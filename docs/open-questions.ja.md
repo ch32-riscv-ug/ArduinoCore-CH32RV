@@ -68,7 +68,7 @@
 
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
-| Q-050 | P0 | 最初のreference fixture構成 | 選定board、programmer、UART、logic analyzer、power controller |
+| Q-050 | P0 | 初期fixtureのLA channel/pin、adapter connector、電源構成 | 選定boardのpinmux、8chでのtest case割当、電圧、配線prototype |
 | Q-051 | P1 | code/RAM size budget | empty/Blink/Serial baselineと旧/公式/ch32fun比較 |
 | Q-052 | P1 | timing toleranceの決め方 | oscillator条件、sample rate、複数個体測定 |
 | Q-053 | P1 | HIL runnerの信頼境界 | CI provider、artifact署名、fork PR policy |

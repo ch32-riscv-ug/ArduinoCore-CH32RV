@@ -21,6 +21,8 @@
 - 標準外の拡張は主要Arduino coreで定着した慣例を優先し、合理的な既存形がない場合だけCH32固有APIを追加する
 - 書き込み先は複数台から決定的に指定できなければならず、USB PPPSで他portを切断して1台に見せる方式は採用しない
 - 既存toolで要件を満たせない場合は新規toolも開発対象にできる。Arduino専用に閉じず、`ch32fun`等からも利用できる独立toolを目標にする
+- 初期fixtureはWCH-LinkE 1台、8ch/8MHz運用のFX2LP系logic analyzer 1台、DUT 1台とし、Arduino `Serial`にはWCH-LinkE内蔵の物理UARTを使用する
+- logic analyzerのchannelとDUT pinの割当、adapter connector、電源構成は初期board選定後に決める
 
 ## 有力な提案
 

@@ -79,6 +79,19 @@ upload前に物理laneと期待deviceを照合します。UIDはSKU、backend、
 
 ## Fixture構成案
 
+### 決定済みの初期構成
+
+最初のvertical sliceでは、次の1組を使用します。
+
+- WCH-LinkE 1台
+- FX2LP系logic analyzer 1台。まず8 channel、8 MHzで運用する
+- DUT 1台
+- Arduino `Serial`の送受信にはWCH-LinkE内蔵の物理UARTを使用する
+- DUTのUART TX/RXはWCH-LinkEへ接続し、必要な信号をlogic analyzerから並行して観測する
+- MCU/boardはadapterまたは配線を交換して逐次試験する
+
+WCH-LinkEのSDI virtual serialは通常のArduino `HardwareSerial`認定には使用せず、bring-upや障害解析の補助候補とします。logic analyzerの各channelをどのDUT pinと論理信号へ接続するか、adapter connector、電源供給・制御方法は未決定です。
+
 ### 運用優先構成
 
 初期費用を許容し、運用を単純にする構成です。
@@ -136,10 +149,12 @@ programmer:
 logic_analyzer:
   driver: fx2lafw
   connection: <stable-connection>
+  sample_rate_hz: 8000000
   channels:
-    marker: D0
-    gpio_out: D1
-    uart_tx: D2
+    # channel mappingはboard/adapter選定後に決定する
+    marker: <channel>
+    gpio_out: <channel>
+    uart_tx: <channel>
 power:
   backend: <controller>
   lane: 1

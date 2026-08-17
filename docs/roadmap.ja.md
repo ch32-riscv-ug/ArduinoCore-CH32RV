@@ -39,7 +39,7 @@
 - 最小Serial
 - ELF/BIN生成
 - 1 backendでのflash/verify/reset
-- 1 fixtureの独立health check、candidate READY、GPIO capture
+- WCH-LinkE 1台、8ch/8MHz運用のFX2LP 1台、DUT 1台によるfixture health check、candidate READY、GPIO capture
 - 最初のGPIO `.sr`、decoder、golden corpus、replay test
 
 完了条件:
