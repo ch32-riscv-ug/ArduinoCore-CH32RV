@@ -54,14 +54,15 @@
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
 | Q-040 | P0 | `probe-rs 0.32.x`をprimary backendにできるか | 対象SKU×WCH-Link FW×host OSのflash/verify/reset試験 |
-| Q-041 | P0 | 最初のLinux HIL runnerでWCH-Linkを物理pathから選択する方法 | topology列挙だけでなくbackendが指定deviceをopenするprototype |
+| Q-041 | P0 | 最初のLinux HIL runnerで書き込み先を一意に選択する方法 | topology列挙だけでなくbackendが指定deviceだけをopenするprototype。PPPSによる他port切断は選択方法にしない |
 | Q-042 | P0 | target UIDのaddressと保護時挙動 | device別reference manualと実機read試験 |
 | Q-043 | P1 | 1 lane 1 LinkEか、共有LinkE+muxか | fixture費用、throughput、信号品質、故障解析比較 |
 | Q-044 | P1 | uploader frontendを独自binaryにするかwrapperにするか | Arduino packaging、cross-platform配布、probe-rs API安定性 |
-| Q-045 | P2 | ESP32-S3 programmerを開発するか | 対象protocol、全family対応工数、既存S2実装との比較 |
+| Q-045 | P2 | ESP32系/RP2040 programmerを開発するか | 対象protocol、unique IDと複数台選択、全family対応工数、既存実装との比較。Q-041を既存toolで解決できなければ優先度を上げる |
 | Q-046 | P2 | flash失敗、保護、電源断からの復旧contract | fault injectionとbrick/recovery試験 |
 | Q-047 | P2 | Windows/macOSでの物理probe選択 | 対応OS確定後のUSB topology、driver、backend prototype |
 | Q-048 | P0 | WCH-Link firmwareの固定・更新方針 | 型番、HW revision、mode、FW別backend認定とrollback試験 |
+| Q-049 | P1 | 新規toolのrepository、CLI/API、release単位 | Arduino、`ch32fun`、単体利用から共用できるprototypeとversioning |
 
 ## Testとrelease
 

@@ -8,6 +8,7 @@
 - `ch32fun`と同等以上のサイズ、性能、実用性を目標とする
 - 性能やcode sizeの改善だけを理由に、入手条件、改変条件、再配布条件、対応sourceが確認できないtoolchainを採用しない
 - 比較対象のlicenseが明確でも、新コアへ第三者コードやbinaryを無断でコピーしない
+- GCC/binutilsへの独自patchをdefault toolchainの前提にしない。upstream versionごとの追従保守が必要なcompiler forkは、標準ISAで満たせない必須要件と継続保守体制が確認できた場合だけ再検討する
 
 「大幅な劣化」の数値閾値は、代表sketchと初期SKUを確定してから認定matrixで定めます。この原則はdefault toolchainの選定基準であり、特定のGCC distributionを採用する決定ではありません。
 

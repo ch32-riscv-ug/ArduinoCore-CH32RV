@@ -19,6 +19,8 @@
 - EVT example数ではなく、実用的でcompile/HIL状態を追跡できるArduino exampleの完成度を目標にする
 - 公開APIは可能な限りArduino標準と`ArduinoCore-API`へ準拠する。小容量SKUの未対応機能は明示し、標準APIの意味をCH32都合で変更しない
 - 標準外の拡張は主要Arduino coreで定着した慣例を優先し、合理的な既存形がない場合だけCH32固有APIを追加する
+- 書き込み先は複数台から決定的に指定できなければならず、USB PPPSで他portを切断して1台に見せる方式は採用しない
+- 既存toolで要件を満たせない場合は新規toolも開発対象にできる。Arduino専用に閉じず、`ch32fun`等からも利用できる独立toolを目標にする
 
 ## 有力な提案
 
@@ -29,6 +31,7 @@
 - startup、CRT、vector、linkerをプロジェクト側で管理する
 - vendorソースはcommit、SHA-256、allowlist、通知文を固定する
 - uploaderは安定したフロントエンドを持ち、backendを交換可能にする
+- compiler forkはversion追従コストが高いためdefault前提にせず、書き込みtoolやESP32系/RP2040 programmerは既存toolで解決できない課題に対する候補として評価する
 - `probe-rs`をWCH-Link backendの第一候補として実機認定する
 - host/compile/HIL/logic analyzer/replayを段階的にCIへ組み込む
 

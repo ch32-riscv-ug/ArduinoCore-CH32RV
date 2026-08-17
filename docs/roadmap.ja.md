@@ -15,6 +15,7 @@
 - vendor provenanceとライセンス扱いを確認
 - toolchain候補と認定matrixを確定
 - uploader frontendのcontractを定義
+- 複数programmerから指定した1台だけをopenする方式をprototypeで確認する。USB PPPSによる他port切断は使用しない
 - host testを外部host core、HAL mock、native unitのどれで成立させるか決める
 - 最初のADRを作成
 
@@ -47,6 +48,7 @@
 - constructor、weak handler、memory layout testが通る
 - 2つのABI系でBlink/Serialをcompileできる
 - 少なくとも1 boardでflashからlogic analyzer判定まで無人実行できる
+- 複数の同型programmerが接続された状態でも、指定lane以外へ書き込まないことをtestできる
 - 保存したGPIO captureを通常CIで再decodeできる
 - code/RAM size baselineが保存される
 
