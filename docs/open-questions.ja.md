@@ -10,9 +10,9 @@
 |---|---:|---|---|
 | Q-001 | P0 | 最初に正式対象とするexact SKU/package/board | 所有実機、一次資料、fixture配線、利用者需要 |
 | Q-002 | P0 | 初期releaseをRISC-V CH32だけに限定するか | CH32F対応の需要とrepository/package構造への影響 |
-| Q-003 | P1 | Arduino APIの初期対応範囲 | ArduinoCore-API inventory、サイズbudget、利用例 |
+| Q-003 | P1 | Arduino APIの初期対応範囲とSKU別の未対応表現 | ArduinoCore-API inventory、標準API contract、サイズbudget、capability、利用例 |
 | Q-004 | P1 | 旧コアとのソース互換範囲 | 既存sketch/exampleのcompile survey |
-| Q-005 | P2 | EVT Compatibility Packをcore releaseへ同梱するか別artifactにするか | Arduino Builder挙動、versioning、license、更新頻度 |
+| Q-005 | P2 | 初期release後にEVT Compatibility Packを提供する必要があるか | 実用Arduino example提供後の利用者需要、license、維持コスト |
 
 ## Architectureとmanifest
 

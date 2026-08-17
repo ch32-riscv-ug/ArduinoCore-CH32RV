@@ -65,6 +65,8 @@ tests/sketches/<category>/<case>/
 
 公開API contractを比較するtestでは、`#ifdef HOST`や`#ifdef CH32`によって期待動作そのものを分岐させないことを原則とします。fixture接続や観測方法の違いはtest harness側で吸収します。
 
+標準APIのconformance testでは、可能な範囲で同じportable sketchをCH32 profileと基準となる主要Arduino coreまたはhost profileでcompileし、signature、overload解決、戻り値、境界条件を比較します。CH32拡張用testは標準API testから分離し、拡張を使わないsketchへCH32固有headerを要求しません。
+
 testはユーザーの通常のArduino data/sketchbook directoryを変更せず、一時directoryと専用Arduino CLI configurationを使います。
 
 ### Host test方式は未決定

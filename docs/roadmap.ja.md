@@ -85,22 +85,24 @@
 - family固有の手編集`boards.txt`やstartup wrapperを必要としない
 - support matrixがmanifestから生成される
 
-## Phase 4: EVT Compatibility Pack
+## Phase 4: 実用exampleとArduino API完成度
 
 作業:
 
-- 対象EVT revisionと再配布条件を確定
-- sample manifest format
-- C sourceとしてのsample build
-- weak `main()` compatibility mode
-- 旧patch failure modeのregression test
-- compile/HIL済みexample catalog
+- GPIO interrupt、timer、ADC、Serial、SPI、Wireを組み合わせた実用example
+- 割込み、pin remap、buffer overflow、timeout、bus recoveryなど分かりにくい挙動の説明とexample
+- exampleごとの対象capability、必要配線、期待結果、検証状態を表すmanifest
+- 全対象boardでのcompile matrixと、代表boardでのHIL
+- EVTを参照して確認した低レベル挙動のtest化
+- compile/HIL済みArduino example catalog
 
 完了条件:
 
-- default Arduino sketchがEVT headerのC++問題に影響されない
-- 公開するEVT exampleは対象revision、device、検証状態を追跡できる
-- vendor更新で失敗したexampleが自動で検出される
+- 通常利用者がEVT APIやvendor headerを使わず主要周辺機能を利用できる
+- 各exampleの対象SKU、必要配線、期待動作、compile/HIL状態を追跡できる
+- vendor更新によるArduino APIとexampleの回帰が自動で検出される
+
+EVT Compatibility Packはrelease roadmapへ含めません。上記を達成した後にも利用者需要が確認できた場合だけ、別artifactとして再評価します。
 
 ## Phase 5: 2.0 release準備
 

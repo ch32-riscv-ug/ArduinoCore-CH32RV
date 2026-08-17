@@ -27,7 +27,9 @@ Sketch / Arduino libraries
  必要最小限のvendor由来header/source
 ```
 
-EVT互換は上記のデフォルト経路へ混ぜず、横に独立させます。
+通常のArduino利用は上記の経路だけで完結させ、EVT APIやEVT sampleを要求しません。低レベル挙動はdatasheet/reference manualを一次情報とし、EVTと`ch32fun`を相互確認に利用します。EVTだけで仕様や実用実装が完結するとは仮定しません。
+
+将来、実用的なArduino APIとexampleを提供した後にも明確な需要があり、利用・再配布条件を満たせる場合だけ、次の互換packを独立artifactとして検討します。初期releaseの構成要素ではありません。
 
 ```text
 EVT Compatibility Pack
@@ -45,6 +47,17 @@ EVT Compatibility Pack
 - `String`、`Print`、`Stream`などhardware非依存部分を独自forkしない
 - 本プロジェクト側はhardware依存interfaceを実装する
 - CH32V003級の小容量デバイスで、未使用機能がdead stripされることをサイズ試験する
+
+公開APIは次の優先順位で設計します。
+
+1. Arduinoの標準API、signature、意味
+2. 固定する`ArduinoCore-API`のcontract
+3. ESP32等、複数の主要Arduino coreで利用者に定着した拡張方法
+4. 上記で表現できない場合に限るCH32固有拡張
+
+CH32V003級ですべての機能を実装できない場合でも、標準APIの意味を別の意味へ変更しません。SKUごとの対応範囲と制限をcapabilityとして公開し、未対応機能を成功したように見せる空実装にはしません。compile-time error、runtime error、機能省略のどれで表現するかはAPIごとに決定し、support matrixとexampleへ反映します。
+
+拡張は標準APIと名前やoverloadで衝突させず、標準的なsketchが拡張をincludeしなくてもbuildできる構造にします。主要coreの公開APIと挙動は比較対象であり、そのsourceを無断でコピーするものではありません。
 
 ### Arduino adapters
 
@@ -134,6 +147,8 @@ manifestから次を生成する案です。
 - vendor警告抑制が必要な場合、vendor translation unitだけへ限定する
 
 ## EVT Compatibility Pack
+
+文書状態: 将来の条件付き候補。初期release対象外。
 
 互換packでは、旧コアの次の仕組みを限定的に継承できます。
 

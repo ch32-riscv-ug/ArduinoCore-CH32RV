@@ -15,10 +15,14 @@
 - 初期コストが増えても、更新・試験・リリースの継続コストを下げる
 - 最初に仕様、対応範囲、検証方法を明文化する
 - 日本語文書は`.ja.md`、成熟した利用者向け英語文書は`.md`とする。現時点の英語文書はトップREADMEだけとする
+- 通常のArduino利用は公開Arduino APIで完結させ、EVT APIやvendor headerへ降りることを要求しない
+- EVT example数ではなく、実用的でcompile/HIL状態を追跡できるArduino exampleの完成度を目標にする
+- 公開APIは可能な限りArduino標準と`ArduinoCore-API`へ準拠する。小容量SKUの未対応機能は明示し、標準APIの意味をCH32都合で変更しない
+- 標準外の拡張は主要Arduino coreで定着した慣例を優先し、合理的な既存形がない場合だけCH32固有APIを追加する
 
 ## 有力な提案
 
-- デフォルトコアを小さくし、EVT互換を任意レイヤーへ分離する
+- デフォルトコアを小さくし、EVT互換を初期release要件から外す。将来需要が確認できた場合だけ別artifactとして再評価する
 - `Arduino.h`からEVTの全headerを公開しない
 - `ArduinoCore-API`を固定versionで利用する
 - exact SKUとpackageを正本にして`boards.txt`等を生成する
@@ -39,6 +43,7 @@
 - board定義はfamily中心で、exact SKU、package、startup、linker、pin、memory設定の対応が不十分です
 - 公式WCH Arduino coreのBoard Manager版もGCC 8.2.0と古いOpenOCDに依存しています
 - `ch32fun`は活発で重要な参照実装ですが、Arduino APIやEVT互換の土台として直接forkするものではありません
+- EVTだけでは実用実装に足りず、datasheet/reference manualと`ch32fun`等を見ながら直接レジスタを操作する場面が残るため、その必要をArduino API、library、検証済みexampleで減らすことが新コアの価値です
 - 2026年7月の`probe-rs 0.32.0`でCH32/WCH-Link対応が大きく改善しましたが、対象機種すべてでの実機認定はまだです
 - WCH-LinkはUSB serialを恒久的な個体IDとして信用できない可能性があります。serial単独には依存せず固定lane/topologyを使い、読める機種ではDUT UIDも照合する案を検証します
 - `host-arduino-core`と`I2CDeviceDB`には、テスト構造とlogic analyzer制御に再利用できる設計があります

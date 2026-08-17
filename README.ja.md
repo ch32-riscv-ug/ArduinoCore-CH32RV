@@ -14,6 +14,8 @@ WCH CH32マイコン向けの、コミュニティ管理によるArduinoコア�
 - 現代的なtoolchainとArduino環境で継続的にビルドできること
 - 正確な型番・package単位で、対応範囲と検証状況を説明できること
 - 外部SDKやEVTの変更をArduino APIから隔離すること
+- 通常利用者がEVT APIへ降りずに使える、実用的なArduino APIとexampleを提供すること
+- 小容量SKUの制約を明示しながら、可能な限りArduino標準APIへ準拠すること
 - ビルド、書き込み、実機試験、Board Manager配布を自動化すること
 - 初期実装の速さよりも、更新時の作業量と故障解析コストを小さくすること
 
@@ -21,7 +23,7 @@ WCH CH32マイコン向けの、コミュニティ管理によるArduinoコア�
 
 現時点では、次の構成を有力案としています。まだ最終決定ではありません。
 
-- 小さなArduinoコアと、任意のEVT Compatibility Packを分離する
+- 小さなArduinoコアを既定経路とし、EVT Compatibility Packは初期release要件にしない
 - Arduino API境界には固定版の`ArduinoCore-API`を利用する
 - startup、CRT、vector table、linker scriptは本プロジェクトが所有する
 - WCH由来コードは必要なファイルだけをversion・hash・由来付きで取り込む

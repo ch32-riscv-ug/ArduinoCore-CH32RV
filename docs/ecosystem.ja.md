@@ -36,6 +36,8 @@ family別の公式repositoryがあります。
 
 EVT全体の再配布は前提にせず、利用条件を確認したファイルだけを由来付きで扱います。
 
+EVTの多数のexampleは、割込みや周辺機能の低レベル挙動を確認する資料として有用です。ただしEVTだけでは実用実装に足りず、datasheet/reference manualと`ch32fun`等を参照しながら直接レジスタを操作する必要がある場面もあります。example数を新コアの完成度指標にはせず、通常利用者向けにはArduino APIで完結する実用exampleを別に設計します。EVT API互換は初期release要件にしません。
+
 ## ch32fun
 
 - Repository: [cnlohr/ch32fun](https://github.com/cnlohr/ch32fun)
