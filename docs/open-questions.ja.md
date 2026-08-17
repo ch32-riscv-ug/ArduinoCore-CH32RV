@@ -31,12 +31,13 @@
 
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
-| Q-020 | P0 | default GCC distribution/version | RV32E/ILP32E、RV32I、FPU、host OSの認定結果 |
+| Q-020 | P0 | default GCC distribution/version | RV32E/ILP32E、RV32I、FPU、host OS、`ch32fun`比較の認定結果 |
 | Q-021 | P0 | interrupt ABIとWCH固有高速割込みの扱い | disassembly、register preservation、latency HIL |
 | Q-022 | P0 | newlibまたは代替runtimeの構成 | printf、constructor、code/RAM size、license |
 | Q-023 | P1 | C++ standardをGNU++11/14/17のどれにするか | Arduino library compile matrix、サイズ比較 |
 | Q-024 | P1 | LTOをdefaultにするか | weak ISR、archive、debug、size、link再現性 |
 | Q-025 | P2 | WCH toolchain compatibility laneを維持するか | 固有命令の効果と維持コスト |
+| Q-026 | P0 | toolchain artifactの取得・改変・再配布条件を満たせるか | component別license、対応source、patch、公式配布元、host別archive |
 
 ## Vendorとライセンス
 

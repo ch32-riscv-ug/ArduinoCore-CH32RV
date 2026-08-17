@@ -2,6 +2,15 @@
 
 文書状態: 候補選定前
 
+## 決定済みの選定原則
+
+- 同一SKU、clock、機能条件で`ch32fun`を比較基準にし、Flash/RAM使用量と主要な実行性能を大幅に劣化させないことを採用の最低条件とする
+- `ch32fun`と同等以上のサイズ、性能、実用性を目標とする
+- 性能やcode sizeの改善だけを理由に、入手条件、改変条件、再配布条件、対応sourceが確認できないtoolchainを採用しない
+- 比較対象のlicenseが明確でも、新コアへ第三者コードやbinaryを無断でコピーしない
+
+「大幅な劣化」の数値閾値は、代表sketchと初期SKUを確定してから認定matrixで定めます。この原則はdefault toolchainの選定基準であり、特定のGCC distributionを採用する決定ではありません。
+
 ## 目標
 
 - 保守されているRISC-V GCC/binutils/newlibを利用する
@@ -65,6 +74,9 @@ GCC 8 laneは旧コードとの比較用に残せますが、新コアのdefault
 - constructorを持つsketch
 - ISR latencyと保存register
 - Flash/RAM budgetの回帰閾値
+- 同一SKU、clock、Arduino API機能、最適化条件での`ch32fun` baselineとの比較
+- Flash、static RAM、stack、起動時間、GPIO、割込みlatencyのうち各benchmarkに関係する指標
+- 最低条件である「大幅に劣化しない」閾値と、目標である「同等以上」を区別した合否記録
 
 ### host OS
 
@@ -94,6 +106,7 @@ release前には新規Arduino data directoryを使い、既存installに依存�
 
 Board ManagerからGCC、binutils、newlib等を配布する場合、binaryのSHA-256だけでは不十分です。
 
+- IDE等の別製品から抽出したbinaryは、toolchain単体の再配布条件を確認できない限りrelease artifactに使用しない
 - 各componentのversion、license、noticeをinventory化する
 - 対応sourceと適用patchを取得できる状態にする
 - 再現可能なbuild script/configurationを保持する
