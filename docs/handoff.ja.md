@@ -6,7 +6,9 @@
 
 `ArduinoCore-CH32`は、古くなった[`arduino_core_ch32_riscv_noneos`](https://github.com/ch32-riscv-ug/arduino_core_ch32_riscv_noneos)をそのまま修復するのではなく、長期保守を前提に新規設計するために作成されました。
 
-現在のリポジトリには設計文書だけがあり、コア実装、生成器、CI、Board Manager packageはまだありません。
+現在のリポジトリには設計文書があります。コア実装、Arduino用generator、CI、Board Manager packageはまだありません。
+
+device schema、8 sample record、validator、詳細引継ぎは独立[`ch32-device-data`](https://github.com/ch32-riscv-ug/ch32-device-data) repositoryへ移動しました。境界は[device dataの配置と利用方針](device-data.ja.md)を参照してください。
 
 ## 決定済み
 
@@ -23,6 +25,7 @@
 - 既存toolで要件を満たせない場合は新規toolも開発対象にできる。Arduino専用に閉じず、`ch32fun`等からも利用できる独立toolを目標にする
 - 初期fixtureはWCH-LinkE 1台、8ch/8MHz運用のFX2LP系logic analyzer 1台、DUT 1台とし、Arduino `Serial`にはWCH-LinkE内蔵の物理UARTを使用する
 - logic analyzerのchannelとDUT pinの割当、adapter connector、電源構成は初期board選定後に決める
+- device databaseは独立`ch32-device-data` repositoryを正本とし、Arduino coreを固定versionのconsumerにする。配置だけを決定し、schema・対象family・対応SKU・release形式は未決定のままとする
 
 ## 有力な提案
 
@@ -30,6 +33,7 @@
 - `Arduino.h`からEVTの全headerを公開しない
 - `ArduinoCore-API`を固定versionで利用する
 - exact SKUとpackageを正本にして`boards.txt`等を生成する
+- `ch32_riscv_tools`を将来の固定data releaseのviewer・生成物consumerにする
 - startup、CRT、vector、linkerをプロジェクト側で管理する
 - vendorソースはcommit、SHA-256、allowlist、通知文を固定する
 - uploaderは安定したフロントエンドを持ち、backendを交換可能にする
@@ -52,6 +56,9 @@
 - 2026年7月の`probe-rs 0.32.0`でCH32/WCH-Link対応が大きく改善しましたが、対象機種すべてでの実機認定はまだです
 - WCH-LinkはUSB serialを恒久的な個体IDとして信用できない可能性があります。serial単独には依存せず固定lane/topologyを使い、読める機種ではDUT UIDも照合する案を検証します
 - `host-arduino-core`と`I2CDeviceDB`には、テスト構造とlogic analyzer制御に再利用できる設計があります
+- schema prototypeはCH32V003F4P6、CH32X035F8U6、CH32M030C8T7のcomplete package/pin-functionを表現でき、非連続register bit、reserved selector値、OPA input selection、QFN exposed pad、MV/HV I/O、内蔵Rdを扱えます
+- CH32M030とCH32V003のreference manualにはpin selector表とregister説明間の矛盾が見つかり、recordへ根拠と未実機確認を記録しています
+- signal名のcanonical化、silicon/package/exact SKUの正規化、pinを持たないinternal route、verification粒度は未決定です
 
 詳細は[旧コア監査](legacy-audit.ja.md)、[外部調査](ecosystem.ja.md)、[テスト戦略](test-strategy.ja.md)を参照してください。
 
@@ -59,17 +66,17 @@
 
 次のセッションでは、いきなり多数のデバイスを実装せず、以下を順に進めるのが妥当です。
 
-1. [project-scope.ja.md](project-scope.ja.md)と[open-questions.ja.md](open-questions.ja.md)をレビューする
-2. 最初の正確なSKUと評価ボードを2種類程度選ぶ
-3. device/board manifestの最小schemaを決める
+1. `ch32-device-data`でcanonical signal ID、silicon/package正規化、internal route、verification粒度を決め、Q-011をADR候補にする
+2. Arduino側のdata lock/consumer形式を試作する
+3. 最初の正確なSKUと評価ボードを2種類程度選ぶ
 4. toolchain候補でstartup、constructor、割込み、LTO、サイズを比較する
 5. `probe-rs`で選定ボードのflash/verify/reset/read-uidを検証する
 6. 「Blinkをcompile → flash → Serial READY → GPIO波形判定」までを1本通す
 
-最初の2機種候補は、制約の厳しいRV32E機と標準的なRV32I系を1つずつ選ぶ案です。例としてCH32V003F4P6とCH32V203系が挙がっていますが、所有している実機、package、fixture配線を確認してから確定してください。
+最初の2機種候補は、制約の厳しいRV32E機と実用的なRV32I系を1つずつ選ぶ案です。小容量側はCH32V003F4P6、実用側はCH32X035、CH32M030、CH32V203系などが候補ですが、所有実機、USB PDを初期範囲へ含めるか、package、fixture配線を確認してから合意してください。
 
 ## 新しいスレッドでの開始文
 
 必要なら、次の内容で作業を再開できます。
 
-> `/home/mt/dev_wch/ArduinoCore-CH32`でCH32向けArduinoコアを新規設計しています。まず`docs/handoff.ja.md`と関連文書を読み、決定済み事項・提案・未決定事項を区別してください。次は初期対象SKU、device/board schema、toolchain認定条件を固めたいです。旧コアは参照のみとし、新リポジトリへ無断でコピーしないでください。
+> `/home/mt/dev_wch/ArduinoCore-CH32`でCH32向けArduinoコアを新規設計しています。まず`docs/handoff.ja.md`と`docs/device-data.ja.md`を読み、device data作業では兄弟repository `/home/mt/dev_wch/ch32-device-data`の`docs/handoff.ja.md`も読んでください。配置は独立repositoryを正本とすることで決定済みですが、schema、対象family、初期対応SKU、consumer lock、toolchain認定条件は未決定です。これらは順に合意してください。旧コア、EVT、公式PDF、手製pin表は参照のみとし、新repositoryへ無断でコピーしないでください。

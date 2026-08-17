@@ -19,10 +19,10 @@
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
 | Q-010 | P0 | `ArduinoCore-API`の固定versionと取込方法 | サイズ試験、LGPL配布方法、symlinkを使わないrelease方法 |
-| Q-011 | P0 | device/board manifestのformatとschema実装 | 最初の2 deviceを表現するprototype |
+| Q-011 | P0 | device/board manifestのformatとschema実装 | 8 sample prototype、canonical signal、silicon/package正規化、internal route、verification粒度のreview |
 | Q-012 | P0 | startup/vector/linkerを手書き、template生成、外部data生成のどれにするか | family差分比較、ELF検査、debug互換性 |
 | Q-013 | P1 | 内部HAL contractをどこまで設けるか | digital/time/Serial/SPI/I2Cの2 family実装比較 |
-| Q-014 | P1 | `ch32-data`を入力に使うか | license/provenance監査、最新RMとの自動比較 |
+| Q-014 | P1 | `ch32-device-data`のrelease/commitをArduinoへ固定する形式 | offline build prototype、hash検証、生成差分、更新手順 |
 | Q-015 | P0 | 開発用の暫定packager/architecture/FQBN | Arduino CLIでvertical sliceをbuildできる最小platform prototype |
 | Q-016 | P0 | host contract testを何で実行するか | host-arduino-core固定利用、内部HAL mock、native unitの比較 |
 | Q-017 | P2 | 公開用FQBN、packager ID、architecture ID | Arduino package互換性、既存公式coreとの衝突確認、暫定IDからの移行 |
@@ -92,3 +92,9 @@
 - ADRへ進めるか、追加実験が必要か
 
 重要な決定は[ADR](adr/README.ja.md)へ移し、この一覧にはADRへのlinkを追加します。
+
+## 解決済み
+
+| ID | 結論 |
+|---|---|
+| Q-018 | device databaseの正本を独立`ch32-device-data` repositoryに置く。[ADR-0001](adr/0001-device-data-repository.ja.md)参照。releaseとconsumer lock形式はQ-014で継続する |

@@ -37,6 +37,7 @@
 | [handoff.ja.md](handoff.ja.md) | 新しいスレッド／担当者向けの要約 |
 | [project-scope.ja.md](project-scope.ja.md) | プロジェクト目標、初期スコープ、非目標 |
 | [architecture.ja.md](architecture.ja.md) | Arduino API、内部HAL、SoC、EVT互換の境界 |
+| [device-data.ja.md](device-data.ja.md) | 独立device databaseの配置、repository境界、Arduino consumer方針 |
 | [legacy-audit.ja.md](legacy-audit.ja.md) | 旧リポジトリの構造、問題、継承すべき知見 |
 | [ecosystem.ja.md](ecosystem.ja.md) | Arduino、WCH、ch32fun、書き込みツールの調査 |
 | [vendor-policy.ja.md](vendor-policy.ja.md) | 外部ソースの固定、取込、patch、ライセンス方針 |
@@ -46,6 +47,7 @@
 | [roadmap.ja.md](roadmap.ja.md) | 段階的な実装順と完了条件 |
 | [open-questions.ja.md](open-questions.ja.md) | 未決定事項、必要な実験、判断基準 |
 | [adr/README.ja.md](adr/README.ja.md) | Architecture Decision Recordの運用 |
+| [ADR-0001](adr/0001-device-data-repository.ja.md) | device databaseを独立repositoryに置く決定 |
 
 ## 更新規則
 
