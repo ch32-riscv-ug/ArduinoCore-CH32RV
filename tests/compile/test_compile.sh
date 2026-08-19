@@ -21,14 +21,14 @@ export ARDUINO_DIRECTORIES_DOWNLOADS="$(w "$WORK/staging")"
 mkdir -p "$WORK/user/hardware/ch32-riscv-ug" "$WORK/Blink"
 # The Arduino platform is the repo root; these are the entries arduino-cli reads.
 # The same list defines what a release archive must contain.
-PLATFORM_ENTRIES="platform.txt boards.txt cores variants"
+PLATFORM_ENTRIES="platform.txt boards.txt programmers.txt cores variants libraries bootloaders system"
 
 case "$(uname -s)" in
   MINGW*|MSYS*)  # no reliable symlinks on the Windows runner: copy instead
     rm -rf "$WORK/user/hardware/ch32-riscv-ug/ch32v"
     mkdir -p "$WORK/user/hardware/ch32-riscv-ug/ch32v"
     for e in $PLATFORM_ENTRIES; do
-      cp -r "$PLATFORM/$e" "$WORK/user/hardware/ch32-riscv-ug/ch32v/"
+      [ -e "$PLATFORM/$e" ] && cp -r "$PLATFORM/$e" "$WORK/user/hardware/ch32-riscv-ug/ch32v/"
     done ;;
   *)
     ln -sfn "$PLATFORM" "$WORK/user/hardware/ch32-riscv-ug/ch32v" ;;

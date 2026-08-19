@@ -49,6 +49,11 @@ ADR化されている提案:
 - **ArduinoCore-APIは使う。repoに実体をコミットする**(→[ADR-0009](adr/0009-arduinocore-api-import.ja.md))
 - **ArduinoCore-APIの更新は積極的に行わない**(変更頻度が低く、追随自体に価値がないため)
 - コア拡張(`Serial.printf()`等)の置き場所は**未承認**([Q-019](open-questions.ja.md))
+- **主対象はCH32X035**。X035固有機能もリリース対象外にはせず、**できるところまで載せて出す**。**USB-PDまわりは優先度高め**
+- **旧実装(`arduino_core_ch32_riscv_arduino`)は参考程度**。ゼロベースでより良い設計を作る。[監査結果](legacy-audit.ja.md)は「どこにfamily差が出るか」の観測データとして使い、構造をそのまま踏襲しない
+- WCH-LinkEの複数台識別は**当面1台のみで進めながら検討**。[`board-identify`](https://github.com/tanakamasayuki/board-identify)方式(ターゲット自身から識別子を読む)が有力
+- **最初のマイルストーンは「主要boardで`Serial.println()`が通る」**。周辺機能とfixture配線(LA接続)はその後
+- **自動testは`pytest-embedded-arduino-cli`単体**で組む(他プロジェクトと同一構成。ArduTestは使わない)。**board切り替えは`sketch.yaml`のprofile**
 
 ## 現在の資産
 
@@ -71,18 +76,40 @@ ADR化されている提案:
 
 新規に判明: **arduino-cliは`cores/arduino/api/*.cpp`(8本)を実platformで自動compileし、`--gc-sections`が未使用分を完全に落とす**。api/追加後もBlinkのサイズは26 SKU全てでbaselineとバイト一致(476/4/520)。
 
-コアが提供すべき関数の判明分: `ltoa`/`ultoa`/`dtostrf`(newlib非搭載)、HAL(millis/delay等)、syscalls(`_write`/`_sbrk`等)。
+コアが提供すべき関数(2026-08-19に実物で確認し、実験0007の記述を細分化):
+
+| 関数 | 状況 |
+|---|---|
+| `itoa` / `utoa` | newlibが持つ。対応不要 |
+| `ltoa` / `ultoa` | **coreが実装する**。upstreamは`api/itoa.h`で宣言のみ |
+| `dtostrf` | **upstreamが`api/deprecated-avr-comp/avr/dtostrf.c.impl`に実装を持つ**。coreは自前の`.c`からincludeするだけでよい(samd/renesasと同じ) |
+
+その他: HAL(millis/delay等)、syscalls(`_write`/`_sbrk`等)。
 
 ## 次に始める作業
 
-L1(初期スコープ)まで確認済み。次はL2(実装の骨格)。
+### Milestone 1: 主要boardで`Serial.println()`が通る
 
-1. **実機の特定と配線**: 所有機材のうちどのboard/SKUを最初のTier A対象にするか(Q-001)、WCH-LinkEとの配線、LA channel割当(Q-050)
-2. **Q-013**: 内部HAL contractの範囲を決める。v1.0の対象がGPIO/UART/SPI/I2C/ADC/PWM/割込みと決まったので、この7つが境界設計の入力になる
-3. **Q-019**: コア拡張(`Serial.printf()`等)を`api/`改変で出すか別手段にするか
-4. **Q-016**: host contract testの方式(`api/`にupstreamのhost test suiteがあるので、固定commitでCIからcloneして使える)
-5. ADR-0001〜0009を大きい順に確認して`Accepted`にしていく
-6. 生成器拡張: variant(pin map)生成はArduinoピン設計合意後。V103/H417のstartup対応は対象family追加時
+受け入れtestは作成済みで、**現在は正しく失敗している**(`'Serial' was not declared in this scope`)。
+これを通すのが次の作業。
+
+1. **UART HALとHardwareSerialの実装**。ADR-0006の要件(tickソース差し替え可能)を織り込む
+2. **syscalls**(`_write`等)と`ltoa`/`ultoa`。`dtostrf`はupstreamの`.c.impl`をincludeするだけでよい
+3. **crt0からsetup()までの実行**を実機で確認(現在は静的検査のみ)
+4. **生成器へfamily追加**: 対象boardのfamilyを`FAMILY_CONFIG`へ足す(設定1エントリ+vector table+variant)
+5. **書き込み経路の実体化**: `programmers.txt`+`program.pattern`。tool本体はQ-040/Q-044の決定待ち
+
+### 並行して決める
+
+- **Q-001**: 対象boardの確定(X035が主。C8T6以上でないとI2C/USB/SWDが両立しない)
+- **Q-013**: 内部HAL contract。[旧コア監査](legacy-audit.ja.md)は境界の観測データとして使う
+- **Q-019**: コア拡張(`Serial.printf()`等)の置き場所
+- ADR-0001〜0009を大きい順に確認して`Accepted`にしていく
+
+### あとで
+
+- fixture配線(LA channel数とconnector、Q-050)。**16ch推奨**の根拠は[upload-and-fixture](upload-and-fixture.ja.md)
+- variant(pin map)生成はArduinoピン設計合意後
 
 ## 未決定のまま実装に影響する主要論点
 

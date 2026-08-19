@@ -43,7 +43,19 @@ def sha256(path: pathlib.Path) -> str:
 # The repo root doubles as the Arduino platform directory (R-15 method A), so a
 # release archive is an allowlist, not the whole tree. Keep in sync with
 # PLATFORM_ENTRIES in tests/compile/test_compile.sh.
-PLATFORM_ENTRIES = ("platform.txt", "boards.txt", "cores", "variants", "libraries")
+# Arduino platform files that a release archive must carry. Entries absent from the
+# tree are skipped, so this can list things the platform does not have yet.
+PLATFORM_ENTRIES = (
+    "platform.txt",
+    "boards.txt",
+    "programmers.txt",
+    "cores",
+    "variants",
+    "libraries",
+    "bootloaders",
+    "system",
+)
+REQUIRED_ENTRIES = ("platform.txt", "boards.txt", "cores", "variants")
 
 
 def build_archive(platform_dir: pathlib.Path, out: pathlib.Path, version: str) -> pathlib.Path:
@@ -55,9 +67,9 @@ def build_archive(platform_dir: pathlib.Path, out: pathlib.Path, version: str) -
         for name in PLATFORM_ENTRIES:
             src = platform_dir / name
             if not src.exists():
-                if name == "libraries":
-                    continue          # optional until the core ships libraries
-                raise SystemExit(f"platform entry missing: {src}")
+                if name in REQUIRED_ENTRIES:
+                    raise SystemExit(f"required platform entry missing: {src}")
+                continue
             if src.is_dir():
                 shutil.copytree(src, staged / name, symlinks=False)
             else:

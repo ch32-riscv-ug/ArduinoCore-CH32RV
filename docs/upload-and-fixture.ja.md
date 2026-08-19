@@ -51,6 +51,52 @@ WCH-Link host protocolはfirmware依存の解析部分があるため、probe fi
 
 ## 複数WCH-Linkの識別
 
+**maintainer報告(2026-08-19)**: WCH-LinkEは複数台所有しているが、**同時に接続して使うことができず、実際には1台しか接続できない**。
+
+これはfixture設計だけの話ではなく、**独自書き込みツール開発([R-17](research/upload-programmers.ja.md)の`ch32-upload`、Q-044/Q-045/Q-049)の昇格条件に直接効く報告**です。既存文書は次の条件を書いていました。
+
+- R-17: 「書き込みソフトの自作(`ch32-upload` frontend)は既定方針どおり。backend gapと**probe選択問題(Q-041)が既存toolで埋まらない場合に本体開発へ昇格**」
+- Q-045: 「**Q-041を既存toolで解決できなければ優先度を上げる**」
+
+したがってこの報告は、`ch32-upload`および独自programmer(Q-045)の**優先度を上げる方向の証拠**として扱います。確定には原因切り分けが要ります。
+
+### 既存実装の裏付け
+
+旧コア`arduino_core_ch32_riscv_arduino` 1.4.0のupload recipeは`openocd -f wch-riscv.cfg -c init -c halt -c "program ...; verify; reset; wlink_reset_resume; exit;"`で、**probe選択の引数が一切ありません**([legacy-audit](legacy-audit.ja.md)調査対象B)。openwch公式coreも同様にOpenOCD一発です。既存のCH32 Arduinoコアはこの問題を解いていません。
+
+### 切り分けに使える実測(2026-08-19、開発機のWCH製USBデバイス)
+
+| device | VID:PID | 台数 | USB serial descriptor |
+|---|---|---|---|
+| CH343 (USB Single Serial) | `1a86:55d3` | 4 | **個体ごとにunique**(`58FA041019`/`5B5E058417`/`5B5F091220`/`5B5E057951`) |
+| CH340 | `1a86:7523` | 3 | **なし**(topology pathでしか区別できない) |
+
+**WCHは製品によってserialの有無が違う**ことが実測で確認できました。CH343 4台とCH340 3台の計7台が同時接続できています。したがってWCH-LinkEが繋げない理由は「WCH製だから」ではなく、LinkE固有の事情です。
+
+**次の実験(所要1分)**: WCH-LinkEを2台挿して以下を実行し、`serial`欄を確認する。
+
+```sh
+for d in /sys/bus/usb/devices/*/; do
+  v=$(cat $d/idVendor 2>/dev/null); [ "$v" = "1a86" ] || continue
+  echo "$(basename $d) $(cat $d/idProduct) devpath=$(cat $d/devpath) serial=$(cat $d/serial 2>/dev/null)"
+done
+```
+
+結果による分岐:
+
+| 観測 | 意味 | 対応 |
+|---|---|---|
+| serialがunique | tool側がserial selectorを使っていないだけ | probe-rs/wlinkの`--probe VID:PID:SERIAL`で解決。独自tool不要 |
+| serialが全台同一 | USB descriptorレベルで区別不能 | topology path選択が必須 → 既存toolに無ければ`ch32-upload`本体開発へ昇格(Q-044) |
+| 2台目が列挙されない/掴めない | driver/firmware側の制限 | Q-048(FW固定方針)と合わせて再検討。mux構成が現実解 |
+
+### 当面の扱い
+
+- 単一DUTで進む限りこの制約は開発をblockしない
+- 「運用優先構成」(1 DUT laneにつき1 WCH-LinkE)は複数LinkEの同時接続を前提にしているため、**reference fixtureの第一候補から外す**
+- 多DUT化は「台数削減構成」(1 LinkE + debug signal mux)を第一候補として設計する
+- Q-043は共有+mux側へ大きく傾く
+
 USB serialと列挙indexは恒久IDとして扱いません。
 
 識別の優先順位案:
@@ -93,6 +139,70 @@ upload前に物理laneと期待deviceを照合します。UIDはSKU、backend、
 - MCU/boardはadapterまたは配線を交換して逐次試験する
 
 WCH-LinkEのSDI virtual serialは通常のArduino `HardwareSerial`認定には使用せず、bring-upや障害解析の補助候補とします。logic analyzerの各channelをどのDUT pinと論理信号へ接続するか、adapter connector、電源供給・制御方法は未決定です。
+
+### CH32X035を初期対象にする場合のピン制約(2026-08-19調査)
+
+`ch32-device-data`から確認した、**配線前に確定させる必要がある**制約です。
+
+**固定で占有されるpad(全X035パッケージ共通)**
+
+| pad | 機能 | 影響 |
+|---|---|---|
+| `PC18` / `PC19` | `DIO` / `DCK`(SWD) | WCH-LinkE接続に必須。他用途に使えない |
+| `PC16` / `PC17` | `UDM` / `UDP`(USB D-/D+) | USB・USB-PDに必須 |
+| `PC14` / `PC15` | `CC1` / `CC2`(Type-C CC) | USB-PDに必須 |
+
+**★ I2Cがこれらと衝突する**
+
+X035のI2C1は6 routeあるが、行き先が限られる。
+
+| route | SCL | SDA | 衝突 |
+|---|---|---|---|
+| default | PA10 | PA11 | なし |
+| remap-1 | PA13 | PA14 | なし |
+| remap-2 / 4 | PC16 / PC17 | PC17 / PC16 | **USB D-/D+** |
+| remap-3 / 5 | PC19 / PC18 | PC18 / PC19 | **SWD** |
+
+`PA10/PA11`と`PA13/PA14`がpadとして出ているのは**CH32X035C8T6(LQFP48)とCH32X035R8T6(LQFP64)だけ**。`G8R6`はSCL(PA13)のみでSDAが無く使えない。
+
+したがって**小パッケージ(F8U6 / G8U6 / F7P6 / D8U6)では、SWD・USB・I2Cのどれか1つを必ず諦める**ことになる。v1.0がI2CをTier Aに含み、USB-PDの優先度も高い以上、**初期fixtureのDUTはCH32X035C8T6(LQFP48)以上**が要件となる。
+
+**エラッタによる追加制約**([device-data errata](device-data.ja.md))
+
+- `x035-adc-ch-i2c-unavailable`(ロット番号の下から5桁目=0): **ADC ch3/7/11/15とI2Cが使えない**
+  - fixtureのADC試験には**ch3/7/11/15以外**(A0/A1等)を割り当て、影響ロットでもADC試験が成立するようにする
+  - I2C試験には非該当ロットの個体が必要。fixture inventoryにロット番号を記録する
+- `x035-pc10-pc17-bonded`(F8U6/D8U6以外): PC10/PC17とPC11/PC16が内部結線。**PC10/PC11はどのパッケージでもpadとして出ていない**ため配線の問題ではないが、**コアがPC10/PC11をoutputに設定してはならない**。variant生成でunusableとして表現する(Q-011)
+
+### Logic analyzerのchannel数(先に決める必要がある項目)
+
+v1.0の完成条件(GPIO/UART/SPI/I2C/ADC/PWM/割込みがTier A)を波形で検証するには、次の論理信号が要る。
+
+| 論理名 | 用途 |
+|---|---|
+| `MARKER` | 測定開始点。RUN受信後にDUTがtoggle |
+| `GPIO_OUT` | digitalWrite |
+| `INT_IN` | attachInterrupt(hostが駆動) |
+| `PWM` | analogWrite |
+| `UART_TX` / `UART_RX` | HardwareSerial |
+| `I2C_SCL` / `I2C_SDA` | Wire |
+| `SPI_SCK` / `SPI_MOSI` / `SPI_MISO` / `SPI_CS` | SPI |
+
+**合計12**(clock検証用の`MCO`を足すと13)。当初案の**8 channelでは足りず**、SPI群とI2C群を同時に張れないためtest group単位で配線し直しになる。
+
+→ **16 channelを推奨**。これはfixture部材とconnector設計に直結し、後から変更するコストが最も高い項目。
+
+sample rateはFX2LP系がUSB 2.0帯域律速のため、**8ch@24MHz と 16ch@12MHz** のトレードオフになる。Arduinoのconformance対象としてSPIを1MHz級で回すなら12MHzで12倍oversamplingとなり足りる。8MHz級SPIの波形判定が必要になった時点で別機材を検討する。
+
+### 変更コストによる3層の切り分け
+
+「後から変えるのが大変」という観点では、決める順序が分かれる。
+
+| 層 | 内容 | 変更コスト | いつ決めるか |
+|---|---|---|---|
+| 論理信号名 | `MARKER`/`GPIO_OUT`/… | 低。[test-strategy](test-strategy.ja.md)が論理名のみをtestへ書くことを既に義務化 | **今** |
+| LA channel数・connector | 16ch、ピンヘッダ配列、電源/GND位置 | **高**(部材購入・治具再製作) | **今** |
+| 物理pin割当 | `PA5=SPI_SCK`等 | 中。board metadataとして差し替え可能 | 対象boardの確定後 |
 
 ### 運用優先構成
 

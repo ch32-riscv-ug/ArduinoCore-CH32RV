@@ -39,6 +39,16 @@
 
 実験0007は「tagなし」と記録したが、**tag `1.5.2`の`api/`は実験0007のcommitと完全に同一**であり、tagで固定しても実測結果はそのまま有効である。
 
+### 前コアで起きていた版のずれ(本ADRの動機)
+
+旧`arduino_core_ch32_riscv_arduino` 1.4.0は`libraries/ArduinoCoreAPI/src/api/`にupstreamをbundleしているが、実測すると:
+
+- `ArduinoAPI.h`は`ARDUINO_API_VERSION 10501`(=1.5.1)と宣言している
+- しかし内容は1.5.1ではない。1.5.1以降のlicense header追加が入っており、1.5.2で追加された`SPIBusMode`は入っていない
+- 実体は`1.5.1..1.5.2`間の**untagged master snapshot**(16 commit中9 commitと一致し、それ以上は特定できない)
+
+**版マクロが実際の内容と一致せず、どのrevisionを配っているのか事後に特定できない**状態になっていた。本ADRがtag固定・tree hash記録・CIでのbyte一致検証を求めるのは、この失敗を繰り返さないためである(詳細は[legacy-audit 調査対象B](../legacy-audit.ja.md))。
+
 他coreの取込方式:
 
 - `ArduinoCore-renesas`: `cores/arduino/api` は `../../../ArduinoCore-API/api/` へのsymlink(兄弟checkout前提。submoduleですらない)
@@ -57,7 +67,13 @@
 利点: 履歴上のpinがcommit SHAで自明、更新がsubmodule bump 1行、upstream codeを自repoへ複製しない。
 欠点: `--recursive`忘れでbuild不能。ZIP download / `git archive` / GitHub release tarballから消えるため、release packagingで結局実体化(copy)工程が要る。vendor-policyの「snapshotを格納しoffline buildを可能にする」に反する。**不採用**。
 
-### Option C: vendored snapshot + lock manifest + CI byte一致検証(採用)
+### Option C: `libraries/`配下にbundleする(前コア方式)
+
+前コア`arduino_core_ch32_riscv_arduino` 1.4.0は`libraries/ArduinoCoreAPI/`に置いていた。
+利点: platform bundled libraryとして扱われ、includeされたときだけcompileされる。
+欠点: `Arduino.h`がplatform libraryへ依存する構造になり、コアの必須要素がlibrary解決順序に左右される。実測では`cores/`配置でも`--gc-sections`が未使用分を完全に除去するため(26 SKUでBlinkのサイズがbaselineとバイト一致)、この利点は実質存在しない。**不採用**。
+
+### Option D: vendored snapshot + lock manifest + CI byte一致検証(採用)
 
 利点: `git clone`もZIPもrelease tarballも同一構造で完結。symlink不要。既存の`generated-sync` job(device-data locked commit検証)と同型の仕組みで済み、CI/運用パターンが増えない。vendor-policyの記述通り。
 欠点: MITリポジトリにLGPLのsub-treeが入るため、license境界の明示が必須。upstream追随が自動でなく明示PRになる。

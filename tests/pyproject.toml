@@ -1,0 +1,19 @@
+[project]
+name = "arduinocore-ch32-tests"
+version = "0.0.0"
+description = "Hardware and build tests for the ArduinoCore-CH32 platform"
+readme = "README.ja.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "TANAKA Masayuki" }]
+dependencies = [
+  "pytest>=8",
+  "pytest-embedded>=2.0",
+  "pytest-embedded-serial>=2.0",
+  "pytest-embedded-arduino-cli>=1.1",
+  "pytest-html>=4.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["sketches"]
+addopts = "-ra --strict-markers"
