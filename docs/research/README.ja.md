@@ -22,7 +22,7 @@
 | R-06 | linker scriptとメモリ構成 | SKU別FLASH/RAM、RAM分割(V20x/V307/V407)、vector配置の扱い | Q-012 | R-02に統合 |
 | R-07 | clock初期化とクロックメニュー | system_ch32*.cのSYSCLK選択肢とHSE有無 | Q-013 | R-02に統合 |
 | R-08 | 割込みABIとWCH高速割込み(HPE) | interrupt attribute、hardware stack、latencyの実測 | Q-021 | 未着手(実測が必要) |
-| R-09 | newlib/ilp32e runtimeのサイズ実測 | RV32EmC/RV32ECでのprintf、constructor、C++コスト | Q-022, Q-051 | 未着手(toolchain認定と併せて実測) |
+| R-09 | newlib/ilp32e runtimeのサイズ実測 | RV32EmC/RV32ECでのprintf、constructor、C++コスト | Q-022, Q-051 | **計測済み**([実験0006](../experiments/0006-newlib-size-baseline.ja.md): nano必須、full printf=47KB/new=114KB、%f opt-in=+19.5KB、C++機能自体は軽量) |
 | R-10 | uploader/書き込みtool | probe-rs等のbackend認定 | Q-040〜Q-048 | [既存文書](../upload-and-fixture.ja.md)で管理 |
 | R-11 | vendorファイルのライセンス・再配布 | EVT由来ファイルの取込条件 | Q-030, Q-034 | [既存文書](../vendor-policy.ja.md)で管理 |
 | R-12 | device databaseとboards.txt生成の連携 | exact SKU正本からの生成 | Q-011, Q-014 | [ADR-0001](../adr/0001-device-data-repository.ja.md)と[device-data](../device-data.ja.md)で管理。R-03に生成方針の提案あり |

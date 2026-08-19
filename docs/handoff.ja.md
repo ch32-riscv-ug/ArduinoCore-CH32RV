@@ -71,7 +71,9 @@ device schema、8 sample record、validator、詳細引継ぎは独立[`ch32-dev
 
 実機なしフェーズの進捗と残作業は[環境整備計画](infrastructure.ja.md)のW-1〜W-7が正本です。2026-08-19時点でW-1(xPack toolchain検証)、W-2(統合startup等価性検証、13バリアント)、W-3(暫定FQBNでのBlink compile)、W-4のboards.txt/ld生成(26/26 SKU compile matrix)、W-5(index生成+clean install検証)が完了しています。
 
-1. **W-6**: 作成済みの[CI workflow](../.github/workflows/ci.yml)(startup-equivalence/generated-sync/compile-matrix/install-test)をpushして初回実行をgreenにする。EVTミラーのGitHub側layoutやmacos runnerでの差異はここで判明する(crt0の`.init_array`呼び出しは実装済み・静的検査済み。実行確認はHIL待ち)
+CI([workflow](../.github/workflows/ci.yml): startup-equivalence/generated-sync/compile-matrix/install-test)は**ubuntu/macos/windowsの3 OSでall green確認済み**(2026-08-19)。crt0の`.init_array`呼び出しは実装済み・静的検査済み(実行確認はHIL待ち)。
+
+1. W-7: size回帰の閾値化(baseline記録とCI比較。R-09の計測は[実験0006](experiments/0006-newlib-size-baseline.ja.md)で完了: default=newlib-nano、%fはmenu opt-inが結論)
 2. コア本体の実装開始(ArduinoCore-API統合、pinMode/digitalWrite/millis/delay/Serial。Q-010/Q-013)
 3. (実機が使えるようになったら)`probe-rs`でflash/verify/reset/read-uidを検証し、「Blinkをcompile → flash → Serial READY → GPIO波形判定」までを1本通す
 
