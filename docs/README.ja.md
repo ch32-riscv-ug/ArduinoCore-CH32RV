@@ -36,6 +36,8 @@
 |---|---|
 | [handoff.ja.md](handoff.ja.md) | 新しいスレッド／担当者向けの要約 |
 | [research/README.ja.md](research/README.ja.md) | 事前調査(startup、EVT構造、SKU/board構造、toolchain、テスト環境) |
+| [infrastructure.ja.md](infrastructure.ja.md) | 環境整備計画(実機なしworkstream、repository分離、GitHub Actions/Pages) |
+| [experiments/](experiments/0001-xpack-multilib-smoke.ja.md) | 実験記録(0001: xPack multilib確認、0002: 統合startup等価性検証) |
 | [project-scope.ja.md](project-scope.ja.md) | プロジェクト目標、初期スコープ、非目標 |
 | [architecture.ja.md](architecture.ja.md) | Arduino API、内部HAL、SoC、EVT互換の境界 |
 | [device-data.ja.md](device-data.ja.md) | 独立device databaseの配置、repository境界、Arduino consumer方針 |

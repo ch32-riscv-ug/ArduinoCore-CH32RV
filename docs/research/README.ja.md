@@ -32,10 +32,10 @@
 
 ## 主要な結論(要約)
 
-- **R-01**: startupの統合は可能。family差は「vector table」「CSR初期化定数」「FPU/VS」「highcode」「H417 V5F特殊boot」の5軸に整理でき、reset処理はプリプロセッサで完全にパラメータ化できる。本丸はvector tableの記述方法(手書き統合 vs device-data生成)
+- **R-01**: startupの統合は可能。family差は「vector table」「CSR初期化定数」「FPU/VS」「highcode」「H417 V5F特殊boot」の5軸に整理でき、reset処理はプリプロセッサで完全にパラメータ化できる。本丸はvector tableの記述方法(手書き統合 vs device-data生成)。「共通crt+vector include」方式は3 familyのELF等価性検証で成立を確認済み([実験0002](../experiments/0002-unified-startup-poc.ja.md))
 - **R-02**: menu軸候補はSKU、clockプロファイル、HSE値、FLASH/RAM分割、VectorInRAM(ld差分のみ)、debug出力先。vendorのsystem_*.cはSYSCLK選択がハードコードで-D上書き不可のため、clock初期化はown実装が有力
 - **R-03**: 「26バリエーション」はV00X系6 seriesの英語版datasheet合計と一致(zh版のみのCH32M006で27)。推奨構成は**family単位11ボード+pnumメニューに全型番**(STM32duino/openwch型)、boards.txt/variantはdevice-dataから完全自動生成
-- **R-04**: **ESP32のtoolchainはrv32e/ilp32e欠落でCH32V003/V00Xに使用不可**。推奨は**xPack riscv-none-elf-gcc(14.3.0-1基準)のGitHub Releases直リンク参照**(STM32duinoに同方式の実績)。WCH fork(MRS GCC12)は比較lane限定
+- **R-04**: **ESP32のtoolchainはrv32e/ilp32e欠落でCH32V003/V00Xに使用不可**。推奨は**xPack riscv-none-elf-gcc(14.3.0-1基準)のGitHub Releases直リンク参照**(STM32duinoに同方式の実績)。WCH fork(MRS GCC12)は比較lane限定。multilib実物と全core向けcompile smokeは[実験0001](../experiments/0001-xpack-multilib-smoke.ja.md)で確認済み
 
 ## 文書間の関係
 

@@ -114,6 +114,10 @@ H417 v5fのみ例外的に複雑: handle_resetでFLASH関連レジスタ(0x40022
 | VectorInRAM | ld側で`.vector`配置切替 | startup側は分岐不要(正規化後) |
 | V5F特殊боot | loadcode+RAM実行 | H417対応時のみ。`CH32_LOADCODE` |
 
+## 検証済みの追記(2026-08-19)
+
+案Bのproof of conceptを実装し、V00X/X035/V307 D8Cの3 familyで**EVT startupと統合startupのELF等価性(vector table全entry+CSR初期化集合)を機械検証で確認した**。[実験0002](../experiments/0002-unified-startup-poc.ja.md)と[prototypes/startup/](../../prototypes/startup/README.ja.md)を参照。
+
 ## 判断ポイント
 
 - **Q-012の本丸**: tableを手書き統合(A/B)にするかdevice-data生成(C)にするか。生成にする場合、`ch32-device-data`にIRQ番号→名前の順序付き一覧を追加する必要がある(schema拡張の要否をdevice-data側と合意する)

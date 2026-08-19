@@ -92,9 +92,17 @@ host要件: Windows x64 / Linux x64(できればarm64)/ macOS x64・arm64。
 - **linux-arm64対応**をrelease要件に含めるか(xPackなら追加コストゼロ、MRS laneは提供不可)
 - V2C(RV32EmC)のmultilib選択: `rv32emc`完全一致のlibはなく`rv32ec/ilp32e`等へのフォールバックになる見込み。libgccの乗算がソフト実装になる影響はサイズ/性能実測で確認
 
+## 検証済みの追記(2026-08-19)
+
+[実験0001](../experiments/0001-xpack-multilib-smoke.ja.md)で以下を実物確認した。
+
+- 14.3.0-1(linux-x64)のmultilibに**rv32e系6種(rv32ec/ilp32e含む)が実在**。defaultはrv32imac/ilp32
+- CH32全coreのmarch/mabiでcompile/link成功。V2C(rv32emc)はrv32ec/ilp32e libへ、V3B(+Zb系)はrv32imc/ilp32へフォールバック。V4F系はrv32imafc_zicsr/ilp32fに完全一致。Zve64x+Zvbbはassemble可
+- EVTのstartup_ch32v00X.S+Link.ldが無改変で通り、最小ELFはtext 328B(RVEフラグ、vector table 0x0配置を確認)
+- C++(仮想関数+グローバルオブジェクト)がilp32eでlink可能。rv32ec/ilp32eにnewlib一式(nano含む)あり
+
 ## 未検証事項
 
-- xPack 14.3.0-1の同梱multilib実物確認(`--print-multi-lib`実行。現状はversioning.shとv15.2.0-1ノートからの高確度推定)
 - 展開後ディスクサイズとArduino IDE/CLI経由インストールの実測(各OS)
 - MRS2(MounRiver Studio II)同梱toolchainの版数・配布条件
 - ilp32e×newlibの品質(printf、long long、float format)とcode size(Q-022の実測へ)
