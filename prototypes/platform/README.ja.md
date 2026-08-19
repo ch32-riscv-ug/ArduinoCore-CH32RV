@@ -31,7 +31,7 @@ CH32_GCC_BIN=/path/to/xpack-riscv-none-elf-gcc-14.3.0-1/bin \
 ```
 ch32v/
   platform.txt              最小recipe(c/cpp/S/ar/link/objcopy/size)。compiler.path未指定時はPATH
-  boards.txt                手書きseed(CH32V00X+pnum 2種)。将来device-data生成へ置換
+  boards.txt                生成物(prototypes/generator/generate.py、pnum 26項目)。手編集禁止
   cores/arduino/
     Arduino.h main.cpp wiring_stub.c   compile専用スタブAPI
     crt0_ch32.S             正本は ../startup/crt0_ch32.S(同期が必要。将来は生成/共有化)
@@ -39,8 +39,10 @@ ch32v/
   variants/CH32V00X/
     pins_arduino.h          スタブ
     sections.ld             own実装の共通セクション定義(init_array系symbolを含む)
-    ch32v006_62k_8k.ld / ch32v002_16k_4k.ld   SKU別MEMORY(datasheet事実)
+    ch32v00x_{16k_4k,32k_6k,62k_8k}.ld   生成物(ユニークなFLASH/SRAM組合せ別)
 ```
+
+`test_compile.sh`はboards.txtの全pnum(26 SKU)をcompileするcompile matrixとして動く。
 
 ## 既知の制限(実装時に解消する)
 

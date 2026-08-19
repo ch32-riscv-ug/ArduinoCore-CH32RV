@@ -6,7 +6,7 @@
 
 `ArduinoCore-CH32`は、古くなった[`arduino_core_ch32_riscv_noneos`](https://github.com/ch32-riscv-ug/arduino_core_ch32_riscv_noneos)をそのまま修復するのではなく、長期保守を前提に新規設計するために作成されました。
 
-現在のリポジトリには、設計文書に加えて[事前調査](research/README.ja.md)(startup、EVT構造、SKU/board構造、toolchain)、[環境整備計画](infrastructure.ja.md)、[実験記録](experiments/0001-xpack-multilib-smoke.ja.md)(0001〜0003)、および実機なしで検証済みのprototype([統合startup+等価性検証ハーネス](../prototypes/startup/README.ja.md)、[最小platform](../prototypes/platform/README.ja.md))があります。コア本体の実装、generator、CI、Board Manager packageはまだありません。
+現在のリポジトリには、設計文書に加えて[事前調査](research/README.ja.md)(startup、EVT構造、SKU/board構造、toolchain)、[環境整備計画](infrastructure.ja.md)、[実験記録](experiments/0001-xpack-multilib-smoke.ja.md)(0001〜)、および実機なしで検証済みのprototype([統合startup+等価性検証ハーネス](../prototypes/startup/README.ja.md)、[最小platform](../prototypes/platform/README.ja.md)、[boards.txt/ld generator](../prototypes/generator/README.ja.md))があります。コア本体(実API)の実装、CI、Board Manager packageの公開はまだありません。
 
 device schema、8 sample record、validator、詳細引継ぎは独立[`ch32-device-data`](https://github.com/ch32-riscv-ug/ch32-device-data) repositoryへ移動しました。境界は[device dataの配置と利用方針](device-data.ja.md)を参照してください。
 
@@ -69,13 +69,12 @@ device schema、8 sample record、validator、詳細引継ぎは独立[`ch32-dev
 
 ## 次に始める作業
 
-実機なしフェーズの進捗と残作業は[環境整備計画](infrastructure.ja.md)のW-1〜W-7が正本です。2026-08-19時点でW-1(xPack toolchain検証)、W-2(統合startupの等価性検証、13バリアント)、W-3(暫定FQBNでのarduino-cli Blink compile)が完了しています。
+実機なしフェーズの進捗と残作業は[環境整備計画](infrastructure.ja.md)のW-1〜W-7が正本です。2026-08-19時点でW-1(xPack toolchain検証)、W-2(統合startup等価性検証、13バリアント)、W-3(暫定FQBNでのBlink compile)、W-4のboards.txt/ld生成(26/26 SKU compile matrix)、W-5(index生成+clean install検証)が完了しています。
 
-1. **W-4**: `ch32-device-data/tables`からV00X familyのboards.txt/ld/variantを生成する最小generatorを作り、W-3のprototype platformへ接続する
-2. **W-5**: package index生成とローカルHTTP経由のclean install検証(R-15方式B)をscript化する
-3. **W-6/W-7**: 上記とhost test、size計測をGitHub Actionsへ載せる
-4. crt0へのグローバルコンストラクタ(`__init_array`)呼び出し追加と、そのtest
-5. (実機が使えるようになったら)`probe-rs`でflash/verify/reset/read-uidを検証し、「Blinkをcompile → flash → Serial READY → GPIO波形判定」までを1本通す
+1. **W-6/W-7**: 各prototypeの検証script(run_check/generate --check/test_compile/test_install)とhost test、size計測をGitHub Actionsへ載せる
+2. crt0へのグローバルコンストラクタ(`__init_array`)呼び出し追加と、そのtest
+3. コア本体の実装開始(ArduinoCore-API統合、pinMode/digitalWrite/millis/delay/Serial。Q-010/Q-013)
+4. (実機が使えるようになったら)`probe-rs`でflash/verify/reset/read-uidを検証し、「Blinkをcompile → flash → Serial READY → GPIO波形判定」までを1本通す
 
 最初の2機種候補は、制約の厳しいRV32E機と実用的なRV32I系を1つずつ選ぶ案です。小容量側はCH32V003F4P6、実用側はCH32X035、CH32M030、CH32V203系などが候補ですが、所有実機、USB PDを初期範囲へ含めるか、package、fixture配線を確認してから合意してください。
 

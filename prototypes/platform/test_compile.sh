@@ -36,8 +36,12 @@ EOF
 echo "== boards =="
 arduino-cli board listall
 
+# Compile every part number listed in the generated boards.txt (compile-matrix seed).
+PNUMS=$(sed -n 's/^CH32V00X\.menu\.pnum\.\([A-Z0-9]*\)=.*/\1/p' "$HERE/ch32v/boards.txt")
+echo "== part numbers: $(echo "$PNUMS" | wc -w)"
+
 fail=0
-for pnum in CH32V006K8U7 CH32V002F4U6; do
+for pnum in $PNUMS; do
   echo "== compile Blink for $pnum =="
   arduino-cli compile \
     --fqbn "ch32-riscv-ug:ch32v:CH32V00X:pnum=$pnum" \

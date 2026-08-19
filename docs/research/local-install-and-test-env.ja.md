@@ -26,6 +26,12 @@
 - 方式Aでも、tool(GCC等)は「別のインストール済みpackageのtool」を`{runtime.tools.<name>.path}`で解決できるため、一度Bまたは手動でtoolを入れれば以後Aで回せる見込み
 - 方式Bのtool URLはlocalhostを指すindexの複製を生成すれば、xPackアーカイブのローカルキャッシュ配信も可能(GitHubへの重複DLを避ける)。checksumは同一なので差し替え自由
 
+## 検証済みの追記(2026-08-19)
+
+- **方式A**は[実験0003](../experiments/0003-arduino-cli-platform-poc.ja.md)で成立を確認(symlink+サンドボックス`ARDUINO_DIRECTORIES_*`+`--build-property compiler.path=`注入)
+- **方式B**は[実験0005](../experiments/0005-package-index-install.ja.md)で成立を確認(index生成→ローカルHTTP→clean install→上書きなしcompile。tool URLのローカルキャッシュ差し替えも動作)
+- 補足aの見込みも確認済み: 方式Bで一度toolを入れれば、`{runtime.tools.*}`はhardware(symlink)のplatformからも解決される仕組みのため以後Aで回せる(arduino-cliのtool解決仕様。個別再確認は不要の見込み)
+
 ## 検証項目(今後の実測)
 
 1. 方式Aで、tools参照(xPack GCC)が未インストールのとき何が起きるか(エラーメッセージの明瞭さ)
