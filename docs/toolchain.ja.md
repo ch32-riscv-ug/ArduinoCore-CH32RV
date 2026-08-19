@@ -1,6 +1,6 @@
 # Toolchain方針
 
-文書状態: 候補選定前
+文書状態: 配布物と参照方式は決定済み([ADR-0002](adr/0002-toolchain-distribution.ja.md))。認定matrixの実測(ch32fun比較)が未了
 
 ## 決定済みの選定原則
 
@@ -21,19 +21,11 @@
 - 標準RISC-V ISAで動作する構成をdefaultにする
 - WCH固有最適化は、必要性と効果を実測したoptional profileに限定する
 
-## 現状
+## 決定済み(ADR-0002)
 
-旧コアとWCH公式Arduino coreは、主に`riscv-none-embed-gcc 8.2.0`を使用しています。旧コアはGNU++14と`-fpermissive`にも依存しています。
-
-GCC 8 laneは旧コードとの比較用に残せますが、新コアのdefault候補にはしません。
-
-## 候補
-
-- [riscv-collab/riscv-gnu-toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain)を基にした固定配布物
-- 継続的に更新され、出所とbuild optionを確認できる既存cross-toolchain distribution
-- WCH toolchainは固有命令や高速割込みの比較lane
-
-特定distributionとversionは未決定です。
+- default: **xPack `riscv-none-elf-gcc`をGitHub Releases直リンクでtool参照**(再ホストしない)。認定候補versionは14.3.0-1
+- WCH MounRiver fork(XW拡張、`WCH-Interrupt-fast`)は比較lane限定。旧GCC 8 laneは旧コード比較が必要な間のみ
+- 候補比較・multilib実測・install検証は[R-04](research/toolchain-distributions.ja.md)と[実験0001](experiments/0001-xpack-multilib-smoke.ja.md)/[0005](experiments/0005-package-index-install.ja.md)を参照
 
 ## 必須の認定項目
 
@@ -88,14 +80,7 @@ GCC 8 laneは旧コードとの比較用に残せますが、新コアのdefault
 
 ## C++標準
 
-ArduinoCore-APIの最低条件であるC++11は保証します。新コアのdefaultをGNU++17にする案がありますが、次を確認してからADRで決定します。
-
-- 既存Arduino library互換性
-- compiler/package size
-- CH32V003級でのFlash/RAM
-- vendor headerを隔離した状態でのwarning/error
-
-`-fpermissive`はown codeでは使用しません。
+**GNU++17に決定**([ADR-0004](adr/0004-runtime-and-cxx.ja.md))。gnu++11/14/17でサイズ差ゼロを実測確認済み。`-fpermissive`はown codeでは使用しません。
 
 ## 配布
 

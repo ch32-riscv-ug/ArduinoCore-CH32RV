@@ -63,13 +63,18 @@
 - 一次資料、issue、実験artifact
 ```
 
-## 初期ADR候補
+## ADR一覧
 
-- ArduinoCore-APIの採用と固定方法
-- exact SKUを正本とするdevice/board manifest
-- owned startup/CRT/vector/linker
-- EVT Compatibility Packの分離
-- default toolchainとC++ standard
-- upload frontendとprimary backend
-- fixtureのprobe識別方法
+- [ADR-0001](0001-device-data-repository.ja.md): device databaseを独立repositoryに置く
+- [ADR-0002](0002-toolchain-distribution.ja.md): toolchainはxPack riscv-none-elf-gccの直リンク参照
+- [ADR-0003](0003-owned-startup-vector-linker.ja.md): owned startup/CRT/vector/linker
+- [ADR-0004](0004-runtime-and-cxx.ja.md): newlib-nano defaultとGNU++17
+- [ADR-0005](0005-board-structure-and-fqbn.ja.md): family board+pnumメニューとdevice-data生成
+
+## 今後のADR候補
+
+- ArduinoCore-APIの固定versionと取込方法(Q-010)
+- 内部HAL contract(Q-013)
+- upload frontendとprimary backend(Q-040系)
+- 公開packager/表示名(Q-017)
 - support tierとrelease gate

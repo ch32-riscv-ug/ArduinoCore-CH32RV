@@ -18,12 +18,10 @@
 
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
-| Q-010 | P0 | `ArduinoCore-API`の固定versionと取込方法 | サイズ試験、LGPL配布方法、symlinkを使わないrelease方法 |
+| Q-010 | P0 | `ArduinoCore-API`の固定versionと取込方法 | サイズ試験、LGPL配布方法、symlinkを使わないrelease方法。実験0007で対象commitの無改変compile・サイズ実測済み。残りはversion固定方法とLGPL配布 |
 | Q-011 | P0 | device/board manifestのformatとschema実装 | 8 sample prototype、canonical signal、silicon/package正規化、internal route、verification粒度のreview |
-| Q-012 | P0 | startup/vector/linkerを手書き、template生成、外部data生成のどれにするか | family差分比較、ELF検査、debug互換性 |
 | Q-013 | P1 | 内部HAL contractをどこまで設けるか | digital/time/Serial/SPI/I2Cの2 family実装比較 |
 | Q-014 | P1 | `ch32-device-data`のrelease/commitをArduinoへ固定する形式 | offline build prototype、hash検証、生成差分、更新手順 |
-| Q-015 | P0 | 開発用の暫定packager/architecture/FQBN | Arduino CLIでvertical sliceをbuildできる最小platform prototype |
 | Q-016 | P0 | host contract testを何で実行するか | host-arduino-core固定利用、内部HAL mock、native unitの比較 |
 | Q-017 | P2 | 公開用FQBN、packager ID、architecture ID | Arduino package互換性、既存公式coreとの衝突確認、暫定IDからの移行 |
 
@@ -31,20 +29,16 @@
 
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
-| Q-020 | P0 | default GCC distribution/version | RV32E/ILP32E、RV32I、FPU、host OS、`ch32fun`比較の認定結果 |
-| Q-021 | P0 | interrupt ABIとWCH固有高速割込みの扱い | disassembly、register preservation、latency HIL |
-| Q-022 | P0 | newlibまたは代替runtimeの構成 | printf、constructor、code/RAM size、license |
-| Q-023 | P1 | C++ standardをGNU++11/14/17のどれにするか | Arduino library compile matrix、サイズ比較 |
-| Q-024 | P1 | LTOをdefaultにするか | weak ISR、archive、debug、size、link再現性 |
+| Q-021 | P0 | interrupt ABIとWCH固有高速割込みの扱い | disassembly、register preservation、latency HIL。静的部分(attribute生成コード、fork属性の非互換)は実験0008で確認済み。latency実測が残り |
+| Q-024 | P1 | LTOをdefaultにするか | weak ISR、archive、debug、size、link再現性。weak ISR/vector/constructorのLTO無害は実験0008で確認。size/debug/再現性比較が残り |
 | Q-025 | P2 | WCH toolchain compatibility laneを維持するか | 固有命令の効果と維持コスト |
-| Q-026 | P0 | toolchain artifactの取得・改変・再配布条件を満たせるか | component別license、対応source、patch、公式配布元、host別archive |
 
 ## Vendorとライセンス
 
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
 | Q-030 | P0 | WCH EVT/header/sourceの再配布・改変条件 | 各file notice、repository条件、必要ならWCHの書面回答 |
-| Q-031 | P0 | vendorから取り込む最小ファイル集合 | startup/device headerをown実装と比較 |
+| Q-031 | P0 | vendorから取り込む最小ファイル集合 | startup/device headerをown実装と比較。startupはADR-0003でown化し対象外。残りはdevice header/SPL等 |
 | Q-032 | P1 | 旧33 patchのうち再現する不具合 | 新toolchainでのcompile/runtime regression test |
 | Q-033 | P2 | SBOM formatとrelease notice | Board Manager配布物、依存tool一覧、CI生成方法 |
 | Q-034 | P0 | vendor lockのhash正本 | Git commit、取得archive hash、canonical tree、allowlist file hashの比較 |
@@ -69,10 +63,9 @@
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
 | Q-050 | P0 | 初期fixtureのLA channel/pin、adapter connector、電源構成 | 選定boardのpinmux、8chでのtest case割当、電圧、配線prototype |
-| Q-051 | P1 | code/RAM size budget | empty/Blink/Serial baselineと旧/公式/ch32fun比較 |
+| Q-051 | P1 | code/RAM size budget | empty/Blink/Serial baselineと旧/公式/ch32fun比較。newlib系baselineは実験0006、Blink 26 SKUはsizes_baseline.jsonでgate済み。閾値の正式化が残り |
 | Q-052 | P1 | timing toleranceの決め方 | oscillator条件、sample rate、複数個体測定 |
 | Q-053 | P1 | HIL runnerの信頼境界 | CI provider、artifact署名、fork PR policy |
-| Q-054 | P2 | Board Manager indexを別repositoryにするか | release権限、append-only運用、beta/stable導線 |
 | Q-055 | P2 | 対応OS matrix | 利用者需要とtool/programmer artifactの提供可能性 |
 | Q-056 | P1 | replay corpusとartifact保持方針 | decoder固定、golden昇格review、保持期間、storage cost |
 | Q-057 | P0 | fixture healthとcandidate failureの境界 | 独立self-test、既知good firmware、candidate READY failureの試験 |
@@ -97,4 +90,11 @@
 
 | ID | 結論 |
 |---|---|
-| Q-018 | device databaseの正本を独立`ch32-device-data` repositoryに置く。[ADR-0001](adr/0001-device-data-repository.ja.md)参照。releaseとconsumer lock形式はQ-014で継続する |
+| Q-018 | device databaseの正本を独立`ch32-device-data` repositoryに置く。[ADR-0001](adr/0001-device-data-repository.ja.md)。releaseとconsumer lock形式はQ-014で継続する |
+| Q-012 | startup/vector/linkerはowned実装。共通crt0+family別vector include(将来device-data生成)。[ADR-0003](adr/0003-owned-startup-vector-linker.ja.md) |
+| Q-015 | 開発用暫定ID: packager=`ch32-riscv-ug`、architecture=`ch32v`。boardはfamily単位+pnum全型番。[ADR-0005](adr/0005-board-structure-and-fqbn.ja.md) |
+| Q-020 | xPack riscv-none-elf-gccのGitHub Releases直リンク参照。認定候補14.3.0-1。ch32fun比較はrelease前validationとして残る。[ADR-0002](adr/0002-toolchain-distribution.ja.md) |
+| Q-022 | default=newlib-nano。printf `%f`はmenu opt-in。ltoa/ultoa/dtostrfはcore提供。[ADR-0004](adr/0004-runtime-and-cxx.ja.md) |
+| Q-023 | GNU++17(+-fno-exceptions/-fno-rtti/-fno-threadsafe-statics)。サイズ差ゼロを実測確認。[ADR-0004](adr/0004-runtime-and-cxx.ja.md) |
+| Q-026 | 直リンク参照(convey回避)で満たす。再ホスト時はGPL§6(d)対応へ切替。[ADR-0002](adr/0002-toolchain-distribution.ja.md) |
+| Q-054 | コアが1つの間は本repositoryから直接配信し、同一名前空間のコアが増えたらlang-ship方式(統合index repo+release kick)へ移行する(2026-08-19決定)。append-only運用の詳細はrelease前に確定 |
