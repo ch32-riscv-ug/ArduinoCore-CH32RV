@@ -5,21 +5,26 @@
 # xPack tar.gz, so the test does not re-download 400MB from GitHub).
 set -euo pipefail
 
-: "${CH32_XPACK_ARCHIVE:?set CH32_XPACK_ARCHIVE to the local xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz}"
+: "${CH32_XPACK_ARCHIVE:?set CH32_XPACK_ARCHIVE to a local xPack 14.3.0-1 archive for this host}"
 WORK="${1:?usage: test_install.sh <workdir>}"
 PORT="${PORT:-8731}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 BASE_URL="http://127.0.0.1:$PORT"
 
+# Windows (Git Bash) compatibility: python3 may be absent (use python), and
+# native tools (arduino-cli, python) need Windows-style paths (cygpath -m).
+PY=$(command -v python3 || command -v python)
+w() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else echo "$1"; fi; }
+
 mkdir -p "$WORK/www" "$WORK/Blink"
 
 # 1) package the platform and generate the index (tool URL -> local server)
-python3 "$HERE/gen_index.py" --platform "$HERE/../platform/ch32v" \
-  --out "$WORK/www" --base-url "$BASE_URL" --tools local
+"$PY" "$HERE/gen_index.py" --platform "$(w "$HERE/../platform/ch32v")" \
+  --out "$(w "$WORK/www")" --base-url "$BASE_URL" --tools local
 
 # Serve the provided archive under the name the index expects for it. The entry
 # is found by SHA-256, so a wrong/corrupt archive fails here instead of later.
-ARCHIVE_NAME=$(python3 - "$CH32_XPACK_ARCHIVE" "$HERE/tools_xpack_gcc.json" <<'EOF'
+ARCHIVE_NAME=$("$PY" - "$CH32_XPACK_ARCHIVE" "$HERE/tools_xpack_gcc.json" <<'EOF'
 import hashlib, json, sys
 h = hashlib.sha256()
 with open(sys.argv[1], "rb") as f:
@@ -36,15 +41,15 @@ EOF
 cp "$CH32_XPACK_ARCHIVE" "$WORK/www/$ARCHIVE_NAME"
 
 # 2) serve it
-python3 -m http.server "$PORT" --bind 127.0.0.1 --directory "$WORK/www" &
+"$PY" -m http.server "$PORT" --bind 127.0.0.1 --directory "$(w "$WORK/www")" &
 SERVER=$!
 trap 'kill $SERVER 2>/dev/null || true' EXIT
 sleep 1
 
 # 3) clean install into sandboxed directories (fresh data dir = real user path)
-export ARDUINO_DIRECTORIES_USER="$WORK/user"
-export ARDUINO_DIRECTORIES_DATA="$WORK/data"
-export ARDUINO_DIRECTORIES_DOWNLOADS="$WORK/staging"
+export ARDUINO_DIRECTORIES_USER="$(w "$WORK/user")"
+export ARDUINO_DIRECTORIES_DATA="$(w "$WORK/data")"
+export ARDUINO_DIRECTORIES_DOWNLOADS="$(w "$WORK/staging")"
 INDEX_URL="$BASE_URL/package_ch32-riscv-ug_index.json"
 
 arduino-cli core update-index --additional-urls "$INDEX_URL"
@@ -63,7 +68,7 @@ void loop() {
 EOF
 arduino-cli compile \
   --fqbn "ch32-riscv-ug:ch32v:CH32V00X:pnum=CH32V006K8U7" \
-  --build-path "$WORK/build" \
-  "$WORK/Blink"
+  --build-path "$(w "$WORK/build")" \
+  "$(w "$WORK/Blink")"
 
 echo "INSTALL-AND-COMPILE OK"

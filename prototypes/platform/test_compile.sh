@@ -7,13 +7,23 @@ set -euo pipefail
 WORK="${1:?usage: test_compile.sh <workdir>}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
+# Windows (Git Bash): arduino-cli is a native exe; paths handed to it via env
+# vars or property values must be Windows-style. cygpath -m gives C:/... form.
+w() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else echo "$1"; fi; }
+
 # Sandboxed arduino-cli directories: never touches the user's real ~/.arduino15 / ~/Arduino.
-export ARDUINO_DIRECTORIES_USER="$WORK/user"
-export ARDUINO_DIRECTORIES_DATA="$WORK/data"
-export ARDUINO_DIRECTORIES_DOWNLOADS="$WORK/staging"
+export ARDUINO_DIRECTORIES_USER="$(w "$WORK/user")"
+export ARDUINO_DIRECTORIES_DATA="$(w "$WORK/data")"
+export ARDUINO_DIRECTORIES_DOWNLOADS="$(w "$WORK/staging")"
 
 mkdir -p "$WORK/user/hardware/ch32-riscv-ug" "$WORK/Blink"
-ln -sfn "$HERE/ch32v" "$WORK/user/hardware/ch32-riscv-ug/ch32v"
+case "$(uname -s)" in
+  MINGW*|MSYS*)  # no reliable symlinks on the Windows runner: copy instead
+    rm -rf "$WORK/user/hardware/ch32-riscv-ug/ch32v"
+    cp -r "$HERE/ch32v" "$WORK/user/hardware/ch32-riscv-ug/ch32v" ;;
+  *)
+    ln -sfn "$HERE/ch32v" "$WORK/user/hardware/ch32-riscv-ug/ch32v" ;;
+esac
 
 cat > "$WORK/Blink/Blink.ino" <<'EOF'
 // Global constructor to exercise C++ compilation (NOTE: not yet executed at
@@ -45,9 +55,9 @@ for pnum in $PNUMS; do
   echo "== compile Blink for $pnum =="
   arduino-cli compile \
     --fqbn "ch32-riscv-ug:ch32v:CH32V00X:pnum=$pnum" \
-    --build-property "compiler.path=$CH32_GCC_BIN/" \
-    --build-path "$WORK/build-$pnum" \
-    "$WORK/Blink" || fail=1
+    --build-property "compiler.path=$(w "$CH32_GCC_BIN")/" \
+    --build-path "$(w "$WORK/build-$pnum")" \
+    "$(w "$WORK/Blink")" || fail=1
   "$CH32_GCC_BIN/riscv-none-elf-size" "$WORK/build-$pnum/Blink.ino.elf"
 done
 

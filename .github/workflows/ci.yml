@@ -8,6 +8,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   # W-2: unified startup vs EVT startup ELF equivalence (13 variants)
   startup-equivalence:
@@ -20,7 +24,9 @@ jobs:
           path: ~/xpack-cache
           key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
       - name: Fetch and extract toolchain
-        run: python3 prototypes/index/fetch_xpack.py --dest ~/xpack-cache --extract ~/xpack
+        run: |
+          PY=$(command -v python3 || command -v python)
+          "$PY" prototypes/index/fetch_xpack.py --dest ~/xpack-cache --extract ~/xpack
       - name: Clone EVT mirrors (sparse, SRC only)
         run: |
           mkdir -p ~/mirrors && cd ~/mirrors
@@ -57,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -68,7 +74,9 @@ jobs:
           path: ~/xpack-cache
           key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
       - name: Fetch and extract toolchain
-        run: python3 prototypes/index/fetch_xpack.py --dest ~/xpack-cache --extract ~/xpack
+        run: |
+          PY=$(command -v python3 || command -v python)
+          "$PY" prototypes/index/fetch_xpack.py --dest ~/xpack-cache --extract ~/xpack
       - name: Compile all part numbers
         run: |
           CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
@@ -85,7 +93,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -96,7 +104,9 @@ jobs:
           path: ~/xpack-cache
           key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
       - name: Fetch toolchain archive
-        run: python3 prototypes/index/fetch_xpack.py --dest ~/xpack-cache | tee /tmp/archive-path
+        run: |
+          PY=$(command -v python3 || command -v python)
+          "$PY" prototypes/index/fetch_xpack.py --dest ~/xpack-cache | tee /tmp/archive-path
       - name: Clean install and compile
         run: |
           CH32_XPACK_ARCHIVE=$(cat /tmp/archive-path) \
