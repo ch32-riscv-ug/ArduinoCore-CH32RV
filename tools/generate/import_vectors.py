@@ -33,13 +33,21 @@ SOURCES = {
     "x035":     "CH32X035/EVT/EXAM/SRC/Startup/startup_ch32x035.S",
     "x3x5":     "CH32X315/EVT/EXAM/SRC/Startup/startup_ch32x3x5.S",
     "l103":     "CH32L103/EVT/EXAM/SRC/Startup/startup_ch32l103.S",
+    # CH32V103's table holds jump instructions rather than addresses; the
+    # startup selects that with mtvec mode 1.
+    "v103":     "CH32V103/EVT/EXAM/SRC/Startup/startup_ch32v10x.S",
 }
 
 OUT = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
 
-def parse_startup(path: pathlib.Path) -> list[str | None]:
-    """Return the vector entries after the reset slot; None means reserved."""
+def parse_startup(path: pathlib.Path):
+    """(form, entries) for one startup file.
+
+    form is "word" when the table holds handler addresses and "jump" when it
+    holds `j <handler>` instructions. Entries are the slots after the reset
+    vector; None means reserved.
+    """
     entries: list[str] = []
     in_table = False
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -60,34 +68,38 @@ def parse_startup(path: pathlib.Path) -> list[str | None]:
     # Slot 0 is the reset vector; crt0_ch32.S emits it.
     if entries and (entries[0] in ("_start", "0") or entries[0].startswith("@J@")):
         entries = entries[1:]
-    out: list[str | None] = []
-    for e in entries:
-        if e.startswith("@J@"):
-            raise SystemExit(f"{path}: j-form vector entry '{e}' is not supported")
-        out.append(None if e == "0" else e)
-    return out
+    forms = {"jump" if e.startswith("@J@") else "word"
+             for e in entries if e != "0"}
+    if len(forms) > 1:
+        raise SystemExit(f"{path}: table mixes jump and address entries")
+    form = forms.pop() if forms else "word"
+    out = [None if e == "0" else e.removeprefix("@J@") for e in entries]
+    return form, out
 
 
-def build(mirrors: pathlib.Path) -> list[tuple[str, int, str]]:
-    rows: list[tuple[str, int, str]] = []
+def build(mirrors: pathlib.Path):
+    rows = []
     for variant, rel in SOURCES.items():
         src = mirrors / rel
         if not src.is_file():
             raise SystemExit(f"missing EVT startup: {src}")
-        for slot, handler in enumerate(parse_startup(src), start=1):
-            rows.append((variant, slot, handler or ""))
+        form, entries = parse_startup(src)
+        for slot, handler in enumerate(entries, start=1):
+            rows.append((variant, form, slot, handler or ""))
     return rows
 
 
-def write(rows: list[tuple[str, int, str]]) -> str:
+def write(rows) -> str:
     lines = [
         "# DO NOT EDIT BY HAND - rebuild with tools/generate/import_vectors.py",
         "# Interrupt vector map per startup variant. Slot 0 (reset) is emitted by",
         "# crt0_ch32.S, so slots start at 1. An empty handler means a reserved slot.",
+        "# form is how the table stores an entry: word = handler address,",
+        "# jump = `j handler` instruction (CH32V103). It selects mtvec's mode.",
         "# Verified against the EVT startup sources every PR by tests/startup/.",
-        "variant,slot,handler",
+        "variant,form,slot,handler",
     ]
-    lines += [f"{v},{s},{h}" for v, s, h in rows]
+    lines += [f"{v},{f},{s},{h}" for v, f, s, h in rows]
     return "\n".join(lines) + "\n"
 
 
@@ -108,7 +120,7 @@ def main() -> None:
         return
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(text, encoding="utf-8")
-    n = len(text.splitlines()) - 5
+    n = len(text.splitlines()) - 7
     print(f"wrote: {OUT} ({n} rows, {len(SOURCES)} variants)")
 
 

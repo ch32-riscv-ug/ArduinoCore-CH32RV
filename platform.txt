@@ -33,3 +33,38 @@ recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{b
 recipe.size.pattern="{compiler.path}{compiler.size.cmd}" -A "{build.path}/{build.project_name}.elf"
 recipe.size.regex=^(?:\.init|\.vector|\.text|\.rodata|\.data|\.init_array|\.preinit_array|\.fini_array)\s+([0-9]+).*
 recipe.size.regex.data=^(?:\.data|\.bss)\s+([0-9]+).*
+
+# ---------------------------------------------------------------- upload
+# probe-rs (ADR-0008). `download --reset` flashes and starts the target in one
+# command, which is what a programmer pattern has room for.
+#
+# {build.probe_rs_chip} is generated per menu entry from
+# tools/index/probe_rs_targets.csv; entries with no probe-rs target have no
+# value and the board is labelled "[compile only]".
+tools.probe_rs.path={runtime.tools.probe-rs.path}
+tools.probe_rs.cmd=probe-rs
+tools.probe_rs.cmd.windows=probe-rs.exe
+
+# Probe selection. Empty means "the only probe attached"; with several probes
+# pass the whole flag, because an empty {upload.probe_args} has to vanish from
+# the command line rather than leave a dangling --probe:
+#   --upload-property upload.probe_args="--probe 1a86:8010:FBC18F0680B0"
+# `probe-rs list` prints that VID:PID:Serial form.
+upload.probe_args=
+
+# upload.tool must exist even though the documented path is
+# `upload --programmer wch-link`: arduino-cli 1.3.1 resolves upload.tool.default
+# before it looks at the programmer and fails with "Property
+# 'upload.tool.default' is undefined" otherwise. A bare `upload` still refuses
+# with "A programmer is required to upload", which is correct - there is no
+# serial bootloader to fall back to.
+upload.tool=probe_rs
+upload.tool.default=probe_rs
+tools.probe_rs.upload.params.verbose=
+tools.probe_rs.upload.params.quiet=--disable-progressbars
+
+tools.probe_rs.program.params.verbose=
+tools.probe_rs.program.params.quiet=--disable-progressbars
+
+tools.probe_rs.upload.pattern="{path}/{cmd}" download --chip {build.probe_rs_chip} --binary-format elf --non-interactive --reset {upload.verbose} {upload.probe_args} "{build.path}/{build.project_name}.elf"
+tools.probe_rs.program.pattern="{path}/{cmd}" download --chip {build.probe_rs_chip} --binary-format elf --non-interactive --reset {program.verbose} {upload.probe_args} "{build.path}/{build.project_name}.elf"

@@ -16,8 +16,8 @@
 # `programmer:` selects the non-serial upload path. Verified with arduino-cli 1.3.1:
 # `arduino-cli upload --profile <p>` uses programmers.txt + tools.<t>.program.pattern
 # and needs no --port, and keeps using it even when --port is also passed (which the
-# pytest plugin does for the runtime serial). The programmer itself is still
-# undecided (Q-040/Q-044), so it is commented out until the platform ships one.
+# pytest plugin does for the runtime serial). The platform now ships `wch-link`,
+# which drives probe-rs; verified end to end on CH32V203 hardware (experiment 0012).
 #
 # Every profile targets the board's ANY part number: the acceptance sketch only
 # needs Serial, which the variant places on pins that exist on every package.
@@ -29,25 +29,29 @@ profiles:
   # Verified on hardware 2026-08-20 (WCH-LinkE v2.12, docs/experiments/0011).
   ch32v003:
     fqbn: ch32-riscv-ug:ch32v:CH32V003:pnum=ANY
-    # programmer: wch-linke
+    programmer: wch-link
+    programmer: wch-link
     platforms:
       - platform: ch32-riscv-ug:ch32v (0.0.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   ch32x035:
     fqbn: ch32-riscv-ug:ch32v:CH32X035:pnum=ANY
+    programmer: wch-link
     platforms:
       - platform: ch32-riscv-ug:ch32v (0.0.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   ch32l103:
     fqbn: ch32-riscv-ug:ch32v:CH32L103:pnum=ANY
+    programmer: wch-link
     platforms:
       - platform: ch32-riscv-ug:ch32v (0.0.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   ch32v203:
     fqbn: ch32-riscv-ug:ch32v:CH32V203:pnum=ANY
+    programmer: wch-link
     platforms:
       - platform: ch32-riscv-ug:ch32v (0.0.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json

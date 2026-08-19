@@ -17,14 +17,42 @@ def run(*cmd):
     return subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
 
 def spec_entries(path):
+    """[(kind, name)]; kind is "word", "jump" or None for a reserved slot."""
     out = []
     for line in open(path):
         s = line.strip()
         if s.startswith("CH32_RSV"):
-            out.append(None)
-        elif s.startswith("CH32_IRQ") or s.startswith("CH32_JMP"):
-            out.append(s.split()[1])
+            out.append((None, None))
+        elif s.startswith("CH32_IRQ"):
+            out.append(("word", s.split()[1]))
+        elif s.startswith("CH32_JMP"):
+            out.append(("jump", s.split()[1]))
     return out
+
+
+def section_vma(elf, section):
+    for line in run(BIN + "/riscv-none-elf-objdump", "-h", elf).splitlines():
+        parts = line.split()
+        if len(parts) > 3 and parts[1] == section:
+            return int(parts[3], 16)
+    return None
+
+
+def jal_target(word, pc):
+    """Decode `j offset` (JAL with rd=x0) into the address it lands on.
+
+    CH32V103's vector table stores instructions instead of addresses, so the
+    entry can only be checked against a symbol after resolving the jump.
+    """
+    if (word & 0x7F) != 0x6F or ((word >> 7) & 0x1F) != 0:
+        return None
+    imm = (((word >> 31) & 1) << 20 |
+           ((word >> 12) & 0xFF) << 12 |
+           ((word >> 20) & 1) << 11 |
+           ((word >> 21) & 0x3FF) << 1)
+    if imm & (1 << 20):
+        imm -= (1 << 21)
+    return pc + imm
 
 def symbols(elf):
     m = {}
@@ -45,21 +73,33 @@ def table_words(elf, section):
 def check_table(tag, elf, section, spec):
     syms = symbols(elf)
     words = table_words(elf, section)
+    base = section_vma(elf, section)
     if len(words) < len(spec):
         print(f"FAIL {tag}: table has {len(words)} entries, spec {len(spec)}")
         return False
     ok = True
-    for i, want in enumerate(spec):
+    for i, (kind, want) in enumerate(spec):
         got = words[i]
-        if want is None:
+        if kind is None:
             if got != 0:
                 print(f"FAIL {tag}: entry {i+1} expected 0, got 0x{got:08x}"); ok = False
-        else:
-            expect = syms.get(want)
-            if expect is None:
-                print(f"FAIL {tag}: symbol {want} not in ELF"); ok = False
-            elif got != expect:
-                print(f"FAIL {tag}: entry {i+1} ({want}) expected 0x{expect:08x}, got 0x{got:08x}"); ok = False
+            continue
+        expect = syms.get(want)
+        if expect is None:
+            print(f"FAIL {tag}: symbol {want} not in ELF"); ok = False
+            continue
+        if kind == "jump":
+            # words[] dropped entry 0, so entry i+1 sits one slot further in.
+            target = jal_target(got, base + 4 * (i + 1))
+            if target is None:
+                print(f"FAIL {tag}: entry {i+1} ({want}) is not a jump: "
+                      f"0x{got:08x}"); ok = False
+            elif target != expect:
+                print(f"FAIL {tag}: entry {i+1} ({want}) jumps to 0x{target:08x}, "
+                      f"expected 0x{expect:08x}"); ok = False
+        elif got != expect:
+            print(f"FAIL {tag}: entry {i+1} ({want}) expected 0x{expect:08x}, "
+                  f"got 0x{got:08x}"); ok = False
     extra = words[len(spec):]
     if any(extra):
         print(f"WARN {tag}: {len(extra)} nonzero words beyond spec")

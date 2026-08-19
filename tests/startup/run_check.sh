@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # W-2: build EVT-startup and unified-startup ELFs per family and verify equivalence.
 # Requires: CH32_MIRROR_ROOT (EVT mirrors), CH32_GCC_BIN (riscv-none-elf-gcc bin dir)
-# Excluded families: CH32V103 (j-instruction vector table), CH32H417 (loadcode boot) - see README.
+# Excluded families: CH32H417 (loadcode boot) - see README.
 set -euo pipefail
 
 : "${CH32_MIRROR_ROOT:?set CH32_MIRROR_ROOT to the directory containing the CH32* EVT mirrors}"
@@ -38,6 +38,7 @@ CONFIG=(
 "v4x7|rv32imac_zicsr|ilp32|CH32V407/EVT/EXAM/SRC/Startup/startup_ch32v4x7.S|CH32V407/EVT/EXAM/SRC/Ld/Link.ld|-DCH32_MSTATUS_INIT=0x688 -DCH32_INTSYSCR_INIT=0x07 -DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100"
 "x035|rv32imac_zicsr|ilp32|CH32X035/EVT/EXAM/SRC/Startup/startup_ch32x035.S|CH32X035/EVT/EXAM/SRC/Ld/Link.ld|-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 -DCH32_CORECFGR=0x1f"
 "x3x5|rv32imafc_zicsr|ilp32f|CH32X315/EVT/EXAM/SRC/Startup/startup_ch32x3x5.S|CH32X315/EVT/EXAM/SRC/Ld/Link.ld|-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x07 -DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01"
+"v103|rv32imac_zicsr|ilp32|CH32V103/EVT/EXAM/SRC/Startup/startup_ch32v10x.S|CH32V103/EVT/EXAM/SRC/Ld/Link.ld|-DCH32_MSTATUS_INIT=0x88 -DCH32_MTVEC_MODE=1"
 "l103|rv32imac_zicsr|ilp32|CH32L103/EVT/EXAM/SRC/Startup/startup_ch32l103.S|CH32L103/EVT/EXAM/SRC/Ld/Link.ld|-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 -DCH32_CORECFGR=0x1f"
 )
 
@@ -49,7 +50,7 @@ for row in "${CONFIG[@]}"; do
   echo "===== $tag ($march/$mabi)"
 
   # Vector spec generated from the local EVT mirror; MUST NOT be committed.
-  python3 "$HERE/extract_vectors.py" "$startup" "vectors_$tag.inc"
+  uv run --no-project python "$HERE/extract_vectors.py" "$startup" "vectors_$tag.inc"
 
   # EVT table location: .vector if the startup defines _vector_base, else .init.
   if grep -q "_vector_base" "$startup"; then evt_section=".vector"; else evt_section=".init"; fi
@@ -59,7 +60,7 @@ for row in "${CONFIG[@]}"; do
   if grep -q '\.vector' "ld_$tag.ld"; then
     cp "ld_$tag.ld" "ld_${tag}_uni.ld"
   else
-    python3 - "ld_$tag.ld" "ld_${tag}_uni.ld" <<'EOF'
+    uv run --no-project python - "ld_$tag.ld" "ld_${tag}_uni.ld" <<'EOF'
 import sys
 src = open(sys.argv[1]).read()
 open(sys.argv[2], 'w').write(src.replace(
@@ -78,7 +79,7 @@ EOF
   $GCC -march="$march" -mabi="$mabi" -nostartfiles -T "ld_${tag}_uni.ld" -Wl,--gc-sections \
        "main_$tag.o" "startup_uni_$tag.o" -o "uni_$tag.elf"
 
-  python3 "$HERE/compare.py" "$CH32_GCC_BIN" "vectors_$tag.inc" "evt_$tag.elf" "uni_$tag.elf" "$evt_section" || fail=1
+  uv run --no-project python "$HERE/compare.py" "$CH32_GCC_BIN" "vectors_$tag.inc" "evt_$tag.elf" "uni_$tag.elf" "$evt_section" || fail=1
 done
 
 "$CH32_GCC_BIN/riscv-none-elf-size" evt_*.elf uni_*.elf

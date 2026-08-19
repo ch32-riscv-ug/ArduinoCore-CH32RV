@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - name: Cache xPack toolchain archive
         uses: actions/cache@v4
         with:
@@ -25,17 +26,17 @@ jobs:
           key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
       - name: Fetch and extract toolchain
         run: |
-          PY=$(command -v python3 || command -v python)
-          "$PY" tools/index/fetch_xpack.py --dest ~/xpack-cache --extract ~/xpack
+          uv run --no-project python tools/index/fetch_xpack.py \
+            --dest ~/xpack-cache --extract ~/xpack
       - name: Clone EVT mirrors (sparse, SRC only)
         run: |
           mkdir -p ~/mirrors && cd ~/mirrors
-          for repo in CH32V003 CH32V006 CH32V20x CH32V205 CH32M030 CH32V307 CH32V407 CH32X035 CH32X315 CH32L103; do
+          for repo in CH32V003 CH32V006 CH32V103 CH32V20x CH32V205 CH32M030 CH32V307 CH32V407 CH32X035 CH32X315 CH32L103; do
             git clone --depth 1 --filter=blob:none --sparse "https://github.com/ch32-riscv-ug/$repo"
             git -C "$repo" sparse-checkout set EVT/EXAM/SRC
           done
       - name: Interrupt table must match the EVT startup sources
-        run: python3 tools/generate/import_vectors.py --mirrors "$HOME/mirrors" --check
+        run: uv run --no-project python tools/generate/import_vectors.py --mirrors "$HOME/mirrors" --check
       - name: Run equivalence harness
         run: |
           CH32_MIRROR_ROOT="$HOME/mirrors" \
@@ -48,6 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - name: Clone ch32-device-data at the locked commit
         run: |
           commit=$(sed -n 's/^# source: ch32-device-data tables @ git \([0-9a-f]\{40\}\)$/\1/p' boards.txt)
@@ -56,7 +58,7 @@ jobs:
           git -C ~/ch32-device-data checkout "$commit"
       - name: Check regeneration matches committed files
         run: |
-          python3 tools/generate/generate.py \
+          uv run --no-project python tools/generate/generate.py \
             --tables ~/ch32-device-data/tables \
             --platform . --check
 
@@ -66,6 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - name: Verify cores/arduino/api against the pinned upstream commit
         run: tools/vendor/check_api_sync.sh /tmp/apisync
 
@@ -78,6 +81,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - uses: arduino/setup-arduino-cli@v2
       - name: Cache xPack toolchain archive
         uses: actions/cache@v4
@@ -86,16 +90,15 @@ jobs:
           key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
       - name: Fetch and extract toolchain
         run: |
-          PY=$(command -v python3 || command -v python)
-          "$PY" tools/index/fetch_xpack.py --dest ~/xpack-cache --extract ~/xpack
+          uv run --no-project python tools/index/fetch_xpack.py \
+            --dest ~/xpack-cache --extract ~/xpack
       - name: Compile all part numbers
         run: |
           CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
           tests/compile/test_compile.sh /tmp/w3 | tee /tmp/w3.log
       - name: Size regression check (W-7)
         run: |
-          PY=$(command -v python3 || command -v python)
-          "$PY" tests/compile/check_sizes.py \
+          uv run --no-project python tests/compile/check_sizes.py \
             --baseline tests/compile/sizes_baseline.json \
             --sizes /tmp/w3/sizes.tsv --check
       - name: Size summary
@@ -114,6 +117,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - uses: arduino/setup-arduino-cli@v2
       - name: Cache xPack toolchain archive
         uses: actions/cache@v4
@@ -122,8 +126,8 @@ jobs:
           key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
       - name: Fetch toolchain archive
         run: |
-          PY=$(command -v python3 || command -v python)
-          "$PY" tools/index/fetch_xpack.py --dest ~/xpack-cache | tee /tmp/archive-path
+          uv run --no-project python tools/index/fetch_xpack.py \
+            --dest ~/xpack-cache | tee /tmp/archive-path
       - name: Clean install and compile
         run: |
           CH32_XPACK_ARCHIVE=$(cat /tmp/archive-path) \

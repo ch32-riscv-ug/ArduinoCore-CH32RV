@@ -25,9 +25,14 @@
 #error "CH32_IRQNS is required (see build.core_defines in boards.txt)"
 #endif
 
+#ifndef CH32_EXTIS
+#error "CH32_EXTIS is required (see build.core_defines in boards.txt)"
+#endif
+
 #define CH32_STRINGIFY_(s) #s
-#define CH32_IRQNS_FILE(s) CH32_STRINGIFY_(s)
-#include CH32_IRQNS_FILE(CH32_IRQNS)
+#define CH32_GENERATED_(s) CH32_STRINGIFY_(s)
+#include CH32_GENERATED_(CH32_IRQNS)
+#include CH32_GENERATED_(CH32_EXTIS)
 
 #define CH32_REG32(addr) (*(volatile uint32_t *)(uintptr_t)(addr))
 #define CH32_REG16(addr) (*(volatile uint16_t *)(uintptr_t)(addr))
@@ -68,6 +73,12 @@
 #define CH32_RCC_APB1_USART3 (1u << 18)
 #define CH32_RCC_APB1_USART4 (1u << 19)
 #define CH32_RCC_APB1_USART5 (1u << 20)
+
+/* ---------------------------------------------------------------- FLASH */
+/* Flash controller registers (not the flash memory itself). */
+#define CH32_FLASH_BASE  (CH32_AHB_BASE + 0x2000u)
+#define CH32_FLASH_ACTLR CH32_REG32(CH32_FLASH_BASE + 0x00u)
+#define CH32_FLASH_ACTLR_LATENCY_MASK 0x3u
 
 /* ----------------------------------------------------------------- AFIO */
 #define CH32_AFIO_BASE  (CH32_APB2_BASE + 0x0000u)
@@ -112,6 +123,11 @@
 #define CH32_USART_CTLR2(b) CH32_REG16((b) + 0x10u)
 #define CH32_USART_CTLR3(b) CH32_REG16((b) + 0x14u)
 
+#define CH32_USART_STATR_PE   (1u << 0)
+#define CH32_USART_STATR_FE   (1u << 1)
+#define CH32_USART_STATR_NE   (1u << 2)
+#define CH32_USART_STATR_ORE  (1u << 3)
+#define CH32_USART_STATR_IDLE (1u << 4)
 #define CH32_USART_STATR_RXNE (1u << 5)
 #define CH32_USART_STATR_TC   (1u << 6)
 #define CH32_USART_STATR_TXE  (1u << 7)
@@ -162,3 +178,64 @@ static inline void ch32_irq_disable(uint32_t irqn)
 {
     CH32_PFIC_IRER(irqn >> 5) = 1u << (irqn & 31u);
 }
+
+/* ------------------------------------------------------------------ ADC */
+/* Layout is the same on every family the platform builds for; only the
+ * conversion width differs (CH32_ADC_BITS, from build.core_defines). */
+#define CH32_ADC1_BASE   (CH32_APB2_BASE + 0x2400u)
+#define CH32_ADC_STATR   CH32_REG32(CH32_ADC1_BASE + 0x00u)
+#define CH32_ADC_CTLR1   CH32_REG32(CH32_ADC1_BASE + 0x04u)
+#define CH32_ADC_CTLR2   CH32_REG32(CH32_ADC1_BASE + 0x08u)
+#define CH32_ADC_SAMPTR1 CH32_REG32(CH32_ADC1_BASE + 0x0Cu)  /* channels 10..17 */
+#define CH32_ADC_SAMPTR2 CH32_REG32(CH32_ADC1_BASE + 0x10u)  /* channels 0..9   */
+#define CH32_ADC_RSQR1   CH32_REG32(CH32_ADC1_BASE + 0x2Cu)
+#define CH32_ADC_RSQR3   CH32_REG32(CH32_ADC1_BASE + 0x34u)
+#define CH32_ADC_RDATAR  CH32_REG32(CH32_ADC1_BASE + 0x4Cu)
+
+#define CH32_ADC_STATR_EOC   (1u << 1)
+#define CH32_ADC_CTLR2_ADON    (1u << 0)
+#define CH32_ADC_CTLR2_CAL     (1u << 2)
+#define CH32_ADC_CTLR2_RSTCAL  (1u << 3)
+#define CH32_ADC_CTLR2_EXTSEL_SWSTART (7u << 17)
+#define CH32_ADC_CTLR2_EXTTRIG (1u << 20)
+#define CH32_ADC_CTLR2_SWSTART (1u << 22)
+/* RCC_CFGR0 ADCPRE: 00=/2 01=/4 10=/6 11=/8. ADCCLK must stay under 14 MHz. */
+#define CH32_RCC_CFGR0_ADCPRE_MASK (0x3u << 14)
+#define CH32_RCC_CFGR0_ADCPRE(n)   ((uint32_t)(n) << 14)
+
+/* ----------------------------------------------------------------- EXTI */
+#define CH32_EXTI_BASE   (CH32_APB2_BASE + 0x0400u)
+#define CH32_EXTI_INTENR CH32_REG32(CH32_EXTI_BASE + 0x00u)
+#define CH32_EXTI_EVENR  CH32_REG32(CH32_EXTI_BASE + 0x04u)
+#define CH32_EXTI_RTENR  CH32_REG32(CH32_EXTI_BASE + 0x08u)
+#define CH32_EXTI_FTENR  CH32_REG32(CH32_EXTI_BASE + 0x0Cu)
+#define CH32_EXTI_SWIEVR CH32_REG32(CH32_EXTI_BASE + 0x10u)
+#define CH32_EXTI_INTFR  CH32_REG32(CH32_EXTI_BASE + 0x14u)
+/* Which port drives EXTI line n: four lines per word, four bits each. */
+#define CH32_AFIO_EXTICR(n) CH32_REG32(CH32_AFIO_BASE + 0x08u + 4u * (n))
+
+/* ---------------------------------------------------------------- timers */
+/* TIM1 is the advanced timer on APB2; TIM2/TIM3 are general purpose on APB1.
+ * The register block is the same for all of them. */
+#define CH32_TIM1_BASE (CH32_APB2_BASE + 0x2C00u)
+#define CH32_TIM2_BASE (CH32_APB1_BASE + 0x0000u)
+#define CH32_TIM3_BASE (CH32_APB1_BASE + 0x0400u)
+
+#define CH32_TIM_CTLR1(b)   CH32_REG16((b) + 0x00u)
+#define CH32_TIM_CHCTLR1(b) CH32_REG16((b) + 0x18u)   /* channels 1 and 2 */
+#define CH32_TIM_CHCTLR2(b) CH32_REG16((b) + 0x1Cu)   /* channels 3 and 4 */
+#define CH32_TIM_CCER(b)    CH32_REG16((b) + 0x20u)
+#define CH32_TIM_CNT(b)     CH32_REG16((b) + 0x24u)
+#define CH32_TIM_PSC(b)     CH32_REG16((b) + 0x28u)
+#define CH32_TIM_ATRLR(b)   CH32_REG16((b) + 0x2Cu)   /* auto-reload */
+#define CH32_TIM_CHCVR(b, ch) CH32_REG16((b) + 0x34u + 4u * ((ch) - 1u))
+#define CH32_TIM_BDTR(b)    CH32_REG16((b) + 0x44u)   /* TIM1 only */
+
+#define CH32_TIM_CTLR1_CEN  (1u << 0)
+#define CH32_TIM_CTLR1_ARPE (1u << 7)
+#define CH32_TIM_BDTR_MOE   (1u << 15)
+/* PWM mode 1 with preload, in the low or high half of a CHCTLR word. */
+#define CH32_TIM_OCMODE_PWM1 0x68u
+
+#define CH32_RCC_APB1_TIM2 (1u << 0)
+#define CH32_RCC_APB1_TIM3 (1u << 1)

@@ -30,49 +30,56 @@ import sys
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=10"),
     "CH32V006": dict(march="rv32emc_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12"),
     "CH32V205": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x7 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
     "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
     "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x0b "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
     "CH32V407": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x688 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12"),
     "CH32X035": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="48000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=24 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=48000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=24 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=48000000 -DCH32_FLASH_LATENCY=2 -DCH32_ADC_BITS=12"),
     "CH32X315": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12"),
+    # CH32V103's table is a jump table and its startup never writes csr 0x804.
+    "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
+                     defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_MTVEC_MODE=1",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 "
+                                  "-DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 "
+                                  "-DCH32_ADC_BITS=12"),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
     "CH32M030": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000"),
-    # Excluded, same reason as tests/startup/: CH32V103 has a j-form vector
-    # table and CH32H417 boots via loadcode.
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
+    # Excluded, same reason as tests/startup/: CH32H417 boots via loadcode.
 }
 
 # One board per silicon series, so the board name matches the chip marking.
-# `flashable=False` means no upload backend covers it yet (probe-rs has no
-# target); it still builds and guards the core against ISA/CSR regressions.
+# Whether a series can be flashed is not configured here: it follows from
+# whether probe-rs has a target for it (tools/index/probe_rs_targets.csv).
+# Series it does not cover are still built - they guard the core against
+# ISA/CSR regressions - and are labelled "[compile only]" in the menu.
 SERIES_CONFIG = {
     "CH32V003": dict(family="CH32V003", vectors="v003"),
     "CH32V002": dict(family="CH32V006", vectors="v00x"),
@@ -81,6 +88,7 @@ SERIES_CONFIG = {
     "CH32V006": dict(family="CH32V006", vectors="v00x"),
     "CH32V007": dict(family="CH32V006", vectors="v00x"),
     "CH32M007": dict(family="CH32V006", vectors="v00x"),
+    "CH32V103": dict(family="CH32V103", vectors="v103"),
     "CH32V203": dict(family="CH32V20x", vectors="v20x_d6"),
     "CH32V208": dict(family="CH32V20x", vectors="v20x_d8w"),
     "CH32V303": dict(family="CH32V307", vectors="v307_d8"),
@@ -91,12 +99,12 @@ SERIES_CONFIG = {
     "CH32X035": dict(family="CH32X035", vectors="x035"),
     "CH32L103": dict(family="CH32L103", vectors="l103"),
     "CH32M103": dict(family="CH32L103", vectors="l103"),
-    "CH32V205": dict(family="CH32V205", vectors="v205", flashable=False),
-    "CH32V407": dict(family="CH32V407", vectors="v4x7", flashable=False),
-    "CH32V467": dict(family="CH32V407", vectors="v4x7", flashable=False),
-    "CH32X305": dict(family="CH32X315", vectors="x3x5", flashable=False),
-    "CH32X315": dict(family="CH32X315", vectors="x3x5", flashable=False),
-    "CH32M030": dict(family="CH32M030", vectors="m030", flashable=False),
+    "CH32V205": dict(family="CH32V205", vectors="v205"),
+    "CH32V407": dict(family="CH32V407", vectors="v4x7"),
+    "CH32V467": dict(family="CH32V407", vectors="v4x7"),
+    "CH32X305": dict(family="CH32X315", vectors="x3x5"),
+    "CH32X315": dict(family="CH32X315", vectors="x3x5"),
+    "CH32M030": dict(family="CH32M030", vectors="m030"),
 }
 
 # CH32V203CCT6 is a CH32V205 die sold under a V203 part number: it ships in the
@@ -133,18 +141,20 @@ def kb(n: int) -> str:
     return str(n // 1024)
 
 
-def load_interrupts() -> dict:
-    """variant tag -> ordered list of handler names (None = reserved slot)."""
-    table: dict[str, list] = {}
+def load_interrupts():
+    """(entries, forms): variant -> handler list, variant -> "word"|"jump"."""
+    table: dict = {}
+    forms: dict = {}
     with open(INTERRUPTS_CSV, newline="", encoding="utf-8") as f:
         rows = [r for r in csv.DictReader(
             line for line in f if not line.startswith("#"))]
     for r in rows:
         table.setdefault(r["variant"], []).append(r["handler"] or None)
-    return table
+        forms[r["variant"]] = r["form"]
+    return table, forms
 
 
-def gen_vectors(variant: str, entries: list, commit: str) -> str:
+def gen_vectors(variant: str, entries: list, form: str, commit: str) -> str:
     """Emit the crt0 vector include for one startup variant."""
     out = [
         "/* DO NOT EDIT - machine generated by tools/generate/generate.py",
@@ -153,6 +163,9 @@ def gen_vectors(variant: str, entries: list, commit: str) -> str:
         " * this file starts at slot 1. Verified against the EVT startup",
         " * sources by tests/startup/ on every PR. */",
     ]
+    # A jump-instruction table (CH32V103) needs CH32_JMP; crt0 emits `j name`
+    # for it and selects mtvec mode 1.
+    macro = "CH32_JMP" if form == "jump" else "CH32_IRQ"
     width = max((len(h) for h in entries if h), default=0)
     for slot, handler in enumerate(entries, start=1):
         if handler is None:
@@ -160,7 +173,7 @@ def gen_vectors(variant: str, entries: list, commit: str) -> str:
             pad = " " * max(1, 9 + width + 1 - len(body) + 4)
             out.append(f"{body}{pad}/* {slot:3d} reserved */")
         else:
-            body = f"    CH32_IRQ {handler}"
+            body = f"    {macro} {handler}"
             pad = " " * max(1, 9 + width + 1 - len(body) + 4 + 9)
             out.append(f"{body}{pad}/* {slot:3d} */")
     return "\n".join(out) + "\n"
@@ -180,8 +193,12 @@ ADC_SHORT_RE = re.compile(r"^A(\d+)$")
 
 # Pads that are GPIO-shaped in pins.csv but are not GPIO port bits at all
 # (dedicated analog/RF/PHY balls). Excluded from the pin map on purpose.
+# NRST is here only for CH32V103, whose pins.csv marks it gpio but gives it no
+# port name. Other families expose their reset pin as a normal pad (PD7 on
+# V003), so this is a data gap rather than a hardware difference - if the pin
+# turns out to be usable, device-data should name its port (docs/todo.ja.md).
 NON_PORT_PADS = {"ANT", "HO3", "ISP1", "LED0", "LED1",
-                 "MDITP", "MDITN", "MDIRP", "MDIRN"}
+                 "MDITP", "MDITN", "MDIRP", "MDIRN", "NRST"}
 
 # Register bits that are NOT harmless to write even though no pin carries them
 # (ADR-0010 #4 makes unbonded pads harmless; these are the exception).
@@ -399,6 +416,35 @@ def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
     return chosen
 
 
+# probe-rs target names, extracted from `probe-rs chip list` (see
+# tools/index/probe_rs_targets.csv). `probe-rs download` refuses an ambiguous
+# name, so every menu entry gets a concrete part number.
+PROBE_RS_CSV = pathlib.Path(__file__).parent.parent / "index" / "probe_rs_targets.csv"
+
+
+def load_probe_rs_targets() -> set:
+    with open(PROBE_RS_CSV, newline="", encoding="utf-8") as f:
+        rows = csv.DictReader(line for line in f if not line.startswith("#"))
+        return {r["chip"] for r in rows}
+
+
+def probe_rs_chip(part: str, series: str, ordered_parts: list, known: set):
+    """The --chip value for one menu entry.
+
+    An exact match wins. Otherwise fall back to another part of the same series
+    that probe-rs does know: the flash algorithm is per family, and the memory
+    bounds that matter are already enforced by upload.maximum_size. For ANY the
+    fallback is the smallest part in the series, which is what ANY declares.
+    """
+    if part in known:
+        return part
+    for candidate in ordered_parts:
+        if candidate in known:
+            return candidate
+    prefix = [c for c in sorted(known) if c.startswith(series)]
+    return prefix[0] if prefix else None
+
+
 def gen_irqns(variant: str, entries: list) -> str:
     """Interrupt numbers for one startup variant, derived from the same table
     that builds the vector list: slot index == IRQ number."""
@@ -417,8 +463,95 @@ def gen_irqns(variant: str, entries: list) -> str:
     return "\n".join(out) + "\n"
 
 
+# EXTI vectors are grouped two different ways: EXTI7_0 / EXTI15_8 on the small
+# parts, EXTI0..EXTI4 plus EXTI9_5 / EXTI15_10 elsewhere. Derive both the
+# handler names and the lines each one covers from the vector table.
+EXTI_RANGE_RE = re.compile(r"^EXTI(\d+)_(\d+)_IRQHandler$")
+EXTI_SINGLE_RE = re.compile(r"^EXTI(\d+)_IRQHandler$")
+# Only the lines that reach AFIO_EXTICR, i.e. pin bits 0..15. X033/X035 route
+# bits 16..23 through EXTI25_16, which needs EXTICR words this core does not
+# program yet (docs/todo.ja.md).
+EXTI_LINE_MASK = 0xFFFF
+
+
+# Timer capture/compare signal naming, like the USART case, is not normalized:
+# TIM1_CH1 on most families, T1CH1 on V003, T1C1 on X033/X035. Complementary
+# outputs (…N) are skipped: driving one needs the break/dead-time setup that
+# analogWrite() has no way to express.
+PWM_SIGNAL_RE = [
+    re.compile(r"^TIM(\d+)_CH(\d+)$"),
+    re.compile(r"^T(\d+)CH(\d+)(?:ETR)?$"),
+    re.compile(r"^T(\d+)C(\d+)$"),
+]
+# Timers at a known base with a known clock-enable bit. TIM1 is the advanced
+# one on APB2; TIM2/TIM3 are general purpose on APB1.
+PWM_TIMERS = (1, 2, 3)
+
+
+def load_pwm_pins(tables: pathlib.Path) -> dict:
+    """part -> {(port, bit): (timer, channel)} for the default route only."""
+    with open(tables / "pin_functions.csv", newline="", encoding="utf-8") as f:
+        functions = list(csv.DictReader(f))
+    out: dict = {}
+    for r in functions:
+        if r["route"] not in ("default", "main"):
+            continue
+        for pattern in PWM_SIGNAL_RE:
+            m = pattern.match(r["signal"])
+            if m:
+                break
+        else:
+            continue
+        timer, channel = int(m.group(1)), int(m.group(2))
+        if timer not in PWM_TIMERS or not 1 <= channel <= 4:
+            continue
+        pm = PAD_PORT_RE.match(r["pad"])
+        if not pm:
+            continue
+        out.setdefault(r["part_number"], {})[(pm.group(1), int(pm.group(2)))] = \
+            (timer, channel)
+    return out
+
+
+def gen_exti(variant: str, entries: list) -> str:
+    groups = []
+    for name in entries:
+        if not name:
+            continue
+        m = EXTI_RANGE_RE.match(name)
+        if m:
+            hi, lo = int(m.group(1)), int(m.group(2))
+            mask = ((1 << (hi + 1)) - 1) & ~((1 << lo) - 1)
+        else:
+            m = EXTI_SINGLE_RE.match(name)
+            if not m:
+                continue
+            mask = 1 << int(m.group(1))
+        mask &= EXTI_LINE_MASK
+        if mask:
+            groups.append((name, mask))
+    groups.sort(key=lambda g: g[1])
+
+    out = [
+        "/* DO NOT EDIT - machine generated by tools/generate/generate.py",
+        f" * source: tools/generate/interrupts/interrupts.csv (variant {variant})",
+        " * EXTI vector grouping: handler name and the pin bits it covers. */",
+        "#pragma once",
+        "",
+        f"#define CH32_EXTI_GROUP_COUNT {len(groups)}",
+        "",
+        "/* X(handler, mask, irqn) for every EXTI vector this variant has. */",
+        "#define CH32_EXTI_GROUPS(X) \\",
+    ]
+    for name, mask in groups:
+        irq = "CH32_IRQN_" + name.removesuffix("_IRQHandler")
+        out.append(f"    X({name}, 0x{mask:08x}u, {irq}) \\")
+    out.append("    /* end */")
+    return "\n".join(out) + "\n"
+
+
 def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
-             handlers: list, remap: dict, commit: str) -> str:
+             pwm: dict, handlers: list, remap: dict, commit: str) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
     per_part = [pads.get(pn, set()) for pn in parts]
@@ -598,7 +731,39 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             programmable = value == 0 or (value is not None and (series, i) in remap)
             return (programmable, coverage, -i)
         default = max(sorted(chosen), key=rank)
+        # A board can wire a different USART than the series-wide choice: the
+        # generator optimises for the ANY entry (pins present on every part),
+        # while a real board only has to work for itself. Overridable with
+        # -DCH32_SERIAL_DEFAULT=<n>, which is what tests/hardware/uart_scan.py
+        # reports.
+        out.append("#ifndef CH32_SERIAL_DEFAULT")
         out.append(f"#define CH32_SERIAL_DEFAULT {default}")
+        out.append("#endif")
+        out.append("")
+
+    # --- PWM ---
+    # Only pads every part agrees on: a sketch built for ANY must not have
+    # analogWrite() land on a different timer depending on the package.
+    pwm_pads: dict = {}
+    conflicting = set()
+    for pn in parts:
+        for padkey, tc in pwm.get(pn, {}).items():
+            prev = pwm_pads.setdefault(padkey, tc)
+            if prev != tc:
+                conflicting.add(padkey)
+    for padkey in conflicting:
+        pwm_pads.pop(padkey, None)
+    pwm_pads = {k: v for k, v in pwm_pads.items() if k in set(union)}
+    if pwm_pads:
+        ordered = sorted(pwm_pads.items(), key=lambda kv: (kv[1], kv[0]))
+        out.append(f"/* ---- PWM: {len(ordered)} pads on TIM1/TIM2/TIM3, "
+                   "default route ---- */")
+        out.append(f"#define CH32_PWM_PIN_COUNT {len(ordered)}")
+        for name, index in (("TIMER", 0), ("CHANNEL", 1)):
+            out.append(f"#define CH32_PWM_PIN_TO_{name}(p) ( \\")
+            for padkey, tc in ordered:
+                out.append(f"    (p) == {pad_name(*padkey)} ? {tc[index]} : \\")
+            out.append("    0)")
         out.append("")
 
     # --- LED_BUILTIN ---
@@ -613,14 +778,16 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     return "\n".join(out) + "\n"
 
 
-def gen_board(series: str, rows: list, commit: str):
+def gen_board(series: str, rows: list, probe_rs: set, commit: str):
     """One board per series. Returns (boards.txt block, {ld name: content})."""
     cfg = SERIES_CONFIG[series]
     fam = FAMILY[cfg["family"]]
     rows = sorted(rows, key=lambda r: (int(r["flash_bytes"]), int(r["sram_bytes"]),
                                        r["part_number"]))
     board = series
-    suffix = "" if cfg.get("flashable", True) else " [compile only]"
+    ordered = [r["part_number"] for r in rows]
+    flashable = probe_rs_chip("ANY", series, ordered, probe_rs) is not None
+    suffix = "" if flashable else " [compile only]"
 
     lines = [f"{board}.name=Generic {series}{suffix}"]
     lines.append(f"{board}.build.board={board}")
@@ -633,7 +800,8 @@ def gen_board(series: str, rows: list, commit: str):
     lines.append(f"{board}.build.startup_defines={fam['defines']}")
     lines.append(f"{board}.build.vectors=vectors_{cfg['vectors']}.inc")
     lines.append(f"{board}.build.core_defines={fam['core_defines']} "
-                 f"-DCH32_IRQNS=irqn_{cfg['vectors']}.h")
+                 f"-DCH32_IRQNS=irqn_{cfg['vectors']}.h "
+                 f"-DCH32_EXTIS=exti_{cfg['vectors']}.h")
     lines.append("")
 
     ld_files = {}
@@ -663,6 +831,8 @@ def gen_board(series: str, rows: list, commit: str):
                         f"{r['part_number']} ({r['package']}, {kb(flash)}K/{kb(sram)}K)",
                         flash, sram))
 
+    # rows is sorted smallest flash first, so the ANY fallback below lands on
+    # the smallest part probe-rs knows - which is what ANY declares.
     for pn, label, flash, sram in entries:
         pfx = f"{board}.menu.pnum.{pn}"
         lines.append(f"{pfx}={label}")
@@ -670,6 +840,9 @@ def gen_board(series: str, rows: list, commit: str):
         lines.append(f"{pfx}.build.ldscript={ld_for(flash, sram)}")
         lines.append(f"{pfx}.upload.maximum_size={flash}")
         lines.append(f"{pfx}.upload.maximum_data_size={sram}")
+        chip = probe_rs_chip(pn, series, ordered, probe_rs)
+        if chip:
+            lines.append(f"{pfx}.build.probe_rs_chip={chip}")
         lines.append("")
 
     return "\n".join(lines), ld_files
@@ -687,10 +860,12 @@ def main() -> int:
         products = list(csv.DictReader(f))
     commit = source_commit(args.tables)
 
-    interrupts = load_interrupts()
+    interrupts, vector_forms = load_interrupts()
     pads, adc, unresolved = load_pin_tables(args.tables)
     uarts = load_uart_pins(args.tables)
+    probe_rs = load_probe_rs_targets()
     remap = load_remap_fields(args.tables)
+    pwm = load_pwm_pins(args.tables)
     errata_ids = load_errata_ids(args.tables)
     stale = sorted(set(UNUSABLE_PADS) - errata_ids)
     if stale:
@@ -714,13 +889,13 @@ def main() -> int:
     used_variants = set()
     for series in SERIES_CONFIG:
         rows = by_board[series]
-        block, ld_files = gen_board(series, rows, commit)
+        block, ld_files = gen_board(series, rows, probe_rs, commit)
         boards_blocks.append(block)
         used_variants.add(SERIES_CONFIG[series]["vectors"])
         for name, content in ld_files.items():
             outputs[args.platform / "variants" / series / name] = content
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
-            gen_pins(series, rows, pads, adc, uarts,
+            gen_pins(series, rows, pads, adc, uarts, pwm,
                      interrupts[SERIES_CONFIG[series]['vectors']], remap, commit)
 
     generated_parts = {r["part_number"] for rows in by_board.values() for r in rows}
@@ -740,9 +915,12 @@ def main() -> int:
                   f"(rebuild with tools/generate/import_vectors.py)", file=sys.stderr)
             return 1
         outputs[args.platform / "cores" / "arduino" / f"vectors_{variant}.inc"] = \
-            gen_vectors(variant, interrupts[variant], commit)
+            gen_vectors(variant, interrupts[variant],
+                        vector_forms[variant], commit)
         outputs[args.platform / "cores" / "arduino" / f"irqn_{variant}.h"] = \
             gen_irqns(variant, interrupts[variant])
+        outputs[args.platform / "cores" / "arduino" / f"exti_{variant}.h"] = \
+            gen_exti(variant, interrupts[variant])
 
     drift = 0
     for path, content in outputs.items():

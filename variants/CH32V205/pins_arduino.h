@@ -199,7 +199,18 @@
 /* NOTE: route af-2 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this port needs verifying (docs/todo.ja.md). */
+#ifndef CH32_SERIAL_DEFAULT
 #define CH32_SERIAL_DEFAULT 1
+#endif
+
+/* ---- PWM: 1 pads on TIM1/TIM2/TIM3, default route ---- */
+#define CH32_PWM_PIN_COUNT 1
+#define CH32_PWM_PIN_TO_TIMER(p) ( \
+    (p) == PB1 ? 1 : \
+    0)
+#define CH32_PWM_PIN_TO_CHANNEL(p) ( \
+    (p) == PB1 ? 3 : \
+    0)
 
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present

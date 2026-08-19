@@ -3,7 +3,9 @@
  * Parameters via -D:
  *   CH32_VECTORS        include file (unquoted) with CH32_IRQ/CH32_RSV/CH32_JMP lines
  *   CH32_MSTATUS_INIT   e.g. 0x1880 (V2), 0x88 (V3/V4), 0x6088 (+FPU), 0x688 (+RVV)
- *   CH32_INTSYSCR_INIT  value for csr 0x804
+ *   CH32_INTSYSCR_INIT  optional, value for csr 0x804 (absent on V103)
+ *   CH32_MTVEC_MODE     optional, mtvec mode bits (default 3 = address table,
+ *                       1 = jump-instruction table as used by CH32V103)
  *   CH32_CORECFGR       optional, value for csr 0xbc0
  *   CH32_CSR_BC1        optional, value for csr 0xbc1
  *   CH32_CSR805_CLR     optional, bitmask cleared in csr 0x805 (csrc)
@@ -19,8 +21,11 @@
 #ifndef CH32_MSTATUS_INIT
 #error "CH32_MSTATUS_INIT is required"
 #endif
-#ifndef CH32_INTSYSCR_INIT
-#error "CH32_INTSYSCR_INIT is required"
+/* CH32_INTSYSCR_INIT is optional: CH32V103's startup does not touch csr 0x804.
+ * CH32_MTVEC_MODE picks how the core reads the table - 3 = the entries are
+ * addresses (most families), 1 = the entries are jump instructions (V103). */
+#ifndef CH32_MTVEC_MODE
+#define CH32_MTVEC_MODE 3
 #endif
 
 /* ---- vector table (pass 1: table words) ---- */
@@ -137,14 +142,16 @@ handle_reset:
     li t0, CH32_CSR_BC1
     csrw 0xbc1, t0
 #endif
+#ifdef CH32_INTSYSCR_INIT
     li t0, CH32_INTSYSCR_INIT
     csrw 0x804, t0
+#endif
     li t0, CH32_MSTATUS_INIT
     csrw mstatus, t0
 
-/* interrupt vector table: absolute address mode */
+/* Vector table base plus the mode bits; the base has to be 0, see above. */
     la t0, _vector_base
-    ori t0, t0, 3
+    ori t0, t0, CH32_MTVEC_MODE
     csrw mtvec, t0
 
     jal SystemInit

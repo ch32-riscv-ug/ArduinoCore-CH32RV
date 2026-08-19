@@ -68,7 +68,9 @@ ADR化されている提案:
 | `cores/arduino/{wiring_digital.c,wiring_time.c}` | GPIO / clock / SysTick / millis / delay。**V003実機で動作確認済み** | `compile-matrix` |
 | `cores/arduino/HardwareSerial.{h,cpp}` | 割込み駆動UART。**V003実機で送受信確認済み** | `compile-matrix` |
 | `cores/arduino/{syscalls.c,itoa.c,dtostrf.c}` | newlib syscallと`ltoa`/`ultoa`/`dtostrf` | `compile-matrix` |
-| `tests/hardware/smoke.py` | 実機bring-up runner(compile→flash→UART読み出し) | 手動(要実機) |
+| `tests/hardware/` | 実機bring-up runner。`smoke.py`(出荷経路でのcompile→upload→UART確認)と`uart_scan.py`(boardがどのUSARTを配線しているか特定) | 手動(要実機) |
+| `tools/index/tools_probe_rs.json` / `probe_rs_targets.csv` | probe-rs 0.32.0のtool定義とchip名map | `install-test`(3 OS、`.tar.xz`展開と実行確認) |
+| `programmers.txt` | `wch-link` programmer(probe-rs経由のSWD書き込み) | `install-test` |
 | `boards.txt` / `variants/<SERIES>/` | device-dataからの生成物(23 series board / 117エントリ、ld + pin map)。locked commit | `generated-sync` |
 | `platform.txt` | ビルドrecipe。`build.extra_flags`はユーザー注入専用 | `compile-matrix`(注入到達ガード) |
 | `tools/generate/generate.py` | boards.txt / ld / pin map / vector include の生成 | `generated-sync` |
@@ -116,8 +118,8 @@ boardごとのSerial結線(TX/RX)は[tests/hardware/README.ja.md](../tests/hardw
    AFIO remapの検証になる(L103はremap route、X035はGPIO 24bit port)
 2. **CH32V103対応**。vector tableがj命令形式。crt0に`CH32_JMP`マクロは既にあるので、
    `import_vectors.py`のparse、`gen_vectors`の分岐、`mtvec`のmode bit(V103は`|1`)の3点
-3. **書き込み経路の実体化**: `programmers.txt`+`program.pattern`。tool本体はQ-040/Q-044の決定待ち。
-   これが入ればsmoke testはpytest profile経由へ移せる
+3. ~~書き込み経路の実体化~~ → **完了**。`arduino-cli upload --programmer wch-link`がprobe-rs 0.32.0を
+   呼んでCH32V203実機へ書き込めることを確認([実験0012](experiments/0012-probe-rs-upload-toolchain.ja.md))
 
 pin mapは生成済み([ADR-0010](adr/0010-pin-numbering.ja.md))。`variants/<SERIES>/pins_arduino.h`が
 pad名・ポート別validity mask・`A<n>`(ADC1)・USART pinとAFIO remapを持ち、

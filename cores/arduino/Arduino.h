@@ -33,6 +33,10 @@ using namespace arduino;
     ((CH32_PIN_PORT(pin) < CH32_PORT_COUNT) && \
      ((CH32_PORT_COMMON_MASK(CH32_PIN_PORT(pin)) >> CH32_PIN_BIT(pin)) & 1u))
 
+/* EXTI lines are numbered by the pin's bit, not by the port, so the pin number
+ * carries everything attachInterrupt() needs. */
+#define digitalPinToInterrupt(pin) (pin)
+
 #ifdef NUM_ANALOG_INPUTS
 #define digitalPinToAnalogChannel(pin) CH32_PIN_TO_ADC_CHANNEL(pin)
 #define analogInputToDigitalPin(chan)  CH32_ADC_CHANNEL_TO_PIN(chan)

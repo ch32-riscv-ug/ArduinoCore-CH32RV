@@ -23,7 +23,11 @@
 - [ ] `[P0]` X035 / L103 / V20x でも実機確認する。runnerは`tests/hardware/smoke.py`に用意済み (要実機)
 - [ ] `[P1]` ADR-0006の「tickソース差し替え可能」をHALへ織り込む。
       現在`wiring_time.c`がSysTickを直接叩いており、RTOSへ渡す口が無い
-- [ ] `[P1]` `HardwareSerial`のring bufferが64バイト固定。`write()`は満杯でblockする。
+- [x] **ring bufferのlost updateを修正**。`api/RingBuffer.h`は単一カウンタをpush/pop両方で
+      read-modify-writeするため、ISRとsketchの2文脈から触るUARTでは壊れる。
+      実機で文字化けとして観測([実験0013](experiments/0013-core-api-completion.ja.md))。
+      lock不要のSPSC実装`ch32_ringbuffer.h`へ置換
+- [ ] `[P1]` ring bufferが64バイト固定。`write()`は満杯でblockする。
       サイズをvariantかbuild optionで変えられるようにする
 - [ ] `[P1]` `micros()`が約71分でwrapする(AVRコアと同じ挙動)。64bit SysTickを持つfamilyでは避けられる
 - [ ] `[P2]` SysTickのhardware auto-reload(`STRE`)を使う。現在はISRで`CNT`を巻き戻している
@@ -44,10 +48,53 @@
       ([実験0011](experiments/0011-milestone1-serial-on-v003.ja.md))
 - [x] `compare.py`に`_vector_base == 0`のcheckを追加。
       **中身は合っているのに使われていない**状態をCIが見逃していた
-- [ ] `[P1]` `attachInterrupt`(EXTI)の実装。ArduinoCore-APIの`Interrupts.h`が要求する
+- [x] `attachInterrupt`/`detachInterrupt`(EXTI)の実装。**vector分割の2方式(`EXTI7_0`系と
+      `EXTI0..4`系)は生成物`exti_<variant>.h`から吸収**するので、family追加でコード変更が要らない
+- [ ] `[P1]` X033/X035のEXTI線16〜23(`EXTI25_16`)。`AFIO_EXTICR`の追加wordが要る
 - [ ] `[P1]` V003のvector tableに**spec外の非ゼロword**が1つある(EVT側にも同じものがある)。
       slot 39相当で実害は無いが出所を確認する
 - [ ] `[P2]` 割込み優先度(`PFIC IPRIOR`)を触っていない。全てreset既定のまま
+
+## 書き込み
+- [x] 実機ボード取り違えのガード。`probe-rs info`が返すchip名と`--board`が
+      食い違ったら書き込む前に止まる(ベンチはboardを差し替えるので実際に踏んだ)
+
+
+- [x] `programmers.txt`と`program.pattern`の実体化。`arduino-cli upload --programmer wch-link`が
+      **CH32V203実機で通った**([実験0012](experiments/0012-probe-rs-upload-toolchain.ja.md))
+- [x] `tests/hardware/smoke.py`を`arduino-cli upload`経由へ移行。**出荷経路そのものを検証する**
+- [ ] `[P1]` Windows / macOSでの書き込み確認(要実機)
+- [ ] `[P1]` probe選択を`sketch.yaml` profileから渡せるようにする。
+      現在は`--upload-property upload.probe_args=...`のみで、profileには書けない
+- [ ] `[P2]` `upload.probe_args`にflag全体を書かせている。空のときに引数を消す方法が他にない
+
+## コアAPI
+
+- [x] ArduinoCore-APIが宣言する未実装関数11件を実装
+      ([実験0013](experiments/0013-core-api-completion.ja.md))。
+      `analogRead` / `analogWrite` / `attachInterrupt` / `detachInterrupt` /
+      `shiftIn` / `shiftOut` / `pulseIn` / `pulseInLong` / `random` / `randomSeed` /
+      `digitalPinToInterrupt`。`tone`/`noTone`はstub
+- [x] 配線不要の自己検証sketch`tests/sketches/basic/core_api/`を追加。
+      **CH32V203実機で13 check全passを確認**
+- [ ] `[P1]` `tone()`が無音stub。timer channelの排他管理が要る
+- [ ] `[P1]` ADC分解能(`CH32_ADC_BITS`)はdatasheet由来。**実機で確認する** (要実機)
+- [ ] `[P1]` `analogWrite`のPWM周波数が1kHz固定。Arduino慣例には合うが変更手段が無い
+- [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ
+- [ ] `[P2]` X305/X315のPWM。timerもper-pin AF方式でdefault routeが無い
+- [ ] `[P2]` `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))
+
+## Serial
+
+- [ ] `[P1]` **SDI printfを独立したSerialクラスとして公開する**(`SerialSDI`等)。
+      WCH-Linkのdebug data register(`0xE0000380`/`0xE0000384`)へ7バイトずつ渡す方式で、
+      **UART配線が一切要らない**。hostは`minichlink -T`が読む。
+      旧コアとWCH公式はどちらも`_write`の`#if`で切り替えるだけだったが、
+      **Streamとして分けておけば両方同時に使える**。
+      2026-08-20に生波形で試したが同梱minichlink(`-T`)では読めず、上流buildが要る
+- [ ] `[P1]` `Serial`の実体をboardごとに差し替えられるようにする。
+      series生成の既定は「全型番に出ているUSART」だが、実boardの配線は別
+      (X035 EVTはWCH公式・旧コアとも**USART1/PB10**を使う)
 
 ## クロック
 
@@ -105,19 +152,30 @@
       **PC10/PC11はそもそもpadとして出ていない**ので、pad属性ではなく除外リスト
       `CH32_UNUSABLE_PINS`として生成した。errata idの存在をgenerate.pyが検証する
 - [ ] `[P1]` `CH32_UNUSABLE_PINS`をcore側で実際に弾く(現在は宣言のみ。`pinMode`実装時に対応)
-- [ ] `[P2]` `[compile only]`表示の6 series(V205/V407/V467/X305/X315/M030)にupload経路を用意する。
+- [x] `[compile only]`表示を**probe-rsのcoverageから自動導出**するようにした。
+      手書きフラグではCH32M103が漏れていた(7 series / 27 entryが対象)
+- [ ] `[P2]` その7 series(M030/M103/V205/V407/V467/X305/X315)にupload経路を用意する。
       probe-rsにtargetが無く、**実物がほとんど流通していないチップ**でもある。wlink併用で埋まる
-- [ ] `[P1]` probe tool定義(Q-040)でminichlinkのversionを固定し、**`-l`(serial選択)の存在を
-      smoke testで検証**する。UIAP同梱の`minichlink-2982dfd`は`-l`を持たない古いbuildだった
+- [x] **probe tool定義(Q-040)をprobe-rs 0.32.0で実装**した([実験0012](experiments/0012-probe-rs-upload-toolchain.ja.md))。
+      `tools/index/tools_probe_rs.json`(GitHub Releases直リンク、再ホストなし)、
+      `programmers.txt`の`wch-link`、`probe_rs_targets.csv`からのchip名生成。
+      clean installで`.tar.xz`の展開と`probe-rs --version`まで検証
+- [ ] `[P1]` probe-rsのversion追随方針を決める。現在0.32.0固定で更新は手動。
+      chip listが増えると`[compile only]`が減るので、更新にはboards.txt再生成が伴う
+- [ ] `[P2]` minichlinkは補助扱い。同梱`minichlink-2982dfd`は`-l`もCH32L103も持たない。
+      使うなら上流buildを固定すること(libusb-1.0の開発headerが要る)
 - [ ] `[P1]` fixture inventoryに**probeの種別とfirmware version**を記録する。
       初代WCH-Link(CH549)とWCH-LinkEは電源制御とV003単線SDIの可否が違う
 - [ ] `[P1]` HIL runnerのsetupに`1a86:8010`のudev rule導入を含める(無いと`LIBUSB_ERROR_ACCESS`)
 - [ ] `[P2]` Serial監視にCH340(`1a86:7523`)系adapterを使わない方針を明文化する。
       **USB serialを持たず複数台を区別できない**。CH343(`55d3`)はuniqueなserialを持つ
 - [ ] `[P2]` 製品名board(`WeAct CH32X035 CoreBoard`等)の追加。series boardと共存できる
-- [ ] `[P1]` CH32V103対応。vector tableがj命令形式でharnessが除外中。
-      **2026-08-19に実機(64K品)が接続され、minichlinkで`Detected: CH32V10x`を確認済み**なので
-      優先度をP2から上げた。`import_vectors.py`のj形式parse対応が入口
+- [x] **CH32V103対応**。vector tableのj命令形式に対応し、24 board / 122エントリへ。
+      `import_vectors.py`がtableの形式(`word`/`jump`)を記録し、`crt0`は`CH32_MTVEC_MODE`で
+      切り替える(V103は`1`、他は`3`)。`CH32_INTSYSCR_INIT`はV103が書かないのでoptional化。
+      `compare.py`にj命令のdecodeを足し、**等価性harnessで59 entry一致を確認**(14 variant)
+- [ ] `[P1]` CH32V103の`NRST` padがdevice-dataでport名を持たない。GPIOとして使えるなら
+      upstreamへ報告する(現在は`NON_PORT_PADS`で除外)
 - [ ] `[P2]` CH32H417対応。loadcode bootでharnessが除外中
 - [ ] `[P2]` device-dataの`product_attributes.csv`の属性名揺れをupstreamへ報告
       (`usart`/`serial_port`/`communicationinterfaces`、1件は文字列逆順の`ecafretninoitacinummoc`)

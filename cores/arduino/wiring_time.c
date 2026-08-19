@@ -8,6 +8,10 @@
 #include "Arduino.h"
 #include "ch32_registers.h"
 
+#ifndef CH32_FLASH_LATENCY
+#error "CH32_FLASH_LATENCY is required (see build.core_defines in boards.txt)"
+#endif
+
 #if F_CPU != CH32_HSI_HZ
 #error "Milestone 1 runs the core straight off HSI: F_CPU must equal CH32_HSI_HZ. \
 Prescalers and PLL are not implemented yet (see docs/todo.ja.md, clock section)."
@@ -25,6 +29,14 @@ void SystemInit(void)
     CH32_RCC_CTLR |= CH32_RCC_CTLR_HSION;
     while ((CH32_RCC_CTLR & CH32_RCC_CTLR_HSIRDY) == 0u) {
     }
+
+    /* Wait states first: the core comes out of reset on a divided clock, and
+     * removing the divider below raises it. Too few wait states at 48 MHz makes
+     * the CPU fetch garbage - measured on CH32X035, which needs two and hangs
+     * before setup() without them. Too many are merely slow, so this is safe to
+     * do before the switch rather than after. */
+    CH32_FLASH_ACTLR = (CH32_FLASH_ACTLR & ~CH32_FLASH_ACTLR_LATENCY_MASK) |
+                       CH32_FLASH_LATENCY;
 
     CH32_RCC_CFGR0 &= ~(CH32_RCC_CFGR0_SW_MASK | CH32_RCC_CFGR0_HPRE_MASK |
                         CH32_RCC_CFGR0_PPRE1_MASK | CH32_RCC_CFGR0_PPRE2_MASK);

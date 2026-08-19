@@ -90,7 +90,7 @@ int CH32HardwareSerial::peek(void)
 
 int CH32HardwareSerial::read(void)
 {
-    return _rx.read_char();
+    return _rx.pop();
 }
 
 void CH32HardwareSerial::flush(void)
@@ -98,7 +98,7 @@ void CH32HardwareSerial::flush(void)
     if (!_started) {
         return;
     }
-    while (_tx.available() > 0) {
+    while (!_tx.isEmpty()) {
     }
     while ((CH32_USART_STATR(_base) & CH32_USART_STATR_TC) == 0u) {
     }
@@ -118,7 +118,7 @@ size_t CH32HardwareSerial::write(uint8_t c)
      * this cannot deadlock as long as interrupts are enabled. */
     while (_tx.isFull()) {
     }
-    _tx.store_char(c);
+    _tx.push(c);
     start_tx();
     return 1;
 }
@@ -127,14 +127,25 @@ void CH32HardwareSerial::irq(void)
 {
     const uint16_t status = CH32_USART_STATR(_base);
 
-    if (status & CH32_USART_STATR_RXNE) {
-        _rx.store_char((uint8_t)CH32_USART_DATAR(_base));
+    /* RXNEIE also raises the interrupt for the receive error flags, and those
+     * are only cleared by reading STATR and then DATAR. Handling just RXNE
+     * leaves an overrun asserted, the interrupt re-enters immediately and the
+     * core never returns to loop() - which is what a noisy or unconnected RX
+     * line produces. So always drain the data register when any receive flag
+     * is set, and only keep the byte when it is a real one. */
+    if (status & (CH32_USART_STATR_RXNE | CH32_USART_STATR_ORE |
+                  CH32_USART_STATR_NE | CH32_USART_STATR_FE |
+                  CH32_USART_STATR_PE)) {
+        const uint8_t data = (uint8_t)CH32_USART_DATAR(_base);
+        if (status & CH32_USART_STATR_RXNE) {
+            _rx.push(data);
+        }
     }
     if (status & CH32_USART_STATR_TXE) {
-        if (_tx.available() == 0) {
+        if (_tx.isEmpty()) {
             CH32_USART_CTLR1(_base) &= (uint16_t)~CH32_USART_CTLR1_TXEIE;
         } else {
-            CH32_USART_DATAR(_base) = (uint16_t)(uint8_t)_tx.read_char();
+            CH32_USART_DATAR(_base) = (uint16_t)(uint8_t)_tx.pop();
         }
     }
 }

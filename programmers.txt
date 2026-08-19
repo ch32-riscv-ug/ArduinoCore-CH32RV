@@ -1,0 +1,13 @@
+# Upload back ends. CH32 flashing is SWD, not serial, so these are `programmer`
+# entries driving tools.<t>.program.pattern - `arduino-cli upload --programmer
+# <id>` needs no --port, and keeps using this path even when the pytest plugin
+# passes --port for the runtime serial (experiment 0009).
+#
+# Selecting one probe out of several: pass its USB serial through
+#   arduino-cli upload --programmer wch-link --upload-property upload.probe=1a86:8010:<serial>
+# `probe-rs list` prints exactly that VID:PID:Serial form. Every WCH-Link
+# reports a unique serial (experiment 0011), so this is deterministic.
+
+wch-link.name=WCH-Link / WCH-LinkE (probe-rs)
+wch-link.program.tool=probe_rs
+wch-link.program.tool.default=probe_rs

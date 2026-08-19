@@ -1,19 +1,27 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.9"
+# dependencies = ["pyserial>=3.5"]
+# ///
 """Compile, flash and read back the Milestone 1 acceptance sketch on one board.
 
-This is the bring-up path for a board the core has never run on. It does not go
-through `arduino-cli upload`, because the platform has no programmer definition
-yet (Q-040/Q-044); it calls minichlink directly. Once the programmer lands, the
-same check runs from pytest through the sketch profiles instead.
+It compiles and uploads exactly the way a user would - `arduino-cli upload
+--programmer wch-link`, which drives probe-rs - so a pass means the shipping
+path works, not just the code.
 
-  tests/hardware/smoke.py --board CH32X035 --port /dev/ttyACM4
+  uv run tests/hardware/smoke.py --board CH32X035
+
+The probe and its UART bridge are discovered by USB VID:PID, because boards get
+swapped on this bench and /dev/ttyACM* is not stable. Pass --probe <serial> when
+more than one probe is attached, or --port to override the discovery.
 
 The board's Serial pins are printed before flashing: wire those two to the
 probe's UART bridge (TX -> probe RX, RX -> probe TX) first.
 
 Environment:
-  CH32_GCC_BIN    riscv-none-elf-gcc bin directory (required)
-  CH32_MINICHLINK path to minichlink (required)
+  CH32_GCC_BIN   riscv-none-elf-gcc bin directory (required)
+  CH32_PROBE_RS  directory holding the probe-rs binary (default: the one the
+                 Board Manager installed under ~/.arduino15)
 """
 import argparse
 import os
@@ -29,18 +37,80 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 SKETCH = REPO / "tests" / "sketches" / "basic" / "serial_println" / "serial_println.ino"
 EXPECT = ("hello from ch32", "int=42", "hex=BEEF")
 
+# WCH-Link USB ids. RV mode is the one probe-rs drives; the same device also
+# exposes a CDC UART bridge, so one cable carries both flashing and Serial.
+WCH_LINK_VID = 0x1A86
+WCH_LINK_PIDS = (0x8010, 0x8012)
 
-def serial_pins(board: str):
+
+def find_probes():
+    """[(serial, tty)] for every attached WCH-Link, newest enumeration last."""
+    from serial.tools import list_ports
+    found = []
+    for port in sorted(list_ports.comports(), key=lambda p: p.device):
+        if port.vid == WCH_LINK_VID and port.pid in WCH_LINK_PIDS:
+            found.append((port.serial_number or "", port.device))
+    return found
+
+
+def resolve_port(want_serial, want_port):
+    """Pick the probe's UART bridge. Returns (port, serial) or exits."""
+    if want_port and want_serial:
+        return want_port, want_serial
+    probes = find_probes()
+    if want_serial:
+        for serial_number, tty in probes:
+            if serial_number == want_serial:
+                return want_port or tty, serial_number
+        raise SystemExit(f"no WCH-Link with serial {want_serial}; attached: "
+                         f"{[s for s, _ in probes] or 'none'}")
+    if want_port:
+        return want_port, None
+    if not probes:
+        raise SystemExit("no WCH-Link found (looked for "
+                         f"{WCH_LINK_VID:04x}:{'/'.join('%04x' % p for p in WCH_LINK_PIDS)})")
+    if len(probes) > 1:
+        raise SystemExit("several WCH-Links attached; pick one with --probe: "
+                         + ", ".join(f"{s} ({t})" for s, t in probes))
+    return probes[0][1], probes[0][0]
+
+
+def serial_pins(board: str, override=None):
     """Read the chosen USART and its pins out of the generated variant."""
     header = (REPO / "variants" / board / "pins_arduino.h").read_text(encoding="utf-8")
-    index = re.search(r"#define CH32_SERIAL_DEFAULT (\d+)", header)
-    if not index:
-        return None
-    n = index.group(1)
+    if override is not None:
+        n = str(override)
+        if f"#define CH32_SERIAL{n}_TX" not in header:
+            raise SystemExit(f"{board}: the variant has no USART{n}")
+    else:
+        index = re.search(r"#define CH32_SERIAL_DEFAULT (\d+)", header)
+        if not index:
+            return None
+        n = index.group(1)
     tx = re.search(rf"#define CH32_SERIAL{n}_TX (\w+)", header)
     rx = re.search(rf"#define CH32_SERIAL{n}_RX (\w+)", header)
     note = re.search(rf"/\* USART{n}: ([^*]+)\*/", header)
     return n, tx.group(1), rx.group(1), (note.group(1).strip() if note else "")
+
+
+def find_probe_rs():
+    """The probe-rs the Board Manager installed, newest version last."""
+    root = pathlib.Path.home() / ".arduino15" / "packages" / "ch32-riscv-ug" / "tools" / "probe-rs"
+    found = sorted(d for d in root.glob("*") if (d / "probe-rs").exists()
+                   or (d / "probe-rs.exe").exists())
+    return str(found[-1]) if found else None
+
+
+def detected_chip(probe_rs_dir, probe_serial):
+    """What probe-rs thinks is attached, or None if it cannot tell."""
+    cmd = [str(pathlib.Path(probe_rs_dir) / "probe-rs"), "info"]
+    if probe_serial:
+        cmd += ["--probe", f"1a86:8010:{probe_serial}"]
+    out = subprocess.run(cmd, capture_output=True, text=True).stdout
+    for line in out.splitlines():
+        if line.startswith("Detected chip:"):
+            return line.split(":", 1)[1].strip()
+    return None
 
 
 def run(cmd, **kw):
@@ -51,19 +121,42 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--board", required=True, help="series board, e.g. CH32X035")
     ap.add_argument("--pnum", default="ANY")
-    ap.add_argument("--port", default="/dev/ttyACM4", help="probe UART bridge")
+    ap.add_argument("--port", help="probe UART bridge (default: discovered)")
     ap.add_argument("--baud", type=int, default=115200)
-    ap.add_argument("--probe", help="WCH-Link USB serial; needs a minichlink with -l")
+    ap.add_argument("--probe", help="WCH-Link USB serial (default: the only one attached)")
     ap.add_argument("--seconds", type=float, default=4.0)
+    ap.add_argument("--force", action="store_true",
+                    help="flash even if the attached chip is a different series")
+    ap.add_argument("--serial", type=int,
+                    help="override which USART Serial is (uart_scan.py finds it)")
     args = ap.parse_args()
 
     gcc = os.environ.get("CH32_GCC_BIN")
-    minichlink = os.environ.get("CH32_MINICHLINK")
-    if not gcc or not minichlink:
-        print("set CH32_GCC_BIN and CH32_MINICHLINK", file=sys.stderr)
+    if not gcc:
+        print("set CH32_GCC_BIN", file=sys.stderr)
+        return 2
+    probe_rs_dir = os.environ.get("CH32_PROBE_RS") or find_probe_rs()
+    if not probe_rs_dir:
+        print("probe-rs not found; install the platform or set CH32_PROBE_RS",
+              file=sys.stderr)
         return 2
 
-    pins = serial_pins(args.board)
+    port, probe_serial = resolve_port(args.probe, args.port)
+    print(f"== probe {probe_serial or '(unidentified)'} -> {port}")
+
+    # Boards get swapped on this bench, so make a mismatch fail here rather
+    # than as a mysterious silent target after flashing the wrong image.
+    chip = detected_chip(probe_rs_dir, probe_serial)
+    if chip:
+        print(f"== target reports {chip}")
+        if not chip.upper().startswith(args.board.upper()) and not args.force:
+            print(f"FAIL: {chip} is attached but --board says {args.board}; "
+                  f"pass --force to flash anyway")
+            return 1
+    else:
+        print("== target chip not identified; flashing anyway")
+
+    pins = serial_pins(args.board, args.serial)
     if pins is None:
         print(f"{args.board}: the variant defines no default Serial port")
         return 1
@@ -87,32 +180,40 @@ def main() -> int:
         r = run(["arduino-cli", "compile",
                  "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
                  "--build-property", f"compiler.path={gcc}/",
+                 *(["--build-property",
+                    f"build.extra_flags=-DCH32_SERIAL_DEFAULT={args.serial}"]
+                   if args.serial else []),
                  "--build-path", str(build), str(sketch_dir)], env=env)
         if r.returncode:
             print(r.stdout + r.stderr)
             return 1
         print("   " + r.stdout.strip().replace("\n", "\n   "))
 
-        binary = build / f"{SKETCH.stem}.ino.bin"
-        select = ["-l", args.probe] if args.probe else []
-        r = run([minichlink, *select, "-w", str(binary), "flash", "-a"])
-        if "Image written" not in (r.stdout + r.stderr):
-            print("flash failed:\n" + r.stdout + r.stderr)
-            return 1
-        print("   flashed")
+        # The upload goes through the platform's own programmer entry, so this
+        # exercises programmers.txt and the probe-rs recipe rather than a
+        # side channel. --upload-property points the recipe at a probe-rs that
+        # may not be Board-Manager-installed in a symlinked dev tree.
+        upload = ["arduino-cli", "upload",
+                  "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
+                  "--programmer", "wch-link", "--input-dir", str(build),
+                  "--upload-property", f"runtime.tools.probe-rs.path={probe_rs_dir}"]
+        if probe_serial and args.probe:
+            upload += ["--upload-property",
+                       f"upload.probe_args=--probe 1a86:8010:{probe_serial}"]
+        upload.append(str(sketch_dir))
 
-        try:
-            import serial
-        except ImportError:
-            print("pyserial is not installed; skipping the read-back")
-            return 1
-        with serial.Serial(args.port, args.baud, timeout=0.3) as port:
-            port.reset_input_buffer()
-            run([minichlink, *select, "-b"])          # release from halt
+        import serial
+        with serial.Serial(port, args.baud, timeout=0.3) as uart:
+            uart.reset_input_buffer()
+            r = run(upload, env=env)
+            if r.returncode:
+                print(r.stdout + r.stderr)
+                return 1
+            print("   uploaded")
             deadline = time.time() + args.seconds
             got = b""
             while time.time() < deadline:
-                got += port.read(256)
+                got += uart.read(256)
 
     text = got.decode(errors="replace")
     print("--- output " + "-" * 48)

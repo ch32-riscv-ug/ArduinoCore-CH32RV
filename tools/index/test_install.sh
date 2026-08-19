@@ -11,20 +11,20 @@ PORT="${PORT:-8731}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 BASE_URL="http://127.0.0.1:$PORT"
 
-# Windows (Git Bash) compatibility: python3 may be absent (use python), and
+# Windows (Git Bash) compatibility:
 # native tools (arduino-cli, python) need Windows-style paths (cygpath -m).
-PY=$(command -v python3 || command -v python)
+PY="uv run --no-project python"
 w() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else echo "$1"; fi; }
 
 mkdir -p "$WORK/www" "$WORK/Blink"
 
 # 1) package the platform and generate the index (tool URL -> local server)
-"$PY" "$HERE/gen_index.py" --platform "$(w "$HERE/../..")" \
+$PY "$HERE/gen_index.py" --platform "$(w "$HERE/../..")" \
   --out "$(w "$WORK/www")" --base-url "$BASE_URL" --tools local
 
 # Serve the provided archive under the name the index expects for it. The entry
 # is found by SHA-256, so a wrong/corrupt archive fails here instead of later.
-ARCHIVE_NAME=$("$PY" - "$CH32_XPACK_ARCHIVE" "$HERE/tools_xpack_gcc.json" <<'EOF'
+ARCHIVE_NAME=$($PY - "$CH32_XPACK_ARCHIVE" "$HERE/tools_xpack_gcc.json" <<'EOF'
 import hashlib, json, sys
 h = hashlib.sha256()
 with open(sys.argv[1], "rb") as f:
@@ -41,7 +41,7 @@ EOF
 cp "$CH32_XPACK_ARCHIVE" "$WORK/www/$ARCHIVE_NAME"
 
 # 2) serve it
-"$PY" -m http.server "$PORT" --bind 127.0.0.1 --directory "$(w "$WORK/www")" &
+$PY -m http.server "$PORT" --bind 127.0.0.1 --directory "$(w "$WORK/www")" &
 SERVER=$!
 trap 'kill $SERVER 2>/dev/null || true' EXIT
 sleep 1
@@ -67,8 +67,15 @@ void loop() {
 }
 EOF
 arduino-cli compile \
-  --fqbn "ch32-riscv-ug:ch32v:CH32V00X:pnum=CH32V006K8U7" \
+  --fqbn "ch32-riscv-ug:ch32v:CH32V006:pnum=ANY" \
   --build-path "$(w "$WORK/build")" \
   "$(w "$WORK/Blink")"
+
+# The upload path is only real if the programmer tool came down with the
+# platform: probe-rs ships as .tar.xz, which not every archive reader handles.
+PROBE=$(find "$WORK/data/packages/ch32-riscv-ug/tools/probe-rs" -name "probe-rs*" -type f 2>/dev/null | head -1)
+[ -n "$PROBE" ] || { echo "FAIL: probe-rs was not installed with the platform"; exit 1; }
+"$PROBE" --version || { echo "FAIL: installed probe-rs does not run"; exit 1; }
+echo "PROBE-RS INSTALL OK: $PROBE"
 
 echo "INSTALL-AND-COMPILE OK"

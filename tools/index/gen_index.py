@@ -25,6 +25,8 @@ import tempfile
 
 TOOL_NAME = "xpack-riscv-none-elf-gcc"
 TOOL_VERSION = "14.3.0-1"
+PROBE_TOOL_NAME = "probe-rs"
+PROBE_TOOL_VERSION = "0.32.0"
 PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32v"
 
@@ -98,8 +100,9 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     archive = build_archive(args.platform, args.out, args.version)
 
-    tool = json.loads((pathlib.Path(__file__).parent / "tools_xpack_gcc.json")
-                      .read_text(encoding="utf-8"))
+    here = pathlib.Path(__file__).parent
+    tool = json.loads((here / "tools_xpack_gcc.json").read_text(encoding="utf-8"))
+    probe = json.loads((here / "tools_probe_rs.json").read_text(encoding="utf-8"))
     systems = tool["systems"]
     if args.tools == "local":
         systems = [dict(s, url=f"{args.base_url}/{s['archiveFileName']}")
@@ -122,17 +125,18 @@ def main() -> None:
                 "checksum": f"SHA-256:{sha256(archive)}",
                 "size": str(archive.stat().st_size),
                 "boards": [{"name": "CH32V00X"}],
-                "toolsDependencies": [{
-                    "packager": PACKAGER,
-                    "name": TOOL_NAME,
-                    "version": TOOL_VERSION,
-                }],
+                "toolsDependencies": [
+                    {"packager": PACKAGER, "name": TOOL_NAME,
+                     "version": TOOL_VERSION},
+                    {"packager": PACKAGER, "name": PROBE_TOOL_NAME,
+                     "version": PROBE_TOOL_VERSION},
+                ],
             }],
-            "tools": [{
-                "name": TOOL_NAME,
-                "version": TOOL_VERSION,
-                "systems": systems,
-            }],
+            "tools": [
+                {"name": TOOL_NAME, "version": TOOL_VERSION, "systems": systems},
+                {"name": PROBE_TOOL_NAME, "version": PROBE_TOOL_VERSION,
+                 "systems": probe["systems"]},
+            ],
         }],
     }
     index_path = args.out / f"package_{PACKAGER}_index.json"

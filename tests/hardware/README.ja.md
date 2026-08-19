@@ -1,22 +1,31 @@
 # 実機smoke test
 
 実機を1台つないで「そのboardで`Serial.println()`が出るか」だけを見るbring-up用のrunnerです。
-`arduino-cli upload`はまだ経路が無い(Q-040/Q-044)ので、minichlinkを直接呼びます。
-programmer定義が入ったら、同じ確認をpytestの[profile](../sketches/basic/serial_println/sketch.yaml)経由へ移します。
+compileも書き込みも**利用者と同じ経路**(`arduino-cli upload --programmer wch-link` → probe-rs)を
+通るので、passは「コードが動く」ではなく「出荷経路が動く」ことを意味します。
 
 ## 使い方
 
 ```bash
 export CH32_GCC_BIN=~/.arduino15/internal/ch32-riscv-ug_xpack-riscv-none-elf-gcc_14.3.0-1_*/bin
-export CH32_MINICHLINK=~/.arduino15/packages/UIAP/tools/minichlink-*/1.0.0/minichlink
+# probe-rsはBoard Manager導入分を自動で探します。開発ツリーで別の場所を使うなら:
+# export CH32_PROBE_RS=/path/to/probe-rs-tools-<target>
 
-python3 tests/hardware/smoke.py --board CH32X035 --port /dev/ttyACM4
+uv run tests/hardware/smoke.py --board CH32X035
 ```
 
-`--port`はprobe内蔵UARTブリッジのCDCポートです(WCH-LinkEは`ff`+CDC×2構成なので、
-**書き込みとSerial受信が1本のケーブルで済みます**)。
-probeが複数ある場合は`--probe <USB serial>`で選べますが、
-**同梱の`minichlink-2982dfd`は`-l`を持たない**ので上流buildが要ります([実験0011](../../docs/experiments/0011-milestone1-serial-on-v003.ja.md))。
+boardが既定と違うUSARTを配線している場合は`--serial <n>`で切り替えます
+(どれが繋がっているかは`uart_scan.py`が特定します):
+
+```bash
+uv run tests/hardware/uart_scan.py --board CH32V203   # -> WIRED: U1-PA9
+uv run tests/hardware/smoke.py     --board CH32V203 --serial 1
+```
+
+probeとそのUARTブリッジは**USB VID:PIDから自動検出**します。このベンチはboardごと
+差し替えるので`/dev/ttyACM*`は固定できません。複数繋がっているときは`--probe <USB serial>`、
+明示したいときは`--port`。WCH-LinkEは`ff`+CDC×2構成なので、
+**書き込みとSerial受信が1本のケーブルで済みます**。
 
 内容は[Milestone 1受け入れsketch](../sketches/basic/serial_println/serial_println.ino)と同一で、
 `hello from ch32` / `int=42` / `hex=BEEF`の3行が出れば pass です。
@@ -69,3 +78,9 @@ runnerは実行前に対象boardのTX/RXを表示します。**TX → probeのRX
 | 日付 | board | probe | 結果 |
 |---|---|---|---|
 | 2026-08-20 | CH32V003(16K/2K) | WCH-LinkE v2.12 | **pass**(TX/RX両方向) |
+| 2026-08-20 | CH32V203(64K/20K) | WCH-LinkE v2.12 | **pass**(`--serial 1`、boardの配線がUSART1/PA9) |
+| 2026-08-20 | CH32X035(62K/20K) | WCH-LinkE v2.12 | コアは動作、**UART未接続**(6 route全滅、旧コア・WCH公式でも出力なし) |
+| 2026-08-20 | CH32V203C8T6 | WCH-LinkE v2.12 | **pass**。`tests/sketches/basic/core_api`も13 check全pass |
+
+書き込み前に`probe-rs info`でチップを読み、`--board`と食い違ったら止まります
+(ベンチはboardを差し替えるため)。意図的に上書きするなら`--force`。

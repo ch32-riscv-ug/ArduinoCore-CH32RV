@@ -8,8 +8,8 @@
 #pragma once
 
 #include "api/HardwareSerial.h"
-#include "api/RingBuffer.h"
 #include "ch32_pins.h"
+#include "ch32_ringbuffer.h"
 
 #include <stdint.h>
 
@@ -54,8 +54,9 @@ private:
     const uint32_t _remap_mask;
     const uint32_t _remap_value;
     bool _started;
-    RingBufferN<64> _rx;
-    RingBufferN<64> _tx;
+    /* TODO(docs/todo.ja.md): 64 bytes each is not configurable yet. */
+    CH32RingBuffer<64> _rx;
+    CH32RingBuffer<64> _tx;
 };
 
 }  // namespace arduino

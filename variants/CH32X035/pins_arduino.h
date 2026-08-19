@@ -201,7 +201,36 @@
 #define CH32_SERIAL4_RX PB1
 #define CH32_SERIAL4_HANDLER USART4_IRQHandler
 #define CH32_SERIAL4_IRQ CH32_IRQN_USART4
+#ifndef CH32_SERIAL_DEFAULT
 #define CH32_SERIAL_DEFAULT 2
+#endif
+
+/* ---- PWM: 10 pads on TIM1/TIM2/TIM3, default route ---- */
+#define CH32_PWM_PIN_COUNT 10
+#define CH32_PWM_PIN_TO_TIMER(p) ( \
+    (p) == PB9 ? 1 : \
+    (p) == PB10 ? 1 : \
+    (p) == PB11 ? 1 : \
+    (p) == PC16 ? 1 : \
+    (p) == PA0 ? 2 : \
+    (p) == PA1 ? 2 : \
+    (p) == PA2 ? 2 : \
+    (p) == PA3 ? 2 : \
+    (p) == PA6 ? 3 : \
+    (p) == PA7 ? 3 : \
+    0)
+#define CH32_PWM_PIN_TO_CHANNEL(p) ( \
+    (p) == PB9 ? 1 : \
+    (p) == PB10 ? 2 : \
+    (p) == PB11 ? 3 : \
+    (p) == PC16 ? 4 : \
+    (p) == PA0 ? 1 : \
+    (p) == PA1 ? 2 : \
+    (p) == PA2 ? 3 : \
+    (p) == PA3 ? 4 : \
+    (p) == PA6 ? 1 : \
+    (p) == PA7 ? 2 : \
+    0)
 
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present

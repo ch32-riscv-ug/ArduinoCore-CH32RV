@@ -177,7 +177,9 @@
 /* NOTE: route af-1 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this port needs verifying (docs/todo.ja.md). */
+#ifndef CH32_SERIAL_DEFAULT
 #define CH32_SERIAL_DEFAULT 1
+#endif
 
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present
