@@ -81,6 +81,12 @@ jobs:
         run: |
           CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
           prototypes/platform/test_compile.sh /tmp/w3 | tee /tmp/w3.log
+      - name: Size regression check (W-7)
+        run: |
+          PY=$(command -v python3 || command -v python)
+          "$PY" prototypes/platform/check_sizes.py \
+            --baseline prototypes/platform/sizes_baseline.json \
+            --sizes /tmp/w3/sizes.tsv --check
       - name: Size summary
         if: always()
         run: |

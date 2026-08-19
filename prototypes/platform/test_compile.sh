@@ -49,6 +49,7 @@ arduino-cli board listall
 # Compile every part number listed in the generated boards.txt (compile-matrix seed).
 PNUMS=$(sed -n 's/^CH32V00X\.menu\.pnum\.\([A-Z0-9]*\)=.*/\1/p' "$HERE/ch32v/boards.txt")
 echo "== part numbers: $(echo "$PNUMS" | wc -w)"
+: > "$WORK/sizes.tsv"
 
 fail=0
 for pnum in $PNUMS; do
@@ -58,7 +59,8 @@ for pnum in $PNUMS; do
     --build-property "compiler.path=$(w "$CH32_GCC_BIN")/" \
     --build-path "$(w "$WORK/build-$pnum")" \
     "$(w "$WORK/Blink")" || fail=1
-  "$CH32_GCC_BIN/riscv-none-elf-size" "$WORK/build-$pnum/Blink.ino.elf"
+  "$CH32_GCC_BIN/riscv-none-elf-size" "$WORK/build-$pnum/Blink.ino.elf" | \
+    awk -v p="$pnum" 'NR==2 {print p "\t" $1 "\t" $2 "\t" $3}' | tee -a "$WORK/sizes.tsv"
 done
 
 # Static checks on one build: sketch's global constructor is registered in

@@ -42,7 +42,7 @@ ch32v/
     ch32v00x_{16k_4k,32k_6k,62k_8k}.ld   生成物(ユニークなFLASH/SRAM組合せ別)
 ```
 
-`test_compile.sh`はboards.txtの全pnum(26 SKU)をcompileするcompile matrixとして動く。
+`test_compile.sh`はboards.txtの全pnum(26 SKU)をcompileするcompile matrixとして動き、`<workdir>/sizes.tsv`へ各SKUのtext/data/bssを出力する。[check_sizes.py](check_sizes.py)が[sizes_baseline.json](sizes_baseline.json)との**完全一致**を検証する(W-7。toolchain固定下ではビルドは決定的)。サイズが意図的に変わる変更では、同じPRで`check_sizes.py --update`によりbaselineを再生成してcommitする。
 
 ## 既知の制限(実装時に解消する)
 

@@ -73,8 +73,10 @@ device schema、8 sample record、validator、詳細引継ぎは独立[`ch32-dev
 
 CI([workflow](../.github/workflows/ci.yml): startup-equivalence/generated-sync/compile-matrix/install-test)は**ubuntu/macos/windowsの3 OSでall green確認済み**(2026-08-19)。crt0の`.init_array`呼び出しは実装済み・静的検査済み(実行確認はHIL待ち)。
 
-1. W-7: size回帰の閾値化(baseline記録とCI比較。R-09の計測は[実験0006](experiments/0006-newlib-size-baseline.ja.md)で完了: default=newlib-nano、%fはmenu opt-inが結論)
-2. コア本体の実装開始(ArduinoCore-API統合、pinMode/digitalWrite/millis/delay/Serial。Q-010/Q-013)
+W-7のsize回帰gate(baseline完全一致チェック)も実装済み。R-09の計測は[実験0006](experiments/0006-newlib-size-baseline.ja.md)で完了(default=newlib-nano、%fはmenu opt-inが結論)。実機なしフェーズの計画項目はhost test(Q-016)を残して完了。
+
+1. コア本体の実装開始(ArduinoCore-API統合、pinMode/digitalWrite/millis/delay/Serial。入口はQ-010=ArduinoCore-APIの固定versionとLGPL配布方法、Q-013=内部HAL contract)
+2. host test基盤(Q-016。コア実装と並走)
 3. (実機が使えるようになったら)`probe-rs`でflash/verify/reset/read-uidを検証し、「Blinkをcompile → flash → Serial READY → GPIO波形判定」までを1本通す
 
 最初の2機種候補は、制約の厳しいRV32E機と実用的なRV32I系を1つずつ選ぶ案です。小容量側はCH32V003F4P6、実用側はCH32X035、CH32M030、CH32V203系などが候補ですが、所有実機、USB PDを初期範囲へ含めるか、package、fixture配線を確認してから合意してください。
