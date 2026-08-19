@@ -13,6 +13,7 @@
 | Q-003 | P1 | Arduino APIの初期対応範囲とSKU別の未対応表現 | ArduinoCore-API inventory、標準API contract、サイズbudget、capability、利用例 |
 | Q-004 | P1 | 旧コアとのソース互換範囲 | 既存sketch/exampleのcompile survey |
 | Q-005 | P2 | 初期release後にEVT Compatibility Packを提供する必要があるか | 実用Arduino example提供後の利用者需要、license、維持コスト |
+| Q-006 | P2 | RTOSの提供方式(コア同梱ライブラリ/独立ライブラリ)と提供開始のトリガー | 利用者需要。方針調査は[R-16](research/rtos-support.ja.md)済み(コア層はベアメタル維持、初期はRTOSなしを推奨)。millis/delayのtickソース差替可能性とbuild_opt.h相当フックはQ-013で先行実装 |
 
 ## Architectureとmanifest
 
