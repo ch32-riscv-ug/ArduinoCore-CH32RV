@@ -1,6 +1,6 @@
 # ADR-0002: default toolchainはxPack riscv-none-elf-gccをGitHub Releases直リンクで参照する
 
-- Status: Accepted
+- Status: Proposed
 - Date: 2026-08-19
 - Related questions: Q-020, Q-026
 
@@ -36,7 +36,7 @@ rv32e系6種を含むmultilib、5 host、活発な保守、公式ソース無改
 ## Decision
 
 - default toolchainは**xPack `riscv-none-elf-gcc`**とし、package indexのtoolsは**xpack-dev-toolsのGitHub Releases資産へ直接URL参照**する(再ホストしない)
-- 認定候補versionは**14.3.0-1**(Zve64x/Zvbb対応と安定性のバランス)。tool定義の正本は[prototypes/index/tools_xpack_gcc.json](../../prototypes/index/tools_xpack_gcc.json)(6 host、公式checksum)
+- 認定候補versionは**14.3.0-1**(Zve64x/Zvbb対応と安定性のバランス)。tool定義の正本は[tools/index/tools_xpack_gcc.json](../../tools/index/tools_xpack_gcc.json)(6 host、公式checksum)
 - versionの更新は、認定matrix通過とADR追記を条件にindexへ追加する(過去entryは変更しない)
 - WCH fork laneは`ch32-riscv-ug`ミラー参照の比較用として維持し、defaultにしない
 

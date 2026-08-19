@@ -2,7 +2,7 @@
 
 実施日: 2026-08-19
 対象question: Q-026(tool参照方式)、Q-054(index配信)、R-15方式B
-実装: [prototypes/index/](../../prototypes/index/README.ja.md)
+実装: [tools/index/](../../tools/index/README.ja.md)
 実施環境: WSL2 Linux x86_64、arduino-cli、xPack riscv-none-elf-gcc 14.3.0-1(実験0001と同一archive)。実機なし
 
 ## 目的
@@ -34,7 +34,7 @@
 
 ```sh
 CH32_XPACK_ARCHIVE=<xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz> \
-prototypes/index/test_install.sh /tmp/w5-work
+tools/index/test_install.sh /tmp/w5-work
 # INSTALL-AND-COMPILE OK で終了
 ```
 

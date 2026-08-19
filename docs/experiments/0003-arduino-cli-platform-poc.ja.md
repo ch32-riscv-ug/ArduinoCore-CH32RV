@@ -2,7 +2,7 @@
 
 実施日: 2026-08-19
 対象question: Q-015(暫定packager/FQBN)、Q-012(own startup/ld/vector構成)、R-15方式A
-実装: [prototypes/platform/](../../prototypes/platform/README.ja.md)
+実装: [tests/compile/](../../tests/compile/README.ja.md)
 実施環境: WSL2 Linux x86_64、arduino-cli(ローカルinstall済み)、xPack riscv-none-elf-gcc 14.3.0-1(実験0001と同一)。実機なし(compile/linkのみ)
 
 ## 目的
@@ -35,7 +35,7 @@ vendorファイルを一切含まない最小platform(own crt0+own linker script
 
 ```sh
 CH32_GCC_BIN=<xpack-riscv-none-elf-gcc-14.3.0-1>/bin \
-prototypes/platform/test_compile.sh /tmp/w3-work
+tests/compile/test_compile.sh /tmp/w3-work
 # exit 0 = 両pnumのcompile成功
 ```
 

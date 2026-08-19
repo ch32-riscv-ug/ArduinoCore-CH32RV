@@ -1,18 +1,24 @@
 # 引継ぎメモ
 
-文書基準日: 2026-08-19
+文書基準日: 2026-08-19(2026-08-19にADRの承認状態を見直し)
 
 ## 現在地
 
 `ArduinoCore-CH32`は、旧[`arduino_core_ch32_riscv_noneos`](https://github.com/ch32-riscv-ug/arduino_core_ch32_riscv_noneos)を修復せず、長期保守を前提に新規設計するプロジェクトです。対象は全CH32ファミリ(11 family / 27 series / 103型番)。
 
-実機なしフェーズ(環境整備)は完了済みです。リポジトリには設計文書、[事前調査](research/README.ja.md)、[実験記録0001〜0008](experiments/0001-xpack-multilib-smoke.ja.md)、[ADR-0001〜0008](adr/README.ja.md)、検証済みprototype([統合startup](../prototypes/startup/README.ja.md)、[最小platform](../prototypes/platform/README.ja.md)、[generator](../prototypes/generator/README.ja.md)、[index/install](../prototypes/index/README.ja.md)、[sizebench](../prototypes/sizebench/README.ja.md))と、3 OSでall greenの[CI](../.github/workflows/ci.yml)があります。**コア本体(実API)の実装はこれから**です。
+環境整備は完了し、2026-08-19に**prototypes/を実構成へ昇格**しました。リポジトリのルートがそのままArduino platformディレクトリで、Board Manager経由のclean installとcompileが通る状態です。**コア本体(実API)の実装はこれから**です。
+
+リポジトリには設計文書、[事前調査](research/README.ja.md)、[実験記録0001〜0008](experiments/0001-xpack-multilib-smoke.ja.md)、[ADR-0001〜0009](adr/README.ja.md)(すべて`Proposed`)、3 OSでall greenの[CI](../.github/workflows/ci.yml)があります。
 
 device databaseは独立[`ch32-device-data`](https://github.com/ch32-riscv-ug/ch32-device-data)が正本([ADR-0001](adr/0001-device-data-repository.ja.md)、[境界](device-data.ja.md))。
 
-## 決定済み
+## 提案済み(いずれも未承認)
 
-ADRになっている決定:
+2026-08-19時点で、maintainerが明示承認した設計判断はありません。以下はすべて事前調査フェーズの**提案**であり、ADR-0001〜0009は`Status: Proposed`です([承認プロセス](adr/README.ja.md))。実測裏付けの有無は「その選択肢が成立する」ことの証明であって、採用の承認ではありません。
+
+大きい順(L0=目的/完成条件 → L1=初期スコープ → L2=実装骨格 → L3=個別技術判断)に確認していきます。
+
+ADR化されている提案:
 
 - [ADR-0001](adr/0001-device-data-repository.ja.md): device databaseは独立repository。Arduino coreは固定versionのconsumer
 - [ADR-0002](adr/0002-toolchain-distribution.ja.md): default toolchainは**xPack riscv-none-elf-gccのGitHub Releases直リンク参照**(候補14.3.0-1)。WCH forkは比較lane限定
@@ -23,7 +29,7 @@ ADRになっている決定:
 - [ADR-0007](adr/0007-user-build-option-injection.ja.md): **`build.extra_flags`はコアで使わずユーザー注入専用**(--build-property/boards.local.txt)。CIが注入到達を常時ガード
 - [ADR-0008](adr/0008-upload-strategy.ja.md): **書き込みdefaultはWCH-LinkE**(probe-rs系frontend、gap familyはwlink/OpenOCD併用)。開発もLinkEで進め、USB-ISP/UART-ISP/board固有BL(UIAPduino等)を段階追加。互換programmerはTier管理
 
-運用上の決定(ADR外):
+運用上の前提(ADR外、いずれも未承認):
 
 - 本プロジェクトは`ch32-riscv-ug`(ユーザーグループ、WCH公式ではない)配下。旧コアのindex/名前空間は捨てる
 - Board Manager indexはコアが1つの間は本repoから直接配信。複数化したらlang-ship方式(統合index repo+release完了kick)へ移行(Q-054解決)
@@ -33,22 +39,50 @@ ADRになっている決定:
 - 書き込み先は複数台から決定的に指定(USB PPPSは不採用)。fixture構成は[upload-and-fixture](upload-and-fixture.ja.md)
 - vendorファイルは無断コピーしない([vendor-policy](vendor-policy.ja.md))。文書は日本語`.ja.md`
 
-## 実装済みの資産(コア実装で流用するもの)
+## 2026-08-19に確認したこと(maintainer承認済み)
 
-- `prototypes/startup/crt0_ch32.S`: 統合startup(13バリアントでEVT等価性検証済み、CI常時実行)
-- `prototypes/platform/`: platform.txt/生成boards.txt/own ld/スタブコア(FQBN動作・26 SKU compile・size baseline gate付き)
-- `prototypes/generator/generate.py`: device-data tables→boards.txt/ld生成(locked commit方式)
-- `prototypes/index/`: xPack直リンクtool定義(6 host、checksum済み)、index生成、clean install検証
-- `prototypes/sizebench/`: newlibサイズ計測(toolchain更新時の回帰用)
-- コアが提供すべき関数の判明分: `ltoa`/`ultoa`/`dtostrf`、HAL(millis/delay等)、syscalls(_write/_sbrk等)
+このセッションで明示的に合意した項目です。ADR化はこれから。
 
-## 次に始める作業(コア実装フェーズ)
+- ADR-0001〜0008は自己承認だったため全て`Proposed`へ戻し、**大きい順(L0→L1→L2→L3)に確認していく**
+- **v1.0の完成条件は「実用最小」**: GPIO/UART/SPI/I2C/ADC/PWM/割込みが1〜2 familyでTier A。実際のArduino sketchが書ける水準
+- **実機は手元にある**(代表的な機材は所有済み)。残るのは配線で、**どのboardをどう配線するかは未確認**
+- **ArduinoCore-APIは使う。repoに実体をコミットする**(→[ADR-0009](adr/0009-arduinocore-api-import.ja.md))
+- **ArduinoCore-APIの更新は積極的に行わない**(変更頻度が低く、追随自体に価値がないため)
+- コア拡張(`Serial.printf()`等)の置き場所は**未承認**([Q-019](open-questions.ja.md))
 
-1. **Q-010**: ArduinoCore-APIの固定version(実験0007はcommit `0f4e57e`で無改変compile確認済み)と取込方法(LGPL-2.1配布、symlinkなしrelease)をADR化
-2. **Q-013**: 内部HAL contractの範囲を決め、digital/time/Serialから実装(まずcompile+ELF検査、Q-016のhost testを並走)
-3. prototypesの構成を実構成(cores/arduino等)へ昇格し、CIを移し替える
-4. 残る生成器拡張: variant(pin map)生成はArduinoピン設計合意後。V103/H417のstartup対応は対象family追加時
-5. (実機入手後)Q-001の初期SKU確定、probe-rs認定(Q-040系)、HIL一気通貫
+## 現在の資産
+
+すべてCIで常時検証されています(4 job、ローカルでも全green確認済み)。
+
+| path | 内容 | CI job |
+|---|---|---|
+| `cores/arduino/api/` | ArduinoCore-API 1.5.2 無改変snapshot(47ファイル、LGPL-2.1-or-later) | `api-sync`(upstreamとbyte一致) |
+| `cores/arduino/crt0_ch32.S` | 統合startup。EVT等価性を13バリアントで検証(39 check OK) | `startup-equivalence` |
+| `cores/arduino/{Arduino.h,main.cpp,wiring_stub.c}` | **compile専用スタブ**。ここを実装で置き換える | `compile-matrix` |
+| `boards.txt` / `variants/CH32V00X/*.ld` | device-dataからの生成物(locked commit) | `generated-sync` |
+| `platform.txt` | ビルドrecipe。`build.extra_flags`はユーザー注入専用 | `compile-matrix`(注入到達ガード) |
+| `tools/generate/generate.py` | boards.txt/ld生成 | `generated-sync` |
+| `tools/index/` | xPack直リンクtool定義、index生成、clean install検証 | `install-test`(3 OS) |
+| `tools/vendor/check_api_sync.sh` | api/のbyte一致とlock manifest検証 | `api-sync` |
+| `tests/compile/` | 26 SKU compile matrix + size baseline(完全一致gate) | `compile-matrix`(3 OS) |
+| `tests/startup/` | EVT startupとの等価性harness | `startup-equivalence` |
+| `tests/sizebench/` | newlibサイズ計測(toolchain更新時の回帰用) | 手動 |
+| `vendor/arduino-core-api.lock.toml` | 第三者取込のlock(commit + 全ファイルSHA-256) | `api-sync` |
+
+新規に判明: **arduino-cliは`cores/arduino/api/*.cpp`(8本)を実platformで自動compileし、`--gc-sections`が未使用分を完全に落とす**。api/追加後もBlinkのサイズは26 SKU全てでbaselineとバイト一致(476/4/520)。
+
+コアが提供すべき関数の判明分: `ltoa`/`ultoa`/`dtostrf`(newlib非搭載)、HAL(millis/delay等)、syscalls(`_write`/`_sbrk`等)。
+
+## 次に始める作業
+
+L1(初期スコープ)まで確認済み。次はL2(実装の骨格)。
+
+1. **実機の特定と配線**: 所有機材のうちどのboard/SKUを最初のTier A対象にするか(Q-001)、WCH-LinkEとの配線、LA channel割当(Q-050)
+2. **Q-013**: 内部HAL contractの範囲を決める。v1.0の対象がGPIO/UART/SPI/I2C/ADC/PWM/割込みと決まったので、この7つが境界設計の入力になる
+3. **Q-019**: コア拡張(`Serial.printf()`等)を`api/`改変で出すか別手段にするか
+4. **Q-016**: host contract testの方式(`api/`にupstreamのhost test suiteがあるので、固定commitでCIからcloneして使える)
+5. ADR-0001〜0009を大きい順に確認して`Accepted`にしていく
+6. 生成器拡張: variant(pin map)生成はArduinoピン設計合意後。V103/H417のstartup対応は対象family追加時
 
 ## 未決定のまま実装に影響する主要論点
 
@@ -56,4 +90,4 @@ ADRになっている決定:
 
 ## 新しいスレッドでの開始文
 
-> `/home/mt/dev_wch/ArduinoCore-CH32`でCH32向けArduinoコアを開発しています。まず`docs/handoff.ja.md`を読んでください(決定済み事項はADR-0001〜0008、検証済み資産はprototypes/、実験の根拠はdocs/experiments/)。環境整備フェーズは完了しており、これからコア本体の実装に入ります。入口はQ-010(ArduinoCore-APIの固定versionとLGPL配布方法)とQ-013(内部HAL contract)です。EVT・公式PDF・旧コアは参照のみとし、新repositoryへコピーしないでください(ADR-0003によりstartup/ldはown実装済み)。toolchainはxPack riscv-none-elf-gcc 14.3.0-1(ADR-0002)、検証はprototypes配下のscript群とGitHub Actions(3 OS green)で回ります。
+> `/home/mt/dev_wch/ArduinoCore-CH32`でCH32向けArduinoコアを開発しています。まず`docs/handoff.ja.md`を読んでください。**ADR-0001〜0009はすべて`Proposed`(maintainer未承認)**で、大きい順に確認していく方針です。prototypes/は実構成へ昇格済みで、リポジトリのルートがそのままArduino platformディレクトリです(`cores/arduino/api/`にArduinoCore-API 1.5.2の無改変snapshot)。CIは4 job・3 OSでgreen。v1.0の完成条件は「代表familyでGPIO/UART/SPI/I2C/ADC/PWM/割込みがTier A」、実機は所有済みで配線が未確定です。次はQ-013(内部HAL contract)とQ-001/Q-050(対象board確定と配線)。EVT・公式PDF・旧コアは参照のみとし、新repositoryへコピーしないでください。toolchainはxPack riscv-none-elf-gcc 14.3.0-1です。

@@ -1,6 +1,6 @@
 # ADR-0005: boardはfamily単位+pnumメニューとし、boards.txt/ld/variantはdevice-dataから生成する
 
-- Status: Accepted
+- Status: Proposed
 - Date: 2026-08-19
 - Related questions: Q-015, Q-011/Q-014(consumer形式の一部)。公開packager/表示名はQ-017で別途決定
 

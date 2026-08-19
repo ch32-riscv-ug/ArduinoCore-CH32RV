@@ -2,7 +2,7 @@
 
 実施日: 2026-08-19
 対象question: Q-011/Q-014(consumer形式の試作)、Q-015、R-03の設計検証
-実装: [prototypes/generator/](../../prototypes/generator/README.ja.md)
+実装: [tools/generate/](../../tools/generate/README.ja.md)
 実施環境: WSL2 Linux x86_64、arduino-cli、xPack riscv-none-elf-gcc 14.3.0-1。実機なし(compile/linkのみ)
 
 ## 目的
@@ -27,9 +27,9 @@
 ## 再現手順
 
 ```sh
-python3 prototypes/generator/generate.py \
-  --tables <ch32-device-data>/tables --platform prototypes/platform/ch32v --check
-CH32_GCC_BIN=<xpack bin> prototypes/platform/test_compile.sh /tmp/w4-work
+python3 tools/generate/generate.py \
+  --tables <ch32-device-data>/tables --platform . --check
+CH32_GCC_BIN=<xpack bin> tests/compile/test_compile.sh /tmp/w4-work
 # どちらもexit 0
 ```
 

@@ -1,6 +1,6 @@
 # ADR-0008: 書き込みのdefaultはWCH-LinkEとし、経路カバレッジを段階的に増やす
 
-- Status: Accepted
+- Status: Proposed
 - Date: 2026-08-19
 - Related questions: Q-040, Q-044, Q-045(いずれも実機認定・実装は継続)
 

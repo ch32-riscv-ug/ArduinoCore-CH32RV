@@ -1,6 +1,6 @@
 # ADR-0007: build.extra_flagsはコアで使わず、ユーザー注入専用に予約する
 
-- Status: Accepted
+- Status: Proposed
 - Date: 2026-08-19
 - Related questions: Q-013(コアのフック要件)、Q-015
 

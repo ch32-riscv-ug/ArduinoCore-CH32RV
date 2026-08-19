@@ -2,7 +2,7 @@
 
 実施日: 2026-08-19
 対象question: Q-012
-関連調査: [R-01](../research/startup-files.ja.md)、実装: [prototypes/startup/](../../prototypes/startup/README.ja.md)
+関連調査: [R-01](../research/startup-files.ja.md)、実装: [tests/startup/](../../tests/startup/README.ja.md)
 実施環境: WSL2 Linux x86_64、xPack riscv-none-elf-gcc 14.3.0-1([実験0001](0001-xpack-multilib-smoke.ja.md)と同一入力)。実機なし(実行は未検証)
 
 ## 目的
@@ -19,7 +19,7 @@ R-01で提案した「共通crt(`crt0_ch32.S`)+family別vector include+`-D`に�
 | CH32X035 | RV32I系、`.vector`分離型 | rv32imac_zicsr/ilp32 | MSTATUS=0x88, INTSYSCR=0x3, CORECFGR=0x1f |
 | CH32V307 D8C | FPU、最大級table(103) | rv32imafc_zicsr/ilp32f | MSTATUS=0x6088, INTSYSCR=0x0b, CORECFGR=0x1f |
 
-各familyについて「EVT startupで作ったELF」と「統合startupで作ったELF」を同一main.c(SystemInitスタブ+`SysTick_Handler`のweak上書き+無限loop)・同一系linker scriptでビルドし、以下を機械比較した(`prototypes/startup/compare.py`)。
+各familyについて「EVT startupで作ったELF」と「統合startupで作ったELF」を同一main.c(SystemInitスタブ+`SysTick_Handler`のweak上書き+無限loop)・同一系linker scriptでビルドし、以下を機械比較した(`tests/startup/compare.py`)。
 
 1. **vector table照合**: 両ELFのtable(entry 0を除く全entry)が、EVT startupから抽出した仕様(`extract_vectors.py`)と一致するか。予約entryは0、IRQ entryは該当シンボルのアドレスに一致することをELFごとに検証(weak上書きした`SysTick_Handler`が両方でmain.c側を指すことも同時に確認される)
 2. **CSR初期化照合**: handle_resetの逆アセンブリから(命令, CSR, 値)の集合を抽出し一致を確認。mtvec/mepcはシンボル書き込みのため「書き込みの存在」のみ確認
@@ -50,7 +50,7 @@ V307 D8C: 103 entries match (evt/uni) / csr {0x804=0xb, 0xbc0=0x1f, mstatus=0x60
 ```sh
 CH32_MIRROR_ROOT=/home/mt/dev_wch \
 CH32_GCC_BIN=<xpack-riscv-none-elf-gcc-14.3.0-1>/bin \
-prototypes/startup/run_check.sh /tmp/w2-work
+tests/startup/run_check.sh /tmp/w2-work
 # exit 0 = 全familyの等価性検証合格
 ```
 

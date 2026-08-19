@@ -31,6 +31,26 @@ The following items are working proposals, not finalized specifications:
 
 The initial implementation is expected to focus on RISC-V CH32 devices. The long-term scope, including Arm-based CH32 devices and wireless SoCs, has not been decided.
 
+## Repository layout
+
+The repository root **is** the Arduino platform directory. For development,
+symlink this root to `<sketchbook>/hardware/ch32-riscv-ug/ch32v`.
+
+```text
+platform.txt          build recipes
+boards.txt            generated (tools/generate) - do not hand-edit
+cores/arduino/        the core
+  api/                unmodified ArduinoCore-API 1.5.2 snapshot (LGPL-2.1-or-later)
+variants/<VARIANT>/   pin definitions and linker scripts (.ld are generated)
+tools/                generate (boards/ld), index (Board Manager), vendor (import checks)
+tests/                compile matrix, startup equivalence, sizebench
+docs/                 design documents, ADRs, experiment records
+vendor/               lock manifests for third-party imports
+```
+
+A release archive contains only `platform.txt`, `boards.txt`, `cores`,
+`variants` and `libraries` (`PLATFORM_ENTRIES` in `tools/index/gen_index.py`).
+
 ## Development documentation
 
 The initial research and design documents are currently maintained in Japanese:
@@ -47,4 +67,16 @@ Stable user-facing documents will gain English `.md` versions as the project mat
 
 Code and documentation authored by this project are licensed under the [MIT License](LICENSE).
 
-ArduinoCore-API, WCH EVT, toolchains, and any other third-party material retain their respective licenses and usage terms. The repository's MIT License does not relicense third-party material.
+Third-party material retains its own license; the repository's MIT License does not relicense it.
+
+| path | origin | License |
+|---|---|---|
+| `cores/arduino/api/` | unmodified copy of [arduino/ArduinoCore-API](https://github.com/arduino/ArduinoCore-API) tag `1.5.2` | **LGPL-2.1-or-later** ([bundled LICENSE](cores/arduino/api/LICENSE)) |
+
+The pinned commit and a SHA-256 for every file are recorded in
+[`vendor/arduino-core-api.lock.toml`](vendor/arduino-core-api.lock.toml); the CI
+`api-sync` job verifies byte-for-byte equality with upstream on every PR
+(rationale: [ADR-0009](docs/adr/0009-arduinocore-api-import.ja.md), Japanese).
+
+Redistribution terms for WCH EVT and other vendor material are still
+unresolved; no such files are currently imported.

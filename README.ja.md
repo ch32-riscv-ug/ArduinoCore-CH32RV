@@ -33,6 +33,26 @@ WCH CH32マイコン向けの、コミュニティ管理によるArduinoコア�
 
 初期実装の対象はCH32のRISC-V系列を想定しています。CH32FなどのArm系列、無線SoC、RTOSを含む最終的な対応範囲は未決定です。
 
+## リポジトリ構成
+
+リポジトリのルートがそのままArduino platformディレクトリです。開発時は
+`<sketchbook>/hardware/ch32-riscv-ug/ch32v` へこのルートをsymlinkして使います。
+
+```text
+platform.txt          ビルドrecipe
+boards.txt            生成物(tools/generate)。手編集禁止
+cores/arduino/        コア本体
+  api/                ArduinoCore-API 1.5.2 の無改変snapshot(LGPL-2.1-or-later)
+variants/<VARIANT>/   pin定義とlinker script(ldは生成物)
+tools/                generate(boards/ld生成)、index(Board Manager index)、vendor(取込検証)
+tests/                compile matrix、startup等価性、sizebench
+docs/                 設計文書、ADR、実験記録
+vendor/               第三者取込のlock manifest
+```
+
+release archiveへ入るのは`platform.txt` / `boards.txt` / `cores` / `variants` /
+`libraries`だけです(`tools/index/gen_index.py`の`PLATFORM_ENTRIES`)。
+
 ## ドキュメント
 
 次の作業を始める場合は、まず[引継ぎメモ](docs/handoff.ja.md)を参照してください。
@@ -53,4 +73,12 @@ WCH CH32マイコン向けの、コミュニティ管理によるArduinoコア�
 
 本プロジェクト自身のコードと文書は[MIT License](LICENSE)です。
 
-将来取り込む可能性があるArduinoCore-API、WCH EVT、その他の第三者成果物には、それぞれ別のライセンスや利用条件が適用されます。ルートのMIT Licenseは第三者成果物を再ライセンスするものではありません。
+第三者成果物には別のライセンスが適用され、ルートのMIT Licenseはそれらを再ライセンスしません。
+
+| path | 由来 | License |
+|---|---|---|
+| `cores/arduino/api/` | [arduino/ArduinoCore-API](https://github.com/arduino/ArduinoCore-API) tag `1.5.2` の無改変copy | **LGPL-2.1-or-later**([同梱LICENSE](cores/arduino/api/LICENSE)) |
+
+固定commitと全ファイルのSHA-256は[`vendor/arduino-core-api.lock.toml`](vendor/arduino-core-api.lock.toml)に記録し、CIの`api-sync` jobがupstreamとのbyte一致を毎PR検証します(方針: [ADR-0009](docs/adr/0009-arduinocore-api-import.ja.md))。
+
+WCH EVTその他の再配布・改変条件は未確定で、現時点で取り込んでいるファイルはありません。

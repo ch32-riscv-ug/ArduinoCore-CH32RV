@@ -24,6 +24,20 @@
 | Q-014 | P1 | `ch32-device-data`のrelease/commitをArduinoへ固定する形式 | offline build prototype、hash検証、生成差分、更新手順 |
 | Q-016 | P0 | host contract testを何で実行するか | host-arduino-core固定利用、内部HAL mock、native unitの比較 |
 | Q-017 | P2 | 公開用FQBN、packager ID、architecture ID | Arduino package互換性、既存公式coreとの衝突確認、暫定IDからの移行 |
+| Q-019 | P1 | コア拡張API(`Serial.printf()`等)をどこに置くか | 下記の選択肢比較。`api/`改変の可否がADR-0009のbyte一致検証の形を変える |
+
+### Q-019の選択肢(未決定)
+
+`ArduinoCore-API`の`Print`には**`printf`が存在しない**(1.5.2で確認)。`Serial.printf()`を提供する場合の置き場所は未決定。ESP32/arduino-picoは`Print::printf`を持つが、両者ともArduinoCore-APIを使っておらず自前`Print`のため前例にならない。
+
+| 案 | 内容 | 影響 |
+|---|---|---|
+| a | `api/Print.h`をpatchして`Print::printf`を追加 | 任意の`Print&`から呼べる。upstream差分が恒久化し、ADR-0009のbyte一致検証をpatch適用後treeとの比較へ組み替える必要がある |
+| b | CH32側の派生クラス(`HardwareSerial`等)に追加 | `api/`無改変を維持できる。`Print&`越しの多態呼び出しはできない |
+| c | 提供しない(標準APIのみ) | 最小。利用者は`snprintf`+`Serial.print`を書く |
+| d | free function / mixin等の別形 | 要調査 |
+
+いずれの案でもサイズ影響は共通: newlib-nanoの`printf %d`が約4.9KB、`%f`のopt-inが+19.5KB(実験0006)。CH32V003(Flash 16K)では`%f`は成立しない。
 
 ## Toolchain
 
@@ -88,7 +102,9 @@
 
 ## 解決済み
 
-| ID | 結論 |
+**注記(2026-08-19)**: 下表の「結論」はADR-0001〜0008を根拠にしていますが、これらは同日すべて`Status: Proposed`へ戻しました([承認プロセス](adr/README.ja.md))。したがって現時点で確定しているのは**論点の整理と有力案**であり、maintainer承認は未了です。
+
+| ID | 結論(いずれもADR承認待ち) |
 |---|---|
 | Q-018 | device databaseの正本を独立`ch32-device-data` repositoryに置く。[ADR-0001](adr/0001-device-data-repository.ja.md)。releaseとconsumer lock形式はQ-014で継続する |
 | Q-012 | startup/vector/linkerはowned実装。共通crt0+family別vector include(将来device-data生成)。[ADR-0003](adr/0003-owned-startup-vector-linker.ja.md) |

@@ -2,7 +2,7 @@
 
 実施日: 2026-08-19
 対象question: Q-022(runtime構成)、Q-051(size budget)、R-09
-実装: [prototypes/sizebench/](../../prototypes/sizebench/README.ja.md)
+実装: [tests/sizebench/](../../tests/sizebench/README.ja.md)
 実施環境: WSL2 Linux x86_64、xPack riscv-none-elf-gcc 14.3.0-1(実験0001と同一)。サイズのみ(実行なし)
 
 ## 目的
@@ -46,7 +46,7 @@ CH32の小容量SKU(V003=16K/2K、V002=16K/4K、V006=62K/8K)を前提に、newli
 
 ```sh
 CH32_GCC_BIN=<xpack-riscv-none-elf-gcc-14.3.0-1>/bin \
-prototypes/sizebench/run_sizebench.sh /tmp/sizebench
+tests/sizebench/run_sizebench.sh /tmp/sizebench
 # /tmp/sizebench/results.md にMarkdown表が出力される
 ```
 

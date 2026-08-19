@@ -1,6 +1,6 @@
 # ADR-0006: コアはベアメタル単一セマンティクスとし、RTOSは将来の同梱ライブラリで提供する
 
-- Status: Accepted
+- Status: Proposed
 - Date: 2026-08-19
 - Related questions: Q-006, Q-003, Q-013
 

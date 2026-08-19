@@ -1,6 +1,6 @@
 # ADR-0004: runtimeはnewlib-nanoをdefaultとし、C++はGNU++17とする
 
-- Status: Accepted
+- Status: Proposed
 - Date: 2026-08-19
 - Related questions: Q-022, Q-023
 
@@ -44,7 +44,7 @@ gnu++11/14/17でサイズはバイト一致(実験0006/0007)。ArduinoCore-API(2
 
 ## Validation
 
-- sizebench([prototypes/sizebench/](../../prototypes/sizebench/README.ja.md))をtoolchain更新時に再実行し回帰を検出
+- sizebench([tests/sizebench/](../../tests/sizebench/README.ja.md))をtoolchain更新時に再実行し回帰を検出
 - W-7 size baselineがdefaultフラグ変更の影響を検出
 
 ## References

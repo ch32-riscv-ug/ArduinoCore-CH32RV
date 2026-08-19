@@ -19,6 +19,12 @@
 - `Superseded by ADR-NNNN`: 後の判断で置換された
 - `Deprecated`: 新規利用を止めた
 
+### 承認プロセス
+
+`Accepted`はmaintainerが明示的に承認したものだけに付けます。調査・実験の結果として書かれた段階では`Proposed`のままにします。
+
+2026-08-19に、ADR-0001〜0008を`Accepted`から`Proposed`へ戻しました。これらは事前調査フェーズの成果として書かれ、maintainerの明示承認を経ていなかったためです。prototype/CIで実測裏付けがあるもの(0002/0003/0004/0005)も、実測は「その選択肢が成立する」ことの証明であって採用の承認ではないため、同じ扱いにしています。
+
 ## Template
 
 ```markdown
@@ -65,18 +71,22 @@
 
 ## ADR一覧
 
-- [ADR-0001](0001-device-data-repository.ja.md): device databaseを独立repositoryに置く
-- [ADR-0002](0002-toolchain-distribution.ja.md): toolchainはxPack riscv-none-elf-gccの直リンク参照
-- [ADR-0003](0003-owned-startup-vector-linker.ja.md): owned startup/CRT/vector/linker
-- [ADR-0004](0004-runtime-and-cxx.ja.md): newlib-nano defaultとGNU++17
-- [ADR-0005](0005-board-structure-and-fqbn.ja.md): family board+pnumメニューとdevice-data生成
-- [ADR-0006](0006-rtos-policy.ja.md): コアはベアメタル、RTOSは将来の同梱ライブラリ
-- [ADR-0007](0007-user-build-option-injection.ja.md): build.extra_flagsはユーザー注入専用に予約
-- [ADR-0008](0008-upload-strategy.ja.md): 書き込みdefaultはWCH-LinkE、経路カバレッジは段階追加
+いずれもmaintainer承認前(`Proposed`)です。
+
+| ADR | 内容 | Status |
+|---|---|---|
+| [ADR-0001](0001-device-data-repository.ja.md) | device databaseを独立repositoryに置く | Proposed |
+| [ADR-0002](0002-toolchain-distribution.ja.md) | toolchainはxPack riscv-none-elf-gccの直リンク参照 | Proposed |
+| [ADR-0003](0003-owned-startup-vector-linker.ja.md) | owned startup/CRT/vector/linker | Proposed |
+| [ADR-0004](0004-runtime-and-cxx.ja.md) | newlib-nano defaultとGNU++17 | Proposed |
+| [ADR-0005](0005-board-structure-and-fqbn.ja.md) | family board+pnumメニューとdevice-data生成 | Proposed |
+| [ADR-0006](0006-rtos-policy.ja.md) | コアはベアメタル、RTOSは将来の同梱ライブラリ | Proposed |
+| [ADR-0007](0007-user-build-option-injection.ja.md) | build.extra_flagsはユーザー注入専用に予約 | Proposed |
+| [ADR-0008](0008-upload-strategy.ja.md) | 書き込みdefaultはWCH-LinkE、経路カバレッジは段階追加 | Proposed |
+| [ADR-0009](0009-arduinocore-api-import.ja.md) | ArduinoCore-APIを固定versionのvendored snapshotで取り込む | Proposed |
 
 ## 今後のADR候補
 
-- ArduinoCore-APIの固定versionと取込方法(Q-010)
 - 内部HAL contract(Q-013)
 - upload frontend実装とbackend実機認定(Q-040系。方針はADR-0008)
 - 公開packager/表示名(Q-017)

@@ -1,6 +1,6 @@
 # ADR-0001: Device databaseを独立repositoryに置く
 
-- Status: Accepted
+- Status: Proposed
 - Date: 2026-08-17
 - Related questions: Q-011, Q-018
 

@@ -1,6 +1,6 @@
 # ADR-0003: startup/CRT/vector/linkerはowned実装とし、共通crt0+family別vector includeで統合する
 
-- Status: Accepted
+- Status: Proposed
 - Date: 2026-08-19
 - Related questions: Q-012, Q-031(startup部分)
 
@@ -36,7 +36,7 @@ reset処理を単一`crt0_ch32.S`にし、CSR初期値等を`-D`注入、vector 
 - vector includeは割込み番号表(事実)の転記とし、**将来`ch32-device-data`からの生成に置き換える**(IRQ表のschema追加をdata側と合意する)
 - 全familyを`_vector_base`分離形式へ正規化し、VectorInRAMはlinker scriptの選択だけで提供する
 - linker scriptは共通`sections.ld`+SKU別MEMORY(device-data生成)
-- 等価性検証ハーネス([prototypes/startup/](../../prototypes/startup/README.ja.md))をCIで常時実行し、EVT更新起因の差分を検出する
+- 等価性検証ハーネス([tests/startup/](../../tests/startup/README.ja.md))をCIで常時実行し、EVT更新起因の差分を検出する
 
 ## Consequences
 

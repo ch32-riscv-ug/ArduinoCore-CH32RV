@@ -116,7 +116,7 @@ H417 v5fのみ例外的に複雑: handle_resetでFLASH関連レジスタ(0x40022
 
 ## 検証済みの追記(2026-08-19)
 
-案Bのproof of conceptを実装し、V00X/X035/V307 D8Cの3 familyで**EVT startupと統合startupのELF等価性(vector table全entry+CSR初期化集合)を機械検証で確認した**。[実験0002](../experiments/0002-unified-startup-poc.ja.md)と[prototypes/startup/](../../prototypes/startup/README.ja.md)を参照。
+案Bのproof of conceptを実装し、V00X/X035/V307 D8Cの3 familyで**EVT startupと統合startupのELF等価性(vector table全entry+CSR初期化集合)を機械検証で確認した**。[実験0002](../experiments/0002-unified-startup-poc.ja.md)と[tests/startup/](../../tests/startup/README.ja.md)を参照。
 
 ## 判断ポイント
 
