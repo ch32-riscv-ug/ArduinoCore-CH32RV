@@ -108,4 +108,19 @@ else:
 mt_evt = [v for (o, c, v) in w_evt if c == "mtvec"]
 mt_uni = [v for (o, c, v) in w_uni if c == "mtvec"]
 print(f"info mtvec written: evt={len(mt_evt)==1}, uni={len(mt_uni)==1} (mode bits checked in disasm manually)")
-sys.exit(0 if (r1 and r2) else 1)
+
+# The value written to mtvec is computed from a symbol, so compare the symbol
+# instead: QingKe V2 drops the low bits of the mtvec base, which silently
+# vectors every interrupt to address 0 when the table is not at the reset
+# address. Measured on CH32V003, and invisible to the table check above.
+uni_syms = symbols(ELF_UNI)
+base = uni_syms.get("_vector_base")
+r3 = True
+if base is None:
+    print("FAIL uni: no _vector_base symbol"); r3 = False
+elif base != 0:
+    print(f"FAIL uni: _vector_base is 0x{base:08x}, must be 0 "
+          f"(mtvec base must be the reset address)"); r3 = False
+else:
+    print("OK   uni: vector table starts at the reset address")
+sys.exit(0 if (r1 and r2 and r3) else 1)

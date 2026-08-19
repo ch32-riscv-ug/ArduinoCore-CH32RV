@@ -10,18 +10,19 @@ PROVIDE( _stack_size = __stack_size );
 
 SECTIONS
 {
+    /* Must be first: entry 0 is the reset jump, and mtvec's base has to be 0
+     * because QingKe V2 drops the low bits of the address (see crt0_ch32.S). */
+    .vector :
+    {
+        KEEP(*(.vector))
+        . = ALIGN(4);
+    } >FLASH
+
     .init :
     {
         . = ALIGN(4);
         KEEP(*(SORT_NONE(.init)))
         . = ALIGN(4);
-    } >FLASH
-
-    .vector :
-    {
-        . = ALIGN(4);
-        KEEP(*(.vector))
-        . = ALIGN(64);
     } >FLASH
 
     .text :
@@ -119,3 +120,6 @@ SECTIONS
         PROVIDE( _eusrstack = . );
     } >RAM
 }
+
+ASSERT(_vector_base == 0,
+       "the interrupt vector table must start at the reset address")

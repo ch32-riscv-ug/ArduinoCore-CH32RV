@@ -15,9 +15,20 @@
 受け入れtestは`tests/sketches/basic/serial_println/`にあり、現在は正しく失敗している
 (`'Serial' was not declared in this scope`)。
 
-- [ ] `[P0]` UART HALと`HardwareSerial`の実装。ADR-0006の「tickソース差し替え可能」を織り込む
-- [ ] `[P0]` `SystemInit()`の実体化。現在`cores/arduino/wiring_stub.c`で空実装
-- [ ] `[P0]` syscalls(`_write`最低限、`_sbrk`等)
+- [x] UART HALと`HardwareSerial`の実装。割込み駆動のTX/RX ring buffer、AFIO remap適用込み
+- [x] `SystemInit()`の実体化(HSI直結、SysTick 1kHz)。`wiring_stub.c`は削除
+- [x] syscalls(`_write`→Serial、heap/stack衝突を防ぐ`_sbrk`、他はEBADF/ENOMEM)
+- [x] **CH32V003実機で`Serial.println()`が通った**([実験0011](experiments/0011-milestone1-serial-on-v003.ja.md))。
+      送受信・SysTick精度・`F_CPU`一致まで確認
+- [ ] `[P0]` X035 / L103 / V20x でも実機確認する。runnerは`tests/hardware/smoke.py`に用意済み (要実機)
+- [ ] `[P1]` ADR-0006の「tickソース差し替え可能」をHALへ織り込む。
+      現在`wiring_time.c`がSysTickを直接叩いており、RTOSへ渡す口が無い
+- [ ] `[P1]` `HardwareSerial`のring bufferが64バイト固定。`write()`は満杯でblockする。
+      サイズをvariantかbuild optionで変えられるようにする
+- [ ] `[P1]` `micros()`が約71分でwrapする(AVRコアと同じ挙動)。64bit SysTickを持つfamilyでは避けられる
+- [ ] `[P2]` SysTickのhardware auto-reload(`STRE`)を使う。現在はISRで`CNT`を巻き戻している
+- [ ] `[P2]` `af-N` routeのper-pin alternate-function設定(V205/X305/X315)。
+      現在コアが未対応で、これらのboardのSerialは未検証
 - [ ] `[P0]` `ltoa`/`ultoa`の実装(upstreamは`api/itoa.h`で宣言のみ)
 - [ ] `[P0]` `dtostrf`: upstreamの`api/deprecated-avr-comp/avr/dtostrf.c.impl`をincludeする`.c`を1本置く
 - [ ] `[P0]` `Arduino.h`から`api/ArduinoAPI.h`をincludeする。**`api/`はinclude pathへ入れず、必ず`api/`付きで書く**(samd/renesas/mbedと同じ規律。arduino-cliが渡す`-I`はcoreとvariantのみなので現状のまま成立する)
@@ -25,6 +36,18 @@
 - [x] crt0→`setup()`/`loop()`到達をCH32V003実機で確認。`.data` copy、`.bss` zero fill、
       `.init_array`(C++大域constructor)まで全てpass([実験0010](experiments/0010-first-on-target-run.ja.md))
 - [ ] `[P1]` 同じ確認をX035/L103/V20xでも回す(実機あり)。variantごとのlinker scriptとvector tableの検証になる
+
+## 割込みとvector table
+
+- [x] **ベクタテーブルをFLASH先頭へ移した**。QingKe V2は`mtvec`のベース下位ビットを捨てるため、
+      アドレス8に置いた状態では全割込みが0番地へ飛んで1msごとに再起動していた
+      ([実験0011](experiments/0011-milestone1-serial-on-v003.ja.md))
+- [x] `compare.py`に`_vector_base == 0`のcheckを追加。
+      **中身は合っているのに使われていない**状態をCIが見逃していた
+- [ ] `[P1]` `attachInterrupt`(EXTI)の実装。ArduinoCore-APIの`Interrupts.h`が要求する
+- [ ] `[P1]` V003のvector tableに**spec外の非ゼロword**が1つある(EVT側にも同じものがある)。
+      slot 39相当で実害は無いが出所を確認する
+- [ ] `[P2]` 割込み優先度(`PFIC IPRIOR`)を触っていない。全てreset既定のまま
 
 ## クロック
 

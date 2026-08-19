@@ -162,6 +162,26 @@
     (c) == 11 ? PB5 : \
     NOT_A_PIN)
 
+/* ---- USART pins (device-data; one route per USART, chosen for
+ *      the whole series - see choose_uarts in generate.py) ---- */
+/* USART2: route af-1, on every part */
+#define CH32_SERIAL2_TX PD6
+#define CH32_SERIAL2_RX PD7
+#define CH32_SERIAL2_HANDLER USART2_IRQHandler
+#define CH32_SERIAL2_IRQ CH32_IRQN_USART2
+/* NOTE: route af-1 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this port needs verifying (docs/todo.ja.md). */
+/* USART3: route af-1, on every part */
+#define CH32_SERIAL3_TX PC8
+#define CH32_SERIAL3_RX PC9
+#define CH32_SERIAL3_HANDLER USART3_IRQHandler
+#define CH32_SERIAL3_IRQ CH32_IRQN_USART3
+/* NOTE: route af-1 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this port needs verifying (docs/todo.ja.md). */
+#define CH32_SERIAL_DEFAULT 2
+
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present
  * on every part in the series. Override it per board or on the command

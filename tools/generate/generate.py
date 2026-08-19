@@ -29,33 +29,43 @@ import sys
 # Values come from the equivalence harness table in tests/startup/run_check.sh.
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE"),
+                     defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000"),
     "CH32V006": dict(march="rv32emc_zicsr", mabi="ilp32e", f_cpu="24000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3"),
+                     defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000"),
     "CH32V205": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x7 "
-                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1"),
+                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000"),
     "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
-                             "-DCH32_CORECFGR=0x1f"),
+                             "-DCH32_CORECFGR=0x1f",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000"),
     "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x0b "
-                             "-DCH32_CORECFGR=0x1f"),
+                             "-DCH32_CORECFGR=0x1f",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000"),
     "CH32V407": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x688 -DCH32_INTSYSCR_INIT=0x07 "
-                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100"),
+                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000"),
     "CH32X035": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="48000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
-                             "-DCH32_CORECFGR=0x1f"),
+                             "-DCH32_CORECFGR=0x1f",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=24 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=48000000"),
     "CH32X315": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x07 "
-                             "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01"),
+                             "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000"),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
-                             "-DCH32_CORECFGR=0x1f"),
+                             "-DCH32_CORECFGR=0x1f",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000"),
     "CH32M030": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
-                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1"),
+                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000"),
     # Excluded, same reason as tests/startup/: CH32V103 has a j-form vector
     # table and CH32H417 boots via loadcode.
 }
@@ -255,7 +265,160 @@ def pad_name(port: str, bit: int) -> str:
     return f"P{port}{bit}"
 
 
-def gen_pins(series: str, rows: list, pads: dict, adc: dict, commit: str) -> str:
+# USART signal naming is not normalized in device-data (see docs/todo.ja.md):
+# V003 says UTX/URX, M030 says UART_TX/UART_RX, X033/X035 say TX1/RX1,
+# everyone else says USART1_TX/USART1_RX. Map them onto (index, "TX"|"RX").
+UART_SIGNAL_RE = [
+    (re.compile(r"^USART(\d+)_(TX|RX)$"), lambda m: (int(m.group(1)), m.group(2))),
+    (re.compile(r"^UART(\d+)_(TX|RX)$"),  lambda m: (int(m.group(1)), m.group(2))),
+    (re.compile(r"^(TX|RX)(\d+)$"),       lambda m: (int(m.group(2)), m.group(1))),
+    (re.compile(r"^U(TX|RX)$"),            lambda m: (1, m.group(1))),
+    (re.compile(r"^UART_(TX|RX)$"),        lambda m: (1, m.group(1))),
+]
+# Route preference: the first one present wins. Families that expose no
+# "default" route (V205/X305/X315) only carry af-N alternate-function numbers.
+# USART instances the core can drive: base address and whether the peripheral
+# hangs off APB1. UART6..8 sit at a different offset and use different RCC bits,
+# so they are out of scope for now (see docs/todo.ja.md).
+SERIAL_BASES = {1: "CH32_USART1_BASE", 2: "CH32_USART2_BASE",
+                3: "CH32_USART3_BASE", 4: "CH32_USART4_BASE",
+                5: "CH32_USART5_BASE"}
+UART_ROUTE_ORDER = ("default", "main", "af-1", "af-2", "remap-1")
+
+
+# AFIO remap. device-data gives the controlling field per series and selector;
+# the bit list can be non-contiguous (CH32V003 USART1_REMAP is bits 2 and 21),
+# so a value is spread over the listed positions, least significant bit first.
+REMAP_SELECTOR_RE = re.compile(r"^afio-u(?:s)?art(\d+)-(?:rm|remap)$")
+CH32_AFIO_PCFR1_OFFSET = 0x04
+
+
+def load_remap_fields(tables: pathlib.Path) -> dict:
+    """(series, usart index) -> [bit positions], for AFIO PCFR1 only."""
+    with open(tables / "remap_fields.csv", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    out: dict = {}
+    for r in rows:
+        m = REMAP_SELECTOR_RE.match(r["selector"])
+        if not m or r["controller"] != "afio" or r["register"] != "PCFR1":
+            continue
+        bits = [int(b) for b in r["bits"].split(";") if b != ""]
+        if bits:
+            out[(r["series"], int(m.group(1)))] = bits
+    return out
+
+
+def remap_mask_value(bits: list, value: int):
+    mask = 0
+    val = 0
+    for i, bit in enumerate(bits):
+        mask |= 1 << bit
+        if (value >> i) & 1:
+            val |= 1 << bit
+    return mask, val
+
+
+def route_remap_value(route: str):
+    """AFIO field value for a pin_functions route, or None if the route is not
+    an AFIO remap (the af-N families use a per-pin selector instead)."""
+    if route in ("default", "main"):
+        return 0
+    if route.startswith("remap-"):
+        return int(route.split("-", 1)[1])
+    return None
+
+
+def load_uart_pins(tables: pathlib.Path) -> dict:
+    """part -> {(usart index, route): {"TX": (port, bit), "RX": (port, bit)}}.
+
+    TX and RX are kept per route: several families expose a USART only through
+    alternate-function routes, and pairing a TX from one route with an RX from
+    another would name two pins that cannot be active at the same time.
+    """
+    with open(tables / "pin_functions.csv", newline="", encoding="utf-8") as f:
+        functions = list(csv.DictReader(f))
+    out: dict = {}
+    for r in functions:
+        for pattern, extract in UART_SIGNAL_RE:
+            m = pattern.match(r["signal"])
+            if m:
+                index, direction = extract(m)
+                break
+        else:
+            continue
+        if r["route"] not in UART_ROUTE_ORDER:
+            continue
+        m = PAD_PORT_RE.match(r["pad"])
+        if not m:
+            continue
+        out.setdefault(r["part_number"], {}).setdefault(
+            (index, r["route"]), {})[direction] = (m.group(1), int(m.group(2)))
+    return out
+
+
+def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
+                 remap: dict) -> dict:
+    """Pick one route per USART for the whole series.
+
+    A board is a series (ADR-0005) and its default menu entry is ANY, so the
+    pins have to be chosen for the series rather than for one package. Prefer
+    the route that reaches the most part numbers; ties go to the earliest route
+    in UART_ROUTE_ORDER. Parts that do not bond the chosen pins simply have no
+    output there, which is reported in the generated header.
+    """
+    chosen: dict = {}
+    indices = {i for pn in parts for (i, _r) in uarts.get(pn, {})}
+    for index in sorted(indices):
+        if index not in handler_of or index not in SERIAL_BASES:
+            continue
+        best = None
+        for route in UART_ROUTE_ORDER:
+            pads_by_part = {}
+            for pn in parts:
+                entry = uarts.get(pn, {}).get((index, route))
+                if entry and {"TX", "RX"} <= set(entry):
+                    pads_by_part[pn] = (entry["TX"], entry["RX"])
+            if not pads_by_part:
+                continue
+            variants = set(pads_by_part.values())
+            if len(variants) != 1:
+                continue   # the route moves between packages: unusable for ANY
+            coverage = len(pads_by_part)
+            # A route the core cannot actually select is worse than a smaller
+            # one it can: non-default routes need an AFIO field, and device-data
+            # does not have one for every series (X033/X035 USART1, for
+            # example), while the af-N families use a different mechanism.
+            value = route_remap_value(route)
+            programmable = value == 0 or (value is not None and
+                                          (series, index) in remap)
+            score = (programmable, coverage, -UART_ROUTE_ORDER.index(route))
+            if best is None or score > best[0]:
+                best = (score, coverage, route, next(iter(variants)))
+        if best:
+            chosen[index] = best[1:]
+    return chosen
+
+
+def gen_irqns(variant: str, entries: list) -> str:
+    """Interrupt numbers for one startup variant, derived from the same table
+    that builds the vector list: slot index == IRQ number."""
+    out = [
+        "/* DO NOT EDIT - machine generated by tools/generate/generate.py",
+        f" * source: tools/generate/interrupts/interrupts.csv (variant {variant})",
+        " * Slot index in the vector table == interrupt number for PFIC. */",
+        "#pragma once",
+        "",
+    ]
+    width = max((len(h) for h in entries if h), default=0)
+    for slot, handler in enumerate(entries, start=1):
+        if handler:
+            name = handler.removesuffix("_Handler").removesuffix("_IRQHandler")
+            out.append(f"#define CH32_IRQN_{name:<{width}} {slot}")
+    return "\n".join(out) + "\n"
+
+
+def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
+             handlers: list, remap: dict, commit: str) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
     per_part = [pads.get(pn, set()) for pn in parts]
@@ -379,6 +542,65 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, commit: str) -> str
         out.append("    NOT_A_PIN)")
         out.append("")
 
+    # --- default USART pins ---
+    # Only emit an entry when every part in the series that has this USART puts
+    # it on the same pads; otherwise a sketch built for ANY would target a pin
+    # that moves between packages.
+    agreed: dict = {}
+    for index in sorted({i for pn in parts for i in uarts.get(pn, {})}):
+        seen = [uarts[pn][index] for pn in parts
+                if index in uarts.get(pn, {}) and
+                {"TX", "RX"} <= set(uarts[pn][index])]
+        if seen and all(v == seen[0] for v in seen) and len(seen) == len(parts):
+            agreed[index] = seen[0]
+    # The core drives serial from interrupts, so a USART is only usable when the
+    # startup variant actually has a handler slot for it. The handler is named
+    # USARTn_IRQHandler on some families and UARTn_IRQHandler on others, so take
+    # the name from the vector table instead of guessing.
+    handler_of = {}
+    for name in handlers:
+        if not name:
+            continue
+        m = re.match(r"^U(?:S)?ART(\d+)_IRQHandler$", name)
+        if m:
+            handler_of.setdefault(int(m.group(1)), name)
+    chosen = choose_uarts(series, parts, uarts, handler_of, remap)
+    if chosen:
+        out.append("/* ---- USART pins (device-data; one route per USART, chosen for")
+        out.append(" *      the whole series - see choose_uarts in generate.py) ---- */")
+        for index, (coverage, route, (tx, rx)) in sorted(chosen.items()):
+            where = ("on every part" if coverage == len(parts)
+                     else f"on {coverage} of {len(parts)} parts")
+            out.append(f"/* USART{index}: route {route}, {where} */")
+            out.append(f"#define CH32_SERIAL{index}_TX {pad_name(*tx)}")
+            out.append(f"#define CH32_SERIAL{index}_RX {pad_name(*rx)}")
+            name = handler_of[index]
+            out.append(f"#define CH32_SERIAL{index}_HANDLER {name}")
+            out.append(f"#define CH32_SERIAL{index}_IRQ "
+                       f"CH32_IRQN_{name.removesuffix('_IRQHandler')}")
+            value = route_remap_value(route)
+            bits = remap.get((series, index))
+            if value is None:
+                out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
+                out.append(" * selector, not an AFIO remap. The core does not program it")
+                out.append(" * yet, so this port needs verifying (docs/todo.ja.md). */")
+            elif value and bits:
+                mask, val = remap_mask_value(bits, value)
+                out.append(f"#define CH32_SERIAL{index}_REMAP_MASK 0x{mask:08x}u")
+                out.append(f"#define CH32_SERIAL{index}_REMAP_VAL  0x{val:08x}u")
+            elif value:
+                out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
+                out.append(f" * has no PCFR1 field for USART{index} in this series. */")
+        # Serial points at the USART that reaches the most part numbers.
+        def rank(i):
+            coverage, route, _pads = chosen[i]
+            value = route_remap_value(route)
+            programmable = value == 0 or (value is not None and (series, i) in remap)
+            return (programmable, coverage, -i)
+        default = max(sorted(chosen), key=rank)
+        out.append(f"#define CH32_SERIAL_DEFAULT {default}")
+        out.append("")
+
     # --- LED_BUILTIN ---
     led = common[0] if common else union[0]
     out.append("/* Generic boards have no on-board LED. This placeholder only exists so")
@@ -410,6 +632,8 @@ def gen_board(series: str, rows: list, commit: str):
     lines.append(f"{board}.build.series={series}")
     lines.append(f"{board}.build.startup_defines={fam['defines']}")
     lines.append(f"{board}.build.vectors=vectors_{cfg['vectors']}.inc")
+    lines.append(f"{board}.build.core_defines={fam['core_defines']} "
+                 f"-DCH32_IRQNS=irqn_{cfg['vectors']}.h")
     lines.append("")
 
     ld_files = {}
@@ -465,6 +689,8 @@ def main() -> int:
 
     interrupts = load_interrupts()
     pads, adc, unresolved = load_pin_tables(args.tables)
+    uarts = load_uart_pins(args.tables)
+    remap = load_remap_fields(args.tables)
     errata_ids = load_errata_ids(args.tables)
     stale = sorted(set(UNUSABLE_PADS) - errata_ids)
     if stale:
@@ -494,7 +720,8 @@ def main() -> int:
         for name, content in ld_files.items():
             outputs[args.platform / "variants" / series / name] = content
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
-            gen_pins(series, rows, pads, adc, commit)
+            gen_pins(series, rows, pads, adc, uarts,
+                     interrupts[SERIES_CONFIG[series]['vectors']], remap, commit)
 
     generated_parts = {r["part_number"] for rows in by_board.values() for r in rows}
     blocked = sorted(p for p in unresolved if p[0] in generated_parts)
@@ -514,6 +741,8 @@ def main() -> int:
             return 1
         outputs[args.platform / "cores" / "arduino" / f"vectors_{variant}.inc"] = \
             gen_vectors(variant, interrupts[variant], commit)
+        outputs[args.platform / "cores" / "arduino" / f"irqn_{variant}.h"] = \
+            gen_irqns(variant, interrupts[variant])
 
     drift = 0
     for path, content in outputs.items():

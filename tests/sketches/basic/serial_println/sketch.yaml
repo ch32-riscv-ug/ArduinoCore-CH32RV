@@ -18,13 +18,41 @@
 # and needs no --port, and keeps using it even when --port is also passed (which the
 # pytest plugin does for the runtime serial). The programmer itself is still
 # undecided (Q-040/Q-044), so it is commented out until the platform ships one.
+#
+# Every profile targets the board's ANY part number: the acceptance sketch only
+# needs Serial, which the variant places on pins that exist on every package.
+# The default Serial port per board comes from the generated variant
+# (CH32_SERIAL_DEFAULT); it is USART1 on V003/V307 and USART2 elsewhere, because
+# USART1's pins are not bonded out on every package of those series.
 
 profiles:
-  ch32v00x:
-    fqbn: ch32-riscv-ug:ch32v:CH32V00X:pnum=CH32V006K8U7
+  # Verified on hardware 2026-08-20 (WCH-LinkE v2.12, docs/experiments/0011).
+  ch32v003:
+    fqbn: ch32-riscv-ug:ch32v:CH32V003:pnum=ANY
     # programmer: wch-linke
     platforms:
       - platform: ch32-riscv-ug:ch32v (0.0.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
-default_profile: ch32v00x
+  ch32x035:
+    fqbn: ch32-riscv-ug:ch32v:CH32X035:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32v (0.0.1)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+
+  ch32l103:
+    fqbn: ch32-riscv-ug:ch32v:CH32L103:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32v (0.0.1)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+
+  ch32v203:
+    fqbn: ch32-riscv-ug:ch32v:CH32V203:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32v (0.0.1)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+
+  # CH32V103 has no board yet: its vector table is a jump table, which the
+  # generator does not emit (docs/todo.ja.md). Add the profile with the rest.
+
+default_profile: ch32v003

@@ -63,7 +63,12 @@ ADR化されている提案:
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 無改変snapshot(47ファイル、LGPL-2.1-or-later) | `api-sync`(upstreamとbyte一致) |
 | `cores/arduino/crt0_ch32.S` | 統合startup。EVT等価性を13バリアントで検証(39 check OK)。**CH32V003実機で動作確認済み**(実験0010) | `startup-equivalence` |
-| `cores/arduino/{Arduino.h,main.cpp,wiring_stub.c}` | **compile専用スタブ**。ここを実装で置き換える | `compile-matrix` |
+| `cores/arduino/{Arduino.h,main.cpp}` | ArduinoCore-APIへの接続とentry point | `compile-matrix` |
+| `cores/arduino/{ch32_registers.h,ch32_gpio.h}` | 自前の最小レジスタmapとGPIO primitive(family差を吸収) | `compile-matrix` |
+| `cores/arduino/{wiring_digital.c,wiring_time.c}` | GPIO / clock / SysTick / millis / delay。**V003実機で動作確認済み** | `compile-matrix` |
+| `cores/arduino/HardwareSerial.{h,cpp}` | 割込み駆動UART。**V003実機で送受信確認済み** | `compile-matrix` |
+| `cores/arduino/{syscalls.c,itoa.c,dtostrf.c}` | newlib syscallと`ltoa`/`ultoa`/`dtostrf` | `compile-matrix` |
+| `tests/hardware/smoke.py` | 実機bring-up runner(compile→flash→UART読み出し) | 手動(要実機) |
 | `boards.txt` / `variants/<SERIES>/` | device-dataからの生成物(23 series board / 117エントリ、ld + pin map)。locked commit | `generated-sync` |
 | `platform.txt` | ビルドrecipe。`build.extra_flags`はユーザー注入専用 | `compile-matrix`(注入到達ガード) |
 | `tools/generate/generate.py` | boards.txt / ld / pin map / vector include の生成 | `generated-sync` |
@@ -90,16 +95,33 @@ ADR化されている提案:
 
 ### Milestone 1: 主要boardで`Serial.println()`が通る
 
-受け入れtestは作成済みで、**現在は正しく失敗している**(`'Serial' was not declared in this scope`)。
-これを通すのが次の作業。
+**CH32V003で達成**(2026-08-20、[実験0011](experiments/0011-milestone1-serial-on-v003.ja.md))。
+受け入れtestの3項目が実機で通り、送受信・SysTick精度・`F_CPU`一致まで確認済み。
 
-1. **UART HALとHardwareSerialの実装**。ADR-0006の要件(tickソース差し替え可能)を織り込む
-2. **syscalls**(`_write`等)と`ltoa`/`ultoa`。`dtostrf`はupstreamの`.c.impl`をincludeするだけでよい
-3. ~~crt0からsetup()までの実行を実機で確認~~ → **2026-08-20にCH32V003実機で確認済み**。`.data` copy / `.bss` zero fill / `.init_array` / `setup()` / `loop()`まで全てpass([実験0010](experiments/0010-first-on-target-run.ja.md))
-4. **書き込み経路の実体化**: `programmers.txt`+`program.pattern`。tool本体はQ-040/Q-044の決定待ち
+```
+hello from ch32
+int=42
+hex=BEEF
+```
+
+残りは**手持ちの他boardへの横展開**。runnerは用意してあるので、繋いで1コマンドで済む:
+
+```bash
+python3 tests/hardware/smoke.py --board CH32X035 --port /dev/ttyACM4
+```
+
+boardごとのSerial結線(TX/RX)は[tests/hardware/README.ja.md](../tests/hardware/README.ja.md)の表。
+
+1. **X035 / L103 / V20x で実機確認**。variantごとのlinker script・vector table・
+   AFIO remapの検証になる(L103はremap route、X035はGPIO 24bit port)
+2. **CH32V103対応**。vector tableがj命令形式。crt0に`CH32_JMP`マクロは既にあるので、
+   `import_vectors.py`のparse、`gen_vectors`の分岐、`mtvec`のmode bit(V103は`|1`)の3点
+3. **書き込み経路の実体化**: `programmers.txt`+`program.pattern`。tool本体はQ-040/Q-044の決定待ち。
+   これが入ればsmoke testはpytest profile経由へ移せる
 
 pin mapは生成済み([ADR-0010](adr/0010-pin-numbering.ja.md))。`variants/<SERIES>/pins_arduino.h`が
-pad名・ポート別validity mask・`A<n>`(ADC1)を持ち、`cores/arduino/ch32_pins.h`が番号encodingを持つ。
+pad名・ポート別validity mask・`A<n>`(ADC1)・USART pinとAFIO remapを持ち、
+`cores/arduino/ch32_pins.h`が番号encodingを持つ。
 
 ### 並行して決める
 

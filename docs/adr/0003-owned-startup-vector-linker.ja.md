@@ -38,6 +38,24 @@ reset処理を単一`crt0_ch32.S`にし、CSR初期値等を`-D`注入、vector 
 - linker scriptは共通`sections.ld`+SKU別MEMORY(device-data生成)
 - 等価性検証ハーネス([tests/startup/](../../tests/startup/README.ja.md))をCIで常時実行し、EVT更新起因の差分を検出する
 
+## 実機で判明した制約(2026-08-20追記)
+
+**ベクタテーブルはFLASHの先頭に置き、entry 0をリセットジャンプそのものにする。**
+
+QingKe V2(CH32V003/V00x)の`mtvec`はベースアドレスの下位ビットを捨てる。
+テーブルを`.init`の後ろ(アドレス8)へ置くと`mtvec`は`0x03`と読め、
+全割込みがアドレス0へ飛ぶ。CH32V003実機で計測
+([実験0011](../experiments/0011-milestone1-serial-on-v003.ja.md))。
+
+EVTのV003 startupが同じlayoutを採っているのはこの制約のためである。
+ベース0はどの世代でもalignedなので、**全familyでこの1つのlayoutに統一する**。
+`sections.ld`が`ASSERT(_vector_base == 0, ...)`で、
+`tests/startup/compare.py`が13 variantすべてで同じことを検証する。
+
+等価性harnessは当初**テーブルの中身しか比較していなかった**。
+「中身が正しい」ことと「そのテーブルが実際に使われる」ことは別であり、
+配置アドレスの検証を後から追加した。
+
 ## Consequences
 
 - EVT再配布条件(Q-030)がstartupに関して無関係になる(vendor取込の最小集合はデバイスheader側の論点に縮小)

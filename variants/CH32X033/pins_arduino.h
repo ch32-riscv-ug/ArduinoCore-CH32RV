@@ -128,6 +128,34 @@
     (c) == 13 ? PC3 : \
     NOT_A_PIN)
 
+/* ---- USART pins (device-data; one route per USART, chosen for
+ *      the whole series - see choose_uarts in generate.py) ---- */
+/* USART1: route remap-1, on every part */
+#define CH32_SERIAL1_TX PA10
+#define CH32_SERIAL1_RX PA11
+#define CH32_SERIAL1_HANDLER USART1_IRQHandler
+#define CH32_SERIAL1_IRQ CH32_IRQN_USART1
+/* NOTE: route remap-1 needs an AFIO remap but device-data
+ * has no PCFR1 field for USART1 in this series. */
+/* USART2: route default, on every part */
+#define CH32_SERIAL2_TX PA2
+#define CH32_SERIAL2_RX PA3
+#define CH32_SERIAL2_HANDLER USART2_IRQHandler
+#define CH32_SERIAL2_IRQ CH32_IRQN_USART2
+/* USART3: route remap-1, on every part */
+#define CH32_SERIAL3_TX PC18
+#define CH32_SERIAL3_RX PC19
+#define CH32_SERIAL3_HANDLER USART3_IRQHandler
+#define CH32_SERIAL3_IRQ CH32_IRQN_USART3
+/* NOTE: route remap-1 needs an AFIO remap but device-data
+ * has no PCFR1 field for USART3 in this series. */
+/* USART4: route default, on every part */
+#define CH32_SERIAL4_TX PB0
+#define CH32_SERIAL4_RX PB1
+#define CH32_SERIAL4_HANDLER USART4_IRQHandler
+#define CH32_SERIAL4_IRQ CH32_IRQN_USART4
+#define CH32_SERIAL_DEFAULT 2
+
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present
  * on every part in the series. Override it per board or on the command

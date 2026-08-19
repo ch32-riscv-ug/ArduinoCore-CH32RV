@@ -161,6 +161,15 @@
     (c) == 19 ? PA12 : \
     NOT_A_PIN)
 
+/* ---- USART pins (device-data; one route per USART, chosen for
+ *      the whole series - see choose_uarts in generate.py) ---- */
+/* USART1: route default, on 3 of 5 parts */
+#define CH32_SERIAL1_TX PC1
+#define CH32_SERIAL1_RX PC0
+#define CH32_SERIAL1_HANDLER USART1_IRQHandler
+#define CH32_SERIAL1_IRQ CH32_IRQN_USART1
+#define CH32_SERIAL_DEFAULT 1
+
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present
  * on every part in the series. Override it per board or on the command

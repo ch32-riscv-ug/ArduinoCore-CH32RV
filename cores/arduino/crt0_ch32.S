@@ -23,12 +23,6 @@
 #error "CH32_INTSYSCR_INIT is required"
 #endif
 
-    .section  .init, "ax", @progbits
-    .globl    _start
-    .align    2
-_start:
-    j       handle_reset
-
 /* ---- vector table (pass 1: table words) ---- */
     .macro CH32_IRQ name
     .word   \name
@@ -40,12 +34,23 @@ _start:
     j       \name
     .endm
 
+/* The reset jump IS entry 0 of the vector table, so the table starts at the
+ * reset address and mtvec's base is 0.
+ *
+ * This matters: on QingKe V2 (CH32V003/V00x) the mtvec BASEADDR field drops the
+ * low address bits, so a table placed anywhere else silently vectors to 0 and
+ * the part resets on its first interrupt. Measured on CH32V003: writing
+ * _vector_base|3 with the table at 0x40 reads mtvec back as 0x00000003.
+ * Base 0 is aligned for every core generation, so all families use one layout.
+ * tests/startup/compare.py checks the base stays 0. */
     .section  .vector, "ax", @progbits
+    .globl    _start
     .globl    _vector_base
-    .align    1
+    .align    2
+_start:
 _vector_base:
     .option norvc;
-    .word   _start
+    j       handle_reset
 #include CH32_VECTORS_FILE(CH32_VECTORS)
     .option rvc;
 

@@ -1,5 +1,7 @@
-/* W-3 prototype Arduino.h - compile-only stub API.
- * The real core will implement the public API against ArduinoCore-API. */
+/* Public entry point for sketches. The API surface is ArduinoCore-API
+ * (cores/arduino/api, ADR-0009); this header only adds what the CH32 core
+ * itself defines: the pin encoding, the generated variant pin map, and the
+ * serial instances. */
 #pragma once
 
 #include <stdint.h>
@@ -7,26 +9,11 @@
 
 #include "ch32_pins.h"
 
-#define HIGH 1
-#define LOW  0
-
-#define INPUT         0
-#define OUTPUT        1
-#define INPUT_PULLUP  2
-
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-void pinMode(uint8_t pin, uint8_t mode);
-void digitalWrite(uint8_t pin, uint8_t val);
-int  digitalRead(uint8_t pin);
-void delay(uint32_t ms);
-uint32_t millis(void);
-void yield(void);
-
-#ifdef __cplusplus
-}
+#include "api/ArduinoAPI.h"
+using namespace arduino;
+#else
+#include "api/Common.h"
 #endif
 
 /* Pad names, per-port validity masks and analog aliases for the selected
@@ -54,6 +41,16 @@ void yield(void);
 #endif
 
 #ifdef __cplusplus
+extern "C" {
+#endif
+void SystemInit(void);
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+#include "HardwareSerial.h"
+
 void setup(void);
 void loop(void);
 #endif
