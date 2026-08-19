@@ -111,6 +111,10 @@ ADR化されている提案:
 - fixture配線(LA channel数とconnector、Q-050)。**16ch推奨**の根拠は[upload-and-fixture](upload-and-fixture.ja.md)
 - variant(pin map)生成はArduinoピン設計合意後
 
+## 先送りにした作業
+
+[TODO](todo.ja.md)に積み上げる。実装を簡略化するたびに1行足すこと。
+
 ## 未決定のまま実装に影響する主要論点
 
 [未決定事項](open-questions.ja.md)参照。特にQ-010(API取込)、Q-013(HAL境界)、Q-016(host test方式)、Q-001(初期SKU、実機待ち)、Q-030(vendor header再配布条件。startupはADR-0003で不要化済み)。

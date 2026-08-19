@@ -28,6 +28,7 @@
 2. [project-scope.ja.md](project-scope.ja.md) — 目的、非目的、対応の定義
 3. [architecture.ja.md](architecture.ja.md) — コア全体の境界案
 4. [open-questions.ja.md](open-questions.ja.md) — 次に決める論点
+- [TODO(未対応作業)](todo.ja.md): 簡略化のたびに積み上げる先送り作業の一覧
 5. 作業内容に応じて以下の各文書
 
 ## 文書一覧

@@ -65,11 +65,11 @@
 | ID | 優先度 | 論点 | 判断に必要なもの |
 |---|---:|---|---|
 | Q-040 | P0 | `probe-rs 0.32.x`をprimary backendにできるか | 対象SKU×WCH-Link FW×host OSのflash/verify/reset試験 |
-| Q-041 | P0 | 最初のLinux HIL runnerで書き込み先を一意に選択する方法 | topology列挙だけでなくbackendが指定deviceだけをopenするprototype。PPPSによる他port切断は選択方法にしない。**前提として「LinkE複数台の同時接続不可」の原因切り分けが必要**(Q-043) |
+| Q-041 | P0 | 最初のLinux HIL runnerで書き込み先を一意に選択する方法 | topology列挙だけでなくbackendが指定deviceだけをopenするprototype。PPPSによる他port切断は選択方法にしない。**次の実機確認は2台接続で`wlink list`/`probe-rs list`を叩きserialが個体別に出るか**(Q-043) |
 | Q-042 | P0 | target UIDのaddressと保護時挙動 | device別reference manualと実機read試験 |
 | Q-043 | P1 | 1 lane 1 LinkEか、共有LinkE+muxか | fixture費用、throughput、信号品質、故障解析比較。**maintainer報告(2026-08-19): LinkEは複数所有だが同時接続不可**のため共有+mux側へ傾く。原因(serial重複かtool制限か)の切り分けが先 |
-| Q-044 | P1 | uploader frontendを独自binaryにするかwrapperにするか | Arduino packaging、cross-platform配布、probe-rs API安定性。**maintainer報告(LinkE複数台の同時接続不可)により昇格条件に接近**。原因切り分け実験は[upload-and-fixture](upload-and-fixture.ja.md)に記載 |
-| Q-045 | **P1?** | ESP32系/RP2040 programmerを開発するか | 対象protocol、unique IDと複数台選択、全family対応工数、既存実装との比較。Q-041を既存toolで解決できなければ優先度を上げる。**LinkE複数台の同時接続不可という報告が出たため、切り分け結果次第でP1へ昇格** |
+| Q-044 | P1 | uploader frontendを独自binaryにするかwrapperにするか | Arduino packaging、cross-platform配布、probe-rs API安定性。probe-rs(`--probe VID:PID:Serial`)とminichlink(`-l <serial>`)が既にprobe選択に対応していることをsourceで確認したため、**昇格条件は現時点では未達**。[upload-and-fixture](upload-and-fixture.ja.md)参照 |
+| Q-045 | P2 | ESP32系/RP2040 programmerを開発するか | 対象protocol、unique IDと複数台選択、全family対応工数、既存実装との比較。Q-041を既存toolで解決できなければ優先度を上げる。LinkE同時接続不可の報告は出たが、既存toolにserial選択機構があると判明したためP2のまま |
 | Q-046 | P2 | flash失敗、保護、電源断からの復旧contract | fault injectionとbrick/recovery試験 |
 | Q-047 | P2 | Windows/macOSでの物理probe選択 | 対応OS確定後のUSB topology、driver、backend prototype |
 | Q-048 | P0 | WCH-Link firmwareの固定・更新方針 | 型番、HW revision、mode、FW別backend認定とrollback試験 |

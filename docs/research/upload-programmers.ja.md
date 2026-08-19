@@ -84,6 +84,26 @@ EVTのIAP例(全familyに独自BL雛形あり: UART/USB両対応+フラッシュ
 - 独自BLは「boardプロダクト向け付加価値」(UIAPduino型)として設計する。候補: V003=rv003usb(実績あり)、V00X=UART BL(BOOT領域3328Bのユーザー化がDS0で公式に許可されている)、USB family=UF2/CDC系
 - 書き込みソフトの自作(`ch32-upload` frontend)は既定方針どおり。backend gapとprobe選択問題(Q-041)が既存toolで埋まらない場合に本体開発へ昇格
 
+## 追記(2026-08-19): backendのprobe選択能力をsourceで確認
+
+「複数のWCH-LinkEから対象を一意に選ぶ」ができるかを、各toolのsourceで直接確認した。
+
+| tool | probe選択 | 根拠 |
+|---|---|---|
+| **probe-rs** | **可** | `--probe VID:PID:Serial`(env `PROBE_RS_PROBE`)。`probe-rs/src/probe/wlink/mod.rs`の`get_wlink_info()`が`device.serial_number()`を`DebugProbeInfo`へ格納 |
+| **minichlink** | **可** | `-l <serial>` / env `MINICHLINK_LINKE_SERIAL`・`MINICHLINK_programmer_serial_number`。`pgm-wch-linke.c`の`usb_device_matches_serial()`がRV(`1a86:8010`)/ARM(`1a86:8012`)/IAP(`4348:55e0`)の3モードを横断して照合。不一致時は`(available RISC-V: '<serial>')`で候補を列挙 |
+| wlink 0.1.2 | 不可 | `-d/--device <INDEX>`のみ(`usb_device.rs`の`open_nth`)。serialは`list_libusb_devices()`が読んで`wlink list`に表示するが選択に使えない |
+| WCH OpenOCD | 不可 | 旧コアのrecipeにも選択の口がない |
+
+**minichlinkがWCH-LinkE専用のserial filterを実装している事実は、LinkEが個体ごとのUSB serialを持つ強い傍証**。
+
+この結果、**「既存toolでprobe選択ができないから独自tool」という論拠は成立しない**。
+独自`ch32-upload`(Q-044)の判断根拠は、probe選択ではなく
+**backend coverage gap**(probe-rsのV407/X315/M030/V205未対応)と配布・UXに絞られる。
+
+wlinkへのserial selector追加は上流patchとして小さい(データは既に読めている)。
+probe-rs gapのfallbackにwlinkを使う場合は、この貢献が前提になる。
+
 ## 判断ポイント
 
 - probe-rs gap(V407/X315/M030/V205)への対応: target追加をupstreamへ貢献するか、wlink/OpenOCD併用で始めるか(Q-040/Q-044)

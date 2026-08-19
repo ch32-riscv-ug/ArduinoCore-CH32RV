@@ -53,49 +53,48 @@ WCH-Link host protocolはfirmware依存の解析部分があるため、probe fi
 
 **maintainer報告(2026-08-19)**: WCH-LinkEは複数台所有しているが、**同時に接続して使うことができず、実際には1台しか接続できない**。
 
-これはfixture設計だけの話ではなく、**独自書き込みツール開発([R-17](research/upload-programmers.ja.md)の`ch32-upload`、Q-044/Q-045/Q-049)の昇格条件に直接効く報告**です。既存文書は次の条件を書いていました。
+### backend側のprobe選択能力(2026-08-19にsourceで確認)
 
-- R-17: 「書き込みソフトの自作(`ch32-upload` frontend)は既定方針どおり。backend gapと**probe選択問題(Q-041)が既存toolで埋まらない場合に本体開発へ昇格**」
-- Q-045: 「**Q-041を既存toolで解決できなければ優先度を上げる**」
+当初これを「独自書き込みツール開発(Q-044/Q-045)の昇格条件に触れる報告」と整理したが、
+実際にbackendのsourceを読むと**選択機構は既に存在する**。
 
-したがってこの報告は、`ch32-upload`および独自programmer(Q-045)の**優先度を上げる方向の証拠**として扱います。確定には原因切り分けが要ります。
-
-### 既存実装の裏付け
-
-旧コア`arduino_core_ch32_riscv_arduino` 1.4.0のupload recipeは`openocd -f wch-riscv.cfg -c init -c halt -c "program ...; verify; reset; wlink_reset_resume; exit;"`で、**probe選択の引数が一切ありません**([legacy-audit](legacy-audit.ja.md)調査対象B)。openwch公式coreも同様にOpenOCD一発です。既存のCH32 Arduinoコアはこの問題を解いていません。
-
-### 切り分けに使える実測(2026-08-19、開発機のWCH製USBデバイス)
-
-| device | VID:PID | 台数 | USB serial descriptor |
-|---|---|---|---|
-| CH343 (USB Single Serial) | `1a86:55d3` | 4 | **個体ごとにunique**(`58FA041019`/`5B5E058417`/`5B5F091220`/`5B5E057951`) |
-| CH340 | `1a86:7523` | 3 | **なし**(topology pathでしか区別できない) |
-
-**WCHは製品によってserialの有無が違う**ことが実測で確認できました。CH343 4台とCH340 3台の計7台が同時接続できています。したがってWCH-LinkEが繋げない理由は「WCH製だから」ではなく、LinkE固有の事情です。
-
-**次の実験(所要1分)**: WCH-LinkEを2台挿して以下を実行し、`serial`欄を確認する。
-
-```sh
-for d in /sys/bus/usb/devices/*/; do
-  v=$(cat $d/idVendor 2>/dev/null); [ "$v" = "1a86" ] || continue
-  echo "$(basename $d) $(cat $d/idProduct) devpath=$(cat $d/devpath) serial=$(cat $d/serial 2>/dev/null)"
-done
-```
-
-結果による分岐:
-
-| 観測 | 意味 | 対応 |
+| tool | probe選択 | 方式 |
 |---|---|---|
-| serialがunique | tool側がserial selectorを使っていないだけ | probe-rs/wlinkの`--probe VID:PID:SERIAL`で解決。独自tool不要 |
-| serialが全台同一 | USB descriptorレベルで区別不能 | topology path選択が必須 → 既存toolに無ければ`ch32-upload`本体開発へ昇格(Q-044) |
-| 2台目が列挙されない/掴めない | driver/firmware側の制限 | Q-048(FW固定方針)と合わせて再検討。mux構成が現実解 |
+| **probe-rs** | **可** | `--probe VID:PID:Serial`(env `PROBE_RS_PROBE`)。`probe/wlink/mod.rs`の`get_wlink_info()`がUSB descriptorのserialを`DebugProbeInfo`へ格納している |
+| **minichlink** | **可** | `-l <serial>` / env `MINICHLINK_LINKE_SERIAL`。**WCH-LinkE専用に実装されている**。RV(`1a86:8010`)/ARM(`1a86:8012`)/IAP(`4348:55e0`)の3モードを横断して照合し、不一致時は`(available RISC-V: '<serial>')`形式で候補を列挙する |
+| wlink 0.1.2 | 不可 | `-d/--device <INDEX>`の列挙indexのみ(`open_nth`)。serialは読んで`wlink list`に`Serial <S>`として表示するが、selectorにできない。**上流patchは小さい**(データは既にある) |
+| WCH OpenOCD | 不可 | 旧コアのrecipeにも選択の口がない |
+
+**minichlinkがLinkE専用のserial filterを実装して出荷している事実は、LinkEが個体ごとのUSB serialを持つ
+強い傍証**である(持たなければこの機能は成立しない)。
+
+したがって:
+
+- **`ch32-upload`本体開発(Q-044)や独自programmer(Q-045)の昇格条件は、現時点では満たされていない**。
+  ADR-0008の第一候補であるprobe-rsが既にserial選択に対応している
+- 「LinkEを同時に使えない」原因は**serialの非ユニーク性ではない可能性が高い**。
+  udev権限、WSL usbipdのattach、あるいは選択機構を持たないtool(wlink/OpenOCD)を使っていたこと、が候補
+- 次の確認は`wlink list`または`probe-rs list`を2台接続状態で実行すること。
+  serialが表示されればprobe-rs/minichlink経路で解決する
+
+### arduino-cli側で選択子を渡す経路(2026-08-19実測)
+
+[実験0009](experiments/0009-arduino-cli-upload-and-pytest-harness.ja.md)。
+
+| 経路 | 結果 |
+|---|---|
+| `--port <任意アドレス>` | `{serial.port}`へ素通し。`wchlink://bench-01/lane-1`のような非シリアルアドレスも通る |
+| `--upload-property upload.probe=X` | 任意プロパティをrecipeへ注入できる(`upload`に`--build-property`は無い) |
+| `--flash-port`(pytest-embedded) | 書き込み先とSerial監視先を別ポートに分離できる |
+
+`program.pattern`が`{serial.port}`を参照する場合はportが必須になる。参照しなければ不要。
 
 ### 当面の扱い
 
 - 単一DUTで進む限りこの制約は開発をblockしない
-- 「運用優先構成」(1 DUT laneにつき1 WCH-LinkE)は複数LinkEの同時接続を前提にしているため、**reference fixtureの第一候補から外す**
-- 多DUT化は「台数削減構成」(1 LinkE + debug signal mux)を第一候補として設計する
-- Q-043は共有+mux側へ大きく傾く
+- 「運用優先構成」(1 DUT laneにつき1 WCH-LinkE)の可否は、**serialによる選択が実機で成立するかの確認待ち**。
+  成立すれば運用優先構成は生きる(当初の「第一候補から外す」判断は撤回)
+- 成立しない場合に限り「台数削減構成」(1 LinkE + debug signal mux)へ倒す
 
 USB serialと列挙indexは恒久IDとして扱いません。
 
