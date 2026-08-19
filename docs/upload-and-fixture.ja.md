@@ -2,6 +2,8 @@
 
 文書状態: 提案および要実機検証
 
+書き込み経路×familyの対応表、互換programmerのエコシステム、upload_methodメニュー構成案は[R-17調査](research/upload-programmers.ja.md)を参照。
+
 ## 問題設定
 
 旧コアはWCH-LinkEとWCH OpenOCDを直接呼び出しますが、複数probeから特定の1台を安全に選ぶ仕組みがありません。
@@ -38,7 +40,7 @@ ch32-upload read-uid --probe <id> --json
 
 | 優先度案 | Backend | 位置付け |
 |---|---|---|
-| 1 | `probe-rs` | 第一候補。全対象SKUとWCH-Link FWで認定する |
+| 1 | `probe-rs` | 第一候補。全対象SKUとWCH-Link FWで認定する。**0.32時点でV407/X315/M030/V205のtargetが無い**(R-17)ため、gap分は下位backendまたはupstream貢献で埋める |
 | 2 | `minichlink` / `wlink` | 代替実装、protocol調査、fallback候補 |
 | 3 | `wchisp` | USB/UART ISPを持つ対象だけのfallback |
 | 4 | WCH OpenOCD | legacy互換。source/build/licenseを確認 |

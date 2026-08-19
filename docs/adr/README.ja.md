@@ -72,11 +72,12 @@
 - [ADR-0005](0005-board-structure-and-fqbn.ja.md): family board+pnumメニューとdevice-data生成
 - [ADR-0006](0006-rtos-policy.ja.md): コアはベアメタル、RTOSは将来の同梱ライブラリ
 - [ADR-0007](0007-user-build-option-injection.ja.md): build.extra_flagsはユーザー注入専用に予約
+- [ADR-0008](0008-upload-strategy.ja.md): 書き込みdefaultはWCH-LinkE、経路カバレッジは段階追加
 
 ## 今後のADR候補
 
 - ArduinoCore-APIの固定versionと取込方法(Q-010)
 - 内部HAL contract(Q-013)
-- upload frontendとprimary backend(Q-040系)
+- upload frontend実装とbackend実機認定(Q-040系。方針はADR-0008)
 - 公開packager/表示名(Q-017)
 - support tierとrelease gate

@@ -23,19 +23,21 @@
 | R-07 | clock初期化とクロックメニュー | system_ch32*.cのSYSCLK選択肢とHSE有無 | Q-013 | R-02に統合 |
 | R-08 | 割込みABIとWCH高速割込み(HPE) | interrupt attribute、hardware stack、latencyの実測 | Q-021 | 未着手(実測が必要) |
 | R-09 | newlib/ilp32e runtimeのサイズ実測 | RV32EmC/RV32ECでのprintf、constructor、C++コスト | Q-022, Q-051 | **計測済み**([実験0006](../experiments/0006-newlib-size-baseline.ja.md): nano必須、full printf=47KB/new=114KB、%f opt-in=+19.5KB、C++機能自体は軽量) |
-| R-10 | uploader/書き込みtool | probe-rs等のbackend認定 | Q-040〜Q-048 | [既存文書](../upload-and-fixture.ja.md)で管理 |
+| R-10 | uploader/書き込みtool | probe-rs等のbackend認定 | Q-040〜Q-048 | frontend/fixture設計は[既存文書](../upload-and-fixture.ja.md)、エコシステム調査はR-17 |
 | R-11 | vendorファイルのライセンス・再配布 | EVT由来ファイルの取込条件 | Q-030, Q-034 | [既存文書](../vendor-policy.ja.md)で管理 |
 | R-12 | device databaseとboards.txt生成の連携 | exact SKU正本からの生成 | Q-011, Q-014 | [ADR-0001](../adr/0001-device-data-repository.ja.md)と[device-data](../device-data.ja.md)で管理。R-03に生成方針の提案あり |
 | R-13 | USB(CDC/HID)対応family | X035/V20x/V307等のUSB stack方針 | Q-003 | 未着手(初期scope外の見込み) |
 | R-14 | ArduinoCore-APIの取込とhost test | 固定version、LGPL配布 | Q-010, Q-016 | [既存文書](../architecture.ja.md)で管理 |
 | R-15 | [開発中コアのインストール方式とテスト環境](local-install-and-test-env.ja.md) | symlink直接実行と、ローカルHTTP+arduino-cli経由の実インストール検証の使い分け | Q-015, Q-016 | 方式A/Bとも検証済み |
 | R-16 | [RTOSサポート方針](rtos-support.ja.md) | EVTのRTOS移植の実態と他コア前例から、コア層での採用/オプション/ライブラリ任せを判断 | Q-006, Q-003, Q-013 | 調査済み・[ADR-0006](../adr/0006-rtos-policy.ja.md)で決定 |
+| R-17 | [書き込み経路・書き込み器・書き込みソフト](upload-programmers.ja.md) | family×書き込み経路の対応表、互換programmerエコシステム、default/オプションのメニュー構成案 | Q-040〜Q-049 | 調査済み・[ADR-0008](../adr/0008-upload-strategy.ja.md)で方針決定(実機認定は未) |
 
 ## 主要な結論(要約)
 
 - **R-01**: startupの統合は可能。family差は「vector table」「CSR初期化定数」「FPU/VS」「highcode」「H417 V5F特殊boot」の5軸に整理でき、reset処理はプリプロセッサで完全にパラメータ化できる。本丸はvector tableの記述方法(手書き統合 vs device-data生成)。「共通crt+vector include」方式は3 familyのELF等価性検証で成立を確認済み([実験0002](../experiments/0002-unified-startup-poc.ja.md))
 - **R-02**: menu軸候補はSKU、clockプロファイル、HSE値、FLASH/RAM分割、VectorInRAM(ld差分のみ)、debug出力先。vendorのsystem_*.cはSYSCLK選択がハードコードで-D上書き不可のため、clock初期化はown実装が有力
 - **R-03**: 「26バリエーション」はV00X系6 seriesの英語版datasheet合計と一致(zh版のみのCH32M006で27)。推奨構成は**family単位11ボード+pnumメニューに全型番**(STM32duino/openwch型)、boards.txt/variantはdevice-dataから完全自動生成
+- **R-17**: defaultは**WCH-LinkE(probe-rs系frontend)**、オプションはUSB-ISP(wchisp。X03x/X315/H417は1200bps touch+SWエントリで自動書き込み化可)/UART-ISP(V00X系)/board固有BL(UIAPduino=rv003usb等)。**probe-rsのcoverage gap(V407/X315/M030/V205)**と「工場BLへのSWエントリ可否でfamilyが2系統に割れる」構造が判明
 - **R-16**: **コアはRTOS上に構築しない(全familyベアメタル単一セマンティクス)**。初期リリースはRTOSなし、需要が出たら「コア同梱FreeRTOSライブラリ(UNO R4方式)」→必要時のみ限定familyメニューの二段構え。V003/V00XにはWCH自身もRTOS例を提供しておらず、RTOS用startup差分(CSR 2定数)はADR-0003のcrt0で表現可能
 - **R-04**: **ESP32のtoolchainはrv32e/ilp32e欠落でCH32V003/V00Xに使用不可**。推奨は**xPack riscv-none-elf-gcc(14.3.0-1基準)のGitHub Releases直リンク参照**(STM32duinoに同方式の実績)。WCH fork(MRS GCC12)は比較lane限定。multilib実物と全core向けcompile smokeは[実験0001](../experiments/0001-xpack-multilib-smoke.ja.md)で確認済み
 
