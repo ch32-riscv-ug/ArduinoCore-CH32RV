@@ -26,27 +26,53 @@
 
 ## クロック
 
-- [ ] `[P0]` **(要判断)** 初期は全familyで内蔵発振器(HSI)固定にするか。
-      HSEを使うと`f_cpu`がboard属性になりvariantに水晶情報が要る。X035はHSE非搭載のため制約ゼロ
-- [ ] `[P0]` **(要判断)** familyごとの既定SYSCLK。X035は48MHz(HSI直、PLL不要)が自明。
-      V003/V006は24MHz HSI→PLL×2で48MHz。8MHz HSI系(V20x/V307/L103/M030/V205)は個別確認
-- [ ] `[P2]` クロックのメニュー化(STM32duino型)。需要が出てから
-- [ ] `[P2]` HSE対応。boardごとの水晶有無・周波数をvariantへ持たせる
+**決定(2026-08-19)**: **初期は内蔵発振器(HSI)のみ**。HSEは将来の拡張とする。
+値は**boards.txtの固定値**とし、クロックメニューは設けない。
+
+メニューを後から足してもFQBNは壊れないことを実測確認済み
+(menuキーを省略すると先頭に並べた項目が既定値として使われる)。
+したがって「今は固定、必要になったらメニュー」で拡張性は失われない。
+
+### 今やっておく拡張準備(これを守ればメニュー追加はboards.txtの行追加だけで済む)
+
+- [ ] `[P0]` **`SystemInit()`は`F_CPU`を読んで分周器を決める**。周波数をハードコードしない
+- [ ] `[P0]` **到達できない`F_CPU`は`#error`でコンパイル時に落とす**。
+      F_CPUと実際のSYSCLKがズレるとSerialが化けるため、実行時に発覚させてはいけない
+
+### Milestone 1の固定値: 「HSI直結、PLLなし」で全family統一
+
+| family | HSI | f_cpu | 備考 |
+|---|---:|---:|---|
+| **CH32X035** | 48 MHz | **48 MHz** | 分周`/1`のみ。最大値がそのまま出る |
+| CH32V003 / CH32V006 | 24 MHz | 24 MHz | 48MHzにはPLL×2が要る |
+| V20x / V307 / L103 / M030 / V205 | 8 MHz | 8 MHz | 本来はPLLで逓倍すべき |
+
+8MHzでもSerial 115200は分周比69.4(誤差0.6%)で成立するため、Milestone 1の目的は達成できる。
+
+### 将来
+
+- [ ] `[P1]` familyごとのPLL対応。boards.txtの`f_cpu`を変え、そのfamilyの`SystemInit`にPLL設定を足す。
+      優先度が高いのは8MHz HSI系(V20x/V307/L103/M030/V205)
+- [ ] `[P2]` クロックのメニュー化(STM32duino型)。既定値を現在の固定値と同じにすればFQBN互換は保たれる
+- [ ] `[P2]` HSE対応。boardごとの水晶有無・周波数をvariantへ持たせる。**X035はHSE非搭載のため対象外**
 
 ## ボード定義の生成
 
-- [ ] `[P0]` 割込みvector tableをこのリポジトリへ正規化データとして置く(`tools/generate/interrupts/`)。
-      13 variant / 904 slot / 実handler 775 / ユニーク名157。`generate.py`が`vectors_*.inc`を生成し、
-      既存のstartup harnessが毎PR EVTと照合する
+- [x] 割込みvector tableを`tools/generate/interrupts/interrupts.csv`へ配置(13 variant / 904 slot)。
+      `generate.py`が`vectors_*.inc`を生成、`import_vectors.py --check`をCIへ追加
 - [ ] `[P1]` **公開価値が出たら`ch32-device-data`へ移送する**。トリガは「2つ目のconsumerが現れたとき」
-- [ ] `[P0]` `FAMILY_CONFIG`を10 familyへ拡張。march/mabi/CSR初期値は
-      [tests/startup/run_check.sh](../tests/startup/run_check.sh)の表から移す
+- [x] 生成器をseries board(23 board / 117エントリ)へ拡張。ANY先頭・`[compile only]`表示込み([ADR-0005](adr/0005-board-structure-and-fqbn.ja.md)改訂)
 - [ ] `[P1]` ハーネスと`FAMILY_CONFIG`のパラメータ二重管理を解消(片方を正本にするかCIで一致検証)
-- [ ] `[P1]` variant(pin map)生成。Arduinoピン番号設計の合意が前提(Q-011)
+- [ ] `[P0]` `pins_arduino.h`の本実装。[ADR-0010](adr/0010-pin-numbering.ja.md)の
+      `(port<<5)|bit`方式でseriesの全pad名を生成する。現在はplaceholder
+- [ ] `[P1]` `A0`等アナログエイリアスのADCチャネルマップ生成
 - [ ] `[P1]` device-dataのsignal名正規化。**X035とV003が最も未正規化**(`SCL`/`MISO`/`T1CH1`のような裸名)。
       V203は`I2C1_SCL`、V006は`I2C_SCL`と表記が揃っていない
 - [ ] `[P1]` X035エラッタのvariant表現: `PC10`/`PC11`をoutput不可としてマークする
-      (`x035-pc10-pc17-bonded`。PC16/PC17と内部結線)
+      (`x035-pc10-pc17-bonded`。PC16/PC17と内部結線)。ADR-0010のDecision 4
+- [ ] `[P2]` `[compile only]`表示の6 series(V205/V407/V467/X305/X315/M030)にupload経路を用意する。
+      probe-rsにtargetが無く、**実物がほとんど流通していないチップ**でもある。wlink併用で埋まる
+- [ ] `[P2]` 製品名board(`WeAct CH32X035 CoreBoard`等)の追加。series boardと共存できる
 - [ ] `[P2]` CH32V103対応。vector tableがj命令形式でharnessが除外中
 - [ ] `[P2]` CH32H417対応。loadcode bootでharnessが除外中
 - [ ] `[P2]` device-dataの`product_attributes.csv`の属性名揺れをupstreamへ報告

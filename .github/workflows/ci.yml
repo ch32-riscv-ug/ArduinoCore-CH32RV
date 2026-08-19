@@ -34,6 +34,8 @@ jobs:
             git clone --depth 1 --filter=blob:none --sparse "https://github.com/ch32-riscv-ug/$repo"
             git -C "$repo" sparse-checkout set EVT/EXAM/SRC
           done
+      - name: Interrupt table must match the EVT startup sources
+        run: python3 tools/generate/import_vectors.py --mirrors "$HOME/mirrors" --check
       - name: Run equivalence harness
         run: |
           CH32_MIRROR_ROOT="$HOME/mirrors" \

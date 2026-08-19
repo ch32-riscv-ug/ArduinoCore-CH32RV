@@ -56,26 +56,30 @@ echo "== boards =="
 arduino-cli board listall
 
 # Compile every part number listed in the generated boards.txt (compile-matrix seed).
-PNUMS=$(sed -n 's/^CH32V00X\.menu\.pnum\.\([A-Z0-9]*\)=.*/\1/p' "$PLATFORM/boards.txt")
-echo "== part numbers: $(echo "$PNUMS" | wc -w)"
+# every board's every part number: "<BOARD> <PNUM>" pairs
+TARGETS=$(sed -n 's/^\([A-Za-z0-9_]*\)\.menu\.pnum\.\([A-Za-z0-9]*\)=.*/\1 \2/p' "$PLATFORM/boards.txt")
+echo "== targets: $(echo "$TARGETS" | wc -l) across $(echo "$TARGETS" | awk '{print $1}' | sort -u | wc -l) boards"
 : > "$WORK/sizes.tsv"
 
 fail=0
-for pnum in $PNUMS; do
-  echo "== compile Blink for $pnum =="
+while read -r board pnum; do
+  [ -z "$board" ] && continue
+  echo "== compile Blink for $board/$pnum =="
   arduino-cli compile \
-    --fqbn "ch32-riscv-ug:ch32v:CH32V00X:pnum=$pnum" \
+    --fqbn "ch32-riscv-ug:ch32v:$board:pnum=$pnum" \
     --build-property "compiler.path=$(w "$CH32_GCC_BIN")/" \
-    --build-path "$(w "$WORK/build-$pnum")" \
+    --build-path "$(w "$WORK/build-$board-$pnum")" \
     "$(w "$WORK/Blink")" || fail=1
-  "$CH32_GCC_BIN/riscv-none-elf-size" "$WORK/build-$pnum/Blink.ino.elf" | \
-    awk -v p="$pnum" 'NR==2 {print p "\t" $1 "\t" $2 "\t" $3}' | tee -a "$WORK/sizes.tsv"
-done
+  "$CH32_GCC_BIN/riscv-none-elf-size" "$WORK/build-$board-$pnum/Blink.ino.elf" | \
+    awk -v p="$board/$pnum" 'NR==2 {print p "\t" $1 "\t" $2 "\t" $3}' | tee -a "$WORK/sizes.tsv"
+done <<EOF_TARGETS
+$TARGETS
+EOF_TARGETS
 
 # Static checks on one build: sketch's global constructor is registered in
 # .init_array and crt0 contains the constructor-call loop (jalr). Runtime
 # execution is verified later on hardware (HIL).
-ELF="$WORK/build-CH32V006K8U7/Blink.ino.elf"
+ELF="$WORK/build-CH32V006-ANY/Blink.ino.elf"
 IA=$("$CH32_GCC_BIN/riscv-none-elf-size" -A "$ELF" | awk '$1==".init_array"{print $2}')
 if [ -z "$IA" ] || [ "$IA" -eq 0 ]; then echo "FAIL: .init_array empty"; exit 1; fi
 "$CH32_GCC_BIN/riscv-none-elf-nm" "$ELF" | grep -q "_GLOBAL__sub_I" || { echo "FAIL: no global ctor symbol"; exit 1; }
@@ -93,7 +97,7 @@ void setup() {}
 void loop() {}
 EOF
 arduino-cli compile \
-  --fqbn "ch32-riscv-ug:ch32v:CH32V00X:pnum=CH32V006K8U7" \
+  --fqbn "ch32-riscv-ug:ch32v:CH32V006:pnum=ANY" \
   --build-property "compiler.path=$(w "$CH32_GCC_BIN")/" \
   --build-property "build.extra_flags=-DCH32_EXTRA_FLAGS_SMOKE=1" \
   --build-path "$(w "$WORK/build-extraflags")" \

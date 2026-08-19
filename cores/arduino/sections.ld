@@ -1,3 +1,7 @@
+/* Core-owned section layout, shared by every variant (ADR-0003).
+ * The MEMORY block (FLASH/RAM origin and length) is variant-owned and lives in
+ * variants/<VARIANT>/<device>.ld, which INCLUDEs this file.
+ */
 /* W-3 prototype: own-written common section layout for crt0_ch32.S.
  * Included from the per-SKU memory scripts (ch32v006_62k_8k.ld etc.). */
 
@@ -50,6 +54,21 @@ SECTIONS
         KEEP(*(.fini_array* .dtors*))
         PROVIDE_HIDDEN(__fini_array_end = .);
     } >FLASH
+
+    /* Code the user asks to run from RAM, e.g.
+     *   void f(void) __attribute__((section(".highcode")));
+     * crt0_ch32.S copies it when CH32_HIGHCODE is defined. Empty by default,
+     * so the copy loop moves zero bytes on families that do not use it. */
+    .highcode :
+    {
+        . = ALIGN(4);
+        PROVIDE(_highcode_vma_start = .);
+        *(.highcode)
+        *(.highcode.*)
+        . = ALIGN(4);
+        PROVIDE(_highcode_vma_end = .);
+    } >RAM AT>FLASH
+    PROVIDE(_highcode_lma = LOADADDR(.highcode));
 
     .dalign :
     {

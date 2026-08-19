@@ -8,35 +8,36 @@
 
 対象は11 family / 27 series / 103型番。SKU追加が继续的に発生する前提で、IDEのboard選択構造とFQBN、生成方式を決める必要がある。
 
-## Decision drivers
-
-- 利用者はチップ刻印の型番(family名込み)で探す
-- board一覧の肥大はesp32型の実害(メニュー崩壊、手編集PR集中)がある
-- STM32duinoのpnum方式は1 boardあたり153項目まで実運用実績がある
-- exact SKUを正本にboards.txtを生成する方針([R-03](../research/board-variants-and-menus.ja.md))
-- CH32はWCH-Link書込みのためUSB VID/PIDによるboard自動検出が効かず、board細分化に検出上の利点がない
-
-## Options considered
-
-### SKUごと個別board(103 board)
-
-一覧が破綻方向。SKU追加=board増殖。不採用。
-
-### series単位board(27)
-
-series名は型番から自明でない。不採用。
-
-### family単位board+pnumメニュー(採用)
-
-一覧11行、最大メニュー26項目。26/26 SKUのcompile matrixで実証済み(実験0004)。
-
 ## Decision
 
-- boardは**family単位**(例: `CH32V00X`)とし、`menu.pnum`に該当familyの**全型番**を列挙する。温度グレード違い等ビルド同一のSKUも項目としては全部出し、variant/ldの実体を共有する
-- **boards.txt・SKU別linker script・variantは`ch32-device-data`から自動生成**し、生成物をcommitする。手編集はCIが拒否(esp8266方式)。生成物ヘッダにdata側commitを記録し、CIがそのcommitで再生成一致を検証する(lock機構)
-- pnum項目の順序は決定的(series正順+型番昇順)とし、FQBNの既定(先頭項目)が再生成で変わらないことを保証する。CI・文書のFQBNは常に`:pnum=`付きで書く
-- 開発用の暫定IDは**packager=`ch32-riscv-ug`、architecture=`ch32v`**(FQBN例: `ch32-riscv-ug:ch32v:CH32V00X:pnum=CH32V006K8U7`)。公開時のIDと表示名はQ-017で確定する(変更時は生成器の設定1箇所)
-- 市販ボードは独立boardにせずpnum項目として追加し、需要が確認できたものだけ独立board化する
+**2026-08-19に改訂**(当初は「board=EVT family単位」だった。下記「改訂の理由」参照)。
+
+1. **1 boardは1 silicon series**とする。board名は`Generic <SERIES>`(例: `Generic CH32X035`)。
+   チップの刻印とboard名が一致するため、利用者はグループ名を知らなくてよい
+2. 各boardの`menu.pnum`は、**先頭に`ANY`**、続いて正確な型番を並べる
+3. **`ANY`はそのseriesの最小flash/最小SRAM**を宣言する。型番を知らない利用者が選んでも、
+   binaryは同series全部品に収まり、stack(RAM末尾)が必ず実在メモリ内に入る
+4. 型番の表示には**packageと容量を併記**する(例: `CH32X035C8T6 (LQFP48, 62K/20K)`)
+5. upload backendが無いseriesはboard名へ`[compile only]`を付ける。
+   現時点ではV205 / V407 / V467 / X305 / X315 / M030(probe-rsにtarget定義が無い)
+6. boards.txt / linker script / vector table / variantはすべて**device-dataから生成**する。
+   手編集はCIが拒否し、locked commitで検証する
+7. 製品名のboard(`WeAct CH32X035 CoreBoard`等)は**別途追加する**。series boardと共存できる
+
+## 改訂の理由: なぜfamilyではなくseriesか
+
+当初案の`family`はWCHの**EVTリポジトリ単位**であり、利用者から見えない実装都合だった。
+
+- チップに`CH32V307VCT6`と書いてあっても、一覧の`CH32V30x`が自分のものだと気づけない
+- **`CH32V203CCT6`のfamilyは`CH32V205`**。推測不能(V205ダイをV203型番で売っている)
+- 実害として、**`CH32V20x`はV203とV208でvector tableが衝突する**。slot 61がV203では
+  `UART4_IRQHandler`、V208では`ETH_IRQHandler`。1 boardにまとめると`ANY`が作れない
+
+series単位にすると、**vector tableがboardごとに一意に定まり**、24 series中20 seriesは
+容量も1種類だけになるため、型番選択が実質不要になる。
+
+`CH32V203CCT6`だけはseries=V203でありながらV205のstartupを要するため、
+`CH32V205` boardへ収容する(`SKU_BOARD_OVERRIDE`)。
 
 ## Consequences
 
