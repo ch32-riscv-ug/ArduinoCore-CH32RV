@@ -43,7 +43,7 @@ platform.txt          ビルドrecipe
 boards.txt            生成物(tools/generate)。手編集禁止
 cores/arduino/        コア本体
   api/                ArduinoCore-API 1.5.2 の無改変snapshot(LGPL-2.1-or-later)
-variants/<VARIANT>/   pin定義とlinker script(ldは生成物)
+variants/<SERIES>/    pin定義とlinker script(いずれも生成物)
 tools/                generate(boards/ld生成)、index(Board Manager index)、vendor(取込検証)
 tests/                compile matrix、startup等価性、sizebench
 docs/                 設計文書、ADR、実験記録

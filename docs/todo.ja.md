@@ -22,7 +22,9 @@
 - [ ] `[P0]` `dtostrf`: upstreamの`api/deprecated-avr-comp/avr/dtostrf.c.impl`をincludeする`.c`を1本置く
 - [ ] `[P0]` `Arduino.h`から`api/ArduinoAPI.h`をincludeする。**`api/`はinclude pathへ入れず、必ず`api/`付きで書く**(samd/renesas/mbedと同じ規律。arduino-cliが渡す`-I`はcoreとvariantのみなので現状のまま成立する)
 - [ ] `[P1]` `F_CPU`と実際のSYSCLKの一致をtestで担保する(不一致だとSerialが化ける)
-- [ ] `[P1]` crt0→`setup()`到達を実機で確認(現在は静的検査のみ) (要実機)
+- [x] crt0→`setup()`/`loop()`到達をCH32V003実機で確認。`.data` copy、`.bss` zero fill、
+      `.init_array`(C++大域constructor)まで全てpass([実験0010](experiments/0010-first-on-target-run.ja.md))
+- [ ] `[P1]` 同じ確認をX035/L103/V20xでも回す(実機あり)。variantごとのlinker scriptとvector tableの検証になる
 
 ## クロック
 
@@ -63,17 +65,36 @@
 - [ ] `[P1]` **公開価値が出たら`ch32-device-data`へ移送する**。トリガは「2つ目のconsumerが現れたとき」
 - [x] 生成器をseries board(23 board / 117エントリ)へ拡張。ANY先頭・`[compile only]`表示込み([ADR-0005](adr/0005-board-structure-and-fqbn.ja.md)改訂)
 - [ ] `[P1]` ハーネスと`FAMILY_CONFIG`のパラメータ二重管理を解消(片方を正本にするかCIで一致検証)
-- [ ] `[P0]` `pins_arduino.h`の本実装。[ADR-0010](adr/0010-pin-numbering.ja.md)の
-      `(port<<5)|bit`方式でseriesの全pad名を生成する。現在はplaceholder
-- [ ] `[P1]` `A0`等アナログエイリアスのADCチャネルマップ生成
+- [x] `pins_arduino.h`の本実装。[ADR-0010](adr/0010-pin-numbering.ja.md)の`(port<<5)|bit`方式で
+      seriesの全pad名・ポート別validity mask・`ANY`共通padマスクを生成。Blinkのサイズが
+      117 SKU全てでbaselineとバイト一致し、**テーブルが生成されない**ことを実証
+- [x] `A0`等アナログエイリアスのADCチャネルマップ生成。**ADC1のみ**採用(X305/X315は
+      ADC1〜ADC4で同じチャネル番号が別padに出るため`A<n>`が一意にならない)
+- [ ] `[P1]` X305/X315のADC2〜ADC4を表現する。現在`A<n>`はADC1のみで、他instanceのpadは
+      アナログとして到達できない
+- [ ] `[P1]` `LED_BUILTIN`がgeneric boardでは実体のないplaceholder(seriesの全型番に共通する
+      最小pad)。製品名boardを足すときに実体へ差し替える
+- [ ] `[P2]` `NON_PORT_PADS`(`ANT`/`HO3`/`ISP1`/`LED0`/`MDITP`等)を`generate.py`で手管理している。
+      device-data側にGPIOポートbitか否かのフラグが入れば不要になる
 - [ ] `[P1]` device-dataのsignal名正規化。**X035とV003が最も未正規化**(`SCL`/`MISO`/`T1CH1`のような裸名)。
       V203は`I2C1_SCL`、V006は`I2C_SCL`と表記が揃っていない
-- [ ] `[P1]` X035エラッタのvariant表現: `PC10`/`PC11`をoutput不可としてマークする
-      (`x035-pc10-pc17-bonded`。PC16/PC17と内部結線)。ADR-0010のDecision 4
+- [x] X035エラッタのvariant表現(`x035-pc10-pc17-bonded`、ADR-0010のDecision 4)。
+      **PC10/PC11はそもそもpadとして出ていない**ので、pad属性ではなく除外リスト
+      `CH32_UNUSABLE_PINS`として生成した。errata idの存在をgenerate.pyが検証する
+- [ ] `[P1]` `CH32_UNUSABLE_PINS`をcore側で実際に弾く(現在は宣言のみ。`pinMode`実装時に対応)
 - [ ] `[P2]` `[compile only]`表示の6 series(V205/V407/V467/X305/X315/M030)にupload経路を用意する。
       probe-rsにtargetが無く、**実物がほとんど流通していないチップ**でもある。wlink併用で埋まる
+- [ ] `[P1]` probe tool定義(Q-040)でminichlinkのversionを固定し、**`-l`(serial選択)の存在を
+      smoke testで検証**する。UIAP同梱の`minichlink-2982dfd`は`-l`を持たない古いbuildだった
+- [ ] `[P1]` fixture inventoryに**probeの種別とfirmware version**を記録する。
+      初代WCH-Link(CH549)とWCH-LinkEは電源制御とV003単線SDIの可否が違う
+- [ ] `[P1]` HIL runnerのsetupに`1a86:8010`のudev rule導入を含める(無いと`LIBUSB_ERROR_ACCESS`)
+- [ ] `[P2]` Serial監視にCH340(`1a86:7523`)系adapterを使わない方針を明文化する。
+      **USB serialを持たず複数台を区別できない**。CH343(`55d3`)はuniqueなserialを持つ
 - [ ] `[P2]` 製品名board(`WeAct CH32X035 CoreBoard`等)の追加。series boardと共存できる
-- [ ] `[P2]` CH32V103対応。vector tableがj命令形式でharnessが除外中
+- [ ] `[P1]` CH32V103対応。vector tableがj命令形式でharnessが除外中。
+      **2026-08-19に実機(64K品)が接続され、minichlinkで`Detected: CH32V10x`を確認済み**なので
+      優先度をP2から上げた。`import_vectors.py`のj形式parse対応が入口
 - [ ] `[P2]` CH32H417対応。loadcode bootでharnessが除外中
 - [ ] `[P2]` device-dataの`product_attributes.csv`の属性名揺れをupstreamへ報告
       (`usart`/`serial_port`/`communicationinterfaces`、1件は文字列逆順の`ecafretninoitacinummoc`)

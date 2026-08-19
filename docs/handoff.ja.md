@@ -62,14 +62,14 @@ ADR化されている提案:
 | path | 内容 | CI job |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 無改変snapshot(47ファイル、LGPL-2.1-or-later) | `api-sync`(upstreamとbyte一致) |
-| `cores/arduino/crt0_ch32.S` | 統合startup。EVT等価性を13バリアントで検証(39 check OK) | `startup-equivalence` |
+| `cores/arduino/crt0_ch32.S` | 統合startup。EVT等価性を13バリアントで検証(39 check OK)。**CH32V003実機で動作確認済み**(実験0010) | `startup-equivalence` |
 | `cores/arduino/{Arduino.h,main.cpp,wiring_stub.c}` | **compile専用スタブ**。ここを実装で置き換える | `compile-matrix` |
-| `boards.txt` / `variants/CH32V00X/*.ld` | device-dataからの生成物(locked commit) | `generated-sync` |
+| `boards.txt` / `variants/<SERIES>/` | device-dataからの生成物(23 series board / 117エントリ、ld + pin map)。locked commit | `generated-sync` |
 | `platform.txt` | ビルドrecipe。`build.extra_flags`はユーザー注入専用 | `compile-matrix`(注入到達ガード) |
-| `tools/generate/generate.py` | boards.txt/ld生成 | `generated-sync` |
+| `tools/generate/generate.py` | boards.txt / ld / pin map / vector include の生成 | `generated-sync` |
 | `tools/index/` | xPack直リンクtool定義、index生成、clean install検証 | `install-test`(3 OS) |
 | `tools/vendor/check_api_sync.sh` | api/のbyte一致とlock manifest検証 | `api-sync` |
-| `tests/compile/` | 26 SKU compile matrix + size baseline(完全一致gate) | `compile-matrix`(3 OS) |
+| `tests/compile/` | 117エントリ compile matrix + size baseline(完全一致gate) | `compile-matrix`(3 OS) |
 | `tests/startup/` | EVT startupとの等価性harness | `startup-equivalence` |
 | `tests/sizebench/` | newlibサイズ計測(toolchain更新時の回帰用) | 手動 |
 | `vendor/arduino-core-api.lock.toml` | 第三者取込のlock(commit + 全ファイルSHA-256) | `api-sync` |
@@ -95,9 +95,11 @@ ADR化されている提案:
 
 1. **UART HALとHardwareSerialの実装**。ADR-0006の要件(tickソース差し替え可能)を織り込む
 2. **syscalls**(`_write`等)と`ltoa`/`ultoa`。`dtostrf`はupstreamの`.c.impl`をincludeするだけでよい
-3. **crt0からsetup()までの実行**を実機で確認(現在は静的検査のみ)
-4. **生成器へfamily追加**: 対象boardのfamilyを`FAMILY_CONFIG`へ足す(設定1エントリ+vector table+variant)
-5. **書き込み経路の実体化**: `programmers.txt`+`program.pattern`。tool本体はQ-040/Q-044の決定待ち
+3. ~~crt0からsetup()までの実行を実機で確認~~ → **2026-08-20にCH32V003実機で確認済み**。`.data` copy / `.bss` zero fill / `.init_array` / `setup()` / `loop()`まで全てpass([実験0010](experiments/0010-first-on-target-run.ja.md))
+4. **書き込み経路の実体化**: `programmers.txt`+`program.pattern`。tool本体はQ-040/Q-044の決定待ち
+
+pin mapは生成済み([ADR-0010](adr/0010-pin-numbering.ja.md))。`variants/<SERIES>/pins_arduino.h`が
+pad名・ポート別validity mask・`A<n>`(ADC1)を持ち、`cores/arduino/ch32_pins.h`が番号encodingを持つ。
 
 ### 並行して決める
 
@@ -109,7 +111,7 @@ ADR化されている提案:
 ### あとで
 
 - fixture配線(LA channel数とconnector、Q-050)。**16ch推奨**の根拠は[upload-and-fixture](upload-and-fixture.ja.md)
-- variant(pin map)生成はArduinoピン設計合意後
+- `CH32_UNUSABLE_PINS`をcore側で実際に弾く(現在はvariantが宣言するだけ)
 
 ## 先送りにした作業
 

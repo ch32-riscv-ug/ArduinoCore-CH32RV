@@ -41,7 +41,7 @@ platform.txt          build recipes
 boards.txt            generated (tools/generate) - do not hand-edit
 cores/arduino/        the core
   api/                unmodified ArduinoCore-API 1.5.2 snapshot (LGPL-2.1-or-later)
-variants/<VARIANT>/   pin definitions and linker scripts (.ld are generated)
+variants/<SERIES>/    pin definitions and linker scripts (both generated)
 tools/                generate (boards/ld), index (Board Manager), vendor (import checks)
 tests/                compile matrix, startup equivalence, sizebench
 docs/                 design documents, ADRs, experiment records

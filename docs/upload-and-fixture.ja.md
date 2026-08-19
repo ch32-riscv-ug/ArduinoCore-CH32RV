@@ -74,8 +74,61 @@ WCH-Link host protocolはfirmware依存の解析部分があるため、probe fi
   ADR-0008の第一候補であるprobe-rsが既にserial選択に対応している
 - 「LinkEを同時に使えない」原因は**serialの非ユニーク性ではない可能性が高い**。
   udev権限、WSL usbipdのattach、あるいは選択機構を持たないtool(wlink/OpenOCD)を使っていたこと、が候補
-- 次の確認は`wlink list`または`probe-rs list`を2台接続状態で実行すること。
-  serialが表示されればprobe-rs/minichlink経路で解決する
+- **実機で確定済み**(下記「実機確認」)。WCH-Linkはuniqueなserialを報告する。
+  残る確認は2台同時接続時の`probe-rs list`の挙動のみ
+
+### 実機確認(2026-08-19、WSL2 + usbip)
+
+上の「傍証」段階を実機で確定させた。接続していたのは以下。
+
+| device | VID:PID | USB serial | tty |
+|---|---|---|---|
+| **WCH-Link** | `1a86:8010` | **`434A124C5596`** | `/dev/ttyACM4` |
+| CH343 ×4 | `1a86:55d3` | `58FA041019` / `5B5E058417` / `5B5F091220` / `5B5E057951`(全てunique) | `/dev/ttyACM0`〜`3` |
+| CH340 ×3 | `1a86:7523` | **無し** | `/dev/ttyUSB0`〜`2` |
+
+確定した事実:
+
+- **WCH-Linkは個体ごとのUSB serialを報告する**。傍証ではなく実測。
+  `probe-rs --probe`と`minichlink -l`はこの値をそのまま使える
+- **CH340はUSB serialを持たない**。同一VID/PIDが3台並ぶと**USB descriptorだけでは区別できない**。
+  Arduinoの`Serial`監視先にCH340系adapterを使う構成は、fixtureの識別要件を満たさない。
+  CH343(`55d3`)はuniqueなserialを持つので代替になる
+- **WCH-LinkのUSB interface構成は`ff`(debug)+ CDC ACM ×2**。
+  つまり`/dev/ttyACM4`はWCH-Link内蔵のUARTブリッジであり、
+  **1本のケーブルでSWD書き込みとUART受信の両方が取れる**。
+  Milestone 1の`Serial.println()`監視に外付けadapterは不要
+
+権限: `1a86:8010`はudev rule(`GROUP="plugdev", MODE="0660"`)が無いと
+`libusb_open() = -3 (LIBUSB_ERROR_ACCESS)`で開けない。
+HIL runnerのsetup手順に含める。
+
+### probeのfirmware世代(2026-08-19実測)
+
+minichlinkは`\x81\x0d\x01\x01`の応答`rbuff[5]`でprobeの種別を判定する
+(`pgm-wch-linke.c`)。手元の個体は**`1` = CH549、すなわち初代WCH-Link**であり、
+WCH-LinkE(`18`)ではなかった。
+
+| 値 | probe |
+|---|---|
+| 1 | CH549(初代WCH-Link) |
+| 2 / 3 | CH32V307 / CH32V203ベース |
+| 4 / 5 | LinkB / LinkW |
+| 18 | **WCH-LinkE** |
+
+初代WCH-Linkは電源制御(`-3`/`-5`)とCH32V003の単線SDI debugに対応しない。
+**fixture inventoryにはprobeの種別とfirmware versionを記録する**必要がある
+(「WCH-LinkEを持っている」だけでは、その日に挿さっている個体がLinkEである保証にならない)。
+
+### 同梱minichlinkの世代差(2026-08-19実測)
+
+`~/.arduino15/packages/UIAP/tools/minichlink-2982dfd/1.0.0/minichlink`は
+`-l`を`Error: Unknown command l`で拒否する。**serial選択を持たない古いbuild**である。
+上流`ch32fun`のsourceには`-l`と`MINICHLINK_LINKE_SERIAL`の両方がある。
+
+つまり「minichlinkでserial選択できる」は**上流をbuildして配る前提**の話であり、
+既存のBoard Manager配布物をそのまま使うと成立しない。tool定義を作るとき(Q-040)は
+**versionを固定し、`-l`の存在をsmoke testで検証する**こと。
 
 ### arduino-cli側で選択子を渡す経路(2026-08-19実測)
 
@@ -92,8 +145,8 @@ WCH-Link host protocolはfirmware依存の解析部分があるため、probe fi
 ### 当面の扱い
 
 - 単一DUTで進む限りこの制約は開発をblockしない
-- 「運用優先構成」(1 DUT laneにつき1 WCH-LinkE)の可否は、**serialによる選択が実機で成立するかの確認待ち**。
-  成立すれば運用優先構成は生きる(当初の「第一候補から外す」判断は撤回)
+- 「運用優先構成」(1 DUT laneにつき1 WCH-LinkE)は**生きる**。
+  serialがuniqueであることを実機で確認済み(当初の「第一候補から外す」判断は撤回)
 - 成立しない場合に限り「台数削減構成」(1 LinkE + debug signal mux)へ倒す
 
 USB serialと列挙indexは恒久IDとして扱いません。
