@@ -1,0 +1,103 @@
+# W-6: no-hardware CI over the prototype verification scripts.
+# See docs/infrastructure.ja.md. All jobs run without target hardware.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # W-2: unified startup vs EVT startup ELF equivalence (13 variants)
+  startup-equivalence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache xPack toolchain archive
+        uses: actions/cache@v4
+        with:
+          path: ~/xpack-cache
+          key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
+      - name: Fetch and extract toolchain
+        run: python3 prototypes/index/fetch_xpack.py --dest ~/xpack-cache --extract ~/xpack
+      - name: Clone EVT mirrors (sparse, SRC only)
+        run: |
+          mkdir -p ~/mirrors && cd ~/mirrors
+          for repo in CH32V003 CH32V006 CH32V20x CH32V205 CH32M030 CH32V307 CH32V407 CH32X035 CH32X315 CH32L103; do
+            git clone --depth 1 --filter=blob:none --sparse "https://github.com/ch32-riscv-ug/$repo"
+            git -C "$repo" sparse-checkout set EVT/EXAM/SRC
+          done
+      - name: Run equivalence harness
+        run: |
+          CH32_MIRROR_ROOT="$HOME/mirrors" \
+          CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
+          prototypes/startup/run_check.sh /tmp/w2
+
+  # W-4: committed generated files must match regeneration from the locked
+  # ch32-device-data commit (recorded in the generated boards.txt header)
+  generated-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone ch32-device-data at the locked commit
+        run: |
+          commit=$(sed -n 's/^# source: ch32-device-data tables @ git \([0-9a-f]\{40\}\)$/\1/p' prototypes/platform/ch32v/boards.txt)
+          test -n "$commit" || { echo "no locked commit in boards.txt"; exit 1; }
+          git clone https://github.com/ch32-riscv-ug/ch32-device-data ~/ch32-device-data
+          git -C ~/ch32-device-data checkout "$commit"
+      - name: Check regeneration matches committed files
+        run: |
+          python3 prototypes/generator/generate.py \
+            --tables ~/ch32-device-data/tables \
+            --platform prototypes/platform/ch32v --check
+
+  # W-3/W-7: symlink-mode compile matrix over all generated part numbers
+  compile-matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Cache xPack toolchain archive
+        uses: actions/cache@v4
+        with:
+          path: ~/xpack-cache
+          key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
+      - name: Fetch and extract toolchain
+        run: python3 prototypes/index/fetch_xpack.py --dest ~/xpack-cache --extract ~/xpack
+      - name: Compile all part numbers
+        run: |
+          CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
+          prototypes/platform/test_compile.sh /tmp/w3 | tee /tmp/w3.log
+      - name: Size summary
+        if: always()
+        run: |
+          { echo "### Compile sizes (${{ matrix.os }})"; echo '```'; \
+            grep -E "compile Blink|Sketch uses|Global variables" /tmp/w3.log; \
+            echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  # W-5: clean Board Manager install via local HTTP, then compile with no overrides
+  install-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Cache xPack toolchain archive
+        uses: actions/cache@v4
+        with:
+          path: ~/xpack-cache
+          key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
+      - name: Fetch toolchain archive
+        run: python3 prototypes/index/fetch_xpack.py --dest ~/xpack-cache | tee /tmp/archive-path
+      - name: Clean install and compile
+        run: |
+          CH32_XPACK_ARCHIVE=$(cat /tmp/archive-path) \
+          prototypes/index/test_install.sh /tmp/w5

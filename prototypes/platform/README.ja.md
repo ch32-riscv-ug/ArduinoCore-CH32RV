@@ -46,7 +46,7 @@ ch32v/
 
 ## 既知の制限(実装時に解消する)
 
-- **グローバルコンストラクタ未実行**: sections.ldは`__init_array_start/end`を提供するが、crt0はまだ呼ばない(旧コアの主要patch要因。own crtの必須作業)
+- グローバルコンストラクタはcrt0が`.init_array`ループで呼び出す(`CH32_NO_INIT_ARRAY`で無効化可)。test_compile.shが「sketchのctorが.init_arrayに載る+crt0に呼出ループがある」ことを静的検査するが、**実行はHIL待ち**
 - API/pinはスタブ。upload/デバッグrecipeなし
 - vendorヘッダ・SPLを一切含まないため、実ペリフェラル操作はできない
 - `crt0_ch32.S`が`prototypes/startup/`と二重管理(prototype段階の割り切り)

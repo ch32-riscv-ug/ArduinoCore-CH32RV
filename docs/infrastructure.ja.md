@@ -68,9 +68,11 @@ index配信の方針(前例に基づく決定済みの方向):
 
 ## GitHub Pages用途候補(提案)
 
-- package index JSONの配信(index repoから。URLの安定性が利用者導線になる)
+- package index JSONの配信(URLの安定性が利用者導線になる)
 - support matrix・対応SKU一覧(device-data+CI結果から生成)
 - size regressionやcompile状況のダッシュボード(静的生成)
+
+現状(2026-08-19確認): 本repoのPagesは有効化済みで、`/`全体が https://ch32-riscv-ug.github.io/ArduinoCore-CH32/ で公開されている。index配信に使う場合のURL候補は `https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json`。JSONやarchiveを確実に生配信するには`.nojekyll`の追加(Jekyll処理の無効化)を推奨(未適用。判断ポイント)。
 
 ## 実機なしフェーズの作業順序(提案)
 
@@ -79,7 +81,7 @@ index配信の方針(前例に基づく決定済みの方向):
 3. **W-3**: 暫定packager/FQBNを決め、symlink方式でBlink compileを通す(**完了**、[実験0003](experiments/0003-arduino-cli-platform-poc.ja.md)と[prototypes/platform/](../prototypes/platform/README.ja.md)。暫定FQBN=`ch32-riscv-ug:ch32v:CH32V00X:pnum=...`)
 4. **W-4**: tablesからV00X familyのboards.txt/ld/variantを生成する最小generatorを作り、W-3のplatformへ接続(**boards.txt+ldは完了**、[実験0004](experiments/0004-boards-generator-poc.ja.md)と[prototypes/generator/](../prototypes/generator/README.ja.md)。26/26 SKU compile matrix成功。variant生成とdata lockが未了)
 5. **W-5**: index生成とローカルinstall検証をscript化(**完了**、[実験0005](experiments/0005-package-index-install.ja.md)と[prototypes/index/](../prototypes/index/README.ja.md)。xPack直リンクtool参照のarchive形式・tool解決を実物確認)
-6. **W-6/W-7**: host testとsize計測をCI化し、上記すべてをGitHub Actionsへ載せる
+6. **W-6/W-7**: host testとsize計測をCI化し、上記すべてをGitHub Actionsへ載せる(**workflow作成済み**: [.github/workflows/ci.yml](../.github/workflows/ci.yml)。startup-equivalence(EVTミラーをsparse clone)/generated-sync(boards.txtヘッダのlocked commitでdevice-dataをcheckout)/compile-matrix(ubuntu+macos、size summary付き)/install-test(ubuntu+macos)の4 job。**初回実行と各jobのgreen確認はGitHub push後**。host test(W-6の一部)とsize回帰の閾値化(W-7)は未了)
 
 この順序は「後の工程が前の工程の生成物を消費する」依存関係に沿っており、各段階の成果物がそのままCIのtestになる。
 

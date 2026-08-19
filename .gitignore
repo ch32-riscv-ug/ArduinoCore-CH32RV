@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor local settings
+.vscode/
+.idea/
+
+# Local build/work outputs (verification scripts take an external workdir,
+# but guard against accidental in-repo runs)
+*.elf
+*.map
+*.hex
+*.bin
+/work/

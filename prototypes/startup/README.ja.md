@@ -39,6 +39,7 @@ CH32_GCC_BIN=/path/to/xpack-riscv-none-elf-gcc-14.3.0-1/bin \
 | `CH32_CSR_BC1` | (任意)CSR 0xbc1初期値 | 0x1 / 0x7 |
 | `CH32_CSR805_CLR` | (任意)CSR 0x805でクリアするbit | 0x100(V407) |
 | `CH32_HIGHCODE` | (任意)`.highcode`のRAMコピーを有効化 | − |
+| `CH32_NO_INIT_ARRAY` | (任意)C++グローバルコンストラクタ(`.init_array`)呼び出しを無効化 | − |
 
 ## 既知の未対応
 

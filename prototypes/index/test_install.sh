@@ -16,7 +16,24 @@ mkdir -p "$WORK/www" "$WORK/Blink"
 # 1) package the platform and generate the index (tool URL -> local server)
 python3 "$HERE/gen_index.py" --platform "$HERE/../platform/ch32v" \
   --out "$WORK/www" --base-url "$BASE_URL" --tools local
-cp "$CH32_XPACK_ARCHIVE" "$WORK/www/xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz"
+
+# Serve the provided archive under the name the index expects for it. The entry
+# is found by SHA-256, so a wrong/corrupt archive fails here instead of later.
+ARCHIVE_NAME=$(python3 - "$CH32_XPACK_ARCHIVE" "$HERE/tools_xpack_gcc.json" <<'EOF'
+import hashlib, json, sys
+h = hashlib.sha256()
+with open(sys.argv[1], "rb") as f:
+    for chunk in iter(lambda: f.read(1 << 20), b""):
+        h.update(chunk)
+frag = json.load(open(sys.argv[2]))
+for s in frag["systems"]:
+    if s["checksum"] == "SHA-256:" + h.hexdigest():
+        print(s["archiveFileName"]); break
+else:
+    sys.exit("archive does not match any checksum in tools_xpack_gcc.json")
+EOF
+)
+cp "$CH32_XPACK_ARCHIVE" "$WORK/www/$ARCHIVE_NAME"
 
 # 2) serve it
 python3 -m http.server "$PORT" --bind 127.0.0.1 --directory "$WORK/www" &

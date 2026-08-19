@@ -8,6 +8,7 @@
  *   CH32_CSR_BC1        optional, value for csr 0xbc1
  *   CH32_CSR805_CLR     optional, bitmask cleared in csr 0x805 (csrc)
  *   CH32_HIGHCODE       optional, copy .highcode from flash to RAM
+ *   CH32_NO_INIT_ARRAY  optional, skip calling C++ global constructors
  */
 
 #ifndef CH32_VECTORS
@@ -142,6 +143,21 @@ handle_reset:
     csrw mtvec, t0
 
     jal SystemInit
+
+#ifndef CH32_NO_INIT_ARRAY
+/* Call C++ global constructors (.init_array). Not done by the EVT startups;
+   this is an own-crt feature (linker script must provide the symbols). */
+    la s0, __init_array_start
+    la s1, __init_array_end
+1:
+    bgeu s0, s1, 2f
+    lw t0, 0(s0)
+    jalr t0
+    addi s0, s0, 4
+    j 1b
+2:
+#endif
+
     la t0, main
     csrw mepc, t0
     mret

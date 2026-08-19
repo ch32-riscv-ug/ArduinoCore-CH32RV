@@ -50,4 +50,15 @@ for pnum in $PNUMS; do
     "$WORK/Blink" || fail=1
   "$CH32_GCC_BIN/riscv-none-elf-size" "$WORK/build-$pnum/Blink.ino.elf"
 done
+
+# Static checks on one build: sketch's global constructor is registered in
+# .init_array and crt0 contains the constructor-call loop (jalr). Runtime
+# execution is verified later on hardware (HIL).
+ELF="$WORK/build-CH32V006K8U7/Blink.ino.elf"
+IA=$("$CH32_GCC_BIN/riscv-none-elf-size" -A "$ELF" | awk '$1==".init_array"{print $2}')
+if [ -z "$IA" ] || [ "$IA" -eq 0 ]; then echo "FAIL: .init_array empty"; exit 1; fi
+"$CH32_GCC_BIN/riscv-none-elf-nm" "$ELF" | grep -q "_GLOBAL__sub_I" || { echo "FAIL: no global ctor symbol"; exit 1; }
+"$CH32_GCC_BIN/riscv-none-elf-objdump" -d "$ELF" | sed -n '/<handle_reset>:/,/^$/p' | grep -q "jalr" || { echo "FAIL: crt0 has no init_array call loop"; exit 1; }
+echo "INIT_ARRAY CHECKS OK (.init_array=$IA bytes)"
+
 exit $fail
