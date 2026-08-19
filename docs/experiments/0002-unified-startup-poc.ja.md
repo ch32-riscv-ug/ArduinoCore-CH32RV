@@ -54,9 +54,14 @@ prototypes/startup/run_check.sh /tmp/w2-work
 # exit 0 = 全familyの等価性検証合格
 ```
 
+## 追記(同日): 全family拡張
+
+ハーネスをデータ駆動化し、**13バリアント**(V003/V00X/V20x D6・D8・D8W/V205/M030/V307 D8・D8C/V407/X035/X315/L103)へ拡張して全て合格(exit 0)。V003のhighcode軸(`CH32_HIGHCODE`)も動作確認済み。crt0のvector include指定は`-DCH32_VECTORS=<file>`(非引用)+stringify方式へ変更した(platform.txtからの注入用)。
+
+除外は2 family: **CH32V103**(j命令テーブル+mtvecモード00。比較器のデコーダ対応と一次資料確認が必要)、**CH32H417**(v3f/v5fともloadcode boot。`CH32_LOADCODE`軸の追加が必要)。
+
 ## 残る未検証事項
 
 - 実機でのreset動作、weak上書きISRの実発火(HILで)
-- V103(j命令テーブル)、V205/M030/V407/X315/L103/H417 v3fの残りfamily(defineセットはR-01の表で確定済み、ハーネスへの追加のみ)
-- H417 V5Fのloadcode boot(`CH32_LOADCODE`軸の追加が必要)
+- CH32V103(j命令テーブル)とCH32H417(loadcode boot)の対応
 - グローバルコンストラクタ(`__init_array`)呼び出しの追加(EVT startupは呼ばないため等価性検証の対象外。own crtの新機能として別途test)

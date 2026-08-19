@@ -1,0 +1,26 @@
+# W-3 prototype boards.txt - hand-written seed; the real file will be generated
+# from ch32-device-data (see docs/research/board-variants-and-menus.ja.md).
+menu.pnum=Part Number
+
+CH32V00X.name=CH32V00X (V002/V004/V005/V006/V007/M007) [prototype]
+CH32V00X.build.board=CH32V00X
+CH32V00X.build.core=arduino
+CH32V00X.build.variant=CH32V00X
+CH32V00X.build.march=rv32emc_zicsr
+CH32V00X.build.mabi=ilp32e
+CH32V00X.build.f_cpu=48000000L
+CH32V00X.build.startup_defines=-DCH32_VECTORS=vectors_ch32v00x.inc -DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3
+
+CH32V00X.menu.pnum.CH32V006K8U7=CH32V006K8U7 (QFN32, 62K/8K)
+CH32V00X.menu.pnum.CH32V006K8U7.build.board=CH32V006K8U7
+CH32V00X.menu.pnum.CH32V006K8U7.build.series=CH32V006
+CH32V00X.menu.pnum.CH32V006K8U7.build.ldscript=ch32v006_62k_8k.ld
+CH32V00X.menu.pnum.CH32V006K8U7.upload.maximum_size=63488
+CH32V00X.menu.pnum.CH32V006K8U7.upload.maximum_data_size=8192
+
+CH32V00X.menu.pnum.CH32V002F4U6=CH32V002F4U6 (QFN20, 16K/4K)
+CH32V00X.menu.pnum.CH32V002F4U6.build.board=CH32V002F4U6
+CH32V00X.menu.pnum.CH32V002F4U6.build.series=CH32V002
+CH32V00X.menu.pnum.CH32V002F4U6.build.ldscript=ch32v002_16k_4k.ld
+CH32V00X.menu.pnum.CH32V002F4U6.upload.maximum_size=16384
+CH32V00X.menu.pnum.CH32V002F4U6.upload.maximum_data_size=4096

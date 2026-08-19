@@ -42,7 +42,7 @@ index配信の方針(前例に基づく決定済みの方向):
 - 前例: [tanakamasayuki/lang-ship-arduino-core](https://github.com/tanakamasayuki/lang-ship-arduino-core)は、`host-arduino-core`と`native-arduino-core`の**統合package indexをGitHub Pagesで配信**し、各ソースrepositoryのrelease workflow完了をkickにGitHub Actionsで統合indexを再生成している
 - 統合indexが必要になる理由: Arduino CLIには**同一packager名前空間のindexが複数あると共存できないケース**があるため、同じ名前空間のコアが複数になったらindexを1つへマージする必要がある
 - したがって: **コアが1つの間は本repoから直接配信する(シンプル)**。同一名前空間のコアが増えた時点でlang-ship方式(merged index repo+release kick)へ移行する
-- 旧CH32コア(`ch32-riscv-ug`系)の名前空間との衝突は考慮しない(**旧のは捨ててよい**方針)
+- 本プロジェクトは**ch32-riscv-ug**(ユーザーグループ。WCH公式ではない)配下であり、lang-ship系とは別の名前空間。旧CH32コア(同じch32-riscv-ug配下)のindex/名前空間との衝突は「**旧のは捨てる**」方針で解消する
 - generatorの置き場所は判断ポイント(後述)。データ正本はch32-device-data、生成物の消費者は本repoという境界は[ADR-0001](adr/0001-device-data-repository.ja.md)の通り
 
 ## 生成物の扱い(提案)
@@ -75,8 +75,8 @@ index配信の方針(前例に基づく決定済みの方向):
 ## 実機なしフェーズの作業順序(提案)
 
 1. **W-1**: xPack multilib確認とfamily別compile smoke(linux-x64分は[実験0001](experiments/0001-xpack-multilib-smoke.ja.md)で完了。Windows/macOSはW-6のCI matrixで実施)
-2. **W-2**: 統合startup prototypeを書き、全family分をassemble+ELF検査するローカルscriptを作る(3 family分のPoCは[実験0002](experiments/0002-unified-startup-poc.ja.md)と[prototypes/startup/](../prototypes/startup/README.ja.md)で完了。残りfamilyの追加とCI化が未了)
-3. **W-3**: 暫定packager/FQBNを決め(Q-015のADR候補)、symlink方式でBlink compileを通す
+2. **W-2**: 統合startup prototypeを書き、全family分をassemble+ELF検査するローカルscriptを作る(**13バリアントで完了**、[実験0002](experiments/0002-unified-startup-poc.ja.md)と[prototypes/startup/](../prototypes/startup/README.ja.md)。V103/H417とCI化が未了)
+3. **W-3**: 暫定packager/FQBNを決め、symlink方式でBlink compileを通す(**完了**、[実験0003](experiments/0003-arduino-cli-platform-poc.ja.md)と[prototypes/platform/](../prototypes/platform/README.ja.md)。暫定FQBN=`ch32-riscv-ug:ch32v:CH32V00X:pnum=...`)
 4. **W-4**: tablesからV00X familyのboards.txt/ld/variantを生成する最小generatorを作り、W-3のplatformへ接続
 5. **W-5**: index生成とローカルinstall検証をscript化
 6. **W-6/W-7**: host testとsize計測をCI化し、上記すべてをGitHub Actionsへ載せる
@@ -86,7 +86,7 @@ index配信の方針(前例に基づく決定済みの方向):
 ## 判断ポイント
 
 - generator(boards.txt/variant/ld/vector生成)を本repoに置くかch32-device-dataに置くか。提案は**本repo**(生成物の形式はArduino都合で決まり、データ側を汚さない)
-- CH32コアをlang-ship系(host/native core)と同一packager名前空間に入れるか、独立名前空間にするか(前者なら最初からmerged index前提、後者なら当面コア直配信で足りる)。Q-017と併せて決める
+- ~~CH32コアをlang-ship系と同一packager名前空間に入れるか~~ → **解決**: 本プロジェクトはch32-riscv-ug配下の独立名前空間。開発用の暫定packagerは`ch32-riscv-ug`とし(Q-015)、公開時のIDと表示名はQ-017のADRで確定する
 - Pagesの公開単位(repoごとに持つか、index repoに集約するか)
 - 暫定packager/architecture ID(Q-015)。install検証を始めるW-3までに仮決めが必要
 - arm64 runner(linux-arm64/macos arm64)をcompile matrixへ含める範囲
