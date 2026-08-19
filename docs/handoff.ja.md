@@ -6,7 +6,7 @@
 
 `ArduinoCore-CH32`は、旧[`arduino_core_ch32_riscv_noneos`](https://github.com/ch32-riscv-ug/arduino_core_ch32_riscv_noneos)を修復せず、長期保守を前提に新規設計するプロジェクトです。対象は全CH32ファミリ(11 family / 27 series / 103型番)。
 
-実機なしフェーズ(環境整備)は完了済みです。リポジトリには設計文書、[事前調査](research/README.ja.md)、[実験記録0001〜0008](experiments/0001-xpack-multilib-smoke.ja.md)、[ADR-0001〜0005](adr/README.ja.md)、検証済みprototype([統合startup](../prototypes/startup/README.ja.md)、[最小platform](../prototypes/platform/README.ja.md)、[generator](../prototypes/generator/README.ja.md)、[index/install](../prototypes/index/README.ja.md)、[sizebench](../prototypes/sizebench/README.ja.md))と、3 OSでall greenの[CI](../.github/workflows/ci.yml)があります。**コア本体(実API)の実装はこれから**です。
+実機なしフェーズ(環境整備)は完了済みです。リポジトリには設計文書、[事前調査](research/README.ja.md)、[実験記録0001〜0008](experiments/0001-xpack-multilib-smoke.ja.md)、[ADR-0001〜0007](adr/README.ja.md)、検証済みprototype([統合startup](../prototypes/startup/README.ja.md)、[最小platform](../prototypes/platform/README.ja.md)、[generator](../prototypes/generator/README.ja.md)、[index/install](../prototypes/index/README.ja.md)、[sizebench](../prototypes/sizebench/README.ja.md))と、3 OSでall greenの[CI](../.github/workflows/ci.yml)があります。**コア本体(実API)の実装はこれから**です。
 
 device databaseは独立[`ch32-device-data`](https://github.com/ch32-riscv-ug/ch32-device-data)が正本([ADR-0001](adr/0001-device-data-repository.ja.md)、[境界](device-data.ja.md))。
 
@@ -19,6 +19,8 @@ ADRになっている決定:
 - [ADR-0003](adr/0003-owned-startup-vector-linker.ja.md): startup/CRT/vector/linkerは**own実装**。共通crt0+family別vector include(将来device-data生成)、コンストラクタ呼び出し込み、VectorInRAMはld切替
 - [ADR-0004](adr/0004-runtime-and-cxx.ja.md): **newlib-nano default、printf %fはmenu opt-in、GNU++17**(-fno-exceptions/-fno-rtti/-fno-threadsafe-statics)。コアAPIはprintf非依存。ltoa/ultoa/dtostrfはcore提供
 - [ADR-0005](adr/0005-board-structure-and-fqbn.ja.md): boardは**family単位+pnumメニューに全型番**。boards.txt/ld/variantはdevice-dataから自動生成(手編集CI拒否、locked commit検証)。暫定FQBN=`ch32-riscv-ug:ch32v:<BOARD>:pnum=<型番>`
+- [ADR-0006](adr/0006-rtos-policy.ja.md): **コアはベアメタル単一セマンティクス**。初期リリースはRTOSなし、将来はコア同梱FreeRTOSライブラリ(UNO R4方式)が第一候補。tickソース差替可能なHALとConfig置換フックをQ-013で先行実装
+- [ADR-0007](adr/0007-user-build-option-injection.ja.md): **`build.extra_flags`はコアで使わずユーザー注入専用**(--build-property/boards.local.txt)。CIが注入到達を常時ガード
 
 運用上の決定(ADR外):
 
@@ -53,4 +55,4 @@ ADRになっている決定:
 
 ## 新しいスレッドでの開始文
 
-> `/home/mt/dev_wch/ArduinoCore-CH32`でCH32向けArduinoコアを開発しています。まず`docs/handoff.ja.md`を読んでください(決定済み事項はADR-0001〜0005、検証済み資産はprototypes/、実験の根拠はdocs/experiments/)。環境整備フェーズは完了しており、これからコア本体の実装に入ります。入口はQ-010(ArduinoCore-APIの固定versionとLGPL配布方法)とQ-013(内部HAL contract)です。EVT・公式PDF・旧コアは参照のみとし、新repositoryへコピーしないでください(ADR-0003によりstartup/ldはown実装済み)。toolchainはxPack riscv-none-elf-gcc 14.3.0-1(ADR-0002)、検証はprototypes配下のscript群とGitHub Actions(3 OS green)で回ります。
+> `/home/mt/dev_wch/ArduinoCore-CH32`でCH32向けArduinoコアを開発しています。まず`docs/handoff.ja.md`を読んでください(決定済み事項はADR-0001〜0007、検証済み資産はprototypes/、実験の根拠はdocs/experiments/)。環境整備フェーズは完了しており、これからコア本体の実装に入ります。入口はQ-010(ArduinoCore-APIの固定versionとLGPL配布方法)とQ-013(内部HAL contract)です。EVT・公式PDF・旧コアは参照のみとし、新repositoryへコピーしないでください(ADR-0003によりstartup/ldはown実装済み)。toolchainはxPack riscv-none-elf-gcc 14.3.0-1(ADR-0002)、検証はprototypes配下のscript群とGitHub Actions(3 OS green)で回ります。

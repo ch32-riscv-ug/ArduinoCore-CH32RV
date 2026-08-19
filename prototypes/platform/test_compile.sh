@@ -73,4 +73,22 @@ if [ -z "$IA" ] || [ "$IA" -eq 0 ]; then echo "FAIL: .init_array empty"; exit 1;
 "$CH32_GCC_BIN/riscv-none-elf-objdump" -d "$ELF" | sed -n '/<handle_reset>:/,/^$/p' | grep -q "jalr" || { echo "FAIL: crt0 has no init_array call loop"; exit 1; }
 echo "INIT_ARRAY CHECKS OK (.init_array=$IA bytes)"
 
+# ADR-0007 guard: build.extra_flags is reserved for USER injection. Verify an
+# injected define reaches the sketch (fails if the core ever consumes the property).
+mkdir -p "$WORK/ExtraFlags"
+cat > "$WORK/ExtraFlags/ExtraFlags.ino" <<'EOF'
+#ifndef CH32_EXTRA_FLAGS_SMOKE
+#error "build.extra_flags did not reach the sketch"
+#endif
+void setup() {}
+void loop() {}
+EOF
+arduino-cli compile \
+  --fqbn "ch32-riscv-ug:ch32v:CH32V00X:pnum=CH32V006K8U7" \
+  --build-property "compiler.path=$(w "$CH32_GCC_BIN")/" \
+  --build-property "build.extra_flags=-DCH32_EXTRA_FLAGS_SMOKE=1" \
+  --build-path "$(w "$WORK/build-extraflags")" \
+  "$(w "$WORK/ExtraFlags")"
+echo "EXTRA_FLAGS INJECTION OK"
+
 exit $fail

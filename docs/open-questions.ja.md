@@ -13,7 +13,6 @@
 | Q-003 | P1 | Arduino APIの初期対応範囲とSKU別の未対応表現 | ArduinoCore-API inventory、標準API contract、サイズbudget、capability、利用例 |
 | Q-004 | P1 | 旧コアとのソース互換範囲 | 既存sketch/exampleのcompile survey |
 | Q-005 | P2 | 初期release後にEVT Compatibility Packを提供する必要があるか | 実用Arduino example提供後の利用者需要、license、維持コスト |
-| Q-006 | P2 | RTOSの提供方式(コア同梱ライブラリ/独立ライブラリ)と提供開始のトリガー | 利用者需要。方針調査は[R-16](research/rtos-support.ja.md)済み(コア層はベアメタル維持、初期はRTOSなしを推奨)。millis/delayのtickソース差替可能性とbuild_opt.h相当フックはQ-013で先行実装 |
 
 ## Architectureとmanifest
 
@@ -98,4 +97,5 @@
 | Q-022 | default=newlib-nano。printf `%f`はmenu opt-in。ltoa/ultoa/dtostrfはcore提供。[ADR-0004](adr/0004-runtime-and-cxx.ja.md) |
 | Q-023 | GNU++17(+-fno-exceptions/-fno-rtti/-fno-threadsafe-statics)。サイズ差ゼロを実測確認。[ADR-0004](adr/0004-runtime-and-cxx.ja.md) |
 | Q-026 | 直リンク参照(convey回避)で満たす。再ホスト時はGPL§6(d)対応へ切替。[ADR-0002](adr/0002-toolchain-distribution.ja.md) |
+| Q-006 | コアはベアメタル単一セマンティクス。初期リリースはRTOSなし。将来はコア同梱FreeRTOSライブラリ(UNO R4方式)を第一候補とし、提供開始は利用者需要で判断。[ADR-0006](adr/0006-rtos-policy.ja.md) |
 | Q-054 | コアが1つの間は本repositoryから直接配信し、同一名前空間のコアが増えたらlang-ship方式(統合index repo+release kick)へ移行する(2026-08-19決定)。append-only運用の詳細はrelease前に確定 |

@@ -1,7 +1,7 @@
 # R-16: RTOSサポート方針の事前調査
 
 調査基準日: 2026-08-19
-関連: 新規論点Q-006、[Q-003](../open-questions.ja.md)、boardメニュー構成([ADR-0005](../adr/0005-board-structure-and-fqbn.ja.md))
+関連: Q-006(→[ADR-0006](../adr/0006-rtos-policy.ja.md)で決定済み)、[Q-003](../open-questions.ja.md)、boardメニュー構成([ADR-0005](../adr/0005-board-structure-and-fqbn.ja.md))
 
 ## 調査目的
 

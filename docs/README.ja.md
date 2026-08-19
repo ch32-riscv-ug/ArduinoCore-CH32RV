@@ -49,7 +49,7 @@
 | [test-strategy.ja.md](test-strategy.ja.md) | unit、host、compile、HIL、logic analyzer、CI |
 | [roadmap.ja.md](roadmap.ja.md) | 段階的な実装順と完了条件 |
 | [open-questions.ja.md](open-questions.ja.md) | 未決定事項、必要な実験、判断基準 |
-| [adr/README.ja.md](adr/README.ja.md) | ADR一覧(0001: device data独立repo、0002: toolchain=xPack直リンク、0003: owned startup/vector/linker、0004: newlib-nano+GNU++17、0005: family board+pnum生成) |
+| [adr/README.ja.md](adr/README.ja.md) | ADR一覧(0001: device data独立repo、0002: toolchain=xPack直リンク、0003: owned startup/vector/linker、0004: newlib-nano+GNU++17、0005: family board+pnum生成、0006: RTOSはベアメタル+将来ライブラリ、0007: extra_flagsユーザー専用) |
 
 ## 更新規則
 

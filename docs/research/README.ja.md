@@ -29,7 +29,7 @@
 | R-13 | USB(CDC/HID)対応family | X035/V20x/V307等のUSB stack方針 | Q-003 | 未着手(初期scope外の見込み) |
 | R-14 | ArduinoCore-APIの取込とhost test | 固定version、LGPL配布 | Q-010, Q-016 | [既存文書](../architecture.ja.md)で管理 |
 | R-15 | [開発中コアのインストール方式とテスト環境](local-install-and-test-env.ja.md) | symlink直接実行と、ローカルHTTP+arduino-cli経由の実インストール検証の使い分け | Q-015, Q-016 | 方式A/Bとも検証済み |
-| R-16 | [RTOSサポート方針](rtos-support.ja.md) | EVTのRTOS移植の実態と他コア前例から、コア層での採用/オプション/ライブラリ任せを判断 | Q-006, Q-003, Q-013 | **調査済み** |
+| R-16 | [RTOSサポート方針](rtos-support.ja.md) | EVTのRTOS移植の実態と他コア前例から、コア層での採用/オプション/ライブラリ任せを判断 | Q-006, Q-003, Q-013 | 調査済み・[ADR-0006](../adr/0006-rtos-policy.ja.md)で決定 |
 
 ## 主要な結論(要約)
 

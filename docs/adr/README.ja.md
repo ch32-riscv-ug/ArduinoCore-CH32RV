@@ -70,6 +70,8 @@
 - [ADR-0003](0003-owned-startup-vector-linker.ja.md): owned startup/CRT/vector/linker
 - [ADR-0004](0004-runtime-and-cxx.ja.md): newlib-nano defaultとGNU++17
 - [ADR-0005](0005-board-structure-and-fqbn.ja.md): family board+pnumメニューとdevice-data生成
+- [ADR-0006](0006-rtos-policy.ja.md): コアはベアメタル、RTOSは将来の同梱ライブラリ
+- [ADR-0007](0007-user-build-option-injection.ja.md): build.extra_flagsはユーザー注入専用に予約
 
 ## 今後のADR候補
 
