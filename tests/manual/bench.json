@@ -1,0 +1,13 @@
+{
+  "comment": [
+    "How the boards on this bench are wired, when it differs from what the",
+    "variant generates. Since the generator started preferring each USART's",
+    "reset-default route, the generated default matches this bench on every",
+    "board tried so far, so this file is empty of overrides.",
+    "",
+    "Find the value for a board whose wiring does differ with:",
+    "  uv run tests/manual/uart_scan.py --board <BOARD>",
+    "and record it here so smoke.py needs no --serial."
+  ],
+  "boards": {}
+}

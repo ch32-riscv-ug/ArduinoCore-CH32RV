@@ -9,7 +9,7 @@ It compiles and uploads exactly the way a user would - `arduino-cli upload
 --programmer wch-link`, which drives probe-rs - so a pass means the shipping
 path works, not just the code.
 
-  uv run tests/hardware/smoke.py --board CH32X035
+  uv run tests/manual/smoke.py --board CH32X035
 
 The probe and its UART bridge are discovered by USB VID:PID, because boards get
 swapped on this bench and /dev/ttyACM* is not stable. Pass --probe <serial> when
@@ -24,6 +24,7 @@ Environment:
                  Board Manager installed under ~/.arduino15)
 """
 import argparse
+import json
 import os
 import pathlib
 import re
@@ -93,6 +94,17 @@ def serial_pins(board: str, override=None):
     return n, tx.group(1), rx.group(1), (note.group(1).strip() if note else "")
 
 
+BENCH = REPO / "tests" / "hardware" / "bench.json"
+
+
+def bench_serial(board: str):
+    """The USART this bench has wired for a board, or None if unrecorded."""
+    if not BENCH.exists():
+        return None
+    entry = json.loads(BENCH.read_text(encoding="utf-8"))["boards"].get(board)
+    return entry.get("serial") if entry else None
+
+
 def find_probe_rs():
     """The probe-rs the Board Manager installed, newest version last."""
     root = pathlib.Path.home() / ".arduino15" / "packages" / "ch32-riscv-ug" / "tools" / "probe-rs"
@@ -156,7 +168,10 @@ def main() -> int:
     else:
         print("== target chip not identified; flashing anyway")
 
-    pins = serial_pins(args.board, args.serial)
+    serial_index = args.serial if args.serial else bench_serial(args.board)
+    if serial_index and not args.serial:
+        print(f"== bench.json says {args.board} is wired to USART{serial_index}")
+    pins = serial_pins(args.board, serial_index)
     if pins is None:
         print(f"{args.board}: the variant defines no default Serial port")
         return 1
@@ -181,8 +196,8 @@ def main() -> int:
                  "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
                  "--build-property", f"compiler.path={gcc}/",
                  *(["--build-property",
-                    f"build.extra_flags=-DCH32_SERIAL_DEFAULT={args.serial}"]
-                   if args.serial else []),
+                    f"build.extra_flags=-DCH32_SERIAL_DEFAULT={serial_index}"]
+                   if serial_index else []),
                  "--build-path", str(build), str(sketch_dir)], env=env)
         if r.returncode:
             print(r.stdout + r.stderr)
@@ -205,7 +220,15 @@ def main() -> int:
         import serial
         with serial.Serial(port, args.baud, timeout=0.3) as uart:
             uart.reset_input_buffer()
+            # The WCH-Link occasionally answers a flash session with
+            # "bulk read timed out" and recovers on the next attempt. Retry
+            # once, but say so: a bench that needs the retry every time is
+            # broken, and hiding that would make the suite lie.
             r = run(upload, env=env)
+            if r.returncode:
+                print("   upload failed, retrying once:")
+                print("   " + (r.stdout + r.stderr).strip().replace("\n", "\n   "))
+                r = run(upload, env=env)
             if r.returncode:
                 print(r.stdout + r.stderr)
                 return 1
