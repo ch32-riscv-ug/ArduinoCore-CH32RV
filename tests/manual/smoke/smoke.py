@@ -355,6 +355,73 @@ def resolve_bench(board=None, pnum="ANY", port=None, probe=None, serial=None,
                  baud=baud, seconds=seconds, properties=tuple(properties))
 
 
+def sketchbook(tmp: pathlib.Path) -> dict:
+    """An arduino-cli environment whose only platform is this working tree.
+
+    Only the sketchbook is sandboxed: it is where the platform symlink goes.
+    The data directory is left alone so arduino-cli does not re-download its
+    builtin tools on every run.
+    """
+    (tmp / "user" / "hardware" / "ch32-riscv-ug").mkdir(parents=True,
+                                                        exist_ok=True)
+    link = tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32v"
+    if not link.exists():
+        link.symlink_to(REPO)
+    return dict(os.environ, ARDUINO_DIRECTORIES_USER=str(tmp / "user"))
+
+
+def build(bench: Bench, sketch_dir: pathlib.Path, tmp: pathlib.Path,
+          env=None, log=print) -> pathlib.Path:
+    """Compile one sketch directory; return the build path or raise Failure."""
+    out = tmp / "build"
+    r = sh(["arduino-cli", "compile",
+            "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
+            "--build-property", f"compiler.path={bench.gcc}/",
+            *(["--build-property",
+               f"build.extra_flags=-DCH32_SERIAL_DEFAULT={bench.serial_index}"]
+              if bench.serial_index else []),
+            *[a for p in bench.properties for a in ("--build-property", p)],
+            "--build-path", str(out), str(sketch_dir)],
+           env=env if env is not None else sketchbook(tmp))
+    if r.returncode:
+        raise Failure("compile failed\n" + r.stdout + r.stderr)
+    log("   " + r.stdout.strip().replace("\n", "\n   "))
+    return out
+
+
+def upload(bench: Bench, built: pathlib.Path, sketch_dir: pathlib.Path,
+           env=None, log=print) -> None:
+    """Flash it the way a user would, or raise Failure.
+
+    The upload goes through the platform's own programmer entry, so this
+    exercises programmers.txt and the probe-rs recipe rather than a side
+    channel. --upload-property points the recipe at a probe-rs that may not be
+    Board-Manager-installed in a symlinked dev tree.
+    """
+    cmd = ["arduino-cli", "upload",
+           "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
+           "--programmer", "wch-link", "--input-dir", str(built),
+           "--upload-property", f"runtime.tools.probe-rs.path={bench.probe_rs}"]
+    if bench.select_probe:
+        cmd += ["--upload-property",
+                f"upload.probe_args=--probe 1a86:8010:{bench.probe}"]
+    cmd.append(str(sketch_dir))
+
+    env = env if env is not None else sketchbook(built.parent)
+    # The WCH-Link occasionally answers a flash session with "bulk read timed
+    # out" and recovers on the next attempt. Retry once, but say so: a bench
+    # that needs the retry every time is broken, and hiding that would make the
+    # suite lie.
+    r = sh(cmd, env=env)
+    if r.returncode:
+        log("   upload failed, retrying once:")
+        log("   " + (r.stdout + r.stderr).strip().replace("\n", "\n   "))
+        r = sh(cmd, env=env)
+    if r.returncode:
+        raise Failure("upload failed\n" + r.stdout + r.stderr)
+    log("   uploaded")
+
+
 def run_one(name, bench: Bench) -> dict:
     """Compile, flash and read back one sketch.
 
@@ -378,58 +445,22 @@ def run_one(name, bench: Bench) -> dict:
         sketch_dir = tmp / name
         sketch_dir.mkdir()
         shutil.copy(sketch, sketch_dir)
-        build = tmp / "build"
-        # Only the sketchbook is sandboxed: it is where the platform symlink
-        # goes. The data directory is left alone so arduino-cli does not
-        # re-download its builtin tools on every run.
-        env = dict(os.environ, ARDUINO_DIRECTORIES_USER=str(tmp / "user"))
-        (tmp / "user" / "hardware" / "ch32-riscv-ug").mkdir(parents=True)
-        (tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32v").symlink_to(REPO)
-        r = sh(["arduino-cli", "compile",
-                 "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
-                 "--build-property", f"compiler.path={bench.gcc}/",
-                 *(["--build-property",
-                    f"build.extra_flags=-DCH32_SERIAL_DEFAULT={bench.serial_index}"]
-                   if bench.serial_index else []),
-                 *[a for p in bench.properties
-                   for a in ("--build-property", p)],
-                 "--build-path", str(build), str(sketch_dir)], env=env)
-        if r.returncode:
-            print(r.stdout + r.stderr)
-            return {"verdict": "fail", "why": "compile failed",
-                    "output": r.stdout + r.stderr}
-        print("   " + r.stdout.strip().replace("\n", "\n   "))
-
-        # The upload goes through the platform's own programmer entry, so this
-        # exercises programmers.txt and the probe-rs recipe rather than a
-        # side channel. --upload-property points the recipe at a probe-rs that
-        # may not be Board-Manager-installed in a symlinked dev tree.
-        upload = ["arduino-cli", "upload",
-                  "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
-                  "--programmer", "wch-link", "--input-dir", str(build),
-                  "--upload-property", f"runtime.tools.probe-rs.path={bench.probe_rs}"]
-        if bench.select_probe:
-            upload += ["--upload-property",
-                       f"upload.probe_args=--probe 1a86:8010:{bench.probe}"]
-        upload.append(str(sketch_dir))
+        env = sketchbook(tmp)
+        try:
+            built = build(bench, sketch_dir, tmp, env)
+        except Failure as e:
+            print(str(e))
+            return {"verdict": "fail", "why": "compile failed", "output": str(e)}
 
         import serial
         with serial.Serial(bench.port, bench.baud, timeout=0.3) as uart:
             uart.reset_input_buffer()
-            # The WCH-Link occasionally answers a flash session with
-            # "bulk read timed out" and recovers on the next attempt. Retry
-            # once, but say so: a bench that needs the retry every time is
-            # broken, and hiding that would make the suite lie.
-            r = sh(upload, env=env)
-            if r.returncode:
-                print("   upload failed, retrying once:")
-                print("   " + (r.stdout + r.stderr).strip().replace("\n", "\n   "))
-                r = sh(upload, env=env)
-            if r.returncode:
-                print(r.stdout + r.stderr)
+            try:
+                upload(bench, built, sketch_dir, env)
+            except Failure as e:
+                print(str(e))
                 return {"verdict": "fail", "why": "upload failed",
-                        "output": r.stdout + r.stderr}
-            print("   uploaded")
+                        "output": str(e)}
             deadline = time.time() + bench.seconds
             got = b""
             while time.time() < deadline:

@@ -26,6 +26,7 @@ uv run pytest --profile ch32x035 --port /dev/ttyACM4  # + 実機で実行
 | `test_sketch_profiles.py` | 全sketch × 全profile boardのcompile | 不要 | `slow` |
 | `test_sizebench.py` | newlibのサイズ計測(nano vs full) | 不要 | `slow` |
 | `test_package_install.py` | Board Manager install → 上書きなしcompile → upgrade/rollback | 不要 | `slow` |
+| `test_sketch_profile_build.py` | `arduino-cli compile --profile`(=index経由)で全sketch × 全profile | 不要 | `slow` |
 | [`sketches/`](sketches/) | Arduino APIのsketch単位test | 任意 | `--profile`必須 |
 | [`manual/`](manual/README.ja.md) | 手動test + 実機tool | 必要 | 明示指定のみ |
 

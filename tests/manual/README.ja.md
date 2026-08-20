@@ -17,6 +17,7 @@
 | [`uart_scan/`](uart_scan/) | boardがどのUSART routeを実際に配線しているか特定 |
 | [`smoke/`](smoke/) | 出荷経路でcompile → upload → UART読み出し。全sketchを一巡できる |
 | [`gpio_loopback/`](gpio_loopback/) | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
+| [`crt0_probe/`](crt0_probe/) | 自作crt0が`setup()`へ正しいRAMを渡しているか。`.data` copy / `.bss` zero fill / `.init_array` |
 | [`conftest.py`](conftest.py) | 共有fixture(`attached` / `bench` / `uart_routes`)とsketchのparametrize |
 | [`env_config.py`](env_config.py) | `.env`のpad名(`PA0`)をpin番号へ変換し、sketch用のheaderを書き出す |
 | [`bench.json`](bench.json) | この作業台の配線記録(既定と違うboardだけ) |
@@ -180,6 +181,38 @@ testは2つです。**どれか1つのrouteが届くこと**(届かなければ�
 
 結果は[`bench.json`](bench.json)へ記録すれば、以降`--serial`は要りません。
 その場限りで上書きしたいときだけ`--serial <n>`。
+
+## crt0_probe
+
+[ADR-0003](../../docs/adr/0003-owned-startup-vector-linker.ja.md)で置き換えた自作crt0が、
+`setup()`に**正しく初期化されたRAM**を渡しているかを見ます。
+静的なELF等価性([`../startup/`](../startup/))では分からない部分です。
+
+```sh
+cd tests && uv run pytest manual/crt0_probe/crt0_probe.py -v -s
+```
+
+**書き込みの後・resetの前**にRAMを`0xDEADBEEF`で埋め、
+C++大域constructor(crt0が動かす最初のuserコード)が見た値をSerialで報告させます。
+埋めるのが後なのは、**書き込みalgorithm自体がRAMを使う**からです。
+
+埋めることが結果に意味を与えます。「`.bss`が0だった」はRAMが元から0の石では何も
+証明しないので、同じ実行で**`_ebss`の先にパターンが残っていること**も確認します
+(何も初期化しない領域なので)。これが落ちたら他の3つは無効です。
+
+```text
+data_at_ctor=A5A5A5A5   .data がflashからcopyされた
+bss_at_ctor=00000000    .bss がzero fillされた
+ctor=C0DEC0DE           .init_array が実行された
+past_ebss=DEADBEEF      埋めパターンが実際に届いていた(対照)
+```
+
+boardを載せ替えれば同じコマンドで回ります。**variantごとのlinker scriptとvector table**の
+検証になるので、新しいseriesを触るときは最初にこれです。
+
+sketchが`sketch/`にあるのは、testディレクトリ直下の`*.ino`をpytest-embeddedが
+自分のsketch testと解釈して`sketch.yaml`を要求するためです。これはdriverがcopyして
+自分でbuildする素材で、uploadとresetの間にRAMを埋める必要があります。
 
 ## gpio_loopback
 

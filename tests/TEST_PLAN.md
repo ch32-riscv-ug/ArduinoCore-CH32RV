@@ -118,6 +118,7 @@ tests/manual/
   chip_info/       what is attached right now (probe / chip / port / FQBN / Serial pins)
   uart_scan/       which USART route a board actually wires
   smoke/           compile -> upload -> read back over the shipping path
+  crt0_probe/      the RAM our own crt0 hands to setup() (.data, .bss, .init_array)
   gpio_loopback/   GPIO through one jumper (level / pulls / EXTI / PWM duty)
 ```
 
@@ -339,6 +340,7 @@ uv run --env-file .env pytest manual/chip_info/chip_info.py -v -s   # bench prec
 uv run --env-file .env pytest manual/smoke/smoke.py -v -s           # acceptance sketch
 CH32_SKETCH=all uv run --env-file .env pytest manual/smoke/smoke.py -v -s  # after a swap
 uv run --env-file .env pytest manual/uart_scan/uart_scan.py -v -s   # wiring unknown
+uv run --env-file .env pytest manual/crt0_probe/crt0_probe.py -v -s # after a board swap
 uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s  # needs a jumper
 ```
 

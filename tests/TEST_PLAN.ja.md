@@ -112,6 +112,7 @@ tests/manual/
   chip_info/       いま何が繋がっているか(probe / chip / port / FQBN / Serial pin)
   uart_scan/       boardがどのUSART routeを配線しているか特定する
   smoke/           出荷経路でcompile→upload→UART確認(Milestone 1のacceptance)
+  crt0_probe/      自作crt0が渡すRAM(.data copy / .bss zero fill / .init_array)
   gpio_loopback/   ジャンパ1本でGPIO(レベル / pull / EXTI / PWM duty)
 ```
 
@@ -323,6 +324,7 @@ uv run --env-file .env pytest manual/chip_info/chip_info.py -v -s   # 作業台�
 uv run --env-file .env pytest manual/smoke/smoke.py -v -s           # 受け入れsketch
 CH32_SKETCH=all uv run --env-file .env pytest manual/smoke/smoke.py -v -s   # 差し替え後
 uv run --env-file .env pytest manual/uart_scan/uart_scan.py -v -s   # 配線が不明なとき
+uv run --env-file .env pytest manual/crt0_probe/crt0_probe.py -v -s  # boardを載せ替えたら
 uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s   # ジャンパ要
 ```
 

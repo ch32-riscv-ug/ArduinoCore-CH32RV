@@ -125,6 +125,12 @@ jobs:
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
       - name: Fetch tools
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      - name: Clean install and compile
+      # Two things share this job because they share its expensive part: a
+      # generated index served on loopback and a 400 MB toolchain to fetch.
+      # test_sketch_profile_build.py covers what neither the compile sweeps nor
+      # the install test do - `arduino-cli compile --profile`, which is what
+      # the instructions tell a user to type, resolving the platform through
+      # the index rather than through --fqbn.
+      - name: Clean install, and build every sketch profile
         working-directory: tests
-        run: uv run pytest -q test_package_install.py
+        run: uv run pytest -q test_package_install.py test_sketch_profile_build.py

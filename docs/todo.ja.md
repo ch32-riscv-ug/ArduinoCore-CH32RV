@@ -57,7 +57,14 @@
       `CH32_BUILD_PROPERTY=build.f_cpu=...`で再現できる
 - [x] crt0→`setup()`/`loop()`到達をCH32V003実機で確認。`.data` copy、`.bss` zero fill、
       `.init_array`(C++大域constructor)まで全てpass([実験0010](experiments/0010-first-on-target-run.ja.md))
-- [ ] `[P1]` 同じ確認をX035/L103/V20xでも回す(実機あり)。variantごとのlinker scriptとvector tableの検証になる
+- [x] **実験0010を再現可能なtestにした**([tests/manual/crt0_probe/](../tests/manual/crt0_probe/))。
+      書き込み後・reset前にprobe-rsでRAMを`0xDEADBEEF`で埋め、C++大域constructorが
+      見た値をSerialで報告させる。**X035実機で全項目pass**
+      (`.data`のcopy / `.bss`のzero fill / `.init_array` / `_ebss`の先にパターンが
+      残っていること=対照)。順序が要点で、**書き込みalgorithm自体がRAMを使う**ため
+      埋めるのはuploadの後。boardを載せ替えれば同じ1コマンドで回る
+- [ ] `[P1]` 同じ確認を**L103/V20x/V103/V307**でも回す(要実機・board載せ替え)。
+      `crt0_probe`がそのまま使える。variantごとのlinker scriptとvector tableの検証になる
 
 ## 割込みとvector table
 
@@ -323,8 +330,17 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       スクリプトを直接叩くのは相当の特殊事例だけにする。残っているもの:
       `tests/sketches/sync_profiles.py`、`tools/index/fetch_tools.py`、
       `tools/generate/generate.py`(いずれも生成・取得系で、testではない)
-- [ ] `[P1]` CIへpytest sketch testを追加(`--run-mode build`)。
-      ローカルindexの配信が要る
+- [x] **profile経由のbuildをCIへ追加**
+      ([tests/test_sketch_profile_build.py](../tests/test_sketch_profile_build.py))。
+      `arduino-cli compile --profile`は**index経由**でplatformを解決する経路で、
+      compile sweep(`--fqbn`+作業ツリー)ともinstall test(index install+`--fqbn`)とも別。
+      利用者に案内しているのはこの経路。**30通り / 72秒**、`install-test` jobへ相乗り
+      (index生成とtoolchain取得という高い部分を共有するため、3 OSぶん増えるのは72秒×3)。
+      pytest-embeddedの`--run-mode build`はbuild後にtest本体をskipするだけなので
+      検証内容は同じだが、あれは`--profile`をコマンドラインで要求し、かつ
+      **未公開のindex URL**へ取りにいくため使わなかった。
+      profileのindex URLはloopbackで配信し、`sketch.yaml`は**コピー側だけ**書き換える
+      (実行中にコミット済み生成物を書き換えると、中断時にツリーが汚れるため)
 - [x] **Windows install失敗の原因を特定**。probe-rsのWindows zipが平坦で、
       arduino-cliは単一root directoryを要求する。平坦/root付きの両方のzipを作って
       arduino-cliへ食わせ、前者だけが落ちることを実証
