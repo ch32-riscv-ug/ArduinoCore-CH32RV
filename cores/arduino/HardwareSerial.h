@@ -10,6 +10,14 @@
 #include "api/HardwareSerial.h"
 #include "ch32_pins.h"
 #include "ch32_ringbuffer.h"
+/* Not just for the pad names: CH32_SERIALn_TX and CH32_SERIAL_DEFAULT below
+ * come from here, and this header has to work when it is included first.
+ * HardwareSerial.cpp includes it before Arduino.h, and when the variant was
+ * only reachable through Arduino.h that left SERIAL_PORT_MONITOR undefined for
+ * exactly one translation unit - the one holding the printf() bridge, which
+ * then compiled to `return 0` and made every stdio write to Serial a silent
+ * no-op. */
+#include "pins_arduino.h"
 
 #include <stdint.h>
 

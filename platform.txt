@@ -19,14 +19,29 @@ compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_de
 compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_ARCH_{build.arch} -D{build.series}
 
 build.extra_flags=
+# Chosen by the printf menu in boards.txt; empty for the default entry.
+build.printf_flags=
 
 recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.S.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.S.flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "{object_file}"
+# --specs=nano.specs: ADR-0004. The full newlib formatter is ~40 KB, which does
+# not fit most of the family - a printf sketch on CH32X035 goes 48 KB -> 7.6 KB.
+# nano drops %f by default; the printf menu in boards.txt adds it back with
+# -u _printf_float for sketches that need it.
+# --start-group around core.a and -lc: the core's syscall stubs must beat the
+# libgloss ones, which are *semihosting* - they issue `ecall`, and a CH32 with
+# no environment-call handler traps that straight to the reset vector. libgloss
+# comes after core.a on the driver's implicit link line, so left-to-right
+# resolution used to pick its _sbrk and _write: any sketch that allocated
+# (String, new, malloc) or called printf() rebooted in a loop and printed
+# nothing at all. The group makes the linker come back to core.a when libc asks
+# for those symbols, and costs nothing when the sketch needs neither
+# (Blink stays 932 bytes on CH32X035).
 # --no-warn-rwx-segments: .init_array (writable) shares the single FLASH segment with
 # text; acceptable for MCU flash layout. Revisit with PHDRS in the real core.
-recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -nostartfiles -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" {object_files} "{build.path}/{archive_file}" -lm
+recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -nostartfiles --specs=nano.specs {build.printf_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" {object_files} -Wl,--start-group "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
 recipe.objcopy.hex.pattern="{compiler.path}{compiler.objcopy.cmd}" -O ihex "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
 recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
 

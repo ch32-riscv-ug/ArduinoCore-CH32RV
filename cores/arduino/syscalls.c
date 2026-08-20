@@ -3,6 +3,15 @@
  * printf()/puts() reach the serial monitor through _write; everything else is
  * a well-behaved failure rather than a link error, so a sketch that pulls in
  * an unexpected libc corner fails predictably instead of silently.
+ *
+ * These have to beat the libgloss versions, which are *semihosting* stubs: they
+ * issue `ecall`, and a CH32 with no environment-call handler traps that to the
+ * reset vector. libgloss is scanned after core.a, so plain left-to-right
+ * resolution picked its _write and printf() rebooted the board. platform.txt
+ * links core.a inside --start-group/--end-group, which makes the linker come
+ * back to this object when libc asks for _write.
+ *
+ * _sbrk is deliberately *not* here - see ch32_sbrk.c for why.
  */
 #include <errno.h>
 #include <sys/stat.h>
@@ -13,9 +22,6 @@
 
 #undef errno
 extern int errno;
-
-extern char _end[];        /* provided by the linker script */
-extern char _eusrstack[];
 
 ssize_t _write(int fd, const void *buf, size_t count)
 {
@@ -30,27 +36,6 @@ ssize_t _read(int fd, void *buf, size_t count)
 {
     (void)fd; (void)buf; (void)count;
     return 0;   /* EOF */
-}
-
-/* The stack grows down from the top of RAM and the heap grows up from _end;
- * refuse to let them meet. */
-void *_sbrk(ptrdiff_t incr)
-{
-    static char *brk;
-    char *prev;
-    char *next;
-
-    if (brk == 0) {
-        brk = _end;
-    }
-    prev = brk;
-    next = brk + incr;
-    if (next > _eusrstack || next < _end) {
-        errno = ENOMEM;
-        return (void *)-1;
-    }
-    brk = next;
-    return prev;
 }
 
 int _close(int fd)             { (void)fd; errno = EBADF; return -1; }
