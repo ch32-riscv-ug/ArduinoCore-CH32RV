@@ -68,8 +68,10 @@ these, and none of them can be caught by compiling the repository tree.
 The distribution machinery is implemented, but **publishing it is not approved**
 ([approval status](../docs/approval-status.ja.md)).
 
-- Re-hosting probe-rs's Windows archive (A-2). The URL the index names is not
-  published, so it 404s today
+- **Board Manager install does not work on Windows**: probe-rs's Windows zip is
+  flat and arduino-cli rejects it
+  ([investigation](../tools/index/README.ja.md)). Re-hosting it here was
+  rejected. Must be solved before release
 - Publishing the package index at all. `release.yml` has never run
 
 ### Still open

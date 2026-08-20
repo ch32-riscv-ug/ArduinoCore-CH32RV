@@ -261,14 +261,17 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       公開中のindexを取得できなければ**publishを拒否**する(過去versionを消さないため)
 - [ ] `[P1]` CIへpytest sketch testを追加(`--run-mode build`)。
       ローカルindexの配信が要る
-- [x] **Windows install失敗の原因を特定し、修正案を実装**(**未承認**、
-      [承認状態 A-2](approval-status.ja.md))。probe-rsのWindows zipが平坦でarduino-cliが
-      `files in archive must be placed in a subdirectory`で拒否していた。
-      Linux/macOSの`.tar.xz`はroot directoryを持つのでこの1アーカイブだけ再パッケージ・
-      再ホストする。`repack_probe_rs.py`は決定的でupstream checksumを検証する
-- [ ] `[P1]` `publish-tool.yml`を実行してprobe-rs 0.32.0の再パッケージ済みzipを公開する。
-      **未実行**。CIはローカル再パッケージ版を配信して検証しているので緑だが、
-      利用者がindexからinstallするには実publishが要る
+- [x] **Windows install失敗の原因を特定**。probe-rsのWindows zipが平坦で、
+      arduino-cliは単一root directoryを要求する。平坦/root付きの両方のzipを作って
+      arduino-cliへ食わせ、前者だけが落ちることを実証
+- [x] **WindowsでBoard Manager installができない原因を特定し、方針を決定**。
+      probe-rsのWindows zipが平坦で、arduino-cliは単一root directoryを要求する。
+      indexからWindows entryを削っても回避できない。方針は
+      [ADR-0011](adr/0011-tool-mirror-repository.ja.md)(1ツール1repositoryでミラー、
+      `mirror-probe-rs`、取り込み自動・採用手動)。中身は実装済みでローカル検証も通過
+- [ ] `[P0]` **`mirror-probe-rs`の最初のreleaseを公開する**。これができるまで
+      `tools_probe_rs.json`が指すURLは404。公開後にCIの`install-test`へ
+      windows-latestを戻す(1行)
 - [ ] `[P1]` Board Manager index を実際に公開する。workflowは用意したが未実行で、
       `sketch.yaml`の`platform_index_url`は未公開URLのまま
 - [ ] `[P1]` `libraries/`(SPI/Wire)同梱後、installした状態で`#include <SPI.h>`が

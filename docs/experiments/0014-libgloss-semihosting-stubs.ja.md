@@ -2,7 +2,7 @@
 
 日付: 2026-08-20
 board: CH32X035C8T6 + WCH-LinkE(probe FC928F068181)
-関連: [ADR-0003](../adr/0003-startup-and-linker.ja.md)、[テスト計画](../../tests/TEST_PLAN.ja.md)
+関連: [ADR-0003](../adr/0003-owned-startup-vector-linker.ja.md)、[テスト計画](../../tests/TEST_PLAN.ja.md)
 
 ## 症状
 

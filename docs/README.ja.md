@@ -52,7 +52,7 @@
 | [roadmap.ja.md](roadmap.ja.md) | 段階的な実装順と完了条件 |
 | [open-questions.ja.md](open-questions.ja.md) | 未決定事項、必要な実験、判断基準 |
 | [approval-status.ja.md](approval-status.ja.md) | **実装済みだが承認されていないもの**の一覧。動くことと採用が決まっていることは別 |
-| [adr/README.ja.md](adr/README.ja.md) | ADR一覧(0001: device data独立repo、0002: toolchain=xPack直リンク、0003: owned startup/vector/linker、0004: newlib-nano+GNU++17、0005: family board+pnum生成、0006: RTOSはベアメタル+将来ライブラリ、0007: extra_flagsユーザー専用、0008: 書き込みdefault=WCH-LinkE) |
+| [adr/README.ja.md](adr/README.ja.md) | ADR一覧(0001: device data独立repo、0002: toolchain=xPack直リンク、0003: owned startup/vector/linker、0004: newlib-nano+GNU++17、0005: family board+pnum生成、0006: RTOSはベアメタル+将来ライブラリ、0007: extra_flagsユーザー専用、0008: 書き込みdefault=WCH-LinkE、0011: tool配布を別repositoryで自動ミラー) |
 
 ## 更新規則
 

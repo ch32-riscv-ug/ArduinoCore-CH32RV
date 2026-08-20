@@ -25,9 +25,26 @@
 | # | 内容 | 実装場所 | 実測 | 未決の論点 | 承認 |
 |---|---|---|---|---|:--:|
 | A-1 | **`--specs=nano.specs`を既定にし、`%f`を`menu.printf`のopt-inにする** | `platform.txt`、`boards.txt`(生成) | printf sketchが48,492→7,064 byte(X035)。CH32V003(16K)にも載るようになる。X035実機で`none`/`float`両方確認 | [ADR-0004](adr/0004-runtime-and-cxx.ja.md)は**`Proposed`**。同ADRはnano既定と`%f` opt-inを提案しているが承認されていない。menuの文言、`-u _printf_float`かmenuかの選択、size baselineへの影響 | ⬜ |
-| A-2 | **probe-rsのWindowsアーカイブを再パッケージして本repositoryで再ホストする** | `tools/index/tools_probe_rs.json`(URL)、`repack_probe_rs.py`、`publish-tool.yml` | upstreamのWindows zipは平坦でarduino-cliが拒否する(平坦/root付きの両方を作って実証)。再パッケージ版は中身がupstreamとバイト一致 | [ADR-0002](adr/0002-toolchain-distribution.ja.md)は「再ホストしない」を提案しており、これはその**例外**。ADRも承認もない。代替(upstreamへPR、別のWindows配布物、Windowsでprobe-rsを配らない)を検討していない | ⬜ |
 | A-3 | **検証boardをTier A/B/C/Dへ絞る** | [tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | ハードウェア差分6軸を数え、Tier A+BでISA以外の全軸を踏むことを確認 | Q-001(対象boardの確定)が未決。どのboardを常時接続にするかは所有実機と運用の問題で、私が決められない | ⬜ |
+| A-5 | **probe-rsを`mirror-probe-rs`経由で参照する** | `tools/index/tools_probe_rs.json` | 詰め直したWindowsアーカイブがarduino-cliでinstallできること、中身がupstreamとバイト一致すること、決定的であること、差し替え検知が働くことを確認 | 方針は[ADR-0011](adr/0011-tool-mirror-repository.ja.md)で承認済み。**ミラーのreleaseが未公開**のためURLは現時点で404。公開後にCIの`install-test`へwindows-latestを戻す | 🔄 |
 | A-4 | **`smoke.py`/`uart_scan.py`の`--board`を省略可能にし、probe-rsの検出結果を既定にする** | `tests/manual/smoke.py`、`uart_scan.py` | X035実機で自動判定・明示一致・明示不一致(exit 1)・`--pnum detect`の4経路を確認 | 既定の挙動変更。`[compile only]`のseriesは検出できないため`--board`必須のまま。CIでどちらを使うか未決 | ⬜ |
+
+## 却下されたもの
+
+| # | 内容 | 却下理由 | 日付 |
+|---|---|---|---|
+| A-2 | probe-rsのWindowsアーカイブを再パッケージして本repositoryで再ホストする | **手動publishになるため他のtoolとversionがずれる。運用が持たない。**[ADR-0002](adr/0002-toolchain-distribution.ja.md)の「再ホストしない」方針にも反する。実装(`repack_probe_rs.py`、`publish-tool.yml`)は撤去済み | 2026-08-20 |
+
+代わりの方針として、**tool配布専用repositoryでの自動ミラー**を
+[ADR-0011](adr/0011-tool-mirror-repository.ja.md)にまとめ、
+方針はmaintainer承認済みです(2026-08-20)。却下されたA-2との違いは、
+publishが自動でversionが機械的に追従することと、コア本体のrelease streamに
+混ざらないことです。実体は[`ch32-riscv-ug/mirror-probe-rs`](https://github.com/ch32-riscv-ug/mirror-probe-rs)。
+
+調査結果と他の選択肢は
+[tools/index/README.ja.md](../tools/index/README.ja.md)「Windowsでinstallできない」と
+[research/probe-rs-archive-layout.ja.md](research/probe-rs-archive-layout.ja.md)に
+まとめてあります。**現状Windowsではinstallできません**(Linux/macOSは通ります)。
 
 ## 承認されたら消えるもの
 
@@ -36,7 +53,7 @@
 1. 該当ADRの`Status`を`Accepted`にする(ADRが無いものは先に起こす)
 2. 各文書の「提案」表記を外す
 3. [open-questions](open-questions.ja.md)の該当Qを閉じる
-4. 外部公開が絡むもの(A-2)は、承認後にworkflowを実行する
+4. 外部公開が絡むものは、承認後にworkflowを実行する
 
 ## 外部へ出るものの現状
 
@@ -45,7 +62,7 @@
 | workflow | 起動条件 | 状態 |
 |---|---|---|
 | [`release.yml`](../.github/workflows/release.yml) | tag `v<version>`のpush(手動dispatchではbuildのみ) | 未実行。package indexは未公開 |
-| [`publish-tool.yml`](../.github/workflows/publish-tool.yml) | 手動dispatchのみ、`dry_run`既定`true` | 未実行。A-2の承認待ち |
+| [`mirror-probe-rs`の`update.yml`](https://github.com/ch32-riscv-ug/mirror-probe-rs) | 日次 + 手動dispatch | **未実行**。最初のreleaseを作るまでindexのURLは404 |
 
 ## 関連
 

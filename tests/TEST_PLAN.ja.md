@@ -65,7 +65,9 @@ Arduino Board Manager経由で配布するArduino coreとして、**利用者が
 配布経路の実装は入っていますが、**外へ出す判断は未承認**です
 ([承認状態](../docs/approval-status.ja.md))。
 
-- probe-rsのWindowsアーカイブ再ホスト(A-2)。indexが指すURLは未公開で、現時点では404
+- **WindowsでBoard Manager installができない**。probe-rsのWindows zipが平坦で
+  arduino-cliが拒否する([調査](../tools/index/README.ja.md#windowsでinstallできない未解決))。
+  再ホストは却下済み。releaseまでに解決が必要
 - package index自体の公開。`release.yml`は未実行
 
 ### まだ埋まっていない穴
