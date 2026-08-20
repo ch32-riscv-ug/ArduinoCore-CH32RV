@@ -15,5 +15,18 @@ dependencies = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["sketches"]
+# The whole tree, not just sketches/: the build harnesses have pytest wrappers
+# beside conftest.py so `pytest` is one entry point. manual/ is reached only by
+# naming a file, because its files deliberately have no test_ prefix.
+testpaths = ["."]
+norecursedirs = [".venv", "manual", "*/build", ".tools"]
 addopts = "-ra --strict-markers"
+# pytest-embedded pulls in record_xml_attribute for every test, which warns
+# about being experimental even for tests that never touch a board.
+filterwarnings = [
+  "ignore::pytest.PytestExperimentalApiWarning",
+]
+markers = [
+  "slow: takes minutes (the compile sweeps)",
+  "hardware: needs a board attached",
+]

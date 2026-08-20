@@ -12,6 +12,11 @@ defaults:
   run:
     shell: bash
 
+env:
+  # On a laptop a missing tool is a skip; in CI it means provisioning broke and
+  # the run would go green having checked nothing. See tests/conftest.py.
+  CH32_TESTS_REQUIRE_TOOLS: "1"
+
 jobs:
   # W-2: unified startup vs EVT startup ELF equivalence (13 variants)
   startup-equivalence:
@@ -36,10 +41,9 @@ jobs:
             git clone --depth 1 --filter=blob:none --sparse "https://github.com/ch32-riscv-ug/$repo"
             git -C "$repo" sparse-checkout set EVT/EXAM/SRC
           done
-      - name: Interrupt table must match the EVT startup sources
-        run: uv run --no-project python tools/generate/import_vectors.py --mirrors "$HOME/mirrors" --check
-      - name: Run equivalence harness
-        run: CH32_MIRROR_ROOT="$HOME/mirrors" tests/startup/run_check.sh /tmp/w2
+      - name: Startup equivalence and interrupt tables
+        working-directory: tests
+        run: CH32_MIRROR_ROOT="$HOME/mirrors" uv run pytest -q test_startup_equivalence.py test_interrupt_tables.py
 
   # W-4: committed generated files must match regeneration from the locked
   # ch32-device-data commit (recorded in the generated boards.txt header)
@@ -52,11 +56,9 @@ jobs:
       # against exactly the tables the committed files were generated from.
       - name: Fetch the device-data tables at the locked commit
         run: uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
-      - name: Check regeneration matches committed files
-        run: |
-          uv run --no-project python tools/generate/generate.py \
-            --tables .tools/ch32-device-data/tables \
-            --platform . --check
+      - name: Generated files and sketch profiles are in sync
+        working-directory: tests
+        run: uv run pytest -q test_generated.py
 
   # ADR-0009: the vendored ArduinoCore-API snapshot must stay byte-identical to
   # the upstream commit pinned in vendor/arduino-core-api.lock.toml
@@ -66,7 +68,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: Verify cores/arduino/api against the pinned upstream commit
-        run: tools/vendor/check_api_sync.sh /tmp/apisync
+        working-directory: tests
+        run: uv run pytest -q test_vendored_api.py
 
   # W-3/W-7: symlink-mode compile matrix over all generated part numbers
   compile-matrix:
@@ -89,23 +92,11 @@ jobs:
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
       - name: Fetch tools
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      - name: Compile all part numbers
-        run: tests/compile/test_compile.sh /tmp/w3 | tee /tmp/w3.log
-      - name: Sketch profiles are in sync with the board list
-        run: uv run --no-project python tests/sketches/sync_profiles.py --check
-      - name: Every sketch compiles for every board its profile claims
-        run: tests/sketches/compile_all.sh /tmp/sketches
-      - name: Size regression check (W-7)
-        run: |
-          uv run --no-project python tests/compile/check_sizes.py \
-            --baseline tests/compile/sizes_baseline.json \
-            --sizes /tmp/w3/sizes.tsv --check
-      - name: Size summary
-        if: always()
-        run: |
-          { echo "### Compile sizes (${{ matrix.os }})"; echo '```'; \
-            grep -E "compile Blink|Sketch uses|Global variables" /tmp/w3.log; \
-            echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      # Compile sweeps plus the size baseline, as one pytest run so a failure
+      # names the check rather than a shell exit code.
+      - name: Compile matrix, sketch profiles and size baseline
+        working-directory: tests
+        run: uv run pytest -q test_compile_matrix.py test_sketch_profiles.py test_sizebench.py
 
   # W-5: clean Board Manager install via local HTTP, then compile with no overrides
   #
@@ -135,4 +126,5 @@ jobs:
       - name: Fetch tools
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
       - name: Clean install and compile
-        run: tools/index/test_install.sh /tmp/w5
+        working-directory: tests
+        run: uv run pytest -q test_package_install.py

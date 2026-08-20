@@ -291,19 +291,17 @@ the versions a user would install. See [tests/README.ja.md](README.ja.md).
 
 ### Automated, no hardware
 
+**One command.**
+
 ```sh
-# every part number, plus size regression
-CH32_GCC_BIN=<xpack>/bin tests/compile/test_compile.sh /tmp/w3
-
-# every sketch against every board its profile claims
-CH32_GCC_BIN=<xpack>/bin tests/sketches/compile_all.sh /tmp/sketches
-
-# clean Board Manager install, then compile with no overrides
-CH32_XPACK_ARCHIVE=<archive> tools/index/test_install.sh /tmp/w5
-
-# sketch tests, build only (what CI runs)
-cd tests && uv run pytest sketches --profile ch32x035 --run-mode build
+cd tests
+uv run pytest                  # everything that needs no board and no profile (~4 min)
+uv run pytest -m "not slow"    # skip the compile sweeps (seconds)
 ```
+
+See [tests/README.ja.md](README.ja.md) for what that covers and how to run each
+harness on its own. Add `--profile ch32x035 --run-mode build` for the sketch
+tests without hardware.
 
 ### Automated, with hardware
 

@@ -188,6 +188,32 @@ def paths(root: pathlib.Path) -> dict:
     return out
 
 
+def env_defaults(root: pathlib.Path) -> dict:
+    """{variable: path} for the CH32_* the scripts read.
+
+    Built here rather than in shell. The archive name in particular differs per
+    host in ways a case statement gets wrong - Windows is a .zip, not a .tar.gz
+    - and the fragment already records the exact name, so there is no reason to
+    reconstruct it. (An earlier shell version also failed to parse at all on
+    macOS's bash 3.2.)
+    """
+    frags = fragments()
+    where = paths(root)
+    out = {}
+    gcc = frags.get("xpack-riscv-none-elf-gcc")
+    if gcc:
+        out["CH32_GCC_BIN"] = where["xpack-riscv-none-elf-gcc"] / "bin"
+        entry = next((s for s in gcc["systems"] if s["host"] == host_key()), None)
+        if entry:
+            # test_install.sh serves this locally instead of pulling it from
+            # GitHub on every run.
+            out["CH32_XPACK_ARCHIVE"] = root / "cache" / entry["archiveFileName"]
+    if "probe-rs" in frags:
+        out["CH32_PROBE_RS"] = where["probe-rs"]
+    out["CH32_TABLES"] = where[DEVICE_DATA]
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", type=pathlib.Path, default=DEFAULT_ROOT,
@@ -198,7 +224,8 @@ def main() -> int:
     ap.add_argument("--print-paths", action="store_true",
                     help="print name=path for each tool and exit without fetching")
     ap.add_argument("--print-env", action="store_true",
-                    help="print the export lines for the override variables")
+                    help="print shell lines that set the CH32_* variables, "
+                         "leaving any that are already set alone")
     args = ap.parse_args()
 
     frags = fragments()
@@ -214,10 +241,10 @@ def main() -> int:
             print(f"{name}={where[name]}")
         return 0
     if args.print_env:
-        gcc = where.get("xpack-riscv-none-elf-gcc")
-        print(f"export CH32_GCC_BIN={gcc / 'bin'}")
-        print(f"export CH32_PROBE_RS={where['probe-rs']}")
-        print(f"export CH32_TABLES={where[DEVICE_DATA]}")
+        # `: "${VAR:=default}"` assigns only when VAR is unset or empty, so an
+        # explicit setting from CI or a bench always wins.
+        for var, path in env_defaults(args.root).items():
+            print(f': "${{{var}:={path}}}"; export {var}')
         return 0
 
     key = host_key()
@@ -230,14 +257,18 @@ def main() -> int:
         frag = frags[name]
         dest = tool_dir(args.root, name, frag["version"])
         print(f"{name} {frag['version']}:", file=sys.stderr)
-        if dest.exists():
-            print(f"  already at {dest}", file=sys.stderr)
-            print(dest)
-            continue
         entry = next((s for s in frag["systems"] if s["host"] == key), None)
         if entry is None:
             raise SystemExit(f"{name} has no entry for this host ({key})")
-        unpack(download(entry, cache), dest)
+        # The archive is fetched even when the tool is already unpacked:
+        # test_install.sh serves it to arduino-cli, so --print-env promising a
+        # path that is not there would break a run that looked provisioned.
+        # download() returns immediately when the cached copy already verifies.
+        archive = download(entry, cache)
+        if dest.exists():
+            print(f"  already unpacked at {dest}", file=sys.stderr)
+        else:
+            unpack(archive, dest)
         print(dest)
     return 0
 

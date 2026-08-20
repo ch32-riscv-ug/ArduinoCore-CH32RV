@@ -259,6 +259,12 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [x] **release workflow**([.github/workflows/release.yml](../.github/workflows/release.yml))。
       tag `v<version>`のpushでRelease(アーカイブ) + GitHub Pages(index)を公開。
       公開中のindexを取得できなければ**publishを拒否**する(過去versionを消さないため)
+- [x] **既存harnessを全部pytestに載せた。** `cd tests && uv run pytest`ひとつで
+      生成物同期・API同期・割込み表・crt0等価性・compile matrix・sketch profile・
+      sizebench・Board Manager installが回る。shell harnessは残し、pytestが呼んで
+      markerを検証する形。CIも同じ経路へ。`slow` markerでcompile系を分離
+- [x] CIで**ツール未取得によるskipを失敗扱い**にした(`CH32_TESTS_REQUIRE_TOOLS`)。
+      skipは緑に見えるので、provisioningが壊れても気付けなかった
 - [ ] `[P1]` CIへpytest sketch testを追加(`--run-mode build`)。
       ローカルindexの配信が要る
 - [x] **Windows install失敗の原因を特定**。probe-rsのWindows zipが平坦で、

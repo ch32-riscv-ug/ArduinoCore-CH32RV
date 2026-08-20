@@ -279,16 +279,16 @@ cd tests && uv sync
 
 ### 自動テスト(実機なし)
 
+**すべて`pytest`ひとつです。**
+
 ```sh
-# 全part numberのcompile + サイズ回帰
-CH32_GCC_BIN=<xpack>/bin tests/compile/test_compile.sh /tmp/w3
-
-# Board Manager経由のclean install → 上書きなしcompile
-CH32_XPACK_ARCHIVE=<archive> tools/index/test_install.sh /tmp/w5
-
-# sketchテストをbuildだけで回す(CIが回す形)
-cd tests && uv run pytest sketches --profile ch32x035 --run-mode build
+cd tests
+uv run pytest                  # 実機もprofileも要らないもの全部(約4分)
+uv run pytest -m "not slow"    # compile系を飛ばす(数秒)
 ```
+
+内訳と個別実行は[tests/README.ja.md](README.ja.md)。
+sketchテストをbuildだけで回すなら`--profile ch32x035 --run-mode build`。
 
 ### 自動テスト(実機あり)
 

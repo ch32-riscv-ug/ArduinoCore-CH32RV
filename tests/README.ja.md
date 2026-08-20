@@ -4,13 +4,45 @@
 検証boardの階層、ペリフェラル別の検証方法、Board Manager配布物としての検証項目が
 そこにまとまっています。ここはその実行手順です。
 
-| ディレクトリ | 内容 | 実機 | 実行 |
+## 実行
+
+**すべて`pytest`ひとつで回ります。**
+
+```sh
+cd tests
+uv run pytest                                   # boardもprofileも要らないもの全部(約4分)
+uv run pytest -m "not slow"                     # compile系を飛ばす(数秒)
+uv run pytest --profile ch32x035 --run-mode build   # + sketch testをbuildだけ
+uv run pytest --profile ch32x035 --port /dev/ttyACM4  # + 実機で実行
+```
+
+| test | 内容 | 実機 | marker |
 |---|---|---|---|
-| [`sketches/`](sketches/) | Arduino API のsketch単位test(pytest) | 任意 | `uv run pytest sketches/...` |
-| [`manual/`](manual/README.ja.md) | 手動test + 実機tool(`chip_info.py` / `uart_scan.py` / `smoke.py`) | 必要 | 個別に指定 |
-| [`compile/`](compile/README.ja.md) | 全SKU compile matrix + size baseline | 不要 | `test_compile.sh <workdir>` |
-| [`startup/`](startup/README.ja.md) | 統合crt0とEVT startupのELF等価性 | 不要 | `run_check.sh <workdir>` |
-| [`sizebench/`](sizebench/README.ja.md) | newlibサイズ計測 | 不要 | `run_sizebench.sh <workdir>` |
+| `test_generated.py` | 生成物とsketch profileがtablesと同期しているか | 不要 | |
+| `test_vendored_api.py` | `cores/arduino/api`がpin先とバイト一致 | 不要 | |
+| `test_interrupt_tables.py` | 割込み表がEVT startupと一致 | 不要 | EVT mirror要 |
+| `test_startup_equivalence.py` | 統合crt0とEVT startupのELF等価性(14 variant) | 不要 | `slow`、EVT mirror要 |
+| `test_compile_matrix.py` | 全122 part numberのcompile + sizeベースライン | 不要 | `slow` |
+| `test_sketch_profiles.py` | 全sketch × 全profile boardのcompile | 不要 | `slow` |
+| `test_sizebench.py` | newlibのサイズ計測(nano vs full) | 不要 | `slow` |
+| `test_package_install.py` | Board Manager install → 上書きなしcompile → upgrade/rollback | 不要 | `slow` |
+| [`sketches/`](sketches/) | Arduino APIのsketch単位test | 任意 | `--profile`必須 |
+| [`manual/`](manual/README.ja.md) | 手動test + 実機tool | 必要 | 明示指定のみ |
+
+`sketches/`は`--profile`が無いとskipします(profileが無いとpytest-embeddedが
+targetを決められないため)。`manual/`は`test_`プレフィックスを付けていないので、
+ファイルを名指ししない限り収集されません。
+
+中身のshell harness(`test_compile.sh`等)はそのまま残してあり、pytestはそれを呼んで
+出力のmarkerを検証します。単独でも動きます。
+
+| ディレクトリ | 内容 | 単独実行 |
+|---|---|---|
+| [`sketches/`](sketches/) | sketch単位test | `uv run pytest sketches/...` |
+| [`manual/`](manual/README.ja.md) | 手動test + 実機tool | `uv run pytest manual/<case>/<case>.py -v -s` |
+| [`compile/`](compile/README.ja.md) | compile matrix + size baseline | `test_compile.sh <workdir>` |
+| [`startup/`](startup/README.ja.md) | crt0等価性 | `run_check.sh <workdir>` |
+| [`sizebench/`](sizebench/README.ja.md) | newlibサイズ計測 | `run_sizebench.sh <workdir>` |
 
 ## sketches/
 
