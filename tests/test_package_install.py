@@ -5,11 +5,12 @@ reference a file the archive does not ship, or depend on a path override that
 only exists during development. This installs from a generated index into a
 fresh data directory and compiles with no overrides at all.
 """
+import os
+import pathlib
+
 import pytest
 
 from conftest import load
-
-pytestmark = pytest.mark.slow
 
 harness = load("tools/index/install_check.py", "install_check")
 
@@ -21,6 +22,7 @@ def install(repo, gcc_bin, arduino_cli, workdir):
     return harness.run(workdir / "install", port=8741)
 
 
+@pytest.mark.slow
 def test_compiles_with_no_overrides(install):
     """Both sketches built, so the installed toolchain resolved on its own."""
     assert install["sizes"]["Blink"] > 0
@@ -30,6 +32,7 @@ def test_compiles_with_no_overrides(install):
     assert install["sizes"]["Acceptance"] > 0
 
 
+@pytest.mark.slow
 def test_probe_rs_installs_and_runs(install):
     """The upload path is only real if the programmer came down with it.
 
@@ -39,7 +42,30 @@ def test_probe_rs_installs_and_runs(install):
     assert install["probe_rs"]
 
 
+@pytest.mark.slow
 def test_upgrade_and_rollback(install):
     """The index is append-only: a pinned older version stays installable."""
     current, nxt = install["versions"]
     assert current != nxt
+
+
+def test_path_budget_rejects_a_deep_sandbox(monkeypatch):
+    """The Windows depth check fires before the confusing failure does.
+
+    Too deep, and the real symptom is "bits/c++config.h: No such file or
+    directory" for a file that is right there: GCC opens its include path with
+    the dot-dots unresolved but canonicalises it for the message. The check is
+    string arithmetic over a path that need not exist, and a separator counts
+    as one character either way, so it is exact on any host.
+    """
+    monkeypatch.setattr(os, "name", "nt")
+    deep = pathlib.PurePath(r"C:\Users\runneradmin\AppData\Local\Temp"
+                            r"\pytest-of-runneradmin\pytest-0\harness0\install")
+    with pytest.raises(harness.Failure, match="too deep for Windows"):
+        harness.check_path_budget(deep)
+
+
+def test_path_budget_accepts_the_short_root(monkeypatch):
+    """What conftest hands over on Windows: a drive root plus eight characters."""
+    monkeypatch.setattr(os, "name", "nt")
+    harness.check_path_budget(pathlib.PurePath(r"C:\ch32t\a1b2c3d4\install"))

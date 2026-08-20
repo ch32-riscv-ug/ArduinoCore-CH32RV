@@ -277,6 +277,14 @@ cd tests && uv sync
 から取るため、**利用者がinstallするのと同じ版**でtestが回ります。
 詳細は[tests/README.ja.md](README.ja.md)。
 
+Windowsでは作業ディレクトリを`<repoのドライブ>:\ch32t\`以下に作ります。`%TEMP%`配下
+(`C:\Users\<user>\AppData\Local\Temp\pytest-of-…`)は80文字あり、Board Manager
+installテストが入れるtoolchainがMAX_PATH(260)を超えます。GCCはinclude pathを
+`bin/../lib/gcc/…/../../../../riscv-none-elf/include/c++/…`と**解決せずに**開くため、
+`bits/c++config.h: No such file or directory`という、実在するfileが無いという形で落ちます。
+別の場所にしたいときは`CH32_TEST_TMP`を指定。作業ディレクトリはsession終了時に消します
+(`CH32_KEEP_TMP=1`で残す)。
+
 ### 自動テスト(実機なし)
 
 **すべて`pytest`ひとつです。**

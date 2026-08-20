@@ -17,6 +17,7 @@ import importlib.util
 import os
 import pathlib
 import shutil
+import tempfile
 
 import pytest
 
@@ -108,7 +109,60 @@ def arduino_cli():
     return "arduino-cli"
 
 
+# Windows makes the scratch directory a correctness problem, not just a place
+# to put files. arduino-cli installs the toolchain *inside* it, and GCC then
+# looks for its own headers through a path it never resolves:
+#
+#   <tool root>/bin/../lib/gcc/riscv-none-elf/14.3.0/../../../../riscv-none-elf
+#   /include/c++/14.3.0/riscv-none-elf/rv32ec/ilp32e/bits/c++config.h
+#
+# That tail alone is 129 characters, and GCC is a plain Win32 program with no
+# long-path manifest, so once the whole thing passes 259 the open just fails.
+# The diagnostic then names the canonicalised path - which is well under the
+# limit and plainly exists - so the error reads as a missing file rather than
+# as a too-long one. pytest's own base is
+# AppData\Local\Temp\pytest-of-<user>\pytest-N\harness0, 80 characters before
+# anything of ours, which leaves 50 too few.
+#
+# Only the Board Manager install is deep enough to care; the compile sweeps run
+# the toolchain from <repo>/.tools. But one root for the session is simpler than
+# a second per-harness rule, so Windows gets a short one for everything.
+def _short_root() -> pathlib.Path | None:
+    """A short, writable base for the session, or None to use pytest's."""
+    candidates = []
+    if os.environ.get("CH32_TEST_TMP"):        # escape hatch, every platform
+        candidates.append(pathlib.Path(os.environ["CH32_TEST_TMP"]))
+    if os.name == "nt":
+        # A drive root, and nothing under the user profile: %TEMP% is already
+        # C:\Users\<user>\AppData\Local\Temp, which leaves no margin at all
+        # once the username is a realistic length. If this one cannot be
+        # created the run should fail with install_check's explanation and a
+        # pointer to CH32_TEST_TMP, not limp on from somewhere marginal.
+        # An install run unpacks well over a gigabyte, so the system drive
+        # first - it is normally the roomiest - then the checkout's own drive.
+        drives = [os.environ.get("SystemDrive", "C:")]
+        if len(REPO.drive) == 2 and REPO.drive not in drives:   # not a UNC share
+            drives.append(REPO.drive)
+        candidates += [pathlib.Path(d + "\\") / "ch32t" for d in drives]
+    for base in candidates:
+        try:
+            base.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            continue
+        return base
+    return None
+
+
 @pytest.fixture(scope="session")
 def workdir(tmp_path_factory):
     """One scratch directory for the session, shared by the harnesses."""
-    return tmp_path_factory.mktemp("harness")
+    base = _short_root()
+    if base is None:
+        yield tmp_path_factory.mktemp("harness")
+        return
+    # pytest keeps the last three of its own temp directories; nothing prunes
+    # this one, and an install run leaves about a gigabyte behind.
+    work = pathlib.Path(tempfile.mkdtemp(prefix="", dir=base))
+    yield work
+    if not os.environ.get("CH32_KEEP_TMP"):
+        shutil.rmtree(work, ignore_errors=True)

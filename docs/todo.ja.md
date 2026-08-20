@@ -271,6 +271,20 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       pytestは文字列マッチをやめ、**関数を呼んで戻り値をassert**する形に
 - [x] CIで**ツール未取得によるskipを失敗扱い**にした(`CH32_TESTS_REQUIRE_TOOLS`)。
       skipは緑に見えるので、provisioningが壊れても気付けなかった
+- [x] **WindowsのMAX_PATH超過を修正**。Board Manager installテストはpytestの
+      作業ディレクトリ(`…\AppData\Local\Temp\pytest-of-<user>\pytest-0\harness0`、
+      80文字)にtoolchainを展開するので、GCCが自前のheaderを開く時点で**284文字**に
+      なり260を超えていた。GCCはinclude pathを
+      `bin/../lib/gcc/…/../../../../riscv-none-elf/include/c++/…`と**解決せずに**開き、
+      診断だけ正規化して出すため、実在する`bits/c++config.h`が「無い」というエラーになる。
+      Windowsでは作業ディレクトリをドライブ直下(`C:\ch32t\`)に置くようにした
+      (`CH32_TEST_TMP`で変更可)。222文字、余裕37文字。長さは
+      `install_check.check_path_budget()`が事前に検査して落とす
+- [ ] `[P2]` **実利用側の余裕は測っただけ**(判断が要る)。
+      `C:\Users\<user>\AppData\Local\Arduino15\…\xpack-riscv-none-elf-gcc\14.3.0-1`
+      だとユーザー名が**34文字**まで入る。Windowsのローカルアカウントは20文字上限なので
+      実害は考えにくいが、余裕は多くない。tool名から`xpack-`を落とせば40文字まで伸びる
+      一方、公開済みindexと`platform.txt`の`{runtime.tools.*}`に関わる変更になる
 - [ ] `[P1]` **単体スクリプトの呼び出しをなくす。** 実行の入口は`pytest`ひとつにし、
       スクリプトを直接叩くのは相当の特殊事例だけにする。残っているもの:
       `tests/manual/`の3 tool(`chip_info.py` / `uart_scan.py` / `smoke.py`)、

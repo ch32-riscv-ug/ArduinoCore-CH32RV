@@ -289,6 +289,15 @@ variables need setting**. Versions come from `tools/index/tools_*.json`, the
 same files the package index is built from, so the tests run against exactly
 the versions a user would install. See [tests/README.ja.md](README.ja.md).
 
+On Windows the scratch directory goes under `<repo drive>:\ch32t\`. `%TEMP%`
+(`C:\Users\<user>\AppData\Local\Temp\pytest-of-…`) is 80 characters deep, which
+puts the toolchain the Board Manager install test unpacks past MAX_PATH (260):
+GCC opens its include path **unresolved**, as
+`bin/../lib/gcc/…/../../../../riscv-none-elf/include/c++/…`, so it fails with
+`bits/c++config.h: No such file or directory` for a file that is plainly there.
+`CH32_TEST_TMP` picks a different root. The directory is removed at the end of
+the session unless `CH32_KEEP_TMP=1`.
+
 ### Automated, no hardware
 
 **One command.**
