@@ -198,8 +198,27 @@
       最小pad)。製品名boardを足すときに実体へ差し替える
 - [ ] `[P2]` `NON_PORT_PADS`(`ANT`/`HO3`/`ISP1`/`LED0`/`MDITP`等)を`generate.py`で手管理している。
       device-data側にGPIOポートbitか否かのフラグが入れば不要になる
-- [ ] `[P1]` device-dataのsignal名正規化。**X035とV003が最も未正規化**(`SCL`/`MISO`/`T1CH1`のような裸名)。
-      V203は`I2C1_SCL`、V006は`I2C_SCL`と表記が揃っていない
+- [x] **device-dataのsignal名正規化とremap fieldの再構築を取り込んだ**([R-19](research/signal-name-normalization.ja.md))。
+      調査で分かったのは、名前より**fieldの定義のほうが重い**ということだった:
+      `remap_fields.csv`は全selectorを単一registerとして持っていたが、
+      L103/M103やV20x/V30xでは**PCFR1とPCFR2にまたがる**。コアはPCFR1しか
+      書いていなかったので、route 2以上を使った瞬間に黙って別のrouteを選ぶ状態だった。
+      上流が要件から作り直したテーブルを、EVTの`GPIO_PinRemapConfig`を
+      ホストで実行して独立に検証([tools/generate/evt_remap_fields.py](../tools/generate/evt_remap_fields.py))、
+      **235 selectorで完全一致**。`peripheral`/`role`列、既定route(value=0)、
+      V407/V467の抽出漏れも解消されている。
+      取り込みで`load_remap_fields`はregister修飾を要求するようになり
+      (無ければ落とす)、variantは**fieldがまたぐregisterごとに**
+      `CH32_SERIALn_REMAP{,2}_{MASK,VAL}`を持つ
+- [x] **既定route(value 0)でもfieldを書く**ようにした。`begin()`が事前の状態に
+      依存しなくなる。初期化後に既定へ戻す・再初期化するのは通常操作であって
+      例外ではないため。`uart_scan`では実際にこれが牙を剥き、
+      前の候補のremapが残ったまま全routeが1つのpadから出ていた
+- [ ] `[P1]` `setRoute(n)` / `setPins(tx, rx)`を実装する。逆引き表の材料は
+      `remap_routes.csv`の`peripheral`/`role`列で揃った。API形はR-19参照
+      (**まだ決定として文書化していない。実装が見えてから記録する**)
+- [ ] `[P1]` PCFR2書き込み経路の**実機確認**。X035のSerialは既定routeなので踏めない。
+      L103/M103/V203/V307のいずれかを載せたときに確認する
 - [x] X035エラッタのvariant表現(`x035-pc10-pc17-bonded`、ADR-0010のDecision 4)。
       **PC10/PC11はそもそもpadとして出ていない**ので、pad属性ではなく除外リスト
       `CH32_UNUSABLE_PINS`として生成した。errata idの存在をgenerate.pyが検証する

@@ -754,7 +754,14 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
                 out.append(" * selector, not an AFIO remap. The core does not program it")
                 out.append(" * yet, so this port needs verifying (docs/todo.ja.md). */")
-            elif value and bits:
+            elif bits:
+                # Emitted for the default route (value 0) too, so begin()
+                # writes the field rather than assuming it. Re-initialising a
+                # port back onto its default pins is ordinary use, and "leave
+                # the field alone" makes that a no-op that silently keeps the
+                # previous route - which is exactly how the uart_scan sweep
+                # ended up driving every route out of one pad.
+                #
                 # One macro pair per register the field spans. PCFR2 is not
                 # cosmetic: where the field crosses into it, writing PCFR1
                 # alone lands on a different route.

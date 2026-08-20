@@ -18,8 +18,13 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
         CH32_RCC_APB2PCENR |= _clock_bit;
     }
     CH32_RCC_APB2PCENR |= CH32_RCC_APB2_AFIO;
-    /* The selector is not always one field in one register: on L103/M103 and
-     * V20x/V30x it spans PCFR1 and PCFR2, and writing only PCFR1 selects a
+    /* Written every time, including for the default route, so begin() does
+     * not depend on what the field already held - going back to the default
+     * pins is ordinary use, not an edge case. A zero mask means device-data
+     * knows no field for this port, which is the only case left alone.
+     *
+     * The selector is also not always one field in one register: on L103/M103
+     * and V20x/V30x it spans PCFR1 and PCFR2, and writing only PCFR1 selects a
      * different route with nothing to say so. The variant carries one mask per
      * register the field touches. */
     if (_remap_mask) {
