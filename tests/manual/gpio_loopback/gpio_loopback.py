@@ -57,7 +57,7 @@ def test_starts(dut) -> None:
     """
     Expected result (pass):  the sketch prints its banner and the pads it uses.
     Expected result (fail):  nothing arrives - check the Serial wiring first,
-                             with `uv run tests/manual/smoke.py --board <board>`.
+                             with `uv run tests/manual/smoke/smoke.py --board <board>`.
     """
     dut.expect_exact("gpio_loopback begin")
 

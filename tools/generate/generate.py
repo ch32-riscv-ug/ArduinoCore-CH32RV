@@ -750,8 +750,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         # A board can wire a different USART than the series-wide choice: the
         # generator optimises for the ANY entry (pins present on every part),
         # while a real board only has to work for itself. Overridable with
-        # -DCH32_SERIAL_DEFAULT=<n>, which is what tests/manual/uart_scan.py
-        # reports.
+        # -DCH32_SERIAL_DEFAULT=<n>, which is what the uart_scan manual
+        # test reports.
         out.append("#ifndef CH32_SERIAL_DEFAULT")
         out.append(f"#define CH32_SERIAL_DEFAULT {default}")
         out.append("#endif")

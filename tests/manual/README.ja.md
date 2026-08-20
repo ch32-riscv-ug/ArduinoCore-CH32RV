@@ -8,25 +8,40 @@
 
 ## 中身
 
-| ファイル | 種類 | 内容 |
-|---|---|---|
-| [`chip_info.py`](chip_info.py) | tool | **いま何が繋がっているか**。probe / chip / serial port / FQBN / Serialのpinを表示 |
-| [`uart_scan.py`](uart_scan.py) | tool | boardがどのUSART routeを実際に配線しているか特定 |
-| [`smoke.py`](smoke.py) | tool | 出荷経路でcompile → upload → UART読み出し。`--sketch all`で全sketchを一巡 |
-| [`bench.json`](bench.json) | data | この作業台の配線記録(既定と違うboardだけ) |
-| [`env_config.py`](env_config.py) | 共有 | `.env`のpad名(`PA0`)をpin番号へ変換し、sketch用のheaderを書き出す |
-| [`gpio_loopback/`](gpio_loopback/) | 手動test | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
-| `<case>/<case>.py` | 手動test | pytest本体。必要なら`<case>.ino` + `sketch.yaml`を同居させる |
+**1 case = 1 ディレクトリ**です。`<case>/<case>.py`が本体で、必要なら
+`<case>.ino`と`sketch.yaml`を同居させます。
 
-**`test_`プレフィックスは付けません。** `pytest`を引数なしで回したときに、
-実機が要るものが混ざらないようにするためです。手動testは明示的に指定して実行します。
+| ディレクトリ | 内容 |
+|---|---|
+| [`chip_info/`](chip_info/) | **いま何が繋がっているか**。probe / chip / serial port / FQBN / Serialのpin |
+| [`uart_scan/`](uart_scan/) | boardがどのUSART routeを実際に配線しているか特定 |
+| [`smoke/`](smoke/) | 出荷経路でcompile → upload → UART読み出し。全sketchを一巡できる |
+| [`gpio_loopback/`](gpio_loopback/) | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
+| [`conftest.py`](conftest.py) | 共有fixture(`attached` / `bench` / `uart_routes`)とsketchのparametrize |
+| [`env_config.py`](env_config.py) | `.env`のpad名(`PA0`)をpin番号へ変換し、sketch用のheaderを書き出す |
+| [`bench.json`](bench.json) | この作業台の配線記録(既定と違うboardだけ) |
+
+**入口は`pytest`です。**
 
 ```sh
 cd tests
 uv run --env-file .env pytest manual/<case>/<case>.py -v -s
 ```
 
-`-s`は必須です。オペレータへの指示が端末に出ます。
+`-s`は必須です。オペレータへの指示と実機の出力が端末に出ます。
+
+**`test_`プレフィックスは付けません。** `pytest`を引数なしで回したときに実機が要る
+ものが混ざらないようにするためで、`manual`は`norecursedirs`にも入っています
+(二重の防護)。手動testは常にファイルを名指しして実行します。
+
+`chip_info` / `smoke` / `uart_scan`は**CLIとしても**動きます。
+「いま何が繋がっているか」を対話的に見るような、pytestを挟む意味がない場面のためです。
+どちらの経路も同じ関数(`inventory()` / `resolve_bench()` + `run()` / `scan()`)を
+呼ぶので、結果が食い違うことはありません。
+
+**設定は環境変数**です。pytestのoptionは増やしていません
+(`--port`と`--target`はpytest-embeddedが既に持っていて、別の意味を重ねる方が害が大きい)。
+[`../.env.example`](../.env.example)を参照してください。
 
 **作業台固有の値は`.env`で上書きします。** どのpadが空いているかはboardごとに違うので、
 sketchへ焼き込むと書いた本人以外には合いません。[`../.env.example`](../.env.example)を
@@ -43,9 +58,15 @@ pinはArduinoでは**コンパイル時**の値なので、各testの`conftest.p
 `boards.txt`の`build.probe_rs_chip`から逆引きするので、
 **焼く対象と焼く相手が食い違うことが原理的に起きません**。
 
+```sh
+cd tests
+uv run pytest manual/smoke/smoke.py -v -s                  # 受け入れsketch
+CH32_SKETCH=all uv run pytest manual/smoke/smoke.py -v -s  # 全sketch(1件1 case)
+```
+
 ```bash
-uv run tests/manual/smoke.py               # 繋がっているboardで受け入れsketch
-uv run tests/manual/smoke.py --sketch all  # 全sketch
+uv run tests/manual/smoke/smoke.py               # 繋がっているboardで受け入れsketch
+uv run tests/manual/smoke/smoke.py --sketch all  # 全sketch
 ```
 
 明示したいときだけ`--board`を渡します。検出結果と食い違えば止まります
@@ -58,8 +79,18 @@ uv run tests/manual/smoke.py --sketch all  # 全sketch
 
 ## まず現状を確認する
 
+```sh
+cd tests && uv run pytest manual/chip_info/chip_info.py -v -s
+```
+
+これは他の実機testの**前提条件**そのものです: probeが応答し、chipを名乗り、
+probe-rsがそのchipを知っていて、`boards.txt`が引き当て、生成されたvariantに
+Serialがある——の5点を1 assertionずつ確認します。
+
+コマンド付きのレポートが欲しいときはCLIで:
+
 ```bash
-uv run tests/manual/chip_info.py
+uv run tests/manual/chip_info/chip_info.py
 ```
 
 ```text
@@ -69,7 +100,7 @@ probe FC928F068181
   board           CH32X035
   Serial          USART1  TX=PB10  RX=PB11   (TX -> probe RX, RX -> probe TX, common ground)
   FQBN            ch32-riscv-ug:ch32v:CH32X035:pnum=CH32X035C8T6
-  next            uv run tests/manual/smoke.py --board CH32X035
+  next            uv run tests/manual/smoke/smoke.py --board CH32X035
 ```
 
 読み出しだけで、書き込みもresetもしません。
@@ -82,7 +113,7 @@ compileも書き込みも**利用者と同じ経路**(`arduino-cli upload --prog
 通るので、passは「コードが動く」ではなく「出荷経路が動く」ことを意味します。
 
 ```bash
-uv run tests/manual/smoke.py --board CH32X035
+uv run tests/manual/smoke/smoke.py --board CH32X035
 ```
 
 環境変数は要りません。toolchainとprobe-rsは`<repo>/.tools`から探します
@@ -96,7 +127,7 @@ uv run tests/manual/smoke.py --board CH32X035
 順に焼いて最後に表を出します。
 
 ```bash
-uv run tests/manual/smoke.py --board CH32X035 --sketch all
+uv run tests/manual/smoke/smoke.py --board CH32X035 --sketch all
 ```
 
 ```text
@@ -126,9 +157,18 @@ sketchを増やしてもこのtoolを触る必要はありません。加えて2
 
 実boardが既定と違うUSARTを配線していることはよくあります。
 
-```bash
-uv run tests/manual/uart_scan.py --board CH32X035   # -> WIRED: U1-PB10
+```sh
+cd tests && uv run pytest manual/uart_scan/uart_scan.py -v -s
 ```
+
+```bash
+uv run tests/manual/uart_scan/uart_scan.py --board CH32X035   # -> WIRED: U1-PB10
+```
+
+testは2つです。**どれか1つのrouteが届くこと**(届かなければ配線の問題)と、
+**variantが選んだrouteが届くこと**(届かなければ生成器の選択がこのboardに合っていない)。
+後者が落ちたときの直し方はコード変更ではなく[`bench.json`](bench.json)への追記ですが、
+気付けないと`smoke`が黙って無音になるので、testにしてあります。
 
 結果は[`bench.json`](bench.json)へ記録すれば、以降`--serial`は要りません。
 その場限りで上書きしたいときだけ`--serial <n>`。

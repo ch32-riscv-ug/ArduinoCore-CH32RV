@@ -87,7 +87,7 @@ serial bootloaderが無いので、これは正しい挙動である。
 
 ## 実機での確認手順
 
-`tests/manual/smoke.py`を**minichlink直叩きから`arduino-cli upload --programmer`へ移した**。
+`tests/manual/smoke/smoke.py`を**minichlink直叩きから`arduino-cli upload --programmer`へ移した**。
 これでsmoke testは「コードが動く」ではなく「出荷経路が動く」ことを見る。
 副次的にminichlink依存が消え、**同梱minichlinkが知らないCH32L103も扱えるようになった**
 (`Chip Type unknown [0e]`で書き込めなかった)。

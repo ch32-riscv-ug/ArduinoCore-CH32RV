@@ -9,9 +9,18 @@ It compiles and uploads exactly the way a user would - `arduino-cli upload
 --programmer wch-link`, which drives probe-rs - so a pass means the shipping
 path works, not just the code.
 
-  uv run tests/manual/smoke.py                     # acceptance on whatever is attached
-  uv run tests/manual/smoke.py --sketch all        # the whole set
-  uv run tests/manual/smoke.py --board CH32X035    # assert which board it should be
+  cd tests
+  uv run pytest manual/smoke/smoke.py -v -s                  # one case per sketch
+  CH32_SKETCH=all uv run pytest manual/smoke/smoke.py -v -s  # the whole set
+
+  uv run tests/manual/smoke/smoke.py                   # the same, as a CLI
+  uv run tests/manual/smoke/smoke.py --sketch all
+  uv run tests/manual/smoke/smoke.py --board CH32X035  # assert which board
+
+Both routes call resolve_bench() and run_one(), so they cannot disagree about
+which board a given chip means. The CLI exists for interactive bench work; the
+pytest cases are the entry point everywhere else, and take their settings from
+the environment (see tests/.env.example).
 
 --board is optional: probe-rs reports the exact part number and boards.txt maps
 it back, so the board the image is built for cannot disagree with the board it
@@ -46,6 +55,7 @@ CH32_GCC_BIN and CH32_PROBE_RS override that if a bench keeps them elsewhere.
 """
 import argparse
 import ast
+import dataclasses
 import json
 import os
 import pathlib
@@ -56,9 +66,13 @@ import sys
 import tempfile
 import time
 
-REPO = pathlib.Path(__file__).resolve().parents[2]
+REPO = pathlib.Path(__file__).resolve().parents[3]
 BASIC = REPO / "tests" / "sketches" / "basic"
 DEFAULT_SKETCH = "serial_println"
+
+
+class Failure(Exception):
+    """The bench cannot do what was asked, and says why."""
 
 # WCH-Link USB ids. RV mode is the one probe-rs drives; the same device also
 # exposes a CDC UART bridge, so one cable carries both flashing and Serial.
@@ -139,16 +153,16 @@ def resolve_port(want_serial, want_port):
         for serial_number, tty in probes:
             if serial_number == want_serial:
                 return want_port or tty, serial_number
-        raise SystemExit(f"no WCH-Link with serial {want_serial}; attached: "
-                         f"{[s for s, _ in probes] or 'none'}")
+        raise Failure(f"no WCH-Link with serial {want_serial}; attached: "
+                      f"{[s for s, _ in probes] or 'none'}")
     if want_port:
         return want_port, None
     if not probes:
-        raise SystemExit("no WCH-Link found (looked for "
-                         f"{WCH_LINK_VID:04x}:{'/'.join('%04x' % p for p in WCH_LINK_PIDS)})")
+        raise Failure("no WCH-Link found (looked for "
+                      f"{WCH_LINK_VID:04x}:{'/'.join('%04x' % p for p in WCH_LINK_PIDS)})")
     if len(probes) > 1:
-        raise SystemExit("several WCH-Links attached; pick one with --probe: "
-                         + ", ".join(f"{s} ({t})" for s, t in probes))
+        raise Failure("several WCH-Links attached; pick one with --probe: "
+                      + ", ".join(f"{s} ({t})" for s, t in probes))
     return probes[0][1], probes[0][0]
 
 
@@ -158,7 +172,7 @@ def serial_pins(board: str, override=None):
     if override is not None:
         n = str(override)
         if f"#define CH32_SERIAL{n}_TX" not in header:
-            raise SystemExit(f"{board}: the variant has no USART{n}")
+            raise Failure(f"{board}: the variant has no USART{n}")
     else:
         index = re.search(r"#define CH32_SERIAL_DEFAULT (\d+)", header)
         if not index:
@@ -170,7 +184,7 @@ def serial_pins(board: str, override=None):
     return n, tx.group(1), rx.group(1), (note.group(1).strip() if note else "")
 
 
-BENCH = REPO / "tests" / "hardware" / "bench.json"
+BENCH = REPO / "tests" / "manual" / "bench.json"
 
 
 def bench_serial(board: str):
@@ -244,21 +258,115 @@ def detected_chip(probe_rs_dir, probe_serial):
     return None
 
 
-def run(cmd, **kw):
+def sh(cmd, **kw):
     return subprocess.run(cmd, check=False, capture_output=True, text=True, **kw)
 
 
-def run_one(name, args, gcc, probe_rs_dir, probe_serial, port, serial_index):
-    """Compile, flash and read back one sketch. Returns True on pass."""
+@dataclasses.dataclass
+class Bench:
+    """Everything one run needs to know about the hardware in front of it.
+
+    Resolved once by resolve_bench and then passed around, so the run loop
+    cannot quietly re-detect a board halfway through - on this bench the board
+    really does change between sessions, but never during one.
+    """
+    gcc: str
+    probe_rs: str
+    port: str
+    probe: str = None            # WCH-Link serial number, None if unidentified
+    select_probe: bool = False   # pass --probe through to the upload recipe
+    chip: str = None             # what probe-rs reports, None if it cannot tell
+    board: str = None
+    pnum: str = "ANY"
+    serial_index: int = None
+    pins: tuple = None           # (usart, tx, rx, note)
+    baud: int = 115200
+    seconds: float = 4.0
+
+
+def resolve_bench(board=None, pnum="ANY", port=None, probe=None, serial=None,
+                  force=False, baud=115200, seconds=4.0, log=print) -> Bench:
+    """Ask the hardware what it is, and refuse to guess when it will not say.
+
+    Every failure here is a Failure rather than a printed line and an exit
+    code, so a caller that is a test gets the reason in its own report.
+    """
+    gcc = find_gcc_bin()
+    probe_rs_dir = find_probe_rs()
+    if not gcc or not probe_rs_dir:
+        missing = [n for n, v in (("toolchain", gcc), ("probe-rs", probe_rs_dir))
+                   if not v]
+        raise Failure(f"missing {' and '.join(missing)}; run: "
+                      f"uv run tools/index/fetch_tools.py")
+
+    port, probe_serial = resolve_port(probe, port)
+    log(f"== probe {probe_serial or '(unidentified)'} -> {port}")
+
+    chip = detected_chip(probe_rs_dir, probe_serial)
+    detected = sorted(boards_for(chip)) if chip else []
+    if chip:
+        log(f"== target reports {chip}"
+            + (f" -> {', '.join(detected)}" if detected else
+               " (no boards.txt entry maps to it)"))
+    else:
+        log("== target chip not identified "
+            "(unpowered, SWD not wired, or unknown to this probe-rs)")
+
+    if board:
+        # Boards get swapped on this bench, so an explicit board that disagrees
+        # with the silicon is a mistake, not an instruction.
+        if detected and board not in detected and not force:
+            raise Failure(f"{chip} is attached but the board asked for is "
+                          f"{board}; pass --force to flash anyway")
+    elif len(detected) == 1:
+        board = detected[0]
+    elif detected:
+        raise Failure(f"{chip} maps to several boards ({', '.join(detected)}); "
+                      f"pick one")
+    else:
+        raise Failure("nothing to build for - name a board, or attach one "
+                      "probe-rs can identify")
+
+    if pnum == "detect":
+        if not chip or chip not in boards_for(chip).get(board, []):
+            raise Failure(f"a detected part number is needed that {board} "
+                          f"lists; got {chip!r}")
+        pnum = chip
+
+    serial_index = serial if serial else bench_serial(board)
+    if serial_index and not serial:
+        log(f"== bench.json says {board} is wired to USART{serial_index}")
+    pins = serial_pins(board, serial_index)
+    if pins is None:
+        raise Failure(f"{board}: the variant defines no default Serial port")
+    n, tx, rx, note = pins
+    log(f"== {board}:{pnum}  Serial = USART{n}  TX={tx}  RX={rx}"
+        f"{'  (' + note + ')' if note else ''}")
+    log(f"   wire {tx} -> probe RX, {rx} -> probe TX, and a common ground")
+
+    return Bench(gcc=gcc, probe_rs=probe_rs_dir, port=port, probe=probe_serial,
+                 select_probe=bool(probe_serial and probe), chip=chip,
+                 board=board, pnum=pnum, serial_index=serial_index, pins=pins,
+                 baud=baud, seconds=seconds)
+
+
+def run_one(name, bench: Bench) -> dict:
+    """Compile, flash and read back one sketch.
+
+    Returns {"verdict": "pass" | "fail" | "skip", "why": ..., "output": ...}.
+    A verdict with a reason rather than True/False/None: the caller may be a
+    person reading a summary table or a test that has to say why it skipped,
+    and None meant two unrelated things.
+    """
     sketch = BASIC / name / f"{name}.ino"
     if not sketch.exists():
-        print(f"FAIL {name}: no such sketch under {BASIC}")
-        return False
+        return {"verdict": "fail", "why": f"no such sketch under {BASIC}",
+                "output": ""}
     expect, drives = expectations(name)
     if drives:
-        print(f"SKIP {name}: its test drives the target (dut.write); "
-              f"run it under pytest")
-        return None
+        return {"verdict": "skip", "output": "",
+                "why": "its test drives the target (dut.write), and this "
+                       "runner only listens - run it under pytest"}
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = pathlib.Path(tmp)
@@ -272,16 +380,17 @@ def run_one(name, args, gcc, probe_rs_dir, probe_serial, port, serial_index):
         env = dict(os.environ, ARDUINO_DIRECTORIES_USER=str(tmp / "user"))
         (tmp / "user" / "hardware" / "ch32-riscv-ug").mkdir(parents=True)
         (tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32v").symlink_to(REPO)
-        r = run(["arduino-cli", "compile",
-                 "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
-                 "--build-property", f"compiler.path={gcc}/",
+        r = sh(["arduino-cli", "compile",
+                 "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
+                 "--build-property", f"compiler.path={bench.gcc}/",
                  *(["--build-property",
-                    f"build.extra_flags=-DCH32_SERIAL_DEFAULT={serial_index}"]
-                   if serial_index else []),
+                    f"build.extra_flags=-DCH32_SERIAL_DEFAULT={bench.serial_index}"]
+                   if bench.serial_index else []),
                  "--build-path", str(build), str(sketch_dir)], env=env)
         if r.returncode:
             print(r.stdout + r.stderr)
-            return False
+            return {"verdict": "fail", "why": "compile failed",
+                    "output": r.stdout + r.stderr}
         print("   " + r.stdout.strip().replace("\n", "\n   "))
 
         # The upload goes through the platform's own programmer entry, so this
@@ -289,31 +398,32 @@ def run_one(name, args, gcc, probe_rs_dir, probe_serial, port, serial_index):
         # side channel. --upload-property points the recipe at a probe-rs that
         # may not be Board-Manager-installed in a symlinked dev tree.
         upload = ["arduino-cli", "upload",
-                  "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
+                  "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
                   "--programmer", "wch-link", "--input-dir", str(build),
-                  "--upload-property", f"runtime.tools.probe-rs.path={probe_rs_dir}"]
-        if probe_serial and args.probe:
+                  "--upload-property", f"runtime.tools.probe-rs.path={bench.probe_rs}"]
+        if bench.select_probe:
             upload += ["--upload-property",
-                       f"upload.probe_args=--probe 1a86:8010:{probe_serial}"]
+                       f"upload.probe_args=--probe 1a86:8010:{bench.probe}"]
         upload.append(str(sketch_dir))
 
         import serial
-        with serial.Serial(port, args.baud, timeout=0.3) as uart:
+        with serial.Serial(bench.port, bench.baud, timeout=0.3) as uart:
             uart.reset_input_buffer()
             # The WCH-Link occasionally answers a flash session with
             # "bulk read timed out" and recovers on the next attempt. Retry
             # once, but say so: a bench that needs the retry every time is
             # broken, and hiding that would make the suite lie.
-            r = run(upload, env=env)
+            r = sh(upload, env=env)
             if r.returncode:
                 print("   upload failed, retrying once:")
                 print("   " + (r.stdout + r.stderr).strip().replace("\n", "\n   "))
-                r = run(upload, env=env)
+                r = sh(upload, env=env)
             if r.returncode:
                 print(r.stdout + r.stderr)
-                return False
+                return {"verdict": "fail", "why": "upload failed",
+                        "output": r.stdout + r.stderr}
             print("   uploaded")
-            deadline = time.time() + args.seconds
+            deadline = time.time() + bench.seconds
             got = b""
             while time.time() < deadline:
                 got += uart.read(256)
@@ -326,119 +436,97 @@ def run_one(name, args, gcc, probe_rs_dir, probe_serial, port, serial_index):
     # target, where the pytest file's expectations are parametrised f-strings.
     if "FAIL" in text:
         bad = [ln for ln in text.splitlines() if "FAIL" in ln]
-        print(f"FAIL {name}: the sketch reported {bad}")
-        return False
+        return {"verdict": "fail", "why": f"the sketch reported {bad}",
+                "output": text}
     counts = re.findall(r"failures=(\d+)", text)
     if counts and any(c != "0" for c in counts):
-        print(f"FAIL {name}: reported failures={counts}")
-        return False
+        return {"verdict": "fail", "why": f"reported failures={counts}",
+                "output": text}
     missing = [w for w in expect if w not in text]
     if missing:
-        print(f"FAIL {name}: missing {missing}")
-        return False
+        return {"verdict": "fail", "why": f"missing {missing}", "output": text}
     if not expect and not counts:
-        print(f"?    {name}: nothing to check against - test_{name}.py has no "
-              f"literal expectations and the sketch reports no failure count")
-        return None
+        return {"verdict": "skip", "output": text,
+                "why": f"nothing to check against - test_{name}.py has no "
+                       f"literal expectations and the sketch reports no "
+                       f"failure count"}
     detail = f"{len(expect)} expectations" if expect else "no failures reported"
-    print(f"PASS {name}: {detail}"
-          + (f", failures={counts[-1]}" if counts else ""))
-    return True
+    return {"verdict": "pass", "output": text,
+            "why": detail + (f", failures={counts[-1]}" if counts else "")}
+
+
+MARK = {"pass": "PASS", "fail": "FAIL", "skip": "SKIP"}
+
+
+def run(sketch=DEFAULT_SKETCH, bench: Bench = None, **kw) -> dict:
+    """Every sketch asked for, on one board. {name: verdict dict}."""
+    if bench is None:
+        bench = resolve_bench(**kw)
+    results = {}
+    for name in sketch_names(sketch):
+        print(f"\n===== {name}")
+        results[name] = r = run_one(name, bench)
+        print(f"{MARK[r['verdict']]} {name}: {r['why']}")
+    return results
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--board", help="series board, e.g. CH32X035 "
-                                    "(default: whatever probe-rs detects)")
-    ap.add_argument("--pnum", default="ANY",
+    ap.add_argument("--board", default=os.environ.get("CH32_BOARD"),
+                    help="series board, e.g. CH32X035 "
+                         "(default: whatever probe-rs detects)")
+    ap.add_argument("--pnum", default=os.environ.get("CH32_PNUM", "ANY"),
                     help="part number menu entry, or 'detect' for the exact "
                          "part probe-rs reports (default: ANY, which is what "
                          "the profiles and most users build)")
-    ap.add_argument("--port", help="probe UART bridge (default: discovered)")
+    ap.add_argument("--port", default=os.environ.get("CH32_PORT"),
+                    help="probe UART bridge (default: discovered)")
     ap.add_argument("--baud", type=int, default=115200)
-    ap.add_argument("--probe", help="WCH-Link USB serial (default: the only one attached)")
+    ap.add_argument("--probe", default=os.environ.get("CH32_PROBE"),
+                    help="WCH-Link USB serial (default: the only one attached)")
     ap.add_argument("--seconds", type=float, default=4.0)
     ap.add_argument("--force", action="store_true",
                     help="flash even if the attached chip is a different series")
     ap.add_argument("--serial", type=int,
-                    help="override which USART Serial is (uart_scan.py finds it)")
-    ap.add_argument("--sketch", default=DEFAULT_SKETCH,
+                    help="override which USART Serial is (the uart_scan test "
+                         "finds it)")
+    ap.add_argument("--sketch", default=os.environ.get("CH32_SKETCH", DEFAULT_SKETCH),
                     help=f"a directory under tests/sketches/basic, or 'all' "
                          f"(default: {DEFAULT_SKETCH})")
     args = ap.parse_args()
 
-    gcc = find_gcc_bin()
-    probe_rs_dir = find_probe_rs()
-    if not gcc or not probe_rs_dir:
-        missing = [n for n, v in (("toolchain", gcc), ("probe-rs", probe_rs_dir))
-                   if not v]
-        print(f"missing {' and '.join(missing)}; run: "
-              f"uv run tools/index/fetch_tools.py", file=sys.stderr)
-        return 2
-
-    port, probe_serial = resolve_port(args.probe, args.port)
-    print(f"== probe {probe_serial or '(unidentified)'} -> {port}")
-
-    chip = detected_chip(probe_rs_dir, probe_serial)
-    detected = sorted(boards_for(chip)) if chip else []
-    if chip:
-        print(f"== target reports {chip}"
-              + (f" -> {', '.join(detected)}" if detected else
-                 " (no boards.txt entry maps to it)"))
-    else:
-        print("== target chip not identified "
-              "(unpowered, SWD not wired, or unknown to this probe-rs)")
-
-    if args.board:
-        # Boards get swapped on this bench, so an explicit --board that
-        # disagrees with the silicon is a mistake, not an instruction.
-        if detected and args.board not in detected and not args.force:
-            print(f"FAIL: {chip} is attached but --board says {args.board}; "
-                  f"pass --force to flash anyway")
-            return 1
-    elif len(detected) == 1:
-        args.board = detected[0]
-    elif detected:
-        print(f"FAIL: {chip} maps to several boards ({', '.join(detected)}); "
-              f"pick one with --board")
-        return 1
-    else:
-        print("FAIL: nothing to build for - pass --board, or attach a board "
-              "probe-rs can identify")
+    try:
+        bench = resolve_bench(board=args.board, pnum=args.pnum, port=args.port,
+                              probe=args.probe, serial=args.serial,
+                              force=args.force, baud=args.baud,
+                              seconds=args.seconds)
+        results = run(args.sketch, bench)
+    except Failure as e:
+        print(f"FAIL: {e}", file=sys.stderr)
         return 1
 
-    if args.pnum == "detect":
-        if not chip or chip not in boards_for(chip).get(args.board, []):
-            print(f"FAIL: --pnum detect needs a detected part number that "
-                  f"{args.board} lists; got {chip!r}")
-            return 1
-        args.pnum = chip
+    if len(results) > 1:
+        print(f"\n===== summary: {bench.board} ({bench.chip or 'unidentified'})")
+        for name, r in results.items():
+            print(f"  {MARK[r['verdict']]}  {name}")
+    return 0 if all(r["verdict"] != "fail" for r in results.values()) else 1
 
-    serial_index = args.serial if args.serial else bench_serial(args.board)
-    if serial_index and not args.serial:
-        print(f"== bench.json says {args.board} is wired to USART{serial_index}")
-    pins = serial_pins(args.board, serial_index)
-    if pins is None:
-        print(f"{args.board}: the variant defines no default Serial port")
-        return 1
-    n, tx, rx, note = pins
-    print(f"== {args.board}:{args.pnum}  Serial = USART{n}  TX={tx}  RX={rx}"
-          f"{'  (' + note + ')' if note else ''}")
-    print(f"   wire {tx} -> probe RX, {rx} -> probe TX, and a common ground")
 
-    names = sketch_names(args.sketch)
-    results = {}
-    for name in names:
-        print(f"\n===== {name}")
-        results[name] = run_one(name, args, gcc, probe_rs_dir, probe_serial,
-                                port, serial_index)
+# --- as a test ---------------------------------------------------------------
+# One case per sketch; manual/conftest.py turns CH32_SKETCH into the parameter
+# list and resolves `bench` once for the module. pytest is imported inside the
+# test rather than at the top, because as a CLI this file runs under a bare
+# `uv run`, which installs only the dependencies declared above.
 
-    if len(names) > 1:
-        print("\n===== summary: " + f"{args.board} ({chip or 'unidentified'})")
-        for name, ok in results.items():
-            mark = {True: "PASS", False: "FAIL", None: "SKIP"}[ok]
-            print(f"  {mark}  {name}")
-    return 0 if all(v is not False for v in results.values()) else 1
+def test_sketch_runs_on_the_board(bench, sketch_name):
+    """Compile, flash and read back one sketch, the way a user would."""
+    import pytest
+    print(f"\n===== {sketch_name}")
+    result = run_one(sketch_name, bench)
+    print(f"{MARK[result['verdict']]} {sketch_name}: {result['why']}")
+    if result["verdict"] == "skip":
+        pytest.skip(result["why"])
+    assert result["verdict"] == "pass", result["why"]
 
 
 if __name__ == "__main__":

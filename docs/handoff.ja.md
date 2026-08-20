@@ -112,8 +112,8 @@ hex=BEEF
 **V003 / V203 / X035 / L103 の4 familyで実機確認済み**。runnerは繋いで1コマンド:
 
 ```bash
-uv run tests/manual/chip_info.py                 # 何が繋がっているか
-uv run tests/manual/smoke.py --board CH32X035    # 受け入れsketch
+uv run tests/manual/chip_info/chip_info.py                 # 何が繋がっているか
+uv run tests/manual/smoke/smoke.py --board CH32X035    # 受け入れsketch
 ```
 
 boardごとのSerial結線(TX/RX)は[tests/manual/README.ja.md](../tests/manual/README.ja.md)の表。

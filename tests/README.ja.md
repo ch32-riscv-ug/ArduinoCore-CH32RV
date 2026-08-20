@@ -30,8 +30,13 @@ uv run pytest --profile ch32x035 --port /dev/ttyACM4  # + 実機で実行
 | [`manual/`](manual/README.ja.md) | 手動test + 実機tool | 必要 | 明示指定のみ |
 
 `sketches/`は`--profile`が無いとskipします(profileが無いとpytest-embeddedが
-targetを決められないため)。`manual/`は`test_`プレフィックスを付けていないので、
-ファイルを名指ししない限り収集されません。
+targetを決められないため)。`manual/`は`test_`プレフィックスを付けておらず、
+`norecursedirs`にも入れてあるので、ファイルを名指ししない限り収集されません
+——引数なしの`pytest`が実機を焼きにいかないための二重の防護です。
+
+実機tool(`chip_info` / `smoke` / `uart_scan`)も**pytestのcase**です。
+CLIとしても残していますが、それは対話的に作業台を見る場面のためで、
+どちらも同じ関数を呼びます。
 
 harnessはすべて**Pythonモジュール**で、pytestは`import`して関数を呼びます
 (以前はshell scriptをsubprocessで起動し、標準出力のmarker文字列をassertしていました。

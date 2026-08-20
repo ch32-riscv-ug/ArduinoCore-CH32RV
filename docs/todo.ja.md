@@ -74,7 +74,7 @@
 
 - [x] `programmers.txt`と`program.pattern`の実体化。`arduino-cli upload --programmer wch-link`が
       **CH32V203実機で通った**([実験0012](experiments/0012-probe-rs-upload-toolchain.ja.md))
-- [x] `tests/manual/smoke.py`を`arduino-cli upload`経由へ移行。**出荷経路そのものを検証する**
+- [x] `tests/manual/smoke/smoke.py`を`arduino-cli upload`経由へ移行。**出荷経路そのものを検証する**
 - [ ] `[P1]` Windows / macOSでの書き込み確認(要実機)
 - [ ] `[P1]` probe選択を`sketch.yaml` profileから渡せるようにする。
       現在は`--upload-property upload.probe_args=...`のみで、profileには書けない
@@ -285,14 +285,28 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       だとユーザー名が**34文字**まで入る。Windowsのローカルアカウントは20文字上限なので
       実害は考えにくいが、余裕は多くない。tool名から`xpack-`を落とせば40文字まで伸びる
       一方、公開済みindexと`platform.txt`の`{runtime.tools.*}`に関わる変更になる
+- [x] **`tests/manual/`をpytestへ載せた。** 3 tool(`chip_info` / `uart_scan` /
+      `smoke`)を「印字する`main()`」から**構造化データを返す関数**へ組み替え
+      (`inventory()` / `scan()` / `resolve_bench()`+`run()`)、pytest caseを追加。
+      配置は`gpio_loopback`と同じ**1 case = 1 ディレクトリ**(`<case>/<case>.py`)。
+      設定はpytest optionではなく`tests/.env`の環境変数
+      (`--port`と`--target`はpytest-embeddedが既に持っているため)。
+      sketchのparametrizeは`manual/conftest.py`の`pytest_generate_tests`が行い、
+      `pytest`はtest本体の中でimportする——CLIはPEP 723の`uv run`で動く必要があり、
+      そこにpytestは入っていないため。CLIは対話用に残した。
+      **実機(CH32X035C8T6)で両経路とも確認済み**
+- [x] pytest化して**既存の実バグが4件出た**(いずれも表面化していなかった):
+      `chip_info`が`probe_rs_targets.csv`の`#`行を落とさずDictReaderへ渡していて
+      chip集合が常に空(=「CSVに無い」警告が一度も出ない)、
+      `uart_scan`が存在しない`tests/hardware`を`sys.path`へ入れている、
+      `uart_scan`が`detected_chip`/`boards_for`を未importで使用(`--board`省略で
+      NameError)、`uart_scan`が`.tools`フォールバックを実装しておらず
+      `CH32_GCC_BIN`/`CH32_TABLES`必須。`smoke`の`bench.json`も
+      存在しない`tests/hardware/`を指していた
 - [ ] `[P1]` **単体スクリプトの呼び出しをなくす。** 実行の入口は`pytest`ひとつにし、
       スクリプトを直接叩くのは相当の特殊事例だけにする。残っているもの:
-      `tests/manual/`の3 tool(`chip_info.py` / `uart_scan.py` / `smoke.py`)、
       `tests/sketches/sync_profiles.py`、`tools/index/fetch_tools.py`、
-      `tools/generate/generate.py`。実機toolはpytestのcaseとしても呼べる形にする
-- [ ] `[P1]` `tests/manual/`をpytestへ載せる。`gpio_loopback`は既にpytest caseだが、
-      tool系(chip_info / uart_scan / smoke)はCLIのまま。**関数として呼べるようにし、
-      pytest caseからも使えるようにする**
+      `tools/generate/generate.py`(いずれも生成・取得系で、testではない)
 - [ ] `[P1]` CIへpytest sketch testを追加(`--run-mode build`)。
       ローカルindexの配信が要る
 - [x] **Windows install失敗の原因を特定**。probe-rsのWindows zipが平坦で、

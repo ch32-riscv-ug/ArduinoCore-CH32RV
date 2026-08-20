@@ -80,7 +80,7 @@ def _unavailable(what):
 
 def _finder(name):
     import sys
-    sys.path.insert(0, str(REPO / "tests" / "manual"))
+    sys.path.insert(0, str(REPO / "tests" / "manual" / "smoke"))
     import smoke
     return getattr(smoke, name)
 

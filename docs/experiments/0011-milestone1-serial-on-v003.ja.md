@@ -19,7 +19,7 @@ hex=BEEF
 `t=1000` / `t=2000` / `t=3000`が1秒間隔で出るので、SysTickも正しい。
 `F_CPU=24000000`をsketchから出力させ、HSI直結24MHzで動いていることも確認した。
 
-再現: `tests/manual/smoke.py --board CH32V003 --port /dev/ttyACM4`([手順](../../tests/manual/README.ja.md))。
+再現: `tests/manual/smoke/smoke.py --board CH32V003 --port /dev/ttyACM4`([手順](../../tests/manual/README.ja.md))。
 
 ## 実装したもの
 

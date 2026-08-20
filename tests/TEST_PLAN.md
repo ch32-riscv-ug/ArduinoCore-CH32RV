@@ -59,7 +59,7 @@ these, and none of them can be caught by compiling the repository tree.
 | package index | append-only: upgrade, then reinstall the older version | `install_check.py` |
 | toolchain tool | installs and resolves as the compiler | `install_check.py` |
 | probe-rs tool | installs and `--version` runs | `install_check.py` |
-| upload path | `arduino-cli upload --programmer wch-link` works | `tests/manual/smoke.py` (hardware) |
+| upload path | `arduino-cli upload --programmer wch-link` works | `tests/manual/smoke/smoke.py` (hardware) |
 | profile path | `sketch.yaml` `platform_index_url` + `programmer:` works | `tests/sketches/` (hardware) |
 | 3 OSes | all of the above | `install-test` matrix in `.github/workflows/ci.yml` |
 
@@ -103,17 +103,28 @@ tests/sketches/<category>/<case>/
   test_<case>.py     expectations against the dut fixture
 ```
 
-Files under `manual/` deliberately have **no `test_` prefix**, so a bare
-`pytest` run never picks up something that needs hardware. Run them explicitly.
+`manual/` is **one directory per case** too, and `pytest` is the way in. Its
+files deliberately have **no `test_` prefix**, and `manual` is in
+`norecursedirs` as well - two guards against a bare `pytest` deciding to flash
+the board. Run them by naming the file.
 
 ```text
 tests/manual/
-  chip_info.py       tool - what is attached right now (probe / chip / port / FQBN / Serial pins)
-  uart_scan.py       tool - which USART route a board actually wires
-  smoke.py           tool - compile -> upload -> read back over the shipping path
+  conftest.py              shared fixtures (attached / bench / uart_routes)
+  env_config.py            .env pad names -> pin numbers, and the sketch header
   bench.json               this bench's wiring record
   <case>/<case>.py         a manual test (plus <case>.ino + sketch.yaml when it needs a sketch)
+
+  chip_info/       what is attached right now (probe / chip / port / FQBN / Serial pins)
+  uart_scan/       which USART route a board actually wires
+  smoke/           compile -> upload -> read back over the shipping path
+  gpio_loopback/   GPIO through one jumper (level / pulls / EXTI / PWM duty)
 ```
+
+chip_info, smoke and uart_scan also run as CLIs, for looking at the bench
+interactively; both routes call the same functions. They are configured through
+the environment (`tests/.env`), not through pytest options - pytest-embedded
+already owns `--port` and `--target`.
 
 ---
 
@@ -237,7 +248,7 @@ second). Hardware testing is therefore sequential. Four options:
 | d | Tier A stays connected, tier B swapped in before a release | Available today at no cost |
 
 **Take d for now** and build b separately. d only works if scripts can tell
-which board is attached, which is what `tests/manual/chip_info.py` is for - it
+which board is attached, which is what `tests/manual/chip_info/chip_info.py` is for - it
 asks the probe and prints chip, FQBN and Serial pins. `smoke.py` also refuses to
 flash when `--board` disagrees with the chip it detects.
 
@@ -315,17 +326,20 @@ tests without hardware.
 ### Automated, with hardware
 
 ```sh
-uv run tests/manual/chip_info.py            # first, see what is attached
+cd tests
+uv run pytest manual/chip_info/chip_info.py -v -s     # first, see what is attached
 cd tests && uv run --env-file .env pytest sketches --profile ch32x035 --port /dev/ttyACM4
 ```
 
 ### Manual
 
 ```sh
-uv run tests/manual/smoke.py                 # acceptance on whatever is attached
-uv run tests/manual/smoke.py --sketch all    # after swapping a board
-uv run tests/manual/uart_scan.py             # when the wiring is unknown
-cd tests && uv run --env-file .env pytest manual/<case>/<case>.py -v -s
+cd tests
+uv run --env-file .env pytest manual/chip_info/chip_info.py -v -s   # bench preconditions
+uv run --env-file .env pytest manual/smoke/smoke.py -v -s           # acceptance sketch
+CH32_SKETCH=all uv run --env-file .env pytest manual/smoke/smoke.py -v -s  # after a swap
+uv run --env-file .env pytest manual/uart_scan/uart_scan.py -v -s   # wiring unknown
+uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s  # needs a jumper
 ```
 
 `--board` is optional: probe-rs reports the part number and boards.txt maps it

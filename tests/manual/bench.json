@@ -6,7 +6,7 @@
     "board tried so far, so this file is empty of overrides.",
     "",
     "Find the value for a board whose wiring does differ with:",
-    "  uv run tests/manual/uart_scan.py --board <BOARD>",
+    "  uv run tests/manual/uart_scan/uart_scan.py --board <BOARD>",
     "and record it here so smoke.py needs no --serial."
   ],
   "boards": {}

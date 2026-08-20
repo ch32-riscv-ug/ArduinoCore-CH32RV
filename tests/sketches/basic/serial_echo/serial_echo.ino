@@ -3,7 +3,7 @@
 // the UART and the RX interrupt path work.
 //
 // Needs the probe's UART TX wired to the board's Serial RX pin as well as the
-// usual TX. tests/manual/uart_scan.py only finds TX, so RX is what this adds.
+// usual TX. The uart_scan manual test only finds TX, so RX is what this adds.
 
 void setup() {
   Serial.begin(115200);

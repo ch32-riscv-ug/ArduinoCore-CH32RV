@@ -56,7 +56,7 @@ Arduino Board Manager経由で配布するArduino coreとして、**利用者が
 | package index | append-only(過去versionが残る) | `gen_index.py --merge` |
 | toolchain tool | installされ、compilerとして解決される | `install_check.py` |
 | probe-rs tool | installされ、`--version`が動く | `install_check.py` |
-| upload経路 | `arduino-cli upload --programmer wch-link`が通る | `tests/manual/smoke.py`(実機) |
+| upload経路 | `arduino-cli upload --programmer wch-link`が通る | `tests/manual/smoke/smoke.py`(実機) |
 | profile経路 | `sketch.yaml`の`platform_index_url` + `programmer:`で動く | `tests/sketches/`(実機) |
 | 3 OS | 上記すべて | `.github/workflows/ci.yml`の`install-test` matrix |
 
@@ -98,17 +98,26 @@ tests/sketches/<category>/<case>/
   test_<case>.py     dut fixtureへのexpect
 ```
 
-`manual/`には`test_`プレフィックスを**付けません**。`pytest`を引数なしで回したときに
-実機が要るものが混ざらないようにするためです。明示的に指定して実行します。
+`manual/`も**1 case = 1 ディレクトリ**で、`pytest`が入口です。`test_`プレフィックスは
+**付けず**、`manual`は`norecursedirs`にも入れてあります——引数なしの`pytest`が実機を
+焼きにいかないための二重の防護で、手動testは常にファイルを名指しして実行します。
 
 ```text
 tests/manual/
-  chip_info.py       tool — いま何が繋がっているか(probe / chip / port / FQBN / Serial pin)
-  uart_scan.py       tool — boardがどのUSART routeを配線しているか特定する
-  smoke.py           tool — 出荷経路でcompile→upload→UART確認(Milestone 1のacceptance)
+  conftest.py              共有fixture(attached / bench / uart_routes)
+  env_config.py            .envのpad名 -> pin番号、sketch用headerの生成
   bench.json               この作業台の配線記録
   <case>/<case>.py         手動テスト本体(必要なら<case>.ino + sketch.yaml)
+
+  chip_info/       いま何が繋がっているか(probe / chip / port / FQBN / Serial pin)
+  uart_scan/       boardがどのUSART routeを配線しているか特定する
+  smoke/           出荷経路でcompile→upload→UART確認(Milestone 1のacceptance)
+  gpio_loopback/   ジャンパ1本でGPIO(レベル / pull / EXTI / PWM duty)
 ```
+
+`chip_info` / `smoke` / `uart_scan`はCLIとしても動きます。対話的に作業台を見る場面の
+ためで、どちらの経路も同じ関数を呼びます。設定は`tests/.env`の環境変数です
+(pytestのoptionは増やしていません。`--port`と`--target`はpytest-embeddedのもの)。
 
 ---
 
@@ -227,7 +236,7 @@ Board追加時は[`tests/sketches/sync_profiles.py`](sketches/sync_profiles.py)�
 
 **当面はd**とし、bを別途準備します。
 dの前提として、**どのboardが繋がっているかをスクリプトが自分で判定できる**必要があるので、
-`tests/manual/chip_info.py`がprobeとchipを問い合わせてFQBNとSerial pinまで出します。
+`tests/manual/chip_info/chip_info.py`がprobeとchipを問い合わせてFQBNとSerial pinまで出します。
 `smoke.py`も`--board`と実チップが食い違えばフラッシュ前に落とします。
 
 ---
@@ -301,17 +310,20 @@ sketchテストをbuildだけで回すなら`--profile ch32x035 --run-mode build
 ### 自動テスト(実機あり)
 
 ```sh
-uv run tests/manual/chip_info.py            # まず何が繋がっているか確認
-cd tests && uv run --env-file .env pytest sketches --profile ch32x035 --port /dev/ttyACM4
+cd tests
+uv run pytest manual/chip_info/chip_info.py -v -s     # まず何が繋がっているか確認
+uv run --env-file .env pytest sketches --profile ch32x035 --port /dev/ttyACM4
 ```
 
 ### 手動テスト
 
 ```sh
-uv run tests/manual/smoke.py                 # 繋がっているboardで受け入れsketch
-uv run tests/manual/smoke.py --sketch all    # boardを差し替えたら
-uv run tests/manual/uart_scan.py             # 配線が不明なとき
-cd tests && uv run --env-file .env pytest manual/<case>/<case>.py -v -s
+cd tests
+uv run --env-file .env pytest manual/chip_info/chip_info.py -v -s   # 作業台の前提確認
+uv run --env-file .env pytest manual/smoke/smoke.py -v -s           # 受け入れsketch
+CH32_SKETCH=all uv run --env-file .env pytest manual/smoke/smoke.py -v -s   # 差し替え後
+uv run --env-file .env pytest manual/uart_scan/uart_scan.py -v -s   # 配線が不明なとき
+uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s   # ジャンパ要
 ```
 
 `--board`は省略できます。probe-rsが型番を読んで`boards.txt`から逆引きするので、
