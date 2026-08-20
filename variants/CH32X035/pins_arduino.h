@@ -189,20 +189,18 @@
 #define CH32_SERIAL2_RX PA3
 #define CH32_SERIAL2_HANDLER USART2_IRQHandler
 #define CH32_SERIAL2_IRQ CH32_IRQN_USART2
-/* USART3: route remap-1, on every part */
-#define CH32_SERIAL3_TX PC18
-#define CH32_SERIAL3_RX PC19
+/* USART3: route default, on 4 of 7 parts */
+#define CH32_SERIAL3_TX PB3
+#define CH32_SERIAL3_RX PB4
 #define CH32_SERIAL3_HANDLER USART3_IRQHandler
 #define CH32_SERIAL3_IRQ CH32_IRQN_USART3
-#define CH32_SERIAL3_REMAP_MASK 0x00000c00u
-#define CH32_SERIAL3_REMAP_VAL  0x00000400u
 /* USART4: route default, on 5 of 7 parts */
 #define CH32_SERIAL4_TX PB0
 #define CH32_SERIAL4_RX PB1
 #define CH32_SERIAL4_HANDLER USART4_IRQHandler
 #define CH32_SERIAL4_IRQ CH32_IRQN_USART4
 #ifndef CH32_SERIAL_DEFAULT
-#define CH32_SERIAL_DEFAULT 2
+#define CH32_SERIAL_DEFAULT 1
 #endif
 
 /* ---- PWM: 10 pads on TIM1/TIM2/TIM3, default route ---- */

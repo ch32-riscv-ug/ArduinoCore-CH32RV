@@ -33,6 +33,22 @@ WCH CH32マイコン向けの、コミュニティ管理によるArduinoコア�
 
 初期実装の対象はCH32のRISC-V系列を想定しています。CH32FなどのArm系列、無線SoC、RTOSを含む最終的な対応範囲は未決定です。
 
+## ビルドメニュー
+
+| メニュー | 既定 | 内容 |
+|---|---|---|
+| Part Number (`pnum`) | `ANY` | 型番。`ANY`はseries内で最小のflash/RAMを宣言するので、どの型番にも載る |
+| printf() float support (`printf`) | `none` | `printf("%f")`を使えるようにするか |
+
+**`printf`の既定では`%f`が何も出力しません。** ランタイムがnewlib-nanoで
+([ADR-0004](docs/adr/0004-runtime-and-cxx.ja.md))、浮動小数点の変換が入っていないためです。
+Arduinoの他コアから来ると必ず引っかかる点なので明記します。
+
+必要なときはメニューを`%f supported`にしてください。flashが約19 KB増えます
+(CH32X035の実測で7.1 KB → 25.9 KB)。CH32V003の16 KBには入りません。
+
+`Serial.print(1.5, 2)`はコアの実装で、`printf`とは無関係に常に動きます。
+
 ## リポジトリ構成
 
 リポジトリのルートがそのままArduino platformディレクトリです。開発時は

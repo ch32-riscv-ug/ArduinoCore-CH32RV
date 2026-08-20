@@ -156,13 +156,11 @@
 
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
-/* USART1: route remap-1, on every part */
-#define CH32_SERIAL1_TX PB6
-#define CH32_SERIAL1_RX PB7
+/* USART1: route default, on 2 of 4 parts */
+#define CH32_SERIAL1_TX PA9
+#define CH32_SERIAL1_RX PA10
 #define CH32_SERIAL1_HANDLER USART1_IRQHandler
 #define CH32_SERIAL1_IRQ CH32_IRQN_USART1
-#define CH32_SERIAL1_REMAP_MASK 0x00000004u
-#define CH32_SERIAL1_REMAP_VAL  0x00000004u
 /* USART2: route default, on 2 of 4 parts */
 #define CH32_SERIAL2_TX PA2
 #define CH32_SERIAL2_RX PA3

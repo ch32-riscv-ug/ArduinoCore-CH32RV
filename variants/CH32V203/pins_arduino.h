@@ -177,7 +177,7 @@
 #define CH32_SERIAL3_HANDLER USART3_IRQHandler
 #define CH32_SERIAL3_IRQ CH32_IRQN_USART3
 #ifndef CH32_SERIAL_DEFAULT
-#define CH32_SERIAL_DEFAULT 2
+#define CH32_SERIAL_DEFAULT 1
 #endif
 
 /* ---- PWM: 12 pads on TIM1/TIM2/TIM3, default route ---- */

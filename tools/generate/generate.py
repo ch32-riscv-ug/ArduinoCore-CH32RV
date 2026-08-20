@@ -113,7 +113,17 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = "menu.pnum=Part Number\n"
+MENU_HEADER = "menu.pnum=Part Number\nmenu.printf=printf() float support\n"
+
+# ADR-0004: newlib-nano is the default runtime and printf's float support is a
+# menu opt-in. The cost is why - on CH32X035 a printf sketch is 48 KB with the
+# full formatter and 7.6 KB with nano, and CH32V003 only has 16 KB of flash.
+# Both entries are emitted for every board because the choice is per-sketch,
+# not per-part.
+PRINTF_MENU = (
+    ("none", "No float (smaller)", ""),
+    ("float", "%f supported (+~19 KB)", "-Wl,-u,_printf_float"),
+)
 
 
 def source_commit(tables_dir: pathlib.Path) -> str:
@@ -377,11 +387,14 @@ def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
                  remap: dict) -> dict:
     """Pick one route per USART for the whole series.
 
-    A board is a series (ADR-0005) and its default menu entry is ANY, so the
-    pins have to be chosen for the series rather than for one package. Prefer
-    the route that reaches the most part numbers; ties go to the earliest route
-    in UART_ROUTE_ORDER. Parts that do not bond the chosen pins simply have no
-    output there, which is reported in the generated header.
+    Route order comes first, coverage second. Picking by coverage looked
+    better on paper - a remap route often reaches more packages - but boards
+    are wired to the reset-default pins: every board on the bench is, and so
+    are the WCH and the old community cores. A default that needs an AFIO
+    remap would be wrong on the hardware people actually have.
+
+    Parts that do not bond the chosen pins have no Serial output there, which
+    the generated header states per USART.
     """
     chosen: dict = {}
     indices = {i for pn in parts for (i, _r) in uarts.get(pn, {})}
@@ -401,14 +414,14 @@ def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
             if len(variants) != 1:
                 continue   # the route moves between packages: unusable for ANY
             coverage = len(pads_by_part)
-            # A route the core cannot actually select is worse than a smaller
-            # one it can: non-default routes need an AFIO field, and device-data
-            # does not have one for every series (X033/X035 USART1, for
-            # example), while the af-N families use a different mechanism.
+            # A route the core cannot actually select is worse than any it
+            # can: non-default routes need an AFIO field, and device-data does
+            # not have one for every series (X033/X035 USART1, for example),
+            # while the af-N families use a different mechanism.
             value = route_remap_value(route)
             programmable = value == 0 or (value is not None and
                                           (series, index) in remap)
-            score = (programmable, coverage, -UART_ROUTE_ORDER.index(route))
+            score = (programmable, -UART_ROUTE_ORDER.index(route), coverage)
             if best is None or score > best[0]:
                 best = (score, coverage, route, next(iter(variants)))
         if best:
@@ -725,16 +738,18 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
                 out.append(f" * has no PCFR1 field for USART{index} in this series. */")
         # Serial points at the USART that reaches the most part numbers.
+        # Serial is the lowest-numbered USART on its reset-default pins;
+        # that is what a board's silkscreen almost always means by "UART".
         def rank(i):
             coverage, route, _pads = chosen[i]
             value = route_remap_value(route)
             programmable = value == 0 or (value is not None and (series, i) in remap)
-            return (programmable, coverage, -i)
+            return (programmable, route in ("default", "main"), -i)
         default = max(sorted(chosen), key=rank)
         # A board can wire a different USART than the series-wide choice: the
         # generator optimises for the ANY entry (pins present on every part),
         # while a real board only has to work for itself. Overridable with
-        # -DCH32_SERIAL_DEFAULT=<n>, which is what tests/hardware/uart_scan.py
+        # -DCH32_SERIAL_DEFAULT=<n>, which is what tests/manual/uart_scan.py
         # reports.
         out.append("#ifndef CH32_SERIAL_DEFAULT")
         out.append(f"#define CH32_SERIAL_DEFAULT {default}")
@@ -844,6 +859,11 @@ def gen_board(series: str, rows: list, probe_rs: set, commit: str):
         if chip:
             lines.append(f"{pfx}.build.probe_rs_chip={chip}")
         lines.append("")
+
+    for key, label, flags in PRINTF_MENU:
+        lines.append(f"{board}.menu.printf.{key}={label}")
+        lines.append(f"{board}.menu.printf.{key}.build.printf_flags={flags}")
+    lines.append("")
 
     return "\n".join(lines), ld_files
 

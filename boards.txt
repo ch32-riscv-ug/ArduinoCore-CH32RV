@@ -3,6 +3,7 @@
 # Regenerate: generate.py --tables <ch32-device-data>/tables --platform <platform dir>
 
 menu.pnum=Part Number
+menu.printf=printf() float support
 
 CH32V003.name=Generic CH32V003
 CH32V003.build.board=CH32V003
@@ -50,6 +51,11 @@ CH32V003.menu.pnum.CH32V003J4M6.build.ldscript=ch32v003_16k_2k.ld
 CH32V003.menu.pnum.CH32V003J4M6.upload.maximum_size=16384
 CH32V003.menu.pnum.CH32V003J4M6.upload.maximum_data_size=2048
 CH32V003.menu.pnum.CH32V003J4M6.build.probe_rs_chip=CH32V003J4M6
+
+CH32V003.menu.printf.none=No float (smaller)
+CH32V003.menu.printf.none.build.printf_flags=
+CH32V003.menu.printf.float=%f supported (+~19 KB)
+CH32V003.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32V002.name=Generic CH32V002
 CH32V002.build.board=CH32V002
@@ -105,6 +111,11 @@ CH32V002.menu.pnum.CH32V002J4M6.upload.maximum_size=16384
 CH32V002.menu.pnum.CH32V002J4M6.upload.maximum_data_size=4096
 CH32V002.menu.pnum.CH32V002J4M6.build.probe_rs_chip=CH32V002J4M6
 
+CH32V002.menu.printf.none=No float (smaller)
+CH32V002.menu.printf.none.build.printf_flags=
+CH32V002.menu.printf.float=%f supported (+~19 KB)
+CH32V002.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32V004.name=Generic CH32V004
 CH32V004.build.board=CH32V004
 CH32V004.build.core=arduino
@@ -137,6 +148,11 @@ CH32V004.menu.pnum.CH32V004F6U1.build.ldscript=ch32v004_32k_6k.ld
 CH32V004.menu.pnum.CH32V004F6U1.upload.maximum_size=32768
 CH32V004.menu.pnum.CH32V004F6U1.upload.maximum_data_size=6144
 CH32V004.menu.pnum.CH32V004F6U1.build.probe_rs_chip=CH32V004F6U1
+
+CH32V004.menu.printf.none=No float (smaller)
+CH32V004.menu.printf.none.build.printf_flags=
+CH32V004.menu.printf.float=%f supported (+~19 KB)
+CH32V004.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32V005.name=Generic CH32V005
 CH32V005.build.board=CH32V005
@@ -184,6 +200,11 @@ CH32V005.menu.pnum.CH32V005F6U6.build.ldscript=ch32v005_32k_6k.ld
 CH32V005.menu.pnum.CH32V005F6U6.upload.maximum_size=32768
 CH32V005.menu.pnum.CH32V005F6U6.upload.maximum_data_size=6144
 CH32V005.menu.pnum.CH32V005F6U6.build.probe_rs_chip=CH32V005F6U6
+
+CH32V005.menu.printf.none=No float (smaller)
+CH32V005.menu.printf.none.build.printf_flags=
+CH32V005.menu.printf.float=%f supported (+~19 KB)
+CH32V005.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32V006.name=Generic CH32V006
 CH32V006.build.board=CH32V006
@@ -253,6 +274,11 @@ CH32V006.menu.pnum.CH32V006K8U7.upload.maximum_size=63488
 CH32V006.menu.pnum.CH32V006K8U7.upload.maximum_data_size=8192
 CH32V006.menu.pnum.CH32V006K8U7.build.probe_rs_chip=CH32V006E8R6
 
+CH32V006.menu.printf.none=No float (smaller)
+CH32V006.menu.printf.none.build.printf_flags=
+CH32V006.menu.printf.float=%f supported (+~19 KB)
+CH32V006.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32V007.name=Generic CH32V007
 CH32V007.build.board=CH32V007
 CH32V007.build.core=arduino
@@ -299,6 +325,11 @@ CH32V007.menu.pnum.CH32V007K8U7.build.ldscript=ch32v007_62k_8k.ld
 CH32V007.menu.pnum.CH32V007K8U7.upload.maximum_size=63488
 CH32V007.menu.pnum.CH32V007K8U7.upload.maximum_data_size=8192
 CH32V007.menu.pnum.CH32V007K8U7.build.probe_rs_chip=CH32V007E8R6
+
+CH32V007.menu.printf.none=No float (smaller)
+CH32V007.menu.printf.none.build.printf_flags=
+CH32V007.menu.printf.float=%f supported (+~19 KB)
+CH32V007.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32M007.name=Generic CH32M007
 CH32M007.build.board=CH32M007
@@ -347,6 +378,11 @@ CH32M007.menu.pnum.CH32M007K8U7.upload.maximum_size=63488
 CH32M007.menu.pnum.CH32M007K8U7.upload.maximum_data_size=8192
 CH32M007.menu.pnum.CH32M007K8U7.build.probe_rs_chip=CH32M007K8U7
 
+CH32M007.menu.printf.none=No float (smaller)
+CH32M007.menu.printf.none.build.printf_flags=
+CH32M007.menu.printf.float=%f supported (+~19 KB)
+CH32M007.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32V103.name=Generic CH32V103
 CH32V103.build.board=CH32V103
 CH32V103.build.core=arduino
@@ -393,6 +429,11 @@ CH32V103.menu.pnum.CH32V103R8T6.build.ldscript=ch32v103_64k_20k.ld
 CH32V103.menu.pnum.CH32V103R8T6.upload.maximum_size=65536
 CH32V103.menu.pnum.CH32V103R8T6.upload.maximum_data_size=20480
 CH32V103.menu.pnum.CH32V103R8T6.build.probe_rs_chip=CH32V103R8T6
+
+CH32V103.menu.printf.none=No float (smaller)
+CH32V103.menu.printf.none.build.printf_flags=
+CH32V103.menu.printf.float=%f supported (+~19 KB)
+CH32V103.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32V203.name=Generic CH32V203
 CH32V203.build.board=CH32V203
@@ -497,6 +538,11 @@ CH32V203.menu.pnum.CH32V203RBT6.upload.maximum_size=131072
 CH32V203.menu.pnum.CH32V203RBT6.upload.maximum_data_size=65536
 CH32V203.menu.pnum.CH32V203RBT6.build.probe_rs_chip=CH32V203RBT6
 
+CH32V203.menu.printf.none=No float (smaller)
+CH32V203.menu.printf.none.build.printf_flags=
+CH32V203.menu.printf.float=%f supported (+~19 KB)
+CH32V203.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32V208.name=Generic CH32V208
 CH32V208.build.board=CH32V208
 CH32V208.build.core=arduino
@@ -543,6 +589,11 @@ CH32V208.menu.pnum.CH32V208WBU6.build.ldscript=ch32v208_128k_64k.ld
 CH32V208.menu.pnum.CH32V208WBU6.upload.maximum_size=131072
 CH32V208.menu.pnum.CH32V208WBU6.upload.maximum_data_size=65536
 CH32V208.menu.pnum.CH32V208WBU6.build.probe_rs_chip=CH32V208WBU6
+
+CH32V208.menu.printf.none=No float (smaller)
+CH32V208.menu.printf.none.build.printf_flags=
+CH32V208.menu.printf.float=%f supported (+~19 KB)
+CH32V208.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32V303.name=Generic CH32V303
 CH32V303.build.board=CH32V303
@@ -598,6 +649,11 @@ CH32V303.menu.pnum.CH32V303VCT6.upload.maximum_size=491520
 CH32V303.menu.pnum.CH32V303VCT6.upload.maximum_data_size=65536
 CH32V303.menu.pnum.CH32V303VCT6.build.probe_rs_chip=CH32V303VCT6
 
+CH32V303.menu.printf.none=No float (smaller)
+CH32V303.menu.printf.none.build.printf_flags=
+CH32V303.menu.printf.float=%f supported (+~19 KB)
+CH32V303.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32V305.name=Generic CH32V305
 CH32V305.build.board=CH32V305
 CH32V305.build.core=arduino
@@ -645,6 +701,11 @@ CH32V305.menu.pnum.CH32V305CCT6.upload.maximum_size=491520
 CH32V305.menu.pnum.CH32V305CCT6.upload.maximum_data_size=65536
 CH32V305.menu.pnum.CH32V305CCT6.build.probe_rs_chip=CH32V305FBP6
 
+CH32V305.menu.printf.none=No float (smaller)
+CH32V305.menu.printf.none.build.printf_flags=
+CH32V305.menu.printf.float=%f supported (+~19 KB)
+CH32V305.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32V307.name=Generic CH32V307
 CH32V307.build.board=CH32V307
 CH32V307.build.core=arduino
@@ -685,6 +746,11 @@ CH32V307.menu.pnum.CH32V307WCU6.upload.maximum_size=491520
 CH32V307.menu.pnum.CH32V307WCU6.upload.maximum_data_size=65536
 CH32V307.menu.pnum.CH32V307WCU6.build.probe_rs_chip=CH32V307WCU6
 
+CH32V307.menu.printf.none=No float (smaller)
+CH32V307.menu.printf.none.build.printf_flags=
+CH32V307.menu.printf.float=%f supported (+~19 KB)
+CH32V307.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32V317.name=Generic CH32V317
 CH32V317.build.board=CH32V317
 CH32V317.build.core=arduino
@@ -718,6 +784,11 @@ CH32V317.menu.pnum.CH32V317WCU6.upload.maximum_size=491520
 CH32V317.menu.pnum.CH32V317WCU6.upload.maximum_data_size=65536
 CH32V317.menu.pnum.CH32V317WCU6.build.probe_rs_chip=CH32V317WCU6
 
+CH32V317.menu.printf.none=No float (smaller)
+CH32V317.menu.printf.none.build.printf_flags=
+CH32V317.menu.printf.float=%f supported (+~19 KB)
+CH32V317.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32X033.name=Generic CH32X033
 CH32X033.build.board=CH32X033
 CH32X033.build.core=arduino
@@ -743,6 +814,11 @@ CH32X033.menu.pnum.CH32X033F8P6.build.ldscript=ch32x033_62k_20k.ld
 CH32X033.menu.pnum.CH32X033F8P6.upload.maximum_size=63488
 CH32X033.menu.pnum.CH32X033F8P6.upload.maximum_data_size=20480
 CH32X033.menu.pnum.CH32X033F8P6.build.probe_rs_chip=CH32X033F8P6
+
+CH32X033.menu.printf.none=No float (smaller)
+CH32X033.menu.printf.none.build.printf_flags=
+CH32X033.menu.printf.float=%f supported (+~19 KB)
+CH32X033.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32X035.name=Generic CH32X035
 CH32X035.build.board=CH32X035
@@ -812,6 +888,11 @@ CH32X035.menu.pnum.CH32X035R8T6.upload.maximum_size=63488
 CH32X035.menu.pnum.CH32X035R8T6.upload.maximum_data_size=20480
 CH32X035.menu.pnum.CH32X035R8T6.build.probe_rs_chip=CH32X035R8T6
 
+CH32X035.menu.printf.none=No float (smaller)
+CH32X035.menu.printf.none.build.printf_flags=
+CH32X035.menu.printf.float=%f supported (+~19 KB)
+CH32X035.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32L103.name=Generic CH32L103
 CH32L103.build.board=CH32L103
 CH32L103.build.core=arduino
@@ -873,6 +954,11 @@ CH32L103.menu.pnum.CH32L103K8U7.upload.maximum_size=65536
 CH32L103.menu.pnum.CH32L103K8U7.upload.maximum_data_size=20480
 CH32L103.menu.pnum.CH32L103K8U7.build.probe_rs_chip=CH32L103C8T6
 
+CH32L103.menu.printf.none=No float (smaller)
+CH32L103.menu.printf.none.build.printf_flags=
+CH32L103.menu.printf.float=%f supported (+~19 KB)
+CH32L103.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32M103.name=Generic CH32M103 [compile only]
 CH32M103.build.board=CH32M103
 CH32M103.build.core=arduino
@@ -896,6 +982,11 @@ CH32M103.menu.pnum.CH32M103G8R6.build.board=CH32M103G8R6
 CH32M103.menu.pnum.CH32M103G8R6.build.ldscript=ch32m103_64k_20k.ld
 CH32M103.menu.pnum.CH32M103G8R6.upload.maximum_size=65536
 CH32M103.menu.pnum.CH32M103G8R6.upload.maximum_data_size=20480
+
+CH32M103.menu.printf.none=No float (smaller)
+CH32M103.menu.printf.none.build.printf_flags=
+CH32M103.menu.printf.float=%f supported (+~19 KB)
+CH32M103.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32V205.name=Generic CH32V205 [compile only]
 CH32V205.build.board=CH32V205
@@ -939,6 +1030,11 @@ CH32V205.menu.pnum.CH32V205VCT6.build.ldscript=ch32v205_256k_32k.ld
 CH32V205.menu.pnum.CH32V205VCT6.upload.maximum_size=262144
 CH32V205.menu.pnum.CH32V205VCT6.upload.maximum_data_size=32768
 
+CH32V205.menu.printf.none=No float (smaller)
+CH32V205.menu.printf.none.build.printf_flags=
+CH32V205.menu.printf.float=%f supported (+~19 KB)
+CH32V205.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32V407.name=Generic CH32V407 [compile only]
 CH32V407.build.board=CH32V407
 CH32V407.build.core=arduino
@@ -974,6 +1070,11 @@ CH32V407.menu.pnum.CH32V407WEU6.build.board=CH32V407WEU6
 CH32V407.menu.pnum.CH32V407WEU6.build.ldscript=ch32v407_512k_200k.ld
 CH32V407.menu.pnum.CH32V407WEU6.upload.maximum_size=524288
 CH32V407.menu.pnum.CH32V407WEU6.upload.maximum_data_size=204800
+
+CH32V407.menu.printf.none=No float (smaller)
+CH32V407.menu.printf.none.build.printf_flags=
+CH32V407.menu.printf.float=%f supported (+~19 KB)
+CH32V407.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32V467.name=Generic CH32V467 [compile only]
 CH32V467.build.board=CH32V467
@@ -1011,6 +1112,11 @@ CH32V467.menu.pnum.CH32V467WEU6.build.ldscript=ch32v467_512k_200k.ld
 CH32V467.menu.pnum.CH32V467WEU6.upload.maximum_size=524288
 CH32V467.menu.pnum.CH32V467WEU6.upload.maximum_data_size=204800
 
+CH32V467.menu.printf.none=No float (smaller)
+CH32V467.menu.printf.none.build.printf_flags=
+CH32V467.menu.printf.float=%f supported (+~19 KB)
+CH32V467.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
 CH32X305.name=Generic CH32X305 [compile only]
 CH32X305.build.board=CH32X305
 CH32X305.build.core=arduino
@@ -1034,6 +1140,11 @@ CH32X305.menu.pnum.CH32X305RCT6.build.board=CH32X305RCT6
 CH32X305.menu.pnum.CH32X305RCT6.build.ldscript=ch32x305_480k_64k.ld
 CH32X305.menu.pnum.CH32X305RCT6.upload.maximum_size=491520
 CH32X305.menu.pnum.CH32X305RCT6.upload.maximum_data_size=65536
+
+CH32X305.menu.printf.none=No float (smaller)
+CH32X305.menu.printf.none.build.printf_flags=
+CH32X305.menu.printf.float=%f supported (+~19 KB)
+CH32X305.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32X315.name=Generic CH32X315 [compile only]
 CH32X315.build.board=CH32X315
@@ -1070,6 +1181,11 @@ CH32X315.menu.pnum.CH32X315WCU6.build.board=CH32X315WCU6
 CH32X315.menu.pnum.CH32X315WCU6.build.ldscript=ch32x315_480k_64k.ld
 CH32X315.menu.pnum.CH32X315WCU6.upload.maximum_size=491520
 CH32X315.menu.pnum.CH32X315WCU6.upload.maximum_data_size=65536
+
+CH32X315.menu.printf.none=No float (smaller)
+CH32X315.menu.printf.none.build.printf_flags=
+CH32X315.menu.printf.float=%f supported (+~19 KB)
+CH32X315.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
 
 CH32M030.name=Generic CH32M030 [compile only]
 CH32M030.build.board=CH32M030
@@ -1118,3 +1234,8 @@ CH32M030.menu.pnum.CH32M030K8U7.build.board=CH32M030K8U7
 CH32M030.menu.pnum.CH32M030K8U7.build.ldscript=ch32m030_64k_12k.ld
 CH32M030.menu.pnum.CH32M030K8U7.upload.maximum_size=65536
 CH32M030.menu.pnum.CH32M030K8U7.upload.maximum_data_size=12288
+
+CH32M030.menu.printf.none=No float (smaller)
+CH32M030.menu.printf.none.build.printf_flags=
+CH32M030.menu.printf.float=%f supported (+~19 KB)
+CH32M030.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
