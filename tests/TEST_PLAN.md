@@ -292,7 +292,8 @@ cd tests && uv run pytest sketches --profile ch32x035 --port /dev/ttyACM4
 ### Manual
 
 ```sh
-uv run tests/manual/smoke.py --board CH32X035        # acceptance
+uv run tests/manual/smoke.py --board CH32X035              # acceptance only
+uv run tests/manual/smoke.py --board CH32X035 --sketch all # after swapping a board
 uv run tests/manual/uart_scan.py --board CH32X035    # when the wiring is unknown
 cd tests && uv run pytest manual/<case>/<case>.py -v -s
 ```

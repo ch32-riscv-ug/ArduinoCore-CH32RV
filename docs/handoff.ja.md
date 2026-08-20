@@ -1,6 +1,6 @@
 # 引継ぎメモ
 
-文書基準日: 2026-08-19(2026-08-19にADRの承認状態を見直し)
+文書基準日: 2026-08-20(2026-08-19にADRの承認状態を見直し)
 
 ## 現在地
 
@@ -106,20 +106,38 @@ int=42
 hex=BEEF
 ```
 
-残りは**手持ちの他boardへの横展開**。runnerは用意してあるので、繋いで1コマンドで済む:
+**V003 / V203 / X035 / L103 の4 familyで実機確認済み**。runnerは繋いで1コマンド:
 
 ```bash
-python3 tests/manual/smoke.py --board CH32X035 --port /dev/ttyACM4
+uv run tests/manual/chip_info.py                 # 何が繋がっているか
+uv run tests/manual/smoke.py --board CH32X035    # 受け入れsketch
 ```
 
 boardごとのSerial結線(TX/RX)は[tests/manual/README.ja.md](../tests/manual/README.ja.md)の表。
 
-1. **X035 / L103 / V20x で実機確認**。variantごとのlinker script・vector table・
-   AFIO remapの検証になる(L103はremap route、X035はGPIO 24bit port)
-2. **CH32V103対応**。vector tableがj命令形式。crt0に`CH32_JMP`マクロは既にあるので、
-   `import_vectors.py`のparse、`gen_vectors`の分岐、`mtvec`のmode bit(V103は`|1`)の3点
-3. ~~書き込み経路の実体化~~ → **完了**。`arduino-cli upload --programmer wch-link`がprobe-rs 0.32.0を
-   呼んでCH32V203実機へ書き込めることを確認([実験0012](experiments/0012-probe-rs-upload-toolchain.ja.md))
+1. **V003 / V203 / L103をroute変更後のpinで回し直す**。UART routeをreset既定優先へ
+   変えた(手元のboardもWCH公式コアも旧コミュニティコアも既定pinへ配線しているため)ので、
+   これらの確認は変更前のpinで取ったものになっている。X035は変更後で確認済み
+2. **V103 / V307 の実機確認**。V103は**vector tableがジャンプ表の唯一のfamily**
+3. **`gpio_loopback`を実機で回す**。ジャンパ1本でGPIOのレベル / pull / 別ポートEXTI /
+   PWM dutyが見える。compileのみ確認済み
+4. ~~書き込み経路の実体化~~ → **完了**([実験0012](experiments/0012-probe-rs-upload-toolchain.ja.md))
+
+### 2026-08-20に見つけて直したこと
+
+**libglossのsemihosting stubがheapとprintfを黙って壊していた**
+([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))。
+`String`を使うsketchはリセットループになり出力が一切出ず、`printf`は無音で成功していた。
+どちらもcompile testでは絶対に見つからない。`--start-group`で`core.a`を再走査させ、
+`_sbrk`を別objectへ分離し、`HardwareSerial.h`が`pins_arduino.h`を自分でincludeするようにした。
+
+ついでに**ADR-0004どおり`--specs=nano.specs`を既定にした**。printfを使うsketchが
+48 KB → 7.1 KBになり、CH32V003(16 KB)にも載るようになった。`%f`は`menu.printf`でopt-in。
+
+**テスト計画**([tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md))を作成し、
+`tests/hardware/` を `tests/manual/` へ集約、`chip_info.py`を追加。
+Board Manager配布経路はupgrade/rollbackまで検証でき、release workflowも用意した
+(未実行)。
 
 pin mapは生成済み([ADR-0010](adr/0010-pin-numbering.ja.md))。`variants/<SERIES>/pins_arduino.h`が
 pad名・ポート別validity mask・`A<n>`(ADC1)・USART pinとAFIO remapを持ち、

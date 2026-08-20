@@ -3,13 +3,29 @@
 # requires-python = ">=3.9"
 # dependencies = ["pyserial>=3.5"]
 # ///
-"""Compile, flash and read back the Milestone 1 acceptance sketch on one board.
+"""Compile, flash and read back a tests/sketches/basic sketch on one board.
 
 It compiles and uploads exactly the way a user would - `arduino-cli upload
 --programmer wch-link`, which drives probe-rs - so a pass means the shipping
 path works, not just the code.
 
-  uv run tests/manual/smoke.py --board CH32X035
+  uv run tests/manual/smoke.py --board CH32X035               # acceptance only
+  uv run tests/manual/smoke.py --board CH32X035 --sketch all  # the whole set
+
+`--sketch all` is what to run after swapping a tier B board onto the bench
+(see tests/TEST_PLAN.ja.md): one command, one summary table.
+
+What counts as a pass comes from each sketch's own test_<name>.py - the string
+literals it hands to dut.expect_exact(). That keeps one source of truth, so
+adding a sketch needs no change here. Two rules apply on top, because several
+sketches decide pass/fail on the target and print one line per check:
+
+  - the output must contain no "FAIL"
+  - if it reports "failures=", that has to be "failures=0"
+
+A sketch whose test drives the target (dut.write) is skipped: this runner only
+listens, so replaying its stimulus here would be a second, diverging copy.
+Run those under pytest.
 
 The probe and its UART bridge are discovered by USB VID:PID, because boards get
 swapped on this bench and /dev/ttyACM* is not stable. Pass --probe <serial> when
@@ -24,6 +40,7 @@ Environment:
                  Board Manager installed under ~/.arduino15)
 """
 import argparse
+import ast
 import json
 import os
 import pathlib
@@ -35,13 +52,47 @@ import tempfile
 import time
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-SKETCH = REPO / "tests" / "sketches" / "basic" / "serial_println" / "serial_println.ino"
-EXPECT = ("hello from ch32", "int=42", "hex=BEEF")
+BASIC = REPO / "tests" / "sketches" / "basic"
+DEFAULT_SKETCH = "serial_println"
 
 # WCH-Link USB ids. RV mode is the one probe-rs drives; the same device also
 # exposes a CDC UART bridge, so one cable carries both flashing and Serial.
 WCH_LINK_VID = 0x1A86
 WCH_LINK_PIDS = (0x8010, 0x8012)
+
+
+def expectations(name: str):
+    """(literals, needs_host_input) read out of the sketch's pytest file.
+
+    Only plain literals are collected: an f-string means the test parametrises
+    the value, and guessing what it expands to would be worse than admitting we
+    cannot check it here. The generic FAIL / failures= rules in run_one still
+    apply to those sketches, which is what makes core_api meaningful here.
+    """
+    test = BASIC / name / f"test_{name}.py"
+    if not test.exists():
+        return [], False
+    tree = ast.parse(test.read_text(encoding="utf-8"))
+    wanted = []
+    drives = False
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+            continue
+        if node.func.attr == "write":
+            drives = True
+        if node.func.attr not in ("expect_exact", "expect"):
+            continue
+        for arg in node.args[:1]:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                wanted.append(arg.value)
+    return wanted, drives
+
+
+def sketch_names(which: str):
+    if which != "all":
+        return [which]
+    return sorted(d.name for d in BASIC.iterdir()
+                  if (d / f"{d.name}.ino").exists())
 
 
 def find_probes():
@@ -129,6 +180,104 @@ def run(cmd, **kw):
     return subprocess.run(cmd, check=False, capture_output=True, text=True, **kw)
 
 
+def run_one(name, args, gcc, probe_rs_dir, probe_serial, port, serial_index):
+    """Compile, flash and read back one sketch. Returns True on pass."""
+    sketch = BASIC / name / f"{name}.ino"
+    if not sketch.exists():
+        print(f"FAIL {name}: no such sketch under {BASIC}")
+        return False
+    expect, drives = expectations(name)
+    if drives:
+        print(f"SKIP {name}: its test drives the target (dut.write); "
+              f"run it under pytest")
+        return None
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        sketch_dir = tmp / name
+        sketch_dir.mkdir()
+        shutil.copy(sketch, sketch_dir)
+        build = tmp / "build"
+        # Only the sketchbook is sandboxed: it is where the platform symlink
+        # goes. The data directory is left alone so arduino-cli does not
+        # re-download its builtin tools on every run.
+        env = dict(os.environ, ARDUINO_DIRECTORIES_USER=str(tmp / "user"))
+        (tmp / "user" / "hardware" / "ch32-riscv-ug").mkdir(parents=True)
+        (tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32v").symlink_to(REPO)
+        r = run(["arduino-cli", "compile",
+                 "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
+                 "--build-property", f"compiler.path={gcc}/",
+                 *(["--build-property",
+                    f"build.extra_flags=-DCH32_SERIAL_DEFAULT={serial_index}"]
+                   if serial_index else []),
+                 "--build-path", str(build), str(sketch_dir)], env=env)
+        if r.returncode:
+            print(r.stdout + r.stderr)
+            return False
+        print("   " + r.stdout.strip().replace("\n", "\n   "))
+
+        # The upload goes through the platform's own programmer entry, so this
+        # exercises programmers.txt and the probe-rs recipe rather than a
+        # side channel. --upload-property points the recipe at a probe-rs that
+        # may not be Board-Manager-installed in a symlinked dev tree.
+        upload = ["arduino-cli", "upload",
+                  "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
+                  "--programmer", "wch-link", "--input-dir", str(build),
+                  "--upload-property", f"runtime.tools.probe-rs.path={probe_rs_dir}"]
+        if probe_serial and args.probe:
+            upload += ["--upload-property",
+                       f"upload.probe_args=--probe 1a86:8010:{probe_serial}"]
+        upload.append(str(sketch_dir))
+
+        import serial
+        with serial.Serial(port, args.baud, timeout=0.3) as uart:
+            uart.reset_input_buffer()
+            # The WCH-Link occasionally answers a flash session with
+            # "bulk read timed out" and recovers on the next attempt. Retry
+            # once, but say so: a bench that needs the retry every time is
+            # broken, and hiding that would make the suite lie.
+            r = run(upload, env=env)
+            if r.returncode:
+                print("   upload failed, retrying once:")
+                print("   " + (r.stdout + r.stderr).strip().replace("\n", "\n   "))
+                r = run(upload, env=env)
+            if r.returncode:
+                print(r.stdout + r.stderr)
+                return False
+            print("   uploaded")
+            deadline = time.time() + args.seconds
+            got = b""
+            while time.time() < deadline:
+                got += uart.read(256)
+
+    text = got.decode(errors="replace")
+    print("--- output " + "-" * 48)
+    print(text.strip() or "(nothing received)")
+    print("-" * 59)
+    # Generic rules first: they cover the sketches that self-check on the
+    # target, where the pytest file's expectations are parametrised f-strings.
+    if "FAIL" in text:
+        bad = [ln for ln in text.splitlines() if "FAIL" in ln]
+        print(f"FAIL {name}: the sketch reported {bad}")
+        return False
+    counts = re.findall(r"failures=(\d+)", text)
+    if counts and any(c != "0" for c in counts):
+        print(f"FAIL {name}: reported failures={counts}")
+        return False
+    missing = [w for w in expect if w not in text]
+    if missing:
+        print(f"FAIL {name}: missing {missing}")
+        return False
+    if not expect and not counts:
+        print(f"?    {name}: nothing to check against - test_{name}.py has no "
+              f"literal expectations and the sketch reports no failure count")
+        return None
+    detail = f"{len(expect)} expectations" if expect else "no failures reported"
+    print(f"PASS {name}: {detail}"
+          + (f", failures={counts[-1]}" if counts else ""))
+    return True
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--board", required=True, help="series board, e.g. CH32X035")
@@ -141,6 +290,9 @@ def main() -> int:
                     help="flash even if the attached chip is a different series")
     ap.add_argument("--serial", type=int,
                     help="override which USART Serial is (uart_scan.py finds it)")
+    ap.add_argument("--sketch", default=DEFAULT_SKETCH,
+                    help=f"a directory under tests/sketches/basic, or 'all' "
+                         f"(default: {DEFAULT_SKETCH})")
     args = ap.parse_args()
 
     gcc = os.environ.get("CH32_GCC_BIN")
@@ -180,74 +332,19 @@ def main() -> int:
           f"{'  (' + note + ')' if note else ''}")
     print(f"   wire {tx} -> probe RX, {rx} -> probe TX, and a common ground")
 
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp = pathlib.Path(tmp)
-        sketch_dir = tmp / SKETCH.stem
-        sketch_dir.mkdir()
-        shutil.copy(SKETCH, sketch_dir)
-        build = tmp / "build"
-        # Only the sketchbook is sandboxed: it is where the platform symlink
-        # goes. The data directory is left alone so arduino-cli does not
-        # re-download its builtin tools on every run.
-        env = dict(os.environ, ARDUINO_DIRECTORIES_USER=str(tmp / "user"))
-        (tmp / "user" / "hardware" / "ch32-riscv-ug").mkdir(parents=True)
-        (tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32v").symlink_to(REPO)
-        r = run(["arduino-cli", "compile",
-                 "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
-                 "--build-property", f"compiler.path={gcc}/",
-                 *(["--build-property",
-                    f"build.extra_flags=-DCH32_SERIAL_DEFAULT={serial_index}"]
-                   if serial_index else []),
-                 "--build-path", str(build), str(sketch_dir)], env=env)
-        if r.returncode:
-            print(r.stdout + r.stderr)
-            return 1
-        print("   " + r.stdout.strip().replace("\n", "\n   "))
+    names = sketch_names(args.sketch)
+    results = {}
+    for name in names:
+        print(f"\n===== {name}")
+        results[name] = run_one(name, args, gcc, probe_rs_dir, probe_serial,
+                                port, serial_index)
 
-        # The upload goes through the platform's own programmer entry, so this
-        # exercises programmers.txt and the probe-rs recipe rather than a
-        # side channel. --upload-property points the recipe at a probe-rs that
-        # may not be Board-Manager-installed in a symlinked dev tree.
-        upload = ["arduino-cli", "upload",
-                  "--fqbn", f"ch32-riscv-ug:ch32v:{args.board}:pnum={args.pnum}",
-                  "--programmer", "wch-link", "--input-dir", str(build),
-                  "--upload-property", f"runtime.tools.probe-rs.path={probe_rs_dir}"]
-        if probe_serial and args.probe:
-            upload += ["--upload-property",
-                       f"upload.probe_args=--probe 1a86:8010:{probe_serial}"]
-        upload.append(str(sketch_dir))
-
-        import serial
-        with serial.Serial(port, args.baud, timeout=0.3) as uart:
-            uart.reset_input_buffer()
-            # The WCH-Link occasionally answers a flash session with
-            # "bulk read timed out" and recovers on the next attempt. Retry
-            # once, but say so: a bench that needs the retry every time is
-            # broken, and hiding that would make the suite lie.
-            r = run(upload, env=env)
-            if r.returncode:
-                print("   upload failed, retrying once:")
-                print("   " + (r.stdout + r.stderr).strip().replace("\n", "\n   "))
-                r = run(upload, env=env)
-            if r.returncode:
-                print(r.stdout + r.stderr)
-                return 1
-            print("   uploaded")
-            deadline = time.time() + args.seconds
-            got = b""
-            while time.time() < deadline:
-                got += uart.read(256)
-
-    text = got.decode(errors="replace")
-    print("--- output " + "-" * 48)
-    print(text.strip() or "(nothing received)")
-    print("-" * 59)
-    missing = [w for w in EXPECT if w not in text]
-    if missing:
-        print(f"FAIL {args.board}: missing {missing}")
-        return 1
-    print(f"PASS {args.board}: Serial.println works")
-    return 0
+    if len(names) > 1:
+        print("\n===== summary: " + f"{args.board} ({chip or 'unidentified'})")
+        for name, ok in results.items():
+            mark = {True: "PASS", False: "FAIL", None: "SKIP"}[ok]
+            print(f"  {mark}  {name}")
+    return 0 if all(v is not False for v in results.values()) else 1
 
 
 if __name__ == "__main__":

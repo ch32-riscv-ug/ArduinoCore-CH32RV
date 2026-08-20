@@ -280,7 +280,8 @@ cd tests && uv run pytest sketches --profile ch32x035 --port /dev/ttyACM4
 ### 手動テスト
 
 ```sh
-uv run tests/manual/smoke.py --board CH32X035        # acceptance
+uv run tests/manual/smoke.py --board CH32X035              # 受け入れのみ
+uv run tests/manual/smoke.py --board CH32X035 --sketch all # boardを差し替えたら
 uv run tests/manual/uart_scan.py --board CH32X035    # 配線が不明なとき
 cd tests && uv run pytest manual/<case>/<case>.py -v -s
 ```

@@ -12,7 +12,7 @@
 |---|---|---|
 | [`chip_info.py`](chip_info.py) | tool | **いま何が繋がっているか**。probe / chip / serial port / FQBN / Serialのpinを表示 |
 | [`uart_scan.py`](uart_scan.py) | tool | boardがどのUSART routeを実際に配線しているか特定 |
-| [`smoke.py`](smoke.py) | tool | 出荷経路でcompile → upload → UART読み出し(Milestone 1の受け入れ) |
+| [`smoke.py`](smoke.py) | tool | 出荷経路でcompile → upload → UART読み出し。`--sketch all`で全sketchを一巡 |
 | [`bench.json`](bench.json) | data | この作業台の配線記録(既定と違うboardだけ) |
 | [`gpio_loopback/`](gpio_loopback/) | 手動test | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
 | `<case>/<case>.py` | 手動test | pytest本体。必要なら`<case>.ino` + `sketch.yaml`を同居させる |
@@ -60,8 +60,35 @@ export CH32_GCC_BIN=~/.arduino15/internal/ch32-riscv-ug_xpack-riscv-none-elf-gcc
 uv run tests/manual/smoke.py --board CH32X035
 ```
 
-内容は[Milestone 1受け入れsketch](../sketches/basic/serial_println/serial_println.ino)と同一で、
+既定は[Milestone 1受け入れsketch](../sketches/basic/serial_println/serial_println.ino)で、
 `hello from ch32` / `int=42` / `hex=BEEF`の3行が出れば pass です。
+
+**boardを差し替えたときは`--sketch all`**。`tests/sketches/basic/`の全sketchを
+順に焼いて最後に表を出します。
+
+```bash
+uv run tests/manual/smoke.py --board CH32X035 --sketch all
+```
+
+```text
+===== summary: CH32X035 (CH32X035C8T6)
+  PASS  core_api
+  PASS  heap_string
+  SKIP  serial_echo
+  PASS  serial_println
+  PASS  stdio_printf
+```
+
+合否の基準は各sketchの`test_<name>.py`が`dut.expect_exact()`へ渡している
+**文字列リテラル**から取ります。source of truthを1つに保つためで、
+sketchを増やしてもこのtoolを触る必要はありません。加えて2つの一般規則:
+
+- 出力に`FAIL`が含まれてはいけない
+- `failures=`があれば`failures=0`でなければならない
+
+これがあるので、`core_api`のようにparametrizeされたf-stringしか持たないtestでも
+実質的に検証できます。`dut.write()`でtargetを叩くtest(`serial_echo`)はSKIPします
+——このtoolは受信しかせず、刺激を書き写すとpytest側と二重管理になるからです。
 
 書き込み前に`probe-rs info`でチップを読み、`--board`と食い違ったら止まります
 (ベンチはboardを差し替えるため)。意図的に上書きするなら`--force`。

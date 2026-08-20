@@ -266,6 +266,9 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [x] `manual/gpio_loopback/` を追加。ジャンパ1本でレベル / pull-up / pull-down /
       別ポートへのEXTI / PWM dutyを見る。`manual/<case>/<case>.py`規約の最初の実例。
       **compileのみ確認、実機未実行**(padの配線が分からないと駆動できないため)
+- [x] `smoke.py --sketch all` を追加。boardを差し替えたら1コマンドで全sketchを一巡し、
+      最後に表を出す。合否は各`test_<name>.py`のリテラルから取り、加えて
+      「出力に`FAIL`が無い」「`failures=0`」の一般規則を適用する
 - [ ] `[P1]` `gpio_loopback`を実機で回す (要実機・要ジャンパ)
 - [ ] `[P2]` `tests/manual/README.ja.md`のSerial pin表が手作業。variantから生成する
 - [ ] `[P2]` sketchの`build_opt.h`がarduino-cli 1.3.1で効かない。
