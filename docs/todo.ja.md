@@ -34,15 +34,17 @@
       read-modify-writeするため、ISRとsketchの2文脈から触るUARTでは壊れる。
       実機で文字化けとして観測([実験0013](experiments/0013-core-api-completion.ja.md))。
       lock不要のSPSC実装`ch32_ringbuffer.h`へ置換
-- [ ] `[P1]` ring bufferが64バイト固定。`write()`は満杯でblockする。
-      サイズをvariantかbuild optionで変えられるようにする
+- [x] ring bufferのサイズをbuild optionで変えられるようにした
+      (`-DCH32_SERIAL_RX_BUFFER_SIZE=n` / `..._TX_...`。既定は64)。
+      X035実測で256にすると`.bss`が+768バイト(4 USART分)
+- [ ] `[P1]` `write()`は満杯でblockする。non-blockingにする手段が無い
 - [ ] `[P1]` `micros()`が約71分でwrapする(AVRコアと同じ挙動)。64bit SysTickを持つfamilyでは避けられる
 - [ ] `[P2]` SysTickのhardware auto-reload(`STRE`)を使う。現在はISRで`CNT`を巻き戻している
 - [ ] `[P2]` `af-N` routeのper-pin alternate-function設定(V205/X305/X315)。
       現在コアが未対応で、これらのboardのSerialは未検証
-- [ ] `[P0]` `ltoa`/`ultoa`の実装(upstreamは`api/itoa.h`で宣言のみ)
-- [ ] `[P0]` `dtostrf`: upstreamの`api/deprecated-avr-comp/avr/dtostrf.c.impl`をincludeする`.c`を1本置く
-- [ ] `[P0]` `Arduino.h`から`api/ArduinoAPI.h`をincludeする。**`api/`はinclude pathへ入れず、必ず`api/`付きで書く**(samd/renesas/mbedと同じ規律。arduino-cliが渡す`-I`はcoreとvariantのみなので現状のまま成立する)
+- [x] `ltoa`/`ultoa`の実装(`cores/arduino/itoa.c`)
+- [x] `dtostrf`: upstreamの`.c.impl`をincludeする`cores/arduino/dtostrf.c`を置いた
+- [x] `Arduino.h`から`api/ArduinoAPI.h`をinclude。**`api/`はinclude pathへ入れず`api/`付きで書く**規律を維持
 - [ ] `[P1]` `F_CPU`と実際のSYSCLKの一致をtestで担保する(不一致だとSerialが化ける)
 - [x] crt0→`setup()`/`loop()`到達をCH32V003実機で確認。`.data` copy、`.bss` zero fill、
       `.init_array`(C++大域constructor)まで全てpass([実験0010](experiments/0010-first-on-target-run.ja.md))
@@ -106,8 +108,8 @@
       variantかmenuで変えられるようにする。現状は`_sbrk`が`_heap_end`で止めるだけで、
       stack自体のoverflow検出は無い
 - [ ] `[P2]` heapの断片化と`realloc`の実機確認。`heap_string`はまだ素直な経路しか見ていない
-- [ ] `[P2]` `_fstat`が`st_blksize`を設定していない。newlibの`__swhatbuf_r`が読むので、
-      stdoutのbuffer sizeが未初期化値で決まっている
+- [x] `_fstat`が`st_blksize`を設定するようにした(64)。newlibの`__swhatbuf_r`が読むので、
+      未設定だとstdoutのbuffer sizeがstack上のゴミで決まっていた
 
 ## Serial
 
@@ -133,7 +135,7 @@
 ### 今やっておく拡張準備(これを守ればメニュー追加はboards.txtの行追加だけで済む)
 
 - [ ] `[P0]` **`SystemInit()`は`F_CPU`を読んで分周器を決める**。周波数をハードコードしない
-- [ ] `[P0]` **到達できない`F_CPU`は`#error`でコンパイル時に落とす**。
+- [x] **到達できない`F_CPU`は`#error`でコンパイル時に落とす**。
       F_CPUと実際のSYSCLKがズレるとSerialが化けるため、実行時に発覚させてはいけない
 
 ### Milestone 1の固定値: 「HSI直結、PLLなし」で全family統一
@@ -210,11 +212,11 @@
 方針: **Board Manager経由でtoolを入れ、`arduino-cli upload`から実行する**。
 xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0002-toolchain-distribution.ja.md))。
 
-- [ ] `[P0]` probe-rs v0.32.0をtool定義化(`tools/index/`に`tools_probe_rs.json`)。
+- [x] probe-rs v0.32.0をtool定義化(`tools/index/tools_probe_rs.json`)。
       6 host分の公式アーカイブと`.sha256`が揃っている唯一のbackend
-- [ ] `[P0]` `programmers.txt`と`platform.txt`の`tools.<t>.program.pattern`を実装。
+- [x] `programmers.txt`と`platform.txt`の`tools.<t>.program.pattern`を実装。
       **`upload.pattern`ではなく`program.pattern`**を使う(実験0009で実測確認済み)
-- [ ] `[P0]` `sketch.yaml` profileの`programmer:`を有効化(現在コメントアウト)
+- [x] `sketch.yaml` profileの`programmer:`を有効化(`sync_profiles.py`が全profileへ出力)
 - [ ] `[P1]` probe-rs未対応familyのfallback: **CH32V205 / V407 / X315 / M030**。
       wlink併用か、probe-rsへのtarget追加貢献か (要判断)
 - [ ] `[P1]` wlinkは`-d <INDEX>`しか持たない。**serial selectorの上流patch**(serialは既に読めている)
@@ -261,7 +263,15 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `[P1]` 実機testを回すrunnerの用意。**WCH-LinkEを同時に1台しか使えない**ため、
       別ホスト(Raspberry Pi等)にboard farmを置く案を検討
       ([TEST_PLAN](../tests/TEST_PLAN.ja.md)の選択肢b)
+- [x] `manual/gpio_loopback/` を追加。ジャンパ1本でレベル / pull-up / pull-down /
+      別ポートへのEXTI / PWM dutyを見る。`manual/<case>/<case>.py`規約の最初の実例。
+      **compileのみ確認、実機未実行**(padの配線が分からないと駆動できないため)
+- [ ] `[P1]` `gpio_loopback`を実機で回す (要実機・要ジャンパ)
 - [ ] `[P2]` `tests/manual/README.ja.md`のSerial pin表が手作業。variantから生成する
+- [ ] `[P2]` sketchの`build_opt.h`がarduino-cli 1.3.1で効かない。
+      `compiler.<lang>.extra_flags`をrecipeへ入れても`build.opt.path`が設定されず、
+      `@<file>`がコマンドラインに現れない。原因未特定。
+      `--build-property compiler.cpp.extra_flags=...`は効く
 - [ ] `[P2]` arduino-cliへbug報告: sketch profileに`platforms:`が無いとpanicする
       (`internal/arduino/sketch/profiles.go:125`、1.3.1で確認)
 - [ ] `[P2]` host contract test(Q-016)。upstream ArduinoCore-APIの`test/`を固定commitでcloneして使う

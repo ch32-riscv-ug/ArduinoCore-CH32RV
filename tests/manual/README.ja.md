@@ -14,6 +14,7 @@
 | [`uart_scan.py`](uart_scan.py) | tool | boardがどのUSART routeを実際に配線しているか特定 |
 | [`smoke.py`](smoke.py) | tool | 出荷経路でcompile → upload → UART読み出し(Milestone 1の受け入れ) |
 | [`bench.json`](bench.json) | data | この作業台の配線記録(既定と違うboardだけ) |
+| [`gpio_loopback/`](gpio_loopback/) | 手動test | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
 | `<case>/<case>.py` | 手動test | pytest本体。必要なら`<case>.ino` + `sketch.yaml`を同居させる |
 
 **`test_`プレフィックスは付けません。** `pytest`を引数なしで回したときに、
@@ -75,6 +76,29 @@ uv run tests/manual/uart_scan.py --board CH32X035   # -> WIRED: U1-PB10
 
 結果は[`bench.json`](bench.json)へ記録すれば、以降`--serial`は要りません。
 その場限りで上書きしたいときだけ`--serial <n>`。
+
+## gpio_loopback
+
+`core_api`のGPIO checkは**出力pinを自分で読み戻している**だけです。CH32では出力pinも
+入力経路に入るので配線なしで通りますが、それが証明するのは「レジスタが往復した」ことで、
+**padが実際に何かを駆動している**ことではありません。pull抵抗も、別ポートへのEXTIも、
+PWMのdutyも、この方法では見えません。
+
+ジャンパ1本(別ポートの2 pad間)で、その4つをまとめて見ます。
+
+```sh
+# 1. 空いているpadを2つ選び、ジャンパで繋ぐ
+# 2. gpio_loopback.ino 冒頭の LOOPBACK_OUT / LOOPBACK_IN を書き換える
+cd tests && uv run pytest manual/gpio_loopback/gpio_loopback.py -v -s
+```
+
+SWDのpad(PA13/PA14、X033/X035ならPC18/PC19)は**絶対に使わないでください**。
+駆動した瞬間にdebug接続が切れます。他のものが繋がっているpadも同様に不可です。
+
+ジャンパを忘れた場合は`level_through_wire`が落ちます(HIGHとLOWの両方を見ているため。
+片方だけならfloating inputがHIGHを読んで誤ってpassします)。
+
+**まだ実機で回していません**(compileのみ確認)。
 
 ## 結線
 

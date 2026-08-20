@@ -21,6 +21,25 @@
 
 #include <stdint.h>
 
+/* 64 bytes each, which is the AVR core's size and fits CH32V003's 2 KB of RAM
+ * with room to spare. Raise it per sketch with a build option, e.g.
+ *   arduino-cli compile --build-property build.extra_flags=-DCH32_SERIAL_RX_BUFFER_SIZE=256
+ * or the same line in a sketch's build_opt.h. Every instance grows, so the cost
+ * is (RX + TX) x the number of USARTs the variant defines.
+ *
+ * The ring keeps one slot unusable to tell empty from full, so a size of N
+ * holds N-1 bytes. Sizes must be at least 2. */
+#ifndef CH32_SERIAL_RX_BUFFER_SIZE
+#define CH32_SERIAL_RX_BUFFER_SIZE 64
+#endif
+#ifndef CH32_SERIAL_TX_BUFFER_SIZE
+#define CH32_SERIAL_TX_BUFFER_SIZE 64
+#endif
+
+#if CH32_SERIAL_RX_BUFFER_SIZE < 2 || CH32_SERIAL_TX_BUFFER_SIZE < 2
+#error "CH32_SERIAL_{RX,TX}_BUFFER_SIZE must be at least 2 (one slot is the empty/full marker)"
+#endif
+
 namespace arduino {
 
 class CH32HardwareSerial : public HardwareSerial {
@@ -62,9 +81,8 @@ private:
     const uint32_t _remap_mask;
     const uint32_t _remap_value;
     bool _started;
-    /* TODO(docs/todo.ja.md): 64 bytes each is not configurable yet. */
-    CH32RingBuffer<64> _rx;
-    CH32RingBuffer<64> _tx;
+    CH32RingBuffer<CH32_SERIAL_RX_BUFFER_SIZE> _rx;
+    CH32RingBuffer<CH32_SERIAL_TX_BUFFER_SIZE> _tx;
 };
 
 }  // namespace arduino

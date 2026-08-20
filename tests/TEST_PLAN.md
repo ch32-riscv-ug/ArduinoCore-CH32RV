@@ -176,12 +176,12 @@ worth using in place of method 2 from tier B down.
 | Serial baud accuracy | 4 | analyzer on TX | ⬜ |
 | `millis()` / `micros()` | 1 (cross-checked against host elapsed time) | none | ✅ `core_api` |
 | `digitalWrite` / `digitalRead` | 1 (an output pin still feeds the input path) | none | ✅ `core_api` |
-| Input mode / pull-up | 2 (output pin -> input pin) | one jumper | ⬜ |
+| Input mode / pull-up | 2 (output pin -> input pin) | one jumper | 🔧 `manual/gpio_loopback` (not yet run on hardware) |
 | `analogRead` | 1 (range), 2 (known voltage from GND/VDD) | one jumper | ✅ range only |
-| `analogWrite` duty | 2 (PWM out -> another pin, `pulseIn`) | one jumper | 🔧 only "does not hang" |
+| `analogWrite` duty | 2 (PWM out -> another pin, `pulseIn`) | one jumper | 🔧 `manual/gpio_loopback` (not yet run on hardware) |
 | `analogWrite` frequency | 4 | analyzer | ⬜ |
 | `attachInterrupt` | 1 (catch the board's own edge) | none | ✅ `core_api` |
-| `attachInterrupt` across ports | 2 | one jumper | ⬜ |
+| `attachInterrupt` across ports | 2 | one jumper | 🔧 `manual/gpio_loopback` (not yet run on hardware) |
 | `shiftOut` / `shiftIn` | 2 (tie two pins together) | one jumper | 🔧 only "does not hang" |
 | `pulseIn` | 2 (measure a PWM output) | one jumper | 🔧 timeout only |
 | Heap (`String` / `malloc`) | 1 | none | ✅ `heap_string` |

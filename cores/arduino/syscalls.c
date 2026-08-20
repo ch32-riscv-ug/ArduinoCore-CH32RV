@@ -39,7 +39,16 @@ ssize_t _read(int fd, void *buf, size_t count)
 }
 
 int _close(int fd)             { (void)fd; errno = EBADF; return -1; }
-int _fstat(int fd, struct stat *st) { (void)fd; st->st_mode = S_IFCHR; return 0; }
+/* st_blksize matters: newlib's __swhatbuf_r reads it to size the buffer it
+ * mallocs for stdout, and leaving it unset means that size comes from whatever
+ * was on the stack. */
+int _fstat(int fd, struct stat *st)
+{
+    (void)fd;
+    st->st_mode = S_IFCHR;
+    st->st_blksize = 64;
+    return 0;
+}
 int _isatty(int fd)            { (void)fd; return 1; }
 off_t _lseek(int fd, off_t off, int whence) { (void)fd; (void)off; (void)whence; return 0; }
 int _getpid(void)              { return 1; }

@@ -168,12 +168,12 @@ Board追加時は[`tests/sketches/sync_profiles.py`](sketches/sync_profiles.py)�
 | Serial ボーレート精度 | 4 | ロジアナをTXへ | ⬜ |
 | `millis()` / `micros()` | 1(hostの経過時間と突き合わせ) | 不要 | ✅ `core_api` |
 | `digitalWrite` / `digitalRead` | 1(出力pinは入力経路にも入る) | 不要 | ✅ `core_api` |
-| `digitalRead` の入力・プルアップ | 2(出力pin → 入力pin) | ジャンパ1本 | ⬜ |
+| `digitalRead` の入力・プルアップ | 2(出力pin → 入力pin) | ジャンパ1本 | 🔧 `manual/gpio_loopback`(実機未実行) |
 | `analogRead` | 1(範囲チェック)、2(既知電圧をGND/VDDから) | ジャンパ1本 | ✅ 範囲のみ |
-| `analogWrite` (PWM) duty | 2(PWM出力 → 別pinで`pulseIn`) | ジャンパ1本 | 🔧 ハングしないことのみ |
+| `analogWrite` (PWM) duty | 2(PWM出力 → 別pinで`pulseIn`) | ジャンパ1本 | 🔧 `manual/gpio_loopback`(実機未実行) |
 | `analogWrite` (PWM) 周波数 | 4 | ロジアナ | ⬜ |
 | `attachInterrupt` | 1(自分の出力エッジを拾う) | 不要 | ✅ `core_api` |
-| `attachInterrupt` の他ポート | 2 | ジャンパ1本 | ⬜ |
+| `attachInterrupt` の他ポート | 2 | ジャンパ1本 | 🔧 `manual/gpio_loopback`(実機未実行) |
 | `shiftOut` / `shiftIn` | 2(2 pinを直結) | ジャンパ1本 | 🔧 ハングしないことのみ |
 | `pulseIn` | 2(PWM出力を測る) | ジャンパ1本 | 🔧 timeoutのみ |
 | ヒープ (`String` / `malloc`) | 1 | 不要 | ✅ `heap_string` |

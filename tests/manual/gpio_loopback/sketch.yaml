@@ -1,0 +1,15 @@
+# GPIO through a real wire. Manual: it needs a jumper the operator has to fit,
+# and the two pads depend on which board is on the bench.
+#
+# The pads are passed at compile time, so there is no per-board profile here
+# beyond the boards that have been wired. Add one when you wire another board.
+
+profiles:
+  ch32x035:
+    fqbn: ch32-riscv-ug:ch32v:CH32X035:pnum=ANY
+    programmer: wch-link
+    platforms:
+      - platform: ch32-riscv-ug:ch32v (0.0.1)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+
+default_profile: ch32x035
