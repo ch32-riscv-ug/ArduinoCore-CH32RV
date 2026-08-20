@@ -1,8 +1,13 @@
 # tests
 
+**まず[テスト計画](TEST_PLAN.ja.md)を読んでください。** 自動/手動の切り分け、
+検証boardの階層、ペリフェラル別の検証方法、Board Manager配布物としての検証項目が
+そこにまとまっています。ここはその実行手順です。
+
 | ディレクトリ | 内容 | 実機 | 実行 |
 |---|---|---|---|
 | [`sketches/`](sketches/) | Arduino API のsketch単位test(pytest) | 任意 | `uv run pytest sketches/...` |
+| [`manual/`](manual/README.ja.md) | 手動test + 実機tool(`chip_info.py` / `uart_scan.py` / `smoke.py`) | 必要 | 個別に指定 |
 | [`compile/`](compile/README.ja.md) | 全SKU compile matrix + size baseline | 不要 | `test_compile.sh <workdir>` |
 | [`startup/`](startup/README.ja.md) | 統合crt0とEVT startupのELF等価性 | 不要 | `run_check.sh <workdir>` |
 | [`sizebench/`](sizebench/README.ja.md) | newlibサイズ計測 | 不要 | `run_sizebench.sh <workdir>` |
@@ -18,6 +23,20 @@ sketches/<category>/<case>/
   <case>.ino
   test_<case>.py     dut fixtureへのexpect
 ```
+
+`sketch.yaml`のprofile一覧は**生成物**です。boardを増減するときは
+[`sketches/sync_profiles.py`](sketches/sync_profiles.py)の`BOARDS`だけを直します。
+
+```sh
+uv run tests/sketches/sync_profiles.py           # 全sketch.yamlを再生成
+uv run tests/sketches/sync_profiles.py --check   # CI: 古ければ失敗
+CH32_GCC_BIN=<xpack>/bin tests/sketches/compile_all.sh /tmp/sk   # 全組み合わせをcompile
+```
+
+sketchによっては小さいboardに載りません(`String`はCH32V003の2 KB RAMに入らない、
+newlibのフルprintfは約40 KB)。その下限は`sync_profiles.py`の`REQUIREMENTS`に書き、
+入らないboardはそのsketchのprofileから外します。`compile_all.sh`が全組み合わせを
+実際にcompileするので、**載らないboardをprofileが名乗ることはできません**。
 
 ### セットアップ
 
