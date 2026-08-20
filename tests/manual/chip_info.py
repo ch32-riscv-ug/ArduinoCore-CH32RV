@@ -36,27 +36,6 @@ sys.path.insert(0, str(REPO / "tests" / "manual"))
 TARGETS_CSV = REPO / "tools" / "index" / "probe_rs_targets.csv"
 
 
-def boards_for(chip: str):
-    """Board ids in boards.txt whose probe-rs chip name matches the target.
-
-    Matching is on the generated {build.probe_rs_chip}, not on the name, so a
-    part whose series id does not begin with its board id still resolves.
-    """
-    text = (REPO / "boards.txt").read_text(encoding="utf-8")
-    hits = {}
-    for line in text.splitlines():
-        key, _, value = line.partition("=")
-        if not key.endswith(".build.probe_rs_chip"):
-            continue
-        if value.strip().upper() != chip.upper():
-            continue
-        parts = key.split(".")
-        board = parts[0]
-        pnum = parts[3] if len(parts) > 4 and parts[1] == "menu" else "ANY"
-        hits.setdefault(board, []).append(pnum)
-    return hits
-
-
 def serial_pins_of(board: str):
     """(usart, tx pad, rx pad) the generated variant picked for Serial."""
     header = REPO / "variants" / board / "pins_arduino.h"
@@ -80,7 +59,7 @@ def main() -> int:
     ap.add_argument("--probe-rs", help="directory holding the probe-rs binary")
     args = ap.parse_args()
 
-    from smoke import find_probes, find_probe_rs, detected_chip
+    from smoke import find_probes, find_probe_rs, detected_chip, boards_for
 
     probe_rs_dir = args.probe_rs or os.environ.get("CH32_PROBE_RS") or find_probe_rs()
     if not probe_rs_dir:
@@ -134,7 +113,7 @@ def main() -> int:
                 print(f"  Serial          USART{pins[0]}  TX={pins[1]}  RX={pins[2]}"
                       f"   (TX -> probe RX, RX -> probe TX, common ground)")
             print(f"  FQBN            ch32-riscv-ug:ch32v:{board}:pnum={pnum}")
-            cmd = f"    uv run tests/manual/smoke.py --board {board}"
+            cmd = "    uv run tests/manual/smoke.py"
             if len(probes) > 1:
                 cmd += f" --probe {serial_number}"
             print("  next            " + cmd.strip())

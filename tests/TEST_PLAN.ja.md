@@ -274,17 +274,24 @@ cd tests && uv run pytest sketches --profile ch32x035 --run-mode build
 
 ```sh
 uv run tests/manual/chip_info.py            # まず何が繋がっているか確認
-cd tests && uv run pytest sketches --profile ch32x035 --port /dev/ttyACM4
+cd tests && uv run --env-file .env pytest sketches --profile ch32x035 --port /dev/ttyACM4
 ```
 
 ### 手動テスト
 
 ```sh
-uv run tests/manual/smoke.py --board CH32X035              # 受け入れのみ
-uv run tests/manual/smoke.py --board CH32X035 --sketch all # boardを差し替えたら
-uv run tests/manual/uart_scan.py --board CH32X035    # 配線が不明なとき
-cd tests && uv run pytest manual/<case>/<case>.py -v -s
+uv run tests/manual/smoke.py                 # 繋がっているboardで受け入れsketch
+uv run tests/manual/smoke.py --sketch all    # boardを差し替えたら
+uv run tests/manual/uart_scan.py             # 配線が不明なとき
+cd tests && uv run --env-file .env pytest manual/<case>/<case>.py -v -s
 ```
+
+`--board`は省略できます。probe-rsが型番を読んで`boards.txt`から逆引きするので、
+**焼く対象と焼く相手が食い違うことが原理的に起きません**。
+明示すると検出結果に対する主張になり、食い違えば止まります。
+
+作業台固有の値(手動testが使うpad等)は`tests/.env`で上書きします
+([`.env.example`](.env.example)が説明)。
 
 手動テストは常に`-s`を付けます。オペレータへの指示が端末に出ます。
 

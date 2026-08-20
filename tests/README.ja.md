@@ -43,9 +43,19 @@ newlibのフルprintfは約40 KB)。その下限は`sync_profiles.py`の`REQUIRE
 ```sh
 cd tests
 uv sync
+cp .env.example .env     # 作業台固有の設定(手動testのpin等)
 ```
 
 `arduino-cli`がPATHに必要です。
+
+`.env`は**作業台ごとの設定**です。手動testが使うpadのように、どのboardが載っているかで
+変わる値を置きます。既定値はどれも作者の作業台で動く値なので、未設定でもエラーにはなりません。
+
+```sh
+uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
+```
+
+`.env`はgitignoreされていて、[`.env.example`](.env.example)が唯一の説明です。
 
 ### 実行
 

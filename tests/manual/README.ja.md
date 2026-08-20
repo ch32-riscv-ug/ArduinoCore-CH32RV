@@ -14,6 +14,7 @@
 | [`uart_scan.py`](uart_scan.py) | tool | boardがどのUSART routeを実際に配線しているか特定 |
 | [`smoke.py`](smoke.py) | tool | 出荷経路でcompile → upload → UART読み出し。`--sketch all`で全sketchを一巡 |
 | [`bench.json`](bench.json) | data | この作業台の配線記録(既定と違うboardだけ) |
+| [`env_config.py`](env_config.py) | 共有 | `.env`のpad名(`PA0`)をpin番号へ変換し、sketch用のheaderを書き出す |
 | [`gpio_loopback/`](gpio_loopback/) | 手動test | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
 | `<case>/<case>.py` | 手動test | pytest本体。必要なら`<case>.ino` + `sketch.yaml`を同居させる |
 
@@ -22,10 +23,38 @@
 
 ```sh
 cd tests
-uv run pytest manual/<case>/<case>.py -v -s
+uv run --env-file .env pytest manual/<case>/<case>.py -v -s
 ```
 
 `-s`は必須です。オペレータへの指示が端末に出ます。
+
+**作業台固有の値は`.env`で上書きします。** どのpadが空いているかはboardごとに違うので、
+sketchへ焼き込むと書いた本人以外には合いません。[`../.env.example`](../.env.example)を
+`tests/.env`へコピーして編集してください。既定値は作者の作業台の値なので、
+未設定でもエラーにはなりません。
+
+pinはArduinoでは**コンパイル時**の値なので、各testの`conftest.py`がbuild前に
+`env_config.h`を書き出します([`env_config.py`](env_config.py))。
+`PA0`のようなpad名を`(port << 5) | bit`へ変換するので、`.env`には人が読める名前を書けます。
+
+## boardの指定は要りません
+
+`smoke.py`と`uart_scan.py`の`--board`は**省略できます**。probe-rsが型番を読み、
+`boards.txt`の`build.probe_rs_chip`から逆引きするので、
+**焼く対象と焼く相手が食い違うことが原理的に起きません**。
+
+```bash
+uv run tests/manual/smoke.py               # 繋がっているboardで受け入れsketch
+uv run tests/manual/smoke.py --sketch all  # 全sketch
+```
+
+明示したいときだけ`--board`を渡します。検出結果と食い違えば止まります
+(意図的に上書きするなら`--force`)。CIのように「X035を意図してテストした」と
+**主張**したい場合と、probe-rsにtargetが無い`[compile only]`のseriesでは必要です。
+
+`--pnum`の既定は`ANY`のままです。利用者が実際にcompileするのも、profileが使うのも
+`ANY`なので、勝手に実SKUへ変えるとテストしている構成が変わってしまいます。
+実SKUで焼きたいときは`--pnum detect`。
 
 ## まず現状を確認する
 
@@ -115,8 +144,10 @@ PWMのdutyも、この方法では見えません。
 
 ```sh
 # 1. 空いているpadを2つ選び、ジャンパで繋ぐ
-# 2. gpio_loopback.ino 冒頭の LOOPBACK_OUT / LOOPBACK_IN を書き換える
-cd tests && uv run pytest manual/gpio_loopback/gpio_loopback.py -v -s
+# 2. tests/.env に書く
+#      CH32_LOOPBACK_OUT=PA0
+#      CH32_LOOPBACK_IN=PB0
+cd tests && uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
 ```
 
 SWDのpad(PA13/PA14、X033/X035ならPC18/PC19)は**絶対に使わないでください**。

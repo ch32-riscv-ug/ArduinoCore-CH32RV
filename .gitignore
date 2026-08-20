@@ -23,3 +23,8 @@ Thumbs.db
 .pytest_cache/
 # pytest-embedded-arduino-cli build output next to each sketch
 tests/sketches/**/build/
+
+# Bench-local configuration for the manual tests (tests/.env.example documents it)
+tests/.env
+# Generated from the environment by tests/manual/env_config.py before each build
+tests/manual/**/env_config.h

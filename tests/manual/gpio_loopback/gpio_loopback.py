@@ -24,11 +24,15 @@ Safety:
 Setup:
     1. Choose two free pads on different ports, e.g. PA0 and PB0.
     2. Fit the jumper between them.
-    3. Edit LOOPBACK_OUT / LOOPBACK_IN at the top of gpio_loopback.ino to match.
+    3. Put them in tests/.env (copy .env.example):
+
+           CH32_LOOPBACK_OUT=PA0
+           CH32_LOOPBACK_IN=PB0
+
     4. Run:
 
        cd tests
-       uv run pytest manual/gpio_loopback/gpio_loopback.py -v -s
+       uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
 
     A pad that does not exist on the package is a compile error naming it, and
     a missing jumper fails `level_through_wire` rather than passing silently -

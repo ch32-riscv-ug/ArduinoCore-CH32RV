@@ -276,7 +276,17 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [x] `smoke.py --sketch all` を追加。boardを差し替えたら1コマンドで全sketchを一巡し、
       最後に表を出す。合否は各`test_<name>.py`のリテラルから取り、加えて
       「出力に`FAIL`が無い」「`failures=0`」の一般規則を適用する
+- [x] **手動testのpinを`.env`で上書きできるようにした**。既定値はsketch内に残しつつ、
+      `tests/.env`の`CH32_LOOPBACK_OUT=PA0`のようなpad名を`conftest.py`が
+      `env_config.h`へ変換する(`tests/manual/env_config.py`)。
+      実行は`uv run --env-file .env pytest ...`
+- [x] **`--board`を省略可能にした**。probe-rsが型番を読み`boards.txt`から逆引きするので、
+      焼く対象と焼く相手が食い違うことが原理的に起きない。明示すると主張になる。
+      `--pnum detect`で実SKUを選べる
 - [ ] `[P1]` `gpio_loopback`を実機で回す (要実機・要ジャンパ)
+- [ ] `[P2]` pytest profileもchip検出から選べるようにする。現在は`--profile`で人が指定する。
+      pytest-embedded-arduino-cli側の対応が要るかもしれない
+- [ ] `[P2]` `.env`の項目を増やす(serial port、probe serial等)。現在はCLI flagのみ
 - [ ] `[P2]` `tests/manual/README.ja.md`のSerial pin表が手作業。variantから生成する
 - [ ] `[P2]` sketchの`build_opt.h`がarduino-cli 1.3.1で効かない。
       `compiler.<lang>.extra_flags`をrecipeへ入れても`build.opt.path`が設定されず、

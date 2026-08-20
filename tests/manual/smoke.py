@@ -9,8 +9,15 @@ It compiles and uploads exactly the way a user would - `arduino-cli upload
 --programmer wch-link`, which drives probe-rs - so a pass means the shipping
 path works, not just the code.
 
-  uv run tests/manual/smoke.py --board CH32X035               # acceptance only
-  uv run tests/manual/smoke.py --board CH32X035 --sketch all  # the whole set
+  uv run tests/manual/smoke.py                     # acceptance on whatever is attached
+  uv run tests/manual/smoke.py --sketch all        # the whole set
+  uv run tests/manual/smoke.py --board CH32X035    # assert which board it should be
+
+--board is optional: probe-rs reports the exact part number and boards.txt maps
+it back, so the board the image is built for cannot disagree with the board it
+is flashed to. Pass it anyway when you want the run to *assert* which board it
+tested - CI does, and the [compile only] series have no probe-rs target to
+detect.
 
 `--sketch all` is what to run after swapping a tier B board onto the bench
 (see tests/TEST_PLAN.ja.md): one command, one summary table.
@@ -93,6 +100,26 @@ def sketch_names(which: str):
         return [which]
     return sorted(d.name for d in BASIC.iterdir()
                   if (d / f"{d.name}.ino").exists())
+
+
+def boards_for(chip: str) -> dict:
+    """{board id: [part numbers]} whose generated probe-rs chip name matches.
+
+    Matching is on {build.probe_rs_chip} rather than on the name, so a part
+    whose series id does not begin with its board id still resolves.
+    """
+    text = (REPO / "boards.txt").read_text(encoding="utf-8")
+    hits = {}
+    for line in text.splitlines():
+        key, _, value = line.partition("=")
+        if not key.endswith(".build.probe_rs_chip"):
+            continue
+        if value.strip().upper() != chip.upper():
+            continue
+        parts = key.split(".")
+        pnum = parts[3] if len(parts) > 4 and parts[1] == "menu" else "ANY"
+        hits.setdefault(parts[0], []).append(pnum)
+    return hits
 
 
 def find_probes():
@@ -280,8 +307,12 @@ def run_one(name, args, gcc, probe_rs_dir, probe_serial, port, serial_index):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--board", required=True, help="series board, e.g. CH32X035")
-    ap.add_argument("--pnum", default="ANY")
+    ap.add_argument("--board", help="series board, e.g. CH32X035 "
+                                    "(default: whatever probe-rs detects)")
+    ap.add_argument("--pnum", default="ANY",
+                    help="part number menu entry, or 'detect' for the exact "
+                         "part probe-rs reports (default: ANY, which is what "
+                         "the profiles and most users build)")
     ap.add_argument("--port", help="probe UART bridge (default: discovered)")
     ap.add_argument("--baud", type=int, default=115200)
     ap.add_argument("--probe", help="WCH-Link USB serial (default: the only one attached)")
@@ -308,17 +339,40 @@ def main() -> int:
     port, probe_serial = resolve_port(args.probe, args.port)
     print(f"== probe {probe_serial or '(unidentified)'} -> {port}")
 
-    # Boards get swapped on this bench, so make a mismatch fail here rather
-    # than as a mysterious silent target after flashing the wrong image.
     chip = detected_chip(probe_rs_dir, probe_serial)
+    detected = sorted(boards_for(chip)) if chip else []
     if chip:
-        print(f"== target reports {chip}")
-        if not chip.upper().startswith(args.board.upper()) and not args.force:
+        print(f"== target reports {chip}"
+              + (f" -> {', '.join(detected)}" if detected else
+                 " (no boards.txt entry maps to it)"))
+    else:
+        print("== target chip not identified "
+              "(unpowered, SWD not wired, or unknown to this probe-rs)")
+
+    if args.board:
+        # Boards get swapped on this bench, so an explicit --board that
+        # disagrees with the silicon is a mistake, not an instruction.
+        if detected and args.board not in detected and not args.force:
             print(f"FAIL: {chip} is attached but --board says {args.board}; "
                   f"pass --force to flash anyway")
             return 1
+    elif len(detected) == 1:
+        args.board = detected[0]
+    elif detected:
+        print(f"FAIL: {chip} maps to several boards ({', '.join(detected)}); "
+              f"pick one with --board")
+        return 1
     else:
-        print("== target chip not identified; flashing anyway")
+        print("FAIL: nothing to build for - pass --board, or attach a board "
+              "probe-rs can identify")
+        return 1
+
+    if args.pnum == "detect":
+        if not chip or chip not in boards_for(chip).get(args.board, []):
+            print(f"FAIL: --pnum detect needs a detected part number that "
+                  f"{args.board} lists; got {chip!r}")
+            return 1
+        args.pnum = chip
 
     serial_index = args.serial if args.serial else bench_serial(args.board)
     if serial_index and not args.serial:

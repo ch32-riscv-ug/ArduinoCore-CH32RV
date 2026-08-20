@@ -130,7 +130,7 @@ void loop() {{
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--board", required=True)
+    ap.add_argument("--board", help="series board (default: whatever probe-rs detects)")
     ap.add_argument("--pnum", default="ANY")
     ap.add_argument("--port")
     ap.add_argument("--probe")
@@ -153,6 +153,20 @@ def main() -> int:
         return 2
 
     port, probe_serial = resolve_port(args.probe, args.port)
+
+    # Same rule as smoke.py: the silicon knows which board it is, so --board is
+    # an assertion rather than a required input.
+    if not args.board:
+        chip = detected_chip(probe_rs_dir, probe_serial)
+        detected = sorted(boards_for(chip)) if chip else []
+        if len(detected) != 1:
+            print(f"cannot tell which board this is (chip={chip!r}, "
+                  f"candidates={detected or 'none'}); pass --board",
+                  file=sys.stderr)
+            return 2
+        args.board = detected[0]
+        print(f"== detected {chip} -> {args.board}")
+
     cands = candidates(args.board, pathlib.Path(tables))
     if not cands:
         print(f"{args.board}: no selectable USART route in device-data")

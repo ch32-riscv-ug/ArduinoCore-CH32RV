@@ -8,21 +8,28 @@
 //
 // One jumper between LOOPBACK_OUT and LOOPBACK_IN covers all four.
 //
-// ---------------------------------------------------------------------------
-// EDIT THESE to match your board and the wire you fitted.
+// The two pads come from the environment, because which ones are free depends
+// on the board on the bench:
+//
+//   cd tests && cp .env.example .env      # edit CH32_LOOPBACK_OUT / _IN
+//   uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
+//
+// conftest.py turns those into env_config.h before the build. Compiling this
+// sketch by hand without pytest works too - the fallbacks below are the
+// author's CH32X035 wiring.
 //
 // Pick two pads on DIFFERENT ports that nothing else on the board drives, and
 // never the SWD pads (PA13/PA14, or PC18/PC19 on X033/X035) - driving those
 // kills the debug connection mid-run.
-//
-//   CH32X035 (LQFP48): PA0 and PB0
-//   CH32V003 (TSSOP20): PA1 and PC0
-//
-// They live here rather than in a -D because the pytest plugin has no way to
-// pass build properties, and a manual test is edited by hand anyway.
+#if __has_include("env_config.h")
+#include "env_config.h"
+#endif
+#ifndef LOOPBACK_OUT
 #define LOOPBACK_OUT PA0
+#endif
+#ifndef LOOPBACK_IN
 #define LOOPBACK_IN  PB0
-// ---------------------------------------------------------------------------
+#endif
 
 static int failures = 0;
 

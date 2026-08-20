@@ -286,17 +286,24 @@ cd tests && uv run pytest sketches --profile ch32x035 --run-mode build
 
 ```sh
 uv run tests/manual/chip_info.py            # first, see what is attached
-cd tests && uv run pytest sketches --profile ch32x035 --port /dev/ttyACM4
+cd tests && uv run --env-file .env pytest sketches --profile ch32x035 --port /dev/ttyACM4
 ```
 
 ### Manual
 
 ```sh
-uv run tests/manual/smoke.py --board CH32X035              # acceptance only
-uv run tests/manual/smoke.py --board CH32X035 --sketch all # after swapping a board
-uv run tests/manual/uart_scan.py --board CH32X035    # when the wiring is unknown
-cd tests && uv run pytest manual/<case>/<case>.py -v -s
+uv run tests/manual/smoke.py                 # acceptance on whatever is attached
+uv run tests/manual/smoke.py --sketch all    # after swapping a board
+uv run tests/manual/uart_scan.py             # when the wiring is unknown
+cd tests && uv run --env-file .env pytest manual/<case>/<case>.py -v -s
 ```
+
+`--board` is optional: probe-rs reports the part number and boards.txt maps it
+back, so the board an image is built for cannot disagree with the board it is
+flashed to. Passing it turns the run into an assertion instead.
+
+Bench-specific values - the pads a manual test drives, for instance - are
+overridden in `tests/.env` (documented by [`.env.example`](.env.example)).
 
 Always pass `-s` to manual tests: operator prompts go to the terminal.
 
