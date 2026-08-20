@@ -96,6 +96,12 @@ jobs:
         run: |
           CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
           tests/compile/test_compile.sh /tmp/w3 | tee /tmp/w3.log
+      - name: Sketch profiles are in sync with the board list
+        run: uv run --no-project python tests/sketches/sync_profiles.py --check
+      - name: Every sketch compiles for every board its profile claims
+        run: |
+          CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
+          tests/sketches/compile_all.sh /tmp/sketches
       - name: Size regression check (W-7)
         run: |
           uv run --no-project python tests/compile/check_sizes.py \

@@ -1,0 +1,121 @@
+# Publish a Board Manager release: the platform archive to a GitHub Release,
+# the package index to GitHub Pages.
+#
+# The index is append-only. Every run downloads the currently published index
+# and passes it to gen_index.py --merge, so previous versions stay installable
+# - a user who pinned 0.1.0 in a sketch.yaml profile must keep being able to
+# install it after 0.2.0 ships. Losing the published index therefore loses
+# history: it is the only copy, which is why the workflow refuses to publish
+# when the fetch fails for any reason other than "not there yet".
+#
+# Trigger: push a tag `v<version>` whose version equals platform.txt's.
+# Dry run: workflow_dispatch builds and uploads the artifacts to the run
+# without publishing anything.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Read the version from platform.txt
+        id: version
+        run: |
+          version=$(sed -n 's/^version=//p' platform.txt)
+          test -n "$version" || { echo "platform.txt has no version="; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE:-}" = tag ]; then
+            test "$GITHUB_REF_NAME" = "v$version" || {
+              echo "tag $GITHUB_REF_NAME does not match platform.txt version=$version"
+              exit 1; }
+          fi
+
+      # The published index is the only record of what shipped before. A 404
+      # means this is the first release; anything else is a real failure and
+      # must not silently produce an index with the history missing.
+      - name: Fetch the currently published index
+        id: previous
+        run: |
+          url=https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+          code=$(curl -sS -o /tmp/previous.json -w '%{http_code}' "$url" || echo 000)
+          case "$code" in
+            200) echo "merge=--merge /tmp/previous.json" >> "$GITHUB_OUTPUT" ;;
+            404) echo "no published index yet; this is the first release"
+                 echo "merge=" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "could not read the published index (HTTP $code); refusing"
+                 echo "to publish an index that would drop earlier versions"
+                 exit 1 ;;
+          esac
+
+      - name: Build the archive and the index
+        run: |
+          uv run --no-project python tools/index/gen_index.py \
+            --platform . --out dist \
+            --base-url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}" \
+            --tools github ${{ steps.previous.outputs.merge }}
+
+      # The index the release points at must be the one just built, so the same
+      # generated pair is what both the Release and Pages get.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: dist/
+
+  publish:
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
+
+      # The archive has to exist at the URL the index names before anyone can
+      # install from that index, so the Release goes up first.
+      - name: Attach the platform archive to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "${{ github.repository }}" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            dist/*.tar.bz2 \
+          || gh release upload "$GITHUB_REF_NAME" dist/*.tar.bz2 \
+               --repo "${{ github.repository }}" --clobber
+
+      # Pages carries the index only - the archive lives on the Release, which
+      # is what the index's url points at. deploy-pages replaces the whole
+      # site, so anything else that wants to live there has to be added here.
+      - name: Stage the index for Pages
+        run: |
+          mkdir -p pages
+          cp dist/package_ch32-riscv-ug_index.json pages/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+      - id: pages
+        uses: actions/deploy-pages@v4

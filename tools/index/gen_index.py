@@ -6,14 +6,21 @@
   tool ({runtime.tools...}); the working tree keeps the PATH/-override default
   for symlink-mode development.
 - Emits package_ch32-riscv-ug_index.json referencing the archive at --base-url.
-- Tool section: --tools github uses tools/index/tools_xpack_gcc.json
-  (direct links to xPack GitHub Releases); --tools local rewrites the URL of
-  the current host's entry to --base-url (archive must be served there) while
-  keeping the official checksum.
+- Tool section: --tools github uses tools/index/tools_xpack_gcc.json and
+  tools_probe_rs.json (direct links to the upstream GitHub Releases); --tools
+  local rewrites the URL of the tools named by --local-tools to --base-url
+  while keeping the official checksums. Only those, because the archive has to
+  actually be served there - a tool nobody staged locally must keep pointing at
+  GitHub or the install 404s.
+- The board list shown by Board Manager is read out of boards.txt, and the
+  version out of platform.txt, so neither can drift from what ships.
+- --merge <index.json> keeps the versions an existing published index already
+  offers. A Board Manager index is append-only: dropping an old version breaks
+  everyone pinned to it, and sketch.yaml profiles pin by version.
 
 Usage:
   gen_index.py --platform <dir> --out <dir> --base-url http://127.0.0.1:8000 \
-               [--tools github|local] [--version 0.0.1]
+               [--tools github|local] [--version 0.0.1] [--merge old.json]
 """
 import argparse
 import hashlib
@@ -23,6 +30,8 @@ import shutil
 import tarfile
 import tempfile
 
+MAINTAINER = "CH32 RISC-V UG"
+WEBSITE = "https://github.com/ch32-riscv-ug/ArduinoCore-CH32"
 TOOL_NAME = "xpack-riscv-none-elf-gcc"
 TOOL_VERSION = "14.3.0-1"
 PROBE_TOOL_NAME = "probe-rs"
@@ -60,6 +69,52 @@ PLATFORM_ENTRIES = (
 REQUIRED_ENTRIES = ("platform.txt", "boards.txt", "cores", "variants")
 
 
+def platform_version(platform_dir: pathlib.Path) -> str:
+    """The version platform.txt declares. The index must agree with it: Board
+    Manager installs by the index's version but the IDE shows platform.txt's."""
+    for line in (platform_dir / "platform.txt").read_text(encoding="utf-8").splitlines():
+        if line.startswith("version="):
+            return line.split("=", 1)[1].strip()
+    raise SystemExit("platform.txt has no version= line")
+
+
+def board_names(platform_dir: pathlib.Path) -> list:
+    """Board Manager shows this list under the platform, so it has to be the
+    real one. boards.txt is generated, so reading it keeps the two in step."""
+    names = []
+    for line in (platform_dir / "boards.txt").read_text(encoding="utf-8").splitlines():
+        key, _, value = line.partition("=")
+        # `<ID>.name=` only; menu entries are `<ID>.menu.pnum.<PN>=`.
+        if key.endswith(".name") and key.count(".") == 1 and value:
+            names.append({"name": value.strip()})
+    if not names:
+        raise SystemExit("boards.txt lists no boards")
+    return names
+
+
+def merge_previous(index: dict, previous: pathlib.Path) -> dict:
+    """Carry forward every platform and tool version the old index offered.
+
+    A Board Manager index is append-only. Regenerating from scratch would drop
+    older versions, which uninstalls nobody but makes them unreinstallable -
+    and every sketch.yaml profile in the wild pins a version.
+    """
+    old = json.loads(previous.read_text(encoding="utf-8"))
+    old_pkg = next((p for p in old.get("packages", []) if p["name"] == PACKAGER), None)
+    if old_pkg is None:
+        return index
+    pkg = index["packages"][0]
+    for key, ident in (("platforms", ("architecture", "version")),
+                       ("tools", ("name", "version"))):
+        fresh = {tuple(e[k] for k in ident): e for e in pkg[key]}
+        merged = [e for e in old_pkg.get(key, [])
+                  if tuple(e.get(k) for k in ident) not in fresh]
+        # Newest last is what the Arduino index files do; arduino-cli sorts
+        # semver itself, so this is presentation only.
+        pkg[key] = merged + pkg[key]
+    return index
+
+
 def build_archive(platform_dir: pathlib.Path, out: pathlib.Path, version: str) -> pathlib.Path:
     root = f"ArduinoCore-CH32-{ARCH}-{version}"
     archive = out / f"{root}.tar.bz2"
@@ -94,8 +149,19 @@ def main() -> None:
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--base-url", required=True)
     ap.add_argument("--tools", choices=["github", "local"], default="github")
-    ap.add_argument("--version", default="0.0.1")
+    ap.add_argument("--local-tools", default=TOOL_NAME,
+                    help="comma-separated tool names to point at --base-url "
+                         f"when --tools local (default: {TOOL_NAME})")
+    ap.add_argument("--version", help="default: the version in platform.txt")
+    ap.add_argument("--merge", type=pathlib.Path,
+                    help="existing index whose older versions to keep")
     args = ap.parse_args()
+
+    declared = platform_version(args.platform)
+    if args.version and args.version != declared:
+        raise SystemExit(f"--version {args.version} does not match platform.txt "
+                         f"version={declared}; bump platform.txt instead")
+    args.version = declared
 
     args.out.mkdir(parents=True, exist_ok=True)
     archive = build_archive(args.platform, args.out, args.version)
@@ -104,17 +170,28 @@ def main() -> None:
     tool = json.loads((here / "tools_xpack_gcc.json").read_text(encoding="utf-8"))
     probe = json.loads((here / "tools_probe_rs.json").read_text(encoding="utf-8"))
     systems = tool["systems"]
+    probe_systems = probe["systems"]
     if args.tools == "local":
-        systems = [dict(s, url=f"{args.base_url}/{s['archiveFileName']}")
-                   for s in systems]
+        wanted = {n.strip() for n in args.local_tools.split(",") if n.strip()}
+        unknown = wanted - {TOOL_NAME, PROBE_TOOL_NAME}
+        if unknown:
+            raise SystemExit(f"--local-tools: unknown tool {sorted(unknown)}")
+
+        def localize(entries):
+            return [dict(e, url=f"{args.base_url}/{e['archiveFileName']}")
+                    for e in entries]
+        if TOOL_NAME in wanted:
+            systems = localize(systems)
+        if PROBE_TOOL_NAME in wanted:
+            probe_systems = localize(probe_systems)
 
     index = {
         "packages": [{
             "name": PACKAGER,
-            "maintainer": "CH32 RISC-V UG (prototype, not affiliated with WCH)",
-            "websiteURL": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32",
+            "maintainer": MAINTAINER,
+            "websiteURL": WEBSITE,
             "email": "",
-            "help": {"online": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32"},
+            "help": {"online": f"{WEBSITE}/issues"},
             "platforms": [{
                 "name": "CH32 RISC-V (prototype)",
                 "architecture": ARCH,
@@ -124,7 +201,8 @@ def main() -> None:
                 "archiveFileName": archive.name,
                 "checksum": f"SHA-256:{sha256(archive)}",
                 "size": str(archive.stat().st_size),
-                "boards": [{"name": "CH32V00X"}],
+                "help": {"online": f"{WEBSITE}/issues"},
+                "boards": board_names(args.platform),
                 "toolsDependencies": [
                     {"packager": PACKAGER, "name": TOOL_NAME,
                      "version": TOOL_VERSION},
@@ -135,14 +213,19 @@ def main() -> None:
             "tools": [
                 {"name": TOOL_NAME, "version": TOOL_VERSION, "systems": systems},
                 {"name": PROBE_TOOL_NAME, "version": PROBE_TOOL_VERSION,
-                 "systems": probe["systems"]},
+                 "systems": probe_systems},
             ],
         }],
     }
+    if args.merge:
+        index = merge_previous(index, args.merge)
     index_path = args.out / f"package_{PACKAGER}_index.json"
     index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
     print(f"wrote: {archive}")
+    pkg = index["packages"][0]
     print(f"wrote: {index_path}")
+    print(f"  platform {args.version} with {len(pkg['platforms'][-1]['boards'])} boards; "
+          f"index offers {len(pkg['platforms'])} platform / {len(pkg['tools'])} tool entries")
 
 
 if __name__ == "__main__":
