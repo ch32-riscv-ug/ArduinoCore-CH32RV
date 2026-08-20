@@ -68,7 +68,7 @@ ADR化されている提案:
 | `cores/arduino/{wiring_digital.c,wiring_time.c}` | GPIO / clock / SysTick / millis / delay。**V003実機で動作確認済み** | `compile-matrix` |
 | `cores/arduino/HardwareSerial.{h,cpp}` | 割込み駆動UART。**V003実機で送受信確認済み** | `compile-matrix` |
 | `cores/arduino/{syscalls.c,itoa.c,dtostrf.c}` | newlib syscallと`ltoa`/`ultoa`/`dtostrf` | `compile-matrix` |
-| `tests/hardware/` | 実機bring-up runner。`smoke.py`(出荷経路でのcompile→upload→UART確認)と`uart_scan.py`(boardがどのUSARTを配線しているか特定) | 手動(要実機) |
+| `tests/manual/` | 実機bring-up runner。`smoke.py`(出荷経路でのcompile→upload→UART確認)と`uart_scan.py`(boardがどのUSARTを配線しているか特定) | 手動(要実機) |
 | `tools/index/tools_probe_rs.json` / `probe_rs_targets.csv` | probe-rs 0.32.0のtool定義とchip名map | `install-test`(3 OS、`.tar.xz`展開と実行確認) |
 | `programmers.txt` | `wch-link` programmer(probe-rs経由のSWD書き込み) | `install-test` |
 | `boards.txt` / `variants/<SERIES>/` | device-dataからの生成物(23 series board / 117エントリ、ld + pin map)。locked commit | `generated-sync` |
@@ -109,10 +109,10 @@ hex=BEEF
 残りは**手持ちの他boardへの横展開**。runnerは用意してあるので、繋いで1コマンドで済む:
 
 ```bash
-python3 tests/hardware/smoke.py --board CH32X035 --port /dev/ttyACM4
+python3 tests/manual/smoke.py --board CH32X035 --port /dev/ttyACM4
 ```
 
-boardごとのSerial結線(TX/RX)は[tests/hardware/README.ja.md](../tests/hardware/README.ja.md)の表。
+boardごとのSerial結線(TX/RX)は[tests/manual/README.ja.md](../tests/manual/README.ja.md)の表。
 
 1. **X035 / L103 / V20x で実機確認**。variantごとのlinker script・vector table・
    AFIO remapの検証になる(L103はremap route、X035はGPIO 24bit port)

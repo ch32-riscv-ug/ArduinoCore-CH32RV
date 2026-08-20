@@ -19,7 +19,7 @@ hex=BEEF
 `t=1000` / `t=2000` / `t=3000`が1秒間隔で出るので、SysTickも正しい。
 `F_CPU=24000000`をsketchから出力させ、HSI直結24MHzで動いていることも確認した。
 
-再現: `tests/hardware/smoke.py --board CH32V003 --port /dev/ttyACM4`([手順](../../tests/hardware/README.ja.md))。
+再現: `tests/manual/smoke.py --board CH32V003 --port /dev/ttyACM4`([手順](../../tests/manual/README.ja.md))。
 
 ## 実装したもの
 
@@ -110,6 +110,6 @@ Blink(`pinMode`/`digitalWrite`/`delay`)の実装後サイズ。`--gc-sections`�
 
 ## 未確認
 
-- X035 / L103 / V20x はまだ実機で回していない([runner](../../tests/hardware/README.ja.md)は用意済み)
+- X035 / L103 / V20x はまだ実機で回していない([runner](../../tests/manual/README.ja.md)は用意済み)
 - `af-N` routeの3 series(V205/X305/X315)はper-pin alternate-function方式で、コアが未対応
 - `analogRead`/`analogWrite`/SPI/I2C/割込みAPIは未実装

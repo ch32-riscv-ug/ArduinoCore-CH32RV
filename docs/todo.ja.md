@@ -1,6 +1,6 @@
 # TODO(未対応作業の積み上げ)
 
-文書基準日: 2026-08-19
+文書基準日: 2026-08-20
 
 「あとで拡張できる設計なら、まずは作りやすいもので整える」方針で進めるため、
 **先送りにした作業をここへ積み上げる**。実装を簡略化するたびに必ず1行足すこと。
@@ -20,7 +20,14 @@
 - [x] syscalls(`_write`→Serial、heap/stack衝突を防ぐ`_sbrk`、他はEBADF/ENOMEM)
 - [x] **CH32V003実機で`Serial.println()`が通った**([実験0011](experiments/0011-milestone1-serial-on-v003.ja.md))。
       送受信・SysTick精度・`F_CPU`一致まで確認
-- [ ] `[P0]` X035 / L103 / V20x でも実機確認する。runnerは`tests/hardware/smoke.py`に用意済み (要実機)
+- [x] **X035 / V203でも実機確認**。`Serial.println()`と`core_api`13 checkが両方でpass。
+      これでrv32ec/rv32imac、24/8/48MHz、32/64bit SysTick、8/16/24bit GPIO portを実機で通した
+- [x] **CH32L103も実機確認**(`serial_println`)。ただし**routeをreset既定優先へ変える前**なので
+      pinが変わっている。次に繋いだときに回し直すこと
+- [ ] `[P1]` CH32V103とCH32V307で実機確認する。V103は**vector tableがジャンプ表の唯一のfamily** (要実機)
+- [ ] `[P1]` V003 / V203 / L103をroute変更後のpinで回し直す (要実機)
+- [ ] `[P2]` probe-rsがまれに`bulk read timed out`で書き込みに失敗する。
+      `smoke.py`は1回だけ再試行し、**再試行したことを表示する**。頻度が上がるようなら原因を追う
 - [ ] `[P1]` ADR-0006の「tickソース差し替え可能」をHALへ織り込む。
       現在`wiring_time.c`がSysTickを直接叩いており、RTOSへ渡す口が無い
 - [x] **ring bufferのlost updateを修正**。`api/RingBuffer.h`は単一カウンタをpush/pop両方で
@@ -62,7 +69,7 @@
 
 - [x] `programmers.txt`と`program.pattern`の実体化。`arduino-cli upload --programmer wch-link`が
       **CH32V203実機で通った**([実験0012](experiments/0012-probe-rs-upload-toolchain.ja.md))
-- [x] `tests/hardware/smoke.py`を`arduino-cli upload`経由へ移行。**出荷経路そのものを検証する**
+- [x] `tests/manual/smoke.py`を`arduino-cli upload`経由へ移行。**出荷経路そのものを検証する**
 - [ ] `[P1]` Windows / macOSでの書き込み確認(要実機)
 - [ ] `[P1]` probe選択を`sketch.yaml` profileから渡せるようにする。
       現在は`--upload-property upload.probe_args=...`のみで、profileには書けない
@@ -83,6 +90,24 @@
 - [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ
 - [ ] `[P2]` X305/X315のPWM。timerもper-pin AF方式でdefault routeが無い
 - [ ] `[P2]` `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))
+
+## libc / heap
+
+- [x] **libglossのsemihosting stubがheapとprintfを壊していた**
+      ([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))。
+      `core.a`を`--start-group`で囲み、`_sbrk`を`ch32_sbrk.c`へ分離、
+      `HardwareSerial.h`が`pins_arduino.h`を自分でinclude。X035実機で確認
+- [x] **ADR-0004どおり`--specs=nano.specs`を既定にし、`menu.printf`で`%f`をopt-inに**。
+      `printf`sketchが48 KB → 7.1 KB、**CH32V003にも載るようになった**。X035実機で
+      `printf=none`(空)/`printf=float`(`1.50`)を確認([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))
+- [ ] `[P1]` `menu.printf`の文言をdocumentへ。ADR-0004が求める
+      「nanoの`%f`非対応はArduino利用者の既知の落とし穴」の明示がまだREADMEに無い
+- [ ] `[P1]` `__stack_size`の既定が512バイト。`printf`は簡単に超える。
+      variantかmenuで変えられるようにする。現状は`_sbrk`が`_heap_end`で止めるだけで、
+      stack自体のoverflow検出は無い
+- [ ] `[P2]` heapの断片化と`realloc`の実機確認。`heap_string`はまだ素直な経路しか見ていない
+- [ ] `[P2]` `_fstat`が`st_blksize`を設定していない。newlibの`__swhatbuf_r`が読むので、
+      stdoutのbuffer sizeが未初期化値で決まっている
 
 ## Serial
 
@@ -214,10 +239,29 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 
 ## テスト基盤
 
+- [x] **テスト計画を作成**([tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) / [英語](../tests/TEST_PLAN.md))。
+      自動/手動の切り分け、board階層(A/B/C/D)、ペリフェラル別の検証方法4種、
+      Board Manager配布物としての検証項目
+- [x] `tests/hardware/` → **`tests/manual/`**へ移動し、`chip_info.py`(chip/probe/port/FQBN判定)を追加。
+      `test_`プレフィックスを付けないので`pytest`一括実行に混ざらない
+- [x] `sketch.yaml`のprofile一覧を`sync_profiles.py`で生成。`compile_all.sh`が
+      **全sketch × 全profile boardをcompile**するのでCIに載せた
+- [x] `test_install.sh`にupgrade/rollback、受け入れsketchのcompile、
+      アーカイブ内容の検査を追加。`gen_index.py`は`boards`を`boards.txt`から、
+      `version`を`platform.txt`から取り、`--merge`でindexをappend-onlyに保つ
+- [x] **release workflow**([.github/workflows/release.yml](../.github/workflows/release.yml))。
+      tag `v<version>`のpushでRelease(アーカイブ) + GitHub Pages(index)を公開。
+      公開中のindexを取得できなければ**publishを拒否**する(過去versionを消さないため)
 - [ ] `[P1]` CIへpytest sketch testを追加(`--run-mode build`)。
-      ローカルindexの配信が要る。**現在はSerial未実装で失敗するため追加は実装後**
-- [ ] `[P1]` Board Manager index の公開(GitHub Pages)。
-      `sketch.yaml`の`platform_index_url`が未公開URLを指している
+      ローカルindexの配信が要る
+- [ ] `[P1]` Board Manager index を実際に公開する。workflowは用意したが未実行で、
+      `sketch.yaml`の`platform_index_url`は未公開URLのまま
+- [ ] `[P1]` `libraries/`(SPI/Wire)同梱後、installした状態で`#include <SPI.h>`が
+      解決されるかを`test_install.sh`へ追加
+- [ ] `[P1]` 実機testを回すrunnerの用意。**WCH-LinkEを同時に1台しか使えない**ため、
+      別ホスト(Raspberry Pi等)にboard farmを置く案を検討
+      ([TEST_PLAN](../tests/TEST_PLAN.ja.md)の選択肢b)
+- [ ] `[P2]` `tests/manual/README.ja.md`のSerial pin表が手作業。variantから生成する
 - [ ] `[P2]` arduino-cliへbug報告: sketch profileに`platforms:`が無いとpanicする
       (`internal/arduino/sketch/profiles.go:125`、1.3.1で確認)
 - [ ] `[P2]` host contract test(Q-016)。upstream ArduinoCore-APIの`test/`を固定commitでcloneして使う
