@@ -1,5 +1,5 @@
 {
-  "comment": "probe-rs 0.32.0 - Arduino tool definition fragment. Direct links to probe-rs GitHub Releases (same no-re-hosting policy as the toolchain, ADR-0002). Checksums from the release's sha256.sum, sizes from the GitHub API. Each archive unpacks to a single root directory holding the probe-rs binary, which is the layout Arduino tools expect.",
+  "comment": "probe-rs 0.32.0 - Arduino tool definition fragment. Linux and macOS point straight at the probe-rs GitHub Release (no re-hosting, ADR-0002): those tarballs already unpack to a single root directory, which is what arduino-cli requires. The Windows zip is flat - seven files at the root - and arduino-cli refuses it with 'searching package root dir: files in archive must be placed in a subdirectory', so that one archive is repacked under a root directory and re-hosted on this repository's releases. tools/index/repack_probe_rs.py rebuilds it byte-for-byte from the upstream archive recorded in upstreamUrl/upstreamChecksum, so the re-hosted asset can be verified against upstream by anyone. probe-rs is MIT/Apache-2.0 and both license files travel inside the archive. Sizes and checksums verified 2026-08-20.",
   "name": "probe-rs",
   "version": "0.32.0",
   "systems": [
@@ -33,17 +33,23 @@
     },
     {
       "host": "x86_64-mingw32",
-      "url": "https://github.com/probe-rs/probe-rs/releases/download/v0.32.0/probe-rs-tools-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "probe-rs-tools-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:56fc0564cc23d604b27dc2d57606194159c49f951999f3e47bd2cbffcba64103",
-      "size": "11502414"
+      "url": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32/releases/download/tools-probe-rs-0.32.0/probe-rs-tools-x86_64-pc-windows-msvc-arduino.zip",
+      "archiveFileName": "probe-rs-tools-x86_64-pc-windows-msvc-arduino.zip",
+      "checksum": "SHA-256:5d03d7663db7dcae0559c747d04d793ed7369fc3a6308daefb25caf12546b5d4",
+      "size": "11024371",
+      "upstreamUrl": "https://github.com/probe-rs/probe-rs/releases/download/v0.32.0/probe-rs-tools-x86_64-pc-windows-msvc.zip",
+      "upstreamArchiveFileName": "probe-rs-tools-x86_64-pc-windows-msvc.zip",
+      "upstreamChecksum": "SHA-256:56fc0564cc23d604b27dc2d57606194159c49f951999f3e47bd2cbffcba64103"
     },
     {
       "host": "i686-mingw32",
-      "url": "https://github.com/probe-rs/probe-rs/releases/download/v0.32.0/probe-rs-tools-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "probe-rs-tools-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:56fc0564cc23d604b27dc2d57606194159c49f951999f3e47bd2cbffcba64103",
-      "size": "11502414"
+      "url": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32/releases/download/tools-probe-rs-0.32.0/probe-rs-tools-x86_64-pc-windows-msvc-arduino.zip",
+      "archiveFileName": "probe-rs-tools-x86_64-pc-windows-msvc-arduino.zip",
+      "checksum": "SHA-256:5d03d7663db7dcae0559c747d04d793ed7369fc3a6308daefb25caf12546b5d4",
+      "size": "11024371",
+      "upstreamUrl": "https://github.com/probe-rs/probe-rs/releases/download/v0.32.0/probe-rs-tools-x86_64-pc-windows-msvc.zip",
+      "upstreamArchiveFileName": "probe-rs-tools-x86_64-pc-windows-msvc.zip",
+      "upstreamChecksum": "SHA-256:56fc0564cc23d604b27dc2d57606194159c49f951999f3e47bd2cbffcba64103"
     }
   ]
 }

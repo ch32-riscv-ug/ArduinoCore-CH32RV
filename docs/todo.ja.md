@@ -256,6 +256,13 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       公開中のindexを取得できなければ**publishを拒否**する(過去versionを消さないため)
 - [ ] `[P1]` CIへpytest sketch testを追加(`--run-mode build`)。
       ローカルindexの配信が要る
+- [x] **Windows install失敗を修正**。probe-rsのWindows zipが平坦でarduino-cliが
+      `files in archive must be placed in a subdirectory`で拒否していた。
+      Linux/macOSの`.tar.xz`はroot directoryを持つのでこの1アーカイブだけ再パッケージ・
+      再ホストする。`repack_probe_rs.py`は決定的でupstream checksumを検証する
+- [ ] `[P1]` `publish-tool.yml`を実行してprobe-rs 0.32.0の再パッケージ済みzipを公開する。
+      **未実行**。CIはローカル再パッケージ版を配信して検証しているので緑だが、
+      利用者がindexからinstallするには実publishが要る
 - [ ] `[P1]` Board Manager index を実際に公開する。workflowは用意したが未実行で、
       `sketch.yaml`の`platform_index_url`は未公開URLのまま
 - [ ] `[P1]` `libraries/`(SPI/Wire)同梱後、installした状態で`#include <SPI.h>`が

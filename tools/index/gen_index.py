@@ -170,7 +170,11 @@ def main() -> None:
     tool = json.loads((here / "tools_xpack_gcc.json").read_text(encoding="utf-8"))
     probe = json.loads((here / "tools_probe_rs.json").read_text(encoding="utf-8"))
     systems = tool["systems"]
-    probe_systems = probe["systems"]
+    # tools_probe_rs.json records where a re-hosted archive came from, in
+    # upstream* keys. Those are provenance for us, not part of the Board Manager
+    # schema, so they stay out of the published index.
+    probe_systems = [{k: v for k, v in e.items() if not k.startswith("upstream")}
+                     for e in probe["systems"]]
     if args.tools == "local":
         wanted = {n.strip() for n in args.local_tools.split(",") if n.strip()}
         unknown = wanted - {TOOL_NAME, PROBE_TOOL_NAME}
