@@ -18,8 +18,15 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
         CH32_RCC_APB2PCENR |= _clock_bit;
     }
     CH32_RCC_APB2PCENR |= CH32_RCC_APB2_AFIO;
+    /* The selector is not always one field in one register: on L103/M103 and
+     * V20x/V30x it spans PCFR1 and PCFR2, and writing only PCFR1 selects a
+     * different route with nothing to say so. The variant carries one mask per
+     * register the field touches. */
     if (_remap_mask) {
         CH32_AFIO_PCFR1 = (CH32_AFIO_PCFR1 & ~_remap_mask) | _remap_value;
+    }
+    if (_remap2_mask) {
+        CH32_AFIO_PCFR2 = (CH32_AFIO_PCFR2 & ~_remap2_mask) | _remap2_value;
     }
 
     const uint8_t tx_port = (uint8_t)CH32_PIN_PORT(_tx_pin);
@@ -156,14 +163,14 @@ void CH32HardwareSerial::irq(void)
 /* The variant supplies the pins, the IRQ number and the handler symbol; the
  * handler is USARTn_IRQHandler on some families and UARTn_IRQHandler on others,
  * so the name comes from the generated vector table rather than from here. */
-#define CH32_REMAP_MASK(n) CH32_SERIAL##n##_REMAP_MASK
-#define CH32_REMAP_VAL(n)  CH32_SERIAL##n##_REMAP_VAL
-
-#define CH32_DEFINE_SERIAL(n, base, apb1, clkbit, rmask, rval)                \
+#define CH32_DEFINE_SERIAL(n, base, apb1, clkbit)                             \
     arduino::CH32HardwareSerial Serial##n(base, CH32_SERIAL##n##_IRQ,         \
                                           CH32_SERIAL##n##_TX,                \
                                           CH32_SERIAL##n##_RX, apb1, clkbit,  \
-                                          rmask, rval);                       \
+                                          CH32_SERIAL##n##_REMAP_MASK,        \
+                                          CH32_SERIAL##n##_REMAP_VAL,         \
+                                          CH32_SERIAL##n##_REMAP2_MASK,       \
+                                          CH32_SERIAL##n##_REMAP2_VAL);       \
     extern "C" __attribute__((interrupt))                                     \
     void CH32_SERIAL##n##_HANDLER(void) { Serial##n.irq(); }
 
@@ -172,40 +179,55 @@ void CH32HardwareSerial::irq(void)
 #define CH32_SERIAL1_REMAP_MASK 0u
 #define CH32_SERIAL1_REMAP_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(1, CH32_USART1_BASE, false, CH32_RCC_APB2_USART1,
-                   CH32_SERIAL1_REMAP_MASK, CH32_SERIAL1_REMAP_VAL)
+#ifndef CH32_SERIAL1_REMAP2_MASK
+#define CH32_SERIAL1_REMAP2_MASK 0u
+#define CH32_SERIAL1_REMAP2_VAL  0u
+#endif
+CH32_DEFINE_SERIAL(1, CH32_USART1_BASE, false, CH32_RCC_APB2_USART1)
 #endif
 #if defined(CH32_SERIAL2_TX)
 #ifndef CH32_SERIAL2_REMAP_MASK
 #define CH32_SERIAL2_REMAP_MASK 0u
 #define CH32_SERIAL2_REMAP_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(2, CH32_USART2_BASE, true, CH32_RCC_APB1_USART2,
-                   CH32_SERIAL2_REMAP_MASK, CH32_SERIAL2_REMAP_VAL)
+#ifndef CH32_SERIAL2_REMAP2_MASK
+#define CH32_SERIAL2_REMAP2_MASK 0u
+#define CH32_SERIAL2_REMAP2_VAL  0u
+#endif
+CH32_DEFINE_SERIAL(2, CH32_USART2_BASE, true, CH32_RCC_APB1_USART2)
 #endif
 #if defined(CH32_SERIAL3_TX)
 #ifndef CH32_SERIAL3_REMAP_MASK
 #define CH32_SERIAL3_REMAP_MASK 0u
 #define CH32_SERIAL3_REMAP_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(3, CH32_USART3_BASE, true, CH32_RCC_APB1_USART3,
-                   CH32_SERIAL3_REMAP_MASK, CH32_SERIAL3_REMAP_VAL)
+#ifndef CH32_SERIAL3_REMAP2_MASK
+#define CH32_SERIAL3_REMAP2_MASK 0u
+#define CH32_SERIAL3_REMAP2_VAL  0u
+#endif
+CH32_DEFINE_SERIAL(3, CH32_USART3_BASE, true, CH32_RCC_APB1_USART3)
 #endif
 #if defined(CH32_SERIAL4_TX)
 #ifndef CH32_SERIAL4_REMAP_MASK
 #define CH32_SERIAL4_REMAP_MASK 0u
 #define CH32_SERIAL4_REMAP_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(4, CH32_USART4_BASE, true, CH32_RCC_APB1_USART4,
-                   CH32_SERIAL4_REMAP_MASK, CH32_SERIAL4_REMAP_VAL)
+#ifndef CH32_SERIAL4_REMAP2_MASK
+#define CH32_SERIAL4_REMAP2_MASK 0u
+#define CH32_SERIAL4_REMAP2_VAL  0u
+#endif
+CH32_DEFINE_SERIAL(4, CH32_USART4_BASE, true, CH32_RCC_APB1_USART4)
 #endif
 #if defined(CH32_SERIAL5_TX)
 #ifndef CH32_SERIAL5_REMAP_MASK
 #define CH32_SERIAL5_REMAP_MASK 0u
 #define CH32_SERIAL5_REMAP_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(5, CH32_USART5_BASE, true, CH32_RCC_APB1_USART5,
-                   CH32_SERIAL5_REMAP_MASK, CH32_SERIAL5_REMAP_VAL)
+#ifndef CH32_SERIAL5_REMAP2_MASK
+#define CH32_SERIAL5_REMAP2_MASK 0u
+#define CH32_SERIAL5_REMAP2_VAL  0u
+#endif
+CH32_DEFINE_SERIAL(5, CH32_USART5_BASE, true, CH32_RCC_APB1_USART5)
 #endif
 
 /* --------------------------------------------------------- printf() bridge */

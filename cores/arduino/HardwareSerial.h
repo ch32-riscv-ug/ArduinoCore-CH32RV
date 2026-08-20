@@ -46,10 +46,12 @@ class CH32HardwareSerial : public HardwareSerial {
 public:
     CH32HardwareSerial(uint32_t base, uint8_t irqn, uint8_t tx_pin,
                        uint8_t rx_pin, bool on_apb1, uint32_t clock_bit,
-                       uint32_t remap_mask, uint32_t remap_value)
+                       uint32_t remap_mask, uint32_t remap_value,
+                       uint32_t remap2_mask, uint32_t remap2_value)
         : _base(base), _irqn(irqn), _tx_pin(tx_pin), _rx_pin(rx_pin),
           _on_apb1(on_apb1), _clock_bit(clock_bit), _remap_mask(remap_mask),
-          _remap_value(remap_value), _started(false) {}
+          _remap_value(remap_value), _remap2_mask(remap2_mask),
+          _remap2_value(remap2_value), _started(false) {}
 
     void begin(unsigned long baudrate) override { begin(baudrate, SERIAL_8N1); }
     void begin(unsigned long baudrate, uint16_t config) override;
@@ -76,10 +78,13 @@ private:
     const uint8_t _rx_pin;
     const bool _on_apb1;
     const uint32_t _clock_bit;
-    /* AFIO PCFR1 field that routes this USART to _tx_pin/_rx_pin; zero mask
+    /* AFIO field that routes this USART to _tx_pin/_rx_pin; zero mask
      * means the pins are the reset-default route. */
     const uint32_t _remap_mask;
     const uint32_t _remap_value;
+    /* Second half of a field that spans PCFR2. */
+    const uint32_t _remap2_mask;
+    const uint32_t _remap2_value;
     bool _started;
     CH32RingBuffer<CH32_SERIAL_RX_BUFFER_SIZE> _rx;
     CH32RingBuffer<CH32_SERIAL_TX_BUFFER_SIZE> _tx;

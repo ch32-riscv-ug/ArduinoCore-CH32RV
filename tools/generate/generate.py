@@ -325,28 +325,48 @@ CH32_AFIO_PCFR1_OFFSET = 0x04
 
 
 def load_remap_fields(tables: pathlib.Path) -> dict:
-    """(series, usart index) -> [bit positions], for AFIO PCFR1 only."""
+    """(series, usart index) -> [(register, bit)], LSB first.
+
+    A field is not always one run of bits in one register: on L103/M103 the
+    USART1 selector is PCFR1 bit 2 plus PCFR2 bits 19-20, and on V20x/V30x it
+    is PCFR1 bit 2 plus PCFR2 bit 26. device-data qualifies every bit with its
+    register for exactly that reason, so keep the qualification - dropping it
+    and writing PCFR1 alone selects a different route without saying so.
+    """
     with open(tables / "remap_fields.csv", newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     out: dict = {}
     for r in rows:
         m = REMAP_SELECTOR_RE.match(r["selector"])
-        if not m or r["controller"] != "afio" or r["register"] != "PCFR1":
+        if not m or r["controller"] != "afio":
             continue
-        bits = [int(b) for b in r["bits"].split(";") if b != ""]
+        bits = []
+        for entry in r["bits"].split(";"):
+            if not entry:
+                continue
+            register, _, bit = entry.partition(":")
+            if not bit:
+                raise SystemExit(
+                    f"{r['series']} {r['selector']}: the bits column is "
+                    f"{r['bits']!r}, which names no register. device-data "
+                    f"changed shape; see "
+                    f"docs/research/signal-name-normalization.ja.md")
+            bits.append((register, int(bit)))
         if bits:
             out[(r["series"], int(m.group(1)))] = bits
     return out
 
 
-def remap_mask_value(bits: list, value: int):
-    mask = 0
-    val = 0
-    for i, bit in enumerate(bits):
+def remap_mask_value(bits: list, value: int) -> dict:
+    """{register: (mask, value)} for one route, from an LSB-first bit list."""
+    out: dict = {}
+    for i, (register, bit) in enumerate(bits):
+        mask, val = out.get(register, (0, 0))
         mask |= 1 << bit
         if (value >> i) & 1:
             val |= 1 << bit
-    return mask, val
+        out[register] = (mask, val)
+    return out
 
 
 def route_remap_value(route: str):
@@ -735,12 +755,19 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 out.append(" * selector, not an AFIO remap. The core does not program it")
                 out.append(" * yet, so this port needs verifying (docs/todo.ja.md). */")
             elif value and bits:
-                mask, val = remap_mask_value(bits, value)
-                out.append(f"#define CH32_SERIAL{index}_REMAP_MASK 0x{mask:08x}u")
-                out.append(f"#define CH32_SERIAL{index}_REMAP_VAL  0x{val:08x}u")
+                # One macro pair per register the field spans. PCFR2 is not
+                # cosmetic: where the field crosses into it, writing PCFR1
+                # alone lands on a different route.
+                for register, (mask, val) in sorted(
+                        remap_mask_value(bits, value).items()):
+                    suffix = "" if register == "PCFR1" else "2"
+                    out.append(f"#define CH32_SERIAL{index}_REMAP{suffix}_MASK "
+                               f"0x{mask:08x}u")
+                    out.append(f"#define CH32_SERIAL{index}_REMAP{suffix}_VAL  "
+                               f"0x{val:08x}u")
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
-                out.append(f" * has no PCFR1 field for USART{index} in this series. */")
+                out.append(f" * has no AFIO field for USART{index} in this series. */")
         # Serial points at the USART that reaches the most part numbers.
         # Serial is the lowest-numbered USART on its reset-default pins;
         # that is what a board's silkscreen almost always means by "UART".

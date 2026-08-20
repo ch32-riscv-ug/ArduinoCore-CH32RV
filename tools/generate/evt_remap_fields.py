@@ -45,6 +45,9 @@ CONST = re.compile(r"#define\s+(GPIO_(?:Remap|PartialRemap\d*|FullRemap)_(\w+))"
                    r"\s+\(\(uint32_t\)(0x[0-9A-Fa-f]+)\)")
 ABS_DEREF = re.compile(r"\*\s*\(\s*(?:volatile\s+)?uint32_t\s*\*\s*\)\s*(0x[0-9A-Fa-f]+)")
 SELECTOR = re.compile(r"^afio-(\w+?)-(?:remap|rm)$")
+# A second constant for the same field, not a peripheral of its own: on
+# V20x/V30x, GPIO_Remap_USART1_HighBit is PCFR2:26 and belongs to USART1.
+SECOND_HALF = re.compile(r"^(\w+?)_HighBit$")
 
 # One EVT per implementation family; every series inside shares the AFIO layout.
 FAMILY_SERIES = {
@@ -164,16 +167,18 @@ def extract(mirrors: pathlib.Path) -> dict:
 
             per = collections.defaultdict(list)
             for (name, periph, _), (s1, s2, c1, c2) in zip(consts, probed):
-                per[periph].append((name, s1 & c1, s2 & c2, c1, c2))
+                merged = SECOND_HALF.match(periph)
+                per[merged.group(1) if merged else periph].append(
+                    (name, s1 & c1, s2 & c2, c1, c2))
             fam: dict = {}
             for periph, entries in sorted(per.items()):
-                fields = {(c1, c2) for _, _, _, c1, c2 in entries}
-                if len(fields) != 1:
-                    # Constants for one peripheral disagree on the field. Not
-                    # something to average over - hand it to a human.
-                    fam[periph] = {"inconsistent_field": [list(f) for f in fields]}
-                    continue
-                c1, c2 = fields.pop()
+                # The field is the union of what its constants clear. Usually
+                # they all clear the same thing, but where WCH split a field
+                # over two registers each constant clears only its own half.
+                c1 = c2 = 0
+                for _, _, _, e1, e2 in entries:
+                    c1 |= e1
+                    c2 |= e2
                 bits = bit_list(c1, c2)
                 fam[periph] = {
                     "bits": [f"{reg}:{bit}" for reg, bit in bits],
