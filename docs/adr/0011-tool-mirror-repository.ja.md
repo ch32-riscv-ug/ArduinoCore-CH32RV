@@ -1,6 +1,6 @@
 # ADR-0011: 再配布が必要なtoolは1ツール1repositoryでミラーする
 
-- Status: Proposed(方針は2026-08-20にmaintainer承認済み。残る未決は末尾)
+- Status: Accepted(2026-08-20、maintainerが明示承認)
 - Date: 2026-08-20
 - Related questions: Q-054、[ADR-0002](0002-toolchain-distribution.ja.md)、[ADR-0008](0008-upload-strategy.ja.md)
 
@@ -42,7 +42,7 @@ org内には既に同種の前例があり(`WCH-common`のデータシート、
 - upstreamの資産削除・retagに対する耐性(ADR-0002がConsequencesに挙げたリスク)
 - 再現可能であること。第三者がupstreamから同じ成果物を作り直して照合できる
 
-## Decision(提案)
+## Decision
 
 ### 1. 再配布するかどうかの基準
 
@@ -146,9 +146,23 @@ CIの重複は、2つ目が出た時点でreusable workflowへ抽出します(�
 - upstreamの新versionが出たときに自動で追従すること
 - 既存tagの再発行が拒否されること
 
-## 実装状況(2026-08-20)
+## 実装状況(2026-08-20: 稼働中)
 
-`mirror-probe-rs`の中身は用意済みで、ローカルで次を確認しました。
+[`mirror-probe-rs`](https://github.com/ch32-riscv-ug/mirror-probe-rs)は稼働しており、
+**probe-rs 0.32.0のreleaseが公開済み**です。このrepositoryの
+`tools/index/tools_probe_rs.json`は、そのreleaseの`tools_probe_rs.json`資産を
+そのまま取り込んだものです。
+
+公開後に確認したこと:
+
+- 公開資産6 hostすべてのchecksum/sizeがfragmentの記載と一致
+- 素通し4種のchecksumがupstream公開値と一致
+- 詰め直したWindowsアーカイブの中身がupstreamとバイト一致(7ファイル、差分なし)
+- **ミラーURLから実際にダウンロードするclean installが通る**
+  (`CH32_PROBE_RS_ARCHIVE`なし = ローカル差し替えなしで`test_install.sh`が成功)
+- CIの`install-test`にwindows-latestを復帰
+
+公開前にローカルで確認したこと:
 
 - 詰め直しが必要なのはWindows zipのみで、**判定は実物の検査による**(tarballは素通し)
 - 詰め直したアーカイブがarduino-cliでinstallでき、`probe-rs.exe`が
@@ -159,13 +173,9 @@ CIの重複は、2つ目が出た時点でreusable workflowへ抽出します(�
 - 取り込み済みversionの差し替えを検知してジョブが落ちる
 - ミラーの成果物でLinuxのclean install → 上書きなしcompile → upgrade/rollbackが通る
 
-**未実施**: ミラーのreleaseの公開。これができるまで`tools_probe_rs.json`が指すURLは
-404で、CIの`install-test`にwindows-latestを戻せません。
-
 ## 未決
 
-- 定期確認の間隔と、失敗時の通知先
-- このADRを`Accepted`にするか(方針自体は2026-08-20に承認済み)
+- 定期確認の間隔(現在は日次04:11 UTC)と、失敗時の通知先
 
 ## References
 

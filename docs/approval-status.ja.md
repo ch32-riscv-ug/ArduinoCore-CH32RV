@@ -26,8 +26,13 @@
 |---|---|---|---|---|:--:|
 | A-1 | **`--specs=nano.specs`を既定にし、`%f`を`menu.printf`のopt-inにする** | `platform.txt`、`boards.txt`(生成) | printf sketchが48,492→7,064 byte(X035)。CH32V003(16K)にも載るようになる。X035実機で`none`/`float`両方確認 | [ADR-0004](adr/0004-runtime-and-cxx.ja.md)は**`Proposed`**。同ADRはnano既定と`%f` opt-inを提案しているが承認されていない。menuの文言、`-u _printf_float`かmenuかの選択、size baselineへの影響 | ⬜ |
 | A-3 | **検証boardをTier A/B/C/Dへ絞る** | [tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | ハードウェア差分6軸を数え、Tier A+BでISA以外の全軸を踏むことを確認 | Q-001(対象boardの確定)が未決。どのboardを常時接続にするかは所有実機と運用の問題で、私が決められない | ⬜ |
-| A-5 | **probe-rsを`mirror-probe-rs`経由で参照する** | `tools/index/tools_probe_rs.json` | 詰め直したWindowsアーカイブがarduino-cliでinstallできること、中身がupstreamとバイト一致すること、決定的であること、差し替え検知が働くことを確認 | 方針は[ADR-0011](adr/0011-tool-mirror-repository.ja.md)で承認済み。**ミラーのreleaseが未公開**のためURLは現時点で404。公開後にCIの`install-test`へwindows-latestを戻す | 🔄 |
 | A-4 | **`smoke.py`/`uart_scan.py`の`--board`を省略可能にし、probe-rsの検出結果を既定にする** | `tests/manual/smoke.py`、`uart_scan.py` | X035実機で自動判定・明示一致・明示不一致(exit 1)・`--pnum detect`の4経路を確認 | 既定の挙動変更。`[compile only]`のseriesは検出できないため`--board`必須のまま。CIでどちらを使うか未決 | ⬜ |
+
+## 承認されたもの
+
+| # | 内容 | 承認 | 日付 |
+|---|---|---|---|
+| A-5 | **probe-rsを[`mirror-probe-rs`](https://github.com/ch32-riscv-ug/mirror-probe-rs)経由で参照する** | [ADR-0011](adr/0011-tool-mirror-repository.ja.md) `Accepted`。releaseを公開し、そこからのclean installが通ることを確認したうえでmaintainerが承認 | 2026-08-20 |
 
 ## 却下されたもの
 
@@ -35,16 +40,12 @@
 |---|---|---|---|
 | A-2 | probe-rsのWindowsアーカイブを再パッケージして本repositoryで再ホストする | **手動publishになるため他のtoolとversionがずれる。運用が持たない。**[ADR-0002](adr/0002-toolchain-distribution.ja.md)の「再ホストしない」方針にも反する。実装(`repack_probe_rs.py`、`publish-tool.yml`)は撤去済み | 2026-08-20 |
 
-代わりの方針として、**tool配布専用repositoryでの自動ミラー**を
-[ADR-0011](adr/0011-tool-mirror-repository.ja.md)にまとめ、
-方針はmaintainer承認済みです(2026-08-20)。却下されたA-2との違いは、
+代わりに[ADR-0011](adr/0011-tool-mirror-repository.ja.md)(`Accepted`)の
+**tool配布専用repositoryでの自動ミラー**を採用しました(A-5)。A-2との違いは、
 publishが自動でversionが機械的に追従することと、コア本体のrelease streamに
-混ざらないことです。実体は[`ch32-riscv-ug/mirror-probe-rs`](https://github.com/ch32-riscv-ug/mirror-probe-rs)。
+混ざらないことです。**Windowsのinstallは解決済み**です。
 
-調査結果と他の選択肢は
-[tools/index/README.ja.md](../tools/index/README.ja.md)「Windowsでinstallできない」と
-[research/probe-rs-archive-layout.ja.md](research/probe-rs-archive-layout.ja.md)に
-まとめてあります。**現状Windowsではinstallできません**(Linux/macOSは通ります)。
+調査結果は[R-18](research/probe-rs-archive-layout.ja.md)。
 
 ## 承認されたら消えるもの
 
@@ -62,7 +63,7 @@ publishが自動でversionが機械的に追従することと、コア本体の
 | workflow | 起動条件 | 状態 |
 |---|---|---|
 | [`release.yml`](../.github/workflows/release.yml) | tag `v<version>`のpush(手動dispatchではbuildのみ) | 未実行。package indexは未公開 |
-| [`mirror-probe-rs`の`update.yml`](https://github.com/ch32-riscv-ug/mirror-probe-rs) | 日次 + 手動dispatch | **未実行**。最初のreleaseを作るまでindexのURLは404 |
+| [`mirror-probe-rs`の`update.yml`](https://github.com/ch32-riscv-ug/mirror-probe-rs) | 日次 + 手動dispatch | **稼働中**。v0.32.0を公開済み。以降は自動で追従する(採用は手動) |
 
 ## 関連
 

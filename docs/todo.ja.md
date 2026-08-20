@@ -269,9 +269,12 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       indexからWindows entryを削っても回避できない。方針は
       [ADR-0011](adr/0011-tool-mirror-repository.ja.md)(1ツール1repositoryでミラー、
       `mirror-probe-rs`、取り込み自動・採用手動)。中身は実装済みでローカル検証も通過
-- [ ] `[P0]` **`mirror-probe-rs`の最初のreleaseを公開する**。これができるまで
-      `tools_probe_rs.json`が指すURLは404。公開後にCIの`install-test`へ
-      windows-latestを戻す(1行)
+- [x] **`mirror-probe-rs`を公開し、tool配布をそちらへ切り替えた**
+      ([ADR-0011](adr/0011-tool-mirror-repository.ja.md) `Accepted`)。
+      ミラーURLからのclean installが通ることを確認し、CIの`install-test`へ
+      windows-latestを復帰。**Windowsのinstall問題は解決**
+- [ ] `[P2]` `mirror-probe-rs`の定期実行が失敗したときの通知先を決める。
+      現在は日次04:11 UTCで、失敗はジョブの赤でしか分からない
 - [ ] `[P1]` Board Manager index を実際に公開する。workflowは用意したが未実行で、
       `sketch.yaml`の`platform_index_url`は未公開URLのまま
 - [ ] `[P1]` `libraries/`(SPI/Wire)同梱後、installした状態で`#include <SPI.h>`が

@@ -65,17 +65,15 @@ Arduino Board Manager経由で配布するArduino coreとして、**利用者が
 配布経路の実装は入っていますが、**外へ出す判断は未承認**です
 ([承認状態](../docs/approval-status.ja.md))。
 
-- **WindowsでBoard Manager installができない**。probe-rsのWindows zipが平坦で
-  arduino-cliが拒否する([調査](../tools/index/README.ja.md#windowsでinstallできない未解決))。
-  再ホストは却下済み。releaseまでに解決が必要
 - package index自体の公開。`release.yml`は未実行
 
 ### まだ埋まっていない穴
 
-- [ ] **upgrade経路**: 0.0.1をinstallした環境へ0.0.2を上書きinstallする検証
-- [ ] `test_install.sh`のcompile対象が`CH32V006`のBlink 1本。**Tier Aのboardでacceptance sketchを** compileすべき
+- [ ] **probe-rsは[ミラー](https://github.com/ch32-riscv-ug/mirror-probe-rs)経由**
+      ([ADR-0011](../docs/adr/0011-tool-mirror-repository.ja.md))。
+      ミラーが新versionを公開しても採用は手動なので、**採用時に認定を回す運用**が要る
+
 - [ ] `libraries/`(SPI / Wire)を同梱したあと、installした状態で`#include <SPI.h>`が解決されるか
-- [ ] アーカイブに`tests/`や`docs/`が混入していないことの明示的な確認
 
 ---
 

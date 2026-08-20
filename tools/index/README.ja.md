@@ -122,9 +122,15 @@ probe-rsの配布物はそれをOSによって満たしたり満たさなかっ�
 
 ### 現状
 
-- **ミラーのreleaseが未公開**のため、indexが指すURLは現時点で404です
-- そのためCIの`install-test`から**windows-latestを外して**います
-  (`compile-matrix`のWindowsは残っています)。ミラーが公開されたら1行戻すだけです
+**解決済み**(2026-08-20)。ミラーはprobe-rs 0.32.0を公開しており、
+CIの`install-test`は3 OSすべてで回っています。
+
+公開後に確認したこと:
+
+- 公開資産6 hostすべてのchecksum/sizeがfragmentの記載と一致
+- 素通し4種のchecksumがupstream公開値と一致
+- 詰め直したWindowsアーカイブの中身がupstreamとバイト一致(7ファイル、差分なし)
+- **ミラーURLから実際にダウンロードするclean installが通る**
 
 ## 検証済みの重要事実
 

@@ -68,14 +68,13 @@ these, and none of them can be caught by compiling the repository tree.
 The distribution machinery is implemented, but **publishing it is not approved**
 ([approval status](../docs/approval-status.ja.md)).
 
-- **Board Manager install does not work on Windows**: probe-rs's Windows zip is
-  flat and arduino-cli rejects it
-  ([investigation](../tools/index/README.ja.md)). Re-hosting it here was
-  rejected. Must be solved before release
 - Publishing the package index at all. `release.yml` has never run
 
 ### Still open
 
+- [ ] probe-rs comes from the [mirror](https://github.com/ch32-riscv-ug/mirror-probe-rs)
+      ([ADR-0011](../docs/adr/0011-tool-mirror-repository.ja.md)). Adoption of a new
+      version is manual, so the qualification run has to happen at adoption time
 - [ ] `libraries/` (SPI / Wire) do not exist yet; once they do, `#include <SPI.h>`
       must resolve from the installed platform
 - [ ] Publishing the index itself (GitHub Pages / Releases) and the release workflow
