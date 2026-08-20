@@ -12,6 +12,9 @@
 
 device databaseは独立[`ch32-device-data`](https://github.com/ch32-riscv-ug/ch32-device-data)が正本([ADR-0001](adr/0001-device-data-repository.ja.md)、[境界](device-data.ja.md))。
 
+**実装が入っているが承認されていないものは[承認状態](approval-status.ja.md)に一覧があります。**
+コードやCIが緑であることと、採用が決まっていることは別です。
+
 ## 提案済み(いずれも未承認)
 
 2026-08-19時点で、maintainerが明示承認した設計判断はありません。以下はすべて事前調査フェーズの**提案**であり、ADR-0001〜0009は`Status: Proposed`です([承認プロセス](adr/README.ja.md))。実測裏付けの有無は「その選択肢が成立する」ことの証明であって、採用の承認ではありません。
@@ -131,13 +134,15 @@ boardごとのSerial結線(TX/RX)は[tests/manual/README.ja.md](../tests/manual/
 どちらもcompile testでは絶対に見つからない。`--start-group`で`core.a`を再走査させ、
 `_sbrk`を別objectへ分離し、`HardwareSerial.h`が`pins_arduino.h`を自分でincludeするようにした。
 
-ついでに**ADR-0004どおり`--specs=nano.specs`を既定にした**。printfを使うsketchが
-48 KB → 7.1 KBになり、CH32V003(16 KB)にも載るようになった。`%f`は`menu.printf`でopt-in。
+`--specs=nano.specs`を既定にする案も入れた(printfを使うsketchが48 KB → 7.1 KBになり、
+CH32V003(16 KB)にも載る。`%f`は`menu.printf`でopt-in)。ADR-0004が同じ形を提案しているが
+**同ADRは`Proposed`で、これは承認されていない**([承認状態 A-1](approval-status.ja.md))。
 
 **テスト計画**([tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md))を作成し、
 `tests/hardware/` を `tests/manual/` へ集約、`chip_info.py`を追加。
 Board Manager配布経路はupgrade/rollbackまで検証でき、release workflowも用意した
-(未実行)。
+(**未実行**)。probe-rsのWindowsアーカイブ再ホストは**未承認**
+([承認状態 A-2](approval-status.ja.md))。
 
 pin mapは生成済み([ADR-0010](adr/0010-pin-numbering.ja.md))。`variants/<SERIES>/pins_arduino.h`が
 pad名・ポート別validity mask・`A<n>`(ADC1)・USART pinとAFIO remapを持ち、

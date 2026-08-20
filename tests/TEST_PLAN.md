@@ -6,6 +6,11 @@ Subject: `ch32-riscv-ug:ch32v` (ArduinoCore-CH32). This is an Arduino core
 distributed through Board Manager, so what has to work is **what the user
 receives**, not what is in the repository.
 
+> **This document is a proposal.** The board tiering in particular has not been
+> approved by the maintainer ([approval status A-3](../docs/approval-status.ja.md)).
+> Tooling and CI existing and passing does not mean the approach here was
+> adopted.
+
 ## Approach
 
 Tests split in two by whether software can fully control the environment.
@@ -58,6 +63,15 @@ these, and none of them can be caught by compiling the repository tree.
 | profile path | `sketch.yaml` `platform_index_url` + `programmer:` works | `tests/sketches/` (hardware) |
 | 3 OSes | all of the above | `install-test` matrix in `.github/workflows/ci.yml` |
 
+### Not approved
+
+The distribution machinery is implemented, but **publishing it is not approved**
+([approval status](../docs/approval-status.ja.md)).
+
+- Re-hosting probe-rs's Windows archive (A-2). The URL the index names is not
+  published, so it 404s today
+- Publishing the package index at all. `release.yml` has never run
+
 ### Still open
 
 - [ ] `libraries/` (SPI / Wire) do not exist yet; once they do, `#include <SPI.h>`
@@ -102,7 +116,12 @@ tests/manual/
 
 ---
 
-## Narrowing the board set
+## Narrowing the board set (**proposed, not approved**)
+
+> Which boards are in scope is open as Q-001. Which ones stay on the bench
+> depends on what hardware exists and how it is operated, so the tiers below are
+> worked backwards from that - a proposal, not a decision
+> ([approval status A-3](../docs/approval-status.ja.md)).
 
 122 part numbers cannot all be exercised on hardware. **Compile everything,
 flash only representatives of each hardware difference axis.**
@@ -124,7 +143,7 @@ Counting only the axes the core actually branches on, there are six.
 
 | Tier | Board | Cadence | Why this one |
 |---|---|---|---|
-| **A** | **CH32X035** | every change (on the bench) + release | **Main target.** The most unusual combination: 24-bit ports, 48 MHz, 2 wait states. Where USB-PD will land |
+| **A** | **CH32X035** | every change (on the bench) + release | Understood to be the main target. The most unusual combination: 24-bit ports, 48 MHz, 2 wait states. Where USB-PD will land |
 | **A** | **CH32V003** | same | The opposite extreme: `rv32ec` (no M/A/C), 8-bit ports, 16 K flash, 32-bit SysTick. Passing here pins the floor |
 | **B** | CH32V203 | weekly / before release | The mainstream V3 part: `rv32imac`, 16-bit ports, 64-bit SysTick |
 | **B** | CH32L103 | weekly / before release | V4C, the low-power clock path |

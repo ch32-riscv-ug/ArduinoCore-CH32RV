@@ -31,16 +31,19 @@ The following items are working proposals, not finalized specifications:
 
 The initial implementation is expected to focus on RISC-V CH32 devices. The long-term scope, including Arm-based CH32 devices and wireless SoCs, has not been decided.
 
-## Build menus
+## Build menus (**provisional**)
+
+> The `printf` menu and the newlib-nano default are **proposed and not
+> approved** ([approval status A-1](docs/approval-status.ja.md)). They may change.
 
 | Menu | Default | What it selects |
 |---|---|---|
 | Part Number (`pnum`) | `ANY` | The part. `ANY` declares the smallest flash/RAM in the series, so a binary built for it fits every part |
 | printf() float support (`printf`) | `none` | Whether `printf("%f")` works |
 
-**With the default, `printf("%f")` prints nothing.** The runtime is newlib-nano
-([ADR-0004](docs/adr/0004-runtime-and-cxx.ja.md)), which leaves out floating
-point conversion. Anyone arriving from another Arduino core will hit this, so it
+**With the default, `printf("%f")` prints nothing.** The runtime is newlib-nano,
+which leaves out floating point conversion (proposed in
+[ADR-0004](docs/adr/0004-runtime-and-cxx.ja.md), still `Proposed`). Anyone arriving from another Arduino core will hit this, so it
 is stated plainly here.
 
 Set the menu to `%f supported` when you need it. That costs about 19 KB of flash

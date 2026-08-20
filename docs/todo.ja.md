@@ -8,6 +8,9 @@
 凡例: `[P0]`実装をblockする / `[P1]`初期release前 / `[P2]`将来
 `(要判断)`はmaintainerの決定待ち、`(要実機)`はハードウェアが要る。
 
+**`[x]`は「実装して検証した」であって「承認された」ではありません。**
+実装が入っているが承認されていないものは[承認状態](approval-status.ja.md)に一覧があります。
+
 ---
 
 ## Milestone 1: 主要boardで`Serial.println()`が通る
@@ -99,7 +102,8 @@
       ([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))。
       `core.a`を`--start-group`で囲み、`_sbrk`を`ch32_sbrk.c`へ分離、
       `HardwareSerial.h`が`pins_arduino.h`を自分でinclude。X035実機で確認
-- [x] **ADR-0004どおり`--specs=nano.specs`を既定にし、`menu.printf`で`%f`をopt-inに**。
+- [x] `--specs=nano.specs`を既定にし、`menu.printf`で`%f`をopt-inにする案を実装(**未承認**、
+      [承認状態 A-1](approval-status.ja.md))。ADR-0004が同じ形を提案しているが`Proposed`。
       `printf`sketchが48 KB → 7.1 KB、**CH32V003にも載るようになった**。X035実機で
       `printf=none`(空)/`printf=float`(`1.50`)を確認([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))
 - [ ] `[P1]` `menu.printf`の文言をdocumentへ。ADR-0004が求める
@@ -242,6 +246,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 ## テスト基盤
 
 - [x] **テスト計画を作成**([tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) / [英語](../tests/TEST_PLAN.md))。
+      board階層は**未承認の提案**([承認状態 A-3](approval-status.ja.md))。
       自動/手動の切り分け、board階層(A/B/C/D)、ペリフェラル別の検証方法4種、
       Board Manager配布物としての検証項目
 - [x] `tests/hardware/` → **`tests/manual/`**へ移動し、`chip_info.py`(chip/probe/port/FQBN判定)を追加。
@@ -256,7 +261,8 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       公開中のindexを取得できなければ**publishを拒否**する(過去versionを消さないため)
 - [ ] `[P1]` CIへpytest sketch testを追加(`--run-mode build`)。
       ローカルindexの配信が要る
-- [x] **Windows install失敗を修正**。probe-rsのWindows zipが平坦でarduino-cliが
+- [x] **Windows install失敗の原因を特定し、修正案を実装**(**未承認**、
+      [承認状態 A-2](approval-status.ja.md))。probe-rsのWindows zipが平坦でarduino-cliが
       `files in archive must be placed in a subdirectory`で拒否していた。
       Linux/macOSの`.tar.xz`はroot directoryを持つのでこの1アーカイブだけ再パッケージ・
       再ホストする。`repack_probe_rs.py`は決定的でupstream checksumを検証する
@@ -280,7 +286,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       `tests/.env`の`CH32_LOOPBACK_OUT=PA0`のようなpad名を`conftest.py`が
       `env_config.h`へ変換する(`tests/manual/env_config.py`)。
       実行は`uv run --env-file .env pytest ...`
-- [x] **`--board`を省略可能にした**。probe-rsが型番を読み`boards.txt`から逆引きするので、
+- [x] `--board`を省略可能にした(**未承認**の既定変更、[承認状態 A-4](approval-status.ja.md))。probe-rsが型番を読み`boards.txt`から逆引きするので、
       焼く対象と焼く相手が食い違うことが原理的に起きない。明示すると主張になる。
       `--pnum detect`で実SKUを選べる
 - [ ] `[P1]` `gpio_loopback`を実機で回す (要実機・要ジャンパ)

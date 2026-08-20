@@ -5,6 +5,10 @@
 対象: `ch32-riscv-ug:ch32v`(ArduinoCore-CH32)。
 Arduino Board Manager経由で配布するArduino coreとして、**利用者が受け取るもの**が動くことを検証します。
 
+> **この文書は提案です。** 特に「検証boardの絞り込み」はmaintainerの承認を経ていません
+> ([承認状態 A-3](../docs/approval-status.ja.md))。実装済みのtoolやCIが動いていることは、
+> ここに書いた方針が採用されたことを意味しません。
+
 ## テスト方針
 
 テストはソフトウェアで環境を完全に制御できるかどうかで2種類に分けます。
@@ -56,6 +60,14 @@ Arduino Board Manager経由で配布するArduino coreとして、**利用者が
 | profile経路 | `sketch.yaml`の`platform_index_url` + `programmer:`で動く | `tests/sketches/`(実機) |
 | 3 OS | 上記すべて | `.github/workflows/ci.yml`の`install-test` matrix |
 
+### 承認されていないもの
+
+配布経路の実装は入っていますが、**外へ出す判断は未承認**です
+([承認状態](../docs/approval-status.ja.md))。
+
+- probe-rsのWindowsアーカイブ再ホスト(A-2)。indexが指すURLは未公開で、現時点では404
+- package index自体の公開。`release.yml`は未実行
+
 ### まだ埋まっていない穴
 
 - [ ] **upgrade経路**: 0.0.1をinstallした環境へ0.0.2を上書きinstallする検証
@@ -100,7 +112,12 @@ tests/manual/
 
 ---
 
-## 検証boardの絞り込み
+## 検証boardの絞り込み(**提案・未承認**)
+
+> 対象boardの確定は[Q-001](../docs/open-questions.ja.md)で未決です。
+> どのboardを常時接続にするかは所有実機と運用の都合で決まるもので、
+> ここに書いた階層は**そこから逆算した提案**にすぎません
+> ([承認状態 A-3](../docs/approval-status.ja.md))。
 
 24 series・122 part numberを全部実機で回すことはできません。
 **compileは全部**、**実機はハードウェア差分軸の代表だけ**にします。
@@ -122,7 +139,7 @@ coreの実装が実際に分岐する軸だけを数えると6つです。
 
 | Tier | Board | 実行頻度 | 選んだ理由 |
 |---|---|---|---|
-| **A** | **CH32X035** | 全PR相当(手元)＋release | **主対象**。24 bitポート・48 MHz・wait state 2という最も特殊な組み合わせ。USB-PDの実装先 |
+| **A** | **CH32X035** | 全PR相当(手元)＋release | 主対象と聞いている。24 bitポート・48 MHz・wait state 2という最も特殊な組み合わせ。USB-PDの実装先 |
 | **A** | **CH32V003** | 同上 | 反対の極。`rv32ec`(M/A/Cなし)・8 bitポート・16 K flash・32 bit SysTick。ここが通れば下限が保証される |
 | **B** | CH32V203 | 週次 / release前 | 最も普及しているV3系。`rv32imac` + 16 bitポート + 64 bit SysTick |
 | **B** | CH32L103 | 週次 / release前 | V4C系。低消費電力系のクロック経路 |

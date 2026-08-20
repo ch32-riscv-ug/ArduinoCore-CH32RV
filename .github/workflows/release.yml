@@ -8,6 +8,9 @@
 # history: it is the only copy, which is why the workflow refuses to publish
 # when the fetch fails for any reason other than "not there yet".
 #
+# NOT RUN YET, and the index it would publish carries proposals that are not
+# approved (docs/approval-status.ja.md). Check that file before tagging.
+#
 # Trigger: push a tag `v<version>` whose version equals platform.txt's.
 # Dry run: workflow_dispatch builds and uploads the artifacts to the run
 # without publishing anything.

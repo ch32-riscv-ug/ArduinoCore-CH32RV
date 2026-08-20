@@ -18,7 +18,7 @@ Board Manager経由でinstallしたplatformでcompileが通ることは別物で
 |---|---|
 | `gen_index.py` | platformを`.tar.bz2`化し、`package_ch32-riscv-ug_index.json`を生成 |
 | `tools_xpack_gcc.json` | xPack GCC 14.3.0-1のtool定義(6 host、GitHub Releases直リンク、公式`.sha`由来のchecksum) |
-| `tools_probe_rs.json` | probe-rs 0.32.0のtool定義(6 host)。**Windowsだけ再ホスト**、他はupstream直リンク |
+| `tools_probe_rs.json` | probe-rs 0.32.0のtool定義(6 host)。Windowsだけ再ホスト**案**(未承認)、他はupstream直リンク |
 | `repack_probe_rs.py` | probe-rs Windows zipをroot directory付きへ再パッケージ(決定的・checksum検証つき) |
 | `probe_rs_targets.csv` | probe-rsが知っているCH32 target 127件。`{build.probe_rs_chip}`の生成元 |
 | `fetch_xpack.py` | xPackアーカイブの取得(CIのcache用) |
@@ -75,7 +75,19 @@ uv run --no-project python gen_index.py --platform ../.. --out dist \
   --tools github --merge <公開中のindex.json>
 ```
 
-## Windowsだけprobe-rsを再ホストしている理由
+## Windowsだけprobe-rsを再ホストする案(**未承認**)
+
+> **承認されていません。** [ADR-0002](../../docs/adr/0002-toolchain-distribution.ja.md)は
+> 「再ホストしない」を提案しており、これはその例外にあたります。ADRも例外も未承認です
+> ([承認状態 A-2](../../docs/approval-status.ja.md))。
+> 再パッケージ済みアーカイブは**まだ公開していません**。indexが指すURLは現時点で404です。
+> CIはローカルで再パッケージしたものを配信して検証しているので緑ですが、
+> それは「この案が動く」ことの確認であって採用ではありません。
+>
+> 検討していない代替: upstreamへroot付きWindowsアーカイブを追加するPR、
+> Windowsではprobe-rsを配らずwlink等を使う、利用者に手動installさせる。
+
+### 何が起きているか
 
 arduino-cliは**tool archiveのファイルがroot直下にあると拒否します**。
 
@@ -88,9 +100,9 @@ probe-rsのLinux/macOS向け`.tar.xz`は`probe-rs-tools-<triple>/`というroot 
 持つのでそのまま通りますが、**Windows向け`.zip`は平坦**(7ファイルがroot直下)です。
 upstreamにroot付きのWindowsアーカイブは存在しません。
 
-そこでこの1アーカイブだけ、root directoryを付けて再パッケージし、本repositoryの
-releaseへ添付します([ADR-0002](../../docs/adr/0002-toolchain-distribution.ja.md)の
-「再ホストしない」方針の例外)。
+### 案
+
+この1アーカイブだけroot directoryを付けて再パッケージし、本repositoryのreleaseへ添付する。
 
 - `repack_probe_rs.py`は**決定的**です(entry順固定・timestamp固定・圧縮方式固定)。
   同じupstreamからは必ず同じchecksumが出るので、indexがpinしているSHA-256を
@@ -102,7 +114,8 @@ releaseへ添付します([ADR-0002](../../docs/adr/0002-toolchain-distribution.
 - 中身はupstreamとバイト単位で同一です(7ファイルすべてSHA-256一致を確認)
 
 publishは[`publish-tool.yml`](../../.github/workflows/publish-tool.yml)。
-probe-rsのversionを上げるたびに1回、platformのreleaseより先に実行します。
+**承認後に**、probe-rsのversionを上げるたび1回、platformのreleaseより先に実行します。
+手動dispatchのみ・`dry_run`既定`true`なので、放っておいて動くことはありません。
 CIのWindows install-testは**ローカルで再パッケージしたものを配信して検証**するので、
 publish前でもレイアウト崩れはPRで落ちます。
 

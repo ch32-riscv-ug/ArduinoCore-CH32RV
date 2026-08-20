@@ -115,11 +115,12 @@ INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
 MENU_HEADER = "menu.pnum=Part Number\nmenu.printf=printf() float support\n"
 
-# ADR-0004: newlib-nano is the default runtime and printf's float support is a
-# menu opt-in. The cost is why - on CH32X035 a printf sketch is 48 KB with the
-# full formatter and 7.6 KB with nano, and CH32V003 only has 16 KB of flash.
-# Both entries are emitted for every board because the choice is per-sketch,
-# not per-part.
+# printf float support as a menu entry. PROPOSED, NOT APPROVED - see
+# docs/approval-status.ja.md A-1. ADR-0004 proposes this shape but is still
+# Proposed. The measurement behind it: on CH32X035 a printf sketch is 48,492
+# bytes with the full newlib formatter and 7,064 with nano, and CH32V003 has
+# only 16 KB of flash. Both entries are emitted for every board because the
+# choice is per-sketch, not per-part.
 PRINTF_MENU = (
     ("none", "No float (smaller)", ""),
     ("float", "%f supported (+~19 KB)", "-Wl,-u,_printf_float"),

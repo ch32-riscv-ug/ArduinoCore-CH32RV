@@ -36,10 +36,12 @@ recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {compile
 recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {compiler.cpp.extra_flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.S.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.S.flags} {compiler.S.extra_flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "{object_file}"
-# --specs=nano.specs: ADR-0004. The full newlib formatter is ~40 KB, which does
-# not fit most of the family - a printf sketch on CH32X035 goes 48 KB -> 7.6 KB.
-# nano drops %f by default; the printf menu in boards.txt adds it back with
-# -u _printf_float for sketches that need it.
+# --specs=nano.specs: PROPOSED, NOT APPROVED (docs/approval-status.ja.md A-1).
+# ADR-0004 proposes newlib-nano as the default runtime with %f as a menu opt-in,
+# but that ADR is still Proposed - it is not authority for this change. What is
+# measured: the full newlib formatter is ~40 KB, so a printf sketch on CH32X035
+# goes 48,492 -> 7,064 bytes and fits CH32V003's 16 KB at all. nano drops %f by
+# default; the printf menu in boards.txt adds it back with -u _printf_float.
 # --start-group around core.a and -lc: the core's syscall stubs must beat the
 # libgloss ones, which are *semihosting* - they issue `ecall`, and a CH32 with
 # no environment-call handler traps that straight to the reset vector. libgloss

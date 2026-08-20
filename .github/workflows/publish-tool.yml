@@ -1,4 +1,9 @@
-# Publish the one tool archive this project has to re-host.
+# Publish the one tool archive this project would have to re-host.
+#
+# NOT APPROVED YET - docs/approval-status.ja.md A-2. Re-hosting is an exception
+# to ADR-0002's proposal not to re-host, and neither is approved. Do not run
+# this with dry_run off until it is. Manual dispatch only, dry_run defaults to
+# true, so nothing is published by accident.
 #
 # probe-rs ships Linux and macOS as tarballs with a single root directory,
 # which is what arduino-cli requires, so the package index links those straight
@@ -13,7 +18,8 @@
 # verifies the upstream download against the checksum in tools_probe_rs.json,
 # so anyone can rebuild this asset and confirm it matches the index.
 #
-# Run this once per probe-rs version, before the release that references it.
+# Once approved: run once per probe-rs version, before the release that
+# references it.
 # The tag it creates is a tool tag (tools-probe-rs-<version>), separate from
 # the platform's own v<version> tags.
 name: Publish re-hosted tool
@@ -76,6 +82,15 @@ jobs:
           name: rehosted-tools
           path: dist/
 
+      - name: Refuse to publish while this is unapproved
+        if: ${{ !inputs.dry_run }}
+        run: |
+          if grep -q '^| A-2 .*| ⬜ |$' docs/approval-status.ja.md; then
+            echo "A-2 (re-hosting the probe-rs Windows archive) is still marked"
+            echo "unapproved in docs/approval-status.ja.md. Approve it there"
+            echo "first - this workflow publishes to a public release."
+            exit 1
+          fi
       - name: Create the tool release
         if: ${{ !inputs.dry_run }}
         env:
