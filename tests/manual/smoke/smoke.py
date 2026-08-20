@@ -282,10 +282,15 @@ class Bench:
     pins: tuple = None           # (usart, tx, rx, note)
     baud: int = 115200
     seconds: float = 4.0
+    # Extra --build-property, for trying something the board definition does
+    # not offer - a different build.f_cpu, say. Not a config knob so much as
+    # the difference between an experiment you can re-run and one you cannot.
+    properties: tuple = ()
 
 
 def resolve_bench(board=None, pnum="ANY", port=None, probe=None, serial=None,
-                  force=False, baud=115200, seconds=4.0, log=print) -> Bench:
+                  force=False, baud=115200, seconds=4.0, properties=(),
+                  log=print) -> Bench:
     """Ask the hardware what it is, and refuse to guess when it will not say.
 
     Every failure here is a Failure rather than a printed line and an exit
@@ -347,7 +352,7 @@ def resolve_bench(board=None, pnum="ANY", port=None, probe=None, serial=None,
     return Bench(gcc=gcc, probe_rs=probe_rs_dir, port=port, probe=probe_serial,
                  select_probe=bool(probe_serial and probe), chip=chip,
                  board=board, pnum=pnum, serial_index=serial_index, pins=pins,
-                 baud=baud, seconds=seconds)
+                 baud=baud, seconds=seconds, properties=tuple(properties))
 
 
 def run_one(name, bench: Bench) -> dict:
@@ -386,6 +391,8 @@ def run_one(name, bench: Bench) -> dict:
                  *(["--build-property",
                     f"build.extra_flags=-DCH32_SERIAL_DEFAULT={bench.serial_index}"]
                    if bench.serial_index else []),
+                 *[a for p in bench.properties
+                   for a in ("--build-property", p)],
                  "--build-path", str(build), str(sketch_dir)], env=env)
         if r.returncode:
             print(r.stdout + r.stderr)
@@ -490,6 +497,9 @@ def main() -> int:
     ap.add_argument("--serial", type=int,
                     help="override which USART Serial is (the uart_scan test "
                          "finds it)")
+    ap.add_argument("--build-property", action="append", default=[],
+                    dest="properties", metavar="KEY=VALUE",
+                    help="extra --build-property for the compile, repeatable")
     ap.add_argument("--sketch", default=os.environ.get("CH32_SKETCH", DEFAULT_SKETCH),
                     help=f"a directory under tests/sketches/basic, or 'all' "
                          f"(default: {DEFAULT_SKETCH})")
@@ -499,7 +509,7 @@ def main() -> int:
         bench = resolve_bench(board=args.board, pnum=args.pnum, port=args.port,
                               probe=args.probe, serial=args.serial,
                               force=args.force, baud=args.baud,
-                              seconds=args.seconds)
+                              seconds=args.seconds, properties=args.properties)
         results = run(args.sketch, bench)
     except Failure as e:
         print(f"FAIL: {e}", file=sys.stderr)

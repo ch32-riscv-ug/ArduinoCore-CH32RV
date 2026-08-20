@@ -57,7 +57,10 @@
 #define CH32_RCC_CFGR0_SW_HSI    0x0u
 #define CH32_RCC_CFGR0_SWS_MASK  (0x3u << 2) /* switch status (read-back)    */
 #define CH32_RCC_CFGR0_HPRE_MASK (0xFu << 4) /* AHB prescaler                */
-#define CH32_RCC_CFGR0_HPRE_DIV1 (0x0u << 4)
+/* The field value itself, not the divider: the CH32 line encodes AHB dividers
+ * two different ways and only wiring_time.c knows which one this build needs.
+ * See CH32_HPRE_LINEAR there. */
+#define CH32_RCC_CFGR0_HPRE(n)   ((uint32_t)(n) << 4)
 #define CH32_RCC_CFGR0_PPRE1_MASK (0x7u << 8)
 #define CH32_RCC_CFGR0_PPRE2_MASK (0x7u << 11)
 

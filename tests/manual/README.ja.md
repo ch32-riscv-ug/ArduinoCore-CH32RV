@@ -123,6 +123,14 @@ uv run tests/manual/smoke/smoke.py --board CH32X035
 既定は[Milestone 1受け入れsketch](../sketches/basic/serial_println/serial_println.ino)で、
 `hello from ch32` / `int=42` / `hex=BEEF`の3行が出れば pass です。
 
+board定義に無い設定を試すときは`--build-property`(pytestなら`CH32_BUILD_PROPERTY`)。
+分周クロックの確認はこれで再現できます。
+
+```sh
+cd tests
+CH32_BUILD_PROPERTY=build.f_cpu=24000000L uv run pytest manual/smoke/smoke.py -q -s
+```
+
 **boardを差し替えたときは`--sketch all`**。`tests/sketches/basic/`の全sketchを
 順に焼いて最後に表を出します。
 

@@ -27,51 +27,54 @@ import sys
 # experiments 0001/0002. Only families proven by the equivalence harness are listed.
 # Startup/ISA parameters shared by every series in an EVT family.
 # Values come from the equivalence harness table in tests/startup/startup_equivalence.py.
+# CH32_HPRE_LINEAR is which of the two AHB-prescaler encodings the family uses,
+# read off its own EVT header (RCC_HPRE_DIV2 is 0x10 on one and 0x80 on the
+# other); the two tables are written out in cores/arduino/wiring_time.c.
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=10"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=10 -DCH32_HPRE_LINEAR=1"),
     "CH32V006": dict(march="rv32emc_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=1"),
     "CH32V205": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x7 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
     "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
     "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x0b "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
     "CH32V407": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x688 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
     "CH32X035": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="48000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=24 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=48000000 -DCH32_FLASH_LATENCY=2 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=24 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=48000000 -DCH32_FLASH_LATENCY=2 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=1"),
     "CH32X315": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
     # CH32V103's table is a jump table and its startup never writes csr 0x804.
     "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_MTVEC_MODE=1",
                      core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 "
                                   "-DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 "
-                                  "-DCH32_ADC_BITS=12"),
+                                  "-DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
     "CH32M030": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=1"),
     # Excluded, same reason as tests/startup/: CH32H417 boots via loadcode.
 }
 

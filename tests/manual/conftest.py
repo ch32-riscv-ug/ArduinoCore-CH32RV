@@ -76,7 +76,9 @@ def bench(attached):
             if os.environ.get("CH32_SERIAL_INDEX") else None,
             force=bool(os.environ.get("CH32_FORCE")),
             baud=int(os.environ.get("CH32_BAUD", 115200)),
-            seconds=float(os.environ.get("CH32_SECONDS", 4.0)))
+            seconds=float(os.environ.get("CH32_SECONDS", 4.0)),
+            # Space-separated, because one experiment rarely needs two.
+            properties=os.environ.get("CH32_BUILD_PROPERTY", "").split())
     except smoke.Failure as e:
         # Not a skip: a board is plugged in and something about the bench is
         # wrong - the wrong board named, two probes and no choice made, a

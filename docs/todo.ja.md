@@ -48,7 +48,13 @@
 - [x] `ltoa`/`ultoa`の実装(`cores/arduino/itoa.c`)
 - [x] `dtostrf`: upstreamの`.c.impl`をincludeする`cores/arduino/dtostrf.c`を置いた
 - [x] `Arduino.h`から`api/ArduinoAPI.h`をinclude。**`api/`はinclude pathへ入れず`api/`付きで書く**規律を維持
-- [ ] `[P1]` `F_CPU`と実際のSYSCLKの一致をtestで担保する(不一致だとSerialが化ける)
+- [x] `F_CPU`とHCLKの一致を担保。compile時は
+      [tests/test_clock_prescaler.py](../tests/test_clock_prescaler.py)が
+      両符号化 × 19比でfield値を`_Static_assert`し、表現できない7比が`#error`になることも
+      確認する(27 case、実機不要、0.4秒)。実機側はboard rateが`F_CPU`から計算されるため、
+      **分周した状態でSerialが化けないこと**が一致の証明になる。
+      X035実機で48→24MHz(`/2`)と48→16MHz(`/3`、linear符号化にしか無い値)を確認済み。
+      `CH32_BUILD_PROPERTY=build.f_cpu=...`で再現できる
 - [x] crt0→`setup()`/`loop()`到達をCH32V003実機で確認。`.data` copy、`.bss` zero fill、
       `.init_array`(C++大域constructor)まで全てpass([実験0010](experiments/0010-first-on-target-run.ja.md))
 - [ ] `[P1]` 同じ確認をX035/L103/V20xでも回す(実機あり)。variantごとのlinker scriptとvector tableの検証になる
@@ -138,7 +144,15 @@
 
 ### 今やっておく拡張準備(これを守ればメニュー追加はboards.txtの行追加だけで済む)
 
-- [ ] `[P0]` **`SystemInit()`は`F_CPU`を読んで分周器を決める**。周波数をハードコードしない
+- [x] **`SystemInit()`が`F_CPU`から分周器を決める**。`F_CPU`を目標HCLKとし、
+      AHB prescalerは`CH32_HSI_HZ / F_CPU`から導く([cores/arduino/ch32_clock.h](../cores/arduino/ch32_clock.h))。
+      これで**クロック変更はboards.txtの`f_cpu`だけ**になる。
+      CH32系はprescalerの4bit fieldの符号化が2通りあり、一致するのは`/1`だけ:
+      linear(`0x0..0x7`=`/1../8`、`/3`や`/5`もある)がV00x / M030 / X03x、
+      pow2(`0x8`=`/2`、`/32`が無い)がV10x / V20x / V30x / V4x7 / L103 / V205 / X3x5。
+      **全11 familyを各EVTヘッダの`RCC_HPRE_DIVn`で確認**し、推測は使っていない
+      (`-DCH32_HPRE_LINEAR`をfamilyごとに生成)。
+      表現できない比は`#error`。
 - [x] **到達できない`F_CPU`は`#error`でコンパイル時に落とす**。
       F_CPUと実際のSYSCLKがズレるとSerialが化けるため、実行時に発覚させてはいけない
 
@@ -280,11 +294,13 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       Windowsでは作業ディレクトリをドライブ直下(`C:\ch32t\`)に置くようにした
       (`CH32_TEST_TMP`で変更可)。222文字、余裕37文字。長さは
       `install_check.check_path_budget()`が事前に検査して落とす
-- [ ] `[P2]` **実利用側の余裕は測っただけ**(判断が要る)。
+- [x] 実利用側の余裕も測った。
       `C:\Users\<user>\AppData\Local\Arduino15\…\xpack-riscv-none-elf-gcc\14.3.0-1`
       だとユーザー名が**34文字**まで入る。Windowsのローカルアカウントは20文字上限なので
-      実害は考えにくいが、余裕は多くない。tool名から`xpack-`を落とせば40文字まで伸びる
-      一方、公開済みindexと`platform.txt`の`{runtime.tools.*}`に関わる変更になる
+      実害は考えにくい。tool名から`xpack-`を落とせば40文字まで伸びるが、
+      **maintainer判断で「とりあえず現状の名前のまま」**(2026-08-20)。
+      公開済みindexと`platform.txt`の`{runtime.tools.*}`に関わるため、
+      変えるなら別途判断する
 - [x] **`tests/manual/`をpytestへ載せた。** 3 tool(`chip_info` / `uart_scan` /
       `smoke`)を「印字する`main()`」から**構造化データを返す関数**へ組み替え
       (`inventory()` / `scan()` / `resolve_bench()`+`run()`)、pytest caseを追加。

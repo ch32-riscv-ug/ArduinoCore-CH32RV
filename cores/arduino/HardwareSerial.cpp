@@ -35,8 +35,10 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
     ch32_gpio_set(rx_port, (uint8_t)CH32_PIN_BIT(_rx_pin));
 
     /* USART1 hangs off PCLK2 and the others off PCLK1; Milestone 1 leaves both
-     * prescalers at /1, so either way the clock is F_CPU. BRR holds
-     * USARTDIV * 16, which is exactly the rounded fck/baud. */
+     * APB prescalers at /1, so either way the clock is HCLK, which SystemInit
+     * makes equal to F_CPU. BRR holds USARTDIV * 16, which is exactly the
+     * rounded fck/baud - and getting it wrong is how a mis-set AHB prescaler
+     * announces itself, as garbled output. */
     CH32_USART_BRR(_base) = (uint16_t)((F_CPU + baudrate / 2) / baudrate);
 
     uint16_t ctlr1 = CH32_USART_CTLR1_TE | CH32_USART_CTLR1_RE |

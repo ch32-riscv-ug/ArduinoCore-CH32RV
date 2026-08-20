@@ -1,20 +1,19 @@
 /* Clock setup and the millis/micros/delay family.
  *
- * Milestone 1 clocking (docs/todo.ja.md): internal oscillator only, no PLL,
- * no AHB/APB division. F_CPU therefore has to equal the family's HSI, and a
- * mismatch is a compile error rather than a runtime surprise - a wrong F_CPU
- * shows up as garbled Serial output, which is expensive to debug.
+ * Milestone 1 clocking (docs/todo.ja.md): internal oscillator only, no PLL.
+ * F_CPU is the target HCLK and the AHB prescaler is *derived* from it, so a
+ * different clock is a boards.txt change and nothing else - which is the whole
+ * point, because the clock menu that comes later is then just more boards.txt
+ * lines. A ratio the hardware cannot encode is a compile error rather than a
+ * runtime surprise: a wrong HCLK shows up as garbled Serial output, since the
+ * baud divisor is computed from F_CPU, and that is expensive to debug.
  */
 #include "Arduino.h"
+#include "ch32_clock.h"
 #include "ch32_registers.h"
 
 #ifndef CH32_FLASH_LATENCY
 #error "CH32_FLASH_LATENCY is required (see build.core_defines in boards.txt)"
-#endif
-
-#if F_CPU != CH32_HSI_HZ
-#error "Milestone 1 runs the core straight off HSI: F_CPU must equal CH32_HSI_HZ. \
-Prescalers and PLL are not implemented yet (see docs/todo.ja.md, clock section)."
 #endif
 
 #define CH32_TICKS_PER_MS ((uint32_t)(F_CPU / 1000u))
@@ -31,21 +30,24 @@ void SystemInit(void)
     }
 
     /* Wait states first: the core comes out of reset on a divided clock, and
-     * removing the divider below raises it. Too few wait states at 48 MHz makes
-     * the CPU fetch garbage - measured on CH32X035, which needs two and hangs
-     * before setup() without them. Too many are merely slow, so this is safe to
-     * do before the switch rather than after. */
+     * the prescaler below may raise it. Too few wait states at 48 MHz makes the
+     * CPU fetch garbage - measured on CH32X035, which needs two and hangs
+     * before setup() without them. Too many are merely slow, which is why
+     * CH32_FLASH_LATENCY is sized for the family's fastest clock and left alone
+     * when F_CPU asks for a slower one, and why setting it before the switch is
+     * safe rather than after. */
     CH32_FLASH_ACTLR = (CH32_FLASH_ACTLR & ~CH32_FLASH_ACTLR_LATENCY_MASK) |
                        CH32_FLASH_LATENCY;
 
     CH32_RCC_CFGR0 &= ~(CH32_RCC_CFGR0_SW_MASK | CH32_RCC_CFGR0_HPRE_MASK |
                         CH32_RCC_CFGR0_PPRE1_MASK | CH32_RCC_CFGR0_PPRE2_MASK);
-    CH32_RCC_CFGR0 |= CH32_RCC_CFGR0_SW_HSI | CH32_RCC_CFGR0_HPRE_DIV1;
+    CH32_RCC_CFGR0 |= CH32_RCC_CFGR0_SW_HSI |
+                      CH32_RCC_CFGR0_HPRE(CH32_HPRE_FIELD);
     while ((CH32_RCC_CFGR0 & CH32_RCC_CFGR0_SWS_MASK) !=
            (CH32_RCC_CFGR0_SW_HSI << 2)) {
     }
 
-    /* 1 kHz tick straight off HCLK. */
+    /* 1 kHz tick straight off HCLK, which the prescaler above made F_CPU. */
     CH32_SYSTICK_CTLR = 0u;
     CH32_SYSTICK_SR = 0u;
     CH32_SYSTICK_CNT = 0u;
