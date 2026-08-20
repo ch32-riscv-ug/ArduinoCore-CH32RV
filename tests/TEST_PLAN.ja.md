@@ -268,11 +268,14 @@ dの前提として、**どのboardが繋がっているかをスクリプトが
 ## 実行方法
 
 ```sh
-cd tests
-uv sync
+uv run tools/index/fetch_tools.py     # toolchain / probe-rs / device-data を .tools/ へ
+cd tests && uv sync
 ```
 
-`arduino-cli`がPATHに必要です。
+`arduino-cli`がPATHに必要です。それ以外は`<repo>/.tools`に入るので、
+**環境変数の設定は要りません**。版は`tools/index/tools_*.json`(package indexの正本)
+から取るため、**利用者がinstallするのと同じ版**でtestが回ります。
+詳細は[tests/README.ja.md](README.ja.md)。
 
 ### 自動テスト(実機なし)
 

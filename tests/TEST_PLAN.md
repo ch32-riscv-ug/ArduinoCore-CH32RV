@@ -280,11 +280,14 @@ flash when `--board` disagrees with the chip it detects.
 ## Running
 
 ```sh
-cd tests
-uv sync
+uv run tools/index/fetch_tools.py     # toolchain, probe-rs, device-data into .tools/
+cd tests && uv sync
 ```
 
-`arduino-cli` must be on PATH.
+`arduino-cli` must be on PATH; nothing else needs to be, and **no environment
+variables need setting**. Versions come from `tools/index/tools_*.json`, the
+same files the package index is built from, so the tests run against exactly
+the versions a user would install. See [tests/README.ja.md](README.ja.md).
 
 ### Automated, no hardware
 

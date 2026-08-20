@@ -18,9 +18,8 @@ that follow from the answer.
 Reads only: it connects to the debug port and asks, it does not flash, reset or
 run anything.
 
-Environment:
-  CH32_PROBE_RS  directory holding the probe-rs binary (default: the one the
-                 Board Manager installed under ~/.arduino15)
+probe-rs comes from <repo>/.tools, which `uv run tools/index/fetch_tools.py`
+fills. CH32_PROBE_RS overrides that.
 """
 import argparse
 import csv
@@ -61,9 +60,9 @@ def main() -> int:
 
     from smoke import find_probes, find_probe_rs, detected_chip, boards_for
 
-    probe_rs_dir = args.probe_rs or os.environ.get("CH32_PROBE_RS") or find_probe_rs()
+    probe_rs_dir = args.probe_rs or find_probe_rs()
     if not probe_rs_dir:
-        print("probe-rs not found; install the platform or set CH32_PROBE_RS",
+        print("probe-rs not found; run: uv run tools/index/fetch_tools.py",
               file=sys.stderr)
         return 2
 

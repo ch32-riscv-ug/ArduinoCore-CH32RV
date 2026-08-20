@@ -10,9 +10,11 @@ newlib full / nano / nano+`_printf_float`の代表機能コストを、統合crt
 ## 使い方
 
 ```sh
-CH32_GCC_BIN=/path/to/xpack-riscv-none-elf-gcc-14.3.0-1/bin \
 ./run_sizebench.sh /tmp/sizebench
 ```
+事前に`uv run tools/index/fetch_tools.py`を一度実行しておけば、環境変数の指定は不要です
+(`<repo>/.tools`から探します。設定済みの`CH32_*`があればそちらが優先されます)。
+
 
 結果は`<workdir>/results.md`(case × libc × arch のtext/data/bss表)。
 

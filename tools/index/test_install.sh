@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 # W-5: clean Board Manager install via local HTTP (R-15 mode B), then compile Blink
 # WITHOUT any compiler.path override (the installed tool must resolve).
-# Requires: arduino-cli on PATH, CH32_XPACK_ARCHIVE (local copy of this host's
-# xPack tar.gz, so the test does not re-download 400MB from GitHub).
-# Optional: CH32_PROBE_RS_ARCHIVE, the same trick for probe-rs. Without it the
-# probe-rs entry keeps pointing at GitHub and the install downloads it, which is
-# what CI does; with it the whole install runs offline.
+# Requires: arduino-cli on PATH. The xPack archive is served locally rather
+# than pulled from GitHub on every run; it comes from <repo>/.tools/cache, which
+# tools/index/fetch_tools.py fills.
+# Optional: CH32_PROBE_RS_ARCHIVE serves probe-rs locally too. Without it the
+# install downloads it from the mirror, which is what CI does.
 set -euo pipefail
 
-: "${CH32_XPACK_ARCHIVE:?set CH32_XPACK_ARCHIVE to a local xPack 14.3.0-1 archive for this host}"
+# Tool locations default to <repo>/.tools (tools/index/fetch_tools.py puts
+# them there); anything already exported wins.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/index/toolenv.sh"
+
+: "${CH32_XPACK_ARCHIVE:?no xPack archive: run  uv run tools/index/fetch_tools.py}"
 WORK="${1:?usage: test_install.sh <workdir>}"
 PORT="${PORT:-8731}"
 HERE="$(cd "$(dirname "$0")" && pwd)"

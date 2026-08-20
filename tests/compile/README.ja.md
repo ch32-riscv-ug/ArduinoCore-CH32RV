@@ -20,9 +20,11 @@ arduino-cliのsymlink方式で、暫定FQBN(`ch32-riscv-ug:ch32v:CH32V00X:pnum=.
 ## 使い方
 
 ```sh
-CH32_GCC_BIN=/path/to/xpack-riscv-none-elf-gcc-14.3.0-1/bin \
 ./test_compile.sh /tmp/w3-work
 ```
+事前に`uv run tools/index/fetch_tools.py`を一度実行しておけば、環境変数の指定は不要です
+(`<repo>/.tools`から探します。設定済みの`CH32_*`があればそちらが優先されます)。
+
 
 サンドボックス化した`ARDUINO_DIRECTORIES_*`を使うため、実環境の`~/.arduino15`や`~/Arduino`には触れない。
 

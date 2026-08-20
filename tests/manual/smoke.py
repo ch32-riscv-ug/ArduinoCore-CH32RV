@@ -41,10 +41,8 @@ more than one probe is attached, or --port to override the discovery.
 The board's Serial pins are printed before flashing: wire those two to the
 probe's UART bridge (TX -> probe RX, RX -> probe TX) first.
 
-Environment:
-  CH32_GCC_BIN   riscv-none-elf-gcc bin directory (required)
-  CH32_PROBE_RS  directory holding the probe-rs binary (default: the one the
-                 Board Manager installed under ~/.arduino15)
+Tools come from <repo>/.tools, which `uv run tools/index/fetch_tools.py` fills.
+CH32_GCC_BIN and CH32_PROBE_RS override that if a bench keeps them elsewhere.
 """
 import argparse
 import ast
@@ -183,12 +181,55 @@ def bench_serial(board: str):
     return entry.get("serial") if entry else None
 
 
+def _holds_probe_rs(d):
+    return (d / "probe-rs").exists() or (d / "probe-rs.exe").exists()
+
+
 def find_probe_rs():
-    """The probe-rs the Board Manager installed, newest version last."""
-    root = pathlib.Path.home() / ".arduino15" / "packages" / "ch32-riscv-ug" / "tools" / "probe-rs"
-    found = sorted(d for d in root.glob("*") if (d / "probe-rs").exists()
-                   or (d / "probe-rs.exe").exists())
-    return str(found[-1]) if found else None
+    """Where probe-rs is, wherever it came from.
+
+    Three places, in order of how deliberate they are:
+      1. CH32_PROBE_RS - an explicit override always wins.
+      2. <repo>/.tools - what tools/index/fetch_tools.py puts in the project.
+         This is the reproducible one: same path on every machine, which
+         matters most on Windows where nothing else is predictable.
+      3. ~/.arduino15/packages/... - a Board Manager install, i.e. a machine
+         that already has the platform the way a user would.
+
+    Not searched: arduino-cli's `internal/` profile cache. Its directory names
+    carry a hash of the index URL, so they cannot be guessed - ask for it with
+    `arduino-cli compile --profile <p> --show-properties` instead.
+    """
+    override = os.environ.get("CH32_PROBE_RS")
+    if override:
+        return override
+    project = REPO / ".tools" / "probe-rs"
+    installed = (pathlib.Path.home() / ".arduino15" / "packages"
+                 / "ch32-riscv-ug" / "tools" / "probe-rs")
+    for root in (project, installed):
+        found = sorted(d for d in root.glob("*") if _holds_probe_rs(d))
+        if found:
+            return str(found[-1])
+    return None
+
+
+def find_tables():
+    """The ch32-device-data tables: CH32_TABLES, else <repo>/.tools."""
+    override = os.environ.get("CH32_TABLES")
+    if override:
+        return override
+    d = REPO / ".tools" / "ch32-device-data" / "tables"
+    return str(d) if d.is_dir() else None
+
+
+def find_gcc_bin():
+    """The toolchain bin directory: CH32_GCC_BIN, else <repo>/.tools."""
+    override = os.environ.get("CH32_GCC_BIN")
+    if override:
+        return override
+    root = REPO / ".tools" / "xpack-riscv-none-elf-gcc"
+    found = sorted(d for d in root.glob("*") if (d / "bin").is_dir())
+    return str(found[-1] / "bin") if found else None
 
 
 def detected_chip(probe_rs_dir, probe_serial):
@@ -326,14 +367,13 @@ def main() -> int:
                          f"(default: {DEFAULT_SKETCH})")
     args = ap.parse_args()
 
-    gcc = os.environ.get("CH32_GCC_BIN")
-    if not gcc:
-        print("set CH32_GCC_BIN", file=sys.stderr)
-        return 2
-    probe_rs_dir = os.environ.get("CH32_PROBE_RS") or find_probe_rs()
-    if not probe_rs_dir:
-        print("probe-rs not found; install the platform or set CH32_PROBE_RS",
-              file=sys.stderr)
+    gcc = find_gcc_bin()
+    probe_rs_dir = find_probe_rs()
+    if not gcc or not probe_rs_dir:
+        missing = [n for n, v in (("toolchain", gcc), ("probe-rs", probe_rs_dir))
+                   if not v]
+        print(f"missing {' and '.join(missing)}; run: "
+              f"uv run tools/index/fetch_tools.py", file=sys.stderr)
         return 2
 
     port, probe_serial = resolve_port(args.probe, args.port)

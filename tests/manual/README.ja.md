@@ -82,12 +82,12 @@ compileも書き込みも**利用者と同じ経路**(`arduino-cli upload --prog
 通るので、passは「コードが動く」ではなく「出荷経路が動く」ことを意味します。
 
 ```bash
-export CH32_GCC_BIN=~/.arduino15/internal/ch32-riscv-ug_xpack-riscv-none-elf-gcc_14.3.0-1_*/bin
-# probe-rsはBoard Manager導入分を自動で探します。開発ツリーで別の場所を使うなら:
-# export CH32_PROBE_RS=/path/to/probe-rs-tools-<target>
-
 uv run tests/manual/smoke.py --board CH32X035
 ```
+
+環境変数は要りません。toolchainとprobe-rsは`<repo>/.tools`から探します
+(`uv run tools/index/fetch_tools.py`で入ります)。無ければBoard Manager導入分、
+`CH32_GCC_BIN` / `CH32_PROBE_RS`があればそちらが優先されます。
 
 既定は[Milestone 1受け入れsketch](../sketches/basic/serial_println/serial_println.ino)で、
 `hello from ch32` / `int=42` / `hex=BEEF`の3行が出れば pass です。

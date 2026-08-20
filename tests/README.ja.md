@@ -40,13 +40,35 @@ newlibのフルprintfは約40 KB)。その下限は`sync_profiles.py`の`REQUIRE
 
 ### セットアップ
 
+clone直後にこれだけです。
+
 ```sh
-cd tests
-uv sync
-cp .env.example .env     # 作業台固有の設定(手動testのpin等)
+uv run tools/index/fetch_tools.py     # toolchain / probe-rs / device-data を .tools/ へ
+cd tests && uv sync
+cp .env.example .env                  # 作業台固有の設定(手動testのpin等)。任意
 ```
 
-`arduino-cli`がPATHに必要です。
+`arduino-cli`がPATHに必要です。それ以外は`<repo>/.tools`に入り、**環境変数の設定は不要**です。
+
+#### ツールがどこから来るか
+
+| | |
+|---|---|
+| 置き場所 | `<repo>/.tools/<name>/<version>/`(gitignore済み) |
+| 版の正本 | [`tools/index/tools_*.json`](../tools/index/)。package indexを作るのと同じファイルなので、**利用者がinstallするのと同じ版**でtestが回る |
+| 完全性 | ダウンロードは展開前にSHA-256を照合 |
+| device-data | `boards.txt`が記録しているlocked commitでcheckoutする |
+| probe-rs | [`mirror-probe-rs`](https://github.com/ch32-riscv-ug/mirror-probe-rs)から([ADR-0011](../docs/adr/0011-tool-mirror-repository.ja.md)) |
+
+環境変数(`CH32_GCC_BIN` / `CH32_PROBE_RS` / `CH32_TABLES` / `CH32_XPACK_ARCHIVE`)は
+**上書き用として残してあります**。設定済みならそちらが優先されるので、
+作業台に別の場所へ置いた物があっても使えます。
+
+`.tools/cache`はダウンロードしたアーカイブの置き場です。消しても次回取り直すだけです
+(約400MB)。
+
+EVT mirror(`CH32_MIRROR_ROOT`)だけは`.tools`に入れていません。他repositoryの
+大きなcloneで、[startup等価性test](startup/README.ja.md)しか使わないためです。
 
 `.env`は**作業台ごとの設定**です。手動testが使うpadのように、どのboardが載っているかで
 変わる値を置きます。既定値はどれも作者の作業台で動く値なので、未設定でもエラーにはなりません。

@@ -3,7 +3,11 @@
 # Requires: arduino-cli on PATH, CH32_GCC_BIN (riscv-none-elf-gcc bin dir)
 set -euo pipefail
 
-: "${CH32_GCC_BIN:?set CH32_GCC_BIN to the xPack riscv-none-elf-gcc bin directory}"
+# Tool locations default to <repo>/.tools (tools/index/fetch_tools.py puts them
+# there); anything already exported wins.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/index/toolenv.sh"
+
+: "${CH32_GCC_BIN:?no toolchain: run  uv run tools/index/fetch_tools.py}"
 WORK="${1:?usage: test_compile.sh <workdir>}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # repo root がそのまま Arduino platform ディレクトリ(R-15 方式A)

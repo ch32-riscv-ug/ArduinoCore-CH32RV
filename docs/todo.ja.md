@@ -273,12 +273,19 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       ([ADR-0011](adr/0011-tool-mirror-repository.ja.md) `Accepted`)。
       ミラーURLからのclean installが通ることを確認し、CIの`install-test`へ
       windows-latestを復帰。**Windowsのinstall問題は解決**
-- [ ] `[P2]` `mirror-probe-rs`の定期実行が失敗したときの通知先を決める。
-      現在は日次04:11 UTCで、失敗はジョブの赤でしか分からない
+- [x] `mirror-probe-rs`の失敗通知はGitHubの標準通知(Actions失敗メール)で受ける。
+      専用の通知先は設けない
 - [ ] `[P1]` Board Manager index を実際に公開する。workflowは用意したが未実行で、
       `sketch.yaml`の`platform_index_url`は未公開URLのまま
 - [ ] `[P1]` `libraries/`(SPI/Wire)同梱後、installした状態で`#include <SPI.h>`が
       解決されるかを`test_install.sh`へ追加
+- [x] **testに要るものを`<repo>/.tools`へ集約**(`tools/index/fetch_tools.py`)。
+      環境変数なしで全harnessが回るようになった。版は`tools/index/tools_*.json`
+      (package indexの正本)から取り、SHA-256照合つき。device-dataは`boards.txt`の
+      locked commitでcheckout。`CH32_*`は上書き用として存続。CIも同じ経路へ移行
+- [x] `tests/sizebench/run_sizebench.sh`が参照していた`tests/startup/crt0_ch32.S`と
+      `tests/platform/`は既に存在せず、**harnessが動いていなかった**。正本
+      (`cores/arduino/`)を指すよう修正。CIには載っていない
 - [ ] `[P1]` 実機testを回すrunnerの用意。**WCH-LinkEを同時に1台しか使えない**ため、
       別ホスト(Raspberry Pi等)にboard farmを置く案を検討
       ([TEST_PLAN](../tests/TEST_PLAN.ja.md)の選択肢b)

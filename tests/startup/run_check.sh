@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # W-2: build EVT-startup and unified-startup ELFs per family and verify equivalence.
-# Requires: CH32_MIRROR_ROOT (EVT mirrors), CH32_GCC_BIN (riscv-none-elf-gcc bin dir)
+# Requires: CH32_MIRROR_ROOT (EVT mirrors). The toolchain comes from <repo>/.tools.
 # Excluded families: CH32H417 (loadcode boot) - see README.
 set -euo pipefail
 
+# Tool locations default to <repo>/.tools (tools/index/fetch_tools.py puts
+# them there); anything already exported wins.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/index/toolenv.sh"
+
+: "${CH32_GCC_BIN:?no toolchain: run  uv run tools/index/fetch_tools.py}"
+# The EVT mirrors are large clones of other repositories and are not fetched
+# into .tools; point at wherever they are checked out.
 : "${CH32_MIRROR_ROOT:?set CH32_MIRROR_ROOT to the directory containing the CH32* EVT mirrors}"
-: "${CH32_GCC_BIN:?set CH32_GCC_BIN to the xPack riscv-none-elf-gcc bin directory}"
 WORK="${1:?usage: run_check.sh <workdir>}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"

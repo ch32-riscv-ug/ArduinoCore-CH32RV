@@ -16,10 +16,9 @@ The sketch is generated from the same device-data tables the platform is
 generated from, so the candidate list stays correct as the tables change.
 Routes on pins the debugger needs (SWD) are skipped.
 
-Environment:
-  CH32_GCC_BIN   riscv-none-elf-gcc bin directory (required)
-  CH32_TABLES    ch32-device-data tables directory (required)
-  CH32_PROBE_RS  directory holding the probe-rs binary (default: Board Manager's)
+Tools and the device-data tables come from <repo>/.tools, which
+`uv run tools/index/fetch_tools.py` fills. CH32_GCC_BIN, CH32_TABLES and
+CH32_PROBE_RS override that.
 """
 import argparse
 import csv

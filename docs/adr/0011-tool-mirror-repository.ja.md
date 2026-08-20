@@ -173,9 +173,10 @@ CIの重複は、2つ目が出た時点でreusable workflowへ抽出します(�
 - 取り込み済みversionの差し替えを検知してジョブが落ちる
 - ミラーの成果物でLinuxのclean install → 上書きなしcompile → upgrade/rollbackが通る
 
-## 未決
+## 運用
 
-- 定期確認の間隔(現在は日次04:11 UTC)と、失敗時の通知先
+- 定期確認は日次04:11 UTC
+- **失敗通知はGitHubの標準通知**(Actionsの失敗メール)を使う。専用の通知先は設けない
 
 ## References
 

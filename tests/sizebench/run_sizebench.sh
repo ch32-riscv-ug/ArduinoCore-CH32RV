@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 # R-09: newlib(-nano) size measurement on the unified crt0 + own linker script.
 # Sizes only - nothing is executed. Feeds Q-022/Q-051 and the toolchain matrix.
-# Requires: CH32_GCC_BIN (riscv-none-elf-gcc bin dir)
+# Requires: nothing preinstalled; the toolchain comes from <repo>/.tools.
 set -euo pipefail
 
-: "${CH32_GCC_BIN:?set CH32_GCC_BIN to the xPack riscv-none-elf-gcc bin directory}"
+# Tool locations default to <repo>/.tools (tools/index/fetch_tools.py puts
+# them there); anything already exported wins.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../tools/index/toolenv.sh"
+
+: "${CH32_GCC_BIN:?no toolchain: run  uv run tools/index/fetch_tools.py}"
 WORK="${1:?usage: run_sizebench.sh <workdir>}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-PLATFORM="$HERE/../platform/ch32v"
+# The platform is the repository root; crt0 and sections.ld are the real
+# ones the core ships, not copies (they used to live under tests/).
+PLATFORM="$(cd "$HERE/../.." && pwd)"
 GCC="$CH32_GCC_BIN/riscv-none-elf-gcc"
 GXX="$CH32_GCC_BIN/riscv-none-elf-g++"
 
@@ -24,12 +30,12 @@ MEMORY
 INCLUDE sections.ld
 LDEOF
 
-CRT_DEFS=(-DCH32_VECTORS=vectors_ch32v00x.inc -DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3)
+CRT_DEFS=(-DCH32_VECTORS=vectors_v00x.inc -DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3)
 COMMON=(-Os -g -ffunction-sections -fdata-sections)
 # Measurement-only linker script with generous MEMORY so no case is clipped by
 # a real SKU's flash limit (fit-per-SKU is judged from the numbers, not here).
 LINK=(-nostartfiles -Wl,--gc-sections -Wl,--no-warn-rwx-segments
-      "-L$PLATFORM/variants/CH32V00X" "-T$WORK/sizebench.ld")
+      "-L$PLATFORM/cores/arduino" "-T$WORK/sizebench.ld")
 CXXFLAGS=(-fno-exceptions -fno-rtti -fno-threadsafe-statics)
 
 build_one() { # arch_tag march mabi case_file flavor_tag extra_link_flags...
@@ -40,7 +46,7 @@ build_one() { # arch_tag march mabi case_file flavor_tag extra_link_flags...
   if [[ "$case_file" == *.cpp ]]; then cc=$GXX; std_flags=("${CXXFLAGS[@]}"); else cc=$GCC; fi
 
   $GCC -march="$march" -mabi="$mabi" "${COMMON[@]}" "-I$PLATFORM/cores/arduino" \
-       "${CRT_DEFS[@]}" -c "$HERE/../startup/crt0_ch32.S" -o "$WORK/crt0_$tag.o"
+       "${CRT_DEFS[@]}" -c "$PLATFORM/cores/arduino/crt0_ch32.S" -o "$WORK/crt0_$tag.o"
   $GCC -march="$march" -mabi="$mabi" "${COMMON[@]}" -c "$HERE/syscalls.c" -o "$WORK/sys_$tag.o"
   $cc  -march="$march" -mabi="$mabi" "${COMMON[@]}" "${std_flags[@]}" -c "$case_file" -o "$WORK/case_$tag.o"
   $cc  -march="$march" -mabi="$mabi" "${LINK[@]}" "$@" \

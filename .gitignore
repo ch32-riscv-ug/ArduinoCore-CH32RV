@@ -28,3 +28,6 @@ tests/sketches/**/build/
 tests/.env
 # Generated from the environment by tests/manual/env_config.py before each build
 tests/manual/**/env_config.h
+
+# Tools the tests need, fetched by tools/index/fetch_tools.py. Not source.
+.tools/

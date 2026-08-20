@@ -23,10 +23,14 @@
 ## 使い方
 
 ```sh
-CH32_MIRROR_ROOT=/home/mt/dev_wch \
-CH32_GCC_BIN=/path/to/xpack-riscv-none-elf-gcc-14.3.0-1/bin \
-./run_check.sh /tmp/w2-work
+CH32_MIRROR_ROOT=/home/mt/dev_wch ./run_check.sh /tmp/w2-work
 ```
+
+toolchainは`<repo>/.tools`から探すので指定不要です
+(`uv run tools/index/fetch_tools.py`で入ります)。
+EVT mirrorだけは他repositoryの大きなcloneなので`.tools`に入れておらず、
+`CH32_MIRROR_ROOT`で場所を渡します。
+
 
 ## crt0_ch32.Sのパラメータ
 

@@ -19,15 +19,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: Cache xPack toolchain archive
+      # Everything the tests need goes into <repo>/.tools, at versions taken from
+      # the tool definition fragments and verified against their checksums.
+      # Same command a contributor runs, so CI and a laptop are the same setup.
+      - name: Cache the downloaded archives
         uses: actions/cache@v4
         with:
-          path: ~/xpack-cache
-          key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
-      - name: Fetch and extract toolchain
-        run: |
-          uv run --no-project python tools/index/fetch_xpack.py \
-            --dest ~/xpack-cache --extract ~/xpack
+          path: .tools/cache
+          key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
+      - name: Fetch tools
+        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
       - name: Clone EVT mirrors (sparse, SRC only)
         run: |
           mkdir -p ~/mirrors && cd ~/mirrors
@@ -38,10 +39,7 @@ jobs:
       - name: Interrupt table must match the EVT startup sources
         run: uv run --no-project python tools/generate/import_vectors.py --mirrors "$HOME/mirrors" --check
       - name: Run equivalence harness
-        run: |
-          CH32_MIRROR_ROOT="$HOME/mirrors" \
-          CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
-          tests/startup/run_check.sh /tmp/w2
+        run: CH32_MIRROR_ROOT="$HOME/mirrors" tests/startup/run_check.sh /tmp/w2
 
   # W-4: committed generated files must match regeneration from the locked
   # ch32-device-data commit (recorded in the generated boards.txt header)
@@ -50,16 +48,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: Clone ch32-device-data at the locked commit
-        run: |
-          commit=$(sed -n 's/^# source: ch32-device-data tables @ git \([0-9a-f]\{40\}\)$/\1/p' boards.txt)
-          test -n "$commit" || { echo "no locked commit in boards.txt"; exit 1; }
-          git clone https://github.com/ch32-riscv-ug/ch32-device-data ~/ch32-device-data
-          git -C ~/ch32-device-data checkout "$commit"
+      # fetch_tools.py checks out the commit boards.txt locks, so this compares
+      # against exactly the tables the committed files were generated from.
+      - name: Fetch the device-data tables at the locked commit
+        run: uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
       - name: Check regeneration matches committed files
         run: |
           uv run --no-project python tools/generate/generate.py \
-            --tables ~/ch32-device-data/tables \
+            --tables .tools/ch32-device-data/tables \
             --platform . --check
 
   # ADR-0009: the vendored ArduinoCore-API snapshot must stay byte-identical to
@@ -83,25 +79,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - uses: arduino/setup-arduino-cli@v2
-      - name: Cache xPack toolchain archive
+      # Everything the tests need goes into <repo>/.tools, at versions taken from
+      # the tool definition fragments and verified against their checksums.
+      # Same command a contributor runs, so CI and a laptop are the same setup.
+      - name: Cache the downloaded archives
         uses: actions/cache@v4
         with:
-          path: ~/xpack-cache
-          key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
-      - name: Fetch and extract toolchain
-        run: |
-          uv run --no-project python tools/index/fetch_xpack.py \
-            --dest ~/xpack-cache --extract ~/xpack
+          path: .tools/cache
+          key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
+      - name: Fetch tools
+        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
       - name: Compile all part numbers
-        run: |
-          CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
-          tests/compile/test_compile.sh /tmp/w3 | tee /tmp/w3.log
+        run: tests/compile/test_compile.sh /tmp/w3 | tee /tmp/w3.log
       - name: Sketch profiles are in sync with the board list
         run: uv run --no-project python tests/sketches/sync_profiles.py --check
       - name: Every sketch compiles for every board its profile claims
-        run: |
-          CH32_GCC_BIN="$HOME/xpack/xpack-riscv-none-elf-gcc-14.3.0-1/bin" \
-          tests/sketches/compile_all.sh /tmp/sketches
+        run: tests/sketches/compile_all.sh /tmp/sketches
       - name: Size regression check (W-7)
         run: |
           uv run --no-project python tests/compile/check_sizes.py \
@@ -131,16 +124,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - uses: arduino/setup-arduino-cli@v2
-      - name: Cache xPack toolchain archive
+      # Everything the tests need goes into <repo>/.tools, at versions taken from
+      # the tool definition fragments and verified against their checksums.
+      # Same command a contributor runs, so CI and a laptop are the same setup.
+      - name: Cache the downloaded archives
         uses: actions/cache@v4
         with:
-          path: ~/xpack-cache
-          key: xpack-riscv-gcc-14.3.0-1-${{ runner.os }}-${{ runner.arch }}
-      - name: Fetch toolchain archive
-        run: |
-          uv run --no-project python tools/index/fetch_xpack.py \
-            --dest ~/xpack-cache | tee /tmp/archive-path
+          path: .tools/cache
+          key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
+      - name: Fetch tools
+        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
       - name: Clean install and compile
-        run: |
-          CH32_XPACK_ARCHIVE=$(cat /tmp/archive-path) \
-          tools/index/test_install.sh /tmp/w5
+        run: tools/index/test_install.sh /tmp/w5

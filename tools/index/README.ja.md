@@ -20,7 +20,8 @@ Board Manager経由でinstallしたplatformでcompileが通ることは別物で
 | `tools_xpack_gcc.json` | xPack GCC 14.3.0-1のtool定義(6 host、GitHub Releases直リンク、公式`.sha`由来のchecksum) |
 | `tools_probe_rs.json` | probe-rs 0.32.0のtool定義(6 host)。Windowsだけ再ホスト**案**(未承認)、他はupstream直リンク |
 | `probe_rs_targets.csv` | probe-rsが知っているCH32 target 127件。`{build.probe_rs_chip}`の生成元 |
-| `fetch_xpack.py` | xPackアーカイブの取得(CIのcache用) |
+| `fetch_tools.py` | **testに要るものを`<repo>/.tools`へ揃える**(toolchain / probe-rs / device-data tables)。版とchecksumは`tools_*.json`が正本 |
+| `toolenv.sh` | `CH32_*`が未設定なら`.tools`の場所を入れるshell helper。設定済みのものは触らない |
 | `test_install.sh` | ローカルHTTP配信 → 新規data dirへclean install → **上書きなしでcompile** → upgrade/rollback |
 
 publishは[`.github/workflows/release.yml`](../../.github/workflows/release.yml)が行います
@@ -47,13 +48,11 @@ packaging時に`platform.txt`の`compiler.path=`を
 ## 使い方
 
 ```sh
-# ローカル検証(toolchainだけローカル、probe-rsはGitHubから)
-CH32_XPACK_ARCHIVE=/path/to/xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz \
+# toolchainのアーカイブは .tools/cache から取る(fetch_tools.pyが置く)
 ./test_install.sh /tmp/w5
 
-# 完全オフライン(probe-rsもローカルに置く)
-CH32_XPACK_ARCHIVE=... CH32_PROBE_RS_ARCHIVE=/path/to/probe-rs-tools-<target>.tar.xz \
-./test_install.sh /tmp/w5
+# probe-rsもローカルから配信して完全オフラインにする
+CH32_PROBE_RS_ARCHIVE=/path/to/probe-rs-tools-<target>.tar.xz ./test_install.sh /tmp/w5
 ```
 
 最後に`INSTALL-AND-COMPILE OK`が出れば通っています。途中の確認点:
