@@ -31,6 +31,7 @@
 | R-15 | [開発中コアのインストール方式とテスト環境](local-install-and-test-env.ja.md) | symlink直接実行と、ローカルHTTP+arduino-cli経由の実インストール検証の使い分け | Q-015, Q-016 | 方式A/Bとも検証済み |
 | R-16 | [RTOSサポート方針](rtos-support.ja.md) | EVTのRTOS移植の実態と他コア前例から、コア層での採用/オプション/ライブラリ任せを判断 | Q-006, Q-003, Q-013 | 調査済み・[ADR-0006](../adr/0006-rtos-policy.ja.md)で決定 |
 | R-18 | [probe-rsのアーカイブ構造とarduino-cliの要求](probe-rs-archive-layout.ja.md) | Windowsだけ Board Manager install が失敗する原因の特定と方針比較 | Q-054 | 調査済み・[ADR-0011](../adr/0011-tool-mirror-repository.ja.md)で方針決定 |
+| R-19 | [device-dataのsignal名正規化](signal-name-normalization.ja.md) | リマップAPIの`setPins(tx, rx)`が要求するpin名→ルート値の逆引き表を、device-dataから生成できるようにするための不足分の特定 | Q-011, Q-014 | **調査済み・上流へ依頼作成。作業深さは判断待ち** |
 | R-17 | [書き込み経路・書き込み器・書き込みソフト](upload-programmers.ja.md) | family×書き込み経路の対応表、互換programmerエコシステム、default/オプションのメニュー構成案 | Q-040〜Q-049 | 調査済み・[ADR-0008](../adr/0008-upload-strategy.ja.md)で方針決定(実機認定は未) |
 
 ## 主要な結論(要約)
