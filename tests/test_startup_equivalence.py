@@ -14,9 +14,11 @@ import pathlib
 
 import pytest
 
-from conftest import run_harness
+from conftest import load
 
 pytestmark = pytest.mark.slow
+
+harness = load("tests/startup/startup_equivalence.py", "startup_equivalence")
 
 # Where the mirrors usually sit on a bench that has them.
 LIKELY = (pathlib.Path.home() / "dev_wch", pathlib.Path.home() / "mirrors")
@@ -32,13 +34,27 @@ def mirror_root():
     return None
 
 
-def test_unified_startup_matches_evt(repo, gcc_bin, workdir):
+@pytest.fixture(scope="module")
+def families(repo, gcc_bin, workdir):
     root = mirror_root()
     if root is None:
         pytest.skip("no EVT mirrors; set CH32_MIRROR_ROOT to the directory "
                     "holding the CH32* clones")
-    output = run_harness("tests/startup/run_check.sh", workdir / "startup", repo,
-                         extra_env={"CH32_MIRROR_ROOT": root})
-    families = output.count("=====")
-    assert families >= 13, f"only {families} families were checked"
-    assert "FAIL" not in output, output[-2000:]
+    os.environ["CH32_MIRROR_ROOT"] = root
+    return harness.run(workdir / "startup")
+
+
+def test_every_family_matches(families):
+    differing = [tag for tag, ok in families.items() if not ok]
+    assert not differing, f"these families differ from their EVT startup: {differing}"
+
+
+def test_covers_the_whole_family_range(families):
+    """One tag per vector layout the generator emits, so nothing is untested.
+
+    CH32H417 is absent on purpose: it boots through loadcode, so there is no
+    reset-vector behaviour to compare.
+    """
+    assert len(families) >= 13, sorted(families)
+    for expected in ("v003", "v103", "v307_d8c", "x035"):
+        assert expected in families

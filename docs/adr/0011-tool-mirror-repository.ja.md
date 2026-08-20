@@ -159,7 +159,7 @@ CIの重複は、2つ目が出た時点でreusable workflowへ抽出します(�
 - 素通し4種のchecksumがupstream公開値と一致
 - 詰め直したWindowsアーカイブの中身がupstreamとバイト一致(7ファイル、差分なし)
 - **ミラーURLから実際にダウンロードするclean installが通る**
-  (`CH32_PROBE_RS_ARCHIVE`なし = ローカル差し替えなしで`test_install.sh`が成功)
+  (`CH32_PROBE_RS_ARCHIVE`なし = ローカル差し替えなしで`install_check.py`が成功)
 - CIの`install-test`にwindows-latestを復帰
 
 公開前にローカルで確認したこと:

@@ -7,19 +7,29 @@ what the machine can do, and that is decided here rather than in each test:
   pytest --profile ch32x035 --port /dev/ttyACM4      adds the sketch tests
   pytest -m "not slow"        skips the multi-minute compile sweeps
 
-The build harnesses are shell scripts (they drive arduino-cli, serve a local
-index, clone mirrors) and stay shell scripts. The pytest modules beside this
-file run them and assert on the marker each one prints, so `pytest` is the
-single entry point without rewriting working harnesses in Python.
+The harnesses are Python modules under tests/ and tools/, imported and called
+directly. They used to be shell scripts invoked as subprocesses, with the tests
+asserting on marker strings in their output; three Windows-only bugs later
+(no shebang handling, bash 3.2 syntax, path separators) they are Python, and
+the tests assert on returned values instead of parsing prose.
 """
+import importlib.util
 import os
 import pathlib
 import shutil
-import subprocess
 
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
+
+
+def load(relative_path, name):
+    """Import a harness that lives outside any package."""
+    path = REPO / relative_path
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def pytest_configure(config):
@@ -102,21 +112,3 @@ def arduino_cli():
 def workdir(tmp_path_factory):
     """One scratch directory for the session, shared by the harnesses."""
     return tmp_path_factory.mktemp("harness")
-
-
-def run_harness(script, work, repo, extra_env=None, timeout=3600):
-    """Run one of the shell harnesses and return its combined output.
-
-    The harnesses are chatty and slow; on failure the tail of the output is
-    what identifies which part number or variant broke, so it goes into the
-    assertion rather than being swallowed.
-    """
-    env = dict(os.environ, **(extra_env or {}))
-    proc = subprocess.run([str(repo / script), str(work)],
-                          cwd=repo, env=env, capture_output=True, text=True,
-                          timeout=timeout)
-    output = proc.stdout + proc.stderr
-    if proc.returncode != 0:
-        tail = "\n".join(output.strip().splitlines()[-40:])
-        pytest.fail(f"{script} exited {proc.returncode}\n--- last output ---\n{tail}")
-    return output

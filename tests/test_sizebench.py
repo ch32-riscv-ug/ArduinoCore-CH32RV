@@ -6,34 +6,24 @@ reproducible rather than being quoted from a one-off run. What is asserted is
 the shape: nano has to be dramatically smaller than full, because that is the
 claim the runtime decision is built on.
 """
-import re
-
 import pytest
 
-from conftest import run_harness
+from conftest import load
 
 pytestmark = pytest.mark.slow
 
-
-def parse(output):
-    """{(case, libc): text size} from the harness's markdown table."""
-    out = {}
-    for line in output.splitlines():
-        m = re.match(r"\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*\S+\s*\|\s*(\d+)\s*\|", line)
-        if m:
-            out[(m.group(1), m.group(2))] = int(m.group(3))
-    return out
+harness = load("tests/sizebench/sizebench.py", "sizebench")
 
 
 @pytest.fixture(scope="module")
 def sizes(repo, gcc_bin, workdir):
-    return parse(run_harness("tests/sizebench/run_sizebench.sh",
-                             workdir / "sizebench", repo))
+    """{(case, libc, arch): (text, data, bss)}"""
+    return harness.run(workdir / "sizebench")
 
 
-def test_measured_every_case(sizes):
-    assert sizes, "the harness produced no size table"
-    for libc in ("nano", "full"):
+def test_measured_every_variant(sizes):
+    assert sizes, "the harness produced no measurements"
+    for libc in ("nano", "full", "nano+f"):
         assert any(k[1] == libc for k in sizes), f"no {libc} results"
 
 
@@ -44,7 +34,19 @@ def test_nano_is_far_smaller_than_full(sizes, case):
     printf and operator new are where full newlib explodes: on a 16 KB
     CH32V003 the full formatter does not fit at all.
     """
-    nano, full = sizes.get((case, "nano")), sizes.get((case, "full"))
-    if nano is None or full is None:
-        pytest.skip(f"{case} not in the harness output")
-    assert full > nano * 4, f"{case}: nano={nano} full={full}"
+    for arch in {k[2] for k in sizes}:
+        nano = sizes.get((case, "nano", arch))
+        full = sizes.get((case, "full", arch))
+        if nano is None or full is None:
+            continue
+        assert full[0] > nano[0] * 4, f"{case}/{arch}: nano={nano[0]} full={full[0]}"
+
+
+def test_float_printf_is_opt_in_and_costs(sizes):
+    """`printf=float` in boards.txt buys %f, and it is not free."""
+    for arch in {k[2] for k in sizes}:
+        plain = sizes.get(("12_printf_float", "nano", arch))
+        withf = sizes.get(("12_printf_float", "nano+f", arch))
+        if plain is None or withf is None:
+            continue
+        assert withf[0] > plain[0], f"{arch}: -u _printf_float added nothing"

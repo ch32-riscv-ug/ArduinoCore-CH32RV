@@ -27,7 +27,7 @@ arduino-cli upload --fqbn ch32-riscv-ug:ch32v:CH32V203:pnum=ANY --programmer wch
 
 **Linux/macOSの配布形式は`.tar.xz`**。Arduinoのtoolは`.tar.bz2`/`.zip`が主流なので
 扱えるか不明だったが、**arduino-cli 1.3.1はclean installで問題なく展開した**
-(`tools/index/test_install.sh`に`probe-rs --version`まで走らせるcheckを追加済み)。
+(`tools/index/install_check.py`に`probe-rs --version`まで走らせるcheckを追加済み)。
 archiveは単一rootフォルダ構成で、Arduinoのtool規約にそのまま合う。
 
 ## chip名の解決

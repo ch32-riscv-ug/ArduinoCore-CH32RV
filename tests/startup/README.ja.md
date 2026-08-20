@@ -18,12 +18,12 @@
 | `crt0_ch32.S` | 統合startup。vector includeとCSR初期値を`-D`で注入する(own実装) |
 | `extract_vectors.py` | EVT startup .Sからvector table仕様(`CH32_IRQ`/`CH32_RSV`/`CH32_JMP`行)を抽出 |
 | `compare.py` | EVT版ELFと統合版ELFの等価性検証: (1)両者のvector tableが抽出仕様と一致 (2)handle_resetのCSR書き込み集合が一致(mtvec/mepcはシンボル書き込みのため存在のみ確認) |
-| `run_check.sh` | 3 family(V00X/X035/V307 D8C)のビルドと検証を一括実行 |
+| `startup_equivalence.py` | 3 family(V00X/X035/V307 D8C)のビルドと検証を一括実行 |
 
 ## 使い方
 
 ```sh
-CH32_MIRROR_ROOT=/home/mt/dev_wch ./run_check.sh /tmp/w2-work
+CH32_MIRROR_ROOT=/home/mt/dev_wch uv run tests/startup/startup_equivalence.py /tmp/w2-work
 ```
 
 toolchainは`<repo>/.tools`から探すので指定不要です
@@ -49,4 +49,4 @@ EVT mirrorだけは他repositoryの大きなcloneなので`.tools`に入れて�
 
 - H417 V5Fのloadcode/RAM実行boot(R-01参照。対応時は`CH32_LOADCODE`軸を追加)
 - V103のj命令テーブル(`CH32_JMP`は実装済みだがmtvecモード検証が未了)
-- `.init`一体型family(V00X等)のEVT linker scriptには`.vector`出力sectionがないため、統合startupには`.vector`ルール入りldが必要(`run_check.sh`が生成する2行差分)
+- `.init`一体型family(V00X等)のEVT linker scriptには`.vector`出力sectionがないため、統合startupには`.vector`ルール入りldが必要(`startup_equivalence.py`が生成する2行差分)

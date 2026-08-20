@@ -33,16 +33,18 @@ uv run pytest --profile ch32x035 --port /dev/ttyACM4  # + 実機で実行
 targetを決められないため)。`manual/`は`test_`プレフィックスを付けていないので、
 ファイルを名指ししない限り収集されません。
 
-中身のshell harness(`test_compile.sh`等)はそのまま残してあり、pytestはそれを呼んで
-出力のmarkerを検証します。単独でも動きます。
+harnessはすべて**Pythonモジュール**で、pytestは`import`して関数を呼びます
+(以前はshell scriptをsubprocessで起動し、標準出力のmarker文字列をassertしていました。
+Windows専用のバグを3回作ったのでやめました: shebang非対応、bash 3.2の構文、
+パス区切り)。単独でも動きます。
 
 | ディレクトリ | 内容 | 単独実行 |
 |---|---|---|
 | [`sketches/`](sketches/) | sketch単位test | `uv run pytest sketches/...` |
 | [`manual/`](manual/README.ja.md) | 手動test + 実機tool | `uv run pytest manual/<case>/<case>.py -v -s` |
-| [`compile/`](compile/README.ja.md) | compile matrix + size baseline | `test_compile.sh <workdir>` |
-| [`startup/`](startup/README.ja.md) | crt0等価性 | `run_check.sh <workdir>` |
-| [`sizebench/`](sizebench/README.ja.md) | newlibサイズ計測 | `run_sizebench.sh <workdir>` |
+| [`compile/`](compile/README.ja.md) | compile matrix + size baseline | `uv run tests/compile/compile_matrix.py <workdir>` |
+| [`startup/`](startup/README.ja.md) | crt0等価性 | `uv run tests/startup/startup_equivalence.py <workdir>` |
+| [`sizebench/`](sizebench/README.ja.md) | newlibサイズ計測 | `uv run tests/sizebench/sizebench.py <workdir>` |
 
 ## sketches/
 
@@ -62,12 +64,12 @@ sketches/<category>/<case>/
 ```sh
 uv run tests/sketches/sync_profiles.py           # 全sketch.yamlを再生成
 uv run tests/sketches/sync_profiles.py --check   # CI: 古ければ失敗
-CH32_GCC_BIN=<xpack>/bin tests/sketches/compile_all.sh /tmp/sk   # 全組み合わせをcompile
+CH32_GCC_BIN=<xpack>/bin tests/sketches/compile_all.py /tmp/sk   # 全組み合わせをcompile
 ```
 
 sketchによっては小さいboardに載りません(`String`はCH32V003の2 KB RAMに入らない、
 newlibのフルprintfは約40 KB)。その下限は`sync_profiles.py`の`REQUIREMENTS`に書き、
-入らないboardはそのsketchのprofileから外します。`compile_all.sh`が全組み合わせを
+入らないboardはそのsketchのprofileから外します。`compile_all.py`が全組み合わせを
 実際にcompileするので、**載らないboardをprofileが名乗ることはできません**。
 
 ### セットアップ
@@ -95,6 +97,9 @@ cp .env.example .env                  # 作業台固有の設定(手動testのpi
 環境変数(`CH32_GCC_BIN` / `CH32_PROBE_RS` / `CH32_TABLES` / `CH32_XPACK_ARCHIVE`)は
 **上書き用として残してあります**。設定済みならそちらが優先されるので、
 作業台に別の場所へ置いた物があっても使えます。
+
+**shell scriptは1本もありません。** 全harnessがPythonで、`bash`に依存しません
+(Windowsでの3件の不具合がすべてshell由来だったため)。
 
 `.tools/cache`はダウンロードしたアーカイブの置き場です。消しても次回取り直すだけです
 (約400MB)。

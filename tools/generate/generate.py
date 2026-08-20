@@ -26,7 +26,7 @@ import sys
 # march/mabi and startup CSR defines: docs/research/startup-files.ja.md (R-01),
 # experiments 0001/0002. Only families proven by the equivalence harness are listed.
 # Startup/ISA parameters shared by every series in an EVT family.
-# Values come from the equivalence harness table in tests/startup/run_check.sh.
+# Values come from the equivalence harness table in tests/startup/startup_equivalence.py.
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",

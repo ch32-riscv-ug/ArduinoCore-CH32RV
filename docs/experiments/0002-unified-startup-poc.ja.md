@@ -50,7 +50,7 @@ V307 D8C: 103 entries match (evt/uni) / csr {0x804=0xb, 0xbc0=0x1f, mstatus=0x60
 ```sh
 CH32_MIRROR_ROOT=/home/mt/dev_wch \
 CH32_GCC_BIN=<xpack-riscv-none-elf-gcc-14.3.0-1>/bin \
-tests/startup/run_check.sh /tmp/w2-work
+uv run tests/startup/startup_equivalence.py /tmp/w2-work
 # exit 0 = 全familyの等価性検証合格
 ```
 

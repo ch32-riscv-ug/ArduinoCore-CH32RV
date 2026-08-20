@@ -251,9 +251,9 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       Board Manager配布物としての検証項目
 - [x] `tests/hardware/` → **`tests/manual/`**へ移動し、`chip_info.py`(chip/probe/port/FQBN判定)を追加。
       `test_`プレフィックスを付けないので`pytest`一括実行に混ざらない
-- [x] `sketch.yaml`のprofile一覧を`sync_profiles.py`で生成。`compile_all.sh`が
+- [x] `sketch.yaml`のprofile一覧を`sync_profiles.py`で生成。`compile_all.py`が
       **全sketch × 全profile boardをcompile**するのでCIに載せた
-- [x] `test_install.sh`にupgrade/rollback、受け入れsketchのcompile、
+- [x] `install_check.py`にupgrade/rollback、受け入れsketchのcompile、
       アーカイブ内容の検査を追加。`gen_index.py`は`boards`を`boards.txt`から、
       `version`を`platform.txt`から取り、`--merge`でindexをappend-onlyに保つ
 - [x] **release workflow**([.github/workflows/release.yml](../.github/workflows/release.yml))。
@@ -263,8 +263,22 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       生成物同期・API同期・割込み表・crt0等価性・compile matrix・sketch profile・
       sizebench・Board Manager installが回る。shell harnessは残し、pytestが呼んで
       markerを検証する形。CIも同じ経路へ。`slow` markerでcompile系を分離
+- [x] **shell scriptを全廃してPythonへ移植**(6本、591行)。Windowsでの不具合3件が
+      すべてshell由来(shebang非対応 / bash 3.2の構文 / パス区切り)だったため。
+      移植後は各harnessの出力をshell版と突き合わせて**完全一致**を確認:
+      compile matrix 122件、sketch profile 30通り、sizebench 30件、
+      startup等価性 14 family/56 check、API sync、install checkの全marker。
+      pytestは文字列マッチをやめ、**関数を呼んで戻り値をassert**する形に
 - [x] CIで**ツール未取得によるskipを失敗扱い**にした(`CH32_TESTS_REQUIRE_TOOLS`)。
       skipは緑に見えるので、provisioningが壊れても気付けなかった
+- [ ] `[P1]` **単体スクリプトの呼び出しをなくす。** 実行の入口は`pytest`ひとつにし、
+      スクリプトを直接叩くのは相当の特殊事例だけにする。残っているもの:
+      `tests/manual/`の3 tool(`chip_info.py` / `uart_scan.py` / `smoke.py`)、
+      `tests/sketches/sync_profiles.py`、`tools/index/fetch_tools.py`、
+      `tools/generate/generate.py`。実機toolはpytestのcaseとしても呼べる形にする
+- [ ] `[P1]` `tests/manual/`をpytestへ載せる。`gpio_loopback`は既にpytest caseだが、
+      tool系(chip_info / uart_scan / smoke)はCLIのまま。**関数として呼べるようにし、
+      pytest caseからも使えるようにする**
 - [ ] `[P1]` CIへpytest sketch testを追加(`--run-mode build`)。
       ローカルindexの配信が要る
 - [x] **Windows install失敗の原因を特定**。probe-rsのWindows zipが平坦で、
@@ -284,12 +298,12 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `[P1]` Board Manager index を実際に公開する。workflowは用意したが未実行で、
       `sketch.yaml`の`platform_index_url`は未公開URLのまま
 - [ ] `[P1]` `libraries/`(SPI/Wire)同梱後、installした状態で`#include <SPI.h>`が
-      解決されるかを`test_install.sh`へ追加
+      解決されるかを`install_check.py`へ追加
 - [x] **testに要るものを`<repo>/.tools`へ集約**(`tools/index/fetch_tools.py`)。
       環境変数なしで全harnessが回るようになった。版は`tools/index/tools_*.json`
       (package indexの正本)から取り、SHA-256照合つき。device-dataは`boards.txt`の
       locked commitでcheckout。`CH32_*`は上書き用として存続。CIも同じ経路へ移行
-- [x] `tests/sizebench/run_sizebench.sh`が参照していた`tests/startup/crt0_ch32.S`と
+- [x] `tests/sizebench/sizebench.py`が参照していた`tests/startup/crt0_ch32.S`と
       `tests/platform/`は既に存在せず、**harnessが動いていなかった**。正本
       (`cores/arduino/`)を指すよう修正。CIには載っていない
 - [ ] `[P1]` 実機testを回すrunnerの用意。**WCH-LinkEを同時に1台しか使えない**ため、

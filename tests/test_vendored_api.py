@@ -9,10 +9,21 @@ Needs network the first time (it clones upstream into the work directory).
 """
 import pytest
 
-from conftest import run_harness
+from conftest import load
+
+harness = load("tools/vendor/check_api_sync.py", "check_api_sync")
 
 
-def test_matches_the_pinned_commit(repo, workdir):
-    output = run_harness("tools/vendor/check_api_sync.sh", workdir / "api-sync",
-                         repo)
-    assert "API SYNC OK" in output, output[-2000:]
+@pytest.fixture(scope="module")
+def synced(repo, workdir):
+    return harness.run(workdir / "api-sync")
+
+
+def test_matches_the_pinned_commit(synced):
+    assert synced["files"] > 0
+    assert synced["tag"]
+
+
+def test_api_version_matches_the_pin(synced):
+    """A version bump has to move both the lock and the vendored header."""
+    assert synced["api_version"] >= 10502

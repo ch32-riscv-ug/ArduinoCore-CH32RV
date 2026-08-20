@@ -35,7 +35,7 @@ vendorファイルを一切含まない最小platform(own crt0+own linker script
 
 ```sh
 CH32_GCC_BIN=<xpack-riscv-none-elf-gcc-14.3.0-1>/bin \
-tests/compile/test_compile.sh /tmp/w3-work
+uv run tests/compile/compile_matrix.py /tmp/w3-work
 # exit 0 = 両pnumのcompile成功
 ```
 

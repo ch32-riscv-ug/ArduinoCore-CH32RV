@@ -16,7 +16,7 @@
    - ldファイル3本(ユニークな(FLASH,SRAM)組合せ: 16K/4K、32K/6K、62K/8K。MEMORY+共通sections.ldのINCLUDE)
    - 生成物ヘッダにsource tablesのgit commit(`8c09ab44…`)を記録。タイムスタンプなし
 2. **idempotency**: `--check`モードで再生成一致を確認(CIのgenerated-sync jobの種)
-3. **compile matrix**: test_compile.shを「boards.txtの全pnumを列挙してcompile」に拡張し、**26/26 SKUでBlinkのcompile/link成功**(exit 0)。サイズ上限がSKUごとに正しく反映される(16K SKUは2%、62K SKUは0%表示。例外SKUのCH32V006F4U6も16K/4Kとして正しく生成)
+3. **compile matrix**: compile_matrix.pyを「boards.txtの全pnumを列挙してcompile」に拡張し、**26/26 SKUでBlinkのcompile/link成功**(exit 0)。サイズ上限がSKUごとに正しく反映される(16K SKUは2%、62K SKUは0%表示。例外SKUのCH32V006F4U6も16K/4Kとして正しく生成)
 
 ## 結論
 
@@ -29,7 +29,7 @@
 ```sh
 python3 tools/generate/generate.py \
   --tables <ch32-device-data>/tables --platform . --check
-CH32_GCC_BIN=<xpack bin> tests/compile/test_compile.sh /tmp/w4-work
+CH32_GCC_BIN=<xpack bin> tests/compile/compile_matrix.py /tmp/w4-work
 # どちらもexit 0
 ```
 

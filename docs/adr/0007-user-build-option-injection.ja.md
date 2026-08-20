@@ -30,7 +30,7 @@ Arduinoの慣例プロパティ`build.extra_flags`は、利用者がarduino-cli�
 
 ## Validation
 
-- CI compile-matrixのextra_flags注入テスト(test_compile.sh内)
+- CI compile-matrixのextra_flags注入テスト(compile_matrix.py内)
 
 ## References
 

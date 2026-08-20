@@ -20,7 +20,7 @@ arduino-cliのsymlink方式で、暫定FQBN(`ch32-riscv-ug:ch32v:CH32V00X:pnum=.
 ## 使い方
 
 ```sh
-./test_compile.sh /tmp/w3-work
+uv run tests/compile/compile_matrix.py /tmp/w3-work
 ```
 事前に`uv run tools/index/fetch_tools.py`を一度実行しておけば、環境変数の指定は不要です
 (`<repo>/.tools`から探します。設定済みの`CH32_*`があればそちらが優先されます)。
@@ -44,11 +44,11 @@ ch32v/
     ch32v00x_{16k_4k,32k_6k,62k_8k}.ld   生成物(ユニークなFLASH/SRAM組合せ別)
 ```
 
-`test_compile.sh`はboards.txtの全pnum(26 SKU)をcompileするcompile matrixとして動き、`<workdir>/sizes.tsv`へ各SKUのtext/data/bssを出力する。[check_sizes.py](check_sizes.py)が[sizes_baseline.json](sizes_baseline.json)との**完全一致**を検証する(W-7。toolchain固定下ではビルドは決定的)。サイズが意図的に変わる変更では、同じPRで`check_sizes.py --update`によりbaselineを再生成してcommitする。
+`compile_matrix.py`はboards.txtの全pnum(26 SKU)をcompileするcompile matrixとして動き、`<workdir>/sizes.tsv`へ各SKUのtext/data/bssを出力する。[check_sizes.py](check_sizes.py)が[sizes_baseline.json](sizes_baseline.json)との**完全一致**を検証する(W-7。toolchain固定下ではビルドは決定的)。サイズが意図的に変わる変更では、同じPRで`check_sizes.py --update`によりbaselineを再生成してcommitする。
 
 ## 既知の制限(実装時に解消する)
 
-- グローバルコンストラクタはcrt0が`.init_array`ループで呼び出す(`CH32_NO_INIT_ARRAY`で無効化可)。test_compile.shが「sketchのctorが.init_arrayに載る+crt0に呼出ループがある」ことを静的検査するが、**実行はHIL待ち**
+- グローバルコンストラクタはcrt0が`.init_array`ループで呼び出す(`CH32_NO_INIT_ARRAY`で無効化可)。compile_matrix.pyが「sketchのctorが.init_arrayに載る+crt0に呼出ループがある」ことを静的検査するが、**実行はHIL待ち**
 - API/pinはスタブ。upload/デバッグrecipeなし
 - vendorヘッダ・SPLを一切含まないため、実ペリフェラル操作はできない
 - `crt0_ch32.S`が`prototypes/startup/`と二重管理(prototype段階の割り切り)

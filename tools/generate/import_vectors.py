@@ -18,7 +18,7 @@ import re
 import sys
 
 # variant tag -> EVT startup .S, relative to the mirror root.
-# Keep in sync with the CONFIG table in tests/startup/run_check.sh.
+# Keep in sync with the CONFIG table in tests/startup/startup_equivalence.py.
 SOURCES = {
     "v003":     "CH32V003/EVT/EXAM/SRC/Startup/startup_ch32v00x.S",
     "v00x":     "CH32V006/EVT/EXAM/SRC/Startup/startup_ch32v00X.S",

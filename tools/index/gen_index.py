@@ -53,7 +53,7 @@ def sha256(path: pathlib.Path) -> str:
 
 # The repo root doubles as the Arduino platform directory (R-15 method A), so a
 # release archive is an allowlist, not the whole tree. Keep in sync with
-# PLATFORM_ENTRIES in tests/compile/test_compile.sh.
+# PLATFORM_ENTRIES in tests/compile/compile_matrix.py.
 # Arduino platform files that a release archive must carry. Entries absent from the
 # tree are skipped, so this can list things the platform does not have yet.
 PLATFORM_ENTRIES = (
@@ -143,7 +143,7 @@ def build_archive(platform_dir: pathlib.Path, out: pathlib.Path, version: str) -
     return archive
 
 
-def main() -> None:
+def main(argv=None) -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--platform", required=True, type=pathlib.Path)
     ap.add_argument("--out", required=True, type=pathlib.Path)
@@ -155,7 +155,7 @@ def main() -> None:
     ap.add_argument("--version", help="default: the version in platform.txt")
     ap.add_argument("--merge", type=pathlib.Path,
                     help="existing index whose older versions to keep")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     declared = platform_version(args.platform)
     if args.version and args.version != declared:
@@ -231,6 +231,11 @@ def main() -> None:
     print(f"wrote: {index_path}")
     print(f"  platform {args.version} with {len(pkg['platforms'][-1]['boards'])} boards; "
           f"index offers {len(pkg['platforms'])} platform / {len(pkg['tools'])} tool entries")
+
+
+# Callers that already are Python (tools/index/install_check.py) use this
+# rather than paying for a subprocess and parsing printed paths back out.
+main_with_args = main
 
 
 if __name__ == "__main__":

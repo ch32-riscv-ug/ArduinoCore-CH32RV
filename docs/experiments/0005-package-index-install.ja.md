@@ -34,7 +34,7 @@
 
 ```sh
 CH32_XPACK_ARCHIVE=<xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz> \
-tools/index/test_install.sh /tmp/w5-work
+uv run tools/index/install_check.py /tmp/w5-work
 # INSTALL-AND-COMPILE OK で終了
 ```
 

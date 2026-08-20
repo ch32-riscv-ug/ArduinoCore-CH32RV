@@ -205,7 +205,7 @@ def env_defaults(root: pathlib.Path) -> dict:
         out["CH32_GCC_BIN"] = where["xpack-riscv-none-elf-gcc"] / "bin"
         entry = next((s for s in gcc["systems"] if s["host"] == host_key()), None)
         if entry:
-            # test_install.sh serves this locally instead of pulling it from
+            # install_check.py serves this locally instead of pulling it from
             # GitHub on every run.
             out["CH32_XPACK_ARCHIVE"] = root / "cache" / entry["archiveFileName"]
     if "probe-rs" in frags:
@@ -261,7 +261,7 @@ def main() -> int:
         if entry is None:
             raise SystemExit(f"{name} has no entry for this host ({key})")
         # The archive is fetched even when the tool is already unpacked:
-        # test_install.sh serves it to arduino-cli, so --print-env promising a
+        # install_check.py serves it to arduino-cli, so --print-env promising a
         # path that is not there would break a run that looked provisioned.
         # download() returns immediately when the cached copy already verifies.
         archive = download(entry, cache)

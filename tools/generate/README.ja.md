@@ -65,7 +65,7 @@ V20xのD6/D8/D8WもV307のD8/D8Cも、CSRとmarch/mabiは同一。
 - linker script(MEMORY) → 同上
 - march / mabi / CSR初期値 → 等価性ハーネスの表を`FAMILY_CONFIG`へ移すだけ
 
-ハーネス([tests/startup/run_check.sh](../../tests/startup/run_check.sh))と`FAMILY_CONFIG`が
+ハーネス([tests/startup/startup_equivalence.py](../../tests/startup/startup_equivalence.py))と`FAMILY_CONFIG`が
 同じ値を二重に持つことになるため、**片方を正本にしてもう片方が参照する**か、
 CIで一致を検証するtestを追加する。
 

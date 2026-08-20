@@ -50,12 +50,12 @@ Arduino Board Manager経由で配布するArduino coreとして、**利用者が
 | 配布物 | 何を確認するか | どこで |
 |---|---|---|
 | platform archive | 単一rootフォルダ、必須entryが揃う、checksum/size一致 | `tools/index/gen_index.py` |
-| platform archive | **上書きなしでcompileが通る** | `tools/index/test_install.sh` |
+| platform archive | **上書きなしでcompileが通る** | `tools/index/install_check.py` |
 | package index | `version`が`platform.txt`と一致 | `gen_index.py`(不一致はエラー) |
 | package index | `boards`が`boards.txt`の全24 boardと一致 | `gen_index.py` |
 | package index | append-only(過去versionが残る) | `gen_index.py --merge` |
-| toolchain tool | installされ、compilerとして解決される | `test_install.sh` |
-| probe-rs tool | installされ、`--version`が動く | `test_install.sh` |
+| toolchain tool | installされ、compilerとして解決される | `install_check.py` |
+| probe-rs tool | installされ、`--version`が動く | `install_check.py` |
 | upload経路 | `arduino-cli upload --programmer wch-link`が通る | `tests/manual/smoke.py`(実機) |
 | profile経路 | `sketch.yaml`の`platform_index_url` + `programmer:`で動く | `tests/sketches/`(実機) |
 | 3 OS | 上記すべて | `.github/workflows/ci.yml`の`install-test` matrix |
@@ -246,7 +246,7 @@ dの前提として、**どのboardが繋がっているかをスクリプトが
 | Serial 送信 | ✅ `serial_println`(V003 / V203 / X035 / L103 実機PASS) | ✅ `smoke.py` | ⬜ V103 / V307 実機 |
 | Serial 受信 | 🔧 `serial_echo`(sketchのみ。実機未確認) | | ⬜ 実機、フロー制御、エラーフラグ |
 | ヒープ(`String`/`malloc`/`free`/OOM) | ✅ `heap_string`(X035実機PASS) | | ⬜ 断片化、`realloc` |
-| ビルドmenu(`pnum` / `printf`) | ✅ `compile_all.sh`(pnum)、実機(printf) | | ⬜ 全menu組み合わせのcompile |
+| ビルドmenu(`pnum` / `printf`) | ✅ `compile_all.py`(pnum)、実機(printf) | | ⬜ 全menu組み合わせのcompile |
 | `printf` / stdio | ✅ `heap_string`(X035実機PASS) | | ⬜ float書式、`nano.specs`未適用でsketchが約40 KB膨らむ |
 | 時間 (`millis`/`micros`/`delay`) | ✅ `core_api` | | ⬜ 長時間のオーバーフロー、歩度精度 |
 | GPIO | ✅ `core_api`(出力の読み戻し) | | ⬜ 入力プルアップ、他ポートへのloopback |

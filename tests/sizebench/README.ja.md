@@ -10,7 +10,7 @@ newlib full / nano / nano+`_printf_float`の代表機能コストを、統合crt
 ## 使い方
 
 ```sh
-./run_sizebench.sh /tmp/sizebench
+uv run tests/sizebench/sizebench.py /tmp/sizebench
 ```
 事前に`uv run tools/index/fetch_tools.py`を一度実行しておけば、環境変数の指定は不要です
 (`<repo>/.tools`から探します。設定済みの`CH32_*`があればそちらが優先されます)。

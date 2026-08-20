@@ -78,7 +78,7 @@ ADR化されている提案:
 | `platform.txt` | ビルドrecipe。`build.extra_flags`はユーザー注入専用 | `compile-matrix`(注入到達ガード) |
 | `tools/generate/generate.py` | boards.txt / ld / pin map / vector include の生成 | `generated-sync` |
 | `tools/index/` | xPack直リンクtool定義、index生成、clean install検証 | `install-test`(3 OS) |
-| `tools/vendor/check_api_sync.sh` | api/のbyte一致とlock manifest検証 | `api-sync` |
+| `tools/vendor/check_api_sync.py` | api/のbyte一致とlock manifest検証 | `api-sync` |
 | `tests/compile/` | 117エントリ compile matrix + size baseline(完全一致gate) | `compile-matrix`(3 OS) |
 | `tests/startup/` | EVT startupとの等価性harness | `startup-equivalence` |
 | `tests/sizebench/` | newlibサイズ計測(toolchain更新時の回帰用) | 手動 |

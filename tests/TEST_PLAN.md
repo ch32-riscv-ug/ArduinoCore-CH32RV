@@ -52,13 +52,13 @@ these, and none of them can be caught by compiling the repository tree.
 | Artifact | What is checked | Where |
 |---|---|---|
 | platform archive | single root folder, required entries present, checksum/size match | `tools/index/gen_index.py` |
-| platform archive | **compiles with no overrides** (Blink and the acceptance sketch) | `tools/index/test_install.sh` |
-| platform archive | carries no `tests/`, `docs/`, `tools/`, `.git` | `tools/index/test_install.sh` |
+| platform archive | **compiles with no overrides** (Blink and the acceptance sketch) | `tools/index/install_check.py` |
+| platform archive | carries no `tests/`, `docs/`, `tools/`, `.git` | `tools/index/install_check.py` |
 | package index | `version` matches `platform.txt` | `gen_index.py` (mismatch is an error) |
 | package index | `boards` matches all 24 boards in `boards.txt` | `gen_index.py` |
-| package index | append-only: upgrade, then reinstall the older version | `test_install.sh` |
-| toolchain tool | installs and resolves as the compiler | `test_install.sh` |
-| probe-rs tool | installs and `--version` runs | `test_install.sh` |
+| package index | append-only: upgrade, then reinstall the older version | `install_check.py` |
+| toolchain tool | installs and resolves as the compiler | `install_check.py` |
+| probe-rs tool | installs and `--version` runs | `install_check.py` |
 | upload path | `arduino-cli upload --programmer wch-link` works | `tests/manual/smoke.py` (hardware) |
 | profile path | `sketch.yaml` `platform_index_url` + `programmer:` works | `tests/sketches/` (hardware) |
 | 3 OSes | all of the above | `install-test` matrix in `.github/workflows/ci.yml` |
@@ -164,7 +164,7 @@ are covered by the `tests/compile` matrix, which needs no profile.
 To add a board, edit `BOARDS` in [`tests/sketches/sync_profiles.py`](sketches/sync_profiles.py)
 and run `uv run tests/sketches/sync_profiles.py`. A sketch that cannot fit every
 tier A/B board declares its floor in `REQUIREMENTS` there, and
-`tests/sketches/compile_all.sh` builds the whole grid so a profile cannot claim
+`tests/sketches/compile_all.py` builds the whole grid so a profile cannot claim
 a board it does not fit.
 
 ---
@@ -257,7 +257,7 @@ flash when `--board` disagrees with the chip it detects.
 | Serial transmit | ✅ `serial_println` (V003 / V203 / X035 / L103 pass on hardware) | ✅ `smoke.py` | ⬜ V103 / V307 on hardware |
 | Serial receive | 🔧 `serial_echo` (sketch only) | | ⬜ hardware, flow control, error flags |
 | Heap (`String` / `malloc` / `free` / OOM) | ✅ `heap_string` (X035 passes on hardware) | | ⬜ fragmentation, `realloc` |
-| Build menus (`pnum` / `printf`) | ✅ `compile_all.sh` (pnum), hardware (printf) | | ⬜ the full menu cross-product |
+| Build menus (`pnum` / `printf`) | ✅ `compile_all.py` (pnum), hardware (printf) | | ⬜ the full menu cross-product |
 | `printf` / stdio | ✅ `stdio_printf` (X035 passes on hardware) | | ⬜ long formats, `%n$` |
 | `printf` `%f` (menu opt-in) | ✅ both `printf=none` and `printf=float` verified on X035 hardware | | ⬜ other boards |
 | Time (`millis`/`micros`/`delay`) | ✅ `core_api` | | ⬜ long-run overflow, rate accuracy |
