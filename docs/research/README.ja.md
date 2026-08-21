@@ -36,6 +36,7 @@
 | R-21 | [route定数の書式候補](pin-name-format.ja.md) | `setPins()`へ渡すpadをエディタ補完で選べるようにする定数の書式。define / namespace+constexpr / route単位 / enum class を実データで比較 | Q-011 | **候補のみ。採用は未決** |
 | R-22 | [USB device/hostのスタック選定](usb-stack.ja.md) | TinyUSBかベンダ独自か。TinyUSBのCH32対応範囲、WCH側がhost FS層をバイナリでしか出していないこと、X035はPR未マージであること、そしてX035以外はPLLが先という順序 | Q-011 | **調査済み・採用は判断待ち** |
 | R-23 | [TinyUSBのベンダヘッダ依存をどう外すか](tinyusb-vendor-header.ja.md) | TinyUSBのCH32 driverが要求する4つの記号の特定、上流refactor / opt-in追加 / 同名shim の比較、既存ユーザーへの影響 | Q-011 | **決定(2026-08-21): まずshim(B)。上流提案(A')はR-20が形になってから** |
+| R-24 | [クロック関連データの整備依頼](clock-data-request.ja.md) | PLL対応に要る事実(ツリーの段数・PLL field・非RCCレジスタ・APB上限・flash latency・USB 48MHz経路)をC-1〜C-8として上流へ依頼する案。検証方法込み | Q-011 | **依頼案。上流へ未提出** |
 | R-17 | [書き込み経路・書き込み器・書き込みソフト](upload-programmers.ja.md) | family×書き込み経路の対応表、互換programmerエコシステム、default/オプションのメニュー構成案 | Q-040〜Q-049 | 調査済み・[ADR-0008](../adr/0008-upload-strategy.ja.md)で方針決定(実機認定は未) |
 
 ## 主要な結論(要約)
