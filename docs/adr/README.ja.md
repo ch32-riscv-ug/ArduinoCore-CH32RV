@@ -23,6 +23,9 @@
 
 `Accepted`はmaintainerが明示的に承認したものだけに付けます。調査・実験の結果として書かれた段階では`Proposed`のままにします。
 
+2026-08-21にADR-0012(USBはTinyUSB)を`Accepted`にしました。maintainerの明示指示
+「方針としてTinyUSBを採用します」によるもので、実装はこれからです。
+
 2026-08-20にADR-0011を`Accepted`にしました。方針の合意、実装、実機での動作確認
 (ミラーのrelease公開とそこからのclean install)を経てmaintainerが明示承認したものです。
 
