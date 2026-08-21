@@ -11,6 +11,11 @@
 # NOT RUN YET, and the index it would publish carries proposals that are not
 # approved (docs/approval-status.ja.md). Check that file before tagging.
 #
+# Before tagging, adopt any pending ch32-device-data update: it is the first
+# step of preparing a release, done by hand, never on a schedule - taking
+# data in without releasing it is what makes the tree and the published
+# platform drift apart. Procedure: tools/generate/README.ja.md.
+#
 # Trigger: push a tag `v<version>` whose version equals platform.txt's.
 # Dry run: workflow_dispatch builds and uploads the artifacts to the run
 # without publishing anything.

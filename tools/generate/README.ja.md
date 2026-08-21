@@ -16,7 +16,56 @@ python3 generate.py --tables /path/to/ch32-device-data/tables \
 
 # CI用: commit済み生成物と再生成結果の一致検証(drift検出でexit 1)
 python3 generate.py --tables ... --platform ... --check
+
+# レビュー用: driftしたファイルのunified diffも出す(--checkを含む)
+python3 generate.py --tables ... --platform ... --diff
 ```
+
+`--check`はdriftがあると末尾に**採用サマリ**を出します。
+
+```
+adoption summary: 1 additive, 0 rewriting existing lines
+```
+
+`additive`は行が増えただけ(新しいroute・pad・型番)、`rewriting`は既存の行が
+変わったか消えたもの(pin番号・既定route・board名・メモリサイズが動きうる)です。
+**後者だけが取り込み前に理解を要します。** lock自身は毎回動くので数えません。
+この判別が成立するのは生成物ヘッダにcommit idを入れていないためで、
+入れていた頃は毎回全ファイルが1行失っていて信号が埋もれていました。
+
+## device-dataの取り込み手順
+
+**取り込みはリリース準備の最初の工程で、手動でのみ行います**(自動化しない)。
+取り込みだけ先に進めるとリリース物とずれるためです。
+
+```sh
+# 1. 上流を取得して見るだけ(ツリーは書き換わらない)
+git -C .tools/ch32-device-data fetch origin
+git -C .tools/ch32-device-data checkout origin/main
+uv run --no-project python tools/generate/generate.py \
+    --tables .tools/ch32-device-data/tables --platform . --check
+
+#    exit 0 なら生成物は変わらない。取り込む必要がない
+#    → 手順4でcloneを戻して終わり
+
+# 2. 差分を見る
+uv run --no-project python tools/generate/generate.py \
+    --tables .tools/ch32-device-data/tables --platform . --diff
+
+# 3. 取り込む(lockのcommitとhashもここで動く)
+uv run --no-project python tools/generate/generate.py \
+    --tables .tools/ch32-device-data/tables --platform .
+cd tests && uv run pytest -q test_generated.py test_compile_matrix.py test_sizebench.py
+
+# 4. 取り込まないと決めたら、cloneをlockedへ戻す
+uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
+```
+
+手順4を忘れると、`.tools`のcloneがlockと違うcommitのまま残り、
+ローカルの`generated-sync`が偽の失敗を出します。
+
+`rewriting`が出た場合は、該当seriesの実機があるなら取り込み後に一度動かします。
+pin番号や既定routeが変わると、既存のsketchの意味が変わるためです。
 
 ## 生成規則
 

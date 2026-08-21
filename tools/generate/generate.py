@@ -18,6 +18,7 @@ Usage:
 """
 import argparse
 import csv
+import difflib
 import hashlib
 import pathlib
 import re
@@ -1316,7 +1317,10 @@ def main() -> int:
     ap.add_argument("--platform", required=True, type=pathlib.Path)
     ap.add_argument("--check", action="store_true",
                     help="verify committed files match regeneration; do not write")
+    ap.add_argument("--diff", action="store_true",
+                    help="with --check, print a unified diff of each drifting file")
     args = ap.parse_args()
+    args.check = args.check or args.diff
 
     products = read_table(args.tables, "products.csv")
     commit = source_commit(args.tables)
@@ -1395,11 +1399,31 @@ def main() -> int:
     outputs[args.platform / LOCK_REL] = gen_lock(args.tables, commit)
 
     drift = 0
+    additive, rewritten = [], []
     for path, content in outputs.items():
         if args.check:
             on_disk = path.read_text(encoding="utf-8") if path.exists() else None
             if on_disk != content:
                 print(f"DRIFT: {path}")
+                diff = list(difflib.unified_diff(
+                    (on_disk or "").splitlines(keepends=True),
+                    content.splitlines(keepends=True),
+                    fromfile=f"a/{path}", tofile=f"b/{path}"))
+                # Nothing removed means the tables only gained facts: a new
+                # route, pad or part number. Something removed means an
+                # existing one moved, which can change what a sketch compiles
+                # to. Worth separating, because only the second kind has to be
+                # understood before it is adopted. This reading only works
+                # because the header carries no commit id: when it did, every
+                # file lost a line on every bump and the signal was buried.
+                changed = any(ln.startswith("-") and not ln.startswith("---")
+                              for ln in diff)
+                if path.as_posix().endswith(LOCK_REL):
+                    pass          # the pin itself always moves; not a finding
+                else:
+                    (rewritten if changed else additive).append(path)
+                if args.diff:
+                    sys.stdout.writelines(diff)
                 drift = 1
             else:
                 print(f"ok:    {path}")
@@ -1407,6 +1431,12 @@ def main() -> int:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
             print(f"wrote: {path}")
+
+    if drift:
+        print(f"\nadoption summary: {len(additive)} additive, "
+              f"{len(rewritten)} rewriting existing lines", file=sys.stderr)
+        for path in rewritten:
+            print(f"  REVIEW: {path}", file=sys.stderr)
     return drift
 
 

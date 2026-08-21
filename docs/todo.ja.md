@@ -728,6 +728,15 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       入力を増やせば自動でlockに載る。実測: `66a421f`→`0a1eed7`の8 commitのうち
       **この5表に触れたのは2つだけ**で、bumpの差分は56ファイルから
       「lock 3行 + CH32V305の`pins_arduino.h`」になった
+- [x] **device-dataの取り込みは「リリース準備の最初の工程」で手動でのみ行う**と決めた。
+      取り込みだけ先に進めるとリリース物とずれるため、**週次等の自動化はしない**。
+      手順は[generate.pyのREADME](../tools/generate/README.ja.md)、
+      `release.yml`のヘッダからも参照。`--check`が末尾に出す採用サマリ
+      (`N additive, M rewriting existing lines`)で、既存の値が動く変更だけを
+      重点レビューする。`--diff`でunified diffも出せる
+- [ ] `[P2]` リリース本文にpinしたdevice-data commitを出すか(**要判断**)。
+      publishした版がどのデータから作られたかを、installした人が辿れるようにする案。
+      release archiveに`vendor/`を入れる案の代替。今は未実装
 - [x] `tests/sizebench/sizebench.py`が参照していた`tests/startup/crt0_ch32.S`と
       `tests/platform/`は既に存在せず、**harnessが動いていなかった**。正本
       (`cores/arduino/`)を指すよう修正。CIには載っていない
