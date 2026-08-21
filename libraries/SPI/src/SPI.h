@@ -13,6 +13,7 @@
 
 #include "api/HardwareSPI.h"
 #include "ch32_pins.h"
+#include "ch32_route.h"
 #include "pins_arduino.h"
 
 #include <stdint.h>
@@ -60,6 +61,14 @@ public:
     void attachInterrupt() override {}
     void detachInterrupt() override {}
 
+    /* Move this bus onto another of its pin routes. false, and nothing
+     * changed, when the route does not exist on this series; setPins()
+     * additionally refuses pins that do not all belong to one route, which is
+     * the only thing the hardware can select. Calling either after begin()
+     * reopens the bus and hands the old pads back as inputs. */
+    bool setRoute(uint8_t route);
+    bool setPins(uint8_t sck, uint8_t miso, uint8_t mosi);
+
     /* Pre-transaction API. Still used by a lot of library code. */
     void setBitOrder(BitOrder order);
     void setDataMode(uint8_t mode);
@@ -67,19 +76,21 @@ public:
 
 private:
     void apply(uint32_t clock_hz, BitOrder order, uint8_t mode);
+    bool use_route(const ch32_route_t &route);
 
     const uint32_t _base;
     const bool _on_apb1;
     const uint32_t _clock_bit;
-    const uint8_t _sck_pin;
-    const uint8_t _miso_pin;
-    const uint8_t _mosi_pin;
+    /* Not const: setRoute()/setPins() move the bus between pin sets. */
+    uint8_t _sck_pin;
+    uint8_t _miso_pin;
+    uint8_t _mosi_pin;
     /* AFIO route for these pins, written on every begin() - see
      * HardwareSerial::begin for why the default route is written too. */
     const uint32_t _remap_mask;
-    const uint32_t _remap_value;
+    uint32_t _remap_value;
     const uint32_t _remap2_mask;
-    const uint32_t _remap2_value;
+    uint32_t _remap2_value;
 
     uint32_t _clock_hz = 4000000;
     BitOrder _order = MSBFIRST;

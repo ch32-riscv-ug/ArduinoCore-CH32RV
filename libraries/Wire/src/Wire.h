@@ -15,6 +15,7 @@
 
 #include "api/HardwareI2C.h"
 #include "ch32_pins.h"
+#include "ch32_route.h"
 #include "pins_arduino.h"
 
 #include <stdint.h>
@@ -64,6 +65,19 @@ public:
     void onReceive(void (*)(int)) override;
     void onRequest(void (*)(void)) override;
 
+    /* Move this bus onto another of its pin routes.
+     *
+     * false, and nothing changed, when the route does not exist on this
+     * series - and setPins() also refuses an SCL and an SDA that belong to
+     * different routes, which the hardware cannot do. Several X035 routes
+     * swap the two signals over the same pair of pads, so the order matters
+     * and is checked.
+     *
+     * Calling either after begin() reopens the bus on the new pins and hands
+     * the old pads back as inputs. */
+    bool setRoute(uint8_t route);
+    bool setPins(uint8_t scl, uint8_t sda);
+
     /* Print/Stream */
     size_t write(uint8_t data) override;
     size_t write(const uint8_t *data, size_t len) override;
@@ -75,21 +89,23 @@ public:
 
 private:
     bool wait_flag1(uint16_t mask, bool set);
+    bool use_route(const ch32_route_t &route);
     bool start(uint8_t address, bool read);
     void stop(void);
     void recover(void);
 
     const uint32_t _base;
     const uint32_t _clock_bit;
-    const uint8_t _scl_pin;
-    const uint8_t _sda_pin;
+    /* Not const: setRoute()/setPins() move the bus between pin sets. */
+    uint8_t _scl_pin;
+    uint8_t _sda_pin;
     /* AFIO field that routes this I2C to _scl_pin/_sda_pin, written on every
      * begin() for the same reason HardwareSerial writes its own: going back to
      * the default pins has to be a real write, not an assumption. */
     const uint32_t _remap_mask;
-    const uint32_t _remap_value;
+    uint32_t _remap_value;
     const uint32_t _remap2_mask;
-    const uint32_t _remap2_value;
+    uint32_t _remap2_value;
 
     uint32_t _clock_hz = 100000;
     uint8_t _address = 0;          /* target of the transmission being built */

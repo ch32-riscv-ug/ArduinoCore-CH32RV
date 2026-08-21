@@ -170,6 +170,12 @@
 #define CH32_SERIAL1_IRQ CH32_IRQN_USART1
 #define CH32_SERIAL1_REMAP_MASK 0x0000001cu
 #define CH32_SERIAL1_REMAP_VAL  0x00000000u
+/* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32_SERIAL1_ROUTE_COUNT 2
+#define CH32_SERIAL1_ROUTES { \
+    { 0, { PC1, PC0, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PC1, PC2, CH32_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
+}
 #ifndef CH32_SERIAL_DEFAULT
 #define CH32_SERIAL_DEFAULT 1
 #endif
@@ -181,6 +187,21 @@
 #define CH32_I2C1_SDA PB2
 #define CH32_I2C1_REMAP_MASK 0x00000003u
 #define CH32_I2C1_REMAP_VAL  0x00000000u
+/* I2C1 routes for setRoute()/setPins(): route number, then SCL, SDA */
+#define CH32_I2C1_ROUTE_COUNT 4
+#define CH32_I2C1_ROUTES { \
+    { 0, { PB3, PB2, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PA2, PB6, CH32_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 2, { PA15, PA14, CH32_ROUTE_NO_PIN }, 0x00000002u, 0x00000000u }, \
+    { 3, { PA2, PA3, CH32_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+}
+/* Arduino's standard names for the first bus (Wire). */
+#ifndef PIN_WIRE_SCL
+#define PIN_WIRE_SCL CH32_I2C1_SCL
+#define PIN_WIRE_SDA CH32_I2C1_SDA
+#define SCL PIN_WIRE_SCL
+#define SDA PIN_WIRE_SDA
+#endif
 
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
@@ -191,6 +212,25 @@
 #define CH32_SPI1_MOSI PC3
 #define CH32_SPI1_REMAP_MASK 0x00000060u
 #define CH32_SPI1_REMAP_VAL  0x00000000u
+/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32_SPI1_ROUTE_COUNT 4
+#define CH32_SPI1_ROUTES { \
+    { 0, { PA1, PC4, PC3 }, 0x00000000u, 0x00000000u }, \
+    { 1, { PB6, PA4, PB5 }, 0x00000020u, 0x00000000u }, \
+    { 2, { PA1, PC4, PA11 }, 0x00000040u, 0x00000000u }, \
+    { 3, { PA1, PA4, PA8 }, 0x00000060u, 0x00000000u }, \
+}
+/* Arduino's standard names for the first bus (SPI). */
+#ifndef PIN_SPI_SCK
+#define PIN_SPI_SCK CH32_SPI1_SCK
+#define PIN_SPI_MISO CH32_SPI1_MISO
+#define PIN_SPI_MOSI CH32_SPI1_MOSI
+#define SCK PIN_SPI_SCK
+#define MISO PIN_SPI_MISO
+#define MOSI PIN_SPI_MOSI
+#define PIN_SPI_SS PA0
+#define SS PIN_SPI_SS
+#endif
 
 /* ---- PWM: 10 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32_PWM_PIN_COUNT 10

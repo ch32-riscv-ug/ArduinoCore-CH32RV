@@ -336,10 +336,15 @@ I2C_ROUTE_ORDER = ("default", "main", "af-3", "af-7",
 # SPI, same three spellings. NSS is deliberately not a role: Arduino drives
 # chip select as an ordinary GPIO, so requiring the peripheral's own NSS pad
 # would throw away routes that are perfectly usable.
+# NSS is matched so that PIN_SPI_SS can be named, but it is deliberately not
+# one of the roles a route is chosen by: Arduino drives chip select as an
+# ordinary GPIO, and requiring the peripheral's NSS pad would throw away routes
+# that are perfectly usable. X315 spells it SCS.
 SPI_SIGNAL_RE = [
-    (re.compile(r"^SPI(\d+)_(SCK|MISO|MOSI)$"), lambda m: (int(m.group(1)), m.group(2))),
-    (re.compile(r"^SPI_(SCK|MISO|MOSI)$"),      lambda m: (1, m.group(1))),
-    (re.compile(r"^(SCK|MISO|MOSI)$"),          lambda m: (1, m.group(1))),
+    (re.compile(r"^SPI(\d+)_(SCK|MISO|MOSI|NSS)$"), lambda m: (int(m.group(1)), m.group(2))),
+    (re.compile(r"^SPI(\d+)_SCS$"),                 lambda m: (int(m.group(1)), "NSS")),
+    (re.compile(r"^SPI_(SCK|MISO|MOSI|NSS)$"),       lambda m: (1, m.group(1))),
+    (re.compile(r"^(SCK|MISO|MOSI|NSS)$"),           lambda m: (1, m.group(1))),
 ]
 SPI_BASES = {1: "CH32_SPI1_BASE", 2: "CH32_SPI2_BASE", 3: "CH32_SPI3_BASE"}
 SPI_ROUTE_ORDER = ("default", "main", "af-4", "af-5",
@@ -499,6 +504,59 @@ def choose_routes(series: str, parts: list, pins: dict, remap: dict, kind: str,
         if best:
             chosen[index] = best[1:]
     return chosen
+
+
+# Every AFIO-selectable route, for the setRoute()/setPins() tables. Wider than
+# the *_ROUTE_ORDER tuples above, which exist to rank one default: here the
+# point is to list everything the core can actually select, so af-N is absent
+# (no AFIO field) and the remap numbers run as far as any series goes.
+ROUTE_TABLE_ORDER = ("default", "main") + tuple(f"remap-{i}" for i in range(1, 8))
+
+
+def route_table(series: str, parts: list, pins: dict, remap: dict, kind: str,
+                roles: tuple, index: int) -> list:
+    """[(route number, (pads in role order), PCFR1 value, PCFR2 value)].
+
+    Empty when device-data has no AFIO field for the instance: without the
+    field the core cannot select a route, and a table it cannot act on would
+    only invite setRoute() to lie.
+    """
+    bits = remap.get((series, kind, index))
+    if not bits:
+        return []
+    rows = []
+    for route in ROUTE_TABLE_ORDER:
+        value = route_remap_value(route)
+        if value is None:
+            continue
+        pads_by_part = {}
+        for pn in parts:
+            entry = pins.get(pn, {}).get((index, route))
+            if entry and set(roles) <= set(entry):
+                pads_by_part[pn] = tuple(entry[r] for r in roles)
+        variants = set(pads_by_part.values())
+        if len(variants) != 1:
+            continue          # absent, or it moves between packages
+        mv = remap_mask_value(bits, value)
+        rows.append((value, next(iter(variants)),
+                     mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1]))
+    return rows
+
+
+def emit_routes(out: list, prefix: str, roles: tuple, rows: list) -> None:
+    """The CH32_<prefix>_ROUTES initializer for ch32_route_t[]."""
+    if not rows:
+        return
+    out.append(f"/* {prefix} routes for setRoute()/setPins(): "
+               f"route number, then {', '.join(roles)} */")
+    out.append(f"#define CH32_{prefix}_ROUTE_COUNT {len(rows)}")
+    out.append(f"#define CH32_{prefix}_ROUTES {{ \\")
+    for value, pads, v1, v2 in rows:
+        names = [pad_name(*p) for p in pads]
+        names += ["CH32_ROUTE_NO_PIN"] * (3 - len(names))
+        out.append(f"    {{ {value}, {{ {', '.join(names)} }}, "
+                   f"0x{v1:08x}u, 0x{v2:08x}u }}, \\")
+    out.append("}")
 
 
 def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
@@ -845,6 +903,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
                 out.append(f" * has no AFIO field for USART{index} in this series. */")
+            emit_routes(out, f"SERIAL{index}", ("TX", "RX"),
+                        route_table(series, parts, uarts, remap, "usart",
+                                    ("TX", "RX"), index))
         # Serial points at the USART that reaches the most part numbers.
         # Serial is the lowest-numbered USART on its reset-default pins;
         # that is what a board's silkscreen almost always means by "UART".
@@ -895,9 +956,24 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
                 out.append(f" * has no AFIO field for I2C{index} in this series. */")
+            emit_routes(out, f"I2C{index}", ("SCL", "SDA"),
+                        route_table(series, parts, i2cs, remap, "i2c",
+                                    ("SCL", "SDA"), index))
         # No CH32_WIRE_DEFAULT to match CH32_SERIAL_DEFAULT: the Arduino
         # ecosystem names I2C buses Wire/Wire1 in bus order, so the library
         # binds the bare name to the first instance itself.
+        #
+        # The standard aliases point at that same first instance. Libraries
+        # written for other cores use PIN_WIRE_SDA or the bare SDA, and a core
+        # that defines neither simply fails to compile them.
+        first = min(chosen_i2c)
+        out.append("/* Arduino's standard names for the first bus (Wire). */")
+        out.append("#ifndef PIN_WIRE_SCL")
+        out.append(f"#define PIN_WIRE_SCL CH32_I2C{first}_SCL")
+        out.append(f"#define PIN_WIRE_SDA CH32_I2C{first}_SDA")
+        out.append("#define SCL PIN_WIRE_SCL")
+        out.append("#define SDA PIN_WIRE_SDA")
+        out.append("#endif")
         out.append("")
 
     # --- SPI ---
@@ -930,6 +1006,34 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
                 out.append(f" * has no AFIO field for SPI{index} in this series. */")
+            emit_routes(out, f"SPI{index}", ("SCK", "MISO", "MOSI"),
+                        route_table(series, parts, spis, remap, "spi",
+                                    ("SCK", "MISO", "MOSI"), index))
+        first = min(chosen_spi)
+        out.append("/* Arduino's standard names for the first bus (SPI). */")
+        out.append("#ifndef PIN_SPI_SCK")
+        out.append(f"#define PIN_SPI_SCK CH32_SPI{first}_SCK")
+        out.append(f"#define PIN_SPI_MISO CH32_SPI{first}_MISO")
+        out.append(f"#define PIN_SPI_MOSI CH32_SPI{first}_MOSI")
+        out.append("#define SCK PIN_SPI_SCK")
+        out.append("#define MISO PIN_SPI_MISO")
+        out.append("#define MOSI PIN_SPI_MOSI")
+        # SS is the peripheral's own NSS pad on the route that was chosen. The
+        # driver never uses it - chip select is a GPIO - but libraries expect
+        # the name to exist, and this is the pad their wiring diagrams show.
+        nss = None
+        _cov, chosen_route, _pads = chosen_spi[first]
+        for pn in parts:
+            entry = spis.get(pn, {}).get((first, chosen_route))
+            if entry and "NSS" in entry:
+                nss = entry["NSS"]
+                break
+        if nss is not None:
+            out.append(f"#define PIN_SPI_SS {pad_name(*nss)}")
+            out.append("#define SS PIN_SPI_SS")
+        else:
+            out.append("/* No SS: device-data names no NSS pad on this route. */")
+        out.append("#endif")
         out.append("")
 
     # --- PWM ---

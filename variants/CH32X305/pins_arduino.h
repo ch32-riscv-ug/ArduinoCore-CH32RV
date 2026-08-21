@@ -195,6 +195,13 @@
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
+/* Arduino's standard names for the first bus (Wire). */
+#ifndef PIN_WIRE_SCL
+#define PIN_WIRE_SCL CH32_I2C1_SCL
+#define PIN_WIRE_SDA CH32_I2C1_SDA
+#define SCL PIN_WIRE_SCL
+#define SDA PIN_WIRE_SDA
+#endif
 
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
@@ -220,6 +227,17 @@
 /* NOTE: route af-4 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
+/* Arduino's standard names for the first bus (SPI). */
+#ifndef PIN_SPI_SCK
+#define PIN_SPI_SCK CH32_SPI1_SCK
+#define PIN_SPI_MISO CH32_SPI1_MISO
+#define PIN_SPI_MOSI CH32_SPI1_MOSI
+#define SCK PIN_SPI_SCK
+#define MISO PIN_SPI_MISO
+#define MOSI PIN_SPI_MOSI
+#define PIN_SPI_SS PB0
+#define SS PIN_SPI_SS
+#endif
 
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present

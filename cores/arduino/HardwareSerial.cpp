@@ -11,6 +11,8 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
     if (_started) {
         end();
     }
+    _baudrate = baudrate;
+    _config = config;
 
     if (_on_apb1) {
         CH32_RCC_APB1PCENR |= _clock_bit;
@@ -162,6 +164,109 @@ void CH32HardwareSerial::irq(void)
             CH32_USART_DATAR(_base) = (uint16_t)(uint8_t)_tx.pop();
         }
     }
+}
+
+/* --------------------------------------------------------------- routes */
+/* The tables are reached only from setRoute()/setPins(), never from the
+ * constructor, so a sketch that does not move its pins does not pay for them:
+ * with -ffunction-sections/-fdata-sections and --gc-sections the unused
+ * functions go, and the tables go with them. */
+namespace {
+
+struct RouteTable {
+    const ch32_route_t *rows;
+    uint8_t count;
+};
+
+RouteTable routes_for(uint32_t base)
+{
+#if defined(CH32_SERIAL1_ROUTES)
+    static const ch32_route_t r1[] = CH32_SERIAL1_ROUTES;
+    if (base == CH32_USART1_BASE) {
+        return {r1, CH32_SERIAL1_ROUTE_COUNT};
+    }
+#endif
+#if defined(CH32_SERIAL2_ROUTES)
+    static const ch32_route_t r2[] = CH32_SERIAL2_ROUTES;
+    if (base == CH32_USART2_BASE) {
+        return {r2, CH32_SERIAL2_ROUTE_COUNT};
+    }
+#endif
+#if defined(CH32_SERIAL3_ROUTES)
+    static const ch32_route_t r3[] = CH32_SERIAL3_ROUTES;
+    if (base == CH32_USART3_BASE) {
+        return {r3, CH32_SERIAL3_ROUTE_COUNT};
+    }
+#endif
+#if defined(CH32_SERIAL4_ROUTES)
+    static const ch32_route_t r4[] = CH32_SERIAL4_ROUTES;
+    if (base == CH32_USART4_BASE) {
+        return {r4, CH32_SERIAL4_ROUTE_COUNT};
+    }
+#endif
+#if defined(CH32_SERIAL5_ROUTES)
+    static const ch32_route_t r5[] = CH32_SERIAL5_ROUTES;
+    if (base == CH32_USART5_BASE) {
+        return {r5, CH32_SERIAL5_ROUTE_COUNT};
+    }
+#endif
+    (void)base;
+    return {nullptr, 0};
+}
+
+/* Hand a pad back as a floating input. Leaving the old TX configured as an
+ * alternate-function output would keep it driving after the port moved away
+ * from it. */
+void release_pin(uint8_t pin)
+{
+    ch32_gpio_set_config((uint8_t)CH32_PIN_PORT(pin), (uint8_t)CH32_PIN_BIT(pin),
+                         CH32_GPIO_CFG_IN_FLOAT);
+}
+
+}  // namespace
+
+bool CH32HardwareSerial::use_route(const ch32_route_t &route)
+{
+    const uint8_t old_tx = _tx_pin;
+    const uint8_t old_rx = _rx_pin;
+    const bool was_started = _started;
+    const unsigned long baudrate = _baudrate;
+    const uint16_t config = _config;
+
+    if (was_started) {
+        end();
+        release_pin(old_tx);
+        release_pin(old_rx);
+    }
+    _tx_pin = route.pins[0];
+    _rx_pin = route.pins[1];
+    _remap_value = route.value;
+    _remap2_value = route.value2;
+    if (was_started) {
+        begin(baudrate, config);
+    }
+    return true;
+}
+
+bool CH32HardwareSerial::setRoute(uint8_t route)
+{
+    const RouteTable table = routes_for(_base);
+    const int i = ch32_route_find(table.rows, table.count, route);
+    if (i < 0) {
+        return false;
+    }
+    return use_route(table.rows[i]);
+}
+
+bool CH32HardwareSerial::setPins(uint8_t tx, uint8_t rx)
+{
+    const RouteTable table = routes_for(_base);
+    const uint8_t want[CH32_ROUTE_PINS] = {tx, rx, CH32_ROUTE_NO_PIN};
+    const int i = ch32_route_match(table.rows, table.count, want);
+    if (i < 0) {
+        return false;
+    }
+    return use_route(table.rows[i]);
 }
 
 /* ------------------------------------------------------- instances + ISRs */

@@ -112,6 +112,12 @@
 #define CH32_SERIAL1_IRQ CH32_IRQN_USART1
 #define CH32_SERIAL1_REMAP_MASK 0x000003c0u
 #define CH32_SERIAL1_REMAP_VAL  0x00000000u
+/* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32_SERIAL1_ROUTE_COUNT 2
+#define CH32_SERIAL1_ROUTES { \
+    { 0, { PD5, PD6, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PD6, PD5, CH32_ROUTE_NO_PIN }, 0x00000040u, 0x00000000u }, \
+}
 /* USART2: route remap-1, on 3 of 4 parts */
 #define CH32_SERIAL2_TX PA4
 #define CH32_SERIAL2_RX PA5
@@ -119,6 +125,11 @@
 #define CH32_SERIAL2_IRQ CH32_IRQN_USART2
 #define CH32_SERIAL2_REMAP_MASK 0x00700000u
 #define CH32_SERIAL2_REMAP_VAL  0x00100000u
+/* SERIAL2 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32_SERIAL2_ROUTE_COUNT 1
+#define CH32_SERIAL2_ROUTES { \
+    { 1, { PA4, PA5, CH32_ROUTE_NO_PIN }, 0x00100000u, 0x00000000u }, \
+}
 #ifndef CH32_SERIAL_DEFAULT
 #define CH32_SERIAL_DEFAULT 1
 #endif
@@ -130,6 +141,20 @@
 #define CH32_I2C1_SDA PC1
 #define CH32_I2C1_REMAP_MASK 0x00000038u
 #define CH32_I2C1_REMAP_VAL  0x00000000u
+/* I2C1 routes for setRoute()/setPins(): route number, then SCL, SDA */
+#define CH32_I2C1_ROUTE_COUNT 3
+#define CH32_I2C1_ROUTES { \
+    { 0, { PC2, PC1, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 2, { PC5, PC4, CH32_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
+    { 4, { PB3, PD1, CH32_ROUTE_NO_PIN }, 0x00000020u, 0x00000000u }, \
+}
+/* Arduino's standard names for the first bus (Wire). */
+#ifndef PIN_WIRE_SCL
+#define PIN_WIRE_SCL CH32_I2C1_SCL
+#define PIN_WIRE_SDA CH32_I2C1_SDA
+#define SCL PIN_WIRE_SCL
+#define SDA PIN_WIRE_SDA
+#endif
 
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
@@ -140,6 +165,23 @@
 #define CH32_SPI1_MOSI PD3
 #define CH32_SPI1_REMAP_MASK 0x00000007u
 #define CH32_SPI1_REMAP_VAL  0x00000002u
+/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32_SPI1_ROUTE_COUNT 2
+#define CH32_SPI1_ROUTES { \
+    { 2, { PD2, PB3, PD3 }, 0x00000002u, 0x00000000u }, \
+    { 4, { PD4, PD5, PD6 }, 0x00000004u, 0x00000000u }, \
+}
+/* Arduino's standard names for the first bus (SPI). */
+#ifndef PIN_SPI_SCK
+#define PIN_SPI_SCK CH32_SPI1_SCK
+#define PIN_SPI_MISO CH32_SPI1_MISO
+#define PIN_SPI_MOSI CH32_SPI1_MOSI
+#define SCK PIN_SPI_SCK
+#define MISO PIN_SPI_MISO
+#define MOSI PIN_SPI_MOSI
+#define PIN_SPI_SS PC4
+#define SS PIN_SPI_SS
+#endif
 
 /* ---- PWM: 6 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32_PWM_PIN_COUNT 6

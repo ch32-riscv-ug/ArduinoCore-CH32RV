@@ -10,6 +10,7 @@
 #include "api/HardwareSerial.h"
 #include "ch32_pins.h"
 #include "ch32_ringbuffer.h"
+#include "ch32_route.h"
 /* Not just for the pad names: CH32_SERIALn_TX and CH32_SERIAL_DEFAULT below
  * come from here, and this header has to work when it is included first.
  * HardwareSerial.cpp includes it before Arduino.h, and when the variant was
@@ -66,26 +67,46 @@ public:
 
     operator bool() override { return _started; }
 
+    /* Move this port onto another of its pin routes.
+     *
+     * Both forms return false and change nothing when the route does not
+     * exist on this series, and setPins() additionally refuses a TX and an RX
+     * that belong to different routes - the hardware cannot do that, and
+     * silently honouring one of the two is how a sketch ends up transmitting
+     * on a pad nobody is watching.
+     *
+     * Calling either while the port is open reopens it on the new pins with
+     * the same baud rate and framing, and returns the pads it left to inputs.
+     */
+    bool setRoute(uint8_t route);
+    bool setPins(uint8_t tx, uint8_t rx);
+
     /* Called from the generated interrupt handler. */
     void irq(void);
 
 private:
     void start_tx(void);
 
+    bool use_route(const ch32_route_t &route);
+
     const uint32_t _base;
     const uint8_t _irqn;
-    const uint8_t _tx_pin;
-    const uint8_t _rx_pin;
+    /* Not const: setRoute()/setPins() move the port between pin sets. */
+    uint8_t _tx_pin;
+    uint8_t _rx_pin;
     const bool _on_apb1;
     const uint32_t _clock_bit;
     /* AFIO field that routes this USART to _tx_pin/_rx_pin; zero mask
-     * means the pins are the reset-default route. */
+     * means device-data knows no field, so the pins cannot be moved. */
     const uint32_t _remap_mask;
-    const uint32_t _remap_value;
+    uint32_t _remap_value;
     /* Second half of a field that spans PCFR2. */
     const uint32_t _remap2_mask;
-    const uint32_t _remap2_value;
+    uint32_t _remap2_value;
     bool _started;
+    /* Remembered so a route change can reopen the port exactly as it was. */
+    unsigned long _baudrate = 0;
+    uint16_t _config = 0;
     CH32RingBuffer<CH32_SERIAL_RX_BUFFER_SIZE> _rx;
     CH32RingBuffer<CH32_SERIAL_TX_BUFFER_SIZE> _tx;
 };

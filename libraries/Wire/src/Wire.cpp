@@ -405,6 +405,84 @@ int CH32TwoWire::peek(void)
     return _rx[_rx_read];
 }
 
+/* --------------------------------------------------------------- routes */
+/* Reached only from setRoute()/setPins(), so --gc-sections drops the tables
+ * from a sketch that never moves its pins. */
+namespace {
+
+struct RouteTable {
+    const ch32_route_t *rows;
+    uint8_t count;
+};
+
+RouteTable routes_for(uint32_t base)
+{
+#if defined(CH32_I2C1_ROUTES)
+    static const ch32_route_t r1[] = CH32_I2C1_ROUTES;
+    if (base == CH32_I2C1_BASE) {
+        return {r1, CH32_I2C1_ROUTE_COUNT};
+    }
+#endif
+#if defined(CH32_I2C2_ROUTES)
+    static const ch32_route_t r2[] = CH32_I2C2_ROUTES;
+    if (base == CH32_I2C2_BASE) {
+        return {r2, CH32_I2C2_ROUTE_COUNT};
+    }
+#endif
+    (void)base;
+    return {nullptr, 0};
+}
+
+void release_pin(uint8_t pin)
+{
+    ch32_gpio_set_config((uint8_t)CH32_PIN_PORT(pin), (uint8_t)CH32_PIN_BIT(pin),
+                         CH32_GPIO_CFG_IN_FLOAT);
+}
+
+}  // namespace
+
+bool CH32TwoWire::use_route(const ch32_route_t &route)
+{
+    const uint8_t old_scl = _scl_pin;
+    const uint8_t old_sda = _sda_pin;
+    const bool was_started = _started;
+
+    if (was_started) {
+        end();
+        release_pin(old_scl);
+        release_pin(old_sda);
+    }
+    _scl_pin = route.pins[0];
+    _sda_pin = route.pins[1];
+    _remap_value = route.value;
+    _remap2_value = route.value2;
+    if (was_started) {
+        begin();
+    }
+    return true;
+}
+
+bool CH32TwoWire::setRoute(uint8_t route)
+{
+    const RouteTable table = routes_for(_base);
+    const int i = ch32_route_find(table.rows, table.count, route);
+    if (i < 0) {
+        return false;
+    }
+    return use_route(table.rows[i]);
+}
+
+bool CH32TwoWire::setPins(uint8_t scl, uint8_t sda)
+{
+    const RouteTable table = routes_for(_base);
+    const uint8_t want[CH32_ROUTE_PINS] = {scl, sda, CH32_ROUTE_NO_PIN};
+    const int i = ch32_route_match(table.rows, table.count, want);
+    if (i < 0) {
+        return false;
+    }
+    return use_route(table.rows[i]);
+}
+
 /* ------------------------------------------------------- instances */
 /* Naming follows the Arduino ecosystem rather than this core's Serial: the
  * bare name is the first bus and Wire1 is the second, which is what Due, Zero,

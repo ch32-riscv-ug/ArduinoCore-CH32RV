@@ -174,6 +174,89 @@ void CH32SPIClass::transfer(void *buf, size_t count)
     }
 }
 
+/* --------------------------------------------------------------- routes */
+namespace {
+
+struct RouteTable {
+    const ch32_route_t *rows;
+    uint8_t count;
+};
+
+RouteTable routes_for(uint32_t base)
+{
+#if defined(CH32_SPI1_ROUTES)
+    static const ch32_route_t r1[] = CH32_SPI1_ROUTES;
+    if (base == CH32_SPI1_BASE) {
+        return {r1, CH32_SPI1_ROUTE_COUNT};
+    }
+#endif
+#if defined(CH32_SPI2_ROUTES)
+    static const ch32_route_t r2[] = CH32_SPI2_ROUTES;
+    if (base == CH32_SPI2_BASE) {
+        return {r2, CH32_SPI2_ROUTE_COUNT};
+    }
+#endif
+#if defined(CH32_SPI3_ROUTES)
+    static const ch32_route_t r3[] = CH32_SPI3_ROUTES;
+    if (base == CH32_SPI3_BASE) {
+        return {r3, CH32_SPI3_ROUTE_COUNT};
+    }
+#endif
+    (void)base;
+    return {nullptr, 0};
+}
+
+void release_pin(uint8_t pin)
+{
+    ch32_gpio_set_config((uint8_t)CH32_PIN_PORT(pin), (uint8_t)CH32_PIN_BIT(pin),
+                         CH32_GPIO_CFG_IN_FLOAT);
+}
+
+}  // namespace
+
+bool CH32SPIClass::use_route(const ch32_route_t &route)
+{
+    const uint8_t old[3] = {_sck_pin, _miso_pin, _mosi_pin};
+    const bool was_started = _started;
+
+    if (was_started) {
+        end();
+        for (int i = 0; i < 3; i++) {
+            release_pin(old[i]);
+        }
+    }
+    _sck_pin = route.pins[0];
+    _miso_pin = route.pins[1];
+    _mosi_pin = route.pins[2];
+    _remap_value = route.value;
+    _remap2_value = route.value2;
+    if (was_started) {
+        begin();
+    }
+    return true;
+}
+
+bool CH32SPIClass::setRoute(uint8_t route)
+{
+    const RouteTable table = routes_for(_base);
+    const int i = ch32_route_find(table.rows, table.count, route);
+    if (i < 0) {
+        return false;
+    }
+    return use_route(table.rows[i]);
+}
+
+bool CH32SPIClass::setPins(uint8_t sck, uint8_t miso, uint8_t mosi)
+{
+    const RouteTable table = routes_for(_base);
+    const uint8_t want[CH32_ROUTE_PINS] = {sck, miso, mosi};
+    const int i = ch32_route_match(table.rows, table.count, want);
+    if (i < 0) {
+        return false;
+    }
+    return use_route(table.rows[i]);
+}
+
 /* ------------------------------------------------------- instances */
 #ifndef CH32_SPI1_REMAP_MASK
 #define CH32_SPI1_REMAP_MASK 0u

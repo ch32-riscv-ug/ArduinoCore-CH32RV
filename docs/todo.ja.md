@@ -325,18 +325,55 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       実際のV307はPA5/PA6/PA7がSPI1の既定のはずなので、データ側の欠落
 - [ ] `[P2]` 上流へ報告: `SPI3_MOSI（12）`のように**全角括弧つきのsignal名**がV307にある。
       現行の正規表現では拾わないので実害は無いが、R-19と同じ種類の揺れ
-- [ ] `[P1]` `[要判断]` **route選択の方針をI2C/SPIにもそのまま適用してよいか**。
-      「boardは既定routeで配線されている」という理由でUSARTは既定route優先にしているが、
-      X033/X035のI2C1は**既定route(PA10/PA11)が7型番中2つにしかbondされていない**。
-      残り5型番ではWireのpinが存在しないpadを指す。
-      coverage優先に切り替えるか、seriesごとに例外を持つか、現状のままにするか
+- [x] **決定(2026-08-21、ユーザ指示): `pins_arduino.h`の既定pinはデータシートどおり**、
+      つまり既定routeのまま。coverage優先には切り替えない。
+      X033/X035のI2C1のように**既定route(PA10/PA11)が7型番中2つにしかbondされていない**
+      ケースは残るが、そこは「利用例では明示的にpinを選ぶ」で埋める
+- [ ] `[P1]` **route定数を機械生成する**(2026-08-21、ユーザ指示)。
+      `CH32V003_I2C1_0_SCL_PC2`のように**series・周辺・route番号・役割・pad**を名前に持つ定数を
+      variantへ出す。狙いは**エディタ補完で選択肢が見えること**なので、
+      値そのものより名前の並びが要件。
+      **書式は未定**(`要判断`)で、生成は最後でよい。決めるときの論点:
+      - series名を入れるか(1 variantに1 seriesなので冗長だが、補完の頭出しには効く)
+      - route番号は`0`起点(=既定)でよいか、`default`/`remap-1`のどちらを書くか
+      - padが型番によって無い場合の扱い(生成するが`digitalPinIsCommon`で弾けるようにする等)
+      - 定数の型。`pins_arduino.h`のpad名(`PC2`)そのままにするか、専用の型で誤用を防ぐか
+      - **`#define`ではなくnamespace階層にする案**(2026-08-21、ユーザ指示)。
+        他コアの事例では`namespace variants_collector::esp32::esp32::<board>`の下に
+        `struct Info`/`struct Pins`を置き、`static inline constexpr`で値を持たせている。
+        **階層が見えるぶん補完が効く**のが利点で、名前空間の衝突も起きない。
+        欠点は`#ifdef`で存在判定できないことと、C(`.c`)から使えないこと。
+        **どれを採るかは決めない**: 自動生成なのだから何通りか作ってみて選ぶ
+- [ ] `[P1]` `[要判断]` **レジスタマップを同梱するか**(2026-08-21、ユーザ指示で調査)。
+      必要データの列挙は[R-20](research/register-map-data.ja.md)にD-1〜D-8として書いた。
+      要点は3つ:
+      - device-dataに**レジスタ関係の表は1つも無い**(`remap_fields.csv`が唯一の例外)
+      - 既に[ch32-rs/ch32-data](https://github.com/ch32-rs/ch32-data)(MIT/Apache)がある。
+        ただし**V205 / V407 / V467 / X305 / X315 / M030 / M103 / M007が見当たらない**
+      - 粒度は「peripheral型 × 型version」。同じI2Cでも
+        V003/X035にRTRが無くV20x/V30xにはある、という差が実在する
+- [ ] `[P1]` **利用例(examples)は明示的にpinを選ぶ書き方にする**(2026-08-21、ユーザ指示)。
+      既定routeがbondされていない型番があるので、`Wire.begin()`任せの例は
+      「動かない板がある例」になってしまう。
+      前提として`setRoute()`/`setPins()`相当がWire/SPI/Serialに要る
 - [x] **既定route(value 0)でもfieldを書く**ようにした。`begin()`が事前の状態に
       依存しなくなる。初期化後に既定へ戻す・再初期化するのは通常操作であって
       例外ではないため。`uart_scan`では実際にこれが牙を剥き、
       前の候補のremapが残ったまま全routeが1つのpadから出ていた
-- [ ] `[P1]` `setRoute(n)` / `setPins(tx, rx)`を実装する。逆引き表の材料は
-      `remap_routes.csv`の`peripheral`/`role`列で揃った。API形はR-19参照
-      (**まだ決定として文書化していない。実装が見えてから記録する**)
+- [x] **`setRoute(n)` / `setPins(...)`を実装した**(Serial / Wire / SPI)。
+      DxCore型どおり両方を持ち、`bool`を返し、**別routeのpinを混ぜたら拒否**する
+      (STM32duinoは`setRx`/`setTx`を独立に受けて衝突を見ない)。
+      - variantが`CH32_<instance>_ROUTES`を生成する。1行が
+        `{route番号, {pin×3}, PCFR1値, PCFR2値}`で、maskはinstance側が持つ(routeで変わらないため)
+      - **型番でpadが変わるrouteは表に載せない**。1つのheaderがseries全体を担うので、
+        パッケージ次第で別pinになるrouteは名前を付けられない
+      - 表は`setRoute()`/`setPins()`からしか参照しないので、
+        `--gc-sections`で**使わないsketchからは消える**
+      - 開いている状態で呼ぶと、**古いpadをfloating inputへ戻してから**開き直す
+        (USARTはbaudとframingを覚えていて同じ設定で再開する)
+      - **X035実機で確認**: `setRoute(1)`でPA10/PA11へ移ると出力が消え、
+        `setPins(PB10,PB11)`で戻ると再び出る。TX/RXを別routeから混ぜると`false`、
+        存在しないroute番号も`false`
 - [ ] `[P1]` PCFR2書き込み経路の**実機確認**。X035のSerialは既定routeなので踏めない。
       L103/M103/V203/V307のいずれかを載せたときに確認する
 - [x] X035エラッタのvariant表現(`x035-pc10-pc17-bonded`、ADR-0010のDecision 4)。
@@ -391,6 +428,19 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `[P2]` UIAPduino等のboard固有BL
 
 ## Probe識別 / HIL
+
+- [x] **LinkEのUART bridgeが固まる事象と復帰手順**(2026-08-21に遭遇)。
+      SDI printの有効/無効を何度か切り替えたあと、
+      **CDCが古いデータしか返さなくなった**(resetのたびに数十バイトだけ吐く)。
+      route変更なしの素のsketchでも同じだったので、ファーム側ではなくprobeの状態。
+      `probe-rs read`でflashを読むと**新しいimageは確かに書けていた**ので、
+      書き込みではなくbridgeだけが壊れる。
+      復帰は**USBの付け直し**。WSLでは`usbipd.exe detach --busid <id>`のあと
+      `usbipd.exe attach --wsl --busid <id>`。
+      なお`USBDEVFS_RESET`(ioctl)は**usbipのattachごと壊す**ので使わないこと
+- [ ] `[P2]` 上の事象の切り分け。SDI printのenable/disableが原因かは未確定で、
+      再現手順も未確立。HIL runnerに載せるなら「serialが無反応ならprobeを付け直す」を
+      自動化する余地がある
 
 - [ ] `[P0]` **(要実機)** LinkE 2台接続で`probe-rs list`を実行し、serialが個体別に出るか確認。
       出れば`--probe VID:PID:Serial`で確定選択できる
