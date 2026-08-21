@@ -37,6 +37,23 @@ using namespace arduino;
  * carries everything attachInterrupt() needs. */
 #define digitalPinToInterrupt(pin) (pin)
 
+/* api/Common.h declares these two but leaves them to the core. MIE is bit 3 of
+ * mstatus, and csrsi/csrci take the bit as an immediate, so each is one
+ * instruction with no scratch register.
+ *
+ * noInterrupts() does not nest: a second call still leaves one interrupts()
+ * away from enabled, which is the AVR behaviour libraries are written
+ * against. */
+static inline void interrupts(void)
+{
+    __asm__ volatile ("csrsi mstatus, 8" ::: "memory");
+}
+
+static inline void noInterrupts(void)
+{
+    __asm__ volatile ("csrci mstatus, 8" ::: "memory");
+}
+
 #ifdef NUM_ANALOG_INPUTS
 #define digitalPinToAnalogChannel(pin) CH32_PIN_TO_ADC_CHANNEL(pin)
 #define analogInputToDigitalPin(chan)  CH32_ADC_CHANNEL_TO_PIN(chan)

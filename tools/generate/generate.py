@@ -33,48 +33,48 @@ import sys
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=10 -DCH32_HPRE_LINEAR=1"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=10 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1"),
     "CH32V006": dict(march="rv32emc_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=1"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1"),
     "CH32V205": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x7 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
     "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
     "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x0b "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
     "CH32V407": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x688 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
     "CH32X035": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="48000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=24 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=48000000 -DCH32_FLASH_LATENCY=2 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=1"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=24 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=48000000 -DCH32_FLASH_LATENCY=2 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1"),
     "CH32X315": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=0"),
     # CH32V103's table is a jump table and its startup never writes csr 0x804.
     "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_MTVEC_MODE=1",
                      core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 "
                                   "-DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 "
-                                  "-DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
+                                  "-DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=0"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
     "CH32M030": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_HPRE_LINEAR=1"),
+                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1"),
     # Excluded, same reason as tests/startup/: CH32H417 boots via loadcode.
 }
 
@@ -316,16 +316,46 @@ SERIAL_BASES = {1: "CH32_USART1_BASE", 2: "CH32_USART2_BASE",
                 5: "CH32_USART5_BASE"}
 UART_ROUTE_ORDER = ("default", "main", "af-1", "af-2", "remap-1")
 
+# I2C signal naming is not normalized either: V003/X033/X035 say bare SCL/SDA,
+# M030/V002/V006/V407 say I2C_SCL/I2C_SDA, everyone else says I2C1_SCL. The
+# single-instance families all mean instance 1. SMBA is not a role the core
+# uses, so it is not matched at all.
+I2C_SIGNAL_RE = [
+    (re.compile(r"^I2C(\d+)_(SCL|SDA)$"), lambda m: (int(m.group(1)), m.group(2))),
+    (re.compile(r"^I2C_(SCL|SDA)$"),      lambda m: (1, m.group(1))),
+    (re.compile(r"^(SCL|SDA)$"),          lambda m: (1, m.group(1))),
+]
+# Only the instances the register map covers. Both sit on APB1; families with
+# one I2C simply have no I2C2 pins in device-data, so nothing is emitted.
+I2C_BASES = {1: "CH32_I2C1_BASE", 2: "CH32_I2C2_BASE"}
+# X033/X035 reach remap-5, and the af-N families (V205/X305/X315) carry only
+# alternate-function numbers - listed so the chooser can see them and say so.
+I2C_ROUTE_ORDER = ("default", "main", "af-3", "af-7",
+                   "remap-1", "remap-2", "remap-3", "remap-4", "remap-5")
+
+# SPI, same three spellings. NSS is deliberately not a role: Arduino drives
+# chip select as an ordinary GPIO, so requiring the peripheral's own NSS pad
+# would throw away routes that are perfectly usable.
+SPI_SIGNAL_RE = [
+    (re.compile(r"^SPI(\d+)_(SCK|MISO|MOSI)$"), lambda m: (int(m.group(1)), m.group(2))),
+    (re.compile(r"^SPI_(SCK|MISO|MOSI)$"),      lambda m: (1, m.group(1))),
+    (re.compile(r"^(SCK|MISO|MOSI)$"),          lambda m: (1, m.group(1))),
+]
+SPI_BASES = {1: "CH32_SPI1_BASE", 2: "CH32_SPI2_BASE", 3: "CH32_SPI3_BASE"}
+SPI_ROUTE_ORDER = ("default", "main", "af-4", "af-5",
+                   "remap-1", "remap-2", "remap-3", "remap-4",
+                   "remap-5", "remap-6")
+
 
 # AFIO remap. device-data gives the controlling field per series and selector;
 # the bit list can be non-contiguous (CH32V003 USART1_REMAP is bits 2 and 21),
 # so a value is spread over the listed positions, least significant bit first.
-REMAP_SELECTOR_RE = re.compile(r"^afio-u(?:s)?art(\d+)-(?:rm|remap)$")
+REMAP_SELECTOR_RE = re.compile(r"^afio-(u(?:s)?art|i2c|spi)(\d+)-(?:rm|remap)$")
 CH32_AFIO_PCFR1_OFFSET = 0x04
 
 
 def load_remap_fields(tables: pathlib.Path) -> dict:
-    """(series, usart index) -> [(register, bit)], LSB first.
+    """(series, "usart" | "i2c", index) -> [(register, bit)], LSB first.
 
     A field is not always one run of bits in one register: on L103/M103 the
     USART1 selector is PCFR1 bit 2 plus PCFR2 bits 19-20, and on V20x/V30x it
@@ -353,7 +383,8 @@ def load_remap_fields(tables: pathlib.Path) -> dict:
                     f"docs/research/signal-name-normalization.ja.md")
             bits.append((register, int(bit)))
         if bits:
-            out[(r["series"], int(m.group(1)))] = bits
+            kind = m.group(1) if m.group(1) in ("i2c", "spi") else "usart"
+            out[(r["series"], kind, int(m.group(2)))] = bits
     return out
 
 
@@ -379,37 +410,54 @@ def route_remap_value(route: str):
     return None
 
 
-def load_uart_pins(tables: pathlib.Path) -> dict:
-    """part -> {(usart index, route): {"TX": (port, bit), "RX": (port, bit)}}.
+def load_pin_routes(tables: pathlib.Path, signal_res: list,
+                    route_order: tuple) -> dict:
+    """part -> {(instance index, route): {role: (port, bit)}}.
 
-    TX and RX are kept per route: several families expose a USART only through
-    alternate-function routes, and pairing a TX from one route with an RX from
-    another would name two pins that cannot be active at the same time.
+    The roles of one peripheral are kept per route: several families expose an
+    instance only through alternate-function routes, and pairing a TX from one
+    route with an RX from another would name two pins that cannot be active at
+    the same time. The same is true of SCL and SDA.
     """
     with open(tables / "pin_functions.csv", newline="", encoding="utf-8") as f:
         functions = list(csv.DictReader(f))
     out: dict = {}
     for r in functions:
-        for pattern, extract in UART_SIGNAL_RE:
+        for pattern, extract in signal_res:
             m = pattern.match(r["signal"])
             if m:
-                index, direction = extract(m)
+                index, role = extract(m)
                 break
         else:
             continue
-        if r["route"] not in UART_ROUTE_ORDER:
+        if r["route"] not in route_order:
             continue
         m = PAD_PORT_RE.match(r["pad"])
         if not m:
             continue
         out.setdefault(r["part_number"], {}).setdefault(
-            (index, r["route"]), {})[direction] = (m.group(1), int(m.group(2)))
+            (index, r["route"]), {})[role] = (m.group(1), int(m.group(2)))
     return out
 
 
-def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
-                 remap: dict) -> dict:
-    """Pick one route per USART for the whole series.
+def load_uart_pins(tables: pathlib.Path) -> dict:
+    """part -> {(usart index, route): {"TX": ..., "RX": ...}}."""
+    return load_pin_routes(tables, UART_SIGNAL_RE, UART_ROUTE_ORDER)
+
+
+def load_i2c_pins(tables: pathlib.Path) -> dict:
+    """part -> {(i2c index, route): {"SCL": ..., "SDA": ...}}."""
+    return load_pin_routes(tables, I2C_SIGNAL_RE, I2C_ROUTE_ORDER)
+
+
+def load_spi_pins(tables: pathlib.Path) -> dict:
+    """part -> {(spi index, route): {"SCK": ..., "MISO": ..., "MOSI": ...}}."""
+    return load_pin_routes(tables, SPI_SIGNAL_RE, SPI_ROUTE_ORDER)
+
+
+def choose_routes(series: str, parts: list, pins: dict, remap: dict, kind: str,
+                  roles: tuple, route_order: tuple, indices=None) -> dict:
+    """Pick one route per peripheral instance for the whole series.
 
     Route order comes first, coverage second. Picking by coverage looked
     better on paper - a remap route often reaches more packages - but boards
@@ -417,21 +465,21 @@ def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
     are the WCH and the old community cores. A default that needs an AFIO
     remap would be wrong on the hardware people actually have.
 
-    Parts that do not bond the chosen pins have no Serial output there, which
-    the generated header states per USART.
+    Parts that do not bond the chosen pins have no peripheral there, which the
+    generated header states per instance.
     """
     chosen: dict = {}
-    indices = {i for pn in parts for (i, _r) in uarts.get(pn, {})}
-    for index in sorted(indices):
-        if index not in handler_of or index not in SERIAL_BASES:
+    present = {i for pn in parts for (i, _r) in pins.get(pn, {})}
+    for index in sorted(present):
+        if indices is not None and index not in indices:
             continue
         best = None
-        for route in UART_ROUTE_ORDER:
+        for route in route_order:
             pads_by_part = {}
             for pn in parts:
-                entry = uarts.get(pn, {}).get((index, route))
-                if entry and {"TX", "RX"} <= set(entry):
-                    pads_by_part[pn] = (entry["TX"], entry["RX"])
+                entry = pins.get(pn, {}).get((index, route))
+                if entry and set(roles) <= set(entry):
+                    pads_by_part[pn] = tuple(entry[role] for role in roles)
             if not pads_by_part:
                 continue
             variants = set(pads_by_part.values())
@@ -444,13 +492,34 @@ def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
             # while the af-N families use a different mechanism.
             value = route_remap_value(route)
             programmable = value == 0 or (value is not None and
-                                          (series, index) in remap)
-            score = (programmable, -UART_ROUTE_ORDER.index(route), coverage)
+                                          (series, kind, index) in remap)
+            score = (programmable, -route_order.index(route), coverage)
             if best is None or score > best[0]:
                 best = (score, coverage, route, next(iter(variants)))
         if best:
             chosen[index] = best[1:]
     return chosen
+
+
+def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
+                 remap: dict) -> dict:
+    """One route per USART, for the USARTs the core can actually drive."""
+    usable = {i for i in SERIAL_BASES if i in handler_of}
+    return choose_routes(series, parts, uarts, remap, "usart", ("TX", "RX"),
+                         UART_ROUTE_ORDER, usable)
+
+
+def choose_i2cs(series: str, parts: list, i2cs: dict, remap: dict) -> dict:
+    """One route per I2C instance. Only the two the register map covers."""
+    return choose_routes(series, parts, i2cs, remap, "i2c", ("SCL", "SDA"),
+                         I2C_ROUTE_ORDER, set(I2C_BASES))
+
+
+def choose_spis(series: str, parts: list, spis: dict, remap: dict) -> dict:
+    """One route per SPI instance."""
+    return choose_routes(series, parts, spis, remap, "spi",
+                         ("SCK", "MISO", "MOSI"), SPI_ROUTE_ORDER,
+                         set(SPI_BASES))
 
 
 # probe-rs target names, extracted from `probe-rs chip list` (see
@@ -588,7 +657,8 @@ def gen_exti(variant: str, entries: list) -> str:
 
 
 def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
-             pwm: dict, handlers: list, remap: dict, commit: str) -> str:
+             i2cs: dict, spis: dict, pwm: dict, handlers: list, remap: dict,
+             commit: str) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
     per_part = [pads.get(pn, set()) for pn in parts]
@@ -749,7 +819,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"#define CH32_SERIAL{index}_IRQ "
                        f"CH32_IRQN_{name.removesuffix('_IRQHandler')}")
             value = route_remap_value(route)
-            bits = remap.get((series, index))
+            bits = remap.get((series, "usart", index))
             if value is None:
                 out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
                 out.append(" * selector, not an AFIO remap. The core does not program it")
@@ -781,7 +851,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         def rank(i):
             coverage, route, _pads = chosen[i]
             value = route_remap_value(route)
-            programmable = value == 0 or (value is not None and (series, i) in remap)
+            programmable = value == 0 or (value is not None and
+                                          (series, "usart", i) in remap)
             return (programmable, route in ("default", "main"), -i)
         default = max(sorted(chosen), key=rank)
         # A board can wire a different USART than the series-wide choice: the
@@ -792,6 +863,73 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("#ifndef CH32_SERIAL_DEFAULT")
         out.append(f"#define CH32_SERIAL_DEFAULT {default}")
         out.append("#endif")
+        out.append("")
+
+    # --- I2C ---
+    # Same shape as the USART block, and for the same reason: the pair has to
+    # come from one route, and the route has to be one the core can select.
+    chosen_i2c = choose_i2cs(series, parts, i2cs, remap)
+    if chosen_i2c:
+        out.append("/* ---- I2C pins (device-data; one route per instance,")
+        out.append(" *      chosen for the whole series - see choose_i2cs) ---- */")
+        for index, (coverage, route, (scl, sda)) in sorted(chosen_i2c.items()):
+            where = ("on every part" if coverage == len(parts)
+                     else f"on {coverage} of {len(parts)} parts")
+            out.append(f"/* I2C{index}: route {route}, {where} */")
+            out.append(f"#define CH32_I2C{index}_SCL {pad_name(*scl)}")
+            out.append(f"#define CH32_I2C{index}_SDA {pad_name(*sda)}")
+            value = route_remap_value(route)
+            bits = remap.get((series, "i2c", index))
+            if value is None:
+                out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
+                out.append(" * selector, not an AFIO remap. The core does not program it")
+                out.append(" * yet, so this instance needs verifying (docs/todo.ja.md). */")
+            elif bits:
+                for register, (mask, val) in sorted(
+                        remap_mask_value(bits, value).items()):
+                    suffix = "" if register == "PCFR1" else "2"
+                    out.append(f"#define CH32_I2C{index}_REMAP{suffix}_MASK "
+                               f"0x{mask:08x}u")
+                    out.append(f"#define CH32_I2C{index}_REMAP{suffix}_VAL  "
+                               f"0x{val:08x}u")
+            elif value:
+                out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
+                out.append(f" * has no AFIO field for I2C{index} in this series. */")
+        # No CH32_WIRE_DEFAULT to match CH32_SERIAL_DEFAULT: the Arduino
+        # ecosystem names I2C buses Wire/Wire1 in bus order, so the library
+        # binds the bare name to the first instance itself.
+        out.append("")
+
+    # --- SPI ---
+    chosen_spi = choose_spis(series, parts, spis, remap)
+    if chosen_spi:
+        out.append("/* ---- SPI pins (device-data; one route per instance,")
+        out.append(" *      chosen for the whole series - see choose_spis).")
+        out.append(" *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */")
+        for index, (coverage, route, (sck, miso, mosi)) in sorted(chosen_spi.items()):
+            where = ("on every part" if coverage == len(parts)
+                     else f"on {coverage} of {len(parts)} parts")
+            out.append(f"/* SPI{index}: route {route}, {where} */")
+            out.append(f"#define CH32_SPI{index}_SCK {pad_name(*sck)}")
+            out.append(f"#define CH32_SPI{index}_MISO {pad_name(*miso)}")
+            out.append(f"#define CH32_SPI{index}_MOSI {pad_name(*mosi)}")
+            value = route_remap_value(route)
+            bits = remap.get((series, "spi", index))
+            if value is None:
+                out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
+                out.append(" * selector, not an AFIO remap. The core does not program it")
+                out.append(" * yet, so this instance needs verifying (docs/todo.ja.md). */")
+            elif bits:
+                for register, (mask, val) in sorted(
+                        remap_mask_value(bits, value).items()):
+                    suffix = "" if register == "PCFR1" else "2"
+                    out.append(f"#define CH32_SPI{index}_REMAP{suffix}_MASK "
+                               f"0x{mask:08x}u")
+                    out.append(f"#define CH32_SPI{index}_REMAP{suffix}_VAL  "
+                               f"0x{val:08x}u")
+            elif value:
+                out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
+                out.append(f" * has no AFIO field for SPI{index} in this series. */")
         out.append("")
 
     # --- PWM ---
@@ -921,6 +1059,8 @@ def main() -> int:
     interrupts, vector_forms = load_interrupts()
     pads, adc, unresolved = load_pin_tables(args.tables)
     uarts = load_uart_pins(args.tables)
+    i2cs = load_i2c_pins(args.tables)
+    spis = load_spi_pins(args.tables)
     probe_rs = load_probe_rs_targets()
     remap = load_remap_fields(args.tables)
     pwm = load_pwm_pins(args.tables)
@@ -953,7 +1093,7 @@ def main() -> int:
         for name, content in ld_files.items():
             outputs[args.platform / "variants" / series / name] = content
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
-            gen_pins(series, rows, pads, adc, uarts, pwm,
+            gen_pins(series, rows, pads, adc, uarts, i2cs, spis, pwm,
                      interrupts[SERIES_CONFIG[series]['vectors']], remap, commit)
 
     generated_parts = {r["part_number"] for rows in by_board.values() for r in rows}

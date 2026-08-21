@@ -66,6 +66,71 @@
 - [ ] `[P1]` 同じ確認を**L103/V20x/V103/V307**でも回す(要実機・board載せ替え)。
       `crt0_probe`がそのまま使える。variantごとのlinker scriptとvector tableの検証になる
 
+## 対応範囲の目安: UNO入門キット相当
+
+**方針(2026-08-20、ユーザ指示)**: UNO用入門キット
+(Freenove Ultimate Starter Kit、`~/dev_wch/Freenove_Ultimate_Starter_Kit-master`)は
+「このくらいのことができてほしい」を示す**ユースケース例**であって、
+キットのlibraryが全部動くことを目標にはしない。
+キットは**外部資料として参照するだけ**で、sketchもlibraryもこのrepositoryへ取り込まない。
+
+**基本クラスは優先度に関係なく全部実装する**。実装できるものから順に入れ、
+**実機検証は後でまとめて回す**。
+
+50 sketchが呼ぶcore APIを数えた結果、coreに足りないものは2つしかない。
+
+| キットが使うAPI | 状態 |
+|---|---|
+| `pinMode`(71) / `digitalWrite`(60) / `digitalRead`(10) | 実装済 |
+| `Serial.begin`(16) / `print`(69) / `println`(36) / `available` / `read` / `parseInt` | 実装済 |
+| `analogRead`(11) / `analogWrite`(20) | 実装済。ただしADC分解能は実機未確認、PWMは1kHz固定 |
+| `shiftOut`(6) / `pulseIn` / `delayMicroseconds` / `attachInterrupt` / `millis` / `random` | 実装済 |
+| **`tone`(3)** | **無音stub**。`Sketch_9.2.1_Passive_Buzzer`が鳴らない |
+| `Wire`(2) | 実装済(master)。16Bと14.1.xが該当 |
+
+- [x] `Wire`(I2C)を実装した(`libraries/Wire/`、master専用、polling)。
+      pinはvariantの`CH32_I2Cn_SCL/SDA`から。**X035実機で配線なしの自己検査11項目pass**
+- [x] `SPI`を実装した(`libraries/SPI/`、controller専用、polling)。
+      **X035実機で配線なしの自己検査9項目pass**(MISOをpull-upして0xFFが読めることを利用)
+- [x] `interrupts()`/`noInterrupts()`を実装した。`api/Common.h`が
+      「coreが定義すること」としていたのに**どこにも無かった**。`csrsi/csrci mstatus, 8`の1命令
+- [ ] `[P1]` `tone()`の実装(「コアAPI」の同項目と同じもの)
+- [ ] `[P2]` `Servo` / `LiquidCrystal`。基本クラスの後。AVR版`Servo`はtimerを直接触るので
+      **移植ではなく実装**になる
+- [ ] `[P2]` キット同梱libraryのzip 8種の可否は**目標に含めない**。参考までに、
+      `IRremote` / `FlexiTimer2` / `NewPing`はAVRのtimer・portレジスタを直接触るため
+      そのままでは動かない公算が大きい
+- [ ] `[P2]` UNO pin番号との読み替え表。キットの配線図はD2〜D13 / A0〜A5前提で、
+      CH32のpad名とは一対一に対応しない
+- [ ] `[P2]` 5Vモジュールとの電圧整合(LCD1602、L293D、HC-SR04のECHO等)。
+      CH32は3.3V。どのpadが5Vトレラントかはfamily・pinごとに違う
+
+## 対応ペリフェラルの範囲
+
+一覧は[ペリフェラル対応表](peripheral-support.ja.md)(peripheral × series)。
+EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
+こちらの実装状況を重ねた表で、`tools/generate/peripheral_matrix.py`が作ります。
+
+**決定(2026-08-20、ユーザ指示)**
+
+- EVTにある**基本ペリフェラルは対応したい**
+- **USB PDは必ず載せる**(初回release対象)
+- RTOS(FreeRTOS/RT-Thread/HarmonyOS/TencentOS)は**一覧には載せるが初回release対象外**
+- USB host/deviceは**要判断**
+
+- [x] ペリフェラル対応表を作った(2026-08-20)
+- [ ] `[P1]` `[要判断]` 基本ペリフェラルのうち方針未決のもの:
+      PWR(sleep)、FLASH(`EEPROM`相当)、IWDG/WWDG、RTC。
+      いずれもArduinoに標準APIが無いか、libraryとして出すのが慣例
+- [ ] `[P1]` **USB PDの実装方針**。対応siliconはV205 / L103 / M030 / X033・X035。
+      Arduinoに前例が無いので、公開APIの形から決める必要がある
+- [ ] `[P1]` `[要判断]` USB device(CDC/HID)とUSB hostの範囲。
+      CDCを入れると「書き込み後にそのままSerial monitor」ができる反面、
+      family差(USBFS/USBHS/USBSS)とdescriptor管理を抱え込む
+- [ ] `[P2]` 表の空欄は「EVTに例が無い」であって「siliconに無い」ではない。
+      実装時にreference manualか`ch32-device-data`で裏を取ること
+      (V407のSysTick、V103のINTが実例)
+
 ## 割込みとvector table
 
 - [x] **ベクタテーブルをFLASH先頭へ移した**。QingKe V2は`mtvec`のベース下位ビットを捨てるため、
@@ -107,7 +172,31 @@
 - [ ] `[P1]` `analogWrite`のPWM周波数が1kHz固定。Arduino慣例には合うが変更手段が無い
 - [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ
 - [ ] `[P2]` X305/X315のPWM。timerもper-pin AF方式でdefault routeが無い
-- [ ] `[P2]` `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))
+- [x] `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))。
+      詳細と残作業は[ライブラリ(Wire / SPI)](#ライブラリwire--spi)へ
+
+## ライブラリ(Wire / SPI)
+
+どちらも`libraries/`に置いた同梱library。pinはvariantの生成マクロから来るので
+`begin()`に引数は要らない。AFIO routeは**既定routeでも毎回書く**(`HardwareSerial`と同じ理由)。
+
+- [x] `Wire`: master、polling、bufferは32バイト(`CH32_WIRE_BUFFER_SIZE`で変更可)。
+      **待ちは全てtimeout付き**(`CH32_WIRE_TIMEOUT_US`、既定25ms)。
+      pull-upが無い/デバイスが居ない、はI2Cの普通の失敗なので、
+      そこで止まらず`endTransmission()`のエラーコードになる
+- [x] `SPI`: controller、polling、NSSはsoftware(SSM/SSI)にしてpinを解放。
+      `transfer16()`は8bit×2で送る(DFFを切り替えないので設定が半端にならない)
+- [ ] `[P1]` **実デバイス相手の確認**(要実機・要配線)。今の自己検査は
+      「バスに何も無くても固まらない」ことしか見ていない。
+      I2CはEEPROMかLCD、SPIはMISO-MOSI短絡のloopbackが要る
+- [ ] `[P1]` **slave / peripheral モード**。`Wire.begin(address)`・`onReceive`・`onRequest`と
+      SPIのperipheralは**受け付けるが何もしない**。
+      `SPI_HAS_PERIPHERAL_MODE`は意図的に未定義にしてある
+- [ ] `[P1]` `Wire`の`setWireTimeout()`/`clearWireTimeout()`(AVR互換API)が無い
+- [ ] `[P2]` `usingInterrupt()`が空実装。この実装はISRからバスを触らないので実害は無いが、
+      sketch側がISRからSPIを使うと壊れる
+- [ ] `[P2]` I2C/SPIとも**PCLK1 = F_CPU前提**。APB prescalerやPLLを入れたら追随が要る
+- [ ] `[P2]` DMAを使っていない。長い転送はCPUを占有する
 
 ## libc / heap
 
@@ -130,12 +219,31 @@
 
 ## Serial
 
-- [ ] `[P1]` **SDI printfを独立したSerialクラスとして公開する**(`SerialSDI`等)。
-      WCH-Linkのdebug data register(`0xE0000380`/`0xE0000384`)へ7バイトずつ渡す方式で、
-      **UART配線が一切要らない**。hostは`minichlink -T`が読む。
-      旧コアとWCH公式はどちらも`_write`の`#if`で切り替えるだけだったが、
-      **Streamとして分けておけば両方同時に使える**。
-      2026-08-20に生波形で試したが同梱minichlink(`-T`)では読めず、上流buildが要る
+- [x] **SDI print(debug moduleのmailbox経由の出力)を実機で受信できることを確認**
+      (2026-08-20、X035 + WCH-LinkE fw 2.12)。UART配線もpinも消費せず、**coreはhaltしない**
+      (`millis`が500ms刻みのまま進むことで確認)。
+      - protocol: `DATA0`が0になるのを待ち、`DATA1`=byte3..6、`DATA0`=長さ|byte0..2<<8。
+        7バイト/frame。番地`0xE0000380`/`0x384`は魔法の数ではなく、
+        `hartinfo`が`dataaccess=1, datasize=2, dataaddr=0x380`と自己申告している
+      - 有効化はprobeへのUSB command 1つ(`0x0d` payload `ee 00`、`ff`=非対応)。
+        **probeはWCH-LinkE(CH32V305)限定、firmware 2.10以上**。手元は2.12
+      - 対応chip(wlinkの判定): V003/V00x/V103/V20x/V30x/**X035**/L103/CH641/CH643/CH645。
+        **V4x7/V205/M030/X3x5は対象外**
+      - **受信はwlinkがsessionを保持している間だけ**。
+        `wlink flash --enable-sdi-print --watch-serial`は通り、
+        probe-rsで書いた後に`wlink sdi-print enable`だけしても届かない
+        (attachでhaltし、`resume`は別sessionになるため)。wlinkが終了すると転送も止まる
+      - vendorの`_write`は`DATA0`が0になるまで**無限に待つ**。debuggerを外すと固まるので、
+        我々の実装では待ちを打ち切って捨てる(spikeで実装・確認済み)
+- [ ] `[P1]` **SDI printを独立したSerialクラスとして公開する**(`SerialSDI`等)。
+      target側は約40行。`_write`の`#if`で差し替える旧コア/WCH公式と違い、
+      **Streamとして分ければUARTと同時に使える**
+- [ ] `[P1]` `[要判断]` SDI printの受信をどう提供するか。
+      (a) wlinkを第2のuploaderとして同梱する、
+      (b) 有効化commandは小さいので自前のtool/probe-rs patchで賄う、
+      (c) 開発者向けに外部toolとして案内するだけ。
+      なお[R-17](research/upload-programmers.ja.md)のとおりwlinkは**probeをserialで選べない**
+      (`-d INDEX`のみ)ため、LinkEを複数挿す運用とは相性が悪い
 - [ ] `[P1]` `Serial`の実体をboardごとに差し替えられるようにする。
       series生成の既定は「全型番に出ているUSART」だが、実boardの配線は別
       (X035 EVTはWCH公式・旧コアとも**USART1/PB10**を使う)
@@ -210,6 +318,18 @@
       取り込みで`load_remap_fields`はregister修飾を要求するようになり
       (無ければ落とす)、variantは**fieldがまたぐregisterごとに**
       `CH32_SERIALn_REMAP{,2}_{MASK,VAL}`を持つ
+- [ ] `[P1]` **上流へ報告: CH32V307に`SPI1_SCK/default`の行が無い**。
+      `pin_functions.csv`はV307のSPI1についてMISO/MOSI/NSSのdefaultは持つのに
+      SCKだけremap-1しか無く、そのため生成器がSPI1にremap-1(PB3/PB4/PB5)を選ぶ。
+      結果として**SPI1(remap-1)とSPI3(default)が同じpadを名乗る**。
+      実際のV307はPA5/PA6/PA7がSPI1の既定のはずなので、データ側の欠落
+- [ ] `[P2]` 上流へ報告: `SPI3_MOSI（12）`のように**全角括弧つきのsignal名**がV307にある。
+      現行の正規表現では拾わないので実害は無いが、R-19と同じ種類の揺れ
+- [ ] `[P1]` `[要判断]` **route選択の方針をI2C/SPIにもそのまま適用してよいか**。
+      「boardは既定routeで配線されている」という理由でUSARTは既定route優先にしているが、
+      X033/X035のI2C1は**既定route(PA10/PA11)が7型番中2つにしかbondされていない**。
+      残り5型番ではWireのpinが存在しないpadを指す。
+      coverage優先に切り替えるか、seriesごとに例外を持つか、現状のままにするか
 - [x] **既定route(value 0)でもfieldを書く**ようにした。`begin()`が事前の状態に
       依存しなくなる。初期化後に既定へ戻す・再初期化するのは通常操作であって
       例外ではないため。`uart_scan`では実際にこれが牙を剥き、
@@ -376,8 +496,10 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       専用の通知先は設けない
 - [ ] `[P1]` Board Manager index を実際に公開する。workflowは用意したが未実行で、
       `sketch.yaml`の`platform_index_url`は未公開URLのまま
-- [ ] `[P1]` `libraries/`(SPI/Wire)同梱後、installした状態で`#include <SPI.h>`が
-      解決されるかを`install_check.py`へ追加
+- [x] `libraries/`(SPI/Wire)同梱後、**installした状態で`#include <SPI.h>`/`<Wire.h>`が
+      解決されることを`install_check.py`で確認**(3本目のsketch`Libraries`)。
+      release archiveのallowlistに`libraries`は元から入っていたが、
+      入っていることと**解決されること**は別なので、compileで踏むようにした
 - [x] **testに要るものを`<repo>/.tools`へ集約**(`tools/index/fetch_tools.py`)。
       環境変数なしで全harnessが回るようになった。版は`tools/index/tools_*.json`
       (package indexの正本)から取り、SHA-256照合つき。device-dataは`boards.txt`の

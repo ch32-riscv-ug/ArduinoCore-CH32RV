@@ -9,6 +9,7 @@
  * tools/generate/generate.py from the FAMILY table):
  *   CH32_GPIO_PORT_WIDTH   8 (V003/V00x), 16 (most), 24 (X033/X035)
  *   CH32_SYSTICK_64        1 when SysTick CNT/CMP are 64-bit
+ *   CH32_I2C_HAS_RTR       1 when the I2C block has a rise-time register
  *   CH32_IRQNS             generated header naming each interrupt slot
  */
 #pragma once
@@ -23,6 +24,10 @@
 #endif
 #ifndef CH32_IRQNS
 #error "CH32_IRQNS is required (see build.core_defines in boards.txt)"
+#endif
+
+#ifndef CH32_I2C_HAS_RTR
+#error "CH32_I2C_HAS_RTR is required (see build.core_defines in boards.txt)"
 #endif
 
 #ifndef CH32_EXTIS
@@ -76,6 +81,94 @@
 #define CH32_RCC_APB1_USART3 (1u << 18)
 #define CH32_RCC_APB1_USART4 (1u << 19)
 #define CH32_RCC_APB1_USART5 (1u << 20)
+
+/* ------------------------------------------------------------------ I2C */
+/* Both instances sit on APB1. Families with one I2C simply have no I2C2 pins,
+ * so nothing names the second base. The registers are 16-bit and every one is
+ * padded to a 32-bit slot, which is why the offsets step by four. */
+#define CH32_I2C1_BASE (CH32_APB1_BASE + 0x5400u)
+#define CH32_I2C2_BASE (CH32_APB1_BASE + 0x5800u)
+
+#define CH32_I2C_CTLR1(b)  CH32_REG16((b) + 0x00u)
+#define CH32_I2C_CTLR2(b)  CH32_REG16((b) + 0x04u)
+#define CH32_I2C_OADDR1(b) CH32_REG16((b) + 0x08u)
+#define CH32_I2C_OADDR2(b) CH32_REG16((b) + 0x0Cu)
+#define CH32_I2C_DATAR(b)  CH32_REG16((b) + 0x10u)
+#define CH32_I2C_STAR1(b)  CH32_REG16((b) + 0x14u)
+#define CH32_I2C_STAR2(b)  CH32_REG16((b) + 0x18u)
+#define CH32_I2C_CKCFGR(b) CH32_REG16((b) + 0x1Cu)
+/* Rise-time register. V003/V00x/X03x/M030 have no such register - their I2C
+ * block ends at CKCFGR - so it is only written where CH32_I2C_HAS_RTR says so
+ * (build.core_defines, from the FAMILY table in generate.py). */
+#define CH32_I2C_RTR(b)    CH32_REG16((b) + 0x20u)
+
+#define CH32_I2C_CTLR1_PE      (1u << 0)   /* peripheral enable             */
+#define CH32_I2C_CTLR1_START   (1u << 8)
+#define CH32_I2C_CTLR1_STOP    (1u << 9)
+#define CH32_I2C_CTLR1_ACK     (1u << 10)
+#define CH32_I2C_CTLR1_POS     (1u << 11)  /* ACK applies to the next byte  */
+#define CH32_I2C_CTLR1_SWRST   (1u << 15)
+
+#define CH32_I2C_CTLR2_FREQ_MASK 0x3Fu     /* APB1 clock in MHz             */
+
+#define CH32_I2C_STAR1_SB      (1u << 0)   /* start condition generated     */
+#define CH32_I2C_STAR1_ADDR    (1u << 1)   /* address sent / matched        */
+#define CH32_I2C_STAR1_BTF     (1u << 2)   /* byte transfer finished        */
+#define CH32_I2C_STAR1_RXNE    (1u << 6)
+#define CH32_I2C_STAR1_TXE     (1u << 7)
+#define CH32_I2C_STAR1_BERR    (1u << 8)
+#define CH32_I2C_STAR1_ARLO    (1u << 9)   /* arbitration lost              */
+#define CH32_I2C_STAR1_AF      (1u << 10)  /* acknowledge failure = NACK    */
+#define CH32_I2C_STAR1_OVR     (1u << 11)
+
+#define CH32_I2C_STAR2_MSL     (1u << 0)   /* master mode                   */
+#define CH32_I2C_STAR2_BUSY    (1u << 1)
+#define CH32_I2C_STAR2_TRA     (1u << 2)   /* transmitting                  */
+
+#define CH32_I2C_CKCFGR_CCR_MASK 0x0FFFu
+#define CH32_I2C_CKCFGR_DUTY     (1u << 14) /* fast mode 16/9 instead of 2/1 */
+#define CH32_I2C_CKCFGR_FS       (1u << 15) /* fast mode                     */
+
+/* APB1 */
+#define CH32_RCC_APB1_I2C1 (1u << 21)
+#define CH32_RCC_APB1_I2C2 (1u << 22)
+
+/* ------------------------------------------------------------------ SPI */
+/* SPI1 is on APB2, SPI2/SPI3 on APB1. Like the I2C block the registers are
+ * 16-bit in 32-bit slots. Only what a master transfer needs is named; the CRC
+ * and I2S registers are left out. */
+#define CH32_SPI1_BASE (CH32_APB2_BASE + 0x3000u)
+#define CH32_SPI2_BASE (CH32_APB1_BASE + 0x3800u)
+#define CH32_SPI3_BASE (CH32_APB1_BASE + 0x3C00u)
+
+#define CH32_SPI_CTLR1(b) CH32_REG16((b) + 0x00u)
+#define CH32_SPI_CTLR2(b) CH32_REG16((b) + 0x04u)
+#define CH32_SPI_STATR(b) CH32_REG16((b) + 0x08u)
+#define CH32_SPI_DATAR(b) CH32_REG16((b) + 0x0Cu)
+
+#define CH32_SPI_CTLR1_CPHA      (1u << 0)
+#define CH32_SPI_CTLR1_CPOL      (1u << 1)
+#define CH32_SPI_CTLR1_MSTR      (1u << 2)
+#define CH32_SPI_CTLR1_BR_SHIFT  3          /* divider = 2^(BR+1)            */
+#define CH32_SPI_CTLR1_BR_MASK   (0x7u << 3)
+#define CH32_SPI_CTLR1_SPE       (1u << 6)
+#define CH32_SPI_CTLR1_LSBFIRST  (1u << 7)
+#define CH32_SPI_CTLR1_SSI       (1u << 8)  /* the value NSS reads as        */
+#define CH32_SPI_CTLR1_SSM       (1u << 9)  /* NSS from SSI, not from a pin  */
+#define CH32_SPI_CTLR1_RXONLY    (1u << 10)
+#define CH32_SPI_CTLR1_DFF       (1u << 11) /* 16-bit frames                 */
+#define CH32_SPI_CTLR1_BIDIOE    (1u << 14)
+#define CH32_SPI_CTLR1_BIDIMODE  (1u << 15)
+
+#define CH32_SPI_STATR_RXNE      (1u << 0)
+#define CH32_SPI_STATR_TXE       (1u << 1)
+#define CH32_SPI_STATR_MODF      (1u << 5)
+#define CH32_SPI_STATR_OVR       (1u << 6)
+#define CH32_SPI_STATR_BSY       (1u << 7)
+
+/* APB1 */
+#define CH32_RCC_APB1_SPI2 (1u << 14)
+#define CH32_RCC_APB1_SPI3 (1u << 15)
 
 /* ---------------------------------------------------------------- FLASH */
 /* Flash controller registers (not the flash memory itself). */

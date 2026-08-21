@@ -184,6 +184,32 @@
 #define CH32_SERIAL_DEFAULT 2
 #endif
 
+/* ---- I2C pins (device-data; one route per instance,
+ *      chosen for the whole series - see choose_i2cs) ---- */
+/* I2C1: route af-3, on every part */
+#define CH32_I2C1_SCL PD4
+#define CH32_I2C1_SDA PD5
+/* NOTE: route af-3 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this instance needs verifying (docs/todo.ja.md). */
+/* I2C2: route af-3, on every part */
+#define CH32_I2C2_SCL PD6
+#define CH32_I2C2_SDA PD7
+/* NOTE: route af-3 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this instance needs verifying (docs/todo.ja.md). */
+
+/* ---- SPI pins (device-data; one route per instance,
+ *      chosen for the whole series - see choose_spis).
+ *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
+/* SPI2: route af-4, on every part */
+#define CH32_SPI2_SCK PB5
+#define CH32_SPI2_MISO PB7
+#define CH32_SPI2_MOSI PB6
+/* NOTE: route af-4 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this instance needs verifying (docs/todo.ja.md). */
+
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present
  * on every part in the series. Override it per board or on the command

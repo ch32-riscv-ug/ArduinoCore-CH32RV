@@ -49,6 +49,7 @@ PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32v"
 FQBN_BLINK = f"{PACKAGER}:{ARCH}:CH32V006:pnum=ANY"
 FQBN_ACCEPTANCE = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"
+FQBN_LIBRARIES = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"
 
 # Nothing of the repository's own scaffolding may reach a user's machine.
 # gen_index.py packages an allowlist, so a leak means the allowlist grew
@@ -72,6 +73,20 @@ void loop() {
   digitalWrite(LED_BUILTIN, LOW);
   delay(500);
 }
+"""
+
+
+# The bundled libraries only exist for a user if the release archive carries
+# libraries/ and arduino-cli finds them there without a sketchbook copy. The
+# working tree cannot show that: it is the archive's allowlist that decides.
+LIBRARIES = """\
+#include <SPI.h>
+#include <Wire.h>
+void setup() {
+  Wire.begin();
+  SPI.begin();
+}
+void loop() {}
 """
 
 
@@ -251,6 +266,8 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
                 ("Acceptance", FQBN_ACCEPTANCE,
                  sketch(work, "Acceptance", copy_from=REPO / "tests" / "sketches"
                         / "basic" / "serial_println" / "serial_println.ino")),
+                ("Libraries", FQBN_LIBRARIES,
+                 sketch(work, "Libraries", LIBRARIES)),
         ):
             out = cli("compile", "--fqbn", fqbn, "--build-path",
                       str(work / f"build-{name}"), str(src), env=env)

@@ -30,6 +30,9 @@ def test_compiles_with_no_overrides(install):
     # installed platform has actually differed from the working tree - so the
     # acceptance sketch is built too.
     assert install["sizes"]["Acceptance"] > 0
+    # And the bundled libraries: <Wire.h>/<SPI.h> have to resolve from the
+    # installed platform, which only happens if libraries/ is in the archive.
+    assert install["sizes"]["Libraries"] > 0
 
 
 @pytest.mark.slow

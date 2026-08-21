@@ -203,6 +203,39 @@
 #define CH32_SERIAL_DEFAULT 1
 #endif
 
+/* ---- I2C pins (device-data; one route per instance,
+ *      chosen for the whole series - see choose_i2cs) ---- */
+/* I2C1: route af-7, on every part */
+#define CH32_I2C1_SCL PB8
+#define CH32_I2C1_SDA PB9
+/* NOTE: route af-7 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this instance needs verifying (docs/todo.ja.md). */
+/* I2C2: route af-7, on every part */
+#define CH32_I2C2_SCL PB10
+#define CH32_I2C2_SDA PB11
+/* NOTE: route af-7 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this instance needs verifying (docs/todo.ja.md). */
+
+/* ---- SPI pins (device-data; one route per instance,
+ *      chosen for the whole series - see choose_spis).
+ *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
+/* SPI1: route af-5, on every part */
+#define CH32_SPI1_SCK PB3
+#define CH32_SPI1_MISO PB4
+#define CH32_SPI1_MOSI PB5
+/* NOTE: route af-5 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this instance needs verifying (docs/todo.ja.md). */
+/* SPI2: route af-5, on every part */
+#define CH32_SPI2_SCK PB13
+#define CH32_SPI2_MISO PB14
+#define CH32_SPI2_MOSI PB15
+/* NOTE: route af-5 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this instance needs verifying (docs/todo.ja.md). */
+
 /* ---- PWM: 1 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32_PWM_PIN_COUNT 1
 #define CH32_PWM_PIN_TO_TIMER(p) ( \

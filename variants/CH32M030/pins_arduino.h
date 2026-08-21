@@ -174,6 +174,24 @@
 #define CH32_SERIAL_DEFAULT 1
 #endif
 
+/* ---- I2C pins (device-data; one route per instance,
+ *      chosen for the whole series - see choose_i2cs) ---- */
+/* I2C1: route default, on 4 of 5 parts */
+#define CH32_I2C1_SCL PB3
+#define CH32_I2C1_SDA PB2
+#define CH32_I2C1_REMAP_MASK 0x00000003u
+#define CH32_I2C1_REMAP_VAL  0x00000000u
+
+/* ---- SPI pins (device-data; one route per instance,
+ *      chosen for the whole series - see choose_spis).
+ *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
+/* SPI1: route default, on 3 of 5 parts */
+#define CH32_SPI1_SCK PA1
+#define CH32_SPI1_MISO PC4
+#define CH32_SPI1_MOSI PC3
+#define CH32_SPI1_REMAP_MASK 0x00000060u
+#define CH32_SPI1_REMAP_VAL  0x00000000u
+
 /* ---- PWM: 10 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32_PWM_PIN_COUNT 10
 #define CH32_PWM_PIN_TO_TIMER(p) ( \
