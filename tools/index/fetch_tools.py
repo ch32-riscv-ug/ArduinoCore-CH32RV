@@ -142,12 +142,17 @@ def unpack(archive: pathlib.Path, dest: pathlib.Path) -> None:
 def locked_commit() -> str | None:
     """The ch32-device-data commit the generated files were produced from.
 
-    boards.txt records it, so the tables can be checked out at exactly the
-    revision this working tree was generated against rather than at whatever
-    main happens to be.
+    vendor/ch32-device-data.lock.toml records it, so the tables can be checked
+    out at exactly the revision this working tree was generated against rather
+    than at whatever main happens to be. Regex rather than tomllib because the
+    other vendor locks are read the same way and the harnesses still run on
+    Python 3.10 (tools/vendor/check_api_sync.py).
     """
-    header = (REPO / "boards.txt").read_text(encoding="utf-8")[:2000]
-    m = re.search(r"ch32-device-data tables @ git ([0-9a-f]{40})", header)
+    lock = REPO / "vendor" / f"{DEVICE_DATA}.lock.toml"
+    if not lock.exists():
+        return None
+    m = re.search(r'^commit = "([0-9a-f]{40})"', lock.read_text(encoding="utf-8"),
+                  re.M)
     return m.group(1) if m else None
 
 
@@ -169,7 +174,8 @@ def fetch_device_data(root: pathlib.Path) -> pathlib.Path:
                            check=True)
             print(f"  checked out locked commit {commit[:12]}", file=sys.stderr)
     else:
-        print("  boards.txt records no locked commit; leaving the clone as is",
+        print(f"  {DEVICE_DATA}.lock.toml records no commit; "
+              "leaving the clone as is",
               file=sys.stderr)
     return dest / "tables"
 

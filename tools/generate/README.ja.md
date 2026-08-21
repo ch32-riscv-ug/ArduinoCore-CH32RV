@@ -24,7 +24,8 @@ python3 generate.py --tables ... --platform ... --check
 - 並び順は`series_order`(V002→V004→…→M007)+型番昇順で決定的。FQBNの既定(先頭項目)が再生成で変わらない
 - pnum項目が`build.board`/`build.series`(vendorデバイス選択マクロ。V007/M007→`CH32V007_M007`)/`build.ldscript`/`upload.maximum_*`を注入
 - ldはユニークな(FLASH, SRAM)組合せごとに1本(`ch32v00x_62k_8k.ld`等)。MEMORYのみ持ち、共通`sections.ld`をINCLUDE
-- 生成物ヘッダに`DO NOT EDIT`と**source tablesのgit commit**を記録(タイムスタンプは入れず再生成をidempotentに保つ)
+- 生成物ヘッダに`DO NOT EDIT`を記録(タイムスタンプは入れず再生成をidempotentに保つ)
+- **source tablesのgit commitは`vendor/ch32-device-data.lock.toml`に1か所だけ**置く。生成物ヘッダにcommitを入れていた頃は、中身が変わらないupstream bumpでも全生成物が更新されていた。lockはgeneratorの出力の1つなので`--check`がそのまま検証する。lockは`read_table()`が実際に読んだ表のSHA-256も持ち、**この5表に触れないupstream commitは生成物を変えられない**ことを表す
 
 ## 現在の範囲と今後
 

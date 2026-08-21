@@ -97,7 +97,7 @@ cp .env.example .env                  # 作業台固有の設定(手動testのpi
 | 置き場所 | `<repo>/.tools/<name>/<version>/`(gitignore済み) |
 | 版の正本 | [`tools/index/tools_*.json`](../tools/index/)。package indexを作るのと同じファイルなので、**利用者がinstallするのと同じ版**でtestが回る |
 | 完全性 | ダウンロードは展開前にSHA-256を照合 |
-| device-data | `boards.txt`が記録しているlocked commitでcheckoutする |
+| device-data | `vendor/ch32-device-data.lock.toml`が記録しているlocked commitでcheckoutする |
 | probe-rs | [`mirror-probe-rs`](https://github.com/ch32-riscv-ug/mirror-probe-rs)から([ADR-0011](../docs/adr/0011-tool-mirror-repository.ja.md)) |
 
 環境変数(`CH32_GCC_BIN` / `CH32_PROBE_RS` / `CH32_TABLES` / `CH32_XPACK_ARCHIVE`)は

@@ -716,8 +716,18 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       入っていることと**解決されること**は別なので、compileで踏むようにした
 - [x] **testに要るものを`<repo>/.tools`へ集約**(`tools/index/fetch_tools.py`)。
       環境変数なしで全harnessが回るようになった。版は`tools/index/tools_*.json`
-      (package indexの正本)から取り、SHA-256照合つき。device-dataは`boards.txt`の
-      locked commitでcheckout。`CH32_*`は上書き用として存続。CIも同じ経路へ移行
+      (package indexの正本)から取り、SHA-256照合つき。device-dataはlocked commitで
+      checkout(当初は`boards.txt`のヘッダ、現在は`vendor/ch32-device-data.lock.toml`)。
+      `CH32_*`は上書き用として存続。CIも同じ経路へ移行
+- [x] **device-dataのpinを`vendor/ch32-device-data.lock.toml`へ集約した**。
+      それまでcommit idが生成物55ファイルのヘッダに入っていたため、**中身が1バイトも
+      変わらないupstream bumpでも56ファイルの差分**になり、レビューが成立しなかった。
+      lockはgenerator自身の出力なので`generated-sync`がそのまま検証する。
+      lockは**generatorが読む表のSHA-256も持つ**(`errata` `pin_functions` `pins`
+      `products` `remap_fields`の5つ)。読み口を`read_table()`一本にしたので、
+      入力を増やせば自動でlockに載る。実測: `66a421f`→`0a1eed7`の8 commitのうち
+      **この5表に触れたのは2つだけ**で、bumpの差分は56ファイルから
+      「lock 3行 + CH32V305の`pins_arduino.h`」になった
 - [x] `tests/sizebench/sizebench.py`が参照していた`tests/startup/crt0_ch32.S`と
       `tests/platform/`は既に存在せず、**harnessが動いていなかった**。正本
       (`cores/arduino/`)を指すよう修正。CIには載っていない

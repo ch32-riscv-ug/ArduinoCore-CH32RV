@@ -46,13 +46,13 @@ jobs:
         run: CH32_MIRROR_ROOT="$HOME/mirrors" uv run pytest -q test_startup_equivalence.py test_interrupt_tables.py
 
   # W-4: committed generated files must match regeneration from the locked
-  # ch32-device-data commit (recorded in the generated boards.txt header)
+  # ch32-device-data commit (recorded in vendor/ch32-device-data.lock.toml)
   generated-sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      # fetch_tools.py checks out the commit boards.txt locks, so this compares
+      # fetch_tools.py checks out the commit the lock records, so this compares
       # against exactly the tables the committed files were generated from.
       - name: Fetch the device-data tables at the locked commit
         run: uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
