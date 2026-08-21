@@ -1,0 +1,4 @@
+SerialSDI	KEYWORD1
+CH32SerialSDI	KEYWORD1
+ch32_set_stdout	KEYWORD2
+ch32_get_stdout	KEYWORD2

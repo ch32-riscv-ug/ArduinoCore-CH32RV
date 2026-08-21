@@ -37,6 +37,7 @@
 | R-22 | [USB device/hostのスタック選定](usb-stack.ja.md) | TinyUSBかベンダ独自か。TinyUSBのCH32対応範囲、WCH側がhost FS層をバイナリでしか出していないこと、X035はPR未マージであること、そしてX035以外はPLLが先という順序 | Q-011 | **調査済み・採用は判断待ち** |
 | R-23 | [TinyUSBのベンダヘッダ依存をどう外すか](tinyusb-vendor-header.ja.md) | TinyUSBのCH32 driverが要求する4つの記号の特定、上流refactor / opt-in追加 / 同名shim の比較、既存ユーザーへの影響 | Q-011 | **決定(2026-08-21): まずshim(B)。上流提案(A')はR-20が形になってから** |
 | R-24 | [クロック関連データの整備依頼](clock-data-request.ja.md) | PLL対応に要る事実(ツリーの段数・PLL field・非RCCレジスタ・APB上限・flash latency・USB 48MHz経路)をC-1〜C-8として上流へ依頼する案。検証方法込み | Q-011 | **依頼案。上流へ未提出** |
+| R-25 | [coreに置くものと、ライブラリに出すもの](core-scope.ja.md) | coreの範囲を決める3つの基準、`SerialSDI`のライブラリ化、printfの出力先差し替え、examplesの置き場所と規約、レジスタヘッダを公開することの懸念 | Q-011 | **一部実施済み(SerialSDI移動・stdout・examples)。基準のADR化は判断待ち** |
 | R-17 | [書き込み経路・書き込み器・書き込みソフト](upload-programmers.ja.md) | family×書き込み経路の対応表、互換programmerエコシステム、default/オプションのメニュー構成案 | Q-040〜Q-049 | 調査済み・[ADR-0008](../adr/0008-upload-strategy.ja.md)で方針決定(実機認定は未) |
 
 ## 主要な結論(要約)

@@ -343,16 +343,33 @@ CH32_DEFINE_SERIAL(5, CH32_USART5_BASE, true, CH32_RCC_APB1_USART5)
 /* --------------------------------------------------------- printf() bridge */
 #include "ch32_serial_write.h"
 
+/* Where printf()/puts() go. A pointer rather than a compile-time choice,
+ * because the alternatives to the UART - SDI print, and later USB CDC - live
+ * in libraries, and the core must not have to know about them to let a sketch
+ * pick one. The default is the board's monitor port, resolved at link time, so
+ * a sketch that never calls ch32_set_stdout() behaves exactly as before.
+ *
+ * A port that has not been begun accepts nothing: HardwareSerial::write()
+ * returns 0 when it is closed, so printf() before Serial.begin() stays a
+ * silent no-op rather than a hang. */
+static Print *ch32_stdout =
+#ifdef SERIAL_PORT_MONITOR
+    &SERIAL_PORT_MONITOR;
+#else
+    nullptr;
+#endif
+
+void ch32_set_stdout(Print *out)
+{
+    ch32_stdout = out;
+}
+
+Print *ch32_get_stdout(void)
+{
+    return ch32_stdout;
+}
+
 extern "C" size_t ch32_serial_write_bytes(const uint8_t *data, size_t len)
 {
-#ifdef SERIAL_PORT_MONITOR
-    if (!SERIAL_PORT_MONITOR) {
-        return 0;
-    }
-    return SERIAL_PORT_MONITOR.write(data, len);
-#else
-    (void)data;
-    (void)len;
-    return 0;
-#endif
+    return ch32_stdout ? ch32_stdout->write(data, len) : 0;
 }

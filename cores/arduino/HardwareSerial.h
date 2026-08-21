@@ -147,3 +147,15 @@ extern arduino::CH32HardwareSerial Serial5;
 #if defined(SERIAL_PORT_MONITOR) && !defined(Serial)
 #define Serial SERIAL_PORT_MONITOR
 #endif
+
+/* Retarget printf()/puts()/stderr. The default is the monitor port above.
+ *
+ *   ch32_set_stdout(&SerialSDI);   // trace over the debug probe, no wiring
+ *   ch32_set_stdout(nullptr);      // discard
+ *
+ * This moves *stdio* only. The name `Serial` is bound at compile time and does
+ * not follow - a sketch that wants to print to SDI writes SerialSDI.println()
+ * as usual. Anything deriving from Print works, so a library that provides a
+ * USB CDC port plugs in the same way, without the core knowing it exists. */
+void ch32_set_stdout(arduino::Print *out);
+arduino::Print *ch32_get_stdout(void);

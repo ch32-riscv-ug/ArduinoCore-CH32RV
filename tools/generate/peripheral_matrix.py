@@ -165,7 +165,7 @@ STATUS = {
     "ARGB (LEDドライバ)": ("対象外", "-", ""),
     "RNG": ("対象外", "-", "`random()`はsoftware実装で足りている"),
     "BLE": ("対象外", "-", "V208のみ。専用stackが要る"),
-    "SDI print (debug出力)": ("実装済", "SerialSDI",
+    "SDI print (debug出力)": ("実装済", "SerialSDI(library)",
                               "送信のみ。spikeで受信まで実機確認済み(class実装後の実機確認は未)。"
                               "**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ**"),
     "FreeRTOS": ("対象外", "-", "初回release対象外(ユーザ指示)"),

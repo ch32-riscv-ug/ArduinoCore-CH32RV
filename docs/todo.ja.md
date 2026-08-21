@@ -235,6 +235,29 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 - [x] `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))。
       詳細と残作業は[ライブラリ(Wire / SPI)](#ライブラリwire--spi)へ
 
+## coreの範囲とexamples
+
+範囲の判断基準・examplesの規約・レジスタ公開の懸念は[R-25](research/core-scope.ja.md)。
+
+- [x] **`SerialSDI`をcoreから`libraries/`へ移した**(2026-08-21)。
+      ArduinoCore-APIが宣言しておらず、coreの他ファイルからの参照も無かったため。
+      `#include <SerialSDI.h>`の綴りは変わらないのでsketchへの影響は無い
+- [x] **`printf`の出力先を差し替えられるようにした**(`ch32_set_stdout(Print*)`)。
+      既定はmonitor port。**stdioだけ**動き、`Serial`という名前は追随しない。
+      USB CDCが来ても同じ口を使う
+- [x] **examplesの置き場所と規約を決めた**。ライブラリ機能はそのライブラリの`examples/`、
+      coreのAPIは`libraries/CH32/examples/`。
+      Arduinoは**ライブラリ経由でしかexamplesを配れない**ためで、
+      ESP32も同じ理由で`libraries/ESP32/`に`src/dummy.h`を置いている。
+      こちらは同じファイルに「レジスタの逃げ道」という仕事を与えた(`CH32.h`)
+- [x] **全examplesをCIでコンパイル**する([tests/test_examples.py](../tests/test_examples.py))。
+      X035とV003の2 board。現在11 example
+- [x] 各ライブラリに`keywords.txt`を置いた
+- [ ] `[P1]` `[要判断]` 判断基準(core 3条件)と同梱ライブラリの方針を**ADRにするか**
+- [ ] `[P1]` examplesを増やす。いまは11本。
+      `Wire`は実デバイス例、`SPI`はSDカード的な例、coreは`shiftOut`・`pulseIn`・
+      `micros`あたりが手薄
+
 ## ライブラリ(Wire / SPI / Servo)
 
 どちらも`libraries/`に置いた同梱library。pinはvariantの生成マクロから来るので
@@ -308,7 +331,9 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       - vendorの`_write`は`DATA0`が0になるまで**無限に待つ**。debuggerを外すと固まるので、
         我々の実装では待ちを打ち切って捨てる(spikeで実装・確認済み)
 - [x] **SDI printを独立したSerialクラスとして実装した**
-      (`cores/arduino/SerialSDI.{h,cpp}`、instance名`SerialSDI`)。
+      (`libraries/SerialSDI/`、instance名`SerialSDI`)。
+      **2026-08-21にcoreからライブラリへ移した**([R-25](research/core-scope.ja.md))。
+      `#include <SerialSDI.h>`という綴りは変わらないのでsketchへの影響は無い。
       `_write`の`#if`で差し替える旧コア/WCH公式と違い、**UARTと同時に使える**。
       送信のみ。待ちは打ち切るので、hostが居なくても止まらない。
       TU を分けてあるので、使わないsketchはリンクされない。**実機確認は未**
