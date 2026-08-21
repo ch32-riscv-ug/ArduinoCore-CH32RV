@@ -32,6 +32,17 @@ from compile_matrix import (Failure, compile_one, gcc_bin,   # noqa: E402
 
 BOARDS = ("CH32X035", "CH32V003")
 
+# An example that cannot fit the floor board says so here, with the reason.
+# Trimming the example until it fits would make it worse for every other board,
+# and pretending it fits would be a lie the linker catches later. Skips are
+# printed, never silent - the same rule sync_profiles.py follows for sketches.
+SKIP = {
+    ("CH32", "PrintFormatting"): {
+        "CH32V003": "dtostrf() pulls the full formatter with float support, "
+                    "which does not fit 16 KB",
+    },
+}
+
 
 def examples() -> list:
     """[(library, name, directory)] for every bundled example, sorted."""
@@ -58,8 +69,14 @@ def run(work: pathlib.Path) -> dict:
         raise Failure("no examples under libraries/*/examples")
 
     built = []
+    skipped = []
     for library, name, src in found:
+        done = []
         for board in BOARDS:
+            reason = SKIP.get((library, name), {}).get(board)
+            if reason:
+                skipped.append((library, name, board, reason))
+                continue
             fqbn = f"ch32-riscv-ug:ch32v:{board}:pnum=ANY"
             build = work / "build" / board / library / name
             code, output = compile_one(env, fqbn, gcc, build, src)
@@ -67,10 +84,14 @@ def run(work: pathlib.Path) -> dict:
                 raise Failure(f"{library}/{name} does not compile for "
                               f"{board}:\n{output}")
             built.append((library, name, board))
-        print(f"== {library}/{name}: ok on {', '.join(BOARDS)}", flush=True)
+            done.append(board)
+        print(f"== {library}/{name}: ok on {', '.join(done)}", flush=True)
 
-    print(f"EXAMPLES OK: {len(found)} examples x {len(BOARDS)} boards")
-    return {"examples": found, "built": built}
+    for library, name, board, reason in skipped:
+        print(f"== {library}/{name}: skipped on {board} - {reason}", flush=True)
+    print(f"EXAMPLES OK: {len(built)} builds from {len(found)} examples "
+          f"x {len(BOARDS)} boards, {len(skipped)} skipped")
+    return {"examples": found, "built": built, "skipped": skipped}
 
 
 def main() -> int:

@@ -31,3 +31,19 @@ def test_each_library_has_at_least_one_example(repo, built):
     # the CDC glue lands (docs/todo.ja.md).
     missing = libraries - with_examples - {"TinyUSB"}
     assert not missing, f"no examples for {sorted(missing)}"
+
+
+def test_every_library_documents_itself(repo):
+    """A bundled library ships README.md, README.ja.md and keywords.txt.
+
+    ADR-0013 makes documentation part of what "bundled" means: the examples
+    show how, and the README says what to watch out for. Checking it here is
+    what keeps a new library from arriving without either.
+    """
+    missing = []
+    for properties in sorted((repo / "libraries").glob("*/library.properties")):
+        library = properties.parent
+        for name in ("README.md", "README.ja.md", "keywords.txt"):
+            if not (library / name).exists():
+                missing.append(f"{library.name}/{name}")
+    assert not missing, f"missing: {missing}"

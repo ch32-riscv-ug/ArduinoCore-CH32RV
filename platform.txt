@@ -13,8 +13,12 @@ compiler.size.cmd=riscv-none-elf-size
 
 compiler.warning_flags=-Wall
 compiler.common_flags=-march={build.march} -mabi={build.mabi} -Os -g -ffunction-sections -fdata-sections {compiler.warning_flags}
-compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines}
-compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics
+# api/deprecated-avr-comp is on the include path so that <avr/dtostrf.h> and
+# <avr/pgmspace.h> resolve the way AVR sketches spell them. ArduinoCore-API
+# ships those headers for exactly that reason, and samd/renesas add the same
+# path; without it the headers are present but unreachable.
+compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} "-I{build.core.path}/api/deprecated-avr-comp"
+compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp"
 compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} -DCH32_VECTORS={build.vectors}
 compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_ARCH_{build.arch} -D{build.series}
 

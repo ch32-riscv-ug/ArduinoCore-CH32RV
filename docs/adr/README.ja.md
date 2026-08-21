@@ -23,6 +23,9 @@
 
 `Accepted`はmaintainerが明示的に承認したものだけに付けます。調査・実験の結果として書かれた段階では`Proposed`のままにします。
 
+2026-08-21にADR-0013(同梱ライブラリとexamplesの方針)を`Accepted`にしました。
+maintainerの「同梱ライブラリの方針は承認します」による明示承認です。
+
 2026-08-21にADR-0012(USBはTinyUSB)を`Accepted`にしました。maintainerの明示指示
 「方針としてTinyUSBを採用します」によるもので、実装はこれからです。
 

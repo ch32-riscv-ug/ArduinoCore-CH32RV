@@ -237,6 +237,16 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 
 ## coreの範囲とexamples
 
+**examplesを書いたら、届いていなかったAPIが2つ見つかった**(2026-08-21):
+
+- [x] `analogReadResolution()` / `analogWriteResolution()`は**実装済みなのに宣言が無く**、
+      sketchから呼べなかった。ArduinoCore-APIのこの版が宣言していないため。
+      `Arduino.h`の`extern "C"`ブロックへ追加した
+- [x] `dtostrf()`は**ヘッダを同梱しているのにinclude pathに無かった**ので
+      `<avr/dtostrf.h>`が解決できなかった。
+      `api/deprecated-avr-comp`をinclude pathへ追加(samd/renesasと同じ)。
+      これで`<avr/pgmspace.h>`も届く
+
 範囲の判断基準・examplesの規約・レジスタ公開の懸念は[R-25](research/core-scope.ja.md)。
 
 - [x] **`SerialSDI`をcoreから`libraries/`へ移した**(2026-08-21)。
@@ -253,10 +263,20 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 - [x] **全examplesをCIでコンパイル**する([tests/test_examples.py](../tests/test_examples.py))。
       X035とV003の2 board。現在11 example
 - [x] 各ライブラリに`keywords.txt`を置いた
-- [ ] `[P1]` `[要判断]` 判断基準(core 3条件)と同梱ライブラリの方針を**ADRにするか**
-- [ ] `[P1]` examplesを増やす。いまは11本。
-      `Wire`は実デバイス例、`SPI`はSDカード的な例、coreは`shiftOut`・`pulseIn`・
-      `micros`あたりが手薄
+- [x] **決定(2026-08-21、ユーザ指示): 同梱ライブラリの方針を承認**
+      → [ADR-0013](adr/0013-bundled-libraries.ja.md)。
+      coreの3条件・同梱の3基準・examplesの置き場所を1本にまとめた
+- [x] **examplesを19本に増やし、core APIをひととおり網羅した**。
+      `libraries/CH32/`に14本(Blink / SerialEcho / AnalogRead / Fade / ToneMelody /
+      PinInterrupt / ShiftOut / PulseIn / Timing / RandomNumbers /
+      AnalogResolution / CriticalSection / PrintFormatting / PinCapabilities)、
+      各ライブラリに5本
+- [x] **全ライブラリに`README.md`と`README.ja.md`を置いた**。
+      使い方だけでなく**注意事項**(プルアップは自前・timeoutの意味・
+      slave未実装・timer共有・サーボの電源・SDIはhost側の準備が要る、等)を書いた。
+      `tests/test_examples.py`がREADME 2本と`keywords.txt`の存在を検査する
+- [ ] `[P2]` examplesをさらに増やす。実デバイスを使う例(EEPROM/LCD/センサ)は、
+      外部ライブラリに依存しない範囲でどこまでやるかを決めてから
 
 ## ライブラリ(Wire / SPI / Servo)
 

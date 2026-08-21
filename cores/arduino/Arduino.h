@@ -65,6 +65,14 @@ static inline void noInterrupts(void)
 extern "C" {
 #endif
 void SystemInit(void);
+
+/* ArduinoCore-API does not declare these two - they arrived in the Arduino
+ * API after the version this core pins, and several cores define them
+ * themselves. Ours are implemented in C (wiring_analog.c / wiring_pwm.c), so
+ * the declarations belong in this extern "C" block: without them a sketch
+ * cannot call a function the core has had all along. */
+void analogReadResolution(int bits);
+void analogWriteResolution(int bits);
 #ifdef __cplusplus
 }
 #endif

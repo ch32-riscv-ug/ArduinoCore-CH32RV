@@ -1,0 +1,61 @@
+# CH32
+
+ここには2つのものが入っています。**coreのAPIのexamples**と、
+**レジスタレベルの逃げ道**です。
+
+同居している理由は、Arduinoのプラットフォームが**ライブラリ経由でしかexamplesを
+配れない**ことと、ライブラリには最低1つヘッダが要ることです。
+他のコアがこの用途に空のダミーを置いているのに対し、
+こちらはそのファイルに仕事を持たせました。
+
+## examples
+
+`digitalWrite()`・`analogRead()`・`tone()`などはcoreのもので、
+どのライブラリにも属さないので、examplesはここに置いています。すべて共通で:
+
+- pinをvariantの名前(`LED_BUILTIN`・`A0`・`SDA`・`SCK`…)から取ります。
+  数値を書かないので、どのboardでも動きます
+- 冒頭コメントに**何を示すか**と**必要な配線**を書いています
+- 一番広いboardと一番狭いboardの2つでCIがコンパイルします
+
+| example | 何を示すか |
+|---|---|
+| Blink | `pinMode`・`digitalWrite`・`delay` |
+| SerialEcho | `Serial`の入出力 |
+| AnalogRead | `analogRead` |
+| Fade | `analogWrite` |
+| ToneMelody | `tone`・`noTone` |
+| PinInterrupt | `attachInterrupt`とISRとの状態共有 |
+| ShiftOut | 74HC595への`shiftOut` |
+| PulseIn | `pulseIn`・`delayMicroseconds` |
+| Timing | `millis`・`micros`と、その巻き戻り |
+| RandomNumbers | `random`・`randomSeed` |
+| AnalogResolution | `analogReadResolution`・`analogWriteResolution` |
+| CriticalSection | `interrupts`・`noInterrupts`・`volatile` |
+| PrintFormatting | `Print`・`String`・`dtostrf` |
+| PinCapabilities | このチップに実在するpad |
+
+**知らないboardで最初に走らせるべきはPinCapabilities**です。
+CH32のpin番号は`(port << 5) | bit`なので飛び飛びで、
+PA0が0、PB0が32、その間のほとんどの番号はpadに対応しません。
+このsketchは推測せずvariantに問い合わせます。
+
+## 逃げ道
+
+```cpp
+#include <CH32.h>
+
+CH32_TIM_ATRLR(CH32_TIM2_BASE) = 999;   // timerを直接叩く
+```
+
+`CH32.h`はレジスタマップ・GPIOヘルパ・pinエンコード・route表をまとめて読み込みます。
+注意書きが2つあります。
+
+1. **この層は安定ではありません。** 名前はベンダSDKのものではなく
+   このコア独自のもので、**変わる予定**です
+   (レジスタマップは手書きから`ch32-device-data`生成へ移行していきます)。
+   これを使うsketchは、Arduino APIだけを使うsketchと違って
+   **コアのバージョンに固定**されます。
+2. **coreも同じレジスタを使っています。** `Serial`や`Wire`が開いている状態で
+   `AFIO_PCFR1`を直接書くと`begin()`や`setRoute()`と衝突します。
+   症状は「次に開いたときにpinが動く」です。
