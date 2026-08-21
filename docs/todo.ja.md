@@ -135,11 +135,17 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 - [x] **決定(2026-08-21、ユーザ指示): USBは[TinyUSB](https://github.com/hathach/tinyusb)を採用**
       ([ADR-0012](adr/0012-usb-stack.ja.md))。自前スタックは書かない。
       **未対応seriesはforkせず上流へ載せにいく**のも方針。調査は[R-22](research/usb-stack.ja.md)
-- [ ] `[P1]` **上流貢献その1: レジスタstructの自前化**。TinyUSBの`ch32_usbfs_reg.h`は
-      V20x/V30x/F20xについて`#include <ch32v20x.h>`のように**WCHのSDKヘッダを読む**。
-      **このコアはEVTヘッダを同梱しない**([ADR-0003](adr/0003-owned-startup-vector-linker.ja.md))ので
-      そのままでは詰まる。structを自前化するのは**上流自身のTODO**でもある
-      (V103とCH58xは既にそうなっている)
+- [x] **決定(2026-08-21、ユーザ指示): ベンダヘッダ依存はshimで回避する**
+      ([R-23](research/tinyusb-vendor-header.ja.md))。TinyUSBは無改造で使い、
+      `variants/<SERIES>/ch32v20x.h`のような**同名ヘッダをこちらで生成**する。
+      driverが要求するのは4つだけで、実際に無いのは**レジスタstructのみ**
+      (IRQn・NVIC・SystemCoreClockは既存の生成物と`F_CPU`で足りる)
+- [ ] `[P1]` shimを生成する。structは**EVTを読んで起こす**ことになるので、
+      **EVTとoffsetを突き合わせる自動チェック**を必ず付ける(写し間違いを検出できる状態にする)
+- [ ] `[P2]` **上流提案(自前struct)は「ずっと先」**。理由は保守の当て:
+      手で写したstructを上流へ置けば人力追随の義務を負う。
+      前提は[R-20](research/register-map-data.ja.md)、つまり
+      **データが育ってレジスタ定義が自動反映される信頼**ができてから
 - [ ] `[P1]` **上流貢献その2: PR #3703(X033/X035)を実機で検証して返す**。
       マージの障害は**HILで試せていないこと**。X035実機はこちらにある
 - [ ] `[P1]` **上流貢献その3: L103/M103・M030・V205のUSBFS**。
