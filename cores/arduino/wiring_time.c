@@ -20,8 +20,20 @@
 #error "CH32_FLASH_LATENCY is required (see build.core_defines in boards.txt)"
 #endif
 
-#define CH32_TICKS_PER_MS ((uint32_t)(F_CPU / 1000u))
-#define CH32_TICKS_PER_US ((uint32_t)(F_CPU / 1000000u))
+/* What SysTick counts. Every family but CH32V103 can be told to count HCLK;
+ * V103 has no such bit and is fixed at HCLK/8. */
+#if CH32_SYSTICK_V103
+#define CH32_SYSTICK_HZ (F_CPU / 8u)
+#if (F_CPU / 8u) < 1000000u
+#error "F_CPU below 8 MHz leaves CH32V103's SysTick under 1 MHz, which micros() \
+cannot divide by."
+#endif
+#else
+#define CH32_SYSTICK_HZ (F_CPU)
+#endif
+
+#define CH32_TICKS_PER_MS ((uint32_t)(CH32_SYSTICK_HZ / 1000u))
+#define CH32_TICKS_PER_US ((uint32_t)(CH32_SYSTICK_HZ / 1000000u))
 
 static volatile uint32_t ch32_millis_counter;
 
@@ -109,28 +121,50 @@ void SystemInit(void)
     }
 #endif
 
-    /* 1 kHz tick straight off HCLK, which the prescaler above made F_CPU. */
+    /* 1 kHz tick off HCLK - or HCLK/8 on CH32V103, which cannot select. */
     CH32_SYSTICK_CTLR = 0u;
+#if !CH32_SYSTICK_V103
     CH32_SYSTICK_SR = 0u;
+#endif
+#if CH32_SYSTICK_V103
+    CH32_SYSTICK_WRITE8(0x04u, 0u);
+    CH32_SYSTICK_WRITE8(0x08u, 0u);
+    CH32_SYSTICK_WRITE8(0x0Cu, CH32_TICKS_PER_MS - 1u);
+    CH32_SYSTICK_WRITE8(0x10u, 0u);
+#else
     CH32_SYSTICK_CNT = 0u;
     CH32_SYSTICK_CMP = CH32_TICKS_PER_MS - 1u;
 #if CH32_SYSTICK_64
     CH32_SYSTICK_CNT_HI = 0u;
     CH32_SYSTICK_CMP_HI = 0u;
 #endif
+#endif
     ch32_irq_enable(CH32_IRQN_SysTick);
+#if CH32_SYSTICK_V103
+    /* STE is the whole configuration here: the other two bits do not exist
+     * (writing 0x7 reads back 0x1), the PFIC enable above is what lets the
+     * match through, and the source is fixed. EVT's SYSTICK_Interrupt example
+     * does exactly this. */
+    CH32_SYSTICK_CTLR = CH32_SYSTICK_CTLR_STE;
+#else
     CH32_SYSTICK_CTLR = CH32_SYSTICK_CTLR_STE | CH32_SYSTICK_CTLR_STIE |
                         CH32_SYSTICK_CTLR_STCLK;
+#endif
 }
 
 /* TODO(docs/todo.ja.md): use the hardware auto-reload bit where the family has
  * one instead of rewinding the counter by hand. */
 __attribute__((interrupt)) void SysTick_Handler(void)
 {
+#if CH32_SYSTICK_V103
+    CH32_SYSTICK_WRITE8(0x04u, 0u);
+    CH32_SYSTICK_WRITE8(0x08u, 0u);
+#else
     CH32_SYSTICK_SR = 0u;
     CH32_SYSTICK_CNT = 0u;
 #if CH32_SYSTICK_64
     CH32_SYSTICK_CNT_HI = 0u;
+#endif
 #endif
     ch32_millis_counter++;
 }

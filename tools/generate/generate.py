@@ -1769,6 +1769,7 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
         f"{board}.build.core_defines="
         f"-DCH32_GPIO_PORT_WIDTH={fact['port_width']} "
         f"-DCH32_SYSTICK_64={fam['systick64']} "
+        f"-DCH32_SYSTICK_V103={1 if cfg['family'] == 'CH32V103' else 0} "
         f"-DCH32_HSI_HZ={fact['hsi_hz']} "
         f"-DCH32_FLASH_LATENCY={latency} "
         f"-DCH32_ADC_BITS={fam['adc_bits']} "

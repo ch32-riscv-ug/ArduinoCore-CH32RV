@@ -70,7 +70,12 @@ def candidates(series: str, tables: pathlib.Path):
             value = g.route_remap_value(route)
             if value is None:
                 continue                       # per-pin AF, not an AFIO remap
-            bits = remap.get((series, index))
+            # (series, kind, index): load_remap_fields grew the kind
+            # dimension when I2C and SPI selectors were added, and a
+            # two-part key silently returned None here - which sent
+            # every remapped route down the `cannot select` path, so
+            # the scan only ever tried the default ones.
+            bits = remap.get((series, "usart", index))
             if value and not bits:
                 continue                       # cannot select this route
             tx = dirs["TX"]

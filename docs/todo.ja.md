@@ -735,32 +735,28 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       予約のままなので、**V305の看板機能であるUSB-HSにベクタが無かった**。
       サイズ変化なし(RSVもIRQも`.word`1つ)。同種の取り違えを防ぐため、
       `vectors`の接尾辞を`evt_variants.csv`の既定macroと突き合わせる検査を入れた
-- [ ] `[P0]` **CH32V103では`millis()`/`micros()`/`delay()`が最初から動いていない**。
+- [x] **CH32V103の`millis()`/`micros()`/`delay()`が動かなかったのを直した**(P0)。
       SysTickのレジスタ配置がV103だけ違う。WCH自身の`core_riscv.h`より:
 
       | offset | CH32V103 | 他の10 family |
       |---|---|---|
       | +0x00 | CTLR | CTLR |
-      | +0x04 | **CNTL**(カウンタ下位) | SR |
-      | +0x08 | **CNTH** | CNT |
-      | +0x0C | **CMPLR**(比較値 下位) | — |
-      | +0x10 | **CMPHR**(比較値 上位) | CMP |
+      | +0x04 | **CNTL0..3**(カウンタ下位) | SR |
+      | +0x08 | **CNTH0..3** | CNT |
+      | +0x0C | **CMPLR0..3**(比較値 下位) | — |
+      | +0x10 | **CMPHR0..3**(比較値 上位) | CMP |
 
-      `ch32_registers.h`のコメントは「どのfamilyも同じoffsetで、CMPは0x10」と書いて
-      いるが、**V103では成立しない**。我々は比較値を+0x10(=上位ワード)へ書いていたので
-      実効値が`71999 << 32`になり、一致が起きない。
-      **実測(CH32V103R8T6)**: `ch32_millis_counter`が0のまま進まない、
-      `CMPLR`(+0x0C)がリセット値`0xFFFFFFFF`のまま、`+0x04`は変化する(=カウンタ)。
-      `servo_selftest`が「ハング」に見えたのは`delay()`と`measure_pulse()`の
-      `millis()`待ちが返らないため。
-      **影響はCH32V103シリーズのみ**。他10 familyは`CTLR,SR,CNT,CMP`で確認済み。
-      **未解決**: `CTLR`にbit1/bit2を書いても立たない(実測`0x7`を書いて`0x1`)。
-      EVTのV103は`CTLR=1`でカウンタを回して**ポーリング**するだけで、
-      compare割込みを使っていない。比較値とカウンタを正しい位置へ書いても割込みが
-      起きないことをデバッガで確認済みなので、**割込み許可の場所がRMのSTK章にしかない**。
-      register mapの整備(R-20)に依存する。
-      **これまで発覚しなかった理由**: V103は実機で回したことがなく、手元のボードは
-      無印WCH-Link(CH549)でシリアルが読めない。レジスタを読んで初めて分かった
+      違いは5点: 比較値の位置、カウンタの位置、**SRが無い**、**CTLRは`STE`のみ**
+      (`STIE`/`STCLK`は存在せず、割込み許可はPFIC側だけ)、**クロック源がHCLK/8固定**。
+      さらに**カウンタはバイト単位でしか書けない**(word書き込みは無視される)。
+      読みはwordで可(EVTのdelayループがそうしている)。
+      出典: WCHの`core_riscv.h`、EVTの`SYSTICK/SYSTICK_Interrupt`、
+      旧コア`ch32-riscv-arduino`の`cores/CH32V103/port.c`(EVTを出典として明記)。
+      **実機検証(CH32V103R8T6 @72 MHz)**: `CMPLR`=8999(=72e6/8/1000-1)、
+      millisが実時間の**96%**で進行(残り4%は測定時のhalt分)、
+      `servo_selftest`が完走して`failures=0`、PCはmainループ内。
+      シリアルが読めない基板なので、すべてレジスタとRAMの読み出しで確認した。
+      **影響はCH32V103シリーズのみ**。他10 familyはサイズがバイト単位で不変
 - [x] **PLLに対応し、CH32V20x / CH32V307を8 MHz -> 144 MHzにした**。
       仕組み: `clock_configs.csv`と`clock_symbols.csv`から**生成時に設定を解決して**
       boards.txtへ出す(`CH32_CLOCK_SYSCLK_HZ` / `USE_PLL` / `PLL_MASK` / `PLL_VALUE` /

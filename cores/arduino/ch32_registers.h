@@ -278,23 +278,43 @@
 #define CH32_USART_CTLR2_STOP_1P5 (3u << 12)
 
 /* -------------------------------------------------------------- SysTick */
-/* These offsets hold on ten of the eleven families. CH32V103 is the exception
- * and this map is WRONG for it: its SysTick has no SR at all, the counter is
- * at 0x04 and the compare at 0x0C, so the value written to CMP below lands in
- * V103's compare *high* word and the match never happens - millis(), micros()
- * and delay() do not work there. Confirmed against WCH's own core_riscv.h and
- * measured on a CH32V103R8T6. Not fixed here because the interrupt-enable bit
- * is not in CTLR either (writing 0x7 reads back 0x1) and EVT's V103 code only
- * polls the counter, so where it lives needs the reference manual's STK
- * chapter - see docs/todo.ja.md. */
+/* CH32V103 (QingKe V3A) lays this out differently from every other family:
+ * there is no status register, the counter starts where SR is elsewhere, the
+ * compare sits four bytes lower, CTLR has no interrupt-enable or clock-select
+ * bit, and the source is fixed at HCLK/8. Confirmed against WCH's own
+ * core_riscv.h, EVT's SYSTICK/SYSTICK_Interrupt example, and measured on a
+ * CH32V103R8T6 - writing the compare at the other families' offset put it in
+ * the high word, so the match never happened and millis() never advanced. */
+#ifndef CH32_SYSTICK_V103
+#error "CH32_SYSTICK_V103 is required (see build.core_defines in boards.txt)"
+#endif
+
 #define CH32_SYSTICK_BASE 0xE000F000u
 #define CH32_SYSTICK_CTLR CH32_REG32(CH32_SYSTICK_BASE + 0x00u)
+#if CH32_SYSTICK_V103
+/* Read as a word - EVT's own delay loop does - but WRITE AS BYTES. WCH
+ * declares these as four uint8_t each and every EVT example writes them one
+ * byte at a time; a word write is ignored. Measured: after a word write the
+ * counter carried on past the compare, matched once on the way up and never
+ * again, so millis() stopped at 1. */
+#define CH32_SYSTICK_CNT    CH32_REG32(CH32_SYSTICK_BASE + 0x04u)
+#define CH32_SYSTICK_CNT_HI CH32_REG32(CH32_SYSTICK_BASE + 0x08u)
+#define CH32_SYSTICK_CMP    CH32_REG32(CH32_SYSTICK_BASE + 0x0Cu)
+#define CH32_SYSTICK_CMP_HI CH32_REG32(CH32_SYSTICK_BASE + 0x10u)
+#define CH32_SYSTICK_WRITE8(off, v) do { \
+    CH32_REG8(CH32_SYSTICK_BASE + (off) + 0u) = (uint8_t)((v) >> 0);  \
+    CH32_REG8(CH32_SYSTICK_BASE + (off) + 1u) = (uint8_t)((v) >> 8);  \
+    CH32_REG8(CH32_SYSTICK_BASE + (off) + 2u) = (uint8_t)((v) >> 16); \
+    CH32_REG8(CH32_SYSTICK_BASE + (off) + 3u) = (uint8_t)((v) >> 24); \
+} while (0)
+#else
 #define CH32_SYSTICK_SR   CH32_REG32(CH32_SYSTICK_BASE + 0x04u)
 #define CH32_SYSTICK_CNT  CH32_REG32(CH32_SYSTICK_BASE + 0x08u)  /* low word */
 #define CH32_SYSTICK_CMP  CH32_REG32(CH32_SYSTICK_BASE + 0x10u)  /* low word */
 #if CH32_SYSTICK_64
 #define CH32_SYSTICK_CNT_HI CH32_REG32(CH32_SYSTICK_BASE + 0x0Cu)
 #define CH32_SYSTICK_CMP_HI CH32_REG32(CH32_SYSTICK_BASE + 0x14u)
+#endif
 #endif
 
 #define CH32_SYSTICK_CTLR_STE   (1u << 0)  /* counter enable                 */
