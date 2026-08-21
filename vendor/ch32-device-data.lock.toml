@@ -15,7 +15,9 @@ commit = "b1285de9c2138c004f6be92ad24d2ca69718b7f3"
 # generated file, which is the whole reason they are listed.
 files = [
   { path = "clock_configs.csv", sha256 = "dc5b264c24f9b0659a0edbb4b02b72d00ee9b3470b1550bf3da43235bc659ac7" },
+  { path = "clock_init.csv", sha256 = "006f0680c410e2f24f701297aa13e54ebb8b9d2e1402af034e912971e316b6b8" },
   { path = "clock_prescalers.csv", sha256 = "6f3cde8eced2f3522487ea9978c766d0b444add0730c6682371f3748f03ba29e" },
+  { path = "clock_symbols.csv", sha256 = "ec1ec70a374b5f07e254c823f62eb8399fefbdf262b456ee64b3ce4046700fa2" },
   { path = "errata.csv", sha256 = "1a1475e5aedf5eaa39b1e3f2e7d4c4a1c79c499f617521061f1aecf3eea8715e" },
   { path = "evt_variants.csv", sha256 = "e4b29ff6f42740a77d2d3cdbfaad8b806efd84e9b4e25eea820d94c22bcb76bf" },
   { path = "families.csv", sha256 = "50b110db7266128cc32abda9ee6c0dd67fc7d8318e0a357e3f258d60f8f5f4c4" },

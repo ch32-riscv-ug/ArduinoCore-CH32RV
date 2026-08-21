@@ -735,6 +735,49 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       予約のままなので、**V305の看板機能であるUSB-HSにベクタが無かった**。
       サイズ変化なし(RSVもIRQも`.word`1つ)。同種の取り違えを防ぐため、
       `vectors`の接尾辞を`evt_variants.csv`の既定macroと突き合わせる検査を入れた
+- [x] **PLLに対応し、CH32V20x / CH32V307を8 MHz -> 144 MHzにした**。
+      仕組み: `clock_configs.csv`と`clock_symbols.csv`から**生成時に設定を解決して**
+      boards.txtへ出す(`CH32_CLOCK_SYSCLK_HZ` / `USE_PLL` / `PLL_MASK` / `PLL_VALUE` /
+      `EXTEN_ADDR` / `EXTEN_BITS`)。`condition`がdie依存なので、series/pnum粒度の
+      boards.txtで解決すれば`#if`が要らない。AHB分周は`SYSCLK / F_CPU`から導出する
+      ままなので「F_CPUが唯一のつまみ」も維持。
+      **実機確認: CH32V307VCT6とCH32V203C8T6の両方で144 MHz動作**
+      (`serial_println`が化けない = PLLが噛んでいてPCLK2 == F_CPU)
+- [x] **PLL関連で踏んだ罠を2つ記録**。(1) `RCC_PLLMULL18_EXTEN`は**値が0**なので
+      「PLL値が非0ならPLLを使う」判定は成立しない。`CH32_CLOCK_USE_PLL`で明示する。
+      D8C(V305/V307/V317)が黙って8 MHzのままになるところだった。
+      (2) クリアすべきPLLフィールドのマスクはfamilyごとに違う
+      (V103/V20x/V30x/L103は4bit、**V205は5bit**、**V407は位置違い**、V307は同じ
+      registerに`PLL2MUL`/`PLL3MUL`が同居していて巻き込めない)。設定に出てくる記号から
+      所属フィールドを引いて和を取る。一方`PLLON`=1<<24 / `PLLRDY`=1<<25 / `SW`=0x3 /
+      `SWS`=0xC / `SW_PLL`=0x2は**全familyで一致**を確認したのでコアに直接置いた
+- [x] **APB1を`/1`にした**(PPRE1=1、PCLK1 == PCLK2 == HCLK == F_CPU)。
+      EVTはV103/V20x/V30x/L103で48 MHz以上を`/2`にするが、**24 MHzだけ`/1`**で、
+      これはSTM32F1のAPB1 36 MHz上限とちょうど一致する。datasheetは全familyで
+      `F_PCLK1 max == F_HCLK max`(V103 80 / L103 96 / V20x・V30x 144)。
+      STM32F1形でないV205(192 MHzまで`/1`)とV407(480 MHzまで`/1`)は分周しない。
+      **実機で144 MHzのまま`wire_selftest`が全項目PASS**(I2CはAPB1、fast mode含む)、
+      tone(TIM7=APB1)のタイミング系も全PASS。これで`PCLK == F_CPU`の前提が
+      7か所そのまま生きる。EVTがなぜ`/2`かは上流へ確認を出す
+- [ ] `[P1]` **`servo_selftest`がCH32V20x / CH32V30xで落ちる**。X035では通る。
+      出力が送信途中で切れる(V307@144は`reports_attached`まで、V307@8は`attach_suc`、
+      V203@144は`ser`だけ)ので、CPUが止まってからFIFOが吐き切れていない形。
+      **V307の8 MHzで再現するのでクロックとは無関係**。`CH32_SERVO_TIMER`は
+      V307でTIM6(基本タイマ)。別件として追う
+- [ ] `[P2]` `tone_selftest`の`invalid_pin_ignored`がV20x/V30xで落ちる。
+      8 MHzでも同じ。タイミングではなくピン検証の話
+- [ ] `[P1]` **CH32V30xのflash/SRAMは利用者が構成を選べる**(datasheet注記)。
+      256K+64Kの製品は(192+128)/(224+96)/(256+64)/(288+32)から選べ、
+      ロットによっては(128+192)も。FLASHはゼロウェイト領域R0WAITを指し、
+      非ゼロウェイト領域が(480K-R0WAIT)バイト。
+      **`products.csv`は480K/64Kを1組だけ`confirmed`で持っていて「この型番はこう」と
+      読める**ため、linker scriptを書くconsumerを誤らせる。上流へ組み合わせ表の依頼を出す。
+      実測(CH32V307VCT6): ESIG `0x1FFFF7E0`=`0x0120`(288KB、wlinkの表示元)、
+      USER option byte `0x1FFFF800`=`0xBF`、**SRAMは64Kが実在・非ミラー**
+      (0x20000000/0x20008000/0x2000FFF0に別値を書いて3つとも保持)。
+      3つの情報源が食い違うので、RMのオプションバイト表(`SRAM_CODE_MODE`の符号化)が要る。
+      **文書に無い部分(ESIGが288を返すのにSRAMが64Kある理由)は上流では調べられない**ので、
+      基板のあるこちらで測る。実害は「288K+32K構成の基板でスタックがRAM外」だけ
 - [x] **CH32V203RBT6だけdie variantが違う問題を直した**(`CH32V20x_D8`、他のV203は`D6`)。
       D6とD8は**slot 61から並びが違い**(D6は`UART4`、D8は`ETH`)、D8は69 slotで
       D6は62 slot。`CH32_IRQN_UART4`が61と66でずれていた。

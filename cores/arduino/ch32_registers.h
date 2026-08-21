@@ -57,9 +57,22 @@
 
 #define CH32_RCC_CTLR_HSION  (1u << 0)
 #define CH32_RCC_CTLR_HSIRDY (1u << 1)
+/* Same on every family clock_symbols.csv covers (10 for PLLON/PLLRDY, 11 for
+ * the SW fields below), which is why these are here and the PLL *value* is
+ * not. */
+#define CH32_RCC_CTLR_PLLON  (1u << 24)
+#define CH32_RCC_CTLR_PLLRDY (1u << 25)
 
 #define CH32_RCC_CFGR0_SW_MASK   0x3u        /* system clock switch          */
 #define CH32_RCC_CFGR0_SW_HSI    0x0u
+#define CH32_RCC_CFGR0_SW_PLL    0x2u
+/* The fields the PLL configuration occupies are NOT the same everywhere, so
+ * the mask to clear comes from boards.txt (CH32_CLOCK_PLL_MASK) rather than
+ * from here: PLLMULL is four bits at 0x003C0000 on CH32V103/V20x/V30x/L103,
+ * five bits at 0x007C0000 on CH32V205 and at 0x003E0000 on CH32V407, and
+ * CH32X315 uses different fields entirely. CH32V307 additionally has PLL2MUL
+ * and PLL3MUL in the same register, which must not be cleared along with it.
+ */
 #define CH32_RCC_CFGR0_SWS_MASK  (0x3u << 2) /* switch status (read-back)    */
 #define CH32_RCC_CFGR0_HPRE_MASK (0xFu << 4) /* AHB prescaler                */
 /* The field value itself, not the divider: the CH32 line encodes AHB dividers
@@ -189,7 +202,14 @@
 /* Flash controller registers (not the flash memory itself). */
 #define CH32_FLASH_BASE  (CH32_AHB_BASE + 0x2000u)
 #define CH32_FLASH_ACTLR CH32_REG32(CH32_FLASH_BASE + 0x00u)
-#define CH32_FLASH_ACTLR_LATENCY_MASK 0x3u
+/* The LATENCY field is not the same width everywhere: CH32V003/V006/V103/
+ * L103/X035 have two bits, CH32M030 three, CH32V205 four - and CH32V20x,
+ * CH32V307 and CH32V407 have no wait states at all, where the mask is 0 and
+ * the field must be left alone rather than written with a harmless-looking 0.
+ * boards.txt carries the family's own value, read out of clock_symbols.csv. */
+#ifndef CH32_FLASH_ACTLR_LATENCY_MASK
+#error "CH32_FLASH_ACTLR_LATENCY_MASK is required (see build.core_defines)"
+#endif
 
 /* ----------------------------------------------------------------- AFIO */
 #define CH32_AFIO_BASE  (CH32_APB2_BASE + 0x0000u)

@@ -50,8 +50,8 @@ ENCODES = [
 
 # (linear?, HSI, F_CPU, what the message should mention)
 REFUSES = [
-    (1, 48_000_000, 96_000_000, "PLL"),           # above the oscillator
-    (0, 8_000_000, 16_000_000, "PLL"),
+    (1, 48_000_000, 96_000_000, "above SYSCLK"),  # more than the clock produces
+    (0, 8_000_000, 16_000_000, "above SYSCLK"),
     (1, 48_000_000, 5_000_000, "divide"),         # not a whole ratio
     (0, 20_000_000, 3_000_000, "divide"),
     (1, 48_000_000, 2_000_000, "prescaler"),      # /24: no encoding has it
@@ -60,18 +60,27 @@ REFUSES = [
 ]
 
 
-def compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu, expect=None):
-    """Compile a TU that asserts the field, and return (rc, output)."""
+def compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu, expect=None,
+                  sysclk=None):
+    """Compile a TU that asserts the field, and return (rc, output).
+
+    sysclk defaults to the oscillator, which is the no-PLL case. Passing a
+    different one is what a PLL configuration looks like to this header: the
+    prescaler divides SYSCLK, not the oscillator.
+    """
     src = tmp_path / "probe.c"
     body = f"#include <ch32_clock.h>\n"
     if expect is not None:
         body += (f"_Static_assert(CH32_HPRE_FIELD == {expect}u,\n"
                  f'               "wrong AHB prescaler field");\n')
     src.write_text(body, encoding="utf-8")
+    sysclk = hsi if sysclk is None else sysclk
     proc = subprocess.run(
         [f"{gcc_bin}/riscv-none-elf-gcc", "-std=c11", "-fsyntax-only",
          f"-I{repo / 'cores' / 'arduino'}",
          f"-DF_CPU={f_cpu}L", f"-DCH32_HSI_HZ={hsi}",
+         f"-DCH32_CLOCK_SYSCLK_HZ={sysclk}",
+         f"-DCH32_CLOCK_USE_PLL={0 if sysclk == hsi else 1}",
          f"-DCH32_HPRE_LINEAR={linear}", str(src)],
         capture_output=True, text=True)
     return proc.returncode, proc.stdout + proc.stderr
@@ -105,3 +114,51 @@ def test_every_family_declares_an_encoding(repo):
                                      if ".build.core_defines=" in ln])
                if "-DCH32_HPRE_LINEAR=" not in line]
     assert families and not without, f"{without} carry no CH32_HPRE_LINEAR"
+
+
+# The PLL only moves what the prescaler divides, so the same table has to hold
+# with SYSCLK above the oscillator - and F_CPU above SYSCLK must still refuse.
+PLL_CASES = [
+    # (linear, hsi, sysclk, f_cpu, field)
+    (0, 8_000_000, 144_000_000, 144_000_000, 0x0),   # CH32V20x / CH32V30x
+    (0, 8_000_000, 144_000_000, 72_000_000, 0x8),
+    (0, 8_000_000, 144_000_000, 18_000_000, 0xA),
+    (1, 24_000_000, 48_000_000, 48_000_000, 0x0),    # CH32V003
+    (1, 24_000_000, 48_000_000, 16_000_000, 0x2),
+]
+
+
+@pytest.mark.parametrize("linear,hsi,sysclk,f_cpu,field", PLL_CASES)
+def test_prescaler_divides_sysclk_not_the_oscillator(gcc_bin, repo, tmp_path,
+                                                     linear, hsi, sysclk,
+                                                     f_cpu, field):
+    rc, out = compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu,
+                            expect=field, sysclk=sysclk)
+    assert rc == 0, out
+
+
+def test_f_cpu_above_sysclk_is_refused(gcc_bin, repo, tmp_path):
+    """The prescaler can only divide; asking for more than the PLL produces is
+    a mistake worth catching at compile time rather than at 2x the clock."""
+    rc, out = compile_probe(gcc_bin, repo, tmp_path, 0, 8_000_000, 200_000_000,
+                            sysclk=144_000_000)
+    assert rc != 0, out
+    assert "F_CPU is above SYSCLK" in out, out
+
+
+def test_sysclk_above_the_oscillator_needs_a_pll_setting(gcc_bin, repo,
+                                                         tmp_path):
+    """SYSCLK and the PLL setting are generated together, so one without the
+    other means boards.txt was hand-edited or half-regenerated."""
+    src = tmp_path / "probe.c"
+    src.write_text("#include <ch32_clock.h>\n", encoding="utf-8")
+    proc = subprocess.run(
+        [f"{gcc_bin}/riscv-none-elf-gcc", "-std=c11", "-fsyntax-only",
+         f"-I{repo / 'cores' / 'arduino'}",
+         "-DF_CPU=144000000L", "-DCH32_HSI_HZ=8000000",
+         "-DCH32_CLOCK_SYSCLK_HZ=144000000", "-DCH32_CLOCK_USE_PLL=0",
+         "-DCH32_HPRE_LINEAR=0", str(src)],
+        capture_output=True, text=True)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode != 0, out
+    assert "no PLL setting" in out, out

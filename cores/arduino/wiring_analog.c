@@ -7,6 +7,9 @@
  * tools/generate/generate.py and docs/todo.ja.md).
  */
 #include "Arduino.h"
+#ifndef CH32_ADC_MAX_HZ
+#error "CH32_ADC_MAX_HZ is required (see build.core_defines in boards.txt)"
+#endif
 #include "ch32_gpio.h"
 #include "ch32_registers.h"
 
@@ -39,9 +42,13 @@ static void ch32_adc_begin(void)
     }
     CH32_RCC_APB2PCENR |= CH32_RCC_APB2_ADC1;
 
-    /* ADCCLK has to stay below 14 MHz; pick the smallest divider that does. */
+    /* ADCCLK has to stay inside the family's own ceiling, which is not the
+     * same number everywhere: 14 MHz on CH32V103/V20x/V30x, 48 on CH32L103,
+     * 64 on CH32V205, 80 on CH32X315, and as low as 6 on CH32X035 and CH32V003
+     * at their lower supply voltages. boards.txt carries it, read out of
+     * operating_conditions.csv. Pick the smallest divider that stays under. */
     uint32_t divider = 2;
-    while (divider < 8 && (F_CPU / divider) > 14000000u) {
+    while (divider < 8 && (F_CPU / divider) > CH32_ADC_MAX_HZ) {
         divider += 2;
     }
     CH32_RCC_CFGR0 = (CH32_RCC_CFGR0 & ~CH32_RCC_CFGR0_ADCPRE_MASK) |

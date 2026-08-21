@@ -48,6 +48,16 @@ import sys
 # CH32_HPRE_LINEAR is which of the two AHB-prescaler encodings the family uses,
 # read off its own EVT header (RCC_HPRE_DIV2 is 0x10 on one and 0x80 on the
 # other); the two tables are written out in cores/arduino/wiring_time.c.
+    # CH32V407 and CH32X315 carry flash_latency=0 because neither family has a
+    # wait-state field: EVT never writes ACTLR on CH32V407, and CH32X315's
+    # ACTLR holds FLASH_ACTLR_SCK_CFG, a flash-clock divider. Both used to be
+    # written with a 1 of no traceable origin; check_family_facts rejects that
+    # now. Raising CH32X315 past its default needs the divider, which is a
+    # separate mechanism (docs/todo.ja.md).
+    # 96 MHz rather than the 144 the PLL can reach: ADCPRE divides by at most
+    # 8, and f_ADC on these families is 14 MHz, so 144 would leave the ADC at
+    # 18 MHz - out of spec with no way to fix it. 96/8 = 12 MHz is inside it,
+    # and USB still gets its 48 MHz (PLLCLK/2). Defaults stay in spec.
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",
@@ -59,18 +69,18 @@ FAMILY = {
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x7 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
-    "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
+    "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="96000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
                      systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
-    "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="8000000L",
+    "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="96000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x0b "
                              "-DCH32_CORECFGR=0x1f",
                      systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32V407": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x688 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100",
-                     systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=1),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32X035": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="48000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
@@ -78,9 +88,9 @@ FAMILY = {
     "CH32X315": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01",
-                     systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=0),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0),
     # CH32V103's table is a jump table and its startup never writes csr 0x804.
-    "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
+    "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="72000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_MTVEC_MODE=1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
@@ -451,6 +461,39 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
         if r["field"] == "HPRE" and r["divider"] == "2":
             hpre.setdefault(r["family"], set()).add(int(r["value"]))
 
+    # Flash wait states: the LATENCY field is two bits on most families, three
+    # on CH32M030 and four on CH32V205, and absent where the flash needs no
+    # wait states (CH32V20x/V307/V407 never write ACTLR, so the field is left
+    # alone rather than written with a 0 that may mean something else).
+    # CH32X315 and CH32H417 spell the field FLASH_ACTLR_SCK_CFG and it is a
+    # flash-clock divider, not a wait count, so it is deliberately not read
+    # here - that is a separate mechanism (docs/todo.ja.md).
+    latency_mask: dict = {}
+    for r in read_table(tables, "clock_symbols.csv",
+                        ("family", "symbol", "role", "value")):
+        if r["symbol"] == "FLASH_ACTLR_LATENCY" and r["role"] == "mask":
+            latency_mask.setdefault(r["family"], set()).add(int(r["value"]))
+
+    # ADC clock ceiling. Hard-coding one number was wrong in both directions:
+    # 14 MHz is the CH32V103/V20x/V30x figure, which left CH32X035 running its
+    # ADC at 12 MHz against an 8 MHz limit, and needlessly halved it on
+    # CH32L103 (48), CH32V205 (64) and CH32X315 (80).
+    #
+    # Several families give a different ceiling per supply voltage - CH32V003
+    # is 6/12/24 MHz at 2.8/3.2/4.5 V and CH32X035 is 6/8 MHz around 3.2 V - and
+    # the core cannot know the board's VDD, so the lowest is taken. A slower
+    # conversion is a cost; running the ADC out of spec is a wrong reading.
+    adc_hz: dict = {}
+    for r in read_table(tables, "operating_conditions.csv",
+                        ("series", "symbol", "max", "unit")):
+        if r["symbol"] != "f_ADC" or not r["max"] or r["unit"] != "MHz":
+            continue
+        for s in r["series"].split(";"):
+            f = fam_of_series.get(s)
+            if f:
+                hz = int(float(r["max"]) * 1e6)
+                adc_hz[f] = min(adc_hz.get(f, hz), hz)
+
     # Port width: the widest pad the parts of this family actually have. Taken
     # from the resolved pad set rather than pins.csv so it is the same set the
     # pin map is built from - a pad excluded there must not widen the port.
@@ -468,13 +511,36 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
         if enc not in (0x10, 0x80):
             raise SystemExit(f"ERROR: {family}: HPRE /2 is {enc:#x}, which is "
                              "neither of the two known encodings")
+        masks = set(latency_mask.get(family, ()))
         facts[family] = dict(
             hsi_hz=one(family, "the HSI frequency", set(hsi.get(family, ()))),
             hpre_linear=1 if enc == 0x10 else 0,
             port_width=one(family, "the GPIO port width",
                            {width[family]} if family in width else set()),
+            latency_mask=one(family, "the flash LATENCY mask", masks) if masks
+            else 0,
+            adc_max_hz=adc_hz.get(family, 0),
         )
     return facts
+
+
+def load_die_macros(tables: pathlib.Path) -> tuple:
+    """(series -> default macro, part -> macro) for the families that have die
+    variants. The macro is what clock_configs.csv's conditions are written
+    against, so it is kept whole here rather than reduced to a suffix."""
+    part_series = {r["part_number"]: r["series"]
+                   for r in read_table(tables, "products.csv")}
+    by_part, by_series = {}, {}
+    for r in read_table(tables, "evt_variants.csv",
+                        ("family", "macro", "part_number", "default")):
+        if not re.search(r"_D\d\w*$", r["macro"]):
+            continue
+        by_part[r["part_number"]] = r["macro"]
+        if r["default"] == "yes":
+            by_series[part_series.get(r["part_number"])] = r["macro"]
+    for part, macro in by_part.items():
+        by_series.setdefault(part_series.get(part), macro)
+    return by_series, by_part
 
 
 def load_die_variants(tables: pathlib.Path) -> dict:
@@ -519,6 +585,203 @@ def load_die_variants(tables: pathlib.Path) -> dict:
     return out
 
 
+# The compile-time branches EVT's setters carry. Anything not listed makes the
+# generator stop rather than guess: picking the wrong branch of a clock setter
+# is a part that boots at the wrong speed, or not at all.
+COND_DIE = re.compile(r"^(?:ifdef|if defined)\s*\(?\s*(\w+)\s*\)?$")
+
+
+def _condition_matches(condition: str, die: str | None):
+    """(matches, is_else) for one clock_configs row, given the series' die macro."""
+    condition = condition.strip()
+    if not condition:
+        return True, False
+    if condition == "else":
+        return False, True
+    if condition == "if (PLL_Source == HSI)":
+        return True, False        # HSI is the source this core uses
+    m = COND_DIE.match(condition)
+    if m:
+        return m.group(1) == die, False
+    raise SystemExit(f"ERROR: clock_configs.csv has a condition the generator "
+                     f"does not understand: {condition!r}")
+
+
+def load_clock(tables: pathlib.Path) -> tuple:
+    """(configs, symbols, prescalers) in the shapes the resolver below wants."""
+    configs = read_table(tables, "clock_configs.csv",
+                         ("family", "config", "source", "condition", "domains",
+                          "hpre", "pll", "flash_latency", "outside_rcc"))
+    symbols: dict = {}
+    for r in read_table(tables, "clock_symbols.csv",
+                        ("family", "symbol", "role", "address", "value")):
+        symbols[(r["family"], r["symbol"])] = r
+    return configs, symbols
+
+
+def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
+                  configs: list, symbols: dict) -> dict:
+    """What SystemInit has to write to run this family's SYSCLK at hz off HSI.
+
+    Returns the numbers, not the symbol names: the same name is a different
+    value on different silicon (CH32V307's RCC_PLLMULL18 is 0x003C0000 and
+    RCC_PLLMULL18_EXTEN is 0), so resolving here is the only place the die is
+    still known.
+
+    The wait states come from the same row, because they belong to the clock
+    rather than to the family: CH32V103 wants 0 at 8 MHz and 2 at 72, and
+    getting that wrong is a part that cannot fetch its own code.
+    """
+    want = [r for r in configs
+            if r["family"] == family and r["source"] == "HSI"
+            and f"SYSCLK={hz}" in r["domains"].split(";")[0]]
+    if not want:
+        if hz == hsi_hz:
+            # The reset default: no setter configures it because nothing has to
+            # be written. CH32V20x and CH32V30x sit here until raised.
+            return dict(sysclk=hz, pll_mask=0, pll_value=0, exten_addr=0,
+                        exten_bits=0, latency=None, config=None)
+        raise SystemExit(f"ERROR: {family}: ch32-device-data lists no HSI clock "
+                         f"configuration for SYSCLK={hz}")
+    chosen = [r for r in want if _condition_matches(r["condition"], die)[0]]
+    if not chosen:
+        chosen = [r for r in want if _condition_matches(r["condition"], die)[1]]
+    if len(chosen) != 1:
+        raise SystemExit(f"ERROR: {family}: {len(chosen)} clock configurations "
+                         f"match SYSCLK={hz} for die {die}: "
+                         f"{[r['config'] for r in chosen]}")
+    row = chosen[0]
+
+    # The value is the OR of the named constants; the mask to clear first is
+    # the OR of the fields they sit in, found by longest-prefix against the
+    # family's own mask symbols. Clearing a fixed 0x003F0000 would be wrong on
+    # CH32V205 (five-bit multiplier), CH32V407 (different position) and
+    # CH32V307 (PLL2MUL and PLL3MUL share the register).
+    fields = sorted((s for (f, s), r in symbols.items()
+                     if f == family and r["role"] == "mask"),
+                    key=len, reverse=True)
+    value = mask = 0
+    for name in filter(None, row["pll"].split(";")):
+        sym = symbols.get((family, name))
+        if sym is None:
+            raise SystemExit(f"ERROR: {family}: clock_symbols.csv does not "
+                             f"resolve {name}")
+        value |= int(sym["value"])
+        owner = next((f for f in fields if name.startswith(f)), None)
+        if owner is None:
+            raise SystemExit(f"ERROR: {family}: no mask symbol owns {name}")
+        mask |= int(symbols[(family, owner)]["value"])
+
+    exten_addr = exten_bits = 0
+    for name in row["outside_rcc"].split():
+        if "->" in name:
+            continue                       # the register, named by its bits below
+        sym = symbols.get((family, name))
+        if sym is None:
+            raise SystemExit(f"ERROR: {family}: clock_symbols.csv does not "
+                             f"resolve {name}")
+        addr = int(sym["address"], 16)
+        if exten_addr and exten_addr != addr:
+            raise SystemExit(f"ERROR: {family}: outside_rcc spans two registers")
+        exten_addr, exten_bits = addr, exten_bits | int(sym["value"])
+
+    return dict(sysclk=hz, pll_mask=mask, pll_value=value,
+                exten_addr=exten_addr, exten_bits=exten_bits,
+                latency=int(row["flash_latency"]) if row["flash_latency"]
+                else None,
+                config=row["config"] if row["pll"] else None)
+
+
+# EVT's SystemInit starts by putting RCC back to a known state, and that turns
+# out to be load-bearing rather than tidy: PLLSRC and PLLMULL are read-only
+# while PLLON is set, so a PLL left running by whatever ran before silently
+# swallows the new configuration. Measured on CH32V103, where a leftover
+# HSE x9 survived a reflash and the core's own PLL write did nothing.
+#
+# The steps are family-specific (CH32V103 clears CFGR0 with 0xf8ff0000 and
+# CH32V20x with 0xf0ff0000; CH32X035 needs three and CH32X315 sixteen), so
+# they are generated rather than written out once.
+CLOCK_INIT_ACTIONS = ("set", "clear", "write", "poll")
+
+
+def load_clock_init(tables: pathlib.Path) -> dict:
+    """family -> the SystemInit steps, in order."""
+    out: dict = {}
+    for r in read_table(tables, "clock_init.csv",
+                        ("family", "function", "step", "action", "address",
+                         "value", "condition")):
+        if r["function"] == "SystemInit":
+            out.setdefault(r["family"], []).append(r)
+    for steps in out.values():
+        steps.sort(key=lambda r: int(r["step"]))
+    return out
+
+
+def gen_clock_init(family: str, steps: list, symbols: dict) -> str:
+    """The reset sequence for one family, as a macro SystemInit expands."""
+    out = [
+        "/* DO NOT EDIT - machine generated by tools/generate/generate.py",
+        f" * {SOURCE_LINE}",
+        " *",
+        f" * {family}: what EVT's SystemInit writes before configuring the",
+        " * clock. Order matters, and so does doing it at all - PLLSRC and",
+        " * PLLMULL cannot be changed while PLLON is set, so a PLL left running",
+        " * by a previous program would otherwise keep its configuration.",
+        " */",
+        "#pragma once",
+        "",
+        "#define CH32_CLOCK_INIT_RESET() do { \\",
+    ]
+    skipped = []
+    for r in steps:
+        action, value = r["action"], r["value"]
+        if action not in CLOCK_INIT_ACTIONS:
+            # Only CH32V003 has one, an HSI calibration load. The field it
+            # writes is not in clock_symbols.csv, so it cannot be emitted;
+            # leaving it out matches what the core did before.
+            skipped.append(f"step {r['step']} ({action})")
+            continue
+        addr, v = int(r["address"], 16), int(value)
+        reg = f"CH32_REG32({addr:#010x}u)"
+        if action == "set":
+            out.append(f"    {reg} |= {v:#010x}u; \\")
+        elif action == "clear":
+            out.append(f"    {reg} &= {v:#010x}u; \\")
+        elif action == "write":
+            out.append(f"    {reg} = {v:#010x}u; \\")
+        else:                                   # poll
+            want = r["condition"].removeprefix("!=").strip()
+            if want.startswith("0x") or want.isdigit():
+                target = int(want, 0)
+            else:
+                sym = symbols.get((family, want))
+                if sym is not None:
+                    target = int(sym["value"])
+                elif v and not (v & (v - 1)):
+                    # A one-bit mask leaves one reading: wait for that bit to
+                    # be set. CH32X315 polls "!= RCC_HSIRDY" with mask 0x2 and
+                    # clock_symbols.csv does not carry RCC_HSIRDY, so the mask
+                    # is the only thing that says which bit - and for a ready
+                    # flag the target cannot be anything else.
+                    target = v
+                    print(f"NOTE: {family}: clock_init.csv polls for {want}, "
+                          f"which clock_symbols.csv does not resolve; the "
+                          f"one-bit mask {v:#x} fixes the target",
+                          file=sys.stderr)
+                else:
+                    raise SystemExit(f"ERROR: {family}: clock_init.csv polls "
+                                     f"for {want} against mask {v:#x}, and "
+                                     f"clock_symbols.csv does not resolve it")
+            out.append(f"    while (({reg} & {v:#010x}u) != {target:#010x}u) {{}} \\")
+    out.append("} while (0)")
+    if skipped:
+        # index 7 is the closing */, so the note has to go before it
+        out.insert(7, f" * NOT emitted: {', '.join(skipped)} - see docs/todo.ja.md.")
+        print(f"WARNING: {family}: clock_init step(s) not emitted: "
+              f"{', '.join(skipped)}", file=sys.stderr)
+    return "\n".join(out) + "\n"
+
+
 def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
     """Values we still write by hand, against what the tables say. Returns
     complaints rather than raising, so one run reports all of them."""
@@ -561,6 +824,19 @@ def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
     # Flash latency at the clock we boot at. Only checkable where EVT ships a
     # setter for exactly that frequency off HSI; most families reach their
     # default by not configuring anything, so there is nothing to compare to.
+    # An ADC with no ceiling would be clocked by a guess.
+    for family in FAMILY:
+        if not facts[family]["adc_max_hz"]:
+            bad.append(f"{family}: operating_conditions.csv gives no f_ADC")
+
+    # A wait-state count that does not fit its field would be silently
+    # truncated, which is the failure that only shows up at speed.
+    for family, fam in FAMILY.items():
+        mask = facts[family]["latency_mask"]
+        if fam["flash_latency"] & ~mask:
+            bad.append(f"{family}: flash_latency={fam['flash_latency']} does not "
+                       f"fit FLASH_ACTLR_LATENCY (mask {mask:#x})")
+
     configs = read_table(tables, "clock_configs.csv")
     for family, fam in FAMILY.items():
         hz = int(fam["f_cpu"].rstrip("L"))
@@ -1445,8 +1721,18 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     return "\n".join(out) + "\n"
 
 
+def clock_defines(clk: dict) -> str:
+    """The resolved clock setting, as the -D values SystemInit reads."""
+    return (f"-DCH32_CLOCK_SYSCLK_HZ={clk['sysclk']} "
+            f"-DCH32_CLOCK_USE_PLL={1 if clk['config'] else 0} "
+            f"-DCH32_CLOCK_PLL_MASK={clk['pll_mask']:#x}u "
+            f"-DCH32_CLOCK_PLL_VALUE={clk['pll_value']:#x}u "
+            f"-DCH32_CLOCK_EXTEN_ADDR={clk['exten_addr']:#x}u "
+            f"-DCH32_CLOCK_EXTEN_BITS={clk['exten_bits']:#x}u")
+
+
 def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
-              die: dict):
+              die: dict, clock_for):
     """One board per series. Returns (boards.txt block, {ld name: content})."""
     cfg = SERIES_CONFIG[series]
     fam = FAMILY[cfg["family"]]
@@ -1471,15 +1757,30 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
     # and exti_*.h from it. Keeping it a single property is what lets a menu
     # entry move a part to another die variant in one line.
     lines.append(f"{board}.build.vector_variant={cfg['vectors']}")
+    lines.append(f"{board}.build.clock_init=clock_init_{cfg['family'].lower()}.h")
+    # Wait states belong to the clock, not to the family: CH32V103 needs 0 at
+    # 8 MHz and 2 at 72. Taken from the configuration that was resolved for
+    # this F_CPU; families whose setters never write ACTLR fall back to the
+    # value in FAMILY, which is 0 and never reaches the register (their
+    # LATENCY mask is 0).
+    clk = clock_for()
+    latency = clk["latency"] if clk["latency"] is not None else fam["flash_latency"]
     lines.append(
         f"{board}.build.core_defines="
         f"-DCH32_GPIO_PORT_WIDTH={fact['port_width']} "
         f"-DCH32_SYSTICK_64={fam['systick64']} "
         f"-DCH32_HSI_HZ={fact['hsi_hz']} "
-        f"-DCH32_FLASH_LATENCY={fam['flash_latency']} "
+        f"-DCH32_FLASH_LATENCY={latency} "
         f"-DCH32_ADC_BITS={fam['adc_bits']} "
         f"-DCH32_I2C_HAS_RTR={fam['i2c_has_rtr']} "
-        f"-DCH32_HPRE_LINEAR={fact['hpre_linear']}")
+        f"-DCH32_HPRE_LINEAR={fact['hpre_linear']} "
+        f"-DCH32_FLASH_ACTLR_LATENCY_MASK={fact['latency_mask']:#x}u "
+        f"-DCH32_ADC_MAX_HZ={fact['adc_max_hz']}u")
+    # Its own property, not part of core_defines: a pnum entry has to be able
+    # to replace it outright, and a menu value that referred back to the board
+    # value would be referring to itself.
+    board_clock = clock_defines(clk)
+    lines.append(f"{board}.build.clock_defines={board_clock}")
     lines.append("")
 
     ld_files = {}
@@ -1526,6 +1827,12 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
         # entry and a part that needs its own table has to be picked by name.
         if pn in die:
             lines.append(f"{pfx}.build.vector_variant={die[pn]}")
+            # A different die can also mean a different PLL encoding, so the
+            # clock setting is re-resolved for this part. Emitted only when it
+            # actually differs, so the menu stays readable.
+            part_clock = clock_defines(clock_for(pn))
+            if part_clock != board_clock:
+                lines.append(f"{pfx}.build.clock_defines={part_clock}")
         lines.append("")
 
     for key, label, flags in PRINTF_MENU:
@@ -1562,6 +1869,9 @@ def main() -> int:
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
     die = load_die_variants(args.tables)
+    die_macro_series, die_macro_part = load_die_macros(args.tables)
+    clock_configs_t, clock_symbols_t = load_clock(args.tables)
+    clock_init_t = load_clock_init(args.tables)
     disagreements = check_family_facts(args.tables, facts)
     if disagreements:
         print("ERROR: hand-written values disagree with ch32-device-data:",
@@ -1591,7 +1901,14 @@ def main() -> int:
     used_variants = set()
     for series in SERIES_CONFIG:
         rows = by_board[series]
-        block, ld_files = gen_board(series, rows, probe_rs, facts, die)
+        block, ld_files = gen_board(
+            series, rows, probe_rs, facts, die,
+            lambda part=None, series=series: resolve_clock(
+                SERIES_CONFIG[series]["family"],
+                int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L")),
+                die_macro_part.get(part) if part else die_macro_series.get(series),
+                facts[SERIES_CONFIG[series]["family"]]["hsi_hz"],
+                clock_configs_t, clock_symbols_t))
         boards_blocks.append(block)
         used_variants.add(SERIES_CONFIG[series]["vectors"])
         # A part on another die variant needs that table emitted too.
@@ -1626,6 +1943,15 @@ def main() -> int:
             gen_irqns(variant, interrupts[variant])
         outputs[args.platform / "cores" / "arduino" / f"exti_{variant}.h"] = \
             gen_exti(variant, interrupts[variant])
+
+    for family in sorted({SERIES_CONFIG[s]["family"] for s in SERIES_CONFIG}):
+        steps = clock_init_t.get(family)
+        if not steps:
+            raise SystemExit(f"ERROR: clock_init.csv has no SystemInit steps "
+                             f"for {family}")
+        outputs[args.platform / "cores" / "arduino" /
+                f"clock_init_{family.lower()}.h"] = \
+            gen_clock_init(family, steps, clock_symbols_t)
 
     # Last: gen_lock hashes the tables that were actually read, so every
     # loader above has to have run first.

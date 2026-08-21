@@ -16,21 +16,36 @@
 #ifndef CH32_HSI_HZ
 #error "CH32_HSI_HZ is required (see build.core_defines in boards.txt)"
 #endif
+#ifndef CH32_CLOCK_SYSCLK_HZ
+#error "CH32_CLOCK_SYSCLK_HZ is required (see build.core_defines in boards.txt)"
+#endif
+#ifndef CH32_CLOCK_USE_PLL
+#error "CH32_CLOCK_USE_PLL is required (see build.core_defines in boards.txt)"
+#endif
 
 #ifndef CH32_HPRE_LINEAR
 #error "CH32_HPRE_LINEAR is required (see build.core_defines in boards.txt)"
 #endif
 
-#if F_CPU > CH32_HSI_HZ
-#error "F_CPU is above this family's HSI, which needs the PLL. Milestone 1 runs \
-the core off HSI only (see docs/todo.ja.md, clock section)."
+/* SYSCLK is the oscillator, or the PLL output when boards.txt asked for one;
+ * the generator resolved which from clock_configs.csv. HCLK is SYSCLK divided
+ * by the AHB prescaler, and F_CPU is HCLK - so the prescaler is still derived
+ * rather than configured, exactly as it was before the PLL existed.
+ */
+#if CH32_CLOCK_SYSCLK_HZ != CH32_HSI_HZ && !CH32_CLOCK_USE_PLL
+#error "CH32_CLOCK_SYSCLK_HZ differs from the oscillator but no PLL setting \
+came with it. Both are generated together; regenerate boards.txt."
 #endif
-#if (CH32_HSI_HZ % F_CPU) != 0
-#error "F_CPU must divide CH32_HSI_HZ exactly: the AHB prescaler is the only \
-thing between them until the PLL exists."
+#if F_CPU > CH32_CLOCK_SYSCLK_HZ
+#error "F_CPU is above SYSCLK. The AHB prescaler can only divide, so this \
+needs a different clock configuration (see docs/todo.ja.md, clock section)."
+#endif
+#if (CH32_CLOCK_SYSCLK_HZ % F_CPU) != 0
+#error "F_CPU must divide SYSCLK exactly: the AHB prescaler is the only thing \
+between them."
 #endif
 
-#define CH32_AHB_DIV (CH32_HSI_HZ / F_CPU)
+#define CH32_AHB_DIV (CH32_CLOCK_SYSCLK_HZ / F_CPU)
 
 /* The AHB prescaler is four bits in RCC_CFGR0[7:4], and the CH32 line encodes
  * them two different ways. They agree only on /1, so choosing the wrong one is
@@ -85,6 +100,6 @@ thing between them until the PLL exists."
 #endif
 
 #ifndef CH32_HPRE_FIELD
-#error "CH32_HSI_HZ / F_CPU is not a ratio this family's AHB prescaler can \
+#error "SYSCLK / F_CPU is not a ratio this family's AHB prescaler can \
 encode. The usable dividers are listed just above this line."
 #endif
