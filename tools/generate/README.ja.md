@@ -74,6 +74,7 @@ pin番号や既定routeが変わると、既存のsketchの意味が変わるた
 - pnum項目が`build.board`/`build.series`(vendorデバイス選択マクロ。V007/M007→`CH32V007_M007`)/`build.ldscript`/`upload.maximum_*`を注入
 - ldはユニークな(FLASH, SRAM)組合せごとに1本(`ch32v00x_62k_8k.ld`等)。MEMORYのみ持ち、共通`sections.ld`をINCLUDE
 - 生成物ヘッダに`DO NOT EDIT`を記録(タイムスタンプは入れず再生成をidempotentに保つ)
+- vector tableは`build.vector_variant`という**1つのstem**で選ぶ。platform.txtが`vectors_<stem>.inc`/`irqn_<stem>.h`/`exti_<stem>.h`の3つを組み立てるので、**pnum項目が1行上書きするだけでdie variantを差し替えられる**(CH32V203RBT6。どのpartがどのmacroかは`evt_variants.csv`由来で手書きしない)。`ANY`はboardの既定を保つ——既にseries最小のflashを宣言している「特定の石向けではない」項目なので
 - **source tablesのgit commitは`vendor/ch32-device-data.lock.toml`に1か所だけ**置く。生成物ヘッダにcommitを入れていた頃は、中身が変わらないupstream bumpでも全生成物が更新されていた。lockはgeneratorの出力の1つなので`--check`がそのまま検証する。lockは`read_table()`が実際に読んだ表のSHA-256も持ち、**この5表に触れないupstream commitは生成物を変えられない**ことを表す
 
 ## 現在の範囲と今後
@@ -97,7 +98,7 @@ pin番号や既定routeが変わると、既存のsketchの意味が変わるた
 | CH32V003 | V003 | 4 | rv32ec_zicsr / ilp32e | v003 |
 | CH32V006 | V002/V004/V005/V006/V007/M007 | 26 | rv32emc_zicsr / ilp32e | v00x(生成済み) |
 | CH32V205 | V205 | 3 | rv32imc_zicsr / ilp32 | v205 |
-| CH32V20x | V203 / V208 | 17 | rv32imac_zicsr / ilp32 | **series別**: V203→d6、V208→d8 or d8w |
+| CH32V20x | V203 / V208 | 17 | rv32imac_zicsr / ilp32 | **series別**: V203→d6、V208→d8w。ただし**CH32V203RBT6だけd8**で、pnum項目が`build.vector_variant`を上書きする |
 | CH32V307 | V303/V305/V307/V317 | 14 | rv32imafc_zicsr / ilp32f | **series別**: V303→d8、V305/V307/V317→d8c(`evt_variants.csv`と`ch32v30x.h`のコメントに一致) |
 | CH32V407 | V407/V467 | 6 | rv32imac_zicsr / ilp32 | v4x7 |
 | CH32X035 | X033/X035 | 8 | rv32imac_zicsr / ilp32 | x035 |

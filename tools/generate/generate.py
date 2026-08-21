@@ -477,6 +477,48 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     return facts
 
 
+def load_die_variants(tables: pathlib.Path) -> dict:
+    """part number -> startup variant, for the parts that need a different one
+    from the rest of their series.
+
+    A series is normally one die, so one board is one vector table. CH32V203 is
+    not: eleven of its twelve part numbers are CH32V20x_D6 and CH32V203RBT6 is
+    CH32V20x_D8, and the two tables stop agreeing at slot 61, where D6 has
+    UART4 and D8 has ETH. Building that one part as D6 gives it the wrong
+    interrupt numbers, so its menu entry overrides build.vector_variant.
+
+    Which macro a part number carries is evt_variants.csv's answer, read out of
+    the EVT device header; the variant *names* are ours, so only the suffix
+    crosses over.
+    """
+    variant_suffix = re.compile(r"_(D\d\w*)$")
+    part_series = {r["part_number"]: r["series"]
+                   for r in read_table(tables, "products.csv")}
+    suffix_of: dict = {}
+    default_of: dict = {}
+    for r in read_table(tables, "evt_variants.csv",
+                        ("family", "macro", "part_number", "default")):
+        m = variant_suffix.search(r["macro"])
+        series = part_series.get(r["part_number"])
+        if not (m and series):
+            continue
+        suffix_of[r["part_number"]] = m.group(1).lower()
+        if r["default"] == "yes":
+            default_of[series] = m.group(1).lower()
+
+    out = {}
+    for part, suffix in suffix_of.items():
+        series = part_series[part]
+        cfg = SERIES_CONFIG.get(series)
+        if cfg is None:
+            continue
+        base, _, own = cfg["vectors"].rpartition("_")
+        if not base or suffix == own:
+            continue                      # same die as the board it sits on
+        out[part] = f"{base}_{suffix}"
+    return out
+
+
 def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
     """Values we still write by hand, against what the tables say. Returns
     complaints rather than raising, so one run reports all of them."""
@@ -513,15 +555,8 @@ def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
         if len(got) != 2 or got[1] != suffix:
             bad.append(f"{series}: vectors={cfg['vectors']!r} but "
                        f"evt_variants.csv says the part numbers are {suffix.upper()}")
-        # A board is one vector table, so any SKU on a different die variant is
-        # currently built with the wrong one. Reported, not fatal: fixing it
-        # needs per-pnum build.vectors (docs/todo.ja.md).
-        for (other, _), parts in sorted(found.items()):
-            if other != suffix:
-                print(f"WARNING: {series}: {', '.join(sorted(parts))} "
-                      f"{'is' if len(parts) == 1 else 'are'} {other.upper()}, "
-                      f"not the {suffix.upper()} the board is built as",
-                      file=sys.stderr)
+        # SKUs on a different die variant are not a problem here: gen_board
+        # gives them their own build.vector_variant (load_die_variants).
 
     # Flash latency at the clock we boot at. Only checkable where EVT ships a
     # setter for exactly that frequency off HSI; most families reach their
@@ -1410,7 +1445,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     return "\n".join(out) + "\n"
 
 
-def gen_board(series: str, rows: list, probe_rs: set, facts: dict):
+def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
+              die: dict):
     """One board per series. Returns (boards.txt block, {ld name: content})."""
     cfg = SERIES_CONFIG[series]
     fam = FAMILY[cfg["family"]]
@@ -1431,7 +1467,10 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict):
     lines.append(f"{board}.build.f_cpu={fam['f_cpu']}")
     lines.append(f"{board}.build.series={series}")
     lines.append(f"{board}.build.startup_defines={fam['defines']}")
-    lines.append(f"{board}.build.vectors=vectors_{cfg['vectors']}.inc")
+    # One stem, three file names: platform.txt builds vectors_*.inc, irqn_*.h
+    # and exti_*.h from it. Keeping it a single property is what lets a menu
+    # entry move a part to another die variant in one line.
+    lines.append(f"{board}.build.vector_variant={cfg['vectors']}")
     lines.append(
         f"{board}.build.core_defines="
         f"-DCH32_GPIO_PORT_WIDTH={fact['port_width']} "
@@ -1440,9 +1479,7 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict):
         f"-DCH32_FLASH_LATENCY={fam['flash_latency']} "
         f"-DCH32_ADC_BITS={fam['adc_bits']} "
         f"-DCH32_I2C_HAS_RTR={fam['i2c_has_rtr']} "
-        f"-DCH32_HPRE_LINEAR={fact['hpre_linear']} "
-        f"-DCH32_IRQNS=irqn_{cfg['vectors']}.h "
-        f"-DCH32_EXTIS=exti_{cfg['vectors']}.h")
+        f"-DCH32_HPRE_LINEAR={fact['hpre_linear']}")
     lines.append("")
 
     ld_files = {}
@@ -1484,6 +1521,11 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict):
         chip = probe_rs_chip(pn, series, ordered, probe_rs)
         if chip:
             lines.append(f"{pfx}.build.probe_rs_chip={chip}")
+        # ANY deliberately keeps the board's variant: it already declares the
+        # smallest flash in the series, so it is the "not a specific part"
+        # entry and a part that needs its own table has to be picked by name.
+        if pn in die:
+            lines.append(f"{pfx}.build.vector_variant={die[pn]}")
         lines.append("")
 
     for key, label, flags in PRINTF_MENU:
@@ -1519,6 +1561,7 @@ def main() -> int:
     pwm = load_pwm_pins(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
+    die = load_die_variants(args.tables)
     disagreements = check_family_facts(args.tables, facts)
     if disagreements:
         print("ERROR: hand-written values disagree with ch32-device-data:",
@@ -1548,9 +1591,12 @@ def main() -> int:
     used_variants = set()
     for series in SERIES_CONFIG:
         rows = by_board[series]
-        block, ld_files = gen_board(series, rows, probe_rs, facts)
+        block, ld_files = gen_board(series, rows, probe_rs, facts, die)
         boards_blocks.append(block)
         used_variants.add(SERIES_CONFIG[series]["vectors"])
+        # A part on another die variant needs that table emitted too.
+        used_variants.update(die[r["part_number"]] for r in rows
+                             if r["part_number"] in die)
         for name, content in ld_files.items():
             outputs[args.platform / "variants" / series / name] = content
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \

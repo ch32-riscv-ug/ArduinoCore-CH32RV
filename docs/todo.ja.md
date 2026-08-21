@@ -735,12 +735,18 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       予約のままなので、**V305の看板機能であるUSB-HSにベクタが無かった**。
       サイズ変化なし(RSVもIRQも`.word`1つ)。同種の取り違えを防ぐため、
       `vectors`の接尾辞を`evt_variants.csv`の既定macroと突き合わせる検査を入れた
-- [ ] `[P1]` **CH32V203RBT6だけdie variantが違う**(`CH32V20x_D8`、他のV203は`D6`)。
-      D6とD8は**slot 61から並びが違う**(D6は`UART4`、D8は`ETH`)うえ、D8は69 slotで
-      D6は62 slot。boardは1つのvector tableしか持てないので、いまV203RBT6は
-      **誤ったtableで組まれている**。generatorがWARNINGを出す。
-      直すにはpnum項目ごとに`build.vectors`/`CH32_IRQNS`/`CH32_EXTIS`を上書きする
-      必要があり、`ANY`項目がどちらを指すかも決める必要がある(**要判断**)
+- [x] **CH32V203RBT6だけdie variantが違う問題を直した**(`CH32V20x_D8`、他のV203は`D6`)。
+      D6とD8は**slot 61から並びが違い**(D6は`UART4`、D8は`ETH`)、D8は69 slotで
+      D6は62 slot。`CH32_IRQN_UART4`が61と66でずれていた。
+      対応: vector tableの選択を`build.vector_variant`という**1つのstem**に集約し、
+      platform.txtが`vectors_*.inc`/`irqn_*.h`/`exti_*.h`の3つを組み立てる形にした。
+      pnum項目が1行上書きするだけでdie variantを差し替えられる。
+      上書き対象は`evt_variants.csv`由来で**手書きしない**。
+      `ANY`はboardの既定(d6)を保つ——既にseries最小のflash(32K/10K)を宣言していて
+      「特定の石向けではない」項目なので、RBT6の人はどのみちpnumを選ぶ必要がある。
+      series内でdieが割れるのは**全seriesでCH32V203だけ**(確認済み)。
+      サイズはCH32V203RBT6だけ**956→984バイト(+28)**。D8のvector tableが7 slot長い分で、
+      他の121ターゲットは1バイトも動かない——上書きが効いたことの裏付けにもなっている
 - [x] **手書き定数のうち、上流が答えられるものをデータ由来にした**。
       `CH32_HSI_HZ`(`operating_conditions.F_HSI.typ`)・`CH32_HPRE_LINEAR`
       (`clock_prescalers`のHPRE `/2`が`0x10`か`0x80`か)・`CH32_GPIO_PORT_WIDTH`

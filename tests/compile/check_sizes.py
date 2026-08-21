@@ -34,7 +34,11 @@ def main() -> int:
 
     current = read_tsv(args.sizes)
     if args.update:
-        args.baseline.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
+        # sort_keys, because otherwise a rebuild rewrites every entry in
+        # TSV column order and one changed number hides in a 244-line diff.
+        args.baseline.write_text(
+            json.dumps(current, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8")
         print(f"wrote baseline: {args.baseline} ({len(current)} entries)")
         return 0
 
