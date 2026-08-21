@@ -53,6 +53,13 @@ public:
         return (int)((uint16_t)(_head - _tail) % N);
     }
 
+    /* Room for this many more bytes. One slot is always spent telling empty
+     * from full, so a buffer of N holds N-1. */
+    int availableForWrite(void) const
+    {
+        return (int)(N - 1u) - available();
+    }
+
     void clear(void) { _tail = _head; }
 
 private:

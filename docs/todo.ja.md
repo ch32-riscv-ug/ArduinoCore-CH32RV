@@ -240,7 +240,48 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 
 ## coreの範囲とexamples
 
-**examplesを書いたら、届いていなかったAPIが2つ見つかった**(2026-08-21):
+**API監査で穴が5つ見つかった**(2026-08-21)。
+examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き合わせて3つ。
+
+- [x] **`serialEvent()`が一度も呼ばれなかった**。`api/HardwareSerial.h`が
+      `serialEventRun()`をweakで宣言しているのに、`main()`が呼んでいなかった。
+      **参照キットは50 sketch中3本がserialEvent()を使っている**ので直撃だった。
+      `HardwareSerial.cpp`に`arduino::serialEventRun()`を実装し、
+      `serialEvent()`(monitor port)と`serialEvent1..5()`を配る。
+      定義をSerialと同じTUに置いたので、**Serialを使わないsketchはリンクしない**
+      (AVRコアと同じ構造)。**X035実機で動作確認済み**
+- [x] **`yield()`がweakでなかった**。自前の`yield()`を定義したsketchが
+      リンクエラーになる。`delay()`が呼ぶ以上、差し替えられることが契約
+- [x] **`initVariant()`を`main()`が呼んでいなかった**。APIが宣言しているフック。
+      weakの空実装を用意して呼ぶようにした。
+      **`init()`は敢えて呼ばない**: AVRではあれは*コア自身*のハードウェア初期化
+      (timerやADCの設定)であってユーザフックではなく、
+      こちらは`SystemInit`とcrt0がmainより前に済ませている。
+      空の`init()`を呼ぶのは全sketchが払う儀式にしかならない
+- [x] **サイズ基準線を更新した**。上の変更でBlinkの`.text`が**全部品で+48バイト**
+      (V003で812→860)。内訳は`initVariant()`の呼び出しと、
+      loopごとの`serialEventRun`のnullチェック。
+      **AVRコアも同じ構造で同じコストを払っている**。V003の16KBに対して0.3%
+
+**ESP32互換のためのAPI追加**(2026-08-21、ユーザ指示「ESP32との互換性のほうが嬉しい」):
+
+- [x] `digitalPinToPort()` / `digitalPinToBitMask()` /
+      `portOutputRegister()` / `portInputRegister()`を追加。
+      **ESP32と同じ形**(`volatile uint32_t*`で、1ビット=1ピン)。
+      CH32の`OUTDR`/`INDR`は意味論が一致し、X033/X035の24ビットポートも1本に収まる
+- [x] **`portModeRegister()`は敢えて提供しない**。CH32のモードは1ビットではなく
+      `CFGLR`/`CFGHR`/`CFGXR`に散る4ビットのフィールドで、1本のポインタでは表せない。
+      `CFGLR`を返せばbit 8以上で黙って壊れるので、**コンパイルが通らない方を選ぶ**
+- [x] ポートのbase addressは`ch32_pins.h`に置いた(Arduino.hが
+      `ch32_registers.h`を読まずに済ませるため)。二重定義になるので
+      `wiring_digital.c`で`_Static_assert`により一致を強制している
+- [x] **`Serial.availableForWrite()`を実装**。`Print`の既定は常に0で、
+      「送信バッファが永久に満杯」に見えていた。
+      todoの「`write()`が満杯でblockする/non-blockingにする手段が無い」への答えでもある
+- [x] `core_api`自己検査に5項目追加(**X035実機で全項目pass**)。
+      なおAVR固有の`_BV()`等は追わない(ユーザ判断: キットのAVR前提ライブラリは対象外)
+
+**examplesを書いて見つかったぶん**:
 
 - [x] `analogReadResolution()` / `analogWriteResolution()`は**実装済みなのに宣言が無く**、
       sketchから呼べなかった。ArduinoCore-APIのこの版が宣言していないため。

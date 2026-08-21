@@ -99,6 +99,11 @@ int CH32HardwareSerial::available(void)
     return _rx.available();
 }
 
+int CH32HardwareSerial::availableForWrite(void)
+{
+    return _started ? (int)_tx.availableForWrite() : 0;
+}
+
 int CH32HardwareSerial::peek(void)
 {
     return _rx.peek();
@@ -339,6 +344,65 @@ CH32_DEFINE_SERIAL(4, CH32_USART4_BASE, true, CH32_RCC_APB1_USART4)
 #endif
 CH32_DEFINE_SERIAL(5, CH32_USART5_BASE, true, CH32_RCC_APB1_USART5)
 #endif
+
+/* ------------------------------------------------------- serialEvent() */
+/* Arduino calls serialEvent() after every loop() when the port has data. The
+ * dispatcher lives in this translation unit on purpose: main() only holds a
+ * weak reference to it, so a sketch that never touches Serial does not link
+ * any of this - which is also how the AVR core keeps Blink small.
+ *
+ * serialEvent() belongs to the monitor port (the one `Serial` names), and
+ * serialEvent1..5() to the numbered instances. On a board where Serial is
+ * Serial1, defining both means both run; that overlap is inherited from AVR,
+ * where Serial is USART0 and serialEvent() is its hook. */
+/* The sketch defines these in its .ino, so they have C++ linkage at global
+ * scope - the same shape the AVR core declares. serialEventRun() itself is
+ * declared by api/HardwareSerial.h inside namespace arduino, so that is where
+ * it has to be defined. */
+void serialEvent(void) __attribute__((weak));
+void serialEvent1(void) __attribute__((weak));
+void serialEvent2(void) __attribute__((weak));
+void serialEvent3(void) __attribute__((weak));
+void serialEvent4(void) __attribute__((weak));
+void serialEvent5(void) __attribute__((weak));
+
+namespace arduino {
+
+void serialEventRun(void)
+{
+#ifdef SERIAL_PORT_MONITOR
+    if (serialEvent && SERIAL_PORT_MONITOR.available() > 0) {
+        serialEvent();
+    }
+#endif
+#if defined(CH32_SERIAL1_TX)
+    if (serialEvent1 && Serial1.available() > 0) {
+        serialEvent1();
+    }
+#endif
+#if defined(CH32_SERIAL2_TX)
+    if (serialEvent2 && Serial2.available() > 0) {
+        serialEvent2();
+    }
+#endif
+#if defined(CH32_SERIAL3_TX)
+    if (serialEvent3 && Serial3.available() > 0) {
+        serialEvent3();
+    }
+#endif
+#if defined(CH32_SERIAL4_TX)
+    if (serialEvent4 && Serial4.available() > 0) {
+        serialEvent4();
+    }
+#endif
+#if defined(CH32_SERIAL5_TX)
+    if (serialEvent5 && Serial5.available() > 0) {
+        serialEvent5();
+    }
+#endif
+}
+
+}  // namespace arduino
 
 /* --------------------------------------------------------- printf() bridge */
 #include "ch32_serial_write.h"

@@ -14,5 +14,12 @@
 #define CH32_PIN_PORT(pin)   ((pin) >> CH32_PIN_PORT_BITS)
 #define CH32_PIN_BIT(pin)    ((pin) & ((1 << CH32_PIN_PORT_BITS) - 1))
 
+/* Base address of a port's register block. Repeated here rather than pulled
+ * from ch32_registers.h so that Arduino.h can offer the port-access macros
+ * without putting the whole register map into every sketch's namespace.
+ * wiring_digital.c includes both headers and asserts they agree, so the two
+ * cannot drift apart. */
+#define CH32_GPIO_PORT_BASE(port) (0x40010800u + 0x400u * (uint32_t)(port))
+
 #define NOT_A_PIN            0xffu
 #define NOT_AN_ANALOG_PIN    0xffu

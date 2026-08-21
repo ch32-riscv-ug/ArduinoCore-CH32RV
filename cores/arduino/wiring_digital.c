@@ -3,6 +3,17 @@
 #include "Arduino.h"
 #include "ch32_gpio.h"
 
+/* Arduino.h spells the port base out itself for portOutputRegister(), so that
+ * sketches get the ESP32-shaped macros without the whole register map. This is
+ * the one place that sees both definitions, so it is where they are held to
+ * the same value. */
+_Static_assert(CH32_GPIO_PORT_BASE(0) == CH32_GPIO_BASE(0),
+               "CH32_GPIO_PORT_BASE (ch32_pins.h) disagrees with "
+               "CH32_GPIO_BASE (ch32_registers.h)");
+_Static_assert(CH32_GPIO_PORT_BASE(3) == CH32_GPIO_BASE(3),
+               "CH32_GPIO_PORT_BASE (ch32_pins.h) disagrees with "
+               "CH32_GPIO_BASE (ch32_registers.h)");
+
 void pinMode(pin_size_t pin, PinMode mode)
 {
     const uint8_t port = (uint8_t)CH32_PIN_PORT(pin);

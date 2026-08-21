@@ -109,6 +109,10 @@ void delayMicroseconds(unsigned int us)
     }
 }
 
-void yield(void)
+/* Weak so a sketch, or a cooperative scheduler, can take it over. delay()
+ * calls it, which is the whole point: without the weak attribute a sketch that
+ * defines its own yield() fails to link, and that is a contract several
+ * libraries rely on. */
+__attribute__((weak)) void yield(void)
 {
 }

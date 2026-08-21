@@ -37,6 +37,26 @@ using namespace arduino;
  * carries everything attachInterrupt() needs. */
 #define digitalPinToInterrupt(pin) (pin)
 
+/* Port access, in the shape the ESP32 core uses: a pointer to a 32-bit
+ * register where one bit is one pin. CH32's OUTDR and INDR are exactly that,
+ * including on the 24-bit ports of X033/X035, so a library written against
+ * these macros gets the same meaning it has there.
+ *
+ * portModeRegister() is deliberately absent. A CH32 pin's direction is not one
+ * bit: it is a four-bit CNF+MODE field spread across CFGLR, CFGHR and CFGXR,
+ * and no single pointer can stand for that. Returning CFGLR would compile and
+ * then silently do the wrong thing for any pin above bit 7, so this core would
+ * rather not compile.
+ *
+ * These reach the same registers the core uses. Driving a pin this way while
+ * Serial, Wire or SPI owns it is the caller's problem to avoid. */
+#define digitalPinToPort(pin)    CH32_PIN_PORT(pin)
+#define digitalPinToBitMask(pin) (1UL << CH32_PIN_BIT(pin))
+#define portOutputRegister(port) \
+    ((volatile uint32_t *)(CH32_GPIO_PORT_BASE(port) + 0x0Cu))
+#define portInputRegister(port) \
+    ((volatile uint32_t *)(CH32_GPIO_PORT_BASE(port) + 0x08u))
+
 /* api/Common.h declares these two but leaves them to the core. MIE is bit 3 of
  * mstatus, and csrsi/csrci take the bit as an immediate, so each is one
  * instruction with no scratch register.

@@ -59,6 +59,10 @@ public:
     void end() override;
 
     int available(void) override;
+    /* Room left in the transmit ring. Print declares it with a default of 0,
+     * which is safe but useless: a sketch checking it to avoid blocking would
+     * conclude the port is permanently full. */
+    int availableForWrite(void) override;
     int peek(void) override;
     int read(void) override;
     void flush(void) override;

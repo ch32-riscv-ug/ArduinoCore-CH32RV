@@ -105,6 +105,38 @@ void setup() {
   Serial.print(',');
   Serial.println(1.5, 2);
 
+  /* Room in the transmit ring. Print's default returns 0, which would make a
+   * sketch believe the port is permanently full.
+   *
+   * flush() first: every check above printed, and at 115200 the ring really is
+   * full at this point. Measuring without draining would be testing how fast
+   * the UART is, not whether the count is reported. */
+  Serial.flush();
+  const int room = Serial.availableForWrite();
+  check("availableForWrite", room > 0, room);
+
+  /* The port-access macros, in the shape the ESP32 core uses: one bit of one
+   * 32-bit register per pin. Driving the pad through them has to be visible to
+   * digitalRead(), and the port and bit have to match the pin encoding. */
+  {
+    const uint8_t pin = LED_BUILTIN;
+    pinMode(pin, OUTPUT);
+    volatile uint32_t *out = portOutputRegister(digitalPinToPort(pin));
+    volatile uint32_t *in = portInputRegister(digitalPinToPort(pin));
+    const uint32_t mask = digitalPinToBitMask(pin);
+
+    check("digitalPinToPort", digitalPinToPort(pin) == CH32_PIN_PORT(pin),
+          digitalPinToPort(pin));
+    check("digitalPinToBitMask", mask == (1UL << CH32_PIN_BIT(pin)), (long)mask);
+
+    *out |= mask;
+    const bool high = digitalRead(pin) == HIGH && (*in & mask) != 0;
+    *out &= ~mask;
+    const bool low = digitalRead(pin) == LOW && (*in & mask) == 0;
+    check("portOutputRegister", high && low);
+    check("portInputRegister", high && low);
+  }
+
   Serial.print("core_api done failures=");
   Serial.println(failures);
 }

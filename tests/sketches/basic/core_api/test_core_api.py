@@ -22,6 +22,11 @@ CHECKS = [
     "pulseIn_timeout",
     "random_repeatable",
     "random_range",
+    "availableForWrite",
+    "digitalPinToPort",
+    "digitalPinToBitMask",
+    "portOutputRegister",
+    "portInputRegister",
 ]
 
 
