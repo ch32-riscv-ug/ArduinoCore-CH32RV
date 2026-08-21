@@ -26,7 +26,21 @@ import textwrap
 import subprocess
 import sys
 
-# Per-family generation config. Values come from verified research:
+# Per-family generation config. What is left here is either a decision of ours
+# or a fact no table holds yet; everything ch32-device-data can answer is read
+# from it instead (load_family_facts), so there is no second copy to drift.
+#
+#   from the tables   CH32_GPIO_PORT_WIDTH, CH32_HSI_HZ, CH32_HPRE_LINEAR
+#   checked against   flash_latency, SERIES_CONFIG's vectors variant
+#     the tables
+#   ours              march/mabi (which optional extensions to enable: the
+#                     tables call CH32V407 RV32IMACB+Zve64x_zvbb and we build
+#                     rv32imac), f_cpu (HSI direct today)
+#   not in any table  systick64, adc_bits, i2c_has_rtr, and the CSR init values
+#                     below - the CSR ones come from the EVT startup assembly
+#                     and are re-verified every PR by tests/startup/
+#
+# Values come from verified research:
 # march/mabi and startup CSR defines: docs/research/startup-files.ja.md (R-01),
 # experiments 0001/0002. Only families proven by the equivalence harness are listed.
 # Startup/ISA parameters shared by every series in an EVT family.
@@ -37,48 +51,46 @@ import sys
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=10 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1"),
+                     systick64=0, flash_latency=0, adc_bits=10, i2c_has_rtr=0),
     "CH32V006": dict(march="rv32emc_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1"),
+                     systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=0),
     "CH32V205": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x7 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
+                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x0b "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
+                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32V407": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x688 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
+                     systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=1),
     "CH32X035": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="48000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=24 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=48000000 -DCH32_FLASH_LATENCY=2 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1"),
+                     systick64=1, flash_latency=2, adc_bits=12, i2c_has_rtr=0),
     "CH32X315": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="20000000L",
                      defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x07 "
                              "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=20000000 -DCH32_FLASH_LATENCY=1 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=0"),
+                     systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=0),
     # CH32V103's table is a jump table and its startup never writes csr 0x804.
     "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_MTVEC_MODE=1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 "
-                                  "-DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 "
-                                  "-DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x1f",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=1 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=1 -DCH32_HPRE_LINEAR=0"),
+                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32M030": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
-                     core_defines="-DCH32_GPIO_PORT_WIDTH=16 -DCH32_SYSTICK_64=0 -DCH32_HSI_HZ=8000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=12 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1"),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0),
     # Excluded, same reason as tests/startup/: CH32H417 boots via loadcode.
 }
 
@@ -99,7 +111,12 @@ SERIES_CONFIG = {
     "CH32V203": dict(family="CH32V20x", vectors="v20x_d6"),
     "CH32V208": dict(family="CH32V20x", vectors="v20x_d8w"),
     "CH32V303": dict(family="CH32V307", vectors="v307_d8"),
-    "CH32V305": dict(family="CH32V307", vectors="v307_d8"),
+    # D8C, not D8: ch32v30x.h says so ("CH32V307x-CH32V305x-CH32V317x") and
+    # evt_variants.csv carries the same mapping. CH32V305 is the USB-HS part,
+    # and the D8 table leaves USBHS_IRQHandler and USBHSWakeup_IRQHandler
+    # reserved, so building it as D8 left its headline peripheral with no
+    # vector at all.
+    "CH32V305": dict(family="CH32V307", vectors="v307_d8c"),
     "CH32V307": dict(family="CH32V307", vectors="v307_d8c"),
     "CH32V317": dict(family="CH32V307", vectors="v307_d8c"),
     "CH32X033": dict(family="CH32X035", vectors="x035"),
@@ -143,11 +160,28 @@ LOCK_REL = "vendor/ch32-device-data.lock.toml"
 _READ_TABLES: set = set()
 
 
-def read_table(tables: pathlib.Path, name: str) -> list:
-    """One ch32-device-data CSV, as a list of dicts."""
+def read_table(tables: pathlib.Path, name: str, require: tuple = ()) -> list:
+    """One ch32-device-data CSV, as a list of dicts.
+
+    `require` names columns this caller reads. Upstream adds columns over time
+    (operating_conditions.csv grew `typ` for the oscillators), so a pin that
+    predates one produces a KeyError deep in a loader; checking here says which
+    table is too old instead.
+    """
     _READ_TABLES.add(name)
-    with open(tables / name, newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+    try:
+        with open(tables / name, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+    except FileNotFoundError:
+        raise SystemExit(f"ERROR: {name} is not in these tables. The pinned "
+                         f"ch32-device-data commit predates it "
+                         f"({LOCK_REL}).") from None
+    missing = [c for c in require if rows and c not in rows[0]]
+    if missing:
+        raise SystemExit(f"ERROR: {name} has no {', '.join(missing)} column. "
+                         f"The pinned ch32-device-data commit predates it "
+                         f"({LOCK_REL}).")
+    return rows
 
 
 def source_commit(tables_dir: pathlib.Path) -> str:
@@ -363,6 +397,146 @@ def load_pin_tables(tables: pathlib.Path):
 
 def load_errata_ids(tables: pathlib.Path) -> set:
     return {r["id"] for r in read_table(tables, "errata.csv")}
+
+
+# ------------------------------------------------------- facts from the tables
+def _family_series(tables: pathlib.Path) -> dict:
+    """family -> its series names. families.csv is the only place that says so."""
+    return {r["family"]: r["series"].split(";")
+            for r in read_table(tables, "families.csv", ("family", "series"))}
+
+
+def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
+    """family -> the values FAMILY used to spell out.
+
+    One value per family, and the table has to agree with itself: a family is
+    one silicon, so if two of its series disagree about the HSI that is a data
+    bug and guessing which one is right would hide it.
+    """
+    series_of = {f: set(s) for f, s in _family_series(tables).items()}
+    fam_of_series = {s: f for f, ss in series_of.items() for s in ss}
+    fam_of_part = {r["part_number"]: fam_of_series.get(r["series"])
+                   for r in products}
+
+    def one(family: str, what: str, values: set):
+        if len(values) != 1:
+            raise SystemExit(f"ERROR: {family}: ch32-device-data gives "
+                             f"{len(values)} answers for {what}: {sorted(values)}")
+        return values.pop()
+
+    # HSI: operating_conditions carries it as a typical value, because the
+    # datasheets specify the oscillator as "typ plus ACC_HSI percent" and have
+    # no min/max for it. The CH32V00x rows are qualified by HSI_LP, whose 0
+    # branch is the normal-speed one; the low-power rows are kHz and belong to
+    # a mode we do not drive.
+    hsi: dict = {}
+    for r in read_table(tables, "operating_conditions.csv",
+                        ("series", "symbol", "condition", "typ", "unit")):
+        if r["symbol"] != "F_HSI" or r["unit"] != "MHz" or not r["typ"]:
+            continue
+        if r["condition"] not in ("", "HSI_LP = 0"):
+            continue
+        for s in r["series"].split(";"):
+            f = fam_of_series.get(s)
+            if f:
+                hsi.setdefault(f, set()).add(int(float(r["typ"]) * 1e6))
+
+    # AHB prescaler encoding. The two schemes agree on /1 and differ on /2,
+    # which is the cheapest question that separates them: 0x10 counts (/2 is
+    # field 1) and 0x80 is a power-of-two field. Reading /2 wrong runs the part
+    # at twice the clock every timing calculation assumes.
+    hpre: dict = {}
+    for r in read_table(tables, "clock_prescalers.csv",
+                        ("family", "field", "divider", "value")):
+        if r["field"] == "HPRE" and r["divider"] == "2":
+            hpre.setdefault(r["family"], set()).add(int(r["value"]))
+
+    # Port width: the widest pad the parts of this family actually have. Taken
+    # from the resolved pad set rather than pins.csv so it is the same set the
+    # pin map is built from - a pad excluded there must not widen the port.
+    width: dict = {}
+    for part, got in pads.items():
+        f = fam_of_part.get(part)
+        if f:
+            width[f] = max(width.get(f, 0), max(b for _, b in got) + 1)
+
+    facts = {}
+    for family in FAMILY:
+        if family not in series_of:
+            raise SystemExit(f"ERROR: families.csv has no {family}")
+        enc = one(family, "the HPRE /2 encoding", set(hpre.get(family, ())))
+        if enc not in (0x10, 0x80):
+            raise SystemExit(f"ERROR: {family}: HPRE /2 is {enc:#x}, which is "
+                             "neither of the two known encodings")
+        facts[family] = dict(
+            hsi_hz=one(family, "the HSI frequency", set(hsi.get(family, ()))),
+            hpre_linear=1 if enc == 0x10 else 0,
+            port_width=one(family, "the GPIO port width",
+                           {width[family]} if family in width else set()),
+        )
+    return facts
+
+
+def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
+    """Values we still write by hand, against what the tables say. Returns
+    complaints rather than raising, so one run reports all of them."""
+    bad = []
+
+    # The EVT header picks its register set and its vector table with the same
+    # macro, so evt_variants.csv decides which startup variant a series needs.
+    # The variant *names* are ours, so this compares rather than derives: the
+    # suffix after the last underscore has to be the macro's own suffix.
+    # evt_variants.csv holds two kinds of macro: die variants (CH32V20x_D8W)
+    # and plain device selectors (CH32V002). Only the first kind picks a
+    # startup file, and WCH spells those as a D followed by a digit.
+    variant_suffix = re.compile(r"_(D\d\w*)$")
+    part_series = {r["part_number"]: r["series"]
+                   for r in read_table(tables, "products.csv")}
+    by_series: dict = {}
+    for r in read_table(tables, "evt_variants.csv",
+                        ("family", "macro", "part_number", "default")):
+        m = variant_suffix.search(r["macro"])
+        s = part_series.get(r["part_number"])
+        if m and s:
+            by_series.setdefault(s, {}).setdefault(
+                (m.group(1).lower(), r["default"] == "yes"), []
+            ).append(r["part_number"])
+    for series, cfg in sorted(SERIES_CONFIG.items()):
+        found = by_series.get(series)
+        if not found:
+            continue                      # no die variants in this family
+        # The header's uncommented macro is what a part gets unless told
+        # otherwise, so that is the one a whole-series board has to match.
+        default = [k for k in found if k[1]] or list(found)
+        suffix = sorted(default)[0][0]
+        got = cfg["vectors"].rsplit("_", 1)
+        if len(got) != 2 or got[1] != suffix:
+            bad.append(f"{series}: vectors={cfg['vectors']!r} but "
+                       f"evt_variants.csv says the part numbers are {suffix.upper()}")
+        # A board is one vector table, so any SKU on a different die variant is
+        # currently built with the wrong one. Reported, not fatal: fixing it
+        # needs per-pnum build.vectors (docs/todo.ja.md).
+        for (other, _), parts in sorted(found.items()):
+            if other != suffix:
+                print(f"WARNING: {series}: {', '.join(sorted(parts))} "
+                      f"{'is' if len(parts) == 1 else 'are'} {other.upper()}, "
+                      f"not the {suffix.upper()} the board is built as",
+                      file=sys.stderr)
+
+    # Flash latency at the clock we boot at. Only checkable where EVT ships a
+    # setter for exactly that frequency off HSI; most families reach their
+    # default by not configuring anything, so there is nothing to compare to.
+    configs = read_table(tables, "clock_configs.csv")
+    for family, fam in FAMILY.items():
+        hz = int(fam["f_cpu"].rstrip("L"))
+        want = {r["flash_latency"] for r in configs
+                if r["family"] == family and r["source"] == "HSI"
+                and not r["pll"] and f"SYSCLK={hz}" in r["domains"]
+                and r["flash_latency"]}
+        if want and want != {str(fam["flash_latency"])}:
+            bad.append(f"{family}: flash_latency={fam['flash_latency']} but the "
+                       f"{hz // 1000000} MHz HSI configs say {sorted(want)}")
+    return bad
 
 
 def pad_name(port: str, bit: int) -> str:
@@ -1236,10 +1410,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     return "\n".join(out) + "\n"
 
 
-def gen_board(series: str, rows: list, probe_rs: set):
+def gen_board(series: str, rows: list, probe_rs: set, facts: dict):
     """One board per series. Returns (boards.txt block, {ld name: content})."""
     cfg = SERIES_CONFIG[series]
     fam = FAMILY[cfg["family"]]
+    fact = facts[cfg["family"]]
     rows = sorted(rows, key=lambda r: (int(r["flash_bytes"]), int(r["sram_bytes"]),
                                        r["part_number"]))
     board = series
@@ -1257,9 +1432,17 @@ def gen_board(series: str, rows: list, probe_rs: set):
     lines.append(f"{board}.build.series={series}")
     lines.append(f"{board}.build.startup_defines={fam['defines']}")
     lines.append(f"{board}.build.vectors=vectors_{cfg['vectors']}.inc")
-    lines.append(f"{board}.build.core_defines={fam['core_defines']} "
-                 f"-DCH32_IRQNS=irqn_{cfg['vectors']}.h "
-                 f"-DCH32_EXTIS=exti_{cfg['vectors']}.h")
+    lines.append(
+        f"{board}.build.core_defines="
+        f"-DCH32_GPIO_PORT_WIDTH={fact['port_width']} "
+        f"-DCH32_SYSTICK_64={fam['systick64']} "
+        f"-DCH32_HSI_HZ={fact['hsi_hz']} "
+        f"-DCH32_FLASH_LATENCY={fam['flash_latency']} "
+        f"-DCH32_ADC_BITS={fam['adc_bits']} "
+        f"-DCH32_I2C_HAS_RTR={fam['i2c_has_rtr']} "
+        f"-DCH32_HPRE_LINEAR={fact['hpre_linear']} "
+        f"-DCH32_IRQNS=irqn_{cfg['vectors']}.h "
+        f"-DCH32_EXTIS=exti_{cfg['vectors']}.h")
     lines.append("")
 
     ld_files = {}
@@ -1335,6 +1518,14 @@ def main() -> int:
     remap = load_remap_fields(args.tables)
     pwm = load_pwm_pins(args.tables)
     errata_ids = load_errata_ids(args.tables)
+    facts = load_family_facts(args.tables, pads, products)
+    disagreements = check_family_facts(args.tables, facts)
+    if disagreements:
+        print("ERROR: hand-written values disagree with ch32-device-data:",
+              file=sys.stderr)
+        for line in disagreements:
+            print(f"  {line}", file=sys.stderr)
+        return 1
     stale = sorted(set(UNUSABLE_PADS) - errata_ids)
     if stale:
         print(f"ERROR: UNUSABLE_PADS references errata ids that no longer exist "
@@ -1357,7 +1548,7 @@ def main() -> int:
     used_variants = set()
     for series in SERIES_CONFIG:
         rows = by_board[series]
-        block, ld_files = gen_board(series, rows, probe_rs)
+        block, ld_files = gen_board(series, rows, probe_rs, facts)
         boards_blocks.append(block)
         used_variants.add(SERIES_CONFIG[series]["vectors"])
         for name, content in ld_files.items():

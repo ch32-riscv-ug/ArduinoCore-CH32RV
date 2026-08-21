@@ -728,6 +728,27 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       入力を増やせば自動でlockに載る。実測: `66a421f`→`0a1eed7`の8 commitのうち
       **この5表に触れたのは2つだけ**で、bumpの差分は56ファイルから
       「lock 3行 + CH32V305の`pins_arduino.h`」になった
+- [x] **CH32V305のvector tableが間違っていたのを直した**。`SERIES_CONFIG`が
+      `v307_d8`にしていたが、`ch32v30x.h`のコメントは
+      `#define CH32V30x_D8C /* CH32V307x-CH32V305x-CH32V317x */`で、
+      `evt_variants.csv`も同じ。D8側はslot 84/85(`USBHSWakeup`/`USBHS`)が
+      予約のままなので、**V305の看板機能であるUSB-HSにベクタが無かった**。
+      サイズ変化なし(RSVもIRQも`.word`1つ)。同種の取り違えを防ぐため、
+      `vectors`の接尾辞を`evt_variants.csv`の既定macroと突き合わせる検査を入れた
+- [ ] `[P1]` **CH32V203RBT6だけdie variantが違う**(`CH32V20x_D8`、他のV203は`D6`)。
+      D6とD8は**slot 61から並びが違う**(D6は`UART4`、D8は`ETH`)うえ、D8は69 slotで
+      D6は62 slot。boardは1つのvector tableしか持てないので、いまV203RBT6は
+      **誤ったtableで組まれている**。generatorがWARNINGを出す。
+      直すにはpnum項目ごとに`build.vectors`/`CH32_IRQNS`/`CH32_EXTIS`を上書きする
+      必要があり、`ANY`項目がどちらを指すかも決める必要がある(**要判断**)
+- [x] **手書き定数のうち、上流が答えられるものをデータ由来にした**。
+      `CH32_HSI_HZ`(`operating_conditions.F_HSI.typ`)・`CH32_HPRE_LINEAR`
+      (`clock_prescalers`のHPRE `/2`が`0x10`か`0x80`か)・`CH32_GPIO_PORT_WIDTH`
+      (解決済みpad集合の最大bit+1)の3つ。11 familyすべてで手書き値と一致し、
+      **生成物は1バイトも変わらなかった**。`flash_latency`と`vectors`は値を
+      手元に残したまま表と突き合わせる(不一致でgeneratorがexit 1)。
+      `march`/`mabi`(任意拡張をどこまで有効にするか)・`f_cpu`・`adc_bits`・
+      `i2c_has_rtr`・`systick64`・CSR初期値は据え置き。理由は`FAMILY`のコメント
 - [x] **device-dataの取り込みは「リリース準備の最初の工程」で手動でのみ行う**と決めた。
       取り込みだけ先に進めるとリリース物とずれるため、**週次等の自動化はしない**。
       手順は[generate.pyのREADME](../tools/generate/README.ja.md)、

@@ -98,7 +98,7 @@ pin番号や既定routeが変わると、既存のsketchの意味が変わるた
 | CH32V006 | V002/V004/V005/V006/V007/M007 | 26 | rv32emc_zicsr / ilp32e | v00x(生成済み) |
 | CH32V205 | V205 | 3 | rv32imc_zicsr / ilp32 | v205 |
 | CH32V20x | V203 / V208 | 17 | rv32imac_zicsr / ilp32 | **series別**: V203→d6、V208→d8 or d8w |
-| CH32V307 | V303/V305/V307/V317 | 14 | rv32imafc_zicsr / ilp32f | **series別**: V303/V305→d8、V307/V317→d8c |
+| CH32V307 | V303/V305/V307/V317 | 14 | rv32imafc_zicsr / ilp32f | **series別**: V303→d8、V305/V307/V317→d8c(`evt_variants.csv`と`ch32v30x.h`のコメントに一致) |
 | CH32V407 | V407/V467 | 6 | rv32imac_zicsr / ilp32 | v4x7 |
 | CH32X035 | X033/X035 | 8 | rv32imac_zicsr / ilp32 | x035 |
 | CH32X315 | X305/X315 | 4 | rv32imafc_zicsr / ilp32f | x3x5 |
