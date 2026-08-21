@@ -45,17 +45,4 @@ long random(long howsmall, long howbig)
     return random(howbig - howsmall) + howsmall;
 }
 
-/* TODO(docs/todo.ja.md): tone() needs a spare timer and a pin->timer channel
- * map, which the variant does not generate yet. Defined so that sketches using
- * it still link; it does not make a sound. */
-void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
-{
-    (void)pin;
-    (void)frequency;
-    (void)duration;
-}
-
-void noTone(uint8_t pin)
-{
-    (void)pin;
-}
+/* tone() and noTone() live in wiring_tone.c. */

@@ -8,6 +8,8 @@
 #include "ch32_gpio.h"
 #include "ch32_registers.h"
 
+#include <stdbool.h>
+
 /* Arduino's analogWrite() takes 0..255 unless analogWriteResolution() says
  * otherwise. Counting to exactly 256 keeps duty = value / 256. */
 #define CH32_PWM_STEPS 256u
@@ -67,8 +69,59 @@ static void timer_begin(uint8_t timer, uint32_t base)
     ch32_pwm_started |= (uint8_t)(1u << timer);
 }
 
+#if defined(CH32_DAC1_PIN) || defined(CH32_DAC2_PIN)
+/* Drive the converter instead of a timer. The pad goes to analog mode - as an
+ * input, which is what the reference manual asks for: the DAC drives the pin
+ * from inside, and leaving the digital output driver on would fight it. */
+static bool dac_write(pin_size_t pin, uint32_t value12)
+{
+    uint32_t enable;
+    volatile uint32_t *holding;
+
+#if defined(CH32_DAC1_PIN)
+    if (pin == CH32_DAC1_PIN) {
+        enable = CH32_DAC_CTLR_EN1;
+        holding = &CH32_DAC_R12BDHR1;
+    } else
+#endif
+#if defined(CH32_DAC2_PIN)
+    if (pin == CH32_DAC2_PIN) {
+        enable = CH32_DAC_CTLR_EN2;
+        holding = &CH32_DAC_R12BDHR2;
+    } else
+#endif
+    {
+        return false;
+    }
+
+    const uint8_t port = (uint8_t)CH32_PIN_PORT(pin);
+    ch32_gpio_clock_enable(port);
+    ch32_gpio_set_config(port, (uint8_t)CH32_PIN_BIT(pin),
+                         CH32_GPIO_CFG_IN_ANALOG);
+    CH32_RCC_APB1PCENR |= CH32_RCC_APB1_DAC;
+    CH32_DAC_CTLR |= enable;
+    *holding = value12 & 0x0FFFu;
+    return true;
+}
+#endif
+
 void analogWrite(pin_size_t pin, int value)
 {
+#if defined(CH32_DAC1_PIN) || defined(CH32_DAC2_PIN)
+    {
+        /* Scale the caller's range onto the converter's 12 bits before the
+         * PWM path gets a chance to treat the pad as an ordinary pin. */
+        const uint32_t full = (1u << ch32_pwm_write_bits) - 1u;
+        uint32_t level = (value <= 0) ? 0u : (uint32_t)value;
+        if (level > full) {
+            level = full;
+        }
+        level = (level * 0x0FFFu) / full;
+        if (dac_write(pin, level)) {
+            return;
+        }
+    }
+#endif
     const uint8_t timer = (uint8_t)CH32_PWM_PIN_TO_TIMER(pin);
     const uint8_t channel = (uint8_t)CH32_PWM_PIN_TO_CHANNEL(pin);
     const uint32_t base = timer_base(timer);

@@ -307,6 +307,29 @@
     (p) == PB1 ? 4 : \
     0)
 
+/* ---- DAC: analogWrite() drives the converter on these pads,
+ *      not a timer. ---- */
+/* DAC1: on 3 of 4 parts */
+#define CH32_DAC1_PIN PA4
+
+/* ---- tone(): TIM7, free of PWM pads. ---- */
+#define CH32_TONE_TIMER 7
+#define CH32_TONE_TIMER_BASE CH32_TIM7_BASE
+#define CH32_TONE_TIMER_RCC CH32_RCC_APB1_TIM7
+#define CH32_TONE_TIMER_ON_APB2 0
+#define CH32_TONE_TIMER_IRQ CH32_IRQN_TIM7
+#define CH32_TONE_TIMER_HANDLER TIM7_IRQHandler
+#define CH32_TONE_SHARES_PWM 0
+
+/* ---- Servo: TIM6, free of PWM pads. ---- */
+#define CH32_SERVO_TIMER 6
+#define CH32_SERVO_TIMER_BASE CH32_TIM6_BASE
+#define CH32_SERVO_TIMER_RCC CH32_RCC_APB1_TIM6
+#define CH32_SERVO_TIMER_ON_APB2 0
+#define CH32_SERVO_TIMER_IRQ CH32_IRQN_TIM6
+#define CH32_SERVO_TIMER_HANDLER TIM6_IRQHandler
+#define CH32_SERVO_SHARES_PWM 0
+
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present
  * on every part in the series. Override it per board or on the command

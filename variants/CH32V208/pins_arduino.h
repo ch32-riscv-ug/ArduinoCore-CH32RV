@@ -299,6 +299,24 @@
     (p) == PB1 ? 4 : \
     0)
 
+/* ---- tone(): TIM5, free of PWM pads. ---- */
+#define CH32_TONE_TIMER 5
+#define CH32_TONE_TIMER_BASE CH32_TIM5_BASE
+#define CH32_TONE_TIMER_RCC CH32_RCC_APB1_TIM5
+#define CH32_TONE_TIMER_ON_APB2 0
+#define CH32_TONE_TIMER_IRQ CH32_IRQN_TIM5
+#define CH32_TONE_TIMER_HANDLER TIM5_IRQHandler
+#define CH32_TONE_SHARES_PWM 0
+
+/* ---- Servo: TIM4, free of PWM pads. ---- */
+#define CH32_SERVO_TIMER 4
+#define CH32_SERVO_TIMER_BASE CH32_TIM4_BASE
+#define CH32_SERVO_TIMER_RCC CH32_RCC_APB1_TIM4
+#define CH32_SERVO_TIMER_ON_APB2 0
+#define CH32_SERVO_TIMER_IRQ CH32_IRQN_TIM4
+#define CH32_SERVO_TIMER_HANDLER TIM4_IRQHandler
+#define CH32_SERVO_SHARES_PWM 0
+
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present
  * on every part in the series. Override it per board or on the command

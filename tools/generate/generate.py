@@ -347,6 +347,14 @@ SPI_SIGNAL_RE = [
     (re.compile(r"^(SCK|MISO|MOSI|NSS)$"),           lambda m: (1, m.group(1))),
 ]
 SPI_BASES = {1: "CH32_SPI1_BASE", 2: "CH32_SPI2_BASE", 3: "CH32_SPI3_BASE"}
+
+# DAC. One pad per channel, no remap to speak of - the output is wired to a
+# fixed pin - so this is only about naming the pad analogWrite() should treat
+# as a converter rather than as a PWM pin.
+DAC_SIGNAL_RE = [
+    (re.compile(r"^DAC(\d+)_OUT$"), lambda m: (int(m.group(1)), "OUT")),
+]
+DAC_ROUTE_ORDER = ("default", "main")
 SPI_ROUTE_ORDER = ("default", "main", "af-4", "af-5",
                    "remap-1", "remap-2", "remap-3", "remap-4",
                    "remap-5", "remap-6")
@@ -458,6 +466,11 @@ def load_i2c_pins(tables: pathlib.Path) -> dict:
 def load_spi_pins(tables: pathlib.Path) -> dict:
     """part -> {(spi index, route): {"SCK": ..., "MISO": ..., "MOSI": ...}}."""
     return load_pin_routes(tables, SPI_SIGNAL_RE, SPI_ROUTE_ORDER)
+
+
+def load_dac_pins(tables: pathlib.Path) -> dict:
+    """part -> {(dac channel, route): {"OUT": (port, bit)}}."""
+    return load_pin_routes(tables, DAC_SIGNAL_RE, DAC_ROUTE_ORDER)
 
 
 def choose_routes(series: str, parts: list, pins: dict, remap: dict, kind: str,
@@ -715,8 +728,8 @@ def gen_exti(variant: str, entries: list) -> str:
 
 
 def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
-             i2cs: dict, spis: dict, pwm: dict, handlers: list, remap: dict,
-             commit: str) -> str:
+             i2cs: dict, spis: dict, dacs: dict, pwm: dict, handlers: list,
+             remap: dict, commit: str) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
     per_part = [pads.get(pn, set()) for pn in parts]
@@ -1061,6 +1074,86 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append("    0)")
         out.append("")
 
+    # --- DAC ---
+    # analogWrite() on one of these pads has to reach the converter instead of
+    # a timer, so the pad is all the core needs to know.
+    chosen_dac = choose_routes(series, parts, dacs, remap, "dac", ("OUT",),
+                               DAC_ROUTE_ORDER)
+    if chosen_dac:
+        out.append("/* ---- DAC: analogWrite() drives the converter on these pads,")
+        out.append(" *      not a timer. ---- */")
+        for channel, (coverage, route, (pad,)) in sorted(chosen_dac.items()):
+            where = ("on every part" if coverage == len(parts)
+                     else f"on {coverage} of {len(parts)} parts")
+            out.append(f"/* DAC{channel}: {where} */")
+            out.append(f"#define CH32_DAC{channel}_PIN {pad_name(*pad)}")
+        out.append("")
+
+    # --- tone() and Servo timers ---
+    # Both need a timer whose *update* interrupt has a vector of its own, and
+    # they must not be the same timer: sounding a buzzer while a servo moves is
+    # ordinary. A timer qualifies either through a single TIMn vector or
+    # through a separate TIMn_UP one - the advanced timers split their
+    # interrupt four ways, and the update part is what these two use.
+    #
+    # Preference is for a timer no PWM pad uses. Where there is none the choice
+    # is still made, and the header says which analogWrite() pads stop working,
+    # exactly as the AVR core documents for pins 3, 9, 10 and 11.
+    candidates = {}
+    for name in handlers:
+        if not name:
+            continue
+        m = re.match(r"^TIM(\d+)(_UP)?_IRQHandler$", name)
+        if not m:
+            continue
+        number = int(m.group(1))
+        # Only the timers ch32_registers.h names. V30x/V4x7 also have TIM8..10
+        # on APB2, which nothing in the core can address yet (docs/todo.ja.md).
+        if number > 7:
+            continue
+        # A whole-timer vector is preferred over the update-only one when a
+        # family somehow has both.
+        if number not in candidates or not m.group(2):
+            candidates[number] = name
+    pwm_timers = {tc[0] for tc in pwm_pads.values()}
+
+    def pick(pool):
+        """Highest-numbered, preferring one no PWM pad uses."""
+        free = [t for t in pool if t not in pwm_timers]
+        return (free or pool or [None])[-1]
+
+    def emit_timer(kind: str, number, users: str):
+        if number is None:
+            out.append(f"/* No timer left for {kind}: it is unavailable on this series. */")
+            out.append("")
+            return
+        handler = candidates[number]
+        irqn = handler.removesuffix("_IRQHandler")
+        shared = number in pwm_timers
+        if shared:
+            pads = sorted(pad_name(*k) for k, v in pwm_pads.items()
+                          if v[0] == number)
+            out.append(f"/* ---- {kind}: TIM{number}, which is also a PWM timer here, so")
+            out.append(f" *      analogWrite() on {', '.join(pads)}")
+            out.append(f" *      is disturbed while {users}. ---- */")
+        else:
+            out.append(f"/* ---- {kind}: TIM{number}, free of PWM pads. ---- */")
+        prefix = "CH32_TONE" if kind == "tone()" else "CH32_SERVO"
+        bus = "APB2" if number == 1 else "APB1"
+        out.append(f"#define {prefix}_TIMER {number}")
+        out.append(f"#define {prefix}_TIMER_BASE CH32_TIM{number}_BASE")
+        out.append(f"#define {prefix}_TIMER_RCC CH32_RCC_{bus}_TIM{number}")
+        out.append(f"#define {prefix}_TIMER_ON_APB2 {1 if number == 1 else 0}")
+        out.append(f"#define {prefix}_TIMER_IRQ CH32_IRQN_{irqn}")
+        out.append(f"#define {prefix}_TIMER_HANDLER {handler}")
+        out.append(f"#define {prefix}_SHARES_PWM {1 if shared else 0}")
+        out.append("")
+
+    tone_timer = pick(sorted(candidates))
+    emit_timer("tone()", tone_timer, "a tone plays")
+    emit_timer("Servo", pick([t for t in sorted(candidates) if t != tone_timer]),
+               "a servo is attached")
+
     # --- LED_BUILTIN ---
     led = common[0] if common else union[0]
     out.append("/* Generic boards have no on-board LED. This placeholder only exists so")
@@ -1165,6 +1258,7 @@ def main() -> int:
     uarts = load_uart_pins(args.tables)
     i2cs = load_i2c_pins(args.tables)
     spis = load_spi_pins(args.tables)
+    dacs = load_dac_pins(args.tables)
     probe_rs = load_probe_rs_targets()
     remap = load_remap_fields(args.tables)
     pwm = load_pwm_pins(args.tables)
@@ -1197,7 +1291,7 @@ def main() -> int:
         for name, content in ld_files.items():
             outputs[args.platform / "variants" / series / name] = content
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
-            gen_pins(series, rows, pads, adc, uarts, i2cs, spis, pwm,
+            gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                      interrupts[SERIES_CONFIG[series]['vectors']], remap, commit)
 
     generated_parts = {r["part_number"] for rows in by_board.values() for r in rows}

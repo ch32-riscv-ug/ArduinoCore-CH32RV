@@ -120,15 +120,20 @@ STATUS = {
     "SysTick": ("実装済", "millis/micros/delay", ""),
     "RCC (クロック)": ("実装済", "F_CPU", "HSIのみ。PLL/HSEは将来"),
     "PWR (低消費電力)": ("要判断", "-", "Arduino標準APIが無い。sleep系をどう見せるか"),
-    "FLASH (自己書き換え)": ("要判断", "EEPROM相当", "Arduinoでは`EEPROM`が定番"),
+    "FLASH (自己書き換え)": ("要判断", "EEPROM相当",
+                            "Arduinoでは`EEPROM`が定番。**page消去単位と書き込み粒度のデータが無い**"
+                            "(R-20のD-3相当)。products.csvにあるのはflash容量だけ"),
     "USART": ("実装済", "Serial", ""),
     "I2C": ("実装済", "Wire", "master専用。X035実機で配線なしの自己検査11項目pass。"
             "**slave(onReceive/onRequest)は未実装**、実デバイス相手の確認はこれから"),
     "SPI": ("実装済", "SPI", "controller専用。X035実機で配線なしの自己検査9項目pass。"
             "**peripheral(slave)は未実装**、実デバイス相手の確認はこれから"),
     "ADC": ("実装済", "analogRead", "分解能は実機未確認"),
-    "DAC": ("予定(初回)", "analogWrite(DAC pin)", "V307/V407のみ"),
-    "TIM (PWM/tone/入力捕捉)": ("一部", "analogWrite/tone", "`tone()`は無音stub"),
+    "DAC": ("実装済", "analogWrite(CH32_DACn_PIN)",
+            "V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来。**実機未確認**"),
+    "TIM (PWM/tone/入力捕捉)": ("実装済", "analogWrite/tone",
+                               "`tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ"
+                               "(`CH32_TONE_TIMER`)。V003/X035/M030は空きが無く**PWMと共有**"),
     "LPTIM": ("対象外", "-", "L103のみ"),
     "DMA": ("対象外", "-", "Arduino APIに露出しない。内部最適化として将来"),
     "IWDG": ("要判断", "-", "Arduino標準APIが無い"),
@@ -156,8 +161,8 @@ STATUS = {
     "ARGB (LEDドライバ)": ("対象外", "-", ""),
     "RNG": ("対象外", "-", "`random()`はsoftware実装で足りている"),
     "BLE": ("対象外", "-", "V208のみ。専用stackが要る"),
-    "SDI print (debug出力)": ("予定(初回)", "SerialSDI(仮)",
-                              "spikeで受信まで実機確認済み。core実装はこれから。"
+    "SDI print (debug出力)": ("実装済", "SerialSDI",
+                              "送信のみ。spikeで受信まで実機確認済み(class実装後の実機確認は未)。"
                               "**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ**"),
     "FreeRTOS": ("対象外", "-", "初回release対象外(ユーザ指示)"),
     "RT-Thread": ("対象外", "-", "同上"),

@@ -94,9 +94,9 @@
       **X035実機で配線なしの自己検査9項目pass**(MISOをpull-upして0xFFが読めることを利用)
 - [x] `interrupts()`/`noInterrupts()`を実装した。`api/Common.h`が
       「coreが定義すること」としていたのに**どこにも無かった**。`csrsi/csrci mstatus, 8`の1命令
-- [ ] `[P1]` `tone()`の実装(「コアAPI」の同項目と同じもの)
-- [ ] `[P2]` `Servo` / `LiquidCrystal`。基本クラスの後。AVR版`Servo`はtimerを直接触るので
-      **移植ではなく実装**になる
+- [x] `tone()`を実装した(「コアAPI」の同項目を参照)
+- [x] `Servo`を実装した(移植ではなく実装。[ライブラリ](#ライブラリwire--spi--servo)参照)
+- [ ] `[P2]` `LiquidCrystal`(4bit parallel)。純Arduino APIだけで書けるので同梱の判断だけ
 - [ ] `[P2]` キット同梱libraryのzip 8種の可否は**目標に含めない**。参考までに、
       `IRremote` / `FlexiTimer2` / `NewPing`はAVRのtimer・portレジスタを直接触るため
       そのままでは動かない公算が大きい
@@ -120,8 +120,16 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 
 - [x] ペリフェラル対応表を作った(2026-08-20)
 - [ ] `[P1]` `[要判断]` 基本ペリフェラルのうち方針未決のもの:
-      PWR(sleep)、FLASH(`EEPROM`相当)、IWDG/WWDG、RTC。
+      PWR(sleep)、IWDG/WWDG、RTC。
       いずれもArduinoに標準APIが無いか、libraryとして出すのが慣例
+- [ ] `[P1]` `[要判断]` **`EEPROM`(flash emulation)を入れるか、入れるならページを予約するか**。
+      消去単位はEVTを読んで分かった: **V003/X035は1KB、V20x/V307は4KB**
+      (fast eraseは64B/256B)。device-dataは**flash容量しか持っていない**ので、
+      入れるなら`CH32_I2C_HAS_RTR`と同じくFAMILY表へ定数として持つことになる(R-20のD-3)。
+      判断が要るのは**linker scriptで末尾ページを予約するか**:
+      - 予約する: 安全だが**全sketchがflashを失う**。V003では16KBのうち1KB=6%
+      - 予約しない: 他コアにも例はあるが、大きいsketchがEEPROM領域を踏む
+      - メニューにする: FQBNが増える
 - [ ] `[P1]` **USB PDの実装方針**。対応siliconはV205 / L103 / M030 / X033・X035。
       Arduinoに前例が無いので、公開APIの形から決める必要がある
 - [ ] `[P1]` `[要判断]` USB device(CDC/HID)とUSB hostの範囲。
@@ -167,7 +175,13 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       `digitalPinToInterrupt`。`tone`/`noTone`はstub
 - [x] 配線不要の自己検証sketch`tests/sketches/basic/core_api/`を追加。
       **CH32V203実機で13 check全passを確認**
-- [ ] `[P1]` `tone()`が無音stub。timer channelの排他管理が要る
+- [x] **`tone()`を実装した**(`cores/arduino/wiring_tone.cpp`)。
+      timerのupdate割込みでpinをtoggleする方式なのでpinを選ばない。
+      使うtimerはvariantが選ぶ(`CH32_TONE_TIMER`)。
+      空きが無いfamily(V003/X035/M030)では**PWMと共有**し、影響するpadを
+      variantヘッダに列挙してある(AVRがpin 3/11で同じ制限を持つのと同じ扱い)。
+      **C++で書いた**: `api/Common.h`が`tone`/`noTone`をC++プロトタイプ側にだけ
+      置いているので、Cで定義するとリンクしない
 - [ ] `[P1]` ADC分解能(`CH32_ADC_BITS`)はdatasheet由来。**実機で確認する** (要実機)
 - [ ] `[P1]` `analogWrite`のPWM周波数が1kHz固定。Arduino慣例には合うが変更手段が無い
 - [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ
@@ -175,7 +189,7 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 - [x] `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))。
       詳細と残作業は[ライブラリ(Wire / SPI)](#ライブラリwire--spi)へ
 
-## ライブラリ(Wire / SPI)
+## ライブラリ(Wire / SPI / Servo)
 
 どちらも`libraries/`に置いた同梱library。pinはvariantの生成マクロから来るので
 `begin()`に引数は要らない。AFIO routeは**既定routeでも毎回書く**(`HardwareSerial`と同じ理由)。
@@ -197,6 +211,18 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       sketch側がISRからSPIを使うと壊れる
 - [ ] `[P2]` I2C/SPIとも**PCLK1 = F_CPU前提**。APB prescalerやPLLを入れたら追随が要る
 - [ ] `[P2]` DMAを使っていない。長い転送はCPUを占有する
+
+### Servo(2026-08-21実装)
+
+- [x] `libraries/Servo/`。1本のtimerが最大12個のservoを順に駆動する方式(AVRと同じ)なので
+      **pinを選ばない**。timerはvariantが選ぶ(`CH32_SERVO_TIMER`)
+- [x] **tone()とは必ず別のtimer**にした。ブザーを鳴らしながらサーボを動かすのは普通の要求
+- [x] timer選定の候補に**update割込みが独立ベクタを持つもの**(`TIM2_UP`等)も入れた。
+      これで**全familyでtoneとServoが同時に成立**する。ただしV003/X035/M030では
+      PWM用timerを食うので、その板の`analogWrite()`は影響を受ける(variantヘッダに列挙)
+- [ ] `[P1]` 実機確認(要実機)。自己検査sketchは自分のpadのpulse幅を測っている
+- [ ] `[P2]` TIM8〜TIM10(V30x/V4x7のAPB2側)を`ch32_registers.h`が持っていないので、
+      timer候補から外している。持てば選択肢が広がる
 
 ## libc / heap
 
@@ -235,9 +261,12 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
         (attachでhaltし、`resume`は別sessionになるため)。wlinkが終了すると転送も止まる
       - vendorの`_write`は`DATA0`が0になるまで**無限に待つ**。debuggerを外すと固まるので、
         我々の実装では待ちを打ち切って捨てる(spikeで実装・確認済み)
-- [ ] `[P1]` **SDI printを独立したSerialクラスとして公開する**(`SerialSDI`等)。
-      target側は約40行。`_write`の`#if`で差し替える旧コア/WCH公式と違い、
-      **Streamとして分ければUARTと同時に使える**
+- [x] **SDI printを独立したSerialクラスとして実装した**
+      (`cores/arduino/SerialSDI.{h,cpp}`、instance名`SerialSDI`)。
+      `_write`の`#if`で差し替える旧コア/WCH公式と違い、**UARTと同時に使える**。
+      送信のみ。待ちは打ち切るので、hostが居なくても止まらない。
+      TU を分けてあるので、使わないsketchはリンクされない。**実機確認は未**
+      (spikeでは同じprotocolで受信できている)
 - [ ] `[P1]` `[要判断]` SDI printの受信をどう提供するか。
       (a) wlinkを第2のuploaderとして同梱する、
       (b) 有効化commandは小さいので自前のtool/probe-rs patchで賄う、

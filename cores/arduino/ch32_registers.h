@@ -170,6 +170,21 @@
 #define CH32_RCC_APB1_SPI2 (1u << 14)
 #define CH32_RCC_APB1_SPI3 (1u << 15)
 
+/* ------------------------------------------------------------------ DAC */
+/* Only V303/V305/V307/V4x7 have one. The variant names the pads it reaches
+ * (CH32_DACn_PIN); nothing here is referenced otherwise. */
+#define CH32_DAC_BASE (CH32_APB1_BASE + 0x7400u)
+#define CH32_DAC_CTLR      CH32_REG32(CH32_DAC_BASE + 0x00u)
+#define CH32_DAC_R12BDHR1  CH32_REG32(CH32_DAC_BASE + 0x08u)
+#define CH32_DAC_R12BDHR2  CH32_REG32(CH32_DAC_BASE + 0x14u)
+
+#define CH32_DAC_CTLR_EN1   (1u << 0)
+#define CH32_DAC_CTLR_BOFF1 (1u << 1)   /* 1 disables the output buffer */
+#define CH32_DAC_CTLR_EN2   (1u << 16)
+#define CH32_DAC_CTLR_BOFF2 (1u << 17)
+
+#define CH32_RCC_APB1_DAC (1u << 29)
+
 /* ---------------------------------------------------------------- FLASH */
 /* Flash controller registers (not the flash memory itself). */
 #define CH32_FLASH_BASE  (CH32_AHB_BASE + 0x2000u)
@@ -316,8 +331,17 @@ static inline void ch32_irq_disable(uint32_t irqn)
 #define CH32_TIM1_BASE (CH32_APB2_BASE + 0x2C00u)
 #define CH32_TIM2_BASE (CH32_APB1_BASE + 0x0000u)
 #define CH32_TIM3_BASE (CH32_APB1_BASE + 0x0400u)
+/* Only some families have these. Which one tone() uses is decided by the
+ * generator and named by CH32_TONE_TIMER in the variant. */
+#define CH32_TIM4_BASE (CH32_APB1_BASE + 0x0800u)
+#define CH32_TIM5_BASE (CH32_APB1_BASE + 0x0C00u)
+#define CH32_TIM6_BASE (CH32_APB1_BASE + 0x1000u)
+#define CH32_TIM7_BASE (CH32_APB1_BASE + 0x1400u)
 
 #define CH32_TIM_CTLR1(b)   CH32_REG16((b) + 0x00u)
+#define CH32_TIM_DMAINTENR(b) CH32_REG16((b) + 0x0Cu) /* interrupt enables */
+#define CH32_TIM_INTFR(b)   CH32_REG16((b) + 0x10u)   /* interrupt flags   */
+#define CH32_TIM_SWEVGR(b)  CH32_REG16((b) + 0x14u)   /* software events   */
 #define CH32_TIM_CHCTLR1(b) CH32_REG16((b) + 0x18u)   /* channels 1 and 2 */
 #define CH32_TIM_CHCTLR2(b) CH32_REG16((b) + 0x1Cu)   /* channels 3 and 4 */
 #define CH32_TIM_CCER(b)    CH32_REG16((b) + 0x20u)
@@ -329,9 +353,15 @@ static inline void ch32_irq_disable(uint32_t irqn)
 
 #define CH32_TIM_CTLR1_CEN  (1u << 0)
 #define CH32_TIM_CTLR1_ARPE (1u << 7)
+#define CH32_TIM_INT_UIE    (1u << 0)  /* update interrupt enable / flag */
+#define CH32_TIM_SWEVGR_UG  (1u << 0)  /* force an update event          */
 #define CH32_TIM_BDTR_MOE   (1u << 15)
 /* PWM mode 1 with preload, in the low or high half of a CHCTLR word. */
 #define CH32_TIM_OCMODE_PWM1 0x68u
 
 #define CH32_RCC_APB1_TIM2 (1u << 0)
 #define CH32_RCC_APB1_TIM3 (1u << 1)
+#define CH32_RCC_APB1_TIM4 (1u << 2)
+#define CH32_RCC_APB1_TIM5 (1u << 3)
+#define CH32_RCC_APB1_TIM6 (1u << 4)
+#define CH32_RCC_APB1_TIM7 (1u << 5)
