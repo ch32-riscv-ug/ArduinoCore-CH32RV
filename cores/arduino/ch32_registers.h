@@ -278,8 +278,15 @@
 #define CH32_USART_CTLR2_STOP_1P5 (3u << 12)
 
 /* -------------------------------------------------------------- SysTick */
-/* Same offsets on every family; only the CNT/CMP width differs, and CMP sits
- * at 0x10 either way (the 32-bit layout pads CNT to eight bytes). */
+/* These offsets hold on ten of the eleven families. CH32V103 is the exception
+ * and this map is WRONG for it: its SysTick has no SR at all, the counter is
+ * at 0x04 and the compare at 0x0C, so the value written to CMP below lands in
+ * V103's compare *high* word and the match never happens - millis(), micros()
+ * and delay() do not work there. Confirmed against WCH's own core_riscv.h and
+ * measured on a CH32V103R8T6. Not fixed here because the interrupt-enable bit
+ * is not in CTLR either (writing 0x7 reads back 0x1) and EVT's V103 code only
+ * polls the counter, so where it lives needs the reference manual's STK
+ * chapter - see docs/todo.ja.md. */
 #define CH32_SYSTICK_BASE 0xE000F000u
 #define CH32_SYSTICK_CTLR CH32_REG32(CH32_SYSTICK_BASE + 0x00u)
 #define CH32_SYSTICK_SR   CH32_REG32(CH32_SYSTICK_BASE + 0x04u)

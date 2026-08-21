@@ -40,7 +40,13 @@ static void tone_stop(void)
 
 void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
 {
-    if (!digitalPinIsValid(pin) || frequency == 0u) {
+    if (!digitalPinIsValid(pin)) {
+        /* Nothing to do: a pin that does not exist cannot be the one playing,
+         * and stopping the tone that *is* playing would break the rule below
+         * that a sounding tone on another pin wins. */
+        return;
+    }
+    if (frequency == 0u) {
         noTone(pin);
         return;
     }
@@ -112,7 +118,9 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
 
 void noTone(uint8_t pin)
 {
-    if (tone_pin != 0xFF && (pin == tone_pin || !digitalPinIsValid(pin))) {
+    /* Only the pin that is playing. Treating an unknown pin as "stop whatever
+     * is running" made tone(bogus_pin) silence a tone on a real one. */
+    if (tone_pin != 0xFF && pin == tone_pin) {
         tone_stop();
     }
     if (digitalPinIsValid(pin)) {

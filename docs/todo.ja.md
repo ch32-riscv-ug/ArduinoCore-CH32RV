@@ -735,13 +735,42 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       予約のままなので、**V305の看板機能であるUSB-HSにベクタが無かった**。
       サイズ変化なし(RSVもIRQも`.word`1つ)。同種の取り違えを防ぐため、
       `vectors`の接尾辞を`evt_variants.csv`の既定macroと突き合わせる検査を入れた
+- [ ] `[P0]` **CH32V103では`millis()`/`micros()`/`delay()`が最初から動いていない**。
+      SysTickのレジスタ配置がV103だけ違う。WCH自身の`core_riscv.h`より:
+
+      | offset | CH32V103 | 他の10 family |
+      |---|---|---|
+      | +0x00 | CTLR | CTLR |
+      | +0x04 | **CNTL**(カウンタ下位) | SR |
+      | +0x08 | **CNTH** | CNT |
+      | +0x0C | **CMPLR**(比較値 下位) | — |
+      | +0x10 | **CMPHR**(比較値 上位) | CMP |
+
+      `ch32_registers.h`のコメントは「どのfamilyも同じoffsetで、CMPは0x10」と書いて
+      いるが、**V103では成立しない**。我々は比較値を+0x10(=上位ワード)へ書いていたので
+      実効値が`71999 << 32`になり、一致が起きない。
+      **実測(CH32V103R8T6)**: `ch32_millis_counter`が0のまま進まない、
+      `CMPLR`(+0x0C)がリセット値`0xFFFFFFFF`のまま、`+0x04`は変化する(=カウンタ)。
+      `servo_selftest`が「ハング」に見えたのは`delay()`と`measure_pulse()`の
+      `millis()`待ちが返らないため。
+      **影響はCH32V103シリーズのみ**。他10 familyは`CTLR,SR,CNT,CMP`で確認済み。
+      **未解決**: `CTLR`にbit1/bit2を書いても立たない(実測`0x7`を書いて`0x1`)。
+      EVTのV103は`CTLR=1`でカウンタを回して**ポーリング**するだけで、
+      compare割込みを使っていない。比較値とカウンタを正しい位置へ書いても割込みが
+      起きないことをデバッガで確認済みなので、**割込み許可の場所がRMのSTK章にしかない**。
+      register mapの整備(R-20)に依存する。
+      **これまで発覚しなかった理由**: V103は実機で回したことがなく、手元のボードは
+      無印WCH-Link(CH549)でシリアルが読めない。レジスタを読んで初めて分かった
 - [x] **PLLに対応し、CH32V20x / CH32V307を8 MHz -> 144 MHzにした**。
       仕組み: `clock_configs.csv`と`clock_symbols.csv`から**生成時に設定を解決して**
       boards.txtへ出す(`CH32_CLOCK_SYSCLK_HZ` / `USE_PLL` / `PLL_MASK` / `PLL_VALUE` /
       `EXTEN_ADDR` / `EXTEN_BITS`)。`condition`がdie依存なので、series/pnum粒度の
       boards.txtで解決すれば`#if`が要らない。AHB分周は`SYSCLK / F_CPU`から導出する
       ままなので「F_CPUが唯一のつまみ」も維持。
-      **実機確認: CH32V307VCT6とCH32V203C8T6の両方で144 MHz動作**
+      **既定は96 MHz**(144ではなく): ADCPREは最大/8でf_ADCが14 MHzなので、144だと
+      ADCが18 MHzになり規格内に入れられない。96なら/8で12 MHz、USBもPLLCLK/2で48 MHzが出る。
+      **実機確認: CH32V307VCT6とCH32V203C8T6の両方で144 MHz動作。さらに
+      CH32V307VCT6は96 MHzで実行可能な9 sketchすべてPASS**
       (`serial_println`が化けない = PLLが噛んでいてPCLK2 == F_CPU)
 - [x] **PLL関連で踏んだ罠を2つ記録**。(1) `RCC_PLLMULL18_EXTEN`は**値が0**なので
       「PLL値が非0ならPLLを使う」判定は成立しない。`CH32_CLOCK_USE_PLL`で明示する。
@@ -759,13 +788,29 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       **実機で144 MHzのまま`wire_selftest`が全項目PASS**(I2CはAPB1、fast mode含む)、
       tone(TIM7=APB1)のタイミング系も全PASS。これで`PCLK == F_CPU`の前提が
       7か所そのまま生きる。EVTがなぜ`/2`かは上流へ確認を出す
-- [ ] `[P1]` **`servo_selftest`がCH32V20x / CH32V30xで落ちる**。X035では通る。
-      出力が送信途中で切れる(V307@144は`reports_attached`まで、V307@8は`attach_suc`、
-      V203@144は`ser`だけ)ので、CPUが止まってからFIFOが吐き切れていない形。
-      **V307の8 MHzで再現するのでクロックとは無関係**。`CH32_SERVO_TIMER`は
-      V307でTIM6(基本タイマ)。別件として追う
-- [ ] `[P2]` `tone_selftest`の`invalid_pin_ignored`がV20x/V30xで落ちる。
-      8 MHzでも同じ。タイミングではなくピン検証の話
+- [x] **`servo_selftest`のハングを直した**。ISRの中から`SWEVGR = UG`(更新イベント)を
+      撃っていたのが原因で、**ハンドラが処理すべきフラグを自分で立て直す**ため抜けられない。
+      デバッガでPCを3回サンプルすると毎回`TIM6_IRQHandler`の中、`millis()`は動くが
+      **本来の1/5の速度**、TIM6の`INTFR`はUIFが立ったまま(PSC=95→1 MHz、
+      ATRLR=18499→18.5 msはどちらも正しい)。
+      同じfamilyで動いている`tone`と比べると、**toneはUGを起動時に1回だけ、
+      しかも割込みを有効化する前**に撃っていた。`timer_set()`からUGを外し、
+      ISRではATRLRを書くだけにした(次の周期から自動で反映される)。
+      **CH32V307VCT6 @96 MHzで全10項目PASS**
+- [ ] `[P2]` **`hooks_selftest`と`serial_echo`はどのboardでもSKIPされている**。
+      この2つはtestが`dut.write()`で対象を駆動するが、`smoke.py`はlisten専用。
+      本来の経路は各sketchの`test_<case>.py`(`dut` fixture)だが、それは
+      `sketch.yaml`のprofile経由で**未公開のpackage index**を要求する。
+      `test_sketch_profile_build.py`がloopbackでindexを配信する仕組みを持っているが
+      **build専用**で、実機へ焼いて`dut`で駆動する経路が無い。
+      `hooks_selftest`はX035で個別に検証済みなので穴は小さいが、
+      **boardを替えたときに自動で回らない**のは事実
+- [x] **`tone()`の無効ピン規則を直した**。`noTone()`が
+      `pin == tone_pin || !digitalPinIsValid(pin)`で止めていたため、
+      **存在しないピンを渡すと別ピンで鳴っているtoneが止まっていた**。
+      `tone()`自身が2行上で「別ピンで鳴っているtoneが優先」と書いているのに、
+      無効ピン経由でその規則を迂回していた。無効ピンは何もしないのが正しい。
+      **CH32V307VCT6 @96 MHzで全9項目PASS**
 - [ ] `[P1]` **CH32V30xのflash/SRAMは利用者が構成を選べる**(datasheet注記)。
       256K+64Kの製品は(192+128)/(224+96)/(256+64)/(288+32)から選べ、
       ロットによっては(128+192)も。FLASHはゼロウェイト領域R0WAITを指し、

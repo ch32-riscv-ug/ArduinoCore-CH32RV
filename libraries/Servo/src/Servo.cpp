@@ -26,9 +26,17 @@ inline void timer_set(uint16_t us)
     if (us < 2u) {
         us = 2u;                   /* a zero reload would never interrupt */
     }
+    /* Only the reload. This runs from the handler, where the counter has just
+     * wrapped, so the new period takes effect next time round on its own.
+     *
+     * It used to fire a software update event here as well, to load the value
+     * immediately. That is what timer_start does - but from inside the handler
+     * it re-raises the very flag the handler exists to clear, and the core
+     * never gets out: measured on CH32V307, the PC was in TIM6_IRQHandler on
+     * every sample, UIF was set, and millis() ran at a fifth of real time.
+     * wiring_tone.cpp does not hit this because its update event is fired once
+     * at start, while the interrupt is still masked. */
     CH32_TIM_ATRLR(CH32_SERVO_TIMER_BASE) = (uint16_t)(us - 1u);
-    CH32_TIM_SWEVGR(CH32_SERVO_TIMER_BASE) = CH32_TIM_SWEVGR_UG;
-    CH32_TIM_INTFR(CH32_SERVO_TIMER_BASE) = 0;
 }
 
 void timer_start(void)
@@ -46,6 +54,10 @@ void timer_start(void)
     current = -1;
     frame_used_us = 0;
     timer_set(100);                /* first interrupt starts the frame */
+    /* Load PSC and ATRLR now and drop the update flag that loading them
+     * raises, while the interrupt is still masked. */
+    CH32_TIM_SWEVGR(CH32_SERVO_TIMER_BASE) = CH32_TIM_SWEVGR_UG;
+    CH32_TIM_INTFR(CH32_SERVO_TIMER_BASE) = 0;
     CH32_TIM_DMAINTENR(CH32_SERVO_TIMER_BASE) = CH32_TIM_INT_UIE;
     ch32_irq_enable(CH32_SERVO_TIMER_IRQ);
     CH32_TIM_CTLR1(CH32_SERVO_TIMER_BASE) = CH32_TIM_CTLR1_CEN;
