@@ -66,7 +66,9 @@ variants/<SERIES>/    pin definitions and linker scripts (both generated)
 tools/                generate (boards/ld), index (Board Manager), vendor (import checks)
 tests/                compile matrix, startup equivalence, sizebench
 docs/                 design documents, ADRs, experiment records
-vendor/               lock manifests for third-party imports
+vendor/               upstream pins: the ArduinoCore-API and TinyUSB snapshots,
+                      and ch32-device-data.lock.toml - the one place recording
+                      which tables boards.txt and variants/ came from
 ```
 
 A release archive contains only `platform.txt`, `boards.txt`, `cores`,

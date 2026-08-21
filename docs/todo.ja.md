@@ -734,9 +734,11 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       `release.yml`のヘッダからも参照。`--check`が末尾に出す採用サマリ
       (`N additive, M rewriting existing lines`)で、既存の値が動く変更だけを
       重点レビューする。`--diff`でunified diffも出せる
-- [ ] `[P2]` リリース本文にpinしたdevice-data commitを出すか(**要判断**)。
-      publishした版がどのデータから作られたかを、installした人が辿れるようにする案。
-      release archiveに`vendor/`を入れる案の代替。今は未実装
+- [x] **リリース物にデータの版は載せない**と決めた。installした人が版を知る必要はなく、
+      **リポジトリを見れば分かる場所があればよい**という判断。その場所は
+      `vendor/ch32-device-data.lock.toml`で、README(構成表)・`docs/handoff.ja.md`・
+      生成物ヘッダの3か所から辿れる。release archiveに`vendor/`を入れる案と
+      リリース本文に出す案は、どちらも取り下げ
 - [x] `tests/sizebench/sizebench.py`が参照していた`tests/startup/crt0_ch32.S`と
       `tests/platform/`は既に存在せず、**harnessが動いていなかった**。正本
       (`cores/arduino/`)を指すよう修正。CIには載っていない

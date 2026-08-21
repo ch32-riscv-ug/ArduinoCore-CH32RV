@@ -74,7 +74,7 @@ ADR化されている提案:
 | `tests/manual/` | 実機bring-up runner。`smoke.py`(出荷経路でのcompile→upload→UART確認)と`uart_scan.py`(boardがどのUSARTを配線しているか特定) | 手動(要実機) |
 | `tools/index/tools_probe_rs.json` / `probe_rs_targets.csv` | probe-rs 0.32.0のtool定義とchip名map | `install-test`(3 OS、`.tar.xz`展開と実行確認) |
 | `programmers.txt` | `wch-link` programmer(probe-rs経由のSWD書き込み) | `install-test` |
-| `boards.txt` / `variants/<SERIES>/` | device-dataからの生成物(23 series board / 117エントリ、ld + pin map)。locked commit | `generated-sync` |
+| `boards.txt` / `variants/<SERIES>/` | device-dataからの生成物(23 series board / 117エントリ、ld + pin map)。どのデータから生成したかは`vendor/ch32-device-data.lock.toml`(commit + 読んだ5表のSHA-256) | `generated-sync` |
 | `platform.txt` | ビルドrecipe。`build.extra_flags`はユーザー注入専用 | `compile-matrix`(注入到達ガード) |
 | `tools/generate/generate.py` | boards.txt / ld / pin map / vector include の生成 | `generated-sync` |
 | `tools/index/` | xPack直リンクtool定義、index生成、clean install検証 | `install-test`(3 OS) |

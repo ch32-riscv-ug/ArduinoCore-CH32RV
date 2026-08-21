@@ -66,7 +66,9 @@ variants/<SERIES>/    pin定義とlinker script(いずれも生成物)
 tools/                generate(boards/ld生成)、index(Board Manager index)、vendor(取込検証)
 tests/                compile matrix、startup等価性、sizebench
 docs/                 設計文書、ADR、実験記録
-vendor/               第三者取込のlock manifest
+vendor/               上流のpin。ArduinoCore-API / TinyUSBのsnapshotと、
+                      ch32-device-data.lock.toml(boards.txtとvariants/が
+                      どの表から生成されたかを記録している唯一の場所)
 ```
 
 release archiveへ入るのは`platform.txt` / `boards.txt` / `cores` / `variants` /
