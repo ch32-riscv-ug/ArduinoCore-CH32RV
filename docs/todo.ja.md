@@ -132,9 +132,18 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       - メニューにする: FQBNが増える
 - [ ] `[P1]` **USB PDの実装方針**。対応siliconはV205 / L103 / M030 / X033・X035。
       Arduinoに前例が無いので、公開APIの形から決める必要がある
-- [ ] `[P1]` `[要判断]` USB device(CDC/HID)とUSB hostの範囲。
-      CDCを入れると「書き込み後にそのままSerial monitor」ができる反面、
-      family差(USBFS/USBHS/USBSS)とdescriptor管理を抱え込む
+- [ ] `[P1]` `[要判断]` **USB device/hostのスタック選定**。調査は[R-22](research/usb-stack.ja.md)。
+      要点:
+      - WCHの既存物は全部独自API。**公式ArduinoコアはUSBスタックを持っていない**
+      - **TinyUSB(MIT)にCH32の正式ドライバがある**(device FS/HS + **host FS**)。
+        対応は**V103/V20x/V30x**のみで、**X033/X035はPR #3703が未マージ**、
+        L103/M030/V205/V407/X3x5は未対応
+      - WCHのhostファイルシステム層は`libRV3UFI.a`という**バイナリでしか無い**ので、
+        「WCHのhostを使う」は方針以前にソースが無い
+      - **本当の障害はクロック**。X035はHSIが48MHzなのでそのまま動くが、
+        他は全部PLLが要る(下の`[P1]`)
+- [ ] `[P2]` 上流貢献: TinyUSBのPR #3703(CH32X035)は**HILで試せていないこと**が
+      マージの障害。**X035実機はこちらにある**ので、試して結果を返す価値が高い
 - [ ] `[P2]` 表の空欄は「EVTに例が無い」であって「siliconに無い」ではない。
       実装時にreference manualか`ch32-device-data`で裏を取ること
       (V407のSysTick、V103のINTが実例)
