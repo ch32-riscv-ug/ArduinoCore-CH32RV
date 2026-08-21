@@ -154,8 +154,23 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 - [ ] `[P2]` **上流貢献その4: V4x7配置のUSBHS**ドライバ。
       **V205 / V407・V467 / X305・X315の3グループは互いに完全一致**(101フィールド、
       `BASE_MODE`始まり)で、V307配置(127フィールド)とは別物。1つ書けば3 seriesに効く
-- [ ] `[P1]` `[要判断]` TinyUSBの**同梱の形**(coreに埋める / 同梱ライブラリ / 外部依存)と、
-      **USB CDCを`Serial`にするか**(やるならFQBNメニューが要る)
+- [x] **決定(2026-08-21、ユーザ指示): TinyUSBは内部に持つ(vendoring)**。
+      「なにかパッチを入れる可能性もある」ため。
+      前例は`cores/arduino/api`(ArduinoCore-API)で、版を固定して同梱し
+      同期チェックを付ける形([tools/vendor/check_api_sync.py](../tools/vendor/check_api_sync.py))
+- [x] **決定(2026-08-21、ユーザ指示): 最初に通すのはV203/V307**。両方実機がある。
+      **上流サポート済みのfamilyで土台を固めてからX035へ行く**
+      (X035は未マージPRが要るので、そこで躓くと切り分けが濁る)
+- [ ] `[P1]` `[要判断]` **USB CDCを`Serial`にするか**(やるならFQBNメニューが要る)
+- [ ] `[P0]` **V203/V307のUSBには48MHzが要る = PLLが前提**。
+      現在の[クロック方針](#クロック)は「HSI直結・PLLなし・boards.txt固定値」なので、
+      **この決定を採るとクロック方針に手を入れることになる**。
+      調べた範囲では**HSE無しでも経路はある**:
+      - V20x: SDKに`SYSCLK_FREQ_48MHz_HSI`等の選択肢がある
+      - V307(D8C): `RCC_HSBHSPLLCLKSource_HSI`があり、USBHS PLLの参照は`_8M`を選べる。
+        USBFS側は`RCC_USBCLK48MCLKSource_USBPHY`でPHY PLLから取れる
+      - ただし**WCHのUSB例はどれもHSE**を使っている。full speedの許容偏差は±0.25%で、
+        HSIの確度がそこに収まるかは**実機で確かめるべき**(収まらなければHSE対応も要る)
 - [ ] `[P2]` 表の空欄は「EVTに例が無い」であって「siliconに無い」ではない。
       実装時にreference manualか`ch32-device-data`で裏を取ること
       (V407のSysTick、V103のINTが実例)
