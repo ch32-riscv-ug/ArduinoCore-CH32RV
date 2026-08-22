@@ -317,6 +317,20 @@ The other half of the reason is that `setup()` is the wrong place for work: a
 check that takes twenty seconds looks exactly like a board that never booted.
 Between RUN and the done line it looks like a board that is busy.
 
+**The banner does not stop once a command has been served.** The reference
+sketches under `~/dev` stop; they talk to a USB-CDC peripheral on the MCU
+itself, and this path is the WCH-Link's UART bridge. Stopping was implemented
+and measured: the bridge stalls with a partial line still in it, so the host
+sees `string=ab` and then nothing, for as long as it waits. The banner is what
+keeps the pipe moving.
+
+The cost is that a board talking into a port nobody reads overruns the bridge,
+and what comes out afterwards is spliced - `hooks_selftest READY` arriving as
+"selftest READY" and "hooY" in alternation, so the line being waited for is
+never contiguous. That is answered on the host side, by holding the port open
+across the upload rather than by silencing the board
+([`manual/smoke/smoke.py`](manual/smoke/smoke.py)).
+
 The template is [`sketches/testcmd.h`](sketches/testcmd.h). arduino-cli compiles
 nothing above the sketch folder, so **a copy is distributed into every case**
 ([`sync_testcmd.py`](sketches/sync_testcmd.py); its `--check` runs from
@@ -377,8 +391,8 @@ input uses a fixed-size buffer, which the template (`tc_ready`) provides
 `String` is the thing under test.
 
 The protocol costs a sketch 400-500 bytes, for `loop()` and command parsing. On
-the tightest combination - `core_api` on CH32V003 - that is 15512 -> 15964
-bytes, **leaving 420 of 16 KB**. When that runs out, split the case rather than
+the tightest combination - `core_api` on CH32V003 - that is 15512 -> 15988
+bytes, **leaving 396 of 16 KB**. When that runs out, split the case rather than
 dropping the board from `REQUIREMENTS`.
 
 The other projects under `~/dev` implement the same rule on top of `String`,

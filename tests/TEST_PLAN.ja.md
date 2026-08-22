@@ -296,6 +296,18 @@ loop()    tc_ready() → 0.5秒ごとに "<name> READY" を出し、
 checkは「起動しないボード」と見分けがつきません。`RUN`とdone行の間なら「忙しい
 ボード」に見えます。
 
+**バナーはコマンドを受けたあとも止めません。** `~/dev`の参照実装は止めますが、
+あちらはMCU内蔵のUSB-CDCで、こちらはWCH-LinkのUARTブリッジです。止める実装を
+一度作って実測したところ、**ブリッジが行の途中で止まりました**——ホストには
+`string=ab`まで届いて、あとはいくら待っても来ません。**バナーが管を動かしている**
+ので、動かし続けます。
+
+代償として、誰も読んでいないポートへボードが喋り続けるとブリッジが溢れ、
+あとから出てくるものが混線します(`hooks_selftest READY`が`selftest READY`と
+`hooY`に割れて、待っている文字列が連続して現れない)。ここはボードを黙らせるのでは
+なく、**ホスト側がuploadを跨いでポートを開いたままにする**ことで解きます
+([`manual/smoke/smoke.py`](manual/smoke/smoke.py))。
+
 雛形は[`sketches/testcmd.h`](sketches/testcmd.h)です。arduino-cliはsketchフォルダの
 外をコンパイルしないので、**各caseへコピーを配ります**([`sync_testcmd.py`](sketches/sync_testcmd.py)、
 `--check`は`generated/test_generated.py`が回す)。`sketch.yaml`と同じく生成物です。
@@ -354,7 +366,7 @@ test関数ごとにportを開き直します。したがって
 **被験体**です。
 
 規約の導入でsketchは400〜500バイト増えます(`loop()`とコマンド解釈の分)。
-最も厳しい`core_api` / CH32V003で15512 → 15964バイト、**16 KBに対し残り420バイト**です。
+最も厳しい`core_api` / CH32V003で15512 → 15988バイト、**16 KBに対し残り396バイト**です。
 ここを超えたら`REQUIREMENTS`でboardを外すのではなく、caseを分割してください。
 
 `~/dev`配下の他プロジェクトは同じ規約を`String`ベースで実装していますが、

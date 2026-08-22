@@ -128,6 +128,26 @@ TC_FN void tc_unknown(const char *cmd)
     Serial.println(cmd);
 }
 
+/* Print the banner if it is due, and read nothing.
+ *
+ * The half of tc_ready() that keeps the bridge moving. A sketch that must not
+ * touch Serial input for a while - hooks_selftest, waiting for the line that
+ * belongs to serialEvent() - still has to keep talking, or the bridge stalls
+ * with its last partial line inside and the host sees nothing at all.
+ */
+TC_FN void tc_tick(void)
+{
+    static uint32_t next_banner;
+
+    const uint32_t now = millis();
+    if ((int32_t)(now - next_banner) >= 0) {
+        next_banner = now + TC_READY_MS;
+        Serial.print(tc_name_);
+        Serial.println(" READY");
+    }
+}
+
+
 /* Announce readiness, and return the next command line, or NULL.
  *
  * This is the whole of loop() for most sketches:
@@ -142,16 +162,27 @@ TC_FN void tc_unknown(const char *cmd)
  * The returned pointer is into a static buffer that the next call overwrites,
  * which is the point: no allocation, and one buffer per sketch.
  *
- * The banner resumes after a command has been served, so a second test can ask
- * again on a port it has just opened. A sketch that must stop announcing itself
- * for a while - hooks_selftest, which has to leave the input for serialEvent()
- * - simply does not call this until it is done waiting.
+ * **The banner keeps going after a command has been served**, and that is not
+ * an oversight. The reference sketches under ~/dev stop, because they talk to a
+ * USB-CDC peripheral on the MCU itself; here the path is the WCH-Link's UART
+ * bridge, which pushes a packet out when it has one to push. Stopping the
+ * banner was tried and it stalls the bridge with a partial line still in it -
+ * the host sees "string=ab" and then nothing at all, for as long as it waits.
+ * The banner is what keeps the pipe moving, so it keeps moving.
+ *
+ * The cost is that a board left running talks into a port nobody is reading,
+ * which overruns the bridge and splices what comes out later. The host side
+ * answers that by holding the port open across the upload rather than by
+ * silencing the board - see manual/smoke/smoke.py.
+ *
+ * A sketch that must stop *reading* for a while - hooks_selftest, which has to
+ * leave the input for serialEvent() - calls tc_tick() instead, so the banner
+ * keeps the bridge moving while the input is left alone.
  */
 TC_FN const char *tc_ready(void)
 {
     static char buf[TC_CMD_MAX];
     static uint8_t len;
-    static uint32_t next_banner;
 
     while (Serial.available()) {
         const char c = (char)Serial.read();
@@ -183,12 +214,7 @@ TC_FN const char *tc_ready(void)
         return buf;
     }
 
-    const uint32_t now = millis();
-    if ((int32_t)(now - next_banner) >= 0) {
-        next_banner = now + TC_READY_MS;
-        Serial.print(tc_name_);
-        Serial.println(" READY");
-    }
+    tc_tick();
     return NULL;
 }
 

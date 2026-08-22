@@ -225,11 +225,17 @@ class Link:
 _tokens = itertools.count(os.getpid() % 9000 + 1000)
 
 
-def handshake(link: Link, attempts: int = 3, timeout: float = 5.0) -> bool:
+def handshake(link: Link, attempts: int = 3, timeout: float = 12.0) -> bool:
     """PING <token> -> PONG <token>. True once the target has answered.
 
     The token is what makes this a proof rather than a guess: every sketch
     answers PING, so a bare PONG still in the FIFO would satisfy a bare PING.
+
+    Twelve seconds for a round trip over a UART is not a typo. Measured on this
+    bench, the WCH-Link's bridge takes about five seconds to turn a PING around
+    while the target is also printing its banner - core_api failed three
+    attempts at five seconds each and the transcript showed all three PONGs
+    arriving, just late. Waiting longer costs nothing when the bench is healthy.
     """
     for _ in range(attempts):
         token = next(_tokens)
@@ -597,21 +603,31 @@ def run_one(name, bench: Bench) -> dict:
             print(str(e))
             return {"verdict": "fail", "why": "compile failed", "output": str(e)}
 
-        try:
-            upload(bench, built, sketch_dir, env)
-        except Failure as e:
-            print(str(e))
-            return {"verdict": "fail", "why": "upload failed", "output": str(e)}
-
         import serial
-        # Opened *after* the upload, not before. The WCH-Link is one composite
-        # device: probe-rs drives its debug endpoint while this would be holding
-        # its CDC endpoint, and this bench answers that with "bulk read timed
-        # out" and then stops identifying the chip at all until the USB is
-        # re-attached. Holding the port open used to be necessary to catch a
-        # banner printed once; it is not, now that the banner repeats.
+        # One port open across the upload, and a fresh one for the protocol.
+        #
+        # Open across it, because the sketch already on the board goes on
+        # announcing itself for the twenty seconds the next image takes to
+        # build and flash: with nobody reading, the WCH-Link's bridge overruns
+        # and what comes out later is spliced - "hooks_selftest READY" arriving
+        # as "selftest READY" and "hooY" in alternation, so the line being
+        # waited for is never contiguous.
+        #
+        # Reopened after it, because the flash session leaves the bridge in a
+        # state where it stops delivering: measured here as two banners and
+        # then nothing for thirty-six seconds, on a build that had passed
+        # minutes earlier. Reopening re-runs SET_LINE_CODING and clears it.
         with serial.Serial(bench.port, bench.baud, timeout=0.3) as uart:
             uart.reset_input_buffer()
+            try:
+                upload(bench, built, sketch_dir, env)
+            except Failure as e:
+                print(str(e))
+                return {"verdict": "fail", "why": "upload failed",
+                        "output": str(e)}
+            uart.read(4096)
+
+        with serial.Serial(bench.port, bench.baud, timeout=0.3) as uart:
             link = Link(uart)
             # The banner repeats every half second, so there is nothing to
             # catch in time - waiting is enough however long the flash took.
@@ -687,8 +703,12 @@ def replay(link: Link, name: str, script: tuple, seconds: float) -> list:
         if verb == "write":
             link.send(text if text.endswith("\n") else text + "\n")
             continue
-        ok = (link.wait(text, seconds) if verb == "expect"
-              else link.match(text, seconds))
+        # A floor of ten seconds, not the bench's default four: this bridge
+        # takes seconds to turn a line around, and a step that times out early
+        # reports a missing line for output that was still on its way.
+        step = max(seconds, 10.0)
+        ok = (link.wait(text, step) if verb == "expect"
+              else link.match(text, step))
         if not ok:
             missed.append(text)
             break

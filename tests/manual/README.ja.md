@@ -149,7 +149,10 @@ uv run tests/manual/smoke/smoke.py --board CH32X035 --sketch all
 ```
 
 `smoke.py`は[コマンド規約](../TEST_PLAN.ja.md)を喋ります。バナーは0.5秒ごとに
-繰り返されるので、書き込みに何秒かかっても待てば捕まります。そのあと
+繰り返されるので、書き込みに何秒かかっても待てば捕まります。
+**ポートはuploadの前に開いて跨いだまま**にします——バナーを捕まえるためではなく、
+読み続けるためです。前のsketchはbuildとflashの20秒ほどの間も喋り続けるので、
+誰も読まないとWCH-Linkのブリッジが溢れ、あとから出てくるものが混線します。そのあと
 `PING <token>` → `PONG <token>`を取ってから先へ進みます——**このtoolだけは
 sketchを連続で焼く**ので、前のsketchが残した`PONG`が今の`PING`の答に
 見えないよう、tokenで区別する必要があります(pytest側は1ファイル1 sketchなので

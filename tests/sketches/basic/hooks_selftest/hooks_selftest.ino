@@ -26,6 +26,12 @@ static volatile bool saw_init_variant;
 static volatile uint32_t yields;
 static volatile bool saw_serial_event;
 
+/* millis() at which the wait for a line gives up, or 0 when not waiting.
+ * A hook that never fires has to fail rather than hang: silence is the one
+ * answer a host cannot tell apart from a dead board. It is also what keeps
+ * serialEvent() out of the command reader's way - see below. */
+static uint32_t waiting_until;
+
 void initVariant(void)
 {
     saw_init_variant = true;
@@ -38,16 +44,27 @@ void yield(void)
 
 void serialEvent(void)
 {
-    while (Serial.available()) {
-        (void)Serial.read();
+    /* Only while this sketch is expecting the line, and not a moment before.
+     *
+     * main() calls serialEventRun() after every loop(), so a hook that drains
+     * unconditionally competes with tc_ready() for the same bytes - and wins
+     * whenever they land between the two calls. Measured on CH32V103: the
+     * host's PING disappeared into here and the run failed as "banner but no
+     * PONG", on a board whose RX was working perfectly.
+     */
+    if (!waiting_until) {
+        return;
     }
-    saw_serial_event = true;
+    /* Consume up to and including the newline, and only then report. Bytes
+     * arrive a few at a time, so a hook that stopped at "no more available"
+     * would leave the tail of the line for tc_ready() to read back as an
+     * unknown command. */
+    while (Serial.available()) {
+        if ((char)Serial.read() == '\n') {
+            saw_serial_event = true;
+        }
+    }
 }
-
-/* millis() at which the wait for a line gives up, or 0 when not waiting.
- * A hook that never fires has to fail rather than hang: silence is the one
- * answer a host cannot tell apart from a dead board. */
-static uint32_t waiting_until;
 
 static void run_checks()
 {
@@ -71,7 +88,10 @@ void setup()
 void loop()
 {
     if (waiting_until) {
-        /* Deliberately no tc_ready() here - see the header comment. */
+        /* tc_tick() and not tc_ready(): the banner has to keep going or the
+         * bridge stalls with the last partial line inside it, but reading
+         * would consume the line serialEvent() is waiting for. */
+        tc_tick();
         if (saw_serial_event) {
             waiting_until = 0;
             tc_check("serialEvent_called", true);

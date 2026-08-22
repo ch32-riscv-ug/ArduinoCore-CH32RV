@@ -454,26 +454,36 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 
 ## ボード定義の生成
 
-- [ ] `[P1]` `[要判断]` **上流`c2c457d`を取り込むかの判断**(2026-08-22時点、pinは`b1285de`のまま)。
-      F-2(CH32V20xの`AFIO_PCFR2_`)が上流で解決し、`systick.csv`も入った。
-      ただし`--check`を当てると**7 variantが「既存行の書き換え」**になり、
-      中身は追加ではなく**喪失側**が多い。取り込み前に上流へ確認するのが筋に見える。
+- [ ] `[P1]` **上流`c2c457d`は取り込まない**(2026-08-22時点、pinは`b1285de`のまま)。
+      F-2(CH32V20xの`AFIO_PCFR2_`)は解決しているが、同じcommitで
+      **pin表のsignal名が2つ連結された行**が入っている。
+      104行 / 14 part number / 4 series(V208 84、M030 10、V407 5、V467 5)。
+      `remap_routes.csv`にも同じ形があり、そちらは**route番号やselector値まで
+      巻き込む**(`SCL_5T1ET` = `SCL`(remap-5) + `T1ET`、`role`列も`SDA_2SPI_NSS`に壊れる)。
 
-      | variant | 差分 |
+      | 例 | = |
       |---|---|
-      | CH32V407 / CH32V467 | **SPI3の既定routeがPB3/PB4/PB5 → PC10/PC11/PC12**。route 0が消えてcount 2→1。SPI1もremap routeを失う |
-      | CH32V208 | **ADC channel A0〜A4・A6・A7が消える**(16→9)。USART3の既定がroute default(PB10/PB11) → remap-1、対象部品も3/4→2/4 |
-      | CH32V205 | **PWM padが全滅**(1→0)。`CH32_PWM_*`ごと消えるので`analogWrite()`が効かなくなる |
-      | CH32M030 | PWM pad PB2/PB3が消える(10→8) |
-      | CH32V007 / CH32X033 | I2C1のroute 1本ずつ消失(5→4) |
+      | `ADC_IN6TIM3_CH1` (V208 PA6) | `ADC_IN6` + `TIM3_CH1` |
+      | `USART3_TXOPA2_CH0N` (V208 PB10) | `USART3_TX` + `OPA2_CH0N` |
+      | `SPI3_MOSII2S3_SD` (V407 PB5) | `SPI3_MOSI` + `I2S3_SD` |
+      | `I3C_SCL_1SPI1_MISO` (V407 PB4) | `I3C_SCL`(remap-1) + `SPI1_MISO` |
+      | `I2C_SDA_2SPI_NSS` (V007 PC4, remap_routes) | `I2C_SDA`(val=2) + `SPI_NSS` |
 
-      F-2で意図したのは**7 selectorの追加**(V203/V208 `USART4`、V30x `TIM5CH4_RM`)で、
-      上の喪失はそれとは別物に見える。新しい2段条件
-      「(a) RMがpad経路を述べ (b) その signal が部品のpin表にもある」の副作用か、
-      `pin_functions.csv`の行数変更(F-1/F-4系の修正)由来かは**未確認**。
-      なお**CH32V203は差分に出ていない**——F-2の主目的だった部品なので、
-      そこも合わせて聞きたい。
-      新しい警告も1件出る: `CH32V003: clock_init step(s) not emitted: step 6 (trim)`
+      検出は機械的にできる: **新表にしか無いsignal名のうち、旧表が知っている
+      2つの名前へ綺麗に割れるもの**。86件中28件が該当した。
+      同じcommitでF-4系の切れは直っている(`MC`+`O`→`MCO`、`USART1_RT`→`USART1_RTS`、
+      `LTDC_V`+`SYNC`→`LTDC_VSYNC`、M030 PB2/PB3の`N`が消えた)ので、
+      **run-onだけが問題**。
+      原因不明が2件残る: M030 PB2/PB3の`TIM3_CH1`/`TIM3_CH2`(default)が
+      run-onの形でなく消失、V205 PB1のPWMがどの表も無変更なのに消える。
+      **上流で全面調査中**(2026-08-22)。報告内容は
+      `scratchpad/runon_report.md`に出した形で渡してある。
+      我々の生成物への影響は7 variant:
+      V407/V467のSPI3既定routeがPB3/PB4/PB5→PC10/PC11/PC12、
+      V208のADC A0〜A4・A6・A7消失(16→9)とUSART3既定のremap-1化、
+      V205のPWM全滅(`analogWrite()`が効かなくなる)、M030のPWM pad PB2/PB3消失、
+      V007のI2C1 route 2消失、X033のI2C1 route 5消失。
+      新しい警告も1件: `CH32V003: clock_init step(s) not emitted: step 6 (trim)`
 - [ ] `[P2]` **`systick.csv`が入ったのでCH32V103のSysTick配置をデータ由来にできる**。
       いま`cores/arduino/ch32_registers.h`に手書きしてあるoffsetと、
       「カウンタはbyte writeのみ」という制約(`CH32_SYSTICK_WRITE8`)は、
@@ -833,6 +843,44 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       `--check`は`generated/test_generated.py`が回す)。
       代替(`../testcmd.h` / `-I`をbuild propertyで / caseごとにsymlink)は
       それぞれbuildディレクトリの位置・4つのcallerの取りこぼし・Windowsで破綻する
+- [x] **WCH-LinkのUARTブリッジは「送るものがある」ときにしか吐かない**(2026-08-22実測)。
+      規約のバナーを「最初のコマンドを受けたら止める」形にしたら
+      (参照実装の`~/dev`はそうしている)、**11本全部が行の途中で止まった**——
+      `heap_string`はホストに`string=ab`まで届いてそこで無音。
+      バナーが管を動かしていたと分かったので**止めない**ことにした。
+      あちらの参照実装はMCU内蔵のUSB-CDCで、こちらはブリッジという違い。
+      代償は、誰も読んでいないポートへ喋り続けるとブリッジが溢れて
+      **出力が混線する**こと(`hooks_selftest READY`が`selftest READY`と`hooY`に割れ、
+      待っている文字列が連続して現れない)。
+      これはボードを黙らせるのではなく、**`smoke.py`がuploadを跨いでポートを
+      開いたままにする**ことで解いた。
+      さらに**flashのあと配送が止まる**ことがある——バナーが2本来て36秒間無音、
+      数分前に同じbuildが通っていても起きる。**portを閉じて開き直すと直る**ので、
+      `smoke.py`は「uploadを跨いで開いたまま → 終わったら閉じて開き直す」の2段にした。
+      往復も遅く、`PING`→`PONG`に約5秒かかる。handshakeは12秒、
+      replayの1ステップは最低10秒にしてある。
+      3点とも[docs/upload-and-fixture.ja.md](upload-and-fixture.ja.md)に実測値つきで残した
+- [x] **`hooks_selftest`の`serialEvent()`がコマンドを食べていた**(実機で発覚)。
+      `main()`は`loop()`のあとに`serialEventRun()`を呼ぶので、
+      無条件にdrainするhookは`tc_ready()`と同じバイトを奪い合い、
+      **バイトが2つの呼び出しの間に届いたときは必ず勝つ**。
+      ホストの`PING`がそこへ消えて「banner but no PONG」になっていた——
+      RXは完全に正常なのに。
+      hookは`waiting_until`が立っている間だけ読むようにし、
+      **改行まで読んでから**報告するようにした(数バイトずつ届くので、
+      「availableが尽きたら終わり」だと行の尻尾が残って`unknown cmd`になる)。
+      待機中は`tc_ready()`ではなく`tc_tick()`を呼ぶ——
+      入力に触れずにバナーだけ出す。上の癖1のため、黙ると配送が止まる
+- [x] **コマンド規約をCH32V103実機で検証した。11本すべて`failures=0`**(2026-08-22)。
+      **これまで全boardでSKIPしていた`hooks_selftest`と`serial_echo`を含む**。
+      3本(`hooks_selftest`/`servo_selftest`/`wire_selftest`)は
+      `no banner → probe-rs reset → PASS`で、後から入れたreset経路が効いている
+      (毎回表示するので、頻度が上がればbenchの異常として見える)。
+      過程で**実機でしか出ない欠陥を3件見つけた**。
+      (1) `core_api`の期待順が印字順と違っていた——`fmt=FF,-42,1.50`は
+      `availableForWrite`より前。pexpectも前方一致なのでpytest側でも落ちる本物の誤り。
+      (2) `hooks_selftest`の`serialEvent()`がコマンドを食べていた(下記)。
+      (3) 待機中にバナーが止まるとブリッジの配送が止まる(下記)
 - [x] **`gpio_loopback`もコマンド規約へ載せ替えた**。同じ壊れ方をしていた——
       `dut`はfunction scopeなので、`setup()`で全部出力して1行ずつ`expect`する形は
       ファイル先頭の1本しか通り得ない。`testcmd.h`の配布対象を
