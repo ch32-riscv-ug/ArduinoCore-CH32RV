@@ -43,7 +43,7 @@ jobs:
           done
       - name: Startup equivalence and interrupt tables
         working-directory: tests
-        run: CH32_MIRROR_ROOT="$HOME/mirrors" uv run pytest -q test_startup_equivalence.py test_interrupt_tables.py
+        run: CH32_MIRROR_ROOT="$HOME/mirrors" uv run pytest -q startup
 
   # W-4: committed generated files must match regeneration from the locked
   # ch32-device-data commit (recorded in vendor/ch32-device-data.lock.toml)
@@ -56,9 +56,11 @@ jobs:
       # against exactly the tables the committed files were generated from.
       - name: Fetch the device-data tables at the locked commit
         run: uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
-      - name: Generated files and sketch profiles are in sync
+      # The layout check rides along: it needs no toolchain, and a category
+      # directory that stops being collected is invisible in every other job.
+      - name: Generated files, sketch profiles and the test layout
         working-directory: tests
-        run: uv run pytest -q test_generated.py
+        run: uv run pytest -q generated unit/test_tests_layout.py
 
   # ADR-0009: the vendored ArduinoCore-API snapshot must stay byte-identical to
   # the upstream commit pinned in vendor/arduino-core-api.lock.toml
@@ -69,7 +71,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Verify cores/arduino/api against the pinned upstream commit
         working-directory: tests
-        run: uv run pytest -q test_vendored_api.py
+        run: uv run pytest -q vendor/test_vendored_api.py
 
   # W-3/W-7: symlink-mode compile matrix over all generated part numbers
   compile-matrix:
@@ -96,7 +98,7 @@ jobs:
       # names the check rather than a shell exit code.
       - name: Compile matrix, sketch profiles and size baseline
         working-directory: tests
-        run: uv run pytest -q test_compile_matrix.py test_sketch_profiles.py test_sizebench.py
+        run: uv run pytest -q compile/test_compile_matrix.py sketches/test_sketch_profiles.py sizebench
 
   # W-5: clean Board Manager install via local HTTP, then compile with no overrides
   #
@@ -127,10 +129,10 @@ jobs:
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
       # Two things share this job because they share its expensive part: a
       # generated index served on loopback and a 400 MB toolchain to fetch.
-      # test_sketch_profile_build.py covers what neither the compile sweeps nor
-      # the install test do - `arduino-cli compile --profile`, which is what
-      # the instructions tell a user to type, resolving the platform through
-      # the index rather than through --fqbn.
+      # sketches/test_sketch_profile_build.py covers what neither the compile
+      # sweeps nor the install test do - `arduino-cli compile --profile`, the
+      # command the instructions tell a user to type, resolving the platform
+      # through the index rather than through --fqbn.
       - name: Clean install, and build every sketch profile
         working-directory: tests
-        run: uv run pytest -q test_package_install.py test_sketch_profile_build.py
+        run: uv run pytest -q package sketches/test_sketch_profile_build.py

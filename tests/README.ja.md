@@ -10,30 +10,45 @@
 
 ```sh
 cd tests
-uv run pytest                                   # boardもprofileも要らないもの全部(約4分)
+uv run pytest                                   # boardもprofileも要らないもの全部(約7分)
+uv run pytest --clean                           # 同じものを、cacheを消してから
 uv run pytest -m "not slow"                     # compile系を飛ばす(数秒)
 uv run pytest --profile ch32x035 --run-mode build   # + sketch testをbuildだけ
 uv run pytest --profile ch32x035 --port /dev/ttyACM4  # + 実機で実行
 ```
 
-| test | 内容 | 実機 | marker |
-|---|---|---|---|
-| `test_generated.py` | 生成物とsketch profileがtablesと同期しているか | 不要 | |
-| `test_vendored_api.py` | `cores/arduino/api`がpin先とバイト一致 | 不要 | |
-| `test_interrupt_tables.py` | 割込み表がEVT startupと一致 | 不要 | EVT mirror要 |
-| `test_startup_equivalence.py` | 統合crt0とEVT startupのELF等価性(14 variant) | 不要 | `slow`、EVT mirror要 |
-| `test_compile_matrix.py` | 全122 part numberのcompile + sizeベースライン | 不要 | `slow` |
-| `test_sketch_profiles.py` | 全sketch × 全profile boardのcompile | 不要 | `slow` |
-| `test_sizebench.py` | newlibのサイズ計測(nano vs full) | 不要 | `slow` |
-| `test_package_install.py` | Board Manager install → 上書きなしcompile → upgrade/rollback | 不要 | `slow` |
-| `test_sketch_profile_build.py` | `arduino-cli compile --profile`(=index経由)で全sketch × 全profile | 不要 | `slow` |
-| [`sketches/`](sketches/) | Arduino APIのsketch単位test | 任意 | `--profile`必須 |
-| [`manual/`](manual/README.ja.md) | 手動test + 実機tool | 必要 | 明示指定のみ |
+`--clean`は`pytest-embedded-arduino-cli`のoptionで、本来は`arduino-cli compile`へ
+`--clean`を渡すためのものです。`conftest.py`がこれに相乗りして、`.pytest_cache`、
+`__pycache__`、前回のscratchディレクトリの残骸も消します。`.tools`(toolchain /
+probe-rs)と`~/.arduino15`は消しません——消しても結果は変わらず、実行が1時間伸びるだけ
+だからです。
 
-`sketches/`は`--profile`が無いとskipします(profileが無いとpytest-embeddedが
-targetを決められないため)。`manual/`は`test_`プレフィックスを付けておらず、
-`norecursedirs`にも入れてあるので、ファイルを名指ししない限り収集されません
-——引数なしの`pytest`が実機を焼きにいかないための二重の防護です。
+**カテゴリごとに1ディレクトリ**で、そのディレクトリ名を渡せばその範囲だけ回ります。
+規約の全文は[テスト計画の「テストの種類とディレクトリ」](TEST_PLAN.ja.md)です。
+
+| ディレクトリ | 入口 | 内容 | 実機 | marker |
+|---|---|---|---|---|
+| `generated/` | `test_generated.py` | 生成物とsketch profileがtablesと同期しているか | 不要 | |
+| `vendor/` | `test_vendored_api.py` | `cores/arduino/api`がpin先とバイト一致 | 不要 | |
+| | `test_vendored_tinyusb.py` | TinyUSB snapshotがlockのSHA-256と一致 | 不要 | |
+| [`startup/`](startup/README.ja.md) | `test_interrupt_tables.py` | 割込み表がEVT startupと一致 | 不要 | EVT mirror要 |
+| | `test_startup_equivalence.py` | 統合crt0とEVT startupのELF等価性(14 variant) | 不要 | `slow`、EVT mirror要 |
+| [`compile/`](compile/README.ja.md) | `test_compile_matrix.py` | 全122 part numberのcompile + sizeベースライン | 不要 | `slow` |
+| | `test_examples.py` | 同梱examplesが全部compileできる | 不要 | `slow` |
+| [`sizebench/`](sizebench/README.ja.md) | `test_sizebench.py` | newlibのサイズ計測(nano vs full) | 不要 | `slow` |
+| `package/` | `test_package_install.py` | Board Manager install → 上書きなしcompile → upgrade/rollback | 不要 | `slow` |
+| [`sketches/`](sketches/) | `test_sketch_profiles.py` | 全sketch × 全profile boardのcompile | 不要 | `slow` |
+| | `test_sketch_profile_build.py` | `arduino-cli compile --profile`(=index経由)で全sketch × 全profile | 不要 | `slow` |
+| | `basic/<case>/test_<case>.py` | Arduino APIのsketch単位test | 任意 | `--profile`必須 |
+| `unit/` | `test_clock_prescaler.py` | AHB分周器の符号化表(compile時assertのみ) | 不要 | |
+| | `test_tests_layout.py` | この表の規約そのもの | 不要 | |
+| [`manual/`](manual/README.ja.md) | `<case>/<case>.py` | 手動test + 実機tool | 必要 | 明示指定のみ |
+
+`sketch.yaml`が隣にあるtest(=sketch case)は`--profile`が無いとskipします
+(profileが無いとpytest-embeddedがtargetを決められないため)。`manual/`は
+`test_`プレフィックスを付けておらず、`norecursedirs`にも入れてあるので、
+ファイルを名指ししない限り収集されません——引数なしの`pytest`が実機を
+焼きにいかないための二重の防護です。
 
 実機tool(`chip_info` / `smoke` / `uart_scan`)も**pytestのcase**です。
 CLIとしても残していますが、それは対話的に作業台を見る場面のためで、
@@ -42,15 +57,15 @@ CLIとしても残していますが、それは対話的に作業台を見る�
 harnessはすべて**Pythonモジュール**で、pytestは`import`して関数を呼びます
 (以前はshell scriptをsubprocessで起動し、標準出力のmarker文字列をassertしていました。
 Windows専用のバグを3回作ったのでやめました: shebang非対応、bash 3.2の構文、
-パス区切り)。単独でも動きます。
+パス区切り)。単独でも動きます。入口(`test_*.py`)とharnessは同じディレクトリに
+置いてあります。
 
-| ディレクトリ | 内容 | 単独実行 |
-|---|---|---|
-| [`sketches/`](sketches/) | sketch単位test | `uv run pytest sketches/...` |
-| [`manual/`](manual/README.ja.md) | 手動test + 実機tool | `uv run pytest manual/<case>/<case>.py -v -s` |
-| [`compile/`](compile/README.ja.md) | compile matrix + size baseline | `uv run tests/compile/compile_matrix.py <workdir>` |
-| [`startup/`](startup/README.ja.md) | crt0等価性 | `uv run tests/startup/startup_equivalence.py <workdir>` |
-| [`sizebench/`](sizebench/README.ja.md) | newlibサイズ計測 | `uv run tests/sizebench/sizebench.py <workdir>` |
+```sh
+uv run tests/compile/compile_matrix.py <workdir>        # compile matrix + size baseline
+uv run tests/startup/startup_equivalence.py <workdir>   # crt0等価性
+uv run tests/sizebench/sizebench.py <workdir>           # newlibサイズ計測
+uv run pytest manual/<case>/<case>.py -v -s             # 手動test
+```
 
 ## sketches/
 
@@ -58,20 +73,41 @@ Windows専用のバグを3回作ったのでやめました: shebang非対応、
 **1 caseにつき1 sketchディレクトリ**、`sketch.yaml`のprofileで対象boardを切り替えます。
 
 ```text
-sketches/<category>/<case>/
-  sketch.yaml        profile定義(board = profile)
-  <case>.ino
-  test_<case>.py     dut fixtureへのexpect
+sketches/
+  testcmd.h          コマンド規約の雛形(原本)。各caseへ配る
+  sync_testcmd.py    testcmd.hを各caseへコピー / --checkで差分検出
+  sync_profiles.py   sketch.yamlのprofilesブロックを生成 / --check
+  stage.py           buildディレクトリへ何をコピーするか(3つのharnessで共有)
+  compile_all.py     全sketch × 全profile boardをcompile
+  profile_build.py   loopback index経由で --profile build
+
+  <category>/<case>/
+    sketch.yaml      profile定義(board = profile)。生成物
+    <case>.ino
+    testcmd.h        sync_testcmd.pyが配ったコピー。**直接編集しない**
+    test_<case>.py   1関数。バナーを待ち、コマンドを送り、順に読む
 ```
 
-`sketch.yaml`のprofile一覧は**生成物**です。boardを増減するときは
+sketchは**コマンド規約**に従います。`setup()`は`Serial.begin()`だけ、`loop()`が
+`"<name> READY"`を0.5秒ごとに出しながらコマンドを待ち、`RUN`を受けてから判定を
+走らせます。ホスト側は**1 sketch = 1テスト関数**で、その中で順に読みます。
+理由と全文は[テスト計画の「実機テストのコマンド規約」](TEST_PLAN.ja.md)にあります。
+
+`testcmd.h`が各caseにコピーで置いてあるのは、**arduino-cliがsketchフォルダの外を
+コンパイルしないから**です。原本は`sketches/testcmd.h`だけで、コピーは生成物です。
+
+`sketch.yaml`のprofile一覧も**生成物**です。boardを増減するときは
 [`sketches/sync_profiles.py`](sketches/sync_profiles.py)の`BOARDS`だけを直します。
 
 ```sh
 uv run tests/sketches/sync_profiles.py           # 全sketch.yamlを再生成
+uv run tests/sketches/sync_testcmd.py            # testcmd.hを配り直す
 uv run tests/sketches/sync_profiles.py --check   # CI: 古ければ失敗
+uv run tests/sketches/sync_testcmd.py --check    # 同上
 CH32_GCC_BIN=<xpack>/bin tests/sketches/compile_all.py /tmp/sk   # 全組み合わせをcompile
 ```
+
+どちらの`--check`も`generated/test_generated.py`が回します。
 
 sketchによっては小さいboardに載りません(`String`はCH32V003の2 KB RAMに入らない、
 newlibのフルprintfは約40 KB)。その下限は`sync_profiles.py`の`REQUIREMENTS`に書き、

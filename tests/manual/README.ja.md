@@ -143,21 +143,39 @@ uv run tests/manual/smoke/smoke.py --board CH32X035 --sketch all
 ===== summary: CH32X035 (CH32X035C8T6)
   PASS  core_api
   PASS  heap_string
-  SKIP  serial_echo
+  PASS  serial_echo
   PASS  serial_println
   PASS  stdio_printf
 ```
 
-合否の基準は各sketchの`test_<name>.py`が`dut.expect_exact()`へ渡している
-**文字列リテラル**から取ります。source of truthを1つに保つためで、
-sketchを増やしてもこのtoolを触る必要はありません。加えて2つの一般規則:
+`smoke.py`は[コマンド規約](../TEST_PLAN.ja.md)を喋ります。バナーは0.5秒ごとに
+繰り返されるので、書き込みに何秒かかっても待てば捕まります。そのあと
+`PING <token>` → `PONG <token>`を取ってから先へ進みます——**このtoolだけは
+sketchを連続で焼く**ので、前のsketchが残した`PONG`が今の`PING`の答に
+見えないよう、tokenで区別する必要があります(pytest側は1ファイル1 sketchなので
+バナー名で足ります)。
+
+合否の基準は各sketchの`test_<name>.py`から読み取ります。source of truthを
+1つに保つためで、sketchを増やしてもこのtoolを触る必要はありません。
+各テストは1関数で、`dut.write`と`dut.expect_exact` / `dut.expect`が
+**順番に並んだscript**なので、それをそのまま再生します。
+
+| 記法 | 再生 |
+|---|---|
+| `dut.write("RUN\n")` | 送る |
+| `dut.expect_exact("...")` | その文字列が来るまで読む |
+| `dut.expect(r"...")` | 正規表現で待つ(`PASS\|SKIP`のような選択) |
+| f-string | **飛ばす**。値をtestが組み立てているので再現できない |
+
+`dut.write`が1つも無いsketchは標準の`RUN`で駆動します。加えて2つの一般規則:
 
 - 出力に`FAIL`が含まれてはいけない
 - `failures=`があれば`failures=0`でなければならない
 
 これがあるので、`core_api`のようにparametrizeされたf-stringしか持たないtestでも
-実質的に検証できます。`dut.write()`でtargetを叩くtest(`serial_echo`)はSKIPします
-——このtoolは受信しかせず、刺激を書き写すとpytest側と二重管理になるからです。
+実質的に検証できます。**`dut.write()`でtargetを叩くtest(`serial_echo` /
+`hooks_selftest`)もSKIPしなくなりました**——それぞれのtestファイルから
+並びを読み取って再生するので、二重管理にはなりません。
 
 書き込み前に`probe-rs info`でチップを読み、`--board`と食い違ったら止まります
 (ベンチはboardを差し替えるため)。意図的に上書きするなら`--force`。

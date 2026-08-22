@@ -8,7 +8,7 @@ claim the runtime decision is built on.
 """
 import pytest
 
-from conftest import load
+from loader import load
 
 pytestmark = pytest.mark.slow
 

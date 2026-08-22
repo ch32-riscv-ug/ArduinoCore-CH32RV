@@ -6,7 +6,7 @@ narrowest board is the cheapest way to keep them honest.
 """
 import pytest
 
-from conftest import load
+from loader import load
 
 pytestmark = pytest.mark.slow
 

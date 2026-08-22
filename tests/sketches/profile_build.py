@@ -9,15 +9,15 @@ A user who follows tests/README.ja.md runs `arduino-cli compile --profile
 named in sketch.yaml - not through an installed core and not through --fqbn.
 Nothing covered that path:
 
-  test_sketch_profiles.py   --fqbn against the working tree; it deliberately
+  test_sketch_profiles.py       --fqbn against the working tree; it deliberately
                             copies the .ino out from under its sketch.yaml
-  test_package_install.py   installs from the index, then builds with --fqbn
+  ../package/test_package_install.py  installs from the index, then builds with --fqbn
   this                      the index *and* the profile, which is what the
                             instructions actually tell people to type
 
   uv run tests/sketches/profile_build.py <workdir>
 
-Normally reached through `pytest` (tests/test_sketch_profile_build.py).
+Normally reached through `pytest` (tests/sketches/test_sketch_profile_build.py).
 
 The index the profiles name is not published yet, so one is generated and
 served on loopback, and the sketches are built from copies whose
@@ -41,6 +41,7 @@ sys.path.insert(0, str(REPO / "tests" / "compile"))
 import gen_index                                            # noqa: E402
 import install_check                                        # noqa: E402
 from compile_matrix import Failure                          # noqa: E402
+from stage import stage_sketch                              # noqa: E402
 from sync_profiles import INDEX_URL                         # noqa: E402
 
 PROFILE = re.compile(r"^  ([a-z0-9_]+):$", re.M)
@@ -58,8 +59,7 @@ def combinations():
 
 def stage(src: pathlib.Path, dest: pathlib.Path, base_url: str) -> pathlib.Path:
     """A copy of one sketch whose profiles point at the local index."""
-    dest.mkdir(parents=True, exist_ok=True)
-    shutil.copy(src / f"{src.name}.ino", dest)
+    stage_sketch(src, dest, keep_yaml=True)
     yaml = (src / "sketch.yaml").read_text(encoding="utf-8")
     local = f"{base_url}/package_{install_check.PACKAGER}_index.json"
     if INDEX_URL not in yaml:

@@ -17,7 +17,7 @@ using a pad encoding only the wide-port part has.
 
   uv run tests/compile/compile_examples.py <workdir>
 
-Normally reached through `pytest` (tests/test_examples.py).
+Normally reached through `pytest` (tests/compile/test_examples.py).
 """
 import pathlib
 import shutil

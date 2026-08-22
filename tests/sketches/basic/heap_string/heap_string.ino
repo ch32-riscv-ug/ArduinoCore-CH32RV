@@ -9,9 +9,12 @@
 // first allocation. platform.txt now passes --require-defined=_sbrk.
 //
 // A global String is deliberate: its constructor runs from .init_array, before
-// setup(), so a broken heap takes the sketch down at the earliest point.
+// setup(), so a broken heap takes the sketch down at the earliest point. That
+// is also why this sketch keeps its String while the rest of the suite has
+// none - it is the thing under test, not a convenience.
 //
 // printf() has the same root cause and lives in stdio_printf.
+#include "testcmd.h"
 
 String global_string;
 
@@ -19,14 +22,12 @@ String global_string;
 // current program break without moving it.
 extern "C" void *_sbrk(ptrdiff_t incr);
 
-void setup()
+static void run_checks()
 {
-  Serial.begin(115200);
-  delay(1000);
+  // Reaching this line at all is most of the test: with the semihosting _sbrk
+  // the board never answered PING, because it never left .init_array.
   Serial.println("heap test start");
 
-  // Reaching this line at all is most of the test: with the semihosting _sbrk
-  // the board never got here.
   global_string = "abc";
   global_string += "def";
   Serial.print("string=");
@@ -65,8 +66,23 @@ void setup()
   Serial.println(huge == NULL ? "null" : "BAD");
 
   Serial.println("heap test done");
+  tc_done();
+}
+
+void setup()
+{
+  tc_begin("heap_string");
 }
 
 void loop()
 {
+  const char *cmd = tc_ready();
+  if (!cmd) {
+    return;
+  }
+  if (!strcmp(cmd, "RUN")) {
+    run_checks();
+  } else {
+    tc_unknown(cmd);
+  }
 }

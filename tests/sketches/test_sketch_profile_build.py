@@ -13,7 +13,7 @@ bare `pytest` and in CI with nothing to configure.
 """
 import pytest
 
-from conftest import load
+from loader import load
 
 pytestmark = pytest.mark.slow
 

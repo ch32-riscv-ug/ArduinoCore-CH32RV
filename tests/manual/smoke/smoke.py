@@ -31,17 +31,33 @@ detect.
 `--sketch all` is what to run after swapping a tier B board onto the bench
 (see tests/TEST_PLAN.ja.md): one command, one summary table.
 
-What counts as a pass comes from each sketch's own test_<name>.py - the string
-literals it hands to dut.expect_exact(). That keeps one source of truth, so
-adding a sketch needs no change here. Two rules apply on top, because several
-sketches decide pass/fail on the target and print one line per check:
+It speaks the command protocol (tests/sketches/testcmd.h): the sketch repeats
+"<name> READY" twice a second and does nothing until asked, so however long the
+flash took there is a banner to wait for. Then `PING <token>` has to come back
+as `PONG <token>`. The token matters *here* and nowhere else - this is the one
+caller that flashes sketches back to back, and every sketch answers PING, so a
+PONG the previous one left in the probe's FIFO would answer for a board that is
+not running. That is exactly the failure this runner used to have, scoring nine
+sketches against the last one's output.
+
+What counts as a pass comes from each sketch's own test_<name>.py, so adding a
+sketch needs no change here. Each of those is one test function that writes
+commands and reads answers in order - a script - and it is replayed as one:
+
+  dut.write("RUN\n")             send it
+  dut.expect_exact("...")        read until that literal arrives
+  dut.expect(r"...")             the same, as a regex (PASS|SKIP)
+  anything f-string              skipped; the test builds the value itself
+
+A sketch whose test writes nothing is driven with the standard RUN. Two rules
+apply on top, because the sketches decide pass/fail on the target:
 
   - the output must contain no "FAIL"
   - if it reports "failures=", that has to be "failures=0"
 
-A sketch whose test drives the target (dut.write) is skipped: this runner only
-listens, so replaying its stimulus here would be a second, diverging copy.
-Run those under pytest.
+Nothing is skipped for driving the target any more: serial_echo and
+hooks_selftest are replayed from their own test files rather than left to
+pytest.
 
 The probe and its UART bridge are discovered by USB VID:PID, because boards get
 swapped on this bench and /dev/ttyACM* is not stable. Pass --probe <serial> when
@@ -56,6 +72,7 @@ CH32_GCC_BIN and CH32_PROBE_RS override that if a bench keeps them elsewhere.
 import argparse
 import ast
 import dataclasses
+import itertools
 import json
 import os
 import pathlib
@@ -70,6 +87,11 @@ REPO = pathlib.Path(__file__).resolve().parents[3]
 BASIC = REPO / "tests" / "sketches" / "basic"
 DEFAULT_SKETCH = "serial_println"
 
+# What to copy into a build directory, shared with the two compile harnesses so
+# that a sketch gaining a file does not fail in three places one at a time.
+sys.path.insert(0, str(REPO / "tests" / "sketches"))
+from stage import stage_sketch                              # noqa: E402
+
 
 class Failure(Exception):
     """The bench cannot do what was asked, and says why."""
@@ -80,31 +102,141 @@ WCH_LINK_VID = 0x1A86
 WCH_LINK_PIDS = (0x8010, 0x8012)
 
 
-def expectations(name: str):
-    """(literals, needs_host_input) read out of the sketch's pytest file.
+def expectations(name: str) -> tuple:
+    """The test file's own script: [("write"|"expect"|"match", text)], in order.
 
-    Only plain literals are collected: an f-string means the test parametrises
+    Read out of test_<name>.py rather than restated here, so the pytest run and
+    this one cannot disagree about what passing means - adding a sketch needs no
+    change to this runner. Each file is one test function that writes commands
+    and reads answers in order, which is exactly a script.
+
+    Only plain literals are collected. An f-string means the test parametrises
     the value, and guessing what it expands to would be worse than admitting we
-    cannot check it here. The generic FAIL / failures= rules in run_one still
-    apply to those sketches, which is what makes core_api meaningful here.
+    cannot check it; the FAIL and failures= rules in run_one still cover those.
     """
     test = BASIC / name / f"test_{name}.py"
     if not test.exists():
-        return [], False
-    tree = ast.parse(test.read_text(encoding="utf-8"))
-    wanted = []
-    drives = False
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+        return ()
+    steps = []
+    for node in ast.walk(ast.parse(test.read_text(encoding="utf-8"))):
+        if not isinstance(node, ast.Call) or not isinstance(node.func,
+                                                            ast.Attribute):
             continue
-        if node.func.attr == "write":
-            drives = True
-        if node.func.attr not in ("expect_exact", "expect"):
+        arg = node.args[0] if node.args else None
+        if not isinstance(arg, ast.Constant) or not isinstance(arg.value, str):
             continue
-        for arg in node.args[:1]:
-            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                wanted.append(arg.value)
-    return wanted, drives
+        # expect() takes a regex and expect_exact() takes a literal; keeping
+        # them apart is what lets the SKIP-tolerant checks be replayed at all.
+        verb = {"write": "write", "expect_exact": "expect",
+                "expect": "match"}.get(node.func.attr)
+        if verb:
+            steps.append((node.lineno, verb, arg.value))
+    # ast.walk is breadth-first, and a script only means anything in order.
+    steps.sort()
+    # run_one has already waited for the banner, and it repeats, so replaying
+    # that step would only cost half a second of waiting for the next one.
+    return tuple((verb, text) for _, verb, text in steps
+                 if not (verb == "expect" and text == f"{name} READY"))
+
+
+def _find(buf: bytes, target: bytes, pos: int) -> int:
+    """Index just past `target` at or after `pos`, or -1."""
+    found = buf.find(target, pos)
+    return -1 if found < 0 else found + len(target)
+
+
+def show(text: str) -> None:
+    """Print what the board said, whether the run passed or not.
+
+    The READY banner repeats twice a second, so a run that waits for anything
+    collects a column of them. They are folded into one line with a count: the
+    fact that the board kept announcing itself is worth seeing, forty copies of
+    it are not.
+    """
+    lines = []
+    for line in text.strip().splitlines():
+        if lines and lines[-1][0] == line:
+            lines[-1][1] += 1
+        else:
+            lines.append([line, 1])
+    print("--- output " + "-" * 48)
+    print("\n".join(f"{line}   (x{n})" if n > 1 else line
+                    for line, n in lines) or "(nothing received)")
+    print("-" * 59)
+
+
+class Link:
+    """A serial port, plus everything read from it so far.
+
+    pyserial has no expect(), and the one this needs is not quite pexpect's: a
+    match has to advance a cursor so that replaying "write X, expect Y" twice
+    does not match the first Y both times. Hence the explicit position.
+    """
+
+    def __init__(self, uart):
+        self.uart = uart
+        self.buf = b""
+        self.pos = 0
+
+    def send(self, text: str) -> None:
+        self.uart.write(text.encode())
+        self.uart.flush()
+
+    def wait(self, needle: str, seconds: float) -> bool:
+        """Read until `needle` appears after the last match, or time out."""
+        return self._until(lambda buf, pos: _find(buf, needle.encode(), pos),
+                           seconds)
+
+    def match(self, pattern: str, seconds: float) -> bool:
+        """The same, for a regex - what dut.expect() takes."""
+        rx = re.compile(pattern.encode())
+        def search(buf, pos):
+            m = rx.search(buf, pos)
+            return m.end() if m else -1
+        return self._until(search, seconds)
+
+    def _until(self, find, seconds: float) -> bool:
+        deadline = time.time() + seconds
+        while True:
+            end = find(self.buf, self.pos)
+            if end >= 0:
+                self.pos = end
+                return True
+            if time.time() >= deadline:
+                return False
+            chunk = self.uart.read(256)
+            if chunk:
+                self.buf += chunk
+
+    def drain(self, seconds: float) -> None:
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            chunk = self.uart.read(256)
+            if chunk:
+                self.buf += chunk
+
+    @property
+    def text(self) -> str:
+        return self.buf.decode(errors="replace")
+
+
+# Tokens have to differ between runs as well as within one, because the stale
+# bytes a run is trying to see past can be the previous run's.
+_tokens = itertools.count(os.getpid() % 9000 + 1000)
+
+
+def handshake(link: Link, attempts: int = 3, timeout: float = 5.0) -> bool:
+    """PING <token> -> PONG <token>. True once the target has answered.
+
+    The token is what makes this a proof rather than a guess: every sketch
+    answers PING, so a bare PONG still in the FIFO would satisfy a bare PING.
+    """
+    for _ in range(attempts):
+        token = next(_tokens)
+        link.send(f"PING {token}\n")
+        if link.wait(f"PONG {token}", timeout):
+            return True
+    return False
 
 
 def sketch_names(which: str):
@@ -422,29 +554,42 @@ def upload(bench: Bench, built: pathlib.Path, sketch_dir: pathlib.Path,
     log("   uploaded")
 
 
+def reset_target(bench: Bench) -> bool:
+    """probe-rs reset, for an upload that finished with the core stopped.
+
+    Worth trying because it is now free to try. Resetting used to eat the head
+    of the output - the sketch said everything once, in setup(), and a reset
+    halfway through cost exactly the lines being waited for. With a banner that
+    repeats there is nothing to lose and one class of failure to recover from:
+    the WCH-Link occasionally answers a flash session with "bulk read timed
+    out", succeeds on the retry, and leaves the core somewhere it will not run.
+    """
+    if not bench.chip:
+        return False
+    cmd = [str(pathlib.Path(bench.probe_rs) / "probe-rs"), "reset",
+           "--chip", bench.chip]
+    if bench.probe:
+        cmd += ["--probe", f"1a86:8010:{bench.probe}"]
+    return sh(cmd).returncode == 0
+
+
 def run_one(name, bench: Bench) -> dict:
-    """Compile, flash and read back one sketch.
+    """Compile, flash and drive one sketch.
 
     Returns {"verdict": "pass" | "fail" | "skip", "why": ..., "output": ...}.
     A verdict with a reason rather than True/False/None: the caller may be a
     person reading a summary table or a test that has to say why it skipped,
     and None meant two unrelated things.
     """
-    sketch = BASIC / name / f"{name}.ino"
-    if not sketch.exists():
+    sketch_src = BASIC / name
+    if not (sketch_src / f"{name}.ino").exists():
         return {"verdict": "fail", "why": f"no such sketch under {BASIC}",
                 "output": ""}
-    expect, drives = expectations(name)
-    if drives:
-        return {"verdict": "skip", "output": "",
-                "why": "its test drives the target (dut.write), and this "
-                       "runner only listens - run it under pytest"}
+    script = expectations(name)
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = pathlib.Path(tmp)
-        sketch_dir = tmp / name
-        sketch_dir.mkdir()
-        shutil.copy(sketch, sketch_dir)
+        sketch_dir = stage_sketch(sketch_src, tmp / name)
         env = sketchbook(tmp)
         try:
             built = build(bench, sketch_dir, tmp, env)
@@ -452,26 +597,61 @@ def run_one(name, bench: Bench) -> dict:
             print(str(e))
             return {"verdict": "fail", "why": "compile failed", "output": str(e)}
 
+        try:
+            upload(bench, built, sketch_dir, env)
+        except Failure as e:
+            print(str(e))
+            return {"verdict": "fail", "why": "upload failed", "output": str(e)}
+
         import serial
+        # Opened *after* the upload, not before. The WCH-Link is one composite
+        # device: probe-rs drives its debug endpoint while this would be holding
+        # its CDC endpoint, and this bench answers that with "bulk read timed
+        # out" and then stops identifying the chip at all until the USB is
+        # re-attached. Holding the port open used to be necessary to catch a
+        # banner printed once; it is not, now that the banner repeats.
         with serial.Serial(bench.port, bench.baud, timeout=0.3) as uart:
             uart.reset_input_buffer()
-            try:
-                upload(bench, built, sketch_dir, env)
-            except Failure as e:
-                print(str(e))
-                return {"verdict": "fail", "why": "upload failed",
-                        "output": str(e)}
-            deadline = time.time() + bench.seconds
-            got = b""
-            while time.time() < deadline:
-                got += uart.read(256)
+            link = Link(uart)
+            # The banner repeats every half second, so there is nothing to
+            # catch in time - waiting is enough however long the flash took.
+            banner = f"{name} READY"
+            window = max(bench.seconds, 10.0)
+            needed_reset = False
+            if not link.wait(banner, window):
+                # Say so rather than absorbing it: a bench that needs the reset
+                # every time is broken, and hiding that would make this lie.
+                needed_reset = reset_target(bench)
+                print("   no banner; reset the target and waited again"
+                      if needed_reset else
+                      "   no banner, and the target could not be reset")
+                if not (needed_reset and link.wait(banner, window)):
+                    link.drain(1.0)
+                    show(link.text)
+                    return {"verdict": "fail", "output": link.text,
+                            "why": f"no '{banner}': the sketch is not running. "
+                                   f"Check that the board boots from flash - "
+                                   f"probe-rs run reports the PC"}
+            # Then a token, because this runner flashes sketches back to back:
+            # every sketch answers PING, so a PONG the last one left in the
+            # probe's FIFO would answer a bare PING. A number chosen just now
+            # cannot be in output produced before it was chosen, and reading up
+            # to it is what discards the rest.
+            if not handshake(link):
+                link.drain(1.0)
+                show(link.text)
+                return {"verdict": "fail", "output": link.text,
+                        "why": "banner but no PONG: Serial RX is probably not "
+                               "wired (the probe's TX to the board's RX)"}
+            missed = replay(link, name, script, bench.seconds)
 
-    text = got.decode(errors="replace")
-    print("--- output " + "-" * 48)
-    print(text.strip() or "(nothing received)")
-    print("-" * 59)
-    # Generic rules first: they cover the sketches that self-check on the
-    # target, where the pytest file's expectations are parametrised f-strings.
+    text = link.text
+    show(text)
+    if missed:
+        return {"verdict": "fail", "why": f"never arrived: {missed}",
+                "output": text}
+    # Generic rules, which also cover the steps whose text the test file
+    # parametrises and this runner therefore had to skip.
     if "FAIL" in text:
         bad = [ln for ln in text.splitlines() if "FAIL" in ln]
         return {"verdict": "fail", "why": f"the sketch reported {bad}",
@@ -480,17 +660,46 @@ def run_one(name, bench: Bench) -> dict:
     if counts and any(c != "0" for c in counts):
         return {"verdict": "fail", "why": f"reported failures={counts}",
                 "output": text}
-    missing = [w for w in expect if w not in text]
-    if missing:
-        return {"verdict": "fail", "why": f"missing {missing}", "output": text}
-    if not expect and not counts:
+    replayed = sum(1 for verb, _ in script if verb != "write")
+    if not replayed and not counts:
         return {"verdict": "skip", "output": text,
                 "why": f"nothing to check against - test_{name}.py has no "
                        f"literal expectations and the sketch reports no "
                        f"failure count"}
-    detail = f"{len(expect)} expectations" if expect else "no failures reported"
     return {"verdict": "pass", "output": text,
-            "why": detail + (f", failures={counts[-1]}" if counts else "")}
+            "why": ", ".join(part for part in (
+                f"{replayed} expectations" if replayed else "",
+                f"failures={counts[-1]}" if counts else "",
+                "needed a reset after the upload" if needed_reset else "")
+                if part)}
+
+
+def replay(link: Link, name: str, script: tuple, seconds: float) -> list:
+    """Run the test file's script, and return the steps that never arrived.
+
+    A sketch whose test writes nothing still gets the standard RUN, so a new
+    case works here before anyone has written its expectations down.
+    """
+    missed = []
+    if not any(verb == "write" for verb, _ in script):
+        link.send("RUN\n")
+    for verb, text in script:
+        if verb == "write":
+            link.send(text if text.endswith("\n") else text + "\n")
+            continue
+        ok = (link.wait(text, seconds) if verb == "expect"
+              else link.match(text, seconds))
+        if not ok:
+            missed.append(text)
+            break
+    # The done line is the sketch's own verdict, so it is waited for - unless
+    # the script already consumed it, in which case waiting again would sit
+    # through the timeout collecting banners for a line that will not come.
+    done = f"{name} done failures="
+    if not any(verb != "write" and done in text for verb, text in script):
+        link.wait(done, max(seconds, 30.0))
+    link.drain(0.3)
+    return missed
 
 
 MARK = {"pass": "PASS", "fail": "FAIL", "skip": "SKIP"}
@@ -501,7 +710,15 @@ def run(sketch=DEFAULT_SKETCH, bench: Bench = None, **kw) -> dict:
     if bench is None:
         bench = resolve_bench(**kw)
     results = {}
-    for name in sketch_names(sketch):
+    names = sketch_names(sketch)
+    for i, name in enumerate(names):
+        if i:
+            # A moment between cases. Back-to-back flash sessions are where
+            # this bench produces "bulk read timed out", and once it does the
+            # probe stops answering until the USB is re-attached. Not a fix -
+            # the retry and the reset in run_one are - but it costs a second
+            # and makes a sweep of eleven sketches finish more often.
+            time.sleep(float(os.environ.get("CH32_SETTLE", 1.5)))
         print(f"\n===== {name}")
         results[name] = r = run_one(name, bench)
         print(f"{MARK[r['verdict']]} {name}: {r['why']}")

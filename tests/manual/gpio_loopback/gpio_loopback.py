@@ -34,12 +34,15 @@ Setup:
        cd tests
        uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
 
+    The sketch speaks the command protocol (tests/sketches/testcmd.h): setup()
+    only announces itself and the checks run when the host sends RUN, so a
+    missing jumper fails a named check rather than producing a silence that
+    could equally be a board that never booted.
+
     A pad that does not exist on the package is a compile error naming it, and
     a missing jumper fails `level_through_wire` rather than passing silently -
     the test drives both levels, because a floating input often reads HIGH.
 """
-import pytest
-
 CHECKS = [
     "pins_differ",
     "pins_valid",
@@ -53,20 +56,24 @@ CHECKS = [
 ]
 
 
-def test_starts(dut) -> None:
+def test_gpio_loopback(dut) -> None:
     """
-    Expected result (pass):  the sketch prints its banner and the pads it uses.
-    Expected result (fail):  nothing arrives - check the Serial wiring first,
-                             with `uv run tests/manual/smoke/smoke.py --board <board>`.
+    Expected result (pass):  every check below reports PASS.
+    Expected result (fail):  the banner never arrives - check the Serial wiring
+                             first, with
+                             `uv run tests/manual/smoke/smoke.py --board <board>`.
+                             A missing jumper fails `level_through_wire`, not
+                             the banner: the sketch drives both levels, because
+                             a floating input often reads HIGH.
     """
-    dut.expect_exact("gpio_loopback begin")
+    dut.expect_exact("gpio_loopback READY", timeout=20)
+    dut.write("RUN\n")
 
+    # The pads are the first thing to look at when a check fails: they come from
+    # tests/.env through conftest.py, and these are the numbers the sketch was
+    # actually compiled with.
+    dut.expect(r"out=\d+ in=\d+")
 
-@pytest.mark.parametrize("check", CHECKS)
-def test_check(dut, check: str) -> None:
-    """Each check prints "<name> PASS" or "<name> FAIL <detail>"."""
-    dut.expect_exact(f"{check} PASS")
-
-
-def test_no_failures(dut) -> None:
+    for name in CHECKS:
+        dut.expect_exact(f"{name} PASS")
     dut.expect_exact("gpio_loopback done failures=0")

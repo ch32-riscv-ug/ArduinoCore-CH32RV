@@ -194,6 +194,65 @@ wlink status → Connected to WCH-Link v2.12(v32) (WCH-Link-CH549)
 
 `program.pattern`が`{serial.port}`を参照する場合はportが必須になる。参照しなければ不要。
 
+### probeが固まる条件と戻し方(2026-08-22実測)
+
+`bulk read timed out` / `bulk write timed out`は1回の再試行で通ることが多いが、
+**通らなかったあとはprobeがchipを認識しなくなる**。
+
+```text
+Error: ... Failed to erase flash sector at address 0x00001500.
+        Failed to start running code on the CPU ... bulk write timed out
+→ 以降 probe-rs info が「target chip not identified」を返し続ける
+```
+
+この日の観測では**最大のsketch(`core_api`、16700バイト)で起きた**。
+sketchを連続で焼くと、そこから後ろが全部落ちる。
+
+戻し方は**USBの再接続**で、WSLからは次の2行。
+
+```sh
+usbipd.exe detach --busid <busid>
+usbipd.exe attach --wsl --busid <busid>
+```
+
+`USBDEVFS_RESET`は使わない(過去に別の壊れ方をした)。
+
+`smoke.py`はuploadを1回だけ再試行し、**再試行したことを表示する**。
+さらにbannerが来なければ`probe-rs reset`を1回だけ試し、これも表示する
+——bannerが繰り返すようになったので、resetが本命の出力の頭を食べる心配は無くなった。
+どちらも「毎回必要ならbenchが壊れている」ことが見えるように、黙って吸収はしない。
+
+### 「書けるのに動かない」を切り分ける(2026-08-22実測)
+
+uploadが成功しても**targetがflashから起動していない**ことがある。この日CH32V103で
+遭遇したものは、症状だけ見ると過去のfirmware 2.11の件と区別がつかない。
+
+| 観測 | 値 |
+|---|---|
+| `probe-rs download --reset` | rc=0、`Finished in 4.97s` |
+| UART出力 | 何も出ない(**committed版のsketchでも同じ**) |
+| `probe-rs read b32 0xE000F004`(V103のSysTick CNT) | `00000000`のまま |
+| `probe-rs run <elf>` | `Firmware exited unexpectedly: Breakpoint(Software)`、`@ 0x20000018` |
+| `probe-rs reset` | `disable_debug_module: ... DtmOperationFailed`(2.11の症状) |
+| probeのUSB再接続(`usbipd.exe detach`/`attach --wsl`) | 変化なし |
+
+**PCがSRAM領域(`0x2000_0018`)にある**のが決定的で、flashのreset vectorから
+走り出していない。SPも壊れていて(`Stack pointer is too far away to unwind`)、
+`0x20000018`はELF上`Serial3`というRAMのオブジェクトの中に落ちる。
+つまりコアは**動いてはいるが、SRAMのゴミを実行している**。
+
+有力な仮説は**BOOTピンの状態**(このboardはジャンパがある)。同じboardが同じ日の
+午前中には正常に動いていて、その間に一度**物理的に外して戻している**。
+確定はしていないので、boardを見られるときに次の順で確認する。
+
+1. BOOT0 / BOOT1ジャンパの位置(flash起動になっているか)
+2. 電源とGNDの結線
+3. それでも駄目なら`probe-rs erase` → 再download
+
+**切り分けの型として残す価値があるのは、`probe-rs run`でPCを見ること**。
+「UARTに何も出ない」は配線・クロック・起動の3つを区別しないが、
+PCがflash領域にあるかSRAM領域にあるかは一目で分かる。
+
 ### 当面の扱い
 
 - 単一DUTで進む限りこの制約は開発をblockしない

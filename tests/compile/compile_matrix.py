@@ -11,7 +11,7 @@ change in code size has to be acknowledged rather than noticed later.
 
   uv run tests/compile/compile_matrix.py <workdir>
 
-Normally reached through `pytest` (tests/test_compile_matrix.py); the direct
+Normally reached through `pytest` (tests/compile/test_compile_matrix.py); the direct
 form is for iterating on a failure.
 
 Runs in symlink mode - the working tree *is* the platform - so it tests

@@ -10,7 +10,7 @@ import pathlib
 
 import pytest
 
-from conftest import load
+from loader import load
 
 harness = load("tools/index/install_check.py", "install_check")
 

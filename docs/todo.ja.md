@@ -49,7 +49,7 @@
 - [x] `dtostrf`: upstreamの`.c.impl`をincludeする`cores/arduino/dtostrf.c`を置いた
 - [x] `Arduino.h`から`api/ArduinoAPI.h`をinclude。**`api/`はinclude pathへ入れず`api/`付きで書く**規律を維持
 - [x] `F_CPU`とHCLKの一致を担保。compile時は
-      [tests/test_clock_prescaler.py](../tests/test_clock_prescaler.py)が
+      [tests/unit/test_clock_prescaler.py](../tests/unit/test_clock_prescaler.py)が
       両符号化 × 19比でfield値を`_Static_assert`し、表現できない7比が`#error`になることも
       確認する(27 case、実機不要、0.4秒)。実機側はboard rateが`F_CPU`から計算されるため、
       **分周した状態でSerialが化けないこと**が一致の証明になる。
@@ -304,7 +304,7 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
       Arduinoは**ライブラリ経由でしかexamplesを配れない**ためで、
       ESP32も同じ理由で`libraries/ESP32/`に`src/dummy.h`を置いている。
       こちらは同じファイルに「レジスタの逃げ道」という仕事を与えた(`CH32.h`)
-- [x] **全examplesをCIでコンパイル**する([tests/test_examples.py](../tests/test_examples.py))。
+- [x] **全examplesをCIでコンパイル**する([tests/compile/test_examples.py](../tests/compile/test_examples.py))。
       X035とV003の2 board。現在11 example
 - [x] 各ライブラリに`keywords.txt`を置いた
 - [x] **決定(2026-08-21、ユーザ指示): 同梱ライブラリの方針を承認**
@@ -318,7 +318,7 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 - [x] **全ライブラリに`README.md`と`README.ja.md`を置いた**。
       使い方だけでなく**注意事項**(プルアップは自前・timeoutの意味・
       slave未実装・timer共有・サーボの電源・SDIはhost側の準備が要る、等)を書いた。
-      `tests/test_examples.py`がREADME 2本と`keywords.txt`の存在を検査する
+      `tests/compile/test_examples.py`がREADME 2本と`keywords.txt`の存在を検査する
 - [ ] `[P2]` examplesをさらに増やす。実デバイスを使う例(EEPROM/LCD/センサ)は、
       外部ライブラリに依存しない範囲でどこまでやるかを決めてから
 
@@ -453,6 +453,32 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 - [ ] `[P2]` HSE対応。boardごとの水晶有無・周波数をvariantへ持たせる。**X035はHSE非搭載のため対象外**
 
 ## ボード定義の生成
+
+- [ ] `[P1]` `[要判断]` **上流`c2c457d`を取り込むかの判断**(2026-08-22時点、pinは`b1285de`のまま)。
+      F-2(CH32V20xの`AFIO_PCFR2_`)が上流で解決し、`systick.csv`も入った。
+      ただし`--check`を当てると**7 variantが「既存行の書き換え」**になり、
+      中身は追加ではなく**喪失側**が多い。取り込み前に上流へ確認するのが筋に見える。
+
+      | variant | 差分 |
+      |---|---|
+      | CH32V407 / CH32V467 | **SPI3の既定routeがPB3/PB4/PB5 → PC10/PC11/PC12**。route 0が消えてcount 2→1。SPI1もremap routeを失う |
+      | CH32V208 | **ADC channel A0〜A4・A6・A7が消える**(16→9)。USART3の既定がroute default(PB10/PB11) → remap-1、対象部品も3/4→2/4 |
+      | CH32V205 | **PWM padが全滅**(1→0)。`CH32_PWM_*`ごと消えるので`analogWrite()`が効かなくなる |
+      | CH32M030 | PWM pad PB2/PB3が消える(10→8) |
+      | CH32V007 / CH32X033 | I2C1のroute 1本ずつ消失(5→4) |
+
+      F-2で意図したのは**7 selectorの追加**(V203/V208 `USART4`、V30x `TIM5CH4_RM`)で、
+      上の喪失はそれとは別物に見える。新しい2段条件
+      「(a) RMがpad経路を述べ (b) その signal が部品のpin表にもある」の副作用か、
+      `pin_functions.csv`の行数変更(F-1/F-4系の修正)由来かは**未確認**。
+      なお**CH32V203は差分に出ていない**——F-2の主目的だった部品なので、
+      そこも合わせて聞きたい。
+      新しい警告も1件出る: `CH32V003: clock_init step(s) not emitted: step 6 (trim)`
+- [ ] `[P2]` **`systick.csv`が入ったのでCH32V103のSysTick配置をデータ由来にできる**。
+      いま`cores/arduino/ch32_registers.h`に手書きしてあるoffsetと、
+      「カウンタはbyte writeのみ」という制約(`CH32_SYSTICK_WRITE8`)は、
+      上流表の`offset`と`write_bits`にそのまま載っている。
+      54行、`basis=evt(core_riscv.h)`。取り込み判断の後に着手する
 
 - [x] 割込みvector tableを`tools/generate/interrupts/interrupts.csv`へ配置(13 variant / 904 slot)。
       `generate.py`が`vectors_*.inc`を生成、`import_vectors.py --check`をCIへ追加
@@ -625,6 +651,27 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       Board Manager配布物としての検証項目
 - [x] `tests/hardware/` → **`tests/manual/`**へ移動し、`chip_info.py`(chip/probe/port/FQBN判定)を追加。
       `test_`プレフィックスを付けないので`pytest`一括実行に混ざらない
+- [x] **`tests/`直下の12本の`test_*.py`をカテゴリのディレクトリへ移した**(2026-08-22)。
+      `generated/` `vendor/` `startup/` `compile/` `sizebench/` `package/`
+      `sketches/` `unit/` `manual/`の9つで、入口(`test_*.py`)とharnessを同居させる。
+      規約そのものは[`unit/test_tests_layout.py`](../tests/unit/test_tests_layout.py)が
+      検査する——直下に実行可能ファイルを置かない、宣言のないディレクトリを作らない、
+      `manual/`に`test_`を付けない、同じファイル名を2箇所に置かない、
+      **収集されるconftest.pyは1つだけ**。
+      `dist/`という名前は避けた。**pytest既定の`norecursedirs`に`dist`が入っている**ので、
+      除外リストを一行簡略化した日にinstall testが静かに消える
+- [x] **収集されるconftest.pyを2つにすると壊れることが分かった**(同日、実際に踏んだ)。
+      pytestは全conftest.pyを`conftest`という同じmodule名でimportするため、
+      `tests/sketches/conftest.py`を置いた瞬間に`tests/conftest.py`がsys.modulesから
+      消え、`from conftest import load`をしている7本が
+      `ImportError: cannot import name 'load'`で落ちた。**どちらのファイルも
+      エラーには出てこない**。sketch側のhost実装は`sketches/testcmd.py`という
+      普通のmodule名にし、`tests/conftest.py`が`tc` fixtureとして配る形にした
+- [x] **`pytest --clean`が全体に効くようにした**。`--clean`は
+      `pytest-embedded-arduino-cli`のoption(本来は`arduino-cli compile --clean`)。
+      `tests/conftest.py`が相乗りして`.pytest_cache`・`__pycache__`・
+      前回のscratchディレクトリも消し、header行に消した数を出す。
+      `.tools`と`~/.arduino15`は**消さない**——結果は変わらず実行が1時間伸びるだけ
 - [x] `sketch.yaml`のprofile一覧を`sync_profiles.py`で生成。`compile_all.py`が
       **全sketch × 全profile boardをcompile**するのでCIに載せた
 - [x] `install_check.py`にupgrade/rollback、受け入れsketchのcompile、
@@ -684,7 +731,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       `tests/sketches/sync_profiles.py`、`tools/index/fetch_tools.py`、
       `tools/generate/generate.py`(いずれも生成・取得系で、testではない)
 - [x] **profile経由のbuildをCIへ追加**
-      ([tests/test_sketch_profile_build.py](../tests/test_sketch_profile_build.py))。
+      ([tests/sketches/test_sketch_profile_build.py](../tests/sketches/test_sketch_profile_build.py))。
       `arduino-cli compile --profile`は**index経由**でplatformを解決する経路で、
       compile sweep(`--fqbn`+作業ツリー)ともinstall test(index install+`--fqbn`)とも別。
       利用者に案内しているのはこの経路。**30通り / 72秒**、`install-test` jobへ相乗り
@@ -749,7 +796,8 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       `uart_scan`の「どの経路も届かない」の**両方の正体**だった。配線もコードも正常。
       皮肉なことに、これで実機シリアルが使えずレジスタ読みに追い込まれた結果、
       **CH32V103のSysTickバグ(P0)が見つかった**
-- [ ] `[P1]` **`smoke.py`が前のsketchの出力を読むことがある**(2026-08-22、CH32V103で顕在化)。
+- [x] **`smoke.py`が前のsketchの出力を読むことがある**(2026-08-22、CH32V103で顕在化。
+      **同日、コマンド規約の導入で解決**——下記「コマンド規約」を参照)。
       手順は「ポートを開く→`reset_input_buffer()`→upload→`seconds`秒読む」だが、
       **`reset_input_buffer()`はhost側のバッファしか捨てず、probe内のFIFOは残る**。
       さらに前のsketchは**upload中ずっと出力し続ける**(CH32V103は書き込みに7〜10秒)。
@@ -764,9 +812,45 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       (3)リセットの非同期化——変わらず(3 PASS)、
       (4)drain廃止+窓を12秒——**4 PASSまで改善**したが5本落ちる。
       捨てるべき古い出力と残すべき新しい出力が**同じ経路を通る**ので、
-      時間だけでは区別できないのが本質。pytest-embedded側の仕組み
-      (port を upload 前から開き続ける)を流用する方向で見直すのが筋に見える。
-      投機的な変更は残さず`smoke.py`はcommitted状態へ戻した
+      時間だけでは区別できないのが本質。投機的な変更は残さず一旦committed状態へ戻し、
+      **受信側の工夫ではなくプロトコルで解いた**(次項)
+- [x] **実機testのコマンド規約を導入した**(2026-08-22)。
+      [`tests/sketches/testcmd.h`](../tests/sketches/testcmd.h)(target)と
+      [`testcmd.py`](../tests/sketches/testcmd.py)(host)。全11 sketchを載せ替え。
+      仕様は[tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md)。
+      `setup()`は`tc_begin()`(=`Serial.begin`と`"<name> READY"`)だけ、
+      判定は`loop()`が`RUN`を受けてから走らせる。
+      **同期の要は`PING <token>` → `PONG <token>`のtoken**。
+      `READY`だけでは足りない——全sketchが`PING`に答える以上、
+      **前のsketchが残した`PONG`が今の`PING`の答に見える**。
+      ホストがいま決めた数字は、それ以前に作られた出力には入っていない。
+      副次的な効果が2つある。
+      (1) `setup()`で20秒かかるtestが「起動しないboard」と区別できる。
+      (2) `hooks_selftest`/`serial_echo`が`smoke.py`でSKIPされなくなった(下記)。
+      `arduino-cli`はsketchフォルダの外をコンパイルしないので、
+      `testcmd.h`は**各caseへコピーを配る生成物**にした
+      ([`sync_testcmd.py`](../tests/sketches/sync_testcmd.py)、
+      `--check`は`generated/test_generated.py`が回す)。
+      代替(`../testcmd.h` / `-I`をbuild propertyで / caseごとにsymlink)は
+      それぞれbuildディレクトリの位置・4つのcallerの取りこぼし・Windowsで破綻する
+- [x] **`gpio_loopback`もコマンド規約へ載せ替えた**。同じ壊れ方をしていた——
+      `dut`はfunction scopeなので、`setup()`で全部出力して1行ずつ`expect`する形は
+      ファイル先頭の1本しか通り得ない。`testcmd.h`の配布対象を
+      `manual/*/sketch.yaml`にも広げてある。
+      X035とV307でcompile確認(V003は`PA0`/`PB0`が無く**変更前から**compileできない。
+      padは`.env`で指定するもので、既定値は作者のX035配線)
+- [ ] `[P2]` **`crt0_probe`は規約に載せていない**。自前のharnessでmodule scopeの
+      captureを1回だけ行う形なので上記の破綻はしないが、
+      probe内FIFOの残骸を読む可能性は残る。markerは起動時に変数へ記録しているので、
+      **印字だけ`RUN`待ちにすれば**規約に載る
+- [ ] `[P1]` **コマンド規約を実機で検証していない**(2026-08-22時点)。
+      全11 sketch × 6 boardのcompileは通っているが、
+      作業台のCH32V103が**flashではなくSRAMから起動している**らしく
+      (`probe-rs run`が`Breakpoint(Software)` @ `0x20000018`=SRAM領域を報告、
+      SysTick CNTは0のまま、UART出力なし)、**committed版のsketchでも同じ**。
+      よってコード起因ではなくBOOTジャンパ等の物理状態。
+      probeのUSB再接続(`usbipd.exe detach`/`attach --wsl`)では戻らない。
+      **boardを見られる状態になったら`smoke.py --sketch all`を回す**
 - [x] **`uart_scan`がremapを要する経路を1つも試せていなかった**。
       `load_remap_fields`が`(series, kind, index)`の3要素キーを返すのに
       `remap.get((series, index))`と2要素で引いていて常に`None`。
@@ -833,14 +917,13 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       しかも割込みを有効化する前**に撃っていた。`timer_set()`からUGを外し、
       ISRではATRLRを書くだけにした(次の周期から自動で反映される)。
       **CH32V307VCT6 @96 MHzで全10項目PASS**
-- [ ] `[P2]` **`hooks_selftest`と`serial_echo`はどのboardでもSKIPされている**。
-      この2つはtestが`dut.write()`で対象を駆動するが、`smoke.py`はlisten専用。
-      本来の経路は各sketchの`test_<case>.py`(`dut` fixture)だが、それは
-      `sketch.yaml`のprofile経由で**未公開のpackage index**を要求する。
-      `test_sketch_profile_build.py`がloopbackでindexを配信する仕組みを持っているが
-      **build専用**で、実機へ焼いて`dut`で駆動する経路が無い。
-      `hooks_selftest`はX035で個別に検証済みなので穴は小さいが、
-      **boardを替えたときに自動で回らない**のは事実
+- [x] **`hooks_selftest`と`serial_echo`がどのboardでもSKIPされていたのを解消**。
+      `smoke.py`はlisten専用だったので、`dut.write()`で対象を駆動するtestを
+      再現できず飛ばしていた。コマンド規約の導入で駆動できるようになったので、
+      `smoke.py`は**各caseの`test_<case>.py`をASTで読み、`dut.write` /
+      `dut.expect_exact` / `dut.expect`の並びをソース順に再生する**ようにした。
+      testが1関数の素直なscriptなのでそのまま写せる。
+      判定の正本が1箇所のままなので、sketchを足してもsmoke側は変更不要
 - [x] **`tone()`の無効ピン規則を直した**。`noTone()`が
       `pin == tone_pin || !digitalPinIsValid(pin)`で止めていたため、
       **存在しないピンを渡すと別ピンで鳴っているtoneが止まっていた**。

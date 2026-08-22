@@ -5,24 +5,24 @@ called, yield() was not weak, and serialEvent() was never dispatched because
 main() did not call serialEventRun(). The sketch overrides all three, so a
 regression shows up either as a link error or as a missing PASS.
 
+Two steps, because serialEvent() needs input the command reader must not eat:
+RUN does the first two checks and then stops reading, and the plain line sent
+afterwards is what reaches the hook.
+
     uv run pytest sketches/basic/hooks_selftest --profile ch32x035
 """
-import pytest
-
-CHECKS = ["initVariant_called", "yield_called"]
 
 
-@pytest.mark.parametrize("name", CHECKS)
-def test_check_passes(dut, name: str) -> None:
-    dut.expect_exact(f"{name} PASS")
+def test_hooks_selftest(dut) -> None:
+    dut.expect_exact("hooks_selftest READY", timeout=20)
+    dut.write("RUN\n")
+    dut.expect_exact("initVariant_called PASS")
+    dut.expect_exact("yield_called PASS")
 
-
-def test_serial_event_is_dispatched(dut) -> None:
-    """serialEvent() needs input, so the test provides it."""
+    # From here the sketch is not reading commands, so this line reaches
+    # serialEvent() instead of the command buffer. That is the check.
     dut.expect_exact("hooks_selftest send a line now")
-    dut.write("ping\n")
+    dut.write("a line for serialEvent\n")
     dut.expect_exact("serialEvent_called PASS")
 
-
-def test_no_failures(dut) -> None:
     dut.expect_exact("hooks_selftest done failures=0")

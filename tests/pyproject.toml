@@ -15,11 +15,27 @@ dependencies = [
 ]
 
 [tool.pytest.ini_options]
-# The whole tree, not just sketches/: the build harnesses have pytest wrappers
-# beside conftest.py so `pytest` is one entry point. manual/ is reached only by
-# naming a file, because its files deliberately have no test_ prefix.
+# One entry point for everything: `pytest` walks the whole tree and each kind of
+# check lives in its own directory (generated, vendor, startup, compile,
+# sizebench, package, sketches, unit). The layout itself is a test - see
+# unit/test_tests_layout.py - so a stray file at the root fails rather than
+# quietly running from the wrong place.
+#
+# `.` rather than the eight directories by name: a new category that nobody
+# remembered to list here would be collected silently by the first form and
+# silently *not* collected by the second, and a check that never runs is worse
+# than one that runs in the wrong order.
 testpaths = ["."]
-norecursedirs = [".venv", "manual", "*/build", ".tools"]
+# This replaces pytest's default list rather than adding to it, so everything
+# that has to stay out is named here - including the dot-directories the
+# default `.*` entry used to cover.
+#   manual   flashes the attached board; reached only by naming a file
+#   */build  harness scratch, when a run was interrupted mid-compile
+# Nothing is called `dist` on purpose: that name is in pytest's own default
+# list, so a directory with it would vanish from collection the day this line
+# is simplified. The Board Manager install test lives in package/.
+norecursedirs = [".venv", ".tools", ".git", ".pytest_cache", "__pycache__",
+                 "manual", "*/build"]
 addopts = "-ra --strict-markers"
 # pytest-embedded pulls in record_xml_attribute for every test, which warns
 # about being experimental even for tests that never touch a board.

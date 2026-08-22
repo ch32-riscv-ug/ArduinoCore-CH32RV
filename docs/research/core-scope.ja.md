@@ -139,7 +139,7 @@ IDEの警告を黙らせるためだけの`src/dummy.h`を置いている。
 
 ### CIで焼く
 
-[tests/test_examples.py](../../tests/test_examples.py)が**全examplesを2 boardでコンパイル**する
+[tests/compile/test_examples.py](../../tests/compile/test_examples.py)が**全examplesを2 boardでコンパイル**する
 (X035=主対象、V003=下限)。examplesはテストに触られない唯一のコードなので、
 放っておくと真っ先に腐る。現在11 example × 2 board。
 

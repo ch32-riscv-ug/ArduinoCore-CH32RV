@@ -34,6 +34,21 @@ def test_sketch_profiles_are_in_sync(repo):
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
 
+def test_the_command_protocol_header_is_in_sync(repo):
+    """Every sketch's testcmd.h is the copy sync_testcmd.py would write.
+
+    arduino-cli only compiles what is inside the sketch folder, so the shared
+    header is distributed rather than included from above. A copy edited in
+    place would work on the bench and fail nowhere else, which is exactly the
+    kind of drift a generated file is supposed to make impossible.
+    """
+    proc = subprocess.run(
+        ["uv", "run", "--no-project", "python", "tests/sketches/sync_testcmd.py",
+         "--check"],
+        cwd=repo, capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
 def test_every_table_read_goes_through_read_table(repo):
     """The lock can only list inputs it is told about.
 

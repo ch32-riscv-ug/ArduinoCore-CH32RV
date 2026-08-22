@@ -10,33 +10,19 @@ deliberately not fetched into .tools. Without them the test skips rather than
 failing a machine that simply does not have them.
 """
 import os
-import pathlib
 
 import pytest
 
-from conftest import load
+from loader import load
 
 pytestmark = pytest.mark.slow
 
 harness = load("tests/startup/startup_equivalence.py", "startup_equivalence")
 
-# Where the mirrors usually sit on a bench that has them.
-LIKELY = (pathlib.Path.home() / "dev_wch", pathlib.Path.home() / "mirrors")
-
-
-def mirror_root():
-    env = os.environ.get("CH32_MIRROR_ROOT")
-    if env:
-        return env
-    for d in LIKELY:
-        if (d / "CH32V003" / "EVT").is_dir():
-            return str(d)
-    return None
-
 
 @pytest.fixture(scope="module")
 def families(repo, gcc_bin, workdir):
-    root = mirror_root()
+    root = harness.find_mirror_root()
     if root is None:
         pytest.skip("no EVT mirrors; set CH32_MIRROR_ROOT to the directory "
                     "holding the CH32* clones")

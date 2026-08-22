@@ -21,6 +21,8 @@
 // Pick two pads on DIFFERENT ports that nothing else on the board drives, and
 // never the SWD pads (PA13/PA14, or PC18/PC19 on X033/X035) - driving those
 // kills the debug connection mid-run.
+#include "testcmd.h"
+
 #if __has_include("env_config.h")
 #include "env_config.h"
 #endif
@@ -31,28 +33,11 @@
 #define LOOPBACK_IN  PB0
 #endif
 
-static int failures = 0;
-
-static void check(const char *name, bool ok, long detail = 0)
-{
-  Serial.print(name);
-  if (ok) {
-    Serial.println(" PASS");
-  } else {
-    Serial.print(" FAIL ");
-    Serial.println(detail);
-    failures++;
-  }
-}
-
 static volatile int edges = 0;
 static void on_edge() { edges++; }
 
-void setup()
+static void run_checks()
 {
-  Serial.begin(115200);
-  delay(1000);
-  Serial.println("gpio_loopback begin");
   // Printed as numbers: the pad names are macros, and the port-encoded value
   // is what every failure below is really about.
   Serial.print("out=");
@@ -60,9 +45,9 @@ void setup()
   Serial.print(" in=");
   Serial.println(LOOPBACK_IN);
 
-  check("pins_differ", LOOPBACK_OUT != LOOPBACK_IN);
-  check("pins_valid", digitalPinIsValid(LOOPBACK_OUT) &&
-                      digitalPinIsValid(LOOPBACK_IN));
+  tc_check("pins_differ", LOOPBACK_OUT != LOOPBACK_IN);
+  tc_check("pins_valid", digitalPinIsValid(LOOPBACK_OUT) &&
+                         digitalPinIsValid(LOOPBACK_IN));
 
   // --- the wire carries a level ---
   pinMode(LOOPBACK_OUT, OUTPUT);
@@ -75,7 +60,7 @@ void setup()
   bool low = digitalRead(LOOPBACK_IN) == LOW;
   // Both halves matter: a floating input often reads HIGH, so "high" alone
   // would pass with no jumper at all.
-  check("level_through_wire", high && low, (high ? 2 : 0) + (low ? 1 : 0));
+  tc_checkv("level_through_wire", high && low, (high ? 2 : 0) + (low ? 1 : 0));
 
   // --- the input's pull-up actually pulls ---
   pinMode(LOOPBACK_OUT, INPUT);       // let go of the line
@@ -85,8 +70,8 @@ void setup()
   pinMode(LOOPBACK_IN, INPUT_PULLDOWN);
   delayMicroseconds(200);
   bool pulled_down = digitalRead(LOOPBACK_IN) == LOW;
-  check("pullup", pulled_up);
-  check("pulldown", pulled_down);
+  tc_check("pullup", pulled_up);
+  tc_check("pulldown", pulled_down);
 
   // --- an edge on another port reaches EXTI ---
   pinMode(LOOPBACK_OUT, OUTPUT);
@@ -101,7 +86,7 @@ void setup()
   digitalWrite(LOOPBACK_OUT, LOW);
   delay(2);
   // RISING must not fire on the falling edge.
-  check("exti_cross_port", after_rise == 1 && edges == 1, edges);
+  tc_checkv("exti_cross_port", after_rise == 1 && edges == 1, edges);
   detachInterrupt(digitalPinToInterrupt(LOOPBACK_IN));
 
   // --- pulseIn measures a PWM output ---
@@ -111,19 +96,32 @@ void setup()
   analogWrite(LOOPBACK_OUT, 64);
   delay(5);
   unsigned long width = pulseIn(LOOPBACK_IN, HIGH, 20000);
-  check("pwm_duty_25pct", width > 150 && width < 400, (long)width);
+  tc_checkv("pwm_duty_25pct", width > 150 && width < 400, (long)width);
 
   analogWrite(LOOPBACK_OUT, 191);
   delay(5);
   unsigned long wide = pulseIn(LOOPBACK_IN, HIGH, 20000);
-  check("pwm_duty_75pct", wide > 550 && wide < 950, (long)wide);
-  check("pwm_duty_ordered", wide > width, (long)(wide - width));
+  tc_checkv("pwm_duty_75pct", wide > 550 && wide < 950, (long)wide);
+  tc_checkv("pwm_duty_ordered", wide > width, (long)(wide - width));
 
   digitalWrite(LOOPBACK_OUT, LOW);
-  Serial.print("gpio_loopback done failures=");
-  Serial.println(failures);
+  tc_done();
+}
+
+void setup()
+{
+  tc_begin("gpio_loopback");
 }
 
 void loop()
 {
+  const char *cmd = tc_ready();
+  if (!cmd) {
+    return;
+  }
+  if (!strcmp(cmd, "RUN")) {
+    run_checks();
+  } else {
+    tc_unknown(cmd);
+  }
 }

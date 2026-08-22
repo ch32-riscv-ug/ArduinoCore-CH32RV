@@ -4,8 +4,21 @@ Everything is reachable from one `pytest` run. What actually runs depends on
 what the machine can do, and that is decided here rather than in each test:
 
   pytest                      every check that needs no board and no profile
+  pytest --clean              the same, with every cache cleared first
   pytest --profile ch32x035 --port /dev/ttyACM4      adds the sketch tests
   pytest -m "not slow"        skips the multi-minute compile sweeps
+
+Collection is by directory, one per kind of check (generated, vendor, startup,
+compile, sizebench, package, sketches, unit). Only files named test_*.py are
+collected; manual/ is excluded outright and its entry points deliberately carry
+no test_ prefix, so nothing a bare `pytest` picks up ever flashes a board.
+See tests/TEST_PLAN.ja.md.
+
+Kept small on purpose. Nothing about the sketch command protocol is here: a
+hardware test talks to `dut` directly - wait for the repeated banner, send a
+command, read the answers - so it needs no fixture of ours. Shared code that is
+not a fixture goes in a normally-named module beside this one (loader.py),
+because a second conftest.py anywhere would replace this module in sys.modules.
 
 The harnesses are Python modules under tests/ and tools/, imported and called
 directly. They used to be shell scripts invoked as subprocesses, with the tests
@@ -13,7 +26,6 @@ asserting on marker strings in their output; three Windows-only bugs later
 (no shebang handling, bash 3.2 syntax, path separators) they are Python, and
 the tests assert on returned values instead of parsing prose.
 """
-import importlib.util
 import os
 import pathlib
 import shutil
@@ -21,16 +33,48 @@ import tempfile
 
 import pytest
 
-REPO = pathlib.Path(__file__).resolve().parents[1]
+from loader import REPO
 
 
-def load(relative_path, name):
-    """Import a harness that lives outside any package."""
-    path = REPO / relative_path
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+# --clean is pytest-embedded-arduino-cli's option: it passes --clean to
+# `arduino-cli compile` for the sketch builds it drives itself. That covers
+# tests/sketches and nothing else, so the rest of the suite is extended to mean
+# the same thing here - see _clean().
+def _clean_requested(config) -> bool:
+    return bool(config.getoption("--clean", default=False))
+
+
+def _clean(config):
+    """Remove what a previous run left behind, and say what went.
+
+    Deliberately narrow. Every harness already builds into a scratch directory
+    of its own and sets ARDUINO_DIRECTORIES_* alongside it, so almost nothing
+    survives a run - what does is pytest's caches and, when a run crashed or
+    CH32_KEEP_TMP was set, a scratch directory of a gigabyte or so.
+
+    Three things are left alone on purpose, because deleting them turns a
+    two-minute run into an hour and does not make it any more honest:
+      <repo>/.tools        provisioned toolchain and probe-rs, checksum-pinned
+      ~/.arduino15         arduino-cli's own data directory
+      pytest's tmp base    shared with every other project on the machine
+    A run that has to re-fetch tools is `uv run tools/index/fetch_tools.py`.
+    """
+    here = pathlib.Path(__file__).resolve().parent
+    targets = [here / ".pytest_cache", *here.rglob("__pycache__")]
+    # Scratch roots this suite creates itself: the contents go, the root stays.
+    base = _short_root()
+    if base is not None:
+        targets += sorted(base.iterdir())
+    removed = 0
+    for path in targets:
+        if not path.exists() or ".venv" in path.parts:
+            continue
+        shutil.rmtree(path, ignore_errors=True)
+        removed += 1
+    config.stash[_CLEANED] = removed
+
+
+_CLEANED = pytest.StashKey[int]()
 
 
 def pytest_configure(config):
@@ -38,23 +82,36 @@ def pytest_configure(config):
         "markers", "slow: takes minutes (the compile sweeps)")
     config.addinivalue_line(
         "markers", "hardware: needs a board attached")
+    if _clean_requested(config):
+        _clean(config)
+
+
+def pytest_report_header(config):
+    """Say that --clean ran, so a fast suite is not mistaken for a cached one."""
+    if _clean_requested(config):
+        return f"clean: removed {config.stash[_CLEANED]} cache/scratch directories"
+    return None
 
 
 def pytest_collection_modifyitems(config, items):
-    """Drop the sketch tests unless a profile was asked for.
+    """Drop the per-sketch tests unless a profile was asked for.
 
     They build and flash through a sketch profile, so without --profile there
     is nothing for them to select and pytest-embedded errors out. Silently
     collecting them would make a bare `pytest` fail on a machine that is
     perfectly able to run everything else.
+
+    What counts is being *a sketch case*, not living under tests/sketches:
+    tests/sketches/test_sketch_profiles.py and test_sketch_profile_build.py sit
+    beside the cases and drive arduino-cli themselves, with no dut and no
+    profile option. A case is a directory with a sketch.yaml in it.
     """
     if config.getoption("--profile", default=None):
         return
-    sketches = REPO / "tests" / "sketches"
     skip = pytest.mark.skip(reason="needs --profile (and a board, unless "
                                    "--run-mode build)")
     for item in items:
-        if sketches in pathlib.Path(str(item.fspath)).parents:
+        if (pathlib.Path(str(item.fspath)).parent / "sketch.yaml").exists():
             item.add_marker(skip)
 
 

@@ -11,11 +11,13 @@ import subprocess
 
 import pytest
 
-from test_startup_equivalence import mirror_root
+from loader import load
+
+harness = load("tests/startup/startup_equivalence.py", "startup_equivalence")
 
 
 def test_interrupts_csv_matches_evt(repo):
-    root = mirror_root()
+    root = harness.find_mirror_root()
     if root is None:
         pytest.skip("no EVT mirrors; set CH32_MIRROR_ROOT to the directory "
                     "holding the CH32* clones")

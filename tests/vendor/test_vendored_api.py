@@ -9,7 +9,7 @@ Needs network the first time (it clones upstream into the work directory).
 """
 import pytest
 
-from conftest import load
+from loader import load
 
 harness = load("tools/vendor/check_api_sync.py", "check_api_sync")
 

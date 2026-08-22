@@ -1,7 +1,15 @@
 /* The Arduino hooks a sketch is allowed to override.
  *
- * Wiring: none. The serialEvent() check needs the test to send a line, so it
- * only runs under pytest - the listen-only smoke runner skips this sketch.
+ * Wiring: none, but the serialEvent() check needs the host to send a line, so
+ * this sketch has one command beyond RUN. See tests/TEST_PLAN.ja.md.
+ *
+ *   RUN     initVariant / yield, then "hooks_selftest send a line now"
+ *   <any>   after that: any line at all, delivered to serialEvent()
+ *
+ * The second step is why loop() stops calling tc_ready() while it waits.
+ * main() runs loop() and then serialEventRun(), so a poll that drained the
+ * buffer would consume the very line serialEvent() is supposed to see - the
+ * hook would look broken when it is the test that ate the input.
  *
  * All four of these were broken at some point:
  *   - initVariant() was declared by the API and never called
@@ -12,6 +20,8 @@
  * Overriding them here is itself half the test: if any of them stops being a
  * weak symbol, this sketch fails to link.
  */
+#include "testcmd.h"
+
 static volatile bool saw_init_variant;
 static volatile uint32_t yields;
 static volatile bool saw_serial_event;
@@ -34,42 +44,53 @@ void serialEvent(void)
     saw_serial_event = true;
 }
 
-static int failures;
+/* millis() at which the wait for a line gives up, or 0 when not waiting.
+ * A hook that never fires has to fail rather than hang: silence is the one
+ * answer a host cannot tell apart from a dead board. */
+static uint32_t waiting_until;
 
-static void check(const char *name, bool ok)
+static void run_checks()
 {
-    Serial.print(name);
-    Serial.println(ok ? " PASS" : " FAIL");
-    if (!ok) {
-        failures++;
-    }
-}
-
-void setup()
-{
-    Serial.begin(115200);
-    while (!Serial) {
-    }
-    delay(50);
-    Serial.println("hooks_selftest start");
-
-    check("initVariant_called", saw_init_variant);
+    tc_check("initVariant_called", saw_init_variant);
 
     /* delay() calls yield() on every turn of its wait loop. */
     const uint32_t before = yields;
     delay(5);
-    check("yield_called", yields > before);
+    tc_check("yield_called", yields > before);
 
+    saw_serial_event = false;
+    waiting_until = millis() + 15000;
     Serial.println("hooks_selftest send a line now");
+}
+
+void setup()
+{
+    tc_begin("hooks_selftest");
 }
 
 void loop()
 {
-    static bool reported;
-    if (saw_serial_event && !reported) {
-        reported = true;
-        check("serialEvent_called", true);
-        Serial.print("hooks_selftest done failures=");
-        Serial.println(failures);
+    if (waiting_until) {
+        /* Deliberately no tc_ready() here - see the header comment. */
+        if (saw_serial_event) {
+            waiting_until = 0;
+            tc_check("serialEvent_called", true);
+            tc_done();
+        } else if ((int32_t)(millis() - waiting_until) >= 0) {
+            waiting_until = 0;
+            tc_check("serialEvent_called", false);
+            tc_done();
+        }
+        return;
+    }
+
+    const char *cmd = tc_ready();
+    if (!cmd) {
+        return;
+    }
+    if (!strcmp(cmd, "RUN")) {
+        run_checks();
+    } else {
+        tc_unknown(cmd);
     }
 }

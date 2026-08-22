@@ -11,7 +11,7 @@ could never fit in.
 
   uv run tests/sketches/compile_all.py <workdir>
 
-Normally reached through `pytest` (tests/test_sketch_profiles.py).
+Normally reached through `pytest` (tests/sketches/test_sketch_profiles.py).
 
 Board-specific limits belong in REQUIREMENTS in sync_profiles.py, not here:
 this only reports whether the generated profiles are honest.
@@ -28,6 +28,9 @@ sys.path.insert(0, str(REPO / "tests" / "compile"))
 
 from compile_matrix import (Failure, compile_one, gcc_bin,   # noqa: E402
                             link_platform, sandbox)
+
+sys.path.insert(0, str(HERE))
+from stage import stage_sketch                              # noqa: E402
 
 FQBN = re.compile(r"ch32-riscv-ug:ch32v:[A-Za-z0-9]+:pnum=[A-Za-z0-9]+")
 USED = re.compile(r"Sketch uses (\d+) bytes \((\d+)%\)")
@@ -54,14 +57,11 @@ def run(work: pathlib.Path) -> dict:
     for src, fqbn in combinations():
         name = src.name
         board = fqbn.split(":")[2]
-        # Copy the .ino out from under its sketch.yaml: with the profile file
-        # present arduino-cli resolves the platform through platform_index_url
-        # and ignores --fqbn, so the symlinked working tree would never be
-        # built. The copy also proves the sketch needs nothing else from its
-        # directory.
-        staged = work / "sketches" / name
-        staged.mkdir(parents=True, exist_ok=True)
-        shutil.copy(src / f"{name}.ino", staged)
+        # Staged out from under its sketch.yaml: with the profile file present
+        # arduino-cli resolves the platform through platform_index_url and
+        # ignores --fqbn, so the symlinked working tree would never be built.
+        # stage_sketch() decides what comes along - see sketches/stage.py.
+        staged = stage_sketch(src, work / "sketches" / name)
 
         build = work / "build"
         if build.exists():

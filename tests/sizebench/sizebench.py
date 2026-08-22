@@ -10,7 +10,7 @@ reproducible rather than being quoted from a one-off run.
 
   uv run tests/sizebench/sizebench.py <workdir>
 
-Normally reached through `pytest` (tests/test_sizebench.py).
+Normally reached through `pytest` (tests/sizebench/test_sizebench.py).
 
 Built against the real crt0 and sections.ld the core ships, not copies, so the
 numbers describe this platform rather than an approximation of it.

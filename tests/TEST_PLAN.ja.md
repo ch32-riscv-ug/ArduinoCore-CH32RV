@@ -100,7 +100,7 @@ tests/
   startup/     自動 — 統合crt0とEVT startupのELF等価性、割込みベクタ表
   compile/     自動 — 全122 part numberのcompile matrix、同梱examples、サイズ回帰
   sizebench/   自動 — newlibのサイズ計測
-  dist/        自動 — package index生成とBoard Managerからのclean install
+  package/     自動 — package index生成とBoard Managerからのclean install
   sketches/    自動 — sketch単位のAPIテスト(pytest + pytest-embedded)
   unit/        自動 — boardもbuildも要らない小さな検査
   manual/      手動 — 実機と人の操作が要るもの、および実機を扱う便利tool
@@ -116,10 +116,11 @@ tests/
 | `test_compile_matrix.py` | `compile/` | 全part numberがcompileでき、サイズが基準線と一致 |
 | `test_examples.py` | `compile/` | 同梱examplesが全部compileできる |
 | `test_sizebench.py` | `sizebench/` | newlibのサイズ計測harnessが動く |
-| `test_package_install.py` | `dist/` | 生成したindexからclean installできる |
+| `test_package_install.py` | `package/` | 生成したindexからclean installできる |
 | `test_sketch_profiles.py` | `sketches/` | 各sketch.yamlがboard一覧と同期 |
 | `test_sketch_profile_build.py` | `sketches/` | profile経由(loopback index)でbuildできる |
 | `test_clock_prescaler.py` | `unit/` | AHB分周器の符号化表(compile時assertのみ) |
+| `test_tests_layout.py` | `unit/` | 本節の規約そのもの(下記) |
 
 `sketches/`は**1 caseにつき1ディレクトリ**です。
 
@@ -127,8 +128,28 @@ tests/
 tests/sketches/<category>/<case>/
   <case>.ino
   sketch.yaml        profile = board。tests/sketches/sync_profiles.pyが生成
-  test_<case>.py     dut fixtureへのexpect
+  testcmd.h          コマンド規約の雛形。sync_testcmd.pyが配る生成物
+  test_<case>.py     1関数。バナーを待ち、コマンドを送り、順に読む
 ```
+
+`sketches/`直下には、全caseで共有するものを置きます。
+
+| ファイル | 役割 |
+|---|---|
+| `testcmd.h` | コマンド規約の雛形(原本)。各caseへコピーされる |
+| `sync_testcmd.py` | `testcmd.h`の配布と`--check` |
+| `sync_profiles.py` | `sketch.yaml`の`profiles:`生成と`--check` |
+| `stage.py` | buildディレクトリへ何をコピーするか。3つのharnessが共有 |
+| `compile_all.py` / `profile_build.py` | compile harness |
+
+ホスト側にモジュールはありません。testは`dut`を直接使います——バナーを待ち、
+コマンドを送り、順に読むだけなので、共有するものが無いからです。
+
+`sketches/conftest.py`も置いていません。**pytestは全conftest.pyを`conftest`という
+同じmodule名でimportする**ので、2つ目を置いた瞬間に`tests/conftest.py`が
+sys.modulesから消えます。共有コードは`conftest.py`ではなく普通の名前のモジュール
+([`loader.py`](loader.py))に置き、`from conftest import ...`は**1箇所もありません**
+([`unit/test_tests_layout.py`](unit/test_tests_layout.py)が検査)。
 
 `manual/`も**1 case = 1 ディレクトリ**で、`pytest`が入口です。`test_`プレフィックスは
 **付けず**、`manual`は`norecursedirs`にも入れてあります——引数なしの`pytest`が実機を
@@ -151,6 +172,40 @@ tests/manual/
 `chip_info` / `smoke` / `uart_scan`はCLIとしても動きます。対話的に作業台を見る場面の
 ためで、どちらの経路も同じ関数を呼びます。設定は`tests/.env`の環境変数です
 (pytestのoptionは増やしていません。`--port`と`--target`はpytest-embeddedのもの)。
+
+`dist/`という名前は使いません。**pytest既定の`norecursedirs`に`dist`が入っている**ため、
+`pyproject.toml`の除外リストを一行簡略化した日に収集対象から静かに消えます。
+消えたTestは緑に見えるので、名前の側で避けます。
+
+### `test_`プレフィックスの規約
+
+**プレフィックスの有無が「引数なしの`pytest`が実行するか」の唯一のスイッチ**です。
+ここを間違えると、どちらの向きでも緑のまま壊れます——実行されないTestは通ったように
+見え、実行されるべきでないTestは実機を焼きます。
+
+| 種類 | 名前 | 引数なし`pytest` | 例 |
+|---|---|---|---|
+| 自動Testの入口 | `test_<name>.py` | **実行する** | `compile/test_compile_matrix.py` |
+| sketch caseの入口 | `test_<case>.py` | `--profile`が要る(下記) | `sketches/basic/wire_selftest/test_wire_selftest.py` |
+| 手動Testの入口 | `<case>.py` | **実行しない** | `manual/smoke/smoke.py` |
+| harness(本体) | `<name>.py` | 実行しない(Test関数を持たない) | `compile/compile_matrix.py` |
+
+- **手動Testはプレフィックスを付けない**。中身は普通の`def test_*`関数なので、
+  ファイルを名指しすれば`pytest`で走ります。名指しが要ることが安全装置です。
+  加えて`manual`は`norecursedirs`にも入っています——二重にしてあるのは、片方だけだと
+  「`pytest manual/`と打った瞬間に焼ける」「いつか誰かがファイル名を間違える」の
+  どちらかが残るからです。
+- **sketch caseは`test_`を付ける**。ただし`sketch.yaml`のあるディレクトリのTestは
+  `--profile`が無ければ`tests/conftest.py`がskipにします。判定に使うのは
+  *`sketch.yaml`が隣にあるか*で、`tests/sketches/`配下かどうかではありません
+  ——`sketches/test_sketch_profiles.py`はcaseではなくcase一覧の検査だからです。
+- **harnessは`test_`を付けない**。単体でも`uv run`できるscriptで、pytestからは
+  `conftest.load()`が読み込みます。
+- 同じファイル名を2箇所に置かない。pytestはTest moduleをフラットな名前空間に
+  importするので、衝突は`import file mismatch`という分かりにくいエラーになります。
+
+この規約自体は[`unit/test_tests_layout.py`](unit/test_tests_layout.py)が検査します。
+新しいカテゴリを足すときは、そこの`CATEGORIES`と本節の表の両方に行を足してください。
 
 ---
 
@@ -221,54 +276,86 @@ probe種別・firmware版・chipで変わります。それなのに`setup()`で
 
 ### 規約
 
-**ホストが要求し、ボードが応答する。** `setup()`は最小限の初期化とバナーだけにし、
-判定は`loop()`でコマンドを受けてから走らせます。時間のかかるテストでも
-`setup()`で無反応にならないのが要点です。
+**ボードはバナーを繰り返し、聞かれるのを待つ。** `~/dev`配下の他プロジェクトと同じ形で、
+理由も同じです——書き込みツールがボードをリセットし、**そのあとで**コンソールが開くので、
+`setup()`の最初に印字したものは誰も聞いていないうちに終わっています。
+
+```text
+setup()   Serial.begin()だけ
+loop()    tc_ready() → 0.5秒ごとに "<name> READY" を出し、
+          コマンドが来たらその行を返す
+```
+
+**繰り返すことが要点**です。1回だけのバナーは「いつ始まるか分からない放送」ですが、
+0.5秒ごとに出るバナーは**ホストが好きなときに待てば捕まえられる**ものになります。
+1回だけの版で実際に起きたのが、CH32V103で9本すべてが前のsketchの出力を読んだ
+一件です(`heap_string`が`core_api`の行を読む)。配線・firmware・probeの不調と
+3回誤診しました。
+
+もう一つの理由は、`setup()`が仕事をする場所として不適切なことです。20秒かかる
+checkは「起動しないボード」と見分けがつきません。`RUN`とdone行の間なら「忙しい
+ボード」に見えます。
+
+雛形は[`sketches/testcmd.h`](sketches/testcmd.h)です。arduino-cliはsketchフォルダの
+外をコンパイルしないので、**各caseへコピーを配ります**([`sync_testcmd.py`](sketches/sync_testcmd.py)、
+`--check`は`generated/test_generated.py`が回す)。`sketch.yaml`と同じく生成物です。
 
 ```cpp
-void setup() {
-  Serial.begin(115200);
-  tc_begin("wire_selftest");     // 初期化は最小限。"wire_selftest READY" を出す
+#include "testcmd.h"
+
+static void run_checks() {
+  tc_check("nack_reported", rc != 0);     // "<name> PASS" / " FAIL"
+  tc_checkv("millis", ok, elapsed);       // FAIL行に実測値を付ける
+  tc_skip("mixed_route_refused", "one route only");   // boardが持たない機能
+  tc_done();                              // "<name> done failures=N"
 }
+
+void setup() { tc_begin("wire_selftest"); }   // Serial.begin()だけ
 
 void loop() {
-  const char *cmd = tc_poll();   // 固定長バッファ。PING は内部で PONG を返す
+  const char *cmd = tc_ready();           // バナーを繰り返し、コマンドを返す
   if (!cmd) return;
   if (!strcmp(cmd, "RUN")) run_checks();
+  else tc_unknown(cmd);                   // 沈黙しない。歩調のずれを即座に返す
 }
 ```
 
-ホスト側:
+### ホスト側は「1 sketch = 1 テスト関数」
+
+**1つのテスト関数の中で、順番に複数のcheckを読みます。** fixtureもconftestも要りません。
 
 ```python
-dut.expect(rb"wire_selftest READY", timeout=20)   # 同期はここ。FIFOの残骸は一致しない
-dut.write("PING\n"); dut.expect_exact("PONG")     # 生存確認
-dut.write("RUN\n");  dut.expect_exact("wire_selftest done failures=0")
+def test_wire_selftest(dut) -> None:
+    dut.expect_exact("wire_selftest READY", timeout=20)
+    dut.write("RUN\n")
+    dut.expect_exact("nack_reported PASS")
+    dut.expect_exact("nack_bounded PASS")
+    ...
+    dut.expect_exact("wire_selftest done failures=0")
 ```
 
-`READY`を待つことでリセット時刻のずれが吸収され、古い出力は`READY`に一致しないので
-無害になります。2台構成では**各ボードのREADYを個別に待って**から先へ進みます。
+boardが持たない機能はtargetが`SKIP`を出すので、そこだけ
+`dut.expect(r"tone_toggles_pin (PASS|SKIP .*)")`にします。**沈黙だけは許しません。**
 
-### コマンド粒度
+**check 1つを1 testにはしません。** pytest-embeddedの`arduino_cli_build` /
+`arduino_cli_upload`は**module scope**なのに`dut`は**function scope**で、
+test関数ごとにportを開き直します。したがって
+「前のtest関数が出させた行」を次のtest関数が読むことは**原理的にできません**。
+分けたいなら、**test関数ごとに自分でコマンドを送って自分で読む**——
+つまりcheckごとに個別コマンドを用意する——形にします。現状の12本は
+`RUN`一発で足りるので、1関数にまとめてあります。
 
-**小さいものは生存確認だけで足ります。** 段階実行が要るものだけ個別コマンドを足し、
-そのときは本書に追記します。
-
-| コマンド | 応答 | 対象 |
-|---|---|---|
-| `PING` | `PONG` | **全sketch共通**。雛形が処理するのでcase側は書かない |
-| `RUN` | 判定行の並び + `<name> done failures=N` | 一括実行。現行の9本はこれで足りる |
-| case固有 | caseが決める | 段階実行・パラメータが要るときだけ。**本書に定義を書く** |
-
-case固有コマンドを足す条件は「1回の`RUN`では観測できないものがある」ときだけです。
-例: 送信側と受信側でタイミングを合わせる、同じ操作をパラメータを変えて繰り返す、
-ホスト側の計測器と歩調を合わせる。
-
-### 実装上の制約
+### 実装上の制約### 実装上の制約
 
 **`String`を使いません。** CH32V003はRAMが2 KBで、`String`を含むsketchが載らないことは
 `sketches/sync_profiles.py`の`REQUIREMENTS`で既に除外対象になっています。
-行の受信は固定長バッファで行い、雛形(`tc_poll`)がそれを提供します。
+行の受信は固定長バッファで行い、雛形(`tc_ready`)がそれを提供します
+(`TC_CMD_MAX`、既定64バイト)。例外は`heap_string`だけで、そこでは`String`が
+**被験体**です。
+
+規約の導入でsketchは400〜500バイト増えます(`loop()`とコマンド解釈の分)。
+最も厳しい`core_api` / CH32V003で15512 → 15964バイト、**16 KBに対し残り420バイト**です。
+ここを超えたら`REQUIREMENTS`でboardを外すのではなく、caseを分割してください。
 
 `~/dev`配下の他プロジェクトは同じ規約を`String`ベースで実装していますが、
 そちらの下限はUno級でRAMに余裕があります。**規約は共通、実装だけ我々の下限に合わせます。**

@@ -10,29 +10,14 @@
  */
 #include <Wire.h>
 
-static int failures;
-
-static void check(const char *name, bool ok)
-{
-    Serial.print(name);
-    Serial.println(ok ? " PASS" : " FAIL");
-    if (!ok) {
-        failures++;
-    }
-}
+#include "testcmd.h"
 
 /* An address nothing answers. 0x7F is reserved for 10-bit addressing, so no
  * ordinary device is there even when the bench does have a device attached. */
 static const uint8_t NOBODY = 0x7F;
 
-void setup()
+static void run_checks()
 {
-    Serial.begin(115200);
-    while (!Serial) {
-    }
-    delay(50);
-    Serial.println("wire_selftest start");
-
     Wire.begin();
 
     /* 1. A transmission to nobody has to end, and say it failed. Without
@@ -44,16 +29,16 @@ void setup()
     Wire.write((uint8_t)0x00);
     uint8_t rc = Wire.endTransmission();
     uint32_t elapsed = millis() - t0;
-    check("nack_reported", rc != 0);
-    check("nack_bounded", elapsed < 200);
+    tc_check("nack_reported", rc != 0);
+    tc_check("nack_bounded", elapsed < 200);
 
     /* 2. Same for a read. */
     t0 = millis();
     size_t got = Wire.requestFrom(NOBODY, (size_t)2);
     elapsed = millis() - t0;
-    check("read_reported", got == 0);
-    check("read_bounded", elapsed < 200);
-    check("read_empty", Wire.available() == 0 && Wire.read() == -1);
+    tc_check("read_reported", got == 0);
+    tc_check("read_bounded", elapsed < 200);
+    tc_check("read_empty", Wire.available() == 0 && Wire.read() == -1);
 
     /* 3. More than the buffer holds is reported as 1 and never reaches the
      *    bus - the AVR behaviour libraries check for. */
@@ -65,20 +50,20 @@ void setup()
     t0 = millis();
     rc = Wire.endTransmission();
     elapsed = millis() - t0;
-    check("overflow_truncates", written == CH32_WIRE_BUFFER_SIZE);
-    check("overflow_code", rc == 1);
-    check("overflow_skips_bus", elapsed < 5);
+    tc_check("overflow_truncates", written == CH32_WIRE_BUFFER_SIZE);
+    tc_check("overflow_code", rc == 1);
+    tc_check("overflow_skips_bus", elapsed < 5);
 
     /* 4. write() outside a transmission goes nowhere rather than into the
      *    next transmission's buffer. */
-    check("write_outside", Wire.write((uint8_t)0xAA) == 0);
+    tc_check("write_outside", Wire.write((uint8_t)0xAA) == 0);
 
     /* 5. Changing the clock while idle must not wedge the peripheral: the
      *    next transfer still gets to the same error. */
     Wire.setClock(400000);
     Wire.beginTransmission(NOBODY);
     rc = Wire.endTransmission();
-    check("fast_mode_still_reports", rc != 0);
+    tc_check("fast_mode_still_reports", rc != 0);
     Wire.setClock(100000);
 
     /* 6. And end()/begin() is a legal cycle. */
@@ -86,12 +71,25 @@ void setup()
     Wire.begin();
     Wire.beginTransmission(NOBODY);
     rc = Wire.endTransmission();
-    check("restart_still_reports", rc != 0);
+    tc_check("restart_still_reports", rc != 0);
 
-    Serial.print("wire_selftest done failures=");
-    Serial.println(failures);
+    tc_done();
+}
+
+void setup()
+{
+    tc_begin("wire_selftest");
 }
 
 void loop()
 {
+    const char *cmd = tc_ready();
+    if (!cmd) {
+        return;
+    }
+    if (!strcmp(cmd, "RUN")) {
+        run_checks();
+    } else {
+        tc_unknown(cmd);
+    }
 }

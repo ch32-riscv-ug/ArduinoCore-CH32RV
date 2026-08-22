@@ -13,7 +13,7 @@ index pulled down.
 
   uv run tools/index/install_check.py <workdir>
 
-Normally reached through `pytest` (tests/test_package_install.py).
+Normally reached through `pytest` (tests/package/test_package_install.py).
 
 The xPack archive is served from <repo>/.tools/cache rather than fetched from
 GitHub on every run (400 MB). CH32_PROBE_RS_ARCHIVE does the same for probe-rs;
@@ -40,10 +40,12 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(REPO / "tests" / "compile"))
+sys.path.insert(0, str(REPO / "tests" / "sketches"))
 
 import gen_index                                    # noqa: E402
 from compile_matrix import Failure                  # noqa: E402
 from fetch_tools import env_defaults                # noqa: E402
+from stage import stage_sketch                      # noqa: E402
 
 PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32v"
@@ -177,13 +179,24 @@ def cli(*args, env, check=True, capture=True):
 
 
 def sketch(work: pathlib.Path, name: str, source=None, copy_from=None):
+    """One sketch directory to compile, from a literal source or a real case.
+
+    copy_from names a case *directory*, not its .ino: a case carries more than
+    one buildable file (testcmd.h), and copying only the .ino produced exactly
+    one error message per board rather than one. stage_sketch() owns that rule,
+    shared with the three harnesses under tests/. The main file is then renamed,
+    because arduino-cli requires it to match the directory it sits in and this
+    directory is named after what the check is called here.
+    """
     d = work / name
     d.mkdir(parents=True, exist_ok=True)
-    target = d / f"{name}.ino"
     if copy_from is not None:
-        shutil.copy(copy_from, target)
+        stage_sketch(copy_from, d)
+        main = d / f"{copy_from.name}.ino"
+        if main.name != f"{name}.ino":
+            main.rename(d / f"{name}.ino")
     else:
-        target.write_text(source, encoding="utf-8")
+        (d / f"{name}.ino").write_text(source, encoding="utf-8")
     return d
 
 
@@ -264,8 +277,8 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
         for name, fqbn, src in (
                 ("Blink", FQBN_BLINK, sketch(work, "Blink", BLINK)),
                 ("Acceptance", FQBN_ACCEPTANCE,
-                 sketch(work, "Acceptance", copy_from=REPO / "tests" / "sketches"
-                        / "basic" / "serial_println" / "serial_println.ino")),
+                 sketch(work, "Acceptance", copy_from=REPO / "tests"
+                        / "sketches" / "basic" / "serial_println")),
                 ("Libraries", FQBN_LIBRARIES,
                  sketch(work, "Libraries", LIBRARIES)),
         ):

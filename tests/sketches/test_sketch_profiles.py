@@ -7,7 +7,7 @@ could never fit in.
 """
 import pytest
 
-from conftest import load
+from loader import load
 
 pytestmark = pytest.mark.slow
 

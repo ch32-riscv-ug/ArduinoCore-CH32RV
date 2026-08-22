@@ -17,7 +17,7 @@ from upstream has to be listed as a patch.
   uv run tools/vendor/vendor_tinyusb.py --check       # verify against the lock
 
 --check is offline: it hashes what is on disk and compares. --update needs the
-network. Normally reached through `pytest` (tests/test_vendored_tinyusb.py).
+network. Normally reached through `pytest` (tests/vendor/test_vendored_tinyusb.py).
 
 Not all of upstream src/ is vendored: portable/ carries a driver for every
 vendor TinyUSB supports, and shipping thirty of them to compile into nothing

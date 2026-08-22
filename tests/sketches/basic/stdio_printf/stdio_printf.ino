@@ -21,10 +21,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-void setup()
+#include "testcmd.h"
+
+static void run_checks()
 {
-  Serial.begin(115200);
-  delay(1000);
   Serial.println("stdio test start");
 
   // The lowest level first: if this is libgloss's stub the board resets here
@@ -46,8 +46,23 @@ void setup()
   fflush(stdout);
 
   Serial.println("stdio test done");
+  tc_done();
+}
+
+void setup()
+{
+  tc_begin("stdio_printf");
 }
 
 void loop()
 {
+  const char *cmd = tc_ready();
+  if (!cmd) {
+    return;
+  }
+  if (!strcmp(cmd, "RUN")) {
+    run_checks();
+  } else {
+    tc_unknown(cmd);
+  }
 }

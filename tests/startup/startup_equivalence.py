@@ -13,7 +13,7 @@ table and the CSR writes.
   CH32_MIRROR_ROOT=<dir with the CH32* clones> \\
       uv run tests/startup/startup_equivalence.py <workdir>
 
-Normally reached through `pytest` (tests/test_startup_equivalence.py).
+Normally reached through `pytest` (tests/startup/test_startup_equivalence.py).
 
 The EVT mirrors are large clones of other repositories, so they are not fetched
 into .tools; point CH32_MIRROR_ROOT at wherever they are.
@@ -121,8 +121,29 @@ FAMILIES = (
 )
 
 
-def mirror_root() -> pathlib.Path:
+# Where the mirrors usually sit on a bench that has them. Searched only as a
+# fallback, so a bench with them in the usual place needs no environment at all
+# and CH32_MIRROR_ROOT still wins when it is set.
+LIKELY = (pathlib.Path.home() / "dev_wch", pathlib.Path.home() / "mirrors")
+
+
+def find_mirror_root():
+    """The EVT mirror root as a string, or None if this machine has none.
+
+    Both startup tests ask the same question - one to build, one to re-check
+    interrupts.csv - so it is answered here rather than in either of them.
+    """
     root = os.environ.get("CH32_MIRROR_ROOT")
+    if root:
+        return root
+    for d in LIKELY:
+        if (d / "CH32V003" / "EVT").is_dir():
+            return str(d)
+    return None
+
+
+def mirror_root() -> pathlib.Path:
+    root = find_mirror_root()
     if not root:
         raise Failure("set CH32_MIRROR_ROOT to the directory holding the "
                       "CH32* EVT mirrors")

@@ -55,7 +55,7 @@ uv run --no-project python tools/generate/generate.py \
 # 3. 取り込む(lockのcommitとhashもここで動く)
 uv run --no-project python tools/generate/generate.py \
     --tables .tools/ch32-device-data/tables --platform .
-cd tests && uv run pytest -q test_generated.py test_compile_matrix.py test_sizebench.py
+cd tests && uv run pytest -q generated compile/test_compile_matrix.py sizebench
 
 # 4. 取り込まないと決めたら、cloneをlockedへ戻す
 uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
