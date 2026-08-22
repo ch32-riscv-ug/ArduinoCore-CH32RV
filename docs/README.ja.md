@@ -47,6 +47,7 @@
 | [ecosystem.ja.md](ecosystem.ja.md) | Arduino、WCH、ch32fun、書き込みツールの調査 |
 | [vendor-policy.ja.md](vendor-policy.ja.md) | 外部ソースの固定、取込、patch、ライセンス方針 |
 | [toolchain.ja.md](toolchain.ja.md) | toolchainの候補、選定条件、認定matrix |
+| [flash-size.ja.md](flash-size.ja.md) | 何がフラッシュを食うか、map fileの読み方、削り方 |
 | [upload-and-fixture.ja.md](upload-and-fixture.ja.md) | uploader、WCH-Link識別、実機fixture |
 | [test-strategy.ja.md](test-strategy.ja.md) | unit、host、compile、HIL、logic analyzer、CI |
 | [roadmap.ja.md](roadmap.ja.md) | 段階的な実装順と完了条件 |

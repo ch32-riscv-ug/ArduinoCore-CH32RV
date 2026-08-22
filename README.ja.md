@@ -85,6 +85,7 @@ release archiveへ入るのは`platform.txt` / `boards.txt` / `cores` / `variant
 - [外部エコシステム調査](docs/ecosystem.ja.md)
 - [vendor取込方針](docs/vendor-policy.ja.md)
 - [toolchain方針](docs/toolchain.ja.md)
+- [フラッシュサイズの削り方](docs/flash-size.ja.md)
 - [書き込みとfixture](docs/upload-and-fixture.ja.md)
 - [テスト戦略](docs/test-strategy.ja.md)
 - [ロードマップ](docs/roadmap.ja.md)

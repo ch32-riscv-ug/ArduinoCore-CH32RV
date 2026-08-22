@@ -390,10 +390,26 @@ input uses a fixed-size buffer, which the template (`tc_ready`) provides
 (`TC_CMD_MAX`, 64 bytes by default). The one exception is `heap_string`, where
 `String` is the thing under test.
 
-The protocol costs a sketch 400-500 bytes, for `loop()` and command parsing. On
-the tightest combination - `core_api` on CH32V003 - that is 15512 -> 15988
-bytes, **leaving 396 of 16 KB**. When that runs out, split the case rather than
-dropping the board from `REQUIREMENTS`.
+The protocol costs a sketch 400-500 bytes, for `loop()` and command parsing.
+**When a case stops fitting, split it rather than dropping the board from
+`REQUIREMENTS`**: dropping loses that board's coverage, while splitting keeps it
+because `sync_profiles.py` gives both halves the same board list.
+
+That has happened once. `core_api` reached 15972 bytes on CH32V003, 97% of a
+16 KB part, and the cause was one line rather than the number of checks:
+`Serial.println(1.5, 2)` is **9428 bytes**. Print::printFloat takes a double,
+rv32ec has no FPU, and the soft-float routines follow it in (`__adddf3` 2346,
+`__subdf3` 2252, `__divdf3` 1818, `__muldf3` 1510, and the rest). Moving it to
+the `print_format` case gives:
+
+| sketch | CH32V003 |
+|---|---|
+| `core_api` after the split | 6464 bytes (39%) |
+| `print_format` | 12772 bytes (77%) |
+
+**Split along the expensive feature, not down the middle.** Halving the checks
+would have left the float half carrying the same 9.4 KB and the other half
+nearly empty. Look at `nm --size-sort -S` before deciding where the seam is.
 
 The other projects under `~/dev` implement the same rule on top of `String`,
 but their floor is an Uno-class board with room to spare. **The protocol is

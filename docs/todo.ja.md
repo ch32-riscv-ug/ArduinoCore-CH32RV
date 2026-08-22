@@ -367,6 +367,38 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
       [承認状態 A-1](approval-status.ja.md))。ADR-0004が同じ形を提案しているが`Proposed`。
       `printf`sketchが48 KB → 7.1 KB、**CH32V003にも載るようになった**。X035実機で
       `printf=none`(空)/`printf=float`(`1.50`)を確認([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))
+- [ ] `[P1]` **`Serial.print(float)`はCH32V003で約9.4 KB**(2026-08-22実測)。
+      `menu.printf`とは別の話で、こちらはC++の`Print`側。
+      `Print::printFloat`が`double`を取り(ArduinoCore-API由来、ADR-0009で無改変)、
+      rv32ecにFPUが無いのでsoft-float一式が丸ごと入る。
+
+      | symbol | bytes |
+      |---|---|
+      | `__adddf3` | 2346 |
+      | `__subdf3` | 2252 |
+      | `__divdf3` | 1818 |
+      | `__muldf3` | 1510 |
+      | `Print::printFloat` | 468 |
+      | `__clz_tab` / `__ltdf2` / `__gtdf2` ほか | 約1000 |
+
+      `core_api`が`Serial.println(1.5, 2)`の**1行**で15972バイト(16 KBの97%)、
+      外すと6544バイト(39%)になる。**この1行を`print_format` caseへ分離した**
+      (2026-08-22)——分割後は`core_api` 6464バイト(39%)、
+      `print_format` 12772バイト(77%)で、`sync_profiles.py`が両方へ同じboard一覧を
+      配るのでカバレッジは減っていない。期待値は`cores/arduino/api/Print.cpp`を
+      読んで導いたもの(`1.50` / `3.1416` / `2.00` / `3`)で、
+      **CH32V103実機で4つとも一致**。
+      **文書化のみで対応する**(2026-08-22判断)。
+      [docs/flash-size.ja.md](flash-size.ja.md)に、何が高いか・map fileの読み方・
+      削り方をまとめた。`float`版`printFloat`の追加は**やらない**——
+      ArduinoCore-APIの署名を変えることになり、しかも`print(1.5, 2)`の`1.5`は
+      `double`リテラルなので一番ありがちな書き方が救われない。
+      やるなら上流のArduinoCore-APIへ
+- [ ] `[P2]` `[要判断]` **CH32V003で高コスト関数の呼び出しをビルドエラーにするboard設定**。
+      `-Wl,--wrap`や`--defsym`で`__adddf3`等を弾けば「知らずに9.4 KB持っていかれる」
+      事故は防げる。**2026-08-22時点では入れない判断**——逃げ道の設計
+      (意図的に使いたいときにどう外すか)が要るため。
+      [docs/flash-size.ja.md](flash-size.ja.md)の「検討したが入れていないもの」に記録済み
 - [ ] `[P1]` `menu.printf`の文言をdocumentへ。ADR-0004が求める
       「nanoの`%f`非対応はArduino利用者の既知の落とし穴」の明示がまだREADMEに無い
 - [ ] `[P1]` `__stack_size`の既定が512バイト。`printf`は簡単に超える。
@@ -454,7 +486,8 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 
 ## ボード定義の生成
 
-- [ ] `[P1]` **上流`c2c457d`は取り込まない**(2026-08-22時点、pinは`b1285de`のまま)。
+- [ ] `[P1]` **上流`c2c457d`は取り込まない。上流の修正が終わってから**
+      (2026-08-22判断、pinは`b1285de`のまま)。
       F-2(CH32V20xの`AFIO_PCFR2_`)は解決しているが、同じcommitで
       **pin表のsignal名が2つ連結された行**が入っている。
       104行 / 14 part number / 4 series(V208 84、M030 10、V407 5、V467 5)。

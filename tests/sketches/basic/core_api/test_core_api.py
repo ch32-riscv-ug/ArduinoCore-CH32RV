@@ -4,6 +4,9 @@ The sketch decides pass/fail on the target and prints one line per check, so a
 failure here points at a specific API rather than at a value comparison done on
 the host.
 
+Print's number formatting is next door in print_format, because its float path
+costs 9.4 KB and had this sketch at 97% of a CH32V003.
+
 One test function, many checks - the board is asked once and every answer is
 read in order. The banner is waited for rather than assumed: `dut` is opened
 after the flashing tool has reset the board, so the sketch repeats
@@ -29,10 +32,6 @@ def test_core_api(dut) -> None:
     dut.expect_exact("pulseIn_timeout PASS")
     dut.expect_exact("random_repeatable PASS")
     dut.expect_exact("random_range PASS")
-    # Printed here, between the checks, and both this runner and pexpect match
-    # forward only - so the order below has to be the sketch's order.
-    # HEX is uppercase without a prefix, and floats honour the digit count.
-    dut.expect_exact("fmt=FF,-42,1.50")
     dut.expect_exact("availableForWrite PASS")
     dut.expect_exact("digitalPinToPort PASS")
     dut.expect_exact("digitalPinToBitMask PASS")

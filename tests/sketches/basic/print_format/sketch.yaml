@@ -1,8 +1,5 @@
-# Self-check of the Arduino core API that needs no wiring: timing, bit/byte
-# macros, math helpers, character classification.
-#
-# Print's number formatting is in print_format, not here: its float path costs
-# 9.4 KB and had this sketch at 97% of a CH32V003.
+# Print's number formatting, kept apart from core_api because the float path
+# costs 9.4 KB on a 16 KB part.
 #
 # The profile list below is generated - see tests/sketches/sync_profiles.py.
 

@@ -83,13 +83,10 @@ static void run_checks()
   tc_checkv("random_repeatable", r1 == r2, r1 - r2);
   tc_checkv("random_range", r1 >= 0 && r1 < 100, r1);
 
-  // --- Print formatting, the part sketches actually depend on ---
-  Serial.print("fmt=");
-  Serial.print(255, HEX);
-  Serial.print(',');
-  Serial.print(-42);
-  Serial.print(',');
-  Serial.println(1.5, 2);
+  /* Print's number formatting lives in the print_format case, not here.
+   * Serial.println(1.5, 2) is one line and 9428 bytes on CH32V003 - the
+   * soft-float routines behind Print::printFloat - which had this sketch at
+   * 97% of a 16 KB part. */
 
   /* Room in the transmit ring. Print's default returns 0, which would make a
    * sketch believe the port is permanently full.
