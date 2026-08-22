@@ -120,6 +120,58 @@ WCH-LinkE(`18`)ではなかった。
 **fixture inventoryにはprobeの種別とfirmware versionを記録する**必要がある
 (「WCH-LinkEを持っている」だけでは、その日に挿さっている個体がLinkEである保証にならない)。
 
+### probeのfirmware版がuploadの成否を変える(2026-08-22実測)
+
+**WCH-Link firmware 2.11では、probe-rsが書き込みには成功するのにコアを走らせない。**
+CH32V103R8T6 + 初代WCH-Link(CH549)で確認した。
+
+```
+probe-rs download --chip ... --reset ...   → Finished（フラッシュは正しく書ける）
+   WARN disable_debug_module: could not clear sw-breakpoint state: DtmOperationFailed
+→ ターゲットは halt のまま。出力ゼロ
+wlink reset                                 → そこで走り出す
+```
+
+`--reset`は正規のフラグ(「Whether to reset the chip after downloading」)で渡している。
+**エラーは出ない**ので、症状は「書き込み成功と表示されるのに何も起きない」になる。
+
+| firmware | 手動`probe-rs download --reset` | 9本連続のsuite |
+|---|---|---|
+| **2.11(v31)** | **常に走らない** | 全滅 |
+| **2.12(v32)** | 毎回走る | **断続的に失敗**(後述) |
+
+2.12へ上げると恒常的な失敗は消えた。ハードは同じCH549のままなので、
+**probe種別ではなくfirmware版の問題**。LinkE(2.12)を載せた3枚
+(X035/V203/V307)では2.11相当の症状を一度も見ていない。
+
+この一件が、CH32V103で「全sketchがnothing received」だったことと、
+`uart_scan`が「どの経路も届かない」と報告したこと(**スキャン用sketch自体が
+走っていなかった**)の両方の原因だった。配線もコアも正常だった。
+
+#### 更新手段が公式ツールにしかない
+
+**OSSツールにはfirmware更新の経路が1つも無い**(2026-08-22に手元で確認)。
+
+| ツール | 更新機能 |
+|---|---|
+| `wlink`(WCH製) | 無し。`mode-switch`はRV↔DAPのみ |
+| `probe-rs` | 無し |
+| `minichlink`(ch32fun) | 無し。IAPモード(`4348:55e0`)を**認識して`0x83`で脱出させる**コードはあるが、書き込み経路は無い |
+
+IAPモードへの入口自体はOSS側でも既知なのに、書き込みを実装したものが無い。
+実際の更新はWCHのWCH-LinkUtility(Windows)またはMounRiver Studioに同梱の
+updaterで行う。**Windows以外での手順は未確認**で、
+「最新版はこれ」を示す公開のchangelogも見つけていない。
+版が分かるのは実物に聞いたときだけ:
+
+```
+wlink status → Connected to WCH-Link v2.12(v32) (WCH-Link-CH549)
+               ← 種別と版の両方。probe-rsはどちらも出さない
+```
+
+したがって文書に書けるのは**実測した下限**だけで、「最新にせよ」とは書けない:
+**2.11では書き込めても動かない。2.12で正常動作を確認**。
+
 ### 同梱minichlinkの世代差(2026-08-19実測)
 
 `~/.arduino15/packages/UIAP/tools/minichlink-2982dfd/1.0.0/minichlink`は

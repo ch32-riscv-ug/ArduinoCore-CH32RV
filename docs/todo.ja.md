@@ -735,6 +735,46 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       予約のままなので、**V305の看板機能であるUSB-HSにベクタが無かった**。
       サイズ変化なし(RSVもIRQも`.word`1つ)。同種の取り違えを防ぐため、
       `vectors`の接尾辞を`evt_variants.csv`の既定macroと突き合わせる検査を入れた
+- [x] **WCH-Linkのファーム2.11では、probe-rsのdownload後にコアが走らなかった**。
+      書き込み自体は成功(`Finished`)するのに`--reset`が効かず**haltのまま**で、
+      `disable_debug_module: could not clear sw-breakpoint state: DtmOperationFailed`
+      が出る。**ファームを2.12へ上げたら解消**(同じ無印CH549のまま。LinkEも2.12)。
+      警告は2.12でも出るが無害。**プローブ種別ではなくファーム版の問題**だったので、
+      uploadラッパーの同梱もrelease archiveの変更も不要で、ADR-0008はそのまま。
+      **症状がエラー無しの「書けたのに動かない」**なので原因に辿り着けない点は変わらず、
+      古いファームのLinkを持つ利用者は同じ目に遭う。
+      SDI printがLinkE 2.10以上を要求するのと同じ扱いで、**最低ファーム版を文書化**するか、
+      uploadの前に`wlink status`が報告する版を見て警告するかは**要判断**。
+      この一件が、CH32V103の「全sketchがnothing received」と
+      `uart_scan`の「どの経路も届かない」の**両方の正体**だった。配線もコードも正常。
+      皮肉なことに、これで実機シリアルが使えずレジスタ読みに追い込まれた結果、
+      **CH32V103のSysTickバグ(P0)が見つかった**
+- [ ] `[P1]` **`smoke.py`が前のsketchの出力を読むことがある**(2026-08-22、CH32V103で顕在化)。
+      手順は「ポートを開く→`reset_input_buffer()`→upload→`seconds`秒読む」だが、
+      **`reset_input_buffer()`はhost側のバッファしか捨てず、probe内のFIFOは残る**。
+      さらに前のsketchは**upload中ずっと出力し続ける**(CH32V103は書き込みに7〜10秒)。
+      結果、読み取り窓が前のsketchの出力で埋まる。
+      実際に`heap_string`が`core_api`の行を、`serial_println`が`route_selftest`の行を
+      読んでいた。**1本ずつ実行すれば通り、連続実行で全滅する**ので誤診しやすい。
+      X035/V203/V307で表面化していないのは書き込みが速く窓に間に合っているだけで、
+      **9/9 PASSは「たまたま間に合った」可能性がある**。
+      失敗の向きは偽陰性(期待文字列が無い→FAIL)なので、**PASSした結果は有効**。
+      **試して駄目だった対処**: (1)upload前のdrain——upload中に吐くので無意味、
+      (2)upload後のdrain+`probe-rs reset`——**本命の頭を食べる**(3 PASS)、
+      (3)リセットの非同期化——変わらず(3 PASS)、
+      (4)drain廃止+窓を12秒——**4 PASSまで改善**したが5本落ちる。
+      捨てるべき古い出力と残すべき新しい出力が**同じ経路を通る**ので、
+      時間だけでは区別できないのが本質。pytest-embedded側の仕組み
+      (port を upload 前から開き続ける)を流用する方向で見直すのが筋に見える。
+      投機的な変更は残さず`smoke.py`はcommitted状態へ戻した
+- [x] **`uart_scan`がremapを要する経路を1つも試せていなかった**。
+      `load_remap_fields`が`(series, kind, index)`の3要素キーを返すのに
+      `remap.get((series, index))`と2要素で引いていて常に`None`。
+      `if value and not bits: continue`で**全ての非default経路が捨てられていた**。
+      I2C/SPIセレクタを追加してkind次元が入って以降、**全boardでdefault経路しか
+      スキャンしていない**。CH32V103で3経路→5経路(`U1-PB6`と`U3-PC10`が追加)になった。
+      「どの経路が配線されているか」を答えるための道具が、
+      **remap先を一度も試せていなかった**ことになる
 - [x] **CH32V103の`millis()`/`micros()`/`delay()`が動かなかったのを直した**(P0)。
       SysTickのレジスタ配置がV103だけ違う。WCH自身の`core_riscv.h`より:
 

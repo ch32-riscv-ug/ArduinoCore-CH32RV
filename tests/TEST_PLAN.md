@@ -84,15 +84,47 @@ The distribution machinery is implemented, but **publishing it is not approved**
 
 ## Test kinds and layout
 
+**Only these five belong directly in `tests/`.** Everything else goes in a
+category directory - the same rule the other projects under `~/dev` follow.
+
 ```text
 tests/
-  sketches/    auto   - per-sketch API tests (pytest + pytest-embedded); hardware or build-only
-  compile/     auto   - compile matrix over all 122 part numbers, plus size regression
-  startup/     auto   - ELF equivalence between the unified crt0 and the EVT startup
-  sizebench/   auto   - newlib size measurements
-  manual/      manual - needs hardware and a human, plus the tools for driving hardware
-tools/index/   auto   - package index generation and clean-install verification
+  README.ja.md / README.md          how this tree is used
+  TEST_PLAN.ja.md / TEST_PLAN.md    this document
+  conftest.py                       fixtures shared by every category
+  pyproject.toml / uv.lock          the environment
 ```
+
+A category directory holds **the pytest entry point next to the harness it
+drives**: `test_<name>.py` is the entry, its neighbours are what it calls.
+
+```text
+tests/
+  generated/   auto   - generated files still match the ch32-device-data tables
+  vendor/      auto   - vendored snapshots (ArduinoCore-API / TinyUSB) still match their locks
+  startup/     auto   - ELF equivalence with the EVT startup, and the vector tables
+  compile/     auto   - compile matrix over all 122 part numbers, bundled examples, size regression
+  sizebench/   auto   - newlib size measurements
+  dist/        auto   - package index generation and clean install through Board Manager
+  sketches/    auto   - per-sketch API tests (pytest + pytest-embedded)
+  unit/        auto   - small checks that need neither a board nor a build
+  manual/      manual - needs hardware and a human, plus the tools for driving hardware
+```
+
+| Entry point | Lives in | What it checks |
+|---|---|---|
+| `test_generated.py` | `generated/` | boards.txt, variants and vector includes regenerate identically |
+| `test_vendored_api.py` | `vendor/` | the ArduinoCore-API snapshot matches the pinned commit |
+| `test_vendored_tinyusb.py` | `vendor/` | the TinyUSB snapshot matches 110 recorded SHA-256s |
+| `test_startup_equivalence.py` | `startup/` | our crt0 and the EVT startup produce equivalent ELFs |
+| `test_interrupt_tables.py` | `startup/` | interrupts.csv still matches the EVT startup assembly |
+| `test_compile_matrix.py` | `compile/` | every part number compiles and its size matches the baseline |
+| `test_examples.py` | `compile/` | every bundled example compiles |
+| `test_sizebench.py` | `sizebench/` | the newlib size harness runs |
+| `test_package_install.py` | `dist/` | a clean install from the generated index works |
+| `test_sketch_profiles.py` | `sketches/` | every sketch.yaml matches the board list |
+| `test_sketch_profile_build.py` | `sketches/` | building through a profile (loopback index) works |
+| `test_clock_prescaler.py` | `unit/` | the AHB prescaler table (compile-time assertions only) |
 
 `sketches/` is **one directory per case**.
 
@@ -178,6 +210,84 @@ and run `uv run tests/sketches/sync_profiles.py`. A sketch that cannot fit every
 tier A/B board declares its floor in `REQUIREMENTS` there, and
 `tests/sketches/compile_all.py` builds the whole grid so a profile cannot claim
 a board it does not fit.
+
+---
+
+## Command protocol for hardware tests
+
+### Why
+
+**The host cannot know when the target is reset.** When the upload backend
+actually starts the core depends on the probe, its firmware and the chip. A
+sketch that prints once in `setup()` and then goes quiet is therefore
+broadcasting at a moment nobody can predict, and no amount of cleverness on
+the listening side reliably catches it.
+
+That is what happened on a CH32V103 on 2026-08-22: all nine sketches read the
+*previous* sketch's output (`heap_string` reporting `core_api`'s lines), and it
+was misdiagnosed three times - as wiring, as probe firmware, as a flaky probe.
+Four listener-side fixes were tried and none worked properly (see
+[docs/todo.ja.md](../docs/todo.ja.md)): the stale output and the wanted output
+travel the same path, so timing alone cannot separate them.
+
+With two boards (a host role and a device role) transfer delay is added on top,
+so the problem gets worse rather than better.
+
+### The rule
+
+**The host asks, the board answers.** `setup()` does minimal initialisation and
+prints a banner; the checks run from `loop()` once a command arrives. The point
+is that a slow test no longer goes silent inside `setup()`.
+
+```cpp
+void setup() {
+  Serial.begin(115200);
+  tc_begin("wire_selftest");     // minimal init, prints "wire_selftest READY"
+}
+
+void loop() {
+  const char *cmd = tc_poll();   // fixed-size buffer; PING is answered inside
+  if (!cmd) return;
+  if (!strcmp(cmd, "RUN")) run_checks();
+}
+```
+
+Host side:
+
+```python
+dut.expect(rb"wire_selftest READY", timeout=20)   # this is the synchronisation
+dut.write("PING\n"); dut.expect_exact("PONG")     # liveness
+dut.write("RUN\n");  dut.expect_exact("wire_selftest done failures=0")
+```
+
+Waiting for `READY` absorbs the unknown reset time, and anything stale in the
+pipe cannot match it. With two boards, **wait for each board's READY
+separately** before going on.
+
+### Command granularity
+
+**A small case needs nothing beyond the liveness check.** Add per-case commands
+only where stepping is genuinely required, and write them down here when you do.
+
+| Command | Reply | Applies to |
+|---|---|---|
+| `PING` | `PONG` | **every sketch**; handled by the template, not by the case |
+| `RUN` | the check lines, then `<name> done failures=N` | run everything; enough for all nine current cases |
+| case-specific | up to the case | only when one `RUN` cannot express it - **define it in this document** |
+
+The bar for adding one is "there is something a single `RUN` cannot observe":
+lining up a sender and a receiver, repeating an operation with different
+parameters, or keeping step with an instrument on the host side.
+
+### Implementation constraint
+
+**No `String`.** CH32V003 has 2 KB of RAM and sketches using `String` already do
+not fit - `sketches/sync_profiles.py` excludes them through `REQUIREMENTS`. Line
+input uses a fixed-size buffer, which the template (`tc_poll`) provides.
+
+The other projects under `~/dev` implement the same rule on top of `String`,
+but their floor is an Uno-class board with room to spare. **The protocol is
+shared; only the implementation is sized to our floor.**
 
 ---
 

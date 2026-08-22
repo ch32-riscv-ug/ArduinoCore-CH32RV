@@ -79,15 +79,47 @@ Arduino Board Manager経由で配布するArduino coreとして、**利用者が
 
 ## テストの種類とディレクトリ
 
+**`tests/`直下に置いてよいのは次の5種だけ**です。それ以外は必ずカテゴリの
+ディレクトリへ入れます。`~/dev`配下の他プロジェクトと同じ規約です。
+
 ```text
 tests/
-  sketches/    自動 — sketch単位のAPIテスト(pytest + pytest-embedded)。実機/buildのみ両対応
-  compile/     自動 — 全122 part numberのcompile matrixとサイズ回帰
-  startup/     自動 — 統合crt0とEVT startupのELF等価性
-  sizebench/   自動 — newlibのサイズ計測
-  manual/      手動 — 実機と人の操作が要るもの、および実機を扱う便利tool
-tools/index/   自動 — package index生成とclean install検証
+  README.ja.md / README.md          この階層の使い方
+  TEST_PLAN.ja.md / TEST_PLAN.md    本書
+  conftest.py                       全カテゴリ共有のfixture
+  pyproject.toml / uv.lock          実行環境
 ```
+
+カテゴリのディレクトリは**pytestの入口とその補助スクリプトを同居**させます。
+`test_<name>.py`が入口、隣にあるのがそれが呼ぶharnessです。
+
+```text
+tests/
+  generated/   自動 — 生成物がch32-device-dataの表と一致するか
+  vendor/      自動 — 取り込んだsnapshot(ArduinoCore-API / TinyUSB)の照合
+  startup/     自動 — 統合crt0とEVT startupのELF等価性、割込みベクタ表
+  compile/     自動 — 全122 part numberのcompile matrix、同梱examples、サイズ回帰
+  sizebench/   自動 — newlibのサイズ計測
+  dist/        自動 — package index生成とBoard Managerからのclean install
+  sketches/    自動 — sketch単位のAPIテスト(pytest + pytest-embedded)
+  unit/        自動 — boardもbuildも要らない小さな検査
+  manual/      手動 — 実機と人の操作が要るもの、および実機を扱う便利tool
+```
+
+| 入口 | 置き場所 | 何を見るか |
+|---|---|---|
+| `test_generated.py` | `generated/` | boards.txt / variant / vector includeが再生成と一致 |
+| `test_vendored_api.py` | `vendor/` | ArduinoCore-API snapshotがlockのcommitと同一 |
+| `test_vendored_tinyusb.py` | `vendor/` | TinyUSB snapshotが110ファイルのSHA-256と一致 |
+| `test_startup_equivalence.py` | `startup/` | 自作crt0とEVT startupのELF等価性 |
+| `test_interrupt_tables.py` | `startup/` | interrupts.csvがEVT startup assemblyと一致 |
+| `test_compile_matrix.py` | `compile/` | 全part numberがcompileでき、サイズが基準線と一致 |
+| `test_examples.py` | `compile/` | 同梱examplesが全部compileできる |
+| `test_sizebench.py` | `sizebench/` | newlibのサイズ計測harnessが動く |
+| `test_package_install.py` | `dist/` | 生成したindexからclean installできる |
+| `test_sketch_profiles.py` | `sketches/` | 各sketch.yamlがboard一覧と同期 |
+| `test_sketch_profile_build.py` | `sketches/` | profile経由(loopback index)でbuildできる |
+| `test_clock_prescaler.py` | `unit/` | AHB分周器の符号化表(compile時assertのみ) |
 
 `sketches/`は**1 caseにつき1ディレクトリ**です。
 
@@ -167,6 +199,79 @@ Tier C/Dは`tests/compile`のmatrixが見ます(profileは不要)。
 
 Board追加時は[`tests/sketches/sync_profiles.py`](sketches/sync_profiles.py)の`BOARDS`だけを直し、
 `uv run tests/sketches/sync_profiles.py`で全`sketch.yaml`を再生成します。
+
+---
+
+## 実機テストのコマンド規約
+
+### なぜ必要か
+
+**リセットの時刻はホストから見て不定です。** upload backendがいつコアを走らせるかは
+probe種別・firmware版・chipで変わります。それなのに`setup()`で一度だけ出力して
+黙るsketchは、**いつ始まるか分からない放送を聞きに行く**形になり、受信側を
+どう工夫しても取りこぼします。
+
+2026-08-22にCH32V103で実際に起きたことがこれです。9本すべてが
+「前のsketchの出力を読む」状態になり(`heap_string`が`core_api`の行を読む)、
+配線・firmware・probeの不調と3回誤診しました。受信側の対処を4通り試して
+いずれも部分的にしか効いていません(詳細は[docs/todo.ja.md](../docs/todo.ja.md))。
+**捨てるべき古い出力と本命が同じ経路を通る**以上、時間だけでは区別できません。
+
+2台構成(ホスト役とデバイス役)では転送遅延が乗るため、この問題はさらに広がります。
+
+### 規約
+
+**ホストが要求し、ボードが応答する。** `setup()`は最小限の初期化とバナーだけにし、
+判定は`loop()`でコマンドを受けてから走らせます。時間のかかるテストでも
+`setup()`で無反応にならないのが要点です。
+
+```cpp
+void setup() {
+  Serial.begin(115200);
+  tc_begin("wire_selftest");     // 初期化は最小限。"wire_selftest READY" を出す
+}
+
+void loop() {
+  const char *cmd = tc_poll();   // 固定長バッファ。PING は内部で PONG を返す
+  if (!cmd) return;
+  if (!strcmp(cmd, "RUN")) run_checks();
+}
+```
+
+ホスト側:
+
+```python
+dut.expect(rb"wire_selftest READY", timeout=20)   # 同期はここ。FIFOの残骸は一致しない
+dut.write("PING\n"); dut.expect_exact("PONG")     # 生存確認
+dut.write("RUN\n");  dut.expect_exact("wire_selftest done failures=0")
+```
+
+`READY`を待つことでリセット時刻のずれが吸収され、古い出力は`READY`に一致しないので
+無害になります。2台構成では**各ボードのREADYを個別に待って**から先へ進みます。
+
+### コマンド粒度
+
+**小さいものは生存確認だけで足ります。** 段階実行が要るものだけ個別コマンドを足し、
+そのときは本書に追記します。
+
+| コマンド | 応答 | 対象 |
+|---|---|---|
+| `PING` | `PONG` | **全sketch共通**。雛形が処理するのでcase側は書かない |
+| `RUN` | 判定行の並び + `<name> done failures=N` | 一括実行。現行の9本はこれで足りる |
+| case固有 | caseが決める | 段階実行・パラメータが要るときだけ。**本書に定義を書く** |
+
+case固有コマンドを足す条件は「1回の`RUN`では観測できないものがある」ときだけです。
+例: 送信側と受信側でタイミングを合わせる、同じ操作をパラメータを変えて繰り返す、
+ホスト側の計測器と歩調を合わせる。
+
+### 実装上の制約
+
+**`String`を使いません。** CH32V003はRAMが2 KBで、`String`を含むsketchが載らないことは
+`sketches/sync_profiles.py`の`REQUIREMENTS`で既に除外対象になっています。
+行の受信は固定長バッファで行い、雛形(`tc_poll`)がそれを提供します。
+
+`~/dev`配下の他プロジェクトは同じ規約を`String`ベースで実装していますが、
+そちらの下限はUno級でRAMに余裕があります。**規約は共通、実装だけ我々の下限に合わせます。**
 
 ---
 
