@@ -13,6 +13,7 @@
 
 | ディレクトリ | 内容 |
 |---|---|
+| [`probe_switch/`](probe_switch/) | **どのboardを繋ぐか**。USB/IPで1台をWSLへ渡し、他を外す(WSLのbench専用) |
 | [`chip_info/`](chip_info/) | **いま何が繋がっているか**。probe / chip / serial port / FQBN / Serialのpin |
 | [`uart_scan/`](uart_scan/) | boardがどのUSART routeを実際に配線しているか特定 |
 | [`smoke/`](smoke/) | 出荷経路でcompile → upload → UART読み出し。全sketchを一巡できる |
@@ -77,6 +78,74 @@ uv run tests/manual/smoke/smoke.py --sketch all  # 全sketch
 `--pnum`の既定は`ANY`のままです。利用者が実際にcompileするのも、profileが使うのも
 `ANY`なので、勝手に実SKUへ変えるとテストしている構成が変わってしまいます。
 実SKUで焼きたいときは`--pnum detect`。
+
+## probe_switch.py — boardの切り替え(WSLのbenchのみ)
+
+probeがUSB/IP(usbipd-win)で来る環境では、**同時に繋げるのは8台まで**です。
+WSLの`vhci_hcd`はhigh-speed portを8本しか持たず(super-speedも8本ありますが、
+USB 2.0のadapterは使えません)、埋まっていると`attach`が
+
+```text
+WSL usbip: error: no free port
+```
+
+で落ちます。**probeの故障に見えますが違います。** この作業台では8本のうち7本を
+別プロジェクトのESP32が使っていたため、WCH-Linkは常に1台だけでした。
+WCH-Link固有の制限ではなく、1本空ければ2台挿さります。moduleにparameterは
+無い(`modinfo vhci_hcd`)ので、8本は増やせません。
+
+そもそも**どのtoolもどのprobeを使うかを言われる必要がある**(`CH32_PROBE`)ので、
+同時接続が必須のtestは今のところありません。1台だけ繋いでおけば選択が要らず、
+切り替えは5秒ほどです。
+
+```bash
+uv run --env-file tests/.env tests/manual/probe_switch/probe_switch.py         # 一覧
+uv run --env-file tests/.env tests/manual/probe_switch/probe_switch.py V103    # 切り替え
+uv run --env-file tests/.env tests/manual/probe_switch/probe_switch.py 434A    # serialでも可
+uv run --env-file tests/.env tests/manual/probe_switch/probe_switch.py --detach
+```
+
+```text
+name   serial         COM    busid   state
+V103   434A124C5596   COM19  16-1    attached, /dev/ttyACM0
+V203   FBC18F0680B0   COM21  16-3    plugged into Windows, not attached
+X035   FC928F068181   COM22  16-2    plugged into Windows, not attached
+L103   0E028F0692F1   COM23  16-4    plugged into Windows, not attached
+```
+
+切り替えた後は`chip_info`と同じレポートを出すので、**何に繋がったかがその場で分かります**。
+
+### 名前はserialで持つ
+
+同じprobeに3つの呼び名がありますが、**安全なのは1つだけ**です。
+
+| | |
+|---|---|
+| bus id `16-2` | 何かを挿し直すたびに振り直される |
+| `COM19` | Windowsがdeviceごとに覚えるが、**物理portに付く**ので挿し替えると変わる |
+| serial `434A124C5596` | probeに焼かれている。**唯一持ち運べる名前** |
+
+なのでこのscriptは全部serialで解決し、bus idは毎回`usbipd state`から引き直します。
+COM番号は人がDevice Managerで見るものなので表示だけします。
+
+serialは読めないので、`tests/.env`で名前を付けます。
+
+```sh
+CH32_PROBE_V103=434A124C5596
+CH32_PROBE_X035=FC928F068181
+```
+
+接頭辞`CH32_PROBE_`だけが決まりで、名前は自由です。`.env`はコミットされないので、
+**この作業台のserialがrepositoryに入りません**。
+
+### 触らないもの
+
+外すのは**WCH-Linkだけ**です(`1a86:8010` RISC-Vモード / `1a86:8012` ARMモード)。
+portを埋めている他のdeviceは挿した人のものなので、空きが要るときは
+**どれが埋めているかを表示して止まります**。
+
+繋がっていないprobeを指定したときも、**何も外さずに**止まります
+(最初の版はここで動いているprobeを外してから失敗し、benchが空になりました)。
 
 ## まず現状を確認する
 

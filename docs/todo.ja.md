@@ -675,9 +675,26 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       再現手順も未確立。HIL runnerに載せるなら「serialが無反応ならprobeを付け直す」を
       自動化する余地がある
 
-- [ ] `[P0]` **(要実機)** LinkE 2台接続で`probe-rs list`を実行し、serialが個体別に出るか確認。
-      出れば`--probe VID:PID:Serial`で確定選択できる
-- [ ] `[P1]` 「LinkEを同時に使えない」原因の切り分け。udev権限 / WSL usbipd / 選択機構のないtool、が候補
+- [x] **(実機)** LinkEを4台分確認(2026-08-25)。serialは個体別
+      (`434A124C5596` / `FBC18F0680B0` / `FC928F068181` / `0E028F0692F1`)で、
+      `--probe VID:PID:Serial`で確定選択できる。ただし**同時attachは未確認**——下記の通り
+      portが空かなかったため、1台ずつ切り替えて4台とも確認した
+- [x] **「LinkEを同時に使えない」原因が判明**(2026-08-25)。udev権限でもtoolでもなく、
+      **WSLの`vhci_hcd`がhigh-speed portを8本しか持たない**ため。
+      この作業台では7本を別プロジェクトのCH343×4 + CH340×3が使っていた。
+      埋まっていると`usbipd attach`が`WSL usbip: error: no free port`で落ちる。
+      **WCH-Link固有の制限ではなく**、1本空ければ2台入る。
+      `modinfo vhci_hcd`にparameterが無いので8本は増やせない。
+      詳細は[upload-and-fixture.ja.md](upload-and-fixture.ja.md)
+- [x] **probe切り替えtoolを追加**([`tests/manual/probe_switch`](../tests/manual/probe_switch/probe_switch.py)、2026-08-25)。
+      `tests/.env`の`CH32_PROBE_<NAME>=<serial>`で名前を付け、名前かserial接頭辞で
+      detach + attachする(約5秒)。**識別はserialのみ**——bus idは挿し直しで振り直され、
+      COM番号は物理portに付くので挿し替えると変わる。外すのはWCH-Linkだけ
+- [ ] `[P1]` **(要判断・要実機)** 4 familyでの実機sweep。この作業台には
+      CH32V103R8T6 / CH32V203C8T6 / CH32X035C8T6 / CH32L103C8T6 が繋がっており、
+      これまでの実機検証は**V103の1 familyだけ**。`probe_switch`を挟めば
+      `smoke.py --sketch all`を4本回せる。**V103以外は初走行なので落ちる前提**で、
+      時間もかかる。やるかどうかと、どこまで直すかは判断が要る
 - [ ] `[P1]` `board-identify`にCH32 probeを追加(ESP32のMAC読み出しに相当するのはtarget UID読み出し、Q-042)
 - [ ] `[P1]` **(要判断)** logic analyzerを16 channelにするか。
       v1.0の7周辺を同時に観測するには12本要り、**8chでは足りない**。部材とconnectorの変更コストが最も高い
@@ -1076,7 +1093,9 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `[P1]` `gpio_loopback`を実機で回す (要実機・要ジャンパ)
 - [ ] `[P2]` pytest profileもchip検出から選べるようにする。現在は`--profile`で人が指定する。
       pytest-embedded-arduino-cli側の対応が要るかもしれない
-- [ ] `[P2]` `.env`の項目を増やす(serial port、probe serial等)。現在はCLI flagのみ
+- [x] `.env`の項目を増やした(2026-08-25)。probeのserialは`CH32_PROBE_<NAME>`で
+      名前付きにして`probe_switch`が読む。`CH32_PROBE`(選択)と`CH32_PORT`は既にあった。
+      `.env`はコミットされないので、この作業台のserialがrepositoryに入らない
 - [ ] `[P2]` `tests/manual/README.ja.md`のSerial pin表が手作業。variantから生成する
 - [ ] `[P2]` sketchの`build_opt.h`がarduino-cli 1.3.1で効かない。
       `compiler.<lang>.extra_flags`をrecipeへ入れても`build.opt.path`が設定されず、

@@ -274,6 +274,48 @@ uploadが成功しても**targetがflashから起動していない**ことが�
 「UARTに何も出ない」は配線・クロック・起動の3つを区別しないが、
 PCがflash領域にあるかSRAM領域にあるかは一目で分かる。
 
+### USB/IPで同時に繋げるのは8台まで(2026-08-25実測)
+
+WSLの`vhci_hcd`は**high-speed port 8本 + super-speed port 8本**を持つ。
+USB 2.0のadapterはhigh-speed側にしか入らないので、実効の上限は**8台**。
+埋まった状態で`usbipd attach`すると次で落ちる。
+
+```text
+WSL usbip: error: no free port
+```
+
+```text
+$ cat /sys/devices/platform/vhci_hcd.0/status
+hub port sta spd dev      sockfd local_busid
+hs  0000 006 002 ...              1-1        ← 0000〜0007が全て使用中
+ss  0008 004 000 00000000 000000  0-0        ← 空いているがUSB3専用
+```
+
+**WCH-Link固有の制限ではない。** この日は8本のうち7本を別プロジェクトのCH343×4と
+CH340×3が使っていたため、WCH-Linkは1台しか挿さらなかった。1本空ければ2台入る。
+`modinfo vhci_hcd`にparameterは1つも無いので、8本を増やすにはkernelを替えるしかない。
+
+そもそも**全toolがどのprobeを使うかを言われる必要がある**(`CH32_PROBE`)ので、
+同時接続が要るtestは今のところ無い。1台だけ繋ぐ運用にすれば選択が要らなくなる。
+切り替えは[`tests/manual/probe_switch`](../tests/manual/probe_switch/probe_switch.py)で
+約5秒。
+
+**識別はUSB serialで行う。** 同じprobeに3つの呼び名があるが、持ち運べるのは1つだけ。
+
+| 呼び名 | 安定性 |
+|---|---|
+| USB/IP bus id `16-2` | 何かを挿し直すたびに振り直される |
+| `COM19` | Windowsがdeviceごとに覚えるが、**物理portに付く**ので挿し替えると変わる |
+| USB serial `434A124C5596` | probeに焼かれている。**唯一持ち運べる** |
+
+Windows側のserialは`usbipd state`のJSONに入っている
+(`InstanceId` = `USB\VID_1A86&PID_8010\<SERIAL>`)ので、
+attachする前にどれがどれかを引ける。
+
+attach直後は**CDC interfaceが先に見えてvendor interfaceがまだ**という窓があり、
+そこでprobe-rsに訊くと「targetが見つからない」と答える。1秒ほど置いて訊き直すと通る。
+`probe_switch`はここを3回まで再試行する。
+
 ### 当面の扱い
 
 - 単一DUTで進む限りこの制約は開発をblockしない
