@@ -875,15 +875,38 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       (いまは「未対応」とNOTEを出しているだけ)。ただしaf-Nの実機は入手不能なので、
       入れても検証はcompileまで。
 
-      **まだ無くて欲しいもの**:
-      - **タイマの表**: index / bit幅 / channel数 / 専用update vectorの有無。
-        いま`WIDE_TIMERS`が手書きなのはこれが無いから
-      - **既定padの列**: 一対多の(部品, 周辺, 役割, 経路)に対して「普通はこれ」を
-        上流が1回決める。24 consumerが各自で推測するより、
-        データシートを見ている側が決めるほうが正しい。
-        **SWD padを既定にしない**という制約もそこに載る(素朴な規則だと踏む)
-      - 列名の曖昧さの解消。`flash_bytes`と`code_flash_bytes`の取り違えが
-        480K/256Kの件の元だった
+      **上流へ依頼したいのは3つだけ**(2026-08-25に155c398の全31表を確認した結果。
+      他は既にあるか、こちらで導出できる):
+
+      1. **タイマの表**。`family, timer, kind, counter_width_bits, channels,
+         complementary, update_vector` あたり。**`systick.csv`と同じ形**で足りる
+         (あれも`width_bits`と`write_bits`を持っている)。
+         いま`features.csv`に「General-purpose TIM4 (32-bit)」という**文**が
+         series粒度であるだけで機械可読ではなく、`WIDE_TIMERS`が手書きなのはそのため。
+         **今日のtone()のバグを唯一防げた表**
+      2. **pad名の正規化列**。`pin_roles.csv` / `pin_functions.csv`の`pad`は
+         `PA0-WKUP`(432行) / `PC13-TAMPER-RTC`(89行)のような装飾付きが混ざる。
+         **`pin_alternate.csv`は既に`pad,port,pin`を持っている**ので、
+         新概念ではなく揃えるだけの話。装飾が増えたことに気付かないまま
+         PC13/PC14/PC15が現れたのが今回の件
+      3. **既定padの印**。一対多の`(部品, 周辺, 役割, 経路)`が上流計測で984組
+         (我々が読む範囲で193組)。`pin_roles.csv`に`preferred`列が1つ付けば、
+         「普通はこれ」を**データシートを見ている側が1回決める**ことになる。
+         consumerごとに推測すると、consumerごとに違う間違い方をする
+
+      **依頼しないもの**(既にある / 導出できる):
+
+      | 欲しかったもの | 答 |
+      |---|---|
+      | signal名→周辺・instance・役割 | **`pin_roles.csv`**(23741行)。5組の正規表現が消える |
+      | per-pin AFのregisterとbit | **`pin_alternate.csv`**(240行)。af-Nを実際に設定できる |
+      | flashの分割 | **`memory_configs.csv`**(67行) |
+      | **SWD padを避ける** | **導出できる**。`pin_roles.csv`の`peripheral=SDI`が`SWCLK`/`SWDIO`で、**26 seriesを網羅**している。`peripheral=SYS`が`NRST`/`BOOT0`/`BOOT1` |
+      | GPIOでないpad | `pins.csv`の`kind`。ただし`HO3`/`LED0`が`gpio`扱いなので、pad名が`P<port><bit>`かで見る今の判定のほうが確実 |
+      | 使ってはいけないpad | `errata.csv`(既に`UNUSABLE_PADS`が参照) |
+
+      **`preferred`列が来る前でも、SWD/BOOT padの除外はこちらで実装できる**——
+      上の`SDI`/`SYS`から引ける。一対多の選び方を決めるときの前提条件になる
 
       **原則として言うなら**: 「データシートに何と書いてあるか」の表と、
       「coreは何を知る必要があるか」の表は別物で、後者を上流に1つ置くほうが、
