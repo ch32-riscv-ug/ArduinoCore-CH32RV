@@ -18,7 +18,7 @@
 
 #define CH32_VARIANT_CH32V407 1
 
-/* ---- GPIO pads: 71 in the series, 42 of them on every part ---- */
+/* ---- GPIO pads: 77 in the series, 45 of them on every part ---- */
 #define PA0  CH32_PIN(0,  0)
 #define PA1  CH32_PIN(0,  1)
 #define PA2  CH32_PIN(0,  2)
@@ -37,6 +37,7 @@
 #define PA15 CH32_PIN(0, 15)
 #define PB0  CH32_PIN(1,  0)
 #define PB1  CH32_PIN(1,  1)
+#define PB2  CH32_PIN(1,  2)
 #define PB3  CH32_PIN(1,  3)
 #define PB4  CH32_PIN(1,  4)
 #define PB5  CH32_PIN(1,  5)
@@ -63,6 +64,11 @@
 #define PC10 CH32_PIN(2, 10)
 #define PC11 CH32_PIN(2, 11)
 #define PC12 CH32_PIN(2, 12)
+#define PC13 CH32_PIN(2, 13)
+#define PC14 CH32_PIN(2, 14)
+#define PC15 CH32_PIN(2, 15)
+#define PD0  CH32_PIN(3,  0)
+#define PD1  CH32_PIN(3,  1)
 #define PD2  CH32_PIN(3,  2)
 #define PD3  CH32_PIN(3,  3)
 #define PD4  CH32_PIN(3,  4)
@@ -93,9 +99,9 @@
 
 /* Bit n set = P<port>n is bonded out on at least one part in the series. */
 #define CH32_PORT_MASK_A 0x0000ffffu
-#define CH32_PORT_MASK_B 0x0000fffbu
-#define CH32_PORT_MASK_C 0x00001fffu
-#define CH32_PORT_MASK_D 0x0000fffcu
+#define CH32_PORT_MASK_B 0x0000ffffu
+#define CH32_PORT_MASK_C 0x0000ffffu
+#define CH32_PORT_MASK_D 0x0000ffffu
 #define CH32_PORT_MASK_E 0x00001fffu
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
 #define CH32_PORT_MASK(port) ( \
@@ -111,7 +117,7 @@
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
 #define CH32_PORT_COMMON_MASK_A 0x0000ffffu
 #define CH32_PORT_COMMON_MASK_B 0x0000fffbu
-#define CH32_PORT_COMMON_MASK_C 0x00001c3fu
+#define CH32_PORT_COMMON_MASK_C 0x0000fc3fu
 #define CH32_PORT_COMMON_MASK_D 0x00000104u
 #define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
@@ -126,7 +132,7 @@
 
 #define NUM_DIGITAL_PINS 141   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  71   /* actual pads in the series */
+#define CH32_GPIO_COUNT  77   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (16 channels) ---- */
 #define NUM_ANALOG_INPUTS 16

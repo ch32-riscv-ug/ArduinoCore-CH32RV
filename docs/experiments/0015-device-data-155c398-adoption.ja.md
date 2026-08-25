@@ -281,3 +281,33 @@ F-27/F-28の修正と、こちらが依頼した表の一部が**もう入って
 (c) V205のI2C2消滅も変わらず(こちらの生成器の後勝ち問題)。
 products.csvの±30行はbasis文字列のみで値の変更なし。
 
+---
+
+## 追記3: `944bc9c`を取り込んだ (2026-08-25、maintainer承認)
+
+「可能なものは取り込みに進んでほしい」の指示で実施。pinは`b1285de`→`944bc9c`。
+
+**同時にやったこと**
+
+- `WIDE_TIMERS`(手書き)を削除し、`timers.csv`を読む`load_wide_timers()`に置換。
+  訂正3件(V203 tone 32→16、**V208 tone 16→32=手書きの実バグ**、V208 servo 32→16)。
+  die条件は広い側に倒して無視(16bit部品への32bitストアはV203実機で無害を確認済み)
+- 旧linker script 9本(480K/224K系)を削除。boards.txtの参照ゼロを確認
+- `UNUSABLE_PADS`のnote文を上流の精密化した記述に更新
+  (PC10/PC17・PC11/PC16は**leadを共有するペア**、両方をoutputにしない)
+- `.tools`の取得コピーをfetch_toolsで944bc9cへ
+
+**受け入れた既知の劣化**(いずれもcompile onlyのseriesで実害なし)
+
+- V205のI2C2 define消滅(一対多の後勝ち→部品間不一致→選外。決定則で戻せる)
+- X305のSerial1/I2C1既定padの並び順移動
+
+**保留のまま**(取り込みに含めなかったもの)
+
+- 一対多の決定則(SWD pad除外込み)——規則自体が要判断
+- `PAD_PORT_RE`→`pin_roles.csv`の`port`/`pin`列への置換(loader再設計)
+- `usbpd_hw.h`の生成化(X035以外はAFIO配管が未確認のため手書き継続が安全)
+
+**検証**: fast suite 73 pass。compile matrix(122型番+サイズ基準線)と
+X035実機sweep(13 sketch)は本追記の時点で実行中——結果はtodoに記録する。
+

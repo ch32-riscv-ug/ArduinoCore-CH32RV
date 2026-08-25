@@ -337,32 +337,42 @@ NON_PORT_PADS = {"ANT", "HO3", "ISP1", "LED0", "LED1",
 # Register bits that are NOT harmless to write even though no pin carries them
 # (ADR-0010 #4 makes unbonded pads harmless; these are the exception).
 # Keyed by ch32-device-data errata id, which generate.py verifies still exists.
-# Families with a 32-bit timer. On it CNT, ATRLR and CHnCVR are one 32-bit
-# register, and a 16-bit store is replicated into both halves - see
-# ch32_registers.h. Keyed by family because that is what the EVT header
-# follows: ch32l103.h, ch32v205.h, ch32v20x.h and ch32x3x5.h all union CNT and
-# ATRLR for TIM4, and no other header does.
-#
-# Hand-maintained because ch32-device-data has no machine-readable timer table
-# yet; the datasheet feature row ("General-purpose TIM4 (32-bit)") is prose in
-# the generated README. Asking upstream for one is docs/todo.ja.md.
-#
-# CH32X035 is deliberately absent: its header unions CHnCVR but not CNT or
-# ATRLR, which is an alternate 32-bit view of a 16-bit register rather than a
-# wide timer.
-WIDE_TIMERS = {
-    "CH32L103": (4,),      # series CH32L103, CH32M103
-    "CH32V205": (4,),      # series CH32V205, and CH32V203CCT6
-    "CH32V20x": (4,),      # named ATRLR_R32 there, same thing
-    "CH32X315": (4,),      # series CH32X305, CH32X315
-}
+def load_wide_timers(tables: pathlib.Path) -> dict:
+    """family -> {timer numbers whose counter is wider than 16 bits}.
+
+    On such a timer CNT, ATRLR and CHnCVR are one 32-bit register, and a
+    16-bit store is replicated into both halves - see ch32_registers.h. This
+    was a hand-written table (WIDE_TIMERS) until timers.csv arrived upstream;
+    the hand-written version had every emitted value right but one basis
+    wrong (it called the plain CH32V20x TIM4 wide on the strength of the EVT
+    header's union, where the reference manual says 16 bits - the wide one is
+    the V205 die that shares that header).
+    """
+    wide: dict = {}
+    for r in read_table(tables, "timers.csv"):
+        if int(r["counter_width_bits"] or 16) > 16:
+            number = int(r["timer"].removeprefix("TIM"))
+            # `condition` narrows some rows to a die variant (TIM5 is 32-bit
+            # only on the V20x D8/D8W dies). Ignored on purpose: treating the
+            # timer as wide everywhere in the family is the safe direction,
+            # because a 32-bit store to a 16-bit timer is harmless (measured
+            # on CH32V203C8T6) while the reverse silenced tone() on CH32L103.
+            wide.setdefault(r["family"], set()).add(number)
+    return wide
+
 
 UNUSABLE_PADS = {
     "x035-pc10-pc17-bonded": {
         "series": ("CH32X033", "CH32X035"),
         "pads": (("C", 10), ("C", 11)),
-        "note": ("PC10/PC11 have no pin of their own but are internally bonded "
-                 "to PC17/PC16, so writing them drives a real pin."),
+        # Upstream refined this while the pads were still absent from the
+        # tables: the pairs PC10/PC17 and PC11/PC16 each share one physical
+        # lead, so the two halves of a pair must never both be outputs.
+        # Marking the PC10/PC11 side unusable is the conservative half of
+        # that rule, kept even now that they are generated as real pads.
+        "note": ("PC10/PC17 and PC11/PC16 are internally bonded pairs "
+                 "sharing one lead; never drive both halves of a pair. The "
+                 "core marks PC10/PC11 as the never-driven side."),
     },
 }
 
@@ -1328,7 +1338,8 @@ def gen_exti(variant: str, entries: list) -> str:
 
 def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              i2cs: dict, spis: dict, dacs: dict, pwm: dict, handlers: list,
-             remap: dict, route_alts: dict = None) -> str:
+             remap: dict, route_alts: dict = None,
+             wide_by_family: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -1747,10 +1758,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     # (CH32V203 has one CH32V205 part among twelve CH32V20x ones), and the
     # variant is built for all of them, so the union is what the header must
     # describe - a 32-bit store is right on the wide part and harmless on the
-    # narrow one, while a 16-bit store is wrong on the wide one.
+    # narrow one (measured on CH32V203C8T6), while a 16-bit store is wrong on
+    # the wide one (measured on CH32L103: it silenced tone()).
     wide_timers = set()
     for family in {r.get("family", "") for r in rows}:
-        wide_timers |= set(WIDE_TIMERS.get(family, ()))
+        wide_timers |= wide_by_family.get(family, set())
 
     def pick(pool):
         """Highest-numbered, preferring one no PWM pad uses."""
@@ -1955,6 +1967,7 @@ def main() -> int:
     dacs = load_dac_pins(args.tables, route_alts)
     probe_rs = load_probe_rs_targets()
     remap = load_remap_fields(args.tables)
+    wide_timers = load_wide_timers(args.tables)
     pwm = load_pwm_pins(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
@@ -2009,7 +2022,7 @@ def main() -> int:
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
             gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
-                     route_alts)
+                     route_alts, wide_timers)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of

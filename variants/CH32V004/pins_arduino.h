@@ -18,9 +18,10 @@
 
 #define CH32_VARIANT_CH32V004 1
 
-/* ---- GPIO pads: 18 in the series, 18 of them on every part ---- */
+/* ---- GPIO pads: 19 in the series, 19 of them on every part ---- */
 #define PA1 CH32_PIN(0,  1)
 #define PA2 CH32_PIN(0,  2)
+#define PA4 CH32_PIN(0,  4)
 #define PC0 CH32_PIN(2,  0)
 #define PC1 CH32_PIN(2,  1)
 #define PC2 CH32_PIN(2,  2)
@@ -39,7 +40,7 @@
 #define PD7 CH32_PIN(3,  7)
 
 /* Bit n set = P<port>n is bonded out on at least one part in the series. */
-#define CH32_PORT_MASK_A 0x00000006u
+#define CH32_PORT_MASK_A 0x00000016u
 #define CH32_PORT_MASK_B 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_C 0x000000ffu
 #define CH32_PORT_MASK_D 0x000000ffu
@@ -56,7 +57,7 @@
 
 /* Bit n set = P<port>n is bonded out on EVERY part in the series,
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
-#define CH32_PORT_COMMON_MASK_A 0x00000006u
+#define CH32_PORT_COMMON_MASK_A 0x00000016u
 #define CH32_PORT_COMMON_MASK_B 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_C 0x000000ffu
 #define CH32_PORT_COMMON_MASK_D 0x000000ffu
@@ -73,7 +74,7 @@
 
 #define NUM_DIGITAL_PINS 104   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  18   /* actual pads in the series */
+#define CH32_GPIO_COUNT  19   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (8 channels) ---- */
 #define NUM_ANALOG_INPUTS 8

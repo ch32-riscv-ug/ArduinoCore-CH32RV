@@ -18,7 +18,7 @@
 
 #define CH32_VARIANT_CH32V005 1
 
-/* ---- GPIO pads: 26 in the series, 8 of them on every part ---- */
+/* ---- GPIO pads: 26 in the series, 9 of them on every part ---- */
 #define PA0 CH32_PIN(0,  0)
 #define PA1 CH32_PIN(0,  1)
 #define PA2 CH32_PIN(0,  2)
@@ -64,7 +64,7 @@
 
 /* Bit n set = P<port>n is bonded out on EVERY part in the series,
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
-#define CH32_PORT_COMMON_MASK_A 0x00000006u
+#define CH32_PORT_COMMON_MASK_A 0x00000016u
 #define CH32_PORT_COMMON_MASK_B 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_C 0x00000011u
 #define CH32_PORT_COMMON_MASK_D 0x00000093u

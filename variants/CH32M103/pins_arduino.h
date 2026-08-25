@@ -18,7 +18,7 @@
 
 #define CH32_VARIANT_CH32M103 1
 
-/* ---- GPIO pads: 18 in the series, 18 of them on every part ---- */
+/* ---- GPIO pads: 21 in the series, 21 of them on every part ---- */
 #define PA0  CH32_PIN(0,  0)
 #define PA1  CH32_PIN(0,  1)
 #define PA2  CH32_PIN(0,  2)
@@ -29,9 +29,12 @@
 #define PA7  CH32_PIN(0,  7)
 #define PA11 CH32_PIN(0, 11)
 #define PA12 CH32_PIN(0, 12)
+#define PA13 CH32_PIN(0, 13)
+#define PA14 CH32_PIN(0, 14)
 #define PB0  CH32_PIN(1,  0)
 #define PB1  CH32_PIN(1,  1)
 #define PB3  CH32_PIN(1,  3)
+#define PB5  CH32_PIN(1,  5)
 #define PB6  CH32_PIN(1,  6)
 #define PB7  CH32_PIN(1,  7)
 #define PB8  CH32_PIN(1,  8)
@@ -39,8 +42,8 @@
 #define PB11 CH32_PIN(1, 11)
 
 /* Bit n set = P<port>n is bonded out on at least one part in the series. */
-#define CH32_PORT_MASK_A 0x000018ffu
-#define CH32_PORT_MASK_B 0x00000dcbu
+#define CH32_PORT_MASK_A 0x000078ffu
+#define CH32_PORT_MASK_B 0x00000debu
 #define CH32_PORT_MASK_C 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
@@ -56,8 +59,8 @@
 
 /* Bit n set = P<port>n is bonded out on EVERY part in the series,
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
-#define CH32_PORT_COMMON_MASK_A 0x000018ffu
-#define CH32_PORT_COMMON_MASK_B 0x00000dcbu
+#define CH32_PORT_COMMON_MASK_A 0x000078ffu
+#define CH32_PORT_COMMON_MASK_B 0x00000debu
 #define CH32_PORT_COMMON_MASK_C 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
@@ -73,7 +76,7 @@
 
 #define NUM_DIGITAL_PINS 44   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  18   /* actual pads in the series */
+#define CH32_GPIO_COUNT  21   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (10 channels) ---- */
 #define NUM_ANALOG_INPUTS 10
@@ -162,9 +165,10 @@
 #define CH32_SERIAL4_REMAP2_MASK 0x00010000u
 #define CH32_SERIAL4_REMAP2_VAL  0x00000000u
 /* SERIAL4 routes for setRoute()/setPins(): route number, then TX, RX */
-#define CH32_SERIAL4_ROUTE_COUNT 1
+#define CH32_SERIAL4_ROUTE_COUNT 2
 #define CH32_SERIAL4_ROUTES { \
     { 0, { PB0, PB1, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PA5, PB5, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00010000u }, \
 }
 #ifndef CH32_SERIAL_DEFAULT
 #define CH32_SERIAL_DEFAULT 2
@@ -180,9 +184,10 @@
 #define CH32_I2C1_REMAP2_MASK 0x00800000u
 #define CH32_I2C1_REMAP2_VAL  0x00000000u
 /* I2C1 routes for setRoute()/setPins(): route number, then SCL, SDA */
-#define CH32_I2C1_ROUTE_COUNT 1
+#define CH32_I2C1_ROUTE_COUNT 2
 #define CH32_I2C1_ROUTES { \
     { 0, { PB6, PB7, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 2, { PA13, PA12, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00800000u }, \
 }
 /* I2C2: route default, on every part */
 #define CH32_I2C2_SCL PB10
@@ -207,10 +212,11 @@
 #define CH32_SPI1_REMAP2_MASK 0x01000000u
 #define CH32_SPI1_REMAP2_VAL  0x00000000u
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32_SPI1_ROUTE_COUNT 2
+#define CH32_SPI1_ROUTE_COUNT 3
 #define CH32_SPI1_ROUTES { \
     { 0, { PA5, PA6, PA7 }, 0x00000000u, 0x00000000u }, \
     { 2, { PB6, PB8, PB7 }, 0x00000000u, 0x01000000u }, \
+    { 3, { PB6, PB8, PB7 }, 0x00000001u, 0x01000000u }, \
 }
 /* Arduino's standard names for the first bus (SPI). */
 #ifndef PIN_SPI_SCK

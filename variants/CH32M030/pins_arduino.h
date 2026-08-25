@@ -232,8 +232,8 @@
 #define SS PIN_SPI_SS
 #endif
 
-/* ---- PWM: 10 pads on TIM1/TIM2/TIM3, default route ---- */
-#define CH32_PWM_PIN_COUNT 10
+/* ---- PWM: 8 pads on TIM1/TIM2/TIM3, default route ---- */
+#define CH32_PWM_PIN_COUNT 8
 #define CH32_PWM_PIN_TO_TIMER(p) ( \
     (p) == PB9 ? 1 : \
     (p) == PB11 ? 1 : \
@@ -242,8 +242,6 @@
     (p) == PA6 ? 2 : \
     (p) == PA7 ? 2 : \
     (p) == PA4 ? 2 : \
-    (p) == PB2 ? 3 : \
-    (p) == PB3 ? 3 : \
     (p) == PC1 ? 3 : \
     0)
 #define CH32_PWM_PIN_TO_CHANNEL(p) ( \
@@ -254,13 +252,11 @@
     (p) == PA6 ? 2 : \
     (p) == PA7 ? 3 : \
     (p) == PA4 ? 4 : \
-    (p) == PB2 ? 1 : \
-    (p) == PB3 ? 2 : \
     (p) == PC1 ? 2 : \
     0)
 
 /* ---- tone(): TIM3, which is also a PWM timer here, so
- *      analogWrite() on PB2, PB3, PC1
+ *      analogWrite() on PC1
  *      is disturbed while a tone plays. ---- */
 #define CH32_TONE_TIMER 3
 #define CH32_TONE_TIMER_BASE CH32_TIM3_BASE

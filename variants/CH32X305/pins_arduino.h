@@ -18,7 +18,7 @@
 
 #define CH32_VARIANT_CH32X305 1
 
-/* ---- GPIO pads: 51 in the series, 51 of them on every part ---- */
+/* ---- GPIO pads: 53 in the series, 53 of them on every part ---- */
 #define PA0  CH32_PIN(0,  0)
 #define PA1  CH32_PIN(0,  1)
 #define PA2  CH32_PIN(0,  2)
@@ -64,6 +64,8 @@
 #define PC13 CH32_PIN(2, 13)
 #define PD2  CH32_PIN(3,  2)
 #define PD3  CH32_PIN(3,  3)
+#define PD4  CH32_PIN(3,  4)
+#define PD5  CH32_PIN(3,  5)
 #define PD6  CH32_PIN(3,  6)
 #define PD7  CH32_PIN(3,  7)
 #define PD10 CH32_PIN(3, 10)
@@ -75,7 +77,7 @@
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000fff1u
 #define CH32_PORT_MASK_C 0x00003fffu
-#define CH32_PORT_MASK_D 0x00003cccu
+#define CH32_PORT_MASK_D 0x00003cfcu
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
 #define CH32_PORT_MASK(port) ( \
@@ -92,7 +94,7 @@
 #define CH32_PORT_COMMON_MASK_A 0x0000ffffu
 #define CH32_PORT_COMMON_MASK_B 0x0000fff1u
 #define CH32_PORT_COMMON_MASK_C 0x00003fffu
-#define CH32_PORT_COMMON_MASK_D 0x00003cccu
+#define CH32_PORT_COMMON_MASK_D 0x00003cfcu
 #define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK(port) ( \
@@ -106,7 +108,7 @@
 
 #define NUM_DIGITAL_PINS 110   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  51   /* actual pads in the series */
+#define CH32_GPIO_COUNT  53   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (9 channels) ---- */
 /* Channels [7, 8, 9] are not bonded out in this series. */
@@ -146,11 +148,11 @@
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
 /* USART1: route af-1, on every part */
-#define CH32_SERIAL1_TX PC4
-#define CH32_SERIAL1_RX PA12
-/* device-data lists PA11, PC4 for TX on this
+#define CH32_SERIAL1_TX PD4
+#define CH32_SERIAL1_RX PD5
+/* device-data lists PA11, PC4, PD4 for TX on this
  * route, in that order, and the last is the one above. */
-/* device-data lists PA10, PA12 for RX on this
+/* device-data lists PA10, PA12, PC5, PD5 for RX on this
  * route, in that order, and the last is the one above. */
 #define CH32_SERIAL1_HANDLER USART1_IRQHandler
 #define CH32_SERIAL1_IRQ CH32_IRQN_USART1
@@ -200,11 +202,11 @@
 /* ---- I2C pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_i2cs) ---- */
 /* I2C1: route af-3, on every part */
-#define CH32_I2C1_SCL PB14
-#define CH32_I2C1_SDA PB15
-/* device-data lists PA0, PA14, PA8, PB14 for SCL on this
+#define CH32_I2C1_SCL PD4
+#define CH32_I2C1_SDA PD5
+/* device-data lists PA0, PA14, PA8, PB14, PD4 for SCL on this
  * route, in that order, and the last is the one above. */
-/* device-data lists PA1, PA13, PA9, PB15 for SDA on this
+/* device-data lists PA1, PA13, PA9, PB15, PD5 for SDA on this
  * route, in that order, and the last is the one above. */
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
@@ -260,7 +262,7 @@
 #define CH32_SPI3_SCK PD11
 #define CH32_SPI3_MISO PD13
 #define CH32_SPI3_MOSI PD12
-/* device-data lists PC9, PD11 for SCK on this
+/* device-data lists PC5, PC9, PD11 for SCK on this
  * route, in that order, and the last is the one above. */
 /* device-data lists PC11, PC7, PD13 for MISO on this
  * route, in that order, and the last is the one above. */

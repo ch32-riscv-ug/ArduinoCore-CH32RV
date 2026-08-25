@@ -18,12 +18,13 @@
 
 #define CH32_VARIANT_CH32V307 1
 
-/* ---- GPIO pads: 75 in the series, 44 of them on every part ---- */
+/* ---- GPIO pads: 80 in the series, 49 of them on every part ---- */
 #define PA0  CH32_PIN(0,  0)
 #define PA1  CH32_PIN(0,  1)
 #define PA2  CH32_PIN(0,  2)
 #define PA3  CH32_PIN(0,  3)
 #define PA4  CH32_PIN(0,  4)
+#define PA5  CH32_PIN(0,  5)
 #define PA6  CH32_PIN(0,  6)
 #define PA7  CH32_PIN(0,  7)
 #define PA8  CH32_PIN(0,  8)
@@ -59,9 +60,13 @@
 #define PC6  CH32_PIN(2,  6)
 #define PC7  CH32_PIN(2,  7)
 #define PC8  CH32_PIN(2,  8)
+#define PC9  CH32_PIN(2,  9)
 #define PC10 CH32_PIN(2, 10)
 #define PC11 CH32_PIN(2, 11)
 #define PC12 CH32_PIN(2, 12)
+#define PC13 CH32_PIN(2, 13)
+#define PC14 CH32_PIN(2, 14)
+#define PC15 CH32_PIN(2, 15)
 #define PD0  CH32_PIN(3,  0)
 #define PD1  CH32_PIN(3,  1)
 #define PD2  CH32_PIN(3,  2)
@@ -96,9 +101,9 @@
 #define PE15 CH32_PIN(4, 15)
 
 /* Bit n set = P<port>n is bonded out on at least one part in the series. */
-#define CH32_PORT_MASK_A 0x0000ffdfu
+#define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000ffffu
-#define CH32_PORT_MASK_C 0x00001dffu
+#define CH32_PORT_MASK_C 0x0000ffffu
 #define CH32_PORT_MASK_D 0x0000ffffu
 #define CH32_PORT_MASK_E 0x0000ffffu
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
@@ -113,9 +118,9 @@
 
 /* Bit n set = P<port>n is bonded out on EVERY part in the series,
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
-#define CH32_PORT_COMMON_MASK_A 0x0000ffdfu
+#define CH32_PORT_COMMON_MASK_A 0x0000ffffu
 #define CH32_PORT_COMMON_MASK_B 0x0000ffffu
-#define CH32_PORT_COMMON_MASK_C 0x00001dffu
+#define CH32_PORT_COMMON_MASK_C 0x0000ffffu
 #define CH32_PORT_COMMON_MASK_D 0x00000004u
 #define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
@@ -130,16 +135,16 @@
 
 #define NUM_DIGITAL_PINS 144   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  75   /* actual pads in the series */
+#define CH32_GPIO_COUNT  80   /* actual pads in the series */
 
-/* ---- ADC1 analog inputs (15 channels) ---- */
-/* Channels [5] are not bonded out in this series. */
-#define NUM_ANALOG_INPUTS 16   /* highest channel + 1; see the gaps above */
+/* ---- ADC1 analog inputs (16 channels) ---- */
+#define NUM_ANALOG_INPUTS 16
 #define A0   PA0
 #define A1   PA1
 #define A2   PA2
 #define A3   PA3
 #define A4   PA4
+#define A5   PA5
 #define A6   PA6
 #define A7   PA7
 #define A8   PB0
@@ -156,6 +161,7 @@
     (p) == PA2 ? 2 : \
     (p) == PA3 ? 3 : \
     (p) == PA4 ? 4 : \
+    (p) == PA5 ? 5 : \
     (p) == PA6 ? 6 : \
     (p) == PA7 ? 7 : \
     (p) == PB0 ? 8 : \
@@ -173,6 +179,7 @@
     (c) == 2 ? PA2 : \
     (c) == 3 ? PA3 : \
     (c) == 4 ? PA4 : \
+    (c) == 5 ? PA5 : \
     (c) == 6 ? PA6 : \
     (c) == 7 ? PA7 : \
     (c) == 8 ? PB0 : \
@@ -285,15 +292,16 @@
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
-/* SPI1: route remap-1, on every part */
-#define CH32_SPI1_SCK PB3
-#define CH32_SPI1_MISO PB4
-#define CH32_SPI1_MOSI PB5
+/* SPI1: route default, on every part */
+#define CH32_SPI1_SCK PA5
+#define CH32_SPI1_MISO PA6
+#define CH32_SPI1_MOSI PA7
 #define CH32_SPI1_REMAP_MASK 0x00000001u
-#define CH32_SPI1_REMAP_VAL  0x00000001u
+#define CH32_SPI1_REMAP_VAL  0x00000000u
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32_SPI1_ROUTE_COUNT 1
+#define CH32_SPI1_ROUTE_COUNT 2
 #define CH32_SPI1_ROUTES { \
+    { 0, { PA5, PA6, PA7 }, 0x00000000u, 0x00000000u }, \
     { 1, { PB3, PB4, PB5 }, 0x00000001u, 0x00000000u }, \
 }
 /* SPI2: route default, on every part */
@@ -322,7 +330,7 @@
 #define SCK PIN_SPI_SCK
 #define MISO PIN_SPI_MISO
 #define MOSI PIN_SPI_MOSI
-#define PIN_SPI_SS PA15
+#define PIN_SPI_SS PA4
 #define SS PIN_SPI_SS
 #endif
 
@@ -361,6 +369,8 @@
  *      not a timer. ---- */
 /* DAC1: on every part */
 #define CH32_DAC1_PIN PA4
+/* DAC2: on every part */
+#define CH32_DAC2_PIN PA5
 
 /* ---- tone(): TIM7, free of PWM pads. ---- */
 #define CH32_TONE_TIMER 7

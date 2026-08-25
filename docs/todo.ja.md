@@ -689,7 +689,30 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       **以前のPWM padのほうが誤読由来だった**。
       基準線も確認済み: `--tables <b1285de> --check`はexit 0 / DRIFT無しなので、
       下記の差分は純粋に上流の差。全文は[実験0015](experiments/0015-device-data-155c398-adoption.ja.md)
-- [ ] `[P0]` **(要判断)** `155c398`を取り込むか。生成物は**8 additive / 15 rewriting**。
+- [x] **取り込んだ: pinを`b1285de`→`944bc9c`へ**(2026-08-25、maintainer承認
+      「可能なものは取り込みに進んでほしい」)。実施内容:
+      - 生成器で全再生成(8 additive / 20 rewriting)、lockは13表
+        (**`timers.csv`が加わった**)
+      - **`WIDE_TIMERS`(手書き)を削除し`timers.csv`から読む`load_wide_timers()`へ**。
+        訂正が3つ入った: V203 tone 32→16(正しい。CCT6はV205ボード側)、
+        **V208 tone(TIM5) 16→32——手書き表の実バグを表が直した**
+        (V20xのD8/D8W dieはTIM5が32bit。V208のtone()はL103と同じ沈黙バグを
+        持っていた。実機なしなので未検証のまま修正)、V208 servo 32→16。
+        die条件(`condition`列)は意図的に無視(広い側に倒す。32bitストアは
+        16bit部品に無害とV203実機で確認済み)
+      - **旧linker script 9本を削除**(480K/224K系。参照ゼロを確認)。
+        V303/V305/V307/V317/X305/X315のflashが訂正値(128K/256K/192K)になった
+      - X035/X033に**PC10/PC11がpadとして生成される**ようになった。
+        `UNUSABLE_PADS`のnoteを上流の精密化した記述
+        (「PC10/PC17・PC11/PC16はleadを共有するペア。両方をoutputにしない」)へ更新。
+        `CH32_UNUSABLE_PINS`は情報提供のみ(coreは強制しない)で従来どおり
+      - `.tools`の取得コピーも944bc9cへ更新(fetch_tools)
+      **取り込みで受け入れた既知の劣化**: V205のI2C2 defineが消える
+      (一対多の後勝ちでPC13/PC14が選ばれ、部品間で不一致になり選外。
+      compile only + af-7は元からcore未対応なので実害なし。
+      **一対多の決定則を入れれば戻る**——下記`[P1]`)。
+      X305のSerial1/I2C1既定padが並び順で移動(同じくcompile only)
+- [不要になった過去情報] `155c398`を取り込むか(944bc9cで上書きされた)。当時の分析: 生成物は8 additive / 15 rewriting。
       c2c457dで壊れていた4件(V407/V467 SPI3、V208 ADC、V007 I2C1、X033 I2C1)は
       **すべて直っている**。増えるもの: PC13/PC14/PC15が7 boardに追加、
       linker script 8本、V208 USART4 route表。
@@ -784,7 +807,7 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
         **PB6/PB7には何も繋がっていないのでpinが実際に動いたかは未確認**。
         確かめるならprobeをPB6/PB7へ配線し直して`uart_scan`
 
-- [ ] [P2]` **`systick.csv`が入ったのでCH32V103のSysTick配置をデータ由来にできる**。
+- [ ] `[P2]` **`systick.csv`が入ったのでCH32V103のSysTick配置をデータ由来にできる**(取り込み完了 2026-08-25 により着手可能)。
       いま`cores/arduino/ch32_registers.h`に手書きしてあるoffsetと、
       「カウンタはbyte writeのみ」という制約(`CH32_SYSTICK_WRITE8`)は、
       上流表の`offset`と`write_bits`にそのまま載っている。

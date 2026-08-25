@@ -12,9 +12,9 @@
  * A pad missing from a given package is left unbonded: writing it only
  * touches a register bit with nothing attached, which is harmless.
  *
- * Exception, errata x035-pc10-pc17-bonded: PC10/PC11 have no pin of their
- * own but are internally bonded to PC17/PC16, so writing them drives a
- * real pin.
+ * Exception, errata x035-pc10-pc17-bonded: PC10/PC17 and PC11/PC16 are
+ * internally bonded pairs sharing one lead; never drive both halves of a
+ * pair. The core marks PC10/PC11 as the never-driven side.
  */
 #pragma once
 
@@ -22,7 +22,7 @@
 
 #define CH32_VARIANT_CH32X033 1
 
-/* ---- GPIO pads: 19 in the series, 19 of them on every part ---- */
+/* ---- GPIO pads: 21 in the series, 21 of them on every part ---- */
 #define PA0  CH32_PIN(0,  0)
 #define PA1  CH32_PIN(0,  1)
 #define PA2  CH32_PIN(0,  2)
@@ -38,6 +38,8 @@
 #define PB1  CH32_PIN(1,  1)
 #define PB7  CH32_PIN(1,  7)
 #define PC3  CH32_PIN(2,  3)
+#define PC10 CH32_PIN(2, 10)
+#define PC11 CH32_PIN(2, 11)
 #define PC16 CH32_PIN(2, 16)
 #define PC17 CH32_PIN(2, 17)
 #define PC18 CH32_PIN(2, 18)
@@ -46,7 +48,7 @@
 /* Bit n set = P<port>n is bonded out on at least one part in the series. */
 #define CH32_PORT_MASK_A 0x00000effu
 #define CH32_PORT_MASK_B 0x00000083u
-#define CH32_PORT_MASK_C 0x000f0008u
+#define CH32_PORT_MASK_C 0x000f0c08u
 #define CH32_PORT_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
@@ -63,7 +65,7 @@
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
 #define CH32_PORT_COMMON_MASK_A 0x00000effu
 #define CH32_PORT_COMMON_MASK_B 0x00000083u
-#define CH32_PORT_COMMON_MASK_C 0x000f0008u
+#define CH32_PORT_COMMON_MASK_C 0x000f0c08u
 #define CH32_PORT_COMMON_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
@@ -85,7 +87,7 @@
 
 #define NUM_DIGITAL_PINS 84   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  19   /* actual pads in the series */
+#define CH32_GPIO_COUNT  21   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (11 channels) ---- */
 /* Channels [10, 11, 12] are not bonded out in this series. */

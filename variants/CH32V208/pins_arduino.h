@@ -18,7 +18,7 @@
 
 #define CH32_VARIANT_CH32V208 1
 
-/* ---- GPIO pads: 50 in the series, 14 of them on every part ---- */
+/* ---- GPIO pads: 53 in the series, 17 of them on every part ---- */
 #define PA0  CH32_PIN(0,  0)
 #define PA1  CH32_PIN(0,  1)
 #define PA2  CH32_PIN(0,  2)
@@ -64,6 +64,9 @@
 #define PC10 CH32_PIN(2, 10)
 #define PC11 CH32_PIN(2, 11)
 #define PC12 CH32_PIN(2, 12)
+#define PC13 CH32_PIN(2, 13)
+#define PC14 CH32_PIN(2, 14)
+#define PC15 CH32_PIN(2, 15)
 #define PD2  CH32_PIN(3,  2)
 #define PD3  CH32_PIN(3,  3)
 #define PD4  CH32_PIN(3,  4)
@@ -73,7 +76,7 @@
 /* Bit n set = P<port>n is bonded out on at least one part in the series. */
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000ffffu
-#define CH32_PORT_MASK_C 0x00001fffu
+#define CH32_PORT_MASK_C 0x0000ffffu
 #define CH32_PORT_MASK_D 0x0000007cu
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
@@ -89,8 +92,8 @@
 /* Bit n set = P<port>n is bonded out on EVERY part in the series,
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
 #define CH32_PORT_COMMON_MASK_A 0x000078ffu
-#define CH32_PORT_COMMON_MASK_B 0x000000c0u
-#define CH32_PORT_COMMON_MASK_C 0x00000000u   /* port absent */
+#define CH32_PORT_COMMON_MASK_B 0x000001c0u
+#define CH32_PORT_COMMON_MASK_C 0x0000c000u
 #define CH32_PORT_COMMON_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
@@ -105,7 +108,7 @@
 
 #define NUM_DIGITAL_PINS 103   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  50   /* actual pads in the series */
+#define CH32_GPIO_COUNT  53   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (16 channels) ---- */
 #define NUM_ANALOG_INPUTS 16
@@ -209,6 +212,14 @@
 #define CH32_SERIAL4_RX PC11
 #define CH32_SERIAL4_HANDLER UART4_IRQHandler
 #define CH32_SERIAL4_IRQ CH32_IRQN_UART4
+#define CH32_SERIAL4_REMAP2_MASK 0x00030000u
+#define CH32_SERIAL4_REMAP2_VAL  0x00000000u
+/* SERIAL4 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32_SERIAL4_ROUTE_COUNT 2
+#define CH32_SERIAL4_ROUTES { \
+    { 0, { PC10, PC11, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PB0, PB1, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00010000u }, \
+}
 #ifndef CH32_SERIAL_DEFAULT
 #define CH32_SERIAL_DEFAULT 1
 #endif
@@ -307,7 +318,9 @@
 #define CH32_TONE_TIMER_IRQ CH32_IRQN_TIM5
 #define CH32_TONE_TIMER_HANDLER TIM5_IRQHandler
 #define CH32_TONE_SHARES_PWM 0
-#define CH32_TONE_TIMER_BITS 16
+/* CNT and ATRLR are 32 bit on this timer: a 16-bit store would be
+ * replicated into both halves. See ch32_registers.h. */
+#define CH32_TONE_TIMER_BITS 32
 
 /* ---- Servo: TIM4, free of PWM pads. ---- */
 #define CH32_SERVO_TIMER 4
@@ -317,9 +330,7 @@
 #define CH32_SERVO_TIMER_IRQ CH32_IRQN_TIM4
 #define CH32_SERVO_TIMER_HANDLER TIM4_IRQHandler
 #define CH32_SERVO_SHARES_PWM 0
-/* CNT and ATRLR are 32 bit on this timer: a 16-bit store would be
- * replicated into both halves. See ch32_registers.h. */
-#define CH32_SERVO_TIMER_BITS 32
+#define CH32_SERVO_TIMER_BITS 16
 
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present

@@ -18,7 +18,7 @@
 
 #define CH32_VARIANT_CH32M007 1
 
-/* ---- GPIO pads: 17 in the series, 12 of them on every part ---- */
+/* ---- GPIO pads: 17 in the series, 13 of them on every part ---- */
 #define PA1 CH32_PIN(0,  1)
 #define PA4 CH32_PIN(0,  4)
 #define PA5 CH32_PIN(0,  5)
@@ -58,7 +58,7 @@
 #define CH32_PORT_COMMON_MASK_A 0x00000012u
 #define CH32_PORT_COMMON_MASK_B 0x00000008u
 #define CH32_PORT_COMMON_MASK_C 0x00000034u
-#define CH32_PORT_COMMON_MASK_D 0x000000fcu
+#define CH32_PORT_COMMON_MASK_D 0x000000feu
 #define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK(port) ( \

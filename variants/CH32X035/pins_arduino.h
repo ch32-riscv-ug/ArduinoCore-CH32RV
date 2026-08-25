@@ -12,9 +12,9 @@
  * A pad missing from a given package is left unbonded: writing it only
  * touches a register bit with nothing attached, which is harmless.
  *
- * Exception, errata x035-pc10-pc17-bonded: PC10/PC11 have no pin of their
- * own but are internally bonded to PC17/PC16, so writing them drives a
- * real pin.
+ * Exception, errata x035-pc10-pc17-bonded: PC10/PC17 and PC11/PC16 are
+ * internally bonded pairs sharing one lead; never drive both halves of a
+ * pair. The core marks PC10/PC11 as the never-driven side.
  */
 #pragma once
 
@@ -22,7 +22,7 @@
 
 #define CH32_VARIANT_CH32X035 1
 
-/* ---- GPIO pads: 60 in the series, 11 of them on every part ---- */
+/* ---- GPIO pads: 62 in the series, 11 of them on every part ---- */
 #define PA0  CH32_PIN(0,  0)
 #define PA1  CH32_PIN(0,  1)
 #define PA2  CH32_PIN(0,  2)
@@ -77,6 +77,8 @@
 #define PC5  CH32_PIN(2,  5)
 #define PC6  CH32_PIN(2,  6)
 #define PC7  CH32_PIN(2,  7)
+#define PC10 CH32_PIN(2, 10)
+#define PC11 CH32_PIN(2, 11)
 #define PC14 CH32_PIN(2, 14)
 #define PC15 CH32_PIN(2, 15)
 #define PC16 CH32_PIN(2, 16)
@@ -87,7 +89,7 @@
 /* Bit n set = P<port>n is bonded out on at least one part in the series. */
 #define CH32_PORT_MASK_A 0x00ffffffu
 #define CH32_PORT_MASK_B 0x003fffffu
-#define CH32_PORT_MASK_C 0x000fc0ffu
+#define CH32_PORT_MASK_C 0x000fccffu
 #define CH32_PORT_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
@@ -126,7 +128,7 @@
 
 #define NUM_DIGITAL_PINS 84   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  60   /* actual pads in the series */
+#define CH32_GPIO_COUNT  62   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (14 channels) ---- */
 #define NUM_ANALOG_INPUTS 14
