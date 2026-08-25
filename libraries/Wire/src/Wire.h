@@ -3,13 +3,26 @@
  * Master mode, polled. The pins come from the variant's CH32_I2Cn_SCL/SDA, so
  * a sketch calls Wire.begin() with no arguments the way it does on AVR.
  *
- * Slave mode (begin(address), onReceive, onRequest) is declared because
- * ArduinoCore-API requires it, but it is not implemented yet: the calls are
- * accepted and do nothing rather than pretending to work. See docs/todo.ja.md.
+ * Slave mode (begin(address), onReceive, onRequest) is interrupt-driven -
+ * a slave cannot poll, because the master decides when to talk. The AVR
+ * semantics are kept where libraries depend on them:
  *
- * Every wait in the driver is bounded. A missing pull-up or a device holding
- * SDA low is the normal I2C failure, and an unbounded wait would turn that
- * into a hung sketch instead of an endTransmission() error code.
+ *   - onReceive(count) runs in interrupt context, after the stop condition,
+ *     with the message readable through available()/read()
+ *   - onRequest() runs in interrupt context at the address match; what it
+ *     write()s is what the master reads
+ *   - a master that reads more than onRequest() provided gets 0xFF, the
+ *     bus's idle level, rather than a repeat of the last byte
+ *   - a message longer than CH32_WIRE_BUFFER_SIZE keeps its head and drops
+ *     the tail, as AVR's twi does
+ *
+ * One instance is a master or a slave, not both: begin() and begin(address)
+ * choose, end() switches. Multi-master arbitration is not supported. General
+ * call (address 0) is not answered.
+ *
+ * Every wait in the master driver is bounded. A missing pull-up or a device
+ * holding SDA low is the normal I2C failure, and an unbounded wait would turn
+ * that into a hung sketch instead of an endTransmission() error code.
  */
 #pragma once
 
@@ -41,11 +54,13 @@ class CH32TwoWire : public HardwareI2C {
 public:
     CH32TwoWire(uint32_t base, uint32_t clock_bit, uint8_t scl_pin,
                 uint8_t sda_pin, uint32_t remap_mask, uint32_t remap_value,
-                uint32_t remap2_mask, uint32_t remap2_value)
+                uint32_t remap2_mask, uint32_t remap2_value,
+                uint8_t ev_irqn, uint8_t er_irqn)
         : _base(base), _clock_bit(clock_bit), _scl_pin(scl_pin),
           _sda_pin(sda_pin), _remap_mask(remap_mask),
           _remap_value(remap_value), _remap2_mask(remap2_mask),
-          _remap2_value(remap2_value) {}
+          _remap2_value(remap2_value), _ev_irqn(ev_irqn),
+          _er_irqn(er_irqn) {}
 
     void begin() override;
     void begin(uint8_t address) override;
@@ -64,6 +79,13 @@ public:
 
     void onReceive(void (*)(int)) override;
     void onRequest(void (*)(void)) override;
+
+    /* Interrupt entry points, called by the I2Cn_EV/I2Cn_ER vectors in
+     * Wire.cpp. Public for the same reason HardwareSerial::irq() is: the
+     * vector is a free function and a friend declaration would only dress
+     * that up. Not part of the sketch-facing API. */
+    void ev_irq(void);
+    void er_irq(void);
 
     /* Move this bus onto another of its pin routes.
      *
@@ -107,6 +129,9 @@ private:
     const uint32_t _remap2_mask;
     uint32_t _remap2_value;
 
+    const uint8_t _ev_irqn;
+    const uint8_t _er_irqn;
+
     uint32_t _clock_hz = 100000;
     uint8_t _address = 0;          /* target of the transmission being built */
     bool _started = false;
@@ -116,11 +141,23 @@ private:
      * first: an aborted transfer can leave BUSY asserted forever. */
     bool _needs_recovery = false;
 
+    /* Slave state. The callbacks run in interrupt context. _slave_replying
+     * is what lets write() tell "inside onRequest()" apart from "outside any
+     * transmission", where write() must go nowhere. */
+    void (*_on_receive)(int) = nullptr;
+    void (*_on_request)(void) = nullptr;
+    volatile bool _slave = false;
+    volatile bool _slave_replying = false;
+
+    /* Shared by the polled master and the slave interrupt handler - never
+     * both at once, since the modes are exclusive. Volatile for the halves
+     * the handler writes while the sketch reads. */
     uint8_t _tx[CH32_WIRE_BUFFER_SIZE];
-    uint8_t _tx_len = 0;
+    volatile uint8_t _tx_len = 0;
+    volatile uint8_t _tx_sent = 0;
     uint8_t _rx[CH32_WIRE_BUFFER_SIZE];
-    uint8_t _rx_len = 0;
-    uint8_t _rx_read = 0;
+    volatile uint8_t _rx_len = 0;
+    volatile uint8_t _rx_read = 0;
 };
 
 }  // namespace arduino

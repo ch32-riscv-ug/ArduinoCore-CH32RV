@@ -36,7 +36,7 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 | PWR (低消費電力) | 要判断 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduino標準APIが無い。sleep系をどう見せるか |
 | FLASH (自己書き換え) | 要判断 | EEPROM相当 | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduinoでは`EEPROM`が定番。**page消去単位と書き込み粒度のデータが無い**(R-20のD-3相当)。products.csvにあるのはflash容量だけ |
 | USART | 実装済 | Serial | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
-| I2C | 実装済 | Wire | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | master専用。X035実機で配線なしの自己検査11項目pass。**slave(onReceive/onRequest)は未実装**、実デバイス相手の確認はこれから |
+| I2C | 実装済 | Wire | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | master + slave(割込み駆動)。配線なし自己検査14項目を4 board実機pass。slaveの**データ経路は`manual/i2c_loopback`の配線待ち**。実デバイス相手の確認はこれから |
 | SPI | 実装済 | SPI | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | controller専用。X035実機で配線なしの自己検査9項目pass。**peripheral(slave)は未実装**、実デバイス相手の確認はこれから |
 | ADC | 実装済 | analogRead | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 分解能は実機未確認 |
 | DAC | 実装済 | analogWrite(CH32_DACn_PIN) |  |  |  |  |  | ○ | ○ |  |  |  |  | V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来。**実機未確認** |
@@ -64,7 +64,7 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 | USB (FS device/host) | 予定(初回) | TinyUSB |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | **TinyUSB採用が決定**(ADR-0012)。上流の対応はV103/V20x/V30xのみで、X033/X035はPR未マージ、L103/M030/V205は未対応。**X035以外はPLLが先** |
 | USB HS | 予定(初回) | TinyUSB |  |  |  |  | ○ |  | ○ |  |  |  | ○ | V30x配置は上流済み。V205/V407/X3x5は別配置で未対応(3 seriesで共通) |
 | USB SS | 対象外 | - |  |  |  |  |  |  |  |  |  |  | ○ | X315のみ。当面扱わない |
-| USB PD | 予定(初回・決定) | 未定 |  |  |  |  | ○ |  |  | ○ | ○ | ○ |  | **必ず載せる**(ユーザ指示) |
+| USB PD | 実装中 | `USBPD`(library) |  |  |  |  | ○ |  |  | ○ | ○ | ○ |  | **必ず載せる**(ユーザ指示)。ロジック層とAPIは実装済み(A-8)、ドライバはこれから |
 
 ## 通信・外部バス
 

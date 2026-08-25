@@ -120,6 +120,7 @@ tests/
 | `test_sketch_profiles.py` | `sketches/` | 各sketch.yamlがboard一覧と同期 |
 | `test_sketch_profile_build.py` | `sketches/` | profile経由(loopback index)でbuildできる |
 | `test_clock_prescaler.py` | `unit/` | AHB分周器の符号化表(compile時assertのみ) |
+| `test_pd_frames.py` | `unit/` | USB PDのフレームロジック(hostのccで共有ライブラリにしてctypesで実行) |
 | `test_tests_layout.py` | `unit/` | 本節の規約そのもの(下記) |
 
 `sketches/`は**1 caseにつき1ディレクトリ**です。

@@ -1,0 +1,25 @@
+#######################################
+# USBPD keyword highlighting
+#######################################
+
+USBPD	KEYWORD1
+PDProfile	KEYWORD1
+
+begin	KEYWORD2
+end	KEYWORD2
+connected	KEYWORD2
+ready	KEYWORD2
+profileCount	KEYWORD2
+profile	KEYWORD2
+request	KEYWORD2
+requestProfile	KEYWORD2
+voltage	KEYWORD2
+current	KEYWORD2
+maintain	KEYWORD2
+pd_supply_name	KEYWORD2
+
+PD_SUPPLY_FIXED	LITERAL1
+PD_SUPPLY_PPS	LITERAL1
+PD_SUPPLY_BATTERY	LITERAL1
+PD_SUPPLY_VARIABLE	LITERAL1
+PD_SUPPLY_UNKNOWN	LITERAL1

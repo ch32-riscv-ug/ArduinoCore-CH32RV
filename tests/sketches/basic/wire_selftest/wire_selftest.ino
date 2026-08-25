@@ -16,6 +16,22 @@
  * ordinary device is there even when the bench does have a device attached. */
 static const uint8_t NOBODY = 0x7F;
 
+/* Counted, not acted on: with nothing wired to the bus, any callback firing
+ * is the driver inventing traffic. */
+static volatile int slave_rx_events;
+static volatile int slave_req_events;
+
+static void on_slave_receive(int n)
+{
+    (void)n;
+    slave_rx_events++;
+}
+
+static void on_slave_request(void)
+{
+    slave_req_events++;
+}
+
 static void run_checks()
 {
     Wire.begin();
@@ -72,6 +88,32 @@ static void run_checks()
     Wire.beginTransmission(NOBODY);
     rc = Wire.endTransmission();
     tc_check("restart_still_reports", rc != 0);
+
+    /* 7. Slave mode, as far as it can be seen without a master on the bus:
+     *    it comes up, it does not invent traffic, master calls are refused
+     *    while it holds the peripheral, and the way back to master mode
+     *    works. The actual data path needs two buses wired together -
+     *    manual/i2c_loopback. */
+    slave_rx_events = 0;
+    slave_req_events = 0;
+    Wire.end();
+    Wire.onReceive(on_slave_receive);
+    Wire.onRequest(on_slave_request);
+    Wire.begin(0x2A);
+    tc_check("slave_accepts_no_master_calls",
+             (Wire.beginTransmission(NOBODY),
+              Wire.endTransmission()) == 4
+             && Wire.requestFrom(NOBODY, (size_t)2) == 0);
+    delay(60);
+    tc_checkv("slave_quiet_unwired",
+              slave_rx_events == 0 && slave_req_events == 0
+              && Wire.available() == 0,
+              slave_rx_events * 100 + slave_req_events);
+    Wire.end();
+    Wire.begin();
+    Wire.beginTransmission(NOBODY);
+    rc = Wire.endTransmission();
+    tc_check("master_after_slave", rc != 0 && rc != 4);
 
     tc_done();
 }

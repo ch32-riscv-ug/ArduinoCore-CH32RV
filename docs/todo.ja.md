@@ -338,8 +338,22 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 - [ ] `[P1]` **実デバイス相手の確認**(要実機・要配線)。今の自己検査は
       「バスに何も無くても固まらない」ことしか見ていない。
       I2CはEEPROMかLCD、SPIはMISO-MOSI短絡のloopbackが要る
-- [ ] `[P1]` **slave / peripheral モード**。`Wire.begin(address)`・`onReceive`・`onRequest`と
-      SPIのperipheralは**受け付けるが何もしない**。
+- [x] **Wireのslave modeを実装した**(2026-08-25、**配線ありの実機検証は未**)。
+      割込み駆動(`I2Cn_EV`/`I2Cn_ER`、instanceがIRQ番号を持つ)。
+      AVRの意味論を維持: `onReceive(count)`はSTOP後に割込み文脈で、
+      `onRequest()`はaddress match時に(ADDRクリア前なのでSCL stretchで
+      masterは待たされる)、over-readは**0xFF**(直前byteの繰り返しではなく)、
+      バッファ超過は頭を残して尾を捨てる。master/slaveは排他
+      (`begin()`/`begin(addr)`で選び、slave中のmaster呼び出しは4/0を返す)。
+      検証の現状:
+      - **配線なし**: `wire_selftest`に3 check追加(slave成立・勝手に喋らない・
+        masterへ戻れる)。**CH32V103実機で14/14 pass**。V003/X035/V103/X315
+        (I2C2のみ構成含む)でcompile確認
+      - **配線あり**: [`manual/i2c_loopback`](../tests/manual/i2c_loopback/i2c_loopback.py)を
+        用意(I2C1 master↔I2C2 slave、PB6-PB10 / PB7-PB11 + pull-up 2.2k〜10k)。
+        データ経路・callback・0xFF filler・バッファ上限の10 check。
+        **ジャンパ2本とpull-up 2本の配線待ち**(V103/V203/L103で可)
+- [ ] `[P1]` SPIのperipheral(slave)モードは未実装のまま。
       `SPI_HAS_PERIPHERAL_MODE`は意図的に未定義にしてある
 - [ ] `[P1]` `Wire`の`setWireTimeout()`/`clearWireTimeout()`(AVR互換API)が無い
 - [ ] `[P2]` `usingInterrupt()`が空実装。この実装はISRからバスを触らないので実害は無いが、
@@ -432,13 +446,30 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       (HSI直結、**PLL不要**)で、参照実装のBMCタイミング定数も48MHzが第一候補
       (`USBPD_TMR_TX=80-1` / `RX=120-1`)。
       **つまりPDは`[P0]`のPLL/クロック方針に触らない**——X035を先にやる判断の根拠
-- [ ] `[P1]` `[要判断]` **範囲を決める**。sinkだけか、sourceも出すか。
-      PPS(`PD_setVoltage(mV)`)を入れるか。VDM/alt-modeは対象外でよいか。
-      Arduinoの利用者が普通に欲しいのは**sink**(「PD充電器から好きな電圧をもらう」)で、
-      PPSはその目玉。sourceはWCHの例があるので不可能ではない
-- [ ] `[P1]` `[要判断]` **置き場所**。X035専用なので、coreではなく同梱library
-      ([ADR-0013](adr/0013-bundled-libraries.ja.md))が素直に見える。
-      `CH32_USBPD_BASE`のような変異体のdefineで有無を出し分ける
+- [x] **範囲が決まった**(2026-08-25)。
+      **主目的は「充電器のプロファイル取得」と「PPS」**、つまり
+      Source Capabilitiesの列挙と`setVoltage(mV)`。
+      **sourceも対応したいが優先度は低い**(後追い)。VDM/alt-modeは対象外
+- [x] **同梱library**にする([ADR-0013](adr/0013-bundled-libraries.ja.md))。
+      **X035専用ではない**——当初そう書いたのは誤り。
+- [x] **対象は7 series。placementは2種類**(155c398の`memory_map.csv`):
+
+      | base | series |
+      |---|---|
+      | `0x40027000` | **CH32L103** / CH32V205 / **CH32X035** |
+      | `0x40024400` | CH32H417 / CH32X315 |
+
+      CCのpadも**series毎に違う**(`pin_roles.csv`の`peripheral=USBPD`):
+      X035 `PC14`/`PC15`、**L103 `PB6`/`PB7`**、V205 `PA0`/`PA1`、
+      X305 `PD4`/`PD5`、H41x `PB3`/`PB4`、**M030は`CC1`〜`CC4`の4本**。
+      よってlibraryは変異体の`CH32_USBPD_BASE` / `CH32_USBPD_CC1_PIN`…で
+      出し分ける形になる——Serial/I2C/SPI/toneと同じ作り。
+      **7 seriesとも既にboard定義がある**。うち**L103とX035は実機が繋がっている**
+- [ ] `[P0]` **生成に要る表が`155c398`側にしか無い**。
+      `memory_map.csv`(base) も `pin_roles.csv`(CCのpad) も `pin_alternate.csv` も
+      **`b1285de`には存在しない**。
+      つまり**変異体のdefineを生成する工程は取り込み後**になる。
+      それまでは手書きのdefineで先に進める(検証用、承認とは別管理)
 - [ ] `[P1]` **APIの形**。参照実装(wagiminator)は15関数で、形としては素直:
       `connect` / `negotiate` / `setVoltage(mV)` / PDOの列挙(`getPDONum`,
       `getFixedNum`, `getPPSNum`, `getPDOVoltage(n)`, `getPDOMaxCurrent(n)`) /
@@ -448,13 +479,46 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       state machine(参照実装は10状態: `IDLE`→`CHECK_CONNECT`→`CONNECT`→
       `SOURCE_CAP`→`SEND_REQUEST`→`WAIT_ACCEPT`→`ACCEPT`→`WAIT_PS_RDY`→
       `PS_RDY`、加えて`GET_SOURCE_CAP`) → PDO解析(Fixed / PPS) → Request
-- [ ] `[P1]` **検証をどこまで実機無しでやれるか**。
-      **PDOの解析は純粋なロジックなのでhost側のunit testにできる**
-      (合成したSource Capabilityフレームを食わせる)。
-      レジスタ初期化と「未接続を未接続と報告する」ところまでは配線無しで見られる。
-      **実際のnegotiationはPD電源が要る**——`setVoltage`まで見るなら**PPS対応の充電器**、
-      さらに結果の電圧を見る手段(参照実装はINA219を載せている)
-- [ ] `[P2]` `[要判断・要機材]` PD電源とanalyzerの手配。上記の実機検証の前提
+- [x] **ロジック層とAPIの形を実装した**(2026-08-25、**未承認・検証済み**、A-8)。
+      [`libraries/USBPD/`](../libraries/USBPD/README.ja.md)。
+      - `pd_frames.c/h`: **レジスタもArduino.hも知らない純関数**。
+        Source Capabilitiesの解析(Fixed/PPS/Battery/Variable/AVS)、
+        プロファイル選択(`pd_pick`)、Requestの組み立て(Fixed RDO / PPS RDO)、
+        messageヘッダ。単位換算(10mA/50mA/50mV/100mV/20mV/250mW)はこの中だけ
+      - 検証は**同じベクタを2回**: hostのccで共有ライブラリにして
+        `tests/unit/test_pd_frames.py`(ctypes、14 test)、
+        実機で`tests/sketches/basic/pd_selftest`(18 check、
+        **CH32V103実機でfailures=0**)。V003(16K、31%)とX035にもcompileが通る
+      - API: `USBPD.begin()/ready()/profileCount()/profile(i)/request(mV,mA)/
+        requestProfile(i,mV,mA)/voltage()/current()/maintain()`。
+        全部mV/mA。設計判断: **固定を優先**(PPS契約は数秒毎の再要求が要り、
+        `delay()`中に死ぬ)、**中間電圧を丸めない**(`request(8000)`は
+        5/9/12V充電器では失敗)、battery/variableは列挙のみ、
+        `maintain()`は`Ethernet.maintain()`と同じ役どころ
+      - `begin()`は**正直にfalse**(Wire slaveと同じ規則)。
+        ハードウェアドライバが次の段
+- [ ] `[P1]` `[要判断]` **ポンプ関数の名前**(いま`maintain()`)。
+      loop()から呼び、PPSの再要求と、将来は再広告への応答・割込みの繰り越し
+      仕事を担う。候補と論点(2026-08-25の議論):
+      - `poll()` — BLE.poll()と同構造の公式前例
+      - `update()` — 最も通じる。**「loopで呼ぶ動詞」としての読みは確立している**
+        (maintainerの指摘。Bounce2等は毎loop呼びが普通で、一度きりには読まれない。
+        当初の「一度きりに読める」という反対根拠は弱い)。残る差は
+        「何をするか名前が言わない」ことだけ
+      - `task()` — 同梱TinyUSB(tud_task)と揃う
+      - `maintain()` — Ethernet.maintain()と意味一致だが、前例を知らないと不明瞭
+      **未決のまま保留**(maintainer「もう少し考える」)。リリース前に確定させる。
+      renameは機械的(USBPD.h/cpp、README×2、keywords、example、docs)
+- [ ] `[P1]` **次: ハードウェアドライバ**(CC検出 → 受信 → GoodCRC →
+      state machine → Request送信)。書くことはできるが、
+      **動作確認はPD電源が来るまでできない**。レジスタ初期化と
+      「未接続を未接続と報告する」までは配線無しで見られる
+- [ ] `[P1]` `[要機材]` **PD電源が来たら**: negotiationの実機確認。
+      `setVoltage`まで見るなら**PPS対応**が要る。
+      **電圧測定は初回は無し**(利用者判断)——`getVoltage()`が返す
+      「交渉した結果」までを確認し、実際に何Vが出ているかの計測は後回し。
+      **CC配線は済んでいる**(2026-08-25 maintainer: このbenchのboardで
+      PDOプロファイルを確認したことがある)。PD電源の接続だけが残り
 - [ ] `[P2]` USB device(TinyUSB)は後回し。再開するときの状態:
       TinyUSB 0.21.0はvendor済みだが**glueが1つも無い**
       (`tusb_config.h` / `TinyUSB.h` / `TinyUSB.cpp` / `ch32_tusb_glue.cpp`は

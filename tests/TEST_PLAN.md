@@ -125,6 +125,7 @@ tests/
 | `test_sketch_profiles.py` | `sketches/` | every sketch.yaml matches the board list |
 | `test_sketch_profile_build.py` | `sketches/` | building through a profile (loopback index) works |
 | `test_clock_prescaler.py` | `unit/` | the AHB prescaler table (compile-time assertions only) |
+| `test_pd_frames.py` | `unit/` | the USB PD frame logic (built with the host cc, driven over ctypes) |
 | `test_tests_layout.py` | `unit/` | the rules in this section, asserted (below) |
 
 `sketches/` is **one directory per case**.

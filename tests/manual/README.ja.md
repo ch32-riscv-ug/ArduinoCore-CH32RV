@@ -18,6 +18,7 @@
 | [`uart_scan/`](uart_scan/) | boardがどのUSART routeを実際に配線しているか特定 |
 | [`smoke/`](smoke/) | 出荷経路でcompile → upload → UART読み出し。全sketchを一巡できる |
 | [`gpio_loopback/`](gpio_loopback/) | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
+| [`i2c_loopback/`](i2c_loopback/) | ジャンパ2本+pull-upでWireのslaveを検証。I2C1(master)↔I2C2(slave)、データ双方向 / callback / 0xFF filler |
 | [`crt0_probe/`](crt0_probe/) | 自作crt0が`setup()`へ正しいRAMを渡しているか。`.data` copy / `.bss` zero fill / `.init_array` |
 | [`conftest.py`](conftest.py) | 共有fixture(`attached` / `bench` / `uart_routes`)とsketchのparametrize |
 | [`env_config.py`](env_config.py) | `.env`のpad名(`PA0`)をpin番号へ変換し、sketch用のheaderを書き出す |

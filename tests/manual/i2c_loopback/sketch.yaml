@@ -1,0 +1,27 @@
+# Wire slave against Wire master through two jumpers and pull-ups. Manual:
+# the wiring is fitted by hand. Profiles list the two-bus boards on the
+# bench; a single-bus board (X035) compiles but SKIPs every check.
+
+profiles:
+  ch32v103:
+    fqbn: ch32-riscv-ug:ch32v:CH32V103:pnum=ANY
+    programmer: wch-link
+    platforms:
+      - platform: ch32-riscv-ug:ch32v (0.0.1)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+
+  ch32v203:
+    fqbn: ch32-riscv-ug:ch32v:CH32V203:pnum=ANY
+    programmer: wch-link
+    platforms:
+      - platform: ch32-riscv-ug:ch32v (0.0.1)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+
+  ch32l103:
+    fqbn: ch32-riscv-ug:ch32v:CH32L103:pnum=ANY
+    programmer: wch-link
+    platforms:
+      - platform: ch32-riscv-ug:ch32v (0.0.1)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+
+default_profile: ch32v103

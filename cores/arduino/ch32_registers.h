@@ -123,10 +123,14 @@
 #define CH32_I2C_CTLR1_SWRST   (1u << 15)
 
 #define CH32_I2C_CTLR2_FREQ_MASK 0x3Fu     /* APB1 clock in MHz             */
+#define CH32_I2C_CTLR2_ITERREN  (1u << 8)  /* error interrupt enable        */
+#define CH32_I2C_CTLR2_ITEVTEN  (1u << 9)  /* event interrupt enable        */
+#define CH32_I2C_CTLR2_ITBUFEN  (1u << 10) /* TXE/RXNE raise the event IRQ  */
 
 #define CH32_I2C_STAR1_SB      (1u << 0)   /* start condition generated     */
 #define CH32_I2C_STAR1_ADDR    (1u << 1)   /* address sent / matched        */
 #define CH32_I2C_STAR1_BTF     (1u << 2)   /* byte transfer finished        */
+#define CH32_I2C_STAR1_STOPF   (1u << 4)   /* stop received (slave)         */
 #define CH32_I2C_STAR1_RXNE    (1u << 6)
 #define CH32_I2C_STAR1_TXE     (1u << 7)
 #define CH32_I2C_STAR1_BERR    (1u << 8)

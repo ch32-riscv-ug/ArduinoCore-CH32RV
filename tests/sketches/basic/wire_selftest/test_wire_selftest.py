@@ -28,4 +28,7 @@ def test_wire_selftest(dut) -> None:
     dut.expect_exact("write_outside PASS")
     dut.expect_exact("fast_mode_still_reports PASS")
     dut.expect_exact("restart_still_reports PASS")
+    dut.expect_exact("slave_accepts_no_master_calls PASS")
+    dut.expect_exact("slave_quiet_unwired PASS")
+    dut.expect_exact("master_after_slave PASS")
     dut.expect_exact("wire_selftest done failures=0")

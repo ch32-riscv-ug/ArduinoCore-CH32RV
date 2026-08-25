@@ -104,13 +104,35 @@ void CH32TwoWire::begin()
 
 void CH32TwoWire::begin(uint8_t address)
 {
-    /* Slave mode is not implemented. Coming up as a master would be worse than
-     * doing nothing: the sketch would look alive while never answering. */
-    (void)address;
+    /* Same bring-up as the master - pins, reset, FREQ (which the slave needs
+     * too: it times its own SCL stretching from it) - then the own address
+     * and the interrupt machinery on top. */
+    begin();
+    /* Bit 14 of OADDR1 is documented "must be kept set"; the EVT init does. */
+    CH32_I2C_OADDR1(_base) = (uint16_t)(0x4000u | ((address & 0x7Fu) << 1));
+    _rx_len = 0;
+    _rx_read = 0;
+    _tx_len = 0;
+    _tx_sent = 0;
+    _slave = true;
+    CH32_I2C_CTLR2(_base) |= CH32_I2C_CTLR2_ITEVTEN | CH32_I2C_CTLR2_ITBUFEN |
+                             CH32_I2C_CTLR2_ITERREN;
+    ch32_irq_enable(_ev_irqn);
+    ch32_irq_enable(_er_irqn);
+    /* ACK is what makes the peripheral answer its address at all. */
+    CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
 }
 
 void CH32TwoWire::end()
 {
+    if (_slave) {
+        ch32_irq_disable(_ev_irqn);
+        ch32_irq_disable(_er_irqn);
+        CH32_I2C_CTLR2(_base) &= (uint16_t)~(CH32_I2C_CTLR2_ITEVTEN |
+                                             CH32_I2C_CTLR2_ITBUFEN |
+                                             CH32_I2C_CTLR2_ITERREN);
+        _slave = false;
+    }
     CH32_I2C_CTLR1(_base) = 0;
     CH32_RCC_APB1PCENR &= ~_clock_bit;
     _started = false;
@@ -197,7 +219,10 @@ void CH32TwoWire::beginTransmission(uint8_t address)
 
 uint8_t CH32TwoWire::endTransmission(bool stopBit)
 {
-    if (!_transmitting) {
+    if (!_transmitting || _slave) {
+        /* A slave starting a master transfer would have to win the bus from
+         * the master that is addressing it; this driver does one role at a
+         * time (see the header comment). */
         return 4;
     }
     _transmitting = false;
@@ -257,7 +282,7 @@ size_t CH32TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
 {
     _rx_len = 0;
     _rx_read = 0;
-    if (!_started || len == 0) {
+    if (!_started || _slave || len == 0) {
         return 0;
     }
     if (len > CH32_WIRE_BUFFER_SIZE) {
@@ -349,18 +374,84 @@ size_t CH32TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
 
 void CH32TwoWire::onReceive(void (*callback)(int))
 {
-    (void)callback;      /* slave mode is not implemented */
+    _on_receive = callback;
 }
 
 void CH32TwoWire::onRequest(void (*callback)(void))
 {
-    (void)callback;      /* slave mode is not implemented */
+    _on_request = callback;
+}
+
+/* ------------------------------------------------------- slave handlers */
+
+void CH32TwoWire::ev_irq(void)
+{
+    if (!_slave) {
+        /* The master paths run with the interrupt enables off and end()
+         * disables the vector, so this only catches a straggler that was
+         * already pended when end() ran. Nothing to do for it. */
+        return;
+    }
+    const uint16_t s1 = CH32_I2C_STAR1(_base);
+
+    if (s1 & CH32_I2C_STAR1_ADDR) {
+        /* Reading STAR2 after STAR1 is what clears ADDR, and TRA in it says
+         * which way this transfer goes. Nothing else may happen in between:
+         * the peripheral stretches SCL until ADDR is cleared, which is also
+         * why onRequest() can safely run first - the master is held. */
+        const uint16_t s2 = CH32_I2C_STAR2(_base);
+        if (s2 & CH32_I2C_STAR2_TRA) {
+            _tx_len = 0;
+            _tx_sent = 0;
+            if (_on_request) {
+                _slave_replying = true;
+                _on_request();
+                _slave_replying = false;
+            }
+        } else {
+            _rx_len = 0;
+            _rx_read = 0;
+        }
+        return;
+    }
+    if (s1 & CH32_I2C_STAR1_RXNE) {
+        const uint8_t data = (uint8_t)CH32_I2C_DATAR(_base);
+        if (_rx_len < CH32_WIRE_BUFFER_SIZE) {
+            _rx[_rx_len] = data;
+            _rx_len = (uint8_t)(_rx_len + 1u);
+        }
+        /* else: head kept, tail dropped, the way AVR's twi does. */
+    }
+    if (s1 & CH32_I2C_STAR1_TXE) {
+        /* Past what onRequest() provided, 0xFF: the value a released bus
+         * reads as, so an over-reading master sees "nothing", not echoes. */
+        CH32_I2C_DATAR(_base) =
+            _tx_sent < _tx_len ? _tx[_tx_sent++] : (uint16_t)0xFFu;
+    }
+    if (s1 & CH32_I2C_STAR1_STOPF) {
+        /* Cleared by the STAR1 read above plus a CTLR1 write; re-arming ACK
+         * is that write, and the next address match needs it anyway. */
+        CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
+        if (_on_receive) {
+            _on_receive((int)_rx_len);
+        }
+    }
+}
+
+void CH32TwoWire::er_irq(void)
+{
+    /* AF here is not an error: it is how a slave transmitter learns the
+     * master has read enough - the last byte was NACKed. The others are bus
+     * faults. All are write-zero-to-clear, and after any of them the ACK bit
+     * has to be re-armed or the next address match goes unanswered. */
+    clear_errors(_base);
+    CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
 }
 
 size_t CH32TwoWire::write(uint8_t data)
 {
-    if (!_transmitting) {
-        return 0;        /* slave mode is not implemented */
+    if (!_transmitting && !_slave_replying) {
+        return 0;        /* outside any transmission, bytes go nowhere */
     }
     if (_tx_len >= CH32_WIRE_BUFFER_SIZE) {
         /* AVR truncates and reports it from endTransmission() as 1, so the
@@ -509,17 +600,44 @@ bool CH32TwoWire::setPins(uint8_t scl, uint8_t sda)
 arduino::CH32TwoWire Wire(CH32_I2C1_BASE, CH32_RCC_APB1_I2C1,
                           CH32_I2C1_SCL, CH32_I2C1_SDA,
                           CH32_I2C1_REMAP_MASK, CH32_I2C1_REMAP_VAL,
-                          CH32_I2C1_REMAP2_MASK, CH32_I2C1_REMAP2_VAL);
+                          CH32_I2C1_REMAP2_MASK, CH32_I2C1_REMAP2_VAL,
+                          CH32_IRQN_I2C1_EV, CH32_IRQN_I2C1_ER);
+extern "C" __attribute__((interrupt)) void I2C1_EV_IRQHandler(void)
+{
+    Wire.ev_irq();
+}
+extern "C" __attribute__((interrupt)) void I2C1_ER_IRQHandler(void)
+{
+    Wire.er_irq();
+}
 #if defined(CH32_I2C2_SCL)
 arduino::CH32TwoWire Wire1(CH32_I2C2_BASE, CH32_RCC_APB1_I2C2,
                            CH32_I2C2_SCL, CH32_I2C2_SDA,
                            CH32_I2C2_REMAP_MASK, CH32_I2C2_REMAP_VAL,
-                           CH32_I2C2_REMAP2_MASK, CH32_I2C2_REMAP2_VAL);
+                           CH32_I2C2_REMAP2_MASK, CH32_I2C2_REMAP2_VAL,
+                           CH32_IRQN_I2C2_EV, CH32_IRQN_I2C2_ER);
+extern "C" __attribute__((interrupt)) void I2C2_EV_IRQHandler(void)
+{
+    Wire1.ev_irq();
+}
+extern "C" __attribute__((interrupt)) void I2C2_ER_IRQHandler(void)
+{
+    Wire1.er_irq();
+}
 #endif
 #elif defined(CH32_I2C2_SCL)
 /* A part that bonds only the second instance still gets a plain Wire. */
 arduino::CH32TwoWire Wire(CH32_I2C2_BASE, CH32_RCC_APB1_I2C2,
                           CH32_I2C2_SCL, CH32_I2C2_SDA,
                           CH32_I2C2_REMAP_MASK, CH32_I2C2_REMAP_VAL,
-                          CH32_I2C2_REMAP2_MASK, CH32_I2C2_REMAP2_VAL);
+                          CH32_I2C2_REMAP2_MASK, CH32_I2C2_REMAP2_VAL,
+                          CH32_IRQN_I2C2_EV, CH32_IRQN_I2C2_ER);
+extern "C" __attribute__((interrupt)) void I2C2_EV_IRQHandler(void)
+{
+    Wire.ev_irq();
+}
+extern "C" __attribute__((interrupt)) void I2C2_ER_IRQHandler(void)
+{
+    Wire.er_irq();
+}
 #endif
