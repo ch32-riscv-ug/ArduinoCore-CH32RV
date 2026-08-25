@@ -778,15 +778,20 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
        * route, in that order, and the last is the one above. */
       ```
 
-      **後半(選び方)は要判断。まず素朴な規則が危険だと分かった。**
-      「対応型番が多いpad、同数なら若い番号」を試算すると**35箇所が動き**、
-      そのうち候補は全部同数なので実質「若い番号」になり、
-      **V205のI2C1がPA13/PA14、X305/X315のUSART3もPA13/PA14**——
-      **どちらもSWD pin**を既定に選んでしまう。踏むとdebug接続が切れる。
-      規則を入れるなら**SWD padの除外が先**
-      (`gpio_loopback`のREADMEが既に「絶対に使うな」と書いている pad)。
-      なお`CH32V303/V305/V307`の`spi3 default MOSI`が`PB5`と`PA15`の2候補
-      (default経路の10組の1つ)なのも、この試算で見つかった
+      **後半(選び方)も実装した**(2026-08-25、maintainer承認「①+②を今入れる」)。
+      規則: **①debug/strap padを既定にしない**(`pin_roles.csv`の`SDI`と
+      `SYS`のNRST/BOOT。**part単位**——padが禁止のpartはそのrouteのcoverageから
+      外れるだけで、routeは`setRoute()`表に残る=明示選択は可能)、
+      **②全part一致のpadを優先**(ANY原則)、③残る同点は表順のまま
+      (**上流のpreferred印待ち**。「若いpad番号」はV307のSPI3_MOSIで
+      PA15=NSSを選ぶので不採用)。
+      効果: **V205のI2C2がPB10/PB11で復活**、V205にUSART2〜5が成立、
+      X033のSerial3既定が消滅(唯一のrouteがSWD pinのPC18/PC19だった)、
+      X315にUSART1が成立し既定が1へ、
+      **V005/V006/V007/M007の一部既定が移動**——per-packageの実データ
+      (V006 E8R6/E8R7は**NRSTがPC5**・SWCLKがPB3)により、
+      既定SPI/USART2がstrap padを踏んでいた。すべてcompile onlyのboard。
+      実機系(V003/V103/V203/L103/X035)は不変
 - [x] **`CH32V203CCT6`のPC13/PC14/PC15のI2C2 af-7は正しい**(2026-08-25、上流回答)。
       列ずれを疑ったが外れ——AF番号は**signal名と同じセルの中に括弧で**書かれて
       いるので、列がずれれば名前ごとずれる。しかもp17とp25の**独立した2つの表**に

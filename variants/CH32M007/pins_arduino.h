@@ -159,12 +159,12 @@
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
-/* SPI1: route remap-2, on every part */
-#define CH32_SPI1_SCK PD2
-#define CH32_SPI1_MISO PB3
-#define CH32_SPI1_MOSI PD3
+/* SPI1: route remap-4, on every part */
+#define CH32_SPI1_SCK PD4
+#define CH32_SPI1_MISO PD5
+#define CH32_SPI1_MOSI PD6
 #define CH32_SPI1_REMAP_MASK 0x00000007u
-#define CH32_SPI1_REMAP_VAL  0x00000002u
+#define CH32_SPI1_REMAP_VAL  0x00000004u
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
 #define CH32_SPI1_ROUTE_COUNT 2
 #define CH32_SPI1_ROUTES { \
@@ -179,7 +179,7 @@
 #define SCK PIN_SPI_SCK
 #define MISO PIN_SPI_MISO
 #define MOSI PIN_SPI_MOSI
-#define PIN_SPI_SS PC4
+#define PIN_SPI_SS PD3
 #define SS PIN_SPI_SS
 #endif
 

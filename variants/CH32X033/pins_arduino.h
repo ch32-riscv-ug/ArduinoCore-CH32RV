@@ -156,18 +156,6 @@
 #define CH32_SERIAL2_ROUTES { \
     { 0, { PA2, PA3, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
 }
-/* USART3: route remap-1, on every part */
-#define CH32_SERIAL3_TX PC18
-#define CH32_SERIAL3_RX PC19
-#define CH32_SERIAL3_HANDLER USART3_IRQHandler
-#define CH32_SERIAL3_IRQ CH32_IRQN_USART3
-#define CH32_SERIAL3_REMAP_MASK 0x00000c00u
-#define CH32_SERIAL3_REMAP_VAL  0x00000400u
-/* SERIAL3 routes for setRoute()/setPins(): route number, then TX, RX */
-#define CH32_SERIAL3_ROUTE_COUNT 1
-#define CH32_SERIAL3_ROUTES { \
-    { 1, { PC18, PC19, CH32_ROUTE_NO_PIN }, 0x00000400u, 0x00000000u }, \
-}
 /* USART4: route default, on every part */
 #define CH32_SERIAL4_TX PB0
 #define CH32_SERIAL4_RX PB1

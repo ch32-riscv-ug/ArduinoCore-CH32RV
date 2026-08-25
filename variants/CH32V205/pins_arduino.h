@@ -197,12 +197,80 @@
 /* USART1: route af-2, on every part */
 #define CH32_SERIAL1_TX PB6
 #define CH32_SERIAL1_RX PB7
-/* device-data lists PA6, PA9, PB15, PB6 for TX on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA10, PA7, PB7 for RX on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA6, PA9, PB15, PB6 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA10, PA7, PB7 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 #define CH32_SERIAL1_HANDLER USART1_IRQHandler
 #define CH32_SERIAL1_IRQ CH32_IRQN_USART1
+/* NOTE: route af-2 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this port needs verifying (docs/todo.ja.md). */
+/* USART2: route af-2, on every part */
+#define CH32_SERIAL2_TX PA2
+#define CH32_SERIAL2_RX PA3
+/* device-data lists PA2, PD5 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA3, PD6 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+#define CH32_SERIAL2_HANDLER USART2_IRQHandler
+#define CH32_SERIAL2_IRQ CH32_IRQN_USART2
+/* NOTE: route af-2 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this port needs verifying (docs/todo.ja.md). */
+/* USART3: route af-2, on every part */
+#define CH32_SERIAL3_TX PB10
+#define CH32_SERIAL3_RX PB11
+/* device-data lists PA13, PB10, PC10, PD8 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PB11, PC11, PD9 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+#define CH32_SERIAL3_HANDLER USART3_IRQHandler
+#define CH32_SERIAL3_IRQ CH32_IRQN_USART3
+/* NOTE: route af-2 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this port needs verifying (docs/todo.ja.md). */
+/* USART4: route af-2, on every part */
+#define CH32_SERIAL4_TX PB0
+#define CH32_SERIAL4_RX PB1
+/* device-data lists PB0, PE0 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PB1, PE1 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+#define CH32_SERIAL4_HANDLER USART4_IRQHandler
+#define CH32_SERIAL4_IRQ CH32_IRQN_USART4
+/* NOTE: route af-2 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this port needs verifying (docs/todo.ja.md). */
+/* USART5: route af-2, on every part */
+#define CH32_SERIAL5_TX PB4
+#define CH32_SERIAL5_RX PB5
+/* device-data lists PB4, PE8 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PB5, PE9 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+#define CH32_SERIAL5_HANDLER USART5_IRQHandler
+#define CH32_SERIAL5_IRQ CH32_IRQN_USART5
 /* NOTE: route af-2 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this port needs verifying (docs/todo.ja.md). */
@@ -215,10 +283,28 @@
 /* I2C1: route af-7, on every part */
 #define CH32_I2C1_SCL PB8
 #define CH32_I2C1_SDA PB9
-/* device-data lists PA14, PB6, PB8 for SCL on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA13, PB7, PB9 for SDA on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA14, PB6, PB8 for SCL on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA13, PB7, PB9 for SDA on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* NOTE: route af-7 is a per-pin alternate-function
+ * selector, not an AFIO remap. The core does not program it
+ * yet, so this instance needs verifying (docs/todo.ja.md). */
+/* I2C2: route af-7, on every part */
+#define CH32_I2C2_SCL PB10
+#define CH32_I2C2_SDA PB11
+/* device-data lists PB10, PC13 for SCL on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PB11, PC14 for SDA on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 /* NOTE: route af-7 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
@@ -237,12 +323,18 @@
 #define CH32_SPI1_SCK PB3
 #define CH32_SPI1_MISO PB4
 #define CH32_SPI1_MOSI PB5
-/* device-data lists PA5, PB3 for SCK on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA6, PB4 for MISO on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA7, PB5 for MOSI on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA5, PB3 for SCK on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA6, PB4 for MISO on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA7, PB5 for MOSI on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 /* NOTE: route af-5 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */

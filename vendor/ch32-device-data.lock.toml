@@ -23,6 +23,7 @@ files = [
   { path = "families.csv", sha256 = "50b110db7266128cc32abda9ee6c0dd67fc7d8318e0a357e3f258d60f8f5f4c4" },
   { path = "operating_conditions.csv", sha256 = "42b970b9e7aa5845002bc7ee52b9049b70da42c220850dcbcbf80e0e1c7387bd" },
   { path = "pin_functions.csv", sha256 = "3fc2cdf2975ca8806db2f3c652cdc7f68d8868d55df12daf3ca5dccfd82cbf9d" },
+  { path = "pin_roles.csv", sha256 = "527b23c921061cc05f7b1113e005bd4b6740568e6430bd777486d22d56b4e9df" },
   { path = "pins.csv", sha256 = "fd845c87acb1591b8f81ef858b9f31cdbe4a7016486dd21b60889717a828fe38" },
   { path = "products.csv", sha256 = "3d371e45245371c6be9d3e911f1d026b1a9167bb7e889c0808ca98d88ee8c9b0" },
   { path = "remap_fields.csv", sha256 = "67ab98a1d2b9a1e71ecde4504c5cbfd45cf1e4a295f3c83f13f132dbee4a8076" },

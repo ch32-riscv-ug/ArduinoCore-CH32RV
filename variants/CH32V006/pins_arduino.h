@@ -134,13 +134,13 @@
     { 0, { PD5, PD6, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PD6, PD5, CH32_ROUTE_NO_PIN }, 0x00000040u, 0x00000000u }, \
 }
-/* USART2: route default, on 1 of 7 parts */
-#define CH32_SERIAL2_TX PA7
-#define CH32_SERIAL2_RX PB3
+/* USART2: route remap-1, on 3 of 7 parts */
+#define CH32_SERIAL2_TX PA4
+#define CH32_SERIAL2_RX PA5
 #define CH32_SERIAL2_HANDLER USART2_IRQHandler
 #define CH32_SERIAL2_IRQ CH32_IRQN_USART2
 #define CH32_SERIAL2_REMAP_MASK 0x00700000u
-#define CH32_SERIAL2_REMAP_VAL  0x00000000u
+#define CH32_SERIAL2_REMAP_VAL  0x00100000u
 /* SERIAL2 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32_SERIAL2_ROUTE_COUNT 2
 #define CH32_SERIAL2_ROUTES { \
@@ -178,7 +178,7 @@
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
-/* SPI1: route default, on 4 of 7 parts */
+/* SPI1: route default, on 1 of 7 parts */
 #define CH32_SPI1_SCK PC5
 #define CH32_SPI1_MISO PC7
 #define CH32_SPI1_MOSI PC6

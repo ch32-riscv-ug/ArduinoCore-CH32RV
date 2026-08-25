@@ -312,8 +312,10 @@
 #define CH32_SPI3_SCK PB3
 #define CH32_SPI3_MISO PB4
 #define CH32_SPI3_MOSI PB5
-/* device-data lists PA15, PB5 for MOSI on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA15, PB5 for MOSI on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 #define CH32_SPI3_REMAP_MASK 0x10000000u
 #define CH32_SPI3_REMAP_VAL  0x00000000u
 /* SPI3 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */

@@ -1010,6 +1010,78 @@ def route_remap_value(route: str):
     return None
 
 
+def load_forbidden_pads(tables: pathlib.Path) -> dict:
+    """part -> pads a generated default must never claim.
+
+    The debug pins (SDI: SWCLK/SWDIO) and the system straps (NRST, BOOT):
+    putting Wire or Serial there by default would cut the debug connection or
+    fight the boot circuit the moment begin() runs. pin_roles.csv names them
+    per part, normalised port/pin columns included, for all 26 series.
+    """
+    forbidden: dict = {}
+    for r in read_table(tables, "pin_roles.csv"):
+        if r["peripheral"] == "SDI" or (
+                r["peripheral"] == "SYS"
+                and r["role"] in ("NRST", "BOOT0", "BOOT1")):
+            if r.get("port") and r.get("pin"):
+                forbidden.setdefault(r["part_number"], set()).add(
+                    (r["port"], int(r["pin"])))
+    return forbidden
+
+
+def resolve_pin_candidates(by_board: dict, kinds: list):
+    """Collapse each role's candidate list to one pad, per board.
+
+    Where the tables offer several pads for one (instance, route, role) - 200
+    combinations at the current pin - prefer a pad bonded on every part of
+    the board, so the ANY menu entry's promise holds (this is what brings
+    CH32V205's I2C2 back: PB10/PB11 exist on all four parts, the PC13/PC14
+    alternative does not); among equally-covering candidates, the last in
+    table order - the old behaviour, kept as the tie-break until upstream's
+    preferred-pad mark exists. A plain "lowest pad number" would be stable
+    but wrong: V307's SPI3_MOSI offers PB5 and PA15, and PA15 is also
+    SPI3_NSS.
+
+    The debug/strap-pad exclusion deliberately does NOT happen here: it
+    applies only to what gets chosen as a *default* (choose_routes). The
+    setRoute()/setPins() tables keep those routes, because selecting one
+    explicitly is a legitimate act on a board that has disabled SWD or NRST.
+
+    Decided with the maintainer on 2026-08-25. Mutates the pin dicts in
+    place so every consumer keeps seeing a single pad per role.
+    """
+    for parts_rows in by_board.values():
+        parts = [r["part_number"] for r in parts_rows]
+        for pins in kinds:
+            keys = sorted({k for pn in parts for k in pins.get(pn, {})})
+            for key in keys:
+                roles = sorted({role for pn in parts
+                                for role in pins.get(pn, {}).get(key, {})})
+                for role in roles:
+                    per_part = {pn: pins[pn][key][role] for pn in parts
+                                if role in pins.get(pn, {}).get(key, {})}
+                    merged: list = []
+                    for cands in per_part.values():
+                        for c in cands:
+                            if c not in merged:
+                                merged.append(c)
+                    uniform = [c for c in merged
+                               if all(c in cands for cands in per_part.values())]
+                    chosen = (uniform or merged)[-1]
+                    for pn, cands in per_part.items():
+                        pins[pn][key][role] = (chosen if chosen in cands
+                                               else cands[-1])
+
+    # Parts outside every configured board still hold candidate lists; give
+    # them the plain table-order tail so nothing downstream meets a list.
+    for pins in kinds:
+        for part_pins in pins.values():
+            for roles in part_pins.values():
+                for role, value in list(roles.items()):
+                    if isinstance(value, list):
+                        roles[role] = value[-1]
+
+
 def load_pin_routes(tables: pathlib.Path, signal_res: list,
                     route_order: tuple, kind: str = "", alts=None) -> dict:
     """part -> {(instance index, route): {role: (port, bit)}}.
@@ -1049,13 +1121,15 @@ def load_pin_routes(tables: pathlib.Path, signal_res: list,
         pad = (m.group(1), int(m.group(2)))
         roles = out.setdefault(r["part_number"], {}).setdefault(
             (index, r["route"]), {})
-        if alts is not None and role in roles and roles[role] != pad:
+        candidates = roles.setdefault(role, [])
+        if pad not in candidates:
+            candidates.append(pad)
+        if alts is not None and len(candidates) > 1:
             seen = alts.setdefault(
                 (kind, r["part_number"], index, r["route"], role), [])
-            for one in (roles[role], pad):
+            for one in candidates:
                 if one not in seen:
                     seen.append(one)
-        roles[role] = pad
     return out
 
 
@@ -1084,7 +1158,8 @@ def load_dac_pins(tables: pathlib.Path, alts=None) -> dict:
 
 
 def choose_routes(series: str, parts: list, pins: dict, remap: dict, kind: str,
-                  roles: tuple, route_order: tuple, indices=None) -> dict:
+                  roles: tuple, route_order: tuple, indices=None,
+                  forbidden: dict = {}) -> dict:
     """Pick one route per peripheral instance for the whole series.
 
     Route order comes first, coverage second. Picking by coverage looked
@@ -1107,7 +1182,19 @@ def choose_routes(series: str, parts: list, pins: dict, remap: dict, kind: str,
             for pn in parts:
                 entry = pins.get(pn, {}).get((index, route))
                 if entry and set(roles) <= set(entry):
-                    pads_by_part[pn] = tuple(entry[role] for role in roles)
+                    pads = tuple(entry[role] for role in roles)
+                    # A debug or strap pad is never a *default*: Wire.begin()
+                    # landing on SWDIO cuts the debug connection, and SPI SCK
+                    # on a package whose NRST sits on that pad (V006 E8R6
+                    # puts NRST on PC5) resets the chip. Per part, because
+                    # that is a per-package fact - the part is treated like
+                    # one that does not bond the pad, and drops out of this
+                    # route's coverage. The route itself stays available in
+                    # the setRoute() tables, where choosing it is an explicit
+                    # act (2026-08-25 decision).
+                    if any(pad in forbidden.get(pn, ()) for pad in pads):
+                        continue
+                    pads_by_part[pn] = pads
             if not pads_by_part:
                 continue
             variants = set(pads_by_part.values())
@@ -1183,24 +1270,26 @@ def emit_routes(out: list, prefix: str, roles: tuple, rows: list) -> None:
 
 
 def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
-                 remap: dict) -> dict:
+                 remap: dict, forbidden: dict = {}) -> dict:
     """One route per USART, for the USARTs the core can actually drive."""
     usable = {i for i in SERIAL_BASES if i in handler_of}
     return choose_routes(series, parts, uarts, remap, "usart", ("TX", "RX"),
-                         UART_ROUTE_ORDER, usable)
+                         UART_ROUTE_ORDER, usable, forbidden)
 
 
-def choose_i2cs(series: str, parts: list, i2cs: dict, remap: dict) -> dict:
+def choose_i2cs(series: str, parts: list, i2cs: dict, remap: dict,
+                forbidden: dict = {}) -> dict:
     """One route per I2C instance. Only the two the register map covers."""
     return choose_routes(series, parts, i2cs, remap, "i2c", ("SCL", "SDA"),
-                         I2C_ROUTE_ORDER, set(I2C_BASES))
+                         I2C_ROUTE_ORDER, set(I2C_BASES), forbidden)
 
 
-def choose_spis(series: str, parts: list, spis: dict, remap: dict) -> dict:
+def choose_spis(series: str, parts: list, spis: dict, remap: dict,
+                forbidden: dict = {}) -> dict:
     """One route per SPI instance."""
     return choose_routes(series, parts, spis, remap, "spi",
                          ("SCK", "MISO", "MOSI"), SPI_ROUTE_ORDER,
-                         set(SPI_BASES))
+                         set(SPI_BASES), forbidden)
 
 
 # probe-rs target names, extracted from `probe-rs chip list` (see
@@ -1339,7 +1428,8 @@ def gen_exti(variant: str, entries: list) -> str:
 def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              i2cs: dict, spis: dict, dacs: dict, pwm: dict, handlers: list,
              remap: dict, route_alts: dict = None,
-             wide_by_family: dict = {}) -> str:
+             wide_by_family: dict = {},
+             forbidden: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -1363,8 +1453,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                         found.append(pad)
             if len(found) > 1:
                 names = ", ".join(pad_name(*pad) for pad in found)
-                lines.append(f"/* device-data lists {names} for {role} on this")
-                lines.append(" * route, in that order, and the last is the one above. */")
+                lines.append(f"/* device-data lists {names} for {role} on this route;")
+                lines.append(" * the selection rule picked the one above (never a debug")
+                lines.append(" * or strap pad, prefer a pad on every part, else table")
+                lines.append(" * order - see resolve_pin_candidates). */")
         return lines
     per_part = [pads.get(pn, set()) for pn in parts]
     union = sorted(set().union(*per_part)) if per_part else []
@@ -1509,7 +1601,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         m = re.match(r"^U(?:S)?ART(\d+)_IRQHandler$", name)
         if m:
             handler_of.setdefault(int(m.group(1)), name)
-    chosen = choose_uarts(series, parts, uarts, handler_of, remap)
+    chosen = choose_uarts(series, parts, uarts, handler_of, remap, forbidden)
     if chosen:
         out.append("/* ---- USART pins (device-data; one route per USART, chosen for")
         out.append(" *      the whole series - see choose_uarts in generate.py) ---- */")
@@ -1577,7 +1669,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     # --- I2C ---
     # Same shape as the USART block, and for the same reason: the pair has to
     # come from one route, and the route has to be one the core can select.
-    chosen_i2c = choose_i2cs(series, parts, i2cs, remap)
+    chosen_i2c = choose_i2cs(series, parts, i2cs, remap, forbidden)
     if chosen_i2c:
         out.append("/* ---- I2C pins (device-data; one route per instance,")
         out.append(" *      chosen for the whole series - see choose_i2cs) ---- */")
@@ -1626,7 +1718,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("")
 
     # --- SPI ---
-    chosen_spi = choose_spis(series, parts, spis, remap)
+    chosen_spi = choose_spis(series, parts, spis, remap, forbidden)
     if chosen_spi:
         out.append("/* ---- SPI pins (device-data; one route per instance,")
         out.append(" *      chosen for the whole series - see choose_spis).")
@@ -1716,7 +1808,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     # analogWrite() on one of these pads has to reach the converter instead of
     # a timer, so the pad is all the core needs to know.
     chosen_dac = choose_routes(series, parts, dacs, remap, "dac", ("OUT",),
-                               DAC_ROUTE_ORDER)
+                               DAC_ROUTE_ORDER, forbidden=forbidden)
     if chosen_dac:
         out.append("/* ---- DAC: analogWrite() drives the converter on these pads,")
         out.append(" *      not a timer. ---- */")
@@ -1994,6 +2086,9 @@ def main() -> int:
         if board in SERIES_CONFIG:
             by_board.setdefault(board, []).append(r)
 
+    resolve_pin_candidates(by_board, [uarts, i2cs, spis, dacs])
+    forbidden = load_forbidden_pads(args.tables)
+
     missing = [s for s in SERIES_CONFIG if s not in by_board]
     if missing:
         print(f"ERROR: no products for series {missing}", file=sys.stderr)
@@ -2022,7 +2117,7 @@ def main() -> int:
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
             gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
-                     route_alts, wide_timers)
+                     route_alts, wide_timers, forbidden)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of
@@ -2036,8 +2131,9 @@ def main() -> int:
             by_route.setdefault(key, []).append((kind, part, index, route, role))
         summary = ", ".join(f"{k} {len(v)}" for k, v in sorted(by_route.items()))
         print(f"note: {len(route_alts)} (instance, route, role) combinations name "
-              f"several pads; the last in the table was used ({summary}). "
-              f"Alternatives are written into the variant headers.")
+              f"several pads ({summary}); resolved by rule - no debug/strap "
+              f"pads, prefer series-wide pads, then table order. Alternatives "
+              f"are written into the variant headers.")
         # remap-N is the exclusive kind: one field value moves a whole set of
         # pads, so two pads for one role there is a table problem rather than a
         # choice. Named, not fatal - upstream is working through them (F-27/F-28).

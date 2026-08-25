@@ -384,8 +384,8 @@ WCH-LinkEは`ff`+CDC×2構成なので、**書き込みとSerial受信が1本の
 | `CH32V467` | USART1 | `PA9` | `PA10` | default | all |
 | `CH32X033` | USART2 | `PA2` | `PA3` | default | all |
 | `CH32X035` | USART1 | `PB10` | `PB11` | default | 4/7 |
-| `CH32X305` | USART1 | `PC4` | `PA12` | af-1 | all |
-| `CH32X315` | USART2 | `PD6` | `PD7` | af-1 | all |
+| `CH32X305` | USART1 | `PD4` | `PD5` | af-1 | all |
+| `CH32X315` | USART1 | `PD4` | `PD5` | af-1 | all |
 
 - **route**が`default`以外のboardは、`begin()`がAFIO `PCFR1`のremapフィールドを書きます
   (値はdevice-dataの`remap_fields.csv`から生成)

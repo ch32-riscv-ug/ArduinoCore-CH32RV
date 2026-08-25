@@ -150,10 +150,14 @@
 /* USART1: route af-1, on every part */
 #define CH32_SERIAL1_TX PD4
 #define CH32_SERIAL1_RX PD5
-/* device-data lists PA11, PC4, PD4 for TX on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA10, PA12, PC5, PD5 for RX on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA11, PC4, PD4 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA10, PA12, PC5, PD5 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 #define CH32_SERIAL1_HANDLER USART1_IRQHandler
 #define CH32_SERIAL1_IRQ CH32_IRQN_USART1
 /* NOTE: route af-1 is a per-pin alternate-function
@@ -162,10 +166,14 @@
 /* USART2: route af-1, on every part */
 #define CH32_SERIAL2_TX PD6
 #define CH32_SERIAL2_RX PD7
-/* device-data lists PA4, PC12, PD6 for TX on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA5, PC13, PD7 for RX on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA4, PC12, PD6 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA5, PC13, PD7 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 #define CH32_SERIAL2_HANDLER USART2_IRQHandler
 #define CH32_SERIAL2_IRQ CH32_IRQN_USART2
 /* NOTE: route af-1 is a per-pin alternate-function
@@ -174,10 +182,14 @@
 /* USART3: route af-1, on every part */
 #define CH32_SERIAL3_TX PC8
 #define CH32_SERIAL3_RX PC9
-/* device-data lists PA13, PC8 for TX on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA14, PC9 for RX on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA13, PC8 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA14, PC9 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 #define CH32_SERIAL3_HANDLER USART3_IRQHandler
 #define CH32_SERIAL3_IRQ CH32_IRQN_USART3
 /* NOTE: route af-1 is a per-pin alternate-function
@@ -186,10 +198,14 @@
 /* USART4: route af-1, on every part */
 #define CH32_SERIAL4_TX PB12
 #define CH32_SERIAL4_RX PB13
-/* device-data lists PA8, PB12 for TX on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA9, PB13 for RX on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA8, PB12 for TX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA9, PB13 for RX on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 #define CH32_SERIAL4_HANDLER USART4_IRQHandler
 #define CH32_SERIAL4_IRQ CH32_IRQN_USART4
 /* NOTE: route af-1 is a per-pin alternate-function
@@ -204,20 +220,28 @@
 /* I2C1: route af-3, on every part */
 #define CH32_I2C1_SCL PD4
 #define CH32_I2C1_SDA PD5
-/* device-data lists PA0, PA14, PA8, PB14, PD4 for SCL on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA1, PA13, PA9, PB15, PD5 for SDA on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA0, PA14, PA8, PB14, PD4 for SCL on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA1, PA13, PA9, PB15, PD5 for SDA on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
 /* I2C2: route af-3, on every part */
 #define CH32_I2C2_SCL PD6
 #define CH32_I2C2_SDA PD7
-/* device-data lists PA11, PB9, PC10, PD6 for SCL on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA12, PB10, PC11, PD7 for SDA on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PA11, PB9, PC10, PD6 for SCL on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA12, PB10, PC11, PD7 for SDA on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
@@ -232,29 +256,22 @@
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
-/* SPI1: route af-4, on every part */
-#define CH32_SPI1_SCK PA5
-#define CH32_SPI1_MISO PD3
-#define CH32_SPI1_MOSI PD2
-/* device-data lists PA13, PA5 for SCK on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA15, PA7, PD3 for MISO on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PA14, PA6, PD2 for MOSI on this
- * route, in that order, and the last is the one above. */
-/* NOTE: route af-4 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * yet, so this instance needs verifying (docs/todo.ja.md). */
 /* SPI2: route af-4, on every part */
 #define CH32_SPI2_SCK PB5
 #define CH32_SPI2_MISO PB7
 #define CH32_SPI2_MOSI PB6
-/* device-data lists PB13, PB5 for SCK on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PB15, PB7 for MISO on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PB14, PB6 for MOSI on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PB13, PB5 for SCK on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PB15, PB7 for MISO on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PB14, PB6 for MOSI on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 /* NOTE: route af-4 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
@@ -262,24 +279,30 @@
 #define CH32_SPI3_SCK PD11
 #define CH32_SPI3_MISO PD13
 #define CH32_SPI3_MOSI PD12
-/* device-data lists PC5, PC9, PD11 for SCK on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PC11, PC7, PD13 for MISO on this
- * route, in that order, and the last is the one above. */
-/* device-data lists PC10, PC6, PD12 for MOSI on this
- * route, in that order, and the last is the one above. */
+/* device-data lists PC5, PC9, PD11 for SCK on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PC11, PC7, PD13 for MISO on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PC10, PC6, PD12 for MOSI on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 /* NOTE: route af-4 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
 /* Arduino's standard names for the first bus (SPI). */
 #ifndef PIN_SPI_SCK
-#define PIN_SPI_SCK CH32_SPI1_SCK
-#define PIN_SPI_MISO CH32_SPI1_MISO
-#define PIN_SPI_MOSI CH32_SPI1_MOSI
+#define PIN_SPI_SCK CH32_SPI2_SCK
+#define PIN_SPI_MISO CH32_SPI2_MISO
+#define PIN_SPI_MOSI CH32_SPI2_MOSI
 #define SCK PIN_SPI_SCK
 #define MISO PIN_SPI_MISO
 #define MOSI PIN_SPI_MOSI
-#define PIN_SPI_SS PB0
+#define PIN_SPI_SS PB4
 #define SS PIN_SPI_SS
 #endif
 
