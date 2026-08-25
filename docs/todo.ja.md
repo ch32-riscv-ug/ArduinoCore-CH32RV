@@ -707,6 +707,8 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
         (「PC10/PC17・PC11/PC16はleadを共有するペア。両方をoutputにしない」)へ更新。
         `CH32_UNUSABLE_PINS`は情報提供のみ(coreは強制しない)で従来どおり
       - `.tools`の取得コピーも944bc9cへ更新(fetch_tools)
+      **検証**(2026-08-25): fast suite 73 pass / compile matrix 46 pass
+      (122型番、**サイズ基準線は無変更**) / X035実機sweep 13/13 pass。
       **取り込みで受け入れた既知の劣化**: V205のI2C2 defineが消える
       (一対多の後勝ちでPC13/PC14が選ばれ、部品間で不一致になり選外。
       compile only + af-7は元からcore未対応なので実害なし。
