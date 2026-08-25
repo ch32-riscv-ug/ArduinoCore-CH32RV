@@ -5,6 +5,10 @@
 
 #ifdef CH32_SERVO_TIMER
 
+#ifndef CH32_SERVO_TIMER_BITS
+#define CH32_SERVO_TIMER_BITS 16
+#endif
+
 namespace {
 
 struct Slot {
@@ -36,7 +40,14 @@ inline void timer_set(uint16_t us)
      * every sample, UIF was set, and millis() ran at a fifth of real time.
      * wiring_tone.cpp does not hit this because its update event is fired once
      * at start, while the interrupt is still masked. */
+#if CH32_SERVO_TIMER_BITS == 32
+    /* 32-bit ATRLR: a 16-bit store is replicated into both halves. No variant
+     * currently picks a wide timer for Servo, but the pick follows the vectors
+     * and would change silently. See ch32_registers.h. */
+    CH32_TIM_ATRLR32(CH32_SERVO_TIMER_BASE) = us - 1u;
+#else
     CH32_TIM_ATRLR(CH32_SERVO_TIMER_BASE) = (uint16_t)(us - 1u);
+#endif
 }
 
 void timer_start(void)

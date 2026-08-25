@@ -365,6 +365,7 @@
 #define CH32_TONE_TIMER_IRQ CH32_IRQN_TIM7
 #define CH32_TONE_TIMER_HANDLER TIM7_IRQHandler
 #define CH32_TONE_SHARES_PWM 0
+#define CH32_TONE_TIMER_BITS 16
 
 /* ---- Servo: TIM6, free of PWM pads. ---- */
 #define CH32_SERVO_TIMER 6
@@ -374,6 +375,7 @@
 #define CH32_SERVO_TIMER_IRQ CH32_IRQN_TIM6
 #define CH32_SERVO_TIMER_HANDLER TIM6_IRQHandler
 #define CH32_SERVO_SHARES_PWM 0
+#define CH32_SERVO_TIMER_BITS 16
 
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present

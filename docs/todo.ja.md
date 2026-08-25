@@ -443,6 +443,39 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 - [ ] `[P1]` `Serial`の実体をboardごとに差し替えられるようにする。
       series生成の既定は「全型番に出ているUSART」だが、実boardの配線は別
       (X035 EVTはWCH公式・旧コアとも**USART1/PB10**を使う)
+- [ ] `[P1]` `[要判断]` **使わない`SerialN`が1本あたり192バイトのRAMを取る**
+      (2026-08-25実測)。`HardwareSerial.cpp`が`Serial1`〜`SerialN`を1つの
+      translation unitで定義しているため、vector table → `USARTn_IRQHandler`
+      → `SerialN`という参照の鎖ができて`--gc-sections`が落とせない。
+
+      | board | 定義される本数 | `.bss`のうちSerial | sketchが使うのは1本 |
+      |---|---:|---|---|
+      | CH32L103 | 4 | **768 / 1360 B (56%)** | 576 Bが死蔵 |
+      | CH32V307 | 5 | 960 B | 768 Bが死蔵 |
+
+      (`serial_println`をCH32L103:ANYでビルドし、map fileの`.bss.SerialN`が
+      各`0xc0`であることを確認。RX/TX ring bufferが64 Bずつ)
+
+      **直し方はもう分かっている**: vector tableのhandlerは既にweak alias
+      (`crt0_ch32.S`の`Default_Handler`)なので、`SerialN`とそのISRを
+      **1本ずつ別のtranslation unitへ分ければ**、参照されないarchive memberは
+      そもそも取り込まれず、vectorはweak defaultのままになる。
+      `libraries/SerialSDI`が既に同じ手を使っている。
+      構造変更なので判断が要る。CH32V003(RAM 2K)はUSARTが1本なので影響なし
+- [ ] `[P2]` **`SerialN.setPins()` / `setRoute()`は既に全portにある**——`Serial`
+      専用ではない(`HardwareSerial.h`)。ただし受け付けるのは**生成されたroute表に
+      ある組み合わせだけ**で、任意のpinは`false`を返す。
+      AFIOのremapは「このUSARTはこの組」という単位でしか動かないので設計としては
+      正しいが、**利用者から見て「pinを指定できる」のか「routeを選べる」のかが
+      曖昧**。呼び名とドキュメントを決める
+- [ ] `[P1]` `[要判断]` **USART1が使えないboardの`Serial`をどうするか**。
+      series単位では生成器が既に解決していて、`CH32M103` / `CH32X033` /
+      `CH32X315`は`CH32_SERIAL_DEFAULT`が**USART2**になっている。
+      残る2つが未解決:
+      - **型番単位**。既定routeのpadが小さいpackageで出ていない場合がある
+        (L103は6型番中5型番)。`ANY`で焼くとその型番だけSerialが無音になる
+      - **利用者の上書き**。いまは`-DCH32_SERIAL_DEFAULT=2`をbuild propertyで
+        渡すしかない。boards.txtのmenuにするか、`sketch`側のAPIにするか
 
 ## クロック
 
@@ -731,13 +764,34 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       | CH32X035C8T6 | **12/12 pass** |
       | CH32L103C8T6 | **11/12** — `tone_selftest` FAIL |
 
-- [ ] `[P1]` **CH32L103で`tone()`が何も出さない**(2026-08-25、未解決)。
-      `tone_selftest`の9 checkのうち**padが動くことを見る5つが全部落ちる**
-      (動かないことを見る4つは通る)。静的な設定はEVTの`ch32l103.h`と一致
-      (`TIM4_BASE`=APB1+0x800、`TIM4_IRQn`=46、`RCC_TIM4EN`=0x04)。
-      **同じTIM4を使うV103とV203は通る**。`digitalPinIsValid(LED_BUILTIN)`も
-      `core_api`で通っているので即returnでもない。実行時(PFICのenable、
-      APB1クロック、L103固有の何か)なので**boardを繋いで追う必要がある**
+- [x] **CH32L103で`tone()`が鳴らない原因を特定して直した**(2026-08-25、
+      **未承認・実機検証済み**、[承認状態](approval-status.ja.md)へ要追加)。
+      **CH32L103のTIM4は32 bitタイマ**(データシート「General-purpose TIM4 (32-bit)」、
+      EVT `ch32l103.h`も`ATRLR_TIM4`/`CNT_TIM4`/`CHnCVR_TIM4`をunionで持つ)。
+      coreは`ATRLR`を**16 bitストア**で書いていたが、32 bitレジスタへの16 bitストアは
+      **上下両方のhalfwordへ複製される**——実測で`0x1F3F`を書くと`0x1F3F1F3F`になり、
+      1 msのつもりが65秒周期になってupdate eventが来ない。
+      TIM2/TIM3は16 bitなので正常、だから`analogWrite()`もServo(TIM3)も無事だった。
+      32 bitストアに変えると`cnt_high_5ms=7994` / `irq_hits_5ms=5`で正常、
+      実機の`tone_selftest`も**9/9 PASS**。
+      対処: 変異体が`CH32_TONE_TIMER_BITS` / `CH32_SERVO_TIMER_BITS`を出し、
+      `ch32_registers.h`の`CH32_TIM_ATRLR32()`を使い分ける。
+      どのfamilyが32 bitタイマを持つかは`generate.py`の`WIDE_TIMERS`に手書き
+      (下記の通りdevice-dataに機械可読な表がまだ無い)。
+      **影響したのはtone()だけだが、対象はL103以外にもある**:
+      EVTヘッダでCNTとATRLRがunionになっているのは
+      `ch32l103.h` / `ch32v205.h` / `ch32v20x.h` / `ch32x3x5.h`の4 family、
+      つまり**CH32L103 / CH32M103 / CH32V203 / CH32V205 / CH32X305 / CH32X315**で、
+      いずれも`CH32_TONE_TIMER`が4。実機で確認できたのはL103だけ
+      (V203C8T6はそのpartが16 bitなので元から通っていた)
+- [ ] `[P2]` **(上流へ依頼)** device-dataに**タイマのbit幅の表**が欲しい。
+      いまは「General-purpose TIM4 (32-bit)」というデータシートの機能表の文が
+      生成READMEに出るだけで、機械可読ではない。`generate.py`の`WIDE_TIMERS`が
+      手書きなのはそのため。`systick.csv`と同じ粒度でよい
+- [ ] `[P2]` **CH32X035の`CHnCVR`だけ32 bit union**(`ch32x035.h`)。CNTとATRLRは
+      16 bitなので「32 bitタイマ」ではなく別アクセス手段に見えるが、
+      `analogWrite()`はCHnCVRを16 bitで書いている。**PWM dutyの正しさを見るtestは
+      まだ無い**(gpio_loopbackのジャンパが要る)ので、実機で確認していない
 - [ ] `[P2]` **attach直後の`smoke.py`が「chip not identified」で落ちる**
       (2026-08-25、sweepのV203で発生)。CDC interfaceが先に見えてvendor
       interfaceがまだ、という窓に単発のprobe-rs呼び出しが当たる。
@@ -751,6 +805,35 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `[P1]` X035のI2Cはロット依存で使えない個体がある(`x035-adc-ch-i2c-unavailable`、
       下から5桁目=0)。**fixture inventoryにロット番号を記録**し、ADC試験はch3/7/11/15を避ける
 - [ ] `[P2]` 複数DUT化。1 LinkE + mux か 1 lane 1 LinkE かはprobe識別の結果次第(Q-043)
+- [ ] `[P1]` `[要判断]` **開発機材のリストアップと、常時つなぐ4台の選定**。
+      USB/IPのportが8本しかなく、うち4本を別プロジェクトが使っているので
+      **常時つなげるのは実質4台**(上の8 port制限の項)。いま繋いでいるのは
+      CH32V103R8T6 / CH32V203C8T6 / CH32X035C8T6 / CH32L103C8T6。
+      coreは**24 board / 122型番**を生成しているので、選定は
+      「型番を増やす」ではなく**構造の違いを4枠で最大限カバーする**問題。
+
+      構造の軸(いま埋まっているか):
+
+      | 軸 | 意味 | 手元 |
+      |---|---|---|
+      | 極小RAM | CH32V003(16K/2K)。dietとheapの限界がここでしか出ない | **無し**(2026-08-20に1回だけ確認、コマンド規約より前) |
+      | 大容量 | V307/V317/X305/X315(256〜480K/64K)。vector tableもUSART 5本も別 | **無し** |
+      | af-N | V205 / X305 / X315は**per-pin AF方式でremapとは別機構**。coreは未対応で未検証 | **無し** |
+      | 32 bitタイマ | L103 / M103 / V203CCT6 / V205 / X305 / X315。tone()の件で表面化した | L103のみ |
+      | Serial既定がUSART2 | M103 / X033 / X315 | **無し** |
+      | Mシリーズ | M007 / M030 / M103。vectorもclockも別系統 | **無し** |
+      | 無線 | V208 | **無し** |
+
+      いま繋がっている4台は**V103/V203/L103/X035**で、
+      「普通のCH32」の代表としては妥当だが**上の7軸のうち埋まっているのは1つ**。
+      入れ替え候補としては**V003(下限) / X315(af-N + 32 bitタイマ + USART2既定) /
+      V307(上限) / M030かM103(Mシリーズ)** が効率が良い。ただし——
+
+      **未発売の型番が多い**ので、買える範囲で決める必要がある。
+      「どの軸を実機で押さえ、どの軸をcompile onlyのままにするか」は
+      入手性とセットの判断になるので、**まず入手可能な型番の棚卸しから**。
+      `probe_switch`で切り替えられるので、常時4台に入らないものは
+      **必要なときだけ挿す**運用でもよい(切り替えは5秒)
 
 ## テスト基盤
 

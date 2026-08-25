@@ -296,6 +296,7 @@
 #define CH32_TONE_TIMER_IRQ CH32_IRQN_TIM4
 #define CH32_TONE_TIMER_HANDLER TIM4_IRQHandler
 #define CH32_TONE_SHARES_PWM 0
+#define CH32_TONE_TIMER_BITS 16
 
 /* ---- Servo: TIM3, which is also a PWM timer here, so
  *      analogWrite() on PA6, PA7, PB0, PB1
@@ -307,6 +308,7 @@
 #define CH32_SERVO_TIMER_IRQ CH32_IRQN_TIM3
 #define CH32_SERVO_TIMER_HANDLER TIM3_IRQHandler
 #define CH32_SERVO_SHARES_PWM 1
+#define CH32_SERVO_TIMER_BITS 16
 
 /* Generic boards have no on-board LED. This placeholder only exists so
  * that the stock examples compile; it is the lowest-numbered pad present

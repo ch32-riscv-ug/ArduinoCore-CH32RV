@@ -388,36 +388,51 @@ WCH-LinkEは`ff`+CDC×2構成なので、**書き込みとSerial受信が1本の
 | 2026-08-25 | CH32V103R8T6 | `434A124C5596` | **12/12 pass** (`--sketch all`) |
 | 2026-08-25 | CH32V203C8T6 | `FBC18F0680B0` | **12/12 pass** |
 | 2026-08-25 | CH32X035C8T6 | `FC928F068181` | **12/12 pass** |
-| 2026-08-25 | CH32L103C8T6 | `0E028F0692F1` | **11/12** — `tone_selftest` FAIL (下記) |
+| 2026-08-25 | CH32L103C8T6 | `0E028F0692F1` | **11/12** — `tone_selftest` FAIL ([原因](#ch32l103のtoneが鳴らなかった-2026-08-25-解決)) |
+| 2026-08-25 | CH32L103C8T6 | `0E028F0692F1` | **12/12 pass** (32 bitタイマの修正後) |
 
 2026-08-25の4本は`probe_switch`でprobeを切り替えながら`smoke.py --sketch all`を
 回したものです。**実機検証がV103の1 familyだけだった状態は解消**しました。
 
-### CH32L103の`tone()`が鳴らない (2026-08-25、未解決)
+### CH32L103の`tone()`が鳴らなかった (2026-08-25、解決)
 
-`tone_selftest`の9 checkのうち、**padが動くことを見る5つが全部落ちます**。
-「動かない」ことを見る4つは通るので、症状は「`tone()`が何も出さない」の一言です。
+**CH32L103のTIM4は32 bitタイマ**でした。coreは`ATRLR`を16 bitストアで書いており、
+**32 bitレジスタへの16 bitストアは上下両方のhalfwordへ複製されます**。
 
 ```text
-tone_toggles_pin FAIL     notone_stops PASS
-tone_rate_plausible FAIL  notone_leaves_low PASS
-invalid_pin_ignored FAIL  duration_stops PASS
-duration_plays FAIL       duration_leaves_low PASS
-restart_plays FAIL
+CH32_TIM_ATRLR(TIM4) = 7999      ->  32 bitで読むと 0x1F3F1F3F
 ```
 
-静的な設定は**すべて合っています**(EVTの`ch32l103.h`と突き合わせ済み)。
+7999(0x1F3F)のつもりが524,550,463になるので、1 ms周期のはずが**65秒周期**になり、
+update eventが事実上来ません。TIM2/TIM3は16 bitなので同じストアで正しく、
+だから`analogWrite()`(TIM1/2/3)もServo(TIM3)も無事でした。
 
-| | 我々 | EVT |
-|---|---|---|
-| `TIM4_BASE` | APB1+0x800 | `PB1PERIPH_BASE + 0x0800` |
-| IRQ | 46 | `TIM4_IRQn = 46` |
-| RCC APB1 enable bit | `1u << 2` | `RCC_TIM4EN = 0x04` |
+切り分けは実機のレジスタダンプで、次の順に潰しました。
 
-**同じTIM4を使うV103とV203は通ります。** `digitalPinIsValid(LED_BUILTIN)`も
-`core_api`で通っているので、pinが無効で`tone()`が即returnしている線も消えています。
-残るのは実行時の話(PFICのenable、APB1クロック、L103固有の何か)で、
-**boardを繋いで追う必要があります**。
+| 見たもの | 結果 |
+|---|---|
+| RCC APB1のTIM4EN | 立っている |
+| PFIC(IENRは**write only**なので`ISR[]`を読む) | IRQ 46は有効 |
+| TIM2 / TIM3を同じ手順で | `cnt_high_5ms≈7999`、5 msで5回割り込み——**正常** |
+| TIM4 | `cnt_high_5ms=65517`、`INTFR=0`——**ATRLRを無視して0xFFFFまで走る** |
+| TIM4に`SWEVGR=UG`を書く | `INTFR=0x1`——**flagそのものは生きている** |
+| TIM4のATRLRを32 bitで書く | `cnt_high_5ms=7994`、5 msで5回割り込み——**正常** |
+
+裏付けはEVTの`ch32l103.h`にもあります。`TIM_TypeDef`が
+`ATRLR_TIM4` / `CNT_TIM4` / `CHnCVR_TIM4`を**32 bitのunion**で持っていて、
+16 bit版と並んでいます。データシートの機能表も
+「General-purpose TIM4 (32-bit)」と書いています。
+
+対処は、変異体が`CH32_TONE_TIMER_BITS`(と`CH32_SERVO_TIMER_BITS`)を出し、
+`ch32_registers.h`の`CH32_TIM_ATRLR32()`を使い分けるようにしたことです。
+修正後、L103は**12/12 pass**。
+
+**同じ形の32 bit TIM4を持つfamilyは他にもあります**——EVTヘッダで
+CNTとATRLRがunionになっているのは`ch32l103.h` / `ch32v205.h` / `ch32v20x.h` /
+`ch32x3x5.h`の4つで、つまり
+**CH32L103 / CH32M103 / CH32V203 / CH32V205 / CH32X305 / CH32X315**。
+いずれも`CH32_TONE_TIMER`が4です。実機で確認できたのはL103だけで、
+残りは手元にありません(V203C8T6はその型番のTIM4が16 bitなので元から通っていました)。
 
 X035は最初「UART未接続」と判定していましたが、**ケーブルが抜けていただけ**でした。
 配線し直した後は`uart_scan.py`が`U1-PB10`を一発で当てています。

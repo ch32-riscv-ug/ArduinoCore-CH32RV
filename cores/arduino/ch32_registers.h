@@ -396,6 +396,21 @@ static inline void ch32_irq_disable(uint32_t irqn)
 #define CH32_TIM_PSC(b)     CH32_REG16((b) + 0x28u)
 #define CH32_TIM_ATRLR(b)   CH32_REG16((b) + 0x2Cu)   /* auto-reload */
 #define CH32_TIM_CHCVR(b, ch) CH32_REG16((b) + 0x34u + 4u * ((ch) - 1u))
+
+/* Some families have one 32-bit timer, and on it CNT, ATRLR and CHnCVR are a
+ * single 32-bit register rather than a 16-bit one with a reserved upper half.
+ * A 16-bit store to such a register is *replicated into both halves* by the
+ * bus: writing 7999 (0x1F3F) to ATRLR leaves 0x1F3F1F3F, so the counter runs
+ * for a minute instead of a millisecond and the update event never arrives.
+ *
+ * Measured on CH32L103's TIM4 on 2026-08-25, which is what made tone() silent
+ * there. EVT's own header says the same, with a union: ch32l103.h has
+ * ATRLR_TIM4/CNT_TIM4 beside the 16-bit ATRLR/CNT.
+ *
+ * The variant says which timer is wide, as CH32_<user>_TIMER_BITS. */
+#define CH32_TIM_CNT32(b)   CH32_REG32((b) + 0x24u)
+#define CH32_TIM_ATRLR32(b) CH32_REG32((b) + 0x2Cu)
+#define CH32_TIM_CHCVR32(b, ch) CH32_REG32((b) + 0x34u + 4u * ((ch) - 1u))
 #define CH32_TIM_BDTR(b)    CH32_REG16((b) + 0x44u)   /* TIM1 only */
 
 #define CH32_TIM_CTLR1_CEN  (1u << 0)

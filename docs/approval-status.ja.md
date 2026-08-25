@@ -1,6 +1,6 @@
 # 承認状態(実装済み・未承認の一覧)
 
-文書基準日: 2026-08-20
+文書基準日: 2026-08-25
 
 ## この文書の役割
 
@@ -27,6 +27,7 @@
 | A-1 | **`--specs=nano.specs`を既定にし、`%f`を`menu.printf`のopt-inにする** | `platform.txt`、`boards.txt`(生成) | printf sketchが48,492→7,064 byte(X035)。CH32V003(16K)にも載るようになる。X035実機で`none`/`float`両方確認 | [ADR-0004](adr/0004-runtime-and-cxx.ja.md)は**`Proposed`**。同ADRはnano既定と`%f` opt-inを提案しているが承認されていない。menuの文言、`-u _printf_float`かmenuかの選択、size baselineへの影響 | ⬜ |
 | A-3 | **検証boardをTier A/B/C/Dへ絞る** | [tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | ハードウェア差分6軸を数え、Tier A+BでISA以外の全軸を踏むことを確認 | Q-001(対象boardの確定)が未決。どのboardを常時接続にするかは所有実機と運用の問題で、私が決められない | ⬜ |
 | A-4 | **`smoke.py`/`uart_scan.py`の`--board`を省略可能にし、probe-rsの検出結果を既定にする** | `tests/manual/smoke/smoke.py`、`uart_scan.py` | X035実機で自動判定・明示一致・明示不一致(exit 1)・`--pnum detect`の4経路を確認 | 既定の挙動変更。`[compile only]`のseriesは検出できないため`--board`必須のまま。CIでどちらを使うか未決 | ⬜ |
+| A-6 | **32 bitタイマのレジスタ幅をvariantが宣言し、`ATRLR`を幅に応じて書き分ける** | `tools/generate/generate.py`(`WIDE_TIMERS`)、`cores/arduino/ch32_registers.h`、`wiring_tone.cpp`、`libraries/Servo/src/Servo.cpp` | CH32L103実機。修正前はTIM4が`cnt_high_5ms=65517`/割り込み0、修正後は`7994`/5 ms 5回。`tone_selftest` 9/9 pass、L103全体12/12 pass。16 bit側(V103)に退行が無いことも実機で確認 | **バグ修正そのものより、事実の置き場所が未決。** どのfamilyが32 bitタイマを持つかを`generate.py`へ手書きしている(device-dataに機械可読な表がまだ無いため)。上流に表を作ってもらってデータ由来にするか、手書きのまま`UNUSABLE_PADS`と同じ扱いにするか。また`CH32X035`の`CHnCVR`だけがunionになっている件(PWM duty)は未確認 | ⬜ |
 
 ## 承認されたもの
 

@@ -23,6 +23,12 @@
 
 #ifdef CH32_TONE_TIMER
 
+/* Variants generated before the 32-bit timer was known do not say. 16 is what
+ * every family except CH32L103/V205/V20x/X3x5 has. */
+#ifndef CH32_TONE_TIMER_BITS
+#define CH32_TONE_TIMER_BITS 16
+#endif
+
 /* The pin currently sounding, and how many toggles are left. Read by the ISR,
  * written by tone()/noTone() with the timer stopped, so no lock is needed. */
 static volatile uint8_t tone_pin = 0xFF;
@@ -105,7 +111,14 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
     CH32_RCC_APB1PCENR |= CH32_TONE_TIMER_RCC;
 #endif
     CH32_TIM_PSC(CH32_TONE_TIMER_BASE) = (uint16_t)psc;
+#if CH32_TONE_TIMER_BITS == 32
+    /* A 16-bit store here would land in both halves of the 32-bit register and
+     * ask for a reload 65537 times later than intended, which is what made
+     * tone() silent on CH32L103. */
+    CH32_TIM_ATRLR32(CH32_TONE_TIMER_BASE) = ticks - 1u;
+#else
     CH32_TIM_ATRLR(CH32_TONE_TIMER_BASE) = (uint16_t)(ticks - 1u);
+#endif
     /* Load PSC and ATRLR now rather than at the first overflow, then drop the
      * update flag that loading them raised - otherwise the first interrupt
      * arrives immediately and the first half period is short. */

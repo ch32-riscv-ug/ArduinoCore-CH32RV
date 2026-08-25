@@ -337,6 +337,26 @@ NON_PORT_PADS = {"ANT", "HO3", "ISP1", "LED0", "LED1",
 # Register bits that are NOT harmless to write even though no pin carries them
 # (ADR-0010 #4 makes unbonded pads harmless; these are the exception).
 # Keyed by ch32-device-data errata id, which generate.py verifies still exists.
+# Families with a 32-bit timer. On it CNT, ATRLR and CHnCVR are one 32-bit
+# register, and a 16-bit store is replicated into both halves - see
+# ch32_registers.h. Keyed by family because that is what the EVT header
+# follows: ch32l103.h, ch32v205.h, ch32v20x.h and ch32x3x5.h all union CNT and
+# ATRLR for TIM4, and no other header does.
+#
+# Hand-maintained because ch32-device-data has no machine-readable timer table
+# yet; the datasheet feature row ("General-purpose TIM4 (32-bit)") is prose in
+# the generated README. Asking upstream for one is docs/todo.ja.md.
+#
+# CH32X035 is deliberately absent: its header unions CHnCVR but not CNT or
+# ATRLR, which is an alternate 32-bit view of a 16-bit register rather than a
+# wide timer.
+WIDE_TIMERS = {
+    "CH32L103": (4,),      # series CH32L103, CH32M103
+    "CH32V205": (4,),      # series CH32V205, and CH32V203CCT6
+    "CH32V20x": (4,),      # named ATRLR_R32 there, same thing
+    "CH32X315": (4,),      # series CH32X305, CH32X315
+}
+
 UNUSABLE_PADS = {
     "x035-pc10-pc17-bonded": {
         "series": ("CH32X033", "CH32X035"),
@@ -1671,6 +1691,14 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         if number not in candidates or not m.group(2):
             candidates[number] = name
     pwm_timers = {tc[0] for tc in pwm_pads.values()}
+    # The 32-bit timer, if this family has one. A series can span two families
+    # (CH32V203 has one CH32V205 part among twelve CH32V20x ones), and the
+    # variant is built for all of them, so the union is what the header must
+    # describe - a 32-bit store is right on the wide part and harmless on the
+    # narrow one, while a 16-bit store is wrong on the wide one.
+    wide_timers = set()
+    for family in {r.get("family", "") for r in rows}:
+        wide_timers |= set(WIDE_TIMERS.get(family, ()))
 
     def pick(pool):
         """Highest-numbered, preferring one no PWM pad uses."""
@@ -1702,6 +1730,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(f"#define {prefix}_TIMER_IRQ CH32_IRQN_{irqn}")
         out.append(f"#define {prefix}_TIMER_HANDLER {handler}")
         out.append(f"#define {prefix}_SHARES_PWM {1 if shared else 0}")
+        if number in wide_timers:
+            out.append(f"/* CNT and ATRLR are 32 bit on this timer: a 16-bit"
+                       f" store would be")
+            out.append(f" * replicated into both halves. See ch32_registers.h. */")
+        out.append(f"#define {prefix}_TIMER_BITS "
+                   f"{32 if number in wide_timers else 16}")
         out.append("")
 
     tone_timer = pick(sorted(candidates))
