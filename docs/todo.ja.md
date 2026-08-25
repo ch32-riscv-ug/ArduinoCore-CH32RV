@@ -520,6 +520,11 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       返す」check)。**negotiationはPD電源が来るまで未検証**。
       割り切り(ヘッダに明記): 接続時に自動でprofile 0(5V)をrequest(仕様上の義務)、
       再送なし、取り外し非検出(VBUS監視が要る)、無関係メッセージは無視
+- [x] **`pd_selftest`のhw節をPD電源あり/なし両対応にした**(2026-08-25、機材入れ替え準備)。
+      `pd_connected=`/`pd_profiles=`/`pd_voltage=`を印字し、未接続なら「何も捏造しない」、
+      接続なら「profile 0が5V固定」+「**ドライバ自身の5V契約(Request→Accept→PS_RDY)が
+      成立している**」をcheck。V103(SKIP経路)とX035(空きポート経路)で実機pass。
+      充電器が繋がった瞬間から**negotiationの実機検証**になる
 - [ ] `[P1]` `[要機材]` PD電源が来たら: attach→自動5V→profile列挙→`request(9000)`→
       PPS(`requestProfile`)→`maintain()`のkeepaliveの順に実機確認。
       期待手順は`manual/`に起こしてから(いまはsketches/basic/pd_selftestのhw節のみ)
@@ -1136,6 +1141,14 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `[P1]` X035のI2Cはロット依存で使えない個体がある(`x035-adc-ch-i2c-unavailable`、
       下から5桁目=0)。**fixture inventoryにロット番号を記録**し、ADC試験はch3/7/11/15を避ける
 - [ ] `[P2]` 複数DUT化。1 LinkE + mux か 1 lane 1 LinkE かはprobe識別の結果次第(Q-043)
+- [ ] **機材入れ替えの推奨**(2026-08-25、maintainerが後刻V003追加予定):
+      外すなら**V203**。残る3台がそれぞれ固有の軸を持つ——V103(jump-table vector /
+      SysTick特殊配置)、L103(32bitタイマ / V4C低消費電力 / 2枚目のUSBPD候補)、
+      X035(PD / tier A / 24bit port / I2C 1本)——のに対し、V203はV103と重なりが大きい
+      (rv32imac・F1系周辺)。V203はrotation復帰の第1候補として`.env`のserialは残す。
+      **X035にPD充電器は繋いでよい**(ドライバは自動で5Vしか要求しない)が、
+      **VBUSがboardの電源系に入る配線なら5V以外のrequestは危険**
+      (5V専用LDOに9〜20Vが入る)。基板のVBUS経路を確認するまで高電圧requestのtestは保留
 - [ ] `[P1]` `[要判断]` **開発機材のリストアップと、常時つなぐ4台の選定**
       (棚卸し 2026-08-25、所有状況はmaintainer申告)。
       USB/IPのportの都合で**常時つなげるのは4台**(上の8 port制限の項)。

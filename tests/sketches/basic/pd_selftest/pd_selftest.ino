@@ -103,15 +103,44 @@ static void run_checks()
      * SKIP branch, which also proves begin() is honest there. */
 #ifdef CH32_USBPD_BASE
     tc_check("hw_begin", USBPD.begin());
+    /* Attach polling runs in maintain(). 1.5 s is enough for a source to be
+     * detected and, if one is there, to have sent its capabilities and had
+     * the driver's own 5 V Request answered. */
     const uint32_t t0 = millis();
-    while (millis() - t0 < 300u) {
+    while (millis() - t0 < 1500u) {
         USBPD.maintain();
+        tc_tick();
     }
-    tc_checkv("hw_unplugged_not_connected",
-              !USBPD.connected() && !USBPD.ready(), USBPD.connected());
-    tc_check("hw_no_caps", USBPD.profileCount() == 0
-                           && USBPD.voltage() == 0);
-    tc_check("hw_request_refused", !USBPD.request(9000));
+    /* The bench may or may not have a PD supply on the connector, and this
+     * sketch runs on every board, so it reports which world it is in and
+     * checks the invariants of that world. Both lines are printed for the
+     * host to read. */
+    Serial.print("pd_connected=");
+    Serial.println(USBPD.connected() ? 1 : 0);
+    Serial.print("pd_profiles=");
+    Serial.println(USBPD.profileCount());
+    Serial.print("pd_voltage=");
+    Serial.println(USBPD.voltage());
+    if (!USBPD.connected()) {
+        /* Empty port: nothing may be invented. */
+        tc_check("hw_state_consistent", !USBPD.ready()
+                                        && USBPD.profileCount() == 0
+                                        && USBPD.voltage() == 0);
+        tc_check("hw_request_refused", !USBPD.request(9000));
+    } else {
+        /* A source is attached. The spec makes profile 0 the 5 V fixed one
+         * and the driver requests it itself; ready() means that round trip
+         * (Request -> Accept -> PS_RDY) actually happened on the wire. */
+        tc_checkv("hw_state_consistent",
+                  USBPD.profileCount() >= 1
+                  && USBPD.profile(0).kind == PD_SUPPLY_FIXED
+                  && USBPD.profile(0).max_mv == 5000,
+                  USBPD.profileCount());
+        tc_checkv("hw_request_refused",     /* name kept for the host script:
+                                            * here it means "5 V contract
+                                            * reached", the negotiation proof */
+                  USBPD.ready() && USBPD.voltage() == 5000, USBPD.voltage());
+    }
     USBPD.end();
     tc_check("hw_restart", USBPD.begin());
     USBPD.end();
@@ -119,8 +148,7 @@ static void run_checks()
     static const char *const WHY = "no USBPD block brought up on this part";
     tc_skip("hw_begin", WHY);
     tc_check("hw_begin_honest", !USBPD.begin());
-    tc_skip("hw_unplugged_not_connected", WHY);
-    tc_skip("hw_no_caps", WHY);
+    tc_skip("hw_state_consistent", WHY);
     tc_skip("hw_request_refused", WHY);
     tc_skip("hw_restart", WHY);
 #endif

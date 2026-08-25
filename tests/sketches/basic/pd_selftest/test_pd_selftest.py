@@ -29,8 +29,10 @@ def test_pd_selftest(dut) -> None:
     dut.expect_exact("request_caps_current PASS")
     dut.expect_exact("header_fields PASS")
     dut.expect(r"hw_begin (PASS|SKIP .*)")
-    dut.expect(r"hw_unplugged_not_connected (PASS|SKIP .*)")
-    dut.expect(r"hw_no_caps (PASS|SKIP .*)")
+    # Printed on parts with the block: which world the bench is in. With a
+    # PD supply on the connector, pd_connected=1 and the driver's own 5 V
+    # contract is what hw_request_refused (name kept stable) then proves.
+    dut.expect(r"hw_state_consistent (PASS|SKIP .*)")
     dut.expect(r"hw_request_refused (PASS|SKIP .*)")
     dut.expect(r"hw_restart (PASS|SKIP .*)")
     dut.expect_exact("pd_selftest done failures=0")
