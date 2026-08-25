@@ -517,6 +517,37 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
       V205のPWM全滅(`analogWrite()`が効かなくなる)、M030のPWM pad PB2/PB3消失、
       V007のI2C1 route 2消失、X033のI2C1 route 5消失。
       新しい警告も1件: `CH32V003: clock_init step(s) not emitted: step 6 (trim)`
+- [x] **上流`155c398`で検証(2026-08-25)。run-onは直っている**(28件→0件。検出器が
+      拾う4件は`ISOURCE1` / `VDDIO` / `ETH_RMII_PPS_OUT`等の**誤検出**)。
+      切れも解消(`MC`→`MCO`、`DD`→`VDD`、脚注記号の除去。211名前が消えた)。
+      **原因不明だった2件も解決していて、しかも正しい**: M030 PB2/PB3も
+      V205 PB1も**英語表と中国語表の食い違い**で、上流が中国語表(`TIM3_CH1N` /
+      `TIM1_CH3N`)を採った。どちらも相補出力なので`analogWrite()`の対象外——
+      **以前のPWM padのほうが誤読由来だった**。
+      基準線も確認済み: `--tables <b1285de> --check`はexit 0 / DRIFT無しなので、
+      下記の差分は純粋に上流の差。全文は[実験0015](experiments/0015-device-data-155c398-adoption.ja.md)
+- [ ] `[P0]` **(要判断)** `155c398`を取り込むか。生成物は**8 additive / 15 rewriting**。
+      c2c457dで壊れていた4件(V407/V467 SPI3、V208 ADC、V007 I2C1、X033 I2C1)は
+      **すべて直っている**。増えるもの: PC13/PC14/PC15が7 boardに追加、
+      linker script 8本、V208 USART4 route表。判断が要るのは次の3点。
+      - **flash容量が6 boardで縮む**: V303 480K→128K、V305 224K→128K、
+        V307/V317 480K→256K、X305/X315 480K→192K。`upload.maximum_size`が変わる。
+        `flash_bytes`の訂正で、型番の`B`=128K/`C`=256Kとは整合する
+        (480Kは零等待領域込みの総容量だった可能性)。小さいほうが安全側だが要判断
+      - **V303/V305/V307のSPI1既定routeが変わる**: PB3/PB4/PB5 → PA5/PA6/PA7、
+        remap 1→0、SS PA15→PA4。route数が1→2になりreset既定が選べるようになった
+        ためで、**生成器の方針どおり**だが既存利用者のpinが変わる
+      - **V205からI2C2が消える**——これは**我々の生成器の問題**(下記)
+- [ ] `[P1]` **生成器: 同じ`(instance, route, role)`に2つのpadが来ると黙って後勝ち**。
+      `load_pin_routes()`が`out[part][(index,route)][role] = pad`で上書きするため、
+      どちらが採られたか出力から分からない。**`b1285de`でも既に起きている**
+      (`CH32V203CCT6`のI2C1 af-7はPA14/PB6/PB8の3候補があり黙ってPB8)。
+      `155c398`ではI2C2 af-7がPB10/PB11とPC13/PC14の2組になり、V205で表面化した。
+      **衝突として検出して落とすべき**。上書き後になぜI2C2が移動ではなく消滅するのかは未追跡
+- [ ] `[P2]` **(上流へ確認)** `CH32V203CCT6`のPC13/PC14/PC15に
+      `I2C2_SCL`/`I2C2_SDA`/`I2C2_SMBA`(af-7)が付いた。PB10/PB11/PB12のaf-7
+      3点セットと同じ組み合わせで、列ずれの誤読にも見える。PC13〜PC15は
+      TAMPER-RTC / OSC32のpadなので、本当にI2C2が出るのか確認したい。**断定はしない**
 - [ ] `[P2]` **`systick.csv`が入ったのでCH32V103のSysTick配置をデータ由来にできる**。
       いま`cores/arduino/ch32_registers.h`に手書きしてあるoffsetと、
       「カウンタはbyte writeのみ」という制約(`CH32_SYSTICK_WRITE8`)は、
@@ -690,11 +721,29 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       `tests/.env`の`CH32_PROBE_<NAME>=<serial>`で名前を付け、名前かserial接頭辞で
       detach + attachする(約5秒)。**識別はserialのみ**——bus idは挿し直しで振り直され、
       COM番号は物理portに付くので挿し替えると変わる。外すのはWCH-Linkだけ
-- [ ] `[P1]` **(要判断・要実機)** 4 familyでの実機sweep。この作業台には
-      CH32V103R8T6 / CH32V203C8T6 / CH32X035C8T6 / CH32L103C8T6 が繋がっており、
-      これまでの実機検証は**V103の1 familyだけ**。`probe_switch`を挟めば
-      `smoke.py --sketch all`を4本回せる。**V103以外は初走行なので落ちる前提**で、
-      時間もかかる。やるかどうかと、どこまで直すかは判断が要る
+- [x] **4 familyでの実機sweep実施(2026-08-25)**。`probe_switch`で切り替えながら
+      `smoke.py --sketch all`。**実機検証がV103の1 familyだけだった状態は解消**。
+
+      | board | 結果 |
+      |---|---|
+      | CH32V103R8T6 | **12/12 pass** |
+      | CH32V203C8T6 | **12/12 pass** |
+      | CH32X035C8T6 | **12/12 pass** |
+      | CH32L103C8T6 | **11/12** — `tone_selftest` FAIL |
+
+- [ ] `[P1]` **CH32L103で`tone()`が何も出さない**(2026-08-25、未解決)。
+      `tone_selftest`の9 checkのうち**padが動くことを見る5つが全部落ちる**
+      (動かないことを見る4つは通る)。静的な設定はEVTの`ch32l103.h`と一致
+      (`TIM4_BASE`=APB1+0x800、`TIM4_IRQn`=46、`RCC_TIM4EN`=0x04)。
+      **同じTIM4を使うV103とV203は通る**。`digitalPinIsValid(LED_BUILTIN)`も
+      `core_api`で通っているので即returnでもない。実行時(PFICのenable、
+      APB1クロック、L103固有の何か)なので**boardを繋いで追う必要がある**
+- [ ] `[P2]` **attach直後の`smoke.py`が「chip not identified」で落ちる**
+      (2026-08-25、sweepのV203で発生)。CDC interfaceが先に見えてvendor
+      interfaceがまだ、という窓に単発のprobe-rs呼び出しが当たる。
+      `probe_switch`側は3回再試行するので、`--no-identify`を付けずに
+      挟めば回避できる(sweepはそう直した)。`smoke.py`自身も1回再試行して
+      よいかもしれない
 - [ ] `[P1]` `board-identify`にCH32 probeを追加(ESP32のMAC読み出しに相当するのはtarget UID読み出し、Q-042)
 - [ ] `[P1]` **(要判断)** logic analyzerを16 channelにするか。
       v1.0の7周辺を同時に観測するには12本要り、**8chでは足りない**。部材とconnectorの変更コストが最も高い

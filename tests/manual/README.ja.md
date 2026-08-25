@@ -385,10 +385,39 @@ WCH-LinkEは`ff`+CDC×2構成なので、**書き込みとSerial受信が1本の
 | 2026-08-20 | CH32V203C8T6 | WCH-LinkE v2.12 | **pass** `serial_println` + `core_api` 13 check |
 | 2026-08-20 | CH32L103 | WCH-LinkE v2.12 | **pass** `serial_println`(※route変更前) |
 | 2026-08-20 | CH32X035C8T6 | WCH-LinkE v2.12 | **pass** `serial_println` + `core_api` 13 check + `heap_string` + `stdio_printf` |
+| 2026-08-25 | CH32V103R8T6 | `434A124C5596` | **12/12 pass** (`--sketch all`) |
+| 2026-08-25 | CH32V203C8T6 | `FBC18F0680B0` | **12/12 pass** |
+| 2026-08-25 | CH32X035C8T6 | `FC928F068181` | **12/12 pass** |
+| 2026-08-25 | CH32L103C8T6 | `0E028F0692F1` | **11/12** — `tone_selftest` FAIL (下記) |
 
-※ V003 / V203 / L103は**routeをreset既定優先へ変えるより前**に確認したものです。
-上の表のpinは変更後の値なので、次に繋いだときに`smoke.py`を回し直してください
-(X035は変更後の`PB10`/`PB11`で確認済み)。
+2026-08-25の4本は`probe_switch`でprobeを切り替えながら`smoke.py --sketch all`を
+回したものです。**実機検証がV103の1 familyだけだった状態は解消**しました。
+
+### CH32L103の`tone()`が鳴らない (2026-08-25、未解決)
+
+`tone_selftest`の9 checkのうち、**padが動くことを見る5つが全部落ちます**。
+「動かない」ことを見る4つは通るので、症状は「`tone()`が何も出さない」の一言です。
+
+```text
+tone_toggles_pin FAIL     notone_stops PASS
+tone_rate_plausible FAIL  notone_leaves_low PASS
+invalid_pin_ignored FAIL  duration_stops PASS
+duration_plays FAIL       duration_leaves_low PASS
+restart_plays FAIL
+```
+
+静的な設定は**すべて合っています**(EVTの`ch32l103.h`と突き合わせ済み)。
+
+| | 我々 | EVT |
+|---|---|---|
+| `TIM4_BASE` | APB1+0x800 | `PB1PERIPH_BASE + 0x0800` |
+| IRQ | 46 | `TIM4_IRQn = 46` |
+| RCC APB1 enable bit | `1u << 2` | `RCC_TIM4EN = 0x04` |
+
+**同じTIM4を使うV103とV203は通ります。** `digitalPinIsValid(LED_BUILTIN)`も
+`core_api`で通っているので、pinが無効で`tone()`が即returnしている線も消えています。
+残るのは実行時の話(PFICのenable、APB1クロック、L103固有の何か)で、
+**boardを繋いで追う必要があります**。
 
 X035は最初「UART未接続」と判定していましたが、**ケーブルが抜けていただけ**でした。
 配線し直した後は`uart_scan.py`が`U1-PB10`を一発で当てています。
