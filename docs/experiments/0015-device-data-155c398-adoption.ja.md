@@ -230,3 +230,54 @@ pad一式を切り替えるので排他ですが、AF方式はpadごとに独立
   `setRoute(1)`からしか触れない。`route_selftest`が実機でそこを通って戻って
   きているが、**PB6/PB7には何も繋がっていないのでpinが実際に動いたかは未確認**
 
+---
+
+## 追記2: `944bc9c` の確認 (2026-08-25、同日夜)
+
+F-27/F-28の修正と、こちらが依頼した表の一部が**もう入っている**。
+基準線は変わらず(`--tables <b1285de> --check` = DRIFT無し、run-onも4件の誤検出のみで155c398と同一)。
+
+### 直っているもの
+
+- **F-27**: V103 TIM3のremap値が分割された(`PB4`=値2、`PC6`=値3。
+  `remap_fields`の`valid_values`から存在しない1が消えた)
+- **F-28**: L103のremap格子が読まれるようになった
+  (basisが`datasheet-pin-table+rm-remap-grid:en`に。行数207は不変=値は元から正しかった)
+
+### 依頼した表のうち2つが入っている
+
+- **`timers.csv`(64行)** — 依頼した通りのschema
+  (`family,timer,kind,counter_width_bits,channels,complementary,update_vector`)。
+  **`WIDE_TIMERS`の手書きが消せる**。しかも裏取りが1件正された:
+  手書きの「CH32V20xのTIM4は32bit」(EVTヘッダのunionが根拠)は**RM上は16bit**
+  (32bitはV205 die側だけ)。seriesでfamilyをunionする実装のため**出力は全部正しかった**が、
+  根拠が間違っていた。V203C8T6実機で「16bit部品への32bitストアは無害」を
+  確認済みなので、挙動への影響は無し
+- **pad正規名の列** — `pin_roles.csv`に`port`/`pin`列が付いた
+  (`PC13-TAMPER-RTC,C,13`)。装飾付きpad名のparseが消せる
+
+未着手なのは**既定padの印(preferred)**と**flashの幾何**。
+
+### 生成物への差分: 8 additive / 20 rewriting (155c398の8/15から+5)
+
+155c398からの増分:
+
+- **shared lead対応で新しいpadが増えた**: V004に`PA4`、X035/X033に`PC10`/`PC11`など。
+  `pins.csv`が「1本の物理pinを2つのpadが共有する」を表せるようになった
+  (X035: pin32=PC11+PC16、pin33=PC10+PC17)。
+  **注意**: PC10/PC11はこちらの`UNUSABLE_PADS`
+  (`x035-pc10-pc17-bonded`: 駆動するとPC17/PC16も動く)の対象。
+  いままで「存在しないpad」だったのが**生成されるpadになる**ので、
+  取り込み時にerrataの扱いを見直す必要がある
+- **M103のroute表が増えた**(F-28の副産物: 格子が読めた分、SERIAL4/I2C1/SPI1の
+  選べるrouteが1つずつ増加)
+- **X305のSerial1/I2C1の既定padが動いた**(`PC4/PA12`→`PD4/PD5`)。
+  値の訂正ではなく**「表の最後が勝つ」の並び順依存が上流の版間で発現した**もの
+  (155c398時点のalternativesコメントに既にPD4/PD5が候補として載っていた)。
+  compile onlyのseriesなので実害は無いが、**一対多の選び方を決定的にする件の
+  必要性がこれで実証された**——上流が行を並べ替えるだけで既定pinが変わる
+
+155c398で決着済みの(a) flash縮小と(b) SPI1既定route復元はそのまま。
+(c) V205のI2C2消滅も変わらず(こちらの生成器の後勝ち問題)。
+products.csvの±30行はbasis文字列のみで値の変更なし。
+

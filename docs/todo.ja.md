@@ -708,7 +708,19 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
         以前はremap-1しか無く生成器に選択肢が無かっただけ
       - **(d) PC13/PC14/PC15のI2C2 af-7は列ずれではない**(下記で決着)
 
-      残る判断は**(c) V205からI2C2が消える**だけで、これは我々の生成器の問題(下記)
+      残る判断は**(c) V205からI2C2が消える**だけで、これは我々の生成器の問題(下記)。
+
+      **2026-08-25夜、`944bc9c`で再確認**([実験0015](experiments/0015-device-data-155c398-adoption.ja.md)追記2):
+      F-27/F-28修正済み、**依頼した表のうち`timers.csv`とpad正規名列が入った**。
+      差分は8 additive / 20 rewriting に微増(shared lead対応の新pad、M103のroute増、
+      X305の既定pad移動)。取り込み時のチェックリスト:
+      - `WIDE_TIMERS`(手書き)を`timers.csv`から読む形に置換
+      - `PAD_PORT_RE`のparseを`pin_roles.csv`の`port`/`pin`列に置換(できる範囲で)
+      - **X035のPC10/PC11がpadとして生成されるようになる**——`UNUSABLE_PADS`
+        (PC17/PC16と同じ物理pin)の扱いを見直す
+      - `usbpd_hw.h`(手書き)を`memory_map.csv`+`pin_roles.csv`からの生成に置換
+      - X305の既定pad移動は並び順依存の発現。**一対多の選び方の決定則が先**か、
+        少なくとも同時
 - [ ] `[P1]` **`(a)`の副産物: flash分割をmenuで出せる**。
       `memory_configs.csv`がV307VCT6で5通りの構成を持っている。
       いまは素の構成(256K+64K)だけを`upload.maximum_size`にしているが、
