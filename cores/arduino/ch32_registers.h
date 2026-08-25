@@ -342,6 +342,43 @@ static inline void ch32_irq_disable(uint32_t irqn)
     CH32_PFIC_IRER(irqn >> 5) = 1u << (irqn & 31u);
 }
 
+/* System reset through the PFIC, the RISC-V equivalent of NVIC_SystemReset:
+ * the config register takes a key in the top half and the reset request in
+ * bit 7. Identical across every EVT's core_riscv.h. */
+#define CH32_PFIC_CFGR    CH32_REG32(CH32_PFIC_BASE + 0x48u)
+#define CH32_PFIC_KEY3    0xBEEF0000u
+#define CH32_PFIC_SYSRST  (1u << 7)
+
+/* ---------------------------------------------------------- reset cause */
+/* RSTSCKR sits at RCC+0x24 with the same flag bits on every family checked
+ * (V003/V00x/V103/L103/X035/V307/M030); some families add flags in lower
+ * bits, which readers should ignore rather than misname. The flags survive
+ * everything except a write of RMVF, so they describe the *oldest* unread
+ * reset, not necessarily the latest. */
+#define CH32_RCC_RSTSCKR  CH32_REG32(CH32_RCC_BASE + 0x24u)
+#define CH32_RST_RMVF     (1u << 24)   /* write 1 to clear all flags */
+#define CH32_RST_PIN      (1u << 26)   /* NRST pin                    */
+#define CH32_RST_POR      (1u << 27)   /* power on                    */
+#define CH32_RST_SFT      (1u << 28)   /* software (CH32_PFIC_SYSRST) */
+#define CH32_RST_IWDG     (1u << 29)
+#define CH32_RST_WWDG     (1u << 30)
+#define CH32_RST_LPWR     (1u << 31)
+
+/* ----------------------------------------------------------------- IWDG */
+/* The independent watchdog: LSI-clocked, and irreversible by design - once
+ * the 0xCCCC key starts it, only a reset stops it. Registers and keys are
+ * the F1-classic layout on every family that has the block; CH32_IWDG_BASE
+ * itself comes from build.core_defines, generated from memory_map.csv, so a
+ * family without the block (CH32M030) simply has no base and no watchdog
+ * API. */
+#define CH32_IWDG_CTLR    CH32_REG16(CH32_IWDG_BASE + 0x00u)  /* key register */
+#define CH32_IWDG_PSCR    CH32_REG16(CH32_IWDG_BASE + 0x04u)  /* prescaler   */
+#define CH32_IWDG_RLDR    CH32_REG16(CH32_IWDG_BASE + 0x08u)  /* reload      */
+#define CH32_IWDG_STATR   CH32_REG16(CH32_IWDG_BASE + 0x0Cu)  /* update busy */
+#define CH32_IWDG_KEY_UNLOCK 0x5555u   /* PSCR/RLDR become writable  */
+#define CH32_IWDG_KEY_FEED   0xAAAAu
+#define CH32_IWDG_KEY_START  0xCCCCu
+
 /* ------------------------------------------------------------------ ADC */
 /* Layout is the same on every family the platform builds for; only the
  * conversion width differs (CH32_ADC_BITS, from build.core_defines). */

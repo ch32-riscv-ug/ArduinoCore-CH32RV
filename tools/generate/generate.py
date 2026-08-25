@@ -481,6 +481,37 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             if f:
                 hsi.setdefault(f, set()).add(int(float(r["typ"]) * 1e6))
 
+    # LSI: the watchdog's clock. Several datasheets give slightly different
+    # typicals for the same family (V203 alone has three rows: its own sheet,
+    # an RBT6-qualified one, and the V205 sheet's), and the oscillator is
+    # loosely specified anyway (min..max spans a factor of two on some parts),
+    # so the *largest* unqualified typical is taken: assuming a fast LSI makes
+    # a requested watchdog timeout come out shorter than asked, never longer,
+    # and "shorter than asked" is the survivable direction for a watchdog.
+    # X033/X035 publish no F_LSI at all (requested upstream); those families
+    # simply get no CH32_LSI_HZ and wdtEnable() says so.
+    lsi: dict = {}
+    for r in read_table(tables, "operating_conditions.csv",
+                        ("series", "symbol", "condition", "typ", "unit")):
+        if r["symbol"] != "F_LSI" or not r["typ"] or r["condition"]:
+            continue
+        if r["unit"].lower() != "khz":
+            continue
+        for s in r["series"].split(";"):
+            f = fam_of_series.get(s)
+            if f:
+                hz = int(float(r["typ"]) * 1e3)
+                lsi[f] = max(lsi.get(f, 0), hz)
+
+    # Which families have an independent watchdog at all, and where. Eleven
+    # do; CH32M030 does not (its header has no IWDG block), and a wdtEnable()
+    # that key-writes into a hole while returning true would be a lie there.
+    iwdg: dict = {}
+    for r in read_table(tables, "memory_map.csv",
+                        ("family", "region", "base_address")):
+        if r["region"] == "IWDG" and r["base_address"]:
+            iwdg.setdefault(r["family"], set()).add(int(r["base_address"], 16))
+
     # AHB prescaler encoding. The two schemes agree on /1 and differ on /2,
     # which is the cheapest question that separates them: 0x10 counts (/2 is
     # field 1) and 0x80 is a power-of-two field. Reading /2 wrong runs the part
@@ -550,6 +581,9 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             latency_mask=one(family, "the flash LATENCY mask", masks) if masks
             else 0,
             adc_max_hz=adc_hz.get(family, 0),
+            lsi_hz=lsi.get(family, 0),
+            iwdg_base=one(family, "the IWDG base",
+                          set(iwdg[family])) if family in iwdg else 0,
         )
     return facts
 
@@ -1966,7 +2000,10 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
         f"-DCH32_I2C_HAS_RTR={fam['i2c_has_rtr']} "
         f"-DCH32_HPRE_LINEAR={fact['hpre_linear']} "
         f"-DCH32_FLASH_ACTLR_LATENCY_MASK={fact['latency_mask']:#x}u "
-        f"-DCH32_ADC_MAX_HZ={fact['adc_max_hz']}u")
+        f"-DCH32_ADC_MAX_HZ={fact['adc_max_hz']}u"
+        + (f" -DCH32_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
+        + (f" -DCH32_IWDG_BASE={fact['iwdg_base']:#x}u"
+           if fact['iwdg_base'] else ""))
     # Its own property, not part of core_defines: a pnum entry has to be able
     # to replace it outright, and a menu value that referred back to the board
     # value would be referring to itself.

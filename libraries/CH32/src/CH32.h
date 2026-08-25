@@ -32,3 +32,7 @@
 #include "ch32_pins.h"
 #include "ch32_registers.h"
 #include "ch32_route.h"
+
+/* The chip-level object: CH32.restart(), CH32.resetReason(), the watchdog.
+ * Modeled on the ESP cores' `ESP` - see CH32System.h. */
+#include "CH32System.h"

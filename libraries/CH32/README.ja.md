@@ -1,7 +1,32 @@
 # CH32
 
-ここには2つのものが入っています。**coreのAPIのexamples**と、
-**レジスタレベルの逃げ道**です。
+ここには3つのものが入っています。**coreのAPIのexamples**、
+**レジスタレベルの逃げ道**、そして**チップ全体を扱う`CH32`オブジェクト**です。
+
+## `CH32` オブジェクト (CH32System.h)
+
+ESPコアの`ESP.*`と同じ役どころです。Arduino標準APIが無い機能を、
+ESP32の流儀に寄せて置いています(方針は
+[R-27](../../docs/research/system-api-esp32-style.ja.md))。
+
+```cpp
+#include <CH32.h>
+
+CH32.restart();                        // ソフトウェアリセット(戻らない)
+CH32.resetReason();                    // CH32_RESET_SOFTWARE / _WATCHDOG / ...
+CH32.resetReasonName();                // "software" など、印字用
+CH32.wdtEnable(2000);                  // 2秒ごとに餌をやらないとリセット
+CH32.wdtFeed();                        // loop()で呼ぶ
+```
+
+3つだけ注意:
+
+- **`wdtDisable()`はありません**。IWDGは一度動くと止められない石なので、
+  止まらない`disable()`を置くくらいなら無いほうが正直です
+- **timeoutは近似です**。時計のLSIは仕様上±50%近くばらつきます。
+  換算は「実timeoutが頼んだ値より短くなる」側に倒してあります
+- 対応しない部品では`wdtEnable()`が**falseを返します**——
+  CH32M030(IWDGが無い)、CH32X033/X035(LSI周波数のデータが未着、依頼中)
 
 同居している理由は、Arduinoのプラットフォームが**ライブラリ経由でしかexamplesを
 配れない**ことと、ライブラリには最低1つヘッダが要ることです。

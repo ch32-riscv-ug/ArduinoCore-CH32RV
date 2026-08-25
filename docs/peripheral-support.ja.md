@@ -43,7 +43,7 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 | TIM (PWM/tone/入力捕捉) | 実装済 | analogWrite/tone | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32_TONE_TIMER`)。V003/X035/M030は空きが無く**PWMと共有** |
 | LPTIM | 対象外 | - |  |  |  |  |  |  |  | ○ |  |  |  | L103のみ |
 | DMA | 対象外 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduino APIに露出しない。内部最適化として将来 |
-| IWDG | 要判断 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ | Arduino標準APIが無い |
+| IWDG | 実装済 | `CH32.wdtEnable/wdtFeed` | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ | Arduino標準APIが無い |
 | WWDG | 要判断 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 同上 |
 | RTC | 要判断 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ | libraryとして出す例が多い |
 | BKP (バックアップレジスタ) | 対象外 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  |  |  |

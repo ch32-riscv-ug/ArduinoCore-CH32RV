@@ -570,6 +570,20 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       (c) 開発者向けに外部toolとして案内するだけ。
       なお[R-17](research/upload-programmers.ja.md)のとおりwlinkは**probeをserialで選べない**
       (`-d INDEX`のみ)ため、LinkEを複数挿す運用とは相性が悪い
+- [x] **`CH32`シングルトンを実装した**(2026-08-25、**未承認・実機検証済み**、A-10。
+      設計は[R-27](research/system-api-esp32-style.ja.md)のESP32寄せ方針)。
+      `libraries/CH32`に`CH32System`を追加: `CH32.restart()`(PFIC KEY3+SYSRST) /
+      `CH32.resetReason()`+`resetReasonName()`(RSTSCKR。初回読みでlatch+RMVF、
+      優先はIWDG>WWDG>SFT>LPWR>POR>PIN) / `CH32.wdtEnable(ms)`+`wdtFeed()`。
+      **`wdtDisable()`は出さない**(IWDGは停止不能。嘘APIにしない)。
+      データ由来のdefineを2つ追加: `CH32_LSI_HZ`(operating_conditionsの
+      F_LSI typの最大値。速い側に倒すとtimeoutは頼んだ値より短くなるだけ)、
+      `CH32_IWDG_BASE`(memory_map.csv。**M030にはIWDGが無い**ので出ない=
+      wdtEnableがfalse。X033/X035はF_LSIが無いので同じくfalse——**依頼文書に追記済み**)。
+      検証: [`system_selftest`](../tests/sketches/basic/system_selftest/)が
+      **1回のtest実行で2回の実リセットをまたぐ**(REBOOT→`reset_reason=software`、
+      BITE→餌やり停止→**`reset_reason=watchdog`**)。**CH32V103実機でfailures=0**。
+      V003(23%)/X035/M030 compile確認
 - [ ] `[P1]` `Serial`の実体をboardごとに差し替えられるようにする。
       series生成の既定は「全型番に出ているUSART」だが、実boardの配線は別
       (X035 EVTはWCH公式・旧コアとも**USART1/PB10**を使う)
@@ -1045,7 +1059,17 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       (いまは「未対応」とNOTEを出しているだけ)。ただしaf-Nの実機は入手不能なので、
       入れても検証はcompileまで。
 
-      **上流へ依頼したいのは4つ**(2026-08-25に155c398の全31表を確認した結果。
+      **依頼文書を作成した**(2026-08-25、`scratchpad/data_requests_2026-08-25.md`、
+      maintainer経由で上流へ)。内訳: `[高]`flashの幾何 / `[高]`CMP・OPAレジスタ表
+      (systick.csv粒度、enable・入力select・出力bitの最小範囲) /
+      `[中]`ADC内部チャネル(温度・Vrefintのch番号と換算定数) /
+      `[中]`USBPD配管(RCC enable bitとPHY設定bitの5 series分) /
+      参考: 周辺クロックenable bit表。
+      **依頼不要と確認できたもの**: watchdog用LSI周波数(`operating_conditions.csv`の
+      `F_LSI`にある)、CMP/OPAの入力pad(`pin_roles.csv`)、CMP/OPA・USBPDのbase
+      (`memory_map.csv`)、RTCのLSI分周(`clock_sources.csv`)。
+      preferred印は方針変更(明示指定主義)で優先度低へ。
+      過去の依頼リスト: **上流へ依頼したいのは4つ**(2026-08-25に155c398の全31表を確認した結果。
       他は既にあるか、こちらで導出できる):
 
       1. **タイマの表**。`family, timer, kind, counter_width_bits, channels,
@@ -1063,7 +1087,9 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
          の有無がfamilyごとに違い、いまは容量(`flash_bytes`)しか無い。
          `EEPROM`相当を作らないとしても、低レベルflash APIの前提
          (2026-08-25追加、[調査](research/system-api-esp32-style.ja.md))
-      4. **既定padの印**。一対多の`(部品, 周辺, 役割, 経路)`が上流計測で984組
+      4. **既定padの印**——**優先度低に格下げ**(2026-08-25 maintainer:
+         「デフォルトピンはあまり気にしていない。明示的に指定して使う。
+         既定が要るのはSerialぐらい」。同点の表順依存は許容)。一対多の`(部品, 周辺, 役割, 経路)`が上流計測で984組
          (我々が読む範囲で193組)。`pin_roles.csv`に`preferred`列が1つ付けば、
          「普通はこれ」を**データシートを見ている側が1回決める**ことになる。
          consumerごとに推測すると、consumerごとに違う間違い方をする
