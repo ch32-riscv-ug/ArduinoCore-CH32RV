@@ -95,6 +95,36 @@ static void run_checks()
                                && pd_header_id(h) == 3
                                && !pd_header_extended(h), h);
 
+    /* The hardware driver, as far as an empty port can prove it: the block
+     * comes up, an unplugged port stays "not connected" through real attach
+     * polling, a request with no source is refused, and end()/begin() is a
+     * legal cycle. Negotiation itself needs a PD supply on the connector.
+     * Parts without the block (or not brought up - see usbpd_hw.h) take the
+     * SKIP branch, which also proves begin() is honest there. */
+#ifdef CH32_USBPD_BASE
+    tc_check("hw_begin", USBPD.begin());
+    const uint32_t t0 = millis();
+    while (millis() - t0 < 300u) {
+        USBPD.maintain();
+    }
+    tc_checkv("hw_unplugged_not_connected",
+              !USBPD.connected() && !USBPD.ready(), USBPD.connected());
+    tc_check("hw_no_caps", USBPD.profileCount() == 0
+                           && USBPD.voltage() == 0);
+    tc_check("hw_request_refused", !USBPD.request(9000));
+    USBPD.end();
+    tc_check("hw_restart", USBPD.begin());
+    USBPD.end();
+#else
+    static const char *const WHY = "no USBPD block brought up on this part";
+    tc_skip("hw_begin", WHY);
+    tc_check("hw_begin_honest", !USBPD.begin());
+    tc_skip("hw_unplugged_not_connected", WHY);
+    tc_skip("hw_no_caps", WHY);
+    tc_skip("hw_request_refused", WHY);
+    tc_skip("hw_restart", WHY);
+#endif
+
     tc_done();
 }
 

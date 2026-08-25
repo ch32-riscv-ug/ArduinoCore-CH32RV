@@ -509,10 +509,20 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       - `maintain()` — Ethernet.maintain()と意味一致だが、前例を知らないと不明瞭
       **未決のまま保留**(maintainer「もう少し考える」)。リリース前に確定させる。
       renameは機械的(USBPD.h/cpp、README×2、keywords、example、docs)
-- [ ] `[P1]` **次: ハードウェアドライバ**(CC検出 → 受信 → GoodCRC →
-      state machine → Request送信)。書くことはできるが、
-      **動作確認はPD電源が来るまでできない**。レジスタ初期化と
-      「未接続を未接続と報告する」までは配線無しで見られる
+- [x] **ハードウェアドライバを実装した**(2026-08-25、**未承認・部分検証**、A-9)。
+      CC検出(comparator 0.22V/0.66V + Rd)・BMC送受信(DMA + BMC_CLK_CNT)・
+      GoodCRC(ソフトで返す。X035のPHYはCRC32とBMC符号化までが機械)・
+      sink state machine(DETACHED→WAIT_CAPS→WAIT_ACCEPT→WAIT_PS_RDY→READY)。
+      定義は`usbpd_hw.h`に**手書き(X035/X033のみ、取り込み後に生成へ置換)**。
+      実機(CH32X035)で: begin()成立 / 300msのattach polling後に**空きポートを
+      未接続と報告** / capsなしのrequest拒否 / end→beginが回る——
+      `pd_selftest` 23 check pass(V003等はSKIP分岐 + 「begin()がfalseを正直に
+      返す」check)。**negotiationはPD電源が来るまで未検証**。
+      割り切り(ヘッダに明記): 接続時に自動でprofile 0(5V)をrequest(仕様上の義務)、
+      再送なし、取り外し非検出(VBUS監視が要る)、無関係メッセージは無視
+- [ ] `[P1]` `[要機材]` PD電源が来たら: attach→自動5V→profile列挙→`request(9000)`→
+      PPS(`requestProfile`)→`maintain()`のkeepaliveの順に実機確認。
+      期待手順は`manual/`に起こしてから(いまはsketches/basic/pd_selftestのhw節のみ)
 - [ ] `[P1]` `[要機材]` **PD電源が来たら**: negotiationの実機確認。
       `setVoltage`まで見るなら**PPS対応**が要る。
       **電圧測定は初回は無し**(利用者判断)——`getVoltage()`が返す
@@ -993,7 +1003,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       (いまは「未対応」とNOTEを出しているだけ)。ただしaf-Nの実機は入手不能なので、
       入れても検証はcompileまで。
 
-      **上流へ依頼したいのは3つだけ**(2026-08-25に155c398の全31表を確認した結果。
+      **上流へ依頼したいのは4つ**(2026-08-25に155c398の全31表を確認した結果。
       他は既にあるか、こちらで導出できる):
 
       1. **タイマの表**。`family, timer, kind, counter_width_bits, channels,
@@ -1007,7 +1017,11 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
          **`pin_alternate.csv`は既に`pad,port,pin`を持っている**ので、
          新概念ではなく揃えるだけの話。装飾が増えたことに気付かないまま
          PC13/PC14/PC15が現れたのが今回の件
-      3. **既定padの印**。一対多の`(部品, 周辺, 役割, 経路)`が上流計測で984組
+      3. **flashの幾何の表**。消去単位(page size)・書き込み粒度・fast erase
+         の有無がfamilyごとに違い、いまは容量(`flash_bytes`)しか無い。
+         `EEPROM`相当を作らないとしても、低レベルflash APIの前提
+         (2026-08-25追加、[調査](research/system-api-esp32-style.ja.md))
+      4. **既定padの印**。一対多の`(部品, 周辺, 役割, 経路)`が上流計測で984組
          (我々が読む範囲で193組)。`pin_roles.csv`に`preferred`列が1つ付けば、
          「普通はこれ」を**データシートを見ている側が1回決める**ことになる。
          consumerごとに推測すると、consumerごとに違う間違い方をする

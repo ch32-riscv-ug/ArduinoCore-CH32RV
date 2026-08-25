@@ -11,15 +11,28 @@
  *     }
  *     void loop() { USBPD.maintain(); }           // keeps a PPS contract fed
  *
- * WHAT WORKS TODAY: the frame logic - parsing Source_Capabilities, choosing a
- * profile, building Request objects - is implemented and tested on host and
- * on target (tests/unit/test_pd_frames.py, tests/sketches/basic/pd_selftest).
+ * WHAT WORKS TODAY: the frame logic - parsing Source_Capabilities, choosing
+ * a profile, building Request objects - is implemented and tested on host
+ * and on target (tests/unit/test_pd_frames.py, tests/sketches/basic/
+ * pd_selftest). The hardware driver (CC detection, the BMC engine, GoodCRC,
+ * the sink state machine) is implemented for CH32X035/X033, where the
+ * USBPD block's plumbing has been checked; begin() still returns false on
+ * the other five series with the block, whose defines wait on the next
+ * device-data adoption (see usbpd_hw.h).
  *
- * WHAT DOES NOT YET: the hardware driver underneath (CC detection, the
- * USBPD block's transmitter/receiver, the negotiation state machine).
- * begin() therefore returns false everywhere for now, the same honesty rule
- * as Wire's slave mode: accepted and inert rather than pretending. The
- * driver is the next step (docs/todo.ja.md).
+ * NOT YET VERIFIED AGAINST A REAL SOURCE: everything up to "an empty port
+ * reports disconnected" runs on the bench, but no PD supply has been
+ * attached yet, so negotiation itself is untested. Simplifications this
+ * first driver makes, deliberately and visibly:
+ *
+ *   - on attach it requests profile 0 (the mandatory 5 V one) itself: the
+ *     spec requires a Request in answer to Source_Capabilities, so doing
+ *     nothing until the sketch asks is not an option
+ *   - no retransmission: a lost GoodCRC leads to the source's own recovery
+ *     (hard reset), which this driver survives and renegotiates through
+ *   - detach is not detected (that needs VBUS sensing): connected() latches
+ *     until a hard reset, end(), or reboot
+ *   - messages a plain sink can ignore are ignored; Soft_Reset is honoured
  *
  * Voltages are millivolts, currents milliamps, everywhere. request(9)
  * asking for 9 mV instead of 9 V fails cleanly: no profile offers it.
@@ -41,6 +54,11 @@
 #include <stdint.h>
 
 #include "pd_frames.h"
+/* Where (and whether) this part's USBPD block lives. Included here so a
+ * sketch can feature-test the same way the driver does:
+ *     #ifdef CH32_USBPD_BASE
+ */
+#include "usbpd_hw.h"
 
 /* One entry of the source's advertisement, as Arduino code sees it.
  * Field names carry their unit on purpose: p.max_mv cannot be misread the
@@ -66,7 +84,7 @@ public:
 
     /* The source's advertisement, in the order it was sent. Index 0 is the
      * 5 V fixed profile the spec requires every source to list first. */
-    uint8_t profileCount() const { return _caps.count; }
+    uint8_t profileCount() const;
     PDProfile profile(uint8_t index) const;
 
     /* Ask for a voltage. Fixed profiles match exactly; a PPS profile takes
@@ -84,17 +102,16 @@ public:
 
     /* What the contract says - a promise, not a measurement. 0 before
      * ready(). After a successful request(): the values the source accepted. */
-    uint16_t voltage() const { return _contract_mv; }
-    uint16_t current() const { return _contract_ma; }
+    uint16_t voltage() const;
+    uint16_t current() const;
 
-    /* Re-requests a PPS contract before the source's keepalive timer kills
-     * it; a no-op under a fixed contract. Call it from loop(). */
+    /* The driver's heartbeat: attach polling while disconnected, and the
+     * re-request that keeps a PPS contract alive. Call it from loop(). */
     void maintain();
 
-private:
-    pd_caps_t _caps;
-    uint16_t _contract_mv;
-    uint16_t _contract_ma;
+    /* Interrupt entry point for the USBPD vector. Public the way
+     * HardwareSerial::irq() is; not part of the sketch-facing API. */
+    void irq();
 };
 
 }  // namespace arduino

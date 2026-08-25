@@ -409,6 +409,7 @@ WCH-LinkEは`ff`+CDC×2構成なので、**書き込みとSerial受信が1本の
 | 2026-08-25 | CH32X035C8T6 | `FC928F068181` | **12/12 pass** |
 | 2026-08-25 | CH32L103C8T6 | `0E028F0692F1` | **11/12** — `tone_selftest` FAIL ([原因](#ch32l103のtoneが鳴らなかった-2026-08-25-解決)) |
 | 2026-08-25 | 上記4台 | 同上 | 32 bitタイマの修正後に**再走。全4台 12/12 pass** |
+| 2026-08-25 | CH32X035C8T6 | `FC928F068181` | **13/13 pass** — `pd_selftest`(PDドライバのhw check込み)と`wire_selftest`(slave check込み)が加わった構成 |
 
 `probe_switch`でprobeを切り替えながら`smoke.py --sketch all`を回したものです。
 **実機検証がV103の1 familyだけだった状態は解消**しました。

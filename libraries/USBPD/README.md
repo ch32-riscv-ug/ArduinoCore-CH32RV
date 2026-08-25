@@ -10,11 +10,12 @@ if (USBPD.begin()) {
 void loop() { USBPD.maintain(); }           // keeps a PPS contract alive
 ```
 
-**Status: the frame logic (capability parsing, profile choice, request
-encoding) is implemented and tested on host and on target. The hardware
-driver underneath is not written yet, so `begin()` currently returns false
-everywhere.** A sketch that checks the return value will work unchanged the
-day the driver lands.
+**Status: the frame logic is implemented and tested on host and on target.
+The hardware driver (CC detect, BMC engine, GoodCRC, sink state machine) is
+implemented for CH32X035/X033 and bench-verified as far as an empty port
+allows; negotiation against a real PD supply is still untested. On the other
+five series with the block, `begin()` returns false until their defines can
+be generated (see usbpd_hw.h).**
 
 Targets the USBPD block found on CH32X035/X033, CH32L103/M103, CH32V205,
 CH32X315, CH32H417 and CH32M030 - not only the X035.

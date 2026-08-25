@@ -15,14 +15,17 @@ void loop() { USBPD.maintain(); }           // PPS契約の維持
 
 ## いまの状態
 
-**フレームロジックは実装・検証済み、ハードウェアドライバは未実装です。**
-
 | 層 | 状態 |
 |---|---|
 | Source Capabilitiesの解析、プロファイル選択、Requestの組み立て | 実装済み。hostのunit test(`tests/unit/test_pd_frames.py`)と実機の自己検査(`tests/sketches/basic/pd_selftest`)の両方で検証 |
-| CC検出・送受信・交渉のstate machine | **未実装**。`begin()`は正直に`false`を返す(Wireのslaveと同じ規則: 受け付けて何もしないより、できないと言う) |
+| ハードウェアドライバ(CC検出・BMC送受信・GoodCRC・sinkのstate machine) | **CH32X035/X033で実装済み**。空きポートで「blockが起動する / 未接続を未接続と報告する / capsなしのrequestを拒否する / end()→begin()が回る」まで実機確認。**実際のnegotiationはPD電源が来るまで未検証** |
+| 他の5 series(L103/M103/V205/X315/H417) | `begin()`は`false`。配置とCC padのdefineがdevice-dataの次回取り込み待ち(`usbpd_hw.h`) |
 
-`begin()`の戻り値を見ているsketchは、ドライバが入った日にそのまま動きます。
+この初版ドライバの割り切り(ヘッダにも明記):
+**接続時に自分でprofile 0(5V)をrequestする**(仕様上、Source_Capabilitiesへの
+Requestは義務)、**再送なし**(GoodCRC喪失はsource側のhard reset回復に任せ、
+それを生き延びて再交渉する)、**取り外しは検出しない**(VBUS監視が要る)、
+無関係なメッセージは無視(Soft_Resetには応答)。
 
 ## API
 
