@@ -62,16 +62,19 @@ jobs:
         working-directory: tests
         run: uv run pytest -q generated unit/test_tests_layout.py
 
-  # ADR-0009: the vendored ArduinoCore-API snapshot must stay byte-identical to
-  # the upstream commit pinned in vendor/arduino-core-api.lock.toml
-  api-sync:
+  # Every vendored snapshot against its lock: cores/arduino/api byte-identical
+  # to the commit pinned in vendor/arduino-core-api.lock.toml (ADR-0009), and
+  # libraries/TinyUSB/src hashing to what vendor/tinyusb.lock.toml records.
+  # The whole directory rather than one file, so a new lock is covered the day
+  # it is added instead of the day someone remembers this workflow.
+  vendor-sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: Verify cores/arduino/api against the pinned upstream commit
+      - name: Verify every vendored snapshot against its lock
         working-directory: tests
-        run: uv run pytest -q vendor/test_vendored_api.py
+        run: uv run pytest -q vendor
 
   # W-3/W-7: symlink-mode compile matrix over all generated part numbers
   compile-matrix:
@@ -96,9 +99,14 @@ jobs:
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
       # Compile sweeps plus the size baseline, as one pytest run so a failure
       # names the check rather than a shell exit code.
-      - name: Compile matrix, sketch profiles and size baseline
+      #
+      # The examples and the prescaler table ride along because this is the job
+      # that already has a compiler: the examples are the only code no other
+      # test builds, and the prescaler test is a _Static_assert probe that needs
+      # riscv-none-elf-gcc and nothing else. Together they add about a minute.
+      - name: Compile matrix, examples, sketch profiles and size baseline
         working-directory: tests
-        run: uv run pytest -q compile/test_compile_matrix.py sketches/test_sketch_profiles.py sizebench
+        run: uv run pytest -q compile sketches/test_sketch_profiles.py sizebench unit/test_clock_prescaler.py
 
   # W-5: clean Board Manager install via local HTTP, then compile with no overrides
   #

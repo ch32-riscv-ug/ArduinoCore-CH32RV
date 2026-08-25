@@ -304,6 +304,24 @@ sketchが`sketch/`にあるのは、testディレクトリ直下の`*.ino`をpyt
 自分のsketch testと解釈して`sketch.yaml`を要求するためです。これはdriverがcopyして
 自分でbuildする素材で、uploadとresetの間にRAMを埋める必要があります。
 
+**2026-08-25にコマンド規約へ載せました。** このtestはdriverが自分でresetするので
+「最初の出力を取り逃す」問題は元から無いのですが、載せた理由は別で、
+**言うだけ言って黙るsketchは最後の1行をWCH-Linkのブリッジに置き去りにする**ためです
+(繰り返すバナーがパイプを動かし続けます)。固定時間の読み取りも要らなくなり、
+バナーを待って`RUN`を送る形になりました。
+
+`bss_zeroed` / `data_copied_from_flash` / `init_array_ran`はboard側の
+`tc_check`になりましたが、**対照の`past_ebss`だけはhost側に残してあります**。
+パターンを決めているのがhostなので、boardにも同じ定数を置くと二重管理になって
+ずれます。
+
+**`RUN`の前に`PING`を通します。** 最初の版はbannerを見たらすぐ`RUN`を撃っていて、
+V103だけ応答が来ませんでした。transcriptを見ると**PONGが返るまでにbannerが7回**
+出ていて、WCH-Linkのブリッジが最初の1往復に数秒かかっているだけでした。
+`smoke.py`が既に同じ理由でhandshakeを入れています。
+
+4 board(V103 / V203 / X035 / L103)で5 passを確認済みです。
+
 ## gpio_loopback
 
 `core_api`のGPIO checkは**出力pinを自分で読み戻している**だけです。CH32では出力pinも

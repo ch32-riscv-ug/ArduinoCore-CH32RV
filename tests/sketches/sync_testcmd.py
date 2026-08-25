@@ -36,16 +36,27 @@ HERE = pathlib.Path(__file__).resolve().parent
 SOURCE = HERE / "testcmd.h"
 
 
+INCLUDE_LINE = '#include "testcmd.h"'
+
+
 def cases():
     """Every directory holding a sketch that speaks the protocol.
 
-    A sketch.yaml is what marks one, which also picks up the manual cases -
-    gpio_loopback is driven through the same `dut` fixture as the automated
-    ones and needs the same header.
+    The sketch itself says so, by including the header. That was not the first
+    rule tried: sketch.yaml marked a case, which worked while every case had
+    one and then quietly missed crt0_probe, whose sketch its driver builds
+    directly and which therefore has no profile. Asking the source removes the
+    convention from the middle - a new sketch is covered by the line it has to
+    write anyway.
     """
     tests = HERE.parent
-    return sorted({p.parent for p in HERE.glob("*/*/sketch.yaml")}
-                  | {p.parent for p in (tests / "manual").glob("*/sketch.yaml")})
+    found = set()
+    for ino in tests.rglob("*.ino"):
+        if ".venv" in ino.parts or "build" in ino.parts:
+            continue
+        if INCLUDE_LINE in ino.read_text(encoding="utf-8", errors="replace"):
+            found.add(ino.parent)
+    return sorted(found)
 
 
 def main() -> int:

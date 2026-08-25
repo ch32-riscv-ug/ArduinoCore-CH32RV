@@ -35,7 +35,6 @@ builds itself, so that it can fill RAM between the upload and the reset.
 """
 import pathlib
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -46,10 +45,20 @@ import pytest
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "smoke"))
+sys.path.insert(0, str(REPO / "tests" / "sketches"))
 
 import smoke                                                    # noqa: E402
+from stage import stage_sketch                                  # noqa: E402
 
 PATTERN = 0xDEADBEEF
+# How long the banner may take to appear after `probe-rs reset`, and how long
+# the report may take once RUN is sent. Both are generous: this test runs once
+# and a tight bound only buys a flaky failure. Ten seconds for the report was
+# tried and CH32V103 missed it - the WCH-Link's bridge takes seconds to turn a
+# line around while the banner is also going out (see smoke.handshake).
+BANNER_SECONDS = 20.0
+RUN_SECONDS = 20.0
+RUN_ATTEMPTS = 2
 # Enough past _ebss to be clear of it, but still well below the stack.
 PAST_EBSS_WORDS = 4
 # A runaway symbol table should not turn into a command line megabytes long.
@@ -99,9 +108,10 @@ def run(bench: smoke.Bench, log=print) -> dict:
     """Flash, fill RAM, reset, and return the markers the sketch reported."""
     with tempfile.TemporaryDirectory() as tmp:
         tmp = pathlib.Path(tmp)
-        sketch_dir = tmp / "crt0_probe"
-        sketch_dir.mkdir()
-        shutil.copy(HERE / "sketch" / "crt0_probe.ino", sketch_dir)
+        # stage_sketch rather than a copy of the .ino: the sketch now includes
+        # testcmd.h, and arduino-cli compiles the sketch folder and nothing
+        # above it.
+        sketch_dir = stage_sketch(HERE / "sketch", tmp / "crt0_probe")
         env = smoke.sketchbook(tmp)
         built = smoke.build(bench, sketch_dir, tmp, env, log=log)
         smoke.upload(bench, built, sketch_dir, env, log=log)
@@ -122,10 +132,34 @@ def run(bench: smoke.Bench, log=print) -> dict:
         with serial.Serial(bench.port, bench.baud, timeout=0.3) as uart:
             uart.reset_input_buffer()
             probe_rs(bench, "reset")
-            deadline = time.time() + bench.seconds
-            got = b""
-            while time.time() < deadline:
-                got += uart.read(256)
+            link = smoke.Link(uart)
+            # Wait for the banner rather than reading for a fixed window: the
+            # sketch repeats it every half second, so however long the reset
+            # takes, it is caught. A window was the old way and it had to be
+            # long enough for the worst case on every board.
+            if not link.wait("crt0_probe READY", BANNER_SECONDS):
+                raise smoke.Failure(
+                    f"no 'crt0_probe READY' within {BANNER_SECONDS:g}s after "
+                    f"reset: the sketch is not running, or Serial is miswired")
+            # PING before RUN, the way smoke.py does. It proves the host's
+            # bytes are reaching the target before anything depends on them,
+            # so "RUN went missing" and "the board cannot read at all" stop
+            # looking the same - and it absorbs the first, slowest round trip.
+            if not smoke.handshake(link):
+                raise smoke.Failure(
+                    "the banner arrives but PING is not answered: the probe's "
+                    "TX is probably not wired to the board's RX")
+            for attempt in range(RUN_ATTEMPTS):
+                link.send("RUN\n")
+                if link.wait("crt0_probe done failures=", RUN_SECONDS):
+                    break
+                if attempt + 1 == RUN_ATTEMPTS:
+                    raise smoke.Failure(
+                        f"the report did not finish within {RUN_SECONDS:g}s of "
+                        f"RUN, {RUN_ATTEMPTS} times over")
+                log("   no report; sending RUN again")
+            link.wait("\n", 1.0)          # let the count itself arrive
+            got = link.buf
 
     text = got.decode(errors="replace")
     log("--- output " + "-" * 48)
@@ -147,13 +181,20 @@ def crt0(bench):
 
 def test_setup_was_reached(crt0):
     """Nothing else below means anything if the sketch never ran."""
-    assert "crt0_probe begin" in crt0["output"], (
+    assert "crt0_probe READY" in crt0["output"], (
         "no banner: crt0 did not reach setup(), or Serial is miswired")
-    assert "crt0_probe done" in crt0["output"], "setup() did not finish"
+    assert "crt0_probe done failures=0" in crt0["output"], (
+        "the sketch reported a failing check of its own; the lines above say "
+        "which")
 
 
 def test_the_fill_really_happened(crt0):
-    """The control. Without it, a zeroed .bss could just be RAM powering up at 0."""
+    """The control. Without it, a zeroed .bss could just be RAM powering up at 0.
+
+    Checked here rather than on the board: the host chose the pattern, so the
+    host is the side that can compare against it without the constant existing
+    in two places and drifting.
+    """
     assert crt0["markers"].get("past_ebss") == PATTERN, (
         f"the word past _ebss reads "
         f"{crt0['markers'].get('past_ebss'):#010x} rather than {PATTERN:#010x}, "
@@ -163,14 +204,14 @@ def test_the_fill_really_happened(crt0):
 
 def test_bss_was_zeroed(crt0):
     """crt0 cleared .bss over the pattern, before the first constructor ran."""
-    assert crt0["markers"].get("bss_at_ctor") == 0
+    assert "bss_zeroed PASS" in crt0["output"], crt0["markers"]
 
 
 def test_data_was_copied_from_flash(crt0):
     """And copied .data in, rather than leaving whatever RAM held."""
-    assert crt0["markers"].get("data_at_ctor") == 0xA5A5A5A5
+    assert "data_copied_from_flash PASS" in crt0["output"], crt0["markers"]
 
 
 def test_init_array_ran(crt0):
     """C++ global constructors, which is what .init_array is there for."""
-    assert crt0["markers"].get("ctor") == 0xC0DEC0DE
+    assert "init_array_ran PASS" in crt0["output"], crt0["markers"]

@@ -63,8 +63,10 @@
       (`.data`のcopy / `.bss`のzero fill / `.init_array` / `_ebss`の先にパターンが
       残っていること=対照)。順序が要点で、**書き込みalgorithm自体がRAMを使う**ため
       埋めるのはuploadの後。boardを載せ替えれば同じ1コマンドで回る
-- [ ] `[P1]` 同じ確認を**L103/V20x/V103/V307**でも回す(要実機・board載せ替え)。
-      `crt0_probe`がそのまま使える。variantごとのlinker scriptとvector tableの検証になる
+- [x] **`crt0_probe`を4 boardで実施**(2026-08-25、いずれも5 pass):
+      CH32V103R8T6 / CH32V203C8T6 / CH32X035C8T6 / CH32L103C8T6。
+      variantごとのlinker scriptとvector tableの動的検証がこれで4系統になった
+- [ ] `[P2]` `crt0_probe`をCH32V307でも回す(要board接続)
 
 ## 対応範囲の目安: UNO入門キット相当
 
@@ -848,6 +850,44 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       **同じ修正でServoのバグも1件潰れている**: CH32V208はtone()がTIM5を取るので
       Servoに32 bitのTIM4が回っており、20 msのはずのフレームが65秒になっていた。
       board が無いので**未検証**だが、機構はL103のtone()で実測したものと同一
+- [ ] `[P1]` `[要判断]` **「素直に使えない表」は上流に派生表を作ってもらう方向で検討する**
+      (2026-08-25 maintainer)。device-dataはいまデータシートの**忠実な記録**として
+      正しく、それは正しさの土台だが、**consumerが使いやすい形ではない**。
+      抽出logicがconsumer側にあると、consumerごとに違う間違い方をする。
+      実際に今日それが2件バグとして出た(32 bitタイマ / 一対多の後勝ち)。
+
+      **いま生成器が持っている抽出logic**——これが「派生表があれば消せる」ものの一覧:
+
+      | logic | 何をしている | 消せる表 |
+      |---|---|---|
+      | `UART/I2C/SPI/DAC/PWM_SIGNAL_RE` (5組) | signal名から周辺+instance+役割を正規表現で切り出す。タイマだけで`TIM1_CH1`/`T1CH1`/`T1C1`の3流儀 | **`pin_roles.csv`(既にある)** |
+      | `PAD_PORT_RE` | `PA0-WKUP` / `PC13-TAMPER-RTC`のような装飾付きpad名からportとbitを取る | pad正規名の列 |
+      | `WIDE_TIMERS` | どのfamilyのTIM4が32 bitか。**手書き** | タイマ表(下記) |
+      | `route_remap_value()` / `*_ROUTE_ORDER` | route文字列から`remap-N`/`af-N`を判別し、優先順を持つ | route種別の列 |
+      | 一対多の選択 | 193組でpadを1つ選んでいる。いまは「表の最後」 | 既定pad列(下記) |
+      | `NON_PORT_PADS` / `UNUSABLE_PADS` | GPIOでないpad、使ってはいけないpad | errata / pad種別 |
+
+      **`pin_roles.csv`は既に155c398に入っている**
+      (`part_number,series,family,peripheral,role,pad,routing,signal`、23742行)。
+      **これを読めば5組の正規表現が全部消えます。** 取り込み判断とセットで検討する。
+      `pin_alternate.csv`(241行、family毎のper-pin AFのregisterとbit位置)もあり、
+      これは**af-N方式をcoreが実際に設定できるようになる**材料
+      (いまは「未対応」とNOTEを出しているだけ)。ただしaf-Nの実機は入手不能なので、
+      入れても検証はcompileまで。
+
+      **まだ無くて欲しいもの**:
+      - **タイマの表**: index / bit幅 / channel数 / 専用update vectorの有無。
+        いま`WIDE_TIMERS`が手書きなのはこれが無いから
+      - **既定padの列**: 一対多の(部品, 周辺, 役割, 経路)に対して「普通はこれ」を
+        上流が1回決める。24 consumerが各自で推測するより、
+        データシートを見ている側が決めるほうが正しい。
+        **SWD padを既定にしない**という制約もそこに載る(素朴な規則だと踏む)
+      - 列名の曖昧さの解消。`flash_bytes`と`code_flash_bytes`の取り違えが
+        480K/256Kの件の元だった
+
+      **原則として言うなら**: 「データシートに何と書いてあるか」の表と、
+      「coreは何を知る必要があるか」の表は別物で、後者を上流に1つ置くほうが、
+      consumerごとに導出するより間違いが少ない。どこまで上流に持ってもらうかは判断が要る
 - [ ] `[P2]` **(上流へ依頼)** device-dataに**タイマのbit幅の表**が欲しい。
       いまは「General-purpose TIM4 (32-bit)」というデータシートの機能表の文が
       生成READMEに出るだけで、機械可読ではない。`generate.py`の`WIDE_TIMERS`が
@@ -1152,10 +1192,22 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       `manual/*/sketch.yaml`にも広げてある。
       X035とV307でcompile確認(V003は`PA0`/`PB0`が無く**変更前から**compileできない。
       padは`.env`で指定するもので、既定値は作者のX035配線)
-- [ ] `[P2]` **`crt0_probe`は規約に載せていない**。自前のharnessでmodule scopeの
-      captureを1回だけ行う形なので上記の破綻はしないが、
-      probe内FIFOの残骸を読む可能性は残る。markerは起動時に変数へ記録しているので、
-      **印字だけ`RUN`待ちにすれば**規約に載る
+- [x] **`crt0_probe`をコマンド規約に載せた**(2026-08-25、CH32X035実機で5 pass)。
+      markerはもともと大域constructorが変数へ記録しているので、印字だけ`RUN`待ちに
+      すれば済んだ。載せた理由は「最初の出力を取り逃す」ではなく——このtestは
+      driverが自分でresetするので元からその問題は無い——**言うだけ言って黙るsketchは
+      最後の1行をWCH-Linkのブリッジに置き去りにする**ほう。
+      固定時間の読み取りも消え、バナーを待って`RUN`を送る形になった。
+      `bss_zeroed`/`data_copied_from_flash`/`init_array_ran`はboard側の`tc_check`、
+      **対照の`past_ebss`だけはhost側**(パターンを決めているのがhostなので、
+      boardにも定数を置くと二重管理になる)。
+
+      最初の版は**V103だけ落ちた**。bannerは来るのに`RUN`の応答が10秒来ない。
+      原因は「`RUN`を撃つのが早すぎた」で、transcriptを見ると
+      **PONGが返るまでにbannerが7回**出ている——WCH-Linkのブリッジが
+      最初の1往復に数秒かかる(`smoke.handshake`のコメントが既に書いていた話)。
+      `smoke.handshake()`(`PING <token>`→`PONG <token>`)を先に通し、
+      `RUN`は20秒×2回に。以後4 boardとも安定
 - [ ] `[P1]` **コマンド規約を実機で検証していない**(2026-08-22時点)。
       全11 sketch × 6 boardのcompileは通っているが、
       作業台のCH32V103が**flashではなくSRAMから起動している**らしく
