@@ -58,11 +58,7 @@ void timer_start(void)
     if (timer_running) {
         return;
     }
-#if CH32_SERVO_TIMER_ON_APB2
-    CH32_RCC_APB2PCENR |= CH32_SERVO_TIMER_RCC;
-#else
-    CH32_RCC_APB1PCENR |= CH32_SERVO_TIMER_RCC;
-#endif
+    ch32_clock_enable_at(CH32_SERVO_TIMER_CLKEN_ADDR, CH32_SERVO_TIMER_CLKEN_MASK);
     CH32_TIM_CTLR1(CH32_SERVO_TIMER_BASE) = 0;
     CH32_TIM_PSC(CH32_SERVO_TIMER_BASE) = (uint16_t)((F_CPU / 1000000u) - 1u);
     current = -1;

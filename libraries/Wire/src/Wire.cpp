@@ -70,8 +70,8 @@ bool CH32TwoWire::wait_flag1(uint16_t mask, bool set)
 
 void CH32TwoWire::begin()
 {
-    CH32_RCC_APB1PCENR |= _clock_bit;
-    CH32_RCC_APB2PCENR |= CH32_RCC_APB2_AFIO;
+    ch32_clock_enable_at(_clken_addr, _clken_mask);
+    ch32_clock_enable(AFIO);
     /* Written every time, default route included - see HardwareSerial::begin
      * for why "leave the field alone" is the wrong default. */
     if (_remap_mask) {
@@ -134,7 +134,7 @@ void CH32TwoWire::end()
         _slave = false;
     }
     CH32_I2C_CTLR1(_base) = 0;
-    CH32_RCC_APB1PCENR &= ~_clock_bit;
+    ch32_clock_disable_at(_clken_addr, _clken_mask);
     _started = false;
     _transmitting = false;
     _tx_len = 0;
@@ -597,7 +597,7 @@ bool CH32TwoWire::setPins(uint8_t scl, uint8_t sda)
 #endif
 
 #if defined(CH32_I2C1_SCL)
-arduino::CH32TwoWire Wire(CH32_I2C1_BASE, CH32_RCC_APB1_I2C1,
+arduino::CH32TwoWire Wire(CH32_I2C1_BASE, CH32_I2C1_CLKEN_ADDR, CH32_I2C1_CLKEN_MASK,
                           CH32_I2C1_SCL, CH32_I2C1_SDA,
                           CH32_I2C1_REMAP_MASK, CH32_I2C1_REMAP_VAL,
                           CH32_I2C1_REMAP2_MASK, CH32_I2C1_REMAP2_VAL,
@@ -611,7 +611,7 @@ extern "C" __attribute__((interrupt)) void I2C1_ER_IRQHandler(void)
     Wire.er_irq();
 }
 #if defined(CH32_I2C2_SCL)
-arduino::CH32TwoWire Wire1(CH32_I2C2_BASE, CH32_RCC_APB1_I2C2,
+arduino::CH32TwoWire Wire1(CH32_I2C2_BASE, CH32_I2C2_CLKEN_ADDR, CH32_I2C2_CLKEN_MASK,
                            CH32_I2C2_SCL, CH32_I2C2_SDA,
                            CH32_I2C2_REMAP_MASK, CH32_I2C2_REMAP_VAL,
                            CH32_I2C2_REMAP2_MASK, CH32_I2C2_REMAP2_VAL,
@@ -627,7 +627,7 @@ extern "C" __attribute__((interrupt)) void I2C2_ER_IRQHandler(void)
 #endif
 #elif defined(CH32_I2C2_SCL)
 /* A part that bonds only the second instance still gets a plain Wire. */
-arduino::CH32TwoWire Wire(CH32_I2C2_BASE, CH32_RCC_APB1_I2C2,
+arduino::CH32TwoWire Wire(CH32_I2C2_BASE, CH32_I2C2_CLKEN_ADDR, CH32_I2C2_CLKEN_MASK,
                           CH32_I2C2_SCL, CH32_I2C2_SDA,
                           CH32_I2C2_REMAP_MASK, CH32_I2C2_REMAP_VAL,
                           CH32_I2C2_REMAP2_MASK, CH32_I2C2_REMAP2_VAL,

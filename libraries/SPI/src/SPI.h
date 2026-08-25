@@ -33,11 +33,11 @@ namespace arduino {
 
 class CH32SPIClass : public HardwareSPI {
 public:
-    CH32SPIClass(uint32_t base, bool on_apb1, uint32_t clock_bit,
+    CH32SPIClass(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
                  uint8_t sck_pin, uint8_t miso_pin, uint8_t mosi_pin,
                  uint32_t remap_mask, uint32_t remap_value,
                  uint32_t remap2_mask, uint32_t remap2_value)
-        : _base(base), _on_apb1(on_apb1), _clock_bit(clock_bit),
+        : _base(base), _clken_addr(clken_addr), _clken_mask(clken_mask),
           _sck_pin(sck_pin), _miso_pin(miso_pin), _mosi_pin(mosi_pin),
           _remap_mask(remap_mask), _remap_value(remap_value),
           _remap2_mask(remap2_mask), _remap2_value(remap2_value) {}
@@ -79,8 +79,9 @@ private:
     bool use_route(const ch32_route_t &route);
 
     const uint32_t _base;
-    const bool _on_apb1;
-    const uint32_t _clock_bit;
+    /* RCC enable register and bit, from the variant (clock_enables.csv). */
+    const uint32_t _clken_addr;
+    const uint32_t _clken_mask;
     /* Not const: setRoute()/setPins() move the bus between pin sets. */
     uint8_t _sck_pin;
     uint8_t _miso_pin;

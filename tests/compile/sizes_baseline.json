@@ -37,27 +37,27 @@
   "CH32M007/ANY": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32M007/CH32M007E8R6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32M007/CH32M007E8U7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32M007/CH32M007G8R6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32M007/CH32M007K8U7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32M030/ANY": {
     "bss": 520,
@@ -102,32 +102,32 @@
   "CH32V002/ANY": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V002/CH32V002A4M6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V002/CH32V002D4U6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V002/CH32V002F4P6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V002/CH32V002F4U6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V002/CH32V002J4M6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V003/ANY": {
     "bss": 520,
@@ -157,107 +157,107 @@
   "CH32V004/ANY": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V004/CH32V004F6P1": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V004/CH32V004F6U1": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V005/ANY": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V005/CH32V005D6U6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V005/CH32V005E6R6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V005/CH32V005F6P6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V005/CH32V005F6U6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V006/ANY": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V006/CH32V006D8U7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V006/CH32V006E8R6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V006/CH32V006E8R7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V006/CH32V006F4U6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V006/CH32V006F8P7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V006/CH32V006F8U7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V006/CH32V006K8U7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V007/ANY": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V007/CH32V007E8R6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V007/CH32V007E8R7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V007/CH32V007K8U6": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V007/CH32V007K8U7": {
     "bss": 520,
     "data": 4,
-    "text": 876
+    "text": 900
   },
   "CH32V103/ANY": {
     "bss": 520,

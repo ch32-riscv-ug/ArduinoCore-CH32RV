@@ -37,7 +37,7 @@ static void ch32_exti_set(pin_size_t pin, PinStatus mode,
     ch32_exti_callback[bit] = callback;
     ch32_exti_param[bit] = param;
 
-    CH32_RCC_APB2PCENR |= CH32_RCC_APB2_AFIO;
+    ch32_clock_enable(AFIO);
     ch32_gpio_clock_enable(port);
 
     const uint32_t shift = (bit & 3u) * 4u;

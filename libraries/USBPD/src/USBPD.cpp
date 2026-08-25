@@ -161,8 +161,8 @@ namespace arduino {
 
 bool CH32UsbPd::begin()
 {
-    CH32_RCC_AHBPCENR |= CH32_USBPD_RCC_AHB;
-    CH32_RCC_APB2PCENR |= CH32_RCC_APB2_AFIO;
+    ch32_clock_enable_at(CH32_USBPD_CLKEN_ADDR, CH32_USBPD_CLKEN_MASK);
+    ch32_clock_enable(AFIO);
     CH32_USBPD_AFIO_CTLR |= CH32_USBPD_IN_HVT | CH32_USBPD_PHY_V33;
 
     CH32_USBPD_CONFIG = CH32_UPD_PD_DMA_EN;
@@ -194,7 +194,7 @@ void CH32UsbPd::end()
     CH32_USBPD_CONFIG = 0;
     CH32_USBPD_PORT_CC1 = 0;
     CH32_USBPD_PORT_CC2 = 0;
-    CH32_RCC_AHBPCENR &= ~CH32_USBPD_RCC_AHB;
+    ch32_clock_disable_at(CH32_USBPD_CLKEN_ADDR, CH32_USBPD_CLKEN_MASK);
     pd.state = ST_DETACHED;
     pd.caps.count = 0;
     pd.contract_mv = 0;

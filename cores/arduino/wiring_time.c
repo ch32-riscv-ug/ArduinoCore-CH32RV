@@ -52,6 +52,31 @@ void SystemInit(void)
      *
      * The sequence is EVT's own and differs per family, so it is generated
      * (clock_init_<family>.h, from clock_init.csv). */
+    /* Start from a known clock, whatever the last program left running. The
+     * reset that brought us here is not necessarily a power-on: CH32.restart()
+     * (a PFIC system-reset) and an IWDG watchdog reset both restart the core
+     * WITHOUT resetting RCC on the V20x/V30x parts - measured on CH32V203,
+     * where CFGR0 still reads SYSCLK-from-PLL after restart(). Left alone, the
+     * generated reset macro below then clears PLLON while the PLL is still the
+     * system clock, and the reconfiguration that follows lands on a glitched
+     * clock - the UART came out ~1.25x fast and unstable, so the console was
+     * unreadable after any software or watchdog reset.
+     *
+     * The fix is a specification, not a special case: bring SYSCLK to HSI and
+     * confirm the switch (SWS) before touching anything else, every boot. HSI
+     * is a valid source until we are off the PLL, so this is safe from the PLL
+     * state too; and where we are already on HSI (a real power-on) both waits
+     * fall straight through. From here the reset macro and the PLL bring-up
+     * run from one fixed starting point regardless of what caused the reset. */
+    CH32_RCC_CTLR |= CH32_RCC_CTLR_HSION;
+    while ((CH32_RCC_CTLR & CH32_RCC_CTLR_HSIRDY) == 0u) {
+    }
+    CH32_RCC_CFGR0 = (CH32_RCC_CFGR0 & ~CH32_RCC_CFGR0_SW_MASK) |
+                     CH32_RCC_CFGR0_SW_HSI;
+    while ((CH32_RCC_CFGR0 & CH32_RCC_CFGR0_SWS_MASK) !=
+           (CH32_RCC_CFGR0_SW_HSI << 2)) {
+    }
+
     CH32_CLOCK_INIT_RESET();
     while ((CH32_RCC_CTLR & CH32_RCC_CTLR_HSIRDY) == 0u) {
     }

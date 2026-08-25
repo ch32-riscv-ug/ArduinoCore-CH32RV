@@ -46,11 +46,11 @@ namespace arduino {
 class CH32HardwareSerial : public HardwareSerial {
 public:
     CH32HardwareSerial(uint32_t base, uint8_t irqn, uint8_t tx_pin,
-                       uint8_t rx_pin, bool on_apb1, uint32_t clock_bit,
+                       uint8_t rx_pin, uint32_t clken_addr, uint32_t clken_mask,
                        uint32_t remap_mask, uint32_t remap_value,
                        uint32_t remap2_mask, uint32_t remap2_value)
         : _base(base), _irqn(irqn), _tx_pin(tx_pin), _rx_pin(rx_pin),
-          _on_apb1(on_apb1), _clock_bit(clock_bit), _remap_mask(remap_mask),
+          _clken_addr(clken_addr), _clken_mask(clken_mask), _remap_mask(remap_mask),
           _remap_value(remap_value), _remap2_mask(remap2_mask),
           _remap2_value(remap2_value), _started(false) {}
 
@@ -98,8 +98,10 @@ private:
     /* Not const: setRoute()/setPins() move the port between pin sets. */
     uint8_t _tx_pin;
     uint8_t _rx_pin;
-    const bool _on_apb1;
-    const uint32_t _clock_bit;
+    /* RCC enable register and bit, from the variant (clock_enables.csv):
+     * which bus a USART hangs off differs per family. */
+    const uint32_t _clken_addr;
+    const uint32_t _clken_mask;
     /* AFIO field that routes this USART to _tx_pin/_rx_pin; zero mask
      * means device-data knows no field, so the pins cannot be moved. */
     const uint32_t _remap_mask;

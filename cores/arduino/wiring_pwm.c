@@ -48,11 +48,21 @@ static void timer_begin(uint8_t timer, uint32_t base)
     if (ch32_pwm_started & (1u << timer)) {
         return;
     }
-    if (timer == 1) {
-        CH32_RCC_APB2PCENR |= CH32_RCC_APB2_TIM1;
-    } else {
-        CH32_RCC_APB1PCENR |= (timer == 2) ? CH32_RCC_APB1_TIM2
-                                           : CH32_RCC_APB1_TIM3;
+    /* Which register and bit turn a timer on is a per-family fact (V006 has
+     * TIM3 at bit 2, the F1-style parts at bit 1) and comes from the variant
+     * header; a family without one of these timers has no define, and its
+     * pin map never names that timer. */
+    switch (timer) {
+#ifdef CH32_CLKEN_TIM1_ADDR
+    case 1: ch32_clock_enable(TIM1); break;
+#endif
+#ifdef CH32_CLKEN_TIM2_ADDR
+    case 2: ch32_clock_enable(TIM2); break;
+#endif
+#ifdef CH32_CLKEN_TIM3_ADDR
+    case 3: ch32_clock_enable(TIM3); break;
+#endif
+    default: break;
     }
     /* One PWM period every CH32_PWM_STEPS counts, at roughly CH32_PWM_HZ. */
     uint32_t prescale = F_CPU / (CH32_PWM_HZ * CH32_PWM_STEPS);
@@ -98,7 +108,7 @@ static bool dac_write(pin_size_t pin, uint32_t value12)
     ch32_gpio_clock_enable(port);
     ch32_gpio_set_config(port, (uint8_t)CH32_PIN_BIT(pin),
                          CH32_GPIO_CFG_IN_ANALOG);
-    CH32_RCC_APB1PCENR |= CH32_RCC_APB1_DAC;
+    ch32_clock_enable(DAC);
     CH32_DAC_CTLR |= enable;
     *holding = value12 & 0x0FFFu;
     return true;

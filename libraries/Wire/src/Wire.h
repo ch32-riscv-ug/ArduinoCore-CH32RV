@@ -52,11 +52,13 @@ namespace arduino {
 
 class CH32TwoWire : public HardwareI2C {
 public:
-    CH32TwoWire(uint32_t base, uint32_t clock_bit, uint8_t scl_pin,
+    CH32TwoWire(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
+                uint8_t scl_pin,
                 uint8_t sda_pin, uint32_t remap_mask, uint32_t remap_value,
                 uint32_t remap2_mask, uint32_t remap2_value,
                 uint8_t ev_irqn, uint8_t er_irqn)
-        : _base(base), _clock_bit(clock_bit), _scl_pin(scl_pin),
+        : _base(base), _clken_addr(clken_addr), _clken_mask(clken_mask),
+          _scl_pin(scl_pin),
           _sda_pin(sda_pin), _remap_mask(remap_mask),
           _remap_value(remap_value), _remap2_mask(remap2_mask),
           _remap2_value(remap2_value), _ev_irqn(ev_irqn),
@@ -117,7 +119,9 @@ private:
     void recover(void);
 
     const uint32_t _base;
-    const uint32_t _clock_bit;
+    /* RCC enable register and bit, from the variant (clock_enables.csv). */
+    const uint32_t _clken_addr;
+    const uint32_t _clken_mask;
     /* Not const: setRoute()/setPins() move the bus between pin sets. */
     uint8_t _scl_pin;
     uint8_t _sda_pin;

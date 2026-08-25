@@ -311,3 +311,18 @@ products.csvの±30行はbasis文字列のみで値の変更なし。
 **検証**: fast suite 73 pass。compile matrix(122型番+サイズ基準線)と
 X035実機sweep(13 sketch)は本追記の時点で実行中——結果はtodoに記録する。
 
+---
+
+## 追記4: `fbb6502` — 依頼した表が全部届いたので取り込んだ (2026-08-25夜)
+
+新規5表(`flash_geometry` / `opa_cmp_registers` / `adc_internal` /
+`usbpd_plumbing` / `clock_enables`)。生成物の差は`clock_init_ch32v006.h`の2行だけ
+(V006のclock initに手順が1つ増えた)。run-onは0。
+
+**`clock_enables.csv`で手書き定数を検算したら2件のバグが出た**:
+CH32V006 familyのUSART2(APB2 bit13、手書きはAPB1 bit17)とTIM3(bit2、手書きはbit1)。
+その場で周辺クロックenableを全部データ由来に置き換え、手書き定数を削除。
+
+`usbpd_plumbing.csv`のX035行(AHBPCENR bit17、AFIO CTLR bit8/9)は
+手書きの`usbpd_hw.h`と完全一致——手書き側が正しかったことの裏取りにもなった。
+

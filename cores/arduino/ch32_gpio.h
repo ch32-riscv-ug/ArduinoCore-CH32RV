@@ -12,7 +12,9 @@ extern "C" {
 /* Turn on the port's peripheral clock. Harmless to call repeatedly. */
 static inline void ch32_gpio_clock_enable(uint8_t port)
 {
-    CH32_RCC_APB2PCENR |= CH32_RCC_APB2_IOP(port);
+    /* One register, PA at CH32_CLKEN_GPIO_BIT0 and the ports contiguous
+     * after it - true of every family in clock_enables.csv. */
+    CH32_REG32(CH32_CLKEN_GPIO_ADDR) |= 1u << (CH32_CLKEN_GPIO_BIT0 + (port));
 }
 
 /* Write the 4-bit configuration nibble for one pin. */

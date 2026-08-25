@@ -105,11 +105,7 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
     tone_toggles = toggles;
     tone_pin = pin;
 
-#if CH32_TONE_TIMER_ON_APB2
-    CH32_RCC_APB2PCENR |= CH32_TONE_TIMER_RCC;
-#else
-    CH32_RCC_APB1PCENR |= CH32_TONE_TIMER_RCC;
-#endif
+    ch32_clock_enable_at(CH32_TONE_TIMER_CLKEN_ADDR, CH32_TONE_TIMER_CLKEN_MASK);
     CH32_TIM_PSC(CH32_TONE_TIMER_BASE) = (uint16_t)psc;
 #if CH32_TONE_TIMER_BITS == 32
     /* A 16-bit store here would land in both halves of the 32-bit register and

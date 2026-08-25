@@ -40,7 +40,7 @@ static void ch32_adc_begin(void)
     if (ch32_adc_started) {
         return;
     }
-    CH32_RCC_APB2PCENR |= CH32_RCC_APB2_ADC1;
+    ch32_clock_enable(ADC1);
 
     /* ADCCLK has to stay inside the family's own ceiling, which is not the
      * same number everywhere: 14 MHz on CH32V103/V20x/V30x, 48 on CH32L103,

@@ -1116,6 +1116,25 @@ def resolve_pin_candidates(by_board: dict, kinds: list):
                         roles[role] = value[-1]
 
 
+def load_clock_enables(tables: pathlib.Path) -> dict:
+    """family -> {peripheral: (RCC enable register address, mask)}.
+
+    Which register turns a block on, and which bit, is a per-family fact:
+    CH32V006 has USART2 on the APB2 register at bit 13 and TIM3 at bit 2,
+    where the F1-style families have USART2 on APB1 bit 17 and TIM3 at bit 1.
+    The core used to carry one hand-written set for all families, and those
+    two were wrong for the whole V00x line - uncaught because no V00x board
+    was on the bench. clock_enables.csv (requested for exactly this) makes
+    the variant carry the right pair per peripheral.
+    """
+    out: dict = {}
+    for r in read_table(tables, "clock_enables.csv",
+                        ("family", "peripheral", "address", "mask")):
+        out.setdefault(r["family"], {})[r["peripheral"]] = (
+            int(r["address"], 16), int(r["mask"], 16))
+    return out
+
+
 def load_pin_routes(tables: pathlib.Path, signal_res: list,
                     route_order: tuple, kind: str = "", alts=None) -> dict:
     """part -> {(instance index, route): {role: (port, bit)}}.
@@ -1463,9 +1482,30 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              i2cs: dict, spis: dict, dacs: dict, pwm: dict, handlers: list,
              remap: dict, route_alts: dict = None,
              wide_by_family: dict = {},
-             forbidden: dict = {}) -> str:
+             forbidden: dict = {}, clock_enables: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
+
+    # The board's clock-enable map. A board spanning two families (none does
+    # today, since CH32V203CCT6 is its own board) would have to agree.
+    clken: dict = {}
+    for family in sorted({r.get("family", "") for r in rows}):
+        for name, pair in clock_enables.get(family, {}).items():
+            if name in clken and clken[name] != pair:
+                raise SystemExit(f"{series}: families disagree on the clock "
+                                 f"enable for {name}: {clken[name]} vs {pair}")
+            clken[name] = pair
+
+    def clken_defines(prefix: str, *names) -> list:
+        """#defines for the first of `names` the family has, or an error:
+        an instance the header advertises must be one the core can clock."""
+        for name in names:
+            if name in clken:
+                addr, mask = clken[name]
+                return [f"#define {prefix}_CLKEN_ADDR {addr:#010x}u",
+                        f"#define {prefix}_CLKEN_MASK {mask:#010x}u"]
+        raise SystemExit(f"{series}: clock_enables.csv has no row for "
+                         f"{'/'.join(names)}, which the pin map uses")
 
     def alternatives(kind: str, index, route: str, roles: tuple) -> list:
         """Comment naming the pads device-data offers and this file did not.
@@ -1531,6 +1571,35 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     out += [" */", "#pragma once", "", '#include "ch32_pins.h"', ""]
 
     out.append(f"#define CH32_VARIANT_{series} 1")
+    out.append("")
+
+    # --- peripheral clock enables ---
+    out.append("/* ---- peripheral clock enables (clock_enables.csv) ----")
+    out.append(" * The RCC register that turns each block on, and the bit. Per family,")
+    out.append(" * because it differs: CH32V006 has USART2 on the APB2 register at bit 13")
+    out.append(" * where the F1-style parts have it on APB1 bit 17. Use through")
+    out.append(" * ch32_clock_enable(NAME) / ch32_clock_disable(NAME). ---- */")
+    for name in sorted(clken):
+        addr, mask = clken[name]
+        ident = re.sub(r"[^A-Za-z0-9]", "_", name)
+        out.append(f"#define CH32_CLKEN_{ident}_ADDR {addr:#010x}u")
+        out.append(f"#define CH32_CLKEN_{ident}_MASK {mask:#010x}u")
+    gpio = {n: clken[n] for n in clken if re.fullmatch(r"GPIO[A-H]", n)}
+    if gpio:
+        addrs = {a for a, _ in gpio.values()}
+        base_bit = None
+        for n, (a, m) in gpio.items():
+            bit = m.bit_length() - 1
+            b0 = bit - (ord(n[-1]) - ord("A"))
+            if base_bit is None:
+                base_bit = b0
+            elif base_bit != b0:
+                raise SystemExit(f"{series}: GPIO clock enables are not contiguous")
+        if len(addrs) != 1:
+            raise SystemExit(f"{series}: GPIO clock enables span registers")
+        out.append("/* The ports share one register, PA at _BIT0 and the rest contiguous. */")
+        out.append(f"#define CH32_CLKEN_GPIO_ADDR {addrs.pop():#010x}u")
+        out.append(f"#define CH32_CLKEN_GPIO_BIT0 {base_bit}")
     out.append("")
 
     out.append(f"/* ---- GPIO pads: {len(union)} in the series, "
@@ -1648,6 +1717,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.extend(alternatives("uart", index, route, ("TX", "RX")))
             name = handler_of[index]
             out.append(f"#define CH32_SERIAL{index}_HANDLER {name}")
+            out.extend(clken_defines(f"CH32_SERIAL{index}",
+                                     f"USART{index}", f"UART{index}"))
             out.append(f"#define CH32_SERIAL{index}_IRQ "
                        f"CH32_IRQN_{name.removesuffix('_IRQHandler')}")
             value = route_remap_value(route)
@@ -1713,6 +1784,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"/* I2C{index}: route {route}, {where} */")
             out.append(f"#define CH32_I2C{index}_SCL {pad_name(*scl)}")
             out.append(f"#define CH32_I2C{index}_SDA {pad_name(*sda)}")
+            out.extend(clken_defines(f"CH32_I2C{index}", f"I2C{index}"))
             out.extend(alternatives("i2c", index, route, ("SCL", "SDA")))
             value = route_remap_value(route)
             bits = remap.get((series, "i2c", index))
@@ -1764,6 +1836,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"#define CH32_SPI{index}_SCK {pad_name(*sck)}")
             out.append(f"#define CH32_SPI{index}_MISO {pad_name(*miso)}")
             out.append(f"#define CH32_SPI{index}_MOSI {pad_name(*mosi)}")
+            out.extend(clken_defines(f"CH32_SPI{index}", f"SPI{index}"))
             out.extend(alternatives("spi", index, route,
                                     ("SCK", "MISO", "MOSI")))
             value = route_remap_value(route)
@@ -1912,11 +1985,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         else:
             out.append(f"/* ---- {kind}: TIM{number}, free of PWM pads. ---- */")
         prefix = "CH32_TONE" if kind == "tone()" else "CH32_SERVO"
-        bus = "APB2" if number == 1 else "APB1"
         out.append(f"#define {prefix}_TIMER {number}")
         out.append(f"#define {prefix}_TIMER_BASE CH32_TIM{number}_BASE")
-        out.append(f"#define {prefix}_TIMER_RCC CH32_RCC_{bus}_TIM{number}")
-        out.append(f"#define {prefix}_TIMER_ON_APB2 {1 if number == 1 else 0}")
+        out.extend(clken_defines(f"{prefix}_TIMER", f"TIM{number}"))
         out.append(f"#define {prefix}_TIMER_IRQ CH32_IRQN_{irqn}")
         out.append(f"#define {prefix}_TIMER_HANDLER {handler}")
         out.append(f"#define {prefix}_SHARES_PWM {1 if shared else 0}")
@@ -2097,6 +2168,7 @@ def main() -> int:
     probe_rs = load_probe_rs_targets()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)
+    clock_enables = load_clock_enables(args.tables)
     pwm = load_pwm_pins(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
@@ -2154,7 +2226,7 @@ def main() -> int:
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
             gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
-                     route_alts, wide_timers, forbidden)
+                     route_alts, wide_timers, forbidden, clock_enables)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of

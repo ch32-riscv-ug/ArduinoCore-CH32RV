@@ -12,6 +12,8 @@
     CH32_REG32(0x40022000u) = 0x00000002u; \
     CH32_REG32(0x40021000u) |= 0x00000001u; \
     CH32_REG32(0x40021004u) &= 0x68ff0000u; \
+    CH32_REG32(0x40021000u) &= 0xfed6fffbu; \
+    CH32_REG32(0x40021000u) |= 0x00100000u; \
     CH32_REG32(0x40021000u) &= 0xfffbffffu; \
     CH32_REG32(0x40021004u) &= 0xfffeffffu; \
     CH32_REG32(0x40021008u) = 0x009d0000u; \

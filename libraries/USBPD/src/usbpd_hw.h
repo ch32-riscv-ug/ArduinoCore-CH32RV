@@ -25,7 +25,16 @@
  * differs and nothing has been checked - absence here is deliberate. */
 #if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
 #define CH32_USBPD_BASE      0x40027000u
-#define CH32_USBPD_RCC_AHB   (1u << 17)   /* RCC_AHBPeriph_USBPD          */
+/* The clock enable comes from the variant now that clock_enables.csv exists
+ * (usbpd_plumbing.csv confirms the same bit); the literal stays as the
+ * fallback for a variant generated before the table. */
+#ifdef CH32_CLKEN_USBPD_ADDR
+#define CH32_USBPD_CLKEN_ADDR CH32_CLKEN_USBPD_ADDR
+#define CH32_USBPD_CLKEN_MASK CH32_CLKEN_USBPD_MASK
+#else
+#define CH32_USBPD_CLKEN_ADDR 0x40021014u   /* RCC AHBPCENR               */
+#define CH32_USBPD_CLKEN_MASK (1u << 17)    /* RCC_AHBPeriph_USBPD        */
+#endif
 #define CH32_USBPD_IRQ       CH32_IRQN_USBPD
 /* AFIO_CTLR bits the PHY needs. IN_HVT raises the CC input threshold while
  * PD is in use; PHY_V33 says VDD is 3.3 V so the pull-up limiter can be

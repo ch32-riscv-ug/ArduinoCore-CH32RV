@@ -589,6 +589,20 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       **1回のtest実行で2回の実リセットをまたぐ**(REBOOT→`reset_reason=software`、
       BITE→餌やり停止→**`reset_reason=watchdog`**)。**CH32V103実機でfailures=0**。
       V003(23%)/X035/M030 compile確認
+- [x] **周辺クロックenableをデータ由来にした**(2026-08-25、`clock_enables.csv`到着と同時)。
+      **手書き定数の検算で実バグ2件が出た**: CH32V006 family(V002/V004/V005/
+      V006/V007/M007)で**USART2はPB2PCENR(APB2側) bit13**(手書きはAPB1 bit17)、
+      **TIM3はbit2**(手書きはbit1)。V00x系boardのSerial2とTIM3のPWM/toneは
+      クロックが入らず死んでいた——**benchにV00xが無かったので誰も踏まなかった**。
+      修正: 変異体に`CH32_CLKEN_<周辺>_ADDR/_MASK`を全周辺ぶん生成(+GPIOの短縮形
+      `CH32_CLKEN_GPIO_ADDR/_BIT0`、SERIALn/I2Cn/SPIn/TONE/SERVOの別名)、
+      coreは`ch32_clock_enable(NAME)`/`ch32_clock_enable_at(addr,mask)`で使う。
+      `ch32_registers.h`の手書き`CH32_RCC_APB1_*/APB2_*/IOP`は**全部削除**。
+      消費側8箇所(Serial/Wire/SPI/gpio/analog/interrupts/pwm/tone/Servo/USBPD)を
+      置換。V003/V006/V307/X315/M030でcompile確認、実機4台sweepで回帰確認。
+      **サイズ基準線を更新**(CH32V006 familyの32型番で text+24。原因は
+      クロックenable置換ではなく、同時に取り込んだ`clock_init_ch32v006.h`の
+      追加2手順。data/bssは不変)
 - [ ] `[P1]` `Serial`の実体をboardごとに差し替えられるようにする。
       series生成の既定は「全型番に出ているUSART」だが、実boardの配線は別
       (X035 EVTはWCH公式・旧コアとも**USART1/PB10**を使う)
@@ -617,6 +631,24 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       AFIOのremapは「このUSARTはこの組」という単位でしか動かないので設計としては
       正しいが、**利用者から見て「pinを指定できる」のか「routeを選べる」のかが
       曖昧**。呼び名とドキュメントを決める
+- [x] **CH32.restart()/watchdogリセット後にV20xのクロックが壊れる件を直した**
+      (2026-08-25、`system_selftest`が実機で発見→修正、CH32V203実機で確認)。
+      **本セッションの変更起因ではない**——既存のPLLクロック対応(未検証)の穴を、
+      初めてsoftware/watchdogリセットをまたぐtestが踏んだ。
+
+      **機構(実機で確定)**: **PFIC SYSRST(`CH32.restart()`)もIWDGリセットも、
+      V20x/V30xではcoreだけリセットしRCCを残す**(SYSRST書き込み後もCFGR0=`0x0034040a`、
+      PLL稼働のまま。真のリセットなら`0`)。その状態で生成リセットマクロがPLL稼働中に
+      PLLONを消しに行き、以降のPLL再設定がグリッチ状態に乗る→UART実効baudが約1.25倍で
+      不安定→hostが読めずhang。probe-rs reset(NRST/電源)は完全リセットなので回復していた。
+
+      **修正(最もシンプルな仕様、maintainer指示「今後バグが出ない形」)**:
+      `restart()`(software resetだけ直る)ではなく、**どのリセット要因でも必ず通る
+      `SystemInit`の入口で、生成マクロの前に無条件でSYSCLK→HSIへ切り替えてSWSで確認**する
+      (4行)。これでsoftware / watchdog / 電源 / 将来の何であっても
+      **1つの既知状態から**初期化が始まる。電源onで既にHSIなら両waitは素通り。
+      V203実機で`reset_reason=watchdog`まで通過、BITE後も読めることを確認。
+      **全PLL稼働family(V20x/V30x/V103/L103等)に効く**——単一経路なので個別対応不要
 - [ ] `[P1]` `[要判断]` **USART1が使えないboardの`Serial`をどうするか**。
       series単位では生成器が既に解決していて、`CH32M103` / `CH32X033` /
       `CH32X315`は`CH32_SERIAL_DEFAULT`が**USART2**になっている。
@@ -1064,6 +1096,13 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       (いまは「未対応」とNOTEを出しているだけ)。ただしaf-Nの実機は入手不能なので、
       入れても検証はcompileまで。
 
+      **依頼した5表が全部届いた**(2026-08-25夜、上流`fbb6502`。参考扱いの
+      `clock_enables.csv`まで): `flash_geometry.csv`(12 family)、
+      `opa_cmp_registers.csv`(293行、CMPのEN/MODE/NSEL/PSEL等)、
+      `adc_internal.csv`(19行。X035は温度センサ無しでVrefint ch15のみ)、
+      `usbpd_plumbing.csv`(6 family。**X035行は手書き`usbpd_hw.h`と完全一致**)、
+      `clock_enables.csv`(429行)。**取り込み済み**(lockは18表、生成物の差は
+      `clock_init_ch32v006.h`の2行のみ)。残る未着は**X033/X035の`F_LSI`**だけ。
       **依頼文書を作成した**(2026-08-25、`scratchpad/data_requests_2026-08-25.md`、
       maintainer経由で上流へ)。内訳: `[高]`flashの幾何 / `[高]`CMP・OPAレジスタ表
       (systick.csv粒度、enable・入力select・出力bitの最小範囲) /

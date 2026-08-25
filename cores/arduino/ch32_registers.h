@@ -84,17 +84,30 @@
 #define CH32_RCC_CFGR0_PPRE2_MASK (0x7u << 11)
 
 /* APB2 peripheral clock enables (bit positions are uniform across CH32). */
-#define CH32_RCC_APB2_AFIO   (1u << 0)
-#define CH32_RCC_APB2_IOP(p) (1u << (2 + (p)))   /* p: 0=PA, 1=PB, ...        */
-#define CH32_RCC_APB2_ADC1   (1u << 9)
-#define CH32_RCC_APB2_TIM1   (1u << 11)
-#define CH32_RCC_APB2_SPI1   (1u << 12)
-#define CH32_RCC_APB2_USART1 (1u << 14)
+/* Peripheral clock enables are NOT spelled out here. The register and bit
+ * differ per family - CH32V006 has USART2 on the APB2 register at bit 13
+ * where the F1-style parts have it on APB1 bit 17, and its TIM3 is bit 2 not
+ * bit 1 - and two of the hand-written constants that used to live here were
+ * exactly those two, wrong for that whole family and never caught because no
+ * V00x board was on the bench. The variant header now carries
+ *
+ *     CH32_CLKEN_<PERIPHERAL>_ADDR / _MASK      (generated from clock_enables.csv)
+ *
+ * for every block the family has, plus CH32_CLKEN_GPIO_ADDR/_BIT0 for the
+ * ports, and the helpers below use them. */
+#define CH32_CLKEN_(name, op) \
+    (CH32_REG32(CH32_CLKEN_##name##_ADDR) op CH32_CLKEN_##name##_MASK)
+#define ch32_clock_enable(name)  CH32_CLKEN_(name, |=)
+#define ch32_clock_disable(name) CH32_CLKEN_(name, &= ~)
+static inline void ch32_clock_enable_at(uint32_t addr, uint32_t mask)
+{
+    CH32_REG32(addr) |= mask;
+}
+static inline void ch32_clock_disable_at(uint32_t addr, uint32_t mask)
+{
+    CH32_REG32(addr) &= ~mask;
+}
 /* APB1 */
-#define CH32_RCC_APB1_USART2 (1u << 17)
-#define CH32_RCC_APB1_USART3 (1u << 18)
-#define CH32_RCC_APB1_USART4 (1u << 19)
-#define CH32_RCC_APB1_USART5 (1u << 20)
 
 /* ------------------------------------------------------------------ I2C */
 /* Both instances sit on APB1. Families with one I2C simply have no I2C2 pins,
@@ -148,8 +161,6 @@
 #define CH32_I2C_CKCFGR_FS       (1u << 15) /* fast mode                     */
 
 /* APB1 */
-#define CH32_RCC_APB1_I2C1 (1u << 21)
-#define CH32_RCC_APB1_I2C2 (1u << 22)
 
 /* ------------------------------------------------------------------ SPI */
 /* SPI1 is on APB2, SPI2/SPI3 on APB1. Like the I2C block the registers are
@@ -185,8 +196,6 @@
 #define CH32_SPI_STATR_BSY       (1u << 7)
 
 /* APB1 */
-#define CH32_RCC_APB1_SPI2 (1u << 14)
-#define CH32_RCC_APB1_SPI3 (1u << 15)
 
 /* ------------------------------------------------------------------ DAC */
 /* Only V303/V305/V307/V4x7 have one. The variant names the pads it reaches
@@ -201,7 +210,6 @@
 #define CH32_DAC_CTLR_EN2   (1u << 16)
 #define CH32_DAC_CTLR_BOFF2 (1u << 17)
 
-#define CH32_RCC_APB1_DAC (1u << 29)
 
 /* ---------------------------------------------------------------- FLASH */
 /* Flash controller registers (not the flash memory itself). */
@@ -463,9 +471,3 @@ static inline void ch32_irq_disable(uint32_t irqn)
 /* PWM mode 1 with preload, in the low or high half of a CHCTLR word. */
 #define CH32_TIM_OCMODE_PWM1 0x68u
 
-#define CH32_RCC_APB1_TIM2 (1u << 0)
-#define CH32_RCC_APB1_TIM3 (1u << 1)
-#define CH32_RCC_APB1_TIM4 (1u << 2)
-#define CH32_RCC_APB1_TIM5 (1u << 3)
-#define CH32_RCC_APB1_TIM6 (1u << 4)
-#define CH32_RCC_APB1_TIM7 (1u << 5)

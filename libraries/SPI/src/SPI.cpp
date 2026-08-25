@@ -30,12 +30,8 @@ static uint16_t br_for(uint32_t clock_hz)
 
 void CH32SPIClass::begin()
 {
-    if (_on_apb1) {
-        CH32_RCC_APB1PCENR |= _clock_bit;
-    } else {
-        CH32_RCC_APB2PCENR |= _clock_bit;
-    }
-    CH32_RCC_APB2PCENR |= CH32_RCC_APB2_AFIO;
+    ch32_clock_enable_at(_clken_addr, _clken_mask);
+    ch32_clock_enable(AFIO);
     if (_remap_mask) {
         CH32_AFIO_PCFR1 = (CH32_AFIO_PCFR1 & ~_remap_mask) | _remap_value;
     }
@@ -68,11 +64,7 @@ void CH32SPIClass::begin()
 void CH32SPIClass::end()
 {
     CH32_SPI_CTLR1(_base) = 0;
-    if (_on_apb1) {
-        CH32_RCC_APB1PCENR &= ~_clock_bit;
-    } else {
-        CH32_RCC_APB2PCENR &= ~_clock_bit;
-    }
+    ch32_clock_disable_at(_clken_addr, _clken_mask);
     _started = false;
 }
 
@@ -283,8 +275,9 @@ bool CH32SPIClass::setPins(uint8_t sck, uint8_t miso, uint8_t mosi)
 #define CH32_SPI3_REMAP2_VAL  0u
 #endif
 
-#define CH32_SPI_INSTANCE(name, n, base, apb1, clkbit)                        \
-    arduino::CH32SPIClass name(base, apb1, clkbit,                            \
+#define CH32_SPI_INSTANCE(name, n, base)                                      \
+    arduino::CH32SPIClass name(base, CH32_SPI##n##_CLKEN_ADDR,                \
+                               CH32_SPI##n##_CLKEN_MASK,                      \
                                CH32_SPI##n##_SCK, CH32_SPI##n##_MISO,         \
                                CH32_SPI##n##_MOSI,                            \
                                CH32_SPI##n##_REMAP_MASK,                      \
@@ -293,16 +286,16 @@ bool CH32SPIClass::setPins(uint8_t sck, uint8_t miso, uint8_t mosi)
                                CH32_SPI##n##_REMAP2_VAL)
 
 #if defined(CH32_SPI1_SCK)
-CH32_SPI_INSTANCE(SPI, 1, CH32_SPI1_BASE, false, CH32_RCC_APB2_SPI1);
+CH32_SPI_INSTANCE(SPI, 1, CH32_SPI1_BASE);
 #if defined(CH32_SPI2_SCK)
-CH32_SPI_INSTANCE(SPI1, 2, CH32_SPI2_BASE, true, CH32_RCC_APB1_SPI2);
+CH32_SPI_INSTANCE(SPI1, 2, CH32_SPI2_BASE);
 #endif
 #if defined(CH32_SPI3_SCK)
-CH32_SPI_INSTANCE(SPI2, 3, CH32_SPI3_BASE, true, CH32_RCC_APB1_SPI3);
+CH32_SPI_INSTANCE(SPI2, 3, CH32_SPI3_BASE);
 #endif
 #elif defined(CH32_SPI2_SCK)
-CH32_SPI_INSTANCE(SPI, 2, CH32_SPI2_BASE, true, CH32_RCC_APB1_SPI2);
+CH32_SPI_INSTANCE(SPI, 2, CH32_SPI2_BASE);
 #if defined(CH32_SPI3_SCK)
-CH32_SPI_INSTANCE(SPI1, 3, CH32_SPI3_BASE, true, CH32_RCC_APB1_SPI3);
+CH32_SPI_INSTANCE(SPI1, 3, CH32_SPI3_BASE);
 #endif
 #endif

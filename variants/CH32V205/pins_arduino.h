@@ -18,6 +18,89 @@
 
 #define CH32_VARIANT_CH32V205 1
 
+/* ---- peripheral clock enables (clock_enables.csv) ----
+ * The RCC register that turns each block on, and the bit. Per family,
+ * because it differs: CH32V006 has USART2 on the APB2 register at bit 13
+ * where the F1-style parts have it on APB1 bit 17. Use through
+ * ch32_clock_enable(NAME) / ch32_clock_disable(NAME). ---- */
+#define CH32_CLKEN_ADC1_ADDR 0x40021018u
+#define CH32_CLKEN_ADC1_MASK 0x00000200u
+#define CH32_CLKEN_AFIO_ADDR 0x40021018u
+#define CH32_CLKEN_AFIO_MASK 0x00000001u
+#define CH32_CLKEN_BKP_ADDR 0x4002101cu
+#define CH32_CLKEN_BKP_MASK 0x08000000u
+#define CH32_CLKEN_CAN1_ADDR 0x4002101cu
+#define CH32_CLKEN_CAN1_MASK 0x02000000u
+#define CH32_CLKEN_CRC_ADDR 0x40021014u
+#define CH32_CLKEN_CRC_MASK 0x00000040u
+#define CH32_CLKEN_DMA1_ADDR 0x40021014u
+#define CH32_CLKEN_DMA1_MASK 0x00000001u
+#define CH32_CLKEN_DMA2_ADDR 0x40021014u
+#define CH32_CLKEN_DMA2_MASK 0x00000002u
+#define CH32_CLKEN_FSMC_ADDR 0x40021014u
+#define CH32_CLKEN_FSMC_MASK 0x00000100u
+#define CH32_CLKEN_GPIOA_ADDR 0x40021018u
+#define CH32_CLKEN_GPIOA_MASK 0x00000004u
+#define CH32_CLKEN_GPIOB_ADDR 0x40021018u
+#define CH32_CLKEN_GPIOB_MASK 0x00000008u
+#define CH32_CLKEN_GPIOC_ADDR 0x40021018u
+#define CH32_CLKEN_GPIOC_MASK 0x00000010u
+#define CH32_CLKEN_GPIOD_ADDR 0x40021018u
+#define CH32_CLKEN_GPIOD_MASK 0x00000020u
+#define CH32_CLKEN_GPIOE_ADDR 0x40021018u
+#define CH32_CLKEN_GPIOE_MASK 0x00000040u
+#define CH32_CLKEN_I2C1_ADDR 0x4002101cu
+#define CH32_CLKEN_I2C1_MASK 0x00200000u
+#define CH32_CLKEN_I2C2_ADDR 0x4002101cu
+#define CH32_CLKEN_I2C2_MASK 0x00400000u
+#define CH32_CLKEN_PIOC_ADDR 0x40021014u
+#define CH32_CLKEN_PIOC_MASK 0x00000080u
+#define CH32_CLKEN_PWR_ADDR 0x4002101cu
+#define CH32_CLKEN_PWR_MASK 0x10000000u
+#define CH32_CLKEN_QSPI1_ADDR 0x40021014u
+#define CH32_CLKEN_QSPI1_MASK 0x00000020u
+#define CH32_CLKEN_SPI1_ADDR 0x40021018u
+#define CH32_CLKEN_SPI1_MASK 0x00001000u
+#define CH32_CLKEN_SPI2_ADDR 0x4002101cu
+#define CH32_CLKEN_SPI2_MASK 0x00004000u
+#define CH32_CLKEN_SRAM_ADDR 0x40021014u
+#define CH32_CLKEN_SRAM_MASK 0x00000004u
+#define CH32_CLKEN_TIM1_ADDR 0x40021018u
+#define CH32_CLKEN_TIM1_MASK 0x00000800u
+#define CH32_CLKEN_TIM2_ADDR 0x4002101cu
+#define CH32_CLKEN_TIM2_MASK 0x00000001u
+#define CH32_CLKEN_TIM3_ADDR 0x4002101cu
+#define CH32_CLKEN_TIM3_MASK 0x00000002u
+#define CH32_CLKEN_TIM4_ADDR 0x4002101cu
+#define CH32_CLKEN_TIM4_MASK 0x00000004u
+#define CH32_CLKEN_USART1_ADDR 0x40021018u
+#define CH32_CLKEN_USART1_MASK 0x00004000u
+#define CH32_CLKEN_USART2_ADDR 0x4002101cu
+#define CH32_CLKEN_USART2_MASK 0x00020000u
+#define CH32_CLKEN_USART3_ADDR 0x4002101cu
+#define CH32_CLKEN_USART3_MASK 0x00040000u
+#define CH32_CLKEN_USART4_ADDR 0x4002101cu
+#define CH32_CLKEN_USART4_MASK 0x00080000u
+#define CH32_CLKEN_USART5_ADDR 0x4002101cu
+#define CH32_CLKEN_USART5_MASK 0x00100000u
+#define CH32_CLKEN_USART6_ADDR 0x4002101cu
+#define CH32_CLKEN_USART6_MASK 0x00000040u
+#define CH32_CLKEN_USART7_ADDR 0x4002101cu
+#define CH32_CLKEN_USART7_MASK 0x00000080u
+#define CH32_CLKEN_USART8_ADDR 0x4002101cu
+#define CH32_CLKEN_USART8_MASK 0x00000100u
+#define CH32_CLKEN_USBFS_ADDR 0x40021014u
+#define CH32_CLKEN_USBFS_MASK 0x00001000u
+#define CH32_CLKEN_USBHS_ADDR 0x40021014u
+#define CH32_CLKEN_USBHS_MASK 0x00000800u
+#define CH32_CLKEN_USBPD_ADDR 0x40021014u
+#define CH32_CLKEN_USBPD_MASK 0x00020000u
+#define CH32_CLKEN_WWDG_ADDR 0x4002101cu
+#define CH32_CLKEN_WWDG_MASK 0x00000800u
+/* The ports share one register, PA at _BIT0 and the rest contiguous. */
+#define CH32_CLKEN_GPIO_ADDR 0x40021018u
+#define CH32_CLKEN_GPIO_BIT0 2
+
 /* ---- GPIO pads: 80 in the series, 34 of them on every part ---- */
 #define PA0  CH32_PIN(0,  0)
 #define PA1  CH32_PIN(0,  1)
@@ -206,6 +289,8 @@
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
 #define CH32_SERIAL1_HANDLER USART1_IRQHandler
+#define CH32_SERIAL1_CLKEN_ADDR 0x40021018u
+#define CH32_SERIAL1_CLKEN_MASK 0x00004000u
 #define CH32_SERIAL1_IRQ CH32_IRQN_USART1
 /* NOTE: route af-2 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
@@ -222,6 +307,8 @@
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
 #define CH32_SERIAL2_HANDLER USART2_IRQHandler
+#define CH32_SERIAL2_CLKEN_ADDR 0x4002101cu
+#define CH32_SERIAL2_CLKEN_MASK 0x00020000u
 #define CH32_SERIAL2_IRQ CH32_IRQN_USART2
 /* NOTE: route af-2 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
@@ -238,6 +325,8 @@
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
 #define CH32_SERIAL3_HANDLER USART3_IRQHandler
+#define CH32_SERIAL3_CLKEN_ADDR 0x4002101cu
+#define CH32_SERIAL3_CLKEN_MASK 0x00040000u
 #define CH32_SERIAL3_IRQ CH32_IRQN_USART3
 /* NOTE: route af-2 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
@@ -254,6 +343,8 @@
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
 #define CH32_SERIAL4_HANDLER USART4_IRQHandler
+#define CH32_SERIAL4_CLKEN_ADDR 0x4002101cu
+#define CH32_SERIAL4_CLKEN_MASK 0x00080000u
 #define CH32_SERIAL4_IRQ CH32_IRQN_USART4
 /* NOTE: route af-2 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
@@ -270,6 +361,8 @@
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
 #define CH32_SERIAL5_HANDLER USART5_IRQHandler
+#define CH32_SERIAL5_CLKEN_ADDR 0x4002101cu
+#define CH32_SERIAL5_CLKEN_MASK 0x00100000u
 #define CH32_SERIAL5_IRQ CH32_IRQN_USART5
 /* NOTE: route af-2 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
@@ -283,6 +376,8 @@
 /* I2C1: route af-7, on every part */
 #define CH32_I2C1_SCL PB8
 #define CH32_I2C1_SDA PB9
+#define CH32_I2C1_CLKEN_ADDR 0x4002101cu
+#define CH32_I2C1_CLKEN_MASK 0x00200000u
 /* device-data lists PA14, PB6, PB8 for SCL on this route;
  * the selection rule picked the one above (never a debug
  * or strap pad, prefer a pad on every part, else table
@@ -297,6 +392,8 @@
 /* I2C2: route af-7, on every part */
 #define CH32_I2C2_SCL PB10
 #define CH32_I2C2_SDA PB11
+#define CH32_I2C2_CLKEN_ADDR 0x4002101cu
+#define CH32_I2C2_CLKEN_MASK 0x00400000u
 /* device-data lists PB10, PC13 for SCL on this route;
  * the selection rule picked the one above (never a debug
  * or strap pad, prefer a pad on every part, else table
@@ -323,6 +420,8 @@
 #define CH32_SPI1_SCK PB3
 #define CH32_SPI1_MISO PB4
 #define CH32_SPI1_MOSI PB5
+#define CH32_SPI1_CLKEN_ADDR 0x40021018u
+#define CH32_SPI1_CLKEN_MASK 0x00001000u
 /* device-data lists PA5, PB3 for SCK on this route;
  * the selection rule picked the one above (never a debug
  * or strap pad, prefer a pad on every part, else table
@@ -342,6 +441,8 @@
 #define CH32_SPI2_SCK PB13
 #define CH32_SPI2_MISO PB14
 #define CH32_SPI2_MOSI PB15
+#define CH32_SPI2_CLKEN_ADDR 0x4002101cu
+#define CH32_SPI2_CLKEN_MASK 0x00004000u
 /* NOTE: route af-5 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
@@ -360,8 +461,8 @@
 /* ---- tone(): TIM4, free of PWM pads. ---- */
 #define CH32_TONE_TIMER 4
 #define CH32_TONE_TIMER_BASE CH32_TIM4_BASE
-#define CH32_TONE_TIMER_RCC CH32_RCC_APB1_TIM4
-#define CH32_TONE_TIMER_ON_APB2 0
+#define CH32_TONE_TIMER_CLKEN_ADDR 0x4002101cu
+#define CH32_TONE_TIMER_CLKEN_MASK 0x00000004u
 #define CH32_TONE_TIMER_IRQ CH32_IRQN_TIM4
 #define CH32_TONE_TIMER_HANDLER TIM4_IRQHandler
 #define CH32_TONE_SHARES_PWM 0
@@ -372,8 +473,8 @@
 /* ---- Servo: TIM3, free of PWM pads. ---- */
 #define CH32_SERVO_TIMER 3
 #define CH32_SERVO_TIMER_BASE CH32_TIM3_BASE
-#define CH32_SERVO_TIMER_RCC CH32_RCC_APB1_TIM3
-#define CH32_SERVO_TIMER_ON_APB2 0
+#define CH32_SERVO_TIMER_CLKEN_ADDR 0x4002101cu
+#define CH32_SERVO_TIMER_CLKEN_MASK 0x00000002u
 #define CH32_SERVO_TIMER_IRQ CH32_IRQN_TIM3
 #define CH32_SERVO_TIMER_HANDLER TIM3_IRQHandler
 #define CH32_SERVO_SHARES_PWM 0
