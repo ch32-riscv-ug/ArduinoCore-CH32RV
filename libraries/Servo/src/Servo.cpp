@@ -41,9 +41,12 @@ inline void timer_set(uint16_t us)
      * wiring_tone.cpp does not hit this because its update event is fired once
      * at start, while the interrupt is still masked. */
 #if CH32_SERVO_TIMER_BITS == 32
-    /* 32-bit ATRLR: a 16-bit store is replicated into both halves. No variant
-     * currently picks a wide timer for Servo, but the pick follows the vectors
-     * and would change silently. See ch32_registers.h. */
+    /* 32-bit ATRLR: a 16-bit store is replicated into both halves, which would
+     * ask for a 65-second frame instead of a 20 ms one - no servo would ever
+     * move. CH32V208 is the variant this applies to: tone() takes TIM5 there,
+     * so Servo gets the 32-bit TIM4. Untested, for want of the board; the
+     * mechanism is the one measured on CH32L103's tone(). See
+     * ch32_registers.h. */
     CH32_TIM_ATRLR32(CH32_SERVO_TIMER_BASE) = us - 1u;
 #else
     CH32_TIM_ATRLR(CH32_SERVO_TIMER_BASE) = (uint16_t)(us - 1u);
