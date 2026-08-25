@@ -410,6 +410,60 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 - [x] `_fstat`が`st_blksize`を設定するようにした(64)。newlibの`__swhatbuf_r`が読むので、
       未設定だとstdoutのbuffer sizeがstack上のゴミで決まっていた
 
+## USB PD (X035)
+
+**方針(2026-08-25)**: **PDを先にやる。USB deviceは後回し**(利用者判断——deviceは
+classの種類が多く、それぞれ実機確認まで要るので範囲が大きい)。
+
+- [x] **下調べ完了**(2026-08-25)。参照実装3系統を確認した。**いずれも参照のみ**:
+
+      | 実装 | 規模 | 内容 | ライセンス |
+      |---|---|---|---|
+      | WCH EVT `USBPD_SNK` | `PD_Process.c` 824行 | sink | EVT(参照のみ) |
+      | WCH EVT `USBPD_SRC` | `PD_Process.c` 853行 | source | 同上 |
+      | WCH EVT `USBPD_CH211` | `PD_Prot.c` 584 + `PD_VDM.c` 528 | protocol層 + VDM(alt-mode) | 同上 |
+      | [wagiminator PD Adapter](https://github.com/wagiminator/CH32X035-USB-PD-Adapter) | `usbpd_sink.c` 488行 | sink + PPS | **CC BY-SA 3.0 = share-alike**。コードは持ち込めない。**価値はAPIの形** |
+
+- [x] **X035のPHYはハードウェアでBMCをやる**。ビットバンではないので、
+      仕事は「protocolとstate machine」であって信号生成ではない。
+      レジスタのbase addressは**上流にある**(`memory_map.csv`の
+      `CH32X035,USBPD,0x40027000`、155c398以降)
+- [x] **クロックは既に条件を満たしている**。X035は`build.f_cpu=48000000L`
+      (HSI直結、**PLL不要**)で、参照実装のBMCタイミング定数も48MHzが第一候補
+      (`USBPD_TMR_TX=80-1` / `RX=120-1`)。
+      **つまりPDは`[P0]`のPLL/クロック方針に触らない**——X035を先にやる判断の根拠
+- [ ] `[P1]` `[要判断]` **範囲を決める**。sinkだけか、sourceも出すか。
+      PPS(`PD_setVoltage(mV)`)を入れるか。VDM/alt-modeは対象外でよいか。
+      Arduinoの利用者が普通に欲しいのは**sink**(「PD充電器から好きな電圧をもらう」)で、
+      PPSはその目玉。sourceはWCHの例があるので不可能ではない
+- [ ] `[P1]` `[要判断]` **置き場所**。X035専用なので、coreではなく同梱library
+      ([ADR-0013](adr/0013-bundled-libraries.ja.md))が素直に見える。
+      `CH32_USBPD_BASE`のような変異体のdefineで有無を出し分ける
+- [ ] `[P1]` **APIの形**。参照実装(wagiminator)は15関数で、形としては素直:
+      `connect` / `negotiate` / `setVoltage(mV)` / PDOの列挙(`getPDONum`,
+      `getFixedNum`, `getPPSNum`, `getPDOVoltage(n)`, `getPDOMaxCurrent(n)`) /
+      現在値(`getPDO`, `getVoltage`, `getCurrent`)。
+      Arduino風に直すならclass1つ。**Arduino標準APIには前例が無い**ので新規設計
+- [ ] `[P1]` 実装の中身: CC1/CC2の接続検出 → Good CRCとmessage ID → sinkの
+      state machine(参照実装は10状態: `IDLE`→`CHECK_CONNECT`→`CONNECT`→
+      `SOURCE_CAP`→`SEND_REQUEST`→`WAIT_ACCEPT`→`ACCEPT`→`WAIT_PS_RDY`→
+      `PS_RDY`、加えて`GET_SOURCE_CAP`) → PDO解析(Fixed / PPS) → Request
+- [ ] `[P1]` **検証をどこまで実機無しでやれるか**。
+      **PDOの解析は純粋なロジックなのでhost側のunit testにできる**
+      (合成したSource Capabilityフレームを食わせる)。
+      レジスタ初期化と「未接続を未接続と報告する」ところまでは配線無しで見られる。
+      **実際のnegotiationはPD電源が要る**——`setVoltage`まで見るなら**PPS対応の充電器**、
+      さらに結果の電圧を見る手段(参照実装はINA219を載せている)
+- [ ] `[P2]` `[要判断・要機材]` PD電源とanalyzerの手配。上記の実機検証の前提
+- [ ] `[P2]` USB device(TinyUSB)は後回し。再開するときの状態:
+      TinyUSB 0.21.0はvendor済みだが**glueが1つも無い**
+      (`tusb_config.h` / `TinyUSB.h` / `TinyUSB.cpp` / `ch32_tusb_glue.cpp`は
+      lockに名前があるだけで**未作成**)。
+      上流に**X035のDCDが無い**(`OPT_MCU_CH32*`はV307/F20x/V20x/V103/CH583)が、
+      ドライバのコメントが「newer USBFS IP (CH32V20x/V307/**X035**)」と書いているので
+      **移植であって新規実装ではない**。
+      なおPD用のTCDは`portable/wch/`に**1本も無い**ので、`typec/usbc.c`の下は空
+
 ## Serial
 
 - [x] **SDI print(debug moduleのmailbox経由の出力)を実機で受信できることを確認**
