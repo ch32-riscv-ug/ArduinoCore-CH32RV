@@ -1001,13 +1001,25 @@ def route_remap_value(route: str):
 
 
 def load_pin_routes(tables: pathlib.Path, signal_res: list,
-                    route_order: tuple) -> dict:
+                    route_order: tuple, kind: str = "", alts=None) -> dict:
     """part -> {(instance index, route): {role: (port, bit)}}.
 
     The roles of one peripheral are kept per route: several families expose an
     instance only through alternate-function routes, and pairing a TX from one
     route with an RX from another would name two pins that cannot be active at
     the same time. The same is true of SCL and SDA.
+
+    **One (instance, route, role) can name several pads, and that is normal.**
+    Reverse lookup is one-to-many for 984 of 22453 combinations, measured
+    upstream on 2026-08-25: 860 of them af-N, 101 default, 23 remap-N. On the
+    af-N families the selector is per pin, so several pads offering the same
+    role are alternatives rather than a contradiction; only a remap-N route is
+    exclusive, because one field value moves a whole set of pads at once.
+
+    So a second pad is not an error here. The last one is kept, as it always
+    has been, and the others are recorded in `alts` so that the choice is
+    visible instead of silent: main() reports them and gen_pins() writes them
+    into the variant header beside the pin it picked.
     """
     functions = read_table(tables, "pin_functions.csv")
     out: dict = {}
@@ -1024,29 +1036,41 @@ def load_pin_routes(tables: pathlib.Path, signal_res: list,
         m = PAD_PORT_RE.match(r["pad"])
         if not m:
             continue
-        out.setdefault(r["part_number"], {}).setdefault(
-            (index, r["route"]), {})[role] = (m.group(1), int(m.group(2)))
+        pad = (m.group(1), int(m.group(2)))
+        roles = out.setdefault(r["part_number"], {}).setdefault(
+            (index, r["route"]), {})
+        if alts is not None and role in roles and roles[role] != pad:
+            seen = alts.setdefault(
+                (kind, r["part_number"], index, r["route"], role), [])
+            for one in (roles[role], pad):
+                if one not in seen:
+                    seen.append(one)
+        roles[role] = pad
     return out
 
 
-def load_uart_pins(tables: pathlib.Path) -> dict:
+def load_uart_pins(tables: pathlib.Path, alts=None) -> dict:
     """part -> {(usart index, route): {"TX": ..., "RX": ...}}."""
-    return load_pin_routes(tables, UART_SIGNAL_RE, UART_ROUTE_ORDER)
+    return load_pin_routes(tables, UART_SIGNAL_RE, UART_ROUTE_ORDER,
+                           "uart", alts)
 
 
-def load_i2c_pins(tables: pathlib.Path) -> dict:
+def load_i2c_pins(tables: pathlib.Path, alts=None) -> dict:
     """part -> {(i2c index, route): {"SCL": ..., "SDA": ...}}."""
-    return load_pin_routes(tables, I2C_SIGNAL_RE, I2C_ROUTE_ORDER)
+    return load_pin_routes(tables, I2C_SIGNAL_RE, I2C_ROUTE_ORDER,
+                           "i2c", alts)
 
 
-def load_spi_pins(tables: pathlib.Path) -> dict:
+def load_spi_pins(tables: pathlib.Path, alts=None) -> dict:
     """part -> {(spi index, route): {"SCK": ..., "MISO": ..., "MOSI": ...}}."""
-    return load_pin_routes(tables, SPI_SIGNAL_RE, SPI_ROUTE_ORDER)
+    return load_pin_routes(tables, SPI_SIGNAL_RE, SPI_ROUTE_ORDER,
+                           "spi", alts)
 
 
-def load_dac_pins(tables: pathlib.Path) -> dict:
+def load_dac_pins(tables: pathlib.Path, alts=None) -> dict:
     """part -> {(dac channel, route): {"OUT": (port, bit)}}."""
-    return load_pin_routes(tables, DAC_SIGNAL_RE, DAC_ROUTE_ORDER)
+    return load_pin_routes(tables, DAC_SIGNAL_RE, DAC_ROUTE_ORDER,
+                           "dac", alts)
 
 
 def choose_routes(series: str, parts: list, pins: dict, remap: dict, kind: str,
@@ -1304,9 +1328,33 @@ def gen_exti(variant: str, entries: list) -> str:
 
 def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              i2cs: dict, spis: dict, dacs: dict, pwm: dict, handlers: list,
-             remap: dict) -> str:
+             remap: dict, route_alts: dict = None) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
+
+    def alternatives(kind: str, index, route: str, roles: tuple) -> list:
+        """Comment naming the pads device-data offers and this file did not.
+
+        Silence here used to mean "there was only one pad", and that was wrong
+        often enough to matter: on the af-N families the selector is per pin,
+        so a role commonly has two or three pads and the loader kept whichever
+        came last in the CSV. Writing the others down makes the pick reviewable
+        in the diff instead of invisible.
+        """
+        if not route_alts:
+            return []
+        lines = []
+        for role in roles:
+            found = []
+            for part in parts:
+                for pad in route_alts.get((kind, part, index, route, role), []):
+                    if pad not in found:
+                        found.append(pad)
+            if len(found) > 1:
+                names = ", ".join(pad_name(*pad) for pad in found)
+                lines.append(f"/* device-data lists {names} for {role} on this")
+                lines.append(" * route, in that order, and the last is the one above. */")
+        return lines
     per_part = [pads.get(pn, set()) for pn in parts]
     union = sorted(set().union(*per_part)) if per_part else []
     if not union:
@@ -1460,6 +1508,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"/* USART{index}: route {route}, {where} */")
             out.append(f"#define CH32_SERIAL{index}_TX {pad_name(*tx)}")
             out.append(f"#define CH32_SERIAL{index}_RX {pad_name(*rx)}")
+            out.extend(alternatives("uart", index, route, ("TX", "RX")))
             name = handler_of[index]
             out.append(f"#define CH32_SERIAL{index}_HANDLER {name}")
             out.append(f"#define CH32_SERIAL{index}_IRQ "
@@ -1527,6 +1576,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"/* I2C{index}: route {route}, {where} */")
             out.append(f"#define CH32_I2C{index}_SCL {pad_name(*scl)}")
             out.append(f"#define CH32_I2C{index}_SDA {pad_name(*sda)}")
+            out.extend(alternatives("i2c", index, route, ("SCL", "SDA")))
             value = route_remap_value(route)
             bits = remap.get((series, "i2c", index))
             if value is None:
@@ -1577,6 +1627,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"#define CH32_SPI{index}_SCK {pad_name(*sck)}")
             out.append(f"#define CH32_SPI{index}_MISO {pad_name(*miso)}")
             out.append(f"#define CH32_SPI{index}_MOSI {pad_name(*mosi)}")
+            out.extend(alternatives("spi", index, route,
+                                    ("SCK", "MISO", "MOSI")))
             value = route_remap_value(route)
             bits = remap.get((series, "spi", index))
             if value is None:
@@ -1894,10 +1946,13 @@ def main() -> int:
 
     interrupts, vector_forms = load_interrupts()
     pads, adc, unresolved = load_pin_tables(args.tables)
-    uarts = load_uart_pins(args.tables)
-    i2cs = load_i2c_pins(args.tables)
-    spis = load_spi_pins(args.tables)
-    dacs = load_dac_pins(args.tables)
+    # Where one (instance, route, role) names several pads. Not an error - see
+    # load_pin_routes - but the pick has to be visible rather than silent.
+    route_alts: dict = {}
+    uarts = load_uart_pins(args.tables, route_alts)
+    i2cs = load_i2c_pins(args.tables, route_alts)
+    spis = load_spi_pins(args.tables, route_alts)
+    dacs = load_dac_pins(args.tables, route_alts)
     probe_rs = load_probe_rs_targets()
     remap = load_remap_fields(args.tables)
     pwm = load_pwm_pins(args.tables)
@@ -1953,7 +2008,33 @@ def main() -> int:
             outputs[args.platform / "variants" / series / name] = content
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
             gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
-                     interrupts[SERIES_CONFIG[series]['vectors']], remap)
+                     interrupts[SERIES_CONFIG[series]['vectors']], remap,
+                     route_alts)
+
+    # What the one-to-many lookups resolved, grouped by route kind. Printed
+    # every run rather than only on change: "the generator picked one of
+    # several" is a standing property of the tables, not an incident, and the
+    # counts moving is the signal worth noticing.
+    if route_alts:
+        by_route: dict = {}
+        for (kind, part, index, route, role) in route_alts:
+            key = ("af-N" if route.startswith("af-") else
+                   "remap-N" if route.startswith("remap-") else route)
+            by_route.setdefault(key, []).append((kind, part, index, route, role))
+        summary = ", ".join(f"{k} {len(v)}" for k, v in sorted(by_route.items()))
+        print(f"note: {len(route_alts)} (instance, route, role) combinations name "
+              f"several pads; the last in the table was used ({summary}). "
+              f"Alternatives are written into the variant headers.")
+        # remap-N is the exclusive kind: one field value moves a whole set of
+        # pads, so two pads for one role there is a table problem rather than a
+        # choice. Named, not fatal - upstream is working through them (F-27/F-28).
+        exclusive = sorted(by_route.get("remap-N", []))
+        for kind, part, index, route, role in exclusive:
+            pads = ", ".join(pad_name(*x)
+                             for x in route_alts[(kind, part, index, route, role)])
+            print(f"  WARNING: {part} {kind}{index} {route} {role}: {pads} "
+                  f"(a remap route is exclusive; two pads means the table "
+                  f"disagrees with itself)")
 
     generated_parts = {r["part_number"] for rows in by_board.values() for r in rows}
     blocked = sorted(p for p in unresolved if p[0] in generated_parts)

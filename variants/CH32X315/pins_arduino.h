@@ -167,6 +167,10 @@
 /* USART2: route af-1, on every part */
 #define CH32_SERIAL2_TX PD6
 #define CH32_SERIAL2_RX PD7
+/* device-data lists PA4, PD6, PC12 for TX on this
+ * route, in that order, and the last is the one above. */
+/* device-data lists PA5, PD7, PC13 for RX on this
+ * route, in that order, and the last is the one above. */
 #define CH32_SERIAL2_HANDLER USART2_IRQHandler
 #define CH32_SERIAL2_IRQ CH32_IRQN_USART2
 /* NOTE: route af-1 is a per-pin alternate-function
@@ -175,6 +179,10 @@
 /* USART3: route af-1, on every part */
 #define CH32_SERIAL3_TX PC8
 #define CH32_SERIAL3_RX PC9
+/* device-data lists PA13, PC8 for TX on this
+ * route, in that order, and the last is the one above. */
+/* device-data lists PA14, PC9 for RX on this
+ * route, in that order, and the last is the one above. */
 #define CH32_SERIAL3_HANDLER USART3_IRQHandler
 #define CH32_SERIAL3_IRQ CH32_IRQN_USART3
 /* NOTE: route af-1 is a per-pin alternate-function
@@ -189,12 +197,20 @@
 /* I2C1: route af-3, on every part */
 #define CH32_I2C1_SCL PD4
 #define CH32_I2C1_SDA PD5
+/* device-data lists PA0, PA14, PA8, PD4, PB14, PC14 for SCL on this
+ * route, in that order, and the last is the one above. */
+/* device-data lists PA1, PA13, PA9, PD5, PB15, PC15 for SDA on this
+ * route, in that order, and the last is the one above. */
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
 /* I2C2: route af-3, on every part */
 #define CH32_I2C2_SCL PD6
 #define CH32_I2C2_SDA PD7
+/* device-data lists PA11, PB9, PD6, PC10 for SCL on this
+ * route, in that order, and the last is the one above. */
+/* device-data lists PA12, PB10, PD7, PC11 for SDA on this
+ * route, in that order, and the last is the one above. */
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
@@ -213,6 +229,12 @@
 #define CH32_SPI2_SCK PB5
 #define CH32_SPI2_MISO PB7
 #define CH32_SPI2_MOSI PB6
+/* device-data lists PB13, PB5 for SCK on this
+ * route, in that order, and the last is the one above. */
+/* device-data lists PB15, PB7 for MISO on this
+ * route, in that order, and the last is the one above. */
+/* device-data lists PB14, PB6 for MOSI on this
+ * route, in that order, and the last is the one above. */
 /* NOTE: route af-4 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
