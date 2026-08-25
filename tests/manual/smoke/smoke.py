@@ -699,16 +699,29 @@ def replay(link: Link, name: str, script: tuple, seconds: float) -> list:
     missed = []
     if not any(verb == "write" for verb, _ in script):
         link.send("RUN\n")
+    # The last command sent, so a stalled expect can resend it once. The
+    # WCH-Link bridge occasionally drops a single line - the same quirk the
+    # upload path retries around - and here it is a command that vanishes, so
+    # the answer never comes. Resending is safe because every command this
+    # protocol has is idempotent: RUN re-runs the checks, REBOOT/BITE just
+    # reach the same post-reset banner again. One resend only, so a board
+    # that is genuinely not answering still fails.
+    last_write = None
     for verb, text in script:
         if verb == "write":
             link.send(text if text.endswith("\n") else text + "\n")
+            last_write = text if text.endswith("\n") else text + "\n"
             continue
         # A floor of ten seconds, not the bench's default four: this bridge
         # takes seconds to turn a line around, and a step that times out early
         # reports a missing line for output that was still on its way.
         step = max(seconds, 10.0)
-        ok = (link.wait(text, step) if verb == "expect"
-              else link.match(text, step))
+        wait = (lambda: link.wait(text, step)) if verb == "expect" \
+            else (lambda: link.match(text, step))
+        ok = wait()
+        if not ok and last_write is not None:
+            link.send(last_write)
+            ok = wait()
         if not ok:
             missed.append(text)
             break
