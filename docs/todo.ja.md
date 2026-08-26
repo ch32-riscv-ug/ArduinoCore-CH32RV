@@ -1240,6 +1240,40 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       startup等価性harnessが対応していないため(下の`[P2]`項)。
       **買ってから気付くと使えないので、優先度を上げるか購入を後回しにするかの判断**
 
+- [x] **V003を追加して実機sweep——全14 sketch pass**(2026-08-26)。
+      probe `F90E8F067DFD`(COM20)にCH32V003F4P6。`tests/.env`へ`CH32_PROBE_V003`を追加。
+      `smoke.py --sketch all`(初回は`--board CH32V003 --pnum CH32V003F4P6 --force`)で
+      **14/14 pass**(core_api / system_selftest / tone / servo / spi / wire / pd_selftest含む)。
+      coreの不具合は見つからず。既存WARNING(clock_init step 6 trim未emit)は従来から
+
+- [x] **「V003が書き込み後にprobe-rsから見えなくなる」根本原因を特定して直した**(2026-08-26)。
+      犯人は**WCH-LinkE firmware(2.12)のchip sessionの汚染**:
+      probe-rsの**memoryを触るsession(download / read)のあと**、以後のAttachChipが
+      **ゴミchip id**(毎回同じstale 4-byte buffer——ChipID 0x400008c3等、
+      ESIG 775KB、UID 07-03-00-00の繰り返し)を返し、`probe-rs info`の自動判別が落ちる。
+      wlinkの`Flash protected: true`表示も同じゴミ(OBは終始`a5 5a`=非保護のまま)。
+      **USB付け直しでは直らない**(probe FWは通電し続ける)。halted/runningも無関係。
+      `probe-rs download/read --chip`は汚染中も正常——だから`--force`のsweepは通っていた。
+      復帰は**`wlink reset`**(最軽量)か`wlink unprotect`(OB pageをdefaultへ書き直す副作用つき)。
+      `probe-rs reset`では直らない——probe-rsは失敗時UnprotectFlashを送るのに
+      **AttachChipをやり直さない**のが上流バグの正体と推測(v0.32.0)。
+      2-wire SWDの他4 family(V103/V203/X035/L103)には出ない
+
+- [x] **bench側の恒久対応: family名での救済**(2026-08-26、`smoke.py` / `chip_info.py`)。
+      AttachChip応答の**family名はゴミ化しない**ことを利用し、`detected_chip()`が
+      `RUST_LOG=probe_rs::probe::wlink=info`でinfoを走らせ、`Detected chip:`が無ければ
+      stderrの`attached riscv chip <family>`へfallback。`boards_for()`は完全一致が
+      0件のときだけ前方一致(実part番号が近隣partへ広がることはない)。
+      検証: 汚染状態でchip_infoの5 test pass、`smoke.py`が引数なしでboardを自動解決してpass、
+      `wlink reset`後は従来通り正確な`CH32V003F4P6`に戻る。generated/layout 19 pass。
+      診断に使ったwlink(ch32-rs、v0.1.2)はscratchpad置きで**未vendor**
+- [ ] `[P2]` probe-rs上流へ報告するか(判断待ち)。再現: V003へ`download`→`info`が
+      `Could not attach`(AttachChip応答のchip idがstale)。修正案: UnprotectFlash送信後や
+      chip idがregistryに無いとき**AttachChipをやり直す**(wlink CLIは`reset`で復帰できている)
+- [ ] `[P2]` wlinkをfetch_toolsへvendorするか(判断待ち)。ADR-0011のmirror方針に載せるなら
+      mirror repo作成が要る。現状はfamily救済で運用でき、正確なpnumが要る場面だけ
+      手元の`wlink reset`で足りる
+
 ## テスト基盤
 
 - [x] **テスト計画を作成**([tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) / [英語](../tests/TEST_PLAN.md))。

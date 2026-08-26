@@ -256,20 +256,29 @@ def boards_for(chip: str) -> dict:
     """{board id: [part numbers]} whose generated probe-rs chip name matches.
 
     Matching is on {build.probe_rs_chip} rather than on the name, so a part
-    whose series id does not begin with its board id still resolves.
+    whose series id does not begin with its board id still resolves. A bare
+    family name - what detected_chip salvages when the probe's chip session
+    has gone stale - matches by prefix instead, but only when nothing matched
+    exactly, so a real part number never widens into its neighbours.
     """
     text = (REPO / "boards.txt").read_text(encoding="utf-8")
-    hits = {}
+    rows = []
     for line in text.splitlines():
         key, _, value = line.partition("=")
         if not key.endswith(".build.probe_rs_chip"):
             continue
-        if value.strip().upper() != chip.upper():
-            continue
-        parts = key.split(".")
-        pnum = parts[3] if len(parts) > 4 and parts[1] == "menu" else "ANY"
-        hits.setdefault(parts[0], []).append(pnum)
-    return hits
+        rows.append((key.split("."), value.strip().upper()))
+    want = chip.upper()
+    for matches in (lambda v: v == want, lambda v: v.startswith(want)):
+        hits = {}
+        for parts, value in rows:
+            if not matches(value):
+                continue
+            pnum = parts[3] if len(parts) > 4 and parts[1] == "menu" else "ANY"
+            hits.setdefault(parts[0], []).append(pnum)
+        if hits:
+            return hits
+    return {}
 
 
 def find_probes():
@@ -385,14 +394,31 @@ def find_gcc_bin():
 
 
 def detected_chip(probe_rs_dir, probe_serial):
-    """What probe-rs thinks is attached, or None if it cannot tell."""
+    """What probe-rs thinks is attached, or None if it cannot tell.
+
+    The exact part number comes from `probe-rs info` ("Detected chip:" on
+    stdout). On CH32V003 that stops working after the first flash: any
+    probe-rs session that touches memory (download, read) leaves the
+    WCH-LinkE's chip session stale, and every AttachChip after that returns a
+    garbage chip id (the same stale 4-byte buffer each time), so probe-rs
+    cannot pick the variant. The state survives USB re-attach and is only
+    cleared by a wlink-protocol reset or unprotect (measured: WCH-LinkE fw
+    2.12, probe-rs 0.32.0, CH32V003F4P6; the other bench families are not
+    affected). The family name in that same response stays correct, and
+    probe-rs logs it - so ask for the log and fall back to the family, which
+    is enough to pick the board; the part number menu stays at ANY.
+    """
     cmd = [str(pathlib.Path(probe_rs_dir) / "probe-rs"), "info"]
     if probe_serial:
         cmd += ["--probe", f"1a86:8010:{probe_serial}"]
-    out = subprocess.run(cmd, capture_output=True, text=True).stdout
-    for line in out.splitlines():
+    env = dict(os.environ, RUST_LOG="probe_rs::probe::wlink=info")
+    proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    for line in proc.stdout.splitlines():
         if line.startswith("Detected chip:"):
             return line.split(":", 1)[1].strip()
+    for line in proc.stderr.splitlines():
+        if "attached riscv chip " in line:
+            return line.rsplit("attached riscv chip ", 1)[1].strip()
     return None
 
 

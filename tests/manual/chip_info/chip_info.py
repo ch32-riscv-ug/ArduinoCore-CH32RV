@@ -110,8 +110,12 @@ def inventory(probe=None, probe_rs_dir=None) -> list:
             "tty": tty,
             "chip": chip,
             # None rather than False when the table is missing entirely: "not
-            # listed" and "there is no list" are different problems.
-            "in_targets_csv": (chip.upper() in known) if chip and known else None,
+            # listed" and "there is no list" are different problems. A prefix
+            # hit covers the family-only fallback (see smoke.detected_chip),
+            # which should not read as "regenerate the table".
+            "in_targets_csv": ((chip.upper() in known
+                                or any(k.startswith(chip.upper()) for k in known))
+                               if chip and known else None),
             "boards": boards,
         })
     return records
