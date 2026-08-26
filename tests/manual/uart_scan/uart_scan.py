@@ -54,8 +54,9 @@ def candidates(series: str, tables: pathlib.Path):
     """
     import generate as g
 
-    products = [r for r in csv.DictReader(open(tables / "products.csv",
-                                               newline="", encoding="utf-8"))
+    products = [r for r in csv.DictReader(
+                    open(tables / g.table_relpath("products.csv"),
+                         newline="", encoding="utf-8"))
                 if r["series"] == series]
     parts = sorted(r["part_number"] for r in products)
     uarts = g.load_uart_pins(tables)

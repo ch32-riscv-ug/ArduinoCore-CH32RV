@@ -12,6 +12,9 @@ dependencies = [
   "pytest-embedded-serial>=2.0",
   "pytest-embedded-arduino-cli>=1.1",
   "pytest-html>=4.1.1",
+  # Bench-only: lets detected_chip() send the WCH-LinkE redetect command
+  # (Control subcommand 3) that clears the stale-target state without a reset.
+  "pyusb>=1.2",
 ]
 
 [tool.pytest.ini_options]

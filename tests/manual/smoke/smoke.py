@@ -375,11 +375,16 @@ def find_probe_rs():
 
 
 def find_tables():
-    """The ch32-device-data tables: CH32_TABLES, else <repo>/.tools."""
+    """The ch32-device-data checkout root: CH32_TABLES, else <repo>/.tools.
+
+    The root, not a tables/ subdirectory: upstream split the flat layout into
+    catalog/ evidence/ index/, and consumers address tables through that split
+    (see tools/generate/generate.py table_relpath).
+    """
     override = os.environ.get("CH32_TABLES")
     if override:
         return override
-    d = REPO / ".tools" / "ch32-device-data" / "tables"
+    d = REPO / ".tools" / "ch32-device-data"
     return str(d) if d.is_dir() else None
 
 
@@ -393,6 +398,56 @@ def find_gcc_bin():
     return str(found[-1] / "bin") if found else None
 
 
+def redetect_chip(probe_serial) -> bool:
+    """Tell the WCH-LinkE to look again at its target, without resetting it.
+
+    probe-rs and minichlink sessions that touch memory leave the probe
+    firmware holding a corrupted readback of its target: the family byte
+    stays right but chip id, ESIG and UUID come back as one repeating stale
+    word, and the state survives a USB re-attach and even a target power
+    cycle. Control subcommand 3 (`81 0d 01 03`) makes the firmware
+    re-establish the target; measured on CH32V003F4P6, a core halted before
+    the command is still halted at the same pc after it, so nothing running
+    is disturbed. The trailing `81 0d 01 ff` releases the session so the
+    following probe-rs attach starts fresh.
+
+    pyusb is bench-only tooling: without it, or without USB access, this
+    returns False and detected_chip() falls back to the family name.
+    """
+    try:
+        import usb.core
+        import usb.util
+    except Exception:
+        return False
+    try:
+        if probe_serial:
+            dev = next((d for d in usb.core.find(
+                            find_all=True, idVendor=0x1A86, idProduct=0x8010)
+                        if (d.serial_number or "") == probe_serial), None)
+        else:
+            dev = usb.core.find(idVendor=0x1A86, idProduct=0x8010)
+        if dev is None:
+            return False
+        # Read the configuration before claiming: claiming without it can make
+        # pyusb send SET_CONFIGURATION, which bounces cdc_acm on the very tty
+        # the bench is using as the UART bridge.
+        dev.get_active_configuration()
+        usb.util.claim_interface(dev, 0)
+        try:
+            for payload in (b"\x81\x0d\x01\x03", b"\x81\x0d\x01\xff"):
+                dev.write(0x01, payload, 2000)
+                dev.read(0x81, 64, 2000)
+        finally:
+            try:
+                usb.util.release_interface(dev, 0)
+            except Exception:
+                pass
+            usb.util.dispose_resources(dev)
+        return True
+    except Exception:
+        return False
+
+
 def detected_chip(probe_rs_dir, probe_serial):
     """What probe-rs thinks is attached, or None if it cannot tell.
 
@@ -401,21 +456,37 @@ def detected_chip(probe_rs_dir, probe_serial):
     probe-rs session that touches memory (download, read) leaves the
     WCH-LinkE's chip session stale, and every AttachChip after that returns a
     garbage chip id (the same stale 4-byte buffer each time), so probe-rs
-    cannot pick the variant. The state survives USB re-attach and is only
-    cleared by a wlink-protocol reset or unprotect (measured: WCH-LinkE fw
-    2.12, probe-rs 0.32.0, CH32V003F4P6; the other bench families are not
-    affected). The family name in that same response stays correct, and
-    probe-rs logs it - so ask for the log and fall back to the family, which
-    is enough to pick the board; the part number menu stays at ANY.
+    cannot pick the variant (measured: WCH-LinkE fw 2.12, probe-rs 0.32.0,
+    CH32V003F4P6; the other bench families are not affected; reported
+    upstream). Recovery is layered:
+
+      1. exact name from a plain `probe-rs info`,
+      2. redetect_chip() - the probe re-reads its target, no reset - then
+         one retry of `probe-rs info` for the exact name again,
+      3. the family name from probe-rs's own log line, which survives the
+         corruption and is enough to pick the board (pnum stays ANY),
+      4. None.
     """
     cmd = [str(pathlib.Path(probe_rs_dir) / "probe-rs"), "info"]
     if probe_serial:
         cmd += ["--probe", f"1a86:8010:{probe_serial}"]
     env = dict(os.environ, RUST_LOG="probe_rs::probe::wlink=info")
+
+    def exact(proc):
+        for line in proc.stdout.splitlines():
+            if line.startswith("Detected chip:"):
+                return line.split(":", 1)[1].strip()
+        return None
+
     proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
-    for line in proc.stdout.splitlines():
-        if line.startswith("Detected chip:"):
-            return line.split(":", 1)[1].strip()
+    chip = exact(proc)
+    if chip:
+        return chip
+    if redetect_chip(probe_serial):
+        proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        chip = exact(proc)
+        if chip:
+            return chip
     for line in proc.stderr.splitlines():
         if "attached riscv chip " in line:
             return line.rsplit("attached riscv chip ", 1)[1].strip()

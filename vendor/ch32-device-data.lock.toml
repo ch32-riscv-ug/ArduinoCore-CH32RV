@@ -8,26 +8,27 @@
 [[source]]
 id = "ch32-device-data"
 url = "https://github.com/ch32-riscv-ug/ch32-device-data.git"
-commit = "fbb6502c1b5fbe6026f39a46a2959f7a89697064"
+commit = "d67f4af52df1c1e2177e64bb30d5cec91f81ce1f"
 
-# SHA-256 of every table the generator reads, relative to tables/.
-# A commit that leaves all of these unchanged cannot change any
-# generated file, which is the whole reason they are listed.
+# SHA-256 of every table the generator reads, relative to the
+# ch32-device-data checkout root. A commit that leaves all of these
+# unchanged cannot change any generated file, which is the whole
+# reason they are listed.
 files = [
-  { path = "clock_configs.csv", sha256 = "dc5b264c24f9b0659a0edbb4b02b72d00ee9b3470b1550bf3da43235bc659ac7" },
-  { path = "clock_enables.csv", sha256 = "6edddb72195dcabf2826bbdae75d089078f83594c90de912c0ddf01a7a4f61fc" },
-  { path = "clock_init.csv", sha256 = "974c97167529458ad0f4bb63befb176f2fee427cc0373ad2c7bcb7c4447a5277" },
-  { path = "clock_prescalers.csv", sha256 = "6f3cde8eced2f3522487ea9978c766d0b444add0730c6682371f3748f03ba29e" },
-  { path = "clock_symbols.csv", sha256 = "a6f49bfd15c467e79a78c55701eb799d931a6c6d6ba7c0d548d500372f2be793" },
-  { path = "errata.csv", sha256 = "1a1475e5aedf5eaa39b1e3f2e7d4c4a1c79c499f617521061f1aecf3eea8715e" },
-  { path = "evt_variants.csv", sha256 = "e4b29ff6f42740a77d2d3cdbfaad8b806efd84e9b4e25eea820d94c22bcb76bf" },
-  { path = "families.csv", sha256 = "50b110db7266128cc32abda9ee6c0dd67fc7d8318e0a357e3f258d60f8f5f4c4" },
-  { path = "memory_map.csv", sha256 = "97389bf22039088027ec654b52d86b9b5f7750de3ce08c68884753405876e722" },
-  { path = "operating_conditions.csv", sha256 = "42b970b9e7aa5845002bc7ee52b9049b70da42c220850dcbcbf80e0e1c7387bd" },
-  { path = "pin_functions.csv", sha256 = "df9e8f20ca8e5298b0cf99cf19ce035c04b825965f99d16d196ed6a04083d846" },
-  { path = "pin_roles.csv", sha256 = "168226930e830c8ec3d0600af9588f0c411d4d111b28585af7d18d7b3114a768" },
-  { path = "pins.csv", sha256 = "7377fac3a6dfd7381f30b1d500a8a0bea12af2a5bb067cb21312880dd8d5a7f0" },
-  { path = "products.csv", sha256 = "3d371e45245371c6be9d3e911f1d026b1a9167bb7e889c0808ca98d88ee8c9b0" },
-  { path = "remap_fields.csv", sha256 = "67ab98a1d2b9a1e71ecde4504c5cbfd45cf1e4a295f3c83f13f132dbee4a8076" },
-  { path = "timers.csv", sha256 = "63f4279286867ca29b842cbb939dcdee3a0d26534a65b66942a4305bab9d9016" },
+  { path = "evidence/clock_configs.csv", sha256 = "dc5b264c24f9b0659a0edbb4b02b72d00ee9b3470b1550bf3da43235bc659ac7" },
+  { path = "evidence/clock_enables.csv", sha256 = "6edddb72195dcabf2826bbdae75d089078f83594c90de912c0ddf01a7a4f61fc" },
+  { path = "evidence/clock_init.csv", sha256 = "974c97167529458ad0f4bb63befb176f2fee427cc0373ad2c7bcb7c4447a5277" },
+  { path = "evidence/clock_prescalers.csv", sha256 = "6f3cde8eced2f3522487ea9978c766d0b444add0730c6682371f3748f03ba29e" },
+  { path = "evidence/clock_symbols.csv", sha256 = "a6f49bfd15c467e79a78c55701eb799d931a6c6d6ba7c0d548d500372f2be793" },
+  { path = "evidence/errata.csv", sha256 = "1a1475e5aedf5eaa39b1e3f2e7d4c4a1c79c499f617521061f1aecf3eea8715e" },
+  { path = "evidence/evt_variants.csv", sha256 = "e4b29ff6f42740a77d2d3cdbfaad8b806efd84e9b4e25eea820d94c22bcb76bf" },
+  { path = "catalog/families.csv", sha256 = "50b110db7266128cc32abda9ee6c0dd67fc7d8318e0a357e3f258d60f8f5f4c4" },
+  { path = "evidence/memory_map.csv", sha256 = "97389bf22039088027ec654b52d86b9b5f7750de3ce08c68884753405876e722" },
+  { path = "evidence/operating_conditions.csv", sha256 = "93162eee6e1d56396b665348ccd46359c818c2220c715bd35011a12fb353f296" },
+  { path = "evidence/pin_functions.csv", sha256 = "1d962db3cf68389736d881afb7ce3788a1aad70c5b3e0d529e7efe53ed8e24b8" },
+  { path = "index/pinout.csv", sha256 = "21c6d24c759659246f10a3ae9d9f2debe6b9ac660975069140a97eb591bc93c0" },
+  { path = "evidence/pins.csv", sha256 = "fba3ad27e78c65b995e017524d07ddbfb730cb912b6e53d3c4b7dfbca3b039c6" },
+  { path = "catalog/products.csv", sha256 = "3d371e45245371c6be9d3e911f1d026b1a9167bb7e889c0808ca98d88ee8c9b0" },
+  { path = "evidence/remap_fields.csv", sha256 = "00b3b031c2f06c68286c6a5066592dd4b15dd3e15e26653e7268bfdd43fd6c62" },
+  { path = "evidence/timers.csv", sha256 = "63f4279286867ca29b842cbb939dcdee3a0d26534a65b66942a4305bab9d9016" },
 ]

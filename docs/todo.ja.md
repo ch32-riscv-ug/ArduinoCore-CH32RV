@@ -1259,6 +1259,15 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       **AttachChipをやり直さない**のが上流バグの正体と推測(v0.32.0)。
       2-wire SWDの他4 family(V103/V203/X035/L103)には出ない
 
+- [x] **bench側の恒久対応(改): probe再検出で正確な型番まで戻す**(2026-08-26、
+      `smoke.py`の`redetect_chip()`)。WCH-LinkEの**Control subcommand 3**
+      (`81 0d 01 03`、maintainer提供・board-identifyで実績)は**targetをリセットせずに**
+      probe firmwareへ再検出させ、stale状態を解消する(halt中のcoreが同じpcでhaltした
+      ままなのを確認=無リセット)。`detected_chip()`は 1) info → 2) redetect+info再試行 →
+      3) familyログ救済 → 4) None の4段。pyusb(tests依存に追加)が無ければ2を飛ばして
+      従来のfamily救済のまま。実機E2E: 汚染→chip_infoが`CH32V003F4P6`を正確表示→
+      smoke auto PASS。SerialSDIの**includeコスト実測**: includeなし=0、
+      includeのみ未使用=+364B flash/+20B RAM(global instanceのvtable/initが残る)
 - [x] **bench側の恒久対応: family名での救済**(2026-08-26、`smoke.py` / `chip_info.py`)。
       AttachChip応答の**family名はゴミ化しない**ことを利用し、`detected_chip()`が
       `RUST_LOG=probe_rs::probe::wlink=info`でinfoを走らせ、`Detected chip:`が無ければ
@@ -1267,12 +1276,18 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       検証: 汚染状態でchip_infoの5 test pass、`smoke.py`が引数なしでboardを自動解決してpass、
       `wlink reset`後は従来通り正確な`CH32V003F4P6`に戻る。generated/layout 19 pass。
       診断に使ったwlink(ch32-rs、v0.1.2)はscratchpad置きで**未vendor**
-- [ ] `[P2]` probe-rs上流へ報告するか(判断待ち)。再現: V003へ`download`→`info`が
-      `Could not attach`(AttachChip応答のchip idがstale)。修正案: UnprotectFlash送信後や
-      chip idがregistryに無いとき**AttachChipをやり直す**(wlink CLIは`reset`で復帰できている)
-- [ ] `[P2]` wlinkをfetch_toolsへvendorするか(判断待ち)。ADR-0011のmirror方針に載せるなら
-      mirror repo作成が要る。現状はfamily救済で運用でき、正確なpnumが要る場面だけ
-      手元の`wlink reset`で足りる
+- [x] **probe-rs上流へ報告済み**(2026-08-26、maintainerが起票)。再現: V003へ`download`→`info`が
+      `Could not attach`(AttachChip応答のchip idがstale)。追加の切り分け(報告に含む材料):
+      **`wlink flash`で同じbinを書いても汚染しない**(=書き込み自体は無関係、DMを直接叩く
+      セッションの終了処理の問題)、**ターゲット3V3を切っても汚染は残る**(=状態はLinkE FW側)、
+      minichlinkのflashも同様に汚染する。修正案: UnprotectFlash送信後やchip idが
+      registryに無いとき**AttachChipをやり直す**(wlink CLIは`reset`で復帰できている)
+- [x] wlinkの位置づけは**開発中の検証ツール**で確定(2026-08-26、maintainer判断)。
+      fetch_toolsへのvendor化はしない。redetect実装により通常運用では不要になった
+- [x] debug出力の方針決定(2026-08-26、maintainer): **target側classは色々作ってよい、
+      host側の受信はツール依存でよい**(SerialSDI=wlink、RTT=probe-rs attach、
+      DMDATA双方向=minichlink系、と各libraryのREADMEに明記する方式)。
+      dataaddrのfamily別データは**maintainerが上流へ依頼**(新register表には未収載を確認済み)
 
 - [x] **debug出力チャネルの調査(SDI print / DMDATA mailbox / RTT / semihosting)**(2026-08-26)。
       maintainer依頼「SDI Print以外の方式で何が可能か、既存ツールで取れるものは」への実測回答。
@@ -1302,6 +1317,24 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [x] SDIトグル後にCDCブリッジの**下り(host→target)だけ死ぬ**事象を再現(2026-08-21の
       既知事象)。bannerは読めるがPONG不達→usbipd付け直しで回復。SDI print検証を
       ベンチ運用に入れるならこの回復をrunnerに織り込むこと
+
+- [x] **上流の新レイアウト(catalog/evidence/index)へ適応し、d67f4afを取り込んだ**(2026-08-26)。
+      上流はflatな`tables/`を廃止し、目録7表(catalog)・証拠32表(evidence)・索引(index)の
+      3区分へ再構成(上流`tools/paths.py`が正本)。こちらの対応:
+      `generate.py`に`TABLE_DIRS`/`table_relpath()`を導入し`--tables`は**checkout root**を
+      指す仕様に変更(lockの`path`もroot相対で`evidence/pins.csv`等になった)。
+      `fetch_tools`/`smoke.find_tables`/`uart_scan`/READMEも追従。
+      **消えたpin_roles.csvの後継はindex/pinout.csv**(role/port/gpio列で同じ情報、
+      `load_forbidden_pads`を移行)。
+      **M007/M103のHO/LOブロッカーは1行で解消**: 新データはpad別名を
+      `pin_functions.csv`の`route="alias"`行(例: `HO1,PA3,alias`)で持っており、
+      `load_pin_tables`の別名解決が受ける値に`"alias"`を足すだけで実bondへ解決できた。
+      取り込みdiffはM007(+PA0/PA2/PA3/PB0/PB1/PD0、GPIO 17→23)と
+      M103(+PA8-10/PB13-15、27 pads)とlockのみ。
+      **注意: M007のLED_BUILTINがPA1→PA0へ変わった**(選定規則による自動変化。実機なし)。
+      検証: fast suite 73 pass、V003実機smoke pass、compile matrix 3 pass——
+      **サイズ基準線の変更なし**(M系の差分はpinマクロとポートマスク定数だけで
+      バイナリサイズに出ない。LED_BUILTINの定数変化も同サイズ)
 
 ## テスト基盤
 

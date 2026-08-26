@@ -14,7 +14,7 @@ Design rules (see docs/research/board-variants-and-menus.ja.md):
   - no timestamps in output so regeneration is idempotent (CI check mode)
 
 Usage:
-  generate.py --tables <ch32-device-data>/tables --platform <platform dir> [--check]
+  generate.py --tables <ch32-device-data checkout root> --platform <platform dir> [--check]
 """
 import argparse
 import csv
@@ -170,6 +170,24 @@ LOCK_REL = "vendor/ch32-device-data.lock.toml"
 _READ_TABLES: set = set()
 
 
+# Where each table lives inside the ch32-device-data checkout. Upstream split
+# the flat tables/ directory into catalog/ (the names everything keys on),
+# evidence/ (what the documents say, provenance included) and index/ (lookup
+# tables rebuilt from evidence with normalised vocabulary) - mirroring its own
+# tools/paths.py. --tables therefore points at the checkout root now.
+TABLE_DIRS = {
+    "families.csv": "catalog",
+    "products.csv": "catalog",
+    "pinout.csv": "index",
+}
+DEFAULT_TABLE_DIR = "evidence"
+
+
+def table_relpath(name: str) -> str:
+    """Path of one table, relative to the ch32-device-data checkout root."""
+    return f"{TABLE_DIRS.get(name, DEFAULT_TABLE_DIR)}/{name}"
+
+
 def read_table(tables: pathlib.Path, name: str, require: tuple = ()) -> list:
     """One ch32-device-data CSV, as a list of dicts.
 
@@ -180,7 +198,8 @@ def read_table(tables: pathlib.Path, name: str, require: tuple = ()) -> list:
     """
     _READ_TABLES.add(name)
     try:
-        with open(tables / name, newline="", encoding="utf-8") as f:
+        with open(tables / table_relpath(name), newline="",
+                  encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
     except FileNotFoundError:
         raise SystemExit(f"ERROR: {name} is not in these tables. The pinned "
@@ -238,14 +257,16 @@ def gen_lock(tables: pathlib.Path, commit: str) -> str:
         f'url = "{DEVICE_DATA_URL}"',
         f'commit = "{commit}"',
         "",
-        "# SHA-256 of every table the generator reads, relative to tables/.",
-        "# A commit that leaves all of these unchanged cannot change any",
-        "# generated file, which is the whole reason they are listed.",
+        "# SHA-256 of every table the generator reads, relative to the",
+        "# ch32-device-data checkout root. A commit that leaves all of these",
+        "# unchanged cannot change any generated file, which is the whole",
+        "# reason they are listed.",
         "files = [",
     ]
     for name in sorted(_READ_TABLES):
-        digest = hashlib.sha256((tables / name).read_bytes()).hexdigest()
-        lines.append(f'  {{ path = "{name}", sha256 = "{digest}" }},')
+        rel = table_relpath(name)
+        digest = hashlib.sha256((tables / rel).read_bytes()).hexdigest()
+        lines.append(f'  {{ path = "{rel}", sha256 = "{digest}" }},')
     lines.append("]")
     return "\n".join(lines) + "\n"
 
@@ -386,10 +407,14 @@ def load_pin_tables(tables: pathlib.Path):
     functions = read_table(tables, "pin_functions.csv")
     pinrows = read_table(tables, "pins.csv")
 
-    # pad -> port name, for pads named after their primary function
+    # pad -> port name, for pads named after their primary function. Upstream
+    # writes these two ways: an empty route on the H41x families, and an
+    # explicit route="alias" since the M007/M103 rework (pad HO1 carrying
+    # signal PA3 means the pad named for its gate-driver function is PA3's
+    # bond). Both mean the same thing: the pad has a port name after all.
     alias = {}
     for r in functions:
-        if r["route"] == "" and PORT_SIGNAL_RE.match(r["signal"]):
+        if r["route"] in ("", "alias") and PORT_SIGNAL_RE.match(r["signal"]):
             alias.setdefault((r["part_number"], r["pad"]), r["signal"])
 
     def resolve(part: str, pad: str):
@@ -1049,17 +1074,18 @@ def load_forbidden_pads(tables: pathlib.Path) -> dict:
 
     The debug pins (SDI: SWCLK/SWDIO) and the system straps (NRST, BOOT):
     putting Wire or Serial there by default would cut the debug connection or
-    fight the boot circuit the moment begin() runs. pin_roles.csv names them
-    per part, normalised port/pin columns included, for all 26 series.
+    fight the boot circuit the moment begin() runs. index/pinout.csv names
+    them per part with normalised port/gpio columns (it replaced the old
+    pin_roles.csv when upstream split the tables into catalog/evidence/index).
     """
     forbidden: dict = {}
-    for r in read_table(tables, "pin_roles.csv"):
+    for r in read_table(tables, "pinout.csv"):
         if r["peripheral"] == "SDI" or (
                 r["peripheral"] == "SYS"
                 and r["role"] in ("NRST", "BOOT0", "BOOT1")):
-            if r.get("port") and r.get("pin"):
+            if r.get("port") and r.get("gpio"):
                 forbidden.setdefault(r["part_number"], set()).add(
-                    (r["port"], int(r["pin"])))
+                    (r["port"], int(r["gpio"])))
     return forbidden
 
 

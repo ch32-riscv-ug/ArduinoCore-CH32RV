@@ -25,7 +25,7 @@ Layout, mirroring how arduino-cli lays tools out so the two are interchangeable:
 
     .tools/<tool name>/<version>/...        the archive's contents, root folder
                                             flattened away as arduino-cli does
-    .tools/ch32-device-data/tables/         the device tables, at their locked commit
+    .tools/ch32-device-data/                the device tables, at their locked commit
     .tools/cache/                           downloaded archives, kept for re-runs
 
 Nothing here is required at runtime by the platform itself; this is only for
@@ -177,7 +177,7 @@ def fetch_device_data(root: pathlib.Path) -> pathlib.Path:
         print(f"  {DEVICE_DATA}.lock.toml records no commit; "
               "leaving the clone as is",
               file=sys.stderr)
-    return dest / "tables"
+    return dest
 
 
 def tool_dir(root: pathlib.Path, name: str, version: str) -> pathlib.Path:
@@ -190,7 +190,7 @@ def paths(root: pathlib.Path) -> dict:
     out = {}
     for name, frag in frags.items():
         out[name] = tool_dir(root, name, frag["version"])
-    out[DEVICE_DATA] = root / DEVICE_DATA / "tables"
+    out[DEVICE_DATA] = root / DEVICE_DATA
     return out
 
 

@@ -5,13 +5,13 @@
 
 ## 目的
 
-`ch32-device-data/tables`(正規化CSV)から、prototype platformの`boards.txt`とSKU別linker scriptを機械生成する。R-03の設計(family単位board+pnumメニューに全型番、生成物はcommitしてCIで再生成一致を検証)の最小実装。
+`ch32-device-data`のcatalog/・evidence/・index/(正規化CSV)から、prototype platformの`boards.txt`とSKU別linker scriptを機械生成する。R-03の設計(family単位board+pnumメニューに全型番、生成物はcommitしてCIで再生成一致を検証)の最小実装。
 
 ## 使い方
 
 ```sh
 # 生成(生成物はcommit対象)
-python3 generate.py --tables /path/to/ch32-device-data/tables \
+python3 generate.py --tables /path/to/ch32-device-data \
                     --platform ../platform/ch32v
 
 # CI用: commit済み生成物と再生成結果の一致検証(drift検出でexit 1)
@@ -43,18 +43,18 @@ adoption summary: 1 additive, 0 rewriting existing lines
 git -C .tools/ch32-device-data fetch origin
 git -C .tools/ch32-device-data checkout origin/main
 uv run --no-project python tools/generate/generate.py \
-    --tables .tools/ch32-device-data/tables --platform . --check
+    --tables .tools/ch32-device-data --platform . --check
 
 #    exit 0 なら生成物は変わらない。取り込む必要がない
 #    → 手順4でcloneを戻して終わり
 
 # 2. 差分を見る
 uv run --no-project python tools/generate/generate.py \
-    --tables .tools/ch32-device-data/tables --platform . --diff
+    --tables .tools/ch32-device-data --platform . --diff
 
 # 3. 取り込む(lockのcommitとhashもここで動く)
 uv run --no-project python tools/generate/generate.py \
-    --tables .tools/ch32-device-data/tables --platform .
+    --tables .tools/ch32-device-data --platform .
 cd tests && uv run pytest -q generated compile/test_compile_matrix.py sizebench
 
 # 4. 取り込まないと決めたら、cloneをlockedへ戻す

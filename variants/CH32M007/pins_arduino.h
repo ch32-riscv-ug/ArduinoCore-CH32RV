@@ -61,10 +61,15 @@
 #define CH32_CLKEN_GPIO_ADDR 0x40021018u
 #define CH32_CLKEN_GPIO_BIT0 2
 
-/* ---- GPIO pads: 17 in the series, 13 of them on every part ---- */
+/* ---- GPIO pads: 23 in the series, 19 of them on every part ---- */
+#define PA0 CH32_PIN(0,  0)
 #define PA1 CH32_PIN(0,  1)
+#define PA2 CH32_PIN(0,  2)
+#define PA3 CH32_PIN(0,  3)
 #define PA4 CH32_PIN(0,  4)
 #define PA5 CH32_PIN(0,  5)
+#define PB0 CH32_PIN(1,  0)
+#define PB1 CH32_PIN(1,  1)
 #define PB3 CH32_PIN(1,  3)
 #define PC0 CH32_PIN(2,  0)
 #define PC1 CH32_PIN(2,  1)
@@ -72,6 +77,7 @@
 #define PC4 CH32_PIN(2,  4)
 #define PC5 CH32_PIN(2,  5)
 #define PC7 CH32_PIN(2,  7)
+#define PD0 CH32_PIN(3,  0)
 #define PD1 CH32_PIN(3,  1)
 #define PD2 CH32_PIN(3,  2)
 #define PD3 CH32_PIN(3,  3)
@@ -81,10 +87,10 @@
 #define PD7 CH32_PIN(3,  7)
 
 /* Bit n set = P<port>n is bonded out on at least one part in the series. */
-#define CH32_PORT_MASK_A 0x00000032u
-#define CH32_PORT_MASK_B 0x00000008u
+#define CH32_PORT_MASK_A 0x0000003fu
+#define CH32_PORT_MASK_B 0x0000000bu
 #define CH32_PORT_MASK_C 0x000000b7u
-#define CH32_PORT_MASK_D 0x000000feu
+#define CH32_PORT_MASK_D 0x000000ffu
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
 #define CH32_PORT_MASK(port) ( \
@@ -98,10 +104,10 @@
 
 /* Bit n set = P<port>n is bonded out on EVERY part in the series,
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
-#define CH32_PORT_COMMON_MASK_A 0x00000012u
-#define CH32_PORT_COMMON_MASK_B 0x00000008u
+#define CH32_PORT_COMMON_MASK_A 0x0000001fu
+#define CH32_PORT_COMMON_MASK_B 0x0000000bu
 #define CH32_PORT_COMMON_MASK_C 0x00000034u
-#define CH32_PORT_COMMON_MASK_D 0x000000feu
+#define CH32_PORT_COMMON_MASK_D 0x000000ffu
 #define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
 #define CH32_PORT_COMMON_MASK(port) ( \
@@ -115,7 +121,7 @@
 
 #define NUM_DIGITAL_PINS 104   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  17   /* actual pads in the series */
+#define CH32_GPIO_COUNT  23   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (7 channels) ---- */
 /* Channels [0] are not bonded out in this series. */
@@ -282,5 +288,5 @@
  * on every part in the series. Override it per board or on the command
  * line: --build-property build.extra_flags=-DLED_BUILTIN=PC13 */
 #ifndef LED_BUILTIN
-#define LED_BUILTIN PA1
+#define LED_BUILTIN PA0
 #endif
