@@ -4,22 +4,22 @@
 
 using namespace arduino;
 
-/* Debug module data registers, seen from the hart. The address is the
- * QingKe core's hartinfo.dataaddr and it is NOT the same everywhere: the V4
- * cores map DATA0/DATA1 at 0xE0000380/0x384, but the V2A in CH32V003 maps
- * them at 0xE00000F4/0xF8 (hartinfo reports dataaddr=0xf4 there, and the
- * family's SDI_Printf reference uses those addresses). Overridable until the
- * per-family value is generated. */
+/* Debug module data registers, seen from the hart. The address is the QingKe
+ * core's hartinfo.dataaddr and it is NOT the same everywhere: the V2 families
+ * map DATA0/DATA1 at 0xE00000F4/0xF8, most V3 families at 0xE0000340/0x344,
+ * and the V4 families (with V103) at 0xE0000380/0x384. The board says which,
+ * from ch32-device-data's debug_data.csv - a default here would be silently
+ * wrong on two families out of three, writing into some other part of the
+ * debug module. */
 #ifndef CH32_SDI_DATA0_ADDR
-#define CH32_SDI_DATA0_ADDR 0xE0000380u
-#endif
-#ifndef CH32_SDI_DATA1_ADDR
-#define CH32_SDI_DATA1_ADDR 0xE0000384u
+#error "CH32_SDI_DATA0_ADDR is not defined: this board does not say where the \
+debug module's data0 is (ch32-device-data debug_data.csv), so SerialSDI cannot \
+be built for it."
 #endif
 static volatile uint32_t *const CH32_DM_DATA0 =
     (volatile uint32_t *)CH32_SDI_DATA0_ADDR;
 static volatile uint32_t *const CH32_DM_DATA1 =
-    (volatile uint32_t *)CH32_SDI_DATA1_ADDR;
+    (volatile uint32_t *)(CH32_SDI_DATA0_ADDR + 4u);
 
 /* One frame: wait for DATA0 to read back zero - the probe saying it took the
  * last one - then write the payload high and the length low. Seven bytes is

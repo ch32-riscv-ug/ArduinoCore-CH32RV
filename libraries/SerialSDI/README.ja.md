@@ -2,11 +2,16 @@
 
 デバッグモジュール経由のシリアル出力です。**UARTもpinも配線も要りません。**
 
-`0xE0000380`/`0x384`の2ワードはRISC-Vデバッグモジュールのabstract data registerで、
-hartのアドレス空間に見えています。この部品では`hartinfo`が`dataaddr=0x380`と
-自己申告するので、**魔法の番地ではなくハードウェアが述べている事実**です。
+`data0`/`data1`の2ワードはRISC-Vデバッグモジュールのabstract data registerで、
+hartのアドレス空間に見えています。番地は`hartinfo.dataaddr`がハードウェア自身で
+述べている事実で、**魔法の番地ではありません**。
 指示を受けたWCH-LinkEがこれをポーリングし、自分のUSBシリアルへ転送します。
 **coreは一度もhaltしません。**
+
+番地は**familyで違います**。V2系(V003/V00x)が`0xE00000F4`、V3系の多く
+(V205/V407/X315/M030)が`0xE0000340`、V4系とV103が`0xE0000380`です。
+boardが`CH32_SDI_DATA0_ADDR`として渡すので**sketch側で指定するものはありません**
+(出所は`ch32-device-data`の`evidence/debug_data.csv`)。
 
 ```cpp
 #include <SerialSDI.h>

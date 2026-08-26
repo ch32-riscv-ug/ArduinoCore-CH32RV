@@ -1304,10 +1304,25 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       EVT `SDI_Printf`参照)。`SerialSDI.cpp`をマクロ上書き可能にし(既定0x380)、
       V003は`-DCH32_SDI_DATA0_ADDR=0xE00000F4`で受信成功=classの実機確認完了。
       フレーミング(DATA0==0待ち/最下位byte=長さ≤7)はEVTと完全一致していた
-- [ ] SerialSDIのper-familyアドレスをどう出すか(判断待ち)。案①generatorの手書き表
-      (V2A系=0xF4)で今すぐ直す、案②上流ch32-device-dataへ「family別hartinfo.dataaddr
-      (debug DATA0のhart側アドレス)」を依頼して生成に乗せる(方針的にはこちらが本筋)。
-      V00x(V002/4/5/6/7)は実機が無く未実測なので、どちらでも上流確認は欲しい
+- [x] **SerialSDIのper-familyアドレスを生成に載せた**(2026-08-26、上流589af48)。
+      案②を採用。上流に依頼→`evidence/debug_data.csv`(family毎1行、
+      `dm_data0_addr`/`dm_data1_addr`/`confidence`/`basis`)が新設された。
+      **番地は2通りではなく3通りあった**:
+
+      | 番地 | core | family |
+      |---|---|---|
+      | `0xE00000F4` | QingKe V2A/V2C | V003、V00x(V002/4/5/6/7)、M007 |
+      | `0xE0000340` | QingKe V3B/V3V/V3F | V205、V407/V467、X315/X305、M030 |
+      | `0xE0000380` | QingKe V3A/V4B/V4C/V4F | V103、V20x、V30x、X035/X033、L103/M103 |
+
+      実測(hartinfo)で裏が取れているのはV003/V103/V203/X035/L103の5つで、
+      残りはEVT `debug.c`の`DEBUG_DATA0_ADDRESS`とQingKeマニュアルのhartinfo表による
+      (上流の`confidence`が`confirmed`/`reference`で言っている)。CH32H417だけ`missing`
+      だがcoreは非対応なので影響なし。
+      こちら側は`load_family_facts()`が`debug_data.csv`を読み、boardの
+      `core_defines`に`-DCH32_SDI_DATA0_ADDR=`を出す。`data1`は全familyで`data0+4`
+      なので読み込み時に検査だけして渡さない。`SerialSDI.cpp`の既定値は**廃止**し
+      (0x380のままだと3通りのうち2通りで黙って外す)、未定義なら`#error`にした
 - [x] **minichlinkを書き込みツールとして実機検証**(2026-08-26、V003)。ソースから
       ビルド(libusb静的+udevスタブ、scratchpad置き・未vendor)。`-w <bin> flash -b`で
       **書けて動く**(ESIG/UUID/保護状態も正しく読める)。ただし**minichlinkのflashも

@@ -2,12 +2,17 @@
 
 Serial output through the debug module, with **no UART, no pin and no wiring**.
 
-The two words at `0xE0000380`/`0x384` are the RISC-V debug module's abstract
-data registers, mapped into the hart's address space - `hartinfo` reports
-`dataaddr=0x380` on these parts, so the addresses are a fact the hardware
-states rather than a magic number. A WCH-LinkE that has been told to do so
-polls them and forwards what it finds to its own USB serial port. **The core is
-never halted.**
+The two words `data0`/`data1` are the RISC-V debug module's abstract data
+registers, mapped into the hart's address space - the address is what
+`hartinfo.dataaddr` reports, so it is a fact the hardware states rather than a
+magic number. A WCH-LinkE that has been told to do so polls them and forwards
+what it finds to its own USB serial port. **The core is never halted.**
+
+**The address differs per family**: `0xE00000F4` on the V2 families
+(V003/V00x), `0xE0000340` on most V3 families (V205/V407/X315/M030) and
+`0xE0000380` on the V4 families and V103. The board passes it as
+`CH32_SDI_DATA0_ADDR`, so **there is nothing for a sketch to configure**
+(the source is `ch32-device-data`'s `evidence/debug_data.csv`).
 
 ```cpp
 #include <SerialSDI.h>

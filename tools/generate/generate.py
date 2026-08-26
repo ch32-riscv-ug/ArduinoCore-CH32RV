@@ -30,7 +30,8 @@ import sys
 # or a fact no table holds yet; everything ch32-device-data can answer is read
 # from it instead (load_family_facts), so there is no second copy to drift.
 #
-#   from the tables   CH32_GPIO_PORT_WIDTH, CH32_HSI_HZ, CH32_HPRE_LINEAR
+#   from the tables   CH32_GPIO_PORT_WIDTH, CH32_HSI_HZ, CH32_HPRE_LINEAR,
+#                     CH32_SDI_DATA0_ADDR
 #   checked against   flash_latency, SERIES_CONFIG's vectors variant
 #     the tables
 #   ours              march/mabi (which optional extensions to enable: the
@@ -580,6 +581,24 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
                 hz = int(float(r["max"]) * 1e6)
                 adc_hz[f] = min(adc_hz.get(f, hz), hz)
 
+    # Where the debug module's data0/data1 sit in the hart's address space -
+    # the two words SerialSDI writes through. There is no single value: the V2
+    # families put them at 0xE00000F4, most V3 families at 0xE0000340, and V4
+    # (plus V103, which is V3A) at 0xE0000380. The library used to default to
+    # 0x380 and had to be overridden by hand on CH32V003; upstream's
+    # debug_data.csv now states it per family, so the board says it instead.
+    sdi: dict = {}
+    for r in read_table(tables, "debug_data.csv",
+                        ("family", "dm_data0_addr", "dm_data1_addr")):
+        if not r["dm_data0_addr"] or not r["dm_data1_addr"]:
+            continue          # CH32H417: no EVT define and the manual does not fix it
+        data0 = int(r["dm_data0_addr"], 16)
+        data1 = int(r["dm_data1_addr"], 16)
+        if data1 != data0 + 4:
+            raise SystemExit(f"ERROR: {r['family']}: debug_data.csv puts data1 "
+                             f"at {data1:#x}, which is not data0 + 4")
+        sdi[r["family"]] = data0
+
     # Port width: the widest pad the parts of this family actually have. Taken
     # from the resolved pad set rather than pins.csv so it is the same set the
     # pin map is built from - a pad excluded there must not widen the port.
@@ -609,6 +628,7 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             lsi_hz=lsi.get(family, 0),
             iwdg_base=one(family, "the IWDG base",
                           set(iwdg[family])) if family in iwdg else 0,
+            sdi_data0=sdi.get(family, 0),
         )
     return facts
 
@@ -2100,7 +2120,11 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
         f"-DCH32_ADC_MAX_HZ={fact['adc_max_hz']}u"
         + (f" -DCH32_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
         + (f" -DCH32_IWDG_BASE={fact['iwdg_base']:#x}u"
-           if fact['iwdg_base'] else ""))
+           if fact['iwdg_base'] else "")
+        # data1 is not passed: it is data0 + 4 everywhere, checked when the
+        # table is read, and two properties that must agree is one too many.
+        + (f" -DCH32_SDI_DATA0_ADDR={fact['sdi_data0']:#x}u"
+           if fact['sdi_data0'] else ""))
     # Its own property, not part of core_defines: a pnum entry has to be able
     # to replace it outright, and a menu value that referred back to the board
     # value would be referring to itself.
