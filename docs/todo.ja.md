@@ -1304,6 +1304,42 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       EVT `SDI_Printf`参照)。`SerialSDI.cpp`をマクロ上書き可能にし(既定0x380)、
       V003は`-DCH32_SDI_DATA0_ADDR=0xE00000F4`で受信成功=classの実機確認完了。
       フレーミング(DATA0==0待ち/最下位byte=長さ≤7)はEVTと完全一致していた
+- [x] **SDI以外のdebug出力classを2つ作った**(2026-08-26、`libraries/SerialRTT`と
+      `libraries/SerialDMDATA`)。2026-08-26のmaintainer方針
+      「target側classは色々作ってよい、host側の受信はツール依存でよい」に沿ったもの。
+
+      | library | host側ツール | 方向 | V003実測 flash/RAM増 |
+      |---|---|---|---|
+      | `SerialSDI`(既存) | `wlink --enable-sdi-print` | 送信のみ | +364 / +20 |
+      | **`SerialRTT`** | **`probe-rs attach`** | **双方向** | +656 / +364 |
+      | **`SerialDMDATA`** | **`minichlink -T`** | **双方向** | +700 / +36 |
+
+      **V003実機で両方とも送受信を確認**した(このベンチ、probe接続はV003のみ)。
+      `SerialRTT`は`probe-rs download`→`attach`で23秒18行のライブストリーム+
+      `HELLO-RTT`のecho back。`SerialDMDATA`は`minichlink -T`で
+      `hello from the debug module`/`uptime N s`+`HELLO-DMDATA`のecho back。
+
+      調査時の記録「**V003はattach時にhaltしたまま**(probe-rsのV2A resume問題)で
+      先頭3行のみ」は**誤り**だった。`download`してから`attach`すれば走行中のまま
+      流れる。haltしたまま残っているprobe状態にattachした場合の症状だったと思われる。
+
+      実装上の判断:
+      - **RTTのcontrol blockは公開仕様の実装**でシンボル名だけhost側が探す
+        `_SEGGER_RTT`にした(SEGGERのコードは不使用)。probe-rsはELFのシンボルから引く
+      - **DMDATAはSDIと同じレジスタの別framing**なので併用不可。READMEに明記した
+      - DMDATAには**16 byteの受信ring**を付けた。最初は3 byte保持だけにしていたが、
+        実機のecho testで`hello-dmdata`が`HELATA`になった。レジスタは1フレームしか
+        持たず、自分の次の`print()`がそれを上書きするため。ringを入れて全12 byte往復
+      - **hostは「レジスタから何か取り出した後」にしか書かない**ので、
+        `available()`が空フレーム(0x84)を置いて次を招く。これが双方向の実体
+      - 生成defineを`CH32_SDI_DATA0_ADDR`→**`CH32_DM_DATA0_ADDR`**へ改名
+        (SDI固有ではなくdebug moduleの事実で、`SerialDMDATA`も読むため)
+      - **semihostingは作っていない**。ebreakごとにcoreがhaltする性質が他の3方式と
+        違いすぎ、probe-rs側もSYS_EXIT+`--semihosting-file`程度で出力経路として弱い。
+        必要になったらopenocd-wch前提で別途判断する
+      - ADR-0013の同梱基準に照らすと「coreの機能を出すのに必要(このチップ固有の出力経路)」
+        の枠。**同梱可否・リリース対象かはmaintainer判断待ち**
+
 - [x] **SerialSDIのper-familyアドレスを生成に載せた**(2026-08-26、上流589af48)。
       案②を採用。上流に依頼→`evidence/debug_data.csv`(family毎1行、
       `dm_data0_addr`/`dm_data1_addr`/`confidence`/`basis`)が新設された。
@@ -1320,7 +1356,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       (上流の`confidence`が`confirmed`/`reference`で言っている)。CH32H417だけ`missing`
       だがcoreは非対応なので影響なし。
       こちら側は`load_family_facts()`が`debug_data.csv`を読み、boardの
-      `core_defines`に`-DCH32_SDI_DATA0_ADDR=`を出す。`data1`は全familyで`data0+4`
+      `core_defines`に`-DCH32_DM_DATA0_ADDR=`を出す。`data1`は全familyで`data0+4`
       なので読み込み時に検査だけして渡さない。`SerialSDI.cpp`の既定値は**廃止**し
       (0x380のままだと3通りのうち2通りで黙って外す)、未定義なら`#error`にした
 - [x] **minichlinkを書き込みツールとして実機検証**(2026-08-26、V003)。ソースから

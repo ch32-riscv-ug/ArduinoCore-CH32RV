@@ -11,15 +11,15 @@ using namespace arduino;
  * from ch32-device-data's debug_data.csv - a default here would be silently
  * wrong on two families out of three, writing into some other part of the
  * debug module. */
-#ifndef CH32_SDI_DATA0_ADDR
-#error "CH32_SDI_DATA0_ADDR is not defined: this board does not say where the \
+#ifndef CH32_DM_DATA0_ADDR
+#error "CH32_DM_DATA0_ADDR is not defined: this board does not say where the \
 debug module's data0 is (ch32-device-data debug_data.csv), so SerialSDI cannot \
 be built for it."
 #endif
 static volatile uint32_t *const CH32_DM_DATA0 =
-    (volatile uint32_t *)CH32_SDI_DATA0_ADDR;
+    (volatile uint32_t *)CH32_DM_DATA0_ADDR;
 static volatile uint32_t *const CH32_DM_DATA1 =
-    (volatile uint32_t *)(CH32_SDI_DATA0_ADDR + 4u);
+    (volatile uint32_t *)(CH32_DM_DATA0_ADDR + 4u);
 
 /* One frame: wait for DATA0 to read back zero - the probe saying it took the
  * last one - then write the payload high and the length low. Seven bytes is
@@ -82,6 +82,7 @@ size_t CH32SerialSDI::write(const uint8_t *buffer, size_t size)
     return sent;
 }
 
-/* Its own translation unit, so a sketch that never mentions SerialSDI does not
- * link it. */
+/* Its own translation unit, and one a sketch only reaches by including the
+ * header - which is where the cost is: the global object's vtable keeps every
+ * virtual alive whether or not the sketch calls one. */
 arduino::CH32SerialSDI SerialSDI;

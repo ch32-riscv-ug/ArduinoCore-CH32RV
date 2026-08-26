@@ -10,7 +10,7 @@ hartのアドレス空間に見えています。番地は`hartinfo.dataaddr`が
 
 番地は**familyで違います**。V2系(V003/V00x)が`0xE00000F4`、V3系の多く
 (V205/V407/X315/M030)が`0xE0000340`、V4系とV103が`0xE0000380`です。
-boardが`CH32_SDI_DATA0_ADDR`として渡すので**sketch側で指定するものはありません**
+boardが`CH32_DM_DATA0_ADDR`として渡すので**sketch側で指定するものはありません**
 (出所は`ch32-device-data`の`evidence/debug_data.csv`)。
 
 ```cpp
@@ -57,7 +57,8 @@ ch32_set_stdout(nullptr);         // 捨てる
   こちらでは検証していないので`read()`は常に-1を返します。
 - 1フレーム7バイトで、次を書く前にprobeが取り終える必要があります。
   速くはありませんし、大量出力でUARTを置き換えるものでもありません。
-- sketchが名前を書かない限り、このインスタンスはリンクされません。
+- **includeしなければゼロ**です。ただしincludeすると、使わなくても
+  インスタンスとvtableのぶん(V003実測でflash 364 byte / RAM 20 byte)は載ります。
 
 ## examples
 
