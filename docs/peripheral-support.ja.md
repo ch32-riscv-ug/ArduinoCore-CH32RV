@@ -88,7 +88,7 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| SDI print (debug出力) | 実装済 | SerialSDI(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 送信のみ。spikeで受信まで実機確認済み(class実装後の実機確認は未)。**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ** |
+| SDI print (debug出力) | 実装済 | SerialSDI(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 送信のみ。class実装をV003実機で受信まで確認(2026-08-26、`wlink sdi-print enable`経由)。**DMDATAのhart側アドレスはfamily依存**: QingKe V2A(V003)は`0xE00000F4`、V103/V203/X035/L103は`0xE0000380`(hartinfo.dataaddr実測)。libraryの既定は0x380のままなのでV003はビルド時上書きが要る(per-family生成は判断待ち)。**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ** |
 
 ## RTOS
 

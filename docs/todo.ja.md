@@ -1274,6 +1274,35 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       mirror repo作成が要る。現状はfamily救済で運用でき、正確なpnumが要る場面だけ
       手元の`wlink reset`で足りる
 
+- [x] **debug出力チャネルの調査(SDI print / DMDATA mailbox / RTT / semihosting)**(2026-08-26)。
+      maintainer依頼「SDI Print以外の方式で何が可能か、既存ツールで取れるものは」への実測回答。
+
+      | 方式 | 実機結果 | host側ツール |
+      |---|---|---|
+      | SDI print(WCHフレーム) | **V003で受信成功**(`uptime N s`) | `wlink sdi-print enable`+CDC(fw2.10+)。probe-rsは不可 |
+      | RTT(RAM ring buffer) | **V203で成功: 26行/15s、走行中ストリーム**。V003はattach時にhaltしたまま(probe-rsのV2A resume問題)で先頭3行のみ | `probe-rs attach <elf> --chip <pnum>`(0.32.0そのまま)。手書き最小control blockで動作 |
+      | DMDATA mailbox(独自プロトコル) | minichlink方式は**双方向**(host→target 3 byte/回、~36KB/s実績)。WCH SDIフレームとは非互換(bit7 ack+count+4 vs 最下位byte=長さ) | `minichlink -T`(要ch32fun流framing) |
+      | semihosting | 未実測。probe-rsはSYS_EXIT+`--semihosting-file`程度、ebreakごとにhalt | probe-rs run / openocd-wch(MRS fork、RTT patchあり) |
+
+      **SDI無音の根本原因はアドレス**: DMDATAのhart側アドレスはQingKe V2A(V003)だけ
+      `0xE00000F4/F8`で、V103/V203/X035/L103は`0xE0000380/384`(hartinfo.dataaddr実測+
+      EVT `SDI_Printf`参照)。`SerialSDI.cpp`をマクロ上書き可能にし(既定0x380)、
+      V003は`-DCH32_SDI_DATA0_ADDR=0xE00000F4`で受信成功=classの実機確認完了。
+      フレーミング(DATA0==0待ち/最下位byte=長さ≤7)はEVTと完全一致していた
+- [ ] SerialSDIのper-familyアドレスをどう出すか(判断待ち)。案①generatorの手書き表
+      (V2A系=0xF4)で今すぐ直す、案②上流ch32-device-dataへ「family別hartinfo.dataaddr
+      (debug DATA0のhart側アドレス)」を依頼して生成に乗せる(方針的にはこちらが本筋)。
+      V00x(V002/4/5/6/7)は実機が無く未実測なので、どちらでも上流確認は欲しい
+- [x] **minichlinkを書き込みツールとして実機検証**(2026-08-26、V003)。ソースから
+      ビルド(libusb静的+udevスタブ、scratchpad置き・未vendor)。`-w <bin> flash -b`で
+      **書けて動く**(ESIG/UUID/保護状態も正しく読める)。ただし**minichlinkのflashも
+      probe-rs同様にLinkEのchip sessionを汚染**する(直後の`probe-rs info`不可、
+      `wlink reset`で回復)——汚染はprobe-rs固有ではなく「wlinkプロトコル外のセッション全般」。
+      SDI printは汚染中でも動く
+- [x] SDIトグル後にCDCブリッジの**下り(host→target)だけ死ぬ**事象を再現(2026-08-21の
+      既知事象)。bannerは読めるがPONG不達→usbipd付け直しで回復。SDI print検証を
+      ベンチ運用に入れるならこの回復をrunnerに織り込むこと
+
 ## テスト基盤
 
 - [x] **テスト計画を作成**([tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) / [英語](../tests/TEST_PLAN.md))。

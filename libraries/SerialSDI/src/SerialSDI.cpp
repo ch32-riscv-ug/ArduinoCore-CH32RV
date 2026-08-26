@@ -4,9 +4,22 @@
 
 using namespace arduino;
 
-/* Debug module data registers, seen from the hart. */
-static volatile uint32_t *const CH32_DM_DATA0 = (volatile uint32_t *)0xE0000380u;
-static volatile uint32_t *const CH32_DM_DATA1 = (volatile uint32_t *)0xE0000384u;
+/* Debug module data registers, seen from the hart. The address is the
+ * QingKe core's hartinfo.dataaddr and it is NOT the same everywhere: the V4
+ * cores map DATA0/DATA1 at 0xE0000380/0x384, but the V2A in CH32V003 maps
+ * them at 0xE00000F4/0xF8 (hartinfo reports dataaddr=0xf4 there, and the
+ * family's SDI_Printf reference uses those addresses). Overridable until the
+ * per-family value is generated. */
+#ifndef CH32_SDI_DATA0_ADDR
+#define CH32_SDI_DATA0_ADDR 0xE0000380u
+#endif
+#ifndef CH32_SDI_DATA1_ADDR
+#define CH32_SDI_DATA1_ADDR 0xE0000384u
+#endif
+static volatile uint32_t *const CH32_DM_DATA0 =
+    (volatile uint32_t *)CH32_SDI_DATA0_ADDR;
+static volatile uint32_t *const CH32_DM_DATA1 =
+    (volatile uint32_t *)CH32_SDI_DATA1_ADDR;
 
 /* One frame: wait for DATA0 to read back zero - the probe saying it took the
  * last one - then write the payload high and the length low. Seven bytes is
