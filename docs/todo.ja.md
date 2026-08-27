@@ -34,10 +34,29 @@
       route_selftest / serial_echo / serial_println / servo_selftest / spi_selftest /
       stdio_printf / system_selftest / tone_selftest / wire_selftest。
       これで`rv32imafc`(F拡張)のTier B枠が実機で埋まった
-- [ ] `[P1]` CH32V103で実機確認する。**vector tableがジャンプ表の唯一のfamily** (要実機)
-- [ ] `[P1]` V003 / V203 / L103をroute変更後のpinで回し直す (要実機)
-- [ ] `[P2]` probe-rsがまれに`bulk read timed out`で書き込みに失敗する。
-      `smoke.py`は1回だけ再試行し、**再試行したことを表示する**。頻度が上がるようなら原因を追う
+- [x] **ベンチ6枚を一度に全部フルスイープ**(2026-08-27)。`smoke.py --sketch all`を
+      probeを挿し替えながら順に流し、**6 board × 14 sketch = 84件すべてPASS、failures=0**。
+
+      | board | part | 結果 |
+      |---|---|---|
+      | CH32V003 | CH32V003F4P6 | 14/14 |
+      | CH32V103 | CH32V103R8T6 | 14/14 |
+      | CH32V203 | CH32V203C8T6 | 14/14 |
+      | CH32X035 | CH32X035C8T6 | 14/14 |
+      | CH32L103 | CH32L103C8T6 | 14/14 |
+      | CH32V307 | CH32V307VCT6 | 14/14 |
+
+      これで**Tier A+Bの6枚すべてが同じ版で実機PASS**した状態になった。
+      **V103が通ったのが要点**で、ジャンプ表形式のvector tableを持つ唯一のfamilyが
+      実機で裏付けられた。V003は16K flashに14本すべて載って通っている。
+      route変更後のpinで回し直す件も同時に解消(V003は`USART1 TX=PD5 RX=PD6`で認識)
+- [ ] `[P2]` probe-rsがまれに書き込みに失敗する。`smoke.py`は1回だけ再試行し、
+      **再試行したことを表示する**。頻度が上がるようなら原因を追う。
+      **観測した症状は2種類**: `bulk read timed out` と、
+      **`Timeout during DMI access`**(2026-08-27のフルスイープ中、CH32V103の
+      `tone_selftest`書き込みで1回。`Could not clear all hardware breakpoints` →
+      `Timeout (2s) exceeded executing RISCV commands`と続いた)。
+      いずれも再試行で成功しており、84件中1件の頻度
 - [ ] `[P1]` ADR-0006の「tickソース差し替え可能」をHALへ織り込む。
       現在`wiring_time.c`がSysTickを直接叩いており、RTOSへ渡す口が無い
 - [x] **ring bufferのlost updateを修正**。`api/RingBuffer.h`は単一カウンタをpush/pop両方で

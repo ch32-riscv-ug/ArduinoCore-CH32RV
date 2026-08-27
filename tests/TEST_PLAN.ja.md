@@ -243,11 +243,25 @@ coreの実装が実際に分岐する軸だけを数えると6つです。
 | **B** | CH32L103 | 週次 / release前 | V4C系。低消費電力系のクロック経路 |
 | **B** | CH32V103 | 週次 / release前 | **vector tableがジャンプ表なのはこのfamilyだけ** |
 | **B** | CH32V307 | 週次 / release前 | `rv32imafc`(F拡張)。手元で最大のpart |
-| **C** | CH32V006 / CH32V205 / CH32X315 | 随時(月次〜) | Tier A+Bで埋まらない軸: `rv32emc`・`rv32imc`・20 MHz/wait state 1 |
-| **D** | 残り15 series | compileのみ | 上のいずれかと差分軸が完全に一致する |
+| **C** | CH32V006 | 入手でき次第 | **1台で`rv32emc`とflash wait state 1の両方**を埋める。開発ボードが出ておりチップも販売中だが、本格的な利用はこれから |
+| **D** | 残り17 series | compileのみ | 上のいずれかと差分軸が一致するか、**未発売で実機を用意できない** |
 
-Tier A+Bで、ISA以外の5軸はすべて両方の値が踏まれます。ISAの`rv32emc`と`rv32imc`だけが
-Tier Cに落ちますが、これはcompiler側の差でありcoreのCコードは同一です。
+Tier A+Bで埋まる軸は4つです(GPIOポート幅 8/16/24、SysTick 32/64、vector table形式、
+EXTIのvector分割)。残る2軸には**未踏の値があります**。
+
+| 未踏の値 | 埋めるboard | 状況 |
+|---|---|---|
+| ISA `rv32emc` | CH32V006ほかV00x系 | Tier C。compiler側の差でcoreのCコードは同一 |
+| ISA `rv32imc` | CH32V205 / CH32M030 | **未発売**。同上の理由で影響は小さい |
+| **flash wait state 1** | CH32V006 / CH32V205 | Tier A+Bは0と2しか踏んでいない。**compileでは絶対に出ない軸**(クロック引き上げ前に設定しないとハングする)なので、実機で埋める価値がある |
+
+したがって**CH32V006が実機に載るまで、wait state 1は未検証のまま**です。ISAの2値は
+compilerの差なので`tests/compile`で足ります。
+
+CH32V205とCH32X315は当初Tier Cに置いていましたが、**どちらも未発売**なので実行頻度を
+持たせられません(2026-08-27にTier Dへ移動)。X315については「20 MHz/wait state 1」と
+書いていましたが、boards.txtの実測値は`rv32imafc`・wait state 0で、**この記述は誤りでした**。
+X315が固有に持つのは`x3x5`のvector tableで、発売されたら再検討します。
 
 `sketch.yaml`のprofileはTier AとBにだけ作ります。
 **profileがあるということは誰かが実機で回すという約束**なので、回せないprofileは無いほうがましです。
@@ -413,7 +427,7 @@ float側が同じ9.4 KBを抱えたまま、もう半分がスカスカになる
 | 機能 | 方法 | 必要な配線 | 現状 |
 |---|---|---|---|
 | Serial 送信 | 2 (probeのUART bridgeへ) | TX → probe RX | ✅ `smoke.py` / `serial_println` |
-| Serial 受信 | 2 | RX ← probe TX | 🔧 `serial_echo`(実機未確認) |
+| Serial 受信 | 2 | RX ← probe TX | ✅ `serial_echo`(bench 6枚すべて実機PASS) |
 | Serial ボーレート精度 | 4 | ロジアナをTXへ | ⬜ |
 | `millis()` / `micros()` | 1(hostの経過時間と突き合わせ) | 不要 | ✅ `core_api` |
 | `digitalWrite` / `digitalRead` | 1(出力pinは入力経路にも入る) | 不要 | ✅ `core_api` |
@@ -475,11 +489,11 @@ dの前提として、**どのboardが繋がっているかをスクリプトが
 | vendored ArduinoCore-API の同期 | ✅ `api-sync` | | |
 | Board Manager install → compile | ✅ `install-test`(3 OS、上書きなし) | | ⬜ upgrade経路、`libraries/`解決 |
 | probe-rsのinstallと起動 | ✅ `install-test` | | |
-| Serial 送信 | ✅ `serial_println`(V003 / V203 / X035 / L103 / V307 実機PASS) | ✅ `smoke.py` | ⬜ V103 実機 |
-| Serial 受信 | ✅ `serial_echo`(V307 実機PASS) | ✅ `smoke.py` | ⬜ 他board実機、フロー制御、エラーフラグ |
-| ヒープ(`String`/`malloc`/`free`/OOM) | ✅ `heap_string`(X035実機PASS) | | ⬜ 断片化、`realloc` |
+| Serial 送信 | ✅ `serial_println`(V003 / V103 / V203 / X035 / L103 / V307 実機PASS) | ✅ `smoke.py` | |
+| Serial 受信 | ✅ `serial_echo`(V003 / V103 / V203 / X035 / L103 / V307 実機PASS) | ✅ `smoke.py` | ⬜ フロー制御、エラーフラグ |
+| ヒープ(`String`/`malloc`/`free`/OOM) | ✅ `heap_string`(V003 / V103 / V203 / X035 / L103 / V307 実機PASS) | ✅ `smoke.py` | ⬜ 断片化、`realloc` |
 | ビルドmenu(`pnum` / `printf`) | ✅ `compile_all.py`(pnum)、実機(printf) | | ⬜ 全menu組み合わせのcompile |
-| `printf` / stdio | ✅ `heap_string`(X035実機PASS) | | ⬜ float書式、`nano.specs`未適用でsketchが約40 KB膨らむ |
+| `printf` / stdio | ✅ `stdio_printf` / `print_format`(V003 / V103 / V203 / X035 / L103 / V307 実機PASS) | ✅ `smoke.py` | ⬜ float書式、`nano.specs`未適用でsketchが約40 KB膨らむ |
 | 時間 (`millis`/`micros`/`delay`) | ✅ `core_api` | | ⬜ 長時間のオーバーフロー、歩度精度 |
 | GPIO | ✅ `core_api`(出力の読み戻し) | | ⬜ 入力プルアップ、他ポートへのloopback |
 | ADC | ✅ `core_api`(範囲) | | ⬜ 既知電圧での確度、分解能設定、複数ch |
