@@ -104,3 +104,16 @@ tools.probe_rs.program.params.quiet=--disable-progressbars
 
 tools.probe_rs.upload.pattern="{path}/{cmd}" download --chip {build.probe_rs_chip} --binary-format elf --non-interactive --reset {upload.verbose} {upload.probe_args} "{build.path}/{build.project_name}.elf"
 tools.probe_rs.program.pattern="{path}/{cmd}" download --chip {build.probe_rs_chip} --binary-format elf --non-interactive --reset {program.verbose} {upload.probe_args} "{build.path}/{build.project_name}.elf"
+
+# ---------------------------------------------------------------- monitor
+# The UART Serial is an ordinary serial port, so the monitor arduino-cli ships
+# is the right one; declaring it is what makes a Board Manager install pull it
+# in rather than relying on the fallback. The per-board default baud rate is in
+# boards.txt (monitor_port.serial.baudrate), which is where the specification
+# puts port settings.
+#
+# The debug-module channels are NOT wired here. SerialSDI needs none: the probe
+# forwards it to its own USB CDC port, so the serial monitor reads it once the
+# probe has been told to (`wlink sdi-print enable`). SerialRTT and SerialDMDATA
+# would each need a pluggable monitor tool of our own - see docs/todo.ja.md.
+pluggable_monitor.required.serial=builtin:serial-monitor

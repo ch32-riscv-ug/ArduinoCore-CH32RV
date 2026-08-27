@@ -1304,6 +1304,62 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       EVT `SDI_Printf`参照)。`SerialSDI.cpp`をマクロ上書き可能にし(既定0x380)、
       V003は`-DCH32_SDI_DATA0_ADDR=0xE00000F4`で受信成功=classの実機確認完了。
       フレーミング(DATA0==0待ち/最下位byte=長さ≤7)はEVTと完全一致していた
+- [x] **Arduino CLIとのつなぎ込み確認: Monitorは繋いだ、debugは繋げなかった**(2026-08-27、
+      arduino-cli 1.3.1、V003実機)。
+
+      **Monitor(繋いだ)**
+      - `platform.txt`に`pluggable_monitor.required.serial=builtin:serial-monitor`を追加。
+        宣言が無くてもfallbackで動くが、Board Manager導入時に依存として引かせるには要る
+      - boards.txtに`<board>.monitor_port.serial.baudrate=115200`を**生成で**入れた
+        (24 board、additiveのみ)。仕様上port設定はboards.txt側。**builtinの既定は9600**で、
+        このtreeのsketchは15箇所すべて`Serial.begin(115200)`なので既定がずれていた
+      - 実機E2E: `arduino-cli compile`→`upload --programmer wch-link`→
+        `arduino-cli monitor -p /dev/ttyACM4 -b CH32V003`で`tick N`が出る(`--config`不要)
+
+      **`SerialSDI`は普通のSerial Monitorで読める**(専用monitorは要らない)。
+      probeが自分のUSB CDCへ転送するので、**LinkEのCDC portがそのまま監視先**。
+      条件は「probe側でSDI printが有効になっていること」だけで、
+      `wlink sdi-print enable`を一度実行すれば、wlinkのプロセスが終了しても転送は続く
+      (実機確認: `arduino-cli monitor`で`uptime N s`が流れた)。
+      **有効化をuploadに織り込む手が無い**のが残る課題(uploadはprobe-rs、
+      wlinkはvendorしない方針)。当面は手動実行を案内するしかない
+
+      **`SerialRTT`/`SerialDMDATA`はIDEのMonitorに繋がらない。**
+      pluggable monitorのプロトコル(stdinにHELLO/DESCRIBE/CONFIGURE/OPEN/CLOSE/QUIT、
+      応答はJSON、OPENで指定されたTCPへ繋いで双方向に流す)を喋る**自前のmonitorツール**が
+      要る。`pluggable_monitor.pattern.<protocol>`でコマンドを指定する形でも、
+      プロトコル実装は必要。arduino-cliが同梱するのは`builtin:serial-monitor`だけで、
+      「コマンドの出力をそのまま流す」汎用monitorは存在しない。
+      **Linux/macOS限定の逃げ道**として`socat`でptyを作り
+      `probe-rs attach`を繋げばbuiltin serial-monitorで読めるが、Windowsで成立しないので
+      配布物には使えない
+
+      **debug(繋げなかった)**
+      - `platform.txt`に`debug.*`が無いので`arduino-cli debug`は
+        `Debugging not supported for board`。keyは**debug.txtではなくplatform.txt**に
+        置くのが実際の作法(esp32・UIAPのCH32coreとも同じ)
+      - 書き足すと`--info`は正しく出るが、**`debug.server`はopenocdしか受け付けない**
+        (`GDB server 'probe-rs' is not supported`。バイナリにも
+        `DebugOpenOCDServerConfiguration`しか無い)。
+        なお`debug.toolchain.path`が空だとarduino-cliは**panic**する(nil Path)
+      - `probe-rs gdb`自体も**CH32V003では動かない**: GDB stubがx0..x15を読んだあと
+        **x16を読んでabstract commandがcmderr=3(exception)**になり
+        `Target threw a fatal error`。V003は**RV32EC=レジスタ16本**なのに32本前提。
+        probe-rsへの報告候補(V203等のRV32I系は未確認、probeが1台しか繋がっていないため)
+
+- [ ] `[要判断]` 上の2件はどちらも**小さな自前ツールを配布するか**という同じ判断に帰着する。
+      案①**自前helperを1つ作る**(Rust/Goでhost 5種をcross build、ADR-0011のmirrorへ):
+      RTT/DMDATAのpluggable monitorと、`probe-rs gdb`をopenocdの皮に見せるshimを兼ねる。
+      ただしdebug側はprobe-rsのRV32E不対応が直るまでV003で使えない。
+      案②**openocd-wch(MounRiver fork)をvendorする**: debugは王道で解決、
+      arduino-cliがそのまま駆動できる。代償はprobe-rsと二重のprobe stackを抱えること
+      (ADR-0008はuploadをprobe-rsで確定済み)。monitorは解決しない。
+      案③**当面どちらもやらない**: Monitorは普通のSerial+SDIまで、
+      RTT/DMDATA/debugは各READMEで手動手順(`probe-rs attach`/`minichlink -T`/
+      `probe-rs gdb`+gdb)を案内する。今回入れたのはここまで。
+      **IDE 2側がRISC-Vのdebug UIを出せるかも未確認**(cortex-debug前提)なので、
+      案②の投資対効果はそこを確かめてから判断したい
+
 - [x] **SDI以外のdebug出力classを2つ作った**(2026-08-26、`libraries/SerialRTT`と
       `libraries/SerialDMDATA`)。2026-08-26のmaintainer方針
       「target側classは色々作ってよい、host側の受信はツール依存でよい」に沿ったもの。

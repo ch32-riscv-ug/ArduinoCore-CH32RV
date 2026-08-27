@@ -30,6 +30,10 @@ minichlink -T
 
 プロトコルは公開されているframingから実装したもので、ch32funのコードは使っていません。
 
+**IDEのSerial Monitorでは読めません。** あれはserial portを開くものだからで、
+繋ぐには自前のpluggable monitorが要ります(docs/todo.ja.md)。
+同じdebug出力でも`SerialSDI`はprobeが自分のCDCへ流すのでSerial Monitorで読めます。
+
 ## SerialSDIとは同じsketchで使えません
 
 同じ2つのレジスタに書くので、片方のframingで読んでいるhostにはもう片方はノイズです。

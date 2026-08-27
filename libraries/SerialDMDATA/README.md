@@ -32,6 +32,10 @@ minichlink -T
 The protocol is implemented here from its documented framing; no ch32fun code
 is used.
 
+**Not the IDE's serial monitor.** That one speaks to serial ports, and this is
+not one; wiring it in would need a pluggable monitor tool of our own
+(docs/todo.ja.md).
+
 ## It cannot share a sketch with SerialSDI
 
 Both write the same two registers, and a host reading one framing sees the

@@ -28,6 +28,11 @@ probe-rs attach --chip CH32V003F4P6 <firmware.elf>
 Any `pnum` from the board menu works as `--chip`. Pass the **ELF**: that is
 where probe-rs looks up the control block.
 
+**Not the IDE's serial monitor.** That one speaks to serial ports, and this is
+not one; wiring RTT into it would need a pluggable monitor tool of our own
+(docs/todo.ja.md). On Linux and macOS `socat` can bridge it into a pty if you
+want the IDE window.
+
 Measured on this bench with probe-rs 0.32.0: `download` and then `attach`
 streams live while the target runs, on CH32V003 (18 lines in 23 s, and typed
 input echoed back) and on CH32V203 alike. Attaching to a target the probe

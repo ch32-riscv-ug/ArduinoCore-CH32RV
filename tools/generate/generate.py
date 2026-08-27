@@ -162,6 +162,11 @@ PRINTF_MENU = (
 )
 
 
+# The baud rate the serial monitor opens with. Every sketch and example in this
+# tree calls Serial.begin(115200), so the monitor that comes up beside them
+# says the same thing.
+MONITOR_BAUD = 115200
+
 DEVICE_DATA_URL = "https://github.com/ch32-riscv-ug/ch32-device-data.git"
 LOCK_REL = "vendor/ch32-device-data.lock.toml"
 
@@ -2089,6 +2094,10 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
     lines = [f"{board}.name=Generic {series}{suffix}"]
     lines.append(f"{board}.build.board={board}")
     lines.append(f"{board}.build.core=arduino")
+    # What the IDE's serial monitor opens with. The platform specification puts
+    # port settings in boards.txt, per board, and the built-in monitor's own
+    # default is 9600 - which is not what a single sketch in this tree uses.
+    lines.append(f"{board}.monitor_port.serial.baudrate={MONITOR_BAUD}")
     lines.append(f"{board}.build.variant={board}")
     lines.append(f"{board}.build.march={fam['march']}")
     lines.append(f"{board}.build.mabi={fam['mabi']}")

@@ -33,8 +33,20 @@ or newer:
 wlink flash --enable-sdi-print --watch-serial firmware.elf
 ```
 
-The probe only forwards while wlink holds the session, so `--watch-serial` is
-part of the recipe rather than an extra.
+### Reading it in the IDE's serial monitor
+
+The probe forwards what it collects to **its own USB CDC port**, so once it has
+been told to, the ordinary serial monitor is where to read it - no special
+monitor needed:
+
+```
+wlink sdi-print enable          # once; forwarding outlives the wlink process
+arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32v:CH32V003
+```
+
+The port is the WCH-LinkE's own CDC (`1a86:8010`); in the IDE, pick that same
+port. There is no way to fold the enabling into upload today, because upload
+goes through probe-rs.
 
 Supported by the probe on V003, V00x, V103, V20x, V30x, X035 and L103. Other
 series have the registers but the probe firmware will not poll them.

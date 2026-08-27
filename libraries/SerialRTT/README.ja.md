@@ -27,6 +27,10 @@ probe-rs attach --chip CH32V003F4P6 <firmware.elf>
 `--chip`にはboardメニューの`pnum`がそのまま使えます。渡すのは**ELF**です。
 probe-rsはそこからcontrol blockの在り処を引きます。
 
+**IDEのSerial Monitorでは読めません。** あれはserial portを開くものだからで、
+繋ぐには自前のpluggable monitorが要ります(docs/todo.ja.md)。
+Linux/macOSなら`socat`でptyに橋渡しすればIDEの窓でも読めます。
+
 このベンチでの実測(probe-rs 0.32.0): `download`してから`attach`すれば、
 走行中のストリームがそのまま出ます。**CH32V003でも動きます**
 (23秒で18行、打ち込んだ文字のecho back込み)。CH32V203も同様。

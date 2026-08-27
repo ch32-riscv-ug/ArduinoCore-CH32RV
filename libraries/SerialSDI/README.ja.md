@@ -31,8 +31,19 @@ probe-rsでは現状受け取れません。
 wlink flash --enable-sdi-print --watch-serial firmware.elf
 ```
 
-**wlinkがセッションを保持している間だけ**probeが転送するので、
-`--watch-serial`はおまけではなく手順の一部です。
+### IDEのSerial Monitorで読む
+
+probeは受け取った文字を**自分のUSB CDC portへ流す**ので、
+一度有効にしてしまえば**普通のSerial Monitorがそのまま監視先**になります
+(専用のmonitorは要りません)。
+
+```
+wlink sdi-print enable                 # 一度だけ。wlinkを終了しても転送は続きます
+arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32v:CH32V003
+```
+
+portはWCH-LinkE自身のCDC(`1a86:8010`)です。IDEなら同じportを選ぶだけです。
+有効化をuploadに織り込む手は今のところありません(uploadはprobe-rsのため)。
 
 probe側が対応しているのは V003 / V00x / V103 / V20x / V30x / X035 / L103 です。
 他のseriesはレジスタこそありますが、probeのfirmwareがポーリングしません。
