@@ -80,7 +80,7 @@ maintainerの「同梱ライブラリの方針は承認します」による明�
 
 ## ADR一覧
 
-いずれもmaintainer承認前(`Proposed`)です。
+`Accepted`は3件(ADR-0011 / 0012 / 0013)で、残りはmaintainer承認前(`Proposed`)です。
 
 | ADR | 内容 | Status |
 |---|---|---|
@@ -94,6 +94,10 @@ maintainerの「同梱ライブラリの方針は承認します」による明�
 | [ADR-0008](0008-upload-strategy.ja.md) | 書き込みdefaultはWCH-LinkE、経路カバレッジは段階追加 | Proposed |
 | [ADR-0009](0009-arduinocore-api-import.ja.md) | ArduinoCore-APIを固定versionのvendored snapshotで取り込む | Proposed |
 | [ADR-0010](0010-pin-numbering.ja.md) | ピン番号はポート埋め込み(`PA0`形式)、連番を採らない | Proposed |
+| [ADR-0011](0011-tool-mirror-repository.ja.md) | 再配布が必要なtoolは1ツール1repositoryで`mirror-`ミラー | Accepted |
+| [ADR-0012](0012-usb-stack.ja.md) | USBはTinyUSB、未対応seriesは上流へ載せにいく | Accepted |
+| [ADR-0013](0013-bundled-libraries.ja.md) | 同梱ライブラリは3基準、examplesはライブラリで配る | Accepted |
+| [ADR-0014](0014-self-built-tool-distribution.ja.md) | upstreamがバイナリを公開しないtoolは`build-`で自前build | Proposed |
 
 ## 今後のADR候補
 

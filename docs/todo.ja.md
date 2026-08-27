@@ -1011,7 +1011,25 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `[P1]` wlinkは`-d <INDEX>`しか持たない。**serial selectorの上流patch**(serialは既に読めている)
 - [ ] `[P1]` udev rulesの配布と案内。ch32funの`minichlink/99-minichlink.rules`が参考。
       **開発機に未インストール**(LinkE 1a86:8010 / 8012、IAP 4348:55e0)
-- [ ] `[P2]` minichlink対応(互換probe 6種とrv003usb BL)。**公式release assetが無く自前buildが要る**
+- [ ] `[P2]` minichlink対応(互換probe 6種とrv003usb BL)。**公式release assetが無く自前buildが要る**。
+      2026-08-27にmaintainerが「配布はやる」と判断し、
+      [`build-minichlink`](https://github.com/ch32-riscv-ug/build-minichlink)を作成。
+      何を作るかは同repositoryの`docs/design.ja.md`に定義済みで、
+      方針は[ADR-0014](adr/0014-self-built-tool-distribution.ja.md)(`Proposed`)。
+      **実装(`build.sh`と workflow)は別プロジェクトとして未着手**。
+      こちら側の作業は、公開後に`tools_minichlink.json`を取り込んで
+      `gen_index.py`へtoolを足すところから
+
+- [ ] `[要判断]` **`build-minichlink`の未決4件**(同repositoryの`docs/design.ja.md` §11)。
+      いずれも既定案は置いてあるが確定していない:
+      **(U-1)** `i686-mingw32`を実ビルドするか——`mirror-probe-rs`はi686枠に
+      amd64バイナリを割り当てている(32bit Windowsでは動かない)が、minichlinkは
+      実際にクロスビルドできる。**entryを空けるとplatformごとinstallに失敗する**
+      のでどちらにせよ枠は要る。
+      **(U-2)** 同日に2度ビルドしたときのversion表記。
+      **(U-3)** libusbをstaticにするか——staticはLGPL-2.1 §6の説明が要るが、
+      動的だと利用者にlibusbのinstallを要求することになる。
+      **(U-4)** ADR-0014の承認(このrepository側。ADR-0011には追記済み)
 - [ ] `[P2]` wchisp(USB/UART ISP)。GPL-2.0のため配布形態に注意
 - [ ] `[P2]` UIAPduino等のboard固有BL
 
