@@ -33,6 +33,7 @@ minichlink -T
 **IDEのSerial Monitorでは読めません。** あれはserial portを開くものだからで、
 繋ぐには自前のpluggable monitorが要ります(docs/todo.ja.md)。
 同じdebug出力でも`SerialSDI`はprobeが自分のCDCへ流すのでSerial Monitorで読めます。
+OSごとの手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にまとめてあります。
 
 ## SerialSDIとは同じsketchで使えません
 

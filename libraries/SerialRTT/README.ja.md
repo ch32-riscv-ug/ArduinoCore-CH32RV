@@ -30,6 +30,7 @@ probe-rsはそこからcontrol blockの在り処を引きます。
 **IDEのSerial Monitorでは読めません。** あれはserial portを開くものだからで、
 繋ぐには自前のpluggable monitorが要ります(docs/todo.ja.md)。
 Linux/macOSなら`socat`でptyに橋渡しすればIDEの窓でも読めます。
+OSごとの手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にまとめてあります。
 
 このベンチでの実測(probe-rs 0.32.0): `download`してから`attach`すれば、
 走行中のストリームがそのまま出ます。**CH32V003でも動きます**

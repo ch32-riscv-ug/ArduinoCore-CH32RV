@@ -34,7 +34,8 @@ is used.
 
 **Not the IDE's serial monitor.** That one speaks to serial ports, and this is
 not one; wiring it in would need a pluggable monitor tool of our own
-(docs/todo.ja.md).
+(docs/todo.ja.md). Per-OS instructions are in
+[docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).
 
 ## It cannot share a sketch with SerialSDI
 

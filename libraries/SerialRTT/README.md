@@ -31,7 +31,8 @@ where probe-rs looks up the control block.
 **Not the IDE's serial monitor.** That one speaks to serial ports, and this is
 not one; wiring RTT into it would need a pluggable monitor tool of our own
 (docs/todo.ja.md). On Linux and macOS `socat` can bridge it into a pty if you
-want the IDE window.
+want the IDE window. Per-OS instructions are in
+[docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).
 
 Measured on this bench with probe-rs 0.32.0: `download` and then `attach`
 streams live while the target runs, on CH32V003 (18 lines in 23 s, and typed

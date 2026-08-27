@@ -23,33 +23,48 @@ void setup() {
 }
 ```
 
-## Getting it on the host
+## Nothing comes out until you switch it on (that is correct)
 
-probe-rs cannot collect this today. With
-[wlink](https://github.com/ch32-rs/wlink) and a WCH-LinkE running firmware 2.10
-or newer:
+This library **only works on a WCH-LinkE, and only after the probe has been
+told to forward**. With nothing configured you get not one character - that is
+not a fault, it is the probe not forwarding yet. Two conditions:
 
-```
-wlink flash --enable-sdi-print --watch-serial firmware.elf
-```
+- **A WCH-LinkE.** Neither the original WCH-Link (CH549) nor the WCH-LinkW has it
+- **A chip the probe supports**: V003, V00x, V103, V20x, V30x, V317, X035, L103
 
-### Reading it in the IDE's serial monitor
+Once it is on, the probe forwards what it collects to **its own USB CDC port**,
+so the ordinary serial monitor is where to read it - no special monitor needed.
 
-The probe forwards what it collects to **its own USB CDC port**, so once it has
-been told to, the ordinary serial monitor is where to read it - no special
-monitor needed:
+**That port is the UART bridge as well.** If the sketch also uses
+`Serial.println()`, both streams arrive **mixed together** in one monitor
+window. They cannot be separated; use one or the other if that matters.
+
+## Switching it on
+
+probe-rs cannot do it, so this one step needs another tool.
+
+| | OS | |
+|---|---|---|
+| **WCH-LinkUtility** | **Windows only** | WCH's own. **Target** menu -> **Enable SDI Printf** |
+| **OpenOCD bundled with MounRiver Studio** | Linux / macOS / Windows | Also WCH's. `openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit` |
+| **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable` |
 
 ```
 wlink sdi-print enable          # once; forwarding outlives the wlink process
 arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32v:CH32V003
 ```
 
-The port is the WCH-LinkE's own CDC (`1a86:8010`); in the IDE, pick that same
-port. There is no way to fold the enabling into upload today, because upload
-goes through probe-rs.
+wlink can also do the flashing and the watching in one go:
 
-Supported by the probe on V003, V00x, V103, V20x, V30x, X035 and L103. Other
-series have the registers but the probe firmware will not poll them.
+```
+wlink flash --enable-sdi-print --watch-serial firmware.elf
+```
+
+The port is the WCH-LinkE's own CDC (`1a86:8010`); in the IDE, pick that same
+port. **Per-OS instructions are in
+[docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).**
+
+Other series have the registers but the probe firmware will not poll them.
 
 ## Retargeting printf()
 

@@ -1347,6 +1347,127 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
         `Target threw a fatal error`。V003は**RV32EC=レジスタ16本**なのに32本前提。
         probe-rsへの報告候補(V203等のRV32I系は未確認、probeが1台しか繋がっていないため)
 
+- [x] **debug: 既存事例(MounRiver Studio)を調べたら、openocd経路は実際に動いた**
+      (2026-08-27、CH32V103R8T6)。前回の「3つとも使えない」という結論は**訂正**する。
+
+      `~/dev_wch/tools`のLinux版MounRiver Studio 2.5.0とMRS OpenOCD v2.8を調べ、
+      MRSのVS Code拡張(`mrs-team.mrs-vscode/out/extension.js`)から
+      **MRS自身のdebug手順**を取り出した。
+
+      ```
+      openocd -c "gdb_port 3333" -s <bin> -f wch-riscv.cfg -c dbgtool -c init -c halt
+      gdb: set mem inaccessible-by-default off
+           set architecture riscv:rv32
+           set remotetimeout unlimited          ← これが無いとloadがtimeoutする
+           monitor reset init → load → monitor reset halt
+           tbreak handle_reset → continue
+      ```
+
+      **前回「openocdがflashを壊す」と書いた現象の正体**: attach(`init`)時に
+      vector tableへnop+ebreakが書かれるのは事実だが、**MRSは毎回`load`する**ので
+      そこで元に戻る。実測でも`load`後は`0x30 = j SysTick_Handler`に復帰した。
+      つまり「壊れたまま使う」のは**attachだけして焼かない**私の手順が悪かった。
+
+      **実機で確認できたところまで**: `load`(895 byte/s と遅い)→`monitor reset halt`→
+      `tbreak handle_reset`→`continue`で**crt0の`handle_reset`(0x12e)に停止**し、
+      `$pc`もsource行も正しい。**resumeもbreakpointも動いている**。
+      その先の`continue`はUSB/IP経由のprobeが落ちて(`LIBUSB_ERROR_TIMEOUT`/`NO_DEVICE`)
+      完走していない。**ベンチのUSB/IPが原因で、ツールの問題ではない**。
+
+      **おまけで分かったベンチの事実**: **V103に繋がっているprobeは初代WCH-Link(CH549)**
+      で、WCH-LinkEではない(`WCH-Link-CH549 mode:RV version 2.12`)。
+      LinkEはV003側(`F90E8F067DFD`)。
+      つまり上のdebugは**初代WCH-Linkでも動いている**。
+      逆にSDI printはLinkE専用なのでV103のprobeでは最初から不可能だった
+
+- [x] **SDI printをLinux純正手段で有効化できた**(2026-08-27)。
+      MRS OpenOCDに`sdi_printf`コマンドがある(MRSのdownloadダイアログの
+      `SDIPrintf`チェックの実体)。
+
+      ```
+      openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit
+      # Info :  SDI_PRINTF  ENABLE
+      ```
+
+      **順番が決まっている**(`sdi_printf`は`init`の前、`exit`は`init`の後)。
+      実測: `probe-rs download`→上のopenocd→`arduino-cli monitor`で`uptime N s`。
+      **wlinkを使わずLinuxで完結する。** `libjaylink.so.0`はMRSが同梱している
+
+- [x] **WCH-LinkWはSDI print非対応**(2026-08-27、2つの独立した出所で確認)。
+      WCH-LinkUtilityは`Only WCH-LinkE support SDI Printf function!`と断り、
+      wlinkのソースも`WchLinkVariant::support_sdi_print()`を
+      **`ECh32v305`(=LinkE)だけ**に限定している(LinkW=`WCh32v208`は
+      `support_power_funcs()`には入っているが、SDIには入っていない)。
+      **対応chipのリストも補正**した: wlinkの`RiscvChip::support_sdi_print()`は
+      V003/V00x/V103/V20x/V30x/**V317**/X035/L103(+CH641/CH643/CH645)で、
+      これまでのREADMEはV317を落としていた
+
+- [x] **ch32funの事例を確認し、minichlinkがCH32V003で完全に動くことを実機で確認した**
+      (2026-08-27)。ch32funのREADMEが答えを持っていた:
+      「**GDB is mostly tested on the 003, but works, to a limited degree on the
+      other processors.**」——つまり上流自身が「003以外は限定的」と言っている。
+
+      実機(CH32V003 + WCH-LinkE、`char st[5]`→`st[16]`の1行修正のみ):
+
+      ```
+      minichlink -G  →  gdb: break tick / continue ×3
+      Breakpoint 1, tick () at dbgbare.ino:6      hits = 0
+      Breakpoint 1, tick () ...                   hits = 1
+      Breakpoint 1, tick () ...                   hits = 2
+      bt → #0 tick() #1 main()
+      ```
+
+      **hitsが進む**=targetが実際に走っている。**V003では完全に使える。**
+      V103で見た「breakpointから再開できない」は、上流が言う
+      「other processorsでは限定的」そのものだった。flashも壊さない
+
+- [x] **probe-rsでのdebugは現状できない**(2026-08-27)。
+      - `probe-rs gdb`: V003はGDB stubがx16を読んでcmderr=3(RV32Eなのに32本前提)、
+        V103はtriggerのtdata1が0でUnexpectedTriggerType。**どちらもattach直後に落ちる**
+      - `probe-rs debug`(内蔵コンソール、DAPベース): 起動はするが
+        `break dbgbare.ino:6`が`No valid breakpoint information found`で通らなかった
+        (`.ino`の行→debug infoの対応が取れていない可能性。要追試)
+      - 上流mainのCHANGELOGを見るとCH32関連の動きは活発だが
+        (target yamlの再生成、AttachChip応答によるchip自動判別)、
+        **RV32Eのレジスタ本数もtrigger探索も直っていない**
+      - つまり「probe-rsでdebugできている事例」は見つからなかった。
+        flashとRTTは動く、というのが現状
+
+- [ ] `[要判断]` **debugをどう成立させるか。openocdが動いたので選択肢の重みが変わった。**
+
+      | 案 | 系統 | 作業量 | 新しい配布物 | 得られるもの | 弱点 |
+      |---|---|---|---|---|---|
+      | **①WCH openocdをvendorする** | 借りる | 小(vendor作業のみ) | 5 MB×5 OS | **`arduino-cli debug`とIDEがそのまま**。WCH純正で実績がある | 毎回`load`が要る(IDEの流儀そのもの)。loadが遅い(895 B/s)。Linuxは`libjaylink`同梱が要る。GPL。probe stackが二重 |
+      | ②probe-rsへPR | 上流 | 小+中(場所は特定済み) | なし | `probe-rs gdb`/`debug`/**VS Code DAP** | マージ待ち。`arduino-cli debug`には別途shim |
+      | ③probe-rsを自前ビルド | 自作 | ②+5 OSのbuild CI | なし(既存枠) | ②を待たずに配れる | mirrorが「再パック」でなくなる(ADR-0011) |
+      | ④minichlinkへPR/自前ビルド | 上流/自作 | 小+中 | 1つ増える | flashを壊さない。軽い | 保守対象が増える |
+      | ⑤openocd shimを自作 | 自作 | 小 | 1つ(極小) | probe-rsを`arduino-cli debug`へ繋ぐ | ②③が動いてから |
+      | ⑥GDB serverを自作 | 自作 | 大(2600行規模) | 1つ増える | 全部を自分で決められる | 保険。①〜③が通るなら不要 |
+
+      **推奨: ①(IDE統合の本命)+④(V003の当座)。**
+      (a)実機で動いた経路は**2つ**になった。openocdはV103でbreakpoint到達まで、
+      minichlinkは**V003で完走**(breakpointを3回踏んでhitsが進む)。
+      (b)`arduino-cli debug`が`openocd`しか解釈しない以上、
+      IDE統合まで**追加の自作なしで**届くのは①だけ。
+      (c)「flashを壊す」は誤解で、**IDEのdebugは毎回loadするのが普通**。
+      (d)ただし**V003に限れば④が今すぐ使える**(1行修正、flashも壊さない、
+      上流もV003を主戦場と明言)。V003はこのcoreの最小ターゲットなので価値がある。
+
+      ②③は**並行して進める価値がある**(probe-rsが直ればVS Code DAPが手に入り、
+      uploadと同じ1つのツールで済む)。ただし①の代わりにはならない。
+      ⑥は①〜④がすべて行き詰まったときの保険として残す。
+
+      ①を選ぶ場合に決めることが3つ: **(1)** vendorするのはWCHのArduino coreに入っている
+      1.0.0/1.91か、MRSのv2.8か。**(2)** Linuxの`libjaylink.so.0`をどう配るか
+      (同梱するかシステム依存にするか)。**(3)** `debug.*`をplatform.txtに書いたときの
+      `debug.toolchain.path`の空文字panicをどう避けるか
+
+- [x] **Monitorの範囲を決めた**(2026-08-27、maintainer): 標準SerialとSDIは現状のまま、
+      RTT/DMDATAは**ドキュメントでOSごとの手順を提供するところまで**。
+      [docs/debug-output.ja.md](debug-output.ja.md)を追加した(ビルドPATHの固定→書き込み→
+      各方式の受け取り方、Linux/macOS/Windows/WSL2の下準備込み)。
+      pluggable monitorの自前ツールは**作らない**
+
 - [ ] `[要判断]` 上の2件はどちらも**小さな自前ツールを配布するか**という同じ判断に帰着する。
       案①**自前helperを1つ作る**(Rust/Goでhost 5種をcross build、ADR-0011のmirrorへ):
       RTT/DMDATAのpluggable monitorと、`probe-rs gdb`をopenocdの皮に見せるshimを兼ねる。
