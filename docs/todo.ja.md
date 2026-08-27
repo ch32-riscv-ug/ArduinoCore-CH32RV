@@ -1407,7 +1407,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       「**GDB is mostly tested on the 003, but works, to a limited degree on the
       other processors.**」——つまり上流自身が「003以外は限定的」と言っている。
 
-      実機(CH32V003 + WCH-LinkE、`char st[5]`→`st[16]`の1行修正のみ):
+      実機(CH32V003 + WCH-LinkE、**無修正の上流**。当初「1行修正が要る」と書いたが誤り):
 
       ```
       minichlink -G  →  gdb: break tick / continue ×3
@@ -1642,7 +1642,6 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 
       | PR | 内容 | 規模 |
       |---|---|---|
-      | **(a) crash修正** | `RVSendGDBHaltReason()`の`char st[5]`が`sprintf("T%02x", ...)`で溢れる。`_FORTIFY_SOURCE`付きビルドでabort | **1行** |
       | **(b) pipe mode** | 返信側にpipe分岐(~10行)+stdin poll/startup(~40行)+CLIフラグ(~15行) | **2ファイル・60〜80行** |
       | (c) V003以外でbreakpointから再開 | 未調査。上流も「003が主戦場、他は限定的」 | 不明 |
 
@@ -1651,9 +1650,46 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       `dup2(STDERR, STDOUT)`しておけば**既存のprintfを1つも触らずに**stderrへ逃がせる。
       **2行**で済む。
 
-      (a)は純粋なバグ修正なので単独で出せる。(b)は
+      **(a)は取り下げた**(下の訂正)。(b)は
       「`arduino-cli`/IDEがpipeでgdbserverを起動する」という一般的な需要があるので、
       minichlink単体でもVS Codeから使いやすくなる=上流に利がある
+
+- [x] **訂正: minichlinkに報告すべきバグは無かった。PR(a)は出さない**(2026-08-27)。
+      「`RVSendGDBHaltReason()`の`char st[5]`がbuffer overflowする」と書いたが**誤り**。
+
+      - `last_halt_reason`は**初期値5で、代入も`= 5`の1箇所だけ**。
+        `sprintf(st, "T%02x", 5)`は`"T05\0"`の4 byteで`st[5]`に収まる
+      - abortしていたのは**こちらのビルドが壊れていた**から。最初のビルドで
+        ソース一覧を間違え(`chips.c`・`nhc-link042.c`・`ardulink.c`・`pgm-wch-isp.c`が抜け、
+        `hidapi.c`を二重にコンパイル)、そのバイナリで測っていた。
+        あとで`st[16]`と**同時にファイル一覧も正した**ので、修正が効いたと誤認した
+      - **pristineな上流をMakefileどおりのファイル一覧でビルドし直して再確認**:
+        V003でbreakpoint 2回・`hits`が0→1。**無修正で動く**
+
+      V103の「breakpointから再開できない」は正しいビルドで測った結果なので変わらない。
+      **minichlinkはV003なら無修正で使える**ので、新規作業は(b)のpipe modeだけ
+
+- [ ] `[要判断]` **仲介(ラッパー)をどこに置くか。** maintainerの判断基準は
+      「汎用なら個人repository、CH32に閉じるならch32-riscv-ug」。
+      **実測した限り、この仲介にCH32要素は1行も無い**:
+      openocdのargv 4つを無視し、RSPをstdioで話し、TCPのgdbserverへ橋渡しするだけで、
+      backendはコマンド文字列(設定)。解いている問題も
+      **「arduino-cliが`debug.server=openocd`しか受け付けない」というArduino全体の制約**で、
+      probe-rs系core・Black Magic・pyOCD・J-Link gdbserver・QEMUも同じ壁に当たる。
+      → **基準に照らすと個人repository側**。
+
+      置き場所が設計にも効く:
+      - **個人/汎用**: backendを設定で受ける。ライセンスは寛容なもの(MIT/Apache)。
+        arduino-cliへ④(汎用server種別)を提案するときの実証としても中立な名前が有利
+      - **org/CH32専用**: minichlinkとprobe-rsを直接知っている作りにできて簡単だが、
+        他のplatformが採らない
+
+      **coreからの依存のさせ方は、どちらに置いても同じ**:
+      (1)openocdと同じくPATHから拾う、または(2)package indexのtoolとして配る
+      (5 host分のbuildとmirror entry。**probe-rsで既にやっている手順**)。
+      つまり個人repositoryに置いても、orgのmirror経由でvendorできる。
+      迷うなら**個人で始めて、CH32専用だと分かった時点でorgへtransfer**でよい
+      (逆方向より安い)
 
 - [ ] `[要判断]` **この仲介プログラムを配布物にするか。** ①bが動いている以上は急がないが、
       成立するなら **OpenOCDの入手をユーザーに求めなくてよくなる**のが大きい。
