@@ -1613,6 +1613,48 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       (上流PRとして小さい)。V003限定なのはminichlink側の制約
       (上流も「003が主戦場」と明言)。
 
+- [x] **仲介プログラムはprobe-rsにも使える。繋がらない理由はprobe-rs側**(2026-08-27)。
+      仲介がやっているのは「4引数を受けてRSPをstdioで話す」だけなので、
+      裏をminichlinkから`probe-rs gdb`(TCP)へ差し替えても**仕組みとしては同じ**。
+      問題はprobe-rsのRISC-V GDB stubそのもので、ソースで場所を再確認した:
+
+      - **V003**: stubは`build_riscv_registers()`で`regs.core_registers()`を
+        そのままgdbへ広告する。その実体が`RISCV_CORE_REGISTERS`=**x0..x31の静的リスト**で、
+        **RV32E版が無い**。だからgdbがx16を要求し、abstract commandがcmderr=3で落ちる
+      - **V103**: `set_hw_breakpoint()`が`tselect`直後の`tdata1`を読み、
+        typeが2/6でなければ即エラー。QingKeは0を返す
+
+      つまり**仲介では直せない**。逆に言えば、この2件が直れば
+      **同じ仲介でprobe-rsを`arduino-cli debug`に繋げる**ので、
+      仲介はどのserverが勝っても無駄にならない
+
+- [x] **minichlinkへのPRの規模感を見積もった**(2026-08-27、ソース実測)。
+      **思ったより小さい。`microgdbstub.h`が最初から転送層非依存に設計されている。**
+
+      ```
+      // If you are not a network socket, you can pass in this data.
+      void MicroGDBStubSendReply( const void * data, int len, int docs );
+      void MicroGDBStubHandleClientData( void * dev, const uint8_t * rxdata, int len );
+      ```
+
+      socket実装は`#ifdef MICROGDBSTUB_SOCKETS`の中だけ。
+      現状socket決め打ちなのは**返信側だけ**(`listenMode==2`で`send(serverSocket,...)`)。
+
+      | PR | 内容 | 規模 |
+      |---|---|---|
+      | **(a) crash修正** | `RVSendGDBHaltReason()`の`char st[5]`が`sprintf("T%02x", ...)`で溢れる。`_FORTIFY_SOURCE`付きビルドでabort | **1行** |
+      | **(b) pipe mode** | 返信側にpipe分岐(~10行)+stdin poll/startup(~40行)+CLIフラグ(~15行) | **2ファイル・60〜80行** |
+      | (c) V003以外でbreakpointから再開 | 未調査。上流も「003が主戦場、他は限定的」 | 不明 |
+
+      (b)の唯一の面倒は、minichlinkがbannerや`-T`の出力を**stdoutに書く**こと
+      (RSPが壊れる)。ただし起動時に`dup(STDOUT)`でRSP用fdを退避し、
+      `dup2(STDERR, STDOUT)`しておけば**既存のprintfを1つも触らずに**stderrへ逃がせる。
+      **2行**で済む。
+
+      (a)は純粋なバグ修正なので単独で出せる。(b)は
+      「`arduino-cli`/IDEがpipeでgdbserverを起動する」という一般的な需要があるので、
+      minichlink単体でもVS Codeから使いやすくなる=上流に利がある
+
 - [ ] `[要判断]` **この仲介プログラムを配布物にするか。** ①bが動いている以上は急がないが、
       成立するなら **OpenOCDの入手をユーザーに求めなくてよくなる**のが大きい。
       minichlinkはUIAPのCH32 coreが既にArduino platformとして配っている前例があり、
