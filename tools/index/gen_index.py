@@ -65,6 +65,7 @@ PLATFORM_ENTRIES = (
     "libraries",
     "bootloaders",
     "system",
+    "debug",
 )
 REQUIRED_ENTRIES = ("platform.txt", "boards.txt", "cores", "variants")
 

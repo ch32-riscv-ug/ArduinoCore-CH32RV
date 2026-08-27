@@ -1433,34 +1433,193 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       - つまり「probe-rsでdebugできている事例」は見つからなかった。
         flashとRTTは動く、というのが現状
 
-- [ ] `[要判断]` **debugをどう成立させるか。openocdが動いたので選択肢の重みが変わった。**
+- [x] **`arduino-cli debug`がこのcoreで実際に動いた**(2026-08-27、CH32V003 + WCH-LinkE)。
+      platform.txtへ一時的に`debug.*`を8行足し、WCH openocd(MRSのv2.8)を指しただけ。
 
-      | 案 | 系統 | 作業量 | 新しい配布物 | 得られるもの | 弱点 |
-      |---|---|---|---|---|---|
-      | **①WCH openocdをvendorする** | 借りる | 小(vendor作業のみ) | 5 MB×5 OS | **`arduino-cli debug`とIDEがそのまま**。WCH純正で実績がある | 毎回`load`が要る(IDEの流儀そのもの)。loadが遅い(895 B/s)。Linuxは`libjaylink`同梱が要る。GPL。probe stackが二重 |
-      | ②probe-rsへPR | 上流 | 小+中(場所は特定済み) | なし | `probe-rs gdb`/`debug`/**VS Code DAP** | マージ待ち。`arduino-cli debug`には別途shim |
-      | ③probe-rsを自前ビルド | 自作 | ②+5 OSのbuild CI | なし(既存枠) | ②を待たずに配れる | mirrorが「再パック」でなくなる(ADR-0011) |
-      | ④minichlinkへPR/自前ビルド | 上流/自作 | 小+中 | 1つ増える | flashを壊さない。軽い | 保守対象が増える |
-      | ⑤openocd shimを自作 | 自作 | 小 | 1つ(極小) | probe-rsを`arduino-cli debug`へ繋ぐ | ②③が動いてから |
-      | ⑥GDB serverを自作 | 自作 | 大(2600行規模) | 1つ増える | 全部を自分で決められる | 保険。①〜③が通るなら不要 |
+      ```
+      (gdb) 0x000000c6 in loop () at dbgbare.ino:12      ← attach直後からsource単位
+      (gdb) monitor reset halt
+      (gdb) load           Transfer rate: 647 bytes/sec
+      (gdb) break tick     Breakpoint 1 at 0xa0: dbgbare.ino:6
+      (gdb) continue       Breakpoint 1, tick () at dbgbare.ino:6
+      (gdb) print hits     $1 = 0
+      ```
 
-      **推奨: ①(IDE統合の本命)+④(V003の当座)。**
-      (a)実機で動いた経路は**2つ**になった。openocdはV103でbreakpoint到達まで、
-      minichlinkは**V003で完走**(breakpointを3回踏んでhitsが進む)。
-      (b)`arduino-cli debug`が`openocd`しか解釈しない以上、
-      IDE統合まで**追加の自作なしで**届くのは①だけ。
-      (c)「flashを壊す」は誤解で、**IDEのdebugは毎回loadするのが普通**。
-      (d)ただし**V003に限れば④が今すぐ使える**(1行修正、flashも壊さない、
-      上流もV003を主戦場と明言)。V003はこのcoreの最小ターゲットなので価値がある。
+      arduino-cliはopenocdを自分で起動し、**gdbとはpipeで繋ぐ**(TCPではない)。
+      実験後platform.txtは元に戻してある。
 
-      ②③は**並行して進める価値がある**(probe-rsが直ればVS Code DAPが手に入り、
-      uploadと同じ1つのツールで済む)。ただし①の代わりにはならない。
-      ⑥は①〜④がすべて行き詰まったときの保険として残す。
+      **`arduino-cli debug`が受け付ける条件**(1.3.1、実測):
 
-      ①を選ぶ場合に決めることが3つ: **(1)** vendorするのはWCHのArduino coreに入っている
-      1.0.0/1.91か、MRSのv2.8か。**(2)** Linuxの`libjaylink.so.0`をどう配るか
-      (同梱するかシステム依存にするか)。**(3)** `debug.*`をplatform.txtに書いたときの
-      `debug.toolchain.path`の空文字panicをどう避けるか
+      | key | 条件 | 外すとどうなるか |
+      |---|---|---|
+      | `debug.executable` | 非空 | `Debugging not supported for board` |
+      | `debug.toolchain` | `gcc`のみ | `Toolchain '%s' is not supported` |
+      | `debug.toolchain.path` | **非空必須** | arduino-cliが**panic**(nil Path) |
+      | `debug.toolchain.prefix` | 末尾の`-`は自動で落ちる | — |
+      | `debug.server` | **`openocd`のみ** | `GDB server '%s' is not supported` |
+      | `debug.server.openocd.{path,scripts_dir,script}` | serverの起動引数 | — |
+
+      **`load`はarduino-cliもgdbも自動ではしない**(利用者が打つ)。
+      WCH openocdはattach時にvector tableを潰すので、**実質`load`が必須**。
+      IDE(MRS/Eclipse系)は毎回loadする設定なので問題にならないが、
+      `arduino-cli debug`で使うなら「最初に`load`」を案内する必要がある
+
+- [x] **他のcoreのdebug設定を調査した**(2026-08-27、ローカルに入っている5 platform)。
+
+      | platform | `debug.*` | 中身 |
+      |---|---|---|
+      | esp32 3.3.11 | 13 | openocd + `svd_file` + `cortex-debug.custom.*` + `additional_config` |
+      | **UIAP ch32v 1.0.42** | **8** | openocd + `wch-riscv.cfg`。uploadは**minichlink**とwchisp |
+      | **ch32-riscv-arduino 1.4.0** | **8** | openocd + `wch-riscv.cfg`。**uploadもopenocd** |
+      | WCH ch32v 1.0.4(公式) | **0** | openocdは同梱しているが**uploadにしか使っていない** |
+      | arduino avr 1.8.8 | 0 | debug無し |
+
+      **CH32のArduino coreが2つ、既に①と同じ構成を配っている。** 目新しい話ではない。
+      両者とも`debug.toolchain.prefix=riscv-none-embed`(古いtoolchain)で、
+      `debug.toolchain.path={compiler.path}`。**こちらは`{compiler.path}`が空**なので、
+      そのまま真似るとpanicする。`{runtime.tools.xpack-riscv-none-elf-gcc.path}/bin/`を指すこと
+
+- [x] **minichlinkをArduino platformが同梱している事例がある**(2026-08-27)。
+      **UIAPのCH32 coreが`minichlink`を配っている**
+      (`tools/minichlink-2982dfd/1.0.0/`にLinux ELF・`.exe`・`99-minichlink.rules`)。
+      使い方は**書き込みだけ**:
+
+      ```
+      tools.minichlink.upload.pattern="{path}{cmd}" -w "{build.path}/{build.project_name}.bin" flash
+      ```
+
+      **debug serverとして使っている事例は見つからなかった。**
+      arduino-cliが`openocd`しか解釈しない以上、minichlinkのgdbserverは
+      `arduino-cli debug`からは呼べない(手動で`minichlink -G`+gdbなら使える)
+
+- [x] **GCCを持ってくる必要は無い**(2026-08-27)。`arduino-cli debug`に要るのはgdbで、
+      **既にvendorしているxpack toolchainに`riscv-none-elf-gdb`が入っている**
+      (上の実機セッションもこれを使った)。①で新たに要るのは**openocdだけ**
+      (Linuxでは`libjaylink.so.0`も)
+
+- [x] **汎用のopenocdでは無理**(2026-08-27)。mainline OpenOCDの
+      adapter driver一覧(`src/jtag/interfaces.c`)に**wlink/wlinkeは無い**
+      (ch347とcklinkはある)。WCH-LinkをRISC-Vモードで駆動できるのは**WCHのforkだけ**
+
+- [x] **自作openocdは可能。ソースが公開されている**(2026-08-27)。
+      WCH自身は出していない(`openwch/openocd_wch`はWindowsバイナリの詰め合わせで、
+      READMEは「ソースはsupport@mounriver.comへ連絡」)。
+      一方**`kprasadvnsi/riscv-openocd-wch`はソース**(445個の`.c`、
+      `src/jtag/drivers/wlink.c` 1632行、OpenOCD 0.11.0+dev、2022年のdump)。
+
+      **vector tableを潰しているコードもそこにあった**:
+      `wlink.c`の`Txbuf`が`13 00 00 00`(nop)×12 + `73 00 10 00`(ebreak)の52 byteで、
+      これを**アドレス4へ`WriteNonFullPage`**している。実測(0x04〜0x30がnop、0x34がebreak)と一致。
+      つまり「reset後にhaltさせる」ための仕掛けで、**復元は書かれていない**。
+
+      自分でビルドすれば **(a)** libjaylink依存を`configure`で外せる、
+      **(b)** flash書き換えを直す/オプションにできる、**(c)** static linkして配布を楽にできる。
+      代償はOpenOCD forkの保守と、**ベースが古い**こと(0.11-dev 2022 vs MRS v2.8 2026)
+
+- [x] **openocdをvendorしてもtoolchainを替える理由は無い**(2026-08-27、実物で確認)。
+      「WCHのopenocdを持ってくるならGCC/GDBもWCHのに」という発想は、実物を見ると崩れる。
+
+      | MRS同梱のtoolchain | 正体 |
+      |---|---|
+      | RISC-V Embedded GCC8 | `riscv-none-embed-gcc` 8.2。古い。`zicsr`分離前で使えない |
+      | **RISC-V Embedded GCC12** | **`riscv-wch-elf-gcc (xPack GNU RISC-V Embedded GCC x86_64) 12.2.0`** ← **中身はxPack**。prefixを変えただけ |
+      | RISC-V Embedded GCC15 | `riscv32-wch-elf-gcc 15.2.0 (g5115c7e44-dirty)`。素のGCC |
+
+      つまりWCHのtoolchainに乗り換えても**xPackの名前替えを使うだけ**で、
+      得るものが無い。失うものは prefix(`riscv-none-elf-`→`riscv-wch-elf-`)の
+      総入れ替え、sizeの基準線、ADR-0002の認定matrix。
+      **gdbはcompilerと独立**(DWARFを読むだけ)で、
+      実機で通した`arduino-cli debug`も**vendor済みxPackの`riscv-none-elf-gdb`**を使っている。
+      → **vendorするならopenocdだけ**
+
+- [x] **「mainlineに入れてもらう」の実際の範囲を調べた**(2026-08-27、
+      `kprasadvnsi/riscv-openocd-wch`のソースを実測)。**アダプタだけでは済まない。**
+
+      | 追加/変更 | ファイル | 量 |
+      |---|---|---|
+      | **アダプタ** | `src/jtag/drivers/wlink.c` | 新規1632行 |
+      | **flash driver** | `src/flash/nor/wchriscv.c`, `wcharm.c` | 新規2本 |
+      | **RISC-V debug本体への割り込み** | `src/target/riscv/riscv-013.c`(15箇所)、`riscv.c`(4箇所) | **`extern bool wchwlink`のグローバルフラグで`if(wchwlink)`分岐** |
+      | その他 | `target.c`(9)、`gdb_server.c`(7)、`interfaces.c`、`drivers.c`、`Makefile.am` | 登録と細工 |
+
+      3つ目が問題で、**標準のRISC-V debug driverを条件分岐で汚している**。
+      mainlineはこの形では受けない(mainlineの`riscv-013.c`にはwch/ch32の記述が**0**)。
+      quirk/capability検出に書き直す作業が要る。
+
+      **他のMCUの前例**:
+      - **`ch347`(WCHのUSB-JTAGブリッジ)はmainlineに入っている**。ただし作者はWCHではなく
+        第三者(oidcat、+EasyDevKits)。**アダプタ単体なら第三者でも上流に入る**前例
+      - **ESP32**: Espressifは`openocd-esp32`という**恒久fork**を維持し、
+        Arduino coreはそれを配っている。**vendorする前例そのもの**
+      - **RISC-V対応そのもの**: SiFiveの`riscv-openocd` forkが何年もあって、
+        mainlineに入ったのは0.12。**アーキ側の拡張はforkで暮らすのが普通**
+      - stlink-dap / nulink / kitprog などベンダのアダプタはmainlineにある
+
+      → アダプタ(+flash driver)だけならmainline行きは現実的。
+      **CH32のdebug挙動の差分まで通すのは別の話**で、そこがforkが消えない理由
+
+- [x] **debugの方針決定と①bの実装**(2026-08-27、maintainer判断)。
+      **①b(既にあるOpenOCDを指す)で進める**。①d(自前fork)は**別プロジェクト**として、
+      もう少し新しいOpenOCDをベースにクリーンに移植して動くか検証する。
+
+      入れたもの(**platform.txtに絶対パスは書いていない**):
+
+      ```
+      debug.toolchain.path={runtime.tools.xpack-riscv-none-elf-gcc.path}/bin/
+      debug.server.openocd.path=openocd                      ← PATHから拾う
+      debug.server.openocd.scripts_dir={runtime.platform.path}/debug
+      debug.server.openocd.script={runtime.platform.path}/debug/ch32-riscv.cfg
+      ```
+
+      - **OpenOCD本体は同梱しない。** PATH、`platform.local.txt`、
+        `--debug-property server.openocd.path=`の3通りで指せる(実測で確認)
+      - **設定ファイルは自作**(`debug/ch32-riscv.cfg`)。WCHのcfgをコピーせず、
+        driverが要求するコマンド構成を自分で書いた。MRSのOpenOCD v2.8で
+        `Target successfully examined`まで確認
+      - `debug`を`PLATFORM_ENTRIES`に追加(gen_index.pyとcompile_matrix.pyの両方)
+      - 手順は[docs/debugger.ja.md](debugger.ja.md)。**`load`必須**の理由も書いた
+      - `{runtime.tools...}`は手動インストールでは解決しないので、
+        そのときだけ`--debug-property toolchain.path=`が要る
+
+- [x] **arduino-cliがGDB serverに求めていることが分かった**(2026-08-27、
+      openocdをラッパで置き換えてargvを記録)。
+
+      ```
+      openocd -s <scripts_dir> --file <script> -c "gdb_port pipe" -c "telnet_port 0"
+      ```
+
+      **`gdb_port pipe`** — つまりserverは**標準入出力でGDB remote protocolを話す**。
+      gdbが`target extended-remote | <cmd>`として起動する。TCPは使わない。
+      openocdのTclもtelnetも使われない。**この4引数を受けてRSPをstdioで話せば、
+      中身は何でもよい**。
+
+- [x] **「openocdのIFで受けてminichlinkに流すエージェント」は成立する。実機で確認した**
+      (2026-08-27、CH32V003)。上の発見を使って、
+      `minichlink -G`を起動してstdio↔TCP:3333を橋渡しするだけの
+      **60行程度のプログラム**を`debug.server.openocd.path`に登録したところ、
+      `arduino-cli debug`から**source単位のデバッグが通った**:
+
+      ```
+      (gdb) break tick     Breakpoint 1 at 0xa0: dbgbare.ino:6
+      (gdb) continue       Breakpoint 1, tick () at dbgbare.ino:6
+      (gdb) print hits     $1 = 0
+      (gdb) continue       Breakpoint 1, tick () ...
+      (gdb) print hits     $2 = 1        ← targetが実際に走っている
+      ```
+
+      **OpenOCDを一切使わずにarduino-cli debugが成立している。**
+      仲介は`scratchpad/ocd_shim.py`(実験用)。配布するなら
+      static binaryか、**minichlink自身に`--pipe`モードを足すのが筋**
+      (上流PRとして小さい)。V003限定なのはminichlink側の制約
+      (上流も「003が主戦場」と明言)。
+
+- [ ] `[要判断]` **この仲介プログラムを配布物にするか。** ①bが動いている以上は急がないが、
+      成立するなら **OpenOCDの入手をユーザーに求めなくてよくなる**のが大きい。
+      minichlinkはUIAPのCH32 coreが既にArduino platformとして配っている前例があり、
+      サイズも小さい(1 MB弱)。判断材料:
+      **(a)** V003以外での挙動(現状は「限定的」)、
+      **(b)** minichlink本体へ`--pipe`を上流PRするか、仲介を別に持つか、
+      **(c)** 配布物を1つ増やすことの是非
 
 - [x] **Monitorの範囲を決めた**(2026-08-27、maintainer): 標準SerialとSDIは現状のまま、
       RTT/DMDATAは**ドキュメントでOSごとの手順を提供するところまで**。

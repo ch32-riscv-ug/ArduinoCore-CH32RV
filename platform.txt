@@ -117,3 +117,28 @@ tools.probe_rs.program.pattern="{path}/{cmd}" download --chip {build.probe_rs_ch
 # probe has been told to (`wlink sdi-print enable`). SerialRTT and SerialDMDATA
 # would each need a pluggable monitor tool of our own - see docs/todo.ja.md.
 pluggable_monitor.required.serial=builtin:serial-monitor
+
+# ---------------------------------------------------------------- debug
+# `arduino-cli debug` (and the IDE's debugger) drive GDB plus a GDB server.
+# arduino-cli only understands `debug.server=openocd`, and it launches it as
+#   openocd -s <scripts_dir> --file <script> -c "gdb_port pipe" -c "telnet_port 0"
+# so the server speaks the GDB remote protocol on stdio, not a socket.
+#
+# **This platform does not ship OpenOCD.** A stock one cannot drive a WCH-Link
+# at all - mainline has no `wlinke` adapter driver - and WCH does not publish
+# the source of the build that can. So the binary is looked up on PATH, the way
+# compiler.path already does it, and only the configuration is ours.
+#
+# Point it at one you already have (MounRiver Studio's, or the one another CH32
+# core installed) without editing this file:
+#   platform.local.txt:  debug.server.openocd.path=/path/to/openocd
+#   arduino-cli debug --debug-property server.openocd.path=/path/to/openocd
+# docs/debugger.ja.md has the per-OS locations and the rest of the recipe.
+debug.executable={build.path}/{build.project_name}.elf
+debug.toolchain=gcc
+debug.toolchain.prefix=riscv-none-elf
+debug.toolchain.path={runtime.tools.xpack-riscv-none-elf-gcc.path}/bin/
+debug.server=openocd
+debug.server.openocd.path=openocd
+debug.server.openocd.scripts_dir={runtime.platform.path}/debug
+debug.server.openocd.script={runtime.platform.path}/debug/ch32-riscv.cfg

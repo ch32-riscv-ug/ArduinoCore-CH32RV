@@ -39,7 +39,7 @@ from fetch_tools import env_defaults      # noqa: E402
 # are the entries arduino-cli reads, and the same list defines what a release
 # archive must contain - keep in step with PLATFORM_ENTRIES in gen_index.py.
 PLATFORM_ENTRIES = ("platform.txt", "boards.txt", "programmers.txt", "cores",
-                    "variants", "libraries", "bootloaders", "system")
+                    "variants", "libraries", "bootloaders", "system", "debug")
 
 BLINK = """\
 // Global constructor to exercise C++ compilation, and to give the .init_array
