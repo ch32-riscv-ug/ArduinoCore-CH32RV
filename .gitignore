@@ -24,6 +24,13 @@ Thumbs.db
 # pytest-embedded-arduino-cli build output next to each sketch
 tests/sketches/**/build/
 
+# Per-machine platform overrides. arduino-cli reads platform.local.txt next to
+# platform.txt; it names paths that exist on one machine only, so it must never
+# be committed (docs/debugger.ja.md and docs/local-install.ja.md use it).
+platform.local.txt
+programmers.local.txt
+boards.local.txt
+
 # Bench-local configuration for the manual tests (tests/.env.example documents it)
 tests/.env
 # Generated from the environment by tests/manual/env_config.py before each build
