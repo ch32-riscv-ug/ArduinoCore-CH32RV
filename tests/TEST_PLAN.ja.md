@@ -475,8 +475,8 @@ dの前提として、**どのboardが繋がっているかをスクリプトが
 | vendored ArduinoCore-API の同期 | ✅ `api-sync` | | |
 | Board Manager install → compile | ✅ `install-test`(3 OS、上書きなし) | | ⬜ upgrade経路、`libraries/`解決 |
 | probe-rsのinstallと起動 | ✅ `install-test` | | |
-| Serial 送信 | ✅ `serial_println`(V003 / V203 / X035 / L103 実機PASS) | ✅ `smoke.py` | ⬜ V103 / V307 実機 |
-| Serial 受信 | 🔧 `serial_echo`(sketchのみ。実機未確認) | | ⬜ 実機、フロー制御、エラーフラグ |
+| Serial 送信 | ✅ `serial_println`(V003 / V203 / X035 / L103 / V307 実機PASS) | ✅ `smoke.py` | ⬜ V103 実機 |
+| Serial 受信 | ✅ `serial_echo`(V307 実機PASS) | ✅ `smoke.py` | ⬜ 他board実機、フロー制御、エラーフラグ |
 | ヒープ(`String`/`malloc`/`free`/OOM) | ✅ `heap_string`(X035実機PASS) | | ⬜ 断片化、`realloc` |
 | ビルドmenu(`pnum` / `printf`) | ✅ `compile_all.py`(pnum)、実機(printf) | | ⬜ 全menu組み合わせのcompile |
 | `printf` / stdio | ✅ `heap_string`(X035実機PASS) | | ⬜ float書式、`nano.specs`未適用でsketchが約40 KB膨らむ |

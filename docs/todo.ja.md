@@ -27,7 +27,14 @@
       これでrv32ec/rv32imac、24/8/48MHz、32/64bit SysTick、8/16/24bit GPIO portを実機で通した
 - [x] **CH32L103も実機確認**(`serial_println`)。ただし**routeをreset既定優先へ変える前**なので
       pinが変わっている。次に繋いだときに回し直すこと
-- [ ] `[P1]` CH32V103とCH32V307で実機確認する。V103は**vector tableがジャンプ表の唯一のfamily** (要実機)
+- [x] **CH32V307を実機でフルスイープ**(2026-08-27)。`smoke.py --sketch all --board CH32V307`で
+      **14 sketchすべてPASS、failures=0**(CH32V307VCT6 @96 MHz、probe `38EF8F06BDC2`)。
+      これまでV307は開発中に個別sketchを通しただけで、**14本を一度に流したのは初めて**。
+      内訳: core_api / heap_string / hooks_selftest / pd_selftest / print_format /
+      route_selftest / serial_echo / serial_println / servo_selftest / spi_selftest /
+      stdio_printf / system_selftest / tone_selftest / wire_selftest。
+      これで`rv32imafc`(F拡張)のTier B枠が実機で埋まった
+- [ ] `[P1]` CH32V103で実機確認する。**vector tableがジャンプ表の唯一のfamily** (要実機)
 - [ ] `[P1]` V003 / V203 / L103をroute変更後のpinで回し直す (要実機)
 - [ ] `[P2]` probe-rsがまれに`bulk read timed out`で書き込みに失敗する。
       `smoke.py`は1回だけ再試行し、**再試行したことを表示する**。頻度が上がるようなら原因を追う
