@@ -1046,6 +1046,26 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       こちら側の作業は、公開後に`tools_minichlink.json`を取り込んで
       `gen_index.py`へtoolを足すところから
 
+- [ ] `[P1]` **minichlinkのGDB stubにバッファオーバーフロー2件**(2026-08-27に発見)。
+      `build-minichlink`の初releaseを検証していて判明。`microgdbstub.h`の2つの返信バッファが
+      **文字列終端の1バイトぶん足りない**。`-O0`(upstream既定)では素通りするが、
+      `_FORTIFY_SOURCE`が効くビルド(Ubuntu/Debianの`-O2`)では**gdbが繋いだ瞬間にabort**し、
+      `minichlink -G`が使えない。
+      **(1)** `g`パケット: `char cts[num_regs*8+1]`だがループは`num_regs+1`回書く
+      (`RVGetNumRegisters()`はPCを含まないGPR数)。ASan `WRITE of size 9`。
+      **(2)** `m`パケット: `alloca(length_to_read*2)`にNUL分が無い。ASan `WRITE of size 3`。
+      修正は2行で、V003(RV32E/16)とV307(RV32I/32)の実機で`-O2`のまま動作確認済み。
+      **両方直さないと駄目**(1だけではメモリ読み出しで落ちる)。
+      PR文面とpatch: `scratchpad/minichlink-PR.md` / `minichlink-gdbstub-overflow.patch`。
+      **upstream(ch32fun)へPRを出すのが本筋**で、通るまで`build-minichlink`のreleaseは
+      GDB serverとして使えない(flash / `-T` / `-l`は影響なし)。
+      なお過去に私が報告した`char st[5]`の件は**誤りで取り下げ済み**。今回は別の箇所
+
+- [ ] `[要判断]` **`build-minichlink`の受け入れ検査を強化するか**。今回、
+      `-h` / `-l` / `ldd` / アーカイブ構造の検査は**全部通ったのに実物は壊れていた**。
+      CIに実機は載せられないが、**「fortifyが効くフラグでビルドする」ことを要件に明記**すれば
+      検出器としては働く(今回それで見つかった)。design.ja.md §6の話
+
 - [ ] `[要判断]` **`build-minichlink`の未決4件**(同repositoryの`docs/design.ja.md` §11)。
       いずれも既定案は置いてあるが確定していない:
       **(U-1)** `i686-mingw32`を実ビルドするか——`mirror-probe-rs`はi686枠に
