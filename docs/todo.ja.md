@@ -958,17 +958,12 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       検出は`tests/unit/test_peripheral_table.py`の`KNOWN_DISAGREEMENTS`。
       解消したらそのエントリを消す(消し忘れはテストが落ちて気づく)
 
-- [ ] `[P1]` **上流へ報告: CH32V307に`SPI1_SCK/default`の行が無い**。
-      `pin_functions.csv`はV307のSPI1についてMISO/MOSI/NSSのdefaultは持つのに
-      SCKだけremap-1しか無く、そのため生成器がSPI1にremap-1(PB3/PB4/PB5)を選ぶ。
-      結果として**SPI1(remap-1)とSPI3(default)が同じpadを名乗る**。
-      実際のV307はPA5/PA6/PA7がSPI1の既定のはずなので、データ側の欠落
-- [ ] `[P2]` 上流へ報告: `SPI3_MOSI（12）`のように**全角括弧つきのsignal名**がV307にある。
-      現行の正規表現では拾わないので実害は無いが、R-19と同じ種類の揺れ
-- [x] **決定(2026-08-21、ユーザ指示): `pins_arduino.h`の既定pinはデータシートどおり**、
-      つまり既定routeのまま。coverage優先には切り替えない。
-      X033/X035のI2C1のように**既定route(PA10/PA11)が7型番中2つにしかbondされていない**
-      ケースは残るが、そこは「利用例では明示的にpinを選ぶ」で埋める
+- [x] ~~上流へ報告: CH32V307に`SPI1_SCK/default`の行が無い~~ → **データ側で解消済み**(2026-08-29確認)。
+      V307の3型番すべてに`SPI1_SCK/default`=PA5があり、生成結果も`CH32_SPI1_SCK PA5`/`CH32_SPI3_SCK PB3`と
+      正しく分かれている。`SPI1`のremap-1と`SPI3`のdefaultが同じpad(PB3/PB4/PB5)を共有するのは
+      データシートどおりで、バグではない
+- [x] ~~上流へ報告: 全角括弧つきのsignal名~~ → **データ側で解消済み**(2026-08-29確認)。
+      `pin_functions.csv`に全角括弧は0件
 - [ ] `[P1]` **route定数を機械生成する**(2026-08-21、ユーザ指示)。
       `CH32V003_I2C1_0_SCL_PC2`のように**series・周辺・route番号・役割・pad**を名前に持つ定数を
       variantへ出す。狙いは**エディタ補完で選択肢が見えること**なので、
