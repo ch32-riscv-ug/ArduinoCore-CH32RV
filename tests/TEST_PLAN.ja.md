@@ -98,7 +98,7 @@ tests/
   generated/   自動 — 生成物がch32-device-dataの表と一致するか
   vendor/      自動 — 取り込んだsnapshot(ArduinoCore-API / TinyUSB)の照合
   startup/     自動 — 統合crt0とEVT startupのELF等価性、割込みベクタ表
-  compile/     自動 — 全122 part numberのcompile matrix、同梱examples、サイズ回帰
+  compile/     自動 — 全122 part numberのcompile matrix、同梱examples(2段)、サイズ回帰
   sizebench/   自動 — newlibのサイズ計測
   package/     自動 — package index生成とBoard Managerからのclean install
   sketches/    自動 — sketch単位のAPIテスト(pytest + pytest-embedded)
@@ -114,7 +114,8 @@ tests/
 | `test_startup_equivalence.py` | `startup/` | 自作crt0とEVT startupのELF等価性 |
 | `test_interrupt_tables.py` | `startup/` | interrupts.csvがEVT startup assemblyと一致 |
 | `test_compile_matrix.py` | `compile/` | 全part numberがcompileでき、サイズが基準線と一致 |
-| `test_examples.py` | `compile/` | 同梱examplesが全部compileできる |
+| `test_examples.py` | `compile/` | 同梱examplesが代表2枚(X035/V003)でcompileできる。**簡易段** |
+| `test_examples_sweep.py` | `compile/` | 同梱examplesが**全24 series**でcompileできる。約20分、`--sweep`が要る。**GitHub段** |
 | `test_sizebench.py` | `sizebench/` | newlibのサイズ計測harnessが動く |
 | `test_package_install.py` | `package/` | 生成したindexからclean installできる |
 | `test_sketch_profiles.py` | `sketches/` | 各sketch.yamlがboard一覧と同期 |
@@ -262,6 +263,20 @@ CH32V205とCH32X315は当初Tier Cに置いていましたが、**どちらも�
 持たせられません(2026-08-27にTier Dへ移動)。X315については「20 MHz/wait state 1」と
 書いていましたが、boards.txtの実測値は`rv32imafc`・wait state 0で、**この記述は誤りでした**。
 X315が固有に持つのは`x3x5`のvector tableで、発売されたら再検討します。
+
+### examplesの2段構え(2026-08-29追加)
+
+同梱examplesは**profileの対象ではありません**(実機で動かす約束ではない)。
+compile側で2段に分けます。詳細は[examples-build-rules](../docs/examples-build-rules.ja.md)。
+
+| 段 | 入口 | ボード | 目安 | いつ |
+|---|---|---|---|---|
+| 簡易 | `test_examples.py` | 代表2枚(X035/V003) | 約2分 | ローカル、コミット前 |
+| sweep | `test_examples_sweep.py` | **全24 series**(`pnum=ANY`) | 約20分 | GitHub Actions専用job、Linuxのみ |
+
+sweepは`--sweep`が要るopt-inです。どのseriesを対象にするかは
+**exampleが自分の`.ino`で`requires:`宣言**し、`CH32_CLKEN_*`とboards.txtのANY容量から
+解決します。CIに手書きのボード名はありません。
 
 `sketch.yaml`のprofileはTier AとBにだけ作ります。
 **profileがあるということは誰かが実機で回すという約束**なので、回せないprofileは無いほうがましです。

@@ -1,6 +1,6 @@
 /* AnalogResolution - change the numbers analogRead() and analogWrite() speak.
  *
- * Wiring: none required; a potentiometer on A0 makes the readings move.
+ * Wiring: none required; a potentiometer on A1 makes the readings move.
  *
  * The hardware does not change - the ADC is 10 bits on CH32V003 and 12 on the
  * rest, and PWM is always 8 bits of duty at 1 kHz. What changes is the scale
@@ -25,11 +25,11 @@ void loop()
      * bits scales the answer down; asking for 16 scales it up - it does not
      * invent precision the ADC does not have. */
     analogReadResolution(8);
-    const int eight = analogRead(A0);
+    const int eight = analogRead(A1);
     analogReadResolution(12);
-    const int twelve = analogRead(A0);
+    const int twelve = analogRead(A1);
 
-    Serial.print("A0 at 8 bits: ");
+    Serial.print("A1 at 8 bits: ");
     Serial.print(eight);
     Serial.print("   at 12 bits: ");
     Serial.println(twelve);

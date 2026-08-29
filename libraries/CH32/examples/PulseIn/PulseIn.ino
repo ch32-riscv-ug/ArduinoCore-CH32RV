@@ -10,10 +10,10 @@
  * With nothing connected, pulseIn() returns 0 after the timeout - which is
  * what this sketch shows when it is left unwired.
  */
-/* Change these two to your wiring. They are just pads that exist on the
- * series this example is built for. */
-static const uint8_t TRIGGER = PC0;
-static const uint8_t ECHO = PC1;
+/* Change these two to your wiring. PA1 and PA2 are the only two pad names
+ * every CH32 series has, which is the only reason they are the ones here. */
+static const uint8_t TRIGGER = PA1;
+static const uint8_t ECHO = PA2;
 
 void setup()
 {

@@ -47,5 +47,6 @@ filterwarnings = [
 ]
 markers = [
   "slow: takes minutes (the compile sweeps)",
+  "sweep: builds every example for every series; needs --sweep",
   "hardware: needs a board attached",
 ]

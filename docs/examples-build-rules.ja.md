@@ -39,7 +39,7 @@ USB・USBPD・DACのような特殊ペリフェラルのexampleが増えると�
 
 ## 3. 決定
 
-### 3-1. 要件はexampleの`.ino`が宣言し、`sketch.yaml`は全文生成する
+### 3-1. 要件はexampleの`.ino`が宣言する (**宣言部は実装済み / sketch.yaml生成は未着手**)
 
 `compile_examples.py`の`BOARDS`と`SKIP`を**両方とも消す**。
 代わりに、各exampleが`.ino`の冒頭で**何を要求するか**を1行で宣言する。
@@ -63,7 +63,7 @@ examplesはヘッダも要らないので丸ごと生成でよい。
 生成物はコミットする(利用者が`--profile`で使い、リリースZIPに載るため)。
 CIは`sync_profiles.py --check`と同じ形で同期を検証する。
 
-### 3-2. capabilityの出所は新規に要らない
+### 3-2. capabilityの出所は新規に要らない (**実装済み**)
 
 生成済みvariantヘッダの `CH32_CLKEN_<PERIPH>_ADDR` がそのままcapability tokenになっている
 (実測86種)。device-data由来で、EVTツリー不要、repository内で完結する。
@@ -106,7 +106,7 @@ USBHS1 / USBHS2 / USBPD0 / USBPD1 / USBSS
 (V407 / V467 / X305 / X315 / V205 / M030)。
 **これらはprofileを作れない**(実機が無い、または未発売)ので、compile sweepだけが見る。
 
-### 3-4. CI時間は買う。失敗メッセージに投資する
+### 3-4. CI時間は買う。失敗メッセージに投資する (**実装済み**)
 
 実測: 1ビルド **約2.2秒**(初回のみ10秒。`Blink`、ローカル、直列)。
 23 example × 24 series = **552 build ≒ 20分**(直列)。
@@ -126,7 +126,7 @@ USBHS1 / USBHS2 / USBPD0 / USBPD1 / USBSS
 「実際に何が起きたか」が1つのブロックに揃っていること。
 ログを遡らないと分からない形にしない。
 
-### 3-5. 簡易テストとGitHubのチェックを分ける
+### 3-5. 簡易テストとGitHubのチェックを分ける (**実装済み**)
 
 1段では両立しない。ローカルは速さ、GitHubは網羅が要る(2026-08-29決定)。
 
@@ -149,6 +149,67 @@ USBHS1 / USBHS2 / USBPD0 / USBPD1 / USBSS
 「ボードのスキップ」と「exampleごと消える」は別。
 sketch.yamlを書き忘れたexampleが黙ってカバレッジ0になるのを防ぐ。
 `test_each_library_has_at_least_one_example`と同じ考え方。
+
+## 3.5. 実装の記録 (2026-08-29)
+
+`tests/compile/compile_examples.py` を書き換えた。
+
+- **`SKIP` dictを削除した。** 唯一の項目だった `CH32/PrintFormatting` は、
+  `.ino`のヘッダに `requires: flash=32K` と書くようになった。
+  結果として **V003 / V002 / V006 の3 series**(ANYが16K)を自動でスキップする。
+  手書きのボード名はもう無い
+- `series_capabilities()` が `variants/*/pins_arduino.h` から
+  `CH32_CLKEN_<X>_ADDR` を集める。`series_limits()` が `boards.txt` の
+  ANYエントリから flash/RAM を読む
+- `requirements()` が `.ino` から `/* requires: USBFS, flash=32K */` を読む。
+  宣言の無いexampleは全ボード対象
+- `run(work, boards)` で board集合を差し替える。`FAST_BOARDS` は従来の2枚、
+  `all_boards()` は `boards.txt` の全24 series
+- 失敗時の出力に**宣言した要件とbuild propertiesを併記**する。
+  失敗通知だけ見る運用なので、ログを遡らずに原因が読めること
+
+テスト側:
+
+- `tests/compile/test_examples.py` — 従来どおり2枚(`slow`)
+- `tests/compile/test_examples_sweep.py` — 全24 series(`slow` + 新marker `sweep`)
+- `sweep`は**opt-in**。`conftest.py`に`--sweep`を追加し、
+  付けないと`pytest_collection_modifyitems`がskipする。
+  20分を待っている人の前で走らせない
+
+`sketch.yaml`の生成は`tests/sketches/sync_profiles.py`を拡張した。
+
+- 共有部を`tests/sketch_requirements.py`へ切り出し、
+  `compile_examples.py`(何をビルドするか)と`sync_profiles.py`(sketch.yamlに何を書くか)
+  の**両方が同じ答えを使う**ようにした。`conftest.py`の
+  「fixtureでない共有コードは`loader.py`の隣」という規約に沿う。
+  `tests/`直下は`unit/test_tests_layout.py`の`ROOT_ALLOWED`で名前列挙されており
+  (「3つ目を足すのは決定であるべき」)、理由を書いて明示的に追加した:
+  **2つのカテゴリが食い違ってはいけない共有物で、どちらのカテゴリの持ち物でもない**
+- `tests/sketches/**`は従来どおりヘッダコメント+生成ブロック。
+  **既存の16ファイルは1バイトも変わらない**(リファクタが挙動を変えていない証拠)
+- `libraries/*/examples/*/sketch.yaml`は**全文生成**。無ければ作る
+- 満たせないboardは理由を書いて外す:
+  `# tier A CH32V003: omitted, requires 32 KB flash, CH32V003 ANY has 16 KB`
+- 未知のcapability名は**エラー**にする。タイポが「どのseriesも持たない」と読まれると
+  全boardスキップで**何もビルドせず緑**になるため
+
+### 落とし穴: sketch.yamlがあると`--fqbn`が無視される
+
+examplesに`sketch.yaml`を置いた瞬間、`compile_examples.py`が全滅した。
+**sketch.yamlがあるとarduino-cliはprofileの`platform_index_url`から
+platformを解決し、`--fqbn`を無視する**。開発ツリーではそのURLはまだ404なので、
+`Platform 'ch32-riscv-ug:ch32v' not found`で落ちる。
+
+これは既知で、`tests/sketches/stage.py`のdocstringに書かれていた。
+対策も同じで、**ビルド前にsketch.yamlを除いたコピーへstageする**。
+`compile_examples.py`も`stage_sketch()`を使うようにした。
+
+利用者側では問題にならない(Board Manager経由でindexが公開されていれば解決できる)が、
+**ローカルのplatformに対してexampleをビルドする経路は必ずstageが要る**。
+
+**まだやっていない**: CIジョブの分離は入れた(`example-sweep`)が、
+`sync_profiles.py --check`がexamplesも見るようになったぶん、
+`test_sketch_profiles.py`の説明文が古い。
 
 ## 4. 未解決
 

@@ -28,6 +28,10 @@ ROOT_ALLOWED = {
     "TEST_PLAN.ja.md", "TEST_PLAN.md",
     "conftest.py",                   # kept small; see its docstring
     "loader.py",                     # what conftest.py is deliberately not
+    # Shared because two categories must not disagree: compile/ decides what to
+    # build and sketches/ decides what a sketch.yaml promises, from one answer.
+    # Putting it in either category would make the other import across.
+    "sketch_requirements.py",
     "pyproject.toml", "uv.lock",
     ".env.example", ".env",          # .env is this bench's, and is not committed
 }
@@ -57,8 +61,10 @@ def _ignored(path: pathlib.Path) -> bool:
 def test_the_root_holds_no_tests_and_no_harnesses():
     """No entry points and no harnesses at the root; those live in a category.
 
-    The two modules that are allowed are the shared ones, and they are listed
-    by name rather than by pattern so that adding a third is a decision.
+    The modules that are allowed are the shared ones, and they are listed by
+    name rather than by pattern so that adding one is a decision. A module
+    earns a place here only when two category directories both need it and
+    neither owns it.
     """
     stray = sorted(p.name for p in TESTS.iterdir()
                    if p.is_file() and p.name not in ROOT_ALLOWED)

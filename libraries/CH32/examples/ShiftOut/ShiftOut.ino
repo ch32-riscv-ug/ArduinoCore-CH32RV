@@ -8,11 +8,17 @@
  * with 20 pins need that trick more than an Uno does.
  */
 /* Change these three to your wiring. Any three pads work - shiftOut() is
- * bit-banged - so these are just pads that exist on the series this example
- * is built for. */
-static const uint8_t DATA_PIN = PC0;
-static const uint8_t CLOCK_PIN = PC1;
-static const uint8_t LATCH_PIN = PC2;
+ * bit-banged - so these are only "pads that exist here", not a recommendation.
+ *
+ * PA1 and PA2 are the only two pad names every CH32 series has; a third has to
+ * fall back, which is why this example is the one that needs an #if. */
+static const uint8_t DATA_PIN = PA1;
+static const uint8_t CLOCK_PIN = PA2;
+#if defined(PA4)
+static const uint8_t LATCH_PIN = PA4;
+#else
+static const uint8_t LATCH_PIN = PC4;   /* CH32V002 and CH32V003 have no PA4 */
+#endif
 
 void setup()
 {

@@ -79,25 +79,37 @@ examplesが要る値はexamplesが持つ(§4-1)。
 [examples-build-rules.ja.md](examples-build-rules.ja.md)で作り直すが、
 「examplesは全seriesで通る必要がない」という前提は変わらない。
 
-pad名はseriesのunionに対して定義されるので、現行の2ボードで使えるpadは実測で:
+**pad名は全24 seriesで2本しかない**(実測、当初の見積りを訂正):
 
 ```
-union の積 : PA1 PA2 PC0 PC1 PC2 PC3 PC4 PC5 PC6 PC7   (10本)
-うちPWM可  : PA1                                        (1本)
+全24 seriesに名前が存在するpad : PA1  PA2      (2本のみ)
+うちPA1がPWM可                 : 20 / 24 series
 ```
 
-ShiftOutの3本もFadeのPWM 1本も足りる。**実在padの直書きで解決する。**
+当初は代表2ボード(X035/V003)の積である10本(`PA1 PA2 PC0..PC7`)を前提にしたが、
+[examples-build-rules](examples-build-rules.ja.md)でsweepを全24 seriesへ広げたため、
+`PC0`系は使えない(L103 / M103 / X033 に存在しない)。
+
+結果、examplesのpadは:
+
+- 1本要るもの → `PA1`
+- 2本要るもの → `PA1` / `PA2`
+- **3本要るのはShiftOutだけ**。3本目は `#if defined(PA4)` → `PC4`(V002/V003用)の
+  2段フォールバックで全24 seriesを覆う。**`#if`を持つexampleはこれ1つ**
+
+`analogWrite()`は非PWM padでdigitalWriteに落ちるので、PWMの有無はコンパイル制約に
+ならない(M030/V205/X305/X315ではfadeしないが、ビルドは通る)。
 
 | sketch | 現状 | 変更後 |
 |---|---|---|
 | CH32/Blink | `LED_BUILTIN` | `#ifndef LED_BUILTIN` → `#error` でbuild-property指定を案内 |
 | CH32/Fade | `LED = LED_BUILTIN` | `PA1`(PWM pad) |
 | CH32/AnalogResolution | `analogWrite(LED_BUILTIN,…)` | `PWM_PIN = PA1` |
-| CH32/ShiftOut | `LED_BUILTIN` ×3(同一pin) | `PC0`/`PC1`/`PC2` |
-| CH32/PulseIn | `LED_BUILTIN` ×2(同一pin) | `PC0`/`PC1` |
-| CH32/ToneMelody | `BUZZER = LED_BUILTIN` | `PC0` |
-| CH32/PinInterrupt | `BUTTON = LED_BUILTIN` | `PC0` |
-| Servo/Sweep | `SERVO_PIN = LED_BUILTIN` | `PC0` |
+| CH32/ShiftOut | `LED_BUILTIN` ×3(同一pin) | `PA1`/`PA2`/`PA4`(無ければ`PC4`) |
+| CH32/PulseIn | `LED_BUILTIN` ×2(同一pin) | `PA1`/`PA2` |
+| CH32/ToneMelody | `BUZZER = LED_BUILTIN` | `PA1` |
+| CH32/PinInterrupt | `BUTTON = LED_BUILTIN` | `PA1` |
+| Servo/Sweep | `SERVO_PIN = LED_BUILTIN` | `PA1` |
 | CH32/PinCapabilities | `describe(LED_BUILTIN,…)` | `#ifdef LED_BUILTIN` で囲う |
 | SerialRTT/RttEcho | LED点滅 | `#ifdef LED_BUILTIN` で囲う |
 
@@ -106,7 +118,7 @@ Blinkは**板のLEDが光ること**が主題なので、LEDの無いpadを黙�
 「ボードが死んでいる」ように見える。ここは止めるほうが親切。
 
 CIは`tests/compile/compile_examples.py`の`EXTRA_PROPERTIES`から
-`build.extra_flags=-DLED_BUILTIN=PC0`を渡してBlinkをビルドする。
+`build.extra_flags=-DLED_BUILTIN=PA1`を渡してBlinkをビルドする。
 **利用者に案内しているのと同じ経路をCIが通る**ので、案内が壊れたらCIが落ちる。
 これはスキップではない(exampleはビルドされる)。
 

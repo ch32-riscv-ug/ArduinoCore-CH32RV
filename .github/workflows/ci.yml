@@ -108,6 +108,30 @@ jobs:
         working-directory: tests
         run: uv run pytest -q compile sketches/test_sketch_profiles.py sizebench unit/test_clock_prescaler.py
 
+  # Every example for every series (~20 min). Its own job, Linux only, because
+  # what it checks is the target's C code, not the host OS - the OS axis is
+  # already covered by compile-matrix above, and multiplying 20 minutes by
+  # three runners buys nothing. See docs/examples-build-rules.ja.md.
+  #
+  # Which series an example is built for is the example's own `requires:` line,
+  # not a list kept in CI.
+  example-sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Cache the downloaded archives
+        uses: actions/cache@v4
+        with:
+          path: .tools/cache
+          key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
+      - name: Fetch tools
+        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
+      - name: Build every example for every series
+        working-directory: tests
+        run: uv run pytest -q --sweep compile/test_examples_sweep.py
+
   # W-5: clean Board Manager install via local HTTP, then compile with no overrides
   #
   # Windows is covered again: probe-rs now comes from ch32-riscv-ug/mirror-probe-rs

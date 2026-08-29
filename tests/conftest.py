@@ -7,6 +7,7 @@ what the machine can do, and that is decided here rather than in each test:
   pytest --clean              the same, with every cache cleared first
   pytest --profile ch32x035 --port /dev/ttyACM4      adds the sketch tests
   pytest -m "not slow"        skips the multi-minute compile sweeps
+  pytest --sweep              adds the every-example x every-series sweep
 
 Collection is by directory, one per kind of check (generated, vendor, startup,
 compile, sizebench, package, sketches, unit). Only files named test_*.py are
@@ -77,9 +78,18 @@ def _clean(config):
 _CLEANED = pytest.StashKey[int]()
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--sweep", action="store_true", default=False,
+        help="run the example sweep (every example x every series, ~20 min). "
+             "Meant for GitHub Actions, where the wall-clock is nobody's.")
+
+
 def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: takes minutes (the compile sweeps)")
+    config.addinivalue_line(
+        "markers", "sweep: builds every example for every series; needs --sweep")
     config.addinivalue_line(
         "markers", "hardware: needs a board attached")
     if _clean_requested(config):
@@ -106,6 +116,14 @@ def pytest_collection_modifyitems(config, items):
     beside the cases and drive arduino-cli themselves, with no dut and no
     profile option. A case is a directory with a sketch.yaml in it.
     """
+    if not config.getoption("--sweep", default=False):
+        # Opt-in, not opt-out: 20 minutes is fine on a runner and not fine in
+        # front of someone waiting. docs/examples-build-rules.ja.md.
+        no_sweep = pytest.mark.skip(reason="needs --sweep (~20 min)")
+        for item in items:
+            if item.get_closest_marker("sweep"):
+                item.add_marker(no_sweep)
+
     if config.getoption("--profile", default=None):
         return
     skip = pytest.mark.skip(reason="needs --profile (and a board, unless "

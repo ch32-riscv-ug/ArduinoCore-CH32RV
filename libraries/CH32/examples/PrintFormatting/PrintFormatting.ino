@@ -8,10 +8,13 @@
  * dtostrf() comes from the AVR compatibility headers, spelled the way an AVR
  * sketch spells it.
  *
- * **Does not fit CH32V003.** dtostrf() drags in the full formatter with float
- * support, which is about 14 KB more than a 16 KB part has. Everything else
- * here fits; it is that one call that does not. Serial.print(float) is the
- * cheaper way to print a float, and it works on every part.
+ * **Does not fit a 16 KB part.** dtostrf() drags in the full formatter with
+ * float support, which is about 14 KB more than CH32V003, CH32V002 and
+ * CH32V006 have. Everything else here fits; it is that one call that does not.
+ * Serial.print(float) is the cheaper way to print a float, and it works on
+ * every part.
+ *
+ * requires: flash=32K
  */
 #include <avr/dtostrf.h>
 void setup()

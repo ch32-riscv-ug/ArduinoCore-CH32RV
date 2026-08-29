@@ -42,7 +42,11 @@ void setup()
      * this. A Generic board does not - see docs/board-layer-rules.ja.md. */
     describe(LED_BUILTIN, "LED_BUILTIN");
 #endif
+#ifdef A0
+    /* Not every series has one: CH32M007 bonds no pad to ADC channel 0. */
     describe(A0, "A0");
+#endif
+    describe(A1, "A1");
 #ifdef PIN_WIRE_SDA
     describe(PIN_WIRE_SCL, "SCL");
     describe(PIN_WIRE_SDA, "SDA");

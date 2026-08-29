@@ -23,7 +23,8 @@ void setup()
 
     /* A floating analog input drifts, so its low bits differ between runs.
      * It is not a good source of randomness, but it is the classic one. */
-    randomSeed((unsigned long)analogRead(A0) ^ micros());
+    /* A1, not A0: A0 is not defined on CH32M007. */
+    randomSeed((unsigned long)analogRead(A1) ^ micros());
     Serial.print("seeded from noise: ");
     for (int i = 0; i < 5; i++) {
         Serial.print(random(100));

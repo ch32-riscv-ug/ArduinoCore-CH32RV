@@ -13,8 +13,8 @@
 #include <Servo.h>
 
 /* Change to your servo's pin. Servo drives any pad from a timer interrupt, so
- * PC0 is just a pad that exists on the series this example is built for. */
-static const uint8_t SERVO_PIN = PC0;
+ * PA1 is here only because every CH32 series has that pad name. */
+static const uint8_t SERVO_PIN = PA1;
 
 static Servo servo;
 

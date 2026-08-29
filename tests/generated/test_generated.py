@@ -26,7 +26,12 @@ def test_generated_files_match_the_tables(repo, tables):
 
 
 def test_sketch_profiles_are_in_sync(repo):
-    """Every sketch.yaml matches the board list in sync_profiles.py."""
+    """Every sketch.yaml matches the board list in sync_profiles.py.
+
+    Both trees: the HIL cases under tests/sketches, and the bundled examples
+    under libraries/*/examples, whose sketch.yaml is generated in full from the
+    `requires:` line in their own .ino (docs/examples-build-rules.ja.md).
+    """
     proc = subprocess.run(
         ["uv", "run", "--no-project", "python", "tests/sketches/sync_profiles.py",
          "--check"],

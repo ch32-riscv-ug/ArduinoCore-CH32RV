@@ -10,8 +10,8 @@
  * are affected while a tone plays.
  */
 /* Change to your buzzer's pin. tone() drives any pad from a timer interrupt,
- * so this is just a pad that exists on the series this example is built for. */
-static const uint8_t BUZZER = PC0;
+ * so PA1 is here only because every CH32 series has that pad name. */
+static const uint8_t BUZZER = PA1;
 
 /* A fragment of the scale. Frequencies in Hz, durations in milliseconds. */
 static const unsigned int notes[] = {262, 294, 330, 349, 392, 440, 494, 523};

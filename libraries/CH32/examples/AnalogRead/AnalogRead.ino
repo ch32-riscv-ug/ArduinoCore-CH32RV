@@ -4,17 +4,19 @@
  * nothing at all - an unconnected input floats and the reading wanders, which
  * is itself a useful thing to see once.
  *
- * A0 is whatever the variant maps ADC channel 0 to; the sketch prints the pad
+ * A1 is whatever the variant maps ADC channel 1 to; the sketch prints the pad
  * name so there is no guessing.
  */
-static const uint8_t SENSOR = A0;
+/* A1, not A0: ADC channel 0 has no pad on CH32M007, so A0 is the one
+ * analog alias that is not defined on every series. A1..A6 are. */
+static const uint8_t SENSOR = A1;
 
 void setup()
 {
     Serial.begin(115200);
     while (!Serial) {
     }
-    Serial.print("reading A0, which is pad number ");
+    Serial.print("reading A1, which is pad number ");
     Serial.println(SENSOR);
 }
 
