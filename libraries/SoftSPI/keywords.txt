@@ -1,0 +1,12 @@
+SoftSPI	KEYWORD1
+SPISettings	KEYWORD1
+begin	KEYWORD2
+end	KEYWORD2
+beginTransaction	KEYWORD2
+endTransaction	KEYWORD2
+transfer	KEYWORD2
+transfer16	KEYWORD2
+setHalfPeriodUs	KEYWORD2
+setBitOrder	KEYWORD2
+setDataMode	KEYWORD2
+setClockDivider	KEYWORD2

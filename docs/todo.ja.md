@@ -355,6 +355,26 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 どちらも`libraries/`に置いた同梱library。pinはvariantの生成マクロから来るので
 `begin()`に引数は要らない。AFIO routeは**既定routeでも毎回書く**(`HardwareSerial`と同じ理由)。
 
+### ソフトウェア実装(bit-bang)
+
+[software-peripherals](software-peripherals.ja.md)に調査と仕様。
+ハードのバスはrouteが名指すpadにしか出せないので、padが足りない部品での逃げ先。
+
+- [x] **`SoftSPI`**(2026-08-29)。`HardwareSPI`継承で`SPIClass&`にそのまま渡せる。
+      任意3 pad、mode 0〜3、MISO省略可。`SPISettings`の周波数は受け取って無視し、
+      `setHalfPeriodUs()`が半周期の下限を置く。
+      **CH32V003で+1376 B**(ハードSPIは+1056)。vtableが全overrideを保持するので
+      **ドロップイン互換それ自体にコストがある**
+- [x] **`SoftWire`**(2026-08-29)。`HardwareI2C`継承で`TwoWire&`にそのまま渡せる。
+      任意2 pad、真のオープンドレイン(`OUTPUT_OPENDRAIN`)、**クロックストレッチ対応**、
+      AVR互換の戻り値とtimeout API。master専用。
+      **CH32V003で+1904 B / RAM+96**(ハードWireは+2608 / +152)で、こちらはソフトが小さい
+- [ ] `[P2]` **`SoftSerial`(送信のみ)**。`delayMicroseconds`でビット幅を刻む8N1。
+      受信はEXTI線がpadのbit番号で共有されることとボーレート上限があるので`要判断`
+- [ ] `[P2]` ソフト実装のHIL自己検査。**ソフトとハードを同じpadに配線して相互通信**させる案が
+      [software-peripherals](software-peripherals.ja.md)§6にあるが、
+      **fixtureの配線変更が要る**ので実機の都合と合わせて決める
+
 - [x] `Wire`: master、polling、bufferは32バイト(`CH32_WIRE_BUFFER_SIZE`で変更可)。
       **待ちは全てtimeout付き**(`CH32_WIRE_TIMEOUT_US`、既定25ms)。
       pull-upが無い/デバイスが居ない、はI2Cの普通の失敗なので、

@@ -45,8 +45,17 @@ flashコスト(CH32V003、16K/2K、Serialのみのsketchを基準):
 | SPI(ハード) | +1056 |
 | `shiftOut()` | +352 |
 
-ソフト実装はレジスタ設定・分周計算・remap書き込みが要らないぶん、
-**同じ機能のハード実装より小さくなる**見込み。
+**当初「ソフトのほうが小さくなる」と見積もったが、実測で外れた**(2026-08-29)。
+SoftSPIは**+1376**で、ハードの+1056より大きい。理由は2つ:
+
+- `digitalWrite()`はエッジごとの**関数呼び出し**で、ペリフェラルのレジスタ1回の
+  書き込みより高くつく。`transfer()`単体で290 B
+- `HardwareSPI`を継承すると**vtableが全overrideを保持する**ので、
+  `--gc-sections`が落とせない。vtable 60 B + 未使用overrideぶん
+
+つまり**ドロップイン互換それ自体にflashコストがある**。それでも16 Kに余裕で入り、
+`#include`しない利用者には一切かからないので、方針は変わらない。
+以降の見積りは「ハードと同程度かやや大きい」を前提にすること。
 
 既にコアにあるソフト実装: `shiftOut()` / `shiftIn()` / `pulseIn()`。
 
@@ -102,7 +111,7 @@ SoftSerial は`SPI`/`Wire`/`Serial`の代替で、**同じAPIの別実装**と�
 - 単独ライブラリとして`libraries/`に置く(ADR-0013の要件: README×2、keywords.txt、example)
 - 速度は保証しない。**「動くこと」が仕様で、周波数は成り行き**とする
 
-### 5-1. SoftSPI
+### 5-1. SoftSPI (**実装済み** 2026-08-29)
 
 ```cpp
 SoftSPI(uint8_t sck, uint8_t mosi, uint8_t miso = NOT_A_PIN);
@@ -114,7 +123,16 @@ SoftSPI(uint8_t sck, uint8_t mosi, uint8_t miso = NOT_A_PIN);
 - `miso`未指定なら`transfer()`は書き込みのみを行い、読み値は0を返す
 - CSは持たない。Arduinoの慣習どおり**スケッチがGPIOとして駆動する**
 
-### 5-2. SoftWire
+**実装(`libraries/SoftSPI/`)で仕様から足したもの**:
+
+- `setHalfPeriodUs(uint16_t)` — 半周期の**下限**をµsで置く。既定0(=ループ任せ)。
+  長い配線・レベル変換・遅いデバイス向け。`delayMicroseconds`を引き込むので
+  **128 Bかかる**(実測)が、bit-bangバスで実際に要求される唯一のつまみなので残した
+- `setBitOrder`/`setDataMode`/`setClockDivider` — 旧API。dividerは受け取って無視
+
+CH32V003での実測: base 2404 → SoftSPI **3780**(+1376)。ハードSPIは+1056。
+
+### 5-2. SoftWire (**実装済み** 2026-08-29)
 
 ```cpp
 SoftWire(uint8_t sda, uint8_t scl);
@@ -130,6 +148,11 @@ SoftWire(uint8_t sda, uint8_t scl);
 - `endTransmission()`の戻り値はAVR互換(0成功 / 2 アドレスNACK / 3 データNACK / 5 timeout)
 - timeout APIはハード実装と同じ形を持つ
   (`setWireTimeout`/`getWireTimeoutFlag`/`clearWireTimeoutFlag`)
+
+**実測(CH32V003)**: base 2404 → SoftWire **4308**(+1904)。ハードWireは+2608。
+RAMは+96(ハードは+152)。**ここではソフトのほうが小さい** —
+ペリフェラルの状態機械・エラー復旧・route書き込みのほうがbit-bangより高くつく。
+SoftSPIとは逆になるので、「ソフトは常に小さい/大きい」とは言えない。
 
 ### 5-3. SoftSerial
 
