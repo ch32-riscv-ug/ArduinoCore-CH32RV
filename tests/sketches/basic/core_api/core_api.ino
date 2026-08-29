@@ -2,10 +2,17 @@
 // Every check prints "<name> PASS" or "<name> FAIL <detail>", so the pytest
 // side can assert on names instead of parsing values.
 //
-// Pins: LED_BUILTIN and A0 come from the variant. The interrupt check drives an
-// output pin and watches its own edge - on CH32 an output pin still feeds the
-// input path, so EXTI sees it without a jumper.
+// Pins: PIN below, and A0. The interrupt check drives an output pin and
+// watches its own edge - on CH32 an output pin still feeds the input path, so
+// EXTI sees it without a jumper.
+//
+// PA1 is the sketch's own choice, not the board's: a Generic board is a
+// silicon series and defines no LED_BUILTIN (docs/board-layer-rules.ja.md).
+// PA1 is the one pad bonded on every tier A/B board that is also PWM-capable
+// on all of them, which is what analogWrite() below needs.
 #include "testcmd.h"
+
+static const uint8_t PIN = PA1;
 
 static volatile int isr_hits = 0;
 static void on_edge() { isr_hits++; }
@@ -24,16 +31,16 @@ static void run_checks()
   tc_checkv("micros", us >= 1800 && us <= 2600, (long)us);
 
   // --- digital, read back through the input path of an output pin ---
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-  bool high = digitalRead(LED_BUILTIN) == HIGH;
-  digitalWrite(LED_BUILTIN, LOW);
-  bool low = digitalRead(LED_BUILTIN) == LOW;
+  pinMode(PIN, OUTPUT);
+  digitalWrite(PIN, HIGH);
+  bool high = digitalRead(PIN) == HIGH;
+  digitalWrite(PIN, LOW);
+  bool low = digitalRead(PIN) == LOW;
   tc_checkv("digital", high && low, (high ? 2 : 0) + (low ? 1 : 0));
 
   // --- pin numbering is port-encoded, not sequential ---
   tc_check("pin_encoding",
-           digitalPinIsValid(LED_BUILTIN) && !digitalPinIsValid(0xFF));
+           digitalPinIsValid(PIN) && !digitalPinIsValid(0xFF));
 
   // --- analog ---
 #ifdef NUM_ANALOG_INPUTS
@@ -44,35 +51,35 @@ static void run_checks()
 #endif
 
   // --- pwm: must not hang, and must accept the extremes ---
-  analogWrite(LED_BUILTIN, 0);
-  analogWrite(LED_BUILTIN, 128);
-  analogWrite(LED_BUILTIN, 255);
+  analogWrite(PIN, 0);
+  analogWrite(PIN, 128);
+  analogWrite(PIN, 255);
   tc_check("analogWrite", true);
 
   // --- interrupts: drive an output and catch its own edge ---
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
+  pinMode(PIN, OUTPUT);
+  digitalWrite(PIN, LOW);
   isr_hits = 0;
-  attachInterrupt(digitalPinToInterrupt(LED_BUILTIN), on_edge, RISING);
-  digitalWrite(LED_BUILTIN, HIGH);
+  attachInterrupt(digitalPinToInterrupt(PIN), on_edge, RISING);
+  digitalWrite(PIN, HIGH);
   delay(2);
   int hits_after_rise = isr_hits;
-  detachInterrupt(digitalPinToInterrupt(LED_BUILTIN));
-  digitalWrite(LED_BUILTIN, LOW);
-  digitalWrite(LED_BUILTIN, HIGH);
+  detachInterrupt(digitalPinToInterrupt(PIN));
+  digitalWrite(PIN, LOW);
+  digitalWrite(PIN, HIGH);
   delay(2);
   tc_checkv("attachInterrupt", hits_after_rise >= 1, hits_after_rise);
   tc_checkv("detachInterrupt", isr_hits == hits_after_rise, isr_hits);
 
   // --- shift: same pin for data and clock is fine, we only check the bits ---
-  pinMode(LED_BUILTIN, OUTPUT);
-  shiftOut(LED_BUILTIN, LED_BUILTIN, MSBFIRST, 0xA5);
+  pinMode(PIN, OUTPUT);
+  shiftOut(PIN, PIN, MSBFIRST, 0xA5);
   tc_check("shiftOut", true);
 
   // --- pulseIn must time out rather than hang ---
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
-  unsigned long p = pulseIn(LED_BUILTIN, HIGH, 2000);
+  pinMode(PIN, OUTPUT);
+  digitalWrite(PIN, LOW);
+  unsigned long p = pulseIn(PIN, HIGH, 2000);
   tc_checkv("pulseIn_timeout", p == 0, (long)p);
 
   // --- random is seeded and stays in range ---
@@ -102,7 +109,7 @@ static void run_checks()
    * 32-bit register per pin. Driving the pad through them has to be visible to
    * digitalRead(), and the port and bit have to match the pin encoding. */
   {
-    const uint8_t pin = LED_BUILTIN;
+    const uint8_t pin = PIN;
     pinMode(pin, OUTPUT);
     volatile uint32_t *out = portOutputRegister(digitalPinToPort(pin));
     volatile uint32_t *in = portInputRegister(digitalPinToPort(pin));

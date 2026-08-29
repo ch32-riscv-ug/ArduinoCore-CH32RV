@@ -9,7 +9,9 @@
  * parts it is shared with analogWrite(), and the header names the pads that
  * are affected while a tone plays.
  */
-static const uint8_t BUZZER = LED_BUILTIN;   /* change to your buzzer's pin */
+/* Change to your buzzer's pin. tone() drives any pad from a timer interrupt,
+ * so this is just a pad that exists on the series this example is built for. */
+static const uint8_t BUZZER = PC0;
 
 /* A fragment of the scale. Frequencies in Hz, durations in milliseconds. */
 static const unsigned int notes[] = {262, 294, 330, 349, 392, 440, 494, 523};

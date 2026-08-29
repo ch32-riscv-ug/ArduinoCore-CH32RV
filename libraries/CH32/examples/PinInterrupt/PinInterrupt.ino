@@ -8,7 +8,10 @@
  * pads with the same bit number (PA3 and PB3) share one line and cannot both
  * have an interrupt. attachInterrupt() on the second one replaces the first.
  */
-static const uint8_t BUTTON = LED_BUILTIN;   /* change to your button's pin */
+/* Change to your button's pin. Any pad with an EXTI line works, which is all
+ * of them; PC0 is just a pad that exists on the series this example is built
+ * for. */
+static const uint8_t BUTTON = PC0;
 
 static volatile uint32_t edges;
 

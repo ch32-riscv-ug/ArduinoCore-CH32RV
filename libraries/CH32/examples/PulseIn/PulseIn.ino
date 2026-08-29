@@ -10,8 +10,10 @@
  * With nothing connected, pulseIn() returns 0 after the timeout - which is
  * what this sketch shows when it is left unwired.
  */
-static const uint8_t TRIGGER = LED_BUILTIN;   /* change these two */
-static const uint8_t ECHO = LED_BUILTIN;
+/* Change these two to your wiring. They are just pads that exist on the
+ * series this example is built for. */
+static const uint8_t TRIGGER = PC0;
+static const uint8_t ECHO = PC1;
 
 void setup()
 {

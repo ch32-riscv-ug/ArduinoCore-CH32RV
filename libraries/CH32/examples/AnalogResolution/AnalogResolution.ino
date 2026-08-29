@@ -7,12 +7,16 @@
  * the API uses, which is there so code written for another board keeps its
  * numbers.
  */
+/* Change this to a pad you can watch. PA1 is a PWM pad on every series this
+ * example is built for; it is the sketch's choice, not the board's. */
+static const uint8_t PWM_PIN = PA1;
+
 void setup()
 {
     Serial.begin(115200);
     while (!Serial) {
     }
-    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(PWM_PIN, OUTPUT);
 }
 
 void loop()
@@ -32,9 +36,9 @@ void loop()
 
     /* Write resolution works the same way: with 10 bits, 1023 is full duty. */
     analogWriteResolution(10);
-    analogWrite(LED_BUILTIN, 1023);
+    analogWrite(PWM_PIN, 1023);
     delay(300);
-    analogWrite(LED_BUILTIN, 0);
+    analogWrite(PWM_PIN, 0);
     analogWriteResolution(8);       /* back to the Arduino default */
     delay(700);
 }

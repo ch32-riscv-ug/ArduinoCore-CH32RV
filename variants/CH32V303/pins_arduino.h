@@ -211,13 +211,37 @@
 #define PE14 CH32_PIN(4, 14)
 #define PE15 CH32_PIN(4, 15)
 
-/* Bit n set = P<port>n is bonded out on at least one part in the series. */
+/* Bit n set = P<port>n is bonded out.
+ *
+ * Selecting a part number narrows this to that package;
+ * the ANY menu entry falls through to the union over the
+ * whole series. See docs/board-layer-rules.ja.md. */
+#define CH32_PORT_MASK_F 0x00000000u   /* port absent */
+#if defined(ARDUINO_CH32V303CBT6)
+#define CH32_PORT_MASK_A 0x0000ffffu
+#define CH32_PORT_MASK_B 0x0000ffffu
+#define CH32_PORT_MASK_C 0x0000e000u
+#define CH32_PORT_MASK_D 0x00000000u
+#define CH32_PORT_MASK_E 0x00000000u
+#elif defined(ARDUINO_CH32V303RBT6) || defined(ARDUINO_CH32V303RCT6) || defined(ARDUINO_CH32V303RCT7)
+#define CH32_PORT_MASK_A 0x0000ffffu
+#define CH32_PORT_MASK_B 0x0000ffffu
+#define CH32_PORT_MASK_C 0x0000ffffu
+#define CH32_PORT_MASK_D 0x00000004u
+#define CH32_PORT_MASK_E 0x00000000u
+#elif defined(ARDUINO_CH32V303VCT6)
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000ffffu
 #define CH32_PORT_MASK_C 0x0000ffffu
 #define CH32_PORT_MASK_D 0x0000ffffu
 #define CH32_PORT_MASK_E 0x0000ffffu
-#define CH32_PORT_MASK_F 0x00000000u   /* port absent */
+#else   /* ANY, or a board that sets no part: the series union */
+#define CH32_PORT_MASK_A 0x0000ffffu
+#define CH32_PORT_MASK_B 0x0000ffffu
+#define CH32_PORT_MASK_C 0x0000ffffu
+#define CH32_PORT_MASK_D 0x0000ffffu
+#define CH32_PORT_MASK_E 0x0000ffffu
+#endif
 #define CH32_PORT_MASK(port) ( \
     (port) == 0 ? CH32_PORT_MASK_A : \
     (port) == 1 ? CH32_PORT_MASK_B : \
@@ -406,7 +430,9 @@
 #define CH32_I2C2_SDA PB11
 #define CH32_I2C2_CLKEN_ADDR 0x4002101cu
 #define CH32_I2C2_CLKEN_MASK 0x00400000u
-/* Arduino's standard names for the first bus (Wire). */
+/* Arduino's standard names for the first bus (Wire). These are
+ * the pads of I2C1's default route in the datasheet - a fact about
+ * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32_I2C1_SCL
 #define PIN_WIRE_SDA CH32_I2C1_SDA
@@ -455,7 +481,9 @@
     { 0, { PB3, PB4, PB5 }, 0x00000000u, 0x00000000u }, \
     { 1, { PC10, PC11, PC12 }, 0x10000000u, 0x00000000u }, \
 }
-/* Arduino's standard names for the first bus (SPI). */
+/* Arduino's standard names for the first bus (SPI). These are
+ * the pads of SPI1's default route in the datasheet - a fact about
+ * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
 #define PIN_SPI_SCK CH32_SPI1_SCK
 #define PIN_SPI_MISO CH32_SPI1_MISO
@@ -525,10 +553,9 @@
 #define CH32_SERVO_SHARES_PWM 0
 #define CH32_SERVO_TIMER_BITS 16
 
-/* Generic boards have no on-board LED. This placeholder only exists so
- * that the stock examples compile; it is the lowest-numbered pad present
- * on every part in the series. Override it per board or on the command
- * line: --build-property build.extra_flags=-DLED_BUILTIN=PC13 */
-#ifndef LED_BUILTIN
-#define LED_BUILTIN PA0
-#endif
+/* No LED_BUILTIN: a Generic board is a silicon series, not a
+ * board, so it does not know where an LED is. Define it yourself -
+ * a product-board variant does it before including this header,
+ * a sketch can do it on the command line:
+ *   --build-property build.extra_flags=-DLED_BUILTIN=PC13
+ * See docs/board-layer-rules.ja.md. */

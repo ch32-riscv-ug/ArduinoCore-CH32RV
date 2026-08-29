@@ -916,8 +916,8 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       ADC1〜ADC4で同じチャネル番号が別padに出るため`A<n>`が一意にならない)
 - [ ] `[P1]` X305/X315のADC2〜ADC4を表現する。現在`A<n>`はADC1のみで、他instanceのpadは
       アナログとして到達できない
-- [ ] `[P1]` `LED_BUILTIN`がgeneric boardでは実体のないplaceholder(seriesの全型番に共通する
-      最小pad)。製品名boardを足すときに実体へ差し替える
+- [x] `LED_BUILTIN`をgeneric boardから**削除した**(2026-08-29、[board-layer-rules](board-layer-rules.ja.md))。
+      代替名は作らない。examplesは自分でpadを選ぶ。製品boardが`#ifndef`ガード越しに定義する
 - [ ] `[P2]` `NON_PORT_PADS`(`ANT`/`HO3`/`ISP1`/`LED0`/`MDITP`等)を`generate.py`で手管理している。
       device-data側にGPIOポートbitか否かのフラグが入れば不要になる
 - [x] **device-dataのsignal名正規化とremap fieldの再構築を取り込んだ**([R-19](research/signal-name-normalization.ja.md))。

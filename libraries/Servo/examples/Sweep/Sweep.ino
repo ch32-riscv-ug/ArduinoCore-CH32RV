@@ -12,7 +12,9 @@
  */
 #include <Servo.h>
 
-static const uint8_t SERVO_PIN = LED_BUILTIN;   /* change to your servo's pin */
+/* Change to your servo's pin. Servo drives any pad from a timer interrupt, so
+ * PC0 is just a pad that exists on the series this example is built for. */
+static const uint8_t SERVO_PIN = PC0;
 
 static Servo servo;
 

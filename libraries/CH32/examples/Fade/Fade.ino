@@ -7,7 +7,9 @@
  *
  * The PWM frequency is 1 kHz and the range is 0-255, as on AVR.
  */
-static const uint8_t LED = LED_BUILTIN;
+/* Change this to the pad your LED is on. PA1 is a PWM pad on every series
+ * this example is built for; it is the sketch's choice, not the board's. */
+static const uint8_t LED = PA1;
 
 void setup()
 {

@@ -38,8 +38,10 @@ CH32.wdtFeed();                        // loop()で呼ぶ
 `digitalWrite()`・`analogRead()`・`tone()`などはcoreのもので、
 どのライブラリにも属さないので、examplesはここに置いています。すべて共通で:
 
-- pinをvariantの名前(`LED_BUILTIN`・`A0`・`SDA`・`SCK`…)から取ります。
-  数値を書かないので、どのboardでも動きます
+- pinはpad名(`PC0`・`PA1`)かvariantの名前(`A0`・`SDA`・`SCK`…)で書きます。
+  数値は書きません。exampleが選んだpadは**exampleの都合であって変更前提**です
+  — Generic boardはsiliconのseriesであって基板ではないので`LED_BUILTIN`を
+  定義せず、coreが勝手に決めることもしません(`docs/board-layer-rules.ja.md`)
 - 冒頭コメントに**何を示すか**と**必要な配線**を書いています
 - 一番広いboardと一番狭いboardの2つでCIがコンパイルします
 

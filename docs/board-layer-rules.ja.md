@@ -62,7 +62,7 @@ examplesが要る値はexamplesが持つ(§4-1)。
 
 ## 4. 決定
 
-### 4-1. `LED_BUILTIN` をGenericから外す。代替名は作らない
+### 4-1. `LED_BUILTIN` をGenericから外す。代替名は作らない (**実装済み**)
 
 現状 `generate.py:2060` は `led = common[0]`、つまり**共通padの最小番号**を取るだけ。
 周辺routeの選定と違い `load_forbidden_pads` を通っていない。
@@ -90,25 +90,49 @@ ShiftOutの3本もFadeのPWM 1本も足りる。**実在padの直書きで解決
 
 | sketch | 現状 | 変更後 |
 |---|---|---|
-| Blink | `LED_BUILTIN` | `#ifndef LED_BUILTIN` → `#error` でbuild-property指定を案内 |
-| Fade, AnalogResolution | `analogWrite(LED_BUILTIN,…)` | `PA1` |
-| ShiftOut | `LED_BUILTIN` ×3(同一pin) | `PC0`/`PC1`/`PC2` |
-| PulseIn | `LED_BUILTIN` ×2(同一pin) | `PC0`/`PC1` |
-| ToneMelody | `BUZZER = LED_BUILTIN` | `PC0` |
-| PinCapabilities | `describe(LED_BUILTIN,…)` | `#ifdef LED_BUILTIN` で囲う |
+| CH32/Blink | `LED_BUILTIN` | `#ifndef LED_BUILTIN` → `#error` でbuild-property指定を案内 |
+| CH32/Fade | `LED = LED_BUILTIN` | `PA1`(PWM pad) |
+| CH32/AnalogResolution | `analogWrite(LED_BUILTIN,…)` | `PWM_PIN = PA1` |
+| CH32/ShiftOut | `LED_BUILTIN` ×3(同一pin) | `PC0`/`PC1`/`PC2` |
+| CH32/PulseIn | `LED_BUILTIN` ×2(同一pin) | `PC0`/`PC1` |
+| CH32/ToneMelody | `BUZZER = LED_BUILTIN` | `PC0` |
+| CH32/PinInterrupt | `BUTTON = LED_BUILTIN` | `PC0` |
+| Servo/Sweep | `SERVO_PIN = LED_BUILTIN` | `PC0` |
+| CH32/PinCapabilities | `describe(LED_BUILTIN,…)` | `#ifdef LED_BUILTIN` で囲う |
 | SerialRTT/RttEcho | LED点滅 | `#ifdef LED_BUILTIN` で囲う |
+
+**Blinkだけ`#error`にする理由**: 他のexampleは「どれか1本要る」だけだが、
+Blinkは**板のLEDが光ること**が主題なので、LEDの無いpadを黙って叩くと
+「ボードが死んでいる」ように見える。ここは止めるほうが親切。
+
+CIは`tests/compile/compile_examples.py`の`EXTRA_PROPERTIES`から
+`build.extra_flags=-DLED_BUILTIN=PC0`を渡してBlinkをビルドする。
+**利用者に案内しているのと同じ経路をCIが通る**ので、案内が壊れたらCIが落ちる。
+これはスキップではない(exampleはビルドされる)。
 
 いずれも先頭で `static const uint8_t X = PC0;` と宣言し、
 「自分の配線に合わせて変えること」をコメントで言う。**PINは変更前提**。
 
 ShiftOut/PulseInが同じpinを3回/2回使っているのは、現状のほうがバグに近い。
 
+**テスト側への波及(要確認)**: `LED_BUILTIN`はexamplesだけでなく、
+compile matrixのsmokeスケッチと実機self-testも使っていた。置き換えは:
+
+| 対象 | ビルド範囲 | 変更後 | 理由 |
+|---|---|---|---|
+| `tests/compile/compile_matrix.py`の`BLINK` | 全122 SKU | `CH32_PIN(0, 0)`(PA0) | **全24 seriesに共通するpad名が無い**ため、pad名ではなく符号化値を直接書く。compile専用で実行されない |
+| `core_api` / `servo_selftest` / `tone_selftest` | Tier A/B 6枚 | `PA1` | 6枚すべてにbondされ、かつ6枚すべてでPWM可能な**唯一のpad**(実測。もう1つの共通padはPA2だがPWM不可) |
+
+**これは実機が駆動するpadの変更**である。従来は`LED_BUILTIN`の値、つまり
+V003=PA1 / X035=PA2 / V203・L103・V103・V307=PA0 を叩いていた。
+PA1へ統一したので、**fixtureの配線と衝突しないかは実機で確認が要る**。
+
 **検証対象外のseriesでの挙動**: 利用者が別のseriesでexampleをビルドすると、
 そのseriesにそのpadが無ければ「`PC0` が未宣言」というコンパイルエラーになる。
 黙って別のpadを叩くよりよい。`#if defined(PC0)` のフォールバック連鎖を
 examples側に書く案もあるが、ビギナー向けexampleの冒頭が汚れるので採らない。
 
-### 4-2. pnumでpadを絞る
+### 4-2. pnumでpadを絞る (**実装済み**)
 
 `digitalPinIsValid` は `CH32_PORT_MASK`(series union)を見る(`cores/arduino/Arduino.h:26`)。
 `CH32V003J4M6`(SOP8, GPIO 6本)を選んでも `digitalPinIsValid(PC7)` は真になる。

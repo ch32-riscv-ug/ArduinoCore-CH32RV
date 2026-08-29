@@ -151,13 +151,34 @@
 #define PD14 CH32_PIN(3, 14)
 #define PD15 CH32_PIN(3, 15)
 
-/* Bit n set = P<port>n is bonded out on at least one part in the series. */
+/* Bit n set = P<port>n is bonded out.
+ *
+ * Selecting a part number narrows this to that package;
+ * the ANY menu entry falls through to the union over the
+ * whole series. See docs/board-layer-rules.ja.md. */
+#define CH32_PORT_MASK_E 0x00000000u   /* port absent */
+#define CH32_PORT_MASK_F 0x00000000u   /* port absent */
+#if defined(ARDUINO_CH32X315CCU6)
+#define CH32_PORT_MASK_A 0x0000ffffu
+#define CH32_PORT_MASK_B 0x00000ff0u
+#define CH32_PORT_MASK_C 0x000003f0u
+#define CH32_PORT_MASK_D 0x000030fcu
+#elif defined(ARDUINO_CH32X315MCU6)
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000ffffu
 #define CH32_PORT_MASK_C 0x0000ffffu
 #define CH32_PORT_MASK_D 0x0000fffcu
-#define CH32_PORT_MASK_E 0x00000000u   /* port absent */
-#define CH32_PORT_MASK_F 0x00000000u   /* port absent */
+#elif defined(ARDUINO_CH32X315WCU6)
+#define CH32_PORT_MASK_A 0x0000ffffu
+#define CH32_PORT_MASK_B 0x00000fffu
+#define CH32_PORT_MASK_C 0x0000ffffu
+#define CH32_PORT_MASK_D 0x0000fff8u
+#else   /* ANY, or a board that sets no part: the series union */
+#define CH32_PORT_MASK_A 0x0000ffffu
+#define CH32_PORT_MASK_B 0x0000ffffu
+#define CH32_PORT_MASK_C 0x0000ffffu
+#define CH32_PORT_MASK_D 0x0000fffcu
+#endif
 #define CH32_PORT_MASK(port) ( \
     (port) == 0 ? CH32_PORT_MASK_A : \
     (port) == 1 ? CH32_PORT_MASK_B : \
@@ -343,7 +364,9 @@
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
-/* Arduino's standard names for the first bus (Wire). */
+/* Arduino's standard names for the first bus (Wire). These are
+ * the pads of I2C1's default route in the datasheet - a fact about
+ * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32_I2C1_SCL
 #define PIN_WIRE_SDA CH32_I2C1_SDA
@@ -417,7 +440,9 @@
 /* NOTE: route af-4 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * yet, so this instance needs verifying (docs/todo.ja.md). */
-/* Arduino's standard names for the first bus (SPI). */
+/* Arduino's standard names for the first bus (SPI). These are
+ * the pads of SPI1's default route in the datasheet - a fact about
+ * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
 #define PIN_SPI_SCK CH32_SPI1_SCK
 #define PIN_SPI_MISO CH32_SPI1_MISO
@@ -451,10 +476,9 @@
 #define CH32_SERVO_SHARES_PWM 0
 #define CH32_SERVO_TIMER_BITS 16
 
-/* Generic boards have no on-board LED. This placeholder only exists so
- * that the stock examples compile; it is the lowest-numbered pad present
- * on every part in the series. Override it per board or on the command
- * line: --build-property build.extra_flags=-DLED_BUILTIN=PC13 */
-#ifndef LED_BUILTIN
-#define LED_BUILTIN PA0
-#endif
+/* No LED_BUILTIN: a Generic board is a silicon series, not a
+ * board, so it does not know where an LED is. Define it yourself -
+ * a product-board variant does it before including this header,
+ * a sketch can do it on the command line:
+ *   --build-property build.extra_flags=-DLED_BUILTIN=PC13
+ * See docs/board-layer-rules.ja.md. */

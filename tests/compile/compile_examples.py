@@ -32,6 +32,17 @@ from compile_matrix import (Failure, compile_one, gcc_bin,   # noqa: E402
 
 BOARDS = ("CH32X035", "CH32V003")
 
+# Build properties an example needs to compile at all. This is not a skip: the
+# example is built, with the same flag its own comment tells a user to pass.
+#
+# Blink is the case that exists: a Generic board is a silicon series, not a
+# PCB, so it defines no LED_BUILTIN and Blink refuses to guess a pad
+# (docs/board-layer-rules.ja.md). Building it the documented way is what keeps
+# the documented way honest - if the flag stops working, this fails.
+EXTRA_PROPERTIES = {
+    ("CH32", "Blink"): ["build.extra_flags=-DLED_BUILTIN=PC0"],
+}
+
 # An example that cannot fit the floor board says so here, with the reason.
 # Trimming the example until it fits would make it worse for every other board,
 # and pretending it fits would be a lie the linker catches later. Skips are
@@ -79,7 +90,8 @@ def run(work: pathlib.Path) -> dict:
                 continue
             fqbn = f"ch32-riscv-ug:ch32v:{board}:pnum=ANY"
             build = work / "build" / board / library / name
-            code, output = compile_one(env, fqbn, gcc, build, src)
+            properties = EXTRA_PROPERTIES.get((library, name), ())
+            code, output = compile_one(env, fqbn, gcc, build, src, properties)
             if code:
                 raise Failure(f"{library}/{name} does not compile for "
                               f"{board}:\n{output}")

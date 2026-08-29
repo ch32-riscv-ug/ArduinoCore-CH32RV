@@ -12,8 +12,11 @@ empty placeholder other cores use for this, the header does a job.
 `digitalWrite()`, `analogRead()`, `tone()` and the rest belong to the core, not
 to any library, so their examples are here. Every one of them:
 
-- takes its pins from names the variant provides (`LED_BUILTIN`, `A0`, `SDA`,
-  `SCK`…) rather than numbers, so it runs on any board;
+- names its pins as pads (`PC0`, `PA1`) or through the names the variant
+  provides (`A0`, `SDA`, `SCK`…), never as bare numbers. A pad an example
+  picks is the example's own choice, meant to be changed - a Generic board is
+  a silicon series, not a PCB, so it defines no `LED_BUILTIN` and the core
+  will not invent one (`docs/board-layer-rules.ja.md`);
 - says in its header comment what it shows and what wiring it needs;
 - is compiled in CI for the widest board and the narrowest one.
 

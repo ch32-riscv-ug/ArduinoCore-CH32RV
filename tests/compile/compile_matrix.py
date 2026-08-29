@@ -47,14 +47,21 @@ BLINK = """\
 struct Marker { int v; Marker() : v(42) {} };
 Marker marker;
 
+// No pad name is common to all 24 series (CH32V003 has no PA0, CH32X035 has
+// no PA0/PA1), and no board here defines LED_BUILTIN - a Generic board is a
+// silicon series, not a PCB (docs/board-layer-rules.ja.md). This is compiled
+// and never run, so the encoded pin is all that matters: it exercises the same
+// digitalWrite() arithmetic on every part.
+static const uint8_t PIN = CH32_PIN(0, 0);   // PA0, compile-only
+
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(PIN, OUTPUT);
 }
 
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(PIN, HIGH);
   delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(PIN, LOW);
   delay(500);
 }
 """

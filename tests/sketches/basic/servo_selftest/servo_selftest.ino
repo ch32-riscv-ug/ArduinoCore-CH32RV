@@ -12,7 +12,7 @@
 
 #include "testcmd.h"
 
-static const uint8_t PIN = LED_BUILTIN;
+static const uint8_t PIN = PA1;
 
 static Servo servo;
 

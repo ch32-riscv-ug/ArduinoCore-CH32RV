@@ -1676,9 +1676,63 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("    0u)")
         out.append("")
 
-    mask_block("PORT_MASK", union,
-               "/* Bit n set = P<port>n is bonded out on at least one part in the "
-               "series. */")
+    def sku_mask_block():
+        """CH32_PORT_MASK_*, narrowed to the selected part number.
+
+        The variant header serves the whole series, but which pads are bonded
+        out is a property of the package, not the series - CH32V003J4M6 (SOP8)
+        has 6 GPIO where the series union has 18. platform.txt already defines
+        ARDUINO_<part> from build.board, so the package is knowable at compile
+        time; nothing read it before, and digitalPinIsValid() answered for the
+        union no matter which part number was selected.
+
+        The ANY menu entry sets ARDUINO_<series>, which matches no branch here
+        and falls through to the union - correct, because ANY promises nothing
+        about the package. Parts that bond the same pads share one branch.
+        """
+        present = [port for port in PORTS
+                   if any(p == port for p, _ in union)]
+
+        def masks_for(pad_set) -> tuple:
+            out_masks = []
+            for port in present:
+                mask = 0
+                for p, b in pad_set:
+                    if p == port:
+                        mask |= 1 << b
+                out_masks.append(mask)
+            return tuple(out_masks)
+
+        out.append("/* Bit n set = P<port>n is bonded out.")
+        out.append(" *")
+        out.append(" * Selecting a part number narrows this to that package;")
+        out.append(" * the ANY menu entry falls through to the union over the")
+        out.append(" * whole series. See docs/board-layer-rules.ja.md. */")
+        for port in PORTS:
+            if port not in present:
+                out.append(f"#define CH32_PORT_MASK_{port} 0x00000000u"
+                           f"   /* port absent */")
+
+        groups: dict = {}
+        for part in parts:
+            groups.setdefault(masks_for(pads.get(part, set())), []).append(part)
+        for i, (values, members) in enumerate(groups.items()):
+            guard = "#if" if i == 0 else "#elif"
+            cond = " || ".join(f"defined(ARDUINO_{m})" for m in members)
+            out.append(f"{guard} {cond}")
+            for port, mask in zip(present, values):
+                out.append(f"#define CH32_PORT_MASK_{port} 0x{mask:08x}u")
+        out.append("#else   /* ANY, or a board that sets no part: the series union */")
+        for port, mask in zip(present, masks_for(union)):
+            out.append(f"#define CH32_PORT_MASK_{port} 0x{mask:08x}u")
+        out.append("#endif")
+        out.append("#define CH32_PORT_MASK(port) ( \\")
+        for i, port in enumerate(PORTS):
+            out.append(f"    (port) == {i} ? CH32_PORT_MASK_{port} : \\")
+        out.append("    0u)")
+        out.append("")
+
+    sku_mask_block()
     mask_block("PORT_COMMON_MASK", common,
                "/* Bit n set = P<port>n is bonded out on EVERY part in the series,\n"
                " * i.e. the pins a sketch built for the ANY menu entry can rely on. */")
@@ -1866,7 +1920,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         # written for other cores use PIN_WIRE_SDA or the bare SDA, and a core
         # that defines neither simply fails to compile them.
         first = min(chosen_i2c)
-        out.append("/* Arduino's standard names for the first bus (Wire). */")
+        out.append("/* Arduino's standard names for the first bus (Wire). These are")
+        out.append(" * the pads of I2C%d's default route in the datasheet - a fact about"
+                   % first)
+        out.append(" * the chip, NOT a claim about how any board is wired. */")
         out.append("#ifndef PIN_WIRE_SCL")
         out.append(f"#define PIN_WIRE_SCL CH32_I2C{first}_SCL")
         out.append(f"#define PIN_WIRE_SDA CH32_I2C{first}_SDA")
@@ -1912,7 +1969,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                         route_table(series, parts, spis, remap, "spi",
                                     ("SCK", "MISO", "MOSI"), index))
         first = min(chosen_spi)
-        out.append("/* Arduino's standard names for the first bus (SPI). */")
+        out.append("/* Arduino's standard names for the first bus (SPI). These are")
+        out.append(" * the pads of SPI%d's default route in the datasheet - a fact about"
+                   % first)
+        out.append(" * the chip, NOT a claim about how any board is wired. */")
         out.append("#ifndef PIN_SPI_SCK")
         out.append(f"#define PIN_SPI_SCK CH32_SPI{first}_SCK")
         out.append(f"#define PIN_SPI_MISO CH32_SPI{first}_MISO")
@@ -2056,15 +2116,23 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     emit_timer("Servo", pick([t for t in sorted(candidates) if t != tone_timer]),
                "a servo is attached")
 
-    # --- LED_BUILTIN ---
-    led = common[0] if common else union[0]
-    out.append("/* Generic boards have no on-board LED. This placeholder only exists so")
-    out.append(" * that the stock examples compile; it is the lowest-numbered pad present")
-    out.append(" * on every part in the series. Override it per board or on the command")
-    out.append(" * line: --build-property build.extra_flags=-DLED_BUILTIN=PC13 */")
-    out.append("#ifndef LED_BUILTIN")
-    out.append(f"#define LED_BUILTIN {pad_name(*led)}")
-    out.append("#endif")
+    # --- no LED_BUILTIN ---
+    # A Generic board is a silicon series, not a PCB, so it does not know where
+    # an LED is - or whether there is one. The old placeholder here was the
+    # lowest-numbered pad common to every part, which is a pad number with no
+    # meaning to anyone reading it. Only a product board (L2) may define
+    # LED_BUILTIN, by defining it before including this header; the sketch or
+    # the command line can too:
+    #
+    #   --build-property build.extra_flags=-DLED_BUILTIN=PC13
+    #
+    # See docs/board-layer-rules.ja.md for the layer rule this follows.
+    out.append("/* No LED_BUILTIN: a Generic board is a silicon series, not a")
+    out.append(" * board, so it does not know where an LED is. Define it yourself -")
+    out.append(" * a product-board variant does it before including this header,")
+    out.append(" * a sketch can do it on the command line:")
+    out.append(" *   --build-property build.extra_flags=-DLED_BUILTIN=PC13")
+    out.append(" * See docs/board-layer-rules.ja.md. */")
     return "\n".join(out) + "\n"
 
 

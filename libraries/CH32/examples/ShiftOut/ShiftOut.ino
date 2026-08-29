@@ -7,9 +7,12 @@
  * '595 is worth knowing: three pins become eight outputs, and the CH32 parts
  * with 20 pins need that trick more than an Uno does.
  */
-static const uint8_t DATA_PIN = LED_BUILTIN;   /* change these three */
-static const uint8_t CLOCK_PIN = LED_BUILTIN;
-static const uint8_t LATCH_PIN = LED_BUILTIN;
+/* Change these three to your wiring. Any three pads work - shiftOut() is
+ * bit-banged - so these are just pads that exist on the series this example
+ * is built for. */
+static const uint8_t DATA_PIN = PC0;
+static const uint8_t CLOCK_PIN = PC1;
+static const uint8_t LATCH_PIN = PC2;
 
 void setup()
 {

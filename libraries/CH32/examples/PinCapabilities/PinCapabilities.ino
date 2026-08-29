@@ -37,7 +37,11 @@ void setup()
 
     Serial.println();
     Serial.println("--- pads this sketch was built for ---");
+#ifdef LED_BUILTIN
+    /* Only a product board, or -DLED_BUILTIN on the command line, defines
+     * this. A Generic board does not - see docs/board-layer-rules.ja.md. */
     describe(LED_BUILTIN, "LED_BUILTIN");
+#endif
     describe(A0, "A0");
 #ifdef PIN_WIRE_SDA
     describe(PIN_WIRE_SCL, "SCL");

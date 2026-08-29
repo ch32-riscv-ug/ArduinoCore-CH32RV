@@ -11,7 +11,7 @@
  */
 #include "testcmd.h"
 
-static const uint8_t PIN = LED_BUILTIN;
+static const uint8_t PIN = PA1;
 
 /* True as soon as the pad changes level, false if it held still for ms. */
 static bool toggles_within(uint32_t ms)
