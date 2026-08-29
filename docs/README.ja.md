@@ -50,6 +50,8 @@
 | [flash-size.ja.md](flash-size.ja.md) | 何がフラッシュを食うか、map fileの読み方、削り方 |
 | [upload-and-fixture.ja.md](upload-and-fixture.ja.md) | uploader、WCH-Link識別、実機fixture |
 | [test-strategy.ja.md](test-strategy.ja.md) | unit、host、compile、HIL、logic analyzer、CI |
+| [board-layer-rules.ja.md](board-layer-rules.ja.md) | どの層(series/SKU/board/sketch)が何を定義してよいか。`LED_BUILTIN`とSKU maskの扱い |
+| [examples-build-rules.ja.md](examples-build-rules.ja.md) | examplesのビルド対象宣言、capabilityによるスキップ、簡易テストとsweepの分離 |
 | [roadmap.ja.md](roadmap.ja.md) | 段階的な実装順と完了条件 |
 | [open-questions.ja.md](open-questions.ja.md) | 未決定事項、必要な実験、判断基準 |
 | [approval-status.ja.md](approval-status.ja.md) | **実装済みだが承認されていないもの**の一覧。動くことと採用が決まっていることは別 |
