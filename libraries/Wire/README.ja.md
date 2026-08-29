@@ -58,6 +58,12 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
   受け付けますが何もしません(中途半端に動くよりよいと判断しています)。
 - **2本目は`Wire1`**です。ペリフェラル番号ではなく**バスの順番**で、
   Arduinoエコシステムの慣習に合わせています。
+- タイムアウトは25msで、`endTransmission()`は5を返します。**既定で有効**です
+  (AVRは既定で無効で、バスが固まるとスケッチが永久に止まります)。
+  `setWireTimeout(us)`で変更、`setWireTimeout(0)`で無効。
+  `getWireTimeoutFlag()`はstickyで、`clearWireTimeoutFlag()`まで残ります。
+  タイムアウト後はどちらにせよペリフェラルをリセットするので、
+  `reset_with_timeout`は受け取るだけで挙動を変えません。
 - クロックは`setClock(100000)`で標準モード、それより速い値でfast mode(2:1)。
   ペリフェラルクロックは`F_CPU`と仮定しています
   (HSI直結・APB分周1という現在の構成で成り立ちます)。

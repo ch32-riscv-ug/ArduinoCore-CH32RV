@@ -70,6 +70,26 @@ public:
 
     void setClock(uint32_t freq) override;
 
+    /* AVR's timeout API (Wire.h since 1.8.x), with two documented differences.
+     *
+     * The timeout is ON by default here, at CH32_WIRE_TIMEOUT_US (25 ms, the
+     * same number AVR's own default uses). On AVR it is off until a sketch
+     * asks for it, and a stuck bus hangs the sketch forever; that is not a
+     * behaviour worth reproducing, so the default stays on. Pass 0 to turn it
+     * off and get AVR's original behaviour.
+     *
+     * reset_with_timeout is accepted and the bus is reset either way: this
+     * driver already marks the peripheral for recovery whenever a wait ends in
+     * anything but a NACK, and the next endTransmission()/requestFrom() runs
+     * it. Leaving a latched-BUSY peripheral alone has no upside, so `false`
+     * does not switch that off. */
+    void setWireTimeout(uint32_t timeout = CH32_WIRE_TIMEOUT_US,
+                        bool reset_with_timeout = false);
+    /* Sticky: set by any wait that ran out, and only cleared by the call
+     * below, so a sketch can check once after a burst of transfers. */
+    bool getWireTimeoutFlag(void);
+    void clearWireTimeoutFlag(void);
+
     void beginTransmission(uint8_t address) override;
     uint8_t endTransmission(bool stopBit) override;
     uint8_t endTransmission(void) override { return endTransmission(true); }
@@ -144,6 +164,9 @@ private:
     /* Set when a transfer ended badly, so the next one resets the peripheral
      * first: an aborted transfer can leave BUSY asserted forever. */
     bool _needs_recovery = false;
+    /* 0 disables the timeout, as on AVR. */
+    uint32_t _timeout_us = CH32_WIRE_TIMEOUT_US;
+    bool _timeout_flag = false;
 
     /* Slave state. The callbacks run in interrupt context. _slave_replying
      * is what lets write() tell "inside onRequest()" apart from "outside any

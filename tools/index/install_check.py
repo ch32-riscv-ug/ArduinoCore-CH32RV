@@ -67,12 +67,17 @@ GCC_HEADER_TAIL = ("/bin/../lib/gcc/riscv-none-elf/{v}/../../../../riscv-none-el
 MAX_PATH = 259
 
 
+# PA1 rather than LED_BUILTIN: a Generic board is a silicon series, not a PCB,
+# so it defines no LED_BUILTIN (docs/board-layer-rules.ja.md). Naming a pad is
+# what a user does here, and it has to stay a pad rather than a build property
+# because the point of this check is that it compiles with NO overrides at all.
+# PA1 exists on every series; FQBN_BLINK is CH32V006.
 BLINK = """\
-void setup() { pinMode(LED_BUILTIN, OUTPUT); }
+void setup() { pinMode(PA1, OUTPUT); }
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(PA1, HIGH);
   delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(PA1, LOW);
   delay(500);
 }
 """

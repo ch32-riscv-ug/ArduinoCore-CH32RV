@@ -59,6 +59,12 @@ old pads to inputs.
   `onRequest()` are accepted and do nothing rather than half-working.
 - **A second bus is `Wire1`**, where the part has one - bus order, as elsewhere
   in the Arduino ecosystem, not the peripheral's number.
+- Timeout: a wait gives up after 25 ms and `endTransmission()` returns 5. That
+  is **on by default**, unlike AVR, where a stuck bus hangs the sketch until
+  the sketch asks for a timeout. `setWireTimeout(us)` changes it and
+  `setWireTimeout(0)` turns it off; `getWireTimeoutFlag()` is sticky until
+  `clearWireTimeoutFlag()`. The peripheral is reset after a timeout either way,
+  so `reset_with_timeout` is accepted and does not change anything.
 - Clock: `setClock(100000)` for standard mode, anything higher selects fast
   mode with a 2:1 duty cycle. The peripheral clock is assumed to be `F_CPU`,
   which holds while the core runs from HSI with both APB prescalers at /1.

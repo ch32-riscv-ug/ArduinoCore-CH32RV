@@ -6,6 +6,9 @@ beginTransmission	KEYWORD2
 endTransmission	KEYWORD2
 requestFrom	KEYWORD2
 setClock	KEYWORD2
+setWireTimeout	KEYWORD2
+getWireTimeoutFlag	KEYWORD2
+clearWireTimeoutFlag	KEYWORD2
 SDA	LITERAL1
 SCL	LITERAL1
 PIN_WIRE_SDA	LITERAL1

@@ -82,6 +82,27 @@ static void run_checks()
     tc_check("fast_mode_still_reports", rc != 0);
     Wire.setClock(100000);
 
+    /* 5b. The AVR-compatible timeout API. There is no way to *make* the bus
+     *     hang from here without wiring, so what is checked is what can be:
+     *     the flag round-trips, a NACK does not raise it (a NACK is not a
+     *     timeout), and turning the timeout off and back on leaves the bus
+     *     usable. Disabling it is only safe here because nothing on this
+     *     board holds SCL low. */
+    Wire.clearWireTimeoutFlag();
+    tc_check("timeout_flag_clears", Wire.getWireTimeoutFlag() == false);
+    Wire.beginTransmission(NOBODY);
+    rc = Wire.endTransmission();
+    tc_check("nack_is_not_a_timeout",
+             rc != 0 && Wire.getWireTimeoutFlag() == false);
+    Wire.setWireTimeout(0);
+    Wire.beginTransmission(NOBODY);
+    rc = Wire.endTransmission();
+    tc_check("no_timeout_still_reports", rc != 0);
+    Wire.setWireTimeout();
+    Wire.beginTransmission(NOBODY);
+    rc = Wire.endTransmission();
+    tc_check("timeout_restored", rc != 0);
+
     /* 6. And end()/begin() is a legal cycle. */
     Wire.end();
     Wire.begin();

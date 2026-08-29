@@ -381,7 +381,12 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
         **ジャンパ2本とpull-up 2本の配線待ち**(V103/V203/L103で可)
 - [ ] `[P1]` SPIのperipheral(slave)モードは未実装のまま。
       `SPI_HAS_PERIPHERAL_MODE`は意図的に未定義にしてある
-- [ ] `[P1]` `Wire`の`setWireTimeout()`/`clearWireTimeout()`(AVR互換API)が無い
+- [x] **`Wire`のAVR互換timeout APIを追加した**(2026-08-29)。
+      `setWireTimeout(us, reset_with_timeout)` / `getWireTimeoutFlag()` / `clearWireTimeoutFlag()`。
+      待ちループもタイムアウト後の復旧(`_needs_recovery`)も`endTransmission()`の戻り値5も既にあり、
+      足りなかったのは**実行時に値を変えることとstickyフラグ**だけだった。
+      AVRとの差は2点、READMEに明記: (1)既定で**有効**(AVRは無効で、固まると永久に待つ)、
+      (2)`reset_with_timeout`は受け取るが常にリセットする(latched-BUSYを放置する利点が無い)
 - [ ] `[P2]` `usingInterrupt()`が空実装。この実装はISRからバスを触らないので実害は無いが、
       sketch側がISRからSPIを使うと壊れる
 - [ ] `[P2]` I2C/SPIとも**PCLK1 = F_CPU前提**。APB prescalerやPLLを入れたら追随が要る
@@ -908,7 +913,13 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       `generate.py`が`vectors_*.inc`を生成、`import_vectors.py --check`をCIへ追加
 - [ ] `[P1]` **公開価値が出たら`ch32-device-data`へ移送する**。トリガは「2つ目のconsumerが現れたとき」
 - [x] 生成器をseries board(23 board / 117エントリ)へ拡張。ANY先頭・`[compile only]`表示込み([ADR-0005](adr/0005-board-structure-and-fqbn.ja.md)改訂)
-- [ ] `[P1]` ハーネスと`FAMILY_CONFIG`のパラメータ二重管理を解消(片方を正本にするかCIで一致検証)
+- [x] **ハーネスとboards.txtのパラメータ二重管理をCIで一致検証するようにした**(2026-08-29)。
+      `FAMILY_CONFIG`という名前はもう無く、実体は`tests/startup/startup_equivalence.py`の`FAMILIES`。
+      `march`/`mabi`/startup定義が`boards.txt`の生成値と一致することを
+      `tests/unit/test_startup_parameters.py`がassertする(14 family、実測で当時すでに全一致)。
+      正本は分けたまま: **ハーネスは「何をbuildするか」、boards.txtは「値が何か」**。
+      副産物: harnessの`v20x_d8`に対応するboardが無い(V203は`v20x_d6`、V208は`v20x_d8w`)ことが判明。
+      die variantとして意図的なので集合として固定した
 - [x] `pins_arduino.h`の本実装。[ADR-0010](adr/0010-pin-numbering.ja.md)の`(port<<5)|bit`方式で
       seriesの全pad名・ポート別validity mask・`ANY`共通padマスクを生成。Blinkのサイズが
       117 SKU全てでbaselineとバイト一致し、**テーブルが生成されない**ことを実証

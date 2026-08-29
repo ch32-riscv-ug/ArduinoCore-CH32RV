@@ -62,10 +62,32 @@ bool CH32TwoWire::wait_flag1(uint16_t mask, bool set)
                   CH32_I2C_STAR1_ARLO)) {
             return false;
         }
-        if (micros() - start_us > CH32_WIRE_TIMEOUT_US) {
+        if (_timeout_us != 0 && micros() - start_us > _timeout_us) {
+            /* Sticky, so a sketch that does not check every call still finds
+             * out. The caller marks the bus for recovery: a wait that ends in
+             * anything but a NACK sets _needs_recovery. */
+            _timeout_flag = true;
             return false;
         }
     }
+}
+
+void CH32TwoWire::setWireTimeout(uint32_t timeout, bool reset_with_timeout)
+{
+    /* Accepted, not honoured - see the note in Wire.h. The peripheral is
+     * reset after a timeout either way. */
+    (void)reset_with_timeout;
+    _timeout_us = timeout;
+}
+
+bool CH32TwoWire::getWireTimeoutFlag(void)
+{
+    return _timeout_flag;
+}
+
+void CH32TwoWire::clearWireTimeoutFlag(void)
+{
+    _timeout_flag = false;
 }
 
 void CH32TwoWire::begin()
