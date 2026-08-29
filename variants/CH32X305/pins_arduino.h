@@ -212,6 +212,37 @@
     (p) == PB0 ? 6 : \
     (p) == PB4 ? 10 : \
     (p) == PB5 ? 11 : \
+    /* pads only another instance reaches; the instance is below */ \
+    (p) == PB6 ? 0 : \
+    (p) == PB7 ? 1 : \
+    (p) == PC8 ? 2 : \
+    (p) == PC9 ? 3 : \
+    (p) == PC10 ? 4 : \
+    (p) == PC11 ? 5 : \
+    (p) == PC12 ? 6 : \
+    (p) == PC13 ? 7 : \
+    (p) == PB8 ? 10 : \
+    (p) == PB9 ? 11 : \
+    (p) == PB10 ? 0 : \
+    (p) == PB11 ? 1 : \
+    (p) == PD10 ? 4 : \
+    (p) == PD11 ? 5 : \
+    (p) == PD12 ? 6 : \
+    (p) == PD13 ? 7 : \
+    (p) == PA8 ? 8 : \
+    (p) == PA9 ? 9 : \
+    (p) == PD4 ? 10 : \
+    (p) == PD5 ? 11 : \
+    (p) == PC0 ? 2 : \
+    (p) == PC1 ? 3 : \
+    (p) == PC2 ? 4 : \
+    (p) == PC3 ? 5 : \
+    (p) == PC4 ? 6 : \
+    (p) == PC5 ? 7 : \
+    (p) == PC6 ? 8 : \
+    (p) == PC7 ? 9 : \
+    (p) == PA0 ? 10 : \
+    (p) == PA1 ? 11 : \
     NOT_AN_ANALOG_PIN)
 #define CH32_ADC_CHANNEL_TO_PIN(c) ( \
     (c) == 0 ? PA2 : \
@@ -224,6 +255,57 @@
     (c) == 10 ? PB4 : \
     (c) == 11 ? PB5 : \
     NOT_A_PIN)
+
+/* ---- ADC2..4 analog inputs (30 more pads) ----
+ * This series puts its ADCs on DISJOINT pads, so a pad
+ * names an instance as well as a channel and A<n>, which
+ * is ADC1's numbering, cannot reach these. analogRead()
+ * takes the instance from CH32_PIN_TO_ADC_INSTANCE.
+ * Bases are from device-data register_blocks.csv; the
+ * register offsets are the same on every family. ---- */
+#define CH32_ADC_INSTANCE_COUNT 4
+#define CH32_ADC2_BASE 0x40012800u
+#define CH32_ADC3_BASE 0x40013c00u
+#define CH32_ADC4_BASE 0x40014000u
+/* { base, clock-enable register, clock-enable bit }, ADC1 first. */
+#define CH32_ADC_INSTANCES { \
+    { CH32_ADC1_BASE, CH32_CLKEN_ADC1_ADDR, CH32_CLKEN_ADC1_MASK }, \
+    { CH32_ADC2_BASE, CH32_CLKEN_ADC2_ADDR, CH32_CLKEN_ADC2_MASK }, \
+    { CH32_ADC3_BASE, CH32_CLKEN_ADC3_ADDR, CH32_CLKEN_ADC3_MASK }, \
+    { CH32_ADC4_BASE, CH32_CLKEN_ADC4_ADDR, CH32_CLKEN_ADC4_MASK }, \
+    }
+#define CH32_PIN_TO_ADC_INSTANCE(p) ( \
+    (p) == PB6 ? 2 : \
+    (p) == PB7 ? 2 : \
+    (p) == PC8 ? 2 : \
+    (p) == PC9 ? 2 : \
+    (p) == PC10 ? 2 : \
+    (p) == PC11 ? 2 : \
+    (p) == PC12 ? 2 : \
+    (p) == PC13 ? 2 : \
+    (p) == PB8 ? 2 : \
+    (p) == PB9 ? 2 : \
+    (p) == PB10 ? 3 : \
+    (p) == PB11 ? 3 : \
+    (p) == PD10 ? 3 : \
+    (p) == PD11 ? 3 : \
+    (p) == PD12 ? 3 : \
+    (p) == PD13 ? 3 : \
+    (p) == PA8 ? 3 : \
+    (p) == PA9 ? 3 : \
+    (p) == PD4 ? 3 : \
+    (p) == PD5 ? 3 : \
+    (p) == PC0 ? 4 : \
+    (p) == PC1 ? 4 : \
+    (p) == PC2 ? 4 : \
+    (p) == PC3 ? 4 : \
+    (p) == PC4 ? 4 : \
+    (p) == PC5 ? 4 : \
+    (p) == PC6 ? 4 : \
+    (p) == PC7 ? 4 : \
+    (p) == PA0 ? 4 : \
+    (p) == PA1 ? 4 : \
+    1)
 
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */

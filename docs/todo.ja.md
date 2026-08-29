@@ -914,8 +914,15 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       117 SKU全てでbaselineとバイト一致し、**テーブルが生成されない**ことを実証
 - [x] `A0`等アナログエイリアスのADCチャネルマップ生成。**ADC1のみ**採用(X305/X315は
       ADC1〜ADC4で同じチャネル番号が別padに出るため`A<n>`が一意にならない)
-- [ ] `[P1]` X305/X315のADC2〜ADC4を表現する。現在`A<n>`はADC1のみで、他instanceのpadは
-      アナログとして到達できない
+- [x] **X305/X315のADC2〜ADC4を表現した**(2026-08-29)。調べたところ、ADC1で届かないpadがあるのは
+      **この2 seriesだけ**だった(V103/V203/V307にもADC2/3はあるがpadがADC1と重なる=同時サンプリング用)。
+      `A<n>`はADC1の番号付けのまま据え置き、pad→instanceを`CH32_PIN_TO_ADC_INSTANCE`で表す。
+      baseは`register_blocks.csv`(X315はreference manualで`confirmed`)、
+      レジスタoffsetは全12 familyで一致することを`index/registers.csv`で確認済み。
+      `wiring_analog.c`は`CH32_ADC_INSTANCE_COUNT > 1`のときだけ多instance経路をコンパイルするので、
+      **他22 seriesのバイナリは1バイトも変わらない**(V003/V307/X035で実測)。
+      X305で30 pad、X315で36 padが新たに到達可能。
+      **注意: 両seriesとも実機も書き込み手段も無いため未検証**(compileと`_Static_assert`のみ)
 - [x] `LED_BUILTIN`をgeneric boardから**削除した**(2026-08-29、[board-layer-rules](board-layer-rules.ja.md))。
       代替名は作らない。examplesは自分でpadを選ぶ。製品boardが`#ifndef`ガード越しに定義する
 - [ ] `[P2]` `NON_PORT_PADS`(`ANT`/`HO3`/`ISP1`/`LED0`/`MDITP`等)を`generate.py`で手管理している。
@@ -932,6 +939,14 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       取り込みで`load_remap_fields`はregister修飾を要求するようになり
       (無ければ落とす)、variantは**fieldがまたぐregisterごとに**
       `CH32_SERIALn_REMAP{,2}_{MASK,VAL}`を持つ
+- [ ] `[P1]` **上流へ報告(要確認): CH32V20xファミリに`ETH`のclock enable行が無い**。
+      `evidence/clock_enables.csv`はETH_MACをCH32V307 / CH32V407、ETHをCH32H417にしか持たない。
+      一方EVTはCH32V20xの下にETHの例を置いており、WCHはCH32V208に10M Ethernetを謳っている。
+      `docs/peripheral-support.ja.md`の「Ethernet / V203・V208 = ○」と食い違う。
+      **どちらが正しいかはreference manualで裏を取ること**。
+      検出は`tests/unit/test_peripheral_table.py`の`KNOWN_DISAGREEMENTS`。
+      解消したらそのエントリを消す(消し忘れはテストが落ちて気づく)
+
 - [ ] `[P1]` **上流へ報告: CH32V307に`SPI1_SCK/default`の行が無い**。
       `pin_functions.csv`はV307のSPI1についてMISO/MOSI/NSSのdefaultは持つのに
       SCKだけremap-1しか無く、そのため生成器がSPI1にremap-1(PB3/PB4/PB5)を選ぶ。

@@ -13,8 +13,9 @@ could never fit in.
 
 Normally reached through `pytest` (tests/sketches/test_sketch_profiles.py).
 
-Board-specific limits belong in REQUIREMENTS in sync_profiles.py, not here:
-this only reports whether the generated profiles are honest.
+Board-specific limits belong in the sketch's own `requires:` line, not here
+(tests/sketch_requirements.py): this only reports whether the generated
+profiles are honest.
 """
 import argparse
 import pathlib

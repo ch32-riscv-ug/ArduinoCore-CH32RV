@@ -1,10 +1,17 @@
-/* analogRead() on ADC1.
+/* analogRead().
  *
- * The variant's generated pin map already says which pad is which ADC1
- * channel, so this file only has to drive the peripheral. Only ADC1 is wired
- * up: parts with several ADCs repeat the same channel numbers on the others,
- * which would make A<n> ambiguous (see choose_uarts' sibling logic in
- * tools/generate/generate.py and docs/todo.ja.md).
+ * The variant's generated pin map already says which pad is which channel, so
+ * this file only has to drive the peripheral.
+ *
+ * Almost everywhere that means ADC1 and nothing else: a part with several ADCs
+ * normally repeats the same channel numbers on the same pads, so the extra
+ * instances reach nothing new and A<n> stays unambiguous. CH32X305 and
+ * CH32X315 are the exception - their four ADCs sit on disjoint pads, and 36 of
+ * X315's 48 analog pads have no A<n> at all. There the variant defines
+ * CH32_ADC_INSTANCE_COUNT > 1 and this file follows CH32_PIN_TO_ADC_INSTANCE.
+ *
+ * The instance is a compile-time constant 0 on every other series, so that
+ * code folds away and those binaries do not pay for this.
  */
 #include "Arduino.h"
 #ifndef CH32_ADC_MAX_HZ
@@ -21,6 +28,30 @@
 static uint8_t ch32_adc_read_bits = 10;
 static uint8_t ch32_adc_started;
 
+#if defined(CH32_ADC_INSTANCE_COUNT) && CH32_ADC_INSTANCE_COUNT > 1
+/* base, and the RCC register and bit that turns the instance on. */
+static const struct {
+    uint32_t base;
+    uint32_t clken_addr;
+    uint32_t clken_mask;
+} ch32_adc_instances[CH32_ADC_INSTANCE_COUNT] = CH32_ADC_INSTANCES;
+
+#define CH32_ADC_INDEX(pin)  ((uint8_t)(CH32_PIN_TO_ADC_INSTANCE(pin) - 1u))
+#define CH32_ADC_BASE(i)     (ch32_adc_instances[i].base)
+#define CH32_ADC_IS_STARTED(i)   ((ch32_adc_started >> (i)) & 1u)
+#define CH32_ADC_MARK_STARTED(i) (ch32_adc_started |= (uint8_t)(1u << (i)))
+#define CH32_ADC_ENABLE_CLOCK(i) \
+    (CH32_REG32(ch32_adc_instances[i].clken_addr) |= \
+     ch32_adc_instances[i].clken_mask)
+#else
+/* One instance: every one of these folds to the ADC1 constant. */
+#define CH32_ADC_INDEX(pin)      ((void)(pin), 0u)
+#define CH32_ADC_BASE(i)         ((void)(i), CH32_ADC1_BASE)
+#define CH32_ADC_IS_STARTED(i)   ((void)(i), ch32_adc_started)
+#define CH32_ADC_MARK_STARTED(i) ((void)(i), ch32_adc_started = 1)
+#define CH32_ADC_ENABLE_CLOCK(i) ((void)(i), ch32_clock_enable(ADC1))
+#endif
+
 void analogReadResolution(int bits)
 {
     if (bits > 0 && bits <= 32) {
@@ -35,12 +66,13 @@ void analogReference(uint8_t mode)
     (void)mode;
 }
 
-static void ch32_adc_begin(void)
+static void ch32_adc_begin(uint8_t index)
 {
-    if (ch32_adc_started) {
+    if (CH32_ADC_IS_STARTED(index)) {
         return;
     }
-    ch32_clock_enable(ADC1);
+    const uint32_t base = CH32_ADC_BASE(index);
+    CH32_ADC_ENABLE_CLOCK(index);
 
     /* ADCCLK has to stay inside the family's own ceiling, which is not the
      * same number everywhere: 14 MHz on CH32V103/V20x/V30x, 48 on CH32L103,
@@ -56,22 +88,23 @@ static void ch32_adc_begin(void)
 
     /* Longest sample time on every channel. analogRead() is not a fast path,
      * and high source impedance is the norm on a breadboard. */
-    CH32_ADC_SAMPTR1 = 0x00FFFFFFu;
-    CH32_ADC_SAMPTR2 = 0x3FFFFFFFu;
-    CH32_ADC_CTLR1 = 0;
+    CH32_ADC_SAMPTR1_AT(base) = 0x00FFFFFFu;
+    CH32_ADC_SAMPTR2_AT(base) = 0x3FFFFFFFu;
+    CH32_ADC_CTLR1_AT(base) = 0;
     /* Software trigger: EXTSEL = SWSTART, with the external trigger enabled. */
-    CH32_ADC_CTLR2 = CH32_ADC_CTLR2_EXTSEL_SWSTART | CH32_ADC_CTLR2_EXTTRIG;
+    CH32_ADC_CTLR2_AT(base) = CH32_ADC_CTLR2_EXTSEL_SWSTART |
+                              CH32_ADC_CTLR2_EXTTRIG;
 
-    CH32_ADC_CTLR2 |= CH32_ADC_CTLR2_ADON;
+    CH32_ADC_CTLR2_AT(base) |= CH32_ADC_CTLR2_ADON;
     for (volatile int settle = 0; settle < 1000; settle++) {
     }
-    CH32_ADC_CTLR2 |= CH32_ADC_CTLR2_RSTCAL;
-    while (CH32_ADC_CTLR2 & CH32_ADC_CTLR2_RSTCAL) {
+    CH32_ADC_CTLR2_AT(base) |= CH32_ADC_CTLR2_RSTCAL;
+    while (CH32_ADC_CTLR2_AT(base) & CH32_ADC_CTLR2_RSTCAL) {
     }
-    CH32_ADC_CTLR2 |= CH32_ADC_CTLR2_CAL;
-    while (CH32_ADC_CTLR2 & CH32_ADC_CTLR2_CAL) {
+    CH32_ADC_CTLR2_AT(base) |= CH32_ADC_CTLR2_CAL;
+    while (CH32_ADC_CTLR2_AT(base) & CH32_ADC_CTLR2_CAL) {
     }
-    ch32_adc_started = 1;
+    CH32_ADC_MARK_STARTED(index);
 }
 
 int analogRead(pin_size_t pin)
@@ -86,13 +119,15 @@ int analogRead(pin_size_t pin)
     ch32_gpio_set_config(port, (uint8_t)CH32_PIN_BIT(pin),
                          CH32_GPIO_CFG_IN_ANALOG);
 
-    ch32_adc_begin();
-    CH32_ADC_RSQR1 = 0;                 /* one conversion in the sequence */
-    CH32_ADC_RSQR3 = channel;
-    CH32_ADC_CTLR2 |= CH32_ADC_CTLR2_SWSTART;
-    while ((CH32_ADC_STATR & CH32_ADC_STATR_EOC) == 0u) {
+    const uint8_t index = CH32_ADC_INDEX(pin);
+    ch32_adc_begin(index);
+    const uint32_t base = CH32_ADC_BASE(index);
+    CH32_ADC_RSQR1_AT(base) = 0;        /* one conversion in the sequence */
+    CH32_ADC_RSQR3_AT(base) = channel;
+    CH32_ADC_CTLR2_AT(base) |= CH32_ADC_CTLR2_SWSTART;
+    while ((CH32_ADC_STATR_AT(base) & CH32_ADC_STATR_EOC) == 0u) {
     }
-    uint32_t value = CH32_ADC_RDATAR & ((1u << CH32_ADC_BITS) - 1u);
+    uint32_t value = CH32_ADC_RDATAR_AT(base) & ((1u << CH32_ADC_BITS) - 1u);
 
     /* Scale the hardware's native width to the requested one, both ways. */
     if (ch32_adc_read_bits > CH32_ADC_BITS) {

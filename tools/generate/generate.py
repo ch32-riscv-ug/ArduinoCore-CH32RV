@@ -442,9 +442,15 @@ def load_pin_tables(tables: pathlib.Path):
             continue
         pads.setdefault(r["part_number"], set()).add(got)
 
-    # analogRead() drives ADC1; parts with several ADCs repeat the same channel
-    # numbers on other instances, which would make A<n> ambiguous.
+    # A<n> is ADC1's channel n. On most series the other ADCs repeat the same
+    # channel numbers on the same pads, so A<n> stays unambiguous and there is
+    # nothing else to reach. CH32X305 and CH32X315 are the exception: their
+    # four ADCs sit on *disjoint* pads (ADC1_IN0 is PA2, ADC2_IN0 is PB6), so
+    # 30 of X305's 39 analog pads and 36 of X315's 48 cannot be named by any
+    # A<n>. Those are collected separately, keyed by (instance, channel), and
+    # reached through CH32_PIN_TO_ADC_INSTANCE rather than through a new alias.
     adc: dict[str, dict] = {}
+    adc_all: dict[str, dict] = {}
     for r in functions:
         m = ADC_LONG_RE.match(r["signal"])
         if m:
@@ -454,16 +460,41 @@ def load_pin_tables(tables: pathlib.Path):
             if not m:
                 continue
             instance, channel = 1, int(m.group(1))
-        if instance != 1:
-            continue
         got = resolve(r["part_number"], r["pad"])
         if got is None:
+            continue
+        prev = adc_all.setdefault(r["part_number"], {}).setdefault(
+            (instance, channel), got)
+        if prev != got:
+            raise SystemExit(f"{r['part_number']}: ADC{instance} channel "
+                             f"{channel} maps to both {prev} and {got}")
+        if instance != 1:
             continue
         prev = adc.setdefault(r["part_number"], {}).setdefault(channel, got)
         if prev != got:
             raise SystemExit(f"{r['part_number']}: ADC1 channel {channel} maps to "
                              f"both {prev} and {got}")
-    return pads, adc, unresolved
+    return pads, adc, adc_all, unresolved
+
+
+def load_adc_bases(tables: pathlib.Path) -> dict:
+    """family -> {instance: base address}, from index/register_blocks.csv.
+
+    Only the base differs between instances: index/registers.csv gives the same
+    offsets for every ADC-bearing family, CH32X315 included, for all eight
+    registers analogRead() touches. The X315 rows are `confirmed` against the
+    reference manual, which is why this can be generated rather than guessed.
+    """
+    out: dict = {}
+    for r in read_table(tables, "register_blocks.csv"):
+        if r.get("type") != "ADC":
+            continue
+        m = re.match(r"^ADC(\d+)$", r.get("block", ""))
+        if not m:
+            continue
+        out.setdefault(r["family"], {})[int(m.group(1))] = int(
+            r["base_address"], 16)
+    return out
 
 
 def load_errata_ids(tables: pathlib.Path) -> set:
@@ -1534,7 +1565,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              i2cs: dict, spis: dict, dacs: dict, pwm: dict, handlers: list,
              remap: dict, route_alts: dict = None,
              wide_by_family: dict = {},
-             forbidden: dict = {}, clock_enables: dict = {}) -> str:
+             forbidden: dict = {}, clock_enables: dict = {},
+             adc_all: dict = {}, adc_bases: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -1765,6 +1797,17 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             if prev != padkey:
                 raise SystemExit(f"{series}: ADC1 channel {ch} maps to both "
                                  f"{prev} and {padkey} within the series")
+    others: dict = {}
+    for pn in parts:
+        for (inst, ch), padkey in adc_all.get(pn, {}).items():
+            if inst == 1:
+                continue
+            prev = others.setdefault((inst, ch), padkey)
+            if prev != padkey:
+                raise SystemExit(f"{series}: ADC{inst} channel {ch} maps to "
+                                 f"both {prev} and {padkey} within the series")
+    reachable = set(channels.values())
+    extra = {k: v for k, v in others.items() if v not in reachable}
     if channels:
         top = max(channels) + 1
         gaps = [c for c in range(top) if c not in channels]
@@ -1780,12 +1823,63 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         for ch in sorted(channels):
             port, bit = channels[ch]
             out.append(f"    (p) == {pad_name(port, bit)} ? {ch} : \\")
+        if extra:
+            out.append("    /* pads only another instance reaches; the "
+                       "instance is below */ \\")
+            for (inst, ch), (port, bit) in sorted(
+                    extra.items(), key=lambda kv: (kv[0][0], kv[0][1])):
+                out.append(f"    (p) == {pad_name(port, bit)} ? {ch} : \\")
         out.append("    NOT_AN_ANALOG_PIN)")
         out.append("#define CH32_ADC_CHANNEL_TO_PIN(c) ( \\")
         for ch in sorted(channels):
             port, bit = channels[ch]
             out.append(f"    (c) == {ch} ? {pad_name(port, bit)} : \\")
         out.append("    NOT_A_PIN)")
+        out.append("")
+
+    # --- ADC instances beyond ADC1 -------------------------------------
+    # Only where they reach pads ADC1 cannot: CH32X305 and CH32X315. On every
+    # other series the extra ADCs sit on the same pads as ADC1, so there is
+    # nothing to name and nothing to emit - and wiring_analog.c keeps its
+    # single-instance code path, byte for byte.
+    if extra:
+        families = {r.get("family", "") for r in rows}
+        bases: dict = {}
+        for family in families:
+            for inst, base in adc_bases.get(family, {}).items():
+                if bases.setdefault(inst, base) != base:
+                    raise SystemExit(f"{series}: families disagree on the "
+                                     f"ADC{inst} base address")
+        instances = sorted({1} | {inst for inst, _ in extra})
+        missing = [i for i in instances if i not in bases]
+        if missing:
+            raise SystemExit(f"{series}: register_blocks.csv has no base "
+                             f"address for ADC{missing}; it is needed because "
+                             f"those pads are unreachable through ADC1")
+        out.append(f"/* ---- ADC2..{instances[-1]} analog inputs "
+                   f"({len(extra)} more pads) ----")
+        out.append(" * This series puts its ADCs on DISJOINT pads, so a pad")
+        out.append(" * names an instance as well as a channel and A<n>, which")
+        out.append(" * is ADC1's numbering, cannot reach these. analogRead()")
+        out.append(" * takes the instance from CH32_PIN_TO_ADC_INSTANCE.")
+        out.append(" * Bases are from device-data register_blocks.csv; the")
+        out.append(" * register offsets are the same on every family. ---- */")
+        out.append(f"#define CH32_ADC_INSTANCE_COUNT {len(instances)}")
+        for inst in instances:
+            if inst != 1:
+                out.append(f"#define CH32_ADC{inst}_BASE {bases[inst]:#010x}u")
+        out.append("/* { base, clock-enable register, clock-enable bit }, "
+                   "ADC1 first. */")
+        out.append("#define CH32_ADC_INSTANCES { \\")
+        for inst in instances:
+            out.append(f"    {{ CH32_ADC{inst}_BASE, CH32_CLKEN_ADC{inst}_ADDR, "
+                       f"CH32_CLKEN_ADC{inst}_MASK }}, \\")
+        out.append("    }")
+        out.append("#define CH32_PIN_TO_ADC_INSTANCE(p) ( \\")
+        for (inst, ch), (port, bit) in sorted(
+                extra.items(), key=lambda kv: (kv[0][0], kv[0][1])):
+            out.append(f"    (p) == {pad_name(port, bit)} ? {inst} : \\")
+        out.append("    1)")
         out.append("")
 
     # --- default USART pins ---
@@ -2285,7 +2379,7 @@ def main() -> int:
     commit = source_commit(args.tables)
 
     interrupts, vector_forms = load_interrupts()
-    pads, adc, unresolved = load_pin_tables(args.tables)
+    pads, adc, adc_all, unresolved = load_pin_tables(args.tables)
     # Where one (instance, route, role) names several pads. Not an error - see
     # load_pin_routes - but the pick has to be visible rather than silent.
     route_alts: dict = {}
@@ -2297,6 +2391,7 @@ def main() -> int:
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)
     clock_enables = load_clock_enables(args.tables)
+    adc_bases = load_adc_bases(args.tables)
     pwm = load_pwm_pins(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
@@ -2354,7 +2449,8 @@ def main() -> int:
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
             gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
-                     route_alts, wide_timers, forbidden, clock_enables)
+                     route_alts, wide_timers, forbidden, clock_enables,
+                     adc_all, adc_bases)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of

@@ -388,17 +388,33 @@ static inline void ch32_irq_disable(uint32_t irqn)
 #define CH32_IWDG_KEY_START  0xCCCCu
 
 /* ------------------------------------------------------------------ ADC */
-/* Layout is the same on every family the platform builds for; only the
- * conversion width differs (CH32_ADC_BITS, from build.core_defines). */
+/* Layout is the same on every family the platform builds for - checked
+ * against index/registers.csv for all twelve, CH32X315 included - so only the
+ * base address changes between instances, and only the conversion width
+ * changes between families (CH32_ADC_BITS, from build.core_defines).
+ *
+ * The _AT(base) forms exist for CH32X305/CH32X315, whose four ADCs sit on
+ * disjoint pads: there, a pad names an instance as well as a channel, and the
+ * variant maps it (CH32_PIN_TO_ADC_INSTANCE). Everywhere else the base folds
+ * to the ADC1 constant and the generated code is unchanged. */
 #define CH32_ADC1_BASE   (CH32_APB2_BASE + 0x2400u)
-#define CH32_ADC_STATR   CH32_REG32(CH32_ADC1_BASE + 0x00u)
-#define CH32_ADC_CTLR1   CH32_REG32(CH32_ADC1_BASE + 0x04u)
-#define CH32_ADC_CTLR2   CH32_REG32(CH32_ADC1_BASE + 0x08u)
-#define CH32_ADC_SAMPTR1 CH32_REG32(CH32_ADC1_BASE + 0x0Cu)  /* channels 10..17 */
-#define CH32_ADC_SAMPTR2 CH32_REG32(CH32_ADC1_BASE + 0x10u)  /* channels 0..9   */
-#define CH32_ADC_RSQR1   CH32_REG32(CH32_ADC1_BASE + 0x2Cu)
-#define CH32_ADC_RSQR3   CH32_REG32(CH32_ADC1_BASE + 0x34u)
-#define CH32_ADC_RDATAR  CH32_REG32(CH32_ADC1_BASE + 0x4Cu)
+#define CH32_ADC_STATR_AT(base)   CH32_REG32((base) + 0x00u)
+#define CH32_ADC_CTLR1_AT(base)   CH32_REG32((base) + 0x04u)
+#define CH32_ADC_CTLR2_AT(base)   CH32_REG32((base) + 0x08u)
+#define CH32_ADC_SAMPTR1_AT(base) CH32_REG32((base) + 0x0Cu) /* channels 10..17 */
+#define CH32_ADC_SAMPTR2_AT(base) CH32_REG32((base) + 0x10u) /* channels 0..9   */
+#define CH32_ADC_RSQR1_AT(base)   CH32_REG32((base) + 0x2Cu)
+#define CH32_ADC_RSQR3_AT(base)   CH32_REG32((base) + 0x34u)
+#define CH32_ADC_RDATAR_AT(base)  CH32_REG32((base) + 0x4Cu)
+
+#define CH32_ADC_STATR   CH32_ADC_STATR_AT(CH32_ADC1_BASE)
+#define CH32_ADC_CTLR1   CH32_ADC_CTLR1_AT(CH32_ADC1_BASE)
+#define CH32_ADC_CTLR2   CH32_ADC_CTLR2_AT(CH32_ADC1_BASE)
+#define CH32_ADC_SAMPTR1 CH32_ADC_SAMPTR1_AT(CH32_ADC1_BASE)
+#define CH32_ADC_SAMPTR2 CH32_ADC_SAMPTR2_AT(CH32_ADC1_BASE)
+#define CH32_ADC_RSQR1   CH32_ADC_RSQR1_AT(CH32_ADC1_BASE)
+#define CH32_ADC_RSQR3   CH32_ADC_RSQR3_AT(CH32_ADC1_BASE)
+#define CH32_ADC_RDATAR  CH32_ADC_RDATAR_AT(CH32_ADC1_BASE)
 
 #define CH32_ADC_STATR_EOC   (1u << 1)
 #define CH32_ADC_CTLR2_ADON    (1u << 0)

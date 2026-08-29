@@ -120,6 +120,9 @@ tests/
 | `test_package_install.py` | `package/` | 生成したindexからclean installできる |
 | `test_sketch_profiles.py` | `sketches/` | 各sketch.yamlがboard一覧と同期 |
 | `test_sketch_profile_build.py` | `sketches/` | profile経由(loopback index)でbuildできる |
+| `test_board_layer.py` | `unit/` | boardレイヤの定義権限が守られているか。variantが`LED_BUILTIN`を定義しない、`Arduino.h`から`ch32_registers.h`へ到達しない、examplesが`LED_BUILTIN`をガードする、`requires:`が実在capabilityを指す([board-layer-rules](../docs/board-layer-rules.ja.md)) |
+| `test_peripheral_table.py` | `unit/` | `docs/peripheral-support.ja.md`の○が、device-data由来のclock enableと矛盾しないか(片方向のみ。空欄は「EVTに例が無い」ことがあるので見ない) |
+| `test_adc_instances.py` | `unit/` | ADC instanceを持つvariantで、instanceを持つpadにchannelもあるか。`A<n>`がADC1に留まっているか |
 | `test_clock_prescaler.py` | `unit/` | AHB分周器の符号化表(compile時assertのみ) |
 | `test_pd_frames.py` | `unit/` | USB PDのフレームロジック(hostのccで共有ライブラリにしてctypesで実行) |
 | `test_tests_layout.py` | `unit/` | 本節の規約そのもの(下記) |

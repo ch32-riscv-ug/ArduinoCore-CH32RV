@@ -30,6 +30,7 @@ files = [
   { path = "index/pinout.csv", sha256 = "21c6d24c759659246f10a3ae9d9f2debe6b9ac660975069140a97eb591bc93c0" },
   { path = "evidence/pins.csv", sha256 = "fba3ad27e78c65b995e017524d07ddbfb730cb912b6e53d3c4b7dfbca3b039c6" },
   { path = "catalog/products.csv", sha256 = "3d371e45245371c6be9d3e911f1d026b1a9167bb7e889c0808ca98d88ee8c9b0" },
+  { path = "evidence/register_blocks.csv", sha256 = "43c92d7b58ea7f1ecd7b941ab7c20a58ee3d642d9fbafc6fca25a5d85b17e5a4" },
   { path = "evidence/remap_fields.csv", sha256 = "00b3b031c2f06c68286c6a5066592dd4b15dd3e15e26653e7268bfdd43fd6c62" },
   { path = "evidence/timers.csv", sha256 = "63f4279286867ca29b842cbb939dcdee3a0d26534a65b66942a4305bab9d9016" },
 ]
