@@ -49,6 +49,7 @@
 | [toolchain.ja.md](toolchain.ja.md) | toolchainの候補、選定条件、認定matrix |
 | [flash-size.ja.md](flash-size.ja.md) | 何がフラッシュを食うか、map fileの読み方、削り方 |
 | [upload-and-fixture.ja.md](upload-and-fixture.ja.md) | uploader、WCH-Link識別、実機fixture |
+| [ch32rv-requests.ja.md](ch32rv-requests.ja.md) | 同梱予定uploader `ch32rv` への依頼事項(ドッグフーディング前/同梱リリース前/リリース後の区分)と、コア側の受け入れ作業 |
 | [test-strategy.ja.md](test-strategy.ja.md) | unit、host、compile、HIL、logic analyzer、CI |
 | [board-layer-rules.ja.md](board-layer-rules.ja.md) | どの層(series/SKU/board/sketch)が何を定義してよいか。`LED_BUILTIN`とSKU maskの扱い |
 | [examples-build-rules.ja.md](examples-build-rules.ja.md) | examplesのビルド対象宣言、capabilityによるスキップ、簡易テストとsweepの分離 |
