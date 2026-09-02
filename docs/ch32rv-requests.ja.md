@@ -10,6 +10,7 @@
 - 現行の [platform.txt](../platform.txt) は probe-rs recipe([ADR-0008](adr/0008-upload-strategy.ja.md))のまま。置換時に ADR の追記(または新 ADR)を行う。この文書は置換までに ch32rv 側へ求めるものの整理である。
 - [upload-and-fixture.ja.md](upload-and-fixture.ja.md) の「ch32-upload(仮称)」構想は ch32rv が実体化した。recipe 形は ch32rv 側 `docs/cli.ja.md` §5 に定義済みで、現行 platform.txt の制約(probe selector を空にできる 1 変数、`--non-interactive`、進捗抑止)と整合している。
 - ch32rv 側のレビュー記録: `../../ch32rv/docs/direction-review-2026-09-01.ja.md`
+- **検証開始(2026-09-02 決定)**: v0.2.0 を baseline に検証(ドッグフーディング)を開始。0.x は検証版として使いながら直し、安定したら 1.0 にする。direction-review §5 の開始条件のうち A-2(lock)・A-3(--capture)は未充足のまま開始する判断(未充足の間はベンチ運用で同一 probe への並行アクセスを避ける)。
 
 ## 依頼 A: ドッグフーディング開始まで(Linux x64 のみで可)
 
@@ -18,7 +19,7 @@
 | A-1 | exit code(cli §3.6)と `--json` envelope を add-only として凍結した版タグを 1 つ切る | ベンチ(tests/manual/smoke)が exit code と JSON に依存する。番号・field の変更が起きない保証がないと切替できない |
 | A-2 | per-device advisory lock(cli §3.7)の実装 | ベンチでは monitor(CDC/DMI)と upload が同一 probe へ並行アクセスするのが常態。lock 無しの常時運転は衝突する |
 | A-3 | `--capture`(USB transaction 記録、P1)の実装 | ベンチで踏んだ protocol 問題を replay fixture として ch32rv へ報告する経路。無いと「実機で再現待ち」になる |
-| A-4 | README / Status の実態同期 | ドッグフーディング自体のブロッカーではないが、対外表示が「pre-implementation」のままではフィードバックの受け口として誤解を生む |
+| A-4 | ~~README / Status の実態同期~~ **済み(2026-09-02 確認)**: README 刷新済み(β位置づけ・verified scope・インストール手順・udev 手順) | 対外表示が「pre-implementation」のままではフィードバックの受け口として誤解を生む → 解消 |
 
 ## 依頼 B: コア同梱リリースまで
 
@@ -29,7 +30,7 @@
 | B-3 | `--chip` 語彙の machine-readable 公開(`db list --json` 等) | boards.txt の `build.ch32rv_chip` 値の源泉。現行 `tools/index/probe_rs_targets.csv` の置換元。compile-only の 7 family(V205/V407/V467/X305/X315/M030/M103)が「DB に無い」exit 20 の detail で区別され、利用者へ fail-closed の文言を出せること |
 | B-4 | `arduino discovery` / `arduino monitor`(Pluggable Discovery/Monitor、P1) | IDE の port 列挙と monitor 体験。特に SerialSDI(uart と同一 CDC に混在)を IDE の monitor で正しく扱う唯一の解。upload だけなら不要なので B 扱い |
 | B-5 | `flash --sdi on`(および `--monitor` への移行)を recipe から使える形で | コアの SerialSDI ライブラリ利用スケッチの「書込→即 monitor」。現行構成では SDI 有効化を upload に織り込む手段が無い(ch32rv requirements §5(5)) |
-| B-6 | udev rules ファイルの Linux tar への同梱(方針決定済み 2026-09-02)。repo 内に rules ファイルを単一ソースとして置き、`doctor --emit-udev` の埋め込み(include_str!)と梱包コピーの両方で同じファイルを使う | tar 直接利用者が README 1 行(`sudo cp` + `udevadm control --reload`)で導入完結する。**ツールアーカイブ内の post_install.sh は Arduino から実行されない**(post-install はプラットフォーム側の仕組み — arduino-cli platform specification で確認済み 2026-09-02)ため、スクリプト同梱は不要。内容の要点: `TAG+="uaccess"` 本線 + `GROUP="plugdev", MODE="0660"` fallback、ファイル名は seat 系(73-)より前の番号(probe-rs は `69-probe-rs.rules`)、対象は `1a86:8010`(RV)/`1a86:8012`(DAP)。ISP `4348:55e0` は v0.2 の isp 実装時に追加 |
+| B-6 | ~~udev rules ファイルの Linux tar への同梱~~ **納品済み(v0.2.0、2026-09-02 実物確認)**: Linux tar(x64/arm64)に `60-ch32rv.rules` を同梱。`doctor --emit-udev` 出力とバイト一致(単一ソース `cli/60-ch32rv.rules` を include_str!)。`uaccess` 本線 + `plugdev`/0660 fallback、対象 `1a86:8010/8011/8012`(8011 = RISC-V alt PID は依頼時想定に無かった分も収録)。ISP `55e0` は isp 実装時に追加予定 | **ツールアーカイブ内の post_install.sh は Arduino から実行されない**(post-install はプラットフォーム側の仕組み — arduino-cli platform specification で確認済み 2026-09-02)ため、スクリプト同梱は無し(依頼どおり)。macOS/Windows アーカイブには非同梱(udev は Linux 固有) |
 
 ## 依頼 C: コアのリリース後でよいもの
 
