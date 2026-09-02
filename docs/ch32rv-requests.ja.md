@@ -10,15 +10,16 @@
 - 現行の [platform.txt](../platform.txt) は probe-rs recipe([ADR-0008](adr/0008-upload-strategy.ja.md))のまま。置換時に ADR の追記(または新 ADR)を行う。この文書は置換までに ch32rv 側へ求めるものの整理である。
 - [upload-and-fixture.ja.md](upload-and-fixture.ja.md) の「ch32-upload(仮称)」構想は ch32rv が実体化した。recipe 形は ch32rv 側 `docs/cli.ja.md` §5 に定義済みで、現行 platform.txt の制約(probe selector を空にできる 1 変数、`--non-interactive`、進捗抑止)と整合している。
 - ch32rv 側のレビュー記録: `../../ch32rv/docs/direction-review-2026-09-01.ja.md`
-- **検証開始(2026-09-02 決定)**: v0.2.0 を baseline に検証(ドッグフーディング)を開始。0.x は検証版として使いながら直し、安定したら 1.0 にする。direction-review §5 の開始条件のうち A-2(lock)・A-3(--capture)は未充足のまま開始する判断(未充足の間はベンチ運用で同一 probe への並行アクセスを避ける)。
+- **検証開始(2026-09-02 決定)**: v0.2.0 を baseline に検証(ドッグフーディング)を開始。0.x は検証版として使いながら直し、安定したら 1.0 にする。A-2(lock)・A-3(--capture)は未充足のまま開始し、同日付で正式にプッシュ(下表に受け入れ基準)。
+- **ドッグフーディング中の運用方針(2026-09-02 決定)**: 変な挙動・足りない機能は**利用者側で回避せず、ch32rv への修正・追加依頼にする**。回避策を恒久化しない(一時的な直列化などは依頼の納品までの暫定に留め、この文書に依頼として残す)。
 
 ## 依頼 A: ドッグフーディング開始まで(Linux x64 のみで可)
 
 | # | 依頼 | 根拠(組み込み側の制約) |
 |---|---|---|
 | A-1 | exit code(cli §3.6)と `--json` envelope を add-only として凍結した版タグを 1 つ切る | ベンチ(tests/manual/smoke)が exit code と JSON に依存する。番号・field の変更が起きない保証がないと切替できない |
-| A-2 | per-device advisory lock(cli §3.7)の実装 | ベンチでは monitor(CDC/DMI)と upload が同一 probe へ並行アクセスするのが常態。lock 無しの常時運転は衝突する |
-| A-3 | `--capture`(USB transaction 記録、P1)の実装 | ベンチで踏んだ protocol 問題を replay fixture として ch32rv へ報告する経路。無いと「実機で再現待ち」になる |
+| A-2 | **プッシュ済み(2026-09-02)** per-device advisory lock の実装(cli §3.7 仕様どおり: USB serial 単位〔無ければ topology〕の advisory lock を OS runtime dir に置く、`--lock-timeout` 既定 10s、取得失敗は exit 13、異常終了者の stale lock は起動時回収)。受け入れ基準: (1) 同一 probe への並行 `flash` ×2 で一方が待機または exit 13 になり protocol 破損が起きない、(2) monitor 保持中の flash が決定的に振る舞う(黙って混線しない)、(3) kill -9 後の stale lock が次回起動で回収される | ベンチでは monitor(CDC/DMI)と upload が同一 probe へ並行アクセスするのが常態。lock 納品までの直列化は暫定運用であり、IDE 相当フロー(discovery + monitor + upload)の検証開始までに必要 |
+| A-3 | **プッシュ済み(2026-09-02)** `--capture <path>`(cli §3.1、USB transaction 記録)の実装。受け入れ基準: (1) 全 probe 系 command で記録できる、(2) **失敗時(非ゼロ exit)でも記録が flush される**(主用途はバグ報告)、(3) 記録形式が versioned で ch32rv 側の replay fixture にそのまま取り込める、(4) 記録に書込データ(firmware 内容)が含まれる旨を doc に明記。**着手順は A-3 → A-2 を推奨**(以後の全報告の質が上がるため) | 「回避せず報告」ループの土台。無いと報告が現象+再現手順ベースになり、実機なし CI での regression 固定(ch32rv architecture §4 の replay harness)にも繋がらない |
 | A-4 | ~~README / Status の実態同期~~ **済み(2026-09-02 確認)**: README 刷新済み(β位置づけ・verified scope・インストール手順・udev 手順) | 対外表示が「pre-implementation」のままではフィードバックの受け口として誤解を生む → 解消 |
 
 ## 依頼 B: コア同梱リリースまで
