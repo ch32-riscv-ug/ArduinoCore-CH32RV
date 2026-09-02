@@ -29,7 +29,7 @@
 | B-3 | `--chip` 語彙の machine-readable 公開(`db list --json` 等) | boards.txt の `build.ch32rv_chip` 値の源泉。現行 `tools/index/probe_rs_targets.csv` の置換元。compile-only の 7 family(V205/V407/V467/X305/X315/M030/M103)が「DB に無い」exit 20 の detail で区別され、利用者へ fail-closed の文言を出せること |
 | B-4 | `arduino discovery` / `arduino monitor`(Pluggable Discovery/Monitor、P1) | IDE の port 列挙と monitor 体験。特に SerialSDI(uart と同一 CDC に混在)を IDE の monitor で正しく扱う唯一の解。upload だけなら不要なので B 扱い |
 | B-5 | `flash --sdi on`(および `--monitor` への移行)を recipe から使える形で | コアの SerialSDI ライブラリ利用スケッチの「書込→即 monitor」。現行構成では SDI 有効化を upload に織り込む手段が無い(ch32rv requirements §5(5)) |
-| B-6 | udev rule の同梱物化とインストール手順の文言 | `doctor --emit-udev` は実装済み。Board Manager インストール時にコア側ドキュメントから参照する固定物が要る |
+| B-6 | udev rules ファイルの Linux tar への同梱(方針決定済み 2026-09-02)。repo 内に rules ファイルを単一ソースとして置き、`doctor --emit-udev` の埋め込み(include_str!)と梱包コピーの両方で同じファイルを使う | tar 直接利用者が README 1 行(`sudo cp` + `udevadm control --reload`)で導入完結する。**ツールアーカイブ内の post_install.sh は Arduino から実行されない**(post-install はプラットフォーム側の仕組み — arduino-cli platform specification で確認済み 2026-09-02)ため、スクリプト同梱は不要。内容の要点: `TAG+="uaccess"` 本線 + `GROUP="plugdev", MODE="0660"` fallback、ファイル名は seat 系(73-)より前の番号(probe-rs は `69-probe-rs.rules`)、対象は `1a86:8010`(RV)/`1a86:8012`(DAP)。ISP `4348:55e0` は v0.2 の isp 実装時に追加 |
 
 ## 依頼 C: コアのリリース後でよいもの
 
@@ -42,6 +42,7 @@
 ## コア側で行う受け入れ作業(ch32rv への依頼ではない)
 
 - ベンチ(smoke.py)に ch32rv 経路の opt-in 切替を実装し、probe-rs 経路とのクロスチェック期間を設ける(probe-rs はローカル利用のみ。同梱はしない)
+- **udev rule の自動インストールはコアの `post_install.sh`(プラットフォームルート、Linux)で行う**(B-6 の対、2026-09-02 決定)。実行条件は IDE 2.x = 常に実行、arduino-cli = interactive 時のみ、IDE 1.x = 実行しない(Arduino 署名限定)。IDE 2.x は通常ユーザー権限で走るため /etc/udev への書込失敗時は sudo 手順を案内して**正常終了**する(非ゼロで落とさない)。rule 実体はコア側にも置き、CI で `ch32rv doctor --emit-udev` の出力と一致することを照合してドリフトを防ぐ。最後の砦は doctor(未インストール検出+次の一手提示、実装済み)
 - platform.txt の recipe 置換、ADR-0008 の追記(または新 ADR)、boards.txt への `build.ch32rv_chip` 追加
 - `mirror-ch32rv`(ADR-0011 枠)の作成と package_index への組み込み
 - gap 7 family の実機調達(ch32rv 側 DB の verified 化は実機が前提。device_id の evidence 依頼は ch32rv → ch32-device-data で提出済み)
