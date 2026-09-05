@@ -436,10 +436,17 @@ float側が同じ9.4 KBを抱えたまま、もう半分がスカスカになる
 | 3 | **デバッガによる状態確認** — probe-rsでレジスタ/RAMを読む | 配線ゼロ(既に繋がっている) | 周辺レジスタが期待値になっているか | 端子まで出ているか、タイミング |
 | 4 | **ロジックアナライザ** | 高い。1台ずつ | 波形の精度そのもの | — |
 
-方法3はこのrepositoryではまだ使っていませんが、**配線をまったく増やさずに済む唯一の方法**なので、
-全boardにロジアナを繋げない以上、Tier B以下では2の代わりに使う価値があります。
-`probe-rs read b32 <addr> <n>`で周辺レジスタが読めます
-(例: USART1の`CTLR1` = `0x40013800 + 0x0C`)。
+方法3は[`manual/reg_probe`](manual/reg_probe/)が使っています(2026-09-05)。sketchを遠隔操作して
+APIを呼ばせ、probe(`probe-rs read` / `ch32rv read`)で周辺レジスタを読み、device-dataの
+`register_map.csv` / `remap_fields.csv` / `routes.csv` / `clock_enables.csv`から組んだ期待値と比べます。
+**配線をまったく増やさずに済む唯一の方法**で、ベンチ5枚(V003/V103/V203/V307/L103)で
+1 boardあたり30〜130秒、200〜400項目を見ます。
+
+ただし実測で分かった制約があります。**WCH-LinkEはattachするたびにターゲットのRCC_CFGR0
+(とFLASH ACTLR)を書き換えます**(V307: PLL×12→×15+APB1/2で120 MHzのまま走り続ける。
+probe-rsとch32rvで同じなのでprobe firmware側の挙動)。RCCはprobe経由では検証できない
+(見えるのはprobeが書いた値)ので、そこだけsketch側で読み、sketchはクロックがずれたら
+`SystemInit()`を再実行して戻します。詳細は[manual/README](manual/README.ja.md#reg_probe)。
 
 ### 機能別の割り当て
 
@@ -450,22 +457,23 @@ float側が同じ9.4 KBを抱えたまま、もう半分がスカスカになる
 | Serial ボーレート精度 | 4 | ロジアナをTXへ | ⬜ |
 | `millis()` / `micros()` | 1(hostの経過時間と突き合わせ) | 不要 | ✅ `core_api` |
 | `digitalWrite` / `digitalRead` | 1(出力pinは入力経路にも入る) | 不要 | ✅ `core_api` |
-| `digitalRead` の入力・プルアップ | 2(出力pin → 入力pin) | ジャンパ1本 | 🔧 `manual/gpio_loopback`(実機未実行) |
+| `digitalRead` の入力・プルアップ | 2(出力pin → 入力pin)、3(CNF/MODE nibbleとOUTDRのpull選択) | ジャンパ1本 / 不要 | 🔧 `manual/gpio_loopback`(実機未実行)、✅ `manual/reg_probe`(5 board) |
 | `analogRead` | 1(範囲チェック)、2(既知電圧をGND/VDDから) | ジャンパ1本 | ✅ 範囲のみ |
-| `analogWrite` (PWM) duty | 2(PWM出力 → 別pinで`pulseIn`) | ジャンパ1本 | 🔧 `manual/gpio_loopback`(実機未実行) |
+| `analogWrite` (PWM) duty | 2(PWM出力 → 別pinで`pulseIn`)、3(PSC/ATRLR/CHCVR/CCER) | ジャンパ1本 / 不要 | 🔧 `manual/gpio_loopback`(実機未実行)、✅ `manual/reg_probe`(pin↔timer対応はpinout.csvとも照合) |
 | `analogWrite` (PWM) 周波数 | 4 | ロジアナ | ⬜ |
 | `attachInterrupt` | 1(自分の出力エッジを拾う) | 不要 | ✅ `core_api` |
-| `attachInterrupt` の他ポート | 2 | ジャンパ1本 | 🔧 `manual/gpio_loopback`(実機未実行) |
+| `attachInterrupt` の他ポート | 2、3(EXTICRのport・RTENR/FTENR・PFIC) | ジャンパ1本 / 不要 | 🔧 `manual/gpio_loopback`(実機未実行)、✅ `manual/reg_probe`(2ポート × RISING/FALLING/CHANGE/LOW) |
+| AFIO remap(`setRoute` / `setPins`) | 1(往復して戻る)、3(PCFR1/PCFR2のフィールド値とpadの設定・解放) | 不要 | ✅ `route_selftest`、✅ `manual/reg_probe`(USART/I2C/SPIの全route) |
 | `shiftOut` / `shiftIn` | 2(2 pinを直結) | ジャンパ1本 | 🔧 ハングしないことのみ |
 | `pulseIn` | 2(PWM出力を測る) | ジャンパ1本 | 🔧 timeoutのみ |
 | ヒープ (`String` / `malloc`) | 1 | 不要 | ✅ `heap_string` |
 | `printf` / stdio | 1 | TXのみ | ✅ `stdio_printf` |
-| SPI | 2(MOSI → MISO 直結でloopback) | ジャンパ1本 | ⬜ 未実装 |
+| SPI | 2(MOSI → MISO 直結でloopback)、3(CTLR1・remap・pad) | ジャンパ1本 / 不要 | ⬜ loopback未実装、✅ `manual/reg_probe` |
 | SPI mode / clock | 4 | ロジアナ | ⬜ 未実装 |
-| Wire (I2C) | 2(同一board上のslave役 or EEPROM) | 外部device | ⬜ 未実装 |
+| Wire (I2C) | 2(同一board上のslave役 or EEPROM)、3(FREQ・CCR・RTR・remap・pad) | ジャンパ2本+pull-up / 不要 | 🔧 `manual/i2c_loopback`(配線待ち)、✅ `manual/reg_probe`(**PCLK1>63 MHzでFREQ/TRISEが溢れる**のを検出、要判断) |
 | USB-PD (X035) | 4 + 実negotiation | 専用治具 | ⬜ 未実装 |
-| クロック設定 | 3(RCCレジスタ読み出し)、1(`millis()`の歩度) | 不要 | 🔧 間接的 |
-| 割り込み優先度 / PFIC | 3 | 不要 | ⬜ |
+| クロック設定 | 3(RCCレジスタ読み出し)、1(`millis()`の歩度) | 不要 | ✅ `manual/reg_probe`(SW/SWS・HPRE・PPRE・PLL・EXTEN・wait state・SysTick。**RCCだけはsketch側読み**——probeが書き換えるため) |
+| 割り込み優先度 / PFIC | 3 | 不要 | 🔧 `manual/reg_probe`(ISRで有効状態のみ。優先度は未検証) |
 
 凡例: ✅ 実装済み / 🔧 部分的 / ⬜ 未着手
 
@@ -514,16 +522,19 @@ dの前提として、**どのboardが繋がっているかをスクリプトが
 | ビルドmenu(`pnum` / `printf`) | ✅ `compile_all.py`(pnum)、実機(printf) | | ⬜ 全menu組み合わせのcompile |
 | `printf` / stdio | ✅ `stdio_printf` / `print_format`(V003 / V103 / V203 / X035 / L103 / V307 実機PASS) | ✅ `smoke.py` | ⬜ float書式、`nano.specs`未適用でsketchが約40 KB膨らむ |
 | 時間 (`millis`/`micros`/`delay`) | ✅ `core_api` | | ⬜ 長時間のオーバーフロー、歩度精度 |
-| GPIO | ✅ `core_api`(出力の読み戻し) | | ⬜ 入力プルアップ、他ポートへのloopback |
-| ADC | ✅ `core_api`(範囲) | | ⬜ 既知電圧での確度、分解能設定、複数ch |
-| PWM | 🔧 `core_api`(ハングしないこと) | | ⬜ duty、周波数、pin ↔ timer対応 |
-| 外部割り込み | ✅ `core_api`(自エッジ) | | ⬜ 他ポート、CHANGE/LOW、優先度 |
+| GPIO | ✅ `core_api`(出力の読み戻し) | ✅ `reg_probe`(CNF/MODE・OUTDRのpull選択、2ポート、5 board) | ⬜ 他ポートへのloopback(実波形) |
+| ADC | ✅ `core_api`(範囲) | ✅ `reg_probe`(ADCPRE・RSQR・SAMPTR・pad・channelをpinout.csvと照合) | ⬜ 既知電圧での確度、分解能設定、複数ch |
+| PWM | 🔧 `core_api`(ハングしないこと) | ✅ `reg_probe`(PSC・ATRLR・CHCVR・CCER・MOE、pin↔timerをpinout.csvと照合) | ⬜ 実波形の周波数 |
+| DAC(V307) | | ✅ `reg_probe`(EN1・R12BDHR1・analog pad) | ⬜ 出力電圧 |
+| 外部割り込み | ✅ `core_api`(自エッジ) | ✅ `reg_probe`(EXTICR・RTENR/FTENR・PFIC、RISING/FALLING/CHANGE/LOW、2ポート) | ⬜ 他ポートの実エッジ、優先度 |
+| AFIO remap(`setRoute`) | ✅ `route_selftest`(往復) | ✅ `reg_probe`(PCFR1/2フィールド値・pad設定と解放、USART/I2C/SPI全route) | ⬜ 未搭載padのrouteをsiliconが無視する件(V203C8T6で実測、要判断) |
+| クロック / SysTick | ✅ `core_api`(`millis`歩度) | ✅ `reg_probe`(RCC・EXTEN・wait state・SysTick CMP・PFIC) | ⬜ 高クロック(144 MHz)実機 |
 | `shiftOut` / `pulseIn` | 🔧 `core_api`(ハングしないこと) | | ⬜ 実波形 |
 | 乱数 / 数学 | ✅ `core_api` | | |
 | USART route自動判定 | | ✅ `uart_scan.py` | |
 | チップ / probe判定 | | ✅ `chip_info.py` | |
-| SPI | | | ⬜ **未実装** |
-| Wire (I2C) | | | ⬜ **未実装** |
+| SPI | ✅ `spi_selftest`(自己検査) | ✅ `reg_probe`(CTLR1・remap・全route) | ⬜ 実デバイス相手、配線loopback |
+| Wire (I2C) | ✅ `wire_selftest`(自己検査) | ✅ `reg_probe`(FREQ・CCR・RTR・remap・全route)、🔧 `i2c_loopback`(配線待ち) | ⬜ 実デバイス相手。**PCLK1>63 MHz(V103/V203/V307)でFREQ/TRISEが6 bitに入らない**(要判断) |
 | USB (X035 PD / V307 HS) | | | ⬜ **未実装** |
 | 低消費電力モード | | | ⬜ **未実装** |
 | SDI printf(WCH-Link経由のdebug出力) | | | ⬜ **未実装**(別Serialクラスとして検討) |

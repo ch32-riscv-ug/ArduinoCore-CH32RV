@@ -20,6 +20,7 @@
 | [`gpio_loopback/`](gpio_loopback/) | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
 | [`i2c_loopback/`](i2c_loopback/) | ジャンパ2本+pull-upでWireのslaveを検証。I2C1(master)↔I2C2(slave)、データ双方向 / callback / 0xFF filler |
 | [`crt0_probe/`](crt0_probe/) | 自作crt0が`setup()`へ正しいRAMを渡しているか。`.data` copy / `.bss` zero fill / `.init_array` |
+| [`reg_probe/`](reg_probe/) | **デバッガでレジスタを読んで照合**(方法3)。sketchを遠隔操作してAPIを呼ばせ、GPIO / AFIO remap / USART / EXTI / TIM / ADC / DAC / I2C / SPI / SysTick / PFICのレジスタをprobeで読み、device-data由来の期待値と比べる。配線ゼロ |
 | [`conftest.py`](conftest.py) | 共有fixture(`attached` / `bench` / `uart_routes`)とsketchのparametrize |
 | [`env_config.py`](env_config.py) | `.env`のpad名(`PA0`)をpin番号へ変換し、sketch用のheaderを書き出す |
 | [`bench.json`](bench.json) | この作業台の配線記録(既定と違うboardだけ) |
@@ -348,6 +349,96 @@ SWDのpad(PA13/PA14、X033/X035ならPC18/PC19)は**絶対に使わないでく�
 
 **まだ実機で回していません**(compileのみ確認)。
 
+## reg_probe
+
+[テスト計画の方法3](../TEST_PLAN.ja.md#ペリフェラル別の検証方法)——**デバッガでレジスタを読んで照合する**——の
+実装です。配線は要りません。
+
+```sh
+cd tests
+CH32_PROBE=<serial> uv run --env-file .env pytest manual/reg_probe/reg_probe.py -v -s
+uv run manual/reg_probe/reg_probe.py --probe <serial> [--reader ch32rv] [--only gpio,serial]
+```
+
+sketch(`sketch/reg_probe.ino`)は**遠隔操作器**で、自分では何も判定しません。hostが
+`PINMODE 1 OUT`のようにAPIを呼ばせ、`OK`が返ったらprobeで該当レジスタを読み、期待値と比べます。
+期待値は`cores/arduino/ch32_registers.h`からは取りません。device-dataの
+`register_map.csv`(アドレス)/`remap_fields.csv`(remapフィールドのbit位置)/`routes.csv`(routeのpad)/
+`clock_enables.csv`(クロック有効bit)/`timers.csv`(タイマ幅)/`pinout.csv`(padの既定機能)と、
+boards.txtの`core_defines`/`clock_defines`、variant headerのroute表から組みます。
+**coreの自前レジスタ表が間違っていれば、自分自身と一致することなくここで落ちます。**
+
+レジスタを読むtoolは`--reader`(env `CH32_READER`)で選べます。既定は`.tools`のprobe-rs、
+`ch32rv`は1回0.08秒(probe-rsは0.4秒)で、V307の270回読みが21秒で終わります。
+どちらでも結果は一致しました(V307で確認)。
+
+| group | 呼ぶAPI | 読むレジスタ |
+|---|---|---|
+| sanity | (最初の読み出し) | probe readのあとsketchが生きているか。probeが書き換えたRCCの値、周辺クロック有効bitがprobe読みとsketch読みで一致するか |
+| clock | 起動状態 | RCC CTLR/CFGR0(SW/SWS・HPRE・PPRE1/2・PLL)・EXTEN・FLASH ACTLR・SysTick CTLR/CMP・PFIC(SysTick/USART) |
+| gpio | `pinMode`の5 mode、`digitalWrite`、`digitalRead` | CFGLR/CFGHRのCNF/MODE nibble、OUTDR(pull選択)、INDR、portのclock。PA1(出力)と別portの入力専用pad(PB12 / PC0) |
+| serial | `Serial<n>.begin/setRoute/end`(全USART・全route)、monitorの往復 | AFIO PCFR1/PCFR2のフィールド、TX/RX padの設定と旧padの解放、CTLR1/BRR/CTLR2/CTLR3、clock、PFIC |
+| exti | `attachInterrupt`(RISING/FALLING/CHANGE/LOW)、`detachInterrupt` | AFIO EXTICRのport、EXTI RTENR/FTENR/INTENR、vector群のPFIC |
+| pwm | `analogWrite` 64/128/255/0 | PSC・ATRLR・CTLR1・CHCTLR(PWM1)・CCER・CHnCVR・TIM1のBDTR MOE・pad。pin↔timer/channelは`pinout.csv`とも照合 |
+| dac | `analogWrite(CH32_DAC1_PIN)`(V307) | DAC CTLR EN1・R12BDHR1・padがanalog・clock |
+| adc | `analogRead(A0)` | ADCPRE(sketch側読み)・CTLR2・RSQR1/3・SAMPTR1/2・pad・clock。channelは`pinout.csv`とも照合 |
+| tone | `tone(PA1, 500)`、`noTone` | PSC・ATRLR(32 bitタイマは32 bitで比較)・CTLR1・DMAINTENR・PFIC |
+| wire | `Wire.begin/setClock(400k)/setRoute/end` | PCFR1/2・SCL/SDA pad(AF OD)・CTLR1 PE・CTLR2 FREQ・CKCFGR・RTR・clock on/off |
+| spi | `SPI.begin/beginTransaction/setRoute/end` | PCFR1/2・SCK/MOSI/MISO pad・CTLR1(MSTR/SSM/SSI/SPE/BR/CPOL/CPHA/LSBFIRST)・clock on/off |
+
+debug pad(PA13/PA14、V00xはPD1、X03xはPC18/PC19)、monitorのpad、**検出したpart numberに無いpad**を
+含むrouteは名指しでSKIPします(理由は下)。
+
+### 実測で分かった3つの制約
+
+**1. WCH-LinkEはattachのたびにターゲットのクロックを書き換える。** probe-rs 0.32でもch32rv 0.5でも同じなので
+probe firmware(2.22)の挙動です。V307ではPLL×12(96 MHz)がPLL×15+APB1/2(CFGR0=`0x0038040a`、120 MHz)になり、
+coreは走り続けるのにconsoleが144000 baudでしか読めなくなる。L103ではCFGR0のほかFLASH ACTLRのwait stateも
+1になる。V003は書き換えられない。初代WCH-Link(CH549、V103)も書き換えない。
+
+対処: sketchは`loop()`ごとにRCCが`SystemInit()`の置いた値か確かめ、違えば`SystemInit()`をもう一度呼びます
+(`heal_clock`)。これで115200 baudに戻ります——**A-11「任意のRCC状態からのSystemInit」の実機検証**にも
+なっていて、1回の実行でV307は263回、L103は211回、V203は184回戻しています。RCC_CTLR/CFGR0・FLASH ACTLR・
+ADCPREだけはprobe経由では検証できない(見えるのはprobeが書いた値)ので、`CLOCK`/`PEEK`コマンドで
+sketch側から読みます。周辺クロック有効bit(APB1/2PCENR)はprobe読みとsketch読みが一致することを
+sanityで確認しています。
+
+**2. 初代WCH-Link(CH549)のUART bridgeは1行を6秒以上抱えることがある。** V103でmonitorの往復(EXCURSION)を
+`OK`を合図に読んだら、6秒の往復が終わってからhostに`OK`が届き、全部「移動前」を見ていました。
+hostはbridgeに頼らず、remapフィールドが移動先の値になるまでprobeでポーリングして同期します。
+コマンドの応答が来ない/`VAL`行が欠けた場合は空行を前置して再送し、回数を報告します。
+
+**3. パッケージに無いpadのrouteは、siliconがremapを無視する。** CH32V203C8T6(LQFP48)で
+`Serial3.setRoute(1)`(PC10/PC11)は`true`を返すが、PCFR1のUSART3フィールドもGPIOCのCFGHRも
+reset値のまま(probe読みとsketch側PEEKで一致。同じportのPC13へのpull-upは効く)。variantは
+series全体の和集合(`pnum=ANY`)なので、coreはそのrouteが無いことを知れません。**未決の論点**:
+pnumが指定されているとき`setRoute()`/`setPins()`が`digitalPinIsValid()`で拒否すべきか、
+ANYではdocumentに留めるか。testは検出したpartの`pinout.csv`に無いpadを含むrouteをSKIPします。
+
+### 見つかったこと(core側、要判断)
+
+- **PCLK1 > 63 MHzでI2CのFREQ[5:0]とTRISE[5:0]が溢れる。** `Wire.begin()`は`CTLR2.FREQ = PCLK1 / 1 MHz`、
+  `RTR = FREQ + 1`を書きますが、フィールドは6 bitです(`registers.csv`もmask `0x3f`)。V307/V203(96 MHz)では
+  FREQ=32・TRISE=33、V103(72 MHz)ではFREQ=8・TRISE=9が実際に書かれています。`wire_selftest`は通っているので
+  SCL周波数(CCR)は正しく、rise time補償だけが間違っている状態です。`wiring_time.c`の「EVTはPPRE1を/2にするが
+  理由不明」というTODOと関係するかもしれません(EVTの144 MHz構成でもPCLK1=72で溢れるので、それだけが理由では
+  ないかもしれません)。testではFAILとして残しています(`wire.*_freq_fits_field` / `*_rtr_fits_field`)。
+- `Wire.end()`はCTLR1=0のあとI2Cのクロックを止めるので、その後のレジスタ読みは不定値です(1・0x9・0x21を観測)。
+  coreの不具合ではないので、testはクロックbitが落ちていることを見ます。
+
+### 2026-09-05 の結果(reader = ch32rv 0.5.0、probe firmware 2.22 / CH549 2.12)
+
+| board | part | 項目 | FAIL | SKIP | probe読み | クロック復元 | 所要 |
+|---|---|---|---|---|---|---|---|
+| CH32V003 | CH32V003F4P6 | 219 | 0 | 2(USART1のroute 1はPD1=SWIO、I2C1のroute 1も) | 124回 | 0回 | 30秒 |
+| CH32V103 | CH32V103R8T6 | 298 | **7**(I2C FREQ/TRISE溢れ、72 MHz) | 0 | 191回 | 0回 | 130秒(CH549 bridge) |
+| CH32V203 | CH32V203C8T6 | 275 | **7**(同上、96 MHz) | 1(USART3 route 1: PC10/PC11がC8T6に無い) | 173回 | 166回 | 35秒 |
+| CH32V307 | CH32V307VCT6 | 417 | **7**(同上、96 MHz) | 1(wait state fieldなし) | 270回 | 263回 | 45秒 |
+| CH32L103 | CH32L103C8T6 | 345 | 0 | 1(I2C1 route 2はPA13=SWDIO) | 218回 | 211回 | 36秒 |
+
+FAILはすべて上の「見つかったこと」のI2C FREQ/TRISEで、レジスタの読み違いや期待値の食い違いは残っていません。
+V307はprobe-rs readerでも同じ結果でした(270回で108秒)。X035はprobeがWindows側にも挿さっておらず未実行です。
+
 ## 結線
 
 `smoke.py`は実行前に対象boardのTX/RXを表示します。**TX → probeのRX、RX → probeのTX**、GND共通。
@@ -410,6 +501,7 @@ WCH-LinkEは`ff`+CDC×2構成なので、**書き込みとSerial受信が1本の
 | 2026-08-25 | CH32L103C8T6 | `0E028F0692F1` | **11/12** — `tone_selftest` FAIL ([原因](#ch32l103のtoneが鳴らなかった-2026-08-25-解決)) |
 | 2026-08-25 | 上記4台 | 同上 | 32 bitタイマの修正後に**再走。全4台 12/12 pass** |
 | 2026-08-25 | CH32X035C8T6 | `FC928F068181` | **13/13 pass** — `pd_selftest`(PDドライバのhw check込み)と`wire_selftest`(slave check込み)が加わった構成 |
+| 2026-09-05 | V003 / V103 / V203 / V307 / L103 | 各probe | **`reg_probe`(方法3)を5枚で初実行**。1,554項目中FAILは3 board × 7のI2C FREQ/TRISE溢れのみ([詳細](#reg_probe)) |
 
 `probe_switch`でprobeを切り替えながら`smoke.py --sketch all`を回したものです。
 **実機検証がV103の1 familyだけだった状態は解消**しました。
