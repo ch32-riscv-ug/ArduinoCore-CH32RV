@@ -8,6 +8,11 @@
 [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md)(検証方法 1〜4)、
 [../tests/manual/README.ja.md](../tests/manual/README.ja.md)(既存の手動テスト)
 
+> **位置づけ**: 本文書は**コア側の立場**であり、protocol 側との合意ではない。
+> 最終的な調整は `wch-protocols` で各リポジトリの要望を突き合わせて行われる。
+> いまは要求を**広げる**段階なので、ここの「結論」は要求の根拠であって決定ではない。
+> 要求そのものは ID 付きで[harness-requirements](harness-requirements.ja.md)に集約した。
+
 ---
 
 ## 0. 結論(先に)

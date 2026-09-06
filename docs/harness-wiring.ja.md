@@ -6,9 +6,19 @@
 出典データ: `ch32-device-data` の `index/pinout.csv`(24983 行、part number 別・全 route)、
 `index/parts.csv`、`evidence/debug_wiring.csv`。手書きのピン表は作らない([device-data](device-data.ja.md))。
 
-想定 harness: **RP2040-Zero**。デジタルは `GP0`–`GP15` が連番でエッジに出ていて PIO の `in pins, 16` が
-そのまま 16ch キャプチャになる。**アナログは窓の外**(`GP26`–`GP29`)。`GP16` は基板上 WS2812、
-`GP17`–`GP25` は裏面パッド。
+> **channel 数は制約ではない。** 本文書は **16ch class(RP2040-Zero)を 1 つの階層として**具体化したもので、
+> 16 が上限という主張ではない。Pico / Pico 2(23ch)、RP2350B(48)、ESP32-S3 / P4(GPIO matrix)なども
+> ありうる。**階層ごとの到達範囲は[harness-requirements](harness-requirements.ja.md) §2.2 の需要曲線**にある。
+> 要点だけ言うと **16 → 20ch の 4 本で、全バスインスタンスの被覆が 18/24 → 24/24 series になる**。
+
+想定 harness(この文書の具体例): **RP2040-Zero**。デジタルは `GP0`–`GP15` が連番でエッジに出ていて
+PIO の `in pins, 16` がそのまま 16ch キャプチャになる。**アナログは窓の外**(`GP26`–`GP29`)。
+`GP16` は基板上 WS2812、`GP17`–`GP25` は裏面パッド。
+
+> **位置づけ**: 本文書は**コア側の立場**であり、protocol 側との合意ではない。
+> 最終的な調整は `wch-protocols` で各リポジトリの要望を突き合わせて行われる。
+> いまは要求を**広げる**段階なので、ここの「結論」は要求の根拠であって決定ではない。
+> 要求そのものは ID 付きで[harness-requirements](harness-requirements.ja.md)に集約した。
 
 ---
 
@@ -17,12 +27,14 @@
 1. **24 series は既定 route で 6 群に分かれ、そのうち 10 series が完全に同一**。
    `USART1 = PA9/PA10`、`I2C1 = PB6/PB7`、`SPI1 = PA5/PA7/PA6/PA4`、`debug = PA13/PA14`。
    **1 本のケーブルで 10 series が挿し替えなしに載る**(§2)。
-2. **16 本の窓に収まるケーブルを 5 本作れば全 24 series を覆える**(§4)。
+2. **16ch class では、ケーブルを 5 本作れば全 24 series を覆える**(§4)。
+   **20ch class なら 1 本のケーブルで届く series が増える**([harness-requirements](harness-requirements.ja.md) §2.2)。
    案A(**12 series**)、案B(7)、案C(2)、案E(2)、案M(1)。
    1 本あたり **16 本の窓 + 4 本のアナログ**で、すべて RP2040 の hardware ブロック割当まで検証済み。
 3. **どの案も既定 route でバスの 3〜8 インスタンスに届く。**
    16 本で足りなくなるのは **2 本目以降の SPI と上位番号の USART** だけ。
-   全インスタンスを同時に張ろうとすると **V303/V305/V307/V317 だけが 18 pad** 必要で窓に入らない(§3)。
+   全インスタンスを同時に張ろうとすると **V303/V305/V307/V317 が 19 pad、V407/V467 が 17 pad** 必要で
+   16ch には入らない(§3)。**20ch class なら全 24 series が入る。**
 4. **ADC・DAC・PWM は専用線が要らない。** バス線と同じ pad に相乗りしている。
    案A の 16 本のうち **ADC が 8 pad、PWM(TIM CHx)が 12〜15 pad、DAC が 2 pad**(V30x/V407 系)。
    窓の外に要るのは「DAC 出力の並列タップ」「VDD」「電流シャント」だけ(§6)。
@@ -125,7 +137,7 @@ harness は**バスの相手役**なので、SPI は slave、I2C は target に�
 ための最小 pad 数。全 route を対象に、§2.1 の 2 方式を区別したうえで beam search で求めた。
 `ADC` / `PWM` / `DAC` 列は、**その最小 pad 集合の中にいくつ相乗りしているか**。
 
-| series | U/I/S インスタンス | 最小 pad | ADC | PWM | DAC | 16ch 窓 |
+| series | U/I/S インスタンス | 最小 pad | ADC | PWM | DAC | 16ch class |
 |---|---|---:|---:|---:|---:|---|
 | V003 / V002 / V004 | 1/1/1 | **3〜5** | 0 | 3 | – | 余裕 |
 | V005 / V006 / V007 / M007 | 2/1/1 | **4** | 2 | 3–4 | – | 余裕 |
@@ -142,8 +154,9 @@ harness は**バスの相手役**なので、SPI は slave、I2C は target に�
 
 **要点**:
 
-- **16 本の窓で「全インスタンス」に届かないのは V30x 系の 4 series だけ**。
-  USART が 8 本ある割に AFIO 方式で逃げ道が少ないのが理由。
+- **16ch class で「全インスタンス」に届かないのは V30x 系の 4 series と V407/V467**。
+  USART が 8〜10 本ある割に AFIO 方式で逃げ道が少ないのが理由。
+  **20ch class にすれば全 24 series が入る**([harness-requirements](harness-requirements.ja.md) §2.2)。
 - この最小値は pad 数だけを最適化した結果で、**利用者が実際に使う既定 route から外れる**。
   実用案(§4)は既定 route を優先し、代わりに一部インスタンスを諦める。
 - **DAC を持つのは V303/V305/V307/V317/V407/V467 の 6 series だけ**で、pad は `PA4`/`PA5` に固定。
@@ -372,16 +385,27 @@ SoftSPI / SoftWire / SoftSerial、**ARGB**(1 線。PIO でデコードできる)
 | **USB PD** | X033/X035/L103/M030/V205/V407 | **CC 線の PD PHY が要る**。RP2040 単体では不可。`FUSB302` を足すか、**もう 1 枚 CH32X035 を PD の相手にする**(コアの `USBPD` ライブラリがそのまま使える)のが現実的 |
 | **SDIO** | V303/V305/V307/V317/V407/V467 | 4 bit SDIO を演じるのは難度が高い。**SPI モードの SD カードなら容易**(EmbedBench に `unit_sdcard_model` が既にある) |
 
-### 7.4 ✕ harness の役ではない / ピン数が足りない
+### 7.4 ✕ / △ — harness class によって線が動くもの
 
-| ペリフェラル | 理由 | 誰が相手か |
-|---|---|---|
-| **USB FS / HS / SS(device)** | RP2040 の USB は **device か host のどちらか一方**。PC 接続に使っている以上 host になれない。`Pico-PIO-USB` で 2 つ目の FS host を PIO に立てる手はあるが、**PIO をキャプチャと取り合う**(要検証) | **PC が相手**。DUT を直接 PC に挿すのが正しい。harness は同期と観測に回る |
-| **Ethernet**(V203/V208 10M、V307 1G MAC+10M PHY、V317/V407/V467 MAC+10M/100M) | RMII/MII は 50 MHz・多ピン。実 PHY が要る | **PHY モジュールとスイッチ / PC** |
-| **FSMC / PSRAM / LTDC / DVP** | 並列バスで 16〜30 本。**16ch の窓に入らない** | 専用治具。コアでも `対象外` |
-| **QSPI** | 6 本 + 高速 | 専用治具 |
-| **BLE**(V208) | 専用スタックと無線 | 対象外(コアも `対象外`) |
-| **USB SS**(X315) | 5 Gbps | 対象外 |
+**16ch class(RP2040-Zero)を前提にすると ✕ になるが、class を上げると届くものがある。**
+到達範囲は[harness-requirements](harness-requirements.ja.md) §2.2 / §2.4 を参照。
+
+| ペリフェラル | 16ch class | 上位 class なら | 本当の難所 |
+|---|---|---|---|
+| **USB FS(device)** | ✕ PC が相手 | **△ ESP32-S3 の OTG FS を host に回せる** | RP2040 は device/host 排他。`Pico-PIO-USB` は PIO をキャプチャと取り合う |
+| **USB HS(device)**(V205/V307/V407/X315) | ✕ | **△ ESP32-P4 の USB 2.0 HS OTG** | HS host 側の stack。コアの TinyUSB glue も未着手なので順序は後 |
+| **Ethernet**(11 series) | ✕ PHY とスイッチが相手 | **△ ESP32-P4 は Ethernet MAC(RMII)を持つ**。PHY を両側に置けば harness が peer になれる | RMII 50 MHz と PHY 2 個。配線と stack の問題に落ちる |
+| **DVP**(15〜19 pad) | ✕ 窓に入らない | **△ 24〜32ch class。ESP32-S3 の `LCD_CAM`** | harness が**カメラ側**を演じる。パラレル出力が使えるか |
+| **SDIO 4bit**(12〜14 pad) | ✕ | **△ 24ch class でピンは足りる** | タイミング。SD card 側を演じられるか(ESP32 の SDIO slave、**要確認**)。SPI モードなら容易 |
+| **I2S**(11〜13 pad) | △ | ○ | PIO / ESP32 の I2S。難所は少ない |
+| **FSMC**(33〜34 pad) | ✕ | **△ 56ch class** | **速度**。SRAM/LCD を演じるので待たせにくい |
+| **LTDC**(34 pad) | ✕ | **△ 56ch class** | 同上。表示なので落としても気づきにくく、検証の設計自体が難しい |
+| **QSPI**(24 pad、V205 のみ) | ✕ | △ 32ch class | 高速 |
+| **BLE**(V208) | ✕ | ✕ | 専用スタックと無線。コアも `対象外` |
+| **USB SS**(X315) | ✕ | ✕ | 5 Gbps |
+
+**「難しい」と「できない」を分ける。** ピン数で切れるものは class を上げれば届き、
+残るのは速度と stack の問題になる。
 
 ### 7.5 harness 側の電気的な限界
 

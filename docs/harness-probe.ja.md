@@ -14,6 +14,11 @@
 - `../../ch32-device-data/` — device DB
 - `../../../dev/EmbedBench/` — host 検証ライブラリ。デバイス IF 凍結済み
 
+> **位置づけ**: 本文書は**コア側の立場**であり、protocol 側との合意ではない。
+> 最終的な調整は `wch-protocols` で各リポジトリの要望を突き合わせて行われる。
+> いまは要求を**広げる**段階なので、ここの「結論」は要求の根拠であって決定ではない。
+> 要求そのものは ID 付きで[harness-requirements](harness-requirements.ja.md)に集約した。
+
 ---
 
 ## 0. 結論(先に)
@@ -142,7 +147,7 @@ NACK、bus stuck 等の刺激を与えます」**。その peer が今は存在�
 
 | 論点 | 実際のところ |
 |---|---|
-| **連続ストリーミングでは FX2LP に負ける** | RP2040 は USB FS(実効 ~1 MB/s)。無圧縮なら 16ch で ~500 kSa/s、8ch で ~1 MSa/s が上限。FX2LP は USB HS で 16ch@12 MHz を流し続けられる |
+| **連続ストリーミングは class 次第** | RP2040 は USB FS(実効 ~1 MB/s)で、無圧縮なら 16ch ~500 kSa/s / 8ch ~1 MSa/s が上限。FX2LP は USB HS で 16ch@12 MHz を流し続けられる。**ただし ESP32-S3 の PSRAM(MB 級バッファ)や ESP32-P4 の USB HS を選べば、この不利は消える**([harness-requirements](harness-requirements.ja.md) §2.4) |
 | **ただしコアの方法4 は全部「短い窓」** | UART 1 フレーム 87 µs、I2C 10 byte @100 kHz で ~1 ms、PWM 数周期。**burst(trigger + RAM 深掘り)で全部足りる**。深さ(16ch@10 MSa/s ≈ 10 ms)は概算だが桁は合う |
 | 全 24 series を書けるようになるわけではない | 線層は SWIO(V003/V00x/M030)と RVSWD(それ以外)の 2 つで、RVSWD は `attested` 止まり。**書込 probe としての完成は遠い**。だから §0-2 の順序 |
 | GDB / `arduino-cli debug` はそのままでは繋がらない | いまの経路は WCH OpenOCD 固定([debugger](debugger.ja.md))。harness を使うなら ch32rv 側の GDB server 経由になる |
