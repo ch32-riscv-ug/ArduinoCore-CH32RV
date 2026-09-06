@@ -51,6 +51,7 @@
 | [upload-and-fixture.ja.md](upload-and-fixture.ja.md) | uploader、WCH-Link識別、実機fixture |
 | [ch32rv-requests.ja.md](ch32rv-requests.ja.md) | 同梱予定uploader `ch32rv` への依頼事項(ドッグフーディング前/同梱リリース前/リリース後の区分)と、コア側の受け入れ作業 |
 | [harness-probe.ja.md](harness-probe.ja.md) | 自作probe(DUT harness = 書込+ロジックキャプチャ+周辺エミュ)の評価と依頼事項。方法4の空白、入力側刺激、EmbedBench接続 |
+| [harness-wiring.ja.md](harness-wiring.ja.md) | harnessの配線設計。series別のpad群分け、16本割当3案、必要な相手の数、試験できないペリフェラル |
 | [test-strategy.ja.md](test-strategy.ja.md) | unit、host、compile、HIL、logic analyzer、CI |
 | [board-layer-rules.ja.md](board-layer-rules.ja.md) | どの層(series/SKU/board/sketch)が何を定義してよいか。`LED_BUILTIN`とSKU maskの扱い |
 | [examples-build-rules.ja.md](examples-build-rules.ja.md) | examplesのビルド対象宣言、capabilityによるスキップ、簡易テストとsweepの分離 |
