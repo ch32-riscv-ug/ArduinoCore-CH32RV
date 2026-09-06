@@ -20,11 +20,23 @@
 
 | 文書 | 中身 |
 |---|---|
-| [harness-probe](harness-probe.ja.md) | 採る/採らないの評価、コアの穴との対応、EmbedBench 接続 |
-| [harness-wiring](harness-wiring.ja.md) | series 別の pad、16 本割当 5 案、必要な相手の数、試験できない範囲 |
+| [harness-probe](harness-probe.ja.md) | 採る/採らないの評価、コアの穴との対応、**§4.1 = DMI 段階のずれの解き方**、EmbedBench 接続 |
+| [harness-wiring](harness-wiring.ja.md) | series 別の pad、16ch class の割当 5 案、必要な相手の数、class 別の到達範囲 |
 | [harness-testing](harness-testing.ja.md) | 誰がどう叩くか、能力宣言と resolver、模型の置き場所 |
 
 **この 3 文書の「結論」はコア側の立場であって、protocol 側の決定ではない。**
+
+### 他リポジトリの要望を読んだ結果(2026-09-06)
+
+所在の索引は `wch-protocols/references/harness-index.ja.md`。
+
+| repo | 文書 | ID 体系 | ここへの反映 |
+|---|---|---|---|
+| **ch32rv**(ライタ) | `docs/data-requests/0006-harness-integration.ja.md` | 節番号 | §1-O に H-180〜H-184、H-108 / H-109 を新設。H-002 / H-126 の根拠を訂正。C-12 / C-13 を追加 |
+| **EmbedBench**(ベンチ) | `docs/HARNESS_REQUESTS.ja.md` | **`B-001`〜`B-007`** | §1-O に H-185〜H-191 |
+| **wch-protocols** | `references/harness-index.ja.md` ほか | 節番号 | 裁定はまだ無い |
+
+**どの指摘をどう反映したかは §6 に 1 枚でまとめた**(相手側が解消済みに線を引けるように)。
 
 ## 読み方
 
@@ -42,7 +54,7 @@
 | ID | 要求 | 重み | 状態 | 根拠 |
 |---|---|:--:|---|---|
 | H-001 | 個体ごとに一意で安定した USB serial を descriptor に出す | ◎ | 文書 | コアの識別優先順位は「実測で unique と確認した hardware serial」が第 1。`--device 0` や「最初に見つかった 1 台」は使わないと決めている |
-| H-002 | probe 種別 / firmware 版 / capability を machine-readable に出す | ◎ | 実測 | fixture manifest が要求。LinkE は `wlink status` に聞くしかなく、それが firmware 2.11/2.12 問題を見えなくしていた |
+| H-002 | probe 種別 / firmware 版 / capability を machine-readable に出す | ◎ | 実測 | fixture manifest が要求。**根拠を更新(ch32rv `0006` §12)**: ch32rv は `probe info --json` が種別と版(raw / 正規化 / WCH 表記の三重)を、`capabilities --json` が probe×target の可否と**理由**を出す。**要求そのものは有効**で、harness も同じことをすべき |
 | H-003 | per-device advisory lock(USB serial 単位、runtime dir、timeout、stale 回収、専用 exit code) | ◎ | 文書 | ch32rv 依頼 A-2 と同一仕様。harness は control / capture / UART が同時に動くので day 1 から要る |
 | H-004 | 1 台 = USB device 1 個(composite) | ◎ | 実測 | WSL `vhci_hcd` が 8 port。ベンチは probe 6 台で既に窮屈 |
 | H-005 | exit code と JSON envelope を ch32rv の contract に合わせる | ○ | 文書 | ベンチのスクリプトが 2 つ目の方言を覚えない |
@@ -151,9 +163,11 @@
 | ID | 要求 | 重み | 状態 | 根拠 |
 |---|---|:--:|---|---|
 | H-100 | **passive attach**(DMI read しか出さない)を持ち、`caps` で申告する | ◎ | **実測** | LinkE は attach で `RCC_CFGR0` と `FLASH ACTLR` を書き換え、コアはクロックツリーを probe 経由で検証できない |
-| H-101 | target に書くものを全部文書化する | ◎ | 実測 | 同上 |
+| H-101 | target に書くものを全部文書化する。**監査対象はメモリだけでなく GPR / CSR も含む** | ◎ | 実測 | 同上。**ch32rv `0006` §14-2**: CH32V103 で `AttachChip` が生きた GPR `s1`(x9)を chip id で上書きし復元しない。**メモリは 1 byte も変わらない**ので、メモリだけ見ていると取りこぼす |
 | H-102 | flash 先頭を書き換えない | ◎ | 実測 | WCH OpenOCD は addr 4 から 48 byte の nop と `0x34` の `ebreak` を書いて戻さない |
 | H-103 | 自己観測で「線に何も出していない」を証拠として出す | ○ | 願望 | H-047 と H-100 の合わせ技。他の probe には作れない |
+| H-108 | **attach 前後で全 GPR を読んで diff する**(安価な変種) | ○ | 実測 | ch32rv `0006` §14-2。線を見なくても GPR 破壊は検出できる。**harness が自分でできる** |
+| H-109 | **書込後の read がいつ確定するかを仕様に持つ** | ◎ | 実測 | ch32rv `0006` §14-1。CH549 の stale fast-read(stub 直後の bulk read が program 前の像を返す)と、CH32V103 の option 領域(**reset するまで書込前の像を読み返す**)。**harness は「自分が書いたものを自分で読み返す」設計になりやすい**ので、確定規則(reset を挟む / bounded retry / 権威ある経路で再確認)を仕様に持つ |
 | H-104 | 1 線 / 2 線を選べることを pad の逃げ道として使える | ○ | 実測 | V005/V006/V007/M007 は 2 線だと SWCLK=`PB3` が SPI_MISO と食い合う。1 線を選べば空く |
 | H-105 | attach 直後のレース(CDC が vendor より先に見える窓)を踏まない | ○ | 実測 | 1 秒間隔 3 回の retry で回避している |
 | H-106 | 大きい image で固まらない。固まっても USB 挿し直し無しで戻る | ◎ | 実測 | LinkE は 16.7 KB の書込で無応答化し、USB 再接続でしか戻らない |
@@ -180,7 +194,7 @@
 | H-123 | 1200bps touch + `SystemReset_StartMode` の相手 | △ | 文書 | X03x/X315/H417 は SW エントリ可 |
 | H-124 | UART ISP / USB ISP の相手 | △ | 文書 | R-17 のオプション経路 |
 | H-125 | board 内蔵ライタ(UIAPduino 型)と共存できる | ? | 文書 | R-17。コアの範囲外だがエコシステムの要求 |
-| H-126 | firmware 更新が全 OS でできる(UF2) | ◎ | 実測 | LinkE は Windows 専用ツールでしか更新できず、それが 2.11/2.12 問題を長引かせた |
+| H-126 | firmware 更新が全 OS でできる(UF2) | ○ | 実測 | ~~LinkE は Windows 専用ツールでしか更新できない~~ **訂正(ch32rv `0006` §12): 解消済み**。`ch32rv probe firmware update` が Linux/macOS から LinkE の更新・ダウングレードをできる(0.5.0、2.22 ⇔ 2.13 を実機往復)。**UF2 が望ましい理由は残るが「全 OS で更新できない」という根拠は成り立たない**ので、重みを ◎ → ○ に下げる |
 
 ### K. USB / PD / 広帯域周辺
 
@@ -239,6 +253,27 @@
 | H-178 | ベンチ機材そのものの共用(他プロジェクトの ESP32 と USB port を取り合っている) | △ | 実測 | 8 port のうち 7 本を別プロジェクトが使っていた実績 |
 
 ---
+
+### O. 他リポジトリの要望を読んで足したもの(2026-09-06)
+
+`ch32rv/docs/data-requests/0006-harness-integration.ja.md` と
+`EmbedBench/docs/HARNESS_REQUESTS.ja.md`(`B-001`〜`B-007`)を読んで追加した分。
+**上の各カテゴリに属するが、出どころを見えるように別枠にした。**
+
+| ID | 属す | 要求 | 重み | 出どころ |
+|---|---|---|:--:|---|
+| H-180 | A | **lock のキーを DUT にもできる**。probe 単位では足りない | ◎ | ch32rv `0006` §2.1。**harness と LinkE は別 USB device なので probe 単位の lock は競合しない**のに、同じ DUT を別経路で触る |
+| H-181 | A | **core の状態(halt / running)の調停**。セッション protocol に明示的な release / re-acquire | ◎ | ch32rv `0006` §2.2。DMDATA/RTT の polling は running のまま、flash/memory 読み/breakpoint は halt 必須。**agent チャネルが生きている間は halt を伴う操作ができない** |
+| H-182 | B | **`caps` に capability の語彙を「可否 + 理由」で持つ** | ◎ | ch32rv `0006` §5。`capabilities --json` が probe×target で可否と理由を出す形が既にある。**H-005 の「contract を揃える」は exit code と envelope だけでは狭い** |
+| H-183 | C | **往復の記録を ch32rv と同じ NDJSON 形にする** | ◎ | ch32rv `0006` §6。`--capture` / `--replay` と **divergence 報告**が実在し、offline CI 回帰に使われている。形式を揃えれば道具立てがそのまま効く |
+| H-184 | M | **束縛をどの data rev で決めたかを fixture manifest に残す** | ○ | ch32rv `0006` §9。ch32rv は pin された rev、resolver は floating な作業コピーを見る。**2026-09-06 に実際に踏んだ**(data repo が動いて `db-check` が stale、リリース後に気づいた) |
+| H-185 | E | **圧縮された時間定数の扱いを決める**(実物値へ設定できる経路 / 圧縮模型を peer に使わない) | ◎ | EmbedBench `B-001`。**模型 6 種が意図的に圧縮**。Modbus は実物 4,010 µs に対し模型 1,500 µs で、9600 baud の 1 文字(1,146 µs)よりわずかに長いだけ。**速すぎて誤動作する**方向で見落としやすい。**EmbedBench 側が実装を引き受けられる** |
+| H-186 | B | **`caps` に「模型の時刻要求(`requestWake`)に応えられるか」と分解能**。応えられない環境で要る模型を束縛したら fail closed | ◎ | EmbedBench `B-002`。基底実装は黙って `false` を返すので**静かに劣化する**。EmbedBench で実際に踏んだ(「500 µs 刻みのはずが 1,000 µs 刻み」)。**呼ぶ模型は 12 種** |
+| H-187 | E | **再入禁止を probe 環境の実装契約として明示**。保留容量が溢れたら必ず診断 | ◎ | EmbedBench `B-003`。**模型 23 種すべての前提**。実機の割り込みで破られると状態機械が壊れる |
+| H-188 | D | **診断語彙とイベント行の形を揃える**。揃えないなら「diff は機能的な署名だけ」と最初に決める | ◎ | EmbedBench `B-004`。準拠キットは語彙を検査していないので**語彙が違っても両方とも準拠**。**後から変えると diff の作り直しになる** |
+| H-189 | B | **`caps` に凍結 IF の版**(`embedbench_if: {version, revision}`) | ○ | EmbedBench `B-005`。模型の版とは別に効く |
+| H-190 | E | **`channelWrite` を「効果を起こしうる経路」として遅延配送の規律に載せる** | ◎ | EmbedBench §4。**23 種中 6 つが `channelWrite` から `HostPort` を呼ぶ**。effect-free は `reset`/`channelRead`/`dump` の 3 つだけ |
+| H-191 | E | **`tests/conformance/` を第 3 の環境の受け入れ門にする** | ○ | EmbedBench §5。既存 2 実装が同じ判定に達することを確認する試験が実在。**新たに考案しなくてよい** |
 
 ## 2. 需要側の数字 — DUT は何本・何台を要求するか
 
@@ -360,6 +395,8 @@
 | **C-9** | PD の高電圧試験(H-132)vs board 保護(H-086 / H-133) | **安全側を既定にしてほしい**。5V 以外は明示的な opt-in |
 | **C-10** | エミュ模型 vs ベンチ上の実物デバイス(H-020) | エミュは障害注入ができ、実物は忠実度が高い。**どちらを既定にするか** |
 | **C-11** | 「配線は利用者の責任」vs 静かな skip | H-154 のカバレッジ報告が無いと成立しない。**報告は要求として強い** |
+| **C-12** | **DMI 能力をどの段階で要求するか** | ch32rv `0006` §1 の指摘。**`harness-probe` は `W` を最後に置き、`harness-testing` は DMI を前提にしている。**こちらの解き方は「**DMI と flash を分ける**」で、コアが早く欲しいのは `L` + **`M`(lane 0 本 + DMI read/write、flash アルゴリズム無し)**、`W` は最後のまま([harness-probe](harness-probe.ja.md) §4.1)。**裁定は protocol 側** |
+| **C-13** | **H-030(セッション)vs H-120(ch32rv を backend に残す)** | ch32rv `0006` §14-3。H-030 の根拠だった `reg_probe` の 30〜130 秒は、まさに **ch32rv の CLI を毎回起動している**ところ。**harness が DMI(`M` 段)を持てば経路から外れて張力は消える**。コア側の回答は §4 の「どちらでもよい」欄へ |
 
 ---
 
@@ -372,12 +409,13 @@
 | 既定の transport(`serial://` か `socket://` か) | どちらでも。**両方あることが要求**(H-031) |
 | `caps` の直列化形式(JSON / CBOR / 独自) | どちらでも。**machine-readable であることが要求**(H-002) |
 | 名前(DUT harness / bench probe / DUT scope …) | どちらでも |
-| 模型の版付け規則をどのリポジトリが採番するか | どちらでも。**版があることが要求**(H-056) |
-| 役割の語彙(`i2c_target` / `uart_peer` …)の正本 | どちらでも |
+| ~~模型の版付け規則をどのリポジトリが採番するか~~ | **解決(B-006): EmbedBench が採番する。** 版が数えるのは**観測可能な振る舞い**であって、ソースではない(コメント・整形・内部実装は据え置き、応答内容・時間定数・診断文言・channel 割り当ては繰り上げ)。模型ごとに独立 |
+| 役割の語彙(`i2c_target` / `uart_peer` …)の正本 | どちらでも。**ただし論理信号名の一次資料はコア側にある** — `research/signal-name-normalization.ja.md`(R-19)。**正規化が要るのは V003 / X033 / X035 の 3 series だけ**で、残りは最初から canonical 形 |
 | board / class(RP2040-Zero / Pico / Pico 2 / RP2350B / ESP32-S3 / **ESP32-P4** / X03x) | **probe 側の判断に従う。** コアは §2.2 の需要曲線を出すところまで。ただし **16 → 20ch の 4 本が最大の段差**であることは伝えたい |
 | 1 台に載せるか 2 台で分業するか | どちらでも。分業なら共有 trigger での時間軸較正(H-048)が要求になる |
 | capture unit を 1 個にするか 2 個にするか | `caps` で申告されるなら(H-016)どちらでも |
 | CLI の名前・サブコマンド構造 | ch32rv の contract に揃っていれば何でも(H-005) |
+| **ch32rv に持続セッションの口を足すか**(ch32rv `0006` §14-3 の問い) | **現時点では要求にしない。** `reg_probe` の 30〜130 秒は harness が DMI(`M` 段)を持てば消える。**ただし DMI 段が遅れるなら、もっと安い代案がある** — `read` が**複数レンジを 1 回の起動で**受けられれば、散在するレジスタ 200〜400 本のプロセス起動が 1 回に畳める。セッション化より小さい変更で同じ効果が出るので、**先にこちらを検討してほしい** |
 
 ---
 
@@ -400,7 +438,62 @@
 
 ---
 
-## 6. 次にコア側でやること(protocol への依頼ではない)
+## 6. 他リポジトリの指摘への対応(相手が線を引くための表)
+
+ch32rv `0006` §11 が「相手の文書が更新されたら解消した項目に取り消し線を引く」としているので、
+**何をどう反映したかを一覧にする**。
+
+### 6.1 ch32rv `0006` からの指摘
+
+| 指摘 | 対応 | 反映先 |
+|---|---|---|
+| §1 2 文書の前提がずれている | **受領。指摘は正しい。**「DMI と flash を分ける」で解いた案を出した。**裁定は protocol 側** | [harness-probe](harness-probe.ja.md) §4.1、**C-12** |
+| §2.1 lock のキーが probe では足りない | **受領。要求として追加** | **H-180** |
+| §2.2 core の状態(halt/running)にも排他がある | **受領。要求として追加** | **H-181** |
+| §2.3「ch32rv = CLI 1 回 1 操作」は半分だけ正しい | **訂正済み**(gdb server / monitor がセッション型) | [harness-testing](harness-testing.ja.md) §3.1 |
+| §3 実測値(DMI 1 往復 **471 µs**) | **見積りを実測に差し替え。** 結論は変わらず | [harness-testing](harness-testing.ja.md) §9.2 / §4.2 |
+| §4.1 `ProbeService` はコードに存在しない | **訂正済み** | [harness-probe](harness-probe.ja.md) §1 |
+| §5 contract は exit code と envelope より広い | **受領**(capability の語彙、可否 + 理由) | **H-182** |
+| §6 mock 段 3 は実在(`--capture` / `--replay`) | **受領**(NDJSON 形を揃える) | **H-183** |
+| §7 `AttachChip` が GPR `s1` を破壊 | **受領**(監査対象に GPR / CSR) | **H-101 / H-108** |
+| §8 DMI へ移す代償(debug 線を占有) | **受領。利点表に代償の行を足した** | [harness-testing](harness-testing.ja.md) §4.2 |
+| §9 データ rev の固定 | **受領。要求として追加** | **H-184** |
+| §12 H-126 の根拠が古い | **訂正済み。重みを ◎ → ○ に下げた** | **H-126** |
+| §12 H-002 の根拠が古い | **根拠を更新。要求は有効のまま** | **H-002** |
+| §14-1 書込後の read がいつ確定するか | **受領。要求として追加** | **H-109** |
+| §14-3 ch32rv に持続セッションの口が要るか | **回答した。現時点では要求にしない。**より安い代案(複数レンジ read)を提示 | §4 の表 / **C-13** |
+
+### 6.2 EmbedBench `HARNESS_REQUESTS` からの依頼
+
+| ID | 対応 | 反映先 |
+|---|---|---|
+| **B-001** 圧縮された時間定数 | **受領。最優先として追加。**(a)実物値へ設定できる経路を推す — **実装を引き受けてもらえるとのことなので、その方向で** | **H-185** |
+| **B-002** `requestWake` の宣言と fail closed | **受領** | **H-186** |
+| **B-003** 再入禁止の明示と保留容量の診断 | **受領** | **H-187** |
+| **B-004** 診断語彙とイベント行 | **受領。「先に決まっていると嬉しいのはこれだけ」という優先度も受け取った** | **H-188** |
+| **B-005** `caps` に凍結 IF の版 | **受領** | **H-189** |
+| **B-006** 模型の版は EmbedBench が採番 | **合意。** §4 の「どちらでもよい」から外し、決定として扱う | §4 |
+| **B-007** 既定プロファイルの判断材料 | **受領。`unit_faulty_model` の推挙も含めて** | H-057 の材料 |
+| §1 数値の訂正(23 種 / 2,996 行 / 464 行) | **訂正済み。以後 `FACTS.ja.md` を引く** | [harness-probe](harness-probe.ja.md) §6.2 |
+| §4 `channelWrite` は effect-free ではない | **訂正済み。こちらの表の誤り** | [harness-testing](harness-testing.ja.md) §9.4、**H-190** |
+| §5 環境実装は probe 側へ | **合意。未決から外す** | [harness-probe](harness-probe.ja.md) §6.4 |
+| §6 差分に乗るノイズ(§0-5 が強すぎる) | **訂正済み。**「バグ候補になりうる」へ弱め、ノイズ源を明記 | [harness-probe](harness-probe.ja.md) §6.3 |
+| C-1 への回答(両立する) | **受領。** IF が器で模型が中身、という読みを採る | C-1 |
+| C-8 への回答(実測 RAM 6,072 B / .text 13.2 KB) | **受領。RP2040 級では問題にならない。** ただし X035(RAM 20 KB 級)では SD カードだけで 23% | C-8 |
+| C-10 への回答(既定はエミュ + 第 3 の選択肢) | **受領。**「両方を同じテストで走らせて差分を取る = 模型の検証」は**こちらに無かった発想** | C-10 |
+| §5 段階との関係(`L` / `WL` を妨げない) | **受領。** 急ぐのは B-004 だけ、という整理に同意 | C-12 |
+
+### 6.3 まだ返せていないもの
+
+| 相手 | 論点 | 状態 |
+|---|---|---|
+| ch32rv | §10 の提供物(attach 時の USB 往復 capture 6 family) | **欲しい。**[harness-probe](harness-probe.ja.md) §7-2 の共同実験の材料になる |
+| EmbedBench | §7 の提供物(SD カードのプリセット 7 枚) | **欲しい。** 巡回クラスタ鎖はコアの FAT ドライバ試験にそのまま使える。**ただしコアに FAT ドライバはまだ無い** |
+| EmbedBench | B-004 のログ形式 | **こちらから形を出す番。** `test-strategy` の 2 層判定を diff に適用する形で提案する |
+
+---
+
+## 7. 次にコア側でやること(protocol への依頼ではない)
 
 - 論理信号名 12(+`MCO`)を確定して文書に固定する(H-049 の前提)
 - Q-050(LA channel / connector / 電源)の判断を harness の結論が出るまで保留する

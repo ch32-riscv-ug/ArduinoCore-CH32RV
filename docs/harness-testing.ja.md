@@ -134,8 +134,13 @@ resolver が pinmux DB を引いて route を選ぶ。
 
 | 方式 | 向く用途 | 向かない用途 |
 |---|---|---|
-| **CLI 1 回 1 操作**(ch32rv 型) | `caps` / `list` / `doctor` / `selftest`、CI の preflight、人が手で確かめるとき | **テスト本体** |
+| **CLI 1 回 1 操作** | `caps` / `list` / `doctor` / `selftest`、CI の preflight、人が手で確かめるとき | **テスト本体** |
 | **セッション** | テスト本体(arm → RUN → capture → 読み出し) | 単発の診断 |
+
+> **訂正(ch32rv `0006` §2.3)**: 「ch32rv = CLI 1 回 1 操作」は半分だけ正しい。
+> **ch32rv には既にセッション型の経路が 2 つある** — **gdb server**(起動から終了まで attach を保持)と
+> `monitor`(streaming)。したがって対立軸は「CLI 型 vs セッション型」ではなく、
+> **誰が DUT を保持するか**。gdb server と harness セッションは同じ DUT を取り合う(§11-5)。
 
 **根拠(実測済み)**: `reg_probe.py` の `Reader` は
 「Memory reads through the WCH-Link, **one process per read**」と自分で書いていて、
@@ -197,7 +202,15 @@ harness は DMI を持つので、**制御チャネルを `SerialRTT` / `SerialD
 | USART が全部空く | [harness-wiring](harness-wiring.ja.md) §5.2 のとおり、全インスタンスを試験に回せる |
 | CDC 配送の癖を踏まない | flash 直後の無音・行の途中で止まる、が消える |
 | 往復が速い | DMI 経由の polling。UART bridge を経由しない |
-| V003 でも成立する | 制御に pad を 1 本も使わない |
+| V003 でも成立する | 制御に**アプリ用の** pad を 1 本も使わない |
+
+**代償もある**(ch32rv `0006` §8 の指摘)。USART を解放する代わりに **debug 線を占有する**。
+
+| 代償 | 内容 |
+|---|---|
+| debug 線が塞がる | `CH32V003` は **1 線 SWIO で pad は `PD1`**。SOP8 は GPIO が 6 本しかないので、**`PD1` を GPIO として試験したい場合は制御チャネルが死ぬ**。**USART の問題が debug 線へ移動する**面がある |
+| 往復は無料ではない | **DMI 1 往復 471 µs**(実測)。**レジスタ 1 本読みは 8 往復 ≈ 4 ms**。RTT/DMDATA の polling も同じ経路なので、**`batch` で 1 往復に畳めるかが分水嶺**(ch32rv `0006` §3) |
+| core の状態が絡む | DMDATA / RTT の polling は **core が running のまま**。flash / memory 読み / breakpoint は **halt 必須**。**agent チャネルが生きている間は halt を伴う操作ができない**(§11-5) |
 
 **コア側の前提は既に揃っている** — `SerialRTT` / `SerialDMDATA` は実装済みで、V003 実機で
 双方向を確認済み([peripheral-support](peripheral-support.ja.md))。足りないのは
@@ -343,10 +356,15 @@ bench: V307 / harness E6614C311B7A2C31 / wiring: bench-01.yaml
 
 | バス | 1 byte の時間 | host 往復 | 待たせる手段 | 成立するか |
 |---|---|---|---|---|
-| I2C 100 kHz | 90 µs | 0.5〜2 ms(USB CDC) | **clock stretch** | △ 成立はする。ただし遅い |
+| I2C 100 kHz | 90 µs | **471 µs**(実測) | **clock stretch** | △ 成立はする。ただし遅い |
 | I2C 400 kHz | 22.5 µs | 同 | clock stretch | △ 比率はさらに悪い |
 | SPI 1 MHz | 8 µs | 同 | **無い**(controller が clock を出す) | ✕ |
 | UART 115200 | 87 µs | 同 | **無い**(既定でフロー制御なし) | ✕ |
+
+> **往復は実測された**(ch32rv `0006` §3)。当初の見積り「0.5〜2 ms」に対し、
+> **DMI 1 往復の中央値 471 µs(WCH-LinkE)/ 461 µs(CH549)**。probe 種別でほぼ差が無く、
+> **USB スタック側の往復コスト**。WSL2 + usbipd 経由なので上限側の値。
+> **推定の範囲内**で、結論(SPI と UART は host backed が原理的に不可)は変わらない。
 
 I2C の余裕は測れる。コアの `Wire` は **1 回の待ちに 25 ms の上限**
 (`CH32_WIRE_TIMEOUT_US`、AVR と違って**既定で ON**)。
@@ -375,17 +393,26 @@ I2C の余裕は測れる。コアの `Wire` は **1 回の待ちに 25 ms の�
 
 凍結済みの `ebdev::Device` は、まさにこの分担で設計されている。
 
-| 誰が | いつ | EmbedBench の IF |
-|---|---|---|
-| **host** | 走行前 | `reset()` → `channelWrite()` で初期状態を流し込む |
-| **probe(模型)** | **走行中** | `i2cWrite` / `i2cRead` / `spiTransfer` / `serialIn` / `lineIn` / `advanceTo` — **host は関与しない** |
-| host | 走行中(低頻度) | `channelWrite()` で環境量を注入(「温度を 30 ℃ に」) |
-| host | 走行後 | `channelRead()` / `dump()` で「相手が何を見たか」を回収 |
+| 誰が | いつ | EmbedBench の IF | 副作用 |
+|---|---|---|---|
+| **host** | 走行前 | `reset()` → `channelWrite()` で初期状態を流し込む | 走行前なので安全 |
+| **probe(模型)** | **走行中** | `i2cWrite` / `i2cRead` / `spiTransfer` / `serialIn` / `lineIn` / `advanceTo` — **host は関与しない** | — |
+| host | 走行中(低頻度) | `channelWrite()` で環境量を注入(「温度を 30 ℃ に」) | **効果を起こしうる。下記** |
+| host | 走行後 | `channelRead()` / `dump()` で「相手が何を見たか」を回収 | 安全 |
 
 **`reset` / `channelRead` / `dump` は effect-free(`HostPort` を呼んではならない)と契約で決まっている**ので、
 **host が任意のタイミングで直接呼んでよい**。
 つまり **preload と readback は最初から critical path の外**にある。
 IF がこの分担を想定して凍結されているのは偶然ではなく、`docs/DEVICE_IF_SCOPE.ja.md` の設計そのもの。
+
+> **訂正(EmbedBench `HARNESS_REQUESTS` §4)**: **`channelWrite` は effect-free ではない。**
+> 契約が副作用禁止と定めているのは `reset` / `channelRead` / `dump` の **3 つだけ**で、
+> **模型 23 種のうち 6 つが `channelWrite` から `HostPort` を呼ぶ**
+> (`temp_model` / `unit_button_model` が `lineOut`、`unit_pir_model` が `lineOut`+`requestWake`、
+> `unit_ir_model` が `requestWake`、`unit_lora_model` が `frameOut`、`unit_chunk_model` が `diagnose`)。
+> **走行中に host から呼ぶと線が動きフレームが出る**ので、模型が転送の途中にいると再入禁止に触れる。
+> → **`channelWrite` は「効果を起こしうる経路」として、他の効果源と同じ遅延配送の規律に載せる。**
+> 最低限、**デバイスの呼び出しの中からは呼ばない**。preload と readback は元どおり安全。
 
 模型は純粋 C++11・動的確保なし・22 種で 3572 行なので **RP2040 に余裕で載る**
 ([harness-probe](harness-probe.ja.md) §6.2)。
@@ -404,9 +431,9 @@ IF がこの分担を想定して凍結されているのは偶然ではなく�
 ```text
 host(pytest)
   ├ 模型を選ぶ           "model:24c02@1 を DUT の I2C1 に、アドレス 0x50 で"
-  ├ 初期状態を流し込む    reset / channelWrite
-  ├ 走行中に低頻度で注入  channelWrite(「温度 = 30 ℃」)
-  └ 走行後に回収          channelRead / dump / イベント列
+  ├ 初期状態を流し込む    reset / channelWrite            (走行前 = 安全)
+  ├ 走行中に低頻度で注入  channelWrite(「温度 = 30 ℃」)   (効果を起こしうる。遅延配送に載せる)
+  └ 走行後に回収          channelRead / dump / イベント列  (effect-free)
 
 probe(harness)
   ├ caps       「器はこれ、模型はこれとこれ、版はこれ」

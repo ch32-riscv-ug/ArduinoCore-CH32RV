@@ -10,7 +10,7 @@
 
 - `../../wch-protocols/` — 線層・USB 層の解読と **harness の設計メモ**
 - `../../ch32rv-probe/` — 実装の置き場(2026-09-04 時点で `LICENSE` のみ)
-- `../../ch32rv/` — 同梱 uploader。`DtmAccess` / `ProbeService` の trait 境界
+- `../../ch32rv/` — 同梱 uploader。**`DtmAccess` の trait 境界(実在)**。要望は `docs/data-requests/0006-harness-integration.ja.md`
 - `../../ch32-device-data/` — device DB
 - `../../../dev/EmbedBench/` — host 検証ライブラリ。デバイス IF 凍結済み
 
@@ -54,7 +54,7 @@
 |---|---|---|
 | **wch-protocols** | 設計済み | 線層・USB 層とも解読がほぼ済み、**harness の設計メモまで書けている**(`dut-harness-design.ja.md` = ピン割当・cross-domain trigger・障害注入、`harness-board-survey.ja.md` = 8 軸の board 比較・RP2350 errata E9、`probe-pattern-coexistence.ja.md` = W/WM/WL/WLE/L/M の共存と作る順序)。**構想側でこちらから足すことはほぼ無い** |
 | **ch32rv-probe** | repo のみ | `LICENSE` だけ(2026-09-04 初回 commit)。実装の置き場は確保済み |
-| **ch32rv** | 受け口あり | probe 経路 verified。`DtmAccess` + `ProbeService` の trait 境界があり、`ch32rv-probe-<name>` を **P2 で予約済み**。**自作 probe は新 crate 1 本で既存 CLI(flash/read/monitor/gdb)に載る** |
+| **ch32rv** | 受け口は**片方だけ実在** | probe 経路 verified。**コードにあるのは `DtmAccess`(`dmi_read`/`dmi_write`/`dmi_nop`)だけで、`ProbeService` は architecture の将来計画**(ch32rv `0006` §4.1 の訂正)。`ch32rv-probe-<name>` の枠は P2 で予約済み |
 | **ArduinoCore-CH32** | 方法4 が空白 | 方法1〜3 は実装済み(`reg_probe` は 5 枚で 200〜400 項目を配線ゼロで照合)。**方法4(波形)は全項目 ⬜**。入力側 API の刺激手段が無い |
 | **EmbedBench** | IF 凍結済み | デバイス IF v1 / rev004(2026-09-04)、模型 22 種・純粋 C++11、環境実装 2 種(host / 純ネイティブ 290 行)。「物理層・波形・サイクル精度」を**明示的に範囲外**とし、越える要望は**実機テストへ振り分ける**と書いてある |
 
@@ -150,7 +150,7 @@ NACK、bus stuck 等の刺激を与えます」**。その peer が今は存在�
 | **連続ストリーミングは class 次第** | RP2040 は USB FS(実効 ~1 MB/s)で、無圧縮なら 16ch ~500 kSa/s / 8ch ~1 MSa/s が上限。FX2LP は USB HS で 16ch@12 MHz を流し続けられる。**ただし ESP32-S3 の PSRAM(MB 級バッファ)や ESP32-P4 の USB HS を選べば、この不利は消える**([harness-requirements](harness-requirements.ja.md) §2.4) |
 | **ただしコアの方法4 は全部「短い窓」** | UART 1 フレーム 87 µs、I2C 10 byte @100 kHz で ~1 ms、PWM 数周期。**burst(trigger + RAM 深掘り)で全部足りる**。深さ(16ch@10 MSa/s ≈ 10 ms)は概算だが桁は合う |
 | 全 24 series を書けるようになるわけではない | 線層は SWIO(V003/V00x/M030)と RVSWD(それ以外)の 2 つで、RVSWD は `attested` 止まり。**書込 probe としての完成は遠い**。だから §0-2 の順序 |
-| GDB / `arduino-cli debug` はそのままでは繋がらない | いまの経路は WCH OpenOCD 固定([debugger](debugger.ja.md))。harness を使うなら ch32rv 側の GDB server 経由になる |
+| GDB / `arduino-cli debug` はそのままでは繋がらない | いまの経路は WCH OpenOCD 固定([debugger](debugger.ja.md))。harness を使うなら ch32rv 側の GDB server 経由になる。**ch32rv の gdb server は attach を保持するセッション型なので、harness セッションと同じ DUT を取り合う**(ch32rv `0006` §2.3) |
 | 「LinkE を捨てる」話ではない | 当面は **LinkE が焼き、harness が観る**。LinkE を認定 probe として残したまま harness を足すのが、リリース経路に対して最も安全 |
 
 ### 3.3 コアが依存してよい範囲(提案)
@@ -181,6 +181,33 @@ NACK、bus stuck 等の刺激を与えます」**。その peer が今は存在�
 
 **追加提案**: `L` と `WL` の間に「**LinkE の線を覗くだけ**」の段があると、コア側は即日価値が出る。
 probe 実装が一切要らず、キャプチャとデコーダだけでよい。§7-2 に実験案。
+
+### 4.1 前提のずれ(ch32rv `0006` §1 の指摘)と、その解き方
+
+ch32rv から**こちらの 2 文書の間に前提のずれがある**と指摘された。**指摘は正しい。**
+
+| 文書 | 言っていること |
+|---|---|
+| 本文書 §0-2 / §4 | LinkE が焼き、harness は観測と刺激だけ。**`W`(書込)は最後でよい** |
+| [harness-testing](harness-testing.ja.md) §4.2 / §5 | **agent の制御チャネルを DMI へ移す**。`dut_agent()` は DMI 経由 |
+
+後者は **harness が DMI を持っていること**が前提なので、`L` 段階では成立しない。
+同じずれが §3.1-3「時間軸が 1 本になる」にも出る。
+**LinkE が焼き harness が観る構成では、DMI 側は LinkE の時計・capture は harness の時計**で、
+時計は 2 本のまま。
+
+**こちらの解き方(提案)**: 対立軸は「観測か書込か」ではなく、**DMI と flash を分ける**ところにある。
+
+| 段 | 要る能力 | コアが得るもの |
+|---|---|---|
+| `L` | capture のみ | 方法4 が 6 項目動く。時計は 2 本のまま |
+| **`M` 相当**(lane 0 本 + **DMI read/write**) | **DMI。flash アルゴリズムは要らない** | **制御チャネルが DMI に載る / 時間軸が 1 本になる / SDI・RTT・DMDATA が probe 非依存になる** |
+| `WLE` | + エミュ | 相手役 |
+| `W` | + flash アルゴリズム + chip DB | 書込。**コアはここに困っていない** |
+
+`probe-pattern-coexistence` の語彙で言えば、**コアが早く欲しいのは `L` + `M` で、`W` は最後のまま**。
+`M` は「lane を attach せずに monitor だけ」なので、**flash を実装せずに DMI だけを持つ段**として読める。
+ここが読めるかどうかが、この対立の実体。**裁定は protocol 側**(§8-9)。
 
 ---
 
@@ -299,13 +326,13 @@ I2C は clock stretch、SD は busy token で待てるが、**UART は待たせ�
 | 要素 | 実態 |
 |---|---|
 | デバイス IF | `src/embedbench_device.h`、**凍結済み(v1 / rev 004)**。include は `<stddef.h>` / `<stdint.h>` のみ。Arduino 型なし |
-| 模型 | **22 種**、純粋 C++11、合計 3572 行。動的確保なし。register-map センサ / SD カード / Modbus slave / UWB / **わざと壊れる部品** まで |
-| 環境実装 | **既に 2 つ**(host-arduino-core 用と、純ネイティブ 290 行)。「環境はプラットホーム別の実装例」と明記 |
+| 模型 | **23 種**、純粋 C++11、模型のソース 2,996 行。動的確保なし。register-map センサ / SD カード / Modbus slave / UWB / **わざと壊れる部品** まで(数値は EmbedBench `docs/FACTS.ja.md` が正本。**自分で数えない**) |
+| 環境実装 | **既に 2 つ**(host 環境 1,457 行 / 純ネイティブ `nenv` 464 行)。「環境はプラットホーム別の実装例」と明記。`tests/conformance/` が**環境の受け入れ試験**を持つ |
 | 契約 | 再入禁止・効果の遅延配送・借用バッファ・`advanceTo` 単調・容量超過は必ず診断 |
 
 つまり **harness を 3 つ目の環境にすれば、22 種の模型がそのまま本物の線の上で動く**。
 host に問い合わせる必要が無いので、**§6-1 の「待たせる手段」制限が消える**(UART も演じられる)。
-firmware に載る量は 3572 行で、RP2040 には過剰なほど余裕がある。
+firmware に載る量は模型 2,996 行で、RP2040 には過剰なほど余裕がある。
 
 ### 6-3. 得られるもの: 同じ模型を 2 つの環境で走らせて diff する
 
@@ -318,8 +345,16 @@ firmware に載る量は 3572 行で、RP2040 には過剰なほど余裕があ�
 
 - **host 側が保証するもの**: アプリのロジック、順序、境界値、エラー経路。実機不要・毎 PR で回せる。
 - **実機側だけが出すもの**: タイミング、電気、コアの HAL 実装、クロック、割込 latency。
-- **差分に残るものが、そのままコアのバグ候補**になる。
+- 差分に残るものが**コアのバグ候補になりうる**。
   「host では通るのに実機で落ちる」を**波形ではなくイベント列で**説明できる。
+
+> **ただし差分はバグだけではない**(EmbedBench `HARNESS_REQUESTS` §6 の指摘)。
+> 少なくとも次が乗る — **模型が意図的に圧縮している時間定数**(6 種)、**仮想時計と実時間の時刻**、
+> **記録の畳み込み**(容量の違う 2 環境は畳む位置が違い、行数が合わない。実測で 27,375 イベントが 61 行)、
+> 効果の遅延配送が実時間を持つこと。
+> **素の行単位 diff は時刻を含むので全行が差分になる。**
+> 答えはコアが既に持っている 2 層判定で、**`(origin, text)` の列は完全一致・時刻は許容差**で比べる。
+> 段取りは「**最小の模型 1 つでノイズをゼロにしてから増やす**」。
 
 [test-strategy](test-strategy.ja.md) は既に
 **「同じ portable sketch を CH32 profile と host profile で compile して比較する」**
@@ -334,8 +369,13 @@ firmware に載る量は 3572 行で、RP2040 には過剰なほど余裕があ�
 | 2 | **遅延配送が実時間を持つ** | 「Device メソッドから戻ってから配送」は、実機では**数 µs 後**になる。master が先に進んでいる可能性がある。→ **ずれたら必ず診断を出す**。無音で吸収しない(EmbedBench の既存 idiom と同じ) |
 | 3 | **模型が間に合わない場合** | 実機では master が待ってくれない。→ **それ自体が測定結果**。「この模型はこの clock では応答が間に合わない」は有用な事実。隠さず記録する |
 | 4 | **ログ形式** | 行単位 diff が成立するよう、**同一形式**にする。ここが分岐すると提案全体の価値が消える |
-| 5 | **どちらの repo に置くか** | harness 用環境実装を EmbedBench 側(3 つ目の実装例)に置くか、ch32rv-probe 側か。**未決** |
-| 6 | **EmbedBench の方針との整合** | 計画 §8「当面やらないこと」に「実機テストと実機用設定」「別環境への移植」が入っている。**方針変更の要否は所有者判断**。IF が凍結済み・環境が実装例扱いなので、技術的な障害は無い |
+| 5 | **どちらの repo に置くか** | **回答あり(EmbedBench `HARNESS_REQUESTS` §5): probe 側を推す。** 模型は独立した Arduino ライブラリで、harness が `embedbench_device.h` + `devices/` に依存するのが**想定した消費形**。EmbedBench 側に置くと RP2040 のツールチェーンが入り CI も覆えない |
+| 6 | **EmbedBench の方針との整合** | **回答あり: probe 側に置くなら触れない。** 「別環境への移植」は EmbedBench 自身の移植をしない宣言であって、他所が凍結 IF に対して環境を書くのは **IF が設計どおり働いている状態** |
+| **7** | **圧縮された時間定数(E-1、最優先)** | **模型 6 種が時間定数を意図的に圧縮している。** 最悪は Modbus で、実物 4,010 µs に対し模型 1,500 µs。9600 baud の 1 文字(1,146 µs)よりわずかに長いだけなので、**DUT の送信途中でフレーム完結と判断しうる**。§9 で扱ったのは「遅すぎて成立しない」だが、こちらは**速すぎて誤動作する**方向。(a) 実物値へ設定できる経路を用意するか (b) 圧縮模型を peer に使わないか、を選ぶ。**EmbedBench 側が (a) の実装を引き受けられる** |
+| **8** | **`requestWake`(E-2)** | 基底実装は何もせず `false` を返すので、**応えられない環境では模型が静かに劣化する**(EmbedBench で実際に踏んだ)。`caps` に「時刻要求に応えられるか」と分解能を載せ、要る模型を束縛したら fail closed。**呼ぶ模型は 12 種** |
+| **9** | **再入禁止(E-3)** | 模型 23 種すべての前提。実機の割り込みで破られると状態機械が壊れる。**保留の容量が溢れたら必ず診断**(無音で捨てない) |
+| **10** | **診断語彙とイベント行(E-4)** | 準拠キットは語彙を検査していないので、**語彙が違っても両方とも準拠**。行単位 diff をやるなら揃える。やらないなら「diff は機能的な署名だけ」と最初に決める |
+| **11** | **`caps` に凍結 IF の版(E-5)** | `embedbench_if: { version, revision }`。模型の版とは別に効く |
 
 ### 6-5. 逆向きの価値(EmbedBench 側から見て)
 
@@ -408,7 +448,9 @@ EmbedBench の `DEVICE_IF_SCOPE.ja.md` §3.3 は
 - wch-protocols: `references/dut-harness-design.ja.md` / `references/harness-board-survey.ja.md` /
   `references/probe-pattern-coexistence.ja.md` / `references/generic-probe-design.ja.md` /
   `protocols/link-to-target.ja.md` / `protocols/dmi-bridge.ja.md`
-- ch32rv: `docs/architecture.ja.md`(`DtmAccess` / `ProbeService`)/ `docs/protocol/wch-link.ja.md`
+- ch32rv: **`docs/data-requests/0006-harness-integration.ja.md`(要望と実測値)** / `docs/architecture.ja.md` / `docs/protocol/wch-link.ja.md`
+- EmbedBench: **`docs/HARNESS_REQUESTS.ja.md`(要望と回答)** / `docs/FACTS.ja.md`(**引用してよい数値の正本**)
+- 索引: wch-protocols `references/harness-index.ja.md`
 - EmbedBench: `docs/DEVICE_IF_SCOPE.ja.md` / `docs/DEVELOPMENT_PLAN.ja.md` /
   `docs/RELEASE_SHAPE.ja.md` / `src/embedbench_device.h`
 - ch32-device-data: `evidence/debug_wiring.csv` / `evidence/remap_routes.csv` / `evidence/pin_alternate.csv`
