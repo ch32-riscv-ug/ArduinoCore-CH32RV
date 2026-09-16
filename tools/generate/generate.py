@@ -55,6 +55,13 @@ import sys
     # written with a 1 of no traceable origin; check_family_facts rejects that
     # now. Raising CH32X315 past its default needs the divider, which is a
     # separate mechanism (docs/todo.ja.md).
+    # The CH32V006 family is rv32ec_zmmul, not rv32emc. CH32V00XRM p.1: "the
+    # 'm' extension in RV32EmC implements the multiplication subset of the M
+    # extension" - the V2C multiplies in hardware but cannot divide. Declaring
+    # the full M lets GCC emit divu/remu, and the first one a sketch reaches is
+    # HardwareSerial::begin's BRR computation, which traps: mcause=2 with mepc
+    # on the divu, measured on CH32V006K8U6. Zmmul keeps the hardware multiply
+    # and calls __udivsi3 (GCC >= 13). Do not "simplify" this back to rv32emc.
     # 96 MHz rather than the 144 the PLL can reach: ADCPRE divides by at most
     # 8, and f_ADC on these families is 14 MHz, so 144 would leave the ADC at
     # 18 MHz - out of spec with no way to fix it. 96/8 = 12 MHz is inside it,
@@ -63,7 +70,7 @@ FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",
                      systick64=0, flash_latency=0, adc_bits=10, i2c_has_rtr=0),
-    "CH32V006": dict(march="rv32emc_zicsr", mabi="ilp32e", f_cpu="24000000L",
+    "CH32V006": dict(march="rv32ec_zmmul_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3",
                      systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=0),
     "CH32V205": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",

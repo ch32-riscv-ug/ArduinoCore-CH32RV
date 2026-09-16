@@ -62,7 +62,7 @@ FAMILIES = (
       "CH32V003/EVT/EXAM/SRC/Startup/startup_ch32v00x.S",
       "CH32V003/EVT/EXAM/SRC/Ld/Link.ld",
       ("-DCH32_MSTATUS_INIT=0x1880", "-DCH32_INTSYSCR_INIT=0x3", "-DCH32_HIGHCODE")),
-    F("v00x", "rv32emc_zicsr", "ilp32e",
+    F("v00x", "rv32ec_zmmul_zicsr", "ilp32e",
       "CH32V006/EVT/EXAM/SRC/Startup/startup_ch32v00X.S",
       "CH32V006/EVT/EXAM/SRC/Ld/Link.ld",
       ("-DCH32_MSTATUS_INIT=0x1880", "-DCH32_INTSYSCR_INIT=0x3")),
