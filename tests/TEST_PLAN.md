@@ -255,23 +255,61 @@ Counting only the axes the core actually branches on, there are six.
 | **B** | CH32L103 | weekly / before release | V4C, the low-power clock path |
 | **B** | CH32V103 | weekly / before release | **The only family whose vector table is a jump table** |
 | **B** | CH32V307 | weekly / before release | `rv32imafc` (F extension); the largest part on the bench |
-| **C** | CH32V006 / CH32V205 / CH32X315 | before release | The axes tier A+B leaves open: `rv32ec_zmmul`, `rv32imc`, 1 wait state. CH32V006K8U6 reached the bench on 2026-09-16 and closed the first and third |
-| **D** | the remaining 15 series | compile only | Every axis matches one of the above exactly |
+| **C** | CH32V006 | before release | Fills **both `rv32ec_zmmul` and flash wait state 1 with a single board**. CH32V006K8U6 reached the bench on 2026-09-16 (probe `497F8F06CE2F`) and both axes are now exercised on hardware |
+| **D** | the remaining 17 series | compile only | Either every difference axis matches one of the above, or **the part is unreleased and cannot be put on a bench** |
 
-Tier A+B covers both values of all five non-ISA axes. Only `rv32ec_zmmul` and
-`rv32imc` fall to tier C, and those are compiler-side differences over identical
-core C code.
+Tier A+B fills four axes outright (GPIO port width 8/16/24, SysTick 32/64,
+vector table form, EXTI vector grouping). The remaining two axes each had
+**values nothing had touched**.
 
-CH32V006 closed `rv32ec_zmmul` and flash wait state 1 on 2026-09-16, and closing
-them found a real bug: `-march=rv32emc` promised GCC a divider the QingKe V2C
-does not have, so `Serial.begin()` trapped on its own `divu`. **The compile
-matrix could not see it** - Blink divides nowhere - which is why
-`compile_matrix.py` now builds a dividing sketch per board and checks that no
-image uses an instruction its `-march` does not provide.
+| Untouched value | Board that fills it | Status |
+|---|---|---|
+| ~~ISA `rv32ec_zmmul`~~ | CH32V006 and the other V00x series | **Closed 2026-09-16.** A compiler-side difference; the core's C code is identical |
+| ISA `rv32imc` | CH32V205 / CH32M030 | **Unreleased.** Same reasoning, so the exposure is small |
+| ~~**flash wait state 1**~~ | CH32V006 / CH32V205 | **Closed 2026-09-16.** Tier A+B had only ever touched 0 and 2. **Compilation can never reach this axis** - it must be set before the clock is raised or the part hangs - and it was confirmed by V006 booting at 24 MHz with `CH32_FLASH_LATENCY=1` and reaching Serial |
 
-Profiles exist for tier A and B only. **A profile is a promise that someone runs
-it on hardware**, so a profile nobody can run is worse than none. Tier C and D
-are covered by the `tests/compile` matrix, which needs no profile.
+**CH32V006K8U6 reached the bench on 2026-09-16 and closed both.**
+`serial_println` runs to completion under `rv32ec_zmmul`, wait state 1 and
+24 MHz, exercising the divide in `Serial.begin()`'s BRR computation and the one
+in `Print::printNumber`. The only untouched value left is CH32V205's `rv32imc`,
+which is **unreleased** and a compiler-side difference, so `tests/compile`
+suffices.
+
+Closing them found a real bug. The QingKe V2C's ISA is written RV32EmC, whose
+lowercase m is the multiplication subset only - it has no divider - so
+`-march=rv32emc` promised GCC an instruction the silicon lacks and
+`Serial.begin()` trapped on its own `divu` with `mcause=2`. Fixed to
+`rv32ec_zmmul_zicsr`. **The compile matrix could not see it**, because the Blink
+it builds divides nowhere, so `compile_matrix.py` now also builds a dividing
+sketch per board and checks that no image uses an instruction its `-march` does
+not provide.
+
+CH32V205 and CH32X315 started in tier C, but **neither is released**, so no
+cadence can be attached to them (moved to tier D on 2026-08-27). X315 was
+described here as "20 MHz, 1 wait state"; boards.txt actually gives it
+`rv32imafc` and wait state 0, so **that claim was wrong**. What X315 does have
+of its own is the `x3x5` vector table, to be revisited if it ships.
+
+### Examples build in two stages (added 2026-08-29)
+
+The bundled examples are **not covered by profiles** - they carry no promise of
+running on hardware. They are split in two on the compile side instead; see
+[examples-build-rules](../docs/examples-build-rules.ja.md).
+
+| Stage | Entry point | Boards | Typical | When |
+|---|---|---|---|---|
+| quick | `test_examples.py` | 2 representatives (X035/V003) | ~2 min | locally, before a commit |
+| sweep | `test_examples_sweep.py` | **all 24 series** (`pnum=ANY`) | ~20 min | a GitHub Actions job of its own, Linux only |
+
+The sweep is opt-in behind `--sweep`. Which series an example covers is resolved
+from a `requires:` declaration **in the example's own `.ino`**, against
+`CH32_CLKEN_*` and the ANY capacities in boards.txt. No board name is written by
+hand in CI.
+
+`sketch.yaml` profiles exist for tier A and B only. **A profile is a promise
+that someone runs it on hardware**, so a profile nobody can run is worse than
+none. Tier C and D are covered by the `tests/compile` matrix, which needs no
+profile.
 
 To add a board, edit `BOARDS` in [`tests/sketches/sync_profiles.py`](sketches/sync_profiles.py)
 and run `uv run tests/sketches/sync_profiles.py`. A sketch that cannot fit every
