@@ -75,5 +75,13 @@ profiles:
       - platform: ch32-riscv-ug:ch32v (0.0.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
+  # tier B: rv32ec_zmmul and flash wait state 1
+  ch32v006:
+    fqbn: ch32-riscv-ug:ch32v:CH32V006:pnum=ANY
+    programmer: wch-link
+    platforms:
+      - platform: ch32-riscv-ug:ch32v (0.0.1)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+
 default_profile: ch32x035
 # --- end generated ---

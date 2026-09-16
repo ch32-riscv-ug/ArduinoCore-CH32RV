@@ -1464,6 +1464,56 @@ def probe_rs_chip(part: str, series: str, ordered_parts: list, known: set):
     return prefix[0] if prefix else None
 
 
+# ch32rv's --chip vocabulary (tools/index/ch32rv_chips.csv, itself taken from
+# ch32rv's embedded DB). ch32rv is the bundled uploader (ADR-0008); probe-rs
+# names are still emitted because the bench harness maps a detected chip back
+# to a board through build.probe_rs_chip.
+CH32RV_CSV = pathlib.Path(__file__).parent.parent / "index" / "ch32rv_chips.csv"
+
+
+def load_ch32rv_chips() -> tuple:
+    """(known SKUs, series -> family, family names) from the vocabulary file."""
+    with open(CH32RV_CSV, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(line for line in f if not line.startswith("#")))
+    return ({r["chip"] for r in rows},
+            {r["series"]: r["family"] for r in rows},
+            {r["family"] for r in rows})
+
+
+def ch32rv_chip(part: str, series: str, ordered_parts: list, vocab: tuple):
+    """The --chip value for one menu entry, or None if ch32rv cannot flash it.
+
+    Two steps, and deliberately not three:
+
+      1. the exact part, when ch32rv knows it. Best case - ch32rv then also
+         refuses to flash a part whose family differs from the one actually
+         attached (`target-ambiguous`, exit 23), catching the wrong-board
+         mistake.
+      2. otherwise the FAMILY name, which ch32rv accepts and probe-rs did not.
+         It resolves the real part from chip_id on attach, so the flash
+         geometry comes from the silicon rather than from our guess.
+
+    There is deliberately no "some other part of the same series" fallback,
+    which is what probe_rs_chip() does. probe-rs needed it because it refuses a
+    family name, and it only ever picked a flash *algorithm* with it. ch32rv
+    drives the FLASH controller directly and takes page/erase geometry from the
+    named part, so naming a sibling of a different size would be a real hazard:
+    CH32V006F4U6 is a 16K part and its nearest known sibling CH32V006E8R6 is
+    62K. The family name avoids the guess entirely.
+
+    None means compile-only, and nothing is emitted: an upload then fails
+    closed with ch32rv's `target-not-in-db` (exit 20) rather than writing to
+    whatever happens to be attached. As of ch32rv 0.8.0 that is exactly the
+    seven unreleased series (V205/V407/V467/X305/X315/M030/M103).
+    """
+    skus, series_to_family, families = vocab
+    if part in skus:
+        return part
+    if series in series_to_family:
+        return series_to_family[series]
+    return series if series in families else None
+
+
 def gen_irqns(variant: str, entries: list) -> str:
     """Interrupt numbers for one startup variant, derived from the same table
     that builds the vector list: slot index == IRQ number."""
@@ -2247,7 +2297,7 @@ def clock_defines(clk: dict) -> str:
             f"-DCH32_CLOCK_EXTEN_BITS={clk['exten_bits']:#x}u")
 
 
-def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
+def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict,
               die: dict, clock_for):
     """One board per series. Returns (boards.txt block, {ld name: content})."""
     cfg = SERIES_CONFIG[series]
@@ -2257,7 +2307,8 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
                                        r["part_number"]))
     board = series
     ordered = [r["part_number"] for r in rows]
-    flashable = probe_rs_chip("ANY", series, ordered, probe_rs) is not None
+    # "[compile only]" now follows the bundled uploader, which is ch32rv.
+    flashable = ch32rv_chip("ANY", series, ordered, ch32rv) is not None
     suffix = "" if flashable else " [compile only]"
 
     lines = [f"{board}.name=Generic {series}{suffix}"]
@@ -2347,6 +2398,12 @@ def gen_board(series: str, rows: list, probe_rs: set, facts: dict,
         lines.append(f"{pfx}.build.ldscript={ld_for(flash, sram)}")
         lines.append(f"{pfx}.upload.maximum_size={flash}")
         lines.append(f"{pfx}.upload.maximum_data_size={sram}")
+        rv_chip = ch32rv_chip(pn, series, ordered, ch32rv)
+        if rv_chip:
+            lines.append(f"{pfx}.build.ch32rv_chip={rv_chip}")
+        # Still emitted although probe-rs is no longer bundled: the bench
+        # harness resolves a detected chip back to a board through this field
+        # (tests/manual/smoke.boards_for).
         chip = probe_rs_chip(pn, series, ordered, probe_rs)
         if chip:
             lines.append(f"{pfx}.build.probe_rs_chip={chip}")
@@ -2395,6 +2452,7 @@ def main() -> int:
     spis = load_spi_pins(args.tables, route_alts)
     dacs = load_dac_pins(args.tables, route_alts)
     probe_rs = load_probe_rs_targets()
+    ch32rv = load_ch32rv_chips()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)
     clock_enables = load_clock_enables(args.tables)
@@ -2439,7 +2497,7 @@ def main() -> int:
     for series in SERIES_CONFIG:
         rows = by_board[series]
         block, ld_files = gen_board(
-            series, rows, probe_rs, facts, die,
+            series, rows, probe_rs, ch32rv, facts, die,
             lambda part=None, series=series: resolve_clock(
                 SERIES_CONFIG[series]["family"],
                 int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L")),

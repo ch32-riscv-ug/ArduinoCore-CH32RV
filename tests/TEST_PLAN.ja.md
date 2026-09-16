@@ -248,11 +248,16 @@ coreの実装が実際に分岐する軸だけを数えると6つです。
 | **B** | CH32L103 | 週次 / release前 | V4C系。低消費電力系のクロック経路 |
 | **B** | CH32V103 | 週次 / release前 | **vector tableがジャンプ表なのはこのfamilyだけ** |
 | **B** | CH32V307 | 週次 / release前 | `rv32imafc`(F拡張)。手元で最大のpart |
-| **C** | CH32V006 | release前 | **1台で`rv32ec_zmmul`とflash wait state 1の両方**を埋める。2026-09-16にCH32V006K8U6が着台(probe `497F8F06CE2F`)、両軸とも実機で踏んだ |
+| **B** | CH32V006 | 週次 / release前 | **1台で`rv32ec_zmmul`とflash wait state 1の両方**を埋める。2026-09-16にCH32V006K8U6が着台(probe `497F8F06CE2F`)、両軸とも実機で踏んだのでTier Cから昇格 |
 | **D** | 残り17 series | compileのみ | 上のいずれかと差分軸が一致するか、**未発売で実機を用意できない** |
 
-Tier A+Bで埋まる軸は4つです(GPIOポート幅 8/16/24、SysTick 32/64、vector table形式、
-EXTIのvector分割)。残る2軸には**未踏の値があります**。
+**Tier Cはいま空です。** 当初置いていた3枚のうちCH32V006はTier Bへ昇格し、
+CH32V205とCH32X315は未発売なのでTier Dにあります(後述)。階層としては残しますが、
+「入手でき次第」に相当するboardが現時点で存在しません。
+
+Tier A+Bで**6軸すべてが埋まりました**(2026-09-16、CH32V006の昇格による)。
+GPIOポート幅 8/16/24、SysTick 32/64、vector table形式、EXTIのvector分割の4軸はTier A+Bで
+元から埋まっており、残っていた2軸もV006が引き受けています。**未踏の値は`rv32imc`だけ**です。
 
 | 未踏の値 | 埋めるboard | 状況 |
 |---|---|---|

@@ -1,0 +1,59 @@
+{
+  "comment": "ch32rv 0.8.0 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.8.0. No mirror is needed (ADR-0011 applies to third-party tools): this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
+  "name": "ch32rv",
+  "version": "0.8.0",
+  "upstreamTag": "v0.8.0",
+  "systems": [
+    {
+      "host": "x86_64-pc-linux-gnu",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.8.0/ch32rv-0.8.0-x86_64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-0.8.0-x86_64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:834efa830ef24538c5abbef9f1327e110e590bd1ee3ba44ccaf991d0a4ed89b3",
+      "size": "1369183"
+    },
+    {
+      "host": "aarch64-linux-gnu",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.8.0/ch32rv-0.8.0-aarch64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-0.8.0-aarch64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:f25ac7bec6f8c8c15c24ca768087f1f285d25b02459f2f20ecd194009fe009f5",
+      "size": "1330058"
+    },
+    {
+      "host": "x86_64-apple-darwin",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.8.0/ch32rv-0.8.0-x86_64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-0.8.0-x86_64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:7335834660de2db6c402b758c5682b08e3df90c03e5eaca782c4e6c33654fc47",
+      "size": "1267975"
+    },
+    {
+      "host": "arm64-apple-darwin",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.8.0/ch32rv-0.8.0-aarch64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-0.8.0-aarch64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:cbfcc447b370ac044a1a44f23fd29b55e8756ad68ee28b7783144e21a1ef1c26",
+      "size": "1218170"
+    },
+    {
+      "host": "x86_64-mingw32",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.8.0/ch32rv-0.8.0-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.8.0-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:6147c6868fdd1717778d7b69a28e3243b88d9ec4cb3d93d8e5057dece645c6f0",
+      "size": "1160466"
+    },
+    {
+      "host": "i686-mingw32",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.8.0/ch32rv-0.8.0-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.8.0-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:6147c6868fdd1717778d7b69a28e3243b88d9ec4cb3d93d8e5057dece645c6f0",
+      "size": "1160466",
+      "comment": "no 32-bit build: 64-bit Windows runs the x64 binary, and arduino-cli picks a host slot, not an architecture"
+    },
+    {
+      "host": "arm64-mingw32",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.8.0/ch32rv-0.8.0-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.8.0-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:6147c6868fdd1717778d7b69a28e3243b88d9ec4cb3d93d8e5057dece645c6f0",
+      "size": "1160466",
+      "comment": "no native arm64 build: Windows on ARM runs the x64 binary under emulation, and USB access goes through the ordinary Win32 APIs"
+    }
+  ]
+}

@@ -71,21 +71,27 @@ recipe.size.regex=^(?:\.init|\.vector|\.text|\.rodata|\.data|\.init_array|\.prei
 recipe.size.regex.data=^(?:\.data|\.bss)\s+([0-9]+).*
 
 # ---------------------------------------------------------------- upload
-# probe-rs (ADR-0008). `download --reset` flashes and starts the target in one
-# command, which is what a programmer pattern has room for.
+# ch32rv (ADR-0008). `flash --reset run --confirm-run` writes the image, starts
+# the target and checks that it is actually running, which is what a programmer
+# pattern has room for. probe-rs is no longer bundled: the platform ships one
+# uploader, and it is this one.
 #
-# {build.probe_rs_chip} is generated per menu entry from
-# tools/index/probe_rs_targets.csv; entries with no probe-rs target have no
-# value and the board is labelled "[compile only]".
-tools.probe_rs.path={runtime.tools.probe-rs.path}
-tools.probe_rs.cmd=probe-rs
-tools.probe_rs.cmd.windows=probe-rs.exe
+# {build.ch32rv_chip} is generated per menu entry from
+# tools/index/ch32rv_chips.csv. A series ch32rv does not know has no value and
+# the board is labelled "[compile only]"; an upload attempted anyway fails
+# closed with ch32rv's `target-not-in-db` (exit 20) rather than writing to
+# whatever is attached. The value is the exact part where ch32rv knows it and
+# the family name otherwise - see ch32rv_chip() in tools/generate/generate.py.
+tools.ch32rv.path={runtime.tools.ch32rv.path}
+tools.ch32rv.cmd=ch32rv
+tools.ch32rv.cmd.windows=ch32rv.exe
 
 # Probe selection. Empty means "the only probe attached"; with several probes
 # pass the whole flag, because an empty {upload.probe_args} has to vanish from
 # the command line rather than leave a dangling --probe:
-#   --upload-property upload.probe_args="--probe 1a86:8010:FBC18F0680B0"
-# `probe-rs list` prints that VID:PID:Serial form.
+#   --upload-property upload.probe_args="--probe serial:FBC18F0680B0"
+# `ch32rv probe list` prints the serial; `serial:<sn>`, `name:<alias>`,
+# `usb:<bus>-<ports>` and `VID:PID[:SERIAL]` are all accepted.
 upload.probe_args=
 
 # upload.tool must exist even though the documented path is
@@ -94,16 +100,19 @@ upload.probe_args=
 # 'upload.tool.default' is undefined" otherwise. A bare `upload` still refuses
 # with "A programmer is required to upload", which is correct - there is no
 # serial bootloader to fall back to.
-upload.tool=probe_rs
-upload.tool.default=probe_rs
-tools.probe_rs.upload.params.verbose=
-tools.probe_rs.upload.params.quiet=--disable-progressbars
+upload.tool=ch32rv
+upload.tool.default=ch32rv
 
-tools.probe_rs.program.params.verbose=
-tools.probe_rs.program.params.quiet=--disable-progressbars
+# --progress none because a recipe's stdout is not a tty; ch32rv defaults to a
+# progress bar only on one, but saying so keeps the log identical either way.
+tools.ch32rv.upload.params.verbose=--verbose
+tools.ch32rv.upload.params.quiet=
 
-tools.probe_rs.upload.pattern="{path}/{cmd}" download --chip {build.probe_rs_chip} --binary-format elf --non-interactive --reset {upload.verbose} {upload.probe_args} "{build.path}/{build.project_name}.elf"
-tools.probe_rs.program.pattern="{path}/{cmd}" download --chip {build.probe_rs_chip} --binary-format elf --non-interactive --reset {program.verbose} {upload.probe_args} "{build.path}/{build.project_name}.elf"
+tools.ch32rv.program.params.verbose=--verbose
+tools.ch32rv.program.params.quiet=
+
+tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.probe_args}
+tools.ch32rv.program.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.probe_args}
 
 # ---------------------------------------------------------------- monitor
 # The UART Serial is an ordinary serial port, so the monitor arduino-cli ships

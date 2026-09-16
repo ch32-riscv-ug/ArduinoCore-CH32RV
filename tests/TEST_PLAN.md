@@ -255,12 +255,18 @@ Counting only the axes the core actually branches on, there are six.
 | **B** | CH32L103 | weekly / before release | V4C, the low-power clock path |
 | **B** | CH32V103 | weekly / before release | **The only family whose vector table is a jump table** |
 | **B** | CH32V307 | weekly / before release | `rv32imafc` (F extension); the largest part on the bench |
-| **C** | CH32V006 | before release | Fills **both `rv32ec_zmmul` and flash wait state 1 with a single board**. CH32V006K8U6 reached the bench on 2026-09-16 (probe `497F8F06CE2F`) and both axes are now exercised on hardware |
+| **B** | CH32V006 | weekly / before release | Fills **both `rv32ec_zmmul` and flash wait state 1 with a single board**. CH32V006K8U6 reached the bench on 2026-09-16 (probe `497F8F06CE2F`); both axes are now exercised on hardware, so it was promoted out of tier C |
 | **D** | the remaining 17 series | compile only | Either every difference axis matches one of the above, or **the part is unreleased and cannot be put on a bench** |
 
-Tier A+B fills four axes outright (GPIO port width 8/16/24, SysTick 32/64,
-vector table form, EXTI vector grouping). The remaining two axes each had
-**values nothing had touched**.
+**Tier C is empty as of 2026-09-16.** Of the three boards once placed there,
+CH32V006 was promoted to tier B and CH32V205 / CH32X315 sit in tier D because
+neither is released (see below). The tier stays in the scheme, but nothing
+currently qualifies for "as soon as one can be had".
+
+**Tier A+B now covers all six axes.** Four were already covered (GPIO port
+width 8/16/24, SysTick 32/64, vector table form, EXTI vector grouping); the two
+that had **values nothing had touched** are V006's, and it is now a tier B
+board. The only untouched value left is `rv32imc`.
 
 | Untouched value | Board that fills it | Status |
 |---|---|---|

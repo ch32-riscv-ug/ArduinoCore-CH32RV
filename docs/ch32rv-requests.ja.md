@@ -11,13 +11,14 @@
 - [upload-and-fixture.ja.md](upload-and-fixture.ja.md) の「ch32-upload(仮称)」構想は ch32rv が実体化した。recipe 形は ch32rv 側 `docs/cli.ja.md` §5 に定義済みで、現行 platform.txt の制約(probe selector を空にできる 1 変数、`--non-interactive`、進捗抑止)と整合している。
 - ch32rv 側のレビュー記録: `../../ch32rv/docs/direction-review-2026-09-01.ja.md`
 - **検証開始(2026-09-02 決定)**: v0.2.0 を baseline に検証(ドッグフーディング)を開始。0.x は検証版として使いながら直し、安定したら 1.0 にする。A-2(lock)・A-3(--capture)は未充足のまま開始し、同日付で正式にプッシュ(下表に受け入れ基準)。
+- **v0.8.0 リリース(2026-09-16)**: tag `v0.8.0`(commit `12e88e5`、remote で確認済み)、crates.io 9 crate、binary 5 target。**V00x 系(V002/V004/V005/V006/V007/M007)が flash 対応**(stub 無しで FLASH controller を DMI 直叩き。V006 62 KiB で約4分、Windows ネイティブなら 4 KiB 4 秒)。依頼 B-3 の fail-closed、`read_mem` の 16 KiB 窓化(`read` の 64 バイトずれと `flash` の交互失敗の修正)、`reset` が実際に走るようになった修正、`--db <FILE>` を含む。**JSON contract 2 → 3**(コア側は `contract` を解釈していないので無影響。将来 Pluggable Monitor で分岐するなら 3 を受ける)。
 - **ドッグフーディング中の運用方針(2026-09-02 決定)**: 変な挙動・足りない機能は**利用者側で回避せず、ch32rv への修正・追加依頼にする**。回避策を恒久化しない(一時的な直列化などは依頼の納品までの暫定に留め、この文書に依頼として残す)。
 
 ## ch32rv 側の既知不具合(コア側が踏みうるもの)
 
 | 日付 | 不具合 | コアへの影響 |
 |---|---|---|
-| 2026-09-16 | ~~`flash` 末尾の verify readback が WCH-Link の data IN エンドポイントに **64 バイト(1 パケット)を読み残す**~~ **修正済み(同日)**: `WchLink::drain_data_in()` を `read_mem` / `write_flash` の頭で呼ぶ。**0.4.0 以降ずっと入っていた既存バグ**で v0.7.0 にも存在した。症状は `flash` の `transfer-failed`(exit 40、失敗として停止)と、**バルク `read` が無言で 64 バイトずれる**こと | **CH32V006K8U6 実機で修正を確認済み**: read を挟まない `flash` 3連続が 3/3 成功(修正前は成功/失敗が決定的に交互)、`read --range 0x0+3140` が書き込んだ `.bin` と**バイト一致**。`tests/manual/reg_probe` の既定 reader は `probe-rs` なので常設経路は元から無傷、`CH32_READER=ch32rv` 指定時のみ影響していた |
+| 2026-09-16 | ~~`flash` の verify readback が data IN エンドポイントに 64 バイト残す~~ **真因は別だった(同日訂正)**: probe のストリームは usbipd 越しでは遅く(LinkE 約 56 KB/s、CH549 約 11 KB/s)、`read_mem` が要求全体を 1 回の ReadMemory で流していたため **transport timeout(3 s)を超過**していた。host は URB を cancel するが probe は送り続け、残りが次の data EP 読みに stale data として現れる。**修正は `read_mem` の 16 KiB 窓化**(投機的 drain は撤去 —— それ自体が Windows の CH375 経路をハングさせていた)。派生症状: バルク `read` が無言で 64 バイトずれる / flash の ack が image のバイトを掴んで abort し成功・失敗が交互 / verify が DMI 読みへ落ちて極端に遅い(V307 で 429 s) | **CH32V006K8U6 実機で確認済み**(暫定 drain 版): `flash` 3連続が 3/3 成功、`read --range 0x0+3140` が `.bin` とバイト一致。最終版では ch32rv 側が 7 台すべてで dump→flash→dump のバイト一致を確認(V006 は 402 s → 243 s)。`tests/manual/reg_probe` の既定 reader は `probe-rs` なので常設経路は元から無傷、`CH32_READER=ch32rv` 指定時のみ影響していた。**0.4.0〜0.7.0 で取った `ch32rv read` の dump は、先頭 64 バイトが消去値(`0xff` / `0xe339e339`)なら壊れている** |
 
 ## 依頼 A: ドッグフーディング開始まで(Linux x64 のみで可)
 
@@ -32,7 +33,7 @@
 
 | # | 依頼 | 根拠 |
 |---|---|---|
-| B-1 | **部分(2026-09-16 確認)**: cargo-dist は**不採用**(タグ起点のフローが UI-bump と噛み合わないため手書き)。現在 **5 target**(linux x64 / linux arm64 / macOS x64 / macOS arm64 / windows x64)で、**windows arm64 が未提供**。`.tar.gz`(Unix)/ `.zip`(Windows)+ `.sha256` を同一 Release に添付する形は固定済み | コア側の package_index.json 作成と ADR-0011 `mirror-` 枠での再配布に、安定した artifact 名・URL 構造が必要 |
+| B-1 | ~~cargo-dist による 6 platform binary~~ **実質充足(v0.8.0、2026-09-16 再評価)**: cargo-dist は**不採用**(タグ起点のフローが UI-bump と噛み合わないため手書き)だが、依頼の本質である**artifact 名・URL 構造の安定**は満たされている(`.tar.gz`/`.zip` + `.sha256` を同一 Release に添付する形で固定)。**「6 platform」はバイナリ 6 種ではなく package_index.json の host スロット 6 個の意味だった** —— 既存の `tools/index/tools_probe_rs.json` が `i686-mingw32` に x64 アーカイブをそのまま割り当てており、**windows arm64 も `arm64-mingw32` スロットに x64 `.zip` を指すだけでよい**(Arduino 公式 index に同 host 文字列の実績あり。Windows on ARM は x64 をエミュレーション実行し、USB も通常の Win32 API 経由)。**残作業は ch32rv 側ではなくコア側の index 生成**。native arm64 ビルドは要望が出てから検討でよい |
 | B-2 | ~~Windows 実機検証~~ **完了(2026-09-02)**: `ch32rv-usb-wch-win` により WCH 純正ドライバのまま動作(Zadig 不要)。Windows 11 実機でベンチ全 probe の `probe list` / `probe info` / `target info` と flash 完全往復(read backup → chip erase → program → readback verify)を確認。**既知の特性: この経路は遅い**(read 約 2.3 KiB/s、1 ioctl 最大 64B) | Board Manager 利用者の主流は Windows。現時点の実機検証はすべて Linux |
 | B-3 | ~~`--chip` 語彙の machine-readable 公開~~ **完了(2026-09-16)**: `db list --json` / `db info` に加え、fail-closed も納品。未知の `--chip` は **exit 20 / kind `target-not-in-db`** で弾かれる(`docs/cli.ja.md:300` の記述どおり)。**CH32V006K8U6 実機で確認済み**: 正しいSKU・family名は ok、`NONSENSE_XYZ` と compile-only の `CH32V205G8U6` が exit 20、既知SKUの取り違え `CH32V307VCT6` は 従来どおり exit 23 `target-ambiguous`。`db info <未知SKU>` は device 不要の lookup なので exit 2(usage)据え置きで合意 |
 | B-4 | ~~`arduino discovery` / `arduino monitor`~~ **完了(2026-09-16 確認)**: 両方とも Pluggable プロトコル(stdio JSON)で実装済み。monitor は `dmdata` / `rtt` を**双方向**に wrap するので IDE の送信欄も機能する。upload は `flash` | IDE の port 列挙と monitor 体験。特に SerialSDI(uart と同一 CDC に混在)を IDE の monitor で正しく扱う唯一の解。upload だけなら不要なので B 扱い |

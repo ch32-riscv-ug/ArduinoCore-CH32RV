@@ -45,5 +45,6 @@ profiles:
       - platform: ch32-riscv-ug:ch32v (0.0.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
+  # tier B CH32V006: omitted, requires 32 KB flash, CH32V006 ANY has 16 KB
 default_profile: ch32x035
 # --- end generated ---

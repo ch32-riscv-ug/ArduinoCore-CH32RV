@@ -8,29 +8,29 @@
 [[source]]
 id = "ch32-device-data"
 url = "https://github.com/ch32-riscv-ug/ch32-device-data.git"
-commit = "7fc5231c4a10cf12565f27d9983eb31533405743"
+commit = "e3e723a1bab635c808b752c3a2ceee200ff4d72f"
 
 # SHA-256 of every table the generator reads, relative to the
 # ch32-device-data checkout root. A commit that leaves all of these
 # unchanged cannot change any generated file, which is the whole
 # reason they are listed.
 files = [
-  { path = "evidence/clock_configs.csv", sha256 = "dc5b264c24f9b0659a0edbb4b02b72d00ee9b3470b1550bf3da43235bc659ac7" },
+  { path = "evidence/clock_configs.csv", sha256 = "a1718ae53064a946568768b325c1fe6187324e4e38af7254e75e4633b723d7ec" },
   { path = "evidence/clock_enables.csv", sha256 = "6edddb72195dcabf2826bbdae75d089078f83594c90de912c0ddf01a7a4f61fc" },
   { path = "evidence/clock_init.csv", sha256 = "974c97167529458ad0f4bb63befb176f2fee427cc0373ad2c7bcb7c4447a5277" },
   { path = "evidence/clock_prescalers.csv", sha256 = "6f3cde8eced2f3522487ea9978c766d0b444add0730c6682371f3748f03ba29e" },
-  { path = "evidence/clock_symbols.csv", sha256 = "a6f49bfd15c467e79a78c55701eb799d931a6c6d6ba7c0d548d500372f2be793" },
+  { path = "evidence/clock_symbols.csv", sha256 = "ff00fa07e3af23bf0d8fa5a3155c611506fee4f59c32e72277938d42bedf75e7" },
   { path = "evidence/debug_data.csv", sha256 = "a6d4b6c565028f2e9c1888d8ffa54d43f1f63f5b71b8be8201810bdf4c3cd411" },
-  { path = "evidence/errata.csv", sha256 = "1a1475e5aedf5eaa39b1e3f2e7d4c4a1c79c499f617521061f1aecf3eea8715e" },
-  { path = "evidence/evt_variants.csv", sha256 = "e4b29ff6f42740a77d2d3cdbfaad8b806efd84e9b4e25eea820d94c22bcb76bf" },
-  { path = "catalog/families.csv", sha256 = "50b110db7266128cc32abda9ee6c0dd67fc7d8318e0a357e3f258d60f8f5f4c4" },
-  { path = "evidence/memory_map.csv", sha256 = "97389bf22039088027ec654b52d86b9b5f7750de3ce08c68884753405876e722" },
-  { path = "evidence/operating_conditions.csv", sha256 = "57c3824e94c42dc4997c2e64f231f91067e2671f79aacea071818a8d658a7ced" },
-  { path = "evidence/pin_functions.csv", sha256 = "c9f2a6cfa44c3ce72b95ef99e24358d5d03d7b79d404bc9265261da1592ae2d0" },
-  { path = "index/pinout.csv", sha256 = "5c19c1d33a0fb29698b2d5d37799fdfcb29af7bebe627d8efe67b364e228a105" },
-  { path = "evidence/pins.csv", sha256 = "e8b5f8f54dc28adefb187bf74cadbfede37396b99635db46eaabcdada1c34666" },
-  { path = "catalog/products.csv", sha256 = "0e75b9716a4f018596b43af0cdb8d7e5aeed821e10b68d37f753c6dcd6880cff" },
-  { path = "evidence/register_blocks.csv", sha256 = "43c92d7b58ea7f1ecd7b941ab7c20a58ee3d642d9fbafc6fca25a5d85b17e5a4" },
-  { path = "evidence/remap_fields.csv", sha256 = "efa489c987e0add850e24a00b189f8ca6922f04f56339d0399f86c400a209812" },
-  { path = "evidence/timers.csv", sha256 = "8247845a28b2221aefc5c05d6169433d7df1bdbdfc2c28f7dbd8f8ffe3c90c01" },
+  { path = "evidence/errata.csv", sha256 = "4e8e7b619a2dbdd18a5210ea3380f62ff1e059b8bd631b9b2e100a84f0a37f48" },
+  { path = "evidence/evt_variants.csv", sha256 = "3743dace619788651a2ffd0da382fd8968468cfb27b54d9224c0bde967b5991f" },
+  { path = "catalog/families.csv", sha256 = "dc88a0b1e1c7536f1b413972869d0a05249dca77c15d95cc7ae8b9ac28e10e4f" },
+  { path = "evidence/memory_map.csv", sha256 = "58bea18778fa213a1ebc591b478827ac8e1fbf5f936f012d6fcf4ad827c70343" },
+  { path = "evidence/operating_conditions.csv", sha256 = "728b917dafa82cd8d31154ea7749ec441709720a72f78659e33040239c619e86" },
+  { path = "evidence/pin_functions.csv", sha256 = "c5a7731d3c1137e9630086b3f474dc2585d42c76c7d2fd43527eb0ea63f9e710" },
+  { path = "index/pinout.csv", sha256 = "0d51936abcdf74a4dbb2a27ee17940bab6b26120115234a1c62306f80496fe91" },
+  { path = "evidence/pins.csv", sha256 = "fa4a47d54fc2a2dc41008335805c7bf0fd8ce6fa4bc430c32d0dc95583f74382" },
+  { path = "catalog/products.csv", sha256 = "f7a7dcd2a2854661ec35e983f478e11b49940700b8e7cccaf8d5a47f8b443cfa" },
+  { path = "evidence/register_blocks.csv", sha256 = "2de03308885a36239f202b1d80fcbe722cea3780380f00267eec7989a892b07c" },
+  { path = "evidence/remap_fields.csv", sha256 = "bfef8e9487275f2f3993fb01588a94fc7e73fac79087eb51de31bc0330cd07a8" },
+  { path = "evidence/timers.csv", sha256 = "0d70d5f795d16cceff24415678f8a03adf019e26ba79efcbff6618ca9895bce6" },
 ]

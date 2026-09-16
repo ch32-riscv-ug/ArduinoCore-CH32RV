@@ -7,7 +7,7 @@
   for symlink-mode development.
 - Emits package_ch32-riscv-ug_index.json referencing the archive at --base-url.
 - Tool section: --tools github uses tools/index/tools_xpack_gcc.json and
-  tools_probe_rs.json (direct links to the upstream GitHub Releases); --tools
+  tools_ch32rv.json (direct links to the upstream GitHub Releases); --tools
   local rewrites the URL of the tools named by --local-tools to --base-url
   while keeping the official checksums. Only those, because the archive has to
   actually be served there - a tool nobody staged locally must keep pointing at
@@ -34,8 +34,10 @@ MAINTAINER = "CH32 RISC-V UG"
 WEBSITE = "https://github.com/ch32-riscv-ug/ArduinoCore-CH32"
 TOOL_NAME = "xpack-riscv-none-elf-gcc"
 TOOL_VERSION = "14.3.0-1"
-PROBE_TOOL_NAME = "probe-rs"
-PROBE_TOOL_VERSION = "0.32.0"
+# The bundled uploader (ADR-0008). probe-rs is not shipped: the platform
+# declares one upload tool and it is this one.
+UPLOAD_TOOL_NAME = "ch32rv"
+UPLOAD_TOOL_VERSION = "0.8.0"
 PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32v"
 
@@ -169,17 +171,17 @@ def main(argv=None) -> None:
 
     here = pathlib.Path(__file__).parent
     tool = json.loads((here / "tools_xpack_gcc.json").read_text(encoding="utf-8"))
-    probe = json.loads((here / "tools_probe_rs.json").read_text(encoding="utf-8"))
+    uploader = json.loads((here / "tools_ch32rv.json").read_text(encoding="utf-8"))
     systems = tool["systems"]
-    # The mirror records where each archive came from and whether it was
-    # repacked. That is provenance for readers of the fragment, not part of the
-    # Board Manager schema, so it stays out of the published index.
-    drop = {"upstreamUrl", "upstreamArchiveFileName", "upstreamChecksum", "repacked"}
-    probe_systems = [{k: v for k, v in e.items() if k not in drop}
-                     for e in probe["systems"]]
+    # Provenance and per-entry notes are for readers of the fragment, not part
+    # of the Board Manager schema, so they stay out of the published index.
+    drop = {"upstreamUrl", "upstreamArchiveFileName", "upstreamChecksum",
+            "repacked", "comment"}
+    uploader_systems = [{k: v for k, v in e.items() if k not in drop}
+                        for e in uploader["systems"]]
     if args.tools == "local":
         wanted = {n.strip() for n in args.local_tools.split(",") if n.strip()}
-        unknown = wanted - {TOOL_NAME, PROBE_TOOL_NAME}
+        unknown = wanted - {TOOL_NAME, UPLOAD_TOOL_NAME}
         if unknown:
             raise SystemExit(f"--local-tools: unknown tool {sorted(unknown)}")
 
@@ -188,8 +190,8 @@ def main(argv=None) -> None:
                     for e in entries]
         if TOOL_NAME in wanted:
             systems = localize(systems)
-        if PROBE_TOOL_NAME in wanted:
-            probe_systems = localize(probe_systems)
+        if UPLOAD_TOOL_NAME in wanted:
+            uploader_systems = localize(uploader_systems)
 
     index = {
         "packages": [{
@@ -212,14 +214,14 @@ def main(argv=None) -> None:
                 "toolsDependencies": [
                     {"packager": PACKAGER, "name": TOOL_NAME,
                      "version": TOOL_VERSION},
-                    {"packager": PACKAGER, "name": PROBE_TOOL_NAME,
-                     "version": PROBE_TOOL_VERSION},
+                    {"packager": PACKAGER, "name": UPLOAD_TOOL_NAME,
+                     "version": UPLOAD_TOOL_VERSION},
                 ],
             }],
             "tools": [
                 {"name": TOOL_NAME, "version": TOOL_VERSION, "systems": systems},
-                {"name": PROBE_TOOL_NAME, "version": PROBE_TOOL_VERSION,
-                 "systems": probe_systems},
+                {"name": UPLOAD_TOOL_NAME, "version": UPLOAD_TOOL_VERSION,
+                 "systems": uploader_systems},
             ],
         }],
     }
