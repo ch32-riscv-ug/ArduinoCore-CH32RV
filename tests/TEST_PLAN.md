@@ -238,7 +238,7 @@ Counting only the axes the core actually branches on, there are six.
 
 | Axis | Values | Where it matters |
 |---|---|---|
-| ISA | `rv32ec` / `rv32emc` / `rv32imc` / `rv32imac` / `rv32imafc` | compiler, multilib, presence of atomics |
+| ISA | `rv32ec` / `rv32ec_zmmul` / `rv32imc` / `rv32imac` / `rv32imafc` | compiler, multilib, presence of atomics |
 | GPIO port width | 8 / 16 / 24 bits | `CFGLR` only / `+CFGHR` / `+CFGXR` and `BSXR` |
 | SysTick | 32 / 64 bit | how `millis()` reads the counter |
 | Flash wait states | 0 / 1 / 2 | must be set **before** raising the clock or the part hangs |
@@ -255,12 +255,19 @@ Counting only the axes the core actually branches on, there are six.
 | **B** | CH32L103 | weekly / before release | V4C, the low-power clock path |
 | **B** | CH32V103 | weekly / before release | **The only family whose vector table is a jump table** |
 | **B** | CH32V307 | weekly / before release | `rv32imafc` (F extension); the largest part on the bench |
-| **C** | CH32V006 / CH32V205 / CH32X315 | occasionally | The axes tier A+B leaves open: `rv32emc`, `rv32imc`, 20 MHz with 1 wait state |
+| **C** | CH32V006 / CH32V205 / CH32X315 | before release | The axes tier A+B leaves open: `rv32ec_zmmul`, `rv32imc`, 1 wait state. CH32V006K8U6 reached the bench on 2026-09-16 and closed the first and third |
 | **D** | the remaining 15 series | compile only | Every axis matches one of the above exactly |
 
-Tier A+B covers both values of all five non-ISA axes. Only `rv32emc` and
+Tier A+B covers both values of all five non-ISA axes. Only `rv32ec_zmmul` and
 `rv32imc` fall to tier C, and those are compiler-side differences over identical
 core C code.
+
+CH32V006 closed `rv32ec_zmmul` and flash wait state 1 on 2026-09-16, and closing
+them found a real bug: `-march=rv32emc` promised GCC a divider the QingKe V2C
+does not have, so `Serial.begin()` trapped on its own `divu`. **The compile
+matrix could not see it** - Blink divides nowhere - which is why
+`compile_matrix.py` now builds a dividing sketch per board and checks that no
+image uses an instruction its `-march` does not provide.
 
 Profiles exist for tier A and B only. **A profile is a promise that someone runs
 it on hardware**, so a profile nobody can run is worse than none. Tier C and D

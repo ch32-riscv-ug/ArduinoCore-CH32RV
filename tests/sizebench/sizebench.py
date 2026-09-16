@@ -29,7 +29,9 @@ from compile_matrix import Failure, gcc_bin, tool     # noqa: E402
 CASES = sorted(list((HERE / "cases").glob("*.c")) + list((HERE / "cases").glob("*.cpp")))
 
 # (tag, -march, -mabi)
-ARCHES = [("rv32ec", "rv32emc_zicsr", "ilp32e"),
+# rv32ec_zmmul, not rv32emc: the QingKe V2C multiplies in hardware but cannot
+# divide (CH32V00XRM p.1), so rv32emc would measure an ISA we do not ship.
+ARCHES = [("rv32ec", "rv32ec_zmmul_zicsr", "ilp32e"),
           ("rv32imac", "rv32imac_zicsr", "ilp32")]
 
 COMMON = ["-Os", "-g", "-ffunction-sections", "-fdata-sections"]

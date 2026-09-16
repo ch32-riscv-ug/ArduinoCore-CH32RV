@@ -231,7 +231,7 @@ coreの実装が実際に分岐する軸だけを数えると6つです。
 
 | 軸 | 値 | どこで効くか |
 |---|---|---|
-| ISA | `rv32ec` / `rv32emc` / `rv32imc` / `rv32imac` / `rv32imafc` | compiler、multilib、atomic有無 |
+| ISA | `rv32ec` / `rv32ec_zmmul` / `rv32imc` / `rv32imac` / `rv32imafc` | compiler、multilib、atomic有無 |
 | GPIOポート幅 | 8 / 16 / 24 bit | `CFGLR`のみ / `+CFGHR` / `+CFGXR`・`BSXR` |
 | SysTick | 32 / 64 bit | `millis()`のカウンタ読み出し |
 | flash wait state | 0 / 1 / 2 | クロック引き上げ**前**に設定しないとハングする |
@@ -248,7 +248,7 @@ coreの実装が実際に分岐する軸だけを数えると6つです。
 | **B** | CH32L103 | 週次 / release前 | V4C系。低消費電力系のクロック経路 |
 | **B** | CH32V103 | 週次 / release前 | **vector tableがジャンプ表なのはこのfamilyだけ** |
 | **B** | CH32V307 | 週次 / release前 | `rv32imafc`(F拡張)。手元で最大のpart |
-| **C** | CH32V006 | 入手でき次第 | **1台で`rv32emc`とflash wait state 1の両方**を埋める。開発ボードが出ておりチップも販売中だが、本格的な利用はこれから |
+| **C** | CH32V006 | release前 | **1台で`rv32ec_zmmul`とflash wait state 1の両方**を埋める。2026-09-16にCH32V006K8U6が着台(probe `497F8F06CE2F`)、両軸とも実機で踏んだ |
 | **D** | 残り17 series | compileのみ | 上のいずれかと差分軸が一致するか、**未発売で実機を用意できない** |
 
 Tier A+Bで埋まる軸は4つです(GPIOポート幅 8/16/24、SysTick 32/64、vector table形式、
@@ -256,12 +256,21 @@ EXTIのvector分割)。残る2軸には**未踏の値があります**。
 
 | 未踏の値 | 埋めるboard | 状況 |
 |---|---|---|
-| ISA `rv32emc` | CH32V006ほかV00x系 | Tier C。compiler側の差でcoreのCコードは同一 |
+| ~~ISA `rv32ec_zmmul`~~ | CH32V006ほかV00x系 | **2026-09-16に解消**。compiler側の差でcoreのCコードは同一 |
 | ISA `rv32imc` | CH32V205 / CH32M030 | **未発売**。同上の理由で影響は小さい |
-| **flash wait state 1** | CH32V006 / CH32V205 | Tier A+Bは0と2しか踏んでいない。**compileでは絶対に出ない軸**(クロック引き上げ前に設定しないとハングする)なので、実機で埋める価値がある |
+| ~~**flash wait state 1**~~ | CH32V006 / CH32V205 | **2026-09-16に解消**。Tier A+Bは0と2しか踏んでいなかった。**compileでは絶対に出ない軸**(クロック引き上げ前に設定しないとハングする)で、V006が`CH32_FLASH_LATENCY=1`のまま24 MHzで起動しSerialまで通ることを実機で確認した |
 
-したがって**CH32V006が実機に載るまで、wait state 1は未検証のまま**です。ISAの2値は
-compilerの差なので`tests/compile`で足ります。
+**2026-09-16にCH32V006K8U6が着台し、この2軸は埋まりました。** `serial_println`が
+`rv32ec_zmmul` / wait state 1 / 24 MHzで完走しています(`Serial.begin()`のBRR計算と
+`Print::printNumber`の除算を両方通る)。残る未踏はCH32V205の`rv32imc`だけで、これは
+**未発売**かつcompilerの差なので`tests/compile`で足ります。
+
+V006の着台と同時に、**`-march=rv32emc`が誤りだったことが実機で判明しました**。QingKe V2Cは
+RV32EmCの小文字mが乗算サブセットのみを意味し除算器を持たないため、GCCの吐く`divu`が
+`mcause=2`でトラップします。`rv32ec_zmmul_zicsr`へ修正済み。**この不具合はcompile matrixを
+素通りしました** —— 焼いているBlinkに除算が無いためで、`compile_matrix.py`に
+ISA適合チェック(除算を踏むスケッチをboardごとにbuildし、`-march`が提供しない命令が
+image に出ていないことを検査)を追加しています。
 
 CH32V205とCH32X315は当初Tier Cに置いていましたが、**どちらも未発売**なので実行頻度を
 持たせられません(2026-08-27にTier Dへ移動)。X315については「20 MHz/wait state 1」と

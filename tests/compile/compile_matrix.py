@@ -77,6 +77,22 @@ void loop() {}
 """
 
 
+# Forces a runtime multiply, divide and remainder that -Os cannot fold away,
+# so check_isa_conformance has something to look at. Blink has none of the
+# three, which is exactly why the size matrix could not see the rv32emc bug.
+DIVIDE = """\
+volatile unsigned long isa_a = 1000003, isa_b = 7;
+volatile unsigned long isa_mul, isa_div, isa_mod;
+
+void setup() {
+  isa_mul = isa_a * isa_b;
+  isa_div = isa_a / isa_b;
+  isa_mod = isa_a % isa_b;
+}
+void loop() {}
+"""
+
+
 class Failure(Exception):
     """A check failed. The message is what the operator needs to see."""
 
@@ -203,6 +219,58 @@ def check_static_cxx(gcc: pathlib.Path, elf: pathlib.Path) -> str:
     return f"INIT_ARRAY CHECKS OK (.init_array={init_array} bytes)"
 
 
+MUL_OPS = frozenset({"mul", "mulh", "mulhu", "mulhsu"})
+DIV_OPS = frozenset({"div", "divu", "rem", "remu"})
+
+
+def board_march(board: str) -> str:
+    """The -march the generated boards.txt gives this board."""
+    text = (REPO / "boards.txt").read_text(encoding="utf-8")
+    m = re.search(rf"^{re.escape(board)}\.build\.march=(\S+)$", text, re.M)
+    if m is None:
+        raise Failure(f"{board} has no build.march in boards.txt")
+    return m.group(1)
+
+
+def mnemonics(gcc: pathlib.Path, elf: pathlib.Path) -> set:
+    """Every instruction mnemonic in the image.
+
+    Read from the mnemonic column only, so a call to __udivsi3 - which is the
+    *fix* for a part with no divider - is not mistaken for a divide.
+    """
+    disasm = subprocess.run([tool(gcc, "objdump"), "-d", str(elf)],
+                            capture_output=True, text=True, check=True).stdout
+    return set(re.findall(r"\t([a-z][a-z0-9._]*)(?:\t|\n)", disasm))
+
+
+def check_isa_conformance(gcc: pathlib.Path, board: str, elf: pathlib.Path) -> str:
+    """No instruction the board's own -march does not provide.
+
+    The QingKe V2C is why this exists. WCH writes its ISA "RV32EmC", and
+    CH32V00XRM p.1 says the lowercase m "implements the multiplication subset
+    of the M extension" - it multiplies in hardware but has no divider.
+    Declaring -march=rv32emc let GCC emit divu, and the first one a sketch
+    reaches is HardwareSerial::begin's BRR computation: the part trapped there
+    with mcause=2 and Serial never came up, while Blink - which divides
+    nowhere - ran fine and kept the size matrix green.
+    """
+    march = board_march(board)
+    base = march.split("_", 1)[0]
+    has_div = "m" in base[4:]
+    has_mul = has_div or "zmmul" in march
+    used = mnemonics(gcc, elf)
+
+    bad = sorted((used & DIV_OPS) if not has_div else set()) + \
+          sorted((used & MUL_OPS) if not has_mul else set())
+    if bad:
+        raise Failure(
+            f"{board} builds -march={march}, which provides no "
+            f"{'divider' if not has_div else 'multiplier'}, but its image uses "
+            f"{', '.join(bad)}. Those trap as illegal instructions on the part.")
+    return (f"{board}\t{march}\tmul={'hw' if has_mul else 'lib'}"
+            f"\tdiv={'hw' if has_div else 'lib'}")
+
+
 def run(work: pathlib.Path) -> dict:
     """Compile everything. Returns the results; raises Failure on a hard stop."""
     work.mkdir(parents=True, exist_ok=True)
@@ -244,6 +312,23 @@ def run(work: pathlib.Path) -> dict:
     # Static checks on one representative build.
     print(check_static_cxx(gcc, work / "build-CH32V006-ANY" / "Blink.ino.elf"),
           flush=True)
+
+    # One build per board that actually divides, because -march is per board
+    # and Blink exercises neither the multiplier nor the divider.
+    divide = sketch(work, "Divide", DIVIDE)
+    isa_rows = []
+    for board in boards:
+        build = work / f"isa-{board}"
+        rc, output = compile_one(env, f"ch32-riscv-ug:ch32v:{board}:pnum=ANY",
+                                 gcc, build, divide)
+        if rc != 0:
+            raise Failure(f"{board}: the ISA conformance sketch failed to "
+                          f"compile:\n{output[-2000:]}")
+        isa_rows.append(check_isa_conformance(gcc, board,
+                                              build / "Divide.ino.elf"))
+    print("ISA CONFORMANCE OK", flush=True)
+    for row in isa_rows:
+        print(f"  {row}", flush=True)
 
     extra = sketch(work, "ExtraFlags", EXTRA_FLAGS)
     rc, output = compile_one(
