@@ -13,6 +13,12 @@
 - **検証開始(2026-09-02 決定)**: v0.2.0 を baseline に検証(ドッグフーディング)を開始。0.x は検証版として使いながら直し、安定したら 1.0 にする。A-2(lock)・A-3(--capture)は未充足のまま開始し、同日付で正式にプッシュ(下表に受け入れ基準)。
 - **ドッグフーディング中の運用方針(2026-09-02 決定)**: 変な挙動・足りない機能は**利用者側で回避せず、ch32rv への修正・追加依頼にする**。回避策を恒久化しない(一時的な直列化などは依頼の納品までの暫定に留め、この文書に依頼として残す)。
 
+## ch32rv 側の既知不具合(コア側が踏みうるもの)
+
+| 日付 | 不具合 | コアへの影響 |
+|---|---|---|
+| 2026-09-16 | ~~`flash` 末尾の verify readback が WCH-Link の data IN エンドポイントに **64 バイト(1 パケット)を読み残す**~~ **修正済み(同日)**: `WchLink::drain_data_in()` を `read_mem` / `write_flash` の頭で呼ぶ。**0.4.0 以降ずっと入っていた既存バグ**で v0.7.0 にも存在した。症状は `flash` の `transfer-failed`(exit 40、失敗として停止)と、**バルク `read` が無言で 64 バイトずれる**こと | **CH32V006K8U6 実機で修正を確認済み**: read を挟まない `flash` 3連続が 3/3 成功(修正前は成功/失敗が決定的に交互)、`read --range 0x0+3140` が書き込んだ `.bin` と**バイト一致**。`tests/manual/reg_probe` の既定 reader は `probe-rs` なので常設経路は元から無傷、`CH32_READER=ch32rv` 指定時のみ影響していた |
+
 ## 依頼 A: ドッグフーディング開始まで(Linux x64 のみで可)
 
 | # | 依頼 | 根拠(組み込み側の制約) |
@@ -26,11 +32,11 @@
 
 | # | 依頼 | 根拠 |
 |---|---|---|
-| B-1 | cargo-dist による 6 platform binary、artifact 命名とチェックサムの固定 | コア側の package_index.json 作成と ADR-0011 `mirror-` 枠での再配布に、安定した artifact 名・URL 構造が必要 |
-| B-2 | Windows 実機検証(WinUSB binding、`doctor` の driver 診断) | Board Manager 利用者の主流は Windows。現時点の実機検証はすべて Linux |
-| B-3 | `--chip` 語彙の machine-readable 公開(`db list --json` 等) | boards.txt の `build.ch32rv_chip` 値の源泉。現行 `tools/index/probe_rs_targets.csv` の置換元。compile-only の 7 family(V205/V407/V467/X305/X315/M030/M103)が「DB に無い」exit 20 の detail で区別され、利用者へ fail-closed の文言を出せること |
-| B-4 | `arduino discovery` / `arduino monitor`(Pluggable Discovery/Monitor、P1) | IDE の port 列挙と monitor 体験。特に SerialSDI(uart と同一 CDC に混在)を IDE の monitor で正しく扱う唯一の解。upload だけなら不要なので B 扱い |
-| B-5 | `flash --sdi on`(および `--monitor` への移行)を recipe から使える形で | コアの SerialSDI ライブラリ利用スケッチの「書込→即 monitor」。現行構成では SDI 有効化を upload に織り込む手段が無い(ch32rv requirements §5(5)) |
+| B-1 | **部分(2026-09-16 確認)**: cargo-dist は**不採用**(タグ起点のフローが UI-bump と噛み合わないため手書き)。現在 **5 target**(linux x64 / linux arm64 / macOS x64 / macOS arm64 / windows x64)で、**windows arm64 が未提供**。`.tar.gz`(Unix)/ `.zip`(Windows)+ `.sha256` を同一 Release に添付する形は固定済み | コア側の package_index.json 作成と ADR-0011 `mirror-` 枠での再配布に、安定した artifact 名・URL 構造が必要 |
+| B-2 | ~~Windows 実機検証~~ **完了(2026-09-02)**: `ch32rv-usb-wch-win` により WCH 純正ドライバのまま動作(Zadig 不要)。Windows 11 実機でベンチ全 probe の `probe list` / `probe info` / `target info` と flash 完全往復(read backup → chip erase → program → readback verify)を確認。**既知の特性: この経路は遅い**(read 約 2.3 KiB/s、1 ioctl 最大 64B) | Board Manager 利用者の主流は Windows。現時点の実機検証はすべて Linux |
+| B-3 | ~~`--chip` 語彙の machine-readable 公開~~ **完了(2026-09-16)**: `db list --json` / `db info` に加え、fail-closed も納品。未知の `--chip` は **exit 20 / kind `target-not-in-db`** で弾かれる(`docs/cli.ja.md:300` の記述どおり)。**CH32V006K8U6 実機で確認済み**: 正しいSKU・family名は ok、`NONSENSE_XYZ` と compile-only の `CH32V205G8U6` が exit 20、既知SKUの取り違え `CH32V307VCT6` は 従来どおり exit 23 `target-ambiguous`。`db info <未知SKU>` は device 不要の lookup なので exit 2(usage)据え置きで合意 |
+| B-4 | ~~`arduino discovery` / `arduino monitor`~~ **完了(2026-09-16 確認)**: 両方とも Pluggable プロトコル(stdio JSON)で実装済み。monitor は `dmdata` / `rtt` を**双方向**に wrap するので IDE の送信欄も機能する。upload は `flash` | IDE の port 列挙と monitor 体験。特に SerialSDI(uart と同一 CDC に混在)を IDE の monitor で正しく扱う唯一の解。upload だけなら不要なので B 扱い |
+| B-5 | ~~`flash --sdi on`~~ **完了(2026-09-16 確認、既知の不具合あり)**: `flash --sdi <on\|off>` と `--monitor` の source(`uart\|sdi\|dmdata\|rtt`)が recipe から使える。**既知**: `monitor --source sdi` の in-process forward に起動不良があり、enable は成功するのに CDC へ流れないことがある(wlink との usbmon 差分待ち) | コアの SerialSDI ライブラリ利用スケッチの「書込→即 monitor」。現行構成では SDI 有効化を upload に織り込む手段が無い(ch32rv requirements §5(5)) |
 | B-6 | ~~udev rules ファイルの Linux tar への同梱~~ **納品済み(v0.2.0、2026-09-02 実物確認)**: Linux tar(x64/arm64)に `60-ch32rv.rules` を同梱。`doctor --emit-udev` 出力とバイト一致(単一ソース `cli/60-ch32rv.rules` を include_str!)。`uaccess` 本線 + `plugdev`/0660 fallback、対象 `1a86:8010/8011/8012`(8011 = RISC-V alt PID は依頼時想定に無かった分も収録)。ISP `55e0` は isp 実装時に追加予定 | **ツールアーカイブ内の post_install.sh は Arduino から実行されない**(post-install はプラットフォーム側の仕組み — arduino-cli platform specification で確認済み 2026-09-02)ため、スクリプト同梱は無し(依頼どおり)。macOS/Windows アーカイブには非同梱(udev は Linux 固有) |
 
 ## 依頼 C: コアのリリース後でよいもの
