@@ -36,13 +36,15 @@ def test_compiles_with_no_overrides(install):
 
 
 @pytest.mark.slow
-def test_probe_rs_installs_and_runs(install):
-    """The upload path is only real if the programmer came down with it.
+def test_uploader_installs_and_runs(install):
+    """The upload path is only real if the uploader came down with it.
 
-    This is the check that caught Windows being broken: probe-rs's Windows zip
-    has no root directory and arduino-cli refuses it (ADR-0011).
+    ch32rv is the bundled uploader (ADR-0008). This is the check that caught
+    Windows being broken back when it was probe-rs: a tool archive without a
+    single root directory is refused by arduino-cli (ADR-0011), and nothing
+    else notices.
     """
-    assert install["probe_rs"]
+    assert install["uploader"]
 
 
 @pytest.mark.slow

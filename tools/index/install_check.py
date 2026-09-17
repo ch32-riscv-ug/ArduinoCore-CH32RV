@@ -16,8 +16,9 @@ index pulled down.
 Normally reached through `pytest` (tests/package/test_package_install.py).
 
 The xPack archive is served from <repo>/.tools/cache rather than fetched from
-GitHub on every run (400 MB). CH32_PROBE_RS_ARCHIVE does the same for probe-rs;
-without it probe-rs is downloaded from the mirror, which is what CI does.
+GitHub on every run (400 MB). CH32_CH32RV_ARCHIVE does the same for the
+bundled uploader; without it ch32rv is downloaded from its release, which is
+what CI does.
 
 On Windows the work directory has to be shallow - see check_path_budget.
 """
@@ -248,11 +249,11 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
     if not xpack.exists():
         raise Failure(f"no xPack archive at {xpack}; "
                       f"run: uv run tools/index/fetch_tools.py")
-    probe_archive = os.environ.get("CH32_PROBE_RS_ARCHIVE")
+    uploader_archive = os.environ.get("CH32_CH32RV_ARCHIVE")
 
     local_tools = ["xpack-riscv-none-elf-gcc"]
-    if probe_archive:
-        local_tools.append("probe-rs")
+    if uploader_archive:
+        local_tools.append("ch32rv")
 
     base_url = f"http://127.0.0.1:{port}"
     with serving(www, port) as base_url:
@@ -262,9 +263,9 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
             "--base-url", base_url, "--tools", "local",
             "--local-tools", ",".join(local_tools)])
         stage_archive(xpack, HERE / "tools_xpack_gcc.json", www)
-        if probe_archive:
-            stage_archive(pathlib.Path(probe_archive),
-                          HERE / "tools_probe_rs.json", www)
+        if uploader_archive:
+            stage_archive(pathlib.Path(uploader_archive),
+                          HERE / "tools_ch32rv.json", www)
 
         # 2) clean install into sandboxed directories - a fresh data directory
         #    is what makes this the real user path rather than a warm cache.
@@ -300,17 +301,19 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
             raise Failure(f"release archive contains {leaked[0]}")
         print("ARCHIVE CONTENTS OK", flush=True)
 
-        # 4) the upload path is only real if the programmer came down with the
-        #    platform. probe-rs is where Windows install used to break.
-        tools_dir = work / "data" / "packages" / PACKAGER / "tools" / "probe-rs"
-        probes = [p for p in tools_dir.glob("*/probe-rs*") if p.is_file()]
-        if not probes:
-            raise Failure("probe-rs was not installed with the platform")
-        proc = subprocess.run([str(probes[0]), "--version"], capture_output=True,
-                              text=True)
+        # 4) the upload path is only real if the uploader came down with the
+        #    platform. This is where a Windows install has broken before: a
+        #    tool archive without a single root directory is refused by
+        #    arduino-cli (ADR-0011), and the failure only shows up here.
+        tools_dir = work / "data" / "packages" / PACKAGER / "tools" / "ch32rv"
+        uploaders = [p for p in tools_dir.glob("*/ch32rv*") if p.is_file()]
+        if not uploaders:
+            raise Failure("ch32rv was not installed with the platform")
+        proc = subprocess.run([str(uploaders[0]), "--version"],
+                              capture_output=True, text=True)
         if proc.returncode != 0:
-            raise Failure(f"installed probe-rs does not run: {proc.stderr}")
-        print(f"PROBE-RS INSTALL OK: {probes[0]}", flush=True)
+            raise Failure(f"installed ch32rv does not run: {proc.stderr}")
+        print(f"CH32RV INSTALL OK: {uploaders[0]}", flush=True)
 
         # 5) upgrade, then back. A Board Manager index is append-only: users
         #    upgrade in place, and regenerating the index from scratch used to
@@ -341,7 +344,7 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
               flush=True)
 
     print("INSTALL-AND-COMPILE OK", flush=True)
-    return {"sizes": sizes, "probe_rs": str(probes[0]),
+    return {"sizes": sizes, "uploader": str(uploaders[0]),
             "versions": [current, nxt]}
 
 

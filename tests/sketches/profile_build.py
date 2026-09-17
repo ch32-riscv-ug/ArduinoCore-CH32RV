@@ -85,8 +85,8 @@ def run(work: pathlib.Path, port: int = 8751) -> dict:
     if not xpack.exists():
         raise Failure(f"no xPack archive at {xpack}; "
                       f"run: uv run tools/index/fetch_tools.py")
-    probe_archive = os.environ.get("CH32_PROBE_RS_ARCHIVE")
-    local_tools = ["xpack-riscv-none-elf-gcc"] + (["probe-rs"] if probe_archive
+    uploader_archive = os.environ.get("CH32_CH32RV_ARCHIVE")
+    local_tools = ["xpack-riscv-none-elf-gcc"] + (["ch32rv"] if uploader_archive
                                                   else [])
 
     with install_check.serving(www, port) as base_url:
@@ -96,10 +96,10 @@ def run(work: pathlib.Path, port: int = 8751) -> dict:
             "--local-tools", ",".join(local_tools)])
         install_check.stage_archive(xpack, REPO / "tools" / "index"
                                     / "tools_xpack_gcc.json", www)
-        if probe_archive:
+        if uploader_archive:
             install_check.stage_archive(
-                pathlib.Path(probe_archive),
-                REPO / "tools" / "index" / "tools_probe_rs.json", www)
+                pathlib.Path(uploader_archive),
+                REPO / "tools" / "index" / "tools_ch32rv.json", www)
 
         # A data directory of its own, so what the profile pulls down is what
         # gets built - not something a previous run left installed.

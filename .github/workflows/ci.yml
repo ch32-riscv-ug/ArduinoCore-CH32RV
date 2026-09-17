@@ -134,11 +134,12 @@ jobs:
 
   # W-5: clean Board Manager install via local HTTP, then compile with no overrides
   #
-  # Windows is covered again: probe-rs now comes from ch32-riscv-ug/mirror-probe-rs
-  # (ADR-0011), whose Windows archive carries the single root directory
-  # arduino-cli requires. With the upstream zip this job failed on Windows with
-  # "searching package root dir: files in archive must be placed in a
-  # subdirectory".
+  # Windows matters here: arduino-cli refuses a tool archive whose files are not
+  # under a single root directory, and nothing else notices. ch32rv (ADR-0008,
+  # the bundled uploader) ships archives that already carry one. The failure
+  # this guards against reads "searching package root dir: files in archive must
+  # be placed in a subdirectory" - it is how the old probe-rs upstream zip broke
+  # this job, which is why ADR-0011's mirror existed.
   install-test:
     strategy:
       fail-fast: false
