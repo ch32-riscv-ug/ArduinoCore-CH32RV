@@ -1415,3 +1415,33 @@ CH32M030.menu.printf.none=No float (smaller)
 CH32M030.menu.printf.none.build.printf_flags=
 CH32M030.menu.printf.float=%f supported (+~19 KB)
 CH32M030.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+
+# Product boards (L2), from tools/generate/boards/*.txt
+
+UIAPDUINO_V003_V14.name=UIAPduino Pro Micro CH32V003 V1.4
+UIAPDUINO_V003_V14.build.board=UIAPDUINO_V003_V14
+UIAPDUINO_V003_V14.build.core=arduino
+UIAPDUINO_V003_V14.monitor_port.serial.baudrate=115200
+UIAPDUINO_V003_V14.build.variant=UIAPduino_Pro_Micro_CH32V003_V14
+UIAPDUINO_V003_V14.build.march=rv32ec_zicsr
+UIAPDUINO_V003_V14.build.mabi=ilp32e
+UIAPDUINO_V003_V14.build.f_cpu=24000000L
+UIAPDUINO_V003_V14.build.series=CH32V003
+UIAPDUINO_V003_V14.build.startup_defines=-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE
+UIAPDUINO_V003_V14.build.vector_variant=v003
+UIAPDUINO_V003_V14.build.clock_init=clock_init_ch32v003.h
+UIAPDUINO_V003_V14.build.core_defines=-DCH32_GPIO_PORT_WIDTH=8 -DCH32_SYSTICK_64=0 -DCH32_SYSTICK_V103=0 -DCH32_HSI_HZ=24000000 -DCH32_FLASH_LATENCY=0 -DCH32_ADC_BITS=10 -DCH32_I2C_HAS_RTR=0 -DCH32_HPRE_LINEAR=1 -DCH32_FLASH_ACTLR_LATENCY_MASK=0x3u -DCH32_ADC_MAX_HZ=6000000u -DCH32_LSI_HZ=128000u -DCH32_IWDG_BASE=0x40003000u -DCH32_DM_DATA0_ADDR=0xe00000f4u
+UIAPDUINO_V003_V14.build.clock_defines=-DCH32_CLOCK_SYSCLK_HZ=24000000 -DCH32_CLOCK_USE_PLL=0 -DCH32_CLOCK_PLL_MASK=0x0u -DCH32_CLOCK_PLL_VALUE=0x0u -DCH32_CLOCK_EXTEN_ADDR=0x0u -DCH32_CLOCK_EXTEN_BITS=0x0u
+UIAPDUINO_V003_V14.build.ldscript=ch32v003_16k_2k.ld
+UIAPDUINO_V003_V14.upload.maximum_size=16384
+UIAPDUINO_V003_V14.upload.maximum_data_size=2048
+UIAPDUINO_V003_V14.upload.protocol=hid
+UIAPDUINO_V003_V14.upload.tool=ch32rv_hid
+UIAPDUINO_V003_V14.upload.tool.default=ch32rv_hid
+UIAPDUINO_V003_V14.build.ch32rv_chip=CH32V003F4U6
+UIAPDUINO_V003_V14.build.probe_rs_chip=CH32V003F4U6
+
+UIAPDUINO_V003_V14.menu.printf.none=No float (smaller)
+UIAPDUINO_V003_V14.menu.printf.none.build.printf_flags=
+UIAPDUINO_V003_V14.menu.printf.float=%f supported (+~19 KB; does not fit most V003 sketches)
+UIAPDUINO_V003_V14.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float

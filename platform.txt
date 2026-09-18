@@ -114,6 +114,16 @@ tools.ch32rv.program.params.quiet=
 tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.probe_args}
 tools.ch32rv.program.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.probe_args}
 
+# UIAPduino Pro Micro CH32V003 V1.4 product bootloader.  This is deliberately
+# separate from the WCH-Link ELF route above: rv003usb consumes the raw binary,
+# has its own VID:PID, and boot entry currently requires an external action.
+tools.ch32rv_hid.path={runtime.tools.ch32rv.path}
+tools.ch32rv_hid.cmd=ch32rv
+tools.ch32rv_hid.cmd.windows=ch32rv.exe
+tools.ch32rv_hid.upload.params.verbose=--verbose
+tools.ch32rv_hid.upload.params.quiet=
+tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" --usb-id 1209:b803 {upload.verbose}
+
 # ---------------------------------------------------------------- monitor
 # The UART Serial is an ordinary serial port, so the monitor arduino-cli ships
 # is the right one; declaring it is what makes a Board Manager install pull it

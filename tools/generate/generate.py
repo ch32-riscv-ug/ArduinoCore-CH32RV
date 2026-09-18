@@ -2551,8 +2551,13 @@ def main() -> int:
               f"{blocked}", file=sys.stderr)
         return 1
 
+    named_board_dir = pathlib.Path(__file__).parent / "boards"
+    named_boards = [p.read_text(encoding="utf-8").rstrip() + "\n"
+                    for p in sorted(named_board_dir.glob("*.txt"))]
     outputs[args.platform / "boards.txt"] = (
-        gen_header() + "\n" + MENU_HEADER + "\n" + "\n".join(boards_blocks))
+        gen_header() + "\n" + MENU_HEADER + "\n" + "\n".join(boards_blocks)
+        + ("\n# Product boards (L2), from tools/generate/boards/*.txt\n\n"
+           + "\n".join(named_boards) if named_boards else ""))
 
     for variant in sorted(used_variants):
         if variant not in interrupts:

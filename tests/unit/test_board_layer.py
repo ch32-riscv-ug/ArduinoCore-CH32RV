@@ -23,6 +23,7 @@ sys.path.insert(0, str(REPO / "tests"))
 from sketch_requirements import BadRequirement, requirements   # noqa: E402
 
 VARIANTS = sorted((REPO / "variants").glob("*/pins_arduino.h"))
+GENERIC_VARIANTS = [p for p in VARIANTS if p.parent.name.startswith("CH32")]
 EXAMPLES = sorted((REPO / "libraries").glob("*/examples/*/*.ino"))
 
 
@@ -38,7 +39,7 @@ def test_variants_are_present():
     assert len(EXAMPLES) >= 20, EXAMPLES
 
 
-@pytest.mark.parametrize("header", VARIANTS, ids=lambda p: p.parent.name)
+@pytest.mark.parametrize("header", GENERIC_VARIANTS, ids=lambda p: p.parent.name)
 def test_no_variant_defines_led_builtin(header):
     """LED_BUILTIN is a board's claim, and a Generic board is not a board.
 

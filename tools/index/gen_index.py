@@ -37,7 +37,7 @@ TOOL_VERSION = "14.3.0-1"
 # The bundled uploader (ADR-0008). probe-rs is not shipped: the platform
 # declares one upload tool and it is this one.
 UPLOAD_TOOL_NAME = "ch32rv"
-UPLOAD_TOOL_VERSION = "0.8.0"
+UPLOAD_TOOL_VERSION = "0.9.0"
 PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32v"
 

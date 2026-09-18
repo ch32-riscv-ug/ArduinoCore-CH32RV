@@ -15,6 +15,15 @@ boot entryまで自動化するrecipeはまだありません。
 
 ## 2. 通常の書き込み
 
+通常利用ではESP32ジグは不要です。RESETを押したままUSBへ接続するか、実行中のsketchから
+BOOT_MODEを設定してsoftware resetし、製品bootloaderへ入ります。後者を利用するには正常に
+動作するapplication側へboot entry処理をあらかじめ組み込んでおく必要があります。
+
+Arduino IDE / CLIではboardに
+`UIAPduino Pro Micro CH32V003 V1.4`（FQBN
+`ch32-riscv-ug:ch32v:UIAPDUINO_V003_V14`）を選びます。このnamed boardの通常Uploadは
+以下のHID書込みだけを担当し、RESET操作や外部ジグ操作は行いません。
+
 bootloaderが見えていることを確認します。UIAPduinoは`1209:b803`、通常のrv003usbは
 `1209:b003`です。
 
@@ -50,7 +59,10 @@ Arduino platformへ専用upload recipeを追加する場合のコマンド本体
 既存のWCH-Link用`flash <ELF>` recipeとは別のupload toolとして定義します。HID routeへ`.elf`を
 渡さず、`recipe.objcopy.bin.pattern`が生成する`.bin`を渡してください。
 
-## 3. SWIOジグでboot modeへ入る
+## 3. 検証・復旧用SWIOジグでboot modeへ入る
+
+この節は自動HILと、applicationからbootloaderへ戻れない場合の復旧用です。製品boardの
+標準書込み手順ではありません。
 
 実験で確認した最小配線は次の2本です。
 
