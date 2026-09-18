@@ -2,12 +2,11 @@
  *
  * A timer interrupt toggles the pin, which is what AVR does and what makes the
  * call work on any pin rather than only on the handful a timer's compare
- * output can reach. Which timer is the variant's business: it picks one with
- * an interrupt vector of its own, preferring one no PWM pad uses
- * (CH32_TONE_TIMER, see generate.py). Where no such timer is free the variant
- * says so with CH32_TONE_SHARES_PWM, and analogWrite() on that timer's pads is
- * disturbed while a tone plays - the same limitation the AVR core documents
- * for pins 3 and 11.
+ * output can reach. The variant supplies a preferred timer with an update
+ * vector (CH32_TONE_TIMER, see generate.py). The resource manager first tries
+ * it without disruption, then another free timer, and only then takes over the
+ * preferred one. If that timer carries PWM, its analogWrite() channels stop -
+ * the same limitation the AVR core documents for pins 3 and 11.
  *
  * The cost is one interrupt per half period: 2 kHz costs 4000 interrupts a
  * second. That is the price of "any pin", and it is what the Arduino API
@@ -18,16 +17,10 @@
  * definition would export an unmangled symbol that no sketch ever references.
  */
 #include "Arduino.h"
+#include "CH32Timer.h"
 #include "ch32_gpio.h"
-#include "ch32_registers.h"
 
 #ifdef CH32_TONE_TIMER
-
-/* Variants generated before the 32-bit timer was known do not say. 16 is what
- * every family except CH32L103/V205/V20x/X3x5 has. */
-#ifndef CH32_TONE_TIMER_BITS
-#define CH32_TONE_TIMER_BITS 16
-#endif
 
 /* The pin currently sounding, and how many toggles are left. Read by the ISR,
  * written by tone()/noTone() with the timer stopped, so no lock is needed. */
@@ -35,13 +28,47 @@ static volatile uint8_t tone_pin = 0xFF;
 static volatile uint8_t tone_port;
 static volatile uint8_t tone_bit;
 static volatile uint32_t tone_toggles;     /* 0 = until noTone() */
+static CH32TimerLease tone_lease;
+static const uint8_t tone_owner_identity = 0;
+
+static void tone_quiesce(void *, uint8_t, uint8_t)
+{
+    if (tone_pin != 0xFF) {
+        ch32_gpio_clear(tone_port, tone_bit);
+    }
+    tone_pin = 0xFF;
+    tone_toggles = 0;
+    tone_lease = {};
+}
+
+static const CH32TimerOwner tone_owner = {
+    &tone_owner_identity, tone_quiesce, nullptr
+};
 
 static void tone_stop(void)
 {
-    CH32_TIM_CTLR1(CH32_TONE_TIMER_BASE) = 0;
-    CH32_TIM_DMAINTENR(CH32_TONE_TIMER_BASE) = 0;
-    ch32_irq_disable(CH32_TONE_TIMER_IRQ);
+    if (ch32TimerLeaseValid(&tone_lease)) {
+        ch32TimerDetachUpdateInterrupt(&tone_lease);
+        ch32TimerRelease(&tone_lease);
+    }
+    if (tone_pin != 0xFF) {
+        ch32_gpio_clear(tone_port, tone_bit);
+    }
     tone_pin = 0xFF;
+    tone_toggles = 0;
+}
+
+static void tone_update(void *)
+{
+    if (ch32_gpio_read(tone_port, tone_bit)) {
+        ch32_gpio_clear(tone_port, tone_bit);
+    } else {
+        ch32_gpio_set(tone_port, tone_bit);
+    }
+
+    if (tone_toggles != 0u && --tone_toggles == 0u) {
+        tone_stop();
+    }
 }
 
 void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
@@ -105,24 +132,24 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
     tone_toggles = toggles;
     tone_pin = pin;
 
-    ch32_clock_enable_at(CH32_TONE_TIMER_CLKEN_ADDR, CH32_TONE_TIMER_CLKEN_MASK);
-    CH32_TIM_PSC(CH32_TONE_TIMER_BASE) = (uint16_t)psc;
-#if CH32_TONE_TIMER_BITS == 32
-    /* A 16-bit store here would land in both halves of the 32-bit register and
-     * ask for a reload 65537 times later than intended, which is what made
-     * tone() silent on CH32L103. */
-    CH32_TIM_ATRLR32(CH32_TONE_TIMER_BASE) = ticks - 1u;
-#else
-    CH32_TIM_ATRLR(CH32_TONE_TIMER_BASE) = (uint16_t)(ticks - 1u);
-#endif
-    /* Load PSC and ATRLR now rather than at the first overflow, then drop the
-     * update flag that loading them raised - otherwise the first interrupt
-     * arrives immediately and the first half period is short. */
-    CH32_TIM_SWEVGR(CH32_TONE_TIMER_BASE) = CH32_TIM_SWEVGR_UG;
-    CH32_TIM_INTFR(CH32_TONE_TIMER_BASE) = 0;
-    CH32_TIM_DMAINTENR(CH32_TONE_TIMER_BASE) = CH32_TIM_INT_UIE;
-    ch32_irq_enable(CH32_TONE_TIMER_IRQ);
-    CH32_TIM_CTLR1(CH32_TONE_TIMER_BASE) = CH32_TIM_CTLR1_CEN;
+    CH32TimerRequest request = {
+        CH32_TONE_TIMER, CH32_TIMER_WHOLE,
+        {(uint16_t)psc, ticks - 1u, 0}
+    };
+    tone_lease = ch32TimerTryAcquire(&request, &tone_owner);
+    if (!ch32TimerLeaseValid(&tone_lease)) {
+        request.timer = CH32_TIMER_ANY;
+        tone_lease = ch32TimerTryAcquire(&request, &tone_owner);
+    }
+    if (!ch32TimerLeaseValid(&tone_lease)) {
+        request.timer = CH32_TONE_TIMER;
+        tone_lease = ch32TimerTakeover(&request, &tone_owner);
+    }
+    if (!ch32TimerApplyBase(&tone_lease) ||
+        !ch32TimerAttachUpdateInterrupt(&tone_lease, tone_update, nullptr) ||
+        !ch32TimerStart(&tone_lease)) {
+        tone_stop();
+    }
 }
 
 void noTone(uint8_t pin)
@@ -136,23 +163,6 @@ void noTone(uint8_t pin)
         /* Left low, not floating: a speaker held at half rail draws current
          * and hums. */
         ch32_gpio_clear((uint8_t)CH32_PIN_PORT(pin), (uint8_t)CH32_PIN_BIT(pin));
-    }
-}
-
-/* The vector table names the handler, so this one keeps C linkage. */
-extern "C" __attribute__((interrupt)) void CH32_TONE_TIMER_HANDLER(void)
-{
-    CH32_TIM_INTFR(CH32_TONE_TIMER_BASE) = (uint16_t)~CH32_TIM_INT_UIE;
-
-    if (ch32_gpio_read(tone_port, tone_bit)) {
-        ch32_gpio_clear(tone_port, tone_bit);
-    } else {
-        ch32_gpio_set(tone_port, tone_bit);
-    }
-
-    if (tone_toggles != 0u && --tone_toggles == 0u) {
-        tone_stop();
-        ch32_gpio_clear(tone_port, tone_bit);
     }
 }
 

@@ -351,6 +351,16 @@
     (p) == PB1 ? 4 : \
     0)
 
+/* ---- Timer resource descriptors.  CH32_TIMER_TABLE(X) fields:
+ * number, kind, counter bits, channels, complementary, base,
+ * clock-enable address/mask, update IRQ, update handler. ---- */
+#define CH32_TIMER_COUNT 4
+#define CH32_TIMER_TABLE(X) \
+    X(1, 1, 16, 4, 1, CH32_TIM1_BASE, 0x40021018u, 0x00000800u, CH32_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
+    X(2, 2, 16, 4, 0, CH32_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32_IRQN_TIM2, TIM2_IRQHandler) \
+    X(3, 2, 16, 4, 0, CH32_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32_IRQN_TIM3, TIM3_IRQHandler) \
+    X(4, 2, 32, 4, 0, CH32_TIM4_BASE, 0x4002101cu, 0x00000004u, CH32_IRQN_TIM4, TIM4_IRQHandler)
+
 /* ---- tone(): TIM4, free of PWM pads. ---- */
 #define CH32_TONE_TIMER 4
 #define CH32_TONE_TIMER_BASE CH32_TIM4_BASE

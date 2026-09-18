@@ -192,6 +192,10 @@ TABLE_DIRS = {
     "families.csv": "catalog",
     "products.csv": "catalog",
     "pinout.csv": "index",
+    # Normalised from evidence/timers.csv.  The index adds channel count and
+    # complementary-output capability, which the public timer resource API
+    # must report rather than guess from whatever PWM pads are bonded out.
+    "timers.csv": "index",
 }
 DEFAULT_TABLE_DIR = "evidence"
 
@@ -393,6 +397,23 @@ def load_wide_timers(tables: pathlib.Path) -> dict:
             # on CH32V203C8T6) while the reverse silenced tone() on CH32L103.
             wide.setdefault(r["family"], set()).add(number)
     return wide
+
+
+def load_timer_capabilities(tables: pathlib.Path) -> dict:
+    """family -> timer number -> normalised peripheral capabilities."""
+    out: dict = {}
+    for r in read_table(tables, "timers.csv",
+                        ("family", "timer", "kind", "counter_width_bits",
+                         "channels", "complementary", "update_vector")):
+        number = int(r["timer"].removeprefix("TIM"))
+        out.setdefault(r["family"], {})[number] = {
+            "kind": r["kind"],
+            "width": int(r["counter_width_bits"] or 16),
+            "channels": int(r["channels"] or 0),
+            "complementary": bool(r["complementary"]),
+            "update_vector": r["update_vector"],
+        }
+    return out
 
 
 UNUSABLE_PADS = {
@@ -1622,6 +1643,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              i2cs: dict, spis: dict, dacs: dict, pwm: dict, handlers: list,
              remap: dict, route_alts: dict = None,
              wide_by_family: dict = {},
+             timers_by_family: dict = {},
              forbidden: dict = {}, clock_enables: dict = {},
              adc_all: dict = {}, adc_bases: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
@@ -2189,10 +2211,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"#define CH32_DAC{channel}_PIN {pad_name(*pad)}")
         out.append("")
 
-    # --- tone() and Servo timers ---
-    # Both need a timer whose *update* interrupt has a vector of its own, and
-    # they must not be the same timer: sounding a buzzer while a servo moves is
-    # ordinary. A timer qualifies either through a single TIMn vector or
+    # --- Timer capabilities, tone() and Servo timers ---
+    # Both need a timer whose *update* interrupt has a vector of its own. Their
+    # preferred timers must differ: sounding a buzzer while a servo moves is
+    # ordinary. Runtime ownership may choose another free timer before it
+    # takes over this preferred one. A timer qualifies either through a single TIMn vector or
     # through a separate TIMn_UP one - the advanced timers split their
     # interrupt four ways, and the update part is what these two use.
     #
@@ -2223,8 +2246,48 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     # narrow one (measured on CH32V203C8T6), while a 16-bit store is wrong on
     # the wide one (measured on CH32L103: it silenced tone()).
     wide_timers = set()
-    for family in {r.get("family", "") for r in rows}:
+    families = {r.get("family", "") for r in rows}
+    for family in families:
         wide_timers |= wide_by_family.get(family, set())
+
+    # Public and core-internal timer management share this one generated
+    # descriptor list.  Only timers whose update vector exists in the selected
+    # interrupt table are emitted: a peripheral that exists on a larger die
+    # but has no vector on this board cannot provide the contract.
+    timer_caps = {}
+    kind_value = {"advanced": 1, "general-purpose": 2, "streamlined": 3,
+                  "": 0}
+    for family in sorted(families):
+        for number, cap in timers_by_family.get(family, {}).items():
+            if number > 7 or number not in candidates:
+                continue
+            previous = timer_caps.get(number)
+            if previous and previous != cap:
+                raise SystemExit(f"{series}: families disagree on TIM{number} "
+                                 f"capabilities: {previous} vs {cap}")
+            timer_caps[number] = cap
+
+    out.append("/* ---- Timer resource descriptors.  CH32_TIMER_TABLE(X) fields:")
+    out.append(" * number, kind, counter bits, channels, complementary, base,")
+    out.append(" * clock-enable address/mask, update IRQ, update handler. ---- */")
+    out.append(f"#define CH32_TIMER_COUNT {len(timer_caps)}")
+    if timer_caps:
+        out.append("#define CH32_TIMER_TABLE(X) \\")
+        ordered_caps = sorted(timer_caps.items())
+        for i, (number, cap) in enumerate(ordered_caps):
+            handler = candidates[number]
+            irqn = handler.removesuffix("_IRQHandler")
+            addr, mask = clken[f"TIM{number}"]
+            suffix = " \\" if i + 1 < len(ordered_caps) else ""
+            out.append(
+                f"    X({number}, {kind_value.get(cap['kind'], 0)}, "
+                f"{cap['width']}, {cap['channels']}, "
+                f"{1 if cap['complementary'] else 0}, CH32_TIM{number}_BASE, "
+                f"{addr:#010x}u, {mask:#010x}u, CH32_IRQN_{irqn}, "
+                f"{handler}){suffix}")
+    else:
+        out.append("#define CH32_TIMER_TABLE(X) /* no managed TIM */")
+    out.append("")
 
     def pick(pool):
         """Highest-numbered, preferring one no PWM pad uses."""
@@ -2242,11 +2305,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         if shared:
             pads = sorted(pad_name(*k) for k, v in pwm_pads.items()
                           if v[0] == number)
-            out.append(f"/* ---- {kind}: TIM{number}, which is also a PWM timer here, so")
+            out.append(f"/* ---- {kind}: preferred TIM{number}, also a PWM timer here, so")
             out.append(f" *      analogWrite() on {', '.join(pads)}")
             out.append(f" *      is disturbed while {users}. ---- */")
         else:
-            out.append(f"/* ---- {kind}: TIM{number}, free of PWM pads. ---- */")
+            out.append(f"/* ---- {kind}: preferred TIM{number}, free of PWM pads. ---- */")
         prefix = "CH32_TONE" if kind == "tone()" else "CH32_SERVO"
         out.append(f"#define {prefix}_TIMER {number}")
         out.append(f"#define {prefix}_TIMER_BASE CH32_TIM{number}_BASE")
@@ -2455,6 +2518,7 @@ def main() -> int:
     ch32rv = load_ch32rv_chips()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)
+    timer_capabilities = load_timer_capabilities(args.tables)
     clock_enables = load_clock_enables(args.tables)
     adc_bases = load_adc_bases(args.tables)
     pwm = load_pwm_pins(args.tables)
@@ -2514,7 +2578,8 @@ def main() -> int:
         outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
             gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
-                     route_alts, wide_timers, forbidden, clock_enables,
+                     route_alts, wide_timers, timer_capabilities, forbidden,
+                     clock_enables,
                      adc_all, adc_bases)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed

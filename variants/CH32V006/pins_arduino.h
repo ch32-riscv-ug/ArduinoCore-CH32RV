@@ -314,6 +314,14 @@
     (p) == PD7 ? 4 : \
     0)
 
+/* ---- Timer resource descriptors.  CH32_TIMER_TABLE(X) fields:
+ * number, kind, counter bits, channels, complementary, base,
+ * clock-enable address/mask, update IRQ, update handler. ---- */
+#define CH32_TIMER_COUNT 2
+#define CH32_TIMER_TABLE(X) \
+    X(1, 1, 16, 4, 1, CH32_TIM1_BASE, 0x40021018u, 0x00000800u, CH32_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
+    X(2, 2, 16, 4, 0, CH32_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32_IRQN_TIM2, TIM2_IRQHandler)
+
 /* ---- tone(): TIM2, which is also a PWM timer here, so
  *      analogWrite() on PC0, PD3, PD7
  *      is disturbed while a tone plays. ---- */

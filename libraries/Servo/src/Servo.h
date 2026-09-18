@@ -6,10 +6,10 @@
  * library does it, and it is why any pin works rather than only the handful a
  * timer's compare output reaches.
  *
- * Which timer is the variant's business (CH32_SERVO_TIMER). It is never the
- * one tone() uses - a sketch may reasonably do both at once - but on the small
- * parts there is no timer left over, and then attaching a servo disturbs
- * analogWrite() on that timer's pads. The variant header says which pads.
+ * The variant supplies a preferred timer (CH32_SERVO_TIMER), distinct from
+ * tone()'s preference. The resource manager may use another free timer before
+ * taking over that one. On small parts there is no timer left over, and then
+ * attaching a servo stops analogWrite() channels on the timer it takes.
  */
 #pragma once
 

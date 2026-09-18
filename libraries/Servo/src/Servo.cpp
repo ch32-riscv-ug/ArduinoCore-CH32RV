@@ -1,13 +1,10 @@
 #include "Servo.h"
 
+#include "CH32Timer.h"
 #include "ch32_gpio.h"
 #include "ch32_registers.h"
 
 #ifdef CH32_SERVO_TIMER
-
-#ifndef CH32_SERVO_TIMER_BITS
-#define CH32_SERVO_TIMER_BITS 16
-#endif
 
 namespace {
 
@@ -15,12 +12,20 @@ struct Slot {
     uint8_t pin;
     bool active;
     uint16_t pulse_us;
+    Servo *owner;
 };
 
 Slot slots[CH32_SERVO_MAX];
 volatile int8_t current = -1;      /* slot whose pulse is on the wire, or -1 */
 volatile uint16_t frame_used_us;   /* how much of the 20 ms frame is spent   */
 bool timer_running;
+CH32TimerLease timer_lease;
+const uint8_t servo_owner_identity = 0;
+void timer_update(void *);
+void timer_quiesce(void *, uint8_t, uint8_t);
+const CH32TimerOwner servo_owner = {
+    &servo_owner_identity, timer_quiesce, nullptr
+};
 
 /* The timer counts microseconds, so a pulse width is a tick count. The
  * prescaler comes straight from F_CPU because Milestone 1 leaves both APB
@@ -40,45 +45,54 @@ inline void timer_set(uint16_t us)
      * every sample, UIF was set, and millis() ran at a fifth of real time.
      * wiring_tone.cpp does not hit this because its update event is fired once
      * at start, while the interrupt is still masked. */
-#if CH32_SERVO_TIMER_BITS == 32
-    /* 32-bit ATRLR: a 16-bit store is replicated into both halves, which would
-     * ask for a 65-second frame instead of a 20 ms one - no servo would ever
-     * move. CH32V208 is the variant this applies to: tone() takes TIM5 there,
-     * so Servo gets the 32-bit TIM4. Untested, for want of the board; the
-     * mechanism is the one measured on CH32L103's tone(). See
-     * ch32_registers.h. */
-    CH32_TIM_ATRLR32(CH32_SERVO_TIMER_BASE) = us - 1u;
-#else
-    CH32_TIM_ATRLR(CH32_SERVO_TIMER_BASE) = (uint16_t)(us - 1u);
-#endif
+    const CH32TimerCapability *cap =
+        ch32TimerCapabilityFor(timer_lease.timer);
+    if (cap->counter_bits == 32u) {
+        CH32_TIM_ATRLR32(cap->register_base) = us - 1u;
+    } else {
+        CH32_TIM_ATRLR(cap->register_base) = (uint16_t)(us - 1u);
+    }
 }
 
 void timer_start(void)
 {
-    if (timer_running) {
+    if (timer_running && ch32TimerLeaseValid(&timer_lease)) {
         return;
     }
-    ch32_clock_enable_at(CH32_SERVO_TIMER_CLKEN_ADDR, CH32_SERVO_TIMER_CLKEN_MASK);
-    CH32_TIM_CTLR1(CH32_SERVO_TIMER_BASE) = 0;
-    CH32_TIM_PSC(CH32_SERVO_TIMER_BASE) = (uint16_t)((F_CPU / 1000000u) - 1u);
+    CH32TimerRequest request = {
+        CH32_SERVO_TIMER, CH32_TIMER_WHOLE,
+        {(uint16_t)((F_CPU / 1000000u) - 1u), 99u, 0}
+    };
+    timer_lease = ch32TimerTryAcquire(&request, &servo_owner);
+    if (!ch32TimerLeaseValid(&timer_lease)) {
+        request.timer = CH32_TIMER_ANY;
+        timer_lease = ch32TimerTryAcquire(&request, &servo_owner);
+    }
+    if (!ch32TimerLeaseValid(&timer_lease)) {
+        request.timer = CH32_SERVO_TIMER;
+        timer_lease = ch32TimerTakeover(&request, &servo_owner);
+    }
+    if (!ch32TimerApplyBase(&timer_lease)) {
+        timer_quiesce(nullptr, CH32_SERVO_TIMER, CH32_TIMER_WHOLE);
+        return;
+    }
     current = -1;
     frame_used_us = 0;
-    timer_set(100);                /* first interrupt starts the frame */
-    /* Load PSC and ATRLR now and drop the update flag that loading them
-     * raises, while the interrupt is still masked. */
-    CH32_TIM_SWEVGR(CH32_SERVO_TIMER_BASE) = CH32_TIM_SWEVGR_UG;
-    CH32_TIM_INTFR(CH32_SERVO_TIMER_BASE) = 0;
-    CH32_TIM_DMAINTENR(CH32_SERVO_TIMER_BASE) = CH32_TIM_INT_UIE;
-    ch32_irq_enable(CH32_SERVO_TIMER_IRQ);
-    CH32_TIM_CTLR1(CH32_SERVO_TIMER_BASE) = CH32_TIM_CTLR1_CEN;
+    if (!ch32TimerAttachUpdateInterrupt(&timer_lease, timer_update, nullptr) ||
+        !ch32TimerStart(&timer_lease)) {
+        ch32TimerRelease(&timer_lease);
+        timer_quiesce(nullptr, CH32_SERVO_TIMER, CH32_TIMER_WHOLE);
+        return;
+    }
     timer_running = true;
 }
 
 void timer_stop(void)
 {
-    CH32_TIM_CTLR1(CH32_SERVO_TIMER_BASE) = 0;
-    CH32_TIM_DMAINTENR(CH32_SERVO_TIMER_BASE) = 0;
-    ch32_irq_disable(CH32_SERVO_TIMER_IRQ);
+    if (ch32TimerLeaseValid(&timer_lease)) {
+        ch32TimerDetachUpdateInterrupt(&timer_lease);
+        ch32TimerRelease(&timer_lease);
+    }
     timer_running = false;
     current = -1;
 }
@@ -104,14 +118,27 @@ inline void drive(uint8_t pin, bool high)
     }
 }
 
+void timer_quiesce(void *, uint8_t, uint8_t)
+{
+    for (uint8_t i = 0; i < CH32_SERVO_MAX; i++) {
+        if (slots[i].active) {
+            drive(slots[i].pin, false);
+            slots[i].active = false;
+        }
+    }
+    timer_running = false;
+    current = -1;
+    frame_used_us = 0;
+    timer_lease = {};
+}
+
 }  // namespace
 
 /* One step of the frame: end the pulse that was running, start the next one,
  * and when they are all done wait out whatever is left of the 20 ms. */
-extern "C" __attribute__((interrupt)) void CH32_SERVO_TIMER_HANDLER(void)
+namespace {
+void timer_update(void *)
 {
-    CH32_TIM_INTFR(CH32_SERVO_TIMER_BASE) = (uint16_t)~CH32_TIM_INT_UIE;
-
     if (current >= 0) {
         drive(slots[current].pin, false);
     }
@@ -137,6 +164,7 @@ extern "C" __attribute__((interrupt)) void CH32_SERVO_TIMER_HANDLER(void)
                   ? (uint16_t)(REFRESH_INTERVAL - used) : 100u);
     }
 }
+}  // namespace
 
 Servo::Servo() : _index(INVALID_SERVO), _min(MIN_PULSE_WIDTH),
                  _max(MAX_PULSE_WIDTH)
@@ -152,6 +180,11 @@ uint8_t Servo::attach(int pin, int min, int max)
 {
     if (pin < 0 || !digitalPinIsValid((uint8_t)pin)) {
         return INVALID_SERVO;
+    }
+    if (_index != INVALID_SERVO && slots[_index].owner != this) {
+        /* A TIM takeover detached this object and the slot has since been
+         * reused.  Never overwrite the new owner's pulse. */
+        _index = INVALID_SERVO;
     }
     if (_index == INVALID_SERVO) {
         for (uint8_t i = 0; i < CH32_SERVO_MAX; i++) {
@@ -176,8 +209,15 @@ uint8_t Servo::attach(int pin, int min, int max)
 
     slots[_index].pin = (uint8_t)pin;
     slots[_index].pulse_us = DEFAULT_PULSE_WIDTH;
+    slots[_index].owner = this;
     slots[_index].active = true;
     timer_start();
+    if (!timer_running) {
+        slots[_index].active = false;
+        slots[_index].owner = nullptr;
+        _index = INVALID_SERVO;
+        return INVALID_SERVO;
+    }
     return _index;
 }
 
@@ -186,8 +226,11 @@ void Servo::detach()
     if (_index == INVALID_SERVO) {
         return;
     }
-    slots[_index].active = false;
-    drive(slots[_index].pin, false);
+    if (slots[_index].owner == this) {
+        slots[_index].active = false;
+        slots[_index].owner = nullptr;
+        drive(slots[_index].pin, false);
+    }
     _index = INVALID_SERVO;
     if (!any_active()) {
         timer_stop();
@@ -210,7 +253,8 @@ void Servo::write(int value)
 
 void Servo::writeMicroseconds(int value)
 {
-    if (_index == INVALID_SERVO) {
+    if (_index == INVALID_SERVO || slots[_index].owner != this ||
+        !slots[_index].active) {
         return;
     }
     if (value < _min) {
@@ -223,7 +267,8 @@ void Servo::writeMicroseconds(int value)
 
 int Servo::readMicroseconds()
 {
-    return _index == INVALID_SERVO ? 0 : (int)slots[_index].pulse_us;
+    return (_index == INVALID_SERVO || slots[_index].owner != this ||
+            !slots[_index].active) ? 0 : (int)slots[_index].pulse_us;
 }
 
 int Servo::read()
@@ -233,7 +278,8 @@ int Servo::read()
 
 bool Servo::attached()
 {
-    return _index != INVALID_SERVO && slots[_index].active;
+    return _index != INVALID_SERVO && slots[_index].owner == this &&
+           slots[_index].active;
 }
 
 #else  /* the variant found no timer to spare */

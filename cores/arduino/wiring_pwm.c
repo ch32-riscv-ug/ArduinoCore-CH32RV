@@ -5,6 +5,7 @@
  * level, which is what the AVR core does for non-PWM pins.
  */
 #include "Arduino.h"
+#include "CH32Timer.h"
 #include "ch32_gpio.h"
 #include "ch32_registers.h"
 
@@ -24,59 +25,16 @@
 #endif
 
 static uint8_t ch32_pwm_write_bits = 8;
-static uint8_t ch32_pwm_started;    /* bit per timer index */
+static const uint8_t ch32_pwm_owner_identity;
+static const CH32TimerOwner ch32_pwm_owner = {
+    &ch32_pwm_owner_identity, 0, 0
+};
 
 void analogWriteResolution(int bits)
 {
     if (bits > 0 && bits <= 16) {
         ch32_pwm_write_bits = (uint8_t)bits;
     }
-}
-
-static uint32_t timer_base(uint8_t timer)
-{
-    switch (timer) {
-    case 1:  return CH32_TIM1_BASE;
-    case 2:  return CH32_TIM2_BASE;
-    case 3:  return CH32_TIM3_BASE;
-    default: return 0;
-    }
-}
-
-static void timer_begin(uint8_t timer, uint32_t base)
-{
-    if (ch32_pwm_started & (1u << timer)) {
-        return;
-    }
-    /* Which register and bit turn a timer on is a per-family fact (V006 has
-     * TIM3 at bit 2, the F1-style parts at bit 1) and comes from the variant
-     * header; a family without one of these timers has no define, and its
-     * pin map never names that timer. */
-    switch (timer) {
-#ifdef CH32_CLKEN_TIM1_ADDR
-    case 1: ch32_clock_enable(TIM1); break;
-#endif
-#ifdef CH32_CLKEN_TIM2_ADDR
-    case 2: ch32_clock_enable(TIM2); break;
-#endif
-#ifdef CH32_CLKEN_TIM3_ADDR
-    case 3: ch32_clock_enable(TIM3); break;
-#endif
-    default: break;
-    }
-    /* One PWM period every CH32_PWM_STEPS counts, at roughly CH32_PWM_HZ. */
-    uint32_t prescale = F_CPU / (CH32_PWM_HZ * CH32_PWM_STEPS);
-    if (prescale == 0) {
-        prescale = 1;
-    }
-    CH32_TIM_PSC(base) = (uint16_t)(prescale - 1u);
-    CH32_TIM_ATRLR(base) = (uint16_t)(CH32_PWM_STEPS - 1u);
-    CH32_TIM_CTLR1(base) = CH32_TIM_CTLR1_ARPE | CH32_TIM_CTLR1_CEN;
-    if (timer == 1) {
-        /* The advanced timer keeps its outputs disabled until MOE is set. */
-        CH32_TIM_BDTR(base) |= CH32_TIM_BDTR_MOE;
-    }
-    ch32_pwm_started |= (uint8_t)(1u << timer);
 }
 
 #if defined(CH32_DAC1_PIN) || defined(CH32_DAC2_PIN)
@@ -134,9 +92,9 @@ void analogWrite(pin_size_t pin, int value)
 #endif
     const uint8_t timer = (uint8_t)CH32_PWM_PIN_TO_TIMER(pin);
     const uint8_t channel = (uint8_t)CH32_PWM_PIN_TO_CHANNEL(pin);
-    const uint32_t base = timer_base(timer);
+    const CH32TimerCapability *cap = ch32TimerCapabilityFor(timer);
 
-    if (base == 0) {
+    if (!cap || channel == 0u) {
         /* No PWM here: behave like the AVR core and just pick a level. */
         pinMode(pin, OUTPUT);
         digitalWrite(pin, value ? HIGH : LOW);
@@ -156,7 +114,22 @@ void analogWrite(pin_size_t pin, int value)
     ch32_gpio_clock_enable(port);
     ch32_gpio_set_config(port, (uint8_t)CH32_PIN_BIT(pin),
                          CH32_GPIO_CFG_AF_PP_50M);
-    timer_begin(timer, base);
+
+    uint32_t prescale = F_CPU / (CH32_PWM_HZ * CH32_PWM_STEPS);
+    if (prescale == 0u) {
+        prescale = 1u;
+    }
+    const CH32TimerRequest request = {
+        timer,
+        channel,
+        {(uint16_t)(prescale - 1u), CH32_PWM_STEPS - 1u,
+         CH32_TIM_CTLR1_ARPE}
+    };
+    CH32TimerLease lease = ch32TimerTakeover(&request, &ch32_pwm_owner);
+    if (!ch32TimerLeaseValid(&lease) || !ch32TimerApplyBase(&lease)) {
+        return;
+    }
+    const uint32_t base = cap->register_base;
 
     /* Channels 1 and 2 share CHCTLR1, 3 and 4 share CHCTLR2; even channels sit
      * in the high byte of their word. */
@@ -167,4 +140,9 @@ void analogWrite(pin_size_t pin, int value)
                          (CH32_TIM_OCMODE_PWM1 << shift));
     CH32_TIM_CHCVR(base, channel) = (uint16_t)duty;
     CH32_TIM_CCER(base) |= (uint16_t)(1u << ((channel - 1u) * 4u));
+    if (cap->kind == CH32_TIMER_KIND_ADVANCED) {
+        /* Advanced timers keep every channel output gated behind MOE. */
+        CH32_TIM_BDTR(base) |= CH32_TIM_BDTR_MOE;
+    }
+    ch32TimerStart(&lease);
 }
