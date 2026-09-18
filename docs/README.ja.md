@@ -49,6 +49,7 @@
 | [toolchain.ja.md](toolchain.ja.md) | toolchainの候補、選定条件、認定matrix |
 | [flash-size.ja.md](flash-size.ja.md) | 何がフラッシュを食うか、map fileの読み方、削り方 |
 | [upload-and-fixture.ja.md](upload-and-fixture.ja.md) | uploader、WCH-Link識別、実機fixture |
+| [uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md) | UIAPduinoのHID書き込み、SWIOジグによるboot mode復帰、失敗時の復旧 |
 | [ch32rv-requests.ja.md](ch32rv-requests.ja.md) | 同梱予定uploader `ch32rv` への依頼事項(ドッグフーディング前/同梱リリース前/リリース後の区分)と、コア側の受け入れ作業 |
 | [harness-requirements.ja.md](harness-requirements.ja.md) | **harnessへの要求カタログ(ID付き)**。protocol側でのマージ用。相反する要求、コアが「どちらでもよい」もの、将来枠も含む |
 | [harness-probe.ja.md](harness-probe.ja.md) | 自作probe(DUT harness = 書込+ロジックキャプチャ+周辺エミュ)の評価と依頼事項。方法4の空白、入力側刺激、EmbedBench接続 |
