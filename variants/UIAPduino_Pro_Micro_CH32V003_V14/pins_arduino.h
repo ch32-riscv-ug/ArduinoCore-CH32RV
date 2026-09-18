@@ -56,16 +56,17 @@
 #define PD6 16
 #define PD7 17
 
+#undef NUM_DIGITAL_PINS
+#undef PINS_COUNT
+#define NUM_DIGITAL_PINS 18
+#define PINS_COUNT       NUM_DIGITAL_PINS
+
+/* The three board ranges are contiguous within PA, PC and PD, so this stays
+ * a constant expression without linking an 18-entry lookup table. */
 #define CH32_UIAP_ENCODE_PIN(pin) ( \
-    (pin) ==  0 ? CH32_PIN(0, 1) : (pin) ==  1 ? CH32_PIN(0, 2) : \
-    (pin) ==  2 ? CH32_PIN(2, 0) : (pin) ==  3 ? CH32_PIN(2, 1) : \
-    (pin) ==  4 ? CH32_PIN(2, 2) : (pin) ==  5 ? CH32_PIN(2, 3) : \
-    (pin) ==  6 ? CH32_PIN(2, 4) : (pin) ==  7 ? CH32_PIN(2, 5) : \
-    (pin) ==  8 ? CH32_PIN(2, 6) : (pin) ==  9 ? CH32_PIN(2, 7) : \
-    (pin) == 10 ? CH32_PIN(3, 0) : (pin) == 11 ? CH32_PIN(3, 1) : \
-    (pin) == 12 ? CH32_PIN(3, 2) : (pin) == 13 ? CH32_PIN(3, 3) : \
-    (pin) == 14 ? CH32_PIN(3, 4) : (pin) == 15 ? CH32_PIN(3, 5) : \
-    (pin) == 16 ? CH32_PIN(3, 6) : (pin) == 17 ? CH32_PIN(3, 7) : (pin))
+    (pin) < 2 ? (pin) + 1 : \
+    (pin) < 10 ? (pin) + 62 : \
+    (pin) < 18 ? (pin) + 86 : (pin))
 
 #undef CH32_PIN_PORT
 #undef CH32_PIN_BIT
@@ -102,3 +103,32 @@
 #define PIN_UIAP_RESET PD7
 #define PIN_USB_DP     PD3
 #define PIN_USB_DM     PD4
+
+/* Compatibility with the extension exposed by UIAP's official core. PinName
+ * is a physical-port encoding there (PD_1 == 0x31), not the Arduino number
+ * PD1/D11. Disabling SWIO is intentionally explicit and remains in effect
+ * until reset; ordinary pinMode(PD1, ...) does not do it behind the user's
+ * back, so a fixture can always recover the board over SWIO. */
+typedef uint8_t PinName;
+#define PD_1 ((PinName)0x31u)
+
+static inline void pinV32_DisconnectDebug(PinName pin)
+{
+#ifndef CH32V_LOCK_DEBUG
+    if (pin == PD_1) {
+        volatile uint32_t *const apb2pcenr =
+            (volatile uint32_t *)(uintptr_t)CH32_CLKEN_AFIO_ADDR;
+        volatile uint32_t *const pcfr1 =
+            (volatile uint32_t *)(uintptr_t)0x40010004u;
+        *apb2pcenr |= CH32_CLKEN_AFIO_MASK;
+        *pcfr1 = (*pcfr1 & ~0x07000000u) | 0x04000000u;
+    }
+#else
+    (void)pin;
+#endif
+}
+
+static inline void pin_DisconnectDebug(PinName pin)
+{
+    pinV32_DisconnectDebug(pin);
+}

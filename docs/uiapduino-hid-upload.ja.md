@@ -147,5 +147,10 @@ firmwareとhost scriptによる経路です。
 - SWIO-only boot entryは外部RST不要で2/2、Arduino imageの書き込み・実行・bootloader復帰は
   2/2、HID書き込みは11/11成功を確認しています。
 
+純正UIAPコアとのsource互換用に、専用board variantでは
+`pinV32_DisconnectDebug(PD_1)`も定義します。引数はArduino pin番号の`PD1`ではなく、純正の
+`PinName`表現`PD_1`です。この呼出しはSWIOをresetまで無効化するため、PD1をGPIOとして使う
+applicationだけが明示的に呼んでください。通常のHIL sweepとboot entry試験では呼びません。
+
 実験根拠は`wch-protocols`のE129（SWIO boot entry）、E130（page round-trip）、E131
 （Arduino image全体）を参照してください。

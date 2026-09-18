@@ -121,6 +121,7 @@ tests/
 | `test_sketch_profiles.py` | `sketches/` | 各sketch.yamlがboard一覧と同期 |
 | `test_sketch_profile_build.py` | `sketches/` | profile経由(loopback index)でbuildできる |
 | `test_board_layer.py` | `unit/` | boardレイヤの定義権限が守られているか。variantが`LED_BUILTIN`を定義しない、`Arduino.h`から`ch32_registers.h`へ到達しない、examplesが`LED_BUILTIN`をガードする、`requires:`が実在capabilityを指す([board-layer-rules](../docs/board-layer-rules.ja.md)) |
+| `test_uiapduino_board.py` | `unit/` | UIAPduino V1.4専用board、HID upload recipe、純正の0..17 pin番号とSWIO切断拡張のsource互換性 |
 | `test_peripheral_table.py` | `unit/` | `docs/peripheral-support.ja.md`の○が、device-data由来のclock enableと矛盾しないか(片方向のみ。空欄は「EVTに例が無い」ことがあるので見ない) |
 | `test_startup_parameters.py` | `unit/` | startupハーネスの`march`/`mabi`/startup定義が`boards.txt`の生成値と一致するか(二重管理の静かなズレを防ぐ) |
 | `test_adc_instances.py` | `unit/` | ADC instanceを持つvariantで、instanceを持つpadにchannelもあるか。`A<n>`がADC1に留まっているか |

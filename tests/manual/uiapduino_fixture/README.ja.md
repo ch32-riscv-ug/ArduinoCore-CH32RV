@@ -7,10 +7,14 @@ boot entryを要求したときだけ使用し、RESETは使用しません。
 1. E132を`esp32-d0wd-v3-0070070d9394`へ書き込む。
 2. このdirectoryのsketchを専用FQBN
    `ch32-riscv-ug:ch32v:UIAPDUINO_V003_V14`でbuildし、製品HID bootloaderから書き込む。
-3. `uv run tests/manual/uiapduino_fixture/hil_test.py --port /dev/ttyUSB0`を実行する。
+3. `uv run tests/manual/uiapduino_fixture/uiapduino_fixture.py --port /dev/ttyUSB0`を実行する。
 
 試験対象はUART、外部header GPIOの入力/出力、A0/A1/A2/A3/A5/A6のLOW/中間/HIGH、I2C
 master、SPI mode 0 masterです。A0/A1の中間電位はESP32 DAC、A2/A3/A5/A6はESP32の
 pull-upとpull-down同時有効で作ります。後者は抵抗ばらつきがあるため、ADC値は厳密な1/2 scale
 ではなく、LOWとHIGHから十分離れていることを判定します。release測定で電圧値を保証する場合は
 テストポイントをDMMでも測定してください。
+
+ESP32 GPIO12はPC6/MOSIの重複配線であると同時にESP32のVDD_SDIO boot strapです。DUTがHIGHを
+保持したままESP32をresetするとflashを読めなくなります。E132の`X` commandは先にDUTのD8を
+LOWへparkしてからrestartし、DUT UARTが開始されていなければ安全のためrestartを拒否します。

@@ -30,8 +30,12 @@ PD3/A4とPD4/A7はUSB D+/D-なのでmapping対象外です。ESP32 GPIO0、34、
 
 V003側は[`uiapduino_pin_map.ino`](uiapduino_pin_map.ino)をこのコアでbuildし、製品HID
 bootloaderから書き込みます。ESP32側は`wch-protocols`の
-`experiments/e132_uiapduino_pin_map/e132_uiapduino_pin_map.ino`です。serial command `G`で
-32秒観測します。
+`experiments/e132_uiapduino_pin_map/e132_uiapduino_pin_map.ino`です。次のhost側entry pointが
+serial command `G`を送り、32秒のcaptureを表示します。
+
+```sh
+uv run tests/manual/uiapduino_pin_map/uiapduino_pin_map.py --port /dev/ttyUSB0
+```
 
 V003側は全対象HIGHを1秒出すframe markerの後、表の順に1本ずつ500 ms HIGH、250 ms LOWを
 繰り返します。ESP32の出力で、markerを挟んだ2周以上が同じ順序になることを合格条件にします。

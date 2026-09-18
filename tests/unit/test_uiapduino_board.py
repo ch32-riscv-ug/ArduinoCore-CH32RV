@@ -58,3 +58,10 @@ def test_v14_keeps_official_numeric_pin_contract():
     }
     assert actual == expected
     assert "#define CH32_UIAP_ENCODE_PIN(pin)" in PINS
+    assert "#define NUM_DIGITAL_PINS 18" in PINS
+
+
+def test_official_sdio_disconnect_extension_is_source_compatible():
+    assert "#define PD_1 ((PinName)0x31u)" in PINS
+    assert "static inline void pinV32_DisconnectDebug(PinName pin)" in PINS
+    assert "(*pcfr1 & ~0x07000000u) | 0x04000000u" in PINS
