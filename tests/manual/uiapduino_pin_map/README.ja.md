@@ -14,7 +14,7 @@
 | PC3 | D5 | 17 | |
 | PC4 | A2 / SS | 33 | |
 | PC5 | SCK | 4, 27 | 左右ヘッダの重複配線 |
-| PC6 | MOSI | 2, 12 | 左右ヘッダの重複配線 |
+| PC6 | MOSI | 2 | GPIO12側はESP32 boot strapのため配線を撤去 |
 | PC7 | MISO | 14, 15 | 左右ヘッダの重複配線 |
 | PD0 | D10 | 13 | |
 | PD1 | D11 / SWIO | 16 | 既知配線。mapping sketchでは触らない |

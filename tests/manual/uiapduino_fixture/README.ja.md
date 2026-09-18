@@ -15,6 +15,5 @@ pull-upとpull-down同時有効で作ります。後者は抵抗ばらつきが�
 ではなく、LOWとHIGHから十分離れていることを判定します。release測定で電圧値を保証する場合は
 テストポイントをDMMでも測定してください。
 
-ESP32 GPIO12はPC6/MOSIの重複配線であると同時にESP32のVDD_SDIO boot strapです。DUTがHIGHを
-保持したままESP32をresetするとflashを読めなくなります。E132の`X` commandは先にDUTのD8を
-LOWへparkしてからrestartし、DUT UARTが開始されていなければ安全のためrestartを拒否します。
+ESP32 GPIO12はESP32自身のVDD_SDIO boot strapなので、PC6/MOSIとの重複配線から外しています。
+HILではPC6/MOSIのGPIO2側だけを使用します。
