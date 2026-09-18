@@ -42,6 +42,7 @@
 | [experiments/](experiments/0001-xpack-multilib-smoke.ja.md) | 実験記録(0001〜。toolchain、startup等価性、platform、generator、index install、newlibサイズ) |
 | [project-scope.ja.md](project-scope.ja.md) | プロジェクト目標、初期スコープ、非目標 |
 | [architecture.ja.md](architecture.ja.md) | Arduino API、内部HAL、SoC、EVT互換の境界 |
+| [timer-design.ja.md](timer-design.ja.md) | SysTick/TIMタイマー、PWM/tone/Servoの所有権と競合規則の設計案 |
 | [device-data.ja.md](device-data.ja.md) | 独立device databaseの配置、repository境界、Arduino consumer方針 |
 | [legacy-audit.ja.md](legacy-audit.ja.md) | 旧リポジトリの構造、問題、継承すべき知見 |
 | [ecosystem.ja.md](ecosystem.ja.md) | Arduino、WCH、ch32fun、書き込みツールの調査 |

@@ -81,6 +81,7 @@ release archiveへ入るのは`platform.txt` / `boards.txt` / `cores` / `variant
 - [ドキュメント一覧](docs/README.ja.md)
 - [目的とスコープ](docs/project-scope.ja.md)
 - [アーキテクチャ案](docs/architecture.ja.md)
+- [タイマー基盤の再設計案](docs/timer-design.ja.md)
 - [旧コアの監査結果](docs/legacy-audit.ja.md)
 - [外部エコシステム調査](docs/ecosystem.ja.md)
 - [vendor取込方針](docs/vendor-policy.ja.md)
