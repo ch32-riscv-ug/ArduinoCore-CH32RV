@@ -268,7 +268,7 @@
     X(1, 1, 16, 4, 1, CH32_TIM1_BASE, 0x40021018u, 0x00000800u, CH32_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
     X(2, 2, 16, 4, 0, CH32_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32_IRQN_TIM2, TIM2_IRQHandler)
 
-/* ---- tone(): TIM2, which is also a PWM timer here, so
+/* ---- tone(): preferred TIM2, also a PWM timer here, so
  *      analogWrite() on PC0, PD3, PD7
  *      is disturbed while a tone plays. ---- */
 #define CH32_TONE_TIMER 2
@@ -280,7 +280,7 @@
 #define CH32_TONE_SHARES_PWM 1
 #define CH32_TONE_TIMER_BITS 16
 
-/* ---- Servo: TIM1, which is also a PWM timer here, so
+/* ---- Servo: preferred TIM1, also a PWM timer here, so
  *      analogWrite() on PA1, PC3, PC4, PD2
  *      is disturbed while a servo is attached. ---- */
 #define CH32_SERVO_TIMER 1

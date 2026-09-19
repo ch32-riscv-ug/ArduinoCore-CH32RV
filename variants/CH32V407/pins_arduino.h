@@ -532,7 +532,7 @@
     X(6, 2, 16, 0, 0, CH32_TIM6_BASE, 0x4002101cu, 0x00000010u, CH32_IRQN_TIM6, TIM6_IRQHandler) \
     X(7, 2, 16, 0, 0, CH32_TIM7_BASE, 0x4002101cu, 0x00000020u, CH32_IRQN_TIM7, TIM7_IRQHandler)
 
-/* ---- tone(): TIM7, free of PWM pads. ---- */
+/* ---- tone(): preferred TIM7, free of PWM pads. ---- */
 #define CH32_TONE_TIMER 7
 #define CH32_TONE_TIMER_BASE CH32_TIM7_BASE
 #define CH32_TONE_TIMER_CLKEN_ADDR 0x4002101cu
@@ -542,7 +542,7 @@
 #define CH32_TONE_SHARES_PWM 0
 #define CH32_TONE_TIMER_BITS 16
 
-/* ---- Servo: TIM6, free of PWM pads. ---- */
+/* ---- Servo: preferred TIM6, free of PWM pads. ---- */
 #define CH32_SERVO_TIMER 6
 #define CH32_SERVO_TIMER_BASE CH32_TIM6_BASE
 #define CH32_SERVO_TIMER_CLKEN_ADDR 0x4002101cu

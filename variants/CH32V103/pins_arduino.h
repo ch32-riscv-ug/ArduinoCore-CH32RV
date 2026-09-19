@@ -450,7 +450,7 @@
     X(3, 2, 16, 4, 0, CH32_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32_IRQN_TIM3, TIM3_IRQHandler) \
     X(4, 2, 16, 4, 0, CH32_TIM4_BASE, 0x4002101cu, 0x00000004u, CH32_IRQN_TIM4, TIM4_IRQHandler)
 
-/* ---- tone(): TIM4, free of PWM pads. ---- */
+/* ---- tone(): preferred TIM4, free of PWM pads. ---- */
 #define CH32_TONE_TIMER 4
 #define CH32_TONE_TIMER_BASE CH32_TIM4_BASE
 #define CH32_TONE_TIMER_CLKEN_ADDR 0x4002101cu
@@ -460,7 +460,7 @@
 #define CH32_TONE_SHARES_PWM 0
 #define CH32_TONE_TIMER_BITS 16
 
-/* ---- Servo: TIM3, which is also a PWM timer here, so
+/* ---- Servo: preferred TIM3, also a PWM timer here, so
  *      analogWrite() on PA6, PA7, PB0, PB1
  *      is disturbed while a servo is attached. ---- */
 #define CH32_SERVO_TIMER 3

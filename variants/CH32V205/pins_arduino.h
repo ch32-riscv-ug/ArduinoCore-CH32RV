@@ -502,7 +502,7 @@
     X(3, 2, 16, 4, 0, CH32_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32_IRQN_TIM3, TIM3_IRQHandler) \
     X(4, 2, 32, 4, 0, CH32_TIM4_BASE, 0x4002101cu, 0x00000004u, CH32_IRQN_TIM4, TIM4_IRQHandler)
 
-/* ---- tone(): TIM4, free of PWM pads. ---- */
+/* ---- tone(): preferred TIM4, free of PWM pads. ---- */
 #define CH32_TONE_TIMER 4
 #define CH32_TONE_TIMER_BASE CH32_TIM4_BASE
 #define CH32_TONE_TIMER_CLKEN_ADDR 0x4002101cu
@@ -514,7 +514,7 @@
  * replicated into both halves. See ch32_registers.h. */
 #define CH32_TONE_TIMER_BITS 32
 
-/* ---- Servo: TIM3, free of PWM pads. ---- */
+/* ---- Servo: preferred TIM3, free of PWM pads. ---- */
 #define CH32_SERVO_TIMER 3
 #define CH32_SERVO_TIMER_BASE CH32_TIM3_BASE
 #define CH32_SERVO_TIMER_CLKEN_ADDR 0x4002101cu
