@@ -97,6 +97,57 @@ software resetを実行させます。user flashと製品bootloader領域は書�
 
 ## 4. 失敗時の復旧
 
+### HIDで待ち受けなくなったがSWIOには応答する
+
+この症状は、直ちに製品bootloaderの破損を意味しません。application側で動作している、
+BOOT_MODEがuser側に残っている、またはbootへ移るreset sequenceだけが成立しなかった場合にも
+`1209:b803`は現れません。SWIOに応答するなら、flashを書き換える前にRAM payloadでboot条件を
+作り直します。
+
+ここでいうSWIOはCH32V003のPD1に出ている1-wire debug信号です。ジグ側でSWDIOと呼んでいる
+場合も同じ線を指し、SWCLKは使いません。
+
+復旧順序は次のとおりです。
+
+1. HIDやSWIOを開いている他のtoolを終了する。
+2. ESP32ジグのserial consoleで`?`を送り、`READY commands=NBRHSWV`を確認する。
+3. `B`を1回送り、`SWIO BOOT END`の後に`1209:b803`が現れるか待つ。
+4. `B`で戻らなければ、`N`でBOOT_MODEをuser側へ明示的に正規化してsoftware resetし、
+   `NORMALIZE END`を確認してから、もう一度`B`を送る。
+5. GPIO23↔PD7/RSTも接続してある場合のfallbackだけ、`H`を1回試す。
+6. `1209:b803`が現れたら、通常どおり`ch32rv boot hid flash`で正しい`.bin`を書き込む。
+
+```text
+?  -> ESP32ジグfirmwareの応答確認
+B  -> SWIO-onlyでBOOT_MODE/PD4を準備し、CPU software reset（第一選択）
+N  -> user modeへ正規化してCPU software reset（状態を揃える診断・前処理）
+S  -> FLASH_STATRのBOOT_LOCK/BOOT_MODE/BOOT_STATUSを表示（診断のみ）
+H  -> boot条件を準備し、GPIO23から外部reset（RST配線がある場合のfallback）
+R  -> GPIO23からresetするだけ（boot modeには入れない）
+```
+
+`S`はtargetをattach/haltして状態を読む診断なので、そこで手順を終えず、続けて`B`またはresetを
+実行します。`R`単独はboot条件を設定しないため、HID復旧操作としては使用しません。
+
+出力からの切り分け:
+
+| ESP32出力 | 主な確認箇所 |
+|---|---|
+| `reason=attach_failed` | GPIO16↔PD1、共通GND、3.3 V、SWIO idle HIGH、他probeとの競合 |
+| `reason=normalize_failed` | DMI通信またはRAM payload転送。配線を直し、`N`を上限付きで再試行 |
+| `reason=boot_payload_failed` | RAM payloadのwrite/read-backまたはDMI操作。一度`N`を通してから`B`を再試行 |
+| `SWIO BOOT END`後もHIDなし | USB data cable、USB port、OS列挙、usbip/driver、製品bootloader本体を確認 |
+
+実機では一時的なSWIO/DMI誤読を検出して再送した例と、最初のboot payload操作だけ失敗して
+再試行で復帰した例があります。ただし同じ操作を無制限に繰り返さず、配線確認後の`N → B`、
+必要なら`H`までを1組の復旧試行として扱います。
+
+`B`、`N`、`H`はいずれも製品bootloader領域を書き換えません。この手順でもSWIO操作は完了する
+のにHIDが一度も列挙されず、USB側にも問題がない場合は、製品bootloader自体の破損を疑います。
+E129～E131の手順はuser flashの復旧と既存bootloaderへのentryであり、破損したbootloaderの
+再書き込み手順ではありません。bootloaderを復元する場合は、対象board版に対応する既知の正しい
+imageを用意し、bootloader領域を明示的に扱える専用のSWIO書き込み手順を別途使用してください。
+
 ### `HID bootloader 1209:b803 was not found`
 
 1. applicationが起動してHIDが消えた直後なら正常です。次の書き込み前にジグへ`B`を送ります。
