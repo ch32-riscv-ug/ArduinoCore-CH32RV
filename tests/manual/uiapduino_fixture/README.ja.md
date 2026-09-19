@@ -34,8 +34,8 @@ pull-upとpull-down同時有効で作ります。後者は抵抗ばらつきが�
 ではなく、LOWとHIGHから十分離れていることを判定します。release測定で電圧値を保証する場合は
 テストポイントをDMMでも測定してください。
 
-ESP32 GPIO12はESP32自身のVDD_SDIO boot strapなので、PC6/MOSIとの重複配線から外しています。
-HILではPC6/MOSIのGPIO2側だけを使用します。
+ESP32 GPIO2、GPIO12、GPIO15はESP32自身のboot strapなのでfixture配線から外しています。
+HILでは`PC5/SCK→GPIO27`、`PC6/MOSI→GPIO4`、`PC7/MISO→GPIO14`を使用します。
 
 ## 2026-09-19 実機結果
 

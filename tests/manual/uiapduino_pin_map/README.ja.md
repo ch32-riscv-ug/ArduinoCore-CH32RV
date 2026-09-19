@@ -13,9 +13,9 @@
 | PC2 | SCL | 18 | |
 | PC3 | D5 | 17 | |
 | PC4 | A2 / SS | 33 | |
-| PC5 | SCK | 4, 27 | 左右ヘッダの重複配線 |
-| PC6 | MOSI | 2 | GPIO12側はESP32 boot strapのため配線を撤去 |
-| PC7 | MISO | 14, 15 | 左右ヘッダの重複配線 |
+| PC5 | SCK | 27 | GPIO4側はPC6/MOSIへ付替え |
+| PC6 | MOSI | 4 | GPIO2/12はESP32 boot strapのため使用しない |
+| PC7 | MISO | 14 | GPIO15側はESP32 boot strapのため配線を撤去 |
 | PD0 | D10 | 13 | |
 | PD1 | D11 / SWIO | 16 | 既知配線。mapping sketchでは触らない |
 | PD2 | A3 | 32 | |
@@ -24,7 +24,8 @@
 | PD7 | RESET | 23 | 既知配線。常時Hi-Z、mapping sketchでは触らない |
 
 PD3/A4とPD4/A7はUSB D+/D-なのでmapping対象外です。ESP32 GPIO0、34、35、36、39には、
-この測定で対象にした外部ヘッダGPIOからの接続は検出されませんでした。
+この測定で対象にした外部ヘッダGPIOからの接続は検出されませんでした。2026-09-19の再測定では
+GPIO2とGPIO15も未接続となり、3周とも`PC5→27`、`PC6→4`、`PC7→14`を再現しました。
 
 ## 再測定
 
