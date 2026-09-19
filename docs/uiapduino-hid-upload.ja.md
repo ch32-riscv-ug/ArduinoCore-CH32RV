@@ -195,6 +195,16 @@ flashを64 byte page単位でerase/program/verifyし、製品bootloaderを残し
 実機確認しています。ただしこれは現在まだ`ch32rv`の一般向けcommandではなく、実験用ESP32
 firmwareとhost scriptによる経路です。
 
+2026-09-19の実機復旧では、未使用の同型基準機をWCH-LinkE serial `49878F06CE37`で3回ずつ
+読んだimageと比較しました。故障機のBOOT 1,920 byteとoption 16 byteは基準機と完全一致し、
+壊れていたのはuser applicationだけでした。このためBOOTには書かず、異なる230/256 pageだけへ
+初期applicationを書き戻しました。全16 KiBの再読出しが基準hashと一致した後、`N`→`B`で
+`1209:b803`へ復帰し、専用boardのHID uploadとHIL suiteが成功しました。
+
+この結果からも、HID不在だけを理由にBOOTを書き戻してはいけません。先に各領域を保全し、複数回
+読出しまたは多数決読出しでSWIOの一時的な1 bit誤読を排除してから比較します。実測ではBOOT読出し
+にも不安定sampleがありましたが、多数決後のimageは基準機と一致しました。
+
 ## 5. 現在の制限
 
 - 対応を実機確認したのはCH32V003とUIAPduino `1209:b803`です。

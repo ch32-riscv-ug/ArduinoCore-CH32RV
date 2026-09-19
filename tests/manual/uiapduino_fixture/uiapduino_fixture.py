@@ -73,9 +73,16 @@ class Fixture:
     def dut(self, command: str):
         self.send(f"T{command}\n")
 
-    def start_uart(self):
+    def start_uart(self, prime: bool = True):
         self.send("U")
         self.expect(r"UART READY")
+        # M releases every fixture pad, including UART2 RX/TX.  Let the ESP32
+        # pin mux and the DUT's idle HIGH settle before sending the first byte
+        # after each restart.
+        time.sleep(0.05)
+        if prime:
+            self.send("TPING\nTPING\n")
+            self.expect(r"DUT PONG")
 
 
 def mask_high(value: str) -> set[int]:
@@ -95,8 +102,31 @@ def adc_value(fixture: Fixture, pin: int, gpio: int, mode: str) -> int:
     time.sleep(0.12)
     fixture.pin(gpio, mode)
     time.sleep(0.55)  # the sample has happened; reclaim the UART pins
-    fixture.start_uart()
+    fixture.start_uart(prime=False)
     return int(fixture.expect(rf"DUT ADCWAIT pin={pin} value=(\d+)").group(1))
+
+
+def adc_uart_sweep(fixture: Fixture, pin: int, gpio: int, midpoint_mode: str):
+    # RX cannot receive another command while it is selected as an ADC input.
+    # One command therefore samples all three fixture levels on a fixed cadence.
+    fixture.dut(f"ADCSWEEP {pin} 600")
+    time.sleep(0.10)
+    fixture.pin(gpio, "L")
+    time.sleep(0.60)
+    fixture.pin(gpio, midpoint_mode)
+    time.sleep(0.60)
+    fixture.pin(gpio, "H")
+    time.sleep(0.60)
+    fixture.start_uart(prime=False)
+    match = fixture.expect(rf"DUT ADCSWEEP pin={pin} values=(\d+),(\d+),(\d+)")
+    values = tuple(int(match.group(index)) for index in range(1, 4))
+    # The DUT repeats its result to tolerate the first frame after pin-mux
+    # recovery.  Do not send the next command while those reports are active.
+    time.sleep(0.20)
+    fixture.uart.reset_input_buffer()
+    fixture.send("TPING\nTPING\n")
+    fixture.expect(r"DUT PONG")
+    return values
 
 
 def run(port: str):
@@ -127,25 +157,34 @@ def run(port: str):
             observed = mask_high(high_match.group(1))
             if not set(gpios).issubset(observed):
                 raise AssertionError(f"{name}: high missing {gpios}, got {observed}")
+            fixture.start_uart()
             fixture.dut(f"DOUT {pin} 0")
             fixture.expect(rf"DUT DOUT pin={pin} value=0")
             fixture.send("M")
             low_match = fixture.expect(r"MAP .* high=([0-9,]+|-)")
             if set(gpios) & mask_high(low_match.group(1)):
                 raise AssertionError(f"{name}: did not go low: {low_match.group(0)}")
+            fixture.start_uart()
             print(f"PASS {name}")
 
         print("ADC low / midpoint / high")
         for name, pin, gpio, midpoint_mode in ADC_PINS:
-            low = adc_value(fixture, pin, gpio, "L")
-            mid = adc_value(fixture, pin, gpio, midpoint_mode)
-            high = adc_value(fixture, pin, gpio, "H")
+            if gpio in (21, 22):
+                low, mid, high = adc_uart_sweep(fixture, pin, gpio, midpoint_mode)
+            else:
+                low = adc_value(fixture, pin, gpio, "L")
+                mid = adc_value(fixture, pin, gpio, midpoint_mode)
+                high = adc_value(fixture, pin, gpio, "H")
             if not (low <= 80 and low + 120 < mid < high - 120 and high >= 750):
                 raise AssertionError(f"{name}: unexpected ADC values {low}/{mid}/{high}")
             fixture.pin(gpio, "D")
+            if gpio in (21, 22):
+                fixture.start_uart()
             print(f"PASS {name}: {low}/{mid}/{high}")
 
         print("I2C master <-> ESP32 slave")
+        fixture.dut("I2CPREP")
+        fixture.expect(r"DUT I2CPREP ready")
         fixture.send("I")
         fixture.expect(r"I2C READY")
         fixture.dut("I2C")

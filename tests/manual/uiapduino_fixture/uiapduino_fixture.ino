@@ -26,13 +26,39 @@ static void adcWaitCommand(unsigned pin, unsigned beforeMs, unsigned afterMs) {
   // Select the ADC mux before the fixture changes the electrical level. This
   // is especially important for PD5: it was the UART TX output that carried
   // this command, and must become high impedance before the jig drives it.
+  Serial.end();
   (void)analogRead(pin);
   delay(beforeMs);
   const int value = analogRead(pin);
   delay(afterMs);
   Serial.begin(115200);
-  Serial.print("ADCWAIT pin="); Serial.print(pin);
-  Serial.print(" value="); Serial.println(value);
+  delay(20);  // establish UART idle HIGH before the first start bit
+  // The fixture drove this same wire while it was an ADC input.  Repeat the
+  // idempotent report so the first frame can serve as UART resynchronization.
+  for (unsigned report = 0; report < 3; ++report) {
+    Serial.print("ADCWAIT pin="); Serial.print(pin);
+    Serial.print(" value="); Serial.println(value);
+    delay(50);
+  }
+}
+
+static void adcSweepCommand(unsigned pin, unsigned stepMs) {
+  Serial.end();
+  (void)analogRead(pin);
+  int values[3];
+  for (unsigned phase = 0; phase < 3; ++phase) {
+    delay(stepMs);
+    values[phase] = analogRead(pin);
+  }
+  Serial.begin(115200);
+  delay(20);
+  for (unsigned report = 0; report < 3; ++report) {
+    Serial.print("ADCSWEEP pin="); Serial.print(pin);
+    Serial.print(" values="); Serial.print(values[0]);
+    Serial.print(','); Serial.print(values[1]);
+    Serial.print(','); Serial.println(values[2]);
+    delay(50);
+  }
 }
 
 static void execute(char *line) {
@@ -59,6 +85,12 @@ static void execute(char *line) {
       Serial.print(byte, HEX);
     }
     Serial.println();
+  } else if (!strcmp(line, "I2CPREP")) {
+    // Release SDA/SCL from earlier GPIO output tests before the ESP32 starts
+    // its slave peripheral.  A held-low bus makes ESP-IDF reject slave init.
+    pinMode(SDA, INPUT_PULLUP);
+    pinMode(SCL, INPUT_PULLUP);
+    Serial.println("I2CPREP ready");
   } else if (!strcmp(line, "SPI")) {
     const uint8_t sent[] = {0x31, 0x42, 0x53, 0x64};
     uint8_t received[sizeof(sent)] = {};
@@ -85,6 +117,8 @@ static void execute(char *line) {
     adcCommand(pin, value);
   } else if (sscanf(line, "ADCWAIT %u %u %u", &pin, &value, &after) == 3) {
     adcWaitCommand(pin, value, after);
+  } else if (sscanf(line, "ADCSWEEP %u %u", &pin, &value) == 2) {
+    adcSweepCommand(pin, value);
   } else if (sscanf(line, "PULSE %u %u", &pin, &value) == 2) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, HIGH);
