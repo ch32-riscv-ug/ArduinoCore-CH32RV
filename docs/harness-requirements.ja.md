@@ -20,6 +20,7 @@
 
 | 文書 | 中身 |
 |---|---|
+| [development-probe-functional-spec](development-probe-functional-spec.ja.md) | **機能から読む入口**。ペリフェラルごとの必要機能、検証範囲、限界、能力classと横展開level |
 | [harness-probe](harness-probe.ja.md) | 採る/採らないの評価、コアの穴との対応、**§4.1 = DMI 段階のずれの解き方**、EmbedBench 接続 |
 | [harness-wiring](harness-wiring.ja.md) | series 別の pad、16ch class の割当 5 案、必要な相手の数、class 別の到達範囲 |
 | [harness-testing](harness-testing.ja.md) | 誰がどう叩くか、能力宣言と resolver、模型の置き場所 |
