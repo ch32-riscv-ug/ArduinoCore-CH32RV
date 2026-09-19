@@ -464,9 +464,7 @@ bool ch32TimerAttachUpdateInterrupt(const CH32TimerLease *lease,
     state->update_context = context;
     state->update_owner = lease->owner_identity;
     const CH32TimerCapability *cap = &timer_capabilities[index];
-    if ((CH32_TIM_INTFR(cap->register_base) & CH32_TIM_INT_UIE) == 0u) {
-        return;
-    }
+    /* Do not deliver an update event left pending before this owner attached. */
     CH32_TIM_INTFR(cap->register_base) = (uint16_t)~CH32_TIM_INT_UIE;
     CH32_TIM_DMAINTENR(cap->register_base) |= CH32_TIM_INT_UIE;
     ch32_irq_enable(cap->update_irq);
@@ -500,6 +498,9 @@ static void timer_irq_dispatch(uint8_t timer)
         return;
     }
     const CH32TimerCapability *cap = &timer_capabilities[index];
+    if ((CH32_TIM_INTFR(cap->register_base) & CH32_TIM_INT_UIE) == 0u) {
+        return;
+    }
     CH32_TIM_INTFR(cap->register_base) = (uint16_t)~CH32_TIM_INT_UIE;
     CH32TimerCallback callback = timer_states[index].update_callback;
     if (callback) {

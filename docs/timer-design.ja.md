@@ -1,6 +1,7 @@
 # タイマー基盤の再設計
 
-文書状態: 提案。実装前の設計レビュー用であり、公開APIの最終形は未決定。
+文書状態: 合意済み方針・基盤実装中。TIM資源APIとPWM/tone/Servo移行は実装済みで、
+SysTick/deferred timerと実機競合試験は未完了。
 
 文書基準日: 2026-09-19
 
@@ -18,7 +19,7 @@ CH32V003でも、競合が偶然のレジスタ上書きにならず、予測可
 
 - UIAP版の`HardwareTimer`実装の移植
 - EEPROM対応
-- 公開タイマー資源APIの最終的な名前とシグネチャの確定
+- 利用者向け周期callback APIの最終的な名前とシグネチャの確定
 - RTOSを前提とした同期、排他、コールバック実行
 
 本コアはベアメタルのシングルスレッドを基本とする。ただし割込みハンドラは通常処理へ
@@ -296,9 +297,9 @@ tone:  TIM2 -> TIM1
 
 一方、PWMはpin routeによりTIM/channelが決まるため自由には移動できない。
 
-動的選択には複数TIMのvector handlerをcore側で持つ必要があり、利用者定義ISRとの衝突、
-flash増加、advanced timerの分割vectorを評価する必要がある。初回実装から動的選択するか、
-まずvariant固定TIMの管理だけを導入するかは未決定とする。
+動的選択に必要な複数TIMのupdate vector handlerはcore側へ生成し、tone/Servoは初回実装から
+「優先TIMを丁寧に取得、任意の空きTIM、最後に優先TIMをtakeover」の順で選ぶ。flash増加、
+advanced timerの分割vector、実機上の競合は引き続き評価する。
 
 ## 7. 公開APIの二つの役割
 
@@ -342,19 +343,24 @@ UIAP版`HardwareTimer`と同じclassを互換目的で持ち込まない。
 - 競合後に出力pinへ意図しないpulseが出ないこと
 - CH32V003でのflash/RAM増加
 
-## 9. 未決定事項
+## 9. 実装済みの決定と未決定事項
+
+実装済みの資源APIは`CH32Timer.h`のC APIとし、固定長状態だけを使用する。device dataから
+TIM種別、counter幅、channel数、register base、clock、update IRQをvariantへ生成する。
+`tryAcquire`、`takeover`、generation付きlease、同期的quiesce、状態照会を公開し、hard lockは
+設けない。PWMはchannel lease、tone/Servoはwhole-TIM leaseを取得する。
+
+残る未決定事項は次のとおり。
 
 1. SysTick timerのslot数と、未使用時にコード/RAMを完全に除去する方法
 2. periodic callbackが遅延した場合にcatch-upするか、一回へまとめるか
 3. deferred dispatchを`main()`、`delay()`、明示`poll()`のどこから呼ぶか
-4. Servoがtakeoverされた場合のslot/`attached()`の正確な意味
+4. Servoがtakeoverされた場合はslotをinactiveにして`attached()`をfalseにする実装の実機確認
 5. `analogWriteFrequency()`を公開するか。公開する場合はTIM上の全PWM channelへ影響する
-6. pin非依存機能のTIM動的選択を初回から実装するか
-7. 公開資源APIをC API、C++ API、または薄いC++ wrapper付きC APIのどれにするか
-8. 公開`quiesce` hookの実行コンテキストと、許容する操作の最終仕様
-9. 利用者による直接レジスタ操作は管理対象外と明記するか、状態再同期手段を持つか
+6. 利用者向けtimer APIをC API、C++ API、または薄いC++ wrapper付きC APIのどれにするか
+7. 利用者による直接レジスタ操作は管理対象外と明記するか、状態再同期手段を持つか
 
-これらを決定してから内部TIM管理の実装へ進む。
+資源管理層は先行して検証を進め、SysTick/deferred APIは上記を決定してから実装する。
 
 ## 10. 利用者へ推奨する使い分けと完成後の文書
 

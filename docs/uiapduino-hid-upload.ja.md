@@ -75,10 +75,12 @@ GPIO23をPD7/RSTへ接続した配線も利用できますが、通常の復帰�
 INPUT（Hi-Z）にします。異なる電源から給電する場合は、3.3 V logicであることとGND共通を先に
 確認してください。
 
-ESP32へ次の実験firmwareを書き込みます。
+ESP32へ次の実験firmwareを書き込みます。pin-mapと周辺機能のHILを兼ねるE132も、同じ
+`N/B/R/H/S/W/V`コマンドを提供します。
 
 ```text
 wch-protocols/experiments/e129_swio_only_cpu_boot/e129_swio_only_cpu_boot.ino
+wch-protocols/experiments/e132_uiapduino_pin_map/e132_uiapduino_pin_map.ino
 ```
 
 ESP32のserial consoleを開き、1 byteのASCII command `B`を送ります。改行は不要です。
@@ -137,6 +139,10 @@ R  -> GPIO23からresetするだけ（boot modeには入れない）
 | `reason=normalize_failed` | DMI通信またはRAM payload転送。配線を直し、`N`を上限付きで再試行 |
 | `reason=boot_payload_failed` | RAM payloadのwrite/read-backまたはDMI操作。一度`N`を通してから`B`を再試行 |
 | `SWIO BOOT END`後もHIDなし | USB data cable、USB port、OS列挙、usbip/driver、製品bootloader本体を確認 |
+
+Windowsの`usbipd list`で`0000:0002`の「デバイス記述子要求の失敗」として現れる場合は、
+boot entry以前ではなくUSB列挙開始後の失敗である。WSLの`lsusb`に現れないことだけを根拠に
+bootloader無応答と判定せず、USB配線・信号品質・clockと、BOOT領域の部分破損を切り分ける。
 
 実機では一時的なSWIO/DMI誤読を検出して再送した例と、最初のboot payload操作だけ失敗して
 再試行で復帰した例があります。ただし同じ操作を無制限に繰り返さず、配線確認後の`N → B`、

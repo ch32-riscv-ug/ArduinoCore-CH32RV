@@ -25,11 +25,11 @@ void loop() {
 - **サーボの電源は別に取ってください。** ストール電流でboardのレギュレータが
   落ちます。症状は「動作中にboardがリセットする」です。
   GNDは共通にし、3V3は共有しないこと。
-- **どのtimerを使うか、その代償。** variantが選び、`CH32_SERVO_TIMER`として
-  書き出しています。**`tone()`と同じtimerには絶対になりません**
-  (ブザーを鳴らしながらサーボを動かすのは普通の要求なので)。
-  小さい部品では空きが無く`analogWrite()`とtimerを共有します。
-  その場合に影響するpadはvariantヘッダに列挙してあります。
+- **どのtimerを使うか、その代償。** まずvariantの`CH32_SERVO_TIMER`を取得し、
+  競合中なら別の空きTIMを探します。どれも空いていない場合は優先TIMをtakeoverするため、
+  そのTIMの`tone()`やPWMは停止します。逆に後から`tone()`やPWMにtakeoverされると、
+  ServoはpinをLowにしてdetach扱いになります。標準API同士はhard lockせず、最後の呼出しを
+  動かす規則です。
 - **`attach()`は失敗します。** pinが無効、12スロットが埋まっている、
   そのseriesに空きtimerが無い、のいずれかで`INVALID_SERVO`を返します。
   戻り値を見ないsketchは黙って何もしません。
