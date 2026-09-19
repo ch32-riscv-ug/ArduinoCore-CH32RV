@@ -496,7 +496,84 @@ UART peer試験がskipされた場合はリリース証拠が不足していま�
 pin数が多いprobeは同時接続範囲が広がりますが、試験の意味は同じです。小型probeを不完全版とせず、
 能力宣言に基づいて同じhost testを再利用できることを最優先にします。
 
-## 11. この仕様だけでは決めないもの
+## 11. 無印ESP32による暫定プローブの実証
+
+2026-09-19時点で、無印ESP32（ESP32-D0WD-V3）を暫定プローブとしてUIAPduino Pro Micro
+CH32V003 V1.4を試験した。この構成は本書の全機能を備えた完成プローブではないが、P0～P2の
+縦方向の一部を実機で結び、機能を分離して組み合わせられることを確認した参照fixtureである。
+
+### 11.1 実際に採用した経路
+
+UIAPduinoは、製品の標準書込み経路がsoftware USB HID bootloader `1209:b803`であるという
+特殊事例である。そのためrelease HILでは、書込み自体は製品HID経路を使い、ESP32は次を担当した。
+
+| 機能 | 採用した経路 | ESP32の役割 |
+|---|---|---|
+| application書込み・verify | host → 製品software USB HID → V003 | boot modeへの復帰を補助。通常の書込みdataは中継しない |
+| boot/application切替 | ESP32 GPIO16 → PD1/SWIO | BOOT_MODE設定用RAM payloadの注入、CPU resume、software reset、状態確認 |
+| reset | SWIOからV003自身にsoftware resetを実行させる | 外部RESET線は通常不使用。GPIO23はHi-Z |
+| console | ESP32 UART2 ↔ DUT UART | commandと結果の転送、pin mux切替後の再同期 |
+| digital/analog fixture | ESP32 GPIO/DAC/pull ↔ DUT header | GPIO drive/read、ADC 3水準の刺激 |
+| serial bus peer | ESP32 I2C target / SPI target ↔ DUT | DUTのI2C/SPI controllerを独立peerとして検証 |
+
+実装と実行手順は
+[`tests/manual/uiapduino_fixture/`](../tests/manual/uiapduino_fixture/README.ja.md)、HIDとSWIOによる
+復旧手順は[`uiapduino-hid-upload`](uiapduino-hid-upload.ja.md)にある。13,780 byteの製品用imageを
+HIDから書き込み、UART、header 12信号、ADC 6入力、I2C、SPIを1 suiteで確認した。
+
+別のend-to-end実験では、同じGPIO16→PD1/SWIOだけでArduino image 5,220 byteをuser flashへ
+直接書き込み、82個の64 byte pageをread-back verifyし、`setup()`実行と製品bootloaderへの復帰まで
+成立した。したがってESP32がP0 Writerを直接担うことも技術的には可能である。ただしUIAPduinoの
+release経路では、製品が通常利用するHID uploader自体も検証するため、あえてHID書込みを採用した。
+
+### 11.2 一般化するときの原則
+
+UIAPduinoの構成を、すべてのtargetの標準形にはしない。
+
+- 製品に標準bootloader経路があり、それ自体が検証対象なら、その経路から書き込む。
+- 標準bootloaderが無い、復旧できない、またはdebug書込みが通常経路なら、SWIO/RVSWD等を
+  プローブが直接操作してerase/program/verifyする方が単純である。
+- 「書込みdata path」と「boot/reset control」と「周辺機能fixture」は別能力として宣言する。
+  1台のプローブがすべて担当しても、別経路を組み合わせてもよい。
+- 書込みに使わないdebug線も、状態確認、halt、memory read、boot復旧に使用できる。その副作用と
+  操作した領域をrun artifactへ残す。
+- target固有のboot条件（UIAPduinoのPD4等）は汎用SWIO能力へ混ぜず、board fixture manifestまたは
+  board固有procedureとして分離する。
+
+### 11.3 実証から追加された実装要件
+
+- SWIO/DMIでは成功statusだけを信用せず、address/valueまたは書込先をread-backする。実験中に
+  一時的な1 bit誤りを実際に検出した。
+- RAMへ注入する実行payloadは全wordを照合してからDPCを設定し、resumeする。
+- flashはpage単位のerase/program/read-back verifyを再実行可能にし、上限付きで再試行する。
+- host→probeのbinary要求にはCRC等の完全性検査を持たせ、破損時はerase前に拒否する。
+- USBIP等の接続管理状態と物理的なUSB列挙を同一視しない。消失したdeviceが管理上`Attached`のまま
+  残る場合があるため、列挙、target状態、実行結果の複数証拠で判定する。
+- fixtureがDUTのUART兼用pinをADC等へ切り替える場合、command受信不能期間とUART再同期を
+  test sequence自身が扱う。
+
+### 11.4 OEP試作へ切り出せる範囲
+
+この実証をそのまま完成版OEPプローブと見なす段階ではないが、**破棄可能な最小縦断試作**を始める
+材料は揃った。目的はwire formatを固定することではなく、異なるhost/probe実装で同じ能力を発見・
+実行・再現できるかを確かめることである。
+
+最初の試作範囲は次に限定する。
+
+1. probe/firmware/protocol versionと個体IDの取得
+2. SWIO boot control、target状態取得、必要ならdirect flashを独立serviceとして列挙
+3. UART、GPIO、ADC stimulus、I2C target、SPI targetの能力と排他groupの列挙
+4. fixture manifestに基づく論理信号から物理channelへの束縛
+5. accepted/rejected/started/completed/failedの区別と、実際に採用した条件・再試行・artifactの取得
+6. HIDのようなOEP外data pathを使う場合、そのbindingと役割を明示し、OEP serviceの成功と
+   外部転送の成功を混同しないこと
+
+最初からP0～P5全機能、streaming capture、全target共通flash algorithm、最終transport、最終的な
+binary encodingを固定しない。現在のASCII commandやPython orchestrationは参照fixtureとして残し、
+OEP試作は同じ実機結果を別host実装から再現できるかを比較する。これなら試作が仕様を先回りせず、
+不足している上流要件を実測で見つける用途になる。
+
+## 12. この仕様だけでは決めないもの
 
 - probeに使うMCUやprogrammable I/Oの種類
 - USB class、具体的なwire protocol、CLI syntax

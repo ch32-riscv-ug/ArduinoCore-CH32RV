@@ -4,6 +4,21 @@
 PD1/SWIO、PD7/RESET、USB接続中のPD3/PD4はGPIO/ADC sweepに含めません。SWIOは明示的に
 boot entryを要求したときだけ使用し、RESETは使用しません。
 
+## 経路と役割
+
+このfixtureでは、書込み、boot制御、周辺機能試験を意図的に別経路へ分けています。
+
+| 処理 | 経路 |
+|---|---|
+| fixture sketchの書込み | hostから製品software USB HID `1209:b803`へ直接送る |
+| boot modeへの復帰・状態確認 | ESP32 GPIO16からPD1/SWIOを操作する |
+| UART/GPIO/ADC/I2C/SPI試験 | ESP32 E132を独立したpeer・刺激源として使う |
+
+UIAPduinoは標準書込み経路がsoftware USB HIDであるため、release試験でもその製品経路を使用します。
+ESP32が書込みbinaryを中継しているわけではありません。ただし別実験ではSWIOだけのuser flash
+書込みも成立しており、標準bootloaderを持たない一般的なtargetではSWIO/RVSWDを直接操作して
+書き込む構成の方が単純です。このfixture固有の分担を汎用プローブの必須構成とはしません。
+
 1. E132を`esp32-d0wd-v3-0070070d9394`へ書き込む。
 2. このdirectoryのsketchを専用FQBN
    `ch32-riscv-ug:ch32v:UIAPDUINO_V003_V14`でbuildし、製品HID bootloaderから書き込む。
