@@ -51,3 +51,6 @@ HILでは`PC5/SCK→GPIO27`、`PC6/MOSI→GPIO4`、`PC7/MISO→GPIO14`を使用�
 A5/PD5とA6/PD6はUART TX/RXと兼用です。試験sketchはUARTを止め、一度の`ADCSWEEP`で
 3状態を時刻同期して測定してからUARTを戻します。特にRX兼用のA6は、ADC中に次のcommandを
 受信する方式では試験できません。
+
+SysTick、TIM資源管理、PWM、toneの波形試験は、16 KiBへ全機能を同居させないため
+[`../uiapduino_timer_fixture/`](../uiapduino_timer_fixture/README.ja.md)の第2imageへ分離しています。
