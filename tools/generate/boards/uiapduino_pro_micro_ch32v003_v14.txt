@@ -21,6 +21,11 @@ UIAPDUINO_V003_V14.upload.tool.default=ch32rv_hid
 UIAPDUINO_V003_V14.build.ch32rv_chip=CH32V003F4U6
 UIAPDUINO_V003_V14.build.probe_rs_chip=CH32V003F4U6
 
+# Product hardware fixes the part number, but a no-op `pnum=ANY` menu is
+# deliberately present so generic Arduino CI invocations that supply the
+# platform-wide pnum option remain valid. It must not select a different SKU.
+UIAPDUINO_V003_V14.menu.pnum.ANY=CH32V003F4U6 (fixed on UIAPduino V1.4)
+
 UIAPDUINO_V003_V14.menu.printf.none=No float (smaller)
 UIAPDUINO_V003_V14.menu.printf.none.build.printf_flags=
 UIAPDUINO_V003_V14.menu.printf.float=%f supported (+~19 KB; does not fit most V003 sketches)
