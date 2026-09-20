@@ -613,5 +613,10 @@
     "bss": 520,
     "data": 4,
     "text": 1156
+  },
+  "UIAPDUINO_V003_V14/ANY": {
+    "bss": 520,
+    "data": 4,
+    "text": 1072
   }
 }
