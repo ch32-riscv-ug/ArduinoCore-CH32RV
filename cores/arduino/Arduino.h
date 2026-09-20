@@ -57,21 +57,32 @@ using namespace arduino;
 #define portInputRegister(port) \
     ((volatile uint32_t *)(CH32_GPIO_PORT_BASE(port) + 0x08u))
 
-/* api/Common.h declares these two but leaves them to the core. MIE is bit 3 of
- * mstatus, and csrsi/csrci take the bit as an immediate, so each is one
- * instruction with no scratch register.
+/* api/Common.h declares these two but leaves them to the core. Most CH32
+ * families expose MIE as bit 3 of mstatus. X033/X035 enter sketches in U mode,
+ * where mstatus is inaccessible; their QingKe interrupt-control CSR 0x800 is
+ * user-accessible and is what WCH's own core header uses (bits 0x88).
  *
  * noInterrupts() does not nest: a second call still leaves one interrupts()
  * away from enabled, which is the AVR behaviour libraries are written
  * against. */
 static inline void interrupts(void)
 {
+#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+    const uint32_t mask = 0x88u;
+    __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");
+#else
     __asm__ volatile ("csrsi mstatus, 8" ::: "memory");
+#endif
 }
 
 static inline void noInterrupts(void)
 {
+#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+    const uint32_t mask = 0x88u;
+    __asm__ volatile ("csrc 0x800, %0" :: "r"(mask) : "memory");
+#else
     __asm__ volatile ("csrci mstatus, 8" ::: "memory");
+#endif
 }
 
 #ifdef NUM_ANALOG_INPUTS
