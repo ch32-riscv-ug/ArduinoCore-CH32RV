@@ -131,6 +131,16 @@ size_t CH32HardwareSerial::write(uint8_t c)
     if (!_started) {
         return 0;
     }
+#if defined(CH32_VARIANT_CH32X035)
+    /* X035's USART TXE interrupt path is not yet reliable on every USART:
+     * a burst larger than the 63-byte ring capacity can otherwise wait here
+     * forever. Polling TXE is bounded by one character time and keeps Serial
+     * correct while the interrupt-route issue is investigated. */
+    while ((CH32_USART_STATR(_base) & CH32_USART_STATR_TXE) == 0u) {
+    }
+    CH32_USART_DATAR(_base) = c;
+    return 1;
+#else
     /* Block until the ring has room. The TX interrupt is what drains it, so
      * this cannot deadlock as long as interrupts are enabled. */
     while (_tx.isFull()) {
@@ -138,6 +148,7 @@ size_t CH32HardwareSerial::write(uint8_t c)
     _tx.push(c);
     start_tx();
     return 1;
+#endif
 }
 
 void CH32HardwareSerial::irq(void)
