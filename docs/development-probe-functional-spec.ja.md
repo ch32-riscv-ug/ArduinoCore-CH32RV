@@ -151,7 +151,12 @@ revision 1のfunction語彙は`gpio.in`、`gpio.out`、`open_drain`、`pull_up`�
 
 この応答にはDUT pin、board名、target MCU、今回の配線先を入れない。P4のGPIO2/54が現在のfirmwareで
 予約されている事実は`reserved`で表すが、それがどのDUTへ接続されているかはConnectionManifestだけが
-知る。`configure`/lease wire operationはrevision 2でこのmodelのまま追加する。
+知る。`ProbeConfiguration` function `0x0003` revision 1 はこのmodelの最初のwire operationである。`apply` payloadは
+revision、role数、反復する`(group wire ID, function bit, channel ID)`だけを含む。target signal名・DUT pin名・
+配線はhostに残す。probeは全roleを検証してから一括でcommitし、成功時だけ32-bit lease IDを返す。`release`は
+lease IDだけを受け取り、leaseが一致しない場合は何も変更せず拒否する。96-byte envelopeでは1 planを最大17 role
+に制限する。個別のpeer/capture操作へlease IDを必須化するのは次のrevisionであり、revision 1は安全な
+構成・解放の境界を先に固定する。
 
 ## 4. 共通基盤機能
 
