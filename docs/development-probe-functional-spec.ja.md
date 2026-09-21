@@ -96,6 +96,27 @@ GPIO番号をテストへ直接書きません。能力宣言では物理channel
 
 これにより、ESP32版で通った試験が別MCU版では静かに縮退することを防ぎます。
 
+### 3.4 接続を固定しないprobeの作業フロー
+
+probe firmwareはMCU固有の物理channelと、その時点で実現できる能力だけを宣言する。DUT名、
+board名、DUT pin名、既知の配線表をfirmwareへ焼き込んではならない。P4、RP2040、別MCUは同じ
+抽象表現を返し、channel数・周辺機能・制約だけが異なる。
+
+1. **能力取得**: hostは起動済みprobeからchannel、peripheral group、電気条件、capture、予約resourceを読む。
+2. **接続記述または発見**: 利用者はその試験で接続したDUT signalとprobe channelの対応をmanifestで渡す。
+   将来は安全なGPIO stimulus/read、UART banner、I2C address scan等で候補を観測できるが、観測結果は
+   「候補」であり自動的に破壊的操作へ進めない。
+3. **束縛・設定**: host resolverがDUT pinmux DB、接続manifest、probe capsから一意の割当を作り、
+   `configure`へ全体を送る。probeはchannelのfunction/pull/peer/captureを一括設定し、成立しなければ
+   何も変更せず拒否する。
+4. **実行・解放**: hostは実効割当と測定条件をartifactへ保存して試験を実行する。終了、失敗、disconnectでは
+   `disable/release`により全channelをHi-Z/inputへ戻す。
+
+従って、例えばUART peerを使う場合もfirmwareが「GPIO12はUART RX」と決めるのではない。capsが
+「channel 12はUART RXへmux可能」、manifestが「このchannelは今回DUT UART_TXへ接続済み」と示し、
+hostが両者を満たすconfigurationを選ぶ。同じprobeへ別targetを繋ぐ場合はmanifestとresolver結果だけを
+替え、probe firmwareの更新を要求しない。
+
 ## 4. 共通基盤機能
 
 ### 4.1 書込みと復旧
