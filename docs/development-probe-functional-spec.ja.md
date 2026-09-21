@@ -137,6 +137,22 @@ input-only、排他、連続pin条件を全て満たす場合だけcommitする�
 GPIO toggle/read、UART banner、I2C ACK等の自動接続発見は候補と信頼度を返す補助機能である。
 hostの明示承認なしにdrive、reset、boot、flashへ遷移してはならない。
 
+### 3.6 OEP Caps revision 1（試作wire profile）
+
+OEP prototypeは96-byte message制限内で`Caps`をpage取得する。これはP4専用のwire形式ではなく、
+RP2040等も同じrevisionを実装できる最小profileである。summaryがrevision、channel/group/voltage-domain
+の件数を返し、hostがordinalで各entryを取得する。entryは数値channel ID、function bitmask、
+input-only/reserved、voltage domain、peripheral kind/instance/roles、排他groupを返す。
+
+revision 1のfunction語彙は`gpio.in`、`gpio.out`、`open_drain`、`pull_up`、`pull_down`、`capture`、
+`uart.rx`、`uart.tx`、`i2c.sda`、`i2c.scl`、`spi.rx`、`spi.tx`、`spi.sck`、`spi.cs`、`pwm.out`、
+`analog.in`、`analog.out`、`edge.out`である。未知bit/revision、未知voltage domain、重複channel/group、
+無効な排他参照はhostがfail-closedで拒否する。
+
+この応答にはDUT pin、board名、target MCU、今回の配線先を入れない。P4のGPIO2/54が現在のfirmwareで
+予約されている事実は`reserved`で表すが、それがどのDUTへ接続されているかはConnectionManifestだけが
+知る。`configure`/lease wire operationはrevision 2でこのmodelのまま追加する。
+
 ## 4. 共通基盤機能
 
 ### 4.1 書込みと復旧
