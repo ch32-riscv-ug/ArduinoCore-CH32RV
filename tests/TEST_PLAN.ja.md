@@ -114,6 +114,7 @@ tests/
 | `test_startup_equivalence.py` | `startup/` | 自作crt0とEVT startupのELF等価性 |
 | `test_interrupt_tables.py` | `startup/` | interrupts.csvがEVT startup assemblyと一致 |
 | `test_compile_matrix.py` | `compile/` | 全part numberがcompileでき、サイズが基準線と一致 |
+| `test_uiapduino_compile.py` | `compile/` | UIAPduino V1.4の`pnum=ANY`を指定して、CH32 APIの`analogRead()` sketchがFQBN解決からcompile/linkまで通る |
 | `test_examples.py` | `compile/` | 同梱examplesが代表2枚(X035/V003)でcompileできる。**簡易段** |
 | `test_examples_sweep.py` | `compile/` | 同梱examplesが**全24 series**でcompileできる。約20分、`--sweep`が要る。**GitHub段** |
 | `test_sizebench.py` | `sizebench/` | newlibのサイズ計測harnessが動く |
