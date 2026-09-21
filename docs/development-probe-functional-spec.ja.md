@@ -149,6 +149,13 @@ revision 1のfunction語彙は`gpio.in`、`gpio.out`、`open_drain`、`pull_up`�
 `analog.in`、`analog.out`、`edge.out`である。未知bit/revision、未知voltage domain、重複channel/group、
 無効な排他参照はhostがfail-closedで拒否する。
 
+revision 1のgroup roleはfunction bitから導かれる短い名前（UARTの`rx`/`tx`等）であり、同じfunctionを
+複数本必要とする構成を区別できない。例えばSCL/SDAをそれぞれ`capture`するRMT observer、複数MISOを
+持つSPI observer、複数ADC入力はrevision 1のgroupに載せてはならない。これらはCaps/Configure revision 2で
+各roleに安定したrole ID（例:`clock`/`data`）を持たせ、plan wireも`(group ID, role ID, function, channel)`
+へ拡張してから宣言する。revision 1 host/probeは未知revisionをfail-closedで拒否し、固定GPIO番号を
+暗黙の代替roleとして使わない。
+
 この応答にはDUT pin、board名、target MCU、今回の配線先を入れない。P4のGPIO2/54が現在のfirmwareで
 予約されている事実は`reserved`で表すが、それがどのDUTへ接続されているかはConnectionManifestだけが
 知る。`ProbeConfiguration` function `0x0003` revision 1 はこのmodelの最初のwire operationである。`apply` payloadは
