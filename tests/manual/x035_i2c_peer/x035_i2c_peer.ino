@@ -11,6 +11,9 @@
 #include "testcmd.h"
 
 static const uint8_t kPeerAddress = 0x42;
+#ifndef X035_I2C_PEER_CLOCK
+#define X035_I2C_PEER_CLOCK 10000u
+#endif
 
 static void run_checks()
 {
@@ -24,7 +27,7 @@ static void run_checks()
   }
 
   Wire.begin();
-  Wire.setClock(10000);
+  Wire.setClock(X035_I2C_PEER_CLOCK);
   Wire.beginTransmission(kPeerAddress);
   const uint8_t payload[] = {0x11, 0x22, 0x33, 0x44};
   const size_t written = Wire.write(payload, sizeof(payload));
