@@ -117,6 +117,26 @@ board名、DUT pin名、既知の配線表をfirmwareへ焼き込んではなら
 hostが両者を満たすconfigurationを選ぶ。同じprobeへ別targetを繋ぐ場合はmanifestとresolver結果だけを
 替え、probe firmwareの更新を要求しない。
 
+### 3.5 host/probe contract の最小データ
+
+wire encodingは実装ごとに選べるが、意味と検証順序は共通にする。
+
+| データ | 作成者 | 含めるもの | 含めてはならないもの |
+|---|---|---|---|
+| `Caps` | probe | channel ID、可能function、電気条件、peripheral group、排他、上限値 | DUT名、board名、DUT pin名、今回の配線 |
+| `ConnectionManifest` | host/利用者 | DUT logical signalとprobe channelの物理接続、電圧domain、外部部品 | probe MCU固有の推測、未確認の自動検出結果 |
+| `ConfigurePlan` | host resolver | channel allocation、mode、速度、peer model、capture条件 | 部分適用を許す命令列 |
+| `Allocation` | probe | 実際に確保したchannel、実効値、排他lease ID、較正/時刻情報 | hostが要求していない隠れたpin変更 |
+| `RunArtifact` | host | 上記4件のhash、target image、結果、trace、cleanup結果 | 再現不能な暗黙既定値 |
+
+`configure(plan)`は全channel/groupが`Caps`に存在し、接続manifest、電圧domain、方向、open-drain、
+input-only、排他、連続pin条件を全て満たす場合だけcommitする。失敗時は変更0件とし、理由を返す。
+成功時はlease IDと実効`Allocation`を返す。以後のpeer/capture操作はlease IDを必須にし、
+`release(lease)`、session切断、watchdog timeoutはいずれも同じ安全cleanupを実行する。
+
+GPIO toggle/read、UART banner、I2C ACK等の自動接続発見は候補と信頼度を返す補助機能である。
+hostの明示承認なしにdrive、reset、boot、flashへ遷移してはならない。
+
 ## 4. 共通基盤機能
 
 ### 4.1 書込みと復旧
