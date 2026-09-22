@@ -166,13 +166,16 @@ def run_one(name: str, args, client, target, uart_service, log) -> dict:
         if not any(verb == "write" for verb, _ in script):
             link.send("RUN\n")
         for verb, text in script:
+            # The banner coming back after REBOOT / BITE is a real reset (watchdog timeouts run
+            # seconds on a 128 kHz LSI); the pytest gives it 20 s, so does this replay.
+            wait_s = max(args.seconds, 20.0) if text == banner else args.seconds
             if verb == "write":
                 link.send(text if text.endswith("\n") else text + "\n")
             elif verb == "expect":
-                if not link.wait(text, args.seconds):
+                if not link.wait(text, wait_s):
                     missed.append(text)
             elif verb == "match":
-                if not link.wait(text, args.seconds, regex=True):
+                if not link.wait(text, wait_s, regex=True):
                     missed.append(text)
         link.wait(f"{name} done failures=", args.seconds)
         link.drain(0.3)
