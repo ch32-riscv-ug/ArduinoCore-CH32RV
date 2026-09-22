@@ -12,7 +12,9 @@
 #include "ch32_gpio.h"
 #include "ch32_registers.h"
 
-#define CH32_EXTI_LINES 16
+#ifndef CH32_EXTI_LINES
+#define CH32_EXTI_LINES 16   /* generated exti_<variant>.h overrides (24 on X033/X035) */
+#endif
 
 static voidFuncPtrParam ch32_exti_callback[CH32_EXTI_LINES];
 static void *ch32_exti_param[CH32_EXTI_LINES];
@@ -31,7 +33,7 @@ static void ch32_exti_set(pin_size_t pin, PinStatus mode,
     const uint8_t bit = (uint8_t)CH32_PIN_BIT(pin);
 
     if (port >= CH32_PORT_COUNT || bit >= CH32_EXTI_LINES) {
-        return;   /* bits 16..23 (X033/X035) have no EXTI line */
+        return;   /* no EXTI line for this bit */
     }
 
     ch32_exti_callback[bit] = callback;

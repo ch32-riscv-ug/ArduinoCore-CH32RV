@@ -225,7 +225,7 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       **中身は合っているのに使われていない**状態をCIが見逃していた
 - [x] `attachInterrupt`/`detachInterrupt`(EXTI)の実装。**vector分割の2方式(`EXTI7_0`系と
       `EXTI0..4`系)は生成物`exti_<variant>.h`から吸収**するので、family追加でコード変更が要らない
-- [ ] `[P1]` X033/X035のEXTI線16〜23(`EXTI25_16`)。`AFIO_EXTICR`の追加wordが要る
+- [x] X033/X035のEXTI線16〜23(`EXTI25_16`)。EXTICR の 2 bit × 16 line 化で追加 word は自然に届くので、生成物に `CH32_EXTI_LINES` 24 と `EXTI25_16` group を出すだけで済んだ（2026-09-22、PC16/PC17 で 10/10/20）
 - [ ] `[P1]` V003のvector tableに**spec外の非ゼロword**が1つある(EVT側にも同じものがある)。
       slot 39相当で実害は無いが出所を確認する
 - [ ] `[P2]` 割込み優先度(`PFIC IPRIOR`)を触っていない。全てreset既定のまま
@@ -354,6 +354,11 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 
 どちらも`libraries/`に置いた同梱library。pinはvariantの生成マクロから来るので
 `begin()`に引数は要らない。AFIO routeは**既定routeでも毎回書く**(`HardwareSerial`と同じ理由)。
+
+- [ ] `[P2]` **Wire の bus clear**。slave が byte 途中で SDA を握ったままの bus に対して、`recover()`（SWRST）では解放できず
+      `endTransmission` は 25 ms timeout（rc=5）を繰り返す（2026-09-22、P4 target で再現。`tests/manual/oep_i2c_trace/ --stuck`）。
+      sketch 側の「SDA 解放 + SCL 9 pulse + STOP」で解放し次の transaction は通る。core が `_needs_recovery` 時にこれを自動で行うか、
+      `Wire.clearBus()` のような明示 API にするかは未決。AVR/ESP32 の Wire にも標準の API は無い
 
 ### ソフトウェア実装(bit-bang)
 

@@ -11,7 +11,7 @@
 
 struct Named { const char *name; uint8_t pin; };
 static const Named kPins[] = {{"PA0", PA0}, {"PA1", PA1}, {"PA2", PA2}, {"PA3", PA3}, {"PA4", PA4}, {"PA5", PA5}, {"PA6", PA6}, {"PA7", PA7},
-                              {"PB3", PB3}, {"PB11", PB11}, {"PB12", PB12}, {"PC14", PC14}, {"PC15", PC15}, {"PB0", PB0}, {"PB1", PB1}};
+                              {"PB3", PB3}, {"PB11", PB11}, {"PB12", PB12}, {"PC14", PC14}, {"PC15", PC15}, {"PC16", PC16}, {"PC17", PC17}, {"PB0", PB0}, {"PB1", PB1}};
 static volatile uint32_t gEdges = 0;
 static void onEdge() { gEdges++; }
 

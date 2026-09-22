@@ -4,6 +4,8 @@
 #pragma once
 
 #define CH32_EXTI_GROUP_COUNT 7
+/* Pin bits that have an EXTI line (24 on the X0 parts, 16 elsewhere). */
+#define CH32_EXTI_LINES 16
 
 /* AFIO_EXTICR field layout: bits per EXTI line and lines per register. */
 #define CH32_EXTICR_FIELD_BITS 4

@@ -1558,10 +1558,13 @@ def gen_irqns(variant: str, entries: list) -> str:
 # handler names and the lines each one covers from the vector table.
 EXTI_RANGE_RE = re.compile(r"^EXTI(\d+)_(\d+)_IRQHandler$")
 EXTI_SINGLE_RE = re.compile(r"^EXTI(\d+)_IRQHandler$")
-# Only the lines that reach AFIO_EXTICR, i.e. pin bits 0..15. X033/X035 route
-# bits 16..23 through EXTI25_16, which needs EXTICR words this core does not
-# program yet (docs/todo.ja.md).
-EXTI_LINE_MASK = 0xFFFF
+# Pin bits that have an EXTI line. 16 on the F1-style parts (AFIO_EXTICR1-4 cover
+# lines 0..15). X033/X035 have 24-bit ports and route bits 16..23 through the
+# EXTI25_16 vector; their two 2-bit-field EXTICR words cover 32 lines, so the
+# same wiring_interrupts.c path serves them once the layout is per variant
+# (2026-09-22: PC16/PC17 EXTI on CH32X035 counted 0 edges until this was lifted).
+EXTI_GPIO_LINES = {"x035": 24, "x3x5": 24}
+EXTI_GPIO_LINES_DEFAULT = 16
 
 
 # Timer capture/compare signal naming, like the USART case, is not normalized:
@@ -1627,7 +1630,7 @@ def gen_exti(variant: str, entries: list) -> str:
             if not m:
                 continue
             mask = 1 << int(m.group(1))
-        mask &= EXTI_LINE_MASK
+        mask &= (1 << EXTI_GPIO_LINES.get(variant, EXTI_GPIO_LINES_DEFAULT)) - 1
         if mask:
             groups.append((name, mask))
     groups.sort(key=lambda g: g[1])
@@ -1639,6 +1642,8 @@ def gen_exti(variant: str, entries: list) -> str:
         "#pragma once",
         "",
         f"#define CH32_EXTI_GROUP_COUNT {len(groups)}",
+        "/* Pin bits that have an EXTI line (24 on the X0 parts, 16 elsewhere). */",
+        f"#define CH32_EXTI_LINES {EXTI_GPIO_LINES.get(variant, EXTI_GPIO_LINES_DEFAULT)}",
         "",
         "/* AFIO_EXTICR field layout: bits per EXTI line and lines per register. */",
         f"#define CH32_EXTICR_FIELD_BITS {EXTICR_LAYOUT.get(variant, EXTICR_LAYOUT_DEFAULT)[0]}",

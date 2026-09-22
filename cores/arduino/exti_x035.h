@@ -3,7 +3,9 @@
  * EXTI vector grouping: handler name and the pin bits it covers. */
 #pragma once
 
-#define CH32_EXTI_GROUP_COUNT 2
+#define CH32_EXTI_GROUP_COUNT 3
+/* Pin bits that have an EXTI line (24 on the X0 parts, 16 elsewhere). */
+#define CH32_EXTI_LINES 24
 
 /* AFIO_EXTICR field layout: bits per EXTI line and lines per register. */
 #define CH32_EXTICR_FIELD_BITS 2
@@ -13,4 +15,5 @@
 #define CH32_EXTI_GROUPS(X) \
     X(EXTI7_0_IRQHandler, 0x000000ffu, CH32_IRQN_EXTI7_0) \
     X(EXTI15_8_IRQHandler, 0x0000ff00u, CH32_IRQN_EXTI15_8) \
+    X(EXTI25_16_IRQHandler, 0x00ff0000u, CH32_IRQN_EXTI25_16) \
     /* end */

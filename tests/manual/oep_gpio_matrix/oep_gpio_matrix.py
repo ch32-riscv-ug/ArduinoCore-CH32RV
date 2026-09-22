@@ -30,7 +30,7 @@ SKETCH = HERE / "gpio_probe"
 UART_RX, UART_TX = 12, 6
 # X035 pad -> P4 GPIO (E143, 2026-09-21)
 PIN_MAP = {"PA0": 46, "PA1": 47, "PA2": 48, "PA3": 49, "PA4": 53, "PA5": 4, "PA6": 11, "PA7": 5,
-           "PB3": 13, "PB11": 9, "PB12": 14, "PC14": 10, "PC15": 15}
+           "PB3": 13, "PB11": 9, "PB12": 14, "PC14": 10, "PC15": 15, "PC16": 52, "PC17": 50}
 
 
 def main() -> None:

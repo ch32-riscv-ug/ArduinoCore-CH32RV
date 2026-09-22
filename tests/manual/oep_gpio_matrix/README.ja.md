@@ -22,3 +22,8 @@ uv run tests/manual/oep_gpio_matrix/oep_gpio_matrix.py [--pins PA0,PB3] [--settl
 | PC14/PC15 の INPUT_PULLUP idle が 0 | USB PD の CC pin。`USBPD_PORT` の reset 値は 0x00030003（CC1/CC2 とも `CC_PD`=1）。ただし `CC_PD` を落としても `USBPD_CONFIG`=0 でも `AFIO_CTLR` の PD bit を変えても pin は上がらず、push-pull high は通る（≈5 kΩ 級の pull-down が線上に残る。PD PHY か P4 側 GPIO10/15/45 かは未決） | 未決。todo に記録 |
 
 修正後: PA0〜PA7、PB3、PB11、PB12 は out / od / in / pullup / EXTI すべて OK。PC14/PC15 は pull-up idle 以外 OK。
+
+2026-09-22（続き）: PC16/PC17（route 2 の I2C pad、P4 GPIO52/50）を表に足した。out / od / in / pullup / pulldown は OK、
+**EXTI は最初 0 edge**: X035 には `EXTI25_16_IRQHandler`（vector 41）があるのに core は EXTI を line 0〜15 に限っていた
+（`CH32_EXTI_LINES` 16、`exti_x035.h` の group が 2 つ）。generator が variant ごとに `CH32_EXTI_LINES`（X0 は 24）と
+`EXTI25_16` group を出すようにして 10/10/20（EXTICR は 2 bit × 16 line なので line 16〜23 は EXTICR2 に自然に届く）。fixture 側の事実: route 2 には bus pull-up が無い（`oep_i2c_trace/` 参照）。
