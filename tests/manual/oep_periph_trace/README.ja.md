@@ -51,3 +51,10 @@ X035 は 4 byte `a55a0f01` を送り、target は `3c96c30f` を返す。
 
 注意: DUT 初回の `SPI` command は `SPI.begin()` と CS の `pinMode` を含み、それまで CS が浮いているので slave が空 transaction を 1 つ消費した
 （target rx 空・bits=0、DUT は FIFO に残っていた応答を受けて一見正常）。runner は arm の前に warm-up transaction を 1 回流す。
+
+## 2026-09-22: CH32V003 の SPI peer（`--target v003 --only spi-peer`）
+
+classic ESP32 probe には capture が無いので data の突き合わせのみ。SPI1 PC5/PC6/PC7、CS = PC3（→ GPIO17）。
+mode 0〜3 @1 MHz 要求、mode 0 @250 kHz、mode 0/3 @4 MHz 要求: DUT の MISO 受信・target の MOSI 受信とも一致。
+12 MHz 要求（実 6 MHz）以上は DUT 受信が 1 bit 遅れ（`1ecbe107` = 期待値 >> 1）: **probe 側 classic ESP32 SPI slave の限界**（MISO setup）。
+PWM / tone / timing は capture が要るので V003 では未。

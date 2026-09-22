@@ -10,8 +10,13 @@
 #include "testcmd.h"
 
 struct Named { const char *name; uint8_t pin; };
+#if defined(OEP_TARGET_V003)   // UIAPduino jig (E132): PD1 SWIO, PD3/PD4 USB, PD5/PD6 console are not in the table
+static const Named kPins[] = {{"PA1", PA1}, {"PA2", PA2}, {"PC0", PC0}, {"PC1", PC1}, {"PC2", PC2}, {"PC3", PC3}, {"PC4", PC4}, {"PC5", PC5},
+                              {"PC6", PC6}, {"PC7", PC7}, {"PD0", PD0}, {"PD2", PD2}};
+#else                          // X035 fixture (E143)
 static const Named kPins[] = {{"PA0", PA0}, {"PA1", PA1}, {"PA2", PA2}, {"PA3", PA3}, {"PA4", PA4}, {"PA5", PA5}, {"PA6", PA6}, {"PA7", PA7},
                               {"PB3", PB3}, {"PB11", PB11}, {"PB12", PB12}, {"PC14", PC14}, {"PC15", PC15}, {"PC16", PC16}, {"PC17", PC17}, {"PB0", PB0}, {"PB1", PB1}};
+#endif
 static volatile uint32_t gEdges = 0;
 static void onEdge() { gEdges++; }
 

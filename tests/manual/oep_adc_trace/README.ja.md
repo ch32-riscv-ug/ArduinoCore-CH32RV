@@ -41,3 +41,10 @@ runner は PA0 を両 rail で前置してから ch15 を 1000 回読み、「�
 - variant の pin map は series 共通なので PA3/PA7 は `A3`/`A7` のまま。ロット依存を core で隠すことはできない。
 - fixture の ADC 試験は ch3/7/11/15 を避ける（[upload-and-fixture](../../../docs/upload-and-fixture.ja.md) の errata 節どおり）。
 - 「ADC が読めているか」の自己診断には VREFINT を **前置してから** 読む（rail 追従なら無い）。単発の値で判断しない。
+
+## 2026-09-22: CH32V003（`--target v003`）
+
+PA1 / PA2 / PC4 / PD2（A1 A0 A2 A3）: probe low で 0、probe high で **915**（4 pin とも ±1）、両 pull の中点で 351〜386。
+915 は probe（classic ESP32）の high が V003 の VDD より低いか、V003 の VDD が高いかのどちらかで未分離（`adc_high_min` 850 で判定）。
+VREFINT（ch8）の生読みは 269 / 1023 で 1.2 V 前提だと VDD 4.5 V になり矛盾するので、V003 の内部基準の扱いは未解決として記録。
+PD3/PD4（USB）は未配線、PD5/PD6 は console。

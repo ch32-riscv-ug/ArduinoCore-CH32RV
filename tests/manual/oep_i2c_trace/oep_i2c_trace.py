@@ -29,6 +29,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402  (build, UartLink, DEFAULT_PORT, DEFAULT_CLIENT)
+import targets  # noqa: E402
 
 SKETCH = HERE / "i2c_probe_write"
 SCL, SDA = 52, 50
@@ -38,11 +39,12 @@ TARGET_ADDRESS = 0x42
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--port", default=oep_smoke.DEFAULT_PORT)
-    parser.add_argument("--fqbn", default="ch32-riscv-ug:ch32v:CH32X035:pnum=ANY")
+    targets.add_target_argument(parser)
+    parser.add_argument("--port", help="probe serial port (default: the target profile's)")
+    parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
     parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--hz", type=int, action="append", help="I2C clocks to try (default 100000 and 10000)")
-    parser.add_argument("--route", type=int, default=2)
+    parser.add_argument("--route", type=int, help="DUT Wire route (default: the target profile's)")
     parser.add_argument("--result-json")
     parser.add_argument("--raw-dir", help="write the raw sample bytes of every capture here")
     parser.add_argument("--bitbang", action="store_true", help="sweep a bit-banged master (SDA hold x drive) instead of Wire")
@@ -51,6 +53,11 @@ def main() -> None:
     parser.add_argument("--stretch", action="store_true", help="target stretches SCL (p4.i2c-target set_stretch) for 0.1..30 ms; Wire must wait, then time out gracefully")
     parser.add_argument("--stuck", action="store_true", help="SDA/SCL held low by the P4, then a target left driving SDA low mid-byte; Wire error codes, timing, recovery")
     args = parser.parse_args()
+    profile = targets.TARGETS[args.target]
+    global SCL, SDA, UART_RX, UART_TX
+    SCL, SDA, UART_RX, UART_TX = profile["i2c"]["scl"], profile["i2c"]["sda"], profile["uart_rx"], profile["uart_tx"]
+    if args.route is None: args.route = profile["i2c"]["route"]
+    has_capture = profile["capture"]
     clocks = args.hz or [100000, 10000]
     sys.path.insert(0, args.oep_client)
     from oep_client.v0 import codec
@@ -61,9 +68,10 @@ def main() -> None:
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("i2c_probe_write", args.fqbn, 4, pathlib.Path(tmp), log, source=SKETCH)
+        binary = oep_smoke.build("i2c_probe_write", args.fqbn or profile["fqbn"], profile["serial_index"], pathlib.Path(tmp), log,
+                                 source=SKETCH, defines=targets.build_defines(profile))
         image = binary.read_bytes()
-    client = open_client(args.port, 3.0)
+    client = open_client(args.port or profile["port"], 3.0)
     target = Target(client)
     outcome = program_image(target, image)
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified} reset_flags=0x{int(outcome.timings['reset_flags']):02x}")
@@ -71,10 +79,10 @@ def main() -> None:
         raise SystemExit("program/verify failed")
     uart = FixtureUart(client, client.find(*codec.DEF_FIXTURE_UART[:2]).function)
     i2c = P4I2cTarget(client, client.find(*codec.DEF_P4_I2C_TARGET[:2]).function)
-    capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function)
-    # One plan: console UART + P4 I2C target on SDA50/SCL52 + capture observing the same two lines.
+    capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function) if has_capture else None
+    # One plan: console UART + probe I2C target + (on the P4) capture observing the same two lines.
     lease, _ = client.plan_apply(uart.assignments(rx=UART_RX, tx=UART_TX) + i2c.assignments(sda=SDA, scl=SCL)
-                                 + capture.assignments(SCL, SDA))
+                                 + (capture.assignments(SCL, SDA) if has_capture else []))
     results = []
     try:
         uart.configure(115200)
@@ -86,10 +94,14 @@ def main() -> None:
             link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
             def trace_cmd(command, reply, hz):
                 rate = 5_000_000 if hz >= 400_000 else 1_000_000
-                capture.configure(rate, 65000); link.drain(0.05); capture.arm()
+                if has_capture: capture.configure(rate, 65000)
+                link.drain(0.05)
+                if has_capture: capture.arm()
                 link.send(command + "\n")
                 if not link.wait(reply, 5): raise SystemExit(f"no reply to {command!r}")
-                st = capture.wait(3.0); samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                samples = b""
+                if has_capture:
+                    st = capture.wait(3.0); samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
                 line = next((l for l in link.text.splitlines()[::-1] if reply in l), "").strip()
                 return line, decode_i2c(samples, scl_bit=0, sda_bit=1)
             # 1. READ: the P4 target answers from preloaded 4-byte slots
@@ -98,7 +110,8 @@ def main() -> None:
             for s_ in slots: i2c.preload_tx(s_)
             for hz, expect in ((100000, slots[0]), (100000, slots[1])):
                 line, trace = trace_cmd(f"READ {args.route} {hz} {TARGET_ADDRESS:02x} 4", "READ got=", hz)
-                got = bytes.fromhex(line.split("data=")[1]) if "data=" in line and line.split("data=")[1] else b""
+                data_hex = line.split("data=")[1].split()[0] if "data=" in line else ""
+                got = bytes.fromhex(data_hex) if data_hex else b""
                 log(f"[read {hz} Hz] {line} | wire {trace.summary()} | expected {expect.hex()} match={got == expect}")
                 results.append({"read": True, "hz": hz, "line": line, "trace": trace.summary(), "match": got == expect})
             # 2. repeated START: write 2 bytes without STOP, then read 4 (the target's next slot)

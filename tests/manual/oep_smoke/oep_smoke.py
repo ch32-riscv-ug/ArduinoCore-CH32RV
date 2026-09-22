@@ -48,13 +48,15 @@ def toolchain_bin() -> pathlib.Path:
 
 
 def build(name: str, fqbn: str, serial_index: int, tmp: pathlib.Path, log,
-          source: pathlib.Path | None = None) -> pathlib.Path:
-    """Compile tests/sketches/basic/<name>, or `source` when another sketch dir is given."""
+          source: pathlib.Path | None = None, defines: list[str] | None = None) -> pathlib.Path:
+    """Compile tests/sketches/basic/<name>, or `source` when another sketch dir is given.
+    `defines` are extra -D flags (targets.build_defines) so one sketch can carry several pin tables."""
     sketch_dir = stage_sketch(source or BASIC / name, tmp / name)
     out = tmp / "build"
+    flags = " ".join([f"-DCH32_SERIAL_DEFAULT={serial_index}"] + list(defines or []))
     cmd = ["arduino-cli", "compile", "--fqbn", fqbn,
            "--build-property", f"compiler.path={toolchain_bin()}/",
-           "--build-property", f"build.extra_flags=-DCH32_SERIAL_DEFAULT={serial_index}",
+           "--build-property", f"build.extra_flags={flags}",
            "--build-path", str(out), str(sketch_dir)]
     r = subprocess.run(cmd, capture_output=True, text=True, env=sketchbook(tmp))
     if r.returncode:

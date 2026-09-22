@@ -25,18 +25,16 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
+import targets  # noqa: E402  (fixture profiles: port, FQBN, console pins, DUT pad -> probe GPIO)
 
 SKETCH = HERE / "gpio_probe"
-UART_RX, UART_TX = 12, 6
-# X035 pad -> P4 GPIO (E143, 2026-09-21)
-PIN_MAP = {"PA0": 46, "PA1": 47, "PA2": 48, "PA3": 49, "PA4": 53, "PA5": 4, "PA6": 11, "PA7": 5,
-           "PB3": 13, "PB11": 9, "PB12": 14, "PC14": 10, "PC15": 15, "PC16": 52, "PC17": 50}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--port", default=oep_smoke.DEFAULT_PORT)
-    parser.add_argument("--fqbn", default="ch32-riscv-ug:ch32v:CH32X035:pnum=ANY")
+    targets.add_target_argument(parser)
+    parser.add_argument("--port", help="probe serial port (default: the target profile's)")
+    parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
     parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--pins", help="comma separated subset of the pin map")
     parser.add_argument("--settle", type=float, default=0.05, help="seconds between a drive change and the sample (P4 GPIO 9/13/14 release slowly)")
@@ -48,12 +46,17 @@ def main() -> None:
     from oep_client.v0.flash_image import Target, program_image
     from oep_client.v0.services import FixtureGpio, FixtureUart
 
+    profile = targets.TARGETS[args.target]
+    port, fqbn = args.port or profile["port"], args.fqbn or profile["fqbn"]
+    UART_RX, UART_TX = profile["uart_rx"], profile["uart_tx"]
+    PIN_MAP = profile["gpio"]
     pins = {k: PIN_MAP[k] for k in (args.pins.split(",") if args.pins else PIN_MAP)}
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("gpio_probe", args.fqbn, 4, pathlib.Path(tmp), log, source=SKETCH)
+        binary = oep_smoke.build("gpio_probe", fqbn, profile["serial_index"], pathlib.Path(tmp), log, source=SKETCH,
+                                 defines=targets.build_defines(profile))
         image = binary.read_bytes()
-    client = open_client(args.port, 3.0)
+    client = open_client(port, 3.0)
     target = Target(client)
     outcome = program_image(target, image)
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
@@ -129,13 +132,14 @@ def main() -> None:
                   and row["pullup"] == {"idle": 1, "p4_low": 0, "p4_high": 1}
                   and row["pulldown"]["p4_low"] == 0 and row["pulldown"]["p4_high"] == 1
                   # P4 GPIO13/14 (SD-card pads) release slowly after driving high; their idle level is not a DUT fact
-                  and (row["pulldown"]["idle"] == 0 or p4 in (13, 14))
+                  # A pad with a board pull-up (UIAPduino I2C PC1/PC2, 2.2 k) idles high even in INPUT_PULLDOWN.
+                  and (row["pulldown"]["idle"] == 0 or (args.target == "x035" and p4 in (13, 14)) or name in profile["external_pullup"])
                   and all(c == e for c, e in exti.values()))
             row["ok"] = ok
             results[name] = row
             if not ok:
                 failures.append(name)
-            log(f"[{name:4s} <-> P4 GPIO{p4:2d}] {'OK ' if ok else 'BAD'} out={row['out']} od={row['od']} in={row['input']} pu={row['pullup']} pd={row['pulldown']} "
+            log(f"[{name:4s} <-> probe GPIO{p4:2d}] {'OK ' if ok else 'BAD'} out={row['out']} od={row['od']} in={row['input']} pu={row['pullup']} pd={row['pulldown']} "
                 f"exti r/f/c={exti['rising'][0]}/{exti['falling'][0]}/{exti['change'][0]}")
     finally:
         client.plan_release(lease)

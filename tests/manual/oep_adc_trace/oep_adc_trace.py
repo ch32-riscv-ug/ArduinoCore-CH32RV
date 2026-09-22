@@ -25,18 +25,20 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
-
-PIN_MAP = {"PA0": 46, "PA1": 47, "PA2": 48, "PA3": 49, "PA4": 53, "PA5": 4, "PA6": 11, "PA7": 5}
-CONSOLE_RX, CONSOLE_TX = 12, 6
+import targets  # noqa: E402
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--port", default=oep_smoke.DEFAULT_PORT)
-    parser.add_argument("--fqbn", default="ch32-riscv-ug:ch32v:CH32X035:pnum=ANY")
+    targets.add_target_argument(parser)
+    parser.add_argument("--port", help="probe serial port (default: the target profile's)")
+    parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
     parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
-    parser.add_argument("--order", help="comma separated pin order (default PA0..PA7)")
+    parser.add_argument("--order", help="comma separated pin order (default: the profile's ADC pins)")
     args = parser.parse_args()
+    profile = targets.TARGETS[args.target]
+    PIN_MAP = profile["adc"]
+    CONSOLE_RX, CONSOLE_TX = profile["uart_rx"], profile["uart_tx"]
     sys.path.insert(0, args.oep_client)
     from oep_client.v0 import codec
     from oep_client.v0.__main__ import open_client
@@ -45,9 +47,10 @@ def main() -> None:
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("adc_probe", args.fqbn, 4, pathlib.Path(tmp), log, source=HERE / "adc_probe")
+        binary = oep_smoke.build("adc_probe", args.fqbn or profile["fqbn"], profile["serial_index"], pathlib.Path(tmp), log,
+                                 source=HERE / "adc_probe", defines=targets.build_defines(profile))
         image = binary.read_bytes()
-    client = open_client(args.port, 3.0)
+    client = open_client(args.port or profile["port"], 3.0)
     target = Target(client)
     outcome = program_image(target, image)
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
@@ -84,7 +87,7 @@ def main() -> None:
             gpio.configure(p4, FixtureGpio.OUTPUT_LOW); time.sleep(0.01); low = adc(name)
             gpio.configure(p4, FixtureGpio.OUTPUT_HIGH); time.sleep(0.01); high = adc(name)
             gpio.configure(p4, FixtureGpio.INPUT_FLOATING); time.sleep(0.01); fl = adc(name)
-            ok = low[1] <= 16 and high[0] >= 1000 and (low[1] - low[0]) <= 8 and (high[1] - high[0]) <= 8
+            ok = low[1] <= 16 and high[0] >= profile["adc_high_min"] and (low[1] - low[0]) <= 8 and (high[1] - high[0]) <= 8
             if not ok: failures.append(name)
             log(f"[{name} <- P4 GPIO{p4:2d}] low min/max/mean={low} high={high} floating={fl} -> {'OK' if ok else 'BAD'} (10-bit, rails: 0 V / P4 3.3 V)")
         # Rough mid-scale: P4 pull-up and pull-down together sit at 1.46-1.49 V (E087, pull-down a bit stronger),
@@ -92,10 +95,12 @@ def main() -> None:
         mid_mode = FixtureGpio.INPUT_PULL_UP_DOWN
         mids = {}
         for name in order:
-            if name in ("PA3", "PA7"): continue
+            if name in profile["adc_absent"]: continue
             gpio.configure(PIN_MAP[name], mid_mode); time.sleep(0.02); mids[name] = adc(name)
             gpio.configure(PIN_MAP[name], FixtureGpio.INPUT_FLOATING)
         log("[mid-scale, P4 pull-up+pull-down ~1.47 V -> expect ~430..480] " + " ".join(f"{n}={v[2]}" for n, v in mids.items()))
+        if args.target != "x035":
+            log(f"failures={failures}"); return
         # Errata x035-adc-ch-i2c-unavailable (CH32X035DS0 note 1): ADC channels 3/7/11/15 are absent on lots whose
         # fifth-to-last lot-number digit is 0. A missing channel is not "reads 0": the sample-and-hold node keeps the
         # charge of the previous conversion and decays a few percent per 1000 conversions, so a single read looks

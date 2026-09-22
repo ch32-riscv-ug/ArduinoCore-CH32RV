@@ -27,3 +27,9 @@ uv run tests/manual/oep_gpio_matrix/oep_gpio_matrix.py [--pins PA0,PB3] [--settl
 **EXTI は最初 0 edge**: X035 には `EXTI25_16_IRQHandler`（vector 41）があるのに core は EXTI を line 0〜15 に限っていた
 （`CH32_EXTI_LINES` 16、`exti_x035.h` の group が 2 つ）。generator が variant ごとに `CH32_EXTI_LINES`（X0 は 24）と
 `EXTI25_16` group を出すようにして 10/10/20（EXTICR は 2 bit × 16 line なので line 16〜23 は EXTICR2 に自然に届く）。fixture 側の事実: route 2 には bus pull-up が無い（`oep_i2c_trace/` 参照）。
+
+## 2026-09-22: CH32V003（UIAPduino、classic ESP32 probe）
+
+`--target v003`（`tests/manual/oep_smoke/targets.py` の profile: port / FQBN / console / pin 地図）。E132 配線の 12 pad
+（PA1 PA2 PC0〜PC7 PD0 PD2）で out / od / in / pullup / pulldown / EXTI（10/10/20）が **12/12 OK**。PC1/PC2 は board の I2C
+pull-up（R4/R5 2.2 kΩ）で INPUT / INPUT_PULLDOWN でも idle が 1 になるので、profile の `external_pullup` で判定から除外している。

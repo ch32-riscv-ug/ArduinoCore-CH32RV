@@ -26,6 +26,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
+import targets  # noqa: E402
 
 SKETCH = HERE / "periph_probe"
 PWM_GPIO, SCK, MOSI, MISO, CS = 47, 4, 5, 11, 53
@@ -109,13 +110,21 @@ def decode_spi(samples: bytes, rate: int):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--port", default=oep_smoke.DEFAULT_PORT)
-    parser.add_argument("--fqbn", default="ch32-riscv-ug:ch32v:CH32X035:pnum=ANY")
+    targets.add_target_argument(parser)
+    parser.add_argument("--port", help="probe serial port (default: the target profile's)")
+    parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
     parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--only", choices=["pwm", "tone", "timing", "spi", "spi-peer"], action="append")
     parser.add_argument("--result-json")
     args = parser.parse_args()
-    sections = args.only or ["pwm", "tone", "timing", "spi", "spi-peer"]
+    profile = targets.TARGETS[args.target]
+    global PWM_GPIO, SCK, MOSI, MISO, CS, UART_RX, UART_TX
+    PWM_GPIO, UART_RX, UART_TX = profile["pwm"], profile["uart_rx"], profile["uart_tx"]
+    SCK, MOSI, MISO, CS = profile["spi"]["sck"], profile["spi"]["mosi"], profile["spi"]["miso"], profile["spi"]["cs"]
+    has_capture = profile["capture"]
+    sections = args.only or (["pwm", "tone", "timing", "spi", "spi-peer"] if has_capture else ["spi-peer"])
+    if not has_capture and any(sec != "spi-peer" for sec in sections):
+        raise SystemExit("this probe has no fixture.capture: only spi-peer runs on " + args.target)
     sys.path.insert(0, args.oep_client)
     from oep_client.v0 import codec
     from oep_client.v0.__main__ import open_client
@@ -124,16 +133,17 @@ def main() -> None:
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("periph_probe", args.fqbn, 4, pathlib.Path(tmp), log, source=SKETCH)
+        binary = oep_smoke.build("periph_probe", args.fqbn or profile["fqbn"], profile["serial_index"], pathlib.Path(tmp), log,
+                                 source=SKETCH, defines=targets.build_defines(profile))
         image = binary.read_bytes()
-    client = open_client(args.port, 3.0)
+    client = open_client(args.port or profile["port"], 3.0)
     target = Target(client)
     outcome = program_image(target, image)
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
     if not outcome.verified:
         raise SystemExit("program/verify failed")
     uart = FixtureUart(client, client.find(*codec.DEF_FIXTURE_UART[:2]).function)
-    capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function)
+    capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function) if has_capture else None
     results = {}
 
     def run(cap_lines, rate, samples, command, reply, settle=0.05):
@@ -245,7 +255,7 @@ def main() -> None:
         # MOSI bytes == DUT payload, and the wire decode of both lines agrees.
         spi = P4SpiTarget(client, client.find(*codec.DEF_P4_SPI_TARGET[:2]).function)
         lease, _ = client.plan_apply(uart.assignments(rx=UART_RX, tx=UART_TX) + spi.assignments(sck=SCK, mosi=MOSI, miso=MISO, cs=CS)
-                                     + capture.assignments(SCK, MOSI, MISO, CS))
+                                     + (capture.assignments(SCK, MOSI, MISO, CS) if has_capture else []))
         uart.configure(115200); link = oep_smoke.UartLink(uart); link.send("\n")
         if not link.wait("periph_probe READY", 10): raise SystemExit(f"no READY: {link.text[:200]!r}")
         try:
@@ -259,17 +269,21 @@ def main() -> None:
                              (12_000_000, 0), (12_000_000, 3), (24_000_000, 0)):
                 spi.configure(mode); spi.arm(len(payload), answer)
                 rate = 20_000_000 if hz >= 1_000_000 else 5_000_000
-                capture.configure(rate, 8 * 65_000 // 4); link.drain(0.05); capture.arm()
+                if has_capture: capture.configure(rate, 8 * 65_000 // 4)
+                link.drain(0.05)
+                if has_capture: capture.arm()
                 link.send(f"SPI {hz} {mode} {payload.hex()}\n"); link.wait("SPI got=", 5)
-                st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                data = b""
+                if has_capture:
+                    st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
                 line = next((l for l in link.text.splitlines()[::-1] if "SPI got=" in l), "").strip()
                 got = bytes.fromhex(line.split("got=")[1]) if "got=" in line else b""
                 time.sleep(0.05); pending, bits, rx = spi.read_rx()
-                d = decode_spi(data, rate)
+                d = decode_spi(data, rate) if data else {"miso_rise": b"", "miso_fall": b"", "mosi_rise": b"", "mosi_fall": b"", "sck_hz": 0.0}
                 cpha = mode & 1; cpol = (mode >> 1) & 1
                 sample_edge = ("fall" if cpol == 0 else "rise") if cpha else ("rise" if cpol == 0 else "fall")   # leading edge samples for CPHA=0
                 wire_miso, wire_mosi = d["miso_" + sample_edge], d["mosi_" + sample_edge]
-                wire_ok = (wire_miso == answer and wire_mosi == payload) if hz <= 4_000_000 else True   # 20 MS/s cannot decode the 6/12 MHz SCK
+                wire_ok = (wire_miso == answer and wire_mosi == payload) if (has_capture and hz <= 4_000_000) else True   # 20 MS/s cannot decode the 6/12 MHz SCK
                 ok = got == answer and rx == payload and bits == len(payload) * 8 and wire_ok
                 rows.append({"hz": hz, "mode": mode, "dut_got": got.hex(), "target_rx": rx.hex(), "bits": bits, "wire_miso": wire_miso.hex(),
                              "wire_mosi": wire_mosi.hex(), "sck_hz": d["sck_hz"], "ok": ok})

@@ -30,7 +30,11 @@ static bool selectRoute(uint8_t route, unsigned long hz) {
 // hardware I2C waveform: BB <hold_us> <drive> <addr_hex> <bytes_hex>. drive 0 = open-drain for both
 // lines (rise time set by the weak pull-up, like Wire), 1 = push-pull highs on SDA and SCL (fast rise;
 // SDA is released to INPUT_PULLUP only in the ACK slot). hold_us = SDA change after the SCL fall.
+#if defined(OEP_TARGET_V003)   // UIAPduino jig: Wire default route PC2 (SCL) / PC1 (SDA) -> ESP32 GPIO18 / GPIO19
+static const uint8_t BB_SCL = PC2, BB_SDA = PC1;
+#else
 static const uint8_t BB_SCL = PC16, BB_SDA = PC17;
+#endif
 static void bbHigh(uint8_t pin, bool pp) { if (pp) { pinMode(pin, OUTPUT); digitalWrite(pin, HIGH); } else { pinMode(pin, OUTPUT_OPENDRAIN); digitalWrite(pin, HIGH); } }
 static void bbLow(uint8_t pin, bool pp) { pinMode(pin, pp ? OUTPUT : OUTPUT_OPENDRAIN); digitalWrite(pin, LOW); }
 static void bitbang(unsigned hold_us, bool pp, uint8_t addr, const uint8_t *data, size_t n) {

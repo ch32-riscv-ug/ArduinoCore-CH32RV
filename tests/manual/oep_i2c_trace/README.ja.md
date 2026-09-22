@@ -131,3 +131,10 @@ SDA 解放を INPUT_PULLUP で行う。RM p.222 の `R8_UDEV_CTRL.RB_UD_PD_DIS`�
 **同日追記**: probe の `p4.i2c-target` が slave 生成後に SDA/SCL へ P4 内部 pull-up（GPIO matrix 経由、約 45 kΩ）を掛けるようにした。
 target が pin を持つ plan では X035 の INPUT / OD release が線上 1.00 になり、open-drain の master でも bus が成立する。P4 GPIO を
 直接使う plan（gpio / capture のみ）では従来どおり pull-up は無い。
+
+## 2026-09-22: CH32V003 の Wire（`--target v003 --rw`）
+
+route 0（PC2 SCL / PC1 SDA → ESP32 GPIO18 / 19、board pull-up 2.2 kΩ）。read 4 byte @100 kHz 一致、repeated START（write 2 → read 4）一致、
+write 4 byte @400 kHz target 受信一致。2 つ目の preloaded slot だけ `00112233`（先頭に filler 0x00、末尾欠け）: P4 では E150 の
+「slot + filler 1 byte」契約で揃うが、classic ESP32 の I2C slave（v1 driver、別 hardware）では前 slot の filler が次 read の先頭に出る。
+**probe 側の実装差**で、V003 の Wire は正しい（記録のみ、修正は後）。

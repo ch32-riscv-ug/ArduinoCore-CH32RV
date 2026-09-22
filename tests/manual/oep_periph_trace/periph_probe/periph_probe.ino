@@ -10,7 +10,11 @@
 #include "testcmd.h"
 #include <SPI.h>
 
+#if defined(OEP_TARGET_V003)   // UIAPduino jig: SPI1 PC5/PC6/PC7, CS on PC3 (-> ESP32 GPIO17), PWM PA1 (-> 25)
+static const uint8_t PWM_PIN = PA1, CS_PIN = PC3;
+#else
 static const uint8_t PWM_PIN = PA1, CS_PIN = PA4;
+#endif
 static uint8_t hexval(char c) { return c <= '9' ? c - '0' : (c | 0x20) - 'a' + 10; }
 
 void setup() { tc_begin("periph_probe"); pinMode(PWM_PIN, OUTPUT); digitalWrite(PWM_PIN, LOW); }
