@@ -42,6 +42,8 @@ def main() -> None:
     parser.add_argument("--route", type=int, default=2)
     parser.add_argument("--result-json")
     parser.add_argument("--raw-dir", help="write the raw sample bytes of every capture here")
+    parser.add_argument("--bitbang", action="store_true", help="sweep a bit-banged master (SDA hold x drive) instead of Wire")
+    parser.add_argument("--hold-sweep", action="store_true", help="fast bit-bang: sweep the SDA hold in ns and report the ACK threshold")
     args = parser.parse_args()
     clocks = args.hz or [100000, 10000]
     sys.path.insert(0, args.oep_client)
@@ -73,8 +75,58 @@ def main() -> None:
         link = oep_smoke.UartLink(uart)
         if not link.wait("i2c_probe_write READY", 10):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
+        if args.hold_sweep:
+            payload = bytes.fromhex("10111213")
+            for hold in (0, 200, 400, 600, 800, 1000, 1500, 2000, 3000):
+                i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_FIXED_RX); i2c.arm_rx(len(payload))
+                capture.configure(5_000_000, 65000); link.drain(0.1); capture.arm()
+                link.send(f"BBF {hold} {TARGET_ADDRESS:02x} {payload.hex()}\n"); link.wait("BBF hold_ns=", 5)
+                st = capture.wait(3.0)
+                samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                trace = decode_i2c(samples, scl_bit=0, sda_bit=1)
+                line = next((l for l in link.text.splitlines()[::-1] if "BBF hold_ns=" in l), "").strip()
+                prev = samples[0] if samples else 0; falls = []; changes = []
+                for i in range(1, len(samples)):
+                    if (prev & 1) and not (samples[i] & 1): falls.append(i)
+                    if (prev ^ samples[i]) & 2: changes.append((i, (samples[i] >> 1) & 1))
+                    prev = samples[i]
+                falls_set = falls
+                rel0 = sorted((s_ - f) * 200 for s_, lvl in changes for f in [min(falls_set, key=lambda x: abs(x - s_))] if lvl == 0 and 0 <= s_ - f < 25) if falls_set else []
+                rel1 = sorted((s_ - f) * 200 for s_, lvl in changes for f in [min(falls_set, key=lambda x: abs(x - s_))] if lvl == 1 and 0 <= s_ - f < 40) if falls_set else []
+                scl = sorted(trace.scl_periods); period = scl[len(scl) // 2] * 200 if scl else 0
+                log(f"[hold {hold:4d} ns] {line} | wire {trace.summary()} | measured SDA fall after SCL fall {rel0[:3]} ns, SDA high after SCL fall {rel1[:3]} ns, SCL period {period} ns")
+                results.append({"hold_sweep": True, "hold_ns": hold, "line": line, "trace": trace.summary(), "fall_ns": rel0[:3], "rise_ns": rel1[:3]})
+            clocks = []
+        if args.bitbang:
+            payload = bytes.fromhex("10111213")
+            for drive in (0, 1):
+                for hold in (0, 1, 2, 4):
+                    i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_FIXED_RX); i2c.arm_rx(len(payload))
+                    capture.configure(5_000_000, 65000); link.drain(0.1); capture.arm()
+                    link.send(f"BB {hold} {drive} {TARGET_ADDRESS:02x} {payload.hex()}\n")
+                    link.wait("BB hold_us=", 5)
+                    st = capture.wait(3.0)
+                    samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                    trace = decode_i2c(samples, scl_bit=0, sda_bit=1)
+                    line = next((l for l in link.text.splitlines()[::-1] if "BB hold_us=" in l), "").strip()
+                    # SDA change after the nearest SCL fall, and SDA 0->1 rise delay, in ns
+                    prev = samples[0] if samples else 0; falls = []; sda_changes = []
+                    for i in range(1, len(samples)):
+                        if (prev & 1) and not (samples[i] & 1): falls.append(i)
+                        if (prev ^ samples[i]) & 2: sda_changes.append((i, (samples[i] >> 1) & 1))
+                        prev = samples[i]
+                    rel = []
+                    for s_, lvl in sda_changes:
+                        near = min(falls, key=lambda f: abs(f - s_)) if falls else None
+                        if near is not None and 0 <= s_ - near < 15000: rel.append((round((s_ - near) * 200), lvl))
+                    zeros = sorted(d for d, l in rel if l == 0)[:3]; ones = sorted(d for d, l in rel if l == 1)[:3]
+                    log(f"[bitbang hold={hold} us drive={'pp' if drive else 'od'}] {line} | wire: {trace.summary()} | "
+                        f"SDA fall after SCL fall {zeros} ns, SDA rise after SCL fall {ones} ns")
+                    results.append({"bitbang": True, "hold_us": hold, "drive": drive, "line": line, "trace": trace.summary()})
+            clocks = []
         case = 0
-        link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
+        if clocks:
+            link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
         # Each clock: target address (first transaction after a settled bus, then a repeat), then nobody.
         for hz in clocks:
             for address, listening in ((TARGET_ADDRESS, True), (TARGET_ADDRESS, True), (TARGET_ADDRESS + 1, False)):

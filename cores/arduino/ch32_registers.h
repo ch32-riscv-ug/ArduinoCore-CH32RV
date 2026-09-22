@@ -229,6 +229,11 @@ static inline void ch32_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32_AFIO_ECR   CH32_REG32(CH32_AFIO_BASE + 0x00u)
 #define CH32_AFIO_PCFR1 CH32_REG32(CH32_AFIO_BASE + 0x04u)  /* peripheral remap */
 #define CH32_AFIO_PCFR2 CH32_REG32(CH32_AFIO_BASE + 0x1Cu)
+/* CH32X035/X033 only: USB pad control. PC16 (UDM) / PC17 (UDP) belong to the
+ * USB PHY; while USB_PHY_V33 is set their open-drain "release" cannot be pulled
+ * low by another device (measured 2026-09-22, errata x035-usb-pads-open-drain). */
+#define CH32_AFIO_CTLR              CH32_REG32(CH32_AFIO_BASE + 0x18u)
+#define CH32_AFIO_CTLR_USB_PHY_V33  0x00000040u
 
 /* ----------------------------------------------------------------- GPIO */
 /* Ports are 0x400 apart starting at PA, whether or not the port exists. */

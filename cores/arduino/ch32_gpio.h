@@ -40,6 +40,16 @@ static inline void ch32_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cfg)
         return;   /* not a pin on this family */
     }
     *reg = (*reg & ~(0xFu << shift)) | ((cfg & 0xFu) << shift);
+#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+    /* errata x035-usb-pads-open-drain: PC16/PC17 are the USB PHY pads. With
+     * AFIO_CTLR.USB_PHY_V33 set (reset default 0x45) a GPIO or AF open-drain
+     * output on them drives high instead of releasing, so an I2C slave can never
+     * ACK and Wire on route 2/4 always reports an address NACK. Drop the bit
+     * whenever either pad becomes an output; USB init sets it again itself. */
+    if (port == 2u && (bit == 16u || bit == 17u) && (cfg & 0x3u) != 0u) {
+        CH32_AFIO_CTLR &= ~CH32_AFIO_CTLR_USB_PHY_V33;
+    }
+#endif
 }
 
 static inline void ch32_gpio_set(uint8_t port, uint8_t bit)

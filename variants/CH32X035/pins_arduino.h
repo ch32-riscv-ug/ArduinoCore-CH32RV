@@ -15,6 +15,11 @@
  * Exception, errata x035-pc10-pc17-bonded: PC10/PC17 and PC11/PC16 are
  * internally bonded pairs sharing one lead; never drive both halves of a
  * pair. The core marks PC10/PC11 as the never-driven side.
+ *
+ * Exception, errata x035-usb-pads-open-drain: PC16/PC17 are the USB PHY pads.
+ * Their open-drain outputs only release when AFIO_CTLR.USB_PHY_V33 is clear;
+ * ch32_gpio_set_config() clears it when either becomes an output (measured
+ * 2026-09-22 with the OEP probe: I2C route 2 went from address NACK to ACK).
  */
 #pragma once
 

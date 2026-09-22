@@ -12,7 +12,25 @@ uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --raw-dir /tmp/raw   # captur
 配線（2026-09-22 の fixture）: X035 route 2 = PC16 (SCL) / PC17 (SDA) → P4 GPIO52 / GPIO50。console は USART4 PB0/PB1 → P4 GPIO12/6。
 route 4（PC17 SCL / PC16 SDA）は同じ 2 本の役割交換。route 3（PC19/PC18）は probe の SWD 線と衝突して P4 が落ちるので使えない。
 
-## 2026-09-22 の結果（worklist B「X035 から P4 0x42 へ write すると NACK」）
+## 2026-09-22 の結論: X035 の USB pad は `USB_PHY_V33` が立っていると open-drain を release できない
+
+原因は X035 側。PC16/PC17 は USB PHY の pad で、`AFIO_CTLR.USB_PHY_V33`（bit 6、reset 値 0x45 に含まれる）が 1 の間は
+GPIO open-drain でも AF open-drain でも「release」中に外部から low に引けない（X035 を halt して P4 に GPIO50 を low 駆動させ、
+X035 の INDR を読んで確認: push-pull HIGH と同じ挙動。INPUT_PULLUP のときだけ引ける）。bit 6 を落とすと P4 が引け、
+hardware I2C の route 2 は `S 84A 10A 11A 12A 13A P` / rc=0 になり、SDA の立上りも 4 µs → 0.2 µs になった。
+core は `ch32_gpio_set_config()` で PC16/PC17 を出力系に設定する時にこの bit を落とす（errata `x035-usb-pads-open-drain`）。
+
+| 条件（修正後） | Wire rc | 線上 | target 受信 |
+|---|---:|---|---|
+| route 2、100 kHz、0x42 | 0 | `S 84A 10A 11A 12A 13A P` | 一致 |
+| route 2、10 kHz、0x42 | 0 | `S 84A 40A 41A 42A 43A P` | 一致 |
+| route 2、0x43（無応答） | 2 | `S 86N P` | — |
+
+切り分けの経過（誤った容疑を含めて残す）: SDA hold（0.2〜0.4 µs）と立上り 4 µs を疑ったが、X035 の bit-bang（ACK slot だけ INPUT_PULLUP）で ACK、
+GPIO OD のまま release する高速 bit-bang では hold 0.2〜4.8 µs 全域で NACK → 「release が release でない」に到達した。
+peer P4 の IDF master に `sda_hold` を書いても transaction ごとに書き戻されて波形は変わらない（E1 は無効）。
+
+## 修正前の記録（worklist B「X035 から P4 0x42 へ write すると NACK」）
 
 | 条件 | Wire rc | 線上 |
 |---|---:|---|
@@ -31,8 +49,7 @@ RX FIFO は空。address が一致しているのに ACK を出していない�
 
 **除外できたもの**: X035 の address bit 列（decode で 0x84）、P4 pin（GPIO50/52 は X035 側 INDR で駆動確認済み、役割交換でも同じ）、
 slave 生成時の bus が low だった順序、slave の SDA filter 遅延（thres 7）、P4 側 pull-up 追加（立上りは変わらず 4 µs）。
-**残る容疑**: X035 の短い SDA hold（0.2〜0.4 µs）か遅い立上り（4 µs）に対する ESP32-P4 slave の感度。確認には hold と立上りを
-制御できる master が要る（peer の IDF master は timing register を transaction ごとに書き戻すので変えられない）。台帳候補 `x035-p4-slave-no-ack`。
+（当時の残る容疑は SDA hold と立上りだったが、上記のとおり原因は `USB_PHY_V33` だった。）
 
 **注意**: `p4.i2c-target` の fixed-rx は v1 driver の制約で「address 後に終わった transaction」でも rx_done が発火し、長さ情報が無いので
 古い buffer 内容を frame として返す。frame の存在を ACK の証拠にしないこと（このため 4 case とも `target rx=10111213` と出る）。

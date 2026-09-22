@@ -398,6 +398,7 @@ X035のI2C1は6 routeあるが、行き先が限られる。
 - `x035-adc-ch-i2c-unavailable`(ロット番号の下から5桁目=0): **ADC ch3/7/11/15とI2Cが使えない**
   - fixtureのADC試験には**ch3/7/11/15以外**(A0/A1等)を割り当て、影響ロットでもADC試験が成立するようにする
   - I2C試験には非該当ロットの個体が必要。fixture inventoryにロット番号を記録する
+- `x035-usb-pads-open-drain`(全パッケージ): PC16(UDM)/PC17(UDP)はUSB PHYのpadで、`AFIO_CTLR.USB_PHY_V33`(reset値0x45で1)が立っている間はGPIO/AFのopen-drain出力が「release」してもhighを駆動し、外部デバイスがlowに引けない(2026-09-22、OEP probeの`fixture.capture`とP4 slaveで実測)。I2C route 2/4の`Wire`はこのためaddress NACKしか返さなかった。`ch32_gpio_set_config()`がPC16/PC17を出力系に設定する時にこのbitを落とす。USBを使うコードは自分で立て直すこと。
 - `x035-pc10-pc17-bonded`(F8U6/D8U6以外): PC10/PC17とPC11/PC16が内部結線。**PC10/PC11はどのパッケージでもpadとして出ていない**ため配線の問題ではないが、**コアがPC10/PC11をoutputに設定してはならない**。variant生成でunusableとして表現する(Q-011)
 
 ### Logic analyzerのchannel数(先に決める必要がある項目)
