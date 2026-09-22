@@ -249,6 +249,12 @@ uv run python -m oep_client.v0 --port /run/board-identify/by-id/esp32-d0wd-v3-00
 
 E129/E132 の jig sketch に戻す場合は該当 `.ino` を書き直す（OEP probe が上書きしている）。
 
+**USB を使わない sketch で PC に「壊れたデバイス」を見せない方法**（同日実測）: この board は D− に固定 pull-up があるため、USB stack の
+無い app が動いていると host は「デバイスあり・記述子応答なし」= `0000:0002` を表示する。app が **PD4（USB D−）を push-pull output LOW**
+にすると host からは切断（SE0）に見え、`usbipd list` から消える。INPUT に戻すと `0000:0002` が再び現れる（2 往復再現）。
+UIAPduino variant で「USB を使わない sketch は起動時に PD4 を LOW に固定する」を既定にするかは利用者判断（PD4 は USB 線なので GPIO 用途と
+競合しない）。sketch 側なら `pinMode(PD4, OUTPUT); digitalWrite(PD4, LOW);` で足りる。
+
 未決（利用者判断）: core の `resetReason()` が PINRSTF を消す挙動をどうするか。案 A: UIAPduino variant では RMVF を書かない
 （reason は「累積」になり `reason_stable` の意味が変わる）。案 B: 現状維持し、boot entry は必ず pin reset 経由（本書の手順）。
 案 C: `resetReason()` が PINRSTF だけ残して他を消す（ハードでは個別 clear 不可なので実現不能）。
