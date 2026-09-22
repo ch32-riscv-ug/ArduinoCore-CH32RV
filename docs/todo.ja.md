@@ -2327,3 +2327,8 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `[P1]` Q-013: 内部HAL contract。[旧コア監査](legacy-audit.ja.md)は境界の観測データとして使い、構造は踏襲しない
 - [ ] `[P1]` Q-019: コア拡張(`Serial.printf()`等)の置き場所。前コアは`api/Print.h`にpatchを当てていた
 - [ ] `[P2]` Q-017: 公開FQBN / packager ID / architecture ID
+
+## 2026-09-22 OEP probe 実測から（X035F8U6、48 MHz）
+- [ ] `digitalWrite()` が 1 回 ≈ 2 µs（線上実測、`tests/manual/oep_periph_trace/`）。48 MHz で約 96 cycle。port/bit の decode と bound check を見直すか、
+  pad 名が定数のときに inline で畳めるようにする。
+- [ ] `delayMicroseconds(us)` が `us + 3〜4 µs`（`micros()` 2 回の polling、1 µs 粒度）。SysTick CNT を直接比較する実装にすれば sub-µs にできる。

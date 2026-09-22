@@ -1,0 +1,245 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["pyserial>=3.5"]
+# ///
+"""Measure X035 peripheral outputs on the wire with the OEP probe's fixture.capture: analogWrite
+PWM frequency and duty, tone() frequency, delayMicroseconds()/millis() timing, and SPI master
+mode/clock/data (worklist P3 rows 4, 5, 7). The sketch periph_probe is programmed first.
+
+  uv run tests/manual/oep_periph_trace/oep_periph_trace.py            # all sections
+  uv run tests/manual/oep_periph_trace/oep_periph_trace.py --only spi
+
+Fixture (E143 pin map): PA1 -> P4 GPIO47, SPI1 SCK PA5 -> 4, MOSI PA7 -> 5, MISO PA6 -> 11, CS PA4 -> 53.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import statistics
+import sys
+import tempfile
+import time
+
+HERE = pathlib.Path(__file__).resolve().parent
+REPO = HERE.parents[2]
+sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
+import oep_smoke  # noqa: E402
+
+SKETCH = HERE / "periph_probe"
+PWM_GPIO, SCK, MOSI, MISO, CS = 47, 4, 5, 11, 53
+UART_RX, UART_TX = 12, 6
+
+
+def edges(samples: bytes, bit: int):
+    prev = (samples[0] >> bit) & 1
+    out = []
+    for i in range(1, len(samples)):
+        cur = (samples[i] >> bit) & 1
+        if cur != prev:
+            out.append((i, cur))
+            prev = cur
+    return out
+
+
+def square_stats(samples: bytes, bit: int, rate: int):
+    """period / duty statistics of a square wave from its edges."""
+    e = edges(samples, bit)
+    rises = [i for i, lvl in e if lvl == 1]
+    falls = [i for i, lvl in e if lvl == 0]
+    if len(rises) < 3:
+        return None
+    periods = [b - a for a, b in zip(rises, rises[1:])]
+    highs = []
+    for r in rises:
+        f = next((x for x in falls if x > r), None)
+        if f is not None:
+            highs.append(f - r)
+    period = statistics.median(periods)
+    high = statistics.median(highs) if highs else 0
+    return {"edges": len(e), "period_us": period / rate * 1e6, "freq_hz": rate / period, "duty": high / period,
+            "period_jitter_us": (max(periods) - min(periods)) / rate * 1e6}
+
+
+def decode_spi(samples: bytes, rate: int):
+    """Decode one CS-framed SPI transfer. Returns dict: mosi per capture edge (rise/fall), SCK idle
+    level right before CS fell (CPOL), SCK frequency, and the CS-low duration."""
+    prev = samples[0]
+    bits = {"rise": [], "fall": []}
+    sck_rises = []
+    cs_fall = None
+    cs_rise = None
+    for i in range(1, len(samples)):
+        cur = samples[i]
+        cs_prev, cs_cur = (prev >> 3) & 1, (cur >> 3) & 1
+        if cs_prev and not cs_cur and cs_fall is None:
+            cs_fall = i
+        if not cs_prev and cs_cur and cs_fall is not None and cs_rise is None:
+            cs_rise = i
+        if cs_fall is not None and cs_rise is None:
+            sck_prev, sck_cur = prev & 1, cur & 1
+            if sck_prev != sck_cur:
+                bits["rise" if sck_cur else "fall"].append((cur >> 1) & 1)
+                if sck_cur:
+                    sck_rises.append(i)
+        prev = cur
+    def pack(b):
+        return bytes(int("".join(map(str, b[k:k + 8])), 2) for k in range(0, len(b) - len(b) % 8, 8))
+    sck_hz = rate / statistics.median([b - a for a, b in zip(sck_rises, sck_rises[1:])]) if len(sck_rises) > 2 else 0
+    # where does MOSI change relative to the nearest SCK edge (rise or fall)?
+    prev = samples[0]; sck_edges = []; mosi_changes = []
+    for i in range(1, len(samples)):
+        cur = samples[i]
+        if cs_fall is not None and (cs_rise is None or i < cs_rise) and i > cs_fall:
+            if (prev ^ cur) & 1: sck_edges.append((i, "rise" if cur & 1 else "fall"))
+            if (prev ^ cur) & 2: mosi_changes.append(i)
+        prev = cur
+    near = {"rise": 0, "fall": 0}
+    for m in mosi_changes:
+        if sck_edges:
+            e = min(sck_edges, key=lambda x: abs(x[0] - m)); near[e[1]] += 1
+    idle = (samples[cs_fall - 1] & 1) if cs_fall and cs_fall > 0 else None
+    return {"mosi_rise": pack(bits["rise"]), "mosi_fall": pack(bits["fall"]), "cpol": idle, "sck_hz": sck_hz, "mosi_changes_near": near,
+            "clocks": len(sck_rises), "cs_low_us": ((cs_rise or len(samples)) - cs_fall) / rate * 1e6 if cs_fall is not None else None}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--port", default=oep_smoke.DEFAULT_PORT)
+    parser.add_argument("--fqbn", default="ch32-riscv-ug:ch32v:CH32X035:pnum=ANY")
+    parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
+    parser.add_argument("--only", choices=["pwm", "tone", "timing", "spi"], action="append")
+    parser.add_argument("--result-json")
+    args = parser.parse_args()
+    sections = args.only or ["pwm", "tone", "timing", "spi"]
+    sys.path.insert(0, args.oep_client)
+    from oep_client.v0 import codec
+    from oep_client.v0.__main__ import open_client
+    from oep_client.v0.flash_image import Target, program_image
+    from oep_client.v0.services import FixtureCapture, FixtureUart
+
+    log = print
+    with tempfile.TemporaryDirectory() as tmp:
+        binary = oep_smoke.build("periph_probe", args.fqbn, 4, pathlib.Path(tmp), log, source=SKETCH)
+        image = binary.read_bytes()
+    client = open_client(args.port, 3.0)
+    target = Target(client)
+    outcome = program_image(target, image)
+    log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
+    if not outcome.verified:
+        raise SystemExit("program/verify failed")
+    uart = FixtureUart(client, client.find(*codec.DEF_FIXTURE_UART[:2]).function)
+    capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function)
+    results = {}
+
+    def run(cap_lines, rate, samples, command, reply, settle=0.05):
+        """Configure the capture, send a command, capture after `settle`, return (samples, reply line)."""
+        capture.configure(rate, samples)
+        link.drain(0.05)
+        link.send(command + "\n")
+        got = link.wait(reply, 5)
+        time.sleep(settle)
+        capture.arm()
+        st = capture.wait(3.0)
+        data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+        line = next((l for l in link.text.splitlines()[::-1] if reply in l), "")
+        return data, line.strip(), got
+
+    def session(cap_lines):
+        lease, _ = client.plan_apply(uart.assignments(rx=UART_RX, tx=UART_TX) + capture.assignments(*cap_lines))
+        uart.configure(115200)
+        lnk = oep_smoke.UartLink(uart)
+        if not lnk.wait("periph_probe READY", 10):
+            raise SystemExit(f"no READY: {lnk.text[:200]!r}")
+        return lease, lnk
+
+    if any(s in sections for s in ("pwm", "tone", "timing")):
+        lease, link = session((PWM_GPIO,))
+        try:
+            if "pwm" in sections:
+                rows = []
+                for duty in (64, 128, 192, 255, 0):
+                    data, line, _ = run((PWM_GPIO,), 2_000_000, 40_000, f"PWM {duty}", "PWM duty=")
+                    st = square_stats(data, 0, 2_000_000)
+                    level = sum(d & 1 for d in data) / len(data) if data else None
+                    row = {"duty": duty, "stats": st, "high_fraction": level}
+                    rows.append(row)
+                    if st:
+                        log(f"[pwm duty={duty:3d}] f={st['freq_hz']:.1f} Hz period={st['period_us']:.2f} us duty={st['duty']*100:.1f}% (expected {duty/255*100:.1f}%) jitter={st['period_jitter_us']:.2f} us")
+                    else:
+                        log(f"[pwm duty={duty:3d}] no edges, level high fraction={level:.2f} (expected {'1.00' if duty == 255 else '0.00'})")
+                results["pwm"] = rows
+            if "tone" in sections:
+                rows = []
+                for hz in (500, 1000, 4000):
+                    data, line, _ = run((PWM_GPIO,), 2_000_000, 60_000, f"TONE {hz}", "TONE hz=")
+                    st = square_stats(data, 0, 2_000_000)
+                    rows.append({"hz": hz, "stats": st})
+                    log(f"[tone {hz} Hz] measured f={st['freq_hz']:.1f} Hz duty={st['duty']*100:.1f}% jitter={st['period_jitter_us']:.2f} us" if st else f"[tone {hz}] no edges")
+                run((PWM_GPIO,), 2_000_000, 1000, "NOTONE", "NOTONE")
+                results["tone"] = rows
+            if "timing" in sections:
+                rows = []
+                for us in (0, 10, 100, 1000):
+                    capture.configure(2_000_000, 60_000); link.drain(0.05); capture.arm()
+                    link.send(f"TOGGLE {us} 20\n"); link.wait("TOGGLE done", 5)
+                    st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                    s = square_stats(data, 0, 2_000_000)
+                    rows.append({"delay_us": us, "stats": s})
+                    log(f"[delayMicroseconds({us})] half period measured {s['period_us']/2:.2f} us (edges {s['edges']}, jitter {s['period_jitter_us']:.2f} us)" if s else f"[delayMicroseconds({us})] no edges")
+                capture.configure(2_000_000, 60_000); link.drain(0.05); capture.arm()
+                link.send("TOGGLE0 20\n"); link.wait("TOGGLE0 done", 5)
+                st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                s = square_stats(data, 0, 2_000_000)
+                log(f"[digitalWrite pair, no delay] half period {s['period_us']/2:.2f} us (edges {s['edges']})" if s else "[digitalWrite pair] no edges")
+                capture.configure(1_000_000, 400_000); link.drain(0.05); capture.arm()   # 0.4 s window: PARLIO cannot sample below ~650 kHz
+                link.send("MILLIS 10 20\n"); link.wait("MILLIS done", 5)
+                log("   DUT: " + next((l for l in link.text.splitlines()[::-1] if "MILLIS done" in l), "").strip())
+                st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                s = square_stats(data, 0, 1_000_000)
+                rows.append({"millis_ms": 10, "stats": s})
+                log(f"[millis() toggle every 10 ms] period measured {s['period_us']/1000:.3f} ms (expected 20.000), jitter {s['period_jitter_us']:.1f} us" if s
+                    else f"[millis] no edges: samples={len(data)} high fraction={(sum(d & 1 for d in data) / len(data)) if data else None} flags=0x{st.flags:02x}")
+                results["timing"] = rows
+        finally:
+            client.plan_release(lease)
+
+    if "spi" in sections:
+        lease, link = session((SCK, MOSI, MISO, CS))
+        try:
+            rows = []
+            payload = bytes.fromhex("a55a0f01")
+            for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (4_000_000, 0), (250_000, 0)):
+                rate = 20_000_000 if hz >= 1_000_000 else 5_000_000
+                capture.configure(rate, 8 * 65_000 // 4); link.drain(0.05); capture.arm()
+                link.send(f"SPI {hz} {mode} {payload.hex()}\n"); link.wait("SPI got=", 5)
+                st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                line = next((l for l in link.text.splitlines()[::-1] if "SPI got=" in l), "").strip()
+                d = decode_spi(data, rate)
+                cpol, cpha = (mode >> 1) & 1, mode & 1
+                # CPHA=0: MOSI changes on the trailing edge (falling for CPOL=0, rising for CPOL=1) and is
+                # sampled on the leading edge; CPHA=1: MOSI changes on the leading edge.
+                leading = "rise" if cpol == 0 else "fall"
+                trailing = "fall" if cpol == 0 else "rise"
+                change_edge_expected = leading if cpha else trailing
+                near = d["mosi_changes_near"]
+                change_edge_seen = "rise" if near["rise"] > near["fall"] else "fall"
+                data_ok = payload in (d["mosi_rise"], d["mosi_fall"])
+                ok = d["cpol"] == cpol and change_edge_seen == change_edge_expected and data_ok
+                rows.append({"hz": hz, "mode": mode, "cpol_seen": d["cpol"], "change_edge_expected": change_edge_expected,
+                             "change_edge_seen": change_edge_seen, "mosi_changes_near": near, "data_ok": data_ok,
+                             "sck_hz": d["sck_hz"], "clocks": d["clocks"], "cs_low_us": d["cs_low_us"], "dut": line})
+                log(f"[spi {hz} Hz mode {mode}] CPOL={d['cpol']} (expect {cpol}), MOSI changes on {change_edge_seen} edge (expect {change_edge_expected}, counts {near}), data={'ok' if data_ok else 'BAD'} -> {'OK' if ok else 'MISMATCH'} | "
+                    f"SCK {d['sck_hz']/1e6:.3f} MHz clocks={d['clocks']} CS low {d['cs_low_us']:.1f} us | DUT: {line}")
+            results["spi"] = rows
+        finally:
+            client.plan_release(lease)
+            target.control.reset()
+    if args.result_json:
+        pathlib.Path(args.result_json).write_text(json.dumps(results, indent=1, default=str))
+        log(f"wrote {args.result_json}")
+
+
+if __name__ == "__main__":
+    main()
