@@ -13,6 +13,23 @@
 
 ---
 
+## リリースまでの残作業（2026-09-22 時点の棚卸し、core 側）
+
+OEP probe で X035F8U6（P4 fixture）と V003（UIAPduino、classic ESP32 ジグ）の P3 表（GPIO / UART / ADC / PWM・tone / 時刻 / I2C / SPI / route /
+reset）は配線のある範囲で全部実測済み。今の機材でこれ以上進まないものと、判断・作業が残るものを分ける。
+
+| 区分 | 残作業 | 備考 |
+|---|---|---|
+| 判断済み・実装済み | `resetReason()` は RMVF を書く現状維持（UIAPduino の boot entry は pin reset 経由）、UIAPduino variant は PD4 LOW 既定 | 2026-09-22 |
+| 未決（判断） | `Wire` の bus clear（slave が SDA を握った時の 9 pulse）を core に入れるか、API にするか | `oep_i2c_trace --stuck` で再現手順あり |
+| 未決（判断） | `x035_i2c_peer` layout test の扱い（`.py` 無しの pre-existing unit 失敗） | |
+| 機材待ち | ADC の絶対値（probe rail と DUT VDD の差、メータ 1 回）。X035 は 1008/1023、V003 は 915/1023 | |
+| 機材待ち | NRST pin reset（X035F8U6 には pin 無し、V003 は GPIO23 で pulse 可 = probe 側で実装済み） | |
+| 機材待ち | 配線の無い route（X035 の I2C route 1/3/5/6、SPI 代替 route、USART1/3）、V003 の I2C route 1（PD1 は SWIO）/ 3 | fixture 追加が要る |
+| 他 board | L103 / V203 / V307 / M030 / V00x は LinkE 経路の smoke のみ。OEP 化は V003 と同じ手順（SWIO or RVSWD PHY + profile）で横展開 | 順番は利用者 |
+| 記録 | device-data の push と lock bump（local commit `27d6435` が未 push）、generated variant header への behavioral errata 注記 | |
+| 小 | `oep_smoke` の READY 待ち・再送は入れた。他 runner の console 定数は `targets.py` に集約済み。`uart_trace` は 2 本目 UART が要るので V003 未 | |
+
 ## Milestone 1: 主要boardで`Serial.println()`が通る
 
 受け入れtestは`tests/sketches/basic/serial_println/`にあり、現在は正しく失敗している
