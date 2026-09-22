@@ -127,3 +127,7 @@ IDF slave driver は内部 pull-up を有効にせず、外付けも無い）。
 このため emulated open-drain の bit-bang（`BB drive=od`）はこの fixture では bus が動かず、`STUCK` / `BUSCLR` は SCL を push-pull、
 SDA 解放を INPUT_PULLUP で行う。RM p.222 の `R8_UDEV_CTRL.RB_UD_PD_DIS`（既定 0 = UDP/UDM 内部 pull-down 有効、GPIO mode でも効く）
 が「INPUT で 0」に寄与しているかは未分離。
+
+**同日追記**: probe の `p4.i2c-target` が slave 生成後に SDA/SCL へ P4 内部 pull-up（GPIO matrix 経由、約 45 kΩ）を掛けるようにした。
+target が pin を持つ plan では X035 の INPUT / OD release が線上 1.00 になり、open-drain の master でも bus が成立する。P4 GPIO を
+直接使う plan（gpio / capture のみ）では従来どおり pull-up は無い。

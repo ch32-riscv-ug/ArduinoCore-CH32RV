@@ -67,6 +67,7 @@ def decode_spi(samples: bytes, rate: int):
     level right before CS fell (CPOL), SCK frequency, and the CS-low duration."""
     prev = samples[0]
     bits = {"rise": [], "fall": []}
+    miso_bits = {"rise": [], "fall": []}
     sck_rises = []
     cs_fall = None
     cs_rise = None
@@ -81,6 +82,7 @@ def decode_spi(samples: bytes, rate: int):
             sck_prev, sck_cur = prev & 1, cur & 1
             if sck_prev != sck_cur:
                 bits["rise" if sck_cur else "fall"].append((cur >> 1) & 1)
+                miso_bits["rise" if sck_cur else "fall"].append((cur >> 2) & 1)
                 if sck_cur:
                     sck_rises.append(i)
         prev = cur
@@ -100,7 +102,8 @@ def decode_spi(samples: bytes, rate: int):
         if sck_edges:
             e = min(sck_edges, key=lambda x: abs(x[0] - m)); near[e[1]] += 1
     idle = (samples[cs_fall - 1] & 1) if cs_fall and cs_fall > 0 else None
-    return {"mosi_rise": pack(bits["rise"]), "mosi_fall": pack(bits["fall"]), "cpol": idle, "sck_hz": sck_hz, "mosi_changes_near": near,
+    return {"mosi_rise": pack(bits["rise"]), "mosi_fall": pack(bits["fall"]), "miso_rise": pack(miso_bits["rise"]), "miso_fall": pack(miso_bits["fall"]),
+            "cpol": idle, "sck_hz": sck_hz, "mosi_changes_near": near,
             "clocks": len(sck_rises), "cs_low_us": ((cs_rise or len(samples)) - cs_fall) / rate * 1e6 if cs_fall is not None else None}
 
 
@@ -109,15 +112,15 @@ def main() -> None:
     parser.add_argument("--port", default=oep_smoke.DEFAULT_PORT)
     parser.add_argument("--fqbn", default="ch32-riscv-ug:ch32v:CH32X035:pnum=ANY")
     parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
-    parser.add_argument("--only", choices=["pwm", "tone", "timing", "spi"], action="append")
+    parser.add_argument("--only", choices=["pwm", "tone", "timing", "spi", "spi-peer"], action="append")
     parser.add_argument("--result-json")
     args = parser.parse_args()
-    sections = args.only or ["pwm", "tone", "timing", "spi"]
+    sections = args.only or ["pwm", "tone", "timing", "spi", "spi-peer"]
     sys.path.insert(0, args.oep_client)
     from oep_client.v0 import codec
     from oep_client.v0.__main__ import open_client
     from oep_client.v0.flash_image import Target, program_image
-    from oep_client.v0.services import FixtureCapture, FixtureUart
+    from oep_client.v0.services import FixtureCapture, FixtureUart, P4SpiTarget
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
@@ -233,6 +236,44 @@ def main() -> None:
                 log(f"[spi {hz} Hz mode {mode}] CPOL={d['cpol']} (expect {cpol}), MOSI changes on {change_edge_seen} edge (expect {change_edge_expected}, counts {near}), data={'ok' if data_ok else 'BAD'} -> {'OK' if ok else 'MISMATCH'} | "
                     f"SCK {d['sck_hz']/1e6:.3f} MHz clocks={d['clocks']} CS low {d['cs_low_us']:.1f} us | DUT: {line}")
             results["spi"] = rows
+        finally:
+            client.plan_release(lease)
+            target.control.reset()
+    if "spi-peer" in sections:
+        # P3 row 7, MISO side: the P4 SPI slave (p4.spi-target, SPI2_HOST) answers on MISO while the capture
+        # observes all four lines in the same plan. Checks per mode: DUT got == preloaded MISO bytes, target's
+        # MOSI bytes == DUT payload, and the wire decode of both lines agrees.
+        spi = P4SpiTarget(client, client.find(*codec.DEF_P4_SPI_TARGET[:2]).function)
+        lease, _ = client.plan_apply(uart.assignments(rx=UART_RX, tx=UART_TX) + spi.assignments(sck=SCK, mosi=MOSI, miso=MISO, cs=CS)
+                                     + capture.assignments(SCK, MOSI, MISO, CS))
+        uart.configure(115200); link = oep_smoke.UartLink(uart); link.send("\n")
+        if not link.wait("periph_probe READY", 10): raise SystemExit(f"no READY: {link.text[:200]!r}")
+        try:
+            rows = []
+            payload, answer = bytes.fromhex("a55a0f01"), bytes.fromhex("3c96c30f")
+            # Warm-up before arming: the DUT's first SPI command runs SPI.begin() and pinMode(CS), and the CS
+            # pin floating until then let the slave see a spurious frame that consumed the armed transaction
+            # (first run: target rx empty, bits=0, while the DUT still got the FIFO's answer).
+            spi.configure(0); link.drain(0.05); link.send(f"SPI 1000000 0 {payload.hex()}\n"); link.wait("SPI got=", 5); time.sleep(0.05)
+            for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (250_000, 0), (4_000_000, 0), (4_000_000, 3)):
+                spi.configure(mode); spi.arm(len(payload), answer)
+                rate = 20_000_000 if hz >= 1_000_000 else 5_000_000
+                capture.configure(rate, 8 * 65_000 // 4); link.drain(0.05); capture.arm()
+                link.send(f"SPI {hz} {mode} {payload.hex()}\n"); link.wait("SPI got=", 5)
+                st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                line = next((l for l in link.text.splitlines()[::-1] if "SPI got=" in l), "").strip()
+                got = bytes.fromhex(line.split("got=")[1]) if "got=" in line else b""
+                time.sleep(0.05); pending, bits, rx = spi.read_rx()
+                d = decode_spi(data, rate)
+                cpha = mode & 1; cpol = (mode >> 1) & 1
+                sample_edge = ("fall" if cpol == 0 else "rise") if cpha else ("rise" if cpol == 0 else "fall")   # leading edge samples for CPHA=0
+                wire_miso, wire_mosi = d["miso_" + sample_edge], d["mosi_" + sample_edge]
+                ok = got == answer and rx == payload and bits == len(payload) * 8 and wire_miso == answer and wire_mosi == payload
+                rows.append({"hz": hz, "mode": mode, "dut_got": got.hex(), "target_rx": rx.hex(), "bits": bits, "wire_miso": wire_miso.hex(),
+                             "wire_mosi": wire_mosi.hex(), "sck_hz": d["sck_hz"], "ok": ok})
+                log(f"[spi peer {hz} Hz mode {mode}] DUT got={got.hex()} (expect {answer.hex()}) | target rx={rx.hex()} bits={bits} (expect {payload.hex()}) "
+                    f"| wire MISO={wire_miso.hex()} MOSI={wire_mosi.hex()} SCK {d['sck_hz']/1e6:.3f} MHz -> {'OK' if ok else 'BAD'}")
+            results["spi_peer"] = rows
         finally:
             client.plan_release(lease)
             target.control.reset()

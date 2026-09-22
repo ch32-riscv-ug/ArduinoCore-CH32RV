@@ -30,3 +30,22 @@ SPI の decoder は最初「data が一致するエッジ」で CPHA を判定�
 
 - `fixture.capture` は PARLIO の整数分周（PLL 160 MHz / ≤256）のため **650 kHz 未満では constant を返す**。200 kHz で `millis` 波形が
   取れなかったのはこれ。probe は下限を `min_clock_hz` で宣言し、未満の configure を reject するようにした。
+
+## 2026-09-22（続き）: SPI の MISO 応答（worklist P3 行 7 の残り）
+
+```
+uv run tests/manual/oep_periph_trace/oep_periph_trace.py --only spi-peer
+```
+
+P4 に SPI slave の vendor tool `p4.spi-target`（SPI2_HOST、DMA 無し 64 byte、`arm(length, tx)` で 1 transaction を積み、CS が上がった後
+`read_rx()` で MOSI 受信と bit 数を返す）を足し、同じ plan の `fixture.capture` で SCK/MOSI/MISO/CS を観測する。
+X035 は 4 byte `a55a0f01` を送り、target は `3c96c30f` を返す。
+
+| 条件 | DUT が受けた MISO | target が受けた MOSI | 線上 decode |
+|---|---|---|---|
+| 1 MHz（実 0.741 MHz）mode 0 / 1 / 2 / 3 | 一致 | 一致、32 bit | MISO / MOSI とも一致 |
+| 250 kHz（実 0.185 MHz）mode 0 | 一致 | 一致 | 一致 |
+| 4 MHz（実 2.857 MHz）mode 0 / 3 | 一致 | 一致 | 一致 |
+
+注意: DUT 初回の `SPI` command は `SPI.begin()` と CS の `pinMode` を含み、それまで CS が浮いているので slave が空 transaction を 1 つ消費した
+（target rx 空・bits=0、DUT は FIFO に残っていた応答を受けて一見正常）。runner は arm の前に warm-up transaction を 1 回流す。
