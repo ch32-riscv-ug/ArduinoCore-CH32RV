@@ -46,6 +46,8 @@ X035 は 4 byte `a55a0f01` を送り、target は `3c96c30f` を返す。
 | 1 MHz（実 0.741 MHz）mode 0 / 1 / 2 / 3 | 一致 | 一致、32 bit | MISO / MOSI とも一致 |
 | 250 kHz（実 0.185 MHz）mode 0 | 一致 | 一致 | 一致 |
 | 4 MHz（実 2.857 MHz）mode 0 / 3 | 一致 | 一致 | 一致 |
+| 12 MHz（実 6 MHz、/8）mode 0 / 3 | 一致 | 一致 | 20 MS/s では decode 不能、data のみ判定 |
+| 24 MHz（実 24 MHz、/2）mode 0 | 一致 | 一致 | 同上。SCK 周波数は未計測 |
 
 注意: DUT 初回の `SPI` command は `SPI.begin()` と CS の `pinMode` を含み、それまで CS が浮いているので slave が空 transaction を 1 つ消費した
 （target rx 空・bits=0、DUT は FIFO に残っていた応答を受けて一見正常）。runner は arm の前に warm-up transaction を 1 回流す。

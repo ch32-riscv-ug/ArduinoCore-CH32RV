@@ -255,7 +255,8 @@ def main() -> None:
             # pin floating until then let the slave see a spurious frame that consumed the armed transaction
             # (first run: target rx empty, bits=0, while the DUT still got the FIFO's answer).
             spi.configure(0); link.drain(0.05); link.send(f"SPI 1000000 0 {payload.hex()}\n"); link.wait("SPI got=", 5); time.sleep(0.05)
-            for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (250_000, 0), (4_000_000, 0), (4_000_000, 3)):
+            for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (250_000, 0), (4_000_000, 0), (4_000_000, 3),
+                             (12_000_000, 0), (12_000_000, 3), (24_000_000, 0)):
                 spi.configure(mode); spi.arm(len(payload), answer)
                 rate = 20_000_000 if hz >= 1_000_000 else 5_000_000
                 capture.configure(rate, 8 * 65_000 // 4); link.drain(0.05); capture.arm()
@@ -268,7 +269,8 @@ def main() -> None:
                 cpha = mode & 1; cpol = (mode >> 1) & 1
                 sample_edge = ("fall" if cpol == 0 else "rise") if cpha else ("rise" if cpol == 0 else "fall")   # leading edge samples for CPHA=0
                 wire_miso, wire_mosi = d["miso_" + sample_edge], d["mosi_" + sample_edge]
-                ok = got == answer and rx == payload and bits == len(payload) * 8 and wire_miso == answer and wire_mosi == payload
+                wire_ok = (wire_miso == answer and wire_mosi == payload) if hz <= 4_000_000 else True   # 20 MS/s cannot decode the 6/12 MHz SCK
+                ok = got == answer and rx == payload and bits == len(payload) * 8 and wire_ok
                 rows.append({"hz": hz, "mode": mode, "dut_got": got.hex(), "target_rx": rx.hex(), "bits": bits, "wire_miso": wire_miso.hex(),
                              "wire_mosi": wire_mosi.hex(), "sck_hz": d["sck_hz"], "ok": ok})
                 log(f"[spi peer {hz} Hz mode {mode}] DUT got={got.hex()} (expect {answer.hex()}) | target rx={rx.hex()} bits={bits} (expect {payload.hex()}) "
