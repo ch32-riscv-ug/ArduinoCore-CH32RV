@@ -362,8 +362,8 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
       書かない、案 B: 現状維持（boot entry は pin reset 前提、`docs/uiapduino-hid-upload.ja.md` §4a）。決定待ち
 - [x] **UIAPduino: USB を使わない sketch の USB detach**。D− 固定 pull-up のため app 起動中は host に `0000:0002` が出る。利用者判断で
       variant の `initVariant()` が PD4 を output LOW にする既定にした（2026-09-22、`variant.cpp`）。soft USB library は begin 時に自分で上書きする
-- [ ] `[P1]` **V003 の `delayMicroseconds()` が +16〜17 µs、jitter 9〜15 µs**（2026-09-22、OEP capture 実測。X035 は +3〜4 µs）。SysTick 比較の分解能か
-      割込み処理長か。`digitalWrite` 自体は 1.25 µs なので API 側
+- [x] **V003 の `delayMicroseconds()` が +16〜17 µs、jitter 9〜15 µs** → `micros()` の `ticks / TICKS_PER_US` が rv32ec で libgcc 除算になっていた。
+      逆数 shift/add（bit 展開、`__mulsi3` 回避）で +4〜7 µs・jitter ≤ 2.5 µs に（2026-09-22、`wiring_time.c`）
 - [ ] `[P2]` **Wire の bus clear**。slave が byte 途中で SDA を握ったままの bus に対して、`recover()`（SWRST）では解放できず
       `endTransmission` は 25 ms timeout（rc=5）を繰り返す（2026-09-22、P4 target で再現。`tests/manual/oep_i2c_trace/ --stuck`）。
       sketch 側の「SDA 解放 + SCL 9 pulse + STOP」で解放し次の transaction は通る。core が `_needs_recovery` 時にこれを自動で行うか、

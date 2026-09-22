@@ -12,7 +12,10 @@
  * what a plain sketch looks like from the PC. */
 #include "Arduino.h"
 
-extern "C" void initVariant(void)
+/* Weak: a sketch or library that defines its own initVariant() (the Arduino
+ * hook this is built on; tests/sketches/basic/hooks_selftest does) replaces
+ * this one and then decides about PD4 itself. */
+extern "C" __attribute__((weak)) void initVariant(void)
 {
     pinMode(PD4, OUTPUT);
     digitalWrite(PD4, LOW);

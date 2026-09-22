@@ -20,3 +20,9 @@ debug reset の幅は probe 側の列（1 ms 待ち × 2、解除 read-back、dm
 
 注意: `testcmd.h` の READY は boot から 500 ms 周期で出るので、**READY の到着は boot の目印にならない**（最初この誤りで 498 ms と読んだ）。
 E158 の「banner 1.6 ms」も同じ周期の READY を見ていた。boot 時間は GPIO marker で測る。
+
+## 2026-09-22: CH32V003（`--target v003`）
+
+`CH32.restart()` → setup(): **0.342〜0.345 ms**（n=5、X035 は 0.184 ms）、reason=software。debug reset → setup() は未計測: classic ESP32
+probe の capture 窓は 400 kHz で 163 ms しか無く、UART 経路の reset 要求と probe の reset 列（ndmreset → 解放 → 再 attach）がその外に出る。
+値は probe 側の列で決まる量なので core の評価には要らない。

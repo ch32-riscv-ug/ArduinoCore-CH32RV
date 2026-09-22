@@ -73,3 +73,18 @@ classic ESP32 probe の `fixture.capture` は core 0 の GPIO sampler（0.4〜2 
 | `millis()` 10 ms toggle | 周期 20.090 ms（+0.45 %）、jitter 1 µs | 20.005 ms |
 
 `delayMicroseconds` の +16 µs と jitter は V003 特有（X035 は +3〜4 µs）。core の実装（SysTick 比較の分解能、割込みの長さ）を見る価値がある（todo）。
+
+### 同日追記: V003 の `delayMicroseconds` は core の `micros()` の除算だった
+
+`micros()` の `ticks / CH32_TICKS_PER_US` が rv32ec（乗除算命令なし）では libgcc の除算になり、1 回数 µs。逆数の shift/add（各家系の
+分周値で厳密、静的 assert 付き）に置き換え、さらに GCC が `__mulsi3` を呼ばないよう定数乗算を bit ごとに展開した。
+
+| `delayMicroseconds` | 修正前（V003） | 修正後（V003） | X035 |
+|---|---|---|---|
+| 0 / 10 / 100 / 1000 の半周期 | 17.75 / 26.0 / 113.3 / 1016.5 µs、jitter 9〜15 µs | **5.5 / 14.5 / 104.3 / 1007.5 µs、jitter ≤ 2.5 µs** | 5.75 / 15.5 / 105.0 / 1005.8 µs |
+| `millis()` 10 ms toggle | 20.090 ms | 20.059 ms | 20.008 ms |
+
+### 同日追記: SPI の連続 transfer（X035、row 7 の残り）
+
+64 byte の transaction × 3（DUT MISO 受信・target MOSI 受信とも一致、512 bit）と、4 byte × 5 連続（4 MHz mode 3、settle 無し）5/5。
+sketch 側の引数バッファ（`%71s`）が 35 byte で切っていたので 135 に広げた。

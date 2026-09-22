@@ -142,3 +142,6 @@ write 4 byte @400 kHz target 受信一致。2 つ目の preloaded slot だけ `0
 同日追記: probe に GPIO sampler capture が入り、classic ESP32 の I2C slave の filler 差も直したので、V003 でも線上 decode 付きで全一致:
 `S 85A a1A b2A c3A d4N P` / `S 85A 11A 22A 33A 44N P` / repeated START `S 84A 01A 02A S 85A 55A 66A 77A 88N P` / 400 kHz write `S 84A 0aA 0bA 0cA 0dA P`
 （2 MHz sampling なので 400 kHz の SCL 周期の値は当てにならない、byte と ACK は正しく読める）。
+
+同日追記（route）: `--route N --probe-scl/--probe-sda` で別 route を試せる。X035 route 4（PC17 SCL / PC16 SDA、probe 50/52）と
+V003 route 2（PC5 SCL / PC6 SDA、probe 27/4）のどちらも read / repeated START / 400 kHz write が線上 decode 付きで一致。

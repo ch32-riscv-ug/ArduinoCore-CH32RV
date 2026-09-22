@@ -254,8 +254,9 @@ E129/E132 の jig sketch に戻す場合は該当 `.ino` を書き直す（OEP p
 にすると host からは切断（SE0）に見え、`usbipd list` から消える。INPUT に戻すと `0000:0002` が再び現れる（2 往復再現）。
 **2026-09-22 決定・実装**: UIAPduino variant は起動時（`initVariant()`、`variants/UIAPduino_Pro_Micro_CH32V003_V14/variant.cpp`）に
 PD4 を push-pull LOW にする。通常の sketch では PC に何も見えない。software USB stack を使う sketch / library は begin 時に自分で
-PD3/PD4 を設定するので競合しない。`initVariant()` は variant が定義するため sketch 側で再定義はできない（必要なら `setup()` で
-`pinMode(PD4, INPUT)` に戻す）。
+PD3/PD4 を設定するので競合しない。variant の `initVariant()` は weak なので、sketch / library が自分の `initVariant()` を定義すると
+そちらが勝ち、PD4 の扱いもその側の責任になる（`tests/sketches/basic/hooks_selftest` がこの形）。USB を使わないのに PD4 を戻したい時は
+`setup()` で `pinMode(PD4, INPUT)`。
 
 未決（利用者判断）: core の `resetReason()` が PINRSTF を消す挙動をどうするか。案 A: UIAPduino variant では RMVF を書かない
 （reason は「累積」になり `reason_stable` の意味が変わる）。案 B: 現状維持し、boot entry は必ず pin reset 経由（本書の手順）。
