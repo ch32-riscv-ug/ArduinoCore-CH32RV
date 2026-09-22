@@ -18,6 +18,8 @@ uv run tests/manual/oep_adc_trace/oep_adc_trace.py [--order PA3,PA7]
 | PA7 | 7 | 676 | 638 | 602 | **BAD**。同上 |
 | （VREFINT） | 15 | — | — | — | **無い**。PA0 を high にして読んだ直後は 997、low の直後は 2（期待は両方 ≈372） |
 
+中点（概略）: P4 の pull-up と pull-down を同時に掛けると線は 1.46〜1.49 V（wch-protocols E087、pull-down がやや強い）。この刺激で PA0/1/2/4/5/6 は **451〜463**（期待 ≈455 @3.3 V）。校正基準ではないが、rail 以外の値が rail と整合して読めている。
+
 ### 読み方: 「無い channel」は 0 を返さない
 
 データシート（CH32X035DS0 注 1、device-data errata `x035-adc-ch-i2c-unavailable`）は「ロット番号の下から 5 桁目が 0 の製品では

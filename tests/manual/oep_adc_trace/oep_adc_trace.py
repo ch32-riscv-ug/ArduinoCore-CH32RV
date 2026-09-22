@@ -87,6 +87,15 @@ def main() -> None:
             ok = low[1] <= 16 and high[0] >= 1000 and (low[1] - low[0]) <= 8 and (high[1] - high[0]) <= 8
             if not ok: failures.append(name)
             log(f"[{name} <- P4 GPIO{p4:2d}] low min/max/mean={low} high={high} floating={fl} -> {'OK' if ok else 'BAD'} (10-bit, rails: 0 V / P4 3.3 V)")
+        # Rough mid-scale: P4 pull-up and pull-down together sit at 1.46-1.49 V (E087, pull-down a bit stronger),
+        # i.e. about 455 of 1023 at 3.3 V. Not a calibrated reference; it shows the ADC is not just reading rails.
+        mid_mode = FixtureGpio.INPUT_PULL_UP_DOWN
+        mids = {}
+        for name in order:
+            if name in ("PA3", "PA7"): continue
+            gpio.configure(PIN_MAP[name], mid_mode); time.sleep(0.02); mids[name] = adc(name)
+            gpio.configure(PIN_MAP[name], FixtureGpio.INPUT_FLOATING)
+        log("[mid-scale, P4 pull-up+pull-down ~1.47 V -> expect ~430..480] " + " ".join(f"{n}={v[2]}" for n, v in mids.items()))
         # Errata x035-adc-ch-i2c-unavailable (CH32X035DS0 note 1): ADC channels 3/7/11/15 are absent on lots whose
         # fifth-to-last lot-number digit is 0. A missing channel is not "reads 0": the sample-and-hold node keeps the
         # charge of the previous conversion and decays a few percent per 1000 conversions, so a single read looks
