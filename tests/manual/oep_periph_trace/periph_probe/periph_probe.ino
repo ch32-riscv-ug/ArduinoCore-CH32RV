@@ -6,7 +6,7 @@
 //   MILLIS <ms> <count>   toggle PA1 every <ms> ms using millis()                    -> "MILLIS done"
 //   SPI <hz> <mode> <hex> SPI1 (PA5 SCK, PA7 MOSI, PA6 MISO), CS = PA4 driven as GPIO -> "SPI got=<hex>"
 // Fixture (E143): PA1 -> P4 GPIO47, PA4 -> 53, PA5 -> 4, PA6 -> 11, PA7 -> 5.
-#define TC_CMD_MAX 96
+#define TC_CMD_MAX 192   // a 64-byte SPI payload is 128 hex characters
 #include "testcmd.h"
 #include <SPI.h>
 
@@ -22,8 +22,8 @@ void setup() { tc_begin("periph_probe"); pinMode(PWM_PIN, OUTPUT); digitalWrite(
 void loop() {
   const char *cmd = tc_ready();
   if (!cmd) return;
-  char verb[8] = {0}; unsigned long a = 0, b = 0; char arg[72] = {0};
-  const int n = sscanf(cmd, "%7s %lu %lu %71s", verb, &a, &b, arg);
+  char verb[8] = {0}; unsigned long a = 0, b = 0; char arg[136] = {0};
+  const int n = sscanf(cmd, "%7s %lu %lu %135s", verb, &a, &b, arg);
   if (n < 1) return;
   if (!strcmp(verb, "PWM")) { analogWrite(PWM_PIN, (int)a); Serial.print("PWM duty="); Serial.println(a); }
   else if (!strcmp(verb, "TONE")) { tone(PWM_PIN, (unsigned)a); Serial.print("TONE hz="); Serial.println(a); }

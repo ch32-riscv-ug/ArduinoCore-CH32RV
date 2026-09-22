@@ -45,6 +45,8 @@ def main() -> None:
     parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--hz", type=int, action="append", help="I2C clocks to try (default 100000 and 10000)")
     parser.add_argument("--route", type=int, help="DUT Wire route (default: the target profile's)")
+    parser.add_argument("--probe-scl", type=int, help="probe GPIO on the DUT's SCL for this route (default: the profile's)")
+    parser.add_argument("--probe-sda", type=int, help="probe GPIO on the DUT's SDA for this route (default: the profile's)")
     parser.add_argument("--result-json")
     parser.add_argument("--raw-dir", help="write the raw sample bytes of every capture here")
     parser.add_argument("--bitbang", action="store_true", help="sweep a bit-banged master (SDA hold x drive) instead of Wire")
@@ -56,6 +58,8 @@ def main() -> None:
     profile = targets.TARGETS[args.target]
     global SCL, SDA, UART_RX, UART_TX
     SCL, SDA, UART_RX, UART_TX = profile["i2c"]["scl"], profile["i2c"]["sda"], profile["uart_rx"], profile["uart_tx"]
+    if args.probe_scl is not None: SCL = args.probe_scl
+    if args.probe_sda is not None: SDA = args.probe_sda
     if args.route is None: args.route = profile["i2c"]["route"]
     has_capture = profile["capture"]
     clocks = args.hz or [100000, 10000]

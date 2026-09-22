@@ -24,9 +24,10 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
+import targets  # noqa: E402
 
 CONSOLE_RX, CONSOLE_TX = 12, 6
-RATE = 1_000_000
+RATE = 1_000_000   # the V003 profile lowers this: its UART-paced reset needs a longer window
 
 
 def tx_edges(samples: bytes):
@@ -51,11 +52,16 @@ def quiet_gap(samples: bytes, min_gap_us: int = 2_000):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--port", default=oep_smoke.DEFAULT_PORT)
-    parser.add_argument("--fqbn", default="ch32-riscv-ug:ch32v:CH32X035:pnum=ANY")
+    targets.add_target_argument(parser)
+    parser.add_argument("--port", help="probe serial port (default: the target profile's)")
+    parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
     parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--repeat", type=int, default=5)
     args = parser.parse_args()
+    profile = targets.TARGETS[args.target]
+    global CONSOLE_RX, CONSOLE_TX, RATE
+    CONSOLE_RX, CONSOLE_TX = profile["uart_rx"], profile["uart_tx"]
+    if profile.get("capture_max_hz", 20_000_000) < 5_000_000: RATE = 400_000   # 64 KiB window = 163 ms on the GPIO sampler
     sys.path.insert(0, args.oep_client)
     from oep_client.v0 import codec
     from oep_client.v0.__main__ import open_client
@@ -64,16 +70,17 @@ def main() -> None:
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("reset_probe", args.fqbn, 4, pathlib.Path(tmp), log, source=HERE / "reset_probe")
+        binary = oep_smoke.build("reset_probe", args.fqbn or profile["fqbn"], profile["serial_index"], pathlib.Path(tmp), log,
+                                 source=HERE / "reset_probe", defines=targets.build_defines(profile))
         image = binary.read_bytes()
-    client = open_client(args.port, 3.0)
+    client = open_client(args.port or profile["port"], 3.0)
     target = Target(client)
     outcome = program_image(target, image)
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
     uart = FixtureUart(client, client.find(*codec.DEF_FIXTURE_UART[:2]).function)
     gpio = FixtureGpio(client, client.find(*codec.DEF_FIXTURE_GPIO[:2]).function)
     capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function)
-    MARK = 47   # X035 PA1 -> P4 GPIO47
+    MARK = profile["pwm"]   # DUT PA1 -> probe GPIO (47 on the X035 fixture, 25 on the V003 jig)
     # plan: console + capture observing the marker and the console TX; fixture.gpio takes no plan roles (configure claims the pin)
     lease, _ = client.plan_apply(uart.assignments(rx=CONSOLE_RX, tx=CONSOLE_TX)
                                  + capture.assignments(MARK, CONSOLE_RX))

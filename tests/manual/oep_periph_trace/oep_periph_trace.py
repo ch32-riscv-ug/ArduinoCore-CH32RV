@@ -291,6 +291,30 @@ def main() -> None:
                              "wire_mosi": wire_mosi.hex(), "sck_hz": d["sck_hz"], "ok": ok})
                 log(f"[spi peer {hz} Hz mode {mode}] DUT got={got.hex()} (expect {answer.hex()}) | target rx={rx.hex()} bits={bits} (expect {payload.hex()}) "
                     f"| wire MISO={wire_miso.hex()} MOSI={wire_mosi.hex()} SCK {d['sck_hz']/1e6:.3f} MHz -> {'OK' if ok else 'BAD'}")
+            # Continuous / long transfers (P3 row 7 remainder): 64-byte transactions back to back, and a burst
+            # of five 4-byte transactions with one arm each. The DUT sketch caps a transfer at 64 bytes.
+            import random
+            rnd = random.Random(7)
+            long_payload = bytes(rnd.randrange(256) for _ in range(64)); long_answer = bytes(rnd.randrange(256) for _ in range(64))
+            for n in range(3):
+                spi.configure(0); spi.arm(64, long_answer); link.drain(0.02)
+                link.send(f"SPI 1000000 0 {long_payload.hex()}\n"); link.wait("SPI got=", 5)
+                line = next((l for l in link.text.splitlines()[::-1] if "SPI got=" in l), "").strip()
+                got = bytes.fromhex(line.split("got=")[1]) if "got=" in line else b""
+                time.sleep(0.05); pending, bits, rx = spi.read_rx()
+                ok = got == long_answer and rx == long_payload and bits == 512
+                rows.append({"long": n, "ok": ok, "bits": bits})
+                log(f"[spi peer 64-byte transfer #{n}] DUT MISO {'match' if got == long_answer else 'MISMATCH'} | target MOSI {'match' if rx == long_payload else 'MISMATCH'} bits={bits} -> {'OK' if ok else 'BAD'}")
+            burst_ok = 0
+            spi.configure(3)
+            for n in range(5):
+                spi.arm(4, answer); link.send(f"SPI 4000000 3 {payload.hex()}\n"); link.wait("SPI got=", 5)
+                line = next((l for l in link.text.splitlines()[::-1] if "SPI got=" in l), "").strip()
+                got = bytes.fromhex(line.split("got=")[1]) if "got=" in line else b""
+                pending, bits, rx = spi.read_rx()
+                burst_ok += got == answer and rx == payload
+            rows.append({"burst5": burst_ok})
+            log(f"[spi peer burst, 5 x 4-byte at 4 MHz mode 3, no settle] {burst_ok}/5 both ways")
             results["spi_peer"] = rows
         finally:
             client.plan_release(lease)

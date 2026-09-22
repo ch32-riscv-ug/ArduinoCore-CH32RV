@@ -199,6 +199,38 @@ unsigned long millis(void)
     return ch32_millis_counter;
 }
 
+/* ticks -> microseconds without a division. QingKe V2 (CH32V003, rv32ec) has
+ * neither divide nor multiply in hardware, and the libgcc division in the
+ * old `ticks / CH32_TICKS_PER_US` made every micros() call cost several
+ * microseconds: delayMicroseconds() on the V003 ran 16-17 us long with
+ * 9-15 us of jitter (2026-09-22, OEP capture), against +3 us on the X035.
+ * Strip the power of two out of the divisor, then multiply by a rounded-up
+ * reciprocal and shift; the compiler turns the constant multiply into a few
+ * shifts and adds. Exact for every ticks value below one millisecond for all
+ * divisors the families use (checked for 8..240 ticks per us); the static
+ * assertions below pin the endpoints for the divisor actually built. */
+#define CH32_US_DIV_K   (CH32_TICKS_PER_US % 16u == 0u ? 4u : CH32_TICKS_PER_US % 8u == 0u ? 3u : \
+                         CH32_TICKS_PER_US % 4u == 0u ? 2u : CH32_TICKS_PER_US % 2u == 0u ? 1u : 0u)
+#define CH32_US_DIV_ODD (CH32_TICKS_PER_US >> CH32_US_DIV_K)
+#define CH32_US_DIV_S   (CH32_US_DIV_ODD <= 9u ? 16u : CH32_US_DIV_ODD <= 15u ? 18u : 19u)
+#define CH32_US_DIV_R   (((1u << CH32_US_DIV_S) + CH32_US_DIV_ODD - 1u) / CH32_US_DIV_ODD)
+/* The multiply by the reciprocal is spelled out per bit: GCC at -Os on rv32e
+ * otherwise emits a __mulsi3 libcall for it (seen in the V003 disassembly),
+ * which is the very cost this is meant to remove. Each `((R >> b) & 1)` is a
+ * constant, so only the set bits of R survive as a shift and an add. */
+#define CH32_MULC_BIT(x, R, b) (((R) >> (b)) & 1u ? ((uint32_t)(x) << (b)) : 0u)
+#define CH32_MULC(x, R) (CH32_MULC_BIT(x, R, 0) + CH32_MULC_BIT(x, R, 1) + CH32_MULC_BIT(x, R, 2) + CH32_MULC_BIT(x, R, 3) + \
+                         CH32_MULC_BIT(x, R, 4) + CH32_MULC_BIT(x, R, 5) + CH32_MULC_BIT(x, R, 6) + CH32_MULC_BIT(x, R, 7) + \
+                         CH32_MULC_BIT(x, R, 8) + CH32_MULC_BIT(x, R, 9) + CH32_MULC_BIT(x, R, 10) + CH32_MULC_BIT(x, R, 11) + \
+                         CH32_MULC_BIT(x, R, 12) + CH32_MULC_BIT(x, R, 13) + CH32_MULC_BIT(x, R, 14) + CH32_MULC_BIT(x, R, 15) + \
+                         CH32_MULC_BIT(x, R, 16) + CH32_MULC_BIT(x, R, 17) + CH32_MULC_BIT(x, R, 18) + CH32_MULC_BIT(x, R, 19))
+_Static_assert(CH32_US_DIV_R < (1u << 20), "reciprocal wider than the spelled-out multiply");
+#define CH32_US_FROM_TICKS(t) (CH32_MULC((uint32_t)(t) >> CH32_US_DIV_K, CH32_US_DIV_R) >> CH32_US_DIV_S)
+_Static_assert(CH32_US_FROM_TICKS(CH32_TICKS_PER_MS - 1u) == 999u, "ticks->us reciprocal off at the top of the millisecond");
+_Static_assert(CH32_US_FROM_TICKS(CH32_TICKS_PER_US) == 1u && CH32_US_FROM_TICKS(CH32_TICKS_PER_US - 1u) == 0u,
+               "ticks->us reciprocal off at one microsecond");
+_Static_assert(CH32_US_FROM_TICKS(CH32_TICKS_PER_US * 500u - 1u) == 499u, "ticks->us reciprocal off at half a millisecond");
+
 /* Wraps every 2^32 us (about 71 minutes), same as the AVR core. Differences
  * stay correct across the wrap because the arithmetic is modulo 2^32. */
 unsigned long micros(void)
@@ -210,7 +242,7 @@ unsigned long micros(void)
         ticks = CH32_SYSTICK_CNT;
     } while (ms != ch32_millis_counter);
 
-    return ms * 1000u + ticks / CH32_TICKS_PER_US;
+    return ms * 1000u + CH32_US_FROM_TICKS(ticks);
 }
 
 void delay(unsigned long ms)
