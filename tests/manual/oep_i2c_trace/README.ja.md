@@ -138,3 +138,7 @@ route 0（PC2 SCL / PC1 SDA → ESP32 GPIO18 / 19、board pull-up 2.2 kΩ）。r
 write 4 byte @400 kHz target 受信一致。2 つ目の preloaded slot だけ `00112233`（先頭に filler 0x00、末尾欠け）: P4 では E150 の
 「slot + filler 1 byte」契約で揃うが、classic ESP32 の I2C slave（v1 driver、別 hardware）では前 slot の filler が次 read の先頭に出る。
 **probe 側の実装差**で、V003 の Wire は正しい（記録のみ、修正は後）。
+
+同日追記: probe に GPIO sampler capture が入り、classic ESP32 の I2C slave の filler 差も直したので、V003 でも線上 decode 付きで全一致:
+`S 85A a1A b2A c3A d4N P` / `S 85A 11A 22A 33A 44N P` / repeated START `S 84A 01A 02A S 85A 55A 66A 77A 88N P` / 400 kHz write `S 84A 0aA 0bA 0cA 0dA P`
+（2 MHz sampling なので 400 kHz の SCL 周期の値は当てにならない、byte と ACK は正しく読める）。
