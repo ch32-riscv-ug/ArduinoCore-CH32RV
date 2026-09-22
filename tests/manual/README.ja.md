@@ -17,6 +17,7 @@
 | [`chip_info/`](chip_info/) | **いま何が繋がっているか**。probe / chip / serial port / FQBN / Serialのpin |
 | [`uart_scan/`](uart_scan/) | boardがどのUSART routeを実際に配線しているか特定 |
 | [`smoke/`](smoke/) | 出荷経路でcompile → upload → UART読み出し。全sketchを一巡できる |
+| [`oep_smoke/`](oep_smoke/) | **OEP 開発用 probe 経由**で compile → `program_image`（CRC verify）→ fixture.uart lease → READY/PING/expectations → 判定。LinkE / probe-rs 不要。P4 + X035F8U6 fixture で basic 14/14（2026-09-22）。client は隣の `oep-client-python` を `--oep-client` で参照 |
 | [`gpio_loopback/`](gpio_loopback/) | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
 | [`i2c_loopback/`](i2c_loopback/) | ジャンパ2本+pull-upでWireのslaveを検証。I2C1(master)↔I2C2(slave)、データ双方向 / callback / 0xFF filler |
 | [`crt0_probe/`](crt0_probe/) | 自作crt0が`setup()`へ正しいRAMを渡しているか。`.data` copy / `.bss` zero fill / `.init_array` |
