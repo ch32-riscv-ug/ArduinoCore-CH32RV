@@ -396,6 +396,7 @@ X035のI2C1は6 routeあるが、行き先が限られる。
 **エラッタによる追加制約**([device-data errata](device-data.ja.md))
 
 - `x035-adc-ch-i2c-unavailable`(ロット番号の下から5桁目=0): **ADC ch3/7/11/15とI2Cが使えない**
+  - **2026-09-22 実測（fixture の X035F8U6）**: ch3（PA3）/ ch7（PA7）/ ch15（VREFINT）が無い。無い channel は 0 ではなく**直前の変換の残留電荷**を読み、1000 変換あたり数 % 減衰する（単発読みは正しく見える）。一方 **I2C は動く**（route 2 で write/read OK）ので、ADC 条項と I2C 条項は必ず一緒に来るとは限らない。ロット刻印は未確認（`tests/manual/oep_adc_trace/`）
   - fixtureのADC試験には**ch3/7/11/15以外**(A0/A1等)を割り当て、影響ロットでもADC試験が成立するようにする
   - I2C試験には非該当ロットの個体が必要。fixture inventoryにロット番号を記録する
 - `x035-no-gpio-open-drain`(X033/X035 全パッケージ): X0 系の GPIO block には汎用 open-drain 出力が無い。CNF=01 の出力は push-pull と同じく high を駆動する（ch32-data `gpio_x0` の CNF=01 は "Floating input, no Open Drain output"、2026-09-22 に PA0/PA5/PB3/PB12/PC14 で実測）。AF open-drain（CNF=11）だけが release するが、その pad は peripheral のもの。core は `pinMode(OUTPUT_OPENDRAIN)` を「release = floating input、low = push-pull low」で**エミュレート**する（`wiring_digital.c`）。

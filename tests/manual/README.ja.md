@@ -23,6 +23,7 @@
 | [`oep_gpio_matrix/`](oep_gpio_matrix/) | E143 配線の X035 pad 13 本を両側から駆動・観測（out / open-drain / input / pull / EXTI）。EXTICR と open-drain の core 不具合をここで発見（2026-09-22） |
 | [`oep_uart_trace/`](oep_uart_trace/) | X035 USART2 を probe の 2 本目 `fixture.uart` と突き合わせ: DUT→P4 / echo / 64 KiB 連続 / overflow 回復 / reset 後再開を 9600〜460800 で（2026-09-22、全一致） |
 | [`oep_reset_trace/`](oep_reset_trace/) | GPIO marker で reset → setup() を実測: `CH32.restart()` 0.18 ms、probe の debug reset 7〜139 ms（probe 側の列）、debug reset 後の reason は software（2026-09-22） |
+| [`oep_adc_trace/`](oep_adc_trace/) | X035 の `analogRead` を P4 の rail 駆動で確認: PA0/1/2/4/5/6 は 1 / 1008 で追従、**PA3/PA7 と VREFINT（ch3/7/15）は無い**（errata `x035-adc-ch-i2c-unavailable`）。無い channel は直前の変換の残留電荷を読み減衰するので単発では見抜けない（2026-09-22） |
 | [`gpio_loopback/`](gpio_loopback/) | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
 | [`i2c_loopback/`](i2c_loopback/) | ジャンパ2本+pull-upでWireのslaveを検証。I2C1(master)↔I2C2(slave)、データ双方向 / callback / 0xFF filler |
 | [`crt0_probe/`](crt0_probe/) | 自作crt0が`setup()`へ正しいRAMを渡しているか。`.data` copy / `.bss` zero fill / `.init_array` |
