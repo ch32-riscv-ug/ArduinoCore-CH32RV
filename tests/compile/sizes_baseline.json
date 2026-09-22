@@ -535,54 +535,54 @@
     "text": 1264
   },
   "CH32X033/ANY": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X033/CH32X033F8P6": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X035/ANY": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X035/CH32X035C8T6": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X035/CH32X035D8U6": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X035/CH32X035F7P6": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X035/CH32X035F8U6": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X035/CH32X035G8R6": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X035/CH32X035G8U6": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X035/CH32X035R8T6": {
-    "bss": 520,
+    "bss": 544,
     "data": 4,
-    "text": 1056
+    "text": 1172
   },
   "CH32X305/ANY": {
     "bss": 520,
