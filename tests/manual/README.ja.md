@@ -22,6 +22,7 @@
 | [`oep_periph_trace/`](oep_periph_trace/) | X035 の `analogWrite` / `tone` / `delayMicroseconds` / `millis` / `SPI` を **線上で実測**（OEP `fixture.capture` 1〜20 MHz、host decode）。PWM 1003.5 Hz duty ±0.3 %、tone 誤差 < 0.1 %、SPI 4 mode 仕様どおり、digitalWrite ≈ 2 µs（2026-09-22） |
 | [`oep_gpio_matrix/`](oep_gpio_matrix/) | E143 配線の X035 pad 13 本を両側から駆動・観測（out / open-drain / input / pull / EXTI）。EXTICR と open-drain の core 不具合をここで発見（2026-09-22） |
 | [`oep_uart_trace/`](oep_uart_trace/) | X035 USART2 を probe の 2 本目 `fixture.uart` と突き合わせ: DUT→P4 / echo / 64 KiB 連続 / overflow 回復 / reset 後再開を 9600〜460800 で（2026-09-22、全一致） |
+| [`oep_reset_trace/`](oep_reset_trace/) | GPIO marker で reset → setup() を実測: `CH32.restart()` 0.18 ms、probe の debug reset 7〜139 ms（probe 側の列）、debug reset 後の reason は software（2026-09-22） |
 | [`gpio_loopback/`](gpio_loopback/) | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
 | [`i2c_loopback/`](i2c_loopback/) | ジャンパ2本+pull-upでWireのslaveを検証。I2C1(master)↔I2C2(slave)、データ双方向 / callback / 0xFF filler |
 | [`crt0_probe/`](crt0_probe/) | 自作crt0が`setup()`へ正しいRAMを渡しているか。`.data` copy / `.bss` zero fill / `.init_array` |
