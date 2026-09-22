@@ -47,8 +47,10 @@ def toolchain_bin() -> pathlib.Path:
     return candidates[-1]
 
 
-def build(name: str, fqbn: str, serial_index: int, tmp: pathlib.Path, log) -> pathlib.Path:
-    sketch_dir = stage_sketch(BASIC / name, tmp / name)
+def build(name: str, fqbn: str, serial_index: int, tmp: pathlib.Path, log,
+          source: pathlib.Path | None = None) -> pathlib.Path:
+    """Compile tests/sketches/basic/<name>, or `source` when another sketch dir is given."""
+    sketch_dir = stage_sketch(source or BASIC / name, tmp / name)
     out = tmp / "build"
     cmd = ["arduino-cli", "compile", "--fqbn", fqbn,
            "--build-property", f"compiler.path={toolchain_bin()}/",
