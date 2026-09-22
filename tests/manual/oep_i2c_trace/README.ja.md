@@ -53,3 +53,14 @@ slave 生成時の bus が low だった順序、slave の SDA filter 遅延（t
 
 **注意**: `p4.i2c-target` の fixed-rx は v1 driver の制約で「address 後に終わった transaction」でも rx_done が発火し、長さ情報が無いので
 古い buffer 内容を frame として返す。frame の存在を ACK の証拠にしないこと（このため 4 case とも `target rx=10111213` と出る）。
+
+## 副産物: UART を再 lease すると DUT の行バッファにゴミが残る（同日、両側で修正）
+
+probe が `Serial1.end()` → `begin()` し直す瞬間に TX が一瞬 low になり、DUT（X035 USART4）は framing error 付きの 1 byte を受けて
+`testcmd.h` の行バッファに newline 無しで残していた。次の命令行がその byte の後ろに連結されて `unknown cmd=�PING 1` になる
+（READY は出続けるので「DUT が命令を聞かなくなった」ように見える）。先に空行を送るか DUT を reset すると戻る。
+
+- probe 側（oep-probe-arduino `FixtureUart`）: `begin()` の前に TX を INPUT_PULLUP → HIGH → OUTPUT の順で idle high に固定し、release では INPUT_PULLUP に戻す
+  （`pinMode(OUTPUT)` 単体は一瞬 low を出す）。5 session 連続で PONG。
+- core 側（`HardwareSerial::irq`）: FE / NE / PE の立った byte はリングに入れない（ORE は当該 byte が有効なので入れる）。fixture.gpio で
+  DUT RX に 0.2 / 2 / 50 ms の low pulse を入れた直後でも PING が通る。

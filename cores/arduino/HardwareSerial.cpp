@@ -160,12 +160,17 @@ void CH32HardwareSerial::irq(void)
      * leaves an overrun asserted, the interrupt re-enters immediately and the
      * core never returns to loop() - which is what a noisy or unconnected RX
      * line produces. So always drain the data register when any receive flag
-     * is set, and only keep the byte when it is a real one. */
+     * is set, and only keep the byte when it is a real one: a frame that came
+     * with a framing, noise or parity error is a glitch on the line (a probe
+     * re-opening its UART put one such byte in front of the next command line,
+     * 2026-09-22), not data. An overrun still leaves this byte valid. */
     if (status & (CH32_USART_STATR_RXNE | CH32_USART_STATR_ORE |
                   CH32_USART_STATR_NE | CH32_USART_STATR_FE |
                   CH32_USART_STATR_PE)) {
         const uint8_t data = (uint8_t)CH32_USART_DATAR(_base);
-        if (status & CH32_USART_STATR_RXNE) {
+        if ((status & CH32_USART_STATR_RXNE) &&
+            !(status & (CH32_USART_STATR_FE | CH32_USART_STATR_NE |
+                        CH32_USART_STATR_PE))) {
             _rx.push(data);
         }
     }
