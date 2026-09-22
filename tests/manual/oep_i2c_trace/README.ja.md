@@ -64,3 +64,26 @@ probe が `Serial1.end()` → `begin()` し直す瞬間に TX が一瞬 low に�
   （`pinMode(OUTPUT)` 単体は一瞬 low を出す）。5 session 連続で PONG。
 - core 側（`HardwareSerial::irq`）: FE / NE / PE の立った byte はリングに入れない（ORE は当該 byte が有効なので入れる）。fixture.gpio で
   DUT RX に 0.2 / 2 / 50 ms の low pulse を入れた直後でも PING が通る。
+
+## 2026-09-22（続き）: read / repeated START / 400 kHz と、`requestFrom` が止まる core バグ
+
+```
+uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --rw
+```
+
+P4 target の preloaded-tx slot から X035 が読む。最初の run は **N byte 読むと N−1 byte で止まり永久に戻らなかった**（4 → 3、3 → 2、5 preload でも 3）。
+halt して読むと I2C1 は BTF=1 / RXNE=1 / ACK=0 で master 自身が SCL を伸ばし、PC は `crt0_ch32.S` の default trap handler、
+`mcause=2`（illegal instruction）、`mtval=0x300474f3` = `csrrci a5, mstatus, 8`、`mepc` は Wire.cpp の `NoIrq`。
+**X035/X033 の sketch は User mode で走る（startup の mstatus=0x88、WCH の EVT も同じ）ので `mstatus` の CSR 操作は illegal**。
+`Arduino.h` の `interrupts()` と `ch32_timer.c` は CSR 0x800 で回避済みだったが、Wire の `NoIrq` だけが直接 `mstatus` を触っていた。
+`ch32_irq_save()/ch32_irq_restore()` を Arduino.h に置いて 3 箇所を統一。wire_selftest は NACK 経路しか通らないので気付けなかった。
+
+修正後:
+
+| 条件 | Wire | 線上 |
+|---|---|---|
+| `requestFrom(0x42, 4)` × 2 slot、100 kHz | got=4、data 一致 | `S 85A a1A b2A c3A d4N P` / `S 85A 11A 22A 33A 44N P` |
+| `endTransmission(false)` → `requestFrom(4)` | rc=0、got=4 | `S 84A 01A 02A S 85A 55A 66A 77A 88N P`（repeated START） |
+| write 4 byte @400 kHz | rc=0、target 受信一致 | `S 84A 0aA 0bA 0cA 0dA P`、SCL 周期 2.6 µs（≈385 kHz） |
+
+`p4.i2c-target` の preloaded-tx は「N byte 読ませるには N+1 byte 積む」（E150）を firmware が filler で吸収している。

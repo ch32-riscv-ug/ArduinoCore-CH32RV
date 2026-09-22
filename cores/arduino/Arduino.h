@@ -85,6 +85,37 @@ static inline void noInterrupts(void)
 #endif
 }
 
+/* Save-and-disable / restore pair for short critical sections in the core and
+ * its libraries. Same rule as above: X035/X033 run sketches in U mode, where
+ * mstatus is an illegal instruction (mcause 2, seen 2026-09-22 when Wire's
+ * requestFrom() masked interrupts around STOP and the sketch hung in the trap
+ * handler); the QingKe CSR 0x800 carries the enable bits there instead. */
+static inline uint32_t ch32_irq_save(void)
+{
+    uint32_t old;
+#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+    const uint32_t mask = 0x88u;
+    __asm__ volatile ("csrr %0, 0x800\n\tcsrc 0x800, %1" : "=r"(old) : "r"(mask) : "memory");
+#else
+    __asm__ volatile ("csrrci %0, mstatus, 8" : "=r"(old) :: "memory");
+#endif
+    return old;
+}
+
+static inline void ch32_irq_restore(uint32_t old)
+{
+#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+    if (old & 0x88u) {
+        const uint32_t mask = 0x88u;
+        __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");
+    }
+#else
+    if (old & 8u) {
+        __asm__ volatile ("csrsi mstatus, 8" ::: "memory");
+    }
+#endif
+}
+
 #ifdef NUM_ANALOG_INPUTS
 #define digitalPinToAnalogChannel(pin) CH32_PIN_TO_ADC_CHANNEL(pin)
 #define analogInputToDigitalPin(chan)  CH32_ADC_CHANNEL_TO_PIN(chan)

@@ -37,35 +37,9 @@ static const CH32TimerCapability timer_capabilities[] = {
 
 static TimerState timer_states[CH32_TIMER_COUNT];
 
-static uint32_t irq_save(void)
-{
-    uint32_t old;
-#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
-    /* X035/X033 sketches run in U mode. mstatus is therefore inaccessible;
-     * WCH exposes the interrupt enable bits through the user-accessible
-     * QingKe CSR 0x800 (the same mechanism used by its EVT core header). */
-    const uint32_t mask = 0x88u;
-    __asm__ volatile ("csrr %0, 0x800\n\tcsrc 0x800, %1"
-                      : "=r"(old) : "r"(mask) : "memory");
-#else
-    __asm__ volatile ("csrrci %0, mstatus, 8" : "=r"(old) :: "memory");
-#endif
-    return old;
-}
+static uint32_t irq_save(void) { return ch32_irq_save(); }
 
-static void irq_restore(uint32_t old)
-{
-#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
-    if (old & 0x88u) {
-        const uint32_t mask = 0x88u;
-        __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");
-    }
-#else
-    if (old & 8u) {
-        __asm__ volatile ("csrsi mstatus, 8" ::: "memory");
-    }
-#endif
-}
+static void irq_restore(uint32_t old) { ch32_irq_restore(old); }
 
 static uint16_t next_generation(uint16_t value)
 {

@@ -20,13 +20,8 @@ namespace {
  * gets them back off. */
 class NoIrq {
 public:
-    NoIrq() { __asm__ volatile ("csrrci %0, mstatus, 8"
-                                : "=r"(_saved) :: "memory"); }
-    ~NoIrq() {
-        if (_saved & 0x8u) {
-            __asm__ volatile ("csrsi mstatus, 8" ::: "memory");
-        }
-    }
+    NoIrq() : _saved(ch32_irq_save()) {}
+    ~NoIrq() { ch32_irq_restore(_saved); }
 private:
     uint32_t _saved;
 };
