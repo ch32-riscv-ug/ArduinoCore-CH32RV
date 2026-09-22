@@ -355,6 +355,10 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 どちらも`libraries/`に置いた同梱library。pinはvariantの生成マクロから来るので
 `begin()`に引数は要らない。AFIO routeは**既定routeでも毎回書く**(`HardwareSerial`と同じ理由)。
 
+- [ ] `[P1]` **`CH32.resetReason()` の RMVF と UIAPduino bootloader**。bootloader は `RCC_RSTSCKR.PINRSTF` が立っている時だけ
+      留まる（BOOT 領域の逆アセンブルと実測、2026-09-22）。`resetReason()` は初回に RMVF で全 flag を消すので、それを呼ぶ sketch の後は
+      software reset 経由の boot entry（UIAP 公式の 3 行 / E129 payload）が失敗し app へ戻る。案 A: UIAPduino variant では RMVF を
+      書かない、案 B: 現状維持（boot entry は pin reset 前提、`docs/uiapduino-hid-upload.ja.md` §4a）。決定待ち
 - [ ] `[P2]` **Wire の bus clear**。slave が byte 途中で SDA を握ったままの bus に対して、`recover()`（SWRST）では解放できず
       `endTransmission` は 25 ms timeout（rc=5）を繰り返す（2026-09-22、P4 target で再現。`tests/manual/oep_i2c_trace/ --stuck`）。
       sketch 側の「SDA 解放 + SCL 9 pulse + STOP」で解放し次の transaction は通る。core が `_needs_recovery` 時にこれを自動で行うか、

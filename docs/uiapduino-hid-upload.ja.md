@@ -216,6 +216,43 @@ USB BUSIDが`1209:b803`へ復帰しました。その後9,140 byteのTIM HIL ima
 断定しません。確定しているのは、USB抜き差しやBOOT書換えなしで、既知のapplicationへのSWIO復元と
 `N→B`だけで復帰したことです。量産・自動ベンチでは、復旧前dumpを保存してから同じ処理を行います。
 
+## 4a. 2026-09-22 の判明事項: bootloader に留まる条件は `RCC_RSTSCKR.PINRSTF`
+
+製品 bootloader（BOOT 領域 1,920 B、factory capture と一致）を逆アセンブルすると、entry 直後に `RCC_RSTSCKR`（0x40021024）の
+**bit26 = PINRSTF（外部 reset pin による reset）**を見て、立っていなければ即「PD4 low → BOOT_MODE clear → PFIC reset」で
+application へ戻る。`B`（BOOT_MODE 設定 + PD4 detach + software reset）だけでは PINRSTF は立たないので、**直前に pin reset があった
+ことが必要**。flag は RMVF を書くまで残るので、過去に RESET ボタン / GPIO23 を使った後は `B` だけで入れ、誰かが RMVF を書くと入れなく
+なる。ArduinoCore-CH32 の `CH32.resetReason()`（`libraries/CH32/src/CH32System.cpp`）は初回読み出しで RMVF を書き全 flag を消す。
+つまり `resetReason()` を呼ぶ sketch（`system_selftest` など）を動かした後は、pin reset 無しの boot entry は失敗する。これが
+「B / N→B / H が完了するのに `0000:0002` のまま」の少なくとも一因である。
+
+実測（OEP probe、同日）:
+
+| 手順 | RSTSCKR | 結果 |
+|---|---|---|
+| RMVF で flag を消してから boot payload | SFTRSTF のみ | app へ戻る（`0000:0002` のまま） |
+| GPIO23 で NRST を 20 ms low → boot payload | PINRSTF あり | **1209:b803 が 1 s で列挙** |
+| BOOT_MODE=1 だけ設定して pin reset | PINRSTF あり | app が動く（bootloader は留まらない） |
+
+もう 1 つ: RAM payload を app が動いている状態から resume すると SysTick 割込みが payload を壊す（`mcause=2`）。`mstatus=0` を書いて
+から resume すること（E135 の loader 経路はこれをしていた）。
+
+**ジグの置き換え**: `esp32-d0wd-v3-0070070d9394` には現在 oep-probe-arduino `examples/Esp32V003Probe`（OEP v0 probe）が入っており、
+E129/E132 の `N/B/H` は次に対応する（同じ配線、GPIO23 → PD7/NRST を使う）。
+
+```sh
+cd ~/dev_oep/oep-client-python
+uv run python -m oep_client.v0 --port /run/board-identify/by-id/esp32-d0wd-v3-0070070d9394 reset --mode boot   # pin reset → E129 payload → 1209:b803
+uv run python -m oep_client.v0 --port /run/board-identify/by-id/esp32-d0wd-v3-0070070d9394 reset --mode user   # E130 normalize（N 相当）
+uv run python -m oep_client.v0 --port /run/board-identify/by-id/esp32-d0wd-v3-0070070d9394 reset --mode pin    # NRST 20 ms low だけ（R 相当）
+```
+
+E129/E132 の jig sketch に戻す場合は該当 `.ino` を書き直す（OEP probe が上書きしている）。
+
+未決（利用者判断）: core の `resetReason()` が PINRSTF を消す挙動をどうするか。案 A: UIAPduino variant では RMVF を書かない
+（reason は「累積」になり `reason_stable` の意味が変わる）。案 B: 現状維持し、boot entry は必ず pin reset 経由（本書の手順）。
+案 C: `resetReason()` が PINRSTF だけ残して他を消す（ハードでは個別 clear 不可なので実現不能）。
+
 ## 5. 現在の制限
 
 - 対応を実機確認したのはCH32V003とUIAPduino `1209:b803`です。
