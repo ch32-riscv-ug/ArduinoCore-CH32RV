@@ -252,8 +252,10 @@ E129/E132 の jig sketch に戻す場合は該当 `.ino` を書き直す（OEP p
 **USB を使わない sketch で PC に「壊れたデバイス」を見せない方法**（同日実測）: この board は D− に固定 pull-up があるため、USB stack の
 無い app が動いていると host は「デバイスあり・記述子応答なし」= `0000:0002` を表示する。app が **PD4（USB D−）を push-pull output LOW**
 にすると host からは切断（SE0）に見え、`usbipd list` から消える。INPUT に戻すと `0000:0002` が再び現れる（2 往復再現）。
-UIAPduino variant で「USB を使わない sketch は起動時に PD4 を LOW に固定する」を既定にするかは利用者判断（PD4 は USB 線なので GPIO 用途と
-競合しない）。sketch 側なら `pinMode(PD4, OUTPUT); digitalWrite(PD4, LOW);` で足りる。
+**2026-09-22 決定・実装**: UIAPduino variant は起動時（`initVariant()`、`variants/UIAPduino_Pro_Micro_CH32V003_V14/variant.cpp`）に
+PD4 を push-pull LOW にする。通常の sketch では PC に何も見えない。software USB stack を使う sketch / library は begin 時に自分で
+PD3/PD4 を設定するので競合しない。`initVariant()` は variant が定義するため sketch 側で再定義はできない（必要なら `setup()` で
+`pinMode(PD4, INPUT)` に戻す）。
 
 未決（利用者判断）: core の `resetReason()` が PINRSTF を消す挙動をどうするか。案 A: UIAPduino variant では RMVF を書かない
 （reason は「累積」になり `reason_stable` の意味が変わる）。案 B: 現状維持し、boot entry は必ず pin reset 経由（本書の手順）。
