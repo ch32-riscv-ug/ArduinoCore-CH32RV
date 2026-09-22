@@ -20,6 +20,8 @@
 | [`oep_smoke/`](oep_smoke/) | **OEP 開発用 probe 経由**で compile → `program_image`（CRC verify）→ fixture.uart lease → READY/PING/expectations → 判定。LinkE / probe-rs 不要。P4 + X035F8U6 fixture で basic 14/14（2026-09-22）。client は隣の `oep-client-python` を `--oep-client` で参照 |
 | [`oep_i2c_trace/`](oep_i2c_trace/) | X035 の `Wire` master transaction を **線上で decode**（OEP `fixture.capture` 1 MHz + P4 I2C target を同じ plan で）。worklist B の「0x42 へ write すると NACK」を再現: X035 の address byte は正しく、P4 slave が ACK を出していない（2026-09-22、原因は台帳候補 `x035-p4-slave-no-ack`） |
 | [`oep_periph_trace/`](oep_periph_trace/) | X035 の `analogWrite` / `tone` / `delayMicroseconds` / `millis` / `SPI` を **線上で実測**（OEP `fixture.capture` 1〜20 MHz、host decode）。PWM 1003.5 Hz duty ±0.3 %、tone 誤差 < 0.1 %、SPI 4 mode 仕様どおり、digitalWrite ≈ 2 µs（2026-09-22） |
+| [`oep_gpio_matrix/`](oep_gpio_matrix/) | E143 配線の X035 pad 13 本を両側から駆動・観測（out / open-drain / input / pull / EXTI）。EXTICR と open-drain の core 不具合をここで発見（2026-09-22） |
+| [`oep_uart_trace/`](oep_uart_trace/) | X035 USART2 を probe の 2 本目 `fixture.uart` と突き合わせ: DUT→P4 / echo / 64 KiB 連続 / overflow 回復 / reset 後再開を 9600〜460800 で（2026-09-22、全一致） |
 | [`gpio_loopback/`](gpio_loopback/) | ジャンパ1本でGPIOを検証。レベル / pull-up / pull-down / 別ポートへのEXTI / PWM duty |
 | [`i2c_loopback/`](i2c_loopback/) | ジャンパ2本+pull-upでWireのslaveを検証。I2C1(master)↔I2C2(slave)、データ双方向 / callback / 0xFF filler |
 | [`crt0_probe/`](crt0_probe/) | 自作crt0が`setup()`へ正しいRAMを渡しているか。`.data` copy / `.bss` zero fill / `.init_array` |
