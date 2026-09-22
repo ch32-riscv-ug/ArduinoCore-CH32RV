@@ -122,7 +122,9 @@ def main() -> None:
     PWM_GPIO, UART_RX, UART_TX = profile["pwm"], profile["uart_rx"], profile["uart_tx"]
     SCK, MOSI, MISO, CS = profile["spi"]["sck"], profile["spi"]["mosi"], profile["spi"]["miso"], profile["spi"]["cs"]
     has_capture = profile["capture"]
-    sections = args.only or (["pwm", "tone", "timing", "spi", "spi-peer"] if has_capture else ["spi-peer"])
+    cap_max = profile.get("capture_max_hz", 0)
+    decode_ok = has_capture and cap_max >= 5_000_000     # SPI wire decode needs >= 5 samples per SCK period
+    sections = args.only or (["pwm", "tone", "timing", "spi", "spi-peer"] if decode_ok else ["pwm", "tone", "timing", "spi-peer"])
     if not has_capture and any(sec != "spi-peer" for sec in sections):
         raise SystemExit("this probe has no fixture.capture: only spi-peer runs on " + args.target)
     sys.path.insert(0, args.oep_client)
@@ -224,7 +226,7 @@ def main() -> None:
             rows = []
             payload = bytes.fromhex("a55a0f01")
             for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (4_000_000, 0), (250_000, 0)):
-                rate = 20_000_000 if hz >= 1_000_000 else 5_000_000
+                rate = min(20_000_000 if hz >= 1_000_000 else 5_000_000, cap_max)
                 capture.configure(rate, 8 * 65_000 // 4); link.drain(0.05); capture.arm()
                 link.send(f"SPI {hz} {mode} {payload.hex()}\n"); link.wait("SPI got=", 5)
                 st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
@@ -268,7 +270,7 @@ def main() -> None:
             for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (250_000, 0), (4_000_000, 0), (4_000_000, 3),
                              (12_000_000, 0), (12_000_000, 3), (24_000_000, 0)):
                 spi.configure(mode); spi.arm(len(payload), answer)
-                rate = 20_000_000 if hz >= 1_000_000 else 5_000_000
+                rate = min(20_000_000 if hz >= 1_000_000 else 5_000_000, cap_max or 1)
                 if has_capture: capture.configure(rate, 8 * 65_000 // 4)
                 link.drain(0.05)
                 if has_capture: capture.arm()
@@ -283,7 +285,7 @@ def main() -> None:
                 cpha = mode & 1; cpol = (mode >> 1) & 1
                 sample_edge = ("fall" if cpol == 0 else "rise") if cpha else ("rise" if cpol == 0 else "fall")   # leading edge samples for CPHA=0
                 wire_miso, wire_mosi = d["miso_" + sample_edge], d["mosi_" + sample_edge]
-                wire_ok = (wire_miso == answer and wire_mosi == payload) if (has_capture and hz <= 4_000_000) else True   # 20 MS/s cannot decode the 6/12 MHz SCK
+                wire_ok = (wire_miso == answer and wire_mosi == payload) if (decode_ok and hz <= 4_000_000) else True   # 20 MS/s cannot decode the 6/12 MHz SCK
                 ok = got == answer and rx == payload and bits == len(payload) * 8 and wire_ok
                 rows.append({"hz": hz, "mode": mode, "dut_got": got.hex(), "target_rx": rx.hex(), "bits": bits, "wire_miso": wire_miso.hex(),
                              "wire_mosi": wire_mosi.hex(), "sck_hz": d["sck_hz"], "ok": ok})

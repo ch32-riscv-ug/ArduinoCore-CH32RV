@@ -58,3 +58,18 @@ classic ESP32 probe には capture が無いので data の突き合わせのみ
 mode 0〜3 @1 MHz 要求、mode 0 @250 kHz、mode 0/3 @4 MHz 要求: DUT の MISO 受信・target の MOSI 受信とも一致。
 12 MHz 要求（実 6 MHz）以上は DUT 受信が 1 bit 遅れ（`1ecbe107` = 期待値 >> 1）: **probe 側 classic ESP32 SPI slave の限界**（MISO setup）。
 PWM / tone / timing は capture が要るので V003 では未。
+
+## 2026-09-22（続き）: CH32V003 の PWM / tone / timing（probe に GPIO sampler capture を追加、`--target v003`）
+
+classic ESP32 probe の `fixture.capture` は core 0 の GPIO sampler（0.4〜2 MHz、1 byte/sample、window ≤ 164 ms）。
+
+| 項目 | V003（48 MHz）実測 | 参考 X035 |
+|---|---|---|
+| `analogWrite` 64 / 128 / 192 | 1005.5 Hz、duty 25.0 / 50.0 / 75.0 %（期待 25.1 / 50.2 / 75.3）、jitter ≤ 3.5 µs | 1003.5 Hz、±0.3 % |
+| `analogWrite` 255 / 0 | edge 無し、level 1.00 / 0.00 | 同 |
+| `tone` 500 / 1000 / 4000 | 498.4 / 996.5 / 3984.1 Hz（−0.3〜−0.4 %）、duty 50 % | 誤差 < 0.1 % |
+| `delayMicroseconds` 0 / 10 / 100 / 1000 | 半周期 17.75 / 26.0 / 113.3 / 1016.5 µs = **+16〜17 µs の一定 overhead、jitter 9〜15 µs** | +3〜4 µs |
+| `digitalWrite` 2 連続 | 1.25 µs | ≈2 µs |
+| `millis()` 10 ms toggle | 周期 20.090 ms（+0.45 %）、jitter 1 µs | 20.005 ms |
+
+`delayMicroseconds` の +16 µs と jitter は V003 特有（X035 は +3〜4 µs）。core の実装（SysTick 比較の分解能、割込みの長さ）を見る価値がある（todo）。

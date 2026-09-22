@@ -93,7 +93,7 @@ def main() -> None:
             from oep_client.v0.decode import I2cTrace
             link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
             def trace_cmd(command, reply, hz):
-                rate = 5_000_000 if hz >= 400_000 else 1_000_000
+                rate = min(5_000_000 if hz >= 400_000 else 1_000_000, profile.get("capture_max_hz", 5_000_000))
                 if has_capture: capture.configure(rate, 65000)
                 link.drain(0.05)
                 if has_capture: capture.arm()

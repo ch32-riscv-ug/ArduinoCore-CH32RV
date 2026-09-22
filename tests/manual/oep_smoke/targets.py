@@ -14,7 +14,7 @@ TARGETS = {
         "serial_index": 4,
         "define": "OEP_TARGET_X035",
         "uart_rx": 12, "uart_tx": 6,                   # DUT USART4 PB0 (TX) -> probe 12, PB1 (RX) <- probe 6
-        "capture": True,
+        "capture": True, "capture_max_hz": 20_000_000,   # PARLIO
         "gpio": {"PA0": 46, "PA1": 47, "PA2": 48, "PA3": 49, "PA4": 53, "PA5": 4, "PA6": 11, "PA7": 5,
                  "PB3": 13, "PB11": 9, "PB12": 14, "PC14": 10, "PC15": 15, "PC16": 52, "PC17": 50},
         "adc": {"PA0": 46, "PA1": 47, "PA2": 48, "PA3": 49, "PA4": 53, "PA5": 4, "PA6": 11, "PA7": 5},
@@ -31,7 +31,7 @@ TARGETS = {
         "serial_index": 1,
         "define": "OEP_TARGET_V003",
         "uart_rx": 22, "uart_tx": 21,                   # DUT USART1 PD5 (TX) -> probe 22, PD6 (RX) <- probe 21
-        "capture": False,
+        "capture": True, "capture_max_hz": 2_000_000,    # GPIO sampler on core 0 (0.4..2 MHz, 1 byte/sample)
         "gpio": {"PA1": 25, "PA2": 26, "PC0": 5, "PC1": 19, "PC2": 18, "PC3": 17, "PC4": 33, "PC5": 27,
                  "PC6": 4, "PC7": 14, "PD0": 13, "PD2": 32},
         "adc": {"PA1": 25, "PA2": 26, "PC4": 33, "PD2": 32},   # A1 A0 A2 A3; PD3/PD4 (USB) unwired, PD5/PD6 console
