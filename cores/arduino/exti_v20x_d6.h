@@ -5,6 +5,10 @@
 
 #define CH32_EXTI_GROUP_COUNT 7
 
+/* AFIO_EXTICR field layout: bits per EXTI line and lines per register. */
+#define CH32_EXTICR_FIELD_BITS 4
+#define CH32_EXTICR_FIELDS_PER_REG 4
+
 /* X(handler, mask, irqn) for every EXTI vector this variant has. */
 #define CH32_EXTI_GROUPS(X) \
     X(EXTI0_IRQHandler, 0x00000001u, CH32_IRQN_EXTI0) \

@@ -2332,3 +2332,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `digitalWrite()` が 1 回 ≈ 2 µs（線上実測、`tests/manual/oep_periph_trace/`）。48 MHz で約 96 cycle。port/bit の decode と bound check を見直すか、
   pad 名が定数のときに inline で畳めるようにする。
 - [ ] `delayMicroseconds(us)` が `us + 3〜4 µs`（`micros()` 2 回の polling、1 µs 粒度）。SysTick CNT を直接比較する実装にすれば sub-µs にできる。
+- [ ] errata `x035-usb-pads-open-drain` / `x035-no-gpio-open-drain` を ch32-device-data に登録済み（local commit 27d6435、未 push）。push 後に
+  `vendor/ch32-device-data.lock.toml` を上げ、`tools/generate` の variant header 注記（UNUSABLE_PADS と同じ仕組みで behavioral errata の注記を出す）に載せる。
+- [ ] PC14/PC15（USB PD CC1/CC2）は INPUT_PULLUP でも idle が 0（PD PHY の Rd 5.1 kΩ が既定で有効）。GPIO として使うときに `USBPD_PORT.CC_PD` を落とすかは
+  `tests/manual/oep_gpio_matrix/` の PD 調査結果で決める。

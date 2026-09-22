@@ -1602,6 +1602,17 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
     return out
 
 
+# AFIO_EXTICR layout per startup variant: (bits per EXTI field, fields per register).
+# ch32-data afio_x0 / afio_v003 / afio_v00x and the CH32M030 EVT header have 2-bit
+# fields (16 per 32-bit register); the L1/V1/V3 families have the STM32-F1 style
+# 4-bit fields, 4 per register. Writing the F1 layout on a 2-bit part configures
+# the wrong line (2026-09-22: PB3 EXTI on CH32X035 ended up selecting line 6).
+EXTICR_LAYOUT = {
+    "m030": (2, 16), "v003": (2, 16), "v00x": (2, 16), "x035": (2, 16), "x3x5": (2, 16),
+}
+EXTICR_LAYOUT_DEFAULT = (4, 4)
+
+
 def gen_exti(variant: str, entries: list) -> str:
     groups = []
     for name in entries:
@@ -1628,6 +1639,10 @@ def gen_exti(variant: str, entries: list) -> str:
         "#pragma once",
         "",
         f"#define CH32_EXTI_GROUP_COUNT {len(groups)}",
+        "",
+        "/* AFIO_EXTICR field layout: bits per EXTI line and lines per register. */",
+        f"#define CH32_EXTICR_FIELD_BITS {EXTICR_LAYOUT.get(variant, EXTICR_LAYOUT_DEFAULT)[0]}",
+        f"#define CH32_EXTICR_FIELDS_PER_REG {EXTICR_LAYOUT.get(variant, EXTICR_LAYOUT_DEFAULT)[1]}",
         "",
         "/* X(handler, mask, irqn) for every EXTI vector this variant has. */",
         "#define CH32_EXTI_GROUPS(X) \\",

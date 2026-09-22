@@ -40,9 +40,17 @@ static void ch32_exti_set(pin_size_t pin, PinStatus mode,
     ch32_clock_enable(AFIO);
     ch32_gpio_clock_enable(port);
 
-    const uint32_t shift = (bit & 3u) * 4u;
-    volatile uint32_t *cr = &CH32_AFIO_EXTICR(bit >> 2);
-    *cr = (*cr & ~(0xFu << shift)) | ((uint32_t)port << shift);
+    /* Which port drives this EXTI line. The field layout differs per family
+     * (2-bit fields, 16 per register on V00x/M030/X03x; 4-bit, 4 per register
+     * on the F1-style families) and comes from the generated exti_*.h. */
+#ifndef CH32_EXTICR_FIELD_BITS
+#define CH32_EXTICR_FIELD_BITS 4
+#define CH32_EXTICR_FIELDS_PER_REG 4
+#endif
+    const uint32_t shift = (bit % CH32_EXTICR_FIELDS_PER_REG) * CH32_EXTICR_FIELD_BITS;
+    const uint32_t field_mask = (1u << CH32_EXTICR_FIELD_BITS) - 1u;
+    volatile uint32_t *cr = &CH32_AFIO_EXTICR(bit / CH32_EXTICR_FIELDS_PER_REG);
+    *cr = (*cr & ~(field_mask << shift)) | ((uint32_t)port << shift);
 
     const uint32_t mask = 1u << bit;
     if (mode == RISING || mode == CHANGE) {

@@ -44,6 +44,7 @@ def main() -> None:
     parser.add_argument("--raw-dir", help="write the raw sample bytes of every capture here")
     parser.add_argument("--bitbang", action="store_true", help="sweep a bit-banged master (SDA hold x drive) instead of Wire")
     parser.add_argument("--hold-sweep", action="store_true", help="fast bit-bang: sweep the SDA hold in ns and report the ACK threshold")
+    parser.add_argument("--rw", action="store_true", help="read from the target's preloaded slots, repeated START (write then read), 400 kHz write")
     args = parser.parse_args()
     clocks = args.hz or [100000, 10000]
     sys.path.insert(0, args.oep_client)
@@ -75,6 +76,39 @@ def main() -> None:
         link = oep_smoke.UartLink(uart)
         if not link.wait("i2c_probe_write READY", 10):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
+        if args.rw:
+            from oep_client.v0.decode import I2cTrace
+            link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
+            def trace_cmd(command, reply, hz):
+                rate = 5_000_000 if hz >= 400_000 else 1_000_000
+                capture.configure(rate, 65000); link.drain(0.05); capture.arm()
+                link.send(command + "\n")
+                if not link.wait(reply, 5): raise SystemExit(f"no reply to {command!r}")
+                st = capture.wait(3.0); samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                line = next((l for l in link.text.splitlines()[::-1] if reply in l), "").strip()
+                return line, decode_i2c(samples, scl_bit=0, sda_bit=1)
+            # 1. READ: the P4 target answers from preloaded 4-byte slots
+            i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_PRELOADED_TX)
+            slots = [bytes.fromhex("a1b2c3d4"), bytes.fromhex("11223344")]
+            for s_ in slots: i2c.preload_tx(s_)
+            for hz, expect in ((100000, slots[0]), (100000, slots[1])):
+                line, trace = trace_cmd(f"READ {args.route} {hz} {TARGET_ADDRESS:02x} 4", "READ got=", hz)
+                got = bytes.fromhex(line.split("data=")[1]) if "data=" in line and line.split("data=")[1] else b""
+                log(f"[read {hz} Hz] {line} | wire {trace.summary()} | expected {expect.hex()} match={got == expect}")
+                results.append({"read": True, "hz": hz, "line": line, "trace": trace.summary(), "match": got == expect})
+            # 2. repeated START: write 2 bytes without STOP, then read 4 (the target's next slot)
+            i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_PRELOADED_TX); i2c.preload_tx(bytes.fromhex("55667788"))
+            line, trace = trace_cmd(f"WRREAD {args.route} 100000 {TARGET_ADDRESS:02x} 0102", "WRREAD rc=", 100000)
+            log(f"[write-then-read, repeated START] {line} | wire {trace.summary()}")
+            results.append({"wrread": True, "line": line, "trace": trace.summary()})
+            # 3. 400 kHz write into fixed-rx
+            i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_FIXED_RX); i2c.arm_rx(4)
+            line, trace = trace_cmd(f"WRITE {args.route} 400000 {TARGET_ADDRESS:02x} 0a0b0c0d", "WRITE rc=", 400000)
+            time.sleep(0.05); pending, rx = i2c.read_rx()
+            period = sorted(trace.scl_periods)[len(trace.scl_periods) // 2] / 5_000_000 * 1e6 if trace.scl_periods else 0
+            log(f"[write 400 kHz] {line} | wire {trace.summary()} | SCL period {period:.2f} us | target rx={rx.hex()}")
+            results.append({"write400": True, "line": line, "trace": trace.summary(), "rx": rx.hex(), "scl_us": period})
+            clocks = []
         if args.hold_sweep:
             payload = bytes.fromhex("10111213")
             for hold in (0, 200, 400, 600, 800, 1000, 1500, 2000, 3000):

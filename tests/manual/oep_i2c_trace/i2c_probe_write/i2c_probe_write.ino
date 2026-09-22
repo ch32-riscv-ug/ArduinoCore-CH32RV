@@ -127,6 +127,15 @@ void loop() {
     const uint8_t rc = Wire.endTransmission();
     Serial.print("WRITE rc="); Serial.print(rc); Serial.print(" route="); Serial.print(route);
     Serial.print(" hz="); Serial.print(hz); Serial.print(" n="); Serial.println(count);
+  } else if (!strcmp(verb, "WRREAD")) {
+    // write <bytes_hex> without STOP, then requestFrom 4 bytes: repeated START on the wire
+    Wire.beginTransmission((uint8_t)addr);
+    for (const char *p = arg; p[0] && p[1]; p += 2) Wire.write((uint8_t)((hexval(p[0]) << 4) | hexval(p[1])));
+    const uint8_t rc = Wire.endTransmission(false);
+    const size_t got = Wire.requestFrom((uint8_t)addr, (size_t)4, true);
+    Serial.print("WRREAD rc="); Serial.print(rc); Serial.print(" got="); Serial.print(got); Serial.print(" data=");
+    while (Wire.available()) { const int b = Wire.read(); if (b < 16) Serial.print('0'); Serial.print(b, HEX); }
+    Serial.println();
   } else if (!strcmp(verb, "READ")) {
     const size_t want = strtoul(arg, nullptr, 10);
     const size_t got = Wire.requestFrom((uint8_t)addr, want);
