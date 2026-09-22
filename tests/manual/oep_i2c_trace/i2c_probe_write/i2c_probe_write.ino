@@ -87,6 +87,55 @@ static void bitbangFast(uint32_t hold_ns, uint8_t addr, const uint8_t *data, siz
   digitalWrite(BB_SCL, HIGH); delayMicroseconds(5); digitalWrite(BB_SDA, HIGH); delayMicroseconds(5);
   pinMode(BB_SDA, INPUT); pinMode(BB_SCL, INPUT);
   Serial.print("BBF hold_ns="); Serial.print(hold_ns); Serial.print(" acks="); Serial.println(acks);
+
+}
+
+// Stuck-bus scenario (worklist P3 row 6): STUCK <addr_hex> bit-bangs START + addr|R, ACKs the first
+// data byte and then stops clocking with SCL high while the target drives the next byte's MSB. With a
+// preloaded 0x00 slot the target keeps SDA low: the classic "slave holds SDA" bus hang for Wire to meet.
+// BUSCLR is the textbook recovery done from the sketch: up to 9 SCL pulses with SDA released, then STOP.
+// The fixture's route 2 has no bus pull-up at all (P4 slave driver enables none, no external ones;
+// 2026-09-22 capture: X035 INPUT / open-drain release read 0.00), so SCL is driven push-pull and SDA is
+// released as INPUT_PULLUP, the same way the BB drive=pp sweep does it. Both leave the pins as GPIO;
+// send BEGIN to hand them back to Wire.
+static void sdaRelease() { pinMode(BB_SDA, INPUT_PULLUP); }
+static void sdaLow() { pinMode(BB_SDA, OUTPUT); digitalWrite(BB_SDA, LOW); }
+static void sclHigh() { pinMode(BB_SCL, OUTPUT); digitalWrite(BB_SCL, HIGH); }
+static void sclLow() { pinMode(BB_SCL, OUTPUT); digitalWrite(BB_SCL, LOW); }
+static void stuckBus(uint8_t addr) {
+  Wire.end(); gRoute = -1;   // the peripheral must not watch the bus through the input path while we bit-bang
+  sdaRelease(); sclHigh(); delayMicroseconds(20);
+  sdaLow(); delayMicroseconds(5);                                              // START
+  const uint8_t byte0 = (uint8_t)((addr << 1) | 1);
+  for (int i = 7; i >= 0; --i) {
+    sclLow(); delayMicroseconds(2);
+    if ((byte0 >> i) & 1) sdaRelease(); else sdaLow();
+    delayMicroseconds(3); sclHigh(); delayMicroseconds(5);
+  }
+  sclLow(); sdaRelease(); delayMicroseconds(5);                                // ACK slot
+  sclHigh(); delayMicroseconds(2); const char ack = digitalRead(BB_SDA) ? 'N' : 'A'; delayMicroseconds(3);
+  uint8_t data = 0;
+  for (int i = 7; i >= 0; --i) {                                                // first data byte, target drives
+    sclLow(); delayMicroseconds(5); sclHigh(); delayMicroseconds(2);
+    data = (uint8_t)((data << 1) | (digitalRead(BB_SDA) ? 1 : 0)); delayMicroseconds(3);
+  }
+  sclLow(); delayMicroseconds(1); sdaLow(); delayMicroseconds(4);              // master ACK
+  sclHigh(); delayMicroseconds(5);
+  sclLow(); delayMicroseconds(1); sdaRelease(); delayMicroseconds(4);          // target now drives MSB of byte 2
+  sclHigh(); delayMicroseconds(20);                                             // ... and we walk away with SCL high
+  Serial.print("STUCK ack="); Serial.print(ack); Serial.print(" byte1="); Serial.print(data, HEX);
+  Serial.print(" sda="); Serial.print(digitalRead(BB_SDA)); Serial.print(" scl="); Serial.println(digitalRead(BB_SCL));
+}
+static void busClear() {
+  sdaRelease(); sclHigh(); delayMicroseconds(5);
+  int pulses = 0;
+  for (; pulses < 9 && !digitalRead(BB_SDA); ++pulses) {
+    sclLow(); delayMicroseconds(5); sclHigh(); delayMicroseconds(5);
+  }
+  sclLow(); delayMicroseconds(2); sdaLow(); delayMicroseconds(5);              // STOP
+  sclHigh(); delayMicroseconds(5); sdaRelease(); delayMicroseconds(5);
+  Serial.print("BUSCLR pulses="); Serial.print(pulses); Serial.print(" sda="); Serial.print(digitalRead(BB_SDA));
+  Serial.print(" scl="); Serial.println(digitalRead(BB_SCL));
 }
 
 void setup() { tc_begin("i2c_probe_write"); }
@@ -101,6 +150,11 @@ void loop() {
     gRoute = route; Wire.begin();
     Serial.print("BEGIN route="); Serial.println(route);
     return;
+  }
+  if (n >= 1 && !strcmp(verb, "BUSCLR")) { busClear(); return; }
+  if (n >= 2 && !strcmp(verb, "STUCK")) {
+    unsigned a = 0; if (sscanf(cmd, "%*s %x", &a) < 1) { Serial.println("ERR STUCK usage"); return; }
+    stuckBus((uint8_t)a); return;
   }
   if (n >= 4 && !strcmp(verb, "BBF")) {
     // BBF <hold_ns> <addr_hex> <bytes_hex>: sscanf mapped hold_ns -> route, addr -> hz (decimal!), bytes -> ... re-parse
@@ -124,9 +178,13 @@ void loop() {
     Wire.beginTransmission((uint8_t)addr);
     size_t count = 0;
     for (const char *p = arg; p[0] && p[1]; p += 2) { Wire.write((uint8_t)((hexval(p[0]) << 4) | hexval(p[1]))); ++count; }
+    const uint32_t t0 = micros();
     const uint8_t rc = Wire.endTransmission();
+    const uint32_t t_us = micros() - t0;
     Serial.print("WRITE rc="); Serial.print(rc); Serial.print(" route="); Serial.print(route);
-    Serial.print(" hz="); Serial.print(hz); Serial.print(" n="); Serial.println(count);
+    Serial.print(" hz="); Serial.print(hz); Serial.print(" n="); Serial.print(count);
+    Serial.print(" t_us="); Serial.print(t_us); Serial.print(" timeout="); Serial.println(Wire.getWireTimeoutFlag() ? 1 : 0);
+    Wire.clearWireTimeoutFlag();
   } else if (!strcmp(verb, "WRREAD")) {
     // write <bytes_hex> without STOP, then requestFrom 4 bytes: repeated START on the wire
     Wire.beginTransmission((uint8_t)addr);
@@ -138,9 +196,12 @@ void loop() {
     Serial.println();
   } else if (!strcmp(verb, "READ")) {
     const size_t want = strtoul(arg, nullptr, 10);
+    const uint32_t t0 = micros();
     const size_t got = Wire.requestFrom((uint8_t)addr, want);
+    const uint32_t t_us = micros() - t0;
     Serial.print("READ got="); Serial.print(got); Serial.print(" data=");
     while (Wire.available()) { const int b = Wire.read(); if (b < 16) Serial.print('0'); Serial.print(b, HEX); }
-    Serial.println();
+    Serial.print(" t_us="); Serial.print(t_us); Serial.print(" timeout="); Serial.println(Wire.getWireTimeoutFlag() ? 1 : 0);
+    Wire.clearWireTimeoutFlag();
   } else { Serial.print("ERR verb "); Serial.println(verb); }
 }

@@ -87,3 +87,43 @@ halt して読むと I2C1 は BTF=1 / RXNE=1 / ACK=0 で master 自身が SCL �
 | write 4 byte @400 kHz | rc=0、target 受信一致 | `S 84A 0aA 0bA 0cA 0dA P`、SCL 周期 2.6 µs（≈385 kHz） |
 
 `p4.i2c-target` の preloaded-tx は「N byte 読ませるには N+1 byte 積む」（E150）を firmware が filler で吸収している。
+
+## 2026-09-22（続き）: clock stretch と stuck bus（worklist P3 行 6 の残り）
+
+```
+uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --stretch
+uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --stuck
+```
+
+### clock stretch — target が SCL を伸ばす
+
+`p4.i2c-target` に `set_stretch <us>`（op 0x11）を足した。ESP-IDF v1 slave driver は `stretch_en` で hardware stretch
+（master read の address 一致時など）を有効にするが**解放を誰もしない**（raw flag が立ったまま SCL low が続き、最初の run は Wire が
+25 ms で timeout、capture 全域 SCL low）。probe は `service()` で stretch を見つけてから `stretch_us` 待って `slave_scl_stretch_clr`
+する。Wire の既定 timeout は `CH32_WIRE_TIMEOUT_US` = 25 ms。
+
+| stretch | Wire `requestFrom(0x42, 4)` @100 kHz | 線上 |
+|---:|---|---|
+| 0 | got=4、一致、0.48 ms | `S 85A a1A b2A c3A d4N P` |
+| 0.1 / 1 / 5 / 20 ms | got=4、一致、t = 0.57 / 1.47 / 5.53 / 20.47 ms | SCL low 最大 0.10 / 1.00 / 5.06 / 20.00 ms、それ以外は同じ |
+| 30 ms（timeout 超） | got=0、**25.12 ms で諦める**、`getWireTimeoutFlag()`=1 | `S 85A a1N P`（解放後に peripheral が 1 byte 分だけ動いて STOP） |
+| その直後、stretch off | got=4、一致 | `_needs_recovery` → SWRST 経路で回復 |
+
+### stuck bus — 線が握られた時の Wire
+
+| 状況 | `endTransmission` | 備考 |
+|---|---|---|
+| P4 GPIO が SDA を low に固定 | rc=5、**36 µs**（timeout flag 無し = error flag 経路、ARLO/BERR） | 2 回目は SWRST 後 START 待ちで 25 ms timeout |
+| P4 GPIO が SCL を low に固定 | rc=5、25.0 ms、timeout flag=1 | 2 回目も同じ |
+| 線を解放（誰もいない） | rc=2（address NACK）、0.12 ms | 回復 |
+| target が byte 途中で SDA low を保持（`STUCK`: START, addr\|R, byte1=0x00 を ACK、次 byte の MSB で SCL high のまま放置） | `Wire.begin()` → rc=5、25 ms、2 回とも | **Wire の recover()（SWRST）では解放できない**。core に bus clear は無い |
+| sketch から 9 pulse bus clear（`BUSCLR`） | 8 pulse で SDA=1、STOP | その後 write rc=0、target 受信一致 |
+
+### fixture の事実: route 2 には bus pull-up が無い
+
+capture で観測すると、X035 が PC16/PC17 を INPUT / open-drain release にした時の線は **0.00**（P4 I2C target が pin を持っていても同じ。
+IDF slave driver は内部 pull-up を有効にせず、外付けも無い）。INPUT_PULLUP にすると 1.00。Wire が動くのは X035 の AF 出力が high を
+能動的に駆動するから（X0 GPIO block、errata `x035-no-gpio-open-drain` の AF 側の顔）。P4 slave はそれに対して low を通せる（ACK、20 ms stretch）。
+このため emulated open-drain の bit-bang（`BB drive=od`）はこの fixture では bus が動かず、`STUCK` / `BUSCLR` は SCL を push-pull、
+SDA 解放を INPUT_PULLUP で行う。RM p.222 の `R8_UDEV_CTRL.RB_UD_PD_DIS`（既定 0 = UDP/UDM 内部 pull-down 有効、GPIO mode でも効く）
+が「INPUT で 0」に寄与しているかは未分離。
