@@ -37,6 +37,10 @@ READY を待つときは `oep_smoke.sync()` を使うこと。
 
 ## 実績
 
+- 2026-09-23(ベンチ再起動後、ch32rv 0.9.1 / V103 M モード化の後): x035 14/14、v003 14/14（`Esp32V003Probe` を
+  `target.console` 入りに更新してから）、l103 13/14。l103 の 1 件は hooks_selftest で、判定は全部 PASS していたが
+  コンソールの 1 フレームが二重に届き（`failures==0`、`READY READY`）完了行が一致しなかった。probe が target の
+  フレームに答える DATA0 の書込みを確かめていないため（飛び線で書込みが黙って落ちると同じ word をもう一度読む）
 - 2026-09-23 x035 / l103: basic 14/14 PASS（最終形: probe 59c06f1、QingKe V4 の割込みを gintenr で、testcmd.h の clock heal 入り）。
   l103 は probe 側で DM read の実行回数検査と flash の CTLR/ADDR 読み戻しを入れるまで、書き込み verify が黙って壊れていた。
   書き込み直後の attach が失敗したときは NRST を 1 回入れて再試行する
