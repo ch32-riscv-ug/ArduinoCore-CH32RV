@@ -146,8 +146,7 @@ static void run_checks()
 
 void setup()
 {
-    // Driven by pytest-embedded over a serial port, so that port is the console.
-    tc_begin("i2c_loopback", Serial);
+    tc_begin("i2c_loopback");
 }
 
 void loop()

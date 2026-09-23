@@ -103,27 +103,25 @@ WCH_LINK_VID = 0x1A86
 WCH_LINK_PIDS = (0x8010, 0x8012)
 
 
-def expectations(name: str) -> tuple:
-    """The test file's own script: [(stream, "write"|"expect"|"match", text)], in order.
+def expectations(name: str, directory: pathlib.Path = None) -> tuple:
+    """The sketch's own script: [(stream, "write"|"expect"|"match", text)], in order.
 
-    stream is the object the test called: "dut" is Console, the harness (the
-    debug module's data registers - see tests/sketches/testcmd.h), and "uart" is
-    the wire of the UART the runner named for a sketch that tests one.
+    Read out of <sketch>/expect.py rather than restated here, so adding a sketch needs no
+    change to a runner. The script is one function that writes and reads in order. It
+    names its streams and nothing else - `console` is the board's Console, the harness,
+    and `uart` the wire of the UART the runner named for a sketch that tests one. How
+    each stream is reached differs per path (target.console on an OEP probe, ch32rv's
+    dmdata monitor on a WCH-Link, a serial port for a UART) and is the runner's business.
 
-    Read out of test_<name>.py rather than restated here, so the pytest run and
-    this one cannot disagree about what passing means - adding a sketch needs no
-    change to this runner. Each file is one test function that writes commands
-    and reads answers in order, which is exactly a script.
-
-    Only plain literals are collected. An f-string means the test parametrises
-    the value, and guessing what it expands to would be worse than admitting we
-    cannot check it; the FAIL and failures= rules in run_one still cover those.
+    Only plain literals are collected. An f-string means the script parametrises the
+    value, and guessing what it expands to would be worse than admitting we cannot check
+    it; the FAIL and failures= rules in run_one still cover those.
     """
-    test = BASIC / name / f"test_{name}.py"
-    if not test.exists():
+    script = (directory or BASIC / name) / "expect.py"
+    if not script.exists():
         return ()
     steps = []
-    for node in ast.walk(ast.parse(test.read_text(encoding="utf-8"))):
+    for node in ast.walk(ast.parse(script.read_text(encoding="utf-8"))):
         if not isinstance(node, ast.Call) or not isinstance(node.func,
                                                             ast.Attribute):
             continue
@@ -134,7 +132,7 @@ def expectations(name: str) -> tuple:
         # them apart is what lets the SKIP-tolerant checks be replayed at all.
         verb = {"write": "write", "expect_exact": "expect",
                 "expect": "match"}.get(node.func.attr)
-        stream = node.func.value.id if isinstance(node.func.value, ast.Name) else "dut"
+        stream = node.func.value.id if isinstance(node.func.value, ast.Name) else "console"
         if verb:
             steps.append((node.lineno, stream, verb, arg.value))
     # ast.walk is breadth-first, and a script only means anything in order.
@@ -142,7 +140,7 @@ def expectations(name: str) -> tuple:
     # run_one has already waited for the banner, and it repeats, so replaying
     # that step would only cost half a second of waiting for the next one.
     return tuple((stream, verb, text) for _, stream, verb, text in steps
-                 if not (stream == "dut" and verb == "expect"
+                 if not (stream == "console" and verb == "expect"
                          and text == f"{name} READY"))
 
 
@@ -773,7 +771,7 @@ def reset_target(bench: Bench) -> bool:
     return sh(cmd).returncode == 0
 
 
-def run_one(name, bench: Bench) -> dict:
+def run_one(name, bench: Bench, source: pathlib.Path = None) -> dict:
     """Compile, flash and drive one sketch.
 
     Returns {"verdict": "pass" | "fail" | "skip", "why": ..., "output": ...}.
@@ -781,11 +779,11 @@ def run_one(name, bench: Bench) -> dict:
     person reading a summary table or a test that has to say why it skipped,
     and None meant two unrelated things.
     """
-    sketch_src = BASIC / name
+    sketch_src = source or BASIC / name
     if not (sketch_src / f"{name}.ino").exists():
-        return {"verdict": "fail", "why": f"no such sketch under {BASIC}",
+        return {"verdict": "fail", "why": f"no {name}.ino under {sketch_src}",
                 "output": ""}
-    script = expectations(name)
+    script = expectations(name, sketch_src)
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = pathlib.Path(tmp)
@@ -810,7 +808,7 @@ def run_one(name, bench: Bench) -> dict:
         uart_port = None
         try:
             link = Link(console_stream)
-            links = {"dut": link}
+            links = {"console": link}
             # The banner repeats every half second, so there is nothing to catch in time -
             # waiting is enough however long the flash took.
             banner = f"{name} READY"
@@ -827,7 +825,7 @@ def run_one(name, bench: Bench) -> dict:
                       "   no banner, and the target could not be reset")
                 console_stream = Ch32rvConsole(bench.ch32rv, bench.probe)
                 link = Link(console_stream)
-                links["dut"] = link
+                links["console"] = link
                 if not (needed_reset and link.wait(banner, window)):
                     link.drain(1.0)
                     show(link.text)
@@ -876,7 +874,7 @@ def run_one(name, bench: Bench) -> dict:
     replayed = sum(1 for _, verb, _ in script if verb != "write")
     if not replayed and not counts:
         return {"verdict": "skip", "output": text,
-                "why": f"nothing to check against - test_{name}.py has no "
+                "why": f"nothing to check against - {name}/expect.py has no "
                        f"literal expectations and the sketch reports no "
                        f"failure count"}
     return {"verdict": "pass", "output": text,
@@ -890,11 +888,11 @@ def run_one(name, bench: Bench) -> dict:
 def replay(links: dict, name: str, script: tuple, seconds: float) -> list:
     """Run the test file's script, and return the steps that never arrived.
 
-    links maps a stream the test names - "dut" for Console, "uart" for the wire of the
-    UART the runner named - to its Link. A sketch whose test writes nothing still gets the
+    links maps a stream the script names - "console" for the board's Console, "uart"
+    for the wire of the UART the runner named - to its Link. A sketch whose test writes nothing still gets the
     standard RUN, so a new case works here before anyone has written its expectations down.
     """
-    console = links["dut"]
+    console = links["console"]
     missed = []
     if not any(verb == "write" for _, verb, _ in script):
         console.send("RUN\n")
@@ -952,8 +950,8 @@ def run(sketch=DEFAULT_SKETCH, bench: Bench = None, **kw) -> dict:
     return results
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
+def bench_arguments(ap: argparse.ArgumentParser) -> None:
+    """The options that pick the board and the probe, shared by every entry point."""
     ap.add_argument("--board", default=os.environ.get("CH32_BOARD"),
                     help="series board, e.g. CH32X035 "
                          "(default: whatever probe-rs detects)")
@@ -970,21 +968,46 @@ def main() -> int:
     ap.add_argument("--force", action="store_true",
                     help="flash even if the attached chip is a different series")
     ap.add_argument("--serial", type=int,
-                    help="override which USART Serial is (the uart_scan test "
-                         "finds it)")
+                    help="override which USART the WCH-Link's UART bridge reaches "
+                         "(the uart_scan test finds it)")
     ap.add_argument("--build-property", action="append", default=[],
                     dest="properties", metavar="KEY=VALUE",
                     help="extra --build-property for the compile, repeatable")
+
+
+def bench_from(args) -> Bench:
+    return resolve_bench(board=args.board, pnum=args.pnum, port=args.port,
+                         probe=args.probe, serial=args.serial,
+                         force=args.force, baud=args.baud,
+                         seconds=args.seconds, properties=args.properties)
+
+
+def run_directory(source: pathlib.Path, argv=None) -> int:
+    """Entry point for a manual case whose sketch and expect.py live in `source`."""
+    ap = argparse.ArgumentParser(description=f"compile, flash and run {source.name}")
+    bench_arguments(ap)
+    args = ap.parse_args(argv)
+    try:
+        bench = bench_from(args)
+        print(f"\n===== {source.name}")
+        result = run_one(source.name, bench, source)
+    except Failure as e:
+        print(f"FAIL: {e}", file=sys.stderr)
+        return 1
+    print(f"{MARK[result['verdict']]} {source.name}: {result['why']}")
+    return 0 if result["verdict"] != "fail" else 1
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    bench_arguments(ap)
     ap.add_argument("--sketch", default=os.environ.get("CH32_SKETCH", DEFAULT_SKETCH),
                     help=f"a directory under tests/sketches/basic, or 'all' "
                          f"(default: {DEFAULT_SKETCH})")
     args = ap.parse_args()
 
     try:
-        bench = resolve_bench(board=args.board, pnum=args.pnum, port=args.port,
-                              probe=args.probe, serial=args.serial,
-                              force=args.force, baud=args.baud,
-                              seconds=args.seconds, properties=args.properties)
+        bench = bench_from(args)
         results = run(args.sketch, bench)
     except Failure as e:
         print(f"FAIL: {e}", file=sys.stderr)

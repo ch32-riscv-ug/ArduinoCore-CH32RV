@@ -25,33 +25,14 @@ Safety:
 
 Setup:
     cd tests
-    uv run --env-file .env pytest manual/i2c_loopback/i2c_loopback.py -v -s
+    uv run manual/i2c_loopback/i2c_loopback.py [--board <BOARD>]
 """
-CHECKS = [
-    "slave_acks_address",
-    "other_address_nacked",
-    "write_delivered",
-    "receive_event_once",
-    "receive_count",
-    "receive_bytes",
-    "request_reply",
-    "overread_gets_ff",
-    "full_buffer_delivered",
-    "second_round_works",
-]
+import pathlib
+import sys
 
+HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "smoke"))
+import smoke  # noqa: E402
 
-def test_i2c_loopback(dut) -> None:
-    """
-    Expected result (pass):  every check reports PASS (or SKIP on a
-                             single-bus series).
-    Expected result (fail):  missing pull-ups fail `slave_acks_address` with
-                             code 5 (bus timeout); a missing jumper fails it
-                             with 2 (address NACK). The code is printed on
-                             the FAIL line.
-    """
-    dut.expect_exact("i2c_loopback READY", timeout=20)
-    dut.write("RUN\n")
-    for name in CHECKS:
-        dut.expect(rf"{name} (PASS|SKIP .*)")
-    dut.expect_exact("i2c_loopback done failures=0")
+if __name__ == "__main__":
+    sys.exit(smoke.run_directory(HERE))

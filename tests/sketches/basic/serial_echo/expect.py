@@ -2,7 +2,7 @@
 
 serial_println only proves the transmit path. This drives the other direction
 over the UART the runner named ("UART <n> <route> <baud>"), so the board's RX
-pin has to reach the runner's UART TX as well. `dut` is Console, the harness;
+pin has to reach the runner's UART TX as well. `console` is Console, the harness;
 `uart` is that wire (tests/sketches/testcmd.h).
 
 The one sketch with no RUN - receiving *is* what is under test, so its
@@ -10,8 +10,8 @@ vocabulary is the test (see tests/TEST_PLAN.ja.md).
 """
 
 
-def test_serial_echo(dut, uart) -> None:
-    dut.expect_exact("serial_echo READY", timeout=20)
+def expect(console, uart) -> None:
+    console.expect_exact("serial_echo READY", timeout=20)
 
     # A line sent to the target comes back with the echo prefix.
     uart.write("ECHO hello\n")

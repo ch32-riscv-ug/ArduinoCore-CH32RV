@@ -1,6 +1,6 @@
 # oep_smoke — OEP 開発用 probe で sketch を一巡する
 
-`smoke.py` と同じ判定（`<name> READY` → `PING` → `test_<name>.py` の expectations 再生 → `FAIL` 無し・`failures=0`）を、
+`smoke.py` と同じ判定（`<name> READY` → `PING` → `<name>/expect.py` の再生 → `FAIL` 無し・`failures=0`）を、
 WCH-LinkE / probe-rs ではなく **OEP v0 probe** で行う。治具は `targets.py` の profile で選ぶ。
 
 ```sh
@@ -11,9 +11,9 @@ uv run tests/manual/oep_smoke/oep_smoke.py --target l103 --sketch all --result-j
 - 書込み: `oep_client.v0.flash_image.program_image`（ESIG preflight、physical page 差分、probe 内 CRC32 verify、reset）
 - **console: probe の `target.console`**。DUT の debug module のデータレジスタ（`SerialDMDATA`）で、ピンを使わず、
   どの UART よりも先に使える。sketch 側は `testcmd.h` の `Console`（[TEST_PLAN](../../TEST_PLAN.ja.md) の規約を参照）
-- **UART は試験対象**。`test_<name>.py` が `uart` を使う sketch だけ、profile の `uart`（USART 番号, route）を
+- **UART は試験対象**。`expect.py` が `uart` を使う sketch だけ、profile の `uart`（USART 番号, route）を
   `UART <n> <route> <baud>` で DUT に指名し、probe の `fixture.uart` をその線が落ちるピン（`uart_rx` / `uart_tx`）で借りる
-- 判定: `smoke.py` の `expectations()` を流用。`dut` はコンソール、`uart` は指名した UART の線
+- 判定: 各 sketch の `expect.py`（`smoke.py` の `expectations()` で読む）。`console` はコンソール、`uart` は指名した UART の線。どう繋ぐかは経路ごとに違い、runner が持つ
 
 治具ごとの違いは profile に閉じている。コンソールの配線は要らないので、profile が持つのは「試験対象の UART を
 どの USART・route で出せば probe が受けられるか」だけ。

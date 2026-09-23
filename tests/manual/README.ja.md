@@ -51,8 +51,7 @@ uv run --env-file .env pytest manual/<case>/<case>.py -v -s
 どちらの経路も同じ関数(`inventory()` / `resolve_bench()` + `run()` / `scan()`)を
 呼ぶので、結果が食い違うことはありません。
 
-**設定は環境変数**です。pytestのoptionは増やしていません
-(`--port`と`--target`はpytest-embeddedが既に持っていて、別の意味を重ねる方が害が大きい)。
+**設定は環境変数**です。pytestのoptionは増やしていません。
 [`../.env.example`](../.env.example)を参照してください。
 
 **作業台固有の値は`.env`で上書きします。** どのpadが空いているかはboardごとに違うので、
@@ -229,35 +228,34 @@ uv run tests/manual/smoke/smoke.py --board CH32X035 --sketch all
 
 `smoke.py`は[コマンド規約](../TEST_PLAN.ja.md)を喋ります。バナーは0.5秒ごとに
 繰り返されるので、書き込みに何秒かかっても待てば捕まります。
-**ポートはuploadの前に開いて跨いだまま**にします——バナーを捕まえるためではなく、
-読み続けるためです。前のsketchはbuildとflashの20秒ほどの間も喋り続けるので、
-誰も読まないとWCH-Linkのブリッジが溢れ、あとから出てくるものが混線します。そのあと
-`PING <token>` → `PONG <token>`を取ってから先へ進みます——**このtoolだけは
+**コンソールはUARTではなく、ch32rvの`monitor --source dmdata`で読むdebug moduleの
+コンソール**です(sketch側の`Console`)。WCH-LinkのUARTブリッジは、UARTを試すsketch
+(台本が`uart`を使うもの)のときだけ開き、`UART <n> <route> <baud>`でsketchにその
+USARTを指名します。そのあと`PING <token>` → `PONG <token>`を取ってから先へ進みます——**このtoolだけは
 sketchを連続で焼く**ので、前のsketchが残した`PONG`が今の`PING`の答に
-見えないよう、tokenで区別する必要があります(pytest側は1ファイル1 sketchなので
-バナー名で足ります)。
+見えないよう、tokenで区別する必要があります。
 
-合否の基準は各sketchの`test_<name>.py`から読み取ります。source of truthを
+合否の基準は各sketchの`expect.py`から読み取ります。source of truthを
 1つに保つためで、sketchを増やしてもこのtoolを触る必要はありません。
-各テストは1関数で、`dut.write`と`dut.expect_exact` / `dut.expect`が
-**順番に並んだscript**なので、それをそのまま再生します。
+台本は1関数で、`console`(コンソール)と`uart`(指名したUARTの線)への
+`write` / `expect_exact` / `expect`が**順番に並んだscript**なので、それをそのまま
+再生します。台本は繋ぎ方を書きません——経路ごとにIFが違うので、どう繋ぐかは
+runnerが持ちます(OEP probe版は[`oep_smoke/`](oep_smoke/README.ja.md))。
 
 | 記法 | 再生 |
 |---|---|
-| `dut.write("RUN\n")` | 送る |
-| `dut.expect_exact("...")` | その文字列が来るまで読む |
-| `dut.expect(r"...")` | 正規表現で待つ(`PASS\|SKIP`のような選択) |
-| f-string | **飛ばす**。値をtestが組み立てているので再現できない |
+| `console.write("RUN\n")` | 送る |
+| `console.expect_exact("...")` | その文字列が来るまで読む |
+| `console.expect(r"...")` | 正規表現で待つ(`PASS\|SKIP`のような選択) |
+| `uart.write(...)` / `uart.expect_exact(...)` | 同じことを試験対象UARTの線の上で |
+| f-string | **飛ばす**。値を台本が組み立てているので再現できない |
 
-`dut.write`が1つも無いsketchは標準の`RUN`で駆動します。加えて2つの一般規則:
+`write`が1つも無いsketchは標準の`RUN`で駆動します。加えて2つの一般規則:
 
 - 出力に`FAIL`が含まれてはいけない
 - `failures=`があれば`failures=0`でなければならない
 
-これがあるので、`core_api`のようにparametrizeされたf-stringしか持たないtestでも
-実質的に検証できます。**`dut.write()`でtargetを叩くtest(`serial_echo` /
-`hooks_selftest`)もSKIPしなくなりました**——それぞれのtestファイルから
-並びを読み取って再生するので、二重管理にはなりません。
+これがあるので、f-stringの行を持つ台本でも実質的に検証できます。
 
 書き込み前に`probe-rs info`でチップを読み、`--board`と食い違ったら止まります
 (ベンチはboardを差し替えるため)。意図的に上書きするなら`--force`。
@@ -310,9 +308,8 @@ past_ebss=DEADBEEF      埋めパターンが実際に届いていた(対照)
 boardを載せ替えれば同じコマンドで回ります。**variantごとのlinker scriptとvector table**の
 検証になるので、新しいseriesを触るときは最初にこれです。
 
-sketchが`sketch/`にあるのは、testディレクトリ直下の`*.ino`をpytest-embeddedが
-自分のsketch testと解釈して`sketch.yaml`を要求するためです。これはdriverがcopyして
-自分でbuildする素材で、uploadとresetの間にRAMを埋める必要があります。
+sketchが`sketch/`にあるのは、driverがcopyして自分でbuildする素材だからです
+(uploadとresetの間にRAMを埋める必要があります)。
 
 **2026-08-25にコマンド規約へ載せました。** このtestはdriverが自分でresetするので
 「最初の出力を取り逃す」問題は元から無いのですが、載せた理由は別で、
@@ -346,7 +343,7 @@ PWMのdutyも、この方法では見えません。
 # 2. tests/.env に書く
 #      CH32_LOOPBACK_OUT=PA0
 #      CH32_LOOPBACK_IN=PB0
-cd tests && uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
+cd tests && uv run --env-file .env manual/gpio_loopback/gpio_loopback.py [--board <BOARD>]
 ```
 
 SWDのpad(PA13/PA14、X033/X035ならPC18/PC19)は**絶対に使わないでください**。

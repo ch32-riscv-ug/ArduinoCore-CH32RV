@@ -210,7 +210,7 @@ def run_one(name: str, args, profile: dict, client, target, uart_service, log) -
         log(f"   programmed {outcome.pages_changed} pages, verified, {result['program_s']} s")
 
     console = open_console(client)
-    links = {"dut": console}
+    links = {"console": console}
     lease = None
     try:
         banner = f"{name} READY"

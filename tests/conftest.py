@@ -5,7 +5,6 @@ what the machine can do, and that is decided here rather than in each test:
 
   pytest                      every check that needs no board and no profile
   pytest --clean              the same, with every cache cleared first
-  pytest --profile ch32x035 --port /dev/ttyACM4      adds the sketch tests
   pytest -m "not slow"        skips the multi-minute compile sweeps
   pytest --sweep              adds the every-example x every-series sweep
 
@@ -15,9 +14,9 @@ collected; manual/ is excluded outright and its entry points deliberately carry
 no test_ prefix, so nothing a bare `pytest` picks up ever flashes a board.
 See tests/TEST_PLAN.ja.md.
 
-Kept small on purpose. Nothing about the sketch command protocol is here: a
-hardware test talks to `dut` directly - wait for the repeated banner, send a
-command, read the answers - so it needs no fixture of ours. Shared code that is
+Kept small on purpose, and nothing here touches a board. Hardware runs go through
+the runners under manual/ (smoke.py on a WCH-Link, oep_smoke/oep_smoke.py on an OEP
+probe), which replay each sketch's expect.py over whatever that path's console is. Shared code that is
 not a fixture goes in a normally-named module beside this one (loader.py),
 because a second conftest.py anywhere would replace this module in sys.modules.
 
@@ -37,10 +36,6 @@ import pytest
 from loader import REPO
 
 
-# --clean is pytest-embedded-arduino-cli's option: it passes --clean to
-# `arduino-cli compile` for the sketch builds it drives itself. That covers
-# tests/sketches and nothing else, so the rest of the suite is extended to mean
-# the same thing here - see _clean().
 def _clean_requested(config) -> bool:
     return bool(config.getoption("--clean", default=False))
 
@@ -80,6 +75,9 @@ _CLEANED = pytest.StashKey[int]()
 
 def pytest_addoption(parser):
     parser.addoption(
+        "--clean", action="store_true", default=False,
+        help="clear pytest's caches and this suite's scratch directories first")
+    parser.addoption(
         "--sweep", action="store_true", default=False,
         help="run the example sweep (every example x every series, ~20 min). "
              "Meant for GitHub Actions, where the wall-clock is nobody's.")
@@ -104,18 +102,7 @@ def pytest_report_header(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    """Drop the per-sketch tests unless a profile was asked for.
-
-    They build and flash through a sketch profile, so without --profile there
-    is nothing for them to select and pytest-embedded errors out. Silently
-    collecting them would make a bare `pytest` fail on a machine that is
-    perfectly able to run everything else.
-
-    What counts is being *a sketch case*, not living under tests/sketches:
-    tests/sketches/test_sketch_profiles.py and test_sketch_profile_build.py sit
-    beside the cases and drive arduino-cli themselves, with no dut and no
-    profile option. A case is a directory with a sketch.yaml in it.
-    """
+    """Skip the example sweep unless it was asked for."""
     if not config.getoption("--sweep", default=False):
         # Opt-in, not opt-out: 20 minutes is fine on a runner and not fine in
         # front of someone waiting. docs/examples-build-rules.ja.md.
@@ -123,14 +110,6 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if item.get_closest_marker("sweep"):
                 item.add_marker(no_sweep)
-
-    if config.getoption("--profile", default=None):
-        return
-    skip = pytest.mark.skip(reason="needs --profile (and a board, unless "
-                                   "--run-mode build)")
-    for item in items:
-        if (pathlib.Path(str(item.fspath)).parent / "sketch.yaml").exists():
-            item.add_marker(skip)
 
 
 @pytest.fixture(scope="session")

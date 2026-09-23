@@ -8,9 +8,8 @@ license = "MIT"
 authors = [{ name = "TANAKA Masayuki" }]
 dependencies = [
   "pytest>=8",
-  "pytest-embedded>=2.0",
-  "pytest-embedded-serial>=2.0",
-  "pytest-embedded-arduino-cli>=1.1",
+  # The WCH-Link's UART bridge, for a sketch whose UART is under test (smoke.py).
+  "pyserial>=3.5",
   "pytest-html>=4.1.1",
   # Bench-only: lets detected_chip() send the WCH-LinkE redetect command
   # (Control subcommand 3) that clears the stale-target state without a reset.
@@ -40,11 +39,6 @@ testpaths = ["."]
 norecursedirs = [".venv", ".tools", ".git", ".pytest_cache", "__pycache__",
                  "manual", "*/build"]
 addopts = "-ra --strict-markers"
-# pytest-embedded pulls in record_xml_attribute for every test, which warns
-# about being experimental even for tests that never touch a board.
-filterwarnings = [
-  "ignore::pytest.PytestExperimentalApiWarning",
-]
 markers = [
   "slow: takes minutes (the compile sweeps)",
   "sweep: builds every example for every series; needs --sweep",

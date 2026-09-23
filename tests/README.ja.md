@@ -13,13 +13,12 @@ cd tests
 uv run pytest                                   # boardもprofileも要らないもの全部(約7分)
 uv run pytest --clean                           # 同じものを、cacheを消してから
 uv run pytest -m "not slow"                     # compile系を飛ばす(数秒)
-uv run pytest --profile ch32x035 --run-mode build   # + sketch testをbuildだけ
-uv run pytest --profile ch32x035 --port /dev/ttyACM4  # + 実機で実行
 ```
 
-`--clean`は`pytest-embedded-arduino-cli`のoptionで、本来は`arduino-cli compile`へ
-`--clean`を渡すためのものです。`conftest.py`がこれに相乗りして、`.pytest_cache`、
-`__pycache__`、前回のscratchディレクトリの残骸も消します。`.tools`(toolchain /
+実機でsketchを回すのはpytestではなく`manual/`のrunnerです(下の[sketches/](#sketches))。
+
+`--clean`は`conftest.py`のoptionで、`.pytest_cache`、`__pycache__`、前回のscratch
+ディレクトリの残骸を消します。`.tools`(toolchain /
 probe-rs)と`~/.arduino15`は消しません——消しても結果は変わらず、実行が1時間伸びるだけ
 だからです。
 
@@ -39,13 +38,11 @@ probe-rs)と`~/.arduino15`は消しません——消しても結果は変わら
 | `package/` | `test_package_install.py` | Board Manager install → 上書きなしcompile → upgrade/rollback | 不要 | `slow` |
 | [`sketches/`](sketches/) | `test_sketch_profiles.py` | 全sketch × 全profile boardのcompile | 不要 | `slow` |
 | | `test_sketch_profile_build.py` | `arduino-cli compile --profile`(=index経由)で全sketch × 全profile | 不要 | `slow` |
-| | `basic/<case>/test_<case>.py` | Arduino APIのsketch単位test | 任意 | `--profile`必須 |
 | `unit/` | `test_clock_prescaler.py` | AHB分周器の符号化表(compile時assertのみ) | 不要 | |
 | | `test_tests_layout.py` | この表の規約そのもの | 不要 | |
 | [`manual/`](manual/README.ja.md) | `<case>/<case>.py` | 手動test + 実機tool | 必要 | 明示指定のみ |
 
-`sketch.yaml`が隣にあるtest(=sketch case)は`--profile`が無いとskipします
-(profileが無いとpytest-embeddedがtargetを決められないため)。`manual/`は
+`manual/`は
 `test_`プレフィックスを付けておらず、`norecursedirs`にも入れてあるので、
 ファイルを名指ししない限り収集されません——引数なしの`pytest`が実機を
 焼きにいかないための二重の防護です。
@@ -69,8 +66,9 @@ uv run pytest manual/<case>/<case>.py -v -s             # 手動test
 
 ## sketches/
 
-`pytest-embedded-arduino-cli`(+`pytest-embedded`)を使います。他プロジェクトと同じ構成で、
-**1 caseにつき1 sketchディレクトリ**、`sketch.yaml`のprofileで対象boardを切り替えます。
+**1 caseにつき1 sketchディレクトリ**です。`sketch.yaml`はそのsketchをどのboardで
+buildできるかの約束で、`test_sketch_profiles.py`が全部buildして確かめます。実機での
+実行は`manual/`のrunnerが各caseの`expect.py`を再生します。
 
 ```text
 sketches/
@@ -85,12 +83,14 @@ sketches/
     sketch.yaml      profile定義(board = profile)。生成物
     <case>.ino
     testcmd.h        sync_testcmd.pyが配ったコピー。**直接編集しない**
-    test_<case>.py   1関数。バナーを待ち、コマンドを送り、順に読む
+    expect.py        runnerが再生する台本。1関数で、バナーを待ち、コマンドを送り、順に読む。
+                     `console`と`uart`を名前で呼ぶだけで、どう繋ぐかは書かない
 ```
 
-sketchは**コマンド規約**に従います。`setup()`は`Serial.begin()`だけ、`loop()`が
+sketchは**コマンド規約**に従います。`setup()`は`tc_begin()`だけ、`loop()`が
 `"<name> READY"`を0.5秒ごとに出しながらコマンドを待ち、`RUN`を受けてから判定を
-走らせます。ホスト側は**1 sketch = 1テスト関数**で、その中で順に読みます。
+走らせます。ハーネスの出入口は`Console`(debug moduleのコンソール)で、UARTは
+試験対象です。ホスト側は**1 sketch = 1台本**(`expect.py`)で、その中で順に読みます。
 理由と全文は[テスト計画の「実機テストのコマンド規約」](TEST_PLAN.ja.md)にあります。
 
 `testcmd.h`が各caseにコピーで置いてあるのは、**arduino-cliがsketchフォルダの外を
@@ -153,7 +153,7 @@ EVT mirror(`CH32_MIRROR_ROOT`)だけは`.tools`に入れていません。他rep
 変わる値を置きます。既定値はどれも作者の作業台で動く値なので、未設定でもエラーにはなりません。
 
 ```sh
-uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
+uv run --env-file .env manual/gpio_loopback/gpio_loopback.py
 ```
 
 `.env`はgitignoreされていて、[`.env.example`](.env.example)が唯一の説明です。
@@ -161,11 +161,12 @@ uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
 ### 実行
 
 ```sh
-# 実機なし(CIが回す形)。buildが通ることだけを見る
-uv run pytest sketches --profile ch32v00x --run-mode build
+# 実機なし(CIが回す形)。全sketch × sketch.yamlの全boardをbuild
+uv run pytest sketches/test_sketch_profiles.py
 
-# 実機あり
-uv run pytest sketches --profile ch32v00x --port /dev/ttyACM0
+# 実機あり。経路ごとにrunnerが違う(繋ぎ方=IFが違うため)
+uv run manual/smoke/smoke.py --sketch all                        # WCH-Link(ch32rvでコンソール)
+uv run manual/oep_smoke/oep_smoke.py --target x035 --sketch all   # OEP probe(target.console)
 ```
 
 ### profileと開発中platformの関係(重要)
@@ -193,7 +194,6 @@ CH32の書き込みはWCH-LinkE(SWD)で、シリアルではありません。ar
 
 - `programmers.txt` + `platform.txt`の`tools.<t>.program.pattern`(`{serial.port}`非参照)を用意し、
   profileに`programmer:`を書けば、`arduino-cli upload --profile`は`--port`なしで通る
-- pytest pluginがruntime serial用に`--port`を渡しても、programmer経路が維持される
 
-したがって**pluginの拡張は不要**です。programmerの実体はQ-040/Q-044の決定待ちのため、
+programmerの実体はQ-040/Q-044の決定待ちのため、
 `sketch.yaml`の`programmer:`は現在コメントアウトしています。

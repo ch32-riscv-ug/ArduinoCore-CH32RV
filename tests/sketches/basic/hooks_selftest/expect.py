@@ -8,21 +8,19 @@ regression shows up either as a link error or as a missing PASS.
 Two steps, because serialEvent() needs input the command reader must not eat:
 RUN does the first two checks and then stops reading, and the plain line sent
 afterwards is what reaches the hook.
-
-    uv run pytest sketches/basic/hooks_selftest --profile ch32x035
 """
 
 
-def test_hooks_selftest(dut, uart) -> None:
-    dut.expect_exact("hooks_selftest READY", timeout=20)
-    dut.write("RUN\n")
-    dut.expect_exact("initVariant_called PASS")
-    dut.expect_exact("yield_called PASS")
+def expect(console, uart) -> None:
+    console.expect_exact("hooks_selftest READY", timeout=20)
+    console.write("RUN\n")
+    console.expect_exact("initVariant_called PASS")
+    console.expect_exact("yield_called PASS")
 
     # The line goes out on the named UART, where only serialEvent() can take it
     # - Console is the harness and never reaches a hook. That is the check.
-    dut.expect_exact("hooks_selftest send a line now")
+    console.expect_exact("hooks_selftest send a line now")
     uart.write("a line for serialEvent\n")
-    dut.expect_exact("serialEvent_called PASS")
+    console.expect_exact("serialEvent_called PASS")
 
-    dut.expect_exact("hooks_selftest done failures=0")
+    console.expect_exact("hooks_selftest done failures=0")

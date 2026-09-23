@@ -11,7 +11,8 @@ Why manual:
     wiring; this covers what cannot.
 
 Required hardware:
-    - One CH32 board with a WCH-LinkE attached (flash + Serial over one cable)
+    - One CH32 board with a WCH-LinkE attached (flash, and the console over the
+      debug link)
     - One jumper wire between the two pads passed as CH32_LOOPBACK_OUT and
       CH32_LOOPBACK_IN
 
@@ -43,37 +44,27 @@ Setup:
     a missing jumper fails `level_through_wire` rather than passing silently -
     the test drives both levels, because a floating input often reads HIGH.
 """
-CHECKS = [
-    "pins_differ",
-    "pins_valid",
-    "level_through_wire",
-    "pullup",
-    "pulldown",
-    "exti_cross_port",
-    "pwm_duty_25pct",
-    "pwm_duty_75pct",
-    "pwm_duty_ordered",
-]
+import pathlib
+import sys
+
+HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+sys.path.insert(0, str(HERE.parent / "smoke"))
+from env_config import pin, write_pin_header  # noqa: E402
+import smoke                                     # noqa: E402
 
 
-def test_gpio_loopback(dut) -> None:
-    """
-    Expected result (pass):  every check below reports PASS.
-    Expected result (fail):  the banner never arrives - check the Serial wiring
-                             first, with
-                             `uv run tests/manual/smoke/smoke.py --board <board>`.
-                             A missing jumper fails `level_through_wire`, not
-                             the banner: the sketch drives both levels, because
-                             a floating input often reads HIGH.
-    """
-    dut.expect_exact("gpio_loopback READY", timeout=20)
-    dut.write("RUN\n")
+def main() -> int:
+    """The pads come from the environment and are compiled in, so write them first."""
+    pins = {
+        "LOOPBACK_OUT": pin("CH32_LOOPBACK_OUT", "PA0"),
+        "LOOPBACK_IN": pin("CH32_LOOPBACK_IN", "PB0"),
+    }
+    path = write_pin_header(HERE, pins)
+    print(f"{path.name}: " + ", ".join(
+        f"{m}={pad} ({n})" for m, (pad, n) in sorted(pins.items())))
+    return smoke.run_directory(HERE)
 
-    # The pads are the first thing to look at when a check fails: they come from
-    # tests/.env through conftest.py, and these are the numbers the sketch was
-    # actually compiled with.
-    dut.expect(r"out=\d+ in=\d+")
 
-    for name in CHECKS:
-        dut.expect_exact(f"{name} PASS")
-    dut.expect_exact("gpio_loopback done failures=0")
+if __name__ == "__main__":
+    sys.exit(main())

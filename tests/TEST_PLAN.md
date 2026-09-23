@@ -106,7 +106,7 @@ tests/
   compile/     auto   - compile matrix over all 122 part numbers, bundled examples, size regression
   sizebench/   auto   - newlib size measurements
   package/     auto   - package index generation and clean install through Board Manager
-  sketches/    auto   - per-sketch API tests (pytest + pytest-embedded)
+  sketches/    auto   - sketch builds; on hardware each sketch's expect.py is replayed by a manual/ runner
   unit/        auto   - small checks that need neither a board nor a build
   manual/      manual - needs hardware and a human, plus the tools for driving hardware
 ```
@@ -148,8 +148,12 @@ tests/sketches/<category>/<case>/
 | `stage.py` | what gets copied into a build directory; shared by three harnesses |
 | `compile_all.py` / `profile_build.py` | the compile harnesses |
 
-There is no host-side module: a test uses `dut` directly - wait for the banner,
-send a command, read the answers - so there is nothing to share.
+The host side of a sketch is its `expect.py`: one function that waits for the
+banner, sends commands and reads the answers in order, and **says nothing about how
+it is connected**. It names two streams, `console` and `uart`, and whether those are
+an OEP probe's `target.console`, ch32rv on a WCH-Link or a serial port is the
+runner's business (`manual/smoke/smoke.py`, `manual/oep_smoke/oep_smoke.py`). The
+interface differs by path, so the script must not assume any particular DUT object.
 
 There is no `sketches/conftest.py` either. **pytest imports every conftest.py
 under the same module name, `conftest`**, so a second one removes
@@ -179,8 +183,7 @@ tests/manual/
 
 chip_info, smoke and uart_scan also run as CLIs, for looking at the bench
 interactively; both routes call the same functions. They are configured through
-the environment (`tests/.env`), not through pytest options - pytest-embedded
-already owns `--port` and `--target`.
+the environment (`tests/.env`), not through pytest options.
 
 Nothing is called `dist/`: **that name is in pytest's own default
 `norecursedirs`**, so the day someone simplifies the exclusion list in
@@ -396,7 +399,7 @@ OEP probe.
   pins reach something it can listen on, so it names them -
   `UART <n> <route> <baud>` - and the sketch hands that line to
   `tc_uart_command()`, which brings USARTn up on that route. Until then
-  `tc_uart()` is NULL and the UART checks SKIP. In a test script `dut` is the
+  `tc_uart()` is NULL and the UART checks SKIP. In a test script `console` is the
   console and `uart` is the named UART's wire.
 - **The exception is a sketch whose host uses the debug link for something else
   at the same time** (reading registers from outside, as `reg_probe` does). Its
@@ -434,31 +437,29 @@ void loop() {
 }
 ```
 
-### One sketch, one test function
+### One sketch, one script
 
-**Many checks inside one test**, read in order. No fixtures, no conftest.
+**Each sketch's `expect.py` is one function reading many checks in order**, and the
+runner replays it.
 
 ```python
-def test_wire_selftest(dut) -> None:
-    dut.expect_exact("wire_selftest READY", timeout=20)
-    dut.write("RUN\n")
-    dut.expect_exact("nack_reported PASS")
-    dut.expect_exact("nack_bounded PASS")
+def expect(console) -> None:
+    console.expect_exact("wire_selftest READY", timeout=20)
+    console.write("RUN\n")
+    console.expect_exact("nack_reported PASS")
+    console.expect_exact("nack_bounded PASS")
     ...
-    dut.expect_exact("wire_selftest done failures=0")
+    console.expect_exact("wire_selftest done failures=0")
 ```
 
 Where a board cannot run a check the target prints SKIP, so those lines are
-matched as `dut.expect(r"tone_toggles_pin (PASS|SKIP .*)")`. **Silence is never
-accepted.**
+matched as `console.expect(r"tone_toggles_pin (PASS|SKIP .*)")`. **Silence is never
+accepted.** A sketch that tests a UART is `def expect(console, uart)`, with what
+happens on the wire written against `uart`.
 
-**One check per test is not an option here.** pytest-embedded's
-`arduino_cli_build` and `arduino_cli_upload` are **module** scoped while `dut`
-is **function** scoped, so every test function opens the port again and no test
-function can read a line an earlier one caused to be printed. Splitting them up
-means each test function sending its own command and reading its own answer -
-a per-check command in the sketch. All twelve cases are served by one `RUN`, so
-they are one function each.
+**The board is asked once.** One `RUN` brings every check's answer back in order,
+so there is no reason to split the checks and ask again. The runner matches
+literals only and skips f-string lines; the FAIL and failures= rules cover those.
 
 ### Implementation constraint### Implementation constraint
 
@@ -635,15 +636,16 @@ uv run pytest -m "not slow"    # skip the compile sweeps (seconds)
 ```
 
 See [tests/README.ja.md](README.ja.md) for what that covers and how to run each
-harness on its own. Add `--profile ch32x035 --run-mode build` for the sketch
-tests without hardware.
+harness on its own. The sketch builds are `sketches/test_sketch_profiles.py`
+(every sketch for every board its sketch.yaml promises).
 
 ### Automated, with hardware
 
 ```sh
 cd tests
 uv run pytest manual/chip_info/chip_info.py -v -s     # first, see what is attached
-cd tests && uv run --env-file .env pytest sketches --profile ch32x035 --port /dev/ttyACM4
+uv run manual/smoke/smoke.py --sketch all                        # WCH-Link
+uv run manual/oep_smoke/oep_smoke.py --target x035 --sketch all   # OEP probe
 ```
 
 ### Manual
@@ -655,7 +657,7 @@ uv run --env-file .env pytest manual/smoke/smoke.py -v -s           # acceptance
 CH32_SKETCH=all uv run --env-file .env pytest manual/smoke/smoke.py -v -s  # after a swap
 uv run --env-file .env pytest manual/uart_scan/uart_scan.py -v -s   # wiring unknown
 uv run --env-file .env pytest manual/crt0_probe/crt0_probe.py -v -s # after a board swap
-uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s  # needs a jumper
+uv run --env-file .env manual/gpio_loopback/gpio_loopback.py       # needs a jumper
 ```
 
 `--board` is optional: probe-rs reports the part number and boards.txt maps it

@@ -13,7 +13,8 @@ Two files are deliberately left behind:
                 against whatever the published index holds. profile_build.py,
                 which *wants* profile resolution, passes keep_yaml and then
                 rewrites the URL to its own loopback index.
-  test_*.py     the host side; nothing on the target needs it.
+  *.py          the host side (expect.py, the runner's script); nothing on the
+                target needs it.
 
 No pytest, no third-party imports: smoke.py runs under a bare `uv run --script`
 whose only dependency is pyserial.
@@ -33,7 +34,7 @@ def stage_sketch(src: pathlib.Path, dest: pathlib.Path,
     for item in sorted(src.iterdir()):
         if item.is_dir():
             continue                       # __pycache__, and nothing else yet
-        if item.name.startswith("test_") and item.suffix == ".py":
+        if item.suffix == ".py":
             continue
         if item.name == "sketch.yaml" and not keep_yaml:
             continue

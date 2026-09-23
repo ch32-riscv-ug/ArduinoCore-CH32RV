@@ -101,7 +101,7 @@ tests/
   compile/     自動 — 全122 part numberのcompile matrix、同梱examples(2段)、サイズ回帰
   sizebench/   自動 — newlibのサイズ計測
   package/     自動 — package index生成とBoard Managerからのclean install
-  sketches/    自動 — sketch単位のAPIテスト(pytest + pytest-embedded)
+  sketches/    自動 — sketchのbuild。実機での実行は各sketchの`expect.py`をmanual/のrunnerが再生
   unit/        自動 — boardもbuildも要らない小さな検査
   manual/      手動 — 実機と人の操作が要るもの、および実機を扱う便利tool
 ```
@@ -150,8 +150,12 @@ tests/sketches/<category>/<case>/
 | `stage.py` | buildディレクトリへ何をコピーするか。3つのharnessが共有 |
 | `compile_all.py` / `profile_build.py` | compile harness |
 
-ホスト側にモジュールはありません。testは`dut`を直接使います——バナーを待ち、
-コマンドを送り、順に読むだけなので、共有するものが無いからです。
+ホスト側の台本は各sketchの`expect.py`です。バナーを待ち、コマンドを送り、順に読む
+だけの1関数で、**どの経路で繋ぐかは書きません**。`console`と`uart`という2本の流れを
+名前で呼ぶだけで、それをOEP probeの`target.console`・WCH-Linkのch32rv・シリアル
+ポートのどれで実現するかはrunner(`manual/smoke/smoke.py`、
+`manual/oep_smoke/oep_smoke.py`)が持ちます。経路ごとにIFが違うので、台本が特定の
+DUTオブジェクトを前提にしないことが要点です。
 
 `sketches/conftest.py`も置いていません。**pytestは全conftest.pyを`conftest`という
 同じmodule名でimportする**ので、2つ目を置いた瞬間に`tests/conftest.py`が
@@ -179,7 +183,7 @@ tests/manual/
 
 `chip_info` / `smoke` / `uart_scan`はCLIとしても動きます。対話的に作業台を見る場面の
 ためで、どちらの経路も同じ関数を呼びます。設定は`tests/.env`の環境変数です
-(pytestのoptionは増やしていません。`--port`と`--target`はpytest-embeddedのもの)。
+(pytestのoptionは増やしていません)。
 
 `dist/`という名前は使いません。**pytest既定の`norecursedirs`に`dist`が入っている**ため、
 `pyproject.toml`の除外リストを一行簡略化した日に収集対象から静かに消えます。
@@ -369,7 +373,7 @@ checkは「起動しないボード」と見分けがつきません。`RUN`とd
 - **UARTを試すsketchはピンを選びません。** どのピンがホストの受けられる先に繋がって
   いるかはホストが知っているので、ホストが`UART <n> <route> <baud>`で指名し、sketchは
   `tc_uart_command()`に渡してUSARTnをそのrouteで起こします。指名が無ければ
-  `tc_uart()`はNULLで、UARTのcheckはSKIPします。試験スクリプトでは`dut`がコンソール、
+  `tc_uart()`はNULLで、UARTのcheckはSKIPします。試験スクリプトでは`console`がコンソール、
   `uart`が指名したUARTの線です
 - **例外は、ホストが同時にデバッグリンクを別の用途に使うsketch**です(外からレジスタを
   読む`reg_probe`など)。そのコンソールは同じリンクにできないので、
@@ -405,30 +409,28 @@ void loop() {
 }
 ```
 
-### ホスト側は「1 sketch = 1 テスト関数」
+### ホスト側は「1 sketch = 1 台本」
 
-**1つのテスト関数の中で、順番に複数のcheckを読みます。** fixtureもconftestも要りません。
+**各sketchの`expect.py`は1関数で、順番に複数のcheckを読みます。** runnerがそれを
+読み取って再生します。
 
 ```python
-def test_wire_selftest(dut) -> None:
-    dut.expect_exact("wire_selftest READY", timeout=20)
-    dut.write("RUN\n")
-    dut.expect_exact("nack_reported PASS")
-    dut.expect_exact("nack_bounded PASS")
+def expect(console) -> None:
+    console.expect_exact("wire_selftest READY", timeout=20)
+    console.write("RUN\n")
+    console.expect_exact("nack_reported PASS")
+    console.expect_exact("nack_bounded PASS")
     ...
-    dut.expect_exact("wire_selftest done failures=0")
+    console.expect_exact("wire_selftest done failures=0")
 ```
 
 boardが持たない機能はtargetが`SKIP`を出すので、そこだけ
-`dut.expect(r"tone_toggles_pin (PASS|SKIP .*)")`にします。**沈黙だけは許しません。**
+`console.expect(r"tone_toggles_pin (PASS|SKIP .*)")`にします。**沈黙だけは許しません。**
+UARTを試すsketchは`def expect(console, uart)`で、線の上のやりとりを`uart`側に書きます。
 
-**check 1つを1 testにはしません。** pytest-embeddedの`arduino_cli_build` /
-`arduino_cli_upload`は**module scope**なのに`dut`は**function scope**で、
-test関数ごとにportを開き直します。したがって
-「前のtest関数が出させた行」を次のtest関数が読むことは**原理的にできません**。
-分けたいなら、**test関数ごとに自分でコマンドを送って自分で読む**——
-つまりcheckごとに個別コマンドを用意する——形にします。現状の12本は
-`RUN`一発で足りるので、1関数にまとめてあります。
+**boardには1回だけ聞きます。** `RUN`一発で全checkの答えが順に返るので、checkを
+分けて何度も聞き直す理由がありません。runnerはリテラルだけを照合し、f文字列の行は
+飛ばします(その分も`FAIL`とfailures=の一般規則が拾います)。
 
 ### 実装上の制約### 実装上の制約
 
@@ -611,14 +613,15 @@ uv run pytest -m "not slow"    # compile系を飛ばす(数秒)
 ```
 
 内訳と個別実行は[tests/README.ja.md](README.ja.md)。
-sketchテストをbuildだけで回すなら`--profile ch32x035 --run-mode build`。
+sketchのbuildは`sketches/test_sketch_profiles.py`(全sketch×sketch.yamlが約束する全board)。
 
 ### 自動テスト(実機あり)
 
 ```sh
 cd tests
 uv run pytest manual/chip_info/chip_info.py -v -s     # まず何が繋がっているか確認
-uv run --env-file .env pytest sketches --profile ch32x035 --port /dev/ttyACM4
+uv run manual/smoke/smoke.py --sketch all                        # WCH-Link
+uv run manual/oep_smoke/oep_smoke.py --target x035 --sketch all   # OEP probe
 ```
 
 ### 手動テスト
@@ -630,7 +633,7 @@ uv run --env-file .env pytest manual/smoke/smoke.py -v -s           # 受け入�
 CH32_SKETCH=all uv run --env-file .env pytest manual/smoke/smoke.py -v -s   # 差し替え後
 uv run --env-file .env pytest manual/uart_scan/uart_scan.py -v -s   # 配線が不明なとき
 uv run --env-file .env pytest manual/crt0_probe/crt0_probe.py -v -s  # boardを載せ替えたら
-uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s   # ジャンパ要
+uv run --env-file .env manual/gpio_loopback/gpio_loopback.py        # ジャンパ要
 ```
 
 `--board`は省略できます。probe-rsが型番を読んで`boards.txt`から逆引きするので、
