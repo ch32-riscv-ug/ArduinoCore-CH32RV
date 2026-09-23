@@ -8,7 +8,8 @@ the 64-byte ring, and resumption after a debug reset.
 
   uv run tests/manual/oep_uart_trace/oep_uart_trace.py [--bauds 9600,115200,460800]
 
-Wiring (E143): X035 PA2 (USART2 TX) -> P4 GPIO48, PA3 (RX) <- P4 GPIO49; console USART4 on GPIO12/6.
+Wiring (E143): X035 PA2 (USART2 TX) -> P4 GPIO48, PA3 (RX) <- P4 GPIO49. The console is the probe's
+target.console (tests/sketches/testcmd.h), so the one UART in play is the one under test.
 """
 
 from __future__ import annotations
@@ -25,7 +26,6 @@ sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
 
 SKETCH = HERE / "uart_probe"
-CONSOLE_RX, CONSOLE_TX = 12, 6
 UART2_RX, UART2_TX = 48, 49   # probe RX = DUT TX (PA2), probe TX = DUT RX (PA3)
 
 
@@ -53,7 +53,7 @@ def main() -> None:
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("uart_probe", args.fqbn, 4, pathlib.Path(tmp), log, source=SKETCH)
+        binary = oep_smoke.build("uart_probe", args.fqbn, pathlib.Path(tmp), log, source=SKETCH)
         image = binary.read_bytes()
     client = open_client(args.port, 3.0)
     target = Target(client)
@@ -62,17 +62,15 @@ def main() -> None:
     if not outcome.verified:
         raise SystemExit("program/verify failed")
     uarts = [f for f in client.list_functions() if (f.owner, f.id) == codec.DEF_FIXTURE_UART[:2]]
-    if len(uarts) < 2:
-        raise SystemExit(f"probe offers {len(uarts)} fixture.uart instance(s); two are needed")
-    console = FixtureUart(client, uarts[0].function)
-    uart2 = FixtureUart(client, uarts[1].function)
-    lease, _ = client.plan_apply(console.assignments(rx=CONSOLE_RX, tx=CONSOLE_TX) + uart2.assignments(rx=UART2_RX, tx=UART2_TX))
+    if not uarts:
+        raise SystemExit("probe offers no fixture.uart")
+    uart2 = FixtureUart(client, uarts[0].function)
+    lease, _ = client.plan_apply(uart2.assignments(rx=UART2_RX, tx=UART2_TX))
     failures = []
     try:
-        console.configure(115200)
-        link = oep_smoke.UartLink(console)
-        if not link.wait("uart_probe READY", 10):
-            raise SystemExit(f"no READY: {link.text[:200]!r}")
+        link = oep_smoke.open_console(client)
+        if not oep_smoke.sync(link, "uart_probe READY"):
+            raise SystemExit(f"no READY/PONG: {link.text[:200]!r}")
 
         def cmd(text, reply, timeout=10):
             link.drain(0.01); mark = len(link.text); link.send(text + "\n")
@@ -146,7 +144,7 @@ def main() -> None:
         # resume after a debug reset
         cmd("CLOSE", "CLOSE ok")
         report = target.control.reset()
-        if not link.wait("uart_probe READY", 5): raise SystemExit("no READY after reset")
+        if not oep_smoke.sync(link, "uart_probe READY", 5): raise SystemExit("no READY/PONG after reset")
         cmd("OPEN 115200", "OPEN ok"); uart2.configure(115200); uart2.read(4096); time.sleep(0.05)
         cmd("SEND 512 77", "SEND done"); got = drain2(512, 3.0); ok = got == lcg_bytes(512, 77)
         log(f"[after reset] flags=0x{report.flags:02x} DUT->P4 512 B match={ok}")

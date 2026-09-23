@@ -71,7 +71,9 @@ static void run_checks() {
 }
 
 void setup() {
-  tc_begin("crt0_probe");
+  // The host fills RAM and resets through the debug link around this sketch, so the
+  // console stays on the UART.
+  tc_begin("crt0_probe", Serial);
 }
 
 void loop() {

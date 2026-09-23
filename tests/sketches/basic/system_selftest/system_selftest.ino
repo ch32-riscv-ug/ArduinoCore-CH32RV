@@ -30,8 +30,8 @@ static void run_checks()
     /* First line on purpose: the host asserts this value differently on the
      * first boot (anything), after REBOOT (software) and after BITE
      * (watchdog, or software where the watchdog is unavailable). */
-    Serial.print("reset_reason=");
-    Serial.println(CH32.resetReasonName());
+    Console.print("reset_reason=");
+    Console.println(CH32.resetReasonName());
 
     tc_check("reason_stable", CH32.resetReason() == CH32.resetReason()
                               && CH32.resetReasonName()[0] != '\0');
@@ -81,13 +81,13 @@ void loop()
     if (!strcmp(cmd, "RUN")) {
         run_checks();
     } else if (!strcmp(cmd, "REBOOT")) {
-        Serial.println("rebooting");
-        Serial.flush();
+        Console.println("rebooting");
+        Console.flush();
         CH32.restart();
     } else if (!strcmp(cmd, "BITE")) {
         const bool armed = CH32.wdtEnable(100);
-        Serial.println("biting");
-        Serial.flush();
+        Console.println("biting");
+        Console.flush();
         if (armed) {
             starving = true;          /* silence; the watchdog ends this */
         } else {

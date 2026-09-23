@@ -1,20 +1,39 @@
-// Milestone 1 acceptance sketch: Serial must come up and print on every target board.
-// Keep this sketch free of anything beyond Serial - it is the gate for "Serial works",
-// not a peripheral test.
+// The UART transmit path, and the gate for "a UART works" on every board.
 //
-// The RUN command is what makes it a gate rather than a coin toss: setup() only
-// announces itself, so the lines below are printed after the host has proved
-// the link with PING/PONG and cannot be confused with the last sketch's output.
-// See testcmd.h.
+// The host names the port and route over Console - "UART <n> <route> <baud>",
+// picked from the pins it can actually listen on - and the lines below go out
+// on that UART, where the host reads them off the wire. The verdict comes back
+// on Console. Nothing here chooses pins: that is the host's knowledge, not the
+// board's (see testcmd.h).
+//
+// RUN is what makes it a gate rather than a coin toss: the lines are printed
+// after the host has proved the link with PING/PONG, so they cannot be confused
+// with the last sketch's output.
 #include "testcmd.h"
 
 static void run_checks()
 {
-  Serial.println("hello from ch32");
-  Serial.print("int=");
-  Serial.println(42);
-  Serial.print("hex=");
-  Serial.println(0xBEEF, HEX);
+  arduino::CH32HardwareSerial *uart = tc_uart();
+  if (!uart) {
+    tc_skip("uart_tx", "no UART named");
+    tc_done();
+    return;
+  }
+  uart->println("hello from ch32");
+  uart->print("int=");
+  uart->println(42);
+  uart->print("hex=");
+  uart->println(0xBEEF, HEX);
+
+  /* Room in the transmit ring. Print's default returns 0, which would make a
+   * sketch believe the port is permanently full.
+   *
+   * flush() first: at 115200 the ring really is full after the lines above.
+   * Measuring without draining would be testing how fast the UART is, not
+   * whether the count is reported. */
+  uart->flush();
+  const int room = uart->availableForWrite();
+  tc_checkv("availableForWrite", room > 0, room);
   tc_done();
 }
 
@@ -27,6 +46,9 @@ void loop()
 {
   const char *cmd = tc_ready();
   if (!cmd) {
+    return;
+  }
+  if (tc_uart_command(cmd)) {
     return;
   }
   if (!strcmp(cmd, "RUN")) {

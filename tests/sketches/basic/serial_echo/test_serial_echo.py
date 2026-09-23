@@ -1,34 +1,31 @@
-"""Serial receive: the host talks, the target answers.
+"""The UART receive path: the host talks on the wire, the board answers on it.
 
-serial_println only proves the transmit path. This drives the other direction,
-so the board's Serial RX pin must be wired to the probe's UART TX as well.
+serial_println only proves the transmit path. This drives the other direction
+over the UART the runner named ("UART <n> <route> <baud>"), so the board's RX
+pin has to reach the runner's UART TX as well. `dut` is Console, the harness;
+`uart` is that wire (tests/sketches/testcmd.h).
 
 The one sketch with no RUN - receiving *is* what is under test, so its
-vocabulary is the test (see tests/TEST_PLAN.ja.md). The banner is waited for
-rather than assumed: `dut` is opened after the flashing tool has reset the
-board, so the sketch repeats "serial_echo READY" until it is asked
-(tests/sketches/testcmd.h).
-
-    uv run pytest sketches/basic/serial_echo --profile ch32x035
+vocabulary is the test (see tests/TEST_PLAN.ja.md).
 """
 
 
-def test_serial_echo(dut) -> None:
+def test_serial_echo(dut, uart) -> None:
     dut.expect_exact("serial_echo READY", timeout=20)
 
     # A line sent to the target comes back with the echo prefix.
-    dut.write("ECHO hello\n")
-    dut.expect_exact("echo:hello")
+    uart.write("ECHO hello\n")
+    uart.expect_exact("echo:hello")
 
     # The target parsed the argument rather than reflecting the bytes.
-    dut.write("LEN abcdef\n")
-    dut.expect_exact("len=6")
+    uart.write("LEN abcdef\n")
+    uart.expect_exact("len=6")
 
     # Ten lines back to back: the RX ring keeps up and stays aligned.
     for i in range(10):
-        dut.write(f"ECHO line{i}\n")
-        dut.expect_exact(f"echo:line{i}")
+        uart.write(f"ECHO line{i}\n")
+        uart.expect_exact(f"echo:line{i}")
 
     # Never silence: a host that is out of step has to find out at once.
-    dut.write("NOSUCHCOMMAND\n")
-    dut.expect_exact("serial_echo unknown cmd=NOSUCHCOMMAND")
+    uart.write("NOSUCHCOMMAND\n")
+    uart.expect_exact("unknown:NOSUCHCOMMAND")

@@ -353,7 +353,7 @@ board and the console is opened *after* that, so anything printed at the top of
 `setup()` is gone before anyone is listening.
 
 ```text
-setup()   Serial.begin() and nothing else
+setup()   tc_begin() and nothing else
 loop()    tc_ready() -> prints "<name> READY" every 500 ms,
           and returns the command line when one arrives
 ```
@@ -369,19 +369,45 @@ The other half of the reason is that `setup()` is the wrong place for work: a
 check that takes twenty seconds looks exactly like a board that never booted.
 Between RUN and the done line it looks like a board that is busy.
 
-**The banner does not stop once a command has been served.** The reference
-sketches under `~/dev` stop; they talk to a USB-CDC peripheral on the MCU
-itself, and this path is the WCH-Link's UART bridge. Stopping was implemented
-and measured: the bridge stalls with a partial line still in it, so the host
-sees `string=ab` and then nothing, for as long as it waits. The banner is what
-keeps the pipe moving.
+**The banner does not stop once a command has been served**, so a host that
+attaches late, or lost its place, can always find the board again. It costs
+next to nothing when nobody is listening: a console write with no host gives up
+once and stays cheap until one attaches.
 
-The cost is that a board talking into a port nobody reads overruns the bridge,
-and what comes out afterwards is spliced - `hooks_selftest READY` arriving as
-"selftest READY" and "hooY" in alternation, so the line being waited for is
-never contiguous. That is answered on the host side, by holding the port open
-across the upload rather than by silencing the board
-([`manual/smoke/smoke.py`](manual/smoke/smoke.py)).
+(While the console was a UART, the WCH-Link's UART bridge only pushed data out
+when it had some to push, so the banner also kept that pipe moving, and a board
+talking into an unread port spliced what came out later. Moving the console to
+the debug module retired both.)
+
+### The console is the debug module, not a UART
+
+**The harness talks over `Console`, which is the debug module's data registers
+(`SerialDMDATA`), not a UART.** The UART is one of the things under test: its
+pins differ per part and per jig, and a sketch testing it moves it around, so it
+cannot also be where the host and the board find each other. `Console` needs no
+pin and works from the moment the core runs. The host reads it through the debug
+probe - `ch32rv monitor --source dmdata` on a WCH-Link, `target.console` on an
+OEP probe.
+
+- In a sketch, **`Console` is the harness and `Serial` is a UART under test**.
+  Results go to `Console.print()`; printf is pointed there explicitly with
+  `ch32_set_stdout(&Console)`.
+- **A sketch that tests a UART does not choose its pins.** The host knows which
+  pins reach something it can listen on, so it names them -
+  `UART <n> <route> <baud>` - and the sketch hands that line to
+  `tc_uart_command()`, which brings USARTn up on that route. Until then
+  `tc_uart()` is NULL and the UART checks SKIP. In a test script `dut` is the
+  console and `uart` is the named UART's wire.
+- **The exception is a sketch whose host uses the debug link for something else
+  at the same time** (reading registers from outside, as `reg_probe` does). Its
+  console cannot be that same link, so it names a UART: `tc_begin("reg_probe",
+  Serial)`. For that sketch the UART is plumbing, not a thing under test.
+
+**The first exchange after programming is not to be trusted.** The probe's
+checks after programming or a reset read registers through abstract commands,
+which pass through the same DATA0 as the console, and a sketch that is already
+running can read that as input. The host sends a line break, then syncs with a
+tokened PING (up to three tries), and only then starts.
 
 The template is [`sketches/testcmd.h`](sketches/testcmd.h). arduino-cli compiles
 nothing above the sketch folder, so **a copy is distributed into every case**

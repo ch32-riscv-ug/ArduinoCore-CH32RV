@@ -331,7 +331,7 @@ probe種別・firmware版・chipで変わります。それなのに`setup()`で
 `setup()`の最初に印字したものは誰も聞いていないうちに終わっています。
 
 ```text
-setup()   Serial.begin()だけ
+setup()   tc_begin()だけ
 loop()    tc_ready() → 0.5秒ごとに "<name> READY" を出し、
           コマンドが来たらその行を返す
 ```
@@ -346,17 +346,40 @@ loop()    tc_ready() → 0.5秒ごとに "<name> READY" を出し、
 checkは「起動しないボード」と見分けがつきません。`RUN`とdone行の間なら「忙しい
 ボード」に見えます。
 
-**バナーはコマンドを受けたあとも止めません。** `~/dev`の参照実装は止めますが、
-あちらはMCU内蔵のUSB-CDCで、こちらはWCH-LinkのUARTブリッジです。止める実装を
-一度作って実測したところ、**ブリッジが行の途中で止まりました**——ホストには
-`string=ab`まで届いて、あとはいくら待っても来ません。**バナーが管を動かしている**
-ので、動かし続けます。
+**バナーはコマンドを受けたあとも止めません。** 遅れて繋いだホストや、位置を見失った
+ホストがいつでもボードを見つけ直せるようにするためです。誰も聞いていないときの
+コストはほぼ無く、コンソールへの書き込みは受け手がいないと一度諦め、以後は
+ホストが繋ぐまで空振りで済みます。
 
-代償として、誰も読んでいないポートへボードが喋り続けるとブリッジが溢れ、
-あとから出てくるものが混線します(`hooks_selftest READY`が`selftest READY`と
-`hooY`に割れて、待っている文字列が連続して現れない)。ここはボードを黙らせるのでは
-なく、**ホスト側がuploadを跨いでポートを開いたままにする**ことで解きます
-([`manual/smoke/smoke.py`](manual/smoke/smoke.py))。
+(UARTをコンソールにしていた頃は、WCH-LinkのUARTブリッジが「送るものがあるときしか
+吐かない」ので、バナーが管を動かす役も担っていました。溢れた出力が混線する問題も
+ありました。コンソールをデバッグモジュールに移したので、どちらも過去の話です。)
+
+### コンソールはUARTではなくデバッグモジュール
+
+**ハーネスは`Console`で話します。中身はdebug moduleのデータレジスタ
+(`SerialDMDATA`)で、UARTではありません。** UART自体が試験対象だからです。ピンは
+部品ごと・治具ごとに違い、UARTを試すsketchはそれを動かします。それがホストと
+ボードの出会う場所を兼ねるのは順序が逆でした。`Console`はピンを使わず、コアが
+走った瞬間から使えます。ホストはデバッグprobe越しに読みます——WCH-Linkなら
+`ch32rv monitor --source dmdata`、OEP probeなら`target.console`。
+
+- sketchの中で**`Console`はハーネス、`Serial`は試験対象のUART**を意味します。
+  結果の報告は`Console.print()`、printfは`ch32_set_stdout(&Console)`で明示的に向けます
+- **UARTを試すsketchはピンを選びません。** どのピンがホストの受けられる先に繋がって
+  いるかはホストが知っているので、ホストが`UART <n> <route> <baud>`で指名し、sketchは
+  `tc_uart_command()`に渡してUSARTnをそのrouteで起こします。指名が無ければ
+  `tc_uart()`はNULLで、UARTのcheckはSKIPします。試験スクリプトでは`dut`がコンソール、
+  `uart`が指名したUARTの線です
+- **例外は、ホストが同時にデバッグリンクを別の用途に使うsketch**です(外からレジスタを
+  読む`reg_probe`など)。そのコンソールは同じリンクにできないので、
+  `tc_begin("reg_probe", Serial)`とUARTを明示します。そのsketchにとってUARTは試験対象
+  ではなく配管です
+
+**書き込み直後の最初の1往復は当てになりません。** probeが書き込み後やリセット後に
+行う確認はabstract commandでレジスタを読み、abstract commandはコンソールと同じ
+DATA0を通るので、既に走り始めたsketchがそれを入力として読むことがあります。
+ホストは改行を送ってからトークン付きPINGで同期し(最大3回)、それから本題に入ります。
 
 雛形は[`sketches/testcmd.h`](sketches/testcmd.h)です。arduino-cliはsketchフォルダの
 外をコンパイルしないので、**各caseへコピーを配ります**([`sync_testcmd.py`](sketches/sync_testcmd.py)、

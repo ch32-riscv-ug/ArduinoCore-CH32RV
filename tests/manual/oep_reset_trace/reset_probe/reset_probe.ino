@@ -16,7 +16,7 @@ void setup() {
 void loop() {
   const char *cmd = tc_ready();
   if (!cmd) return;
-  if (!strcmp(cmd, "REASON")) { Serial.print("REASON "); Serial.println(CH32.resetReasonName()); }
-  else if (!strcmp(cmd, "REBOOT")) { Serial.println("rebooting"); Serial.flush(); digitalWrite(MARK, LOW); CH32.restart(); }
-  else { Serial.print("ERR "); Serial.println(cmd); }
+  if (!strcmp(cmd, "REASON")) { Console.print("REASON "); Console.println(CH32.resetReasonName()); }
+  else if (!strcmp(cmd, "REBOOT")) { Console.println("rebooting"); Console.flush(); digitalWrite(MARK, LOW); CH32.restart(); }
+  else { Console.print("ERR "); Console.println(cmd); }
 }

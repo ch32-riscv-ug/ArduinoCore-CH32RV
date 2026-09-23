@@ -47,21 +47,19 @@ def main() -> None:
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("adc_probe", args.fqbn or profile["fqbn"], profile["serial_index"], pathlib.Path(tmp), log,
+        binary = oep_smoke.build("adc_probe", args.fqbn or profile["fqbn"], pathlib.Path(tmp), log,
                                  source=HERE / "adc_probe", defines=targets.build_defines(profile))
         image = binary.read_bytes()
     client = open_client(args.port or profile["port"], 3.0)
     target = Target(client)
     outcome = program_image(target, image)
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
-    uart = FixtureUart(client, client.find(*codec.DEF_FIXTURE_UART[:2]).function)
     gpio = FixtureGpio(client, client.find(*codec.DEF_FIXTURE_GPIO[:2]).function)
-    lease, _ = client.plan_apply(uart.assignments(rx=CONSOLE_RX, tx=CONSOLE_TX))
+    lease = None   # the console is target.console: no pins, nothing to lease
     failures = []
     try:
-        uart.configure(115200)
-        link = oep_smoke.UartLink(uart)
-        if not link.wait("adc_probe READY", 10):
+        link = oep_smoke.open_console(client)
+        if not oep_smoke.sync(link, "adc_probe READY"):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
 
         def adc(name):
@@ -125,7 +123,8 @@ def main() -> None:
         if not vref_ok: log("channels 3/7/11/15 read an isolated node: this part matches x035-adc-ch-i2c-unavailable (ADC clause)")
     finally:
         for p4 in PIN_MAP.values(): gpio.configure(p4, FixtureGpio.INPUT_FLOATING)
-        client.plan_release(lease)
+        if lease is not None:
+            client.plan_release(lease)
         target.control.reset()
     log(f"failures={failures}")
 

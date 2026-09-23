@@ -53,7 +53,7 @@ def main() -> None:
     pins = {k: PIN_MAP[k] for k in (args.pins.split(",") if args.pins else PIN_MAP)}
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("gpio_probe", fqbn, profile["serial_index"], pathlib.Path(tmp), log, source=SKETCH,
+        binary = oep_smoke.build("gpio_probe", fqbn, pathlib.Path(tmp), log, source=SKETCH,
                                  defines=targets.build_defines(profile))
         image = binary.read_bytes()
     client = open_client(port, 3.0)
@@ -62,15 +62,13 @@ def main() -> None:
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
     if not outcome.verified:
         raise SystemExit("program/verify failed")
-    uart = FixtureUart(client, client.find(*codec.DEF_FIXTURE_UART[:2]).function)
     gpio = FixtureGpio(client, client.find(*codec.DEF_FIXTURE_GPIO[:2]).function)
-    lease, _ = client.plan_apply(uart.assignments(rx=UART_RX, tx=UART_TX))
+    lease = None   # the console is target.console: no pins, nothing to lease
     results = {}
     failures = []
     try:
-        uart.configure(115200)
-        link = oep_smoke.UartLink(uart)
-        if not link.wait("gpio_probe READY", 10):
+        link = oep_smoke.open_console(client)
+        if not oep_smoke.sync(link, "gpio_probe READY"):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
 
         def cmd(text, reply, timeout=3):
@@ -142,7 +140,8 @@ def main() -> None:
             log(f"[{name:4s} <-> probe GPIO{p4:2d}] {'OK ' if ok else 'BAD'} out={row['out']} od={row['od']} in={row['input']} pu={row['pullup']} pd={row['pulldown']} "
                 f"exti r/f/c={exti['rising'][0]}/{exti['falling'][0]}/{exti['change'][0]}")
     finally:
-        client.plan_release(lease)
+        if lease is not None:
+            client.plan_release(lease)
         target.control.reset()
     if args.result_json:
         pathlib.Path(args.result_json).write_text(json.dumps(results, indent=1))

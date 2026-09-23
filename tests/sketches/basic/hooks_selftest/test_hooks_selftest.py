@@ -13,16 +13,16 @@ afterwards is what reaches the hook.
 """
 
 
-def test_hooks_selftest(dut) -> None:
+def test_hooks_selftest(dut, uart) -> None:
     dut.expect_exact("hooks_selftest READY", timeout=20)
     dut.write("RUN\n")
     dut.expect_exact("initVariant_called PASS")
     dut.expect_exact("yield_called PASS")
 
-    # From here the sketch is not reading commands, so this line reaches
-    # serialEvent() instead of the command buffer. That is the check.
+    # The line goes out on the named UART, where only serialEvent() can take it
+    # - Console is the harness and never reaches a hook. That is the check.
     dut.expect_exact("hooks_selftest send a line now")
-    dut.write("a line for serialEvent\n")
+    uart.write("a line for serialEvent\n")
     dut.expect_exact("serialEvent_called PASS")
 
     dut.expect_exact("hooks_selftest done failures=0")

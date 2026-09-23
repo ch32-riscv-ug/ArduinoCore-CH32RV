@@ -33,19 +33,19 @@ void loop() {
   char verb[8] = {0}, pinName[6] = {0}; unsigned a = 0;
   const int n = sscanf(cmd, "%7s %5s %u", verb, pinName, &a);
   if (n < 1) return;
-  if (!strcmp(verb, "COUNT")) { Serial.print("COUNT n="); Serial.println(gEdges); return; }
+  if (!strcmp(verb, "COUNT")) { Console.print("COUNT n="); Console.println(gEdges); return; }
   const int pin = lookup(pinName);
-  if (pin < 0) { Serial.print("ERR pin "); Serial.println(pinName); return; }
+  if (pin < 0) { Console.print("ERR pin "); Console.println(pinName); return; }
   if (!strcmp(verb, "MODE")) {
     static const PinMode modes[] = {INPUT, INPUT_PULLUP, INPUT_PULLDOWN, OUTPUT, OUTPUT_OPENDRAIN};
-    if (a > 4) { Serial.println("ERR mode"); return; }
-    pinMode((pin_size_t)pin, modes[a]); Serial.println("MODE ok");
-  } else if (!strcmp(verb, "WRITE")) { digitalWrite((pin_size_t)pin, a ? HIGH : LOW); Serial.println("WRITE ok"); }
-  else if (!strcmp(verb, "READ")) { Serial.print("READ v="); Serial.println(digitalRead((pin_size_t)pin) ? 1 : 0); }
+    if (a > 4) { Console.println("ERR mode"); return; }
+    pinMode((pin_size_t)pin, modes[a]); Console.println("MODE ok");
+  } else if (!strcmp(verb, "WRITE")) { digitalWrite((pin_size_t)pin, a ? HIGH : LOW); Console.println("WRITE ok"); }
+  else if (!strcmp(verb, "READ")) { Console.print("READ v="); Console.println(digitalRead((pin_size_t)pin) ? 1 : 0); }
   else if (!strcmp(verb, "EXTI")) {
     static const PinStatus modes[] = {RISING, FALLING, CHANGE};
-    if (a > 2) { Serial.println("ERR mode"); return; }
-    gEdges = 0; attachInterrupt(digitalPinToInterrupt(pin), onEdge, modes[a]); Serial.println("EXTI armed");
-  } else if (!strcmp(verb, "EXTIOFF")) { detachInterrupt(digitalPinToInterrupt(pin)); Serial.println("EXTIOFF ok"); }
-  else { Serial.print("ERR verb "); Serial.println(verb); }
+    if (a > 2) { Console.println("ERR mode"); return; }
+    gEdges = 0; attachInterrupt(digitalPinToInterrupt(pin), onEdge, modes[a]); Console.println("EXTI armed");
+  } else if (!strcmp(verb, "EXTIOFF")) { detachInterrupt(digitalPinToInterrupt(pin)); Console.println("EXTIOFF ok"); }
+  else { Console.print("ERR verb "); Console.println(verb); }
 }

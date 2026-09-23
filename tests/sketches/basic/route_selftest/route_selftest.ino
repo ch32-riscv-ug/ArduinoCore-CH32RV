@@ -30,6 +30,10 @@
 
 static void run_checks()
 {
+    /* The board's default Serial is what is being routed here. Console is the
+     * harness and never moves, so this port is free to go anywhere. */
+    Serial.begin(115200);
+
     /* 1. A route number no series has. */
     tc_check("unknown_route_refused", !Serial.setRoute(200));
 
@@ -51,11 +55,8 @@ static void run_checks()
                  !Serial.setPins(routes[0].pins[0], routes[1].pins[1]));
 
         /* 5. Away and back. The print in between goes to pins nobody is
-         *    watching; arriving here at all is what is being tested.
-         *
-         *    The monitor is also where commands arrive, so anything the host
-         *    sends during this window is lost too. That is why the host waits
-         *    for the done line rather than pipelining another command. */
+         *    watching; coming back with both calls reporting success is what
+         *    is being tested. */
         const bool went = Serial.setRoute(routes[1].route);
         Serial.println("this line goes nowhere");
         const bool back = Serial.setRoute(routes[0].route);

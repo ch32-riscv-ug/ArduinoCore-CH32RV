@@ -32,7 +32,6 @@ def test_core_api(dut) -> None:
     dut.expect_exact("pulseIn_timeout PASS")
     dut.expect_exact("random_repeatable PASS")
     dut.expect_exact("random_range PASS")
-    dut.expect_exact("availableForWrite PASS")
     dut.expect_exact("digitalPinToPort PASS")
     dut.expect_exact("digitalPinToBitMask PASS")
     dut.expect_exact("portOutputRegister PASS")

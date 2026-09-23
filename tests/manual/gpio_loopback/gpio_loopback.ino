@@ -110,7 +110,8 @@ static void run_checks()
 
 void setup()
 {
-  tc_begin("gpio_loopback");
+  // Driven by pytest-embedded over a serial port, so that port is the console.
+  tc_begin("gpio_loopback", Serial);
 }
 
 void loop()

@@ -12,7 +12,7 @@ UARTと`SerialSDI`はArduinoのSerial Monitorがそのまま使えます。
 | `Serial`(UART) | 何も要らない | **読める** | WCH-LinkEのUARTブリッジ、または外付けadapter |
 | [`SerialSDI`](../libraries/SerialSDI/README.ja.md) | WCH-LinkUtility(またはwlink)で一度有効化 | **読める**(probeのCDC port) | 不要 |
 | [`SerialRTT`](../libraries/SerialRTT/README.ja.md) | `probe-rs attach` | 読めない | 不要 |
-| [`SerialDMDATA`](../libraries/SerialDMDATA/README.ja.md) | `minichlink -T` | 読めない | 不要 |
+| [`SerialDMDATA`](../libraries/SerialDMDATA/README.ja.md) | `ch32rv monitor --source dmdata`（同梱）/ `minichlink -T` | 読めない | 不要 |
 
 `SerialRTT`と`SerialDMDATA`をSerial Monitorに繋ぐには、Arduinoの
 pluggable monitorプロトコルを喋る専用ツールを配布する必要があります。
@@ -266,10 +266,13 @@ probe-rsの実体はcoreがvendorしているものが使えます。
 Board Managerで入れた場合は`~/.arduino15/packages/ch32-riscv-ug/tools/probe-rs/<version>/`
 (Windowsは`%LOCALAPPDATA%\Arduino15\packages\...`)にあります。
 
-## 5. `SerialDMDATA` — `minichlink -T`
+## 5. `SerialDMDATA` — `ch32rv monitor --source dmdata` / `minichlink -T`
 
-[ch32fun](https://github.com/cnlohr/ch32fun)のminichlinkが要ります。
-**このcoreは同梱していないので、自分でビルドしてください。**
+同梱の書き込みツール ch32rv でも双方向に読み書きできます（`ch32rv monitor --source dmdata`、stdin がターゲットへ）。
+CH32V307 で両方向を確認済み（2026-09-23）。CH32V006 では出力が届かず、調査中です。
+テストハーネスのコンソールもこの経路です（[TEST_PLAN](../tests/TEST_PLAN.ja.md)）。
+
+[ch32fun](https://github.com/cnlohr/ch32fun)のminichlinkでも読めます（こちらは同梱していないので、自分でビルドしてください）。
 
 ```sh
 git clone https://github.com/cnlohr/ch32fun

@@ -452,7 +452,9 @@ static void dispatch(const char *line)
 
 void setup()
 {
-    tc_begin("reg_probe");
+    // The host reads registers through the debug link while this runs, so the console
+    // cannot be that link too: it is the UART, as plumbing, not as a thing under test.
+    tc_begin("reg_probe", Serial);
 }
 
 void loop()

@@ -1,15 +1,16 @@
 /* The Arduino hooks a sketch is allowed to override.
  *
- * Wiring: none, but the serialEvent() check needs the host to send a line, so
- * this sketch has one command beyond RUN. See tests/TEST_PLAN.ja.md.
+ * The serialEvent check needs a UART and a host that writes to it, so the host
+ * names one first ("UART <n> <route> <baud>", see testcmd.h). Without one that
+ * check is skipped and the rest still run.
  *
  *   RUN     initVariant / yield, then "hooks_selftest send a line now"
- *   <any>   after that: any line at all, delivered to serialEvent()
+ *   <any>   after that, on the named UART: any line at all
  *
- * The second step is why loop() stops calling tc_ready() while it waits.
- * main() runs loop() and then serialEventRun(), so a poll that drained the
- * buffer would consume the very line serialEvent() is supposed to see - the
- * hook would look broken when it is the test that ate the input.
+ * main() calls serialEventRun() after every loop(), which calls serialEvent()
+ * for the monitor port and serialEventN() for SerialN. The named UART need not
+ * be the monitor, so every hook is overridden here and the one for the named
+ * port is the one that has to fire.
  *
  * All four of these were broken at some point:
  *   - initVariant() was declared by the API and never called
@@ -42,29 +43,42 @@ void yield(void)
     yields++;
 }
 
-void serialEvent(void)
+/* Every serialEvent hook lands here with its own port. Only the named UART's
+ * counts, and only while this sketch is waiting for the line - a hook that
+ * drained unconditionally would be testing nothing in particular. */
+static void on_serial_event(arduino::CH32HardwareSerial &port)
 {
-    /* Only while this sketch is expecting the line, and not a moment before.
-     *
-     * main() calls serialEventRun() after every loop(), so a hook that drains
-     * unconditionally competes with tc_ready() for the same bytes - and wins
-     * whenever they land between the two calls. Measured on CH32V103: the
-     * host's PING disappeared into here and the run failed as "banner but no
-     * PONG", on a board whose RX was working perfectly.
-     */
-    if (!waiting_until) {
+    if (!waiting_until || &port != tc_uart()) {
         return;
     }
     /* Consume up to and including the newline, and only then report. Bytes
-     * arrive a few at a time, so a hook that stopped at "no more available"
-     * would leave the tail of the line for tc_ready() to read back as an
-     * unknown command. */
-    while (Serial.available()) {
-        if ((char)Serial.read() == '\n') {
+     * arrive a few at a time, so stopping at "no more available" would leave
+     * the tail of the line behind. */
+    while (port.available()) {
+        if ((char)port.read() == '\n') {
             saw_serial_event = true;
         }
     }
 }
+
+#if defined(SERIAL_PORT_MONITOR)
+void serialEvent(void) { on_serial_event(SERIAL_PORT_MONITOR); }
+#endif
+#if defined(CH32_SERIAL1_TX)
+void serialEvent1(void) { on_serial_event(Serial1); }
+#endif
+#if defined(CH32_SERIAL2_TX)
+void serialEvent2(void) { on_serial_event(Serial2); }
+#endif
+#if defined(CH32_SERIAL3_TX)
+void serialEvent3(void) { on_serial_event(Serial3); }
+#endif
+#if defined(CH32_SERIAL4_TX)
+void serialEvent4(void) { on_serial_event(Serial4); }
+#endif
+#if defined(CH32_SERIAL5_TX)
+void serialEvent5(void) { on_serial_event(Serial5); }
+#endif
 
 static void run_checks()
 {
@@ -75,9 +89,14 @@ static void run_checks()
     delay(5);
     tc_check("yield_called", yields > before);
 
+    if (!tc_uart()) {
+        tc_skip("serialEvent_called", "no UART named");
+        tc_done();
+        return;
+    }
     saw_serial_event = false;
     waiting_until = millis() + 15000;
-    Serial.println("hooks_selftest send a line now");
+    Console.println("hooks_selftest send a line now");
 }
 
 void setup()
@@ -88,9 +107,6 @@ void setup()
 void loop()
 {
     if (waiting_until) {
-        /* tc_tick() and not tc_ready(): the banner has to keep going or the
-         * bridge stalls with the last partial line inside it, but reading
-         * would consume the line serialEvent() is waiting for. */
         tc_tick();
         if (saw_serial_event) {
             waiting_until = 0;
@@ -106,6 +122,9 @@ void loop()
 
     const char *cmd = tc_ready();
     if (!cmd) {
+        return;
+    }
+    if (tc_uart_command(cmd)) {
         return;
     }
     if (!strcmp(cmd, "RUN")) {

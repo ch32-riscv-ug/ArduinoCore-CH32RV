@@ -135,7 +135,7 @@ def main() -> None:
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("periph_probe", args.fqbn or profile["fqbn"], profile["serial_index"], pathlib.Path(tmp), log,
+        binary = oep_smoke.build("periph_probe", args.fqbn or profile["fqbn"], pathlib.Path(tmp), log,
                                  source=SKETCH, defines=targets.build_defines(profile))
         image = binary.read_bytes()
     client = open_client(args.port or profile["port"], 3.0)
@@ -144,7 +144,6 @@ def main() -> None:
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
     if not outcome.verified:
         raise SystemExit("program/verify failed")
-    uart = FixtureUart(client, client.find(*codec.DEF_FIXTURE_UART[:2]).function)
     capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function) if has_capture else None
     results = {}
 
@@ -162,10 +161,9 @@ def main() -> None:
         return data, line.strip(), got
 
     def session(cap_lines):
-        lease, _ = client.plan_apply(uart.assignments(rx=UART_RX, tx=UART_TX) + capture.assignments(*cap_lines))
-        uart.configure(115200)
-        lnk = oep_smoke.UartLink(uart)
-        if not lnk.wait("periph_probe READY", 10):
+        lease, _ = client.plan_apply(capture.assignments(*cap_lines))
+        lnk = oep_smoke.open_console(client)
+        if not oep_smoke.sync(lnk, "periph_probe READY"):
             raise SystemExit(f"no READY: {lnk.text[:200]!r}")
         return lease, lnk
 
@@ -256,10 +254,10 @@ def main() -> None:
         # observes all four lines in the same plan. Checks per mode: DUT got == preloaded MISO bytes, target's
         # MOSI bytes == DUT payload, and the wire decode of both lines agrees.
         spi = P4SpiTarget(client, client.find(*codec.DEF_P4_SPI_TARGET[:2]).function)
-        lease, _ = client.plan_apply(uart.assignments(rx=UART_RX, tx=UART_TX) + spi.assignments(sck=SCK, mosi=MOSI, miso=MISO, cs=CS)
+        lease, _ = client.plan_apply(spi.assignments(sck=SCK, mosi=MOSI, miso=MISO, cs=CS)
                                      + (capture.assignments(SCK, MOSI, MISO, CS) if has_capture else []))
-        uart.configure(115200); link = oep_smoke.UartLink(uart); link.send("\n")
-        if not link.wait("periph_probe READY", 10): raise SystemExit(f"no READY: {link.text[:200]!r}")
+        link = oep_smoke.open_console(client); link.send("\n")
+        if not oep_smoke.sync(link, "periph_probe READY"): raise SystemExit(f"no READY: {link.text[:200]!r}")
         try:
             rows = []
             payload, answer = bytes.fromhex("a55a0f01"), bytes.fromhex("3c96c30f")

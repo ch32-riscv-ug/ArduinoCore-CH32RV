@@ -81,6 +81,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 REPO = pathlib.Path(__file__).resolve().parents[3]
@@ -103,7 +104,11 @@ WCH_LINK_PIDS = (0x8010, 0x8012)
 
 
 def expectations(name: str) -> tuple:
-    """The test file's own script: [("write"|"expect"|"match", text)], in order.
+    """The test file's own script: [(stream, "write"|"expect"|"match", text)], in order.
+
+    stream is the object the test called: "dut" is Console, the harness (the
+    debug module's data registers - see tests/sketches/testcmd.h), and "uart" is
+    the wire of the UART the runner named for a sketch that tests one.
 
     Read out of test_<name>.py rather than restated here, so the pytest run and
     this one cannot disagree about what passing means - adding a sketch needs no
@@ -129,14 +134,21 @@ def expectations(name: str) -> tuple:
         # them apart is what lets the SKIP-tolerant checks be replayed at all.
         verb = {"write": "write", "expect_exact": "expect",
                 "expect": "match"}.get(node.func.attr)
+        stream = node.func.value.id if isinstance(node.func.value, ast.Name) else "dut"
         if verb:
-            steps.append((node.lineno, verb, arg.value))
+            steps.append((node.lineno, stream, verb, arg.value))
     # ast.walk is breadth-first, and a script only means anything in order.
     steps.sort()
     # run_one has already waited for the banner, and it repeats, so replaying
     # that step would only cost half a second of waiting for the next one.
-    return tuple((verb, text) for _, verb, text in steps
-                 if not (verb == "expect" and text == f"{name} READY"))
+    return tuple((stream, verb, text) for _, stream, verb, text in steps
+                 if not (stream == "dut" and verb == "expect"
+                         and text == f"{name} READY"))
+
+
+def uses_uart(script: tuple) -> bool:
+    """Whether a sketch's test reads or writes a UART's wire, and so needs one named."""
+    return any(stream == "uart" for stream, _, _ in script)
 
 
 def _find(buf: bytes, target: bytes, pos: int) -> int:
@@ -228,15 +240,14 @@ _tokens = itertools.count(os.getpid() % 9000 + 1000)
 def handshake(link: Link, attempts: int = 3, timeout: float = 12.0) -> bool:
     """PING <token> -> PONG <token>. True once the target has answered.
 
-    The token is what makes this a proof rather than a guess: every sketch
-    answers PING, so a bare PONG still in the FIFO would satisfy a bare PING.
+    The token is what makes this a proof rather than a guess: every sketch answers PING,
+    so a bare PONG left over from the previous sketch would satisfy a bare PING.
 
-    Twelve seconds for a round trip over a UART is not a typo. Measured on this
-    bench, the WCH-Link's bridge takes about five seconds to turn a PING around
-    while the target is also printing its banner - core_api failed three
-    attempts at five seconds each and the transcript showed all three PONGs
-    arriving, just late. Waiting longer costs nothing when the bench is healthy.
+    A newline goes first. The console's first bytes can be noise - the probe claiming the
+    mailbox leaves a word the sketch reads as a frame - and without a line break of its own
+    that noise would be glued to the front of the first PING.
     """
+    link.send("\n")
     for _ in range(attempts):
         token = next(_tokens)
         link.send(f"PING {token}\n")
@@ -344,6 +355,85 @@ def bench_serial(board: str):
 
 def _holds_probe_rs(d):
     return (d / "probe-rs").exists() or (d / "probe-rs.exe").exists()
+
+
+def find_ch32rv():
+    """ch32rv, which carries the console: CH32RV if set, else <repo>/.tools, else PATH."""
+    override = os.environ.get("CH32RV")
+    if override:
+        return override
+    found = sorted((REPO / ".tools" / "ch32rv").glob("*/ch32rv"))
+    return str(found[-1]) if found else shutil.which("ch32rv")
+
+
+class Ch32rvConsole:
+    """Console over ch32rv's dmdata monitor: the board's Console (tests/sketches/testcmd.h)
+    read through the WCH-Link, no UART and no pin involved. read/write/flush, so a Link
+    can wrap it exactly as it wraps a serial port.
+
+    A thread drains ch32rv's stdout into a buffer, because the monitor streams and a
+    read that blocked would stop the Link's deadline from ever firing.
+    """
+
+    def __init__(self, ch32rv: str, probe: str = None):
+        cmd = [ch32rv, "monitor", "--source", "dmdata", "--non-interactive"]
+        if probe:
+            cmd += ["--probe", f"serial:{probe}"]
+        self.proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.DEVNULL)
+        self._buf = bytearray()
+        self._lock = threading.Lock()
+        threading.Thread(target=self._pump, daemon=True).start()
+
+    def _pump(self) -> None:
+        while True:
+            chunk = self.proc.stdout.read1(4096)
+            if not chunk:
+                return
+            with self._lock:
+                self._buf += chunk
+
+    def read(self, n: int) -> bytes:
+        with self._lock:
+            data = bytes(self._buf[:n])
+            del self._buf[:n]
+        if not data:
+            time.sleep(0.02)
+        return data
+
+    def write(self, data: bytes) -> None:
+        self.proc.stdin.write(data)
+        self.proc.stdin.flush()
+
+    def flush(self) -> None:
+        pass
+
+    def close(self) -> None:
+        if self.proc.poll() is None:
+            self.proc.terminate()
+            try:
+                self.proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+
+def serial_route(board: str, n, tx: str, rx: str):
+    """The route number of USARTn whose pins are (tx, rx), from the variant's route table."""
+    header = (REPO / "variants" / board / "pins_arduino.h").read_text(encoding="utf-8")
+    table = re.search(rf"#define CH32_SERIAL{n}_ROUTES \{{(.*?)\n\}}", header, re.S)
+    if not table:
+        return 0
+    for route, pin_tx, pin_rx in re.findall(r"\{\s*(\d+),\s*\{\s*(\w+),\s*(\w+)", table.group(1)):
+        if pin_tx == tx and pin_rx == rx:
+            return int(route)
+    return 0
 
 
 def find_probe_rs():
@@ -514,7 +604,9 @@ class Bench:
     board: str = None
     pnum: str = "ANY"
     serial_index: int = None
-    pins: tuple = None           # (usart, tx, rx, note)
+    pins: tuple = None           # (usart, tx, rx, note): what the WCH-Link's UART bridge reaches
+    uart: tuple = None           # (usart, route) to name for a sketch that tests a UART
+    ch32rv: str = None           # carries the console (ch32rv monitor --source dmdata)
     baud: int = 115200
     seconds: float = 4.0
     # Extra --build-property, for trying something the board definition does
@@ -580,13 +672,18 @@ def resolve_bench(board=None, pnum="ANY", port=None, probe=None, serial=None,
     if pins is None:
         raise Failure(f"{board}: the variant defines no default Serial port")
     n, tx, rx, note = pins
-    log(f"== {board}:{pnum}  Serial = USART{n}  TX={tx}  RX={rx}"
+    route = serial_route(board, n, tx, rx)
+    log(f"== {board}:{pnum}  UART under test = USART{n} route {route}  TX={tx}  RX={rx}"
         f"{'  (' + note + ')' if note else ''}")
     log(f"   wire {tx} -> probe RX, {rx} -> probe TX, and a common ground")
+    ch32rv = find_ch32rv()
+    if not ch32rv:
+        raise Failure("no ch32rv for the console; run: uv run tools/index/fetch_tools.py")
 
     return Bench(gcc=gcc, probe_rs=probe_rs_dir, port=port, probe=probe_serial,
                  select_probe=bool(probe_serial and probe), chip=chip,
                  board=board, pnum=pnum, serial_index=serial_index, pins=pins,
+                 uart=(int(n), route), ch32rv=ch32rv,
                  baud=baud, seconds=seconds, properties=tuple(properties))
 
 
@@ -612,9 +709,6 @@ def build(bench: Bench, sketch_dir: pathlib.Path, tmp: pathlib.Path,
     r = sh(["arduino-cli", "compile",
             "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
             "--build-property", f"compiler.path={bench.gcc}/",
-            *(["--build-property",
-               f"build.extra_flags=-DCH32_SERIAL_DEFAULT={bench.serial_index}"]
-              if bench.serial_index else []),
             *[a for p in bench.properties for a in ("--build-property", p)],
             "--build-path", str(out), str(sketch_dir)],
            env=env if env is not None else sketchbook(tmp))
@@ -636,7 +730,10 @@ def upload(bench: Bench, built: pathlib.Path, sketch_dir: pathlib.Path,
     cmd = ["arduino-cli", "upload",
            "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
            "--programmer", "wch-link", "--input-dir", str(built),
-           "--upload-property", f"runtime.tools.probe-rs.path={bench.probe_rs}"]
+           "--upload-property", f"runtime.tools.probe-rs.path={bench.probe_rs}",
+           # The wch-link programmer is ch32rv now (platform.txt, ADR-0008); a symlinked dev
+           # tree has no Board-Manager copy of it, so point the recipe at the one in use.
+           "--upload-property", f"runtime.tools.ch32rv.path={pathlib.Path(bench.ch32rv).parent}"]
     if bench.select_probe:
         cmd += ["--upload-property",
                 f"upload.probe_args=--probe 1a86:8010:{bench.probe}"]
@@ -700,65 +797,68 @@ def run_one(name, bench: Bench) -> dict:
             print(str(e))
             return {"verdict": "fail", "why": "compile failed", "output": str(e)}
 
-        import serial
-        # One port open across the upload, and a fresh one for the protocol.
-        #
-        # Open across it, because the sketch already on the board goes on
-        # announcing itself for the twenty seconds the next image takes to
-        # build and flash: with nobody reading, the WCH-Link's bridge overruns
-        # and what comes out later is spliced - "hooks_selftest READY" arriving
-        # as "selftest READY" and "hooY" in alternation, so the line being
-        # waited for is never contiguous.
-        #
-        # Reopened after it, because the flash session leaves the bridge in a
-        # state where it stops delivering: measured here as two banners and
-        # then nothing for thirty-six seconds, on a build that had passed
-        # minutes earlier. Reopening re-runs SET_LINE_CODING and clears it.
-        with serial.Serial(bench.port, bench.baud, timeout=0.3) as uart:
-            uart.reset_input_buffer()
-            try:
-                upload(bench, built, sketch_dir, env)
-            except Failure as e:
-                print(str(e))
-                return {"verdict": "fail", "why": "upload failed",
-                        "output": str(e)}
-            uart.read(4096)
+        try:
+            upload(bench, built, sketch_dir, env)
+        except Failure as e:
+            print(str(e))
+            return {"verdict": "fail", "why": "upload failed", "output": str(e)}
 
-        with serial.Serial(bench.port, bench.baud, timeout=0.3) as uart:
-            link = Link(uart)
-            # The banner repeats every half second, so there is nothing to
-            # catch in time - waiting is enough however long the flash took.
+        # The console is the board's Console, read through the WCH-Link by ch32rv - not the
+        # UART bridge. The UART is a thing under test (tests/sketches/testcmd.h), opened
+        # below only for a sketch whose test touches it.
+        console_stream = Ch32rvConsole(bench.ch32rv, bench.probe)
+        uart_port = None
+        try:
+            link = Link(console_stream)
+            links = {"dut": link}
+            # The banner repeats every half second, so there is nothing to catch in time -
+            # waiting is enough however long the flash took.
             banner = f"{name} READY"
             window = max(bench.seconds, 10.0)
             needed_reset = False
             if not link.wait(banner, window):
-                # Say so rather than absorbing it: a bench that needs the reset
-                # every time is broken, and hiding that would make this lie.
+                # Say so rather than absorbing it: a bench that needs the reset every time
+                # is broken, and hiding that would make this lie. The reset needs the
+                # probe, which the console is holding, so let go of it for the moment.
+                console_stream.close()
                 needed_reset = reset_target(bench)
                 print("   no banner; reset the target and waited again"
                       if needed_reset else
                       "   no banner, and the target could not be reset")
+                console_stream = Ch32rvConsole(bench.ch32rv, bench.probe)
+                link = Link(console_stream)
+                links["dut"] = link
                 if not (needed_reset and link.wait(banner, window)):
                     link.drain(1.0)
                     show(link.text)
                     return {"verdict": "fail", "output": link.text,
                             "why": f"no '{banner}': the sketch is not running. "
-                                   f"Check that the board boots from flash - "
-                                   f"probe-rs run reports the PC"}
-            # Then a token, because this runner flashes sketches back to back:
-            # every sketch answers PING, so a PONG the last one left in the
-            # probe's FIFO would answer a bare PING. A number chosen just now
-            # cannot be in output produced before it was chosen, and reading up
-            # to it is what discards the rest.
+                                   f"Check that the board boots from flash"}
+            # Then a token, because this runner flashes sketches back to back: every sketch
+            # answers PING, so a PONG left over from the last one would answer a bare PING.
             if not handshake(link):
                 link.drain(1.0)
                 show(link.text)
                 return {"verdict": "fail", "output": link.text,
-                        "why": "banner but no PONG: Serial RX is probably not "
-                               "wired (the probe's TX to the board's RX)"}
-            missed = replay(link, name, script, bench.seconds)
+                        "why": "banner but no PONG on the console"}
+            if uses_uart(script):
+                import serial
+                uart_port = serial.Serial(bench.port, bench.baud, timeout=0.3)
+                uart_port.reset_input_buffer()
+                links["uart"] = Link(uart_port)
+                n, route = bench.uart
+                link.send(f"UART {n} {route} {bench.baud}\n")
+                if not link.wait(f"UART OK {n} {route}", 10.0):
+                    show(link.text)
+                    return {"verdict": "fail", "output": link.text,
+                            "why": f"the sketch did not accept UART {n} {route}"}
+            missed = replay(links, name, script, bench.seconds)
+        finally:
+            console_stream.close()
+            if uart_port is not None:
+                uart_port.close()
 
-    text = link.text
+    text = link.text + ("\n--- uart ---\n" + links["uart"].text if "uart" in links else "")
     show(text)
     if missed:
         return {"verdict": "fail", "why": f"never arrived: {missed}",
@@ -773,7 +873,7 @@ def run_one(name, bench: Bench) -> dict:
     if counts and any(c != "0" for c in counts):
         return {"verdict": "fail", "why": f"reported failures={counts}",
                 "output": text}
-    replayed = sum(1 for verb, _ in script if verb != "write")
+    replayed = sum(1 for _, verb, _ in script if verb != "write")
     if not replayed and not counts:
         return {"verdict": "skip", "output": text,
                 "why": f"nothing to check against - test_{name}.py has no "
@@ -787,48 +887,45 @@ def run_one(name, bench: Bench) -> dict:
                 if part)}
 
 
-def replay(link: Link, name: str, script: tuple, seconds: float) -> list:
+def replay(links: dict, name: str, script: tuple, seconds: float) -> list:
     """Run the test file's script, and return the steps that never arrived.
 
-    A sketch whose test writes nothing still gets the standard RUN, so a new
-    case works here before anyone has written its expectations down.
+    links maps a stream the test names - "dut" for Console, "uart" for the wire of the
+    UART the runner named - to its Link. A sketch whose test writes nothing still gets the
+    standard RUN, so a new case works here before anyone has written its expectations down.
     """
+    console = links["dut"]
     missed = []
-    if not any(verb == "write" for verb, _ in script):
-        link.send("RUN\n")
-    # The last command sent, so a stalled expect can resend it once. The
-    # WCH-Link bridge occasionally drops a single line - the same quirk the
-    # upload path retries around - and here it is a command that vanishes, so
-    # the answer never comes. Resending is safe because every command this
-    # protocol has is idempotent: RUN re-runs the checks, REBOOT/BITE just
-    # reach the same post-reset banner again. One resend only, so a board
-    # that is genuinely not answering still fails.
+    if not any(verb == "write" for _, verb, _ in script):
+        console.send("RUN\n")
+    # The last command sent, so a stalled expect can resend it once. Every command this
+    # protocol has is idempotent: RUN re-runs the checks, REBOOT/BITE just reach the same
+    # post-reset banner again. One resend only, so a board that is genuinely not
+    # answering still fails.
     last_write = None
-    for verb, text in script:
+    for stream, verb, text in script:
+        link = links[stream]
         if verb == "write":
-            link.send(text if text.endswith("\n") else text + "\n")
-            last_write = text if text.endswith("\n") else text + "\n"
+            line = text if text.endswith("\n") else text + "\n"
+            link.send(line)
+            last_write = (link, line)
             continue
-        # A floor of ten seconds, not the bench's default four: this bridge
-        # takes seconds to turn a line around, and a step that times out early
-        # reports a missing line for output that was still on its way.
         step = max(seconds, 10.0)
         wait = (lambda: link.wait(text, step)) if verb == "expect" \
             else (lambda: link.match(text, step))
         ok = wait()
         if not ok and last_write is not None:
-            link.send(last_write)
+            last_write[0].send(last_write[1])
             ok = wait()
         if not ok:
             missed.append(text)
             break
-    # The done line is the sketch's own verdict, so it is waited for - unless
-    # the script already consumed it, in which case waiting again would sit
-    # through the timeout collecting banners for a line that will not come.
+    # The done line is the sketch's own verdict, so it is waited for - unless the script
+    # already consumed it, in which case waiting again would sit through the timeout.
     done = f"{name} done failures="
-    if not any(verb != "write" and done in text for verb, text in script):
-        link.wait(done, max(seconds, 30.0))
-    link.drain(0.3)
+    if not any(verb != "write" and done in text for _, verb, text in script):
+        console.wait(done, max(seconds, 30.0))
+    console.drain(0.3)
     return missed
 
 

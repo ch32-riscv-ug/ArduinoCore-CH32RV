@@ -23,25 +23,25 @@ static void run_checks()
 {
   /* Uppercase hex with no prefix, a negative decimal, and two decimals -
    * the three a sketch is most likely to depend on. */
-  Serial.print("fmt=");
-  Serial.print(255, HEX);
-  Serial.print(',');
-  Serial.print(-42);
-  Serial.print(',');
-  Serial.println(1.5, 2);
+  Console.print("fmt=");
+  Console.print(255, HEX);
+  Console.print(',');
+  Console.print(-42);
+  Console.print(',');
+  Console.println(1.5, 2);
 
   /* Rounds at the digit asked for rather than truncating. */
-  Serial.print("round=");
-  Serial.println(3.14159, 4);
+  Console.print("round=");
+  Console.println(3.14159, 4);
 
   /* The example Print.cpp's own comment gives: 1.999 at two digits carries
    * into the integer part. */
-  Serial.print("carry=");
-  Serial.println(1.999, 2);
+  Console.print("carry=");
+  Console.println(1.999, 2);
 
   /* Zero digits: rounded, and no trailing point. */
-  Serial.print("digits=");
-  Serial.println(2.5, 0);
+  Console.print("digits=");
+  Console.println(2.5, 0);
 
   tc_done();
 }

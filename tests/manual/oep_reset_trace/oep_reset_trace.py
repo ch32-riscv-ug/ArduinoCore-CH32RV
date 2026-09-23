@@ -70,25 +70,22 @@ def main() -> None:
 
     log = print
     with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("reset_probe", args.fqbn or profile["fqbn"], profile["serial_index"], pathlib.Path(tmp), log,
+        binary = oep_smoke.build("reset_probe", args.fqbn or profile["fqbn"], pathlib.Path(tmp), log,
                                  source=HERE / "reset_probe", defines=targets.build_defines(profile))
         image = binary.read_bytes()
     client = open_client(args.port or profile["port"], 3.0)
     target = Target(client)
     outcome = program_image(target, image)
     log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
-    uart = FixtureUart(client, client.find(*codec.DEF_FIXTURE_UART[:2]).function)
     gpio = FixtureGpio(client, client.find(*codec.DEF_FIXTURE_GPIO[:2]).function)
     capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function)
     MARK = profile["pwm"]   # DUT PA1 -> probe GPIO (47 on the X035 fixture, 25 on the V003 jig)
     # plan: console + capture observing the marker and the console TX; fixture.gpio takes no plan roles (configure claims the pin)
-    lease, _ = client.plan_apply(uart.assignments(rx=CONSOLE_RX, tx=CONSOLE_TX)
-                                 + capture.assignments(MARK, CONSOLE_RX))
+    lease, _ = client.plan_apply(capture.assignments(MARK, CONSOLE_RX))
     try:
-        uart.configure(115200)
         gpio.configure(MARK, FixtureGpio.INPUT_PULL_DOWN)
-        link = oep_smoke.UartLink(uart)
-        if not link.wait("reset_probe READY", 10):
+        link = oep_smoke.open_console(client)
+        if not oep_smoke.sync(link, "reset_probe READY"):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
 
         def reason():

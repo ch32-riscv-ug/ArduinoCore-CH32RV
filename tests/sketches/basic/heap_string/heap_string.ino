@@ -26,25 +26,25 @@ static void run_checks()
 {
   // Reaching this line at all is most of the test: with the semihosting _sbrk
   // the board never answered PING, because it never left .init_array.
-  Serial.println("heap test start");
+  Console.println("heap test start");
 
   global_string = "abc";
   global_string += "def";
-  Serial.print("string=");
-  Serial.println(global_string);
-  Serial.print("length=");
-  Serial.println(global_string.length());
+  Console.print("string=");
+  Console.println(global_string);
+  Console.print("length=");
+  Console.println(global_string.length());
 
   // malloc must hand back RAM above .bss, not a null and not a wild pointer.
   extern char _end[];
   extern char _heap_end[];
   char *block = (char *)malloc(64);
-  Serial.print("malloc=");
-  Serial.println(block >= _end && block + 64 <= _heap_end ? "in range" : "BAD");
+  Console.print("malloc=");
+  Console.println(block >= _end && block + 64 <= _heap_end ? "in range" : "BAD");
   if (block) {
     memset(block, 0x5A, 64);
-    Serial.print("readback=");
-    Serial.println(block[63] == 0x5A ? "ok" : "BAD");
+    Console.print("readback=");
+    Console.println(block[63] == 0x5A ? "ok" : "BAD");
     free(block);
   }
 
@@ -57,15 +57,15 @@ static void run_checks()
     void *q = malloc(128);
     free(q);
   }
-  Serial.print("free_returns_memory=");
-  Serial.println(_sbrk(0) == brk_before ? "ok" : "BAD");
+  Console.print("free_returns_memory=");
+  Console.println(_sbrk(0) == brk_before ? "ok" : "BAD");
 
   // Asking for more than the whole heap must fail cleanly, not hang or reset.
   void *huge = malloc(0x7FFFFF);
-  Serial.print("oom=");
-  Serial.println(huge == NULL ? "null" : "BAD");
+  Console.print("oom=");
+  Console.println(huge == NULL ? "null" : "BAD");
 
-  Serial.println("heap test done");
+  Console.println("heap test done");
   tc_done();
 }
 

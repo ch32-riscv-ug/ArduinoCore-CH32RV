@@ -95,15 +95,7 @@ static void run_checks()
    * soft-float routines behind Print::printFloat - which had this sketch at
    * 97% of a 16 KB part. */
 
-  /* Room in the transmit ring. Print's default returns 0, which would make a
-   * sketch believe the port is permanently full.
-   *
-   * flush() first: every check above printed, and at 115200 the ring really is
-   * full at this point. Measuring without draining would be testing how fast
-   * the UART is, not whether the count is reported. */
-  Serial.flush();
-  const int room = Serial.availableForWrite();
-  tc_checkv("availableForWrite", room > 0, room);
+  /* availableForWrite() is a UART's, and is checked in serial_println. */
 
   /* The port-access macros, in the shape the ESP32 core uses: one bit of one
    * 32-bit register per pin. Driving the pad through them has to be visible to

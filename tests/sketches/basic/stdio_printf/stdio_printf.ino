@@ -25,33 +25,37 @@
 
 static void run_checks()
 {
-  Serial.println("stdio test start");
+  Console.println("stdio test start");
 
   // The lowest level first: if this is libgloss's stub the board resets here
   // and nothing below is ever printed.
   ssize_t n = write(STDOUT_FILENO, "write=direct\r\n", 14);
-  Serial.print("write returned ");
-  Serial.println((int)n);
+  Console.print("write returned ");
+  Console.println((int)n);
 
   int p = printf("printf=%d %s %c\r\n", 42, "str", 'x');
-  Serial.print("printf returned ");
-  Serial.println(p);
+  Console.print("printf returned ");
+  Console.println(p);
 
   int u = puts("puts=line");
-  Serial.print("puts returned ");
-  Serial.println(u >= 0 ? "ok" : "BAD");
+  Console.print("puts returned ");
+  Console.println(u >= 0 ? "ok" : "BAD");
 
   // A conversion wide enough to need the buffer newlib mallocs for stdout.
   printf("wide=%08lx\r\n", 0xDEADBEEFUL);
   fflush(stdout);
 
-  Serial.println("stdio test done");
+  Console.println("stdio test done");
   tc_done();
 }
 
 void setup()
 {
   tc_begin("stdio_printf");
+  // stdio follows the harness onto Console. Said here rather than left to the
+  // default, which is the board's UART - a UART is a thing under test, not
+  // where the results go.
+  ch32_set_stdout(&Console);
 }
 
 void loop()

@@ -25,23 +25,23 @@ void loop() {
   char verb[8] = {0}; unsigned long a = 0, b = 0; char arg[136] = {0};
   const int n = sscanf(cmd, "%7s %lu %lu %135s", verb, &a, &b, arg);
   if (n < 1) return;
-  if (!strcmp(verb, "PWM")) { analogWrite(PWM_PIN, (int)a); Serial.print("PWM duty="); Serial.println(a); }
-  else if (!strcmp(verb, "TONE")) { tone(PWM_PIN, (unsigned)a); Serial.print("TONE hz="); Serial.println(a); }
-  else if (!strcmp(verb, "NOTONE")) { noTone(PWM_PIN); pinMode(PWM_PIN, OUTPUT); digitalWrite(PWM_PIN, LOW); Serial.println("NOTONE"); }
+  if (!strcmp(verb, "PWM")) { analogWrite(PWM_PIN, (int)a); Console.print("PWM duty="); Console.println(a); }
+  else if (!strcmp(verb, "TONE")) { tone(PWM_PIN, (unsigned)a); Console.print("TONE hz="); Console.println(a); }
+  else if (!strcmp(verb, "NOTONE")) { noTone(PWM_PIN); pinMode(PWM_PIN, OUTPUT); digitalWrite(PWM_PIN, LOW); Console.println("NOTONE"); }
   else if (!strcmp(verb, "TOGGLE")) {
     pinMode(PWM_PIN, OUTPUT);
     for (unsigned long i = 0; i < b; ++i) { digitalWrite(PWM_PIN, HIGH); delayMicroseconds(a); digitalWrite(PWM_PIN, LOW); delayMicroseconds(a); }
-    Serial.println("TOGGLE done");
+    Console.println("TOGGLE done");
   } else if (!strcmp(verb, "TOGGLE0")) {
     pinMode(PWM_PIN, OUTPUT);
     for (unsigned long i = 0; i < a; ++i) { digitalWrite(PWM_PIN, HIGH); digitalWrite(PWM_PIN, LOW); }
-    Serial.println("TOGGLE0 done");
+    Console.println("TOGGLE0 done");
   } else if (!strcmp(verb, "MILLIS")) {
     pinMode(PWM_PIN, OUTPUT); bool level = false; unsigned long next = millis() + a; unsigned long toggles = 0;
     const unsigned long t0 = millis();
     for (unsigned long i = 0; i < b; ++i) { while ((long)(millis() - next) < 0) {} next += a; level = !level; digitalWrite(PWM_PIN, level ? HIGH : LOW); ++toggles; }
     const unsigned long dt = millis() - t0;
-    digitalWrite(PWM_PIN, LOW); Serial.print("MILLIS done toggles="); Serial.print(toggles); Serial.print(" ms="); Serial.println(dt);
+    digitalWrite(PWM_PIN, LOW); Console.print("MILLIS done toggles="); Console.print(toggles); Console.print(" ms="); Console.println(dt);
   } else if (!strcmp(verb, "SPI")) {
     uint8_t buf[64]; size_t count = 0;
     for (const char *p = arg; p[0] && p[1] && count < sizeof buf; p += 2) buf[count++] = (uint8_t)((hexval(p[0]) << 4) | hexval(p[1]));
@@ -53,8 +53,8 @@ void loop() {
     SPI.transfer(buf, count);
     digitalWrite(CS_PIN, HIGH);
     SPI.endTransaction();
-    Serial.print("SPI got=");
-    for (size_t i = 0; i < count; ++i) { if (buf[i] < 16) Serial.print('0'); Serial.print(buf[i], HEX); }
-    Serial.println();
-  } else { Serial.print("ERR verb "); Serial.println(verb); }
+    Console.print("SPI got=");
+    for (size_t i = 0; i < count; ++i) { if (buf[i] < 16) Console.print('0'); Console.print(buf[i], HEX); }
+    Console.println();
+  } else { Console.print("ERR verb "); Console.println(verb); }
 }

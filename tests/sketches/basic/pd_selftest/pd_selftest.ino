@@ -115,12 +115,12 @@ static void run_checks()
      * sketch runs on every board, so it reports which world it is in and
      * checks the invariants of that world. Both lines are printed for the
      * host to read. */
-    Serial.print("pd_connected=");
-    Serial.println(USBPD.connected() ? 1 : 0);
-    Serial.print("pd_profiles=");
-    Serial.println(USBPD.profileCount());
-    Serial.print("pd_voltage=");
-    Serial.println(USBPD.voltage());
+    Console.print("pd_connected=");
+    Console.println(USBPD.connected() ? 1 : 0);
+    Console.print("pd_profiles=");
+    Console.println(USBPD.profileCount());
+    Console.print("pd_voltage=");
+    Console.println(USBPD.voltage());
     if (!USBPD.connected()) {
         /* Empty port: nothing may be invented. */
         tc_check("hw_state_consistent", !USBPD.ready()

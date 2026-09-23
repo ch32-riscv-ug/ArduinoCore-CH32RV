@@ -18,18 +18,18 @@ void loop() {
   char verb[8] = {0}; unsigned long a = 0, b = 0;
   const int n = sscanf(cmd, "%7s %lu %lu", verb, &a, &b);
   if (n < 1) return;
-  if (!strcmp(verb, "OPEN")) { Serial2.begin(a); Serial.println("OPEN ok"); }
-  else if (!strcmp(verb, "CLOSE")) { Serial2.end(); Serial.println("CLOSE ok"); }
+  if (!strcmp(verb, "OPEN")) { Serial2.begin(a); Console.println("OPEN ok"); }
+  else if (!strcmp(verb, "CLOSE")) { Serial2.end(); Console.println("CLOSE ok"); }
   else if (!strcmp(verb, "SEND")) {
     uint32_t x = (uint32_t)b;
     for (unsigned long i = 0; i < a; ++i) Serial2.write((uint8_t)lcg(x));
-    Serial2.flush(); Serial.println("SEND done");
+    Serial2.flush(); Console.println("SEND done");
   } else if (!strcmp(verb, "ECHO")) {
     unsigned long k = 0; unsigned long last = millis();
     while (k < a && (millis() - last) < b) {
       while (Serial2.available() && k < a) { Serial2.write((uint8_t)Serial2.read()); ++k; last = millis(); }
     }
-    Serial2.flush(); Serial.print("ECHO n="); Serial.println(k);
+    Serial2.flush(); Console.print("ECHO n="); Console.println(k);
   } else if (!strcmp(verb, "RECV")) {
     delay(b);
     int peak = Serial2.available();
@@ -38,6 +38,6 @@ void loop() {
       const int av = Serial2.available(); if (av > peak) peak = av;
       while (Serial2.available() && k < a) { sum += (uint8_t)Serial2.read(); ++k; }
     }
-    Serial.print("RECV n="); Serial.print(k); Serial.print(" sum="); Serial.print(sum); Serial.print(" avail_peak="); Serial.println(peak);
-  } else { Serial.print("ERR verb "); Serial.println(verb); }
+    Console.print("RECV n="); Console.print(k); Console.print(" sum="); Console.print(sum); Console.print(" avail_peak="); Console.println(peak);
+  } else { Console.print("ERR verb "); Console.println(verb); }
 }
