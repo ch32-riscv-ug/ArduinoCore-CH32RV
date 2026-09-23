@@ -91,6 +91,7 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 | SDI print (debug出力) | 実装済 | SerialSDI(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 送信のみ。class実装をV003実機で受信まで確認(2026-08-26、`wlink sdi-print enable`経由)。**DMDATAのhart側アドレスはfamily依存**で3通りある: V2系(V003/V00x)`0xE00000F4`、V3系の多く(V205/V407/X315/M030)`0xE0000340`、V4系とV103`0xE0000380`。上流`evidence/debug_data.csv`から`CH32_DM_DATA0_ADDR`をboard毎に生成しているのでsketch側の指定は不要(2026-08-26)。**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ** |
 | RTT (debug出力) | 実装済 | SerialRTT(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向**。RAM上のリングバッファをprobeが走行中に読む方式で、host側は`probe-rs attach`(このcoreの書き込みツールそのもの)。V003実機で送受信とも確認(2026-08-26、23秒18行+echo back)。control blockは公開仕様、SEGGERのコードは不使用。**代償はRAM**(既定バッファで+364 byte、`CH32_RTT_UP_SIZE`等で縮小可) |
 | DMDATA mailbox (debug出力) | 実装済 | SerialDMDATA(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向**(送り7 byte/受け3 byteずつ)。SDI printと**同じレジスタの別framing**なので併用不可。host側はminichlink(ch32fun、同梱しない)。対応chipはminichlink側に従う。V003実機で送受信とも確認(2026-08-26、`minichlink -T`でecho back)。RAMはほぼ不要(+36 byte) |
+| DMSEQ console (debug出力) | 実装済 | SerialDMSeq(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向、通し番号+CRC-8**(送り6 byte/受け2 byteずつ)。DMDATAと同じレジスタの別framing(oep-spec `target.console` framing 2、dmseq)で、DMIアクセスが落ちても化けてもbyteの重複・欠落なし。host側は`ch32rv monitor --source dmseq`とOEP probe。X035・V003・L103でOEP probe越しに全出力の厳密照合・echo・再起動時のSYNまで確認(2026-09-24)。V003で+1268 byte flash / +52 byte RAM |
 
 ## RTOS
 

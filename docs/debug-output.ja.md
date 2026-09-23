@@ -13,6 +13,7 @@ UARTと`SerialSDI`はArduinoのSerial Monitorがそのまま使えます。
 | [`SerialSDI`](../libraries/SerialSDI/README.ja.md) | WCH-LinkUtility(またはwlink)で一度有効化 | **読める**(probeのCDC port) | 不要 |
 | [`SerialRTT`](../libraries/SerialRTT/README.ja.md) | `probe-rs attach` | 読めない | 不要 |
 | [`SerialDMDATA`](../libraries/SerialDMDATA/README.ja.md) | `ch32rv monitor --source dmdata`（同梱）/ `minichlink -T` | 読めない | 不要 |
+| [`SerialDMSeq`](../libraries/SerialDMSeq/README.ja.md) | `ch32rv monitor --source dmseq`（ch32rv側は実装中）/ OEP probe | 読めない | 不要 |
 
 `SerialRTT`と`SerialDMDATA`をSerial Monitorに繋ぐには、Arduinoの
 pluggable monitorプロトコルを喋る専用ツールを配布する必要があります。
