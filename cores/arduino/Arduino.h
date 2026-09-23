@@ -59,22 +59,30 @@ using namespace arduino;
 
 /* Where the global interrupt enable lives for the code a sketch runs.
  *
- * Every QingKe V4 part here enters sketches in U mode (MPP = 0 in the board's
- * CH32_MSTATUS_INIT), and the core enforces it: mstatus is an illegal
- * instruction there (mcause 2). Measured on V4C - the X035 on 2026-09-22, the
- * L103 on 2026-09-23 - and on V4F, the V307, the same day; V4A/V4B/V4J share the
- * V4 manual's privilege model and are included on that basis, not measured.
- * Their interrupt-control CSR 0x800 (gintenr) holds the same enable bits (0x88)
- * and is user-accessible. The V2 parts run sketches in M mode and V3/V5 are
- * unconfirmed, so they keep mstatus. The branch is on the core (CH32_CORE_*
- * from the generated variant), not on part names: it was X035/X033 only until
- * the L103 and then the V307 hung the same way. */
-#if defined(CH32_CORE_QINGKE_V4A) || defined(CH32_CORE_QINGKE_V4B) || \
+ * Sketches enter U mode (MPP = 0 in the board's CH32_MSTATUS_INIT) on every
+ * QingKe V3B/V3F/V3V/V4 part, as WCH's own startups do, and the core enforces
+ * it: mstatus is an illegal instruction there (mcause 2). Their CSR 0x800
+ * (gintenr) holds the same enable bits (0x88), is user-accessible, and is what
+ * WCH's __enable_irq/__disable_irq use on those cores. Measured on V4C - the
+ * X035 on 2026-09-22, the L103 on 2026-09-23 - and on V4F, the V307, the same
+ * day; V3B/V3F/V3V/V4A/V4B/V4J follow their EVT headers, not measured.
+ *
+ * The V2 parts and the V3A (CH32V103) run sketches in M mode and use mstatus.
+ * The V3A has U mode but no gintenr (it reads 0 and ignores writes), so it is
+ * put in M mode by its board (tools/generate/generate.py) rather than left
+ * without a way to mask interrupts. The branch is on the core (CH32_CORE_*
+ * from the generated variant), not on part names. */
+#if defined(CH32_CORE_QINGKE_V3B) || defined(CH32_CORE_QINGKE_V3F) || \
+    defined(CH32_CORE_QINGKE_V3V) || \
+    defined(CH32_CORE_QINGKE_V4A) || defined(CH32_CORE_QINGKE_V4B) || \
     defined(CH32_CORE_QINGKE_V4C) || defined(CH32_CORE_QINGKE_V4F) || \
     defined(CH32_CORE_QINGKE_V4J)
 #define CH32_IRQ_IN_GINTENR 1
-#else
+#elif defined(CH32_CORE_QINGKE_V2A) || defined(CH32_CORE_QINGKE_V2C) || \
+      defined(CH32_CORE_QINGKE_V3A)
 #define CH32_IRQ_IN_GINTENR 0
+#else
+#error "unknown QingKe core: say whether sketches run in U mode (gintenr) or M mode (mstatus)"
 #endif
 
 /* api/Common.h declares these two but leaves them to the core; see above for

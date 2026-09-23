@@ -60,6 +60,8 @@ WCH EVTのstartupファイルはfamilyごと・派生ごとに複数存在する
 
 - `.wordエントリ数`は`.word`行の総数(予約0を含む)で、実IRQ数ではない
 - mstatus値の意味: 0x1880 = MPP=Machine+MPIE(mret後に割込み許可)。0x88 = MIE+MPIE。0x6088 = +FS(FPU有効)。0x688 = +VS(vector unit有効)。**V2系だけmret前のMIE=0という差がある**
+  - 0x88 系は MPP=0 なので、**mret 後の main は U モード**で走る(V2 系の 0x1880 だけ M モード)。U モードでは mstatus が不正命令(mcause 2)になり、全体の割込みマスクは CSR 0x800(gintenr)経由になる。EVT の `__disable_irq` も V3B/V3F/V3V/V4 は gintenr を使う。
+  - **V3A(CH32V103)は U モードだが gintenr が無い**(0x800 は 0 を返し書込みも無視、2026-09-23 実測)。EVT の `__disable_irq` は「Machine mode 専用」で mstatus を触るので、U モードからは割込みを止める手段が無い。このため本コアの CH32V103 board だけは EVT と異なり `CH32_MSTATUS_INIT=0x1888`(MPP=3、M モード)を出荷する(`tools/generate/generate.py`、`tests/unit/test_startup_parameters.py` の `DELIBERATE_DEVIATIONS`)
 - CSR 0x804はQingKeマニュアルのINTSYSCR(HW stack/割込みnesting設定)に対応するとみられる(値の意味は一次資料照合が未了 → 未検証)。0xbc0/0xbc1/0x805はvendor固有CSRで、家系ごとに定数が異なる。**この定数群は「family固有の魔法値」としてそのまま保持するのが安全**
 - V103のみvector tableが`j`命令列(mtvecモードビットなし)で、`.init`に意図不明のnop列+ebreakを持つ。最古の世代で、他とパターンが異なる
 

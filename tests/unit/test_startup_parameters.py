@@ -80,10 +80,35 @@ def test_the_isa_matches_boards_txt(fam):
             f"for {fam.tag} uses -march={fam.march} -mabi={fam.mabi}")
 
 
+# Where a board deliberately ships something other than what WCH's startup
+# does. The harness keeps proving the EVT value (so the crt0 is still shown to
+# reproduce WCH's machine state); the board then differs in exactly the define
+# listed, and in nothing else. Pinned, like FAMILIES_WITHOUT_A_BOARD, so a new
+# deviation is a decision someone writes down rather than a drift.
+#
+# v103: MPP = 3, sketches in M mode. The QingKe V3A has U mode but no gintenr,
+# so U mode leaves a sketch no way to mask interrupts (tools/generate/generate.py).
+DELIBERATE_DEVIATIONS = {
+    "v103": {"-DCH32_MSTATUS_INIT=0x88": "-DCH32_MSTATUS_INIT=0x1888"},
+}
+
+
 @pytest.mark.parametrize("fam", harness.FAMILIES, ids=lambda f: f.tag)
 def test_the_startup_defines_match_boards_txt(fam):
+    swap = DELIBERATE_DEVIATIONS.get(fam.tag, {})
+    expected = {swap.get(d, d) for d in fam.defines}
     for board in _boards_by_tag().get(fam.tag, []):
         shipped = set((_field(board, "startup_defines") or "").split())
-        assert shipped == set(fam.defines), (
+        assert shipped == expected, (
             f"{board} ships {sorted(shipped)} but the startup equivalence "
-            f"proof for {fam.tag} uses {sorted(fam.defines)}")
+            f"proof for {fam.tag} uses {sorted(fam.defines)}"
+            f"{' with ' + str(swap) if swap else ''}")
+
+
+def test_every_deviation_names_a_define_the_harness_uses():
+    """A deviation whose EVT side the harness no longer uses would pass silently."""
+    by_tag = {fam.tag: set(fam.defines) for fam in harness.FAMILIES}
+    for tag, swap in DELIBERATE_DEVIATIONS.items():
+        assert tag in by_tag, f"deviation for unknown family {tag}"
+        assert set(swap) <= by_tag[tag], (
+            f"{tag}: {sorted(set(swap) - by_tag[tag])} is not among the harness defines")

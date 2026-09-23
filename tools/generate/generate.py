@@ -98,8 +98,16 @@ FAMILY = {
                              "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0),
     # CH32V103's table is a jump table and its startup never writes csr 0x804.
+    # MPP = 3 (0x1888), not EVT's 0x88: sketches run in M mode on this part.
+    # Its QingKe V3A has U mode but no gintenr (csr 0x800 reads 0 and ignores
+    # writes, measured on CH32V103R8T6 2026-09-23), so in U mode nothing a
+    # sketch can execute masks interrupts - mstatus traps (mcause 2), which hung
+    # analogWrite/tone/Servo in the timer's critical sections. EVT's own
+    # __disable_irq is "only used for Machine mode" for the same reason. U mode
+    # protects nothing here anyway: no PMP is set up, so memory and peripherals
+    # are open to it. tests/unit/test_startup_parameters.py pins this deviation.
     "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="72000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_MTVEC_MODE=1",
+                     defines="-DCH32_MSTATUS_INIT=0x1888 -DCH32_MTVEC_MODE=1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
