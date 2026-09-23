@@ -45,6 +45,26 @@ TARGETS = {
 }
 
 
+# Pico bench, added 2026-09-23. The wiring is provisional (see the probe repo's
+# docs/pico-bench.ja.md): the RP2350's link to the CH32L103 covers only part of the header
+# and the pair is not identified yet, so these profiles carry no pin map. They exist so a
+# runner can name a probe without hard-coding its port.
+PICO_PROBES = {
+    "rp2350": {
+        "role": "OEP probe for the CH32L103 (RVSWD, bit-bang)",
+        "fqbn": "rp2040:rp2040:sparkfun_promicrorp2350:usbstack=picosdk",
+        "example": "oep-probe-arduino/examples/Rp2350L103Probe",
+        "bootsel_usb": "2e8a:000f",
+    },
+    "rp2040zero": {
+        "role": "ordinary ARM SWD counterpart on the Pro Micro RP2350's SWD header (GP0/GP1)",
+        "fqbn": "rp2040:rp2040:waveshare_rp2040_zero:usbstack=picosdk",
+        "example": "oep-probe-arduino/examples/Rp2040SwdSurvey",
+        "bootsel_usb": "2e8a:0003",
+    },
+}
+
+
 def add_target_argument(parser, default="x035"):
     parser.add_argument("--target", choices=sorted(TARGETS), default=default, help="fixture profile (see targets.py)")
 
