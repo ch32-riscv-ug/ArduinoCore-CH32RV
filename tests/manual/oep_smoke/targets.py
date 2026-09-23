@@ -45,16 +45,19 @@ TARGETS = {
 }
 
 
-# Pico bench, added 2026-09-23. The wiring is provisional (see the probe repo's
-# docs/pico-bench.ja.md): the RP2350's link to the CH32L103 covers only part of the header
-# and the pair is not identified yet, so these profiles carry no pin map. They exist so a
-# runner can name a probe without hard-coding its port.
+# Pico bench, added 2026-09-23. The pin map below was measured, not assumed: with the
+# target halted its GPIO registers are reachable, so each side was driven a pin at a time
+# and read from the other (probe repo, scratchpad/l103_wiremap.py). Only part of the
+# header is wired - no ADC input reaches the probe at all - and PA11/PA12 are the part's
+# USB pins, so leave them alone if USB is ever used. See docs/pico-bench.ja.md.
 PICO_PROBES = {
     "rp2350": {
         "role": "OEP probe for the CH32L103 (RVSWD, bit-bang)",
         "fqbn": "rp2040:rp2040:sparkfun_promicrorp2350:usbstack=picosdk",
         "example": "oep-probe-arduino/examples/Rp2350L103Probe",
         "bootsel_usb": "2e8a:000f",
+        "port": "/dev/serial/by-id/usb-SparkFun_ProMicro_RP2350_9489DD2AE0953650-if00",
+        "swdio": 0, "swclk": 1, "nrst": 2,
     },
     "rp2040zero": {
         "role": "ordinary ARM SWD counterpart on the Pro Micro RP2350's SWD header (GP0/GP1)",
@@ -62,6 +65,26 @@ PICO_PROBES = {
         "example": "oep-probe-arduino/examples/Rp2040SwdSurvey",
         "bootsel_usb": "2e8a:0003",
     },
+}
+
+# CH32L103C8T6 on the Pro Micro RP2350 (measured 2026-09-23). Not in TARGETS yet: the basic
+# suite builds sketches that open Serial on the variant's default USART1 route (PA9/PA10),
+# and those land on probe GP20/GP6, which is not a hardware UART pair on the RP2350. Route 1
+# (PB6/PB7) does land on one - GP13/GP12, verified with a console sketch - so what is missing
+# is a way for a build to pick the route. Everything else here is ready.
+L103_JIG = {
+    "port": "/dev/serial/by-id/usb-SparkFun_ProMicro_RP2350_9489DD2AE0953650-if00",
+    "fqbn": "ch32-riscv-ug:ch32v:CH32L103:pnum=CH32L103C8T6",
+    "serial_index": 1,
+    "define": "OEP_TARGET_L103",
+    "uart_rx": 13, "uart_tx": 12,                     # DUT USART1 route 1: PB6 (TX) -> probe 13, PB7 (RX) <- probe 12
+    "capture": False, "capture_max_hz": 0,            # the Pico probe has no fixture.capture yet
+    "gpio": {"PA8": 7, "PA9": 20, "PA10": 6, "PA11": 21, "PA12": 5, "PA15": 15,
+             "PB3": 4, "PB4": 14, "PB5": 3, "PB8": 11, "PC13": 10},   # PB6/PB7 are the console
+    "adc": {}, "adc_absent": [], "external_pullup": [], "adc_high_min": 0,
+    "i2c": {"scl": 13, "sda": 12, "route": 0},        # DUT PB6/PB7 - the same wires as the console, so exclusive
+    "spi": {"sck": 4, "mosi": 3, "miso": 14, "cs": 15, "dut_cs": "PA15"},   # SPI1 route 1
+    "pwm": 7,                                         # DUT PA8 = TIM1_CH1
 }
 
 
