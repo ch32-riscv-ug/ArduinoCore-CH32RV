@@ -31,12 +31,30 @@
 
 #include <stdint.h>
 
-/* How long write() waits for the probe to take the previous frame, as a spin
- * count. On timeout the frame is dropped and the channel is marked dead until
- * a host clears it, so an unplugged debugger costs this once rather than on
- * every line. */
-#ifndef CH32_DMDATA_SPIN
-#define CH32_DMDATA_SPIN 200000u
+/* How long write() waits for the probe to take the previous frame, in
+ * milliseconds. On timeout the frame is dropped and the channel is marked dead
+ * until a host clears it, so an unplugged debugger costs this once rather than
+ * on every line.
+ *
+ * Two waits, because "no host" and "a slow host" look the same from here: a
+ * short one until a host has taken something, and a long one after, so a host
+ * that is merely late - a probe polling over USB/IP next to six others - does
+ * not have lines dropped under it. Dropping is silent on the host side (a RUN
+ * that never answers, a line with a hole in it), which is why it should only
+ * happen when nobody is there. After a timeout the short wait applies again. */
+#ifndef CH32_DMDATA_WAIT_MS
+#define CH32_DMDATA_WAIT_MS 20u
+#endif
+#ifndef CH32_DMDATA_HOST_WAIT_MS
+#define CH32_DMDATA_HOST_WAIT_MS 1000u
+#endif
+
+/* The waits are counted in polls of the register, not read off a clock: they
+ * must still end with interrupts masked, where millis() stands still. One poll
+ * measured about 10 cycles on CH32V003; 8 is assumed, so a wait lasts at least
+ * as long as asked. */
+#ifndef CH32_DMDATA_CYCLES_PER_POLL
+#define CH32_DMDATA_CYCLES_PER_POLL 8u
 #endif
 
 /* Room to park what the host has sent. The register holds one three-byte frame
@@ -87,6 +105,10 @@ private:
     uint8_t _head = 0;            /* next byte to hand to read() */
     uint8_t _tail = 0;            /* next free slot */
     bool _started = false;
+    bool _left = false;           /* we left a word with bit 7 set (a frame or the invitation) */
+    bool _host = false;           /* a host has taken something since the last timeout */
+
+    uint32_t waitPolls(void) const;
 
     void poll(void);
     uint8_t buffered(void) const;

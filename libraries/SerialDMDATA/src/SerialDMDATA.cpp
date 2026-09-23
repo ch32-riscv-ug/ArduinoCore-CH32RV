@@ -58,6 +58,9 @@ void CH32SerialDMDATA::poll(void)
     if (word & ST_PENDING) {
         return;                   /* our own frame, still waiting to be taken */
     }
+    if (_left) {
+        _host = true;             /* it cleared the word we left: a host is here */
+    }
     uint32_t n = word & ST_COUNT;
     if (n > ST_BIAS) {
         n -= ST_BIAS;
@@ -70,6 +73,15 @@ void CH32SerialDMDATA::poll(void)
         }
     }
     *CH32_DM_DATA0 = ST_EMPTY;
+    _left = true;
+}
+
+uint32_t CH32SerialDMDATA::waitPolls(void) const
+{
+    const uint64_t per_ms = (uint64_t)F_CPU / 1000u / CH32_DMDATA_CYCLES_PER_POLL;
+    const uint64_t polls =
+        per_ms * (_host ? CH32_DMDATA_HOST_WAIT_MS : CH32_DMDATA_WAIT_MS);
+    return polls > 0xffffffffu ? 0xffffffffu : (polls ? (uint32_t)polls : 1u);
 }
 
 bool CH32SerialDMDATA::alive(void)
@@ -86,6 +98,8 @@ void CH32SerialDMDATA::begin(unsigned long baudrate, uint16_t config)
     *CH32_DM_DATA0 = 0;
     _head = 0;
     _tail = 0;
+    _left = false;
+    _host = false;
     _started = true;
 }
 
@@ -124,7 +138,7 @@ void CH32SerialDMDATA::flush(void)
     }
     /* Bounded: with no host attached the frame is never taken, and waiting for
      * that would never end. */
-    for (uint32_t spin = CH32_DMDATA_SPIN; spin != 0u; spin--) {
+    for (uint32_t spin = waitPolls(); spin != 0u; spin--) {
         if ((*CH32_DM_DATA0 & ST_PENDING) == 0u) {
             return;
         }
@@ -147,15 +161,19 @@ size_t CH32SerialDMDATA::write(const uint8_t *buffer, size_t size)
     size_t sent = 0;
     while (sent < size) {
         uint32_t word;
-        uint32_t spin = CH32_DMDATA_SPIN;
+        uint32_t spin = waitPolls();
         while ((word = *CH32_DM_DATA0) & ST_PENDING) {
             if (--spin == 0u) {
                 /* Nobody is collecting. Mark it so the next write is free
                  * instead of spinning again; a host that attaches later
                  * clears the word and printing resumes. */
                 *CH32_DM_DATA0 = word | ST_TIMEOUT;
+                _host = false;
                 return sent;
             }
+        }
+        if (_left) {
+            _host = true;         /* the frame we left was taken */
         }
         /* The wait is also where incoming bytes turn up. Taking them here is
          * what keeps a printing sketch from writing over them. */
@@ -174,6 +192,7 @@ size_t CH32SerialDMDATA::write(const uint8_t *buffer, size_t size)
         *CH32_DM_DATA0 = (ST_PENDING | (uint32_t)(chunk + ST_BIAS)) |
                          ((uint32_t)p[0] << 8) | ((uint32_t)p[1] << 16) |
                          ((uint32_t)p[2] << 24);
+        _left = true;
         sent += chunk;
     }
     return sent;

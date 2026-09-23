@@ -76,10 +76,14 @@ ch32_set_stdout(nullptr);         // 捨てる
 
 ## 知っておくとよいこと
 
-- **hostが居なくても固まりません。** 前のフレームをprobeが取るのを有限回だけ待ち、
+- **hostが居なくても固まりません。** 前のフレームをprobeが取るのを有限時間だけ待ち、
   諦めます。しかもそれをstatus wordに*latch*するので、
   以降のwriteは空回りせずタダで返ります。`alive()`がその状態を返し、
   hostがattachすれば自動的に戻ります。
+- **遅いhostでも行を落としません。** 待ちは、hostがまだ何も取っていない間は短く
+  (`CH32_DMDATA_WAIT_MS`、20 ms)、一度取った後は長く(`CH32_DMDATA_HOST_WAIT_MS`、1 s)
+  なります。USB/IP越しに複数probeを同時に回すような、pollが遅れるhostを待てます。
+  どちらも`millis()`ではなくレジスタを読む回数で数えるので、割込み禁止中でも終わります。
 - **番地はfamilyで違います**(V2系`0xE00000F4`、V3系の多く`0xE0000340`、
   V4系とV103`0xE0000380`)。boardが`ch32-device-data`の
   `evidence/debug_data.csv`から渡すので、設定するものはありません。

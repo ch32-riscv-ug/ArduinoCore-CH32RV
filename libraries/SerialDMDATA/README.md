@@ -78,10 +78,15 @@ Only **stdio** follows. The name `Serial` is fixed at compile time, so
 
 ## Worth knowing
 
-- **Nothing hangs when no host is attached.** A write waits a bounded spin for
+- **Nothing hangs when no host is attached.** A write waits a bounded time for
   the probe to take the previous frame, then gives up - and *latches* that in
   the status word, so every write after it is free instead of spinning again.
   `alive()` reports that state, and it clears itself when a host attaches.
+- **A slow host does not lose lines.** The wait is short (`CH32_DMDATA_WAIT_MS`,
+  20 ms) until a host has taken something, and long (`CH32_DMDATA_HOST_WAIT_MS`,
+  1 s) after, so a probe that polls late - several probes over USB/IP at once -
+  is waited for instead of having frames dropped. Both are counted in register
+  polls, not by `millis()`, so they still end with interrupts masked.
 - **The address differs per family** (`0xE00000F4` on V2, `0xE0000340` on most
   V3, `0xE0000380` on V4 and V103). The board states it, from
   `ch32-device-data`'s `evidence/debug_data.csv`, so there is nothing to
