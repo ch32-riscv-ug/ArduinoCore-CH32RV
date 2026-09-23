@@ -194,15 +194,25 @@ def run_one(name: str, args, profile: dict, client, target, uart_service, log) -
         # A few tries: a CH32L103 whose debug link sat idle (the probe rebooting, say) takes a
         # couple of attaches to come back, and the first halt of the preflight is where that
         # shows. Anything that is still refusing after that is a real failure.
-        for attempt in range(4):
+        for attempt in range(5):
             try:
                 outcome = program_image(target, image)   # preflight, diff, pages, CRC verify, reset
                 break
             except Exception as e:
-                if attempt == 3:
+                if attempt == 4:
                     log(f"   program failed: {e}")
                     return {**result, "verdict": "fail", "why": f"program failed: {e}"}
-                time.sleep(0.3)
+                if attempt == 2:
+                    # Still refusing: pull the target's NRST where the jig wires it, which
+                    # starts it clean the way power-up does. Rejected (and harmless) on a
+                    # probe with no reset line.
+                    try:
+                        ok, _ = target.control.reset_report(3)
+                        if ok:
+                            log("   attach kept failing; pulsed NRST")
+                    except Exception:
+                        pass
+                time.sleep(0.3 * (attempt + 1))
         result["program"] = outcome.as_dict()
         result["program_s"] = round(time.perf_counter() - t0, 3)
         if not outcome.verified:

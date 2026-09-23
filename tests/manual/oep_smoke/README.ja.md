@@ -37,6 +37,9 @@ READY を待つときは `oep_smoke.sync()` を使うこと。
 
 ## 実績
 
+- 2026-09-23 x035 / l103: basic 14/14 PASS（最終形: probe 59c06f1、QingKe V4 の割込みを gintenr で、testcmd.h の clock heal 入り）。
+  l103 は probe 側で DM read の実行回数検査と flash の CTLR/ADDR 読み戻しを入れるまで、書き込み verify が黙って壊れていた。
+  書き込み直後の attach が失敗したときは NRST を 1 回入れて再試行する
 - 2026-09-23 x035: basic 14/14 PASS（console は `target.console`、UART sketch は USART4 を指名）
 - 2026-09-23 l103: 5/14 PASS。harness は成立（`serial_echo` は指名した USART1 route 1 で、`system_selftest` は
   リセットを跨いで通過）。残りは L103 側の問題で、Pico probe 経由の書き込み verify が不安定なものと、

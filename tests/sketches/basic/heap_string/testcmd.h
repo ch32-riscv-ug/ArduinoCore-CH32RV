@@ -65,6 +65,8 @@
 
 #include <Arduino.h>
 #include <SerialDMDATA.h>
+#include <ch32_clock.h>
+#include <ch32_registers.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -209,6 +211,42 @@ TC_FN void tc_tick(void)
  * nothing when nobody is listening: a Console write that finds no host gives
  * up once and stays cheap until one attaches.
  */
+/* Put the clock back if the debug probe moved it. A WCH-LinkE rewrites a
+ * running target's RCC_CFGR0 (and FLASH ACTLR) when it attaches - measured on
+ * CH32V307, V203 and L103, not V003, and it is the probe firmware, not the
+ * tool (memory of 2026-09-05). Console is read through that attach, so by the
+ * time a command line arrives it has happened, once per session: re-running
+ * SystemInit() here gives UART baud rates and timing checks the clock the
+ * core chose. Same test as tests/manual/reg_probe. */
+static uint32_t tc_clock_heals;
+
+TC_FN bool tc_clock_is_ours(void)
+{
+    const uint32_t cfgr0 = CH32_RCC_CFGR0;
+    const uint32_t sw = CH32_CLOCK_USE_PLL ? CH32_RCC_CFGR0_SW_PLL : CH32_RCC_CFGR0_SW_HSI;
+    if ((cfgr0 & CH32_RCC_CFGR0_SWS_MASK) != (sw << 2)) {
+        return false;
+    }
+    if ((cfgr0 & (CH32_RCC_CFGR0_HPRE_MASK | CH32_RCC_CFGR0_PPRE1_MASK |
+                  CH32_RCC_CFGR0_PPRE2_MASK)) != CH32_RCC_CFGR0_HPRE(CH32_HPRE_FIELD)) {
+        return false;
+    }
+#if CH32_CLOCK_USE_PLL
+    if ((cfgr0 & (uint32_t)CH32_CLOCK_PLL_MASK) != (uint32_t)CH32_CLOCK_PLL_VALUE) {
+        return false;
+    }
+#endif
+    return true;
+}
+
+TC_FN void tc_heal_clock(void)
+{
+    if (!tc_clock_is_ours()) {
+        SystemInit();
+        tc_clock_heals++;
+    }
+}
+
 TC_FN const char *tc_ready(void)
 {
     static char buf[TC_CMD_MAX];
@@ -230,6 +268,7 @@ TC_FN const char *tc_ready(void)
         }
         buf[len] = '\0';
         len = 0;
+        tc_heal_clock();
         if (buf[0] == '\0') {
             continue;                       /* a blank line is not a command */
         }
