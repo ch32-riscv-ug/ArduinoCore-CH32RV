@@ -21,6 +21,7 @@
 #include "ch32_pins.h"
 
 #define CH32_VARIANT_CH32X035 1
+#define CH32_CORE_QINGKE_V4C 1
 
 /* ---- peripheral clock enables (clock_enables.csv) ----
  * The RCC register that turns each block on, and the bit. Per family,

@@ -191,6 +191,7 @@ _READ_TABLES: set = set()
 TABLE_DIRS = {
     "families.csv": "catalog",
     "products.csv": "catalog",
+    "series.csv": "catalog",
     "pinout.csv": "index",
     # Normalised from evidence/timers.csv.  The index adds channel count and
     # complementary-output capability, which the public timer resource API
@@ -1665,7 +1666,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              wide_by_family: dict = {},
              timers_by_family: dict = {},
              forbidden: dict = {}, clock_enables: dict = {},
-             adc_all: dict = {}, adc_bases: dict = {}) -> str:
+             adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -1754,6 +1755,13 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     out += [" */", "#pragma once", "", '#include "ch32_pins.h"', ""]
 
     out.append(f"#define CH32_VARIANT_{series} 1")
+    # The QingKe core, from catalog/series.csv, so the core can branch on what the
+    # silicon does rather than on a list of part names - Arduino.h picks the CSR
+    # that holds the interrupt enable by it, because QingKe V4 traps mstatus in the
+    # U mode these parts run sketches in (X035, L103, V307; 2026-09-22/23). A
+    # dual-core series names both.
+    for token in [t.strip() for t in cores.get(series, "").split("+") if t.strip()]:
+        out.append("#define CH32_CORE_" + re.sub(r"[^A-Z0-9]+", "_", token.upper()) + " 1")
     out.append("")
 
     # --- peripheral clock enables ---
@@ -2541,6 +2549,8 @@ def main() -> int:
     timer_capabilities = load_timer_capabilities(args.tables)
     clock_enables = load_clock_enables(args.tables)
     adc_bases = load_adc_bases(args.tables)
+    cores = {r["series"]: r["core"]
+             for r in read_table(args.tables, "series.csv", ("series", "core"))}
     pwm = load_pwm_pins(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
@@ -2600,7 +2610,7 @@ def main() -> int:
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
                      route_alts, wide_timers, timer_capabilities, forbidden,
                      clock_enables,
-                     adc_all, adc_bases)
+                     adc_all, adc_bases, cores)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of

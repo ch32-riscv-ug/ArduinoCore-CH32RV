@@ -57,17 +57,35 @@ using namespace arduino;
 #define portInputRegister(port) \
     ((volatile uint32_t *)(CH32_GPIO_PORT_BASE(port) + 0x08u))
 
-/* api/Common.h declares these two but leaves them to the core. Most CH32
- * families expose MIE as bit 3 of mstatus. X033/X035 enter sketches in U mode,
- * where mstatus is inaccessible; their QingKe interrupt-control CSR 0x800 is
- * user-accessible and is what WCH's own core header uses (bits 0x88).
+/* Where the global interrupt enable lives for the code a sketch runs.
+ *
+ * Every QingKe V4 part here enters sketches in U mode (MPP = 0 in the board's
+ * CH32_MSTATUS_INIT), and the core enforces it: mstatus is an illegal
+ * instruction there (mcause 2). Measured on V4C - the X035 on 2026-09-22, the
+ * L103 on 2026-09-23 - and on V4F, the V307, the same day; V4A/V4B/V4J share the
+ * V4 manual's privilege model and are included on that basis, not measured.
+ * Their interrupt-control CSR 0x800 (gintenr) holds the same enable bits (0x88)
+ * and is user-accessible. The V2 parts run sketches in M mode and V3/V5 are
+ * unconfirmed, so they keep mstatus. The branch is on the core (CH32_CORE_*
+ * from the generated variant), not on part names: it was X035/X033 only until
+ * the L103 and then the V307 hung the same way. */
+#if defined(CH32_CORE_QINGKE_V4A) || defined(CH32_CORE_QINGKE_V4B) || \
+    defined(CH32_CORE_QINGKE_V4C) || defined(CH32_CORE_QINGKE_V4F) || \
+    defined(CH32_CORE_QINGKE_V4J)
+#define CH32_IRQ_IN_GINTENR 1
+#else
+#define CH32_IRQ_IN_GINTENR 0
+#endif
+
+/* api/Common.h declares these two but leaves them to the core; see above for
+ * which CSR they touch.
  *
  * noInterrupts() does not nest: a second call still leaves one interrupts()
  * away from enabled, which is the AVR behaviour libraries are written
  * against. */
 static inline void interrupts(void)
 {
-#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+#if CH32_IRQ_IN_GINTENR
     const uint32_t mask = 0x88u;
     __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");
 #else
@@ -77,7 +95,7 @@ static inline void interrupts(void)
 
 static inline void noInterrupts(void)
 {
-#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+#if CH32_IRQ_IN_GINTENR
     const uint32_t mask = 0x88u;
     __asm__ volatile ("csrc 0x800, %0" :: "r"(mask) : "memory");
 #else
@@ -86,16 +104,20 @@ static inline void noInterrupts(void)
 }
 
 /* Save-and-disable / restore pair for short critical sections in the core and
- * its libraries. Same rule as above: X035/X033 run sketches in U mode, where
- * mstatus is an illegal instruction (mcause 2, seen 2026-09-22 when Wire's
- * requestFrom() masked interrupts around STOP and the sketch hung in the trap
- * handler); the QingKe CSR 0x800 carries the enable bits there instead. */
+ * its libraries. Same rule as above (mcause 2 in mstatus - seen when Wire's
+ * requestFrom() masked interrupts around STOP on the X035, and when analogWrite()
+ * took over a timer on the L103 and the V307; each sketch hung in the trap
+ * handler). */
 static inline uint32_t ch32_irq_save(void)
 {
     uint32_t old;
-#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+#if CH32_IRQ_IN_GINTENR
     const uint32_t mask = 0x88u;
-    __asm__ volatile ("csrr %0, 0x800\n\tcsrc 0x800, %1" : "=r"(old) : "r"(mask) : "memory");
+    /* One csrrc, not csrr + csrc: as two statements GCC may give old and mask
+     * the same register (old is not early-clobber), and csrc then clears every
+     * set bit. On a V4F gintenr is a full view of mstatus, so that dropped FS
+     * and the next ISR that saved an FP register trapped (mcause 2 on fsw). */
+    __asm__ volatile ("csrrc %0, 0x800, %1" : "=r"(old) : "r"(mask) : "memory");
 #else
     __asm__ volatile ("csrrci %0, mstatus, 8" : "=r"(old) :: "memory");
 #endif
@@ -104,7 +126,7 @@ static inline uint32_t ch32_irq_save(void)
 
 static inline void ch32_irq_restore(uint32_t old)
 {
-#if defined(CH32_VARIANT_CH32X035) || defined(CH32_VARIANT_CH32X033)
+#if CH32_IRQ_IN_GINTENR
     if (old & 0x88u) {
         const uint32_t mask = 0x88u;
         __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");

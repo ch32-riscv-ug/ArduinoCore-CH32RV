@@ -32,5 +32,6 @@ files = [
   { path = "catalog/products.csv", sha256 = "f7a7dcd2a2854661ec35e983f478e11b49940700b8e7cccaf8d5a47f8b443cfa" },
   { path = "evidence/register_blocks.csv", sha256 = "2de03308885a36239f202b1d80fcbe722cea3780380f00267eec7989a892b07c" },
   { path = "evidence/remap_fields.csv", sha256 = "bfef8e9487275f2f3993fb01588a94fc7e73fac79087eb51de31bc0330cd07a8" },
+  { path = "catalog/series.csv", sha256 = "132653038f9bf385e05e712d39ffaf81e4afccd929105b102f3f7dd8fd477f75" },
   { path = "index/timers.csv", sha256 = "d586f3494ea46e2bbbea58bb36f4213a057b1d46266e24ebbbad3bc8d0dfe24d" },
 ]
