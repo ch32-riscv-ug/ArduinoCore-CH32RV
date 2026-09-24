@@ -15,6 +15,17 @@
  * Exception, errata x035-pc10-pc17-bonded: PC10/PC17 and PC11/PC16 are
  * internally bonded pairs sharing one lead; never drive both halves of a
  * pair. The core marks PC10/PC11 as the never-driven side.
+ *
+ * Behaviour, errata x035-usb-pads-open-drain: PC16/PC17 are the USB PHY
+ * pads; while AFIO_CTLR.USB_PHY_V33 is set (reset default) an open-drain
+ * output on them drives high instead of releasing. The core clears the bit
+ * whenever either pad becomes an output (ch32_gpio_set_config); USB init
+ * sets it again.
+ *
+ * Behaviour, errata x035-no-gpio-open-drain: The GPIO block has no
+ * general-purpose open-drain output. OUTPUT_OPENDRAIN is emulated:
+ * released is a floating input, low is push-pull low, and digitalWrite()
+ * switches between them (wiring_digital.c).
  */
 #pragma once
 

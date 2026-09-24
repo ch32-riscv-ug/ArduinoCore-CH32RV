@@ -440,6 +440,29 @@ UNUSABLE_PADS = {
     },
 }
 
+# Errata the core works around in behaviour rather than by leaving pads alone.
+# Each is written into the variant header of its series, so someone reading the
+# pin map sees why a pin mode does not do what the reference manual says. Keyed
+# by ch32-device-data errata id, verified to exist like UNUSABLE_PADS; the note
+# says what the core does (the code carries the same id in a comment).
+BEHAVIORAL_ERRATA = {
+    "x035-usb-pads-open-drain": {
+        "series": ("CH32X033", "CH32X035"),
+        "note": ("PC16/PC17 are the USB PHY pads; while AFIO_CTLR.USB_PHY_V33 "
+                 "is set (reset default) an open-drain output on them drives "
+                 "high instead of releasing. The core clears the bit whenever "
+                 "either pad becomes an output (ch32_gpio_set_config); USB "
+                 "init sets it again."),
+    },
+    "x035-no-gpio-open-drain": {
+        "series": ("CH32X033", "CH32X035"),
+        "note": ("The GPIO block has no general-purpose open-drain output. "
+                 "OUTPUT_OPENDRAIN is emulated: released is a floating input, "
+                 "low is push-pull low, and digitalWrite() switches between "
+                 "them (wiring_digital.c)."),
+    },
+}
+
 
 def load_pin_tables(tables: pathlib.Path):
     """(pads, adc) keyed by part number.
@@ -1734,6 +1757,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     for eid, spec in UNUSABLE_PADS.items():
         if series in spec["series"]:
             unusable.append((eid, spec))
+    behavioral = [(eid, spec) for eid, spec in BEHAVIORAL_ERRATA.items()
+                  if series in spec["series"]]
 
     def num(port: str, bit: int) -> int:
         return (PORTS.index(port) << 5) | bit
@@ -1759,6 +1784,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     for eid, spec in unusable:
         out.append(" *")
         for line in textwrap.wrap(f"Exception, errata {eid}: {spec['note']}", 72):
+            out.append(f" * {line}")
+    for eid, spec in behavioral:
+        out.append(" *")
+        for line in textwrap.wrap(f"Behaviour, errata {eid}: {spec['note']}", 72):
             out.append(f" * {line}")
     out += [" */", "#pragma once", "", '#include "ch32_pins.h"', ""]
 
@@ -2573,10 +2602,10 @@ def main() -> int:
         for line in disagreements:
             print(f"  {line}", file=sys.stderr)
         return 1
-    stale = sorted(set(UNUSABLE_PADS) - errata_ids)
+    stale = sorted((set(UNUSABLE_PADS) | set(BEHAVIORAL_ERRATA)) - errata_ids)
     if stale:
-        print(f"ERROR: UNUSABLE_PADS references errata ids that no longer exist "
-              f"in ch32-device-data: {stale}", file=sys.stderr)
+        print(f"ERROR: UNUSABLE_PADS / BEHAVIORAL_ERRATA reference errata ids that "
+              f"no longer exist in ch32-device-data: {stale}", file=sys.stderr)
         return 1
 
     by_board = {}

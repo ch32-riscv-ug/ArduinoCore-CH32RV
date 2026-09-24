@@ -28,7 +28,7 @@ reset）は配線のある範囲で全部実測済み。今の機材でこれ以
 | 機材待ち | NRST pin reset（X035F8U6 には pin 無し、V003 は GPIO23 で pulse 可 = probe 側で実装済み） | |
 | 機材待ち | 配線の無い route（X035 の I2C route 1/3/5/6、SPI 代替 route、USART1/3）、V003 の I2C route 1（PD1 は SWIO）/ 3 | fixture 追加が要る |
 | 他 board | OEP 経路は X035（P4）・V003（classic ESP32）・**L103（RP2350、2026-09-23〜）** の 3 台で basic 14/14。V203 / V307 / M030 / V00x は LinkE 経路の smoke のみ。OEP 化は同じ手順（SWIO or RVSWD PHY + profile）で横展開 | 順番は利用者 |
-| 記録 | device-data の lock は `e282cf0` に更新済み（2026-09-24、生成物は無変更）。generated variant header への behavioral errata 注記が残り | |
+| 判断済み・実装済み | device-data の lock を `e282cf0` に更新。コアが振る舞いで対処している errata（`x035-usb-pads-open-drain`、`x035-no-gpio-open-drain`）を `BEHAVIORAL_ERRATA` として variant header に注記（id が上流から消えたら生成エラー） | 2026-09-24 |
 | 小 | `oep_smoke` の READY 待ち・再送は入れた。他 runner の console 定数は `targets.py` に集約済み。`uart_trace` は 2 本目 UART が要るので V003 未 | |
 
 ## Milestone 1: 主要boardで`Serial.println()`が通る
@@ -2364,7 +2364,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
 - [ ] `digitalWrite()` が 1 回 ≈ 2 µs（線上実測、`tests/manual/oep_periph_trace/`）。48 MHz で約 96 cycle。port/bit の decode と bound check を見直すか、
   pad 名が定数のときに inline で畳めるようにする。
 - [ ] `delayMicroseconds(us)` が `us + 3〜4 µs`（`micros()` 2 回の polling、1 µs 粒度）。SysTick CNT を直接比較する実装にすれば sub-µs にできる。
-- [ ] errata `x035-usb-pads-open-drain` / `x035-no-gpio-open-drain` を ch32-device-data に登録済み（local commit 27d6435、未 push）。push 後に
-  `vendor/ch32-device-data.lock.toml` を上げ、`tools/generate` の variant header 注記（UNUSABLE_PADS と同じ仕組みで behavioral errata の注記を出す）に載せる。
+- [x] errata `x035-usb-pads-open-drain` / `x035-no-gpio-open-drain` を ch32-device-data に登録し、lock を上げ、`tools/generate` の
+  `BEHAVIORAL_ERRATA`（UNUSABLE_PADS と同じ仕組み）で variant header に注記した（2026-09-24）。
 - [ ] PC14/PC15（USB PD CC1/CC2）は INPUT_PULLUP でも idle が 0（PD PHY の Rd 5.1 kΩ が既定で有効）。GPIO として使うときに `USBPD_PORT.CC_PD` を落とすかは
   `tests/manual/oep_gpio_matrix/` の PD 調査結果で決める。
