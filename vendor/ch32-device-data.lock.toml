@@ -8,7 +8,7 @@
 [[source]]
 id = "ch32-device-data"
 url = "https://github.com/ch32-riscv-ug/ch32-device-data.git"
-commit = "e3e723a1bab635c808b752c3a2ceee200ff4d72f"
+commit = "e282cf0f5051961468e7925814c7b2cfb82e0847"
 
 # SHA-256 of every table the generator reads, relative to the
 # ch32-device-data checkout root. A commit that leaves all of these
@@ -21,13 +21,13 @@ files = [
   { path = "evidence/clock_prescalers.csv", sha256 = "6f3cde8eced2f3522487ea9978c766d0b444add0730c6682371f3748f03ba29e" },
   { path = "evidence/clock_symbols.csv", sha256 = "ff00fa07e3af23bf0d8fa5a3155c611506fee4f59c32e72277938d42bedf75e7" },
   { path = "evidence/debug_data.csv", sha256 = "a6d4b6c565028f2e9c1888d8ffa54d43f1f63f5b71b8be8201810bdf4c3cd411" },
-  { path = "evidence/errata.csv", sha256 = "4e8e7b619a2dbdd18a5210ea3380f62ff1e059b8bd631b9b2e100a84f0a37f48" },
+  { path = "evidence/errata.csv", sha256 = "215bd9e36ed85fd5505306c7aa9baf4ca24eeb31666a899801231d8b2f875b9e" },
   { path = "evidence/evt_variants.csv", sha256 = "3743dace619788651a2ffd0da382fd8968468cfb27b54d9224c0bde967b5991f" },
   { path = "catalog/families.csv", sha256 = "dc88a0b1e1c7536f1b413972869d0a05249dca77c15d95cc7ae8b9ac28e10e4f" },
   { path = "evidence/memory_map.csv", sha256 = "58bea18778fa213a1ebc591b478827ac8e1fbf5f936f012d6fcf4ad827c70343" },
-  { path = "evidence/operating_conditions.csv", sha256 = "728b917dafa82cd8d31154ea7749ec441709720a72f78659e33040239c619e86" },
-  { path = "evidence/pin_functions.csv", sha256 = "c5a7731d3c1137e9630086b3f474dc2585d42c76c7d2fd43527eb0ea63f9e710" },
-  { path = "index/pinout.csv", sha256 = "0d51936abcdf74a4dbb2a27ee17940bab6b26120115234a1c62306f80496fe91" },
+  { path = "evidence/operating_conditions.csv", sha256 = "3502c9a9f84e628b3f582ca9aba42539eadd8f3d0a438510e51d8f56fdca8725" },
+  { path = "evidence/pin_functions.csv", sha256 = "b7e6754847cea65e40bb7d20e2fe35a573e49de8e3049ffe0f6f339cc3f579b1" },
+  { path = "index/pinout.csv", sha256 = "a9ab237d9f5f6a173516dc73cffb5ee612ab35cf8f722c159340b618f36b779e" },
   { path = "evidence/pins.csv", sha256 = "fa4a47d54fc2a2dc41008335805c7bf0fd8ce6fa4bc430c32d0dc95583f74382" },
   { path = "catalog/products.csv", sha256 = "f7a7dcd2a2854661ec35e983f478e11b49940700b8e7cccaf8d5a47f8b443cfa" },
   { path = "evidence/register_blocks.csv", sha256 = "2de03308885a36239f202b1d80fcbe722cea3780380f00267eec7989a892b07c" },

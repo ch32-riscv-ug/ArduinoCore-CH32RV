@@ -28,7 +28,7 @@ reset）は配線のある範囲で全部実測済み。今の機材でこれ以
 | 機材待ち | NRST pin reset（X035F8U6 には pin 無し、V003 は GPIO23 で pulse 可 = probe 側で実装済み） | |
 | 機材待ち | 配線の無い route（X035 の I2C route 1/3/5/6、SPI 代替 route、USART1/3）、V003 の I2C route 1（PD1 は SWIO）/ 3 | fixture 追加が要る |
 | 他 board | OEP 経路は X035（P4）・V003（classic ESP32）・**L103（RP2350、2026-09-23〜）** の 3 台で basic 14/14。V203 / V307 / M030 / V00x は LinkE 経路の smoke のみ。OEP 化は同じ手順（SWIO or RVSWD PHY + profile）で横展開 | 順番は利用者 |
-| 記録 | device-data は push 済み（main = origin/main）。**lock bump が残り**（`vendor/ch32-device-data.lock.toml` は `e3e723a`、上流は `e282cf0`）。generated variant header への behavioral errata 注記 | |
+| 記録 | device-data の lock は `e282cf0` に更新済み（2026-09-24、生成物は無変更）。generated variant header への behavioral errata 注記が残り | |
 | 小 | `oep_smoke` の READY 待ち・再送は入れた。他 runner の console 定数は `targets.py` に集約済み。`uart_trace` は 2 本目 UART が要るので V003 未 | |
 
 ## Milestone 1: 主要boardで`Serial.println()`が通る
