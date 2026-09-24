@@ -23,7 +23,7 @@ reset）は配線のある範囲で全部実測済み。今の機材でこれ以
 | 判断済み・実装済み | `resetReason()` は RMVF を書く現状維持（UIAPduino の boot entry は pin reset 経由）、UIAPduino variant は PD4 LOW 既定 | 2026-09-22 |
 | 判断済み・実装済み | 割込み全体マスク: sketch が U モードで走る V3B/V3F/V3V/V4 は gintenr（CSR 0x800）、V2 と V3A は mstatus。**CH32V103（V3A）は gintenr が無いので M モード（`CH32_MSTATUS_INIT=0x1888`）** に変更し、EVT との差は `test_startup_parameters.py` に固定。`ch32_irq_save()` の csrr+csrc が V4F で FS を落としていたのを csrrc 1 命令に | 2026-09-23〜24、`5365196` / `1b4c9e4` |
 | 判断済み・実装済み | ハーネスのコンソールを **`SerialDMSeq`（dmseq、通し番号+CRC）** に。WCH-Link は ch32rv 0.10.0 の `--source dmseq`、OEP は `target.console` framing 2。LinkE の attach が書き換える RCC は `testcmd.h` がコマンド受信時に直す | 2026-09-24、全 10 経路で basic 14/14 |
-| 未決（判断） | `Wire` の bus clear（slave が SDA を握った時の 9 pulse）を core に入れるか、API にするか | `oep_i2c_trace --stuck` で再現手順あり |
+| 判断済み・実装済み | `Wire` の bus clear は **API**（`Wire.clearBus()`、自動では行わない）。最大 9 pulse + STOP、線は内蔵 pull-up で解放し SCL を High に駆動しない（stretch は 1 ms/pulse まで待つ）、開いていたバスは元の状態で開き直す。`oep_i2c_trace --stuck` で target が SDA を握った状態から `free=1` → 次の write が rc=0・受信一致 | 2026-09-24 |
 | 機材待ち | ADC の絶対値（probe rail と DUT VDD の差、メータ 1 回）。X035 は 1008/1023、V003 は 915/1023 | |
 | 機材待ち | NRST pin reset（X035F8U6 には pin 無し、V003 は GPIO23 で pulse 可 = probe 側で実装済み） | |
 | 機材待ち | 配線の無い route（X035 の I2C route 1/3/5/6、SPI 代替 route、USART1/3）、V003 の I2C route 1（PD1 は SWIO）/ 3 | fixture 追加が要る |

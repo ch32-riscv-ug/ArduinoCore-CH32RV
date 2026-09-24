@@ -65,6 +65,15 @@ old pads to inputs.
   `setWireTimeout(0)` turns it off; `getWireTimeoutFlag()` is sticky until
   `clearWireTimeoutFlag()`. The peripheral is reset after a timeout either way,
   so `reset_with_timeout` is accepted and does not change anything.
+- **A slave holding SDA low** (cut off mid-byte by a reset or a lost clock)
+  hangs every transfer, and resetting this peripheral cannot help: the line is
+  not ours. `Wire.clearBus()` clocks SCL until the slave lets go (up to 9
+  pulses), puts a STOP on the bus, and returns `true` when both lines read high.
+  It is never done automatically - the pulses reach every device on the bus -
+  so call it when a transfer times out and you know it is safe. Works before or
+  after `begin()`; an open bus is reopened as it was. Lines are released with
+  the internal pull-up and SCL is never driven high, so a stretching slave is
+  waited for (`CH32_WIRE_CLEAR_STRETCH_US`, 1 ms per pulse).
 - Clock: `setClock(100000)` for standard mode, anything higher selects fast
   mode with a 2:1 duty cycle. The peripheral clock is assumed to be `F_CPU`,
   which holds while the core runs from HSI with both APB prescalers at /1.

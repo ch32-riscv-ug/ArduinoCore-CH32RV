@@ -591,6 +591,77 @@ bool CH32TwoWire::setPins(uint8_t scl, uint8_t sda)
     return use_route(table.rows[i]);
 }
 
+/* ------------------------------------------------------- bus clear */
+/* Release a line: input with the internal pull-up, so the bus's own pull-ups
+ * (or, with none - as on the OEP fixture - the internal one) bring it high,
+ * and a device holding it low is never fought. A line is only ever driven low. */
+static void line_release(uint8_t pin) { pinMode(pin, INPUT_PULLUP); }
+static void line_low(uint8_t pin)
+{
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
+}
+
+/* Release SCL and wait for it to read high: a slave may stretch the clock. */
+static bool scl_release(uint8_t scl)
+{
+    line_release(scl);
+    const uint32_t t0 = micros();
+    while (digitalRead(scl) == LOW) {
+        if ((uint32_t)(micros() - t0) >= CH32_WIRE_CLEAR_STRETCH_US) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CH32TwoWire::clearBus(void)
+{
+    const bool was_started = _started;
+    const bool was_slave = _slave;
+    /* The own address has to be read before end() stops the peripheral clock. */
+    const uint8_t own = was_slave ? (uint8_t)((CH32_I2C_OADDR1(_base) >> 1) & 0x7Fu) : 0u;
+    if (was_started) {
+        end();                    /* the peripheral must not watch while we clock */
+    }
+    const uint8_t scl = _scl_pin;
+    const uint8_t sda = _sda_pin;
+    line_release(sda);
+    bool scl_free = scl_release(scl);
+    delayMicroseconds(5);
+
+    /* Half periods of 5 us: 100 kHz, which every slave accepts. The slave
+     * shifts out the rest of the byte it was sending, sees no ACK, and lets go;
+     * nine pulses cover eight bits and the ACK slot. */
+    for (uint8_t pulses = 0; scl_free && pulses < 9 && digitalRead(sda) == LOW; pulses++) {
+        line_low(scl);
+        delayMicroseconds(5);
+        scl_free = scl_release(scl);
+        delayMicroseconds(5);
+    }
+
+    /* STOP: SDA rises while SCL is high, which ends whatever transfer any
+     * device still thinks it is in. */
+    line_low(scl);
+    delayMicroseconds(2);
+    line_low(sda);
+    delayMicroseconds(3);
+    scl_free = scl_release(scl) && scl_free;
+    delayMicroseconds(5);
+    line_release(sda);
+    delayMicroseconds(5);
+
+    const bool free = scl_free && digitalRead(sda) == HIGH && digitalRead(scl) == HIGH;
+    if (was_started) {
+        if (was_slave) {
+            begin(own);
+        } else {
+            begin();
+        }
+    }
+    return free;
+}
+
 /* ------------------------------------------------------- instances */
 /* Naming follows the Arduino ecosystem rather than this core's Serial: the
  * bare name is the first bus and Wire1 is the second, which is what Due, Zero,

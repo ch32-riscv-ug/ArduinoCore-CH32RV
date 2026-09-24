@@ -97,11 +97,12 @@ static void bitbangFast(uint32_t hold_ns, uint8_t addr, const uint8_t *data, siz
 // Stuck-bus scenario (worklist P3 row 6): STUCK <addr_hex> bit-bangs START + addr|R, ACKs the first
 // data byte and then stops clocking with SCL high while the target drives the next byte's MSB. With a
 // preloaded 0x00 slot the target keeps SDA low: the classic "slave holds SDA" bus hang for Wire to meet.
-// BUSCLR is the textbook recovery done from the sketch: up to 9 SCL pulses with SDA released, then STOP.
+// BUSCLR calls Wire.clearBus(): up to 9 SCL pulses with SDA released, then STOP.
 // The fixture's route 2 has no bus pull-up at all (P4 slave driver enables none, no external ones;
-// 2026-09-22 capture: X035 INPUT / open-drain release read 0.00), so SCL is driven push-pull and SDA is
-// released as INPUT_PULLUP, the same way the BB drive=pp sweep does it. Both leave the pins as GPIO;
-// send BEGIN to hand them back to Wire.
+// 2026-09-22 capture: X035 INPUT / open-drain release read 0.00), so STUCK drives SCL push-pull and
+// releases SDA as INPUT_PULLUP, the same way the BB drive=pp sweep does it; clearBus() releases both
+// lines with the internal pull-up and only ever drives them low. STUCK leaves the pins as GPIO and so
+// does clearBus() when Wire was not open; send BEGIN to hand them back to Wire.
 static void sdaRelease() { pinMode(BB_SDA, INPUT_PULLUP); }
 static void sdaLow() { pinMode(BB_SDA, OUTPUT); digitalWrite(BB_SDA, LOW); }
 static void sclHigh() { pinMode(BB_SCL, OUTPUT); digitalWrite(BB_SCL, HIGH); }
@@ -131,14 +132,8 @@ static void stuckBus(uint8_t addr) {
   Console.print(" sda="); Console.print(digitalRead(BB_SDA)); Console.print(" scl="); Console.println(digitalRead(BB_SCL));
 }
 static void busClear() {
-  sdaRelease(); sclHigh(); delayMicroseconds(5);
-  int pulses = 0;
-  for (; pulses < 9 && !digitalRead(BB_SDA); ++pulses) {
-    sclLow(); delayMicroseconds(5); sclHigh(); delayMicroseconds(5);
-  }
-  sclLow(); delayMicroseconds(2); sdaLow(); delayMicroseconds(5);              // STOP
-  sclHigh(); delayMicroseconds(5); sdaRelease(); delayMicroseconds(5);
-  Console.print("BUSCLR pulses="); Console.print(pulses); Console.print(" sda="); Console.print(digitalRead(BB_SDA));
+  const bool free = Wire.clearBus();   // the library's bus clear (up to 9 SCL pulses, then STOP)
+  Console.print("BUSCLR free="); Console.print(free ? 1 : 0); Console.print(" sda="); Console.print(digitalRead(BB_SDA));
   Console.print(" scl="); Console.println(digitalRead(BB_SCL));
 }
 

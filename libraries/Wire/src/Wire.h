@@ -48,6 +48,12 @@
 #define CH32_WIRE_TIMEOUT_US 25000UL
 #endif
 
+/* clearBus(): how long each SCL pulse waits for a slave that stretches the
+ * clock before giving up on it, in microseconds. */
+#ifndef CH32_WIRE_CLEAR_STRETCH_US
+#define CH32_WIRE_CLEAR_STRETCH_US 1000UL
+#endif
+
 namespace arduino {
 
 class CH32TwoWire : public HardwareI2C {
@@ -121,6 +127,21 @@ public:
      * the old pads back as inputs. */
     bool setRoute(uint8_t route);
     bool setPins(uint8_t scl, uint8_t sda);
+
+    /* Free a bus that a slave is holding: the classic hang where a slave was
+     * cut off mid-byte (a reset, a lost clock) and keeps driving SDA low, so
+     * every transfer fails and no amount of re-initialising this peripheral
+     * helps - the SDA line is not ours. Clocks SCL until the slave lets go
+     * (up to 9 pulses, a whole byte plus its ACK), then puts a STOP on the
+     * bus. Returns true when both lines read high afterwards.
+     *
+     * Explicit, never automatic: the pulses reach every device on the bus, and
+     * only the sketch knows whether that is safe. Works before or after
+     * begin(); a bus that was open is reopened as it was (master, or slave at
+     * its own address). Lines are released with the internal pull-up and SCL
+     * is never driven high, so a slave stretching the clock is waited for, up
+     * to CH32_WIRE_CLEAR_STRETCH_US per pulse. */
+    bool clearBus(void);
 
     /* Print/Stream */
     size_t write(uint8_t data) override;

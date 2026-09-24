@@ -64,6 +64,14 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
   `getWireTimeoutFlag()`はstickyで、`clearWireTimeoutFlag()`まで残ります。
   タイムアウト後はどちらにせよペリフェラルをリセットするので、
   `reset_with_timeout`は受け取るだけで挙動を変えません。
+- **slaveがSDAをLowに握ったまま**(resetやclockの途切れでbyteの途中で切られた)
+  だと、以後の転送はすべて失敗し、このペリフェラルをresetしても直りません
+  (握っているのは相手です)。`Wire.clearBus()`はslaveが離すまでSCLを最大9回打ち、
+  STOPを出して、両方の線がHighなら`true`を返します。バス上の全デバイスにパルスが
+  届くので**自動では行いません**。転送がタイムアウトし、打ってよいと分かっている
+  ときに呼んでください。`begin()`の前でも後でも使え、開いていたバスは元の状態で
+  開き直します。線は内蔵プルアップで解放し、SCLをHighに駆動することはないので、
+  clock stretchingするslaveは待ちます(`CH32_WIRE_CLEAR_STRETCH_US`、1パルス1 ms)。
 - クロックは`setClock(100000)`で標準モード、それより速い値でfast mode(2:1)。
   ペリフェラルクロックは`F_CPU`と仮定しています
   (HSI直結・APB分周1という現在の構成で成り立ちます)。
