@@ -228,7 +228,7 @@ uv run tests/manual/smoke/smoke.py --board CH32X035 --sketch all
 
 `smoke.py`は[コマンド規約](../TEST_PLAN.ja.md)を喋ります。バナーは0.5秒ごとに
 繰り返されるので、書き込みに何秒かかっても待てば捕まります。
-**コンソールはUARTではなく、ch32rvの`monitor --source dmdata`で読むdebug moduleの
+**コンソールはUARTではなく、ch32rvの`monitor --source dmseq`で読むdebug moduleの
 コンソール**です(sketch側の`Console`)。WCH-LinkのUARTブリッジは、UARTを試すsketch
 (台本が`uart`を使うもの)のときだけ開き、`UART <n> <route> <baud>`でsketchにその
 USARTを指名します。そのあと`PING <token>` → `PONG <token>`を取ってから先へ進みます——**このtoolだけは

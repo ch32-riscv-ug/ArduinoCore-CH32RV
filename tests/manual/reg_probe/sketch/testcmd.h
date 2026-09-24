@@ -12,12 +12,15 @@
  * ---------------------------------------------------------------------------
  *
  * **The harness talks over `Console`, which is the debug module's data
- * registers (SerialDMDATA), not a UART.** The UART is one of the things under
+ * registers (SerialDMSeq, the dmseq framing), not a UART.** The UART is one of the things under
  * test: its pins differ per part and per jig, and a sketch testing it moves it
  * around. So it cannot also be how the host and the board find each other.
  * Console needs no pin and is up the moment the core runs; the host reads it
- * through the debug probe (ch32rv `monitor --source dmdata` on a WCH-Link,
- * `target.console` on an OEP probe). In a sketch, `Console` is the harness and
+ * through the debug probe (ch32rv `monitor --source dmseq` on a WCH-Link,
+ * `target.console` framing 2 on an OEP probe). dmseq rather than SerialDMDATA's
+ * minichlink framing because the harness must not lose or double a byte: over a
+ * link where a DMI access can go astray, framing 1 did both (oep-spec
+ * docs/target-console-dmseq.ja.md). In a sketch, `Console` is the harness and
  * `Serial` only ever means a UART that is being tested - unless the sketch
  * names a UART as its console in tc_begin(), for a host that needs the debug
  * link for something else at the same time (see Console below).
@@ -64,7 +67,7 @@
 #define TESTCMD_H
 
 #include <Arduino.h>
-#include <SerialDMDATA.h>
+#include <SerialDMSeq.h>
 #include <ch32_clock.h>
 #include <ch32_registers.h>
 #include <stdlib.h>
@@ -103,7 +106,7 @@ static int tc_failures_;
  * tc_begin() and every tc_* function and every Console.print() follows it. */
 class TcConsole : public Stream {
 public:
-    arduino::HardwareSerial *port = &SerialDMDATA;
+    arduino::HardwareSerial *port = &SerialDMSeq;
     void begin(unsigned long baud) { port->begin(baud); }
     size_t write(uint8_t c) override { return port->write(c); }
     size_t write(const uint8_t *b, size_t n) override { return port->write(b, n); }
@@ -116,7 +119,7 @@ public:
 static TcConsole Console;
 
 /* Minimal init. The banner is not printed here - see tc_ready(). */
-TC_FN void tc_begin(const char *name, arduino::HardwareSerial &console = SerialDMDATA)
+TC_FN void tc_begin(const char *name, arduino::HardwareSerial &console = SerialDMSeq)
 {
     tc_name_ = name;
     tc_failures_ = 0;

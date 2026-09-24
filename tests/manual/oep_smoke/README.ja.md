@@ -9,7 +9,7 @@ uv run tests/manual/oep_smoke/oep_smoke.py --target l103 --sketch all --result-j
 ```
 
 - 書込み: `oep_client.v0.flash_image.program_image`（ESIG preflight、physical page 差分、probe 内 CRC32 verify、reset）
-- **console: probe の `target.console`**。DUT の debug module のデータレジスタ（`SerialDMDATA`）で、ピンを使わず、
+- **console: probe の `target.console`（framing 2 = dmseq）**。DUT の debug module のデータレジスタ（`SerialDMSeq`）で、ピンを使わず、
   どの UART よりも先に使える。sketch 側は `testcmd.h` の `Console`（[TEST_PLAN](../../TEST_PLAN.ja.md) の規約を参照）
 - **UART は試験対象**。`expect.py` が `uart` を使う sketch だけ、profile の `uart`（USART 番号, route）を
   `UART <n> <route> <baud>` で DUT に指名し、probe の `fixture.uart` をその線が落ちるピン（`uart_rx` / `uart_tx`）で借りる
@@ -37,6 +37,9 @@ READY を待つときは `oep_smoke.sync()` を使うこと。
 
 ## 実績
 
+- 2026-09-24（Console を SerialDMSeq = framing 2 に切り替えた後）: x035 / v003 14/14、l103 は 12 本通過後に tone_selftest で
+  コンソール有効化の attach が 4 回続けて失敗して runner ごと止まり、残り 2 本は単独で PASS（14/14 相当）。コンソールを開く
+  処理にも NRST での立て直しを入れた。同日、WCH-Link 経路（`smoke.py`、ch32rv `--source dmseq`）も 7 台すべて 14/14
 - 2026-09-24（SerialDMDATA の待ちを時間基準にした後）: x035 / v003 / l103 すべて 14/14。x035 と v003 は WCH-Link 7 台の
   同時実行と並行で回した。probe 側で「答えの書込みを読み戻して再送」も試したが、v003 で同じ文字が続く箇所
   （`2.00`、`deadbeef`）を 1 文字ずつ落としたので取り消した。フレームに通し番号が無く、target が同じ内容の次の

@@ -385,12 +385,14 @@ the debug module retired both.)
 ### The console is the debug module, not a UART
 
 **The harness talks over `Console`, which is the debug module's data registers
-(`SerialDMDATA`), not a UART.** The UART is one of the things under test: its
+(`SerialDMSeq`, the dmseq framing), not a UART.** The UART is one of the things under test: its
 pins differ per part and per jig, and a sketch testing it moves it around, so it
 cannot also be where the host and the board find each other. `Console` needs no
 pin and works from the moment the core runs. The host reads it through the debug
-probe - `ch32rv monitor --source dmdata` on a WCH-Link, `target.console` on an
-OEP probe.
+probe - `ch32rv monitor --source dmseq` on a WCH-Link, `target.console` framing 2
+on an OEP probe. dmseq carries sequence numbers and a CRC, so the harness neither
+loses nor doubles a byte when a debug access goes astray (SerialDMDATA's framing
+did both).
 
 - In a sketch, **`Console` is the harness and `Serial` is a UART under test**.
   Results go to `Console.print()`; printf is pointed there explicitly with

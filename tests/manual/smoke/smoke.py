@@ -111,7 +111,7 @@ def expectations(name: str, directory: pathlib.Path = None) -> tuple:
     names its streams and nothing else - `console` is the board's Console, the harness,
     and `uart` the wire of the UART the runner named for a sketch that tests one. How
     each stream is reached differs per path (target.console on an OEP probe, ch32rv's
-    dmdata monitor on a WCH-Link, a serial port for a UART) and is the runner's business.
+    dmseq monitor on a WCH-Link, a serial port for a UART) and is the runner's business.
 
     Only plain literals are collected. An f-string means the script parametrises the
     value, and guessing what it expands to would be worse than admitting we cannot check
@@ -365,7 +365,7 @@ def find_ch32rv():
 
 
 class Ch32rvConsole:
-    """Console over ch32rv's dmdata monitor: the board's Console (tests/sketches/testcmd.h)
+    """Console over ch32rv's dmseq monitor: the board's Console (tests/sketches/testcmd.h)
     read through the WCH-Link, no UART and no pin involved. read/write/flush, so a Link
     can wrap it exactly as it wraps a serial port.
 
@@ -374,7 +374,7 @@ class Ch32rvConsole:
     """
 
     def __init__(self, ch32rv: str, probe: str = None):
-        cmd = [ch32rv, "monitor", "--source", "dmdata", "--non-interactive"]
+        cmd = [ch32rv, "monitor", "--source", "dmseq", "--non-interactive"]
         if probe:
             cmd += ["--probe", f"serial:{probe}"]
         self.proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
@@ -604,7 +604,7 @@ class Bench:
     serial_index: int = None
     pins: tuple = None           # (usart, tx, rx, note): what the WCH-Link's UART bridge reaches
     uart: tuple = None           # (usart, route) to name for a sketch that tests a UART
-    ch32rv: str = None           # carries the console (ch32rv monitor --source dmdata)
+    ch32rv: str = None           # carries the console (ch32rv monitor --source dmseq)
     baud: int = 115200
     seconds: float = 4.0
     # Extra --build-property, for trying something the board definition does

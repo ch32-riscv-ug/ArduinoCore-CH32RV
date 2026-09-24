@@ -119,14 +119,24 @@ def open_console(client) -> "Link":
     if fn is None:
         raise SystemExit("probe offers no target.console; reflash it")
     console = TargetConsole(client, fn.function)
-    for attempt in range(4):
+    for attempt in range(6):
         try:
-            console.configure(True, TargetConsole.DMDATA)
+            console.configure(True, TargetConsole.DMSEQ)
             break
         except Exception:
-            if attempt == 3:
+            if attempt == 5:
                 raise
-            time.sleep(0.3)
+            if attempt == 3:
+                # Still no attach: pull NRST where the jig wires it, as the program path does.
+                # A CH32L103 behind the RP2350's flying wires refused four enables in a row once
+                # right after a reset (2026-09-24, tone_selftest); the sketch has not been told
+                # RUN yet, so restarting it costs nothing. Rejected (and harmless) without a line.
+                try:
+                    from oep_client.v0.flash_image import Target
+                    Target(client).control.reset_report(3)
+                except Exception:
+                    pass
+            time.sleep(0.3 * (attempt + 1))
     return Link(console)
 
 

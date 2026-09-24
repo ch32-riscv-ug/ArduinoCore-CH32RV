@@ -362,11 +362,13 @@ checkは「起動しないボード」と見分けがつきません。`RUN`とd
 ### コンソールはUARTではなくデバッグモジュール
 
 **ハーネスは`Console`で話します。中身はdebug moduleのデータレジスタ
-(`SerialDMDATA`)で、UARTではありません。** UART自体が試験対象だからです。ピンは
+(`SerialDMSeq`、dmseq framing)で、UARTではありません。** UART自体が試験対象だからです。ピンは
 部品ごと・治具ごとに違い、UARTを試すsketchはそれを動かします。それがホストと
 ボードの出会う場所を兼ねるのは順序が逆でした。`Console`はピンを使わず、コアが
 走った瞬間から使えます。ホストはデバッグprobe越しに読みます——WCH-Linkなら
-`ch32rv monitor --source dmdata`、OEP probeなら`target.console`。
+`ch32rv monitor --source dmseq`、OEP probeなら`target.console`のframing 2。dmseqは通し番号と
+CRCを持つので、デバッグアクセスが落ちても化けてもハーネスのbyteは欠けも重複もしません
+(SerialDMDATAのframingでは両方起きました)。
 
 - sketchの中で**`Console`はハーネス、`Serial`は試験対象のUART**を意味します。
   結果の報告は`Console.print()`、printfは`ch32_set_stdout(&Console)`で明示的に向けます
