@@ -356,12 +356,20 @@ def _holds_probe_rs(d):
 
 
 def find_ch32rv():
-    """ch32rv, which carries the console: CH32RV if set, else <repo>/.tools, else PATH."""
+    """ch32rv, which carries the console: CH32RV if set, else the version
+    tools/index/tools_ch32rv.json pins in <repo>/.tools, else PATH.
+
+    The pinned one, not the newest installed: .tools keeps old versions, and a
+    sorted() glob put 0.9.1 after 0.10.0 - the one without --source dmseq."""
     override = os.environ.get("CH32RV")
     if override:
         return override
-    found = sorted((REPO / ".tools" / "ch32rv").glob("*/ch32rv"))
-    return str(found[-1]) if found else shutil.which("ch32rv")
+    sys.path.insert(0, str(REPO / "tools" / "index"))
+    from fetch_tools import env_defaults
+    pinned = env_defaults(REPO / ".tools").get("CH32_CH32RV")
+    if pinned and pathlib.Path(pinned).exists():
+        return str(pinned)
+    return shutil.which("ch32rv")
 
 
 class Ch32rvConsole:
