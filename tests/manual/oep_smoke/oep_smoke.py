@@ -176,7 +176,7 @@ class Bench:
 
     def __init__(self, port: str, profile: dict):
         from oep_client.v1 import host, link, target
-        self.host = host.Host(link.SerialLink(port).send)
+        self.host = link.open_host(port)   # pipelining bound to the probe's limits
         self.host.open(lease_ms=10000)
         self.wire = target.Wire(self.host, profile["wire"])
         labels = target.probe_labels(self.host)
