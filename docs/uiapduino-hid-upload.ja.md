@@ -237,14 +237,17 @@ application へ戻る。`B`（BOOT_MODE 設定 + PD4 detach + software reset）�
 もう 1 つ: RAM payload を app が動いている状態から resume すると SysTick 割込みが payload を壊す（`mcause=2`）。`mstatus=0` を書いて
 から resume すること（E135 の loader 経路はこれをしていた）。
 
-**ジグの置き換え**: `esp32-d0wd-v3-0070070d9394` には現在 oep-probe-arduino `examples/Esp32V003Probe`（OEP v0 probe）が入っており、
-E129/E132 の `N/B/H` は次に対応する（同じ配線、GPIO23 → PD7/NRST を使う）。
+**ジグの置き換え**: `esp32-d0wd-v3-0070070d9394` には現在 oep-probe-arduino `examples/Esp32V003Probe`（OEP v1 probe）が入っており、
+E129/E132 の `N/B/H` は oep-client-python の `oep_client.v1.uiapduino` が host 側で行う（同じ配線、GPIO23 → PD7/NRST。v0 の
+`target.control reset --mode ...` は probe から外した、2026-09-25）。
 
-```sh
-cd ~/dev_oep/oep-client-python
-uv run python -m oep_client.v0 --port /run/board-identify/by-id/esp32-d0wd-v3-0070070d9394 reset --mode boot   # pin reset → E129 payload → 1209:b803
-uv run python -m oep_client.v0 --port /run/board-identify/by-id/esp32-d0wd-v3-0070070d9394 reset --mode user   # E130 normalize（N 相当）
-uv run python -m oep_client.v0 --port /run/board-identify/by-id/esp32-d0wd-v3-0070070d9394 reset --mode pin    # NRST 20 ms low だけ（R 相当）
+```python
+from oep_client.v1 import link, riscv, core, uiapduino
+hst = link.open_host("/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394"); hst.open()
+wire = riscv.Wire(hst, "oep.wire.swio")
+uiapduino.enter_bootloader(hst, wire, core.find(hst, "oep.fixture.gpio"), 23)   # PINRSTF を見て、要れば NRST → E129 payload → 1209:b803
+uiapduino.normalize_user(hst, wire)                                            # E130 normalize（N 相当）
+uiapduino.pulse_nrst(hst, core.find(hst, "oep.fixture.gpio"), 23)               # NRST 20 ms low だけ（R 相当）
 ```
 
 E129/E132 の jig sketch に戻す場合は該当 `.ino` を書き直す（OEP probe が上書きしている）。
