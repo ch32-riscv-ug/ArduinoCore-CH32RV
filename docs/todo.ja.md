@@ -22,7 +22,6 @@ reset）は配線のある範囲で全部実測済み。今の機材でこれ以
 |---|---|---|
 | 判断済み・実装済み | `resetReason()` は RMVF を書く現状維持（UIAPduino の boot entry は pin reset 経由）、UIAPduino variant は PD4 LOW 既定 | 2026-09-22 |
 | 未決（判断） | `Wire` の bus clear（slave が SDA を握った時の 9 pulse）を core に入れるか、API にするか | `oep_i2c_trace --stuck` で再現手順あり |
-| 未決（判断） | `x035_i2c_peer` layout test の扱い（`.py` 無しの pre-existing unit 失敗） | |
 | 機材待ち | ADC の絶対値（probe rail と DUT VDD の差、メータ 1 回）。X035 は 1008/1023、V003 は 915/1023 | |
 | 機材待ち | NRST pin reset（X035F8U6 には pin 無し、V003 は GPIO23 で pulse 可 = probe 側で実装済み） | |
 | 機材待ち | 配線の無い route（X035 の I2C route 1/3/5/6、SPI 代替 route、USART1/3）、V003 の I2C route 1（PD1 は SWIO）/ 3 | fixture 追加が要る |
