@@ -13,7 +13,7 @@
 
 ---
 
-## リリースまでの残作業（2026-09-22 時点の棚卸し、core 側）
+## リリースまでの残作業（2026-09-22 時点の棚卸し、2026-09-24 更新、core 側）
 
 OEP probe で X035F8U6（P4 fixture）と V003（UIAPduino、classic ESP32 ジグ）の P3 表（GPIO / UART / ADC / PWM・tone / 時刻 / I2C / SPI / route /
 reset）は配線のある範囲で全部実測済み。今の機材でこれ以上進まないものと、判断・作業が残るものを分ける。
@@ -21,12 +21,14 @@ reset）は配線のある範囲で全部実測済み。今の機材でこれ以
 | 区分 | 残作業 | 備考 |
 |---|---|---|
 | 判断済み・実装済み | `resetReason()` は RMVF を書く現状維持（UIAPduino の boot entry は pin reset 経由）、UIAPduino variant は PD4 LOW 既定 | 2026-09-22 |
+| 判断済み・実装済み | 割込み全体マスク: sketch が U モードで走る V3B/V3F/V3V/V4 は gintenr（CSR 0x800）、V2 と V3A は mstatus。**CH32V103（V3A）は gintenr が無いので M モード（`CH32_MSTATUS_INIT=0x1888`）** に変更し、EVT との差は `test_startup_parameters.py` に固定。`ch32_irq_save()` の csrr+csrc が V4F で FS を落としていたのを csrrc 1 命令に | 2026-09-23〜24、`5365196` / `1b4c9e4` |
+| 判断済み・実装済み | ハーネスのコンソールを **`SerialDMSeq`（dmseq、通し番号+CRC）** に。WCH-Link は ch32rv 0.10.0 の `--source dmseq`、OEP は `target.console` framing 2。LinkE の attach が書き換える RCC は `testcmd.h` がコマンド受信時に直す | 2026-09-24、全 10 経路で basic 14/14 |
 | 未決（判断） | `Wire` の bus clear（slave が SDA を握った時の 9 pulse）を core に入れるか、API にするか | `oep_i2c_trace --stuck` で再現手順あり |
 | 機材待ち | ADC の絶対値（probe rail と DUT VDD の差、メータ 1 回）。X035 は 1008/1023、V003 は 915/1023 | |
 | 機材待ち | NRST pin reset（X035F8U6 には pin 無し、V003 は GPIO23 で pulse 可 = probe 側で実装済み） | |
 | 機材待ち | 配線の無い route（X035 の I2C route 1/3/5/6、SPI 代替 route、USART1/3）、V003 の I2C route 1（PD1 は SWIO）/ 3 | fixture 追加が要る |
-| 他 board | L103 / V203 / V307 / M030 / V00x は LinkE 経路の smoke のみ。OEP 化は V003 と同じ手順（SWIO or RVSWD PHY + profile）で横展開 | 順番は利用者 |
-| 記録 | device-data の push と lock bump（local commit `27d6435` が未 push）、generated variant header への behavioral errata 注記 | |
+| 他 board | OEP 経路は X035（P4）・V003（classic ESP32）・**L103（RP2350、2026-09-23〜）** の 3 台で basic 14/14。V203 / V307 / M030 / V00x は LinkE 経路の smoke のみ。OEP 化は同じ手順（SWIO or RVSWD PHY + profile）で横展開 | 順番は利用者 |
+| 記録 | device-data は push 済み（main = origin/main）。**lock bump が残り**（`vendor/ch32-device-data.lock.toml` は `e3e723a`、上流は `e282cf0`）。generated variant header への behavioral errata 注記 | |
 | 小 | `oep_smoke` の READY 待ち・再送は入れた。他 runner の console 定数は `targets.py` に集約済み。`uart_trace` は 2 本目 UART が要るので V003 未 | |
 
 ## Milestone 1: 主要boardで`Serial.println()`が通る
