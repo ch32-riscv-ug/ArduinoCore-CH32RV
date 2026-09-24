@@ -108,6 +108,15 @@ bool CH32SerialDMSeq::service(void)
     if (w & ST_TARGET) {
         return false;             /* still ours: not answered yet */
     }
+    /* A zero word is no answer at all: a host writes only over a frame, and every
+     * answer has a CRC that a zero word fails. It is what data0 reads on a V4
+     * with no debugger attached, where the register holds nothing - posting
+     * again there would be a wasted store on every available() (24 million of
+     * them in one idle run, found by the ch32rv side). The wait runs out as it
+     * would with a silent host. */
+    if (w == 0u) {
+        return false;
+    }
     const uint8_t a[4] = {(uint8_t)w, (uint8_t)(w >> 8), (uint8_t)(w >> 16),
                           (uint8_t)(w >> 24)};
     const uint8_t m = a[0] & ST_LEN;
