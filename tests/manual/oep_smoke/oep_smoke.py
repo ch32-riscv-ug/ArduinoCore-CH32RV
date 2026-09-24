@@ -8,10 +8,11 @@ probe's fixture UART, and judge it the way smoke.py does - without WCH-LinkE or 
   uv run tests/manual/oep_smoke/oep_smoke.py --sketch core_api
   uv run tests/manual/oep_smoke/oep_smoke.py --sketch all --result-json /tmp/oep-smoke.json
 
-Bench facts (ESP32-P4 + CH32X035F8U6 fixture, 2026-09-22): the DUT console is USART4
-(PB0 TX -> P4 GPIO12, PB1 RX <- P4 GPIO6), so sketches build with CH32_SERIAL_DEFAULT=4 and the
-probe leases fixture.uart rx=12 tx=6. The OEP client comes from the sibling oep-client-python
-checkout (--oep-client). The probe firmware must already be flashed (it is a separate build).
+Speaks the OEP v1 draft (oep-spec docs/v1-core-wire-delta.ja.md) through the sibling oep-client-python checkout
+(--oep-client): a session, `oep.wire.*` attach, host-side flashing (oep_client.v1.ch32_flash: a RAM loader run
+through `oep.target.riscv-dm`), the sketch's Console as a dmseq stream (`oep.target.console`), and a sketch that
+tests a UART through `oep.fixture.uart` on the pins targets.py names. The probe firmware must already be flashed
+(it is a separate build) and speak v1.
 """
 
 from __future__ import annotations
@@ -107,37 +108,22 @@ class Link:
             time.sleep(0.02)
 
 
-def open_console(client) -> "Link":
-    """The sketch's Console, through the probe's target.console (tests/sketches/testcmd.h).
+def pulse_nrst(bench, log) -> None:
+    """Pull the target's NRST where the probe declares a channel labelled NRST (a gpio channel, open drain).
+    Starts the target clean the way power-up does; nothing happens on a probe without one."""
+    from oep_client.v1 import uiapduino
+    if bench.nrst is not None and bench.gpio is not None:
+        uiapduino.pulse_nrst(bench.host, bench.gpio, bench.nrst)
+        log("   pulsed NRST")
 
-    Needs no pins and no lease, so it stays open across whatever the caller leases and
-    releases around it. A few tries: the probe's first attach after a reset can miss.
-    """
-    from oep_client.v0 import codec
-    from oep_client.v0.services import TargetConsole
-    fn = client.find(*codec.DEF_TARGET_CONSOLE[:2])
-    if fn is None:
-        raise SystemExit("probe offers no target.console; reflash it")
-    console = TargetConsole(client, fn.function)
-    for attempt in range(6):
-        try:
-            console.configure(True, TargetConsole.DMSEQ)
-            break
-        except Exception:
-            if attempt == 5:
-                raise
-            if attempt == 3:
-                # Still no attach: pull NRST where the jig wires it, as the program path does.
-                # A CH32L103 behind the RP2350's flying wires refused four enables in a row once
-                # right after a reset (2026-09-24, tone_selftest); the sketch has not been told
-                # RUN yet, so restarting it costs nothing. Rejected (and harmless) without a line.
-                try:
-                    from oep_client.v0.flash_image import Target
-                    Target(client).control.reset_report(3)
-                except Exception:
-                    pass
-            time.sleep(0.3 * (attempt + 1))
-    return Link(console)
+
+def open_console(bench, conn: int) -> "Link":
+    """The sketch's Console (tests/sketches/testcmd.h, dmseq) as a stream on the debug connection, read from
+    where it stands now: opened before the reset, so the banner is not missed."""
+    from oep_client.v1 import target
+    console = target.Console(bench.host)
+    console.open(conn, target.Console.DMSEQ)
+    return Link(target.ConsoleIO(console))
 
 
 def sync(link: "Link", banner: str, seconds: float = 10.0) -> bool:
@@ -185,8 +171,40 @@ def name_uart(console: Link, profile: dict, baud: int, log) -> bool:
     return False
 
 
-def run_one(name: str, args, profile: dict, client, target, uart_service, log) -> dict:
-    from oep_client.v0.flash_image import program_image
+class Bench:
+    """One probe, one v1 session, the jig's wire and fixtures."""
+
+    def __init__(self, port: str, profile: dict):
+        from oep_client.v1 import host, link, target
+        self.host = host.Host(link.SerialLink(port).send)
+        self.host.open(lease_ms=10000)
+        self.wire = target.Wire(self.host, profile["wire"])
+        labels = target.probe_labels(self.host)
+        self.nrst = labels.get("NRST")
+        gpios = target.find_all(self.host, "oep.fixture.gpio")
+        self.gpio = gpios[0] if gpios else None
+        uarts = target.find_all(self.host, "oep.fixture.uart")
+        self.uart = uarts[0] if uarts else None
+
+    def close(self) -> None:
+        self.host.end()
+
+
+def program(bench, image: bytes, profile: dict, log):
+    """Attach halted, program through the host's CH32 flash knowledge, reset and see it run. -> (result, conn)"""
+    from oep_client.v1 import ch32_flash, target
+    conn, _ = bench.wire.attach(halt=True)
+    dm = target.RiscvDm(bench.host, conn)
+    # Stop the target before its first instruction, through a system reset: whatever the last sketch left
+    # running goes with it - an independent watchdog above all, which keeps counting while the hart is halted
+    # and reset the CH32L103 in the middle of a 4 s flash after system_selftest (2026-09-24, tone_selftest).
+    dm.reset_halt()
+    outcome = ch32_flash.program(bench.host, dm, image, ch32_flash.PROFILES[profile["flash"]])
+    return outcome, conn, dm
+
+
+def run_one(name: str, args, profile: dict, bench, log) -> dict:
+    from oep_client.v1 import target
     script = expectations(name)
     result = {"sketch": name}
     with tempfile.TemporaryDirectory() as tmp:
@@ -202,36 +220,44 @@ def run_one(name: str, args, profile: dict, client, target, uart_service, log) -
         result["compile_s"] = round(time.perf_counter() - t0, 3)
         t0 = time.perf_counter()
         # A few tries: a CH32L103 whose debug link sat idle (the probe rebooting, say) takes a
-        # couple of attaches to come back, and the first halt of the preflight is where that
-        # shows. Anything that is still refusing after that is a real failure.
+        # couple of attaches to come back, and the first halt is where that shows. Anything that is
+        # still refusing after that is a real failure.
         for attempt in range(5):
             try:
-                outcome = program_image(target, image)   # preflight, diff, pages, CRC verify, reset
+                outcome, conn, dm = program(bench, image, profile, log)
                 break
             except Exception as e:
                 if attempt == 4:
                     log(f"   program failed: {e}")
                     return {**result, "verdict": "fail", "why": f"program failed: {e}"}
                 if attempt == 2:
-                    # Still refusing: pull the target's NRST where the jig wires it, which
-                    # starts it clean the way power-up does. Rejected (and harmless) on a
-                    # probe with no reset line.
-                    try:
-                        ok, _ = target.control.reset_report(3)
-                        if ok:
-                            log("   attach kept failing; pulsed NRST")
-                    except Exception:
-                        pass
+                    pulse_nrst(bench, log)   # still refusing: start the target clean where the jig can
                 time.sleep(0.3 * (attempt + 1))
         result["program"] = outcome.as_dict()
         result["program_s"] = round(time.perf_counter() - t0, 3)
         if not outcome.verified:
             return {**result, "verdict": "fail", "why": "program/verify failed"}
-        log(f"   programmed {outcome.pages_changed} pages, verified, {result['program_s']} s")
+        console = open_console(bench, conn)
+        # The reset must be seen running. Over the CH32L103's flying leads the confirmation now and then
+        # fails once (2026-09-24, serial_println); try again, pull NRST where the jig has it, then give up
+        # on this sketch rather than the run.
+        for attempt in range(3):
+            try:
+                flags, attempts, pc = dm.reset(confirm=True)
+                break
+            except Exception as e:
+                if attempt == 2:
+                    log(f"   reset failed: {e}")
+                    return {**result, "verdict": "fail", "why": f"reset not confirmed: {e}"}
+                if attempt == 1:
+                    pulse_nrst(bench, log)
+                time.sleep(0.3)
+        result["reset"] = {"flags": flags, "attempts": attempts, "pc": f"0x{pc:08x}"}
+        log(f"   programmed {outcome.bytes} bytes (rewrote {outcome.rewritten_pages} pages), verified, reset "
+            f"flags=0x{flags:02x}, {result['program_s']} s")
 
-    console = open_console(client)
     links = {"console": console}
-    lease = None
+    planned = False
     try:
         banner = f"{name} READY"
         if not sync(console, banner, args.seconds + 10):
@@ -240,11 +266,13 @@ def run_one(name: str, args, profile: dict, client, target, uart_service, log) -
             why = f"no '{banner}'" if banner not in console.text else "banner but no PONG"
             return {**result, "verdict": "fail", "why": why, "output": console.text}
         if uses_uart(script):
-            if not profile.get("uart"):
+            if not profile.get("uart") or bench.uart is None:
                 return {**result, "verdict": "skip", "why": "this jig has no UART the probe can reach"}
-            lease, _ = client.plan_apply(uart_service.assignments(rx=profile["uart_rx"], tx=profile["uart_tx"]))
-            uart_service.configure(args.baud)
-            links["uart"] = Link(uart_service)
+            target.plan_apply(bench.host, [(bench.uart, 1, profile["uart_rx"]), (bench.uart, 2, profile["uart_tx"])])
+            planned = True
+            uart = target.FixtureUartIO(bench.host, bench.uart)
+            uart.configure(args.baud)
+            links["uart"] = Link(uart)
             if not name_uart(console, profile, args.baud, log):
                 return {**result, "verdict": "fail", "why": "UART not accepted", "output": console.text}
         missed = []
@@ -274,8 +302,8 @@ def run_one(name: str, args, profile: dict, client, target, uart_service, log) -
         verdict = judge(name, script, text, missed)
         return {**result, **verdict, "output": text}
     finally:
-        if lease is not None:
-            client.plan_release(lease)
+        if planned:
+            target.plan_release(bench.host)
 
 
 def main() -> None:
@@ -289,24 +317,23 @@ def main() -> None:
     parser.add_argument("--result-json")
     args = parser.parse_args()
     sys.path.insert(0, args.oep_client)
-    from oep_client.v0.__main__ import open_client
-    from oep_client.v0 import codec
-    from oep_client.v0.flash_image import Target
-    from oep_client.v0.services import FixtureUart, TargetConsole
 
     profile = TARGETS[args.target]
     port = args.port or profile["port"]
     names = sorted(p.name for p in BASIC.iterdir() if (p / f"{p.name}.ino").exists()) if args.sketch == "all" else [args.sketch]
-    client = open_client(port, 3.0)
-    target = Target(client)
-    uart_fn = client.find(*codec.DEF_FIXTURE_UART[:2])
-    uart_service = FixtureUart(client, uart_fn.function) if uart_fn else None
+    bench = Bench(port, profile)
     results = []
-    for name in names:
-        print(f"== {name}")
-        r = run_one(name, args, profile, client, target, uart_service, print)
-        results.append(r)
-        print(f"   {r['verdict'].upper()}: {r.get('why', '')}")
+    try:
+        for name in names:
+            print(f"== {name}")
+            try:
+                r = run_one(name, args, profile, bench, print)
+            except Exception as e:   # one sketch's trouble must not end the run
+                r = {"sketch": name, "verdict": "fail", "why": f"{type(e).__name__}: {e}"}
+            results.append(r)
+            print(f"   {r['verdict'].upper()}: {r.get('why', '')}")
+    finally:
+        bench.close()
     summary = {"target": args.target, "port": port, "fqbn": profile["fqbn"], "results": results,
                "counts": {v: sum(1 for r in results if r["verdict"] == v) for v in ("pass", "fail", "skip")}}
     print(json.dumps(summary["counts"]))
