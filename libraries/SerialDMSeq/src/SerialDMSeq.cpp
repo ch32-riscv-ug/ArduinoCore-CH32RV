@@ -93,6 +93,25 @@ void CH32SerialDMSeq::repost(void)
     *CH32_DM_DATA0 = _w0;
 }
 
+/* While latched, keep the frame posted - actively. A probe attach may rewrite
+ * data0: 0xffffffff (bit 7 set) reads as our own frame, so we would wait, while an
+ * unsynced host takes it as invalid and never answers; a zero word reads as
+ * silence. Either way both sides would stay stuck. So every short wait the frame
+ * goes up again (oep-spec docs/target-console-dmseq.ja.md, found by the ch32rv
+ * side). Timed by millis() where it runs, and by a call count where it does not
+ * (interrupts masked); whichever comes first. */
+void CH32SerialDMSeq::stale(void)
+{
+    if (!_latched) {
+        return;
+    }
+    if ((uint32_t)(millis() - _stale_ms) >= CH32_DMSEQ_WAIT_MS || ++_stale_calls >= _stale_limit) {
+        repost();
+        _stale_ms = millis();
+        _stale_calls = 0;
+    }
+}
+
 /* Look at data0 once. Returns true when no frame is outstanding any more.
  *
  * A valid answer acknowledges the frame and may carry host bytes. An invalid
@@ -106,7 +125,8 @@ bool CH32SerialDMSeq::service(void)
     }
     const uint32_t w = *CH32_DM_DATA0;
     if (w & ST_TARGET) {
-        return false;             /* still ours: not answered yet */
+        stale();                  /* still ours, or looks it: not answered yet */
+        return false;
     }
     /* A zero word is no answer at all: a host writes only over a frame, and every
      * answer has a CRC that a zero word fails. It is what data0 reads on a V4
@@ -115,6 +135,7 @@ bool CH32SerialDMSeq::service(void)
      * them in one idle run, found by the ch32rv side). The wait runs out as it
      * would with a silent host. */
     if (w == 0u) {
+        stale();
         return false;
     }
     const uint8_t a[4] = {(uint8_t)w, (uint8_t)(w >> 8), (uint8_t)(w >> 16),
@@ -158,6 +179,9 @@ bool CH32SerialDMSeq::waitAnswered(void)
     }
     _latched = true;
     _host = false;
+    _stale_ms = millis();
+    _stale_calls = 0;
+    _stale_limit = waitPolls();   /* the short wait, now that _host is false */
     uint8_t b[8] = {(uint8_t)(_w0 | ST_TIMEOUT), (uint8_t)(_w0 >> 8), (uint8_t)(_w0 >> 16),
                     (uint8_t)(_w0 >> 24), (uint8_t)_w1, (uint8_t)(_w1 >> 8),
                     (uint8_t)(_w1 >> 16), (uint8_t)(_w1 >> 24)};
