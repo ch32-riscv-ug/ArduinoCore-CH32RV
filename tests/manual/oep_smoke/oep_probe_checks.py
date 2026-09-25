@@ -100,6 +100,17 @@ def main() -> int:
         def raw(corr, fn, op, payload):   # one request with an explicit corr, no re-send
             return m.Result.unpack(hst.link.send(m.Request(corr, fn, op, payload, session=hst.session).pack()))
 
+        # scan answers pairs attach takes back; a pair the probe does not allow is refused (v1 wire §5.5)
+        found = wire.scan()
+        try:
+            wire.scan([(found[0].pins[0], 0x7FFE)])
+            bad_refused = False
+        except host.Rejected:
+            bad_refused = True
+        cp, _ = wire.attach(halt=False, pins=found[0].pins)
+        wire.detach(cp)
+        check("scan gives the pair, attach takes it back, a pair not allowed is refused", len(found) == 1 and bad_refused,
+              f"pins {found[0].pins if found else None}")
         # the connection number moves on; an old number is no_connection
         c1, _ = wire.attach(halt=False)
         wire.detach(c1)
