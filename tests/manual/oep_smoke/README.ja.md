@@ -1,15 +1,15 @@
 # oep_smoke — OEP 開発用 probe で sketch を一巡する
 
 `smoke.py` と同じ判定（`<name> READY` → `PING` → `<name>/expect.py` の再生 → `FAIL` 無し・`failures=0`）を、
-WCH-LinkE / probe-rs ではなく **OEP v0 probe** で行う。治具は `targets.py` の profile で選ぶ。
+WCH-LinkE / probe-rs ではなく **OEP v1 probe**（oep-spec v1-core-wire-delta、revision 1 のインターフェース）で行う。治具は `targets.py` の profile で選ぶ。
 
 ```sh
 uv run tests/manual/oep_smoke/oep_smoke.py --target x035 --sketch core_api
 uv run tests/manual/oep_smoke/oep_smoke.py --target l103 --sketch all --result-json /tmp/l103.json
 ```
 
-- 書込み: `oep_client.v0.flash_image.program_image`（ESIG preflight、physical page 差分、probe 内 CRC32 verify、reset）
-- **console: probe の `target.console`（framing 2 = dmseq）**。DUT の debug module のデータレジスタ（`SerialDMSeq`）で、ピンを使わず、
+- 書込み: host 側の `oep_client.v1.ch32_flash`（`oep.target.riscv-dm` で RAM のローダーを走らせる。ESIG の確認、ページの差分、読み戻しの確認、reset）
+- **console: probe の `oep.target.console`（mechanism 2 = dmseq）**。DUT の debug module のデータレジスタ（`SerialDMSeq`）で、ピンを使わず、
   どの UART よりも先に使える。sketch 側は `testcmd.h` の `Console`（[TEST_PLAN](../../TEST_PLAN.ja.md) の規約を参照）
 - **UART は試験対象**。`expect.py` が `uart` を使う sketch だけ、profile の `uart`（USART 番号, route）を
   `UART <n> <route> <baud>` で DUT に指名し、probe の `fixture.uart` をその線が落ちるピン（`uart_rx` / `uart_tx`）で借りる
@@ -37,6 +37,8 @@ READY を待つときは `oep_smoke.sync()` を使うこと。
 
 ## 実績
 
+- 2026-09-25（OEP v1 を固める候補の wire に移行した後。probe oep-probe-arduino d707930 / 76788d3、client oep-client-python
+  57072a9）: x035 14/14、v003 14/14（capture を足した後も 14/14）、l103 14/14。oep_probe_checks は x035 4/4、v003 6/6、l103 6/6
 - 2026-09-24（Console を SerialDMSeq = framing 2 に切り替えた後）: x035 / v003 14/14、l103 は 12 本通過後に tone_selftest で
   コンソール有効化の attach が 4 回続けて失敗して runner ごと止まり、残り 2 本は単独で PASS（14/14 相当）。コンソールを開く
   処理にも NRST での立て直しを入れた。同日、WCH-Link 経路（`smoke.py`、ch32rv `--source dmseq`）も 7 台すべて 14/14
