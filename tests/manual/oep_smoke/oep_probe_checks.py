@@ -4,7 +4,9 @@
 # ///
 """The OEP probe's own debug parts on a jig, independent of any sketch's tests: reset-halt stops before the first
 instruction, step moves the PC, a DMI delay step takes its time, and - where the probe labels a channel NRST - attach under
-reset stops at the vector and the reset-line search finds that channel and no other.
+reset stops at the vector and the reset-line search finds that channel and no other. Also the v1 session rules
+(oep-spec v1-open-proposals §3 / §4): a request sent again with the same corr is answered from the probe's table, the
+connection number moves on, a lapsed lease releases the plan and an explicit end keeps it.
 
     uv run tests/manual/oep_smoke/oep_probe_checks.py --target x035|v003|l103 [--json out.json]
 """
@@ -88,7 +90,70 @@ def main() -> int:
         hits = wire.find_reset_line(candidates)
         check("reset-line search finds NRST only", hits == [nrst], f"hits {hits} of {len(candidates)} candidates")
 
+    def session_rules():
+        import struct
+        from oep_client.v1 import core, message as m, riscv
+        gpio = target.find_all(hst, "oep.fixture.gpio")
+        line = sorted(prof.get("gpio", {}).values())
+        role = core.TAG_ROLE_ASSIGNMENT
+
+        def raw(corr, fn, op, payload):   # one request with an explicit corr, no re-send
+            return m.Result.unpack(hst.link.send(m.Request(corr, fn, op, payload, session=hst.session).pack()))
+
+        # the connection number moves on; an old number is no_connection
+        c1, _ = wire.attach(halt=False)
+        wire.detach(c1)
+        c2, _ = wire.attach(halt=False)
+        try:
+            wire.detach(c1)
+            old_refused = False
+        except host.OepError as e:
+            old_refused = "connection" in str(e).lower()
+        check("a new connection takes the next number, the old one is refused", c2 == c1 % 255 + 1 and old_refused,
+              f"{c1} -> {c2}")
+        # a request sent again with the same corr is answered from the table, not run twice
+        if gpio and line:
+            body = bytes([role, 5]) + struct.pack("<HBH", gpio[0], 1, line[0])
+            corr = hst.next_corr()
+            first, again = raw(corr, 0, core.OP_PLAN_APPLY, body), raw(corr, 0, core.OP_PLAN_APPLY, body)
+            other = raw(corr, 0, core.OP_PLAN_APPLY, bytes([role, 5]) + struct.pack("<HBH", gpio[0], 1, line[-1]))
+            check("a repeat is answered from the table", first.succeeded and again.succeeded and again.detail == first.detail,
+                  f"first {first.resolution}/{first.detail} again {again.resolution}/{again.detail}")
+            check("the same corr with another payload is corr_reused",
+                  other.resolution == m.REJECTED and other.detail == m.CORR_REUSED, f"{other.resolution}/{other.detail}")
+            # an explicit end keeps the plan (the next session gets it); a lapse releases it
+            hst.end()
+            hst.open(lease_ms=1000)
+            kept = raw(hst.next_corr(), 0, core.OP_PLAN_APPLY, body)
+            check("an explicit end keeps the plan", kept.resolution == m.REJECTED and kept.detail == m.UNAVAILABLE,
+                  f"{kept.resolution}/{kept.detail}")
+            time.sleep(1.6)
+            hst.lock_state()                                   # any request lets the probe notice the lapse
+            hst.open(lease_ms=30000)
+            after = raw(hst.next_corr(), 0, core.OP_PLAN_APPLY, body)
+            check("a lapsed lease released the plan", after.succeeded, f"{after.resolution}/{after.detail}")
+            core.plan_release(hst)
+            try:
+                wire.detach(c2)
+                dropped = False
+            except host.OepError as e:
+                dropped = "connection" in str(e).lower()
+            check("a lapsed lease released the host's connection", dropped)
+        # a result too large to keep comes back result_lost when sent again
+        c2, _ = wire.attach(halt=True)
+        dm = riscv.RiscvDm(hst, c2)
+        dm.halt()
+        corr = hst.next_corr()
+        body = dm.prefix + struct.pack("<IH", prof.get("ram_base", 0x20000000), 64)   # the connection first
+        big, again = raw(corr, dm.fn, riscv.RiscvDm.READ_BLOCK, body), raw(corr, dm.fn, riscv.RiscvDm.READ_BLOCK, body)
+        check("a repeat of a large result is result_lost",
+              big.succeeded and again.resolution == m.REJECTED and again.detail == m.RESULT_LOST,
+              f"{len(big.payload)} bytes, again {again.resolution}/{again.detail}")
+        dm.reset(confirm=True)
+        wire.detach(c2)
+
     try:
+        guarded("session rules", session_rules)
         guarded("debug operations", debug_ops)
         if nrst is None:
             print("  skip attach under reset: the probe labels no NRST channel")
