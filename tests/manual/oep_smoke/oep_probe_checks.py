@@ -5,8 +5,9 @@
 """The OEP probe's own debug parts on a jig, independent of any sketch's tests: reset-halt stops before the first
 instruction, step moves the PC, a DMI delay step takes its time, and - where the probe labels a channel NRST - attach under
 reset stops at the vector and the reset-line search finds that channel and no other. Also the v1 session rules
-(oep-spec v1-open-proposals §3 / §4): a request sent again with the same corr is answered from the probe's table, the
-connection number moves on, a lapsed lease releases the plan and an explicit end keeps it.
+(oep-spec oep-core §5.2, §9): a request sent again with the same corr is answered from the probe's table (an end sent
+again does not take the lock back; an old corr dropped from the table is result_lost), the connection number moves on
+and is never reused, a lapsed lease releases the plan and an explicit end keeps it.
 
     uv run tests/manual/oep_smoke/oep_probe_checks.py --target x035|v003|l103 [--json out.json]
 """
@@ -100,7 +101,7 @@ def main() -> int:
         def raw(corr, fn, op, payload):   # one request with an explicit corr, no re-send
             return m.Result.unpack(hst.link.send(m.Request(corr, fn, op, payload, session=hst.session).pack()))
 
-        # scan answers pairs attach takes back; a pair the probe does not allow is refused (v1 wire §5.5)
+        # scan answers pairs attach takes back; a pair the probe does not allow is refused (oep-if-debug §1)
         found = wire.scan()
         try:
             wire.scan([(found[0].pins[0], 0x7FFE)])
@@ -120,7 +121,7 @@ def main() -> int:
             old_refused = False
         except host.OepError as e:
             old_refused = "connection" in str(e).lower()
-        check("a new connection takes the next number, the old one is refused", c2 == c1 % 255 + 1 and old_refused,
+        check("a new connection takes the next number, the old one is refused", c2 == c1 + 1 and old_refused,
               f"{c1} -> {c2}")
         # a request sent again with the same corr is answered from the table, not run twice
         if gpio and line:
@@ -150,6 +151,21 @@ def main() -> int:
             except host.OepError as e:
                 dropped = "connection" in str(e).lower()
             check("a lapsed lease released the host's connection", dropped)
+        # an end sent again is answered from the table and does not take the lock back (oep-core §5.2)
+        corr = hst.next_corr()
+        e1, e2 = raw(corr, 0, m.OP_END, b""), raw(corr, 0, m.OP_END, b"")
+        locked, _ = hst.lock_state()
+        check("an end sent again leaves the lock free", e1.succeeded and e2.succeeded and not locked,
+              f"end {e1.resolution}/{e1.detail} again {e2.resolution}/{e2.detail} locked {locked}")
+        hst.open(lease_ms=30000)
+        # an old corr that fell out of the table is result_lost, not run again (the host numbers requests in order)
+        old = hst.next_corr()
+        raw(old, 0, m.OP_KEEPALIVE, b"")
+        for _ in range(20):
+            hst.keepalive()
+        late = raw(old, 0, m.OP_KEEPALIVE, b"")
+        check("an old corr out of the table is result_lost", late.resolution == m.REJECTED and late.detail == m.RESULT_LOST,
+              f"{late.resolution}/{late.detail}")
         # a result too large to keep comes back result_lost when sent again
         c2, _ = wire.attach(halt=True)
         dm = riscv.RiscvDm(hst, c2)
