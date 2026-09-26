@@ -27,6 +27,7 @@ REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
 import targets  # noqa: E402
+import trace_kit  # noqa: E402
 
 SKETCH = HERE / "periph_probe"
 PWM_GPIO, SCK, MOSI, MISO, CS = 47, 4, 5, 11, 53
@@ -128,23 +129,13 @@ def main() -> None:
     if not has_capture and any(sec != "spi-peer" for sec in sections):
         raise SystemExit("this probe has no fixture.capture: only spi-peer runs on " + args.target)
     sys.path.insert(0, args.oep_client)
-    from oep_client.v0 import codec
-    from oep_client.v0.__main__ import open_client
-    from oep_client.v0.flash_image import Target, program_image
-    from oep_client.v0.services import FixtureCapture, FixtureUart, P4SpiTarget
+    from oep_client.v1.esp32_targets import SpiTarget as P4SpiTarget
+    FixtureCapture = trace_kit.Capture
 
     log = print
-    with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("periph_probe", args.fqbn or profile["fqbn"], pathlib.Path(tmp), log,
-                                 source=SKETCH, defines=targets.build_defines(profile))
-        image = binary.read_bytes()
-    client = open_client(args.port or profile["port"], 3.0)
-    target = Target(client)
-    outcome = program_image(target, image)
-    log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
-    if not outcome.verified:
-        raise SystemExit("program/verify failed")
-    capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function) if has_capture else None
+    sess = trace_kit.Session(args.port, profile, "periph_probe", log, source=SKETCH, fqbn=args.fqbn,
+                             defines=targets.build_defines(profile))
+    capture = trace_kit.Capture(sess) if has_capture else None
     results = {}
 
     def run(cap_lines, rate, samples, command, reply, settle=0.05):
@@ -161,11 +152,12 @@ def main() -> None:
         return data, line.strip(), got
 
     def session(cap_lines):
-        lease, _ = client.plan_apply(capture.assignments(*cap_lines))
-        lnk = oep_smoke.open_console(client)
+        sess.plan(capture.assignments(*cap_lines))
+        lnk = sess.link
+        lnk.cursor = 0   # one console stream for the whole run: its banner may be behind the cursor already
         if not oep_smoke.sync(lnk, "periph_probe READY"):
             raise SystemExit(f"no READY: {lnk.text[:200]!r}")
-        return lease, lnk
+        return None, lnk
 
     if any(s in sections for s in ("pwm", "tone", "timing")):
         lease, link = session((PWM_GPIO,))
@@ -216,7 +208,7 @@ def main() -> None:
                     else f"[millis] no edges: samples={len(data)} high fraction={(sum(d & 1 for d in data) / len(data)) if data else None} flags=0x{st.flags:02x}")
                 results["timing"] = rows
         finally:
-            client.plan_release(lease)
+            sess.release()
 
     if "spi" in sections:
         lease, link = session((SCK, MOSI, MISO, CS))
@@ -247,16 +239,16 @@ def main() -> None:
                     f"SCK {d['sck_hz']/1e6:.3f} MHz clocks={d['clocks']} CS low {d['cs_low_us']:.1f} us | DUT: {line}")
             results["spi"] = rows
         finally:
-            client.plan_release(lease)
-            target.control.reset()
+            sess.release()
+            sess.reset()
     if "spi-peer" in sections:
         # P3 row 7, MISO side: the P4 SPI slave (p4.spi-target, SPI2_HOST) answers on MISO while the capture
         # observes all four lines in the same plan. Checks per mode: DUT got == preloaded MISO bytes, target's
         # MOSI bytes == DUT payload, and the wire decode of both lines agrees.
-        spi = P4SpiTarget(client, client.find(*codec.DEF_P4_SPI_TARGET[:2]).function)
-        lease, _ = client.plan_apply(spi.assignments(sck=SCK, mosi=MOSI, miso=MISO, cs=CS)
-                                     + (capture.assignments(SCK, MOSI, MISO, CS) if has_capture else []))
-        link = oep_smoke.open_console(client); link.send("\n")
+        spi = P4SpiTarget(sess.host)
+        sess.plan(spi.assignments(sck=SCK, mosi=MOSI, miso=MISO, cs=CS)
+                  + (capture.assignments(SCK, MOSI, MISO, CS) if has_capture else []))
+        link = sess.link; link.cursor = 0; link.send("\n")
         if not oep_smoke.sync(link, "periph_probe READY"): raise SystemExit(f"no READY: {link.text[:200]!r}")
         try:
             rows = []
@@ -315,8 +307,9 @@ def main() -> None:
             log(f"[spi peer burst, 5 x 4-byte at 4 MHz mode 3, no settle] {burst_ok}/5 both ways")
             results["spi_peer"] = rows
         finally:
-            client.plan_release(lease)
-            target.control.reset()
+            sess.release()
+            sess.reset()
+    sess.close()
     if args.result_json:
         pathlib.Path(args.result_json).write_text(json.dumps(results, indent=1, default=str))
         log(f"wrote {args.result_json}")

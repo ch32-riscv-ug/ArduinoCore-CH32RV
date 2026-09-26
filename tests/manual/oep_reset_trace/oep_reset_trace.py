@@ -25,6 +25,7 @@ REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
 import targets  # noqa: E402
+import trace_kit  # noqa: E402
 
 CONSOLE_RX, CONSOLE_TX = 12, 6
 RATE = 1_000_000   # the V003 profile lowers this: its UART-paced reset needs a longer window
@@ -63,28 +64,19 @@ def main() -> None:
     CONSOLE_RX, CONSOLE_TX = profile["uart_rx"], profile["uart_tx"]
     if profile.get("capture_max_hz", 20_000_000) < 5_000_000: RATE = 400_000   # 64 KiB window = 163 ms on the GPIO sampler
     sys.path.insert(0, args.oep_client)
-    from oep_client.v0 import codec
-    from oep_client.v0.__main__ import open_client
-    from oep_client.v0.flash_image import Target, program_image
-    from oep_client.v0.services import FixtureCapture, FixtureGpio, FixtureUart
 
     log = print
-    with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("reset_probe", args.fqbn or profile["fqbn"], pathlib.Path(tmp), log,
-                                 source=HERE / "reset_probe", defines=targets.build_defines(profile))
-        image = binary.read_bytes()
-    client = open_client(args.port or profile["port"], 3.0)
-    target = Target(client)
-    outcome = program_image(target, image)
-    log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
-    gpio = FixtureGpio(client, client.find(*codec.DEF_FIXTURE_GPIO[:2]).function)
-    capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function)
+    session = trace_kit.Session(args.port, profile, "reset_probe", log, source=HERE / "reset_probe", fqbn=args.fqbn,
+                                defines=targets.build_defines(profile))
+    FixtureGpio = trace_kit.Gpio
+    gpio = trace_kit.Gpio(session)
+    capture = trace_kit.Capture(session)
     MARK = profile["pwm"]   # DUT PA1 -> probe GPIO (47 on the X035 fixture, 25 on the V003 jig)
-    # plan: console + capture observing the marker and the console TX; fixture.gpio takes no plan roles (configure claims the pin)
-    lease, _ = client.plan_apply(capture.assignments(MARK, CONSOLE_RX))
+    # plan: the capture observes the marker and the DUT's UART TX; the gpio plan takes the marker to pull it down
+    session.plan(capture.assignments(MARK, CONSOLE_RX))
     try:
         gpio.configure(MARK, FixtureGpio.INPUT_PULL_DOWN)
-        link = oep_smoke.open_console(client)
+        link = session.link
         if not oep_smoke.sync(link, "reset_probe READY"):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
 
@@ -117,7 +109,7 @@ def main() -> None:
         log(f"[software reset] reset_reason={reason()}")
         dbg = []
         for i in range(args.repeat):
-            link.drain(0.05); capture.arm(); time.sleep(0.02); report = target.control.reset(confirm=False)
+            link.drain(0.05); capture.arm(); time.sleep(0.02); report = session.reset(confirm=False)
             link.wait("reset_probe READY", 5)
             st = capture.wait(2.0); data = capture.read_all(st.samples)
             a, b = low_pulse(data, 0)
@@ -128,8 +120,7 @@ def main() -> None:
             v = sorted(v)
             log(f"{name} reset -> setup(): median {v[len(v)//2]:.3f} ms, min {v[0]:.3f}, max {v[-1]:.3f} (n={len(v)})")
     finally:
-        client.plan_release(lease)
-        target.control.reset()
+        session.close()
 
 
 if __name__ == "__main__":

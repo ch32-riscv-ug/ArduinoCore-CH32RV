@@ -33,3 +33,9 @@ uv run tests/manual/oep_gpio_matrix/oep_gpio_matrix.py [--pins PA0,PB3] [--settl
 `--target v003`（`tests/manual/oep_smoke/targets.py` の profile: port / FQBN / console / pin 地図）。E132 配線の 12 pad
 （PA1 PA2 PC0〜PC7 PD0 PD2）で out / od / in / pullup / pulldown / EXTI（10/10/20）が **12/12 OK**。PC1/PC2 は board の I2C
 pull-up（R4/R5 2.2 kΩ）で INPUT / INPUT_PULLDOWN でも idle が 1 になるので、profile の `external_pullup` で判定から除外している。
+
+## 2026-09-26: OEP v1
+
+OEP v1 に移した（2026-09-26）: 共通の部品は `oep_smoke/trace_kit.py`（v1 の client の上に、この試験が使っていた形を作る）。
+
+v003: 12/12 OK。x035: 15 pad のうち PB11、PC14、PC15 が BAD。PC14 / PC15 は既知（USB PD の CC pin で pull-up の idle が 0）。PB11 はプルダウンの idle が 1 になる（--settle 0.3 でも同じ）。v0 のとき（2026-09-22）は OK だった。原因は未確認。

@@ -22,3 +22,9 @@ uv run tests/manual/oep_uart_trace/oep_uart_trace.py [--bauds 9600,115200,460800
 送信完了を待って排出してから回復 echo をする形に直した。
 
 未実施: 9600 未満、2 Mbps 級、parity / 2 stop bit、USART1/3、`Serial.setRxBufferSize` 相当（core に無い、`CH32_SERIAL_RX_BUFFER_SIZE` は build define）。
+
+## 2026-09-26: OEP v1
+
+OEP v1 に移した（2026-09-26）: 共通の部品は `oep_smoke/trace_kit.py`（v1 の client の上に、この試験が使っていた形を作る）。
+
+x035: 9600 / 115200 / 460800 の DUT → P4、echo、overflow の後の echo、65536 B 連続、reset の後の再開がすべて一致。最初の run で 9600 の echo が 31/32 で止まったが、流し直すと一致（v0 のときと同じ揺れ）。

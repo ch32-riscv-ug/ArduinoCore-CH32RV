@@ -26,6 +26,7 @@ REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
 import targets  # noqa: E402
+import trace_kit  # noqa: E402
 
 
 def main() -> None:
@@ -40,25 +41,15 @@ def main() -> None:
     PIN_MAP = profile["adc"]
     CONSOLE_RX, CONSOLE_TX = profile["uart_rx"], profile["uart_tx"]
     sys.path.insert(0, args.oep_client)
-    from oep_client.v0 import codec
-    from oep_client.v0.__main__ import open_client
-    from oep_client.v0.flash_image import Target, program_image
-    from oep_client.v0.services import FixtureGpio, FixtureUart
 
     log = print
-    with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("adc_probe", args.fqbn or profile["fqbn"], pathlib.Path(tmp), log,
-                                 source=HERE / "adc_probe", defines=targets.build_defines(profile))
-        image = binary.read_bytes()
-    client = open_client(args.port or profile["port"], 3.0)
-    target = Target(client)
-    outcome = program_image(target, image)
-    log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
-    gpio = FixtureGpio(client, client.find(*codec.DEF_FIXTURE_GPIO[:2]).function)
-    lease = None   # the console is target.console: no pins, nothing to lease
+    session = trace_kit.Session(args.port, profile, "adc_probe", log, source=HERE / "adc_probe", fqbn=args.fqbn,
+                                defines=targets.build_defines(profile))
+    FixtureGpio = trace_kit.Gpio
+    gpio = trace_kit.Gpio(session)   # each pin joins the gpio plan when first driven
     failures = []
     try:
-        link = oep_smoke.open_console(client)
+        link = session.link
         if not oep_smoke.sync(link, "adc_probe READY"):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
 
@@ -90,13 +81,8 @@ def main() -> None:
             log(f"[{name} <- P4 GPIO{p4:2d}] low min/max/mean={low} high={high} floating={fl} -> {'OK' if ok else 'BAD'} (10-bit, rails: 0 V / P4 3.3 V)")
         # Rough mid-scale: P4 pull-up and pull-down together sit at 1.46-1.49 V (E087, pull-down a bit stronger),
         # i.e. about 455 of 1023 at 3.3 V. Not a calibrated reference; it shows the ADC is not just reading rails.
-        mid_mode = FixtureGpio.INPUT_PULL_UP_DOWN
-        mids = {}
-        for name in order:
-            if name in profile["adc_absent"]: continue
-            gpio.configure(PIN_MAP[name], mid_mode); time.sleep(0.02); mids[name] = adc(name)
-            gpio.configure(PIN_MAP[name], FixtureGpio.INPUT_FLOATING)
-        log("[mid-scale, P4 pull-up+pull-down ~1.47 V -> expect ~430..480] " + " ".join(f"{n}={v[2]}" for n, v in mids.items()))
+        # oep.fixture.gpio (v1) has no pull-up + pull-down mode, so the rough mid-scale reading is not taken any more.
+        log("[mid-scale] skipped: the v1 gpio has no pull-up + pull-down mode")
         if args.target != "x035":
             log(f"failures={failures}"); return
         # Errata x035-adc-ch-i2c-unavailable (CH32X035DS0 note 1): ADC channels 3/7/11/15 are absent on lots whose
@@ -122,10 +108,7 @@ def main() -> None:
         log(f"VREFINT channel 15: {'PRESENT' if vref_ok else 'ABSENT (tracks the preconditioned node)'}")
         if not vref_ok: log("channels 3/7/11/15 read an isolated node: this part matches x035-adc-ch-i2c-unavailable (ADC clause)")
     finally:
-        for p4 in PIN_MAP.values(): gpio.configure(p4, FixtureGpio.INPUT_FLOATING)
-        if lease is not None:
-            client.plan_release(lease)
-        target.control.reset()
+        session.close()   # the gpio plan goes: every pin back to its idle state
     log(f"failures={failures}")
 
 

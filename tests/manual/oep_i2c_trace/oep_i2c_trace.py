@@ -30,6 +30,7 @@ REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402  (build, open_console, DEFAULT_PORT, DEFAULT_CLIENT)
 import targets  # noqa: E402
+import trace_kit  # noqa: E402
 
 SKETCH = HERE / "i2c_probe_write"
 SCL, SDA = 52, 50
@@ -64,35 +65,24 @@ def main() -> None:
     has_capture = profile["capture"]
     clocks = args.hz or [100000, 10000]
     sys.path.insert(0, args.oep_client)
-    from oep_client.v0 import codec
-    from oep_client.v0.__main__ import open_client
-    from oep_client.v0.decode import decode_i2c
-    from oep_client.v0.flash_image import Target, program_image
-    from oep_client.v0.services import FixtureCapture, FixtureGpio, FixtureUart, P4I2cTarget
+    from oep_client.v1.esp32_targets import I2cTarget as P4I2cTarget
+    decode_i2c = trace_kit.decode_i2c
+    FixtureCapture, FixtureGpio = trace_kit.Capture, trace_kit.Gpio
 
     log = print
-    with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("i2c_probe_write", args.fqbn or profile["fqbn"], pathlib.Path(tmp), log,
-                                 source=SKETCH, defines=targets.build_defines(profile))
-        image = binary.read_bytes()
-    client = open_client(args.port or profile["port"], 3.0)
-    target = Target(client)
-    outcome = program_image(target, image)
-    log(f"programmed {outcome.pages_changed} pages verified={outcome.verified} reset_flags=0x{int(outcome.timings['reset_flags']):02x}")
-    if not outcome.verified:
-        raise SystemExit("program/verify failed")
-    i2c = P4I2cTarget(client, client.find(*codec.DEF_P4_I2C_TARGET[:2]).function)
-    capture = FixtureCapture(client, client.find(*codec.DEF_FIXTURE_CAPTURE[:2]).function) if has_capture else None
-    # One plan: console UART + probe I2C target + (on the P4) capture observing the same two lines.
-    lease, _ = client.plan_apply(i2c.assignments(sda=SDA, scl=SCL)
-                                 + (capture.assignments(SCL, SDA) if has_capture else []))
+    session = trace_kit.Session(args.port, profile, "i2c_probe_write", log, source=SKETCH, fqbn=args.fqbn,
+                                defines=targets.build_defines(profile))
+    i2c = P4I2cTarget(session.host)
+    capture = trace_kit.Capture(session) if has_capture else None
+    # The probe I2C target and (on the P4) the capture observing the same two lines (the console is target.console).
+    session.plan(i2c.assignments(sda=SDA, scl=SCL) + (capture.assignments(SCL, SDA) if has_capture else []))
     results = []
     try:
-        link = oep_smoke.open_console(client)
+        link = session.link
         if not oep_smoke.sync(link, "i2c_probe_write READY"):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
         if args.rw:
-            from oep_client.v0.decode import I2cTrace
+            from oep_client.v1.decode import I2cTrace
             link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
             def trace_cmd(command, reply, hz):
                 rate = min(5_000_000 if hz >= 400_000 else 1_000_000, profile.get("capture_max_hz", 5_000_000))
@@ -178,11 +168,11 @@ def main() -> None:
             results.append({"after_stretch": True, "got": got, "data": data, "t_us": t_us})
             clocks = []
         if args.stuck:
-            gpio = FixtureGpio(client, client.find(*codec.DEF_FIXTURE_GPIO[:2]).function)
+            gpio = trace_kit.Gpio(session)
             link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
             # Part 1: a line held low by "something else" (P4 GPIO). The target leaves the plan so the pins are free.
-            client.plan_release(lease)
-            lease, _ = client.plan_apply(capture.assignments(SCL, SDA))
+            session.release()
+            session.plan(capture.assignments(SCL, SDA))
             for name, pin in (("SDA", SDA), ("SCL", SCL)):
                 gpio.configure(pin, FixtureGpio.OUTPUT_LOW); time.sleep(0.01)
                 rc, t_us, line, samples, trace = wire_write(100000, "0102")
@@ -195,8 +185,8 @@ def main() -> None:
                 log(f"[{name} released, nobody listening] rc={rc3} t={t3/1000:.2f} ms | wire {trace3.summary()} -> {'OK' if rc3 == 2 else 'BAD'} (expect 2 = address NACK)")
                 results.append({"released": name, "rc": rc3, "t_us": t3})
             # Part 2: a real target left driving SDA low in the middle of a byte.
-            client.plan_release(lease)
-            lease, _ = client.plan_apply(i2c.assignments(sda=SDA, scl=SCL) + capture.assignments(SCL, SDA))
+            session.release()
+            session.plan(i2c.assignments(sda=SDA, scl=SCL) + capture.assignments(SCL, SDA))
             link.send("\n"); link.drain(0.3)
             i2c.set_stretch(0); i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_PRELOADED_TX); i2c.preload_tx(bytes(4))
             capture.configure(1_000_000, 65000); link.drain(0.05); capture.arm()
@@ -305,8 +295,7 @@ def main() -> None:
                     f"| SCL period {period_us:.1f} us | target rx={data.hex() or '-'} pending={pending} frames={tstat.rx_frames} errors={tstat.errors}")
                 log(f"    events: {[(e.kind, e.sample, hex(e.value), e.ack) for e in trace.events]}")
     finally:
-        client.plan_release(lease)
-        target.control.reset()
+        session.close()
     if args.result_json:
         pathlib.Path(args.result_json).write_text(json.dumps({"port": args.port, "results": results}, indent=1))
         log(f"wrote {args.result_json}")

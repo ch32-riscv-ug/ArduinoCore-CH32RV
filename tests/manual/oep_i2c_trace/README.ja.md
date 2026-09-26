@@ -145,3 +145,9 @@ write 4 byte @400 kHz target 受信一致。2 つ目の preloaded slot だけ `0
 
 同日追記（route）: `--route N --probe-scl/--probe-sda` で別 route を試せる。X035 route 4（PC17 SCL / PC16 SDA、probe 50/52）と
 V003 route 2（PC5 SCL / PC6 SDA、probe 27/4）のどちらも read / repeated START / 400 kHz write が線上 decode 付きで一致。
+
+## 2026-09-26: OEP v1
+
+OEP v1 に移した（2026-09-26）: 共通の部品は `oep_smoke/trace_kit.py`（v1 の client の上に、この試験が使っていた形を作る）。
+
+x035 / v003: 100 kHz と 10 kHz の WRITE、NACK（相手なし）の復号と target の受信がすべて一致（--rw、--stuck などの追加の試験は未実施）。

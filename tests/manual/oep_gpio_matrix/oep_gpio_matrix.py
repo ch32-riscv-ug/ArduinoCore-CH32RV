@@ -26,6 +26,7 @@ REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
 import targets  # noqa: E402  (fixture profiles: port, FQBN, console pins, DUT pad -> probe GPIO)
+import trace_kit  # noqa: E402
 
 SKETCH = HERE / "gpio_probe"
 
@@ -41,10 +42,6 @@ def main() -> None:
     parser.add_argument("--result-json")
     args = parser.parse_args()
     sys.path.insert(0, args.oep_client)
-    from oep_client.v0 import codec
-    from oep_client.v0.__main__ import open_client
-    from oep_client.v0.flash_image import Target, program_image
-    from oep_client.v0.services import FixtureGpio, FixtureUart
 
     profile = targets.TARGETS[args.target]
     port, fqbn = args.port or profile["port"], args.fqbn or profile["fqbn"]
@@ -52,22 +49,14 @@ def main() -> None:
     PIN_MAP = profile["gpio"]
     pins = {k: PIN_MAP[k] for k in (args.pins.split(",") if args.pins else PIN_MAP)}
     log = print
-    with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("gpio_probe", fqbn, pathlib.Path(tmp), log, source=SKETCH,
-                                 defines=targets.build_defines(profile))
-        image = binary.read_bytes()
-    client = open_client(port, 3.0)
-    target = Target(client)
-    outcome = program_image(target, image)
-    log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
-    if not outcome.verified:
-        raise SystemExit("program/verify failed")
-    gpio = FixtureGpio(client, client.find(*codec.DEF_FIXTURE_GPIO[:2]).function)
-    lease = None   # the console is target.console: no pins, nothing to lease
+    session = trace_kit.Session(port, profile, "gpio_probe", log, source=SKETCH, fqbn=fqbn,
+                                defines=targets.build_defines(profile))
+    FixtureGpio = trace_kit.Gpio
+    gpio = trace_kit.Gpio(session)   # each pin joins the gpio plan when first used
     results = {}
     failures = []
     try:
-        link = oep_smoke.open_console(client)
+        link = session.link
         if not oep_smoke.sync(link, "gpio_probe READY"):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
 
@@ -140,9 +129,7 @@ def main() -> None:
             log(f"[{name:4s} <-> probe GPIO{p4:2d}] {'OK ' if ok else 'BAD'} out={row['out']} od={row['od']} in={row['input']} pu={row['pullup']} pd={row['pulldown']} "
                 f"exti r/f/c={exti['rising'][0]}/{exti['falling'][0]}/{exti['change'][0]}")
     finally:
-        if lease is not None:
-            client.plan_release(lease)
-        target.control.reset()
+        session.close()
     if args.result_json:
         pathlib.Path(args.result_json).write_text(json.dumps(results, indent=1))
     log(f"pins tested={len(results)} failures={failures}")

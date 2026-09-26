@@ -26,3 +26,9 @@ E158 の「banner 1.6 ms」も同じ周期の READY を見ていた。boot 時�
 `CH32.restart()` → setup(): **0.342〜0.345 ms**（n=5、X035 は 0.184 ms）、reason=software。debug reset → setup() は未計測: classic ESP32
 probe の capture 窓は 400 kHz で 163 ms しか無く、UART 経路の reset 要求と probe の reset 列（ndmreset → 解放 → 再 attach）がその外に出る。
 値は probe 側の列で決まる量なので core の評価には要らない。
+
+## 2026-09-26: OEP v1
+
+OEP v1 に移した（2026-09-26）: 共通の部品は `oep_smoke/trace_kit.py`（v1 の client の上に、この試験が使っていた形を作る）。
+
+x035: software reset → setup() 中央値 0.069 ms、debug reset → setup() 中央値 229 ms。v003: software 0.320 ms、debug 1.247 ms（1 回目の run は UART の probe との通信で COBS のフレームが壊れて落ちた）。

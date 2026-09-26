@@ -24,6 +24,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
 import oep_smoke  # noqa: E402
+import targets  # noqa: E402
+import trace_kit  # noqa: E402
 
 SKETCH = HERE / "uart_probe"
 UART2_RX, UART2_TX = 48, 49   # probe RX = DUT TX (PA2), probe TX = DUT RX (PA3)
@@ -46,29 +48,14 @@ def main() -> None:
     parser.add_argument("--bauds", default="9600,115200,460800")
     args = parser.parse_args()
     sys.path.insert(0, args.oep_client)
-    from oep_client.v0 import codec
-    from oep_client.v0.__main__ import open_client
-    from oep_client.v0.flash_image import Target, program_image
-    from oep_client.v0.services import FixtureUart
 
     log = print
-    with tempfile.TemporaryDirectory() as tmp:
-        binary = oep_smoke.build("uart_probe", args.fqbn, pathlib.Path(tmp), log, source=SKETCH)
-        image = binary.read_bytes()
-    client = open_client(args.port, 3.0)
-    target = Target(client)
-    outcome = program_image(target, image)
-    log(f"programmed {outcome.pages_changed} pages verified={outcome.verified}")
-    if not outcome.verified:
-        raise SystemExit("program/verify failed")
-    uarts = [f for f in client.list_functions() if (f.owner, f.id) == codec.DEF_FIXTURE_UART[:2]]
-    if not uarts:
-        raise SystemExit("probe offers no fixture.uart")
-    uart2 = FixtureUart(client, uarts[0].function)
-    lease, _ = client.plan_apply(uart2.assignments(rx=UART2_RX, tx=UART2_TX))
+    session = trace_kit.Session(args.port, targets.TARGETS["x035"], "uart_probe", log, source=SKETCH, fqbn=args.fqbn)
+    uart2 = trace_kit.Uart(session)
+    session.plan(uart2.assignments(rx=UART2_RX, tx=UART2_TX))
     failures = []
     try:
-        link = oep_smoke.open_console(client)
+        link = session.link
         if not oep_smoke.sync(link, "uart_probe READY"):
             raise SystemExit(f"no READY/PONG: {link.text[:200]!r}")
 
@@ -143,15 +130,14 @@ def main() -> None:
         if not ok: failures.append("long")
         # resume after a debug reset
         cmd("CLOSE", "CLOSE ok")
-        report = target.control.reset()
+        report = session.reset()
         if not oep_smoke.sync(link, "uart_probe READY", 5): raise SystemExit("no READY/PONG after reset")
         cmd("OPEN 115200", "OPEN ok"); uart2.configure(115200); uart2.read(4096); time.sleep(0.05)
         cmd("SEND 512 77", "SEND done"); got = drain2(512, 3.0); ok = got == lcg_bytes(512, 77)
         log(f"[after reset] flags=0x{report.flags:02x} DUT->P4 512 B match={ok}")
         if not ok: failures.append("after reset")
     finally:
-        client.plan_release(lease)
-        target.control.reset()
+        session.close()
     log(f"failures={failures}")
 
 

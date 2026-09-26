@@ -88,3 +88,9 @@ classic ESP32 probe の `fixture.capture` は core 0 の GPIO sampler（0.4〜2 
 
 64 byte の transaction × 3（DUT MISO 受信・target MOSI 受信とも一致、512 bit）と、4 byte × 5 連続（4 MHz mode 3、settle 無し）5/5。
 sketch 側の引数バッファ（`%71s`）が 35 byte で切っていたので 135 に広げた。
+
+## 2026-09-26: OEP v1
+
+OEP v1 に移した（2026-09-26）: 共通の部品は `oep_smoke/trace_kit.py`（v1 の client の上に、この試験が使っていた形を作る）。
+
+x035: PWM、tone、タイミング、SPI（DUT のみ、peer）が通った。peer の 1 MHz mode 0 の最初の 1 回だけ DUT が 1 byte しか受け取らなかった。v003: PWM / tone / タイミングと、SPI peer の 1 MHz / 250 kHz / 4 MHz、64 byte × 3、連続 5/5 が一致。12 MHz 以上は既知の classic ESP32 の slave の限界で BAD。
