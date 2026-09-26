@@ -133,17 +133,23 @@ def main() -> int:
                   f"first {first.resolution}/{first.detail} again {again.resolution}/{again.detail}")
             check("the same corr with another payload is corr_reused",
                   other.resolution == m.REJECTED and other.detail == m.CORR_REUSED, f"{other.resolution}/{other.detail}")
-            # an explicit end keeps the plan (the next session gets it); a lapse releases it
+            # an explicit end keeps the plan (the next session gets it); a lapse releases it. Seen through another fn:
+            # the uart may not take the pin the gpio plan holds (the plan is per fn, oep-core §8)
+            uart = target.find_all(hst, "oep.fixture.uart")
+            probe_body = (bytes([role, 5]) + struct.pack("<HBH", uart[0], 1, line[0]) + bytes([role, 5])
+                          + struct.pack("<HBH", uart[0], 2, line[-1])) if uart and len(line) > 1 else None
             hst.end()
             hst.open(lease_ms=1000)
-            kept = raw(hst.next_corr(), 0, core.OP_PLAN_APPLY, body)
-            check("an explicit end keeps the plan", kept.resolution == m.REJECTED and kept.detail == m.UNAVAILABLE,
-                  f"{kept.resolution}/{kept.detail}")
+            if probe_body:
+                kept = raw(hst.next_corr(), 0, core.OP_PLAN_APPLY, probe_body)
+                check("an explicit end keeps the plan", kept.resolution == m.REJECTED and kept.detail == m.UNAVAILABLE,
+                      f"{kept.resolution}/{kept.detail}")
             time.sleep(1.6)
             hst.lock_state()                                   # any request lets the probe notice the lapse
             hst.open(lease_ms=30000)
-            after = raw(hst.next_corr(), 0, core.OP_PLAN_APPLY, body)
-            check("a lapsed lease released the plan", after.succeeded, f"{after.resolution}/{after.detail}")
+            if probe_body:
+                after = raw(hst.next_corr(), 0, core.OP_PLAN_APPLY, probe_body)
+                check("a lapsed lease released the plan", after.succeeded, f"{after.resolution}/{after.detail}")
             core.plan_release(hst)
             try:
                 wire.detach(c2)
