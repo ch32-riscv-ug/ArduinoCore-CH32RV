@@ -107,7 +107,7 @@ class Reset:
 class Gpio:
     """oep.fixture.gpio with the v0 names; a channel joins this fn's plan the first time it is used."""
     INPUT_FLOATING, INPUT_PULL_UP, INPUT_PULL_DOWN, OUTPUT_LOW, OUTPUT_HIGH = 0, 1, 2, 3, 4
-    OPEN_DRAIN_LOW, OPEN_DRAIN_RELEASE = 5, 6
+    OPEN_DRAIN_LOW, OPEN_DRAIN_RELEASE, INPUT_PULL_UP_DOWN = 5, 6, 7
 
     def __init__(self, session: Session):
         from oep_client.v1 import fixture, target

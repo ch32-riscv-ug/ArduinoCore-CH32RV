@@ -81,8 +81,13 @@ def main() -> None:
             log(f"[{name} <- P4 GPIO{p4:2d}] low min/max/mean={low} high={high} floating={fl} -> {'OK' if ok else 'BAD'} (10-bit, rails: 0 V / P4 3.3 V)")
         # Rough mid-scale: P4 pull-up and pull-down together sit at 1.46-1.49 V (E087, pull-down a bit stronger),
         # i.e. about 455 of 1023 at 3.3 V. Not a calibrated reference; it shows the ADC is not just reading rails.
-        # oep.fixture.gpio (v1) has no pull-up + pull-down mode, so the rough mid-scale reading is not taken any more.
-        log("[mid-scale] skipped: the v1 gpio has no pull-up + pull-down mode")
+        mid_mode = FixtureGpio.INPUT_PULL_UP_DOWN
+        mids = {}
+        for name in order:
+            if name in profile["adc_absent"]: continue
+            gpio.configure(PIN_MAP[name], mid_mode); time.sleep(0.02); mids[name] = adc(name)
+            gpio.configure(PIN_MAP[name], FixtureGpio.INPUT_FLOATING)
+        log("[mid-scale, P4 pull-up+pull-down ~1.47 V -> expect ~430..480] " + " ".join(f"{n}={v[2]}" for n, v in mids.items()))
         if args.target != "x035":
             log(f"failures={failures}"); return
         # Errata x035-adc-ch-i2c-unavailable (CH32X035DS0 note 1): ADC channels 3/7/11/15 are absent on lots whose
