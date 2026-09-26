@@ -37,6 +37,11 @@ READY を待つときは `oep_smoke.sync()` を使うこと。
 
 ## 実績
 
+- 2026-09-26（2 つの第三者レビューを反映した後: corr を要求ごとに進める重複排除、connection の番号 u16、plan は fn ごと、
+  解いたピンは idle の状態、run / resume は出し直さない。probe oep-probe-arduino b2129e5、client oep-client-python 3c031eb）:
+  x035 14/14（resume の変更の前の 75891eb）、v003 14/14、l103 14/14。oep_probe_checks は x035 14/14、v003 16 件中 15 件
+  （dmi delay 17.9 ms、WSL の時計の揺れ）、l103 16/16（3 回中 1 回は 15/16。新しい attach(halt) が 8 回に 1 回ほど status line
+  になる線の揺れ）。l103 は run を出し直さなくなったので、14 本中 5 本で 1〜2 ページを読み戻しの後に書き直す（検証は全部通る）。
 - 2026-09-25（OEP v1 を固める候補の wire に移行した後。probe oep-probe-arduino d707930 / 76788d3、client oep-client-python
   57072a9）: x035 14/14、v003 14/14（capture を足した後も 14/14）、l103 14/14。oep_probe_checks は x035 4/4、v003 6/6、l103 6/6
 - 2026-09-24（Console を SerialDMSeq = framing 2 に切り替えた後）: x035 / v003 14/14、l103 は 12 本通過後に tone_selftest で
