@@ -11,6 +11,18 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
     if (_started) {
         end();
     }
+    /* BRR holds USARTDIV * 16 in 16 bits, and below 16 (USARTDIV < 1) the
+     * USART does not refuse it: it runs at fck / 16 whatever was asked
+     * (measured on X035 and V003, 2026-09-29: 921600 at 8 MHz came out at
+     * 500 kbaud). Above 0xFFFF the value would be cut to 16 bits. Either way
+     * the port would talk at a rate nobody asked for, so an unreachable baud
+     * leaves it closed - `if (!Serial1)` tells the sketch - the same stance
+     * as setRoute() refusing a route the hardware does not have. The range
+     * is fck / 65535 .. fck / 16 (48 MHz: 733 baud .. 3 Mbaud). */
+    const unsigned long brr = baudrate ? (F_CPU + baudrate / 2) / baudrate : 0;
+    if (brr < 16 || brr > 0xFFFFul) {
+        return;
+    }
     _baudrate = baudrate;
     _config = config;
 
@@ -49,7 +61,7 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
      * makes equal to F_CPU. BRR holds USARTDIV * 16, which is exactly the
      * rounded fck/baud - and getting it wrong is how a mis-set AHB prescaler
      * announces itself, as garbled output. */
-    CH32_USART_BRR(_base) = (uint16_t)((F_CPU + baudrate / 2) / baudrate);
+    CH32_USART_BRR(_base) = (uint16_t)brr;
 
     uint16_t ctlr1 = CH32_USART_CTLR1_TE | CH32_USART_CTLR1_RE |
                      CH32_USART_CTLR1_RXNEIE;

@@ -54,6 +54,9 @@ public:
           _remap_value(remap_value), _remap2_mask(remap2_mask),
           _remap2_value(remap2_value), _started(false) {}
 
+    /* A baud the USART cannot reach from F_CPU (outside F_CPU / 65535 ..
+     * F_CPU / 16, or 0) leaves the port closed, reopened or not: check
+     * `if (!Serial1)` after begin() when the baud comes from elsewhere. */
     void begin(unsigned long baudrate) override { begin(baudrate, SERIAL_8N1); }
     void begin(unsigned long baudrate, uint16_t config) override;
     void end() override;

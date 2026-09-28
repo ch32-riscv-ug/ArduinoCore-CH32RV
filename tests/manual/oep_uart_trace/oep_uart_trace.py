@@ -57,7 +57,7 @@ PENDING_PAIRS = ((115200, 1000000), (1000000, 115200), (9600, 115200))   # begin
 
 def expect_brr(f_cpu: int, baud: int) -> tuple[int, float, float]:
     """The core's BRR (HardwareSerial.cpp: round(F_CPU / baud)), the baud it gives and its error against the ask."""
-    brr = (f_cpu + baud // 2) // baud
+    brr = (f_cpu + baud // 2) // baud if baud else 0
     real = f_cpu / brr if brr else 0.0
     return brr, real, (real / baud - 1) if brr else float("nan")
 
@@ -65,10 +65,12 @@ def expect_brr(f_cpu: int, baud: int) -> tuple[int, float, float]:
 def sweep_cases(f_cpu: int, bauds: list[int]) -> list[tuple[int, str, str]]:
     """(baud, format, why): the standard bauds in 8N1; for each BRR in WORST_BRR the baud F_CPU / (BRR + 0.49), the
     one that rounds down to it with the largest error (+3.1 % at 16); above the range F_CPU / 12 and / 8; the other
-    formats at 115200 and at the fastest baud in range."""
+    formats at 115200 and at the fastest baud in range. Out of range begin() must leave the port closed."""
     cases = [(b, "8N1", "standard") for b in bauds]
     cases += [(int(f_cpu / (n + 0.49)), "8N1", f"worst rounding at BRR {n}") for n in WORST_BRR]
-    cases += [(f_cpu // 12, "8N1", "above the range (BRR 12)"), (f_cpu // 8, "8N1", "above the range (BRR 8)")]
+    cases += [(f_cpu // 12, "8N1", "above the range (BRR 12)"), (f_cpu // 8, "8N1", "above the range (BRR 8)"),
+              (f_cpu // 65535 + 1, "8N1", "the slowest in range"), (f_cpu // 70000, "8N1", "below the range (BRR > 0xFFFF)"),
+              (0, "8N1", "zero")]
     for fmt in SWEEP_FORMATS:
         cases += [(115200, fmt, "format"), (f_cpu // 16, fmt, "format at BRR 16")]
     return cases
@@ -117,7 +119,20 @@ def sweep(args, profile: dict, log) -> int:
             row = {"baud": baud, "format": fmt, "why": why, "brr": brr, "expected_error": err, "tx_ok": None, "rx_ok": None}
             with rec.section(2, f"{baud} {fmt}"):
                 rec.note(f"{why}: BRR {brr}, expected {real:.1f} baud ({err * 100:+.3f} %)" + ("" if brr >= 16 else ", below BRR 16"))
-                cmd(f"OPEN {baud} {fmt}", "OPEN ok")
+                opened = cmd(f"OPEN {baud} {fmt}", "OPEN ")
+                row["closed"] = opened is not None and "closed" in opened
+                row["refusal_ok"] = row["closed"] == (not 16 <= brr <= 0xFFFF)   # refused exactly when out of range
+                if row["closed"]:
+                    rec.note("begin() left the port closed")
+                    rows.append(row)
+                    log(f"[{baud:>7} {fmt}] BRR {brr:>5} ({why}) | begin() left the port closed -> "
+                        f"{'ok (out of range)' if row['refusal_ok'] else 'BAD (in range)'}")
+                    return
+                if not row["refusal_ok"]:   # out of range yet open: nothing below would mean anything
+                    rows.append(row)
+                    log(f"[{baud:>7} {fmt}] BRR {brr:>5} ({why}) | BAD: begin() opened the port out of range")
+                    cmd("CLOSE", "CLOSE ok")
+                    return
                 seed = (n * 7919 + baud) & 0xFFFF
                 try:
                     row["probe_baud"] = uart.configure(baud, FixtureUart.format_byte(bits, fmt[1], stop))
@@ -151,9 +166,13 @@ def sweep(args, profile: dict, log) -> int:
                 # the USART is out of range and nothing is promised: the wire is only measured (uart(pin, None)).
                 rate = min(cap_max, max(1_000_000, 20 * baud))
                 if cap and rate >= 8 * baud:
-                    cap.configure(rate, int(min(300_000, rate * max(0.02, 400 / baud))))   # ~40 frames
-                if cap and rate >= 8 * baud and cap.rate < 8 * baud:   # judged on the rate the probe chose
+                    cap.configure(rate, int(min(1_000_000, rate * max(0.02, 400 / baud))))   # ~40 frames
+                # judged on what the probe chose: 8 samples a bit, and a window of two bursts (16 bytes + the gap, twice)
+                if cap and rate >= 8 * baud and cap.rate < 8 * baud:
                     rec.note(f"the capture runs at {cap.rate:.0f} Hz: under 8 samples a bit, the wire is not taken")
+                elif cap and rate >= 8 * baud and cap.config.samples / cap.rate < 360 / baud:
+                    rec.note(f"the capture holds {cap.config.samples / cap.rate * 1000:.0f} ms: under two bursts at this baud, "
+                             "the wire is not taken")
                 elif cap and rate >= 8 * baud:
                     fmt_kw = {"bits": bits, "parity": parity, "stop": stop}
                     want = (run_.uart(tx_pad, real, None, tol_baud=0.015, max_errors=0, **fmt_kw) if brr >= 16
@@ -174,7 +193,8 @@ def sweep(args, profile: dict, log) -> int:
             log(f"[{baud:>7} {fmt}] BRR {brr:>5} expected {err * 100:+7.3f} %{' (BRR < 16)' if brr < 16 else ''} ({why})"
                 f" | probe {row['probe_baud'] or 'cannot'}"
                 f" | DUT->probe {verdict[row['tx_ok']]}{' (' + str(row['tx_bad']) + ' bytes)' if row['tx_ok'] is False else ''}"
-                f" | echo {verdict[row['rx_ok']]}")
+                f" | echo {verdict[row['rx_ok']]}"
+                f"{'' if row['refusal_ok'] else ' | BAD: begin() kept an out-of-range baud open'}")
 
         rec.heading(1, f"uart f_cpu={f_cpu}")
         cases = sweep_cases(f_cpu, bauds)
@@ -212,7 +232,7 @@ def sweep(args, profile: dict, log) -> int:
         rec.heading(1)
     finally:
         sess.close()
-    bad = [r for r in rows if r["tx_ok"] is False or r["rx_ok"] is False]
+    bad = [r for r in rows if r["tx_ok"] is False or r["rx_ok"] is False or r.get("refusal_ok") is False]
     log(f"cases {len(rows)}, data wrong in {len(bad)}: "
         + ", ".join(f"{r['baud']} {r['format']} ({r['expected_error'] * 100:+.2f} %, BRR {r['brr']})" for r in bad))
     code = run_.verify(log)

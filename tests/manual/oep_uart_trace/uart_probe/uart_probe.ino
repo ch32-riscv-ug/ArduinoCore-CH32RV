@@ -1,6 +1,7 @@
 // One UART under test, UUT_SERIAL (default Serial2: X035 PA2 TX / PA3 RX -> P4 GPIO48 / GPIO49; the sweep builds with
 // -DUUT_SERIAL=Serial<n> for the profile's UART), exercised on request from the console (target.console).
-//   OPEN <baud> [<fmt>]    UUT_SERIAL.begin(baud, fmt), fmt 8N1 (default) 8E1 8O1 8N2 7E1 ... -> "OPEN ok"
+//   OPEN <baud> [<fmt>]    UUT_SERIAL.begin(baud, fmt), fmt 8N1 (default) 8E1 8O1 8N2 7E1 ... -> "OPEN ok",
+//                          or "OPEN closed" when begin() refused the baud (out of the USART's range)
 //   CLOCK                  -> "CLOCK f_cpu=<F_CPU>"
 //   SWITCH <baud> <seed>   16 bytes at the open baud, begin(baud) with them still leaving, 16 more -> "SWITCH done"
 //   CLOSE                  UUT_SERIAL.end()                             -> "CLOSE ok"
@@ -40,7 +41,8 @@ void loop() {
   if (!strcmp(verb, "OPEN")) {
     char fmt[4] = "8N1";
     sscanf(cmd, "%*s %*lu %3s", fmt);
-    UUT_SERIAL.begin(a, serial_config(fmt)); open_baud = a; Console.println("OPEN ok");
+    UUT_SERIAL.begin(a, serial_config(fmt)); open_baud = a;
+    Console.println(UUT_SERIAL ? "OPEN ok" : "OPEN closed");   // closed: a baud the USART cannot reach
   }
   else if (!strcmp(verb, "SWITCH")) {
     // 16 LCG bytes of seed at the open baud, begin(a) straight after write() (no flush), 16 of seed + 1 at a
