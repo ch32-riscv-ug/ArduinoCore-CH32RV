@@ -11,6 +11,7 @@ and the host decodes START / bytes / ACK / STOP next to what Wire reported.
   uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --rw        # read / repeated START / 400 kHz
   uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --stretch   # target stretches SCL 0.1..30 ms
   uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --stuck     # lines held low, target left mid-byte, bus clear
+  uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --run-dir /tmp/i2c-run   # + WireSkein ws verify
 
 Fixture (2026-09-22): X035 route 2 PC16 (SCL) / PC17 (SDA) -> P4 GPIO52 / GPIO50; console USART4
 PB0/PB1 -> P4 GPIO12/6. Everything goes through the OEP probe (sibling oep-client-python).
@@ -55,6 +56,7 @@ def main() -> None:
     parser.add_argument("--rw", action="store_true", help="read from the target's preloaded slots, repeated START (write then read), 400 kHz write")
     parser.add_argument("--stretch", action="store_true", help="target stretches SCL (p4.i2c-target set_stretch) for 0.1..30 ms; Wire must wait, then time out gracefully")
     parser.add_argument("--stuck", action="store_true", help="SDA/SCL held low by the P4, then a target left driving SDA low mid-byte; Wire error codes, timing, recovery")
+    trace_kit.add_run_arguments(parser)
     args = parser.parse_args()
     profile = targets.TARGETS[args.target]
     global SCL, SDA, UART_RX, UART_TX
@@ -70,8 +72,19 @@ def main() -> None:
     FixtureCapture, FixtureGpio = trace_kit.Capture, trace_kit.Gpio
 
     log = print
+    run_ = trace_kit.Run(args, profile, test="oep_i2c_trace")
+    rec = run_.rec
+    SCL_PAD, SDA_PAD = targets.pin_name(profile, SCL), targets.pin_name(profile, SDA)
+
+    def expect_i2c(transactions, hz=None, released=True):
+        """The bus as the test means it: these transactions (addr, rw, bytes, ack), SCL at hz, both lines high at the end."""
+        if not has_capture:
+            return None
+        return [run_.i2c(SCL_PAD, SDA_PAD, [{"addr": a, "rw": rw, "bytes": list(b), "ack": ack} for a, rw, b, ack in transactions],
+                         hz=hz, released=released)]
+
     session = trace_kit.Session(args.port, profile, "i2c_probe_write", log, source=SKETCH, fqbn=args.fqbn,
-                                defines=targets.build_defines(profile))
+                                defines=targets.build_defines(profile), run=run_)
     i2c = P4I2cTarget(session.host)
     capture = trace_kit.Capture(session) if has_capture else None
     # The probe I2C target and (on the P4) the capture observing the same two lines (the console is target.console).
@@ -100,24 +113,30 @@ def main() -> None:
             i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_PRELOADED_TX)
             slots = [bytes.fromhex("a1b2c3d4"), bytes.fromhex("11223344")]
             for s_ in slots: i2c.preload_tx(s_)
-            for hz, expect in ((100000, slots[0]), (100000, slots[1])):
-                line, trace = trace_cmd(f"READ {args.route} {hz} {TARGET_ADDRESS:02x} 4", "READ got=", hz)
+            rec.heading(1, "test_i2c_rw")
+            for n, (hz, expect) in enumerate(((100000, slots[0]), (100000, slots[1]))):
+                with rec.section(2, f"read slot{n}", expect=expect_i2c([(TARGET_ADDRESS, "read", expect, True)], hz)):
+                    line, trace = trace_cmd(f"READ {args.route} {hz} {TARGET_ADDRESS:02x} 4", "READ got=", hz)
                 data_hex = line.split("data=")[1].split()[0] if "data=" in line else ""
                 got = bytes.fromhex(data_hex) if data_hex else b""
                 log(f"[read {hz} Hz] {line} | wire {trace.summary()} | expected {expect.hex()} match={got == expect}")
                 results.append({"read": True, "hz": hz, "line": line, "trace": trace.summary(), "match": got == expect})
             # 2. repeated START: write 2 bytes without STOP, then read 4 (the target's next slot)
             i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_PRELOADED_TX); i2c.preload_tx(bytes.fromhex("55667788"))
-            line, trace = trace_cmd(f"WRREAD {args.route} 100000 {TARGET_ADDRESS:02x} 0102", "WRREAD rc=", 100000)
+            with rec.section(2, "write-then-read", expect=expect_i2c([(TARGET_ADDRESS, "write", b"\x01\x02", True),
+                                                                        (TARGET_ADDRESS, "read", bytes.fromhex("55667788"), True)], 100000)):
+                line, trace = trace_cmd(f"WRREAD {args.route} 100000 {TARGET_ADDRESS:02x} 0102", "WRREAD rc=", 100000)
             log(f"[write-then-read, repeated START] {line} | wire {trace.summary()}")
             results.append({"wrread": True, "line": line, "trace": trace.summary()})
             # 3. 400 kHz write into fixed-rx
             i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_FIXED_RX); i2c.arm_rx(4)
-            line, trace = trace_cmd(f"WRITE {args.route} 400000 {TARGET_ADDRESS:02x} 0a0b0c0d", "WRITE rc=", 400000)
+            with rec.section(2, "write 400kHz", expect=expect_i2c([(TARGET_ADDRESS, "write", bytes.fromhex("0a0b0c0d"), True)], 400000)):
+                line, trace = trace_cmd(f"WRITE {args.route} 400000 {TARGET_ADDRESS:02x} 0a0b0c0d", "WRITE rc=", 400000)
             time.sleep(0.05); pending, rx = i2c.read_rx()
             period = sorted(trace.scl_periods)[len(trace.scl_periods) // 2] / 5_000_000 * 1e6 if trace.scl_periods else 0
             log(f"[write 400 kHz] {line} | wire {trace.summary()} | SCL period {period:.2f} us | target rx={rx.hex()}")
             results.append({"write400": True, "line": line, "trace": trace.summary(), "rx": rx.hex(), "scl_us": period})
+            rec.heading(1)
             clocks = []
         def scl_low_max_us(samples, rate):   # longest SCL-low run inside the capture, in microseconds
             best = run = 0
@@ -173,15 +192,20 @@ def main() -> None:
             # Part 1: a line held low by "something else" (P4 GPIO). The target leaves the plan so the pins are free.
             session.release()
             session.plan(capture.assignments(SCL, SDA))
+            rec.heading(1, "test_i2c_stuck")
             for name, pin in (("SDA", SDA), ("SCL", SCL)):
+                # held low: the fault is the P4's, so the wire is only recorded; the check is that Wire gives up (rc)
                 gpio.configure(pin, FixtureGpio.OUTPUT_LOW); time.sleep(0.01)
-                rc, t_us, line, samples, trace = wire_write(100000, "0102")
+                with rec.section(2, f"{name} held low"):
+                    rc, t_us, line, samples, trace = wire_write(100000, "0102")
                 log(f"[{name} held low by P4] rc={rc} t={t_us/1000:.2f} ms | {line} | wire {trace.summary()}")
                 results.append({"held": name, "rc": rc, "t_us": t_us, "line": line})
-                rc2, t2, line2, _, _ = wire_write(100000, "0102")
+                with rec.section(2, f"{name} held low, 2nd try"):
+                    rc2, t2, line2, _, _ = wire_write(100000, "0102")
                 log(f"[{name} still low, 2nd try] rc={rc2} t={t2/1000:.2f} ms")
                 gpio.configure(pin, FixtureGpio.INPUT_FLOATING); time.sleep(0.01)
-                rc3, t3, line3, _, trace3 = wire_write(100000, "0102")
+                with rec.section(2, f"{name} released, nobody", expect=expect_i2c([(TARGET_ADDRESS, "write", b"", False)], 100000)):
+                    rc3, t3, line3, _, trace3 = wire_write(100000, "0102")
                 log(f"[{name} released, nobody listening] rc={rc3} t={t3/1000:.2f} ms | wire {trace3.summary()} -> {'OK' if rc3 == 2 else 'BAD'} (expect 2 = address NACK)")
                 results.append({"released": name, "rc": rc3, "t_us": t3})
             # Part 2: a real target left driving SDA low in the middle of a byte.
@@ -189,14 +213,16 @@ def main() -> None:
             session.plan(i2c.assignments(sda=SDA, scl=SCL) + capture.assignments(SCL, SDA))
             link.send("\n"); link.drain(0.3)
             i2c.set_stretch(0); i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_PRELOADED_TX); i2c.preload_tx(bytes(4))
-            capture.configure(1_000_000, 65000); link.drain(0.05); capture.arm()
-            link.send(f"STUCK {TARGET_ADDRESS:02x}\n"); link.wait("STUCK ack=", 5)
-            st = capture.wait(3.0); samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+            with rec.section(2, "target left mid-byte"):   # the fault itself: recorded, not checked
+                capture.configure(1_000_000, 65000); link.drain(0.05); capture.arm()
+                link.send(f"STUCK {TARGET_ADDRESS:02x}\n"); link.wait("STUCK ack=", 5)
+                st = capture.wait(3.0); samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
             stuck_line = next((l for l in link.text.splitlines()[::-1] if "STUCK ack=" in l), "").strip()
             log(f"[target left mid-byte] {stuck_line} | wire {decode_i2c(samples, 0, 1).summary()}")
             link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.05)
             for attempt in (1, 2):
-                rc, t_us, line, samples, trace = wire_write(100000, "0102")
+                with rec.section(2, f"write, SDA held by target, try {attempt}"):
+                    rc, t_us, line, samples, trace = wire_write(100000, "0102")
                 log(f"[Wire.begin + write, SDA held by target, try {attempt}] rc={rc} t={t_us/1000:.2f} ms | wire {trace.summary()}")
                 results.append({"stuck_write": attempt, "rc": rc, "t_us": t_us})
             link.drain(0.05); link.send("BUSCLR\n"); link.wait("BUSCLR free=", 5)
@@ -204,9 +230,12 @@ def main() -> None:
             log(f"[bus clear from the sketch] {clr_line}")
             link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.05)
             i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_FIXED_RX); i2c.arm_rx(2)
-            rc, t_us, line, samples, trace = wire_write(100000, "0102"); time.sleep(0.05); pending, rx = i2c.read_rx()
+            with rec.section(2, "after bus clear", expect=expect_i2c([(TARGET_ADDRESS, "write", b"\x01\x02", True)], 100000)):
+                rc, t_us, line, samples, trace = wire_write(100000, "0102")
+            time.sleep(0.05); pending, rx = i2c.read_rx()
             log(f"[after bus clear] rc={rc} t={t_us/1000:.2f} ms | wire {trace.summary()} | target rx={rx.hex() or '-'} -> {'OK' if rc == 0 and rx.hex() == '0102' else 'BAD'}")
             results.append({"after_busclr": True, "rc": rc, "stuck": stuck_line, "busclr": clr_line, "rx": rx.hex()})
+            rec.heading(1)
             clocks = []
         if args.hold_sweep:
             payload = bytes.fromhex("10111213")
@@ -261,6 +290,8 @@ def main() -> None:
         if clocks:
             link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
         # Each clock: target address (first transaction after a settled bus, then a repeat), then nobody.
+        if clocks:
+            rec.heading(1, "test_i2c_write")
         for hz in clocks:
             for address, listening in ((TARGET_ADDRESS, True), (TARGET_ADDRESS, True), (TARGET_ADDRESS + 1, False)):
                 case += 1
@@ -268,14 +299,16 @@ def main() -> None:
                 rate, window = 1_000_000, 60_000
                 i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_FIXED_RX)
                 i2c.arm_rx(len(payload))
-                capture.configure(rate, window)
-                link.drain(0.1)
-                capture.arm()
-                link.send(f"WRITE {args.route} {hz} {address:02x} {payload.hex()}\n")
-                got_line = link.wait("WRITE rc=", 5)
-                st = capture.wait(3.0)
-                line = next((l for l in link.text.splitlines()[::-1] if "WRITE rc=" in l), "")
-                samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                want = expect_i2c([(address, "write", payload if listening else b"", listening)], hz)
+                with rec.section(2, f"case{case} {hz}Hz addr={address:02x}", expect=want):
+                    capture.configure(rate, window)
+                    link.drain(0.1)
+                    capture.arm()
+                    link.send(f"WRITE {args.route} {hz} {address:02x} {payload.hex()}\n")
+                    got_line = link.wait("WRITE rc=", 5)
+                    st = capture.wait(3.0)
+                    line = next((l for l in link.text.splitlines()[::-1] if "WRITE rc=" in l), "")
+                    samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
                 trace = decode_i2c(samples, scl_bit=0, sda_bit=1)
                 time.sleep(0.05)
                 pending, data = i2c.read_rx()
@@ -294,11 +327,14 @@ def main() -> None:
                 log(f"[{hz} Hz -> 0x{address:02x}{' (target)' if listening else ' (nobody)'}] {line.strip()} | trace: {trace.summary()} "
                     f"| SCL period {period_us:.1f} us | target rx={data.hex() or '-'} pending={pending} frames={tstat.rx_frames} errors={tstat.errors}")
                 log(f"    events: {[(e.kind, e.sample, hex(e.value), e.ack) for e in trace.events]}")
+        if clocks:
+            rec.heading(1)
     finally:
         session.close()
     if args.result_json:
         pathlib.Path(args.result_json).write_text(json.dumps({"port": args.port, "results": results}, indent=1))
         log(f"wrote {args.result_json}")
+    sys.exit(run_.verify(log))
 
 
 if __name__ == "__main__":

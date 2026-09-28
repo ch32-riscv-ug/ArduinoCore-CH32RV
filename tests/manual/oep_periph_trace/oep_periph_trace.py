@@ -8,6 +8,7 @@ mode/clock/data (worklist P3 rows 4, 5, 7). The sketch periph_probe is programme
 
   uv run tests/manual/oep_periph_trace/oep_periph_trace.py            # all sections
   uv run tests/manual/oep_periph_trace/oep_periph_trace.py --only spi
+  uv run tests/manual/oep_periph_trace/oep_periph_trace.py --run-dir /tmp/periph-run   # + WireSkein ws verify
 
 Fixture (E143 pin map): PA1 -> P4 GPIO47, SPI1 SCK PA5 -> 4, MOSI PA7 -> 5, MISO PA6 -> 11, CS PA4 -> 53.
 """
@@ -117,6 +118,7 @@ def main() -> None:
     parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--only", choices=["pwm", "tone", "timing", "spi", "spi-peer"], action="append")
     parser.add_argument("--result-json")
+    trace_kit.add_run_arguments(parser)
     args = parser.parse_args()
     profile = targets.TARGETS[args.target]
     global PWM_GPIO, SCK, MOSI, MISO, CS, UART_RX, UART_TX
@@ -133,8 +135,26 @@ def main() -> None:
     FixtureCapture = trace_kit.Capture
 
     log = print
+    run_ = trace_kit.Run(args, profile, test="oep_periph_trace")
+    rec = run_.rec
+    PWM_PAD = targets.pin_name(profile, PWM_GPIO)
+    SPI_PADS = [targets.pin_name(profile, g) for g in (SCK, MOSI, MISO, CS)]
+
+    def spi_clock(hz):   # the core's SPI clock: PCLK / 2^k, the largest not above the request
+        pclk = profile.get("spi_pclk")
+        if not pclk:
+            return None
+        div = 2
+        while pclk / div > hz and div < 256:
+            div *= 2
+        return pclk / div
+
+    def spi_expect(hz, mode, mosi, miso=None):
+        return [run_.spi(*SPI_PADS, mode=mode, mosi_bytes=mosi.hex(), miso_bytes=miso.hex() if miso else None,
+                         hz=spi_clock(hz)), run_.only_moving(SPI_PADS)]
+
     sess = trace_kit.Session(args.port, profile, "periph_probe", log, source=SKETCH, fqbn=args.fqbn,
-                             defines=targets.build_defines(profile))
+                             defines=targets.build_defines(profile), run=run_)
     capture = trace_kit.Capture(sess) if has_capture else None
     results = {}
 
@@ -164,8 +184,12 @@ def main() -> None:
         try:
             if "pwm" in sections:
                 rows = []
+                rec.heading(1, "test_pwm")
                 for duty in (64, 128, 192, 255, 0):
-                    data, line, _ = run((PWM_GPIO,), 2_000_000, 40_000, f"PWM {duty}", "PWM duty=")
+                    want = [run_.square(PWM_PAD, 1000, duty / 255, tol_freq=0.02, tol_duty=0.01) if 0 < duty < 255
+                            else run_.level(PWM_PAD, 1 if duty == 255 else 0)]
+                    with rec.section(2, f"duty={duty}", expect=want):
+                        data, line, _ = run((PWM_GPIO,), 2_000_000, 40_000, f"PWM {duty}", "PWM duty=")
                     st = square_stats(data, 0, 2_000_000)
                     level = sum(d & 1 for d in data) / len(data) if data else None
                     row = {"duty": duty, "stats": st, "high_fraction": level}
@@ -174,38 +198,57 @@ def main() -> None:
                         log(f"[pwm duty={duty:3d}] f={st['freq_hz']:.1f} Hz period={st['period_us']:.2f} us duty={st['duty']*100:.1f}% (expected {duty/255*100:.1f}%) jitter={st['period_jitter_us']:.2f} us")
                     else:
                         log(f"[pwm duty={duty:3d}] no edges, level high fraction={level:.2f} (expected {'1.00' if duty == 255 else '0.00'})")
+                rec.heading(1)
                 results["pwm"] = rows
             if "tone" in sections:
                 rows = []
+                rec.heading(1, "test_tone")
                 for hz in (500, 1000, 4000):
-                    data, line, _ = run((PWM_GPIO,), 2_000_000, 60_000, f"TONE {hz}", "TONE hz=")
+                    with rec.section(2, f"{hz}Hz", expect=[run_.square(PWM_PAD, hz, 0.5, tol_freq=0.02, tol_duty=0.02)]):
+                        data, line, _ = run((PWM_GPIO,), 2_000_000, 60_000, f"TONE {hz}", "TONE hz=")
                     st = square_stats(data, 0, 2_000_000)
                     rows.append({"hz": hz, "stats": st})
                     log(f"[tone {hz} Hz] measured f={st['freq_hz']:.1f} Hz duty={st['duty']*100:.1f}% jitter={st['period_jitter_us']:.2f} us" if st else f"[tone {hz}] no edges")
-                run((PWM_GPIO,), 2_000_000, 1000, "NOTONE", "NOTONE")
+                with rec.section(2, "notone", expect=[run_.level(PWM_PAD, 0)]):
+                    run((PWM_GPIO,), 2_000_000, 1000, "NOTONE", "NOTONE")
+                rec.heading(1)
                 results["tone"] = rows
             if "timing" in sections:
                 rows = []
+                rec.heading(1, "test_timing")
                 for us in (0, 10, 100, 1000):
-                    capture.configure(2_000_000, 60_000); link.drain(0.05); capture.arm()
-                    link.send(f"TOGGLE {us} 20\n"); link.wait("TOGGLE done", 5)
-                    st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
-                    s = square_stats(data, 0, 2_000_000)
+                    rate = 2_000_000 if us < 1000 else 1_000_000   # 60 000 samples must hold all 20 periods (40 ms at 1000 us)
+                    with rec.section(2, f"toggle delay={us}us", expect=[run_.pulses(PWM_PAD, count=20)]):
+                        capture.configure(rate, 60_000); link.drain(0.05); capture.arm()
+                        link.send(f"TOGGLE {us} 20\n"); link.wait("TOGGLE done", 5)
+                        st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                    s = square_stats(data, 0, rate)
                     rows.append({"delay_us": us, "stats": s})
                     log(f"[delayMicroseconds({us})] half period measured {s['period_us']/2:.2f} us (edges {s['edges']}, jitter {s['period_jitter_us']:.2f} us)" if s else f"[delayMicroseconds({us})] no edges")
-                capture.configure(2_000_000, 60_000); link.drain(0.05); capture.arm()
-                link.send("TOGGLE0 20\n"); link.wait("TOGGLE0 done", 5)
-                st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                with rec.section(2, "toggle no delay", expect=[run_.pulses(PWM_PAD, count=20)]):
+                    capture.configure(2_000_000, 60_000); link.drain(0.05); capture.arm()
+                    link.send("TOGGLE0 20\n"); link.wait("TOGGLE0 done", 5)
+                    st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
                 s = square_stats(data, 0, 2_000_000)
                 log(f"[digitalWrite pair, no delay] half period {s['period_us']/2:.2f} us (edges {s['edges']})" if s else "[digitalWrite pair] no edges")
-                capture.configure(1_000_000, 400_000); link.drain(0.05); capture.arm()   # 0.4 s window: PARLIO cannot sample below ~650 kHz
-                link.send("MILLIS 10 20\n"); link.wait("MILLIS done", 5)
-                log("   DUT: " + next((l for l in link.text.splitlines()[::-1] if "MILLIS done" in l), "").strip())
-                st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
-                s = square_stats(data, 0, 1_000_000)
+                # As many 10 ms toggles as the window holds (20 in the P4's 0.4 s; the classic ESP32's 64 KiB at 400 kHz
+                # holds 14), starting low: half as many rising edges 20 ms apart, low again at the end.
+                capture.configure(1_000_000, 400_000)   # PARLIO cannot sample below ~650 kHz
+                if capture.config.samples / capture.rate < 0.25:
+                    capture.configure(400_000, 400_000)
+                window = capture.config.samples / capture.rate
+                toggles = min(20, 2 * int((window - 0.02) / 0.020))
+                with rec.section(2, "millis 10ms", expect=[run_.pulses(PWM_PAD, count=toggles // 2, period_s=0.020, tol=0.01),
+                                                           run_.ends({PWM_PAD: 0})]):
+                    link.drain(0.05); capture.arm()
+                    link.send(f"MILLIS 10 {toggles}\n"); link.wait("MILLIS done", 5)
+                    log("   DUT: " + next((l for l in link.text.splitlines()[::-1] if "MILLIS done" in l), "").strip())
+                    st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                s = square_stats(data, 0, capture.rate)
                 rows.append({"millis_ms": 10, "stats": s})
                 log(f"[millis() toggle every 10 ms] period measured {s['period_us']/1000:.3f} ms (expected 20.000), jitter {s['period_jitter_us']:.1f} us" if s
                     else f"[millis] no edges: samples={len(data)} high fraction={(sum(d & 1 for d in data) / len(data)) if data else None} flags=0x{st.flags:02x}")
+                rec.heading(1)
                 results["timing"] = rows
         finally:
             sess.release()
@@ -215,11 +258,13 @@ def main() -> None:
         try:
             rows = []
             payload = bytes.fromhex("a55a0f01")
+            rec.heading(1, "test_spi")
             for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (4_000_000, 0), (250_000, 0)):
                 rate = min(20_000_000 if hz >= 1_000_000 else 5_000_000, cap_max)
-                capture.configure(rate, 8 * 65_000 // 4); link.drain(0.05); capture.arm()
-                link.send(f"SPI {hz} {mode} {payload.hex()}\n"); link.wait("SPI got=", 5)
-                st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                with rec.section(2, f"{hz}Hz mode{mode}", expect=spi_expect(hz, mode, payload)):   # MISO: nobody answers
+                    capture.configure(rate, 8 * 65_000 // 4); link.drain(0.05); capture.arm()
+                    link.send(f"SPI {hz} {mode} {payload.hex()}\n"); link.wait("SPI got=", 5)
+                    st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
                 line = next((l for l in link.text.splitlines()[::-1] if "SPI got=" in l), "").strip()
                 d = decode_spi(data, rate)
                 cpol, cpha = (mode >> 1) & 1, mode & 1
@@ -237,6 +282,7 @@ def main() -> None:
                              "sck_hz": d["sck_hz"], "clocks": d["clocks"], "cs_low_us": d["cs_low_us"], "dut": line})
                 log(f"[spi {hz} Hz mode {mode}] CPOL={d['cpol']} (expect {cpol}), MOSI changes on {change_edge_seen} edge (expect {change_edge_expected}, counts {near}), data={'ok' if data_ok else 'BAD'} -> {'OK' if ok else 'MISMATCH'} | "
                     f"SCK {d['sck_hz']/1e6:.3f} MHz clocks={d['clocks']} CS low {d['cs_low_us']:.1f} us | DUT: {line}")
+            rec.heading(1)
             results["spi"] = rows
         finally:
             sess.release()
@@ -257,17 +303,20 @@ def main() -> None:
             # pin floating until then let the slave see a spurious frame that consumed the armed transaction
             # (first run: target rx empty, bits=0, while the DUT still got the FIFO's answer).
             spi.configure(0); link.drain(0.05); link.send(f"SPI 1000000 0 {payload.hex()}\n"); link.wait("SPI got=", 5); time.sleep(0.05)
+            rec.heading(1, "test_spi_peer")
             for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (250_000, 0), (4_000_000, 0), (4_000_000, 3),
                              (12_000_000, 0), (12_000_000, 3), (24_000_000, 0)):
                 spi.configure(mode); spi.arm(len(payload), answer)
                 rate = min(20_000_000 if hz >= 1_000_000 else 5_000_000, cap_max or 1)
-                if has_capture: capture.configure(rate, 8 * 65_000 // 4)
-                link.drain(0.05)
-                if has_capture: capture.arm()
-                link.send(f"SPI {hz} {mode} {payload.hex()}\n"); link.wait("SPI got=", 5)
-                data = b""
-                if has_capture:
-                    st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                wire = has_capture and decode_ok and hz <= 4_000_000   # 20 MS/s cannot decode the 6/12 MHz SCK
+                with rec.section(2, f"{hz}Hz mode{mode}", expect=spi_expect(hz, mode, payload, answer) if wire else None):
+                    if has_capture: capture.configure(rate, 8 * 65_000 // 4)
+                    link.drain(0.05)
+                    if has_capture: capture.arm()
+                    link.send(f"SPI {hz} {mode} {payload.hex()}\n"); link.wait("SPI got=", 5)
+                    data = b""
+                    if has_capture:
+                        st = capture.wait(3.0); data = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
                 line = next((l for l in link.text.splitlines()[::-1] if "SPI got=" in l), "").strip()
                 got = bytes.fromhex(line.split("got=")[1]) if "got=" in line else b""
                 time.sleep(0.05); pending, bits, rx = spi.read_rx()
@@ -305,6 +354,7 @@ def main() -> None:
                 burst_ok += got == answer and rx == payload
             rows.append({"burst5": burst_ok})
             log(f"[spi peer burst, 5 x 4-byte at 4 MHz mode 3, no settle] {burst_ok}/5 both ways")
+            rec.heading(1)
             results["spi_peer"] = rows
         finally:
             sess.release()
@@ -313,6 +363,7 @@ def main() -> None:
     if args.result_json:
         pathlib.Path(args.result_json).write_text(json.dumps(results, indent=1, default=str))
         log(f"wrote {args.result_json}")
+    sys.exit(run_.verify(log))
 
 
 if __name__ == "__main__":

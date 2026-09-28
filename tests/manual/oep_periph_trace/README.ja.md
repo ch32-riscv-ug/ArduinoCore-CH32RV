@@ -94,3 +94,29 @@ sketch 側の引数バッファ（`%71s`）が 35 byte で切っていたので 
 OEP v1 に移した（2026-09-26）: 共通の部品は `oep_smoke/trace_kit.py`（v1 の client の上に、この試験が使っていた形を作る）。
 
 x035: PWM、tone、タイミング、SPI（DUT のみ、peer）が通った。peer の 1 MHz mode 0 の最初の 1 回だけ DUT が 1 byte しか受け取らなかった。v003: PWM / tone / タイミングと、SPI peer の 1 MHz / 250 kHz / 4 MHz、64 byte × 3、連続 5/5 が一致。12 MHz 以上は既知の classic ESP32 の slave の限界で BAD。
+
+## 2026-09-29: WireSkein の照合（`--run-dir`）
+
+`--run-dir DIR` を付けると、試験は見出し（`# test_pwm` / `## duty=64` など）、console で送った行と受けた行、キャプチャ（CH32 の
+ピン名つき）、見出しごとの期待を WireSkein の記録（`run.json` と `c0001.bin` …）に書く。最後に `ws.py verify DIR --junit
+DIR/report.xml --json DIR/report.json` を呼び、その終了コードで終わる（NG が 1 つでもあれば 1）。WireSkein の置き場は
+`--wireskein`（既定 `~/dev_oep/wireskein/prototype`）。書式と期待は wireskein の `docs/capture-test-guide.ja.md`、組み込みは
+`oep_smoke/trace_kit.py`（`Run`）。
+
+| 節 | 期待 |
+|---|---|
+| pwm | duty 64 / 128 / 192: `square(PA1, 1000 Hz, duty/255, 周波数 ±2 %、duty ±1 %)`。255 / 0: `level` |
+| tone | 500 / 1000 / 4000 Hz: `square(duty 0.5、±2 %)`。NOTONE の後: `level 0` |
+| timing | TOGGLE / TOGGLE0: 立ち上がり 20 回（`pulses`）。MILLIS 10 ms: 窓に入るだけのトグル（P4 は 20 回、classic ESP32 は 14 回）の立ち上がりの数と周期 20 ms ±1 %、最後は low |
+| spi / spi-peer | `spi(PA5, PA7, PA6, PA4)`: mode、MOSI（peer は MISO も）、SCK = PCLK 48 MHz / 2^k（要求を超えない最大）±10 %、最後に CS high。`only_moving` で 4 本以外が動かないこと。20 MS/s で読めない 12 MHz 以上と、2 MHz の classic ESP32 では波形の期待を付けない |
+
+結果: x035 42/42、v003 16/16。最初の x035 では NG 7 件がすべて SPI の「nothing decoded」だった。mode 2 / 3 で転送前に
+CLK が idle へ移る 1 本をバーストと数えたことと、4 MHz でバイト間の隙間がバーストを分けたことが原因で、WireSkein 側で直った
+（この試験のデコーダでは初めから全部一致していた）。記録は x035 で 3.2 MB（31 キャプチャ）、v003 で 1.4 MB（25 キャプチャ）。
+
+見つけて直したこと:
+- toggle 1000 µs の窓（2 MHz × 6 万 = 30 ms）が 20 周期（40 ms）より短かった。1 MHz にした。
+- classic ESP32 の sampler は、2 MHz の歩調に追いついていなかった（実際は 1.92 MHz。PWM が 1041 Hz、周期のばらつき ±5 % に見えた）。
+  毎サンプル GPIO.in1 も読んでいたのが原因。GPIO0〜31 だけのときは GPIO.in だけを読むようにした。GPIO32〜39 を含む plan
+  では 1 MHz を上限にし、実際のレートを configure の答えで返す（oep-probe-arduino `OepV1Sampler`）。直した後は 400 kHz / 1 MHz /
+  2 MHz とも 1005.4 Hz、ばらつき 1 サンプル。以前の v1 の v003 の PWM / tone の値も、この遅れで数 % ずれていたと見られる。

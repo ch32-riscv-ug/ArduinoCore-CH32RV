@@ -19,6 +19,7 @@ TARGETS = {
         "define": "OEP_TARGET_X035",
         "wire": "oep.wire.rvswd", "flash": "x035",       # OEP v1: attach through this wire; oep_client.v1.ch32_flash profile
         "uart": (4, 0), "uart_rx": 12, "uart_tx": 6,   # DUT USART4 route 0: PB0 (TX) -> probe 12, PB1 (RX) <- probe 6
+        "pads": {"PB0": 12, "PB1": 6},                   # wired pads outside "gpio" (the UART's, not for the gpio matrix)
         "capture": True, "capture_max_hz": 20_000_000,   # PARLIO
         "gpio": {"PA0": 46, "PA1": 47, "PA2": 48, "PA3": 49, "PA4": 53, "PA5": 4, "PA6": 11, "PA7": 5,
                  "PB3": 13, "PB11": 9, "PB12": 14, "PC14": 10, "PC15": 15, "PC16": 52, "PC17": 50},
@@ -28,6 +29,7 @@ TARGETS = {
         "adc_high_min": 1000,                            # probe rail == DUT VDD (both 3.3 V)
         "i2c": {"scl": 52, "sda": 50, "route": 2},       # DUT PC16/PC17
         "spi": {"sck": 4, "mosi": 5, "miso": 11, "cs": 53, "dut_cs": "PA4"},
+        "spi_pclk": 48_000_000,                          # SPI1 clock = PCLK / 2^k (1 MHz asked -> 750 kHz)
         "pwm": 47,                                       # DUT PA1
     },
     "v003": {
@@ -36,6 +38,7 @@ TARGETS = {
         "define": "OEP_TARGET_V003",
         "wire": "oep.wire.swio", "flash": "v003",       # OEP v1: attach through this wire; oep_client.v1.ch32_flash profile
         "uart": (1, 0), "uart_rx": 22, "uart_tx": 21,  # DUT USART1 route 0: PD5 (TX) -> probe 22, PD6 (RX) <- probe 21
+        "pads": {"PD5": 22, "PD6": 21},
         "capture": True, "capture_max_hz": 2_000_000,    # GPIO sampler on core 0 (0.4..2 MHz, 1 byte/sample)
         "gpio": {"PA1": 25, "PA2": 26, "PC0": 5, "PC1": 19, "PC2": 18, "PC3": 17, "PC4": 33, "PC5": 27,
                  "PC6": 4, "PC7": 14, "PD0": 13, "PD2": 32},
@@ -45,6 +48,7 @@ TARGETS = {
         "adc_high_min": 850,                             # ESP32 high reads ~915/1023 on the V003 (rail vs VDD unresolved, 2026-09-22)
         "i2c": {"scl": 18, "sda": 19, "route": 0},       # DUT PC2/PC1, the variant's default route
         "spi": {"sck": 27, "mosi": 4, "miso": 14, "cs": 17, "dut_cs": "PC3"},   # classic ESP32 slave: MISO right up to 3 MHz SCK, 1 bit late at 6 MHz (2026-09-22)
+        "spi_pclk": 24_000_000,                          # F_CPU 24 MHz (HSI, no PLL)
         "pwm": 25,                                       # DUT PA1
     },
     # CH32L103C8T6 on the Pro Micro RP2350 (pin map measured 2026-09-23, see PICO_PROBES below).
@@ -54,6 +58,7 @@ TARGETS = {
         "define": "OEP_TARGET_L103",
         "wire": "oep.wire.rvswd", "flash": "l103",       # OEP v1: attach through this wire; oep_client.v1.ch32_flash profile
         "uart": (1, 1), "uart_rx": 13, "uart_tx": 12,  # DUT USART1 route 1: PB6 (TX) -> probe 13, PB7 (RX) <- probe 12
+        "pads": {"PB6": 13, "PB7": 12},
         "capture": False, "capture_max_hz": 0,           # the Pico probe has no fixture.capture yet
         "gpio": {"PA8": 7, "PA9": 20, "PA10": 6, "PA11": 21, "PA12": 5, "PA15": 15,
                  "PB3": 4, "PB4": 14, "PB5": 3, "PB8": 11, "PC13": 10},   # PB6/PB7 carry the UART
@@ -93,3 +98,14 @@ def add_target_argument(parser, default="x035"):
 
 def build_defines(target: dict) -> list[str]:
     return [f"-D{target['define']}=1"]
+
+
+def pin_name(target: dict, gpio: int) -> str:
+    """The DUT pad wired to this probe GPIO ("PA1"), from the profile's gpio and pads maps; "GPIO<n>" if it is not a DUT pad."""
+    wired = {**target["gpio"], **target.get("pads", {})}
+    return next((pad for pad, g in wired.items() if g == gpio), f"GPIO{gpio}")
+
+
+def probe_gpio(target: dict, pad: str) -> int:
+    """The probe GPIO wired to this DUT pad."""
+    return {**target["gpio"], **target.get("pads", {})}[pad]

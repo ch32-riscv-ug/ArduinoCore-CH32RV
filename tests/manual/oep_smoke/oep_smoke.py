@@ -187,7 +187,11 @@ class Bench:
         self.uart = uarts[0] if uarts else None
 
     def close(self) -> None:
-        self.host.end()
+        """End the session and let go of the port (a runner that opens the probe again needs it free)."""
+        try:
+            self.host.end()
+        finally:
+            self.host.link.close()
 
 
 def program(bench, image: bytes, profile: dict, log):

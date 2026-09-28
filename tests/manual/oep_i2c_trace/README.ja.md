@@ -151,3 +151,27 @@ V003 route 2（PC5 SCL / PC6 SDA、probe 27/4）のどちらも read / repeated 
 OEP v1 に移した（2026-09-26）: 共通の部品は `oep_smoke/trace_kit.py`（v1 の client の上に、この試験が使っていた形を作る）。
 
 x035 / v003: 100 kHz と 10 kHz の WRITE、NACK（相手なし）の復号と target の受信がすべて一致（--rw、--stuck などの追加の試験は未実施）。
+
+## 2026-09-29: WireSkein の照合（`--run-dir`）
+
+`--run-dir DIR` で、見出し・console の行・キャプチャ・期待を WireSkein の記録に書き、最後に `ws.py verify` の終了コードで終わる
+（[oep_periph_trace の README](../oep_periph_trace/README.ja.md) の同じ節と共通、組み込みは `oep_smoke/trace_kit.py`）。
+
+期待は `i2c(PC16, PC17, 取引, hz)`: アドレス、読み書き、バイト、ACK、SCL の周波数 ±10 %、最後に両方の線が high。
+- 既定の WRITE: 0x42 は ACK と 4 バイト、0x43 はアドレスの NACK だけ。
+- `--rw`: READ（preload したスロット）、WRREAD（repeated START）、400 kHz WRITE。
+- `--stuck`: 線を P4 が握っている間と、target が SDA を握ったままの間は、注入した障害なので記録だけ（期待なし）。線を放した後の
+  NACK と、バスクリアの後の書き込みに期待を付ける。
+
+| 構成 | 結果 |
+|---|---|
+| x035 既定 | 6/6 |
+| x035 `--rw` | 4/4（400 kHz の実測は 385 kHz） |
+| x035 `--stuck` | 3/3。記録の期待を書き換えて誤らせると、その項目だけが NG になり、理由と測定値が出た |
+| v003 既定 | 6/6 |
+
+- target が SDA を握ったまま止めた波形（`S P S 85A 00A`、STOP なし）を、WireSkein は最初は取引なし（`[]`）と返していた。
+  WireSkein 側で、未完の最後の取引を `complete: false` と `pending_bits` 付きで返すようになった（期待は
+  `{"addr": 0x42, "rw": "read", "bytes": [0], "complete": False}`、`released=False`）。
+- v003 の 60 KB の読み出しで、CP2102 の取りこぼしが 2 回続いて落ちたことがあった。client の capture.read は、読み出しの
+  バッチを 4 回まで送り直すようにした（読み出しは何度送っても状態を変えない）。
