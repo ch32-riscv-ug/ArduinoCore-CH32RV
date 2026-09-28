@@ -259,7 +259,9 @@ def main() -> None:
             rows = []
             payload = bytes.fromhex("a55a0f01")
             rec.heading(1, "test_spi")
-            for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (4_000_000, 0), (250_000, 0)):
+            # each transaction its own SPISettings (beginTransaction), speed and mode changing both ways
+            for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (4_000_000, 0), (250_000, 0),
+                             (4_000_000, 3), (250_000, 2), (1_000_000, 0)):
                 rate = min(20_000_000 if hz >= 1_000_000 else 5_000_000, cap_max)
                 with rec.section(2, f"{hz}Hz mode{mode}", expect=spi_expect(hz, mode, payload)):   # MISO: nobody answers
                     capture.configure(rate, 8 * 65_000 // 4); link.drain(0.05); capture.arm()

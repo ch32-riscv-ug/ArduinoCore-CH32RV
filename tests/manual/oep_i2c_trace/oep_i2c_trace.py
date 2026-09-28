@@ -329,6 +329,28 @@ def main() -> None:
                 log(f"    events: {[(e.kind, e.sample, hex(e.value), e.ack) for e in trace.events]}")
         if clocks:
             rec.heading(1)
+        if clocks and has_capture:
+            # Wire.setClock() between transactions, no Wire.begin() again: up and down, each transaction at its clock.
+            # 400 kHz only where the capture has 10 samples a period (the P4, not the classic ESP32's 2 MHz).
+            cap_hz = profile.get("capture_max_hz", 0)
+            steps = [hz for hz in (100000, 400000, 10000, 400000, 100000, 10000) if hz * 10 <= cap_hz]
+            rec.heading(1, "test_i2c_clock_switch")
+            for k, hz in enumerate(steps):
+                payload = bytes((0xA0 + 4 * k + i) & 0xFF for i in range(4))
+                rate = min(5_000_000 if hz >= 400_000 else 1_000_000, cap_hz)
+                i2c.configure(TARGET_ADDRESS, P4I2cTarget.MODE_FIXED_RX); i2c.arm_rx(len(payload))
+                with rec.section(2, f"step{k} {hz}Hz", expect=expect_i2c([(TARGET_ADDRESS, "write", payload, True)], hz)):
+                    capture.configure(rate, 65000); link.drain(0.05); capture.arm()
+                    link.send(f"WRITE {args.route} {hz} {TARGET_ADDRESS:02x} {payload.hex()}\n")
+                    got_line = link.wait("WRITE rc=", 5)
+                    st = capture.wait(3.0)
+                    samples = capture.read_all(st.samples) if st.flags & FixtureCapture.COMPLETE else b""
+                time.sleep(0.05); pending, rx = i2c.read_rx()
+                line = next((l for l in link.text.splitlines()[::-1] if "WRITE rc=" in l), "").strip()
+                ok = rx == payload and "rc=0" in line
+                results.append({"clock_switch": k, "hz": hz, "line": line, "rx": rx.hex(), "ok": ok})
+                log(f"[clock switch {k}: {hz} Hz] {line} | wire {decode_i2c(samples, 0, 1).summary()} | target rx={rx.hex() or '-'} -> {'OK' if ok else 'BAD'}")
+            rec.heading(1)
     finally:
         session.close()
     if args.result_json:

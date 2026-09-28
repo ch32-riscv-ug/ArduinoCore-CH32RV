@@ -120,3 +120,8 @@ CLK が idle へ移る 1 本をバーストと数えたことと、4 MHz でバ�
   毎サンプル GPIO.in1 も読んでいたのが原因。GPIO0〜31 だけのときは GPIO.in だけを読むようにした。GPIO32〜39 を含む plan
   では 1 MHz を上限にし、実際のレートを configure の答えで返す（oep-probe-arduino `OepV1Sampler`）。直した後は 400 kHz / 1 MHz /
   2 MHz とも 1005.4 Hz、ばらつき 1 サンプル。以前の v1 の v003 の PWM / tone の値も、この遅れで数 % ずれていたと見られる。
+
+### 途中で速さとモードを変える（2026-09-29）
+
+spi の節は、取引ごとに `SPI.beginTransaction(SPISettings(...))` で速さとモードを変える。並びに戻りを足した: 1M モード 0〜3、4M モード 0、
+250k モード 0、4M モード 3、250k モード 2、1M モード 0。x035 で 18/18（どの取引も、その取引の mode・SCK・MOSI が期待どおり）。

@@ -175,3 +175,9 @@ x035 / v003: 100 kHz と 10 kHz の WRITE、NACK（相手なし）の復号と t
   `{"addr": 0x42, "rw": "read", "bytes": [0], "complete": False}`、`released=False`）。
 - v003 の 60 KB の読み出しで、CP2102 の取りこぼしが 2 回続いて落ちたことがあった。client の capture.read は、読み出しの
   バッチを 4 回まで送り直すようにした（読み出しは何度送っても状態を変えない）。
+
+### 途中で速さを変える（`test_i2c_clock_switch`、2026-09-29）
+
+既定の WRITE の後に、`Wire.begin()` し直さず `Wire.setClock()` だけで、100k → 400k → 10k → 400k → 100k → 10k と行き来しながら
+4 バイトずつ書く（400 kHz は 1 周期 10 サンプル取れる P4 だけ、classic ESP32 では 100k ↔ 10k の 4 段）。各取引の期待は
+`i2c(... hz=その速さ)` と、P4 の target が受けたバイトの一致。x035 12/12（行き来 6 段を含む）、v003 10/10（4 段を含む）。
