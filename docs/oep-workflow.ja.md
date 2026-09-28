@@ -8,17 +8,17 @@
 
 ## 1. 登場するもの
 
-置き場は、このリポジトリのルートからの相対パス。
-
-| もの | 置き場 | 受け持つこと |
+| もの | リポジトリ | 受け持つこと |
 |---|---|---|
-| ArduinoCore-CH32 | このリポジトリ | core、ボード定義、試験（`tests/`）。この文書 |
-| ch32rv | `../ch32rv` | 同梱の書き込みツール。WCH-LinkE / WCH-Link での書き込み・消去・reset・gdb・monitor |
-| OEP の仕様 | `../../dev_oep/oep-spec` | probe と host の間のプロトコル（core と標準インターフェース） |
-| OEP の probe | `../../dev_oep/oep-probe-arduino` | ESP32-P4、classic ESP32、RP2350 の probe の実装 |
-| OEP の client | `../../dev_oep/oep-client-python` | Python の host 側。CH32 の書き込み手順（`ch32_flash`）も今はここ |
-| WireSkein | `../../dev_oep/wireskein` | ロジックの記録の解析。試験の期待との照合（`ws verify`） |
-| wch-protocols | `../wch-protocols` | 実測の台帳（読むだけ） |
+| ArduinoCore-CH32 | [ch32-riscv-ug/ArduinoCore-CH32](https://github.com/ch32-riscv-ug/ArduinoCore-CH32)（このリポジトリ） | core、ボード定義、試験（`tests/`）。この文書 |
+| ch32rv | [ch32-riscv-ug/ch32rv](https://github.com/ch32-riscv-ug/ch32rv) | 同梱の書き込みツール。WCH-LinkE / WCH-Link での書き込み・消去・reset・gdb・monitor |
+| OEP の仕様 | [Open-Embedded-Probe/oep-spec](https://github.com/Open-Embedded-Probe/oep-spec) | probe と host の間のプロトコル（core と標準インターフェース） |
+| OEP の probe | [Open-Embedded-Probe/oep-probe-arduino](https://github.com/Open-Embedded-Probe/oep-probe-arduino) | ESP32-P4、classic ESP32、RP2350 の probe の実装 |
+| OEP の client | [Open-Embedded-Probe/oep-client-python](https://github.com/Open-Embedded-Probe/oep-client-python) | Python の host 側。CH32 の書き込み手順（`ch32_flash`）も今はここ |
+| WireSkein | [Open-Embedded-Probe/wireskein](https://github.com/Open-Embedded-Probe/wireskein) | ロジックの記録の解析。試験の期待との照合（`ws verify`） |
+| wch-protocols | [ch32-riscv-ug/wch-protocols](https://github.com/ch32-riscv-ug/wch-protocols) | 実測の台帳（読むだけ） |
+
+以下、リポジトリは名前（ch32rv、oep-spec など）で呼ぶ。
 
 ## 2. 使う場面
 
