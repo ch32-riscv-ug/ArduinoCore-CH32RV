@@ -269,8 +269,9 @@ class Capture:
         lines = [self.capture.channel(data, k, samples) for k in range(self.channels)]
         out = bytes(sum(line[i] << k for k, line in enumerate(lines)) for i in range(samples))
         if out:
+            extra = {"time_base_slipped": True} if self._segment.slipped else {}   # the probe saw its pacing slip
             self.session.rec.capture(out, self.rate, [targets.pin_name(self.session.profile, ch) for ch in self.lines],
-                                     self._armed, start_us=self._segment.start_us)
+                                     self._armed, start_us=self._segment.start_us, **extra)
         return out
 
 

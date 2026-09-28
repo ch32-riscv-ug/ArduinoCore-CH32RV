@@ -163,7 +163,13 @@ size_t CH32HardwareSerial::write(uint8_t c)
 #endif
 }
 
-void CH32HardwareSerial::irq(void)
+/* Inlined into each USARTn handler: called as a function, the handler's
+ * interrupt prologue saves all sixteen caller-saved registers around the call
+ * (32 loads and stores); inlined, it saves only the few this body uses. The
+ * difference is what decides whether back-to-back bytes at a small BRR are
+ * taken before the next one overruns the data register (2026-09-29: an X035
+ * at 8 MHz lost bytes below about 200 CPU cycles a byte). */
+__attribute__((always_inline)) inline void CH32HardwareSerial::irq(void)
 {
     const uint16_t status = CH32_USART_STATR(_base);
 

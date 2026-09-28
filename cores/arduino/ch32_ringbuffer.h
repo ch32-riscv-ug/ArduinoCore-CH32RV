@@ -14,14 +14,20 @@
 
 #include <stdint.h>
 
+/* The interrupt handlers take and give bytes through push / pop: kept out of
+ * line, each call makes the handler's interrupt prologue save every
+ * caller-saved register, which is most of what a byte costs (see
+ * CH32HardwareSerial::irq). */
+#define CH32_RB_INLINE __attribute__((always_inline)) inline
+
 template <uint16_t N>
 class CH32RingBuffer {
 public:
-    bool isEmpty(void) const { return _head == _tail; }
+    CH32_RB_INLINE bool isEmpty(void) const { return _head == _tail; }
     bool isFull(void) const { return next(_head) == _tail; }
 
     /* Producer side. Drops the byte when full, like every Arduino core. */
-    bool push(uint8_t c)
+    CH32_RB_INLINE bool push(uint8_t c)
     {
         const uint16_t n = next(_head);
         if (n == _tail) {
@@ -33,7 +39,7 @@ public:
     }
 
     /* Consumer side. Returns -1 when empty, matching Stream::read(). */
-    int pop(void)
+    CH32_RB_INLINE int pop(void)
     {
         if (_head == _tail) {
             return -1;
@@ -63,7 +69,7 @@ public:
     void clear(void) { _tail = _head; }
 
 private:
-    static uint16_t next(uint16_t i) { return (uint16_t)((i + 1u) % N); }
+    CH32_RB_INLINE static uint16_t next(uint16_t i) { return (uint16_t)((i + 1u) % N); }
 
     uint8_t _buffer[N];
     volatile uint16_t _head = 0;
