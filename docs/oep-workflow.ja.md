@@ -229,13 +229,30 @@ properties を持っている。今の `platform.txt` は `upload.tool=ch32rv` �
 本命（LinkE / HID / ISP / DFU は既に持つ。OEP だけ無い）。ch32rv の OEP 対応まで、OEP の枝だけ client の `ch32_flash` を呼ぶ
 薄い包みを置くか、ch32rv に OEP の枝を先に足すかは、§3 のとおり全体が固まってから決める。
 
-### 書き込みの後のモニタ
+### 発見したポートで、書き込みからモニタまでつながるか（実験、2026-09-29）
 
-| 経路 | モニタ |
+X035 の治具の LinkE（`FC928F068181`）で、platform.txt に仮登録して試した（終わったら戻した）。
+
+| 段 | 結果 |
 |---|---|
-| LinkE | LinkE の CDC（同じポート。target の UART / SDI）、または ch32rv の pluggable monitor（dmseq など） |
-| OEP の probe | 同じポート（共用、§4.2）、または P4 の HS の CDC |
-| ソフト USB / ISP / DFU | 書き込みの後に app が列挙する CDC（あれば）。書き込みの装置とは別の口 |
+| `arduino-cli board list` | `wchlink://FC928F068181` が出る（前の実験のとおり） |
+| `arduino-cli upload -p wchlink://FC928F068181 --fqbn …`（**programmer 指定なし**） | **通った**。`upload.tool.wchlink` の recipe で `--probe serial:{upload.port.properties.serial}` が `FC928F068181` に展開され、HelloDMSeq が X035 に書けた。ただし板に `upload.protocol` が無いと「A programmer is required to upload」で断られる（`--upload-property upload.protocol=wchlink` で通した）。**今の boards.txt で `upload.protocol` を持つのは UIAPduino だけで、素の upload が断られていた本当の理由はこれ** |
+| `arduino-cli monitor -p wchlink://… --fqbn … --config source=dmseq` | monitor は見つかる（`pluggable_monitor.pattern.wchlink` で登録。**`--fqbn` が要る**: platform 自前の monitor は板の platform から引く。IDE は常に板を持つので問題ない）。しかし arduino-cli が **DESCRIBE の応答で落ちる**（nil 参照）。原因は ch32rv が `port_descriptor` を返し、仕様と arduino-cli は `port_description` を読むこと（[ch32rv-requests](ch32rv-requests.ja.md) の既知不具合に記録） |
+| ch32rv の monitor に手で HELLO / CONFIGURE `source dmseq` / OPEN | **通った**。HelloDMSeq の `uptime` が IDE 相当の TCP に 7 秒間届いた。残りの経路は動く |
+
+つまり、**発見したポートでモニタにつながる**。つながらないのは 1 語のキー名だけで、直せば IDE でポートを選ぶだけで
+書き込み → dmseq のモニタまで通る。
+
+| 経路 | IDE でそのポートを選んだときのモニタ | 空き |
+|---|---|---|
+| `wchlink://<serial>`（LinkE） | ch32rv の pluggable monitor: dmdata / dmseq / rtt（設定の `source`） | **UART / SDI は出ない**。LinkE の CDC の serial port を選び直す（書き込みと別のポート）。ch32rv の monitor に `uart` の source を足せば 1 つで済む（依頼 B-7） |
+| LinkE の CDC（serial） | 組み込みの serial-monitor（UART / SDI） | 書き込みは VID:PID で LinkE と分かるので同じポートでできる（§4.6 の表） |
+| `oep://<serial>`（OEP の USB の probe） | pluggable monitor が要る（target.console を TCP に pipe。ch32rv か OEP の client） | 未実装 |
+| OEP の probe の serial（USJ、変換チップ） | 組み込みの serial-monitor（共用の口、§4.2） | — |
+| ソフト USB / ISP / DFU | 書き込みの後に app が列挙する CDC（あれば） | 書き込みの装置とは別の口 |
+
+pluggable monitor は IDE の送信欄の入力も target に届ける（ch32rv の実装）。設定（DESCRIBE の `configuration_parameters`）は
+IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 
 ## 5. 仕様と実装に要ること
 
@@ -268,6 +285,9 @@ properties を持っている。今の `platform.txt` は `upload.tool=ch32rv` �
 3. Web Serial の設定のページと JavaScript の client の置き場（新しいリポジトリか、oep-client の隣か）。
 4. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
    確かめる方式でよいか（VID:PID では見分けられない）。
+   ポートだけで書くには、板に `upload.protocol` を持たせる必要がある（無いと arduino-cli が programmer を要求する）。
+   発見した `wchlink://` のポートで UART も見るには、ch32rv の monitor に `uart` の source を足す（依頼 B-7）か、UART は LinkE の
+   CDC のポートを選ぶ、のどちらか。
 5. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
 6. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
 
@@ -308,6 +328,15 @@ properties を持っている。今の `platform.txt` は `upload.tool=ch32rv` �
   書くと組み込みも `pluggable_discovery.required.N` で明示が要る（最初 `discovery.<id>.pattern` と書いて出なかった）。
 - 実験（2026-09-29）: ch32rv `arduino discovery` を登録した `arduino-cli board list` に、LinkE 7 台が `wchlink://<serial>` として
   出た（protocol `wchlink`、properties vid / pid / serial / mode、hardware_id = serial）。登録は戻してある。
+- 実験（2026-09-29）: `upload.tool.wchlink` と `upload.protocol` を与えると、`arduino-cli upload -p wchlink://FC928F068181` が
+  programmer なしで X035 に書けた。arduino-cli は板に `upload.protocol` が無いと「A programmer is required to upload」を返す
+  （バイナリに `upload.protocol` の参照がある）。platform 自前の monitor は `pluggable_monitor.pattern.<protocol>`（バイナリの
+  文字列に `pluggable_monitor.pattern` / `pluggable_monitor.required`）で、`arduino-cli monitor` には `--fqbn` が要る。arduino-cli
+  1.3.1 は DESCRIBE の応答の `port_description` を読み、無いと panic する。ch32rv 0.10.1 は `port_descriptor` を返す。
+- ch32rv `arduino monitor` の DESCRIBE は `source`（dmdata / dmseq / rtt）だけを出す。uart / sdi は wrap しない（cli 文書）。手で
+  OPEN すると X035 の HelloDMSeq の出力が TCP に届いた。
+- 例のスケッチの `sketch.yaml`（index の platform を指すプロファイル）が付いたままだと、手元の platform で compile できない
+  （"Platform … is not found in any known index"）。試験の道具は sketch.yaml を写さない。
 
 ## 関連
 
