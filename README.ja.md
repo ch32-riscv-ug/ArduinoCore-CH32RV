@@ -5,7 +5,25 @@
 WCH CH32マイコン向けの、コミュニティ管理によるArduinoコアを新規設計するプロジェクトです。
 
 > [!IMPORTANT]
-> 現在は設計・調査段階です。インストール可能なArduinoコアや安定版リリースはまだありません。
+> β版です（0.0.x）。本番前のため、版の間で破壊的変更が入ることがあります。
+
+## インストール
+
+Arduino IDE の「ファイル → 基本設定 → 追加のボードマネージャのURL」に次を足し、ボードマネージャで
+「CH32 RISC-V」を入れます。toolchain と書き込みツール（ch32rv）も一緒に入ります。
+
+```text
+https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+```
+
+arduino-cli なら:
+
+```sh
+arduino-cli core install ch32-riscv-ug:ch32v --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+```
+
+書き込みは、IDE の port で WCH-Link の serial port か `wchlink://…`、OEP の probe なら `oep://…` を選んで
+「書き込み」を押すだけです（programmer の選択は要りません）。変更の一覧は [CHANGELOG.md](CHANGELOG.md)。
 
 本プロジェクトはWCHの公式プロジェクトではありません。プロジェクト名の`CH32`は対象デバイス系列を示すもので、公式性を示すものではありません。
 

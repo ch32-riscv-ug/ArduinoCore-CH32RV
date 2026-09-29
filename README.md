@@ -5,7 +5,25 @@
 A community-maintained Arduino core for WCH CH32 microcontrollers.
 
 > [!IMPORTANT]
-> This project is in the research and design phase. There is no installable or stable Arduino core release yet.
+> This is a beta (0.0.x). It is pre-release, and a version may still break what the previous one did.
+
+## Installation
+
+In the Arduino IDE, add this under File → Preferences → Additional boards manager URLs, then install
+"CH32 RISC-V" from the Boards Manager. The toolchain and the uploader (ch32rv) come with it.
+
+```text
+https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+```
+
+With arduino-cli:
+
+```sh
+arduino-cli core install ch32-riscv-ug:ch32v --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+```
+
+To upload, pick the port in the IDE - a WCH-Link's serial port or `wchlink://…`, an OEP probe's `oep://…` -
+and press Upload; no programmer has to be selected. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 This is not an official WCH project. The name `CH32` identifies the target device family and does not imply endorsement by or affiliation with WCH.
 
