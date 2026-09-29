@@ -13,7 +13,7 @@
 | **slot** | スロット | 登録された 1 つの「場所」: wire、pins、name、attach policy、console mechanism。target_id は任意の錠。IDE port はスロットごと |
 | **connection** | 接続 | スロットへの生きている attach |
 | **bind** | バインド | serial port → stream の対応と、その流し方（mode） |
-| **attach policy** | attach の方針 | host / on open / at boot（+ 再試行の間隔） |
+| **attach policy** | attach の方針 | host / at boot（+ 再試行の間隔） |
 | **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行。probe の serial port とは別の概念 |
 | **broker** | ブローカー | monitor を握る ch32rv が兼ねる、host 側で OEP のセッションを束ねる役 |
 
@@ -180,13 +180,17 @@ UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数�
 
 ### 5.3 attach policy と確認
 
-- policy は host / on open / at boot。at boot に**再試行の間隔**（`retry_s`、0 なら再試行しない）を持たせ、いないスロットは
+- policy は host / at boot の 2 つ。at boot に**再試行の間隔**（`retry_s`、0 なら再試行しない）を持たせ、いないスロットは
   probe がその間隔で止めない attach をやり直す。policy が host のスロットは確認しない。
+- 「serial port が開かれたら attach」（on open）は持たない。開いたことは DTR でしか分からず、UART bridge・pty・DTR を立てない
+  terminal では取れない。取れないことのある event に動きを結び付けない。IDE と pytest の monitor は ch32rv が自分で attach する
+  （host）。素の terminal で見たいスロットは at boot にする（OEP の probe の止めない attach は動いているアプリを乱さず、クロックも
+  変えないので、常に attach しておく代償は小さい）。
 - **接続は使うときに作るのが基本。自動 attach は、接続に時間がかかる場合があるのを先払いするプリフェッチ。** 外れていれば使うときに
   attach からやり直す。登録に前回の速さを保存すれば短くなる。
 - at boot のスロットの数は同時に持てる数まで（超える set は断る。順序は意味を持たない）。席が埋まっているときの host の attach は、
   bind だけが使っている接続のうちいちばん古いものを外して席を空ける（host も使っている接続は外さない）。押し出されたスロットは
-  そのまま。再 attach は policy の合図か host の attach で起き、**bind はどの接続にも乗る**。
+  そのまま。再 attach は at boot の再試行か host の attach で起き、**bind はどの接続にも乗る**。
 - **スロットの状態**（接続あり / いない（最後に試した時刻）/ 錠に不一致）は probe が describe にロック無しで出し、discovery でも
   OEP の client でも同じものが読める。host は線を駆動しない。線を駆動せずに「つながっているか」を知る方法は無い（内蔵プルでも、
   容量の戻り時間でも、接続ピンと未接続ピンで差が無かった）。
@@ -274,7 +278,7 @@ wireskein           純粋なモジュール（pip）。runlog は標準ライ�
 
 ## 8. ch32rv の範囲
 
-書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe への書き込みと monitor を足す（B）。**gdb / debug を OEP の probe で扱うのはプロトタイプの範囲外**（書き込みに要る DM の操作は `DtmAccess` に載せ、gdb はその上に後で）。キャプチャや fixture
+書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe への書き込みと monitor を足す（B）。**gdb / debug を OEP の probe で扱うのはプロトタイプの範囲外**（書き込みに要る DM の操作は `DtmAccess` に載せ、gdb はその上に後で）。 ただし**デバッグは次の作業で載せる前提**で設計する: OEP の transport は `DtmAccess` を実装し、ブローカーはセッションを長く保持する client（gdb server）を想定して client ごとの資源を追い、gdb が monitor と同じ probe を同時に使う形（ブローカーの client か、ブローカーそのもの）を設計の中で決めておく。キャプチャや fixture
 の仲介は持たない（試験の間は pytest の `oep_host` がブローカー経由で直接 OEP を話す）。OEP 対応の中身の設計は、この文書が固まった
 あとに ch32rv の側で。
 
@@ -325,9 +329,11 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
   wchlink://…` が programmer なしで書けた。
 - pluggable monitor: tool との制御は stdio、データは TCP（OPEN <host:port> で arduino-cli が待ち受け、tool が接続）。`arduino-cli
   monitor --quiet` の子プロセスは両方向ともバイト透過（0x00〜0xFF、CR / LF）、tool → pytest の遅れ 0.4 ms、起動から最初のバイト
-  まで約 1 秒（`-l serial` で 0.8 秒）。stdin が EOF だと設定の列挙だけで exit 0 してセッションを開かない。tool は列挙用と本番用で
+  まで約 1 秒（`-l serial` で 0.8 秒）。OPEN より前に stdin に書いたバイトは捨てられず、data の接続の直後に順のまま届く（OPEN を
+  2 秒遅らせても同じ）。stdin が EOF だと設定の列挙だけで exit 0 してセッションを開かない。tool は列挙用と本番用で
   2 回起動される。tool は別のプロセスグループ。stdin を閉じると CLOSE が届き（QUIT は無し）0.02 秒で exit 0。DESCRIBE の列挙の
-  値のキーは `value`。設定の優先順は `--config` > profile の `port_config` > 板の既定、`-m` のとき top-level の `default_port_config`
+  値のキーは `value`。DESCRIBE の `protocol` は port の protocol と照合され、違うと OPEN 前に「invalid monitor protocol 'serial': only
+  '…' is accepted」で exit 1（`--describe` の表示は通る）。設定の優先順は `--config` > profile の `port_config` > 板の既定、`-m` のとき top-level の `default_port_config`
   は届かない、変わった設定だけ CONFIGURE される、宣言に無いキーは exit 7。OPEN の error は exit 1 + stderr、セッション中に tool が
   落ちると stdout EOF + exit 0 + stderr 無し。`-m` のとき読む platform.txt は profile 用の写し（`~/.arduino15/internal/`）。
 - sketch.yaml の `default_fqbn` / `default_port` / `default_programmer` / `default_port_config` は CLI の flag なしで効く。

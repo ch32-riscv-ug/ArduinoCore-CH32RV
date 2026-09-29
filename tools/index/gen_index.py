@@ -33,11 +33,12 @@ import tempfile
 MAINTAINER = "CH32 RISC-V UG"
 WEBSITE = "https://github.com/ch32-riscv-ug/ArduinoCore-CH32"
 TOOL_NAME = "xpack-riscv-none-elf-gcc"
-TOOL_VERSION = "14.3.0-1"
 # The bundled uploader (ADR-0008). probe-rs is not shipped: the platform
 # declares one upload tool and it is this one.
 UPLOAD_TOOL_NAME = "ch32rv"
-UPLOAD_TOOL_VERSION = "0.9.0"
+# Tool versions are not repeated here: the tools_*.json fragment is the single
+# source (fetch_tools.py reads it too). A copy here once said ch32rv 0.9.0 while
+# the fragment shipped the 0.10.0 archives under that name.
 PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32v"
 
@@ -172,6 +173,9 @@ def main(argv=None) -> None:
     here = pathlib.Path(__file__).parent
     tool = json.loads((here / "tools_xpack_gcc.json").read_text(encoding="utf-8"))
     uploader = json.loads((here / "tools_ch32rv.json").read_text(encoding="utf-8"))
+    for frag, name in ((tool, TOOL_NAME), (uploader, UPLOAD_TOOL_NAME)):
+        if frag["name"] != name:
+            raise SystemExit(f"tool fragment names {frag['name']!r}, expected {name!r}")
     systems = tool["systems"]
     # Provenance and per-entry notes are for readers of the fragment, not part
     # of the Board Manager schema, so they stay out of the published index.
@@ -213,14 +217,14 @@ def main(argv=None) -> None:
                 "boards": board_names(args.platform),
                 "toolsDependencies": [
                     {"packager": PACKAGER, "name": TOOL_NAME,
-                     "version": TOOL_VERSION},
+                     "version": tool["version"]},
                     {"packager": PACKAGER, "name": UPLOAD_TOOL_NAME,
-                     "version": UPLOAD_TOOL_VERSION},
+                     "version": uploader["version"]},
                 ],
             }],
             "tools": [
-                {"name": TOOL_NAME, "version": TOOL_VERSION, "systems": systems},
-                {"name": UPLOAD_TOOL_NAME, "version": UPLOAD_TOOL_VERSION,
+                {"name": TOOL_NAME, "version": tool["version"], "systems": systems},
+                {"name": UPLOAD_TOOL_NAME, "version": uploader["version"],
                  "systems": uploader_systems},
             ],
         }],
