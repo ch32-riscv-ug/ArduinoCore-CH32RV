@@ -9,7 +9,7 @@ profiles:
     fqbn: ch32-riscv-ug:ch32v:CH32X035:pnum=ANY
     programmer: wch-link
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.1)
+      - platform: ch32-riscv-ug:ch32v (0.0.2)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier A CH32V003: omitted, requires 32 KB flash, CH32V003 ANY has 16 KB
@@ -18,7 +18,7 @@ profiles:
     fqbn: ch32-riscv-ug:ch32v:CH32V203:pnum=ANY
     programmer: wch-link
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.1)
+      - platform: ch32-riscv-ug:ch32v (0.0.2)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B: low-power V4C
@@ -26,7 +26,7 @@ profiles:
     fqbn: ch32-riscv-ug:ch32v:CH32L103:pnum=ANY
     programmer: wch-link
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.1)
+      - platform: ch32-riscv-ug:ch32v (0.0.2)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B: the only family with a jump-table vector
@@ -34,7 +34,7 @@ profiles:
     fqbn: ch32-riscv-ug:ch32v:CH32V103:pnum=ANY
     programmer: wch-link
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.1)
+      - platform: ch32-riscv-ug:ch32v (0.0.2)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B: largest part on the bench
@@ -42,7 +42,7 @@ profiles:
     fqbn: ch32-riscv-ug:ch32v:CH32V307:pnum=ANY
     programmer: wch-link
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.1)
+      - platform: ch32-riscv-ug:ch32v (0.0.2)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B CH32V006: omitted, requires 32 KB flash, CH32V006 ANY has 16 KB

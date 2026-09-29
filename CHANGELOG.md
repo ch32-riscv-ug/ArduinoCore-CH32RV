@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+
+## 0.0.2
 - (EN) The bundled ch32rv is now 0.12.0: gdb joins the same broker as the monitor, so a debugger and a debug-module monitor work at once, on WCH-Link and OEP probes alike; gdb no longer leaves an ebreak in flash, connects to RV32E (CH32V00x) ELFs, and no longer stops an OEP probe's console.
 - (JA) 同梱の ch32rv を 0.12.0 にした: gdb が monitor と同じブローカーにつながるので、debugger と debug module の monitor を同時に使える（WCH-Link でも OEP の probe でも）。gdb が flash に ebreak を焼き残さない、RV32E（CH32V00x）の ELF でつながる、OEP の probe の console を止めない、の 3 つも直っている。
 - (EN) The GitHub Pages site gets a top page next to the Board Manager index: the URL with a copy button, how to install and upload, and the versions and boards read from the index.
