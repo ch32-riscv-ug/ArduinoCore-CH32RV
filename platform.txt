@@ -86,56 +86,68 @@ tools.ch32rv.path={runtime.tools.ch32rv.path}
 tools.ch32rv.cmd=ch32rv
 tools.ch32rv.cmd.windows=ch32rv.exe
 
-# Probe selection. Empty means "the only probe attached"; with several probes
-# pass the whole flag, because an empty {upload.probe_args} has to vanish from
-# the command line rather than leave a dangling --probe:
-#   --upload-property upload.probe_args="--probe serial:FBC18F0680B0"
-# `ch32rv probe list` prints the serial; `serial:<sn>`, `name:<alias>`,
-# `usb:<bus>-<ports>` and `VID:PID[:SERIAL]` are all accepted.
-upload.probe_args=
-
-# upload.tool must exist even though the documented path is
-# `upload --programmer wch-link`: arduino-cli 1.3.1 resolves upload.tool.default
-# before it looks at the programmer and fails with "Property
-# 'upload.tool.default' is undefined" otherwise. A bare `upload` still refuses
-# with "A programmer is required to upload", which is correct - there is no
-# serial bootloader to fall back to.
+# Uploading with the IDE port alone (docs/oep-workflow.ja.md §3.2). Pick a port
+# and press Upload: boards.txt gives every flashable board upload.protocol, so
+# no programmer is asked for, and the tool follows the port's protocol:
+#   serial   a probe's serial port - a WCH-Link's CDC, an OEP probe's USJ / CDC
+#   wchlink  wchlink://<serial>, from ch32rv's discovery
+#   oep      oep://<probe>/<slot>, from ch32rv's discovery
+#   hid      hid://<topology>, the UIAPduino bootloader
+# ch32rv resolves the address itself (--probe port:); on a probe with several
+# slots it picks the one whose chip family matches --chip and refuses when that
+# is not exactly one.
 upload.tool=ch32rv
 upload.tool.default=ch32rv
+upload.tool.serial=ch32rv
+upload.tool.wchlink=ch32rv
+upload.tool.oep=ch32rv
+upload.tool.hid=ch32rv_hid
 
 # --progress none because a recipe's stdout is not a tty; ch32rv defaults to a
 # progress bar only on one, but saying so keeps the log identical either way.
+# --confirm-run fails (exit 50) when the target does not run after the reset.
 tools.ch32rv.upload.params.verbose=--verbose
 tools.ch32rv.upload.params.quiet=
+tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} --probe "port:{upload.port.address}"
 
+# `upload --programmer wch-link` (programmers.txt) stays for the probe-less
+# command line: it takes the only WCH-Link attached, or the one named by
+#   --upload-property upload.probe_args="--probe serial:<serial>"
+# (`ch32rv probe list` prints the serial). Empty has to vanish from the line.
+upload.probe_args=
 tools.ch32rv.program.params.verbose=--verbose
 tools.ch32rv.program.params.quiet=
-
-tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.probe_args}
 tools.ch32rv.program.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.probe_args}
 
-# UIAPduino Pro Micro CH32V003 V1.4 product bootloader.  This is deliberately
-# separate from the WCH-Link ELF route above: rv003usb consumes the raw binary,
-# has its own VID:PID, and boot entry currently requires an external action.
+# UIAPduino Pro Micro CH32V003 V1.4 product bootloader. rv003usb takes the raw
+# binary, and boot entry still needs an external action (docs/uiapduino-hid-upload.ja.md).
 tools.ch32rv_hid.path={runtime.tools.ch32rv.path}
 tools.ch32rv_hid.cmd=ch32rv
 tools.ch32rv_hid.cmd.windows=ch32rv.exe
 tools.ch32rv_hid.upload.params.verbose=--verbose
 tools.ch32rv_hid.upload.params.quiet=
-tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" --usb-id 1209:b803 {upload.verbose}
+tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" --probe "port:{upload.port.address}" {upload.verbose}
+
+# ---------------------------------------------------------------- discovery
+# ch32rv lists what a plain serial scan cannot see or name: every WCH-Link as
+# wchlink://<serial>, every OEP probe's slot as oep://<probe>/<slot> (a device
+# whose iProduct starts with "OEP" until OEP has its own PID), and the UIAPduino
+# bootloader as hid://. It never opens an ordinary serial port. Declaring one
+# discovery means the built-in ones have to be named too.
+pluggable_discovery.required.0=builtin:serial-discovery
+pluggable_discovery.required.1=builtin:mdns-discovery
+pluggable_discovery.ch32rv.pattern="{runtime.tools.ch32rv.path}/ch32rv" arduino discovery
 
 # ---------------------------------------------------------------- monitor
-# The UART Serial is an ordinary serial port, so the monitor arduino-cli ships
-# is the right one; declaring it is what makes a Board Manager install pull it
-# in rather than relying on the fallback. The per-board default baud rate is in
-# boards.txt (monitor_port.serial.baudrate), which is where the specification
-# puts port settings.
-#
-# The debug-module channels are NOT wired here. SerialSDI needs none: the probe
-# forwards it to its own USB CDC port, so the serial monitor reads it once the
-# probe has been told to (`wlink sdi-print enable`). SerialRTT and SerialDMDATA
-# would each need a pluggable monitor tool of our own - see docs/todo.ja.md.
-pluggable_monitor.required.serial=builtin:serial-monitor
+# Every monitor is ch32rv's (docs/oep-workflow.ja.md §6), for the IDE's serial
+# ports too: its `source` setting reads the target's UART (default, a plain
+# pass-through), SDI, DMDATA, DMSeq, RTT or an OEP probe's fixture UART, and its
+# `chip` setting (boards.txt monitor_port.<protocol>.chip) keeps a debug-module
+# source off a board that is not the one attached. On an ordinary serial port
+# with no probe behind it the UART source is simply a serial monitor.
+pluggable_monitor.pattern.serial="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol serial
+pluggable_monitor.pattern.wchlink="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol wchlink
+pluggable_monitor.pattern.oep="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol oep
 
 # ---------------------------------------------------------------- debug
 # `arduino-cli debug` (and the IDE's debugger) drive GDB plus a GDB server.

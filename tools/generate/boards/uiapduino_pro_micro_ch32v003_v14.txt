@@ -19,6 +19,9 @@ UIAPDUINO_V003_V14.upload.protocol=hid
 UIAPDUINO_V003_V14.upload.tool=ch32rv_hid
 UIAPDUINO_V003_V14.upload.tool.default=ch32rv_hid
 UIAPDUINO_V003_V14.build.ch32rv_chip=CH32V003F4U6
+UIAPDUINO_V003_V14.monitor_port.serial.chip=CH32V003F4U6
+UIAPDUINO_V003_V14.monitor_port.wchlink.chip=CH32V003F4U6
+UIAPDUINO_V003_V14.monitor_port.oep.chip=CH32V003F4U6
 UIAPDUINO_V003_V14.build.probe_rs_chip=CH32V003F4U6
 
 # Product hardware fixes the part number, but a no-op `pnum=ANY` menu is

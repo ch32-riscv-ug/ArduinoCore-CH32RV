@@ -181,6 +181,8 @@ PRINTF_MENU = (
 # tree calls Serial.begin(115200), so the monitor that comes up beside them
 # says the same thing.
 MONITOR_BAUD = 115200
+# The pluggable monitor protocols ch32rv serves (platform.txt pluggable_monitor.pattern.*).
+MONITOR_PROTOCOLS = ("serial", "wchlink", "oep")
 
 DEVICE_DATA_URL = "https://github.com/ch32-riscv-ug/ch32-device-data.git"
 LOCK_REL = "vendor/ch32-device-data.lock.toml"
@@ -2446,6 +2448,11 @@ def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict
     # port settings in boards.txt, per board, and the built-in monitor's own
     # default is 9600 - which is not what a single sketch in this tree uses.
     lines.append(f"{board}.monitor_port.serial.baudrate={MONITOR_BAUD}")
+    # A bare `upload -p <port>` (the IDE's Upload button) needs a protocol, or
+    # arduino-cli asks for a programmer; platform.txt then picks the tool by the
+    # port's protocol (upload.tool.serial / wchlink / oep / hid).
+    if flashable:
+        lines.append(f"{board}.upload.protocol=ch32rv")
     lines.append(f"{board}.build.variant={board}")
     lines.append(f"{board}.build.march={fam['march']}")
     lines.append(f"{board}.build.mabi={fam['mabi']}")
@@ -2529,6 +2536,10 @@ def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict
         rv_chip = ch32rv_chip(pn, series, ordered, ch32rv)
         if rv_chip:
             lines.append(f"{pfx}.build.ch32rv_chip={rv_chip}")
+            # The same value for ch32rv's monitor (its DESCRIBE `chip`): it picks the
+            # probe's slot by it and refuses a debug-module source on another chip.
+            for proto in MONITOR_PROTOCOLS:
+                lines.append(f"{pfx}.monitor_port.{proto}.chip={rv_chip}")
         # Still emitted although probe-rs is no longer bundled: the bench
         # harness resolves a detected chip back to a board through this field
         # (tests/manual/smoke.boards_for).

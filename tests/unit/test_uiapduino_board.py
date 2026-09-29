@@ -23,7 +23,8 @@ def test_named_board_uses_hid_binary_upload():
     assert pattern
     assert "boot hid flash" in pattern.group(1)
     assert "{build.project_name}.bin" in pattern.group(1)
-    assert "--usb-id 1209:b803" in pattern.group(1)
+    # The bootloader is picked by the IDE port (hid://<topology>, ch32rv discovery), not by VID:PID.
+    assert '--probe "port:{upload.port.address}"' in pattern.group(1)
     assert ".elf" not in pattern.group(1)
 
 
