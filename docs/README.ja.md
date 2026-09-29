@@ -57,7 +57,7 @@
 | [harness-probe.ja.md](harness-probe.ja.md) | 自作probe(DUT harness = 書込+ロジックキャプチャ+周辺エミュ)の評価と依頼事項。方法4の空白、入力側刺激、EmbedBench接続 |
 | [harness-wiring.ja.md](harness-wiring.ja.md) | harnessの配線設計。series別のpad群分け、16本割当3案、必要な相手の数、試験できないペリフェラル |
 | [harness-testing.ja.md](harness-testing.ja.md) | harnessをどう叩くか。pytestが主、能力宣言と配線表とpinmuxを突き合わせるresolver、セッション/socket、デバイス模型の置き場所 |
-| [oep-workflow.ja.md](oep-workflow.ja.md) | **OEP を含む開発ワークフローの統括(提案)**。ch32rv / pytest / probe / WireSkein の分担、シリアルしかない probe で書き込みとモニタを 1 本のポートで共用する案、決めること |
+| [oep-workflow.ja.md](oep-workflow.ja.md) | **OEP を含む開発ワークフローの最終の形(決定、2026-09-29)**。書き込みの経路、IDE port と discovery、probe の serial port の原則、スロットと bind、monitor(ch32rv)、pytest の道具の家系、β の範囲、各リポジトリに要る変更 |
 | [test-strategy.ja.md](test-strategy.ja.md) | unit、host、compile、HIL、logic analyzer、CI |
 | [board-layer-rules.ja.md](board-layer-rules.ja.md) | どの層(series/SKU/board/sketch)が何を定義してよいか。`LED_BUILTIN`とSKU maskの扱い |
 | [examples-build-rules.ja.md](examples-build-rules.ja.md) | examplesのビルド対象宣言、capabilityによるスキップ、簡易テストとsweepの分離 |

@@ -1,497 +1,343 @@
-# OEP を含む開発ワークフロー（統括）
+# OEP を含む開発ワークフロー（最終の形）
 
-文書基準日: 2026-09-29（同日に §4 以降を深掘りし、起動モードをやめた形に改めた）。状態: **提案**（決定済みの項目は明記する）。ch32rv の OEP 対応（§3）は、全体が固まってから検討する。
-
-書き込み・モニタ・試験・波形の解析に関わる道具（ch32rv、OEP の probe と client、pytest、WireSkein）が増えたので、
-「どの場面で、どの道具が、何を受け持つか」をこのリポジトリで 1 か所にまとめる。個々の仕様は各リポジトリの文書が正で、
-ここはその間の分担と、まだ決めていないことを並べる。
+文書基準日: 2026-09-29。状態: **決定**（2026-09-29 の議論で決めた最終の形。未決の点は §10 に列挙）。ここから実装を進め、
+実機で確かめて直す。個々の仕様は各リポジトリの文書が正で、ここは分担と、リポジトリをまたぐ決定を置く。
 
 ## 0. 用語（英語で決め、日本語は訳）
 
 | English | 日本語 | 意味 |
 |---|---|---|
 | **transport** | トランスポート | OEP のフレームを運べるもの。vendor bulk、HID、USB CDC、USB-Serial/JTAG、UART bridge、TCP |
-| **serial port** | シリアルポート | transport のうち、OS からシリアルデバイスに見えるもの（USB CDC の interface、USB-Serial/JTAG、UART bridge。TCP の待ち受けも後で足せる）。probe が番号で宣言する。常に OEP を受け、それ以外のバイトは bind したストリームへ流す。vendor bulk と HID は transport だが serial port ではない |
-| **stream** | ストリーム | probe の中の位置付きのバイト列。target console と fixture UART の受信。読んでも消えず、読み手が複数いてよい（OEP の read と serial port の bind） |
-| **target** | ターゲット | 保存された 1 つの target の記述: wire、pins、target_id（scheme / mask / value）、name、attach policy、console mechanism。「register a target = ターゲットを登録する」 |
-| **connection** | 接続 | target への生きている attach |
-| **bind** | バインド | serial port → stream の対応と、その流し方（mode）。流すのは target console か fixture UART |
-| **attach policy** | attach の方針 | host（host が attach したとき）/ on open（port が開かれたとき）/ at boot（起動時） |
-| **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行（`wchlink://…`、`oep://<probe>/<target>`、`/dev/ttyACM0`）。probe の serial port とは別の概念 |
+| **serial port** | シリアルポート | transport のうち、OS からシリアルデバイスに見えるもの（USB CDC の interface、USB-Serial/JTAG、UART bridge）。probe が番号で宣言する。常に OEP を受け、それ以外のバイトは bind したストリームへ流す。vendor bulk と HID は transport だが serial port ではない |
+| **stream** | ストリーム | probe の中の位置付きのバイト列。target console と fixture UART の受信。読んでも消えず、読み手が複数いてよい |
+| **slot** | スロット | 登録された 1 つの「場所」: wire、pins、name、attach policy、console mechanism。target_id は任意の錠。IDE port はスロットごと |
+| **connection** | 接続 | スロットへの生きている attach |
+| **bind** | バインド | serial port → stream の対応と、その流し方（mode） |
+| **attach policy** | attach の方針 | host / on open / at boot（+ 再試行の間隔） |
+| **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行。probe の serial port とは別の概念 |
+| **broker** | ブローカー | monitor を握る ch32rv が兼ねる、host 側で OEP のセッションを束ねる役 |
 
-wire（線。debug の線を駆動するインターフェース）、pins（wire が使うピンの組）、console（target console のストリーム）は
-今の仕様の語のまま。§4 より前の本文は、この用語に直す前の文が残っている。
+wire（線。debug の線を駆動するインターフェース: `oep.wire.rvswd` / `oep.wire.swio`）、pins、console は仕様の語のまま。
 
 ## 1. 登場するもの
 
 | もの | リポジトリ | 受け持つこと |
 |---|---|---|
-| ArduinoCore-CH32 | [ch32-riscv-ug/ArduinoCore-CH32](https://github.com/ch32-riscv-ug/ArduinoCore-CH32)（このリポジトリ） | core、ボード定義、試験（`tests/`）。この文書 |
-| ch32rv | [ch32-riscv-ug/ch32rv](https://github.com/ch32-riscv-ug/ch32rv) | 同梱の書き込みツール。WCH-LinkE / WCH-Link での書き込み・消去・reset・gdb・monitor |
-| OEP の仕様 | [Open-Embedded-Probe/oep-spec](https://github.com/Open-Embedded-Probe/oep-spec) | probe と host の間のプロトコル（core と標準インターフェース） |
-| OEP の probe | [Open-Embedded-Probe/oep-probe-arduino](https://github.com/Open-Embedded-Probe/oep-probe-arduino) | ESP32-P4、classic ESP32、RP2350 の probe の実装 |
-| OEP の client | [Open-Embedded-Probe/oep-client-python](https://github.com/Open-Embedded-Probe/oep-client-python) | Python の host 側。CH32 の書き込み手順（`ch32_flash`）も今はここ |
-| WireSkein | [Open-Embedded-Probe/wireskein](https://github.com/Open-Embedded-Probe/wireskein) | ロジックの記録の解析。試験の期待との照合（`ws verify`） |
+| ArduinoCore-CH32 | [ch32-riscv-ug/ArduinoCore-CH32](https://github.com/ch32-riscv-ug/ArduinoCore-CH32)（このリポジトリ） | core、ボード定義、試験、この文書 |
+| ch32rv | [ch32-riscv-ug/ch32rv](https://github.com/ch32-riscv-ug/ch32rv) | 同梱の書き込みツール。書き込み・デバッグ・モニタ・**discovery**・ブローカー |
 | wch-protocols | [ch32-riscv-ug/wch-protocols](https://github.com/ch32-riscv-ug/wch-protocols) | 実測の台帳（読むだけ） |
-
-以下、リポジトリは名前（ch32rv、oep-spec など）で呼ぶ。
+| OEP の仕様 | [Open-Embedded-Probe/oep-spec](https://github.com/Open-Embedded-Probe/oep-spec) | probe と host の間のプロトコル |
+| OEP の probe | [Open-Embedded-Probe/oep-probe-arduino](https://github.com/Open-Embedded-Probe/oep-probe-arduino) | ESP32-P4、classic ESP32、RP2350 の probe の実装 |
+| OEP の client | [Open-Embedded-Probe/oep-client-python](https://github.com/Open-Embedded-Probe/oep-client-python) | Python の host 側（純粋なモジュール） |
+| WireSkein | [Open-Embedded-Probe/wireskein](https://github.com/Open-Embedded-Probe/wireskein) | ロジックの記録の解析と照合（純粋なモジュール） |
+| pytest-embedded-arduino-cli | [tanakamasayuki/pytest-embedded-arduino-cli](https://github.com/tanakamasayuki/pytest-embedded-arduino-cli) | pytest から arduino-cli で upload / monitor |
+| pytest-embedded-arduino-cli-ch32rv | （新しいリポジトリ） | ch32rv の path、ブローカーの口、`oep_host` |
+| pytest-embedded-wireskein | （新しいリポジトリ） | test ごとの記録と照合 |
 
 ## 2. 使う場面
 
-| 場面 | 書き込み | 実行中の出力を見る | 波形 | OEP のセッションを握るもの |
-|---|---|---|---|---|
-| U1 利用者、WCH-LinkE | ch32rv | LinkE の CDC（UART / SDI）、ch32rv の monitor（dmseq など） | — | —（LinkE） |
-| U2 利用者、OEP の probe（USB の P4 など） | OEP の書き込みツール（vendor / HID / USJ） | probe の CDC の口（bind でコンソールを流す、§4.3） | — | 書き込みの間だけ書き込みツール |
-| U3 利用者、シリアルしかない OEP の probe（classic ESP32） | 同じポートで OEP の書き込みツール | 同じポート（§4.3） | — | 書き込みの間だけ書き込みツール |
-| U4 開発、ベンチの試験（LinkE） | ch32rv | ch32rv の monitor | — | —（LinkE） |
-| U5 開発、ベンチの試験（OEP） | 書き込みツール（§3） | pytest が OEP の target.console で | pytest が fixture.capture で。照合は WireSkein | 試験の間ずっと pytest |
-| U6 デバッグ | ch32rv の gdb server（LinkE） | — | — | —（OEP は未定） |
+| 場面 | 書き込み | 実行中の出力を見る | 波形 |
+|---|---|---|---|
+| 利用者、WCH-LinkE | ch32rv（LinkE の CDC か `wchlink://` を選ぶ） | ch32rv の monitor（uart / sdi / dmdata / dmseq / rtt） | — |
+| 利用者、OEP の probe | ch32rv（`oep://<probe>/<slot>` か、probe の serial port を選ぶ） | ch32rv の monitor（同じ IDE port） | — |
+| 利用者、UIAPduino（USB だけ） | ch32rv（HID のブートローダー。手動の pin reset） | 無し（LinkE / OEP の側） | — |
+| 開発、ベンチ（pytest） | arduino-cli → ch32rv | arduino-cli monitor → ch32rv | OEP の client → WireSkein |
 
-## 3. ch32rv と OEP の分担
+## 3. 書き込みの経路
 
-### 決定済み
+### 3.1 対応する経路
 
-- 同梱の書き込みツールは ch32rv に一本化する（2026-09-01）。
-- WCH-LinkE での書き込みとデバッグは ch32rv が受け持つ（2026-09-29）。
-- OEP のセッションとロックは probe に 1 つ。同時に操作できる host は 1 つ（oep-core §3.3、§5〜§6）。
-- target の知識（CH32 の flash の手順など）は host が持ち、probe は持たない（OEP v1 の前提）。
+| 経路 | 家系 | 入り方 | 状態 |
+|---|---|---|---|
+| **A. WCH-Link / LinkE**（RVSWD、V003 / V00x は SWIO） | 全部 | 常時 | 現状維持（ch32rv `flash`） |
+| **B. OEP の probe**（RVSWD / SWIO） | 全部 | 常時 | **ch32rv で対応する**。pytest も arduino-cli 経由で書く。client の `ch32_flash` は ch32rv の OEP の書き込みが入った時点で消す |
+| **E. UIAPduino の HID ブートローダー**（`1209:b803`） | ブートローダーを入れた V003 の板 | **手動の pin reset**（probe があれば A / B を使う） | 現状維持（ch32rv `boot hid flash`）+ discovery |
+| **C. factory ISP、USB**（`4348:55e0`） | BOOT0 / BOOT1 ピンの家系（V103 / V20x / V30x / V31x / L103 / V407）。X035 / X315 はソフトからしか入れない | BOOT ピン、または app の協力 | **設計は決めた。最初の β には入れず、後から足す**（§3.5） |
+| D. factory ISP、UART | V003 / V00x（app の協力が要る）ほか | — | **対応しない**。変換チップを足すなら、その ESP32 を OEP の probe にする |
+| F. 独自のブートローダー（DFU / UF2 / UART） | そのブートローダーを入れた板（今は無い） | — | **対応しない**。DFU の板が現れたら recipe を足すだけ（discovery は arduino-cli の組み込み） |
 
-### 提案
+ARM の SWD（`oep.wire.swd`、LinkE の DAP モード）は、この core の target には出てこない。
 
-- **ch32rv の OEP での仕事は、LinkE と同じく書き込み・デバッグ・人が使うモニタまで**にする。キャプチャや fixture の仲介は
-  持たせない。
-- **試験の間は pytest がセッションを握る**（U5）。コンソールもキャプチャも同じセッションで扱う。試験中のモニタを ch32rv に
-  任せないので、キャプチャを ch32rv に通す必要も出ない。
-- 書き込みは、段ごとにセッションを持ち替える: 書き込みツールが `open` → attach → 書き込み → reset → `end` で閉じ、pytest が
-  次に `open` する。attach は probe に残るので、pytest はその接続をそのまま使える（oep-if-debug: 付いている線への attach は
-  その接続を返す）。
-- **当面は書き込みツールを選べるようにする**（`--writer ch32rv|oep`）。ch32rv に OEP の対応が入るまでは、client の
-  `ch32_flash` で書く。入ったら pytest の書き込みも ch32rv に寄せ、CH32 の書き込み手順を 1 か所（ch32rv）にまとめる。
-  IDE から OEP の probe で書き込むにも、どのみち ch32rv の対応が要る。
-- pytest と ch32rv は、同じ probe のロック（ch32rv の `DeviceLock`: `$XDG_RUNTIME_DIR/ch32rv/<key>.lock` の flock）を共有する。
-  [harness-requirements](harness-requirements.ja.md) の要求 c と同じ。
+### 3.2 IDE port を選ぶだけで書く
 
-## 4. serial port の原則: 常に OEP を受け、それ以外はコンソールへ（D-13）
+Uno と同じく、プログラマの選択は要らない。板は `upload.protocol` を持ち（無いと arduino-cli がプログラマを要求する）、
+1 つの書き込みツール（ch32rv）が IDE port の protocol と properties から経路を決める。`upload.tool.<protocol>` はすべて ch32rv。
+プログラマのメニューは、書き込み装置が複数つながっているときの上書きに残す。`--upload-property` / `--build-property` は使わない
+（sketch.yaml の `default_fqbn` / `default_port` / `default_programmer` / profile と、platform / boards の定義だけで動く）。
 
-### 4.0 原則（起動モードは持たない）
-
-1. **シリアルに見える口（USB CDC、USB-Serial/JTAG、USB-UART の変換チップ越しの UART）は、いつでも OEP のフレームを受ける。**
-   フレーム以外のバイトは、その口に bind したコンソール（dmseq / SDI / fixture.uart）へ流す。bind が無ければ捨てる。
-2. **ほかの経路（vendor bulk、HID）を持つ probe では、host はそちらで OEP を話す**（oep-core §3.3 の順: vendor bulk、HID、CDC）。
-   すると CDC には実際にはコンソールしか流れない。ただし CDC が OEP を受けなくなるわけではなく、Web Serial やほかの経路に権限が
-   無い環境からは、CDC で話せる。
-3. **どの経路から来た要求も、セッションとロックは 1 つ**（oep-core §3.3、確認済み）。
-
-これで「setup / debugger」のような起動モードは要らない。設定は同じ口で行い、bind はすぐ効く（再起動も要らない）。設定を
-変え直すのも同じ口。OS に権限の無い経路に OEP を置いて入れなくなることも無い（v1-open-proposals §7 の復旧の問いの大部分が消える）。
-起動モードの仕組み自体は残してよいが（ロジアナ用に CDC を持たない構成にする、など。X1）、この用途には使わない。
-
-### 4.1 CDC の経路の形を、効率からシリアルとの共用へ変える
-
-今の CDC / USB-Serial/JTAG のフレームは `length(u16) message`（CRC なし。oep-core §3.1）で、生のバイトとは混ぜられない。
-**シリアルに見える口はすべて UART と同じ形（COBS + CRC-16/CCITT-FALSE、0x00 区切り）にする。** `length` の形は vendor bulk と HID
-だけに残す。
-
-| 経路 | 今 | 変更後 |
+| 選んだ IDE port | 見分け方 | 書き込み |
 |---|---|---|
-| vendor bulk、HID | `length(u16) message` | そのまま |
-| USB CDC、USB-Serial/JTAG | `length(u16) message` | COBS + CRC-16、0x00 区切り |
-| UART（変換チップ越し） | COBS + CRC-16、0x00 区切り | そのまま |
-| TCP | `length(u16) message` | そのまま（共用しない） |
+| LinkE の CDC（serial） | ch32rv が `probe list` の `ports` から Link を引く（`--probe port:<path>`。シリアル番号が無くても topology で辿れる） | LinkE |
+| `wchlink://<serial>` | discovery（実装済み） | LinkE |
+| `oep://<probe>/<slot>` | discovery（専用 PID の probe だけ、§3.3） | そのスロット |
+| OEP の probe の serial port（専用 PID の無い probe） | ch32rv が開いて describe が返る | 板の家系に合うスロット（§3.4） |
+| `hid://<topology>`（UIAPduino） | discovery | HID ブートローダー |
+| ポート無し | `upload.tool.default` | ch32rv が USB を走査し、候補が 1 つならそこ。複数なら候補を並べて断る |
 
-- 代償: COBS の膨らみは 254 byte につき 1 byte、CRC の計算が加わる。CDC の制御の速さ（X6: 往復 0.6 ms、host → probe 0.23 MB/s）
-  はもともと制御にしか使わないので、差は出ない。大きなデータ（キャプチャのストリーミング）は vendor bulk で、変わらない。
-- 利点: client の COBS の読み手が 1 つで済む（今は経路で `length` と COBS を選んでいる: `link.py` の `framing_for`）。「シリアルの
-  ポートを名前で開くなら COBS」と決められる。
+### 3.3 discovery
 
-### 4.2 共用の規則（シリアルに見える口すべてに当てる）
+discovery をするツールは **ch32rv**（`ch32rv arduino discovery`。pluggable discovery のプロトコルを stdio の JSON で話す）。
+platform.txt の `pluggable_discovery.ch32rv.pattern` で登録する（1 つでも自前を書くと組み込みの serial / mdns も
+`pluggable_discovery.required.N` で明示が要る）。Board Manager で core を入れると tool の依存として ch32rv が入るので、利用者に
+別のインストールは要らない。組み込みの discovery（serial、mdns、dfu）はそのまま並走し、普通の serial port は組み込みが出す。
 
-1. probe は入力を常に見張る。0x00 が来たらフレームの候補として次の 0x00 までためる。COBS を解いて CRC-16 が合えば OEP の
-   フレーム。合わなければ、ためたバイトをそのままコンソールへ送る。途中で 200 ms 途切れたら（oep-core §3.2 の読み直しの規則）、
-   同じくコンソールへ送る。0x00 以外のバイトはためずにすぐコンソールへ送る。
-2. probe → PC: コンソールの出力は生のまま。OEP の応答と push は `0x00 <COBS> 0x00` と前後に区切りを付けて送る。**その口への送信は
-   1 つのキューを通す**（下の「送信のキュー」）。直接書くと、OEP のフレームの途中にコンソールの文字が挟まる。
-3. **ロックを持つセッションの要求が来ている口では、生の転送を両方向とも止める。** コンソールの出力は probe の中の位置付きの
-   ストリームに残り、`target.console` の read で読める。PC から来たフレームの外のバイトは捨てる。セッションがほかの経路
-   （vendor / HID / 別の CDC）にあるときは、その口の生の転送は止めない（モニタは試験中も流れ続ける）。
-4. セッションが終わったら（`end`、または lease の期限切れ）、止めていた serial port の生の転送を、host がそのセッションで最後に
-   reset した位置から再開する（reset が無ければ今から。あふれた分は捨ててよい。D-12）。
+**ch32rv の discovery は普通の serial port を開かない**（開くと DTR でリセットされる板があり、OEP でない target に文字が届き、他の
+道具の排他 open と競合する）。host 側の学習（一度開いたら以後出す）は持たない。
 
-**送信のキュー（probe 側）**
+| 出すもの | 条件 | 中身 |
+|---|---|---|
+| `wchlink://<serial>` | LinkE（`1a86:8010` / `8012`） | USB の記述子だけ。target は引かない（LinkE の attach は target のクロックを組み替える） |
+| `oep://<probe>/<slot>` | **専用 PID の USB で列挙する probe だけ**（P4 の HS の口、RP2350。OEP は pid.codes で PID を取る） | ロック無しの describe / config で登録（スロット）と状態を読む。**HID の口があれば HID で読む**（他の道具が CDC / vendor を握っていても読める。競合しない）。無ければ CDC / vendor を短く開き、busy なら前回の写し |
+| `hid://<topology>` | UIAPduino のブートローダー（`1209:b803` / `b003`） | boards.txt の `upload_port.0.vid/pid` で板名を出す |
+| `isp://<topology>`（後で） | ISP で待つ device（`4348:55e0`） | Identify で chip を読み、LinkE の IAP は除く。properties の `chip` で boards.txt の `upload_port.N.protocol=isp` / `.chip=…` と照合して板名を出す |
 
-- 共用する口ごとに送信のキューを 1 つ持ち、書き手はキューに**単位**を入れるだけにする。単位は「OEP のフレーム 1 つ（前後の
-  区切りを含めて丸ごと）」か「コンソールの塊（上限 64 byte 程度）」。書き出すのは 1 つのタスクだけで、単位を割らずに順に出す。
-- OEP のフレームはコンソールの塊より先に出してよい（host の応答が、よくしゃべる target の出力で遅れないように）。コンソールの
-  塊どうしの順は保つ。塊が小さいので、OEP の応答が待つのは最長で塊 1 つ分。
-- コンソールの転送は、位置付きのストリームから読んでキューに入れる。キューに空きが無ければ読まずに待てばよく、捨てる必要は
-  無い（ストリームが持っている）。OEP の送信は今の Endpoint の送信バッファと同じ扱い。
-- 今の実装への注意: Endpoint は `Serial` に直接書く（Esp32V003Probe、Esp32P4X035Probe）。ESP32 の `HardwareSerial::write` は
-  呼び出しごとに排他するだけなので、フレームを複数回の write で出すと、別のタスクの write が間に入る。フレームは 1 回の write
-  で出すか、キューを通す。受信側は 1 本のバイト列なので、この問題は無い（規則 1 の見分けだけ）。
+専用 PID の無い OEP の probe（変換チップ越しの無印 ESP32、USJ だけの P4）は discovery に出さず、利用者が serial port を選ぶ。
 
-**client 側に要る変更**: 今の COBS の読み手（`link.py` の `_recv`）は、0x00 までのバイトをそのままフレームとして解き、失敗すると
-「壊れた応答」として送り直す。共用の口では、セッションを開く前のコンソールの文字が必ず先に来るので、毎回それが起きる。
-**フレームの外のバイト（0x00 の前の解けないまとまり）は雑音として捨て、応答の欠落は時間切れだけで判断する**形に変える。本当に
-壊れた応答（変換チップの取りこぼし）も雑音に見えるが、時間切れで送り直すので結果は同じ（遅くなるだけ）。
+### 3.4 スロットの選び方（専用 PID の無い probe の serial port を選んだとき）
 
-**成り立つ理由と限界**
+書き込みもモニタも同じ規則。利用者が IDE で選んだ板の家系（recipe の `--chip {build.ch32rv_chip}`。monitor には boards.txt の
+`monitor_port.serial.chip=<家系>` を CONFIGURE で渡す）に合うスロットが **1 つならそこ**。接続済みのスロットの chip は probe が
+持つ状態（§5.3）から、未接続のスロットは止めない attach で読む（利用者の操作なので線を駆動してよい）。**0 か 2 つ以上なら止めて**、
+スロットの一覧と理由を出す。動きは挿さっているチップの組で決まり、登録の数では変わらない。ch32rv の `--chip` の fail-closed と同じ。
+専用 PID の probe では、raw の serial port を選んだ upload は常に断る（`oep://…` を選ぶ）。
 
-- テキストのコンソールには 0x00 が出てこないので、フレームの始まりと取り違えない。0x00 を含むバイナリをモニタから送ると、次の
-  0x00 か 200 ms までためるので、その分だけ遅れて届く（捨てはしない）。モニタを使う人は OEP のバイナリを流さない前提。
-- 変換チップ越しの生のコンソールは、取りこぼしから守られない（CP2102 は長い連続の送信でバイトを落とす。v003 の治具で実測）。
-  OEP のフレームは CRC と送り直しで守られる。
-- Linux の tty は 2 つのプロセスが同時に開ける。モニタと書き込みツールが同時に開くと PC → probe のバイトが混ざる。書き込み
-  ツールは `exclusive=True` で開く（今の client はそう）。IDE 2 は書き込みの間モニタを切る（はず。未確認）。
+### 3.5 C（factory ISP、USB）を後から足すときの形
 
-### 4.3 流れ
+1 段目（BOOT ピンの家系）: ch32rv に `isp flash`、discovery に `isp://`、core に `upload.tool.isp` の recipe と boards.txt の照合。
+monitor は無い。2 段目（X035 / X315）: core に USB CDC（TinyUSB の結線）と touch1200 → `FLASH_STATR.BOOT_MODE` + software reset
+の入口を作ってから。全部足すだけで既存の経路に触れない。
 
-**P4（USJ で OEP、HS の CDC にコンソールを bind）、Arduino IDE（U2）**
+## 4. probe の serial port の原則
 
-1. 設定: Web Serial で USJ を開き、target、bind（HS の CDC 0 に dmseq）、`save`。すぐ効く。再起動は要らない。
-2. 書き込み: 書き込みツールが USJ で `open` → attach → 書き込み → reset → `end`。HS の CDC は別の口なので、コンソールは流れ続ける
-   （bind の connection は host の detach や reset を越えて続く。P6 で確認）。
-3. モニタ: HS の CDC を開く。reset 直後の最初の出力から見える（P6）。
+### 4.1 常に OEP を受け、それ以外はコンソールへ
 
-**P4、pytest（U5）**: USJ で 1 つのセッションを握り、コンソールは `target.console`、キャプチャは `fixture.capture` で読む。
-HS の CDC のモニタは同時に流れ続ける（位置付きのストリームは読み手が増えても取り合わない）。今の試験はこの形。
+1. シリアルに見える transport（USB CDC、USB-Serial/JTAG、UART bridge）は、いつでも OEP のフレームを受ける。フレーム以外の
+   バイトは bind したストリームへ流す（bind が無ければ捨てる）。
+2. vendor bulk / HID を持つ probe では host はそちらで OEP を話す（core §3.3 の順）。CDC は実際にはコンソールだけが流れるが、
+   OEP を受けなくなるわけではない（Web Serial や権限の無い環境からは CDC で話せる）。
+3. どの transport から来た要求も、セッションとロックは 1 つ（core §3.3）。
+4. 起動モード（setup / debugger）は持たない。設定は同じ口で行い、bind はすぐ効く。再起動も、setup へ戻る手段も要らない。
 
-**classic ESP32（UART 1 本の共用）、Arduino IDE（U3）**
+### 4.2 フレームの形と共用の規則
 
-1. 設定: Web Serial で同じポートを開き、target、bind（port 0 に dmseq）、`save`。以後、同じポートにコンソールが流れる。
-2. 書き込み: 書き込みツールがポートを開く（DTR / RTS on）。流れてくるコンソールの文字は雑音として捨てる。`open` → attach →
-   書き込み → reset → `end`。この間、生の転送は止まっている。
-3. モニタ: 同じポートを 115200 で開く。セッションは終わっているので、コンソールが流れる。打った文字は target へ届く。
+- シリアルに見える transport はすべて **COBS + CRC-16/CCITT-FALSE、0x00 区切り**（UART と同じ）。`length(u16) message` は vendor bulk
+  と HID（と TCP）だけ。COBS の膨らみは 254 byte に 1 byte、CDC は制御にしか使わないので差は出ない。
+- PC → probe: 0x00 が来たら次の 0x00 までためて解き、CRC が合えば OEP。合わなければ（200 ms 途切れても）ためた分をコンソールへ。
+  0x00 以外はすぐコンソールへ。
+- probe → PC: 応答と push は `0x00 <COBS> 0x00`。**serial port ごとに送信のキューを 1 つ**（単位はフレーム丸ごと、または
+  コンソールの 64 byte 程度の塊。1 つの書き手が割らずに出す。フレームは塊より先に出してよく、塊どうしの順は保つ。塊は位置付きの
+  ストリームから読むので捨てなくてよい）。今の Endpoint は `Serial` に直接書き、`HardwareSerial::write` は呼び出し単位でしか排他
+  しないので、この形にする。
+- **生の転送を止めるのは、ロックを持つセッションの要求が来ている serial port だけ。** 別の transport にセッションがあるとき、その
+  serial port の生の転送は止めない。セッション中に PC から来たフレーム外のバイトは捨てる。
+- セッションが終わったら（`end`、lease の期限切れ）、**host がそのセッションで最後に reset した位置から**生の転送を再開する（reset が
+  無ければ今から。ストリームからあふれた分は捨ててよい）。mode に関係なく同じ。
+- client: フレームの外のバイトは雑音として捨て、応答の欠落は時間切れだけで判断する。
 
-**classic ESP32、pytest（U5）**: 試験の間ずっとセッションを握るので、ポートに流れるのは OEP のフレームだけ。混ざらない仕組みは
-規則 3 そのもので、pytest 側に特別な分離は要らない。試験中にモニタを開くと、フレームのバイナリが見えるだけ。
+### 4.3 排他とロックの奪い方
+
+- **OEP の道具はシリアルを必ず排他で開く**（Linux / macOS は `TIOCEXCL`、Windows は元から排他）。排他でないと応答のバイトが別の
+  プロセスに渡り、経路そのものが成り立たない。`arduino-cli monitor` は既に TIOCEXCL を使っている。
+- **transport がシリアル 1 本だけの probe**は、排他で開けた時点で前の持ち主は死んでいるので、ロックはその場で force で奪ってよい。
+- **transport が複数の probe**は `lock_state` で持ち主と lease の残りを読み、残りだけ待ち（上限は数秒）、持ち主が更新し続けているなら
+  名指しでエラー。force は利用者が明示したときだけ。対話的な道具は lease を短く（2〜3 秒）、pytest は長く（10 秒、更新あり）。
+- 「1 本だけか」は **fn 0 の describe の経路の一覧**（新しい tag。種類の並び: UART bridge / USB CDC / USB-Serial/JTAG / vendor bulk /
+  HID / TCP）で判断する。USB の列挙は discovery がポートを probe ごとにまとめるためだけに使う。
 
 ### 4.4 probe の再起動の抑止
 
-モニタや書き込みツールがポートを開くときの DTR / RTS で probe が再起動すると、RVSWD の同期が落ち、target まで再起動しうる
-（session-and-exclusivity の前提）。probe は自分で止められるものは止める。
-
-| 口 | 再起動の仕組み | 止め方 |
-|---|---|---|
-| P4 の USB-Serial/JTAG | 周辺回路が DTR / RTS の並びで chip を reset する（ハード） | `USB_DEVICE_CHIP_RST_REG` の `USB_UART_CHIP_RST_DIS`（bit2）を立てる。arduino-esp32 3.3.12 の HWCDC に API は無い（レジスタを直接書く） |
-| TinyUSB の CDC（arduino-esp32 `USBCDC`） | DTR / RTS の並びで download モードへ、1200 baud の touch で reset（ソフト） | `USBSerial.enableReboot(false)` |
-| EspUsbDevice の CDC（P4 の HS の口） | 持たない | 不要 |
-| classic ESP32 の変換チップ越しの UART0 | 開発ボードの回路（EN と IO0 をトランジスタで駆動） | firmware では止められない。DTR と RTS を両方 on で開けば再起動しない（実測、2026-09-29）。`arduino-cli monitor` の既定は両方 on |
-
-### 4.5 リンクの速さ（変換チップ越しの UART だけの問題）
-
-- USB CDC と USB-Serial/JTAG では、baud は数字が渡るだけで、バイトは USB の速さで流れる。問題にならない。
-- 変換チップ越しの UART では、PC 側で選んだ baud は ESP32 に伝わらない。ESP32 の UART と合っていなければ何も通らない。
-- **115200 に固定する。** 理由: (a) 設定で変えられるようにすると、忘れたときに入れなくなる（復旧の問いが戻る）。(b) ESP32 の
-  UART にはハードの自動 baud 検出があり ROM のブートローダーが使っているが、コンソールの生のバイトと混ざる口でそれに頼るのは
-  危うく、未検証。(c) 115200 = 約 11 KB/s で、dmseq（DMI の polling で決まる）と書き込み（V003 16 KB を 2.9 s、oep-v1-core-freeze
-  の実測）には足りる。
-- 足りない場面は、fixture.uart を高い baud で素通しするときだけ。それは変換チップ越しの probe の用途に入れない（P4 でやる）。
-
-## 4.5 フローを最初から（提案。2026-09-29 に見直し）
-
-### LinkE
-
-1. ピンは固定。target をつなぐ。**事前の設定はこれで終わり。**
-2. IDE でポートを選ぶ（`wchlink://<serial>` か LinkE の CDC）。書き込みとモニタは §4.6。
-
-### OEP の probe
-
-**1. 設定のページを開く。** ブラウザで、probe に合う経路を選ぶ: CDC なら Web Serial、HID なら WebHID、vendor bulk なら WebUSB。
-どれも同じ OEP（describe、session、probe.config）を話す。シリアルの口は常に OEP を受けるので（§4.0）、設定はいつでも
-同じ口でできる。
-
-**2. target を探して、線を決める。** `scan`（oep-if-debug §1）: probe が許すピンの組を順に試し、見つかった組を返す。probe は
-組の並びを describe で宣言している（固定の組は channel_group、どのピンでもよい probe はその範囲）。見つかった組と、attach の
-応答の target_id（chip_id）を、設定の `target` の項目（wire_fn、scheme、mask、value）と `bind` の pins に書く。
-
-- **複数の target の接続を同時に持てる（D-1）。** 同時に持てる数は probe が宣言し、宣言していない probe は 1。登録した
-  target は保存され、discovery が target ごとに 1 つの IDE port として出す（IDE port を選ぶこと = target を選ぶこと）。IDE は
-  そのうち 1 つを操作する。接続は使うときに作るのが基本で、自動 attach はプリフェッチ（D-10）。
-
-**3. attach policy を target ごとに決める（D-8、D-10）。** 設定ページが勧める並びは at boot（c）を先頭に。at boot / on open は
-接続に時間がかかる場合があるのを先払いするプリフェッチで、外れていれば使うときに attach からやり直す。at boot にできる数は
-同時に持てる数まで。
-
-| attach | 意味 | 向く場面 |
-|---:|---|---|
-| 0 | host に任せる。host（書き込みツール、pytest）が attach したら、その connection でコンソールを流す | ベンチ。書き込み → モニタの導線でも足りる（P6 で確認） |
-| 1 | 口が開かれたとき（DTR）に自動で attach | モニタを開いたら見たい。開いてから約 170 ms は出力が流れない（X3） |
-| 2 | 起動時に自動で attach | probe と target を組にして置いておく。probe の再起動で target は再起動しない（P6） |
-
-- 自動の attach は**止めない attach（method 0）だけ**で、target_id が設定と一致したときだけコンソールを開く。違えば外して
-  bind_state で知らせる。ここまでは仕様にあり、X035 の治具で動いた（P6）。
-- **attach 自体が問題を起こすことはある。** 止めない attach は、0.5 µs の分解能で見て動いているアプリを乱さなかった（X3）。
-  一方、WCH-LinkE の attach は target のクロックを組み替える（L103 / V20x / V30x / X035。wch-protocols）。OEP の probe の
-  attach は DM に書くだけで RCC には触れないので、この問題は LinkE の firmware の側。HPRE の bit3 を立てた X035 が attach だけで
-  止まった件（E164）は core が HPRE の符号化を変えて避けた。
-
-**4. target がいるかを確かめるか（D-11）。** 定期的な確認はしない。線を駆動せずには分からず（X2）、駆動すれば target が
-その線を GPIO に使うアプリとぶつかる。使うときの attach の失敗で分かればよく、console を流している間は DMI の失敗で分かる
-（probe はストリームに link-lost を付けて接続を閉じ、bind は次の接続まで待つ）。
-
-**5. serial port に何を流すかを決める（bind、D-6）。** serial port ごとに bind（流すストリームの集合）と mode を持つ。
-
-| mode | 流すもの | 入力（port に打った文字） |
-|---|---|---|
-| **last-reset** | host が最後に reset した target のストリーム（riscv-dm の reset と attach_under_reset。probe 自身の自動 attach と target の自己リセットは数えない）。起動時は bind の並びの先頭。選ばれた target の接続が切れても選択は替えない | 選ばれているストリームへ |
-| **manual** | bind に保存した「選ばれているストリーム」。設定ページと書き込みツールが替える。選択の無い manual は set で断る（bind を作るときに選択も書く） | 同上 |
-| **mixed** | 全部。ストリームごとに行をため、閉じたら `[name] 行`。閉じない出力は量（例 128 byte）か静けさ（例 100 ms）で区切り、そのたびに印 | **送らない（受信専用）** |
-
-- どの mode でも、bind が 1 つならそれが流れる。**1 つのときと 2 つ以上のときで動きが変わらない。**
-- 対応する mode は probe が宣言する（gpio の modes と同じ形）。last-reset と manual は必須、mixed は任意（行のバッファが
-  ストリームごとに要るので、小さい probe は閉じてよい）。
-- 設定ページに書く注意: mixed は行の先頭に印が入り、target どうしの前後は行が閉じた順になる（機械で読む用途に向かない）。
-  入力は送らない。入力が要るなら last-reset か manual。
-- fixture UART のストリームは接続が無くても流れる。last-reset / manual では選ばれていなければ流れず、mixed では印付きで混ざる。
-
-**6. 保存する。** `save`。bind はすぐ効き、再起動は要らない。
-
-### シリアルの口が無い probe（HID / vendor だけ）でも、Arduino のモニタに出せるか
-
-出せる。IDE のモニタはシリアルポートに限らず、**pluggable monitor**（protocol ごとの外部ツール。IDE は TCP で受け取り、送信欄の
-入力も渡す）で見られる。`wchlink://` のポートで ch32rv の monitor が dmseq を流したのと同じ形（§4.6 の実験）。
-
-- discovery が probe を `oep://<serial>` のポートとして出し、`pluggable_monitor.pattern.oep` のツールが HID / vendor で OEP を
-  話して target.console を TCP に流す。設定（DESCRIBE）で mechanism（dmseq / SDI）や fixture.uart を選べる。
-- ツールは ch32rv か OEP の client のどちらが持つか、未定（§3。全体が固まってから）。
-- HID の権限: Linux は hidraw が root だけなので udev の規則が要る（ch32rv の udev の規則に足す）。Windows は要らない。
-- シリアルの口を持つ probe では、組み込みの serial-monitor で足りる（共用の口、§4.2）。
-
-## 4.6 書き込みの経路: ポートを選ぶだけで書き込む（提案）
-
-### 経路の一覧
-
-| 経路 | 相手の USB | 入り方 | 今の道具 |
-|---|---|---|---|
-| WCH-LinkE / WCH-Link（SWD / RVSWD） | LinkE の CDC `1a86:8010`（DAP は `8012`）。シリアルポートとして見える | 常時 | ch32rv `flash`（今の `wch-link` programmer） |
-| OEP の probe（RVSWD / SWIO） | P4 の USJ `303a:1001`、vendor / HID、または変換チップ（CP2102 `10c4:ea60` など）。シリアルポートとして見える | 常時 | OEP の host（今は client の `ch32_flash`。ch32rv は後） |
-| ソフト USB のブートローダー（UIAPduino rv003usb、HID `1209:b803`） | HID。シリアルポートでは**ない** | 外からの操作（リセット 2 連発、BOOT 手順）。app が協力すれば touch1200 | ch32rv `boot hid flash`（今の `ch32rv_hid` tool） |
-| 直 USB の factory ISP（X03x / X315 / H417、`4348:55e0`） | vendor。シリアルポートでは**ない** | BOOT ピン、または app が協力する touch1200（ch32rv `isp enter --via touch1200`） | ch32rv `isp flash` |
-| UART の factory ISP（家系による） | 変換チップ越し。シリアルポート | BOOT ピン | ch32rv `isp --transport uart` |
-| DFU（将来のブートローダー） | DFU class | — | ch32rv `boot dfu` |
-
-### Uno のように、ポートだけでよいか
-
-Uno はポートを選ぶだけで書き込める（プログラマの選択は「書き込み装置を使って書き込む」の別の操作）。同じことは、
-**ポートに付いてくる情報（`{upload.port.protocol}`、`{upload.port.properties.vid / pid / serialNumber}`）を 1 つの書き込みツールが
-受けて、経路を自分で決める**形でできる。Arduino の仕組み（pluggable discovery）はそのために `upload.tool.<protocol>` と port の
-properties を持っている。今の `platform.txt` は `upload.tool=ch32rv` だけで、素の `upload` は programmer が無いと断る。
-
-| 選んだポート | 見分け方 | 書き込みの経路 |
-|---|---|---|
-| LinkE の CDC | VID:PID `1a86:8010` / `8012`。serialNumber で個体も決まる（`--probe serial:<sn>`） | LinkE。**見分けられる** |
-| ch32rv の discovery が出す `wchlink://<serial>`（protocol `wchlink`、実装済み） | protocol | 同上 |
-| OEP の probe（USB の VID:PID を持つもの: P4 の USJ など） | VID:PID + serialNumber。同じ個体の vendor / HID を優先して開く | OEP |
-| OEP の probe（変換チップ越し: classic ESP32） | VID:PID は汎用（CP2102）で見分けられない。**ツールが OEP の describe を送って確かめる**（COBS のフレーム、200〜300 ms で答えが無ければ違う）。共用の口なので、答えが無いときに送ったフレームは target のコンソールに文字として出るだけ | OEP。**モニタで開くのと同じポートに書き込む** |
-| target 自身の CDC（core が USB CDC を持つ家系: X035 など。core が決める VID:PID） | VID:PID | touch1200 で ISP に入れ、`4348:55e0` の再列挙を待って ISP。Leonardo と同じ導線。**core 側に touch1200 で ISP へ跳ぶ実装が要る** |
-| ポート無し | `upload.tool.default` | ツールが USB を走査（LinkE、OEP の USB の probe、HID のブートローダー、ISP の device）。**候補が 1 つならそれ**、複数なら候補を並べて断る |
-
-- **ポートの一覧は広げられる（実験で確認、2026-09-29）。** `arduino-cli board list` の一覧は pluggable discovery が作っていて、
-  OTA の IP は組み込みの `mdns-discovery`、`1-8 dfu` は `dfu-discovery` が出している。platform が自前の discovery を登録すれば
-  同じ一覧に足せる。ch32rv の `arduino discovery` を platform.txt に仮登録したところ、LinkE 7 台が `wchlink://<serial>`
-  （protocol `wchlink`、properties に vid / pid / serial / mode）として serial と dfu と並んで出た。
-
-  ```text
-  pluggable_discovery.required.0=builtin:serial-discovery      # 1 つでも自前を書くと組み込みも明示が要る
-  pluggable_discovery.required.1=builtin:mdns-discovery
-  pluggable_discovery.ch32rv.pattern="{runtime.tools.ch32rv.path}/ch32rv" arduino discovery
-  ```
-
-  同じ仕組みで、HID のブートローダー（`1209:b803`）と ISP の device（`4348:55e0`）も `hid://` / `isp://` の port として出せる
-  （ch32rv の cli 文書に「ISP device・CDC monitor port も列挙する」の予定がある）。OEP の USB の probe（P4 の vendor / HID の口）
-  も同じ discovery で `oep://<serial>` として出せる。変換チップ越しの OEP の probe は、組み込みの serial discovery が出す
-  ポートのまま（describe で確かめる）。protocol ごとに `upload.tool.<protocol>` で tool が決まるので、`wchlink` / `hid` / `isp` /
-  `oep` / `serial` を全部同じツールに向ける。
-- discovery は USB の記述子だけを見て列挙し、AttachChip はしない（同じ probe への書き込みやモニタの最中でも乱さない。ch32rv の
-  実装済みの仕様）。ホットプラグ（START_SYNC の追加・削除の通知）は未実装で、IDE の一覧の更新に任せている。
-- `boards.txt` の `upload_port.vid / pid` に、その板の CDC と LinkE の VID:PID を並べれば、IDE がポートと板を結び付ける（ポート
-  一覧に板名が出る）。
-- **プログラマのメニューは残すが、上書きに使う**: ベンチのように書き込み装置が複数つながっているとき、ポートで決まる経路以外を
-  強いるとき。普段は要らない。
-
-### 1 つの書き込みツール
-
-`platform.txt` の `upload.tool.serial` / `upload.tool.wchlink` / `upload.tool.default` を全部同じツールに向け、ツールが
-`{upload.port.address}`、protocol、vid、pid、serialNumber、`{build.ch32rv_chip}` を受けて上の表で決める。ツールは ch32rv が
-本命（LinkE / HID / ISP / DFU は既に持つ。OEP だけ無い）。ch32rv の OEP 対応まで、OEP の枝だけ client の `ch32_flash` を呼ぶ
-薄い包みを置くか、ch32rv に OEP の枝を先に足すかは、§3 のとおり全体が固まってから決める。
-
-### 発見したポートで、書き込みからモニタまでつながるか（実験、2026-09-29）
-
-X035 の治具の LinkE（`FC928F068181`）で、platform.txt に仮登録して試した（終わったら戻した）。
-
-| 段 | 結果 |
+| 口 | 止め方 |
 |---|---|
-| `arduino-cli board list` | `wchlink://FC928F068181` が出る（前の実験のとおり） |
-| `arduino-cli upload -p wchlink://FC928F068181 --fqbn …`（**programmer 指定なし**） | **通った**。`upload.tool.wchlink` の recipe で `--probe serial:{upload.port.properties.serial}` が `FC928F068181` に展開され、HelloDMSeq が X035 に書けた。ただし板に `upload.protocol` が無いと「A programmer is required to upload」で断られる（`--upload-property upload.protocol=wchlink` で通した）。**今の boards.txt で `upload.protocol` を持つのは UIAPduino だけで、素の upload が断られていた本当の理由はこれ** |
-| `arduino-cli monitor -p wchlink://… --fqbn … --config source=dmseq` | monitor は見つかる（`pluggable_monitor.pattern.wchlink` で登録。**`--fqbn` が要る**: platform 自前の monitor は板の platform から引く。IDE は常に板を持つので問題ない）。しかし arduino-cli が **DESCRIBE の応答で落ちる**（nil 参照）。原因は ch32rv が `port_descriptor` を返し、仕様と arduino-cli は `port_description` を読むこと（[ch32rv-requests](ch32rv-requests.ja.md) の既知不具合に記録） |
-| ch32rv の monitor に手で HELLO / CONFIGURE `source dmseq` / OPEN | **通った**。HelloDMSeq の `uptime` が IDE 相当の TCP に 7 秒間届いた。残りの経路は動く |
+| P4 の USB-Serial/JTAG | `USB_DEVICE_CHIP_RST_REG` の `USB_UART_CHIP_RST_DIS`（bit2）。arduino-esp32 3.3.12 の HWCDC に API は無い |
+| TinyUSB の CDC（`USBCDC`） | `enableReboot(false)`（DTR / RTS の並びと 1200 baud の touch を止める） |
+| EspUsbDevice の CDC（P4 の HS） | 元から持たない |
+| classic ESP32 の UART bridge | 回路なので firmware では止められない。DTR と RTS を両方 on で開けば再起動しない（`arduino-cli monitor` の既定） |
 
-つまり、**発見したポートでモニタにつながる**。つながらないのは 1 語のキー名だけで、直せば IDE でポートを選ぶだけで
-書き込み → dmseq のモニタまで通る。
+### 4.5 リンクの速さ
 
-| 経路 | IDE でそのポートを選んだときのモニタ | 空き |
+UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数字が渡るだけで問題にならない。設定で変えられるようにすると
+忘れたときに入れなくなり、自動 baud 検出は生のバイトと混ざる口では危うい。dmseq と書き込みには足りる。
+
+## 5. OEP の probe の設定
+
+### 5.1 流れ
+
+1. ブラウザの設定ページ（OEP 側のリポジトリ）で、probe に合う transport（CDC は Web Serial、HID は WebHID、vendor は WebUSB）を
+   開く。どれも同じ OEP（describe、session、probe.config）。
+2. `scan` で target を探し、見つかったピンの組をスロットとして登録する（wire、pins、name、attach policy、console mechanism。
+   target_id は錠を掛けるときだけ）。
+3. serial port ごとに bind（流すストリームの集合と mode）を決める。
+4. `save`。すぐ効く。再起動は要らない。
+
+### 5.2 スロット
+
+- 登録は「チップ」ではなく「場所」。チップを付け替えても登録は直さない。どのチップかは使うときに分かる（書き込みは板の家系と実際の
+  チップの照合で守る）。錠（target_id）を掛けたスロットは、違うチップを断る。
+- **同時に持てる接続の数は probe が宣言する**（宣言が無ければ 1）。ロックは probe に 1 つのまま（接続ごとのロックは足さない）。複数の
+  host の同時制御は transport の分離（TCP、host 側のブローカー）で、protocol の外。
+- 登録の上限は protocol では決めず、probe が宣言する（ピンの数、保存の容量、ピン固定なら 1）。
+- 仕様に要るもの: 数の宣言、今ある接続の一覧の操作、スロットの項目（今の bind が持つ pins と attach を移す）。
+
+### 5.3 attach policy と確認
+
+- policy は host / on open / at boot。at boot に**再試行の間隔**（`retry_s`、0 なら再試行しない）を持たせ、いないスロットは
+  probe がその間隔で止めない attach をやり直す。policy が host のスロットは確認しない。
+- **接続は使うときに作るのが基本。自動 attach は、接続に時間がかかる場合があるのを先払いするプリフェッチ。** 外れていれば使うときに
+  attach からやり直す。登録に前回の速さを保存すれば短くなる。
+- at boot のスロットの数は同時に持てる数まで（超える set は断る。順序は意味を持たない）。席が埋まっているときの host の attach は、
+  bind だけが使っている接続のうちいちばん古いものを外して席を空ける（host も使っている接続は外さない）。押し出されたスロットは
+  そのまま。再 attach は policy の合図か host の attach で起き、**bind はどの接続にも乗る**。
+- **スロットの状態**（接続あり / いない（最後に試した時刻）/ 錠に不一致）は probe が describe にロック無しで出し、discovery でも
+  OEP の client でも同じものが読める。host は線を駆動しない。線を駆動せずに「つながっているか」を知る方法は無い（内蔵プルでも、
+  容量の戻り時間でも、接続ピンと未接続ピンで差が無かった）。
+- 自動 attach は止めない attach だけ。錠があれば target_id が一致したときだけコンソールを開く。
+
+### 5.4 bind（serial port に何を流すか）
+
+| mode | 流すもの | 入力 |
 |---|---|---|
-| `wchlink://<serial>`（LinkE） | ch32rv の pluggable monitor: dmdata / dmseq / rtt（設定の `source`） | **UART / SDI は出ない**。LinkE の CDC の serial port を選び直す（書き込みと別のポート）。ch32rv の monitor に `uart` の source を足せば 1 つで済む（依頼 B-7） |
-| LinkE の CDC（serial） | 組み込みの serial-monitor（UART / SDI） | 書き込みは VID:PID で LinkE と分かるので同じポートでできる（§4.6 の表） |
-| `oep://<serial>`（OEP の USB の probe） | pluggable monitor が要る（target.console を TCP に pipe。ch32rv か OEP の client） | 未実装 |
-| OEP の probe の serial（USJ、変換チップ） | 組み込みの serial-monitor（共用の口、§4.2） | — |
-| ソフト USB / ISP / DFU | 書き込みの後に app が列挙する CDC（あれば） | 書き込みの装置とは別の口 |
+| **last-reset** | host が最後に reset した target のストリーム（riscv-dm の reset と attach_under_reset。probe 自身の attach と target の自己リセットは数えない）。起動時は bind の並びの先頭。選ばれた target の接続が切れても選択は替えない | 選ばれているストリームへ |
+| **manual** | bind に保存した「選ばれているストリーム」。設定ページと書き込みツールが替える。選択の無い manual は set で断る | 同上 |
+| **mixed** | 全部。ストリームごとに行をため、閉じたら `[name] 行`。閉じない出力は量（例 128 byte）か静けさ（例 100 ms）で区切る | **送らない（受信専用）** |
 
-pluggable monitor は IDE の送信欄の入力も target に届ける（ch32rv の実装）。設定（DESCRIBE の `configuration_parameters`）は
-IDE のモニタの右上のメニューに出る（今は `source` だけ）。
+- どの mode でも bind が 1 つならそれが流れる。1 つのときと 2 つ以上のときで動きが変わらない。
+- 対応する mode は probe が宣言する。last-reset と manual は必須、mixed は任意（小さい probe は閉じてよい）。
+- 設定ページの注意: mixed は印が入り、target どうしの前後は行が閉じた順（機械で読む用途に向かない）。入力は送らない。
+- fixture UART のストリームは接続が無くても流れる。
 
-## 5. 仕様と実装に要ること
+## 6. IDE との結び付き
 
-| 項目 | 置き場 | 状態 |
-|---|---|---|
-| CDC / USB-Serial/JTAG のフレームを COBS + CRC-16 に（core §3.1 の表） | oep-spec | 未提案 |
-| fn 0 の describe に経路の一覧（D-5） | oep-spec（core §7.5） | 決定、未提案 |
-| 接続を同時に持てる数の宣言と、接続の一覧の操作（D-1） | oep-spec（oep-if-debug §1〜§2） | 決定、未提案 |
-| client: シリアルを `TIOCEXCL` で開く（D-3）、ロックの奪い方（D-4） | oep-client-python（`link.py`）、host 開発ガイド | 決定、未着手 |
-| シリアルの口の共用の規則（§4.2: 見分け方、前後の区切り、セッションの口では生の転送を止める、再開の位置） | oep-spec（core §3 の経路の節） | 未提案 |
-| USB を持たない probe の口（シリアル）の宣言と bind。今の bind と describe の port は USB の CDC だけが対象 | oep-spec（oep-if-probe-config §1、§3） | 未提案 |
-| probe の再起動の抑止（§4.4）を probe 開発ガイドに | oep-spec（probe-development-guide） | 未着手 |
-| client: シリアルのポートは常に COBS、フレームの外のバイトは雑音として捨てる | oep-client-python（`link.py`） | 未着手 |
-| probe の共用する口の送信のキュー（フレームとコンソールの塊を単位に、1 つの書き手） | oep-probe-arduino（Endpoint と bind の間） | 未着手 |
-| classic ESP32 の probe: 共用、bind、NVS の保存（今は Endpoint だけで ProbeConfig が無い） | oep-probe-arduino（Esp32V003Probe） | 未着手 |
-| P4 の probe: USJ を COBS に、HS の CDC の bind を本線へ（ConsolePrototype から）、USJ の reset 抑止 | oep-probe-arduino（Esp32P4X035Probe） | 未着手 |
-| Web Serial の設定のページと JavaScript の OEP client | 置き場は未定（§6 の 3） | 未着手 |
-| ポートで経路を決める 1 つの書き込みツール（`upload.tool.serial` / `default` / `wchlink` / `hid` / `isp` / `oep`、port の properties を渡す）、`boards.txt` の `upload_port.vid/pid` | ArduinoCore-CH32（`platform.txt`、`boards.txt`）と ch32rv | 未着手 |
-| ch32rv の discovery を platform.txt に登録（`pluggable_discovery.ch32rv.pattern`、組み込みの serial / mdns も明示） | ArduinoCore-CH32（`platform.txt`） | 実験で動作を確認、未登録 |
-| core: USB CDC を持つ家系で touch1200 から ISP へ跳ぶ（Leonardo の導線） | ArduinoCore-CH32 | 未着手 |
-| ch32rv の discovery に HID のブートローダーと ISP の device を足す（任意） | ch32rv | 予定あり（cli 文書） |
-| ch32rv の OEP 対応 | ch32rv（依頼は [ch32rv-requests](ch32rv-requests.ja.md)） | 全体が固まってから |
-| ch32rv の pluggable monitor: DESCRIBE のキー（`port_description`、`value`）、serial port の path を address に受けて LinkE を引く、source `uart`（既定）、**stdin の EOF で必ず終わる**（arduino-cli は CLOSE / QUIT を送らずに死に、tool は別のプロセスグループなので killpg も届かない。EOF が唯一の合図）、**落ちるとき（接続の喪失など）は理由を data の行として流してから終わる**（arduino-cli は tool の stderr を見せず exit 0 で終わるので、data に流せば dut.log と IDE のモニタに残る） | ch32rv | 依頼は固まってから（キーの 2 語は既知不具合に記録済み） |
-| pytest-embedded-arduino-cli: platform が自前の monitor を持つ profile では、runtime を `arduino-cli monitor -m <profile>` の子プロセスで受ける（pyserial の URL handler として。`dut` のまま自動、pyserial 固定の逃げ道は option）。設定は板の既定と profile の `port_config` | pytest-embedded-arduino-cli（ユーザーの管理） | 事前検証済み、依頼は固まってから |
+### 6.1 monitor
 
-## 6. 決めたこと・決めること
+- この platform の protocol serial の pluggable monitor は **ch32rv**（`pluggable_monitor.pattern.serial`）。LinkE の CDC でも OEP の
+  probe の serial port でも、`wchlink://` / `oep://` でも、monitor のプロセスは ch32rv。DESCRIBE の `source`（uart 既定 / sdi /
+  dmdata / dmseq / rtt）をモニタの欄で選ぶ。
+- ch32rv の monitor は、OEP の probe では OEP のセッションを持ち、console のストリームを pluggable monitor の TCP へ流す。この
+  プロセスが**ブローカー**を兼ねる（§7.2）。
+- 設定の優先順は `--config` > profile の `port_config` > 板の既定（boards.txt `monitor_port.serial.<id>`）。`-m <profile>` のときは
+  top-level の `default_port_config` は届かない。monitor が宣言しないキーを profile に書くと arduino-cli が exit 7 で止まる。
+- 板の既定として `monitor_port.serial.chip=<家系>` を持たせ、ch32rv の monitor が §3.4 のスロットの選択に使う。
 
-### 決めたこと（2026-09-29 の議論、順に）
+### 6.2 ch32rv の monitor に要る作り
 
-| # | 決定 | 要るもの |
-|---|---|---|
-| D-1 | **複数の target を指定でき、接続を同時に持てる。** 同時に持てる数は probe が宣言し、宣言していない probe は 1。ロックは probe に 1 つのまま（接続ごとのロックは足さない）。複数の host の同時制御は経路の分離（TCP、host 側のブローカー）の話で、protocol の外 | 仕様: 数の宣言、今ある接続の一覧の操作（接続、ピン、target_id、使っているもの、状態）。probe: 接続ごとの状態、要求ごとのピンの切り替え、複数のコンソールの見回り。client: 接続ごとの状態 |
-| D-2 | **IDE には target ごとに 1 つのポートが見え、1 つずつ操作する。** discovery が probe の保存した設定を読んで並べる | discovery（§4.6） |
-| D-3 | **OEP の道具はシリアルを必ず排他で開く**（Linux / macOS は `TIOCEXCL`、Windows は元から排他）。排他でないと応答のバイトが別のプロセスに渡り、経路そのものが成り立たない。`arduino-cli monitor` は既に TIOCEXCL を使っている（実測） | client: pyserial の `flock` の代わりに `TIOCEXCL`。host 開発ガイドに書く |
-| D-4 | **ロックの奪い方。** 経路がシリアル 1 本だけの probe は、排他で開けた時点で前の持ち主は死んでいるので、その場で force で奪ってよい。経路が複数の probe は `lock_state` で持ち主と lease の残りを読み、残りだけ待ち（上限は数秒）、持ち主が更新し続けているなら名指しでエラー。force は利用者が明示したときだけ。対話的な道具は lease を短く（2〜3 秒）、pytest は長く（10 秒、更新あり） | 書き込みツールとモニタの実装。host 開発ガイド |
-| D-6 | **bind は serial port ごとに「流すストリームの集合と mode」。** mode は last-reset / manual / mixed（§4.5 の 5）。probe が対応する mode を宣言し、last-reset と manual は必須、mixed は任意。bind が 1 つならどの mode でもそれが流れる | 仕様: bind の項目の組み直し（mode、選択、複数のストリーム）、対応 mode の宣言。probe: 選択の追従（last-reset は host の reset を数える）、mixed の行のバッファ。設定ページ: mode の選択肢と注意 |
-| D-7 | **target の登録と bind を分ける。** target = wire、pins、target_id、name、attach policy、console mechanism（target ごとに 1 件）。bind = serial port → stream。登録だけで bind の無い target（pytest が OEP で読む）も、bind だけの serial port（fixture UART）もある | 仕様: 今の bind（pins と attach を持つ）と target（identity だけ）の項目を組み直す |
-| D-8 | **登録の上限は protocol では決めず、probe が宣言する**（ピンの数、保存の容量、ピン固定なら 1）。宣言が無ければ保存の容量で断る。**attach policy は target ごと**に host / on open / at boot から選び、設定ページが勧める並びは at boot を先頭に。at boot は止めない attach だけで、target_id が一致したときだけ console を開く。複数の target を登録していれば、起動時に全部へ順に attach する（1 台 約 170 ms） | 仕様: 登録の上限の宣言、attach policy を target の項目へ。設定ページ: 上限の表示 |
-| D-9 | **用語は英語で決め、日本語は訳**（§0）。「口」はやめて serial port、Arduino の一覧の行は IDE port | 文書 |
-| D-10 | **接続は使うときに作るのが基本。at boot / on open の自動 attach は、接続に時間がかかる場合があるのを先払いするプリフェッチ。** (1) at boot の target の数は同時に持てる数まで（超える set は断る。順序は意味を持たない）。(2) 席が埋まっているときの host の attach は、bind だけが使っている接続のうちいちばん古く attach したものを外して席を空ける（host も使っている接続は外さない。空きが作れなければ断る）。(3) 押し出された target はそのまま。再 attach は policy の合図（on open は DTR、at boot は次の起動）か host の attach で起き、**bind はどの接続にも乗る**（attach policy は probe が自分から attach する合図だけを決める）。host が握っていない接続の console が切れるのは仕方ない（dmseq は target が諦めた分を捨てる）。登録に前回の速さを保存すれば再 attach は短くなる | 仕様: at boot の上限、押し出しの規則、bind の規則の言い換え、登録への速さの保存（任意）。probe: 実装 |
-| D-13 | **共用の serial port の規則（§4.1〜§4.2 を決定に）。** (1) シリアルに見える transport はすべて COBS + CRC-16、0x00 区切り。`length(u16)` は vendor bulk と HID だけ。(2) 0x00 から次の 0x00 までためて解き、CRC が合えば OEP、合わなければ（200 ms 途切れても）ためた分を console へ。0x00 以外はすぐ console へ。(3) 応答は `0x00 <COBS> 0x00`。serial port ごとに送信のキュー 1 つ、単位を割らない 1 つの書き手。(4) 生の転送を止めるのは、ロックを持つセッションの要求が来ている serial port だけ。(5) client はフレームの外のバイトを雑音として捨て、欠落は時間切れだけで判断する | 仕様: core §3.1 の表と経路の節。probe: 見分け、キュー。client: 読み手 |
-| D-12 | **セッションが終わって共用の serial port の生の転送を再開するときは、host がそのセッションで最後に reset した位置から流す**（reset が無ければ今から）。probe のストリームの容量からあふれた分は捨ててよい。mode（last-reset / manual / mixed）に関係なく同じ規則 | 仕様: ストリームに host の reset の位置の印（oep-if-common §1 の mark と同じ仕組み）と再開の規則。probe: 実装 |
-| D-11 | **target がいるかの定期的な確認はしない。** 使うときの attach の失敗で分かればよく、console を流している間は DMI の失敗で分かる。線を無駄に駆動しない | — |
-| D-14 | **pytest の runtime は `dut` のまま、profile の platform が自前の monitor（`pluggable_monitor.pattern.<protocol>`）を持つときだけ自動で `arduino-cli monitor -m <profile> -p <port> -l serial --quiet` の子プロセスで受ける**（pyserial の URL handler として `dut` の裏に置く）。`pdut` は作らない。pyserial に固定する逃げ道は option（marker は使わない）。tool を直接呼ぶ形（B）は option としても持たない。設定は板の既定（boards.txt `monitor_port.serial.<id>`）と profile の `port_config`。close は stdin を閉じて少し待ち、終わらなければ SIGTERM。stdin を閉じていないのに stdout が EOF なら異常終了 | pytest-embedded-arduino-cli（依頼は固まってから）。両セッションで事前検証済み |
-| D-15 | **OEP の経路は、monitor を握る ch32rv がブローカーを兼ねてつなぐ。** (1) upload は今のまま（ch32rv が直接 transport を開き、書いて、閉じる）。(2) `ch32rv arduino monitor` は OEP の probe では transport とセッションを持ち、console を pluggable monitor の TCP へ流すのに加えて、**127.0.0.1 の TCP を 1 つ待ち受けて OEP のフレーム（仕様の TCP の形）を受け、probe との 1 本のセッションに束ねる**（client ごとに corr を付け替え、client の `open` / `end` は受け止めて probe に出さない、client が切れたらその client の plan と接続を外す）。待ち受けの場所は DeviceLock と同じ利用者ごとの runtime ディレクトリの `<key>.oep`（ch32rv の内部。利用者は `ch32rv broker endpoint --probe port:<path> --json` に聞く）。**ブローカーは monitor と一緒に死ぬ**（単体のデーモンは作らない。monitor は何度でも開ける。probe の後始末は `end` と lease）。monitor が開いている間の他の ch32rv コマンドはブローカーを通す。(3) つなぐのは conftest ではなく **`pytest-embedded-arduino-cli-ch32rv`**（D-16）: port を `arduino_cli_resolved_port` から、ch32rv の path を pytest-embedded-arduino-cli が公開する展開済み properties の fixture（依頼）の `runtime.tools.ch32rv.path` から取り、`ch32rv broker endpoint --probe port:<port> --json` で聞いて `oep_host` を作る。**その fixture が入ってから対応する**（つなぎは作らない）。(4) monitor が付いていない OEP の probe（LinkE が書き、OEP の probe は fixture だけ、など）は `oep_host` が transport を直接開く。probe の指定はプラグインのオプション / ini。その probe をプラグインの peers として開かせてはいけない（transport を取られる）。開発用の symlink の platform では tool の path が解けないので、ベンチの platform の入れ方（local index から Board Manager と同じ形で入れる）は別に決める。LinkE では OEP の経路は出てこない。**仕様の変更は無い**（probe から見える transport とセッションは 1 つのまま） | ch32rv（ブローカー、`broker endpoint`、`port:` selector）、oep-client-python（接続先の抽象化）、conftest の helper |
-| D-16 | **pytest の道具の最終の形（ここを目指す）。** conftest は設定だけにし、全部をプラグインとモジュールに載せる。<br>`pytest-embedded` → `pytest-embedded-arduino-cli`（upload / monitor。D-14）→ **`pytest-embedded-arduino-cli-ch32rv`**（ch32rv の path、`broker endpoint`、`oep_host`。oep-client-python を import）。別系統で **`pytest-embedded-wireskein`**（test ごとの `ws_run` = Recorder、記録先は pytest-embedded のログのディレクトリ、teardown で verify して NG なら fail、JUnit / JSON。wireskein を import）。<br>**oep-client-python は純粋なモジュール**（pip で入る package にする。キャプチャを記録の受け口 = callback へ渡す口を持ち、wireskein に依存しない）。**wireskein も純粋なモジュール**（pip で入る package。runlog は標準ライブラリだけ、verify は numpy）。ch32rv のプラグインと wireskein のプラグインの結び付き（`oep_host` のキャプチャを `ws_run` へ）は両方が入っているときだけの任意の連携。今の `trace_kit.Run`（`--wireskein PATH` で runlog を直接 import し `ws.py verify` を shell で呼ぶ）はこれに置き換わる。汎用の `pytest-wireskein` は要る場面が出てから | 新しいリポジトリ 2 つ（ch32rv のプラグイン、wireskein のプラグイン。ユーザーが作る）、oep-client-python と wireskein の package 化、pytest-embedded-arduino-cli の properties の fixture |
-| D-17 | **discovery が出す OEP の probe は、専用 PID の USB で列挙する probe だけ**（P4 の HS の口、RP2350。slot ごとに `oep://<probe>/<slot>`。読むのはロック無しの describe / config で、HID の口があればそれを優先する = 他の道具が CDC / vendor を握っていても読める）。その probe では raw の serial port を選んだ upload は断る。**それ以外の probe（変換チップ越しの無印 ESP32、USJ だけの P4）は discovery に出さず、利用者が serial port を自分で選ぶ。** discovery は普通の serial port を開かない。「一度開いたら以後 discovery に増える」ような host 側の学習は持たない。LinkE は `wchlink://` のまま | ch32rv の discovery、OEP の専用 PID（pid.codes）、probe の HID の口（推奨の作りとしてガイドに） |
-| D-18 | **serial port を選んだときの slot の選び方（専用 PID の無い probe。書き込みもモニタも同じ規則）**: 利用者が IDE で選んだ板の家系（recipe の `--chip {build.ch32rv_chip}`。monitor には boards.txt の `monitor_port.serial.chip=<家系>` を CONFIGURE で渡す）に合う slot が **1 つならそこ**。接続済みの slot の chip は D-19 の状態から、未接続の slot は止めない attach で読む（利用者の操作なので線を駆動してよい）。**0 か 2 つ以上なら止めて**、slot の一覧と理由を出す（同じ家系を 2 つ挿した probe は `oep://…` を持つ専用 PID の probe で使う）。動きは挿さっているチップの組で決まり、登録の数では変わらない。ch32rv の `--chip` の fail-closed と同じ論理 | ch32rv（upload と monitor の slot の選択）、core の boards.txt（`monitor_port.serial.chip`） |
-| D-19 | **登録は「チップ」ではなく「場所」= slot。** slot = wire、pins、name、attach policy、console mechanism。**target_id は任意の錠**（掛ければ違うチップは断る。掛けなければ、そこにいるものが対象で、書き込みの安全は ch32rv の板（FQBN）と実際のチップの照合で守る）。チップを付け替えても登録は直さない。IDE port は slot ごと。**いない slot は probe が設定した間隔で止めない attach をやり直す**（policy の at boot に再試行の間隔 `retry_s` を持たせる。0 なら再試行しない。policy が host の slot は確認しない）。成功した接続はプリフェッチとして残るので、以後の確認は無料。**slot の状態（接続あり / いない（最後に試した時刻）/ 錠に不一致）は probe が describe にロック無しで出し、discovery でも OEP で接続した client でも同じものが読める。** host（discovery、IDE の一覧の更新）は線を駆動しない。線を駆動せずに「つながっているか」を知る方法は無い（X2 に加えて 2026-09-29 に容量の戻り時間も測ったが、接続ピンと未接続ピンで差が無かった）。D-7 と D-11 はこの形に読み替える | 仕様: slot の項目（D-7 の組み直し）、`retry_s`、slot の状態の describe。probe: 再試行と状態。ch32rv の discovery: 状態を読む |
-| D-20 | **ベンチも利用者と同じ「index から入れる」形にする。** 作業ツリーの symlink（tool の依存が解けず `--build-property` / `--upload-property` で補う形）はやめる。**local index**（`tools/index/install_check.py`: archive と index を作って loopback で配り、まっさらな data ディレクトリに `core install`）は **β を出す前の検査**（次の β 候補の作業ツリーを利用者の経路で試す）に使い、**日常のベンチは公開した β から入れる** | ベンチの pytest の session の fixture、tools/index |
-| D-21 | **β をリリースする（最終の形への節目）。** 数日で終わる修正は全部入れてから出す。本番の利用者はいない想定なので、β の後も破壊的変更を入れる。中身: 今動いているもの（LinkE の書き込み、UIAPduino の HID）+ 今日決めた platform.txt の配線（板の `upload.protocol`、`upload.tool.serial` → ch32rv、`pluggable_monitor.pattern.serial` → ch32rv、discovery の登録）を、ch32rv の monitor の修正（DESCRIBE のキー、serial port の address、`uart` の source）と揃えて。OEP の書き込みと pytest の道具はその後の β で。手順: `approval-status.ja.md` を埋める、`gen_index.py` で index を作って公開 | このリポジトリ、ch32rv |
-| D-22 | **書き込みの経路 A（LinkE、RVSWD / SWIO）と E（UIAPduino の HID ブートローダー、手動の pin reset）は現状維持。B（OEP の probe）は ch32rv で対応する（pytest も arduino-cli 経由で書き、client の `ch32_flash` は ch32rv の OEP の書き込みが入った時点で消す）。C（factory ISP、USB `4348:55e0`）は**設計は決めたが最初の β には入れず、後から足す**: ch32rv の discovery が ISP で待つ device を `isp://<topology>` で出し（Identify で chip を読み、LinkE の IAP は除く。properties の `chip` で boards.txt の `upload_port.N.protocol=isp` / `.chip=…` と照合して IDE に板名を出す）、`upload.tool.isp` → ch32rv `isp flash`。monitor は無い。X035 / X315 は core に USB CDC + touch1200 → `BOOT_MODE` + software reset の入口を作ってから（2 段目）。全部足すだけで既存の経路に触れない | ch32rv（`isp`、discovery）、core（recipe、boards.txt、後で USB CDC と touch1200） |
-| D-23 | **D（factory ISP、UART）は対応しない**（要る場面が出たら考える）。USB-UART の変換チップを足すなら、その ESP32 を OEP の probe にした方が書き込みも console も揃う。app の協力が要る入口でもある。**E（UIAPduino の HID ブートローダー）は discovery に対応する**: ch32rv の discovery が `hid://<topology>`（protocol `hid`、専用 PID `1209:b803` / `b003`）を出し、boards.txt の `upload_port.0.vid/pid` で IDE に板名が出る。upload は今の `ch32rv_hid` の recipe（`upload.tool.hid`）。ポート無しの `upload.tool.default` も残す。monitor は無い（app は USB を出さない） | ch32rv の discovery、core の platform.txt / boards.txt |
-| D-5 | **OEP を運ぶ経路の一覧を fn 0 の describe に足す**（種類の並び: UART の変換チップ越し / USB CDC / USB-Serial/JTAG / vendor bulk / HID / TCP）。D-4 の「1 本だけか」はこれで判断する。USB の列挙は discovery がポートを probe ごとにまとめるためだけに使い、安全の判定には使わない | 仕様: core §7.5 の新しい tag（`resets_on_open` の隣）。probe: 宣言。client / discovery: 読む |
+- DESCRIBE のキーは `port_description`、列挙の値のキーは `value`（単数）。
+- serial port の path を address に受け、`probe list` の `ports` から Link / probe を引く。source `uart` は CDC の素通し。
+- **stdin の EOF で必ず終わる**（arduino-cli は CLOSE / QUIT を送らずに死ぬことがあり、tool は別のプロセスグループなので killpg も
+  届かない。stdin を閉じると CLOSE は届き QUIT は届かない）。落ちるとき（接続の喪失など）は理由を data の行として流してから終わる
+  （arduino-cli は tool の stderr を見せず exit 0 で終わる）。
+- OPEN に error を返すと arduino-cli は exit 1 で stderr に tool の message を出す。
 
-### 決めること
+## 7. pytest の道具（最終の形）
 
-1. ~~Web Serial の設定のページと JavaScript の client の置き場~~ → OEP 側（このリポジトリの外）で決める。
-2. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
-   確かめる方式でよいか（VID:PID では見分けられない）。
-   ポートだけで書くには、板に `upload.protocol` を持たせる必要がある（無いと arduino-cli が programmer を要求する）。
-   発見した `wchlink://` のポートで UART も見るには、ch32rv の monitor に `uart` の source を足す（依頼 B-7）か、UART は LinkE の
-   CDC のポートを選ぶ、のどちらか。
-3. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
-4. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
+### 7.1 家系
 
-## 7. 確認済み事実
+```text
+pytest-embedded
+ ├─ pytest-embedded-arduino-cli            upload / monitor
+ │   └─ pytest-embedded-arduino-cli-ch32rv  ch32rv の path、broker endpoint、oep_host（oep-client-python を import）
+ └─ pytest-embedded-wireskein              test ごとの ws_run、記録先はログのディレクトリ、teardown で verify（wireskein を import）
 
-- UART の OEP のフレームは COBS + CRC-16/CCITT-FALSE、0x00 区切り。CDC / USB-Serial/JTAG / TCP / vendor bulk は `length(u16) message`
-  （oep-core §3.1）。probe はフレームの途中で 200 ms 途切れたら読み直す（同 §3.2）。
-- host は同じ probe に複数の経路があれば vendor bulk、HID、CDC の順に試す（oep-core §3.3）。複数の経路はセッションとロックを 1 つ
-  共有する（同、P1 で確認）。
-- bind（口に何を流すか）と describe の port は、今は USB の CDC の口だけが対象（oep-if-probe-config §1、§3）。bind はすぐ効く
-  （「いつ効くか: すぐ」）。
-- CDC の口へのコンソールの bind と、host の detach / reset を越えて続くことは X035 の治具で動いた（P6）。設定の保存（NVS）は
-  P4 で動いた（保存 2 ms。P4 の結果）。
-- 今の仕様では 1 つの wire のインターフェースの connection は 1 つ（oep-if-debug §1）。D-1 で変えると決めた。scan は probe が
-  許す組を順に試して見つかった組を返す。線の操作は scan / attach / detach / attach_under_reset で、接続の一覧は無い。
-- Linux の tty は `TIOCEXCL` で 2 つ目の open が `EBUSY` になる（実測、2026-09-29）。`arduino-cli monitor` が開いている間も
-  `EBUSY`。root（CAP_SYS_ADMIN）は素通り。fn 0 の describe に経路の一覧は無い（firmware / model / unit_id / channels / reserved /
-  profile / label / resets_on_open / uart_rates）。
-- 線を駆動せずに target の有無は分からない（X2: debug の線は probe の内蔵プルに勝たない）。止めない attach は動いているアプリを
-  0.5 µs の分解能で乱さず、約 170 ms かかる（X3）。連続の bind のコンソールは DMI の失敗で link-lost になり、P6 の試作は
-  250 ms ごとに attach をやり直した。
-- 経路ごとの速さ（X6）: vendor bulk 37 MB/s、CDC 8.2 MB/s、HID 0.84 MB/s（probe → host）。往復はどれも 1 ms 未満。
-- CDC を 2 口以上持つと vendor のストリーミングが欠ける（X1）。Linux の cdc-acm は開くときに DTR / RTS を一度立てる（X1）。
-- コンソールの受信は位置付きのストリームで、読んでも消えない。読み手が増えても取り合わない。同じ接続で DM の mailbox を使う
-  方式（dmseq、dmdata、SDI）は 1 つだけ。
-- 再起動の抑止: P4 の `usb_serial_jtag_reg.h` に `USB_SERIAL_JTAG_USB_UART_CHIP_RST_DIS`（`USB_DEVICE_CHIP_RST_REG` bit2）がある。
-  arduino-esp32 3.3.12 の `USBCDC::enableReboot(bool)` は DTR / RTS の並びと 1200 baud の touch を抑止する。HWCDC には同じ API は
-  無い。EspUsbDevice 2.5.1 の CDC は DTR / 1200 baud の処理を持たない。
-- classic ESP32 の probe は、DTR と RTS を両方 on で開くと再起動せず、両方 off にして開くと再起動した（2026-09-29、pyserial）。
-  `arduino-cli monitor` の既定は dtr=on、rts=on。
-- oep-client-python の COBS の読み手は、0x00 の前のバイトをフレームとして解き、失敗すると壊れた応答として送り直す（`link.py`
-  `_recv` → `cobs.unframe`）。フレームの形は USB の VID:PID で選ぶ（`framing_for`）。今の client は 115200 で開く。
-- 今の classic ESP32 の probe（Esp32V003Probe）は Endpoint だけで、ProbeConfig（設定と保存）を持たない。P4 の X035 の probe は
-  USB-Serial/JTAG で OEP を運び、コンソールの CDC は試作（Esp32P4X035ConsolePrototype）にある。
-- 今の OEP の試験（`tests/manual/oep_*`）は、pytest に当たる Python のスクリプトが 1 つのセッションで書き込み・コンソール・
-  キャプチャをすべて扱っている。書き込みは client の `ch32_flash`。
-- ch32rv は WCH-LinkE / WCH-Link（`flash`）、HID のブートローダー（`boot hid`、`1209:b803`）、factory ISP（`isp`、USB `4348:55e0` と
-  UART、X03x / X315 / H417 は `isp enter --via touch1200`）、DFU（`boot dfu`）に対応し、OEP の probe には対応していない。monitor の
-  source は uart / sdi / dmdata / dmseq / rtt。`arduino discovery` は `wchlink://<serial>` の port を protocol `wchlink` で列挙する
-  （実装済み）。`arduino monitor` は pluggable monitor（dmdata / rtt）。
-- 今の `platform.txt`: `upload.tool=ch32rv`、`upload.tool.default=ch32rv`。素の `upload` は「A programmer is required」で断る
-  （programmer `wch-link` を指定して書く）。UIAPduino は `upload.protocol=hid` と `ch32rv_hid` tool（`boot hid flash --usb-id 1209:b803`）。
-- Arduino の pluggable discovery: port には protocol と properties（serial discovery は vid、pid、serialNumber）が付き、
-  `upload.tool.<protocol>` で tool を選べる。ポート無しは `upload.tool.default`。組み込みは serial / mdns / dfu の 3 つ
-  （`~/.arduino15/packages/builtin/tools/`）。platform の自前の discovery は `pluggable_discovery.<id>.pattern` で登録し、1 つでも
-  書くと組み込みも `pluggable_discovery.required.N` で明示が要る（最初 `discovery.<id>.pattern` と書いて出なかった）。
-- 実験（2026-09-29）: ch32rv `arduino discovery` を登録した `arduino-cli board list` に、LinkE 7 台が `wchlink://<serial>` として
-  出た（protocol `wchlink`、properties vid / pid / serial / mode、hardware_id = serial）。登録は戻してある。
-- 実験（2026-09-29）: `upload.tool.wchlink` と `upload.protocol` を与えると、`arduino-cli upload -p wchlink://FC928F068181` が
-  programmer なしで X035 に書けた。arduino-cli は板に `upload.protocol` が無いと「A programmer is required to upload」を返す
-  （バイナリに `upload.protocol` の参照がある）。platform 自前の monitor は `pluggable_monitor.pattern.<protocol>`（バイナリの
-  文字列に `pluggable_monitor.pattern` / `pluggable_monitor.required`）で、`arduino-cli monitor` には `--fqbn` が要る。arduino-cli
-  1.3.1 は DESCRIBE の応答の `port_description` を読み、無いと panic する。ch32rv 0.10.1 は `port_descriptor` を返す。
-- ch32rv `arduino monitor` の DESCRIBE は `source`（dmdata / dmseq / rtt）だけを出す。uart / sdi は wrap しない（cli 文書）。手で
-  OPEN すると X035 の HelloDMSeq の出力が TCP に届いた。
-- pluggable monitor と pytest（2026-09-29、偽の monitor で確認）: `arduino-cli monitor` は子プロセス（stdin / stdout をパイプ、
-  `--quiet`）にすると、monitor の出力が stdout に流れ、stdin の入力が tool に届く。**stdin が EOF だと設定の列挙だけで exit 0
-  してセッションを開かない。** tool は列挙用と本番用の 2 回起動される。DESCRIBE の列挙の値のキーは `value`（単数）。設定の優先順は
-  `--config` > profile の `port_config` > 板の既定（boards.txt `monitor_port.<protocol>.<id>`）。**`-m <profile>` のときは top-level
-  の `default_port_config` は届かない。** `-m` のとき arduino-cli が読む platform.txt は profile 用の写し（`~/.arduino15/internal/`）。
-  profile の `port_config` に monitor の DESCRIBE に無いキーがあると「invalid port configuration」で終了する。変わった設定だけ
-  CONFIGURE される。SIGTERM を受けた arduino-cli は tool に CLOSE / QUIT を送らない。**tool は arduino-cli と別のプロセスグループで起動される**ので、
-  arduino-cli のグループへの killpg は tool に届かない（実測）。tool が残らないのは stdin の EOF で終わるから。probe の解放を保証するのは
-  tool 側の「stdin の EOF で終わる」作りで、killpg ではない。**セッションが開いた後に arduino-cli の stdin を閉じると、arduino-cli
-  は tool に `CLOSE` を送って 0.02 秒で exit 0 する（`QUIT` は送らない）。** tool はその後の EOF で終わる。プラグインの close は
-  「stdin を閉じて少し待ち、終わらなければ SIGTERM」の順が行儀よい。
-- `arduino-cli monitor --quiet` の子プロセスは**両方向ともバイト透過**（0x00〜0xFF、CR / LF がそのまま。271/271 バイト一致、入力も
-  一致）。tool → pytest の遅れ 0.4 ms。起動から最初のバイトまで約 1 秒（`-l serial` で discovery を省くと 0.8 秒）。
-  `arduino-cli compile --show-properties=expanded --profile <p>` は `runtime.tools.*.path` を解いた形で返すので、
-  `pluggable_monitor.pattern.<protocol>` の recipe は展開済みの command line として読める（プラグインが tool を直接呼ぶ案の材料）。
-- 失敗の見え方: tool が OPEN に error を返すと arduino-cli は exit 1、stderr に `Port monitor error: command 'open' failed: <tool の message>`。
-  **セッション中に tool が落ちると stdout が EOF になり arduino-cli は exit 0、stderr は空**（tool の stderr も届かない）。プラグインは
-  「自分が stdin を閉じていないのに EOF」で失敗と判断する必要がある。
-- プラグインのセッションの意見（2026-09-29）: runtime は `arduino-cli monitor` の子プロセス（A）だけにし、tool を直接呼ぶ（B）は option
-  としても持たない（設定の適用と検証、recipe の解釈を arduino-cli に任せる。IDE と同じ経路。経路が 2 つになると切り分けが倍）。
-  `-l serial` を付ける。起動の約 1 秒と tool の 2 回起動は受け入れる。こちらの結論も同じ。
-  platform が自前の monitor を持つかは、`arduino-cli compile --show-properties --profile <p>` または `board details -b <fqbn> --json`
-  の `build_properties` の `pluggable_monitor.*` で分かる（`board details` は `--profile` を取らないので global の platform を見る）。
-- pytest-embedded-arduino-cli 1.6.0（ユーザーの管理）: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ
-  （`--programmer` / `--upload-property` / `--fqbn` は渡さない。fqbn と programmer は sketch.yaml と profile に任せる）。runtime の port
-  は pyserial の `serial_for_url` で自分で開く（`socket://` 可）ので、pluggable monitor は今は経路に入らない。device lock は port の
-  path ごと。peers（複数 DUT）あり。プラグインのセッションの事前検証: 情報は取れる、`dut` のまま自動で出し分けるのが方針に合う
-  （`pdut` はテストが platform を名指しすることになる）、設定は板の既定と profile の `port_config` を主に、marker は使わない。
-- 例のスケッチの `sketch.yaml`（index の platform を指すプロファイル）が付いたままだと、手元の platform で compile できない
-  （"Platform … is not found in any known index"）。試験の道具は sketch.yaml を写さない。
+oep-client-python   純粋なモジュール（pip）。キャプチャを記録の受け口（callback）へ渡す口を持ち、wireskein に依存しない
+wireskein           純粋なモジュール（pip）。runlog は標準ライブラリだけ、verify は numpy
+```
 
-## 関連
+- conftest は設定だけ。ch32rv のプラグインと wireskein のプラグインの結び付き（`oep_host` のキャプチャを `ws_run` へ）は、両方が
+  入っているときだけの任意の連携。今の `tests/manual/oep_smoke/trace_kit.py` の `Run` はこれに置き換わる。
+- **runtime は `dut` のまま、profile の platform が自前の monitor（`pluggable_monitor.pattern.<protocol>`）を持つときだけ自動で
+  `arduino-cli monitor -m <profile> -p <port> -l serial --quiet` の子プロセスで受ける**（pyserial の URL handler として `dut` の裏に置く）。
+  `pdut` は作らない。pyserial に固定する逃げ道は option。marker は使わない。tool を直接呼ぶ形は option としても持たない。close は
+  stdin を閉じて少し待ち、終わらなければ SIGTERM。stdin を閉じていないのに stdout が EOF なら異常終了。
+- 判定に要る情報は arduino-cli から取れる（`compile --show-properties --profile <p>` の `pluggable_monitor.*`。`board details -b` は
+  profile を取らないので使わない）。fqbn は要らない（`-m <profile>` と cwd = sketch）。
 
-[harness-requirements](harness-requirements.ja.md) / [harness-probe](harness-probe.ja.md) /
-[harness-testing](harness-testing.ja.md) / [ch32rv-requests](ch32rv-requests.ja.md) /
-[debug-output](debug-output.ja.md) / oep-spec の `probe-cdc-and-persistence.ja.md`、`session-and-exclusivity.ja.md`、
-`oep-if-probe-config.ja.md`、`v1-open-proposals.ja.md` §7
+### 7.2 OEP の経路（ブローカー）
+
+1. upload: arduino-cli → ch32rv が transport を開き、書いて、閉じる。ブローカーは要らない。
+2. monitor: `ch32rv arduino monitor` が OEP の probe では transport とセッションを持ち、**127.0.0.1 の TCP を 1 つ待ち受けて OEP の
+   フレーム（仕様の TCP の形）を受け、probe との 1 本のセッションに束ねる**（client ごとに corr を付け替え、client の `open` / `end` は
+   受け止めて probe に出さない、client が切れたらその client の plan と接続を外す）。待ち受けの場所は DeviceLock と同じ利用者ごとの
+   runtime ディレクトリ（ch32rv の内部。利用者は `ch32rv broker endpoint --probe port:<path> --json` に聞く）。**ブローカーは monitor と
+   一緒に死ぬ**（単体のデーモンは作らない。monitor は何度でも開ける）。monitor が開いている間の他の ch32rv コマンドはブローカーを通す。
+3. fixture: `pytest-embedded-arduino-cli-ch32rv` が port を `arduino_cli_resolved_port` から、ch32rv の path を pytest-embedded-arduino-cli
+   が公開する展開済み properties の fixture の `runtime.tools.ch32rv.path` から取り、endpoint を聞いて `oep_host` を作る。**その fixture が
+   入ってから対応する**（つなぎは作らない）。
+4. monitor が付いていない OEP の probe（LinkE が書き、OEP の probe は fixture だけ、など）は `oep_host` が transport を直接開く。probe の
+   指定はプラグインのオプション / ini。その probe をプラグインの peers として開かせてはいけない（transport を取られる）。
+
+仕様の変更は無い（probe から見える transport とセッションは 1 つのまま）。
+
+### 7.3 ベンチの platform の入れ方
+
+ベンチも利用者と同じ「index から入れる」形にする。作業ツリーの symlink（tool の依存が解けず `--build-property` / `--upload-property`
+で補う形）はやめる。**local index**（`tools/index/install_check.py`: archive と index を作って loopback で配り、まっさらな data
+ディレクトリに `core install`）は β を出す前の検査に使い、**日常のベンチは公開した β から入れる**。
+
+## 8. ch32rv の範囲
+
+書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe への書き込みと monitor を足す（B）。キャプチャや fixture
+の仲介は持たない（試験の間は pytest の `oep_host` がブローカー経由で直接 OEP を話す）。OEP 対応の中身の設計は、この文書が固まった
+あとに ch32rv の側で。
+
+## 9. β のリリース
+
+最終の形への節目。**数日で終わる修正は全部入れてから出す。** 本番の利用者はいない想定なので、β の後も破壊的変更を入れる。
+
+| どこ | β に入れるもの |
+|---|---|
+| このリポジトリ | 板に `upload.protocol`。`upload.tool.serial` → ch32rv（`--probe port:{upload.port.address}`）。`pluggable_monitor.pattern.serial` → ch32rv。discovery の登録（`wchlink://`、`hid://`）。板に `monitor_port.serial.chip=<家系>`。`approval-status.ja.md` を埋める。`gen_index.py` で index を作って公開 |
+| ch32rv | monitor の DESCRIBE のキー、serial port の address、source `uart`、stdin の EOF で終わる、`--probe port:<path>`、discovery の `hid://` |
+| 後の β | OEP の書き込み（B）、ブローカー、スロットと bind の新しい項目、pytest の道具、C |
+
+## 10. 未決
+
+- ベンチの pytest を最終の形（§7）に移す手順と順序（プラグイン 2 つと package 化が先）。
+- ch32rv の OEP 対応の中身（ブローカーの corr の付け替え、`broker endpoint`、`port:` selector）。
+- OEP の専用 PID（pid.codes）の取得と、probe の HID の口（推奨の作り）。
+- 設定ページと JavaScript の client の置き場（OEP 側で決める）。
+
+## 11. 各リポジトリに要る変更
+
+| リポジトリ | 変更 |
+|---|---|
+| oep-spec | CDC / USJ のフレームを COBS に（core §3.1）。serial port の共用の規則（§4.2）。fn 0 の describe に経路の一覧。スロットの項目（今の bind から pins と attach を移す、target_id は任意、`retry_s`）、同時に持てる接続の数の宣言、接続の一覧の操作、スロットの状態。bind の組み直し（複数のストリーム、mode、選択）と対応 mode の宣言。生の転送の再開の位置。probe 開発ガイドに再起動の抑止と、専用 PID / HID の口の推奨 |
+| oep-probe-arduino | serial port の共用（見分け、送信のキュー）。classic ESP32 に ProbeConfig（bind、NVS）。P4 を HS の口 + 専用 PID + HID の形に（USJ を COBS に、reset 抑止）。スロット、再試行、状態。bind の mode |
+| oep-client-python | package 化。シリアルのポートは常に COBS、フレームの外は雑音。接続先の抽象化（serial / USB / ブローカーの TCP）。記録の受け口。`ch32_flash` は ch32rv の OEP の書き込みが入ったら消す |
+| ch32rv | §6.2、§7.2、§3.3（`oep://`、`hid://`、後で `isp://`）、`--probe port:<path>`、OEP の transport と書き込み |
+| pytest-embedded-arduino-cli | 展開済み properties の fixture。自前の monitor を持つ profile で runtime を `arduino-cli monitor` の子プロセスに（§7.1） |
+| 新しいリポジトリ | `pytest-embedded-arduino-cli-ch32rv`、`pytest-embedded-wireskein` |
+| wireskein | package 化 |
+| このリポジトリ | §9 の β の分。`monitor_port.serial.chip`。ベンチを index から入れる形に。`trace_kit.Run` の置き換え |
+
+## 12. 確認済み事実（決定を支えるもの。2026-09-29 の実測）
+
+- Linux の tty は `TIOCEXCL` で 2 つ目の open が `EBUSY` になる。`arduino-cli monitor` が開いている間も `EBUSY`。root は素通り。
+- classic ESP32 の UART bridge は、DTR と RTS を両方 on で開くと再起動せず、両方 off にして開くと再起動した。`arduino-cli monitor`
+  の既定は dtr=on、rts=on。
+- CH32 の debug の線は probe の内蔵プルに勝たず、何もつながっていないピンと同じに見える（X2）。ピンを一瞬駆動して内蔵プルで
+  戻るまでの時間も、接続ピンと未接続ピンで差が無かった。止めない attach は動いているアプリを 0.5 µs の分解能で乱さず、約 170 ms
+  かかる（X3）。
+- arduino-cli 1.3.1: 板に `upload.protocol` が無いと素の upload は「A programmer is required」。`upload.tool.<protocol>` と port の
+  properties（vid / pid / serialNumber）で経路を決められる。自前の discovery は `pluggable_discovery.<id>.pattern`、自前の monitor は
+  `pluggable_monitor.pattern.<protocol>`。ch32rv の discovery を登録すると LinkE 7 台が `wchlink://<serial>` で並び、`upload -p
+  wchlink://…` が programmer なしで書けた。
+- pluggable monitor: tool との制御は stdio、データは TCP（OPEN <host:port> で arduino-cli が待ち受け、tool が接続）。`arduino-cli
+  monitor --quiet` の子プロセスは両方向ともバイト透過（0x00〜0xFF、CR / LF）、tool → pytest の遅れ 0.4 ms、起動から最初のバイト
+  まで約 1 秒（`-l serial` で 0.8 秒）。stdin が EOF だと設定の列挙だけで exit 0 してセッションを開かない。tool は列挙用と本番用で
+  2 回起動される。tool は別のプロセスグループ。stdin を閉じると CLOSE が届き（QUIT は無し）0.02 秒で exit 0。DESCRIBE の列挙の
+  値のキーは `value`。設定の優先順は `--config` > profile の `port_config` > 板の既定、`-m` のとき top-level の `default_port_config`
+  は届かない、変わった設定だけ CONFIGURE される、宣言に無いキーは exit 7。OPEN の error は exit 1 + stderr、セッション中に tool が
+  落ちると stdout EOF + exit 0 + stderr 無し。`-m` のとき読む platform.txt は profile 用の写し（`~/.arduino15/internal/`）。
+- sketch.yaml の `default_fqbn` / `default_port` / `default_programmer` / `default_port_config` は CLI の flag なしで効く。
+  `compile --show-properties=expanded` は `runtime.tools.*.path` を解いた形で返す。symlink で入れた platform では tool の依存が解けない。
+- pytest-embedded-arduino-cli 1.6.0: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ。runtime の port は
+  pyserial の `serial_for_url` で自分で開く。fqbn は扱わない。peers あり。device lock は port の path ごと。
+- ch32rv 0.10.1: `probe list --json` は Link ごとに CDC の `ports` と `topology` を返す。`arduino discovery` は `wchlink://` を出す。
+  `arduino monitor` の source は dmdata / dmseq / rtt。`isp` / `boot dfu|uf2|uart` は未実装。monitor の DESCRIBE は `port_descriptor` /
+  `values` を返す（要修正）。
+- 今の core の書き込み経路は 2 つ（LinkE の programmer、UIAPduino の HID）。core に USB CDC は無い（TinyUSB は取り込んだだけ）。
+- factory ISP: BOOT ピンの家系と、ソフトからしか入れない家系（V003 / V00x、X035 / X315）。M030 は無い。UART は `57 AB` の framing、
+  115200（wch-protocols）。
+- OEP の仕様の今: 1 つの wire のインターフェースの connection は 1 つ（§5.2 で変える）。線の操作は scan / attach / detach /
+  attach_under_reset で接続の一覧は無い。bind と describe の port は USB の CDC だけが対象（§5 で組み直す）。fn 0 の describe に
+  経路の一覧は無い（§4.3 で足す）。X035 の治具で、CDC の口へのコンソールの bind が host の detach / reset を越えて続くこと、設定の
+  保存（NVS、2 ms）が動いた。
