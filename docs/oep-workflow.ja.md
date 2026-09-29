@@ -274,19 +274,22 @@ wireskein           純粋なモジュール（pip）。runlog は標準ライ�
 
 ## 8. ch32rv の範囲
 
-書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe への書き込みと monitor を足す（B）。キャプチャや fixture
+書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe への書き込みと monitor を足す（B）。**gdb / debug を OEP の probe で扱うのはプロトタイプの範囲外**（書き込みに要る DM の操作は `DtmAccess` に載せ、gdb はその上に後で）。キャプチャや fixture
 の仲介は持たない（試験の間は pytest の `oep_host` がブローカー経由で直接 OEP を話す）。OEP 対応の中身の設計は、この文書が固まった
 あとに ch32rv の側で。
 
 ## 9. β のリリース
 
-最終の形への節目。**数日で終わる修正は全部入れてから出す。** 本番の利用者はいない想定なので、β の後も破壊的変更を入れる。
+最終の形への節目。**暫定の形は作らず、最終の形に近いプロトタイプが端から端まで動いたところで β として出す。** 本番の利用者はいない
+想定なので、β の後も破壊的変更を入れる。端から端まで = IDE で IDE port を選ぶだけで LinkE と OEP の probe に書けてモニタが見え、
+pytest が upload → monitor → fixture（ブローカー経由の OEP）→ WireSkein の記録と照合まで通る。
 
-| どこ | β に入れるもの |
+| どこ | β までに |
 |---|---|
-| このリポジトリ | 板に `upload.protocol`。`upload.tool.serial` → ch32rv（`--probe port:{upload.port.address}`）。`pluggable_monitor.pattern.serial` → ch32rv。discovery の登録（`wchlink://`、`hid://`）。板に `monitor_port.serial.chip=<家系>`。`approval-status.ja.md` を埋める。`gen_index.py` で index を作って公開 |
-| ch32rv | monitor の DESCRIBE のキー、serial port の address、source `uart`、stdin の EOF で終わる、`--probe port:<path>`、discovery の `hid://` |
-| 後の β | OEP の書き込み（B）、ブローカー、スロットと bind の新しい項目、pytest の道具、C |
+| このリポジトリ | 板に `upload.protocol`。`upload.tool.<protocol>` → ch32rv（`--probe port:{upload.port.address}`）。`pluggable_monitor.pattern.serial` → ch32rv。discovery の登録。板に `monitor_port.serial.chip=<家系>`。ベンチを index から入れる形に。`trace_kit.Run` を pytest の道具に置き換える。`approval-status.ja.md` を埋める。index を作って公開 |
+| ch32rv | §6.2、§7.2、§3.3、§3.4、OEP の書き込み（`requests/ch32rv.md` の 1〜14。15 は後） |
+| oep-spec / oep-probe-arduino / oep-client-python | §11 の分 |
+| pytest-embedded-arduino-cli、新しいプラグイン 2 つ、wireskein | §7 の分 |
 
 ## 10. 未決
 
