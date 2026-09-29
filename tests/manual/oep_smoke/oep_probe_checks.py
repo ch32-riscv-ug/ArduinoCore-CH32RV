@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyserial>=3.5"]
+# dependencies = ["pyserial>=3.5", "oep-client-python>=0.0.4"]
 # ///
 """The OEP probe's own debug parts on a jig, independent of any sketch's tests: reset-halt stops before the first
 instruction, step moves the PC, a DMI delay step takes its time, and - where the probe labels a channel NRST - attach under
@@ -23,16 +23,13 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import targets  # noqa: E402
 
-DEFAULT_CLIENT = HERE.parents[4] / "dev_oep" / "oep-client-python" / "src"
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--target", required=True, choices=sorted(k for k, v in targets.TARGETS.items() if "wire" in v))
-    ap.add_argument("--oep-client", default=str(DEFAULT_CLIENT))
     ap.add_argument("--json")
     args = ap.parse_args()
-    sys.path.insert(0, args.oep_client)
     from oep_client import host, link, target
 
     prof = targets.TARGETS[args.target]

@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1", "oep-client-python>=0.0.4"]
 # ///
 """Coarse ADC check through the OEP probe (worklist P3 row 3, endpoints only): the P4 drives each
 ADC-capable X035 pad (PA0..PA7, E143 wiring) push-pull low and high and analogRead() must read the
@@ -34,13 +34,11 @@ def main() -> None:
     targets.add_target_argument(parser)
     parser.add_argument("--port", help="probe serial port (default: the target profile's)")
     parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
-    parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--order", help="comma separated pin order (default: the profile's ADC pins)")
     args = parser.parse_args()
     profile = targets.TARGETS[args.target]
     PIN_MAP = profile["adc"]
     CONSOLE_RX, CONSOLE_TX = profile["uart_rx"], profile["uart_tx"]
-    sys.path.insert(0, args.oep_client)
 
     log = print
     session = trace_kit.Session(args.port, profile, "adc_probe", log, source=HERE / "adc_probe", fqbn=args.fqbn,

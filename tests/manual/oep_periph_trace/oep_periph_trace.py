@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1", "oep-client-python>=0.0.4"]
 # ///
 """Measure X035 peripheral outputs on the wire with the OEP probe's fixture.capture: analogWrite
 PWM frequency and duty, tone() frequency, delayMicroseconds()/millis() timing, and SPI master
@@ -115,7 +115,6 @@ def main() -> None:
     targets.add_target_argument(parser)
     parser.add_argument("--port", help="probe serial port (default: the target profile's)")
     parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
-    parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--only", choices=["pwm", "tone", "timing", "spi", "spi-peer"], action="append")
     parser.add_argument("--result-json")
     trace_kit.add_run_arguments(parser)
@@ -130,7 +129,6 @@ def main() -> None:
     sections = args.only or (["pwm", "tone", "timing", "spi", "spi-peer"] if decode_ok else ["pwm", "tone", "timing", "spi-peer"])
     if not has_capture and any(sec != "spi-peer" for sec in sections):
         raise SystemExit("this probe has no fixture.capture: only spi-peer runs on " + args.target)
-    sys.path.insert(0, args.oep_client)
     from oep_client.esp32_targets import SpiTarget as P4SpiTarget
     FixtureCapture = trace_kit.Capture
 

@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1", "oep-client-python>=0.0.4"]
 # ///
 """Drive and sample every X035 pad that the fixture wires to the P4 (E143 pin map), from both
 sides, through the OEP probe: X035 output -> P4 reads; P4 drives -> X035 digitalRead in
@@ -36,12 +36,10 @@ def main() -> None:
     targets.add_target_argument(parser)
     parser.add_argument("--port", help="probe serial port (default: the target profile's)")
     parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
-    parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--pins", help="comma separated subset of the pin map")
     parser.add_argument("--settle", type=float, default=0.05, help="seconds between a drive change and the sample (P4 GPIO 9/13/14 release slowly)")
     parser.add_argument("--result-json")
     args = parser.parse_args()
-    sys.path.insert(0, args.oep_client)
 
     profile = targets.TARGETS[args.target]
     port, fqbn = args.port or profile["port"], args.fqbn or profile["fqbn"]

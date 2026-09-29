@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1", "oep-client-python>=0.0.4"]
 # ///
 """X035 USART2 against the probe's second fixture.uart (worklist P3 row 2): DUT -> P4 and P4 -> DUT
 (echo) binary payloads at several bauds, a long continuous transfer, receive overflow behaviour of
@@ -244,12 +244,10 @@ def main() -> None:
     targets.add_target_argument(parser)
     parser.add_argument("--port", help="probe serial port (default: the target profile's)")
     parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
-    parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--bauds", help=f"default 9600,115200,460800; with --sweep {SWEEP_BAUDS}")
     parser.add_argument("--sweep", action="store_true", help="F_CPU x baud over the profile's UART (see above)")
     trace_kit.add_run_arguments(parser)
     args = parser.parse_args()
-    sys.path.insert(0, args.oep_client)
     if args.sweep:
         sys.exit(sweep(args, targets.TARGETS[args.target], print))
     if args.target != "x035":

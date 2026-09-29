@@ -25,7 +25,7 @@ uv run tests/manual/oep_smoke/oep_smoke.py --target l103 --sketch all --result-j
 | `l103` | RP2350（`examples/Rp2350L103Probe`） | CH32L103C8T6 | USART1 route 1（PB6/PB7 → probe 13/12） |
 
 probe firmware は別途転送しておく（**`target.console` を持つ版が要る**。無ければ runner がそう言って止まる）。
-client は隣の checkout `../../dev_oep/oep-client-python/src` を既定で参照する（`--oep-client` で変更）。
+client は PyPI の `oep-client-python`（script の PEP 723 の依存）。未リリースの版で試すときは `uv run --with <oep-client-python の checkout> tests/manual/oep_smoke/oep_smoke.py …`。
 port は profile の値を使い、`--port` か `OEP_PROBE_PORT` で上書きできる。
 
 ## 書き込み直後の最初の 1 往復

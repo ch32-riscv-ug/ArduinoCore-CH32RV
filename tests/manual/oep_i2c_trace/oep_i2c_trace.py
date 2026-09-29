@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1", "oep-client-python>=0.0.4"]
 # ///
 """Trace the X035's own I2C master transactions on the wire (worklist B): the DUT writes to
 the probe's I2C target over route 2 while fixture.capture samples SCL/SDA in the same plan,
@@ -14,7 +14,7 @@ and the host decodes START / bytes / ACK / STOP next to what Wire reported.
   uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --run-dir /tmp/i2c-run   # + wireskein verify
 
 Fixture (2026-09-22): X035 route 2 PC16 (SCL) / PC17 (SDA) -> P4 GPIO52 / GPIO50; console USART4
-PB0/PB1 -> P4 GPIO12/6. Everything goes through the OEP probe (sibling oep-client-python).
+PB0/PB1 -> P4 GPIO12/6. Everything goes through the OEP probe (oep-client-python).
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ import time
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "oep_smoke"))
-import oep_smoke  # noqa: E402  (build, open_console, DEFAULT_PORT, DEFAULT_CLIENT)
+import oep_smoke  # noqa: E402  (build, open_console, DEFAULT_PORT)
 import targets  # noqa: E402
 import trace_kit  # noqa: E402
 
@@ -44,7 +44,6 @@ def main() -> None:
     targets.add_target_argument(parser)
     parser.add_argument("--port", help="probe serial port (default: the target profile's)")
     parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
-    parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--hz", type=int, action="append", help="I2C clocks to try (default 100000 and 10000)")
     parser.add_argument("--route", type=int, help="DUT Wire route (default: the target profile's)")
     parser.add_argument("--probe-scl", type=int, help="probe GPIO on the DUT's SCL for this route (default: the profile's)")
@@ -66,7 +65,6 @@ def main() -> None:
     if args.route is None: args.route = profile["i2c"]["route"]
     has_capture = profile["capture"]
     clocks = args.hz or [100000, 10000]
-    sys.path.insert(0, args.oep_client)
     from oep_client.esp32_targets import I2cTarget as P4I2cTarget
     decode_i2c = trace_kit.decode_i2c
     FixtureCapture, FixtureGpio = trace_kit.Capture, trace_kit.Gpio

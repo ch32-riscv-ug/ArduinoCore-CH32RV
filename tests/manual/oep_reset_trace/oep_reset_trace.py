@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1", "oep-client-python>=0.0.4"]
 # ///
 """Reset and startup timing of the X035 core through the OEP probe (worklist P3 row 9), using the
 basic system_selftest sketch: software reset (CH32.restart) -> first banner byte, measured on the
@@ -56,14 +56,12 @@ def main() -> None:
     targets.add_target_argument(parser)
     parser.add_argument("--port", help="probe serial port (default: the target profile's)")
     parser.add_argument("--fqbn", help="DUT board (default: the target profile's)")
-    parser.add_argument("--oep-client", default=str(oep_smoke.DEFAULT_CLIENT))
     parser.add_argument("--repeat", type=int, default=5)
     args = parser.parse_args()
     profile = targets.TARGETS[args.target]
     global CONSOLE_RX, CONSOLE_TX, RATE
     CONSOLE_RX, CONSOLE_TX = profile["uart_rx"], profile["uart_tx"]
     if profile.get("capture_max_hz", 20_000_000) < 5_000_000: RATE = 400_000   # 64 KiB window = 163 ms on the GPIO sampler
-    sys.path.insert(0, args.oep_client)
 
     log = print
     session = trace_kit.Session(args.port, profile, "reset_probe", log, source=HERE / "reset_probe", fqbn=args.fqbn,

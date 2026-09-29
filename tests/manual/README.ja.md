@@ -17,7 +17,7 @@
 | [`chip_info/`](chip_info/) | **いま何が繋がっているか**。probe / chip / serial port / FQBN / Serialのpin |
 | [`uart_scan/`](uart_scan/) | boardがどのUSART routeを実際に配線しているか特定 |
 | [`smoke/`](smoke/) | 出荷経路でcompile → upload → UART読み出し。全sketchを一巡できる |
-| [`oep_smoke/`](oep_smoke/) | **OEP 開発用 probe 経由**で compile → `program_image`（CRC verify）→ fixture.uart lease → READY/PING/expectations → 判定。LinkE / probe-rs 不要。P4 + X035F8U6 fixture で basic 14/14（2026-09-22）。client は隣の `oep-client-python` を `--oep-client` で参照 |
+| [`oep_smoke/`](oep_smoke/) | **OEP 開発用 probe 経由**で compile → `program_image`（CRC verify）→ fixture.uart lease → READY/PING/expectations → 判定。LinkE / probe-rs 不要。P4 + X035F8U6 fixture で basic 14/14（2026-09-22）。client は PyPI の `oep-client-python`（PEP 723 の依存。未リリースの版は `uv run --with <checkout>`） |
 | [`oep_i2c_trace/`](oep_i2c_trace/) | X035 の `Wire` master transaction を **線上で decode**（OEP `fixture.capture` 1 MHz + P4 I2C target を同じ plan で）。worklist B の「0x42 へ write すると NACK」を再現: X035 の address byte は正しく、P4 slave が ACK を出していない（2026-09-22、原因は台帳候補 `x035-p4-slave-no-ack`） |
 | [`oep_periph_trace/`](oep_periph_trace/) | X035 の `analogWrite` / `tone` / `delayMicroseconds` / `millis` / `SPI` を **線上で実測**（OEP `fixture.capture` 1〜20 MHz、host decode）。PWM 1003.5 Hz duty ±0.3 %、tone 誤差 < 0.1 %、SPI 4 mode 仕様どおり、digitalWrite ≈ 2 µs（2026-09-22） |
 | [`oep_gpio_matrix/`](oep_gpio_matrix/) | E143 配線の X035 pad 13 本を両側から駆動・観測（out / open-drain / input / pull / EXTI）。EXTICR と open-drain の core 不具合をここで発見（2026-09-22） |

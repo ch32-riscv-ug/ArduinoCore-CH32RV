@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyserial>=3.5"]
+# dependencies = ["pyserial>=3.5", "oep-client-python>=0.0.4"]
 # ///
 """Compile a test sketch, program it through the OEP development probe, drive it over the
 probe's fixture UART, and judge it the way smoke.py does - without WCH-LinkE or probe-rs.
@@ -8,8 +8,7 @@ probe's fixture UART, and judge it the way smoke.py does - without WCH-LinkE or 
   uv run tests/manual/oep_smoke/oep_smoke.py --sketch core_api
   uv run tests/manual/oep_smoke/oep_smoke.py --sketch all --result-json /tmp/oep-smoke.json
 
-Speaks the OEP v1 draft (oep-spec docs/v1-core-wire-delta.ja.md) through the sibling oep-client-python checkout
-(--oep-client): a session, `oep.wire.*` attach, host-side flashing (oep_client.ch32_flash: a RAM loader run
+Speaks the OEP v1 draft (oep-spec docs/v1-core-wire-delta.ja.md) through oep-client-python (PyPI; `uv run --with <checkout>` for an unreleased one): a session, `oep.wire.*` attach, host-side flashing (oep_client.ch32_flash: a RAM loader run
 through `oep.target.riscv-dm`), the sketch's Console as a dmseq stream (`oep.target.console`), and a sketch that
 tests a UART through `oep.fixture.uart` on the pins targets.py names. The probe firmware must already be flashed
 (it is a separate build) and speak v1.
@@ -39,7 +38,6 @@ from smoke import expectations, sketchbook, uses_uart   # noqa: E402  (pure help
 from targets import TARGETS                              # noqa: E402
 
 DEFAULT_PORT = "/run/board-identify/by-id/esp32-series-30eda0e31108"
-DEFAULT_CLIENT = REPO.parents[1] / "dev_oep" / "oep-client-python" / "src"
 
 
 def toolchain_bin() -> pathlib.Path:
@@ -314,13 +312,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", choices=sorted(TARGETS), default="x035", help="jig profile (targets.py)")
     parser.add_argument("--port", default=os.environ.get("OEP_PROBE_PORT"), help="override the profile's probe port")
-    parser.add_argument("--oep-client", default=str(DEFAULT_CLIENT))
     parser.add_argument("--sketch", default="core_api", help="case name under tests/sketches/basic, or 'all'")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--seconds", type=float, default=4.0)
     parser.add_argument("--result-json")
     args = parser.parse_args()
-    sys.path.insert(0, args.oep_client)
 
     profile = TARGETS[args.target]
     port = args.port or profile["port"]
