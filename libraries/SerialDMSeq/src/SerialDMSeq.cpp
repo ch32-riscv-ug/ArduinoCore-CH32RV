@@ -125,7 +125,18 @@ bool CH32SerialDMSeq::service(void)
     }
     const uint32_t w = *CH32_DM_DATA0;
     if (w & ST_TARGET) {
-        stale();                  /* still ours, or looks it: not answered yet */
+        /* Bit 7 set but not the frame we posted: what a probe attach left
+         * behind - a WCH-LinkE's AttachChip ends on an ESIG read that leaves
+         * 0xffffffff on V006 / X035. An unsynced host takes it for an invalid
+         * word and never answers, so waiting for one only runs the timeout -
+         * a full second per frame once a host has answered, which stalled a
+         * reopened monitor for seconds (2026-09-29). Put ours back at once:
+         * an answer always has bit 7 clear, so this cannot overwrite one. */
+        if (w != _w0) {
+            repost();
+            return false;
+        }
+        stale();                  /* still ours: not answered yet */
         return false;
     }
     /* A zero word is no answer at all: a host writes only over a frame, and every
