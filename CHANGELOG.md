@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+
+## 0.0.1
 - (EN) First Board Manager release, a beta: pre-release, with breaking changes still expected. The platform installs from the package index with its RISC-V toolchain (xPack GCC 14.3.0-1) and one bundled uploader, ch32rv 0.11.0.
 - (JA) 最初の Board Manager のリリース（β）。本番前で、破壊的変更はまだ入る。package index から RISC-V の toolchain（xPack GCC 14.3.0-1）と、同梱の書き込みツール ch32rv 0.11.0 ごと入る。
 - (EN) Upload by picking a port: a WCH-Link's serial port or `wchlink://<serial>`, an OEP probe's `oep://<probe>/<slot>` or its plain serial port, or the UIAPduino bootloader's `hid://`. No programmer menu is needed; `--programmer wch-link` still works from the command line.
