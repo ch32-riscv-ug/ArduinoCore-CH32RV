@@ -15,7 +15,7 @@
 | **bind** | バインド | serial port → stream の対応と、その流し方（mode） |
 | **attach policy** | attach の方針 | host / at boot（+ 再試行の間隔） |
 | **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行。probe の serial port とは別の概念 |
-| **broker** | ブローカー | monitor を握る ch32rv が兼ねる、host 側で OEP のセッションを束ねる役 |
+| **broker** | ブローカー | probe ごとに 1 つ、誰の子でもない ch32rv のプロセス。probe のセッションを持ち、client（ch32rv の各コマンド、pytest）を束ねる。client が 0 になったら終わる |
 
 wire（線。debug の線を駆動するインターフェース: `oep.wire.rvswd` / `oep.wire.swio`）、pins、console は仕様の語のまま。
 
@@ -219,8 +219,8 @@ UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数�
 - この platform の protocol serial の pluggable monitor は **ch32rv**（`pluggable_monitor.pattern.serial`）。LinkE の CDC でも OEP の
   probe の serial port でも、`wchlink://` / `oep://` でも、monitor のプロセスは ch32rv。DESCRIBE の `source`（uart 既定 / sdi /
   dmdata / dmseq / rtt）をモニタの欄で選ぶ。
-- ch32rv の monitor は、OEP の probe では OEP のセッションを持ち、console のストリームを pluggable monitor の TCP へ流す。この
-  プロセスが**ブローカー**を兼ねる（§7.2）。
+- ch32rv の monitor は、OEP の probe（と LinkE の debug の口を使う source）では**ブローカーの client** として console のストリームを
+  受け、pluggable monitor の TCP へ流す（§7.2）。
 - 設定の優先順は `--config` > profile の `port_config` > 板の既定（boards.txt `monitor_port.serial.<id>`）。`-m <profile>` のときは
   top-level の `default_port_config` は届かない。monitor が宣言しないキーを profile に書くと arduino-cli が exit 7 で止まる。
 - 板の既定として `monitor_port.serial.chip=<家系>` を持たせ、ch32rv の monitor が §3.4 のスロットの選択に使う。
@@ -257,19 +257,32 @@ wireskein           純粋なモジュール（pip）。runlog は標準ライ�
 - 判定に要る情報は arduino-cli から取れる（`compile --show-properties --profile <p>` の `pluggable_monitor.*`。`board details -b` は
   profile を取らないので使わない）。fqbn は要らない（`-m <profile>` と cwd = sketch）。
 
-### 7.2 OEP の経路（ブローカー）
+### 7.2 ブローカー
 
-1. upload: arduino-cli → ch32rv が transport を開き、書いて、閉じる。ブローカーは要らない。
-2. monitor: `ch32rv arduino monitor` が OEP の probe では transport とセッションを持ち、**127.0.0.1 の TCP を 1 つ待ち受けて OEP の
-   フレーム（仕様の TCP の形）を受け、probe との 1 本のセッションに束ねる**（client ごとに corr を付け替え、client の `open` / `end` は
-   受け止めて probe に出さない、client が切れたらその client の plan と接続を外す）。待ち受けの場所は DeviceLock と同じ利用者ごとの
-   runtime ディレクトリ（ch32rv の内部。利用者は `ch32rv broker endpoint --probe port:<path> --json` に聞く）。**ブローカーは monitor と
-   一緒に死ぬ**（単体のデーモンは作らない。monitor は何度でも開ける）。monitor が開いている間の他の ch32rv コマンドはブローカーを通す。
-3. fixture: `pytest-embedded-arduino-cli-ch32rv` が port を `arduino_cli_resolved_port` から、ch32rv の path を pytest-embedded-arduino-cli
-   が公開する展開済み properties の fixture の `runtime.tools.ch32rv.path` から取り、endpoint を聞いて `oep_host` を作る。**その fixture が
-   入ってから対応する**（つなぎは作らない）。
-4. monitor が付いていない OEP の probe（LinkE が書き、OEP の probe は fixture だけ、など）は `oep_host` が transport を直接開く。probe の
-   指定はプラグインのオプション / ini。その probe をプラグインの peers として開かせてはいけない（transport を取られる）。
+probe の transport とセッションを持つのは**ブローカーだけ**。ch32rv の各コマンド（upload の flash、monitor、gdb、1 回だけの read /
+reset）と pytest の `oep_host` は、どれもブローカーの **client**。
+
+- ブローカーは**誰の子でもないプロセス**（ch32rv が切り離して起動する。stdio は捨てる）で、probe ごとに 1 つ。client は「この probe の
+  ブローカーにつなぐ」と頼み、無ければ起動させる（起動の取り合いは DeviceLock と同じ利用者ごとの runtime ディレクトリの lock で
+  1 つに絞る）。**client が 0 になったらすぐ終わる**（待ち時間は持たない。誰も使っていないのにプロセスが残らない）。
+- 口は 127.0.0.1 の TCP で、OEP のフレーム（仕様の TCP の形）を受けて probe との 1 本のセッションに束ねる。client ごとに corr を
+  付け替え、client の `open` / `end` は受け止めて probe に出さない。client ごとの資源（接続、plan、stream、止めた hart）を台帳に持ち、
+  client が切れたらその分だけ外す。待ち受けの場所は runtime ディレクトリ（ch32rv の内部。利用者は
+  `ch32rv broker endpoint --probe <sel> --json` に聞く）。
+- **どの順で立ち上がっても同じ**。IDE は monitor を開いたまま debug を始められ、debug 中に monitor も開ける（§12）ので、monitor と
+  gdb server はどちらが先でも同じブローカーの client になる。3 つ以上でも同じ。昇格や引き継ぎは無い（client が落ちても、その
+  client の資源が外れるだけ）。
+- 1 回だけのコマンドも同じ経路を通る（経路は 1 つ）。
+- LinkE も同じ: ブローカーが LinkE の debug の口（vendor）を持ち、gdb と dmseq などの monitor を同時に使える。uart の source の
+  monitor は CDC（TIOCEXCL で排他）だけを使うので、ブローカーにつながず probe の lock も取らない。
+
+pytest の側:
+
+1. upload / monitor: pytest-embedded-arduino-cli → arduino-cli → ch32rv（client）。
+2. fixture: `pytest-embedded-arduino-cli-ch32rv` が port を `arduino_cli_resolved_port` から、ch32rv の path を pytest-embedded-arduino-cli
+   が公開する展開済み properties の fixture の `runtime.tools.ch32rv.path` から取り、endpoint を聞いて（無ければブローカーを起動させて）
+   `oep_host` を作る。monitor が付いていない probe（LinkE が書き、OEP の probe は fixture だけ、など）でも同じ。probe の指定は
+   プラグインのオプション / ini。その probe の serial port をプラグインの peers として開かせてはいけない（pyserial が握る）。
 
 仕様の変更は無い（probe から見える transport とセッションは 1 つのまま）。
 
@@ -281,7 +294,7 @@ wireskein           純粋なモジュール（pip）。runlog は標準ライ�
 
 ## 8. ch32rv の範囲
 
-書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe への書き込みと monitor を足す（B）。**gdb / debug を OEP の probe で扱うのはプロトタイプの範囲外**（書き込みに要る DM の操作は `DtmAccess` に載せ、gdb はその上に後で）。 ただし**デバッグは次の作業で載せる前提**で設計する: OEP の transport は `DtmAccess` を実装し、ブローカーはセッションを長く保持する client（gdb server）を想定して client ごとの資源を追い、gdb が monitor と同じ probe を同時に使う形（ブローカーの client か、ブローカーそのもの）を設計の中で決めておく。キャプチャや fixture
+書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe への書き込みと monitor を足す（B）。**gdb / debug を OEP の probe で扱うのはプロトタイプの範囲外**（書き込みに要る DM の操作は `DtmAccess` に載せ、gdb はその上に後で）。 ただし**デバッグは次の作業で載せる前提**で設計する: OEP の transport は `DtmAccess` を実装し、ブローカーはセッションを長く保持する client（gdb server）を想定して client ごとの資源を追い、gdb server もブローカーの client（§7.2）。キャプチャや fixture
 の仲介は持たない（試験の間は pytest の `oep_host` がブローカー経由で直接 OEP を話す）。OEP 対応の中身の設計は、この文書が固まった
 あとに ch32rv の側で。
 
@@ -302,6 +315,8 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
 
 - ベンチの pytest を最終の形（§7）に移す手順と順序（プラグイン 2 つと package 化が先）。
 - ch32rv の OEP 対応の中身（ブローカーの corr の付け替え、`broker endpoint`、`port:` selector）。
+- 切り離したブローカーが Windows / macOS でも生き残るか（IDE / arduino-cli が子を job object などでまとめて消さないか）。Linux は
+  確認済み（§12）。1 回だけのコマンドがブローカーを通る分の遅れ。
 - OEP の専用 PID（pid.codes）の取得と、probe の HID の口（推奨の作り）。
 - 設定ページと JavaScript の client の置き場（OEP 側で決める）。
 
@@ -343,6 +358,8 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
   `Port monitor error: timeout waiting for message` で exit 1。
 - Arduino IDE 2.3.10: upload の前は monitor を一時停止する（`notifyUploadStarted` → pause）が、debug の開始（`startDebug` →
   `arduino.debug.start`）は monitor に触れない。monitor を開いたまま debug を始めることも、debug 中に monitor を開くこともある。
+- Linux: arduino-cli が起動した monitor の tool から、切り離した子（double fork + setsid）を起動すると、子は arduino-cli の終了後も
+  生き残り（別の session、親は init に付け替わる）、arduino-cli の終了は遅れない。
 - sketch.yaml の `default_fqbn` / `default_port` / `default_programmer` / `default_port_config` は CLI の flag なしで効く。
   `compile --show-properties=expanded` は `runtime.tools.*.path` を解いた形で返す。symlink で入れた platform では tool の依存が解けない。
 - pytest-embedded-arduino-cli 1.6.0: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ。runtime の port は
