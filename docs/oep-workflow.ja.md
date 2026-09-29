@@ -6,6 +6,22 @@
 「どの場面で、どの道具が、何を受け持つか」をこのリポジトリで 1 か所にまとめる。個々の仕様は各リポジトリの文書が正で、
 ここはその間の分担と、まだ決めていないことを並べる。
 
+## 0. 用語（英語で決め、日本語は訳）
+
+| English | 日本語 | 意味 |
+|---|---|---|
+| **transport** | トランスポート | OEP のフレームを運べるもの。vendor bulk、HID、USB CDC、USB-Serial/JTAG、UART bridge、TCP |
+| **serial port** | シリアルポート | transport のうち、OS からシリアルデバイスに見えるもの（USB CDC の interface、USB-Serial/JTAG、UART bridge。TCP の待ち受けも後で足せる）。probe が番号で宣言する。常に OEP を受け、それ以外のバイトは bind したストリームへ流す。vendor bulk と HID は transport だが serial port ではない |
+| **stream** | ストリーム | probe の中の位置付きのバイト列。target console と fixture UART の受信。読んでも消えず、読み手が複数いてよい（OEP の read と serial port の bind） |
+| **target** | ターゲット | 保存された 1 つの target の記述: wire、pins、target_id（scheme / mask / value）、name、attach policy、console mechanism。「register a target = ターゲットを登録する」 |
+| **connection** | 接続 | target への生きている attach |
+| **bind** | バインド | serial port → stream の対応と、その流し方（mode）。流すのは target console か fixture UART |
+| **attach policy** | attach の方針 | host（host が attach したとき）/ on open（port が開かれたとき）/ at boot（起動時） |
+| **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行（`wchlink://…`、`oep://<probe>/<target>`、`/dev/ttyACM0`）。probe の serial port とは別の概念 |
+
+wire（線。debug の線を駆動するインターフェース）、pins（wire が使うピンの組）、console（target console のストリーム）は
+今の仕様の語のまま。§4 より前の本文は、この用語に直す前の文が残っている。
+
 ## 1. 登場するもの
 
 | もの | リポジトリ | 受け持つこと |
@@ -191,7 +207,7 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
   target は保存され、discovery が target ごとに 1 つのポートとして IDE に出す（ポートを選ぶこと = target を選ぶこと）。IDE は
   そのうち 1 つを操作する。
 
-**3. attach の仕方を決める。** 自動の attach は設定の `bind` の attach で選ぶ（oep-if-probe-config §1.1）。
+**3. attach policy を target ごとに決める（D-8）。** 設定ページが勧める並びは at boot（c）を先頭に。
 
 | attach | 意味 | 向く場面 |
 |---:|---|---|
@@ -219,15 +235,20 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
   やり直す（250 ms から始めて数秒まで）。「いるか」を host が知りたいときは、describe の bind_state（待っている / 流している /
   不一致 / 失敗）を読む。
 
-**5. シリアルの口に何を流すかを決める。** `bind`（port、source、attach、引数）。source は fixture.uart か target.console
-（wire_fn、mechanism dmseq / SDI / DMDATA、pins）。
+**5. serial port に何を流すかを決める（bind、D-6）。** serial port ごとに bind（流すストリームの集合）と mode を持つ。
 
-- **今の仕様は、口 1 つに source 1 つ。** つまり「特定の target だけを流す」。これが基本。
-- **全部混ぜて流す**: 仕様に無い。足すなら、口に複数の source を結び、行の先頭に印（`[1]` など）を付ける形。行の途中で
-  切り替わると読めないので、行単位で混ぜる。要る場面（複数の target を 1 つのモニタで見る）が出てから。
-- **最後に attach したものだけ流す**: host の操作の順で見えるものが変わるので、勧めない。複数の target なら、口を target ごとに
-  分ける（P4 は CDC を 3 口まで持てる。X1）か、印を付けて混ぜる。
-- 複数の target の接続を同時に持てるので（上の 2）、target ごとに口を分けるのが基本。
+| mode | 流すもの | 入力（port に打った文字） |
+|---|---|---|
+| **last-reset** | host が最後に reset した target のストリーム（riscv-dm の reset と attach_under_reset。probe 自身の自動 attach と target の自己リセットは数えない）。起動時は bind の並びの先頭。選ばれた target の接続が切れても選択は替えない | 選ばれているストリームへ |
+| **manual** | bind に保存した「選ばれているストリーム」。設定ページと書き込みツールが替える。選択の無い manual は set で断る（bind を作るときに選択も書く） | 同上 |
+| **mixed** | 全部。ストリームごとに行をため、閉じたら `[name] 行`。閉じない出力は量（例 128 byte）か静けさ（例 100 ms）で区切り、そのたびに印 | **送らない（受信専用）** |
+
+- どの mode でも、bind が 1 つならそれが流れる。**1 つのときと 2 つ以上のときで動きが変わらない。**
+- 対応する mode は probe が宣言する（gpio の modes と同じ形）。last-reset と manual は必須、mixed は任意（行のバッファが
+  ストリームごとに要るので、小さい probe は閉じてよい）。
+- 設定ページに書く注意: mixed は行の先頭に印が入り、target どうしの前後は行が閉じた順になる（機械で読む用途に向かない）。
+  入力は送らない。入力が要るなら last-reset か manual。
+- fixture UART のストリームは接続が無くても流れる。last-reset / manual では選ばれていなければ流れず、mixed では印付きで混ざる。
 
 **6. 保存する。** `save`。bind はすぐ効き、再起動は要らない。
 
@@ -358,6 +379,10 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 | D-2 | **IDE には target ごとに 1 つのポートが見え、1 つずつ操作する。** discovery が probe の保存した設定を読んで並べる | discovery（§4.6） |
 | D-3 | **OEP の道具はシリアルを必ず排他で開く**（Linux / macOS は `TIOCEXCL`、Windows は元から排他）。排他でないと応答のバイトが別のプロセスに渡り、経路そのものが成り立たない。`arduino-cli monitor` は既に TIOCEXCL を使っている（実測） | client: pyserial の `flock` の代わりに `TIOCEXCL`。host 開発ガイドに書く |
 | D-4 | **ロックの奪い方。** 経路がシリアル 1 本だけの probe は、排他で開けた時点で前の持ち主は死んでいるので、その場で force で奪ってよい。経路が複数の probe は `lock_state` で持ち主と lease の残りを読み、残りだけ待ち（上限は数秒）、持ち主が更新し続けているなら名指しでエラー。force は利用者が明示したときだけ。対話的な道具は lease を短く（2〜3 秒）、pytest は長く（10 秒、更新あり） | 書き込みツールとモニタの実装。host 開発ガイド |
+| D-6 | **bind は serial port ごとに「流すストリームの集合と mode」。** mode は last-reset / manual / mixed（§4.5 の 5）。probe が対応する mode を宣言し、last-reset と manual は必須、mixed は任意。bind が 1 つならどの mode でもそれが流れる | 仕様: bind の項目の組み直し（mode、選択、複数のストリーム）、対応 mode の宣言。probe: 選択の追従（last-reset は host の reset を数える）、mixed の行のバッファ。設定ページ: mode の選択肢と注意 |
+| D-7 | **target の登録と bind を分ける。** target = wire、pins、target_id、name、attach policy、console mechanism（target ごとに 1 件）。bind = serial port → stream。登録だけで bind の無い target（pytest が OEP で読む）も、bind だけの serial port（fixture UART）もある | 仕様: 今の bind（pins と attach を持つ）と target（identity だけ）の項目を組み直す |
+| D-8 | **登録の上限は protocol では決めず、probe が宣言する**（ピンの数、保存の容量、ピン固定なら 1）。宣言が無ければ保存の容量で断る。**attach policy は target ごと**に host / on open / at boot から選び、設定ページが勧める並びは at boot を先頭に。at boot は止めない attach だけで、target_id が一致したときだけ console を開く。複数の target を登録していれば、起動時に全部へ順に attach する（1 台 約 170 ms） | 仕様: 登録の上限の宣言、attach policy を target の項目へ。設定ページ: 上限の表示 |
+| D-9 | **用語は英語で決め、日本語は訳**（§0）。「口」はやめて serial port、Arduino の一覧の行は IDE port | 文書 |
 | D-5 | **OEP を運ぶ経路の一覧を fn 0 の describe に足す**（種類の並び: UART の変換チップ越し / USB CDC / USB-Serial/JTAG / vendor bulk / HID / TCP）。D-4 の「1 本だけか」はこれで判断する。USB の列挙は discovery がポートを probe ごとにまとめるためだけに使い、安全の判定には使わない | 仕様: core §7.5 の新しい tag（`resets_on_open` の隣）。probe: 宣言。client / discovery: 読む |
 
 ### 決めること
@@ -370,15 +395,18 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
    - 案: セッションの中で最後に行った riscv-dm の reset の位置から流す（無ければ今から）。書き込み → モニタの導線で banner が
      見える。位置はストリームのマークで表せる（oep-if-common §1 の mark）。
 3. Web Serial の設定のページと JavaScript の client の置き場（新しいリポジトリか、oep-client の隣か）。
-4. §4.5 の流れでよいか。特に: 定期的な確認は bind が無いときは行わない（線を駆動しない）、口 1 つに target 1 つを基本にして
-   「混ぜる」は印付きで後から、「最後に attach したもの」は採らない。
-5. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
+4. **登録した target が接続の上限より多いとき、どの接続を持つか（未合意）。** 案: at boot の target を登録の順に上限まで attach し、
+   残りは「待っている」。席が埋まっているときの host の attach は bind より優先し、bind だけが使っている接続のうち最古のものを
+   外して席を空ける。host のセッションが終わったら登録の順に attach をやり直す。
+5. target がいるかの定期的な確認（未合意）。案: bind が無いときは行わない（線を駆動しない）。bind があるときは失敗したら間隔を
+   広げながら attach をやり直す。
+6. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
    確かめる方式でよいか（VID:PID では見分けられない）。
    ポートだけで書くには、板に `upload.protocol` を持たせる必要がある（無いと arduino-cli が programmer を要求する）。
    発見した `wchlink://` のポートで UART も見るには、ch32rv の monitor に `uart` の source を足す（依頼 B-7）か、UART は LinkE の
    CDC のポートを選ぶ、のどちらか。
-6. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
-7. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
+7. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
+8. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
 
 ## 7. 確認済み事実
 
