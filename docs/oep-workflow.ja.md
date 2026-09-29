@@ -199,9 +199,24 @@ properties を持っている。今の `platform.txt` は `upload.tool=ch32rv` �
 | target 自身の CDC（core が USB CDC を持つ家系: X035 など。core が決める VID:PID） | VID:PID | touch1200 で ISP に入れ、`4348:55e0` の再列挙を待って ISP。Leonardo と同じ導線。**core 側に touch1200 で ISP へ跳ぶ実装が要る** |
 | ポート無し | `upload.tool.default` | ツールが USB を走査（LinkE、OEP の USB の probe、HID のブートローダー、ISP の device）。**候補が 1 つならそれ**、複数なら候補を並べて断る |
 
-- HID のブートローダーと ISP の device はシリアルポートではないので、組み込みの discovery には出ない。出したければ ch32rv の
-  `arduino discovery` を広げて `hid://` / `isp://` の port として列挙する（ch32rv の cli 文書に「ISP device・CDC monitor port も
-  列挙する」の予定がある）。出さなくても「ポート無し → 走査」で書ける。
+- **ポートの一覧は広げられる（実験で確認、2026-09-29）。** `arduino-cli board list` の一覧は pluggable discovery が作っていて、
+  OTA の IP は組み込みの `mdns-discovery`、`1-8 dfu` は `dfu-discovery` が出している。platform が自前の discovery を登録すれば
+  同じ一覧に足せる。ch32rv の `arduino discovery` を platform.txt に仮登録したところ、LinkE 7 台が `wchlink://<serial>`
+  （protocol `wchlink`、properties に vid / pid / serial / mode）として serial と dfu と並んで出た。
+
+  ```text
+  pluggable_discovery.required.0=builtin:serial-discovery      # 1 つでも自前を書くと組み込みも明示が要る
+  pluggable_discovery.required.1=builtin:mdns-discovery
+  pluggable_discovery.ch32rv.pattern="{runtime.tools.ch32rv.path}/ch32rv" arduino discovery
+  ```
+
+  同じ仕組みで、HID のブートローダー（`1209:b803`）と ISP の device（`4348:55e0`）も `hid://` / `isp://` の port として出せる
+  （ch32rv の cli 文書に「ISP device・CDC monitor port も列挙する」の予定がある）。OEP の USB の probe（P4 の vendor / HID の口）
+  も同じ discovery で `oep://<serial>` として出せる。変換チップ越しの OEP の probe は、組み込みの serial discovery が出す
+  ポートのまま（describe で確かめる）。protocol ごとに `upload.tool.<protocol>` で tool が決まるので、`wchlink` / `hid` / `isp` /
+  `oep` / `serial` を全部同じツールに向ける。
+- discovery は USB の記述子だけを見て列挙し、AttachChip はしない（同じ probe への書き込みやモニタの最中でも乱さない。ch32rv の
+  実装済みの仕様）。ホットプラグ（START_SYNC の追加・削除の通知）は未実装で、IDE の一覧の更新に任せている。
 - `boards.txt` の `upload_port.vid / pid` に、その板の CDC と LinkE の VID:PID を並べれば、IDE がポートと板を結び付ける（ポート
   一覧に板名が出る）。
 - **プログラマのメニューは残すが、上書きに使う**: ベンチのように書き込み装置が複数つながっているとき、ポートで決まる経路以外を
@@ -235,7 +250,8 @@ properties を持っている。今の `platform.txt` は `upload.tool=ch32rv` �
 | classic ESP32 の probe: 共用、bind、NVS の保存（今は Endpoint だけで ProbeConfig が無い） | oep-probe-arduino（Esp32V003Probe） | 未着手 |
 | P4 の probe: USJ を COBS に、HS の CDC の bind を本線へ（ConsolePrototype から）、USJ の reset 抑止 | oep-probe-arduino（Esp32P4X035Probe） | 未着手 |
 | Web Serial の設定のページと JavaScript の OEP client | 置き場は未定（§6 の 3） | 未着手 |
-| ポートで経路を決める 1 つの書き込みツール（`upload.tool.serial` / `default` / `wchlink`、port の properties を渡す）、`boards.txt` の `upload_port.vid/pid` | ArduinoCore-CH32（`platform.txt`、`boards.txt`）と ch32rv | 未着手 |
+| ポートで経路を決める 1 つの書き込みツール（`upload.tool.serial` / `default` / `wchlink` / `hid` / `isp` / `oep`、port の properties を渡す）、`boards.txt` の `upload_port.vid/pid` | ArduinoCore-CH32（`platform.txt`、`boards.txt`）と ch32rv | 未着手 |
+| ch32rv の discovery を platform.txt に登録（`pluggable_discovery.ch32rv.pattern`、組み込みの serial / mdns も明示） | ArduinoCore-CH32（`platform.txt`） | 実験で動作を確認、未登録 |
 | core: USB CDC を持つ家系で touch1200 から ISP へ跳ぶ（Leonardo の導線） | ArduinoCore-CH32 | 未着手 |
 | ch32rv の discovery に HID のブートローダーと ISP の device を足す（任意） | ch32rv | 予定あり（cli 文書） |
 | ch32rv の OEP 対応 | ch32rv（依頼は [ch32rv-requests](ch32rv-requests.ja.md)） | 全体が固まってから |
@@ -287,7 +303,11 @@ properties を持っている。今の `platform.txt` は `upload.tool=ch32rv` �
 - 今の `platform.txt`: `upload.tool=ch32rv`、`upload.tool.default=ch32rv`。素の `upload` は「A programmer is required」で断る
   （programmer `wch-link` を指定して書く）。UIAPduino は `upload.protocol=hid` と `ch32rv_hid` tool（`boot hid flash --usb-id 1209:b803`）。
 - Arduino の pluggable discovery: port には protocol と properties（serial discovery は vid、pid、serialNumber）が付き、
-  `upload.tool.<protocol>` で tool を選べる。ポート無しは `upload.tool.default`。
+  `upload.tool.<protocol>` で tool を選べる。ポート無しは `upload.tool.default`。組み込みは serial / mdns / dfu の 3 つ
+  （`~/.arduino15/packages/builtin/tools/`）。platform の自前の discovery は `pluggable_discovery.<id>.pattern` で登録し、1 つでも
+  書くと組み込みも `pluggable_discovery.required.N` で明示が要る（最初 `discovery.<id>.pattern` と書いて出なかった）。
+- 実験（2026-09-29）: ch32rv `arduino discovery` を登録した `arduino-cli board list` に、LinkE 7 台が `wchlink://<serial>` として
+  出た（protocol `wchlink`、properties vid / pid / serial / mode、hardware_id = serial）。登録は戻してある。
 
 ## 関連
 
