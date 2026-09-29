@@ -446,6 +446,20 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
   1.3.1 は DESCRIBE の応答の `port_description` を読み、無いと panic する。ch32rv 0.10.1 は `port_descriptor` を返す。
 - ch32rv `arduino monitor` の DESCRIBE は `source`（dmdata / dmseq / rtt）だけを出す。uart / sdi は wrap しない（cli 文書）。手で
   OPEN すると X035 の HelloDMSeq の出力が TCP に届いた。
+- pluggable monitor と pytest（2026-09-29、偽の monitor で確認）: `arduino-cli monitor` は子プロセス（stdin / stdout をパイプ、
+  `--quiet`）にすると、monitor の出力が stdout に流れ、stdin の入力が tool に届く。**stdin が EOF だと設定の列挙だけで exit 0
+  してセッションを開かない。** tool は列挙用と本番用の 2 回起動される。DESCRIBE の列挙の値のキーは `value`（単数）。設定の優先順は
+  `--config` > profile の `port_config` > 板の既定（boards.txt `monitor_port.<protocol>.<id>`）。**`-m <profile>` のときは top-level
+  の `default_port_config` は届かない。** `-m` のとき arduino-cli が読む platform.txt は profile 用の写し（`~/.arduino15/internal/`）。
+  profile の `port_config` に monitor の DESCRIBE に無いキーがあると「invalid port configuration」で終了する。変わった設定だけ
+  CONFIGURE される。SIGTERM を受けた arduino-cli は tool に CLOSE / QUIT を送らない（tool は stdin の EOF で終わる作りが要る）。
+  platform が自前の monitor を持つかは、`arduino-cli compile --show-properties --profile <p>` または `board details -b <fqbn> --json`
+  の `build_properties` の `pluggable_monitor.*` で分かる（`board details` は `--profile` を取らないので global の platform を見る）。
+- pytest-embedded-arduino-cli 1.6.0（ユーザーの管理）: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ
+  （`--programmer` / `--upload-property` / `--fqbn` は渡さない。fqbn と programmer は sketch.yaml と profile に任せる）。runtime の port
+  は pyserial の `serial_for_url` で自分で開く（`socket://` 可）ので、pluggable monitor は今は経路に入らない。device lock は port の
+  path ごと。peers（複数 DUT）あり。プラグインのセッションの事前検証: 情報は取れる、`dut` のまま自動で出し分けるのが方針に合う
+  （`pdut` はテストが platform を名指しすることになる）、設定は板の既定と profile の `port_config` を主に、marker は使わない。
 - 例のスケッチの `sketch.yaml`（index の platform を指すプロファイル）が付いたままだと、手元の platform で compile できない
   （"Platform … is not found in any known index"）。試験の道具は sketch.yaml を写さない。
 
