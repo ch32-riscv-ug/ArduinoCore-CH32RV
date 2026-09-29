@@ -459,6 +459,10 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
   tool 側の「stdin の EOF で終わる」作りで、killpg ではない。**セッションが開いた後に arduino-cli の stdin を閉じると、arduino-cli
   は tool に `CLOSE` を送って 0.02 秒で exit 0 する（`QUIT` は送らない）。** tool はその後の EOF で終わる。プラグインの close は
   「stdin を閉じて少し待ち、終わらなければ SIGTERM」の順が行儀よい。
+- `arduino-cli monitor --quiet` の子プロセスは**両方向ともバイト透過**（0x00〜0xFF、CR / LF がそのまま。271/271 バイト一致、入力も
+  一致）。tool → pytest の遅れ 0.4 ms。起動から最初のバイトまで約 1 秒（`-l serial` で discovery を省くと 0.8 秒）。
+  `arduino-cli compile --show-properties=expanded --profile <p>` は `runtime.tools.*.path` を解いた形で返すので、
+  `pluggable_monitor.pattern.<protocol>` の recipe は展開済みの command line として読める（プラグインが tool を直接呼ぶ案の材料）。
   platform が自前の monitor を持つかは、`arduino-cli compile --show-properties --profile <p>` または `board details -b <fqbn> --json`
   の `build_properties` の `pluggable_monitor.*` で分かる（`board details` は `--profile` を取らないので global の platform を見る）。
 - pytest-embedded-arduino-cli 1.6.0（ユーザーの管理）: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ
