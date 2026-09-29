@@ -170,6 +170,77 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
   の実測）には足りる。
 - 足りない場面は、fixture.uart を高い baud で素通しするときだけ。それは変換チップ越しの probe の用途に入れない（P4 でやる）。
 
+## 4.5 フローを最初から（提案。2026-09-29 に見直し）
+
+### LinkE
+
+1. ピンは固定。target をつなぐ。**事前の設定はこれで終わり。**
+2. IDE でポートを選ぶ（`wchlink://<serial>` か LinkE の CDC）。書き込みとモニタは §4.6。
+
+### OEP の probe
+
+**1. 設定のページを開く。** ブラウザで、probe に合う経路を選ぶ: CDC なら Web Serial、HID なら WebHID、vendor bulk なら WebUSB。
+どれも同じ OEP（describe、session、probe.config）を話す。シリアルの口は常に OEP を受けるので（§4.0）、設定はいつでも
+同じ口でできる。
+
+**2. target を探して、線を決める。** `scan`（oep-if-debug §1）: probe が許すピンの組を順に試し、見つかった組を返す。probe は
+組の並びを describe で宣言している（固定の組は channel_group、どのピンでもよい probe はその範囲）。見つかった組と、attach の
+応答の target_id（chip_id）を、設定の `target` の項目（wire_fn、scheme、mask、value）と `bind` の pins に書く。
+
+- **1 つの線（wire のインターフェース）に持てる connection は 1 つ。** 別のピンの組への attach は断られる（oep-if-debug §1）。
+  複数の target を同時に持つには、probe が wire のインスタンスを複数持つ必要がある。今の probe はどれも 1 つ。
+
+**3. attach の仕方を決める。** 自動の attach は設定の `bind` の attach で選ぶ（oep-if-probe-config §1.1）。
+
+| attach | 意味 | 向く場面 |
+|---:|---|---|
+| 0 | host に任せる。host（書き込みツール、pytest）が attach したら、その connection でコンソールを流す | ベンチ。書き込み → モニタの導線でも足りる（P6 で確認） |
+| 1 | 口が開かれたとき（DTR）に自動で attach | モニタを開いたら見たい。開いてから約 170 ms は出力が流れない（X3） |
+| 2 | 起動時に自動で attach | probe と target を組にして置いておく。probe の再起動で target は再起動しない（P6） |
+
+- 自動の attach は**止めない attach（method 0）だけ**で、target_id が設定と一致したときだけコンソールを開く。違えば外して
+  bind_state で知らせる。ここまでは仕様にあり、X035 の治具で動いた（P6）。
+- **attach 自体が問題を起こすことはある。** 止めない attach は、0.5 µs の分解能で見て動いているアプリを乱さなかった（X3）。
+  一方、WCH-LinkE の attach は target のクロックを組み替える（L103 / V20x / V30x / X035。wch-protocols）。OEP の probe の
+  attach は DM に書くだけで RCC には触れないので、この問題は LinkE の firmware の側。HPRE の bit3 を立てた X035 が attach だけで
+  止まった件（E164）は core が HPRE の符号化を変えて避けた。
+
+**4. target がいるかを、定期的に確かめられるか。**
+
+- **線を駆動せずには分からない**（X2）: CH32 の debug の線は probe の内蔵プルに勝たず、何もつながっていないピンと同じに見える。
+  確かめるには DMSTATUS を読むなど、線を駆動する操作が要る。target のアプリがその線を GPIO として使っていれば、駆動は出力と
+  ぶつかる。
+- **コンソールを bind している間は、ただで分かる。** dmseq / SDI は probe が DM の data レジスタを読み続けるので、target が
+  消えれば DMI が失敗し、probe はストリームに link-lost を付けて connection を閉じ、bind は次の合図（attach 0 は host の
+  attach、1 は次の DTR、2 は次の起動）まで待つ（oep-if-console §2、oep-if-probe-config §1.1）。P6 の試作は 250 ms ごとに
+  attach をやり直した。
+- 提案: **定期的な確認は、bind が無いときは行わない**（駆動しない）。bind があるときは、失敗したら間隔を広げながら attach を
+  やり直す（250 ms から始めて数秒まで）。「いるか」を host が知りたいときは、describe の bind_state（待っている / 流している /
+  不一致 / 失敗）を読む。
+
+**5. シリアルの口に何を流すかを決める。** `bind`（port、source、attach、引数）。source は fixture.uart か target.console
+（wire_fn、mechanism dmseq / SDI / DMDATA、pins）。
+
+- **今の仕様は、口 1 つに source 1 つ。** つまり「特定の target だけを流す」。これが基本。
+- **全部混ぜて流す**: 仕様に無い。足すなら、口に複数の source を結び、行の先頭に印（`[1]` など）を付ける形。行の途中で
+  切り替わると読めないので、行単位で混ぜる。要る場面（複数の target を 1 つのモニタで見る）が出てから。
+- **最後に attach したものだけ流す**: host の操作の順で見えるものが変わるので、勧めない。複数の target なら、口を target ごとに
+  分ける（P4 は CDC を 3 口まで持てる。X1）か、印を付けて混ぜる。
+- 複数の target が要るのは probe が wire を複数持つときだけ（上の 2）。今の probe では起きない。
+
+**6. 保存する。** `save`。bind はすぐ効き、再起動は要らない。
+
+### シリアルの口が無い probe（HID / vendor だけ）でも、Arduino のモニタに出せるか
+
+出せる。IDE のモニタはシリアルポートに限らず、**pluggable monitor**（protocol ごとの外部ツール。IDE は TCP で受け取り、送信欄の
+入力も渡す）で見られる。`wchlink://` のポートで ch32rv の monitor が dmseq を流したのと同じ形（§4.6 の実験）。
+
+- discovery が probe を `oep://<serial>` のポートとして出し、`pluggable_monitor.pattern.oep` のツールが HID / vendor で OEP を
+  話して target.console を TCP に流す。設定（DESCRIBE）で mechanism（dmseq / SDI）や fixture.uart を選べる。
+- ツールは ch32rv か OEP の client のどちらが持つか、未定（§3。全体が固まってから）。
+- HID の権限: Linux は hidraw が root だけなので udev の規則が要る（ch32rv の udev の規則に足す）。Windows は要らない。
+- シリアルの口を持つ probe では、組み込みの serial-monitor で足りる（共用の口、§4.2）。
+
 ## 4.6 書き込みの経路: ポートを選ぶだけで書き込む（提案）
 
 ### 経路の一覧
@@ -283,13 +354,15 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
    - 案: セッションの中で最後に行った riscv-dm の reset の位置から流す（無ければ今から）。書き込み → モニタの導線で banner が
      見える。位置はストリームのマークで表せる（oep-if-common §1 の mark）。
 3. Web Serial の設定のページと JavaScript の client の置き場（新しいリポジトリか、oep-client の隣か）。
-4. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
+4. §4.5 の流れでよいか。特に: 定期的な確認は bind が無いときは行わない（線を駆動しない）、口 1 つに target 1 つを基本にして
+   「混ぜる」は印付きで後から、「最後に attach したもの」は採らない。
+5. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
    確かめる方式でよいか（VID:PID では見分けられない）。
    ポートだけで書くには、板に `upload.protocol` を持たせる必要がある（無いと arduino-cli が programmer を要求する）。
    発見した `wchlink://` のポートで UART も見るには、ch32rv の monitor に `uart` の source を足す（依頼 B-7）か、UART は LinkE の
    CDC のポートを選ぶ、のどちらか。
-5. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
-6. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
+6. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
+7. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
 
 ## 7. 確認済み事実
 
@@ -301,6 +374,11 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
   （「いつ効くか: すぐ」）。
 - CDC の口へのコンソールの bind と、host の detach / reset を越えて続くことは X035 の治具で動いた（P6）。設定の保存（NVS）は
   P4 で動いた（保存 2 ms。P4 の結果）。
+- 1 つの wire のインターフェースの connection は 1 つ。生きている connection と違う組の attach は rejected unavailable
+  （oep-if-debug §1）。scan は probe が許す組を順に試して見つかった組を返す。
+- 線を駆動せずに target の有無は分からない（X2: debug の線は probe の内蔵プルに勝たない）。止めない attach は動いているアプリを
+  0.5 µs の分解能で乱さず、約 170 ms かかる（X3）。連続の bind のコンソールは DMI の失敗で link-lost になり、P6 の試作は
+  250 ms ごとに attach をやり直した。
 - 経路ごとの速さ（X6）: vendor bulk 37 MB/s、CDC 8.2 MB/s、HID 0.84 MB/s（probe → host）。往復はどれも 1 ms 未満。
 - CDC を 2 口以上持つと vendor のストリーミングが欠ける（X1）。Linux の cdc-acm は開くときに DTR / RTS を一度立てる（X1）。
 - コンソールの受信は位置付きのストリームで、読んでも消えない。読み手が増えても取り合わない。同じ接続で DM の mailbox を使う
