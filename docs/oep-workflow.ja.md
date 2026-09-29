@@ -362,7 +362,7 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 | core: USB CDC を持つ家系で touch1200 から ISP へ跳ぶ（Leonardo の導線） | ArduinoCore-CH32 | 未着手 |
 | ch32rv の discovery に HID のブートローダーと ISP の device を足す（任意） | ch32rv | 予定あり（cli 文書） |
 | ch32rv の OEP 対応 | ch32rv（依頼は [ch32rv-requests](ch32rv-requests.ja.md)） | 全体が固まってから |
-| ch32rv の pluggable monitor: DESCRIBE のキー（`port_description`、`value`）、serial port の path を address に受けて LinkE を引く、source `uart`（既定）、**stdin の EOF / SIGTERM / SIGHUP で終わる**（arduino-cli は CLOSE / QUIT を送らずに死ぬ。pytest は killpg で止める） | ch32rv | 依頼は固まってから（キーの 2 語は既知不具合に記録済み） |
+| ch32rv の pluggable monitor: DESCRIBE のキー（`port_description`、`value`）、serial port の path を address に受けて LinkE を引く、source `uart`（既定）、**stdin の EOF で必ず終わる**（arduino-cli は CLOSE / QUIT を送らずに死に、tool は別のプロセスグループなので killpg も届かない。EOF が唯一の合図） | ch32rv | 依頼は固まってから（キーの 2 語は既知不具合に記録済み） |
 | pytest-embedded-arduino-cli: platform が自前の monitor を持つ profile では、runtime を `arduino-cli monitor -m <profile>` の子プロセスで受ける（pyserial の URL handler として。`dut` のまま自動、pyserial 固定の逃げ道は option）。設定は板の既定と profile の `port_config` | pytest-embedded-arduino-cli（ユーザーの管理） | 事前検証済み、依頼は固まってから |
 
 ## 6. 決めたこと・決めること
@@ -454,7 +454,9 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
   `--config` > profile の `port_config` > 板の既定（boards.txt `monitor_port.<protocol>.<id>`）。**`-m <profile>` のときは top-level
   の `default_port_config` は届かない。** `-m` のとき arduino-cli が読む platform.txt は profile 用の写し（`~/.arduino15/internal/`）。
   profile の `port_config` に monitor の DESCRIBE に無いキーがあると「invalid port configuration」で終了する。変わった設定だけ
-  CONFIGURE される。SIGTERM を受けた arduino-cli は tool に CLOSE / QUIT を送らない（tool は stdin の EOF で終わる作りが要る）。
+  CONFIGURE される。SIGTERM を受けた arduino-cli は tool に CLOSE / QUIT を送らない。**tool は arduino-cli と別のプロセスグループで起動される**ので、
+  arduino-cli のグループへの killpg は tool に届かない（実測）。tool が残らないのは stdin の EOF で終わるから。probe の解放を保証するのは
+  tool 側の「stdin の EOF で終わる」作りで、killpg ではない。
   platform が自前の monitor を持つかは、`arduino-cli compile --show-properties --profile <p>` または `board details -b <fqbn> --json`
   の `build_properties` の `pluggable_monitor.*` で分かる（`board details` は `--profile` を取らないので global の platform を見る）。
 - pytest-embedded-arduino-cli 1.6.0（ユーザーの管理）: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ
