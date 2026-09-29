@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) The bundled ch32rv is now 0.12.1: an upload with no port selected says so and how to pick one, and on Windows a WCH-Link another driver holds (usbipd, for example) is listed as `WCH-Link <serial> (cannot open: driver <name>)`.
+- (JA) 同梱の ch32rv を 0.12.1 にした: port を選ばずに書こうとすると、その旨と選び方を案内する。Windows で別の driver（usbipd など）が握っている WCH-Link は `WCH-Link <serial> (cannot open: driver <name>)` と表示する。
 
 ## 0.0.2
 - (EN) The bundled ch32rv is now 0.12.0: gdb joins the same broker as the monitor, so a debugger and a debug-module monitor work at once, on WCH-Link and OEP probes alike; gdb no longer leaves an ebreak in flash, connects to RV32E (CH32V00x) ELFs, and no longer stops an OEP probe's console.
