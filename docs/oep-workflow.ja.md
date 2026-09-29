@@ -339,6 +339,10 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
   '…' is accepted」で exit 1（`--describe` の表示は通る）。設定の優先順は `--config` > profile の `port_config` > 板の既定、`-m` のとき top-level の `default_port_config`
   は届かない、変わった設定だけ CONFIGURE される、宣言に無いキーは exit 7。OPEN の error は exit 1 + stderr、セッション中に tool が
   落ちると stdout EOF + exit 0 + stderr 無し。`-m` のとき読む platform.txt は profile 用の写し（`~/.arduino15/internal/`）。
+  OPEN の返事は 6 秒遅れても通るが、9 秒遅れると data の接続の直後にエラー無しで閉じる（exit 0）。tool が返事をしないと
+  `Port monitor error: timeout waiting for message` で exit 1。
+- Arduino IDE 2.3.10: upload の前は monitor を一時停止する（`notifyUploadStarted` → pause）が、debug の開始（`startDebug` →
+  `arduino.debug.start`）は monitor に触れない。monitor を開いたまま debug を始めることも、debug 中に monitor を開くこともある。
 - sketch.yaml の `default_fqbn` / `default_port` / `default_programmer` / `default_port_config` は CLI の flag なしで効く。
   `compile --show-properties=expanded` は `runtime.tools.*.path` を解いた形で返す。symlink で入れた platform では tool の依存が解けない。
 - pytest-embedded-arduino-cli 1.6.0: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ。runtime の port は
