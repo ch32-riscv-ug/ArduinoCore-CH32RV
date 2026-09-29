@@ -93,6 +93,10 @@ platform.txt の `pluggable_discovery.ch32rv.pattern` で登録する（1 つで
 
 専用 PID の無い OEP の probe（変換チップ越しの無印 ESP32、USJ だけの P4）は discovery に出さず、利用者が serial port を選ぶ。
 
+**PID を取るまでの間**は、専用 PID の代わりに **USB の interface の名前（iInterface）が `OEP` で始まる**ことで見分ける。名前は
+kernel が列挙のときに読んで持っているので、device を開かずに読める（Linux の sysfs で確認。Windows は interface ごとの Bus reported
+device description、macOS は IORegistry の USB Interface Name で読める見込みで、未確認）。PID を取ったら名前での判定は消す。
+
 `oep://<probe>/<slot>` の `<slot>` はスロットの name（1〜32 byte、`a-z 0-9 - _`、probe の中で重ならない）。address は
 sketch.yaml や pytest の `--port` に書かれるので、読めることを優先した。name を変えると address も変わる。
 
@@ -317,7 +321,9 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
 - ch32rv の OEP 対応の中身（ブローカーの corr の付け替え、`broker endpoint`、`port:` selector）。
 - 切り離したブローカーが Windows / macOS でも生き残るか（IDE / arduino-cli が子を job object などでまとめて消さないか）。Linux は
   確認済み（§12）。1 回だけのコマンドがブローカーを通る分の遅れ。
-- OEP の専用 PID（pid.codes）の取得と、probe の HID の口（推奨の作り）。
+- OEP の専用 PID（pid.codes）の取得と、probe の HID の口（推奨の作り）。取るまでは interface の名前で見分ける（§3.3）。その間の
+  VID:PID の値（今の 303a:4021 は Espressif の VID の下で割り当てを受けていない番号、arduino-esp32 の既定は 303a:0002）。
+  Windows / macOS で interface の名前が device を開かずに読めるかの確認。
 - 設定ページと JavaScript の client の置き場（OEP 側で決める）。
 
 ## 11. 各リポジトリに要る変更
