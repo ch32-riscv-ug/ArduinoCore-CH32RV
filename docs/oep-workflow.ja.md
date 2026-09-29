@@ -463,6 +463,12 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
   一致）。tool → pytest の遅れ 0.4 ms。起動から最初のバイトまで約 1 秒（`-l serial` で discovery を省くと 0.8 秒）。
   `arduino-cli compile --show-properties=expanded --profile <p>` は `runtime.tools.*.path` を解いた形で返すので、
   `pluggable_monitor.pattern.<protocol>` の recipe は展開済みの command line として読める（プラグインが tool を直接呼ぶ案の材料）。
+- 失敗の見え方: tool が OPEN に error を返すと arduino-cli は exit 1、stderr に `Port monitor error: command 'open' failed: <tool の message>`。
+  **セッション中に tool が落ちると stdout が EOF になり arduino-cli は exit 0、stderr は空**（tool の stderr も届かない）。プラグインは
+  「自分が stdin を閉じていないのに EOF」で失敗と判断する必要がある。
+- プラグインのセッションの意見（2026-09-29）: runtime は `arduino-cli monitor` の子プロセス（A）だけにし、tool を直接呼ぶ（B）は option
+  としても持たない（設定の適用と検証、recipe の解釈を arduino-cli に任せる。IDE と同じ経路。経路が 2 つになると切り分けが倍）。
+  `-l serial` を付ける。起動の約 1 秒と tool の 2 回起動は受け入れる。こちらの結論も同じ。
   platform が自前の monitor を持つかは、`arduino-cli compile --show-properties --profile <p>` または `board details -b <fqbn> --json`
   の `build_properties` の `pluggable_monitor.*` で分かる（`board details` は `--profile` を取らないので global の platform を見る）。
 - pytest-embedded-arduino-cli 1.6.0（ユーザーの管理）: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ
