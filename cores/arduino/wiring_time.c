@@ -177,10 +177,47 @@ void SystemInit(void)
 #endif
 }
 
+/* Whether RCC still runs the clock SystemInit() chose: source, AHB/APB
+ * prescalers and, with the PLL, its configuration.
+ *
+ * A WCH-LinkE rewrites these on a running target every time it attaches
+ * (monitor on a debug-module console, gdb, `ch32rv target info`), and never
+ * puts them back - measured from inside on V203 (CFGR0 0x0028000A ->
+ * 0x0034040A), L103 (0 -> 0x001C040A, millis 8x fast) and V006 (HSI 24 MHz ->
+ * PLL 48 MHz). Afterwards the UART baud rate, millis() and every timer are
+ * wrong until something re-runs the clock setup. The core has no API that
+ * changes the clock at run time, so any other value is foreign. */
+static inline int ch32_clock_is_ours(void)
+{
+    const uint32_t cfgr0 = CH32_RCC_CFGR0;
+    const uint32_t sw = CH32_CLOCK_USE_PLL ? CH32_RCC_CFGR0_SW_PLL : CH32_RCC_CFGR0_SW_HSI;
+    if ((cfgr0 & CH32_RCC_CFGR0_SWS_MASK) != (sw << 2)) {
+        return 0;
+    }
+    if ((cfgr0 & (CH32_RCC_CFGR0_HPRE_MASK | CH32_RCC_CFGR0_PPRE1_MASK |
+                  CH32_RCC_CFGR0_PPRE2_MASK)) != CH32_RCC_CFGR0_HPRE(CH32_HPRE_FIELD)) {
+        return 0;
+    }
+#if CH32_CLOCK_USE_PLL
+    if ((cfgr0 & (uint32_t)CH32_CLOCK_PLL_MASK) != (uint32_t)CH32_CLOCK_PLL_VALUE) {
+        return 0;
+    }
+#endif
+    return 1;
+}
+
 /* TODO(docs/todo.ja.md): use the hardware auto-reload bit where the family has
  * one instead of rewinding the counter by hand. */
 __attribute__((interrupt)) void SysTick_Handler(void)
 {
+    /* Put the clock back within a millisecond of a probe moving it. Here and
+     * not between loop() calls, because a sketch blocked in delay(), a busy
+     * wait or a stalled SerialDMSeq write never gets back to loop() - on V006
+     * that left the UART garbled for 4 s. One register read per tick; the
+     * few-hundred-microsecond SystemInit() runs once per attach. */
+    if (!ch32_clock_is_ours()) {
+        SystemInit();
+    }
 #if CH32_SYSTICK_V103
     CH32_SYSTICK_WRITE8(0x04u, 0u);
     CH32_SYSTICK_WRITE8(0x08u, 0u);
