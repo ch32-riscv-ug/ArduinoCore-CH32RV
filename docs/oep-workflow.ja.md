@@ -456,7 +456,9 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
   profile の `port_config` に monitor の DESCRIBE に無いキーがあると「invalid port configuration」で終了する。変わった設定だけ
   CONFIGURE される。SIGTERM を受けた arduino-cli は tool に CLOSE / QUIT を送らない。**tool は arduino-cli と別のプロセスグループで起動される**ので、
   arduino-cli のグループへの killpg は tool に届かない（実測）。tool が残らないのは stdin の EOF で終わるから。probe の解放を保証するのは
-  tool 側の「stdin の EOF で終わる」作りで、killpg ではない。
+  tool 側の「stdin の EOF で終わる」作りで、killpg ではない。**セッションが開いた後に arduino-cli の stdin を閉じると、arduino-cli
+  は tool に `CLOSE` を送って 0.02 秒で exit 0 する（`QUIT` は送らない）。** tool はその後の EOF で終わる。プラグインの close は
+  「stdin を閉じて少し待ち、終わらなければ SIGTERM」の順が行儀よい。
   platform が自前の monitor を持つかは、`arduino-cli compile --show-properties --profile <p>` または `board details -b <fqbn> --json`
   の `build_properties` の `pluggable_monitor.*` で分かる（`board details` は `--profile` を取らないので global の platform を見る）。
 - pytest-embedded-arduino-cli 1.6.0（ユーザーの管理）: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ
