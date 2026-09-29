@@ -187,8 +187,9 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
 組の並びを describe で宣言している（固定の組は channel_group、どのピンでもよい probe はその範囲）。見つかった組と、attach の
 応答の target_id（chip_id）を、設定の `target` の項目（wire_fn、scheme、mask、value）と `bind` の pins に書く。
 
-- **1 つの線（wire のインターフェース）に持てる connection は 1 つ。** 別のピンの組への attach は断られる（oep-if-debug §1）。
-  複数の target を同時に持つには、probe が wire のインスタンスを複数持つ必要がある。今の probe はどれも 1 つ。
+- **複数の target の接続を同時に持てる（決定、§6）。** 同時に持てる数は probe が宣言し、宣言していない probe は 1。有効にした
+  target は保存され、discovery が target ごとに 1 つのポートとして IDE に出す（ポートを選ぶこと = target を選ぶこと）。IDE は
+  そのうち 1 つを操作する。
 
 **3. attach の仕方を決める。** 自動の attach は設定の `bind` の attach で選ぶ（oep-if-probe-config §1.1）。
 
@@ -226,7 +227,7 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
   切り替わると読めないので、行単位で混ぜる。要る場面（複数の target を 1 つのモニタで見る）が出てから。
 - **最後に attach したものだけ流す**: host の操作の順で見えるものが変わるので、勧めない。複数の target なら、口を target ごとに
   分ける（P4 は CDC を 3 口まで持てる。X1）か、印を付けて混ぜる。
-- 複数の target が要るのは probe が wire を複数持つときだけ（上の 2）。今の probe では起きない。
+- 複数の target の接続を同時に持てるので（上の 2）、target ごとに口を分けるのが基本。
 
 **6. 保存する。** `save`。bind はすぐ効き、再起動は要らない。
 
@@ -330,6 +331,9 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 | 項目 | 置き場 | 状態 |
 |---|---|---|
 | CDC / USB-Serial/JTAG のフレームを COBS + CRC-16 に（core §3.1 の表） | oep-spec | 未提案 |
+| fn 0 の describe に経路の一覧（D-5） | oep-spec（core §7.5） | 決定、未提案 |
+| 接続を同時に持てる数の宣言と、接続の一覧の操作（D-1） | oep-spec（oep-if-debug §1〜§2） | 決定、未提案 |
+| client: シリアルを `TIOCEXCL` で開く（D-3）、ロックの奪い方（D-4） | oep-client-python（`link.py`）、host 開発ガイド | 決定、未着手 |
 | シリアルの口の共用の規則（§4.2: 見分け方、前後の区切り、セッションの口では生の転送を止める、再開の位置） | oep-spec（core §3 の経路の節） | 未提案 |
 | USB を持たない probe の口（シリアル）の宣言と bind。今の bind と describe の port は USB の CDC だけが対象 | oep-spec（oep-if-probe-config §1、§3） | 未提案 |
 | probe の再起動の抑止（§4.4）を probe 開発ガイドに | oep-spec（probe-development-guide） | 未着手 |
@@ -344,7 +348,19 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 | ch32rv の discovery に HID のブートローダーと ISP の device を足す（任意） | ch32rv | 予定あり（cli 文書） |
 | ch32rv の OEP 対応 | ch32rv（依頼は [ch32rv-requests](ch32rv-requests.ja.md)） | 全体が固まってから |
 
-## 6. 決めること
+## 6. 決めたこと・決めること
+
+### 決めたこと（2026-09-29 の議論、順に）
+
+| # | 決定 | 要るもの |
+|---|---|---|
+| D-1 | **複数の target を指定でき、接続を同時に持てる。** 同時に持てる数は probe が宣言し、宣言していない probe は 1。ロックは probe に 1 つのまま（接続ごとのロックは足さない）。複数の host の同時制御は経路の分離（TCP、host 側のブローカー）の話で、protocol の外 | 仕様: 数の宣言、今ある接続の一覧の操作（接続、ピン、target_id、使っているもの、状態）。probe: 接続ごとの状態、要求ごとのピンの切り替え、複数のコンソールの見回り。client: 接続ごとの状態 |
+| D-2 | **IDE には target ごとに 1 つのポートが見え、1 つずつ操作する。** discovery が probe の保存した設定を読んで並べる | discovery（§4.6） |
+| D-3 | **OEP の道具はシリアルを必ず排他で開く**（Linux / macOS は `TIOCEXCL`、Windows は元から排他）。排他でないと応答のバイトが別のプロセスに渡り、経路そのものが成り立たない。`arduino-cli monitor` は既に TIOCEXCL を使っている（実測） | client: pyserial の `flock` の代わりに `TIOCEXCL`。host 開発ガイドに書く |
+| D-4 | **ロックの奪い方。** 経路がシリアル 1 本だけの probe は、排他で開けた時点で前の持ち主は死んでいるので、その場で force で奪ってよい。経路が複数の probe は `lock_state` で持ち主と lease の残りを読み、残りだけ待ち（上限は数秒）、持ち主が更新し続けているなら名指しでエラー。force は利用者が明示したときだけ。対話的な道具は lease を短く（2〜3 秒）、pytest は長く（10 秒、更新あり） | 書き込みツールとモニタの実装。host 開発ガイド |
+| D-5 | **OEP を運ぶ経路の一覧を fn 0 の describe に足す**（種類の並び: UART の変換チップ越し / USB CDC / USB-Serial/JTAG / vendor bulk / HID / TCP）。D-4 の「1 本だけか」はこれで判断する。USB の列挙は discovery がポートを probe ごとにまとめるためだけに使い、安全の判定には使わない | 仕様: core §7.5 の新しい tag（`resets_on_open` の隣）。probe: 宣言。client / discovery: 読む |
+
+### 決めること
 
 1. **§4.1 と §4.2 でよいか**（シリアルに見える口はすべて COBS、常に OEP を受け、それ以外はコンソール、セッションの口では生の
    転送を止める）。
@@ -374,8 +390,11 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
   （「いつ効くか: すぐ」）。
 - CDC の口へのコンソールの bind と、host の detach / reset を越えて続くことは X035 の治具で動いた（P6）。設定の保存（NVS）は
   P4 で動いた（保存 2 ms。P4 の結果）。
-- 1 つの wire のインターフェースの connection は 1 つ。生きている connection と違う組の attach は rejected unavailable
-  （oep-if-debug §1）。scan は probe が許す組を順に試して見つかった組を返す。
+- 今の仕様では 1 つの wire のインターフェースの connection は 1 つ（oep-if-debug §1）。D-1 で変えると決めた。scan は probe が
+  許す組を順に試して見つかった組を返す。線の操作は scan / attach / detach / attach_under_reset で、接続の一覧は無い。
+- Linux の tty は `TIOCEXCL` で 2 つ目の open が `EBUSY` になる（実測、2026-09-29）。`arduino-cli monitor` が開いている間も
+  `EBUSY`。root（CAP_SYS_ADMIN）は素通り。fn 0 の describe に経路の一覧は無い（firmware / model / unit_id / channels / reserved /
+  profile / label / resets_on_open / uart_rates）。
 - 線を駆動せずに target の有無は分からない（X2: debug の線は probe の内蔵プルに勝たない）。止めない attach は動いているアプリを
   0.5 µs の分解能で乱さず、約 170 ms かかる（X3）。連続の bind のコンソールは DMI の失敗で link-lost になり、P6 の試作は
   250 ms ごとに attach をやり直した。
