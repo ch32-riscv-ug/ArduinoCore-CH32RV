@@ -54,7 +54,11 @@ sys.path.insert(0, str(REPO / "tests"))
 from sketch_requirements import requirements, unmet   # noqa: E402
 INDEX_URL = ("https://ch32-riscv-ug.github.io/ArduinoCore-CH32/"
              "package_ch32-riscv-ug_index.json")
-PLATFORM = "ch32-riscv-ug:ch32v (0.0.1)"
+# The version every profile pins is platform.txt's: tools/index/bump_version.py
+# moves both at once, and --check keeps them from drifting.
+PLATFORM_VERSION = re.search(r"^version=(.+)$", (REPO / "platform.txt").read_text(encoding="utf-8"),
+                             re.M).group(1).strip()
+PLATFORM = f"ch32-riscv-ug:ch32v ({PLATFORM_VERSION})"
 
 # (profile name, board id, tier, note). Keep in sync with docs/TEST_PLAN.ja.md.
 BOARDS = [
