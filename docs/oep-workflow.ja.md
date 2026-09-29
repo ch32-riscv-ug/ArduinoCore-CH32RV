@@ -170,6 +170,58 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
   の実測）には足りる。
 - 足りない場面は、fixture.uart を高い baud で素通しするときだけ。それは変換チップ越しの probe の用途に入れない（P4 でやる）。
 
+## 4.6 書き込みの経路: ポートを選ぶだけで書き込む（提案）
+
+### 経路の一覧
+
+| 経路 | 相手の USB | 入り方 | 今の道具 |
+|---|---|---|---|
+| WCH-LinkE / WCH-Link（SWD / RVSWD） | LinkE の CDC `1a86:8010`（DAP は `8012`）。シリアルポートとして見える | 常時 | ch32rv `flash`（今の `wch-link` programmer） |
+| OEP の probe（RVSWD / SWIO） | P4 の USJ `303a:1001`、vendor / HID、または変換チップ（CP2102 `10c4:ea60` など）。シリアルポートとして見える | 常時 | OEP の host（今は client の `ch32_flash`。ch32rv は後） |
+| ソフト USB のブートローダー（UIAPduino rv003usb、HID `1209:b803`） | HID。シリアルポートでは**ない** | 外からの操作（リセット 2 連発、BOOT 手順）。app が協力すれば touch1200 | ch32rv `boot hid flash`（今の `ch32rv_hid` tool） |
+| 直 USB の factory ISP（X03x / X315 / H417、`4348:55e0`） | vendor。シリアルポートでは**ない** | BOOT ピン、または app が協力する touch1200（ch32rv `isp enter --via touch1200`） | ch32rv `isp flash` |
+| UART の factory ISP（家系による） | 変換チップ越し。シリアルポート | BOOT ピン | ch32rv `isp --transport uart` |
+| DFU（将来のブートローダー） | DFU class | — | ch32rv `boot dfu` |
+
+### Uno のように、ポートだけでよいか
+
+Uno はポートを選ぶだけで書き込める（プログラマの選択は「書き込み装置を使って書き込む」の別の操作）。同じことは、
+**ポートに付いてくる情報（`{upload.port.protocol}`、`{upload.port.properties.vid / pid / serialNumber}`）を 1 つの書き込みツールが
+受けて、経路を自分で決める**形でできる。Arduino の仕組み（pluggable discovery）はそのために `upload.tool.<protocol>` と port の
+properties を持っている。今の `platform.txt` は `upload.tool=ch32rv` だけで、素の `upload` は programmer が無いと断る。
+
+| 選んだポート | 見分け方 | 書き込みの経路 |
+|---|---|---|
+| LinkE の CDC | VID:PID `1a86:8010` / `8012`。serialNumber で個体も決まる（`--probe serial:<sn>`） | LinkE。**見分けられる** |
+| ch32rv の discovery が出す `wchlink://<serial>`（protocol `wchlink`、実装済み） | protocol | 同上 |
+| OEP の probe（USB の VID:PID を持つもの: P4 の USJ など） | VID:PID + serialNumber。同じ個体の vendor / HID を優先して開く | OEP |
+| OEP の probe（変換チップ越し: classic ESP32） | VID:PID は汎用（CP2102）で見分けられない。**ツールが OEP の describe を送って確かめる**（COBS のフレーム、200〜300 ms で答えが無ければ違う）。共用の口なので、答えが無いときに送ったフレームは target のコンソールに文字として出るだけ | OEP。**モニタで開くのと同じポートに書き込む** |
+| target 自身の CDC（core が USB CDC を持つ家系: X035 など。core が決める VID:PID） | VID:PID | touch1200 で ISP に入れ、`4348:55e0` の再列挙を待って ISP。Leonardo と同じ導線。**core 側に touch1200 で ISP へ跳ぶ実装が要る** |
+| ポート無し | `upload.tool.default` | ツールが USB を走査（LinkE、OEP の USB の probe、HID のブートローダー、ISP の device）。**候補が 1 つならそれ**、複数なら候補を並べて断る |
+
+- HID のブートローダーと ISP の device はシリアルポートではないので、組み込みの discovery には出ない。出したければ ch32rv の
+  `arduino discovery` を広げて `hid://` / `isp://` の port として列挙する（ch32rv の cli 文書に「ISP device・CDC monitor port も
+  列挙する」の予定がある）。出さなくても「ポート無し → 走査」で書ける。
+- `boards.txt` の `upload_port.vid / pid` に、その板の CDC と LinkE の VID:PID を並べれば、IDE がポートと板を結び付ける（ポート
+  一覧に板名が出る）。
+- **プログラマのメニューは残すが、上書きに使う**: ベンチのように書き込み装置が複数つながっているとき、ポートで決まる経路以外を
+  強いるとき。普段は要らない。
+
+### 1 つの書き込みツール
+
+`platform.txt` の `upload.tool.serial` / `upload.tool.wchlink` / `upload.tool.default` を全部同じツールに向け、ツールが
+`{upload.port.address}`、protocol、vid、pid、serialNumber、`{build.ch32rv_chip}` を受けて上の表で決める。ツールは ch32rv が
+本命（LinkE / HID / ISP / DFU は既に持つ。OEP だけ無い）。ch32rv の OEP 対応まで、OEP の枝だけ client の `ch32_flash` を呼ぶ
+薄い包みを置くか、ch32rv に OEP の枝を先に足すかは、§3 のとおり全体が固まってから決める。
+
+### 書き込みの後のモニタ
+
+| 経路 | モニタ |
+|---|---|
+| LinkE | LinkE の CDC（同じポート。target の UART / SDI）、または ch32rv の pluggable monitor（dmseq など） |
+| OEP の probe | 同じポート（共用、§4.2）、または P4 の HS の CDC |
+| ソフト USB / ISP / DFU | 書き込みの後に app が列挙する CDC（あれば）。書き込みの装置とは別の口 |
+
 ## 5. 仕様と実装に要ること
 
 | 項目 | 置き場 | 状態 |
@@ -183,7 +235,9 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
 | classic ESP32 の probe: 共用、bind、NVS の保存（今は Endpoint だけで ProbeConfig が無い） | oep-probe-arduino（Esp32V003Probe） | 未着手 |
 | P4 の probe: USJ を COBS に、HS の CDC の bind を本線へ（ConsolePrototype から）、USJ の reset 抑止 | oep-probe-arduino（Esp32P4X035Probe） | 未着手 |
 | Web Serial の設定のページと JavaScript の OEP client | 置き場は未定（§6 の 3） | 未着手 |
-| programmer の登録（OEP probe）と、書き込みツールの呼び出し | ArduinoCore-CH32（`platform.txt`、`programmers.txt`） | 未着手 |
+| ポートで経路を決める 1 つの書き込みツール（`upload.tool.serial` / `default` / `wchlink`、port の properties を渡す）、`boards.txt` の `upload_port.vid/pid` | ArduinoCore-CH32（`platform.txt`、`boards.txt`）と ch32rv | 未着手 |
+| core: USB CDC を持つ家系で touch1200 から ISP へ跳ぶ（Leonardo の導線） | ArduinoCore-CH32 | 未着手 |
+| ch32rv の discovery に HID のブートローダーと ISP の device を足す（任意） | ch32rv | 予定あり（cli 文書） |
 | ch32rv の OEP 対応 | ch32rv（依頼は [ch32rv-requests](ch32rv-requests.ja.md)） | 全体が固まってから |
 
 ## 6. 決めること
@@ -196,7 +250,10 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
    - 案: セッションの中で最後に行った riscv-dm の reset の位置から流す（無ければ今から）。書き込み → モニタの導線で banner が
      見える。位置はストリームのマークで表せる（oep-if-common §1 の mark）。
 3. Web Serial の設定のページと JavaScript の client の置き場（新しいリポジトリか、oep-client の隣か）。
-4. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
+4. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
+   確かめる方式でよいか（VID:PID では見分けられない）。
+5. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
+6. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
 
 ## 7. 確認済み事実
 
@@ -223,8 +280,14 @@ HS の CDC のモニタは同時に流れ続ける（位置付きのストリー
   USB-Serial/JTAG で OEP を運び、コンソールの CDC は試作（Esp32P4X035ConsolePrototype）にある。
 - 今の OEP の試験（`tests/manual/oep_*`）は、pytest に当たる Python のスクリプトが 1 つのセッションで書き込み・コンソール・
   キャプチャをすべて扱っている。書き込みは client の `ch32_flash`。
-- ch32rv は WCH-LinkE / WCH-Link / ブートローダーに対応し、OEP の probe には対応していない。monitor の source は uart / sdi /
-  dmdata / dmseq / rtt。
+- ch32rv は WCH-LinkE / WCH-Link（`flash`）、HID のブートローダー（`boot hid`、`1209:b803`）、factory ISP（`isp`、USB `4348:55e0` と
+  UART、X03x / X315 / H417 は `isp enter --via touch1200`）、DFU（`boot dfu`）に対応し、OEP の probe には対応していない。monitor の
+  source は uart / sdi / dmdata / dmseq / rtt。`arduino discovery` は `wchlink://<serial>` の port を protocol `wchlink` で列挙する
+  （実装済み）。`arduino monitor` は pluggable monitor（dmdata / rtt）。
+- 今の `platform.txt`: `upload.tool=ch32rv`、`upload.tool.default=ch32rv`。素の `upload` は「A programmer is required」で断る
+  （programmer `wch-link` を指定して書く）。UIAPduino は `upload.protocol=hid` と `ch32rv_hid` tool（`boot hid flash --usb-id 1209:b803`）。
+- Arduino の pluggable discovery: port には protocol と properties（serial discovery は vid、pid、serialNumber）が付き、
+  `upload.tool.<protocol>` で tool を選べる。ポート無しは `upload.tool.default`。
 
 ## 関連
 
