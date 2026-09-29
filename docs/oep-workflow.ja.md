@@ -362,7 +362,7 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 | core: USB CDC を持つ家系で touch1200 から ISP へ跳ぶ（Leonardo の導線） | ArduinoCore-CH32 | 未着手 |
 | ch32rv の discovery に HID のブートローダーと ISP の device を足す（任意） | ch32rv | 予定あり（cli 文書） |
 | ch32rv の OEP 対応 | ch32rv（依頼は [ch32rv-requests](ch32rv-requests.ja.md)） | 全体が固まってから |
-| ch32rv の pluggable monitor: DESCRIBE のキー（`port_description`、`value`）、serial port の path を address に受けて LinkE を引く、source `uart`（既定）、**stdin の EOF で必ず終わる**（arduino-cli は CLOSE / QUIT を送らずに死に、tool は別のプロセスグループなので killpg も届かない。EOF が唯一の合図） | ch32rv | 依頼は固まってから（キーの 2 語は既知不具合に記録済み） |
+| ch32rv の pluggable monitor: DESCRIBE のキー（`port_description`、`value`）、serial port の path を address に受けて LinkE を引く、source `uart`（既定）、**stdin の EOF で必ず終わる**（arduino-cli は CLOSE / QUIT を送らずに死に、tool は別のプロセスグループなので killpg も届かない。EOF が唯一の合図）、**落ちるとき（接続の喪失など）は理由を data の行として流してから終わる**（arduino-cli は tool の stderr を見せず exit 0 で終わるので、data に流せば dut.log と IDE のモニタに残る） | ch32rv | 依頼は固まってから（キーの 2 語は既知不具合に記録済み） |
 | pytest-embedded-arduino-cli: platform が自前の monitor を持つ profile では、runtime を `arduino-cli monitor -m <profile>` の子プロセスで受ける（pyserial の URL handler として。`dut` のまま自動、pyserial 固定の逃げ道は option）。設定は板の既定と profile の `port_config` | pytest-embedded-arduino-cli（ユーザーの管理） | 事前検証済み、依頼は固まってから |
 
 ## 6. 決めたこと・決めること
