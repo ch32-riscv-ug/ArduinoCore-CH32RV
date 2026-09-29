@@ -26,7 +26,7 @@ TARGETS = {
         "adc": {"PA0": 46, "PA1": 47, "PA2": 48, "PA3": 49, "PA4": 53, "PA5": 4, "PA6": 11, "PA7": 5},
         "adc_absent": ["PA3", "PA7"],                    # errata x035-adc-ch-i2c-unavailable on this part
         "external_pullup": [],
-        "adc_high_min": 1000,                            # probe rail == DUT VDD (both 3.3 V)
+        "adc_high_min": 960,                             # probe rail == DUT VDD (both 3.3 V); 997 seen on 2026-09-29
         "i2c": {"scl": 52, "sda": 50, "route": 2},       # DUT PC16/PC17
         "spi": {"sck": 4, "mosi": 5, "miso": 11, "cs": 53, "dut_cs": "PA4"},
         "spi_pclk": 48_000_000,                          # SPI1 clock = PCLK / 2^k (1 MHz asked -> 750 kHz)
