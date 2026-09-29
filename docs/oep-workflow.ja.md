@@ -96,6 +96,7 @@ platform.txt の `pluggable_discovery.ch32rv.pattern` で登録する（1 つで
 **PID を取るまでの間**は、専用 PID の代わりに **USB の interface の名前（iInterface）が `OEP` で始まる**ことで見分ける。名前は
 kernel が列挙のときに読んで持っているので、device を開かずに読める（Linux の sysfs で確認。Windows は interface ごとの Bus reported
 device description、macOS は IORegistry の USB Interface Name で読める見込みで、未確認）。PID を取ったら名前での判定は消す。
+その間の VID:PID は arduino-esp32 の TinyUSB の既定 303a:0002（試作の 303a:4021 は割り当てを受けていない番号なのでやめる）。
 
 `oep://<probe>/<slot>` の `<slot>` はスロットの name（1〜32 byte、`a-z 0-9 - _`、probe の中で重ならない）。address は
 sketch.yaml や pytest の `--port` に書かれるので、読めることを優先した。name を変えると address も変わる。
@@ -322,7 +323,6 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
 - 切り離したブローカーが Windows / macOS でも生き残るか（IDE / arduino-cli が子を job object などでまとめて消さないか）。Linux は
   確認済み（§12）。1 回だけのコマンドがブローカーを通る分の遅れ。
 - OEP の専用 PID（pid.codes）の取得と、probe の HID の口（推奨の作り）。取るまでは interface の名前で見分ける（§3.3）。その間の
-  VID:PID の値（今の 303a:4021 は Espressif の VID の下で割り当てを受けていない番号、arduino-esp32 の既定は 303a:0002）。
   Windows / macOS で interface の名前が device を開かずに読めるかの確認。
 - 設定ページと JavaScript の client の置き場（OEP 側で決める）。
 
