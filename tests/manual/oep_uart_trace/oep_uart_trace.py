@@ -77,8 +77,8 @@ def sweep_cases(f_cpu: int, bauds: list[int]) -> list[tuple[int, str, str]]:
 
 
 def sweep(args, profile: dict, log) -> int:
-    from oep_client.v1.fixture import FixtureUart
-    from oep_client.v1.host import Unsupported
+    from oep_client.fixture import FixtureUart
+    from oep_client.host import Unsupported
     usart, _route = profile["uart"]
     tx_pad = targets.pin_name(profile, profile["uart_rx"])     # the DUT's TX lands on the probe's RX
     run_ = trace_kit.Run(args, profile, test="oep_uart_trace --sweep")

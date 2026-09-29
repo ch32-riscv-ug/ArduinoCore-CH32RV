@@ -9,7 +9,7 @@ probe's fixture UART, and judge it the way smoke.py does - without WCH-LinkE or 
   uv run tests/manual/oep_smoke/oep_smoke.py --sketch all --result-json /tmp/oep-smoke.json
 
 Speaks the OEP v1 draft (oep-spec docs/v1-core-wire-delta.ja.md) through the sibling oep-client-python checkout
-(--oep-client): a session, `oep.wire.*` attach, host-side flashing (oep_client.v1.ch32_flash: a RAM loader run
+(--oep-client): a session, `oep.wire.*` attach, host-side flashing (oep_client.ch32_flash: a RAM loader run
 through `oep.target.riscv-dm`), the sketch's Console as a dmseq stream (`oep.target.console`), and a sketch that
 tests a UART through `oep.fixture.uart` on the pins targets.py names. The probe firmware must already be flashed
 (it is a separate build) and speak v1.
@@ -111,7 +111,7 @@ class Link:
 def pulse_nrst(bench, log) -> None:
     """Pull the target's NRST where the probe declares a channel labelled NRST (a gpio channel, open drain).
     Starts the target clean the way power-up does; nothing happens on a probe without one."""
-    from oep_client.v1 import uiapduino
+    from oep_client import uiapduino
     if bench.nrst is not None and bench.gpio is not None:
         uiapduino.pulse_nrst(bench.host, bench.gpio, bench.nrst)
         log("   pulsed NRST")
@@ -120,7 +120,7 @@ def pulse_nrst(bench, log) -> None:
 def open_console(bench, conn: int) -> "Link":
     """The sketch's Console (tests/sketches/testcmd.h, dmseq) as a stream on the debug connection, read from
     where it stands now: opened before the reset, so the banner is not missed."""
-    from oep_client.v1 import target
+    from oep_client import target
     console = target.Console(bench.host)
     console.open(conn, target.Console.DMSEQ)
     return Link(target.ConsoleIO(console))
@@ -175,7 +175,7 @@ class Bench:
     """One probe, one v1 session, the jig's wire and fixtures."""
 
     def __init__(self, port: str, profile: dict):
-        from oep_client.v1 import host, link, target
+        from oep_client import host, link, target
         self.host = link.open_host(port)   # pipelining bound to the probe's limits
         self.host.open(lease_ms=10000)
         self.wire = target.Wire(self.host, profile["wire"])
@@ -196,7 +196,7 @@ class Bench:
 
 def program(bench, image: bytes, profile: dict, log):
     """Attach halted, program through the host's CH32 flash knowledge, reset and see it run. -> (result, conn)"""
-    from oep_client.v1 import ch32_flash, target
+    from oep_client import ch32_flash, target
     conn, _ = bench.wire.attach(halt=True)
     dm = target.RiscvDm(bench.host, conn)
     # Stop the target before its first instruction, through a system reset: whatever the last sketch left
@@ -208,7 +208,7 @@ def program(bench, image: bytes, profile: dict, log):
 
 
 def run_one(name: str, args, profile: dict, bench, log) -> dict:
-    from oep_client.v1 import target
+    from oep_client import target
     script = expectations(name)
     result = {"sketch": name}
     with tempfile.TemporaryDirectory() as tmp:

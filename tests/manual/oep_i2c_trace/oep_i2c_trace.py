@@ -67,7 +67,7 @@ def main() -> None:
     has_capture = profile["capture"]
     clocks = args.hz or [100000, 10000]
     sys.path.insert(0, args.oep_client)
-    from oep_client.v1.esp32_targets import I2cTarget as P4I2cTarget
+    from oep_client.esp32_targets import I2cTarget as P4I2cTarget
     decode_i2c = trace_kit.decode_i2c
     FixtureCapture, FixtureGpio = trace_kit.Capture, trace_kit.Gpio
 
@@ -95,7 +95,7 @@ def main() -> None:
         if not oep_smoke.sync(link, "i2c_probe_write READY"):
             raise SystemExit(f"no READY: {link.text[:200]!r}")
         if args.rw:
-            from oep_client.v1.decode import I2cTrace
+            from oep_client.decode import I2cTrace
             link.send(f"BEGIN {args.route}\n"); link.wait("BEGIN route=", 5); time.sleep(0.2)
             def trace_cmd(command, reply, hz):
                 rate = min(5_000_000 if hz >= 400_000 else 1_000_000, profile.get("capture_max_hz", 5_000_000))

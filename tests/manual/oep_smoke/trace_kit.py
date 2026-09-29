@@ -1,6 +1,6 @@
 """OEP v1 parts in the shapes the peripheral trace tests use (oep_adc_trace, oep_gpio_matrix, oep_i2c_trace,
 oep_periph_trace, oep_reset_trace, oep_uart_trace). They were written against the v0 client; this keeps their test
-logic as it was and does the work through oep_client.v1:
+logic as it was and does the work through oep_client:
 
 - Session: build a sketch, program it through the host's CH32 flash knowledge, open its console, reset it running.
 - plans are per fn (oep-core §8): Session.plan() applies the fns it names and leaves the others; Gpio adds a channel
@@ -116,7 +116,7 @@ class Session:
 
     def __init__(self, port: str, profile: dict, name: str, log, *, source: pathlib.Path | None = None,
                  fqbn: str | None = None, defines: list[str] | None = None, run: Run | None = None):
-        from oep_client.v1 import target
+        from oep_client import target
         self.log = log
         self.profile = profile
         self.rec = run.rec if run is not None else NoRun()
@@ -154,14 +154,14 @@ class Session:
 
     def plan(self, assignments: list[tuple[int, int, int]]) -> list[int]:
         """Apply these (fn, role, channel); the fns named are replaced, others kept. -> the fns."""
-        from oep_client.v1 import core
+        from oep_client import core
         core.plan_apply(self.host, assignments)
         fns = sorted({fn for fn, _, _ in assignments})
         self._planned.update(fns)
         return fns
 
     def release(self, fns: list[int] | None = None) -> None:
-        from oep_client.v1 import core
+        from oep_client import core
         core.plan_release(self.host, fns or [])
         if fns:
             self._planned.difference_update(fns)
@@ -190,7 +190,7 @@ class Gpio:
     OPEN_DRAIN_LOW, OPEN_DRAIN_RELEASE, INPUT_PULL_UP_DOWN = 5, 6, 7
 
     def __init__(self, session: Session):
-        from oep_client.v1 import fixture, target
+        from oep_client import fixture, target
         self.session = session
         self.fn = target.find_all(session.host, "oep.fixture.gpio")[0]
         self.gpio = fixture.Gpio(session.host, self.fn)
@@ -224,7 +224,7 @@ class Capture:
     COMPLETE = 1
 
     def __init__(self, session: Session):
-        from oep_client.v1 import capture
+        from oep_client import capture
         self.session = session
         self.capture = capture.LogicCapture(session.host)
         self.fn = self.capture.fn
@@ -274,7 +274,7 @@ class Uart:
     """oep.fixture.uart as a byte stream (configure, read, write) with the v0 assignments()."""
 
     def __init__(self, session: Session, fn: int | None = None):
-        from oep_client.v1 import fixture, target
+        from oep_client import fixture, target
         self.fn = fn if fn is not None else target.find_all(session.host, "oep.fixture.uart")[0]
         self.io = fixture.FixtureUartIO(session.host, self.fn)
 
@@ -294,5 +294,5 @@ class Uart:
 
 def decode_i2c(samples: bytes, scl_bit: int = 0, sda_bit: int = 1):
     """The v1 decoder on one-byte-per-sample captures."""
-    from oep_client.v1 import decode
+    from oep_client import decode
     return decode.decode_i2c([(b >> scl_bit) & 1 for b in samples], [(b >> sda_bit) & 1 for b in samples])

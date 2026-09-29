@@ -33,7 +33,7 @@ def main() -> int:
     ap.add_argument("--json")
     args = ap.parse_args()
     sys.path.insert(0, args.oep_client)
-    from oep_client.v1 import host, link, target
+    from oep_client import host, link, target
 
     prof = targets.TARGETS[args.target]
     hst = link.open_host(prof["port"])
@@ -93,7 +93,7 @@ def main() -> int:
 
     def session_rules():
         import struct
-        from oep_client.v1 import core, message as m, riscv
+        from oep_client import core, message as m, riscv
         gpio = target.find_all(hst, "oep.fixture.gpio")
         line = sorted(prof.get("gpio", {}).values())
         role = core.TAG_ROLE_ASSIGNMENT

@@ -131,7 +131,7 @@ def main() -> None:
     if not has_capture and any(sec != "spi-peer" for sec in sections):
         raise SystemExit("this probe has no fixture.capture: only spi-peer runs on " + args.target)
     sys.path.insert(0, args.oep_client)
-    from oep_client.v1.esp32_targets import SpiTarget as P4SpiTarget
+    from oep_client.esp32_targets import SpiTarget as P4SpiTarget
     FixtureCapture = trace_kit.Capture
 
     log = print
