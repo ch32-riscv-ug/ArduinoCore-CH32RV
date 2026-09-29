@@ -1,6 +1,10 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) The bundled ch32rv is now 0.12.0: gdb joins the same broker as the monitor, so a debugger and a debug-module monitor work at once, on WCH-Link and OEP probes alike; gdb no longer leaves an ebreak in flash, connects to RV32E (CH32V00x) ELFs, and no longer stops an OEP probe's console.
+- (JA) 同梱の ch32rv を 0.12.0 にした: gdb が monitor と同じブローカーにつながるので、debugger と debug module の monitor を同時に使える（WCH-Link でも OEP の probe でも）。gdb が flash に ebreak を焼き残さない、RV32E（CH32V00x）の ELF でつながる、OEP の probe の console を止めない、の 3 つも直っている。
+- (EN) The GitHub Pages site gets a top page next to the Board Manager index: the URL with a copy button, how to install and upload, and the versions and boards read from the index.
+- (JA) GitHub Pages に、Board Manager の index の隣にトップページを置いた: URL（コピーのボタン付き）、install と書き込みの手順、index から読む版とボードの一覧。
 
 ## 0.0.1
 - (EN) First Board Manager release, a beta: pre-release, with breaking changes still expected. The platform installs from the package index with its RISC-V toolchain (xPack GCC 14.3.0-1) and one bundled uploader, ch32rv 0.11.0.
