@@ -93,6 +93,9 @@ platform.txt の `pluggable_discovery.ch32rv.pattern` で登録する（1 つで
 
 専用 PID の無い OEP の probe（変換チップ越しの無印 ESP32、USJ だけの P4）は discovery に出さず、利用者が serial port を選ぶ。
 
+`oep://<probe>/<slot>` の `<slot>` はスロットの name（1〜32 byte、`a-z 0-9 - _`、probe の中で重ならない）。address は
+sketch.yaml や pytest の `--port` に書かれるので、読めることを優先した。name を変えると address も変わる。
+
 ### 3.4 スロットの選び方（専用 PID の無い probe の serial port を選んだとき）
 
 書き込みもモニタも同じ規則。利用者が IDE で選んだ板の家系（recipe の `--chip {build.ch32rv_chip}`。monitor には boards.txt の
