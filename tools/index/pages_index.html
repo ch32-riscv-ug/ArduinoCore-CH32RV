@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ArduinoCore-CH32</title>
+<meta name="description" content="Community Arduino core for WCH CH32 RISC-V microcontrollers - Board Manager index">
+<style>
+:root {
+  --bg: #fbfbfa; --fg: #1d1d1f; --muted: #5f6368; --line: #e3e3e0; --card: #ffffff;
+  --accent: #0b6e4f; --accent-bg: #e7f3ee; --code: #f3f3f1; --warn-bg: #fff6e0; --warn-line: #e9c46a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141517; --fg: #e8e8e6; --muted: #a0a4a8; --line: #2c2e31; --card: #1b1c1f;
+    --accent: #5ccf9f; --accent-bg: #16352a; --code: #232528; --warn-bg: #2d2615; --warn-line: #7a6320;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+h1 { font-size: 2rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 36px 0 10px; }
+p { margin: 8px 0; }
+.lead { color: var(--muted); margin-bottom: 20px; }
+.en { color: var(--muted); font-size: 0.93rem; }
+.note {
+  background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px;
+  padding: 10px 14px; margin: 16px 0;
+}
+.url {
+  display: flex; gap: 8px; align-items: stretch; margin: 10px 0;
+}
+.url code {
+  flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap;
+  background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  font: 0.9rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+button {
+  border: 1px solid var(--accent); background: var(--accent-bg); color: var(--accent);
+  border-radius: 8px; padding: 0 14px; font: inherit; font-size: 0.9rem; cursor: pointer; white-space: nowrap;
+}
+button:active { transform: translateY(1px); }
+pre {
+  background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  overflow-x: auto; font: 0.88rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin: 8px 0;
+}
+ol { padding-left: 1.3em; margin: 6px 0; }
+a { color: var(--accent); }
+.links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
+.boards { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.boards li { background: var(--code); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 0.85rem; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+footer { margin-top: 48px; color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>ArduinoCore-CH32</h1>
+  <p class="lead">WCH CH32 RISC-V マイコン向けの、コミュニティ管理の Arduino コア<br>
+    <span class="en">A community-maintained Arduino core for WCH CH32 RISC-V microcontrollers</span></p>
+
+  <div class="note">β版です（0.0.x）。版の間で破壊的変更が入ることがあります。<br>
+    <span class="en">This is a beta. A version may still break what the previous one did.</span></div>
+
+  <h2>インストール <span class="en">/ Install</span></h2>
+  <ol>
+    <li>Arduino IDE の「ファイル → 基本設定 → 追加のボードマネージャのURL」に次を足す<br>
+      <span class="en">Add this under File → Preferences → Additional boards manager URLs</span></li>
+  </ol>
+  <div class="url">
+    <code id="url">https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json</code>
+    <button type="button" id="copy">コピー</button>
+  </div>
+  <ol start="2">
+    <li>ボードマネージャで「CH32 RISC-V」を入れる（toolchain と書き込みツール ch32rv も一緒に入る）<br>
+      <span class="en">Install "CH32 RISC-V" from the Boards Manager (the toolchain and the ch32rv uploader come with it)</span></li>
+    <li>port で WCH-Link の serial port か <code>wchlink://…</code>、OEP の probe なら <code>oep://…</code> を選び、書き込む<br>
+      <span class="en">Pick the port - a WCH-Link's serial port or <code>wchlink://…</code>, an OEP probe's <code>oep://…</code> - and upload</span></li>
+  </ol>
+  <p class="meta">arduino-cli:</p>
+  <pre>arduino-cli core install ch32-riscv-ug:ch32v \
+  --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json</pre>
+
+  <h2>リリース <span class="en">/ Releases</span></h2>
+  <div id="releases"><p class="meta">読み込み中… <span class="en">loading…</span></p></div>
+
+  <h2>リンク <span class="en">/ Links</span></h2>
+  <div class="links">
+    <a href="https://github.com/ch32-riscv-ug/ArduinoCore-CH32">GitHub</a>
+    <a href="https://github.com/ch32-riscv-ug/ArduinoCore-CH32/releases">Releases</a>
+    <a href="https://github.com/ch32-riscv-ug/ArduinoCore-CH32/blob/main/CHANGELOG.md">CHANGELOG</a>
+    <a href="https://github.com/ch32-riscv-ug/ArduinoCore-CH32/blob/main/README.ja.md">README（日本語）</a>
+    <a href="https://github.com/ch32-riscv-ug/ArduinoCore-CH32/blob/main/README.md">README (English)</a>
+    <a href="https://github.com/ch32-riscv-ug/ch32rv">ch32rv</a>
+  </div>
+
+  <footer>本プロジェクトは WCH の公式プロジェクトではありません。
+    <span class="en">Not an official WCH project.</span></footer>
+</main>
+<script>
+(function () {
+  var btn = document.getElementById("copy");
+  btn.addEventListener("click", function () {
+    var text = document.getElementById("url").textContent;
+    var done = function () { btn.textContent = "コピーしました"; setTimeout(function () { btn.textContent = "コピー"; }, 1600); };
+    if (navigator.clipboard) { navigator.clipboard.writeText(text).then(done, function () {}); }
+  });
+
+  // The versions and boards come from the index next to this page, so the page never needs editing per release.
+  var box = document.getElementById("releases");
+  fetch("package_ch32-riscv-ug_index.json", { cache: "no-cache" })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (idx) {
+      var pkg = idx.packages[0];
+      var platforms = pkg.platforms.slice().sort(function (a, b) {
+        var pa = a.version.split(".").map(Number), pb = b.version.split(".").map(Number);
+        for (var i = 0; i < 3; i++) { if (pa[i] !== pb[i]) return pb[i] - pa[i]; }
+        return 0;
+      });
+      box.textContent = "";
+      platforms.forEach(function (p, n) {
+        var card = document.createElement("div"); card.className = "card";
+        var h = document.createElement("div");
+        var strong = document.createElement("strong"); strong.textContent = p.version + (n === 0 ? "（最新 / latest）" : "");
+        h.appendChild(strong);
+        var tools = (p.toolsDependencies || []).map(function (t) { return t.name + " " + t.version; }).join(", ");
+        var meta = document.createElement("div"); meta.className = "meta";
+        meta.textContent = p.boards.length + " boards" + (tools ? " · " + tools : "");
+        var ul = document.createElement("ul"); ul.className = "boards";
+        p.boards.forEach(function (b) { var li = document.createElement("li"); li.textContent = b.name; ul.appendChild(li); });
+        card.appendChild(h); card.appendChild(meta); if (n === 0) card.appendChild(ul);
+        box.appendChild(card);
+      });
+    })
+    .catch(function () {
+      box.innerHTML = '<p class="meta">index を読めませんでした。 <span class="en">Could not read the index.</span></p>';
+    });
+})();
+</script>
+</body>
+</html>

@@ -79,6 +79,8 @@ jobs:
           cp "dist/$index" "$index"
           mkdir -p package
           cp "dist/$index" package/
+          # The top page reads the index next to it for the versions and boards.
+          cp tools/index/pages_index.html package/index.html
 
       - name: Commit the release changes back to main
         run: |
