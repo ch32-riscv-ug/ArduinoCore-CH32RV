@@ -114,7 +114,8 @@ wire（線。debug の線を駆動するインターフェース）、pins（wir
 3. **ロックを持つセッションの要求が来ている口では、生の転送を両方向とも止める。** コンソールの出力は probe の中の位置付きの
    ストリームに残り、`target.console` の read で読める。PC から来たフレームの外のバイトは捨てる。セッションがほかの経路
    （vendor / HID / 別の CDC）にあるときは、その口の生の転送は止めない（モニタは試験中も流れ続ける）。
-4. セッションが終わったら（`end`、または lease の期限切れ）、止めていた口の生の転送を再開する。どこから流すかは §6 の 2。
+4. セッションが終わったら（`end`、または lease の期限切れ）、止めていた serial port の生の転送を、host がそのセッションで最後に
+   reset した位置から再開する（reset が無ければ今から。あふれた分は捨ててよい。D-12）。
 
 **送信のキュー（probe 側）**
 
@@ -377,6 +378,7 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 | D-8 | **登録の上限は protocol では決めず、probe が宣言する**（ピンの数、保存の容量、ピン固定なら 1）。宣言が無ければ保存の容量で断る。**attach policy は target ごと**に host / on open / at boot から選び、設定ページが勧める並びは at boot を先頭に。at boot は止めない attach だけで、target_id が一致したときだけ console を開く。複数の target を登録していれば、起動時に全部へ順に attach する（1 台 約 170 ms） | 仕様: 登録の上限の宣言、attach policy を target の項目へ。設定ページ: 上限の表示 |
 | D-9 | **用語は英語で決め、日本語は訳**（§0）。「口」はやめて serial port、Arduino の一覧の行は IDE port | 文書 |
 | D-10 | **接続は使うときに作るのが基本。at boot / on open の自動 attach は、接続に時間がかかる場合があるのを先払いするプリフェッチ。** (1) at boot の target の数は同時に持てる数まで（超える set は断る。順序は意味を持たない）。(2) 席が埋まっているときの host の attach は、bind だけが使っている接続のうちいちばん古く attach したものを外して席を空ける（host も使っている接続は外さない。空きが作れなければ断る）。(3) 押し出された target はそのまま。再 attach は policy の合図（on open は DTR、at boot は次の起動）か host の attach で起き、**bind はどの接続にも乗る**（attach policy は probe が自分から attach する合図だけを決める）。host が握っていない接続の console が切れるのは仕方ない（dmseq は target が諦めた分を捨てる）。登録に前回の速さを保存すれば再 attach は短くなる | 仕様: at boot の上限、押し出しの規則、bind の規則の言い換え、登録への速さの保存（任意）。probe: 実装 |
+| D-12 | **セッションが終わって共用の serial port の生の転送を再開するときは、host がそのセッションで最後に reset した位置から流す**（reset が無ければ今から）。probe のストリームの容量からあふれた分は捨ててよい。mode（last-reset / manual / mixed）に関係なく同じ規則 | 仕様: ストリームに host の reset の位置の印（oep-if-common §1 の mark と同じ仕組み）と再開の規則。probe: 実装 |
 | D-11 | **target がいるかの定期的な確認はしない。** 使うときの attach の失敗で分かればよく、console を流している間は DMI の失敗で分かる。線を無駄に駆動しない | — |
 | D-5 | **OEP を運ぶ経路の一覧を fn 0 の describe に足す**（種類の並び: UART の変換チップ越し / USB CDC / USB-Serial/JTAG / vendor bulk / HID / TCP）。D-4 の「1 本だけか」はこれで判断する。USB の列挙は discovery がポートを probe ごとにまとめるためだけに使い、安全の判定には使わない | 仕様: core §7.5 の新しい tag（`resets_on_open` の隣）。probe: 宣言。client / discovery: 読む |
 
@@ -384,19 +386,14 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 
 1. **§4.1 と §4.2 でよいか**（シリアルに見える口はすべて COBS、常に OEP を受け、それ以外はコンソール、セッションの口では生の
    転送を止める）。
-2. **セッションが終わって生の転送を再開するとき、止めていた間のコンソールの出力をどうするか。**
-   - 捨てて今から流す: 書き込みツールが reset した直後の出力（起動の banner）はモニタに出ない。
-   - 全部流す: 長いセッション（pytest）の後に大量に流れる。
-   - 案: セッションの中で最後に行った riscv-dm の reset の位置から流す（無ければ今から）。書き込み → モニタの導線で banner が
-     見える。位置はストリームのマークで表せる（oep-if-common §1 の mark）。
-3. Web Serial の設定のページと JavaScript の client の置き場（新しいリポジトリか、oep-client の隣か）。
-4. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
+2. Web Serial の設定のページと JavaScript の client の置き場（新しいリポジトリか、oep-client の隣か）。
+3. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
    確かめる方式でよいか（VID:PID では見分けられない）。
    ポートだけで書くには、板に `upload.protocol` を持たせる必要がある（無いと arduino-cli が programmer を要求する）。
    発見した `wchlink://` のポートで UART も見るには、ch32rv の monitor に `uart` の source を足す（依頼 B-7）か、UART は LinkE の
    CDC のポートを選ぶ、のどちらか。
-5. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
-6. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
+4. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
+5. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
 
 ## 7. 確認済み事実
 
