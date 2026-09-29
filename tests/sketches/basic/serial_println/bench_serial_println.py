@@ -1,48 +1,31 @@
-"""serial_println on a bench board: the UART transmit path, through pytest-embedded-arduino-cli.
+"""The UART transmit path, and the gate for "a UART works" on every board.
 
-Not named test_*: a bench test needs a board behind a port, so the plain `pytest` run (CI) must not collect it.
-Run it with the bench's .env (ports and UART wiring per profile, see tests/.env.example):
+Two streams: `console` is Console, the harness (the debug module's data registers,
+see tests/sketches/testcmd.h), and `uart` is the wire of the UART the runner
+named before this script started ("UART <n> <route> <baud>"). The lines are read
+off the wire; the verdict comes back on Console.
+
+The banner is waited for rather than assumed, and nothing is asserted until the
+board has been asked, so a pass cannot be the previous sketch's output arriving
+late.
+
+Bench test (not test_*: it needs a board behind a port). Run with the bench's .env:
 
   uv run --env-file .env --with pytest-embedded-arduino-cli-ch32rv \
-    pytest -o python_files='bench_*.py' sketches/basic --profile ch32v203
-
-`dut` is the harness Console (SerialDMSeq, the profile's port_config source=dmseq); `ch32_uart` is the DUT's UART as
-the probe sees it (a WCH-Link's UART bridge, or an OEP probe's fixture UART).
+    pytest -o python_files='bench_*.py' sketches/basic --profile <profile>
 """
-import os
-import uuid
+from loader import load
 
-import pytest
-
-BAUD = 115200
-
-
-def uart_wiring(profile: str) -> tuple[int, int]:
-    """Which USART and route this bench wires to the probe for the board: TEST_UART_<PROFILE>=<n>,<route>."""
-    key = f"TEST_UART_{profile.upper().replace('-', '_')}"
-    value = os.environ.get(key)
-    if not value:
-        pytest.fail(f"{key} is not set: which USART and route of this board reach the probe (tests/.env.example)")
-    n, route = (int(v) for v in value.split(","))
-    return n, route
+kit = load("tests/sketches/bench_kit.py", "bench_kit")
 
 
 def test_serial_println(dut, ch32_uart, arduino_cli_app):
-    n, route = uart_wiring(arduino_cli_app.profile)
-    dut.expect_exact("serial_println READY", timeout=20)
-
-    # A PONG carrying our own token: a reply the previous sketch left behind cannot answer for this one.
-    token = uuid.uuid4().hex[:8]
-    dut.write(f"PING {token}\n")
-    dut.expect_exact(f"PONG {token}", timeout=10)
-
-    dut.write(f"UART {n} {route} {BAUD}\n")
-    dut.expect_exact(f"UART OK {n} {route} {BAUD}", timeout=10)
-    uart = ch32_uart.open(BAUD)
-
+    kit.start(dut, 'serial_println')
+    uart = kit.open_uart(dut, ch32_uart, arduino_cli_app.profile)
     dut.write("RUN\n")
-    uart.expect_exact("hello from ch32", timeout=10)
+    uart.expect_exact("hello from ch32")
     uart.expect_exact("int=42")
+    # Print(value, HEX) is uppercase with no 0x prefix, as Arduino does.
     uart.expect_exact("hex=BEEF")
-    dut.expect_exact("availableForWrite PASS", timeout=10)
-    dut.expect_exact("serial_println done failures=0", timeout=10)
+    dut.expect_exact("availableForWrite PASS")
+    dut.expect_exact("serial_println done failures=0")
