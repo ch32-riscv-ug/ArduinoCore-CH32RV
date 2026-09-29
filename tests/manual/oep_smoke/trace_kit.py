@@ -7,14 +7,13 @@ logic as it was and does the work through oep_client.v1:
   to its own plan the first time it drives or reads it (v0 took no plan for gpio).
 - Capture: one-shot captures handed back as one byte per sample, bit k = channel k of the plan (the v0 layout the
   tests decode), whatever sample width the probe chose.
-- Run: with --run-dir, a WireSkein run (wireskein/prototype/wsproto/runlog.py): the heading markers the test opens,
-  the console lines sent and received, and every capture with its DUT pad names; `ws verify` then checks the
-  captures against the expectations the test gave each heading (wireskein docs/capture-test-guide.ja.md).
+- Run: with --run-dir, a WireSkein run (the `wireskein` package, `wireskein.runlog`): the heading markers the test
+  opens, the console lines sent and received, and every capture with its DUT pad names; `wireskein verify` then checks
+  the captures against the expectations the test gave each heading (wireskein docs/capture-test-guide.ja.md).
 """
 from __future__ import annotations
 
 import contextlib
-import os
 import pathlib
 import subprocess
 import sys
@@ -22,16 +21,15 @@ import tempfile
 import time
 from dataclasses import dataclass
 
+from wireskein import runlog
+
 import oep_smoke
 import targets
-
-DEFAULT_WIRESKEIN = pathlib.Path.home() / "dev_oep" / "wireskein" / "prototype"
 
 
 def add_run_arguments(parser) -> None:
     parser.add_argument("--run-dir", help="record a WireSkein run here (markers, console lines, captures, "
-                        "expectations) and check it with ws verify; the exit code follows the verdict")
-    parser.add_argument("--wireskein", default=str(DEFAULT_WIRESKEIN), help="WireSkein prototype directory")
+                        "expectations) and check it with wireskein verify; the exit code follows the verdict")
 
 
 class NoRun:
@@ -62,29 +60,26 @@ class NoRun:
 
 class Run:
     """A WireSkein run: the recorder (runlog.Recorder, standard library only), its expectation helpers, and
-    `ws verify` at the end. Without --run-dir the recorder is NoRun and the helpers still build their dicts."""
+    `wireskein verify` at the end. Without --run-dir the recorder is NoRun and the helpers still build their dicts."""
 
     def __init__(self, args, profile: dict, **meta):
-        sys.path.insert(0, args.wireskein)
-        from wsproto import runlog
         self.runlog = runlog
         self.dir = pathlib.Path(args.run_dir) if args.run_dir else None
-        self.wireskein = pathlib.Path(args.wireskein)
         self.rec = runlog.Recorder(self.dir, target=args.target, fqbn=profile["fqbn"], **meta) if self.dir else NoRun()
 
     def __getattr__(self, name):   # square, level, ends, i2c, spi, pulses ...: runlog's helpers
         return getattr(self.runlog, name)
 
     def verify(self, log=print) -> int:
-        """Close the run and check it: -> ws verify's exit code (0 when nothing is NG; 0 without --run-dir)."""
+        """Close the run and check it: -> wireskein verify's exit code (0 when nothing is NG; 0 without --run-dir)."""
         if self.dir is None:
             return 0
         self.rec.close()
         size = sum(f.stat().st_size for f in self.dir.iterdir() if f.suffix in (".json", ".bin"))
         log(f"run {self.dir}: {len(self.rec.doc['captures'])} captures, {size} bytes (run.json + .bin)")
-        cmd = ["uv", "run", "--project", str(self.wireskein), "python", "ws.py", "verify", str(self.dir.resolve()),
+        cmd = [sys.executable, "-m", "wireskein", "verify", str(self.dir.resolve()),
                "--junit", str((self.dir / "report.xml").resolve()), "--json", str((self.dir / "report.json").resolve())]
-        return subprocess.run(cmd, cwd=self.wireskein, env={**os.environ, "PYTHONPATH": "."}).returncode
+        return subprocess.run(cmd).returncode
 
 
 class LineLink(oep_smoke.Link):

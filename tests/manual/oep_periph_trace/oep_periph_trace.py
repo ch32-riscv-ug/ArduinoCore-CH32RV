@@ -1,6 +1,6 @@
 # /// script
-# requires-python = ">=3.10"
-# dependencies = ["pyserial>=3.5"]
+# requires-python = ">=3.13"
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
 # ///
 """Measure X035 peripheral outputs on the wire with the OEP probe's fixture.capture: analogWrite
 PWM frequency and duty, tone() frequency, delayMicroseconds()/millis() timing, and SPI master
@@ -8,7 +8,7 @@ mode/clock/data (worklist P3 rows 4, 5, 7). The sketch periph_probe is programme
 
   uv run tests/manual/oep_periph_trace/oep_periph_trace.py            # all sections
   uv run tests/manual/oep_periph_trace/oep_periph_trace.py --only spi
-  uv run tests/manual/oep_periph_trace/oep_periph_trace.py --run-dir /tmp/periph-run   # + WireSkein ws verify
+  uv run tests/manual/oep_periph_trace/oep_periph_trace.py --run-dir /tmp/periph-run   # + wireskein verify
 
 Fixture (E143 pin map): PA1 -> P4 GPIO47, SPI1 SCK PA5 -> 4, MOSI PA7 -> 5, MISO PA6 -> 11, CS PA4 -> 53.
 """

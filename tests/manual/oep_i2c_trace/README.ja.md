@@ -154,7 +154,7 @@ x035 / v003: 100 kHz と 10 kHz の WRITE、NACK（相手なし）の復号と t
 
 ## 2026-09-29: WireSkein の照合（`--run-dir`）
 
-`--run-dir DIR` で、見出し・console の行・キャプチャ・期待を WireSkein の記録に書き、最後に `ws.py verify` の終了コードで終わる
+`--run-dir DIR` で、見出し・console の行・キャプチャ・期待を WireSkein の記録に書き、最後に `wireskein verify` の終了コードで終わる
 （[oep_periph_trace の README](../oep_periph_trace/README.ja.md) の同じ節と共通、組み込みは `oep_smoke/trace_kit.py`）。
 
 期待は `i2c(PC16, PC17, 取引, hz)`: アドレス、読み書き、バイト、ACK、SCL の周波数 ±10 %、最後に両方の線が high。

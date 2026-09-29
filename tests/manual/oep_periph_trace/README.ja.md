@@ -98,9 +98,9 @@ x035: PWM、tone、タイミング、SPI（DUT のみ、peer）が通った。pe
 ## 2026-09-29: WireSkein の照合（`--run-dir`）
 
 `--run-dir DIR` を付けると、試験は見出し（`# test_pwm` / `## duty=64` など）、console で送った行と受けた行、キャプチャ（CH32 の
-ピン名つき）、見出しごとの期待を WireSkein の記録（`run.json` と `c0001.bin` …）に書く。最後に `ws.py verify DIR --junit
-DIR/report.xml --json DIR/report.json` を呼び、その終了コードで終わる（NG が 1 つでもあれば 1）。WireSkein の置き場は
-`--wireskein`（既定 `~/dev_oep/wireskein/prototype`）。書式と期待は wireskein の `docs/capture-test-guide.ja.md`、組み込みは
+ピン名つき）、見出しごとの期待を WireSkein の記録（`run.json` と `c0001.bin` …）に書く。最後に `wireskein verify DIR --junit
+DIR/report.xml --json DIR/report.json` を呼び、その終了コードで終わる（NG が 1 つでもあれば 1）。WireSkein は PyPI の
+`wireskein` を script の依存（PEP 723）として入れる。書式と期待は wireskein の `docs/capture-test-guide.ja.md`、組み込みは
 `oep_smoke/trace_kit.py`（`Run`）。
 
 | 節 | 期待 |

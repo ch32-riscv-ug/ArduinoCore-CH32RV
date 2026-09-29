@@ -1,6 +1,6 @@
 # /// script
-# requires-python = ">=3.10"
-# dependencies = ["pyserial>=3.5"]
+# requires-python = ">=3.13"
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
 # ///
 """Trace the X035's own I2C master transactions on the wire (worklist B): the DUT writes to
 the probe's I2C target over route 2 while fixture.capture samples SCL/SDA in the same plan,
@@ -11,7 +11,7 @@ and the host decodes START / bytes / ACK / STOP next to what Wire reported.
   uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --rw        # read / repeated START / 400 kHz
   uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --stretch   # target stretches SCL 0.1..30 ms
   uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --stuck     # lines held low, target left mid-byte, bus clear
-  uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --run-dir /tmp/i2c-run   # + WireSkein ws verify
+  uv run tests/manual/oep_i2c_trace/oep_i2c_trace.py --run-dir /tmp/i2c-run   # + wireskein verify
 
 Fixture (2026-09-22): X035 route 2 PC16 (SCL) / PC17 (SDA) -> P4 GPIO52 / GPIO50; console USART4
 PB0/PB1 -> P4 GPIO12/6. Everything goes through the OEP probe (sibling oep-client-python).

@@ -1,6 +1,6 @@
 # /// script
-# requires-python = ">=3.10"
-# dependencies = ["pyserial>=3.5"]
+# requires-python = ">=3.13"
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1"]
 # ///
 """Drive and sample every X035 pad that the fixture wires to the P4 (E143 pin map), from both
 sides, through the OEP probe: X035 output -> P4 reads; P4 drives -> X035 digitalRead in
