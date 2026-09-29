@@ -71,7 +71,7 @@ wire（線。debug の線を駆動するインターフェース）、pins（wir
 - pytest と ch32rv は、同じ probe のロック（ch32rv の `DeviceLock`: `$XDG_RUNTIME_DIR/ch32rv/<key>.lock` の flock）を共有する。
   [harness-requirements](harness-requirements.ja.md) の要求 c と同じ。
 
-## 4. 口の原則: シリアルの口は常に OEP を受け、それ以外はコンソール（提案）
+## 4. serial port の原則: 常に OEP を受け、それ以外はコンソールへ（D-13）
 
 ### 4.0 原則（起動モードは持たない）
 
@@ -378,22 +378,21 @@ IDE のモニタの右上のメニューに出る（今は `source` だけ）。
 | D-8 | **登録の上限は protocol では決めず、probe が宣言する**（ピンの数、保存の容量、ピン固定なら 1）。宣言が無ければ保存の容量で断る。**attach policy は target ごと**に host / on open / at boot から選び、設定ページが勧める並びは at boot を先頭に。at boot は止めない attach だけで、target_id が一致したときだけ console を開く。複数の target を登録していれば、起動時に全部へ順に attach する（1 台 約 170 ms） | 仕様: 登録の上限の宣言、attach policy を target の項目へ。設定ページ: 上限の表示 |
 | D-9 | **用語は英語で決め、日本語は訳**（§0）。「口」はやめて serial port、Arduino の一覧の行は IDE port | 文書 |
 | D-10 | **接続は使うときに作るのが基本。at boot / on open の自動 attach は、接続に時間がかかる場合があるのを先払いするプリフェッチ。** (1) at boot の target の数は同時に持てる数まで（超える set は断る。順序は意味を持たない）。(2) 席が埋まっているときの host の attach は、bind だけが使っている接続のうちいちばん古く attach したものを外して席を空ける（host も使っている接続は外さない。空きが作れなければ断る）。(3) 押し出された target はそのまま。再 attach は policy の合図（on open は DTR、at boot は次の起動）か host の attach で起き、**bind はどの接続にも乗る**（attach policy は probe が自分から attach する合図だけを決める）。host が握っていない接続の console が切れるのは仕方ない（dmseq は target が諦めた分を捨てる）。登録に前回の速さを保存すれば再 attach は短くなる | 仕様: at boot の上限、押し出しの規則、bind の規則の言い換え、登録への速さの保存（任意）。probe: 実装 |
+| D-13 | **共用の serial port の規則（§4.1〜§4.2 を決定に）。** (1) シリアルに見える transport はすべて COBS + CRC-16、0x00 区切り。`length(u16)` は vendor bulk と HID だけ。(2) 0x00 から次の 0x00 までためて解き、CRC が合えば OEP、合わなければ（200 ms 途切れても）ためた分を console へ。0x00 以外はすぐ console へ。(3) 応答は `0x00 <COBS> 0x00`。serial port ごとに送信のキュー 1 つ、単位を割らない 1 つの書き手。(4) 生の転送を止めるのは、ロックを持つセッションの要求が来ている serial port だけ。(5) client はフレームの外のバイトを雑音として捨て、欠落は時間切れだけで判断する | 仕様: core §3.1 の表と経路の節。probe: 見分け、キュー。client: 読み手 |
 | D-12 | **セッションが終わって共用の serial port の生の転送を再開するときは、host がそのセッションで最後に reset した位置から流す**（reset が無ければ今から）。probe のストリームの容量からあふれた分は捨ててよい。mode（last-reset / manual / mixed）に関係なく同じ規則 | 仕様: ストリームに host の reset の位置の印（oep-if-common §1 の mark と同じ仕組み）と再開の規則。probe: 実装 |
 | D-11 | **target がいるかの定期的な確認はしない。** 使うときの attach の失敗で分かればよく、console を流している間は DMI の失敗で分かる。線を無駄に駆動しない | — |
 | D-5 | **OEP を運ぶ経路の一覧を fn 0 の describe に足す**（種類の並び: UART の変換チップ越し / USB CDC / USB-Serial/JTAG / vendor bulk / HID / TCP）。D-4 の「1 本だけか」はこれで判断する。USB の列挙は discovery がポートを probe ごとにまとめるためだけに使い、安全の判定には使わない | 仕様: core §7.5 の新しい tag（`resets_on_open` の隣）。probe: 宣言。client / discovery: 読む |
 
 ### 決めること
 
-1. **§4.1 と §4.2 でよいか**（シリアルに見える口はすべて COBS、常に OEP を受け、それ以外はコンソール、セッションの口では生の
-   転送を止める）。
-2. Web Serial の設定のページと JavaScript の client の置き場（新しいリポジトリか、oep-client の隣か）。
-3. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
+1. Web Serial の設定のページと JavaScript の client の置き場（新しいリポジトリか、oep-client の隣か）。
+2. **書き込みは §4.6 のとおり「ポートだけで決める、プログラマは上書き」でよいか。** 変換チップ越しの OEP の probe を describe で
    確かめる方式でよいか（VID:PID では見分けられない）。
    ポートだけで書くには、板に `upload.protocol` を持たせる必要がある（無いと arduino-cli が programmer を要求する）。
    発見した `wchlink://` のポートで UART も見るには、ch32rv の monitor に `uart` の source を足す（依頼 B-7）か、UART は LinkE の
    CDC のポートを選ぶ、のどちらか。
-4. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
-5. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
+3. core に touch1200 → ISP を入れるか（X035 など、USB CDC を持つ家系）。
+4. デバッグ（gdb）を OEP の probe でも扱うか（U6）。ch32rv と一緒に後で。
 
 ## 7. 確認済み事実
 
