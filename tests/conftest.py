@@ -27,6 +27,7 @@ asserting on marker strings in their output; three Windows-only bugs later
 the tests assert on returned values instead of parsing prose.
 """
 import os
+import argparse
 import pathlib
 import shutil
 import tempfile
@@ -74,9 +75,15 @@ _CLEANED = pytest.StashKey[int]()
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--clean", action="store_true", default=False,
-        help="clear pytest's caches and this suite's scratch directories first")
+    # pytest-embedded-arduino-cli (a bench run adds it with `uv run --with`) owns
+    # --clean already, as "arduino-cli compile --clean"; this conftest rides on it
+    # and clears the caches too. Declare it only when that plugin is not loaded.
+    try:
+        parser.addoption(
+            "--clean", action="store_true", default=False,
+            help="clear pytest's caches and this suite's scratch directories first")
+    except (ValueError, argparse.ArgumentError):
+        pass
     parser.addoption(
         "--sweep", action="store_true", default=False,
         help="run the example sweep (every example x every series, ~20 min). "

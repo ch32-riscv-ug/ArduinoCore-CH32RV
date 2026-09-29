@@ -88,7 +88,7 @@ def limits(board: str) -> tuple:
     return out.get("flash", 0), out.get("ram", 0)
 
 
-def block(src: pathlib.Path) -> str:
+def block(src: pathlib.Path, console: bool = False) -> str:
     """The generated profiles section for the sketch in `src`.
 
     What the sketch needs comes from its own .ino, for both trees. A board that
@@ -108,7 +108,14 @@ def block(src: pathlib.Path) -> str:
             f"  # tier {tier}: {note}",
             f"  {name}:",
             f"    fqbn: ch32-riscv-ug:ch32v:{board}:pnum=ANY",
-            "    programmer: wch-link",
+        ]
+        # A test sketch talks to the harness on its Console (SerialDMSeq), so the
+        # bench's monitor reads the debug module rather than the UART under test.
+        # Upload goes by the port (no programmer), which is what lets the same
+        # profile run on a WCH-Link and on an OEP probe.
+        if console:
+            lines += ["    port_config:", "      source: dmseq"]
+        lines += [
             "    platforms:",
             f"      - platform: {PLATFORM}",
             f"        platform_index_url: {INDEX_URL}",
@@ -131,7 +138,7 @@ def main() -> int:
 
     # tests/sketches: a hand-written header comment, then the generated block.
     for path in sorted(HERE.rglob("sketch.yaml")):
-        generated = block(path.parent)
+        generated = block(path.parent, console=True)
         text = path.read_text(encoding="utf-8")
         if MARK_BEGIN in text:
             head = text.split(MARK_BEGIN)[0]
