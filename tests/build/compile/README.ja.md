@@ -14,7 +14,7 @@ arduino-cliのsymlink方式で、暫定FQBN(`ch32-riscv-ug:ch32rv:CH32V00X:pnum=
 ## 暫定ID(Q-015の仮決め。公開IDはQ-017のADRで確定)
 
 - packager: `ch32-riscv-ug`(ユーザーグループ。WCH公式ではない。lang-ship系とは別名前空間)
-- architecture: `ch32v`
+- architecture: `ch32rv`(2026-10-01 に `ch32v` から変更)
 - FQBN例: `ch32-riscv-ug:ch32rv:CH32V00X:pnum=CH32V006K8U7`
 
 ## 使い方
@@ -31,7 +31,7 @@ uv run tests/compile/compile_matrix.py /tmp/w3-work
 ## 構成
 
 ```
-ch32v/
+ch32rv/
   platform.txt              最小recipe(c/cpp/S/ar/link/objcopy/size)。compiler.path未指定時はPATH
   boards.txt                生成物(prototypes/generator/generate.py、pnum 26項目)。手編集禁止
   cores/arduino/

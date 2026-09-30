@@ -75,7 +75,7 @@ _CLEANED = pytest.StashKey[int]()
 
 
 def pytest_addoption(parser):
-    # pytest-embedded-arduino-cli (a bench run adds it with `uv run --with`) owns
+    # pytest-embedded-arduino-cli (a dependency of this suite) owns
     # --clean already, as "arduino-cli compile --clean"; this conftest rides on it
     # and clears the caches too. Declare it only when that plugin is not loaded.
     try:

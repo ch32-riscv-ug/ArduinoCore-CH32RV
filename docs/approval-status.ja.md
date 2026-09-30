@@ -64,11 +64,11 @@ publishが自動でversionが機械的に追従することと、コア本体の
 
 ## 外部へ出るものの現状
 
-いずれも**未実行**で、人が明示的に起動しない限り動きません。
+どちらも人が明示的に起動するか、日次の定期実行でだけ動きます(2026-10-01 時点)。
 
 | workflow | 起動条件 | 状態 |
 |---|---|---|
-| [`release.yml`](../.github/workflows/release.yml) | tag `v<version>`のpush(手動dispatchではbuildのみ) | 未実行。package indexは未公開 |
+| [`release.yml`](../.github/workflows/release.yml) | tag `v<version>`のpush(手動dispatchではbuildのみ) | **実行済み**。0.0.1〜0.0.5をarchitecture `ch32v`で公開(次のreleaseから`ch32rv`) |
 | [`mirror-probe-rs`の`update.yml`](https://github.com/ch32-riscv-ug/mirror-probe-rs) | 日次 + 手動dispatch | **稼働中**。v0.32.0を公開済み。以降は自動で追従する(採用は手動) |
 
 ## 関連

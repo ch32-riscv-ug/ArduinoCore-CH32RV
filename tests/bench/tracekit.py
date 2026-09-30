@@ -38,7 +38,7 @@ def need(bench, *pads: str, capture_hz: int = 0) -> None:
     if missing:
         pytest.skip(f"{bench.name} does not wire {', '.join(missing)} to the probe")
     if capture_hz and int(bench.facts.get("capture_max_hz", 0)) < capture_hz:
-        pytest.skip(f"{bench.name} has no fixture.capture of {capture_hz / 1e6:g} MS/s or more")
+        pytest.skip(f"{bench.name} has no oep.fixture.logic of {capture_hz / 1e6:g} MS/s or more")
 
 
 class Console:
@@ -116,7 +116,7 @@ class CaptureStatus:
 
 
 class Capture:
-    """oep.fixture.capture one-shot, handed back one byte per sample (bit k = the k-th pad given to assignments()).
+    """oep.fixture.logic one-shot, handed back one byte per sample (bit k = the k-th pad given to assignments()).
     Every capture read goes to the run with its pad names and the time it was armed."""
     COMPLETE = 1
 

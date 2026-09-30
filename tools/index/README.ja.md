@@ -19,7 +19,7 @@ Board Manager経由でinstallしたplatformでcompileが通ることは別物で
 | `gen_index.py` | platformを`.tar.bz2`化し、`package_ch32-riscv-ug_index.json`を生成 |
 | `tools_xpack_gcc.json` | xPack GCC 14.3.0-1のtool定義(6 host、GitHub Releases直リンク、公式`.sha`由来のchecksum) |
 | `tools_probe_rs.json` | probe-rs 0.32.0のtool定義(6 host)。Windowsだけ再ホスト**案**(未承認)、他はupstream直リンク |
-| `probe_rs_targets.csv` | probe-rsが知っているCH32 target 127件。`{build.probe_rs_chip}`の生成元 |
+| `probe_rs_targets.csv` | probe-rsが知っているCH32 target 127件。手動試験の道具(`tests/manual/chip_info`)だけが使う(boards.txtの`build.probe_rs_chip`は2026-10-01に廃止) |
 | `fetch_tools.py` | **testに要るものを`<repo>/.tools`へ揃える**(toolchain / probe-rs / device-data tables)。版とchecksumは`tools_*.json`が正本 |
 | `toolenv.sh` | `CH32RV_*`が未設定なら`.tools`の場所を入れるshell helper。設定済みのものは触らない |
 | `install_check.py` | ローカルHTTP配信 → 新規data dirへclean install → **上書きなしでcompile** → upgrade/rollback |

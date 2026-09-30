@@ -132,9 +132,10 @@ class Tables:
         self.reg = {}
         self.block_base = {}
         for row in self._rows("index/register_map.csv"):
-            if row["family"] == self.family:
+            if row["family"] == self.family and row["address"]:
                 self.reg[(row["block"], row["register"])] = int(row["address"], 16)
-                self.block_base[row["block"]] = int(row["address"], 16) - int(row["offset"], 16)
+                if row["offset"]:              # documented as possibly empty (CH32H417 UHSIF today)
+                    self.block_base[row["block"]] = int(row["address"], 16) - int(row["offset"], 16)
         # routes.csv has one row per (selector, value, pad); the selector's
         # register bits repeat on every row, so the first one decides.
         self.remap = {}
@@ -172,7 +173,8 @@ class Tables:
                 continue
             line = re.fullmatch(r"(?:EXTICR\d*_)?EXTI(\d+)", row["field"])
             if line and row["kind"] == "field" and row["bits"]:
-                hi, lo = (int(b) for b in row["bits"].split(":"))
+                parts = [int(b) for b in row["bits"].split(":")]   # "hi:lo", or "n" for one bit
+                hi, lo = parts[0], parts[-1]
                 by_offset.setdefault(int(row["offset"], 16), []).append(
                     (int(line.group(1)), lo, (1 << (hi - lo + 1)) - 1))
         self.exticr_words = [self.block_base["AFIO"] + off for off in sorted(by_offset)]

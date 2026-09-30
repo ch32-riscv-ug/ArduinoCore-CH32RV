@@ -1,5 +1,5 @@
 """Peripheral outputs on the wire: analogWrite PWM frequency and duty, tone(), delayMicroseconds() / millis()
-timing, and SPI master mode / clock / data - captured by the OEP probe's fixture.capture, decoded here, and recorded
+timing, and SPI master mode / clock / data - captured by the OEP probe's oep.fixture.logic, decoded here, and recorded
 into the test's WireSkein run, which pytest-embedded-wireskein checks against the expectations each section states.
 
 The sketch drives whichever pins the host names (PINS), so the bench file decides the pads: facts.pwm and facts.spi.

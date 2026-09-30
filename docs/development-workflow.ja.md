@@ -84,7 +84,7 @@ tests/
 
 ```sh
 # pytest-embedded-arduino-cli の規約（既存）
-TEST_SERIAL_PORT_CH32X035=oep://30eda0e31108-hs/x035     # IDE port。upload / monitor / oep_host がここから probe を引く
+TEST_SERIAL_PORT_CH32X035=oep://30eda0e31108/x035     # IDE port。upload / monitor / oep_host がここから probe を引く
 # このプラグイン群の規約（既存 + 追加）
 TEST_UART_CH32X035=4,0                                     # DUT のどの USART / route が probe に届いているか
 TEST_BENCH_CH32X035=x035-p4                                # benches/x035-p4.toml

@@ -172,10 +172,13 @@ def wanted_items(bench: Bench, hst) -> list:
         name, _, k = spec["interface"].partition("#")
         fns = core.find_all(hst, name)
         fn = fns[int(k or 1) - 1]
-        roles = registry.by_name(name).enum.get("role", {}) if hasattr(registry, "by_name") else {}
+        # The role numbers are the interface's own enum (oep_client.registry, from oep-spec); a name the
+        # interface does not have is a bench-file error, not a guess.
+        roles = getattr(registry.INTERFACES.get(name), "enum", {}).get("role", {})
         for role, ch in spec["roles"].items():
-            number = roles.get(role) if roles else {"rx": 1, "tx": 2, "line": 1}.get(role)
-            items.append(config.Plan(fn=fn, role=int(number), channel=int(ch)))
+            if role not in roles:
+                raise BenchError(f"{bench.name}: {name} has no role {role!r} (it has {sorted(roles)})")
+            items.append(config.Plan(fn=fn, role=int(roles[role]), channel=int(ch)))
     for spec in bench.data.get("idle", []):          # oep config idle: how an unassigned channel rests
         items.append(config.Idle(channel=int(spec["channel"]), mode=spec.get("mode", "pull-up")))
     if slot:
@@ -257,8 +260,9 @@ def check(bench: Bench, ch32rv: pathlib.Path | str | None = None) -> list[str]:
         st = config.ProbeConfig(hst).state()
         storage = config.STORAGE_STATE.get(st.storage, st.storage)
         if storage != "applied":
-            problems.append(f"probe settings storage is {storage!r} (saved hash {st.saved_hash:#x}): the probe is not "
-                            f"running its saved settings")
+            why = f", unreadable: {st.unreadable}" if getattr(st, "unreadable", None) else ""
+            problems.append(f"probe settings storage is {storage!r} (saved hash {st.saved_hash:#x}{why}): the probe is "
+                            f"not running its saved settings")
         have = [dataclasses.astuple(i) for i in oep_config_items(hst)]
         want_items = [dataclasses.astuple(i) for i in wanted_items(bench, hst)]
         for it in want_items:

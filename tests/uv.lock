@@ -7,6 +7,7 @@ name = "arduinocore-ch32-tests"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "oep-client-python" },
     { name = "pyserial" },
     { name = "pytest" },
     { name = "pytest-embedded-arduino-cli" },
@@ -14,17 +15,20 @@ dependencies = [
     { name = "pytest-embedded-wireskein" },
     { name = "pytest-html" },
     { name = "pyusb" },
+    { name = "wireskein" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "oep-client-python", specifier = ">=0.0.20" },
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-embedded-arduino-cli", specifier = ">=1.8.0" },
     { name = "pytest-embedded-arduino-cli-ch32rv", specifier = ">=0.0.4" },
-    { name = "pytest-embedded-wireskein", specifier = ">=0.0.2" },
+    { name = "pytest-embedded-wireskein", specifier = ">=0.0.4" },
     { name = "pytest-html", specifier = ">=4.1.1" },
     { name = "pyusb", specifier = ">=1.2" },
+    { name = "wireskein", specifier = ">=0.0.13" },
 ]
 
 [[package]]
@@ -182,15 +186,15 @@ wheels = [
 
 [[package]]
 name = "oep-client-python"
-version = "0.0.19"
+version = "0.0.20"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyserial" },
     { name = "pyusb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/25/b9/c7438526490d56a00879492b45cb38f7db7fe6ccc45a7b0a5170363c4b83/oep_client_python-0.0.19.tar.gz", hash = "sha256:cb1fd7ff38634a94176f8ef6d51e27fc2f02eebb28142075b58480549c5467dd", size = 169210, upload_time = "2026-09-30T13:49:04.587Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8c/51/7f06e5ab46bc72046318e27070718980d3e052cd60da44693f7de1a38c84/oep_client_python-0.0.20.tar.gz", hash = "sha256:9e7905e6f5dee185cadcbb45c7c7f27537ba663daaf745f40e628a45583db5ff", size = 169545, upload_time = "2026-09-30T22:38:57.44Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/96/e03abf70d7ce1abf43d84480c8498513d79f07b70d338961f633602394e7/oep_client_python-0.0.19-py3-none-any.whl", hash = "sha256:011c3608b1d9f9ace4d7c5bc74969822211b76515d653c397a85fb84e0a2c616", size = 139197, upload_time = "2026-09-30T13:49:03.055Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/da/6f46b02e5b786c68b6775c0899ed558e296403453610ca0aec04ee4a5c30/oep_client_python-0.0.20-py3-none-any.whl", hash = "sha256:3f43db34cda20099cff193dd60caa3e48a8eb59754a2bfcee878bd95e28c3344", size = 139284, upload_time = "2026-09-30T22:38:56.261Z" },
 ]
 
 [[package]]

@@ -203,6 +203,19 @@ _READ_TABLES: set = set()
 INDEX_DIR = "index"
 MANIFEST_REL = f"{INDEX_DIR}/manifest.csv"
 VERSION_REL = f"{INDEX_DIR}/VERSION"
+# The index/VERSION this generator is written against. Upstream raises it
+# before any change that can break a consumer (index/README.md), so another
+# value stops the run instead of regenerating from tables whose meaning moved -
+# the way ch32rv's db-gen refuses anything but its INDEX_VERSION.
+SUPPORTED_INDEX_VERSION = "1"
+
+
+def check_index_version(tables: pathlib.Path) -> None:
+    version = (tables / VERSION_REL).read_text(encoding="utf-8").strip()
+    if version != SUPPORTED_INDEX_VERSION:
+        raise SystemExit(f"ERROR: {VERSION_REL} is {version!r}; this generator reads version "
+                         f"{SUPPORTED_INDEX_VERSION}. Read upstream's changelog for what changed, "
+                         f"adapt the readers, then raise SUPPORTED_INDEX_VERSION.")
 
 
 def table_relpath(name: str) -> str:
@@ -2685,6 +2698,7 @@ def main() -> int:
                     help="with --check, print a unified diff of each drifting file")
     args = ap.parse_args()
     args.check = args.check or args.diff
+    check_index_version(args.tables)
 
     products = read_table(args.tables, "products.csv")
     commit = source_commit(args.tables)

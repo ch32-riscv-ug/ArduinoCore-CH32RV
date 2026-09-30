@@ -10,21 +10,20 @@ UARTと`SerialSDI`はArduinoのSerial Monitorがそのまま使えます。
 | 経路 | host側 | Serial Monitorで読めるか | 配線 |
 |---|---|---|---|
 | `Serial`(UART) | 何も要らない | **読める** | WCH-LinkEのUARTブリッジ、または外付けadapter |
-| [`SerialSDI`](../libraries/SerialSDI/README.ja.md) | WCH-LinkUtility(またはwlink)で一度有効化 | **読める**(probeのCDC port) | 不要 |
-| [`SerialRTT`](../libraries/SerialRTT/README.ja.md) | `probe-rs attach` | 読めない | 不要 |
-| [`SerialDMDATA`](../libraries/SerialDMDATA/README.ja.md) | `ch32rv monitor --source dmdata`（同梱）/ `minichlink -T` | 読めない | 不要 |
-| [`SerialDMSeq`](../libraries/SerialDMSeq/README.ja.md) | `ch32rv monitor --source dmseq`（ch32rv側は実装中）/ OEP probe | 読めない | 不要 |
+| [`SerialSDI`](../libraries/SerialSDI/README.ja.md) | `ch32rv monitor --source sdi`(同梱、有効化も兼ねる) | **読める**(probeのCDC port) | 不要 |
+| [`SerialRTT`](../libraries/SerialRTT/README.ja.md) | `ch32rv monitor --source rtt`(同梱。WCH-Link、OEP probeは0.14.0以降) | **読める**(monitorの`source`を`rtt`に) | 不要 |
+| [`SerialDMDATA`](../libraries/SerialDMDATA/README.ja.md) | `ch32rv monitor --source dmdata`(同梱)/ `minichlink -T` | **読める**(`source`を`dmdata`に) | 不要 |
+| [`SerialDMSeq`](../libraries/SerialDMSeq/README.ja.md) | `ch32rv monitor --source dmseq`(同梱)/ OEP probe | **読める**(`source`を`dmseq`に) | 不要 |
 
-`SerialRTT`と`SerialDMDATA`をSerial Monitorに繋ぐには、Arduinoの
-pluggable monitorプロトコルを喋る専用ツールを配布する必要があります。
-今は用意していないので、この文書の手順で受けてください
-(方針は[todo](todo.ja.md)を参照)。
+IDEのSerial Monitorは、同梱のch32rvがpluggable monitorとして受けます。probeのport
+(`wchlink://…`か`oep://…`)を選び、monitorの設定`source`を経路に合わせてください。
+CLIでは`ch32rv monitor --source <経路>`です(2026-10-01 時点、ch32rv 0.14.0)。
 
 ## 0. 共通: ビルド成果物の置き場所を自分で決める
 
-`SerialRTT`は**ELFを渡す必要があります**(probe-rsがそこからRTT control blockの
-在り処を引くため)。IDEのビルド成果物はOS依存の一時ディレクトリに出るので、
-CLIで`--build-path`を指定して固定するのがいちばん確実です。
+ch32rvはELFを要りません(RTTのcontrol blockもRAMから自分で探します)。
+ELFが要るのは`probe-rs attach`などほかのツールで読む場合だけです。IDEのビルド成果物は
+OS依存の一時ディレクトリに出るので、そのときはCLIで`--build-path`を指定して固定してください。
 
 ```sh
 arduino-cli compile \
@@ -238,34 +237,25 @@ arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32rv:CH32V103
 portは**WCH-LinkE自身のCDC**(`1a86:8010`)です。
 前述のとおり、ここには**UART Serialの出力も一緒に流れてきます**。
 
-**有効化はuploadに含まれません。** 書き込みツールがprobe-rsのため、
-今のところ1回は手で有効にする必要があります。
+**有効化はuploadに含まれません。** `ch32rv monitor --source sdi`が監視の前に有効化します
+(有効化だけなら`ch32rv monitor sdi on`)。WCH-LinkUtility / wlinkでも有効にできます。
 
-## 4. `SerialRTT` — `probe-rs attach`
+## 4. `SerialRTT` — `ch32rv monitor --source rtt`
 
-probe-rsはこのcoreが書き込みに使っているツールなので、**追加で入れるものはありません**。
-渡すのは**ELF**です。
+同梱のch32rvで読めます。**追加で入れるものはありません**。ELFも要りません。
 
 ```sh
-probe-rs attach --chip CH32V103R8T6 ./build/MySketch.ino.elf
+ch32rv monitor --source rtt --chip CH32V103
 ```
 
-- `--chip`にはboardメニューの`pnum`がそのまま使えます
-- attach時にtargetは**resetされません**。すでに走っているところへ横から入ります。
-  probeがhaltしたまま残した状態にattachすると、それ以前の出力しか出ません。
-  その場合は`probe-rs reset --chip <pnum>`してからattachしてください
+- WCH-LinkでもOEP probeでも読めます(OEP probeはch32rv 0.14.0以降)
+- pollのたびにcoreを一瞬haltします(ch32rvの表示どおり)
 - 打った文字はtargetの`read()`へ届きます(down channel)
-- probeを選ぶときは`--probe 1a86:8010:<serial>`
+- IDEではprobeのportを選び、monitorの`source`を`rtt`にします
+- WCH-Link経由のattachはtargetのクロックを書き換えることがあります(ch32rvが警告を出します)。
+  sketch自身のクロックで見たいときは`ch32rv run <elf> --no-flash --source rtt`でresetしてから読みます
 
-probe-rsの実体はcoreがvendorしているものが使えます。
-
-| OS | 場所 |
-|---|---|
-| Linux / macOS | `<core>/.tools/probe-rs/<version>/probe-rs` |
-| Windows | `<core>\.tools\probe-rs\<version>\probe-rs.exe` |
-
-Board Managerで入れた場合は`~/.arduino15/packages/ch32-riscv-ug/tools/probe-rs/<version>/`
-(Windowsは`%LOCALAPPDATA%\Arduino15\packages\...`)にあります。
+`probe-rs attach --chip <型番> <firmware.elf>`でも読めます(こちらはELFが要ります)。
 
 ## 5. `SerialDMDATA` — `ch32rv monitor --source dmdata` / `minichlink -T`
 

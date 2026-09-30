@@ -123,7 +123,7 @@ IDEの警告を黙らせるためだけの`src/dummy.h`を置いている。
 // Currently IDE doesn't support no-code libraries, like this collection of example sketches.
 ```
 
-こちらは**そのファイルに仕事を与えた**。`libraries/CH32RV/src/CH32.h`は
+こちらは**そのファイルに仕事を与えた**。`libraries/CH32RV/src/CH32RV.h`は
 レジスタマップとGPIOヘルパを束ねる「逃げ道」の入口で、
 ダミーではないのに同じ役目(IDEの警告回避)も果たす。
 
@@ -173,7 +173,7 @@ IDEの警告を黙らせるためだけの`src/dummy.h`を置いている。
 - [ ] この判断基準(1〜3)を採るか。採るならADRにする
 - [ ] 同梱ライブラリの方針を採るか
 - [x] `ch32rv_registers.h`等がsketchから見えることは**認める**。
-      懸念と対処は上記。`libraries/CH32RV/src/CH32.h`が入口で、
+      懸念と対処は上記。`libraries/CH32RV/src/CH32RV.h`が入口で、
       「安定ではない」「coreと取り合いになる」を冒頭に明記した
 - [x] printf/monitorの出力先: **`ch32rv_set_stdout(Print*)`で実装済み**。
       USB CDCが来ても同じ口が使える
