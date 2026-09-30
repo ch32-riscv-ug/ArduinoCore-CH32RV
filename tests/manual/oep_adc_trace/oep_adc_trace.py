@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1", "oep-client-python>=0.0.4"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.2", "oep-client-python>=0.0.4"]
 # ///
 """Coarse ADC check through the OEP probe (worklist P3 row 3, endpoints only): the P4 drives each
 ADC-capable X035 pad (PA0..PA7, E143 wiring) push-pull low and high and analogRead() must read the

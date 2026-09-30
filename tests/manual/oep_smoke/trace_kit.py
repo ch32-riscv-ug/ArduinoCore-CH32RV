@@ -75,8 +75,8 @@ class Run:
         if self.dir is None:
             return 0
         self.rec.close()
-        size = sum(f.stat().st_size for f in self.dir.iterdir() if f.suffix in (".json", ".bin"))
-        log(f"run {self.dir}: {len(self.rec.doc['captures'])} captures, {size} bytes (run.json + .bin)")
+        size = sum(f.stat().st_size for f in self.dir.iterdir() if f.suffix in (".json", ".wsc"))
+        log(f"run {self.dir}: {len(self.rec.doc['captures'])} captures, {size} bytes (run.json + .wsc)")
         cmd = [sys.executable, "-m", "wireskein", "verify", str(self.dir.resolve()),
                "--junit", str((self.dir / "report.xml").resolve()), "--json", str((self.dir / "report.json").resolve())]
         return subprocess.run(cmd).returncode
@@ -265,8 +265,9 @@ class Capture:
         out = bytes(sum(line[i] << k for k, line in enumerate(lines)) for i in range(samples))
         if out:
             extra = {"time_base_slipped": True} if self._segment.slipped else {}   # the probe saw its pacing slip
-            self.session.rec.capture(out, self.rate, [targets.pin_name(self.session.profile, ch) for ch in self.lines],
-                                     self._armed, start_us=self._segment.start_us, **extra)
+            self.session.rec.capture(self._armed, self.rate, interleaved=out,
+                                     names=[targets.pin_name(self.session.profile, ch) for ch in self.lines],
+                                     start_us=self._segment.start_us, **extra)
         return out
 
 

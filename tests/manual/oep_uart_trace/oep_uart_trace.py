@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein>=0.0.1", "oep-client-python>=0.0.4"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.2", "oep-client-python>=0.0.4"]
 # ///
 """X035 USART2 against the probe's second fixture.uart (worklist P3 row 2): DUT -> P4 and P4 -> DUT
 (echo) binary payloads at several bauds, a long continuous transfer, receive overflow behaviour of
