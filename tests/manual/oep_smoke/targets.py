@@ -3,7 +3,7 @@ can reach, and how the DUT pads are wired to the probe GPIOs. One place, so a ru
 `--target x035|v003|l103` instead of carrying its own pin table.
 
 There is no console entry. The harness talks over the probe's target.console - the debug module's data
-registers, no pin needed (tests/sketches/testcmd.h) - so a jig only has to say which UART a sketch
+registers, no pin needed (tests/build/sketches/testcmd.h) - so a jig only has to say which UART a sketch
 that *tests* a UART should bring up: `uart` is (USART number, route), and uart_rx/uart_tx are the probe
 pins that wire lands on.
 

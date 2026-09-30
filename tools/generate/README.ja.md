@@ -90,7 +90,7 @@ pin番号や既定routeが変わると、既存のsketchの意味が変わるた
 
 ### 対象family
 
-等価性ハーネス([tests/startup/](../../tests/startup/README.ja.md))が実証済みの**10 family**が対象。
+等価性ハーネス([tests/build/startup/](../../tests/build/startup/README.ja.md))が実証済みの**10 family**が対象。
 除外は`CH32V103`(vector tableがj命令形式)と`CH32H417`(loadcode boot)で、これはハーネス側の除外理由と同じ。
 
 | family | series | SKU | march / mabi | vector variant |
@@ -116,7 +116,7 @@ V20xのD6/D8/D8WもV307のD8/D8Cも、CSRとmarch/mabiは同一。
 - linker script(MEMORY) → 同上
 - march / mabi / CSR初期値 → 等価性ハーネスの表を`FAMILY_CONFIG`へ移すだけ
 
-ハーネス([tests/startup/startup_equivalence.py](../../tests/startup/startup_equivalence.py))と`FAMILY_CONFIG`が
+ハーネス([tests/build/startup/startup_equivalence.py](../../tests/build/startup/startup_equivalence.py))と`FAMILY_CONFIG`が
 同じ値を二重に持つことになるため、**片方を正本にしてもう片方が参照する**か、
 CIで一致を検証するtestを追加する。
 
@@ -127,7 +127,7 @@ CIで一致を検証するtestを追加する。
 必要なのは**13本**(38〜103 entry、合計約900 entry)。family内で統合できるものはない
 (V20x: D6/D8間7行差、D8/D8W間4行差。V307: D8/D8C間はUSBWakeUp等で差)。
 
-`tests/startup/extract_vectors.py`でEVT startupから機械的に抽出できることは確認済み
+`tests/build/startup/extract_vectors.py`でEVT startupから機械的に抽出できることは確認済み
 (13本すべて成功、j命令形式ゼロ)。ただし既存の`vectors_ch32v00x.inc`は
 「Reference Manualの割込み番号表の自前転記、EVTはCIでの照合相手」という位置づけであり、
 EVT抽出結果をそのままcommitするかは**方針判断が必要**([vendor-policy](../../docs/vendor-policy.ja.md))。

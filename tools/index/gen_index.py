@@ -56,7 +56,7 @@ def sha256(path: pathlib.Path) -> str:
 
 # The repo root doubles as the Arduino platform directory (R-15 method A), so a
 # release archive is an allowlist, not the whole tree. Keep in sync with
-# PLATFORM_ENTRIES in tests/compile/compile_matrix.py.
+# PLATFORM_ENTRIES in tests/build/compile/compile_matrix.py.
 # Arduino platform files that a release archive must carry. Entries absent from the
 # tree are skipped, so this can list things the platform does not have yet.
 PLATFORM_ENTRIES = (

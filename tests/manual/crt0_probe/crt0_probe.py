@@ -45,7 +45,7 @@ import pytest
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests" / "manual" / "smoke"))
-sys.path.insert(0, str(REPO / "tests" / "sketches"))
+sys.path.insert(0, str(REPO / "tests" / "build" / "sketches"))
 
 import smoke                                                    # noqa: E402
 from stage import stage_sketch                                  # noqa: E402

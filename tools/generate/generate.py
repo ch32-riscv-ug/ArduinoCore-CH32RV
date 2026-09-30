@@ -39,13 +39,13 @@ import sys
 #                     rv32imac), f_cpu (HSI direct today)
 #   not in any table  systick64, adc_bits, i2c_has_rtr, and the CSR init values
 #                     below - the CSR ones come from the EVT startup assembly
-#                     and are re-verified every PR by tests/startup/
+#                     and are re-verified every PR by tests/build/startup/
 #
 # Values come from verified research:
 # march/mabi and startup CSR defines: docs/research/startup-files.ja.md (R-01),
 # experiments 0001/0002. Only families proven by the equivalence harness are listed.
 # Startup/ISA parameters shared by every series in an EVT family.
-# Values come from the equivalence harness table in tests/startup/startup_equivalence.py.
+# Values come from the equivalence harness table in tests/build/startup/startup_equivalence.py.
 # CH32_HPRE_LINEAR is which of the two AHB-prescaler encodings the family uses,
 # read off its own EVT header (RCC_HPRE_DIV2 is 0x10 on one and 0x80 on the
 # other); the two tables are written out in cores/arduino/wiring_time.c.
@@ -117,7 +117,7 @@ FAMILY = {
                      defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
                              "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0),
-    # Excluded, same reason as tests/startup/: CH32H417 boots via loadcode.
+    # Excluded, same reason as tests/build/startup/: CH32H417 boots via loadcode.
 }
 
 # One board per silicon series, so the board name matches the chip marking.
@@ -344,7 +344,7 @@ def gen_vectors(variant: str, entries: list, form: str) -> str:
         f" * source: tools/generate/interrupts/interrupts.csv (variant {variant})",
         " * Interrupt vector map. Slot 0 (reset) is emitted by crt0_ch32.S;",
         " * this file starts at slot 1. Verified against the EVT startup",
-        " * sources by tests/startup/ on every PR. */",
+        " * sources by tests/build/startup/ on every PR. */",
     ]
     # A jump-instruction table (CH32V103) needs CH32_JMP; crt0 emits `j name`
     # for it and selects mtvec mode 1.

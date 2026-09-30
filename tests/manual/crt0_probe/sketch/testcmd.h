@@ -1,10 +1,10 @@
 /* testcmd.h - the command protocol every hardware test sketch speaks.
  *
- * THIS FILE IS DISTRIBUTED. The original is tests/sketches/testcmd.h and a copy
+ * THIS FILE IS DISTRIBUTED. The original is tests/build/sketches/testcmd.h and a copy
  * lives in every case directory, because arduino-cli only compiles files that
  * are inside the sketch folder. Edit the original and run
  *
- *     uv run tests/sketches/sync_testcmd.py
+ *     uv run tests/build/sketches/sync_testcmd.py
  *
  * to push it out; `--check` fails when a copy has drifted, and
  * tests/generated/test_generated.py runs that check.

@@ -3,7 +3,7 @@
 The library splits protocol logic from hardware exactly so this test can
 exist: pd_frames.c knows no registers, so the host compiler can build it as a
 shared object and ctypes can call it. The same vectors run on the target in
-tests/sketches/basic/pd_selftest, which is what proves the shifts on rv32ec;
+tests/bench/basic/pd_selftest, which is what proves the shifts on rv32ec;
 this file is where the coverage is, because adding a case here is free.
 
 The expected words are ENCODED HERE, INDEPENDENTLY, from the spec's field

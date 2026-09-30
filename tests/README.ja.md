@@ -58,9 +58,9 @@ Windows専用のバグを3回作ったのでやめました: shebang非対応、
 置いてあります。
 
 ```sh
-uv run tests/compile/compile_matrix.py <workdir>        # compile matrix + size baseline
-uv run tests/startup/startup_equivalence.py <workdir>   # crt0等価性
-uv run tests/sizebench/sizebench.py <workdir>           # newlibサイズ計測
+uv run tests/build/compile/compile_matrix.py <workdir>        # compile matrix + size baseline
+uv run tests/build/startup/startup_equivalence.py <workdir>   # crt0等価性
+uv run tests/build/sizebench/sizebench.py <workdir>           # newlibサイズ計測
 uv run pytest manual/<case>/<case>.py -v -s             # 手動test
 ```
 
@@ -100,11 +100,11 @@ sketchは**コマンド規約**に従います。`setup()`は`tc_begin()`だけ�
 [`sketches/sync_profiles.py`](sketches/sync_profiles.py)の`BOARDS`だけを直します。
 
 ```sh
-uv run tests/sketches/sync_profiles.py           # 全sketch.yamlを再生成
-uv run tests/sketches/sync_testcmd.py            # testcmd.hを配り直す
-uv run tests/sketches/sync_profiles.py --check   # CI: 古ければ失敗
-uv run tests/sketches/sync_testcmd.py --check    # 同上
-CH32_GCC_BIN=<xpack>/bin tests/sketches/compile_all.py /tmp/sk   # 全組み合わせをcompile
+uv run tests/build/sketches/sync_profiles.py           # 全sketch.yamlを再生成
+uv run tests/build/sketches/sync_testcmd.py            # testcmd.hを配り直す
+uv run tests/build/sketches/sync_profiles.py --check   # CI: 古ければ失敗
+uv run tests/build/sketches/sync_testcmd.py --check    # 同上
+CH32_GCC_BIN=<xpack>/bin tests/build/sketches/compile_all.py /tmp/sk   # 全組み合わせをcompile
 ```
 
 どちらの`--check`も`generated/test_generated.py`が回します。
@@ -162,7 +162,7 @@ uv run --env-file .env manual/gpio_loopback/gpio_loopback.py
 
 ```sh
 # 実機なし(CIが回す形)。全sketch × sketch.yamlの全boardをbuild
-uv run pytest sketches/test_sketch_profiles.py
+uv run pytest build/sketches/test_sketch_profiles.py
 
 # 実機あり。経路ごとにrunnerが違う(繋ぎ方=IFが違うため)
 uv run manual/smoke/smoke.py --sketch all                        # WCH-Link(ch32rvでコンソール)

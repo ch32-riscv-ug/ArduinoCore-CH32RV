@@ -35,7 +35,7 @@ Setup:
        cd tests
        uv run --env-file .env pytest manual/gpio_loopback/gpio_loopback.py -v -s
 
-    The sketch speaks the command protocol (tests/sketches/testcmd.h): setup()
+    The sketch speaks the command protocol (tests/build/sketches/testcmd.h): setup()
     only announces itself and the checks run when the host sends RUN, so a
     missing jumper fails a named check rather than producing a silence that
     could equally be a board that never booted.

@@ -15,7 +15,7 @@ against the probe's fixture.uart and measured on the wire: the core sets BRR = r
 baud is F_CPU / BRR, and some bauds land far from the ask (F_CPU / 16.49: +3.1 %) or below BRR 16, out of range.
 
 Wiring (E143): X035 PA2 (USART2 TX) -> P4 GPIO48, PA3 (RX) <- P4 GPIO49. The console is the probe's
-target.console (tests/sketches/testcmd.h), so the one UART in play is the one under test.
+target.console (tests/build/sketches/testcmd.h), so the one UART in play is the one under test.
 """
 
 from __future__ import annotations

@@ -30,8 +30,8 @@ import time
 
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-BASIC = REPO / "tests" / "sketches" / "basic"
-sys.path.insert(0, str(REPO / "tests" / "sketches"))
+BASIC = REPO / "tests" / "bench" / "basic"
+sys.path.insert(0, str(REPO / "tests" / "build" / "sketches"))
 sys.path.insert(0, str(REPO / "tests" / "manual" / "smoke"))
 from stage import stage_sketch                      # noqa: E402
 from smoke import expectations, sketchbook, uses_uart   # noqa: E402  (pure helpers)
@@ -49,7 +49,7 @@ def toolchain_bin() -> pathlib.Path:
 
 def build(name: str, fqbn: str, tmp: pathlib.Path, log,
           source: pathlib.Path | None = None, defines: list[str] | None = None) -> pathlib.Path:
-    """Compile tests/sketches/basic/<name>, or `source` when another sketch dir is given.
+    """Compile tests/bench/basic/<name>, or `source` when another sketch dir is given.
     `defines` are extra -D flags (targets.build_defines) so one sketch can carry several pin tables."""
     sketch_dir = stage_sketch(source or BASIC / name, tmp / name)
     out = tmp / "build"
@@ -116,7 +116,7 @@ def pulse_nrst(bench, log) -> None:
 
 
 def open_console(bench, conn: int) -> "Link":
-    """The sketch's Console (tests/sketches/testcmd.h, dmseq) as a stream on the debug connection, read from
+    """The sketch's Console (tests/build/sketches/testcmd.h, dmseq) as a stream on the debug connection, read from
     where it stands now: opened before the reset, so the banner is not missed."""
     from oep_client import target
     console = target.Console(bench.host)
@@ -312,7 +312,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", choices=sorted(TARGETS), default="x035", help="jig profile (targets.py)")
     parser.add_argument("--port", default=os.environ.get("OEP_PROBE_PORT"), help="override the profile's probe port")
-    parser.add_argument("--sketch", default="core_api", help="case name under tests/sketches/basic, or 'all'")
+    parser.add_argument("--sketch", default="core_api", help="case name under tests/bench/basic, or 'all'")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--seconds", type=float, default=4.0)
     parser.add_argument("--result-json")

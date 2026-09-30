@@ -3,7 +3,7 @@ Purpose:
     Wire's slave mode against its own master mode, through real wire: the
     data path both ways, the callbacks, the 0xFF over-read filler and the
     buffer cap. The unwired half of the story lives in
-    tests/sketches/basic/wire_selftest (a slave with no master stays quiet);
+    tests/bench/basic/wire_selftest (a slave with no master stays quiet);
     this is the wired half that actually moves bytes.
 
 Why manual:

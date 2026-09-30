@@ -40,8 +40,8 @@ import threading
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(REPO / "tests" / "compile"))
-sys.path.insert(0, str(REPO / "tests" / "sketches"))
+sys.path.insert(0, str(REPO / "tests" / "build" / "compile"))
+sys.path.insert(0, str(REPO / "tests" / "build" / "sketches"))
 
 import gen_index                                    # noqa: E402
 from compile_matrix import Failure                  # noqa: E402
@@ -284,7 +284,7 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
                 ("Blink", FQBN_BLINK, sketch(work, "Blink", BLINK)),
                 ("Acceptance", FQBN_ACCEPTANCE,
                  sketch(work, "Acceptance", copy_from=REPO / "tests"
-                        / "sketches" / "basic" / "serial_println")),
+                        / "bench" / "basic" / "serial_println")),
                 ("Libraries", FQBN_LIBRARIES,
                  sketch(work, "Libraries", LIBRARIES)),
         ):

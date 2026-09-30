@@ -5,7 +5,7 @@ conftest.py under the plain module name `conftest`, so `from conftest import
 load` reaches whichever one was loaded last - and one command that names both a
 category and a manual test
 
-    uv run pytest sketches manual/gpio_loopback/gpio_loopback.py
+    uv run pytest build/compile manual/gpio_loopback/gpio_loopback.py
 
 made that manual/gpio_loopback/conftest.py, with an ImportError that names
 neither file as the cause. A module with its own name cannot be shadowed.
@@ -20,7 +20,7 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 
 
 def load(relative_path, name):
-    """Import a harness by path, e.g. load("tests/compile/compile_matrix.py").
+    """Import a harness by path, e.g. load("tests/build/compile/compile_matrix.py").
 
     The harnesses are plain scripts rather than an installed package: each one
     also runs under a bare `uv run`, which is what makes a failure reproducible

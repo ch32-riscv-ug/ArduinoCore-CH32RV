@@ -28,29 +28,32 @@ ROOT_ALLOWED = {
     "TEST_PLAN.ja.md", "TEST_PLAN.md",
     "conftest.py",                   # kept small; see its docstring
     "loader.py",                     # what conftest.py is deliberately not
-    # Shared because two categories must not disagree: compile/ decides what to
-    # build and sketches/ decides what a sketch.yaml promises, from one answer.
-    # Putting it in either category would make the other import across.
+    # Shared because two categories must not disagree: build/compile decides what
+    # to build and build/sketches decides what a sketch.yaml promises, from one
+    # answer. Putting it in either would make the other import across.
     "sketch_requirements.py",
     "pyproject.toml", "uv.lock",
     ".env.example", ".env",          # .env is this bench's, and is not committed
 }
 
-# Category directories, and what each one is for. A new kind of check adds a
-# row here and a directory; anything not listed is a file in the wrong place.
+# Category directories, cut by what a check *needs* rather than by what it
+# checks (the pytest-embedded-arduino-cli guide's rule), so that each maps to
+# one way of running it. A new kind of check goes under one of these; a new
+# top-level directory is a new requirement and adds a row here.
 CATEGORIES = {
-    "generated": "generated files still match the device-data tables",
-    "vendor": "vendored snapshots still match their locks",
-    "startup": "crt0 and vector tables against the EVT sources",
-    "compile": "the compile sweeps and the size baseline",
-    "sizebench": "newlib size measurement",
-    "package": "the Board Manager distribution installs and builds",
-    "sketches": "per-sketch API tests, and the profile builds beside them",
-    "unit": "small checks that need neither a board nor a build",
-    "manual": "needs the bench: real hardware and, sometimes, a person",
+    "unit": "needs nothing: neither a board nor a build",
+    "build": "needs the toolchain: generated files, vendored snapshots, "
+             "startup, the compile sweeps, sizebench, the package install, "
+             "and the sketch profile builds",
+    "bench": "needs the bench: a probe and a board behind --profile "
+             "(tests/benches/<name>.toml says what is wired)",
+    "benches": "the bench files: jig designs, data rather than tests",
+    "manual": "needs a person too: rewiring, another OS, outside equipment",
 }
 
-NOT_COLLECTED = {"manual"}       # excluded in pyproject.toml norecursedirs
+# Reached by naming them, never by a bare `pytest` (pyproject.toml norecursedirs);
+# benches/ holds no tests at all.
+NOT_COLLECTED = {"bench", "benches", "manual"}
 
 
 def _ignored(path: pathlib.Path) -> bool:
@@ -125,13 +128,14 @@ def test_only_the_root_conftest_is_collected():
     whichever loaded last, and anything importing from it gets the wrong file
     with an ImportError that names neither as the cause.
 
-    manual/ keeps its own, because it is in norecursedirs and is loaded only
-    when one of its files is named on the command line. That is still enough to
+    bench/ and manual/ keep their own, because they are in norecursedirs and
+    are loaded only when named on the command line. That is still enough to
     shadow the root one in a command that names both, which is why nothing
     imports from conftest at all - shared code lives in loader.py.
     """
     collected = [p for p in TESTS.rglob("conftest.py")
-                 if not _ignored(p) and "manual" not in p.relative_to(TESTS).parts]
+                 if not _ignored(p)
+                 and not (set(p.relative_to(TESTS).parts) & NOT_COLLECTED)]
     assert collected == [TESTS / "conftest.py"], \
         f"only tests/conftest.py may be collected; also found: {collected}"
 
@@ -156,14 +160,14 @@ def test_no_two_test_modules_share_a_name():
 def test_the_plan_lists_every_entry_point():
     """The table in TEST_PLAN is the map; a check missing from it is invisible.
 
-    Only the category-level entry points are checked. The per-sketch files are
-    covered by their own row in the plan ("1 case = 1 directory") rather than
-    one line each.
+    Only the collected categories are checked. The bench cases are covered by
+    their own row in the plan ("1 case = 1 directory") rather than one line
+    each.
     """
     plan = (TESTS / "TEST_PLAN.ja.md").read_text(encoding="utf-8")
     missing = []
     for name in sorted(set(CATEGORIES) - NOT_COLLECTED):
-        for path in sorted((TESTS / name).glob("test_*.py")):
+        for path in sorted((TESTS / name).rglob("test_*.py")):
             if path.name not in plan:
                 missing.append(str(path.relative_to(TESTS)))
     assert not missing, f"not mentioned in TEST_PLAN.ja.md: {missing}"

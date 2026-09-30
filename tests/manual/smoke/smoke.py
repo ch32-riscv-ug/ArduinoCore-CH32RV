@@ -3,7 +3,7 @@
 # requires-python = ">=3.9"
 # dependencies = ["pyserial>=3.5"]
 # ///
-"""Compile, flash and read back a tests/sketches/basic sketch on one board.
+"""Compile, flash and read back a tests/bench/basic sketch on one board.
 
 It compiles and uploads exactly the way a user would - `arduino-cli upload
 --programmer wch-link`, which drives probe-rs - so a pass means the shipping
@@ -31,7 +31,7 @@ detect.
 `--sketch all` is what to run after swapping a tier B board onto the bench
 (see tests/TEST_PLAN.ja.md): one command, one summary table.
 
-It speaks the command protocol (tests/sketches/testcmd.h): the sketch repeats
+It speaks the command protocol (tests/build/sketches/testcmd.h): the sketch repeats
 "<name> READY" twice a second and does nothing until asked, so however long the
 flash took there is a banner to wait for. Then `PING <token>` has to come back
 as `PONG <token>`. The token matters *here* and nowhere else - this is the one
@@ -85,12 +85,12 @@ import threading
 import time
 
 REPO = pathlib.Path(__file__).resolve().parents[3]
-BASIC = REPO / "tests" / "sketches" / "basic"
+BASIC = REPO / "tests" / "bench" / "basic"
 DEFAULT_SKETCH = "serial_println"
 
 # What to copy into a build directory, shared with the two compile harnesses so
 # that a sketch gaining a file does not fail in three places one at a time.
-sys.path.insert(0, str(REPO / "tests" / "sketches"))
+sys.path.insert(0, str(REPO / "tests" / "build" / "sketches"))
 from stage import stage_sketch                              # noqa: E402
 
 
@@ -373,7 +373,7 @@ def find_ch32rv():
 
 
 class Ch32rvConsole:
-    """Console over ch32rv's dmseq monitor: the board's Console (tests/sketches/testcmd.h)
+    """Console over ch32rv's dmseq monitor: the board's Console (tests/build/sketches/testcmd.h)
     read through the WCH-Link, no UART and no pin involved. read/write/flush, so a Link
     can wrap it exactly as it wraps a serial port.
 
@@ -810,7 +810,7 @@ def run_one(name, bench: Bench, source: pathlib.Path = None) -> dict:
             return {"verdict": "fail", "why": "upload failed", "output": str(e)}
 
         # The console is the board's Console, read through the WCH-Link by ch32rv - not the
-        # UART bridge. The UART is a thing under test (tests/sketches/testcmd.h), opened
+        # UART bridge. The UART is a thing under test (tests/build/sketches/testcmd.h), opened
         # below only for a sketch whose test touches it.
         console_stream = Ch32rvConsole(bench.ch32rv, bench.probe)
         uart_port = None
@@ -1010,7 +1010,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     bench_arguments(ap)
     ap.add_argument("--sketch", default=os.environ.get("CH32_SKETCH", DEFAULT_SKETCH),
-                    help=f"a directory under tests/sketches/basic, or 'all' "
+                    help=f"a directory under tests/bench/basic, or 'all' "
                          f"(default: {DEFAULT_SKETCH})")
     args = ap.parse_args()
 

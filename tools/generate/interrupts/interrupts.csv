@@ -3,7 +3,7 @@
 # crt0_ch32.S, so slots start at 1. An empty handler means a reserved slot.
 # form is how the table stores an entry: word = handler address,
 # jump = `j handler` instruction (CH32V103). It selects mtvec's mode.
-# Verified against the EVT startup sources every PR by tests/startup/.
+# Verified against the EVT startup sources every PR by tests/build/startup/.
 variant,form,slot,handler
 v003,word,1,
 v003,word,2,NMI_Handler

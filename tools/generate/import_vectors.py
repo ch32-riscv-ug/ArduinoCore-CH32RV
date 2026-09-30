@@ -3,7 +3,7 @@
 
 This is a maintenance tool, not part of the build. The committed CSV is the
 input to generate.py; EVT is only read here and by the startup equivalence
-harness (tests/startup/), which re-verifies every PR that the generated vector
+harness (tests/build/startup/), which re-verifies every PR that the generated vector
 tables still match what the silicon documentation describes.
 
 Usage:
@@ -18,7 +18,7 @@ import re
 import sys
 
 # variant tag -> EVT startup .S, relative to the mirror root.
-# Keep in sync with the CONFIG table in tests/startup/startup_equivalence.py.
+# Keep in sync with the CONFIG table in tests/build/startup/startup_equivalence.py.
 SOURCES = {
     "v003":     "CH32V003/EVT/EXAM/SRC/Startup/startup_ch32v00x.S",
     "v00x":     "CH32V006/EVT/EXAM/SRC/Startup/startup_ch32v00X.S",
@@ -96,7 +96,7 @@ def write(rows) -> str:
         "# crt0_ch32.S, so slots start at 1. An empty handler means a reserved slot.",
         "# form is how the table stores an entry: word = handler address,",
         "# jump = `j handler` instruction (CH32V103). It selects mtvec's mode.",
-        "# Verified against the EVT startup sources every PR by tests/startup/.",
+        "# Verified against the EVT startup sources every PR by tests/build/startup/.",
         "variant,form,slot,handler",
     ]
     lines += [f"{v},{f},{s},{h}" for v, f, s, h in rows]

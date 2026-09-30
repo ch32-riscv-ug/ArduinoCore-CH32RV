@@ -57,7 +57,7 @@ Arduino Board Manager経由で配布するArduino coreとして、**利用者が
 | toolchain tool | installされ、compilerとして解決される | `install_check.py` |
 | probe-rs tool | installされ、`--version`が動く | `install_check.py` |
 | upload経路 | `arduino-cli upload --programmer wch-link`が通る | `tests/manual/smoke/smoke.py`(実機) |
-| profile経路 | `sketch.yaml`の`platform_index_url` + `programmer:`で動く | `tests/sketches/`(実機) |
+| profile経路 | `sketch.yaml`の`platform_index_url` + `programmer:`で動く | `tests/build/sketches/`(実機) |
 | 3 OS | 上記すべて | `.github/workflows/ci.yml`の`install-test` matrix |
 
 ### 承認されていないもの
@@ -133,9 +133,9 @@ tests/
 `sketches/`は**1 caseにつき1ディレクトリ**です。
 
 ```text
-tests/sketches/<category>/<case>/
+tests/build/sketches/<category>/<case>/
   <case>.ino
-  sketch.yaml        profile = board。tests/sketches/sync_profiles.pyが生成
+  sketch.yaml        profile = board。tests/build/sketches/sync_profiles.pyが生成
   testcmd.h          コマンド規約の雛形。sync_testcmd.pyが配る生成物
   test_<case>.py     1関数。バナーを待ち、コマンドを送り、順に読む
 ```
@@ -209,8 +209,8 @@ tests/manual/
   どちらかが残るからです。
 - **sketch caseは`test_`を付ける**。ただし`sketch.yaml`のあるディレクトリのTestは
   `--profile`が無ければ`tests/conftest.py`がskipにします。判定に使うのは
-  *`sketch.yaml`が隣にあるか*で、`tests/sketches/`配下かどうかではありません
-  ——`sketches/test_sketch_profiles.py`はcaseではなくcase一覧の検査だからです。
+  *`sketch.yaml`が隣にあるか*で、`tests/build/sketches/`配下かどうかではありません
+  ——`build/sketches/test_sketch_profiles.py`はcaseではなくcase一覧の検査だからです。
 - **harnessは`test_`を付けない**。単体でも`uv run`できるscriptで、pytestからは
   `conftest.load()`が読み込みます。
 - 同じファイル名を2箇所に置かない。pytestはTest moduleをフラットな名前空間に
@@ -306,8 +306,8 @@ sweepは`--sweep`が要るopt-inです。どのseriesを対象にするかは
 **profileがあるということは誰かが実機で回すという約束**なので、回せないprofileは無いほうがましです。
 Tier C/Dは`tests/compile`のmatrixが見ます(profileは不要)。
 
-Board追加時は[`tests/sketches/sync_profiles.py`](sketches/sync_profiles.py)の`BOARDS`だけを直し、
-`uv run tests/sketches/sync_profiles.py`で全`sketch.yaml`を再生成します。
+Board追加時は[`tests/build/sketches/sync_profiles.py`](sketches/sync_profiles.py)の`BOARDS`だけを直し、
+`uv run tests/build/sketches/sync_profiles.py`で全`sketch.yaml`を再生成します。
 
 ---
 
@@ -615,7 +615,7 @@ uv run pytest -m "not slow"    # compile系を飛ばす(数秒)
 ```
 
 内訳と個別実行は[tests/README.ja.md](README.ja.md)。
-sketchのbuildは`sketches/test_sketch_profiles.py`(全sketch×sketch.yamlが約束する全board)。
+sketchのbuildは`build/sketches/test_sketch_profiles.py`(全sketch×sketch.yamlが約束する全board)。
 
 ### 自動テスト(実機あり)
 

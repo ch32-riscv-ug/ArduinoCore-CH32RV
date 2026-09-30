@@ -8,6 +8,11 @@ license = "MIT"
 authors = [{ name = "TANAKA Masayuki" }]
 dependencies = [
   "pytest>=8",
+  # The bench tests: upload and monitor through arduino-cli, and this core's
+  # fixtures (ch32rv, oep_host, ch32_uart). Lower bounds only - a lock file pins,
+  # and a breaking release should break the run so it gets fixed.
+  "pytest-embedded-arduino-cli>=1.7.1",
+  "pytest-embedded-arduino-cli-ch32rv>=0.0.2",
   # The WCH-Link's UART bridge, for a sketch whose UART is under test (smoke.py).
   "pyserial>=3.5",
   "pytest-html>=4.1.1",
@@ -18,8 +23,8 @@ dependencies = [
 
 [tool.pytest.ini_options]
 # One entry point for everything: `pytest` walks the whole tree and each kind of
-# check lives in its own directory (generated, vendor, startup, compile,
-# sizebench, package, sketches, unit). The layout itself is a test - see
+# check lives in its own directory (unit, build/<kind>; bench and manual are
+# reached by name). The layout itself is a test - see
 # unit/test_tests_layout.py - so a stray file at the root fails rather than
 # quietly running from the wrong place.
 #
@@ -31,13 +36,16 @@ testpaths = ["."]
 # This replaces pytest's default list rather than adding to it, so everything
 # that has to stay out is named here - including the dot-directories the
 # default `.*` entry used to cover.
-#   manual   flashes the attached board; reached only by naming a file
-#   */build  harness scratch, when a run was interrupted mid-compile
+#   bench    needs the bench (a probe and a board behind --profile); reached by
+#            naming the directory: `pytest bench --profile <board>`
+#   manual   needs a person too; reached only by naming a file
+#   */build  harness scratch, when a run was interrupted mid-compile (not
+#            tests/build itself: that pattern has a slash)
 # Nothing is called `dist` on purpose: that name is in pytest's own default
 # list, so a directory with it would vanish from collection the day this line
 # is simplified. The Board Manager install test lives in package/.
 norecursedirs = [".venv", ".tools", ".git", ".pytest_cache", "__pycache__",
-                 "manual", "*/build"]
+                 "bench", "manual", "*/build"]
 addopts = "-ra --strict-markers"
 markers = [
   "slow: takes minutes (the compile sweeps)",

@@ -63,7 +63,7 @@ jobs:
           V=${{ steps.ver.outputs.version }}
           uv run --no-project python tools/index/bump_version.py "$V"
           uv run --no-project python tools/index/prepare_release.py --version "$V" --body release_body.md
-          uv run tests/sketches/sync_profiles.py --check
+          uv run tests/build/sketches/sync_profiles.py --check
 
       - name: Build the archive and the index
         run: |
