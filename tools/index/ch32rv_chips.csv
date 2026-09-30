@@ -1,9 +1,8 @@
 # DO NOT EDIT BY HAND - rebuild with: ch32rv db list --json
 # The --chip vocabulary ch32rv accepts, for the CH32 families this
 # platform builds for. A name absent from this file makes the board
-# compile-only: build.ch32rv_chip is `auto` (ch32rv 0.13.1: detect on
-# attach), and an upload attempt fails closed with ch32rv's own
-# `target-not-in-db` (exit 20).
+# compile-only: build.ch32rv_chip is the series name, which ch32rv
+# refuses with its own `target-not-in-db` (exit 20) before writing.
 # ch32rv also accepts a FAMILY name, which probe-rs did not, so a series
 # whose exact part is unknown can still upload - see ch32rv_chip() in
 # tools/generate/generate.py.

@@ -1628,13 +1628,15 @@ def ch32rv_chip(part: str, series: str, ordered_parts: list, vocab: tuple):
 
     None means ch32rv's database has no name for the series (as of ch32rv
     0.8.0 exactly the seven unreleased series V205/V407/V467/X305/X315/M030/
-    M103): the board is labelled "[compile only]" and its menu entries get
-    `auto`, ch32rv's regular value (0.13.1) for "detect the chip on attach"
-    - the same as no --chip at all, which the upload pattern cannot express
-    (an empty `--chip` is a usage error, exit 2). An upload attempted anyway
-    fails closed with ch32rv's own `target-not-in-db` (exit 20) rather than
-    writing to whatever happens to be attached, and starts working the day a
-    ch32rv that knows the chip is bundled.
+    M103): the board is labelled "[compile only]" and its menu entries get the
+    SERIES name as --chip. ch32rv does not know it, so an upload attempted
+    anyway stops with `target-not-in-db` (exit 20) before writing anything,
+    and starts working the day a ch32rv that knows the chip is bundled.
+
+    Not `auto`: that is "detect whatever is attached and write to it", so a
+    V205 image went onto an attached V203 (measured 2026-10-01, ch32rv 0.14.0:
+    `--chip auto` exit 0 and flashed, `--chip CH32V205` exit 20). The monitor
+    keys do get `auto` - see gen_board.
     """
     skus, series_to_family, families = vocab
     if part in skus:
@@ -2642,12 +2644,16 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines.append(f"{pfx}.upload.maximum_size={flash}")
         lines.append(f"{pfx}.upload.maximum_data_size={sram}")
         # `auto` for a series ch32rv has no name for: see ch32rv_chip().
-        rv_chip = ch32rv_chip(pn, series, ordered, ch32rv) or "auto"
-        lines.append(f"{pfx}.build.ch32rv_chip={rv_chip}")
+        known = ch32rv_chip(pn, series, ordered, ch32rv)
+        # A series ch32rv has no name for flashes nothing: its own name, which
+        # ch32rv refuses with target-not-in-db (see ch32rv_chip()).
+        lines.append(f"{pfx}.build.ch32rv_chip={known or series}")
         # The same value for ch32rv's monitor (its DESCRIBE `chip`): it picks the
         # probe's slot by it and refuses a debug-module source on another chip.
+        # `auto` where ch32rv has no name: the monitor only reads, and a name it
+        # rejects would keep even a plain UART monitor from opening.
         for proto in MONITOR_PROTOCOLS:
-            lines.append(f"{pfx}.monitor_port.{proto}.chip={rv_chip}")
+            lines.append(f"{pfx}.monitor_port.{proto}.chip={known or 'auto'}")
         # ANY deliberately keeps the board's variant: it already declares the
         # smallest flash in the series, so it is the "not a specific part"
         # entry and a part that needs its own table has to be picked by name.
