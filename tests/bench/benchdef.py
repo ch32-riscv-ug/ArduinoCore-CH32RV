@@ -177,14 +177,13 @@ def wanted_items(bench: Bench, hst) -> list:
 
 
 def attach_slot(bench: Bench, hst, halt: bool = False):
-    """A test's own connection on the slot's wire, naming the slot's pins: since oep-probe-arduino 0.0.8 the host
-    picks the wire's pins, and an attach that names none scans every pair the probe allows - which the slot's live
-    connection makes `unavailable`. Naming the pair joins that connection. -> (wire, connection)."""
+    """A test's own connection on the slot's wire, joining the slot's live connection. The host picks the wire's
+    pins since oep-probe-arduino 0.0.8; an attach that names none joins the one live connection on that wire
+    (oep-if-debug §1, from 0.0.9 - 0.0.8 wanted the pair named). -> (wire, connection)."""
     from oep_client import target
     slot = bench.data["slot"]
-    pins = tuple(slot["pins"]) if len(slot["pins"]) == 2 else (slot["pins"][0], 0xFFFF)
     wire = target.Wire(hst, "oep.wire." + slot["wire"])
-    conn, _ = wire.attach(halt=halt, pins=pins)
+    conn, _ = wire.attach(halt=halt)
     return wire, conn
 
 
