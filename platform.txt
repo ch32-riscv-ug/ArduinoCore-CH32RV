@@ -1,6 +1,6 @@
 # ArduinoCore-CH32 platform. See docs/adr/README.ja.md (all ADRs currently Proposed).
 name=CH32 RISC-V (ArduinoCore-CH32 prototype)
-version=0.0.3
+version=0.0.4
 
 # Toolchain lookup: empty compiler.path means PATH lookup. For a pinned toolchain pass
 #   --build-property "compiler.path=/path/to/xpack-riscv-none-elf-gcc/bin/"
