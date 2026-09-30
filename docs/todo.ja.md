@@ -286,6 +286,11 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       CTLR2 bit 23 は書いても残らない。V003(classic ESP32 ジグ)では読みは 269〜270 で安定しているが、
       それだと VDD 4.56 V になり、ESP32 の High が 915/1023 に読める記録と両立しない。
       device-data に有効化ビット・X035 のチャネル再確認・V103/M030 の VREFINT を依頼済み。
+      **2026-10-01 LinkE の基板で追試**(pad を HIGH/LOW に駆動した直後に全チャネルを読み比べ):
+      V006 / V203 / V307 は VREFINT から VDD 3.24〜3.27 V が出て正しい。
+      X035C8T6 も ch3/7/11/15 が直前の値をなぞる = エラッタ x035-adc-ch-i2c-unavailable のロット(F8U6 も同じ)。
+      V003 の ch8(2 台とも 270 前後、10bit)と L103 の ch17(973、12bit)は安定した内部源だが、
+      3.3 V 給電なら 0.89 V / 0.78 V で公称 1.2 V と合わない(原因不明、VDD は直接未測定)
       生成物の`CH32RV_ADC_VREFINT_CHANNEL`/`_MV`/`CH32RV_ADC_CTLR2_TSVREFE`はそのために残してある
 - [ ] `[P2]` **ch32rv の次の release で同梱版を上げるとき**: SerialRTT の README / HelloRTT / RttEcho の
       「OEP probe 経由の rtt はまだ使えない」を「OEP probe でも rtt 可」に書き換える
