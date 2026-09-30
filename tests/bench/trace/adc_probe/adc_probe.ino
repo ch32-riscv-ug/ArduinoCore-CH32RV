@@ -3,6 +3,8 @@
 //   ADC <pin> [n]          -> "ADC <pin> n=<n> min=<> max=<> mean=<>" (n samples, default 16)
 //   ADCSEQ <pin> [n]       -> first / last 8 of n back-to-back conversions (settling / decay evidence)
 //   CH <channel> <n> <pin> -> raw regular-channel conversion (15 = VREFINT) after analogRead(<pin>) set the ADC up
+// requires: ram=4K
+// (the sample buffers and the line buffer do not fit CH32V003's 2 KB next to the stack)
 #define TC_CMD_MAX 64
 #include "testcmd.h"
 #include "ch32_registers.h"   // raw ADC register access for the CH command

@@ -7,12 +7,13 @@
 //   TOGGLE0 <count>       digitalWrite high / low pairs, no delay                    -> "TOGGLE0 done"
 //   MILLIS <ms> <count>   toggle pwm every <ms> ms using millis()                    -> "MILLIS done"
 //   SPI <hz> <mode> <hex> SPI (the variant's default route), cs driven as GPIO       -> "SPI got=<hex>"
-// No pin is baked in: the host reads the bench file and sends PINS first. Defaults are PA1 / PA4.
+// No pin is baked in: the host reads the bench file and sends PINS first. The defaults, PA1 / PA2, are the
+// two pads every tier A/B variant has (CH32V003's port A is just those two) - the sketch has to compile for all of them.
 #define TC_CMD_MAX 192   // a 64-byte SPI payload is 128 hex characters
 #include "testcmd.h"
 #include <SPI.h>
 
-static uint8_t PWM_PIN = PA1, CS_PIN = PA4;
+static uint8_t PWM_PIN = PA1, CS_PIN = PA2;
 static uint8_t hexval(char c) { return c <= '9' ? c - '0' : (c | 0x20) - 'a' + 10; }
 
 void setup() { tc_begin("periph_probe"); pinMode(PWM_PIN, OUTPUT); digitalWrite(PWM_PIN, LOW); }

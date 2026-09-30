@@ -17,14 +17,7 @@ profiles:
     platforms:
       - platform: ch32-riscv-ug:ch32v
 
-  # tier A: the other extreme: rv32ec, 24 MHz, 16 K flash
-  ch32v003:
-    fqbn: ch32-riscv-ug:ch32v:CH32V003:pnum=ANY
-    port_config:
-      source: dmseq
-    platforms:
-      - platform: ch32-riscv-ug:ch32v
-
+  # tier A CH32V003: omitted, requires 4 KB RAM, CH32V003 ANY has 2 KB
   # tier B: the mainstream V2 part
   ch32v203:
     fqbn: ch32-riscv-ug:ch32v:CH32V203:pnum=ANY

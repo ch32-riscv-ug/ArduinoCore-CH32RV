@@ -9,6 +9,9 @@
  * or an instrument - and without trusting the core's own register map, which
  * is exactly the thing under test.
  *
+ * requires: flash=32K
+ * (every scenario in one image is 18 KB, over the 16 KB of CH32V003 / V006's ANY part)
+ *
  * Commands are one line each. Pins arrive as the port-encoded numbers the
  * core uses (PA1 = 1, PB12 = 44 ...), because the host has the variant header
  * and this sketch should not carry a second copy of the pad table.

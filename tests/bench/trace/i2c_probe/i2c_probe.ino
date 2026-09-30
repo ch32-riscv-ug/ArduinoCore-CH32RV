@@ -28,8 +28,10 @@ static bool selectRoute(uint8_t route, unsigned long hz) {
   return true;
 }
 
-// The route's pads, for the stuck-bus scenario that bit-bangs them: PINS sets them (defaults: X035 route 2).
-static uint8_t BB_SCL = PC16, BB_SDA = PC17;
+// The route's pads, for the stuck-bus scenario that bit-bangs them: PINS sets them from the bench file before
+// any scenario runs. The defaults only have to exist on every tier A/B variant so the sketch compiles for all of
+// them - PA1 / PA2 do (CH32V003's port A is just those two; L103's smallest package has no PC1 / PC2).
+static uint8_t BB_SCL = PA1, BB_SDA = PA2;
 // Stuck-bus scenario (worklist P3 row 6): STUCK <addr_hex> bit-bangs START + addr|R, ACKs the first
 // data byte and then stops clocking with SCL high while the target drives the next byte's MSB. With a
 // preloaded 0x00 slot the target keeps SDA low: the classic "slave holds SDA" bus hang for Wire to meet.

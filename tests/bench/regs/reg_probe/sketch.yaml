@@ -18,14 +18,7 @@ profiles:
     platforms:
       - platform: ch32-riscv-ug:ch32v
 
-  # tier A: the other extreme: rv32ec, 24 MHz, 16 K flash
-  ch32v003:
-    fqbn: ch32-riscv-ug:ch32v:CH32V003:pnum=ANY
-    port_config:
-      source: dmseq
-    platforms:
-      - platform: ch32-riscv-ug:ch32v
-
+  # tier A CH32V003: omitted, requires 32 KB flash, CH32V003 ANY has 16 KB
   # tier B: the mainstream V2 part
   ch32v203:
     fqbn: ch32-riscv-ug:ch32v:CH32V203:pnum=ANY
@@ -58,13 +51,6 @@ profiles:
     platforms:
       - platform: ch32-riscv-ug:ch32v
 
-  # tier B: rv32ec_zmmul and flash wait state 1
-  ch32v006:
-    fqbn: ch32-riscv-ug:ch32v:CH32V006:pnum=ANY
-    port_config:
-      source: dmseq
-    platforms:
-      - platform: ch32-riscv-ug:ch32v
-
+  # tier B CH32V006: omitted, requires 32 KB flash, CH32V006 ANY has 16 KB
 default_profile: ch32x035
 # --- end generated ---
