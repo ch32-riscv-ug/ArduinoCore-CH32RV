@@ -237,7 +237,7 @@
     NOT_A_PIN)
 
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
- *      reads FLACAP (KiB), getEfuseMac()/getUniqueId() the 96-bit UID ---- */
+ *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */
 #define CH32RV_ESIG_FLACAP_ADDR 0x1ffff3a0u
 #define CH32RV_ESIG_UNIID1_ADDR 0x1ffff3a8u
 #define CH32RV_ESIG_UNIID2_ADDR 0x1ffff3acu

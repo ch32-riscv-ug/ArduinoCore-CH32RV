@@ -287,7 +287,8 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       それだと VDD 4.56 V になり、ESP32 の High が 915/1023 に読める記録と両立しない。
       device-data に有効化ビット・X035 のチャネル再確認・V103/M030 の VREFINT を依頼済み。
       生成物の`CH32RV_ADC_VREFINT_CHANNEL`/`_MV`/`CH32RV_ADC_CTLR2_TSVREFE`はそのために残してある
-- [x] `CH32RV.getFlashChipSize()`と`getEfuseMac()`/`getUniqueId()`(2026-10-01、device-data 1635edf の esig.csv)。
+- [x] `CH32RV.getFlashChipSize()`と`getUniqueId()`(64 bit、2026-10-01、device-data 1635edf の esig.csv)。
+      MAC ではないので ESP32 の`getEfuseMac()`の名前は採らない(ユーザー判断、2026-10-01)。
       X035F8U6 は 63488、V003F4U6 は 16384 を返した。LinkE の 7 台でも FLACAP は型番どおり。
       UNIID3 は V003/V006/X035/L103 で 0xffffffff、V203 と V307 で同じ 0xe339e339(固有でない)。固有なのは下位 64 bit
 - [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ

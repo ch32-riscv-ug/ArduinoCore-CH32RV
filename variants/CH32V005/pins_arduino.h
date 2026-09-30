@@ -188,7 +188,7 @@
 #define CH32RV_ADC_VREFINT_MV 1200   /* 1180..1220 mV */
 
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
- *      reads FLACAP (KiB), getEfuseMac()/getUniqueId() the 96-bit UID ---- */
+ *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */
 #define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u
 #define CH32RV_ESIG_UNIID1_ADDR 0x1ffff7e8u
 #define CH32RV_ESIG_UNIID2_ADDR 0x1ffff7ecu

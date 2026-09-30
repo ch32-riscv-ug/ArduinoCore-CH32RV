@@ -2104,7 +2104,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         regs = dict(sigs.pop())
         if {"FLACAP", "UNIID1", "UNIID2", "UNIID3"} <= set(regs):
             out.append("/* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()")
-            out.append(" *      reads FLACAP (KiB), getEfuseMac()/getUniqueId() the 96-bit UID ---- */")
+            out.append(" *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */")
             for name in ("FLACAP", "UNIID1", "UNIID2", "UNIID3"):
                 out.append(f"#define CH32RV_ESIG_{name}_ADDR 0x{regs[name]:08x}u")
             out.append("")

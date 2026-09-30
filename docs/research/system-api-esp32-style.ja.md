@@ -14,7 +14,7 @@ EEPROMは作らない——作るとしても**低レベルなフラッシュ直
 | リセット理由 | `esp_reset_reason()` (IDF関数を直接使う文化) | `CH32RV.resetReason()` + `CH32RV.resetReasonName()` (RCC RSTSCKRの残骸から) |
 | watchdog | ESP32は`esp_task_wdt_*`(IDF)。**ESP8266の`ESP.wdtEnable/wdtFeed`が「ESPオブジェクト」流儀の前例** | `CH32RV.wdtEnable(ms)` / `CH32RV.wdtFeed()`。IWDGは**一度動くと止められない**石なのでwdtDisable()は出さない(正直に) |
 | heap残量 | `ESP.getFreeHeap()` | `CH32RV.getFreeHeap()` (`_sbrk`とheap末尾から) |
-| チップ識別 | `ESP.getEfuseMac()` | `CH32.chipId()` (ESIG UID 96bit) |
+| チップ識別 | `ESP.getEfuseMac()` | `CH32RV.getUniqueId()`(ESIG UID の固有な下位 64 bit。MAC ではないので ESP32 の名前は採らない、2026-10-01) |
 | flash直接アクセス | **ESP8266の`ESP.flashRead/flashWrite/flashEraseSector`**が前例(ESP32はPreferences/IDF) | `CH32.flashEraseSector(n)` / `flashWrite(off, buf, len)` / `flashRead(off, buf, len)` |
 | sleep | `esp_sleep_enable_timer_wakeup()` + `esp_deep_sleep_start()` | 後述。急がない |
 | SPI slave | **coreに無い**。事実上の標準はhideakitaiのESP32SPISlave(キュー式transfer) | 前例が「core外」なので急がず、やるならその形に寄せる |
