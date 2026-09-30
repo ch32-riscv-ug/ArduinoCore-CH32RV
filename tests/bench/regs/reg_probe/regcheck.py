@@ -369,7 +369,14 @@ def spi_br(f_cpu: int, clock_hz: int) -> int:
     return 7
 
 
-def adc_divider(f_cpu: int, max_hz: int) -> int:
+def adc_divider(f_cpu: int, max_hz: int, ctlr3: bool = False) -> int:
+    """The divider the core picks: RCC ADCPRE offers /2 /4 /6 /8; the ADC_CTLR3 CLK_DIV of
+    CH32X035 offers /4 .. /16 in steps of one (EVT ADC_CLK_Div4 .. Div16)."""
+    if ctlr3:
+        div = 4
+        while div < 16 and f_cpu // div > max_hz:
+            div += 1
+        return div
     div = 2
     while div < 8 and f_cpu // div > max_hz:
         div += 2
@@ -1112,9 +1119,17 @@ class Session:
             self.rep.skip(g, "variant_channel_vs_pinout", "no pinout rows for this part")
         v = self.t.val(f"AREAD {pin}")
         self.rep.true(g, "value_in_range", 0 <= v <= 1023, f"analogRead({a0}) = {v}")
-        div = adc_divider(self.f_cpu, self.defs["CH32_ADC_MAX_HZ"])
-        cfgr0 = self.peek(self.dd.addr("RCC", "CFGR0"))
-        self.rep.eq(g, "adcpre", (cfgr0 >> 14) & 0x3, div // 2 - 1, f"HCLK/{div}, read by the core")
+        ctlr3 = bool(self.defs.get("CH32_ADC_CLK_CTLR3", 0))
+        div = adc_divider(self.f_cpu, self.defs["CH32_ADC_MAX_HZ"], ctlr3)
+        if ctlr3:
+            # The family has no RCC ADCPRE (clock_prescalers.csv); the divider is ADC_CTLR3 CLK_DIV[8:0],
+            # [3:0] = div - 1 and [8:4] = div / 2 - 1 (EVT ADC_CLK_Div4 = 0x13 .. Div16 = 0x7F).
+            reg = self.peek(self.dd.addr("ADC1", "CTLR3"))
+            self.rep.eq(g, "ctlr3_clk_div", reg & 0x1FF, ((div // 2 - 1) << 4) | (div - 1),
+                        f"HCLK/{div}, ADC_CTLR3 CLK_DIV written by the core")
+        else:
+            cfgr0 = self.peek(self.dd.addr("RCC", "CFGR0"))
+            self.rep.eq(g, "adcpre", (cfgr0 >> 14) & 0x3, div // 2 - 1, f"HCLK/{div}, read by the core")
         a = self.adc()
         adon, exttrig, swstart_sel = 1 << 0, 1 << 20, 7 << 17
         self.rep.eq(g, "ctlr2_adon_exttrig_swstart", a["CTLR2"] & (adon | exttrig | swstart_sel),

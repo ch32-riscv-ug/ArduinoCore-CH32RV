@@ -428,9 +428,20 @@ static inline void ch32_irq_disable(uint32_t irqn)
 #define CH32_ADC_CTLR2_EXTSEL_SWSTART (7u << 17)
 #define CH32_ADC_CTLR2_EXTTRIG (1u << 20)
 #define CH32_ADC_CTLR2_SWSTART (1u << 22)
-/* RCC_CFGR0 ADCPRE: 00=/2 01=/4 10=/6 11=/8. ADCCLK must stay under 14 MHz. */
+/* RCC_CFGR0 ADCPRE: 00=/2 01=/4 10=/6 11=/8 (the families that have it; the
+ * ceiling ADCCLK must stay under is CH32_ADC_MAX_HZ from boards.txt). */
 #define CH32_RCC_CFGR0_ADCPRE_MASK (0x3u << 14)
 #define CH32_RCC_CFGR0_ADCPRE(n)   ((uint32_t)(n) << 14)
+/* CH32X035 has no ADCPRE: its divider is ADC_CTLR3 CLK_DIV[8:0] (the EVT header
+ * names only [3:0]; the manual and EVT's ADC_CLK_Div4..16 values say nine).
+ * [3:0] is divider - 1 and [8:4] is divider / 2 - 1, so /4 = 0x13, /6 = 0x25,
+ * /8 = 0x37 and /16 = 0x7F, exactly ADC_CLK_Div4..ADC_CLK_Div16 of the EVT.
+ * The reset value is /4, which at 48 MHz is 12 MHz against a 6 to 8 MHz limit.
+ * boards.txt says which mechanism a family uses (CH32_ADC_CLK_CTLR3). */
+#define CH32_ADC_CTLR3_AT(base)   CH32_REG32((base) + 0x50u)
+#define CH32_ADC_CTLR3_CLK_DIV_MASK 0x1FFu
+#define CH32_ADC_CTLR3_CLK_DIV(div) \
+    ((uint32_t)(((div) / 2u - 1u) << 4) | (uint32_t)((div) - 1u))
 
 /* ----------------------------------------------------------------- EXTI */
 #define CH32_EXTI_BASE   (CH32_APB2_BASE + 0x0400u)

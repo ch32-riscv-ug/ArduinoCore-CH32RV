@@ -79,12 +79,23 @@ static void ch32_adc_begin(uint8_t index)
      * 64 on CH32V205, 80 on CH32X315, and as low as 6 on CH32X035 and CH32V003
      * at their lower supply voltages. boards.txt carries it, read out of
      * operating_conditions.csv. Pick the smallest divider that stays under. */
+#if defined(CH32_ADC_CLK_CTLR3) && CH32_ADC_CLK_CTLR3
+    /* CH32X035: the divider is in the ADC itself, /4 to /16 in steps of one,
+     * and RCC_CFGR0 has no ADCPRE bits to write (ch32_registers.h). */
+    uint32_t divider = 4;
+    while (divider < 16 && (F_CPU / divider) > CH32_ADC_MAX_HZ) {
+        divider += 1;
+    }
+    CH32_ADC_CTLR3_AT(base) = (CH32_ADC_CTLR3_AT(base) & ~CH32_ADC_CTLR3_CLK_DIV_MASK) |
+                              CH32_ADC_CTLR3_CLK_DIV(divider);
+#else
     uint32_t divider = 2;
     while (divider < 8 && (F_CPU / divider) > CH32_ADC_MAX_HZ) {
         divider += 2;
     }
     CH32_RCC_CFGR0 = (CH32_RCC_CFGR0 & ~CH32_RCC_CFGR0_ADCPRE_MASK) |
                      CH32_RCC_CFGR0_ADCPRE((divider / 2u) - 1u);
+#endif
 
     /* Longest sample time on every channel. analogRead() is not a fast path,
      * and high source impedance is the norm on a breadboard. */

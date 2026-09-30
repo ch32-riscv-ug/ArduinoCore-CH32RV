@@ -641,10 +641,27 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # field 1) and 0x80 is a power-of-two field. Reading /2 wrong runs the part
     # at twice the clock every timing calculation assumes.
     hpre: dict = {}
+    adcpre: set = set()
     for r in read_table(tables, "clock_prescalers.csv",
                         ("family", "field", "divider", "value")):
         if r["field"] == "HPRE" and r["divider"] == "2":
             hpre.setdefault(r["family"], set()).add(int(r["value"]))
+        if r["field"] == "ADCPRE":
+            adcpre.add(r["family"])
+
+    # Where the ADC clock divider lives. Most families divide HCLK in
+    # RCC_CFGR0 ADCPRE; CH32X035 has no such field and divides in the ADC's
+    # own CTLR3 CLK_DIV instead. Writing ADCPRE there lands on reserved bits
+    # and leaves the ADC at its reset /4 - 12 MHz at 48 MHz against an 8 MHz
+    # limit (measured 2026-09-30 through the probe). The core needs to be told
+    # which register to write, so a family without ADCPRE but with CLK_DIV
+    # gets CH32_ADC_CLK_CTLR3=1; one with neither is an error, not a guess.
+    adc_ctlr3: set = set()
+    for r in read_table(tables, "register_fields.csv",
+                        ("family", "register", "field", "kind")):
+        if (r["register"] == "ADC_CTLR3" and r["field"] == "CLK_DIV"
+                and r["kind"] == "field"):
+            adc_ctlr3.add(r["family"])
 
     # Flash wait states: the LATENCY field is two bits on most families, three
     # on CH32M030 and four on CH32V205, and absent where the flash needs no
@@ -724,6 +741,9 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             latency_mask=one(family, "the flash LATENCY mask", masks) if masks
             else 0,
             adc_max_hz=adc_hz.get(family, 0),
+            adc_clk_ctlr3=(1 if family not in adcpre and family in adc_ctlr3
+                           else 0),
+            adc_clk_known=family in adcpre or family in adc_ctlr3,
             lsi_hz=lsi.get(family, 0),
             iwdg_base=one(family, "the IWDG base",
                           set(iwdg[family])) if family in iwdg else 0,
@@ -1036,6 +1056,10 @@ def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
     for family in FAMILY:
         if not facts[family]["adc_max_hz"]:
             bad.append(f"{family}: operating_conditions.csv gives no f_ADC")
+        if not facts[family]["adc_clk_known"]:
+            bad.append(f"{family}: neither clock_prescalers.csv (ADCPRE) nor "
+                       "register_fields.csv (ADC_CTLR3 CLK_DIV) says where the "
+                       "ADC clock divider is")
 
     # A wait-state count that does not fit its field would be silently
     # truncated, which is the failure that only shows up at speed.
@@ -2483,6 +2507,7 @@ def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict
         f"-DCH32_HPRE_LINEAR={fact['hpre_linear']} "
         f"-DCH32_FLASH_ACTLR_LATENCY_MASK={fact['latency_mask']:#x}u "
         f"-DCH32_ADC_MAX_HZ={fact['adc_max_hz']}u"
+        + (" -DCH32_ADC_CLK_CTLR3=1" if fact['adc_clk_ctlr3'] else "")
         + (f" -DCH32_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
         + (f" -DCH32_IWDG_BASE={fact['iwdg_base']:#x}u"
            if fact['iwdg_base'] else "")

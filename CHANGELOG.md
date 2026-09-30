@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) CH32X035 / X033: `analogRead()` now runs the ADC inside its rated clock. The divider on these parts is ADC_CTLR3 CLK_DIV, not RCC_CFGR0 ADCPRE, which they do not have; the core was writing reserved bits and the ADC stayed at its reset /4 - 12 MHz at 48 MHz against an 8 MHz (6 MHz below 3.2 V) limit. It is now /8, 6 MHz, checked on the bench through the debugger. boards.txt says which register a family uses (`CH32_ADC_CLK_CTLR3`, read out of device-data).
+- (JA) CH32X035 / X033 の `analogRead()` が ADC を規格内のクロックで回す。この 2 つの分周は RCC_CFGR0 ADCPRE ではなく（その bit が無い）ADC_CTLR3 の CLK_DIV で、core は予約 bit に書いていたため ADC はリセット値の /4 = 48 MHz で 12 MHz のまま（上限は 8 MHz、3.2 V 未満は 6 MHz）だった。今は /8 の 6 MHz（bench でデバッガ越しに確認）。どの register を使う家系かは boards.txt が言う（`CH32_ADC_CLK_CTLR3`、device-data から）。
 - (EN) The bundled ch32rv is now 0.12.4: uploads through an OEP probe running oep-probe-arduino 0.0.6 or later find their slot again (the slot item grew `max_speed` / `idle_clock`; 0.12.2 read the old shape and reported `the probe has no slot`), and the monitor's command latency is down from 20 ms to under 2 ms.
 - (JA) 同梱の ch32rv を 0.12.4 にした: oep-probe-arduino 0.0.6 以降の OEP probe 経由の upload でスロットが見つかる（スロット項目に `max_speed` / `idle_clock` が増え、0.12.2 は古い形で読んで `the probe has no slot` と断っていた）。monitor のコマンド遅延も 20 ms から 2 ms 未満になった。
 - (EN) The bundled ch32rv is now 0.12.3: the monitor on an OEP probe forwards what you type at once and reads the console every 5 ms, instead of waiting up to 20 ms (an echo's round trip went from 15 ms to 1.6 ms).
