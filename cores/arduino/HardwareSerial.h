@@ -59,6 +59,12 @@ public:
      * `if (!Serial1)` after begin() when the baud comes from elsewhere. */
     void begin(unsigned long baudrate) override { begin(baudrate, SERIAL_8N1); }
     void begin(unsigned long baudrate, uint16_t config) override;
+    /* arduino-esp32's form: the pins (RX, TX) named in the same call. -1, -1
+     * keeps the pins the port has (the variant's default, or the last
+     * setPins() / setRoute()); a pair that is not one route leaves the port
+     * closed, as does invert (no USART here inverts its lines). */
+    void begin(unsigned long baudrate, uint16_t config, int rxPin, int txPin,
+               bool invert = false);
     void end() override;
 
     int available(void) override;
@@ -71,6 +77,16 @@ public:
     void flush(void) override;
     size_t write(uint8_t c) override;
     using Print::write;
+    /* AVR's HardwareSerial has these: Serial.write(0) picks the byte write. */
+    inline size_t write(unsigned long n) { return write((uint8_t)n); }
+    inline size_t write(long n) { return write((uint8_t)n); }
+    inline size_t write(unsigned int n) { return write((uint8_t)n); }
+    inline size_t write(int n) { return write((uint8_t)n); }
+
+    /* arduino-esp32's Print::printf, here on the port (ArduinoCore-API's Print,
+     * vendored unmodified, has none). Floats need the "printf() float support"
+     * menu, as printf() itself does. */
+    size_t printf(const char *format, ...) __attribute__((format(printf, 2, 3)));
 
     operator bool() override { return _started; }
 
@@ -84,9 +100,12 @@ public:
      *
      * Calling either while the port is open reopens it on the new pins with
      * the same baud rate and framing, and returns the pads it left to inputs.
+     *
+     * setPins() takes RX first, as on an ESP32. CTS / RTS are there for the
+     * same reason and must stay -1: hardware flow control is not supported.
      */
     bool setRoute(uint8_t route);
-    bool setPins(uint8_t tx, uint8_t rx);
+    bool setPins(int rxPin, int txPin, int ctsPin = -1, int rtsPin = -1);
 
     /* Called from the generated interrupt handler. */
     void irq(void);

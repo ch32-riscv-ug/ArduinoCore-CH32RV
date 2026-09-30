@@ -140,6 +140,45 @@ void CH32TwoWire::begin(uint8_t address)
     CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
 }
 
+/* -1, -1 keeps the pins; anything else has to be a whole route. */
+static bool pins_ok(CH32TwoWire &bus, int sda, int scl)
+{
+    if (sda < 0 && scl < 0) {
+        return true;
+    }
+    return bus.setPins(sda, scl);
+}
+
+bool CH32TwoWire::begin(int sda, int scl, uint32_t frequency)
+{
+    if (_started) {
+        end();
+    }
+    if (!pins_ok(*this, sda, scl)) {
+        return false;
+    }
+    if (frequency) {
+        _clock_hz = frequency;
+    }
+    begin();
+    return true;
+}
+
+bool CH32TwoWire::begin(uint8_t address, int sda, int scl, uint32_t frequency)
+{
+    if (_started) {
+        end();
+    }
+    if (!pins_ok(*this, sda, scl)) {
+        return false;
+    }
+    if (frequency) {
+        _clock_hz = frequency;
+    }
+    begin(address);
+    return true;
+}
+
 void CH32TwoWire::end()
 {
     if (_slave) {
@@ -580,10 +619,13 @@ bool CH32TwoWire::setRoute(uint8_t route)
     return use_route(table.rows[i]);
 }
 
-bool CH32TwoWire::setPins(uint8_t scl, uint8_t sda)
+bool CH32TwoWire::setPins(int sda, int scl)
 {
+    if (sda < 0 || scl < 0 || sda > 0xFE || scl > 0xFE) {
+        return false;
+    }
     const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32_ROUTE_PINS] = {scl, sda, CH32_ROUTE_NO_PIN};
+    const uint8_t want[CH32_ROUTE_PINS] = {(uint8_t)scl, (uint8_t)sda, CH32_ROUTE_NO_PIN};
     const int i = ch32_route_match(table.rows, table.count, want);
     if (i < 0) {
         return false;

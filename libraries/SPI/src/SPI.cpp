@@ -61,6 +61,46 @@ void CH32SPIClass::begin()
     apply(_clock_hz, _order, _mode);
 }
 
+bool CH32SPIClass::begin(int sck, int miso, int mosi, int ss)
+{
+    (void)ss;
+    if (_started) {
+        end();
+    }
+    if (!(sck < 0 && miso < 0 && mosi < 0) && !setPins(sck, miso, mosi)) {
+        return false;
+    }
+    begin();
+    return true;
+}
+
+uint32_t CH32SPIClass::transfer32(uint32_t data)
+{
+    if (_order == LSBFIRST) {
+        const uint32_t lo = transfer16((uint16_t)data);
+        const uint32_t hi = transfer16((uint16_t)(data >> 16));
+        return (hi << 16) | lo;
+    }
+    const uint32_t hi = transfer16((uint16_t)(data >> 16));
+    const uint32_t lo = transfer16((uint16_t)data);
+    return (hi << 16) | lo;
+}
+
+void CH32SPIClass::transferBytes(const uint8_t *data, uint8_t *out, uint32_t size)
+{
+    for (uint32_t i = 0; i < size; i++) {
+        const uint8_t in = transfer(data ? data[i] : 0xFFu);
+        if (out) {
+            out[i] = in;
+        }
+    }
+}
+
+void CH32SPIClass::writeBytes(const uint8_t *data, uint32_t size)
+{
+    transferBytes(data, nullptr, size);
+}
+
 void CH32SPIClass::end()
 {
     CH32_SPI_CTLR1(_base) = 0;
@@ -238,10 +278,13 @@ bool CH32SPIClass::setRoute(uint8_t route)
     return use_route(table.rows[i]);
 }
 
-bool CH32SPIClass::setPins(uint8_t sck, uint8_t miso, uint8_t mosi)
+bool CH32SPIClass::setPins(int sck, int miso, int mosi)
 {
+    if (sck < 0 || miso < 0 || mosi < 0 || sck > 0xFE || miso > 0xFE || mosi > 0xFE) {
+        return false;
+    }
     const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32_ROUTE_PINS] = {sck, miso, mosi};
+    const uint8_t want[CH32_ROUTE_PINS] = {(uint8_t)sck, (uint8_t)miso, (uint8_t)mosi};
     const int i = ch32_route_match(table.rows, table.count, want);
     if (i < 0) {
         return false;

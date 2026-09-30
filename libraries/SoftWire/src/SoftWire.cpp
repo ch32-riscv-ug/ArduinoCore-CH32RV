@@ -69,6 +69,31 @@ void SoftWire::end()
     _started = false;
 }
 
+bool SoftWire::setPins(int sda, int scl)
+{
+    if (sda < 0 || scl < 0 || sda == scl || !digitalPinIsValid(sda) || !digitalPinIsValid(scl)) {
+        return false;
+    }
+    const bool was_started = _started;
+    end();
+    _sda = (uint8_t)sda;
+    _scl = (uint8_t)scl;
+    if (was_started) {
+        begin();
+    }
+    return true;
+}
+
+bool SoftWire::begin(int sda, int scl, uint32_t frequency)
+{
+    if (!(sda < 0 && scl < 0) && !setPins(sda, scl)) {
+        return false;
+    }
+    setClock(frequency);                /* 0 keeps the floor */
+    begin();
+    return true;
+}
+
 void SoftWire::setClock(uint32_t freq)
 {
     /* Half of one period, rounded down, and never zero for a named frequency:

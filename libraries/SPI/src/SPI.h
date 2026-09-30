@@ -43,11 +43,25 @@ public:
           _remap2_mask(remap2_mask), _remap2_value(remap2_value) {}
 
     void begin() override;
+    /* arduino-esp32's form: the pins (SCK, MISO, MOSI) named in the call.
+     * All -1 keeps the pins the bus has; the three have to be one route, and
+     * false leaves the bus closed. ss is accepted for the same reason and not
+     * used: chip select stays a GPIO the sketch (or the library) drives. */
+    bool begin(int sck, int miso = -1, int mosi = -1, int ss = -1);
     void end() override;
 
     uint8_t transfer(uint8_t data) override;
     uint16_t transfer16(uint16_t data) override;
     void transfer(void *buf, size_t count) override;
+
+    /* arduino-esp32's buffer and wide-word transfers. A word's bytes go in
+     * the bit order's direction, as transfer16() does (MSBFIRST: high first). */
+    uint32_t transfer32(uint32_t data);
+    void transferBytes(const uint8_t *data, uint8_t *out, uint32_t size);
+    void writeBytes(const uint8_t *data, uint32_t size);
+    void write(uint8_t data) { (void)transfer(data); }
+    void write16(uint16_t data) { (void)transfer16(data); }
+    void write32(uint32_t data) { (void)transfer32(data); }
 
     void beginTransaction(SPISettings settings) override;
     void endTransaction(void) override;
@@ -67,7 +81,7 @@ public:
      * the only thing the hardware can select. Calling either after begin()
      * reopens the bus and hands the old pads back as inputs. */
     bool setRoute(uint8_t route);
-    bool setPins(uint8_t sck, uint8_t miso, uint8_t mosi);
+    bool setPins(int sck, int miso, int mosi);
 
     /* Pre-transaction API. Still used by a lot of library code. */
     void setBitOrder(BitOrder order);
@@ -100,6 +114,14 @@ private:
 };
 
 }  // namespace arduino
+
+#if defined(CH32_SPI1_SCK) + defined(CH32_SPI2_SCK) + defined(CH32_SPI3_SCK) == 3
+#define SPI_INTERFACES_COUNT 3
+#elif defined(CH32_SPI1_SCK) + defined(CH32_SPI2_SCK) + defined(CH32_SPI3_SCK) == 2
+#define SPI_INTERFACES_COUNT 2
+#elif defined(CH32_SPI1_SCK) || defined(CH32_SPI2_SCK) || defined(CH32_SPI3_SCK)
+#define SPI_INTERFACES_COUNT 1
+#endif
 
 /* Bus order, as everywhere else in the Arduino ecosystem: the bare name is the
  * first bus. */

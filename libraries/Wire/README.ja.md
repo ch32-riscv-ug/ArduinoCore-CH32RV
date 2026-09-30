@@ -1,7 +1,9 @@
 # Wire (I2C)
 
 CH32のI2Cペリフェラルを使うmaster専用の実装です。pinはvariantから来るので
-`Wire.begin()`に引数は要りません。
+`Wire.begin()`に引数は要りません。別のpinはESP32と同じ形で指定できます:
+`Wire.begin(sda, scl)`、`Wire.begin(sda, scl, 400000)`。
+ライブラリには`TwoWire *`(`&Wire`)で渡し、`SoftWire`もそこへ渡せます。
 
 ```cpp
 #include <Wire.h>
@@ -31,11 +33,11 @@ board側に無い場合は移動させます。
 
 ```cpp
 Wire.setRoute(2);                 // データシートのroute番号
-Wire.setPins(PC16, PC17);         // padで指定してもよい
+Wire.setPins(PC17, PC16);         // padで指定してもよい(SDA, SCL)
 ```
 
 どちらも、存在しないrouteなら**何も変えずに`false`**を返します。
-`setPins()`は**別routeのSCLとSDAを混ぜた場合も拒否**します。
+`setPins()`はESP32と同じくSDAが先です。**別routeのSDAとSCLを混ぜた場合も拒否**します。
 ハードウェアはペリフェラルごと移動するものであり、
 X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので、
 順序は意味を持ちますし、実際に検査しています。

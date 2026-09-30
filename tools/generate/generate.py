@@ -2210,6 +2210,22 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("#ifndef CH32_SERIAL_DEFAULT")
         out.append(f"#define CH32_SERIAL_DEFAULT {default}")
         out.append("#endif")
+        # TX / RX: the pads of Serial's port, in the shape arduino-esp32's
+        # pins_arduino.h has them (TX, RX next to SDA, SCL, SS ...). They
+        # follow CH32_SERIAL_DEFAULT, so a board that overrides it gets the
+        # matching pads.
+        out.append("/* The monitor port's default pads (Serial = SerialN, N above). */")
+        out.append("#ifndef PIN_SERIAL_TX")
+        for n, i in enumerate(sorted(chosen)):
+            out.append(f"#{'if' if n == 0 else 'elif'} CH32_SERIAL_DEFAULT == {i}")
+            out.append(f"#define PIN_SERIAL_TX CH32_SERIAL{i}_TX")
+            out.append(f"#define PIN_SERIAL_RX CH32_SERIAL{i}_RX")
+        out.append("#endif")
+        out.append("#endif")
+        out.append("#if defined(PIN_SERIAL_TX) && !defined(TX)")
+        out.append("#define TX PIN_SERIAL_TX")
+        out.append("#define RX PIN_SERIAL_RX")
+        out.append("#endif")
         out.append("")
 
     # --- I2C ---

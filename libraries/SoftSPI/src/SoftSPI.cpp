@@ -26,6 +26,45 @@ void SoftSPI::begin()
     _started = true;
 }
 
+bool SoftSPI::begin(int sck, int miso, int mosi, int ss)
+{
+    (void)ss;
+    if (!(sck < 0 && miso < 0 && mosi < 0)) {
+        if (sck < 0 || mosi < 0 || !digitalPinIsValid(sck) || !digitalPinIsValid(mosi) ||
+            (miso >= 0 && !digitalPinIsValid(miso))) {
+            return false;
+        }
+        end();
+        _sck = (uint8_t)sck;
+        _mosi = (uint8_t)mosi;
+        _miso = miso < 0 ? (uint8_t)NOT_A_PIN : (uint8_t)miso;
+    }
+    begin();
+    return true;
+}
+
+uint32_t SoftSPI::transfer32(uint32_t data)
+{
+    if (_order == LSBFIRST) {
+        const uint32_t lo = transfer16((uint16_t)data);
+        const uint32_t hi = transfer16((uint16_t)(data >> 16));
+        return (hi << 16) | lo;
+    }
+    const uint32_t hi = transfer16((uint16_t)(data >> 16));
+    const uint32_t lo = transfer16((uint16_t)data);
+    return (hi << 16) | lo;
+}
+
+void SoftSPI::transferBytes(const uint8_t *data, uint8_t *out, uint32_t size)
+{
+    for (uint32_t i = 0; i < size; i++) {
+        const uint8_t in = transfer(data ? data[i] : 0xFFu);
+        if (out) {
+            out[i] = in;
+        }
+    }
+}
+
 void SoftSPI::end()
 {
     if (!_started) {

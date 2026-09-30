@@ -36,6 +36,17 @@ using namespace arduino;
 /* EXTI lines are numbered by the pin's bit, not by the port, so the pin number
  * carries everything attachInterrupt() needs. */
 #define digitalPinToInterrupt(pin) (pin)
+/* What AVR / arduino-esp32 return for a pin with no interrupt; libraries compare
+ * against it. */
+#define NOT_AN_INTERRUPT -1
+
+/* AVR's cycle helpers (arduino-esp32 has them too); DHT and friends time with them. */
+#define clockCyclesPerMicrosecond()  (F_CPU / 1000000L)
+#define clockCyclesToMicroseconds(a) ((a) / clockCyclesPerMicrosecond())
+#define microsecondsToClockCycles(a) ((a) * clockCyclesPerMicrosecond())
+
+/* arduino-esp32's spelling of ArduinoCore-API's OUTPUT_OPENDRAIN. */
+#define OUTPUT_OPEN_DRAIN OUTPUT_OPENDRAIN
 
 /* Port access, in the shape the ESP32 core uses: a pointer to a 32-bit
  * register where one bit is one pin. CH32's OUTDR and INDR are exactly that,
@@ -165,7 +176,32 @@ void SystemInit(void);
  * cannot call a function the core has had all along. */
 void analogReadResolution(int bits);
 void analogWriteResolution(int bits);
+/* arduino-esp32's: the PWM frequency analogWrite() uses from now on, in Hz
+ * (default 1000). A timer is shared by its channels, so the pads on the same
+ * timer follow at their next analogWrite(), as LEDC channels on one timer do
+ * on an ESP32. Clamped to what the timer can make at 256 steps
+ * (F_CPU / 256 at most). The pin is accepted for the signature's sake. */
+void analogWriteFrequency(pin_size_t pin, uint32_t frequency);
 #ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+/* arduino-esp32 3.x's form of the resolution setter. The resolution here is
+ * one setting for every pin, as it is on AVR, so the pin only selects the
+ * signature. */
+static inline void analogWriteResolution(pin_size_t pin, uint8_t bits)
+{
+    (void)pin;
+    analogWriteResolution((int)bits);
+}
+
+/* arduino-esp32's name and argument order for ArduinoCore-API's
+ * attachInterruptParam(pin, callback, mode, arg). */
+static inline void attachInterruptArg(pin_size_t pin, void (*callback)(void *), void *arg,
+                                      int mode)
+{
+    attachInterruptParam(pin, callback, (PinStatus)mode, arg);
 }
 #endif
 

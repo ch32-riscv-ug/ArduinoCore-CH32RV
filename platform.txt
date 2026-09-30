@@ -17,8 +17,11 @@ compiler.common_flags=-march={build.march} -mabi={build.mabi} -Os -g -ffunction-
 # <avr/pgmspace.h> resolve the way AVR sketches spell them. ArduinoCore-API
 # ships those headers for exactly that reason, and samd/renesas add the same
 # path; without it the headers are present but unreachable.
+# api/deprecated holds the pre-ArduinoCore-API header names (Print.h, Stream.h,
+# WString.h, ...) as one-line forwards to api/. Libraries still include them
+# bare - Adafruit_GFX does `#include "Print.h"` - and renesas adds the same path.
 compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.clock_defines} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
-compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp"
+compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
 compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} -DCH32_VECTORS=vectors_{build.vector_variant}.inc
 # The three generated interrupt tables share one stem, so a board - or a
 # single pnum menu entry, for a part on a different die - selects all

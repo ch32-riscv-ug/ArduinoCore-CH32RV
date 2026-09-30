@@ -1,7 +1,9 @@
 /* Wire (I2C) for CH32 RISC-V.
  *
  * Master mode, polled. The pins come from the variant's CH32_I2Cn_SCL/SDA, so
- * a sketch calls Wire.begin() with no arguments the way it does on AVR.
+ * a sketch calls Wire.begin() with no arguments the way it does on AVR, or names
+ * them the way it does on an ESP32: Wire.begin(sda, scl[, frequency]). The type
+ * libraries take, TwoWire, is the base in <TwoWire.h>.
  *
  * Slave mode (begin(address), onReceive, onRequest) is interrupt-driven -
  * a slave cannot poll, because the master decides when to talk. The AVR
@@ -26,7 +28,7 @@
  */
 #pragma once
 
-#include "api/HardwareI2C.h"
+#include "TwoWire.h"
 #include "ch32_pins.h"
 #include "ch32_route.h"
 #include "pins_arduino.h"
@@ -40,6 +42,9 @@
 #ifndef CH32_WIRE_BUFFER_SIZE
 #define CH32_WIRE_BUFFER_SIZE 32
 #endif
+/* The names libraries size their transfers by (arduino-esp32 / AVR spellings). */
+#define I2C_BUFFER_LENGTH CH32_WIRE_BUFFER_SIZE
+#define BUFFER_LENGTH CH32_WIRE_BUFFER_SIZE
 
 /* How long a single bus wait may take before the call gives up, in
  * microseconds. 25 ms is well past the worst case for a byte at the slowest
@@ -56,7 +61,7 @@
 
 namespace arduino {
 
-class CH32TwoWire : public HardwareI2C {
+class CH32TwoWire : public ::TwoWire {
 public:
     CH32TwoWire(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
                 uint8_t scl_pin,
@@ -72,9 +77,12 @@ public:
 
     void begin() override;
     void begin(uint8_t address) override;
+    bool begin(int sda, int scl, uint32_t frequency = 0) override;
+    bool begin(uint8_t address, int sda, int scl, uint32_t frequency) override;
     void end() override;
 
     void setClock(uint32_t freq) override;
+    uint32_t getClock(void) override { return _clock_hz; }
 
     /* AVR's timeout API (Wire.h since 1.8.x), with two documented differences.
      *
@@ -90,11 +98,11 @@ public:
      * it. Leaving a latched-BUSY peripheral alone has no upside, so `false`
      * does not switch that off. */
     void setWireTimeout(uint32_t timeout = CH32_WIRE_TIMEOUT_US,
-                        bool reset_with_timeout = false);
+                        bool reset_with_timeout = false) override;
     /* Sticky: set by any wait that ran out, and only cleared by the call
      * below, so a sketch can check once after a burst of transfers. */
-    bool getWireTimeoutFlag(void);
-    void clearWireTimeoutFlag(void);
+    bool getWireTimeoutFlag(void) override;
+    void clearWireTimeoutFlag(void) override;
 
     void beginTransmission(uint8_t address) override;
     uint8_t endTransmission(bool stopBit) override;
@@ -118,15 +126,15 @@ public:
     /* Move this bus onto another of its pin routes.
      *
      * false, and nothing changed, when the route does not exist on this
-     * series - and setPins() also refuses an SCL and an SDA that belong to
-     * different routes, which the hardware cannot do. Several X035 routes
-     * swap the two signals over the same pair of pads, so the order matters
-     * and is checked.
+     * series - and setPins() (SDA, SCL, as on an ESP32) also refuses an SDA
+     * and an SCL that belong to different routes, which the hardware cannot
+     * do. Several X035 routes swap the two signals over the same pair of
+     * pads, so the order matters and is checked.
      *
      * Calling either after begin() reopens the bus on the new pins and hands
      * the old pads back as inputs. */
     bool setRoute(uint8_t route);
-    bool setPins(uint8_t scl, uint8_t sda);
+    bool setPins(int sda, int scl) override;
 
     /* Free a bus that a slave is holding: the classic hang where a slave was
      * cut off mid-byte (a reset, a lost clock) and keeps driving SDA low, so
@@ -146,11 +154,14 @@ public:
     /* Print/Stream */
     size_t write(uint8_t data) override;
     size_t write(const uint8_t *data, size_t len) override;
-    using Print::write;
+    using ::TwoWire::write;
     int available(void) override;
     int read(void) override;
     int peek(void) override;
     void flush(void) override {}
+
+protected:
+    uint32_t wireTimeoutUs(void) override { return _timeout_us; }
 
 private:
     bool wait_flag1(uint16_t mask, bool set);
@@ -212,6 +223,11 @@ private:
 
 /* The bare name is the first bus and Wire1 the second, as elsewhere in the
  * Arduino ecosystem - see the note above the instances in Wire.cpp. */
+#if defined(CH32_I2C1_SCL) && defined(CH32_I2C2_SCL)
+#define WIRE_INTERFACES_COUNT 2
+#elif defined(CH32_I2C1_SCL) || defined(CH32_I2C2_SCL)
+#define WIRE_INTERFACES_COUNT 1
+#endif
 #if defined(CH32_I2C1_SCL)
 extern arduino::CH32TwoWire Wire;       /* I2C1 */
 #if defined(CH32_I2C2_SCL)

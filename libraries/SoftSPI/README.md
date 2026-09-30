@@ -7,7 +7,7 @@ Bit-banged SPI on any three pads, with the same API as [SPI](../SPI).
 ```cpp
 #include <SoftSPI.h>
 
-SoftSPI bus(PA1, PA2, PA4);      // SCK, MOSI, MISO
+SoftSPI bus(PA1, PA4, PA2);      // SCK, MISO, MOSI (SPI.begin()'s order)
 ```
 
 ## Why
@@ -25,7 +25,7 @@ it goes anywhere a pin goes.
 written against `SPIClass&` takes one unchanged:
 
 ```cpp
-SoftSPI bus(PA1, PA2, PA4);
+SoftSPI bus(PA1, PA4, PA2);
 Adafruit_Something device(&bus);
 ```
 

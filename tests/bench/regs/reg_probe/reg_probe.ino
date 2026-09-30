@@ -325,7 +325,7 @@ static void do_wire(char **save)
             err("WIRE", "args");
             return;
         }
-        val(Wire.setPins((uint8_t)scl, (uint8_t)sda));
+        val(Wire.setPins((int)sda, (int)scl));   /* SDA, SCL (arduino-esp32's order) */
     } else {
         err("WIRE", "sub");
         return;

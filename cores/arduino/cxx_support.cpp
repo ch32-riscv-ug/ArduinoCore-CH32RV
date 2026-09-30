@@ -50,3 +50,18 @@ void operator delete(void *ptr) noexcept { free(ptr); }
 void operator delete[](void *ptr) noexcept { free(ptr); }
 void operator delete(void *ptr, size_t) noexcept { free(ptr); }
 void operator delete[](void *ptr, size_t) noexcept { free(ptr); }
+
+/* The matching allocations. libstdc++'s operator new throws std::bad_alloc,
+ * which -fno-exceptions cannot carry and which drags in the unwinder, so the
+ * core supplies them: malloc(), and nullptr when the heap is out - what AVR
+ * and arduino-esp32 sketches check for. Libraries built on `new`
+ * (Adafruit_BusIO's `new Adafruit_I2CDevice`, every Adafruit sensor driver)
+ * failed to link without these. */
+#include <new>
+
+void *operator new(size_t size) { return malloc(size ? size : 1); }
+void *operator new[](size_t size) { return malloc(size ? size : 1); }
+void *operator new(size_t size, const std::nothrow_t &) noexcept { return malloc(size ? size : 1); }
+void *operator new[](size_t size, const std::nothrow_t &) noexcept { return malloc(size ? size : 1); }
+void operator delete(void *ptr, const std::nothrow_t &) noexcept { free(ptr); }
+void operator delete[](void *ptr, const std::nothrow_t &) noexcept { free(ptr); }

@@ -8,7 +8,9 @@
  * It derives from HardwareSPI, so anything written against `SPIClass&` takes
  * one of these unchanged:
  *
- *   SoftSPI bus(PC5, PC6, PC7);      // SCK, MOSI, MISO
+ *   SoftSPI bus(PC5, PC7, PC6);      // SCK, MISO, MOSI - SPI.begin()'s order
+ *
+ * or name the pins later, as on an ESP32's SPI: bus.begin(sck, miso, mosi).
  *   Adafruit_Something dev(&bus);
  *
  * Chip select is not here, exactly as it is not in <SPI.h>: Arduino drives it
@@ -30,17 +32,29 @@ namespace arduino {
 
 class SoftSPI : public HardwareSPI {
 public:
-    /* miso may be left out for a write-only bus - a display, a shift
-     * register, a LED driver. transfer() then returns 0. */
-    SoftSPI(uint8_t sck, uint8_t mosi, uint8_t miso = NOT_A_PIN)
+    /* SCK, MISO, MOSI: the order of SPI.begin(sck, miso, mosi) here and on an
+     * ESP32. miso may be NOT_A_PIN for a write-only bus - a display, a shift
+     * register, a LED driver; transfer() then returns 0. */
+    SoftSPI(uint8_t sck, uint8_t miso, uint8_t mosi)
         : _sck(sck), _mosi(mosi), _miso(miso) {}
 
     void begin() override;
+    /* arduino-esp32's form. All -1 keeps the constructor's pins; otherwise sck
+     * and mosi must be pins, miso may be -1 (write-only). ss is not used. */
+    bool begin(int sck, int miso = -1, int mosi = -1, int ss = -1);
     void end() override;
 
     uint8_t transfer(uint8_t data) override;
     uint16_t transfer16(uint16_t data) override;
     void transfer(void *buf, size_t count) override;
+
+    /* The same buffer and wide-word transfers <SPI.h> has. */
+    uint32_t transfer32(uint32_t data);
+    void transferBytes(const uint8_t *data, uint8_t *out, uint32_t size);
+    void writeBytes(const uint8_t *data, uint32_t size) { transferBytes(data, nullptr, size); }
+    void write(uint8_t data) { (void)transfer(data); }
+    void write16(uint16_t data) { (void)transfer16(data); }
+    void write32(uint32_t data) { (void)transfer32(data); }
 
     void beginTransaction(SPISettings settings) override;
     void endTransaction(void) override;
@@ -73,9 +87,9 @@ public:
 private:
     void idle_clock(void);
 
-    const uint8_t _sck;
-    const uint8_t _mosi;
-    const uint8_t _miso;
+    uint8_t _sck;
+    uint8_t _mosi;
+    uint8_t _miso;
 
     BitOrder _order = MSBFIRST;
     /* CPOL: clock idles high. CPHA: sample on the trailing edge. */

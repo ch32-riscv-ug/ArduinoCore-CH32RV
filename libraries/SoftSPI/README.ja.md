@@ -7,7 +7,7 @@ English: [README.md](README.md)
 ```cpp
 #include <SoftSPI.h>
 
-SoftSPI bus(PA1, PA2, PA4);      // SCK, MOSI, MISO
+SoftSPI bus(PA1, PA4, PA2);      // SCK, MISO, MOSI (SPI.begin()'s order)
 ```
 
 ## なぜ要るか
@@ -25,7 +25,7 @@ pinがあるところならどこでも動きます。
 ライブラリがそのまま受け取れます。
 
 ```cpp
-SoftSPI bus(PA1, PA2, PA4);
+SoftSPI bus(PA1, PA4, PA2);
 Adafruit_Something device(&bus);
 ```
 

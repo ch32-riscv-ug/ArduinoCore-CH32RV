@@ -21,7 +21,7 @@ static const uint8_t MISO_PIN = PA4;
 static const uint8_t MISO_PIN = PC4;   /* CH32V002 and CH32V003 have no PA4 */
 #endif
 
-SoftSPI bus(SCK_PIN, MOSI_PIN, MISO_PIN);
+SoftSPI bus(SCK_PIN, MISO_PIN, MOSI_PIN);   /* SPI.begin()'s order */
 
 void setup()
 {

@@ -94,8 +94,15 @@
 #define D16 PD6
 #define D17 PD7
 
+/* The series header names TX / RX by pad; on this board they are D15 / D16. */
+#undef TX
+#undef RX
+#undef PIN_SERIAL_TX
+#undef PIN_SERIAL_RX
 #define TX  D15
 #define RX  D16
+#define PIN_SERIAL_TX TX
+#define PIN_SERIAL_RX RX
 
 /* Board-level reserved functions. They remain valid pin constants, but test
  * fixtures use these names to exclude them from generic GPIO sweeps. */

@@ -192,6 +192,17 @@
 #ifndef CH32_SERIAL_DEFAULT
 #define CH32_SERIAL_DEFAULT 1
 #endif
+/* The monitor port's default pads (Serial = SerialN, N above). */
+#ifndef PIN_SERIAL_TX
+#if CH32_SERIAL_DEFAULT == 1
+#define PIN_SERIAL_TX CH32_SERIAL1_TX
+#define PIN_SERIAL_RX CH32_SERIAL1_RX
+#endif
+#endif
+#if defined(PIN_SERIAL_TX) && !defined(TX)
+#define TX PIN_SERIAL_TX
+#define RX PIN_SERIAL_RX
+#endif
 
 /* ---- I2C pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_i2cs) ---- */

@@ -4,6 +4,10 @@
 #include "ch32_gpio.h"
 #include "ch32_registers.h"
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 using namespace arduino;
 
 void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
@@ -90,6 +94,48 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
 
     ch32_irq_enable(_irqn);
     _started = true;
+}
+
+void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config, int rxPin,
+                               int txPin, bool invert)
+{
+    if (_started) {
+        end();
+    }
+    if (invert) {
+        return;
+    }
+    if (!(rxPin < 0 && txPin < 0) && !setPins(rxPin, txPin)) {
+        return;
+    }
+    begin(baudrate, config);
+}
+
+size_t CH32HardwareSerial::printf(const char *format, ...)
+{
+    /* arduino-esp32's shape: a stack buffer, and the heap only for a line that
+     * does not fit. */
+    char small[64];
+    va_list ap;
+    va_start(ap, format);
+    const int len = vsnprintf(small, sizeof small, format, ap);
+    va_end(ap);
+    if (len < 0) {
+        return 0;
+    }
+    if ((size_t)len < sizeof small) {
+        return write((const uint8_t *)small, (size_t)len);
+    }
+    char *big = (char *)malloc((size_t)len + 1);
+    if (big == nullptr) {
+        return 0;
+    }
+    va_start(ap, format);
+    vsnprintf(big, (size_t)len + 1, format, ap);
+    va_end(ap);
+    const size_t n = write((const uint8_t *)big, (size_t)len);
+    free(big);
+    return n;
 }
 
 void CH32HardwareSerial::end(void)
@@ -293,10 +339,16 @@ bool CH32HardwareSerial::setRoute(uint8_t route)
     return use_route(table.rows[i]);
 }
 
-bool CH32HardwareSerial::setPins(uint8_t tx, uint8_t rx)
+bool CH32HardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
 {
+    if (ctsPin >= 0 || rtsPin >= 0) {
+        return false;                  /* no hardware flow control */
+    }
+    if (rxPin < 0 || txPin < 0 || rxPin > 0xFE || txPin > 0xFE) {
+        return false;
+    }
     const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32_ROUTE_PINS] = {tx, rx, CH32_ROUTE_NO_PIN};
+    const uint8_t want[CH32_ROUTE_PINS] = {(uint8_t)txPin, (uint8_t)rxPin, CH32_ROUTE_NO_PIN};
     const int i = ch32_route_match(table.rows, table.count, want);
     if (i < 0) {
         return false;

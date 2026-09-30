@@ -44,15 +44,16 @@ static void run_checks()
     static const ch32_route_t routes[] = MONITOR_ROUTES;
     const uint8_t count = MONITOR_ROUTE_COUNT;
 
-    /* 3. The pins of the route it is already on are accepted. */
+    /* 3. The pins of the route it is already on are accepted. setPins() is
+     *    RX, TX (arduino-esp32's order); a route row is TX, RX. */
     tc_check("current_pins_accepted",
-             Serial.setPins(routes[0].pins[0], routes[0].pins[1]));
+             Serial.setPins(routes[0].pins[1], routes[0].pins[0]));
 
     if (count >= 2) {
         /* 4. TX from one route and RX from another is not something the
          *    hardware can do, so it has to be refused rather than half-done. */
         tc_check("mixed_route_refused",
-                 !Serial.setPins(routes[0].pins[0], routes[1].pins[1]));
+                 !Serial.setPins(routes[1].pins[1], routes[0].pins[0]));
 
         /* 5. Away and back. The print in between goes to pins nobody is
          *    watching; coming back with both calls reporting success is what

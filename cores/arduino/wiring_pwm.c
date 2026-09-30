@@ -25,6 +25,17 @@
 #endif
 
 static uint8_t ch32_pwm_write_bits = 8;
+static uint32_t ch32_pwm_hz = CH32_PWM_HZ;
+
+void analogWriteFrequency(pin_size_t pin, uint32_t frequency)
+{
+    (void)pin;
+    const uint32_t top = F_CPU / CH32_PWM_STEPS;
+    if (frequency == 0u) {
+        return;
+    }
+    ch32_pwm_hz = frequency > top ? top : frequency;
+}
 static const uint8_t ch32_pwm_owner_identity;
 static const CH32TimerOwner ch32_pwm_owner = {
     &ch32_pwm_owner_identity, 0, 0
@@ -115,9 +126,11 @@ void analogWrite(pin_size_t pin, int value)
     ch32_gpio_set_config(port, (uint8_t)CH32_PIN_BIT(pin),
                          CH32_GPIO_CFG_AF_PP_50M);
 
-    uint32_t prescale = F_CPU / (CH32_PWM_HZ * CH32_PWM_STEPS);
+    uint32_t prescale = F_CPU / (ch32_pwm_hz * CH32_PWM_STEPS);
     if (prescale == 0u) {
         prescale = 1u;
+    } else if (prescale > 65536u) {
+        prescale = 65536u;             /* the 16-bit prescaler's end: ~3 Hz at 48 MHz */
     }
     const CH32TimerRequest request = {
         timer,

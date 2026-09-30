@@ -4,11 +4,14 @@
  * the pads its routes name, and on the small parts those are often gone -
  * not bonded out on your package, or already carrying something else.
  *
- * It derives from HardwareI2C, so anything written against `TwoWire&` takes
- * one of these unchanged:
+ * It derives from TwoWire (<TwoWire.h>), so anything written against
+ * `TwoWire *` / `TwoWire &` takes one of these unchanged:
  *
  *   SoftWire bus(PA1, PA2);        // SDA, SCL
  *   Adafruit_Something dev(&bus);
+ *
+ * The pins can also be named later, as on <Wire.h>: bus.begin(sda, scl) or
+ * bus.setPins(sda, scl). Unlike the hardware bus, any two pads will do.
  *
  * I2C is the bus where bit-banging costs least: it is open-drain and slow by
  * design, and the controller owns the clock, so running under the nominal
@@ -23,7 +26,7 @@
  */
 #pragma once
 
-#include "api/HardwareI2C.h"
+#include "TwoWire.h"
 #include "ch32_pins.h"
 
 #include <stdint.h>
@@ -40,7 +43,7 @@
 
 namespace arduino {
 
-class SoftWire : public HardwareI2C {
+class SoftWire : public ::TwoWire {
 public:
     SoftWire(uint8_t sda, uint8_t scl) : _sda(sda), _scl(scl) {}
 
@@ -49,12 +52,22 @@ public:
      * that code written for another core still compiles; the bus stays a
      * controller and nothing answers at `address`. */
     void begin(uint8_t address) override { (void)address; begin(); }
+    bool begin(int sda, int scl, uint32_t frequency = 0) override;
+    bool begin(uint8_t address, int sda, int scl, uint32_t frequency) override
+    {
+        (void)address;
+        return begin(sda, scl, frequency);
+    }
+    /* Any two distinct pads; an open bus moves to them. */
+    bool setPins(int sda, int scl) override;
     void end() override;
 
     /* Sets the floor on the half period, not an achieved frequency: a
      * bit-banged bus cannot hit a number. Anything at or above what the loop
      * already produces leaves it running flat out. */
     void setClock(uint32_t freq) override;
+    /* The frequency the half-period floor stands for, not a measured one. */
+    uint32_t getClock(void) override { return _half_us ? 500000UL / _half_us : 1000000UL; }
 
     void beginTransmission(uint8_t address) override;
     uint8_t endTransmission(bool stopBit) override;
@@ -71,7 +84,7 @@ public:
 
     size_t write(uint8_t data) override;
     size_t write(const uint8_t *data, size_t len) override;
-    using Print::write;
+    using ::TwoWire::write;
 
     int available(void) override;
     int read(void) override;
@@ -81,9 +94,12 @@ public:
     /* AVR's timeout API, and the same two divergences <Wire.h> documents: the
      * timeout is ON by default, and the bus is released either way. */
     void setWireTimeout(uint32_t timeout = SOFTWIRE_TIMEOUT_US,
-                        bool reset_with_timeout = false);
-    bool getWireTimeoutFlag(void) { return _timeout_flag; }
-    void clearWireTimeoutFlag(void) { _timeout_flag = false; }
+                        bool reset_with_timeout = false) override;
+    bool getWireTimeoutFlag(void) override { return _timeout_flag; }
+    void clearWireTimeoutFlag(void) override { _timeout_flag = false; }
+
+protected:
+    uint32_t wireTimeoutUs(void) override { return _timeout_us; }
 
 private:
     void hold(uint8_t pin);            /* drive low                     */
@@ -96,8 +112,8 @@ private:
     bool write_byte(uint8_t b);        /* true when the target ACKed    */
     uint8_t read_byte(bool ack);
 
-    const uint8_t _sda;
-    const uint8_t _scl;
+    uint8_t _sda;
+    uint8_t _scl;
 
     uint8_t _tx[SOFTWIRE_BUFFER_SIZE];
     uint8_t _rx[SOFTWIRE_BUFFER_SIZE];

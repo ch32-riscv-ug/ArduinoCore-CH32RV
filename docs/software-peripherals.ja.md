@@ -114,13 +114,15 @@ SoftSerial は`SPI`/`Wire`/`Serial`の代替で、**同じAPIの別実装**と�
 ### 5-1. SoftSPI (**実装済み** 2026-08-29)
 
 ```cpp
-SoftSPI(uint8_t sck, uint8_t mosi, uint8_t miso = NOT_A_PIN);
+SoftSPI(uint8_t sck, uint8_t miso, uint8_t mosi);   // SPI.begin(sck, miso, mosi) と同じ順
+bool begin(int sck, int miso = -1, int mosi = -1, int ss = -1);   // arduino-esp32 の形
 ```
 
 - `class SoftSPI : public arduino::HardwareSPI`
+- 引数順は 2026-10-01 に ESP32 の `SPI.begin(sck, miso, mosi)` へ揃えた(以前は sck, mosi, miso)
 - `beginTransaction(SPISettings)`でmode 0〜3・bit orderを受ける。**クロック周波数は無視**する
   (`SPISettings`の周波数は上限の宣言であって、下回るのは仕様違反ではない)
-- `miso`未指定なら`transfer()`は書き込みのみを行い、読み値は0を返す
+- `miso`が`NOT_A_PIN`なら`transfer()`は書き込みのみを行い、読み値は0を返す
 - CSは持たない。Arduinoの慣習どおり**スケッチがGPIOとして駆動する**
 
 **実装(`libraries/SoftSPI/`)で仕様から足したもの**:
@@ -136,9 +138,12 @@ CH32V003での実測: base 2404 → SoftSPI **3780**(+1376)。ハードSPIは+10
 
 ```cpp
 SoftWire(uint8_t sda, uint8_t scl);
+bool begin(int sda, int scl, uint32_t frequency = 0);   // arduino-esp32 の形
+bool setPins(int sda, int scl);
 ```
 
-- `class SoftWire : public arduino::HardwareI2C`
+- `class SoftWire : public ::TwoWire`(2026-10-01 から。`TwoWire`は`<TwoWire.h>`のグローバルの基底で、
+  ハードの`Wire`と共通。`TwoWire *`を取るライブラリにどちらも渡せる)
 - 両padを`OUTPUT_OPENDRAIN`にし、HIGHは解放、LOWは駆動
 - **クロックストレッチ対応**: SCLを解放したあと、実際にHIGHになるまで待つ。
   待ち上限は`CH32_WIRE_TIMEOUT_US`(25 ms、ハード実装と同じ既定)
@@ -147,7 +152,7 @@ SoftWire(uint8_t sda, uint8_t scl);
   コンパイルは通し実行時に何もしない(基底が純粋仮想のため実装は必要)
 - `endTransmission()`の戻り値はAVR互換(0成功 / 2 アドレスNACK / 3 データNACK / 5 timeout)
 - timeout APIはハード実装と同じ形を持つ
-  (`setWireTimeout`/`getWireTimeoutFlag`/`clearWireTimeoutFlag`)
+  (`setWireTimeout`/`getWireTimeoutFlag`/`clearWireTimeoutFlag`、ESP32 の`setTimeOut`/`getTimeOut`)
 
 **実測(CH32V003)**: base 2404 → SoftWire **4308**(+1904)。ハードWireは+2608。
 RAMは+96(ハードは+152)。**ここではソフトのほうが小さい** —

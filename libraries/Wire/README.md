@@ -1,7 +1,9 @@
 # Wire (I2C)
 
 Master-mode I2C on the CH32's own peripheral. The pins come from the variant,
-so `Wire.begin()` takes no arguments.
+so `Wire.begin()` takes no arguments; name them as on an ESP32 when you want
+others: `Wire.begin(sda, scl)` or `Wire.begin(sda, scl, 400000)`.
+Libraries take the bus as `TwoWire *` (`&Wire`), and a `SoftWire` passes there too.
 
 ```cpp
 #include <Wire.h>
@@ -31,11 +33,11 @@ bus when your board does not have it:
 
 ```cpp
 Wire.setRoute(2);                 // route number from the datasheet
-Wire.setPins(PC16, PC17);         // or name the pads
+Wire.setPins(PC17, PC16);         // or name the pads: SDA, SCL
 ```
 
 Both return `false` and change nothing if the route does not exist. `setPins()`
-also refuses SCL and SDA that belong to different routes - the hardware moves
+takes SDA first, as on an ESP32, and also refuses SDA and SCL that belong to different routes - the hardware moves
 the whole peripheral at once, and several X035 routes swap the two signals over
 the same pair of pads, so the order matters and is checked.
 
