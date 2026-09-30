@@ -6,7 +6,7 @@
 確認項目:
 
 - SysTick由来の`millis()`と`delay()`
-- 公開`CH32Timer` APIによるTIM2全体lease
+- 公開`CH32RVTimer` APIによるTIM2全体lease
 - polite acquireからtakeoverした際のquiesceと旧lease無効化
 - 1 ms update interrupt、detach、release後の状態
 - `analogWrite(PC3, 64)`の約1 kHz、25% duty波形

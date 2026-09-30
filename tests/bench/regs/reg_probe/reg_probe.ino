@@ -56,8 +56,8 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <ch32_clock.h>
-#include <ch32_registers.h>
+#include <ch32rv_clock.h>
+#include <ch32rv_registers.h>
 
 #include "testcmd.h"
 #include <stdlib.h>
@@ -82,17 +82,17 @@ static uint32_t heals;
 /* Is RCC still the way SystemInit left it? Source, prescalers, PLL word. */
 static bool clock_is_ours()
 {
-    const uint32_t cfgr0 = CH32_RCC_CFGR0;
-    const uint32_t sw = CH32_CLOCK_USE_PLL ? CH32_RCC_CFGR0_SW_PLL : CH32_RCC_CFGR0_SW_HSI;
-    if ((cfgr0 & CH32_RCC_CFGR0_SWS_MASK) != (sw << 2)) {
+    const uint32_t cfgr0 = CH32RV_RCC_CFGR0;
+    const uint32_t sw = CH32RV_CLOCK_USE_PLL ? CH32RV_RCC_CFGR0_SW_PLL : CH32RV_RCC_CFGR0_SW_HSI;
+    if ((cfgr0 & CH32RV_RCC_CFGR0_SWS_MASK) != (sw << 2)) {
         return false;
     }
-    if ((cfgr0 & (CH32_RCC_CFGR0_HPRE_MASK | CH32_RCC_CFGR0_PPRE1_MASK |
-                  CH32_RCC_CFGR0_PPRE2_MASK)) != CH32_RCC_CFGR0_HPRE(CH32_HPRE_FIELD)) {
+    if ((cfgr0 & (CH32RV_RCC_CFGR0_HPRE_MASK | CH32RV_RCC_CFGR0_PPRE1_MASK |
+                  CH32RV_RCC_CFGR0_PPRE2_MASK)) != CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD)) {
         return false;
     }
-#if CH32_CLOCK_USE_PLL
-    if ((cfgr0 & (uint32_t)CH32_CLOCK_PLL_MASK) != (uint32_t)CH32_CLOCK_PLL_VALUE) {
+#if CH32RV_CLOCK_USE_PLL
+    if ((cfgr0 & (uint32_t)CH32RV_CLOCK_PLL_MASK) != (uint32_t)CH32RV_CLOCK_PLL_VALUE) {
         return false;
     }
 #endif
@@ -146,22 +146,22 @@ static bool arg_long(char **save, long *out)
     return *end == '\0';
 }
 
-static arduino::CH32HardwareSerial *serial_by_index(long n)
+static arduino::CH32RVHardwareSerial *serial_by_index(long n)
 {
     switch (n) {
-#ifdef CH32_SERIAL1_TX
+#ifdef CH32RV_SERIAL1_TX
     case 1: return &Serial1;
 #endif
-#ifdef CH32_SERIAL2_TX
+#ifdef CH32RV_SERIAL2_TX
     case 2: return &Serial2;
 #endif
-#ifdef CH32_SERIAL3_TX
+#ifdef CH32RV_SERIAL3_TX
     case 3: return &Serial3;
 #endif
-#ifdef CH32_SERIAL4_TX
+#ifdef CH32RV_SERIAL4_TX
     case 4: return &Serial4;
 #endif
-#ifdef CH32_SERIAL5_TX
+#ifdef CH32RV_SERIAL5_TX
     case 5: return &Serial5;
 #endif
     default: return nullptr;
@@ -196,7 +196,7 @@ static void do_serial(char **save)
         err("SERIAL", "args");
         return;
     }
-    arduino::CH32HardwareSerial *port = serial_by_index(n);
+    arduino::CH32RVHardwareSerial *port = serial_by_index(n);
     if (!port) {
         err("SERIAL", "no such port");
         return;
@@ -448,9 +448,9 @@ static void dispatch(const char *line)
         do_spi(&save);
     } else if (!strcmp(verb, "CLOCK")) {
         Console.print("RCC ");
-        Console.print((uint32_t)CH32_RCC_CTLR, HEX);
+        Console.print((uint32_t)CH32RV_RCC_CTLR, HEX);
         Console.print(' ');
-        Console.println((uint32_t)CH32_RCC_CFGR0, HEX);
+        Console.println((uint32_t)CH32RV_RCC_CFGR0, HEX);
         val((long)heals);
         ok("CLOCK");
     } else if (!strcmp(verb, "PEEK")) {
@@ -459,7 +459,7 @@ static void dispatch(const char *line)
             return;
         }
         Console.print("VAL ");
-        Console.println((uint32_t)CH32_REG32((uint32_t)v));
+        Console.println((uint32_t)CH32RV_REG32((uint32_t)v));
         ok("PEEK");
     } else {
         tc_unknown(line);
@@ -470,7 +470,7 @@ void setup()
 {
     // The host reads registers through the debug link while this runs, so the console
     // cannot be that link too: it is the UART, as plumbing, not as a thing under test.
-    arduino::CH32HardwareSerial *console = console_index >= 0 ? serial_by_index(console_index) : nullptr;
+    arduino::CH32RVHardwareSerial *console = console_index >= 0 ? serial_by_index(console_index) : nullptr;
     if (console) {
 #ifdef BENCH_CONSOLE_ROUTE
         console->setRoute((uint8_t)atoi(BENCH_CONSOLE_ROUTE));

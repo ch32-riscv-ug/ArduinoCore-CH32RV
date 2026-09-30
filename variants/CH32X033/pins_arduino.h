@@ -19,7 +19,7 @@
  * Behaviour, errata x035-usb-pads-open-drain: PC16/PC17 are the USB PHY
  * pads; while AFIO_CTLR.USB_PHY_V33 is set (reset default) an open-drain
  * output on them drives high instead of releasing. The core clears the bit
- * whenever either pad becomes an output (ch32_gpio_set_config); USB init
+ * whenever either pad becomes an output (ch32rv_gpio_set_config); USB init
  * sets it again.
  *
  * Behaviour, errata x035-no-gpio-open-drain: The GPIO block has no
@@ -29,138 +29,138 @@
  */
 #pragma once
 
-#include "ch32_pins.h"
+#include "ch32rv_pins.h"
 
-#define CH32_VARIANT_CH32X033 1
-#define CH32_CORE_QINGKE_V4C 1
+#define CH32RV_VARIANT_CH32X033 1
+#define CH32RV_CORE_QINGKE_V4C 1
 
 /* ---- peripheral clock enables (clock_enables.csv) ----
  * The RCC register that turns each block on, and the bit. Per family,
  * because it differs: CH32V006 has USART2 on the APB2 register at bit 13
  * where the F1-style parts have it on APB1 bit 17. Use through
- * ch32_clock_enable(NAME) / ch32_clock_disable(NAME). ---- */
-#define CH32_CLKEN_ADC1_ADDR 0x40021018u
-#define CH32_CLKEN_ADC1_MASK 0x00000200u
-#define CH32_CLKEN_AFIO_ADDR 0x40021018u
-#define CH32_CLKEN_AFIO_MASK 0x00000001u
-#define CH32_CLKEN_DMA1_ADDR 0x40021014u
-#define CH32_CLKEN_DMA1_MASK 0x00000001u
-#define CH32_CLKEN_GPIOA_ADDR 0x40021018u
-#define CH32_CLKEN_GPIOA_MASK 0x00000004u
-#define CH32_CLKEN_GPIOB_ADDR 0x40021018u
-#define CH32_CLKEN_GPIOB_MASK 0x00000008u
-#define CH32_CLKEN_GPIOC_ADDR 0x40021018u
-#define CH32_CLKEN_GPIOC_MASK 0x00000010u
-#define CH32_CLKEN_I2C1_ADDR 0x4002101cu
-#define CH32_CLKEN_I2C1_MASK 0x00200000u
-#define CH32_CLKEN_IO2W_ADDR 0x40021014u
-#define CH32_CLKEN_IO2W_MASK 0x00002000u
-#define CH32_CLKEN_PWR_ADDR 0x4002101cu
-#define CH32_CLKEN_PWR_MASK 0x10000000u
-#define CH32_CLKEN_SPI1_ADDR 0x40021018u
-#define CH32_CLKEN_SPI1_MASK 0x00001000u
-#define CH32_CLKEN_SRAM_ADDR 0x40021014u
-#define CH32_CLKEN_SRAM_MASK 0x00000004u
-#define CH32_CLKEN_TIM1_ADDR 0x40021018u
-#define CH32_CLKEN_TIM1_MASK 0x00000800u
-#define CH32_CLKEN_TIM2_ADDR 0x4002101cu
-#define CH32_CLKEN_TIM2_MASK 0x00000001u
-#define CH32_CLKEN_TIM3_ADDR 0x4002101cu
-#define CH32_CLKEN_TIM3_MASK 0x00000002u
-#define CH32_CLKEN_USART1_ADDR 0x40021018u
-#define CH32_CLKEN_USART1_MASK 0x00004000u
-#define CH32_CLKEN_USART2_ADDR 0x4002101cu
-#define CH32_CLKEN_USART2_MASK 0x00020000u
-#define CH32_CLKEN_USART3_ADDR 0x4002101cu
-#define CH32_CLKEN_USART3_MASK 0x00040000u
-#define CH32_CLKEN_USART4_ADDR 0x4002101cu
-#define CH32_CLKEN_USART4_MASK 0x00080000u
-#define CH32_CLKEN_USBFS_ADDR 0x40021014u
-#define CH32_CLKEN_USBFS_MASK 0x00001000u
-#define CH32_CLKEN_USBPD_ADDR 0x40021014u
-#define CH32_CLKEN_USBPD_MASK 0x00020000u
-#define CH32_CLKEN_WWDG_ADDR 0x4002101cu
-#define CH32_CLKEN_WWDG_MASK 0x00000800u
+ * ch32rv_clock_enable(NAME) / ch32rv_clock_disable(NAME). ---- */
+#define CH32RV_CLKEN_ADC1_ADDR 0x40021018u
+#define CH32RV_CLKEN_ADC1_MASK 0x00000200u
+#define CH32RV_CLKEN_AFIO_ADDR 0x40021018u
+#define CH32RV_CLKEN_AFIO_MASK 0x00000001u
+#define CH32RV_CLKEN_DMA1_ADDR 0x40021014u
+#define CH32RV_CLKEN_DMA1_MASK 0x00000001u
+#define CH32RV_CLKEN_GPIOA_ADDR 0x40021018u
+#define CH32RV_CLKEN_GPIOA_MASK 0x00000004u
+#define CH32RV_CLKEN_GPIOB_ADDR 0x40021018u
+#define CH32RV_CLKEN_GPIOB_MASK 0x00000008u
+#define CH32RV_CLKEN_GPIOC_ADDR 0x40021018u
+#define CH32RV_CLKEN_GPIOC_MASK 0x00000010u
+#define CH32RV_CLKEN_I2C1_ADDR 0x4002101cu
+#define CH32RV_CLKEN_I2C1_MASK 0x00200000u
+#define CH32RV_CLKEN_IO2W_ADDR 0x40021014u
+#define CH32RV_CLKEN_IO2W_MASK 0x00002000u
+#define CH32RV_CLKEN_PWR_ADDR 0x4002101cu
+#define CH32RV_CLKEN_PWR_MASK 0x10000000u
+#define CH32RV_CLKEN_SPI1_ADDR 0x40021018u
+#define CH32RV_CLKEN_SPI1_MASK 0x00001000u
+#define CH32RV_CLKEN_SRAM_ADDR 0x40021014u
+#define CH32RV_CLKEN_SRAM_MASK 0x00000004u
+#define CH32RV_CLKEN_TIM1_ADDR 0x40021018u
+#define CH32RV_CLKEN_TIM1_MASK 0x00000800u
+#define CH32RV_CLKEN_TIM2_ADDR 0x4002101cu
+#define CH32RV_CLKEN_TIM2_MASK 0x00000001u
+#define CH32RV_CLKEN_TIM3_ADDR 0x4002101cu
+#define CH32RV_CLKEN_TIM3_MASK 0x00000002u
+#define CH32RV_CLKEN_USART1_ADDR 0x40021018u
+#define CH32RV_CLKEN_USART1_MASK 0x00004000u
+#define CH32RV_CLKEN_USART2_ADDR 0x4002101cu
+#define CH32RV_CLKEN_USART2_MASK 0x00020000u
+#define CH32RV_CLKEN_USART3_ADDR 0x4002101cu
+#define CH32RV_CLKEN_USART3_MASK 0x00040000u
+#define CH32RV_CLKEN_USART4_ADDR 0x4002101cu
+#define CH32RV_CLKEN_USART4_MASK 0x00080000u
+#define CH32RV_CLKEN_USBFS_ADDR 0x40021014u
+#define CH32RV_CLKEN_USBFS_MASK 0x00001000u
+#define CH32RV_CLKEN_USBPD_ADDR 0x40021014u
+#define CH32RV_CLKEN_USBPD_MASK 0x00020000u
+#define CH32RV_CLKEN_WWDG_ADDR 0x4002101cu
+#define CH32RV_CLKEN_WWDG_MASK 0x00000800u
 /* The ports share one register, PA at _BIT0 and the rest contiguous. */
-#define CH32_CLKEN_GPIO_ADDR 0x40021018u
-#define CH32_CLKEN_GPIO_BIT0 2
+#define CH32RV_CLKEN_GPIO_ADDR 0x40021018u
+#define CH32RV_CLKEN_GPIO_BIT0 2
 
 /* ---- GPIO pads: 21 in the series, 21 of them on every part ---- */
-#define PA0  CH32_PIN(0,  0)
-#define PA1  CH32_PIN(0,  1)
-#define PA2  CH32_PIN(0,  2)
-#define PA3  CH32_PIN(0,  3)
-#define PA4  CH32_PIN(0,  4)
-#define PA5  CH32_PIN(0,  5)
-#define PA6  CH32_PIN(0,  6)
-#define PA7  CH32_PIN(0,  7)
-#define PA9  CH32_PIN(0,  9)
-#define PA10 CH32_PIN(0, 10)
-#define PA11 CH32_PIN(0, 11)
-#define PB0  CH32_PIN(1,  0)
-#define PB1  CH32_PIN(1,  1)
-#define PB7  CH32_PIN(1,  7)
-#define PC3  CH32_PIN(2,  3)
-#define PC10 CH32_PIN(2, 10)
-#define PC11 CH32_PIN(2, 11)
-#define PC16 CH32_PIN(2, 16)
-#define PC17 CH32_PIN(2, 17)
-#define PC18 CH32_PIN(2, 18)
-#define PC19 CH32_PIN(2, 19)
+#define PA0  CH32RV_PIN(0,  0)
+#define PA1  CH32RV_PIN(0,  1)
+#define PA2  CH32RV_PIN(0,  2)
+#define PA3  CH32RV_PIN(0,  3)
+#define PA4  CH32RV_PIN(0,  4)
+#define PA5  CH32RV_PIN(0,  5)
+#define PA6  CH32RV_PIN(0,  6)
+#define PA7  CH32RV_PIN(0,  7)
+#define PA9  CH32RV_PIN(0,  9)
+#define PA10 CH32RV_PIN(0, 10)
+#define PA11 CH32RV_PIN(0, 11)
+#define PB0  CH32RV_PIN(1,  0)
+#define PB1  CH32RV_PIN(1,  1)
+#define PB7  CH32RV_PIN(1,  7)
+#define PC3  CH32RV_PIN(2,  3)
+#define PC10 CH32RV_PIN(2, 10)
+#define PC11 CH32RV_PIN(2, 11)
+#define PC16 CH32RV_PIN(2, 16)
+#define PC17 CH32RV_PIN(2, 17)
+#define PC18 CH32RV_PIN(2, 18)
+#define PC19 CH32RV_PIN(2, 19)
 
 /* Bit n set = P<port>n is bonded out.
  *
  * Selecting a part number narrows this to that package;
  * the ANY menu entry falls through to the union over the
  * whole series. See docs/board-layer-rules.ja.md. */
-#define CH32_PORT_MASK_D 0x00000000u   /* port absent */
-#define CH32_PORT_MASK_E 0x00000000u   /* port absent */
-#define CH32_PORT_MASK_F 0x00000000u   /* port absent */
-#if defined(CH32_PART_CH32X033F8P6)
-#define CH32_PORT_MASK_A 0x00000effu
-#define CH32_PORT_MASK_B 0x00000083u
-#define CH32_PORT_MASK_C 0x000f0c08u
+#define CH32RV_PORT_MASK_D 0x00000000u   /* port absent */
+#define CH32RV_PORT_MASK_E 0x00000000u   /* port absent */
+#define CH32RV_PORT_MASK_F 0x00000000u   /* port absent */
+#if defined(CH32RV_PART_CH32X033F8P6)
+#define CH32RV_PORT_MASK_A 0x00000effu
+#define CH32RV_PORT_MASK_B 0x00000083u
+#define CH32RV_PORT_MASK_C 0x000f0c08u
 #else   /* ANY, or a board that sets no part: the series union */
-#define CH32_PORT_MASK_A 0x00000effu
-#define CH32_PORT_MASK_B 0x00000083u
-#define CH32_PORT_MASK_C 0x000f0c08u
+#define CH32RV_PORT_MASK_A 0x00000effu
+#define CH32RV_PORT_MASK_B 0x00000083u
+#define CH32RV_PORT_MASK_C 0x000f0c08u
 #endif
-#define CH32_PORT_MASK(port) ( \
-    (port) == 0 ? CH32_PORT_MASK_A : \
-    (port) == 1 ? CH32_PORT_MASK_B : \
-    (port) == 2 ? CH32_PORT_MASK_C : \
-    (port) == 3 ? CH32_PORT_MASK_D : \
-    (port) == 4 ? CH32_PORT_MASK_E : \
-    (port) == 5 ? CH32_PORT_MASK_F : \
+#define CH32RV_PORT_MASK(port) ( \
+    (port) == 0 ? CH32RV_PORT_MASK_A : \
+    (port) == 1 ? CH32RV_PORT_MASK_B : \
+    (port) == 2 ? CH32RV_PORT_MASK_C : \
+    (port) == 3 ? CH32RV_PORT_MASK_D : \
+    (port) == 4 ? CH32RV_PORT_MASK_E : \
+    (port) == 5 ? CH32RV_PORT_MASK_F : \
     0u)
 
 /* Bit n set = P<port>n is bonded out on EVERY part in the series,
  * i.e. the pins a sketch built for the ANY menu entry can rely on. */
-#define CH32_PORT_COMMON_MASK_A 0x00000effu
-#define CH32_PORT_COMMON_MASK_B 0x00000083u
-#define CH32_PORT_COMMON_MASK_C 0x000f0c08u
-#define CH32_PORT_COMMON_MASK_D 0x00000000u   /* port absent */
-#define CH32_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
-#define CH32_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
-#define CH32_PORT_COMMON_MASK(port) ( \
-    (port) == 0 ? CH32_PORT_COMMON_MASK_A : \
-    (port) == 1 ? CH32_PORT_COMMON_MASK_B : \
-    (port) == 2 ? CH32_PORT_COMMON_MASK_C : \
-    (port) == 3 ? CH32_PORT_COMMON_MASK_D : \
-    (port) == 4 ? CH32_PORT_COMMON_MASK_E : \
-    (port) == 5 ? CH32_PORT_COMMON_MASK_F : \
+#define CH32RV_PORT_COMMON_MASK_A 0x00000effu
+#define CH32RV_PORT_COMMON_MASK_B 0x00000083u
+#define CH32RV_PORT_COMMON_MASK_C 0x000f0c08u
+#define CH32RV_PORT_COMMON_MASK_D 0x00000000u   /* port absent */
+#define CH32RV_PORT_COMMON_MASK_E 0x00000000u   /* port absent */
+#define CH32RV_PORT_COMMON_MASK_F 0x00000000u   /* port absent */
+#define CH32RV_PORT_COMMON_MASK(port) ( \
+    (port) == 0 ? CH32RV_PORT_COMMON_MASK_A : \
+    (port) == 1 ? CH32RV_PORT_COMMON_MASK_B : \
+    (port) == 2 ? CH32RV_PORT_COMMON_MASK_C : \
+    (port) == 3 ? CH32RV_PORT_COMMON_MASK_D : \
+    (port) == 4 ? CH32RV_PORT_COMMON_MASK_E : \
+    (port) == 5 ? CH32RV_PORT_COMMON_MASK_F : \
     0u)
 
 /* Register bits that must never be driven; see the errata note above. */
-#define CH32_UNUSABLE_PIN_COUNT 2
-#define CH32_UNUSABLE_PINS { \
-    CH32_PIN(2, 10) /* PC10, x035-pc10-pc17-bonded */, \
-    CH32_PIN(2, 11) /* PC11, x035-pc10-pc17-bonded */, \
+#define CH32RV_UNUSABLE_PIN_COUNT 2
+#define CH32RV_UNUSABLE_PINS { \
+    CH32RV_PIN(2, 10) /* PC10, x035-pc10-pc17-bonded */, \
+    CH32RV_PIN(2, 11) /* PC11, x035-pc10-pc17-bonded */, \
     }
 
 #define NUM_DIGITAL_PINS 84   /* highest pin number + 1, not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
-#define CH32_GPIO_COUNT  21   /* actual pads in the series */
+#define CH32RV_GPIO_COUNT  21   /* actual pads in the series */
 
 /* ---- ADC1 analog inputs (11 channels) ---- */
 /* Channels [10, 11, 12] are not bonded out in this series. */
@@ -176,7 +176,7 @@
 #define A8   PB0
 #define A9   PB1
 #define A13  PC3
-#define CH32_PIN_TO_ADC_CHANNEL(p) ( \
+#define CH32RV_PIN_TO_ADC_CHANNEL(p) ( \
     (p) == PA0 ? 0 : \
     (p) == PA1 ? 1 : \
     (p) == PA2 ? 2 : \
@@ -189,7 +189,7 @@
     (p) == PB1 ? 9 : \
     (p) == PC3 ? 13 : \
     NOT_AN_ANALOG_PIN)
-#define CH32_ADC_CHANNEL_TO_PIN(c) ( \
+#define CH32RV_ADC_CHANNEL_TO_PIN(c) ( \
     (c) == 0 ? PA0 : \
     (c) == 1 ? PA1 : \
     (c) == 2 ? PA2 : \
@@ -206,62 +206,62 @@
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
 /* USART1: route remap-1, on every part */
-#define CH32_SERIAL1_TX PA10
-#define CH32_SERIAL1_RX PA11
-#define CH32_SERIAL1_HANDLER USART1_IRQHandler
-#define CH32_SERIAL1_CLKEN_ADDR 0x40021018u
-#define CH32_SERIAL1_CLKEN_MASK 0x00004000u
-#define CH32_SERIAL1_IRQ CH32_IRQN_USART1
-#define CH32_SERIAL1_REMAP_MASK 0x00000060u
-#define CH32_SERIAL1_REMAP_VAL  0x00000020u
+#define CH32RV_SERIAL1_TX PA10
+#define CH32RV_SERIAL1_RX PA11
+#define CH32RV_SERIAL1_HANDLER USART1_IRQHandler
+#define CH32RV_SERIAL1_CLKEN_ADDR 0x40021018u
+#define CH32RV_SERIAL1_CLKEN_MASK 0x00004000u
+#define CH32RV_SERIAL1_IRQ CH32RV_IRQN_USART1
+#define CH32RV_SERIAL1_REMAP_MASK 0x00000060u
+#define CH32RV_SERIAL1_REMAP_VAL  0x00000020u
 /* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
-#define CH32_SERIAL1_ROUTE_COUNT 1
-#define CH32_SERIAL1_ROUTES { \
-    { 1, { PA10, PA11, CH32_ROUTE_NO_PIN }, 0x00000020u, 0x00000000u }, \
+#define CH32RV_SERIAL1_ROUTE_COUNT 1
+#define CH32RV_SERIAL1_ROUTES { \
+    { 1, { PA10, PA11, CH32RV_ROUTE_NO_PIN }, 0x00000020u, 0x00000000u }, \
 }
 /* USART2: route default, on every part */
-#define CH32_SERIAL2_TX PA2
-#define CH32_SERIAL2_RX PA3
-#define CH32_SERIAL2_HANDLER USART2_IRQHandler
-#define CH32_SERIAL2_CLKEN_ADDR 0x4002101cu
-#define CH32_SERIAL2_CLKEN_MASK 0x00020000u
-#define CH32_SERIAL2_IRQ CH32_IRQN_USART2
-#define CH32_SERIAL2_REMAP_MASK 0x00000380u
-#define CH32_SERIAL2_REMAP_VAL  0x00000000u
+#define CH32RV_SERIAL2_TX PA2
+#define CH32RV_SERIAL2_RX PA3
+#define CH32RV_SERIAL2_HANDLER USART2_IRQHandler
+#define CH32RV_SERIAL2_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERIAL2_CLKEN_MASK 0x00020000u
+#define CH32RV_SERIAL2_IRQ CH32RV_IRQN_USART2
+#define CH32RV_SERIAL2_REMAP_MASK 0x00000380u
+#define CH32RV_SERIAL2_REMAP_VAL  0x00000000u
 /* SERIAL2 routes for setRoute()/setPins(): route number, then TX, RX */
-#define CH32_SERIAL2_ROUTE_COUNT 1
-#define CH32_SERIAL2_ROUTES { \
-    { 0, { PA2, PA3, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+#define CH32RV_SERIAL2_ROUTE_COUNT 1
+#define CH32RV_SERIAL2_ROUTES { \
+    { 0, { PA2, PA3, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
 }
 /* USART4: route default, on every part */
-#define CH32_SERIAL4_TX PB0
-#define CH32_SERIAL4_RX PB1
-#define CH32_SERIAL4_HANDLER USART4_IRQHandler
-#define CH32_SERIAL4_CLKEN_ADDR 0x4002101cu
-#define CH32_SERIAL4_CLKEN_MASK 0x00080000u
-#define CH32_SERIAL4_IRQ CH32_IRQN_USART4
-#define CH32_SERIAL4_REMAP_MASK 0x00007000u
-#define CH32_SERIAL4_REMAP_VAL  0x00000000u
+#define CH32RV_SERIAL4_TX PB0
+#define CH32RV_SERIAL4_RX PB1
+#define CH32RV_SERIAL4_HANDLER USART4_IRQHandler
+#define CH32RV_SERIAL4_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERIAL4_CLKEN_MASK 0x00080000u
+#define CH32RV_SERIAL4_IRQ CH32RV_IRQN_USART4
+#define CH32RV_SERIAL4_REMAP_MASK 0x00007000u
+#define CH32RV_SERIAL4_REMAP_VAL  0x00000000u
 /* SERIAL4 routes for setRoute()/setPins(): route number, then TX, RX */
-#define CH32_SERIAL4_ROUTE_COUNT 2
-#define CH32_SERIAL4_ROUTES { \
-    { 0, { PB0, PB1, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
-    { 1, { PA5, PA9, CH32_ROUTE_NO_PIN }, 0x00001000u, 0x00000000u }, \
+#define CH32RV_SERIAL4_ROUTE_COUNT 2
+#define CH32RV_SERIAL4_ROUTES { \
+    { 0, { PB0, PB1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PA5, PA9, CH32RV_ROUTE_NO_PIN }, 0x00001000u, 0x00000000u }, \
 }
-#ifndef CH32_SERIAL_DEFAULT
-#define CH32_SERIAL_DEFAULT 2
+#ifndef CH32RV_SERIAL_DEFAULT
+#define CH32RV_SERIAL_DEFAULT 2
 #endif
 /* The monitor port's default pads (Serial = SerialN, N above). */
 #ifndef PIN_SERIAL_TX
-#if CH32_SERIAL_DEFAULT == 1
-#define PIN_SERIAL_TX CH32_SERIAL1_TX
-#define PIN_SERIAL_RX CH32_SERIAL1_RX
-#elif CH32_SERIAL_DEFAULT == 2
-#define PIN_SERIAL_TX CH32_SERIAL2_TX
-#define PIN_SERIAL_RX CH32_SERIAL2_RX
-#elif CH32_SERIAL_DEFAULT == 4
-#define PIN_SERIAL_TX CH32_SERIAL4_TX
-#define PIN_SERIAL_RX CH32_SERIAL4_RX
+#if CH32RV_SERIAL_DEFAULT == 1
+#define PIN_SERIAL_TX CH32RV_SERIAL1_TX
+#define PIN_SERIAL_RX CH32RV_SERIAL1_RX
+#elif CH32RV_SERIAL_DEFAULT == 2
+#define PIN_SERIAL_TX CH32RV_SERIAL2_TX
+#define PIN_SERIAL_RX CH32RV_SERIAL2_RX
+#elif CH32RV_SERIAL_DEFAULT == 4
+#define PIN_SERIAL_TX CH32RV_SERIAL4_TX
+#define PIN_SERIAL_RX CH32RV_SERIAL4_RX
 #endif
 #endif
 #if defined(PIN_SERIAL_TX) && !defined(TX)
@@ -272,27 +272,27 @@
 /* ---- I2C pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_i2cs) ---- */
 /* I2C1: route default, on every part */
-#define CH32_I2C1_SCL PA10
-#define CH32_I2C1_SDA PA11
-#define CH32_I2C1_CLKEN_ADDR 0x4002101cu
-#define CH32_I2C1_CLKEN_MASK 0x00200000u
-#define CH32_I2C1_REMAP_MASK 0x0000001cu
-#define CH32_I2C1_REMAP_VAL  0x00000000u
+#define CH32RV_I2C1_SCL PA10
+#define CH32RV_I2C1_SDA PA11
+#define CH32RV_I2C1_CLKEN_ADDR 0x4002101cu
+#define CH32RV_I2C1_CLKEN_MASK 0x00200000u
+#define CH32RV_I2C1_REMAP_MASK 0x0000001cu
+#define CH32RV_I2C1_REMAP_VAL  0x00000000u
 /* I2C1 routes for setRoute()/setPins(): route number, then SCL, SDA */
-#define CH32_I2C1_ROUTE_COUNT 5
-#define CH32_I2C1_ROUTES { \
-    { 0, { PA10, PA11, CH32_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
-    { 2, { PC16, PC17, CH32_ROUTE_NO_PIN }, 0x00000008u, 0x00000000u }, \
-    { 3, { PC19, PC18, CH32_ROUTE_NO_PIN }, 0x0000000cu, 0x00000000u }, \
-    { 4, { PC17, PC16, CH32_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
-    { 5, { PC18, PC19, CH32_ROUTE_NO_PIN }, 0x00000014u, 0x00000000u }, \
+#define CH32RV_I2C1_ROUTE_COUNT 5
+#define CH32RV_I2C1_ROUTES { \
+    { 0, { PA10, PA11, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 2, { PC16, PC17, CH32RV_ROUTE_NO_PIN }, 0x00000008u, 0x00000000u }, \
+    { 3, { PC19, PC18, CH32RV_ROUTE_NO_PIN }, 0x0000000cu, 0x00000000u }, \
+    { 4, { PC17, PC16, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
+    { 5, { PC18, PC19, CH32RV_ROUTE_NO_PIN }, 0x00000014u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (Wire). These are
  * the pads of I2C1's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
-#define PIN_WIRE_SCL CH32_I2C1_SCL
-#define PIN_WIRE_SDA CH32_I2C1_SDA
+#define PIN_WIRE_SCL CH32RV_I2C1_SCL
+#define PIN_WIRE_SDA CH32RV_I2C1_SDA
 #define SCL PIN_WIRE_SCL
 #define SDA PIN_WIRE_SDA
 #endif
@@ -301,16 +301,16 @@
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
 /* SPI1: route default, on every part */
-#define CH32_SPI1_SCK PA5
-#define CH32_SPI1_MISO PA6
-#define CH32_SPI1_MOSI PA7
-#define CH32_SPI1_CLKEN_ADDR 0x40021018u
-#define CH32_SPI1_CLKEN_MASK 0x00001000u
-#define CH32_SPI1_REMAP_MASK 0x00000003u
-#define CH32_SPI1_REMAP_VAL  0x00000000u
+#define CH32RV_SPI1_SCK PA5
+#define CH32RV_SPI1_MISO PA6
+#define CH32RV_SPI1_MOSI PA7
+#define CH32RV_SPI1_CLKEN_ADDR 0x40021018u
+#define CH32RV_SPI1_CLKEN_MASK 0x00001000u
+#define CH32RV_SPI1_REMAP_MASK 0x00000003u
+#define CH32RV_SPI1_REMAP_VAL  0x00000000u
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32_SPI1_ROUTE_COUNT 2
-#define CH32_SPI1_ROUTES { \
+#define CH32RV_SPI1_ROUTE_COUNT 2
+#define CH32RV_SPI1_ROUTES { \
     { 0, { PA5, PA6, PA7 }, 0x00000000u, 0x00000000u }, \
     { 2, { PA11, PA9, PA10 }, 0x00000002u, 0x00000000u }, \
 }
@@ -318,9 +318,9 @@
  * the pads of SPI1's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
-#define PIN_SPI_SCK CH32_SPI1_SCK
-#define PIN_SPI_MISO CH32_SPI1_MISO
-#define PIN_SPI_MOSI CH32_SPI1_MOSI
+#define PIN_SPI_SCK CH32RV_SPI1_SCK
+#define PIN_SPI_MISO CH32RV_SPI1_MISO
+#define PIN_SPI_MOSI CH32RV_SPI1_MOSI
 #define SCK PIN_SPI_SCK
 #define MISO PIN_SPI_MISO
 #define MOSI PIN_SPI_MOSI
@@ -328,8 +328,8 @@
 #endif
 
 /* ---- PWM: 7 pads on TIM1/TIM2/TIM3, default route ---- */
-#define CH32_PWM_PIN_COUNT 7
-#define CH32_PWM_PIN_TO_TIMER(p) ( \
+#define CH32RV_PWM_PIN_COUNT 7
+#define CH32RV_PWM_PIN_TO_TIMER(p) ( \
     (p) == PC16 ? 1 : \
     (p) == PA0 ? 2 : \
     (p) == PA1 ? 2 : \
@@ -338,7 +338,7 @@
     (p) == PA6 ? 3 : \
     (p) == PA7 ? 3 : \
     0)
-#define CH32_PWM_PIN_TO_CHANNEL(p) ( \
+#define CH32RV_PWM_PIN_TO_CHANNEL(p) ( \
     (p) == PC16 ? 4 : \
     (p) == PA0 ? 1 : \
     (p) == PA1 ? 2 : \
@@ -348,38 +348,38 @@
     (p) == PA7 ? 2 : \
     0)
 
-/* ---- Timer resource descriptors.  CH32_TIMER_TABLE(X) fields:
+/* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,
  * clock-enable address/mask, update IRQ, update handler. ---- */
-#define CH32_TIMER_COUNT 3
-#define CH32_TIMER_TABLE(X) \
-    X(1, 1, 16, 4, 1, CH32_TIM1_BASE, 0x40021018u, 0x00000800u, CH32_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
-    X(2, 1, 16, 4, 1, CH32_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32_IRQN_TIM2_UP, TIM2_UP_IRQHandler) \
-    X(3, 2, 16, 2, 0, CH32_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32_IRQN_TIM3, TIM3_IRQHandler)
+#define CH32RV_TIMER_COUNT 3
+#define CH32RV_TIMER_TABLE(X) \
+    X(1, 1, 16, 4, 1, CH32RV_TIM1_BASE, 0x40021018u, 0x00000800u, CH32RV_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
+    X(2, 1, 16, 4, 1, CH32RV_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32RV_IRQN_TIM2_UP, TIM2_UP_IRQHandler) \
+    X(3, 2, 16, 2, 0, CH32RV_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32RV_IRQN_TIM3, TIM3_IRQHandler)
 
 /* ---- tone(): preferred TIM3, also a PWM timer here, so
  *      analogWrite() on PA6, PA7
  *      is disturbed while a tone plays. ---- */
-#define CH32_TONE_TIMER 3
-#define CH32_TONE_TIMER_BASE CH32_TIM3_BASE
-#define CH32_TONE_TIMER_CLKEN_ADDR 0x4002101cu
-#define CH32_TONE_TIMER_CLKEN_MASK 0x00000002u
-#define CH32_TONE_TIMER_IRQ CH32_IRQN_TIM3
-#define CH32_TONE_TIMER_HANDLER TIM3_IRQHandler
-#define CH32_TONE_SHARES_PWM 1
-#define CH32_TONE_TIMER_BITS 16
+#define CH32RV_TONE_TIMER 3
+#define CH32RV_TONE_TIMER_BASE CH32RV_TIM3_BASE
+#define CH32RV_TONE_TIMER_CLKEN_ADDR 0x4002101cu
+#define CH32RV_TONE_TIMER_CLKEN_MASK 0x00000002u
+#define CH32RV_TONE_TIMER_IRQ CH32RV_IRQN_TIM3
+#define CH32RV_TONE_TIMER_HANDLER TIM3_IRQHandler
+#define CH32RV_TONE_SHARES_PWM 1
+#define CH32RV_TONE_TIMER_BITS 16
 
 /* ---- Servo: preferred TIM2, also a PWM timer here, so
  *      analogWrite() on PA0, PA1, PA2, PA3
  *      is disturbed while a servo is attached. ---- */
-#define CH32_SERVO_TIMER 2
-#define CH32_SERVO_TIMER_BASE CH32_TIM2_BASE
-#define CH32_SERVO_TIMER_CLKEN_ADDR 0x4002101cu
-#define CH32_SERVO_TIMER_CLKEN_MASK 0x00000001u
-#define CH32_SERVO_TIMER_IRQ CH32_IRQN_TIM2_UP
-#define CH32_SERVO_TIMER_HANDLER TIM2_UP_IRQHandler
-#define CH32_SERVO_SHARES_PWM 1
-#define CH32_SERVO_TIMER_BITS 16
+#define CH32RV_SERVO_TIMER 2
+#define CH32RV_SERVO_TIMER_BASE CH32RV_TIM2_BASE
+#define CH32RV_SERVO_TIMER_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERVO_TIMER_CLKEN_MASK 0x00000001u
+#define CH32RV_SERVO_TIMER_IRQ CH32RV_IRQN_TIM2_UP
+#define CH32RV_SERVO_TIMER_HANDLER TIM2_UP_IRQHandler
+#define CH32RV_SERVO_SHARES_PWM 1
+#define CH32RV_SERVO_TIMER_BITS 16
 
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -

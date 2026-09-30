@@ -9,23 +9,23 @@
  * does not exist, and a TX/RX pair taken from two different routes, both have
  * to come back false with nothing changed.
  */
-#include <ch32_route.h>
+#include <ch32rv_route.h>
 
 #include "testcmd.h"
 
 /* The route table of whichever USART is the monitor. Generated per variant. */
-#if CH32_SERIAL_DEFAULT == 1 && defined(CH32_SERIAL1_ROUTES)
-#define MONITOR_ROUTES      CH32_SERIAL1_ROUTES
-#define MONITOR_ROUTE_COUNT CH32_SERIAL1_ROUTE_COUNT
-#elif CH32_SERIAL_DEFAULT == 2 && defined(CH32_SERIAL2_ROUTES)
-#define MONITOR_ROUTES      CH32_SERIAL2_ROUTES
-#define MONITOR_ROUTE_COUNT CH32_SERIAL2_ROUTE_COUNT
-#elif CH32_SERIAL_DEFAULT == 3 && defined(CH32_SERIAL3_ROUTES)
-#define MONITOR_ROUTES      CH32_SERIAL3_ROUTES
-#define MONITOR_ROUTE_COUNT CH32_SERIAL3_ROUTE_COUNT
-#elif CH32_SERIAL_DEFAULT == 4 && defined(CH32_SERIAL4_ROUTES)
-#define MONITOR_ROUTES      CH32_SERIAL4_ROUTES
-#define MONITOR_ROUTE_COUNT CH32_SERIAL4_ROUTE_COUNT
+#if CH32RV_SERIAL_DEFAULT == 1 && defined(CH32RV_SERIAL1_ROUTES)
+#define MONITOR_ROUTES      CH32RV_SERIAL1_ROUTES
+#define MONITOR_ROUTE_COUNT CH32RV_SERIAL1_ROUTE_COUNT
+#elif CH32RV_SERIAL_DEFAULT == 2 && defined(CH32RV_SERIAL2_ROUTES)
+#define MONITOR_ROUTES      CH32RV_SERIAL2_ROUTES
+#define MONITOR_ROUTE_COUNT CH32RV_SERIAL2_ROUTE_COUNT
+#elif CH32RV_SERIAL_DEFAULT == 3 && defined(CH32RV_SERIAL3_ROUTES)
+#define MONITOR_ROUTES      CH32RV_SERIAL3_ROUTES
+#define MONITOR_ROUTE_COUNT CH32RV_SERIAL3_ROUTE_COUNT
+#elif CH32RV_SERIAL_DEFAULT == 4 && defined(CH32RV_SERIAL4_ROUTES)
+#define MONITOR_ROUTES      CH32RV_SERIAL4_ROUTES
+#define MONITOR_ROUTE_COUNT CH32RV_SERIAL4_ROUTE_COUNT
 #endif
 
 static void run_checks()
@@ -41,7 +41,7 @@ static void run_checks()
     tc_check("alive_after_refusal", true);
 
 #ifdef MONITOR_ROUTES
-    static const ch32_route_t routes[] = MONITOR_ROUTES;
+    static const ch32rv_route_t routes[] = MONITOR_ROUTES;
     const uint8_t count = MONITOR_ROUTE_COUNT;
 
     /* 3. The pins of the route it is already on are accepted. setPins() is

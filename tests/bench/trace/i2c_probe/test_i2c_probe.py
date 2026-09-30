@@ -171,7 +171,7 @@ def test_i2c_clock_switch(fx, ws_run):
 
 def test_i2c_clock_stretch(fx, ws_run):
     """The target holds every stretch for stretch_us (the ESP32 slave stretches at address match for a master READ).
-    Below Wire's 25 ms timeout (CH32_WIRE_TIMEOUT_US) the read completes with the slot's bytes; above it Wire gives
+    Below Wire's 25 ms timeout (CH32RV_WIRE_TIMEOUT_US) the read completes with the slot's bytes; above it Wire gives
     up within the timeout, and the next read with the stretch off works again."""
     T = fx.target
     begin(fx)

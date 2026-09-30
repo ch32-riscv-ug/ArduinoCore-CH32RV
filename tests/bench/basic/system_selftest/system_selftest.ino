@@ -1,4 +1,4 @@
-/* CH32.restart(), CH32.resetReason() and the watchdog, across real resets.
+/* CH32RV.restart(), CH32RV.resetReason() and the watchdog, across real resets.
  *
  * The only honest way to test a reset is to cause one and look at the far
  * side, so this sketch is driven through three commands and survives two
@@ -7,19 +7,19 @@
  *   RUN      report this boot's reset reason, prove it is stable, and - where
  *            the family's LSI frequency is known - arm the watchdog and prove
  *            that feeding it keeps the sketch alive
- *   REBOOT   CH32.restart(); the host expects the banner to come back and the
+ *   REBOOT   CH32RV.restart(); the host expects the banner to come back and the
  *            next RUN to say reset_reason=software
  *   BITE     stop feeding a short watchdog and go silent; the reset brings
  *            the banner back and the next RUN says reset_reason=watchdog.
  *            Where the watchdog is unavailable (no F_LSI in the device data:
- *            X033/X035 today) this substitutes CH32.restart(), so the flow
+ *            X033/X035 today) this substitutes CH32RV.restart(), so the flow
  *            stays linear and the output says which one happened.
  *
  * After RUN has armed the watchdog, loop() feeds it forever - the IWDG
  * cannot be stopped, so the sketch must keep it fed to keep answering.
  * Feeding an unarmed watchdog is a harmless key write.
  */
-#include <CH32.h>
+#include <CH32RV.h>
 
 #include "testcmd.h"
 
@@ -31,13 +31,13 @@ static void run_checks()
      * first boot (anything), after REBOOT (software) and after BITE
      * (watchdog, or software where the watchdog is unavailable). */
     Console.print("reset_reason=");
-    Console.println(CH32.resetReasonName());
+    Console.println(CH32RV.resetReasonName());
 
-    tc_check("reason_stable", CH32.resetReason() == CH32.resetReason()
-                              && CH32.resetReasonName()[0] != '\0');
+    tc_check("reason_stable", CH32RV.resetReason() == CH32RV.resetReason()
+                              && CH32RV.resetReasonName()[0] != '\0');
 
-    const bool enabled = CH32.wdtEnable(300);
-#if defined(CH32_LSI_HZ) && defined(CH32_IWDG_BASE)
+    const bool enabled = CH32RV.wdtEnable(300);
+#if defined(CH32RV_LSI_HZ) && defined(CH32RV_IWDG_BASE)
     tc_check("wdt_enable_honest", enabled);
     /* Four timeouts' worth of staying alive while fed is the proof that
      * feeding works; the bite is proven later, across the reset. */
@@ -46,7 +46,7 @@ static void run_checks()
     while (millis() - t0 < 1200u) {
         if (millis() - last_feed >= 50u) {
             last_feed = millis();
-            CH32.wdtFeed();
+            CH32RV.wdtFeed();
         }
         tc_tick();                    /* keep the bridge moving meanwhile */
     }
@@ -72,7 +72,7 @@ void loop()
          * deterministic. The watchdog does the rest. */
         return;
     }
-    CH32.wdtFeed();
+    CH32RV.wdtFeed();
 
     const char *cmd = tc_ready();
     if (!cmd) {
@@ -83,15 +83,15 @@ void loop()
     } else if (!strcmp(cmd, "REBOOT")) {
         Console.println("rebooting");
         Console.flush();
-        CH32.restart();
+        CH32RV.restart();
     } else if (!strcmp(cmd, "BITE")) {
-        const bool armed = CH32.wdtEnable(100);
+        const bool armed = CH32RV.wdtEnable(100);
         Console.println("biting");
         Console.flush();
         if (armed) {
             starving = true;          /* silence; the watchdog ends this */
         } else {
-            CH32.restart();           /* substitute, and the reason says so */
+            CH32RV.restart();           /* substitute, and the reason says so */
         }
     } else {
         tc_unknown(cmd);

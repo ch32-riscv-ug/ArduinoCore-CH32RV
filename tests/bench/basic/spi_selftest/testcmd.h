@@ -254,29 +254,29 @@ TC_FN const char *tc_ready(void)
 /* ------------------------------------------------------------------ UART */
 
 /* The UART under test, once the host has named one; NULL until then. */
-static arduino::CH32HardwareSerial *tc_uart_;
+static arduino::CH32RVHardwareSerial *tc_uart_;
 
-TC_FN arduino::CH32HardwareSerial *tc_uart(void)
+TC_FN arduino::CH32RVHardwareSerial *tc_uart(void)
 {
     return tc_uart_;
 }
 
-TC_FN arduino::CH32HardwareSerial *tc_serial_port(long n)
+TC_FN arduino::CH32RVHardwareSerial *tc_serial_port(long n)
 {
     switch (n) {
-#if defined(CH32_SERIAL1_TX)
+#if defined(CH32RV_SERIAL1_TX)
     case 1: return &Serial1;
 #endif
-#if defined(CH32_SERIAL2_TX)
+#if defined(CH32RV_SERIAL2_TX)
     case 2: return &Serial2;
 #endif
-#if defined(CH32_SERIAL3_TX)
+#if defined(CH32RV_SERIAL3_TX)
     case 3: return &Serial3;
 #endif
-#if defined(CH32_SERIAL4_TX)
+#if defined(CH32RV_SERIAL4_TX)
     case 4: return &Serial4;
 #endif
-#if defined(CH32_SERIAL5_TX)
+#if defined(CH32RV_SERIAL5_TX)
     case 5: return &Serial5;
 #endif
     default: return NULL;
@@ -300,7 +300,7 @@ TC_FN bool tc_uart_command(const char *cmd)
     const long n = strtol(cmd + 5, &end, 10);
     const long route = strtol(end, &end, 10);
     const long baud = strtol(end, &end, 10);
-    arduino::CH32HardwareSerial *port = tc_serial_port(n);
+    arduino::CH32RVHardwareSerial *port = tc_serial_port(n);
     if (!port) {
         Console.print("UART FAIL no-port ");
         Console.println(n);

@@ -6,7 +6,7 @@
  * of skipping that.
  *
  * Which timer the series gave Servo is in the variant header as
- * CH32_SERVO_TIMER. It is never the one tone() uses, so a buzzer and a servo
+ * CH32RV_SERVO_TIMER. It is never the one tone() uses, so a buzzer and a servo
  * can run at once; on the small parts it does share a timer with analogWrite(),
  * and the header names the pads that stop fading while a servo is attached.
  */

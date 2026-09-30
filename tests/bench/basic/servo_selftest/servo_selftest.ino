@@ -41,7 +41,7 @@ static uint32_t measure_pulse(uint32_t timeout_ms)
 
 static void run_checks()
 {
-#ifdef CH32_SERVO_TIMER
+#ifdef CH32RV_SERVO_TIMER
     tc_check("attach_succeeds", servo.attach(PIN) != INVALID_SERVO);
     tc_check("reports_attached", servo.attached());
 

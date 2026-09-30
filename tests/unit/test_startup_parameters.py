@@ -2,7 +2,7 @@
 
 tests/build/startup proves the unified crt0 lands the machine in the same state as
 WCH's own startup code, per family. It does that with its own table of
--march/-mabi and CH32_MSTATUS_INIT / CH32_INTSYSCR_INIT / CH32_CORECFGR
+-march/-mabi and CH32RV_MSTATUS_INIT / CH32RV_INTSYSCR_INIT / CH32RV_CORECFGR
 values - and boards.txt carries the same numbers, generated from device-data.
 
 Two copies of the same parameter is the setup for a silent pass: change the
@@ -89,7 +89,7 @@ def test_the_isa_matches_boards_txt(fam):
 # v103: MPP = 3, sketches in M mode. The QingKe V3A has U mode but no gintenr,
 # so U mode leaves a sketch no way to mask interrupts (tools/generate/generate.py).
 DELIBERATE_DEVIATIONS = {
-    "v103": {"-DCH32_MSTATUS_INIT=0x88": "-DCH32_MSTATUS_INIT=0x1888"},
+    "v103": {"-DCH32RV_MSTATUS_INIT=0x88": "-DCH32RV_MSTATUS_INIT=0x1888"},
 }
 
 

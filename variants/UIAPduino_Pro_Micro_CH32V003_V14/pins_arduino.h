@@ -2,7 +2,7 @@
 #pragma once
 
 /* The QFN20 package masks in the generated silicon variant are selected by
- * CH32_PART_CH32V003F4U6, which boards.txt passes (build.part). */
+ * CH32RV_PART_CH32V003F4U6, which boards.txt passes (build.part). */
 
 /* Board facts must precede the L0 header because its standard names are
  * intentionally guarded for product-board overrides. */
@@ -14,7 +14,7 @@
 /* The generic CH32 variants expose port-encoded pin numbers. The released
  * UIAPduino core instead exposes the Pro Micro silkscreen as the ordinary
  * Arduino numbers 0..17. Preserve that source-level contract on this named
- * product board, while CH32_PIN_PORT/BIT translate to the core's internal
+ * product board, while CH32RV_PIN_PORT/BIT translate to the core's internal
  * encoding. D7/D8/D9 occur on both sides but name one MCU pad each. */
 #undef PA1
 #undef PA2
@@ -61,17 +61,17 @@
 
 /* The three board ranges are contiguous within PA, PC and PD, so this stays
  * a constant expression without linking an 18-entry lookup table. */
-#define CH32_UIAP_ENCODE_PIN(pin) ( \
+#define CH32RV_UIAP_ENCODE_PIN(pin) ( \
     (pin) < 2 ? (pin) + 1 : \
     (pin) < 10 ? (pin) + 62 : \
     (pin) < 18 ? (pin) + 86 : (pin))
 
-#undef CH32_PIN_PORT
-#undef CH32_PIN_BIT
-#define CH32_PIN_PORT(pin) \
-    (CH32_UIAP_ENCODE_PIN(pin) >> CH32_PIN_PORT_BITS)
-#define CH32_PIN_BIT(pin) \
-    (CH32_UIAP_ENCODE_PIN(pin) & ((1 << CH32_PIN_PORT_BITS) - 1))
+#undef CH32RV_PIN_PORT
+#undef CH32RV_PIN_BIT
+#define CH32RV_PIN_PORT(pin) \
+    (CH32RV_UIAP_ENCODE_PIN(pin) >> CH32RV_PIN_PORT_BITS)
+#define CH32RV_PIN_BIT(pin) \
+    (CH32RV_UIAP_ENCODE_PIN(pin) & ((1 << CH32RV_PIN_PORT_BITS) - 1))
 
 #define D0  PA1
 #define D1  PA2
@@ -122,10 +122,10 @@ static inline void pinV32_DisconnectDebug(PinName pin)
 #ifndef CH32V_LOCK_DEBUG
     if (pin == PD_1) {
         volatile uint32_t *const apb2pcenr =
-            (volatile uint32_t *)(uintptr_t)CH32_CLKEN_AFIO_ADDR;
+            (volatile uint32_t *)(uintptr_t)CH32RV_CLKEN_AFIO_ADDR;
         volatile uint32_t *const pcfr1 =
             (volatile uint32_t *)(uintptr_t)0x40010004u;
-        *apb2pcenr |= CH32_CLKEN_AFIO_MASK;
+        *apb2pcenr |= CH32RV_CLKEN_AFIO_MASK;
         *pcfr1 = (*pcfr1 & ~0x07000000u) | 0x04000000u;
     }
 #else

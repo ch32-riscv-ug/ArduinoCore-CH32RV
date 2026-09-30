@@ -19,7 +19,7 @@ UART the probe hears (`bench.uart`), measured facts.
 
 The bench builds the working tree, not a release. The profiles name the platform without a
 version, and for the session this repository is linked into the sketchbook as
-<user>/hardware/ch32-riscv-ug/ch32v (host-arduino-core's way); the toolchain and ch32rv come
+<user>/hardware/ch32-riscv-ug/ch32rv (host-arduino-core's way); the toolchain and ch32rv come
 from <data>/packages, put there once by bench/install_tools.py, which is checked here too.
 """
 import os
@@ -78,7 +78,7 @@ def _compile_time_facts(bench) -> None:
 
 
 def _encode(pad: str) -> int:
-    """"PA0" -> the core's pin number, (port << 5) | bit (cores/arduino/ch32_pins.h, ADR-0010)."""
+    """"PA0" -> the core's pin number, (port << 5) | bit (cores/arduino/ch32rv_pins.h, ADR-0010)."""
     import re
     m = re.fullmatch(r"P([A-F])(\d{1,2})", pad.strip().upper())
     if not m:
@@ -88,7 +88,7 @@ def _encode(pad: str) -> int:
 
 @pytest.fixture(scope="session", autouse=True)
 def _working_tree_platform():
-    """The repository as <user>/hardware/ch32-riscv-ug/ch32v for the session, so a version-less profile
+    """The repository as <user>/hardware/ch32-riscv-ug/ch32rv for the session, so a version-less profile
     resolves to it. A link that already points here is reused and left; anything else there is an error
     (install_tools.check has said so). Where the OS refuses a symlink, the release entries are copied."""
     link = install_tools.platform_link()

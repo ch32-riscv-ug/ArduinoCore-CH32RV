@@ -63,15 +63,15 @@ posts an empty frame to invite the next two bytes. Call `available()` in
 `loop()`. It does not post one right after a write, so a loop that alternates
 `available()` and `print()` does not pay an extra round trip per print.
 
-What arrives is parked in a 16-byte buffer (`CH32_DMSEQ_RX_SIZE`). With no room
+What arrives is parked in a 16-byte buffer (`CH32RV_DMSEQ_RX_SIZE`). With no room
 for another frame the sketch does not take it, and the host sends it again -
 nothing is lost.
 
 ## Worth knowing
 
 - **Nothing hangs when no host is attached.** A write waits 20 ms
-  (`CH32_DMSEQ_WAIT_MS`) until a host has answered once, 1 s
-  (`CH32_DMSEQ_HOST_WAIT_MS`) after. On a timeout the frame stays posted with
+  (`CH32RV_DMSEQ_WAIT_MS`) until a host has answered once, 1 s
+  (`CH32RV_DMSEQ_HOST_WAIT_MS`) after. On a timeout the frame stays posted with
   its TO bit set and later writes are dropped until a host answers it;
   `alive()` reports that and clears itself. A host that polls at least once a
   second loses nothing. The waits count register polls, not `millis()`, so they

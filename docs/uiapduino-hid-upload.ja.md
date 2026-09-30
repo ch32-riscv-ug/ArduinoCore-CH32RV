@@ -21,7 +21,7 @@ BOOT_MODEを設定してsoftware resetし、製品bootloaderへ入ります。�
 
 Arduino IDE / CLIではboardに
 `UIAPduino Pro Micro CH32V003 V1.4`（FQBN
-`ch32-riscv-ug:ch32v:UIAPDUINO_V003_V14`）を選びます。このnamed boardの通常Uploadは
+`ch32-riscv-ug:ch32rv:UIAPDUINO_V003_V14`）を選びます。このnamed boardの通常Uploadは
 以下のHID書込みだけを担当し、RESET操作や外部ジグ操作は行いません。
 
 bootloaderが見えていることを確認します。UIAPduinoは`1209:b803`、通常のrv003usbは
@@ -222,7 +222,7 @@ USB BUSIDが`1209:b803`へ復帰しました。その後9,140 byteのTIM HIL ima
 **bit26 = PINRSTF（外部 reset pin による reset）**を見て、立っていなければ即「PD4 low → BOOT_MODE clear → PFIC reset」で
 application へ戻る。`B`（BOOT_MODE 設定 + PD4 detach + software reset）だけでは PINRSTF は立たないので、**直前に pin reset があった
 ことが必要**。flag は RMVF を書くまで残るので、過去に RESET ボタン / GPIO23 を使った後は `B` だけで入れ、誰かが RMVF を書くと入れなく
-なる。ArduinoCore-CH32 の `CH32.resetReason()`（`libraries/CH32/src/CH32System.cpp`）は初回読み出しで RMVF を書き全 flag を消す。
+なる。ArduinoCore-CH32 の `CH32RV.resetReason()`（`libraries/CH32RV/src/CH32RVSystem.cpp`）は初回読み出しで RMVF を書き全 flag を消す。
 つまり `resetReason()` を呼ぶ sketch（`system_selftest` など）を動かした後は、pin reset 無しの boot entry は失敗する。これが
 「B / N→B / H が完了するのに `0000:0002` のまま」の少なくとも一因である。
 

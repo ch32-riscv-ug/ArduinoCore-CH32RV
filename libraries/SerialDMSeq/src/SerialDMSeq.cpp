@@ -7,15 +7,15 @@ using namespace arduino;
 /* Debug module data registers, seen from the hart - the pair SerialSDI and
  * SerialDMDATA use. The board states the address (ch32-device-data
  * debug_data.csv). */
-#ifndef CH32_DM_DATA0_ADDR
-#error "CH32_DM_DATA0_ADDR is not defined: this board does not say where the \
+#ifndef CH32RV_DM_DATA0_ADDR
+#error "CH32RV_DM_DATA0_ADDR is not defined: this board does not say where the \
 debug module's data0 is (ch32-device-data debug_data.csv), so SerialDMSeq \
 cannot be built for it."
 #endif
-static volatile uint32_t *const CH32_DM_DATA0 =
-    (volatile uint32_t *)CH32_DM_DATA0_ADDR;
-static volatile uint32_t *const CH32_DM_DATA1 =
-    (volatile uint32_t *)(CH32_DM_DATA0_ADDR + 4u);
+static volatile uint32_t *const CH32RV_DM_DATA0 =
+    (volatile uint32_t *)CH32RV_DM_DATA0_ADDR;
+static volatile uint32_t *const CH32RV_DM_DATA1 =
+    (volatile uint32_t *)(CH32RV_DM_DATA0_ADDR + 4u);
 
 /* data0's low byte. Target frame: T TO S A SYN N(3). Host answer: 0 0 K H 0 M(3). */
 #define ST_TARGET  0x80u          /* the word is the target's frame */
@@ -47,7 +47,7 @@ static uint8_t crc8(const uint8_t *p, uint8_t n)
     return crc;
 }
 
-uint8_t CH32SerialDMSeq::buffered(void) const
+uint8_t CH32RVSerialDMSeq::buffered(void) const
 {
     return (uint8_t)(_tail >= _head ? _tail - _head
                                     : sizeof(_rx) - _head + _tail);
@@ -57,17 +57,17 @@ uint8_t CH32SerialDMSeq::buffered(void) const
  * must still end with interrupts masked, where millis() stands still. One poll
  * measured about 10 cycles on CH32V003; 8 is assumed, so a wait lasts at least
  * as long as asked. */
-uint32_t CH32SerialDMSeq::waitPolls(void) const
+uint32_t CH32RVSerialDMSeq::waitPolls(void) const
 {
     const uint64_t per_ms = (uint64_t)F_CPU / 1000u / 8u;
     const uint64_t polls =
-        per_ms * (_host ? CH32_DMSEQ_HOST_WAIT_MS : CH32_DMSEQ_WAIT_MS);
+        per_ms * (_host ? CH32RV_DMSEQ_HOST_WAIT_MS : CH32RV_DMSEQ_WAIT_MS);
     return polls > 0xffffffffu ? 0xffffffffu : (polls ? (uint32_t)polls : 1u);
 }
 
 /* Build a frame and hand it over: data1 first (when the frame reaches it), then
  * data0, whose bit 7 gives it to the host. */
-void CH32SerialDMSeq::post(const uint8_t *p, uint8_t n)
+void CH32RVSerialDMSeq::post(const uint8_t *p, uint8_t n)
 {
     uint8_t b[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     b[0] = (uint8_t)(ST_TARGET | (_s ? ST_SEQ : 0u) | (_last_h ? ST_ACK : 0u) |
@@ -85,12 +85,12 @@ void CH32SerialDMSeq::post(const uint8_t *p, uint8_t n)
     _posted = true;
 }
 
-void CH32SerialDMSeq::repost(void)
+void CH32RVSerialDMSeq::repost(void)
 {
     if (_long) {
-        *CH32_DM_DATA1 = _w1;
+        *CH32RV_DM_DATA1 = _w1;
     }
-    *CH32_DM_DATA0 = _w0;
+    *CH32RV_DM_DATA0 = _w0;
 }
 
 /* While latched, keep the frame posted - actively. A probe attach may rewrite
@@ -100,12 +100,12 @@ void CH32SerialDMSeq::repost(void)
  * goes up again (oep-spec docs/target-console-dmseq.ja.md, found by the ch32rv
  * side). Timed by millis() where it runs, and by a call count where it does not
  * (interrupts masked); whichever comes first. */
-void CH32SerialDMSeq::stale(void)
+void CH32RVSerialDMSeq::stale(void)
 {
     if (!_latched) {
         return;
     }
-    if ((uint32_t)(millis() - _stale_ms) >= CH32_DMSEQ_WAIT_MS || ++_stale_calls >= _stale_limit) {
+    if ((uint32_t)(millis() - _stale_ms) >= CH32RV_DMSEQ_WAIT_MS || ++_stale_calls >= _stale_limit) {
         repost();
         _stale_ms = millis();
         _stale_calls = 0;
@@ -118,12 +118,12 @@ void CH32SerialDMSeq::stale(void)
  * one - a corrupted word, an answer to the other sequence bit, whatever an
  * attach or a flash left behind - gets the same frame posted again, which the
  * host recognises as a duplicate. */
-bool CH32SerialDMSeq::service(void)
+bool CH32RVSerialDMSeq::service(void)
 {
     if (!_posted) {
         return true;
     }
-    const uint32_t w = *CH32_DM_DATA0;
+    const uint32_t w = *CH32RV_DM_DATA0;
     if (w & ST_TARGET) {
         /* Bit 7 set but not the frame we posted: what a probe attach left
          * behind - a WCH-LinkE's AttachChip ends on an ESIG read that leaves
@@ -178,7 +178,7 @@ bool CH32SerialDMSeq::service(void)
 /* Wait for the posted frame to be answered, within the bound. On a timeout the
  * frame is posted again with TO set - same sequence bit and payload, CRC redone
  * - and left there: a host that attaches later answers it and printing resumes. */
-bool CH32SerialDMSeq::waitAnswered(void)
+bool CH32RVSerialDMSeq::waitAnswered(void)
 {
     if (_latched) {
         return service();         /* free until a host answers */
@@ -206,13 +206,13 @@ bool CH32SerialDMSeq::waitAnswered(void)
     return false;
 }
 
-void CH32SerialDMSeq::begin(unsigned long baudrate, uint16_t config)
+void CH32RVSerialDMSeq::begin(unsigned long baudrate, uint16_t config)
 {
     (void)baudrate;
     (void)config;
     /* Claim the mailbox. A zero word is never a valid answer (the CRC starts at
      * 0xFF), so nothing an earlier session left can be taken for one. */
-    *CH32_DM_DATA0 = 0;
+    *CH32RV_DM_DATA0 = 0;
     _head = _tail = 0;
     _s = 0;
     _last_h = 1;
@@ -225,7 +225,7 @@ void CH32SerialDMSeq::begin(unsigned long baudrate, uint16_t config)
     _started = true;
 }
 
-void CH32SerialDMSeq::end()
+void CH32RVSerialDMSeq::end()
 {
     _started = false;
 }
@@ -235,7 +235,7 @@ void CH32SerialDMSeq::end()
  * alternates available() and print() would otherwise pay a round trip for an
  * empty frame before every print; while it prints, input rides on the answers
  * to its data frames. */
-int CH32SerialDMSeq::available(void)
+int CH32RVSerialDMSeq::available(void)
 {
     if (!_started) {
         return 0;
@@ -250,7 +250,7 @@ int CH32SerialDMSeq::available(void)
     return buffered();
 }
 
-int CH32SerialDMSeq::peek(void)
+int CH32RVSerialDMSeq::peek(void)
 {
     if (!_started) {
         return -1;
@@ -259,7 +259,7 @@ int CH32SerialDMSeq::peek(void)
     return buffered() ? _rx[_head] : -1;
 }
 
-int CH32SerialDMSeq::read(void)
+int CH32RVSerialDMSeq::read(void)
 {
     const int c = peek();
     if (c >= 0) {
@@ -268,19 +268,19 @@ int CH32SerialDMSeq::read(void)
     return c;
 }
 
-void CH32SerialDMSeq::flush(void)
+void CH32RVSerialDMSeq::flush(void)
 {
     if (_started) {
         waitAnswered();
     }
 }
 
-size_t CH32SerialDMSeq::write(uint8_t c)
+size_t CH32RVSerialDMSeq::write(uint8_t c)
 {
     return write(&c, 1);
 }
 
-size_t CH32SerialDMSeq::write(const uint8_t *buffer, size_t size)
+size_t CH32RVSerialDMSeq::write(const uint8_t *buffer, size_t size)
 {
     if (!_started) {
         return 0;
@@ -301,4 +301,4 @@ size_t CH32SerialDMSeq::write(const uint8_t *buffer, size_t size)
 /* Its own translation unit, and one a sketch only reaches by including the
  * header - the global object's vtable keeps every virtual alive whether or not
  * the sketch calls one. */
-arduino::CH32SerialDMSeq SerialDMSeq;
+arduino::CH32RVSerialDMSeq SerialDMSeq;

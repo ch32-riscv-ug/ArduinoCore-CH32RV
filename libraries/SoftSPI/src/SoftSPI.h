@@ -24,7 +24,7 @@
 #pragma once
 
 #include "api/HardwareSPI.h"
-#include "ch32_pins.h"
+#include "ch32rv_pins.h"
 
 #include <stdint.h>
 

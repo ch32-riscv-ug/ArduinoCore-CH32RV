@@ -64,7 +64,7 @@ signal名のほうは範囲が狭い。**正規化が要るのはV003 / X033 / X
 | F-17 | その結果と`remap_fields.csv`は**129 selectorで一致、12で不一致**。不一致は全てL103/M103で、**表にPCFR2側のbitが無い** | 同toolの`--compare` |
 | F-18 | **表に丸ごと無いselectorがある。** X035の`USART1`(PCFR1:5,6)と`TIM1`、X033の`SPI1`/`USART1`/`USART3`、L103/M103の`USART4`、V407/V467は34個すべて。**X035の既定SerialはUSART1** | 同上。EVT 11 selectorに対し表は8 |
 | F-19 | 12 familyの`GPIO_PinRemapConfig`は**全て実装が異なる**(共有ゼロ)。だから書き写さず実行する | 関数本体をハッシュして比較 |
-| F-15 | うちのコアは**PCFR1しか書いていない**。`CH32_AFIO_PCFR2`は定義済みだが未使用で、`remap_mask_value()`は`bits`に収まらない上位を黙って捨てる | [HardwareSerial.cpp:22](../../cores/arduino/HardwareSerial.cpp#L22)、[ch32_registers.h:90](../../cores/arduino/ch32_registers.h#L90)、`generate.py`の`remap_mask_value` |
+| F-15 | うちのコアは**PCFR1しか書いていない**。`CH32RV_AFIO_PCFR2`は定義済みだが未使用で、`remap_mask_value()`は`bits`に収まらない上位を黙って捨てる | [HardwareSerial.cpp:22](../../cores/arduino/HardwareSerial.cpp#L22)、[ch32rv_registers.h:90](../../cores/arduino/ch32rv_registers.h#L90)、`generate.py`の`remap_mask_value` |
 
 ## `signal_aliases`が使えない理由
 

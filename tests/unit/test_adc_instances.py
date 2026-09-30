@@ -1,8 +1,8 @@
 """Every analog pad a variant names can actually be converted.
 
-analogRead() takes the channel from CH32_PIN_TO_ADC_CHANNEL and, where the
+analogRead() takes the channel from CH32RV_PIN_TO_ADC_CHANNEL and, where the
 series has several ADCs on disjoint pads, the instance from
-CH32_PIN_TO_ADC_INSTANCE. A pad that is in one macro and not the other is the
+CH32RV_PIN_TO_ADC_INSTANCE. A pad that is in one macro and not the other is the
 failure this guards: analogRead() returns 0 for a pad the header advertises,
 and nothing else notices, because a reading of 0 looks like a grounded input.
 
@@ -46,7 +46,7 @@ def _aliases(text: str) -> dict:
 def test_the_disjoint_series_are_the_only_ones():
     """A third one appearing is a decision, not a silent generator change."""
     found = {h.parent.name for h in VARIANTS
-             if "CH32_ADC_INSTANCE_COUNT" in h.read_text(encoding="utf-8")}
+             if "CH32RV_ADC_INSTANCE_COUNT" in h.read_text(encoding="utf-8")}
     assert found == set(DISJOINT), (
         f"series with several ADCs on disjoint pads changed: {sorted(found)}; "
         f"wiring_analog.c's single-instance path covers the rest")
@@ -55,8 +55,8 @@ def test_the_disjoint_series_are_the_only_ones():
 @pytest.mark.parametrize("header", VARIANTS, ids=lambda p: p.parent.name)
 def test_every_instance_pad_has_a_channel(header):
     text = header.read_text(encoding="utf-8")
-    channels = _macro_pairs(text, "CH32_PIN_TO_ADC_CHANNEL")
-    instances = _macro_pairs(text, "CH32_PIN_TO_ADC_INSTANCE")
+    channels = _macro_pairs(text, "CH32RV_PIN_TO_ADC_CHANNEL")
+    instances = _macro_pairs(text, "CH32RV_PIN_TO_ADC_INSTANCE")
     orphans = sorted(set(instances) - set(channels))
     assert not orphans, (
         f"{header.parent.name} gives {orphans} an ADC instance but no channel, "
@@ -66,19 +66,19 @@ def test_every_instance_pad_has_a_channel(header):
 @pytest.mark.parametrize("header", VARIANTS, ids=lambda p: p.parent.name)
 def test_the_instance_macro_travels_with_the_count(header):
     text = header.read_text(encoding="utf-8")
-    has_count = "CH32_ADC_INSTANCE_COUNT" in text
-    has_macro = "CH32_PIN_TO_ADC_INSTANCE(p)" in text
+    has_count = "CH32RV_ADC_INSTANCE_COUNT" in text
+    has_macro = "CH32RV_PIN_TO_ADC_INSTANCE(p)" in text
     assert has_count == has_macro, (
-        f"{header.parent.name}: CH32_ADC_INSTANCE_COUNT and "
-        f"CH32_PIN_TO_ADC_INSTANCE must be emitted together")
+        f"{header.parent.name}: CH32RV_ADC_INSTANCE_COUNT and "
+        f"CH32RV_PIN_TO_ADC_INSTANCE must be emitted together")
     if not has_count:
         return
-    count = int(re.search(r"#define CH32_ADC_INSTANCE_COUNT (\d+)", text).group(1))
-    table = re.search(r"#define CH32_ADC_INSTANCES \{(.*?)\n    \}", text, re.S)
-    assert table, f"{header.parent.name}: no CH32_ADC_INSTANCES table"
-    rows = re.findall(r"\{ CH32_ADC\d+_BASE,", table.group(1))
+    count = int(re.search(r"#define CH32RV_ADC_INSTANCE_COUNT (\d+)", text).group(1))
+    table = re.search(r"#define CH32RV_ADC_INSTANCES \{(.*?)\n    \}", text, re.S)
+    assert table, f"{header.parent.name}: no CH32RV_ADC_INSTANCES table"
+    rows = re.findall(r"\{ CH32RV_ADC\d+_BASE,", table.group(1))
     assert len(rows) == count, (
-        f"{header.parent.name}: CH32_ADC_INSTANCE_COUNT is {count} but the "
+        f"{header.parent.name}: CH32RV_ADC_INSTANCE_COUNT is {count} but the "
         f"table has {len(rows)} rows")
 
 
@@ -86,7 +86,7 @@ def test_the_instance_macro_travels_with_the_count(header):
 def test_the_a_aliases_stay_on_adc1(header):
     """A<n> is ADC1's numbering. If an alias moved, analogRead(A0) changed pad."""
     text = header.read_text(encoding="utf-8")
-    instances = _macro_pairs(text, "CH32_PIN_TO_ADC_INSTANCE")
+    instances = _macro_pairs(text, "CH32RV_PIN_TO_ADC_INSTANCE")
     if not instances:
         return
     wrong = {f"A{n}": pad for n, pad in _aliases(text).items()
@@ -99,8 +99,8 @@ def test_the_a_aliases_stay_on_adc1(header):
 def test_the_disjoint_pads_map_where_device_data_says(series):
     text = (REPO / "variants" / series / "pins_arduino.h").read_text(
         encoding="utf-8")
-    channels = _macro_pairs(text, "CH32_PIN_TO_ADC_CHANNEL")
-    instances = _macro_pairs(text, "CH32_PIN_TO_ADC_INSTANCE")
+    channels = _macro_pairs(text, "CH32RV_PIN_TO_ADC_CHANNEL")
+    instances = _macro_pairs(text, "CH32RV_PIN_TO_ADC_INSTANCE")
     for pad, (want_instance, want_channel) in DISJOINT[series].items():
         assert instances.get(pad, 1) == want_instance, f"{pad} instance"
         assert channels.get(pad) == want_channel, f"{pad} channel"

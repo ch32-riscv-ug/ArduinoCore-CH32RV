@@ -33,8 +33,8 @@ import sys
 # or a fact no table holds yet; everything ch32-device-data can answer is read
 # from it instead (load_family_facts), so there is no second copy to drift.
 #
-#   from the tables   CH32_GPIO_PORT_WIDTH, CH32_HSI_HZ, CH32_HPRE_LINEAR,
-#                     CH32_DM_DATA0_ADDR
+#   from the tables   CH32RV_GPIO_PORT_WIDTH, CH32RV_HSI_HZ, CH32RV_HPRE_LINEAR,
+#                     CH32RV_DM_DATA0_ADDR
 #   checked against   flash_latency, SERIES_CONFIG's vectors variant
 #     the tables
 #   ours              march/mabi (which optional extensions to enable: the
@@ -49,7 +49,7 @@ import sys
 # experiments 0001/0002. Only families proven by the equivalence harness are listed.
 # Startup/ISA parameters shared by every series in an EVT family.
 # Values come from the equivalence harness table in tests/build/startup/startup_equivalence.py.
-# CH32_HPRE_LINEAR is which of the two AHB-prescaler encodings the family uses,
+# CH32RV_HPRE_LINEAR is which of the two AHB-prescaler encodings the family uses,
 # read off its own EVT header (RCC_HPRE_DIV2 is 0x10 on one and 0x80 on the
 # other); the two tables are written out in cores/arduino/wiring_time.c.
     # CH32V407 and CH32X315 carry flash_latency=0 because neither family has a
@@ -71,34 +71,34 @@ import sys
     # and USB still gets its 48 MHz (PLLCLK/2). Defaults stay in spec.
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3 -DCH32_HIGHCODE",
+                     defines="-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_HIGHCODE",
                      systick64=0, flash_latency=0, adc_bits=10, i2c_has_rtr=0),
     "CH32V006": dict(march="rv32ec_zmmul_zicsr", mabi="ilp32e", f_cpu="24000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x1880 -DCH32_INTSYSCR_INIT=0x3",
+                     defines="-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3",
                      systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=0),
     "CH32V205": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x7 "
-                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
+                     defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x7 "
+                             "-DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="96000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
-                             "-DCH32_CORECFGR=0x1f",
+                     defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 "
+                             "-DCH32RV_CORECFGR=0x1f",
                      systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="96000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x0b "
-                             "-DCH32_CORECFGR=0x1f",
+                     defines="-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x0b "
+                             "-DCH32RV_CORECFGR=0x1f",
                      systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32V407": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="20000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x688 -DCH32_INTSYSCR_INIT=0x07 "
-                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x01 -DCH32_CSR805_CLR=0x100",
+                     defines="-DCH32RV_MSTATUS_INIT=0x688 -DCH32RV_INTSYSCR_INIT=0x07 "
+                             "-DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x01 -DCH32RV_CSR805_CLR=0x100",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32X035": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="48000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
-                             "-DCH32_CORECFGR=0x1f",
+                     defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 "
+                             "-DCH32RV_CORECFGR=0x1f",
                      systick64=1, flash_latency=2, adc_bits=12, i2c_has_rtr=0),
     "CH32X315": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="20000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x6088 -DCH32_INTSYSCR_INIT=0x07 "
-                             "-DCH32_CORECFGR=0x123703E1 -DCH32_CSR_BC1=0x01",
+                     defines="-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 "
+                             "-DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0),
     # CH32V103's table is a jump table and its startup never writes csr 0x804.
     # MPP = 3 (0x1888), not EVT's 0x88: sketches run in M mode on this part.
@@ -110,15 +110,15 @@ FAMILY = {
     # protects nothing here anyway: no PMP is set up, so memory and peripherals
     # are open to it. tests/unit/test_startup_parameters.py pins this deviation.
     "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="72000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x1888 -DCH32_MTVEC_MODE=1",
+                     defines="-DCH32RV_MSTATUS_INIT=0x1888 -DCH32RV_MTVEC_MODE=1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
-                             "-DCH32_CORECFGR=0x1f",
+                     defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 "
+                             "-DCH32RV_CORECFGR=0x1f",
                      systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
     "CH32M030": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
-                     defines="-DCH32_MSTATUS_INIT=0x88 -DCH32_INTSYSCR_INIT=0x3 "
-                             "-DCH32_CORECFGR=0x21 -DCH32_CSR_BC1=0x1",
+                     defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 "
+                             "-DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0),
     # Excluded, same reason as tests/build/startup/: CH32H417 boots via loadcode.
 }
@@ -367,13 +367,13 @@ def gen_vectors(variant: str, entries: list, form: str) -> str:
         " * this file starts at slot 1. Verified against the EVT startup",
         " * sources by tests/build/startup/ on every PR. */",
     ]
-    # A jump-instruction table (CH32V103) needs CH32_JMP; crt0 emits `j name`
+    # A jump-instruction table (CH32V103) needs CH32RV_JMP; crt0 emits `j name`
     # for it and selects mtvec mode 1.
-    macro = "CH32_JMP" if form == "jump" else "CH32_IRQ"
+    macro = "CH32RV_JMP" if form == "jump" else "CH32RV_IRQ"
     width = max((len(h) for h in entries if h), default=0)
     for slot, handler in enumerate(entries, start=1):
         if handler is None:
-            body = "    CH32_RSV"
+            body = "    CH32RV_RSV"
             pad = " " * max(1, 9 + width + 1 - len(body) + 4)
             out.append(f"{body}{pad}/* {slot:3d} reserved */")
         else:
@@ -411,7 +411,7 @@ def load_wide_timers(tables: pathlib.Path) -> dict:
     """family -> {timer numbers whose counter is wider than 16 bits}.
 
     On such a timer CNT, ATRLR and CHnCVR are one 32-bit register, and a
-    16-bit store is replicated into both halves - see ch32_registers.h. This
+    16-bit store is replicated into both halves - see ch32rv_registers.h. This
     was a hand-written table (WIDE_TIMERS) until timers.csv arrived upstream;
     the hand-written version had every emitted value right but one basis
     wrong (it called the plain CH32V20x TIM4 wide on the strength of the EVT
@@ -474,7 +474,7 @@ BEHAVIORAL_ERRATA = {
         "note": ("PC16/PC17 are the USB PHY pads; while AFIO_CTLR.USB_PHY_V33 "
                  "is set (reset default) an open-drain output on them drives "
                  "high instead of releasing. The core clears the bit whenever "
-                 "either pad becomes an output (ch32_gpio_set_config); USB "
+                 "either pad becomes an output (ch32rv_gpio_set_config); USB "
                  "init sets it again."),
     },
     "x035-no-gpio-open-drain": {
@@ -561,7 +561,7 @@ def load_pin_tables(tables: pathlib.Path):
     # four ADCs sit on *disjoint* pads (ADC1_IN0 is PA2, ADC2_IN0 is PB6), so
     # 30 of X305's 39 analog pads and 36 of X315's 48 cannot be named by any
     # A<n>. Those are collected separately, keyed by (instance, channel), and
-    # reached through CH32_PIN_TO_ADC_INSTANCE rather than through a new alias.
+    # reached through CH32RV_PIN_TO_ADC_INSTANCE rather than through a new alias.
     adc: dict[str, dict] = {}
     adc_all: dict[str, dict] = {}
     for r in functions:
@@ -664,7 +664,7 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # a requested watchdog timeout come out shorter than asked, never longer,
     # and "shorter than asked" is the survivable direction for a watchdog.
     # X033/X035 publish no F_LSI at all (requested upstream); those families
-    # simply get no CH32_LSI_HZ and wdtEnable() says so.
+    # simply get no CH32RV_LSI_HZ and wdtEnable() says so.
     lsi: dict = {}
     for r in read_table(tables, "operating_conditions.csv",
                         ("series", "symbol", "condition", "typ", "unit")):
@@ -706,7 +706,7 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # and leaves the ADC at its reset /4 - 12 MHz at 48 MHz against an 8 MHz
     # limit (measured 2026-09-30 through the probe). The core needs to be told
     # which register to write, so a family without ADCPRE but with CLK_DIV
-    # gets CH32_ADC_CLK_CTLR3=1; one with neither is an error, not a guess.
+    # gets CH32RV_ADC_CLK_CTLR3=1; one with neither is an error, not a guess.
     adc_ctlr3: set = set()
     for r in read_table(tables, "registers.csv",
                         ("family", "type", "register", "field", "kind")):
@@ -1009,7 +1009,7 @@ def gen_clock_init(family: str, steps: list, symbols: dict) -> str:
         " */",
         "#pragma once",
         "",
-        "#define CH32_CLOCK_INIT_RESET() do { \\",
+        "#define CH32RV_CLOCK_INIT_RESET() do { \\",
     ]
     skipped = []
     for r in steps:
@@ -1021,7 +1021,7 @@ def gen_clock_init(family: str, steps: list, symbols: dict) -> str:
             skipped.append(f"step {r['step']} ({action})")
             continue
         addr, v = int(r["address"], 16), int(value)
-        reg = f"CH32_REG32({addr:#010x}u)"
+        reg = f"CH32RV_REG32({addr:#010x}u)"
         if action == "set":
             out.append(f"    {reg} |= {v:#010x}u; \\")
         elif action == "clear":
@@ -1152,9 +1152,9 @@ UART_SIGNAL_RE = [
 # USART instances the core can drive: base address and whether the peripheral
 # hangs off APB1. UART6..8 sit at a different offset and use different RCC bits,
 # so they are out of scope for now (see docs/todo.ja.md).
-SERIAL_BASES = {1: "CH32_USART1_BASE", 2: "CH32_USART2_BASE",
-                3: "CH32_USART3_BASE", 4: "CH32_USART4_BASE",
-                5: "CH32_USART5_BASE"}
+SERIAL_BASES = {1: "CH32RV_USART1_BASE", 2: "CH32RV_USART2_BASE",
+                3: "CH32RV_USART3_BASE", 4: "CH32RV_USART4_BASE",
+                5: "CH32RV_USART5_BASE"}
 UART_ROUTE_ORDER = ("default", "main", "af-1", "af-2", "remap-1")
 
 # I2C signal naming is not normalized either: V003/X033/X035 say bare SCL/SDA,
@@ -1168,7 +1168,7 @@ I2C_SIGNAL_RE = [
 ]
 # Only the instances the register map covers. Both sit on APB1; families with
 # one I2C simply have no I2C2 pins in device-data, so nothing is emitted.
-I2C_BASES = {1: "CH32_I2C1_BASE", 2: "CH32_I2C2_BASE"}
+I2C_BASES = {1: "CH32RV_I2C1_BASE", 2: "CH32RV_I2C2_BASE"}
 # X033/X035 reach remap-5, and the af-N families (V205/X305/X315) carry only
 # alternate-function numbers - listed so the chooser can see them and say so.
 I2C_ROUTE_ORDER = ("default", "main", "af-3", "af-7",
@@ -1187,7 +1187,7 @@ SPI_SIGNAL_RE = [
     (re.compile(r"^SPI_(SCK|MISO|MOSI|NSS)$"),       lambda m: (1, m.group(1))),
     (re.compile(r"^(SCK|MISO|MOSI|NSS)$"),           lambda m: (1, m.group(1))),
 ]
-SPI_BASES = {1: "CH32_SPI1_BASE", 2: "CH32_SPI2_BASE", 3: "CH32_SPI3_BASE"}
+SPI_BASES = {1: "CH32RV_SPI1_BASE", 2: "CH32RV_SPI2_BASE", 3: "CH32RV_SPI3_BASE"}
 
 # DAC. One pad per channel, no remap to speak of - the output is wired to a
 # fixed pin - so this is only about naming the pad analogWrite() should treat
@@ -1205,7 +1205,7 @@ SPI_ROUTE_ORDER = ("default", "main", "af-4", "af-5",
 # the bit list can be non-contiguous (CH32V003 USART1_REMAP is bits 2 and 21),
 # so a value is spread over the listed positions, least significant bit first.
 REMAP_SELECTOR_RE = re.compile(r"^afio-(u(?:s)?art|i2c|spi)(\d+)-(?:rm|remap)$")
-CH32_AFIO_PCFR1_OFFSET = 0x04
+CH32RV_AFIO_PCFR1_OFFSET = 0x04
 
 
 def load_remap_fields(tables: pathlib.Path) -> dict:
@@ -1542,16 +1542,16 @@ def route_table(series: str, parts: list, pins: dict, remap: dict, kind: str,
 
 
 def emit_routes(out: list, prefix: str, roles: tuple, rows: list) -> None:
-    """The CH32_<prefix>_ROUTES initializer for ch32_route_t[]."""
+    """The CH32RV_<prefix>_ROUTES initializer for ch32rv_route_t[]."""
     if not rows:
         return
     out.append(f"/* {prefix} routes for setRoute()/setPins(): "
                f"route number, then {', '.join(roles)} */")
-    out.append(f"#define CH32_{prefix}_ROUTE_COUNT {len(rows)}")
-    out.append(f"#define CH32_{prefix}_ROUTES {{ \\")
+    out.append(f"#define CH32RV_{prefix}_ROUTE_COUNT {len(rows)}")
+    out.append(f"#define CH32RV_{prefix}_ROUTES {{ \\")
     for value, pads, v1, v2 in rows:
         names = [pad_name(*p) for p in pads]
-        names += ["CH32_ROUTE_NO_PIN"] * (3 - len(names))
+        names += ["CH32RV_ROUTE_NO_PIN"] * (3 - len(names))
         out.append(f"    {{ {value}, {{ {', '.join(names)} }}, "
                    f"0x{v1:08x}u, 0x{v2:08x}u }}, \\")
     out.append("}")
@@ -1678,7 +1678,7 @@ def gen_irqns(variant: str, entries: list) -> str:
     for slot, handler in enumerate(entries, start=1):
         if handler:
             name = handler.removesuffix("_Handler").removesuffix("_IRQHandler")
-            out.append(f"#define CH32_IRQN_{name:<{width}} {slot}")
+            out.append(f"#define CH32RV_IRQN_{name:<{width}} {slot}")
     return "\n".join(out) + "\n"
 
 
@@ -1770,19 +1770,19 @@ def gen_exti(variant: str, entries: list) -> str:
         " * EXTI vector grouping: handler name and the pin bits it covers. */",
         "#pragma once",
         "",
-        f"#define CH32_EXTI_GROUP_COUNT {len(groups)}",
+        f"#define CH32RV_EXTI_GROUP_COUNT {len(groups)}",
         "/* Pin bits that have an EXTI line (24 on the X0 parts, 16 elsewhere). */",
-        f"#define CH32_EXTI_LINES {EXTI_GPIO_LINES.get(variant, EXTI_GPIO_LINES_DEFAULT)}",
+        f"#define CH32RV_EXTI_LINES {EXTI_GPIO_LINES.get(variant, EXTI_GPIO_LINES_DEFAULT)}",
         "",
         "/* AFIO_EXTICR field layout: bits per EXTI line and lines per register. */",
-        f"#define CH32_EXTICR_FIELD_BITS {EXTICR_LAYOUT.get(variant, EXTICR_LAYOUT_DEFAULT)[0]}",
-        f"#define CH32_EXTICR_FIELDS_PER_REG {EXTICR_LAYOUT.get(variant, EXTICR_LAYOUT_DEFAULT)[1]}",
+        f"#define CH32RV_EXTICR_FIELD_BITS {EXTICR_LAYOUT.get(variant, EXTICR_LAYOUT_DEFAULT)[0]}",
+        f"#define CH32RV_EXTICR_FIELDS_PER_REG {EXTICR_LAYOUT.get(variant, EXTICR_LAYOUT_DEFAULT)[1]}",
         "",
         "/* X(handler, mask, irqn) for every EXTI vector this variant has. */",
-        "#define CH32_EXTI_GROUPS(X) \\",
+        "#define CH32RV_EXTI_GROUPS(X) \\",
     ]
     for name, mask in groups:
-        irq = "CH32_IRQN_" + name.removesuffix("_IRQHandler")
+        irq = "CH32RV_IRQN_" + name.removesuffix("_IRQHandler")
         out.append(f"    X({name}, 0x{mask:08x}u, {irq}) \\")
     out.append("    /* end */")
     return "\n".join(out) + "\n"
@@ -1886,16 +1886,16 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" *")
         for line in textwrap.wrap(f"Behaviour, errata {eid}: {spec['note']}", 72):
             out.append(f" * {line}")
-    out += [" */", "#pragma once", "", '#include "ch32_pins.h"', ""]
+    out += [" */", "#pragma once", "", '#include "ch32rv_pins.h"', ""]
 
-    out.append(f"#define CH32_VARIANT_{series} 1")
+    out.append(f"#define CH32RV_VARIANT_{series} 1")
     # The QingKe core, from index/series.csv, so the core can branch on what the
     # silicon does rather than on a list of part names - Arduino.h picks the CSR
     # that holds the interrupt enable by it, because QingKe V4 traps mstatus in the
     # U mode these parts run sketches in (X035, L103, V307; 2026-09-22/23). A
     # dual-core series names both.
     for token in [t.strip() for t in cores.get(series, "").split("+") if t.strip()]:
-        out.append("#define CH32_CORE_" + re.sub(r"[^A-Z0-9]+", "_", token.upper()) + " 1")
+        out.append("#define CH32RV_CORE_" + re.sub(r"[^A-Z0-9]+", "_", token.upper()) + " 1")
     out.append("")
 
     # --- peripheral clock enables ---
@@ -1903,12 +1903,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     out.append(" * The RCC register that turns each block on, and the bit. Per family,")
     out.append(" * because it differs: CH32V006 has USART2 on the APB2 register at bit 13")
     out.append(" * where the F1-style parts have it on APB1 bit 17. Use through")
-    out.append(" * ch32_clock_enable(NAME) / ch32_clock_disable(NAME). ---- */")
+    out.append(" * ch32rv_clock_enable(NAME) / ch32rv_clock_disable(NAME). ---- */")
     for name in sorted(clken):
         addr, mask = clken[name]
         ident = re.sub(r"[^A-Za-z0-9]", "_", name)
-        out.append(f"#define CH32_CLKEN_{ident}_ADDR {addr:#010x}u")
-        out.append(f"#define CH32_CLKEN_{ident}_MASK {mask:#010x}u")
+        out.append(f"#define CH32RV_CLKEN_{ident}_ADDR {addr:#010x}u")
+        out.append(f"#define CH32RV_CLKEN_{ident}_MASK {mask:#010x}u")
     gpio = {n: clken[n] for n in clken if re.fullmatch(r"GPIO[A-H]", n)}
     if gpio:
         addrs = {a for a, _ in gpio.values()}
@@ -1923,15 +1923,15 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         if len(addrs) != 1:
             raise SystemExit(f"{series}: GPIO clock enables span registers")
         out.append("/* The ports share one register, PA at _BIT0 and the rest contiguous. */")
-        out.append(f"#define CH32_CLKEN_GPIO_ADDR {addrs.pop():#010x}u")
-        out.append(f"#define CH32_CLKEN_GPIO_BIT0 {base_bit}")
+        out.append(f"#define CH32RV_CLKEN_GPIO_ADDR {addrs.pop():#010x}u")
+        out.append(f"#define CH32RV_CLKEN_GPIO_BIT0 {base_bit}")
     out.append("")
 
     out.append(f"/* ---- GPIO pads: {len(union)} in the series, "
                f"{len(common)} of them on every part ---- */")
     for port, bit in union:
         out.append(f"#define {pad_name(port, bit):<{width}} "
-                   f"CH32_PIN({PORTS.index(port)}, {bit:2d})")
+                   f"CH32RV_PIN({PORTS.index(port)}, {bit:2d})")
     out.append("")
 
     def mask_block(name: str, pads_set, comment: str):
@@ -1942,15 +1942,15 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 if p == port:
                     mask |= 1 << b
             absent = "" if mask else "   /* port absent */"
-            out.append(f"#define CH32_{name}_{port} 0x{mask:08x}u{absent}")
-        out.append(f"#define CH32_{name}(port) ( \\")
+            out.append(f"#define CH32RV_{name}_{port} 0x{mask:08x}u{absent}")
+        out.append(f"#define CH32RV_{name}(port) ( \\")
         for i, port in enumerate(PORTS):
-            out.append(f"    (port) == {i} ? CH32_{name}_{port} : \\")
+            out.append(f"    (port) == {i} ? CH32RV_{name}_{port} : \\")
         out.append("    0u)")
         out.append("")
 
     def sku_mask_block():
-        """CH32_PORT_MASK_*, narrowed to the selected part number.
+        """CH32RV_PORT_MASK_*, narrowed to the selected part number.
 
         The variant header serves the whole series, but which pads are bonded
         out is a property of the package, not the series - CH32V003J4M6 (SOP8)
@@ -1958,10 +1958,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         ARDUINO_<part> from build.board, so the package is knowable at compile
         time; nothing read it before, and digitalPinIsValid() answered for the
         union no matter which part number was selected. (Since 2026-10-01 the
-        part is CH32_PART_<part>, from build.part; ARDUINO_<board> no longer
+        part is CH32RV_PART_<part>, from build.part; ARDUINO_<board> no longer
         moves with the menu.)
 
-        The ANY menu entry sets CH32_PART_ANY, which matches no branch here
+        The ANY menu entry sets CH32RV_PART_ANY, which matches no branch here
         and falls through to the union - correct, because ANY promises nothing
         about the package. Parts that bond the same pads share one branch.
         """
@@ -1985,7 +1985,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" * whole series. See docs/board-layer-rules.ja.md. */")
         for port in PORTS:
             if port not in present:
-                out.append(f"#define CH32_PORT_MASK_{port} 0x00000000u"
+                out.append(f"#define CH32RV_PORT_MASK_{port} 0x00000000u"
                            f"   /* port absent */")
 
         groups: dict = {}
@@ -1993,17 +1993,17 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             groups.setdefault(masks_for(pads.get(part, set())), []).append(part)
         for i, (values, members) in enumerate(groups.items()):
             guard = "#if" if i == 0 else "#elif"
-            cond = " || ".join(f"defined(CH32_PART_{m})" for m in members)
+            cond = " || ".join(f"defined(CH32RV_PART_{m})" for m in members)
             out.append(f"{guard} {cond}")
             for port, mask in zip(present, values):
-                out.append(f"#define CH32_PORT_MASK_{port} 0x{mask:08x}u")
+                out.append(f"#define CH32RV_PORT_MASK_{port} 0x{mask:08x}u")
         out.append("#else   /* ANY, or a board that sets no part: the series union */")
         for port, mask in zip(present, masks_for(union)):
-            out.append(f"#define CH32_PORT_MASK_{port} 0x{mask:08x}u")
+            out.append(f"#define CH32RV_PORT_MASK_{port} 0x{mask:08x}u")
         out.append("#endif")
-        out.append("#define CH32_PORT_MASK(port) ( \\")
+        out.append("#define CH32RV_PORT_MASK(port) ( \\")
         for i, port in enumerate(PORTS):
-            out.append(f"    (port) == {i} ? CH32_PORT_MASK_{port} : \\")
+            out.append(f"    (port) == {i} ? CH32RV_PORT_MASK_{port} : \\")
         out.append("    0u)")
         out.append("")
 
@@ -2016,11 +2016,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         pins = []
         for eid, spec in unusable:
             for port, bit in spec["pads"]:
-                pins.append(f"CH32_PIN({PORTS.index(port)}, {bit})"
+                pins.append(f"CH32RV_PIN({PORTS.index(port)}, {bit})"
                             f" /* {pad_name(port, bit)}, {eid} */")
         out.append("/* Register bits that must never be driven; see the errata note above. */")
-        out.append(f"#define CH32_UNUSABLE_PIN_COUNT {len(pins)}")
-        out.append("#define CH32_UNUSABLE_PINS { \\")
+        out.append(f"#define CH32RV_UNUSABLE_PIN_COUNT {len(pins)}")
+        out.append("#define CH32RV_UNUSABLE_PINS { \\")
         for s in pins:
             out.append(f"    {s}, \\")
         out.append("    }")
@@ -2029,7 +2029,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     out.append(f"#define NUM_DIGITAL_PINS {hi + 1}   "
                f"/* highest pin number + 1, not a pad count */")
     out.append(f"#define PINS_COUNT       NUM_DIGITAL_PINS")
-    out.append(f"#define CH32_GPIO_COUNT  {len(union)}   /* actual pads in the series */")
+    out.append(f"#define CH32RV_GPIO_COUNT  {len(union)}   /* actual pads in the series */")
     out.append("")
 
     # --- analog ---
@@ -2062,7 +2062,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         for ch in sorted(channels):
             port, bit = channels[ch]
             out.append(f"#define A{ch:<3} {pad_name(port, bit)}")
-        out.append("#define CH32_PIN_TO_ADC_CHANNEL(p) ( \\")
+        out.append("#define CH32RV_PIN_TO_ADC_CHANNEL(p) ( \\")
         for ch in sorted(channels):
             port, bit = channels[ch]
             out.append(f"    (p) == {pad_name(port, bit)} ? {ch} : \\")
@@ -2073,7 +2073,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                     extra.items(), key=lambda kv: (kv[0][0], kv[0][1])):
                 out.append(f"    (p) == {pad_name(port, bit)} ? {ch} : \\")
         out.append("    NOT_AN_ANALOG_PIN)")
-        out.append("#define CH32_ADC_CHANNEL_TO_PIN(c) ( \\")
+        out.append("#define CH32RV_ADC_CHANNEL_TO_PIN(c) ( \\")
         for ch in sorted(channels):
             port, bit = channels[ch]
             out.append(f"    (c) == {ch} ? {pad_name(port, bit)} : \\")
@@ -2104,21 +2104,21 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" * This series puts its ADCs on DISJOINT pads, so a pad")
         out.append(" * names an instance as well as a channel and A<n>, which")
         out.append(" * is ADC1's numbering, cannot reach these. analogRead()")
-        out.append(" * takes the instance from CH32_PIN_TO_ADC_INSTANCE.")
+        out.append(" * takes the instance from CH32RV_PIN_TO_ADC_INSTANCE.")
         out.append(" * Bases are from device-data register_blocks.csv; the")
         out.append(" * register offsets are the same on every family. ---- */")
-        out.append(f"#define CH32_ADC_INSTANCE_COUNT {len(instances)}")
+        out.append(f"#define CH32RV_ADC_INSTANCE_COUNT {len(instances)}")
         for inst in instances:
             if inst != 1:
-                out.append(f"#define CH32_ADC{inst}_BASE {bases[inst]:#010x}u")
+                out.append(f"#define CH32RV_ADC{inst}_BASE {bases[inst]:#010x}u")
         out.append("/* { base, clock-enable register, clock-enable bit }, "
                    "ADC1 first. */")
-        out.append("#define CH32_ADC_INSTANCES { \\")
+        out.append("#define CH32RV_ADC_INSTANCES { \\")
         for inst in instances:
-            out.append(f"    {{ CH32_ADC{inst}_BASE, CH32_CLKEN_ADC{inst}_ADDR, "
-                       f"CH32_CLKEN_ADC{inst}_MASK }}, \\")
+            out.append(f"    {{ CH32RV_ADC{inst}_BASE, CH32RV_CLKEN_ADC{inst}_ADDR, "
+                       f"CH32RV_CLKEN_ADC{inst}_MASK }}, \\")
         out.append("    }")
-        out.append("#define CH32_PIN_TO_ADC_INSTANCE(p) ( \\")
+        out.append("#define CH32RV_PIN_TO_ADC_INSTANCE(p) ( \\")
         for (inst, ch), (port, bit) in sorted(
                 extra.items(), key=lambda kv: (kv[0][0], kv[0][1])):
             out.append(f"    (p) == {pad_name(port, bit)} ? {inst} : \\")
@@ -2155,15 +2155,15 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             where = ("on every part" if coverage == len(parts)
                      else f"on {coverage} of {len(parts)} parts")
             out.append(f"/* USART{index}: route {route}, {where} */")
-            out.append(f"#define CH32_SERIAL{index}_TX {pad_name(*tx)}")
-            out.append(f"#define CH32_SERIAL{index}_RX {pad_name(*rx)}")
+            out.append(f"#define CH32RV_SERIAL{index}_TX {pad_name(*tx)}")
+            out.append(f"#define CH32RV_SERIAL{index}_RX {pad_name(*rx)}")
             out.extend(alternatives("uart", index, route, ("TX", "RX")))
             name = handler_of[index]
-            out.append(f"#define CH32_SERIAL{index}_HANDLER {name}")
-            out.extend(clken_defines(f"CH32_SERIAL{index}",
+            out.append(f"#define CH32RV_SERIAL{index}_HANDLER {name}")
+            out.extend(clken_defines(f"CH32RV_SERIAL{index}",
                                      f"USART{index}", f"UART{index}"))
-            out.append(f"#define CH32_SERIAL{index}_IRQ "
-                       f"CH32_IRQN_{name.removesuffix('_IRQHandler')}")
+            out.append(f"#define CH32RV_SERIAL{index}_IRQ "
+                       f"CH32RV_IRQN_{name.removesuffix('_IRQHandler')}")
             value = route_remap_value(route)
             bits = remap.get((series, "usart", index))
             if value is None:
@@ -2184,9 +2184,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 for register, (mask, val) in sorted(
                         remap_mask_value(bits, value).items()):
                     suffix = "" if register == "PCFR1" else "2"
-                    out.append(f"#define CH32_SERIAL{index}_REMAP{suffix}_MASK "
+                    out.append(f"#define CH32RV_SERIAL{index}_REMAP{suffix}_MASK "
                                f"0x{mask:08x}u")
-                    out.append(f"#define CH32_SERIAL{index}_REMAP{suffix}_VAL  "
+                    out.append(f"#define CH32RV_SERIAL{index}_REMAP{suffix}_VAL  "
                                f"0x{val:08x}u")
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
@@ -2207,21 +2207,21 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         # A board can wire a different USART than the series-wide choice: the
         # generator optimises for the ANY entry (pins present on every part),
         # while a real board only has to work for itself. Overridable with
-        # -DCH32_SERIAL_DEFAULT=<n>, which is what the uart_scan manual
+        # -DCH32RV_SERIAL_DEFAULT=<n>, which is what the uart_scan manual
         # test reports.
-        out.append("#ifndef CH32_SERIAL_DEFAULT")
-        out.append(f"#define CH32_SERIAL_DEFAULT {default}")
+        out.append("#ifndef CH32RV_SERIAL_DEFAULT")
+        out.append(f"#define CH32RV_SERIAL_DEFAULT {default}")
         out.append("#endif")
         # TX / RX: the pads of Serial's port, in the shape arduino-esp32's
         # pins_arduino.h has them (TX, RX next to SDA, SCL, SS ...). They
-        # follow CH32_SERIAL_DEFAULT, so a board that overrides it gets the
+        # follow CH32RV_SERIAL_DEFAULT, so a board that overrides it gets the
         # matching pads.
         out.append("/* The monitor port's default pads (Serial = SerialN, N above). */")
         out.append("#ifndef PIN_SERIAL_TX")
         for n, i in enumerate(sorted(chosen)):
-            out.append(f"#{'if' if n == 0 else 'elif'} CH32_SERIAL_DEFAULT == {i}")
-            out.append(f"#define PIN_SERIAL_TX CH32_SERIAL{i}_TX")
-            out.append(f"#define PIN_SERIAL_RX CH32_SERIAL{i}_RX")
+            out.append(f"#{'if' if n == 0 else 'elif'} CH32RV_SERIAL_DEFAULT == {i}")
+            out.append(f"#define PIN_SERIAL_TX CH32RV_SERIAL{i}_TX")
+            out.append(f"#define PIN_SERIAL_RX CH32RV_SERIAL{i}_RX")
         out.append("#endif")
         out.append("#endif")
         out.append("#if defined(PIN_SERIAL_TX) && !defined(TX)")
@@ -2241,9 +2241,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             where = ("on every part" if coverage == len(parts)
                      else f"on {coverage} of {len(parts)} parts")
             out.append(f"/* I2C{index}: route {route}, {where} */")
-            out.append(f"#define CH32_I2C{index}_SCL {pad_name(*scl)}")
-            out.append(f"#define CH32_I2C{index}_SDA {pad_name(*sda)}")
-            out.extend(clken_defines(f"CH32_I2C{index}", f"I2C{index}"))
+            out.append(f"#define CH32RV_I2C{index}_SCL {pad_name(*scl)}")
+            out.append(f"#define CH32RV_I2C{index}_SDA {pad_name(*sda)}")
+            out.extend(clken_defines(f"CH32RV_I2C{index}", f"I2C{index}"))
             out.extend(alternatives("i2c", index, route, ("SCL", "SDA")))
             value = route_remap_value(route)
             bits = remap.get((series, "i2c", index))
@@ -2255,9 +2255,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 for register, (mask, val) in sorted(
                         remap_mask_value(bits, value).items()):
                     suffix = "" if register == "PCFR1" else "2"
-                    out.append(f"#define CH32_I2C{index}_REMAP{suffix}_MASK "
+                    out.append(f"#define CH32RV_I2C{index}_REMAP{suffix}_MASK "
                                f"0x{mask:08x}u")
-                    out.append(f"#define CH32_I2C{index}_REMAP{suffix}_VAL  "
+                    out.append(f"#define CH32RV_I2C{index}_REMAP{suffix}_VAL  "
                                f"0x{val:08x}u")
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
@@ -2265,7 +2265,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             emit_routes(out, f"I2C{index}", ("SCL", "SDA"),
                         route_table(series, parts, i2cs, remap, "i2c",
                                     ("SCL", "SDA"), index))
-        # No CH32_WIRE_DEFAULT to match CH32_SERIAL_DEFAULT: the Arduino
+        # No CH32RV_WIRE_DEFAULT to match CH32RV_SERIAL_DEFAULT: the Arduino
         # ecosystem names I2C buses Wire/Wire1 in bus order, so the library
         # binds the bare name to the first instance itself.
         #
@@ -2278,8 +2278,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                    % first)
         out.append(" * the chip, NOT a claim about how any board is wired. */")
         out.append("#ifndef PIN_WIRE_SCL")
-        out.append(f"#define PIN_WIRE_SCL CH32_I2C{first}_SCL")
-        out.append(f"#define PIN_WIRE_SDA CH32_I2C{first}_SDA")
+        out.append(f"#define PIN_WIRE_SCL CH32RV_I2C{first}_SCL")
+        out.append(f"#define PIN_WIRE_SDA CH32RV_I2C{first}_SDA")
         out.append("#define SCL PIN_WIRE_SCL")
         out.append("#define SDA PIN_WIRE_SDA")
         out.append("#endif")
@@ -2295,10 +2295,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             where = ("on every part" if coverage == len(parts)
                      else f"on {coverage} of {len(parts)} parts")
             out.append(f"/* SPI{index}: route {route}, {where} */")
-            out.append(f"#define CH32_SPI{index}_SCK {pad_name(*sck)}")
-            out.append(f"#define CH32_SPI{index}_MISO {pad_name(*miso)}")
-            out.append(f"#define CH32_SPI{index}_MOSI {pad_name(*mosi)}")
-            out.extend(clken_defines(f"CH32_SPI{index}", f"SPI{index}"))
+            out.append(f"#define CH32RV_SPI{index}_SCK {pad_name(*sck)}")
+            out.append(f"#define CH32RV_SPI{index}_MISO {pad_name(*miso)}")
+            out.append(f"#define CH32RV_SPI{index}_MOSI {pad_name(*mosi)}")
+            out.extend(clken_defines(f"CH32RV_SPI{index}", f"SPI{index}"))
             out.extend(alternatives("spi", index, route,
                                     ("SCK", "MISO", "MOSI")))
             value = route_remap_value(route)
@@ -2311,9 +2311,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 for register, (mask, val) in sorted(
                         remap_mask_value(bits, value).items()):
                     suffix = "" if register == "PCFR1" else "2"
-                    out.append(f"#define CH32_SPI{index}_REMAP{suffix}_MASK "
+                    out.append(f"#define CH32RV_SPI{index}_REMAP{suffix}_MASK "
                                f"0x{mask:08x}u")
-                    out.append(f"#define CH32_SPI{index}_REMAP{suffix}_VAL  "
+                    out.append(f"#define CH32RV_SPI{index}_REMAP{suffix}_VAL  "
                                f"0x{val:08x}u")
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
@@ -2327,9 +2327,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                    % first)
         out.append(" * the chip, NOT a claim about how any board is wired. */")
         out.append("#ifndef PIN_SPI_SCK")
-        out.append(f"#define PIN_SPI_SCK CH32_SPI{first}_SCK")
-        out.append(f"#define PIN_SPI_MISO CH32_SPI{first}_MISO")
-        out.append(f"#define PIN_SPI_MOSI CH32_SPI{first}_MOSI")
+        out.append(f"#define PIN_SPI_SCK CH32RV_SPI{first}_SCK")
+        out.append(f"#define PIN_SPI_MISO CH32RV_SPI{first}_MISO")
+        out.append(f"#define PIN_SPI_MOSI CH32RV_SPI{first}_MOSI")
         out.append("#define SCK PIN_SPI_SCK")
         out.append("#define MISO PIN_SPI_MISO")
         out.append("#define MOSI PIN_SPI_MOSI")
@@ -2368,9 +2368,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         ordered = sorted(pwm_pads.items(), key=lambda kv: (kv[1], kv[0]))
         out.append(f"/* ---- PWM: {len(ordered)} pads on TIM1/TIM2/TIM3, "
                    "default route ---- */")
-        out.append(f"#define CH32_PWM_PIN_COUNT {len(ordered)}")
+        out.append(f"#define CH32RV_PWM_PIN_COUNT {len(ordered)}")
         for name, index in (("TIMER", 0), ("CHANNEL", 1)):
-            out.append(f"#define CH32_PWM_PIN_TO_{name}(p) ( \\")
+            out.append(f"#define CH32RV_PWM_PIN_TO_{name}(p) ( \\")
             for padkey, tc in ordered:
                 out.append(f"    (p) == {pad_name(*padkey)} ? {tc[index]} : \\")
             out.append("    0)")
@@ -2388,7 +2388,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             where = ("on every part" if coverage == len(parts)
                      else f"on {coverage} of {len(parts)} parts")
             out.append(f"/* DAC{channel}: {where} */")
-            out.append(f"#define CH32_DAC{channel}_PIN {pad_name(*pad)}")
+            out.append(f"#define CH32RV_DAC{channel}_PIN {pad_name(*pad)}")
         out.append("")
 
     # --- Timer capabilities, tone() and Servo timers ---
@@ -2410,7 +2410,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         if not m:
             continue
         number = int(m.group(1))
-        # Only the timers ch32_registers.h names. V30x/V4x7 also have TIM8..10
+        # Only the timers ch32rv_registers.h names. V30x/V4x7 also have TIM8..10
         # on APB2, which nothing in the core can address yet (docs/todo.ja.md).
         if number > 7:
             continue
@@ -2447,12 +2447,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                                  f"capabilities: {previous} vs {cap}")
             timer_caps[number] = cap
 
-    out.append("/* ---- Timer resource descriptors.  CH32_TIMER_TABLE(X) fields:")
+    out.append("/* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:")
     out.append(" * number, kind, counter bits, channels, complementary, base,")
     out.append(" * clock-enable address/mask, update IRQ, update handler. ---- */")
-    out.append(f"#define CH32_TIMER_COUNT {len(timer_caps)}")
+    out.append(f"#define CH32RV_TIMER_COUNT {len(timer_caps)}")
     if timer_caps:
-        out.append("#define CH32_TIMER_TABLE(X) \\")
+        out.append("#define CH32RV_TIMER_TABLE(X) \\")
         ordered_caps = sorted(timer_caps.items())
         for i, (number, cap) in enumerate(ordered_caps):
             handler = candidates[number]
@@ -2462,11 +2462,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(
                 f"    X({number}, {kind_value.get(cap['kind'], 0)}, "
                 f"{cap['width']}, {cap['channels']}, "
-                f"{1 if cap['complementary'] else 0}, CH32_TIM{number}_BASE, "
-                f"{addr:#010x}u, {mask:#010x}u, CH32_IRQN_{irqn}, "
+                f"{1 if cap['complementary'] else 0}, CH32RV_TIM{number}_BASE, "
+                f"{addr:#010x}u, {mask:#010x}u, CH32RV_IRQN_{irqn}, "
                 f"{handler}){suffix}")
     else:
-        out.append("#define CH32_TIMER_TABLE(X) /* no managed TIM */")
+        out.append("#define CH32RV_TIMER_TABLE(X) /* no managed TIM */")
     out.append("")
 
     def pick(pool):
@@ -2490,17 +2490,17 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f" *      is disturbed while {users}. ---- */")
         else:
             out.append(f"/* ---- {kind}: preferred TIM{number}, free of PWM pads. ---- */")
-        prefix = "CH32_TONE" if kind == "tone()" else "CH32_SERVO"
+        prefix = "CH32RV_TONE" if kind == "tone()" else "CH32RV_SERVO"
         out.append(f"#define {prefix}_TIMER {number}")
-        out.append(f"#define {prefix}_TIMER_BASE CH32_TIM{number}_BASE")
+        out.append(f"#define {prefix}_TIMER_BASE CH32RV_TIM{number}_BASE")
         out.extend(clken_defines(f"{prefix}_TIMER", f"TIM{number}"))
-        out.append(f"#define {prefix}_TIMER_IRQ CH32_IRQN_{irqn}")
+        out.append(f"#define {prefix}_TIMER_IRQ CH32RV_IRQN_{irqn}")
         out.append(f"#define {prefix}_TIMER_HANDLER {handler}")
         out.append(f"#define {prefix}_SHARES_PWM {1 if shared else 0}")
         if number in wide_timers:
             out.append(f"/* CNT and ATRLR are 32 bit on this timer: a 16-bit"
                        f" store would be")
-            out.append(f" * replicated into both halves. See ch32_registers.h. */")
+            out.append(f" * replicated into both halves. See ch32rv_registers.h. */")
         out.append(f"#define {prefix}_TIMER_BITS "
                    f"{32 if number in wide_timers else 16}")
         out.append("")
@@ -2532,12 +2532,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
 
 def clock_defines(clk: dict) -> str:
     """The resolved clock setting, as the -D values SystemInit reads."""
-    return (f"-DCH32_CLOCK_SYSCLK_HZ={clk['sysclk']} "
-            f"-DCH32_CLOCK_USE_PLL={1 if clk['config'] else 0} "
-            f"-DCH32_CLOCK_PLL_MASK={clk['pll_mask']:#x}u "
-            f"-DCH32_CLOCK_PLL_VALUE={clk['pll_value']:#x}u "
-            f"-DCH32_CLOCK_EXTEN_ADDR={clk['exten_addr']:#x}u "
-            f"-DCH32_CLOCK_EXTEN_BITS={clk['exten_bits']:#x}u")
+    return (f"-DCH32RV_CLOCK_SYSCLK_HZ={clk['sysclk']} "
+            f"-DCH32RV_CLOCK_USE_PLL={1 if clk['config'] else 0} "
+            f"-DCH32RV_CLOCK_PLL_MASK={clk['pll_mask']:#x}u "
+            f"-DCH32RV_CLOCK_PLL_VALUE={clk['pll_value']:#x}u "
+            f"-DCH32RV_CLOCK_EXTEN_ADDR={clk['exten_addr']:#x}u "
+            f"-DCH32RV_CLOCK_EXTEN_BITS={clk['exten_bits']:#x}u")
 
 
 def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict,
@@ -2587,23 +2587,23 @@ def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict
     latency = clk["latency"] if clk["latency"] is not None else fam["flash_latency"]
     lines.append(
         f"{board}.build.core_defines="
-        f"-DCH32_GPIO_PORT_WIDTH={fact['port_width']} "
-        f"-DCH32_SYSTICK_64={fam['systick64']} "
-        f"-DCH32_SYSTICK_V103={1 if cfg['family'] == 'CH32V103' else 0} "
-        f"-DCH32_HSI_HZ={fact['hsi_hz']} "
-        f"-DCH32_FLASH_LATENCY={latency} "
-        f"-DCH32_ADC_BITS={fam['adc_bits']} "
-        f"-DCH32_I2C_HAS_RTR={fam['i2c_has_rtr']} "
-        f"-DCH32_HPRE_LINEAR={fact['hpre_linear']} "
-        f"-DCH32_FLASH_ACTLR_LATENCY_MASK={fact['latency_mask']:#x}u "
-        f"-DCH32_ADC_MAX_HZ={fact['adc_max_hz']}u"
-        + (" -DCH32_ADC_CLK_CTLR3=1" if fact['adc_clk_ctlr3'] else "")
-        + (f" -DCH32_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
-        + (f" -DCH32_IWDG_BASE={fact['iwdg_base']:#x}u"
+        f"-DCH32RV_GPIO_PORT_WIDTH={fact['port_width']} "
+        f"-DCH32RV_SYSTICK_64={fam['systick64']} "
+        f"-DCH32RV_SYSTICK_V103={1 if cfg['family'] == 'CH32V103' else 0} "
+        f"-DCH32RV_HSI_HZ={fact['hsi_hz']} "
+        f"-DCH32RV_FLASH_LATENCY={latency} "
+        f"-DCH32RV_ADC_BITS={fam['adc_bits']} "
+        f"-DCH32RV_I2C_HAS_RTR={fam['i2c_has_rtr']} "
+        f"-DCH32RV_HPRE_LINEAR={fact['hpre_linear']} "
+        f"-DCH32RV_FLASH_ACTLR_LATENCY_MASK={fact['latency_mask']:#x}u "
+        f"-DCH32RV_ADC_MAX_HZ={fact['adc_max_hz']}u"
+        + (" -DCH32RV_ADC_CLK_CTLR3=1" if fact['adc_clk_ctlr3'] else "")
+        + (f" -DCH32RV_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
+        + (f" -DCH32RV_IWDG_BASE={fact['iwdg_base']:#x}u"
            if fact['iwdg_base'] else "")
         # data1 is not passed: it is data0 + 4 everywhere, checked when the
         # table is read, and two properties that must agree is one too many.
-        + (f" -DCH32_DM_DATA0_ADDR={fact['dm_data0']:#x}u"
+        + (f" -DCH32RV_DM_DATA0_ADDR={fact['dm_data0']:#x}u"
            if fact['dm_data0'] else ""))
     # Its own property, not part of core_defines: a pnum entry has to be able
     # to replace it outright, and a menu value that referred back to the board
@@ -2644,7 +2644,7 @@ def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict
     for pn, label, flash, sram in entries:
         pfx = f"{board}.menu.pnum.{pn}"
         lines.append(f"{pfx}={label}")
-        # The part goes to CH32_PART_<pn>; ARDUINO_<board> stays the board's
+        # The part goes to CH32RV_PART_<pn>; ARDUINO_<board> stays the board's
         # (platform.txt), whichever part is picked.
         lines.append(f"{pfx}.build.part={pn}")
         lines.append(f"{pfx}.build.ldscript={ld_for(flash, sram)}")

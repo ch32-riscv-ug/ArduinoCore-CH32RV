@@ -27,7 +27,7 @@ ADR化されている提案:
 - [ADR-0002](adr/0002-toolchain-distribution.ja.md): default toolchainは**xPack riscv-none-elf-gccのGitHub Releases直リンク参照**(候補14.3.0-1)。WCH forkは比較lane限定
 - [ADR-0003](adr/0003-owned-startup-vector-linker.ja.md): startup/CRT/vector/linkerは**own実装**。共通crt0+family別vector include(将来device-data生成)、コンストラクタ呼び出し込み、VectorInRAMはld切替
 - [ADR-0004](adr/0004-runtime-and-cxx.ja.md): **newlib-nano default、printf %fはmenu opt-in、GNU++17**(-fno-exceptions/-fno-rtti/-fno-threadsafe-statics)。コアAPIはprintf非依存。ltoa/ultoa/dtostrfはcore提供
-- [ADR-0005](adr/0005-board-structure-and-fqbn.ja.md): boardは**family単位+pnumメニューに全型番**。boards.txt/ld/variantはdevice-dataから自動生成(手編集CI拒否、locked commit検証)。暫定FQBN=`ch32-riscv-ug:ch32v:<BOARD>:pnum=<型番>`
+- [ADR-0005](adr/0005-board-structure-and-fqbn.ja.md): boardは**family単位+pnumメニューに全型番**。boards.txt/ld/variantはdevice-dataから自動生成(手編集CI拒否、locked commit検証)。暫定FQBN=`ch32-riscv-ug:ch32rv:<BOARD>:pnum=<型番>`
 - [ADR-0006](adr/0006-rtos-policy.ja.md): **コアはベアメタル単一セマンティクス**。初期リリースはRTOSなし、将来はコア同梱FreeRTOSライブラリ(UNO R4方式)が第一候補。tickソース差替可能なHALとConfig置換フックをQ-013で先行実装
 - [ADR-0007](adr/0007-user-build-option-injection.ja.md): **`build.extra_flags`はコアで使わずユーザー注入専用**(--build-property/boards.local.txt)。CIが注入到達を常時ガード
 - [ADR-0008](adr/0008-upload-strategy.ja.md): **書き込みdefaultはWCH-LinkE**(probe-rs系frontend、gap familyはwlink/OpenOCD併用)。開発もLinkEで進め、USB-ISP/UART-ISP/board固有BL(UIAPduino等)を段階追加。互換programmerはTier管理
@@ -67,7 +67,7 @@ ADR化されている提案:
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 無改変snapshot(47ファイル、LGPL-2.1-or-later) | `api-sync`(upstreamとbyte一致) |
 | `cores/arduino/crt0_ch32.S` | 統合startup。EVT等価性を13バリアントで検証(39 check OK)。**CH32V003実機で動作確認済み**(実験0010) | `startup-equivalence` |
 | `cores/arduino/{Arduino.h,main.cpp}` | ArduinoCore-APIへの接続とentry point | `compile-matrix` |
-| `cores/arduino/{ch32_registers.h,ch32_gpio.h}` | 自前の最小レジスタmapとGPIO primitive(family差を吸収) | `compile-matrix` |
+| `cores/arduino/{ch32rv_registers.h,ch32rv_gpio.h}` | 自前の最小レジスタmapとGPIO primitive(family差を吸収) | `compile-matrix` |
 | `cores/arduino/{wiring_digital.c,wiring_time.c}` | GPIO / clock / SysTick / millis / delay。**V003実機で動作確認済み** | `compile-matrix` |
 | `cores/arduino/HardwareSerial.{h,cpp}` | 割込み駆動UART。**V003実機で送受信確認済み** | `compile-matrix` |
 | `cores/arduino/{syscalls.c,itoa.c,dtostrf.c}` | newlib syscallと`ltoa`/`ultoa`/`dtostrf` | `compile-matrix` |
@@ -146,7 +146,7 @@ Board Manager配布経路はupgrade/rollbackまで検証でき、release workflo
 
 pin mapは生成済み([ADR-0010](adr/0010-pin-numbering.ja.md))。`variants/<SERIES>/pins_arduino.h`が
 pad名・ポート別validity mask・`A<n>`(ADC1)・USART pinとAFIO remapを持ち、
-`cores/arduino/ch32_pins.h`が番号encodingを持つ。
+`cores/arduino/ch32rv_pins.h`が番号encodingを持つ。
 
 ### 並行して決める
 
@@ -158,7 +158,7 @@ pad名・ポート別validity mask・`A<n>`(ADC1)・USART pinとAFIO remapを持
 ### あとで
 
 - fixture配線(LA channel数とconnector、Q-050)。**16ch推奨**の根拠は[upload-and-fixture](upload-and-fixture.ja.md)
-- `CH32_UNUSABLE_PINS`をcore側で実際に弾く(現在はvariantが宣言するだけ)
+- `CH32RV_UNUSABLE_PINS`をcore側で実際に弾く(現在はvariantが宣言するだけ)
 
 ## 先送りにした作業
 

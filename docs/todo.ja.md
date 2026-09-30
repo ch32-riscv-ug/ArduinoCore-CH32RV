@@ -21,7 +21,7 @@ reset）は配線のある範囲で全部実測済み。今の機材でこれ以
 | 区分 | 残作業 | 備考 |
 |---|---|---|
 | 判断済み・実装済み | `resetReason()` は RMVF を書く現状維持（UIAPduino の boot entry は pin reset 経由）、UIAPduino variant は PD4 LOW 既定 | 2026-09-22 |
-| 判断済み・実装済み | 割込み全体マスク: sketch が U モードで走る V3B/V3F/V3V/V4 は gintenr（CSR 0x800）、V2 と V3A は mstatus。**CH32V103（V3A）は gintenr が無いので M モード（`CH32_MSTATUS_INIT=0x1888`）** に変更し、EVT との差は `test_startup_parameters.py` に固定。`ch32_irq_save()` の csrr+csrc が V4F で FS を落としていたのを csrrc 1 命令に | 2026-09-23〜24、`5365196` / `1b4c9e4` |
+| 判断済み・実装済み | 割込み全体マスク: sketch が U モードで走る V3B/V3F/V3V/V4 は gintenr（CSR 0x800）、V2 と V3A は mstatus。**CH32V103（V3A）は gintenr が無いので M モード（`CH32RV_MSTATUS_INIT=0x1888`）** に変更し、EVT との差は `test_startup_parameters.py` に固定。`ch32rv_irq_save()` の csrr+csrc が V4F で FS を落としていたのを csrrc 1 命令に | 2026-09-23〜24、`5365196` / `1b4c9e4` |
 | 判断済み・実装済み | ハーネスのコンソールを **`SerialDMSeq`（dmseq、通し番号+CRC）** に。WCH-Link は ch32rv 0.10.0 の `--source dmseq`、OEP は `target.console` framing 2。LinkE の attach が書き換える RCC は `testcmd.h` がコマンド受信時に直す | 2026-09-24、全 10 経路で basic 14/14 |
 | 判断済み・実装済み | `Wire` の bus clear は **API**（`Wire.clearBus()`、自動では行わない）。最大 9 pulse + STOP、線は内蔵 pull-up で解放し SCL を High に駆動しない（stretch は 1 ms/pulse まで待つ）、開いていたバスは元の状態で開き直す。`oep_i2c_trace --stuck` で target が SDA を握った状態から `free=1` → 次の write が rc=0・受信一致 | 2026-09-24 |
 | 機材待ち | ADC の絶対値（probe rail と DUT VDD の差、メータ 1 回）。X035 は 1008/1023、V003 は 915/1023 | |
@@ -80,9 +80,9 @@ reset）は配線のある範囲で全部実測済み。今の機材でこれ以
 - [x] **ring bufferのlost updateを修正**。`api/RingBuffer.h`は単一カウンタをpush/pop両方で
       read-modify-writeするため、ISRとsketchの2文脈から触るUARTでは壊れる。
       実機で文字化けとして観測([実験0013](experiments/0013-core-api-completion.ja.md))。
-      lock不要のSPSC実装`ch32_ringbuffer.h`へ置換
+      lock不要のSPSC実装`ch32rv_ringbuffer.h`へ置換
 - [x] ring bufferのサイズをbuild optionで変えられるようにした
-      (`-DCH32_SERIAL_RX_BUFFER_SIZE=n` / `..._TX_...`。既定は64)。
+      (`-DCH32RV_SERIAL_RX_BUFFER_SIZE=n` / `..._TX_...`。既定は64)。
       X035実測で256にすると`.bss`が+768バイト(4 USART分)
 - [ ] `[P1]` `write()`は満杯でblockする。non-blockingにする手段が無い
 - [ ] `[P1]` `micros()`が約71分でwrapする(AVRコアと同じ挙動)。64bit SysTickを持つfamilyでは避けられる
@@ -135,7 +135,7 @@ reset）は配線のある範囲で全部実測済み。今の機材でこれ以
 | `Wire`(2) | 実装済(master)。16Bと14.1.xが該当 |
 
 - [x] `Wire`(I2C)を実装した(`libraries/Wire/`、master専用、polling)。
-      pinはvariantの`CH32_I2Cn_SCL/SDA`から。**X035実機で配線なしの自己検査11項目pass**
+      pinはvariantの`CH32RV_I2Cn_SCL/SDA`から。**X035実機で配線なしの自己検査11項目pass**
 - [x] `SPI`を実装した(`libraries/SPI/`、controller専用、polling)。
       **X035実機で配線なしの自己検査9項目pass**(MISOをpull-upして0xFFが読めることを利用)
 - [x] `interrupts()`/`noInterrupts()`を実装した。`api/Common.h`が
@@ -243,7 +243,7 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       **中身は合っているのに使われていない**状態をCIが見逃していた
 - [x] `attachInterrupt`/`detachInterrupt`(EXTI)の実装。**vector分割の2方式(`EXTI7_0`系と
       `EXTI0..4`系)は生成物`exti_<variant>.h`から吸収**するので、family追加でコード変更が要らない
-- [x] X033/X035のEXTI線16〜23(`EXTI25_16`)。EXTICR の 2 bit × 16 line 化で追加 word は自然に届くので、生成物に `CH32_EXTI_LINES` 24 と `EXTI25_16` group を出すだけで済んだ（2026-09-22、PC16/PC17 で 10/10/20）
+- [x] X033/X035のEXTI線16〜23(`EXTI25_16`)。EXTICR の 2 bit × 16 line 化で追加 word は自然に届くので、生成物に `CH32RV_EXTI_LINES` 24 と `EXTI25_16` group を出すだけで済んだ（2026-09-22、PC16/PC17 で 10/10/20）
 - [ ] `[P1]` V003のvector tableに**spec外の非ゼロword**が1つある(EVT側にも同じものがある)。
       slot 39相当で実害は無いが出所を確認する
 - [ ] `[P2]` 割込み優先度(`PFIC IPRIOR`)を触っていない。全てreset既定のまま
@@ -272,12 +272,12 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       **CH32V203実機で13 check全passを確認**
 - [x] **`tone()`を実装した**(`cores/arduino/wiring_tone.cpp`)。
       timerのupdate割込みでpinをtoggleする方式なのでpinを選ばない。
-      使うtimerはvariantが選ぶ(`CH32_TONE_TIMER`)。
+      使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。
       空きが無いfamily(V003/X035/M030)では**PWMと共有**し、影響するpadを
       variantヘッダに列挙してある(AVRがpin 3/11で同じ制限を持つのと同じ扱い)。
       **C++で書いた**: `api/Common.h`が`tone`/`noTone`をC++プロトタイプ側にだけ
       置いているので、Cで定義するとリンクしない
-- [ ] `[P1]` ADC分解能(`CH32_ADC_BITS`)はdatasheet由来。**実機で確認する** (要実機)
+- [ ] `[P1]` ADC分解能(`CH32RV_ADC_BITS`)はdatasheet由来。**実機で確認する** (要実機)
 - [ ] `[P1]` `analogWrite`のPWM周波数が1kHz固定。Arduino慣例には合うが変更手段が無い
 - [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ
 - [ ] `[P2]` X305/X315のPWM。timerもper-pin AF方式でdefault routeが無い
@@ -318,8 +318,8 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 - [x] **`portModeRegister()`は敢えて提供しない**。CH32のモードは1ビットではなく
       `CFGLR`/`CFGHR`/`CFGXR`に散る4ビットのフィールドで、1本のポインタでは表せない。
       `CFGLR`を返せばbit 8以上で黙って壊れるので、**コンパイルが通らない方を選ぶ**
-- [x] ポートのbase addressは`ch32_pins.h`に置いた(Arduino.hが
-      `ch32_registers.h`を読まずに済ませるため)。二重定義になるので
+- [x] ポートのbase addressは`ch32rv_pins.h`に置いた(Arduino.hが
+      `ch32rv_registers.h`を読まずに済ませるため)。二重定義になるので
       `wiring_digital.c`で`_Static_assert`により一致を強制している
 - [x] **`Serial.availableForWrite()`を実装**。`Print`の既定は常に0で、
       「送信バッファが永久に満杯」に見えていた。
@@ -342,14 +342,14 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 - [x] **`SerialSDI`をcoreから`libraries/`へ移した**(2026-08-21)。
       ArduinoCore-APIが宣言しておらず、coreの他ファイルからの参照も無かったため。
       `#include <SerialSDI.h>`の綴りは変わらないのでsketchへの影響は無い
-- [x] **`printf`の出力先を差し替えられるようにした**(`ch32_set_stdout(Print*)`)。
+- [x] **`printf`の出力先を差し替えられるようにした**(`ch32rv_set_stdout(Print*)`)。
       既定はmonitor port。**stdioだけ**動き、`Serial`という名前は追随しない。
       USB CDCが来ても同じ口を使う
 - [x] **examplesの置き場所と規約を決めた**。ライブラリ機能はそのライブラリの`examples/`、
-      coreのAPIは`libraries/CH32/examples/`。
+      coreのAPIは`libraries/CH32RV/examples/`。
       Arduinoは**ライブラリ経由でしかexamplesを配れない**ためで、
       ESP32も同じ理由で`libraries/ESP32/`に`src/dummy.h`を置いている。
-      こちらは同じファイルに「レジスタの逃げ道」という仕事を与えた(`CH32.h`)
+      こちらは同じファイルに「レジスタの逃げ道」という仕事を与えた(`CH32RV.h`)
 - [x] **全examplesをCIでコンパイル**する([tests/compile/test_examples.py](../tests/compile/test_examples.py))。
       X035とV003の2 board。現在11 example
 - [x] 各ライブラリに`keywords.txt`を置いた
@@ -357,7 +357,7 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
       → [ADR-0013](adr/0013-bundled-libraries.ja.md)。
       coreの3条件・同梱の3基準・examplesの置き場所を1本にまとめた
 - [x] **examplesを19本に増やし、core APIをひととおり網羅した**。
-      `libraries/CH32/`に14本(Blink / SerialEcho / AnalogRead / Fade / ToneMelody /
+      `libraries/CH32RV/`に14本(Blink / SerialEcho / AnalogRead / Fade / ToneMelody /
       PinInterrupt / ShiftOut / PulseIn / Timing / RandomNumbers /
       AnalogResolution / CriticalSection / PrintFormatting / PinCapabilities)、
       各ライブラリに5本
@@ -373,7 +373,7 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 どちらも`libraries/`に置いた同梱library。pinはvariantの生成マクロから来るので
 `begin()`に引数は要らない。AFIO routeは**既定routeでも毎回書く**(`HardwareSerial`と同じ理由)。
 
-- [x] **`CH32.resetReason()` の RMVF と UIAPduino bootloader**（利用者判断 2026-09-22: 現状維持 = 案 B。boot entry は pin reset 経由、
+- [x] **`CH32RV.resetReason()` の RMVF と UIAPduino bootloader**（利用者判断 2026-09-22: 現状維持 = 案 B。boot entry は pin reset 経由、
       OEP `reset --mode boot` がそれを行う。手順は `docs/uiapduino-hid-upload.ja.md` §4a）。元の記録: bootloader は `RCC_RSTSCKR.PINRSTF` が立っている時だけ
       留まる（BOOT 領域の逆アセンブルと実測、2026-09-22）。`resetReason()` は初回に RMVF で全 flag を消すので、それを呼ぶ sketch の後は
       software reset 経由の boot entry（UIAP 公式の 3 行 / E129 payload）が失敗し app へ戻る。案 A: UIAPduino variant では RMVF を
@@ -407,8 +407,8 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
       [software-peripherals](software-peripherals.ja.md)§6にあるが、
       **fixtureの配線変更が要る**ので実機の都合と合わせて決める
 
-- [x] `Wire`: master、polling、bufferは32バイト(`CH32_WIRE_BUFFER_SIZE`で変更可)。
-      **待ちは全てtimeout付き**(`CH32_WIRE_TIMEOUT_US`、既定25ms)。
+- [x] `Wire`: master、polling、bufferは32バイト(`CH32RV_WIRE_BUFFER_SIZE`で変更可)。
+      **待ちは全てtimeout付き**(`CH32RV_WIRE_TIMEOUT_US`、既定25ms)。
       pull-upが無い/デバイスが居ない、はI2Cの普通の失敗なので、
       そこで止まらず`endTransmission()`のエラーコードになる
 - [x] `SPI`: controller、polling、NSSはsoftware(SSM/SSI)にしてpinを解放。
@@ -447,20 +447,20 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
 ### Servo(2026-08-21実装)
 
 - [x] `libraries/Servo/`。1本のtimerが最大12個のservoを順に駆動する方式(AVRと同じ)なので
-      **pinを選ばない**。timerはvariantが選ぶ(`CH32_SERVO_TIMER`)
+      **pinを選ばない**。timerはvariantが選ぶ(`CH32RV_SERVO_TIMER`)
 - [x] **tone()とは必ず別のtimer**にした。ブザーを鳴らしながらサーボを動かすのは普通の要求
 - [x] timer選定の候補に**update割込みが独立ベクタを持つもの**(`TIM2_UP`等)も入れた。
       これで**全familyでtoneとServoが同時に成立**する。ただしV003/X035/M030では
       PWM用timerを食うので、その板の`analogWrite()`は影響を受ける(variantヘッダに列挙)
 - [ ] `[P1]` 実機確認(要実機)。自己検査sketchは自分のpadのpulse幅を測っている
-- [ ] `[P2]` TIM8〜TIM10(V30x/V4x7のAPB2側)を`ch32_registers.h`が持っていないので、
+- [ ] `[P2]` TIM8〜TIM10(V30x/V4x7のAPB2側)を`ch32rv_registers.h`が持っていないので、
       timer候補から外している。持てば選択肢が広がる
 
 ## libc / heap
 
 - [x] **libglossのsemihosting stubがheapとprintfを壊していた**
       ([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))。
-      `core.a`を`--start-group`で囲み、`_sbrk`を`ch32_sbrk.c`へ分離、
+      `core.a`を`--start-group`で囲み、`_sbrk`を`ch32rv_sbrk.c`へ分離、
       `HardwareSerial.h`が`pins_arduino.h`を自分でinclude。X035実機で確認
 - [x] `--specs=nano.specs`を既定にし、`menu.printf`で`%f`をopt-inにする案を実装(**未承認**、
       [承認状態 A-1](approval-status.ja.md))。ADR-0004が同じ形を提案しているが`Proposed`。
@@ -545,7 +545,7 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       CCのpadも**series毎に違う**(`pin_roles.csv`の`peripheral=USBPD`):
       X035 `PC14`/`PC15`、**L103 `PB6`/`PB7`**、V205 `PA0`/`PA1`、
       X305 `PD4`/`PD5`、H41x `PB3`/`PB4`、**M030は`CC1`〜`CC4`の4本**。
-      よってlibraryは変異体の`CH32_USBPD_BASE` / `CH32_USBPD_CC1_PIN`…で
+      よってlibraryは変異体の`CH32RV_USBPD_BASE` / `CH32RV_USBPD_CC1_PIN`…で
       出し分ける形になる——Serial/I2C/SPI/toneと同じ作り。
       **7 seriesとも既にboard定義がある**。うち**L103とX035は実機が繋がっている**
 - [ ] `[P0]` **生成に要る表が`155c398`側にしか無い**。
@@ -660,13 +660,13 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       (`-d INDEX`のみ)ため、LinkEを複数挿す運用とは相性が悪い
 - [x] **`CH32`シングルトンを実装した**(2026-08-25、**未承認・実機検証済み**、A-10。
       設計は[R-27](research/system-api-esp32-style.ja.md)のESP32寄せ方針)。
-      `libraries/CH32`に`CH32System`を追加: `CH32.restart()`(PFIC KEY3+SYSRST) /
-      `CH32.resetReason()`+`resetReasonName()`(RSTSCKR。初回読みでlatch+RMVF、
-      優先はIWDG>WWDG>SFT>LPWR>POR>PIN) / `CH32.wdtEnable(ms)`+`wdtFeed()`。
+      `libraries/CH32`に`CH32RVSystem`を追加: `CH32RV.restart()`(PFIC KEY3+SYSRST) /
+      `CH32RV.resetReason()`+`resetReasonName()`(RSTSCKR。初回読みでlatch+RMVF、
+      優先はIWDG>WWDG>SFT>LPWR>POR>PIN) / `CH32RV.wdtEnable(ms)`+`wdtFeed()`。
       **`wdtDisable()`は出さない**(IWDGは停止不能。嘘APIにしない)。
-      データ由来のdefineを2つ追加: `CH32_LSI_HZ`(operating_conditionsの
+      データ由来のdefineを2つ追加: `CH32RV_LSI_HZ`(operating_conditionsの
       F_LSI typの最大値。速い側に倒すとtimeoutは頼んだ値より短くなるだけ)、
-      `CH32_IWDG_BASE`(memory_map.csv。**M030にはIWDGが無い**ので出ない=
+      `CH32RV_IWDG_BASE`(memory_map.csv。**M030にはIWDGが無い**ので出ない=
       wdtEnableがfalse。X033/X035はF_LSIが無いので同じくfalse——**依頼文書に追記済み**)。
       検証: [`system_selftest`](../tests/sketches/basic/system_selftest/)が
       **1回のtest実行で2回の実リセットをまたぐ**(REBOOT→`reset_reason=software`、
@@ -677,10 +677,10 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       V006/V007/M007)で**USART2はPB2PCENR(APB2側) bit13**(手書きはAPB1 bit17)、
       **TIM3はbit2**(手書きはbit1)。V00x系boardのSerial2とTIM3のPWM/toneは
       クロックが入らず死んでいた——**benchにV00xが無かったので誰も踏まなかった**。
-      修正: 変異体に`CH32_CLKEN_<周辺>_ADDR/_MASK`を全周辺ぶん生成(+GPIOの短縮形
-      `CH32_CLKEN_GPIO_ADDR/_BIT0`、SERIALn/I2Cn/SPIn/TONE/SERVOの別名)、
-      coreは`ch32_clock_enable(NAME)`/`ch32_clock_enable_at(addr,mask)`で使う。
-      `ch32_registers.h`の手書き`CH32_RCC_APB1_*/APB2_*/IOP`は**全部削除**。
+      修正: 変異体に`CH32RV_CLKEN_<周辺>_ADDR/_MASK`を全周辺ぶん生成(+GPIOの短縮形
+      `CH32RV_CLKEN_GPIO_ADDR/_BIT0`、SERIALn/I2Cn/SPIn/TONE/SERVOの別名)、
+      coreは`ch32rv_clock_enable(NAME)`/`ch32rv_clock_enable_at(addr,mask)`で使う。
+      `ch32rv_registers.h`の手書き`CH32RV_RCC_APB1_*/APB2_*/IOP`は**全部削除**。
       消費側8箇所(Serial/Wire/SPI/gpio/analog/interrupts/pwm/tone/Servo/USBPD)を
       置換。V003/V006/V307/X315/M030でcompile確認、実機4台sweepで回帰確認。
       **サイズ基準線を更新**(CH32V006 familyの32型番で text+24。原因は
@@ -721,12 +721,12 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       クロックではなくRX side)。expectがstallしたら直前のwriteを1回だけ再送して
       待ち直す(upload/handshakeと同じパターン)。全コマンドが冪等なので安全、
       再送は1回だけなので本当の無応答は隠さない
-- [x] **CH32.restart()/watchdogリセット後にV20xのクロックが壊れる件を直した**
+- [x] **CH32RV.restart()/watchdogリセット後にV20xのクロックが壊れる件を直した**
       (2026-08-25、`system_selftest`が実機で発見→修正、CH32V203実機で確認)。
       **本セッションの変更起因ではない**——既存のPLLクロック対応(未検証)の穴を、
       初めてsoftware/watchdogリセットをまたぐtestが踏んだ。
 
-      **機構(実機で確定)**: **PFIC SYSRST(`CH32.restart()`)もIWDGリセットも、
+      **機構(実機で確定)**: **PFIC SYSRST(`CH32RV.restart()`)もIWDGリセットも、
       V20x/V30xではcoreだけリセットしRCCを残す**(SYSRST書き込み後もCFGR0=`0x0034040a`、
       PLL稼働のまま。真のリセットなら`0`)。その状態で生成リセットマクロがPLL稼働中に
       PLLONを消しに行き、以降のPLL再設定がグリッチ状態に乗る→UART実効baudが約1.25倍で
@@ -741,11 +741,11 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       **全PLL稼働family(V20x/V30x/V103/L103等)に効く**——単一経路なので個別対応不要
 - [ ] `[P1]` `[要判断]` **USART1が使えないboardの`Serial`をどうするか**。
       series単位では生成器が既に解決していて、`CH32M103` / `CH32X033` /
-      `CH32X315`は`CH32_SERIAL_DEFAULT`が**USART2**になっている。
+      `CH32X315`は`CH32RV_SERIAL_DEFAULT`が**USART2**になっている。
       残る2つが未解決:
       - **型番単位**。既定routeのpadが小さいpackageで出ていない場合がある
         (L103は6型番中5型番)。`ANY`で焼くとその型番だけSerialが無音になる
-      - **利用者の上書き**。いまは`-DCH32_SERIAL_DEFAULT=2`をbuild propertyで
+      - **利用者の上書き**。いまは`-DCH32RV_SERIAL_DEFAULT=2`をbuild propertyで
         渡すしかない。boards.txtのmenuにするか、`sketch`側のAPIにするか
 
 ## クロック
@@ -760,13 +760,13 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
 ### 今やっておく拡張準備(これを守ればメニュー追加はboards.txtの行追加だけで済む)
 
 - [x] **`SystemInit()`が`F_CPU`から分周器を決める**。`F_CPU`を目標HCLKとし、
-      AHB prescalerは`CH32_HSI_HZ / F_CPU`から導く([cores/arduino/ch32_clock.h](../cores/arduino/ch32_clock.h))。
+      AHB prescalerは`CH32RV_HSI_HZ / F_CPU`から導く([cores/arduino/ch32rv_clock.h](../cores/arduino/ch32rv_clock.h))。
       これで**クロック変更はboards.txtの`f_cpu`だけ**になる。
       CH32系はprescalerの4bit fieldの符号化が2通りあり、一致するのは`/1`だけ:
       linear(`0x0..0x7`=`/1../8`、`/3`や`/5`もある)がV00x / M030 / X03x、
       pow2(`0x8`=`/2`、`/32`が無い)がV10x / V20x / V30x / V4x7 / L103 / V205 / X3x5。
       **全11 familyを各EVTヘッダの`RCC_HPRE_DIVn`で確認**し、推測は使っていない
-      (`-DCH32_HPRE_LINEAR`をfamilyごとに生成)。
+      (`-DCH32RV_HPRE_LINEAR`をfamilyごとに生成)。
       表現できない比は`#error`。
 - [x] **到達できない`F_CPU`は`#error`でコンパイル時に落とす**。
       F_CPUと実際のSYSCLKがズレるとSerialが化けるため、実行時に発覚させてはいけない
@@ -846,7 +846,7 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       - X035/X033に**PC10/PC11がpadとして生成される**ようになった。
         `UNUSABLE_PADS`のnoteを上流の精密化した記述
         (「PC10/PC17・PC11/PC16はleadを共有するペア。両方をoutputにしない」)へ更新。
-        `CH32_UNUSABLE_PINS`は情報提供のみ(coreは強制しない)で従来どおり
+        `CH32RV_UNUSABLE_PINS`は情報提供のみ(coreは強制しない)で従来どおり
       - `.tools`の取得コピーも944bc9cへ更新(fetch_tools)
       **検証**(2026-08-25): fast suite 73 pass / compile matrix 46 pass
       (122型番、**サイズ基準線は無変更**) / X035実機sweep 13/13 pass。
@@ -914,7 +914,7 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
 
       ```
       /* USART1: route af-1, on every part */
-      #define CH32_SERIAL1_TX PC4
+      #define CH32RV_SERIAL1_TX PC4
       /* device-data lists PA11, PC4 for TX on this
        * route, in that order, and the last is the one above. */
       ```
@@ -949,15 +949,15 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
         `default`/`main`しか読まず、`load_remap_fields()`はUSART/I2C/SPIだけ。
         `variants/`にも`TIM._REMAP`は無い
       - F-28: **L103の既定は全て`REMAP_VAL 0`**(reset既定)なので、出荷経路は
-        格子に依存しない。依存するのは`CH32_SERIAL1_ROUTES`のroute 1
+        格子に依存しない。依存するのは`CH32RV_SERIAL1_ROUTES`のroute 1
         (PB6/PB7、PCFR1値`0x4`)だけで、これは`setRoute(1)`からしか触れない。
         `route_selftest`が実機でそこを通って戻ってきているが、
         **PB6/PB7には何も繋がっていないのでpinが実際に動いたかは未確認**。
         確かめるならprobeをPB6/PB7へ配線し直して`uart_scan`
 
 - [ ] `[P2]` **`systick.csv`が入ったのでCH32V103のSysTick配置をデータ由来にできる**(取り込み完了 2026-08-25 により着手可能)。
-      いま`cores/arduino/ch32_registers.h`に手書きしてあるoffsetと、
-      「カウンタはbyte writeのみ」という制約(`CH32_SYSTICK_WRITE8`)は、
+      いま`cores/arduino/ch32rv_registers.h`に手書きしてあるoffsetと、
+      「カウンタはbyte writeのみ」という制約(`CH32RV_SYSTICK_WRITE8`)は、
       上流表の`offset`と`write_bits`にそのまま載っている。
       54行、`basis=evt(core_riscv.h)`。取り込み判断の後に着手する
 
@@ -979,10 +979,10 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       ADC1〜ADC4で同じチャネル番号が別padに出るため`A<n>`が一意にならない)
 - [x] **X305/X315のADC2〜ADC4を表現した**(2026-08-29)。調べたところ、ADC1で届かないpadがあるのは
       **この2 seriesだけ**だった(V103/V203/V307にもADC2/3はあるがpadがADC1と重なる=同時サンプリング用)。
-      `A<n>`はADC1の番号付けのまま据え置き、pad→instanceを`CH32_PIN_TO_ADC_INSTANCE`で表す。
+      `A<n>`はADC1の番号付けのまま据え置き、pad→instanceを`CH32RV_PIN_TO_ADC_INSTANCE`で表す。
       baseは`register_blocks.csv`(X315はreference manualで`confirmed`)、
       レジスタoffsetは全12 familyで一致することを`index/registers.csv`で確認済み。
-      `wiring_analog.c`は`CH32_ADC_INSTANCE_COUNT > 1`のときだけ多instance経路をコンパイルするので、
+      `wiring_analog.c`は`CH32RV_ADC_INSTANCE_COUNT > 1`のときだけ多instance経路をコンパイルするので、
       **他22 seriesのバイナリは1バイトも変わらない**(V003/V307/X035で実測)。
       X305で30 pad、X315で36 padが新たに到達可能。
       **注意: 両seriesとも実機も書き込み手段も無いため未検証**(compileと`_Static_assert`のみ)
@@ -1001,7 +1001,7 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       V407/V467の抽出漏れも解消されている。
       取り込みで`load_remap_fields`はregister修飾を要求するようになり
       (無ければ落とす)、variantは**fieldがまたぐregisterごとに**
-      `CH32_SERIALn_REMAP{,2}_{MASK,VAL}`を持つ
+      `CH32RV_SERIALn_REMAP{,2}_{MASK,VAL}`を持つ
 - [ ] `[P1]` **上流へ報告(要確認): CH32V20xファミリに`ETH`のclock enable行が無い**。
       `evidence/clock_enables.csv`はETH_MACをCH32V307 / CH32V407、ETHをCH32H417にしか持たない。
       一方EVTはCH32V20xの下にETHの例を置いており、WCHはCH32V208に10M Ethernetを謳っている。
@@ -1011,7 +1011,7 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       解消したらそのエントリを消す(消し忘れはテストが落ちて気づく)
 
 - [x] ~~上流へ報告: CH32V307に`SPI1_SCK/default`の行が無い~~ → **データ側で解消済み**(2026-08-29確認)。
-      V307の3型番すべてに`SPI1_SCK/default`=PA5があり、生成結果も`CH32_SPI1_SCK PA5`/`CH32_SPI3_SCK PB3`と
+      V307の3型番すべてに`SPI1_SCK/default`=PA5があり、生成結果も`CH32RV_SPI1_SCK PA5`/`CH32RV_SPI3_SCK PB3`と
       正しく分かれている。`SPI1`のremap-1と`SPI3`のdefaultが同じpad(PB3/PB4/PB5)を共有するのは
       データシートどおりで、バグではない
 - [x] ~~上流へ報告: 全角括弧つきのsignal名~~ → **データ側で解消済み**(2026-08-29確認)。
@@ -1050,7 +1050,7 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
 - [x] **`setRoute(n)` / `setPins(...)`を実装した**(Serial / Wire / SPI)。
       DxCore型どおり両方を持ち、`bool`を返し、**別routeのpinを混ぜたら拒否**する
       (STM32duinoは`setRx`/`setTx`を独立に受けて衝突を見ない)。
-      - variantが`CH32_<instance>_ROUTES`を生成する。1行が
+      - variantが`CH32RV_<instance>_ROUTES`を生成する。1行が
         `{route番号, {pin×3}, PCFR1値, PCFR2値}`で、maskはinstance側が持つ(routeで変わらないため)
       - **型番でpadが変わるrouteは表に載せない**。1つのheaderがseries全体を担うので、
         パッケージ次第で別pinになるrouteは名前を付けられない
@@ -1065,8 +1065,8 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       L103/M103/V203/V307のいずれかを載せたときに確認する
 - [x] X035エラッタのvariant表現(`x035-pc10-pc17-bonded`、ADR-0010のDecision 4)。
       **PC10/PC11はそもそもpadとして出ていない**ので、pad属性ではなく除外リスト
-      `CH32_UNUSABLE_PINS`として生成した。errata idの存在をgenerate.pyが検証する
-- [ ] `[P1]` `CH32_UNUSABLE_PINS`をcore側で実際に弾く(現在は宣言のみ。`pinMode`実装時に対応)
+      `CH32RV_UNUSABLE_PINS`として生成した。errata idの存在をgenerate.pyが検証する
+- [ ] `[P1]` `CH32RV_UNUSABLE_PINS`をcore側で実際に弾く(現在は宣言のみ。`pinMode`実装時に対応)
 - [x] `[compile only]`表示を**probe-rsのcoverageから自動導出**するようにした。
       手書きフラグではCH32M103が漏れていた(7 series / 27 entryが対象)
 - [ ] `[P2]` その7 series(M030/M103/V205/V407/V467/X305/X315)にupload経路を用意する。
@@ -1086,8 +1086,8 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
       **USB serialを持たず複数台を区別できない**。CH343(`55d3`)はuniqueなserialを持つ
 - [ ] `[P2]` 製品名board(`WeAct CH32X035 CoreBoard`等)の追加。series boardと共存できる
 - [x] **CH32V103対応**。vector tableのj命令形式に対応し、24 board / 122エントリへ。
-      `import_vectors.py`がtableの形式(`word`/`jump`)を記録し、`crt0`は`CH32_MTVEC_MODE`で
-      切り替える(V103は`1`、他は`3`)。`CH32_INTSYSCR_INIT`はV103が書かないのでoptional化。
+      `import_vectors.py`がtableの形式(`word`/`jump`)を記録し、`crt0`は`CH32RV_MTVEC_MODE`で
+      切り替える(V103は`1`、他は`3`)。`CH32RV_INTSYSCR_INIT`はV103が書かないのでoptional化。
       `compare.py`にj命令のdecodeを足し、**等価性harnessで59 entry一致を確認**(14 variant)
 - [ ] `[P1]` CH32V103の`NRST` padがdevice-dataでport名を持たない。GPIOとして使えるなら
       upstreamへ報告する(現在は`NON_PORT_PADS`で除外)
@@ -1202,15 +1202,15 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       TIM2/TIM3は16 bitなので正常、だから`analogWrite()`もServo(TIM3)も無事だった。
       32 bitストアに変えると`cnt_high_5ms=7994` / `irq_hits_5ms=5`で正常、
       実機の`tone_selftest`も**9/9 PASS**。
-      対処: 変異体が`CH32_TONE_TIMER_BITS` / `CH32_SERVO_TIMER_BITS`を出し、
-      `ch32_registers.h`の`CH32_TIM_ATRLR32()`を使い分ける。
+      対処: 変異体が`CH32RV_TONE_TIMER_BITS` / `CH32RV_SERVO_TIMER_BITS`を出し、
+      `ch32rv_registers.h`の`CH32RV_TIM_ATRLR32()`を使い分ける。
       どのfamilyが32 bitタイマを持つかは`generate.py`の`WIDE_TIMERS`に手書き
       (下記の通りdevice-dataに機械可読な表がまだ無い)。
       **影響したのはtone()だけだが、対象はL103以外にもある**:
       EVTヘッダでCNTとATRLRがunionになっているのは
       `ch32l103.h` / `ch32v205.h` / `ch32v20x.h` / `ch32x3x5.h`の4 family、
       つまり**CH32L103 / CH32M103 / CH32V203 / CH32V205 / CH32X305 / CH32X315**で、
-      いずれも`CH32_TONE_TIMER`が4。実機で確認できたのはL103だけ
+      いずれも`CH32RV_TONE_TIMER`が4。実機で確認できたのはL103だけ
       (V203C8T6はそのpartが16 bitなので元から通っていた)。
       **同じ修正でServoのバグも1件潰れている**: CH32V208はtone()がTIM5を取るので
       Servoに32 bitのTIM4が回っており、20 msのはずのフレームが65秒になっていた。
@@ -1439,7 +1439,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       **SDI無音の根本原因はアドレス**: DMDATAのhart側アドレスはQingKe V2A(V003)だけ
       `0xE00000F4/F8`で、V103/V203/X035/L103は`0xE0000380/384`(hartinfo.dataaddr実測+
       EVT `SDI_Printf`参照)。`SerialSDI.cpp`をマクロ上書き可能にし(既定0x380)、
-      V003は`-DCH32_SDI_DATA0_ADDR=0xE00000F4`で受信成功=classの実機確認完了。
+      V003は`-DCH32RV_SDI_DATA0_ADDR=0xE00000F4`で受信成功=classの実機確認完了。
       フレーミング(DATA0==0待ち/最下位byte=長さ≤7)はEVTと完全一致していた
 - [x] **Arduino CLIとのつなぎ込み確認: Monitorは繋いだ、debugは繋げなかった**(2026-08-27、
       arduino-cli 1.3.1、V003実機)。
@@ -1883,7 +1883,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
         持たず、自分の次の`print()`がそれを上書きするため。ringを入れて全12 byte往復
       - **hostは「レジスタから何か取り出した後」にしか書かない**ので、
         `available()`が空フレーム(0x84)を置いて次を招く。これが双方向の実体
-      - 生成defineを`CH32_SDI_DATA0_ADDR`→**`CH32_DM_DATA0_ADDR`**へ改名
+      - 生成defineを`CH32RV_SDI_DATA0_ADDR`→**`CH32RV_DM_DATA0_ADDR`**へ改名
         (SDI固有ではなくdebug moduleの事実で、`SerialDMDATA`も読むため)
       - **semihostingは作っていない**。ebreakごとにcoreがhaltする性質が他の3方式と
         違いすぎ、probe-rs側もSYS_EXIT+`--semihosting-file`程度で出力経路として弱い。
@@ -1907,7 +1907,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       (上流の`confidence`が`confirmed`/`reference`で言っている)。CH32H417だけ`missing`
       だがcoreは非対応なので影響なし。
       こちら側は`load_family_facts()`が`debug_data.csv`を読み、boardの
-      `core_defines`に`-DCH32_DM_DATA0_ADDR=`を出す。`data1`は全familyで`data0+4`
+      `core_defines`に`-DCH32RV_DM_DATA0_ADDR=`を出す。`data1`は全familyで`data0+4`
       なので読み込み時に検査だけして渡さない。`SerialSDI.cpp`の既定値は**廃止**し
       (0x380のままだと3通りのうち2通りで黙って外す)、未定義なら`#error`にした
 - [x] **minichlinkを書き込みツールとして実機検証**(2026-08-26、V003)。ソースから
@@ -2060,7 +2060,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       環境変数なしで全harnessが回るようになった。版は`tools/index/tools_*.json`
       (package indexの正本)から取り、SHA-256照合つき。device-dataはlocked commitで
       checkout(当初は`boards.txt`のヘッダ、現在は`vendor/ch32-device-data.lock.toml`)。
-      `CH32_*`は上書き用として存続。CIも同じ経路へ移行
+      `CH32RV_*`は上書き用として存続。CIも同じ経路へ移行
 - [x] **device-dataのpinを`vendor/ch32-device-data.lock.toml`へ集約した**。
       それまでcommit idが生成物55ファイルのヘッダに入っていたため、**中身が1バイトも
       変わらないupstream bumpでも56ファイルの差分**になり、レビューが成立しなかった。
@@ -2228,7 +2228,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       **影響はCH32V103シリーズのみ**。他10 familyはサイズがバイト単位で不変
 - [x] **PLLに対応し、CH32V20x / CH32V307を8 MHz -> 144 MHzにした**。
       仕組み: `clock_configs.csv`と`clock_symbols.csv`から**生成時に設定を解決して**
-      boards.txtへ出す(`CH32_CLOCK_SYSCLK_HZ` / `USE_PLL` / `PLL_MASK` / `PLL_VALUE` /
+      boards.txtへ出す(`CH32RV_CLOCK_SYSCLK_HZ` / `USE_PLL` / `PLL_MASK` / `PLL_VALUE` /
       `EXTEN_ADDR` / `EXTEN_BITS`)。`condition`がdie依存なので、series/pnum粒度の
       boards.txtで解決すれば`#if`が要らない。AHB分周は`SYSCLK / F_CPU`から導出する
       ままなので「F_CPUが唯一のつまみ」も維持。
@@ -2238,7 +2238,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       CH32V307VCT6は96 MHzで実行可能な9 sketchすべてPASS**
       (`serial_println`が化けない = PLLが噛んでいてPCLK2 == F_CPU)
 - [x] **PLL関連で踏んだ罠を2つ記録**。(1) `RCC_PLLMULL18_EXTEN`は**値が0**なので
-      「PLL値が非0ならPLLを使う」判定は成立しない。`CH32_CLOCK_USE_PLL`で明示する。
+      「PLL値が非0ならPLLを使う」判定は成立しない。`CH32RV_CLOCK_USE_PLL`で明示する。
       D8C(V305/V307/V317)が黙って8 MHzのままになるところだった。
       (2) クリアすべきPLLフィールドのマスクはfamilyごとに違う
       (V103/V20x/V30x/L103は4bit、**V205は5bit**、**V407は位置違い**、V307は同じ
@@ -2289,7 +2289,7 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       基板のあるこちらで測る。実害は「288K+32K構成の基板でスタックがRAM外」だけ
 - [x] **CH32V203RBT6だけdie variantが違う問題を直した**(`CH32V20x_D8`、他のV203は`D6`)。
       D6とD8は**slot 61から並びが違い**(D6は`UART4`、D8は`ETH`)、D8は69 slotで
-      D6は62 slot。`CH32_IRQN_UART4`が61と66でずれていた。
+      D6は62 slot。`CH32RV_IRQN_UART4`が61と66でずれていた。
       対応: vector tableの選択を`build.vector_variant`という**1つのstem**に集約し、
       platform.txtが`vectors_*.inc`/`irqn_*.h`/`exti_*.h`の3つを組み立てる形にした。
       pnum項目が1行上書きするだけでdie variantを差し替えられる。
@@ -2300,8 +2300,8 @@ xPack toolchainと同じ「GitHub Releases直リンク」方式([ADR-0002](adr/0
       サイズはCH32V203RBT6だけ**956→984バイト(+28)**。D8のvector tableが7 slot長い分で、
       他の121ターゲットは1バイトも動かない——上書きが効いたことの裏付けにもなっている
 - [x] **手書き定数のうち、上流が答えられるものをデータ由来にした**。
-      `CH32_HSI_HZ`(`operating_conditions.F_HSI.typ`)・`CH32_HPRE_LINEAR`
-      (`clock_prescalers`のHPRE `/2`が`0x10`か`0x80`か)・`CH32_GPIO_PORT_WIDTH`
+      `CH32RV_HSI_HZ`(`operating_conditions.F_HSI.typ`)・`CH32RV_HPRE_LINEAR`
+      (`clock_prescalers`のHPRE `/2`が`0x10`か`0x80`か)・`CH32RV_GPIO_PORT_WIDTH`
       (解決済みpad集合の最大bit+1)の3つ。11 familyすべてで手書き値と一致し、
       **生成物は1バイトも変わらなかった**。`flash_latency`と`vectors`は値を
       手元に残したまま表と突き合わせる(不一致でgeneratorがexit 1)。

@@ -8,8 +8,8 @@
  */
 #pragma once
 
-#define CH32_CLOCK_INIT_RESET() do { \
-    CH32_REG32(0x40021000u) |= 0x00000001u; \
-    CH32_REG32(0x40021004u) |= 0x00000050u; \
-    CH32_REG32(0x40021004u) &= 0xf8ffff5fu; \
+#define CH32RV_CLOCK_INIT_RESET() do { \
+    CH32RV_REG32(0x40021000u) |= 0x00000001u; \
+    CH32RV_REG32(0x40021004u) |= 0x00000050u; \
+    CH32RV_REG32(0x40021004u) &= 0xf8ffff5fu; \
 } while (0)

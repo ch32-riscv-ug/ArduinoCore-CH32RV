@@ -7,7 +7,7 @@
 // (the sample buffers and the line buffer do not fit CH32V003's 2 KB next to the stack)
 #define TC_CMD_MAX 64
 #include "testcmd.h"
-#include "ch32_registers.h"   // raw ADC register access for the CH command
+#include "ch32rv_registers.h"   // raw ADC register access for the CH command
 
 void setup() { tc_begin("adc_probe"); }
 
@@ -23,9 +23,9 @@ void loop() {
     if (n > 1000) n = 1000;
     long sum = 0; int lo = 4096, hi = -1, first = -1, last = -1;
     for (unsigned i = 0; i < n; ++i) {
-      CH32_ADC_RSQR1 = 0; CH32_ADC_RSQR3 = ch; CH32_ADC_CTLR2 |= CH32_ADC_CTLR2_SWSTART;
-      while ((CH32_ADC_STATR & CH32_ADC_STATR_EOC) == 0u) {}
-      const int v = (int)(CH32_ADC_RDATAR & 0xFFFu) >> (CH32_ADC_BITS - 10);   // 10-bit like analogRead() (V003 is 10-bit natively)
+      CH32RV_ADC_RSQR1 = 0; CH32RV_ADC_RSQR3 = ch; CH32RV_ADC_CTLR2 |= CH32RV_ADC_CTLR2_SWSTART;
+      while ((CH32RV_ADC_STATR & CH32RV_ADC_STATR_EOC) == 0u) {}
+      const int v = (int)(CH32RV_ADC_RDATAR & 0xFFFu) >> (CH32RV_ADC_BITS - 10);   // 10-bit like analogRead() (V003 is 10-bit natively)
       sum += v; if (v < lo) lo = v; if (v > hi) hi = v; if (i == 0) first = v; last = v;
     }
     Console.print("CH "); Console.print(ch); Console.print(" n="); Console.print(n); Console.print(" min="); Console.print(lo);

@@ -38,12 +38,12 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 | USART | 実装済 | Serial | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
 | I2C | 実装済 | Wire | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | master + slave(割込み駆動)。配線なし自己検査14項目を4 board実機pass。slaveの**データ経路は`manual/i2c_loopback`の配線待ち**。実デバイス相手の確認はこれから |
 | SPI | 実装済 | SPI | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | controller専用。X035実機で配線なしの自己検査9項目pass。**peripheral(slave)は未実装**、実デバイス相手の確認はこれから |
-| ADC | 実装済 | analogRead | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 分解能は実機未確認。X305/X315はADC1〜4がpadを分け合うため`CH32_PIN_TO_ADC_INSTANCE`で切替(**未検証**) |
-| DAC | 実装済 | analogWrite(CH32_DACn_PIN) |  |  |  |  |  | ○ | ○ |  |  |  |  | V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来。**実機未確認** |
-| TIM (PWM/tone/入力捕捉) | 実装済 | analogWrite/tone | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32_TONE_TIMER`)。V003/X035/M030は空きが無く**PWMと共有** |
+| ADC | 実装済 | analogRead | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 分解能は実機未確認。X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替(**未検証**) |
+| DAC | 実装済 | analogWrite(CH32RV_DACn_PIN) |  |  |  |  |  | ○ | ○ |  |  |  |  | V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来。**実機未確認** |
+| TIM (PWM/tone/入力捕捉) | 実装済 | analogWrite/tone | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V003/X035/M030は空きが無く**PWMと共有** |
 | LPTIM | 対象外 | - |  |  |  |  |  |  |  | ○ |  |  |  | L103のみ |
 | DMA | 対象外 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduino APIに露出しない。内部最適化として将来 |
-| IWDG | 実装済 | `CH32.wdtEnable/wdtFeed` | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ | Arduino標準APIが無い |
+| IWDG | 実装済 | `CH32RV.wdtEnable/wdtFeed` | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ | Arduino標準APIが無い |
 | WWDG | 要判断 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 同上 |
 | RTC | 要判断 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ | libraryとして出す例が多い |
 | BKP (バックアップレジスタ) | 対象外 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  |  |  |
@@ -88,8 +88,8 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| SDI print (debug出力) | 実装済 | SerialSDI(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 送信のみ。class実装をV003実機で受信まで確認(2026-08-26、`wlink sdi-print enable`経由)。**DMDATAのhart側アドレスはfamily依存**で3通りある: V2系(V003/V00x)`0xE00000F4`、V3系の多く(V205/V407/X315/M030)`0xE0000340`、V4系とV103`0xE0000380`。上流`evidence/debug_data.csv`から`CH32_DM_DATA0_ADDR`をboard毎に生成しているのでsketch側の指定は不要(2026-08-26)。**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ** |
-| RTT (debug出力) | 実装済 | SerialRTT(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向**。RAM上のリングバッファをprobeが走行中に読む方式で、host側は`probe-rs attach`(このcoreの書き込みツールそのもの)。V003実機で送受信とも確認(2026-08-26、23秒18行+echo back)。control blockは公開仕様、SEGGERのコードは不使用。**代償はRAM**(既定バッファで+364 byte、`CH32_RTT_UP_SIZE`等で縮小可) |
+| SDI print (debug出力) | 実装済 | SerialSDI(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 送信のみ。class実装をV003実機で受信まで確認(2026-08-26、`wlink sdi-print enable`経由)。**DMDATAのhart側アドレスはfamily依存**で3通りある: V2系(V003/V00x)`0xE00000F4`、V3系の多く(V205/V407/X315/M030)`0xE0000340`、V4系とV103`0xE0000380`。上流`evidence/debug_data.csv`から`CH32RV_DM_DATA0_ADDR`をboard毎に生成しているのでsketch側の指定は不要(2026-08-26)。**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ** |
+| RTT (debug出力) | 実装済 | SerialRTT(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向**。RAM上のリングバッファをprobeが走行中に読む方式で、host側は`probe-rs attach`(このcoreの書き込みツールそのもの)。V003実機で送受信とも確認(2026-08-26、23秒18行+echo back)。control blockは公開仕様、SEGGERのコードは不使用。**代償はRAM**(既定バッファで+364 byte、`CH32RV_RTT_UP_SIZE`等で縮小可) |
 | DMDATA mailbox (debug出力) | 実装済 | SerialDMDATA(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向**(送り7 byte/受け3 byteずつ)。SDI printと**同じレジスタの別framing**なので併用不可。host側はminichlink(ch32fun、同梱しない)。対応chipはminichlink側に従う。V003実機で送受信とも確認(2026-08-26、`minichlink -T`でecho back)。RAMはほぼ不要(+36 byte) |
 | DMSEQ console (debug出力) | 実装済 | SerialDMSeq(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向、通し番号+CRC-8**(送り6 byte/受け2 byteずつ)。DMDATAと同じレジスタの別framing(oep-spec `target.console` framing 2、dmseq)で、DMIアクセスが落ちても化けてもbyteの重複・欠落なし。host側は`ch32rv monitor --source dmseq`とOEP probe。X035・V003・L103でOEP probe越しに全出力の厳密照合・echo・再起動時のSYNまで確認(2026-09-24)。V003で+1268 byte flash / +52 byte RAM |
 

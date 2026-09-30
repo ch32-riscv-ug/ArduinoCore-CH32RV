@@ -13,7 +13,7 @@
 
 static void run_checks()
 {
-  arduino::CH32HardwareSerial *uart = tc_uart();
+  arduino::CH32RVHardwareSerial *uart = tc_uart();
   if (!uart) {
     tc_skip("uart_tx", "no UART named");
     tc_done();

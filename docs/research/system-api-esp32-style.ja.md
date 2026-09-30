@@ -10,10 +10,10 @@ EEPROMは作らない——作るとしても**低レベルなフラッシュ直
 
 | 機能 | arduino-esp32の姿 | こちらへの写像(提案) |
 |---|---|---|
-| 再起動 | `ESP.restart()` | `CH32.restart()` (PFIC SYSRST) |
-| リセット理由 | `esp_reset_reason()` (IDF関数を直接使う文化) | `CH32.resetReason()` + `CH32.resetReasonName()` (RCC RSTSCKRの残骸から) |
-| watchdog | ESP32は`esp_task_wdt_*`(IDF)。**ESP8266の`ESP.wdtEnable/wdtFeed`が「ESPオブジェクト」流儀の前例** | `CH32.wdtEnable(ms)` / `CH32.wdtFeed()`。IWDGは**一度動くと止められない**石なのでwdtDisable()は出さない(正直に) |
-| heap残量 | `ESP.getFreeHeap()` | `CH32.getFreeHeap()` (`_sbrk`とheap末尾から) |
+| 再起動 | `ESP.restart()` | `CH32RV.restart()` (PFIC SYSRST) |
+| リセット理由 | `esp_reset_reason()` (IDF関数を直接使う文化) | `CH32RV.resetReason()` + `CH32RV.resetReasonName()` (RCC RSTSCKRの残骸から) |
+| watchdog | ESP32は`esp_task_wdt_*`(IDF)。**ESP8266の`ESP.wdtEnable/wdtFeed`が「ESPオブジェクト」流儀の前例** | `CH32RV.wdtEnable(ms)` / `CH32RV.wdtFeed()`。IWDGは**一度動くと止められない**石なのでwdtDisable()は出さない(正直に) |
+| heap残量 | `ESP.getFreeHeap()` | `CH32RV.getFreeHeap()` (`_sbrk`とheap末尾から) |
 | チップ識別 | `ESP.getEfuseMac()` | `CH32.chipId()` (ESIG UID 96bit) |
 | flash直接アクセス | **ESP8266の`ESP.flashRead/flashWrite/flashEraseSector`**が前例(ESP32はPreferences/IDF) | `CH32.flashEraseSector(n)` / `flashWrite(off, buf, len)` / `flashRead(off, buf, len)` |
 | sleep | `esp_sleep_enable_timer_wakeup()` + `esp_deep_sleep_start()` | 後述。急がない |
@@ -22,18 +22,18 @@ EEPROMは作らない——作るとしても**低レベルなフラッシュ直
 
 **置き場所**: `ESP`オブジェクトの写像として、既存の`libraries/CH32`(逃げ道 + examples)に
 **`CH32`シングルトン**を足すのが素直。ADR-0013の基準2「coreの機能を出すのに必要」で通る。
-名前衝突に注意: いま`CH32.h`はincludeするだけのヘッダで、`CH32`という**オブジェクトは未定義**なので空いている。
+名前衝突に注意: いま`CH32RV.h`はincludeするだけのヘッダで、`CH32`という**オブジェクトは未定義**なので空いている。
 
 ## 各論
 
-### 1. `CH32.restart()` — 実装可能・検証可能(今すぐ)
+### 1. `CH32RV.restart()` — 実装可能・検証可能(今すぐ)
 
 PFICのシステムリセット(core_riscv.hの`NVIC_SystemReset`相当、KEY付きCFGR書き込み)。
 family差なし(全EVTで同一)。**コマンド規約のsketchで検証できる**:
 `REBOOT`コマンド→再起動→bannerが再来→`resetReason()==software`をRUNで確認、
 という**再起動をまたぐtest**が書ける(crt0_probeと同じ考え方で、配線不要)。
 
-### 2. `CH32.wdtEnable(ms)` / `wdtFeed()` — 実装可能・検証可能(今すぐ)
+### 2. `CH32RV.wdtEnable(ms)` / `wdtFeed()` — 実装可能・検証可能(今すぐ)
 
 IWDG(LSI駆動、KEY/PSCR/RLDRの3レジスタ、base 0x40003000は**全family同一**を確認済み)。
 - `wdtEnable(ms)`: LSI周波数から分周とreloadを計算。LSI周波数はfamily差あり
@@ -43,10 +43,10 @@ IWDG(LSI駆動、KEY/PSCR/RLDRの3レジスタ、base 0x40003000は**全family�
   ESP8266の`wdtDisable()`を真似ると嘘になるので、無いことを文書化する。
 - 検証: 上と同じ再起動またぎで`BITE`コマンド→餌やり停止→リセット→`resetReason()==watchdog`。
 
-### 3. `CH32.resetReason()` — 実装可能(今すぐ)。値はESP32の列挙に寄せる
+### 3. `CH32RV.resetReason()` — 実装可能(今すぐ)。値はESP32の列挙に寄せる
 
 RCC RSTSCKR(CSR)の残骸フラグ。ESP32の`esp_reset_reason_t`に寄せた列挙:
-`CH32_RESET_POWERON / EXTERNAL(NRSTピン) / SOFTWARE / WATCHDOG(IWDG) /
+`CH32RV_RESET_POWERON / EXTERNAL(NRSTピン) / SOFTWARE / WATCHDOG(IWDG) /
 WINDOW_WATCHDOG / LOW_POWER / UNKNOWN`。
 読み出し後にフラグをクリアするか(次回のために)は**要判断**——EVTはRMVFで消す。
 提案: 初回読み出しでlatchしてRMVF、以後はlatch値を返す。
@@ -64,12 +64,12 @@ zero-wait領域の外で実行しつつ消すのが可能か、familyごとの�
 
 ### 5. コンパレーター — クラス設計案(前例なしの新規)
 
-ESP32に前例が無いので、このcoreの既存流儀(`CH32SerialSDI`等の
+ESP32に前例が無いので、このcoreの既存流儀(`CH32RVSerialSDI`等の
 「`CH32`接頭辞クラス + 変異体define」)に合わせる:
 
 ```cpp
-CH32Comparator cmp(1);                    // CMP1
-cmp.begin(PA0, CH32_CMP_REF_VREFINT);     // +入力pad、-入力(padか内部基準)
+CH32RVComparator cmp(1);                    // CMP1
+cmp.begin(PA0, CH32RV_CMP_REF_VREFINT);     // +入力pad、-入力(padか内部基準)
 bool level = cmp.read();                  // いまの比較結果
 cmp.onChange(callback, RISING);           // 出力エッジで割込み
 cmp.end();
@@ -78,7 +78,7 @@ cmp.end();
 現実の制約:
 - CMPの構成は**familyでかなり違う**(X035: OPA兼用3ch+PGA、M030: CMP1-3、
   V003: OPA1のみ…)。入力padの選択肢・内部基準の有無・出力先(EXTI/TIM BKIN)が別物
-- 必要なdefine(`CH32_CMP1_BASE`、入力padの選択表)は**device-dataの
+- 必要なdefine(`CH32RV_CMP1_BASE`、入力padの選択表)は**device-dataの
   `pin_roles.csv`(155c398)にCMP行がある**——これも取り込み後に生成
 - → **設計はできるが、生成の前提が155c398取り込み**。実装はその後
 

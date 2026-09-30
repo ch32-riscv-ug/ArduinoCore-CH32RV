@@ -46,7 +46,7 @@ void yield(void)
 /* Every serialEvent hook lands here with its own port. Only the named UART's
  * counts, and only while this sketch is waiting for the line - a hook that
  * drained unconditionally would be testing nothing in particular. */
-static void on_serial_event(arduino::CH32HardwareSerial &port)
+static void on_serial_event(arduino::CH32RVHardwareSerial &port)
 {
     if (!waiting_until || &port != tc_uart()) {
         return;
@@ -64,19 +64,19 @@ static void on_serial_event(arduino::CH32HardwareSerial &port)
 #if defined(SERIAL_PORT_MONITOR)
 void serialEvent(void) { on_serial_event(SERIAL_PORT_MONITOR); }
 #endif
-#if defined(CH32_SERIAL1_TX)
+#if defined(CH32RV_SERIAL1_TX)
 void serialEvent1(void) { on_serial_event(Serial1); }
 #endif
-#if defined(CH32_SERIAL2_TX)
+#if defined(CH32RV_SERIAL2_TX)
 void serialEvent2(void) { on_serial_event(Serial2); }
 #endif
-#if defined(CH32_SERIAL3_TX)
+#if defined(CH32RV_SERIAL3_TX)
 void serialEvent3(void) { on_serial_event(Serial3); }
 #endif
-#if defined(CH32_SERIAL4_TX)
+#if defined(CH32RV_SERIAL4_TX)
 void serialEvent4(void) { on_serial_event(Serial4); }
 #endif
-#if defined(CH32_SERIAL5_TX)
+#if defined(CH32RV_SERIAL5_TX)
 void serialEvent5(void) { on_serial_event(Serial5); }
 #endif
 

@@ -122,7 +122,7 @@ recipeから`--chip`を落としたり空にしたりする変更は、このfai
 
 ```
 arduino-cli upload --programmer wch-link \
-  --fqbn ch32-riscv-ug:ch32v:CH32V006:pnum=CH32V006K8U6
+  --fqbn ch32-riscv-ug:ch32rv:CH32V006:pnum=CH32V006K8U6
 → flashed 3140 bytes to CH32V00X / verify: OK (readback matches) / running: yes
 → VCP: serial_println READY / PING→PONG / RUN 4行完走
 ```

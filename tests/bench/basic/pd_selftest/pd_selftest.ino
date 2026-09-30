@@ -101,7 +101,7 @@ static void run_checks()
      * legal cycle. Negotiation itself needs a PD supply on the connector.
      * Parts without the block (or not brought up - see usbpd_hw.h) take the
      * SKIP branch, which also proves begin() is honest there. */
-#ifdef CH32_USBPD_BASE
+#ifdef CH32RV_USBPD_BASE
     tc_check("hw_begin", USBPD.begin());
     /* Attach polling runs in maintain(). 1.5 s is enough for a source to be
      * detected and, if one is there, to have sent its capabilities and had

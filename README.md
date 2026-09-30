@@ -19,7 +19,7 @@ https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.jso
 With arduino-cli:
 
 ```sh
-arduino-cli core install ch32-riscv-ug:ch32v --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+arduino-cli core install ch32-riscv-ug:ch32rv --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 ```
 
 To upload, pick the port in the IDE - a WCH-Link's serial port or `wchlink://…`, an OEP probe's `oep://…` -
@@ -73,7 +73,7 @@ independent of this menu.
 ## Repository layout
 
 The repository root **is** the Arduino platform directory. For development,
-symlink this root to `<sketchbook>/hardware/ch32-riscv-ug/ch32v`.
+symlink this root to `<sketchbook>/hardware/ch32-riscv-ug/ch32rv`.
 
 ```text
 platform.txt          build recipes

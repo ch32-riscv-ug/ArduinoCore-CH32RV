@@ -1,4 +1,4 @@
-"""The AHB prescaler table in cores/arduino/ch32_clock.h.
+"""The AHB prescaler table in cores/arduino/ch32rv_clock.h.
 
 F_CPU is the target HCLK and the prescaler is derived from it, so that a
 different clock is a boards.txt change and nothing else. That only holds if the
@@ -69,19 +69,19 @@ def compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu, expect=None,
     prescaler divides SYSCLK, not the oscillator.
     """
     src = tmp_path / "probe.c"
-    body = f"#include <ch32_clock.h>\n"
+    body = f"#include <ch32rv_clock.h>\n"
     if expect is not None:
-        body += (f"_Static_assert(CH32_HPRE_FIELD == {expect}u,\n"
+        body += (f"_Static_assert(CH32RV_HPRE_FIELD == {expect}u,\n"
                  f'               "wrong AHB prescaler field");\n')
     src.write_text(body, encoding="utf-8")
     sysclk = hsi if sysclk is None else sysclk
     proc = subprocess.run(
         [f"{gcc_bin}/riscv-none-elf-gcc", "-std=c11", "-fsyntax-only",
          f"-I{repo / 'cores' / 'arduino'}",
-         f"-DF_CPU={f_cpu}L", f"-DCH32_HSI_HZ={hsi}",
-         f"-DCH32_CLOCK_SYSCLK_HZ={sysclk}",
-         f"-DCH32_CLOCK_USE_PLL={0 if sysclk == hsi else 1}",
-         f"-DCH32_HPRE_LINEAR={linear}", str(src)],
+         f"-DF_CPU={f_cpu}L", f"-DCH32RV_HSI_HZ={hsi}",
+         f"-DCH32RV_CLOCK_SYSCLK_HZ={sysclk}",
+         f"-DCH32RV_CLOCK_USE_PLL={0 if sysclk == hsi else 1}",
+         f"-DCH32RV_HPRE_LINEAR={linear}", str(src)],
         capture_output=True, text=True)
     return proc.returncode, proc.stdout + proc.stderr
 
@@ -112,8 +112,8 @@ def test_every_family_declares_an_encoding(repo):
     without = [f for f, line in zip(families,
                                     [ln for ln in boards.splitlines()
                                      if ".build.core_defines=" in ln])
-               if "-DCH32_HPRE_LINEAR=" not in line]
-    assert families and not without, f"{without} carry no CH32_HPRE_LINEAR"
+               if "-DCH32RV_HPRE_LINEAR=" not in line]
+    assert families and not without, f"{without} carry no CH32RV_HPRE_LINEAR"
 
 
 # The PLL only moves what the prescaler divides, so the same table has to hold
@@ -151,13 +151,13 @@ def test_sysclk_above_the_oscillator_needs_a_pll_setting(gcc_bin, repo,
     """SYSCLK and the PLL setting are generated together, so one without the
     other means boards.txt was hand-edited or half-regenerated."""
     src = tmp_path / "probe.c"
-    src.write_text("#include <ch32_clock.h>\n", encoding="utf-8")
+    src.write_text("#include <ch32rv_clock.h>\n", encoding="utf-8")
     proc = subprocess.run(
         [f"{gcc_bin}/riscv-none-elf-gcc", "-std=c11", "-fsyntax-only",
          f"-I{repo / 'cores' / 'arduino'}",
-         "-DF_CPU=144000000L", "-DCH32_HSI_HZ=8000000",
-         "-DCH32_CLOCK_SYSCLK_HZ=144000000", "-DCH32_CLOCK_USE_PLL=0",
-         "-DCH32_HPRE_LINEAR=0", str(src)],
+         "-DF_CPU=144000000L", "-DCH32RV_HSI_HZ=8000000",
+         "-DCH32RV_CLOCK_SYSCLK_HZ=144000000", "-DCH32RV_CLOCK_USE_PLL=0",
+         "-DCH32RV_HPRE_LINEAR=0", str(src)],
         capture_output=True, text=True)
     out = proc.stdout + proc.stderr
     assert proc.returncode != 0, out

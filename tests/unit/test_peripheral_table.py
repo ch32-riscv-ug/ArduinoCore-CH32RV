@@ -13,7 +13,7 @@ That asymmetry is why this checks one direction only.
   blank where a clock enable exists             ->  the documented "EVT has no
                                                     example" case. Ignored.
 
-The second source is CH32_CLKEN_<X>_ADDR in the generated variant headers,
+The second source is CH32RV_CLKEN_<X>_ADDR in the generated variant headers,
 which comes from ch32-device-data's clock_enables.csv. It is in the repository,
 so this runs in CI where peripheral_matrix.py cannot.
 """
@@ -34,7 +34,7 @@ DOC = REPO / "docs" / "peripheral-support.ja.md"
 # The bridge between two vocabularies, and the only thing written down here.
 # Deliberately partial: a row earns an entry only when it is a clock-gated
 # block with a clock enable of its own. GPIO, EXTI, PFIC, SysTick and RCC have
-# no CH32_CLKEN_ row to check them against, and a row absent from here is
+# no CH32RV_CLKEN_ row to check them against, and a row absent from here is
 # simply not checked rather than assumed missing.
 CLOCK_GATED = {
     "I2C": ("I2C1",),

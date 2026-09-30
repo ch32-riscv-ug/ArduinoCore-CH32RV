@@ -50,12 +50,12 @@ old pads to inputs.
   what I2C needs, but there are no internal pull-ups strong enough. Fit 4.7k to
   3V3 on each line unless the module already has them. Without them every
   transfer times out.
-- **Every wait is bounded.** `CH32_WIRE_TIMEOUT_US` (25 ms by default) caps
+- **Every wait is bounded.** `CH32RV_WIRE_TIMEOUT_US` (25 ms by default) caps
   each step, so a stuck bus returns an error instead of hanging the sketch.
   `endTransmission()` returns 5 for a timeout, 2 for an address NACK, 3 for a
   data NACK, 1 for an over-long write, 0 for success.
 - **The buffer is 32 bytes**, as on AVR. Writing more truncates and reports 1.
-  Raise it with `-DCH32_WIRE_BUFFER_SIZE=128`; both buffers grow, on every
+  Raise it with `-DCH32RV_WIRE_BUFFER_SIZE=128`; both buffers grow, on every
   instance.
 - **Slave mode is not implemented.** `begin(address)`, `onReceive()` and
   `onRequest()` are accepted and do nothing rather than half-working.
@@ -75,7 +75,7 @@ old pads to inputs.
   so call it when a transfer times out and you know it is safe. Works before or
   after `begin()`; an open bus is reopened as it was. Lines are released with
   the internal pull-up and SCL is never driven high, so a stretching slave is
-  waited for (`CH32_WIRE_CLEAR_STRETCH_US`, 1 ms per pulse).
+  waited for (`CH32RV_WIRE_CLEAR_STRETCH_US`, 1 ms per pulse).
 - Clock: `setClock(100000)` for standard mode, anything higher selects fast
   mode with a 2:1 duty cycle. The peripheral clock is assumed to be `F_CPU`,
   which holds while the core runs from HSI with both APB prescalers at /1.

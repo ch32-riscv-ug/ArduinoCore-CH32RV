@@ -56,13 +56,13 @@ ch32rv monitor --source dmseq
 `loop()`で`available()`を呼んでください。書き込みの直後には空フレームを出さないので、
 `available()`と`print()`を交互に呼ぶloopでも、printのたびに往復が1回増えることはありません。
 
-届いた分は16 byteのバッファ(`CH32_DMSEQ_RX_SIZE`)に置きます。次のフレームを置く場所がない
+届いた分は16 byteのバッファ(`CH32RV_DMSEQ_RX_SIZE`)に置きます。次のフレームを置く場所がない
 ときは受け取らず、hostが送り直すので、落ちることはありません。
 
 ## 知っておくとよいこと
 
-- **hostが居なくても固まりません。** hostが一度答えるまでは20 ms(`CH32_DMSEQ_WAIT_MS`)、
-  以後は1 s(`CH32_DMSEQ_HOST_WAIT_MS`)待ちます。待ちが切れると、フレームをTO bitを立てて
+- **hostが居なくても固まりません。** hostが一度答えるまでは20 ms(`CH32RV_DMSEQ_WAIT_MS`)、
+  以後は1 s(`CH32RV_DMSEQ_HOST_WAIT_MS`)待ちます。待ちが切れると、フレームをTO bitを立てて
   出したままにし、hostが答えるまで以後の書込みは捨てます。`alive()`がその状態を返し、
   自動的に戻ります。1秒に1回以上pollするhostなら何も落ちません。待ちは`millis()`ではなく
   レジスタを読んだ回数で数えるので、割込み禁止中でも終わります。

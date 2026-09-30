@@ -3,15 +3,15 @@
  * Transmit is interrupt-driven through a ring buffer so that print() does not
  * block on the wire; receive is interrupt-driven into a second ring buffer.
  * One instance per USART, wired up in HardwareSerial.cpp from the variant's
- * CH32_SERIALn_TX / CH32_SERIALn_RX definitions.
+ * CH32RV_SERIALn_TX / CH32RV_SERIALn_RX definitions.
  */
 #pragma once
 
 #include "api/HardwareSerial.h"
-#include "ch32_pins.h"
-#include "ch32_ringbuffer.h"
-#include "ch32_route.h"
-/* Not just for the pad names: CH32_SERIALn_TX and CH32_SERIAL_DEFAULT below
+#include "ch32rv_pins.h"
+#include "ch32rv_ringbuffer.h"
+#include "ch32rv_route.h"
+/* Not just for the pad names: CH32RV_SERIALn_TX and CH32RV_SERIAL_DEFAULT below
  * come from here, and this header has to work when it is included first.
  * HardwareSerial.cpp includes it before Arduino.h, and when the variant was
  * only reachable through Arduino.h that left SERIAL_PORT_MONITOR undefined for
@@ -24,28 +24,28 @@
 
 /* 64 bytes each, which is the AVR core's size and fits CH32V003's 2 KB of RAM
  * with room to spare. Raise it per sketch with a build option, e.g.
- *   arduino-cli compile --build-property build.extra_flags=-DCH32_SERIAL_RX_BUFFER_SIZE=256
+ *   arduino-cli compile --build-property build.extra_flags=-DCH32RV_SERIAL_RX_BUFFER_SIZE=256
  * or the same line in a sketch's build_opt.h. Every instance grows, so the cost
  * is (RX + TX) x the number of USARTs the variant defines.
  *
  * The ring keeps one slot unusable to tell empty from full, so a size of N
  * holds N-1 bytes. Sizes must be at least 2. */
-#ifndef CH32_SERIAL_RX_BUFFER_SIZE
-#define CH32_SERIAL_RX_BUFFER_SIZE 64
+#ifndef CH32RV_SERIAL_RX_BUFFER_SIZE
+#define CH32RV_SERIAL_RX_BUFFER_SIZE 64
 #endif
-#ifndef CH32_SERIAL_TX_BUFFER_SIZE
-#define CH32_SERIAL_TX_BUFFER_SIZE 64
+#ifndef CH32RV_SERIAL_TX_BUFFER_SIZE
+#define CH32RV_SERIAL_TX_BUFFER_SIZE 64
 #endif
 
-#if CH32_SERIAL_RX_BUFFER_SIZE < 2 || CH32_SERIAL_TX_BUFFER_SIZE < 2
-#error "CH32_SERIAL_{RX,TX}_BUFFER_SIZE must be at least 2 (one slot is the empty/full marker)"
+#if CH32RV_SERIAL_RX_BUFFER_SIZE < 2 || CH32RV_SERIAL_TX_BUFFER_SIZE < 2
+#error "CH32RV_SERIAL_{RX,TX}_BUFFER_SIZE must be at least 2 (one slot is the empty/full marker)"
 #endif
 
 namespace arduino {
 
-class CH32HardwareSerial : public HardwareSerial {
+class CH32RVHardwareSerial : public HardwareSerial {
 public:
-    CH32HardwareSerial(uint32_t base, uint8_t irqn, uint8_t tx_pin,
+    CH32RVHardwareSerial(uint32_t base, uint8_t irqn, uint8_t tx_pin,
                        uint8_t rx_pin, uint32_t clken_addr, uint32_t clken_mask,
                        uint32_t remap_mask, uint32_t remap_value,
                        uint32_t remap2_mask, uint32_t remap2_value)
@@ -113,7 +113,7 @@ public:
 private:
     void start_tx(void);
 
-    bool use_route(const ch32_route_t &route);
+    bool use_route(const ch32rv_route_t &route);
 
     const uint32_t _base;
     const uint8_t _irqn;
@@ -135,39 +135,39 @@ private:
     /* Remembered so a route change can reopen the port exactly as it was. */
     unsigned long _baudrate = 0;
     uint16_t _config = 0;
-    CH32RingBuffer<CH32_SERIAL_RX_BUFFER_SIZE> _rx;
-    CH32RingBuffer<CH32_SERIAL_TX_BUFFER_SIZE> _tx;
+    CH32RVRingBuffer<CH32RV_SERIAL_RX_BUFFER_SIZE> _rx;
+    CH32RVRingBuffer<CH32RV_SERIAL_TX_BUFFER_SIZE> _tx;
 };
 
 }  // namespace arduino
 
 /* The variant names the USART whose pins exist on every part in the series. */
-#if defined(CH32_SERIAL1_TX)
-extern arduino::CH32HardwareSerial Serial1;
+#if defined(CH32RV_SERIAL1_TX)
+extern arduino::CH32RVHardwareSerial Serial1;
 #endif
-#if defined(CH32_SERIAL2_TX)
-extern arduino::CH32HardwareSerial Serial2;
+#if defined(CH32RV_SERIAL2_TX)
+extern arduino::CH32RVHardwareSerial Serial2;
 #endif
-#if defined(CH32_SERIAL3_TX)
-extern arduino::CH32HardwareSerial Serial3;
+#if defined(CH32RV_SERIAL3_TX)
+extern arduino::CH32RVHardwareSerial Serial3;
 #endif
-#if defined(CH32_SERIAL4_TX)
-extern arduino::CH32HardwareSerial Serial4;
+#if defined(CH32RV_SERIAL4_TX)
+extern arduino::CH32RVHardwareSerial Serial4;
 #endif
-#if defined(CH32_SERIAL5_TX)
-extern arduino::CH32HardwareSerial Serial5;
+#if defined(CH32RV_SERIAL5_TX)
+extern arduino::CH32RVHardwareSerial Serial5;
 #endif
 
-#if !defined(SERIAL_PORT_MONITOR) && defined(CH32_SERIAL_DEFAULT)
-#if CH32_SERIAL_DEFAULT == 1
+#if !defined(SERIAL_PORT_MONITOR) && defined(CH32RV_SERIAL_DEFAULT)
+#if CH32RV_SERIAL_DEFAULT == 1
 #define SERIAL_PORT_MONITOR Serial1
-#elif CH32_SERIAL_DEFAULT == 2
+#elif CH32RV_SERIAL_DEFAULT == 2
 #define SERIAL_PORT_MONITOR Serial2
-#elif CH32_SERIAL_DEFAULT == 3
+#elif CH32RV_SERIAL_DEFAULT == 3
 #define SERIAL_PORT_MONITOR Serial3
-#elif CH32_SERIAL_DEFAULT == 4
+#elif CH32RV_SERIAL_DEFAULT == 4
 #define SERIAL_PORT_MONITOR Serial4
-#elif CH32_SERIAL_DEFAULT == 5
+#elif CH32RV_SERIAL_DEFAULT == 5
 #define SERIAL_PORT_MONITOR Serial5
 #endif
 #endif
@@ -178,12 +178,12 @@ extern arduino::CH32HardwareSerial Serial5;
 
 /* Retarget printf()/puts()/stderr. The default is the monitor port above.
  *
- *   ch32_set_stdout(&SerialSDI);   // trace over the debug probe, no wiring
- *   ch32_set_stdout(nullptr);      // discard
+ *   ch32rv_set_stdout(&SerialSDI);   // trace over the debug probe, no wiring
+ *   ch32rv_set_stdout(nullptr);      // discard
  *
  * This moves *stdio* only. The name `Serial` is bound at compile time and does
  * not follow - a sketch that wants to print to SDI writes SerialSDI.println()
  * as usual. Anything deriving from Print works, so a library that provides a
  * USB CDC port plugs in the same way, without the core knowing it exists. */
-void ch32_set_stdout(arduino::Print *out);
-arduino::Print *ch32_get_stdout(void);
+void ch32rv_set_stdout(arduino::Print *out);
+arduino::Print *ch32rv_get_stdout(void);

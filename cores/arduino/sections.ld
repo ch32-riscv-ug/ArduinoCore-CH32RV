@@ -58,7 +58,7 @@ SECTIONS
 
     /* Code the user asks to run from RAM, e.g.
      *   void f(void) __attribute__((section(".highcode")));
-     * crt0_ch32.S copies it when CH32_HIGHCODE is defined. Empty by default,
+     * crt0_ch32.S copies it when CH32RV_HIGHCODE is defined. Empty by default,
      * so the copy loop moves zero bytes on families that do not use it. */
     .highcode :
     {

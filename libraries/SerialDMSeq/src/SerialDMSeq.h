@@ -36,26 +36,26 @@
  * than having output dropped. On a timeout the frame stays posted with TO set
  * and later writes are dropped until a host answers it. A synced host that
  * polls at least once a second loses nothing. */
-#ifndef CH32_DMSEQ_WAIT_MS
-#define CH32_DMSEQ_WAIT_MS 20u
+#ifndef CH32RV_DMSEQ_WAIT_MS
+#define CH32RV_DMSEQ_WAIT_MS 20u
 #endif
-#ifndef CH32_DMSEQ_HOST_WAIT_MS
-#define CH32_DMSEQ_HOST_WAIT_MS 1000u
+#ifndef CH32RV_DMSEQ_HOST_WAIT_MS
+#define CH32RV_DMSEQ_HOST_WAIT_MS 1000u
 #endif
 
 /* Room to park what the host has sent. A frame carries two bytes; the host is
  * held off (its frame is not taken, so it sends it again) while there is no
  * room for one. */
-#ifndef CH32_DMSEQ_RX_SIZE
-#define CH32_DMSEQ_RX_SIZE 16u
+#ifndef CH32RV_DMSEQ_RX_SIZE
+#define CH32RV_DMSEQ_RX_SIZE 16u
 #endif
 
-static_assert(CH32_DMSEQ_RX_SIZE >= 4u && CH32_DMSEQ_RX_SIZE <= 255u,
-              "CH32_DMSEQ_RX_SIZE must be between 4 and 255");
+static_assert(CH32RV_DMSEQ_RX_SIZE >= 4u && CH32RV_DMSEQ_RX_SIZE <= 255u,
+              "CH32RV_DMSEQ_RX_SIZE must be between 4 and 255");
 
 namespace arduino {
 
-class CH32SerialDMSeq : public HardwareSerial {
+class CH32RVSerialDMSeq : public HardwareSerial {
 public:
     /* The baud rate is meaningless here - there is no wire - and is accepted
      * only so that a sketch can swap this in for Serial without edits. */
@@ -81,7 +81,7 @@ public:
     bool alive(void) { return !_latched; }
 
 private:
-    uint8_t _rx[CH32_DMSEQ_RX_SIZE];
+    uint8_t _rx[CH32RV_DMSEQ_RX_SIZE];
     uint8_t _head = 0;            /* next byte to hand to read() */
     uint8_t _tail = 0;            /* next free slot */
     uint8_t _s = 0;               /* sequence bit of the frame posted (or next) */
@@ -109,4 +109,4 @@ private:
 
 }  // namespace arduino
 
-extern arduino::CH32SerialDMSeq SerialDMSeq;
+extern arduino::CH32RVSerialDMSeq SerialDMSeq;

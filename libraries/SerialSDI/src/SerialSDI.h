@@ -30,13 +30,13 @@
  * count. The vendor's implementation waits forever, which turns "I unplugged
  * the debugger" into "my sketch hangs"; this one gives up and drops the bytes,
  * the way a UART with nobody listening does. */
-#ifndef CH32_SDI_SPIN
-#define CH32_SDI_SPIN 200000u
+#ifndef CH32RV_SDI_SPIN
+#define CH32RV_SDI_SPIN 200000u
 #endif
 
 namespace arduino {
 
-class CH32SerialSDI : public HardwareSerial {
+class CH32RVSerialSDI : public HardwareSerial {
 public:
     /* The baud rate is meaningless here - there is no wire - and is accepted
      * only so that a sketch can swap this in for Serial without edits. */
@@ -62,4 +62,4 @@ private:
 
 }  // namespace arduino
 
-extern arduino::CH32SerialSDI SerialSDI;
+extern arduino::CH32RVSerialSDI SerialSDI;

@@ -146,7 +146,7 @@ bool setPins(int sda, int scl);
   ハードの`Wire`と共通。`TwoWire *`を取るライブラリにどちらも渡せる)
 - 両padを`OUTPUT_OPENDRAIN`にし、HIGHは解放、LOWは駆動
 - **クロックストレッチ対応**: SCLを解放したあと、実際にHIGHになるまで待つ。
-  待ち上限は`CH32_WIRE_TIMEOUT_US`(25 ms、ハード実装と同じ既定)
+  待ち上限は`CH32RV_WIRE_TIMEOUT_US`(25 ms、ハード実装と同じ既定)
 - `setClock()`は半周期の`delayMicroseconds`量に反映する。**達成値ではなく上限**
 - **master専用**。`begin(uint8_t address)`はslaveになれないので、
   コンパイルは通し実行時に何もしない(基底が純粋仮想のため実装は必要)
@@ -180,8 +180,8 @@ SoftSerial(uint8_t tx, uint8_t rx);      /* 受信つき(条件付き) */
 
 - 空きTIMを1本占有し、compare割り込みで任意padをトグルする
 - **CH32V003では空きタイマが無いので提供しない**。
-  variantが空きTIMを宣言する仕組みが要る(現在は`CH32_TONE_TIMER`/
-  `CH32_SERVO_TIMER`しか出していない)
+  variantが空きTIMを宣言する仕組みが要る(現在は`CH32RV_TONE_TIMER`/
+  `CH32RV_SERVO_TIMER`しか出していない)
 - 優先度は低い。`要判断`
 
 ## 6. 検証
@@ -190,7 +190,7 @@ SoftSerial(uint8_t tx, uint8_t rx);      /* 受信つき(条件付き) */
 - **HIL**: `tests/sketches/basic/`に自己検査を置き、**ソフト実装とハード実装を
   同じ2 padに配線して相互に通信させる**。SoftSPI↔SPI、SoftWire↔Wire、
   SoftSerial↔Serial。ソフト側の正しさをハード側が裏書きする形にできる
-- `pins_arduino.h`の`CH32_PORT_MASK`がSKU別になったので、
+- `pins_arduino.h`の`CH32RV_PORT_MASK`がSKU別になったので、
   **選んだpadがそのpackageに無ければ`digitalPinIsValid()`で弾ける**
 
 ## 7. 未解決

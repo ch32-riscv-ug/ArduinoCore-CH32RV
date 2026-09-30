@@ -36,8 +36,8 @@ ARCHES = [("rv32ec", "rv32ec_zmmul_zicsr", "ilp32e"),
 
 COMMON = ["-Os", "-g", "-ffunction-sections", "-fdata-sections"]
 CXXFLAGS = ["-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics"]
-CRT_DEFS = ["-DCH32_VECTORS=vectors_v00x.inc", "-DCH32_MSTATUS_INIT=0x1880",
-            "-DCH32_INTSYSCR_INIT=0x3"]
+CRT_DEFS = ["-DCH32RV_VECTORS=vectors_v00x.inc", "-DCH32RV_MSTATUS_INIT=0x1880",
+            "-DCH32RV_INTSYSCR_INIT=0x3"]
 
 # Measurement-only memory map, deliberately generous so no case is clipped by a
 # real part's flash limit. Whether a case fits a given SKU is judged from the

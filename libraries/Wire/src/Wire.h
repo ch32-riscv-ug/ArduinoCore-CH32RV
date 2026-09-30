@@ -1,6 +1,6 @@
 /* Wire (I2C) for CH32 RISC-V.
  *
- * Master mode, polled. The pins come from the variant's CH32_I2Cn_SCL/SDA, so
+ * Master mode, polled. The pins come from the variant's CH32RV_I2Cn_SCL/SDA, so
  * a sketch calls Wire.begin() with no arguments the way it does on AVR, or names
  * them the way it does on an ESP32: Wire.begin(sda, scl[, frequency]). The type
  * libraries take, TwoWire, is the base in <TwoWire.h>.
@@ -15,7 +15,7 @@
  *     write()s is what the master reads
  *   - a master that reads more than onRequest() provided gets 0xFF, the
  *     bus's idle level, rather than a repeat of the last byte
- *   - a message longer than CH32_WIRE_BUFFER_SIZE keeps its head and drops
+ *   - a message longer than CH32RV_WIRE_BUFFER_SIZE keeps its head and drops
  *     the tail, as AVR's twi does
  *
  * One instance is a master or a slave, not both: begin() and begin(address)
@@ -29,41 +29,41 @@
 #pragma once
 
 #include "TwoWire.h"
-#include "ch32_pins.h"
-#include "ch32_route.h"
+#include "ch32rv_pins.h"
+#include "ch32rv_route.h"
 #include "pins_arduino.h"
 
 #include <stdint.h>
 
 /* AVR's Wire uses 32, and libraries written against it assume a write of more
  * than 32 bytes is truncated rather than sent. Raise it per sketch with
- *   -DCH32_WIRE_BUFFER_SIZE=128
+ *   -DCH32RV_WIRE_BUFFER_SIZE=128
  * remembering that both buffers grow, on every Wire instance. */
-#ifndef CH32_WIRE_BUFFER_SIZE
-#define CH32_WIRE_BUFFER_SIZE 32
+#ifndef CH32RV_WIRE_BUFFER_SIZE
+#define CH32RV_WIRE_BUFFER_SIZE 32
 #endif
 /* The names libraries size their transfers by (arduino-esp32 / AVR spellings). */
-#define I2C_BUFFER_LENGTH CH32_WIRE_BUFFER_SIZE
-#define BUFFER_LENGTH CH32_WIRE_BUFFER_SIZE
+#define I2C_BUFFER_LENGTH CH32RV_WIRE_BUFFER_SIZE
+#define BUFFER_LENGTH CH32RV_WIRE_BUFFER_SIZE
 
 /* How long a single bus wait may take before the call gives up, in
  * microseconds. 25 ms is well past the worst case for a byte at the slowest
  * clock this driver programs, so hitting it means the bus is stuck. */
-#ifndef CH32_WIRE_TIMEOUT_US
-#define CH32_WIRE_TIMEOUT_US 25000UL
+#ifndef CH32RV_WIRE_TIMEOUT_US
+#define CH32RV_WIRE_TIMEOUT_US 25000UL
 #endif
 
 /* clearBus(): how long each SCL pulse waits for a slave that stretches the
  * clock before giving up on it, in microseconds. */
-#ifndef CH32_WIRE_CLEAR_STRETCH_US
-#define CH32_WIRE_CLEAR_STRETCH_US 1000UL
+#ifndef CH32RV_WIRE_CLEAR_STRETCH_US
+#define CH32RV_WIRE_CLEAR_STRETCH_US 1000UL
 #endif
 
 namespace arduino {
 
-class CH32TwoWire : public ::TwoWire {
+class CH32RVTwoWire : public ::TwoWire {
 public:
-    CH32TwoWire(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
+    CH32RVTwoWire(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
                 uint8_t scl_pin,
                 uint8_t sda_pin, uint32_t remap_mask, uint32_t remap_value,
                 uint32_t remap2_mask, uint32_t remap2_value,
@@ -86,7 +86,7 @@ public:
 
     /* AVR's timeout API (Wire.h since 1.8.x), with two documented differences.
      *
-     * The timeout is ON by default here, at CH32_WIRE_TIMEOUT_US (25 ms, the
+     * The timeout is ON by default here, at CH32RV_WIRE_TIMEOUT_US (25 ms, the
      * same number AVR's own default uses). On AVR it is off until a sketch
      * asks for it, and a stuck bus hangs the sketch forever; that is not a
      * behaviour worth reproducing, so the default stays on. Pass 0 to turn it
@@ -97,7 +97,7 @@ public:
      * anything but a NACK, and the next endTransmission()/requestFrom() runs
      * it. Leaving a latched-BUSY peripheral alone has no upside, so `false`
      * does not switch that off. */
-    void setWireTimeout(uint32_t timeout = CH32_WIRE_TIMEOUT_US,
+    void setWireTimeout(uint32_t timeout = CH32RV_WIRE_TIMEOUT_US,
                         bool reset_with_timeout = false) override;
     /* Sticky: set by any wait that ran out, and only cleared by the call
      * below, so a sketch can check once after a burst of transfers. */
@@ -148,7 +148,7 @@ public:
      * begin(); a bus that was open is reopened as it was (master, or slave at
      * its own address). Lines are released with the internal pull-up and SCL
      * is never driven high, so a slave stretching the clock is waited for, up
-     * to CH32_WIRE_CLEAR_STRETCH_US per pulse. */
+     * to CH32RV_WIRE_CLEAR_STRETCH_US per pulse. */
     bool clearBus(void);
 
     /* Print/Stream */
@@ -165,7 +165,7 @@ protected:
 
 private:
     bool wait_flag1(uint16_t mask, bool set);
-    bool use_route(const ch32_route_t &route);
+    bool use_route(const ch32rv_route_t &route);
     bool start(uint8_t address, bool read);
     void stop(void);
     void recover(void);
@@ -197,7 +197,7 @@ private:
      * first: an aborted transfer can leave BUSY asserted forever. */
     bool _needs_recovery = false;
     /* 0 disables the timeout, as on AVR. */
-    uint32_t _timeout_us = CH32_WIRE_TIMEOUT_US;
+    uint32_t _timeout_us = CH32RV_WIRE_TIMEOUT_US;
     bool _timeout_flag = false;
 
     /* Slave state. The callbacks run in interrupt context. _slave_replying
@@ -211,10 +211,10 @@ private:
     /* Shared by the polled master and the slave interrupt handler - never
      * both at once, since the modes are exclusive. Volatile for the halves
      * the handler writes while the sketch reads. */
-    uint8_t _tx[CH32_WIRE_BUFFER_SIZE];
+    uint8_t _tx[CH32RV_WIRE_BUFFER_SIZE];
     volatile uint8_t _tx_len = 0;
     volatile uint8_t _tx_sent = 0;
-    uint8_t _rx[CH32_WIRE_BUFFER_SIZE];
+    uint8_t _rx[CH32RV_WIRE_BUFFER_SIZE];
     volatile uint8_t _rx_len = 0;
     volatile uint8_t _rx_read = 0;
 };
@@ -223,16 +223,16 @@ private:
 
 /* The bare name is the first bus and Wire1 the second, as elsewhere in the
  * Arduino ecosystem - see the note above the instances in Wire.cpp. */
-#if defined(CH32_I2C1_SCL) && defined(CH32_I2C2_SCL)
+#if defined(CH32RV_I2C1_SCL) && defined(CH32RV_I2C2_SCL)
 #define WIRE_INTERFACES_COUNT 2
-#elif defined(CH32_I2C1_SCL) || defined(CH32_I2C2_SCL)
+#elif defined(CH32RV_I2C1_SCL) || defined(CH32RV_I2C2_SCL)
 #define WIRE_INTERFACES_COUNT 1
 #endif
-#if defined(CH32_I2C1_SCL)
-extern arduino::CH32TwoWire Wire;       /* I2C1 */
-#if defined(CH32_I2C2_SCL)
-extern arduino::CH32TwoWire Wire1;      /* I2C2 */
+#if defined(CH32RV_I2C1_SCL)
+extern arduino::CH32RVTwoWire Wire;       /* I2C1 */
+#if defined(CH32RV_I2C2_SCL)
+extern arduino::CH32RVTwoWire Wire1;      /* I2C2 */
 #endif
-#elif defined(CH32_I2C2_SCL)
-extern arduino::CH32TwoWire Wire;       /* I2C2, on a part that has no I2C1 */
+#elif defined(CH32RV_I2C2_SCL)
+extern arduino::CH32RVTwoWire Wire;       /* I2C2, on a part that has no I2C1 */
 #endif

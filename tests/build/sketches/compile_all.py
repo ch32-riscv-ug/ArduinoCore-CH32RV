@@ -33,7 +33,7 @@ from compile_matrix import (Failure, compile_one, gcc_bin,   # noqa: E402
 sys.path.insert(0, str(HERE))
 from stage import stage_sketch                              # noqa: E402
 
-FQBN = re.compile(r"ch32-riscv-ug:ch32v:[A-Za-z0-9]+:pnum=[A-Za-z0-9]+")
+FQBN = re.compile(r"ch32-riscv-ug:ch32rv:[A-Za-z0-9]+:pnum=[A-Za-z0-9]+")
 USED = re.compile(r"Sketch uses (\d+) bytes \((\d+)%\)")
 
 

@@ -327,15 +327,15 @@ def serial_pins(board: str, override=None):
     header = (REPO / "variants" / board / "pins_arduino.h").read_text(encoding="utf-8")
     if override is not None:
         n = str(override)
-        if f"#define CH32_SERIAL{n}_TX" not in header:
+        if f"#define CH32RV_SERIAL{n}_TX" not in header:
             raise Failure(f"{board}: the variant has no USART{n}")
     else:
-        index = re.search(r"#define CH32_SERIAL_DEFAULT (\d+)", header)
+        index = re.search(r"#define CH32RV_SERIAL_DEFAULT (\d+)", header)
         if not index:
             return None
         n = index.group(1)
-    tx = re.search(rf"#define CH32_SERIAL{n}_TX (\w+)", header)
-    rx = re.search(rf"#define CH32_SERIAL{n}_RX (\w+)", header)
+    tx = re.search(rf"#define CH32RV_SERIAL{n}_TX (\w+)", header)
+    rx = re.search(rf"#define CH32RV_SERIAL{n}_RX (\w+)", header)
     note = re.search(rf"/\* USART{n}: ([^*]+)\*/", header)
     return n, tx.group(1), rx.group(1), (note.group(1).strip() if note else "")
 
@@ -433,7 +433,7 @@ class Ch32rvConsole:
 def serial_route(board: str, n, tx: str, rx: str):
     """The route number of USARTn whose pins are (tx, rx), from the variant's route table."""
     header = (REPO / "variants" / board / "pins_arduino.h").read_text(encoding="utf-8")
-    table = re.search(rf"#define CH32_SERIAL{n}_ROUTES \{{(.*?)\n\}}", header, re.S)
+    table = re.search(rf"#define CH32RV_SERIAL{n}_ROUTES \{{(.*?)\n\}}", header, re.S)
     if not table:
         return 0
     for route, pin_tx, pin_rx in re.findall(r"\{\s*(\d+),\s*\{\s*(\w+),\s*(\w+)", table.group(1)):
@@ -702,7 +702,7 @@ def sketchbook(tmp: pathlib.Path) -> dict:
     """
     (tmp / "user" / "hardware" / "ch32-riscv-ug").mkdir(parents=True,
                                                         exist_ok=True)
-    link = tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32v"
+    link = tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32rv"
     if not link.exists():
         link.symlink_to(REPO)
     return dict(os.environ, ARDUINO_DIRECTORIES_USER=str(tmp / "user"))
@@ -713,7 +713,7 @@ def build(bench: Bench, sketch_dir: pathlib.Path, tmp: pathlib.Path,
     """Compile one sketch directory; return the build path or raise Failure."""
     out = tmp / "build"
     r = sh(["arduino-cli", "compile",
-            "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
+            "--fqbn", f"ch32-riscv-ug:ch32rv:{bench.board}:pnum={bench.pnum}",
             "--build-property", f"compiler.path={bench.gcc}/",
             *[a for p in bench.properties for a in ("--build-property", p)],
             "--build-path", str(out), str(sketch_dir)],
@@ -734,7 +734,7 @@ def upload(bench: Bench, built: pathlib.Path, sketch_dir: pathlib.Path,
     Board-Manager-installed in a symlinked dev tree.
     """
     cmd = ["arduino-cli", "upload",
-           "--fqbn", f"ch32-riscv-ug:ch32v:{bench.board}:pnum={bench.pnum}",
+           "--fqbn", f"ch32-riscv-ug:ch32rv:{bench.board}:pnum={bench.pnum}",
            "--programmer", "wch-link", "--input-dir", str(built),
            "--upload-property", f"runtime.tools.probe-rs.path={bench.probe_rs}",
            # The wch-link programmer is ch32rv now (platform.txt, ADR-0008); a symlinked dev

@@ -56,8 +56,8 @@ against an empty sketch (624 bytes flash, 4 bytes RAM):
 The buffers are the bulk of the RAM, and they are `#define`s:
 
 ```
--DCH32_RTT_UP_SIZE=64        // target to host, default 256
--DCH32_RTT_DOWN_SIZE=8       // host to target, default 16
+-DCH32RV_RTT_UP_SIZE=64        // target to host, default 256
+-DCH32RV_RTT_DOWN_SIZE=8       // host to target, default 16
 ```
 
 Pass them through `build_opt.h` beside the sketch, or
@@ -79,9 +79,9 @@ either of them.
 ## Changing where printf() goes
 
 ```cpp
-ch32_set_stdout(&SerialRTT);      // printf() into the ring buffer
-ch32_set_stdout(&Serial);         // back to the UART
-ch32_set_stdout(nullptr);         // discard
+ch32rv_set_stdout(&SerialRTT);      // printf() into the ring buffer
+ch32rv_set_stdout(&Serial);         // back to the UART
+ch32rv_set_stdout(nullptr);         // discard
 ```
 
 Only **stdio** follows. The name `Serial` is fixed at compile time, so

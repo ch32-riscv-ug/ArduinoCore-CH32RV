@@ -81,19 +81,19 @@ def _reachable_headers(variant: pathlib.Path) -> set:
 
 @pytest.mark.parametrize("header", VARIANTS, ids=lambda p: p.parent.name)
 def test_the_register_map_stays_out_of_the_sketch(header):
-    """Arduino.h must not reach ch32_registers.h. `#include <CH32.h>` is the door.
+    """Arduino.h must not reach ch32rv_registers.h. `#include <CH32RV.h>` is the door.
 
-    ch32_pins.h repeats CH32_GPIO_PORT_BASE rather than including the register
+    ch32rv_pins.h repeats CH32RV_GPIO_PORT_BASE rather than including the register
     map, and says so in a comment; wiring_digital.c has a _Static_assert so the
     two constants cannot drift. Nothing checked the include boundary itself,
-    so one `#include "ch32_registers.h"` in ch32_pins.h would put 473 lines of
+    so one `#include "ch32rv_registers.h"` in ch32rv_pins.h would put 473 lines of
     register map into every sketch's namespace and no test would notice.
     """
     reachable = _reachable_headers(header)
     assert "Arduino.h" in reachable, "the walk found nothing; check the roots"
-    assert "ch32_registers.h" not in reachable, (
+    assert "ch32rv_registers.h" not in reachable, (
         f"the register map reaches a sketch through Arduino.h on "
-        f"{header.parent.name}; it belongs behind #include <CH32.h> "
+        f"{header.parent.name}; it belongs behind #include <CH32RV.h> "
         f"(docs/board-layer-rules.ja.md)")
 
 

@@ -1,41 +1,41 @@
 /*
  * crt0_ch32.S - prototype unified startup for CH32 (W-2 proof of concept)
  * Parameters via -D:
- *   CH32_VECTORS        include file (unquoted) with CH32_IRQ/CH32_RSV/CH32_JMP lines
- *   CH32_MSTATUS_INIT   e.g. 0x1880 (V2), 0x88 (V3/V4), 0x6088 (+FPU), 0x688 (+RVV)
- *   CH32_INTSYSCR_INIT  optional, value for csr 0x804 (absent on V103)
- *   CH32_MTVEC_MODE     optional, mtvec mode bits (default 3 = address table,
+ *   CH32RV_VECTORS        include file (unquoted) with CH32RV_IRQ/CH32RV_RSV/CH32RV_JMP lines
+ *   CH32RV_MSTATUS_INIT   e.g. 0x1880 (V2), 0x88 (V3/V4), 0x6088 (+FPU), 0x688 (+RVV)
+ *   CH32RV_INTSYSCR_INIT  optional, value for csr 0x804 (absent on V103)
+ *   CH32RV_MTVEC_MODE     optional, mtvec mode bits (default 3 = address table,
  *                       1 = jump-instruction table as used by CH32V103)
- *   CH32_CORECFGR       optional, value for csr 0xbc0
- *   CH32_CSR_BC1        optional, value for csr 0xbc1
- *   CH32_CSR805_CLR     optional, bitmask cleared in csr 0x805 (csrc)
- *   CH32_HIGHCODE       optional, copy .highcode from flash to RAM
- *   CH32_NO_INIT_ARRAY  optional, skip calling C++ global constructors
+ *   CH32RV_CORECFGR       optional, value for csr 0xbc0
+ *   CH32RV_CSR_BC1        optional, value for csr 0xbc1
+ *   CH32RV_CSR805_CLR     optional, bitmask cleared in csr 0x805 (csrc)
+ *   CH32RV_HIGHCODE       optional, copy .highcode from flash to RAM
+ *   CH32RV_NO_INIT_ARRAY  optional, skip calling C++ global constructors
  */
 
-#ifndef CH32_VECTORS
-#error "CH32_VECTORS is required"
+#ifndef CH32RV_VECTORS
+#error "CH32RV_VECTORS is required"
 #endif
-#define CH32_STR(s) #s
-#define CH32_VECTORS_FILE(s) CH32_STR(s)
-#ifndef CH32_MSTATUS_INIT
-#error "CH32_MSTATUS_INIT is required"
+#define CH32RV_STR(s) #s
+#define CH32RV_VECTORS_FILE(s) CH32RV_STR(s)
+#ifndef CH32RV_MSTATUS_INIT
+#error "CH32RV_MSTATUS_INIT is required"
 #endif
-/* CH32_INTSYSCR_INIT is optional: CH32V103's startup does not touch csr 0x804.
- * CH32_MTVEC_MODE picks how the core reads the table - 3 = the entries are
+/* CH32RV_INTSYSCR_INIT is optional: CH32V103's startup does not touch csr 0x804.
+ * CH32RV_MTVEC_MODE picks how the core reads the table - 3 = the entries are
  * addresses (most families), 1 = the entries are jump instructions (V103). */
-#ifndef CH32_MTVEC_MODE
-#define CH32_MTVEC_MODE 3
+#ifndef CH32RV_MTVEC_MODE
+#define CH32RV_MTVEC_MODE 3
 #endif
 
 /* ---- vector table (pass 1: table words) ---- */
-    .macro CH32_IRQ name
+    .macro CH32RV_IRQ name
     .word   \name
     .endm
-    .macro CH32_RSV
+    .macro CH32RV_RSV
     .word   0
     .endm
-    .macro CH32_JMP name
+    .macro CH32RV_JMP name
     j       \name
     .endm
 
@@ -56,12 +56,12 @@ _start:
 _vector_base:
     .option norvc;
     j       handle_reset
-#include CH32_VECTORS_FILE(CH32_VECTORS)
+#include CH32RV_VECTORS_FILE(CH32RV_VECTORS)
     .option rvc;
 
-    .purgem CH32_IRQ
-    .purgem CH32_RSV
-    .purgem CH32_JMP
+    .purgem CH32RV_IRQ
+    .purgem CH32RV_RSV
+    .purgem CH32RV_JMP
 
 /* ---- default handler and weak aliases (pass 2) ---- */
     .section  .text.vector_handler, "ax", @progbits
@@ -70,17 +70,17 @@ Default_Handler:
 1:
     j 1b
 
-    .macro CH32_IRQ name
+    .macro CH32RV_IRQ name
     .weak   \name
     .set    \name, Default_Handler
     .endm
-    .macro CH32_RSV
+    .macro CH32RV_RSV
     .endm
-    .macro CH32_JMP name
+    .macro CH32RV_JMP name
     .weak   \name
     .set    \name, Default_Handler
     .endm
-#include CH32_VECTORS_FILE(CH32_VECTORS)
+#include CH32RV_VECTORS_FILE(CH32RV_VECTORS)
 
 /* ---- reset ---- */
     .section  .text.handle_reset, "ax", @progbits
@@ -93,7 +93,7 @@ handle_reset:
 .option pop
     la sp, _eusrstack
 
-#ifdef CH32_HIGHCODE
+#ifdef CH32RV_HIGHCODE
 /* Load highcode section from flash to RAM */
     la a0, _highcode_lma
     la a1, _highcode_vma_start
@@ -130,33 +130,33 @@ handle_reset:
     bltu a0, a1, 1b
 2:
 
-#ifdef CH32_CSR805_CLR
-    li t0, CH32_CSR805_CLR
+#ifdef CH32RV_CSR805_CLR
+    li t0, CH32RV_CSR805_CLR
     csrc 0x805, t0
 #endif
-#ifdef CH32_CORECFGR
-    li t0, CH32_CORECFGR
+#ifdef CH32RV_CORECFGR
+    li t0, CH32RV_CORECFGR
     csrw 0xbc0, t0
 #endif
-#ifdef CH32_CSR_BC1
-    li t0, CH32_CSR_BC1
+#ifdef CH32RV_CSR_BC1
+    li t0, CH32RV_CSR_BC1
     csrw 0xbc1, t0
 #endif
-#ifdef CH32_INTSYSCR_INIT
-    li t0, CH32_INTSYSCR_INIT
+#ifdef CH32RV_INTSYSCR_INIT
+    li t0, CH32RV_INTSYSCR_INIT
     csrw 0x804, t0
 #endif
-    li t0, CH32_MSTATUS_INIT
+    li t0, CH32RV_MSTATUS_INIT
     csrw mstatus, t0
 
 /* Vector table base plus the mode bits; the base has to be 0, see above. */
     la t0, _vector_base
-    ori t0, t0, CH32_MTVEC_MODE
+    ori t0, t0, CH32RV_MTVEC_MODE
     csrw mtvec, t0
 
     jal SystemInit
 
-#ifndef CH32_NO_INIT_ARRAY
+#ifndef CH32RV_NO_INIT_ARRAY
 /* Call C++ global constructors (.init_array). Not done by the EVT startups;
    this is an own-crt feature (linker script must provide the symbols). */
     la s0, __init_array_start

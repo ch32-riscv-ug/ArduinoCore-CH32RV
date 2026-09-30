@@ -1,10 +1,10 @@
 #include "Servo.h"
 
-#include "CH32Timer.h"
-#include "ch32_gpio.h"
-#include "ch32_registers.h"
+#include "CH32RVTimer.h"
+#include "ch32rv_gpio.h"
+#include "ch32rv_registers.h"
 
-#ifdef CH32_SERVO_TIMER
+#ifdef CH32RV_SERVO_TIMER
 
 namespace {
 
@@ -15,15 +15,15 @@ struct Slot {
     Servo *owner;
 };
 
-Slot slots[CH32_SERVO_MAX];
+Slot slots[CH32RV_SERVO_MAX];
 volatile int8_t current = -1;      /* slot whose pulse is on the wire, or -1 */
 volatile uint16_t frame_used_us;   /* how much of the 20 ms frame is spent   */
 bool timer_running;
-CH32TimerLease timer_lease;
+CH32RVTimerLease timer_lease;
 const uint8_t servo_owner_identity = 0;
 void timer_update(void *);
 void timer_quiesce(void *, uint8_t, uint8_t);
-const CH32TimerOwner servo_owner = {
+const CH32RVTimerOwner servo_owner = {
     &servo_owner_identity, timer_quiesce, nullptr
 };
 
@@ -45,12 +45,12 @@ inline void timer_set(uint16_t us)
      * every sample, UIF was set, and millis() ran at a fifth of real time.
      * wiring_tone.cpp does not hit this because its update event is fired once
      * at start, while the interrupt is still masked. */
-    const CH32TimerCapability *cap =
+    const CH32RVTimerCapability *cap =
         ch32TimerCapabilityFor(timer_lease.timer);
     if (cap->counter_bits == 32u) {
-        CH32_TIM_ATRLR32(cap->register_base) = us - 1u;
+        CH32RV_TIM_ATRLR32(cap->register_base) = us - 1u;
     } else {
-        CH32_TIM_ATRLR(cap->register_base) = (uint16_t)(us - 1u);
+        CH32RV_TIM_ATRLR(cap->register_base) = (uint16_t)(us - 1u);
     }
 }
 
@@ -59,21 +59,21 @@ void timer_start(void)
     if (timer_running && ch32TimerLeaseValid(&timer_lease)) {
         return;
     }
-    CH32TimerRequest request = {
-        CH32_SERVO_TIMER, CH32_TIMER_WHOLE,
+    CH32RVTimerRequest request = {
+        CH32RV_SERVO_TIMER, CH32RV_TIMER_WHOLE,
         {(uint16_t)((F_CPU / 1000000u) - 1u), 99u, 0}
     };
     timer_lease = ch32TimerTryAcquire(&request, &servo_owner);
     if (!ch32TimerLeaseValid(&timer_lease)) {
-        request.timer = CH32_TIMER_ANY;
+        request.timer = CH32RV_TIMER_ANY;
         timer_lease = ch32TimerTryAcquire(&request, &servo_owner);
     }
     if (!ch32TimerLeaseValid(&timer_lease)) {
-        request.timer = CH32_SERVO_TIMER;
+        request.timer = CH32RV_SERVO_TIMER;
         timer_lease = ch32TimerTakeover(&request, &servo_owner);
     }
     if (!ch32TimerApplyBase(&timer_lease)) {
-        timer_quiesce(nullptr, CH32_SERVO_TIMER, CH32_TIMER_WHOLE);
+        timer_quiesce(nullptr, CH32RV_SERVO_TIMER, CH32RV_TIMER_WHOLE);
         return;
     }
     current = -1;
@@ -81,7 +81,7 @@ void timer_start(void)
     if (!ch32TimerAttachUpdateInterrupt(&timer_lease, timer_update, nullptr) ||
         !ch32TimerStart(&timer_lease)) {
         ch32TimerRelease(&timer_lease);
-        timer_quiesce(nullptr, CH32_SERVO_TIMER, CH32_TIMER_WHOLE);
+        timer_quiesce(nullptr, CH32RV_SERVO_TIMER, CH32RV_TIMER_WHOLE);
         return;
     }
     timer_running = true;
@@ -99,7 +99,7 @@ void timer_stop(void)
 
 bool any_active(void)
 {
-    for (uint8_t i = 0; i < CH32_SERVO_MAX; i++) {
+    for (uint8_t i = 0; i < CH32RV_SERVO_MAX; i++) {
         if (slots[i].active) {
             return true;
         }
@@ -109,18 +109,18 @@ bool any_active(void)
 
 inline void drive(uint8_t pin, bool high)
 {
-    const uint8_t port = (uint8_t)CH32_PIN_PORT(pin);
-    const uint8_t bit = (uint8_t)CH32_PIN_BIT(pin);
+    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
+    const uint8_t bit = (uint8_t)CH32RV_PIN_BIT(pin);
     if (high) {
-        ch32_gpio_set(port, bit);
+        ch32rv_gpio_set(port, bit);
     } else {
-        ch32_gpio_clear(port, bit);
+        ch32rv_gpio_clear(port, bit);
     }
 }
 
 void timer_quiesce(void *, uint8_t, uint8_t)
 {
-    for (uint8_t i = 0; i < CH32_SERVO_MAX; i++) {
+    for (uint8_t i = 0; i < CH32RV_SERVO_MAX; i++) {
         if (slots[i].active) {
             drive(slots[i].pin, false);
             slots[i].active = false;
@@ -144,11 +144,11 @@ void timer_update(void *)
     }
 
     int8_t next = (int8_t)(current + 1);
-    while (next < (int8_t)CH32_SERVO_MAX && !slots[next].active) {
+    while (next < (int8_t)CH32RV_SERVO_MAX && !slots[next].active) {
         next++;
     }
 
-    if (next < (int8_t)CH32_SERVO_MAX) {
+    if (next < (int8_t)CH32RV_SERVO_MAX) {
         current = next;
         const uint16_t us = slots[next].pulse_us;
         drive(slots[next].pin, true);
@@ -187,7 +187,7 @@ uint8_t Servo::attach(int pin, int min, int max)
         _index = INVALID_SERVO;
     }
     if (_index == INVALID_SERVO) {
-        for (uint8_t i = 0; i < CH32_SERVO_MAX; i++) {
+        for (uint8_t i = 0; i < CH32RV_SERVO_MAX; i++) {
             if (!slots[i].active) {
                 _index = i;
                 break;
@@ -201,10 +201,10 @@ uint8_t Servo::attach(int pin, int min, int max)
     _min = (int16_t)min;
     _max = (int16_t)max;
 
-    const uint8_t port = (uint8_t)CH32_PIN_PORT((uint8_t)pin);
-    ch32_gpio_clock_enable(port);
-    ch32_gpio_set_config(port, (uint8_t)CH32_PIN_BIT((uint8_t)pin),
-                         CH32_GPIO_CFG_OUT_PP_10M);
+    const uint8_t port = (uint8_t)CH32RV_PIN_PORT((uint8_t)pin);
+    ch32rv_gpio_clock_enable(port);
+    ch32rv_gpio_set_config(port, (uint8_t)CH32RV_PIN_BIT((uint8_t)pin),
+                         CH32RV_GPIO_CFG_OUT_PP_10M);
     drive((uint8_t)pin, false);
 
     slots[_index].pin = (uint8_t)pin;

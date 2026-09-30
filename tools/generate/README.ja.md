@@ -12,7 +12,7 @@
 ```sh
 # 生成(生成物はcommit対象)
 python3 generate.py --tables /path/to/ch32-device-data \
-                    --platform ../platform/ch32v
+                    --platform ../platform/ch32rv
 
 # CI用: commit済み生成物と再生成結果の一致検証(drift検出でexit 1)
 python3 generate.py --tables ... --platform ... --check
@@ -106,7 +106,7 @@ pin番号や既定routeが変わると、既存のsketchの意味が変わるた
 | CH32L103 | L103/M103 | 7 | rv32imac_zicsr / ilp32 | l103 |
 | CH32M030 | M030 | 5 | rv32imc_zicsr / ilp32 | m030 |
 
-CSR初期値(`CH32_MSTATUS_INIT`/`CH32_INTSYSCR_INIT`/`CH32_CORECFGR`/`CH32_CSR_BC1`/`CH32_CSR805_CLR`)は
+CSR初期値(`CH32RV_MSTATUS_INIT`/`CH32RV_INTSYSCR_INIT`/`CH32RV_CORECFGR`/`CH32RV_CSR_BC1`/`CH32RV_CSR805_CLR`)は
 **family単位で確定**しており、family内で分かれるのはvector tableだけ。
 V20xのD6/D8/D8WもV307のD8/D8Cも、CSRとmarch/mabiは同一。
 
@@ -122,7 +122,7 @@ CIで一致を検証するtestを追加する。
 
 ### ブロッカー1: vector table 13本
 
-`-DCH32_VECTORS=vectors_<x>.inc`が指すファイルが無いとcompileできない。現在あるのは`vectors_ch32v00x.inc`のみ。
+`-DCH32RV_VECTORS=vectors_<x>.inc`が指すファイルが無いとcompileできない。現在あるのは`vectors_ch32v00x.inc`のみ。
 
 必要なのは**13本**(38〜103 entry、合計約900 entry)。family内で統合できるものはない
 (V20x: D6/D8間7行差、D8/D8W間4行差。V307: D8/D8C間はUSBWakeUp等で差)。

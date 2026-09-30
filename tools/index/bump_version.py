@@ -2,7 +2,7 @@
 """Set the platform version everywhere it is written down (the release workflow's first step).
 
 - platform.txt `version=` - the one source: gen_index.py and tests/build/sketches/sync_profiles.py read it.
-- every sketch.yaml's `- platform: ch32-riscv-ug:ch32v (X.Y.Z)` pin: the generated ones (tests/bench,
+- every sketch.yaml's `- platform: ch32-riscv-ug:ch32rv (X.Y.Z)` pin: the generated ones (tests/bench,
   libraries/*/examples, re-checked by sync_profiles.py --check) and the hand-written ones under tests/manual.
 
 Usage: bump_version.py X.Y.Z
@@ -15,7 +15,7 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PLATFORM_TXT = ROOT / "platform.txt"
-PIN_RE = re.compile(r"^(\s*-\s*platform:\s*ch32-riscv-ug:ch32v\s*)\([^)]*\)(\s*)$")
+PIN_RE = re.compile(r"^(\s*-\s*platform:\s*ch32-riscv-ug:ch32rv\s*)\([^)]*\)(\s*)$")
 SKIP = {".git", ".tools", ".venv", "build"}
 
 

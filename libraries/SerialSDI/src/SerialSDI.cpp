@@ -11,23 +11,23 @@ using namespace arduino;
  * from ch32-device-data's debug_data.csv - a default here would be silently
  * wrong on two families out of three, writing into some other part of the
  * debug module. */
-#ifndef CH32_DM_DATA0_ADDR
-#error "CH32_DM_DATA0_ADDR is not defined: this board does not say where the \
+#ifndef CH32RV_DM_DATA0_ADDR
+#error "CH32RV_DM_DATA0_ADDR is not defined: this board does not say where the \
 debug module's data0 is (ch32-device-data debug_data.csv), so SerialSDI cannot \
 be built for it."
 #endif
-static volatile uint32_t *const CH32_DM_DATA0 =
-    (volatile uint32_t *)CH32_DM_DATA0_ADDR;
-static volatile uint32_t *const CH32_DM_DATA1 =
-    (volatile uint32_t *)(CH32_DM_DATA0_ADDR + 4u);
+static volatile uint32_t *const CH32RV_DM_DATA0 =
+    (volatile uint32_t *)CH32RV_DM_DATA0_ADDR;
+static volatile uint32_t *const CH32RV_DM_DATA1 =
+    (volatile uint32_t *)(CH32RV_DM_DATA0_ADDR + 4u);
 
 /* One frame: wait for DATA0 to read back zero - the probe saying it took the
  * last one - then write the payload high and the length low. Seven bytes is
  * what the two words hold once the length has taken a byte. */
 static bool sdi_frame(const uint8_t *b, size_t n)
 {
-    uint32_t spin = CH32_SDI_SPIN;
-    while (*CH32_DM_DATA0 != 0u) {
+    uint32_t spin = CH32RV_SDI_SPIN;
+    while (*CH32RV_DM_DATA0 != 0u) {
         if (--spin == 0u) {
             return false;
         }
@@ -36,34 +36,34 @@ static bool sdi_frame(const uint8_t *b, size_t n)
     for (size_t k = 0; k < n; k++) {
         p[k] = b[k];
     }
-    *CH32_DM_DATA1 = (uint32_t)p[3] | ((uint32_t)p[4] << 8) |
+    *CH32RV_DM_DATA1 = (uint32_t)p[3] | ((uint32_t)p[4] << 8) |
                      ((uint32_t)p[5] << 16) | ((uint32_t)p[6] << 24);
-    *CH32_DM_DATA0 = (uint32_t)n | ((uint32_t)p[0] << 8) |
+    *CH32RV_DM_DATA0 = (uint32_t)n | ((uint32_t)p[0] << 8) |
                      ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 24);
     return true;
 }
 
-void CH32SerialSDI::begin(unsigned long baudrate, uint16_t config)
+void CH32RVSerialSDI::begin(unsigned long baudrate, uint16_t config)
 {
     (void)baudrate;
     (void)config;
     /* Claim the mailbox. Whatever an earlier session left in it would
      * otherwise be read as a frame. */
-    *CH32_DM_DATA0 = 0;
+    *CH32RV_DM_DATA0 = 0;
     _started = true;
 }
 
-void CH32SerialSDI::end()
+void CH32RVSerialSDI::end()
 {
     _started = false;
 }
 
-size_t CH32SerialSDI::write(uint8_t c)
+size_t CH32RVSerialSDI::write(uint8_t c)
 {
     return write(&c, 1);
 }
 
-size_t CH32SerialSDI::write(const uint8_t *buffer, size_t size)
+size_t CH32RVSerialSDI::write(const uint8_t *buffer, size_t size)
 {
     if (!_started) {
         return 0;
@@ -85,4 +85,4 @@ size_t CH32SerialSDI::write(const uint8_t *buffer, size_t size)
 /* Its own translation unit, and one a sketch only reaches by including the
  * header - which is where the cost is: the global object's vtable keeps every
  * virtual alive whether or not the sketch calls one. */
-arduino::CH32SerialSDI SerialSDI;
+arduino::CH32RVSerialSDI SerialSDI;

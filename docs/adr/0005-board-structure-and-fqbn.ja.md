@@ -45,6 +45,15 @@ series単位にすると、**vector tableがboardごとに一意に定まり**�
 - 旧コア/openwch coreとboard構造の互換はない(移行表が必要)
 - 生成器はFLASH/RAM分割series(V20x/V307/V407)の扱い(独立menu軸)を今後拡張する
 
+## 追記 (2026-10-01): architecture を `ch32rv` に
+
+architecture は `ch32v` から **`ch32rv`** に改めた(FQBN は `ch32-riscv-ug:ch32rv:<board>`)。
+`ch32v` は WCH 公式(openwch)と UIAPduino の core も使っており、`ARDUINO_ARCH_CH32V` が3つの core で
+共通になっていた。ライブラリがその名前で分岐すると、openwch の API を前提にした経路にこの core が入る。
+同時に core 独自の接頭辞も `CH32_` / `ch32_` から `CH32RV_` / `ch32rv_` に、クラス名を `CH32RV…` に、
+チップの singleton を `CH32RV`(`<CH32RV.h>`)に揃えた。系列名(`CH32V003` など)と
+`ARDUINO_<board>` は変えていない。
+
 ## Validation
 
 - CI `generated-sync`(locked commitでの再生成一致)と`compile-matrix`(全pnum compile+size baseline)

@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <CH32Timer.h>
+#include <CH32RVTimer.h>
 
 static char command[24];
 static size_t used;
@@ -12,13 +12,13 @@ static void timerUpdate(void *) { ++timerTicks; }
 static void timerQuiesce(void *, uint8_t, uint8_t) { ++timerQuiesced; }
 
 static void testTimerResource() {
-  const CH32TimerRequest request = {2, CH32_TIMER_WHOLE, {0, 23999, 0}};
-  const CH32TimerOwner ownerA = {&ownerAIdentity, timerQuiesce, nullptr};
-  const CH32TimerOwner ownerB = {&ownerBIdentity, nullptr, nullptr};
+  const CH32RVTimerRequest request = {2, CH32RV_TIMER_WHOLE, {0, 23999, 0}};
+  const CH32RVTimerOwner ownerA = {&ownerAIdentity, timerQuiesce, nullptr};
+  const CH32RVTimerOwner ownerB = {&ownerBIdentity, nullptr, nullptr};
   timerTicks = 0;
   timerQuiesced = 0;
-  CH32TimerLease displaced = ch32TimerTryAcquire(&request, &ownerA);
-  CH32TimerLease active = ch32TimerTakeover(&request, &ownerB);
+  CH32RVTimerLease displaced = ch32TimerTryAcquire(&request, &ownerA);
+  CH32RVTimerLease active = ch32TimerTakeover(&request, &ownerB);
   const bool invalidated = !ch32TimerLeaseValid(&displaced);
   const bool started = ch32TimerApplyBase(&active) &&
                        ch32TimerAttachUpdateInterrupt(&active, timerUpdate,
@@ -28,7 +28,7 @@ static void testTimerResource() {
   const unsigned ticks = timerTicks;
   ch32TimerDetachUpdateInterrupt(&active);
   ch32TimerRelease(&active);
-  CH32TimerStatus status = {};
+  CH32RVTimerStatus status = {};
   const bool statusRead = ch32TimerGetStatus(2, &status);
   Serial.print("TIMER started="); Serial.print(started ? 1 : 0);
   Serial.print(" invalidated="); Serial.print(invalidated ? 1 : 0);

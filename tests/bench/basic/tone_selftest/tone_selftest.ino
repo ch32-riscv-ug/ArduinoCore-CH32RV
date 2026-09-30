@@ -43,7 +43,7 @@ static uint32_t count_edges(uint32_t ms)
 
 static void run_checks()
 {
-#ifdef CH32_TONE_TIMER
+#ifdef CH32RV_TONE_TIMER
     /* 1. It makes the pin move. */
     tone(PIN, 500);
     tc_check("tone_toggles_pin", toggles_within(20));

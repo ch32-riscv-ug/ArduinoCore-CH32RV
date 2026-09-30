@@ -26,7 +26,7 @@ void loop() {
   board's regulator, and the symptom is a board that resets mid-sweep. Share
   the ground, not the 3V3 rail.
 - **Which timer, and what it costs.** The variant picks it and names it as
-  `CH32_SERVO_TIMER`. It is never the timer `tone()` uses, so a buzzer and a
+  `CH32RV_SERVO_TIMER`. It is never the timer `tone()` uses, so a buzzer and a
   servo can run at once. On the smaller parts there is no timer left over, and
   then it shares one with `analogWrite()` - the variant header lists the pads
   that stop fading while a servo is attached.

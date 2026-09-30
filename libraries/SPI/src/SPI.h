@@ -1,7 +1,7 @@
 /* SPI for CH32 RISC-V.
  *
  * Controller (master) mode, polled. The pins come from the variant's
- * CH32_SPIn_SCK/MISO/MOSI; chip select is not among them because Arduino
+ * CH32RV_SPIn_SCK/MISO/MOSI; chip select is not among them because Arduino
  * drives it as an ordinary GPIO, which is also what lets one bus carry several
  * devices.
  *
@@ -12,8 +12,8 @@
 #pragma once
 
 #include "api/HardwareSPI.h"
-#include "ch32_pins.h"
-#include "ch32_route.h"
+#include "ch32rv_pins.h"
+#include "ch32rv_route.h"
 #include "pins_arduino.h"
 
 #include <stdint.h>
@@ -31,9 +31,9 @@
 
 namespace arduino {
 
-class CH32SPIClass : public HardwareSPI {
+class CH32RVSPIClass : public HardwareSPI {
 public:
-    CH32SPIClass(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
+    CH32RVSPIClass(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
                  uint8_t sck_pin, uint8_t miso_pin, uint8_t mosi_pin,
                  uint32_t remap_mask, uint32_t remap_value,
                  uint32_t remap2_mask, uint32_t remap2_value)
@@ -90,7 +90,7 @@ public:
 
 private:
     void apply(uint32_t clock_hz, BitOrder order, uint8_t mode);
-    bool use_route(const ch32_route_t &route);
+    bool use_route(const ch32rv_route_t &route);
 
     const uint32_t _base;
     /* RCC enable register and bit, from the variant (clock_enables.csv). */
@@ -115,27 +115,27 @@ private:
 
 }  // namespace arduino
 
-#if defined(CH32_SPI1_SCK) + defined(CH32_SPI2_SCK) + defined(CH32_SPI3_SCK) == 3
+#if defined(CH32RV_SPI1_SCK) + defined(CH32RV_SPI2_SCK) + defined(CH32RV_SPI3_SCK) == 3
 #define SPI_INTERFACES_COUNT 3
-#elif defined(CH32_SPI1_SCK) + defined(CH32_SPI2_SCK) + defined(CH32_SPI3_SCK) == 2
+#elif defined(CH32RV_SPI1_SCK) + defined(CH32RV_SPI2_SCK) + defined(CH32RV_SPI3_SCK) == 2
 #define SPI_INTERFACES_COUNT 2
-#elif defined(CH32_SPI1_SCK) || defined(CH32_SPI2_SCK) || defined(CH32_SPI3_SCK)
+#elif defined(CH32RV_SPI1_SCK) || defined(CH32RV_SPI2_SCK) || defined(CH32RV_SPI3_SCK)
 #define SPI_INTERFACES_COUNT 1
 #endif
 
 /* Bus order, as everywhere else in the Arduino ecosystem: the bare name is the
  * first bus. */
-#if defined(CH32_SPI1_SCK)
-extern arduino::CH32SPIClass SPI;        /* SPI1 */
-#if defined(CH32_SPI2_SCK)
-extern arduino::CH32SPIClass SPI1;       /* SPI2 */
+#if defined(CH32RV_SPI1_SCK)
+extern arduino::CH32RVSPIClass SPI;        /* SPI1 */
+#if defined(CH32RV_SPI2_SCK)
+extern arduino::CH32RVSPIClass SPI1;       /* SPI2 */
 #endif
-#if defined(CH32_SPI3_SCK)
-extern arduino::CH32SPIClass SPI2;       /* SPI3 */
+#if defined(CH32RV_SPI3_SCK)
+extern arduino::CH32RVSPIClass SPI2;       /* SPI3 */
 #endif
-#elif defined(CH32_SPI2_SCK)
-extern arduino::CH32SPIClass SPI;        /* SPI2, on a part with no SPI1 */
-#if defined(CH32_SPI3_SCK)
-extern arduino::CH32SPIClass SPI1;       /* SPI3 */
+#elif defined(CH32RV_SPI2_SCK)
+extern arduino::CH32RVSPIClass SPI;        /* SPI2, on a part with no SPI1 */
+#if defined(CH32RV_SPI3_SCK)
+extern arduino::CH32RVSPIClass SPI1;       /* SPI3 */
 #endif
 #endif

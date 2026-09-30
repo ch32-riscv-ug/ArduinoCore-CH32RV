@@ -3,7 +3,7 @@
  * A timer interrupt toggles the pin, which is what AVR does and what makes the
  * call work on any pin rather than only on the handful a timer's compare
  * output can reach. The variant supplies a preferred timer with an update
- * vector (CH32_TONE_TIMER, see generate.py). The resource manager first tries
+ * vector (CH32RV_TONE_TIMER, see generate.py). The resource manager first tries
  * it without disruption, then another free timer, and only then takes over the
  * preferred one. If that timer carries PWM, its analogWrite() channels stop -
  * the same limitation the AVR core documents for pins 3 and 11.
@@ -17,10 +17,10 @@
  * definition would export an unmangled symbol that no sketch ever references.
  */
 #include "Arduino.h"
-#include "CH32Timer.h"
-#include "ch32_gpio.h"
+#include "CH32RVTimer.h"
+#include "ch32rv_gpio.h"
 
-#ifdef CH32_TONE_TIMER
+#ifdef CH32RV_TONE_TIMER
 
 /* The pin currently sounding, and how many toggles are left. Read by the ISR,
  * written by tone()/noTone() with the timer stopped, so no lock is needed. */
@@ -28,20 +28,20 @@ static volatile uint8_t tone_pin = 0xFF;
 static volatile uint8_t tone_port;
 static volatile uint8_t tone_bit;
 static volatile uint32_t tone_toggles;     /* 0 = until noTone() */
-static CH32TimerLease tone_lease;
+static CH32RVTimerLease tone_lease;
 static const uint8_t tone_owner_identity = 0;
 
 static void tone_quiesce(void *, uint8_t, uint8_t)
 {
     if (tone_pin != 0xFF) {
-        ch32_gpio_clear(tone_port, tone_bit);
+        ch32rv_gpio_clear(tone_port, tone_bit);
     }
     tone_pin = 0xFF;
     tone_toggles = 0;
     tone_lease = {};
 }
 
-static const CH32TimerOwner tone_owner = {
+static const CH32RVTimerOwner tone_owner = {
     &tone_owner_identity, tone_quiesce, nullptr
 };
 
@@ -52,7 +52,7 @@ static void tone_stop(void)
         ch32TimerRelease(&tone_lease);
     }
     if (tone_pin != 0xFF) {
-        ch32_gpio_clear(tone_port, tone_bit);
+        ch32rv_gpio_clear(tone_port, tone_bit);
     }
     tone_pin = 0xFF;
     tone_toggles = 0;
@@ -60,10 +60,10 @@ static void tone_stop(void)
 
 static void tone_update(void *)
 {
-    if (ch32_gpio_read(tone_port, tone_bit)) {
-        ch32_gpio_clear(tone_port, tone_bit);
+    if (ch32rv_gpio_read(tone_port, tone_bit)) {
+        ch32rv_gpio_clear(tone_port, tone_bit);
     } else {
-        ch32_gpio_set(tone_port, tone_bit);
+        ch32rv_gpio_set(tone_port, tone_bit);
     }
 
     if (tone_toggles != 0u && --tone_toggles == 0u) {
@@ -121,28 +121,28 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
 
     tone_stop();
 
-    const uint8_t port = (uint8_t)CH32_PIN_PORT(pin);
-    const uint8_t bit = (uint8_t)CH32_PIN_BIT(pin);
-    ch32_gpio_clock_enable(port);
-    ch32_gpio_set_config(port, bit, CH32_GPIO_CFG_OUT_PP_10M);
-    ch32_gpio_clear(port, bit);
+    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
+    const uint8_t bit = (uint8_t)CH32RV_PIN_BIT(pin);
+    ch32rv_gpio_clock_enable(port);
+    ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
+    ch32rv_gpio_clear(port, bit);
 
     tone_port = port;
     tone_bit = bit;
     tone_toggles = toggles;
     tone_pin = pin;
 
-    CH32TimerRequest request = {
-        CH32_TONE_TIMER, CH32_TIMER_WHOLE,
+    CH32RVTimerRequest request = {
+        CH32RV_TONE_TIMER, CH32RV_TIMER_WHOLE,
         {(uint16_t)psc, ticks - 1u, 0}
     };
     tone_lease = ch32TimerTryAcquire(&request, &tone_owner);
     if (!ch32TimerLeaseValid(&tone_lease)) {
-        request.timer = CH32_TIMER_ANY;
+        request.timer = CH32RV_TIMER_ANY;
         tone_lease = ch32TimerTryAcquire(&request, &tone_owner);
     }
     if (!ch32TimerLeaseValid(&tone_lease)) {
-        request.timer = CH32_TONE_TIMER;
+        request.timer = CH32RV_TONE_TIMER;
         tone_lease = ch32TimerTakeover(&request, &tone_owner);
     }
     if (!ch32TimerApplyBase(&tone_lease) ||
@@ -162,7 +162,7 @@ void noTone(uint8_t pin)
     if (digitalPinIsValid(pin)) {
         /* Left low, not floating: a speaker held at half rail draws current
          * and hums. */
-        ch32_gpio_clear((uint8_t)CH32_PIN_PORT(pin), (uint8_t)CH32_PIN_BIT(pin));
+        ch32rv_gpio_clear((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin));
     }
 }
 

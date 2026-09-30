@@ -58,7 +58,7 @@ so a sketch that never leaves anything there never hears anything either.
 behind as the invitation for the next three bytes. Calling it in `loop()` is
 what makes the channel two-way.
 
-What arrives is parked in a 16-byte buffer (`CH32_DMDATA_RX_SIZE`), and the
+What arrives is parked in a 16-byte buffer (`CH32RV_DMDATA_RX_SIZE`), and the
 host is held off once there is no room for another frame. The buffer is what
 makes an echo loop work at all: the register holds one frame, and the sketch's
 own next `print()` overwrites it, so without somewhere to put those bytes two
@@ -68,9 +68,9 @@ still overrun it - `available()` often enough is the cure.
 ## Changing where printf() goes
 
 ```cpp
-ch32_set_stdout(&SerialDMDATA);   // printf() to the probe
-ch32_set_stdout(&Serial);         // back to the UART
-ch32_set_stdout(nullptr);         // discard
+ch32rv_set_stdout(&SerialDMDATA);   // printf() to the probe
+ch32rv_set_stdout(&Serial);         // back to the UART
+ch32rv_set_stdout(nullptr);         // discard
 ```
 
 Only **stdio** follows. The name `Serial` is fixed at compile time, so
@@ -82,8 +82,8 @@ Only **stdio** follows. The name `Serial` is fixed at compile time, so
   the probe to take the previous frame, then gives up - and *latches* that in
   the status word, so every write after it is free instead of spinning again.
   `alive()` reports that state, and it clears itself when a host attaches.
-- **A slow host does not lose lines.** The wait is short (`CH32_DMDATA_WAIT_MS`,
-  20 ms) until a host has taken something, and long (`CH32_DMDATA_HOST_WAIT_MS`,
+- **A slow host does not lose lines.** The wait is short (`CH32RV_DMDATA_WAIT_MS`,
+  20 ms) until a host has taken something, and long (`CH32RV_DMDATA_HOST_WAIT_MS`,
   1 s) after, so a probe that polls late - several probes over USB/IP at once -
   is waited for instead of having frames dropped. Both are counted in register
   polls, not by `millis()`, so they still end with interrupts masked.

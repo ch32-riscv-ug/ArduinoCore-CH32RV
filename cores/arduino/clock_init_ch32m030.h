@@ -8,13 +8,13 @@
  */
 #pragma once
 
-#define CH32_CLOCK_INIT_RESET() do { \
-    CH32_REG32(0x40021000u) |= 0x00000001u; \
-    CH32_REG32(0x40021004u) &= 0xfffffffcu; \
-    CH32_REG32(0x40021004u) &= 0xe8ff0003u; \
-    CH32_REG32(0x40021000u) &= 0xfef6ffffu; \
-    CH32_REG32(0x40021000u) &= 0xfffbffffu; \
-    CH32_REG32(0x40021004u) &= 0xfffeffffu; \
-    CH32_REG32(0x40021008u) = 0x009f0000u; \
-    CH32_REG32(0x40022000u) = 0x00000000u; \
+#define CH32RV_CLOCK_INIT_RESET() do { \
+    CH32RV_REG32(0x40021000u) |= 0x00000001u; \
+    CH32RV_REG32(0x40021004u) &= 0xfffffffcu; \
+    CH32RV_REG32(0x40021004u) &= 0xe8ff0003u; \
+    CH32RV_REG32(0x40021000u) &= 0xfef6ffffu; \
+    CH32RV_REG32(0x40021000u) &= 0xfffbffffu; \
+    CH32RV_REG32(0x40021004u) &= 0xfffeffffu; \
+    CH32RV_REG32(0x40021008u) = 0x009f0000u; \
+    CH32RV_REG32(0x40022000u) = 0x00000000u; \
 } while (0)

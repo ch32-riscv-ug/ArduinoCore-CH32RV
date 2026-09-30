@@ -206,9 +206,9 @@ def scan(board=None, pnum="ANY", port=None, probe=None, baud=115200,
         sketch.mkdir()
         (sketch / "UartScan.ino").write_text(source, encoding="utf-8")
         (tmp / "user" / "hardware" / "ch32-riscv-ug").mkdir(parents=True)
-        (tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32v").symlink_to(REPO)
+        (tmp / "user" / "hardware" / "ch32-riscv-ug" / "ch32rv").symlink_to(REPO)
         env = dict(os.environ, ARDUINO_DIRECTORIES_USER=str(tmp / "user"))
-        fqbn = f"ch32-riscv-ug:ch32v:{board}:pnum={pnum}"
+        fqbn = f"ch32-riscv-ug:ch32rv:{board}:pnum={pnum}"
         r = sh(["arduino-cli", "compile", "--fqbn", fqbn,
                 "--build-property", f"compiler.path={gcc}/",
                 "--build-path", str(tmp / "build"), str(sketch)], env=env)

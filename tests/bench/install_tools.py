@@ -5,7 +5,7 @@
 """Put the toolchain and ch32rv where arduino-cli finds them for the working tree.
 
 The bench builds the working tree, not a release: bench/conftest.py links the repository into
-the sketchbook (<user>/hardware/ch32-riscv-ug/ch32v) and the bench profiles name the platform
+the sketchbook (<user>/hardware/ch32-riscv-ug/ch32rv) and the bench profiles name the platform
 without a version, so arduino-cli takes that link. A platform installed that way has no tools
 of its own; arduino-cli then resolves {runtime.tools.<name>.path} from the tools installed under
 <data>/packages/*/tools/<name>/<version>. This script puts the two the platform needs there -
@@ -35,7 +35,7 @@ sys.path.insert(0, str(REPO / "tools" / "index"))
 import fetch_tools                                   # noqa: E402
 
 PACKAGER = "ch32-riscv-ug"
-ARCH = "ch32v"
+ARCH = "ch32rv"
 TOOLS = ("xpack-riscv-none-elf-gcc", "ch32rv")       # what platform.txt asks for by {runtime.tools.<name>.path}
 
 

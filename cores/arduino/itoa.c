@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-static char *ch32_ultoa(unsigned long value, char *buf, int radix, int negative)
+static char *ch32rv_ultoa(unsigned long value, char *buf, int radix, int negative)
 {
     char tmp[8 * sizeof(unsigned long) + 1];
     char *p = tmp;
@@ -35,12 +35,12 @@ char *ltoa(long value, char *buf, int radix)
 {
     if (radix == 10 && value < 0) {
         /* Negate in unsigned space so LONG_MIN does not overflow. */
-        return ch32_ultoa(0UL - (unsigned long)value, buf, radix, 1);
+        return ch32rv_ultoa(0UL - (unsigned long)value, buf, radix, 1);
     }
-    return ch32_ultoa((unsigned long)value, buf, radix, 0);
+    return ch32rv_ultoa((unsigned long)value, buf, radix, 0);
 }
 
 char *ultoa(unsigned long value, char *buf, int radix)
 {
-    return ch32_ultoa(value, buf, radix, 0);
+    return ch32rv_ultoa(value, buf, radix, 0);
 }

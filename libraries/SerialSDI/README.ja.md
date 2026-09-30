@@ -10,7 +10,7 @@ hartのアドレス空間に見えています。番地は`hartinfo.dataaddr`が
 
 番地は**familyで違います**。V2系(V003/V00x)が`0xE00000F4`、V3系の多く
 (V205/V407/X315/M030)が`0xE0000340`、V4系とV103が`0xE0000380`です。
-boardが`CH32_DM_DATA0_ADDR`として渡すので**sketch側で指定するものはありません**
+boardが`CH32RV_DM_DATA0_ADDR`として渡すので**sketch側で指定するものはありません**
 (出所は`ch32-device-data`の`evidence/debug_data.csv`)。
 
 ```cpp
@@ -50,7 +50,7 @@ probe-rsでは有効化できないので、そこだけ別のツールを使い
 
 ```
 wlink sdi-print enable                 # 一度だけ。wlinkを終了しても転送は続きます
-arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32v:CH32V003
+arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32rv:CH32V003
 ```
 
 wlinkなら書き込みと監視をまとめることもできます。
@@ -68,9 +68,9 @@ portはWCH-LinkE自身のCDC(`1a86:8010`)です。IDEなら同じportを選ぶ�
 ## printf()の出力先を変える
 
 ```cpp
-ch32_set_stdout(&SerialSDI);      // printf()がprobeへ
-ch32_set_stdout(&Serial);         // UARTへ戻す
-ch32_set_stdout(nullptr);         // 捨てる
+ch32rv_set_stdout(&SerialSDI);      // printf()がprobeへ
+ch32rv_set_stdout(&Serial);         // UARTへ戻す
+ch32rv_set_stdout(nullptr);         // 捨てる
 ```
 
 動くのは**stdioだけ**です。`Serial`という名前はコンパイル時に決まるので追随せず、

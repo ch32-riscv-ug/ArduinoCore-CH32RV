@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import pytest
 
 PORTS = "ABCDEF"
-PIN_PORT_BITS = 5      # cores/arduino/ch32_pins.h, ADR-0010
+PIN_PORT_BITS = 5      # cores/arduino/ch32rv_pins.h, ADR-0010
 
 
 def encode(pad: str) -> int:

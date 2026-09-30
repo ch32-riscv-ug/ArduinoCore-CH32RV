@@ -67,8 +67,8 @@ usbipd から外れるので `TEST_BENCH_CH32X035_USBIP_BUSID` も要ります�
 ### つまずきやすい点
 
 - **bench は作業ツリーを焼きます（Release ではなく）。** bench の `sketch.yaml` の profile は platform を**版無し**で書き
-  （`- platform: ch32-riscv-ug:ch32v`）、`bench/conftest.py` がセッションの間だけこのリポジトリを
-  `<sketchbook>/hardware/ch32-riscv-ug/ch32v` に symlink します（host-arduino-core と同じ形）。toolchain と ch32rv は
+  （`- platform: ch32-riscv-ug:ch32rv`）、`bench/conftest.py` がセッションの間だけこのリポジトリを
+  `<sketchbook>/hardware/ch32-riscv-ug/ch32rv` に symlink します（host-arduino-core と同じ形）。toolchain と ch32rv は
   `{runtime.tools.*.path}` で引かれるので、`bench/install_tools.py` が `tools_*.json` の版を `<data>/packages/ch32-riscv-ug/tools/`
   へ link しておきます（pytest が最初に照合し、無ければそのコマンドを案内して止まる）。**自分の platform を Board Manager で
   入れてはいけません**: 同じ platform が 2 つあると arduino-cli は版の高いほうを取り、Release が作業ツリーの代わりに焼かれます

@@ -3,7 +3,7 @@
  * Wiring: none for the SDI half; the UART half needs the usual serial adapter
  * if you want to see the first line.
  *
- * printf() normally reaches the board's monitor port. ch32_set_stdout() moves
+ * printf() normally reaches the board's monitor port. ch32rv_set_stdout() moves
  * it to anything that derives from Print, which is how a debug channel can
  * take over stdio without the core knowing that channel exists.
  *
@@ -20,11 +20,11 @@ void setup()
 
     printf("this line goes to the UART\n");
 
-    ch32_set_stdout(&SerialSDI);
+    ch32rv_set_stdout(&SerialSDI);
     printf("and this one goes to the debug probe\n");
 
     /* Back again, and then off entirely. */
-    ch32_set_stdout(&Serial);
+    ch32rv_set_stdout(&Serial);
     printf("back on the UART\n");
 }
 

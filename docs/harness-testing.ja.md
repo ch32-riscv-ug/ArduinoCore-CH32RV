@@ -369,7 +369,7 @@ bench: V307 / harness E6614C311B7A2C31 / wiring: bench-01.yaml
 > **推定の範囲内**で、結論(SPI と UART は host backed が原理的に不可)は変わらない。
 
 I2C の余裕は測れる。コアの `Wire` は **1 回の待ちに 25 ms の上限**
-(`CH32_WIRE_TIMEOUT_US`、AVR と違って**既定で ON**)。
+(`CH32RV_WIRE_TIMEOUT_US`、AVR と違って**既定で ON**)。
 1 byte あたり 2 ms の stretch なら上限は踏まないが、**10 byte の転送が 1 ms → 20 ms になる**。
 実物の 20 倍遅い相手を DUT に見せることになるので:
 

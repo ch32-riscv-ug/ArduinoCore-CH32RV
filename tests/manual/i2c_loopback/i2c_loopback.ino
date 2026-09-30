@@ -15,11 +15,11 @@
 static const uint8_t SLAVE = 0x2A;
 static const uint8_t NOBODY = 0x2B;   /* one off, so a stuck ACK is caught */
 
-#if defined(CH32_I2C1_SCL) && defined(CH32_I2C2_SCL)
+#if defined(CH32RV_I2C1_SCL) && defined(CH32RV_I2C2_SCL)
 
 static volatile int rx_events;
 static volatile int rx_last_count;
-static uint8_t rx_copy[CH32_WIRE_BUFFER_SIZE];
+static uint8_t rx_copy[CH32RV_WIRE_BUFFER_SIZE];
 static volatile uint8_t rx_copy_len;
 
 static void on_receive(int count)
@@ -96,15 +96,15 @@ static void run_checks()
      *    is intact and the reported count stops at the cap. */
     rx_events = 0;
     Wire.beginTransmission(SLAVE);
-    for (uint8_t i = 0; i < CH32_WIRE_BUFFER_SIZE; i++) {
+    for (uint8_t i = 0; i < CH32RV_WIRE_BUFFER_SIZE; i++) {
         Wire.write(i);
     }
     const uint8_t full_rc = Wire.endTransmission();
     delay(2);
     bool head = full_rc == 0 && rx_events == 1
-                && rx_last_count == CH32_WIRE_BUFFER_SIZE
-                && rx_copy_len == CH32_WIRE_BUFFER_SIZE;
-    for (uint8_t i = 0; head && i < CH32_WIRE_BUFFER_SIZE; i++) {
+                && rx_last_count == CH32RV_WIRE_BUFFER_SIZE
+                && rx_copy_len == CH32RV_WIRE_BUFFER_SIZE;
+    for (uint8_t i = 0; head && i < CH32RV_WIRE_BUFFER_SIZE; i++) {
         head = rx_copy[i] == i;
     }
     tc_checkv("full_buffer_delivered", head, rx_last_count);

@@ -52,7 +52,7 @@ Marker marker;
 // silicon series, not a PCB (docs/board-layer-rules.ja.md). This is compiled
 // and never run, so the encoded pin is all that matters: it exercises the same
 // digitalWrite() arithmetic on every part.
-static const uint8_t PIN = CH32_PIN(0, 0);   // PA0, compile-only
+static const uint8_t PIN = CH32RV_PIN(0, 0);   // PA0, compile-only
 
 void setup() {
   pinMode(PIN, OUTPUT);
@@ -128,7 +128,7 @@ def link_platform(work: pathlib.Path) -> None:
     A symlink where the OS allows one, a copy where it does not: Windows needs
     a privilege for symlinks that CI does not have.
     """
-    dest = work / "user" / "hardware" / "ch32-riscv-ug" / "ch32v"
+    dest = work / "user" / "hardware" / "ch32-riscv-ug" / "ch32rv"
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.is_symlink() or dest.exists():
         if dest.is_symlink():
@@ -291,7 +291,7 @@ def run(work: pathlib.Path) -> dict:
         key = f"{board}/{pnum}"
         print(f"== compile Blink for {key} ==", flush=True)
         build = work / f"build-{board}-{pnum}"
-        rc, output = compile_one(env, f"ch32-riscv-ug:ch32v:{board}:pnum={pnum}",
+        rc, output = compile_one(env, f"ch32-riscv-ug:ch32rv:{board}:pnum={pnum}",
                                  gcc, build, blink)
         if rc != 0:
             failures.append((key, output.strip().splitlines()[-15:]))
@@ -319,7 +319,7 @@ def run(work: pathlib.Path) -> dict:
     isa_rows = []
     for board in boards:
         build = work / f"isa-{board}"
-        rc, output = compile_one(env, f"ch32-riscv-ug:ch32v:{board}:pnum=ANY",
+        rc, output = compile_one(env, f"ch32-riscv-ug:ch32rv:{board}:pnum=ANY",
                                  gcc, build, divide)
         if rc != 0:
             raise Failure(f"{board}: the ISA conformance sketch failed to "
@@ -332,7 +332,7 @@ def run(work: pathlib.Path) -> dict:
 
     extra = sketch(work, "ExtraFlags", EXTRA_FLAGS)
     rc, output = compile_one(
-        env, "ch32-riscv-ug:ch32v:CH32V006:pnum=ANY", gcc,
+        env, "ch32-riscv-ug:ch32rv:CH32V006:pnum=ANY", gcc,
         work / "build-extraflags", extra,
         ["build.extra_flags=-DCH32_EXTRA_FLAGS_SMOKE=1"])
     if rc != 0:

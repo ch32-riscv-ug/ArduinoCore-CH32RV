@@ -129,12 +129,12 @@ STATUS = {
     "SPI": ("実装済", "SPI", "controller専用。X035実機で配線なしの自己検査9項目pass。"
             "**peripheral(slave)は未実装**、実デバイス相手の確認はこれから"),
     "ADC": ("実装済", "analogRead",
-            "分解能は実機未確認。X305/X315はADC1〜4がpadを分け合うため`CH32_PIN_TO_ADC_INSTANCE`で切替(**未検証**)"),
-    "DAC": ("実装済", "analogWrite(CH32_DACn_PIN)",
+            "分解能は実機未確認。X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替(**未検証**)"),
+    "DAC": ("実装済", "analogWrite(CH32RV_DACn_PIN)",
             "V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来。**実機未確認**"),
     "TIM (PWM/tone/入力捕捉)": ("実装済", "analogWrite/tone",
                                "`tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ"
-                               "(`CH32_TONE_TIMER`)。V003/X035/M030は空きが無く**PWMと共有**"),
+                               "(`CH32RV_TONE_TIMER`)。V003/X035/M030は空きが無く**PWMと共有**"),
     "LPTIM": ("対象外", "-", "L103のみ"),
     "DMA": ("対象外", "-", "Arduino APIに露出しない。内部最適化として将来"),
     "IWDG": ("要判断", "-", "Arduino標準APIが無い"),

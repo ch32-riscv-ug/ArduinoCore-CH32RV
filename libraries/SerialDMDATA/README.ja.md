@@ -55,7 +55,7 @@ hostは**レジスタから何かを取り出した後にしか**書き込みま
 届いていれば取り込み、次の3 byteへの招待として空フレームを置きます。
 `loop()`でこれを呼ぶことが、このチャネルを双方向にしている実体です。
 
-届いたぶんは16 byteのバッファ(`CH32_DMDATA_RX_SIZE`)に置きます。
+届いたぶんは16 byteのバッファ(`CH32RV_DMDATA_RX_SIZE`)に置きます。
 1フレーム入る空きが無くなればhostは待たされます。
 このバッファがechoを成立させている実体です。レジスタは1フレームしか持たず、
 sketch自身の次の`print()`がそれを上書きするので、
@@ -66,9 +66,9 @@ sketch自身の次の`print()`がそれを上書きするので、
 ## printf()の出力先を変える
 
 ```cpp
-ch32_set_stdout(&SerialDMDATA);   // printf()がprobeへ
-ch32_set_stdout(&Serial);         // UARTへ戻す
-ch32_set_stdout(nullptr);         // 捨てる
+ch32rv_set_stdout(&SerialDMDATA);   // printf()がprobeへ
+ch32rv_set_stdout(&Serial);         // UARTへ戻す
+ch32rv_set_stdout(nullptr);         // 捨てる
 ```
 
 動くのは**stdioだけ**です。`Serial`という名前はコンパイル時に決まるので追随せず、
@@ -81,7 +81,7 @@ ch32_set_stdout(nullptr);         // 捨てる
   以降のwriteは空回りせずタダで返ります。`alive()`がその状態を返し、
   hostがattachすれば自動的に戻ります。
 - **遅いhostでも行を落としません。** 待ちは、hostがまだ何も取っていない間は短く
-  (`CH32_DMDATA_WAIT_MS`、20 ms)、一度取った後は長く(`CH32_DMDATA_HOST_WAIT_MS`、1 s)
+  (`CH32RV_DMDATA_WAIT_MS`、20 ms)、一度取った後は長く(`CH32RV_DMDATA_HOST_WAIT_MS`、1 s)
   なります。USB/IP越しに複数probeを同時に回すような、pollが遅れるhostを待てます。
   どちらも`millis()`ではなくレジスタを読む回数で数えるので、割込み禁止中でも終わります。
 - **番地はfamilyで違います**(V2系`0xE00000F4`、V3系の多く`0xE0000340`、

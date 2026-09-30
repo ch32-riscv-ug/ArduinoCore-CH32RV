@@ -18,7 +18,7 @@
 
 String global_string;
 
-// The core's own _sbrk (cores/arduino/ch32_sbrk.c). Calling it with 0 reads the
+// The core's own _sbrk (cores/arduino/ch32rv_sbrk.c). Calling it with 0 reads the
 // current program break without moving it.
 extern "C" void *_sbrk(ptrdiff_t incr);
 

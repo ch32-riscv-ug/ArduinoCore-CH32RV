@@ -64,8 +64,8 @@ arduino-cli debug --debug-property toolchain.path=<xpack>/bin/ ...
 ## 3. デバッグする
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32v:CH32V003:pnum=CH32V003F4P6 ./MySketch
-arduino-cli debug   --fqbn ch32-riscv-ug:ch32v:CH32V003:pnum=CH32V003F4P6 -P wch-link ./MySketch
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32V003:pnum=CH32V003F4P6 ./MySketch
+arduino-cli debug   --fqbn ch32-riscv-ug:ch32rv:CH32V003:pnum=CH32V003F4P6 -P wch-link ./MySketch
 ```
 
 gdbのプロンプトが出たら、**まず`load`を打ってください**。

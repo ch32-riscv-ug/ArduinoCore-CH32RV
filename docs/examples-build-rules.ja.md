@@ -50,7 +50,7 @@ USB・USBPD・DACのような特殊ペリフェラルのexampleが増えると�
 ```
 
 - 宣言が無いexampleは**どのボードでも通る**扱い。Blink等はこれで、注記の負担が無い
-- capability tokenは変数名ではなく **`CH32_CLKEN_<name>_ADDR` の `<name>`**
+- capability tokenは変数名ではなく **`CH32RV_CLKEN_<name>_ADDR` の `<name>`**
 - `flash=` / `ram=` は下限。`sync_profiles.py`の既存`REQUIREMENTS`と同じ意味
 
 **`.ino`に置く理由**: examplesは利用者に配られる。
@@ -65,9 +65,9 @@ CIは`sync_profiles.py --check`と同じ形で同期を検証する。
 
 ### 3-2. capabilityの出所は新規に要らない (**実装済み**)
 
-生成済みvariantヘッダの `CH32_CLKEN_<PERIPH>_ADDR` がそのままcapability tokenになっている
+生成済みvariantヘッダの `CH32RV_CLKEN_<PERIPH>_ADDR` がそのままcapability tokenになっている
 (実測86種)。device-data由来で、EVTツリー不要、repository内で完結する。
-USBPDライブラリは既に`#ifdef CH32_CLKEN_USBPD_ADDR`でこれを使っている
+USBPDライブラリは既に`#ifdef CH32RV_CLKEN_USBPD_ADDR`でこれを使っている
 (`libraries/USBPD/src/usbpd_hw.h:31`)。
 
 実測(`variants/*/pins_arduino.h`から集計):
@@ -154,12 +154,12 @@ sketch.yamlを書き忘れたexampleが黙ってカバレッジ0になるのを�
 
 `tests/compile/compile_examples.py` を書き換えた。
 
-- **`SKIP` dictを削除した。** 唯一の項目だった `CH32/PrintFormatting` は、
+- **`SKIP` dictを削除した。** 唯一の項目だった `CH32RV/PrintFormatting` は、
   `.ino`のヘッダに `requires: flash=32K` と書くようになった。
   結果として **V003 / V002 / V006 の3 series**(ANYが16K)を自動でスキップする。
   手書きのボード名はもう無い
 - `series_capabilities()` が `variants/*/pins_arduino.h` から
-  `CH32_CLKEN_<X>_ADDR` を集める。`series_limits()` が `boards.txt` の
+  `CH32RV_CLKEN_<X>_ADDR` を集める。`series_limits()` が `boards.txt` の
   ANYエントリから flash/RAM を読む
 - `requirements()` が `.ino` から `/* requires: USBFS, flash=32K */` を読む。
   宣言の無いexampleは全ボード対象
@@ -198,7 +198,7 @@ sketch.yamlを書き忘れたexampleが黙ってカバレッジ0になるのを�
 examplesに`sketch.yaml`を置いた瞬間、`compile_examples.py`が全滅した。
 **sketch.yamlがあるとarduino-cliはprofileの`platform_index_url`から
 platformを解決し、`--fqbn`を無視する**。開発ツリーではそのURLはまだ404なので、
-`Platform 'ch32-riscv-ug:ch32v' not found`で落ちる。
+`Platform 'ch32-riscv-ug:ch32rv' not found`で落ちる。
 
 これは既知で、`tests/sketches/stage.py`のdocstringに書かれていた。
 対策も同じで、**ビルド前にsketch.yamlを除いたコピーへstageする**。
@@ -219,7 +219,7 @@ platformを解決し、`--fqbn`を無視する**。開発ツリーではそのUR
   CDC glueが入るときがこの規則の最初の本番になる
 - `USBPD/ListProfiles`は現在フレーム論理だけなので全ボードでbuildできる。
   ハードウェアドライバが入ると`requires: USBPD`が要る
-- capability tokenを`CH32_CLKEN_*`に依存させると、
+- capability tokenを`CH32RV_CLKEN_*`に依存させると、
   [board-layer-rules.ja.md](board-layer-rules.ja.md)§5の
   「variantから生アドレスを隠す」案と衝突する。隠すなら別の参照経路が要る
 - sweepとprofileでpnumを変えるか(現在はどちらも`ANY`)

@@ -59,7 +59,7 @@ def test_v14_keeps_official_numeric_pin_contract():
         )
     }
     assert actual == expected
-    assert "#define CH32_UIAP_ENCODE_PIN(pin)" in PINS
+    assert "#define CH32RV_UIAP_ENCODE_PIN(pin)" in PINS
     assert "#define NUM_DIGITAL_PINS 18" in PINS
 
 

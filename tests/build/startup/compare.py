@@ -2,7 +2,7 @@
 """Equivalence check between an EVT-startup ELF and the unified-startup ELF.
 
 Check 1: the vector table of BOTH ELFs matches the spec (vectors_*.inc):
-         entry i is 0 for CH32_RSV, or the address of the named symbol for CH32_IRQ.
+         entry i is 0 for CH32RV_RSV, or the address of the named symbol for CH32RV_IRQ.
 Check 2: the set of (csr-op, csr, value) writes in handle_reset is identical.
 """
 import re, struct, subprocess, sys
@@ -21,11 +21,11 @@ def spec_entries(path):
     out = []
     for line in open(path):
         s = line.strip()
-        if s.startswith("CH32_RSV"):
+        if s.startswith("CH32RV_RSV"):
             out.append((None, None))
-        elif s.startswith("CH32_IRQ"):
+        elif s.startswith("CH32RV_IRQ"):
             out.append(("word", s.split()[1]))
-        elif s.startswith("CH32_JMP"):
+        elif s.startswith("CH32RV_JMP"):
             out.append(("jump", s.split()[1]))
     return out
 

@@ -246,7 +246,7 @@ def paths(root: pathlib.Path) -> dict:
 
 
 def env_defaults(root: pathlib.Path) -> dict:
-    """{variable: path} for the CH32_* the scripts read.
+    """{variable: path} for the CH32RV_* the scripts read.
 
     Built here rather than in shell. The archive name in particular differs per
     host in ways a case statement gets wrong - Windows is a .zip, not a .tar.gz
@@ -283,7 +283,7 @@ def main() -> int:
     ap.add_argument("--print-paths", action="store_true",
                     help="print name=path for each tool and exit without fetching")
     ap.add_argument("--print-env", action="store_true",
-                    help="print shell lines that set the CH32_* variables, "
+                    help="print shell lines that set the CH32RV_* variables, "
                          "leaving any that are already set alone")
     args = ap.parse_args()
 

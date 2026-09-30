@@ -54,8 +54,8 @@ probeがhaltしたまま残した状態にattachすると、それ以前の出�
 RAMの大半はバッファで、`#define`で変えられます。
 
 ```
--DCH32_RTT_UP_SIZE=64        // target→host、既定256
--DCH32_RTT_DOWN_SIZE=8       // host→target、既定16
+-DCH32RV_RTT_UP_SIZE=64        // target→host、既定256
+-DCH32RV_RTT_DOWN_SIZE=8       // host→target、既定16
 ```
 
 sketchの隣に`build_opt.h`を置くか、arduino-cliの
@@ -76,9 +76,9 @@ RAM 2 KBの部品ではやる価値がありますし、20 KBの部品では既�
 ## printf()の出力先を変える
 
 ```cpp
-ch32_set_stdout(&SerialRTT);      // printf()がリングバッファへ
-ch32_set_stdout(&Serial);         // UARTへ戻す
-ch32_set_stdout(nullptr);         // 捨てる
+ch32rv_set_stdout(&SerialRTT);      // printf()がリングバッファへ
+ch32rv_set_stdout(&Serial);         // UARTへ戻す
+ch32rv_set_stdout(nullptr);         // 捨てる
 ```
 
 動くのは**stdioだけ**です。`Serial`という名前はコンパイル時に決まるので追随せず、

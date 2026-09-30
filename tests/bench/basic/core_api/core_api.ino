@@ -107,9 +107,9 @@ static void run_checks()
     volatile uint32_t *in = portInputRegister(digitalPinToPort(pin));
     const uint32_t mask = digitalPinToBitMask(pin);
 
-    tc_checkv("digitalPinToPort", digitalPinToPort(pin) == CH32_PIN_PORT(pin),
+    tc_checkv("digitalPinToPort", digitalPinToPort(pin) == CH32RV_PIN_PORT(pin),
               digitalPinToPort(pin));
-    tc_checkv("digitalPinToBitMask", mask == (1UL << CH32_PIN_BIT(pin)),
+    tc_checkv("digitalPinToBitMask", mask == (1UL << CH32RV_PIN_BIT(pin)),
               (long)mask);
 
     *out |= mask;

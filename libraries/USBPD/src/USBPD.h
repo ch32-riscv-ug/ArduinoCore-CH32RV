@@ -56,7 +56,7 @@
 #include "pd_frames.h"
 /* Where (and whether) this part's USBPD block lives. Included here so a
  * sketch can feature-test the same way the driver does:
- *     #ifdef CH32_USBPD_BASE
+ *     #ifdef CH32RV_USBPD_BASE
  */
 #include "usbpd_hw.h"
 
@@ -67,7 +67,7 @@ typedef pd_pdo_t PDProfile;
 
 namespace arduino {
 
-class CH32UsbPd {
+class CH32RVUsbPd {
 public:
     /* Start CC detection and capability capture. False when this part has no
      * USBPD block - or, today, always: see the header comment. A sketch that
@@ -116,4 +116,4 @@ public:
 
 }  // namespace arduino
 
-extern arduino::CH32UsbPd USBPD;
+extern arduino::CH32RVUsbPd USBPD;

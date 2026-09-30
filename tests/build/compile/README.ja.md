@@ -5,7 +5,7 @@
 
 ## 目的
 
-arduino-cliのsymlink方式で、暫定FQBN(`ch32-riscv-ug:ch32v:CH32V00X:pnum=...`)からBlinkのcompile/linkを一周させ、以下のメカニズムを検証する。
+arduino-cliのsymlink方式で、暫定FQBN(`ch32-riscv-ug:ch32rv:CH32V00X:pnum=...`)からBlinkのcompile/linkを一周させ、以下のメカニズムを検証する。
 
 - boards.txtのpnumメニュー → build.board/series/ldscript/march/mabi/startup定義の注入
 - 統合startup(crt0_ch32.S)+own linker script+own vector includeによるvendorファイル非依存のビルド
@@ -15,7 +15,7 @@ arduino-cliのsymlink方式で、暫定FQBN(`ch32-riscv-ug:ch32v:CH32V00X:pnum=.
 
 - packager: `ch32-riscv-ug`(ユーザーグループ。WCH公式ではない。lang-ship系とは別名前空間)
 - architecture: `ch32v`
-- FQBN例: `ch32-riscv-ug:ch32v:CH32V00X:pnum=CH32V006K8U7`
+- FQBN例: `ch32-riscv-ug:ch32rv:CH32V00X:pnum=CH32V006K8U7`
 
 ## 使い方
 
@@ -23,7 +23,7 @@ arduino-cliのsymlink方式で、暫定FQBN(`ch32-riscv-ug:ch32v:CH32V00X:pnum=.
 uv run tests/compile/compile_matrix.py /tmp/w3-work
 ```
 事前に`uv run tools/index/fetch_tools.py`を一度実行しておけば、環境変数の指定は不要です
-(`<repo>/.tools`から探します。設定済みの`CH32_*`があればそちらが優先されます)。
+(`<repo>/.tools`から探します。設定済みの`CH32RV_*`があればそちらが優先されます)。
 
 
 サンドボックス化した`ARDUINO_DIRECTORIES_*`を使うため、実環境の`~/.arduino15`や`~/Arduino`には触れない。
@@ -48,7 +48,7 @@ ch32v/
 
 ## 既知の制限(実装時に解消する)
 
-- グローバルコンストラクタはcrt0が`.init_array`ループで呼び出す(`CH32_NO_INIT_ARRAY`で無効化可)。compile_matrix.pyが「sketchのctorが.init_arrayに載る+crt0に呼出ループがある」ことを静的検査するが、**実行はHIL待ち**
+- グローバルコンストラクタはcrt0が`.init_array`ループで呼び出す(`CH32RV_NO_INIT_ARRAY`で無効化可)。compile_matrix.pyが「sketchのctorが.init_arrayに載る+crt0に呼出ループがある」ことを静的検査するが、**実行はHIL待ち**
 - API/pinはスタブ。upload/デバッグrecipeなし
 - vendorヘッダ・SPLを一切含まないため、実ペリフェラル操作はできない
 - `crt0_ch32.S`が`prototypes/startup/`と二重管理(prototype段階の割り切り)

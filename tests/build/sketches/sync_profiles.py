@@ -66,8 +66,8 @@ INDEX_URL = ("https://ch32-riscv-ug.github.io/ArduinoCore-CH32/"
 # moves both at once, and --check keeps them from drifting.
 PLATFORM_VERSION = re.search(r"^version=(.+)$", (REPO / "platform.txt").read_text(encoding="utf-8"),
                              re.M).group(1).strip()
-PLATFORM = f"ch32-riscv-ug:ch32v ({PLATFORM_VERSION})"
-PLATFORM_WORKING_TREE = "ch32-riscv-ug:ch32v"       # no version: the platform installed in the sketchbook
+PLATFORM = f"ch32-riscv-ug:ch32rv ({PLATFORM_VERSION})"
+PLATFORM_WORKING_TREE = "ch32-riscv-ug:ch32rv"       # no version: the platform installed in the sketchbook
 
 # (profile name, board id, tier, note). Keep in sync with docs/TEST_PLAN.ja.md.
 BOARDS = [
@@ -116,7 +116,7 @@ def block(src: pathlib.Path, console: bool = False) -> str:
         lines += [
             f"  # tier {tier}: {note}",
             f"  {name}:",
-            f"    fqbn: ch32-riscv-ug:ch32v:{board}:pnum=ANY",
+            f"    fqbn: ch32-riscv-ug:ch32rv:{board}:pnum=ANY",
         ]
         # A test sketch talks to the harness on its Console (SerialDMSeq), so the
         # bench's monitor reads the debug module rather than the UART under test.

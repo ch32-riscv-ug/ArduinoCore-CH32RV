@@ -60,13 +60,13 @@ static void run_checks()
      *    bus - the AVR behaviour libraries check for. */
     Wire.beginTransmission(NOBODY);
     size_t written = 0;
-    for (int i = 0; i < CH32_WIRE_BUFFER_SIZE + 4; i++) {
+    for (int i = 0; i < CH32RV_WIRE_BUFFER_SIZE + 4; i++) {
         written += Wire.write((uint8_t)i);
     }
     t0 = millis();
     rc = Wire.endTransmission();
     elapsed = millis() - t0;
-    tc_check("overflow_truncates", written == CH32_WIRE_BUFFER_SIZE);
+    tc_check("overflow_truncates", written == CH32RV_WIRE_BUFFER_SIZE);
     tc_check("overflow_code", rc == 1);
     tc_check("overflow_skips_bus", elapsed < 5);
 

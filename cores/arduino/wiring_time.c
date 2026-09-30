@@ -9,33 +9,33 @@
  * baud divisor is computed from F_CPU, and that is expensive to debug.
  */
 #include "Arduino.h"
-#include "ch32_clock.h"
-#include "ch32_registers.h"
-#ifndef CH32_CLOCK_INIT
-#error "CH32_CLOCK_INIT is required (see build.clock_init in boards.txt)"
+#include "ch32rv_clock.h"
+#include "ch32rv_registers.h"
+#ifndef CH32RV_CLOCK_INIT
+#error "CH32RV_CLOCK_INIT is required (see build.clock_init in boards.txt)"
 #endif
-#include CH32_GENERATED_(CH32_CLOCK_INIT)
+#include CH32RV_GENERATED_(CH32RV_CLOCK_INIT)
 
-#ifndef CH32_FLASH_LATENCY
-#error "CH32_FLASH_LATENCY is required (see build.core_defines in boards.txt)"
+#ifndef CH32RV_FLASH_LATENCY
+#error "CH32RV_FLASH_LATENCY is required (see build.core_defines in boards.txt)"
 #endif
 
 /* What SysTick counts. Every family but CH32V103 can be told to count HCLK;
  * V103 has no such bit and is fixed at HCLK/8. */
-#if CH32_SYSTICK_V103
-#define CH32_SYSTICK_HZ (F_CPU / 8u)
+#if CH32RV_SYSTICK_V103
+#define CH32RV_SYSTICK_HZ (F_CPU / 8u)
 #if (F_CPU / 8u) < 1000000u
 #error "F_CPU below 8 MHz leaves CH32V103's SysTick under 1 MHz, which micros() \
 cannot divide by."
 #endif
 #else
-#define CH32_SYSTICK_HZ (F_CPU)
+#define CH32RV_SYSTICK_HZ (F_CPU)
 #endif
 
-#define CH32_TICKS_PER_MS ((uint32_t)(CH32_SYSTICK_HZ / 1000u))
-#define CH32_TICKS_PER_US ((uint32_t)(CH32_SYSTICK_HZ / 1000000u))
+#define CH32RV_TICKS_PER_MS ((uint32_t)(CH32RV_SYSTICK_HZ / 1000u))
+#define CH32RV_TICKS_PER_US ((uint32_t)(CH32RV_SYSTICK_HZ / 1000000u))
 
-static volatile uint32_t ch32_millis_counter;
+static volatile uint32_t ch32rv_millis_counter;
 
 void SystemInit(void)
 {
@@ -53,7 +53,7 @@ void SystemInit(void)
      * The sequence is EVT's own and differs per family, so it is generated
      * (clock_init_<family>.h, from clock_init.csv). */
     /* Start from a known clock, whatever the last program left running. The
-     * reset that brought us here is not necessarily a power-on: CH32.restart()
+     * reset that brought us here is not necessarily a power-on: CH32RV.restart()
      * (a PFIC system-reset) and an IWDG watchdog reset both restart the core
      * WITHOUT resetting RCC on the V20x/V30x parts - measured on CH32V203,
      * where CFGR0 still reads SYSCLK-from-PLL after restart(). Left alone, the
@@ -68,33 +68,33 @@ void SystemInit(void)
      * state too; and where we are already on HSI (a real power-on) both waits
      * fall straight through. From here the reset macro and the PLL bring-up
      * run from one fixed starting point regardless of what caused the reset. */
-    CH32_RCC_CTLR |= CH32_RCC_CTLR_HSION;
-    while ((CH32_RCC_CTLR & CH32_RCC_CTLR_HSIRDY) == 0u) {
+    CH32RV_RCC_CTLR |= CH32RV_RCC_CTLR_HSION;
+    while ((CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_HSIRDY) == 0u) {
     }
-    CH32_RCC_CFGR0 = (CH32_RCC_CFGR0 & ~CH32_RCC_CFGR0_SW_MASK) |
-                     CH32_RCC_CFGR0_SW_HSI;
-    while ((CH32_RCC_CFGR0 & CH32_RCC_CFGR0_SWS_MASK) !=
-           (CH32_RCC_CFGR0_SW_HSI << 2)) {
+    CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~CH32RV_RCC_CFGR0_SW_MASK) |
+                     CH32RV_RCC_CFGR0_SW_HSI;
+    while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
+           (CH32RV_RCC_CFGR0_SW_HSI << 2)) {
     }
 
-    CH32_CLOCK_INIT_RESET();
-    while ((CH32_RCC_CTLR & CH32_RCC_CTLR_HSIRDY) == 0u) {
+    CH32RV_CLOCK_INIT_RESET();
+    while ((CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_HSIRDY) == 0u) {
     }
 
     /* Wait states first: the core comes out of reset on a divided clock, and
      * the prescaler below may raise it. Too few wait states at 48 MHz makes the
      * CPU fetch garbage - measured on CH32X035, which needs two and hangs
      * before setup() without them. Too many are merely slow, which is why
-     * CH32_FLASH_LATENCY is sized for the family's fastest clock and left alone
+     * CH32RV_FLASH_LATENCY is sized for the family's fastest clock and left alone
      * when F_CPU asks for a slower one, and why setting it before the switch is
      * safe rather than after.
      *
      * Families whose flash needs no wait states have a zero mask and are not
      * touched at all: EVT never writes ACTLR on CH32V20x/V307/V407, so what
      * the low bits mean there is not established. */
-#if CH32_FLASH_ACTLR_LATENCY_MASK
-    CH32_FLASH_ACTLR = (CH32_FLASH_ACTLR & ~(uint32_t)CH32_FLASH_ACTLR_LATENCY_MASK) |
-                       CH32_FLASH_LATENCY;
+#if CH32RV_FLASH_ACTLR_LATENCY_MASK
+    CH32RV_FLASH_ACTLR = (CH32RV_FLASH_ACTLR & ~(uint32_t)CH32RV_FLASH_ACTLR_LATENCY_MASK) |
+                       CH32RV_FLASH_LATENCY;
 #endif
 
     /* Both APB prescalers stay at /1, so PCLK1 == PCLK2 == HCLK == F_CPU and
@@ -114,66 +114,66 @@ void SystemInit(void)
      * being F_CPU and USART2-5, I2C, SPI2/3 and the APB1 timers each need
      * their own divisor - which is why this is worth settling before it
      * spreads. */
-    CH32_RCC_CFGR0 &= ~(CH32_RCC_CFGR0_SW_MASK | CH32_RCC_CFGR0_HPRE_MASK |
-                        CH32_RCC_CFGR0_PPRE1_MASK | CH32_RCC_CFGR0_PPRE2_MASK);
-    CH32_RCC_CFGR0 |= CH32_RCC_CFGR0_SW_HSI |
-                      CH32_RCC_CFGR0_HPRE(CH32_HPRE_FIELD);
-    while ((CH32_RCC_CFGR0 & CH32_RCC_CFGR0_SWS_MASK) !=
-           (CH32_RCC_CFGR0_SW_HSI << 2)) {
+    CH32RV_RCC_CFGR0 &= ~(CH32RV_RCC_CFGR0_SW_MASK | CH32RV_RCC_CFGR0_HPRE_MASK |
+                        CH32RV_RCC_CFGR0_PPRE1_MASK | CH32RV_RCC_CFGR0_PPRE2_MASK);
+    CH32RV_RCC_CFGR0 |= CH32RV_RCC_CFGR0_SW_HSI |
+                      CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD);
+    while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
+           (CH32RV_RCC_CFGR0_SW_HSI << 2)) {
     }
 
 /* The flag, not the value: CH32V30x_D8C encodes a x18 multiplier as field
  * 0 (RCC_PLLMULL18_EXTEN), so a zero PLL word is a real configuration. */
-#if CH32_CLOCK_USE_PLL
+#if CH32RV_CLOCK_USE_PLL
     /* Some families gate the oscillator's path into the PLL from outside RCC:
      * CH32L103/V103/V205/V20x/V30x take HSI/2 unless EXTEN_PLL_HSI_PRE says
      * otherwise, and every HSI multiplier the tables list assumes the whole
      * oscillator. Without this, SYSCLK comes out at half. The register is not
      * even called the same thing on all of them (CH32V205 spells it CTLR0),
      * so its address arrives as a number rather than a name. */
-#if CH32_CLOCK_EXTEN_ADDR
-    CH32_REG32(CH32_CLOCK_EXTEN_ADDR) |= (uint32_t)CH32_CLOCK_EXTEN_BITS;
+#if CH32RV_CLOCK_EXTEN_ADDR
+    CH32RV_REG32(CH32RV_CLOCK_EXTEN_ADDR) |= (uint32_t)CH32RV_CLOCK_EXTEN_BITS;
 #endif
-    CH32_RCC_CFGR0 = (CH32_RCC_CFGR0 & ~(uint32_t)CH32_CLOCK_PLL_MASK) |
-                     (uint32_t)CH32_CLOCK_PLL_VALUE;
-    CH32_RCC_CTLR |= CH32_RCC_CTLR_PLLON;
-    while ((CH32_RCC_CTLR & CH32_RCC_CTLR_PLLRDY) == 0u) {
+    CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~(uint32_t)CH32RV_CLOCK_PLL_MASK) |
+                     (uint32_t)CH32RV_CLOCK_PLL_VALUE;
+    CH32RV_RCC_CTLR |= CH32RV_RCC_CTLR_PLLON;
+    while ((CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_PLLRDY) == 0u) {
     }
-    CH32_RCC_CFGR0 = (CH32_RCC_CFGR0 & ~CH32_RCC_CFGR0_SW_MASK) |
-                     CH32_RCC_CFGR0_SW_PLL;
-    while ((CH32_RCC_CFGR0 & CH32_RCC_CFGR0_SWS_MASK) !=
-           (CH32_RCC_CFGR0_SW_PLL << 2)) {
+    CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~CH32RV_RCC_CFGR0_SW_MASK) |
+                     CH32RV_RCC_CFGR0_SW_PLL;
+    while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
+           (CH32RV_RCC_CFGR0_SW_PLL << 2)) {
     }
 #endif
 
     /* 1 kHz tick off HCLK - or HCLK/8 on CH32V103, which cannot select. */
-    CH32_SYSTICK_CTLR = 0u;
-#if !CH32_SYSTICK_V103
-    CH32_SYSTICK_SR = 0u;
+    CH32RV_SYSTICK_CTLR = 0u;
+#if !CH32RV_SYSTICK_V103
+    CH32RV_SYSTICK_SR = 0u;
 #endif
-#if CH32_SYSTICK_V103
-    CH32_SYSTICK_WRITE8(0x04u, 0u);
-    CH32_SYSTICK_WRITE8(0x08u, 0u);
-    CH32_SYSTICK_WRITE8(0x0Cu, CH32_TICKS_PER_MS - 1u);
-    CH32_SYSTICK_WRITE8(0x10u, 0u);
+#if CH32RV_SYSTICK_V103
+    CH32RV_SYSTICK_WRITE8(0x04u, 0u);
+    CH32RV_SYSTICK_WRITE8(0x08u, 0u);
+    CH32RV_SYSTICK_WRITE8(0x0Cu, CH32RV_TICKS_PER_MS - 1u);
+    CH32RV_SYSTICK_WRITE8(0x10u, 0u);
 #else
-    CH32_SYSTICK_CNT = 0u;
-    CH32_SYSTICK_CMP = CH32_TICKS_PER_MS - 1u;
-#if CH32_SYSTICK_64
-    CH32_SYSTICK_CNT_HI = 0u;
-    CH32_SYSTICK_CMP_HI = 0u;
+    CH32RV_SYSTICK_CNT = 0u;
+    CH32RV_SYSTICK_CMP = CH32RV_TICKS_PER_MS - 1u;
+#if CH32RV_SYSTICK_64
+    CH32RV_SYSTICK_CNT_HI = 0u;
+    CH32RV_SYSTICK_CMP_HI = 0u;
 #endif
 #endif
-    ch32_irq_enable(CH32_IRQN_SysTick);
-#if CH32_SYSTICK_V103
+    ch32rv_irq_enable(CH32RV_IRQN_SysTick);
+#if CH32RV_SYSTICK_V103
     /* STE is the whole configuration here: the other two bits do not exist
      * (writing 0x7 reads back 0x1), the PFIC enable above is what lets the
      * match through, and the source is fixed. EVT's SYSTICK_Interrupt example
      * does exactly this. */
-    CH32_SYSTICK_CTLR = CH32_SYSTICK_CTLR_STE;
+    CH32RV_SYSTICK_CTLR = CH32RV_SYSTICK_CTLR_STE;
 #else
-    CH32_SYSTICK_CTLR = CH32_SYSTICK_CTLR_STE | CH32_SYSTICK_CTLR_STIE |
-                        CH32_SYSTICK_CTLR_STCLK;
+    CH32RV_SYSTICK_CTLR = CH32RV_SYSTICK_CTLR_STE | CH32RV_SYSTICK_CTLR_STIE |
+                        CH32RV_SYSTICK_CTLR_STCLK;
 #endif
 }
 
@@ -187,19 +187,19 @@ void SystemInit(void)
  * PLL 48 MHz). Afterwards the UART baud rate, millis() and every timer are
  * wrong until something re-runs the clock setup. The core has no API that
  * changes the clock at run time, so any other value is foreign. */
-static inline int ch32_clock_is_ours(void)
+static inline int ch32rv_clock_is_ours(void)
 {
-    const uint32_t cfgr0 = CH32_RCC_CFGR0;
-    const uint32_t sw = CH32_CLOCK_USE_PLL ? CH32_RCC_CFGR0_SW_PLL : CH32_RCC_CFGR0_SW_HSI;
-    if ((cfgr0 & CH32_RCC_CFGR0_SWS_MASK) != (sw << 2)) {
+    const uint32_t cfgr0 = CH32RV_RCC_CFGR0;
+    const uint32_t sw = CH32RV_CLOCK_USE_PLL ? CH32RV_RCC_CFGR0_SW_PLL : CH32RV_RCC_CFGR0_SW_HSI;
+    if ((cfgr0 & CH32RV_RCC_CFGR0_SWS_MASK) != (sw << 2)) {
         return 0;
     }
-    if ((cfgr0 & (CH32_RCC_CFGR0_HPRE_MASK | CH32_RCC_CFGR0_PPRE1_MASK |
-                  CH32_RCC_CFGR0_PPRE2_MASK)) != CH32_RCC_CFGR0_HPRE(CH32_HPRE_FIELD)) {
+    if ((cfgr0 & (CH32RV_RCC_CFGR0_HPRE_MASK | CH32RV_RCC_CFGR0_PPRE1_MASK |
+                  CH32RV_RCC_CFGR0_PPRE2_MASK)) != CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD)) {
         return 0;
     }
-#if CH32_CLOCK_USE_PLL
-    if ((cfgr0 & (uint32_t)CH32_CLOCK_PLL_MASK) != (uint32_t)CH32_CLOCK_PLL_VALUE) {
+#if CH32RV_CLOCK_USE_PLL
+    if ((cfgr0 & (uint32_t)CH32RV_CLOCK_PLL_MASK) != (uint32_t)CH32RV_CLOCK_PLL_VALUE) {
         return 0;
     }
 #endif
@@ -215,30 +215,30 @@ __attribute__((interrupt)) void SysTick_Handler(void)
      * wait or a stalled SerialDMSeq write never gets back to loop() - on V006
      * that left the UART garbled for 4 s. One register read per tick; the
      * few-hundred-microsecond SystemInit() runs once per attach. */
-    if (!ch32_clock_is_ours()) {
+    if (!ch32rv_clock_is_ours()) {
         SystemInit();
     }
-#if CH32_SYSTICK_V103
-    CH32_SYSTICK_WRITE8(0x04u, 0u);
-    CH32_SYSTICK_WRITE8(0x08u, 0u);
+#if CH32RV_SYSTICK_V103
+    CH32RV_SYSTICK_WRITE8(0x04u, 0u);
+    CH32RV_SYSTICK_WRITE8(0x08u, 0u);
 #else
-    CH32_SYSTICK_SR = 0u;
-    CH32_SYSTICK_CNT = 0u;
-#if CH32_SYSTICK_64
-    CH32_SYSTICK_CNT_HI = 0u;
+    CH32RV_SYSTICK_SR = 0u;
+    CH32RV_SYSTICK_CNT = 0u;
+#if CH32RV_SYSTICK_64
+    CH32RV_SYSTICK_CNT_HI = 0u;
 #endif
 #endif
-    ch32_millis_counter++;
+    ch32rv_millis_counter++;
 }
 
 unsigned long millis(void)
 {
-    return ch32_millis_counter;
+    return ch32rv_millis_counter;
 }
 
 /* ticks -> microseconds without a division. QingKe V2 (CH32V003, rv32ec) has
  * neither divide nor multiply in hardware, and the libgcc division in the
- * old `ticks / CH32_TICKS_PER_US` made every micros() call cost several
+ * old `ticks / CH32RV_TICKS_PER_US` made every micros() call cost several
  * microseconds: delayMicroseconds() on the V003 ran 16-17 us long with
  * 9-15 us of jitter (2026-09-22, OEP capture), against +3 us on the X035.
  * Strip the power of two out of the divisor, then multiply by a rounded-up
@@ -246,27 +246,27 @@ unsigned long millis(void)
  * shifts and adds. Exact for every ticks value below one millisecond for all
  * divisors the families use (checked for 8..240 ticks per us); the static
  * assertions below pin the endpoints for the divisor actually built. */
-#define CH32_US_DIV_K   (CH32_TICKS_PER_US % 16u == 0u ? 4u : CH32_TICKS_PER_US % 8u == 0u ? 3u : \
-                         CH32_TICKS_PER_US % 4u == 0u ? 2u : CH32_TICKS_PER_US % 2u == 0u ? 1u : 0u)
-#define CH32_US_DIV_ODD (CH32_TICKS_PER_US >> CH32_US_DIV_K)
-#define CH32_US_DIV_S   (CH32_US_DIV_ODD <= 9u ? 16u : CH32_US_DIV_ODD <= 15u ? 18u : 19u)
-#define CH32_US_DIV_R   (((1u << CH32_US_DIV_S) + CH32_US_DIV_ODD - 1u) / CH32_US_DIV_ODD)
+#define CH32RV_US_DIV_K   (CH32RV_TICKS_PER_US % 16u == 0u ? 4u : CH32RV_TICKS_PER_US % 8u == 0u ? 3u : \
+                         CH32RV_TICKS_PER_US % 4u == 0u ? 2u : CH32RV_TICKS_PER_US % 2u == 0u ? 1u : 0u)
+#define CH32RV_US_DIV_ODD (CH32RV_TICKS_PER_US >> CH32RV_US_DIV_K)
+#define CH32RV_US_DIV_S   (CH32RV_US_DIV_ODD <= 9u ? 16u : CH32RV_US_DIV_ODD <= 15u ? 18u : 19u)
+#define CH32RV_US_DIV_R   (((1u << CH32RV_US_DIV_S) + CH32RV_US_DIV_ODD - 1u) / CH32RV_US_DIV_ODD)
 /* The multiply by the reciprocal is spelled out per bit: GCC at -Os on rv32e
  * otherwise emits a __mulsi3 libcall for it (seen in the V003 disassembly),
  * which is the very cost this is meant to remove. Each `((R >> b) & 1)` is a
  * constant, so only the set bits of R survive as a shift and an add. */
-#define CH32_MULC_BIT(x, R, b) (((R) >> (b)) & 1u ? ((uint32_t)(x) << (b)) : 0u)
-#define CH32_MULC(x, R) (CH32_MULC_BIT(x, R, 0) + CH32_MULC_BIT(x, R, 1) + CH32_MULC_BIT(x, R, 2) + CH32_MULC_BIT(x, R, 3) + \
-                         CH32_MULC_BIT(x, R, 4) + CH32_MULC_BIT(x, R, 5) + CH32_MULC_BIT(x, R, 6) + CH32_MULC_BIT(x, R, 7) + \
-                         CH32_MULC_BIT(x, R, 8) + CH32_MULC_BIT(x, R, 9) + CH32_MULC_BIT(x, R, 10) + CH32_MULC_BIT(x, R, 11) + \
-                         CH32_MULC_BIT(x, R, 12) + CH32_MULC_BIT(x, R, 13) + CH32_MULC_BIT(x, R, 14) + CH32_MULC_BIT(x, R, 15) + \
-                         CH32_MULC_BIT(x, R, 16) + CH32_MULC_BIT(x, R, 17) + CH32_MULC_BIT(x, R, 18) + CH32_MULC_BIT(x, R, 19))
-_Static_assert(CH32_US_DIV_R < (1u << 20), "reciprocal wider than the spelled-out multiply");
-#define CH32_US_FROM_TICKS(t) (CH32_MULC((uint32_t)(t) >> CH32_US_DIV_K, CH32_US_DIV_R) >> CH32_US_DIV_S)
-_Static_assert(CH32_US_FROM_TICKS(CH32_TICKS_PER_MS - 1u) == 999u, "ticks->us reciprocal off at the top of the millisecond");
-_Static_assert(CH32_US_FROM_TICKS(CH32_TICKS_PER_US) == 1u && CH32_US_FROM_TICKS(CH32_TICKS_PER_US - 1u) == 0u,
+#define CH32RV_MULC_BIT(x, R, b) (((R) >> (b)) & 1u ? ((uint32_t)(x) << (b)) : 0u)
+#define CH32RV_MULC(x, R) (CH32RV_MULC_BIT(x, R, 0) + CH32RV_MULC_BIT(x, R, 1) + CH32RV_MULC_BIT(x, R, 2) + CH32RV_MULC_BIT(x, R, 3) + \
+                         CH32RV_MULC_BIT(x, R, 4) + CH32RV_MULC_BIT(x, R, 5) + CH32RV_MULC_BIT(x, R, 6) + CH32RV_MULC_BIT(x, R, 7) + \
+                         CH32RV_MULC_BIT(x, R, 8) + CH32RV_MULC_BIT(x, R, 9) + CH32RV_MULC_BIT(x, R, 10) + CH32RV_MULC_BIT(x, R, 11) + \
+                         CH32RV_MULC_BIT(x, R, 12) + CH32RV_MULC_BIT(x, R, 13) + CH32RV_MULC_BIT(x, R, 14) + CH32RV_MULC_BIT(x, R, 15) + \
+                         CH32RV_MULC_BIT(x, R, 16) + CH32RV_MULC_BIT(x, R, 17) + CH32RV_MULC_BIT(x, R, 18) + CH32RV_MULC_BIT(x, R, 19))
+_Static_assert(CH32RV_US_DIV_R < (1u << 20), "reciprocal wider than the spelled-out multiply");
+#define CH32RV_US_FROM_TICKS(t) (CH32RV_MULC((uint32_t)(t) >> CH32RV_US_DIV_K, CH32RV_US_DIV_R) >> CH32RV_US_DIV_S)
+_Static_assert(CH32RV_US_FROM_TICKS(CH32RV_TICKS_PER_MS - 1u) == 999u, "ticks->us reciprocal off at the top of the millisecond");
+_Static_assert(CH32RV_US_FROM_TICKS(CH32RV_TICKS_PER_US) == 1u && CH32RV_US_FROM_TICKS(CH32RV_TICKS_PER_US - 1u) == 0u,
                "ticks->us reciprocal off at one microsecond");
-_Static_assert(CH32_US_FROM_TICKS(CH32_TICKS_PER_US * 500u - 1u) == 499u, "ticks->us reciprocal off at half a millisecond");
+_Static_assert(CH32RV_US_FROM_TICKS(CH32RV_TICKS_PER_US * 500u - 1u) == 499u, "ticks->us reciprocal off at half a millisecond");
 
 /* Wraps every 2^32 us (about 71 minutes), same as the AVR core. Differences
  * stay correct across the wrap because the arithmetic is modulo 2^32. */
@@ -275,18 +275,18 @@ unsigned long micros(void)
     uint32_t ms, ticks;
 
     do {
-        ms = ch32_millis_counter;
-        ticks = CH32_SYSTICK_CNT;
-    } while (ms != ch32_millis_counter);
+        ms = ch32rv_millis_counter;
+        ticks = CH32RV_SYSTICK_CNT;
+    } while (ms != ch32rv_millis_counter);
 
-    return ms * 1000u + CH32_US_FROM_TICKS(ticks);
+    return ms * 1000u + CH32RV_US_FROM_TICKS(ticks);
 }
 
 void delay(unsigned long ms)
 {
-    const uint32_t start = ch32_millis_counter;
+    const uint32_t start = ch32rv_millis_counter;
 
-    while ((uint32_t)(ch32_millis_counter - start) < (uint32_t)ms) {
+    while ((uint32_t)(ch32rv_millis_counter - start) < (uint32_t)ms) {
         yield();
     }
 }

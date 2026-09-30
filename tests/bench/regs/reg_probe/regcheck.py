@@ -14,7 +14,7 @@ Purpose:
     a timer was given, the ADC sequence register, the interrupt-enable state in
     the PFIC. None of it needs a wire or an instrument.
 
-    The expected values do not come from cores/arduino/ch32_registers.h. Block
+    The expected values do not come from cores/arduino/ch32rv_registers.h. Block
     bases and register offsets come from device-data's register_map.csv, remap
     bit positions and route pads from routes.csv, clock-
     enable bits from clock_enables.csv - so a wrong address in the core's own
@@ -266,26 +266,26 @@ class Variant:
         self.text = text
         self.pads = {m.group(1): (int(m.group(2)) << 5) | int(m.group(3))
                      for m in re.finditer(
-                         r"#define (P[A-F]\d+)\s+CH32_PIN\((\d+),\s*(\d+)\)", text)}
+                         r"#define (P[A-F]\d+)\s+CH32RV_PIN\((\d+),\s*(\d+)\)", text)}
         self.pad_of = {v: k for k, v in self.pads.items()}
         self.defs = {m.group(1): m.group(2) for m in re.finditer(
             r"^#define (\w+)\s+(\S+)\s*$", text, re.M)}
         self.routes = {}
-        for m in re.finditer(r"#define CH32_(\w+)_ROUTES \{", text):
+        for m in re.finditer(r"#define CH32RV_(\w+)_ROUTES \{", text):
             name = m.group(1)
             body = text[m.end():text.index("\n}", m.end())]
             rows = []
             for r in re.finditer(
                     r"\{\s*(\d+),\s*\{\s*(\w+),\s*(\w+),\s*(\w+)\s*\},"
                     r"\s*(0x[0-9A-Fa-f]+)u,\s*(0x[0-9A-Fa-f]+)u\s*\}", body):
-                pins = tuple(None if p == "CH32_ROUTE_NO_PIN" else p
+                pins = tuple(None if p == "CH32RV_ROUTE_NO_PIN" else p
                              for p in r.group(2, 3, 4))
                 rows.append(Route(int(r.group(1)), pins, int(r.group(5), 16),
                                   int(r.group(6), 16)))
             self.routes[name] = rows
-        self.pwm_timer = self._pin_map("CH32_PWM_PIN_TO_TIMER")
-        self.pwm_channel = self._pin_map("CH32_PWM_PIN_TO_CHANNEL")
-        self.adc_channel = self._pin_map("CH32_PIN_TO_ADC_CHANNEL")
+        self.pwm_timer = self._pin_map("CH32RV_PWM_PIN_TO_TIMER")
+        self.pwm_channel = self._pin_map("CH32RV_PWM_PIN_TO_CHANNEL")
+        self.adc_channel = self._pin_map("CH32RV_PIN_TO_ADC_CHANNEL")
 
     def _pin_map(self, macro: str) -> dict:
         m = re.search(rf"#define {macro}\(p\) \(", self.text)
@@ -318,7 +318,7 @@ class Variant:
         return self.pads[pad]
 
     def serial_numbers(self) -> list:
-        return sorted(n for n in range(1, 6) if f"CH32_SERIAL{n}_TX" in self.defs)
+        return sorted(n for n in range(1, 6) if f"CH32RV_SERIAL{n}_TX" in self.defs)
 
 
 def board_defs(board: str) -> dict:
@@ -336,8 +336,8 @@ def board_defs(board: str) -> dict:
             out["F_CPU"] = _int(value)
         elif key == "vector_variant":
             out["vector_variant"] = value.strip()
-    for need in ("F_CPU", "vector_variant", "CH32_CLOCK_USE_PLL",
-                 "CH32_CLOCK_SYSCLK_HZ", "CH32_HPRE_LINEAR"):
+    for need in ("F_CPU", "vector_variant", "CH32RV_CLOCK_USE_PLL",
+                 "CH32RV_CLOCK_SYSCLK_HZ", "CH32RV_HPRE_LINEAR"):
         if need not in out:
             raise Failure(f"boards.txt: {board} has no {need}")
     return out
@@ -346,20 +346,20 @@ def board_defs(board: str) -> dict:
 def irq_numbers(vector_variant: str) -> dict:
     text = (REPO / "cores" / "arduino" / f"irqn_{vector_variant}.h").read_text(encoding="utf-8")
     return {m.group(1): int(m.group(2))
-            for m in re.finditer(r"#define CH32_IRQN_(\w+)\s+(\d+)", text)}
+            for m in re.finditer(r"#define CH32RV_IRQN_(\w+)\s+(\d+)", text)}
 
 
 def exti_groups(vector_variant: str) -> list:
     """[(handler, mask, irq name)] from the generated exti_<v>.h."""
     text = (REPO / "cores" / "arduino" / f"exti_{vector_variant}.h").read_text(encoding="utf-8")
     return [(m.group(1), int(m.group(2), 16), m.group(3)) for m in re.finditer(
-        r"X\((\w+),\s*(0x[0-9a-fA-F]+)u,\s*CH32_IRQN_(\w+)\)", text)]
+        r"X\((\w+),\s*(0x[0-9a-fA-F]+)u,\s*CH32RV_IRQN_(\w+)\)", text)]
 
 
 def hpre_field(defs: dict) -> int:
-    """The AHB prescaler field for SYSCLK/F_CPU, both encodings (ch32_clock.h)."""
-    div = defs["CH32_CLOCK_SYSCLK_HZ"] // defs["F_CPU"]
-    if defs["CH32_HPRE_LINEAR"]:
+    """The AHB prescaler field for SYSCLK/F_CPU, both encodings (ch32rv_clock.h)."""
+    div = defs["CH32RV_CLOCK_SYSCLK_HZ"] // defs["F_CPU"]
+    if defs["CH32RV_HPRE_LINEAR"]:
         table = {16: 0xB, 32: 0xC, 64: 0xD, 128: 0xE, 256: 0xF}
         return div - 1 if div <= 8 else table[div]
     table = {1: 0x0, 2: 0x8, 4: 0x9, 8: 0xA, 16: 0xB, 64: 0xC, 128: 0xD,
@@ -841,7 +841,7 @@ class Session:
         ctlr, cfgr0 = inside["CTLR"], inside["CFGR0"]
         rcc = self.rcc()
         self.rep.eq(g, "hsi_on_and_ready", ctlr & 0x3, 0x3)
-        use_pll = d["CH32_CLOCK_USE_PLL"]
+        use_pll = d["CH32RV_CLOCK_USE_PLL"]
         self.rep.eq(g, "sysclk_source", (cfgr0 >> 2) & 0x3, 2 if use_pll else 0,
                     "SWS: 0=HSI 2=PLL")
         self.rep.eq(g, "ahb_prescaler", (cfgr0 >> 4) & 0xF, hpre_field(d))
@@ -849,31 +849,31 @@ class Session:
         self.rep.eq(g, "apb2_prescaler", (cfgr0 >> 11) & 0x7, 0)
         if use_pll:
             self.rep.eq(g, "pll_on_and_ready", (ctlr >> 24) & 0x3, 0x3)
-            self.rep.eq(g, "pll_field", cfgr0 & d["CH32_CLOCK_PLL_MASK"],
-                        d["CH32_CLOCK_PLL_VALUE"])
-            if d.get("CH32_CLOCK_EXTEN_ADDR"):
-                v = self.peek(d["CH32_CLOCK_EXTEN_ADDR"])
-                self.rep.eq(g, "exten_pll_hsi_pre", v & d["CH32_CLOCK_EXTEN_BITS"],
-                            d["CH32_CLOCK_EXTEN_BITS"], "read by the core")
-        mask = d.get("CH32_FLASH_ACTLR_LATENCY_MASK", 0)
+            self.rep.eq(g, "pll_field", cfgr0 & d["CH32RV_CLOCK_PLL_MASK"],
+                        d["CH32RV_CLOCK_PLL_VALUE"])
+            if d.get("CH32RV_CLOCK_EXTEN_ADDR"):
+                v = self.peek(d["CH32RV_CLOCK_EXTEN_ADDR"])
+                self.rep.eq(g, "exten_pll_hsi_pre", v & d["CH32RV_CLOCK_EXTEN_BITS"],
+                            d["CH32RV_CLOCK_EXTEN_BITS"], "read by the core")
+        mask = d.get("CH32RV_FLASH_ACTLR_LATENCY_MASK", 0)
         if mask:
             # Read by the core: the probe's attach raises the wait states along
             # with the clock (CH32L103 read 1 through the probe, 0 from inside).
             actlr = self.peek(self.dd.addr("FLASH", "ACTLR"))
-            self.rep.eq(g, "flash_latency", actlr & mask, d["CH32_FLASH_LATENCY"],
+            self.rep.eq(g, "flash_latency", actlr & mask, d["CH32RV_FLASH_LATENCY"],
                         "read by the core")
         else:
             self.rep.skip(g, "flash_latency", "family has no wait-state field")
 
         st = self.p.words(SYSTICK_BASE, 6)
-        if d.get("CH32_SYSTICK_V103"):
+        if d.get("CH32RV_SYSTICK_V103"):
             self.rep.eq(g, "systick_enabled", st[0] & 0x1, 0x1)
             self.rep.eq(g, "systick_compare", st[3], self.f_cpu // 8 // 1000 - 1,
                         "V103 layout: CMP at +0x0C, HCLK/8")
         else:
             self.rep.eq(g, "systick_ctlr", st[0] & 0x7, 0x7, "STE|STIE|STCLK")
             self.rep.eq(g, "systick_compare", st[4], self.f_cpu // 1000 - 1)
-            if d.get("CH32_SYSTICK_64"):
+            if d.get("CH32RV_SYSTICK_64"):
                 self.rep.eq(g, "systick_compare_hi", st[5], 0)
         self.rep.true(g, "pfic_systick_enabled", self.pfic_enabled(self.irq["SysTick"]))
 
@@ -944,8 +944,8 @@ class Session:
         self.rep.eq(g, f"{tag}_ctlr2", u["CTLR2"] & 0xFFFF, 0)
         self.rep.eq(g, f"{tag}_ctlr3", u["CTLR3"] & 0xFFFF, 0)
         self.clock_on(g, f"{tag}_clock_on", self.rcc(), u["block"])
-        irq = self.var.d(f"CH32_SERIAL{n}_IRQ")
-        irqn = self.irq.get(str(irq).replace("CH32_IRQN_", ""))
+        irq = self.var.d(f"CH32RV_SERIAL{n}_IRQ")
+        irqn = self.irq.get(str(irq).replace("CH32RV_IRQN_", ""))
         if irqn is None:
             self.rep.skip(g, f"{tag}_pfic", f"unknown irq {irq}")
         else:
@@ -1106,7 +1106,7 @@ class Session:
                 self.clock_on(g, f"{name.lower()}_clock_on", self.rcc(), name)
         self.t.cmd(f"PINMODE {pin} IN")
 
-        dac1 = self.var.d("CH32_DAC1_PIN")
+        dac1 = self.var.d("CH32RV_DAC1_PIN")
         if dac1:
             g = "dac"
             self.t.cmd(f"AWRITE {self.var.pin(dac1)} 128")
@@ -1135,8 +1135,8 @@ class Session:
             self.rep.skip(g, "variant_channel_vs_pinout", "no pinout rows for this part")
         v = self.t.val(f"AREAD {pin}")
         self.rep.true(g, "value_in_range", 0 <= v <= 1023, f"analogRead({a0}) = {v}")
-        ctlr3 = bool(self.defs.get("CH32_ADC_CLK_CTLR3", 0))
-        div = adc_divider(self.f_cpu, self.defs["CH32_ADC_MAX_HZ"], ctlr3)
+        ctlr3 = bool(self.defs.get("CH32RV_ADC_CLK_CTLR3", 0))
+        div = adc_divider(self.f_cpu, self.defs["CH32RV_ADC_MAX_HZ"], ctlr3)
         if ctlr3:
             # The family has no RCC ADCPRE (clock_prescalers.csv); the divider is ADC_CTLR3 CLK_DIV[8:0],
             # [3:0] = div - 1 and [8:4] = div / 2 - 1 (EVT ADC_CLK_Div4 = 0x13 .. Div16 = 0x7F).
@@ -1155,19 +1155,19 @@ class Session:
         self.rep.eq(g, "samptr1_longest", a["SAMPTR1"] & 0x00FFFFFF, 0x00FFFFFF)
         self.rep.eq(g, "samptr2_longest", a["SAMPTR2"] & 0x3FFFFFFF, 0x3FFFFFFF)
         rcc = self.rcc()
-        self.rep.true(g, "adcclk_within_limit", self.f_cpu // div <= self.defs["CH32_ADC_MAX_HZ"],
-                      f"{self.f_cpu // div} Hz <= {self.defs['CH32_ADC_MAX_HZ']}")
+        self.rep.true(g, "adcclk_within_limit", self.f_cpu // div <= self.defs["CH32RV_ADC_MAX_HZ"],
+                      f"{self.f_cpu // div} Hz <= {self.defs['CH32RV_ADC_MAX_HZ']}")
         self.pad_is(g, "analog", a0, CFG_IN_ANALOG)
         self.clock_on(g, "adc1_clock_on", rcc, "ADC1")
 
     def s_tone(self):
         g = "tone"
-        timer = self.var.d("CH32_TONE_TIMER")
+        timer = self.var.d("CH32RV_TONE_TIMER")
         if not timer:
             self.rep.skip(g, "timer", "variant has no tone timer")
             return
         name = f"TIM{timer}"
-        bits = self.var.d("CH32_TONE_TIMER_BITS", 16)
+        bits = self.var.d("CH32RV_TONE_TIMER_BITS", 16)
         dd_bits = self.dd.timer_bits.get(name)
         if dd_bits:
             self.rep.eq(g, "variant_bits_vs_timers_csv", bits, dd_bits, name)
@@ -1185,7 +1185,7 @@ class Session:
             self.rep.eq(g, "atrlr", tm["ATRLR"] & 0xFFFF, ticks - 1)
         self.rep.eq(g, "ctlr1_cen", tm["CTLR1"] & 0x1, 0x1)
         self.rep.eq(g, "dmaintenr_uie", tm["DMAINTENR"] & 0x1, 0x1)
-        irq = str(self.var.d("CH32_TONE_TIMER_IRQ")).replace("CH32_IRQN_", "")
+        irq = str(self.var.d("CH32RV_TONE_TIMER_IRQ")).replace("CH32RV_IRQN_", "")
         if irq in self.irq:
             self.rep.true(g, "pfic_enabled", self.pfic_enabled(self.irq[irq]), f"{irq} = {self.irq[irq]}")
         self.pad_is(g, "pin_output", pad, CFG_OUT_PP_10M)

@@ -68,7 +68,7 @@ fullを引くのはmenuを`full`にしたときだけなので、上の「full�
 ビルド成果物は`--build-path`に出ます。ELFとmap fileが両方あります。
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32v:CH32V003:pnum=ANY \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32V003:pnum=ANY \
     --build-path /tmp/b <sketch>
 ```
 

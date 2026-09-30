@@ -175,13 +175,13 @@ variants/                           **空**
 `PA0`形式(上位3bit=ポート、下位5bit=ピン番号)で、Arduino慣例の連番`D0`/`D1`ではありません。
 
 ```c
-#define CH32_GPIO_A (1 << 5)
-#define PA0 (CH32_GPIO_A | (0))
+#define CH32RV_GPIO_A (1 << 5)
+#define PA0 (CH32RV_GPIO_A | (0))
 ```
 
 多package・多familyを1つの番号体系で扱えるのが利点、`digitalWrite(13, HIGH)`のような標準的なsketchがそのまま動かないのが欠点です。新コアのpin番号設計(Q-011/Q-003)で引き継ぐかどうかを決める必要があります。
 
-なお`CH32_UART1_TX PA10`と`CH32_I2C1_SCL PA10`が同一ピンに割り当てられており(X035)、既定bus pinの衝突は手書き管理では検出できていません。生成器で扱うべき理由の1つです。
+なお`CH32RV_UART1_TX PA10`と`CH32RV_I2C1_SCL PA10`が同一ピンに割り当てられており(X035)、既定bus pinの衝突は手書き管理では検出できていません。生成器で扱うべき理由の1つです。
 
 ## ★ ArduinoCore-APIの扱い(Q-010/Q-019の一次資料)
 

@@ -24,7 +24,7 @@ series has says so in its own header:
     /* requires: USBFS */
     /* requires: USBPD, flash=32K */
 
-The capability names are the <X> of CH32_CLKEN_<X>_ADDR in the generated
+The capability names are the <X> of CH32RV_CLKEN_<X>_ADDR in the generated
 variant header, so the question "does this series have a USB device
 controller?" is answered by device-data rather than by a hand-written table.
 An example with no `requires:` line is built for every board.
@@ -59,7 +59,7 @@ FAST_BOARDS = ("CH32X035", "CH32V003")
 # (docs/board-layer-rules.ja.md). Building it the documented way is what keeps
 # the documented way honest - if the flag stops working, this fails.
 EXTRA_PROPERTIES = {
-    ("CH32", "Blink"): ["build.extra_flags=-DLED_BUILTIN=PA1"],
+    ("CH32RV", "Blink"): ["build.extra_flags=-DLED_BUILTIN=PA1"],
 }
 
 
@@ -107,7 +107,7 @@ def run(work: pathlib.Path, boards=FAST_BOARDS) -> dict:
             if reason:
                 skipped.append((library, name, board, reason))
                 continue
-            fqbn = f"ch32-riscv-ug:ch32v:{board}:pnum=ANY"
+            fqbn = f"ch32-riscv-ug:ch32rv:{board}:pnum=ANY"
             build = work / "build" / board / library / name
             properties = EXTRA_PROPERTIES.get((library, name), ())
             code, output = compile_one(env, fqbn, gcc, build, staged,

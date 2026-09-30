@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "ch32_pins.h"
+#include "ch32rv_pins.h"
 
 #ifdef __cplusplus
 #include "api/ArduinoAPI.h"
@@ -24,14 +24,14 @@ using namespace arduino;
  * if its port exists in this series and the port's mask has the bit set. Both
  * fold to a constant when `pin` is a pad name. */
 #define digitalPinIsValid(pin) \
-    ((CH32_PIN_PORT(pin) < CH32_PORT_COUNT) && \
-     ((CH32_PORT_MASK(CH32_PIN_PORT(pin)) >> CH32_PIN_BIT(pin)) & 1u))
+    ((CH32RV_PIN_PORT(pin) < CH32RV_PORT_COUNT) && \
+     ((CH32RV_PORT_MASK(CH32RV_PIN_PORT(pin)) >> CH32RV_PIN_BIT(pin)) & 1u))
 
 /* Same, restricted to the pads present on every part in the series - the set a
  * sketch built for the ANY menu entry can rely on. */
 #define digitalPinIsCommon(pin) \
-    ((CH32_PIN_PORT(pin) < CH32_PORT_COUNT) && \
-     ((CH32_PORT_COMMON_MASK(CH32_PIN_PORT(pin)) >> CH32_PIN_BIT(pin)) & 1u))
+    ((CH32RV_PIN_PORT(pin) < CH32RV_PORT_COUNT) && \
+     ((CH32RV_PORT_COMMON_MASK(CH32RV_PIN_PORT(pin)) >> CH32RV_PIN_BIT(pin)) & 1u))
 
 /* EXTI lines are numbered by the pin's bit, not by the port, so the pin number
  * carries everything attachInterrupt() needs. */
@@ -61,16 +61,16 @@ using namespace arduino;
  *
  * These reach the same registers the core uses. Driving a pin this way while
  * Serial, Wire or SPI owns it is the caller's problem to avoid. */
-#define digitalPinToPort(pin)    CH32_PIN_PORT(pin)
-#define digitalPinToBitMask(pin) (1UL << CH32_PIN_BIT(pin))
+#define digitalPinToPort(pin)    CH32RV_PIN_PORT(pin)
+#define digitalPinToBitMask(pin) (1UL << CH32RV_PIN_BIT(pin))
 #define portOutputRegister(port) \
-    ((volatile uint32_t *)(CH32_GPIO_PORT_BASE(port) + 0x0Cu))
+    ((volatile uint32_t *)(CH32RV_GPIO_PORT_BASE(port) + 0x0Cu))
 #define portInputRegister(port) \
-    ((volatile uint32_t *)(CH32_GPIO_PORT_BASE(port) + 0x08u))
+    ((volatile uint32_t *)(CH32RV_GPIO_PORT_BASE(port) + 0x08u))
 
 /* Where the global interrupt enable lives for the code a sketch runs.
  *
- * Sketches enter U mode (MPP = 0 in the board's CH32_MSTATUS_INIT) on every
+ * Sketches enter U mode (MPP = 0 in the board's CH32RV_MSTATUS_INIT) on every
  * QingKe V3B/V3F/V3V/V4 part, as WCH's own startups do, and the core enforces
  * it: mstatus is an illegal instruction there (mcause 2). Their CSR 0x800
  * (gintenr) holds the same enable bits (0x88), is user-accessible, and is what
@@ -81,17 +81,17 @@ using namespace arduino;
  * The V2 parts and the V3A (CH32V103) run sketches in M mode and use mstatus.
  * The V3A has U mode but no gintenr (it reads 0 and ignores writes), so it is
  * put in M mode by its board (tools/generate/generate.py) rather than left
- * without a way to mask interrupts. The branch is on the core (CH32_CORE_*
+ * without a way to mask interrupts. The branch is on the core (CH32RV_CORE_*
  * from the generated variant), not on part names. */
-#if defined(CH32_CORE_QINGKE_V3B) || defined(CH32_CORE_QINGKE_V3F) || \
-    defined(CH32_CORE_QINGKE_V3V) || \
-    defined(CH32_CORE_QINGKE_V4A) || defined(CH32_CORE_QINGKE_V4B) || \
-    defined(CH32_CORE_QINGKE_V4C) || defined(CH32_CORE_QINGKE_V4F) || \
-    defined(CH32_CORE_QINGKE_V4J)
-#define CH32_IRQ_IN_GINTENR 1
-#elif defined(CH32_CORE_QINGKE_V2A) || defined(CH32_CORE_QINGKE_V2C) || \
-      defined(CH32_CORE_QINGKE_V3A)
-#define CH32_IRQ_IN_GINTENR 0
+#if defined(CH32RV_CORE_QINGKE_V3B) || defined(CH32RV_CORE_QINGKE_V3F) || \
+    defined(CH32RV_CORE_QINGKE_V3V) || \
+    defined(CH32RV_CORE_QINGKE_V4A) || defined(CH32RV_CORE_QINGKE_V4B) || \
+    defined(CH32RV_CORE_QINGKE_V4C) || defined(CH32RV_CORE_QINGKE_V4F) || \
+    defined(CH32RV_CORE_QINGKE_V4J)
+#define CH32RV_IRQ_IN_GINTENR 1
+#elif defined(CH32RV_CORE_QINGKE_V2A) || defined(CH32RV_CORE_QINGKE_V2C) || \
+      defined(CH32RV_CORE_QINGKE_V3A)
+#define CH32RV_IRQ_IN_GINTENR 0
 #else
 #error "unknown QingKe core: say whether sketches run in U mode (gintenr) or M mode (mstatus)"
 #endif
@@ -104,7 +104,7 @@ using namespace arduino;
  * against. */
 static inline void interrupts(void)
 {
-#if CH32_IRQ_IN_GINTENR
+#if CH32RV_IRQ_IN_GINTENR
     const uint32_t mask = 0x88u;
     __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");
 #else
@@ -114,7 +114,7 @@ static inline void interrupts(void)
 
 static inline void noInterrupts(void)
 {
-#if CH32_IRQ_IN_GINTENR
+#if CH32RV_IRQ_IN_GINTENR
     const uint32_t mask = 0x88u;
     __asm__ volatile ("csrc 0x800, %0" :: "r"(mask) : "memory");
 #else
@@ -127,10 +127,10 @@ static inline void noInterrupts(void)
  * requestFrom() masked interrupts around STOP on the X035, and when analogWrite()
  * took over a timer on the L103 and the V307; each sketch hung in the trap
  * handler). */
-static inline uint32_t ch32_irq_save(void)
+static inline uint32_t ch32rv_irq_save(void)
 {
     uint32_t old;
-#if CH32_IRQ_IN_GINTENR
+#if CH32RV_IRQ_IN_GINTENR
     const uint32_t mask = 0x88u;
     /* One csrrc, not csrr + csrc: as two statements GCC may give old and mask
      * the same register (old is not early-clobber), and csrc then clears every
@@ -143,9 +143,9 @@ static inline uint32_t ch32_irq_save(void)
     return old;
 }
 
-static inline void ch32_irq_restore(uint32_t old)
+static inline void ch32rv_irq_restore(uint32_t old)
 {
-#if CH32_IRQ_IN_GINTENR
+#if CH32RV_IRQ_IN_GINTENR
     if (old & 0x88u) {
         const uint32_t mask = 0x88u;
         __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");
@@ -158,10 +158,10 @@ static inline void ch32_irq_restore(uint32_t old)
 }
 
 #ifdef NUM_ANALOG_INPUTS
-#define digitalPinToAnalogChannel(pin) CH32_PIN_TO_ADC_CHANNEL(pin)
-#define analogInputToDigitalPin(chan)  CH32_ADC_CHANNEL_TO_PIN(chan)
+#define digitalPinToAnalogChannel(pin) CH32RV_PIN_TO_ADC_CHANNEL(pin)
+#define analogInputToDigitalPin(chan)  CH32RV_ADC_CHANNEL_TO_PIN(chan)
 #define digitalPinHasADC(pin) \
-    (CH32_PIN_TO_ADC_CHANNEL(pin) != NOT_AN_ANALOG_PIN)
+    (CH32RV_PIN_TO_ADC_CHANNEL(pin) != NOT_AN_ANALOG_PIN)
 #endif
 
 #ifdef __cplusplus

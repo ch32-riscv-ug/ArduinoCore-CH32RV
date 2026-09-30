@@ -11,14 +11,14 @@
  * links core.a inside --start-group/--end-group, which makes the linker come
  * back to this object when libc asks for _write.
  *
- * _sbrk is deliberately *not* here - see ch32_sbrk.c for why.
+ * _sbrk is deliberately *not* here - see ch32rv_sbrk.c for why.
  */
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "ch32_serial_write.h"
+#include "ch32rv_serial_write.h"
 
 #undef errno
 extern int errno;
@@ -29,7 +29,7 @@ ssize_t _write(int fd, const void *buf, size_t count)
         errno = EBADF;
         return -1;
     }
-    return (ssize_t)ch32_serial_write_bytes((const uint8_t *)buf, count);
+    return (ssize_t)ch32rv_serial_write_bytes((const uint8_t *)buf, count);
 }
 
 ssize_t _read(int fd, void *buf, size_t count)

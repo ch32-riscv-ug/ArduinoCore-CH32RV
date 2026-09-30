@@ -24,7 +24,7 @@ if entries and (entries[0] in ("_start", "0") or entries[0].startswith("@J@")):
 out = open(sys.argv[2], "w")
 for e in entries:
     if e.startswith("@J@"):
-        out.write("    CH32_JMP %s\n" % e[3:])
+        out.write("    CH32RV_JMP %s\n" % e[3:])
     else:
-        out.write(("    CH32_RSV\n") if e == "0" else ("    CH32_IRQ %s\n" % e))
+        out.write(("    CH32RV_RSV\n") if e == "0" else ("    CH32RV_IRQ %s\n" % e))
 print("entries:", len(entries))

@@ -12,11 +12,11 @@ def test_analog_read_compiles_with_generic_pnum(repo, gcc_bin, arduino_cli, work
     work = workdir / "uiapduino-analog-read"
     env = matrix.sandbox(work)
     matrix.link_platform(work)
-    source = repo / "libraries" / "CH32" / "examples" / "AnalogRead"
+    source = repo / "libraries" / "CH32RV" / "examples" / "AnalogRead"
     staged = stage.stage_sketch(source, work / "AnalogRead")
     rc, output = matrix.compile_one(
         env,
-        "ch32-riscv-ug:ch32v:UIAPDUINO_V003_V14:pnum=ANY",
+        "ch32-riscv-ug:ch32rv:UIAPDUINO_V003_V14:pnum=ANY",
         gcc_bin,
         work / "build",
         staged,

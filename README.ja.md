@@ -19,7 +19,7 @@ https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.jso
 arduino-cli なら:
 
 ```sh
-arduino-cli core install ch32-riscv-ug:ch32v --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+arduino-cli core install ch32-riscv-ug:ch32rv --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 ```
 
 書き込みは、IDE の port で WCH-Link の serial port か `wchlink://…`、OEP の probe なら `oep://…` を選んで
@@ -73,7 +73,7 @@ arduino-cli core install ch32-riscv-ug:ch32v --additional-urls https://ch32-risc
 ## リポジトリ構成
 
 リポジトリのルートがそのままArduino platformディレクトリです。開発時は
-`<sketchbook>/hardware/ch32-riscv-ug/ch32v` へこのルートをsymlinkして使います。
+`<sketchbook>/hardware/ch32-riscv-ug/ch32rv` へこのルートをsymlinkして使います。
 
 ```text
 platform.txt          ビルドrecipe

@@ -1,4 +1,4 @@
-"""CH32.restart(), resetReason() and the watchdog, across two real resets.
+"""CH32RV.restart(), resetReason() and the watchdog, across two real resets.
 
 One linear script for every board: after BITE the reason is `watchdog` where
 the family's LSI frequency is known, and `software` where the sketch had to

@@ -21,8 +21,8 @@ TinyUSBのCH32ドライバは、一部のfamilyについて**WCHのSDKヘッダ�
 | # | 記号 | 用途 | 出どころ | このコアに相当物は? |
 |---|---|---|---|---|
 | 1 | `USBOTG_FS` / `USBFSD` / `USBHSD`(structとポインタ) | レジスタアクセス | `ch32_usbfs_reg.h`が`#include <ch32v20x.h>`等で得る | **無い**(作るなら書く) |
-| 2 | `USBFS_IRQn` / `USBHS_IRQn` / `USBHD_IRQn` | 割込み番号 | ベンダヘッダの`IRQn_Type` | **ある**。生成した`CH32_IRQN_USBFS`等 |
-| 3 | `NVIC_EnableIRQ` / `NVIC_DisableIRQ` | 割込み許可 | WCHの`core_riscv.h` | **ある**。`ch32_irq_enable/disable` |
+| 2 | `USBFS_IRQn` / `USBHS_IRQn` / `USBHD_IRQn` | 割込み番号 | ベンダヘッダの`IRQn_Type` | **ある**。生成した`CH32RV_IRQN_USBFS`等 |
+| 3 | `NVIC_EnableIRQ` / `NVIC_DisableIRQ` | 割込み許可 | WCHの`core_riscv.h` | **ある**。`ch32rv_irq_enable/disable` |
 | 4 | `SystemCoreClock` | 2箇所 | ベンダの`system_*.c` | **ある**。`F_CPU` |
 
 つまり**本当に無いのはレジスタstructだけ**で、残り3つは名前を合わせるだけ。

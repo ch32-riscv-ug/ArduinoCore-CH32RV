@@ -15,12 +15,12 @@ appear for my board" is answerable by opening the sketch a user was shipped:
 `flash=` and `ram=` are floors, measured against the ANY menu entry, which is
 the smallest part in the series and therefore the one a build has to fit.
 
-Everything else is a **capability**: the <X> of a CH32_CLKEN_<X>_ADDR in the
+Everything else is a **capability**: the <X> of a CH32RV_CLKEN_<X>_ADDR in the
 generated variant header. That name is not invented here - it comes from
 device-data's clock_enables.csv through tools/generate/generate.py, so
 "does this series have a USB device controller?" is answered by the device
 tables. It is also how a library already asks: see
-libraries/USBPD/src/usbpd_hw.h's `#ifdef CH32_CLKEN_USBPD_ADDR`.
+libraries/USBPD/src/usbpd_hw.h's `#ifdef CH32RV_CLKEN_USBPD_ADDR`.
 
 See docs/examples-build-rules.ja.md.
 """
@@ -57,7 +57,7 @@ def series_capabilities() -> dict:
     caps = {}
     for header in sorted((REPO / "variants").glob("*/pins_arduino.h")):
         caps[header.parent.name] = frozenset(
-            re.findall(r"CH32_CLKEN_([A-Z0-9_]+)_ADDR",
+            re.findall(r"CH32RV_CLKEN_([A-Z0-9_]+)_ADDR",
                        header.read_text(encoding="utf-8")))
     return caps
 
@@ -96,7 +96,7 @@ def requirements(src: pathlib.Path) -> dict:
                 # skips every board and passes with nothing built.
                 raise BadRequirement(
                     f"{ino.name}: no series declares a capability {cap!r}. "
-                    f"Capabilities are the <X> of CH32_CLKEN_<X>_ADDR in "
+                    f"Capabilities are the <X> of CH32RV_CLKEN_<X>_ADDR in "
                     f"variants/*/pins_arduino.h.")
             need["caps"].append(cap)
             continue

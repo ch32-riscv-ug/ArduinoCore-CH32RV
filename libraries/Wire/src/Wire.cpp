@@ -1,15 +1,15 @@
 #include "Wire.h"
 
 #include "Arduino.h"
-#include "ch32_gpio.h"
-#include "ch32_registers.h"
+#include "ch32rv_gpio.h"
+#include "ch32rv_registers.h"
 
 using namespace arduino;
 
 /* The I2C block hangs off PCLK1, and Milestone 1 leaves both APB prescalers at
  * /1, so PCLK1 is HCLK, which SystemInit makes equal to F_CPU. When a PLL or a
  * non-unity APB prescaler arrives this has to follow (docs/todo.ja.md). */
-static const uint32_t CH32_I2C_PCLK1 = F_CPU;
+static const uint32_t CH32RV_I2C_PCLK1 = F_CPU;
 
 namespace {
 
@@ -20,8 +20,8 @@ namespace {
  * gets them back off. */
 class NoIrq {
 public:
-    NoIrq() : _saved(ch32_irq_save()) {}
-    ~NoIrq() { ch32_irq_restore(_saved); }
+    NoIrq() : _saved(ch32rv_irq_save()) {}
+    ~NoIrq() { ch32rv_irq_restore(_saved); }
 private:
     uint32_t _saved;
 };
@@ -30,31 +30,31 @@ private:
  * flags, which clear as a side effect of reading a register. */
 inline void clear_errors(uint32_t base)
 {
-    CH32_I2C_STAR1(base) &= (uint16_t)~(CH32_I2C_STAR1_AF | CH32_I2C_STAR1_BERR |
-                                        CH32_I2C_STAR1_ARLO | CH32_I2C_STAR1_OVR);
+    CH32RV_I2C_STAR1(base) &= (uint16_t)~(CH32RV_I2C_STAR1_AF | CH32RV_I2C_STAR1_BERR |
+                                        CH32RV_I2C_STAR1_ARLO | CH32RV_I2C_STAR1_OVR);
 }
 
 inline void clear_addr(uint32_t base)
 {
-    (void)CH32_I2C_STAR1(base);
-    (void)CH32_I2C_STAR2(base);
+    (void)CH32RV_I2C_STAR1(base);
+    (void)CH32RV_I2C_STAR2(base);
 }
 
 }  // namespace
 
-bool CH32TwoWire::wait_flag1(uint16_t mask, bool set)
+bool CH32RVTwoWire::wait_flag1(uint16_t mask, bool set)
 {
     const uint32_t start_us = micros();
     for (;;) {
-        const uint16_t s1 = CH32_I2C_STAR1(_base);
+        const uint16_t s1 = CH32RV_I2C_STAR1(_base);
         if (((s1 & mask) != 0) == set) {
             return true;
         }
         /* A device that never acknowledges reports AF instead of just never
          * raising the flag being waited on; treating that as "keep waiting"
          * would spend the whole timeout on every missing device. */
-        if (s1 & (CH32_I2C_STAR1_AF | CH32_I2C_STAR1_BERR |
-                  CH32_I2C_STAR1_ARLO)) {
+        if (s1 & (CH32RV_I2C_STAR1_AF | CH32RV_I2C_STAR1_BERR |
+                  CH32RV_I2C_STAR1_ARLO)) {
             return false;
         }
         if (_timeout_us != 0 && micros() - start_us > _timeout_us) {
@@ -67,7 +67,7 @@ bool CH32TwoWire::wait_flag1(uint16_t mask, bool set)
     }
 }
 
-void CH32TwoWire::setWireTimeout(uint32_t timeout, bool reset_with_timeout)
+void CH32RVTwoWire::setWireTimeout(uint32_t timeout, bool reset_with_timeout)
 {
     /* Accepted, not honoured - see the note in Wire.h. The peripheral is
      * reset after a timeout either way. */
@@ -75,73 +75,73 @@ void CH32TwoWire::setWireTimeout(uint32_t timeout, bool reset_with_timeout)
     _timeout_us = timeout;
 }
 
-bool CH32TwoWire::getWireTimeoutFlag(void)
+bool CH32RVTwoWire::getWireTimeoutFlag(void)
 {
     return _timeout_flag;
 }
 
-void CH32TwoWire::clearWireTimeoutFlag(void)
+void CH32RVTwoWire::clearWireTimeoutFlag(void)
 {
     _timeout_flag = false;
 }
 
-void CH32TwoWire::begin()
+void CH32RVTwoWire::begin()
 {
-    ch32_clock_enable_at(_clken_addr, _clken_mask);
-    ch32_clock_enable(AFIO);
+    ch32rv_clock_enable_at(_clken_addr, _clken_mask);
+    ch32rv_clock_enable(AFIO);
     /* Written every time, default route included - see HardwareSerial::begin
      * for why "leave the field alone" is the wrong default. */
     if (_remap_mask) {
-        CH32_AFIO_PCFR1 = (CH32_AFIO_PCFR1 & ~_remap_mask) | _remap_value;
+        CH32RV_AFIO_PCFR1 = (CH32RV_AFIO_PCFR1 & ~_remap_mask) | _remap_value;
     }
     if (_remap2_mask) {
-        CH32_AFIO_PCFR2 = (CH32_AFIO_PCFR2 & ~_remap2_mask) | _remap2_value;
+        CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~_remap2_mask) | _remap2_value;
     }
 
     /* Open drain, because that is what the bus is: both lines are pulled up
      * externally and every device only ever pulls them down. */
-    const uint8_t scl_port = (uint8_t)CH32_PIN_PORT(_scl_pin);
-    const uint8_t sda_port = (uint8_t)CH32_PIN_PORT(_sda_pin);
-    ch32_gpio_clock_enable(scl_port);
-    ch32_gpio_clock_enable(sda_port);
-    ch32_gpio_set_config(scl_port, (uint8_t)CH32_PIN_BIT(_scl_pin),
-                         CH32_GPIO_CFG_AF_OD_50M);
-    ch32_gpio_set_config(sda_port, (uint8_t)CH32_PIN_BIT(_sda_pin),
-                         CH32_GPIO_CFG_AF_OD_50M);
+    const uint8_t scl_port = (uint8_t)CH32RV_PIN_PORT(_scl_pin);
+    const uint8_t sda_port = (uint8_t)CH32RV_PIN_PORT(_sda_pin);
+    ch32rv_gpio_clock_enable(scl_port);
+    ch32rv_gpio_clock_enable(sda_port);
+    ch32rv_gpio_set_config(scl_port, (uint8_t)CH32RV_PIN_BIT(_scl_pin),
+                         CH32RV_GPIO_CFG_AF_OD_50M);
+    ch32rv_gpio_set_config(sda_port, (uint8_t)CH32RV_PIN_BIT(_sda_pin),
+                         CH32RV_GPIO_CFG_AF_OD_50M);
 
     /* SWRST is the only way back from a transfer that was interrupted with the
      * bus held: BUSY is otherwise latched and every later transfer fails. */
-    CH32_I2C_CTLR1(_base) = CH32_I2C_CTLR1_SWRST;
-    CH32_I2C_CTLR1(_base) = 0;
+    CH32RV_I2C_CTLR1(_base) = CH32RV_I2C_CTLR1_SWRST;
+    CH32RV_I2C_CTLR1(_base) = 0;
 
     _started = true;
     _needs_recovery = false;
     setClock(_clock_hz);
 }
 
-void CH32TwoWire::begin(uint8_t address)
+void CH32RVTwoWire::begin(uint8_t address)
 {
     /* Same bring-up as the master - pins, reset, FREQ (which the slave needs
      * too: it times its own SCL stretching from it) - then the own address
      * and the interrupt machinery on top. */
     begin();
     /* Bit 14 of OADDR1 is documented "must be kept set"; the EVT init does. */
-    CH32_I2C_OADDR1(_base) = (uint16_t)(0x4000u | ((address & 0x7Fu) << 1));
+    CH32RV_I2C_OADDR1(_base) = (uint16_t)(0x4000u | ((address & 0x7Fu) << 1));
     _rx_len = 0;
     _rx_read = 0;
     _tx_len = 0;
     _tx_sent = 0;
     _slave = true;
-    CH32_I2C_CTLR2(_base) |= CH32_I2C_CTLR2_ITEVTEN | CH32_I2C_CTLR2_ITBUFEN |
-                             CH32_I2C_CTLR2_ITERREN;
-    ch32_irq_enable(_ev_irqn);
-    ch32_irq_enable(_er_irqn);
+    CH32RV_I2C_CTLR2(_base) |= CH32RV_I2C_CTLR2_ITEVTEN | CH32RV_I2C_CTLR2_ITBUFEN |
+                             CH32RV_I2C_CTLR2_ITERREN;
+    ch32rv_irq_enable(_ev_irqn);
+    ch32rv_irq_enable(_er_irqn);
     /* ACK is what makes the peripheral answer its address at all. */
-    CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
+    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
 }
 
 /* -1, -1 keeps the pins; anything else has to be a whole route. */
-static bool pins_ok(CH32TwoWire &bus, int sda, int scl)
+static bool pins_ok(CH32RVTwoWire &bus, int sda, int scl)
 {
     if (sda < 0 && scl < 0) {
         return true;
@@ -149,7 +149,7 @@ static bool pins_ok(CH32TwoWire &bus, int sda, int scl)
     return bus.setPins(sda, scl);
 }
 
-bool CH32TwoWire::begin(int sda, int scl, uint32_t frequency)
+bool CH32RVTwoWire::begin(int sda, int scl, uint32_t frequency)
 {
     if (_started) {
         end();
@@ -164,7 +164,7 @@ bool CH32TwoWire::begin(int sda, int scl, uint32_t frequency)
     return true;
 }
 
-bool CH32TwoWire::begin(uint8_t address, int sda, int scl, uint32_t frequency)
+bool CH32RVTwoWire::begin(uint8_t address, int sda, int scl, uint32_t frequency)
 {
     if (_started) {
         end();
@@ -179,18 +179,18 @@ bool CH32TwoWire::begin(uint8_t address, int sda, int scl, uint32_t frequency)
     return true;
 }
 
-void CH32TwoWire::end()
+void CH32RVTwoWire::end()
 {
     if (_slave) {
-        ch32_irq_disable(_ev_irqn);
-        ch32_irq_disable(_er_irqn);
-        CH32_I2C_CTLR2(_base) &= (uint16_t)~(CH32_I2C_CTLR2_ITEVTEN |
-                                             CH32_I2C_CTLR2_ITBUFEN |
-                                             CH32_I2C_CTLR2_ITERREN);
+        ch32rv_irq_disable(_ev_irqn);
+        ch32rv_irq_disable(_er_irqn);
+        CH32RV_I2C_CTLR2(_base) &= (uint16_t)~(CH32RV_I2C_CTLR2_ITEVTEN |
+                                             CH32RV_I2C_CTLR2_ITBUFEN |
+                                             CH32RV_I2C_CTLR2_ITERREN);
         _slave = false;
     }
-    CH32_I2C_CTLR1(_base) = 0;
-    ch32_clock_disable_at(_clken_addr, _clken_mask);
+    CH32RV_I2C_CTLR1(_base) = 0;
+    ch32rv_clock_disable_at(_clken_addr, _clken_mask);
     _started = false;
     _transmitting = false;
     _tx_len = 0;
@@ -198,74 +198,74 @@ void CH32TwoWire::end()
     _rx_read = 0;
 }
 
-void CH32TwoWire::setClock(uint32_t freq)
+void CH32RVTwoWire::setClock(uint32_t freq)
 {
     _clock_hz = freq ? freq : 100000;
     if (!_started) {
         return;                        /* begin() applies it */
     }
     /* FREQ and CCR may only be written while the peripheral is disabled. */
-    CH32_I2C_CTLR1(_base) &= (uint16_t)~CH32_I2C_CTLR1_PE;
+    CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_PE;
 
-    const uint32_t mhz = CH32_I2C_PCLK1 / 1000000u;
-    CH32_I2C_CTLR2(_base) = (uint16_t)(mhz & CH32_I2C_CTLR2_FREQ_MASK);
+    const uint32_t mhz = CH32RV_I2C_PCLK1 / 1000000u;
+    CH32RV_I2C_CTLR2(_base) = (uint16_t)(mhz & CH32RV_I2C_CTLR2_FREQ_MASK);
 
     uint32_t ccr;
     if (_clock_hz <= 100000u) {
         /* Standard mode: the low and high halves of SCL are equal, so one
          * period is 2 x CCR peripheral clocks. */
-        ccr = CH32_I2C_PCLK1 / (2u * _clock_hz);
+        ccr = CH32RV_I2C_PCLK1 / (2u * _clock_hz);
         if (ccr < 4u) {
             ccr = 4u;
         }
-        CH32_I2C_CKCFGR(_base) = (uint16_t)(ccr & CH32_I2C_CKCFGR_CCR_MASK);
-#if CH32_I2C_HAS_RTR
-        CH32_I2C_RTR(_base) = (uint16_t)(mhz + 1u);
+        CH32RV_I2C_CKCFGR(_base) = (uint16_t)(ccr & CH32RV_I2C_CKCFGR_CCR_MASK);
+#if CH32RV_I2C_HAS_RTR
+        CH32RV_I2C_RTR(_base) = (uint16_t)(mhz + 1u);
 #endif
     } else {
         /* Fast mode with the 2:1 duty cycle: 3 x CCR per period. */
-        ccr = CH32_I2C_PCLK1 / (3u * _clock_hz);
+        ccr = CH32RV_I2C_PCLK1 / (3u * _clock_hz);
         if (ccr < 1u) {
             ccr = 1u;
         }
-        CH32_I2C_CKCFGR(_base) = (uint16_t)(CH32_I2C_CKCFGR_FS |
-                                            (ccr & CH32_I2C_CKCFGR_CCR_MASK));
-#if CH32_I2C_HAS_RTR
-        CH32_I2C_RTR(_base) = (uint16_t)((mhz * 300u) / 1000u + 1u);
+        CH32RV_I2C_CKCFGR(_base) = (uint16_t)(CH32RV_I2C_CKCFGR_FS |
+                                            (ccr & CH32RV_I2C_CKCFGR_CCR_MASK));
+#if CH32RV_I2C_HAS_RTR
+        CH32RV_I2C_RTR(_base) = (uint16_t)((mhz * 300u) / 1000u + 1u);
 #endif
     }
 
-    CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_PE;
+    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_PE;
 }
 
-void CH32TwoWire::recover(void)
+void CH32RVTwoWire::recover(void)
 {
     /* Full re-initialisation. Cheap, and the only reliable way out of a
      * latched BUSY - which is exactly the state a sketch reaches by resetting
      * the MCU in the middle of a transfer. */
-    CH32_I2C_CTLR1(_base) = CH32_I2C_CTLR1_SWRST;
-    CH32_I2C_CTLR1(_base) = 0;
+    CH32RV_I2C_CTLR1(_base) = CH32RV_I2C_CTLR1_SWRST;
+    CH32RV_I2C_CTLR1(_base) = 0;
     _needs_recovery = false;
     setClock(_clock_hz);
 }
 
-bool CH32TwoWire::start(uint8_t address, bool read)
+bool CH32RVTwoWire::start(uint8_t address, bool read)
 {
     clear_errors(_base);
-    CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_START;
-    if (!wait_flag1(CH32_I2C_STAR1_SB, true)) {
+    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_START;
+    if (!wait_flag1(CH32RV_I2C_STAR1_SB, true)) {
         return false;
     }
-    CH32_I2C_DATAR(_base) = (uint16_t)((address << 1) | (read ? 1u : 0u));
-    return wait_flag1(CH32_I2C_STAR1_ADDR, true);
+    CH32RV_I2C_DATAR(_base) = (uint16_t)((address << 1) | (read ? 1u : 0u));
+    return wait_flag1(CH32RV_I2C_STAR1_ADDR, true);
 }
 
-void CH32TwoWire::stop(void)
+void CH32RVTwoWire::stop(void)
 {
-    CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_STOP;
+    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_STOP;
 }
 
-void CH32TwoWire::beginTransmission(uint8_t address)
+void CH32RVTwoWire::beginTransmission(uint8_t address)
 {
     _address = address;
     _tx_len = 0;
@@ -273,7 +273,7 @@ void CH32TwoWire::beginTransmission(uint8_t address)
     _transmitting = true;
 }
 
-uint8_t CH32TwoWire::endTransmission(bool stopBit)
+uint8_t CH32RVTwoWire::endTransmission(bool stopBit)
 {
     if (!_transmitting || _slave) {
         /* A slave starting a master transfer would have to win the bus from
@@ -296,7 +296,7 @@ uint8_t CH32TwoWire::endTransmission(bool stopBit)
 
     if (!start(_address, false)) {
         /* AF here is the ordinary "nothing at that address" case. */
-        const bool nack = (CH32_I2C_STAR1(_base) & CH32_I2C_STAR1_AF) != 0;
+        const bool nack = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) != 0;
         clear_errors(_base);
         stop();
         _needs_recovery = !nack;
@@ -306,20 +306,20 @@ uint8_t CH32TwoWire::endTransmission(bool stopBit)
     clear_addr(_base);
 
     for (uint8_t i = 0; i < _tx_len; i++) {
-        if (!wait_flag1(CH32_I2C_STAR1_TXE, true)) {
-            const bool nack = (CH32_I2C_STAR1(_base) & CH32_I2C_STAR1_AF) != 0;
+        if (!wait_flag1(CH32RV_I2C_STAR1_TXE, true)) {
+            const bool nack = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) != 0;
             clear_errors(_base);
             stop();
             _needs_recovery = !nack;
             _tx_len = 0;
             return nack ? 3 : 5;
         }
-        CH32_I2C_DATAR(_base) = _tx[i];
+        CH32RV_I2C_DATAR(_base) = _tx[i];
     }
     /* BTF rather than TXE: TXE only says the shift register took the byte,
      * and stopping there truncates the last one on the wire. */
-    if (!wait_flag1(CH32_I2C_STAR1_BTF, true)) {
-        const bool nack = (CH32_I2C_STAR1(_base) & CH32_I2C_STAR1_AF) != 0;
+    if (!wait_flag1(CH32RV_I2C_STAR1_BTF, true)) {
+        const bool nack = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) != 0;
         clear_errors(_base);
         stop();
         _needs_recovery = !nack;
@@ -334,15 +334,15 @@ uint8_t CH32TwoWire::endTransmission(bool stopBit)
     return 0;
 }
 
-size_t CH32TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
+size_t CH32RVTwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
 {
     _rx_len = 0;
     _rx_read = 0;
     if (!_started || _slave || len == 0) {
         return 0;
     }
-    if (len > CH32_WIRE_BUFFER_SIZE) {
-        len = CH32_WIRE_BUFFER_SIZE;
+    if (len > CH32RV_WIRE_BUFFER_SIZE) {
+        len = CH32RV_WIRE_BUFFER_SIZE;
     }
     if (_needs_recovery) {
         recover();
@@ -351,15 +351,15 @@ size_t CH32TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
     /* ACK has to be right before ADDR is cleared, because the peripheral
      * decides what to do with the first byte at that moment. */
     if (len == 1) {
-        CH32_I2C_CTLR1(_base) &= (uint16_t)~CH32_I2C_CTLR1_ACK;
+        CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_ACK;
     } else {
-        CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
+        CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
     }
 
     if (!start(address, true)) {
         clear_errors(_base);
         stop();
-        _needs_recovery = (CH32_I2C_STAR1(_base) & CH32_I2C_STAR1_AF) == 0;
+        _needs_recovery = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) == 0;
         return 0;
     }
 
@@ -370,46 +370,46 @@ size_t CH32TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
             clear_addr(_base);
             stop();
         }
-        if (wait_flag1(CH32_I2C_STAR1_RXNE, true)) {
-            _rx[got++] = (uint8_t)CH32_I2C_DATAR(_base);
+        if (wait_flag1(CH32RV_I2C_STAR1_RXNE, true)) {
+            _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
         }
     } else if (len == 2) {
         /* POS makes ACK apply to the byte after next, which is what lets both
          * bytes be read out of DR and the shift register at once - the only
          * way to NACK the second byte without also NACKing the first. */
-        CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_POS;
-        CH32_I2C_CTLR1(_base) &= (uint16_t)~CH32_I2C_CTLR1_ACK;
+        CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_POS;
+        CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_ACK;
         {
             NoIrq lock;
             clear_addr(_base);
         }
-        if (wait_flag1(CH32_I2C_STAR1_BTF, true)) {
+        if (wait_flag1(CH32RV_I2C_STAR1_BTF, true)) {
             NoIrq lock;
             stop();
-            _rx[got++] = (uint8_t)CH32_I2C_DATAR(_base);
-            _rx[got++] = (uint8_t)CH32_I2C_DATAR(_base);
+            _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
+            _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
         }
-        CH32_I2C_CTLR1(_base) &= (uint16_t)~CH32_I2C_CTLR1_POS;
+        CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_POS;
     } else {
         clear_addr(_base);
         while (len - got > 3) {
-            if (!wait_flag1(CH32_I2C_STAR1_RXNE, true)) {
+            if (!wait_flag1(CH32RV_I2C_STAR1_RXNE, true)) {
                 break;
             }
-            _rx[got++] = (uint8_t)CH32_I2C_DATAR(_base);
+            _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
         }
         /* Last three: with two bytes still in DR and the shift register, the
          * NACK has to be armed before the third one is clocked in. */
-        if (len - got == 3 && wait_flag1(CH32_I2C_STAR1_BTF, true)) {
-            CH32_I2C_CTLR1(_base) &= (uint16_t)~CH32_I2C_CTLR1_ACK;
+        if (len - got == 3 && wait_flag1(CH32RV_I2C_STAR1_BTF, true)) {
+            CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_ACK;
             {
                 NoIrq lock;
-                _rx[got++] = (uint8_t)CH32_I2C_DATAR(_base);
+                _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
                 stop();
             }
-            _rx[got++] = (uint8_t)CH32_I2C_DATAR(_base);
-            if (wait_flag1(CH32_I2C_STAR1_RXNE, true)) {
-                _rx[got++] = (uint8_t)CH32_I2C_DATAR(_base);
+            _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
+            if (wait_flag1(CH32RV_I2C_STAR1_RXNE, true)) {
+                _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
             }
         }
     }
@@ -423,24 +423,24 @@ size_t CH32TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
          * call must not wait for it to go idle. */
     }
 
-    CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
+    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
     _rx_len = (uint8_t)got;
     return got;
 }
 
-void CH32TwoWire::onReceive(void (*callback)(int))
+void CH32RVTwoWire::onReceive(void (*callback)(int))
 {
     _on_receive = callback;
 }
 
-void CH32TwoWire::onRequest(void (*callback)(void))
+void CH32RVTwoWire::onRequest(void (*callback)(void))
 {
     _on_request = callback;
 }
 
 /* ------------------------------------------------------- slave handlers */
 
-void CH32TwoWire::ev_irq(void)
+void CH32RVTwoWire::ev_irq(void)
 {
     if (!_slave) {
         /* The master paths run with the interrupt enables off and end()
@@ -448,15 +448,15 @@ void CH32TwoWire::ev_irq(void)
          * already pended when end() ran. Nothing to do for it. */
         return;
     }
-    const uint16_t s1 = CH32_I2C_STAR1(_base);
+    const uint16_t s1 = CH32RV_I2C_STAR1(_base);
 
-    if (s1 & CH32_I2C_STAR1_ADDR) {
+    if (s1 & CH32RV_I2C_STAR1_ADDR) {
         /* Reading STAR2 after STAR1 is what clears ADDR, and TRA in it says
          * which way this transfer goes. Nothing else may happen in between:
          * the peripheral stretches SCL until ADDR is cleared, which is also
          * why onRequest() can safely run first - the master is held. */
-        const uint16_t s2 = CH32_I2C_STAR2(_base);
-        if (s2 & CH32_I2C_STAR2_TRA) {
+        const uint16_t s2 = CH32RV_I2C_STAR2(_base);
+        if (s2 & CH32RV_I2C_STAR2_TRA) {
             _tx_len = 0;
             _tx_sent = 0;
             if (_on_request) {
@@ -470,46 +470,46 @@ void CH32TwoWire::ev_irq(void)
         }
         return;
     }
-    if (s1 & CH32_I2C_STAR1_RXNE) {
-        const uint8_t data = (uint8_t)CH32_I2C_DATAR(_base);
-        if (_rx_len < CH32_WIRE_BUFFER_SIZE) {
+    if (s1 & CH32RV_I2C_STAR1_RXNE) {
+        const uint8_t data = (uint8_t)CH32RV_I2C_DATAR(_base);
+        if (_rx_len < CH32RV_WIRE_BUFFER_SIZE) {
             _rx[_rx_len] = data;
             _rx_len = (uint8_t)(_rx_len + 1u);
         }
         /* else: head kept, tail dropped, the way AVR's twi does. */
     }
-    if (s1 & CH32_I2C_STAR1_TXE) {
+    if (s1 & CH32RV_I2C_STAR1_TXE) {
         /* Past what onRequest() provided, 0xFF: the value a released bus
          * reads as, so an over-reading master sees "nothing", not echoes. */
-        CH32_I2C_DATAR(_base) =
+        CH32RV_I2C_DATAR(_base) =
             _tx_sent < _tx_len ? _tx[_tx_sent++] : (uint16_t)0xFFu;
     }
-    if (s1 & CH32_I2C_STAR1_STOPF) {
+    if (s1 & CH32RV_I2C_STAR1_STOPF) {
         /* Cleared by the STAR1 read above plus a CTLR1 write; re-arming ACK
          * is that write, and the next address match needs it anyway. */
-        CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
+        CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
         if (_on_receive) {
             _on_receive((int)_rx_len);
         }
     }
 }
 
-void CH32TwoWire::er_irq(void)
+void CH32RVTwoWire::er_irq(void)
 {
     /* AF here is not an error: it is how a slave transmitter learns the
      * master has read enough - the last byte was NACKed. The others are bus
      * faults. All are write-zero-to-clear, and after any of them the ACK bit
      * has to be re-armed or the next address match goes unanswered. */
     clear_errors(_base);
-    CH32_I2C_CTLR1(_base) |= CH32_I2C_CTLR1_ACK;
+    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
 }
 
-size_t CH32TwoWire::write(uint8_t data)
+size_t CH32RVTwoWire::write(uint8_t data)
 {
     if (!_transmitting && !_slave_replying) {
         return 0;        /* outside any transmission, bytes go nowhere */
     }
-    if (_tx_len >= CH32_WIRE_BUFFER_SIZE) {
+    if (_tx_len >= CH32RV_WIRE_BUFFER_SIZE) {
         /* AVR truncates and reports it from endTransmission() as 1, so the
          * flag has to survive until then. */
         _tx_overflow = true;
@@ -519,7 +519,7 @@ size_t CH32TwoWire::write(uint8_t data)
     return 1;
 }
 
-size_t CH32TwoWire::write(const uint8_t *data, size_t len)
+size_t CH32RVTwoWire::write(const uint8_t *data, size_t len)
 {
     size_t written = 0;
     for (size_t i = 0; i < len; i++) {
@@ -531,12 +531,12 @@ size_t CH32TwoWire::write(const uint8_t *data, size_t len)
     return written;
 }
 
-int CH32TwoWire::available(void)
+int CH32RVTwoWire::available(void)
 {
     return _rx_len - _rx_read;
 }
 
-int CH32TwoWire::read(void)
+int CH32RVTwoWire::read(void)
 {
     if (_rx_read >= _rx_len) {
         return -1;
@@ -544,7 +544,7 @@ int CH32TwoWire::read(void)
     return _rx[_rx_read++];
 }
 
-int CH32TwoWire::peek(void)
+int CH32RVTwoWire::peek(void)
 {
     if (_rx_read >= _rx_len) {
         return -1;
@@ -558,22 +558,22 @@ int CH32TwoWire::peek(void)
 namespace {
 
 struct RouteTable {
-    const ch32_route_t *rows;
+    const ch32rv_route_t *rows;
     uint8_t count;
 };
 
 RouteTable routes_for(uint32_t base)
 {
-#if defined(CH32_I2C1_ROUTES)
-    static const ch32_route_t r1[] = CH32_I2C1_ROUTES;
-    if (base == CH32_I2C1_BASE) {
-        return {r1, CH32_I2C1_ROUTE_COUNT};
+#if defined(CH32RV_I2C1_ROUTES)
+    static const ch32rv_route_t r1[] = CH32RV_I2C1_ROUTES;
+    if (base == CH32RV_I2C1_BASE) {
+        return {r1, CH32RV_I2C1_ROUTE_COUNT};
     }
 #endif
-#if defined(CH32_I2C2_ROUTES)
-    static const ch32_route_t r2[] = CH32_I2C2_ROUTES;
-    if (base == CH32_I2C2_BASE) {
-        return {r2, CH32_I2C2_ROUTE_COUNT};
+#if defined(CH32RV_I2C2_ROUTES)
+    static const ch32rv_route_t r2[] = CH32RV_I2C2_ROUTES;
+    if (base == CH32RV_I2C2_BASE) {
+        return {r2, CH32RV_I2C2_ROUTE_COUNT};
     }
 #endif
     (void)base;
@@ -582,13 +582,13 @@ RouteTable routes_for(uint32_t base)
 
 void release_pin(uint8_t pin)
 {
-    ch32_gpio_set_config((uint8_t)CH32_PIN_PORT(pin), (uint8_t)CH32_PIN_BIT(pin),
-                         CH32_GPIO_CFG_IN_FLOAT);
+    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
+                         CH32RV_GPIO_CFG_IN_FLOAT);
 }
 
 }  // namespace
 
-bool CH32TwoWire::use_route(const ch32_route_t &route)
+bool CH32RVTwoWire::use_route(const ch32rv_route_t &route)
 {
     const uint8_t old_scl = _scl_pin;
     const uint8_t old_sda = _sda_pin;
@@ -609,24 +609,24 @@ bool CH32TwoWire::use_route(const ch32_route_t &route)
     return true;
 }
 
-bool CH32TwoWire::setRoute(uint8_t route)
+bool CH32RVTwoWire::setRoute(uint8_t route)
 {
     const RouteTable table = routes_for(_base);
-    const int i = ch32_route_find(table.rows, table.count, route);
+    const int i = ch32rv_route_find(table.rows, table.count, route);
     if (i < 0) {
         return false;
     }
     return use_route(table.rows[i]);
 }
 
-bool CH32TwoWire::setPins(int sda, int scl)
+bool CH32RVTwoWire::setPins(int sda, int scl)
 {
     if (sda < 0 || scl < 0 || sda > 0xFE || scl > 0xFE) {
         return false;
     }
     const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32_ROUTE_PINS] = {(uint8_t)scl, (uint8_t)sda, CH32_ROUTE_NO_PIN};
-    const int i = ch32_route_match(table.rows, table.count, want);
+    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)scl, (uint8_t)sda, CH32RV_ROUTE_NO_PIN};
+    const int i = ch32rv_route_match(table.rows, table.count, want);
     if (i < 0) {
         return false;
     }
@@ -650,19 +650,19 @@ static bool scl_release(uint8_t scl)
     line_release(scl);
     const uint32_t t0 = micros();
     while (digitalRead(scl) == LOW) {
-        if ((uint32_t)(micros() - t0) >= CH32_WIRE_CLEAR_STRETCH_US) {
+        if ((uint32_t)(micros() - t0) >= CH32RV_WIRE_CLEAR_STRETCH_US) {
             return false;
         }
     }
     return true;
 }
 
-bool CH32TwoWire::clearBus(void)
+bool CH32RVTwoWire::clearBus(void)
 {
     const bool was_started = _started;
     const bool was_slave = _slave;
     /* The own address has to be read before end() stops the peripheral clock. */
-    const uint8_t own = was_slave ? (uint8_t)((CH32_I2C_OADDR1(_base) >> 1) & 0x7Fu) : 0u;
+    const uint8_t own = was_slave ? (uint8_t)((CH32RV_I2C_OADDR1(_base) >> 1) & 0x7Fu) : 0u;
     if (was_started) {
         end();                    /* the peripheral must not watch while we clock */
     }
@@ -709,29 +709,29 @@ bool CH32TwoWire::clearBus(void)
  * bare name is the first bus and Wire1 is the second, which is what Due, Zero,
  * STM32duino and arduino-pico all do. A library asking for Wire1 means "the
  * other one", not "I2C1". */
-#ifndef CH32_I2C1_REMAP_MASK
-#define CH32_I2C1_REMAP_MASK 0u
-#define CH32_I2C1_REMAP_VAL  0u
+#ifndef CH32RV_I2C1_REMAP_MASK
+#define CH32RV_I2C1_REMAP_MASK 0u
+#define CH32RV_I2C1_REMAP_VAL  0u
 #endif
-#ifndef CH32_I2C1_REMAP2_MASK
-#define CH32_I2C1_REMAP2_MASK 0u
-#define CH32_I2C1_REMAP2_VAL  0u
+#ifndef CH32RV_I2C1_REMAP2_MASK
+#define CH32RV_I2C1_REMAP2_MASK 0u
+#define CH32RV_I2C1_REMAP2_VAL  0u
 #endif
-#ifndef CH32_I2C2_REMAP_MASK
-#define CH32_I2C2_REMAP_MASK 0u
-#define CH32_I2C2_REMAP_VAL  0u
+#ifndef CH32RV_I2C2_REMAP_MASK
+#define CH32RV_I2C2_REMAP_MASK 0u
+#define CH32RV_I2C2_REMAP_VAL  0u
 #endif
-#ifndef CH32_I2C2_REMAP2_MASK
-#define CH32_I2C2_REMAP2_MASK 0u
-#define CH32_I2C2_REMAP2_VAL  0u
+#ifndef CH32RV_I2C2_REMAP2_MASK
+#define CH32RV_I2C2_REMAP2_MASK 0u
+#define CH32RV_I2C2_REMAP2_VAL  0u
 #endif
 
-#if defined(CH32_I2C1_SCL)
-arduino::CH32TwoWire Wire(CH32_I2C1_BASE, CH32_I2C1_CLKEN_ADDR, CH32_I2C1_CLKEN_MASK,
-                          CH32_I2C1_SCL, CH32_I2C1_SDA,
-                          CH32_I2C1_REMAP_MASK, CH32_I2C1_REMAP_VAL,
-                          CH32_I2C1_REMAP2_MASK, CH32_I2C1_REMAP2_VAL,
-                          CH32_IRQN_I2C1_EV, CH32_IRQN_I2C1_ER);
+#if defined(CH32RV_I2C1_SCL)
+arduino::CH32RVTwoWire Wire(CH32RV_I2C1_BASE, CH32RV_I2C1_CLKEN_ADDR, CH32RV_I2C1_CLKEN_MASK,
+                          CH32RV_I2C1_SCL, CH32RV_I2C1_SDA,
+                          CH32RV_I2C1_REMAP_MASK, CH32RV_I2C1_REMAP_VAL,
+                          CH32RV_I2C1_REMAP2_MASK, CH32RV_I2C1_REMAP2_VAL,
+                          CH32RV_IRQN_I2C1_EV, CH32RV_IRQN_I2C1_ER);
 extern "C" __attribute__((interrupt)) void I2C1_EV_IRQHandler(void)
 {
     Wire.ev_irq();
@@ -740,12 +740,12 @@ extern "C" __attribute__((interrupt)) void I2C1_ER_IRQHandler(void)
 {
     Wire.er_irq();
 }
-#if defined(CH32_I2C2_SCL)
-arduino::CH32TwoWire Wire1(CH32_I2C2_BASE, CH32_I2C2_CLKEN_ADDR, CH32_I2C2_CLKEN_MASK,
-                           CH32_I2C2_SCL, CH32_I2C2_SDA,
-                           CH32_I2C2_REMAP_MASK, CH32_I2C2_REMAP_VAL,
-                           CH32_I2C2_REMAP2_MASK, CH32_I2C2_REMAP2_VAL,
-                           CH32_IRQN_I2C2_EV, CH32_IRQN_I2C2_ER);
+#if defined(CH32RV_I2C2_SCL)
+arduino::CH32RVTwoWire Wire1(CH32RV_I2C2_BASE, CH32RV_I2C2_CLKEN_ADDR, CH32RV_I2C2_CLKEN_MASK,
+                           CH32RV_I2C2_SCL, CH32RV_I2C2_SDA,
+                           CH32RV_I2C2_REMAP_MASK, CH32RV_I2C2_REMAP_VAL,
+                           CH32RV_I2C2_REMAP2_MASK, CH32RV_I2C2_REMAP2_VAL,
+                           CH32RV_IRQN_I2C2_EV, CH32RV_IRQN_I2C2_ER);
 extern "C" __attribute__((interrupt)) void I2C2_EV_IRQHandler(void)
 {
     Wire1.ev_irq();
@@ -755,13 +755,13 @@ extern "C" __attribute__((interrupt)) void I2C2_ER_IRQHandler(void)
     Wire1.er_irq();
 }
 #endif
-#elif defined(CH32_I2C2_SCL)
+#elif defined(CH32RV_I2C2_SCL)
 /* A part that bonds only the second instance still gets a plain Wire. */
-arduino::CH32TwoWire Wire(CH32_I2C2_BASE, CH32_I2C2_CLKEN_ADDR, CH32_I2C2_CLKEN_MASK,
-                          CH32_I2C2_SCL, CH32_I2C2_SDA,
-                          CH32_I2C2_REMAP_MASK, CH32_I2C2_REMAP_VAL,
-                          CH32_I2C2_REMAP2_MASK, CH32_I2C2_REMAP2_VAL,
-                          CH32_IRQN_I2C2_EV, CH32_IRQN_I2C2_ER);
+arduino::CH32RVTwoWire Wire(CH32RV_I2C2_BASE, CH32RV_I2C2_CLKEN_ADDR, CH32RV_I2C2_CLKEN_MASK,
+                          CH32RV_I2C2_SCL, CH32RV_I2C2_SDA,
+                          CH32RV_I2C2_REMAP_MASK, CH32RV_I2C2_REMAP_VAL,
+                          CH32RV_I2C2_REMAP2_MASK, CH32RV_I2C2_REMAP2_VAL,
+                          CH32RV_IRQN_I2C2_EV, CH32RV_IRQN_I2C2_ER);
 extern "C" __attribute__((interrupt)) void I2C2_EV_IRQHandler(void)
 {
     Wire.ev_irq();

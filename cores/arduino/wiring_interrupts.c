@@ -6,118 +6,118 @@
  *
  * The handlers are shared: the vector table groups the lines
  * (EXTI7_0 / EXTI15_8 on the small parts, EXTI0..4 plus EXTI9_5 and EXTI15_10
- * elsewhere), so every generated handler funnels into ch32_exti_dispatch().
+ * elsewhere), so every generated handler funnels into ch32rv_exti_dispatch().
  */
 #include "Arduino.h"
-#include "ch32_gpio.h"
-#include "ch32_registers.h"
+#include "ch32rv_gpio.h"
+#include "ch32rv_registers.h"
 
-#ifndef CH32_EXTI_LINES
-#define CH32_EXTI_LINES 16   /* generated exti_<variant>.h overrides (24 on X033/X035) */
+#ifndef CH32RV_EXTI_LINES
+#define CH32RV_EXTI_LINES 16   /* generated exti_<variant>.h overrides (24 on X033/X035) */
 #endif
 
-static voidFuncPtrParam ch32_exti_callback[CH32_EXTI_LINES];
-static void *ch32_exti_param[CH32_EXTI_LINES];
+static voidFuncPtrParam ch32rv_exti_callback[CH32RV_EXTI_LINES];
+static void *ch32rv_exti_param[CH32RV_EXTI_LINES];
 
 /* A plain voidFuncPtr is stored in the same table by wrapping it: the wrapper
  * receives the function pointer itself as its parameter. */
-static void ch32_exti_call_plain(void *fn)
+static void ch32rv_exti_call_plain(void *fn)
 {
     ((voidFuncPtr)fn)();
 }
 
-static void ch32_exti_set(pin_size_t pin, PinStatus mode,
+static void ch32rv_exti_set(pin_size_t pin, PinStatus mode,
                           voidFuncPtrParam callback, void *param)
 {
-    const uint8_t port = (uint8_t)CH32_PIN_PORT(pin);
-    const uint8_t bit = (uint8_t)CH32_PIN_BIT(pin);
+    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
+    const uint8_t bit = (uint8_t)CH32RV_PIN_BIT(pin);
 
-    if (port >= CH32_PORT_COUNT || bit >= CH32_EXTI_LINES) {
+    if (port >= CH32RV_PORT_COUNT || bit >= CH32RV_EXTI_LINES) {
         return;   /* no EXTI line for this bit */
     }
 
-    ch32_exti_callback[bit] = callback;
-    ch32_exti_param[bit] = param;
+    ch32rv_exti_callback[bit] = callback;
+    ch32rv_exti_param[bit] = param;
 
-    ch32_clock_enable(AFIO);
-    ch32_gpio_clock_enable(port);
+    ch32rv_clock_enable(AFIO);
+    ch32rv_gpio_clock_enable(port);
 
     /* Which port drives this EXTI line. The field layout differs per family
      * (2-bit fields, 16 per register on V00x/M030/X03x; 4-bit, 4 per register
      * on the F1-style families) and comes from the generated exti_*.h. */
-#ifndef CH32_EXTICR_FIELD_BITS
-#define CH32_EXTICR_FIELD_BITS 4
-#define CH32_EXTICR_FIELDS_PER_REG 4
+#ifndef CH32RV_EXTICR_FIELD_BITS
+#define CH32RV_EXTICR_FIELD_BITS 4
+#define CH32RV_EXTICR_FIELDS_PER_REG 4
 #endif
-    const uint32_t shift = (bit % CH32_EXTICR_FIELDS_PER_REG) * CH32_EXTICR_FIELD_BITS;
-    const uint32_t field_mask = (1u << CH32_EXTICR_FIELD_BITS) - 1u;
-    volatile uint32_t *cr = &CH32_AFIO_EXTICR(bit / CH32_EXTICR_FIELDS_PER_REG);
+    const uint32_t shift = (bit % CH32RV_EXTICR_FIELDS_PER_REG) * CH32RV_EXTICR_FIELD_BITS;
+    const uint32_t field_mask = (1u << CH32RV_EXTICR_FIELD_BITS) - 1u;
+    volatile uint32_t *cr = &CH32RV_AFIO_EXTICR(bit / CH32RV_EXTICR_FIELDS_PER_REG);
     *cr = (*cr & ~(field_mask << shift)) | ((uint32_t)port << shift);
 
     const uint32_t mask = 1u << bit;
     if (mode == RISING || mode == CHANGE) {
-        CH32_EXTI_RTENR |= mask;
+        CH32RV_EXTI_RTENR |= mask;
     } else {
-        CH32_EXTI_RTENR &= ~mask;
+        CH32RV_EXTI_RTENR &= ~mask;
     }
     if (mode == FALLING || mode == CHANGE || mode == LOW) {
-        CH32_EXTI_FTENR |= mask;
+        CH32RV_EXTI_FTENR |= mask;
     } else {
-        CH32_EXTI_FTENR &= ~mask;
+        CH32RV_EXTI_FTENR &= ~mask;
     }
-    CH32_EXTI_INTFR = mask;          /* drop anything pending from setup */
-    CH32_EXTI_INTENR |= mask;
+    CH32RV_EXTI_INTFR = mask;          /* drop anything pending from setup */
+    CH32RV_EXTI_INTENR |= mask;
 
     /* Enable whichever vector covers this line. */
-#define CH32_EXTI_ENABLE(handler, group_mask, irqn) \
-    if (group_mask & mask) ch32_irq_enable(irqn);
-    CH32_EXTI_GROUPS(CH32_EXTI_ENABLE)
-#undef CH32_EXTI_ENABLE
+#define CH32RV_EXTI_ENABLE(handler, group_mask, irqn) \
+    if (group_mask & mask) ch32rv_irq_enable(irqn);
+    CH32RV_EXTI_GROUPS(CH32RV_EXTI_ENABLE)
+#undef CH32RV_EXTI_ENABLE
 }
 
 void attachInterruptParam(pin_size_t pin, voidFuncPtrParam callback,
                           PinStatus mode, void *param)
 {
     if (callback) {
-        ch32_exti_set(pin, mode, callback, param);
+        ch32rv_exti_set(pin, mode, callback, param);
     }
 }
 
 void attachInterrupt(pin_size_t pin, voidFuncPtr callback, PinStatus mode)
 {
     if (callback) {
-        ch32_exti_set(pin, mode, ch32_exti_call_plain, (void *)callback);
+        ch32rv_exti_set(pin, mode, ch32rv_exti_call_plain, (void *)callback);
     }
 }
 
 void detachInterrupt(pin_size_t pin)
 {
-    const uint8_t bit = (uint8_t)CH32_PIN_BIT(pin);
+    const uint8_t bit = (uint8_t)CH32RV_PIN_BIT(pin);
 
-    if (CH32_PIN_PORT(pin) >= CH32_PORT_COUNT || bit >= CH32_EXTI_LINES) {
+    if (CH32RV_PIN_PORT(pin) >= CH32RV_PORT_COUNT || bit >= CH32RV_EXTI_LINES) {
         return;
     }
     const uint32_t mask = 1u << bit;
-    CH32_EXTI_INTENR &= ~mask;
-    CH32_EXTI_RTENR &= ~mask;
-    CH32_EXTI_FTENR &= ~mask;
-    CH32_EXTI_INTFR = mask;
-    ch32_exti_callback[bit] = 0;
-    ch32_exti_param[bit] = 0;
+    CH32RV_EXTI_INTENR &= ~mask;
+    CH32RV_EXTI_RTENR &= ~mask;
+    CH32RV_EXTI_FTENR &= ~mask;
+    CH32RV_EXTI_INTFR = mask;
+    ch32rv_exti_callback[bit] = 0;
+    ch32rv_exti_param[bit] = 0;
 }
 
 /* Clearing INTFR before the callback means an edge that arrives while the
  * callback runs is not lost. */
-static void ch32_exti_dispatch(uint32_t lines)
+static void ch32rv_exti_dispatch(uint32_t lines)
 {
-    uint32_t pending = CH32_EXTI_INTFR & lines;
+    uint32_t pending = CH32RV_EXTI_INTFR & lines;
 
     while (pending) {
         const uint32_t bit = (uint32_t)__builtin_ctz(pending);
         pending &= ~(1u << bit);
-        CH32_EXTI_INTFR = 1u << bit;
-        if (ch32_exti_callback[bit]) {
-            ch32_exti_callback[bit](ch32_exti_param[bit]);
+        CH32RV_EXTI_INTFR = 1u << bit;
+        if (ch32rv_exti_callback[bit]) {
+            ch32rv_exti_callback[bit](ch32rv_exti_param[bit]);
         }
     }
 }
@@ -125,10 +125,10 @@ static void ch32_exti_dispatch(uint32_t lines)
 /* One ISR per EXTI vector this variant has; the names come from the generated
  * vector table, so a family that groups the lines differently needs no change
  * here. */
-#define CH32_EXTI_DEFINE_ISR(handler, group_mask, irqn)      \
+#define CH32RV_EXTI_DEFINE_ISR(handler, group_mask, irqn)      \
     __attribute__((interrupt)) void handler(void)            \
     {                                                        \
-        ch32_exti_dispatch(group_mask);                      \
+        ch32rv_exti_dispatch(group_mask);                      \
     }
-CH32_EXTI_GROUPS(CH32_EXTI_DEFINE_ISR)
-#undef CH32_EXTI_DEFINE_ISR
+CH32RV_EXTI_GROUPS(CH32RV_EXTI_DEFINE_ISR)
+#undef CH32RV_EXTI_DEFINE_ISR

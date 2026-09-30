@@ -27,7 +27,7 @@
 #include "Arduino.h"
 #include "usbpd_hw.h"
 
-#ifdef CH32_USBPD_BASE
+#ifdef CH32RV_USBPD_BASE
 
 namespace {
 
@@ -65,30 +65,30 @@ __attribute__((aligned(4))) uint8_t crc_buf[4];   /* a GoodCRC is header-only */
 
 void rx_mode()
 {
-    CH32_USBPD_CONFIG |= CH32_UPD_PD_ALL_CLR;
-    CH32_USBPD_CONFIG &= (uint16_t)~CH32_UPD_PD_ALL_CLR;
-    CH32_USBPD_DMA = (uint32_t)rx_buf;
-    CH32_USBPD_CONTROL &= (uint8_t)~CH32_UPD_PD_TX_EN;
-    CH32_USBPD_BMC_CLK_CNT = CH32_UPD_TMR_RX;
-    CH32_USBPD_CONTROL |= CH32_UPD_BMC_START;
+    CH32RV_USBPD_CONFIG |= CH32RV_UPD_PD_ALL_CLR;
+    CH32RV_USBPD_CONFIG &= (uint16_t)~CH32RV_UPD_PD_ALL_CLR;
+    CH32RV_USBPD_DMA = (uint32_t)rx_buf;
+    CH32RV_USBPD_CONTROL &= (uint8_t)~CH32RV_UPD_PD_TX_EN;
+    CH32RV_USBPD_BMC_CLK_CNT = CH32RV_UPD_TMR_RX;
+    CH32RV_USBPD_CONTROL |= CH32RV_UPD_BMC_START;
 }
 
 void phy_send(const uint8_t *buf, uint8_t len, uint8_t sop)
 {
     /* LVE turns the selected CC pad into a driver for the duration of the
      * frame; the TX_END handler releases it. */
-    if (CH32_USBPD_CONFIG & CH32_UPD_CC_SEL) {
-        CH32_USBPD_PORT_CC2 |= CH32_UPD_CC_LVE;
+    if (CH32RV_USBPD_CONFIG & CH32RV_UPD_CC_SEL) {
+        CH32RV_USBPD_PORT_CC2 |= CH32RV_UPD_CC_LVE;
     } else {
-        CH32_USBPD_PORT_CC1 |= CH32_UPD_CC_LVE;
+        CH32RV_USBPD_PORT_CC1 |= CH32RV_UPD_CC_LVE;
     }
-    CH32_USBPD_BMC_CLK_CNT = CH32_UPD_TMR_TX;
-    CH32_USBPD_DMA = (uint32_t)buf;
-    CH32_USBPD_TX_SEL = sop;
-    CH32_USBPD_BMC_TX_SZ = len;
-    CH32_USBPD_CONTROL |= CH32_UPD_PD_TX_EN;
-    CH32_USBPD_STATUS = 0;
-    CH32_USBPD_CONTROL |= CH32_UPD_BMC_START;
+    CH32RV_USBPD_BMC_CLK_CNT = CH32RV_UPD_TMR_TX;
+    CH32RV_USBPD_DMA = (uint32_t)buf;
+    CH32RV_USBPD_TX_SEL = sop;
+    CH32RV_USBPD_BMC_TX_SZ = len;
+    CH32RV_USBPD_CONTROL |= CH32RV_UPD_PD_TX_EN;
+    CH32RV_USBPD_STATUS = 0;
+    CH32RV_USBPD_CONTROL |= CH32RV_UPD_BMC_START;
 }
 
 /* Queue-of-one for the protocol messages: the bytes go into tx_buf, and
@@ -97,7 +97,7 @@ void stage_tx(uint8_t len)
 {
     if (pd.tx_stage == 0) {
         pd.tx_stage = 2;
-        phy_send(tx_buf, len, CH32_UPD_SOP0);
+        phy_send(tx_buf, len, CH32RV_UPD_SOP0);
     } else {
         pd.pending_len = len;
     }
@@ -129,8 +129,8 @@ void send_control(uint8_t type)
 /* Masks only the USBPD vector: what the handler and the sketch share is the
  * pd struct above, and SysTick has no business stopping for it. */
 struct IrqLock {
-    IrqLock() { ch32_irq_disable(CH32_USBPD_IRQ); }
-    ~IrqLock() { ch32_irq_enable(CH32_USBPD_IRQ); }
+    IrqLock() { ch32rv_irq_disable(CH32RV_USBPD_IRQ); }
+    ~IrqLock() { ch32rv_irq_enable(CH32RV_USBPD_IRQ); }
 };
 
 void goodcrc(uint8_t their_id)
@@ -139,7 +139,7 @@ void goodcrc(uint8_t their_id)
     crc_buf[0] = (uint8_t)header;
     crc_buf[1] = (uint8_t)(header >> 8);
     pd.tx_stage = 1;
-    phy_send(crc_buf, 2, CH32_UPD_SOP0);
+    phy_send(crc_buf, 2, CH32RV_UPD_SOP0);
 }
 
 void attach_reset()
@@ -159,18 +159,18 @@ void attach_reset()
 
 namespace arduino {
 
-bool CH32UsbPd::begin()
+bool CH32RVUsbPd::begin()
 {
-    ch32_clock_enable_at(CH32_USBPD_CLKEN_ADDR, CH32_USBPD_CLKEN_MASK);
-    ch32_clock_enable(AFIO);
-    CH32_USBPD_AFIO_CTLR |= CH32_USBPD_IN_HVT | CH32_USBPD_PHY_V33;
+    ch32rv_clock_enable_at(CH32RV_USBPD_CLKEN_ADDR, CH32RV_USBPD_CLKEN_MASK);
+    ch32rv_clock_enable(AFIO);
+    CH32RV_USBPD_AFIO_CTLR |= CH32RV_USBPD_IN_HVT | CH32RV_USBPD_PHY_V33;
 
-    CH32_USBPD_CONFIG = CH32_UPD_PD_DMA_EN;
-    CH32_USBPD_STATUS = CH32_UPD_IF_ALL;              /* write-1-to-clear */
+    CH32RV_USBPD_CONFIG = CH32RV_UPD_PD_DMA_EN;
+    CH32RV_USBPD_STATUS = CH32RV_UPD_IF_ALL;              /* write-1-to-clear */
 
     /* A sink presents Rd on both CC lines and watches for a source's Rp. */
-    CH32_USBPD_PORT_CC1 = CH32_UPD_CC_CMP_66 | CH32_UPD_CC_PD;
-    CH32_USBPD_PORT_CC2 = CH32_UPD_CC_CMP_66 | CH32_UPD_CC_PD;
+    CH32RV_USBPD_PORT_CC1 = CH32RV_UPD_CC_CMP_66 | CH32RV_UPD_CC_PD;
+    CH32RV_USBPD_PORT_CC2 = CH32RV_UPD_CC_CMP_66 | CH32RV_UPD_CC_PD;
 
     pd.state = ST_DETACHED;
     pd.rev = PD_REV_3_0;
@@ -181,32 +181,32 @@ bool CH32UsbPd::begin()
     pd.tx_stage = 0;
     pd.pending_len = 0;
 
-    CH32_USBPD_CONFIG |= CH32_UPD_IE_RX_ACT | CH32_UPD_IE_RX_RESET |
-                         CH32_UPD_IE_TX_END;
-    ch32_irq_enable(CH32_USBPD_IRQ);
+    CH32RV_USBPD_CONFIG |= CH32RV_UPD_IE_RX_ACT | CH32RV_UPD_IE_RX_RESET |
+                         CH32RV_UPD_IE_TX_END;
+    ch32rv_irq_enable(CH32RV_USBPD_IRQ);
     rx_mode();
     return true;
 }
 
-void CH32UsbPd::end()
+void CH32RVUsbPd::end()
 {
-    ch32_irq_disable(CH32_USBPD_IRQ);
-    CH32_USBPD_CONFIG = 0;
-    CH32_USBPD_PORT_CC1 = 0;
-    CH32_USBPD_PORT_CC2 = 0;
-    ch32_clock_disable_at(CH32_USBPD_CLKEN_ADDR, CH32_USBPD_CLKEN_MASK);
+    ch32rv_irq_disable(CH32RV_USBPD_IRQ);
+    CH32RV_USBPD_CONFIG = 0;
+    CH32RV_USBPD_PORT_CC1 = 0;
+    CH32RV_USBPD_PORT_CC2 = 0;
+    ch32rv_clock_disable_at(CH32RV_USBPD_CLKEN_ADDR, CH32RV_USBPD_CLKEN_MASK);
     pd.state = ST_DETACHED;
     pd.caps.count = 0;
     pd.contract_mv = 0;
     pd.contract_ma = 0;
 }
 
-bool CH32UsbPd::connected() { return pd.state != ST_DETACHED; }
-bool CH32UsbPd::ready()     { return pd.state == ST_READY; }
+bool CH32RVUsbPd::connected() { return pd.state != ST_DETACHED; }
+bool CH32RVUsbPd::ready()     { return pd.state == ST_READY; }
 
-uint8_t CH32UsbPd::profileCount() const { return pd.caps.count; }
+uint8_t CH32RVUsbPd::profileCount() const { return pd.caps.count; }
 
-PDProfile CH32UsbPd::profile(uint8_t index) const
+PDProfile CH32RVUsbPd::profile(uint8_t index) const
 {
     if (index >= pd.caps.count) {
         PDProfile none = {PD_SUPPLY_UNKNOWN, 0, 0, 0, 0, 0};
@@ -215,16 +215,16 @@ PDProfile CH32UsbPd::profile(uint8_t index) const
     return pd.caps.pdo[index];
 }
 
-uint16_t CH32UsbPd::voltage() const { return pd.contract_mv; }
-uint16_t CH32UsbPd::current() const { return pd.contract_ma; }
+uint16_t CH32RVUsbPd::voltage() const { return pd.contract_mv; }
+uint16_t CH32RVUsbPd::current() const { return pd.contract_ma; }
 
-bool CH32UsbPd::request(uint16_t millivolts, uint16_t milliamps)
+bool CH32RVUsbPd::request(uint16_t millivolts, uint16_t milliamps)
 {
     return requestProfile((uint8_t)pd_pick(&pd.caps, millivolts, milliamps),
                           millivolts, milliamps);
 }
 
-bool CH32UsbPd::requestProfile(uint8_t index, uint16_t millivolts,
+bool CH32RVUsbPd::requestProfile(uint8_t index, uint16_t millivolts,
                                uint16_t milliamps)
 {
     const int idx = index >= pd.caps.count ? -1 : index;
@@ -266,7 +266,7 @@ bool CH32UsbPd::requestProfile(uint8_t index, uint16_t millivolts,
     return false;
 }
 
-void CH32UsbPd::maintain()
+void CH32RVUsbPd::maintain()
 {
     const uint32_t now = millis();
 
@@ -278,28 +278,28 @@ void CH32UsbPd::maintain()
         /* Drop each comparator to 0.22 V and look for a source's pull-up.
          * 2 us is the settle time the reference implementations use. */
         uint8_t found = 0;
-        CH32_USBPD_PORT_CC1 &= (uint16_t)~(CH32_UPD_CC_CMP_MASK | CH32_UPD_PA_CC_AI);
-        CH32_USBPD_PORT_CC1 |= CH32_UPD_CC_CMP_22;
+        CH32RV_USBPD_PORT_CC1 &= (uint16_t)~(CH32RV_UPD_CC_CMP_MASK | CH32RV_UPD_PA_CC_AI);
+        CH32RV_USBPD_PORT_CC1 |= CH32RV_UPD_CC_CMP_22;
         delayMicroseconds(2);
-        if (CH32_USBPD_PORT_CC1 & CH32_UPD_PA_CC_AI) {
+        if (CH32RV_USBPD_PORT_CC1 & CH32RV_UPD_PA_CC_AI) {
             found = 1;
         }
-        CH32_USBPD_PORT_CC2 &= (uint16_t)~(CH32_UPD_CC_CMP_MASK | CH32_UPD_PA_CC_AI);
-        CH32_USBPD_PORT_CC2 |= CH32_UPD_CC_CMP_22;
+        CH32RV_USBPD_PORT_CC2 &= (uint16_t)~(CH32RV_UPD_CC_CMP_MASK | CH32RV_UPD_PA_CC_AI);
+        CH32RV_USBPD_PORT_CC2 |= CH32RV_UPD_CC_CMP_22;
         delayMicroseconds(2);
-        if (!found && (CH32_USBPD_PORT_CC2 & CH32_UPD_PA_CC_AI)) {
+        if (!found && (CH32RV_USBPD_PORT_CC2 & CH32RV_UPD_PA_CC_AI)) {
             found = 2;
         }
         /* Back to the idle threshold either way. */
-        CH32_USBPD_PORT_CC1 = CH32_UPD_CC_CMP_66 | CH32_UPD_CC_PD;
-        CH32_USBPD_PORT_CC2 = CH32_UPD_CC_CMP_66 | CH32_UPD_CC_PD;
+        CH32RV_USBPD_PORT_CC1 = CH32RV_UPD_CC_CMP_66 | CH32RV_UPD_CC_PD;
+        CH32RV_USBPD_PORT_CC2 = CH32RV_UPD_CC_CMP_66 | CH32RV_UPD_CC_PD;
         if (!found) {
             return;
         }
         if (found == 2) {
-            CH32_USBPD_CONFIG |= CH32_UPD_CC_SEL;
+            CH32RV_USBPD_CONFIG |= CH32RV_UPD_CC_SEL;
         } else {
-            CH32_USBPD_CONFIG &= (uint16_t)~CH32_UPD_CC_SEL;
+            CH32RV_USBPD_CONFIG &= (uint16_t)~CH32RV_UPD_CC_SEL;
         }
         attach_reset();
         rx_mode();
@@ -324,12 +324,12 @@ void CH32UsbPd::maintain()
     }
 }
 
-void CH32UsbPd::irq()
+void CH32RVUsbPd::irq()
 {
-    const uint8_t status = CH32_USBPD_STATUS;
+    const uint8_t status = CH32RV_USBPD_STATUS;
 
-    if (status & CH32_UPD_IF_RX_RESET) {
-        CH32_USBPD_STATUS = CH32_UPD_IF_RX_RESET;
+    if (status & CH32RV_UPD_IF_RX_RESET) {
+        CH32RV_USBPD_STATUS = CH32RV_UPD_IF_RX_RESET;
         /* A hard reset takes the bus back to 5 V and the source re-sends
          * its capabilities; mirror that. */
         attach_reset();
@@ -337,16 +337,16 @@ void CH32UsbPd::irq()
         return;
     }
 
-    if (status & CH32_UPD_IF_TX_END) {
-        CH32_USBPD_STATUS = CH32_UPD_IF_TX_END;
-        CH32_USBPD_PORT_CC1 &= (uint16_t)~CH32_UPD_CC_LVE;
-        CH32_USBPD_PORT_CC2 &= (uint16_t)~CH32_UPD_CC_LVE;
+    if (status & CH32RV_UPD_IF_TX_END) {
+        CH32RV_USBPD_STATUS = CH32RV_UPD_IF_TX_END;
+        CH32RV_USBPD_PORT_CC1 &= (uint16_t)~CH32RV_UPD_CC_LVE;
+        CH32RV_USBPD_PORT_CC2 &= (uint16_t)~CH32RV_UPD_CC_LVE;
         if (pd.tx_stage == 1 && pd.pending_len) {
             /* The GoodCRC is out; now the message staged behind it. */
             const uint8_t len = pd.pending_len;
             pd.pending_len = 0;
             pd.tx_stage = 2;
-            phy_send(tx_buf, len, CH32_UPD_SOP0);
+            phy_send(tx_buf, len, CH32RV_UPD_SOP0);
             return;
         }
         pd.tx_stage = 0;
@@ -354,16 +354,16 @@ void CH32UsbPd::irq()
         return;
     }
 
-    if (!(status & CH32_UPD_IF_RX_ACT)) {
+    if (!(status & CH32RV_UPD_IF_RX_ACT)) {
         return;
     }
-    CH32_USBPD_STATUS = CH32_UPD_IF_RX_ACT;
+    CH32RV_USBPD_STATUS = CH32RV_UPD_IF_RX_ACT;
 
-    if ((status & CH32_UPD_BMC_AUX_MASK) != CH32_UPD_AUX_SOP0) {
+    if ((status & CH32RV_UPD_BMC_AUX_MASK) != CH32RV_UPD_AUX_SOP0) {
         rx_mode();
         return;
     }
-    const uint16_t count = CH32_USBPD_BMC_BYTE_CNT;
+    const uint16_t count = CH32RV_USBPD_BMC_BYTE_CNT;
     if (count < 6u) {                     /* header + CRC is the floor */
         rx_mode();
         return;
@@ -463,27 +463,27 @@ extern "C" __attribute__((interrupt)) void USBPD_IRQHandler(void)
 
 namespace arduino {
 
-bool CH32UsbPd::begin()     { return false; }
-void CH32UsbPd::end()       {}
-bool CH32UsbPd::connected() { return false; }
-bool CH32UsbPd::ready()     { return false; }
-uint8_t CH32UsbPd::profileCount() const { return 0; }
+bool CH32RVUsbPd::begin()     { return false; }
+void CH32RVUsbPd::end()       {}
+bool CH32RVUsbPd::connected() { return false; }
+bool CH32RVUsbPd::ready()     { return false; }
+uint8_t CH32RVUsbPd::profileCount() const { return 0; }
 
-PDProfile CH32UsbPd::profile(uint8_t) const
+PDProfile CH32RVUsbPd::profile(uint8_t) const
 {
     PDProfile none = {PD_SUPPLY_UNKNOWN, 0, 0, 0, 0, 0};
     return none;
 }
 
-uint16_t CH32UsbPd::voltage() const { return 0; }
-uint16_t CH32UsbPd::current() const { return 0; }
-bool CH32UsbPd::request(uint16_t, uint16_t) { return false; }
-bool CH32UsbPd::requestProfile(uint8_t, uint16_t, uint16_t) { return false; }
-void CH32UsbPd::maintain() {}
-void CH32UsbPd::irq() {}
+uint16_t CH32RVUsbPd::voltage() const { return 0; }
+uint16_t CH32RVUsbPd::current() const { return 0; }
+bool CH32RVUsbPd::request(uint16_t, uint16_t) { return false; }
+bool CH32RVUsbPd::requestProfile(uint8_t, uint16_t, uint16_t) { return false; }
+void CH32RVUsbPd::maintain() {}
+void CH32RVUsbPd::irq() {}
 
 }  // namespace arduino
 
-#endif /* CH32_USBPD_BASE */
+#endif /* CH32RV_USBPD_BASE */
 
-arduino::CH32UsbPd USBPD;
+arduino::CH32RVUsbPd USBPD;

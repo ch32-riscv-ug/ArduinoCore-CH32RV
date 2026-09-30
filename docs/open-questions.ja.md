@@ -111,7 +111,7 @@
 |---|---|
 | Q-018 | device databaseの正本を独立`ch32-device-data` repositoryに置く。[ADR-0001](adr/0001-device-data-repository.ja.md)。releaseとconsumer lock形式はQ-014で継続する |
 | Q-012 | startup/vector/linkerはowned実装。共通crt0+family別vector include(将来device-data生成)。[ADR-0003](adr/0003-owned-startup-vector-linker.ja.md) |
-| Q-015 | 開発用暫定ID: packager=`ch32-riscv-ug`、architecture=`ch32v`。boardはfamily単位+pnum全型番。[ADR-0005](adr/0005-board-structure-and-fqbn.ja.md) |
+| Q-015 | 開発用暫定ID: packager=`ch32-riscv-ug`、architecture=`ch32rv`(2026-10-01 に `ch32v` から変更。openwch / UIAP と重なるため)。boardはfamily単位+pnum全型番。[ADR-0005](adr/0005-board-structure-and-fqbn.ja.md) |
 | Q-020 | xPack riscv-none-elf-gccのGitHub Releases直リンク参照。認定候補14.3.0-1。ch32fun比較はrelease前validationとして残る。[ADR-0002](adr/0002-toolchain-distribution.ja.md) |
 | Q-022 | default=newlib-nano。printf `%f`はmenu opt-in。ltoa/ultoa/dtostrfはcore提供。[ADR-0004](adr/0004-runtime-and-cxx.ja.md) |
 | Q-023 | GNU++17(+-fno-exceptions/-fno-rtti/-fno-threadsafe-statics)。サイズ差ゼロを実測確認。[ADR-0004](adr/0004-runtime-and-cxx.ja.md) |

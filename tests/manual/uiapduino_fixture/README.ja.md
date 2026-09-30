@@ -21,7 +21,7 @@ ESP32が書込みbinaryを中継しているわけではありません。ただ
 
 1. E132を`esp32-d0wd-v3-0070070d9394`へ書き込む。
 2. このdirectoryのsketchを専用FQBN
-   `ch32-riscv-ug:ch32v:UIAPDUINO_V003_V14`でbuildし、製品HID bootloaderから書き込む。
+   `ch32-riscv-ug:ch32rv:UIAPDUINO_V003_V14`でbuildし、製品HID bootloaderから書き込む。
 3. `uv run tests/manual/uiapduino_fixture/uiapduino_fixture.py --port
    /run/board-identify/by-id/esp32-d0wd-v3-0070070d9394`を実行する。
 

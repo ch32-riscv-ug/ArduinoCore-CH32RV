@@ -1,8 +1,8 @@
 #include "HardwareSerial.h"
 
 #include "Arduino.h"
-#include "ch32_gpio.h"
-#include "ch32_registers.h"
+#include "ch32rv_gpio.h"
+#include "ch32rv_registers.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -10,7 +10,7 @@
 
 using namespace arduino;
 
-void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
+void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config)
 {
     if (_started) {
         end();
@@ -30,8 +30,8 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
     _baudrate = baudrate;
     _config = config;
 
-    ch32_clock_enable_at(_clken_addr, _clken_mask);
-    ch32_clock_enable(AFIO);
+    ch32rv_clock_enable_at(_clken_addr, _clken_mask);
+    ch32rv_clock_enable(AFIO);
     /* Written every time, including for the default route, so begin() does
      * not depend on what the field already held - going back to the default
      * pins is ordinary use, not an edge case. A zero mask means device-data
@@ -42,61 +42,61 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config)
      * different route with nothing to say so. The variant carries one mask per
      * register the field touches. */
     if (_remap_mask) {
-        CH32_AFIO_PCFR1 = (CH32_AFIO_PCFR1 & ~_remap_mask) | _remap_value;
+        CH32RV_AFIO_PCFR1 = (CH32RV_AFIO_PCFR1 & ~_remap_mask) | _remap_value;
     }
     if (_remap2_mask) {
-        CH32_AFIO_PCFR2 = (CH32_AFIO_PCFR2 & ~_remap2_mask) | _remap2_value;
+        CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~_remap2_mask) | _remap2_value;
     }
 
-    const uint8_t tx_port = (uint8_t)CH32_PIN_PORT(_tx_pin);
-    const uint8_t rx_port = (uint8_t)CH32_PIN_PORT(_rx_pin);
-    ch32_gpio_clock_enable(tx_port);
-    ch32_gpio_clock_enable(rx_port);
-    ch32_gpio_set_config(tx_port, (uint8_t)CH32_PIN_BIT(_tx_pin),
-                         CH32_GPIO_CFG_AF_PP_50M);
+    const uint8_t tx_port = (uint8_t)CH32RV_PIN_PORT(_tx_pin);
+    const uint8_t rx_port = (uint8_t)CH32RV_PIN_PORT(_rx_pin);
+    ch32rv_gpio_clock_enable(tx_port);
+    ch32rv_gpio_clock_enable(rx_port);
+    ch32rv_gpio_set_config(tx_port, (uint8_t)CH32RV_PIN_BIT(_tx_pin),
+                         CH32RV_GPIO_CFG_AF_PP_50M);
     /* Pull the RX line up so an unconnected input idles as a mark instead of
      * generating framing errors. */
-    ch32_gpio_set_config(rx_port, (uint8_t)CH32_PIN_BIT(_rx_pin),
-                         CH32_GPIO_CFG_IN_PULL);
-    ch32_gpio_set(rx_port, (uint8_t)CH32_PIN_BIT(_rx_pin));
+    ch32rv_gpio_set_config(rx_port, (uint8_t)CH32RV_PIN_BIT(_rx_pin),
+                         CH32RV_GPIO_CFG_IN_PULL);
+    ch32rv_gpio_set(rx_port, (uint8_t)CH32RV_PIN_BIT(_rx_pin));
 
     /* USART1 hangs off PCLK2 and the others off PCLK1; Milestone 1 leaves both
      * APB prescalers at /1, so either way the clock is HCLK, which SystemInit
      * makes equal to F_CPU. BRR holds USARTDIV * 16, which is exactly the
      * rounded fck/baud - and getting it wrong is how a mis-set AHB prescaler
      * announces itself, as garbled output. */
-    CH32_USART_BRR(_base) = (uint16_t)brr;
+    CH32RV_USART_BRR(_base) = (uint16_t)brr;
 
-    uint16_t ctlr1 = CH32_USART_CTLR1_TE | CH32_USART_CTLR1_RE |
-                     CH32_USART_CTLR1_RXNEIE;
+    uint16_t ctlr1 = CH32RV_USART_CTLR1_TE | CH32RV_USART_CTLR1_RE |
+                     CH32RV_USART_CTLR1_RXNEIE;
     uint16_t ctlr2 = 0;
 
     switch (config & SERIAL_PARITY_MASK) {
-    case SERIAL_PARITY_EVEN: ctlr1 |= CH32_USART_CTLR1_PCE; break;
-    case SERIAL_PARITY_ODD:  ctlr1 |= CH32_USART_CTLR1_PCE | CH32_USART_CTLR1_PS; break;
+    case SERIAL_PARITY_EVEN: ctlr1 |= CH32RV_USART_CTLR1_PCE; break;
+    case SERIAL_PARITY_ODD:  ctlr1 |= CH32RV_USART_CTLR1_PCE | CH32RV_USART_CTLR1_PS; break;
     default: break;
     }
     /* The parity bit occupies the ninth position, so 8 data bits with parity
      * means a 9-bit word. */
     if ((config & SERIAL_DATA_MASK) == SERIAL_DATA_8 &&
-        (ctlr1 & CH32_USART_CTLR1_PCE)) {
-        ctlr1 |= CH32_USART_CTLR1_M;
+        (ctlr1 & CH32RV_USART_CTLR1_PCE)) {
+        ctlr1 |= CH32RV_USART_CTLR1_M;
     }
     switch (config & SERIAL_STOP_BIT_MASK) {
-    case SERIAL_STOP_BIT_2:   ctlr2 |= CH32_USART_CTLR2_STOP_2; break;
-    case SERIAL_STOP_BIT_1_5: ctlr2 |= CH32_USART_CTLR2_STOP_1P5; break;
+    case SERIAL_STOP_BIT_2:   ctlr2 |= CH32RV_USART_CTLR2_STOP_2; break;
+    case SERIAL_STOP_BIT_1_5: ctlr2 |= CH32RV_USART_CTLR2_STOP_1P5; break;
     default: break;
     }
 
-    CH32_USART_CTLR2(_base) = ctlr2;
-    CH32_USART_CTLR3(_base) = 0;
-    CH32_USART_CTLR1(_base) = ctlr1 | CH32_USART_CTLR1_UE;
+    CH32RV_USART_CTLR2(_base) = ctlr2;
+    CH32RV_USART_CTLR3(_base) = 0;
+    CH32RV_USART_CTLR1(_base) = ctlr1 | CH32RV_USART_CTLR1_UE;
 
-    ch32_irq_enable(_irqn);
+    ch32rv_irq_enable(_irqn);
     _started = true;
 }
 
-void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config, int rxPin,
+void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config, int rxPin,
                                int txPin, bool invert)
 {
     if (_started) {
@@ -111,7 +111,7 @@ void CH32HardwareSerial::begin(unsigned long baudrate, uint16_t config, int rxPi
     begin(baudrate, config);
 }
 
-size_t CH32HardwareSerial::printf(const char *format, ...)
+size_t CH32RVHardwareSerial::printf(const char *format, ...)
 {
     /* arduino-esp32's shape: a stack buffer, and the heap only for a line that
      * does not fit. */
@@ -138,65 +138,65 @@ size_t CH32HardwareSerial::printf(const char *format, ...)
     return n;
 }
 
-void CH32HardwareSerial::end(void)
+void CH32RVHardwareSerial::end(void)
 {
     flush();
-    ch32_irq_disable(_irqn);
-    CH32_USART_CTLR1(_base) = 0;
+    ch32rv_irq_disable(_irqn);
+    CH32RV_USART_CTLR1(_base) = 0;
     _rx.clear();
     _tx.clear();
     _started = false;
 }
 
-int CH32HardwareSerial::available(void)
+int CH32RVHardwareSerial::available(void)
 {
     return _rx.available();
 }
 
-int CH32HardwareSerial::availableForWrite(void)
+int CH32RVHardwareSerial::availableForWrite(void)
 {
     return _started ? (int)_tx.availableForWrite() : 0;
 }
 
-int CH32HardwareSerial::peek(void)
+int CH32RVHardwareSerial::peek(void)
 {
     return _rx.peek();
 }
 
-int CH32HardwareSerial::read(void)
+int CH32RVHardwareSerial::read(void)
 {
     return _rx.pop();
 }
 
-void CH32HardwareSerial::flush(void)
+void CH32RVHardwareSerial::flush(void)
 {
     if (!_started) {
         return;
     }
     while (!_tx.isEmpty()) {
     }
-    while ((CH32_USART_STATR(_base) & CH32_USART_STATR_TC) == 0u) {
+    while ((CH32RV_USART_STATR(_base) & CH32RV_USART_STATR_TC) == 0u) {
     }
 }
 
-void CH32HardwareSerial::start_tx(void)
+void CH32RVHardwareSerial::start_tx(void)
 {
-    CH32_USART_CTLR1(_base) |= CH32_USART_CTLR1_TXEIE;
+    CH32RV_USART_CTLR1(_base) |= CH32RV_USART_CTLR1_TXEIE;
 }
 
-size_t CH32HardwareSerial::write(uint8_t c)
+size_t CH32RVHardwareSerial::write(uint8_t c)
 {
     if (!_started) {
         return 0;
     }
-#if defined(CH32_VARIANT_CH32X035)
+#if defined(CH32RV_VARIANT_CH32X035)
     /* X035's USART TXE interrupt path is not yet reliable on every USART:
      * a burst larger than the 63-byte ring capacity can otherwise wait here
      * forever. Polling TXE is bounded by one character time and keeps Serial
      * correct while the interrupt-route issue is investigated. */
-    while ((CH32_USART_STATR(_base) & CH32_USART_STATR_TXE) == 0u) {
+    while ((CH32RV_USART_STATR(_base) & CH32RV_USART_STATR_TXE) == 0u) {
     }
-    CH32_USART_DATAR(_base) = c;
+    CH32RV_USART_DATAR(_base) = c;
     return 1;
 #else
     /* Block until the ring has room. The TX interrupt is what drains it, so
@@ -215,9 +215,9 @@ size_t CH32HardwareSerial::write(uint8_t c)
  * difference is what decides whether back-to-back bytes at a small BRR are
  * taken before the next one overruns the data register (2026-09-29: an X035
  * at 8 MHz lost bytes below about 200 CPU cycles a byte). */
-__attribute__((always_inline)) inline void CH32HardwareSerial::irq(void)
+__attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(void)
 {
-    const uint16_t status = CH32_USART_STATR(_base);
+    const uint16_t status = CH32RV_USART_STATR(_base);
 
     /* RXNEIE also raises the interrupt for the receive error flags, and those
      * are only cleared by reading STATR and then DATAR. Handling just RXNE
@@ -228,21 +228,21 @@ __attribute__((always_inline)) inline void CH32HardwareSerial::irq(void)
      * with a framing, noise or parity error is a glitch on the line (a probe
      * re-opening its UART put one such byte in front of the next command line,
      * 2026-09-22), not data. An overrun still leaves this byte valid. */
-    if (status & (CH32_USART_STATR_RXNE | CH32_USART_STATR_ORE |
-                  CH32_USART_STATR_NE | CH32_USART_STATR_FE |
-                  CH32_USART_STATR_PE)) {
-        const uint8_t data = (uint8_t)CH32_USART_DATAR(_base);
-        if ((status & CH32_USART_STATR_RXNE) &&
-            !(status & (CH32_USART_STATR_FE | CH32_USART_STATR_NE |
-                        CH32_USART_STATR_PE))) {
+    if (status & (CH32RV_USART_STATR_RXNE | CH32RV_USART_STATR_ORE |
+                  CH32RV_USART_STATR_NE | CH32RV_USART_STATR_FE |
+                  CH32RV_USART_STATR_PE)) {
+        const uint8_t data = (uint8_t)CH32RV_USART_DATAR(_base);
+        if ((status & CH32RV_USART_STATR_RXNE) &&
+            !(status & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_NE |
+                        CH32RV_USART_STATR_PE))) {
             _rx.push(data);
         }
     }
-    if (status & CH32_USART_STATR_TXE) {
+    if (status & CH32RV_USART_STATR_TXE) {
         if (_tx.isEmpty()) {
-            CH32_USART_CTLR1(_base) &= (uint16_t)~CH32_USART_CTLR1_TXEIE;
+            CH32RV_USART_CTLR1(_base) &= (uint16_t)~CH32RV_USART_CTLR1_TXEIE;
         } else {
-            CH32_USART_DATAR(_base) = (uint16_t)(uint8_t)_tx.pop();
+            CH32RV_USART_DATAR(_base) = (uint16_t)(uint8_t)_tx.pop();
         }
     }
 }
@@ -255,40 +255,40 @@ __attribute__((always_inline)) inline void CH32HardwareSerial::irq(void)
 namespace {
 
 struct RouteTable {
-    const ch32_route_t *rows;
+    const ch32rv_route_t *rows;
     uint8_t count;
 };
 
 RouteTable routes_for(uint32_t base)
 {
-#if defined(CH32_SERIAL1_ROUTES)
-    static const ch32_route_t r1[] = CH32_SERIAL1_ROUTES;
-    if (base == CH32_USART1_BASE) {
-        return {r1, CH32_SERIAL1_ROUTE_COUNT};
+#if defined(CH32RV_SERIAL1_ROUTES)
+    static const ch32rv_route_t r1[] = CH32RV_SERIAL1_ROUTES;
+    if (base == CH32RV_USART1_BASE) {
+        return {r1, CH32RV_SERIAL1_ROUTE_COUNT};
     }
 #endif
-#if defined(CH32_SERIAL2_ROUTES)
-    static const ch32_route_t r2[] = CH32_SERIAL2_ROUTES;
-    if (base == CH32_USART2_BASE) {
-        return {r2, CH32_SERIAL2_ROUTE_COUNT};
+#if defined(CH32RV_SERIAL2_ROUTES)
+    static const ch32rv_route_t r2[] = CH32RV_SERIAL2_ROUTES;
+    if (base == CH32RV_USART2_BASE) {
+        return {r2, CH32RV_SERIAL2_ROUTE_COUNT};
     }
 #endif
-#if defined(CH32_SERIAL3_ROUTES)
-    static const ch32_route_t r3[] = CH32_SERIAL3_ROUTES;
-    if (base == CH32_USART3_BASE) {
-        return {r3, CH32_SERIAL3_ROUTE_COUNT};
+#if defined(CH32RV_SERIAL3_ROUTES)
+    static const ch32rv_route_t r3[] = CH32RV_SERIAL3_ROUTES;
+    if (base == CH32RV_USART3_BASE) {
+        return {r3, CH32RV_SERIAL3_ROUTE_COUNT};
     }
 #endif
-#if defined(CH32_SERIAL4_ROUTES)
-    static const ch32_route_t r4[] = CH32_SERIAL4_ROUTES;
-    if (base == CH32_USART4_BASE) {
-        return {r4, CH32_SERIAL4_ROUTE_COUNT};
+#if defined(CH32RV_SERIAL4_ROUTES)
+    static const ch32rv_route_t r4[] = CH32RV_SERIAL4_ROUTES;
+    if (base == CH32RV_USART4_BASE) {
+        return {r4, CH32RV_SERIAL4_ROUTE_COUNT};
     }
 #endif
-#if defined(CH32_SERIAL5_ROUTES)
-    static const ch32_route_t r5[] = CH32_SERIAL5_ROUTES;
-    if (base == CH32_USART5_BASE) {
-        return {r5, CH32_SERIAL5_ROUTE_COUNT};
+#if defined(CH32RV_SERIAL5_ROUTES)
+    static const ch32rv_route_t r5[] = CH32RV_SERIAL5_ROUTES;
+    if (base == CH32RV_USART5_BASE) {
+        return {r5, CH32RV_SERIAL5_ROUTE_COUNT};
     }
 #endif
     (void)base;
@@ -300,13 +300,13 @@ RouteTable routes_for(uint32_t base)
  * from it. */
 void release_pin(uint8_t pin)
 {
-    ch32_gpio_set_config((uint8_t)CH32_PIN_PORT(pin), (uint8_t)CH32_PIN_BIT(pin),
-                         CH32_GPIO_CFG_IN_FLOAT);
+    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
+                         CH32RV_GPIO_CFG_IN_FLOAT);
 }
 
 }  // namespace
 
-bool CH32HardwareSerial::use_route(const ch32_route_t &route)
+bool CH32RVHardwareSerial::use_route(const ch32rv_route_t &route)
 {
     const uint8_t old_tx = _tx_pin;
     const uint8_t old_rx = _rx_pin;
@@ -329,17 +329,17 @@ bool CH32HardwareSerial::use_route(const ch32_route_t &route)
     return true;
 }
 
-bool CH32HardwareSerial::setRoute(uint8_t route)
+bool CH32RVHardwareSerial::setRoute(uint8_t route)
 {
     const RouteTable table = routes_for(_base);
-    const int i = ch32_route_find(table.rows, table.count, route);
+    const int i = ch32rv_route_find(table.rows, table.count, route);
     if (i < 0) {
         return false;
     }
     return use_route(table.rows[i]);
 }
 
-bool CH32HardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
+bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
 {
     if (ctsPin >= 0 || rtsPin >= 0) {
         return false;                  /* no hardware flow control */
@@ -348,8 +348,8 @@ bool CH32HardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
         return false;
     }
     const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32_ROUTE_PINS] = {(uint8_t)txPin, (uint8_t)rxPin, CH32_ROUTE_NO_PIN};
-    const int i = ch32_route_match(table.rows, table.count, want);
+    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)txPin, (uint8_t)rxPin, CH32RV_ROUTE_NO_PIN};
+    const int i = ch32rv_route_match(table.rows, table.count, want);
     if (i < 0) {
         return false;
     }
@@ -360,73 +360,73 @@ bool CH32HardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
 /* The variant supplies the pins, the IRQ number and the handler symbol; the
  * handler is USARTn_IRQHandler on some families and UARTn_IRQHandler on others,
  * so the name comes from the generated vector table rather than from here. */
-#define CH32_DEFINE_SERIAL(n, base)                                           \
-    arduino::CH32HardwareSerial Serial##n(base, CH32_SERIAL##n##_IRQ,         \
-                                          CH32_SERIAL##n##_TX,                \
-                                          CH32_SERIAL##n##_RX,                \
-                                          CH32_SERIAL##n##_CLKEN_ADDR,        \
-                                          CH32_SERIAL##n##_CLKEN_MASK,        \
-                                          CH32_SERIAL##n##_REMAP_MASK,        \
-                                          CH32_SERIAL##n##_REMAP_VAL,         \
-                                          CH32_SERIAL##n##_REMAP2_MASK,       \
-                                          CH32_SERIAL##n##_REMAP2_VAL);       \
+#define CH32RV_DEFINE_SERIAL(n, base)                                           \
+    arduino::CH32RVHardwareSerial Serial##n(base, CH32RV_SERIAL##n##_IRQ,         \
+                                          CH32RV_SERIAL##n##_TX,                \
+                                          CH32RV_SERIAL##n##_RX,                \
+                                          CH32RV_SERIAL##n##_CLKEN_ADDR,        \
+                                          CH32RV_SERIAL##n##_CLKEN_MASK,        \
+                                          CH32RV_SERIAL##n##_REMAP_MASK,        \
+                                          CH32RV_SERIAL##n##_REMAP_VAL,         \
+                                          CH32RV_SERIAL##n##_REMAP2_MASK,       \
+                                          CH32RV_SERIAL##n##_REMAP2_VAL);       \
     extern "C" __attribute__((interrupt))                                     \
-    void CH32_SERIAL##n##_HANDLER(void) { Serial##n.irq(); }
+    void CH32RV_SERIAL##n##_HANDLER(void) { Serial##n.irq(); }
 
-#if defined(CH32_SERIAL1_TX)
-#ifndef CH32_SERIAL1_REMAP_MASK
-#define CH32_SERIAL1_REMAP_MASK 0u
-#define CH32_SERIAL1_REMAP_VAL  0u
+#if defined(CH32RV_SERIAL1_TX)
+#ifndef CH32RV_SERIAL1_REMAP_MASK
+#define CH32RV_SERIAL1_REMAP_MASK 0u
+#define CH32RV_SERIAL1_REMAP_VAL  0u
 #endif
-#ifndef CH32_SERIAL1_REMAP2_MASK
-#define CH32_SERIAL1_REMAP2_MASK 0u
-#define CH32_SERIAL1_REMAP2_VAL  0u
+#ifndef CH32RV_SERIAL1_REMAP2_MASK
+#define CH32RV_SERIAL1_REMAP2_MASK 0u
+#define CH32RV_SERIAL1_REMAP2_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(1, CH32_USART1_BASE)
+CH32RV_DEFINE_SERIAL(1, CH32RV_USART1_BASE)
 #endif
-#if defined(CH32_SERIAL2_TX)
-#ifndef CH32_SERIAL2_REMAP_MASK
-#define CH32_SERIAL2_REMAP_MASK 0u
-#define CH32_SERIAL2_REMAP_VAL  0u
+#if defined(CH32RV_SERIAL2_TX)
+#ifndef CH32RV_SERIAL2_REMAP_MASK
+#define CH32RV_SERIAL2_REMAP_MASK 0u
+#define CH32RV_SERIAL2_REMAP_VAL  0u
 #endif
-#ifndef CH32_SERIAL2_REMAP2_MASK
-#define CH32_SERIAL2_REMAP2_MASK 0u
-#define CH32_SERIAL2_REMAP2_VAL  0u
+#ifndef CH32RV_SERIAL2_REMAP2_MASK
+#define CH32RV_SERIAL2_REMAP2_MASK 0u
+#define CH32RV_SERIAL2_REMAP2_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(2, CH32_USART2_BASE)
+CH32RV_DEFINE_SERIAL(2, CH32RV_USART2_BASE)
 #endif
-#if defined(CH32_SERIAL3_TX)
-#ifndef CH32_SERIAL3_REMAP_MASK
-#define CH32_SERIAL3_REMAP_MASK 0u
-#define CH32_SERIAL3_REMAP_VAL  0u
+#if defined(CH32RV_SERIAL3_TX)
+#ifndef CH32RV_SERIAL3_REMAP_MASK
+#define CH32RV_SERIAL3_REMAP_MASK 0u
+#define CH32RV_SERIAL3_REMAP_VAL  0u
 #endif
-#ifndef CH32_SERIAL3_REMAP2_MASK
-#define CH32_SERIAL3_REMAP2_MASK 0u
-#define CH32_SERIAL3_REMAP2_VAL  0u
+#ifndef CH32RV_SERIAL3_REMAP2_MASK
+#define CH32RV_SERIAL3_REMAP2_MASK 0u
+#define CH32RV_SERIAL3_REMAP2_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(3, CH32_USART3_BASE)
+CH32RV_DEFINE_SERIAL(3, CH32RV_USART3_BASE)
 #endif
-#if defined(CH32_SERIAL4_TX)
-#ifndef CH32_SERIAL4_REMAP_MASK
-#define CH32_SERIAL4_REMAP_MASK 0u
-#define CH32_SERIAL4_REMAP_VAL  0u
+#if defined(CH32RV_SERIAL4_TX)
+#ifndef CH32RV_SERIAL4_REMAP_MASK
+#define CH32RV_SERIAL4_REMAP_MASK 0u
+#define CH32RV_SERIAL4_REMAP_VAL  0u
 #endif
-#ifndef CH32_SERIAL4_REMAP2_MASK
-#define CH32_SERIAL4_REMAP2_MASK 0u
-#define CH32_SERIAL4_REMAP2_VAL  0u
+#ifndef CH32RV_SERIAL4_REMAP2_MASK
+#define CH32RV_SERIAL4_REMAP2_MASK 0u
+#define CH32RV_SERIAL4_REMAP2_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(4, CH32_USART4_BASE)
+CH32RV_DEFINE_SERIAL(4, CH32RV_USART4_BASE)
 #endif
-#if defined(CH32_SERIAL5_TX)
-#ifndef CH32_SERIAL5_REMAP_MASK
-#define CH32_SERIAL5_REMAP_MASK 0u
-#define CH32_SERIAL5_REMAP_VAL  0u
+#if defined(CH32RV_SERIAL5_TX)
+#ifndef CH32RV_SERIAL5_REMAP_MASK
+#define CH32RV_SERIAL5_REMAP_MASK 0u
+#define CH32RV_SERIAL5_REMAP_VAL  0u
 #endif
-#ifndef CH32_SERIAL5_REMAP2_MASK
-#define CH32_SERIAL5_REMAP2_MASK 0u
-#define CH32_SERIAL5_REMAP2_VAL  0u
+#ifndef CH32RV_SERIAL5_REMAP2_MASK
+#define CH32RV_SERIAL5_REMAP2_MASK 0u
+#define CH32RV_SERIAL5_REMAP2_VAL  0u
 #endif
-CH32_DEFINE_SERIAL(5, CH32_USART5_BASE)
+CH32RV_DEFINE_SERIAL(5, CH32RV_USART5_BASE)
 #endif
 
 /* ------------------------------------------------------- serialEvent() */
@@ -459,27 +459,27 @@ void serialEventRun(void)
         serialEvent();
     }
 #endif
-#if defined(CH32_SERIAL1_TX)
+#if defined(CH32RV_SERIAL1_TX)
     if (serialEvent1 && Serial1.available() > 0) {
         serialEvent1();
     }
 #endif
-#if defined(CH32_SERIAL2_TX)
+#if defined(CH32RV_SERIAL2_TX)
     if (serialEvent2 && Serial2.available() > 0) {
         serialEvent2();
     }
 #endif
-#if defined(CH32_SERIAL3_TX)
+#if defined(CH32RV_SERIAL3_TX)
     if (serialEvent3 && Serial3.available() > 0) {
         serialEvent3();
     }
 #endif
-#if defined(CH32_SERIAL4_TX)
+#if defined(CH32RV_SERIAL4_TX)
     if (serialEvent4 && Serial4.available() > 0) {
         serialEvent4();
     }
 #endif
-#if defined(CH32_SERIAL5_TX)
+#if defined(CH32RV_SERIAL5_TX)
     if (serialEvent5 && Serial5.available() > 0) {
         serialEvent5();
     }
@@ -489,35 +489,35 @@ void serialEventRun(void)
 }  // namespace arduino
 
 /* --------------------------------------------------------- printf() bridge */
-#include "ch32_serial_write.h"
+#include "ch32rv_serial_write.h"
 
 /* Where printf()/puts() go. A pointer rather than a compile-time choice,
  * because the alternatives to the UART - SDI print, and later USB CDC - live
  * in libraries, and the core must not have to know about them to let a sketch
  * pick one. The default is the board's monitor port, resolved at link time, so
- * a sketch that never calls ch32_set_stdout() behaves exactly as before.
+ * a sketch that never calls ch32rv_set_stdout() behaves exactly as before.
  *
  * A port that has not been begun accepts nothing: HardwareSerial::write()
  * returns 0 when it is closed, so printf() before Serial.begin() stays a
  * silent no-op rather than a hang. */
-static Print *ch32_stdout =
+static Print *ch32rv_stdout =
 #ifdef SERIAL_PORT_MONITOR
     &SERIAL_PORT_MONITOR;
 #else
     nullptr;
 #endif
 
-void ch32_set_stdout(Print *out)
+void ch32rv_set_stdout(Print *out)
 {
-    ch32_stdout = out;
+    ch32rv_stdout = out;
 }
 
-Print *ch32_get_stdout(void)
+Print *ch32rv_get_stdout(void)
 {
-    return ch32_stdout;
+    return ch32rv_stdout;
 }
 
-extern "C" size_t ch32_serial_write_bytes(const uint8_t *data, size_t len)
+extern "C" size_t ch32rv_serial_write_bytes(const uint8_t *data, size_t len)
 {
-    return ch32_stdout ? ch32_stdout->write(data, len) : 0;
+    return ch32rv_stdout ? ch32rv_stdout->write(data, len) : 0;
 }

@@ -25,7 +25,7 @@ void loop() {
 - **サーボの電源は別に取ってください。** ストール電流でboardのレギュレータが
   落ちます。症状は「動作中にboardがリセットする」です。
   GNDは共通にし、3V3は共有しないこと。
-- **どのtimerを使うか、その代償。** まずvariantの`CH32_SERVO_TIMER`を取得し、
+- **どのtimerを使うか、その代償。** まずvariantの`CH32RV_SERVO_TIMER`を取得し、
   競合中なら別の空きTIMを探します。どれも空いていない場合は優先TIMをtakeoverするため、
   そのTIMの`tone()`やPWMは停止します。逆に後から`tone()`やPWMにtakeoverされると、
   ServoはpinをLowにしてdetach扱いになります。標準API同士はhard lockせず、最後の呼出しを

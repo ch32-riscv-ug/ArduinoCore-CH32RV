@@ -13,14 +13,14 @@ ESP32やSTM32duinoは、sketchから**レジスタを直接触れる**ヘッダ�
 | ESP32 | `soc/gpio_reg.h`、`soc/gpio_struct.h` 等 | ESP-IDFの生成物(ベンダ製) |
 | STM32duino | `stm32f4xx.h` 等のCMSIS device header | STのCMSISパッケージ(ベンダ製) |
 | RP2040 (arduino-pico) | `hardware/regs/*.h` | pico-sdkの生成物(ベンダ製) |
-| **このコア** | `cores/arduino/ch32_registers.h` | **手書き。コアが触るものだけ** |
+| **このコア** | `cores/arduino/ch32rv_registers.h` | **手書き。コアが触るものだけ** |
 
 つまりどのコアも「ベンダが配っている機械生成ヘッダをそのまま同梱」しており、
 自前で書いているのはうちだけ。WCHの相当物はEVTヘッダだが、
 **EVTは参照のみでrepositoryへ取り込まない**という方針([ADR-0003](../adr/0003-owned-startup-vector-linker.ja.md)以来)があるので、
 同じ手は使えない。同梱するなら**事実をデータとして持ち直して生成する**ことになる。
 
-現状の`ch32_registers.h`は約300行で、RCC / GPIO / AFIO / USART / I2C / SPI / SysTick / PFIC /
+現状の`ch32rv_registers.h`は約300行で、RCC / GPIO / AFIO / USART / I2C / SPI / SysTick / PFIC /
 FLASH latency しか無い。sketchがADCのレジスタを直接触りたくなった時点で行き止まりになる。
 
 ## 先に確認: 既に存在する機械可読データ
@@ -50,15 +50,15 @@ operating_conditions / product_attributes。
 
 粒度は「**peripheral型 × family**」が正しい。同じI2Cでも
 V003/X035にはRTR(rise-time register)が無くV20x/V30xにはある、という差が実在する
-(このコアも`CH32_I2C_HAS_RTR`という定数で吸収している)。
+(このコアも`CH32RV_I2C_HAS_RTR`という定数で吸収している)。
 型を共有できる単位でまとめないと、11 family × 数十peripheralの総当たりになる。
 
 | # | 欲しいもの | 粒度 | なぜ要るか | 今どうしているか |
 |---|---|---|---|---|
 | **D-1** | peripheral instance一覧: 名前・instance番号・**base address**・バス(APB1/APB2/AHB) | part または series | どのpartに何個あるか。X035にI2C2が無い類 | 手書き |
-| **D-2** | **RCCのクロック許可bit**(register名 + bit位置)、可能ならreset bitも | family | `begin()`が最初に触る。バスとbit位置は別の事実 | 手書き(`CH32_RCC_APB1_I2C1`等) |
+| **D-2** | **RCCのクロック許可bit**(register名 + bit位置)、可能ならreset bitも | family | `begin()`が最初に触る。バスとbit位置は別の事実 | 手書き(`CH32RV_RCC_APB1_I2C1`等) |
 | **D-3** | peripheral型ごとの**register一覧**: 名前・offset・幅・access・reset値 | **peripheral型 × 型version** | ヘッダ生成の本体 | 手書き(コアが触る分だけ) |
-| **D-4** | register内の**bit field**: 名前・bit位置(範囲)・意味。列挙値があれば列挙値も | 同上 | `CH32_I2C_CTLR1_START`のような定数 | 手書き |
+| **D-4** | register内の**bit field**: 名前・bit位置(範囲)・意味。列挙値があれば列挙値も | 同上 | `CH32RV_I2C_CTLR1_START`のような定数 | 手書き |
 | **D-5** | **peripheral型のversion key**: 「このfamilyのI2Cは型Aだ」と言える識別子 | family × peripheral | D-3/D-4を共有するため。RTRの有無がまさにこれ | `FAMILY`表の`core_defines`に手で1個ずつ足している |
 | **D-6** | **割込み番号**とhandler名(instanceごと) | part または family | vector tableとNVIC。**既にEVTから生成している**ので移送候補 | `tools/generate/import_vectors.py`がEVTから生成 |
 | **D-7** | **DMA channel対応**(peripheral+方向 → channel) | family | 将来DMAを使うとき。今は未使用 | 無い |

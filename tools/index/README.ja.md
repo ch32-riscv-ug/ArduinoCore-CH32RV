@@ -21,7 +21,7 @@ Board Manager経由でinstallしたplatformでcompileが通ることは別物で
 | `tools_probe_rs.json` | probe-rs 0.32.0のtool定義(6 host)。Windowsだけ再ホスト**案**(未承認)、他はupstream直リンク |
 | `probe_rs_targets.csv` | probe-rsが知っているCH32 target 127件。`{build.probe_rs_chip}`の生成元 |
 | `fetch_tools.py` | **testに要るものを`<repo>/.tools`へ揃える**(toolchain / probe-rs / device-data tables)。版とchecksumは`tools_*.json`が正本 |
-| `toolenv.sh` | `CH32_*`が未設定なら`.tools`の場所を入れるshell helper。設定済みのものは触らない |
+| `toolenv.sh` | `CH32RV_*`が未設定なら`.tools`の場所を入れるshell helper。設定済みのものは触らない |
 | `install_check.py` | ローカルHTTP配信 → 新規data dirへclean install → **上書きなしでcompile** → upgrade/rollback |
 
 publishは[`.github/workflows/release.yml`](../../.github/workflows/release.yml)が行います

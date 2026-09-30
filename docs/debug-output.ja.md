@@ -28,7 +28,7 @@ CLIで`--build-path`を指定して固定するのがいちばん確実です。
 
 ```sh
 arduino-cli compile \
-  --fqbn ch32-riscv-ug:ch32v:CH32V103:pnum=CH32V103R8T6 \
+  --fqbn ch32-riscv-ug:ch32rv:CH32V103:pnum=CH32V103R8T6 \
   --build-path ./build \
   ./MySketch
 # → ./build/MySketch.ino.elf  (と .bin / .hex)
@@ -45,7 +45,7 @@ IDEでビルドしたELFを使いたい場合は、環境設定で「詳細な�
 
 ```sh
 arduino-cli upload \
-  --fqbn ch32-riscv-ug:ch32v:CH32V103:pnum=CH32V103R8T6 \
+  --fqbn ch32-riscv-ug:ch32rv:CH32V103:pnum=CH32V103R8T6 \
   --programmer wch-link --input-dir ./build ./MySketch
 ```
 
@@ -118,7 +118,7 @@ attach後はLinuxの手順(udev rule、`dialout`)がそのまま必要です。
 **そこがUARTブリッジ**なので、1本のケーブルで書き込みとUART受信の両方が取れます。
 
 ```sh
-arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32v:CH32V103
+arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32rv:CH32V103
 ```
 
 ボーレートの既定は**115200**をboardが宣言しているので`--config`は要りません。
@@ -232,7 +232,7 @@ wlinkのドキュメントは**firmware 2.10以降**のWCH-LinkEを条件に挙�
 どれで有効化しても、読み方は同じです。**普通のSerial Monitor**が監視先になります。
 
 ```sh
-arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32v:CH32V103
+arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32rv:CH32V103
 ```
 
 portは**WCH-LinkE自身のCDC**(`1a86:8010`)です。

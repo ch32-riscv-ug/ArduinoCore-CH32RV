@@ -8,15 +8,15 @@ using namespace arduino;
  * uses. The address is the QingKe core's hartinfo.dataaddr and differs per
  * family (0xE00000F4 on V2, 0xE0000340 on most V3, 0xE0000380 on V4 and V103),
  * so the board states it from ch32-device-data's debug_data.csv. */
-#ifndef CH32_DM_DATA0_ADDR
-#error "CH32_DM_DATA0_ADDR is not defined: this board does not say where the \
+#ifndef CH32RV_DM_DATA0_ADDR
+#error "CH32RV_DM_DATA0_ADDR is not defined: this board does not say where the \
 debug module's data0 is (ch32-device-data debug_data.csv), so SerialDMDATA \
 cannot be built for it."
 #endif
-static volatile uint32_t *const CH32_DM_DATA0 =
-    (volatile uint32_t *)CH32_DM_DATA0_ADDR;
-static volatile uint32_t *const CH32_DM_DATA1 =
-    (volatile uint32_t *)(CH32_DM_DATA0_ADDR + 4u);
+static volatile uint32_t *const CH32RV_DM_DATA0 =
+    (volatile uint32_t *)CH32RV_DM_DATA0_ADDR;
+static volatile uint32_t *const CH32RV_DM_DATA1 =
+    (volatile uint32_t *)(CH32RV_DM_DATA0_ADDR + 4u);
 
 /* The status word is the low byte of data0. */
 #define ST_PENDING 0x80u          /* we left a frame; the host has not taken it */
@@ -32,7 +32,7 @@ static volatile uint32_t *const CH32_DM_DATA1 =
 /* The most a host frame can carry, which is what "room to take one" means. */
 #define RX_FRAME 3u
 
-uint8_t CH32SerialDMDATA::buffered(void) const
+uint8_t CH32RVSerialDMDATA::buffered(void) const
 {
     return (uint8_t)(_tail >= _head ? _tail - _head
                                     : sizeof(_rx) - _head + _tail);
@@ -49,12 +49,12 @@ uint8_t CH32SerialDMDATA::buffered(void) const
  * which stops the host: it cannot write again until we answer. That is the
  * flow control. It only goes wrong if write() overwrites the word first, which
  * is why the buffer exists at all. */
-void CH32SerialDMDATA::poll(void)
+void CH32RVSerialDMDATA::poll(void)
 {
     if (sizeof(_rx) - 1u - buffered() < RX_FRAME) {
         return;                   /* no room for a whole frame */
     }
-    uint32_t word = *CH32_DM_DATA0;
+    uint32_t word = *CH32RV_DM_DATA0;
     if (word & ST_PENDING) {
         return;                   /* our own frame, still waiting to be taken */
     }
@@ -72,30 +72,30 @@ void CH32SerialDMDATA::poll(void)
             _tail = (uint8_t)(_tail + 1u >= sizeof(_rx) ? 0u : _tail + 1u);
         }
     }
-    *CH32_DM_DATA0 = ST_EMPTY;
+    *CH32RV_DM_DATA0 = ST_EMPTY;
     _left = true;
 }
 
-uint32_t CH32SerialDMDATA::waitPolls(void) const
+uint32_t CH32RVSerialDMDATA::waitPolls(void) const
 {
-    const uint64_t per_ms = (uint64_t)F_CPU / 1000u / CH32_DMDATA_CYCLES_PER_POLL;
+    const uint64_t per_ms = (uint64_t)F_CPU / 1000u / CH32RV_DMDATA_CYCLES_PER_POLL;
     const uint64_t polls =
-        per_ms * (_host ? CH32_DMDATA_HOST_WAIT_MS : CH32_DMDATA_WAIT_MS);
+        per_ms * (_host ? CH32RV_DMDATA_HOST_WAIT_MS : CH32RV_DMDATA_WAIT_MS);
     return polls > 0xffffffffu ? 0xffffffffu : (polls ? (uint32_t)polls : 1u);
 }
 
-bool CH32SerialDMDATA::alive(void)
+bool CH32RVSerialDMDATA::alive(void)
 {
-    return (*CH32_DM_DATA0 & (ST_PENDING | ST_TIMEOUT)) != (ST_PENDING | ST_TIMEOUT);
+    return (*CH32RV_DM_DATA0 & (ST_PENDING | ST_TIMEOUT)) != (ST_PENDING | ST_TIMEOUT);
 }
 
-void CH32SerialDMDATA::begin(unsigned long baudrate, uint16_t config)
+void CH32RVSerialDMDATA::begin(unsigned long baudrate, uint16_t config)
 {
     (void)baudrate;
     (void)config;
     /* Claim the mailbox. Whatever an earlier session left in it would
      * otherwise be read as a frame - including a latched timeout. */
-    *CH32_DM_DATA0 = 0;
+    *CH32RV_DM_DATA0 = 0;
     _head = 0;
     _tail = 0;
     _left = false;
@@ -103,12 +103,12 @@ void CH32SerialDMDATA::begin(unsigned long baudrate, uint16_t config)
     _started = true;
 }
 
-void CH32SerialDMDATA::end()
+void CH32RVSerialDMDATA::end()
 {
     _started = false;
 }
 
-int CH32SerialDMDATA::available(void)
+int CH32RVSerialDMDATA::available(void)
 {
     if (!_started) {
         return 0;
@@ -117,12 +117,12 @@ int CH32SerialDMDATA::available(void)
     return buffered();
 }
 
-int CH32SerialDMDATA::peek(void)
+int CH32RVSerialDMDATA::peek(void)
 {
     return available() > 0 ? _rx[_head] : -1;
 }
 
-int CH32SerialDMDATA::read(void)
+int CH32RVSerialDMDATA::read(void)
 {
     int c = peek();
     if (c >= 0) {
@@ -131,7 +131,7 @@ int CH32SerialDMDATA::read(void)
     return c;
 }
 
-void CH32SerialDMDATA::flush(void)
+void CH32RVSerialDMDATA::flush(void)
 {
     if (!_started) {
         return;
@@ -139,13 +139,13 @@ void CH32SerialDMDATA::flush(void)
     /* Bounded: with no host attached the frame is never taken, and waiting for
      * that would never end. */
     for (uint32_t spin = waitPolls(); spin != 0u; spin--) {
-        if ((*CH32_DM_DATA0 & ST_PENDING) == 0u) {
+        if ((*CH32RV_DM_DATA0 & ST_PENDING) == 0u) {
             return;
         }
     }
 }
 
-size_t CH32SerialDMDATA::write(uint8_t c)
+size_t CH32RVSerialDMDATA::write(uint8_t c)
 {
     return write(&c, 1);
 }
@@ -153,7 +153,7 @@ size_t CH32SerialDMDATA::write(uint8_t c)
 /* One frame: wait for the host to clear bit 7 - it saying it took the last one
  * - then write the payload. data1 holds bytes four to seven, data0 the first
  * three above the status byte, which is why seven is the limit. */
-size_t CH32SerialDMDATA::write(const uint8_t *buffer, size_t size)
+size_t CH32RVSerialDMDATA::write(const uint8_t *buffer, size_t size)
 {
     if (!_started || !alive()) {
         return 0;
@@ -162,12 +162,12 @@ size_t CH32SerialDMDATA::write(const uint8_t *buffer, size_t size)
     while (sent < size) {
         uint32_t word;
         uint32_t spin = waitPolls();
-        while ((word = *CH32_DM_DATA0) & ST_PENDING) {
+        while ((word = *CH32RV_DM_DATA0) & ST_PENDING) {
             if (--spin == 0u) {
                 /* Nobody is collecting. Mark it so the next write is free
                  * instead of spinning again; a host that attaches later
                  * clears the word and printing resumes. */
-                *CH32_DM_DATA0 = word | ST_TIMEOUT;
+                *CH32RV_DM_DATA0 = word | ST_TIMEOUT;
                 _host = false;
                 return sent;
             }
@@ -187,9 +187,9 @@ size_t CH32SerialDMDATA::write(const uint8_t *buffer, size_t size)
         for (size_t k = 0; k < chunk; k++) {
             p[k] = buffer[sent + k];
         }
-        *CH32_DM_DATA1 = (uint32_t)p[3] | ((uint32_t)p[4] << 8) |
+        *CH32RV_DM_DATA1 = (uint32_t)p[3] | ((uint32_t)p[4] << 8) |
                          ((uint32_t)p[5] << 16) | ((uint32_t)p[6] << 24);
-        *CH32_DM_DATA0 = (ST_PENDING | (uint32_t)(chunk + ST_BIAS)) |
+        *CH32RV_DM_DATA0 = (ST_PENDING | (uint32_t)(chunk + ST_BIAS)) |
                          ((uint32_t)p[0] << 8) | ((uint32_t)p[1] << 16) |
                          ((uint32_t)p[2] << 24);
         _left = true;
@@ -201,4 +201,4 @@ size_t CH32SerialDMDATA::write(const uint8_t *buffer, size_t size)
 /* Its own translation unit, and one a sketch only reaches by including the
  * header - which is where the cost is: the global object's vtable keeps every
  * virtual alive whether or not the sketch calls one. */
-arduino::CH32SerialDMDATA SerialDMDATA;
+arduino::CH32RVSerialDMDATA SerialDMDATA;

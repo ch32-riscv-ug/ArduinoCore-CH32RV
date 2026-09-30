@@ -42,37 +42,37 @@
  * not have lines dropped under it. Dropping is silent on the host side (a RUN
  * that never answers, a line with a hole in it), which is why it should only
  * happen when nobody is there. After a timeout the short wait applies again. */
-#ifndef CH32_DMDATA_WAIT_MS
-#define CH32_DMDATA_WAIT_MS 20u
+#ifndef CH32RV_DMDATA_WAIT_MS
+#define CH32RV_DMDATA_WAIT_MS 20u
 #endif
-#ifndef CH32_DMDATA_HOST_WAIT_MS
-#define CH32_DMDATA_HOST_WAIT_MS 1000u
+#ifndef CH32RV_DMDATA_HOST_WAIT_MS
+#define CH32RV_DMDATA_HOST_WAIT_MS 1000u
 #endif
 
 /* The waits are counted in polls of the register, not read off a clock: they
  * must still end with interrupts masked, where millis() stands still. One poll
  * measured about 10 cycles on CH32V003; 8 is assumed, so a wait lasts at least
  * as long as asked. */
-#ifndef CH32_DMDATA_CYCLES_PER_POLL
-#define CH32_DMDATA_CYCLES_PER_POLL 8u
+#ifndef CH32RV_DMDATA_CYCLES_PER_POLL
+#define CH32RV_DMDATA_CYCLES_PER_POLL 8u
 #endif
 
 /* Room to park what the host has sent. The register holds one three-byte frame
  * and printing overwrites it, so without somewhere to put those bytes an echo
  * loop loses two frames out of three. Anything from 3 up works; the default
  * covers a typed line. */
-#ifndef CH32_DMDATA_RX_SIZE
-#define CH32_DMDATA_RX_SIZE 16u
+#ifndef CH32RV_DMDATA_RX_SIZE
+#define CH32RV_DMDATA_RX_SIZE 16u
 #endif
 
 /* The offsets are bytes, and a frame has to fit with a slot left over to tell
  * full from empty. */
-static_assert(CH32_DMDATA_RX_SIZE >= 4u && CH32_DMDATA_RX_SIZE <= 255u,
-              "CH32_DMDATA_RX_SIZE must be between 4 and 255");
+static_assert(CH32RV_DMDATA_RX_SIZE >= 4u && CH32RV_DMDATA_RX_SIZE <= 255u,
+              "CH32RV_DMDATA_RX_SIZE must be between 4 and 255");
 
 namespace arduino {
 
-class CH32SerialDMDATA : public HardwareSerial {
+class CH32RVSerialDMDATA : public HardwareSerial {
 public:
     /* The baud rate is meaningless here - there is no wire - and is accepted
      * only so that a sketch can swap this in for Serial without edits. */
@@ -101,7 +101,7 @@ private:
     /* What the host has sent and the sketch has not read yet. The register
      * itself holds one three-byte frame, and our own next write overwrites it,
      * so anything not taken out of it by then is gone. */
-    uint8_t _rx[CH32_DMDATA_RX_SIZE];
+    uint8_t _rx[CH32RV_DMDATA_RX_SIZE];
     uint8_t _head = 0;            /* next byte to hand to read() */
     uint8_t _tail = 0;            /* next free slot */
     bool _started = false;
@@ -116,4 +116,4 @@ private:
 
 }  // namespace arduino
 
-extern arduino::CH32SerialDMDATA SerialDMDATA;
+extern arduino::CH32RVSerialDMDATA SerialDMDATA;

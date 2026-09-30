@@ -63,13 +63,13 @@ def serial_pins_of(board: str):
     if not header.exists():
         return None
     text = header.read_text(encoding="utf-8")
-    n = re.search(r"^#define\s+CH32_SERIAL_DEFAULT\s+(\d+)", text, re.M)
+    n = re.search(r"^#define\s+CH32RV_SERIAL_DEFAULT\s+(\d+)", text, re.M)
     if not n:
         return None
     index = n.group(1)
     pads = []
     for direction in ("TX", "RX"):
-        m = re.search(rf"^#define\s+CH32_SERIAL{index}_{direction}\s+(\w+)", text, re.M)
+        m = re.search(rf"^#define\s+CH32RV_SERIAL{index}_{direction}\s+(\w+)", text, re.M)
         pads.append(m.group(1) if m else "?")
     return index, pads[0], pads[1]
 
@@ -102,7 +102,7 @@ def inventory(probe=None, probe_rs_dir=None) -> list:
             pnum = chip if chip in pnums else "ANY"
             boards[board] = {
                 "pnum": pnum,
-                "fqbn": f"ch32-riscv-ug:ch32v:{board}:pnum={pnum}",
+                "fqbn": f"ch32-riscv-ug:ch32rv:{board}:pnum={pnum}",
                 "serial": serial_pins_of(board),
             }
         records.append({

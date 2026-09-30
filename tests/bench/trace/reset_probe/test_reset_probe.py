@@ -1,5 +1,5 @@
 """Reset and start-up timing on the wire. The sketch raises a marker pad first thing in setup() and drops it right
-before CH32.restart(); the probe's capture watches the marker, so the low time is restart -> setup() for a
+before CH32RV.restart(); the probe's capture watches the marker, so the low time is restart -> setup() for a
 software reset and ndmreset -> setup() for the probe's debug reset. resetReason() is read after each kind.
 
 The marker pad is the bench file's facts.pwm, compiled in (bench/conftest.py -> TEST_BENCH_MARK_PIN ->
@@ -96,7 +96,7 @@ def test_reset_to_setup(request, dut, bench, ws_run):
             line = f"{name} reset -> setup(): median {v[len(v) // 2]:.3f} ms, min {v[0]:.3f}, max {v[-1]:.3f} (n={len(v)})"
             print(line)
             ws_run.note(line)
-        assert sw_reason == "software", f"resetReason() after CH32.restart() is {sw_reason}"
+        assert sw_reason == "software", f"resetReason() after CH32RV.restart() is {sw_reason}"
         assert all(0.05 <= t <= 50 for t in sw), f"software reset -> setup() out of range: {sw}"
     finally:
         fx.release()

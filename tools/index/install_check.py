@@ -49,7 +49,7 @@ from fetch_tools import env_defaults                # noqa: E402
 from stage import stage_sketch                      # noqa: E402
 
 PACKAGER = "ch32-riscv-ug"
-ARCH = "ch32v"
+ARCH = "ch32rv"
 FQBN_BLINK = f"{PACKAGER}:{ARCH}:CH32V006:pnum=ANY"
 FQBN_ACCEPTANCE = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"
 FQBN_LIBRARIES = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"

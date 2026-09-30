@@ -31,7 +31,7 @@ CH32V003でも、競合が偶然のレジスタ上書きにならず、予測可
 ### 2.1 Arduino時間基盤
 
 `cores/arduino/wiring_time.c`はQingKe SysTickを1 kHzで割り込ませ、
-`ch32_millis_counter`を1 msごとに加算している。
+`ch32rv_millis_counter`を1 msごとに加算している。
 
 - `millis()`はこの32 bitカウンタを返す
 - `micros()`はmillisカウンタと現在のSysTickカウントを合成する
@@ -345,7 +345,7 @@ UIAP版`HardwareTimer`と同じclassを互換目的で持ち込まない。
 
 ## 9. 実装済みの決定と未決定事項
 
-実装済みの資源APIは`CH32Timer.h`のC APIとし、固定長状態だけを使用する。device dataから
+実装済みの資源APIは`CH32RVTimer.h`のC APIとし、固定長状態だけを使用する。device dataから
 TIM種別、counter幅、channel数、register base、clock、update IRQをvariantへ生成する。
 `tryAcquire`、`takeover`、generation付きlease、同期的quiesce、状態照会を公開し、hard lockは
 設けない。PWMはchannel lease、tone/Servoはwhole-TIM leaseを取得する。

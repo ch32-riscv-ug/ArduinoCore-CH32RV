@@ -31,8 +31,8 @@ struct rtt_control_block {
  * would hang a sketch whose debugger is unplugged. */
 #define RTT_MODE_TRIM 1u
 
-static char up_storage[CH32_RTT_UP_SIZE];
-static char down_storage[CH32_RTT_DOWN_SIZE];
+static char up_storage[CH32RV_RTT_UP_SIZE];
+static char down_storage[CH32RV_RTT_DOWN_SIZE];
 
 /* The name the host tools look for in the ELF. `used` keeps it through
  * --gc-sections, which would otherwise drop a block nothing in the program
@@ -46,7 +46,7 @@ static unsigned int used_bytes(const struct rtt_buffer *b)
     return w >= r ? w - r : b->size - r + w;
 }
 
-void CH32SerialRTT::begin(unsigned long baudrate, uint16_t config)
+void CH32RVSerialRTT::begin(unsigned long baudrate, uint16_t config)
 {
     (void)baudrate;
     (void)config;
@@ -72,7 +72,7 @@ void CH32SerialRTT::begin(unsigned long baudrate, uint16_t config)
     _started = true;
 }
 
-void CH32SerialRTT::end()
+void CH32RVSerialRTT::end()
 {
     /* The control block is left standing: a host that is already attached is
      * reading these offsets, and pulling them out from under it would look
@@ -80,7 +80,7 @@ void CH32SerialRTT::end()
     _started = false;
 }
 
-int CH32SerialRTT::available(void)
+int CH32RVSerialRTT::available(void)
 {
     if (!_started) {
         return 0;
@@ -88,7 +88,7 @@ int CH32SerialRTT::available(void)
     return (int)used_bytes(&_SEGGER_RTT.down[0]);
 }
 
-int CH32SerialRTT::peek(void)
+int CH32RVSerialRTT::peek(void)
 {
     if (!_started || _SEGGER_RTT.down[0].read_off == _SEGGER_RTT.down[0].write_off) {
         return -1;
@@ -96,7 +96,7 @@ int CH32SerialRTT::peek(void)
     return (uint8_t)down_storage[_SEGGER_RTT.down[0].read_off];
 }
 
-int CH32SerialRTT::read(void)
+int CH32RVSerialRTT::read(void)
 {
     int c = peek();
     if (c < 0) {
@@ -107,7 +107,7 @@ int CH32SerialRTT::read(void)
     return c;
 }
 
-int CH32SerialRTT::availableForWrite(void)
+int CH32RVSerialRTT::availableForWrite(void)
 {
     if (!_started) {
         return 0;
@@ -116,26 +116,26 @@ int CH32SerialRTT::availableForWrite(void)
     return (int)(_SEGGER_RTT.up[0].size - 1u - used_bytes(&_SEGGER_RTT.up[0]));
 }
 
-void CH32SerialRTT::flush(void)
+void CH32RVSerialRTT::flush(void)
 {
     if (!_started) {
         return;
     }
     /* Bounded, unlike a UART's flush: with no host attached the buffer never
      * drains and waiting for it would never end. */
-    for (uint32_t spin = CH32_RTT_SPIN; spin != 0u; spin--) {
+    for (uint32_t spin = CH32RV_RTT_SPIN; spin != 0u; spin--) {
         if (_SEGGER_RTT.up[0].read_off == _SEGGER_RTT.up[0].write_off) {
             return;
         }
     }
 }
 
-size_t CH32SerialRTT::write(uint8_t c)
+size_t CH32RVSerialRTT::write(uint8_t c)
 {
     return write(&c, 1);
 }
 
-size_t CH32SerialRTT::write(const uint8_t *buffer, size_t size)
+size_t CH32RVSerialRTT::write(const uint8_t *buffer, size_t size)
 {
     if (!_started) {
         return 0;
@@ -171,4 +171,4 @@ size_t CH32SerialRTT::write(const uint8_t *buffer, size_t size)
 /* Its own translation unit, and one a sketch only reaches by including the
  * header - which is where the cost is, buffers included: the global object's
  * vtable keeps every virtual alive whether or not the sketch calls one. */
-arduino::CH32SerialRTT SerialRTT;
+arduino::CH32RVSerialRTT SerialRTT;

@@ -40,7 +40,7 @@ UPLOAD_TOOL_NAME = "ch32rv"
 # source (fetch_tools.py reads it too). A copy here once said ch32rv 0.9.0 while
 # the fragment shipped the 0.10.0 archives under that name.
 PACKAGER = "ch32-riscv-ug"
-ARCH = "ch32v"
+ARCH = "ch32rv"
 
 COMPILER_PATH_DEV = "compiler.path="
 COMPILER_PATH_PKG = ("compiler.path={runtime.tools." + TOOL_NAME + ".path}/bin/")

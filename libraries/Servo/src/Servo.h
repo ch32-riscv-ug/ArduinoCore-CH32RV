@@ -6,7 +6,7 @@
  * library does it, and it is why any pin works rather than only the handful a
  * timer's compare output reaches.
  *
- * The variant supplies a preferred timer (CH32_SERVO_TIMER), distinct from
+ * The variant supplies a preferred timer (CH32RV_SERVO_TIMER), distinct from
  * tone()'s preference. The resource manager may use another free timer before
  * taking over that one. On small parts there is no timer left over, and then
  * attaching a servo stops analogWrite() channels on the timer it takes.
@@ -26,12 +26,12 @@
 
 /* Twelve is what one AVR timer carries, and it is also what fits a 20 ms frame
  * at the maximum pulse width with room for the frame gap. */
-#ifndef CH32_SERVO_MAX
-#define CH32_SERVO_MAX 12
+#ifndef CH32RV_SERVO_MAX
+#define CH32RV_SERVO_MAX 12
 #endif
 
-#define SERVOS_PER_TIMER CH32_SERVO_MAX
-#define MAX_SERVOS       CH32_SERVO_MAX
+#define SERVOS_PER_TIMER CH32RV_SERVO_MAX
+#define MAX_SERVOS       CH32RV_SERVO_MAX
 #define INVALID_SERVO    255
 
 class Servo {
@@ -40,7 +40,7 @@ public:
 
     /* INVALID_SERVO when the pin is not a pin, when all the slots are taken,
      * or when this series has no timer to spare - the last of which a sketch
-     * can also test for at compile time with CH32_SERVO_TIMER. */
+     * can also test for at compile time with CH32RV_SERVO_TIMER. */
     uint8_t attach(int pin);
     uint8_t attach(int pin, int min, int max);
     void detach();

@@ -39,7 +39,7 @@ static void answer(Print &out, const char *line)
 
 /* One line at a time off the UART under test. A line longer than the buffer
  * keeps its head, and comes back as unknown rather than being lost. */
-static void serve(arduino::CH32HardwareSerial &uart)
+static void serve(arduino::CH32RVHardwareSerial &uart)
 {
   static char buf[TC_CMD_MAX];
   static uint8_t len;

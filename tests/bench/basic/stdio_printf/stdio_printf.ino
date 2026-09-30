@@ -55,7 +55,7 @@ void setup()
   // stdio follows the harness onto Console. Said here rather than left to the
   // default, which is the board's UART - a UART is a thing under test, not
   // where the results go.
-  ch32_set_stdout(&Console);
+  ch32rv_set_stdout(&Console);
 }
 
 void loop()

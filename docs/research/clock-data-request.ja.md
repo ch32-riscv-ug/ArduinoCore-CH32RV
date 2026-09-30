@@ -66,7 +66,7 @@ SYSCLKを上げると分周を選び直す必要がある。
 ### 6. flash latencyの扱いがfamilyで違う
 
 V20x / V30xの`system_*.c`は**flash latencyを一度も触らない**。
-一方こちらは`CH32_FLASH_LATENCY`をfamily定数として持っている(X035=2、V006/V407/X315=1、他0)。
+一方こちらは`CH32RV_FLASH_LATENCY`をfamily定数として持っている(X035=2、V006/V407/X315=1、他0)。
 **HCLKを上げたときに何を設定すべきかがデータとして無い。**
 
 ## 依頼したいデータ(C-1〜C-8)
@@ -87,7 +87,7 @@ V20x / V30xの`system_*.c`は**flash latencyを一度も触らない**。
 ### C-5について: 一部は既にこちらで検証済み
 
 AHBプリスケーラのfield符号化は**2通りある**ことを全11 familyのEVTヘッダで確認済み
-([cores/arduino/ch32_clock.h](../../cores/arduino/ch32_clock.h))。
+([cores/arduino/ch32rv_clock.h](../../cores/arduino/ch32rv_clock.h))。
 
 - linear(`0x0..0x7` = `/1../8`、`/3`や`/5`もある): V00x / M030 / X03x
 - pow2(`0x8` = `/2`、`/32`が無い): V10x / V20x / V30x / V4x7 / L103 / V205 / X3x5
