@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) The bundled ch32rv is now 0.12.3: the monitor on an OEP probe forwards what you type at once and reads the console every 5 ms, instead of waiting up to 20 ms (an echo's round trip went from 15 ms to 1.6 ms).
+- (JA) 同梱の ch32rv を 0.12.3 にした: OEP の probe の monitor が、入力をすぐ送り、console を 5 ms ごとに読む（最大 20 ms の待ちがあった。echo の往復は 15 ms → 1.6 ms）。
 
 ## 0.0.3
 - (EN) The bundled ch32rv is now 0.12.2: an upload with no port selected says so and how to pick one; on Windows a WCH-Link another driver holds (usbipd, for example) is listed as `WCH-Link <serial> (cannot open: driver <name>)`; an OEP probe's vendor bulk IN is read on a thread of its own, so replies never wait behind a busy reader; a failed flash says whether the probe link failed (transfer-failed) or the target's flash really differs (verify-mismatch); the broker writes a log next to its endpoint.
