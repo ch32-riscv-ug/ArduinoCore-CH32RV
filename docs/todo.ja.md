@@ -286,9 +286,7 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       = エラッタ x035-adc-ch-i2c-unavailable のロット。V003 の ch8(2 台とも 270 前後、10bit)と L103 の ch17
       (971、12bit、サンプル時間 60〜240 µs で不変)は安定した内部源だが、3.3 V 給電なら 1.2 V と合わない(未解決、device-data に記録送付済み)。
       生成物の VREFINT 定義も外した
-- [ ] `[P2]` **ch32rv の次の release で同梱版を上げるとき**: SerialRTT の README / HelloRTT / RttEcho の
-      「OEP probe 経由の rtt はまだ使えない」を「OEP probe でも rtt 可」に書き換える
-      (ch32rv-df が X035 治具で確認済み、2026-10-01。arduino monitor の 1 行 echo は p50 ~70 ms)
+- [x] ch32rv 0.14.0 で SerialRTT が OEP probe 経由でも読める(2026-10-01、X035 治具で HelloRTT を確認、README 更新)
 - [x] `CH32RV.getFlashChipSize()`と`getUniqueId()`(64 bit、2026-10-01、device-data 1635edf の esig.csv)。
       MAC ではないので ESP32 の`getEfuseMac()`の名前は採らない(ユーザー判断、2026-10-01)。
       X035F8U6 は 63488、V003F4U6 は 16384 を返した。LinkE の 7 台でも FLACAP は型番どおり。

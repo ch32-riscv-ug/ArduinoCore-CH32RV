@@ -21,15 +21,16 @@ void setup() {
 
 ## Reading it on the host
 
-With the bundled ch32rv, through a WCH-Link:
+With the bundled ch32rv, through a WCH-Link or an OEP probe (ch32rv 0.14.0 or later):
 
 ```
 ch32rv monitor --source rtt --chip CH32V203
 ```
 
-It finds the control block in RAM by itself (no ELF needed). Checked on
-CH32V203 over a WCH-LinkE with ch32rv 0.13.2 (2026-10-01). Through an OEP
-probe the `rtt` source is not available yet; use `SerialDMSeq` there.
+It finds the control block in RAM by itself (no ELF needed) and halts the
+core briefly for each poll. In the IDE, pick the port and set the monitor's
+`source` to `rtt`. Checked on CH32V203 over a WCH-LinkE and on CH32X035 over
+an OEP probe (2026-10-01).
 `probe-rs attach --chip <part> <firmware.elf>` works as well.
 
 **Not the IDE's serial monitor.** That one speaks to serial ports, and this is

@@ -20,14 +20,14 @@ void setup() {
 
 ## host側での受け取り方
 
-同梱のch32rvで、WCH-Link経由で読めます。
+同梱のch32rvで、WCH-LinkでもOEP probeでも読めます(OEP probeはch32rv 0.14.0以降)。
 
 ```
 ch32rv monitor --source rtt --chip CH32V203
 ```
 
-control blockはRAMから自分で探すのでELFは要りません。CH32V203 + WCH-LinkE、ch32rv 0.13.2で確認
-(2026-10-01)。OEP probe経由の`rtt`はまだ使えないので、そちらでは`SerialDMSeq`を使ってください。
+control blockはRAMから自分で探すのでELFは要りません。pollのたびにcoreを一瞬止めます。
+IDEではportを選び、monitorの`source`を`rtt`にします。CH32V203 + WCH-LinkE と CH32X035 + OEP probeで確認(2026-10-01)。
 `probe-rs attach --chip <型番> <firmware.elf>`でも読めます。
 
 **IDEのSerial Monitorでは読めません。** あれはserial portを開くものだからで、

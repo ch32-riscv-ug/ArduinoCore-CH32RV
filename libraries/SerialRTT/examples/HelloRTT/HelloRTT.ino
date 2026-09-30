@@ -4,7 +4,7 @@
  * into a ring buffer in RAM and the probe reads that memory while the core
  * runs, so this costs no pin and never halts the core.
  *
- * The host side is the bundled ch32rv, through a WCH-Link:
+ * The host side is the bundled ch32rv, through a WCH-Link or an OEP probe:
  *
  *   ch32rv monitor --source rtt --chip CH32V203
  *

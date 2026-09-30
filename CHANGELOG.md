@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) The bundled ch32rv is now 0.14.0 (JSON contract 4): SerialRTT is readable through an OEP probe too (`ch32rv monitor --source rtt`, and the IDE monitor's `source` setting), and choosing `uart` on an OEP probe's port says the source is not there (exit 24) instead of "no probe matched". The udev rules are unchanged.
+- (JA) 同梱の ch32rv を 0.14.0(JSON 契約 4)にした: SerialRTT が OEP probe 経由でも読める(`ch32rv monitor --source rtt`、IDE の monitor の `source` 設定)。OEP probe の port で `uart` を選ぶと「その source は無い」(exit 24)と返る(以前は「probe が見つからない」)。udev のルールは変わらない。
 - (EN) boards.txt no longer carries `build.probe_rs_chip`; `build.ch32rv_chip` is the one chip name. SerialRTT and SerialSDI document the bundled ch32rv as the host side (`ch32rv monitor --source rtt` through a WCH-Link, `ch32rv monitor --source sdi`, which also switches SDI print on).
 - (JA) boards.txt から `build.probe_rs_chip` を外した(チップ名は `build.ch32rv_chip` だけ)。SerialRTT と SerialSDI の説明は host 側を同梱の ch32rv にした(WCH-Link 経由の `ch32rv monitor --source rtt`、SDI print の有効化も兼ねる `ch32rv monitor --source sdi`)。
 - (EN) `CH32RV` gains arduino-esp32's `ESP.*` names for what the chip can say: `getHeapSize()`, `getFreeHeap()`, `getCpuFreqMHz()`, `getChipModel()` (the series, e.g. "CH32V003"), `getSketchSize()`, `getFreeSketchSpace()`, and from the chip's electronic signature `getFlashChipSize()` (the silicon's flash) and `getUniqueId()` (its 64-bit unique ID; not named `getEfuseMac()` as on an ESP32, since it is not a MAC address). `printf()` is on every port a sketch prints to - Serial1.., SerialDMSeq, SerialSDI, SerialRTT, SerialDMDATA - as `Print::printf` is on an ESP32.
