@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["oep-client-python>=0.0.7", "libusb1>=3"]
+# dependencies = ["oep-client-python>=0.0.7", "libusb1>=3", "pyusb>=1.2"]
 # ///
 """Bring a bench's probe to the state its bench file describes, or check that it is there.
 
@@ -12,12 +12,19 @@
 The bench file is tests/benches/<name>.toml (TEST_BENCH_<PROFILE>); the probe is the one
 behind TEST_SERIAL_PORT_<PROFILE>. The steps, for an OEP probe:
 
-  1. fetch the oep-probe-arduino release the file names (its tag's tarball), build
-     examples/<example> with the sketch.yaml in that tag (it pins the platform and the
-     library), erase the probe's whole flash and upload. A tests-only step: a released
-     probe firmware is what a bench runs, never a working tree.
+  1. put the oep-probe-arduino release the file names on the probe. Two routes, `[probe] update`:
+       "usj" (default): fetch the tag's tarball, build examples/<example> with the sketch.yaml
+              in that tag, erase the probe's whole flash and upload through its bootloader
+              port (TEST_BENCH_<PROFILE>_UPLOAD). The first flash of a blank probe, always.
+       "dfu": fetch the release's app image (firmware-<ver>.json names it, with its sha256)
+              and send it over USB DFU to the running probe (bench/dfu.py), which verifies it
+              and reboots into it. The HS port is all this needs - the permanent P4 jigs
+              expose nothing else. `--usj` forces the first route.
+     A tests-only step either way: a released probe firmware is what a bench runs, never
+     a working tree.
   2. write the probe's settings from the file (erase the stored ones first), save.
-  3. read them back and compare, with the firmware / model / profile from describe.
+  3. read them back and compare, with the firmware / model / profile from describe and
+     the storage state (the probe runs on what it saved).
 
 A WCH-Link bench has only step 3: its firmware is WCH's tools' to update.
 
@@ -108,6 +115,56 @@ def flash_firmware(bench: benchdef.Bench, work: pathlib.Path) -> None:
     reattach_usbip(bench)
 
 
+def release_asset(tag: str, name: str, into: pathlib.Path) -> pathlib.Path:
+    url = f"{PROBE_REPO}/releases/download/{tag}/{name}"
+    log(f"fetching {url}")
+    into.mkdir(parents=True, exist_ok=True)
+    path = into / name
+    path.write_bytes(urllib.request.urlopen(url, timeout=120).read())
+    return path
+
+
+def flash_dfu(bench: benchdef.Bench, work: pathlib.Path) -> None:
+    """The release's app image over USB DFU to the running probe: no bootloader port, no build."""
+    import hashlib
+    import json
+    import dfu
+    probe = bench.probe
+    tag = probe["release"]
+    version = tag.lstrip("v")
+    manifest = json.loads(release_asset(tag, f"firmware-{version}.json", work / "release").read_text(encoding="utf-8"))
+    entry = next((e for e in manifest["firmware"]
+                  if e.get("example") == probe["example"] and e.get("profile") == probe.get("sketch_profile")
+                  and e.get("kind") == "app"), None)
+    if entry is None:
+        raise SystemExit(f"{tag}'s firmware-{version}.json has no app image for {probe['example']} / "
+                         f"{probe.get('sketch_profile')}; the DFU route needs oep-probe-arduino >= 0.0.16")
+    image = release_asset(tag, entry["file"], work / "release").read_bytes()
+    digest = hashlib.sha256(image).hexdigest()
+    if digest != entry["sha256"]:
+        raise SystemExit(f"{entry['file']}: sha256 {digest} is not the release's {entry['sha256']}")
+    # DFU writes the other app slot and leaves the settings; erase them here so step 2 starts clean, as the
+    # whole-flash erase of the usj route does.
+    hst, close = benchdef.open_probe(bench, None)
+    try:
+        from oep_client import config
+        hst.open(lease_ms=10000, owner="prepare")
+        log("erasing the stored settings")
+        cfg = config.ProbeConfig(hst)
+        cfg.erase()
+        cfg.save()
+        hst.end()
+    finally:
+        close()
+    log(f"sending {entry['file']} ({len(image)} bytes) over DFU to {bench.probe_serial}")
+    try:
+        dfu.download(bench.probe_serial, image, log)
+    except dfu.DfuError as e:
+        raise SystemExit(f"DFU: {e}") from None
+    dfu.wait_reboot(bench.probe_serial, log, back_s=5.0)
+    reattach_usbip(bench)
+
+
 def reattach_usbip(bench: benchdef.Bench) -> None:
     """A WSL bench: the probe's USB device re-enumerates after a flash and usbipd drops it, so attach it again
     when TEST_BENCH_<PROFILE>_USBIP_BUSID names it. A bench on a Linux host has nothing to do here."""
@@ -190,6 +247,9 @@ def main() -> int:
     ap.add_argument("--check", action="store_true", help="only compare the probe with the bench file")
     ap.add_argument("--config", action="store_true", help="write the settings and check; do not flash")
     ap.add_argument("--keep", action="store_true", help="keep the work directory")
+    ap.add_argument("--usj", action="store_true",
+                    help="flash through the bootloader port even when the bench file says update = \"dfu\" "
+                         "(a blank probe, or one whose firmware predates DFU)")
     args = ap.parse_args()
     try:
         bench = benchdef.load(args.profile)
@@ -205,7 +265,10 @@ def main() -> int:
     work = pathlib.Path(tempfile.mkdtemp(prefix="bench-prepare-"))
     try:
         if not args.config:
-            flash_firmware(bench, work)
+            if bench.probe.get("update") == "dfu" and not args.usj:
+                flash_dfu(bench, work)
+            else:
+                flash_firmware(bench, work)
             log("waiting for the probe to come back")
             import time
             time.sleep(4)

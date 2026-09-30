@@ -54,11 +54,15 @@ TEST_BENCH_CH32X035=x035-p4                                # benches/x035-p4.tom
 
 ```sh
 uv run --env-file .env bench/prepare.py --profile ch32x035 --check   # プローブが bench file と合っているか（pytest も最初にこれをする）
-uv run --env-file .env bench/prepare.py --profile ch32x035           # 全消去 → Release の firmware を焼く → 設定 → 照合
+uv run --env-file .env bench/prepare.py --profile ch32x035           # Release の firmware を焼く → 設定を消して書く → 照合
+uv run --env-file .env bench/prepare.py --profile ch32x035 --usj     # 空のプローブ: bootloader の口から全消去して焼く
 ```
 
-X035 ジグは P4 の USB-Serial/JTAG から焼くので `TEST_BENCH_CH32X035_UPLOAD`、WSL では焼くたびに HS の口が usbipd から外れるので
-`TEST_BENCH_CH32X035_USBIP_BUSID` も要ります（[.env.example](.env.example)）。
+firmware の入れ方は bench file の `[probe] update`。`"dfu"`（P4、oep-probe-arduino 0.0.16 以降）は Release の app image を
+**HS の口の USB DFU** で送る（`bench/dfu.py`、dfu-util 不要。動いている firmware が検証して反対の面に書き、再起動。壊れた image は
+errVERIFY で断られて今の firmware のまま）。正式ベンチの P4 は HS しか出さないのでこれが常用。既定の `"usj"` は tag からビルドして
+bootloader の口（`TEST_BENCH_<P>_UPLOAD`）から全消去して焼く — 空のプローブの初回はこちら（`--usj`）。WSL では焼くたびに HS の口が
+usbipd から外れるので `TEST_BENCH_CH32X035_USBIP_BUSID` も要ります（[.env.example](.env.example)）。
 
 ### つまずきやすい点
 

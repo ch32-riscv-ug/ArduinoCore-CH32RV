@@ -226,6 +226,16 @@ def check(bench: Bench, ch32rv: pathlib.Path | str | None = None) -> list[str]:
             want = bench.probe.get(key)
             if want and facts.get(key) != want:
                 problems.append(f"probe {key}: bench file says {want!r}, probe says {facts.get(key)!r}")
+        # The settings the probe runs on have to be the SAVED ones: items() shows what is live, which right after
+        # prepare is what was just set - but a reboot that cannot read the storage (a firmware whose interface
+        # list no longer matches the saved hash, oep-probe-arduino <= 0.0.16) runs on nothing, and only the storage
+        # state says so.
+        from oep_client import config
+        st = config.ProbeConfig(hst).state()
+        storage = config.STORAGE_STATE.get(st.storage, st.storage)
+        if storage != "applied":
+            problems.append(f"probe settings storage is {storage!r} (saved hash {st.saved_hash:#x}): the probe is not "
+                            f"running its saved settings")
         have = [dataclasses.astuple(i) for i in oep_config_items(hst)]
         want_items = [dataclasses.astuple(i) for i in wanted_items(bench, hst)]
         for it in want_items:
