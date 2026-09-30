@@ -82,6 +82,11 @@ def flash_firmware(bench: benchdef.Bench, work: pathlib.Path) -> None:
     if not (sketch / "sketch.yaml").exists():
         raise SystemExit(f"{sketch} has no sketch.yaml in {probe['release']}")
     build = work / "build"
+    # The release sketch.yaml pins the library by version from the Library Manager, so the
+    # local indexes must know that version (the guide's rule: update before a pinned build).
+    log("updating the package and library indexes")
+    run(["arduino-cli", "core", "update-index"])
+    run(["arduino-cli", "lib", "update-index"])
     log(f"building {sketch.relative_to(tree)} with its release sketch.yaml (--clean)")
     run(["arduino-cli", "compile", "--clean", "--build-path", str(build), str(sketch)], cwd=sketch)
     port = upload_port(bench)
@@ -89,6 +94,20 @@ def flash_firmware(bench: benchdef.Bench, work: pathlib.Path) -> None:
         erase_flash(bench, sketch, build, port)
     log(f"uploading to {port}")
     run(["arduino-cli", "upload", "--build-path", str(build), "-p", port, str(sketch)], cwd=sketch)
+    reattach_usbip(bench)
+
+
+def reattach_usbip(bench: benchdef.Bench) -> None:
+    """A WSL bench: the probe's USB device re-enumerates after a flash and usbipd drops it, so attach it again
+    when TEST_BENCH_<PROFILE>_USBIP_BUSID names it. A bench on a Linux host has nothing to do here."""
+    import time
+    busid = os.environ.get(benchdef.env_key(bench.profile, "BENCH_") + "_USBIP_BUSID")
+    if not busid or not shutil.which("usbipd.exe"):
+        return
+    time.sleep(4)
+    log(f"re-attaching usbipd busid {busid}")
+    subprocess.run(["usbipd.exe", "attach", "--wsl", "--busid", busid], text=True)
+    time.sleep(4)
 
 
 def erase_flash(bench: benchdef.Bench, sketch: pathlib.Path, build: pathlib.Path, port: str) -> None:
