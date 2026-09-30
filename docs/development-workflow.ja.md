@@ -221,9 +221,10 @@ prepare の 3 と同じ関数を呼ぶ。1 秒未満、ロック無し（describ
 
 | job | どこ | 内容 |
 |---|---|---|
-| unit / build（現 5 job） | hosted、全 PR | 変更なし（ディレクトリ名の置き換えのみ） |
-| example-sweep | hosted、専用 job | 変更なし |
-| install-test | hosted、3 OS | 変更なし |
+| startup-equivalence / generated-sync / vendor-sync | hosted、全 PR | 変更なし |
+| compile-matrix | hosted、3 OS × 4 group（parts / examples / profiles / sizebench） | 2026-09-30 に 1 job を 4 つに分けた: 壁時計は合計ではなく最長の group（数分）。toolchain の fetch は cache から 1 分 |
+| example-sweep | hosted、4 shard（`--sweep-shard K/N`: boards.txt の順で N 本ごとに 1 つ） | 20 分 → 約 5 分。失敗は example と series を名指す |
+| install-test | hosted、3 OS × 2（package / profiles） | Release の archive の install と、同梱 examples の `--profile` ビルドを別 job に |
 | **bench** | **self-hosted runner**（正式ベンチの host） | `run_all.py`。main への push と release 候補。fork の PR からは回さない（test-strategy の安全の規則） |
 
 正式ベンチができるまで bench の job は作らない（手で回す）。

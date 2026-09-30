@@ -88,6 +88,10 @@ def pytest_addoption(parser):
         "--sweep", action="store_true", default=False,
         help="run the example sweep (every example x every series, ~20 min). "
              "Meant for GitHub Actions, where the wall-clock is nobody's.")
+    parser.addoption(
+        "--sweep-shard", default=None, metavar="K/N",
+        help="build only every N-th series of the sweep, starting at the K-th (1-based): "
+             "CI runs the shards as parallel jobs. Without it, every series.")
 
 
 def pytest_configure(config):
@@ -122,6 +126,25 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(scope="session")
 def repo() -> pathlib.Path:
     return REPO
+
+
+@pytest.fixture(scope="session")
+def sweep_boards(request) -> tuple:
+    """The series the example sweep builds in this process: all of them, or the shard --sweep-shard K/N
+    names - every N-th series in boards.txt order starting at the K-th, so the heavy and the light series
+    spread over the shards. (boards, sharded?)"""
+    from sketch_requirements import all_boards
+    boards = all_boards()
+    shard = request.config.getoption("--sweep-shard")
+    if not shard:
+        return boards, False
+    try:
+        k, n = (int(x) for x in shard.split("/"))
+        if not 1 <= k <= n:
+            raise ValueError
+    except ValueError:
+        raise pytest.UsageError(f"--sweep-shard wants K/N with 1 <= K <= N, not {shard!r}") from None
+    return boards[k - 1::n], True
 
 
 def _unavailable(what):

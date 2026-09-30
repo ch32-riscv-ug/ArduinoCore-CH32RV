@@ -77,11 +77,30 @@ jobs:
         run: uv run pytest -q build/vendor
 
   # W-3/W-7: symlink-mode compile matrix over all generated part numbers
+  #
+  # Four groups per OS, each its own job, so the wall-clock is the longest
+  # group (a few minutes) rather than their sum: the part-number matrix, the
+  # examples on the two fast boards, the bench sketches x their profiles, and
+  # the size baseline. Every group re-fetches the (cached) toolchain, about a
+  # minute; runner minutes are cheap and a release waits on this workflow.
   compile-matrix:
+    name: compile-matrix (${{ matrix.group }}, ${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        group: [parts, examples, profiles, sizebench]
+        include:
+          # The prescaler test rides with the parts: a _Static_assert probe that
+          # needs riscv-none-elf-gcc and nothing else.
+          - group: parts
+            tests: build/compile/test_compile_matrix.py unit/test_clock_prescaler.py
+          - group: examples
+            tests: build/compile/test_examples.py build/compile/test_uiapduino_compile.py
+          - group: profiles
+            tests: build/sketches/test_sketch_profiles.py
+          - group: sizebench
+            tests: build/sizebench
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -97,16 +116,11 @@ jobs:
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
       - name: Fetch tools
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      # Compile sweeps plus the size baseline, as one pytest run so a failure
-      # names the check rather than a shell exit code.
-      #
-      # The examples and the prescaler table ride along because this is the job
-      # that already has a compiler: the examples are the only code no other
-      # test builds, and the prescaler test is a _Static_assert probe that needs
-      # riscv-none-elf-gcc and nothing else. Together they add about a minute.
-      - name: Compile matrix, examples, sketch profiles and size baseline
+      # One pytest run per group, so a failure names the check rather than a
+      # shell exit code.
+      - name: ${{ matrix.group }}
         working-directory: tests
-        run: uv run pytest -q build/compile build/sketches/test_sketch_profiles.py build/sizebench unit/test_clock_prescaler.py
+        run: uv run pytest -q ${{ matrix.tests }}
 
   # Every example for every series (~20 min). Its own job, Linux only, because
   # what it checks is the target's C code, not the host OS - the OS axis is
@@ -115,7 +129,16 @@ jobs:
   #
   # Which series an example is built for is the example's own `requires:` line,
   # not a list kept in CI.
+  #
+  # Four shards in parallel (every fourth series each, tests/conftest.py
+  # --sweep-shard), so the sweep takes about five minutes of wall-clock instead
+  # of twenty. A failure still names the example and the series.
   example-sweep:
+    name: example-sweep (${{ matrix.shard }})
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/4", "2/4", "3/4", "4/4"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -128,9 +151,9 @@ jobs:
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
       - name: Fetch tools
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      - name: Build every example for every series
+      - name: Build every example for every series (shard ${{ matrix.shard }})
         working-directory: tests
-        run: uv run pytest -q --sweep build/compile/test_examples_sweep.py
+        run: uv run pytest -q --sweep --sweep-shard ${{ matrix.shard }} build/compile/test_examples_sweep.py
 
   # W-5: clean Board Manager install via local HTTP, then compile with no overrides
   #
@@ -141,10 +164,17 @@ jobs:
   # be placed in a subdirectory" - it is how the old probe-rs upstream zip broke
   # this job, which is why ADR-0011's mirror existed.
   install-test:
+    name: install-test (${{ matrix.check }}, ${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        check: [package, profiles]
+        include:
+          - check: package
+            tests: build/package
+          - check: profiles
+            tests: build/sketches/test_sketch_profile_build.py
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -160,12 +190,13 @@ jobs:
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
       - name: Fetch tools
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      # Two things share this job because they share its expensive part: a
-      # generated index served on loopback and a 400 MB toolchain to fetch.
-      # build/sketches/test_sketch_profile_build.py covers what neither the compile
-      # sweeps nor the install test do - `arduino-cli compile --profile`, the
-      # command the instructions tell a user to type, resolving the platform
-      # through the index rather than through --fqbn.
-      - name: Clean install, and build every sketch profile
+      # Two checks, each its own job (they used to share one because both serve
+      # a generated index on loopback and fetch the toolchain; the fetch is
+      # cached and the wall-clock matters more). build/sketches/
+      # test_sketch_profile_build.py covers what neither the compile sweeps nor
+      # the install test do - `arduino-cli compile --profile` on a shipped
+      # example, the command the instructions tell a user to type, resolving
+      # the platform through the index rather than through --fqbn.
+      - name: ${{ matrix.check }}
         working-directory: tests
-        run: uv run pytest -q build/package build/sketches/test_sketch_profile_build.py
+        run: uv run pytest -q ${{ matrix.tests }}
