@@ -7,21 +7,21 @@ profiles:
     fqbn: ch32-riscv-ug:ch32v:CH32V103:pnum=ANY
     programmer: wch-link
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   ch32v203:
     fqbn: ch32-riscv-ug:ch32v:CH32V203:pnum=ANY
     programmer: wch-link
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   ch32l103:
     fqbn: ch32-riscv-ug:ch32v:CH32L103:pnum=ANY
     programmer: wch-link
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
 default_profile: ch32v103

@@ -14,7 +14,7 @@ profiles:
     port_config:
       source: dmseq
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier A: the other extreme: rv32ec, 24 MHz, 16 K flash
@@ -23,7 +23,7 @@ profiles:
     port_config:
       source: dmseq
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B: the mainstream V2 part
@@ -32,7 +32,7 @@ profiles:
     port_config:
       source: dmseq
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B: low-power V4C
@@ -41,7 +41,7 @@ profiles:
     port_config:
       source: dmseq
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B: the only family with a jump-table vector
@@ -50,7 +50,7 @@ profiles:
     port_config:
       source: dmseq
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B: largest part on the bench
@@ -59,7 +59,7 @@ profiles:
     port_config:
       source: dmseq
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
   # tier B: rv32ec_zmmul and flash wait state 1
@@ -68,7 +68,7 @@ profiles:
     port_config:
       source: dmseq
     platforms:
-      - platform: ch32-riscv-ug:ch32v (0.0.2)
+      - platform: ch32-riscv-ug:ch32v (0.0.3)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
 
 default_profile: ch32x035

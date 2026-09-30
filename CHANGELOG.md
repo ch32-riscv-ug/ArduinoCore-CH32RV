@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+
+## 0.0.3
 - (EN) The bundled ch32rv is now 0.12.2: an upload with no port selected says so and how to pick one; on Windows a WCH-Link another driver holds (usbipd, for example) is listed as `WCH-Link <serial> (cannot open: driver <name>)`; an OEP probe's vendor bulk IN is read on a thread of its own, so replies never wait behind a busy reader; a failed flash says whether the probe link failed (transfer-failed) or the target's flash really differs (verify-mismatch); the broker writes a log next to its endpoint.
 - (JA) 同梱の ch32rv を 0.12.2 にした: port を選ばずに書こうとすると、その旨と選び方を案内する。Windows で別の driver（usbipd など）が握っている WCH-Link は `WCH-Link <serial> (cannot open: driver <name>)` と表示する。OEP の probe の vendor bulk の IN を専用の thread で常に読む（読み手が忙しくても答えが待たされない）。flash の失敗は、probe との通信の失敗（transfer-failed）か、target の flash が本当に違う（verify-mismatch）かを分けて示す。ブローカーが endpoint の隣に log を書く。
 
