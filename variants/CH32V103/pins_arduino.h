@@ -192,12 +192,12 @@
  * whole series. See docs/board-layer-rules.ja.md. */
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
-#if defined(ARDUINO_CH32V103C6T6) || defined(ARDUINO_CH32V103C8T6) || defined(ARDUINO_CH32V103C8U6)
+#if defined(CH32_PART_CH32V103C6T6) || defined(CH32_PART_CH32V103C8T6) || defined(CH32_PART_CH32V103C8U6)
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000ffffu
 #define CH32_PORT_MASK_C 0x0000e000u
 #define CH32_PORT_MASK_D 0x00000000u
-#elif defined(ARDUINO_CH32V103R8T6)
+#elif defined(CH32_PART_CH32V103R8T6)
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000ffffu
 #define CH32_PORT_MASK_C 0x0000ffffu

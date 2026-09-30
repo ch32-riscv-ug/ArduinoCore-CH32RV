@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) **Breaking: `ARDUINO_<board>` no longer changes with the part-number menu.** It is the board's (`ARDUINO_CH32V003`, `ARDUINO_UIAPDUINO_V003_V14`), as arduino-esp32 keeps `ARDUINO_ESP32_DEV` whatever its chip-variant menu says. The part is `CH32_PART_<part>` (`CH32_PART_CH32V003F4U6`, or `CH32_PART_ANY`).
+- (JA) **破壊的変更: `ARDUINO_<board>` は型番メニューで変わらなくなった。** boardのもの(`ARDUINO_CH32V003`、`ARDUINO_UIAPDUINO_V003_V14`)に固定した。arduino-esp32 もチップvariantのメニューで `ARDUINO_ESP32_DEV` を変えない。型番は `CH32_PART_<part>`(`CH32_PART_CH32V003F4U6`、ANY は `CH32_PART_ANY`)。
 - (EN) **Breaking: pin arguments follow arduino-esp32.** `Serial.setPins(rx, tx)` (was tx, rx), `Wire.setPins(sda, scl)` (was scl, sda), `SoftSPI(sck, miso, mosi)` (was sck, mosi, miso). Arguments are `int` with -1 for "keep the pins", as there. The old orders compiled silently with the pins swapped when ESP32 code was copied over.
 - (JA) **破壊的変更: ピン引数を arduino-esp32 に揃えた。** `Serial.setPins(rx, tx)`（以前は tx, rx）、`Wire.setPins(sda, scl)`（以前は scl, sda）、`SoftSPI(sck, miso, mosi)`（以前は sck, mosi, miso）。引数は `int` で、-1 は「今のピンのまま」（ESP32 と同じ）。以前の順では ESP32 のコードを写すとピンが入れ替わったまま黙ってコンパイルが通った。
 - (EN) arduino-esp32's pin-taking forms: `Serial1.begin(baud, config, rx, tx)`, `Wire.begin(sda, scl[, frequency])`, `Wire.begin(address, sda, scl, frequency)`, `SPI.begin(sck, miso, mosi[, ss])`, the same on SoftWire / SoftSPI; `Wire.setTimeOut(ms)` / `getTimeOut()` / `getClock()`, `SPI.transferBytes()` / `writeBytes()` / `transfer32()`, `Serial.printf()`, `attachInterruptArg()`, `analogWriteFrequency(pin, hz)`, `analogWriteResolution(pin, bits)`, `OUTPUT_OPEN_DRAIN`, and `TX` / `RX` (Serial's default pads) next to `SDA` / `SCL`.

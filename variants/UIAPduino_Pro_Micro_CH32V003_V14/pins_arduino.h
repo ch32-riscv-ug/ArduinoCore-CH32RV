@@ -1,10 +1,8 @@
 /* UIAPduino Pro Micro CH32V003 V1.4 product-board variant. */
 #pragma once
 
-/* Select the QFN20 package masks in the generated silicon variant. */
-#ifndef ARDUINO_CH32V003F4U6
-#define ARDUINO_CH32V003F4U6 1
-#endif
+/* The QFN20 package masks in the generated silicon variant are selected by
+ * CH32_PART_CH32V003F4U6, which boards.txt passes (build.part). */
 
 /* Board facts must precede the L0 header because its standard names are
  * intentionally guarded for product-board overrides. */

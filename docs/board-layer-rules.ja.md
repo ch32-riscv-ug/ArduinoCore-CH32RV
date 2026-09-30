@@ -15,7 +15,7 @@
 ## 1. 問題
 
 いま存在するboardはGeneric(=1 silicon series)だけで、`menu.pnum`で型番を選んでも
-決まるのはflash/RAMとprobe-rs chipに限られる。pin系は**実ボードの配線**で決まるため、
+決まるのはflash/RAMと書き込み時のchip名(ch32rv の `--chip`)に限られる。pin系は**実ボードの配線**で決まるため、
 Genericでは原理的に確定しない。
 
 にもかかわらずvariantは`LED_BUILTIN`のような「板の配線の主張」を出している。
@@ -26,7 +26,7 @@ Genericでは原理的に確定しない。
 | 層 | 実体 | 決まるもの |
 |---|---|---|
 | L0 silicon series | `variants/<SERIES>/pins_arduino.h`(生成) | pad名、port mask、ADCマップ、route表、PWM/timerマップ、clock enable、IRQ、vector table |
-| L1 SKU (型番・package) | `menu.pnum` | flash/RAM、ldscript、probe-rs chip、**bondされているpadの集合** |
+| L1 SKU (型番・package) | `menu.pnum` | flash/RAM、ldscript、ch32rv の chip名、`CH32_PART_<part>`、**bondされているpadの集合** |
 | L2 board (基板) | 製品boardのvariant(未実装) | on-board LED/ボタン、HSE有無と周波数、USB配線、header露出pad、silkscreen名、**既に何かに繋がっていて触ってはいけないpad** |
 | L3 sketch | ユーザコード | 上記以外すべて。`setPins()`/`setRoute()`/コンストラクタ引数 |
 
@@ -148,11 +148,16 @@ examples側に書く案もあるが、ビギナー向けexampleの冒頭が汚�
 
 `digitalPinIsValid` は `CH32_PORT_MASK`(series union)を見る(`cores/arduino/Arduino.h:26`)。
 `CH32V003J4M6`(SOP8, GPIO 6本)を選んでも `digitalPinIsValid(PC7)` は真になる。
-`-DARDUINO_<part>` は `platform.txt:28` で既に出ているが、**読むコードが1つも無い**。
+当初は `-DARDUINO_<part>`(pnumで変わる `build.board`)を読んでいた。
 
-**実装**: `CH32_PORT_MASK_*` を `#if defined(ARDUINO_<part>)` チェーンでSKU別に生成し、
+**実装**: `CH32_PORT_MASK_*` を `#if defined(CH32_PART_<part>)` チェーンでSKU別に生成し、
 どれにも当たらないとき(=ANY)はseries unionにフォールバックする。
 `CH32_PORT_COMMON_MASK_*` はANYの約束なので現状のまま。
+
+**2026-10-01 変更**: `ARDUINO_{build.board}` はpnumで変えず、boardのID(`ARDUINO_CH32V003`、
+`ARDUINO_UIAPDUINO_V003_V14`)に固定した。arduino-esp32 もチップvariantのメニューで
+`ARDUINO_ESP32_DEV` を変えない。型番は `build.part` から `-DCH32_PART_<part>`
+(ANYは `CH32_PART_ANY`)で渡し、製品boardは `build.part` を固定値で持つ。
 
 - 規模: 122 pnumエントリ / 24 series、最大はV203の13(ANY込み)
 - flashコスト: 定数畳み込みなのでゼロ

@@ -150,7 +150,7 @@
  * whole series. See docs/board-layer-rules.ja.md. */
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
-#if defined(ARDUINO_CH32X305RCT6)
+#if defined(CH32_PART_CH32X305RCT6)
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000fff1u
 #define CH32_PORT_MASK_C 0x00003fffu

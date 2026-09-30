@@ -113,23 +113,23 @@
 #define CH32_PORT_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
-#if defined(ARDUINO_CH32M030C8T7)
+#if defined(CH32_PART_CH32M030C8T7)
 #define CH32_PORT_MASK_A 0x0000fdffu
 #define CH32_PORT_MASK_B 0x0000ff7fu
 #define CH32_PORT_MASK_C 0x0000001fu
-#elif defined(ARDUINO_CH32M030C8U3)
+#elif defined(CH32_PART_CH32M030C8U3)
 #define CH32_PORT_MASK_A 0x0000fdffu
 #define CH32_PORT_MASK_B 0x0000ffffu
 #define CH32_PORT_MASK_C 0x0000003bu
-#elif defined(ARDUINO_CH32M030C8U7)
+#elif defined(CH32_PART_CH32M030C8U7)
 #define CH32_PORT_MASK_A 0x0000fdffu
 #define CH32_PORT_MASK_B 0x0000ff7fu
 #define CH32_PORT_MASK_C 0x0000003fu
-#elif defined(ARDUINO_CH32M030G8R7)
+#elif defined(CH32_PART_CH32M030G8R7)
 #define CH32_PORT_MASK_A 0x00002d8cu
 #define CH32_PORT_MASK_B 0x00003f73u
 #define CH32_PORT_MASK_C 0x00000000u
-#elif defined(ARDUINO_CH32M030K8U7)
+#elif defined(CH32_PART_CH32M030K8U7)
 #define CH32_PORT_MASK_A 0x000065dfu
 #define CH32_PORT_MASK_B 0x0000af7fu
 #define CH32_PORT_MASK_C 0x00000020u

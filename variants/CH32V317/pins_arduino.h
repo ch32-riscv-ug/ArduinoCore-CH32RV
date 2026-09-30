@@ -208,13 +208,13 @@
  * the ANY menu entry falls through to the union over the
  * whole series. See docs/board-layer-rules.ja.md. */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
-#if defined(ARDUINO_CH32V317VCT6)
+#if defined(CH32_PART_CH32V317VCT6)
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000ffffu
 #define CH32_PORT_MASK_C 0x0000ffffu
 #define CH32_PORT_MASK_D 0x0000feffu
 #define CH32_PORT_MASK_E 0x0000007fu
-#elif defined(ARDUINO_CH32V317WCU6)
+#elif defined(CH32_PART_CH32V317WCU6)
 #define CH32_PORT_MASK_A 0x0000ffffu
 #define CH32_PORT_MASK_B 0x0000ffffu
 #define CH32_PORT_MASK_C 0x0000fc3fu

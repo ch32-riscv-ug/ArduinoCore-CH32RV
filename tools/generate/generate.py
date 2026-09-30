@@ -1957,9 +1957,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         has 6 GPIO where the series union has 18. platform.txt already defines
         ARDUINO_<part> from build.board, so the package is knowable at compile
         time; nothing read it before, and digitalPinIsValid() answered for the
-        union no matter which part number was selected.
+        union no matter which part number was selected. (Since 2026-10-01 the
+        part is CH32_PART_<part>, from build.part; ARDUINO_<board> no longer
+        moves with the menu.)
 
-        The ANY menu entry sets ARDUINO_<series>, which matches no branch here
+        The ANY menu entry sets CH32_PART_ANY, which matches no branch here
         and falls through to the union - correct, because ANY promises nothing
         about the package. Parts that bond the same pads share one branch.
         """
@@ -1991,7 +1993,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             groups.setdefault(masks_for(pads.get(part, set())), []).append(part)
         for i, (values, members) in enumerate(groups.items()):
             guard = "#if" if i == 0 else "#elif"
-            cond = " || ".join(f"defined(ARDUINO_{m})" for m in members)
+            cond = " || ".join(f"defined(CH32_PART_{m})" for m in members)
             out.append(f"{guard} {cond}")
             for port, mask in zip(present, values):
                 out.append(f"#define CH32_PORT_MASK_{port} 0x{mask:08x}u")
@@ -2554,6 +2556,7 @@ def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict
 
     lines = [f"{board}.name=Generic {series}{suffix}"]
     lines.append(f"{board}.build.board={board}")
+    lines.append(f"{board}.build.part=ANY")
     lines.append(f"{board}.build.core=arduino")
     # What the IDE's serial monitor opens with. The platform specification puts
     # port settings in boards.txt, per board, and the built-in monitor's own
@@ -2641,7 +2644,9 @@ def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict
     for pn, label, flash, sram in entries:
         pfx = f"{board}.menu.pnum.{pn}"
         lines.append(f"{pfx}={label}")
-        lines.append(f"{pfx}.build.board={pn if pn != 'ANY' else series}")
+        # The part goes to CH32_PART_<pn>; ARDUINO_<board> stays the board's
+        # (platform.txt), whichever part is picked.
+        lines.append(f"{pfx}.build.part={pn}")
         lines.append(f"{pfx}.build.ldscript={ld_for(flash, sram)}")
         lines.append(f"{pfx}.upload.maximum_size={flash}")
         lines.append(f"{pfx}.upload.maximum_data_size={sram}")

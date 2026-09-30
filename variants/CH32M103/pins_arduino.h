@@ -122,7 +122,7 @@
 #define CH32_PORT_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
-#if defined(ARDUINO_CH32M103G8R6)
+#if defined(CH32_PART_CH32M103G8R6)
 #define CH32_PORT_MASK_A 0x00007fffu
 #define CH32_PORT_MASK_B 0x0000edebu
 #else   /* ANY, or a board that sets no part: the series union */

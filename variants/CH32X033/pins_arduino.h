@@ -116,7 +116,7 @@
 #define CH32_PORT_MASK_D 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_E 0x00000000u   /* port absent */
 #define CH32_PORT_MASK_F 0x00000000u   /* port absent */
-#if defined(ARDUINO_CH32X033F8P6)
+#if defined(CH32_PART_CH32X033F8P6)
 #define CH32_PORT_MASK_A 0x00000effu
 #define CH32_PORT_MASK_B 0x00000083u
 #define CH32_PORT_MASK_C 0x000f0c08u

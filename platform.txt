@@ -28,7 +28,11 @@ compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_de
 # three at once (CH32V203RBT6 is CH32V20x_D8 while the rest of CH32V203
 # is D6, and their slot numbering diverges).
 compiler.vector_defines=-DCH32_IRQNS=irqn_{build.vector_variant}.h -DCH32_EXTIS=exti_{build.vector_variant}.h -DCH32_CLOCK_INIT={build.clock_init}
-compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_ARCH_{build.arch} -D{build.series}
+# ARDUINO_{build.board} names the board and stays the same whichever part
+# number the menu picks, as on arduino-esp32 (its chip-variant menu does not
+# change ARDUINO_ESP32_DEV either). The part is CH32_PART_{build.part}:
+# CH32_PART_CH32V003F4U6, or CH32_PART_ANY for the ANY entry.
+compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_ARCH_{build.arch} -D{build.series} -DCH32_PART_{build.part}
 
 build.extra_flags=
 # Chosen by the printf menu in boards.txt; empty for the default entry.
