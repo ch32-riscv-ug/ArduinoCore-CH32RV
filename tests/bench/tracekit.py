@@ -164,8 +164,11 @@ class Capture:
         out = bytes(sum(line[i] << k for k, line in enumerate(lines)) for i in range(samples))
         if out:
             extra = {"time_base_slipped": True} if self._segment.slipped else {}
+            # The segment's start on the probe's clock (oep-if-capture §2 since oep-probe-arduino 0.0.10:
+            # start_ns with its uncertainty; it was start_us before).
             self.fx.ws.capture(self._armed, self.rate, interleaved=out, names=list(self.pads),
-                               start_us=self._segment.start_us, **extra)
+                               start_ns=self._segment.start_ns,
+                               start_uncertainty_ns=self._segment.start_uncertainty_ns, **extra)
         return out
 
     def grab(self, rate: int, samples: int, command: str | None = None, reply: str | None = None,
