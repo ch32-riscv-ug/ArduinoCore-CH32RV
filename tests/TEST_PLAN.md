@@ -11,7 +11,7 @@ Directories are cut by what a check **needs**, so each maps to one way of runnin
 |---|---|---|---|
 | `unit/` | nothing | `uv run pytest unit` | every PR |
 | `build/` | the toolchain, arduino-cli, device-data | `uv run pytest build` (`-m "not slow"` for seconds) | every PR |
-| `bench/` | one permanent bench (probe + DUT behind `--profile`) | `uv run --env-file .env pytest bench --profile <board>` | self-hosted runner (later) |
+| `bench/` | one permanent bench (probe + DUT behind `--profile`); builds the working tree (version-less profiles, the repo linked into the sketchbook, tools via `bench/install_tools.py`) | `uv run --env-file .env pytest bench --profile <board>` | self-hosted runner (later) |
 | `manual/` | a person or outside equipment | name the file: `uv run --env-file .env pytest manual/<case>/<case>.py -s` | none |
 | `benches/` | (data) the jigs' definitions, `<name>.toml`, named by `TEST_BENCH_<PROFILE>` | — | — |
 

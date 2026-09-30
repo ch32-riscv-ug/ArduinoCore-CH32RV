@@ -2,11 +2,13 @@
 # /// script
 # requires-python = ">=3.10"
 # ///
-"""Every sketch profile builds the way the documentation says it does.
+"""Every shipped example's profile builds the way the documentation says it does.
 
-A user who follows tests/README.ja.md runs `arduino-cli compile --profile
+A user who downloads a bundled example runs `arduino-cli compile --profile
 <name>`, and arduino-cli then resolves the platform *through the package index*
 named in sketch.yaml - not through an installed core and not through --fqbn.
+(The bench cases' profiles are the other kind - version-less, resolved to the
+working tree linked into the sketchbook - and `pytest bench` builds those.)
 Nothing covered that path:
 
   test_sketch_profiles.py       --fqbn against the working tree; it deliberately
@@ -49,9 +51,13 @@ USED = re.compile(r"Sketch uses (\d+) bytes")
 
 
 def combinations():
-    """[(sketch dir, profile name)] for every profile every sketch.yaml names."""
+    """[(sketch dir, profile name)] for every profile every shipped example's sketch.yaml names.
+
+    The bundled examples are the sketches whose profiles pin a version and name the index - what a
+    user downloads. The bench cases' profiles name the working tree instead (sync_profiles.py) and
+    are built by `pytest bench`, not through an index."""
     out = []
-    for yaml in sorted((REPO / "tests" / "bench").glob("*/*/sketch.yaml")):
+    for yaml in sorted((REPO / "libraries").glob("*/examples/*/sketch.yaml")):
         for name in PROFILE.findall(yaml.read_text(encoding="utf-8")):
             out.append((yaml.parent, name))
     return out

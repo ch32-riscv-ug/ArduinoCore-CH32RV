@@ -53,7 +53,7 @@
 | `sizebench/test_sizebench.py` | newlib のサイズ計測 harness（`slow`） |
 | `package/test_package_install.py` | 生成した index から clean install → 上書きなし compile → upgrade / rollback（`slow`） |
 | `sketches/test_sketch_profiles.py` | bench の全 sketch × sketch.yaml の全 board を compile（`slow`） |
-| `sketches/test_sketch_profile_build.py` | `arduino-cli compile --profile`（loopback の index 経由）で全 sketch × 全 profile（`slow`） |
+| `sketches/test_sketch_profile_build.py` | 同梱 examples の `arduino-cli compile --profile`（版 pin、loopback の index 経由）で全 example × 全 profile（`slow`）。bench の profile は版無し（作業ツリー）なのでここでは見ない |
 
 `build/sketches/` には bench の sketch の道具も置きます: `testcmd.h`（コマンド規約の原本。各 case へ `sync_testcmd.py` が配る）、
 `sync_profiles.py`（`sketch.yaml` の `profiles:` を生成）、`stage.py`、`compile_all.py`、`profile_build.py`。

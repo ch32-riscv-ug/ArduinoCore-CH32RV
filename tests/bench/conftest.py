@@ -16,16 +16,24 @@ done from a test.
 
 `bench` gives a test the checked bench file: wiring (`bench.channel("PA1")`), the DUT
 UART the probe hears (`bench.uart`), measured facts.
+
+The bench builds the working tree, not a release. The profiles name the platform without a
+version, and for the session this repository is linked into the sketchbook as
+<user>/hardware/ch32-riscv-ug/ch32v (host-arduino-core's way); the toolchain and ch32rv come
+from <data>/packages, put there once by bench/install_tools.py, which is checked here too.
 """
 import os
 import pathlib
+import shutil
 import sys
 
 import pytest
 
 HERE = pathlib.Path(__file__).resolve().parent
+REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 import benchdef  # noqa: E402
+import install_tools  # noqa: E402
 
 _BENCH = pytest.StashKey[dict]()
 
@@ -37,6 +45,10 @@ def pytest_collection_modifyitems(session, config, items):
     profile = config.getoption("profile", None)
     if not profile:
         raise pytest.UsageError("bench tests need --profile <board>: the bench is chosen by profile")
+    problems = install_tools.check()
+    if problems:
+        raise pytest.UsageError("the working tree cannot be built as the platform:\n  " + "\n  ".join(problems)
+                                + "\nrun: uv run tests/bench/install_tools.py")
     if config.getoption("run_mode", "all") == "build":
         return                                 # compiling only: no probe is touched, so none is checked
     try:
@@ -72,6 +84,39 @@ def _encode(pad: str) -> int:
     if not m:
         raise pytest.UsageError(f"{pad!r} is not a pad name like PA0")
     return ("ABCDEF".index(m.group(1)) << 5) | int(m.group(2))
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _working_tree_platform():
+    """The repository as <user>/hardware/ch32-riscv-ug/ch32v for the session, so a version-less profile
+    resolves to it. A link that already points here is reused and left; anything else there is an error
+    (install_tools.check has said so). Where the OS refuses a symlink, the release entries are copied."""
+    link = install_tools.platform_link()
+    made = ""
+    if link.is_symlink() and link.resolve() == REPO.resolve():
+        pass
+    elif link.exists() or link.is_symlink():
+        pytest.fail(f"{link} exists and is not a link to {REPO}")
+    else:
+        link.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            link.symlink_to(REPO, target_is_directory=True)
+            made = "symlink"
+        except OSError:
+            sys.path.insert(0, str(REPO / "tools" / "index"))
+            import install_check
+            install_check.stage_platform_copy(link)
+            made = "copy"
+    yield link
+    if made == "symlink" and link.is_symlink():
+        link.unlink()
+    elif made == "copy" and link.exists():
+        shutil.rmtree(link)
+    if made:
+        try:
+            link.parent.rmdir()
+        except OSError:
+            pass
 
 
 def pytest_report_header(config):

@@ -243,10 +243,8 @@ prepare の 3 と同じ関数を呼ぶ。1 秒未満、ロック無し（describ
 残っている probe 側の依頼: capture の edge trigger（backlog）。plan_roles の宣言と DATA0 / GPR の復元は 0.0.7 で入り、
 X035 ジグで確認済み（SPIN 中に halt / read_block / resume を 100 回挟んでも合計が変わらない、dmseq console が 10/10 生き残る）。
 
-**bench は Release の core しか試せない**（profile が公開 index の版を pin する。§4 の「利用者と同じ形」の裏返し）。作業ツリーの
-core を実機で確かめるには、`install_check.py` と同じ loopback の index を立てて profile をそこへ向ける必要がある。今回は
-scratch でやった（reg_probe のコピー + `dev_index.py`）。恒久化するなら `sync_profiles.py` が `<board>-dev` profile を生成し、
-`bench/dev_index.py` が作業ツリーを次の版として配信する形（未決、§12 に足す）。
+bench は当初 Release の core しか焼けなかった（profile が公開 index の版を pin していた）。X035 の ADC 修正の確認は scratch の
+loopback index でやり、その後 §12-8 の形（版無し profile + symlink + `install_tools.py`）に変えて、作業ツリーがそのまま焼かれる。
 
 ## 12. 決めたこと（2026-09-30）
 
@@ -261,3 +259,4 @@ scratch でやった（reg_probe のコピー + `dev_index.py`）。恒久化す
 | 7 | DUT の part は錠にしない。家系の照合（`--chip`）で守る |
 | 依存の版 | 下限だけ（`>=`）。固定はロックファイルの役目。互換のない版が出たら壊れて気づくのが好ましい |
 | firmware の照合 | describe の `firmware`（tag 0x40）。oep-probe-arduino 0.0.5 から Release の版そのもの。「その版の Release の binary か」は prepare が焼くときに json の sha256 で確かめる |
+| 8 | **bench は作業ツリーを焼く**（自分自身の test はリリース前に確かめる。外部は Release のみ）。host-arduino-core と同じ形: bench の profile は platform を版無しで書き、`bench/conftest.py` がリポジトリを `<sketchbook>/hardware/ch32-riscv-ug/ch32v` に symlink する。toolchain と ch32rv は `bench/install_tools.py` が `tools_*.json` の版を `<data>/packages/ch32-riscv-ug/tools/` へ link（砂場で確認: platform を入れずに tool だけ置けば `{runtime.tools.*}` が解ける。自分の platform を Board Manager で入れると版の高いほうが勝つので入れない）。同梱 examples の profile は版 pin + 公開 index のまま、Release の archive は `install_check.py` |

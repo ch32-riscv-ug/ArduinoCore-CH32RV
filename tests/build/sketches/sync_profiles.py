@@ -8,12 +8,20 @@ Two trees, because both need the same board list and must not drift apart:
 
   tests/bench/**/         the HIL cases. Keep their hand-written header
                              comment; only the profiles block is generated.
+                             Their platform is named WITHOUT a version: that
+                             makes arduino-cli take the working tree, linked
+                             into the sketchbook's hardware/ by bench/conftest.py
+                             (host-arduino-core does the same), so the bench
+                             tests the core before it is released. The tools
+                             come from tools_*.json via bench/install_tools.py.
   libraries/*/examples/*/    the bundled examples. Generated in full - they
                              have nothing hand-written to keep, since what a
                              sketch requires is declared in its own .ino
                              (see tests/sketch_requirements.py). They ship to
                              users, so `arduino-cli compile --profile
-                             ch32v003` works on a downloaded example.
+                             ch32v003` works on a downloaded example: the
+                             platform is pinned to platform.txt's version and
+                             resolved through the published index.
 
 A profile is a board, and every sketch needs the same set of them. Written by
 hand that is 24 boards x N sketches of copy-paste that silently drifts (the
@@ -59,6 +67,7 @@ INDEX_URL = ("https://ch32-riscv-ug.github.io/ArduinoCore-CH32/"
 PLATFORM_VERSION = re.search(r"^version=(.+)$", (REPO / "platform.txt").read_text(encoding="utf-8"),
                              re.M).group(1).strip()
 PLATFORM = f"ch32-riscv-ug:ch32v ({PLATFORM_VERSION})"
+PLATFORM_WORKING_TREE = "ch32-riscv-ug:ch32v"       # no version: the platform installed in the sketchbook
 
 # (profile name, board id, tier, note). Keep in sync with docs/TEST_PLAN.ja.md.
 BOARDS = [
@@ -115,12 +124,19 @@ def block(src: pathlib.Path, console: bool = False) -> str:
         # profile run on a WCH-Link and on an OEP probe.
         if console:
             lines += ["    port_config:", "      source: dmseq"]
-        lines += [
-            "    platforms:",
-            f"      - platform: {PLATFORM}",
-            f"        platform_index_url: {INDEX_URL}",
-            "",
-        ]
+        if REPO / "tests" / "bench" in src.parents:
+            lines += [
+                "    platforms:",
+                f"      - platform: {PLATFORM_WORKING_TREE}",
+                "",
+            ]
+        else:
+            lines += [
+                "    platforms:",
+                f"      - platform: {PLATFORM}",
+                f"        platform_index_url: {INDEX_URL}",
+                "",
+            ]
     if not kept:
         raise SystemExit(f"{src.name}: its requirements leave no tier A/B board "
                          f"to run on. A sketch nobody can run is not a sketch "

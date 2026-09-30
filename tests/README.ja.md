@@ -7,6 +7,7 @@
 
 ```sh
 uv run tools/index/fetch_tools.py     # toolchain / device-data を <repo>/.tools へ
+uv run tests/bench/install_tools.py   # ベンチ用: その toolchain と ch32rv を arduino-cli の packages/ へ link（bump_tool.py の後も）
 cd tests && uv sync                   # Python 3.13、pytest-embedded-arduino-cli(-ch32rv)、pytest-embedded-wireskein
 cp .env.example .env                  # このベンチの port と bench file。任意
 ```
@@ -61,9 +62,15 @@ X035 ジグは P4 の USB-Serial/JTAG から焼くので `TEST_BENCH_CH32X035_UP
 
 ### つまずきやすい点
 
-- **`sketch.yaml` の profile は index から入れた platform しか解決しません。** 作業ツリーの symlink では tool の依存が解けません。
-  ベンチも利用者と同じ「公開 index から入れる」形で、profile が pin する版は `platform.txt` と同じ（`sync_profiles.py` が読む）。
-  リリース前の検査だけ `tools/index/install_check.py` が loopback の index を使います。
+- **bench は作業ツリーを焼きます（Release ではなく）。** bench の `sketch.yaml` の profile は platform を**版無し**で書き
+  （`- platform: ch32-riscv-ug:ch32v`）、`bench/conftest.py` がセッションの間だけこのリポジトリを
+  `<sketchbook>/hardware/ch32-riscv-ug/ch32v` に symlink します（host-arduino-core と同じ形）。toolchain と ch32rv は
+  `{runtime.tools.*.path}` で引かれるので、`bench/install_tools.py` が `tools_*.json` の版を `<data>/packages/ch32-riscv-ug/tools/`
+  へ link しておきます（pytest が最初に照合し、無ければそのコマンドを案内して止まる）。**自分の platform を Board Manager で
+  入れてはいけません**: 同じ platform が 2 つあると arduino-cli は版の高いほうを取り、Release が作業ツリーの代わりに焼かれます
+  （`--check` が見つけます）。外部（プローブの esp32 platform、ライブラリ）は版 pin の Release のみ。同梱 examples の profile は
+  利用者向けなので版 pin + 公開 index のまま（`profile_build.py` がそれを loopback の index で確かめる）。Release の archive
+  そのものの検査は `tools/index/install_check.py`。
 - **console は UART ではなく debug module（`SerialDMSeq`、dmseq）です。** ch32rv の monitor が読みます。UART は試験対象で、どの USART が
   probe に届いているかは bench file の `[uart]` が言い、test が `UART <n> <route> <baud>` で sketch に指名します。
 - **console の往復は ch32rv 0.12.2 で 13〜26 ms、0.12.3 で 2 ms**（monitor の 20 ms の待ちが直った）。trace 試験の capture の窓は
