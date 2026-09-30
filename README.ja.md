@@ -105,8 +105,8 @@ release archiveへ入るのは`platform.txt` / `boards.txt` / `cores` / `variant
 - [vendor取込方針](docs/vendor-policy.ja.md)
 - [toolchain方針](docs/toolchain.ja.md)
 - [フラッシュサイズの削り方](docs/flash-size.ja.md)
-- [書き込みとfixture](docs/upload-and-fixture.ja.md)
-- [テスト戦略](docs/test-strategy.ja.md)
+- [開発ワークフローとテスト計画](docs/development-workflow.ja.md)
+- [テスト計画（入口と実行手順）](tests/TEST_PLAN.ja.md)
 - [ロードマップ](docs/roadmap.ja.md)
 - [未決定事項](docs/open-questions.ja.md)
 

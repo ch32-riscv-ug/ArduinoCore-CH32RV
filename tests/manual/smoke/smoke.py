@@ -1034,16 +1034,9 @@ def main() -> int:
 # test rather than at the top, because as a CLI this file runs under a bare
 # `uv run`, which installs only the dependencies declared above.
 
-def test_sketch_runs_on_the_board(bench, sketch_name):
-    """Compile, flash and read back one sketch, the way a user would."""
-    import pytest
-    print(f"\n===== {sketch_name}")
-    result = run_one(sketch_name, bench)
-    print(f"{MARK[result['verdict']]} {sketch_name}: {result['why']}")
-    if result["verdict"] == "skip":
-        pytest.skip(result["why"])
-    assert result["verdict"] == "pass", result["why"]
-
-
+# The sketch replay (`--sketch all`, one pytest case per sketch) is gone: the sketches are bench tests now,
+# `pytest bench --profile <board>` (tests/bench). What is left here is the bench library the LinkE tools and
+# the jumper tests share (find_probes / resolve_bench / build / upload / detected_chip), until the formal
+# benches replace them.
 if __name__ == "__main__":
     sys.exit(main())

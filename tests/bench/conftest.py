@@ -55,10 +55,14 @@ def pytest_collection_modifyitems(session, config, items):
 
 def _compile_time_facts(bench) -> None:
     """The few bench facts a sketch needs before it can talk (build_config.toml <- environment): the boot
-    marker pad, as the core's pin number."""
+    marker pad as the core's pin number, and the UART a sketch may put its console on."""
     pwm = bench.facts.get("pwm")
     if pwm:
         os.environ.setdefault("TEST_BENCH_MARK_PIN", str(_encode(pwm)))
+    uart = bench.data.get("uart")
+    if uart:                                   # a sketch whose console is that UART (bench/regs/reg_probe)
+        os.environ.setdefault("TEST_BENCH_CONSOLE_UART", str(uart["usart"]))
+        os.environ.setdefault("TEST_BENCH_CONSOLE_ROUTE", str(uart["route"]))
 
 
 def _encode(pad: str) -> int:

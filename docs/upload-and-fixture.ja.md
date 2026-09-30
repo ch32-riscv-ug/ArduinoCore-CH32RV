@@ -1,5 +1,7 @@
 # 書き込みと実機fixture
 
+> **役目を終えた文書（2026-09-30）。** 方針は [development-workflow.ja.md](development-workflow.ja.md) と [oep-workflow.ja.md](oep-workflow.ja.md) が正で、ここは当時の検討と実測の記録として残しています。
+
 文書状態: 提案および要実機検証
 
 書き込み経路×familyの対応表、互換programmerのエコシステム、upload_methodメニュー構成案は[R-17調査](research/upload-programmers.ja.md)を参照。

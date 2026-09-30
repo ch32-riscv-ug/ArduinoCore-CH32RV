@@ -1,5 +1,7 @@
 # 自作 probe(DUT harness)の評価と依頼事項
 
+> **役目を終えた文書（2026-09-30）。** 方針は [development-workflow.ja.md](development-workflow.ja.md) と [oep-workflow.ja.md](oep-workflow.ja.md) が正で、ここは当時の検討と実測の記録として残しています。
+
 文書状態: **提案**(調査結果と依頼案。個々の実施可否・順序の判断は probe 側)
 文書基準日: 2026-09-06
 関連: [test-strategy](test-strategy.ja.md)(HIL とロジアナ)、[upload-and-fixture](upload-and-fixture.ja.md)(fixture 構成)、

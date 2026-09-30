@@ -7,7 +7,7 @@ deliberate: these tests flash the attached board, which is not something a bare
 
     cd tests
     uv run --env-file .env pytest manual/chip_info/chip_info.py -v -s
-    uv run --env-file .env pytest manual/smoke/smoke.py -v -s
+    uv run --env-file .env pytest manual/uart_scan/uart_scan.py -v -s
 
 Which probe, which board and which port are not fixed on this bench, so they
 come from the environment the same way the loopback pins do - see
@@ -103,16 +103,3 @@ def uart_routes(attached):
             seconds=float(os.environ.get("CH32_SECONDS", 12.0)))
     except smoke.Failure as e:
         pytest.fail(str(e))
-
-
-def pytest_generate_tests(metafunc):
-    """CH32_SKETCH decides how many cases there are, so it cannot be a fixture.
-
-        CH32_SKETCH=all uv run pytest manual/smoke/smoke.py -v -s
-
-    Default is smoke.DEFAULT_SKETCH, the one sketch worth running after any
-    change; `all` is what to run after swapping a board onto the bench.
-    """
-    if "sketch_name" in metafunc.fixturenames:
-        metafunc.parametrize("sketch_name", smoke.sketch_names(
-            os.environ.get("CH32_SKETCH", smoke.DEFAULT_SKETCH)))

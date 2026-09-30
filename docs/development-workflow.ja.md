@@ -1,6 +1,6 @@
 # 開発ワークフローとテスト計画
 
-文書基準日: 2026-09-30。状態: **決定**（2026-09-30。§12 の判断は決まり、§11 の順で実装中）。
+文書基準日: 2026-09-30。状態: **決定**（2026-09-30。§12 の判断は決まり、§11 の 1〜6 は実装済み、7 は正式ベンチ待ち）。
 [oep-workflow.ja.md](oep-workflow.ja.md)（OEP を含む最終の形）の「§7 pytest の道具」「§9 β」を、
 日々の作業とベンチの運用まで含めて 1 本にしたもの。個々の道具の仕様は各リポジトリが正で、ここは分担と手順を置く。
 
@@ -228,17 +228,20 @@ prepare の 3 と同じ関数を呼ぶ。1 秒未満、ロック無し（describ
 
 正式ベンチができるまで bench の job は作らない（手で回す）。
 
-## 11. 移行の順序（案）
+## 11. 移行の順序と進捗（2026-09-30）
 
-1. `benches/*.toml` と `.env` の規約を決め、X035（P4）と LinkE 7 台分を書く。`prepare.py --check` と `bench/conftest.py` の照合。
-2. `sketches/basic/*` を `bench/*` に移し、`bench_*.py` → `test_*.py`。`build/` へ profile build の 2 テストを移す。layout test を更新。
-   `pyproject.toml` の依存にプラグインを足し、`--with` を無くす。
-3. `prepare.py` の焼き直し（P4 → classic ESP32 → RP2350）。X035 ジグで一巡。
-4. trace 試験を `bench/trace/` に移す（`trace_kit.Run` → `ws_run`、`targets.py` → TOML）。1 本ずつ、旧と結果を突き合わせながら。
-5. `reg_probe` を `oep_host` 経由に。`crt0_probe` を自動に。
-6. 旧 runner / expect.py / targets.py / probe-rs の残りを消す。TEST_PLAN と README を書き直す。古い docs（test-strategy、harness-*、
-   upload-and-fixture、infrastructure）を research へ移すか消す。
-7. 正式ベンチが届いたら家系ごとに TOML を書き、`prepare.py` で立ち上げ、`run_all.py` で一巡 → self-hosted runner。
+| # | 作業 | 状態 |
+|---|---|---|
+| 1 | `benches/*.toml` と `.env` の規約。X035（P4）と LinkE 7 台分。`prepare.py --check` と `bench/conftest.py` の照合 | 済 |
+| 2 | `sketches/basic/*` → `bench/basic/*`、`bench_*.py` → `test_*.py`。profile build の 2 テストは `build/sketches`。layout test、CI、`pyproject` の依存にプラグイン | 済（X035 P4 14/14、V203 LinkE 14/14） |
+| 3 | `prepare.py` の焼き直し（Release の tag から example をビルド、全消去、設定、照合、WSL の usbipd 付け直し） | 済（X035 ジグで全工程） |
+| 4 | trace 6 本を `bench/trace/` に（`trace_kit.Run` → `ws_run`、`targets.py` → bench file、pin は実行時に） | 済（X035: periph 5/5、gpio 1/1、adc 2/2、reset 1/1、i2c 5/5、uart 2/2） |
+| 5 | `crt0_probe` を probe が RAM を埋める形で自動に。`reg_probe` を `oep_host` の riscv-dm 経由に | crt0 済（1/1）。reg_probe は **probe の halt/resume が core のレジスタを戻さない不具合**で xfail（dev_oep が d1fe654 で直し、0.0.6 待ち） |
+| 6 | 旧 runner（`oep_smoke`、`oep_*_trace`、`reg_probe`、`crt0_probe`、`expect.py`）を消す。TEST_PLAN / README を書き直す。役目を終えた docs に注記 | 済。LinkE 経路の道具（chip_info / uart_scan / probe_switch / smoke.py）とジャンパの試験は manual に残る（正式ベンチまで）。probe-rs の残り（`tools_probe_rs.json`、fetch）は smoke.py が使うので同時に消す |
+| 7 | 正式ベンチが届いたら家系ごとに TOML、`prepare.py` で立ち上げ、`run_all.py` で一巡 → self-hosted runner | 未（`run_all.py` も未） |
+
+残っている probe 側の依頼: capture の edge trigger（backlog）、plan_roles の宣言（0.0.6）、DATA0 / GPR の復元（0.0.6）。
+0.0.6 を焼いたら reg_probe の xfail を外し、console を dmseq に戻せるか（halt/resume を挟んでも黙らないか）を確かめる。
 
 ## 12. 決めたこと（2026-09-30）
 

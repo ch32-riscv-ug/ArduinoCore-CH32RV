@@ -1,5 +1,7 @@
 # harness の配線設計 — 各シリーズで何に繋げば何が試験できるか
 
+> **役目を終えた文書（2026-09-30）。** 方針は [development-workflow.ja.md](development-workflow.ja.md) と [oep-workflow.ja.md](oep-workflow.ja.md) が正で、ここは当時の検討と実測の記録として残しています。
+
 文書状態: **提案**(`ch32-device-data` の生成物から機械的に導出。実配線・実測は未)
 文書基準日: 2026-09-06
 前提: [harness-probe](harness-probe.ja.md)(harness を採る/採らないの評価)。本文書はその**配線の中身**を詰める。

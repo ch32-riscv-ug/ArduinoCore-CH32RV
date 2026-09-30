@@ -38,7 +38,7 @@
 |---|---|
 | [handoff.ja.md](handoff.ja.md) | 新しいスレッド／担当者向けの要約 |
 | [research/README.ja.md](research/README.ja.md) | 事前調査(startup、EVT構造、SKU/board構造、toolchain、テスト環境) |
-| [infrastructure.ja.md](infrastructure.ja.md) | 環境整備計画(実機なしworkstream、repository分離、GitHub Actions/Pages) |
+| [infrastructure.ja.md](infrastructure.ja.md) | （役目を終えた。記録）環境整備計画(実機なしworkstream、repository分離、GitHub Actions/Pages) |
 | [experiments/](experiments/0001-xpack-multilib-smoke.ja.md) | 実験記録(0001〜。toolchain、startup等価性、platform、generator、index install、newlibサイズ) |
 | [project-scope.ja.md](project-scope.ja.md) | プロジェクト目標、初期スコープ、非目標 |
 | [architecture.ja.md](architecture.ja.md) | Arduino API、内部HAL、SoC、EVT互換の境界 |
@@ -49,17 +49,17 @@
 | [vendor-policy.ja.md](vendor-policy.ja.md) | 外部ソースの固定、取込、patch、ライセンス方針 |
 | [toolchain.ja.md](toolchain.ja.md) | toolchainの候補、選定条件、認定matrix |
 | [flash-size.ja.md](flash-size.ja.md) | 何がフラッシュを食うか、map fileの読み方、削り方 |
-| [upload-and-fixture.ja.md](upload-and-fixture.ja.md) | uploader、WCH-Link識別、実機fixture |
+| [upload-and-fixture.ja.md](upload-and-fixture.ja.md) | （役目を終えた。記録）uploader、WCH-Link識別、実機fixture |
 | [uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md) | UIAPduinoのHID書き込み、SWIOジグによるboot mode復帰、失敗時の復旧 |
 | [ch32rv-requests.ja.md](ch32rv-requests.ja.md) | 同梱予定uploader `ch32rv` への依頼事項(ドッグフーディング前/同梱リリース前/リリース後の区分)と、コア側の受け入れ作業 |
 | [development-probe-functional-spec.ja.md](development-probe-functional-spec.ja.md) | MCU実装に依存しない開発用プローブの機能仕様。能力class、ペリフェラル別の検証範囲と限界、横展開level |
-| [harness-requirements.ja.md](harness-requirements.ja.md) | **harnessへの要求カタログ(ID付き)**。protocol側でのマージ用。相反する要求、コアが「どちらでもよい」もの、将来枠も含む |
-| [harness-probe.ja.md](harness-probe.ja.md) | 自作probe(DUT harness = 書込+ロジックキャプチャ+周辺エミュ)の評価と依頼事項。方法4の空白、入力側刺激、EmbedBench接続 |
-| [harness-wiring.ja.md](harness-wiring.ja.md) | harnessの配線設計。series別のpad群分け、16本割当3案、必要な相手の数、試験できないペリフェラル |
-| [harness-testing.ja.md](harness-testing.ja.md) | harnessをどう叩くか。pytestが主、能力宣言と配線表とpinmuxを突き合わせるresolver、セッション/socket、デバイス模型の置き場所 |
+| [harness-requirements.ja.md](harness-requirements.ja.md) | （役目を終えた。記録）**harnessへの要求カタログ(ID付き)**。protocol側でのマージ用。相反する要求、コアが「どちらでもよい」もの、将来枠も含む |
+| [harness-probe.ja.md](harness-probe.ja.md) | （役目を終えた。記録）自作probe(DUT harness = 書込+ロジックキャプチャ+周辺エミュ)の評価と依頼事項。方法4の空白、入力側刺激、EmbedBench接続 |
+| [harness-wiring.ja.md](harness-wiring.ja.md) | （役目を終えた。記録）harnessの配線設計。series別のpad群分け、16本割当3案、必要な相手の数、試験できないペリフェラル |
+| [harness-testing.ja.md](harness-testing.ja.md) | （役目を終えた。記録）harnessをどう叩くか。pytestが主、能力宣言と配線表とpinmuxを突き合わせるresolver、セッション/socket、デバイス模型の置き場所 |
 | [development-workflow.ja.md](development-workflow.ja.md) | **開発ワークフローとテスト計画(決定、2026-09-30)**。層(unit / build / bench / manual)、ベンチの定義(`.env` + `tests/benches/*.toml`)、プローブの準備と照合(`tests/bench/prepare.py`)、自動と手動の境界、日々のコマンド、繰り返す作業のコマンド化、移行の順序 |
 | [oep-workflow.ja.md](oep-workflow.ja.md) | **OEP を含む開発ワークフローの最終の形(決定、2026-09-29)**。書き込みの経路、IDE port と discovery、probe の serial port の原則、スロットと bind、monitor(ch32rv)、pytest の道具の家系、β の範囲、各リポジトリに要る変更 |
-| [test-strategy.ja.md](test-strategy.ja.md) | unit、host、compile、HIL、logic analyzer、CI |
+| [test-strategy.ja.md](test-strategy.ja.md) | （役目を終えた。記録）unit、host、compile、HIL、logic analyzer、CI |
 | [board-layer-rules.ja.md](board-layer-rules.ja.md) | どの層(series/SKU/board/sketch)が何を定義してよいか。`LED_BUILTIN`とSKU maskの扱い |
 | [examples-build-rules.ja.md](examples-build-rules.ja.md) | examplesのビルド対象宣言、capabilityによるスキップ、簡易テストとsweepの分離 |
 | [software-peripherals.ja.md](software-peripherals.ja.md) | bit-bangで実装できるペリフェラルの調査と仕様(SoftSPI/SoftWire/SoftSerial/OneWire) |

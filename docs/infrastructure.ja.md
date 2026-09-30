@@ -1,5 +1,7 @@
 # 環境整備計画(実機なしフェーズ、repository分離、自動化)
 
+> **役目を終えた文書（2026-09-30）。** 方針は [development-workflow.ja.md](development-workflow.ja.md) と [oep-workflow.ja.md](oep-workflow.ja.md) が正で、ここは当時の検討と実測の記録として残しています。
+
 文書基準日: 2026-08-19
 文書状態: 方針は決定済み、個別の構成は提案
 

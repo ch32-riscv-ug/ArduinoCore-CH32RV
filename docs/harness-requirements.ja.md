@@ -1,5 +1,7 @@
 # harness への要求カタログ(コア側)
 
+> **役目を終えた文書（2026-09-30）。** 方針は [development-workflow.ja.md](development-workflow.ja.md) と [oep-workflow.ja.md](oep-workflow.ja.md) が正で、ここは当時の検討と実測の記録として残しています。
+
 文書状態: **要求の列挙**。**決定でも合意でもない**
 文書基準日: 2026-09-06
 

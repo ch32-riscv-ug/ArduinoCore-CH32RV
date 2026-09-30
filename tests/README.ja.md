@@ -1,199 +1,75 @@
 # tests
 
-**まず[テスト計画](TEST_PLAN.ja.md)を読んでください。** 自動/手動の切り分け、
-検証boardの階層、ペリフェラル別の検証方法、Board Manager配布物としての検証項目が
-そこにまとまっています。ここはその実行手順です。
+**まず[テスト計画](TEST_PLAN.ja.md)を読んでください。** 層の切り方と入口の一覧、実行手順がそこにあります。方針と決定は
+[docs/development-workflow.ja.md](../docs/development-workflow.ja.md)。ここは道具の在処と、つまずきやすい点です。
 
-## 実行
-
-**すべて`pytest`ひとつで回ります。**
+## セットアップ
 
 ```sh
-cd tests
-uv run pytest                                   # boardもprofileも要らないもの全部(約7分)
-uv run pytest --clean                           # 同じものを、cacheを消してから
-uv run pytest -m "not slow"                     # compile系を飛ばす(数秒)
+uv run tools/index/fetch_tools.py     # toolchain / device-data を <repo>/.tools へ
+cd tests && uv sync                   # Python 3.13、pytest-embedded-arduino-cli(-ch32rv)、pytest-embedded-wireskein
+cp .env.example .env                  # このベンチの port と bench file。任意
 ```
 
-実機でsketchを回すのはpytestではなく`manual/`のrunnerです(下の[sketches/](#sketches))。
-
-`--clean`は`conftest.py`のoptionで、`.pytest_cache`、`__pycache__`、前回のscratch
-ディレクトリの残骸を消します。`.tools`(toolchain /
-probe-rs)と`~/.arduino15`は消しません——消しても結果は変わらず、実行が1時間伸びるだけ
-だからです。
-
-**カテゴリごとに1ディレクトリ**で、そのディレクトリ名を渡せばその範囲だけ回ります。
-規約の全文は[テスト計画の「テストの種類とディレクトリ」](TEST_PLAN.ja.md)です。
-
-| ディレクトリ | 入口 | 内容 | 実機 | marker |
-|---|---|---|---|---|
-| `generated/` | `test_generated.py` | 生成物とsketch profileがtablesと同期しているか | 不要 | |
-| `vendor/` | `test_vendored_api.py` | `cores/arduino/api`がpin先とバイト一致 | 不要 | |
-| | `test_vendored_tinyusb.py` | TinyUSB snapshotがlockのSHA-256と一致 | 不要 | |
-| [`startup/`](startup/README.ja.md) | `test_interrupt_tables.py` | 割込み表がEVT startupと一致 | 不要 | EVT mirror要 |
-| | `test_startup_equivalence.py` | 統合crt0とEVT startupのELF等価性(14 variant) | 不要 | `slow`、EVT mirror要 |
-| [`compile/`](compile/README.ja.md) | `test_compile_matrix.py` | 全122 part numberのcompile + sizeベースライン | 不要 | `slow` |
-| | `test_examples.py` | 同梱examplesが全部compileできる | 不要 | `slow` |
-| [`sizebench/`](sizebench/README.ja.md) | `test_sizebench.py` | newlibのサイズ計測(nano vs full) | 不要 | `slow` |
-| `package/` | `test_package_install.py` | Board Manager install → 上書きなしcompile → upgrade/rollback | 不要 | `slow` |
-| [`sketches/`](sketches/) | `test_sketch_profiles.py` | 全sketch × 全profile boardのcompile | 不要 | `slow` |
-| | `test_sketch_profile_build.py` | `arduino-cli compile --profile`(=index経由)で全sketch × 全profile | 不要 | `slow` |
-| `unit/` | `test_clock_prescaler.py` | AHB分周器の符号化表(compile時assertのみ) | 不要 | |
-| | `test_tests_layout.py` | この表の規約そのもの | 不要 | |
-| [`manual/`](manual/README.ja.md) | `<case>/<case>.py` | 手動test + 実機tool | 必要 | 明示指定のみ |
-
-`manual/`は
-`test_`プレフィックスを付けておらず、`norecursedirs`にも入れてあるので、
-ファイルを名指ししない限り収集されません——引数なしの`pytest`が実機を
-焼きにいかないための二重の防護です。
-
-実機tool(`chip_info` / `smoke` / `uart_scan`)も**pytestのcase**です。
-CLIとしても残していますが、それは対話的に作業台を見る場面のためで、
-どちらも同じ関数を呼びます。
-
-harnessはすべて**Pythonモジュール**で、pytestは`import`して関数を呼びます
-(以前はshell scriptをsubprocessで起動し、標準出力のmarker文字列をassertしていました。
-Windows専用のバグを3回作ったのでやめました: shebang非対応、bash 3.2の構文、
-パス区切り)。単独でも動きます。入口(`test_*.py`)とharnessは同じディレクトリに
-置いてあります。
-
-```sh
-uv run tests/build/compile/compile_matrix.py <workdir>        # compile matrix + size baseline
-uv run tests/build/startup/startup_equivalence.py <workdir>   # crt0等価性
-uv run tests/build/sizebench/sizebench.py <workdir>           # newlibサイズ計測
-uv run pytest manual/<case>/<case>.py -v -s             # 手動test
-```
-
-## sketches/
-
-**1 caseにつき1 sketchディレクトリ**です。`sketch.yaml`はそのsketchをどのboardで
-buildできるかの約束で、`test_sketch_profiles.py`が全部buildして確かめます。実機での
-実行は`manual/`のrunnerが各caseの`expect.py`を再生します。
-
-```text
-sketches/
-  testcmd.h          コマンド規約の雛形(原本)。各caseへ配る
-  sync_testcmd.py    testcmd.hを各caseへコピー / --checkで差分検出
-  sync_profiles.py   sketch.yamlのprofilesブロックを生成 / --check
-  stage.py           buildディレクトリへ何をコピーするか(3つのharnessで共有)
-  compile_all.py     全sketch × 全profile boardをcompile
-  profile_build.py   loopback index経由で --profile build
-
-  <category>/<case>/
-    sketch.yaml      profile定義(board = profile)。生成物
-    <case>.ino
-    testcmd.h        sync_testcmd.pyが配ったコピー。**直接編集しない**
-    expect.py        runnerが再生する台本。1関数で、バナーを待ち、コマンドを送り、順に読む。
-                     `console`と`uart`を名前で呼ぶだけで、どう繋ぐかは書かない
-```
-
-sketchは**コマンド規約**に従います。`setup()`は`tc_begin()`だけ、`loop()`が
-`"<name> READY"`を0.5秒ごとに出しながらコマンドを待ち、`RUN`を受けてから判定を
-走らせます。ハーネスの出入口は`Console`(debug moduleのコンソール)で、UARTは
-試験対象です。ホスト側は**1 sketch = 1台本**(`expect.py`)で、その中で順に読みます。
-理由と全文は[テスト計画の「実機テストのコマンド規約」](TEST_PLAN.ja.md)にあります。
-
-`testcmd.h`が各caseにコピーで置いてあるのは、**arduino-cliがsketchフォルダの外を
-コンパイルしないから**です。原本は`sketches/testcmd.h`だけで、コピーは生成物です。
-
-`sketch.yaml`のprofile一覧も**生成物**です。boardを増減するときは
-[`sketches/sync_profiles.py`](sketches/sync_profiles.py)の`BOARDS`だけを直します。
-
-```sh
-uv run tests/build/sketches/sync_profiles.py           # 全sketch.yamlを再生成
-uv run tests/build/sketches/sync_testcmd.py            # testcmd.hを配り直す
-uv run tests/build/sketches/sync_profiles.py --check   # CI: 古ければ失敗
-uv run tests/build/sketches/sync_testcmd.py --check    # 同上
-CH32_GCC_BIN=<xpack>/bin tests/build/sketches/compile_all.py /tmp/sk   # 全組み合わせをcompile
-```
-
-どちらの`--check`も`generated/test_generated.py`が回します。
-
-sketchによっては小さいboardに載りません(`String`はCH32V003の2 KB RAMに入らない、
-newlibのフルprintfは約40 KB)。その下限は`sync_profiles.py`の`REQUIREMENTS`に書き、
-入らないboardはそのsketchのprofileから外します。`compile_all.py`が全組み合わせを
-実際にcompileするので、**載らないboardをprofileが名乗ることはできません**。
-
-### セットアップ
-
-clone直後にこれだけです。
-
-```sh
-uv run tools/index/fetch_tools.py     # toolchain / probe-rs / device-data を .tools/ へ
-cd tests && uv sync
-cp .env.example .env                  # 作業台固有の設定(手動testのpin等)。任意
-```
-
-`arduino-cli`がPATHに必要です。それ以外は`<repo>/.tools`に入り、**環境変数の設定は不要**です。
-
-#### ツールがどこから来るか
+`arduino-cli` が PATH に要ります。それ以外は `<repo>/.tools` に入り、環境変数の設定は要りません。
 
 | | |
 |---|---|
-| 置き場所 | `<repo>/.tools/<name>/<version>/`(gitignore済み) |
-| 版の正本 | [`tools/index/tools_*.json`](../tools/index/)。package indexを作るのと同じファイルなので、**利用者がinstallするのと同じ版**でtestが回る |
-| 完全性 | ダウンロードは展開前にSHA-256を照合 |
-| device-data | `vendor/ch32-device-data.lock.toml`が記録しているlocked commitでcheckoutする |
-| probe-rs | [`mirror-probe-rs`](https://github.com/ch32-riscv-ug/mirror-probe-rs)から([ADR-0011](../docs/adr/0011-tool-mirror-repository.ja.md)) |
+| 置き場所 | `<repo>/.tools/<name>/<version>/`（gitignore 済み） |
+| 版の正本 | [`tools/index/tools_*.json`](../tools/index/)。package index を作るのと同じファイルなので、**利用者が install するのと同じ版**で test が回る |
+| 完全性 | ダウンロードは展開前に SHA-256 を照合 |
+| device-data | `vendor/ch32-device-data.lock.toml` の locked commit を checkout |
+| 上書き | `CH32_GCC_BIN` / `CH32_TABLES` が設定済みならそちら（`loader.py`） |
 
-環境変数(`CH32_GCC_BIN` / `CH32_PROBE_RS` / `CH32_TABLES` / `CH32_XPACK_ARCHIVE`)は
-**上書き用として残してあります**。設定済みならそちらが優先されるので、
-作業台に別の場所へ置いた物があっても使えます。
+`.tools/cache` は取ってきたアーカイブの置き場で、消しても取り直すだけです（約 400 MB）。EVT mirror（`CH32_MIRROR_ROOT`）だけは
+`.tools` に入れていません（startup 等価性の test だけが使う大きな clone）。
 
-**shell scriptは1本もありません。** 全harnessがPythonで、`bash`に依存しません
-(Windowsでの3件の不具合がすべてshell由来だったため)。
-
-`.tools/cache`はダウンロードしたアーカイブの置き場です。消しても次回取り直すだけです
-(約400MB)。
-
-EVT mirror(`CH32_MIRROR_ROOT`)だけは`.tools`に入れていません。他repositoryの
-大きなcloneで、[startup等価性test](startup/README.ja.md)しか使わないためです。
-
-`.env`は**作業台ごとの設定**です。手動testが使うpadのように、どのboardが載っているかで
-変わる値を置きます。既定値はどれも作者の作業台で動く値なので、未設定でもエラーにはなりません。
+## 実行
 
 ```sh
-uv run --env-file .env manual/gpio_loopback/gpio_loopback.py
+cd tests
+uv run pytest                                   # unit + build（約 7 分）
+uv run pytest -m "not slow"                     # compile 系を飛ばす（数秒）
+uv run pytest --clean                           # cache を消してから
+uv run --env-file .env pytest bench --profile ch32x035          # 常設ベンチ 1 台の全部
+uv run --env-file .env pytest bench/basic/serial_println --profile ch32v203 -s
 ```
 
-`.env`はgitignoreされていて、[`.env.example`](.env.example)が唯一の説明です。
+`--clean` は pytest-embedded-arduino-cli の option（`arduino-cli compile --clean`）で、`conftest.py` がそれに乗って `.pytest_cache`
+と scratch も消します。`.tools` と `~/.arduino15` は消しません（消しても結果は変わらず、1 時間伸びるだけ）。
 
-### 実行
+harness はすべて Python module で、pytest は `loader.load()` で読んで関数を呼びます。単独でも `uv run` できます
+（shell script は 1 本もありません。Windows で 3 回壊れたのでやめました）。
+
+## ベンチ
+
+`.env`（commit しない）にはこの machine の port と bench file の名前だけを書きます。配線・期待するプローブの版・スロット・bind・
+plan・測った事実は `benches/<name>.toml`（治具の設計、commit する）にあります。
 
 ```sh
-# 実機なし(CIが回す形)。全sketch × sketch.yamlの全boardをbuild
-uv run pytest build/sketches/test_sketch_profiles.py
-
-# 実機あり。経路ごとにrunnerが違う(繋ぎ方=IFが違うため)
-uv run manual/smoke/smoke.py --sketch all                        # WCH-Link(ch32rvでコンソール)
-uv run manual/oep_smoke/oep_smoke.py --target x035 --sketch all   # OEP probe(target.console)
+TEST_SERIAL_PORT_CH32X035=oep://30eda0e31108-hs/x035     # IDE port（wchlink://<serial> でも）
+TEST_BENCH_CH32X035=x035-p4                                # benches/x035-p4.toml
 ```
-
-### profileと開発中platformの関係(重要)
-
-`sketch.yaml`のprofileは**index経由でinstallされたplatformしか解決できません**。
-[R-15](../docs/research/local-install-and-test-env.ja.md)の方式A(repoを
-`<sketchbook>/hardware/`へsymlink)はprofileでは使えないため、ローカル開発では
-方式B(ローカルindex配信)を使います。
 
 ```sh
-python3 tools/index/gen_index.py --platform . --out /tmp/idx \
-    --base-url http://127.0.0.1:8781 --tools local
-(cd /tmp/idx && python3 -m http.server 8781)
+uv run --env-file .env bench/prepare.py --profile ch32x035 --check   # プローブが bench file と合っているか（pytest も最初にこれをする）
+uv run --env-file .env bench/prepare.py --profile ch32x035           # 全消去 → Release の firmware を焼く → 設定 → 照合
 ```
 
-`sketch.yaml`の`platform_index_url`をこのURLへ向けてください。
+X035 ジグは P4 の USB-Serial/JTAG から焼くので `TEST_BENCH_CH32X035_UPLOAD`、WSL では焼くたびに HS の口が usbipd から外れるので
+`TEST_BENCH_CH32X035_USBIP_BUSID` も要ります（[.env.example](.env.example)）。
 
-**arduino-cli 1.3.1の既知の不具合**: profileに`platforms`が無いと、エラーではなく
-panicします(`internal/arduino/sketch/profiles.go:125`)。
+### つまずきやすい点
 
-### 書き込み経路(非シリアル)
-
-CH32の書き込みはWCH-LinkE(SWD)で、シリアルではありません。arduino-cli 1.3.1で
-次を実測確認済みです。
-
-- `programmers.txt` + `platform.txt`の`tools.<t>.program.pattern`(`{serial.port}`非参照)を用意し、
-  profileに`programmer:`を書けば、`arduino-cli upload --profile`は`--port`なしで通る
-
-programmerの実体はQ-040/Q-044の決定待ちのため、
-`sketch.yaml`の`programmer:`は現在コメントアウトしています。
+- **`sketch.yaml` の profile は index から入れた platform しか解決しません。** 作業ツリーの symlink では tool の依存が解けません。
+  ベンチも利用者と同じ「公開 index から入れる」形で、profile が pin する版は `platform.txt` と同じ（`sync_profiles.py` が読む）。
+  リリース前の検査だけ `tools/index/install_check.py` が loopback の index を使います。
+- **console は UART ではなく debug module（`SerialDMSeq`、dmseq）です。** ch32rv の monitor が読みます。UART は試験対象で、どの USART が
+  probe に届いているかは bench file の `[uart]` が言い、test が `UART <n> <route> <baud>` で sketch に指名します。
+- **console の往復は ch32rv 0.12.2 で 13〜26 ms、0.12.3 で 2 ms**（monitor の 20 ms の待ちが直った）。trace 試験の capture の窓は
+  0.12.2 でも通るように広く取ってあり、probe の capture に trigger が付いたら詰めます。
+- **probe の plan は自分が組んだ fn だけ release します。** 全 release は保存済みの fixture UART の plan まで消していました
+  （oep-probe-arduino 0.0.6 から仕様で守られる）。
+- **ベンチ上の作業は同時に 1 つ。** 並行に焼く・回すと WSL が落ちたことがあります。
+- Windows では作業ディレクトリを `<drive>:\ch32t\` 以下に作ります。`%TEMP%` の深さで toolchain の include path が MAX_PATH を超えます
+  （`CH32_TEST_TMP` で変更、`CH32_KEEP_TMP=1` で残す）。
