@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein==0.0.2", "oep-client-python>=0.0.4"]
+# dependencies = ["pyserial>=3.5", "wireskein==0.0.2", "oep-client-python>=0.0.5"]
 # ///
 """Trace the X035's own I2C master transactions on the wire (worklist B): the DUT writes to
 the probe's I2C target over route 2 while fixture.capture samples SCL/SDA in the same plan,

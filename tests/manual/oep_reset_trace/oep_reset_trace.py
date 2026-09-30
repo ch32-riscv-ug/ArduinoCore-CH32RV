@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein==0.0.2", "oep-client-python>=0.0.4"]
+# dependencies = ["pyserial>=3.5", "wireskein==0.0.2", "oep-client-python>=0.0.5"]
 # ///
 """Reset and startup timing of the X035 core through the OEP probe (worklist P3 row 9), using the
 basic system_selftest sketch: software reset (CH32.restart) -> first banner byte, measured on the

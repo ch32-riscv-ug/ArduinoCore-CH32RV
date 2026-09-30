@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyserial>=3.5", "oep-client-python>=0.0.4"]
+# dependencies = ["pyserial>=3.5", "oep-client-python>=0.0.5"]
 # ///
 """Compile a test sketch, program it through the OEP development probe, drive it over the
 probe's fixture UART, and judge it the way smoke.py does - without WCH-LinkE or probe-rs.

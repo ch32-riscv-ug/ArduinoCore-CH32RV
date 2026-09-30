@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyserial>=3.5", "oep-client-python>=0.0.4"]
+# dependencies = ["pyserial>=3.5", "oep-client-python>=0.0.5"]
 # ///
 """The OEP probe's own debug parts on a jig, independent of any sketch's tests: reset-halt stops before the first
 instruction, step moves the PC, a DMI delay step takes its time, and - where the probe labels a channel NRST - attach under
