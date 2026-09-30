@@ -39,6 +39,30 @@ uint32_t CH32RVSystem::getSketchSize()
     return (uint32_t)((_data_lma + (_edata - _data_vma)) - _ch32rv_flash_origin);
 }
 
+#ifdef CH32RV_ESIG_FLACAP_ADDR
+uint32_t CH32RVSystem::getFlashChipSize()
+{
+    return (uint32_t)(*(volatile const uint16_t *)CH32RV_ESIG_FLACAP_ADDR) * 1024u;
+}
+
+uint64_t CH32RVSystem::getEfuseMac()
+{
+    const uint32_t lo = *(volatile const uint32_t *)CH32RV_ESIG_UNIID1_ADDR;
+    const uint32_t hi = *(volatile const uint32_t *)CH32RV_ESIG_UNIID2_ADDR;
+    return ((uint64_t)hi << 32) | lo;
+}
+
+void CH32RVSystem::getUniqueId(uint8_t out[12])
+{
+    const uint32_t words[3] = {*(volatile const uint32_t *)CH32RV_ESIG_UNIID1_ADDR,
+                               *(volatile const uint32_t *)CH32RV_ESIG_UNIID2_ADDR,
+                               *(volatile const uint32_t *)CH32RV_ESIG_UNIID3_ADDR};
+    for (int i = 0; i < 12; i++) {
+        out[i] = (uint8_t)(words[i / 4] >> (8 * (i % 4)));
+    }
+}
+#endif
+
 uint32_t CH32RVSystem::getFreeSketchSpace()
 {
     const uint32_t length = (uint32_t)(uintptr_t)_ch32rv_flash_length;

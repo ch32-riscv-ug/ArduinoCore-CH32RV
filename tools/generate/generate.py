@@ -611,30 +611,37 @@ def load_adc_bases(tables: pathlib.Path) -> dict:
 
 
 def load_vrefint(tables: pathlib.Path) -> dict:
-    """family -> (channel, mv, mv_min, mv_max, tsvrefe_bit or None).
+    """family -> (channel, mv, mv_min, mv_max, enable_bit or None).
 
     The internal reference arduino-esp32's analogReadMilliVolts() would measure
-    VDDA against (not offered yet - see the note it emits):
-    index/adc_internal.csv (source=vrefint) for its channel and nominal
-    voltage, index/registers.csv for the ADC CTLR2 TSVREFE bit that switches it
-    on, on the families that have one (V003/V006/X035/X315 show none - there it
-    is taken to be always on). Families without a vrefint row (CH32V103,
-    CH32M030) get no analogReadMilliVolts().
+    VDDA against (not offered yet - see the note it emits), from
+    index/adc_internal.csv (source=vrefint): channel, nominal voltage and the
+    CTLR2 bit that switches it on (enable_*; empty where the RM has none -
+    V003/V006/X035, taken to be always on). CH32V103's datasheet gives only
+    min/max, so the nominal is their midpoint. A `missing` row (CH32M030: no
+    VREFINT in its documents) gives nothing.
     """
-    tsvrefe: dict = {}
-    for r in read_table(tables, "registers.csv"):
-        if (r.get("type") == "ADC" and r.get("register") == "CTLR2"
-                and r.get("field") == "TSVREFE" and r.get("kind") == "field"
-                and r.get("bits")):
-            tsvrefe[r["family"]] = int(r["bits"].split(":")[-1])
     out: dict = {}
     for r in read_table(tables, "adc_internal.csv"):
-        if r.get("source") != "vrefint" or not r.get("vrefint_mv"):
+        if r.get("source") != "vrefint" or r.get("confidence") == "missing":
             continue
-        out[r["family"]] = (int(r["channel"]), int(r["vrefint_mv"]),
-                            int(r["vrefint_mv_min"] or r["vrefint_mv"]),
-                            int(r["vrefint_mv_max"] or r["vrefint_mv"]),
-                            tsvrefe.get(r["family"]))
+        lo, hi = r.get("vrefint_mv_min"), r.get("vrefint_mv_max")
+        mv = r.get("vrefint_mv") or (str((int(lo) + int(hi)) // 2) if lo and hi else "")
+        if not mv or not r.get("channel"):
+            continue
+        bit = None
+        if r.get("enable_register") == "CTLR2" and r.get("enable_bit"):
+            bit = int(r["enable_bit"])
+        out[r["family"]] = (int(r["channel"]), int(mv), int(lo or mv), int(hi or mv), bit)
+    return out
+
+
+def load_esig(tables: pathlib.Path) -> dict:
+    """family -> {register: address} from index/esig.csv (R-35): FLACAP (16 bit,
+    KiB) and UNIID1..3 (32 bit each, UNIID1 the low word)."""
+    out: dict = {}
+    for r in read_table(tables, "esig.csv"):
+        out.setdefault(r["family"], {})[r["register"]] = int(r["address"], 16)
     return out
 
 
@@ -1794,7 +1801,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              timers_by_family: dict = {},
              forbidden: dict = {}, clock_enables: dict = {},
              adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {},
-             vrefint: dict = {}) -> str:
+             vrefint: dict = {}, esig: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -2091,6 +2098,15 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"#define CH32RV_ADC_VREFINT_MV {mv}   /* {lo}..{hi} mV */")
             if bit is not None:
                 out.append(f"#define CH32RV_ADC_CTLR2_TSVREFE (1u << {bit})")
+            out.append("")
+    sigs = {tuple(sorted(esig.get(r.get("family", ""), {}).items())) for r in rows}
+    if len(sigs) == 1 and sigs != {()}:
+        regs = dict(sigs.pop())
+        if {"FLACAP", "UNIID1", "UNIID2", "UNIID3"} <= set(regs):
+            out.append("/* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()")
+            out.append(" *      reads FLACAP (KiB), getEfuseMac()/getUniqueId() the 96-bit UID ---- */")
+            for name in ("FLACAP", "UNIID1", "UNIID2", "UNIID3"):
+                out.append(f"#define CH32RV_ESIG_{name}_ADDR 0x{regs[name]:08x}u")
             out.append("")
 
     # --- ADC instances beyond ADC1 -------------------------------------
@@ -2721,6 +2737,7 @@ def main() -> int:
     clock_enables = load_clock_enables(args.tables)
     adc_bases = load_adc_bases(args.tables)
     vrefint = load_vrefint(args.tables)
+    esig = load_esig(args.tables)
     cores = {r["series"]: r["core"]
              for r in read_table(args.tables, "series.csv", ("series", "core"))}
     pwm = load_pwm_pins(args.tables)
@@ -2782,7 +2799,7 @@ def main() -> int:
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
                      route_alts, wide_timers, timer_capabilities, forbidden,
                      clock_enables,
-                     adc_all, adc_bases, cores, vrefint)
+                     adc_all, adc_bases, cores, vrefint, esig)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of

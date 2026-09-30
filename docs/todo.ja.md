@@ -287,7 +287,8 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       それだと VDD 4.56 V になり、ESP32 の High が 915/1023 に読める記録と両立しない。
       device-data に有効化ビット・X035 のチャネル再確認・V103/M030 の VREFINT を依頼済み。
       生成物の`CH32RV_ADC_VREFINT_CHANNEL`/`_MV`/`CH32RV_ADC_CTLR2_TSVREFE`はそのために残してある
-- [ ] `[P2]` `CH32RV.getFlashChipSize()`とチップID(ESP の`getEfuseMac`相当)。ESIG の番地表が device-data に無い(R-35 として依頼済み)
+- [x] `CH32RV.getFlashChipSize()`と`getEfuseMac()`/`getUniqueId()`(2026-10-01、device-data 1635edf の esig.csv)。
+      X035F8U6 は 63488、V003F4U6 は 16384 を返した。UID の UNIID3 はどちらも 0xffffffff(実質 64 bit)
 - [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ
 - [ ] `[P2]` X305/X315のPWM。timerもper-pin AF方式でdefault routeが無い
 - [x] `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))。

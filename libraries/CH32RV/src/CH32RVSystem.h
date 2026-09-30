@@ -29,6 +29,8 @@
 
 #include <stdint.h>
 
+#include "pins_arduino.h"   /* CH32RV_ESIG_* decide which members exist */
+
 /* Values mirror the meaning (not the numbers) of esp_reset_reason_t. */
 typedef enum {
     CH32RV_RESET_UNKNOWN = 0,
@@ -77,6 +79,16 @@ public:
      * part's, or the smallest in the series for the ANY entry. */
     uint32_t getSketchSize();
     uint32_t getFreeSketchSpace();
+#ifdef CH32RV_ESIG_FLACAP_ADDR
+    /* The chip's own flash size in bytes, from its electronic signature
+     * (FLACAP) - the silicon's, not the menu's (device-data esig.csv). */
+    uint32_t getFlashChipSize();
+    /* A per-chip unique value, as sketches use ESP.getEfuseMac(): the low 64
+     * bits of the 96-bit UID (UNIID1 | UNIID2 << 32). Not a MAC address. */
+    uint64_t getEfuseMac();
+    /* The whole 96-bit UID, UNIID1's bytes first (little-endian words). */
+    void getUniqueId(uint8_t out[12]);
+#endif
 
 private:
     uint32_t _latched = 0;     /* RSTSCKR flags, once read */

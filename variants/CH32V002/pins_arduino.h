@@ -180,6 +180,13 @@
 #define CH32RV_ADC_VREFINT_CHANNEL 8
 #define CH32RV_ADC_VREFINT_MV 1200   /* 1180..1220 mV */
 
+/* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
+ *      reads FLACAP (KiB), getEfuseMac()/getUniqueId() the 96-bit UID ---- */
+#define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u
+#define CH32RV_ESIG_UNIID1_ADDR 0x1ffff7e8u
+#define CH32RV_ESIG_UNIID2_ADDR 0x1ffff7ecu
+#define CH32RV_ESIG_UNIID3_ADDR 0x1ffff7f0u
+
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
 /* USART1: route default, on 4 of 5 parts */

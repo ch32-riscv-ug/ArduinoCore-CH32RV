@@ -294,6 +294,21 @@
     (c) == 15 ? PC5 : \
     NOT_A_PIN)
 
+/* ---- internal reference (device-data adc_internal.csv). Kept for
+ *      arduino-esp32's analogReadMilliVolts(), which is NOT offered yet:
+ *      on the X035 bench channel 15 reads the previous conversion, and the
+ *      V003 reading disagrees with the supply (docs/todo.ja.md). ---- */
+#define CH32RV_ADC_VREFINT_CHANNEL 17
+#define CH32RV_ADC_VREFINT_MV 1200   /* 1120..1280 mV */
+#define CH32RV_ADC_CTLR2_TSVREFE (1u << 23)
+
+/* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
+ *      reads FLACAP (KiB), getEfuseMac()/getUniqueId() the 96-bit UID ---- */
+#define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u
+#define CH32RV_ESIG_UNIID1_ADDR 0x1ffff7e8u
+#define CH32RV_ESIG_UNIID2_ADDR 0x1ffff7ecu
+#define CH32RV_ESIG_UNIID3_ADDR 0x1ffff7f0u
+
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
 /* USART1: route default, on every part */

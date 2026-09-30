@@ -236,6 +236,13 @@
     (c) == 19 ? PA12 : \
     NOT_A_PIN)
 
+/* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
+ *      reads FLACAP (KiB), getEfuseMac()/getUniqueId() the 96-bit UID ---- */
+#define CH32RV_ESIG_FLACAP_ADDR 0x1ffff3a0u
+#define CH32RV_ESIG_UNIID1_ADDR 0x1ffff3a8u
+#define CH32RV_ESIG_UNIID2_ADDR 0x1ffff3acu
+#define CH32RV_ESIG_UNIID3_ADDR 0x1ffff3b0u
+
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
 /* USART1: route remap-1, on 2 of 5 parts */

@@ -264,6 +264,14 @@
  *      V003 reading disagrees with the supply (docs/todo.ja.md). ---- */
 #define CH32RV_ADC_VREFINT_CHANNEL 12
 #define CH32RV_ADC_VREFINT_MV 1200   /* 1170..1230 mV */
+#define CH32RV_ADC_CTLR2_TSVREFE (1u << 23)
+
+/* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
+ *      reads FLACAP (KiB), getEfuseMac()/getUniqueId() the 96-bit UID ---- */
+#define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u
+#define CH32RV_ESIG_UNIID1_ADDR 0x1ffff7e8u
+#define CH32RV_ESIG_UNIID2_ADDR 0x1ffff7ecu
+#define CH32RV_ESIG_UNIID3_ADDR 0x1ffff7f0u
 
 /* ---- ADC2..4 analog inputs (30 more pads) ----
  * This series puts its ADCs on DISJOINT pads, so a pad
