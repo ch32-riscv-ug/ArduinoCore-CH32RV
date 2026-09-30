@@ -416,6 +416,108 @@
               "version": "0.12.4"
             }
           ]
+        },
+        {
+          "name": "CH32 RISC-V (prototype)",
+          "architecture": "ch32v",
+          "version": "0.0.5",
+          "category": "Contributed",
+          "url": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32/releases/download/v0.0.5/ArduinoCore-CH32-ch32v-0.0.5.tar.bz2",
+          "archiveFileName": "ArduinoCore-CH32-ch32v-0.0.5.tar.bz2",
+          "checksum": "SHA-256:31ad91093f07ab065c9634d6a11a0390b51d9904257b8b73e5c4e6f863d1021f",
+          "size": "475263",
+          "help": {
+            "online": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32/issues"
+          },
+          "boards": [
+            {
+              "name": "Generic CH32V003"
+            },
+            {
+              "name": "Generic CH32V002"
+            },
+            {
+              "name": "Generic CH32V004"
+            },
+            {
+              "name": "Generic CH32V005"
+            },
+            {
+              "name": "Generic CH32V006"
+            },
+            {
+              "name": "Generic CH32V007"
+            },
+            {
+              "name": "Generic CH32M007"
+            },
+            {
+              "name": "Generic CH32V103"
+            },
+            {
+              "name": "Generic CH32V203"
+            },
+            {
+              "name": "Generic CH32V208"
+            },
+            {
+              "name": "Generic CH32V303"
+            },
+            {
+              "name": "Generic CH32V305"
+            },
+            {
+              "name": "Generic CH32V307"
+            },
+            {
+              "name": "Generic CH32V317"
+            },
+            {
+              "name": "Generic CH32X033"
+            },
+            {
+              "name": "Generic CH32X035"
+            },
+            {
+              "name": "Generic CH32L103"
+            },
+            {
+              "name": "Generic CH32M103 [compile only]"
+            },
+            {
+              "name": "Generic CH32V205 [compile only]"
+            },
+            {
+              "name": "Generic CH32V407 [compile only]"
+            },
+            {
+              "name": "Generic CH32V467 [compile only]"
+            },
+            {
+              "name": "Generic CH32X305 [compile only]"
+            },
+            {
+              "name": "Generic CH32X315 [compile only]"
+            },
+            {
+              "name": "Generic CH32M030 [compile only]"
+            },
+            {
+              "name": "UIAPduino Pro Micro CH32V003 V1.4"
+            }
+          ],
+          "toolsDependencies": [
+            {
+              "packager": "ch32-riscv-ug",
+              "name": "xpack-riscv-none-elf-gcc",
+              "version": "14.3.0-1"
+            },
+            {
+              "packager": "ch32-riscv-ug",
+              "name": "ch32rv",
+              "version": "0.12.5"
+            }
+          ]
         }
       ],
       "tools": [
@@ -585,54 +687,6 @@
           ]
         },
         {
-          "name": "xpack-riscv-none-elf-gcc",
-          "version": "14.3.0-1",
-          "systems": [
-            {
-              "host": "x86_64-pc-linux-gnu",
-              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz",
-              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz",
-              "checksum": "SHA-256:be1768ef22789f4d9c41384e0261996f51724b84c2efa940d975dd7d9938c726",
-              "size": "414461685"
-            },
-            {
-              "host": "aarch64-linux-gnu",
-              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-linux-arm64.tar.gz",
-              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-linux-arm64.tar.gz",
-              "checksum": "SHA-256:9e6ab407bf8eb4a39fa6b7a7f2cfd8d068a50bcf25685614a415d7f4bae6b311",
-              "size": "406957131"
-            },
-            {
-              "host": "x86_64-apple-darwin",
-              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-darwin-x64.tar.gz",
-              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-darwin-x64.tar.gz",
-              "checksum": "SHA-256:0ebd4116c85a72b0e6c49a9e991f396f271269118af45b415286473482795e8a",
-              "size": "388701606"
-            },
-            {
-              "host": "arm64-apple-darwin",
-              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-darwin-arm64.tar.gz",
-              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-darwin-arm64.tar.gz",
-              "checksum": "SHA-256:1cb71ea516a0b1042b8f7b584da2d4aee97d425f6b74ad96c37e791142a4784c",
-              "size": "384483005"
-            },
-            {
-              "host": "x86_64-mingw32",
-              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-win32-x64.zip",
-              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-win32-x64.zip",
-              "checksum": "SHA-256:44749ebaac273114f6689360d6e1a10b7e0debe9cee7cbc24e83ef84b0c21cc5",
-              "size": "438444826"
-            },
-            {
-              "host": "i686-mingw32",
-              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-win32-x64.zip",
-              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-win32-x64.zip",
-              "checksum": "SHA-256:44749ebaac273114f6689360d6e1a10b7e0debe9cee7cbc24e83ef84b0c21cc5",
-              "size": "438444826"
-            }
-          ]
-        },
-        {
           "name": "ch32rv",
           "version": "0.12.4",
           "systems": [
@@ -684,6 +738,109 @@
               "archiveFileName": "ch32rv-0.12.4-x86_64-pc-windows-msvc.zip",
               "checksum": "SHA-256:87dc48eeac22a9fbd01dba48f2d60d8766f17129f8a9ca43e25fd39672b67242",
               "size": "1605421"
+            }
+          ]
+        },
+        {
+          "name": "xpack-riscv-none-elf-gcc",
+          "version": "14.3.0-1",
+          "systems": [
+            {
+              "host": "x86_64-pc-linux-gnu",
+              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz",
+              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz",
+              "checksum": "SHA-256:be1768ef22789f4d9c41384e0261996f51724b84c2efa940d975dd7d9938c726",
+              "size": "414461685"
+            },
+            {
+              "host": "aarch64-linux-gnu",
+              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-linux-arm64.tar.gz",
+              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-linux-arm64.tar.gz",
+              "checksum": "SHA-256:9e6ab407bf8eb4a39fa6b7a7f2cfd8d068a50bcf25685614a415d7f4bae6b311",
+              "size": "406957131"
+            },
+            {
+              "host": "x86_64-apple-darwin",
+              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-darwin-x64.tar.gz",
+              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-darwin-x64.tar.gz",
+              "checksum": "SHA-256:0ebd4116c85a72b0e6c49a9e991f396f271269118af45b415286473482795e8a",
+              "size": "388701606"
+            },
+            {
+              "host": "arm64-apple-darwin",
+              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-darwin-arm64.tar.gz",
+              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-darwin-arm64.tar.gz",
+              "checksum": "SHA-256:1cb71ea516a0b1042b8f7b584da2d4aee97d425f6b74ad96c37e791142a4784c",
+              "size": "384483005"
+            },
+            {
+              "host": "x86_64-mingw32",
+              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-win32-x64.zip",
+              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-win32-x64.zip",
+              "checksum": "SHA-256:44749ebaac273114f6689360d6e1a10b7e0debe9cee7cbc24e83ef84b0c21cc5",
+              "size": "438444826"
+            },
+            {
+              "host": "i686-mingw32",
+              "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-win32-x64.zip",
+              "archiveFileName": "xpack-riscv-none-elf-gcc-14.3.0-1-win32-x64.zip",
+              "checksum": "SHA-256:44749ebaac273114f6689360d6e1a10b7e0debe9cee7cbc24e83ef84b0c21cc5",
+              "size": "438444826"
+            }
+          ]
+        },
+        {
+          "name": "ch32rv",
+          "version": "0.12.5",
+          "systems": [
+            {
+              "host": "x86_64-pc-linux-gnu",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.12.5/ch32rv-0.12.5-x86_64-unknown-linux-gnu.tar.gz",
+              "archiveFileName": "ch32rv-0.12.5-x86_64-unknown-linux-gnu.tar.gz",
+              "checksum": "SHA-256:9c0ce61ed0c493bbc0e295986f82501a2b5856666f94f837d2be40bb48b047f8",
+              "size": "1795387"
+            },
+            {
+              "host": "aarch64-linux-gnu",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.12.5/ch32rv-0.12.5-aarch64-unknown-linux-gnu.tar.gz",
+              "archiveFileName": "ch32rv-0.12.5-aarch64-unknown-linux-gnu.tar.gz",
+              "checksum": "SHA-256:689d1d10c7dc08ec4459ef12d8a94fb832f20c0d11cbbcce1ece3f457e260ad0",
+              "size": "1745007"
+            },
+            {
+              "host": "x86_64-apple-darwin",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.12.5/ch32rv-0.12.5-x86_64-apple-darwin.tar.gz",
+              "archiveFileName": "ch32rv-0.12.5-x86_64-apple-darwin.tar.gz",
+              "checksum": "SHA-256:fb9b3039370e2b027209a2499339e2d9acf6193363522f5229556f08d3582fb0",
+              "size": "1694764"
+            },
+            {
+              "host": "arm64-apple-darwin",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.12.5/ch32rv-0.12.5-aarch64-apple-darwin.tar.gz",
+              "archiveFileName": "ch32rv-0.12.5-aarch64-apple-darwin.tar.gz",
+              "checksum": "SHA-256:9551451667430fc420cd4c4c34db58cb415e29aefa3d154235855e1c074ca700",
+              "size": "1622202"
+            },
+            {
+              "host": "x86_64-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.12.5/ch32rv-0.12.5-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.12.5-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:bcb4aad9f0cb214249c28df942a9b3d3b3194c77161cc5caaef59fd8af083ad2",
+              "size": "1614567"
+            },
+            {
+              "host": "i686-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.12.5/ch32rv-0.12.5-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.12.5-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:bcb4aad9f0cb214249c28df942a9b3d3b3194c77161cc5caaef59fd8af083ad2",
+              "size": "1614567"
+            },
+            {
+              "host": "arm64-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.12.5/ch32rv-0.12.5-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.12.5-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:bcb4aad9f0cb214249c28df942a9b3d3b3194c77161cc5caaef59fd8af083ad2",
+              "size": "1614567"
             }
           ]
         }

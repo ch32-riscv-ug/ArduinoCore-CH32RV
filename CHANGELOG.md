@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+
+## 0.0.5
 - (EN) The bundled ch32rv is now 0.12.5: it follows the current OEP probe shape (oep-spec 89aa7ea) - on a probe whose slot names no pins it scans for the pair the target is on, and the pre-0.0.6 slot item is no longer read. Nothing changes for a WCH-Link or for a probe with a configured slot.
 - (JA) 同梱の ch32rv を 0.12.5 にした: 今の OEP probe の形（oep-spec 89aa7ea）に追従。スロットがピンを持たない probe では target の居る組を scan で探す。0.0.6 より前のスロット項目は読まない。WCH-Link と、スロットを設定した probe では動きは変わらない。
 
