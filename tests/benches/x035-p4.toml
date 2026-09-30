@@ -15,10 +15,10 @@
 [probe]
 kind = "oep"
 model = "esp32-p4-devkit"                    # oep.core describe: model
-firmware = "3.2.0-v1rc"                      # oep.core describe: firmware. From oep-probe-arduino 0.0.5 on this is the release version.
+firmware = "0.0.7"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
 profile = "io.github.ch32-riscv-ug.p4-x035"  # oep.core describe: profile
 usb = "303a:0002"                            # how the probe enumerates; the serial is the oep:// address's probe part
-release = "v0.0.4"                           # oep-probe-arduino tag prepare.py flashes
+release = "v0.0.7"                           # oep-probe-arduino tag prepare.py flashes
 example = "Esp32P4X035Probe"                 # examples/<example> in that tag
 erase = "all"                                # erase the whole flash before flashing
 
@@ -40,6 +40,8 @@ pins = [2, 54]
 attach = "at-boot"
 retry_s = 1
 mechanism = "dmseq"
+max_speed = 0                                # RVSWD clock limit in Hz (0: the probe's fastest); the L103 needs 1000000 and idle_clock = "low"
+idle_clock = "high"
 
 [[bind]]                                     # oep config bind: what each serial port carries
 port = 1

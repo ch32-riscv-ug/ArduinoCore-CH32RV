@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["oep-client-python>=0.0.5", "libusb1>=3"]
+# dependencies = ["oep-client-python>=0.0.7", "libusb1>=3"]
 # ///
 """Bring a bench's probe to the state its bench file describes, or check that it is there.
 
@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import re
 import os
 import pathlib
 import shutil
@@ -81,6 +82,12 @@ def flash_firmware(bench: benchdef.Bench, work: pathlib.Path) -> None:
     sketch = tree / "examples" / probe["example"]
     if not (sketch / "sketch.yaml").exists():
         raise SystemExit(f"{sketch} has no sketch.yaml in {probe['release']}")
+    # The release sketch.yaml names the library by version from the Library Manager, which lags a release by
+    # hours; the tag's own src/ is that version, so build against the tree (what the release's firmware
+    # workflow does too).
+    yaml = sketch / "sketch.yaml"
+    text = re.sub(r"^(\s*)- OpenEmbeddedProbe \([^)]*\)\s*$", r"\1- dir: ../..", yaml.read_text(encoding="utf-8"), flags=re.M)
+    yaml.write_text(text, encoding="utf-8")
     build = work / "build"
     # The release sketch.yaml pins the library by version from the Library Manager, so the
     # local indexes must know that version (the guide's rule: update before a pinned build).

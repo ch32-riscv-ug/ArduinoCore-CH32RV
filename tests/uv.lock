@@ -21,7 +21,7 @@ requires-dist = [
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-embedded-arduino-cli", specifier = ">=1.7.1" },
-    { name = "pytest-embedded-arduino-cli-ch32rv", specifier = ">=0.0.2" },
+    { name = "pytest-embedded-arduino-cli-ch32rv", specifier = ">=0.0.3" },
     { name = "pytest-embedded-wireskein", specifier = ">=0.0.2" },
     { name = "pytest-html", specifier = ">=4.1.1" },
     { name = "pyusb", specifier = ">=1.2" },
@@ -182,15 +182,15 @@ wheels = [
 
 [[package]]
 name = "oep-client-python"
-version = "0.0.5"
+version = "0.0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyserial" },
     { name = "pyusb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/67/34/08d65955af2d0b0bbeaf461989bf98154657ab0aec4588383be8edd0c7a7/oep_client_python-0.0.5.tar.gz", hash = "sha256:224635dca7649c9ae884c12156b5dd548b39d8147dbce1a430dbefa2e2289dff", size = 140395, upload_time = "2026-09-30T01:05:25.488Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/9d/8ff31c16ba8e2a58d18f676f77465e6e89a5d417fb2b835e226d7e3cb593/oep_client_python-0.0.7.tar.gz", hash = "sha256:bc8d2bb7f37928c999c35aae4a44ded66eafa9c352096ef4eec0db1dae07ead0", size = 143395, upload_time = "2026-09-30T03:25:18.12Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a1/ae/da6089dbb10f20abeb612b04337e874a209bd0c90034ceb9e75cf0bc6102/oep_client_python-0.0.5-py3-none-any.whl", hash = "sha256:1b821d7ccaf33e5daa8c1d35ca849f9c3105a02a1a9407f2d0e7a2917132a699", size = 121004, upload_time = "2026-09-30T01:05:24.075Z" },
+    { url = "https://files.pythonhosted.org/packages/35/74/5df3d37d10de25f3c6c7a74a783dab64775eedfc70fa862fc53cd973d5e8/oep_client_python-0.0.7-py3-none-any.whl", hash = "sha256:0854fbb82c88b05995758915f66fd05971fee149376c962a04cb02ac3db4d1f2", size = 122269, upload_time = "2026-09-30T03:25:16.587Z" },
 ]
 
 [[package]]
@@ -307,7 +307,7 @@ wheels = [
 
 [[package]]
 name = "pytest-embedded-arduino-cli-ch32rv"
-version = "0.0.2"
+version = "0.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "oep-client-python" },
@@ -315,9 +315,9 @@ dependencies = [
     { name = "pytest" },
     { name = "pytest-embedded-arduino-cli" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2b/47/41cbc6e1ed14a6f9a555af10c55b1950a58d4c584f00b86f7ae416c6c9f9/pytest_embedded_arduino_cli_ch32rv-0.0.2.tar.gz", hash = "sha256:16f04359a869f5d87166c538787d57257466c41a567952797010e5904dd75331", size = 26059, upload_time = "2026-09-30T01:19:59.805Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/03/b4/bfa090388110673552309b88049bcb15de5333a3fd5ba1410a6a384f9e45/pytest_embedded_arduino_cli_ch32rv-0.0.3.tar.gz", hash = "sha256:de4134f7fb484a82adbd5a7384c944e3eb75814de1fa1acea79ea228617be951", size = 26367, upload_time = "2026-09-30T03:34:25.575Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/86/54/bd522bb1a065b15daac856bd86e06ca064eba751756bf2cdf8449f379543/pytest_embedded_arduino_cli_ch32rv-0.0.2-py3-none-any.whl", hash = "sha256:9d3147905536e9b036adbc29da1a2bd6530b799ab9b880ffe643853b8d761588", size = 7145, upload_time = "2026-09-30T01:19:58.552Z" },
+    { url = "https://files.pythonhosted.org/packages/e2/f0/623d1e92f505f8632076c9b36881960aa51151f906c3fc632578ee9f1457/pytest_embedded_arduino_cli_ch32rv-0.0.3-py3-none-any.whl", hash = "sha256:8af306f0c54c6415daff057c087b768b3c5206c23fb3fd5dd19dd9c2e034706b", size = 7306, upload_time = "2026-09-30T03:34:24.285Z" },
 ]
 
 [[package]]

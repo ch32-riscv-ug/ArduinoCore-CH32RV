@@ -236,12 +236,17 @@ prepare の 3 と同じ関数を呼ぶ。1 秒未満、ロック無し（describ
 | 2 | `sketches/basic/*` → `bench/basic/*`、`bench_*.py` → `test_*.py`。profile build の 2 テストは `build/sketches`。layout test、CI、`pyproject` の依存にプラグイン | 済（X035 P4 14/14、V203 LinkE 14/14） |
 | 3 | `prepare.py` の焼き直し（Release の tag から example をビルド、全消去、設定、照合、WSL の usbipd 付け直し） | 済（X035 ジグで全工程） |
 | 4 | trace 6 本を `bench/trace/` に（`trace_kit.Run` → `ws_run`、`targets.py` → bench file、pin は実行時に） | 済（X035: periph 5/5、gpio 1/1、adc 2/2、reset 1/1、i2c 5/5、uart 2/2） |
-| 5 | `crt0_probe` を probe が RAM を埋める形で自動に。`reg_probe` を `oep_host` の riscv-dm 経由に | crt0 済（1/1）。reg_probe は **probe の halt/resume が core のレジスタを戻さない不具合**で xfail（dev_oep が d1fe654 で直し、0.0.6 待ち） |
+| 5 | `crt0_probe` を probe が RAM を埋める形で自動に。`reg_probe` を `oep_host` の riscv-dm 経由に | 済。crt0 1/1。reg_probe は probe の halt/resume が GPR / DATA0 を戻さない不具合で一時 xfail → oep-probe-arduino 0.0.7 + ch32rv 0.12.4 で全 10 群 PASS（X035）。その過程で checker（X035 の EXTICR は 2 bit × 16 本）と core（X035 の ADC 分周は ADC_CTLR3 CLK_DIV）の不具合も直した |
 | 6 | 旧 runner（`oep_smoke`、`oep_*_trace`、`reg_probe`、`crt0_probe`、`expect.py`）を消す。TEST_PLAN / README を書き直す。役目を終えた docs に注記 | 済。LinkE 経路の道具（chip_info / uart_scan / probe_switch / smoke.py）とジャンパの試験は manual に残る（正式ベンチまで）。probe-rs の残り（`tools_probe_rs.json`、fetch）は smoke.py が使うので同時に消す |
 | 7 | 正式ベンチが届いたら家系ごとに TOML、`prepare.py` で立ち上げ、`run_all.py` で一巡 → self-hosted runner | 未（`run_all.py` も未） |
 
-残っている probe 側の依頼: capture の edge trigger（backlog）、plan_roles の宣言（0.0.6）、DATA0 / GPR の復元（0.0.6）。
-0.0.6 を焼いたら reg_probe の xfail を外し、console を dmseq に戻せるか（halt/resume を挟んでも黙らないか）を確かめる。
+残っている probe 側の依頼: capture の edge trigger（backlog）。plan_roles の宣言と DATA0 / GPR の復元は 0.0.7 で入り、
+X035 ジグで確認済み（SPIN 中に halt / read_block / resume を 100 回挟んでも合計が変わらない、dmseq console が 10/10 生き残る）。
+
+**bench は Release の core しか試せない**（profile が公開 index の版を pin する。§4 の「利用者と同じ形」の裏返し）。作業ツリーの
+core を実機で確かめるには、`install_check.py` と同じ loopback の index を立てて profile をそこへ向ける必要がある。今回は
+scratch でやった（reg_probe のコピー + `dev_index.py`）。恒久化するなら `sync_profiles.py` が `<board>-dev` profile を生成し、
+`bench/dev_index.py` が作業ツリーを次の版として配信する形（未決、§12 に足す）。
 
 ## 12. 決めたこと（2026-09-30）
 

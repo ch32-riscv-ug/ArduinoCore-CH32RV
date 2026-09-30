@@ -22,5 +22,5 @@ the run (with the `bench/prepare.py` command to fix it) when they differ.
 The bench cases: `basic/` (the fourteen self-checking sketches), `trace/` (waveforms recorded and checked
 through WireSkein: periph_probe, gpio_probe, adc_probe, reset_probe, i2c_probe, uart_probe),
 `startup/crt0_probe` (the probe fills RAM and resets) and `regs/reg_probe` (registers read through the
-probe against device-data; xfail until the probe's halt / resume is fixed). Tests ask the bench file by
+probe against device-data; needs oep-probe-arduino 0.0.7 or later). Tests ask the bench file by
 pad name and skip, with the reason, when a pad, a capture or a target is not wired.

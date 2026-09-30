@@ -153,6 +153,16 @@ class Tables:
         for row in self._rows("evidence/timers.csv"):
             if row["family"] == self.family:
                 self.timer_bits[row["timer"]] = int(row["counter_width_bits"])
+        # EXTI line -> (EXTICR word index, shift, mask). The layout differs per family:
+        # four lines of four bits on the F1-style parts, sixteen lines of two bits on X035.
+        self.exticr = {}
+        for row in self._rows("evidence/register_fields.csv"):
+            m = re.fullmatch(r"AFIO_EXTICR(\d+)", row["register"])
+            if row["family"] == self.family and m and row["kind"] == "field" and row["bits"]:
+                line = re.fullmatch(r"EXTI(\d+)", row["field"])
+                if line:
+                    hi, lo = (int(b) for b in row["bits"].split(":"))
+                    self.exticr[int(line.group(1))] = (int(m.group(1)) - 1, lo, (1 << (hi - lo + 1)) - 1)
         # Keyed by the bare pad name: pinout.csv spells some pads with their
         # system function attached (PA0-WKUP, PC13-TAMPER-RTC, PC14-OSC32_IN).
         self.pin_functions = {}
@@ -1012,9 +1022,13 @@ class Session:
             for mode, (rt, ft) in (("RISING", (1, 0)), ("FALLING", (0, 1)),
                                    ("CHANGE", (1, 1)), ("LOW", (0, 1))):
                 self.t.cmd(f"EXTI {pin} {mode}")
-                cr = self.exticr(bit >> 2)
-                self.rep.eq(g, f"{pad}_{mode}_exticr_port", (cr >> ((bit & 3) * 4)) & 0xF, port,
-                            f"EXTICR{bit >> 2} nibble {bit & 3}")
+                if bit in self.dd.exticr:
+                    index, shift, mask = self.dd.exticr[bit]
+                    cr = self.exticr(index)
+                    self.rep.eq(g, f"{pad}_{mode}_exticr_port", (cr >> shift) & mask, port,
+                                f"EXTICR{index + 1} bits {shift}+ (register_fields.csv)")
+                else:
+                    self.rep.skip(g, f"{pad}_{mode}_exticr_port", f"register_fields.csv has no EXTI{bit} field")
                 ex = self.exti_regs()
                 self.rep.eq(g, f"{pad}_{mode}_rising", (ex["RTENR"] >> bit) & 1, rt)
                 self.rep.eq(g, f"{pad}_{mode}_falling", (ex["FTENR"] >> bit) & 1, ft)

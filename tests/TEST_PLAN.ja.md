@@ -76,7 +76,7 @@ pytest-embedded-wireskein（`ws_run`）、そして `bench/conftest.py` の `ben
 | | `i2c_probe` | Wire master を線上で decode（write / read / repeated START / 400 kHz / setClock / stretch / stuck bus） | OEP + I2C target + capture、`facts.i2c` |
 | | `uart_probe` | UART を probe の UART と両方向、overflow、64 KiB、reset 後; sweep（`slow`）は F_CPU × baud × format と線上の baud | OEP + fixture.uart、`[uart]` |
 | `startup/` | `crt0_probe` | crt0 が渡す RAM（probe が RAM を埋めて reset） | OEP |
-| `regs/` | `reg_probe` | デバッガでレジスタを読み device-data と照合（方法 3）。**probe の halt/resume の不具合待ちで xfail** | OEP、device-data |
+| `regs/` | `reg_probe` | デバッガでレジスタを読み device-data と照合（方法 3）。console は bench の UART（halt / resume を挟むと dmseq は数秒黙る） | OEP（oep-probe-arduino 0.0.7 以降）、device-data |
 
 治具に無いもの（pad、capture、I2C target）を要する test は理由付きで **skip** します。skip の一覧が「このベンチが確かめていないこと」です。
 

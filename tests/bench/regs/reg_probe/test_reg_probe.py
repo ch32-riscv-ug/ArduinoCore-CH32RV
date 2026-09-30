@@ -17,8 +17,6 @@ from loader import find_tables, load
 regcheck = load("tests/bench/regs/reg_probe/regcheck.py", "regcheck")
 
 
-@pytest.mark.xfail(strict=False, reason="the OEP probe's halt / read_block / resume leaves the core corrupted after a few "
-                   "dozen reads (X035 jig, 2026-09-30, reported to dev_oep); the sketch dies part way through")
 def test_registers_hold_what_device_data_says(request, dut, bench, ch32_uart):
     if bench.probe.get("kind") != "oep":
         pytest.skip("the register reads go through an OEP probe's riscv-dm")

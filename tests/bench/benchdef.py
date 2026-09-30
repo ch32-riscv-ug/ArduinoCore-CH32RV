@@ -157,7 +157,8 @@ def wanted_items(bench: Bench, hst) -> list:
         wire_fn = core.find(hst, f"oep.wire.{slot['wire']}")
         pins = tuple(slot["pins"]) if len(slot["pins"]) == 2 else (slot["pins"][0], 0xFFFF)
         items.append(config.Slot(0, wire_fn, pins, slot["name"], slot.get("attach", "host"),
-                                 int(slot.get("retry_s", 0)), slot.get("mechanism", "dmseq")))
+                                 int(slot.get("retry_s", 0)), slot.get("mechanism", "dmseq"), None,
+                                 int(slot.get("max_speed", 0)), slot.get("idle_clock", "high")))
     for b in bench.data.get("bind", []):
         streams = []
         for s in b["streams"]:
