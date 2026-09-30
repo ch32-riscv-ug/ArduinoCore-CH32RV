@@ -43,6 +43,7 @@ sys.path.insert(0, str(REPO / "tests" / "build" / "compile"))
 import gen_index                                            # noqa: E402
 import install_check                                        # noqa: E402
 from compile_matrix import Failure                          # noqa: E402
+from compile_examples import EXTRA_PROPERTIES               # noqa: E402
 from stage import stage_sketch                              # noqa: E402
 from sync_profiles import INDEX_URL                         # noqa: E402
 
@@ -124,7 +125,13 @@ def run(work: pathlib.Path, port: int = 8751) -> dict:
             build = work / "build"
             if build.exists():
                 shutil.rmtree(build)
-            out = install_check.cli("compile", "--profile", profile,
+            # What compile_examples.py gives an example that a Generic board
+            # cannot build bare (Blink: no LED_BUILTIN on a series board).
+            library = src.parents[1].name
+            properties = []
+            for prop in EXTRA_PROPERTIES.get((library, src.name), ()):
+                properties += ["--build-property", prop]
+            out = install_check.cli("compile", "--profile", profile, *properties,
                                     "--build-path", str(build), str(staged),
                                     env=env, check=False)
             used = USED.search(out)
