@@ -55,12 +55,14 @@ def test_the_command_protocol_header_is_in_sync(repo):
 
 
 def test_every_table_read_goes_through_read_table(repo):
-    """The lock can only list inputs it is told about.
+    """The generator reads only ch32-device-data's public surface, index/.
 
-    gen_lock() hashes what read_table() recorded, and the claim the lock makes
-    - "an upstream commit that touches none of these cannot change a generated
-    file" - is false the moment some loader opens a CSV directly. There is no
-    way to notice that at runtime, so it is checked in the source instead.
+    read_table() is the one door: it resolves every name to index/<name>.csv,
+    and gen_lock() checks that each table it recorded is in index/manifest.csv,
+    whose hash the lock pins. A loader that opens a CSV directly could read
+    catalog/ or evidence/ (not a contract, upstream R-33) and the pin would be
+    silent about it. There is no way to notice that at runtime, so it is
+    checked in the source instead.
     """
     src = (repo / "tools" / "generate" / "generate.py").read_text(encoding="utf-8")
     # A literal name here means the loader bypassed read_table().

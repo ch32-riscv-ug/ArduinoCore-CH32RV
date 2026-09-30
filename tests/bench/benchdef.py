@@ -70,14 +70,29 @@ class Bench:
     @property
     def probe_serial(self) -> str:
         """The probe's identity from the port: `oep://<unit id>/<slot>` (the unit id is the USB serial since
-        oep-probe-arduino 0.0.19) or `wchlink://<serial>`; a serial OEP probe (`[probe] transport = "serial"`, an
-        ESP32's UART bridge) is its device path."""
+        oep-probe-arduino 0.0.19) or `wchlink://<serial>`; a serial OEP probe (`[probe] transport = "serial"`)
+        whose port is a device path (an ESP32's UART bridge) is that path."""
+        m = re.match(r"^(oep|wchlink)://([^/]+)", self.port)
+        if m:
+            return m.group(2)
         if self.probe.get("transport") == "serial":
             return self.port
-        m = re.match(r"^(oep|wchlink)://([^/]+)", self.port)
-        if not m:
-            raise BenchError(f"{self.profile}: TEST_SERIAL_PORT is {self.port!r}; a bench needs oep:// or wchlink://")
-        return m.group(2)
+        raise BenchError(f"{self.profile}: TEST_SERIAL_PORT is {self.port!r}; a bench needs oep:// or wchlink://")
+
+    def serial_device(self) -> str:
+        """The device path of a serial OEP probe (`[probe] transport = "serial"`): the port itself when it is a
+        path (an ESP32's UART bridge has no unit id on the USB side), else the CDC port whose USB serial is the
+        unit id of the `oep://` port - ch32rv 0.13 takes only that form for a probe it enumerates (an RP2350's
+        CDC), and flashes through it itself."""
+        if not re.match(r"^oep://", self.port):
+            return self.port
+        from serial.tools import list_ports
+        unit = self.probe_serial
+        found = [p.device for p in list_ports.comports() if p.serial_number == unit]
+        if len(found) != 1:
+            raise BenchError(f"{self.profile}: {len(found)} serial ports carry the USB serial {unit} "
+                             f"(the probe part of {self.port}); expected exactly one")
+        return found[0]
 
 
 def env_key(profile: str, suffix: str = "") -> str:
@@ -212,7 +227,7 @@ def open_probe(bench: Bench, ch32rv: pathlib.Path | str | None = None):
     if endpoint:
         hst = link.open_host(f"tcp://{endpoint}")
     elif bench.probe.get("transport") == "serial":
-        hst = link.open_host(bench.port)
+        hst = link.open_host(bench.serial_device())
     else:
         # by the unit id (= the USB serial since oep-probe-arduino 0.0.19), whatever VID:PID the probe carries
         hst = link.open_host(f"usb:{bench.probe_serial}")

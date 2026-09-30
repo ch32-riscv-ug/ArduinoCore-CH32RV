@@ -4,8 +4,13 @@
 # 3a6fabcda284bc48, a different board from the one behind WCH-LinkE 0E028F0692F1). No UART
 # and no other pad is known to reach the probe, so the tests that need them skip. tests/.env:
 #
-#   TEST_SERIAL_PORT_CH32L103=/dev/serial/by-id/usb-Open_Embedded_Probe_OEP_probe__RP2350__9489dd2ae0953650-if00
+#   TEST_SERIAL_PORT_CH32L103=oep://9489dd2ae0953650/l103
 #   TEST_BENCH_CH32L103=l103-rp2350
+#
+# The oep:// form even though the link is serial: ch32rv (0.13) enumerates the RP2350's CDC as an OEP
+# probe and takes only its slot address for a flash (`ch32rv arduino discovery` lists it); the bench
+# finds the CDC device by the unit id in it (benchdef.Bench.serial_device). An ESP32 bridge, which has
+# no unit id on the USB side, stays a device path (v003-esp32).
 #
 # prepare.py: the RP2 is flashed by copying the release's .uf2 onto its BOOTSEL drive (1200 baud
 # on the CDC puts it there). That route lands with the native-Linux bench the RP2 jigs move to
@@ -13,7 +18,7 @@
 
 [probe]
 kind = "oep"
-transport = "serial"                         # the OEP link is the probe's CDC port
+transport = "serial"                         # the OEP link is the probe's CDC port (found by the unit id in the oep:// port)
 model = "rp2350"                             # oep.core describe: model
 firmware = "0.0.19"                          # oep.core describe: firmware = the oep-probe-arduino release version
 release = "v0.0.19"                          # oep-probe-arduino tag

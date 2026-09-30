@@ -16,7 +16,7 @@ Purpose:
 
     The expected values do not come from cores/arduino/ch32_registers.h. Block
     bases and register offsets come from device-data's register_map.csv, remap
-    bit positions from remap_fields.csv, route pads from routes.csv, clock-
+    bit positions and route pads from routes.csv, clock-
     enable bits from clock_enables.csv - so a wrong address in the core's own
     register map fails here rather than agreeing with itself.
 
@@ -130,12 +130,16 @@ class Tables:
         self.part = part
         self.family = self._family(series)
         self.reg = {}
+        self.block_base = {}
         for row in self._rows("index/register_map.csv"):
             if row["family"] == self.family:
                 self.reg[(row["block"], row["register"])] = int(row["address"], 16)
+                self.block_base[row["block"]] = int(row["address"], 16) - int(row["offset"], 16)
+        # routes.csv has one row per (selector, value, pad); the selector's
+        # register bits repeat on every row, so the first one decides.
         self.remap = {}
-        for row in self._rows("evidence/remap_fields.csv"):
-            if row["series"] == series:
+        for row in self._rows("index/routes.csv"):
+            if row["series"] == series and row["selector"] not in self.remap:
                 self.remap[row["selector"]] = [
                     (p.split(":")[0], int(p.split(":")[1]))
                     for p in row["bits"].split(";")]
@@ -145,24 +149,36 @@ class Tables:
                 key = (row["selector"], int(row["value"]))
                 self.routes.setdefault(key, {})[row["role"]] = row["pad"]
         self.clken = {}
-        for row in self._rows("evidence/clock_enables.csv"):
+        for row in self._rows("index/clock_enables.csv"):
             if row["family"] == self.family:
                 self.clken[row["peripheral"]] = (int(row["address"], 16),
                                                  int(row["mask"], 16))
         self.timer_bits = {}
-        for row in self._rows("evidence/timers.csv"):
+        for row in self._rows("index/timers.csv"):
             if row["family"] == self.family:
                 self.timer_bits[row["timer"]] = int(row["counter_width_bits"])
         # EXTI line -> (EXTICR word index, shift, mask). The layout differs per family:
         # four lines of four bits on the F1-style parts, sixteen lines of two bits on X035.
+        # registers.csv spells the AFIO register the way the EVT struct does (`EXTICR`,
+        # `EXTICR[k]`, `EXTICR1`) and upstream keeps those spellings, so the word is not
+        # parsed out of the name: the family's EXTICR rows are put in offset order and the
+        # k-th offset is word k (index/README.md, registers). exticr_words holds their
+        # addresses, the offset off the AFIO block's base.
         self.exticr = {}
-        for row in self._rows("evidence/register_fields.csv"):
-            m = re.fullmatch(r"AFIO_EXTICR(\d+)", row["register"])
-            if row["family"] == self.family and m and row["kind"] == "field" and row["bits"]:
-                line = re.fullmatch(r"EXTI(\d+)", row["field"])
-                if line:
-                    hi, lo = (int(b) for b in row["bits"].split(":"))
-                    self.exticr[int(line.group(1))] = (int(m.group(1)) - 1, lo, (1 << (hi - lo + 1)) - 1)
+        by_offset = {}
+        for row in self._rows("index/registers.csv"):
+            if (row["family"] != self.family or row["type"] != "AFIO"
+                    or not row["register"].upper().startswith("EXTICR")):
+                continue
+            line = re.fullmatch(r"(?:EXTICR\d*_)?EXTI(\d+)", row["field"])
+            if line and row["kind"] == "field" and row["bits"]:
+                hi, lo = (int(b) for b in row["bits"].split(":"))
+                by_offset.setdefault(int(row["offset"], 16), []).append(
+                    (int(line.group(1)), lo, (1 << (hi - lo + 1)) - 1))
+        self.exticr_words = [self.block_base["AFIO"] + off for off in sorted(by_offset)]
+        for index, off in enumerate(sorted(by_offset)):
+            for line, lo, mask in by_offset[off]:
+                self.exticr[line] = (index, lo, mask)
         # Keyed by the bare pad name: pinout.csv spells some pads with their
         # system function attached (PA0-WKUP, PC13-TAMPER-RTC, PC14-OSC32_IN).
         self.pin_functions = {}
@@ -179,10 +195,10 @@ class Tables:
                 yield row
 
     def _family(self, series: str) -> str:
-        for row in self._rows("catalog/families.csv"):
+        for row in self._rows("index/families.csv"):
             if series in row["series"].split(";"):
                 return row["family"]
-        raise Failure(f"{series} is in no family in catalog/families.csv")
+        raise Failure(f"{series} is in no family in index/families.csv")
 
     def addr(self, block: str, register: str) -> int:
         try:
@@ -206,7 +222,7 @@ class Tables:
         for name in self.remap:
             if re.fullmatch(rf"afio-{peripheral}-(remap|rm)", name):
                 return name
-        raise Failure(f"remap_fields.csv has no selector for {peripheral} "
+        raise Failure(f"routes.csv has no selector for {peripheral} "
                             f"on {self.series}")
 
     def remap_expect(self, selector: str, value: int) -> dict:
@@ -630,7 +646,7 @@ class Session:
         return out
 
     def exticr(self, index: int) -> int:
-        return self.p.word(self.dd.addr("AFIO", "EXTICR") + 4 * index)
+        return self.p.word(self.dd.exticr_words[index])
 
     def usart(self, n: int) -> dict:
         block = self.dd.usart_block(n)
@@ -915,7 +931,7 @@ class Session:
                     (route.value, route.value2),
                     tuple(bits for reg in ("PCFR1", "PCFR2")
                           for (m, bits) in [self.dd.remap_expect(sel, route.route).get(reg, (0, 0))]),
-                    "variant table value/value2 against remap_fields.csv")
+                    "variant table value/value2 against routes.csv")
         self.variant_vs_data(g, f"{tag}_variant_pins_vs_data", sel, route, ("TX", "RX"))
         tx, rx = route.pins[0], route.pins[1]
         self.pad_is(g, f"{tag}_tx", tx, CFG_AF_PP_50M)
@@ -1033,9 +1049,9 @@ class Session:
                     index, shift, mask = self.dd.exticr[bit]
                     cr = self.exticr(index)
                     self.rep.eq(g, f"{pad}_{mode}_exticr_port", (cr >> shift) & mask, port,
-                                f"EXTICR{index + 1} bits {shift}+ (register_fields.csv)")
+                                f"EXTICR{index + 1} bits {shift}+ (registers.csv)")
                 else:
-                    self.rep.skip(g, f"{pad}_{mode}_exticr_port", f"register_fields.csv has no EXTI{bit} field")
+                    self.rep.skip(g, f"{pad}_{mode}_exticr_port", f"registers.csv has no EXTI{bit} field")
                 ex = self.exti_regs()
                 self.rep.eq(g, f"{pad}_{mode}_rising", (ex["RTENR"] >> bit) & 1, rt)
                 self.rep.eq(g, f"{pad}_{mode}_falling", (ex["FTENR"] >> bit) & 1, ft)

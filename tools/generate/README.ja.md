@@ -5,7 +5,7 @@
 
 ## 目的
 
-`ch32-device-data`のcatalog/・evidence/・index/(正規化CSV)から、prototype platformの`boards.txt`とSKU別linker scriptを機械生成する。R-03の設計(family単位board+pnumメニューに全型番、生成物はcommitしてCIで再生成一致を検証)の最小実装。
+`ch32-device-data`の公開面 **`index/`**(正規化CSV。`catalog/`・`evidence/`は上流の作業層で契約ではないため読まない——上流R-33)から、prototype platformの`boards.txt`とSKU別linker scriptを機械生成する。R-03の設計(family単位board+pnumメニューに全型番、生成物はcommitしてCIで再生成一致を検証)の最小実装。
 
 ## 使い方
 
@@ -75,13 +75,13 @@ pin番号や既定routeが変わると、既存のsketchの意味が変わるた
 - ldはユニークな(FLASH, SRAM)組合せごとに1本(`ch32v00x_62k_8k.ld`等)。MEMORYのみ持ち、共通`sections.ld`をINCLUDE
 - 生成物ヘッダに`DO NOT EDIT`を記録(タイムスタンプは入れず再生成をidempotentに保つ)
 - vector tableは`build.vector_variant`という**1つのstem**で選ぶ。platform.txtが`vectors_<stem>.inc`/`irqn_<stem>.h`/`exti_<stem>.h`の3つを組み立てるので、**pnum項目が1行上書きするだけでdie variantを差し替えられる**(CH32V203RBT6。どのpartがどのmacroかは`evt_variants.csv`由来で手書きしない)。`ANY`はboardの既定を保つ——既にseries最小のflashを宣言している「特定の石向けではない」項目なので
-- **source tablesのgit commitは`vendor/ch32-device-data.lock.toml`に1か所だけ**置く。生成物ヘッダにcommitを入れていた頃は、中身が変わらないupstream bumpでも全生成物が更新されていた。lockはgeneratorの出力の1つなので`--check`がそのまま検証する。lockは`read_table()`が実際に読んだ表のSHA-256も持ち、**この5表に触れないupstream commitは生成物を変えられない**ことを表す
+- **source tablesのpinは`vendor/ch32-device-data.lock.toml`に1か所だけ**置く。生成物ヘッダにcommitを入れていた頃は、中身が変わらないupstream bumpでも全生成物が更新されていた。lockはgeneratorの出力の1つなので`--check`がそのまま検証する。形は上流がconsumerに求めるもの: **commit＋`index/manifest.csv`のsha256(index/の全ファイルのsha256を載せる表なので、これ1つで公開面全体を識別する)＋`index/VERSION`**(上流のschema版。consumerを壊しうる変更の前に上がるので、動いたら取り込みはレビュー)。表ごとのsha256は持たない。`read_table()`は`index/<表>.csv`しか開かず、読んだ表がmanifestに無ければ止まる
 
 ## 現在の範囲と今後
 
 - 対象はCH32V006 family(26 SKU)のみ。他familyは`FAMILY_CONFIG`への追加+等価性検証済みのstartup defines(実験0002)で拡張する
 - march/mabi・CSR初期値は当面generator内の設定表。将来はcores.csv/series.csvやdevice-data側への移管を検討(判断ポイント)
-- variant(pins_arduino.h)の生成は未実装。pins.csv/pin_functions.csvからのpin map生成はArduinoピン設計の合意後
+- variant(pins_arduino.h)の生成は未実装。pinout.csvからのpin map生成はArduinoピン設計の合意後
 - package index生成(W-5)は未実装
 
 ## 全family展開の計画(2026-08-19調査)

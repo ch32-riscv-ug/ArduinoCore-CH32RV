@@ -17,14 +17,15 @@ against a two-word stub of AFIO and watches what it does instead:
 value. Nothing is transcribed, so nothing can be mistranscribed.
 
   uv run tools/generate/evt_remap_fields.py --mirrors <dir holding the CH32*
-      clones> [--compare <ch32-device-data>/tables] [--json out.json]
+      clones> [--compare <ch32-device-data checkout root>] [--json out.json]
 
-Why this exists: ch32-device-data's remap_fields.csv gives every selector a
-single `register` column, but on L103/M103 a selector spans PCFR1 *and* PCFR2,
-so the field cannot be written down and `valid_values` overflows `bits`. The
-data belongs upstream (docs/research/signal-name-normalization.ja.md, D-0) and
-so does this tool; it sits here until they have room for it, and should be
-deleted rather than kept in step once it lands there.
+Why this exists: ch32-device-data's remap selectors used to carry a single
+`register` column, but on L103/M103 a selector spans PCFR1 *and* PCFR2, so the
+field could not be written down. index/routes.csv now qualifies every bit with
+its register (`PCFR1:2;PCFR2:26`), and --compare checks that against what EVT
+does. The data belongs upstream (docs/research/signal-name-normalization.ja.md,
+D-0) and so does this tool; it sits here until they have room for it, and
+should be deleted rather than kept in step once it lands there.
 
 EVT is read in place and never copied, the same way import_vectors.py does it.
 """
@@ -202,13 +203,18 @@ def extract(mirrors: pathlib.Path) -> dict:
 
 
 def compare(extracted: dict, tables: pathlib.Path) -> int:
-    """Where remap_fields.csv and EVT disagree about a field's bits."""
+    """Where index/routes.csv and EVT disagree about a field's bits.
+
+    `tables` is the ch32-device-data checkout root; only its public surface
+    (index/) is read. routes.csv has one row per (selector, value, pad) and
+    the selector's bits repeat on each, so the first row per selector is kept.
+    """
     rows = {}
-    with (tables / "remap_fields.csv").open(newline="", encoding="utf-8") as f:
+    with (tables / "index" / "routes.csv").open(newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
             m = SELECTOR.match(r["selector"])
             if m:
-                rows[(r["series"], m.group(1).upper())] = r
+                rows.setdefault((r["series"], m.group(1).upper()), r)
     agree, differ, absent = 0, [], []
     for family, selectors in extracted.items():
         for periph, d in sorted(selectors.items()):
@@ -219,7 +225,8 @@ def compare(extracted: dict, tables: pathlib.Path) -> int:
                 if row is None:
                     absent.append((series, periph, d["bits"]))
                     continue
-                csv_bits = [f"PCFR1:{b}" for b in row["bits"].split(";") if b]
+                # `bits` is REG:bit;REG:bit, the same spelling extract() uses.
+                csv_bits = [b for b in row["bits"].split(";") if b]
                 if csv_bits == d["bits"]:
                     agree += 1
                 else:
@@ -239,7 +246,8 @@ def main() -> int:
                     help="directory holding the CH32* EVT clones")
     ap.add_argument("--json", type=pathlib.Path)
     ap.add_argument("--compare", type=pathlib.Path,
-                    help="a ch32-device-data tables/ directory to diff against")
+                    help="a ch32-device-data checkout root to diff against "
+                         "(only index/routes.csv is read)")
     args = ap.parse_args()
 
     result = extract(args.mirrors)

@@ -77,11 +77,12 @@ recipe.size.regex.data=^(?:\.data|\.bss)\s+([0-9]+).*
 # uploader, and it is this one.
 #
 # {build.ch32rv_chip} is generated per menu entry from
-# tools/index/ch32rv_chips.csv. A series ch32rv does not know has no value and
-# the board is labelled "[compile only]"; an upload attempted anyway fails
-# closed with ch32rv's `target-not-in-db` (exit 20) rather than writing to
-# whatever is attached. The value is the exact part where ch32rv knows it and
-# the family name otherwise - see ch32rv_chip() in tools/generate/generate.py.
+# tools/index/ch32rv_chips.csv: the exact part where ch32rv knows it, the
+# family name otherwise, and `auto` (ch32rv 0.13.1: detect the chip on attach,
+# the same as no --chip) for a series ch32rv has no name for - that board is
+# labelled "[compile only]", and an upload attempted anyway fails closed with
+# ch32rv's `target-not-in-db` (exit 20) rather than writing to whatever is
+# attached. See ch32rv_chip() in tools/generate/generate.py.
 tools.ch32rv.path={runtime.tools.ch32rv.path}
 tools.ch32rv.cmd=ch32rv
 tools.ch32rv.cmd.windows=ch32rv.exe

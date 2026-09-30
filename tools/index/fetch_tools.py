@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --no-project --script
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.11"
 # ///
 """Put every tool the tests need inside the project, at a predictable path.
 
@@ -27,7 +27,8 @@ Layout, mirroring how arduino-cli lays tools out so the two are interchangeable:
 
     .tools/<tool name>/<version>/...        the archive's contents, root folder
                                             flattened away as arduino-cli does
-    .tools/ch32-device-data/                the device tables, at their locked commit
+    .tools/ch32-device-data/                the device tables, at their locked commit,
+                                            index/manifest.csv verified against the lock
     .tools/cache/                           downloaded archives, kept for re-runs
 
 Nothing here is required at runtime by the platform itself; this is only for
@@ -39,12 +40,12 @@ import json
 import os
 import pathlib
 import platform
-import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
+import tomllib
 import urllib.request
 import zipfile
 
@@ -141,26 +142,73 @@ def unpack(archive: pathlib.Path, dest: pathlib.Path) -> None:
         shutil.move(str(root), str(dest))
 
 
-def locked_commit() -> str | None:
-    """The ch32-device-data commit the generated files were produced from.
+LOCK = REPO / "vendor" / f"{DEVICE_DATA}.lock.toml"
+MANIFEST_REL = pathlib.Path("index") / "manifest.csv"
+VERSION_REL = pathlib.Path("index") / "VERSION"
 
-    vendor/ch32-device-data.lock.toml records it, so the tables can be checked
-    out at exactly the revision this working tree was generated against rather
-    than at whatever main happens to be. Regex rather than tomllib because the
-    other vendor locks are read the same way and the harnesses still run on
-    Python 3.10 (tools/vendor/check_api_sync.py).
+
+def locked_pin() -> dict | None:
+    """The ch32-device-data pin the generated files were produced from.
+
+    vendor/ch32-device-data.lock.toml records it the way upstream asks
+    consumers to pin (index/README.md, Contract for consumers): the `commit`,
+    the `manifest_sha256` of index/manifest.csv (which lists every file of the
+    public surface with its sha256) and index/VERSION as `version`. The commit
+    lets the tables be checked out at exactly the revision this working tree
+    was generated against rather than at whatever main happens to be; the
+    manifest hash then proves the checkout is that surface.
+
+    Returns the [[source]] table for ch32-device-data, or None when there is
+    no lock. Missing keys are the caller's problem to report.
     """
-    lock = REPO / "vendor" / f"{DEVICE_DATA}.lock.toml"
-    if not lock.exists():
+    if not LOCK.exists():
         return None
-    m = re.search(r'^commit = "([0-9a-f]{40})"', lock.read_text(encoding="utf-8"),
-                  re.M)
-    return m.group(1) if m else None
+    with open(LOCK, "rb") as f:
+        data = tomllib.load(f)
+    for source in data.get("source", []):
+        if source.get("id") == DEVICE_DATA:
+            return source
+    raise SystemExit(f"{LOCK}: no [[source]] with id = \"{DEVICE_DATA}\"")
+
+
+def verify_surface(dest: pathlib.Path, pin: dict) -> None:
+    """The checkout's index/ is the one the lock describes, or stop.
+
+    A mismatch means the lock and the tables disagree: the generator was run
+    against a different checkout than the commit it recorded (dirty clone), or
+    the lock was edited by hand. Either way the generated files cannot be
+    trusted to match these tables, so say so rather than let a harness run
+    against them.
+    """
+    want = pin.get("manifest_sha256")
+    if not want:
+        print(f"  {LOCK.name} records no manifest_sha256; not verified",
+              file=sys.stderr)
+        return
+    manifest = dest / MANIFEST_REL
+    if not manifest.exists():
+        raise SystemExit(f"{manifest} is missing: commit {pin.get('commit', '?')[:12]} "
+                         f"predates the public surface, or the checkout is broken")
+    got = sha256(manifest)
+    if got != want:
+        raise SystemExit(
+            f"{DEVICE_DATA}: {MANIFEST_REL} at commit {pin.get('commit', '?')[:12]} "
+            f"hashes to {got}, but {LOCK.name} says {want}. The lock and the "
+            f"tables disagree; regenerate (tools/generate/generate.py) from a "
+            f"clean checkout to move the pin, or check the clone for local edits.")
+    version = pin.get("version")
+    if version is not None:
+        have = (dest / VERSION_REL).read_text(encoding="utf-8").strip()
+        if str(version) != have:
+            raise SystemExit(f"{DEVICE_DATA}: {VERSION_REL} is {have}, "
+                             f"{LOCK.name} says {version}")
+    print(f"  {MANIFEST_REL} matches the lock", file=sys.stderr)
 
 
 def fetch_device_data(root: pathlib.Path) -> pathlib.Path:
     dest = root / DEVICE_DATA
-    commit = locked_commit()
+    pin = locked_pin()
+    commit = pin.get("commit") if pin else None
     if not dest.exists():
         print(f"  cloning {DEVICE_DATA_URL}", file=sys.stderr)
         subprocess.run(["git", "clone", "--quiet", DEVICE_DATA_URL, str(dest)],
@@ -175,6 +223,7 @@ def fetch_device_data(root: pathlib.Path) -> pathlib.Path:
             subprocess.run(["git", "-C", str(dest), "checkout", "--quiet", commit],
                            check=True)
             print(f"  checked out locked commit {commit[:12]}", file=sys.stderr)
+        verify_surface(dest, pin)
     else:
         print(f"  {DEVICE_DATA}.lock.toml records no commit; "
               "leaving the clone as is",

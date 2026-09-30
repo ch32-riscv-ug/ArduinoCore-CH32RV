@@ -19,7 +19,7 @@ cp .env.example .env                  # このベンチの port と bench file�
 | 置き場所 | `<repo>/.tools/<name>/<version>/`（gitignore 済み） |
 | 版の正本 | [`tools/index/tools_*.json`](../tools/index/)。package index を作るのと同じファイルなので、**利用者が install するのと同じ版**で test が回る |
 | 完全性 | ダウンロードは展開前に SHA-256 を照合 |
-| device-data | `vendor/ch32-device-data.lock.toml` の locked commit を checkout |
+| device-data | `vendor/ch32-device-data.lock.toml` の commit を checkout し、`index/manifest.csv` の sha256 と `index/VERSION` を lock と照合。読むのは公開面 `index/` だけ |
 | 上書き | `CH32_GCC_BIN` / `CH32_TABLES` が設定済みならそちら（`loader.py`） |
 
 `.tools/cache` は取ってきたアーカイブの置き場で、消しても取り直すだけです（約 400 MB）。EVT mirror（`CH32_MIRROR_ROOT`）だけは
