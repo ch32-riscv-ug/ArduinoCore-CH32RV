@@ -11,7 +11,7 @@ dependencies = [
   # The bench tests: upload and monitor through arduino-cli, and this core's
   # fixtures (ch32rv, oep_host, ch32_uart). Lower bounds only - a lock file pins,
   # and a breaking release should break the run so it gets fixed.
-  "pytest-embedded-arduino-cli>=1.7.1",
+  "pytest-embedded-arduino-cli>=1.8.0",
   "pytest-embedded-arduino-cli-ch32rv>=0.0.3",
   # The trace tests: a WireSkein record per test (ws_run), checked at teardown.
   "pytest-embedded-wireskein>=0.0.2",

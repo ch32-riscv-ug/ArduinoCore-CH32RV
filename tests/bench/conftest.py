@@ -134,10 +134,12 @@ def bench(request: pytest.FixtureRequest) -> benchdef.Bench:
 
 
 def _port(config, profile: str) -> str:
-    """The IDE port, the way pytest-embedded-arduino-cli resolves it: --port, else TEST_SERIAL_PORT_<PROFILE>."""
-    import urllib.parse
+    """The IDE port, the way pytest-embedded-arduino-cli resolves it: --port, else TEST_SERIAL_PORT_<PROFILE>. A
+    platform-monitor port arrives wrapped (arduinomonitor://...); the plugin's MonitorTarget takes the wrapper off
+    (its public API since 1.8.0 - the URL's spelling is not a contract)."""
+    from pytest_embedded_arduino_cli import MonitorTarget, is_monitor_url
     port = config.getoption("port", None) or os.environ.get(benchdef.env_key(profile, "SERIAL_PORT_")) or ""
-    if port.startswith("arduinomonitor://"):
-        port = urllib.parse.unquote(port[len("arduinomonitor://"):].split("?", 1)[0])
+    if is_monitor_url(port):
+        port = MonitorTarget.from_url(port).address
     return port
 

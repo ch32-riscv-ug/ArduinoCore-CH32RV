@@ -20,7 +20,7 @@ dependencies = [
 requires-dist = [
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", specifier = ">=8" },
-    { name = "pytest-embedded-arduino-cli", specifier = ">=1.7.1" },
+    { name = "pytest-embedded-arduino-cli", specifier = ">=1.8.0" },
     { name = "pytest-embedded-arduino-cli-ch32rv", specifier = ">=0.0.3" },
     { name = "pytest-embedded-wireskein", specifier = ">=0.0.2" },
     { name = "pytest-html", specifier = ">=4.1.1" },
@@ -291,7 +291,7 @@ wheels = [
 
 [[package]]
 name = "pytest-embedded-arduino-cli"
-version = "1.7.1"
+version = "1.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "portalocker" },
@@ -300,9 +300,9 @@ dependencies = [
     { name = "pytest-embedded-serial" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bb/f4/3e8c8a05f4186f898be43fe0875fbc2a64b66b9ba13276c5a72135142385/pytest_embedded_arduino_cli-1.7.1.tar.gz", hash = "sha256:64894c3a6731add51f3dec7c1ec4198e40d250ad7b9d8da9c0b1edf65818142b", size = 307230, upload_time = "2026-09-29T22:52:09.767Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/3d/ed470fdfe4a9dfd2c30d938e905d7c203369b5162306cb0be5e7b1c4cd7c/pytest_embedded_arduino_cli-1.8.0.tar.gz", hash = "sha256:bb04d19452825faa2f3eb916cb9af10c17a93497ac120546ea807f72801060a3", size = 312883, upload_time = "2026-09-30T12:57:31.785Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/20/03/e2bcd26e8234eadcffa92fe42752a0514832dce9338ad07fdf729e6e8746/pytest_embedded_arduino_cli-1.7.1-py3-none-any.whl", hash = "sha256:28c8a1f62a650fbcf687d8f7ef1f48c0b63dd1aaaa50be215b108b275e6ca885", size = 47118, upload_time = "2026-09-29T22:52:08.092Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/69/0717c2581cf3f7864b099a62f47ad34beefa1a2c1f17c6a1af5650f121f2/pytest_embedded_arduino_cli-1.8.0-py3-none-any.whl", hash = "sha256:1c61dd888b46e3eaf06e4097c4c616d5e4b83f8f97acba31d6706478f5f65f5f", size = 48122, upload_time = "2026-09-30T12:57:30.34Z" },
 ]
 
 [[package]]
