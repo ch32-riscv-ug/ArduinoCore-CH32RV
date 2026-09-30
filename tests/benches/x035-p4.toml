@@ -15,9 +15,9 @@
 [probe]
 kind = "oep"
 model = "esp32-p4"                           # oep.core describe: model (the chip; "esp32-p4-devkit" before 0.0.8)
-firmware = "0.0.11"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
+firmware = "0.0.13"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
 usb = "303a:0002"                            # how the probe enumerates; the serial is the oep:// address's probe part
-release = "v0.0.11"                           # oep-probe-arduino tag prepare.py flashes
+release = "v0.0.13"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag: one sketch per probe chip since 0.0.8, the jig is all settings
 sketch_profile = "esp32p4"                   # its sketch.yaml profile for this probe
 erase = "all"                                # erase the whole flash before flashing
