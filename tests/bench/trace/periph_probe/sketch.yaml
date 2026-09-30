@@ -1,5 +1,7 @@
-# Wire (I2C) without a device on the bus: every transfer must fail fast rather
-# than hang.
+# Peripheral outputs measured on the wire by the OEP probe's fixture.capture:
+# analogWrite PWM, tone(), delayMicroseconds()/millis() timing, SPI mode /
+# clock / data both ways against the probe's SPI target. Needs a bench with a
+# capture (tests/benches/<name>.toml, capture_max_hz); others skip.
 #
 # The profile list below is generated - see tests/build/sketches/sync_profiles.py.
 

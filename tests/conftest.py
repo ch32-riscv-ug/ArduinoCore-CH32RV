@@ -3,22 +3,22 @@
 Everything is reachable from one `pytest` run. What actually runs depends on
 what the machine can do, and that is decided here rather than in each test:
 
-  pytest                      every check that needs no board and no profile
+  pytest                      every check that needs no board (unit, build)
   pytest --clean              the same, with every cache cleared first
   pytest -m "not slow"        skips the multi-minute compile sweeps
   pytest --sweep              adds the every-example x every-series sweep
+  pytest bench --profile <b>  the bench tests, on the bench behind that profile
 
-Collection is by directory, one per kind of check (generated, vendor, startup,
-compile, sizebench, package, sketches, unit). Only files named test_*.py are
-collected; manual/ is excluded outright and its entry points deliberately carry
+Collection is by directory, cut by what a check needs (unit, build, bench,
+manual). bench/ and manual/ are in norecursedirs and manual's entry points carry
 no test_ prefix, so nothing a bare `pytest` picks up ever flashes a board.
-See tests/TEST_PLAN.ja.md.
+See docs/development-workflow.ja.md and tests/TEST_PLAN.ja.md.
 
-Kept small on purpose, and nothing here touches a board. Hardware runs go through
-the runners under manual/ (smoke.py on a WCH-Link, oep_smoke/oep_smoke.py on an OEP
-probe), which replay each sketch's expect.py over whatever that path's console is. Shared code that is
-not a fixture goes in a normally-named module beside this one (loader.py),
-because a second conftest.py anywhere would replace this module in sys.modules.
+Kept small on purpose, and nothing here touches a board. Hardware runs are
+`pytest bench --profile <board>`, whose own conftest checks the bench first. Shared
+code that is not a fixture goes in a normally-named module beside this one
+(loader.py), because a second collected conftest.py would replace this module in
+sys.modules.
 
 The harnesses are Python modules under tests/ and tools/, imported and called
 directly. They used to be shell scripts invoked as subprocesses, with the tests
@@ -34,7 +34,7 @@ import tempfile
 
 import pytest
 
-from loader import REPO
+from loader import REPO, find_gcc_bin, find_tables
 
 
 def _clean_requested(config) -> bool:
@@ -139,28 +139,16 @@ def _unavailable(what):
     pytest.skip(msg)
 
 
-def _finder(name):
-    import sys
-    sys.path.insert(0, str(REPO / "tests" / "manual" / "smoke"))
-    import smoke
-    return getattr(smoke, name)
-
-
 # One fixture per tool rather than one for all of them: a test that only needs
-# the device-data tables must not skip because probe-rs is absent.
+# the device-data tables must not skip because the toolchain is absent.
 @pytest.fixture(scope="session")
 def gcc_bin():
-    return _finder("find_gcc_bin")() or _unavailable("the RISC-V toolchain")
-
-
-@pytest.fixture(scope="session")
-def probe_rs():
-    return _finder("find_probe_rs")() or _unavailable("probe-rs")
+    return find_gcc_bin() or _unavailable("the RISC-V toolchain")
 
 
 @pytest.fixture(scope="session")
 def tables():
-    return _finder("find_tables")() or _unavailable("the ch32-device-data tables")
+    return find_tables() or _unavailable("the ch32-device-data tables")
 
 
 @pytest.fixture(scope="session")

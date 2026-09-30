@@ -3,7 +3,7 @@ name = "arduinocore-ch32-tests"
 version = "0.0.0"
 description = "Hardware and build tests for the ArduinoCore-CH32 platform"
 readme = "README.ja.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"   # pytest-embedded-wireskein needs 3.13
 license = "MIT"
 authors = [{ name = "TANAKA Masayuki" }]
 dependencies = [
@@ -13,6 +13,8 @@ dependencies = [
   # and a breaking release should break the run so it gets fixed.
   "pytest-embedded-arduino-cli>=1.7.1",
   "pytest-embedded-arduino-cli-ch32rv>=0.0.2",
+  # The trace tests: a WireSkein record per test (ws_run), checked at teardown.
+  "pytest-embedded-wireskein>=0.0.2",
   # The WCH-Link's UART bridge, for a sketch whose UART is under test (smoke.py).
   "pyserial>=3.5",
   "pytest-html>=4.1.1",

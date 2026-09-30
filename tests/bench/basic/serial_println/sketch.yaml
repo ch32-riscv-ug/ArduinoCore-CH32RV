@@ -1,6 +1,6 @@
 # Milestone 1 acceptance: Serial comes up and prints.
 #
-# The profile list below is generated - see tests/sketches/sync_profiles.py and
+# The profile list below is generated - see tests/build/sketches/sync_profiles.py and
 # docs/TEST_PLAN.ja.md for what the tiers mean. How profiles relate to a
 # platform that is not installed from an index is explained in tests/README.ja.md.
 

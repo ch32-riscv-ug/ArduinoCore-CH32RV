@@ -2,7 +2,7 @@
  * source: tools/generate/interrupts/interrupts.csv (variant v003)
  * Interrupt vector map. Slot 0 (reset) is emitted by crt0_ch32.S;
  * this file starts at slot 1. Verified against the EVT startup
- * sources by tests/startup/ on every PR. */
+ * sources by tests/build/startup/ on every PR. */
     CH32_RSV                          /*   1 reserved */
     CH32_IRQ NMI_Handler                       /*   2 */
     CH32_IRQ HardFault_Handler                 /*   3 */
