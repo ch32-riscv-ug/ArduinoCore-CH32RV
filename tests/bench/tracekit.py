@@ -183,7 +183,9 @@ class Capture:
 
 
 class Gpio:
-    """oep.fixture.gpio by pad name; a channel joins this fn's plan the first time it is used."""
+    """oep.fixture.gpio by pad name. The fn's plan holds the pads in use: a pad joins it the first time it is
+    driven or read, and `only()` narrows the plan back to the pads a test is working on (a plan of 16 channels was
+    refused as malformed on the P4, 2026-09-30)."""
     INPUT_FLOATING, INPUT_PULL_UP, INPUT_PULL_DOWN, OUTPUT_LOW, OUTPUT_HIGH = 0, 1, 2, 3, 4
     OPEN_DRAIN_LOW, OPEN_DRAIN_RELEASE, INPUT_PULL_UP_DOWN = 5, 6, 7
 
@@ -201,6 +203,11 @@ class Gpio:
             self.channels.add(channel)
             self.fx.plan([(self.fn, 1, c) for c in sorted(self.channels)])
 
+    def only(self, *pads: str) -> None:
+        """Plan exactly these pads (the rest leave the plan and go back to idle)."""
+        self.channels = {self.fx.channel(p) for p in pads}
+        self.fx.plan([(self.fn, 1, c) for c in sorted(self.channels)])
+
     def configure(self, pad: str, mode: int) -> None:
         ch = self.fx.channel(pad)
         self._own(ch)
@@ -213,20 +220,40 @@ class Gpio:
 
 
 class Uart:
-    """oep.fixture.uart as a byte stream, planned on two pads."""
+    """oep.fixture.uart as a byte stream. The bench's fixture UART already has its pins from the probe's saved
+    plan (oep.probe.config, written by prepare.py), so this takes the first oep.fixture.uart that accepts a
+    configure - the one with pins - the way the ch32_uart fixture does."""
 
-    def __init__(self, fx: Fixture, index: int = 0):
-        from oep_client import core, fixture
+    def __init__(self, fx: Fixture, baud: int = 115200, fmt: int | None = None):
+        from oep_client import core, fixture, host as oh
         self.fx = fx
-        self.fn = core.find_all(fx.host, "oep.fixture.uart")[index]
-        self.io = fixture.FixtureUartIO(fx.host, self.fn)
-
-    def assignments(self, rx_pad: str, tx_pad: str) -> list[tuple[int, int, int]]:
-        """rx_pad: the DUT pad the probe listens to (DUT TX); tx_pad: the DUT pad the probe drives (DUT RX)."""
-        return [(self.fn, 1, self.fx.channel(rx_pad)), (self.fn, 2, self.fx.channel(tx_pad))]
+        last = None
+        for fn in core.find_all(fx.host, "oep.fixture.uart"):
+            io = fixture.FixtureUartIO(fx.host, fn)
+            try:
+                io.configure(baud, fmt)
+            except oh.Rejected as e:
+                last = e
+                continue
+            self.fn, self.io = fn, io
+            return
+        pytest.skip(f"no oep.fixture.uart on this probe has pins for the DUT's UART ({last}): prepare.py writes the plan")
 
     def configure(self, baud: int, fmt: int | None = None) -> int:
         return self.io.configure(baud, fmt)
+
+    def collect(self, n: int, timeout: float) -> bytes:
+        """Up to n bytes within timeout seconds."""
+        buf, t0 = bytearray(), time.perf_counter()
+        while len(buf) < n and time.perf_counter() - t0 < timeout:
+            chunk = self.io.read(1024)
+            if chunk:
+                buf += chunk
+        return bytes(buf)
+
+    def flush_input(self) -> None:
+        while self.io.read(4096):
+            pass
 
     def read(self, n: int = 4096) -> bytes:
         return self.io.read(n)
@@ -318,3 +345,9 @@ def decode_spi(samples: bytes, rate: float) -> dict:
             "miso_rise": pack(miso_bits["rise"]), "miso_fall": pack(miso_bits["fall"]),
             "cpol": idle, "sck_hz": sck_hz, "mosi_changes_near": near, "clocks": len(sck_rises),
             "cs_low_us": ((cs_rise or len(samples)) - cs_fall) / rate * 1e6 if cs_fall is not None else None}
+
+
+def decode_i2c(samples: bytes, scl_bit: int = 0, sda_bit: int = 1):
+    """oep_client's I2C decoder on a capture planned as (SCL, SDA) = bits 0, 1. -> I2cTrace (events, scl_periods)."""
+    from oep_client import decode
+    return decode.decode_i2c([(b >> scl_bit) & 1 for b in samples], [(b >> sda_bit) & 1 for b in samples])

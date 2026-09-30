@@ -37,6 +37,8 @@ def pytest_collection_modifyitems(session, config, items):
     profile = config.getoption("profile", None)
     if not profile:
         raise pytest.UsageError("bench tests need --profile <board>: the bench is chosen by profile")
+    if config.getoption("run_mode", "all") == "build":
+        return                                 # compiling only: no probe is touched, so none is checked
     try:
         bench = benchdef.load(profile, _port(config, profile))
         problems = benchdef.check(bench, benchdef.find_ch32rv())
@@ -48,6 +50,24 @@ def pytest_collection_modifyitems(session, config, items):
             f"bench {name} is not ready for --profile {profile}:\n  " + "\n  ".join(problems)
             + f"\nrun: uv run --env-file .env tests/bench/prepare.py --profile {profile}")
     config.stash.setdefault(_BENCH, {})[profile] = bench
+    _compile_time_facts(bench)
+
+
+def _compile_time_facts(bench) -> None:
+    """The few bench facts a sketch needs before it can talk (build_config.toml <- environment): the boot
+    marker pad, as the core's pin number."""
+    pwm = bench.facts.get("pwm")
+    if pwm:
+        os.environ.setdefault("TEST_BENCH_MARK_PIN", str(_encode(pwm)))
+
+
+def _encode(pad: str) -> int:
+    """"PA0" -> the core's pin number, (port << 5) | bit (cores/arduino/ch32_pins.h, ADR-0010)."""
+    import re
+    m = re.fullmatch(r"P([A-F])(\d{1,2})", pad.strip().upper())
+    if not m:
+        raise pytest.UsageError(f"{pad!r} is not a pad name like PA0")
+    return ("ABCDEF".index(m.group(1)) << 5) | int(m.group(2))
 
 
 def pytest_report_header(config):
@@ -59,6 +79,8 @@ def pytest_report_header(config):
 @pytest.fixture(scope="module")
 def bench(request: pytest.FixtureRequest) -> benchdef.Bench:
     """The bench file behind --profile (wiring, UART, facts), already checked against the probe."""
+    if request.config.getoption("run_mode", "all") == "build":
+        pytest.skip("build only: no bench")
     return request.config.stash[_BENCH][request.config.getoption("profile")]
 
 

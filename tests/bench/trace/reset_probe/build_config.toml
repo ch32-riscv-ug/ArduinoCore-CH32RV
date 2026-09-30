@@ -1,0 +1,5 @@
+# The boot marker pad is set before the console exists, so it is compiled in:
+# bench/conftest.py puts the bench file's facts.pwm (as the core's pin number)
+# into TEST_BENCH_MARK_PIN before the build. The value arrives as a string.
+[defines]
+TEST_BENCH_MARK_PIN = "BENCH_MARK_PIN"
