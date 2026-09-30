@@ -287,6 +287,9 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       それだと VDD 4.56 V になり、ESP32 の High が 915/1023 に読める記録と両立しない。
       device-data に有効化ビット・X035 のチャネル再確認・V103/M030 の VREFINT を依頼済み。
       生成物の`CH32RV_ADC_VREFINT_CHANNEL`/`_MV`/`CH32RV_ADC_CTLR2_TSVREFE`はそのために残してある
+- [ ] `[P2]` **ch32rv の次の release で同梱版を上げるとき**: SerialRTT の README / HelloRTT / RttEcho の
+      「OEP probe 経由の rtt はまだ使えない」を「OEP probe でも rtt 可」に書き換える
+      (ch32rv-df が X035 治具で確認済み、2026-10-01。arduino monitor の 1 行 echo は p50 ~70 ms)
 - [x] `CH32RV.getFlashChipSize()`と`getUniqueId()`(64 bit、2026-10-01、device-data 1635edf の esig.csv)。
       MAC ではないので ESP32 の`getEfuseMac()`の名前は採らない(ユーザー判断、2026-10-01)。
       X035F8U6 は 63488、V003F4U6 は 16384 を返した。LinkE の 7 台でも FLACAP は型番どおり。
