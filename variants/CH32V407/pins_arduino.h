@@ -17,6 +17,7 @@
 #include "ch32rv_pins.h"
 
 #define CH32RV_VARIANT_CH32V407 1
+#define CH32RV_SERIES_NAME "CH32V407"   /* CH32RV.getChipModel() */
 #define CH32RV_CORE_QINGKE_V3V 1
 
 /* ---- peripheral clock enables (clock_enables.csv) ----
@@ -322,6 +323,14 @@
     (c) == 14 ? PC4 : \
     (c) == 15 ? PC5 : \
     NOT_A_PIN)
+
+/* ---- internal reference (device-data adc_internal.csv). Kept for
+ *      arduino-esp32's analogReadMilliVolts(), which is NOT offered yet:
+ *      on the X035 bench channel 15 reads the previous conversion, and the
+ *      V003 reading disagrees with the supply (docs/todo.ja.md). ---- */
+#define CH32RV_ADC_VREFINT_CHANNEL 17
+#define CH32RV_ADC_VREFINT_MV 1200   /* 1170..1230 mV */
+#define CH32RV_ADC_CTLR2_TSVREFE (1u << 23)
 
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */

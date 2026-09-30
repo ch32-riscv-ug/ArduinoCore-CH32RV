@@ -118,27 +118,45 @@ static void ch32rv_adc_begin(uint8_t index)
     CH32RV_ADC_MARK_STARTED(index);
 }
 
-int analogRead(pin_size_t pin)
+/* One conversion of `channel` at the hardware's native width. */
+static uint32_t ch32rv_adc_convert(uint32_t base, uint32_t channel)
 {
-#ifdef NUM_ANALOG_INPUTS
-    const uint32_t channel = CH32RV_PIN_TO_ADC_CHANNEL(pin);
-    if (channel == NOT_AN_ANALOG_PIN) {
-        return 0;
-    }
-    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
-    ch32rv_gpio_clock_enable(port);
-    ch32rv_gpio_set_config(port, (uint8_t)CH32RV_PIN_BIT(pin),
-                         CH32RV_GPIO_CFG_IN_ANALOG);
-
-    const uint8_t index = CH32RV_ADC_INDEX(pin);
-    ch32rv_adc_begin(index);
-    const uint32_t base = CH32RV_ADC_BASE(index);
     CH32RV_ADC_RSQR1_AT(base) = 0;        /* one conversion in the sequence */
     CH32RV_ADC_RSQR3_AT(base) = channel;
     CH32RV_ADC_CTLR2_AT(base) |= CH32RV_ADC_CTLR2_SWSTART;
     while ((CH32RV_ADC_STATR_AT(base) & CH32RV_ADC_STATR_EOC) == 0u) {
     }
-    uint32_t value = CH32RV_ADC_RDATAR_AT(base) & ((1u << CH32RV_ADC_BITS) - 1u);
+    return CH32RV_ADC_RDATAR_AT(base) & ((1u << CH32RV_ADC_BITS) - 1u);
+}
+
+#ifdef NUM_ANALOG_INPUTS
+/* The pad as an analog input on its instance, started; its channel, or
+ * NOT_AN_ANALOG_PIN. */
+static uint32_t ch32rv_adc_prepare(pin_size_t pin, uint8_t *index)
+{
+    const uint32_t channel = CH32RV_PIN_TO_ADC_CHANNEL(pin);
+    if (channel == NOT_AN_ANALOG_PIN) {
+        return channel;
+    }
+    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
+    ch32rv_gpio_clock_enable(port);
+    ch32rv_gpio_set_config(port, (uint8_t)CH32RV_PIN_BIT(pin),
+                         CH32RV_GPIO_CFG_IN_ANALOG);
+    *index = CH32RV_ADC_INDEX(pin);
+    ch32rv_adc_begin(*index);
+    return channel;
+}
+#endif
+
+int analogRead(pin_size_t pin)
+{
+#ifdef NUM_ANALOG_INPUTS
+    uint8_t index = 0;
+    const uint32_t channel = ch32rv_adc_prepare(pin, &index);
+    if (channel == NOT_AN_ANALOG_PIN) {
+        return 0;
+    }
+    uint32_t value = ch32rv_adc_convert(CH32RV_ADC_BASE(index), channel);
 
     /* Scale the hardware's native width to the requested one, both ways. */
     if (ch32rv_adc_read_bits > CH32RV_ADC_BITS) {

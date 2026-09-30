@@ -610,6 +610,34 @@ def load_adc_bases(tables: pathlib.Path) -> dict:
     return out
 
 
+def load_vrefint(tables: pathlib.Path) -> dict:
+    """family -> (channel, mv, mv_min, mv_max, tsvrefe_bit or None).
+
+    The internal reference arduino-esp32's analogReadMilliVolts() would measure
+    VDDA against (not offered yet - see the note it emits):
+    index/adc_internal.csv (source=vrefint) for its channel and nominal
+    voltage, index/registers.csv for the ADC CTLR2 TSVREFE bit that switches it
+    on, on the families that have one (V003/V006/X035/X315 show none - there it
+    is taken to be always on). Families without a vrefint row (CH32V103,
+    CH32M030) get no analogReadMilliVolts().
+    """
+    tsvrefe: dict = {}
+    for r in read_table(tables, "registers.csv"):
+        if (r.get("type") == "ADC" and r.get("register") == "CTLR2"
+                and r.get("field") == "TSVREFE" and r.get("kind") == "field"
+                and r.get("bits")):
+            tsvrefe[r["family"]] = int(r["bits"].split(":")[-1])
+    out: dict = {}
+    for r in read_table(tables, "adc_internal.csv"):
+        if r.get("source") != "vrefint" or not r.get("vrefint_mv"):
+            continue
+        out[r["family"]] = (int(r["channel"]), int(r["vrefint_mv"]),
+                            int(r["vrefint_mv_min"] or r["vrefint_mv"]),
+                            int(r["vrefint_mv_max"] or r["vrefint_mv"]),
+                            tsvrefe.get(r["family"]))
+    return out
+
+
 def load_errata_ids(tables: pathlib.Path) -> set:
     return {r["id"] for r in read_table(tables, "errata.csv")}
 
@@ -1794,7 +1822,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              wide_by_family: dict = {},
              timers_by_family: dict = {},
              forbidden: dict = {}, clock_enables: dict = {},
-             adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {}) -> str:
+             adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {},
+             vrefint: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -1889,6 +1918,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     out += [" */", "#pragma once", "", '#include "ch32rv_pins.h"', ""]
 
     out.append(f"#define CH32RV_VARIANT_{series} 1")
+    out.append(f'#define CH32RV_SERIES_NAME "{series}"   /* CH32RV.getChipModel() */')
     # The QingKe core, from index/series.csv, so the core can branch on what the
     # silicon does rather than on a list of part names - Arduino.h picks the CSR
     # that holds the interrupt enable by it, because QingKe V4 traps mstatus in the
@@ -2079,6 +2109,18 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"    (c) == {ch} ? {pad_name(port, bit)} : \\")
         out.append("    NOT_A_PIN)")
         out.append("")
+        refs = {vrefint.get(r.get("family", "")) for r in rows}
+        if len(refs) == 1 and None not in refs:
+            ch, mv, lo, hi, bit = refs.pop()
+            out.append("/* ---- internal reference (device-data adc_internal.csv). Kept for")
+            out.append(" *      arduino-esp32's analogReadMilliVolts(), which is NOT offered yet:")
+            out.append(" *      on the X035 bench channel 15 reads the previous conversion, and the")
+            out.append(" *      V003 reading disagrees with the supply (docs/todo.ja.md). ---- */")
+            out.append(f"#define CH32RV_ADC_VREFINT_CHANNEL {ch}")
+            out.append(f"#define CH32RV_ADC_VREFINT_MV {mv}   /* {lo}..{hi} mV */")
+            if bit is not None:
+                out.append(f"#define CH32RV_ADC_CTLR2_TSVREFE (1u << {bit})")
+            out.append("")
 
     # --- ADC instances beyond ADC1 -------------------------------------
     # Only where they reach pads ADC1 cannot: CH32X305 and CH32X315. On every
@@ -2714,6 +2756,7 @@ def main() -> int:
     timer_capabilities = load_timer_capabilities(args.tables)
     clock_enables = load_clock_enables(args.tables)
     adc_bases = load_adc_bases(args.tables)
+    vrefint = load_vrefint(args.tables)
     cores = {r["series"]: r["core"]
              for r in read_table(args.tables, "series.csv", ("series", "core"))}
     pwm = load_pwm_pins(args.tables)
@@ -2775,7 +2818,7 @@ def main() -> int:
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
                      route_alts, wide_timers, timer_capabilities, forbidden,
                      clock_enables,
-                     adc_all, adc_bases, cores)
+                     adc_all, adc_bases, cores, vrefint)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of

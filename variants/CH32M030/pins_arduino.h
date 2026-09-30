@@ -17,6 +17,7 @@
 #include "ch32rv_pins.h"
 
 #define CH32RV_VARIANT_CH32M030 1
+#define CH32RV_SERIES_NAME "CH32M030"   /* CH32RV.getChipModel() */
 #define CH32RV_CORE_QINGKE_V3B 1
 
 /* ---- peripheral clock enables (clock_enables.csv) ----

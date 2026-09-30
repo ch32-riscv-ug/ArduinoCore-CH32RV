@@ -17,6 +17,7 @@
 #include "ch32rv_pins.h"
 
 #define CH32RV_VARIANT_CH32X305 1
+#define CH32RV_SERIES_NAME "CH32X305"   /* CH32RV.getChipModel() */
 #define CH32RV_CORE_QINGKE_V3F 1
 
 /* ---- peripheral clock enables (clock_enables.csv) ----
@@ -256,6 +257,13 @@
     (c) == 10 ? PB4 : \
     (c) == 11 ? PB5 : \
     NOT_A_PIN)
+
+/* ---- internal reference (device-data adc_internal.csv). Kept for
+ *      arduino-esp32's analogReadMilliVolts(), which is NOT offered yet:
+ *      on the X035 bench channel 15 reads the previous conversion, and the
+ *      V003 reading disagrees with the supply (docs/todo.ja.md). ---- */
+#define CH32RV_ADC_VREFINT_CHANNEL 12
+#define CH32RV_ADC_VREFINT_MV 1200   /* 1170..1230 mV */
 
 /* ---- ADC2..4 analog inputs (30 more pads) ----
  * This series puts its ADCs on DISJOINT pads, so a pad

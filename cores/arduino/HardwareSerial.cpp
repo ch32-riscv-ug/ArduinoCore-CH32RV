@@ -4,9 +4,6 @@
 #include "ch32rv_gpio.h"
 #include "ch32rv_registers.h"
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 using namespace arduino;
 
@@ -109,33 +106,6 @@ void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config, int rx
         return;
     }
     begin(baudrate, config);
-}
-
-size_t CH32RVHardwareSerial::printf(const char *format, ...)
-{
-    /* arduino-esp32's shape: a stack buffer, and the heap only for a line that
-     * does not fit. */
-    char small[64];
-    va_list ap;
-    va_start(ap, format);
-    const int len = vsnprintf(small, sizeof small, format, ap);
-    va_end(ap);
-    if (len < 0) {
-        return 0;
-    }
-    if ((size_t)len < sizeof small) {
-        return write((const uint8_t *)small, (size_t)len);
-    }
-    char *big = (char *)malloc((size_t)len + 1);
-    if (big == nullptr) {
-        return 0;
-    }
-    va_start(ap, format);
-    vsnprintf(big, (size_t)len + 1, format, ap);
-    va_end(ap);
-    const size_t n = write((const uint8_t *)big, (size_t)len);
-    free(big);
-    return n;
 }
 
 void CH32RVHardwareSerial::end(void)
@@ -521,3 +491,4 @@ extern "C" size_t ch32rv_serial_write_bytes(const uint8_t *data, size_t len)
 {
     return ch32rv_stdout ? ch32rv_stdout->write(data, len) : 0;
 }
+

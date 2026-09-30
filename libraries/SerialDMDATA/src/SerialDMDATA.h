@@ -27,6 +27,7 @@
  */
 #pragma once
 
+#include "ch32rv_printf.h"
 #include "api/HardwareSerial.h"
 
 #include <stdint.h>
@@ -87,6 +88,7 @@ public:
     size_t write(uint8_t c) override;
     size_t write(const uint8_t *buffer, size_t size) override;
     using Print::write;
+    CH32RV_PRINTF_MEMBER   /* arduino-esp32's Print::printf */
 
     /* True once begin() has claimed the mailbox. It says nothing about whether
      * a host is listening; alive() does, once something has been sent. */

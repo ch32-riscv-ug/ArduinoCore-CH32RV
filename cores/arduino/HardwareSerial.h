@@ -9,6 +9,7 @@
 
 #include "api/HardwareSerial.h"
 #include "ch32rv_pins.h"
+#include "ch32rv_printf.h"
 #include "ch32rv_ringbuffer.h"
 #include "ch32rv_route.h"
 /* Not just for the pad names: CH32RV_SERIALn_TX and CH32RV_SERIAL_DEFAULT below
@@ -83,10 +84,8 @@ public:
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
     inline size_t write(int n) { return write((uint8_t)n); }
 
-    /* arduino-esp32's Print::printf, here on the port (ArduinoCore-API's Print,
-     * vendored unmodified, has none). Floats need the "printf() float support"
-     * menu, as printf() itself does. */
-    size_t printf(const char *format, ...) __attribute__((format(printf, 2, 3)));
+    /* arduino-esp32's Print::printf - see ch32rv_printf.h. */
+    CH32RV_PRINTF_MEMBER
 
     operator bool() override { return _started; }
 

@@ -278,7 +278,16 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       **C++で書いた**: `api/Common.h`が`tone`/`noTone`をC++プロトタイプ側にだけ
       置いているので、Cで定義するとリンクしない
 - [ ] `[P1]` ADC分解能(`CH32RV_ADC_BITS`)はdatasheet由来。**実機で確認する** (要実機)
-- [ ] `[P1]` `analogWrite`のPWM周波数が1kHz固定。Arduino慣例には合うが変更手段が無い
+- [x] `analogWrite`のPWM周波数を変えられるようにした(2026-10-01、arduino-esp32 の
+      `analogWriteFrequency(pin, hz)`。同じtimerのchannelは次の`analogWrite()`で追従)
+- [ ] `[P1]` **`analogReadMilliVolts()`(arduino-esp32)は保留**(2026-10-01)。
+      実装は VREFINT(device-data `adc_internal.csv`)で VDDA を割り出す形で書いたが、実機で合わなかったので外した。
+      X035F8U6 では ch15(VREFINT とされる)が**直前の変換の値をなぞる**(GND の後 ~10、VDD の後 ~4095)。
+      CTLR2 bit 23 は書いても残らない。V003(classic ESP32 ジグ)では読みは 269〜270 で安定しているが、
+      それだと VDD 4.56 V になり、ESP32 の High が 915/1023 に読める記録と両立しない。
+      device-data に有効化ビット・X035 のチャネル再確認・V103/M030 の VREFINT を依頼済み。
+      生成物の`CH32RV_ADC_VREFINT_CHANNEL`/`_MV`/`CH32RV_ADC_CTLR2_TSVREFE`はそのために残してある
+- [ ] `[P2]` `CH32RV.getFlashChipSize()`とチップID(ESP の`getEfuseMac`相当)。ESIG の番地表が device-data に無い(R-35 として依頼済み)
 - [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ
 - [ ] `[P2]` X305/X315のPWM。timerもper-pin AF方式でdefault routeが無い
 - [x] `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))。

@@ -8,6 +8,11 @@
 __stack_size = DEFINED(__stack_size) ? __stack_size : 512;
 PROVIDE( _stack_size = __stack_size );
 
+/* For CH32RV.getSketchSize() / getFreeSketchSpace(): the flash this build is
+ * linked into (the part the menu picked; the smallest of the series for ANY). */
+PROVIDE( _ch32rv_flash_origin = ORIGIN(FLASH) );
+PROVIDE( _ch32rv_flash_length = LENGTH(FLASH) );
+
 SECTIONS
 {
     /* Must be first: entry 0 is the reset jump, and mtvec's base has to be 0

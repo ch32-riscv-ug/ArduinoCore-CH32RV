@@ -3,6 +3,49 @@
 #include "Arduino.h"
 #include "ch32rv_registers.h"
 
+#include <malloc.h>
+#include <stdint.h>
+
+extern "C" {
+void *_sbrk(ptrdiff_t incr);
+extern char _end[];
+extern char _heap_end[];
+extern char _data_vma[];
+extern char _data_lma[];
+extern char _edata[];
+extern char _ch32rv_flash_origin[];
+extern char _ch32rv_flash_length[];
+}
+
+uint32_t CH32RVSystem::getHeapSize()
+{
+    return (uint32_t)(_heap_end - _end);
+}
+
+uint32_t CH32RVSystem::getFreeHeap()
+{
+    const char *brk = (const char *)_sbrk(0);
+    const struct mallinfo mi = mallinfo();
+    return (uint32_t)(_heap_end - brk) + (uint32_t)mi.fordblks;
+}
+
+const char *CH32RVSystem::getChipModel()
+{
+    return CH32RV_SERIES_NAME;
+}
+
+uint32_t CH32RVSystem::getSketchSize()
+{
+    return (uint32_t)((_data_lma + (_edata - _data_vma)) - _ch32rv_flash_origin);
+}
+
+uint32_t CH32RVSystem::getFreeSketchSpace()
+{
+    const uint32_t length = (uint32_t)(uintptr_t)_ch32rv_flash_length;
+    const uint32_t used = getSketchSize();
+    return used < length ? length - used : 0u;
+}
+
 namespace arduino {
 
 void CH32RVSystem::restart()

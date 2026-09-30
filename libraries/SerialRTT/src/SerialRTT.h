@@ -21,6 +21,7 @@
  */
 #pragma once
 
+#include "ch32rv_printf.h"
 #include "api/HardwareSerial.h"
 
 #include <stdint.h>
@@ -68,6 +69,7 @@ public:
     size_t write(uint8_t c) override;
     size_t write(const uint8_t *buffer, size_t size) override;
     using Print::write;
+    CH32RV_PRINTF_MEMBER   /* arduino-esp32's Print::printf */
 
     /* How much more write() would take right now. Unlike a UART's, this number
      * only moves when a host is actually reading. */

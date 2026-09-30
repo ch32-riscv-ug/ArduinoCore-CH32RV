@@ -62,6 +62,22 @@ public:
     bool wdtEnable(uint32_t ms);
     void wdtFeed();
 
+    /* arduino-esp32's ESP.* names for the same facts. */
+    /* The heap: the RAM between the end of .bss and the reserved stack. */
+    uint32_t getHeapSize();
+    /* What malloc() can still hand out: never-claimed heap plus freed blocks
+     * (fragmented - one allocation of this size may still fail). */
+    uint32_t getFreeHeap();
+    uint32_t getCpuFreqMHz() { return (uint32_t)(F_CPU / 1000000UL); }
+    /* The series this sketch was built for ("CH32V003"). A binary only runs on
+     * its own series, so this is the chip it is running on. */
+    const char *getChipModel();
+    /* Flash the sketch occupies (code, constants and .data's initial values),
+     * and what is left of the flash this build is linked for - the selected
+     * part's, or the smallest in the series for the ANY entry. */
+    uint32_t getSketchSize();
+    uint32_t getFreeSketchSpace();
+
 private:
     uint32_t _latched = 0;     /* RSTSCKR flags, once read */
     bool _read = false;
