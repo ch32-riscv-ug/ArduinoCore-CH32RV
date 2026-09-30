@@ -21,7 +21,7 @@ requires-dist = [
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-embedded-arduino-cli", specifier = ">=1.8.0" },
-    { name = "pytest-embedded-arduino-cli-ch32rv", specifier = ">=0.0.3" },
+    { name = "pytest-embedded-arduino-cli-ch32rv", specifier = ">=0.0.4" },
     { name = "pytest-embedded-wireskein", specifier = ">=0.0.2" },
     { name = "pytest-html", specifier = ">=4.1.1" },
     { name = "pyusb", specifier = ">=1.2" },
@@ -307,7 +307,7 @@ wheels = [
 
 [[package]]
 name = "pytest-embedded-arduino-cli-ch32rv"
-version = "0.0.3"
+version = "0.0.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "oep-client-python" },
@@ -315,9 +315,9 @@ dependencies = [
     { name = "pytest" },
     { name = "pytest-embedded-arduino-cli" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/03/b4/bfa090388110673552309b88049bcb15de5333a3fd5ba1410a6a384f9e45/pytest_embedded_arduino_cli_ch32rv-0.0.3.tar.gz", hash = "sha256:de4134f7fb484a82adbd5a7384c944e3eb75814de1fa1acea79ea228617be951", size = 26367, upload_time = "2026-09-30T03:34:25.575Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ea/37/0b90e03d19b3d18ef420fe1d89608bfcd70de0afae584d1255f59eb74666/pytest_embedded_arduino_cli_ch32rv-0.0.4.tar.gz", hash = "sha256:12b08f47f7759e8797804bfaadb22f5ab43c562c839b6ab5d23c0e1d659cd7ff", size = 27294, upload_time = "2026-09-30T15:11:23.821Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/f0/623d1e92f505f8632076c9b36881960aa51151f906c3fc632578ee9f1457/pytest_embedded_arduino_cli_ch32rv-0.0.3-py3-none-any.whl", hash = "sha256:8af306f0c54c6415daff057c087b768b3c5206c23fb3fd5dd19dd9c2e034706b", size = 7306, upload_time = "2026-09-30T03:34:24.285Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/8d/58d9eb63ca19db55b12d0f594dc1c87a437f15293e0d5cf74b4d5625f3ef/pytest_embedded_arduino_cli_ch32rv-0.0.4-py3-none-any.whl", hash = "sha256:512fee15d72946eff976eb324ab1593ed37c1b2191d3290afd04e48447f7899d", size = 7465, upload_time = "2026-09-30T15:11:22.612Z" },
 ]
 
 [[package]]
