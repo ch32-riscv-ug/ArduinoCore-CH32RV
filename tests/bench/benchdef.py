@@ -65,8 +65,9 @@ class Bench:
 
     @property
     def probe_serial(self) -> str:
-        """The probe's identity from the port: `oep://<serial>/<slot>` or `wchlink://<serial>`; a serial OEP
-        probe (`[probe] transport = "serial"`, an ESP32's UART bridge) is its device path."""
+        """The probe's identity from the port: `oep://<unit id>/<slot>` (the unit id is the USB serial since
+        oep-probe-arduino 0.0.19) or `wchlink://<serial>`; a serial OEP probe (`[probe] transport = "serial"`, an
+        ESP32's UART bridge) is its device path."""
         if self.probe.get("transport") == "serial":
             return self.port
         m = re.match(r"^(oep|wchlink)://([^/]+)", self.port)
@@ -155,15 +156,16 @@ def wanted_items(bench: Bench, hst) -> list:
         roles = registry.by_name(name).enum.get("role", {}) if hasattr(registry, "by_name") else {}
         for role, ch in spec["roles"].items():
             number = roles.get(role) if roles else {"rx": 1, "tx": 2, "line": 1}.get(role)
-            items.append(config.Plan(fn, int(number), int(ch)))
+            items.append(config.Plan(fn=fn, role=int(number), channel=int(ch)))
     for spec in bench.data.get("idle", []):          # oep config idle: how an unassigned channel rests
-        items.append(config.Idle(int(spec["channel"]), spec.get("mode", "pull-up")))
+        items.append(config.Idle(channel=int(spec["channel"]), mode=spec.get("mode", "pull-up")))
     if slot:
         wire_fn = core.find(hst, f"oep.wire.{slot['wire']}")
         pins = tuple(slot["pins"]) if len(slot["pins"]) == 2 else (slot["pins"][0], 0xFFFF)
-        items.append(config.Slot(0, wire_fn, pins, slot["name"], slot.get("attach", "host"),
-                                 int(slot.get("retry_s", 0)), slot.get("mechanism", "dmseq"), None,
-                                 int(slot.get("max_speed", 0)), slot.get("idle_clock", "high")))
+        items.append(config.Slot(slot=0, wire_fn=wire_fn, pins=pins, name=slot["name"],
+                                 attach=slot.get("attach", "host"), retry_s=int(slot.get("retry_s", 0)),
+                                 mechanism=slot.get("mechanism", "dmseq"), lock=None,
+                                 max_speed=int(slot.get("max_speed", 0)), idle_clock=slot.get("idle_clock", "high")))
     for b in bench.data.get("bind", []):
         streams = []
         for s in b["streams"]:
@@ -172,7 +174,8 @@ def wanted_items(bench: Bench, hst) -> list:
                 streams.append(("slot", 0))
             else:
                 streams.append(("uart", core.find_all(hst, "oep.fixture.uart")[int(ref) - 1]))
-        items.append(config.Bind(int(b["port"]), b.get("mode", "last-reset"), streams, int(b.get("selected", 0))))
+        items.append(config.Bind(port=int(b["port"]), mode=b.get("mode", "last-reset"), streams=streams,
+                                 selected=int(b.get("selected", 0))))
     return items
 
 
@@ -180,9 +183,9 @@ def attach_slot(bench: Bench, hst, halt: bool = False):
     """A test's own connection on the slot's wire, joining the slot's live connection. The host picks the wire's
     pins since oep-probe-arduino 0.0.8; an attach that names none joins the one live connection on that wire
     (oep-if-debug §1, from 0.0.9 - 0.0.8 wanted the pair named). -> (wire, connection)."""
-    from oep_client import target
+    from oep_client import riscv
     slot = bench.data["slot"]
-    wire = target.Wire(hst, "oep.wire." + slot["wire"])
+    wire = riscv.Wire(hst, "oep.wire." + slot["wire"])
     conn, _ = wire.attach(halt=halt)
     return wire, conn
 
@@ -207,7 +210,8 @@ def open_probe(bench: Bench, ch32rv: pathlib.Path | str | None = None):
     elif bench.probe.get("transport") == "serial":
         hst = link.open_host(bench.port)
     else:
-        hst = link.open_host(f"usb:{bench.probe['usb'].replace(':', ':')}:{bench.probe_serial}")
+        # by the unit id (= the USB serial since oep-probe-arduino 0.0.19), whatever VID:PID the probe carries
+        hst = link.open_host(f"usb:{bench.probe_serial}")
     return hst, hst.link.close
 
 

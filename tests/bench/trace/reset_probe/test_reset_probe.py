@@ -82,9 +82,9 @@ def test_reset_to_setup(request, dut, bench, ws_run):
                 sw.append(measure("software", lambda: con.send("REBOOT")))
         sw_reason = reason()
         print(f"[software reset] reset_reason={sw_reason}")
-        from oep_client import target
+        from oep_client import riscv
         _wire, conn = benchdef.attach_slot(bench, fx.host)
-        dm = target.RiscvDm(fx.host, conn)
+        dm = riscv.RiscvDm(fx.host, conn)
         dbg = []
         with ws_run.section(1, "debug reset"):
             for _ in range(REPEAT):

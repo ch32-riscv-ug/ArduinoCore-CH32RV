@@ -31,9 +31,9 @@ def test_registers_hold_what_device_data_says(request, dut, bench, ch32_uart):
     console = ch32_uart.open(115200)
     console.expect_exact("reg_probe READY", timeout=20)
     oep_host = request.getfixturevalue("oep_host")
-    from oep_client import target
+    from oep_client import riscv
     _wire, conn = benchdef.attach_slot(bench, oep_host.host)
-    dm = target.RiscvDm(oep_host.host, conn)
+    dm = riscv.RiscvDm(oep_host.host, conn)
     board = bench.data["dut"]["board"]
     part = bench.data["dut"].get("part")
     usart, _route = bench.uart

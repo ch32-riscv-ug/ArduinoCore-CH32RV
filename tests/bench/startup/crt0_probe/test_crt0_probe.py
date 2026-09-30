@@ -48,7 +48,7 @@ def test_crt0_hands_setup_an_initialised_ram(request, dut, bench, arduino_cli_ap
         pytest.skip("filling RAM through the probe needs an OEP bench")
     kit.start(dut, "crt0_probe")
     oep_host = request.getfixturevalue("oep_host")
-    from oep_client import target
+    from oep_client import riscv
     # Where the sketch's RAM is: from the ELF the plugin just built, with the platform's own nm.
     build = pathlib.Path(arduino_cli_app.build_path)
     elf = next(build.glob("*.ino.elf"))
@@ -60,7 +60,7 @@ def test_crt0_hands_setup_an_initialised_ram(request, dut, bench, arduino_cli_ap
     assert 0 < words <= MAX_FILL_WORDS, f"{words} words from {first:#x} to {last:#x} is not a RAM image this test fills"
     # Halt, fill, reset: through the probe, on a connection of our own.
     _wire, conn = benchdef.attach_slot(bench, oep_host.host, halt=True)
-    dm = target.RiscvDm(oep_host.host, conn)
+    dm = riscv.RiscvDm(oep_host.host, conn)
     print(f"filling {words} words from {first:#010x} with {PATTERN:#010X} (_ebss is {sym['_ebss']:#010x})")
     pattern = PATTERN.to_bytes(4, "little")
     for off in range(0, words, CHUNK_WORDS):

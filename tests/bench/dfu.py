@@ -27,10 +27,15 @@ class DfuError(Exception):
 
 
 def find(serial: str | None):
-    """The probe's USB device (by serial when given), or None."""
+    """The probe's USB device: the one whose serial is `serial` (the unit id), whatever VID:PID it carries (OEP has
+    no PID of its own yet; the P4 uses 303a:0002, an RP2 its board's); with no serial, a 303a:0002 device."""
     import usb.core
     import usb.util
-    for d in usb.core.find(find_all=True, idVendor=VID, idProduct=PID):
+    for d in usb.core.find(find_all=True):
+        if serial is None and not (d.idVendor == VID and d.idProduct == PID):
+            continue
+        if not d.iSerialNumber:
+            continue
         try:
             sn = usb.util.get_string(d, d.iSerialNumber)
         except Exception:      # noqa: BLE001 - a device we cannot read is not ours

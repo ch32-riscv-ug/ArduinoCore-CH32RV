@@ -135,9 +135,9 @@ def test_uart_bauds(fx, ws_run):
         cmd(fx, "CLOSE", "CLOSE ok")
     # resume after the probe's debug reset
     with ws_run.section(1, "after debug reset"):
-        from oep_client import target
+        from oep_client import riscv
         _wire, conn = benchdef.attach_slot(fx.bench, fx.host)
-        target.RiscvDm(fx.host, conn).reset(confirm=False)
+        riscv.RiscvDm(fx.host, conn).reset(confirm=False)
         kit.start(fx.console.dut, "uart_probe")
         cmd(fx, f"UART {fx.usart} {fx.route} 115200", "UART OK")
         cmd(fx, "OPEN 115200", "OPEN ok")

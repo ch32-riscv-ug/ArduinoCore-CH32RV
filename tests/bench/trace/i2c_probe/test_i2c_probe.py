@@ -39,7 +39,7 @@ def fx(request, dut, bench, ws_run):
     f = tk.Fixture(oep_host.host, bench, ws_run, con)
     f.scl, f.sda, f.route = i2c["scl"], i2c["sda"], int(i2c["route"])
     f.cap_max = int(bench.facts.get("capture_max_hz", 0))
-    from oep_client.esp32_targets import I2cTarget
+    from oep_client.fixture import I2cTarget
     f.target = I2cTarget(f.host)
     f.cap = tk.Capture(f)
     f.plan(f.target.assignments(sda=f.channel(f.sda), scl=f.channel(f.scl)) + f.cap.assignments(f.scl, f.sda))
@@ -183,7 +183,7 @@ def test_i2c_clock_stretch(fx, ws_run):
         return int(field(line, "got=")), field(line, "data=").lower(), int(field(line, "t_us=")), trace, samples
 
     for stretch_us in (0, 100, 1000, 5000, 20000, 30000):
-        T.set_stretch(stretch_us)
+        T.stretch(stretch_us)
         T.configure(ADDRESS, T.MODE_PRELOADED_TX)
         T.preload_tx(bytes.fromhex(slot))
         with ws_run.section(1, f"stretch {stretch_us}us"):
@@ -196,7 +196,7 @@ def test_i2c_clock_stretch(fx, ws_run):
               f"max SCL low {low / 1000:.2f} ms | wire {trace.summary()} -> {'OK' if ok else 'BAD'}")
         if not ok:
             bad.append(stretch_us)
-    T.set_stretch(0)
+    T.stretch(0)
     T.configure(ADDRESS, T.MODE_PRELOADED_TX)
     T.preload_tx(bytes.fromhex(slot))
     with ws_run.section(1, "after stretch, stretch off"):
@@ -247,7 +247,7 @@ def test_i2c_stuck_bus(fx, ws_run):
     fx.release()
     fx.plan(T.assignments(sda=fx.channel(fx.sda), scl=fx.channel(fx.scl)) + fx.cap.assignments(fx.scl, fx.sda))
     fx.console.drain(0.3)
-    T.set_stretch(0)
+    T.stretch(0)
     T.configure(ADDRESS, T.MODE_PRELOADED_TX)
     T.preload_tx(bytes(4))
     with ws_run.section(1, "target left mid-byte"):          # the fault itself: recorded, not checked

@@ -206,7 +206,7 @@ def test_spi(fx, ws_run, bench):
 def test_spi_peer(fx, ws_run, bench):
     """The probe's SPI target answers on MISO while the capture watches all four lines: what the DUT got, what the
     target received, and the wire decode all have to agree."""
-    from oep_client.esp32_targets import SpiTarget
+    from oep_client.fixture import SpiTarget
     tk.need(bench, *spi_pads(fx))
     cap_max = int(bench.facts.get("capture_max_hz", 0))
     decode_ok = cap_max >= 5_000_000
