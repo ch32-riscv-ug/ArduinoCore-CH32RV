@@ -182,15 +182,15 @@ wheels = [
 
 [[package]]
 name = "oep-client-python"
-version = "0.0.7"
+version = "0.0.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyserial" },
     { name = "pyusb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/9d/8ff31c16ba8e2a58d18f676f77465e6e89a5d417fb2b835e226d7e3cb593/oep_client_python-0.0.7.tar.gz", hash = "sha256:bc8d2bb7f37928c999c35aae4a44ded66eafa9c352096ef4eec0db1dae07ead0", size = 143395, upload_time = "2026-09-30T03:25:18.12Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/16/82/4399892e86380de726533b78d3f2d7027c2b1970eb476431ffdf22f00763/oep_client_python-0.0.8.tar.gz", hash = "sha256:73750ef622327217ad6af1b0b1ce4fbd03623be9a7aa494a3f222f32ddebf5a4", size = 145714, upload_time = "2026-09-30T04:51:36.157Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/35/74/5df3d37d10de25f3c6c7a74a783dab64775eedfc70fa862fc53cd973d5e8/oep_client_python-0.0.7-py3-none-any.whl", hash = "sha256:0854fbb82c88b05995758915f66fd05971fee149376c962a04cb02ac3db4d1f2", size = 122269, upload_time = "2026-09-30T03:25:16.587Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/24/1d18f1e56bfcadd6c55ec6b8467b6de94afb4f6e557c89ed743d1778e995/oep_client_python-0.0.8-py3-none-any.whl", hash = "sha256:bcdb4003fd4570be5da6cdddcc309812f6521d7ec03f8a246e9fb7e739c6d855", size = 123575, upload_time = "2026-09-30T04:51:34.92Z" },
 ]
 
 [[package]]

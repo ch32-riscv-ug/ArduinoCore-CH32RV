@@ -14,12 +14,12 @@
 
 [probe]
 kind = "oep"
-model = "esp32-p4-devkit"                    # oep.core describe: model
-firmware = "0.0.7"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
-profile = "io.github.ch32-riscv-ug.p4-x035"  # oep.core describe: profile
+model = "esp32-p4"                           # oep.core describe: model (the chip; "esp32-p4-devkit" before 0.0.8)
+firmware = "0.0.8"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
 usb = "303a:0002"                            # how the probe enumerates; the serial is the oep:// address's probe part
-release = "v0.0.7"                           # oep-probe-arduino tag prepare.py flashes
-example = "Esp32P4X035Probe"                 # examples/<example> in that tag
+release = "v0.0.8"                           # oep-probe-arduino tag prepare.py flashes
+example = "Firmware/OepProbe"                # examples/<example> in that tag: one sketch per probe chip since 0.0.8, the jig is all settings
+sketch_profile = "esp32p4"                   # its sketch.yaml profile for this probe
 erase = "all"                                # erase the whole flash before flashing
 
 [dut]
@@ -56,6 +56,10 @@ streams = ["slot:x035"]
 [[plan]]                                     # oep config plan: pins an interface keeps
 interface = "oep.fixture.uart#1"
 roles = { rx = 12, tx = 6 }
+
+[[idle]]                                     # oep config idle: how a channel rests when nothing owns it
+channel = 6                                  # the DUT's USART4 RX: pulled up so it never floats (the old sketch had this built in)
+mode = "pull-up"
 
 [wiring]                                     # DUT pad -> probe channel. A pad not here is not wired; a test asking for it skips.
 PA0 = 46

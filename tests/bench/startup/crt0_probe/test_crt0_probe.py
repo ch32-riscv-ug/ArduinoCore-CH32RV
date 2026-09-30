@@ -20,6 +20,7 @@ from loader import load
 
 kit = load("tests/bench/bench_kit.py", "bench_kit")
 tk = load("tests/bench/tracekit.py", "tracekit")
+import benchdef  # noqa: E402  (bench/ is on sys.path: conftest)
 
 PATTERN = 0xDEADBEEF
 PAST_EBSS_WORDS = 4
@@ -58,8 +59,7 @@ def test_crt0_hands_setup_an_initialised_ram(request, dut, bench, arduino_cli_ap
     words = (last - first) // 4
     assert 0 < words <= MAX_FILL_WORDS, f"{words} words from {first:#x} to {last:#x} is not a RAM image this test fills"
     # Halt, fill, reset: through the probe, on a connection of our own.
-    wire = target.Wire(oep_host.host, "oep.wire." + bench.data["slot"]["wire"])
-    conn, _ = wire.attach(halt=True)
+    _wire, conn = benchdef.attach_slot(bench, oep_host.host, halt=True)
     dm = target.RiscvDm(oep_host.host, conn)
     print(f"filling {words} words from {first:#010x} with {PATTERN:#010X} (_ebss is {sym['_ebss']:#010x})")
     pattern = PATTERN.to_bytes(4, "little")

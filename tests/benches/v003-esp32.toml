@@ -1,0 +1,72 @@
+# The CH32V003 bench on the classic ESP32 jig (E132 wiring): a UIAPduino Pro Micro V1.4
+# behind an ESP32-D0WD running the OEP probe, reached over the ESP32's USB-UART (UART0,
+# 115200) - a serial OEP probe, so the port is a device path, not oep://. tests/.env:
+#
+#   TEST_SERIAL_PORT_CH32V003=/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394
+#   TEST_BENCH_CH32V003=v003-esp32
+#   TEST_BENCH_CH32V003_UPLOAD=/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394   # the same UART flashes the ESP32
+#
+# The CP2102 drops bytes in long bursts, so this jig is for the debug wire and the UART;
+# capture is the ESP32's GPIO sampler (0.4-2 MHz, 1 byte/sample, windows under 164 ms).
+
+[probe]
+kind = "oep"
+transport = "serial"                         # the OEP link is the probe's serial port (the oep:// address's probe part elsewhere)
+model = "esp32"                              # oep.core describe: model
+firmware = "0.0.8"                           # oep.core describe: firmware = the oep-probe-arduino release version
+release = "v0.0.8"                           # oep-probe-arduino tag prepare.py flashes
+example = "Firmware/OepProbe"                # examples/<example> in that tag
+sketch_profile = "esp32"                     # its sketch.yaml profile for this probe
+erase = "all"
+
+[dut]
+board = "CH32V003"                           # the profile
+part = "CH32V003F4P6"                        # UIAPduino Pro Micro V1.4; recorded, not enforced
+console = "dmseq"
+
+[uart]                                       # USART1 route 0, the variant's default Serial: PD5 (TX) -> 22, PD6 (RX) <- 21
+usart = 1
+route = 0
+tx = "PD5"
+rx = "PD6"
+
+[slot]                                       # oep config slot: SWIO on ESP32 GPIO16, NRST on 23 is named by the host when it wants it
+name = "v003"
+wire = "swio"
+pins = [16]
+attach = "at-boot"
+retry_s = 1
+mechanism = "dmseq"
+
+[[bind]]                                     # the UART bridge itself carries the slot's console
+port = 0
+mode = "last-reset"
+streams = ["slot:v003"]
+
+[[plan]]                                     # the fixture UART keeps the DUT's Serial pins
+interface = "oep.fixture.uart#1"
+roles = { rx = 22, tx = 21 }
+
+[[idle]]                                     # the DUT's RX (PD6) rests pulled up (the old Esp32V003Probe had this built in)
+channel = 21
+mode = "pull-up"
+
+[wiring]                                     # DUT pad -> ESP32 GPIO, measured 2026-09-22. PD3 / PD4 (software USB) are not wired.
+PA1 = 25
+PA2 = 26
+PC0 = 5
+PC1 = 19
+PC2 = 18
+PC3 = 17
+PC4 = 33
+PC5 = 27
+PC6 = 4
+PC7 = 14
+PD0 = 13
+PD2 = 32
+PD5 = 22
+PD6 = 21
+
+[facts]                                      # no i2c / spi / pwm facts yet: the trace tests that need them skip here
+external_pullup = ["PC1", "PC2"]             # the board's 2.2 k I2C pull-ups (R4 / R5)
+capture_max_hz = 2000000                     # the ESP32's GPIO sampler

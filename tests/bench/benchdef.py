@@ -65,7 +65,10 @@ class Bench:
 
     @property
     def probe_serial(self) -> str:
-        """The probe's identity from the port: `oep://<serial>/<slot>` or `wchlink://<serial>`."""
+        """The probe's identity from the port: `oep://<serial>/<slot>` or `wchlink://<serial>`; a serial OEP
+        probe (`[probe] transport = "serial"`, an ESP32's UART bridge) is its device path."""
+        if self.probe.get("transport") == "serial":
+            return self.port
         m = re.match(r"^(oep|wchlink)://([^/]+)", self.port)
         if not m:
             raise BenchError(f"{self.profile}: TEST_SERIAL_PORT is {self.port!r}; a bench needs oep:// or wchlink://")
@@ -153,6 +156,8 @@ def wanted_items(bench: Bench, hst) -> list:
         for role, ch in spec["roles"].items():
             number = roles.get(role) if roles else {"rx": 1, "tx": 2, "line": 1}.get(role)
             items.append(config.Plan(fn, int(number), int(ch)))
+    for spec in bench.data.get("idle", []):          # oep config idle: how an unassigned channel rests
+        items.append(config.Idle(int(spec["channel"]), spec.get("mode", "pull-up")))
     if slot:
         wire_fn = core.find(hst, f"oep.wire.{slot['wire']}")
         pins = tuple(slot["pins"]) if len(slot["pins"]) == 2 else (slot["pins"][0], 0xFFFF)
@@ -171,9 +176,22 @@ def wanted_items(bench: Bench, hst) -> list:
     return items
 
 
+def attach_slot(bench: Bench, hst, halt: bool = False):
+    """A test's own connection on the slot's wire, naming the slot's pins: since oep-probe-arduino 0.0.8 the host
+    picks the wire's pins, and an attach that names none scans every pair the probe allows - which the slot's live
+    connection makes `unavailable`. Naming the pair joins that connection. -> (wire, connection)."""
+    from oep_client import target
+    slot = bench.data["slot"]
+    pins = tuple(slot["pins"]) if len(slot["pins"]) == 2 else (slot["pins"][0], 0xFFFF)
+    wire = target.Wire(hst, "oep.wire." + slot["wire"])
+    conn, _ = wire.attach(halt=halt, pins=pins)
+    return wire, conn
+
+
 def open_probe(bench: Bench, ch32rv: pathlib.Path | str | None = None):
     """An oep_client Host on the bench's OEP probe: through ch32rv's broker when one is running for this port
-    (it holds the vendor bulk then), else straight over USB. -> (host, close)."""
+    (it holds the vendor bulk then), else straight over USB, or over the probe's serial port when the bench
+    says `transport = "serial"`. -> (host, close)."""
     from oep_client import link
     endpoint = None
     if ch32rv:
@@ -187,6 +205,8 @@ def open_probe(bench: Bench, ch32rv: pathlib.Path | str | None = None):
             endpoint = None
     if endpoint:
         hst = link.open_host(f"tcp://{endpoint}")
+    elif bench.probe.get("transport") == "serial":
+        hst = link.open_host(bench.port)
     else:
         hst = link.open_host(f"usb:{bench.probe['usb'].replace(':', ':')}:{bench.probe_serial}")
     return hst, hst.link.close

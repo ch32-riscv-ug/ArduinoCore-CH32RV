@@ -15,6 +15,7 @@ import pytest
 from loader import find_tables, load
 
 regcheck = load("tests/bench/regs/reg_probe/regcheck.py", "regcheck")
+import benchdef  # noqa: E402  (bench/ is on sys.path: conftest)
 
 
 def test_registers_hold_what_device_data_says(request, dut, bench, ch32_uart):
@@ -31,8 +32,7 @@ def test_registers_hold_what_device_data_says(request, dut, bench, ch32_uart):
     console.expect_exact("reg_probe READY", timeout=20)
     oep_host = request.getfixturevalue("oep_host")
     from oep_client import target
-    wire = target.Wire(oep_host.host, "oep.wire." + bench.data["slot"]["wire"])
-    conn, _ = wire.attach(halt=False)
+    _wire, conn = benchdef.attach_slot(bench, oep_host.host)
     dm = target.RiscvDm(oep_host.host, conn)
     board = bench.data["dut"]["board"]
     part = bench.data["dut"].get("part")

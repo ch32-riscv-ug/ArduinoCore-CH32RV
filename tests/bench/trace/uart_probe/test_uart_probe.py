@@ -19,6 +19,7 @@ from loader import load
 
 kit = load("tests/bench/bench_kit.py", "bench_kit")
 tk = load("tests/bench/tracekit.py", "tracekit")
+import benchdef  # noqa: E402  (bench/ is on sys.path: conftest)
 from wireskein import runlog as ws  # noqa: E402
 
 
@@ -135,8 +136,7 @@ def test_uart_bauds(fx, ws_run):
     # resume after the probe's debug reset
     with ws_run.section(1, "after debug reset"):
         from oep_client import target
-        wire = target.Wire(fx.host, "oep.wire." + fx.bench.data["slot"]["wire"])
-        conn, _ = wire.attach(halt=False)
+        _wire, conn = benchdef.attach_slot(fx.bench, fx.host)
         target.RiscvDm(fx.host, conn).reset(confirm=False)
         kit.start(fx.console.dut, "uart_probe")
         cmd(fx, f"UART {fx.usart} {fx.route} 115200", "UART OK")

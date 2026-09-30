@@ -86,21 +86,25 @@ def flash_firmware(bench: benchdef.Bench, work: pathlib.Path) -> None:
     # hours; the tag's own src/ is that version, so build against the tree (what the release's firmware
     # workflow does too).
     yaml = sketch / "sketch.yaml"
-    text = re.sub(r"^(\s*)- OpenEmbeddedProbe \([^)]*\)\s*$", r"\1- dir: ../..", yaml.read_text(encoding="utf-8"), flags=re.M)
+    lib = os.path.relpath(tree, sketch)          # ../.. for examples/<X>, ../../.. for examples/Firmware/<X>
+    text = re.sub(r"^(\s*)- OpenEmbeddedProbe \([^)]*\)\s*$", rf"\1- dir: {lib}", yaml.read_text(encoding="utf-8"), flags=re.M)
     yaml.write_text(text, encoding="utf-8")
     build = work / "build"
+    # An example with one profile per probe chip (examples/Firmware/OepProbe: rp2040, rp2350, esp32p4, esp32)
+    # names the jig's in [probe] sketch_profile; one with a single profile leaves it out.
+    profile = ["--profile", probe["sketch_profile"]] if probe.get("sketch_profile") else []
     # The release sketch.yaml pins the library by version from the Library Manager, so the
     # local indexes must know that version (the guide's rule: update before a pinned build).
     log("updating the package and library indexes")
     run(["arduino-cli", "core", "update-index"])
     run(["arduino-cli", "lib", "update-index"])
-    log(f"building {sketch.relative_to(tree)} with its release sketch.yaml (--clean)")
-    run(["arduino-cli", "compile", "--clean", "--build-path", str(build), str(sketch)], cwd=sketch)
+    log(f"building {sketch.relative_to(tree)} with its release sketch.yaml (--clean{' ' + ' '.join(profile) if profile else ''})")
+    run(["arduino-cli", "compile", "--clean", *profile, "--build-path", str(build), str(sketch)], cwd=sketch)
     port = upload_port(bench)
     if probe.get("erase") == "all":
-        erase_flash(bench, sketch, build, port)
+        erase_flash(bench, sketch, build, port, profile)
     log(f"uploading to {port}")
-    run(["arduino-cli", "upload", "--build-path", str(build), "-p", port, str(sketch)], cwd=sketch)
+    run(["arduino-cli", "upload", *profile, "--build-path", str(build), "-p", port, str(sketch)], cwd=sketch)
     reattach_usbip(bench)
 
 
@@ -117,10 +121,10 @@ def reattach_usbip(bench: benchdef.Bench) -> None:
     time.sleep(4)
 
 
-def erase_flash(bench: benchdef.Bench, sketch: pathlib.Path, build: pathlib.Path, port: str) -> None:
+def erase_flash(bench: benchdef.Bench, sketch: pathlib.Path, build: pathlib.Path, port: str, profile: list) -> None:
     """Whole-chip erase before the upload, with the platform's own tool (esptool for the ESP32s). RP2040/RP2350
     probes are erased by their flash_nuke UF2, which is a drive copy this script does not do yet."""
-    props = show_properties(sketch)
+    props = show_properties(sketch, profile)
     esptool = props.get("runtime.tools.esptool_py.path")
     if not esptool:
         raise SystemExit("this probe's platform has no esptool (runtime.tools.esptool_py.path); erase by hand")
@@ -131,8 +135,8 @@ def erase_flash(bench: benchdef.Bench, sketch: pathlib.Path, build: pathlib.Path
     run(cmd + ["--chip", chip, "--port", port, "erase_flash"])
 
 
-def show_properties(sketch: pathlib.Path) -> dict[str, str]:
-    out = run(["arduino-cli", "compile", "--show-properties=expanded", str(sketch)], cwd=sketch, capture=True)
+def show_properties(sketch: pathlib.Path, profile: list = ()) -> dict[str, str]:
+    out = run(["arduino-cli", "compile", "--show-properties=expanded", *profile, str(sketch)], cwd=sketch, capture=True)
     return dict(line.split("=", 1) for line in out.splitlines() if "=" in line)
 
 

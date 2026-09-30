@@ -15,6 +15,7 @@ from loader import load
 
 kit = load("tests/bench/bench_kit.py", "bench_kit")
 tk = load("tests/bench/tracekit.py", "tracekit")
+import benchdef  # noqa: E402  (bench/ is on sys.path: conftest)
 
 REPEAT = 5
 
@@ -82,8 +83,7 @@ def test_reset_to_setup(request, dut, bench, ws_run):
         sw_reason = reason()
         print(f"[software reset] reset_reason={sw_reason}")
         from oep_client import target
-        wire = target.Wire(fx.host, "oep.wire." + bench.data["slot"]["wire"])
-        conn, _ = wire.attach(halt=False)
+        _wire, conn = benchdef.attach_slot(bench, fx.host)
         dm = target.RiscvDm(fx.host, conn)
         dbg = []
         with ws_run.section(1, "debug reset"):
