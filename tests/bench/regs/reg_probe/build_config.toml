@@ -1,0 +1,6 @@
+# The console goes out on the bench's UART (the debug module is busy with the
+# host's register reads): bench/conftest.py sets these from the bench file's
+# [uart] before the build. Values arrive as strings.
+[defines]
+TEST_BENCH_CONSOLE_UART = "BENCH_CONSOLE_UART"
+TEST_BENCH_CONSOLE_ROUTE = "BENCH_CONSOLE_ROUTE"
