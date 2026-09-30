@@ -240,9 +240,9 @@ def test_uart_sweep(fx, bench, ws_run):
                     echoed = echo(fx, payload, 16, 0.3 + 160 / baud)
                 row["rx_ok"] = bytes(b & mask for b in echoed) == payload
             # the wire: the baud measured inside a burst (8 samples a bit at least). Below BRR 16 nothing is promised.
-            # The capture has no trigger and the command's way in takes 13..26 ms, so the window (130816 samples at
-            # most) has to be 40 ms or more: with 10 samples a bit that holds up to about 300 kbaud; faster bauds
-            # are checked by data only until the probe has an edge trigger.
+            # The capture has no trigger and the burst starts 20 ms or more after the arm (below), so the window
+            # (130816 samples at most) has to be 40 ms or more: with 10 samples a bit that holds up to about
+            # 300 kbaud; faster bauds are checked by data only until the probe has an edge trigger.
             if cap:
                 rate = min(cap_max, max(1_000_000, 10 * baud))
                 if rate >= 8 * baud:
@@ -260,6 +260,11 @@ def test_uart_sweep(fx, bench, ws_run):
                         window = cap.config.samples / cap.rate
                         fx.console.drain(0.01)
                         cap.arm()
+                        # The decoder learns the idle level from the capture, so the burst has to start after a
+                        # clear stretch of idle: a dozen bit times, and never less than the console's way in
+                        # (ch32rv 0.12.4 delivers a command in ~2 ms; at 733 baud that is under two bits, and a
+                        # back-to-back burst then has longer low runs than high ones).
+                        time.sleep(max(0.02, 12 / baud))
                         fx.console.send(f"BURST {int(window * 1000) + 150} {seed}")
                         st = cap.wait(3.0 + window)
                         if st.flags & cap.COMPLETE:
