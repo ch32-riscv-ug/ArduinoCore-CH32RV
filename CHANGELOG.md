@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) `analogWrite()` reaches the pads where a timer channel shares its pin with that timer's external trigger (TIM2 CH1 on PA0 of CH32L103 / M103, PD4 of CH32V002-V007 / M007, PA5 of CH32M030); they were missed before. Checked on the V006 PD4 and the L103 PA0.
+- (JA) タイマのチャネルが ETR と pad を共有している箇所でも `analogWrite()` が効くようにした(CH32L103 / M103 の PA0、CH32V002〜V007 / M007 の PD4、CH32M030 の PA5 の TIM2 CH1)。以前は拾えていなかった。V006 の PD4 と L103 の PA0 で確認。
 - (EN) The bundled ch32rv is now 0.14.0 (JSON contract 4): SerialRTT is readable through an OEP probe too (`ch32rv monitor --source rtt`, and the IDE monitor's `source` setting), and choosing `uart` on an OEP probe's port says the source is not there (exit 24) instead of "no probe matched". The udev rules are unchanged.
 - (JA) 同梱の ch32rv を 0.14.0(JSON 契約 4)にした: SerialRTT が OEP probe 経由でも読める(`ch32rv monitor --source rtt`、IDE の monitor の `source` 設定)。OEP probe の port で `uart` を選ぶと「その source は無い」(exit 24)と返る(以前は「probe が見つからない」)。udev のルールは変わらない。
 - (EN) boards.txt no longer carries `build.probe_rs_chip`; `build.ch32rv_chip` is the one chip name. SerialRTT and SerialSDI document the bundled ch32rv as the host side (`ch32rv monitor --source rtt` through a WCH-Link, `ch32rv monitor --source sdi`, which also switches SDI print on).

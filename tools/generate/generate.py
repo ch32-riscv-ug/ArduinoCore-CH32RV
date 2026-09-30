@@ -404,9 +404,11 @@ PORTS = "ABCDEF"
 # carries the port name in its port/gpio columns when the datasheet gives one.
 PAD_PORT_RE = re.compile(r"^P([A-F])(\d+)")
 PORT_SIGNAL_RE = re.compile(r"^P([A-F])(\d+)$")
-# ADC_IN0 / ADC1_IN0 (most series) and A0 (V003/X033/X035 datasheets).
-ADC_LONG_RE = re.compile(r"^ADC(\d*)_IN(\d+)$")
-ADC_SHORT_RE = re.compile(r"^A(\d+)$")
+# ADC channels by pinout.csv's normalised columns (spelling=fixed in
+# index/columns.csv): peripheral ADC<n>, role IN<channel> - whether the datasheet
+# printed ADC_IN3, ADC1_IN3 or A3 (device-data R-36, 2026-10-01).
+ADC_PERIPHERAL_RE = re.compile(r"^ADC(\d+)$")
+ADC_ROLE_RE = re.compile(r"^IN(\d+)$")
 
 # Pads that are GPIO-shaped in pinout.csv but are not GPIO port bits at all
 # (dedicated analog/RF/PHY balls). Excluded from the pin map on purpose.
@@ -578,14 +580,11 @@ def load_pin_tables(tables: pathlib.Path):
     adc: dict[str, dict] = {}
     adc_all: dict[str, dict] = {}
     for r in functions:
-        m = ADC_LONG_RE.match(r["signal"])
-        if m:
-            instance, channel = int(m.group(1) or 1), int(m.group(2))
-        else:
-            m = ADC_SHORT_RE.match(r["signal"])
-            if not m:
-                continue
-            instance, channel = 1, int(m.group(1))
+        pm_ = ADC_PERIPHERAL_RE.match(r.get("peripheral", ""))
+        rm_ = ADC_ROLE_RE.match(r.get("role", ""))
+        if not (pm_ and rm_):
+            continue
+        instance, channel = int(pm_.group(1)), int(rm_.group(1))
         got = resolve(r["part_number"], r["pad"])
         if got is None:
             continue
@@ -1691,15 +1690,13 @@ EXTI_GPIO_LINES = {"x035": 24, "x3x5": 24}
 EXTI_GPIO_LINES_DEFAULT = 16
 
 
-# Timer capture/compare signal naming, like the USART case, is not normalized:
-# TIM1_CH1 on most families, T1CH1 on V003, T1C1 on X033/X035. Complementary
-# outputs (…N) are skipped: driving one needs the break/dead-time setup that
-# analogWrite() has no way to express.
-PWM_SIGNAL_RE = [
-    re.compile(r"^TIM(\d+)_CH(\d+)$"),
-    re.compile(r"^T(\d+)CH(\d+)(?:ETR)?$"),
-    re.compile(r"^T(\d+)C(\d+)$"),
-]
+# Timer channels by pinout.csv's normalised columns (spelling=fixed): peripheral
+# TIM<n>, role CH<k>, or CH<k>_ETR where one pad carries a channel and the
+# external trigger under one signal - whatever the datasheet printed (TIM1_CH1,
+# T1CH1, T1C1). Complementary outputs (CH<k>N) are skipped: driving one needs
+# the break/dead-time setup that analogWrite() has no way to express.
+PWM_PERIPHERAL_RE = re.compile(r"^TIM(\d+)$")
+PWM_ROLE_RE = re.compile(r"^CH(\d)(?:_ETR)?$")
 # Timers at a known base with a known clock-enable bit. TIM1 is the advanced
 # one on APB2; TIM2/TIM3 are general purpose on APB1.
 PWM_TIMERS = (1, 2, 3)
@@ -1709,23 +1706,30 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
     """part -> {(port, bit): (timer, channel)} for the default route only."""
     _, functions = load_pin_functions(tables)
     out: dict = {}
+    plain: dict = {}          # part -> pads that already have a plain CH<k>
     for r in functions:
         if r["route"] not in ("default", "main"):
             continue
-        for pattern in PWM_SIGNAL_RE:
-            m = pattern.match(r["signal"])
-            if m:
-                break
-        else:
+        pm_ = PWM_PERIPHERAL_RE.match(r.get("peripheral", ""))
+        rm_ = PWM_ROLE_RE.match(r.get("role", ""))
+        if not (pm_ and rm_):
             continue
-        timer, channel = int(m.group(1)), int(m.group(2))
+        timer, channel = int(pm_.group(1)), int(rm_.group(1))
         if timer not in PWM_TIMERS or not 1 <= channel <= 4:
             continue
         pm = PAD_PORT_RE.match(r["pad"])
         if not pm:
             continue
-        out.setdefault(r["part_number"], {})[(pm.group(1), int(pm.group(2)))] = \
-            (timer, channel)
+        key = (pm.group(1), int(pm.group(2)))
+        shared = rm_.group(0).endswith("_ETR")
+        # A channel that shares its pad with a timer's ETR (CH1_ETR) never displaces
+        # a plain channel on the same pad (CH32M030 PC0: TIM1 CH4 and TIM3 CH1_ETR).
+        seen = plain.setdefault(r["part_number"], set())
+        if shared and key in seen:
+            continue
+        if not shared:
+            seen.add(key)
+        out.setdefault(r["part_number"], {})[key] = (timer, channel)
     return out
 
 

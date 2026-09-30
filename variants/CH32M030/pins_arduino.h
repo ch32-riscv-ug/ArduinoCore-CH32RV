@@ -335,13 +335,14 @@
 #define SS PIN_SPI_SS
 #endif
 
-/* ---- PWM: 8 pads on TIM1/TIM2/TIM3, default route ---- */
-#define CH32RV_PWM_PIN_COUNT 8
+/* ---- PWM: 9 pads on TIM1/TIM2/TIM3, default route ---- */
+#define CH32RV_PWM_PIN_COUNT 9
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \
     (p) == PB9 ? 1 : \
     (p) == PB11 ? 1 : \
     (p) == PB13 ? 1 : \
     (p) == PC0 ? 1 : \
+    (p) == PA5 ? 2 : \
     (p) == PA6 ? 2 : \
     (p) == PA7 ? 2 : \
     (p) == PA4 ? 2 : \
@@ -352,6 +353,7 @@
     (p) == PB11 ? 2 : \
     (p) == PB13 ? 3 : \
     (p) == PC0 ? 4 : \
+    (p) == PA5 ? 1 : \
     (p) == PA6 ? 2 : \
     (p) == PA7 ? 3 : \
     (p) == PA4 ? 4 : \
@@ -380,7 +382,7 @@
 #define CH32RV_TONE_TIMER_BITS 16
 
 /* ---- Servo: preferred TIM2, also a PWM timer here, so
- *      analogWrite() on PA4, PA6, PA7
+ *      analogWrite() on PA4, PA5, PA6, PA7
  *      is disturbed while a servo is attached. ---- */
 #define CH32RV_SERVO_TIMER 2
 #define CH32RV_SERVO_TIMER_BASE CH32RV_TIM2_BASE

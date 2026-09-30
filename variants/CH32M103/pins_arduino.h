@@ -357,10 +357,11 @@
 #define SS PIN_SPI_SS
 #endif
 
-/* ---- PWM: 8 pads on TIM1/TIM2/TIM3, default route ---- */
-#define CH32RV_PWM_PIN_COUNT 8
+/* ---- PWM: 9 pads on TIM1/TIM2/TIM3, default route ---- */
+#define CH32RV_PWM_PIN_COUNT 9
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \
     (p) == PA11 ? 1 : \
+    (p) == PA0 ? 2 : \
     (p) == PA1 ? 2 : \
     (p) == PA2 ? 2 : \
     (p) == PA3 ? 2 : \
@@ -371,6 +372,7 @@
     0)
 #define CH32RV_PWM_PIN_TO_CHANNEL(p) ( \
     (p) == PA11 ? 4 : \
+    (p) == PA0 ? 1 : \
     (p) == PA1 ? 2 : \
     (p) == PA2 ? 3 : \
     (p) == PA3 ? 4 : \
