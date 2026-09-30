@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyserial>=3.5", "wireskein==0.0.2", "oep-client-python>=0.0.5"]
+# dependencies = ["pyserial>=3.5", "wireskein>=0.0.2", "oep-client-python>=0.0.5"]
 # ///
 """Measure X035 peripheral outputs on the wire with the OEP probe's fixture.capture: analogWrite
 PWM frequency and duty, tone() frequency, delayMicroseconds()/millis() timing, and SPI master
