@@ -610,32 +610,6 @@ def load_adc_bases(tables: pathlib.Path) -> dict:
     return out
 
 
-def load_vrefint(tables: pathlib.Path) -> dict:
-    """family -> (channel, mv, mv_min, mv_max, enable_bit or None).
-
-    The internal reference arduino-esp32's analogReadMilliVolts() would measure
-    VDDA against (not offered yet - see the note it emits), from
-    index/adc_internal.csv (source=vrefint): channel, nominal voltage and the
-    CTLR2 bit that switches it on (enable_*; empty where the RM has none -
-    V003/V006/X035, taken to be always on). CH32V103's datasheet gives only
-    min/max, so the nominal is their midpoint. A `missing` row (CH32M030: no
-    VREFINT in its documents) gives nothing.
-    """
-    out: dict = {}
-    for r in read_table(tables, "adc_internal.csv"):
-        if r.get("source") != "vrefint" or r.get("confidence") == "missing":
-            continue
-        lo, hi = r.get("vrefint_mv_min"), r.get("vrefint_mv_max")
-        mv = r.get("vrefint_mv") or (str((int(lo) + int(hi)) // 2) if lo and hi else "")
-        if not mv or not r.get("channel"):
-            continue
-        bit = None
-        if r.get("enable_register") == "CTLR2" and r.get("enable_bit"):
-            bit = int(r["enable_bit"])
-        out[r["family"]] = (int(r["channel"]), int(mv), int(lo or mv), int(hi or mv), bit)
-    return out
-
-
 def load_esig(tables: pathlib.Path) -> dict:
     """family -> {register: address} from index/esig.csv (R-35): FLACAP (16 bit,
     KiB) and UNIID1..3 (32 bit each, UNIID1 the low word)."""
@@ -1801,7 +1775,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              timers_by_family: dict = {},
              forbidden: dict = {}, clock_enables: dict = {},
              adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {},
-             vrefint: dict = {}, esig: dict = {}) -> str:
+             esig: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -2087,18 +2061,6 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"    (c) == {ch} ? {pad_name(port, bit)} : \\")
         out.append("    NOT_A_PIN)")
         out.append("")
-        refs = {vrefint.get(r.get("family", "")) for r in rows}
-        if len(refs) == 1 and None not in refs:
-            ch, mv, lo, hi, bit = refs.pop()
-            out.append("/* ---- internal reference (device-data adc_internal.csv). Kept for")
-            out.append(" *      arduino-esp32's analogReadMilliVolts(), which is NOT offered yet:")
-            out.append(" *      on the X035 bench channel 15 reads the previous conversion, and the")
-            out.append(" *      V003 reading disagrees with the supply (docs/todo.ja.md). ---- */")
-            out.append(f"#define CH32RV_ADC_VREFINT_CHANNEL {ch}")
-            out.append(f"#define CH32RV_ADC_VREFINT_MV {mv}   /* {lo}..{hi} mV */")
-            if bit is not None:
-                out.append(f"#define CH32RV_ADC_CTLR2_TSVREFE (1u << {bit})")
-            out.append("")
     sigs = {tuple(sorted(esig.get(r.get("family", ""), {}).items())) for r in rows}
     if len(sigs) == 1 and sigs != {()}:
         regs = dict(sigs.pop())
@@ -2736,7 +2698,6 @@ def main() -> int:
     timer_capabilities = load_timer_capabilities(args.tables)
     clock_enables = load_clock_enables(args.tables)
     adc_bases = load_adc_bases(args.tables)
-    vrefint = load_vrefint(args.tables)
     esig = load_esig(args.tables)
     cores = {r["series"]: r["core"]
              for r in read_table(args.tables, "series.csv", ("series", "core"))}
@@ -2799,7 +2760,7 @@ def main() -> int:
                      interrupts[SERIES_CONFIG[series]['vectors']], remap,
                      route_alts, wide_timers, timer_capabilities, forbidden,
                      clock_enables,
-                     adc_all, adc_bases, cores, vrefint, esig)
+                     adc_all, adc_bases, cores, esig)
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of

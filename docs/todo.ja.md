@@ -280,18 +280,12 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
 - [ ] `[P1]` ADC分解能(`CH32RV_ADC_BITS`)はdatasheet由来。**実機で確認する** (要実機)
 - [x] `analogWrite`のPWM周波数を変えられるようにした(2026-10-01、arduino-esp32 の
       `analogWriteFrequency(pin, hz)`。同じtimerのchannelは次の`analogWrite()`で追従)
-- [ ] `[P1]` **`analogReadMilliVolts()`(arduino-esp32)は保留**(2026-10-01)。
-      実装は VREFINT(device-data `adc_internal.csv`)で VDDA を割り出す形で書いたが、実機で合わなかったので外した。
-      X035F8U6 では ch15(VREFINT とされる)が**直前の変換の値をなぞる**(GND の後 ~10、VDD の後 ~4095)。
-      CTLR2 bit 23 は書いても残らない。V003(classic ESP32 ジグ)では読みは 269〜270 で安定しているが、
-      それだと VDD 4.56 V になり、ESP32 の High が 915/1023 に読める記録と両立しない。
-      device-data に有効化ビット・X035 のチャネル再確認・V103/M030 の VREFINT を依頼済み。
-      **2026-10-01 LinkE の基板で追試**(pad を HIGH/LOW に駆動した直後に全チャネルを読み比べ):
-      V006 / V203 / V307 は VREFINT から VDD 3.24〜3.27 V が出て正しい。
-      X035C8T6 も ch3/7/11/15 が直前の値をなぞる = エラッタ x035-adc-ch-i2c-unavailable のロット(F8U6 も同じ)。
-      V003 の ch8(2 台とも 270 前後、10bit)と L103 の ch17(973、12bit)は安定した内部源だが、
-      3.3 V 給電なら 0.89 V / 0.78 V で公称 1.2 V と合わない(原因不明、VDD は直接未測定)
-      生成物の`CH32RV_ADC_VREFINT_CHANNEL`/`_MV`/`CH32RV_ADC_CTLR2_TSVREFE`はそのために残してある
+- [x] **`analogReadMilliVolts()`(arduino-esp32)は出さない**(ユーザー判断、2026-10-01)。ESP32 でも補正の効く範囲の
+      上下が切れていて使う人が少ない。VREFINT から VDDA を割り出す形を試した実測の記録は残す:
+      V006 / V203 / V307 は VDD 3.24〜3.27 V が出て正しい。X035(C8T6・F8U6 とも)は ch3/7/11/15 が直前の値をなぞる
+      = エラッタ x035-adc-ch-i2c-unavailable のロット。V003 の ch8(2 台とも 270 前後、10bit)と L103 の ch17
+      (971、12bit、サンプル時間 60〜240 µs で不変)は安定した内部源だが、3.3 V 給電なら 1.2 V と合わない(未解決、device-data に記録送付済み)。
+      生成物の VREFINT 定義も外した
 - [ ] `[P2]` **ch32rv の次の release で同梱版を上げるとき**: SerialRTT の README / HelloRTT / RttEcho の
       「OEP probe 経由の rtt はまだ使えない」を「OEP probe でも rtt 可」に書き換える
       (ch32rv-df が X035 治具で確認済み、2026-10-01。arduino monitor の 1 行 echo は p50 ~70 ms)
