@@ -20,19 +20,22 @@ void setup() {
 
 ## host側での受け取り方
 
+同梱のch32rvで、WCH-Link経由で読めます。
+
 ```
-probe-rs attach --chip CH32V003F4P6 <firmware.elf>
+ch32rv monitor --source rtt --chip CH32V203
 ```
 
-`--chip`にはboardメニューの`pnum`がそのまま使えます。渡すのは**ELF**です。
-probe-rsはそこからcontrol blockの在り処を引きます。
+control blockはRAMから自分で探すのでELFは要りません。CH32V203 + WCH-LinkE、ch32rv 0.13.2で確認
+(2026-10-01)。OEP probe経由の`rtt`はまだ使えないので、そちらでは`SerialDMSeq`を使ってください。
+`probe-rs attach --chip <型番> <firmware.elf>`でも読めます。
 
 **IDEのSerial Monitorでは読めません。** あれはserial portを開くものだからで、
 繋ぐには自前のpluggable monitorが要ります(docs/todo.ja.md)。
 Linux/macOSなら`socat`でptyに橋渡しすればIDEの窓でも読めます。
 OSごとの手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にまとめてあります。
 
-このベンチでの実測(probe-rs 0.32.0): `download`してから`attach`すれば、
+以前このベンチで測った値(probe-rs 0.32.0): `download`してから`attach`すれば、
 走行中のストリームがそのまま出ます。**CH32V003でも動きます**
 (23秒で18行、打ち込んだ文字のecho back込み)。CH32V203も同様。
 probeがhaltしたまま残した状態にattachすると、それ以前の出力しか出てきません。
@@ -68,7 +71,7 @@ RAM 2 KBの部品ではやる価値がありますし、20 KBの部品では既�
 |---|---|---|---|
 | `SerialSDI` | wlink、WCH-LinkUtility | 送信のみ | なし |
 | `SerialDMDATA` | minichlink | 双方向 | なし |
-| **`SerialRTT`** | **probe-rs attach** | **双方向** | **RAM** |
+| **`SerialRTT`** | **ch32rv monitor --source rtt** | **双方向** | **RAM** |
 
 `SerialSDI`と`SerialDMDATA`はdebug moduleの同じレジスタを使うので併用できません。
 `SerialRTT`はどちらのレジスタも使わないので、どちらとも同時に使えます。

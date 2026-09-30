@@ -125,7 +125,7 @@ FAMILY = {
 
 # One board per silicon series, so the board name matches the chip marking.
 # Whether a series can be flashed is not configured here: it follows from
-# whether probe-rs has a target for it (tools/index/probe_rs_targets.csv).
+# whether ch32rv has a name for it (tools/index/ch32rv_chips.csv).
 # Series it does not cover are still built - they guard the core against
 # ISA/CSR regressions - and are labelled "[compile only]" in the menu.
 SERIES_CONFIG = {
@@ -1608,39 +1608,10 @@ def choose_spis(series: str, parts: list, spis: dict, remap: dict,
                          set(SPI_BASES), forbidden)
 
 
-# probe-rs target names, extracted from `probe-rs chip list` (see
-# tools/index/probe_rs_targets.csv). `probe-rs download` refuses an ambiguous
-# name, so every menu entry gets a concrete part number.
-PROBE_RS_CSV = pathlib.Path(__file__).parent.parent / "index" / "probe_rs_targets.csv"
-
-
-def load_probe_rs_targets() -> set:
-    with open(PROBE_RS_CSV, newline="", encoding="utf-8") as f:
-        rows = csv.DictReader(line for line in f if not line.startswith("#"))
-        return {r["chip"] for r in rows}
-
-
-def probe_rs_chip(part: str, series: str, ordered_parts: list, known: set):
-    """The --chip value for one menu entry.
-
-    An exact match wins. Otherwise fall back to another part of the same series
-    that probe-rs does know: the flash algorithm is per family, and the memory
-    bounds that matter are already enforced by upload.maximum_size. For ANY the
-    fallback is the smallest part in the series, which is what ANY declares.
-    """
-    if part in known:
-        return part
-    for candidate in ordered_parts:
-        if candidate in known:
-            return candidate
-    prefix = [c for c in sorted(known) if c.startswith(series)]
-    return prefix[0] if prefix else None
-
-
 # ch32rv's --chip vocabulary (tools/index/ch32rv_chips.csv, itself taken from
-# ch32rv's embedded DB). ch32rv is the bundled uploader (ADR-0008); probe-rs
-# names are still emitted because the bench harness maps a detected chip back
-# to a board through build.probe_rs_chip.
+# ch32rv's embedded DB). ch32rv is the bundled uploader (ADR-0008) and the only
+# chip name boards.txt carries; the manual LinkE tools map a detected chip back
+# to a board through build.ch32rv_chip too (tests/manual/smoke.boards_for).
 CH32RV_CSV = pathlib.Path(__file__).parent.parent / "index" / "ch32rv_chips.csv"
 
 
@@ -1667,7 +1638,7 @@ def ch32rv_chip(part: str, series: str, ordered_parts: list, vocab: tuple):
          geometry comes from the silicon rather than from our guess.
 
     There is deliberately no "some other part of the same series" fallback,
-    which is what probe_rs_chip() does. probe-rs needed it because it refuses a
+    which the old probe-rs generator had. probe-rs needed it because it refuses a
     family name, and it only ever picked a flash *algorithm* with it. ch32rv
     drives the FLASH controller directly and takes page/erase geometry from the
     named part, so naming a sibling of a different size would be a real hazard:
@@ -2582,7 +2553,7 @@ def clock_defines(clk: dict) -> str:
             f"-DCH32RV_CLOCK_EXTEN_BITS={clk['exten_bits']:#x}u")
 
 
-def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict,
+def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
               die: dict, clock_for):
     """One board per series. Returns (boards.txt block, {ld name: content})."""
     cfg = SERIES_CONFIG[series]
@@ -2699,12 +2670,6 @@ def gen_board(series: str, rows: list, probe_rs: set, ch32rv: tuple, facts: dict
         # probe's slot by it and refuses a debug-module source on another chip.
         for proto in MONITOR_PROTOCOLS:
             lines.append(f"{pfx}.monitor_port.{proto}.chip={rv_chip}")
-        # Still emitted although probe-rs is no longer bundled: the bench
-        # harness resolves a detected chip back to a board through this field
-        # (tests/manual/smoke.boards_for).
-        chip = probe_rs_chip(pn, series, ordered, probe_rs)
-        if chip:
-            lines.append(f"{pfx}.build.probe_rs_chip={chip}")
         # ANY deliberately keeps the board's variant: it already declares the
         # smallest flash in the series, so it is the "not a specific part"
         # entry and a part that needs its own table has to be picked by name.
@@ -2749,7 +2714,6 @@ def main() -> int:
     i2cs = load_i2c_pins(args.tables, route_alts)
     spis = load_spi_pins(args.tables, route_alts)
     dacs = load_dac_pins(args.tables, route_alts)
-    probe_rs = load_probe_rs_targets()
     ch32rv = load_ch32rv_chips()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)
@@ -2799,7 +2763,7 @@ def main() -> int:
     for series in SERIES_CONFIG:
         rows = by_board[series]
         block, ld_files = gen_board(
-            series, rows, probe_rs, ch32rv, facts, die,
+            series, rows, ch32rv, facts, die,
             lambda part=None, series=series: resolve_clock(
                 SERIES_CONFIG[series]["family"],
                 int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L")),

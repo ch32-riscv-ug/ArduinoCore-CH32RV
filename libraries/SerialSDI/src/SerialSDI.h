@@ -8,8 +8,8 @@
  * own USB CDC port.
  *
  * What that buys: **no UART, no pin, no wiring**, and the core is never
- * halted. What it costs: the host has to have enabled it, which today means a
- * tool other than probe-rs (see docs/todo.ja.md).
+ * halted. What it costs: the host has to have enabled it - the bundled ch32rv
+ * does (`ch32rv monitor --source sdi`).
  *
  * This is a separate Stream rather than a compile-time switch inside
  * HardwareSerial - which is how WCH's own examples and the older community

@@ -4,12 +4,13 @@
  * into a ring buffer in RAM and the probe reads that memory while the core
  * runs, so this costs no pin and never halts the core.
  *
- * The host side is probe-rs, which is what this core flashes with:
+ * The host side is the bundled ch32rv, through a WCH-Link:
  *
- *   probe-rs attach --chip CH32V003F4P6 <firmware.elf>
+ *   ch32rv monitor --source rtt --chip CH32V203
  *
- * (any pnum from the board menu works as --chip). The ELF matters: that is
- * where probe-rs finds the control block.
+ * It finds the control block in RAM itself (ch32rv says it halts the core
+ * briefly for each poll). `probe-rs attach --chip <part> <firmware.elf>` works
+ * too.
  *
  * Nothing is lost if no host is attached - the buffer fills and further bytes
  * are dropped, the way a UART with nobody listening loses them.

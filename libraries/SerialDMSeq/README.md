@@ -53,7 +53,7 @@ others as noise.
 | `SerialSDI` | wlink, WCH-LinkUtility | send only | none |
 | `SerialDMDATA` | minichlink, `ch32rv --source dmdata` | two-way | none |
 | **`SerialDMSeq`** | **`ch32rv --source dmseq`, OEP** | **two-way** | **sequence + CRC** |
-| `SerialRTT` | probe-rs attach | two-way | - |
+| `SerialRTT` | ch32rv monitor --source rtt | two-way | - |
 
 ## Receiving needs the sketch to poll
 

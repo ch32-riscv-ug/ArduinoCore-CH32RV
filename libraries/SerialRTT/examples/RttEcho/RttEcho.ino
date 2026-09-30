@@ -1,10 +1,10 @@
 /* RttEcho - the debug channel in both directions.
  *
  * Unlike SerialSDI, this one can be typed into: the host writes a second ring
- * buffer and the sketch reads it. probe-rs sends what you type when it is
- * attached to a terminal channel:
+ * buffer and the sketch reads it. ch32rv sends what you type (stdin goes to
+ * the target):
  *
- *   probe-rs attach --chip CH32V003F4P6 <firmware.elf>
+ *   ch32rv monitor --source rtt --chip CH32V203
  *
  * Type a line and it comes back uppercased. Nothing here blocks, so the LED
  * keeps blinking whether or not a host is attached - which is the point of

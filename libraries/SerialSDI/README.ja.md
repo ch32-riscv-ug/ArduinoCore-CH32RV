@@ -40,7 +40,14 @@ void setup() {
 
 ## 有効化のしかた
 
-probe-rsでは有効化できないので、そこだけ別のツールを使います。
+同梱のch32rvは監視と一緒に有効化します。
+
+```
+ch32rv monitor --source sdi --chip CH32V003     # SDI printを有効にしてからCDCを読む
+```
+
+CH32V003 + WCH-LinkE、ch32rv 0.13.2で確認(2026-10-01)。有効化だけなら`ch32rv monitor sdi on|off`。
+WCH純正のツールでもできます。
 
 | | 対応OS | |
 |---|---|---|
@@ -61,7 +68,7 @@ wlink flash --enable-sdi-print --watch-serial firmware.elf
 
 portはWCH-LinkE自身のCDC(`1a86:8010`)です。IDEなら同じportを選ぶだけです。
 **OSごとの詳しい手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にあります。**
-有効化をuploadに織り込む手は今のところありません(uploadはprobe-rsのため)。
+
 
 対象外のseriesはレジスタこそありますが、probeのfirmwareがポーリングしません。
 

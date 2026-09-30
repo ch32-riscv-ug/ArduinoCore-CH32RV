@@ -31,7 +31,6 @@ CH32V003.menu.pnum.ANY.build.ch32rv_chip=CH32V003
 CH32V003.menu.pnum.ANY.monitor_port.serial.chip=CH32V003
 CH32V003.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V003
 CH32V003.menu.pnum.ANY.monitor_port.oep.chip=CH32V003
-CH32V003.menu.pnum.ANY.build.probe_rs_chip=CH32V003A4M6
 
 CH32V003.menu.pnum.CH32V003A4M6=CH32V003A4M6 (SOP16, 16K/2K)
 CH32V003.menu.pnum.CH32V003A4M6.build.part=CH32V003A4M6
@@ -42,7 +41,6 @@ CH32V003.menu.pnum.CH32V003A4M6.build.ch32rv_chip=CH32V003A4M6
 CH32V003.menu.pnum.CH32V003A4M6.monitor_port.serial.chip=CH32V003A4M6
 CH32V003.menu.pnum.CH32V003A4M6.monitor_port.wchlink.chip=CH32V003A4M6
 CH32V003.menu.pnum.CH32V003A4M6.monitor_port.oep.chip=CH32V003A4M6
-CH32V003.menu.pnum.CH32V003A4M6.build.probe_rs_chip=CH32V003A4M6
 
 CH32V003.menu.pnum.CH32V003F4P6=CH32V003F4P6 (TSSOP20, 16K/2K)
 CH32V003.menu.pnum.CH32V003F4P6.build.part=CH32V003F4P6
@@ -53,7 +51,6 @@ CH32V003.menu.pnum.CH32V003F4P6.build.ch32rv_chip=CH32V003F4P6
 CH32V003.menu.pnum.CH32V003F4P6.monitor_port.serial.chip=CH32V003F4P6
 CH32V003.menu.pnum.CH32V003F4P6.monitor_port.wchlink.chip=CH32V003F4P6
 CH32V003.menu.pnum.CH32V003F4P6.monitor_port.oep.chip=CH32V003F4P6
-CH32V003.menu.pnum.CH32V003F4P6.build.probe_rs_chip=CH32V003F4P6
 
 CH32V003.menu.pnum.CH32V003F4U6=CH32V003F4U6 (QFN20, 16K/2K)
 CH32V003.menu.pnum.CH32V003F4U6.build.part=CH32V003F4U6
@@ -64,7 +61,6 @@ CH32V003.menu.pnum.CH32V003F4U6.build.ch32rv_chip=CH32V003F4U6
 CH32V003.menu.pnum.CH32V003F4U6.monitor_port.serial.chip=CH32V003F4U6
 CH32V003.menu.pnum.CH32V003F4U6.monitor_port.wchlink.chip=CH32V003F4U6
 CH32V003.menu.pnum.CH32V003F4U6.monitor_port.oep.chip=CH32V003F4U6
-CH32V003.menu.pnum.CH32V003F4U6.build.probe_rs_chip=CH32V003F4U6
 
 CH32V003.menu.pnum.CH32V003J4M6=CH32V003J4M6 (SOP8, 16K/2K)
 CH32V003.menu.pnum.CH32V003J4M6.build.part=CH32V003J4M6
@@ -75,7 +71,6 @@ CH32V003.menu.pnum.CH32V003J4M6.build.ch32rv_chip=CH32V003J4M6
 CH32V003.menu.pnum.CH32V003J4M6.monitor_port.serial.chip=CH32V003J4M6
 CH32V003.menu.pnum.CH32V003J4M6.monitor_port.wchlink.chip=CH32V003J4M6
 CH32V003.menu.pnum.CH32V003J4M6.monitor_port.oep.chip=CH32V003J4M6
-CH32V003.menu.pnum.CH32V003J4M6.build.probe_rs_chip=CH32V003J4M6
 
 CH32V003.menu.printf.none=No float (smaller)
 CH32V003.menu.printf.none.build.printf_flags=
@@ -108,7 +103,6 @@ CH32V002.menu.pnum.ANY.build.ch32rv_chip=CH32V006
 CH32V002.menu.pnum.ANY.monitor_port.serial.chip=CH32V006
 CH32V002.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V006
 CH32V002.menu.pnum.ANY.monitor_port.oep.chip=CH32V006
-CH32V002.menu.pnum.ANY.build.probe_rs_chip=CH32V002A4M6
 
 CH32V002.menu.pnum.CH32V002A4M6=CH32V002A4M6 (SOP16, 16K/4K)
 CH32V002.menu.pnum.CH32V002A4M6.build.part=CH32V002A4M6
@@ -119,7 +113,6 @@ CH32V002.menu.pnum.CH32V002A4M6.build.ch32rv_chip=CH32V002A4M6
 CH32V002.menu.pnum.CH32V002A4M6.monitor_port.serial.chip=CH32V002A4M6
 CH32V002.menu.pnum.CH32V002A4M6.monitor_port.wchlink.chip=CH32V002A4M6
 CH32V002.menu.pnum.CH32V002A4M6.monitor_port.oep.chip=CH32V002A4M6
-CH32V002.menu.pnum.CH32V002A4M6.build.probe_rs_chip=CH32V002A4M6
 
 CH32V002.menu.pnum.CH32V002D4U6=CH32V002D4U6 (QFN12, 16K/4K)
 CH32V002.menu.pnum.CH32V002D4U6.build.part=CH32V002D4U6
@@ -130,7 +123,6 @@ CH32V002.menu.pnum.CH32V002D4U6.build.ch32rv_chip=CH32V002D4U6
 CH32V002.menu.pnum.CH32V002D4U6.monitor_port.serial.chip=CH32V002D4U6
 CH32V002.menu.pnum.CH32V002D4U6.monitor_port.wchlink.chip=CH32V002D4U6
 CH32V002.menu.pnum.CH32V002D4U6.monitor_port.oep.chip=CH32V002D4U6
-CH32V002.menu.pnum.CH32V002D4U6.build.probe_rs_chip=CH32V002D4U6
 
 CH32V002.menu.pnum.CH32V002F4P6=CH32V002F4P6 (TSSOP20, 16K/4K)
 CH32V002.menu.pnum.CH32V002F4P6.build.part=CH32V002F4P6
@@ -141,7 +133,6 @@ CH32V002.menu.pnum.CH32V002F4P6.build.ch32rv_chip=CH32V002F4P6
 CH32V002.menu.pnum.CH32V002F4P6.monitor_port.serial.chip=CH32V002F4P6
 CH32V002.menu.pnum.CH32V002F4P6.monitor_port.wchlink.chip=CH32V002F4P6
 CH32V002.menu.pnum.CH32V002F4P6.monitor_port.oep.chip=CH32V002F4P6
-CH32V002.menu.pnum.CH32V002F4P6.build.probe_rs_chip=CH32V002F4P6
 
 CH32V002.menu.pnum.CH32V002F4U6=CH32V002F4U6 (QFN20, 16K/4K)
 CH32V002.menu.pnum.CH32V002F4U6.build.part=CH32V002F4U6
@@ -152,7 +143,6 @@ CH32V002.menu.pnum.CH32V002F4U6.build.ch32rv_chip=CH32V002F4U6
 CH32V002.menu.pnum.CH32V002F4U6.monitor_port.serial.chip=CH32V002F4U6
 CH32V002.menu.pnum.CH32V002F4U6.monitor_port.wchlink.chip=CH32V002F4U6
 CH32V002.menu.pnum.CH32V002F4U6.monitor_port.oep.chip=CH32V002F4U6
-CH32V002.menu.pnum.CH32V002F4U6.build.probe_rs_chip=CH32V002F4U6
 
 CH32V002.menu.pnum.CH32V002J4M6=CH32V002J4M6 (SOP8, 16K/4K)
 CH32V002.menu.pnum.CH32V002J4M6.build.part=CH32V002J4M6
@@ -163,7 +153,6 @@ CH32V002.menu.pnum.CH32V002J4M6.build.ch32rv_chip=CH32V002J4M6
 CH32V002.menu.pnum.CH32V002J4M6.monitor_port.serial.chip=CH32V002J4M6
 CH32V002.menu.pnum.CH32V002J4M6.monitor_port.wchlink.chip=CH32V002J4M6
 CH32V002.menu.pnum.CH32V002J4M6.monitor_port.oep.chip=CH32V002J4M6
-CH32V002.menu.pnum.CH32V002J4M6.build.probe_rs_chip=CH32V002J4M6
 
 CH32V002.menu.printf.none=No float (smaller)
 CH32V002.menu.printf.none.build.printf_flags=
@@ -196,7 +185,6 @@ CH32V004.menu.pnum.ANY.build.ch32rv_chip=CH32V006
 CH32V004.menu.pnum.ANY.monitor_port.serial.chip=CH32V006
 CH32V004.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V006
 CH32V004.menu.pnum.ANY.monitor_port.oep.chip=CH32V006
-CH32V004.menu.pnum.ANY.build.probe_rs_chip=CH32V004F6P1
 
 CH32V004.menu.pnum.CH32V004F6P1=CH32V004F6P1 (TSSOP20, 32K/6K)
 CH32V004.menu.pnum.CH32V004F6P1.build.part=CH32V004F6P1
@@ -207,7 +195,6 @@ CH32V004.menu.pnum.CH32V004F6P1.build.ch32rv_chip=CH32V004F6P1
 CH32V004.menu.pnum.CH32V004F6P1.monitor_port.serial.chip=CH32V004F6P1
 CH32V004.menu.pnum.CH32V004F6P1.monitor_port.wchlink.chip=CH32V004F6P1
 CH32V004.menu.pnum.CH32V004F6P1.monitor_port.oep.chip=CH32V004F6P1
-CH32V004.menu.pnum.CH32V004F6P1.build.probe_rs_chip=CH32V004F6P1
 
 CH32V004.menu.pnum.CH32V004F6U1=CH32V004F6U1 (QFN20L, 32K/6K)
 CH32V004.menu.pnum.CH32V004F6U1.build.part=CH32V004F6U1
@@ -218,7 +205,6 @@ CH32V004.menu.pnum.CH32V004F6U1.build.ch32rv_chip=CH32V004F6U1
 CH32V004.menu.pnum.CH32V004F6U1.monitor_port.serial.chip=CH32V004F6U1
 CH32V004.menu.pnum.CH32V004F6U1.monitor_port.wchlink.chip=CH32V004F6U1
 CH32V004.menu.pnum.CH32V004F6U1.monitor_port.oep.chip=CH32V004F6U1
-CH32V004.menu.pnum.CH32V004F6U1.build.probe_rs_chip=CH32V004F6U1
 
 CH32V004.menu.printf.none=No float (smaller)
 CH32V004.menu.printf.none.build.printf_flags=
@@ -251,7 +237,6 @@ CH32V005.menu.pnum.ANY.build.ch32rv_chip=CH32V006
 CH32V005.menu.pnum.ANY.monitor_port.serial.chip=CH32V006
 CH32V005.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V006
 CH32V005.menu.pnum.ANY.monitor_port.oep.chip=CH32V006
-CH32V005.menu.pnum.ANY.build.probe_rs_chip=CH32V005D6U6
 
 CH32V005.menu.pnum.CH32V005D6U6=CH32V005D6U6 (QFN12, 32K/6K)
 CH32V005.menu.pnum.CH32V005D6U6.build.part=CH32V005D6U6
@@ -262,7 +247,6 @@ CH32V005.menu.pnum.CH32V005D6U6.build.ch32rv_chip=CH32V005D6U6
 CH32V005.menu.pnum.CH32V005D6U6.monitor_port.serial.chip=CH32V005D6U6
 CH32V005.menu.pnum.CH32V005D6U6.monitor_port.wchlink.chip=CH32V005D6U6
 CH32V005.menu.pnum.CH32V005D6U6.monitor_port.oep.chip=CH32V005D6U6
-CH32V005.menu.pnum.CH32V005D6U6.build.probe_rs_chip=CH32V005D6U6
 
 CH32V005.menu.pnum.CH32V005E6R6=CH32V005E6R6 (QSOP24, 32K/6K)
 CH32V005.menu.pnum.CH32V005E6R6.build.part=CH32V005E6R6
@@ -273,7 +257,6 @@ CH32V005.menu.pnum.CH32V005E6R6.build.ch32rv_chip=CH32V005E6R6
 CH32V005.menu.pnum.CH32V005E6R6.monitor_port.serial.chip=CH32V005E6R6
 CH32V005.menu.pnum.CH32V005E6R6.monitor_port.wchlink.chip=CH32V005E6R6
 CH32V005.menu.pnum.CH32V005E6R6.monitor_port.oep.chip=CH32V005E6R6
-CH32V005.menu.pnum.CH32V005E6R6.build.probe_rs_chip=CH32V005E6R6
 
 CH32V005.menu.pnum.CH32V005F6P6=CH32V005F6P6 (TSSOP20, 32K/6K)
 CH32V005.menu.pnum.CH32V005F6P6.build.part=CH32V005F6P6
@@ -284,7 +267,6 @@ CH32V005.menu.pnum.CH32V005F6P6.build.ch32rv_chip=CH32V005F6P6
 CH32V005.menu.pnum.CH32V005F6P6.monitor_port.serial.chip=CH32V005F6P6
 CH32V005.menu.pnum.CH32V005F6P6.monitor_port.wchlink.chip=CH32V005F6P6
 CH32V005.menu.pnum.CH32V005F6P6.monitor_port.oep.chip=CH32V005F6P6
-CH32V005.menu.pnum.CH32V005F6P6.build.probe_rs_chip=CH32V005F6P6
 
 CH32V005.menu.pnum.CH32V005F6U6=CH32V005F6U6 (QFN20, 32K/6K)
 CH32V005.menu.pnum.CH32V005F6U6.build.part=CH32V005F6U6
@@ -295,7 +277,6 @@ CH32V005.menu.pnum.CH32V005F6U6.build.ch32rv_chip=CH32V005F6U6
 CH32V005.menu.pnum.CH32V005F6U6.monitor_port.serial.chip=CH32V005F6U6
 CH32V005.menu.pnum.CH32V005F6U6.monitor_port.wchlink.chip=CH32V005F6U6
 CH32V005.menu.pnum.CH32V005F6U6.monitor_port.oep.chip=CH32V005F6U6
-CH32V005.menu.pnum.CH32V005F6U6.build.probe_rs_chip=CH32V005F6U6
 
 CH32V005.menu.printf.none=No float (smaller)
 CH32V005.menu.printf.none.build.printf_flags=
@@ -328,7 +309,6 @@ CH32V006.menu.pnum.ANY.build.ch32rv_chip=CH32V006
 CH32V006.menu.pnum.ANY.monitor_port.serial.chip=CH32V006
 CH32V006.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V006
 CH32V006.menu.pnum.ANY.monitor_port.oep.chip=CH32V006
-CH32V006.menu.pnum.ANY.build.probe_rs_chip=CH32V006E8R6
 
 CH32V006.menu.pnum.CH32V006F4U6=CH32V006F4U6 (QFN20, 16K/4K)
 CH32V006.menu.pnum.CH32V006F4U6.build.part=CH32V006F4U6
@@ -339,7 +319,6 @@ CH32V006.menu.pnum.CH32V006F4U6.build.ch32rv_chip=CH32V006
 CH32V006.menu.pnum.CH32V006F4U6.monitor_port.serial.chip=CH32V006
 CH32V006.menu.pnum.CH32V006F4U6.monitor_port.wchlink.chip=CH32V006
 CH32V006.menu.pnum.CH32V006F4U6.monitor_port.oep.chip=CH32V006
-CH32V006.menu.pnum.CH32V006F4U6.build.probe_rs_chip=CH32V006E8R6
 
 CH32V006.menu.pnum.CH32V006D8U7=CH32V006D8U7 (QFN12, 62K/8K)
 CH32V006.menu.pnum.CH32V006D8U7.build.part=CH32V006D8U7
@@ -350,7 +329,6 @@ CH32V006.menu.pnum.CH32V006D8U7.build.ch32rv_chip=CH32V006
 CH32V006.menu.pnum.CH32V006D8U7.monitor_port.serial.chip=CH32V006
 CH32V006.menu.pnum.CH32V006D8U7.monitor_port.wchlink.chip=CH32V006
 CH32V006.menu.pnum.CH32V006D8U7.monitor_port.oep.chip=CH32V006
-CH32V006.menu.pnum.CH32V006D8U7.build.probe_rs_chip=CH32V006E8R6
 
 CH32V006.menu.pnum.CH32V006E8R6=CH32V006E8R6 (QSOP24, 62K/8K)
 CH32V006.menu.pnum.CH32V006E8R6.build.part=CH32V006E8R6
@@ -361,7 +339,6 @@ CH32V006.menu.pnum.CH32V006E8R6.build.ch32rv_chip=CH32V006E8R6
 CH32V006.menu.pnum.CH32V006E8R6.monitor_port.serial.chip=CH32V006E8R6
 CH32V006.menu.pnum.CH32V006E8R6.monitor_port.wchlink.chip=CH32V006E8R6
 CH32V006.menu.pnum.CH32V006E8R6.monitor_port.oep.chip=CH32V006E8R6
-CH32V006.menu.pnum.CH32V006E8R6.build.probe_rs_chip=CH32V006E8R6
 
 CH32V006.menu.pnum.CH32V006E8R7=CH32V006E8R7 (QSOP24, 62K/8K)
 CH32V006.menu.pnum.CH32V006E8R7.build.part=CH32V006E8R7
@@ -372,7 +349,6 @@ CH32V006.menu.pnum.CH32V006E8R7.build.ch32rv_chip=CH32V006
 CH32V006.menu.pnum.CH32V006E8R7.monitor_port.serial.chip=CH32V006
 CH32V006.menu.pnum.CH32V006E8R7.monitor_port.wchlink.chip=CH32V006
 CH32V006.menu.pnum.CH32V006E8R7.monitor_port.oep.chip=CH32V006
-CH32V006.menu.pnum.CH32V006E8R7.build.probe_rs_chip=CH32V006E8R6
 
 CH32V006.menu.pnum.CH32V006F8P7=CH32V006F8P7 (TSSOP20, 62K/8K)
 CH32V006.menu.pnum.CH32V006F8P7.build.part=CH32V006F8P7
@@ -383,7 +359,6 @@ CH32V006.menu.pnum.CH32V006F8P7.build.ch32rv_chip=CH32V006
 CH32V006.menu.pnum.CH32V006F8P7.monitor_port.serial.chip=CH32V006
 CH32V006.menu.pnum.CH32V006F8P7.monitor_port.wchlink.chip=CH32V006
 CH32V006.menu.pnum.CH32V006F8P7.monitor_port.oep.chip=CH32V006
-CH32V006.menu.pnum.CH32V006F8P7.build.probe_rs_chip=CH32V006E8R6
 
 CH32V006.menu.pnum.CH32V006F8U7=CH32V006F8U7 (QFN20, 62K/8K)
 CH32V006.menu.pnum.CH32V006F8U7.build.part=CH32V006F8U7
@@ -394,7 +369,6 @@ CH32V006.menu.pnum.CH32V006F8U7.build.ch32rv_chip=CH32V006
 CH32V006.menu.pnum.CH32V006F8U7.monitor_port.serial.chip=CH32V006
 CH32V006.menu.pnum.CH32V006F8U7.monitor_port.wchlink.chip=CH32V006
 CH32V006.menu.pnum.CH32V006F8U7.monitor_port.oep.chip=CH32V006
-CH32V006.menu.pnum.CH32V006F8U7.build.probe_rs_chip=CH32V006E8R6
 
 CH32V006.menu.pnum.CH32V006K8U6=CH32V006K8U6 (QFN32, 62K/8K)
 CH32V006.menu.pnum.CH32V006K8U6.build.part=CH32V006K8U6
@@ -405,7 +379,6 @@ CH32V006.menu.pnum.CH32V006K8U6.build.ch32rv_chip=CH32V006K8U6
 CH32V006.menu.pnum.CH32V006K8U6.monitor_port.serial.chip=CH32V006K8U6
 CH32V006.menu.pnum.CH32V006K8U6.monitor_port.wchlink.chip=CH32V006K8U6
 CH32V006.menu.pnum.CH32V006K8U6.monitor_port.oep.chip=CH32V006K8U6
-CH32V006.menu.pnum.CH32V006K8U6.build.probe_rs_chip=CH32V006K8U6
 
 CH32V006.menu.pnum.CH32V006K8U7=CH32V006K8U7 (QFN32, 62K/8K)
 CH32V006.menu.pnum.CH32V006K8U7.build.part=CH32V006K8U7
@@ -416,7 +389,6 @@ CH32V006.menu.pnum.CH32V006K8U7.build.ch32rv_chip=CH32V006
 CH32V006.menu.pnum.CH32V006K8U7.monitor_port.serial.chip=CH32V006
 CH32V006.menu.pnum.CH32V006K8U7.monitor_port.wchlink.chip=CH32V006
 CH32V006.menu.pnum.CH32V006K8U7.monitor_port.oep.chip=CH32V006
-CH32V006.menu.pnum.CH32V006K8U7.build.probe_rs_chip=CH32V006E8R6
 
 CH32V006.menu.printf.none=No float (smaller)
 CH32V006.menu.printf.none.build.printf_flags=
@@ -449,7 +421,6 @@ CH32V007.menu.pnum.ANY.build.ch32rv_chip=CH32V006
 CH32V007.menu.pnum.ANY.monitor_port.serial.chip=CH32V006
 CH32V007.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V006
 CH32V007.menu.pnum.ANY.monitor_port.oep.chip=CH32V006
-CH32V007.menu.pnum.ANY.build.probe_rs_chip=CH32V007E8R6
 
 CH32V007.menu.pnum.CH32V007E8R6=CH32V007E8R6 (QSOP24, 62K/8K)
 CH32V007.menu.pnum.CH32V007E8R6.build.part=CH32V007E8R6
@@ -460,7 +431,6 @@ CH32V007.menu.pnum.CH32V007E8R6.build.ch32rv_chip=CH32V007E8R6
 CH32V007.menu.pnum.CH32V007E8R6.monitor_port.serial.chip=CH32V007E8R6
 CH32V007.menu.pnum.CH32V007E8R6.monitor_port.wchlink.chip=CH32V007E8R6
 CH32V007.menu.pnum.CH32V007E8R6.monitor_port.oep.chip=CH32V007E8R6
-CH32V007.menu.pnum.CH32V007E8R6.build.probe_rs_chip=CH32V007E8R6
 
 CH32V007.menu.pnum.CH32V007E8R7=CH32V007E8R7 (QSOP24, 62K/8K)
 CH32V007.menu.pnum.CH32V007E8R7.build.part=CH32V007E8R7
@@ -471,7 +441,6 @@ CH32V007.menu.pnum.CH32V007E8R7.build.ch32rv_chip=CH32V006
 CH32V007.menu.pnum.CH32V007E8R7.monitor_port.serial.chip=CH32V006
 CH32V007.menu.pnum.CH32V007E8R7.monitor_port.wchlink.chip=CH32V006
 CH32V007.menu.pnum.CH32V007E8R7.monitor_port.oep.chip=CH32V006
-CH32V007.menu.pnum.CH32V007E8R7.build.probe_rs_chip=CH32V007E8R6
 
 CH32V007.menu.pnum.CH32V007K8U6=CH32V007K8U6 (QFN32, 62K/8K)
 CH32V007.menu.pnum.CH32V007K8U6.build.part=CH32V007K8U6
@@ -482,7 +451,6 @@ CH32V007.menu.pnum.CH32V007K8U6.build.ch32rv_chip=CH32V007K8U6
 CH32V007.menu.pnum.CH32V007K8U6.monitor_port.serial.chip=CH32V007K8U6
 CH32V007.menu.pnum.CH32V007K8U6.monitor_port.wchlink.chip=CH32V007K8U6
 CH32V007.menu.pnum.CH32V007K8U6.monitor_port.oep.chip=CH32V007K8U6
-CH32V007.menu.pnum.CH32V007K8U6.build.probe_rs_chip=CH32V007K8U6
 
 CH32V007.menu.pnum.CH32V007K8U7=CH32V007K8U7 (QFN32, 62K/8K)
 CH32V007.menu.pnum.CH32V007K8U7.build.part=CH32V007K8U7
@@ -493,7 +461,6 @@ CH32V007.menu.pnum.CH32V007K8U7.build.ch32rv_chip=CH32V006
 CH32V007.menu.pnum.CH32V007K8U7.monitor_port.serial.chip=CH32V006
 CH32V007.menu.pnum.CH32V007K8U7.monitor_port.wchlink.chip=CH32V006
 CH32V007.menu.pnum.CH32V007K8U7.monitor_port.oep.chip=CH32V006
-CH32V007.menu.pnum.CH32V007K8U7.build.probe_rs_chip=CH32V007E8R6
 
 CH32V007.menu.printf.none=No float (smaller)
 CH32V007.menu.printf.none.build.printf_flags=
@@ -526,7 +493,6 @@ CH32M007.menu.pnum.ANY.build.ch32rv_chip=CH32V006
 CH32M007.menu.pnum.ANY.monitor_port.serial.chip=CH32V006
 CH32M007.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V006
 CH32M007.menu.pnum.ANY.monitor_port.oep.chip=CH32V006
-CH32M007.menu.pnum.ANY.build.probe_rs_chip=CH32M007E8R6
 
 CH32M007.menu.pnum.CH32M007E8R6=CH32M007E8R6 (QSOP24, 62K/8K)
 CH32M007.menu.pnum.CH32M007E8R6.build.part=CH32M007E8R6
@@ -537,7 +503,6 @@ CH32M007.menu.pnum.CH32M007E8R6.build.ch32rv_chip=CH32M007E8R6
 CH32M007.menu.pnum.CH32M007E8R6.monitor_port.serial.chip=CH32M007E8R6
 CH32M007.menu.pnum.CH32M007E8R6.monitor_port.wchlink.chip=CH32M007E8R6
 CH32M007.menu.pnum.CH32M007E8R6.monitor_port.oep.chip=CH32M007E8R6
-CH32M007.menu.pnum.CH32M007E8R6.build.probe_rs_chip=CH32M007E8R6
 
 CH32M007.menu.pnum.CH32M007E8U7=CH32M007E8U7 (QFN26C3, 62K/8K)
 CH32M007.menu.pnum.CH32M007E8U7.build.part=CH32M007E8U7
@@ -548,7 +513,6 @@ CH32M007.menu.pnum.CH32M007E8U7.build.ch32rv_chip=CH32V006
 CH32M007.menu.pnum.CH32M007E8U7.monitor_port.serial.chip=CH32V006
 CH32M007.menu.pnum.CH32M007E8U7.monitor_port.wchlink.chip=CH32V006
 CH32M007.menu.pnum.CH32M007E8U7.monitor_port.oep.chip=CH32V006
-CH32M007.menu.pnum.CH32M007E8U7.build.probe_rs_chip=CH32M007E8R6
 
 CH32M007.menu.pnum.CH32M007G8R6=CH32M007G8R6 (QSOP28, 62K/8K)
 CH32M007.menu.pnum.CH32M007G8R6.build.part=CH32M007G8R6
@@ -559,7 +523,6 @@ CH32M007.menu.pnum.CH32M007G8R6.build.ch32rv_chip=CH32M007G8R6
 CH32M007.menu.pnum.CH32M007G8R6.monitor_port.serial.chip=CH32M007G8R6
 CH32M007.menu.pnum.CH32M007G8R6.monitor_port.wchlink.chip=CH32M007G8R6
 CH32M007.menu.pnum.CH32M007G8R6.monitor_port.oep.chip=CH32M007G8R6
-CH32M007.menu.pnum.CH32M007G8R6.build.probe_rs_chip=CH32M007G8R6
 
 CH32M007.menu.pnum.CH32M007K8U7=CH32M007K8U7 (QFN32, 62K/8K)
 CH32M007.menu.pnum.CH32M007K8U7.build.part=CH32M007K8U7
@@ -570,7 +533,6 @@ CH32M007.menu.pnum.CH32M007K8U7.build.ch32rv_chip=CH32V006
 CH32M007.menu.pnum.CH32M007K8U7.monitor_port.serial.chip=CH32V006
 CH32M007.menu.pnum.CH32M007K8U7.monitor_port.wchlink.chip=CH32V006
 CH32M007.menu.pnum.CH32M007K8U7.monitor_port.oep.chip=CH32V006
-CH32M007.menu.pnum.CH32M007K8U7.build.probe_rs_chip=CH32M007K8U7
 
 CH32M007.menu.printf.none=No float (smaller)
 CH32M007.menu.printf.none.build.printf_flags=
@@ -603,7 +565,6 @@ CH32V103.menu.pnum.ANY.build.ch32rv_chip=CH32V103
 CH32V103.menu.pnum.ANY.monitor_port.serial.chip=CH32V103
 CH32V103.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V103
 CH32V103.menu.pnum.ANY.monitor_port.oep.chip=CH32V103
-CH32V103.menu.pnum.ANY.build.probe_rs_chip=CH32V103C6T6
 
 CH32V103.menu.pnum.CH32V103C6T6=CH32V103C6T6 (LQFP48, 32K/10K)
 CH32V103.menu.pnum.CH32V103C6T6.build.part=CH32V103C6T6
@@ -614,7 +575,6 @@ CH32V103.menu.pnum.CH32V103C6T6.build.ch32rv_chip=CH32V103
 CH32V103.menu.pnum.CH32V103C6T6.monitor_port.serial.chip=CH32V103
 CH32V103.menu.pnum.CH32V103C6T6.monitor_port.wchlink.chip=CH32V103
 CH32V103.menu.pnum.CH32V103C6T6.monitor_port.oep.chip=CH32V103
-CH32V103.menu.pnum.CH32V103C6T6.build.probe_rs_chip=CH32V103C6T6
 
 CH32V103.menu.pnum.CH32V103C8T6=CH32V103C8T6 (LQFP48, 64K/20K)
 CH32V103.menu.pnum.CH32V103C8T6.build.part=CH32V103C8T6
@@ -625,7 +585,6 @@ CH32V103.menu.pnum.CH32V103C8T6.build.ch32rv_chip=CH32V103C8T6
 CH32V103.menu.pnum.CH32V103C8T6.monitor_port.serial.chip=CH32V103C8T6
 CH32V103.menu.pnum.CH32V103C8T6.monitor_port.wchlink.chip=CH32V103C8T6
 CH32V103.menu.pnum.CH32V103C8T6.monitor_port.oep.chip=CH32V103C8T6
-CH32V103.menu.pnum.CH32V103C8T6.build.probe_rs_chip=CH32V103C8T6
 
 CH32V103.menu.pnum.CH32V103C8U6=CH32V103C8U6 (QFN48X7, 64K/20K)
 CH32V103.menu.pnum.CH32V103C8U6.build.part=CH32V103C8U6
@@ -636,7 +595,6 @@ CH32V103.menu.pnum.CH32V103C8U6.build.ch32rv_chip=CH32V103
 CH32V103.menu.pnum.CH32V103C8U6.monitor_port.serial.chip=CH32V103
 CH32V103.menu.pnum.CH32V103C8U6.monitor_port.wchlink.chip=CH32V103
 CH32V103.menu.pnum.CH32V103C8U6.monitor_port.oep.chip=CH32V103
-CH32V103.menu.pnum.CH32V103C8U6.build.probe_rs_chip=CH32V103C8U6
 
 CH32V103.menu.pnum.CH32V103R8T6=CH32V103R8T6 (LQFP64M, 64K/20K)
 CH32V103.menu.pnum.CH32V103R8T6.build.part=CH32V103R8T6
@@ -647,7 +605,6 @@ CH32V103.menu.pnum.CH32V103R8T6.build.ch32rv_chip=CH32V103R8T6
 CH32V103.menu.pnum.CH32V103R8T6.monitor_port.serial.chip=CH32V103R8T6
 CH32V103.menu.pnum.CH32V103R8T6.monitor_port.wchlink.chip=CH32V103R8T6
 CH32V103.menu.pnum.CH32V103R8T6.monitor_port.oep.chip=CH32V103R8T6
-CH32V103.menu.pnum.CH32V103R8T6.build.probe_rs_chip=CH32V103R8T6
 
 CH32V103.menu.printf.none=No float (smaller)
 CH32V103.menu.printf.none.build.printf_flags=
@@ -680,7 +637,6 @@ CH32V203.menu.pnum.ANY.build.ch32rv_chip=CH32V20x
 CH32V203.menu.pnum.ANY.monitor_port.serial.chip=CH32V20x
 CH32V203.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V20x
 CH32V203.menu.pnum.ANY.monitor_port.oep.chip=CH32V20x
-CH32V203.menu.pnum.ANY.build.probe_rs_chip=CH32V203C6T6
 
 CH32V203.menu.pnum.CH32V203C6T6=CH32V203C6T6 (LQFP48, 32K/10K)
 CH32V203.menu.pnum.CH32V203C6T6.build.part=CH32V203C6T6
@@ -691,7 +647,6 @@ CH32V203.menu.pnum.CH32V203C6T6.build.ch32rv_chip=CH32V203C6T6
 CH32V203.menu.pnum.CH32V203C6T6.monitor_port.serial.chip=CH32V203C6T6
 CH32V203.menu.pnum.CH32V203C6T6.monitor_port.wchlink.chip=CH32V203C6T6
 CH32V203.menu.pnum.CH32V203C6T6.monitor_port.oep.chip=CH32V203C6T6
-CH32V203.menu.pnum.CH32V203C6T6.build.probe_rs_chip=CH32V203C6T6
 
 CH32V203.menu.pnum.CH32V203C6U6=CH32V203C6U6 (QFN48X7, 32K/10K)
 CH32V203.menu.pnum.CH32V203C6U6.build.part=CH32V203C6U6
@@ -702,7 +657,6 @@ CH32V203.menu.pnum.CH32V203C6U6.build.ch32rv_chip=CH32V20x
 CH32V203.menu.pnum.CH32V203C6U6.monitor_port.serial.chip=CH32V20x
 CH32V203.menu.pnum.CH32V203C6U6.monitor_port.wchlink.chip=CH32V20x
 CH32V203.menu.pnum.CH32V203C6U6.monitor_port.oep.chip=CH32V20x
-CH32V203.menu.pnum.CH32V203C6U6.build.probe_rs_chip=CH32V203C6T6
 
 CH32V203.menu.pnum.CH32V203F6P6=CH32V203F6P6 (TSSOP20, 32K/10K)
 CH32V203.menu.pnum.CH32V203F6P6.build.part=CH32V203F6P6
@@ -713,7 +667,6 @@ CH32V203.menu.pnum.CH32V203F6P6.build.ch32rv_chip=CH32V203F6P6
 CH32V203.menu.pnum.CH32V203F6P6.monitor_port.serial.chip=CH32V203F6P6
 CH32V203.menu.pnum.CH32V203F6P6.monitor_port.wchlink.chip=CH32V203F6P6
 CH32V203.menu.pnum.CH32V203F6P6.monitor_port.oep.chip=CH32V203F6P6
-CH32V203.menu.pnum.CH32V203F6P6.build.probe_rs_chip=CH32V203F6P6
 
 CH32V203.menu.pnum.CH32V203G6U6=CH32V203G6U6 (QFN28, 32K/10K)
 CH32V203.menu.pnum.CH32V203G6U6.build.part=CH32V203G6U6
@@ -724,7 +677,6 @@ CH32V203.menu.pnum.CH32V203G6U6.build.ch32rv_chip=CH32V203G6U6
 CH32V203.menu.pnum.CH32V203G6U6.monitor_port.serial.chip=CH32V203G6U6
 CH32V203.menu.pnum.CH32V203G6U6.monitor_port.wchlink.chip=CH32V203G6U6
 CH32V203.menu.pnum.CH32V203G6U6.monitor_port.oep.chip=CH32V203G6U6
-CH32V203.menu.pnum.CH32V203G6U6.build.probe_rs_chip=CH32V203G6U6
 
 CH32V203.menu.pnum.CH32V203C8T6=CH32V203C8T6 (LQFP48, 64K/20K)
 CH32V203.menu.pnum.CH32V203C8T6.build.part=CH32V203C8T6
@@ -735,7 +687,6 @@ CH32V203.menu.pnum.CH32V203C8T6.build.ch32rv_chip=CH32V203C8T6
 CH32V203.menu.pnum.CH32V203C8T6.monitor_port.serial.chip=CH32V203C8T6
 CH32V203.menu.pnum.CH32V203C8T6.monitor_port.wchlink.chip=CH32V203C8T6
 CH32V203.menu.pnum.CH32V203C8T6.monitor_port.oep.chip=CH32V203C8T6
-CH32V203.menu.pnum.CH32V203C8T6.build.probe_rs_chip=CH32V203C8T6
 
 CH32V203.menu.pnum.CH32V203C8U6=CH32V203C8U6 (QFN48X7, 64K/20K)
 CH32V203.menu.pnum.CH32V203C8U6.build.part=CH32V203C8U6
@@ -746,7 +697,6 @@ CH32V203.menu.pnum.CH32V203C8U6.build.ch32rv_chip=CH32V203C8U6
 CH32V203.menu.pnum.CH32V203C8U6.monitor_port.serial.chip=CH32V203C8U6
 CH32V203.menu.pnum.CH32V203C8U6.monitor_port.wchlink.chip=CH32V203C8U6
 CH32V203.menu.pnum.CH32V203C8U6.monitor_port.oep.chip=CH32V203C8U6
-CH32V203.menu.pnum.CH32V203C8U6.build.probe_rs_chip=CH32V203C8U6
 
 CH32V203.menu.pnum.CH32V203F8P6=CH32V203F8P6 (TSSOP20, 64K/20K)
 CH32V203.menu.pnum.CH32V203F8P6.build.part=CH32V203F8P6
@@ -757,7 +707,6 @@ CH32V203.menu.pnum.CH32V203F8P6.build.ch32rv_chip=CH32V203F8P6
 CH32V203.menu.pnum.CH32V203F8P6.monitor_port.serial.chip=CH32V203F8P6
 CH32V203.menu.pnum.CH32V203F8P6.monitor_port.wchlink.chip=CH32V203F8P6
 CH32V203.menu.pnum.CH32V203F8P6.monitor_port.oep.chip=CH32V203F8P6
-CH32V203.menu.pnum.CH32V203F8P6.build.probe_rs_chip=CH32V203F8P6
 
 CH32V203.menu.pnum.CH32V203F8U6=CH32V203F8U6 (QFN20, 64K/20K)
 CH32V203.menu.pnum.CH32V203F8U6.build.part=CH32V203F8U6
@@ -768,7 +717,6 @@ CH32V203.menu.pnum.CH32V203F8U6.build.ch32rv_chip=CH32V203F8U6
 CH32V203.menu.pnum.CH32V203F8U6.monitor_port.serial.chip=CH32V203F8U6
 CH32V203.menu.pnum.CH32V203F8U6.monitor_port.wchlink.chip=CH32V203F8U6
 CH32V203.menu.pnum.CH32V203F8U6.monitor_port.oep.chip=CH32V203F8U6
-CH32V203.menu.pnum.CH32V203F8U6.build.probe_rs_chip=CH32V203F8U6
 
 CH32V203.menu.pnum.CH32V203G8R6=CH32V203G8R6 (QSOP28, 64K/20K)
 CH32V203.menu.pnum.CH32V203G8R6.build.part=CH32V203G8R6
@@ -779,7 +727,6 @@ CH32V203.menu.pnum.CH32V203G8R6.build.ch32rv_chip=CH32V203G8R6
 CH32V203.menu.pnum.CH32V203G8R6.monitor_port.serial.chip=CH32V203G8R6
 CH32V203.menu.pnum.CH32V203G8R6.monitor_port.wchlink.chip=CH32V203G8R6
 CH32V203.menu.pnum.CH32V203G8R6.monitor_port.oep.chip=CH32V203G8R6
-CH32V203.menu.pnum.CH32V203G8R6.build.probe_rs_chip=CH32V203G8R6
 
 CH32V203.menu.pnum.CH32V203K8T6=CH32V203K8T6 (LQFP32, 64K/20K)
 CH32V203.menu.pnum.CH32V203K8T6.build.part=CH32V203K8T6
@@ -790,7 +737,6 @@ CH32V203.menu.pnum.CH32V203K8T6.build.ch32rv_chip=CH32V203K8T6
 CH32V203.menu.pnum.CH32V203K8T6.monitor_port.serial.chip=CH32V203K8T6
 CH32V203.menu.pnum.CH32V203K8T6.monitor_port.wchlink.chip=CH32V203K8T6
 CH32V203.menu.pnum.CH32V203K8T6.monitor_port.oep.chip=CH32V203K8T6
-CH32V203.menu.pnum.CH32V203K8T6.build.probe_rs_chip=CH32V203K8T6
 
 CH32V203.menu.pnum.CH32V203K8U7=CH32V203K8U7 (QFN32, 64K/20K)
 CH32V203.menu.pnum.CH32V203K8U7.build.part=CH32V203K8U7
@@ -801,7 +747,6 @@ CH32V203.menu.pnum.CH32V203K8U7.build.ch32rv_chip=CH32V20x
 CH32V203.menu.pnum.CH32V203K8U7.monitor_port.serial.chip=CH32V20x
 CH32V203.menu.pnum.CH32V203K8U7.monitor_port.wchlink.chip=CH32V20x
 CH32V203.menu.pnum.CH32V203K8U7.monitor_port.oep.chip=CH32V20x
-CH32V203.menu.pnum.CH32V203K8U7.build.probe_rs_chip=CH32V203C6T6
 
 CH32V203.menu.pnum.CH32V203RBT6=CH32V203RBT6 (LQFP64M, 128K/64K)
 CH32V203.menu.pnum.CH32V203RBT6.build.part=CH32V203RBT6
@@ -812,7 +757,6 @@ CH32V203.menu.pnum.CH32V203RBT6.build.ch32rv_chip=CH32V203RBT6
 CH32V203.menu.pnum.CH32V203RBT6.monitor_port.serial.chip=CH32V203RBT6
 CH32V203.menu.pnum.CH32V203RBT6.monitor_port.wchlink.chip=CH32V203RBT6
 CH32V203.menu.pnum.CH32V203RBT6.monitor_port.oep.chip=CH32V203RBT6
-CH32V203.menu.pnum.CH32V203RBT6.build.probe_rs_chip=CH32V203RBT6
 CH32V203.menu.pnum.CH32V203RBT6.build.vector_variant=v20x_d8
 
 CH32V203.menu.printf.none=No float (smaller)
@@ -846,7 +790,6 @@ CH32V208.menu.pnum.ANY.build.ch32rv_chip=CH32V20x
 CH32V208.menu.pnum.ANY.monitor_port.serial.chip=CH32V20x
 CH32V208.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V20x
 CH32V208.menu.pnum.ANY.monitor_port.oep.chip=CH32V20x
-CH32V208.menu.pnum.ANY.build.probe_rs_chip=CH32V208CBU6
 
 CH32V208.menu.pnum.CH32V208CBU6=CH32V208CBU6 (QFN48, 128K/64K)
 CH32V208.menu.pnum.CH32V208CBU6.build.part=CH32V208CBU6
@@ -857,7 +800,6 @@ CH32V208.menu.pnum.CH32V208CBU6.build.ch32rv_chip=CH32V208CBU6
 CH32V208.menu.pnum.CH32V208CBU6.monitor_port.serial.chip=CH32V208CBU6
 CH32V208.menu.pnum.CH32V208CBU6.monitor_port.wchlink.chip=CH32V208CBU6
 CH32V208.menu.pnum.CH32V208CBU6.monitor_port.oep.chip=CH32V208CBU6
-CH32V208.menu.pnum.CH32V208CBU6.build.probe_rs_chip=CH32V208CBU6
 
 CH32V208.menu.pnum.CH32V208GBU6=CH32V208GBU6 (QFN28, 128K/64K)
 CH32V208.menu.pnum.CH32V208GBU6.build.part=CH32V208GBU6
@@ -868,7 +810,6 @@ CH32V208.menu.pnum.CH32V208GBU6.build.ch32rv_chip=CH32V208GBU6
 CH32V208.menu.pnum.CH32V208GBU6.monitor_port.serial.chip=CH32V208GBU6
 CH32V208.menu.pnum.CH32V208GBU6.monitor_port.wchlink.chip=CH32V208GBU6
 CH32V208.menu.pnum.CH32V208GBU6.monitor_port.oep.chip=CH32V208GBU6
-CH32V208.menu.pnum.CH32V208GBU6.build.probe_rs_chip=CH32V208GBU6
 
 CH32V208.menu.pnum.CH32V208RBT6=CH32V208RBT6 (LQFP64M, 128K/64K)
 CH32V208.menu.pnum.CH32V208RBT6.build.part=CH32V208RBT6
@@ -879,7 +820,6 @@ CH32V208.menu.pnum.CH32V208RBT6.build.ch32rv_chip=CH32V208RBT6
 CH32V208.menu.pnum.CH32V208RBT6.monitor_port.serial.chip=CH32V208RBT6
 CH32V208.menu.pnum.CH32V208RBT6.monitor_port.wchlink.chip=CH32V208RBT6
 CH32V208.menu.pnum.CH32V208RBT6.monitor_port.oep.chip=CH32V208RBT6
-CH32V208.menu.pnum.CH32V208RBT6.build.probe_rs_chip=CH32V208RBT6
 
 CH32V208.menu.pnum.CH32V208WBU6=CH32V208WBU6 (QFN68, 128K/64K)
 CH32V208.menu.pnum.CH32V208WBU6.build.part=CH32V208WBU6
@@ -890,7 +830,6 @@ CH32V208.menu.pnum.CH32V208WBU6.build.ch32rv_chip=CH32V208WBU6
 CH32V208.menu.pnum.CH32V208WBU6.monitor_port.serial.chip=CH32V208WBU6
 CH32V208.menu.pnum.CH32V208WBU6.monitor_port.wchlink.chip=CH32V208WBU6
 CH32V208.menu.pnum.CH32V208WBU6.monitor_port.oep.chip=CH32V208WBU6
-CH32V208.menu.pnum.CH32V208WBU6.build.probe_rs_chip=CH32V208WBU6
 
 CH32V208.menu.printf.none=No float (smaller)
 CH32V208.menu.printf.none.build.printf_flags=
@@ -923,7 +862,6 @@ CH32V303.menu.pnum.ANY.build.ch32rv_chip=CH32V307
 CH32V303.menu.pnum.ANY.monitor_port.serial.chip=CH32V307
 CH32V303.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V307
 CH32V303.menu.pnum.ANY.monitor_port.oep.chip=CH32V307
-CH32V303.menu.pnum.ANY.build.probe_rs_chip=CH32V303CBT6
 
 CH32V303.menu.pnum.CH32V303CBT6=CH32V303CBT6 (LQFP48, 128K/32K)
 CH32V303.menu.pnum.CH32V303CBT6.build.part=CH32V303CBT6
@@ -934,7 +872,6 @@ CH32V303.menu.pnum.CH32V303CBT6.build.ch32rv_chip=CH32V303CBT6
 CH32V303.menu.pnum.CH32V303CBT6.monitor_port.serial.chip=CH32V303CBT6
 CH32V303.menu.pnum.CH32V303CBT6.monitor_port.wchlink.chip=CH32V303CBT6
 CH32V303.menu.pnum.CH32V303CBT6.monitor_port.oep.chip=CH32V303CBT6
-CH32V303.menu.pnum.CH32V303CBT6.build.probe_rs_chip=CH32V303CBT6
 
 CH32V303.menu.pnum.CH32V303RBT6=CH32V303RBT6 (LQFP64M, 128K/32K)
 CH32V303.menu.pnum.CH32V303RBT6.build.part=CH32V303RBT6
@@ -945,7 +882,6 @@ CH32V303.menu.pnum.CH32V303RBT6.build.ch32rv_chip=CH32V303RBT6
 CH32V303.menu.pnum.CH32V303RBT6.monitor_port.serial.chip=CH32V303RBT6
 CH32V303.menu.pnum.CH32V303RBT6.monitor_port.wchlink.chip=CH32V303RBT6
 CH32V303.menu.pnum.CH32V303RBT6.monitor_port.oep.chip=CH32V303RBT6
-CH32V303.menu.pnum.CH32V303RBT6.build.probe_rs_chip=CH32V303RBT6
 
 CH32V303.menu.pnum.CH32V303RCT6=CH32V303RCT6 (LQFP64M, 256K/64K)
 CH32V303.menu.pnum.CH32V303RCT6.build.part=CH32V303RCT6
@@ -956,7 +892,6 @@ CH32V303.menu.pnum.CH32V303RCT6.build.ch32rv_chip=CH32V303RCT6
 CH32V303.menu.pnum.CH32V303RCT6.monitor_port.serial.chip=CH32V303RCT6
 CH32V303.menu.pnum.CH32V303RCT6.monitor_port.wchlink.chip=CH32V303RCT6
 CH32V303.menu.pnum.CH32V303RCT6.monitor_port.oep.chip=CH32V303RCT6
-CH32V303.menu.pnum.CH32V303RCT6.build.probe_rs_chip=CH32V303RCT6
 
 CH32V303.menu.pnum.CH32V303RCT7=CH32V303RCT7 (LQFP64M, 256K/64K)
 CH32V303.menu.pnum.CH32V303RCT7.build.part=CH32V303RCT7
@@ -967,7 +902,6 @@ CH32V303.menu.pnum.CH32V303RCT7.build.ch32rv_chip=CH32V307
 CH32V303.menu.pnum.CH32V303RCT7.monitor_port.serial.chip=CH32V307
 CH32V303.menu.pnum.CH32V303RCT7.monitor_port.wchlink.chip=CH32V307
 CH32V303.menu.pnum.CH32V303RCT7.monitor_port.oep.chip=CH32V307
-CH32V303.menu.pnum.CH32V303RCT7.build.probe_rs_chip=CH32V303CBT6
 
 CH32V303.menu.pnum.CH32V303VCT6=CH32V303VCT6 (LQFP100, 256K/64K)
 CH32V303.menu.pnum.CH32V303VCT6.build.part=CH32V303VCT6
@@ -978,7 +912,6 @@ CH32V303.menu.pnum.CH32V303VCT6.build.ch32rv_chip=CH32V303VCT6
 CH32V303.menu.pnum.CH32V303VCT6.monitor_port.serial.chip=CH32V303VCT6
 CH32V303.menu.pnum.CH32V303VCT6.monitor_port.wchlink.chip=CH32V303VCT6
 CH32V303.menu.pnum.CH32V303VCT6.monitor_port.oep.chip=CH32V303VCT6
-CH32V303.menu.pnum.CH32V303VCT6.build.probe_rs_chip=CH32V303VCT6
 
 CH32V303.menu.printf.none=No float (smaller)
 CH32V303.menu.printf.none.build.printf_flags=
@@ -1011,7 +944,6 @@ CH32V305.menu.pnum.ANY.build.ch32rv_chip=CH32V307
 CH32V305.menu.pnum.ANY.monitor_port.serial.chip=CH32V307
 CH32V305.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V307
 CH32V305.menu.pnum.ANY.monitor_port.oep.chip=CH32V307
-CH32V305.menu.pnum.ANY.build.probe_rs_chip=CH32V305FBP6
 
 CH32V305.menu.pnum.CH32V305FBP6=CH32V305FBP6 (TSSOP20, 128K/32K)
 CH32V305.menu.pnum.CH32V305FBP6.build.part=CH32V305FBP6
@@ -1022,7 +954,6 @@ CH32V305.menu.pnum.CH32V305FBP6.build.ch32rv_chip=CH32V305FBP6
 CH32V305.menu.pnum.CH32V305FBP6.monitor_port.serial.chip=CH32V305FBP6
 CH32V305.menu.pnum.CH32V305FBP6.monitor_port.wchlink.chip=CH32V305FBP6
 CH32V305.menu.pnum.CH32V305FBP6.monitor_port.oep.chip=CH32V305FBP6
-CH32V305.menu.pnum.CH32V305FBP6.build.probe_rs_chip=CH32V305FBP6
 
 CH32V305.menu.pnum.CH32V305GBU6=CH32V305GBU6 (QFN28, 128K/32K)
 CH32V305.menu.pnum.CH32V305GBU6.build.part=CH32V305GBU6
@@ -1033,7 +964,6 @@ CH32V305.menu.pnum.CH32V305GBU6.build.ch32rv_chip=CH32V305GBU6
 CH32V305.menu.pnum.CH32V305GBU6.monitor_port.serial.chip=CH32V305GBU6
 CH32V305.menu.pnum.CH32V305GBU6.monitor_port.wchlink.chip=CH32V305GBU6
 CH32V305.menu.pnum.CH32V305GBU6.monitor_port.oep.chip=CH32V305GBU6
-CH32V305.menu.pnum.CH32V305GBU6.build.probe_rs_chip=CH32V305GBU6
 
 CH32V305.menu.pnum.CH32V305RBT6=CH32V305RBT6 (LQFP64M, 128K/32K)
 CH32V305.menu.pnum.CH32V305RBT6.build.part=CH32V305RBT6
@@ -1044,7 +974,6 @@ CH32V305.menu.pnum.CH32V305RBT6.build.ch32rv_chip=CH32V305RBT6
 CH32V305.menu.pnum.CH32V305RBT6.monitor_port.serial.chip=CH32V305RBT6
 CH32V305.menu.pnum.CH32V305RBT6.monitor_port.wchlink.chip=CH32V305RBT6
 CH32V305.menu.pnum.CH32V305RBT6.monitor_port.oep.chip=CH32V305RBT6
-CH32V305.menu.pnum.CH32V305RBT6.build.probe_rs_chip=CH32V305RBT6
 
 CH32V305.menu.pnum.CH32V305CCT6=CH32V305CCT6 (LQFP48, 256K/64K)
 CH32V305.menu.pnum.CH32V305CCT6.build.part=CH32V305CCT6
@@ -1055,7 +984,6 @@ CH32V305.menu.pnum.CH32V305CCT6.build.ch32rv_chip=CH32V307
 CH32V305.menu.pnum.CH32V305CCT6.monitor_port.serial.chip=CH32V307
 CH32V305.menu.pnum.CH32V305CCT6.monitor_port.wchlink.chip=CH32V307
 CH32V305.menu.pnum.CH32V305CCT6.monitor_port.oep.chip=CH32V307
-CH32V305.menu.pnum.CH32V305CCT6.build.probe_rs_chip=CH32V305FBP6
 
 CH32V305.menu.printf.none=No float (smaller)
 CH32V305.menu.printf.none.build.printf_flags=
@@ -1088,7 +1016,6 @@ CH32V307.menu.pnum.ANY.build.ch32rv_chip=CH32V307
 CH32V307.menu.pnum.ANY.monitor_port.serial.chip=CH32V307
 CH32V307.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V307
 CH32V307.menu.pnum.ANY.monitor_port.oep.chip=CH32V307
-CH32V307.menu.pnum.ANY.build.probe_rs_chip=CH32V307RCT6
 
 CH32V307.menu.pnum.CH32V307RCT6=CH32V307RCT6 (LQFP64M, 256K/64K)
 CH32V307.menu.pnum.CH32V307RCT6.build.part=CH32V307RCT6
@@ -1099,7 +1026,6 @@ CH32V307.menu.pnum.CH32V307RCT6.build.ch32rv_chip=CH32V307RCT6
 CH32V307.menu.pnum.CH32V307RCT6.monitor_port.serial.chip=CH32V307RCT6
 CH32V307.menu.pnum.CH32V307RCT6.monitor_port.wchlink.chip=CH32V307RCT6
 CH32V307.menu.pnum.CH32V307RCT6.monitor_port.oep.chip=CH32V307RCT6
-CH32V307.menu.pnum.CH32V307RCT6.build.probe_rs_chip=CH32V307RCT6
 
 CH32V307.menu.pnum.CH32V307VCT6=CH32V307VCT6 (LQFP100, 256K/64K)
 CH32V307.menu.pnum.CH32V307VCT6.build.part=CH32V307VCT6
@@ -1110,7 +1036,6 @@ CH32V307.menu.pnum.CH32V307VCT6.build.ch32rv_chip=CH32V307VCT6
 CH32V307.menu.pnum.CH32V307VCT6.monitor_port.serial.chip=CH32V307VCT6
 CH32V307.menu.pnum.CH32V307VCT6.monitor_port.wchlink.chip=CH32V307VCT6
 CH32V307.menu.pnum.CH32V307VCT6.monitor_port.oep.chip=CH32V307VCT6
-CH32V307.menu.pnum.CH32V307VCT6.build.probe_rs_chip=CH32V307VCT6
 
 CH32V307.menu.pnum.CH32V307WCU6=CH32V307WCU6 (QFN68, 256K/64K)
 CH32V307.menu.pnum.CH32V307WCU6.build.part=CH32V307WCU6
@@ -1121,7 +1046,6 @@ CH32V307.menu.pnum.CH32V307WCU6.build.ch32rv_chip=CH32V307WCU6
 CH32V307.menu.pnum.CH32V307WCU6.monitor_port.serial.chip=CH32V307WCU6
 CH32V307.menu.pnum.CH32V307WCU6.monitor_port.wchlink.chip=CH32V307WCU6
 CH32V307.menu.pnum.CH32V307WCU6.monitor_port.oep.chip=CH32V307WCU6
-CH32V307.menu.pnum.CH32V307WCU6.build.probe_rs_chip=CH32V307WCU6
 
 CH32V307.menu.printf.none=No float (smaller)
 CH32V307.menu.printf.none.build.printf_flags=
@@ -1154,7 +1078,6 @@ CH32V317.menu.pnum.ANY.build.ch32rv_chip=CH32V307
 CH32V317.menu.pnum.ANY.monitor_port.serial.chip=CH32V307
 CH32V317.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V307
 CH32V317.menu.pnum.ANY.monitor_port.oep.chip=CH32V307
-CH32V317.menu.pnum.ANY.build.probe_rs_chip=CH32V317VCT6
 
 CH32V317.menu.pnum.CH32V317VCT6=CH32V317VCT6 (LQFP100, 256K/64K)
 CH32V317.menu.pnum.CH32V317VCT6.build.part=CH32V317VCT6
@@ -1165,7 +1088,6 @@ CH32V317.menu.pnum.CH32V317VCT6.build.ch32rv_chip=CH32V317VCT6
 CH32V317.menu.pnum.CH32V317VCT6.monitor_port.serial.chip=CH32V317VCT6
 CH32V317.menu.pnum.CH32V317VCT6.monitor_port.wchlink.chip=CH32V317VCT6
 CH32V317.menu.pnum.CH32V317VCT6.monitor_port.oep.chip=CH32V317VCT6
-CH32V317.menu.pnum.CH32V317VCT6.build.probe_rs_chip=CH32V317VCT6
 
 CH32V317.menu.pnum.CH32V317WCU6=CH32V317WCU6 (QFN68, 256K/64K)
 CH32V317.menu.pnum.CH32V317WCU6.build.part=CH32V317WCU6
@@ -1176,7 +1098,6 @@ CH32V317.menu.pnum.CH32V317WCU6.build.ch32rv_chip=CH32V317WCU6
 CH32V317.menu.pnum.CH32V317WCU6.monitor_port.serial.chip=CH32V317WCU6
 CH32V317.menu.pnum.CH32V317WCU6.monitor_port.wchlink.chip=CH32V317WCU6
 CH32V317.menu.pnum.CH32V317WCU6.monitor_port.oep.chip=CH32V317WCU6
-CH32V317.menu.pnum.CH32V317WCU6.build.probe_rs_chip=CH32V317WCU6
 
 CH32V317.menu.printf.none=No float (smaller)
 CH32V317.menu.printf.none.build.printf_flags=
@@ -1209,7 +1130,6 @@ CH32X033.menu.pnum.ANY.build.ch32rv_chip=CH32X035
 CH32X033.menu.pnum.ANY.monitor_port.serial.chip=CH32X035
 CH32X033.menu.pnum.ANY.monitor_port.wchlink.chip=CH32X035
 CH32X033.menu.pnum.ANY.monitor_port.oep.chip=CH32X035
-CH32X033.menu.pnum.ANY.build.probe_rs_chip=CH32X033F8P6
 
 CH32X033.menu.pnum.CH32X033F8P6=CH32X033F8P6 (TSSOP20, 62K/20K)
 CH32X033.menu.pnum.CH32X033F8P6.build.part=CH32X033F8P6
@@ -1220,7 +1140,6 @@ CH32X033.menu.pnum.CH32X033F8P6.build.ch32rv_chip=CH32X033F8P6
 CH32X033.menu.pnum.CH32X033F8P6.monitor_port.serial.chip=CH32X033F8P6
 CH32X033.menu.pnum.CH32X033F8P6.monitor_port.wchlink.chip=CH32X033F8P6
 CH32X033.menu.pnum.CH32X033F8P6.monitor_port.oep.chip=CH32X033F8P6
-CH32X033.menu.pnum.CH32X033F8P6.build.probe_rs_chip=CH32X033F8P6
 
 CH32X033.menu.printf.none=No float (smaller)
 CH32X033.menu.printf.none.build.printf_flags=
@@ -1253,7 +1172,6 @@ CH32X035.menu.pnum.ANY.build.ch32rv_chip=CH32X035
 CH32X035.menu.pnum.ANY.monitor_port.serial.chip=CH32X035
 CH32X035.menu.pnum.ANY.monitor_port.wchlink.chip=CH32X035
 CH32X035.menu.pnum.ANY.monitor_port.oep.chip=CH32X035
-CH32X035.menu.pnum.ANY.build.probe_rs_chip=CH32X035C8T6
 
 CH32X035.menu.pnum.CH32X035C8T6=CH32X035C8T6 (LQFP48, 62K/20K)
 CH32X035.menu.pnum.CH32X035C8T6.build.part=CH32X035C8T6
@@ -1264,7 +1182,6 @@ CH32X035.menu.pnum.CH32X035C8T6.build.ch32rv_chip=CH32X035C8T6
 CH32X035.menu.pnum.CH32X035C8T6.monitor_port.serial.chip=CH32X035C8T6
 CH32X035.menu.pnum.CH32X035C8T6.monitor_port.wchlink.chip=CH32X035C8T6
 CH32X035.menu.pnum.CH32X035C8T6.monitor_port.oep.chip=CH32X035C8T6
-CH32X035.menu.pnum.CH32X035C8T6.build.probe_rs_chip=CH32X035C8T6
 
 CH32X035.menu.pnum.CH32X035D8U6=CH32X035D8U6 (QFN12, 62K/20K)
 CH32X035.menu.pnum.CH32X035D8U6.build.part=CH32X035D8U6
@@ -1275,7 +1192,6 @@ CH32X035.menu.pnum.CH32X035D8U6.build.ch32rv_chip=CH32X035
 CH32X035.menu.pnum.CH32X035D8U6.monitor_port.serial.chip=CH32X035
 CH32X035.menu.pnum.CH32X035D8U6.monitor_port.wchlink.chip=CH32X035
 CH32X035.menu.pnum.CH32X035D8U6.monitor_port.oep.chip=CH32X035
-CH32X035.menu.pnum.CH32X035D8U6.build.probe_rs_chip=CH32X035C8T6
 
 CH32X035.menu.pnum.CH32X035F7P6=CH32X035F7P6 (TSSOP20, 62K/20K)
 CH32X035.menu.pnum.CH32X035F7P6.build.part=CH32X035F7P6
@@ -1286,7 +1202,6 @@ CH32X035.menu.pnum.CH32X035F7P6.build.ch32rv_chip=CH32X035F7P6
 CH32X035.menu.pnum.CH32X035F7P6.monitor_port.serial.chip=CH32X035F7P6
 CH32X035.menu.pnum.CH32X035F7P6.monitor_port.wchlink.chip=CH32X035F7P6
 CH32X035.menu.pnum.CH32X035F7P6.monitor_port.oep.chip=CH32X035F7P6
-CH32X035.menu.pnum.CH32X035F7P6.build.probe_rs_chip=CH32X035F7P6
 
 CH32X035.menu.pnum.CH32X035F8U6=CH32X035F8U6 (QFN20, 62K/20K)
 CH32X035.menu.pnum.CH32X035F8U6.build.part=CH32X035F8U6
@@ -1297,7 +1212,6 @@ CH32X035.menu.pnum.CH32X035F8U6.build.ch32rv_chip=CH32X035F8U6
 CH32X035.menu.pnum.CH32X035F8U6.monitor_port.serial.chip=CH32X035F8U6
 CH32X035.menu.pnum.CH32X035F8U6.monitor_port.wchlink.chip=CH32X035F8U6
 CH32X035.menu.pnum.CH32X035F8U6.monitor_port.oep.chip=CH32X035F8U6
-CH32X035.menu.pnum.CH32X035F8U6.build.probe_rs_chip=CH32X035F8U6
 
 CH32X035.menu.pnum.CH32X035G8R6=CH32X035G8R6 (QSOP28, 62K/20K)
 CH32X035.menu.pnum.CH32X035G8R6.build.part=CH32X035G8R6
@@ -1308,7 +1222,6 @@ CH32X035.menu.pnum.CH32X035G8R6.build.ch32rv_chip=CH32X035G8R6
 CH32X035.menu.pnum.CH32X035G8R6.monitor_port.serial.chip=CH32X035G8R6
 CH32X035.menu.pnum.CH32X035G8R6.monitor_port.wchlink.chip=CH32X035G8R6
 CH32X035.menu.pnum.CH32X035G8R6.monitor_port.oep.chip=CH32X035G8R6
-CH32X035.menu.pnum.CH32X035G8R6.build.probe_rs_chip=CH32X035G8R6
 
 CH32X035.menu.pnum.CH32X035G8U6=CH32X035G8U6 (QFN28, 62K/20K)
 CH32X035.menu.pnum.CH32X035G8U6.build.part=CH32X035G8U6
@@ -1319,7 +1232,6 @@ CH32X035.menu.pnum.CH32X035G8U6.build.ch32rv_chip=CH32X035G8U6
 CH32X035.menu.pnum.CH32X035G8U6.monitor_port.serial.chip=CH32X035G8U6
 CH32X035.menu.pnum.CH32X035G8U6.monitor_port.wchlink.chip=CH32X035G8U6
 CH32X035.menu.pnum.CH32X035G8U6.monitor_port.oep.chip=CH32X035G8U6
-CH32X035.menu.pnum.CH32X035G8U6.build.probe_rs_chip=CH32X035G8U6
 
 CH32X035.menu.pnum.CH32X035R8T6=CH32X035R8T6 (LQFP64M, 62K/20K)
 CH32X035.menu.pnum.CH32X035R8T6.build.part=CH32X035R8T6
@@ -1330,7 +1242,6 @@ CH32X035.menu.pnum.CH32X035R8T6.build.ch32rv_chip=CH32X035R8T6
 CH32X035.menu.pnum.CH32X035R8T6.monitor_port.serial.chip=CH32X035R8T6
 CH32X035.menu.pnum.CH32X035R8T6.monitor_port.wchlink.chip=CH32X035R8T6
 CH32X035.menu.pnum.CH32X035R8T6.monitor_port.oep.chip=CH32X035R8T6
-CH32X035.menu.pnum.CH32X035R8T6.build.probe_rs_chip=CH32X035R8T6
 
 CH32X035.menu.printf.none=No float (smaller)
 CH32X035.menu.printf.none.build.printf_flags=
@@ -1363,7 +1274,6 @@ CH32L103.menu.pnum.ANY.build.ch32rv_chip=CH32L103
 CH32L103.menu.pnum.ANY.monitor_port.serial.chip=CH32L103
 CH32L103.menu.pnum.ANY.monitor_port.wchlink.chip=CH32L103
 CH32L103.menu.pnum.ANY.monitor_port.oep.chip=CH32L103
-CH32L103.menu.pnum.ANY.build.probe_rs_chip=CH32L103C8T6
 
 CH32L103.menu.pnum.CH32L103C8T6=CH32L103C8T6 (LQFP48, 64K/20K)
 CH32L103.menu.pnum.CH32L103C8T6.build.part=CH32L103C8T6
@@ -1374,7 +1284,6 @@ CH32L103.menu.pnum.CH32L103C8T6.build.ch32rv_chip=CH32L103C8T6
 CH32L103.menu.pnum.CH32L103C8T6.monitor_port.serial.chip=CH32L103C8T6
 CH32L103.menu.pnum.CH32L103C8T6.monitor_port.wchlink.chip=CH32L103C8T6
 CH32L103.menu.pnum.CH32L103C8T6.monitor_port.oep.chip=CH32L103C8T6
-CH32L103.menu.pnum.CH32L103C8T6.build.probe_rs_chip=CH32L103C8T6
 
 CH32L103.menu.pnum.CH32L103F8P6=CH32L103F8P6 (TSSOP20, 64K/20K)
 CH32L103.menu.pnum.CH32L103F8P6.build.part=CH32L103F8P6
@@ -1385,7 +1294,6 @@ CH32L103.menu.pnum.CH32L103F8P6.build.ch32rv_chip=CH32L103F8P6
 CH32L103.menu.pnum.CH32L103F8P6.monitor_port.serial.chip=CH32L103F8P6
 CH32L103.menu.pnum.CH32L103F8P6.monitor_port.wchlink.chip=CH32L103F8P6
 CH32L103.menu.pnum.CH32L103F8P6.monitor_port.oep.chip=CH32L103F8P6
-CH32L103.menu.pnum.CH32L103F8P6.build.probe_rs_chip=CH32L103F8P6
 
 CH32L103.menu.pnum.CH32L103F8U6=CH32L103F8U6 (QFN20, 64K/20K)
 CH32L103.menu.pnum.CH32L103F8U6.build.part=CH32L103F8U6
@@ -1396,7 +1304,6 @@ CH32L103.menu.pnum.CH32L103F8U6.build.ch32rv_chip=CH32L103F8U6
 CH32L103.menu.pnum.CH32L103F8U6.monitor_port.serial.chip=CH32L103F8U6
 CH32L103.menu.pnum.CH32L103F8U6.monitor_port.wchlink.chip=CH32L103F8U6
 CH32L103.menu.pnum.CH32L103F8U6.monitor_port.oep.chip=CH32L103F8U6
-CH32L103.menu.pnum.CH32L103F8U6.build.probe_rs_chip=CH32L103F8U6
 
 CH32L103.menu.pnum.CH32L103G8R6=CH32L103G8R6 (QSOP28, 64K/20K)
 CH32L103.menu.pnum.CH32L103G8R6.build.part=CH32L103G8R6
@@ -1407,7 +1314,6 @@ CH32L103.menu.pnum.CH32L103G8R6.build.ch32rv_chip=CH32L103G8R6
 CH32L103.menu.pnum.CH32L103G8R6.monitor_port.serial.chip=CH32L103G8R6
 CH32L103.menu.pnum.CH32L103G8R6.monitor_port.wchlink.chip=CH32L103G8R6
 CH32L103.menu.pnum.CH32L103G8R6.monitor_port.oep.chip=CH32L103G8R6
-CH32L103.menu.pnum.CH32L103G8R6.build.probe_rs_chip=CH32L103G8R6
 
 CH32L103.menu.pnum.CH32L103K8U6=CH32L103K8U6 (QFN32, 64K/20K)
 CH32L103.menu.pnum.CH32L103K8U6.build.part=CH32L103K8U6
@@ -1418,7 +1324,6 @@ CH32L103.menu.pnum.CH32L103K8U6.build.ch32rv_chip=CH32L103K8U6
 CH32L103.menu.pnum.CH32L103K8U6.monitor_port.serial.chip=CH32L103K8U6
 CH32L103.menu.pnum.CH32L103K8U6.monitor_port.wchlink.chip=CH32L103K8U6
 CH32L103.menu.pnum.CH32L103K8U6.monitor_port.oep.chip=CH32L103K8U6
-CH32L103.menu.pnum.CH32L103K8U6.build.probe_rs_chip=CH32L103K8U6
 
 CH32L103.menu.pnum.CH32L103K8U7=CH32L103K8U7 (QFN32, 64K/20K)
 CH32L103.menu.pnum.CH32L103K8U7.build.part=CH32L103K8U7
@@ -1429,7 +1334,6 @@ CH32L103.menu.pnum.CH32L103K8U7.build.ch32rv_chip=CH32L103
 CH32L103.menu.pnum.CH32L103K8U7.monitor_port.serial.chip=CH32L103
 CH32L103.menu.pnum.CH32L103K8U7.monitor_port.wchlink.chip=CH32L103
 CH32L103.menu.pnum.CH32L103K8U7.monitor_port.oep.chip=CH32L103
-CH32L103.menu.pnum.CH32L103K8U7.build.probe_rs_chip=CH32L103C8T6
 
 CH32L103.menu.printf.none=No float (smaller)
 CH32L103.menu.printf.none.build.printf_flags=
@@ -1880,7 +1784,6 @@ UIAPDUINO_V003_V14.build.ch32rv_chip=CH32V003F4U6
 UIAPDUINO_V003_V14.monitor_port.serial.chip=CH32V003F4U6
 UIAPDUINO_V003_V14.monitor_port.wchlink.chip=CH32V003F4U6
 UIAPDUINO_V003_V14.monitor_port.oep.chip=CH32V003F4U6
-UIAPDUINO_V003_V14.build.probe_rs_chip=CH32V003F4U6
 
 # Product hardware fixes the part number, but a no-op `pnum=ANY` menu is
 # deliberately present so generic Arduino CI invocations that supply the

@@ -44,7 +44,7 @@ OSごとの手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)に�
 |---|---|---|---|
 | `SerialSDI` | wlink、WCH-LinkUtility | 送信のみ | なし |
 | **`SerialDMDATA`** | **minichlink** | **双方向** | **なし** |
-| `SerialRTT` | probe-rs attach | 双方向 | RAM |
+| `SerialRTT` | ch32rv monitor --source rtt | 双方向 | RAM |
 
 `SerialRTT`はこのレジスタを使わないので、併用できます。
 

@@ -46,7 +46,7 @@ other as noise. Pick by the tool you have:
 |---|---|---|---|
 | `SerialSDI` | wlink, WCH-LinkUtility | send only | none |
 | **`SerialDMDATA`** | **minichlink** | **two-way** | **none** |
-| `SerialRTT` | probe-rs attach | two-way | RAM |
+| `SerialRTT` | ch32rv monitor --source rtt | two-way | RAM |
 
 `SerialRTT` uses neither register, so it can be used alongside this one.
 

@@ -21,12 +21,16 @@ void setup() {
 
 ## Reading it on the host
 
+With the bundled ch32rv, through a WCH-Link:
+
 ```
-probe-rs attach --chip CH32V003F4P6 <firmware.elf>
+ch32rv monitor --source rtt --chip CH32V203
 ```
 
-Any `pnum` from the board menu works as `--chip`. Pass the **ELF**: that is
-where probe-rs looks up the control block.
+It finds the control block in RAM by itself (no ELF needed). Checked on
+CH32V203 over a WCH-LinkE with ch32rv 0.13.2 (2026-10-01). Through an OEP
+probe the `rtt` source is not available yet; use `SerialDMSeq` there.
+`probe-rs attach --chip <part> <firmware.elf>` works as well.
 
 **Not the IDE's serial monitor.** That one speaks to serial ports, and this is
 not one; wiring RTT into it would need a pluggable monitor tool of our own
@@ -34,7 +38,7 @@ not one; wiring RTT into it would need a pluggable monitor tool of our own
 want the IDE window. Per-OS instructions are in
 [docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).
 
-Measured on this bench with probe-rs 0.32.0: `download` and then `attach`
+Measured earlier on this bench with probe-rs 0.32.0: `download` and then `attach`
 streams live while the target runs, on CH32V003 (18 lines in 23 s, and typed
 input echoed back) and on CH32V203 alike. Attaching to a target the probe
 happens to have left halted shows only what was printed before - reflash or
@@ -70,7 +74,7 @@ is worth doing; on a 20 KB one the default is nothing.
 |---|---|---|---|
 | `SerialSDI` | wlink, WCH-LinkUtility | send only | none |
 | `SerialDMDATA` | minichlink | two-way | none |
-| **`SerialRTT`** | **probe-rs attach** | **two-way** | **RAM** |
+| **`SerialRTT`** | **ch32rv monitor --source rtt** | **two-way** | **RAM** |
 
 `SerialSDI` and `SerialDMDATA` share the debug module's data registers and
 cannot be used together. `SerialRTT` uses neither, so it can run alongside

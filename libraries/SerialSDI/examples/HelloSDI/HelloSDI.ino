@@ -4,10 +4,12 @@
  * into the debug module's data registers and the probe forwards them to its
  * own USB serial port, so this costs no pin and never halts the core.
  *
- * The host has to be told to collect it, which probe-rs cannot do today. With
- * wlink (https://github.com/ch32-rs/wlink), firmware 2.10 or newer:
+ * The host has to be told to collect it. The bundled ch32rv switches it on
+ * and reads it in one go:
  *
- *   wlink flash --enable-sdi-print --watch-serial <firmware.elf>
+ *   ch32rv monitor --source sdi --chip CH32V003
+ *
+ * (wlink does it too: wlink flash --enable-sdi-print --watch-serial <elf>)
  *
  * Supported on V003/V00x/V103/V20x/V30x/X035/L103. Nothing is lost if no host
  * is listening: the write is dropped after a bounded wait, so unplugging the

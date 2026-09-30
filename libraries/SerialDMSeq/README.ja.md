@@ -47,7 +47,7 @@ ch32rv monitor --source dmseq
 | `SerialSDI` | wlink、WCH-LinkUtility | 送りのみ | なし |
 | `SerialDMDATA` | minichlink、`ch32rv --source dmdata` | 双方向 | なし |
 | **`SerialDMSeq`** | **`ch32rv --source dmseq`、OEP** | **双方向** | **通し番号+CRC** |
-| `SerialRTT` | probe-rs attach | 双方向 | - |
+| `SerialRTT` | ch32rv monitor --source rtt | 双方向 | - |
 
 ## 受信にはsketchのpollが要ります
 

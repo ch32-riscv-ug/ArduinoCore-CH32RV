@@ -9,8 +9,8 @@
  * debug module does the accesses, so **the core is never halted** and no pin
  * is used.
  *
- * What that buys over SerialSDI: the host side is probe-rs, which is what this
- * core already flashes with (`probe-rs attach`), and the channel is genuinely
+ * What that buys over SerialSDI: the host side is the bundled ch32rv
+ * (`ch32rv monitor --source rtt`, through a WCH-Link), and the channel is genuinely
  * two-way, so read() works. What it costs: RAM - the buffers are real memory,
  * CH32RV_RTT_UP_SIZE + CH32RV_RTT_DOWN_SIZE plus about 70 bytes of control block.
  * On a 2 KB part that is worth thinking about; SerialDMDATA does the same job

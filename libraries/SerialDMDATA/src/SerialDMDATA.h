@@ -15,7 +15,7 @@
  *
  *   SerialSDI      wlink, WCH-LinkUtility          send only, 20 bytes of RAM
  *   SerialDMDATA   minichlink (ch32fun)            two-way,   36 bytes of RAM
- *   SerialRTT      probe-rs attach                 two-way,  364 bytes of RAM
+ *   SerialRTT      ch32rv monitor --source rtt     two-way,  364 bytes of RAM
  *
  * The host side here is minichlink's terminal (`minichlink -T`), which this
  * core does not ship - see the README. The protocol is implemented from its

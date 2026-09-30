@@ -207,7 +207,7 @@ def test_every_chip_is_in_the_generated_targets_table(attached):
 
 
 def test_every_chip_maps_to_a_board(attached):
-    """boards.txt claims the silicon, via {build.probe_rs_chip} rather than by name."""
+    """boards.txt claims the silicon, via {build.ch32rv_chip} rather than by name."""
     unmapped = [r["chip"] for r in attached if r["chip"] and not r["boards"]]
     assert not unmapped, (f"no boards.txt entry maps to {unmapped} - those parts "
                           f"are compile-only until one does")

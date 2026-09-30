@@ -264,7 +264,7 @@ def sketch_names(which: str):
 def boards_for(chip: str) -> dict:
     """{board id: [part numbers]} whose generated probe-rs chip name matches.
 
-    Matching is on {build.probe_rs_chip} rather than on the name, so a part
+    Matching is on {build.ch32rv_chip} rather than on the name, so a part
     whose series id does not begin with its board id still resolves. A bare
     family name - what detected_chip salvages when the probe's chip session
     has gone stale - matches by prefix instead, but only when nothing matched
@@ -274,7 +274,9 @@ def boards_for(chip: str) -> dict:
     rows = []
     for line in text.splitlines():
         key, _, value = line.partition("=")
-        if not key.endswith(".build.probe_rs_chip"):
+        # build.ch32rv_chip: the exact part where ch32rv knows it, else the
+        # family; `auto` names nothing (a series ch32rv has no name for).
+        if not key.endswith(".build.ch32rv_chip") or value.strip() == "auto":
             continue
         rows.append((key.split("."), value.strip().upper()))
     want = chip.upper()
