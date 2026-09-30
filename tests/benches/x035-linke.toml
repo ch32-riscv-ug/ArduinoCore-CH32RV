@@ -11,7 +11,8 @@
 
 [probe]
 kind = "wchlink"
-model = "WCH-LinkE"                    # ch32rv probe list: model
+model = "WCH-LinkE"                    # ch32rv probe list: model (display)
+variant = "linke"                             # ch32rv probe list: variant (what the check compares, contract 4)
 firmware = "2.22"                             # ch32rv probe list: firmware.norm
 
 [dut]

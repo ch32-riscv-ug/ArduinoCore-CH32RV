@@ -8,7 +8,8 @@
 #   TEST_BENCH_CH32L103=l103-rp2350
 #
 # prepare.py: the RP2 is flashed by copying the release's .uf2 onto its BOOTSEL drive (1200 baud
-# on the CDC puts it there); that step is by hand for now - `--config` and `--check` work.
+# on the CDC puts it there). That route lands with the native-Linux bench the RP2 jigs move to
+# (on this WSL host the drive is not writable from the bench); `--config` and `--check` work.
 
 [probe]
 kind = "oep"

@@ -268,7 +268,11 @@ def _check_wchlink(bench: Bench, ch32rv) -> list[str]:
     if mine is None:
         return [f"no WCH-Link with serial {bench.probe_serial} is attached"]
     problems = []
-    if bench.probe.get("model") and mine.get("model") != bench.probe["model"]:
+    # ch32rv contract 4 (0.13.0): `variant` is the stable id (linke, link-ch549, ...), `model` a display label.
+    if bench.probe.get("variant"):
+        if mine.get("variant") != bench.probe["variant"]:
+            problems.append(f"probe variant: bench file says {bench.probe['variant']!r}, probe says {mine.get('variant')!r}")
+    elif bench.probe.get("model") and mine.get("model") != bench.probe["model"]:
         problems.append(f"probe model: bench file says {bench.probe['model']!r}, probe says {mine.get('model')!r}")
     fw = (mine.get("firmware") or {}).get("norm")
     if bench.probe.get("firmware") and fw != bench.probe["firmware"]:

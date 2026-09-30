@@ -72,6 +72,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      # The udev rules shipped at the platform root are a copy of the bundled
+      # ch32rv's (request B-6); the check needs that tool's archive.
+      - name: Fetch the bundled ch32rv
+        run: uv run --no-project python tools/index/fetch_tools.py --tool ch32rv
       - name: Verify every vendored snapshot against its lock
         working-directory: tests
         run: uv run pytest -q build/vendor

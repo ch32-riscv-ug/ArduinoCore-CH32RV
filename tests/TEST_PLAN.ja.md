@@ -44,6 +44,7 @@
 | `generated/test_generated.py` | boards.txt / variant / vector include が device-data の locked commit からの再生成と一致。`sync_profiles.py --check`、`sync_testcmd.py --check` |
 | `vendor/test_vendored_api.py` | ArduinoCore-API snapshot が lock の commit と同一 |
 | `vendor/test_vendored_tinyusb.py` | TinyUSB snapshot が lock の SHA-256 と一致 |
+| `vendor/test_udev_rules.py` | platform ルートの `60-ch32rv.rules` が同梱 ch32rv の rule（archive、`doctor --emit-udev`）と byte 一致、`post_install.sh` がある（B-6） |
 | `startup/test_startup_equivalence.py` | 自作 crt0 と EVT startup の ELF 等価性（`slow`、EVT mirror 要） |
 | `startup/test_interrupt_tables.py` | interrupts.csv が EVT startup assembly と一致（EVT mirror 要） |
 | `compile/test_compile_matrix.py` | 全 part number の compile と size baseline（`slow`） |

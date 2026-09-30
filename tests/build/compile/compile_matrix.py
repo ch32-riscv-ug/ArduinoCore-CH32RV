@@ -38,7 +38,7 @@ from fetch_tools import env_defaults      # noqa: E402
 # The repository root is the Arduino platform directory (R-15 method A). These
 # are the entries arduino-cli reads, and the same list defines what a release
 # archive must contain - keep in step with PLATFORM_ENTRIES in gen_index.py.
-PLATFORM_ENTRIES = ("platform.txt", "boards.txt", "programmers.txt", "cores",
+PLATFORM_ENTRIES = ("platform.txt", "boards.txt", "programmers.txt", "cores", "60-ch32rv.rules", "post_install.sh",
                     "variants", "libraries", "bootloaders", "system", "debug")
 
 BLINK = """\

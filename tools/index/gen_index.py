@@ -69,6 +69,10 @@ PLATFORM_ENTRIES = (
     "bootloaders",
     "system",
     "debug",
+    # Request B-6: the bundled ch32rv's udev rules and the script that installs them on Linux
+    # (the IDE 2.x runs post_install.sh after installing the platform).
+    "60-ch32rv.rules",
+    "post_install.sh",
 )
 REQUIRED_ENTRIES = ("platform.txt", "boards.txt", "cores", "variants")
 

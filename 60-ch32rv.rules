@@ -1,0 +1,26 @@
+# ch32rv: non-root access to WCH-Link probes (ArduinoCore-CH32 request B-6).
+# Single source of truth: `ch32rv doctor --emit-udev` prints this file verbatim, and the Linux
+# release tarball bundles it. Install one of two ways:
+#   tar users:      sudo cp 60-ch32rv.rules /etc/udev/rules.d/
+#   cargo install:  ch32rv doctor --emit-udev | sudo tee /etc/udev/rules.d/60-ch32rv.rules
+# then, either way: sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# `TAG+="uaccess"` (systemd/logind) is the primary grant; `GROUP="plugdev", MODE="0660"` is the
+# fallback for systems without uaccess. Numbered below the seat rules (73-) so uaccess is set first.
+# WCH-Link: RISC-V mode (8010), RISC-V mode alt / PID_LINK_RISCV2 (8011), DAP/ARM mode (8012).
+SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="8010", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="8011", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="8012", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# WCH IAP / factory ISP (4348:55e0, 1a86:55e0): `probe firmware update` talks to a WCH-Link in its
+# IAP mode here, and the reserved `isp` will use the ISP bootloader.
+SUBSYSTEM=="usb", ATTR{idVendor}=="4348", ATTR{idProduct}=="55e0", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="55e0", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# HID bootloaders for `boot hid flash` (rv003usb 1209:b803, UIAPduino 1209:b003): the USB node and hidraw.
+SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="b803", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="b003", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b803", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b003", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# OEP probes (docs/oep-host.ja.md §3.3): until OEP has its own PID, a device whose product string
+# starts with "OEP". The USB node carries the vendor bulk pair; hidraw carries the OEP HID.
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{product}=="OEP*", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{product}=="OEP*", MODE="0660", GROUP="plugdev", TAG+="uaccess"
