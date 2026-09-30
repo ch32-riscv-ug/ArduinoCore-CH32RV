@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) The bundled ch32rv is now 0.12.5: it follows the current OEP probe shape (oep-spec 89aa7ea) - on a probe whose slot names no pins it scans for the pair the target is on, and the pre-0.0.6 slot item is no longer read. Nothing changes for a WCH-Link or for a probe with a configured slot.
+- (JA) 同梱の ch32rv を 0.12.5 にした: 今の OEP probe の形（oep-spec 89aa7ea）に追従。スロットがピンを持たない probe では target の居る組を scan で探す。0.0.6 より前のスロット項目は読まない。WCH-Link と、スロットを設定した probe では動きは変わらない。
 
 ## 0.0.4
 - (EN) CH32X035 / X033: `analogRead()` now runs the ADC inside its rated clock. The divider on these parts is ADC_CTLR3 CLK_DIV, not RCC_CFGR0 ADCPRE, which they do not have; the core was writing reserved bits and the ADC stayed at its reset /4 - 12 MHz at 48 MHz against an 8 MHz (6 MHz below 3.2 V) limit. It is now /8, 6 MHz, checked on the bench through the debugger. boards.txt says which register a family uses (`CH32_ADC_CLK_CTLR3`, read out of device-data).
