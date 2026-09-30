@@ -288,7 +288,8 @@ EVTの`EXAM/`ディレクトリからペリフェラルの有無を生成し、
       device-data に有効化ビット・X035 のチャネル再確認・V103/M030 の VREFINT を依頼済み。
       生成物の`CH32RV_ADC_VREFINT_CHANNEL`/`_MV`/`CH32RV_ADC_CTLR2_TSVREFE`はそのために残してある
 - [x] `CH32RV.getFlashChipSize()`と`getEfuseMac()`/`getUniqueId()`(2026-10-01、device-data 1635edf の esig.csv)。
-      X035F8U6 は 63488、V003F4U6 は 16384 を返した。UID の UNIID3 はどちらも 0xffffffff(実質 64 bit)
+      X035F8U6 は 63488、V003F4U6 は 16384 を返した。LinkE の 7 台でも FLACAP は型番どおり。
+      UNIID3 は V003/V006/X035/L103 で 0xffffffff、V203 と V307 で同じ 0xe339e339(固有でない)。固有なのは下位 64 bit
 - [ ] `[P2]` ADC2以降を使えるようにする。現在ADC1のみ
 - [ ] `[P2]` X305/X315のPWM。timerもper-pin AF方式でdefault routeが無い
 - [x] `SPI`/`Wire`ライブラリ。Tier Aの要件([project-scope](project-scope.ja.md))。

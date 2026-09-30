@@ -84,9 +84,13 @@ public:
      * (FLACAP) - the silicon's, not the menu's (device-data esig.csv). */
     uint32_t getFlashChipSize();
     /* A per-chip unique value, as sketches use ESP.getEfuseMac(): the low 64
-     * bits of the 96-bit UID (UNIID1 | UNIID2 << 32). Not a MAC address. */
+     * bits of the 96-bit UID (UNIID1 | UNIID2 << 32). Not a MAC address.
+     * Only these 64 bits are unique: measured 2026-10-01, UNIID3 reads
+     * 0xffffffff on V003/V006/X035/L103 and the same 0xe339e339 on a V203 and
+     * a V307. */
     uint64_t getEfuseMac();
-    /* The whole 96-bit UID, UNIID1's bytes first (little-endian words). */
+    /* The raw 96-bit UID, UNIID1's bytes first (little-endian words). The
+     * last four bytes (UNIID3) are not unique - see getEfuseMac(). */
     void getUniqueId(uint8_t out[12]);
 #endif
 
