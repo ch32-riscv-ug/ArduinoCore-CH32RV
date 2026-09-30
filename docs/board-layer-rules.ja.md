@@ -200,6 +200,20 @@ variant側から周辺アドレスが漏れている形で、方針としては�
   **capability tokenとして使う**ことにしたので、隠すなら別の参照経路が要る
 - **要判断**
 
+### 5-1. variant の名前の公開範囲 (2026-10-01)
+
+arduino-esp32 の `pins_arduino.h` に倣い、スケッチ向けの名前は次に限る。これが公開面で、変えるときは破壊的変更として扱う。
+
+- pad名(`PA0` など)、`A0`〜、`D0`〜(製品board)、`LED_BUILTIN`(製品board)
+- `TX` / `RX` / `SDA` / `SCL` / `SS` / `MOSI` / `MISO` / `SCK` と `PIN_SERIAL_*` / `PIN_WIRE_*` / `PIN_SPI_*`
+- `NUM_DIGITAL_PINS` / `NUM_ANALOG_INPUTS`、`digitalPinIsValid()` などの `Arduino.h` のマクロ
+- `CH32RV_` 付きのうち、上書き用に文書化したもの: `CH32RV_SERIAL_DEFAULT`、`CH32RV_*_BUFFER_SIZE`、
+  `CH32RV_PART_<part>`、capability token としての `CH32RV_CLKEN_*`(examples-build-rules)
+
+それ以外の `CH32RV_` 付きの名前(route 表、生アドレス、timer 表など)は**内部**で、予告なく変わる。
+ヘッダは分けない: 公開名の中身が内部名を参照する(`#define SDA PIN_WIRE_SDA` → `CH32RV_I2C1_SDA`)ので、
+ファイルを分けても隠せない。境界は接頭辞で見分ける(2026-10-01 に core 独自の名前をすべて `CH32RV_` 付きにした)。
+
 ## 6. 未解決
 
 - `SS` の位置づけ。NSS padという点でシリコンの事実だが、コアはSSM/SSIを使うので
