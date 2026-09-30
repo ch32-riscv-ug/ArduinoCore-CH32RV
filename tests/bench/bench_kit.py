@@ -25,7 +25,11 @@ def start(dut, name: str) -> None:
 
 
 def open_uart(dut, ch32_uart, bench, baud: int = BAUD):
-    n, route = bench.uart
+    try:
+        n, route = bench.uart
+    except Exception as e:                    # benchdef.BenchError: the jig wires no UART - not this DUT's fault
+        import pytest
+        pytest.skip(str(e))
     dut.write(f"UART {n} {route} {baud}\n")
     dut.expect_exact(f"UART OK {n} {route} {baud}", timeout=10)
     return ch32_uart.open(baud)

@@ -42,7 +42,11 @@ class Bench:
 
     @property
     def uart(self) -> tuple[int, int]:
-        u = self.data["uart"]
+        """(usart, route) of the DUT UART the probe hears, or BenchError when the jig wires none (a test turns
+        that into a skip, like an unwired pad)."""
+        u = self.data.get("uart")
+        if not u:
+            raise BenchError(f"{self.name} wires no DUT UART to the probe")
         return int(u["usart"]), int(u["route"])
 
     @property

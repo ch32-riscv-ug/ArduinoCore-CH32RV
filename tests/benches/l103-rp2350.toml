@@ -1,0 +1,44 @@
+# The CH32L103 bench on the SparkFun Pro Micro RP2350 (an RP2350 OEP probe, USB CDC = a
+# serial OEP probe). Provisional wiring: only the debug pair is known - found by
+# `oep.wire.rvswd` scan on 2026-09-30 (GP0 = SWDIO, GP1 = SWCLK; the L103 is uid
+# 3a6fabcda284bc48, a different board from the one behind WCH-LinkE 0E028F0692F1). No UART
+# and no other pad is known to reach the probe, so the tests that need them skip. tests/.env:
+#
+#   TEST_SERIAL_PORT_CH32L103=/dev/serial/by-id/usb-Open_Embedded_Probe_OEP_probe__RP2350__9489dd2ae0953650-if00
+#   TEST_BENCH_CH32L103=l103-rp2350
+#
+# prepare.py: the RP2 is flashed by copying the release's .uf2 onto its BOOTSEL drive (1200 baud
+# on the CDC puts it there); that step is by hand for now - `--config` and `--check` work.
+
+[probe]
+kind = "oep"
+transport = "serial"                         # the OEP link is the probe's CDC port
+model = "rp2350"                             # oep.core describe: model
+firmware = "0.0.19"                          # oep.core describe: firmware = the oep-probe-arduino release version
+release = "v0.0.19"                          # oep-probe-arduino tag
+example = "Firmware/OepProbe"                # examples/<example> in that tag
+sketch_profile = "promicrorp2350"            # its sketch.yaml profile for this board (GP19 reserved for the PSRAM, nothing else)
+
+[dut]
+board = "CH32L103"                           # the profile
+part = "CH32L103C8T6"                        # 64 KB flash (ESIG); recorded, not enforced
+console = "dmseq"
+
+[slot]                                       # oep config slot: the L103's RVSWD on GP0 / GP1; the L103 wants <= 1 MHz and SWCLK idling low
+name = "l103"
+wire = "rvswd"
+pins = [0, 1]
+attach = "at-boot"
+retry_s = 1
+mechanism = "dmseq"
+max_speed = 1000000
+idle_clock = "low"
+
+[[bind]]                                     # the CDC port itself carries the slot's console
+port = 0
+mode = "last-reset"
+streams = ["slot:l103"]
+
+[wiring]                                     # nothing beyond the debug pair is known yet
+
+[facts]
