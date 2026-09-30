@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) The bundled ch32rv is now 0.12.4: uploads through an OEP probe running oep-probe-arduino 0.0.6 or later find their slot again (the slot item grew `max_speed` / `idle_clock`; 0.12.2 read the old shape and reported `the probe has no slot`), and the monitor's command latency is down from 20 ms to under 2 ms.
+- (JA) 同梱の ch32rv を 0.12.4 にした: oep-probe-arduino 0.0.6 以降の OEP probe 経由の upload でスロットが見つかる（スロット項目に `max_speed` / `idle_clock` が増え、0.12.2 は古い形で読んで `the probe has no slot` と断っていた）。monitor のコマンド遅延も 20 ms から 2 ms 未満になった。
 - (EN) The bundled ch32rv is now 0.12.3: the monitor on an OEP probe forwards what you type at once and reads the console every 5 ms, instead of waiting up to 20 ms (an echo's round trip went from 15 ms to 1.6 ms).
 - (JA) 同梱の ch32rv を 0.12.3 にした: OEP の probe の monitor が、入力をすぐ送り、console を 5 ms ごとに読む（最大 20 ms の待ちがあった。echo の往復は 15 ms → 1.6 ms）。
 
