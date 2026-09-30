@@ -335,16 +335,16 @@ wheels = [
 
 [[package]]
 name = "pytest-embedded-wireskein"
-version = "0.0.3"
+version = "0.0.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
     { name = "pytest-embedded" },
     { name = "wireskein" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ef/4e/8eb2d10159da9303e929a4d46fa319e15407527cec8ec8a9022ced327ba7/pytest_embedded_wireskein-0.0.3.tar.gz", hash = "sha256:84364c23fa8018212150a919e73a9c9e8d4a27f1908b0f2775046bec31639220", size = 8988, upload_time = "2026-09-30T08:17:25.675Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/1c/ef4f28cfb33babb09b366b7493e290e2aba7fbbc5ba3ab76fc3f672c09e9/pytest_embedded_wireskein-0.0.4.tar.gz", hash = "sha256:0492e84db58626c9b2b4a36e1c4f29634a26a87e5cdd9bebc39bcd158e7a1958", size = 10165, upload_time = "2026-09-30T14:21:31.605Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/69/47e03a5e6ce22d4805a184daefa31fe0c1d9c10cbf6a6000b407f544d98b/pytest_embedded_wireskein-0.0.3-py3-none-any.whl", hash = "sha256:77bc69ef33d1afe30de29be72620d3bf2a8e6b9c55b5206bd6b9a2998612d9a9", size = 6548, upload_time = "2026-09-30T08:17:24.393Z" },
+    { url = "https://files.pythonhosted.org/packages/48/4c/ba2be1fff1446d889ef88c487d2154aa8273ae9a4e204bba8b7f5880c07d/pytest_embedded_wireskein-0.0.4-py3-none-any.whl", hash = "sha256:741d0d351fcb61cc323f285ed23074742850df59baa45efe90b2907f22fa3b29", size = 7053, upload_time = "2026-09-30T14:21:29.412Z" },
 ]
 
 [[package]]
@@ -420,12 +420,12 @@ wheels = [
 
 [[package]]
 name = "wireskein"
-version = "0.0.11"
+version = "0.0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/7f/ef12e0d76e85b54726c731509f4643996724539cd8103bbea3cf17c29f21/wireskein-0.0.11.tar.gz", hash = "sha256:7c3c6440d0b19ca3b9d3ed69e76ecad0f8049309a630821bf6a8e6e5f330078a", size = 190495, upload_time = "2026-09-30T09:39:23.61Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/be/ac/95a5060ebf81a95c4f69bed3c76a695857f05668f956d0effe0e5aa08540/wireskein-0.0.13.tar.gz", hash = "sha256:be5db172b71280fc0cb1b85cde8c6dae4a15d9e76182458ad62c89925217155c", size = 224217, upload_time = "2026-09-30T14:19:01.725Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/a1/7d3b2a03c51d90d045661932b39d728b813d080087053dfe7979493b769c/wireskein-0.0.11-py3-none-any.whl", hash = "sha256:dfa71180ebaa5ff8eb2541c53b46cdaf280030e7ea94a2fc51c0a05bece33306", size = 182464, upload_time = "2026-09-30T09:39:22.279Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/a3/4e8488b7dccfdc71f9f623ca3b6aad00a25804307c92198c5c23e888ad92/wireskein-0.0.13-py3-none-any.whl", hash = "sha256:e81b40c8ac6b9985810681f1a16a5be2dc63d2b5c2d8202ac9b99c9ea326acff", size = 206461, upload_time = "2026-09-30T14:19:00.355Z" },
 ]

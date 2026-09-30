@@ -155,7 +155,7 @@ def test_timing(fx, ws_run):
         cap.configure(400_000, 400_000)
     window = cap.config.samples / cap.rate
     toggles = min(20, 2 * int((window - 0.05) / 0.020))   # 50 ms for the command's way in
-    with ws_run.section(1, "millis 10ms", expect=[ws.pulses(fx.pwm, count=toggles // 2, period_s=0.020, tol=0.01),
+    with ws_run.section(1, "millis 10ms", expect=[ws.pulses(fx.pwm, count=toggles // 2, period_s=0.020, tol_period=0.01),
                                                   ws.ends({fx.pwm: 0})]):
         con.drain(0.05)
         cap.arm()
