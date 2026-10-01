@@ -68,7 +68,7 @@ publishが自動でversionが機械的に追従することと、コア本体の
 
 | workflow | 起動条件 | 状態 |
 |---|---|---|
-| [`release.yml`](../.github/workflows/release.yml) | tag `v<version>`のpush(手動dispatchではbuildのみ) | **実行済み**。0.0.1〜0.0.5をarchitecture `ch32v`で公開(次のreleaseから`ch32rv`) |
+| [`release.yml`](../.github/workflows/release.yml) | tag `v<version>`のpush(手動dispatchではbuildのみ) | **実行済み**。0.0.1〜0.0.5をarchitecture `ch32v`で公開(0.1.0から`ch32rv`。`ch32v`はindexから削除) |
 | [`mirror-probe-rs`の`update.yml`](https://github.com/ch32-riscv-ug/mirror-probe-rs) | 日次 + 手動dispatch | **稼働中**。v0.32.0を公開済み。以降は自動で追従する(採用は手動) |
 
 ## 関連

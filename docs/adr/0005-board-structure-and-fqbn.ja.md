@@ -48,7 +48,7 @@ series単位にすると、**vector tableがboardごとに一意に定まり**�
 ## 追記 (2026-10-01): architecture を `ch32rv` に
 
 **packager `ch32-riscv-ug` と architecture `ch32rv` はユーザーが確定した**(2026-10-01)。
-公開済みの `ch32v`(0.0.1〜0.0.5)は後で index から消す(docs/todo.ja.md)。この ADR の他の部分は Proposed のまま。
+公開済みの `ch32v`(0.0.1〜0.0.5)は index から消した(2026-10-01、docs/todo.ja.md)。この ADR の他の部分は Proposed のまま。
 
 architecture は `ch32v` から **`ch32rv`** に改めた(FQBN は `ch32-riscv-ug:ch32rv:<board>`)。
 `ch32v` は WCH 公式(openwch)と UIAPduino の core も使っており、`ARDUINO_ARCH_CH32V` が3つの core で

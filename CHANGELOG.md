@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) The package index no longer lists the pre-rename architecture `ch32v` (0.0.1-0.0.5) or the ch32rv tool versions only they used; install `ch32-riscv-ug:ch32rv` instead.
+- (JA) package index から改名前の architecture `ch32v`(0.0.1〜0.0.5)と、それだけが使っていた ch32rv の tool 版を外した。`ch32-riscv-ug:ch32rv` を入れ直してください。
 
 ## 0.1.0
 - (EN) **The repository is now ArduinoCore-CH32RV, and the Boards Manager URL is `https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json`** (the old Pages URL no longer serves). The platform shows as "CH32 RISC-V (ArduinoCore-CH32RV)"; its archive is `ArduinoCore-CH32RV-<version>.tar.bz2`.
