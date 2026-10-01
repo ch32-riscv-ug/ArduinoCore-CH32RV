@@ -16,7 +16,7 @@ dependencies = [
   # The bench's OEP probes, driven directly (benchdef, tracekit, the trace tests).
   # Its README asks for the same X.Y.Z as the probe firmware: keep this floor at
   # the firmware the tests/benches/*.toml files name.
-  "oep-client-python>=0.0.22",
+  "oep-client-python>=0.0.24",
   # The trace tests: a WireSkein record per test (ws_run), checked at teardown;
   # the tests also read wireskein.runlog directly.
   "pytest-embedded-wireskein>=0.0.4",

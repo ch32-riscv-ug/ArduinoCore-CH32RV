@@ -6,15 +6,15 @@
 #   TEST_BENCH_CH32V003=v003-esp32
 #   TEST_BENCH_CH32V003_UPLOAD=/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394   # the same UART flashes the ESP32
 #
-# The CP2102 drops bytes in long bursts, so this jig is for the debug wire and the UART;
+# The CH340 (1a86:7523) drops bytes in long bursts, so this jig is for the debug wire and the UART;
 # capture is the ESP32's GPIO sampler (0.4-2 MHz, 1 byte/sample, windows under 164 ms).
 
 [probe]
 kind = "oep"
 transport = "serial"                         # the OEP link is the probe's serial port (the oep:// address's probe part elsewhere)
 model = "esp32"                              # oep.core describe: model
-firmware = "0.0.22"                           # oep.core describe: firmware = the oep-probe-arduino release version
-release = "v0.0.22"                           # oep-probe-arduino tag prepare.py flashes
+firmware = "0.0.24"                           # oep.core describe: firmware = the oep-probe-arduino release version
+release = "v0.0.24"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag
 sketch_profile = "esp32"                     # its sketch.yaml profile for this probe
 erase = "all"
