@@ -424,12 +424,12 @@ wheels = [
 
 [[package]]
 name = "wireskein"
-version = "0.0.13"
+version = "0.0.15"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/be/ac/95a5060ebf81a95c4f69bed3c76a695857f05668f956d0effe0e5aa08540/wireskein-0.0.13.tar.gz", hash = "sha256:be5db172b71280fc0cb1b85cde8c6dae4a15d9e76182458ad62c89925217155c", size = 224217, upload_time = "2026-09-30T14:19:01.725Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/aa/b6a343ec5fc8f955bd10d6d8cfdf59c272c2fda6fb65e62f5f4d3f301c9a/wireskein-0.0.15.tar.gz", hash = "sha256:4942bc94ea716156a73b9ed40238a14fe5e1f209b5ed8c10358efc1aec4f302b", size = 227566, upload_time = "2026-10-01T12:34:35.37Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/a3/4e8488b7dccfdc71f9f623ca3b6aad00a25804307c92198c5c23e888ad92/wireskein-0.0.13-py3-none-any.whl", hash = "sha256:e81b40c8ac6b9985810681f1a16a5be2dc63d2b5c2d8202ac9b99c9ea326acff", size = 206461, upload_time = "2026-09-30T14:19:00.355Z" },
+    { url = "https://files.pythonhosted.org/packages/15/2d/aaae70e2e09d5f589d026234ec9c668c4da2806311d04d357f50ec288548/wireskein-0.0.15-py3-none-any.whl", hash = "sha256:5cb3eef48311c91e4a3e91b7d625309b95310b1b82faca1c1e32a52552c48508", size = 207837, upload_time = "2026-10-01T12:34:33.902Z" },
 ]
