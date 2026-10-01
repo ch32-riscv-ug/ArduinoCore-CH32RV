@@ -69,7 +69,7 @@ UPGRADE AND ROLLBACK OK...  0.0.2へupgradeし、0.0.1を再installできた
 
 ```sh
 uv run --no-project python gen_index.py --platform ../.. --out dist \
-  --base-url https://github.com/ch32-riscv-ug/ArduinoCore-CH32/releases/download/v0.0.1 \
+  --base-url https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/releases/download/v0.0.1 \
   --tools github --merge <公開中のindex.json>
 ```
 

@@ -31,7 +31,7 @@ import tarfile
 import tempfile
 
 MAINTAINER = "CH32 RISC-V UG"
-WEBSITE = "https://github.com/ch32-riscv-ug/ArduinoCore-CH32"
+WEBSITE = "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV"
 TOOL_NAME = "xpack-riscv-none-elf-gcc"
 # The bundled uploader (ADR-0008). probe-rs is not shipped: the platform
 # declares one upload tool and it is this one.
@@ -75,6 +75,16 @@ PLATFORM_ENTRIES = (
     "post_install.sh",
 )
 REQUIRED_ENTRIES = ("platform.txt", "boards.txt", "cores", "variants")
+
+
+def platform_name(platform_dir: pathlib.Path) -> str:
+    """The name platform.txt declares - also what Board Manager shows, so the
+    two cannot drift (they did: the index said "CH32 RISC-V (prototype)", the
+    same as the old ch32v entries, while platform.txt said otherwise)."""
+    for line in (platform_dir / "platform.txt").read_text(encoding="utf-8").splitlines():
+        if line.startswith("name="):
+            return line.split("=", 1)[1].strip()
+    raise SystemExit("platform.txt has no name= line")
 
 
 def platform_version(platform_dir: pathlib.Path) -> str:
@@ -150,7 +160,7 @@ def sync_version_defines(platform_dir: pathlib.Path, version: str) -> bool:
 
 
 def build_archive(platform_dir: pathlib.Path, out: pathlib.Path, version: str) -> pathlib.Path:
-    root = f"ArduinoCore-CH32-{ARCH}-{version}"
+    root = f"ArduinoCore-CH32RV-{version}"
     archive = out / f"{root}.tar.bz2"
     with tempfile.TemporaryDirectory() as tmp:
         staged = pathlib.Path(tmp) / root
@@ -237,7 +247,7 @@ def main(argv=None) -> None:
             "email": "",
             "help": {"online": f"{WEBSITE}/issues"},
             "platforms": [{
-                "name": "CH32 RISC-V (prototype)",
+                "name": platform_name(args.platform),
                 "architecture": ARCH,
                 "version": args.version,
                 "category": "Contributed",

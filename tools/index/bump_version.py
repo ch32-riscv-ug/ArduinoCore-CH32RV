@@ -50,7 +50,7 @@ def update_sketch_pins(version: str) -> tuple[int, int]:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Set the ArduinoCore-CH32 platform version.")
+    ap = argparse.ArgumentParser(description="Set the ArduinoCore-CH32RV platform version.")
     ap.add_argument("version", help="release version, X.Y.Z")
     version = ap.parse_args().version.strip()
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):

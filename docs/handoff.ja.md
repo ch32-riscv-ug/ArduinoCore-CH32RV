@@ -4,7 +4,7 @@
 
 ## 現在地
 
-`ArduinoCore-CH32`は、旧[`arduino_core_ch32_riscv_noneos`](https://github.com/ch32-riscv-ug/arduino_core_ch32_riscv_noneos)を修復せず、長期保守を前提に新規設計するプロジェクトです。対象は全CH32ファミリ(11 family / 27 series / 103型番)。
+`ArduinoCore-CH32RV`は、旧[`arduino_core_ch32_riscv_noneos`](https://github.com/ch32-riscv-ug/arduino_core_ch32_riscv_noneos)を修復せず、長期保守を前提に新規設計するプロジェクトです。対象は全CH32ファミリ(11 family / 27 series / 103型番)。
 
 環境整備は完了し、2026-08-19に**prototypes/を実構成へ昇格**しました。リポジトリのルートがそのままArduino platformディレクトリで、Board Manager経由のclean installとcompileが通る状態です。**コア本体(実API)の実装はこれから**です。
 
@@ -36,7 +36,7 @@ ADR化されている提案:
 
 - 本プロジェクトは`ch32-riscv-ug`(ユーザーグループ、WCH公式ではない)配下。旧コアのindex/名前空間は捨てる
 - Board Manager indexはコアが1つの間は本repoから直接配信。複数化したらlang-ship方式(統合index repo+release完了kick)へ移行(Q-054解決)
-- バッチはGitHub Actions(コスト制約なし)。GitHub Pagesは有効(`/`全体公開中: https://ch32-riscv-ug.github.io/ArduinoCore-CH32/ )
+- バッチはGitHub Actions(コスト制約なし)。GitHub Pagesは有効(`/`全体公開中: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/ )
 - 実機が使えない期間は実機なしで進む作業を優先。必要に応じてrepository分離
 - 公開APIはArduino標準/ArduinoCore-API準拠。EVT API・vendor headerを利用者に要求しない。EVT互換は初期release要件にしない
 - 書き込み先は複数台から決定的に指定(USB PPPSは不採用)。fixture構成は[upload-and-fixture](upload-and-fixture.ja.md)

@@ -57,11 +57,11 @@
 | **wch-protocols** | 設計済み | 線層・USB 層とも解読がほぼ済み、**harness の設計メモまで書けている**(`dut-harness-design.ja.md` = ピン割当・cross-domain trigger・障害注入、`harness-board-survey.ja.md` = 8 軸の board 比較・RP2350 errata E9、`probe-pattern-coexistence.ja.md` = W/WM/WL/WLE/L/M の共存と作る順序)。**構想側でこちらから足すことはほぼ無い** |
 | **ch32rv-probe** | repo のみ | `LICENSE` だけ(2026-09-04 初回 commit)。実装の置き場は確保済み |
 | **ch32rv** | 受け口は**片方だけ実在** | probe 経路 verified。**コードにあるのは `DtmAccess`(`dmi_read`/`dmi_write`/`dmi_nop`)だけで、`ProbeService` は architecture の将来計画**(ch32rv `0006` §4.1 の訂正)。`ch32rv-probe-<name>` の枠は P2 で予約済み |
-| **ArduinoCore-CH32** | 方法4 が空白 | 方法1〜3 は実装済み(`reg_probe` は 5 枚で 200〜400 項目を配線ゼロで照合)。**方法4(波形)は全項目 ⬜**。入力側 API の刺激手段が無い |
+| **ArduinoCore-CH32RV** | 方法4 が空白 | 方法1〜3 は実装済み(`reg_probe` は 5 枚で 200〜400 項目を配線ゼロで照合)。**方法4(波形)は全項目 ⬜**。入力側 API の刺激手段が無い |
 | **EmbedBench** | IF 凍結済み | デバイス IF v1 / rev004(2026-09-04)、模型 22 種・純粋 C++11、環境実装 2 種(host / 純ネイティブ 290 行)。「物理層・波形・サイクル精度」を**明示的に範囲外**とし、越える要望は**実機テストへ振り分ける**と書いてある |
 
 **構造的に噛み合っている点**: EmbedBench が「ここから先は実機」と線を引いた場所と、
-ArduinoCore-CH32 が「ここから先は方法4」と書いて空白のままにしている場所が、**同じ場所**である。
+ArduinoCore-CH32RV が「ここから先は方法4」と書いて空白のままにしている場所が、**同じ場所**である。
 harness はその空白そのものを埋める道具になる。
 
 ---

@@ -1,7 +1,7 @@
 [project]
 name = "arduinocore-ch32-tests"
 version = "0.0.0"
-description = "Hardware and build tests for the ArduinoCore-CH32 platform"
+description = "Hardware and build tests for the ArduinoCore-CH32RV platform"
 readme = "README.ja.md"
 requires-python = ">=3.13"
 license = "MIT"

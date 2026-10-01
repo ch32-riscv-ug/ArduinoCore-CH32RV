@@ -114,7 +114,7 @@ series内で一貫した略記法を使っている限り正しい。実際に�
 
 > ここから下は上流のissueへそのまま貼れる形にしてある。
 
-ArduinoCore-CH32のリマップAPI(`setPins(tx, rx)`)のために、
+ArduinoCore-CH32RVのリマップAPI(`setPins(tx, rx)`)のために、
 pin名→AFIOルート値の逆引き表を生成したい。必要なデータを優先度順に挙げる。
 
 ### D-0. 分割remap fieldを表現できるようにする(最優先)

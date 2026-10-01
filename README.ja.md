@@ -1,4 +1,4 @@
-# ArduinoCore-CH32
+# ArduinoCore-CH32RV
 
 [English](README.md)
 
@@ -13,13 +13,13 @@ Arduino IDE の「ファイル → 基本設定 → 追加のボードマネー�
 「CH32 RISC-V」を入れます。toolchain と書き込みツール（ch32rv）も一緒に入ります。
 
 ```text
-https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 ```
 
 arduino-cli なら:
 
 ```sh
-arduino-cli core install ch32-riscv-ug:ch32rv --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+arduino-cli core install ch32-riscv-ug:ch32rv --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 ```
 
 書き込みは、IDE の port で WCH-Link の serial port か `wchlink://…`、OEP の probe なら `oep://…` を選んで

@@ -184,7 +184,7 @@ EVT sampleが独自startup、vector、linker、重複する`SystemInit`を持つ
 ## 想定するリポジトリ構成
 
 ```text
-ArduinoCore-CH32/
+ArduinoCore-CH32RV/
   boards/
   devices/
   cores/ch32/

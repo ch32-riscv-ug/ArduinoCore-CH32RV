@@ -15,7 +15,7 @@
 | Repository | 役割 |
 |---|---|
 | `ch32-device-data` | schema、検証済みsource data、validator、provenance、data releaseの正本 |
-| `ArduinoCore-CH32` | 固定data versionを読むconsumer、Arduino用descriptor・pin table・linker入力等のgeneratorと生成物 |
+| `ArduinoCore-CH32RV` | 固定data versionを読むconsumer、Arduino用descriptor・pin table・linker入力等のgeneratorと生成物 |
 | `ch32_riscv_tools` | 将来のpin検索viewer、CSV/表等の生成先候補。既存手製表は正本にしない |
 | family別datasheet/EVT mirror | 公式資料の取得・履歴・hash対象。構造化dataの正本にはしない |
 

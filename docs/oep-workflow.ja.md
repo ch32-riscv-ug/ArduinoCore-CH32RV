@@ -23,7 +23,7 @@ wire（線。debug の線を駆動するインターフェース: `oep.wire.rvsw
 
 | もの | リポジトリ | 受け持つこと |
 |---|---|---|
-| ArduinoCore-CH32 | [ch32-riscv-ug/ArduinoCore-CH32](https://github.com/ch32-riscv-ug/ArduinoCore-CH32)（このリポジトリ） | core、ボード定義、試験、この文書 |
+| ArduinoCore-CH32RV | [ch32-riscv-ug/ArduinoCore-CH32RV](https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV)（このリポジトリ） | core、ボード定義、試験、この文書 |
 | ch32rv | [ch32-riscv-ug/ch32rv](https://github.com/ch32-riscv-ug/ch32rv) | 同梱の書き込みツール。書き込み・デバッグ・モニタ・**discovery**・ブローカー |
 | wch-protocols | [ch32-riscv-ug/wch-protocols](https://github.com/ch32-riscv-ug/wch-protocols) | 実測の台帳（読むだけ） |
 | OEP の仕様 | [Open-Embedded-Probe/oep-spec](https://github.com/Open-Embedded-Probe/oep-spec) | probe と host の間のプロトコル |

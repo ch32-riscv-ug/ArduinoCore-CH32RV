@@ -60,7 +60,7 @@ REPO = HERE.parents[2]
 sys.path.insert(0, str(REPO / "tests"))
 
 from sketch_requirements import requirements, unmet   # noqa: E402
-INDEX_URL = ("https://ch32-riscv-ug.github.io/ArduinoCore-CH32/"
+INDEX_URL = ("https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/"
              "package_ch32-riscv-ug_index.json")
 # The version every profile pins is platform.txt's: tools/index/bump_version.py
 # moves both at once, and --check keeps them from drifting.

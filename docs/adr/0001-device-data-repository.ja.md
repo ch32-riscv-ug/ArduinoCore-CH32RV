@@ -18,7 +18,7 @@ device schemaとpin/package dataはArduino coreだけでなく、検索viewer、
 
 ## Options considered
 
-### ArduinoCore-CH32に置く
+### ArduinoCore-CH32RVに置く
 
 初期実装は単純ですが、data releaseがArduino core releaseへ結合し、他consumerが利用しにくくなります。
 
@@ -38,7 +38,7 @@ device schemaとpin/package dataはArduino coreだけでなく、検索viewer、
 
 [`ch32-riscv-ug/ch32-device-data`](https://github.com/ch32-riscv-ug/ch32-device-data)をdevice databaseの正本とします。
 
-`ArduinoCore-CH32`は固定versionのconsumerとし、通常build時にnetwork取得しません。family別repositoryは公式datasheet/RM/EVTのmirror、`ch32_riscv_tools`は将来のviewer・生成物consumerとして扱います。
+`ArduinoCore-CH32RV`は固定versionのconsumerとし、通常build時にnetwork取得しません。family別repositoryは公式datasheet/RM/EVTのmirror、`ch32_riscv_tools`は将来のviewer・生成物consumerとして扱います。
 
 この決定は保存場所とrepository境界だけを確定します。schema、正規化方式、対象family、Arduino対応SKU、release/lock形式は別途決定します。
 

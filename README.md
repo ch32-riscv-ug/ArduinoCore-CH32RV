@@ -1,4 +1,4 @@
-# ArduinoCore-CH32
+# ArduinoCore-CH32RV
 
 [Japanese](README.ja.md)
 
@@ -13,13 +13,13 @@ In the Arduino IDE, add this under File → Preferences → Additional boards ma
 "CH32 RISC-V" from the Boards Manager. The toolchain and the uploader (ch32rv) come with it.
 
 ```text
-https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 ```
 
 With arduino-cli:
 
 ```sh
-arduino-cli core install ch32-riscv-ug:ch32rv --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json
+arduino-cli core install ch32-riscv-ug:ch32rv --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 ```
 
 To upload, pick the port in the IDE - a WCH-Link's serial port or `wchlink://…`, an OEP probe's `oep://…` -

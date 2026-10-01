@@ -150,7 +150,7 @@ static void execute(char *line) {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("UIAP FIXTURE READY core=ArduinoCore-CH32");
+  Serial.println("UIAP FIXTURE READY core=ArduinoCore-CH32RV");
 }
 
 void loop() {

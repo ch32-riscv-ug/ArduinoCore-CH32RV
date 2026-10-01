@@ -473,7 +473,7 @@ USB serialが重複していても、物理portとlaneを論理的には固定�
 
 CH32 programmer自体の置換は別の研究項目にします。ESP32系またはRP2040を使うprogrammerは、固定したunique ID、複数台の決定的な選択、open firmware、cross-platformなhost protocolを一体で設計できる可能性があります。既存backendで選択問題を解決できない場合には優先度を上げます。
 
-開発する場合もArduinoCore-CH32だけの書き込みrecipeには閉じず、`ch32fun`等から同じCLI/protocolを利用できることを要件にします。初期releaseを独自programmerの完成へ無条件に依存させるかは、既存toolの評価後に判断します。
+開発する場合もArduinoCore-CH32RVだけの書き込みrecipeには閉じず、`ch32fun`等から同じCLI/protocolを利用できることを要件にします。初期releaseを独自programmerの完成へ無条件に依存させるかは、既存toolの評価後に判断します。
 
 ## Fixture manifest案
 

@@ -33,7 +33,7 @@
 
 | repository | 役割 | CI(GitHub Actions) | GitHub Pages |
 |---|---|---|---|
-| **ArduinoCore-CH32**(本repo) | コア実装、platform定義、生成物(boards.txt/variant/ld)のcommit先、設計docs | compile matrix(全board×代表sketch)、host test、ELF検査、生成物の再生成差分check、vendor-sync検証 | (必要なら)support matrix等の生成ページ |
+| **ArduinoCore-CH32RV**(本repo) | コア実装、platform定義、生成物(boards.txt/variant/ld)のcommit先、設計docs | compile matrix(全board×代表sketch)、host test、ELF検査、生成物の再生成差分check、vendor-sync検証 | (必要なら)support matrix等の生成ページ |
 | **ch32-device-data**(既存) | デバイスデータ正本、tables、validator | schema check、table build、release作成 | データviewer、tables公開 |
 | **(当面)index配信は本repoから** | Board Manager index JSONの生成・配信(単一コアの間はコア直配信が最もシンプル) | index生成・検証(checksum/size)、過去entry不変check、install smoke | package_*.jsonの配信 |
 | (条件付き新規)merged index repo | 同一packager名前空間の複数コアを統合したindexの配信 | 各コアのrelease完了をkickに統合indexを再生成 | 統合package_*.jsonの配信元 |
@@ -74,7 +74,7 @@ index配信の方針(前例に基づく決定済みの方向):
 - support matrix・対応SKU一覧(device-data+CI結果から生成)
 - size regressionやcompile状況のダッシュボード(静的生成)
 
-現状(2026-08-19確認): 本repoのPagesは有効化済みで、`/`全体が https://ch32-riscv-ug.github.io/ArduinoCore-CH32/ で公開されている。index配信に使う場合のURL候補は `https://ch32-riscv-ug.github.io/ArduinoCore-CH32/package_ch32-riscv-ug_index.json`。JSONやarchiveを確実に生配信するには`.nojekyll`の追加(Jekyll処理の無効化)を推奨(未適用。判断ポイント)。
+現状(2026-08-19確認): 本repoのPagesは有効化済みで、`/`全体が https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/ で公開されている。index配信に使う場合のURL候補は `https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json`。JSONやarchiveを確実に生配信するには`.nojekyll`の追加(Jekyll処理の無効化)を推奨(未適用。判断ポイント)。
 
 ## 実機なしフェーズの作業順序(提案)
 
