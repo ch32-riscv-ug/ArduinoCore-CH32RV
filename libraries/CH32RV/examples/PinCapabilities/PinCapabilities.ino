@@ -2,8 +2,9 @@
  *
  * Wiring: none.
  *
- * CH32 pin numbers are not 0..N. A pin is (port << 5) | bit, so PA0 is 0, PB0
- * is 32 and PC13 is 77 - and most numbers in between belong to no pad at all.
+ * CH32 pin numbers are not 0..N. A pin is CH32RV_PIN(port, bit), so PA0 is
+ * 64, PB0 is 96 and PC13 is 141 - and most numbers in between belong to no pad
+ * at all. 0..63 are a product board's printed numbers, where it has them.
  * The variant knows which are real, and the sketch asks it rather than
  * guessing.
  *
@@ -75,7 +76,7 @@ void setup()
         Serial.print((char)('A' + port));
         Serial.print(": ");
         for (uint8_t bit = 0; bit < 24; bit++) {
-            const uint8_t pin = (uint8_t)((port << 5) | bit);
+            const uint8_t pin = (uint8_t)CH32RV_PIN(port, bit);
             if (digitalPinIsValid(pin)) {
                 Serial.print(bit);
                 Serial.print(' ');

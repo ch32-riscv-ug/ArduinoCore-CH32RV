@@ -14,6 +14,14 @@ _Static_assert(CH32RV_GPIO_PORT_BASE(3) == CH32RV_GPIO_BASE(3),
                "CH32RV_GPIO_PORT_BASE (ch32rv_pins.h) disagrees with "
                "CH32RV_GPIO_BASE (ch32rv_registers.h)");
 
+#ifdef CH32RV_BOARD_PIN_COUNT
+/* The product board's printed numbers (Arduino.h, CH32RV_PIN_RESOLVE). One
+ * copy for the whole sketch; --gc-sections drops it if nothing resolves. */
+_Static_assert(CH32RV_BOARD_PIN_COUNT <= CH32RV_BOARD_PIN_LIMIT,
+               "a board's printed numbers must stay below the first pad (64)");
+const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT] = CH32RV_BOARD_PINS;
+#endif
+
 #if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
 #define CH32RV_GPIO_NO_OPEN_DRAIN 1
 /* Pins whose OUTPUT_OPENDRAIN is emulated (see pinMode). One bit per pad. */
@@ -24,6 +32,7 @@ static uint32_t ch32rv_od_emulated[CH32RV_PORT_COUNT];
 
 void pinMode(pin_size_t pin, PinMode mode)
 {
+    pin = CH32RV_PIN_RESOLVE(pin);
     const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
     const uint8_t bit  = (uint8_t)CH32RV_PIN_BIT(pin);
 
@@ -71,6 +80,7 @@ void pinMode(pin_size_t pin, PinMode mode)
 
 void digitalWrite(pin_size_t pin, PinStatus val)
 {
+    pin = CH32RV_PIN_RESOLVE(pin);
     const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
     const uint8_t bit  = (uint8_t)CH32RV_PIN_BIT(pin);
 
@@ -97,6 +107,7 @@ void digitalWrite(pin_size_t pin, PinStatus val)
 
 PinStatus digitalRead(pin_size_t pin)
 {
+    pin = CH32RV_PIN_RESOLVE(pin);
     const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
 
     if (port >= CH32RV_PORT_COUNT) {

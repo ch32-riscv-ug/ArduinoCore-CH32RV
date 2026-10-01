@@ -45,22 +45,20 @@ def test_v14_silkscreen_aliases_and_reserved_pins():
 
 
 def test_v14_keeps_official_numeric_pin_contract():
-    expected = {
-        "PA1": 0, "PA2": 1,
-        "PC0": 2, "PC1": 3, "PC2": 4, "PC3": 5, "PC4": 6,
-        "PC5": 7, "PC6": 8, "PC7": 9,
-        "PD0": 10, "PD1": 11, "PD2": 12, "PD3": 13,
-        "PD4": 14, "PD5": 15, "PD6": 16, "PD7": 17,
-    }
-    actual = {
-        name: int(value)
-        for name, value in re.findall(
-            r"^#define\s+(P[ACD]\d+)\s+(\d+)$", PINS, re.M
-        )
-    }
-    assert actual == expected
-    assert "#define CH32RV_UIAP_ENCODE_PIN(pin)" in PINS
-    assert "#define NUM_DIGITAL_PINS 18" in PINS
+    """The silkscreen numbers 0..17 of the released UIAPduino core, as the board's lookup table: number n is
+    the n-th pad listed (ADR-0010; Arduino.h CH32RV_PIN_RESOLVE). Pad names keep their encoded values."""
+    expected = [
+        "PA1", "PA2",
+        "PC0", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7",
+        "PD0", "PD1", "PD2", "PD3", "PD4", "PD5", "PD6", "PD7",
+    ]
+    m = re.search(r"^#define CH32RV_BOARD_PINS \{(.*?)\}", PINS, re.M | re.S)
+    assert m, "the board's number -> pad table is missing"
+    assert re.findall(r"P[A-F]\d+", m.group(1)) == expected
+    assert "#define CH32RV_BOARD_PIN_COUNT 18" in PINS
+    assert "#define NUM_DIGITAL_PINS CH32RV_BOARD_PIN_COUNT" in PINS
+    # Pad names are not renumbered on the board any more.
+    assert not re.search(r"^#define\s+P[A-F]\d+\s+\d+\s*$", PINS, re.M)
 
 
 def test_official_sdio_disconnect_extension_is_source_compatible():

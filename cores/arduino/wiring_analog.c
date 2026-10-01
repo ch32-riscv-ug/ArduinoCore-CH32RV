@@ -134,6 +134,7 @@ static uint32_t ch32rv_adc_convert(uint32_t base, uint32_t channel)
  * NOT_AN_ANALOG_PIN. */
 static uint32_t ch32rv_adc_prepare(pin_size_t pin, uint8_t *index)
 {
+    pin = CH32RV_PIN_RESOLVE(pin);
     const uint32_t channel = CH32RV_PIN_TO_ADC_CHANNEL(pin);
     if (channel == NOT_AN_ANALOG_PIN) {
         return channel;

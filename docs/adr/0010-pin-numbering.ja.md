@@ -1,6 +1,6 @@
 # ADR-0010: ピン番号はポート埋め込みのスパース方式とし、公開名は`PA0`形式にする
 
-- Status: Proposed
+- Status: Accepted(2026-10-01、ユーザー判断。製品boardの印刷番号と port 欄のずらしを追加)
 - Date: 2026-08-19
 - Related questions: Q-011, Q-003
 
@@ -50,14 +50,16 @@ CH32はマルチポート(PA/PB/PC/PD/PE)で、1パッケージあたりのGPIO�
 ### Option D: ポート埋め込み・5bit(採用)
 
 ```c
-/* port = pin >> 5, bit = pin & 31 */
-#define PA0  ((0 << 5) | 0)
-#define PC13 ((2 << 5) | 13)
+/* port = (pin >> 5) - 2, bit = pin & 31 (2026-10-01 に port 欄を 2 ずらした) */
+#define PA0  (((0 + 2) << 5) | 0)    /* 64 */
+#define PC13 (((2 + 2) << 5) | 13)   /* 141 */
 ```
 
 ## Decision
 
-1. ピン番号は**`(port << 5) | bit`のスパース値**とする。5bitなのでPA23等も収まる
+1. ピン番号は**`((port + 2) << 5) | bit`のスパース値**とする。5bitなのでPA23等も収まる。
+   port 欄を 2 から始めるので pad は 64〜254 に入り(`pin_size_t` は `uint8_t`、`0xFF` は `NOT_A_PIN`)、
+   **0〜63 は pad を指さない**(7 を参照)
 2. 公開名は**`PA0`/`PB3`形式**。datasheetおよび回路図の表記と一致させる
 3. `digitalWrite`等は`port = pin >> 5`、`bit = pin & 31`でGPIOベースアドレスを算術計算する。
    **pin→padの変換テーブルを持たない**
@@ -65,16 +67,29 @@ CH32はマルチポート(PA/PB/PC/PD/PE)で、1パッケージあたりのGPIO�
    ただし[X035のPC10/PC11](../device-data.ja.md)は内部でPC17/PC16へ結線されているため、
    variant生成で**unusableとして表現する**
 5. アナログは`A0`等のエイリアスをADCチャネルへ別途マップする
-6. `PINS_COUNT`/`NUM_DIGITAL_PINS`は**連続範囲を意味しない**。0..N-1でループする用途には使えないことを文書化する
+6. `PINS_COUNT`/`NUM_DIGITAL_PINS`は**どの pin 番号もこれより小さい、という上限**とする(arduino-esp32 の
+   `SOC_GPIO_PIN_COUNT` と同じ意味)。番号は飛び飛びなので 0..N-1 には欠番があり、有効かどうかは
+   `digitalPinIsValid()` で見る。pad の数は `CH32RV_GPIO_COUNT`
+7. **基板に番号が印刷されている製品boardに限り**、その番号を 0〜63 で使える。variant が
+   `CH32RV_BOARD_PIN_COUNT` と `CH32RV_BOARD_PINS { 0 番の pad, 1 番の pad, ... }` を置き、core は公開 API の
+   入口で 1 回だけ `CH32RV_PIN_RESOLVE()` で pad に置き換える。pad 名(`PA1`)と `D` 名はどの board でも
+   pad の値のままで、数字の `0` と `PA1` が同じ pad を指す。番号から pad を引く公開名は
+   `digitalPinToGPIONumber()`(arduino-esp32 の Nano ESP32 と同じ意味)。印刷番号の無い pad は番号を作らず
+   pad 名で使う。印刷が pad 名の board(WCH の EVT 等)と Generic は表を持たず、0〜63 は無効。
+   番号の意味を切り替えるメニュー(arduino-esp32 の Nano ESP32 の Pin Numbering)は置かない:
+   数字を直に使う下の層が無く、pad 名は常に同じ pad を指すため
 
 ## Consequences
 
 - **`ANY` boardが成立する**。pin定義はseriesの全pad名を出しておけばよく、パッケージ別variantが不要
 - テーブルが無いためFlash消費がゼロ。CH32V003(16K)で効く
 - `ch32fun`・旧コアと同じ表記なので、移植時の読み替えが不要
-- **`digitalWrite(13, HIGH)`のような数値直書きのAVRスケッチは動かない**(13はPA13になる)。
-  ただし黙って別のピンを叩くよりは明示的に別物である方が安全であり、
-  数値直書きは現在の主流ではない。移行表を文書へ用意する
+- **Generic では`digitalWrite(13, HIGH)`のような数値直書きは何もしない**(0〜63 は無効)。
+  黙って別のピンを叩くより安全であり、数値直書きは現在の主流ではない。移行表を文書へ用意する。
+  印刷番号のある製品board(UIAPduino の 0〜17)では数値直書きがその番号の端子に届く
+- 製品boardの表は数字で指定したときだけ引かれる。pad 名なら定数畳み込みで表に触れない。
+  2026-10-01 の実測で、UIAPduino(V003)は以前の比較式による置き換えより 28〜532 byte 小さく、
+  Generic は port 欄のずらしの分だけ 12〜132 byte 大きい
 - STM32duinoからの移植では`PA0`表記がそのまま通る(向こうも同じ名前を公開している)
 
 ## Validation

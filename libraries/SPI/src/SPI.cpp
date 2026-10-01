@@ -284,7 +284,9 @@ bool CH32RVSPIClass::setPins(int sck, int miso, int mosi)
         return false;
     }
     const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)sck, (uint8_t)miso, (uint8_t)mosi};
+    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)CH32RV_PIN_RESOLVE(sck),
+                                             (uint8_t)CH32RV_PIN_RESOLVE(miso),
+                                             (uint8_t)CH32RV_PIN_RESOLVE(mosi)};
     const int i = ch32rv_route_match(table.rows, table.count, want);
     if (i < 0) {
         return false;

@@ -625,7 +625,8 @@ bool CH32RVTwoWire::setPins(int sda, int scl)
         return false;
     }
     const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)scl, (uint8_t)sda, CH32RV_ROUTE_NO_PIN};
+    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)CH32RV_PIN_RESOLVE(scl),
+                                             (uint8_t)CH32RV_PIN_RESOLVE(sda), CH32RV_ROUTE_NO_PIN};
     const int i = ch32rv_route_match(table.rows, table.count, want);
     if (i < 0) {
         return false;

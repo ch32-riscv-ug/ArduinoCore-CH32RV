@@ -73,7 +73,8 @@ static void tone_update(void *)
 
 void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
 {
-    if (!digitalPinIsValid(pin)) {
+    pin = CH32RV_PIN_RESOLVE(pin);
+    if (!ch32rv_pad_is_valid(pin)) {
         /* Nothing to do: a pin that does not exist cannot be the one playing,
          * and stopping the tone that *is* playing would break the rule below
          * that a sounding tone on another pin wins. */
@@ -154,12 +155,13 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
 
 void noTone(uint8_t pin)
 {
+    pin = CH32RV_PIN_RESOLVE(pin);
     /* Only the pin that is playing. Treating an unknown pin as "stop whatever
      * is running" made tone(bogus_pin) silence a tone on a real one. */
     if (tone_pin != 0xFF && pin == tone_pin) {
         tone_stop();
     }
-    if (digitalPinIsValid(pin)) {
+    if (ch32rv_pad_is_valid(pin)) {
         /* Left low, not floating: a speaker held at half rail draws current
          * and hums. */
         ch32rv_gpio_clear((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin));

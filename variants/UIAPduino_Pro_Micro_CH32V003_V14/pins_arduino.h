@@ -11,67 +11,23 @@
 
 #include "../CH32V003/pins_arduino.h"
 
-/* The generic CH32 variants expose port-encoded pin numbers. The released
- * UIAPduino core instead exposes the Pro Micro silkscreen as the ordinary
- * Arduino numbers 0..17. Preserve that source-level contract on this named
- * product board, while CH32RV_PIN_PORT/BIT translate to the core's internal
- * encoding. D7/D8/D9 occur on both sides but name one MCU pad each. */
-#undef PA1
-#undef PA2
-#undef PC0
-#undef PC1
-#undef PC2
-#undef PC3
-#undef PC4
-#undef PC5
-#undef PC6
-#undef PC7
-#undef PD0
-#undef PD1
-#undef PD2
-#undef PD3
-#undef PD4
-#undef PD5
-#undef PD6
-#undef PD7
+/* The silkscreen numbers 0..17, as the released UIAPduino core exposes them.
+ * Pad names keep their port-encoded values (PA1 is 65 here as on every CH32
+ * board); a number below CH32RV_BOARD_PIN_COUNT is looked up in this list at
+ * the core's entry points (ADR-0010, Arduino.h CH32RV_PIN_RESOLVE). So
+ * digitalWrite(13, ...), digitalWrite(D13, ...) and digitalWrite(PD3, ...)
+ * all reach PD3. D7/D8/D9 occur on both sides but name one MCU pad each. */
+#define CH32RV_BOARD_PIN_COUNT 18
+#define CH32RV_BOARD_PINS { \
+    PA1, PA2, PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7, \
+    PD0, PD1, PD2, PD3, PD4, PD5, PD6, PD7, \
+}
 
-#define PA1  0
-#define PA2  1
-#define PC0  2
-#define PC1  3
-#define PC2  4
-#define PC3  5
-#define PC4  6
-#define PC5  7
-#define PC6  8
-#define PC7  9
-#define PD0 10
-#define PD1 11
-#define PD2 12
-#define PD3 13
-#define PD4 14
-#define PD5 15
-#define PD6 16
-#define PD7 17
-
+/* The printed numbers run 0..17; the pads behind them are above. */
 #undef NUM_DIGITAL_PINS
 #undef PINS_COUNT
-#define NUM_DIGITAL_PINS 18
+#define NUM_DIGITAL_PINS CH32RV_BOARD_PIN_COUNT
 #define PINS_COUNT       NUM_DIGITAL_PINS
-
-/* The three board ranges are contiguous within PA, PC and PD, so this stays
- * a constant expression without linking an 18-entry lookup table. */
-#define CH32RV_UIAP_ENCODE_PIN(pin) ( \
-    (pin) < 2 ? (pin) + 1 : \
-    (pin) < 10 ? (pin) + 62 : \
-    (pin) < 18 ? (pin) + 86 : (pin))
-
-#undef CH32RV_PIN_PORT
-#undef CH32RV_PIN_BIT
-#define CH32RV_PIN_PORT(pin) \
-    (CH32RV_UIAP_ENCODE_PIN(pin) >> CH32RV_PIN_PORT_BITS)
-#define CH32RV_PIN_BIT(pin) \
-    (CH32RV_UIAP_ENCODE_PIN(pin) & ((1 << CH32RV_PIN_PORT_BITS) - 1))
 
 #define D0  PA1
 #define D1  PA2
@@ -92,15 +48,7 @@
 #define D16 PD6
 #define D17 PD7
 
-/* The series header names TX / RX by pad; on this board they are D15 / D16. */
-#undef TX
-#undef RX
-#undef PIN_SERIAL_TX
-#undef PIN_SERIAL_RX
-#define TX  D15
-#define RX  D16
-#define PIN_SERIAL_TX TX
-#define PIN_SERIAL_RX RX
+/* TX / RX are the series default, PD5 / PD6 - D15 / D16 on this board. */
 
 /* Board-level reserved functions. They remain valid pin constants, but test
  * fixtures use these names to exclude them from generic GPIO sweeps. */

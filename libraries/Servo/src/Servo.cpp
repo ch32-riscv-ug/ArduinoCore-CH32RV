@@ -178,7 +178,11 @@ uint8_t Servo::attach(int pin)
 
 uint8_t Servo::attach(int pin, int min, int max)
 {
-    if (pin < 0 || !digitalPinIsValid((uint8_t)pin)) {
+    if (pin < 0) {
+        return INVALID_SERVO;
+    }
+    pin = CH32RV_PIN_RESOLVE(pin);
+    if (!ch32rv_pad_is_valid((uint8_t)pin)) {
         return INVALID_SERVO;
     }
     if (_index != INVALID_SERVO && slots[_index].owner != this) {

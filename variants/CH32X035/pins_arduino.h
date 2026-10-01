@@ -4,10 +4,11 @@
  * CH32X035 pin map: the union of all 7 part numbers in the
  * series, so the same header serves the ANY menu entry and every SKU.
  *
- * Pin numbers are port-encoded (ADR-0010): pin = (port << 5) | bit.
- * The valid set is SPARSE. NUM_DIGITAL_PINS is one past the highest pin
- * number, NOT a pad count, and 0..NUM_DIGITAL_PINS-1 is not a usable
- * loop range - test with digitalPinIsValid(pin).
+ * Pin numbers are port-encoded (ADR-0010): pin = ((port + 2) << 5) | bit,
+ * so PA0 is 64; 0..63 are left for a product board's printed numbers.
+ * Every pin number is below NUM_DIGITAL_PINS, but the valid set is
+ * SPARSE: 0..NUM_DIGITAL_PINS-1 has gaps, so test with
+ * digitalPinIsValid(pin). CH32RV_GPIO_COUNT is the number of pads.
  *
  * A pad missing from a given package is left unbonded: writing it only
  * touches a register bit with nothing attached, which is harmless.
@@ -224,7 +225,7 @@
     CH32RV_PIN(2, 11) /* PC11, x035-pc10-pc17-bonded */, \
     }
 
-#define NUM_DIGITAL_PINS 84   /* highest pin number + 1, not a pad count */
+#define NUM_DIGITAL_PINS 148   /* every pin number is below this; not a pad count */
 #define PINS_COUNT       NUM_DIGITAL_PINS
 #define CH32RV_GPIO_COUNT  62   /* actual pads in the series */
 

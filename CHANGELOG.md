@@ -1,6 +1,10 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) **Breaking: pin numbers moved up by 64** - PA0 is 64, PB0 96, PC13 141 (`((port + 2) << 5) | bit`). Code that names pads (`PA1`, `D2`, `LED_BUILTIN`) is unaffected; a stored or printed number changes. 0..63 now never name a pad: on a Generic board `digitalWrite(13, ...)` does nothing instead of driving PA13.
+- (JA) **破壊的変更: pin 番号を 64 上にずらした。** PA0 が 64、PB0 が 96、PC13 が 141(`((port + 2) << 5) | bit`)。pad 名や `D2`、`LED_BUILTIN` で書いたコードはそのまま動く。保存・表示した数値は変わる。0〜63 は pad を指さなくなり、Generic では `digitalWrite(13, ...)` は PA13 を叩かず何もしない。
+- (EN) A product board with numbers printed on its silkscreen maps them to pads with a table in its variant (ADR-0010). UIAPduino Pro Micro V1.4 now does so: `0`..`17`, `D0`..`D17` and the pad names all work, and pad names keep their values (`PA1` is 65 there too). It saves 28-532 bytes of flash over the previous mapping. `digitalPinToGPIONumber(pin)` gives the pad behind a number.
+- (JA) 基板に番号が印刷されている製品 board は、その番号を variant の表で pad に引く(ADR-0010)。UIAPduino Pro Micro V1.4 をこの形にした: `0`〜`17`、`D0`〜`D17`、pad 名のどれでも使え、pad 名の値はそのまま(`PA1` はここでも 65)。以前の置き換えより Flash が 28〜532 byte 小さい。`digitalPinToGPIONumber(pin)` で番号の pad が分かる。
 - (EN) The bundled ch32rv is now 0.14.1: uploading to a "[compile only]" board (a `--chip` absent from ch32rv's database) stops with exit 20 before the probe is opened. 60-ch32rv.rules follows its new header line.
 - (JA) 同梱の ch32rv を 0.14.1 にした: 「[compile only]」の板(ch32rv の DB に無い `--chip`)への書き込みは、probe を開く前に exit 20 で止まる。60-ch32rv.rules は先頭のコメントを新しい版に合わせた。
 - (EN) The package index no longer lists the pre-rename architecture `ch32v` (0.0.1-0.0.5) or the ch32rv tool versions only they used; install `ch32-riscv-ug:ch32rv` instead.

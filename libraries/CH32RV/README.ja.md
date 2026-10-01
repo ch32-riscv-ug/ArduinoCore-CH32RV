@@ -63,8 +63,8 @@ CH32RV.wdtFeed();                        // loop()で呼ぶ
 | PinCapabilities | このチップに実在するpad |
 
 **知らないboardで最初に走らせるべきはPinCapabilities**です。
-CH32のpin番号は`(port << 5) | bit`なので飛び飛びで、
-PA0が0、PB0が32、その間のほとんどの番号はpadに対応しません。
+CH32のpin番号は`((port + 2) << 5) | bit`なので飛び飛びで、
+PA0が64、PB0が96、その間のほとんどの番号はpadに対応しません(0〜63は製品boardの印刷番号用)。
 このsketchは推測せずvariantに問い合わせます。
 
 ## 逃げ道

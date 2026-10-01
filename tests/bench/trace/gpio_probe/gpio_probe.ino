@@ -5,7 +5,7 @@
 //   EXTI <pin> <mode>  attachInterrupt, mode 0 RISING / 1 FALLING / 2 CHANGE, counter reset       -> "EXTI armed"
 //   COUNT              -> "COUNT n=<edges>"
 //   EXTIOFF <pin>      detachInterrupt                                                          -> "EXTIOFF ok"
-// <pin> is the core's pin number ((port << 5) | bit); the host derives it from the pad names in the bench file,
+// <pin> is the core's pin number (((port + 2) << 5) | bit); the host derives it from the pad names in the bench file,
 // so no jig's table is baked in here.
 #define TC_CMD_MAX 64
 #include "testcmd.h"

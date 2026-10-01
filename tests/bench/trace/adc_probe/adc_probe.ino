@@ -1,4 +1,4 @@
-// analogRead on request, for tests/bench/trace/adc_probe. Pins are the core's pin numbers ((port << 5) | bit),
+// analogRead on request, for tests/bench/trace/adc_probe. Pins are the core's pin numbers (((port + 2) << 5) | bit),
 // derived by the host from the bench file - no jig's table is baked in.
 //   ADC <pin> [n]          -> "ADC <pin> n=<n> min=<> max=<> mean=<>" (n samples, default 16)
 //   ADCSEQ <pin> [n]       -> first / last 8 of n back-to-back conversions (settling / decay evidence)

@@ -78,12 +78,12 @@ def _compile_time_facts(bench) -> None:
 
 
 def _encode(pad: str) -> int:
-    """"PA0" -> the core's pin number, (port << 5) | bit (cores/arduino/ch32rv_pins.h, ADR-0010)."""
-    import re
-    m = re.fullmatch(r"P([A-F])(\d{1,2})", pad.strip().upper())
-    if not m:
-        raise pytest.UsageError(f"{pad!r} is not a pad name like PA0")
-    return ("ABCDEF".index(m.group(1)) << 5) | int(m.group(2))
+    """"PA0" -> the core's pin number (tracekit.encode: cores/arduino/ch32rv_pins.h, ADR-0010)."""
+    import tracekit
+    try:
+        return tracekit.encode(pad)
+    except ValueError as e:
+        raise pytest.UsageError(str(e)) from None
 
 
 @pytest.fixture(scope="session", autouse=True)

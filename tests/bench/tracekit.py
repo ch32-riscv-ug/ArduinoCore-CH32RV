@@ -19,17 +19,18 @@ import pytest
 
 PORTS = "ABCDEF"
 PIN_PORT_BITS = 5      # cores/arduino/ch32rv_pins.h, ADR-0010
+PIN_PORT_FIRST = 2     # PA's value in the port field: PA0 = 64
 
 
 def encode(pad: str) -> int:
-    """"PA0" / "PC19" -> the core's pin number, (port << 5) | bit; a plain integer passes through."""
+    """"PA0" / "PC19" -> the core's pin number, ((port + 2) << 5) | bit; a plain integer passes through."""
     pad = pad.strip().upper()
     if re.fullmatch(r"\d+", pad):
         return int(pad)
     m = re.fullmatch(r"P([A-F])(\d{1,2})", pad)
     if not m:
         raise ValueError(f"{pad!r} is not a pad name like PA0 or PC19")
-    return (PORTS.index(m.group(1)) << PIN_PORT_BITS) | int(m.group(2))
+    return ((PORTS.index(m.group(1)) + PIN_PORT_FIRST) << PIN_PORT_BITS) | int(m.group(2))
 
 
 def need(bench, *pads: str, capture_hz: int = 0) -> None:

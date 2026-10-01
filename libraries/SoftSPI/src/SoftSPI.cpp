@@ -30,8 +30,17 @@ bool SoftSPI::begin(int sck, int miso, int mosi, int ss)
 {
     (void)ss;
     if (!(sck < 0 && miso < 0 && mosi < 0)) {
-        if (sck < 0 || mosi < 0 || !digitalPinIsValid(sck) || !digitalPinIsValid(mosi) ||
-            (miso >= 0 && !digitalPinIsValid(miso))) {
+        if (sck < 0 || mosi < 0) {
+            return false;
+        }
+        /* Pads from here on: every bit toggled later skips the board-number lookup. */
+        sck = CH32RV_PIN_RESOLVE(sck);
+        mosi = CH32RV_PIN_RESOLVE(mosi);
+        if (miso >= 0) {
+            miso = CH32RV_PIN_RESOLVE(miso);
+        }
+        if (!ch32rv_pad_is_valid(sck) || !ch32rv_pad_is_valid(mosi) ||
+            (miso >= 0 && !ch32rv_pad_is_valid(miso))) {
             return false;
         }
         end();

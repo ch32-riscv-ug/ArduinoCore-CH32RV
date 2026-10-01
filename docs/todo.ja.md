@@ -991,6 +991,11 @@ classの種類が多く、それぞれ実機確認まで要るので範囲が大
 - [x] `pins_arduino.h`の本実装。[ADR-0010](adr/0010-pin-numbering.ja.md)の`(port<<5)|bit`方式で
       seriesの全pad名・ポート別validity mask・`ANY`共通padマスクを生成。Blinkのサイズが
       117 SKU全てでbaselineとバイト一致し、**テーブルが生成されない**ことを実証
+- [x] pin番号の port 欄を 2 ずらし(PA0=64)、0〜63 を印刷番号のある製品boardの表に空けた(2026-10-01、
+      ユーザー判断、ADR-0010 Accepted)。UIAPduino は `#undef` での付け替えをやめ `CH32RV_BOARD_PINS` の表にした。
+      実測: UIAPduino は 28〜532 byte 減、Generic は 12〜132 byte 増(port 欄の引き算)
+- [ ] `[P2]` Generic の 12〜132 byte 増を戻す: port 番号を 2..7 のまま扱えば GPIO base・mask・clock bit の計算で
+      引き算が消える(`ch32rv_gpio.h` と生成 mask の添字を変える)。有効判定の 1 回だけ残る
 - [x] `A0`等アナログエイリアスのADCチャネルマップ生成。**ADC1のみ**採用(X305/X315は
       ADC1〜ADC4で同じチャネル番号が別padに出るため`A<n>`が一意にならない)
 - [x] **X305/X315のADC2〜ADC4を表現した**(2026-08-29)。調べたところ、ADC1で届かないpadがあるのは

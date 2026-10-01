@@ -318,7 +318,8 @@ bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
         return false;
     }
     const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)txPin, (uint8_t)rxPin, CH32RV_ROUTE_NO_PIN};
+    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)CH32RV_PIN_RESOLVE(txPin),
+                                             (uint8_t)CH32RV_PIN_RESOLVE(rxPin), CH32RV_ROUTE_NO_PIN};
     const int i = ch32rv_route_match(table.rows, table.count, want);
     if (i < 0) {
         return false;

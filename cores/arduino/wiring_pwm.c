@@ -86,6 +86,7 @@ static bool dac_write(pin_size_t pin, uint32_t value12)
 
 void analogWrite(pin_size_t pin, int value)
 {
+    pin = CH32RV_PIN_RESOLVE(pin);
 #if defined(CH32RV_DAC1_PIN) || defined(CH32RV_DAC2_PIN)
     {
         /* Scale the caller's range onto the converter's 12 bits before the

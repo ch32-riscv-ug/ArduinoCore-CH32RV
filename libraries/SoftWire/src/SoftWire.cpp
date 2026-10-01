@@ -71,7 +71,14 @@ void SoftWire::end()
 
 bool SoftWire::setPins(int sda, int scl)
 {
-    if (sda < 0 || scl < 0 || sda == scl || !digitalPinIsValid(sda) || !digitalPinIsValid(scl)) {
+    if (sda < 0 || scl < 0) {
+        return false;
+    }
+    /* Pads from here on, so 0 and its pad name compare equal and every bit
+     * toggled later skips the board-number lookup. */
+    sda = CH32RV_PIN_RESOLVE(sda);
+    scl = CH32RV_PIN_RESOLVE(scl);
+    if (sda == scl || !ch32rv_pad_is_valid(sda) || !ch32rv_pad_is_valid(scl)) {
         return false;
     }
     const bool was_started = _started;

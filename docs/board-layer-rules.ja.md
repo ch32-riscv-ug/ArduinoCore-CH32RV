@@ -172,7 +172,9 @@ examples側に書く案もあるが、ビギナー向けexampleの冒頭が汚�
 この`#ifndef`は偶然ではなく**board overrideの継ぎ目**であることを文書化する。
 
 L2が持つべきもの: on-board LED/ボタン、HSE有無と周波数、既定Serial instance/route、
-silkscreen名エイリアス、板固有のforbidden pad。
+silkscreen名エイリアス、板固有のforbidden pad。基板に番号が印刷されていれば、その番号→padの表
+(`CH32RV_BOARD_PIN_COUNT` / `CH32RV_BOARD_PINS`、0〜63、[ADR-0010](adr/0010-pin-numbering.ja.md) の Decision 7)。
+pad名の値は書き換えない。
 
 ## 5. 付随: レジスタの公開範囲
 
@@ -206,7 +208,8 @@ arduino-esp32 の `pins_arduino.h` に倣い、スケッチ向けの名前は次
 
 - pad名(`PA0` など)、`A0`〜、`D0`〜(製品board)、`LED_BUILTIN`(製品board)
 - `TX` / `RX` / `SDA` / `SCL` / `SS` / `MOSI` / `MISO` / `SCK` と `PIN_SERIAL_*` / `PIN_WIRE_*` / `PIN_SPI_*`
-- `NUM_DIGITAL_PINS` / `NUM_ANALOG_INPUTS`、`digitalPinIsValid()` などの `Arduino.h` のマクロ
+- `NUM_DIGITAL_PINS`(pin 番号の上限。本数ではない)/ `NUM_ANALOG_INPUTS`、`digitalPinIsValid()`、
+  `digitalPinToGPIONumber()` などの `Arduino.h` のマクロ
 - build から来る名前: `ARDUINO_ARCH_CH32RV`、`ARDUINO_<board>`、`CH32RV_SERIES_<series>`(2026-10-01 から。
   以前の接頭辞なしの `-D<series>` は他の core や vendor SDK の分岐と衝突するのでやめた)、`CH32RV_PART_<part>`、
   版番号の `CH32RV_VERSION_MAJOR/MINOR/PATCH`・`CH32RV_VERSION`・`CH32RV_VERSION_VAL()`・`CH32RV_VERSION_STR`

@@ -38,8 +38,9 @@ to any library, so their examples are here. Every one of them:
 | PinCapabilities | which pads this chip actually has |
 
 **PinCapabilities is the one to run first on a board you do not know.** CH32 pin
-numbers are `(port << 5) | bit`, so they are sparse: PA0 is 0, PB0 is 32, and
-most numbers in between belong to no pad. That sketch asks the variant instead
+numbers are `((port + 2) << 5) | bit`, so they are sparse: PA0 is 64, PB0 is 96,
+and most numbers in between belong to no pad (0..63 are kept for a product
+board's printed numbers). That sketch asks the variant instead
 of guessing.
 
 ## The escape hatch

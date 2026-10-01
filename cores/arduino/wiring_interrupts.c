@@ -29,6 +29,7 @@ static void ch32rv_exti_call_plain(void *fn)
 static void ch32rv_exti_set(pin_size_t pin, PinStatus mode,
                           voidFuncPtrParam callback, void *param)
 {
+    pin = CH32RV_PIN_RESOLVE(pin);
     const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
     const uint8_t bit = (uint8_t)CH32RV_PIN_BIT(pin);
 
@@ -92,6 +93,7 @@ void attachInterrupt(pin_size_t pin, voidFuncPtr callback, PinStatus mode)
 
 void detachInterrupt(pin_size_t pin)
 {
+    pin = CH32RV_PIN_RESOLVE(pin);
     const uint8_t bit = (uint8_t)CH32RV_PIN_BIT(pin);
 
     if (CH32RV_PIN_PORT(pin) >= CH32RV_PORT_COUNT || bit >= CH32RV_EXTI_LINES) {

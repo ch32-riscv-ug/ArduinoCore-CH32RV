@@ -397,9 +397,12 @@ def gen_vectors(variant: str, entries: list, form: str) -> str:
 
 
 # ---------------------------------------------------------------- pin maps
-# ADR-0010: pin = (port << 5) | bit. The pad set is the union over every part
-# number in the series, so one header serves the ANY entry and all SKUs.
+# ADR-0010: pin = ((port + 2) << 5) | bit, so PA0 = 64 and 0..63 stay free for
+# the numbers printed on a product board (cores/arduino/ch32rv_pins.h). The pad
+# set is the union over every part number in the series, so one header serves
+# the ANY entry and all SKUs.
 PORTS = "ABCDEF"
+PIN_PORT_FIRST = 2   # CH32RV_PIN_PORT_FIRST
 # Pads whose datasheet name is a primary function ("OSC_IN", "LO1"); pinout.csv
 # carries the port name in its port/gpio columns when the datasheet gives one.
 PAD_PORT_RE = re.compile(r"^P([A-F])(\d+)")
@@ -1858,9 +1861,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                   if series in spec["series"]]
 
     def num(port: str, bit: int) -> int:
-        return (PORTS.index(port) << 5) | bit
+        return ((PORTS.index(port) + PIN_PORT_FIRST) << 5) | bit
 
     hi = max(num(p, b) for p, b in union)
+    # pin_size_t is uint8_t and 0xFF is NOT_A_PIN.
+    assert hi < 0xFF, f"{series}: pin {hi} does not fit below NOT_A_PIN"
     width = max(len(pad_name(p, b)) for p, b in union)
 
     out = [
@@ -1870,10 +1875,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         f" * {series} pin map: the union of all {len(parts)} part numbers in the",
         " * series, so the same header serves the ANY menu entry and every SKU.",
         " *",
-        " * Pin numbers are port-encoded (ADR-0010): pin = (port << 5) | bit.",
-        " * The valid set is SPARSE. NUM_DIGITAL_PINS is one past the highest pin",
-        " * number, NOT a pad count, and 0..NUM_DIGITAL_PINS-1 is not a usable",
-        " * loop range - test with digitalPinIsValid(pin).",
+        " * Pin numbers are port-encoded (ADR-0010): pin = ((port + 2) << 5) | bit,",
+        " * so PA0 is 64; 0..63 are left for a product board's printed numbers.",
+        " * Every pin number is below NUM_DIGITAL_PINS, but the valid set is",
+        " * SPARSE: 0..NUM_DIGITAL_PINS-1 has gaps, so test with",
+        " * digitalPinIsValid(pin). CH32RV_GPIO_COUNT is the number of pads.",
         " *",
         " * A pad missing from a given package is left unbonded: writing it only",
         " * touches a register bit with nothing attached, which is harmless.",
@@ -2028,7 +2034,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("")
 
     out.append(f"#define NUM_DIGITAL_PINS {hi + 1}   "
-               f"/* highest pin number + 1, not a pad count */")
+               f"/* every pin number is below this; not a pad count */")
     out.append(f"#define PINS_COUNT       NUM_DIGITAL_PINS")
     out.append(f"#define CH32RV_GPIO_COUNT  {len(union)}   /* actual pads in the series */")
     out.append("")

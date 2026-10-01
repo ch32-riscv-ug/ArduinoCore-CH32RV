@@ -266,7 +266,8 @@ class Variant:
         self.board = board
         text = (REPO / "variants" / board / "pins_arduino.h").read_text(encoding="utf-8")
         self.text = text
-        self.pads = {m.group(1): (int(m.group(2)) << 5) | int(m.group(3))
+        # CH32RV_PIN(port, bit) = ((port + 2) << 5) | bit (cores/arduino/ch32rv_pins.h, ADR-0010)
+        self.pads = {m.group(1): ((int(m.group(2)) + 2) << 5) | int(m.group(3))
                      for m in re.finditer(
                          r"#define (P[A-F]\d+)\s+CH32RV_PIN\((\d+),\s*(\d+)\)", text)}
         self.pad_of = {v: k for k, v in self.pads.items()}
@@ -622,7 +623,7 @@ class Session:
 
     def gpio(self, pad: str) -> dict:
         pin = self.var.pin(pad)
-        port, bit = pin >> 5, pin & 31
+        port, bit = (pin >> 5) - 2, pin & 31   # pin = ((port + 2) << 5) | bit (ADR-0010)
         block = "GPIO" + PORTS[port]
         base = self.dd.addr(block, "CFGLR")
         cfglr, cfghr, indr, outdr = self.p.words(base, 4)
@@ -1041,7 +1042,7 @@ class Session:
             pads.append(second)
         for pad in pads:
             pin = self.var.pin(pad)
-            port, bit = pin >> 5, pin & 31
+            port, bit = (pin >> 5) - 2, pin & 31   # pin = ((port + 2) << 5) | bit (ADR-0010)
             self.t.cmd(f"PINMODE {pin} IN")
             group = next(((h, m, i) for (h, m, i) in self.exti if m & (1 << bit)), None)
             for mode, (rt, ft) in (("RISING", (1, 0)), ("FALLING", (0, 1)),
