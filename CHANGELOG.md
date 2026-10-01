@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) **The bundled ch32rv is now 0.15.0, which speaks the OEP wire of oep-probe-arduino 0.0.22 and later only**: an OEP probe on 0.0.21 or older has to be updated before it can upload or monitor.
+- (JA) **同梱の ch32rv を 0.15.0 にした。oep-probe-arduino 0.0.22 以降の OEP の wire だけを話す**ので、0.0.21 以前の OEP probe は更新しないと書き込みもモニターもできない。
 - (EN) **Breaking: the printf menu is now `rtlib` (C Runtime Library)**, with the ids the WCH core, ch32-riscv-arduino and STM32duino use: `nano` (default), `nanofp` (float printf, +~21 KB), `nanofs` (float scanf, +~24 KB), `nanofps` (both, +~31 KB). An FQBN with `:printf=float` becomes `:rtlib=nanofp`. On a series with a 16 KB part the float entries say they are too big for it.
 - (JA) **破壊的変更: printf メニューを `rtlib`(C Runtime Library)にした。** ID は WCH 公式 core、ch32-riscv-arduino、STM32duino と同じ: `nano`(既定)、`nanofp`(printf の float、+約 21 KB)、`nanofs`(scanf の float、+約 24 KB)、`nanofps`(両方、+約 31 KB)。FQBN の `:printf=float` は `:rtlib=nanofp` になる。16 KB の型番がある系列では、float の選択肢に入らない旨を表示する。
 - (EN) Board names no longer carry "[compile only]": every series is listed as `Generic <series>`, and which series and parts have run on hardware is in docs/support-status.ja.md. A series the bundled ch32rv does not know yet (M103, V205, V407, V467, X305, X315, M030) now has an upload protocol too, so Upload stops with ch32rv's own `target-not-in-db` instead of asking for a programmer.
