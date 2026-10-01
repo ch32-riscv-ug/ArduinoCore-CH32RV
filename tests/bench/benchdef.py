@@ -162,6 +162,17 @@ def oep_config_items(hst) -> list:
     return config.ProbeConfig(hst).items()
 
 
+def fn_of(hst, name: str, instance: int) -> int:
+    """The fn of `name#instance`: the instance the probe's list gives, from 0 (oep-spec core §7.2, the way
+    `oep config plan` resolves it), not a position."""
+    from oep_client import core
+    entries = core.list_entries(hst, name, exact=True)
+    fn = next((e.fn for e in entries if e.instance == instance), None)
+    if fn is None:
+        raise BenchError(f"the probe has no {name}#{instance} (instances {sorted(e.instance for e in entries)})")
+    return fn
+
+
 def wanted_items(bench: Bench, hst) -> list:
     """The bench file's slot / binds / plan as oep_client.config items, in the probe's canonical order
     (plans, then slots, then binds - what `oep config show` prints)."""
@@ -169,9 +180,8 @@ def wanted_items(bench: Bench, hst) -> list:
     items = []
     slot = bench.data.get("slot")
     for spec in bench.data.get("plan", []):
-        name, _, k = spec["interface"].partition("#")
-        fns = core.find_all(hst, name)
-        fn = fns[int(k or 1) - 1]
+        name, _, k = spec["interface"].partition("#")   # name#instance, from 0; #0 may be left out
+        fn = fn_of(hst, name, int(k or 0))
         # The role numbers are the interface's own enum (oep_client.registry, from oep-spec); a name the
         # interface does not have is a bench-file error, not a guess.
         roles = getattr(registry.INTERFACES.get(name), "enum", {}).get("role", {})
@@ -195,7 +205,7 @@ def wanted_items(bench: Bench, hst) -> list:
             if kind == "slot":
                 streams.append(("slot", 0))
             else:
-                streams.append(("uart", core.find_all(hst, "oep.fixture.uart")[int(ref) - 1]))
+                streams.append(("uart", fn_of(hst, "oep.fixture.uart", int(ref or 0))))   # uart:<instance>
         items.append(config.Bind(port=int(b["port"]), mode=b.get("mode", "last-reset"), streams=streams,
                                  selected=int(b.get("selected", 0))))
     return items

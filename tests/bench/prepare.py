@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["oep-client-python>=0.0.20", "libusb1>=3", "pyusb>=1.2"]
+# dependencies = ["oep-client-python>=0.0.21", "libusb1>=3", "pyusb>=1.2"]
 # ///
 """Bring a bench's probe to the state its bench file describes, or check that it is there.
 

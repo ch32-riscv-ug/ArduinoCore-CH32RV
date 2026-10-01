@@ -15,8 +15,8 @@
 [probe]
 kind = "oep"
 model = "esp32p4"                             # oep.core describe: model (the chip; "esp32-p4-devkit" before 0.0.8)
-firmware = "0.0.20"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
-release = "v0.0.20"                           # oep-probe-arduino tag prepare.py flashes
+firmware = "0.0.21"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
+release = "v0.0.21"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag: one sketch per probe chip since 0.0.8, the jig is all settings
 sketch_profile = "esp32p4"                   # its sketch.yaml profile for this probe
 update = "dfu"                               # prepare.py: the release's app image over USB DFU on the HS port (0.0.16+); --usj for a blank probe
@@ -54,7 +54,7 @@ mode = "last-reset"
 streams = ["slot:x035"]
 
 [[plan]]                                     # oep config plan: pins an interface keeps
-interface = "oep.fixture.uart#1"
+interface = "oep.fixture.uart#0"
 roles = { rx = 12, tx = 6 }
 
 [[idle]]                                     # oep config idle: how a channel rests when nothing owns it

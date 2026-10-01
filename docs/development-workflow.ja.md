@@ -115,7 +115,7 @@ port = 1; mode = "last-reset"; stream = "slot:x035"
 [[bind]]
 port = 3; mode = "last-reset"; stream = "slot:x035"
 
-[plan."oep.fixture.uart#1"]                   # oep config plan（fixture UART）
+[plan."oep.fixture.uart#0"]                   # oep config plan（fixture UART、instance は 0 から）
 rx = 12; tx = 6                               # DUT USART4 route 0: PB0(TX) -> 12, PB1(RX) <- 6
 
 [wiring]                                      # DUT pad -> probe channel。ここに無い pad は「配線されていない」
