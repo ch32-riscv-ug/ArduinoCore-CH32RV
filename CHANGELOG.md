@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) The bundled ch32rv is now 0.14.1: uploading to a "[compile only]" board (a `--chip` absent from ch32rv's database) stops with exit 20 before the probe is opened. 60-ch32rv.rules follows its new header line.
+- (JA) 同梱の ch32rv を 0.14.1 にした: 「[compile only]」の板(ch32rv の DB に無い `--chip`)への書き込みは、probe を開く前に exit 20 で止まる。60-ch32rv.rules は先頭のコメントを新しい版に合わせた。
 - (EN) The package index no longer lists the pre-rename architecture `ch32v` (0.0.1-0.0.5) or the ch32rv tool versions only they used; install `ch32-riscv-ug:ch32rv` instead.
 - (JA) package index から改名前の architecture `ch32v`(0.0.1〜0.0.5)と、それだけが使っていた ch32rv の tool 版を外した。`ch32-riscv-ug:ch32rv` を入れ直してください。
 

@@ -1,4 +1,4 @@
-# ch32rv: non-root access to WCH-Link probes (ArduinoCore-CH32 request B-6).
+# ch32rv: non-root access to WCH-Link probes (ArduinoCore-CH32RV request B-6).
 # Single source of truth: `ch32rv doctor --emit-udev` prints this file verbatim, and the Linux
 # release tarball bundles it. Install one of two ways:
 #   tar users:      sudo cp 60-ch32rv.rules /etc/udev/rules.d/
