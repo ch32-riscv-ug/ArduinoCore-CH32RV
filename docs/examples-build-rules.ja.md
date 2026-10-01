@@ -100,7 +100,7 @@ profileは**「誰かが実機で動かす」約束**なので、実機の無い
 seriesが変われば pad・peripheral・vector table・ISA が変わるので、そこが本当の軸。
 
 **カバレッジの実測**: Tier A/B(X035/V003/V203/L103/V103/V307)は86 peripheral中67を触れる。
-残り19はすべて`[compile only]`ボード側に集中する:
+残り19はすべて「ビルドのみ」の系列([対応状況](support-status.ja.md))に集中する:
 ADC4 / ARGB / I3C / LTDC / OPCM / PIOC / PSRAM / QSPI1 / USART5-10 /
 USBHS1 / USBHS2 / USBPD0 / USBPD1 / USBSS
 (V407 / V467 / X305 / X315 / V205 / M030)。

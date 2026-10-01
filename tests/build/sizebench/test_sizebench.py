@@ -43,7 +43,7 @@ def test_nano_is_far_smaller_than_full(sizes, case):
 
 
 def test_float_printf_is_opt_in_and_costs(sizes):
-    """`printf=float` in boards.txt buys %f, and it is not free."""
+    """`rtlib=nanofp` in boards.txt (-u _printf_float) buys %f, and it is not free."""
     for arch in {k[2] for k in sizes}:
         plain = sizes.get(("12_printf_float", "nano", arch))
         withf = sizes.get(("12_printf_float", "nano+f", arch))

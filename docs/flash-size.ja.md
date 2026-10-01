@@ -33,8 +33,8 @@ CH32V003は**フラッシュ16 KB・RAM 2 KB**です。Arduinoの書き方をそ
 | `printf %f` | nano+`-u _printf_float` | 24,948 |
 
 `--specs=nano.specs`は**既定**です([ADR-0004](adr/0004-c-runtime-and-libc.ja.md))。
-`%f`は`menu.printf`で明示的に有効化したときだけ入ります。
-fullを引くのはmenuを`full`にしたときだけなので、上の「full」行は
+`%f`はメニュー`rtlib`(C Runtime Library)で明示的に有効化したときだけ入ります。
+full newlibはメニューに載せていないので、上の「full」行は
 **そうしたらこうなる**という警告として読んでください。
 
 ---

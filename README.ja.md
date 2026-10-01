@@ -25,6 +25,9 @@ arduino-cli core install ch32-riscv-ug:ch32rv --additional-urls https://ch32-ris
 書き込みは、IDE の port で WCH-Link の serial port か `wchlink://…`、OEP の probe なら `oep://…` を選んで
 「書き込み」を押すだけです（programmer の選択は要りません）。変更の一覧は [CHANGELOG.md](CHANGELOG.md)。
 
+ボードメニューには全系列が `Generic <系列>` として並びます。どの系列・型番を実機で確かめたか、どれがまだ
+書き込めないかは [対応状況](docs/support-status.ja.md) にあります。
+
 本プロジェクトはWCHの公式プロジェクトではありません。プロジェクト名の`CH32`は対象デバイス系列を示すもので、公式性を示すものではありません。
 
 ## 目的
@@ -51,22 +54,20 @@ arduino-cli core install ch32-riscv-ug:ch32rv --additional-urls https://ch32-ris
 
 初期実装の対象はCH32のRISC-V系列を想定しています。CH32FなどのArm系列、無線SoC、RTOSを含む最終的な対応範囲は未決定です。
 
-## ビルドメニュー(**暫定**)
-
-> `printf`メニューとnewlib-nano既定は**提案段階で、承認されていません**
-> ([承認状態 A-1](docs/approval-status.ja.md))。変わる可能性があります。
+## ビルドメニュー
 
 | メニュー | 既定 | 内容 |
 |---|---|---|
 | Part Number (`pnum`) | `ANY` | 型番。`ANY`はseries内で最小のflash/RAMを宣言するので、どの型番にも載る |
-| printf() float support (`printf`) | `none` | `printf("%f")`を使えるようにするか |
+| C Runtime Library (`rtlib`) | `nano` | `printf("%f")` / `scanf("%f")` を使えるようにするか。WCH 公式 core や STM32duino と同じ名前 |
 
 **`printf`の既定では`%f`が何も出力しません。** ランタイムがnewlib-nanoで、
-浮動小数点の変換が入っていないためです([ADR-0004](docs/adr/0004-runtime-and-cxx.ja.md)の
-提案。同ADRは`Proposed`)。Arduinoの他コアから来ると必ず引っかかる点なので明記します。
+浮動小数点の変換が入っていないためです([ADR-0004](docs/adr/0004-runtime-and-cxx.ja.md))。
+Arduinoの他コアから来ると必ず引っかかる点なので明記します。
 
-必要なときはメニューを`%f supported`にしてください。flashが約19 KB増えます
-(CH32X035の実測で7.1 KB → 25.9 KB)。CH32V003の16 KBには入りません。
+必要なときはメニューを選んでください。増える flash は CH32X035 の実測で、`Newlib Nano + Float Printf`(`nanofp`)が
+約 21 KB、`+ Float Scanf`(`nanofs`)が約 24 KB、両方(`nanofps`)が約 31 KB です。16 KB の型番(CH32V003 など)には
+どれも入りません。
 
 `Serial.print(1.5, 2)`はコアの実装で、`printf`とは無関係に常に動きます。
 

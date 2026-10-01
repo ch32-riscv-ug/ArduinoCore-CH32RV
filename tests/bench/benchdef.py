@@ -267,12 +267,11 @@ def check(bench: Bench, ch32rv: pathlib.Path | str | None = None) -> list[str]:
         # list no longer matches the saved hash, oep-probe-arduino <= 0.0.16) runs on nothing, and only the storage
         # state says so.
         from oep_client import config
-        st = config.ProbeConfig(hst).state()
-        storage = config.STORAGE_STATE.get(st.storage, st.storage)
-        if storage != "applied":
-            why = f", unreadable: {st.unreadable}" if getattr(st, "unreadable", None) else ""
-            problems.append(f"probe settings storage is {storage!r} (saved hash {st.saved_hash:#x}{why}): the probe is "
-                            f"not running its saved settings")
+        st = config.ProbeConfig(hst).state()      # the state op (lock-free), oep-client-python 0.0.22
+        if st.storage != "applied":
+            why = f", unreadable: {st.unreadable}" if st.unreadable else ""
+            problems.append(f"probe settings storage is {st.storage!r} (saved hash {st.saved_hash:#x}{why}): the probe "
+                            f"is not running its saved settings")
         have = [dataclasses.astuple(i) for i in oep_config_items(hst)]
         want_items = [dataclasses.astuple(i) for i in wanted_items(bench, hst)]
         for it in want_items:

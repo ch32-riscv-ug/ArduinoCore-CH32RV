@@ -478,12 +478,12 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
       ([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))。
       `core.a`を`--start-group`で囲み、`_sbrk`を`ch32rv_sbrk.c`へ分離、
       `HardwareSerial.h`が`pins_arduino.h`を自分でinclude。X035実機で確認
-- [x] `--specs=nano.specs`を既定にし、`menu.printf`で`%f`をopt-inにする案を実装(**未承認**、
-      [承認状態 A-1](approval-status.ja.md))。ADR-0004が同じ形を提案しているが`Proposed`。
+- [x] `--specs=nano.specs`を既定にし、`%f`をメニューのopt-inにした(2026-10-01 にユーザーが承認、
+      メニューは`rtlib`: `nano` / `nanofp` / `nanofs` / `nanofps`。ADR-0004 の追記)。
       `printf`sketchが48 KB → 7.1 KB、**CH32V003にも載るようになった**。X035実機で
       `printf=none`(空)/`printf=float`(`1.50`)を確認([実験0014](experiments/0014-libgloss-semihosting-stubs.ja.md))
 - [ ] `[P1]` **`Serial.print(float)`はCH32V003で約9.4 KB**(2026-08-22実測)。
-      `menu.printf`とは別の話で、こちらはC++の`Print`側。
+      メニュー`rtlib`とは別の話で、こちらはC++の`Print`側。
       `Print::printFloat`が`double`を取り(ArduinoCore-API由来、ADR-0009で無改変)、
       rv32ecにFPUが無いのでsoft-float一式が丸ごと入る。
 
@@ -514,8 +514,7 @@ examplesを書いて2つ、`core.a`のシンボルとArduinoの契約を突き�
       事故は防げる。**2026-08-22時点では入れない判断**——逃げ道の設計
       (意図的に使いたいときにどう外すか)が要るため。
       [docs/flash-size.ja.md](flash-size.ja.md)の「検討したが入れていないもの」に記録済み
-- [ ] `[P1]` `menu.printf`の文言をdocumentへ。ADR-0004が求める
-      「nanoの`%f`非対応はArduino利用者の既知の落とし穴」の明示がまだREADMEに無い
+- [x] `rtlib`メニューの文言と「nanoの`%f`非対応」をREADMEに書いた(2026-10-01)
 - [ ] `[P1]` `__stack_size`の既定が512バイト。`printf`は簡単に超える。
       variantかmenuで変えられるようにする。現状は`_sbrk`が`_heap_end`で止めるだけで、
       stack自体のoverflow検出は無い

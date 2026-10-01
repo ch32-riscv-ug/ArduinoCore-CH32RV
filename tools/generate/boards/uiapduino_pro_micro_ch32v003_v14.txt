@@ -29,7 +29,11 @@ UIAPDUINO_V003_V14.monitor_port.oep.chip=CH32V003F4U6
 # platform-wide pnum option remain valid. It must not select a different SKU.
 UIAPDUINO_V003_V14.menu.pnum.ANY=CH32V003F4U6 (fixed on UIAPduino V1.4)
 
-UIAPDUINO_V003_V14.menu.printf.none=No float (smaller)
-UIAPDUINO_V003_V14.menu.printf.none.build.printf_flags=
-UIAPDUINO_V003_V14.menu.printf.float=%f supported (+~19 KB; does not fit most V003 sketches)
-UIAPDUINO_V003_V14.menu.printf.float.build.printf_flags=-Wl,-u,_printf_float
+UIAPDUINO_V003_V14.menu.rtlib.nano=Newlib Nano (default)
+UIAPDUINO_V003_V14.menu.rtlib.nano.build.rtlib_flags=
+UIAPDUINO_V003_V14.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB; too big for 16 KB parts)
+UIAPDUINO_V003_V14.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
+UIAPDUINO_V003_V14.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB parts)
+UIAPDUINO_V003_V14.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
+UIAPDUINO_V003_V14.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
+UIAPDUINO_V003_V14.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float

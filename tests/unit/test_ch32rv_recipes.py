@@ -52,9 +52,16 @@ def test_no_menu_entry_flashes_with_chip_auto():
     assert not auto, f"{len(auto)} entries flash with --chip auto, e.g. {auto[:3]}"
 
 
-def test_compile_only_boards_pass_their_series_name():
+def test_series_ch32rv_does_not_know_pass_their_series_name():
+    """Such a board's upload stops with ch32rv's target-not-in-db (exit 20) instead of guessing a chip."""
     boards = (REPO / "boards.txt").read_text(encoding="utf-8")
-    for board in re.findall(r"^(\w+)\.name=.*\[compile only\]$", boards, re.M):
+    chips_csv = (REPO / "tools/index/ch32rv_chips.csv").read_text(encoding="utf-8")
+    known = {line.split(",")[2] for line in chips_csv.splitlines()
+             if line and not line.startswith("#") and not line.startswith("ch32rv_version")}
+    unknown = [b for b in re.findall(r"^(\w+)\.name=Generic ", boards, re.M)
+               if re.search(rf"^{b}\.build\.series=(\S+)$", boards, re.M).group(1) not in known]
+    assert unknown, "every series is known to ch32rv: this test has nothing left to check"
+    for board in unknown:
         series = re.search(rf"^{board}\.build\.series=(\S+)$", boards, re.M).group(1)
         chips = set(re.findall(rf"^{board}\.menu\.pnum\.\w+\.build\.ch32rv_chip=(\S+)$", boards, re.M))
         assert chips == {series}, f"{board} passes {chips}, not its series name {series}"

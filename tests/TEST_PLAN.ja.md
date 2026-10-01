@@ -30,6 +30,7 @@
 |---|---|
 | `test_tests_layout.py` | この計画の規約そのもの（カテゴリ、接頭辞、conftest の唯一性、入口の一覧との一致） |
 | `test_board_layer.py` | board レイヤの定義権限（variant が `LED_BUILTIN` を定義しない、`requires:` が実在 capability を指す） |
+| `test_support_status.py` | docs/support-status.ja.md の系列ごとの状態が、ベンチファイル(実機で確認)・`ch32rv_chips.csv`(書き込み可)・`boards.txt`(系列の一覧)と一致し、ボード名に状態を入れていないこと |
 | `test_uiapduino_board.py` | UIAPduino V1.4 専用 board、HID upload recipe、pin 番号の互換 |
 | `test_ch32rv_recipes.py` | platform.txt が ch32rv に渡すコマンド行(upload / program / HID / discovery / monitor)の固定、`--chip auto` で書く entry が無いこと、[compile only] の板が系列名を渡すこと |
 | `test_version_macros.py` | platform.txt の `compiler.version_defines`(`CH32RV_VERSION_MAJOR/MINOR/PATCH`)が `version=` と一致し、系列名マクロが `CH32RV_SERIES_<series>` で渡ること |

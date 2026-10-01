@@ -1,6 +1,6 @@
 # ADR-0005: boardはfamily単位+pnumメニューとし、boards.txt/ld/variantはdevice-dataから生成する
 
-- Status: Proposed
+- Status: Proposed(board ID と書き込めない系列の表示は 2026-10-01 にユーザーが決定。下の追記)
 - Date: 2026-08-19
 - Related questions: Q-015, Q-011/Q-014(consumer形式の一部)。公開packager/表示名はQ-017で別途決定
 
@@ -18,8 +18,8 @@
 3. **`ANY`はそのseriesの最小flash/最小SRAM**を宣言する。型番を知らない利用者が選んでも、
    binaryは同series全部品に収まり、stack(RAM末尾)が必ず実在メモリ内に入る
 4. 型番の表示には**packageと容量を併記**する(例: `CH32X035C8T6 (LQFP48, 62K/20K)`)
-5. upload backendが無いseriesはboard名へ`[compile only]`を付ける。
-   現時点ではV205 / V407 / V467 / X305 / X315 / M030(probe-rsにtarget定義が無い)
+5. ~~upload backendが無いseriesはboard名へ`[compile only]`を付ける~~ 2026-10-01 に廃止(下の追記)。
+   ボード名に状態を入れず、対応状況は [docs/support-status.ja.md](../support-status.ja.md) に書く
 6. boards.txt / linker script / vector table / variantはすべて**device-dataから生成**する。
    手編集はCIが拒否し、locked commitで検証する
 7. 製品名のboard(`WeAct CH32X035 CoreBoard`等)は**別途追加する**。series boardと共存できる
@@ -56,6 +56,21 @@ architecture は `ch32v` から **`ch32rv`** に改めた(FQBN は `ch32-riscv-u
 同時に core 独自の接頭辞も `CH32_` / `ch32_` から `CH32RV_` / `ch32rv_` に、クラス名を `CH32RV…` に、
 チップの singleton を `CH32RV`(`<CH32RV.h>`)に揃えた。系列名(`CH32V003` など)と
 `ARDUINO_<board>` は変えていない。
+
+## 追記 (2026-10-01): board ID と、書き込めない系列の表示
+
+ユーザーが決めた。
+
+- **系列ボードの ID は系列名**(`CH32V003` → `ARDUINO_CH32V003`)で、型番のメニューで変えない。型番は
+  `CH32RV_PART_<part>`、系列は `CH32RV_SERIES_<series>` で別に渡す(b3f7f0c)。WCH 公式 core は型番ごとに
+  `build.board` を変える(`ARDUINO_CH32V003F4` など)が、この core は変えない
+- **製品ボードの ID は `<製品名>_<チップ>_<版>` を大文字で**(例 `UIAPDUINO_V003_V14`)。基板の版でピン配置が
+  変わりうるので版を入れる
+- **ボード名に `[compile only]` を付けない**。全系列のボードを入手する予定で(V205、V407、X315、M030 は
+  取り寄せ中)、名前は確かめるたびに変わるべきではない。どの系列・型番を確かめたかは
+  [docs/support-status.ja.md](../support-status.ja.md) に書き、`tests/unit/test_support_status.py` が
+  ベンチファイルと同梱 ch32rv の chip 一覧に照らして保つ。ch32rv がまだ知らない系列にも
+  `upload.protocol=ch32rv` を付け、書き込みは ch32rv の `target-not-in-db`(exit 20、probe を開く前)で止まる
 
 ## Validation
 

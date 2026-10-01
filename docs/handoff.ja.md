@@ -135,8 +135,8 @@ boardごとのSerial結線(TX/RX)は[tests/manual/README.ja.md](../tests/manual/
 `_sbrk`を別objectへ分離し、`HardwareSerial.h`が`pins_arduino.h`を自分でincludeするようにした。
 
 `--specs=nano.specs`を既定にする案も入れた(printfを使うsketchが48 KB → 7.1 KBになり、
-CH32V003(16 KB)にも載る。`%f`は`menu.printf`でopt-in)。ADR-0004が同じ形を提案しているが
-**同ADRは`Proposed`で、これは承認されていない**([承認状態 A-1](approval-status.ja.md))。
+CH32V003(16 KB)にも載る。`%f`はメニューでopt-in)。2026-10-01 にユーザーが承認し、メニューは
+`rtlib`(C Runtime Library、`nano` / `nanofp` / `nanofs` / `nanofps`)にした([ADR-0004](adr/0004-runtime-and-cxx.ja.md)の追記)。
 
 **テスト計画**([tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md))を作成し、
 `tests/hardware/` を `tests/manual/` へ集約、`chip_info.py`を追加。

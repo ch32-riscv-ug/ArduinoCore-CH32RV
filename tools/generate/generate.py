@@ -127,7 +127,9 @@ FAMILY = {
 # Whether a series can be flashed is not configured here: it follows from
 # whether ch32rv has a name for it (tools/index/ch32rv_chips.csv).
 # Series it does not cover are still built - they guard the core against
-# ISA/CSR regressions - and are labelled "[compile only]" in the menu.
+# ISA/CSR regressions - and are listed like any other board (no "[compile
+# only]" in the name since 2026-10-01: the boards are on order, and which
+# series are verified lives in docs/support-status, not in board names).
 SERIES_CONFIG = {
     "CH32V003": dict(family="CH32V003", vectors="v003"),
     "CH32V002": dict(family="CH32V006", vectors="v00x"),
@@ -166,18 +168,35 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = "menu.pnum=Part Number\nmenu.printf=printf() float support\n"
+MENU_HEADER = "menu.pnum=Part Number\nmenu.rtlib=C Runtime Library\n"
 
-# printf float support as a menu entry. PROPOSED, NOT APPROVED - see
-# docs/approval-status.ja.md A-1. ADR-0004 proposes this shape but is still
-# Proposed. The measurement behind it: on CH32X035 a printf sketch is 48,492
-# bytes with the full newlib formatter and 7,064 with nano, and CH32V003 has
-# only 16 KB of flash. Both entries are emitted for every board because the
-# choice is per-sketch, not per-part.
-PRINTF_MENU = (
-    ("none", "No float (smaller)", ""),
-    ("float", "%f supported (+~19 KB)", "-Wl,-u,_printf_float"),
+# newlib-nano always; floating point in printf / scanf is opt-in (ADR-0004,
+# approved 2026-10-01). The menu id and entry ids are the ones the WCH core,
+# ch32-riscv-arduino and STM32duino use for the same choice, so an FQBN or a
+# habit carries over. On CH32X035 a printf sketch is 48,492 bytes with the full
+# newlib formatter and 7,064 with nano; the float costs below were measured on
+# CH32X035 with one sscanf("%f") + snprintf("%f") sketch (2026-10-01: 10,092
+# bytes plain). Every board gets every entry: the choice is per sketch.
+RTLIB_MENU = (
+    ("nano", "Newlib Nano (default)", "", 0),
+    ("nanofp", "Newlib Nano + Float Printf", "-Wl,-u,_printf_float", 21),
+    ("nanofs", "Newlib Nano + Float Scanf", "-Wl,-u,_scanf_float", 24),
+    ("nanofps", "Newlib Nano + Float Printf/Scanf",
+     "-Wl,-u,_printf_float -Wl,-u,_scanf_float", 31),
 )
+
+
+def rtlib_menu(board: str, min_flash: int) -> list[str]:
+    """The C runtime menu for one board. A float entry says what it costs, and
+    on a board with a 16 KB part it says that part cannot take it."""
+    lines = []
+    for key, label, flags, kb_cost in RTLIB_MENU:
+        if kb_cost:
+            label += f" (+~{kb_cost} KB"
+            label += "; too big for 16 KB parts)" if min_flash <= 16 * 1024 else ")"
+        lines.append(f"{board}.menu.rtlib.{key}={label}")
+        lines.append(f"{board}.menu.rtlib.{key}.build.rtlib_flags={flags}")
+    return lines
 
 
 # The baud rate the serial monitor opens with. Every sketch and example in this
@@ -1643,8 +1662,7 @@ def ch32rv_chip(part: str, series: str, ordered_parts: list, vocab: tuple):
 
     None means ch32rv's database has no name for the series (as of ch32rv
     0.8.0 exactly the seven unreleased series V205/V407/V467/X305/X315/M030/
-    M103): the board is labelled "[compile only]" and its menu entries get the
-    SERIES name as --chip. ch32rv does not know it, so an upload attempted
+    M103): its menu entries get the SERIES name as --chip. ch32rv does not know it, so an upload attempted
     anyway stops with `target-not-in-db` (exit 20) before writing anything,
     and starts working the day a ch32rv that knows the chip is bundled.
 
@@ -2566,11 +2584,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
                                        r["part_number"]))
     board = series
     ordered = [r["part_number"] for r in rows]
-    # "[compile only]" now follows the bundled uploader, which is ch32rv.
-    flashable = ch32rv_chip("ANY", series, ordered, ch32rv) is not None
-    suffix = "" if flashable else " [compile only]"
-
-    lines = [f"{board}.name=Generic {series}{suffix}"]
+    lines = [f"{board}.name=Generic {series}"]
     lines.append(f"{board}.build.board={board}")
     lines.append(f"{board}.build.part=ANY")
     lines.append(f"{board}.build.core=arduino")
@@ -2580,9 +2594,11 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines.append(f"{board}.monitor_port.serial.baudrate={MONITOR_BAUD}")
     # A bare `upload -p <port>` (the IDE's Upload button) needs a protocol, or
     # arduino-cli asks for a programmer; platform.txt then picks the tool by the
-    # port's protocol (upload.tool.serial / wchlink / oep / hid).
-    if flashable:
-        lines.append(f"{board}.upload.protocol=ch32rv")
+    # port's protocol (upload.tool.serial / wchlink / oep / hid). Every board,
+    # including a series ch32rv does not know yet: the upload then stops with
+    # ch32rv's own `target-not-in-db` (exit 20, before the probe is opened)
+    # instead of arduino-cli asking for a programmer.
+    lines.append(f"{board}.upload.protocol=ch32rv")
     lines.append(f"{board}.build.variant={board}")
     lines.append(f"{board}.build.march={fam['march']}")
     lines.append(f"{board}.build.mabi={fam['mabi']}")
@@ -2690,9 +2706,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
                 lines.append(f"{pfx}.build.clock_defines={part_clock}")
         lines.append("")
 
-    for key, label, flags in PRINTF_MENU:
-        lines.append(f"{board}.menu.printf.{key}={label}")
-        lines.append(f"{board}.menu.printf.{key}.build.printf_flags={flags}")
+    lines += rtlib_menu(board, min_flash)
     lines.append("")
 
     return "\n".join(lines), ld_files

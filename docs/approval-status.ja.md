@@ -24,9 +24,8 @@
 
 | # | 内容 | 実装場所 | 実測 | 未決の論点 | 承認 |
 |---|---|---|---|---|:--:|
-| A-1 | **`--specs=nano.specs`を既定にし、`%f`を`menu.printf`のopt-inにする** | `platform.txt`、`boards.txt`(生成) | printf sketchが48,492→7,064 byte(X035)。CH32V003(16K)にも載るようになる。X035実機で`none`/`float`両方確認 | [ADR-0004](adr/0004-runtime-and-cxx.ja.md)は**`Proposed`**。同ADRはnano既定と`%f` opt-inを提案しているが承認されていない。menuの文言、`-u _printf_float`かmenuかの選択、size baselineへの影響 | ⬜ |
 | A-3 | **検証boardをTier A/B/C/Dへ絞る** | [tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | ハードウェア差分6軸を数え、Tier A+BでISA以外の全軸を踏むことを確認 | Q-001(対象boardの確定)が未決。どのboardを常時接続にするかは所有実機と運用の問題で、私が決められない | ⬜ |
-| A-4 | **`smoke.py`/`uart_scan.py`の`--board`を省略可能にし、probe-rsの検出結果を既定にする** | `tests/manual/smoke/smoke.py`、`uart_scan.py` | X035実機で自動判定・明示一致・明示不一致(exit 1)・`--pnum detect`の4経路を確認 | 既定の挙動変更。`[compile only]`のseriesは検出できないため`--board`必須のまま。CIでどちらを使うか未決 | ⬜ |
+| A-4 | **`smoke.py`/`uart_scan.py`の`--board`を省略可能にし、probe-rsの検出結果を既定にする** | `tests/manual/smoke/smoke.py`、`uart_scan.py` | X035実機で自動判定・明示一致・明示不一致(exit 1)・`--pnum detect`の4経路を確認 | 既定の挙動変更。同梱の ch32rv が知らない系列は検出できないため`--board`必須のまま。CIでどちらを使うか未決 | ⬜ |
 | A-6 | **32 bitタイマのレジスタ幅をvariantが宣言し、`ATRLR`を幅に応じて書き分ける** | `tools/generate/generate.py`(`WIDE_TIMERS`)、`cores/arduino/ch32rv_registers.h`、`wiring_tone.cpp`、`libraries/Servo/src/Servo.cpp` | CH32L103実機。修正前はTIM4が`cnt_high_5ms=65517`/割り込み0、修正後は`7994`/5 ms 5回。`tone_selftest` 9/9 pass、L103全体12/12 pass。16 bit側(V103)に退行が無いことも実機で確認 | **バグ修正そのものより、事実の置き場所が未決。** どのfamilyが32 bitタイマを持つかを`generate.py`へ手書きしている(device-dataに機械可読な表がまだ無いため)。上流に表を作ってもらってデータ由来にするか、手書きのまま`UNUSABLE_PADS`と同じ扱いにするか。また`CH32X035`の`CHnCVR`だけがunionになっている件(PWM duty)は未確認 | ⬜ |
 | A-7 | **一対多のpad解決を可視化する**(挙動は不変) | `tools/generate/generate.py`(`load_pin_routes`の`alts`、`gen_pins`の`alternatives()`、`main()`の要約) | `b1285de`で**193組**(af-N 183 / default 10 / remap-N 0)を検出。`--check`はコメント追加のみで6 variant、pinの値は1つも動かない | 可視化に加えて**選び方も実装済み**(①strap/debug除外はpart単位・既定のみ、②全part一致優先は2026-08-25にmaintainerが承認)。**同点の表順依存だけが残る**——上流のpreferred印待ち | ⬜ |
 | A-8 | **USBPDライブラリ(sink)のAPIの形とフレームロジック** | `libraries/USBPD/`(`pd_frames.c/h`、`USBPD.h/cpp`、example、README×2、keywords)、`tests/unit/test_pd_frames.py`、`tests/sketches/basic/pd_selftest/` | host 14 test + 実機18 check(CH32V103、failures=0)。V003(31%)/X035にcompile可。examplesの全compileも緑 | API命名(`USBPD`インスタンス、`request`/`requestProfile`/`maintain`)と設計判断(固定優先・丸めない・battery/variable列挙のみ)は**私の提案**で未承認。ハードウェアドライバ未実装(`begin()`はfalse)。変異体のdefine生成は155c398取り込み待ち | ⬜ |
@@ -38,6 +37,7 @@
 
 | # | 内容 | 承認 | 日付 |
 |---|---|---|---|
+| A-1 | **`--specs=nano.specs`を既定にし、printf / scanf の`%f`をメニューのopt-inにする**。メニューは他の CH32 core と同じ`rtlib`(`nano` / `nanofp` / `nanofs` / `nanofps`) | ユーザーが承認([ADR-0004](adr/0004-runtime-and-cxx.ja.md)の追記) | 2026-10-01 |
 | A-5 | **probe-rsを[`mirror-probe-rs`](https://github.com/ch32-riscv-ug/mirror-probe-rs)経由で参照する** | [ADR-0011](adr/0011-tool-mirror-repository.ja.md) `Accepted`。releaseを公開し、そこからのclean installが通ることを確認したうえでmaintainerが承認 | 2026-08-20 |
 
 ## 却下されたもの

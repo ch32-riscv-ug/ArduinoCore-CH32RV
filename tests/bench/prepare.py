@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["oep-client-python>=0.0.21", "libusb1>=3", "pyusb>=1.2"]
+# dependencies = ["oep-client-python>=0.0.22", "libusb1>=3", "pyusb>=1.2"]
 # ///
 """Bring a bench's probe to the state its bench file describes, or check that it is there.
 
@@ -144,18 +144,22 @@ def flash_dfu(bench: benchdef.Bench, work: pathlib.Path) -> None:
     if digest != entry["sha256"]:
         raise SystemExit(f"{entry['file']}: sha256 {digest} is not the release's {entry['sha256']}")
     # DFU writes the other app slot and leaves the settings; erase them here so step 2 starts clean, as the
-    # whole-flash erase of the usj route does.
-    hst, close = benchdef.open_probe(bench, None)
+    # whole-flash erase of the usj route does. Best effort: the firmware being replaced may speak an older wire
+    # than this client (0.0.21 -> 0.0.22), and step 2 erases again on the new firmware anyway.
     try:
-        from oep_client import config
-        hst.open(lease_ms=10000, owner="prepare")
-        log("erasing the stored settings")
-        cfg = config.ProbeConfig(hst)
-        cfg.erase()
-        cfg.save()
-        hst.end()
-    finally:
-        close()
+        hst, close = benchdef.open_probe(bench, None)
+        try:
+            from oep_client import config
+            hst.open(lease_ms=10000, owner="prepare")
+            log("erasing the stored settings")
+            cfg = config.ProbeConfig(hst)
+            cfg.erase()
+            cfg.save()
+            hst.end()
+        finally:
+            close()
+    except Exception as e:   # noqa: BLE001 - see above
+        log(f"could not erase the old firmware's settings ({e}); step 2 erases them on the new one")
     log(f"sending {entry['file']} ({len(image)} bytes) over DFU to {bench.probe_serial}")
     try:
         dfu.download(bench.probe_serial, image, log)

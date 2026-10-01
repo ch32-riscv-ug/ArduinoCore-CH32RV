@@ -236,6 +236,6 @@ arduino-esp32 の `pins_arduino.h` に倣い、スケッチ向けの名前は次
 - common padの数は V002の5個 から X305の53個まで
 - common padには**debug/strap padが混ざる**: V002のPD1(SWDIO)、V203/V305のPA13/PA14
   (SWDIO/SWCLK)、X035のPC16/PC17(USB DP/DM)
-- **V205 / X305 / X315 は common PWM pad がゼロ**。3つとも `[compile only]`
+- **V205 / X305 / X315 は common PWM pad がゼロ**。3つとも同梱の ch32rv ではまだ書き込めない([対応状況](support-status.ja.md)の「ビルドのみ」)
 - `analogWrite()`は非PWM padでdigitalWriteにフォールバックする
   (`cores/arduino/wiring_pwm.c:139`)

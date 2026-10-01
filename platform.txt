@@ -42,8 +42,9 @@ compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO
 compiler.version_defines=-DCH32RV_VERSION_MAJOR=0 -DCH32RV_VERSION_MINOR=1 -DCH32RV_VERSION_PATCH=0
 
 build.extra_flags=
-# Chosen by the printf menu in boards.txt; empty for the default entry.
-build.printf_flags=
+# Chosen by the C Runtime Library menu (rtlib) in boards.txt: the float
+# formatters newlib-nano leaves out. Empty for the default entry.
+build.rtlib_flags=
 
 # compiler.<lang>.extra_flags is where arduino-cli injects a sketch's
 # build_opt.h (as @<path>), and where boards.local.txt or --build-property put
@@ -76,7 +77,7 @@ recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "
 # (Blink stays 932 bytes on CH32X035).
 # --no-warn-rwx-segments: .init_array (writable) shares the single FLASH segment with
 # text; acceptable for MCU flash layout. Revisit with PHDRS in the real core.
-recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -nostartfiles --specs=nano.specs {build.printf_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" {object_files} -Wl,--start-group "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
+recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -nostartfiles --specs=nano.specs {build.rtlib_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" {object_files} -Wl,--start-group "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
 recipe.objcopy.hex.pattern="{compiler.path}{compiler.objcopy.cmd}" -O ihex "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
 recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
 
@@ -93,10 +94,11 @@ recipe.size.regex.data=^(?:\.data|\.bss)\s+([0-9]+).*
 # {build.ch32rv_chip} is generated per menu entry from
 # tools/index/ch32rv_chips.csv: the exact part where ch32rv knows it, the
 # family name otherwise, and the series name for a series ch32rv has no name
-# for - that board is labelled "[compile only]", and an upload attempted anyway
-# stops with ch32rv's `target-not-in-db` (exit 20) before writing. Never `auto`
-# here: that detects whatever is attached and writes to it. See ch32rv_chip()
-# in tools/generate/generate.py.
+# for - such a board is listed like any other (docs/support-status.ja.md says
+# which series are flashable), and an upload attempted anyway stops with
+# ch32rv's `target-not-in-db` (exit 20) before writing. Never `auto` here: that
+# detects whatever is attached and writes to it. See ch32rv_chip() in
+# tools/generate/generate.py.
 tools.ch32rv.path={runtime.tools.ch32rv.path}
 tools.ch32rv.cmd=ch32rv
 tools.ch32rv.cmd.windows=ch32rv.exe

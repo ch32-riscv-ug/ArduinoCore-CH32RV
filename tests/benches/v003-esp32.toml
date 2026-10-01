@@ -13,15 +13,15 @@
 kind = "oep"
 transport = "serial"                         # the OEP link is the probe's serial port (the oep:// address's probe part elsewhere)
 model = "esp32"                              # oep.core describe: model
-firmware = "0.0.21"                           # oep.core describe: firmware = the oep-probe-arduino release version
-release = "v0.0.21"                           # oep-probe-arduino tag prepare.py flashes
+firmware = "0.0.22"                           # oep.core describe: firmware = the oep-probe-arduino release version
+release = "v0.0.22"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag
 sketch_profile = "esp32"                     # its sketch.yaml profile for this probe
 erase = "all"
 
 [dut]
 board = "CH32V003"                           # the profile
-part = "CH32V003F4P6"                        # UIAPduino Pro Micro V1.4; recorded, not enforced
+part = "CH32V003F4U6"                        # UIAPduino Pro Micro V1.4 (QFN20); recorded, not enforced
 console = "dmseq"
 
 [uart]                                       # USART1 route 0, the variant's default Serial: PD5 (TX) -> 22, PD6 (RX) <- 21
