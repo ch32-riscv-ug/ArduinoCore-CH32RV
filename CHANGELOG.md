@@ -1,6 +1,8 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+
+## 0.1.0
 - (EN) **The repository is now ArduinoCore-CH32RV, and the Boards Manager URL is `https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json`** (the old Pages URL no longer serves). The platform shows as "CH32 RISC-V (ArduinoCore-CH32RV)"; its archive is `ArduinoCore-CH32RV-<version>.tar.bz2`.
 - (JA) **リポジトリを ArduinoCore-CH32RV にし、Boards Manager の URL を `https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json` にした**(旧 Pages の URL は配信されない)。Board Manager での表示名は「CH32 RISC-V (ArduinoCore-CH32RV)」、アーカイブは `ArduinoCore-CH32RV-<version>.tar.bz2`。
 - (EN) **Breaking: the series macro is `CH32RV_SERIES_<series>`** (e.g. `CH32RV_SERIES_CH32V003`) instead of a bare `CH32V003`, which other cores and the vendor SDKs test with their own meaning.
