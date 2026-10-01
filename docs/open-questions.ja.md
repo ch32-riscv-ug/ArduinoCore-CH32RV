@@ -23,7 +23,6 @@
 | Q-013 | P1 | 内部HAL contractをどこまで設けるか | digital/time/Serial/SPI/I2Cの2 family実装比較 |
 | Q-014 | P1 | `ch32-device-data`のrelease/commitをArduinoへ固定する形式 | offline build prototype、hash検証、生成差分、更新手順 |
 | Q-016 | P0 | host contract testを何で実行するか | host-arduino-core固定利用、内部HAL mock、native unitの比較 |
-| Q-017 | P2 | 公開用FQBN、packager ID、architecture ID | Arduino package互換性、既存公式coreとの衝突確認、暫定IDからの移行 |
 | Q-019 | P1 | コア拡張API(`Serial.printf()`等)をどこに置くか | 下記の選択肢比較。`api/`改変の可否がADR-0009のbyte一致検証の形を変える |
 
 ### Q-019の選択肢(未決定)
@@ -111,7 +110,7 @@
 |---|---|
 | Q-018 | device databaseの正本を独立`ch32-device-data` repositoryに置く。[ADR-0001](adr/0001-device-data-repository.ja.md)。releaseとconsumer lock形式はQ-014で継続する |
 | Q-012 | startup/vector/linkerはowned実装。共通crt0+family別vector include(将来device-data生成)。[ADR-0003](adr/0003-owned-startup-vector-linker.ja.md) |
-| Q-015 | 開発用暫定ID: packager=`ch32-riscv-ug`、architecture=`ch32rv`(2026-10-01 に `ch32v` から変更。openwch / UIAP と重なるため)。boardはfamily単位+pnum全型番。[ADR-0005](adr/0005-board-structure-and-fqbn.ja.md) |
+| Q-015 / Q-017 | **確定**(ユーザー判断、2026-10-01): packager=`ch32-riscv-ug`、architecture=`ch32rv`(`ch32v` から変更。openwch / UIAP と重なるため)。boardはfamily単位+pnum全型番。[ADR-0005](adr/0005-board-structure-and-fqbn.ja.md) |
 | Q-020 | xPack riscv-none-elf-gccのGitHub Releases直リンク参照。認定候補14.3.0-1。ch32fun比較はrelease前validationとして残る。[ADR-0002](adr/0002-toolchain-distribution.ja.md) |
 | Q-022 | default=newlib-nano。printf `%f`はmenu opt-in。ltoa/ultoa/dtostrfはcore提供。[ADR-0004](adr/0004-runtime-and-cxx.ja.md) |
 | Q-023 | GNU++17(+-fno-exceptions/-fno-rtti/-fno-threadsafe-statics)。サイズ差ゼロを実測確認。[ADR-0004](adr/0004-runtime-and-cxx.ja.md) |

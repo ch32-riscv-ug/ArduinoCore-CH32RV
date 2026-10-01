@@ -32,6 +32,7 @@
 | `test_board_layer.py` | board レイヤの定義権限（variant が `LED_BUILTIN` を定義しない、`requires:` が実在 capability を指す） |
 | `test_uiapduino_board.py` | UIAPduino V1.4 専用 board、HID upload recipe、pin 番号の互換 |
 | `test_ch32rv_recipes.py` | platform.txt が ch32rv に渡すコマンド行(upload / program / HID / discovery / monitor)の固定、`--chip auto` で書く entry が無いこと、[compile only] の板が系列名を渡すこと |
+| `test_version_macros.py` | platform.txt の `compiler.version_defines`(`CH32RV_VERSION_MAJOR/MINOR/PATCH`)が `version=` と一致し、系列名マクロが `CH32RV_SERIES_<series>` で渡ること |
 | `test_peripheral_table.py` | `docs/peripheral-support.ja.md` の○が device-data の clock enable と矛盾しない |
 | `test_startup_parameters.py` | startup harness の march / mabi / startup 定義が boards.txt の生成値と一致 |
 | `test_adc_instances.py` | ADC instance を持つ variant で pad と channel が揃う |

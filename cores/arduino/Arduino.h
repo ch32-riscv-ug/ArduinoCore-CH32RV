@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 #include "ch32rv_pins.h"
+#include "ch32rv_version.h"
 
 #ifdef __cplusplus
 #include "api/ArduinoAPI.h"

@@ -30,9 +30,16 @@ compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_de
 compiler.vector_defines=-DCH32RV_IRQNS=irqn_{build.vector_variant}.h -DCH32RV_EXTIS=exti_{build.vector_variant}.h -DCH32RV_CLOCK_INIT={build.clock_init}
 # ARDUINO_{build.board} names the board and stays the same whichever part
 # number the menu picks, as on arduino-esp32 (its chip-variant menu does not
-# change ARDUINO_ESP32_DEV either). The part is CH32RV_PART_{build.part}:
+# change ARDUINO_ESP32_DEV either). The series is CH32RV_SERIES_{build.series}
+# (CH32RV_SERIES_CH32V003) - prefixed, since a bare CH32V003 is what other
+# cores and the vendor SDKs test - and the part CH32RV_PART_{build.part}:
 # CH32RV_PART_CH32V003F4U6, or CH32RV_PART_ANY for the ANY entry.
-compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_ARCH_{build.arch} -D{build.series} -DCH32RV_PART_{build.part}
+compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_ARCH_{build.arch} -DCH32RV_SERIES_{build.series} -DCH32RV_PART_{build.part} {compiler.version_defines}
+# The platform version as numbers, for `#if CH32RV_VERSION >= CH32RV_VERSION_VAL(0, 1, 0)`
+# (cores/arduino/ch32rv_version.h). Written from `version=` above by
+# tools/index/gen_index.py, which the release workflow runs before it commits
+# platform.txt back; tests/unit/test_version_macros.py keeps the two equal.
+compiler.version_defines=-DCH32RV_VERSION_MAJOR=0 -DCH32RV_VERSION_MINOR=0 -DCH32RV_VERSION_PATCH=5
 
 build.extra_flags=
 # Chosen by the printf menu in boards.txt; empty for the default entry.

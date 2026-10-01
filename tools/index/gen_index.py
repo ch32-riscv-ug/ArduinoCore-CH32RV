@@ -123,6 +123,32 @@ def merge_previous(index: dict, previous: pathlib.Path) -> dict:
     return index
 
 
+VERSION_DEFINES_KEY = "compiler.version_defines="
+
+
+def sync_version_defines(platform_dir: pathlib.Path, version: str) -> bool:
+    """Write platform.txt's compiler.version_defines from its version= line.
+
+    The release workflow sets version= (bump_version.py), runs this script, then
+    commits platform.txt back, so writing the line in the source tree here is
+    what keeps CH32RV_VERSION_MAJOR/MINOR/PATCH right in both the archive and
+    main. Between releases the two already agree (tests/unit/test_version_macros.py)
+    and this changes nothing. True when the file was rewritten."""
+    major, minor, patch = (int(x) for x in version.split("."))
+    want = (f"{VERSION_DEFINES_KEY}-DCH32RV_VERSION_MAJOR={major} "
+            f"-DCH32RV_VERSION_MINOR={minor} -DCH32RV_VERSION_PATCH={patch}")
+    path = platform_dir / "platform.txt"
+    lines = path.read_text(encoding="utf-8").splitlines()
+    hits = [i for i, line in enumerate(lines) if line.startswith(VERSION_DEFINES_KEY)]
+    if len(hits) != 1:
+        raise SystemExit(f"platform.txt: expected exactly one '{VERSION_DEFINES_KEY}' line")
+    if lines[hits[0]] == want:
+        return False
+    lines[hits[0]] = want
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return True
+
+
 def build_archive(platform_dir: pathlib.Path, out: pathlib.Path, version: str) -> pathlib.Path:
     root = f"ArduinoCore-CH32-{ARCH}-{version}"
     archive = out / f"{root}.tar.bz2"
@@ -170,6 +196,8 @@ def main(argv=None) -> None:
         raise SystemExit(f"--version {args.version} does not match platform.txt "
                          f"version={declared}; bump platform.txt instead")
     args.version = declared
+    if sync_version_defines(args.platform, args.version):
+        print(f"platform.txt: compiler.version_defines set for {args.version}")
 
     args.out.mkdir(parents=True, exist_ok=True)
     archive = build_archive(args.platform, args.out, args.version)

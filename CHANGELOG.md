@@ -1,6 +1,10 @@
 # Changelog / 変更履歴
 
 ## Unreleased
+- (EN) **Breaking: the series macro is `CH32RV_SERIES_<series>`** (e.g. `CH32RV_SERIES_CH32V003`) instead of a bare `CH32V003`, which other cores and the vendor SDKs test with their own meaning.
+- (JA) **破壊的変更: 系列名のマクロを `CH32RV_SERIES_<series>`(例 `CH32RV_SERIES_CH32V003`)にした。** 以前の接頭辞なしの `CH32V003` は、他の core や vendor SDK が別の意味で分岐に使う名前と重なる。
+- (EN) The platform version as macros, the way arduino-esp32 has them: `CH32RV_VERSION_MAJOR` / `_MINOR` / `_PATCH`, `CH32RV_VERSION`, `CH32RV_VERSION_VAL(major, minor, patch)` and `CH32RV_VERSION_STR`, so a library can write `#if CH32RV_VERSION >= CH32RV_VERSION_VAL(0, 1, 0)`.
+- (JA) arduino-esp32 と同じ形の版番号マクロを足した: `CH32RV_VERSION_MAJOR` / `_MINOR` / `_PATCH`、`CH32RV_VERSION`、`CH32RV_VERSION_VAL(major, minor, patch)`、`CH32RV_VERSION_STR`。ライブラリが `#if CH32RV_VERSION >= CH32RV_VERSION_VAL(0, 1, 0)` と書ける。
 - (EN) `analogWrite()` reaches the pads where a timer channel shares its pin with that timer's external trigger (TIM2 CH1 on PA0 of CH32L103 / M103, PD4 of CH32V002-V007 / M007, PA5 of CH32M030); they were missed before. Checked on the V006 PD4 and the L103 PA0.
 - (JA) タイマのチャネルが ETR と pad を共有している箇所でも `analogWrite()` が効くようにした(CH32L103 / M103 の PA0、CH32V002〜V007 / M007 の PD4、CH32M030 の PA5 の TIM2 CH1)。以前は拾えていなかった。V006 の PD4 と L103 の PA0 で確認。
 - (EN) The bundled ch32rv is now 0.14.0 (JSON contract 4): SerialRTT is readable through an OEP probe too (`ch32rv monitor --source rtt`, and the IDE monitor's `source` setting), and choosing `uart` on an OEP probe's port says the source is not there (exit 24) instead of "no probe matched". The udev rules are unchanged.

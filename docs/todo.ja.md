@@ -15,6 +15,10 @@
 
 ## リリースまでの残作業（2026-09-22 時点の棚卸し、2026-09-24 更新、core 側）
 
+- [ ] `[P1]` **公開済みの architecture `ch32v`(0.0.1〜0.0.5)を package index から消す**(ユーザー判断、2026-10-01:
+      古い版は後で消す)。次のreleaseから `ch32rv` が別 platform として並ぶ。gen_index.py の `--merge` は
+      (architecture, version) で古い entry を引き継ぐので、消すときはそこで `ch32v` を落とす
+
 OEP probe で X035F8U6（P4 fixture）と V003（UIAPduino、classic ESP32 ジグ）の P3 表（GPIO / UART / ADC / PWM・tone / 時刻 / I2C / SPI / route /
 reset）は配線のある範囲で全部実測済み。今の機材でこれ以上進まないものと、判断・作業が残るものを分ける。
 
