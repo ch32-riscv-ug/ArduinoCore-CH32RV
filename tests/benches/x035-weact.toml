@@ -70,10 +70,10 @@ PC15 = 50
 
 [facts]
 adc = ["PA0", "PA1", "PA2", "PA3", "PA4", "PA5", "PA6", "PA7"]
-adc_absent = ["PA3", "PA7"]                  # errata x035-adc-ch-i2c-unavailable on this part
+adc_absent = []                              # ch3 / ch7 and VREFINT work on this unit (no x035-adc-ch-i2c-unavailable lot), measured 2026-10-02
 adc_high_min = 960                           # probe rail == DUT VDD (the DUT runs from the probe's 3V3)
 external_pullup = []
-slow_release = ["PA1", "PA2", "PA6"]         # probe channels 14 / 13 / 9 are P4 SD-card pads: they release slowly
+slow_release = ["PB3", "PB11", "PB12"]       # probe channels 2 / 54 / 53 release slowly after driving high (measured 2026-10-02)
 pulled_low = ["PC14", "PC15"]                # CC1 / CC2: the part and the board's Rd hold them low
 capture_max_hz = 20000000
 spi = { sck = "PA5", mosi = "PA7", miso = "PA6", cs = "PA4", pclk_hz = 48000000 }
