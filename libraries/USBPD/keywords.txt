@@ -16,6 +16,8 @@ requestProfile	KEYWORD2
 voltage	KEYWORD2
 current	KEYWORD2
 maintain	KEYWORD2
+contractProfile	KEYWORD2
+pps	KEYWORD2
 pd_supply_name	KEYWORD2
 
 PD_SUPPLY_FIXED	LITERAL1

@@ -65,8 +65,6 @@ PB1 = 3
 PB3 = 2
 PB11 = 54
 PB12 = 53
-PC14 = 52
-PC15 = 50
 
 [facts]
 adc = ["PA0", "PA1", "PA2", "PA3", "PA4", "PA5", "PA6", "PA7"]
@@ -74,7 +72,10 @@ adc_absent = []                              # ch3 / ch7 and VREFINT work on thi
 adc_high_min = 960                           # probe rail == DUT VDD (the DUT runs from the probe's 3V3)
 external_pullup = []
 slow_release = ["PB3", "PB11", "PB12"]       # probe channels 2 / 54 / 53 release slowly after driving high (measured 2026-10-02)
-pulled_low = ["PC14", "PC15"]                # CC1 / CC2: the part and the board's Rd hold them low
+pulled_low = []
+# A USB PD charger on the board's USB-C (CC1 / CC2 are not wired to the probe: a lead that long
+# loads CC enough that no message decodes). What it offers is read from the charger, not declared here.
+pd_source = true
 capture_max_hz = 20000000
 spi = { sck = "PA5", mosi = "PA7", miso = "PA6", cs = "PA4", pclk_hz = 48000000 }
 pwm = "PA1"

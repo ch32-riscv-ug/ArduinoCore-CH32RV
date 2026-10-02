@@ -19,7 +19,7 @@ Directories are cut by what a check **needs**, so each maps to one way of runnin
 `pytest` never flashes a board. `pytest bench` checks the probe against its bench file first and refuses
 the run (with the `bench/prepare.py` command to fix it) when they differ.
 
-The bench cases: `basic/` (the fourteen self-checking sketches), `trace/` (waveforms recorded and checked
+The bench cases: `basic/` (the fourteen self-checking sketches, and `pd_sink`, which negotiates with a real USB PD charger on a bench whose file says `facts.pd_source`; `TEST_PD_METER` adds a rough VBUS reading from an XY-FZ25), `trace/` (waveforms recorded and checked
 through WireSkein: periph_probe, gpio_probe, adc_probe, reset_probe, i2c_probe, uart_probe),
 `startup/crt0_probe` (the probe fills RAM and resets) and `regs/reg_probe` (registers read through the
 probe against device-data; needs oep-probe-arduino 0.0.7 or later). Tests ask the bench file by

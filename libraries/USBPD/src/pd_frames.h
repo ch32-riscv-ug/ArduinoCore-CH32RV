@@ -73,14 +73,22 @@ typedef struct {
 
 /* Control messages (no data objects). */
 #define PD_CTRL_GOODCRC         0x01u
+#define PD_CTRL_GOTOMIN         0x02u
 #define PD_CTRL_ACCEPT          0x03u
 #define PD_CTRL_REJECT          0x04u
+#define PD_CTRL_PING            0x05u
 #define PD_CTRL_PS_RDY          0x06u
 #define PD_CTRL_GET_SOURCE_CAP  0x07u
+#define PD_CTRL_GET_SINK_CAP    0x08u
+#define PD_CTRL_WAIT            0x0Cu
 #define PD_CTRL_SOFT_RESET      0x0Du
+#define PD_CTRL_NOT_SUPPORTED   0x10u    /* PD 3.0 */
 /* Data messages (count > 0). */
 #define PD_DATA_SOURCE_CAP      0x01u
 #define PD_DATA_REQUEST         0x02u
+#define PD_DATA_BIST            0x03u
+#define PD_DATA_SINK_CAP        0x04u
+#define PD_DATA_ALERT           0x06u    /* PD 3.0 */
 #define PD_DATA_VENDOR_DEFINED  0x0Fu
 /* Values of the spec-revision field (B7..6). */
 #define PD_REV_2_0              0x01u
@@ -134,6 +142,13 @@ uint32_t pd_request_pps(uint8_t position, uint16_t out_mv,
  * voltage outside a PPS range). */
 uint32_t pd_request_for(const pd_caps_t *caps, int index,
                         uint16_t want_mv, uint16_t want_ma);
+
+/* One fixed-supply Sink PDO, for the Sink_Capabilities a source may ask for
+ * (Get_Sink_Cap is mandatory to answer). B19..10 voltage in 50 mV, B9..0
+ * operational current in 10 mA; `flags` carries the B29..23 bits as-is
+ * (none for a plain sink: no dual role, no USB data, no fast role swap). */
+uint32_t pd_sink_pdo_fixed(uint16_t mv, uint16_t ma, uint32_t flags);
+#define PD_SINK_HIGHER_CAPABILITY (1ul << 28)   /* needs more than vSafe5V for full function */
 
 /* "Fixed" / "PPS" / "Battery" / "Variable" / "?" - for listings. */
 const char *pd_supply_name(uint8_t kind);

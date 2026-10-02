@@ -50,7 +50,7 @@ def lib(tmp_path_factory):
     lib = ctypes.CDLL(str(out))
     lib.pd_header.restype = ctypes.c_uint16
     lib.pd_pick.restype = ctypes.c_int
-    for f in ("pd_request_fixed", "pd_request_pps", "pd_request_for"):
+    for f in ("pd_request_fixed", "pd_request_pps", "pd_request_for", "pd_sink_pdo_fixed"):
         getattr(lib, f).restype = ctypes.c_uint32
     lib.pd_supply_name.restype = ctypes.c_char_p
     return lib
@@ -227,3 +227,11 @@ def test_supply_names(lib):
     assert lib.pd_supply_name(FIXED) == b"Fixed"
     assert lib.pd_supply_name(PPS) == b"PPS"
     assert lib.pd_supply_name(99) == b"?"
+
+
+def test_sink_pdo_fixed(lib):
+    # Sink_Capabilities' fixed PDO: B29..23 flags, B19..10 50 mV, B9..0 10 mA.
+    assert lib.pd_sink_pdo_fixed(5000, 3000, 0) == fixed(5000, 3000)
+    assert lib.pd_sink_pdo_fixed(9000, 1500, 1 << 28) == fixed(9000, 1500, 1 << 28)
+    # Supply type bits (B31..30) and reserved bits never leak in from flags.
+    assert lib.pd_sink_pdo_fixed(5000, 3000, 0xC0000000 | 0x7FFFFF) == fixed(5000, 3000)

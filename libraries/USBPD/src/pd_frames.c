@@ -159,6 +159,13 @@ uint32_t pd_request_for(const pd_caps_t *caps, int index,
     }
 }
 
+uint32_t pd_sink_pdo_fixed(uint16_t mv, uint16_t ma, uint32_t flags)
+{
+    return (flags & 0x3F800000ul)               /* B29..23 only */
+           | (((uint32_t)mv / 50u & 0x3FFu) << 10)
+           | ((uint32_t)ma / 10u & 0x3FFu);
+}
+
 const char *pd_supply_name(uint8_t kind)
 {
     switch (kind) {

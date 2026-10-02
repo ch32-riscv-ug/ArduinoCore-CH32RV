@@ -74,6 +74,7 @@ pytest-embedded-wireskein（`ws_run`）、そして `bench/conftest.py` の `ben
 | 場所 | case | 何を見るか | 要る治具 |
 |---|---|---|---|
 | `basic/` | `serial_println` `serial_echo` `core_api` `heap_string` `print_format` `stdio_printf` `route_selftest` `spi_selftest` `wire_selftest` `tone_selftest` `servo_selftest` `pd_selftest` `hooks_selftest` `system_selftest` | 自己検査（sketch が PASS / FAIL を出し、host は順に読む）。UART の 3 本は probe の UART を相手にする | どのベンチでも（UART は `[uart]`） |
+| | `pd_sink` | 実際の USB PD 充電器と交渉: 固定の全電圧、PPS の両端と中間・maintain() だけで 20 秒保持、拒否、契約が残ったままの再起動 | USB-C に PD 充電器、`facts.pd_source`（VBUS の目安の実測は `TEST_PD_METER` に XY-FZ25 の serial） |
 | `trace/` | `periph_probe`（PWM / tone / timing / SPI / SPI peer） | 線上の実測。capture で記録し、WireSkein が照合 | OEP + capture、`facts.pwm` / `facts.spi` |
 | | `gpio_probe` | 配線された全 pad を両側から駆動・観測、EXTI | OEP + fixture.gpio、`[wiring]` |
 | | `adc_probe` | analogRead を probe の rail で、X035 の無い channel の判定 | OEP、`facts.adc` |

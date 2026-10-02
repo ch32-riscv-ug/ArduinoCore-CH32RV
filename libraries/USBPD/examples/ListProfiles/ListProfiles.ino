@@ -1,11 +1,11 @@
 /* List what a USB PD charger offers, then ask it for 9 V.
  *
- * This example is the intended shape of the API. The hardware driver
- * underneath is still being written, so today begin() reports that USB PD is
- * not available and the sketch says so - see libraries/USBPD/README.md.
+ * Runs on CH32X035/X033 (checked on a WeAct CH32X035F8U6 board); on the
+ * other parts begin() is false and the sketch says so - see
+ * libraries/USBPD/README.md.
  *
- * Works only on parts with a USBPD block (CH32X035/X033, CH32L103/M103,
- * CH32V205, CH32X315, CH32H417, CH32M030); everywhere else begin() is false.
+ * A board powered from the charger's own VBUS: a 9 V contract raises VBUS
+ * to 9 V, so make sure the board's regulator takes it.
  */
 #include <USBPD.h>
 
@@ -17,8 +17,15 @@ void setup() {
     return;
   }
 
+  /* ready() moves the driver along by itself. Usually under a second; a
+   * charger that only speaks Type-C (no PD) never gets there. */
+  const uint32_t start = millis();
   while (!USBPD.ready()) {
-    /* waiting for the charger to enumerate */
+    if (millis() - start > 5000) {
+      Serial.println(USBPD.connected() ? "a charger without USB PD"
+                                       : "no charger on the USB-C");
+      return;
+    }
   }
 
   Serial.println("the charger offers:");
@@ -42,7 +49,11 @@ void setup() {
   if (USBPD.request(9000)) {
     Serial.print("now at ");
     Serial.print(USBPD.voltage());
-    Serial.println(" mV");
+    Serial.print(" mV, up to ");
+    Serial.print(USBPD.current());
+    Serial.print(" mA (profile ");
+    Serial.print(USBPD.contractProfile());
+    Serial.println(")");
   } else {
     Serial.println("this charger has no 9 V");
   }
