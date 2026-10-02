@@ -13,8 +13,8 @@
 kind = "oep"
 transport = "serial"                         # the OEP link is the probe's serial port (the oep:// address's probe part elsewhere)
 model = "esp32"                              # oep.core describe: model
-firmware = "0.0.25"                           # oep.core describe: firmware = the oep-probe-arduino release version
-release = "v0.0.25"                           # oep-probe-arduino tag prepare.py flashes
+firmware = "0.0.27"                           # oep.core describe: firmware = the oep-probe-arduino release version
+release = "v0.0.27"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag
 sketch_profile = "esp32"                     # its sketch.yaml profile for this probe
 erase = "all"
@@ -70,3 +70,5 @@ PD6 = 21
 [facts]                                      # no i2c / spi / pwm facts yet: the trace tests that need them skip here
 external_pullup = ["PC1", "PC2"]             # the board's 2.2 k I2C pull-ups (R4 / R5)
 capture_max_hz = 2000000                     # the ESP32's GPIO sampler
+capture_time_base_slips = true               # the sampler falls behind (time_base_slipped) and can miss a slow burst: the wire is kept, not judged
+uart_long_bytes = 6144                       # the probe's fixture-UART ring is 8 KiB, and a 115200 OEP link cannot carry a 115200 UART in full

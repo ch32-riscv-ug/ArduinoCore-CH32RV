@@ -115,13 +115,17 @@ def test_uart_bauds(fx, ws_run):
             if not ok:
                 bad.append(f"{baud} recovery")
             cmd(fx, "CLOSE", "CLOSE ok")
-    # long continuous transfer at 115200: 65536 bytes DUT -> probe
+    # long continuous transfer at 115200: 65536 bytes DUT -> probe. A probe whose OEP link is itself a 115200 serial
+    # port cannot carry that in full (the host takes ~8 KB/s, the UART brings ~11), so such a bench names what fits
+    # the probe's ring (facts.uart_long_bytes) and the full length is judged on the benches with a USB link.
     with ws_run.section(1, "115200 long"):
         cmd(fx, "OPEN 115200", "OPEN ok")
         fx.uart.configure(115200)
         fx.uart.flush_input()
         time.sleep(0.05)
-        n, seed = 65536, 0xBEEF
+        n, seed = int(fx.bench.facts.get("uart_long_bytes", 65536)), 0xBEEF
+        if n < 65536:
+            ws_run.note(f"{n} bytes, not 65536: what this probe's fixture-UART ring holds (facts.uart_long_bytes)")
         fx.console.drain(0.01)
         fx.console.send(f"SEND {n} {seed}")
         t0 = time.perf_counter()
@@ -254,9 +258,16 @@ def test_uart_sweep(fx, bench, ws_run):
                                 "way in: the wire is not taken")
                 else:
                     fmt_kw = {"bits": bits, "parity": parity, "stop": stop}
-                    want = (ws.uart(tx_pad, real, None, tol_baud=0.015, max_errors=0, **fmt_kw) if brr >= 16
-                            else ws.uart(tx_pad, None, **fmt_kw))
-                    with ws_run.section(2, "wire", expect=[want]):
+                    # A sampler that falls behind (facts.capture_time_base_slips: the classic ESP32's) stretches the
+                    # bit times it records and can miss a slow burst altogether, so on such a bench the wire is only
+                    # captured and kept, with no check on it; the data checks above still judge the DUT.
+                    if bench.facts.get("capture_time_base_slips", False):
+                        want = None
+                    elif brr >= 16:
+                        want = ws.uart(tx_pad, real, None, tol_baud=0.015, max_errors=0, **fmt_kw)
+                    else:
+                        want = ws.uart(tx_pad, None, **fmt_kw)
+                    with ws_run.section(2, "wire", expect=None if want is None else [want]):
                         window = cap.config.samples / cap.rate
                         fx.console.drain(0.01)
                         cap.arm()

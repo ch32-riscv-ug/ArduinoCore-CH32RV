@@ -25,7 +25,6 @@ import benchdef  # noqa: E402  (bench/ is on sys.path: conftest)
 PATTERN = 0xDEADBEEF
 PAST_EBSS_WORDS = 4
 MAX_FILL_WORDS = 16384         # 64 KiB: the largest RAM on the bench, with margin
-CHUNK_WORDS = 250              # one OEP frame of write_block
 
 
 def symbols(nm: pathlib.Path, elf: pathlib.Path) -> dict[str, int]:
@@ -63,8 +62,11 @@ def test_crt0_hands_setup_an_initialised_ram(request, dut, bench, arduino_cli_ap
     dm = riscv.RiscvDm(oep_host.host, conn)
     print(f"filling {words} words from {first:#010x} with {PATTERN:#010X} (_ebss is {sym['_ebss']:#010x})")
     pattern = PATTERN.to_bytes(4, "little")
-    for off in range(0, words, CHUNK_WORDS):
-        n = min(CHUNK_WORDS, words - off)
+    # One write_block moves at most what the probe declares (describe max_length, oep-if-debug §4.5): 1000 bytes
+    # on a P4, 488 on a classic ESP32. A longer one is refused as unsupported.
+    chunk = dm.max_words
+    for off in range(0, words, chunk):
+        n = min(chunk, words - off)
         dm.write_block(first + 4 * off, pattern * n)
     assert dm.read_block(sym["_ebss"], 1) == pattern, "the fill did not land past _ebss"
     flags, attempts, pc = dm.reset(confirm=True)

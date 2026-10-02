@@ -129,6 +129,12 @@ external_pullup = []
 capture_max_hz = 20_000_000
 ```
 
+probe が serial の線でつながる治具（V003 の classic ESP32）には、その限界を facts に書く。
+`capture_time_base_slips = true` はサンプラが遅れて time_base_slipped を出し、遅い burst を取り逃がすこともある治具で、
+uart_probe の sweep は線の波形を取って残すだけで判定しない（データの判定はそのまま）。`uart_long_bytes` は fixture UART の連続受信で判定する量で、115200 の
+OEP の線では 115200 の UART を全量運べないので、probe のリング（classic ESP32 は 8 KiB）に収まる量にする（無ければ 64 KiB。
+全量は USB でつながる治具で判定する）。
+
 テストは pad 名で要求する（`bench.channel("PA1")`）。配線にない pad を要求したテストは**理由付きで skip** し、その skip の一覧が
 「このベンチが確かめていないこと」の報告になる（harness-testing §8 の考えを最小で）。LinkE のベンチ（正式ベンチが揃うまでの
 経過措置）は `[probe] model = "WCH-LinkE"`、`firmware = "2.22"`（`ch32rv probe list --json` の `firmware.norm`）、配線は UART だけで、
