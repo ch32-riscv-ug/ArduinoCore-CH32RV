@@ -203,6 +203,15 @@ def show_properties(sketch: pathlib.Path, profile: list = ()) -> dict[str, str]:
 
 # ---------------------------------------------------------------- step 2: settings
 
+def item_key(it) -> tuple[str | None, int | None]:
+    """(kind, key) of a live config item for unset: plan / uart by fn, label / idle / disable by channel, slot by
+    number, bind by port (oep_client.config.remove)."""
+    kind = type(it).__name__.lower()
+    key = {"plan": "fn", "uart": "fn", "label": "channel", "idle": "channel", "disable": "channel",
+           "slot": "slot", "bind": "port"}.get(kind)
+    return (kind, getattr(it, key)) if key else (None, None)
+
+
 def write_config(bench: benchdef.Bench, ch32rv) -> None:
     from oep_client import config
     hst, close = benchdef.open_probe(bench, ch32rv)
@@ -212,6 +221,12 @@ def write_config(bench: benchdef.Bench, ch32rv) -> None:
         items = benchdef.wanted_items(bench, hst)
         log("erasing the stored settings")
         cfg.erase()
+        # erase clears what is stored, not what is live: an item a test or an experiment set by hand (an idle, a
+        # disable) would ride along into the save below. Drop every live item first (one unset keeps it consistent).
+        live = [(kind, key) for kind, key in (item_key(i) for i in cfg.items()) if kind]
+        if live:
+            log(f"removing {len(live)} live items")
+            cfg.unset(live)
         log(f"writing {len(items)} items: " + ", ".join(type(i).__name__ for i in items))
         cfg.set(items)
         h = cfg.save()

@@ -88,7 +88,8 @@ class Bench:
             return self.port
         from serial.tools import list_ports
         unit = self.probe_serial
-        found = [p.device for p in list_ports.comports() if p.serial_number == unit]
+        # Case-insensitive, as oep-spec core §3.3 compares a named unit_id with the USB serial number.
+        found = [p.device for p in list_ports.comports() if (p.serial_number or "").lower() == unit.lower()]
         if len(found) != 1:
             raise BenchError(f"{self.profile}: {len(found)} serial ports carry the USB serial {unit} "
                              f"(the probe part of {self.port}); expected exactly one")
@@ -189,8 +190,24 @@ def wanted_items(bench: Bench, hst) -> list:
             if role not in roles:
                 raise BenchError(f"{bench.name}: {name} has no role {role!r} (it has {sorted(roles)})")
             items.append(config.Plan(fn=fn, role=int(roles[role]), channel=int(ch)))
+    # Channels a pad, the slot or a plan already uses: an output idle or a named line (nrst, power_hi) there would
+    # fight the DUT or be driven by gpio_probe, which walks [wiring].
+    taken = {int(ch): f"[wiring] {pad}" for pad, ch in bench.wiring.items() if isinstance(ch, int)}
+    for spec in bench.data.get("plan", []):
+        taken.update({int(ch): f"plan {spec['interface']} {role}" for role, ch in spec["roles"].items()})
+    if slot:
+        taken.update({int(ch): f"slot {slot['name']}" for ch in slot["pins"]})
     for spec in bench.data.get("idle", []):          # oep config idle: how an unassigned channel rests
-        items.append(config.Idle(channel=int(spec["channel"]), mode=spec.get("mode", "pull-up")))
+        ch, mode = int(spec["channel"]), spec.get("mode", "pull-up")
+        if mode.startswith("output") and ch in taken:
+            raise BenchError(f"{bench.name}: idle {mode} on channel {ch}, which is {taken[ch]}: an output idle "
+                             "only goes on a line nothing else drives (a power switch)")
+        items.append(config.Idle(channel=ch, mode=mode))
+    for spec in bench.data.get("label", []):         # oep config label: a named line (oep-spec host guide §8.1)
+        ch = int(spec["channel"])
+        if ch in taken:
+            raise BenchError(f"{bench.name}: label {spec['name']!r} on channel {ch}, which is {taken[ch]}")
+        items.append(config.Label(channel=ch, text=spec["name"]))
     if slot:
         wire_fn = core.find(hst, f"oep.wire.{slot['wire']}")
         pins = tuple(slot["pins"]) if len(slot["pins"]) == 2 else (slot["pins"][0], 0xFFFF)

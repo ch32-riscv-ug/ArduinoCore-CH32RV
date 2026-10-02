@@ -13,8 +13,8 @@
 kind = "oep"
 transport = "serial"                         # the OEP link is the probe's serial port (the oep:// address's probe part elsewhere)
 model = "esp32"                              # oep.core describe: model
-firmware = "0.0.27"                           # oep.core describe: firmware = the oep-probe-arduino release version
-release = "v0.0.27"                           # oep-probe-arduino tag prepare.py flashes
+firmware = "0.0.28"                           # oep.core describe: firmware = the oep-probe-arduino release version
+release = "v0.0.28"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag
 sketch_profile = "esp32"                     # its sketch.yaml profile for this probe
 erase = "all"
@@ -30,7 +30,7 @@ route = 0
 tx = "PD5"
 rx = "PD6"
 
-[slot]                                       # oep config slot: SWIO on ESP32 GPIO16, NRST on 23 is named by the host when it wants it
+[slot]                                       # oep config slot: SWIO on ESP32 GPIO16 (NRST on 23: the label below)
 name = "v003"
 wire = "swio"
 pins = [16]
@@ -46,6 +46,10 @@ streams = ["slot:v003"]
 [[plan]]                                     # the fixture UART keeps the DUT's Serial pins
 interface = "oep.fixture.uart#0"
 roles = { rx = 22, tx = 21 }
+
+[[label]]                                    # oep config label: the DUT's NRST (PD7) on 23, for a host that resets while attaching
+channel = 23                                 # (oep-spec host guide §8). One slot here, so the bare name. Kept out of [wiring]:
+name = "nrst"                                # gpio_probe must never drive it. Works only while the V003's RST_MODE enables PD7 as NRST
 
 [[idle]]                                     # the DUT's RX (PD6) rests pulled up (the old Esp32V003Probe had this built in)
 channel = 21

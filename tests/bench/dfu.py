@@ -40,7 +40,7 @@ def find(serial: str | None):
             sn = usb.util.get_string(d, d.iSerialNumber)
         except Exception:      # noqa: BLE001 - a device we cannot read is not ours
             continue
-        if serial is None or sn == serial:
+        if serial is None or (sn or "").lower() == serial.lower():     # case-insensitive (oep-spec core §3.3)
             return d
     return None
 

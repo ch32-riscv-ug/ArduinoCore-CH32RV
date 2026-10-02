@@ -180,9 +180,7 @@ def test_i2c_clock_stretch(fx, ws_run):
     Below Wire's 25 ms timeout (CH32RV_WIRE_TIMEOUT_US) the read completes with the slot's bytes; above it Wire gives
     up within the timeout, and the next read with the stretch off works again."""
     T = fx.target
-    # Declared exactly when features has bit1 (stretch). A client before max_stretch_us (oep-client-python 0.0.27)
-    # cannot tell: then every case is tried, as before.
-    max_us = getattr(T, "max_stretch_us", 30_000)
+    max_us = T.max_stretch_us                     # declared exactly when features has bit1 (stretch)
     if max_us is None:
         pytest.skip("the probe's I2C target does not stretch (no features bit1 / max_stretch_us)")
     begin(fx)
@@ -258,7 +256,7 @@ def test_i2c_stuck_bus(fx, ws_run):
     fx.release()
     fx.plan(T.assignments(sda=fx.channel(fx.sda), scl=fx.channel(fx.scl)) + fx.cap.assignments(fx.scl, fx.sda))
     fx.console.drain(0.3)
-    if getattr(T, "max_stretch_us", 0) is not None:          # only a probe that stretches knows the op
+    if T.max_stretch_us is not None:                         # only a probe that stretches knows the op
         T.stretch(0)
     T.configure(ADDRESS, T.MODE_PRELOADED_TX)
     T.preload_tx(bytes(4))
