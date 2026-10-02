@@ -21,6 +21,7 @@ uv run --env-file .env pytest manual/<case>/<case>.py -v -s
 | [`chip_info/`](chip_info/) | **いま何が繋がっているか**: probe / chip / serial port / FQBN / Serial の pin | LinkE |
 | [`uart_scan/`](uart_scan/) | board がどの USART route を配線しているかを特定 | LinkE |
 | [`probe_switch/`](probe_switch/) | USB/IP で 1 台を WSL へ渡し、他を外す（WSL のベンチ専用） | LinkE |
+| [`vbus_meter/`](vbus_meter/) | **VBUS 電圧計リグ**（XY-FZ25 を負荷オフで電圧計に）。使う試験の間だけつなぎ、`TEST_VBUS_METER` で port を渡す。機材・結線・プロトコル・実測は [vbus_meter/README.ja.md](vbus_meter/README.ja.md) | USB-TTL |
 | `smoke/smoke.py` | 上の道具が共有するライブラリ（probe の列挙、board の解決、build / upload、chip の再検出）。sketch の再生（`--sketch all`）は bench/ に移って無くなった | LinkE |
 | `conftest.py` | LinkE の道具の fixture（`attached` / `bench` / `uart_routes`） | |
 | `env_config.py` | `.env` の pad 名（`PA0`）を pin 番号にし、sketch 用の header を書く（ジャンパの試験が使う） | |

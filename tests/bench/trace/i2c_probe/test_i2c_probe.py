@@ -39,6 +39,9 @@ def fx(request, dut, bench, ws_run):
     f = tk.Fixture(oep_host.host, bench, ws_run, con)
     f.scl, f.sda, f.route = i2c["scl"], i2c["sda"], int(i2c["route"])
     f.cap_max = int(bench.facts.get("capture_max_hz", 0))
+    # A sampler that falls behind (the classic ESP32's) stretches what it records and can miss a burst: there the
+    # wire is captured and kept but not judged; the DUT's return codes and the target's bytes still are.
+    f.slips = bool(bench.facts.get("capture_time_base_slips", False))
     from oep_client.fixture import I2cTarget
     f.target = I2cTarget(f.host)
     f.cap = tk.Capture(f)
@@ -48,7 +51,10 @@ def fx(request, dut, bench, ws_run):
 
 
 def expect_i2c(fx, transactions, hz=None, released=True):
-    """The bus as the test means it: (addr, rw, bytes, ack) transactions, SCL at hz, both lines high at the end."""
+    """The bus as the test means it: (addr, rw, bytes, ack) transactions, SCL at hz, both lines high at the end.
+    None (kept, not judged) on a bench whose capture slips."""
+    if fx.slips:
+        return None
     return [ws.i2c(fx.scl, fx.sda, [{"addr": a, "rw": rw, "bytes": list(b), "ack": ack} for a, rw, b, ack in transactions],
                    hz=hz, released=released)]
 
@@ -174,6 +180,11 @@ def test_i2c_clock_stretch(fx, ws_run):
     Below Wire's 25 ms timeout (CH32RV_WIRE_TIMEOUT_US) the read completes with the slot's bytes; above it Wire gives
     up within the timeout, and the next read with the stretch off works again."""
     T = fx.target
+    # Declared exactly when features has bit1 (stretch). A client before max_stretch_us (oep-client-python 0.0.27)
+    # cannot tell: then every case is tried, as before.
+    max_us = getattr(T, "max_stretch_us", 30_000)
+    if max_us is None:
+        pytest.skip("the probe's I2C target does not stretch (no features bit1 / max_stretch_us)")
     begin(fx)
     slot = "a1b2c3d4"
     bad = []
@@ -182,7 +193,7 @@ def test_i2c_clock_stretch(fx, ws_run):
         line, trace, samples = traced(fx, f"READ {fx.route} 100000 {ADDRESS:02x} 4", "READ got=", 100_000)
         return int(field(line, "got=")), field(line, "data=").lower(), int(field(line, "t_us=")), trace, samples
 
-    for stretch_us in (0, 100, 1000, 5000, 20000, 30000):
+    for stretch_us in [us for us in (0, 100, 1000, 5000, 20000, 30000) if us <= max_us]:
         T.stretch(stretch_us)
         T.configure(ADDRESS, T.MODE_PRELOADED_TX)
         T.preload_tx(bytes.fromhex(slot))
@@ -247,7 +258,8 @@ def test_i2c_stuck_bus(fx, ws_run):
     fx.release()
     fx.plan(T.assignments(sda=fx.channel(fx.sda), scl=fx.channel(fx.scl)) + fx.cap.assignments(fx.scl, fx.sda))
     fx.console.drain(0.3)
-    T.stretch(0)
+    if getattr(T, "max_stretch_us", 0) is not None:          # only a probe that stretches knows the op
+        T.stretch(0)
     T.configure(ADDRESS, T.MODE_PRELOADED_TX)
     T.preload_tx(bytes(4))
     with ws_run.section(1, "target left mid-byte"):          # the fault itself: recorded, not checked

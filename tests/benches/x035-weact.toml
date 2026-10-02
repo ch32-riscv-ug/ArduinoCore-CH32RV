@@ -1,5 +1,5 @@
-# TEMPORARY (2026-10-02, not committed): a WeAct CH32X035F8U6 board behind the ESP32-P4 30eda0e34a0e.
-# Powered from the P4's 3V3 for now; its USB-C (PC16 / PC17, CC on PC14 / PC15) goes to a USB PD supply for
+# A WeAct CH32X035F8U6 board behind the ESP32-P4 30eda0e34a0e (added 2026-10-02).
+# Powered from the P4's 3V3; its USB-C (PC16 / PC17, CC on PC14 / PC15) goes to a USB PD charger for
 # the PD tests, so PC16 / PC17 are not wired to the probe. Wiring found by driving each pad through the debug
 # module and reading the P4's channels (both pulls agree).
 [probe]

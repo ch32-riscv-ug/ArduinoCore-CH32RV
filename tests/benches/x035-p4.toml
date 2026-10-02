@@ -85,7 +85,7 @@ adc = ["PA0", "PA1", "PA2", "PA3", "PA4", "PA5", "PA6", "PA7"]   # the ADC-capab
 adc_absent = ["PA3", "PA7"]                  # errata x035-adc-ch-i2c-unavailable on this part (ch3 / ch7 read residual charge)
 adc_high_min = 960                           # probe rail == DUT VDD (both 3.3 V); 997 seen 2026-09-29
 external_pullup = []                         # DUT pads a board pull-up holds high (idle high even in INPUT_PULLDOWN)
-slow_release = ["PB3", "PB11", "PB12"]       # probe channels 13 / 9 / 14 (P4 SD-card pads) release slowly after driving high: their idle level is not a DUT fact
+slow_release = ["PB3", "PB11", "PB12"]       # release slowly after the probe drives high (channels 13 / 9 / 14). Once put down to the P4's SD-card pads, but the WeAct jig shows the same three DUT pads on channels 2 / 54 / 53, so the X035 side is as likely (unsettled, 2026-10-02)
 pulled_low = ["PC14", "PC15"]                # the X035's CC1 / CC2: the part holds them low, so they never float high (open-drain release, INPUT_PULLUP idle read 0)
 capture_max_hz = 20000000                    # PARLIO
 i2c = { scl = "PC16", sda = "PC17", route = 2 }

@@ -74,7 +74,8 @@ pytest-embedded-wireskein（`ws_run`）、そして `bench/conftest.py` の `ben
 | 場所 | case | 何を見るか | 要る治具 |
 |---|---|---|---|
 | `basic/` | `serial_println` `serial_echo` `core_api` `heap_string` `print_format` `stdio_printf` `route_selftest` `spi_selftest` `wire_selftest` `tone_selftest` `servo_selftest` `pd_selftest` `hooks_selftest` `system_selftest` | 自己検査（sketch が PASS / FAIL を出し、host は順に読む）。UART の 3 本は probe の UART を相手にする | どのベンチでも（UART は `[uart]`） |
-| | `pd_sink` | 実際の USB PD 充電器と交渉: 固定の全電圧、PPS の両端と中間・maintain() だけで 20 秒保持、拒否、契約が残ったままの再起動 | USB-C に PD 充電器、`facts.pd_source`（VBUS の目安の実測は `TEST_PD_METER` に XY-FZ25 の serial） |
+| | `pd_sink` | 実際の USB PD 充電器と交渉: 固定の全電圧、PPS の両端と中間・maintain() だけで 20 秒保持、拒否、契約が残ったままの再起動 | USB-C に PD 充電器、`facts.pd_source` |
+| | `pd_sink/pd_vbus.py`（手動: ファイルを指定） | 契約ごとに VBUS が動いたか（4.5 V 以上 ±10 %）を電圧計リグで | 上に加えて `manual/vbus_meter` のリグ、`TEST_VBUS_METER` |
 | `trace/` | `periph_probe`（PWM / tone / timing / SPI / SPI peer） | 線上の実測。capture で記録し、WireSkein が照合 | OEP + capture、`facts.pwm` / `facts.spi` |
 | | `gpio_probe` | 配線された全 pad を両側から駆動・観測、EXTI | OEP + fixture.gpio、`[wiring]` |
 | | `adc_probe` | analogRead を probe の rail で、X035 の無い channel の判定 | OEP、`facts.adc` |
@@ -94,6 +95,7 @@ pytest-embedded-wireskein（`ws_run`）、そして `bench/conftest.py` の `ben
 | `i2c_loopback/i2c_loopback.py` | ジャンパ 2 本 + pull-up で Wire の slave。LinkE 経路 |
 | `uiapduino_fixture/` `uiapduino_pin_map/` `uiapduino_timer_fixture/` | UIAPduino の治具と pin 表 |
 | `chip_info/chip_info.py` `uart_scan/uart_scan.py` `probe_switch/probe_switch.py` | ベンチの道具（何が繋がっているか / どの USART route か / USB/IP の切り替え）。LinkE 経路 |
+| `vbus_meter/vbus_meter.py` | VBUS 電圧計リグ（XY-FZ25 を負荷オフで）の読み取りと疎通確認。`TEST_VBUS_METER` のときだけ。資料は `manual/vbus_meter/README.ja.md` |
 | `smoke/smoke.py` | 上の道具が共有する LinkE 経路のライブラリ（sketch の再生は bench/ に移り、無くなった） |
 
 LinkE 経路のものは probe-rs / ch32rv を直接呼ぶ古い形で、正式ベンチ（家系ごとの P4）が揃ったら bench/ に移すか消します。

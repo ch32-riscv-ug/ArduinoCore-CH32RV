@@ -8,20 +8,16 @@ offers, and a restart while the charger still holds the previous contract
 (the case every re-flash hits: no Source_Capabilities arrive on their own).
 
 Needs a PD charger on the board's USB-C: the bench file says so with
-facts.pd_source; any other bench skips. With TEST_PD_METER naming the serial
-port of an XY-FZ25/FZ35 load across VBUS (kept off: a voltmeter), each
-contract's VBUS is read as well - a rough check that VBUS follows the
-contract, not a measurement of the charger's accuracy. Run with the bench's .env:
+facts.pd_source; any other bench skips. Whether VBUS really follows the
+contract is pd_vbus.py beside this file: a manual run with the VBUS meter rig
+connected for it. Run with the bench's .env:
 
   uv run --env-file .env --with pytest-embedded-arduino-cli-ch32rv \
     pytest bench/basic/pd_sink --profile ch32x035 -s
 """
-import os
 import re
-import time
 
 import pytest
-import serial
 from loader import load
 
 kit = load("tests/bench/bench_kit.py", "bench_kit")
@@ -30,56 +26,6 @@ FIXED, PPS = 0, 1
 STATE = re.compile(rb"(PD \w+) ok=(\d+) ready=(\d) connected=(\d) v=(\d+) a=(\d+) "
                    rb"idx=(-?\d+) pps=(\d) n=(\d+) ms=(\d+)")
 PDO = re.compile(rb"PD PDO (\d+) kind=(\d+) min=(\d+) max=(\d+) ma=(\d+) raw=([0-9A-F]+)")
-
-
-class Meter:
-    """An XY-FZ25 / FZ35 electronic load with its load off, as a voltmeter on
-    VBUS: 9600 8N1, commands without a line end, "start" streams
-    "04.93V,0.00A,0.001Ah,00:00" once a second."""
-
-    def __init__(self, port: str):
-        self.ser = serial.Serial(port, 9600, timeout=1.5)
-        for c in (b"off", b"start"):
-            self.ser.write(c)
-            time.sleep(0.3)
-
-    def volts(self, settle: float = 2.5) -> float:
-        time.sleep(settle)                     # past VBUS settling and the next line
-        self.ser.reset_input_buffer()
-        for _ in range(4):
-            m = re.match(rb"(\d+\.\d+)V,", self.ser.readline())
-            if m:
-                return float(m.group(1))
-        raise AssertionError("no reading from the meter")
-
-    def close(self):
-        self.ser.write(b"stop")
-        self.ser.close()
-
-
-@pytest.fixture(scope="module")
-def meter():
-    port = os.environ.get("TEST_PD_METER")
-    m = Meter(port) if port else None
-    yield m
-    if m:
-        m.close()
-
-
-def vbus(meter, mv: int) -> None:
-    """VBUS follows the contract, loosely: within 10 % from 4.5 V up. Below,
-    only that it came down from 5 V - the PPS charger on the WeAct bench
-    advertises 3.3 V but stops near 4 V (3.98 V on the FZ25 and on an inline
-    USB tester, 2026-10-02). How close the charger gets is its business, not
-    the sink's."""
-    if meter is None:
-        return
-    v = meter.volts() * 1000
-    print(f"VBUS {mv} mV contract -> meter {v:.0f} mV ({v / mv:.3f})")
-    if mv >= 4500:
-        assert abs(v - mv) <= mv * 0.10, f"VBUS {v:.0f} mV on a {mv} mV contract"
-    else:
-        assert v < 4500, f"VBUS {v:.0f} mV on a {mv} mV contract"
 
 
 def cmd(dut, line: str, timeout: float = 10) -> dict:
@@ -127,13 +73,12 @@ def pd(dut, bench):
     cmd(dut, "PD REQ 5000 0")
 
 
-def test_pd_fixed(dut, pd, meter):
+def test_pd_fixed(dut, pd):
     for p in [p for p in pd if p["kind"] == FIXED] + [pd[0]]:
         st = cmd(dut, f"PD REQ {p['min']} 0")
         contract(st, p["min"], p["i"], False)
         assert st["a"] == p["ma"], st
         assert st["ms"] < 1000, st
-        vbus(meter, p["min"])
 
 
 def test_pd_refused(dut, pd):
@@ -153,7 +98,7 @@ def test_pd_refused(dut, pd):
     assert st["ok"] == 0, st
 
 
-def test_pd_pps(dut, pd, meter):
+def test_pd_pps(dut, pd):
     ranges = [p for p in pd if p["kind"] == PPS]
     if not ranges:
         pytest.skip("the charger offers no PPS range")
@@ -163,11 +108,9 @@ def test_pd_pps(dut, pd, meter):
             st = cmd(dut, f"PD PROF {p['i']} {mv} 1000")
             contract(st, mv, p["i"], True)
             assert st["a"] == 1000, st
-            vbus(meter, mv)
         # Twice the charger's tPPSTimeout: only the driver's keepalive keeps it.
         st = cmd(dut, "PD HOLD 20000", timeout=30)
         contract(st, p["max"], p["i"], True)
-        vbus(meter, p["max"])
         # 21 mV truncates to 20 mV steps; past the range is refused.
         st = cmd(dut, f"PD PROF {p['i']} {mid + 21} 0")
         contract(st, mid + 20, p["i"], True)

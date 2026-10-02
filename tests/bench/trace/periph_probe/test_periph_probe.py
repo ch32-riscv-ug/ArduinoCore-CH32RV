@@ -221,8 +221,15 @@ def test_spi_peer(fx, ws_run, bench):
     spi_transfer(fx, None, 1_000_000, 0, PAYLOAD, 0)
     time.sleep(0.05)
     bad = []
-    for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (250_000, 0), (4_000_000, 0),
-                     (4_000_000, 3), (12_000_000, 0), (12_000_000, 3), (24_000_000, 0)):
+    # Only clocks the target declares it follows (describe max_clock_hz): above that a wrong bit is the probe's,
+    # not the DUT's. A target that declares nothing gets the whole list.
+    declared = getattr(spi, "max_clock_hz", None)            # not in oep-client-python 0.0.27
+    top = declared or 24_000_000
+    cases = [(hz, mode) for hz, mode in ((1_000_000, 0), (1_000_000, 1), (1_000_000, 2), (1_000_000, 3), (250_000, 0),
+                                         (4_000_000, 0), (4_000_000, 3), (12_000_000, 0), (12_000_000, 3),
+                                         (24_000_000, 0)) if hz <= top]
+    print(f"[spi peer] the target declares max_clock_hz={declared}")
+    for hz, mode in cases:
         spi.configure(mode)
         spi.arm(len(PAYLOAD), ANSWER)
         rate = spi_rate(hz, cap_max or 1)
@@ -255,7 +262,9 @@ def test_spi_peer(fx, ws_run, bench):
         time.sleep(0.05)
         pending, bits, rx = spi.read_rx()
         ok = got == long_answer and rx == long_payload and bits == 512
-        print(f"[spi peer 64-byte #{n}] {'OK' if ok else 'BAD'} bits={bits}")
+        print(f"[spi peer 64-byte #{n}] {'OK' if ok else 'BAD'} bits={bits}"
+              + ("" if ok else f" | DUT got {got[:8].hex()}.. want {long_answer[:8].hex()}.. | target rx {rx[:8].hex()}.. "
+                                f"want {long_payload[:8].hex()}.."))
         if not ok:
             bad.append(("64-byte", n))
     spi.configure(3)

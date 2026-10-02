@@ -67,7 +67,10 @@ PD2 = 32
 PD5 = 22
 PD6 = 21
 
-[facts]                                      # no i2c / spi / pwm facts yet: the trace tests that need them skip here
+[facts]
+i2c = { scl = "PC2", sda = "PC1", route = 0 }  # I2C1 default route, the board's pull-ups on both (added 2026-10-02)
+spi = { sck = "PC5", mosi = "PC6", miso = "PC7", cs = "PC4", pclk_hz = 48000000 }   # SPI1 default route; CS is a GPIO
+pwm = "PC3"                                  # TIM1 CH3
 external_pullup = ["PC1", "PC2"]             # the board's 2.2 k I2C pull-ups (R4 / R5)
 capture_max_hz = 2000000                     # the ESP32's GPIO sampler
 capture_time_base_slips = true               # the sampler falls behind (time_base_slipped) and can miss a slow burst: the wire is kept, not judged
