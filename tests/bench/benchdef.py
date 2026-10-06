@@ -241,7 +241,11 @@ def attach_slot(bench: Bench, hst, halt: bool = False):
     from oep_client import riscv
     slot = bench.data["slot"]
     wire = riscv.Wire(hst, "oep.wire." + slot["wire"])
-    conn, _ = wire.attach(halt=halt)
+    # The slot's own line settings: an attach without them asks for the spec's defaults (SWCLK resting high), which
+    # switches a live idle-low connection and resets the L103's debug logic.
+    max_speed = int(slot.get("max_speed", 0)) or None              # 0: the wire's declared fastest
+    idle_clock = slot.get("idle_clock", "high") if slot["wire"] == "rvswd" else None
+    conn, _ = wire.attach(halt=halt, max_speed=max_speed, idle_clock=idle_clock)
     return wire, conn
 
 
