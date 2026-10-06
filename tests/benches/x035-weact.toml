@@ -5,7 +5,7 @@
 [probe]
 kind = "oep"
 model = "esp32p4"
-firmware = "0.0.28"
+firmware = "0.0.28+ffe4eb1"
 release = "v0.0.28"
 example = "Firmware/OepProbe"
 sketch_profile = "esp32p4"

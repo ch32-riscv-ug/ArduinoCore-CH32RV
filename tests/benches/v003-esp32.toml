@@ -13,7 +13,7 @@
 kind = "oep"
 transport = "serial"                         # the OEP link is the probe's serial port (the oep:// address's probe part elsewhere)
 model = "esp32"                              # oep.core describe: model
-firmware = "0.0.28"                           # oep.core describe: firmware = the oep-probe-arduino release version
+firmware = "0.0.28+ffe4eb1"                           # oep.core describe: firmware = the oep-probe-arduino release version
 release = "v0.0.28"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag
 sketch_profile = "esp32"                     # its sketch.yaml profile for this probe
