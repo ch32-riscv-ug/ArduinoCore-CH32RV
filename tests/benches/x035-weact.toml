@@ -76,6 +76,9 @@ pulled_low = []
 # pd_source = true when a USB PD charger is on the board's USB-C (CC1 / CC2 are not wired to the probe: a lead
 # that long loads CC enough that no message decodes); tests/bench/basic/pd_sink runs only then. Removed
 # 2026-10-02 with the charger; put it back with one. What the charger offers is read from it, not declared here.
+# Jumper-wiring limits of this jig (not the core, not the probe; the X035 P4 jig passes both on the same probe build):
+# spi_peer fails at 24 MHz (MISO a bit late; 12 MHz and below fine, 2026-10-02), and uart_sweep's DUT->probe fails
+# at 2 Mbaud (1.5 M and 1959983 fine, 2026-10-06). Both show as failures here; no fact caps them yet.
 capture_max_hz = 20000000
 spi = { sck = "PA5", mosi = "PA7", miso = "PA6", cs = "PA4", pclk_hz = 48000000 }
 pwm = "PA1"
