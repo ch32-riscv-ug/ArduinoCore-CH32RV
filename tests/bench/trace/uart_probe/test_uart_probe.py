@@ -276,11 +276,14 @@ def test_uart_sweep(fx, bench, ws_run):
                         # (ch32rv 0.12.4 delivers a command in ~2 ms; at 733 baud that is under two bits, and a
                         # back-to-back burst then has longer low runs than high ones).
                         time.sleep(max(0.02, 12 / baud))
+                        sent = time.monotonic()
                         fx.console.send(f"BURST {int(window * 1000) + 150} {seed}")
                         st = cap.wait(3.0 + window)
                         if st.flags & cap.COMPLETE:
                             cap.read_all()
-                        fx.console.wait("BURST blocks=", 3)
+                        # The DUT answers only after bursting for window + 150 ms, which at a low baud is seconds:
+                        # wait for that from the send, plus the console's way back.
+                        fx.console.wait("BURST blocks=", max(1.0, sent + window + 0.15 + 3.0 - time.monotonic()))
                     if row["probe_baud"] is not None:
                         fx.uart.flush_input()          # the burst's bytes: only drained
             if close:
