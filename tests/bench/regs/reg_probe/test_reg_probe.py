@@ -18,11 +18,14 @@ regcheck = load("tests/bench/regs/reg_probe/regcheck.py", "regcheck")
 import benchdef  # noqa: E402  (bench/ is on sys.path: conftest)
 
 
-def test_registers_hold_what_device_data_says(request, dut, bench, ch32_uart):
+def test_registers_hold_what_device_data_says(request, dut, bench):
     if bench.probe.get("kind") != "oep":
         pytest.skip("the register reads go through an OEP probe's riscv-dm")
     if not find_tables():
         pytest.skip("ch32-device-data is not in <repo>/.tools: uv run tools/index/fetch_tools.py --tool ch32-device-data")
+    if not bench.data.get("uart"):                        # the console of this test is the DUT's UART on the probe
+        pytest.skip(f"{bench.name} wires no DUT UART to the probe")
+    ch32_uart = request.getfixturevalue("ch32_uart")
     import pexpect
     try:
         dut.expect(pexpect.TIMEOUT, timeout=1.5)       # let the monitor open its session: the broker is its
