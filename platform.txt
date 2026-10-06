@@ -148,7 +148,7 @@ tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none
 # ---------------------------------------------------------------- discovery
 # ch32rv lists what a plain serial scan cannot see or name: every WCH-Link as
 # wchlink://<serial>, every OEP probe's slot as oep://<probe>/<slot> (a device
-# whose iProduct starts with "OEP" until OEP has its own PID), and the UIAPduino
+# with the OEP project USB ID 1209:4F45), and the UIAPduino
 # bootloader as hid://. It never opens an ordinary serial port. Declaring one
 # discovery means the built-in ones have to be named too.
 pluggable_discovery.required.0=builtin:serial-discovery

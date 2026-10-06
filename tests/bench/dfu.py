@@ -13,7 +13,7 @@ import struct
 import sys
 import time
 
-VID, PID = 0x303A, 0x0002
+VID, PID = 0x1209, 0x4F45                      # the OEP project USB ID (oep-spec core §3.3)
 DFU_DETACH, DFU_DNLOAD, DFU_UPLOAD, DFU_GETSTATUS, DFU_CLRSTATUS, DFU_GETSTATE, DFU_ABORT = range(7)
 STATES = ["appIDLE", "appDETACH", "dfuIDLE", "dfuDNLOAD-SYNC", "dfuDNBUSY", "dfuDNLOAD-IDLE", "dfuMANIFEST-SYNC",
           "dfuMANIFEST", "dfuMANIFEST-WAIT-RESET", "dfuUPLOAD-IDLE", "dfuERROR"]
@@ -27,8 +27,8 @@ class DfuError(Exception):
 
 
 def find(serial: str | None):
-    """The probe's USB device: the one whose serial is `serial` (the unit id), whatever VID:PID it carries (OEP has
-    no PID of its own yet; the P4 uses 303a:0002, an RP2 its board's); with no serial, a 303a:0002 device."""
+    """The probe's USB device: the one whose serial is `serial` (the unit id), whatever VID:PID it carries; with no
+    serial, a device with the OEP project ID 1209:4F45."""
     import usb.core
     import usb.util
     for d in usb.core.find(find_all=True):
