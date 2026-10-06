@@ -195,10 +195,16 @@ def wanted_items(bench: Bench, hst) -> list:
     taken = {int(ch): f"[wiring] {pad}" for pad, ch in bench.wiring.items() if isinstance(ch, int)}
     for spec in bench.data.get("plan", []):
         taken.update({int(ch): f"plan {spec['interface']} {role}" for role, ch in spec["roles"].items()})
+    slot_pins = {int(ch) for ch in slot["pins"]} if slot else set()
     if slot:
-        taken.update({int(ch): f"slot {slot['name']}" for ch in slot["pins"]})
+        taken.update({ch: f"slot {slot['name']}" for ch in slot_pins})
     for spec in bench.data.get("idle", []):          # oep config idle: how an unassigned channel rests
         ch, mode = int(spec["channel"]), spec.get("mode", "pull-up")
+        if ch in slot_pins:
+            # Any idle there (inputs too) takes the pin out of an attach without pins (oep-spec debug §1:
+            # unavailable, holder_kind 7), which is how attach_slot joins the slot's connection.
+            raise BenchError(f"{bench.name}: idle {mode} on channel {ch}, a pin of slot {slot['name']}: the slot's "
+                             "debug pins carry no idle")
         if mode.startswith("output") and ch in taken:
             raise BenchError(f"{bench.name}: idle {mode} on channel {ch}, which is {taken[ch]}: an output idle "
                              "only goes on a line nothing else drives (a power switch)")
