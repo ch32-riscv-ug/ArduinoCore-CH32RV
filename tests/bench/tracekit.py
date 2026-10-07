@@ -183,6 +183,13 @@ class Capture:
             segments = self.capture.wait(timeout)
         except Exception:   # noqa: BLE001 - not done in time: an incomplete status
             self._segment = None
+            # A capture still waiting for its trigger would refuse the next configure (unavailable, wrong state):
+            # stop it here, best effort.
+            try:
+                self.capture.stop()
+            except Exception:   # noqa: BLE001
+                pass
+            self.fx.ws.note("capture did not complete: stopped")
             return CaptureStatus(0, 0)
         self._segment = segments[0] if segments else None
         return CaptureStatus(self._segment.samples if self._segment else 0, self.COMPLETE if self._segment else 0)
