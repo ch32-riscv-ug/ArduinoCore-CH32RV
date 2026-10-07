@@ -20,7 +20,7 @@
 kind = "oep"
 transport = "serial"                         # the OEP link is the probe's CDC port (found by the unit id in the oep:// port)
 model = "rp2350"                             # oep.core describe: model
-firmware = "0.0.29-dev+47e4b05"                          # oep.core describe: firmware = the oep-probe-arduino release version
+firmware = "0.0.29-dev+5ad85ce"                          # oep.core describe: firmware = the oep-probe-arduino release version
 release = "v0.0.28"                          # oep-probe-arduino tag
 example = "Firmware/OepProbe"                # examples/<example> in that tag
 sketch_profile = "promicrorp2350"            # its sketch.yaml profile for this board (GP19 reserved for the PSRAM, nothing else)
