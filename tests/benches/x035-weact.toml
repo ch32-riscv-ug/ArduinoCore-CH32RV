@@ -5,7 +5,7 @@
 [probe]
 kind = "oep"
 model = "esp32p4"
-firmware = "0.0.29-dev+5ad85ce"
+firmware = "0.0.29-dev+f32a3ef"
 release = "v0.0.28"
 example = "Firmware/OepProbe"
 sketch_profile = "esp32p4"
@@ -35,13 +35,11 @@ idle_clock = "high"
 
 [[bind]]
 port = 1
-mode = "last-reset"
-streams = ["slot:weact"]
+stream = "slot:weact"
 
 [[bind]]
 port = 3
-mode = "last-reset"
-streams = ["slot:weact"]
+stream = "slot:weact"
 
 [[plan]]
 interface = "oep.fixture.uart#0"

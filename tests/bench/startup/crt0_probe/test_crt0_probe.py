@@ -69,8 +69,8 @@ def test_crt0_hands_setup_an_initialised_ram(request, dut, bench, arduino_cli_ap
         n = min(chunk, words - off)
         dm.write_block(first + 4 * off, pattern * n)
     assert dm.read_block(sym["_ebss"], 1) == pattern, "the fill did not land past _ebss"
-    flags, attempts, pc = dm.reset(confirm=True)
-    print(f"reset: flags={flags:#x} attempts={attempts} pc={pc:#x}")
+    flags, pc = dm.reset(confirm=True)
+    print(f"reset: flags={flags:#x} pc={pc:#x}")
     # The sketch is back; its constructor ran on the filled RAM.
     kit.start(dut, "crt0_probe")
     dut.write("RUN\n")

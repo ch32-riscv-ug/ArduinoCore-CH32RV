@@ -20,6 +20,7 @@ tk = load("tests/bench/tracekit.py", "tracekit")
 from wireskein import runlog as ws  # noqa: E402
 
 RATE = 2_000_000
+PRETRIGGER = 1000                   # samples kept before an edge trigger
 # The SPI captures have no trigger to lean on (the P4's capture offers only "immediate") and the probe holds
 # 130816 samples over four channels: a 26 ms window at 5 MS/s, 13 ms at 10 MS/s. The host arms and then sends
 # the command, and the command's way to the DUT (arduino-cli monitor -> ch32rv -> broker -> probe) takes 13..26 ms,
@@ -127,16 +128,20 @@ def test_timing(fx, ws_run):
     cap = tk.Capture(fx)
     fx.plan(cap.assignments(fx.pwm))
     con = fx.console
+    max_pre = cap.edge_trigger
+    # Start at the pad's first edge where the probe offers an edge trigger (the classic ESP32: its immediate window
+    # holds the command until it ends). Without one, the immediate window has to outlast the command's way in.
+    edge = dict(edge=(fx.pwm, "both"), pretrigger=min(PRETRIGGER, max_pre)) if max_pre is not None else {}
 
     def toggled(command: str, done: str, rate: int, samples: int) -> bytes:
-        cap.configure(rate, samples)
+        cap.configure(rate, samples, **edge)
         con.drain(0.05)
         cap.arm()
         con.ask(command, done)
         st = cap.wait(3.0)
         return cap.read_all() if st.flags & cap.COMPLETE else b""
 
-    # The command reaches the DUT 13..26 ms after the arm (see the SPI note), so every window is the probe's
+    # The command reaches the DUT 13..26 ms after the arm (see the SPI note), so an immediate window is the probe's
     # largest, 130816 samples: 65 ms at 2 MS/s, 130 ms at 1 MS/s for the 40 ms the 1000 us toggles take.
     for us in (0, 10, 100, 1000):
         rate = RATE if us < 1000 else 1_000_000
@@ -150,11 +155,11 @@ def test_timing(fx, ws_run):
     s = tk.square_stats(data, 0, RATE)
     print(f"[digitalWrite pair] half period {s['period_us'] / 2:.2f} us" if s else "[digitalWrite pair] no edges")
     # As many 10 ms toggles as the window holds, starting low: half as many rising edges 20 ms apart, low at the end.
-    cap.configure(1_000_000, 400_000)          # PARLIO cannot sample below ~650 kHz
+    cap.configure(1_000_000, 400_000, **edge)   # PARLIO: not below ~650 kHz
     if cap.config.samples / cap.rate < 0.25:
-        cap.configure(400_000, 400_000)
+        cap.configure(400_000, 400_000, **edge)
     window = cap.config.samples / cap.rate
-    toggles = min(20, 2 * int((window - 0.05) / 0.020))   # 50 ms for the command's way in
+    toggles = min(20, 2 * int((window - (0.005 if edge else 0.05)) / 0.020))   # 50 ms for the command's way in
     with ws_run.section(1, "millis 10ms", expect=[ws.pulses(fx.pwm, count=toggles // 2, period_s=0.020, tol_period=0.01),
                                                   ws.ends({fx.pwm: 0})]):
         con.drain(0.05)

@@ -54,6 +54,10 @@ def test_reset_to_setup(request, dut, bench, ws_run):
         gpio = tk.Gpio(fx)
         fx.plan(cap.assignments(mark))
         gpio.configure(mark, tk.Gpio.INPUT_PULL_DOWN)   # a debug reset leaves the pad floating until setup()
+        # Start at the marker's fall where the probe offers an edge trigger: the classic ESP32 holds a reset or a
+        # console command sent during an immediate window until the window ends.
+        max_pre = cap.edge_trigger
+        edge = dict(edge=(mark, "fall"), pretrigger=min(1000, max_pre)) if max_pre is not None else {}
 
         def reason() -> str:
             con.drain(0.02)
@@ -61,7 +65,7 @@ def test_reset_to_setup(request, dut, bench, ws_run):
             return m.group(1) if m else "?"
 
         def measure(kind: str, kick) -> float:
-            cap.configure(rate, 130_816)
+            cap.configure(rate, 130_816, **edge)
             con.drain(0.05)
             cap.arm()
             time.sleep(0.02)

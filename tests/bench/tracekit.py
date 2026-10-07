@@ -137,8 +137,41 @@ class Capture:
         self.pads = pads
         return [(self.fn, k, self.fx.channel(p)) for k, p in enumerate(pads)]
 
-    def configure(self, rate: int, samples: int) -> None:
-        self.config = self.capture.configure(rate=rate, mode=self._mod.ONE_SHOT, samples=samples)
+    EDGES = {"rise": 0, "fall": 1, "both": 2}
+    TAG_TRIGGER = 0x45                             # describe: trigger types(u32 bit set) max_pretrigger(u32)
+
+    @property
+    def edge_trigger(self) -> int | None:
+        """max_pretrigger when the probe's capture offers an edge trigger (describe 0x45, oep-if-capture), else None
+        (immediate only)."""
+        import struct
+        from oep_client import core
+        for tag, value in core.describe(self.fx.host, self.fn):
+            if tag & 0x7F == self.TAG_TRIGGER and len(value) >= 8:
+                types, max_pre = struct.unpack_from("<II", value)
+                return max_pre if types & (1 << self._mod.EDGE) else None
+        return None
+
+    def configure(self, rate: int, samples: int, edge: tuple[str, str] | None = None, pretrigger: int = 0) -> None:
+        """edge = (pad, "rise" / "fall" / "both"): the capture starts at that edge (pretrigger samples kept before it)
+        instead of at the arm. A DUT that acts after the arm needs it on the classic ESP32, where an immediate window
+        holds every SWIO request and console byte until it ends (oep-probe-arduino implementation-limits).
+        A probe that cannot trigger at this rate / size (rejected unsupported, or unavailable as the P4's PARLIO at 400000 samples
+        answers today) gets
+        the immediate window instead, noted in the run; on the classic that window then shows as missing edges."""
+        from oep_client.host import Unavailable, Unsupported
+        trigger = None
+        if edge is not None:
+            pad, kind = edge
+            trigger = (self._mod.EDGE, self.pads.index(pad), self.EDGES[kind])
+        try:
+            self.config = self.capture.configure(rate=rate, mode=self._mod.ONE_SHOT, samples=samples, trigger=trigger,
+                                                 pretrigger=pretrigger if trigger else None)
+        except (Unavailable, Unsupported) as e:
+            if trigger is None:
+                raise
+            self.fx.ws.note(f"edge trigger unavailable at {rate} Hz x {samples} ({e}): immediate window")
+            self.config = self.capture.configure(rate=rate, mode=self._mod.ONE_SHOT, samples=samples)
         self.rate = float(self.config.rate) if self.config.rate else float(rate)
 
     def arm(self) -> None:
@@ -191,7 +224,7 @@ class Gpio:
     driven or read, and `only()` narrows the plan back to the pads a test is working on (a plan of 16 channels was
     refused as malformed on the P4, 2026-09-30)."""
     INPUT_FLOATING, INPUT_PULL_UP, INPUT_PULL_DOWN, OUTPUT_LOW, OUTPUT_HIGH = 0, 1, 2, 3, 4
-    OPEN_DRAIN_LOW, OPEN_DRAIN_RELEASE, INPUT_PULL_UP_DOWN = 5, 6, 7
+    OPEN_DRAIN_LOW, OPEN_DRAIN_RELEASE = 5, 6
 
     def __init__(self, fx: Fixture):
         from oep_client import core, fixture

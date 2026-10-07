@@ -93,8 +93,7 @@ def test_i2c_write(fx, ws_run):
         for address, listening in ((ADDRESS, True), (ADDRESS, True), (ADDRESS + 1, False)):
             case += 1
             payload = bytes((0x10 * case + i) & 0xFF for i in range(4))     # distinct per case: stale data shows
-            T.configure(ADDRESS, T.MODE_FIXED_RX)
-            T.arm_rx(len(payload))
+            T.configure(ADDRESS)
             want = expect_i2c(fx, [(address, "write", payload if listening else b"", listening)], hz)
             with ws_run.section(1, f"case{case} {hz}Hz addr={address:02x}", expect=want):
                 line, trace, _ = traced(fx, f"WRITE {fx.route} {hz} {address:02x} {payload.hex()}", "WRITE rc=", hz)
@@ -114,7 +113,7 @@ def test_i2c_read_and_repeated_start(fx, ws_run):
     START); a 400 kHz write."""
     T = fx.target
     begin(fx)
-    T.configure(ADDRESS, T.MODE_PRELOADED_TX)
+    T.configure(ADDRESS)
     slots = [bytes.fromhex("a1b2c3d4"), bytes.fromhex("11223344")]
     for s in slots:
         T.preload_tx(s)
@@ -126,7 +125,7 @@ def test_i2c_read_and_repeated_start(fx, ws_run):
         print(f"[read slot{n}] {line} | wire {trace.summary()} | expected {want.hex()} -> {'OK' if got == want else 'BAD'}")
         if got != want:
             bad.append(f"read slot{n}")
-    T.configure(ADDRESS, T.MODE_PRELOADED_TX)
+    T.configure(ADDRESS)
     T.preload_tx(bytes.fromhex("55667788"))
     with ws_run.section(1, "write-then-read", expect=expect_i2c(fx, [(ADDRESS, "write", b"\x01\x02", True),
                                                                       (ADDRESS, "read", bytes.fromhex("55667788"), True)], 100_000)):
@@ -136,8 +135,7 @@ def test_i2c_read_and_repeated_start(fx, ws_run):
     if not ok:
         bad.append("write-then-read")
     if fx.cap_max >= 2_500_000:
-        T.configure(ADDRESS, T.MODE_FIXED_RX)
-        T.arm_rx(4)
+        T.configure(ADDRESS)
         with ws_run.section(1, "write 400kHz", expect=expect_i2c(fx, [(ADDRESS, "write", bytes.fromhex("0a0b0c0d"), True)], 400_000)):
             line, trace, _ = traced(fx, f"WRITE {fx.route} 400000 {ADDRESS:02x} 0a0b0c0d", "WRITE rc=", 400_000)
         time.sleep(0.05)
@@ -160,8 +158,7 @@ def test_i2c_clock_switch(fx, ws_run):
     bad = []
     for k, hz in enumerate(steps):
         payload = bytes((0xA0 + 4 * k + i) & 0xFF for i in range(4))
-        T.configure(ADDRESS, T.MODE_FIXED_RX)
-        T.arm_rx(len(payload))
+        T.configure(ADDRESS)
         with ws_run.section(1, f"step{k} {hz}Hz", expect=expect_i2c(fx, [(ADDRESS, "write", payload, True)], hz)):
             line, trace, _ = traced(fx, f"WRITE {fx.route} {hz} {ADDRESS:02x} {payload.hex()}", "WRITE rc=", hz)
         time.sleep(0.05)
@@ -180,9 +177,9 @@ def test_i2c_clock_stretch(fx, ws_run):
     Below Wire's 25 ms timeout (CH32RV_WIRE_TIMEOUT_US) the read completes with the slot's bytes; above it Wire gives
     up within the timeout, and the next read with the stretch off works again."""
     T = fx.target
-    max_us = T.max_stretch_us                     # declared exactly when features has bit1 (stretch)
+    max_us = T.max_stretch_us                     # declared exactly when the ops offer stretch (optional)
     if max_us is None:
-        pytest.skip("the probe's I2C target does not stretch (no features bit1 / max_stretch_us)")
+        pytest.skip("the probe's I2C target does not stretch (no stretch op / max_stretch_us)")
     begin(fx)
     slot = "a1b2c3d4"
     bad = []
@@ -193,7 +190,7 @@ def test_i2c_clock_stretch(fx, ws_run):
 
     for stretch_us in [us for us in (0, 100, 1000, 5000, 20000, 30000) if us <= max_us]:
         T.stretch(stretch_us)
-        T.configure(ADDRESS, T.MODE_PRELOADED_TX)
+        T.configure(ADDRESS)
         T.preload_tx(bytes.fromhex(slot))
         with ws_run.section(1, f"stretch {stretch_us}us"):
             got, data, t_us, trace, samples = read4()
@@ -206,7 +203,7 @@ def test_i2c_clock_stretch(fx, ws_run):
         if not ok:
             bad.append(stretch_us)
     T.stretch(0)
-    T.configure(ADDRESS, T.MODE_PRELOADED_TX)
+    T.configure(ADDRESS)
     T.preload_tx(bytes.fromhex(slot))
     with ws_run.section(1, "after stretch, stretch off"):
         got, data, t_us, trace, _ = read4()
@@ -258,7 +255,7 @@ def test_i2c_stuck_bus(fx, ws_run):
     fx.console.drain(0.3)
     if T.max_stretch_us is not None:                         # only a probe that stretches knows the op
         T.stretch(0)
-    T.configure(ADDRESS, T.MODE_PRELOADED_TX)
+    T.configure(ADDRESS)
     T.preload_tx(bytes(4))
     with ws_run.section(1, "target left mid-byte"):          # the fault itself: recorded, not checked
         stuck_line, trace, _ = traced(fx, f"STUCK {ADDRESS:02x}", "STUCK ack=", 100_000)
@@ -274,8 +271,7 @@ def test_i2c_stuck_bus(fx, ws_run):
     clr = fx.console.ask("BUSCLR", "BUSCLR free=", 5)
     print(f"[bus clear from the sketch] {clr}")
     begin(fx)
-    T.configure(ADDRESS, T.MODE_FIXED_RX)
-    T.arm_rx(2)
+    T.configure(ADDRESS)
     with ws_run.section(1, "after bus clear", expect=expect_i2c(fx, [(ADDRESS, "write", b"\x01\x02", True)], 100_000)):
         rc, t_us, line, trace = write2()
     time.sleep(0.05)

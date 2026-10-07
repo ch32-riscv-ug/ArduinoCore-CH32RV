@@ -1,6 +1,6 @@
 """analogRead() against the probe's rails, endpoints only: the probe drives each ADC pad the bench wires push-pull
 low and high and the reading has to follow (loose bounds - the absolute values are off on this fixture, a pad that
-does not follow fails by hundreds); a rough mid-scale from the probe's pull-up + pull-down for information; and on
+does not follow fails by hundreds); and on
 the X035, whether ADC channels 3 / 7 / 15 exist on this part (errata x035-adc-ch-i2c-unavailable). An absent
 channel is not "reads 0": its sample-and-hold node keeps the previous conversion's charge and decays a few percent
 per 1000 conversions, so it is judged by preconditioning, not by one value.
@@ -63,17 +63,6 @@ def test_adc_follows_the_rails(fx, bench, ws_run):
               f"-> {'OK' if ok else 'BAD'} (10-bit, rails 0 V / probe 3.3 V)")
         if not ok:
             bad.append(pad)
-    # Rough mid-scale: the probe's pull-up and pull-down together sit near 1.47 V (about 455 of 1023 at 3.3 V).
-    # Not a calibrated reference; it shows the ADC is not just reading rails.
-    mids = {}
-    for pad in fx.pads:
-        if pad in absent:
-            continue
-        gpio.only(pad)
-        gpio.configure(pad, G.INPUT_PULL_UP_DOWN); time.sleep(0.02); mids[pad] = reading(con, "ADC", tk.encode(pad), 16)[2]
-        gpio.configure(pad, G.INPUT_FLOATING)
-    print("[mid-scale, probe pull-up + pull-down ~1.47 V -> expect ~430..480] " + " ".join(f"{p}={v}" for p, v in mids.items()))
-    ws_run.note("mid-scale " + " ".join(f"{p}={v}" for p, v in mids.items()))
     assert not bad, f"pads that do not follow the rails: {bad}"
 
 

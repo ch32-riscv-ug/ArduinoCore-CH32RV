@@ -145,10 +145,10 @@ def _text(v: bytes) -> str:
 
 
 def oep_probe_facts(hst) -> dict[str, str]:
-    """firmware / model / unit / profile from oep.core's describe (lock-free)."""
+    """firmware / model / unit from oep.core's describe (lock-free)."""
     from oep_client import core, registry
     tags = registry.CORE.tlv["describe"]
-    want = {tags["firmware"]: "firmware", tags["model"]: "model", tags["unit_id"]: "unit", tags["profile"]: "profile"}
+    want = {tags["firmware"]: "firmware", tags["model"]: "model", tags["unit_id"]: "unit"}
     out = {}
     for tag, value in core.describe(hst, 0):
         key = want.get(tag & 0x7F)
@@ -219,18 +219,15 @@ def wanted_items(bench: Bench, hst) -> list:
         pins = tuple(slot["pins"]) if len(slot["pins"]) == 2 else (slot["pins"][0], 0xFFFF)
         items.append(config.Slot(slot=0, wire_fn=wire_fn, pins=pins, name=slot["name"],
                                  attach=slot.get("attach", "host"), retry_s=int(slot.get("retry_s", 0)),
-                                 mechanism=slot.get("mechanism", "dmseq"), lock=None,
+                                 mechanism=slot.get("mechanism", "dmseq"),
                                  max_speed=int(slot.get("max_speed", 0)), idle_clock=slot.get("idle_clock", "high")))
-    for b in bench.data.get("bind", []):
-        streams = []
-        for s in b["streams"]:
-            kind, _, ref = s.partition(":")
-            if kind == "slot":
-                streams.append(("slot", 0))
-            else:
-                streams.append(("uart", fn_of(hst, "oep.fixture.uart", int(ref or 0))))   # uart:<instance>
-        items.append(config.Bind(port=int(b["port"]), mode=b.get("mode", "last-reset"), streams=streams,
-                                 selected=int(b.get("selected", 0))))
+    for b in bench.data.get("bind", []):              # one port carries one stream (probe.config §1.2)
+        kind, _, ref = b["stream"].partition(":")
+        if kind == "slot":
+            stream = ("slot", 0)
+        else:
+            stream = ("uart", fn_of(hst, "oep.fixture.uart", int(ref or 0)))    # uart:<instance>
+        items.append(config.Bind(port=int(b["port"]), stream=stream))
     return items
 
 
@@ -285,7 +282,7 @@ def check(bench: Bench, ch32rv: pathlib.Path | str | None = None) -> list[str]:
     hst, close = open_probe(bench, ch32rv)
     try:
         facts = oep_probe_facts(hst)
-        for key in ("model", "firmware", "profile"):
+        for key in ("model", "firmware"):
             want = bench.probe.get(key)
             if want and facts.get(key) != want:
                 problems.append(f"probe {key}: bench file says {want!r}, probe says {facts.get(key)!r}")
@@ -299,14 +296,14 @@ def check(bench: Bench, ch32rv: pathlib.Path | str | None = None) -> list[str]:
             why = f", unreadable: {st.unreadable}" if st.unreadable else ""
             problems.append(f"probe settings storage is {st.storage!r} (saved hash {st.saved_hash:#x}{why}): the probe "
                             f"is not running its saved settings")
-        have = [dataclasses.astuple(i) for i in oep_config_items(hst)]
-        want_items = [dataclasses.astuple(i) for i in wanted_items(bench, hst)]
-        for it in want_items:
-            if it not in have:
-                problems.append(f"probe config lacks {it}")
-        for it in have:
-            if it not in want_items:
-                problems.append(f"probe config has {it}, not in the bench file")
+        have, want = oep_config_items(hst), wanted_items(bench, hst)
+        if not config.same_items(have, want):         # item by item: the probe's hash is its own (host guide §15)
+            have_t = [dataclasses.astuple(i) for i in have]
+            want_t = [dataclasses.astuple(i) for i in want]
+            diff = [f"probe config lacks {type(i).__name__} {t}" for i, t in zip(want, want_t) if t not in have_t]
+            diff += [f"probe config has {type(i).__name__} {t}, not in the bench file"
+                     for i, t in zip(have, have_t) if t not in want_t]
+            problems += diff or ["probe config differs from the bench file in item order or encoding"]
     finally:
         close()
     return problems

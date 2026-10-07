@@ -15,7 +15,7 @@
 [probe]
 kind = "oep"
 model = "esp32p4"                             # oep.core describe: model (the chip; "esp32-p4-devkit" before 0.0.8)
-firmware = "0.0.29-dev+5ad85ce"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
+firmware = "0.0.29-dev+f32a3ef"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
 release = "v0.0.28"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag: one sketch per probe chip since 0.0.8, the jig is all settings
 sketch_profile = "esp32p4"                   # its sketch.yaml profile for this probe
@@ -45,13 +45,11 @@ idle_clock = "high"
 
 [[bind]]                                     # oep config bind: what each serial port carries
 port = 1
-mode = "last-reset"
-streams = ["slot:x035"]
+stream = "slot:x035"
 
 [[bind]]
 port = 3
-mode = "last-reset"
-streams = ["slot:x035"]
+stream = "slot:x035"
 
 [[plan]]                                     # oep config plan: pins an interface keeps
 interface = "oep.fixture.uart#0"

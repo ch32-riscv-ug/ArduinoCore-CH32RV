@@ -10,9 +10,9 @@
 | **transport** | トランスポート | OEP のフレームを運べるもの。vendor bulk、HID、USB CDC、USB-Serial/JTAG、UART bridge、TCP |
 | **serial port** | シリアルポート | transport のうち、OS からシリアルデバイスに見えるもの（USB CDC の interface、USB-Serial/JTAG、UART bridge）。probe が番号で宣言する。常に OEP を受け、それ以外のバイトは bind したストリームへ流す。vendor bulk と HID は transport だが serial port ではない |
 | **stream** | ストリーム | probe の中の位置付きのバイト列。target console と fixture UART の受信。読んでも消えず、読み手が複数いてよい |
-| **slot** | スロット | 登録された 1 つの「場所」: wire、pins、name、attach policy、console mechanism。target_id は任意の錠。IDE port はスロットごと |
+| **slot** | スロット | 登録された 1 つの「場所」: wire、pins、name、attach policy、console mechanism。IDE port はスロットごと |
 | **connection** | 接続 | スロットへの生きている attach |
-| **bind** | バインド | serial port → stream の対応と、その流し方（mode） |
+| **bind** | バインド | serial port → stream の対応（1 port に 1 stream） |
 | **attach policy** | attach の方針 | host / at boot（+ 再試行の間隔） |
 | **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行。probe の serial port とは別の概念 |
 | **broker** | ブローカー | probe ごとに 1 つ、誰の子でもない ch32rv のプロセス。probe のセッションを持ち、client（ch32rv の各コマンド、pytest）を束ねる。client が 0 になったら終わる |
@@ -139,8 +139,7 @@ monitor は無い。2 段目（X035 / X315）: core に USB CDC（TinyUSB の結
   しないので、この形にする。
 - **生の転送を止めるのは、ロックを持つセッションの要求が来ている serial port だけ。** 別の transport にセッションがあるとき、その
   serial port の生の転送は止めない。セッション中に PC から来たフレーム外のバイトは捨てる。
-- セッションが終わったら（`end`、lease の期限切れ）、**host がそのセッションで最後に reset した位置から**生の転送を再開する（reset が
-  無ければ今から。ストリームからあふれた分は捨ててよい）。mode に関係なく同じ。
+- セッションが終わったら（`end`、lease の期限切れ）、**止めた位置から**生の転送を再開する（あふれていれば一番古いバイトから）。
 - client: フレームの外のバイトは雑音として捨て、応答の欠落は時間切れだけで判断する。
 
 ### 4.3 排他とロックの奪い方
@@ -173,15 +172,14 @@ UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数�
 
 1. ブラウザの設定ページ（OEP 側のリポジトリ）で、probe に合う transport（CDC は Web Serial、HID は WebHID、vendor は WebUSB）を
    開く。どれも同じ OEP（describe、session、probe.config）。
-2. `scan` で target を探し、見つかったピンの組をスロットとして登録する（wire、pins、name、attach policy、console mechanism。
-   target_id は錠を掛けるときだけ）。
-3. serial port ごとに bind（流すストリームの集合と mode）を決める。
+2. `scan` で target を探し、見つかったピンの組をスロットとして登録する（wire、pins、name、attach policy、console mechanism）。
+3. serial port ごとに bind（流すストリーム 1 つ）を決める。
 4. `save`。すぐ効く。再起動は要らない。
 
 ### 5.2 スロット
 
 - 登録は「チップ」ではなく「場所」。チップを付け替えても登録は直さない。どのチップかは使うときに分かる（書き込みは板の家系と実際の
-  チップの照合で守る）。錠（target_id）を掛けたスロットは、違うチップを断る。
+  チップの照合で守る）。
 - **同時に持てる接続の数は probe が宣言する**（宣言が無ければ 1）。ロックは probe に 1 つのまま（接続ごとのロックは足さない）。複数の
   host の同時制御は transport の分離（TCP、host 側のブローカー）で、protocol の外。
 - 登録の上限は protocol では決めず、probe が宣言する（ピンの数、保存の容量、ピン固定なら 1）。
@@ -200,22 +198,17 @@ UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数�
 - at boot のスロットの数は同時に持てる数まで（超える set は断る。順序は意味を持たない）。席が埋まっているときの host の attach は、
   bind だけが使っている接続のうちいちばん古いものを外して席を空ける（host も使っている接続は外さない）。押し出されたスロットは
   そのまま。再 attach は at boot の再試行か host の attach で起き、**bind はどの接続にも乗る**。
-- **スロットの状態**（接続あり / いない（最後に試した時刻）/ 錠に不一致）は probe が describe にロック無しで出し、discovery でも
+- **スロットの状態**（接続あり / いない（最後に試した時刻））は probe が describe にロック無しで出し、discovery でも
   OEP の client でも同じものが読める。host は線を駆動しない。線を駆動せずに「つながっているか」を知る方法は無い（内蔵プルでも、
   容量の戻り時間でも、接続ピンと未接続ピンで差が無かった）。
-- 自動 attach は止めない attach だけ。錠があれば target_id が一致したときだけコンソールを開く。
+- 自動 attach は止めない attach だけ。
 
 ### 5.4 bind（serial port に何を流すか）
 
-| mode | 流すもの | 入力 |
-|---|---|---|
-| **last-reset** | host が最後に reset した target のストリーム（riscv-dm の reset と attach_under_reset。probe 自身の attach と target の自己リセットは数えない）。起動時は bind の並びの先頭。選ばれた target の接続が切れても選択は替えない | 選ばれているストリームへ |
-| **manual** | bind に保存した「選ばれているストリーム」。設定ページと書き込みツールが替える。選択の無い manual は set で断る | 同上 |
-| **mixed** | 全部。ストリームごとに行をため、閉じたら `[name] 行`。閉じない出力は量（例 128 byte）か静けさ（例 100 ms）で区切る | **送らない（受信専用）** |
+bind は serial port 1 つにストリーム 1 つ（スロットのコンソールか fixture UART の受信）。入力はそのストリームへ送る。
 
-- どの mode でも bind が 1 つならそれが流れる。1 つのときと 2 つ以上のときで動きが変わらない。
-- 対応する mode は probe が宣言する。last-reset と manual は必須、mixed は任意（小さい probe は閉じてよい）。
-- 設定ページの注意: mixed は印が入り、target どうしの前後は行が閉じた順（機械で読む用途に向かない）。入力は送らない。
+- 替えるときは host が bind を set し直す。セッションの間は進めず、終わったら止めた位置から続ける（あふれていれば一番古いバイトから）。
+- 同じスロットを 2 つの port に bind してよい（x035-p4 の port 1 と port 3）。
 - fixture UART のストリームは接続が無くても流れる。
 
 ## 6. IDE との結び付き

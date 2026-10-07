@@ -111,9 +111,9 @@ usb_pads = ["PC16", "PC17"]                   # 治具の注意（USB PHY の pa
 name = "x035"; wire = "rvswd"; pins = [2, 54]; attach = "at-boot"; retry_s = 1; mechanism = "dmseq"
 
 [[bind]]                                      # oep config bind
-port = 1; mode = "last-reset"; stream = "slot:x035"
+port = 1; stream = "slot:x035"
 [[bind]]
-port = 3; mode = "last-reset"; stream = "slot:x035"
+port = 3; stream = "slot:x035"
 
 [plan."oep.fixture.uart#0"]                   # oep config plan（fixture UART、instance は 0 から）
 rx = 12; tx = 6                               # DUT USART4 route 0: PB0(TX) -> 12, PB1(RX) <- 6
