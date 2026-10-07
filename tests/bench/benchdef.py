@@ -228,7 +228,20 @@ def wanted_items(bench: Bench, hst) -> list:
         else:
             stream = ("uart", fn_of(hst, "oep.fixture.uart", int(ref or 0)))    # uart:<instance>
         items.append(config.Bind(port=int(b["port"]), stream=stream))
+    if bench.probe.get("wifi") == "env":                # the networks from OEP_WIFI_SSID_<n> / OEP_WIFI_PASS_<n>
+        nets = config.wifi_from_env()                   # (tests/.env), never from the bench file
+        if not nets:
+            raise BenchError(f"{bench.name}: wifi = \"env\" and no OEP_WIFI_SSID_0 in the environment (tests/.env)")
+        items += nets
     return items
+
+
+def _item_view(it) -> tuple:
+    """An item as the check compares and prints it: a wifi item by index, ssid and whether a passphrase is set (get
+    never shows the passphrase, and nothing here may print it)."""
+    if type(it).__name__ == "Wifi":
+        return ("wifi", it.index, it.ssid, "passphrase set" if it.passphrase is not None else "open")
+    return dataclasses.astuple(it)
 
 
 def attach_slot(bench: Bench, hst, halt: bool = False):
@@ -271,6 +284,32 @@ def open_probe(bench: Bench, ch32rv: pathlib.Path | str | None = None):
     return hst, hst.link.close
 
 
+def wifi_state(bench: Bench, ch32rv: pathlib.Path | str | None = None):
+    """The probe's Wi-Fi link (probe.config state, lock-free): config.WifiState - state, entry, rssi, ipv4 - or None on
+    a probe without the wifi item. Its text names no SSID."""
+    from oep_client import config
+    hst, close = open_probe(bench, ch32rv)
+    try:
+        st = config.ProbeConfig(hst).state()
+        return st.wifi.text() if st.wifi else None
+    finally:
+        close()
+
+
+def tcp_target(bench: Bench, ch32rv: pathlib.Path | str | None = None) -> str | None:
+    """tcp://<ipv4>:<port> of a probe connected to Wi-Fi (the address its state reports; mDNS does not reach WSL, so
+    the bench asks the probe over its usual link), or None while it is not connected."""
+    from oep_client import config
+    hst, close = open_probe(bench, ch32rv)
+    try:
+        w = config.ProbeConfig(hst).state().wifi
+    finally:
+        close()
+    if not (w and w.ipv4):
+        return None
+    return f"tcp://{w.ipv4}:{int(bench.probe.get('tcp_port', 7450))}"
+
+
 def check(bench: Bench, ch32rv: pathlib.Path | str | None = None) -> list[str]:
     """Compare the live probe with the bench file. -> the mismatches, in words; empty means ready."""
     kind = bench.probe.get("kind", "oep")
@@ -298,8 +337,8 @@ def check(bench: Bench, ch32rv: pathlib.Path | str | None = None) -> list[str]:
                             f"is not running its saved settings")
         have, want = oep_config_items(hst), wanted_items(bench, hst)
         if not config.same_items(have, want):         # item by item: the probe's hash is its own (host guide §15)
-            have_t = [dataclasses.astuple(i) for i in have]
-            want_t = [dataclasses.astuple(i) for i in want]
+            have_t = [_item_view(i) for i in have]
+            want_t = [_item_view(i) for i in want]
             diff = [f"probe config lacks {type(i).__name__} {t}" for i, t in zip(want, want_t) if t not in have_t]
             diff += [f"probe config has {type(i).__name__} {t}, not in the bench file"
                      for i, t in zip(have, have_t) if t not in want_t]

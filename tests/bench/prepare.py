@@ -205,10 +205,10 @@ def show_properties(sketch: pathlib.Path, profile: list = ()) -> dict[str, str]:
 
 def item_key(it) -> tuple[str | None, int | None]:
     """(kind, key) of a live config item for unset: plan / uart by fn, label / idle / disable by channel, slot by
-    number, bind by port (oep_client.config.remove)."""
+    number, bind by port, wifi by index (oep_client.config.remove)."""
     kind = type(it).__name__.lower()
     key = {"plan": "fn", "uart": "fn", "label": "channel", "idle": "channel", "disable": "channel",
-           "slot": "slot", "bind": "port"}.get(kind)
+           "slot": "slot", "bind": "port", "wifi": "index"}.get(kind)
     return (kind, getattr(it, key)) if key else (None, None)
 
 
@@ -247,6 +247,8 @@ def check(bench: benchdef.Bench, ch32rv) -> int:
         return 1
     log(f"bench {bench.name} is ready for --profile {bench.profile} ({bench.probe.get('model')}, "
         f"firmware {bench.probe.get('firmware')})")
+    if bench.probe.get("wifi"):
+        log(f"  wifi: {benchdef.wifi_state(bench, ch32rv)}")
     return 0
 
 

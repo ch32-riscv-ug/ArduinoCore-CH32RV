@@ -13,11 +13,14 @@
 kind = "oep"
 transport = "serial"                         # the OEP link is the probe's serial port (the oep:// address's probe part elsewhere)
 model = "esp32"                              # oep.core describe: model
-firmware = "0.0.29-dev+589acd5"                           # oep.core describe: firmware = the oep-probe-arduino release version
+firmware = "0.0.29-dev+8bcecca"                           # oep.core describe: firmware = the oep-probe-arduino release version
 release = "v0.0.28"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag
 sketch_profile = "esp32"                     # its sketch.yaml profile for this probe
 erase = "all"
+wifi = "env"                                 # joins the networks OEP_WIFI_SSID_<n> / OEP_WIFI_PASS_<n> name (tests/.env;
+                                             # never here). prepare --config sets them; --check prints the link
+tcp_port = 7450                              # the reference probe's OEP-over-TCP port (DNS-SD's SRV elsewhere; no mDNS in WSL)
 
 [dut]
 board = "CH32V003"                           # the profile
