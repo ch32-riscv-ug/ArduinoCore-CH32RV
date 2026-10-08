@@ -29,13 +29,13 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | GPIO | 実装済 | pinMode/digitalWrite/digitalRead | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
-| EXTI (外部割込み) | 実装済 | attachInterrupt | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | X033/X035のEXTI16-23は未対応 |
+| EXTI (外部割込み) | 実装済 | attachInterrupt | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | X033/X035はEXTI 16〜23(PC16〜PC23、`EXTI25_16_IRQHandler`、`CH32RV_EXTI_LINES` 24)。AFIO_EXTICRはX033/X035/M030/V00xで1 line 2 bit。EXTI 16〜23の実機確認は未 |
 | PFIC (割込みコントローラ) | 実装済 | - | ○ | ○ |  | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | 優先度は全てreset既定のまま |
 | SysTick | 実装済 | millis/micros/delay | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  |  |
 | RCC (クロック) | 実装済 | F_CPU | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | HSIのみ。PLL/HSEは将来 |
 | PWR (低消費電力) | 要判断 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduino標準APIが無い。sleep系をどう見せるか |
 | FLASH (自己書き換え) | 要判断 | EEPROM相当 | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduinoでは`EEPROM`が定番。**page消去単位と書き込み粒度のデータが無い**(R-20のD-3相当)。products.csvにあるのはflash容量だけ |
-| USART | 実装済 | Serial | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
+| USART | 実装済 | Serial | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 受信でFE / NE / PEの立ったバイトは捨てる(相手のTXのグリッチが行バッファに残らないように) |
 | I2C | 実装済 | Wire | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | master + slave(割込み駆動)。配線なし自己検査14項目を4 board実機pass。slaveの**データ経路は`manual/i2c_loopback`の配線待ち**。実デバイス相手の確認はこれから |
 | SPI | 実装済 | SPI | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | controller専用。X035実機で配線なしの自己検査9項目pass。**peripheral(slave)は未実装**、実デバイス相手の確認はこれから |
 | ADC | 実装済 | analogRead | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 分解能は実機未確認。X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替(**未検証**) |

@@ -84,3 +84,26 @@ usbipd から外れるので `TEST_BENCH_CH32X035_USBIP_BUSID` も要ります�
 - **ベンチ上の作業は同時に 1 つ。** 並行に焼く・回すと WSL が落ちたことがあります。
 - Windows では作業ディレクトリを `<drive>:\ch32t\` 以下に作ります。`%TEMP%` の深さで toolchain の include path が MAX_PATH を超えます
   （`CH32_TEST_TMP` で変更、`CH32_KEEP_TMP=1` で残す）。
+- **target が動いているかは UART(sketch の出力)で判断し、debug link の状態では判断しない。** CH32V00x の debug module は
+  `havereset` を `ackhavereset` で落とすまで DMSTATUS の halt / running を reset 時の値のまま返す(UART に出力して動いている
+  V006 が `allrunning=0 halted=1` だった)。X035 では ndmreset の後、DMSTATUS が allrunning なのに hart が reset vector で
+  止まったままの回が数 % あった(dpc 0。probe 側で、reset を遅いクロックに合わせた速度で行うようにして解消)。bench の test は
+  banner / READY を待つ。
+- **DUT が READY を出し続けるのにコマンドに答えないときは、まず改行だけを送る。** tester 側の TX のグリッチ(UART の begin / end、
+  ESP32 の `pinMode(OUTPUT)` は一瞬 low から始まる)で DUT の行バッファにゴミが 1 byte 残り、次のコマンドとつながっていた
+  (`unknown cmd=\xef\xbf\xbdPING 1`)。今は core が FE / NE / PE のバイトを捨て、probe は begin の前と end の後に TX を high に保つ。
+- **2 つの probe が同じ target に届いていると言う前に UID を比べる。** 同じ型番の chip が別の板に載っていることがある。
+  各 probe から ESIG の UID を読んで比べる。
+- **WSL の時計が遅れることがある。** WSL の CLOCK_MONOTONIC(`time.perf_counter()`)が実時間の 0.92〜0.97 倍で進み、回ごとに
+  揺れた期間があった(`time.time()` は Hyper-V の時刻同期で飛ぶ)。WSL の再起動、clocksource の変更、Windows の再起動でも直らな
+  かった。所要時間や速度を記録する前に水晶基準(例: SWD probe で RP2350 の TIMER0 を約 20 秒読む)と突き合わせる。ずれている
+  ときは比や合否で扱い、数字の横にそう書く。
+- **bench の sketch を書くとき**: `.ino` の前処理は自由関数の prototype をファイルの先頭に差し込むので、template 関数や、自由関数の
+  引数・戻り値に使う struct は隣の `.h` に置いて先頭で include する。`build_config.toml` の define はいつも文字列で届くので、数値は
+  `atoi()` で読む(`reset_probe.ino` の `BENCH_MARK_PIN`)。`word` / `bit` / `constrain` / `sq` / `radians` / `degrees` は
+  `api/Common.h` の関数形式マクロなので、同じ名前の lambda や関数を作ると、呼び出しが黙ってマクロに置き換わる(`word(off)` は
+  `makeWord(off)` になり `off` を返す)。
+- dmseq の console の返事がまれに届かないことがある(ESP32 の治具、probe の版によらない)。再発したら、その回の `dut.log` と
+  ch32rv の broker log(`/run/user/<uid>/ch32rv/*.broker.log`)を残して OEP 側に渡す。
+- `60-ch32rv.rules` は同梱する ch32rv の `doctor --emit-udev` とバイト一致のコピー。手で直さず、リポジトリ全体の一括置換からも
+  外す(`tests/build/vendor/test_udev_rules.py` が検出する)。ch32rv の版を上げたらコピーし直す。

@@ -37,6 +37,19 @@
 - CSR命令と必要なISA extension
 - multilibの存在と正しいlibgcc/newlib選択
 
+- **QingKe V2C(CH32V002/V004/V005/V006/V007/M007)は乗算だけで、除算命令が無い。** CH32V00XRM p.1の`RV32EmC`の小文字の
+  mは「M拡張のうち乗算の部分」を指す。`-march=rv32emc`はGCCに除算器を約束するので`divu`/`remu`が出て、不正命令で
+  trapする。最初に当たるのはたいてい`HardwareSerial::begin`のBRR計算で、clock・AFIO・GPIOは書かれたのにBRRだけ
+  書かれていないように見える。coreは`rv32ec_zmmul_zicsr`を使う(GCC 13以降、`tools/generate/generate.py`)。
+
+  | `-march=` | 乗算 | 除算 |
+  |---|---|---|
+  | `rv32emc_zicsr` | `mul` | `divu`(trap) |
+  | `rv32ec_zmmul_zicsr` | `mul` | `__udivsi3` |
+  | `rv32ec_zicsr` | `__mulsi3` | `__udivsi3` |
+
+  (xpack GCC 14.3.0、`-mabi=ilp32e`。CH32V006K8U6で2026-09-16に確認)
+
 ### runtime
 
 - resetから`main`までの初期化

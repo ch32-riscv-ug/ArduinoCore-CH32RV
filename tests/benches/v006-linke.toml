@@ -1,5 +1,7 @@
 # The CH32V006 bench until its P4 jig exists: a WCH-LinkE and a CH32V006K8U6 with the Link's
 # UART bridge on the variant's default Serial (USART1: PD5 -> Link RX, PD6 <- Link TX).
+# The board is not powered from the Link's 3V3: `ch32rv probe power 3v3` off and on changes nothing at the
+# target, so `probe power cycle` is not a cold boot here. Pull the board's own USB to cold-boot it.
 # No fixture beyond the UART, so tests that need wired pads, capture or an OEP
 # host skip here. The machine's side, in tests/.env:
 #

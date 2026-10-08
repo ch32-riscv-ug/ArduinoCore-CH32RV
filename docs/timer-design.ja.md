@@ -66,6 +66,9 @@ CH32V003では次の割当になっている。
 この「共有」は管理された共有ではない。たとえば`tone()`がTIM2のPSC/ARRを変更すると、
 TIM2のPWM padにも異なる波形が出る可能性がある。終了時にもPWM設定は復元されない。
 
+V003の実測(2026-09-22、OEP probeのcapture): PWM 1005.5 Hz、tone -0.35 %、millis +0.3 %、delayMicroseconds +4〜7 µs
+(以前は+16 µs。rv32ecでは`micros()`の除算がlibgccの呼び出しだったので、逆数のshift / addにした)、restartからsetupまで0.34 ms。
+
 ## 3. 実行コンテキストを三つに分ける
 
 「ハードウェアタイマー」を一種類のAPIとして扱わず、分解能とcallbackの実行場所を

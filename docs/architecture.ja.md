@@ -74,6 +74,10 @@ CH32V003級ですべての機能を実装できない場合でも、標準APIの
 - UART、SPI、I2Cのinstanceとpin routing
 - ADC/PWM/timerの基本操作
 - interrupt attach/detachとcritical section
+  - critical sectionは`ch32rv_irq_save()` / `ch32rv_irq_restore()`(Arduino.h)を使い、libraryとcoreのコードで`mstatus`を
+    直接触らない。mstatus 0x88で起動する家系(X033/X035など)のsketchはUモードで走るので、`csrrci mstatus`は不正命令
+    (mcause 2)になり、既定のtrap handlerで何も出さずに止まる(2026-09-22にWireの`requestFrom()`がこれで途中で止まって
+    いた)。X035のsketchがlibraryの中で無言で止まったら、まずmachine CSRへのアクセスを疑い、haltしてmcause / mtvalを読む
 - clock/reset gating
 
 外部ライブラリに安定APIとして公開する必要が生じた場合は、Arduino APIと分けてADRで決定します。

@@ -18,6 +18,16 @@
 - [x] `[P1]` **公開済みの architecture `ch32v`(0.0.1〜0.0.5)を package index から消す**(ユーザー判断、2026-10-01)。
       commit 済みの package_ch32-riscv-ug_index.json から `ch32v` の 5 件と、それだけが使っていた ch32rv 0.11.0〜0.12.5 の
       tool entry を落とした。release は `--merge` でこの commit 済みの index に重ねるので、次の release の Pages から消える
+- [ ] X035 で HCLK 分周を選べるようにするときは、HPRE を linear 符号化(`0xxx`)で書く。アプリが HPRE を `1xxx`(bit 7 = 1、
+      例 `1000` = /2)にすると WCH-LinkE の attach で target が止まる。`0001`(/2)と `0101`(/6)は問題ない(wch-protocols E164、
+      2026-09-25)。止まった個体は、LinkE の special erase(電源断 / nrst)を応答が 0x0f になるまで繰り返すと戻る。
+      今の core は X03x を `CH32RV_HPRE_LINEAR` で書くので、この形にはならない
+- [ ] `(要判断)` 2026-09-30 の凍結前レビューで core 側に挙げ、判断の記録がまだ無いもの: Serial の既定 USART、
+      setPins / SoftWire / SoftSPI の引数の順、`-D{build.series}` と `ARDUINO_{build.board}` が pnum で変わること、
+      USBPD の `maintain()`
+- [ ] device-data R-36(columns.csv の `spelling`)に合わせて、core がまだ as-printed の値で照合しているもの
+      (`operating_conditions.condition` の `HSI_LP = 0`、`memory_map` の `IWDG`、`clock_symbols` の `FLASH_ACTLR_LATENCY`)を
+      固定し、上流で変わったらはっきり失敗するようにする
 
 OEP probe で X035F8U6（P4 fixture）と V003（UIAPduino、classic ESP32 ジグ）の P3 表（GPIO / UART / ADC / PWM・tone / 時刻 / I2C / SPI / route /
 reset）は配線のある範囲で全部実測済み。今の機材でこれ以上進まないものと、判断・作業が残るものを分ける。

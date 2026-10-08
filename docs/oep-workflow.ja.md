@@ -373,3 +373,7 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
   attach_under_reset で接続の一覧は無い。bind と describe の port は USB の CDC だけが対象（§5 で組み直す）。fn 0 の describe に
   経路の一覧は無い（§4.3 で足す）。X035 の治具で、CDC の口へのコンソールの bind が host の detach / reset を越えて続くこと、設定の
   保存（NVS、2 ms）が動いた。
+- ESP32 系の probe の port は、DTR を立てたまま(pyserial の既定)なら開いても閉じても reset しない(P4 の USB-Serial/JTAG、
+  CH340 越しの classic ESP32 と P4、CH343 越しの S3。2026-09-24)。DTR=0 で開くと reset するのは、pyserial が DTR を先に、
+  RTS を後に書くので、途中で RTS=1 / DTR=0 = EN low を通るため。esp-idf-monitor は RTS を先に落とすので reset しない。
+  RP2350(arduino-pico、USB は picosdk)はどの組み合わせでも reset せず、DTR=0 では CDC の出力が止まるだけ。Windows / macOS は未測定。

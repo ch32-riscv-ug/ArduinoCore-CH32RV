@@ -238,7 +238,23 @@ usbipd.exe detach --busid <busid>
 usbipd.exe attach --wsl --busid <busid>
 ```
 
+注意: probeのWindows側ドライバが標準のusbserだと、detachでbus全体が再列挙され、別のprobeの作業も落ちる
+([debug-output §1](debug-output.ja.md))。他の作業を止めてから行う。
+
 `USBDEVFS_RESET`は使わない(過去に別の壊れ方をした)。
+
+### V003でprobeのchip情報が古くなる(2026-08-26実測)
+
+WCH-LinkE fw 2.12 + CH32V003で、debug moduleを直接叩くセッション(probe-rsのdownload / read、minichlinkのflash)を
+終えると、以後のAttachChipが同じ古い4 byteを返し続け、chipの自動判定が失敗する(wlinkは偽の"Flash protected: true"
+を出す)。
+
+- `wlink flash`では起きない。書き込みそのものではなく、セッションの終わらせ方の問題
+- targetの電源を入れ直しても、usbipdのdetach / attachでも戻らない。状態はLinkEのfirmware側にある
+- OB / RDPRは変わっていない。2線の家系(V103 / V203 / X035 / L103)では起きない
+- 古いままでもfamily名("CH32V003")と、`--chip`を指定したdownload / readは正しい(本当のchip idは0x1FFFF7C4)
+- 戻し方: `wlink reset`、またはvendor command `81 0d 01 03`(続けて`81 0d 01 ff`)でprobeにtargetを読み直させる。
+  後者はtargetをresetしない(halt中のcoreは同じpcのまま)。`probe-rs reset`では戻らない
 
 `smoke.py`はuploadを1回だけ再試行し、**再試行したことを表示する**。
 さらにbannerが来なければ`probe-rs reset`を1回だけ試し、これも表示する
@@ -277,6 +293,10 @@ uploadが成功しても**targetがflashから起動していない**ことが�
 PCがflash領域にあるかSRAM領域にあるかは一目で分かる。
 
 ### USB/IPで同時に繋げるのは8台まで(2026-08-25実測)
+
+> **追記(2026-09-25)**: その後の環境では20台以上を同時にattachできており、この上限は当てはまらなくなった
+> (原因となった変更は未特定)。USB serialで識別するという以下の話は有効。detachの危険は
+> [debug-output §1](debug-output.ja.md)を参照。
 
 WSLの`vhci_hcd`は**high-speed port 8本 + super-speed port 8本**を持つ。
 USB 2.0のadapterはhigh-speed側にしか入らないので、実効の上限は**8台**。
@@ -405,6 +425,10 @@ X035のI2C1は6 routeあるが、行き先が限られる。
 - `x035-exticr-2bit`(X033/X035/M030/V00x、core 側の不具合として修正済み): AFIO_EXTICR は 1 line 2 bit・1 register 16 line。STM32-F1 流の 4 bit × 4 で書くと port B/C の pin で別 line を設定してしまい割込みが来ない（2026-09-22 PB3 で確定、`tools/generate` が `CH32RV_EXTICR_FIELD_BITS` を variant ごとに出す）。
 - fixture の事実（2026-09-22、`tests/manual/oep_i2c_trace/`）: **route 2（PC16/PC17 ↔ P4 GPIO52/50）に bus pull-up が無い**。P4 の IDF slave driver は内部 pull-up を有効にせず外付けも無い。X035 の INPUT / emulated open-drain release は線上 0、INPUT_PULLUP で 1。`Wire` が動くのは X035 の AF 出力が high を能動駆動するため。emulated OD を試す時は pull-up を用意する。**同日修正**: probe の `p4.i2c-target` が slave 生成後に P4 内部 pull-up（約 45 kΩ）を掛けるので、target が plan にいる間は bus に pull-up がある（gpio / capture だけの plan では無い）
 - `x035-usb-pads-open-drain`(全パッケージ): PC16(UDM)/PC17(UDP)はUSB PHYのpadで、`AFIO_CTLR.USB_PHY_V33`(reset値0x45で1)が立っている間はGPIO/AFのopen-drain出力が「release」してもhighを駆動し、外部デバイスがlowに引けない(2026-09-22、OEP probeの`fixture.capture`とP4 slaveで実測)。I2C route 2/4の`Wire`はこのためaddress NACKしか返さなかった。`ch32rv_gpio_set_config()`がPC16/PC17を出力系に設定する時にこのbitを落とす。USBを使うコードは自分で立て直すこと。
+- PC14 / PC15(USB PDのCC): INPUT_PULLUPで0を読む(約5 kΩのpull-downが見える)。`USBPD_PORT`のreset値は
+  0x00030003(CC_PD=1)だが、これを落としても上がらない。push-pullのhighは出る。pull-downの出どころは未確定(2026-09-22)
+- PB3 / PB11 / PB12: probeがhighに駆動して離したあと、戻るのに数百msかかる。別々の2つの治具で同じなのでX035側の
+  性質らしいが未確定。pull-downのidleを確かめる試験には長いsettleが要る(bench fileの`slow_release`)
 - `x035-pc10-pc17-bonded`(F8U6/D8U6以外): PC10/PC17とPC11/PC16が内部結線。**PC10/PC11はどのパッケージでもpadとして出ていない**ため配線の問題ではないが、**コアがPC10/PC11をoutputに設定してはならない**。variant生成でunusableとして表現する(Q-011)
 
 ### Logic analyzerのchannel数(先に決める必要がある項目)

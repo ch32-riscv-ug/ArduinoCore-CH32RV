@@ -107,9 +107,22 @@ usbipd bind   --busid <BUSID>          # 初回のみ、管理者権限
 usbipd attach --wsl --busid <BUSID>
 ```
 
-WSLの`vhci_hcd`は**high-speed portを8本しか持たない**ので、
-9台目のattachは`no free port`で失敗します。使わないデバイスは`usbipd detach`してください。
+2026-08-25にはWSLの`vhci_hcd`がhigh-speed port 8本で、9台目が`no free port`で失敗しました。
+2026-09-25時点の環境では20台以上を同時にattachできています(どの更新で変わったかは未確認)。
+デバイスが見えないときは台数を疑う前に、`usbipd list`でVID:PIDと状態を見てください
+(`Shared`なら`usbipd attach --wsl --busid <BUSID>`だけで済み、管理者権限は要りません)。
+その口で列挙しているのが期待したfirmwareかも確かめてください。
 attach後はLinuxの手順(udev rule、`dialout`)がそのまま必要です。
+
+**`usbipd detach`は、probeのWindows側ドライバ次第で危険です。**
+`usbipd list`のDEVICE欄が`WCH-Link SERIAL (COMxx)`(WCHのnative driver)なら、detachで`Shared`に戻ります。
+`USB シリアル デバイス (COMxx)`(Windows標準のusbser)だとstubが残って`incompatible driver`になり、
+デバイスがUSB busから消えます。この経路はbus全体の再列挙を起こし、別のprobeで走っていた書き込みも落ちました
+(flashの中身は無事)。detachは他の作業をすべて止めてから行い、普段はattachしたままにしてください。
+
+usbipdのbindはUSBの識別(VID / PID / serial number)ごとに保存され、bindには管理者権限が要ります。
+firmwareを書き換えてVID / PID / serialが変わると新しいデバイスとして扱われ、bindし直すまでattachできません。
+焼き直しで再列挙したデバイスはattachをやり直します(`usbipd state`のJSONの`InstanceId`からBusIdを引けます)。
 
 ## 2. `Serial`(UART)
 
@@ -297,5 +310,12 @@ make                     # Linux: libusb-1.0-dev と libudev-dev が要ります
   ディレクトリごと消してから使ってください
 - **probeを掴めるのは1つのプロセスだけです。** WCH-LinkUtilityやwlinkを開いたままだと
   `arduino-cli upload`が失敗します。設定を変えたら閉じてください
+- **WCH-LinkEのattachは、動いているtargetのクロックを書き換えます。** probe-rsでもch32rvでも同じで、
+  メモリを1回読むだけでも起きます。LinkEのfirmwareがattachの中で`RCC_CFGR0`をHSIに戻し、
+  家系ごとに決まったPLL設定に切り替えたまま元に戻しません(家系によってはFLASH ACTLRも変えます)。
+  V307 / V203 / L103 / V006で起き、V003とX035では変わりません。初代WCH-Link(CH549)は書き換えません。
+  coreはSysTickの割り込みの中でクロックが自分の設定と違うことを見つけると1 ms以内に`SystemInit()`をやり直すので、
+  attach後もSerialのbaud・`millis()`・timerは正しいままです(古いcoreやほかのcoreではattach後にconsoleが化けます)。
+  外から読めるRCCはattach直後の値なので、RCCの検査はsketchの内側から読みます(`tests/bench/regs/reg_probe`)
 - **portは固定ではありません。** 抜き差しやreboot、WSLのattach順で番号が変わります。
   `arduino-cli board list`か、probeのUSB serial(`probe-rs list`)で確認してください

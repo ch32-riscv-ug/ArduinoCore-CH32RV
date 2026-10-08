@@ -78,7 +78,7 @@ v0.32.0ではCH32 target定義生成と、WCH-Linkの`AttachChip`応答による
 - [wlink protocol notes](https://github.com/ch32-rs/wlink/blob/main/protocol.md)
 - [WCH-Link User Manual](https://www.wch-ic.com/downloads/WCH-LinkUserManual_PDF.html)
 
-RINSはfirmware 2.5で、USB serialが全個体同じ`0001A0000000`だったと記録しています。新しいfirmwareでも同じかは未検証です。いずれにしても、serialや列挙indexだけへ依存しないfixture設計が必要です。
+RINSはfirmware 2.5で、USB serialが全個体同じ`0001A0000000`だったと記録しています。手元のCH549のWCH-Link(板に載っているもの)もfw 2.6では`0001A0000000`を返し、2.12に更新すると個体ごとのserialを返しました。古いCH549は更新するまでserialで区別できないので、種別は`ch32rv probe info`の`model:`行で確かめます。いずれにしても、serialや列挙indexだけへ依存しないfixture設計が必要です。
 
 WCH-LinkのUSB host protocolは、公開された公式仕様を確認できず、上記の解析資料はfirmware依存です。一方、ターゲット側の一線式debugについては、WCHが[QingKe V2 Debug Manual](https://github.com/openwch/ch32v003/blob/main/RISC-V%20QingKeV2%20Microprocessor%20Debug%20Manual.pdf)と[CH32F103を使ったCH32V003書き込み例](https://github.com/openwch/ch32v003/tree/main/CH32V003_1Line_Base_on_CH32F103)を公開しています。これはV003/QingKe V2の一次資料であり、他のQingKe世代へ無条件に一般化しません。
 
