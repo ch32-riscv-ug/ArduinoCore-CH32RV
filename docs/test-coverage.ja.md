@@ -24,6 +24,7 @@ tests/ の実行コードは実機不要です。現行の検査・CI・保守�
 | 入口 | 保証するもの | 保証しないもの |
 |---|---|---|
 | tests/unit/test_workspace.py | 通常の収集範囲、実機雛形の非実行性、旧 harness との分離 | コア API の動作 |
+| tests/unit/test_core_bringup_safety.py | 復元 prefix の保存性、書込み不能領域に非 blank がある場合の拒否 | 実際の消去・復元、実機動作 |
 | tests/unit/test_maintenance_tools.py | profile 同期、version 更新の対象限定、package 入力の自己完結、CI の旧 suite 非依存 | CH32 compile、実機動作 |
 | tests/build/test_source_locks.py | ArduinoCore-API/TinyUSB のファイル一覧と lock の hash のオフライン一致 | upstream commit の由来、compile、実機動作 |
 
@@ -35,7 +36,10 @@ package 確認は独立ツール内の compile-only source を使い、旧ベン
 全型番 compile matrix、全 example × profile の compile、startup 等価性、割り込み表比較、size baseline、
 製品 board compile、recipe/udev/chip database の個別契約は、新しい実行入口が未整備です。
 旧 job は呼び出しません。新 suite が成功しても、これらが検証されたとは扱いません。
-実機契約もすべて新 suite では未整備です。
+実機契約は通常の pytest suite では未整備です。
+明示実行用の [core bring-up](../tools/diagnostics/core-bringup/README.ja.md) は、
+V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 要求/応答・時間 API の進行を扱います。
+結果はローカル artifact で管理し、系列全体や OEP、外部周辺機能の保証に拡張しません。
 
 ## 基礎 API と runtime
 

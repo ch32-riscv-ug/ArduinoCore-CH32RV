@@ -5,6 +5,8 @@
 この文書は再設計の概要です。新しい検査・CI・保守ツールは旧テストと設定に依存しません。
 新ベンチの基準環境はネイティブ Linux です。tests/ の実行コードはボード不要の検査だけです。
 実機用の構成は README のみの雛形で、実機 runner やローカル設定解決は実装していません。
+初期 bring-up の明示実行は [独立した診断入口](../tools/diagnostics/core-bringup/README.ja.md) に置き、
+通常の pytest に実機操作を持ち込みません。
 [カバレッジ](../docs/test-coverage.ja.md)は実装とテスト定義の照合、
 [README](README.ja.md)は新 workspace の操作を扱います。
 
