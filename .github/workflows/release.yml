@@ -3,21 +3,19 @@
 # Run it from the Actions UI with the version to release (X.Y.Z), or push a tag
 # v<version>. The workflow then
 #   1. writes the version everywhere (tools/index/bump_version.py: platform.txt
-#      and every sketch.yaml's platform pin) and cuts CHANGELOG.md's
-#      "## Unreleased" into "## <version>" (tools/index/prepare_release.py),
+#      and every sketch.yaml's platform pin),
 #   2. builds the platform archive and the package index (gen_index.py), the
 #      index merged onto the committed package_ch32-riscv-ug_index.json,
 #   3. commits those back to main and tags v<version>,
 #   4. publishes the index to GitHub Pages (gh-pages branch) and attaches the
-#      archive to a GitHub Release whose notes are that CHANGELOG section.
+#      archive to a GitHub Release with notes generated from Git history.
 #
 # The index is append-only and its history is the committed copy: every
 # release merges onto it, so a version pinned in someone's sketch.yaml stays
 # installable after the next one ships.
 #
 # Before releasing, adopt any pending ch32-device-data update by hand
-# (tools/generate/README.ja.md) and put the user-facing changes under
-# CHANGELOG.md's "## Unreleased" (EN / JA lines).
+# (tools/generate/README.ja.md).
 name: Release
 
 on:
@@ -57,12 +55,11 @@ jobs:
           echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "version must be X.Y.Z, got '$v'"; exit 1; }
           echo "version=$v" >> "$GITHUB_OUTPUT"
 
-      - name: Write the version and cut the CHANGELOG
+      - name: Write the version
         run: |
           set -euo pipefail
           V=${{ steps.ver.outputs.version }}
           uv run --no-project python tools/index/bump_version.py "$V"
-          uv run --no-project python tools/index/prepare_release.py --version "$V" --body release_body.md
           uv run tests/build/sketches/sync_profiles.py --check
 
       - name: Build the archive and the index
@@ -87,7 +84,7 @@ jobs:
           set -euo pipefail
           git config user.email "actions@github.com"
           git config user.name "github-actions"
-          git add CHANGELOG.md platform.txt package_ch32-riscv-ug_index.json
+          git add platform.txt package_ch32-riscv-ug_index.json
           git ls-files -z -- '*sketch.yaml' | xargs -0 git add
           if git diff --staged --quiet; then
             echo "No release changes to commit"
@@ -114,8 +111,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
-          body_path: release_body.md
-          generate_release_notes: false
+          generate_release_notes: true
           files: |
             dist/*.tar.bz2
             dist/package_ch32-riscv-ug_index.json

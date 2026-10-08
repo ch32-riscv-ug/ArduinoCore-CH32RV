@@ -57,15 +57,7 @@ Adafruit_Something device(&bus);
 
 ## Cost
 
-Measured on CH32V003 (16 KB flash), against the same sketch built with the
-hardware `Wire`:
-
-| | flash | RAM |
-|---|---|---|
-| hardware `Wire` | +2608 B | +152 B |
-| `SoftWire` | +1904 B | +96 B |
-
-`SoftWire` is the **smaller** of the two here - the peripheral's state machine,
-error recovery and route programming cost more than bit-banging does. (SPI goes
-the other way; see [SoftSPI](../SoftSPI).) Neither costs anything to a sketch
-that does not include the header.
+The hardware and software drivers implement different state machines and
+recovery paths, so their size relationship varies with the build. Use the
+build size report for exact flash and RAM usage. It is not linked into sketches
+that do not include its header.

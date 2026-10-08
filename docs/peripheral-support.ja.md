@@ -17,35 +17,33 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 
 | 状態 | 意味 |
 |---|---|
-| 実装済 | コードがあり、少なくとも1枚の実機で確認した |
-| 実装中 | 作業中 |
-| 一部 | 一部だけ動く(備考を参照) |
-| 予定(初回) | 初回releaseに入れる |
-| 要判断 | 方針が未決。**勝手に決めない** |
-| 対象外 | 初回releaseでは扱わない |
+| 実装済 | 公開APIと実装がある |
+| 一部実装 | 備考に記載した範囲だけ実装がある |
+| 未実装 | siliconに機能はあるがcoreの公開API/実装がない |
+| 対象外 | coreの公開APIとして提供しない |
 
 ## 基本ペリフェラル
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | GPIO | 実装済 | pinMode/digitalWrite/digitalRead | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
-| EXTI (外部割込み) | 実装済 | attachInterrupt | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | X033/X035はEXTI 16〜23(PC16〜PC23、`EXTI25_16_IRQHandler`、`CH32RV_EXTI_LINES` 24)。AFIO_EXTICRはX033/X035/M030/V00xで1 line 2 bit。EXTI 16〜23の実機確認は未 |
+| EXTI (外部割込み) | 実装済 | attachInterrupt | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | X033/X035のEXTI16-23は未対応 |
 | PFIC (割込みコントローラ) | 実装済 | - | ○ | ○ |  | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | 優先度は全てreset既定のまま |
 | SysTick | 実装済 | millis/micros/delay | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  |  |
-| RCC (クロック) | 実装済 | F_CPU | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | HSIのみ。PLL/HSEは将来 |
-| PWR (低消費電力) | 要判断 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduino標準APIが無い。sleep系をどう見せるか |
-| FLASH (自己書き換え) | 要判断 | EEPROM相当 | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduinoでは`EEPROM`が定番。**page消去単位と書き込み粒度のデータが無い**(R-20のD-3相当)。products.csvにあるのはflash容量だけ |
-| USART | 実装済 | Serial | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 受信でFE / NE / PEの立ったバイトは捨てる(相手のTXのグリッチが行バッファに残らないように) |
-| I2C | 実装済 | Wire | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | master + slave(割込み駆動)。配線なし自己検査14項目を4 board実機pass。slaveの**データ経路は`manual/i2c_loopback`の配線待ち**。実デバイス相手の確認はこれから |
-| SPI | 実装済 | SPI | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | controller専用。X035実機で配線なしの自己検査9項目pass。**peripheral(slave)は未実装**、実デバイス相手の確認はこれから |
-| ADC | 実装済 | analogRead | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 分解能は実機未確認。X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替(**未検証**) |
-| DAC | 実装済 | analogWrite(CH32RV_DACn_PIN) |  |  |  |  |  | ○ | ○ |  |  |  |  | V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来。**実機未確認** |
+| RCC (クロック) | 一部実装 | F_CPU | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | HSIまたはHSI由来PLLを生成設定で選択。HSEは未実装 |
+| PWR (低消費電力) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | sleep APIは提供していない |
+| FLASH (自己書き換え) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 自己書き換えとEEPROM emulationのAPIは提供していない |
+| USART | 実装済 | Serial | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
+| I2C | 実装済 | Wire | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | controllerはpolling、peripheral(slave)は割込み駆動 |
+| SPI | 一部実装 | SPI | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | controllerのみ。peripheral(slave)は未実装 |
+| ADC | 実装済 | analogRead | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替 |
+| DAC | 実装済 | analogWrite(CH32RV_DACn_PIN) |  |  |  |  |  | ○ | ○ |  |  |  |  | V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来 |
 | TIM (PWM/tone/入力捕捉) | 実装済 | analogWrite/tone | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V003/X035/M030は空きが無く**PWMと共有** |
 | LPTIM | 対象外 | - |  |  |  |  |  |  |  | ○ |  |  |  | L103のみ |
-| DMA | 対象外 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduino APIに露出しない。内部最適化として将来 |
-| IWDG | 実装済 | `CH32RV.wdtEnable/wdtFeed` | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ | Arduino標準APIが無い |
-| WWDG | 要判断 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 同上 |
-| RTC | 要判断 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ | libraryとして出す例が多い |
+| DMA | 対象外 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduino APIには露出しない |
+| IWDG | 実装済 | `CH32RV.wdtEnable/wdtFeed` | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ |  |
+| WWDG | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
+| RTC | 未実装 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ |  |
 | BKP (バックアップレジスタ) | 対象外 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  |  |  |
 | CRC | 対象外 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ |  |
 
@@ -61,16 +59,16 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| USB (FS device/host) | 予定(初回) | TinyUSB |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | **TinyUSB採用が決定**(ADR-0012)。上流の対応はV103/V20x/V30xのみで、X033/X035はPR未マージ、L103/M030/V205は未対応。**X035以外はPLLが先** |
-| USB HS | 予定(初回) | TinyUSB |  |  |  |  | ○ |  | ○ |  |  |  | ○ | V30x配置は上流済み。V205/V407/X3x5は別配置で未対応(3 seriesで共通) |
+| USB (FS device/host) | 未実装 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | 採用stackはTinyUSB。固定sourceはあるがcoreへ未結線 |
+| USB HS | 未実装 | - |  |  |  |  | ○ |  | ○ |  |  |  | ○ | 採用stackはTinyUSB。coreへ未結線 |
 | USB SS | 対象外 | - |  |  |  |  |  |  |  |  |  |  | ○ | X315のみ。当面扱わない |
-| USB PD | 実装中 | `USBPD`(library) |  |  |  |  | ○ |  |  | ○ | ○ | ○ |  | **必ず載せる**(ユーザ指示)。ロジック層とAPIは実装済み(A-8)、ドライバはこれから |
+| USB PD | 一部実装 | `USBPD`(library) |  |  |  |  | ○ |  |  | ○ | ○ | ○ | ○ | sinkはX033/X035で実装。他のUSBPD搭載seriesは`begin()`がfalseを返す |
 
 ## 通信・外部バス
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| CAN | 対象外 | - |  |  |  | ○ | ○ | ○ | ○ | ○ |  |  |  | libraryとして将来 |
+| CAN | 対象外 | - |  |  |  | ○ | ○ | ○ | ○ | ○ |  |  |  |  |
 | Ethernet | 対象外 | - |  |  |  | ○ |  | ○ | ○ |  |  |  |  |  |
 | I2S | 対象外 | - |  |  |  |  |  | ○ | ○ |  |  |  |  |  |
 | SDIO | 対象外 | - |  |  |  |  |  | ○ | ○ |  |  |  |  | `SD`libraryの下地にはなる |
@@ -88,23 +86,18 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| SDI print (debug出力) | 実装済 | SerialSDI(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 送信のみ。class実装をV003実機で受信まで確認(2026-08-26、`wlink sdi-print enable`経由)。**DMDATAのhart側アドレスはfamily依存**で3通りある: V2系(V003/V00x)`0xE00000F4`、V3系の多く(V205/V407/X315/M030)`0xE0000340`、V4系とV103`0xE0000380`。上流`evidence/debug_data.csv`から`CH32RV_DM_DATA0_ADDR`をboard毎に生成しているのでsketch側の指定は不要(2026-08-26)。**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ** |
-| RTT (debug出力) | 実装済 | SerialRTT(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向**。RAM上のリングバッファをprobeが走行中に読む方式で、host側は`probe-rs attach`(このcoreの書き込みツールそのもの)。V003実機で送受信とも確認(2026-08-26、23秒18行+echo back)。control blockは公開仕様、SEGGERのコードは不使用。**代償はRAM**(既定バッファで+364 byte、`CH32RV_RTT_UP_SIZE`等で縮小可) |
-| DMDATA mailbox (debug出力) | 実装済 | SerialDMDATA(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向**(送り7 byte/受け3 byteずつ)。SDI printと**同じレジスタの別framing**なので併用不可。host側はminichlink(ch32fun、同梱しない)。対応chipはminichlink側に従う。V003実機で送受信とも確認(2026-08-26、`minichlink -T`でecho back)。RAMはほぼ不要(+36 byte) |
-| DMSEQ console (debug出力) | 実装済 | SerialDMSeq(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | **双方向、通し番号+CRC-8**(送り6 byte/受け2 byteずつ)。DMDATAと同じレジスタの別framing(oep-spec `target.console` framing 2、dmseq)で、DMIアクセスが落ちても化けてもbyteの重複・欠落なし。host側は`ch32rv monitor --source dmseq`とOEP probe。X035・V003・L103でOEP probe越しに全出力の厳密照合・echo・再起動時のSYNまで確認(2026-09-24)。V003で+1268 byte flash / +52 byte RAM |
+| SDI print (debug出力) | 実装済 | SerialSDI(library) | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 送信のみ |
 
 ## RTOS
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| FreeRTOS | 対象外 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | 初回release対象外(ユーザ指示) |
-| RT-Thread | 対象外 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | 同上 |
-| HarmonyOS | 対象外 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | 同上 |
-| TencentOS | 対象外 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | 同上 |
+| FreeRTOS | 対象外 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | coreはbare metal。ADR-0006 |
+| RT-Thread | 対象外 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | coreはbare metal。ADR-0006 |
+| HarmonyOS | 対象外 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | coreはbare metal。ADR-0006 |
+| TencentOS | 対象外 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | coreはbare metal。ADR-0006 |
 
 ## この表の使いかた
 
-- 「基本ペリフェラル」で`対象外`/`要判断`のものが、初回releaseの範囲を決める議論の対象です。
-- USB PDは**載せると決まっています**(ユーザ指示)。USB host/deviceは範囲が未決なので`要判断`のままにしてあります。
-- RTOSは一覧には載せますが初回release対象外です(ユーザ指示)。
+- 状態は repository 内の実装範囲を表します。
 - series列が空欄のペリフェラルは、そのfamilyの silicon に無いかEVTに例が無いかのどちらかです。実装するときは`ch32-device-data`側でも裏を取ってください。

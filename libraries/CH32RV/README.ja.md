@@ -1,13 +1,10 @@
-# CH32
+# CH32RV
 
-ここには3つのものが入っています。**coreのAPIのexamples**、
-**レジスタレベルの逃げ道**、そして**チップ全体を扱う`CH32`オブジェクト**です。
+ここには core API の examples、レジスタレベルの逃げ道、チップ全体を扱う `CH32RV` オブジェクトが入っています。
 
 ## `CH32` オブジェクト (CH32RVSystem.h)
 
-ESPコアの`ESP.*`と同じ役どころです。Arduino標準APIが無い機能を、
-ESP32の流儀に寄せて置いています(方針は
-[R-27](../../docs/research/system-api-esp32-style.ja.md))。
+ESP core の `ESP.*` と同じ役割で、Arduino 標準 API がない chip 全体の機能をまとめます。
 
 ```cpp
 #include <CH32RV.h>
@@ -19,7 +16,7 @@ CH32RV.wdtEnable(2000);                  // 2秒ごとに餌をやらないと�
 CH32RV.wdtFeed();                        // loop()で呼ぶ
 ```
 
-3つだけ注意:
+注意:
 
 - **`wdtDisable()`はありません**。IWDGは一度動くと止められない石なので、
   止まらない`disable()`を置くくらいなら無いほうが正直です
@@ -43,7 +40,6 @@ CH32RV.wdtFeed();                        // loop()で呼ぶ
   — Generic boardはsiliconのseriesであって基板ではないので`LED_BUILTIN`を
   定義せず、coreが勝手に決めることもしません(`docs/board-layer-rules.ja.md`)
 - 冒頭コメントに**何を示すか**と**必要な配線**を書いています
-- 一番広いboardと一番狭いboardの2つでCIがコンパイルします
 
 | example | 何を示すか |
 |---|---|
@@ -78,11 +74,10 @@ CH32RV_TIM_ATRLR(CH32RV_TIM2_BASE) = 999;   // timerを直接叩く
 `CH32RV.h`はレジスタマップ・GPIOヘルパ・pinエンコード・route表をまとめて読み込みます。
 注意書きが2つあります。
 
-1. **この層は安定ではありません。** 名前はベンダSDKのものではなく
-   このコア独自のもので、**変わる予定**です
-   (レジスタマップは手書きから`ch32-device-data`生成へ移行していきます)。
+1. **この層は安定APIではありません。** 名前はベンダSDKのものではなく
+   このコア独自のもので、互換性の対象外です。
    これを使うsketchは、Arduino APIだけを使うsketchと違って
-   **コアのバージョンに固定**されます。
+   **使用したコアの版に固定**されます。
 2. **coreも同じレジスタを使っています。** `Serial`や`Wire`が開いている状態で
    `AFIO_PCFR1`を直接書くと`begin()`や`setRoute()`と衝突します。
    症状は「次に開いたときにpinが動く」です。

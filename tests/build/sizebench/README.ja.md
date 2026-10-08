@@ -1,7 +1,7 @@
 # R-09 prototype: newlib/ilp32eサイズ計測ベンチ
 
-状態: 計測ツール(2026-08-19)。結果と結論は[実験0006](../../docs/experiments/0006-newlib-size-baseline.ja.md)。
-関連: Q-022(runtime構成)、Q-051(size budget)、[toolchain方針](../../docs/toolchain.ja.md)の認定matrix
+runtime選択とsizeの扱いは[flash size](../../../docs/flash-size.ja.md)と
+[toolchain方針](../../../docs/toolchain.ja.md)を参照してください。
 
 ## 目的
 

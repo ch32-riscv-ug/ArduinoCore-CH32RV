@@ -1,114 +1,35 @@
-# Toolchain方針
+# Toolchain
 
-文書状態: 配布物と参照方式は決定済み([ADR-0002](adr/0002-toolchain-distribution.ja.md))。認定matrixの実測(ch32fun比較)が未了
+## 正本
 
-## 決定済みの選定原則
+- compiler / binutils / newlib: xPack `riscv-none-elf-gcc`
+- host 別 URL、archive size、SHA-256: `tools/index/tools_xpack_gcc.json`
+- C/C++ option と link recipe: `platform.txt`
+- series ごとの ISA / ABI: `boards.txt` の生成元
 
-- 同一SKU、clock、機能条件で`ch32fun`を比較基準にし、Flash/RAM使用量と主要な実行性能を大幅に劣化させないことを採用の最低条件とする
-- `ch32fun`と同等以上のサイズ、性能、実用性を目標とする
-- 性能やcode sizeの改善だけを理由に、入手条件、改変条件、再配布条件、対応sourceが確認できないtoolchainを採用しない
-- 比較対象のlicenseが明確でも、新コアへ第三者コードやbinaryを無断でコピーしない
-- GCC/binutilsへの独自patchをdefault toolchainの前提にしない。upstream versionごとの追従保守が必要なcompiler forkは、標準ISAで満たせない必須要件と継続保守体制が確認できた場合だけ再検討する
+version や host 数はここへ複製しません。採用物を確認するときは上記 machine-readable file を参照します。
 
-「大幅な劣化」の数値閾値は、代表sketchと初期SKUを確定してから認定matrixで定めます。この原則はdefault toolchainの選定基準であり、特定のGCC distributionを採用する決定ではありません。
+## Compiler の条件
 
-## 目標
+- RV32E + ILP32E と、対象 series が必要とする RV32I/M/A/F/C 系を一つの配布系統で扱える
+- Linux、macOS、Windows 向け archive を checksum 固定で取得できる
+- compiler fork 固有の命令や attribute を core の前提にしない
+- upstream source と build metadata を追跡できる
 
-- 保守されているRISC-V GCC/binutils/newlibを利用する
-- Linux、Windows、macOS向けartifactを固定する
-- Arduino Board Managerから再現可能に取得できる
-- version、配布元、SHA-256、build metadataを記録する
-- 標準RISC-V ISAで動作する構成をdefaultにする
-- WCH固有最適化は、必要性と効果を実測したoptional profileに限定する
+CH32V002/V004/V005/V006/V007/M007 の整数乗算は Zmmul で、整数除算命令はありません。
+`rv32emc` を指定すると GCC が `div` / `rem` を出して不正命令になるため、これらは
+`rv32ec_zmmul_zicsr` / `ilp32e` でビルドします。この ISA 指定は性能選択ではなく実行可否の要件です。
 
-## 決定済み(ADR-0002)
+## Runtime
 
-- default: **xPack `riscv-none-elf-gcc`をGitHub Releases直リンクでtool参照**(再ホストしない)。認定候補versionは14.3.0-1
-- WCH MounRiver fork(XW拡張、`WCH-Interrupt-fast`)は比較lane限定。旧GCC 8 laneは旧コード比較が必要な間のみ
-- 候補比較・multilib実測・install検証は[R-04](research/toolchain-distributions.ja.md)と[実験0001](experiments/0001-xpack-multilib-smoke.ja.md)/[0005](experiments/0005-package-index-install.ja.md)を参照
+既定は newlib-nano と GNU++17 です。exceptions、RTTI、thread-safe statics は無効です。
+`printf` / `scanf` の浮動小数点変換は `rtlib` menu で必要なものだけ追加します。
 
-## 必須の認定項目
+詳細な理由は [ADR-0002](adr/0002-toolchain-distribution.ja.md) と
+[ADR-0004](adr/0004-runtime-and-cxx.ja.md) を参照してください。
 
-### CPU/ABI
+## 更新規則
 
-- RV32E + ILP32E
-- RV32I/M/A/C + ILP32の対象組合せ
-- FPU搭載機でのF/ILP32F採用可否
-- CSR命令と必要なISA extension
-- multilibの存在と正しいlibgcc/newlib選択
-
-- **QingKe V2C(CH32V002/V004/V005/V006/V007/M007)は乗算だけで、除算命令が無い。** CH32V00XRM p.1の`RV32EmC`の小文字の
-  mは「M拡張のうち乗算の部分」を指す。`-march=rv32emc`はGCCに除算器を約束するので`divu`/`remu`が出て、不正命令で
-  trapする。最初に当たるのはたいてい`HardwareSerial::begin`のBRR計算で、clock・AFIO・GPIOは書かれたのにBRRだけ
-  書かれていないように見える。coreは`rv32ec_zmmul_zicsr`を使う(GCC 13以降、`tools/generate/generate.py`)。
-
-  | `-march=` | 乗算 | 除算 |
-  |---|---|---|
-  | `rv32emc_zicsr` | `mul` | `divu`(trap) |
-  | `rv32ec_zmmul_zicsr` | `mul` | `__udivsi3` |
-  | `rv32ec_zicsr` | `__mulsi3` | `__udivsi3` |
-
-  (xpack GCC 14.3.0、`-mabi=ilp32e`。CH32V006K8U6で2026-09-16に確認)
-
-### runtime
-
-- resetから`main`までの初期化
-- data/BSS
-- global/static constructor
-- local static initialization
-- weak symbol override
-- interrupt attributeとcallee-saved register
-- trap/HardFault相当のdefault処理
-- LTO有無
-- `--gc-sections`
-
-### C/C++
-
-- ArduinoCore-APIのhost/target build
-- CとC++ headerの境界
-- `printf`、`snprintf`、整数・浮動小数format
-- exception/RTTIの既定方針
-- `-fno-threadsafe-statics`等の互換性とサイズ効果
-- warningをerrorにするown codeと、vendor用flagの分離
-
-### サイズと性能
-
-- empty sketch
-- Blink
-- Serial print
-- Wire/SPI
-- constructorを持つsketch
-- ISR latencyと保存register
-- Flash/RAM budgetの回帰閾値
-- 同一SKU、clock、Arduino API機能、最適化条件での`ch32fun` baselineとの比較
-- Flash、static RAM、stack、起動時間、GPIO、割込みlatencyのうち各benchmarkに関係する指標
-- 最低条件である「大幅に劣化しない」閾値と、目標である「同等以上」を区別した合否記録
-
-### host OS
-
-- x86_64 Linux
-- Windows
-- macOS Arm64
-- macOS x86_64を継続するかは利用者需要とtool配布可能性で決める
-
-## C++標準
-
-**GNU++17に決定**([ADR-0004](adr/0004-runtime-and-cxx.ja.md))。gnu++11/14/17でサイズ差ゼロを実測確認済み。`-fpermissive`はown codeでは使用しません。
-
-## 配布
-
-Board Manager packageへtoolとして登録する場合、[Arduino package index仕様](https://docs.arduino.cc/arduino-cli/package_index_json-specification/)に従い、host別archive、size、SHA-256を固定します。
-
-release前には新規Arduino data directoryを使い、既存installに依存せずcoreをinstall・compileできることを各OSで確認します。
-
-## Toolchain再配布時の遵守事項
-
-Board ManagerからGCC、binutils、newlib等を配布する場合、binaryのSHA-256だけでは不十分です。
-
-- IDE等の別製品から抽出したbinaryは、toolchain単体の再配布条件を確認できない限りrelease artifactに使用しない
-- 各componentのversion、license、noticeをinventory化する
-- 対応sourceと適用patchを取得できる状態にする
-- 再現可能なbuild script/configurationを保持する
-- GCC Runtime Library Exceptionを含むruntime library条件を確認する
-- toolchain、uploader、付属utilityもrelease SBOMの対象にする
-- upstream artifactを再梱包した場合、その内容と理由を記録する
+toolchain を更新するときは、JSON、package index の依存、生成済み size 基準を同じ変更で更新します。
+上流 archive を再梱包しないことを既定とし、再配布が必要になった場合は license、対応 source、改変内容を
+明示して別の設計判断を行います。

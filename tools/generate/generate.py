@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""W-4 prototype generator: boards.txt and linker scripts from ch32-device-data tables.
+"""Generate boards.txt and linker scripts from ch32-device-data tables.
 
 Reads the normalized CSV tables (products.csv) and writes, per configured family:
   - boards.txt            (board entry + menu.pnum entry per part number)
   - variants/<VARIANT>/<ld>  (one MEMORY script per unique flash/sram combination)
 
-Design rules (see docs/research/board-variants-and-menus.ja.md):
+Design rules (see docs/board-layer-rules.ja.md):
   - one board per mirror family, menu.pnum lists every part number
   - deterministic ordering: canonical series order, then part number
   - generated files carry a DO-NOT-EDIT header; the source repo pin (commit,
@@ -44,9 +44,8 @@ import sys
 #                     below - the CSR ones come from the EVT startup assembly
 #                     and are re-verified every PR by tests/build/startup/
 #
-# Values come from verified research:
-# march/mabi and startup CSR defines: docs/research/startup-files.ja.md (R-01),
-# experiments 0001/0002. Only families proven by the equivalence harness are listed.
+# march/mabi and startup CSR defines are checked by the startup equivalence
+# harness. Only families covered by that contract are listed.
 # Startup/ISA parameters shared by every series in an EVT family.
 # Values come from the equivalence harness table in tests/build/startup/startup_equivalence.py.
 # CH32RV_HPRE_LINEAR is which of the two AHB-prescaler encodings the family uses,
@@ -57,7 +56,7 @@ import sys
     # ACTLR holds FLASH_ACTLR_SCK_CFG, a flash-clock divider. Both used to be
     # written with a 1 of no traceable origin; check_family_facts rejects that
     # now. Raising CH32X315 past its default needs the divider, which is a
-    # separate mechanism (docs/todo.ja.md).
+    # separate mechanism not implemented by this generator.
     # The CH32V006 family is rv32ec_zmmul, not rv32emc. CH32V00XRM p.1: "the
     # 'm' extension in RV32EmC implements the multiplication subset of the M
     # extension" - the V2C multiplies in hardware but cannot divide. Declaring
@@ -437,7 +436,7 @@ ADC_ROLE_RE = re.compile(r"^IN(\d+)$")
 # NRST is here only for CH32V103, whose pinout.csv marks it gpio but gives it no
 # port name. Other families expose their reset pin as a normal pad (PD7 on
 # V003), so this is a data gap rather than a hardware difference - if the pin
-# turns out to be usable, device-data should name its port (docs/todo.ja.md).
+# turns out to be usable, device-data must name its port before it is exposed.
 NON_PORT_PADS = {"ANT", "HO3", "ISP1", "LED0", "LED1",
                  "MDITP", "MDITN", "MDIRP", "MDIRN", "NRST"}
 
@@ -763,7 +762,7 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # alone rather than written with a 0 that may mean something else).
     # CH32X315 and CH32H417 spell the field FLASH_ACTLR_SCK_CFG and it is a
     # flash-clock divider, not a wait count, so it is deliberately not read
-    # here - that is a separate mechanism (docs/todo.ja.md).
+    # here; that divider is a separate, unsupported mechanism.
     latency_mask: dict = {}
     for r in read_table(tables, "clock_symbols.csv",
                         ("family", "symbol", "role", "value")):
@@ -1098,7 +1097,7 @@ def gen_clock_init(family: str, steps: list, symbols: dict) -> str:
     out.append("} while (0)")
     if skipped:
         # index 7 is the closing */, so the note has to go before it
-        out.insert(7, f" * NOT emitted: {', '.join(skipped)} - see docs/todo.ja.md.")
+        out.insert(7, f" * NOT emitted because the generator cannot represent it: {', '.join(skipped)}.")
         print(f"WARNING: {family}: clock_init step(s) not emitted: "
               f"{', '.join(skipped)}", file=sys.stderr)
     return "\n".join(out) + "\n"
@@ -1180,7 +1179,7 @@ def pad_name(port: str, bit: int) -> str:
     return f"P{port}{bit}"
 
 
-# USART signal naming is not normalized in device-data (see docs/todo.ja.md):
+# Normalize the USART signal spellings used by device-data:
 # V003 says UTX/URX, M030 says UART_TX/UART_RX, X033/X035 say TX1/RX1,
 # everyone else says USART1_TX/USART1_RX. Map them onto (index, "TX"|"RX").
 UART_SIGNAL_RE = [
@@ -1194,7 +1193,7 @@ UART_SIGNAL_RE = [
 # "default" route (V205/X305/X315) only carry af-N alternate-function numbers.
 # USART instances the core can drive: base address and whether the peripheral
 # hangs off APB1. UART6..8 sit at a different offset and use different RCC bits,
-# so they are out of scope for now (see docs/todo.ja.md).
+# so this core does not expose them.
 SERIAL_BASES = {1: "CH32RV_USART1_BASE", 2: "CH32RV_USART2_BASE",
                 3: "CH32RV_USART3_BASE", 4: "CH32RV_USART4_BASE",
                 5: "CH32RV_USART5_BASE"}
@@ -1289,7 +1288,7 @@ def load_remap_fields(tables: pathlib.Path) -> dict:
                     f"{r['series']} {r['selector']}: the bits column is "
                     f"{r['bits']!r}, which names no register. device-data "
                     f"changed shape; see "
-                    f"docs/research/signal-name-normalization.ja.md")
+                    "the register-qualified route schema")
             bits.append((register, int(bit)))
         if bits:
             kind = m.group(1) if m.group(1) in ("i2c", "spi") else "usart"
@@ -2203,7 +2202,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             if value is None:
                 out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
                 out.append(" * selector, not an AFIO remap. The core does not program it")
-                out.append(" * yet, so this port needs verifying (docs/todo.ja.md). */")
+                out.append(" * and this unsupported port cannot be selected. */")
             elif bits:
                 # Emitted for the default route (value 0) too, so begin()
                 # writes the field rather than assuming it. Re-initialising a
@@ -2284,7 +2283,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             if value is None:
                 out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
                 out.append(" * selector, not an AFIO remap. The core does not program it")
-                out.append(" * yet, so this instance needs verifying (docs/todo.ja.md). */")
+                out.append(" * and this unsupported instance cannot be selected. */")
             elif bits:
                 for register, (mask, val) in sorted(
                         remap_mask_value(bits, value).items()):
@@ -2340,7 +2339,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             if value is None:
                 out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
                 out.append(" * selector, not an AFIO remap. The core does not program it")
-                out.append(" * yet, so this instance needs verifying (docs/todo.ja.md). */")
+                out.append(" * and this unsupported instance cannot be selected. */")
             elif bits:
                 for register, (mask, val) in sorted(
                         remap_mask_value(bits, value).items()):
@@ -2445,7 +2444,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             continue
         number = int(m.group(1))
         # Only the timers ch32rv_registers.h names. V30x/V4x7 also have TIM8..10
-        # on APB2, which nothing in the core can address yet (docs/todo.ja.md).
+        # on APB2, which the core does not expose.
         if number > 7:
             continue
         # A whole-timer vector is preferred over the update-only one when a

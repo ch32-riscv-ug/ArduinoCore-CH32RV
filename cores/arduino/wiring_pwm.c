@@ -18,7 +18,7 @@
 
 #ifndef CH32RV_PWM_PIN_COUNT
 /* X305/X315 reach their timers only through per-pin alternate-function
- * selectors, which the variant cannot describe yet (docs/todo.ja.md). Every
+ * selectors, which the variant does not describe. Every
  * pin then falls through to the digital path below. */
 #define CH32RV_PWM_PIN_TO_TIMER(p)   ((void)(p), 0)
 #define CH32RV_PWM_PIN_TO_CHANNEL(p) ((void)(p), 0)

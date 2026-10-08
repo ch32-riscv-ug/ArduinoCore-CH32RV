@@ -5,7 +5,7 @@
 文書状態: **提案**(調査結果と依頼案。個々の実施可否・順序の判断は probe 側)
 文書基準日: 2026-09-06
 関連: [test-strategy](test-strategy.ja.md)(HIL とロジアナ)、[upload-and-fixture](upload-and-fixture.ja.md)(fixture 構成)、
-[ch32rv-requests](ch32rv-requests.ja.md)(同梱 uploader への依頼。本文書はその隣に立つ)、
+[ADR-0008](adr/0008-upload-strategy.ja.md)(同梱 uploader の契約)、
 [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md)(検証方法 1〜4)
 
 対象の外部 repository(パスは開発環境のもの。link にはしない):
@@ -36,7 +36,7 @@
    **相手役がいないこと**。ここは突き合わせたい(§7-1)。
 3. **コアは当面これに依存しない形で採用できる。** LinkE で焼いたまま harness は観測と刺激だけをする構成
    (`L` / `WLE` の lane なし)なら、**リリース経路にリスクをゼロで足せる**。
-   逆に**同梱アップローダを ch32rv 一本化する決定([ch32rv-requests](ch32rv-requests.ja.md))は動かさない**。
+   逆に**同梱アップローダを ch32rv 一本化する決定([ADR-0008](adr/0008-upload-strategy.ja.md))は動かさない**。
    probe を 2 本目の同梱依存にするのは 1.0 前には勧めない。
 4. **いちばん大きい単独の勝ち筋は「target を汚さない attach」**。
    LinkE は attach するたびに target の `RCC_CFGR0` と `FLASH ACTLR` を書き換える(実測)。
@@ -161,8 +161,8 @@ NACK、bus stuck 等の刺激を与えます」**。その peer が今は存在�
 |---|---|
 | ベンチ / 手動テスト(`tests/manual/`) | **採用してよい**。既に人が介在する層なので、失敗してもリリースに波及しない |
 | CI(self-hosted runner、board farm) | **段階的に**。fixture health の self-test が揃ってから |
-| 同梱アップローダ | **1.0 前は不可**。[ch32rv-requests](ch32rv-requests.ja.md) の「同梱は ch32rv に一本化」を動かさない |
-| 対外的な位置づけ | [R-17](research/upload-programmers.ja.md) の互換書込器 Tier に **Tier 3(実験的)** として載せ、実績で Tier 2 へ上げる |
+| 同梱アップローダ | **1.0 前は不可**。[ADR-0008](adr/0008-upload-strategy.ja.md) の「同梱は ch32rv に一本化」を動かさない |
+| 対外的な位置づけ | 互換書込器の **Tier 3(実験的)** として扱う |
 
 ---
 
@@ -276,7 +276,7 @@ ch32rv から**こちらの 2 文書の間に前提のずれがある**と指摘
 |---|---|---|
 | a | **個体ごとに一意で安定した USB serial**(RP2040 なら flash unique ID)を descriptor に出す | コアの識別優先順位は「実測で unique と確認した hardware serial」が第 1。`--device 0` や「最初に見つかった 1 台」は**使わないと決めている**。候補が複数残ったら**書込中止**(fail-closed) |
 | b | **probe 種別・firmware 版・capability を machine-readable に**出す | fixture manifest が `probe_model` / `probe_firmware` / `probe_mode` を要求。LinkE は `wlink status` に聞くしか無く、これが 2.11/2.12 問題を見えなくしていた |
-| c | **per-device advisory lock**(USB serial 単位、OS runtime dir、timeout、stale 回収、専用 exit code) | [ch32rv-requests](ch32rv-requests.ja.md) の依頼 A-2 と**同じ仕様**。harness は control / capture / DUT-UART が同時に動くので、**day 1 から要る**。ch32rv の実装をそのまま踏襲してほしい |
+| c | **per-device advisory lock**(USB serial 単位、OS runtime dir、timeout、stale 回収、専用 exit code) | harness は control / capture / DUT-UART が同時に動くので、**day 1 から要る**。ch32rv の実装をそのまま踏襲してほしい |
 | d | **1 台 = USB device 1 個**(composite で control + capture + DUT UART) | WSL `vhci_hcd` が 8 port。ベンチは probe 6 台で既に窮屈で、**LA を別 device で足すと即詰まる** |
 | e | exit code と JSON envelope を **ch32rv の contract に合わせる** | コアのベンチ(`smoke.py` 等)が exit code と JSON に依存している。2 つ目の方言を作らない |
 
@@ -415,7 +415,7 @@ EmbedBench の `DEVICE_IF_SCOPE.ja.md` §3.3 は
   → §5-2 の写像を probe に渡せる形にする。
 - **Q-050(LA channel / connector / 電源)の判断を harness の結論が出るまで保留**にする。
   16ch LA + FX2LP + 治具の**購入判断を先にしない**。
-- [R-17](research/upload-programmers.ja.md) の Tier 表に harness を **Tier 3** で載せる枠を用意する。
+- harness は互換書込器の **Tier 3** として扱う。
 - `tests/manual/` に harness を使う case を置く場所を決める(既存の 1 case 1 ディレクトリ規約に従う)。
 
 ---
@@ -440,10 +440,9 @@ EmbedBench の `DEVICE_IF_SCOPE.ja.md` §3.3 は
 
 **コア側**: [test-strategy](test-strategy.ja.md) / [upload-and-fixture](upload-and-fixture.ja.md) /
 [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) /
-[open-questions](open-questions.ja.md)(Q-021, Q-044, Q-045, Q-050, Q-052) /
-[ch32rv-requests](ch32rv-requests.ja.md) / [debug-output](debug-output.ja.md) / [debugger](debugger.ja.md) /
+[ADR-0008](adr/0008-upload-strategy.ja.md) / [debug-output](debug-output.ja.md) / [debugger](debugger.ja.md) /
 [software-peripherals](software-peripherals.ja.md) / [device-data](device-data.ja.md) /
-[R-17](research/upload-programmers.ja.md) / [../tests/manual/reg_probe/](../tests/manual/reg_probe/)
+互換書込器の調査 / `tests/manual/reg_probe/`
 
 **外部 repository**(パスは開発環境のもの):
 

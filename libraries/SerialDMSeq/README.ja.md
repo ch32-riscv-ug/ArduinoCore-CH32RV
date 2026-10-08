@@ -22,12 +22,11 @@ void setup() {
 SerialDMDATAはminichlinkのframingで、通し番号がありません。probeの答えの書込みが黙って
 落ちる(飛び線で起きます)と、probeは同じフレームをもう一度読み、byteが二重に届きます。
 それを答えの書き直しで救おうとすると、sketchが同じ内容を2回出したのと区別できず、今度は
-文字を落とします。どちらも実測しています(RP2350越しのCH32L103、ESP32越しのCH32V003)。
+文字を落とします。
 dmseqはこの二つを区別でき、CRCで化けたwordを捨てます。attachやflashが`data0`に残すゴミも
 これで弾かれます。
 
-仕様はoep-specの`docs/target-console-dmseq.ja.md`(`target.console`のframing 2)、
-故障注入つきでframingを選んだ実験はoep-specの`experiments/dm-console-seq`です。
+仕様はoep-specの`docs/target-console-dmseq.ja.md`(`target.console`のframing 2)です。
 
 ## hostでの読み方
 
@@ -66,12 +65,9 @@ ch32rv monitor --source dmseq
   出したままにし、hostが答えるまで以後の書込みは捨てます。`alive()`がその状態を返し、
   自動的に戻ります。1秒に1回以上pollするhostなら何も落ちません。待ちは`millis()`ではなく
   レジスタを読んだ回数で数えるので、割込み禁止中でも終わります。
-- **SerialDMDATAより重いです。** CH32V003で空sketch(flash 624 byte、RAM 4 byte)と比べ、
-  begin・read・writeするsketchで**flash +1268 byte、RAM +52 byte**(SerialDMDATAは+700 / +36)。
-  CRCは16要素の表で計算します(256要素表と同じ速さ、bit計算より24 byte多いだけ)。
-- **速さ**(1270 byteの出力、実測): ESP32-P4越しのCH32X035で41 kB/s、ESP32越し(SWIO)の
-  CH32V003で8.4 kB/s、RP2350越しのCH32L103で9.2 kB/s。WCH-LinkEではアクセスごとにUSBの
-  往復がかかるので数kB/sです。データ転送路ではなくコンソールです。
+- **SerialDMDATAより状態を多く持ちます。** CRCは小さなtableで計算し、受信bufferの大きさは
+  `CH32RV_DMSEQ_RX_SIZE`で変更できます。
+- probeとの往復を要するため、データ転送路ではなくconsole用途です。
 - **レジスタの番地はfamilyで違います**が、boardが`ch32-device-data`から渡すので設定は不要です。
 
 ## examples

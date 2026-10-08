@@ -1,7 +1,7 @@
 # W-2 prototype: 統合startupと等価性検証ハーネス
 
 状態: proof of concept(2026-08-19)。リリース対象ではありません。
-関連: [R-01](../../docs/research/startup-files.ja.md)、[実験0002](../../docs/experiments/0002-unified-startup-poc.ja.md)、[環境整備計画](../../docs/infrastructure.ja.md) W-2
+startupの契約は[ADR-0003](../../../docs/adr/0003-owned-startup-vector-linker.ja.md)を参照してください。
 
 ## 目的
 

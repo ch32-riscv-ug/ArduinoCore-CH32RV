@@ -1,5 +1,5 @@
 /*
- * crt0_ch32.S - prototype unified startup for CH32 (W-2 proof of concept)
+ * crt0_ch32.S - unified startup for CH32
  * Parameters via -D:
  *   CH32RV_VECTORS        include file (unquoted) with CH32RV_IRQ/CH32RV_RSV/CH32RV_JMP lines
  *   CH32RV_MSTATUS_INIT   e.g. 0x1880 (V2), 0x88 (V3/V4), 0x6088 (+FPU), 0x688 (+RVV)

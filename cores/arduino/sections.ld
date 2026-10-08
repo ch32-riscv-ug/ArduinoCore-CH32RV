@@ -2,8 +2,7 @@
  * The MEMORY block (FLASH/RAM origin and length) is variant-owned and lives in
  * variants/<VARIANT>/<device>.ld, which INCLUDEs this file.
  */
-/* W-3 prototype: own-written common section layout for crt0_ch32.S.
- * Included from the per-SKU memory scripts (ch32v006_62k_8k.ld etc.). */
+/* Included from the per-SKU memory scripts (ch32v006_62k_8k.ld etc.). */
 
 __stack_size = DEFINED(__stack_size) ? __stack_size : 512;
 PROVIDE( _stack_size = __stack_size );

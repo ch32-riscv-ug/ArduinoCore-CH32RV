@@ -6,9 +6,8 @@
 
 using namespace arduino;
 
-/* Both APB prescalers are /1 in Milestone 1, so either bus runs at F_CPU.
- * When a prescaler becomes configurable this has to follow the instance's own
- * bus (docs/todo.ja.md). */
+/* Both supported APB prescalers are /1, so either bus runs at F_CPU. A
+ * non-unity setting must provide the clock of the instance's own bus here. */
 static const uint32_t CH32RV_SPI_PCLK = F_CPU;
 
 /* BR selects a power-of-two divider from 2 to 256. Pick the first one that

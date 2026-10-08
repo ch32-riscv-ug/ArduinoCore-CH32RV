@@ -56,14 +56,6 @@ Adafruit_Something device(&bus);
 
 ## コスト
 
-CH32V003(flash 16 KB)で、同じスケッチをハードの`Wire`で組んだ場合と比較した実測:
-
-| | flash | RAM |
-|---|---|---|
-| ハードの`Wire` | +2608 B | +152 B |
-| `SoftWire` | +1904 B | +96 B |
-
-ここでは**`SoftWire`のほうが小さい**です。ペリフェラルの状態機械・エラー復旧・
-route書き込みのほうが、bit-bangより高くつくためです(SPIは逆になります —
-[SoftSPI](../SoftSPI)参照)。どちらも**ヘッダを`#include`しないスケッチには
-コストがかかりません**。
+hardware `Wire`とは実装する状態機械や復旧処理が異なるため、使用量はbuild条件で変わります。
+正確なflash/RAM使用量はbuild size reportで確認してください。ヘッダを`#include`しない
+sketchにはlinkされません。

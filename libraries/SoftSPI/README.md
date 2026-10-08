@@ -49,18 +49,7 @@ All four. `SPI_MODE0` through `SPI_MODE3`, and `MSBFIRST` / `LSBFIRST`, via
 
 ## Cost
 
-Measured on CH32V003 (16 KB flash), against the same sketch built with the
-hardware `SPI`:
-
-| | flash |
-|---|---|
-| hardware `SPI` | +1056 B |
-| `SoftSPI` | +1376 B |
-
-`SoftSPI` is the **larger** of the two: `digitalWrite()` is a call per edge
-where the peripheral is one register write, and deriving from `HardwareSPI`
-means the vtable keeps every override. 128 B of that total is
-`setHalfPeriodUs()` pulling in `delayMicroseconds()`.
-
-Both fit a 16 KB part with room to spare, and neither costs anything to a
-sketch that does not include the header.
+Each edge calls `digitalWrite()`, and deriving from `HardwareSPI` retains its
+overrides, so `SoftSPI` is not necessarily smaller than the hardware driver.
+Use the build size report for the exact cost. It is not linked into sketches
+that do not include its header.

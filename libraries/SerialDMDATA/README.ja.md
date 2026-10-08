@@ -1,7 +1,7 @@
 # SerialDMDATA
 
 debug moduleのdataレジスタ経由の双方向ターミナルです。
-**UARTもpinも配線も要りません。** RAMは36 byteだけです。
+**UARTもpinも配線も要りません。**
 
 使うレジスタは[SerialSDI](../SerialSDI/README.ja.md)と同じ
 (debug moduleの`data0`/`data1`、hartのアドレス空間に見えているもの)ですが、
@@ -21,18 +21,15 @@ void setup() {
 
 ## host側での受け取り方
 
-[ch32fun](https://github.com/cnlohr/ch32fun)のminichlinkのframingです。
-**このcoreはminichlinkを同梱していません。** 上のrepositoryからビルドしてください。
+```
+ch32rv monitor --source dmdata
+```
 
-```
-minichlink -T
-```
+IDEではprobeのportを選び、monitorの`source`を`dmdata`にします。
+[ch32fun](https://github.com/cnlohr/ch32fun)のminichlinkでも読めますが、このcoreには
+同梱していません。使う場合は同repositoryからbuildして`minichlink -T`を実行します。
 
 プロトコルは公開されているframingから実装したもので、ch32funのコードは使っていません。
-
-**IDEのSerial Monitorでは読めません。** あれはserial portを開くものだからで、
-繋ぐには自前のpluggable monitorが要ります(docs/todo.ja.md)。
-同じdebug出力でも`SerialSDI`はprobeが自分のCDCへ流すのでSerial Monitorで読めます。
 OSごとの手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にまとめてあります。
 
 ## SerialSDIとは同じsketchで使えません
@@ -43,7 +40,7 @@ OSごとの手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)に�
 | | host側ツール | 方向 | 代償 |
 |---|---|---|---|
 | `SerialSDI` | wlink、WCH-LinkUtility | 送信のみ | なし |
-| **`SerialDMDATA`** | **minichlink** | **双方向** | **なし** |
+| **`SerialDMDATA`** | **ch32rv monitor --source dmdata、minichlink** | **双方向** | **なし** |
 | `SerialRTT` | ch32rv monitor --source rtt | 双方向 | RAM |
 
 `SerialRTT`はこのレジスタを使わないので、併用できます。
@@ -58,8 +55,7 @@ hostは**レジスタから何かを取り出した後にしか**書き込みま
 届いたぶんは16 byteのバッファ(`CH32RV_DMDATA_RX_SIZE`)に置きます。
 1フレーム入る空きが無くなればhostは待たされます。
 このバッファがechoを成立させている実体です。レジスタは1フレームしか持たず、
-sketch自身の次の`print()`がそれを上書きするので、
-置き場所が無いと3フレームに2フレームを失います。
+sketch自身の次の`print()`がそれを上書きするため、bufferがないと受信を保持できません。
 読む量よりはるかに多くprintするsketchでは溢れることがあります。
 その場合は`available()`を呼ぶ頻度を上げてください。
 
@@ -87,13 +83,11 @@ ch32rv_set_stdout(nullptr);         // 捨てる
 - **番地はfamilyで違います**(V2系`0xE00000F4`、V3系の多く`0xE0000340`、
   V4系とV103`0xE0000380`)。boardが`ch32-device-data`の
   `evidence/debug_data.csv`から渡すので、設定するものはありません。
-- **RAMをほとんど使いません。** CH32V003で空sketch(flash 624 byte、RAM 4 byte)
-  との差を実測すると flash 700 byte / RAM 36 byte
-  (インスタンス・vtable・受信バッファ)。同じことに`SerialRTT`はRAM 364 byteかかります。
+- RAMを使うのはinstance、vtable、受信bufferです。受信bufferの大きさは
+  `CH32RV_DMDATA_RX_SIZE`で変更できます。
 - 1往復7 byteは速くありません。トレース用であって、
   実データを流すUARTの置き換えではありません。
-- **includeしなければゼロ**です。includeすると、メソッドを一度も呼ばなくても
-  インスタンスとvtableのぶん(上の700/36)は載ります。
+- includeすると、メソッドを呼ばなくてもinstanceとvtableがlink対象になります。
 
 ## examples
 

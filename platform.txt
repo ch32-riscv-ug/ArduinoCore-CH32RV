@@ -60,7 +60,7 @@ recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {compile
 recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {compiler.cpp.extra_flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.S.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.S.flags} {compiler.S.extra_flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "{object_file}"
-# --specs=nano.specs: PROPOSED, NOT APPROVED (docs/approval-status.ja.md A-1).
+# newlib-nano is the default runtime; build.rtlib_flags selects float printf/scanf.
 # ADR-0004 proposes newlib-nano as the default runtime with %f as a menu opt-in,
 # but that ADR is still Proposed - it is not authority for this change. What is
 # measured: the full newlib formatter is ~40 KB, so a printf sketch on CH32X035

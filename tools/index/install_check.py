@@ -4,7 +4,7 @@
 # ///
 """Install this platform the way a user does, then build with no overrides.
 
-W-5. Compiling the working tree proves nothing about the release archive: it
+Compiling the working tree does not validate the installable archive: it
 can reference a file the archive does not ship, or lean on a path override that
 only exists during development. So this generates the package index, serves it
 over loopback, installs into an empty arduino-cli data directory, and compiles

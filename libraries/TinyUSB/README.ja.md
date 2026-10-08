@@ -1,29 +1,19 @@
 # TinyUSB
 
-[TinyUSB](https://github.com/hathach/tinyusb) 0.21.0(MIT)の固定コピーです。
-**まだ結線していません** — `library.properties`を置いていないので
-arduino-cliはライブラリとして認識せず、何もコンパイルされません。
-ここにあるのは[ADR-0012](../../docs/adr/0012-usb-stack.ja.md)で
-TinyUSBを採用し、かつ**パッチを当てる可能性があるため内部に持つ**と決めたためです。
+[English](README.md)
 
-## 何が入っているか
+[TinyUSB](https://github.com/hathach/tinyusb) の固定 source copy です。
+Arduino library として認識させる `library.properties` はなく、core の USB API にも結線されていません。
+したがって、この directory があるだけで sketch に TinyUSB は link されません。
 
-上流`src/`の一部だけです。`portable/`以外の全部に加えて、
-`portable/wch`(CH32のdevice FS/HSとhost FSドライバ)と
-`portable/st/stm32_fsdev`(CH32V20xのport0はSTのIPクローンで、
-TinyUSBはそのドライバを使います)。
-他ベンダのドライバ30種を持ってきても、コンパイルすると何も残りません。
+含める範囲は TinyUSB の共通 source、CH32 driver、CH32V20x が使う STM32 FSDEV driver です。
+他 vendor の portable driver は含めません。
 
-`vendor/tinyusb.lock.toml`にtag・ライセンス・**全ファイルのSHA-256**と
-`patches`欄を記録しています。`tools/vendor/vendor_tinyusb.py --check`が
-オフラインで照合し、CIが回します。
-記録されていない改変はビルドを落とすので、
-**次のバージョン更新で黙って消える**ことがありません。
+upstream tag、license、全 file の SHA-256、許可した patch は `vendor/tinyusb.lock.toml` が正本です。
 
-## 残っていること
+```sh
+uv run --no-project python tools/vendor/vendor_tinyusb.py --check
+```
 
-- board側の結線(クロック・割込み・`tusb_config.h`)
-- ドライバが要求するベンダヘッダのshim
-  ([R-23](../../docs/research/tinyusb-vendor-header.ja.md))
-- PLL対応。USBには48MHzが要り、HSIでそれが出るのはCH32X035だけです
-  ([R-22](../../docs/research/usb-stack.ja.md))
+USB stack として TinyUSB を選ぶ理由は
+[ADR-0012](../../docs/adr/0012-usb-stack.ja.md) を参照してください。

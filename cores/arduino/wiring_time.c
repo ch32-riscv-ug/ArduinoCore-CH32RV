@@ -1,6 +1,6 @@
 /* Clock setup and the millis/micros/delay family.
  *
- * Milestone 1 clocking (docs/todo.ja.md): internal oscillator only, no PLL.
+ * The generated clock configuration selects the internal oscillator or PLL.
  * F_CPU is the target HCLK and the AHB prescaler is *derived* from it, so a
  * different clock is a boards.txt change and nothing else - which is the whole
  * point, because the clock menu that comes later is then just more boards.txt
@@ -109,8 +109,8 @@ void SystemInit(void)
      * them (CH32V103 80, CH32L103 96, CH32V20x and CH32V30x 144). So this
      * follows the datasheet rather than EVT.
      *
-     * TODO(docs/todo.ja.md): confirm on hardware at 144 MHz, and ask upstream
-     * why EVT halves it. If APB1 turns out to have a real ceiling, PCLK1 stops
+     * If APB1 has a lower hardware ceiling than the device-data contract,
+     * PCLK1 stops
      * being F_CPU and USART2-5, I2C, SPI2/3 and the APB1 timers each need
      * their own divisor - which is why this is worth settling before it
      * spreads. */
@@ -206,8 +206,7 @@ static inline int ch32rv_clock_is_ours(void)
     return 1;
 }
 
-/* TODO(docs/todo.ja.md): use the hardware auto-reload bit where the family has
- * one instead of rewinding the counter by hand. */
+/* Rewind the counter in software so every supported family uses one path. */
 __attribute__((interrupt)) void SysTick_Handler(void)
 {
     /* Put the clock back within a millisecond of a probe moving it. Here and

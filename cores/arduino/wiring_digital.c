@@ -72,7 +72,7 @@ void pinMode(pin_size_t pin, PinMode mode)
 #endif
     case OUTPUT:
     default:
-        /* TODO(todo.ja.md): 10 MHz slew is hardcoded; expose a speed API. */
+        /* The public GPIO API has no slew-rate setting; use its 10 MHz default. */
         ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
         break;
     }

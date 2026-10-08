@@ -1,321 +1,57 @@
-# デバッグ出力の受け取り方(OS別)
+# デバッグ出力
 
-文書基準日: 2026-08-27
+CH32RV では UART と debug interface を使う複数の `Print` / `Stream` を選べます。
 
-CH32のsketchから文字を出す経路は4つあり、**host側で必要なものがそれぞれ違います**。
-UARTと`SerialSDI`はArduinoのSerial Monitorがそのまま使えます。
-`SerialRTT`と`SerialDMDATA`はSerial Monitorでは読めないので、専用のコマンドで受けます。
-この文書はその手順を、OSごとの差分込みでまとめたものです。
-
-| 経路 | host側 | Serial Monitorで読めるか | 配線 |
+| API | Host 側 | 方向 | 主な制約 |
 |---|---|---|---|
-| `Serial`(UART) | 何も要らない | **読める** | WCH-LinkEのUARTブリッジ、または外付けadapter |
-| [`SerialSDI`](../libraries/SerialSDI/README.ja.md) | `ch32rv monitor --source sdi`(同梱、有効化も兼ねる) | **読める**(probeのCDC port) | 不要 |
-| [`SerialRTT`](../libraries/SerialRTT/README.ja.md) | `ch32rv monitor --source rtt`(同梱。WCH-Link、OEP probeは0.14.0以降) | **読める**(monitorの`source`を`rtt`に) | 不要 |
-| [`SerialDMDATA`](../libraries/SerialDMDATA/README.ja.md) | `ch32rv monitor --source dmdata`(同梱)/ `minichlink -T` | **読める**(`source`を`dmdata`に) | 不要 |
-| [`SerialDMSeq`](../libraries/SerialDMSeq/README.ja.md) | `ch32rv monitor --source dmseq`(同梱)/ OEP probe | **読める**(`source`を`dmseq`に) | 不要 |
+| `Serial` | Arduino Serial Monitor | 双方向 | UART pin と baud rate が必要 |
+| `SerialSDI` | `ch32rv monitor --source sdi` | target → host | WCH-LinkE の SDI print 対応 chip に限定 |
+| `SerialRTT` | `ch32rv monitor --source rtt` | 双方向 | RAM ring buffer を使用し、poll 時に短時間 halt する |
+| `SerialDMDATA` | `ch32rv monitor --source dmdata` | 双方向 | `SerialSDI` と同じ register を使うため併用不可 |
+| `SerialDMSeq` | `ch32rv monitor --source dmseq` | 双方向 | DMI transport が必要。通し番号と CRC-8 を使用 |
 
-IDEのSerial Monitorは、同梱のch32rvがpluggable monitorとして受けます。probeのport
-(`wchlink://…`か`oep://…`)を選び、monitorの設定`source`を経路に合わせてください。
-CLIでは`ch32rv monitor --source <経路>`です(2026-10-01 時点、ch32rv 0.14.0)。
+API の buffer size、`printf()`、同時使用制約は各 library の README を正本とします。
 
-## 0. 共通: ビルド成果物の置き場所を自分で決める
+## Arduino IDE / CLI
 
-ch32rvはELFを要りません(RTTのcontrol blockもRAMから自分で探します)。
-ELFが要るのは`probe-rs attach`などほかのツールで読む場合だけです。IDEのビルド成果物は
-OS依存の一時ディレクトリに出るので、そのときはCLIで`--build-path`を指定して固定してください。
+WCH-Link は `wchlink://…`、OEP probe は `oep://…` の port として discovery されます。
+IDE の Serial Monitor で probe port を選び、`source` を `sdi`、`rtt`、`dmdata`、`dmseq` のいずれかにします。
 
-```sh
-arduino-cli compile \
-  --fqbn ch32-riscv-ug:ch32rv:CH32V103:pnum=CH32V103R8T6 \
-  --build-path ./build \
-  ./MySketch
-# → ./build/MySketch.ino.elf  (と .bin / .hex)
-```
-
-`--build-path`は既存のディレクトリをそのまま使い、中身を消しません(arduino-cli 1.3.1で確認)。
-sketchを差し替えるときは古い`*.elf`が残らないよう、消してから使ってください。
-
-IDEでビルドしたELFを使いたい場合は、環境設定で「詳細な出力を表示: コンパイル」を
-有効にすると、ログの最後に一時ディレクトリのpathが出ます。
-そこの`<sketch名>.ino.elf`が同じものです。
-
-書き込みは経路を問わず共通です。
+CLI では次の形です。
 
 ```sh
-arduino-cli upload \
-  --fqbn ch32-riscv-ug:ch32rv:CH32V103:pnum=CH32V103R8T6 \
-  --programmer wch-link --input-dir ./build ./MySketch
+ch32rv probe list
+ch32rv monitor --source rtt --chip CH32V103 --probe serial:<probe-serial>
 ```
 
-probeが複数刺さっているときは、`probe-rs list`が出す`VID:PID:Serial`をそのまま渡します。
+通常の UART は OS の serial port を Arduino monitor で開きます。
 
 ```sh
-arduino-cli upload ... --upload-property upload.probe_args="--probe 1a86:8010:434A124C5596"
+arduino-cli monitor -p /dev/ttyACM0 -b ch32-riscv-ug:ch32rv:CH32V103
 ```
 
-## 1. OSごとの下準備
+複数 probe がある場合は USB serial または discovery が返した port URI で対象を指定します。`/dev/ttyACM0` や
+`COM7` のような番号は抜き差しで変わるため、設定の識別子として固定しません。
 
-probeの**vendor interface**(debug用)と**CDC port**(UART/SDI用)は別物で、
-必要な権限もOSごとに違います。
+## Linux の権限
 
-### Linux
-
-CDC portは`/dev/ttyACM*`として見えます。ユーザーを`dialout`グループへ入れてください。
-
-vendor interfaceは`udev` ruleが無いと`libusb_open() = -3 (LIBUSB_ERROR_ACCESS)`で
-開けません。`/etc/udev/rules.d/60-wch-link.rules`に置きます。
-
-```
-# WCH-Link / WCH-LinkE. 8010 と 8012 が RISC-V mode、8011 が ARM mode(CMSIS-DAP)
-SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="8010", GROUP="plugdev", MODE="0660"
-SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="8011", GROUP="plugdev", MODE="0660"
-SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="8012", GROUP="plugdev", MODE="0660"
-```
+Board Manager installation には `60-ch32rv.rules` と `post_install.sh` が含まれます。権限不足が出る場合は
+次で診断し、表示された udev rule を導入します。
 
 ```sh
-sudo udevadm control --reload-rules && sudo udevadm trigger
+ch32rv doctor
+ch32rv doctor --emit-udev
 ```
 
-### macOS
+UART / CDC port には distribution の serial-port group (`dialout` 等)への所属も必要です。
 
-ドライバは要りません。CDC portは`/dev/cu.usbmodem*`です
-(`/dev/tty.usbmodem*`もありますが、**`cu.`のほうを使ってください**。
-`tty.`はDCD待ちでopenがブロックすることがあります)。
-vendor interfaceの権限設定も不要です。
+## 経路の選び方
 
-### Windows
+- 通常の user I/O と互換性を優先するなら `Serial`
+- UART pin と RAM を使わず一方向の log だけ欲しいなら `SerialSDI`
+- 大きめの双方向 buffer が必要なら `SerialRTT`
+- RAM を節約し、DMI が安定している環境なら `SerialDMDATA`
+- 欠落・重複を検出できる console が必要なら `SerialDMSeq`
 
-CDC portは`COM3`のように見えます。デバイスマネージャーか
-`arduino-cli board list`で番号を確認してください。
-
-**vendor interfaceにはドライバが要ります。** 公式の
-`WCH-LinkUtility.ZIP`に入っている`Drv_Link/WCHLinkDrv_WHQL_S.exe`を実行するのが
-いちばん確実で、これでprobe-rsもwlinkも動くようになります。
-
-うまくいかないときの手段として[Zadig](https://zadig.akeo.ie/)でWinUSBを
-割り当てる方法もありますが、**`WCH-Link (Interface 0)`だけ**に当ててください。
-CDC側に当てるとCOM portが消えます(`Options > List All Devices`で選べます)。
-
-### WSL2
-
-USBはWindows側にしか見えないので、`usbipd-win`でWSLへ渡します。
-
-```powershell
-usbipd list
-usbipd bind   --busid <BUSID>          # 初回のみ、管理者権限
-usbipd attach --wsl --busid <BUSID>
-```
-
-2026-08-25にはWSLの`vhci_hcd`がhigh-speed port 8本で、9台目が`no free port`で失敗しました。
-2026-09-25時点の環境では20台以上を同時にattachできています(どの更新で変わったかは未確認)。
-デバイスが見えないときは台数を疑う前に、`usbipd list`でVID:PIDと状態を見てください
-(`Shared`なら`usbipd attach --wsl --busid <BUSID>`だけで済み、管理者権限は要りません)。
-その口で列挙しているのが期待したfirmwareかも確かめてください。
-attach後はLinuxの手順(udev rule、`dialout`)がそのまま必要です。
-
-**`usbipd detach`は、probeのWindows側ドライバ次第で危険です。**
-`usbipd list`のDEVICE欄が`WCH-Link SERIAL (COMxx)`(WCHのnative driver)なら、detachで`Shared`に戻ります。
-`USB シリアル デバイス (COMxx)`(Windows標準のusbser)だとstubが残って`incompatible driver`になり、
-デバイスがUSB busから消えます。この経路はbus全体の再列挙を起こし、別のprobeで走っていた書き込みも落ちました
-(flashの中身は無事)。detachは他の作業をすべて止めてから行い、普段はattachしたままにしてください。
-
-usbipdのbindはUSBの識別(VID / PID / serial number)ごとに保存され、bindには管理者権限が要ります。
-firmwareを書き換えてVID / PID / serialが変わると新しいデバイスとして扱われ、bindし直すまでattachできません。
-焼き直しで再列挙したデバイスはattachをやり直します(`usbipd state`のJSONの`InstanceId`からBusIdを引けます)。
-
-## 2. `Serial`(UART)
-
-普通のSerial Monitorです。WCH-LinkEはdebug interfaceの他にCDCを持っていて、
-**そこがUARTブリッジ**なので、1本のケーブルで書き込みとUART受信の両方が取れます。
-
-```sh
-arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32rv:CH32V103
-```
-
-ボーレートの既定は**115200**をboardが宣言しているので`--config`は要りません。
-変えたいときは`--config baudrate=9600`のように渡します。
-
-| OS | portの例 |
-|---|---|
-| Linux / WSL | `/dev/ttyACM4` |
-| macOS | `/dev/cu.usbmodem1234561` |
-| Windows | `COM7` |
-
-## 3. `SerialSDI` — WCH-LinkEで有効化してはじめて使える
-
-**この経路は「そのままでは出ない」のが正しい状態です。** sketchを書いても、
-何も設定していなければ1文字も出てきません。coreの不具合でもsketchの間違いでもなく、
-**probe側でSDI printを有効にするまで、probeが転送しない**からです。
-
-前提は2つあります。
-
-- **WCH-LinkEであること。** 初代WCH-Link(CH549)にも**WCH-LinkWにも**ありません。
-  WCH-LinkUtilityは`Only WCH-LinkE support SDI Printf function!`と言って断りますし、
-  wlinkのソースも`support_sdi_print()`を**LinkE(CH32V305ベース)だけ**に限定しています
-  (LinkWは電源制御には対応していますが、SDI printは対象外です)
-- **chipが対応していること。** V003 / V00x / V103 / V20x / V30x / **V317** /
-  X035 / L103 です(wlinkの`RiscvChip::support_sdi_print()`より)。
-  対象外だと``Current chip type does`t support SDI Printf function!``になります
-
-そして有効にすると、**通常のUART Serialと同じportに混ざって出てきます**。
-WCH-LinkEのCDCは**UARTブリッジとSDIの受け口を兼ねている**ので、
-`Serial.println()`とSerialSDIの両方を使っていると、
-1つのSerial Monitorに両方が流れ込みます。これは仕様であって、分離はできません。
-分けたいときはどちらか一方だけを使ってください。
-
-有効化のやり方は3つあり、環境で選びます。
-
-| | 対応OS | 位置づけ |
-|---|---|---|
-| **WCH-LinkUtility** | **Windowsのみ** | WCH公式。単体配布はWindows専用 |
-| **MounRiver Studio 同梱のOpenOCD** | Linux / macOS / Windows | 同じくWCH純正。CLIから叩ける |
-| **wlink** | Linux / macOS / Windows | サードパーティ(ch32-rs)のCLI |
-
-### 3.1 WCH-LinkUtility(WCH公式、Windowsのみ)
-
-公式ユーティリティです。probeのドライバとファームウェアも同じZIPに入っているので、
-Windowsならこれ1つで下準備が済みます。
-
-1. WCHのWCH-Link製品ページから`WCH-LinkUtility.ZIP`を取って展開する
-2. `Drv_Link/WCHLinkDrv_WHQL_S.exe`でドライバを入れる(初回のみ)
-3. `WCH-LinkUtility.exe`を起動し、**Target**メニュー → **Connect WCH-Link**
-4. **Target**メニュー → **Enable SDI Printf**
-5. WCH-LinkUtilityを閉じる(probeを掴んだままだと他のツールが使えません)
-
-戻すときは同じメニューの**Disable SDI Printf**です。
-公式マニュアル(`Doc/WCH-LinkUserManual-EN.pdf`)の
-**5.2.11 SDI Virtual Serial Port Function**が該当箇所で、
-「EnableSDIPrintfをチェックし、WCH-LinkEのCOM portを開く」「**V1.80以降**」とあります
-(手元で確認したのはV2.20)。
-
-**ZIPの中身は`.exe`と`.dll`とWHQLドライバだけで、Linux/macOS版はありません。**
-
-### 3.2 MounRiver Studio 同梱のOpenOCD(Linux / macOS / Windows)
-
-Linux版MounRiver Studioに入っているOpenOCD(WCHのfork)は、
-**`sdi_printf`というコマンドを持っています**。
-MRSのdownloadダイアログにある`SDIPrintf`のチェックはこれを呼んでいます。
-LinkUtilityが無い環境ではこれが純正の手段です。
-
-```sh
-cd <MounRiver>/OpenOCD/bin
-./openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit
-# → Info :  SDI_PRINTF  ENABLE
-```
-
-**順番が決まっています**。`sdi_printf`は`init`の**前**、`exit`は`init`の**後**です。
-逆にすると`The 'sdi_printf' command must be used before 'init'.`と言われます。
-
-**このコマンドで無効化はできませんでした。** 引数に`disable`/`0`/`off`のどれを渡しても
-`SDI_PRINTF ENABLE`になります(MRS側も有効化のフラグしか持っていません)。
-戻すときはWCH-LinkUtilityの**Disable SDI Printf**か、`wlink sdi-print disable`を使ってください。
-
-Linuxでは`libjaylink.so.0`が要りますが、**MRSが同梱しています**。
-
-```sh
-export LD_LIBRARY_PATH=<MRS>/resources/app/resources/linux/components/WCH/Others/CommunicationLib/default
-```
-
-このベンチでの実測(2026-08-27、CH32V003 + WCH-LinkE): `probe-rs download`で書き込み →
-上のopenocdで有効化 → `arduino-cli monitor`で`uptime N s`が読めました。
-**wlinkを一切使わずにLinuxで完結します。**
-
-### 3.3 wlink(サードパーティCLI、Linux / macOS / Windows)
-
-[wlink](https://github.com/ch32-rs/wlink)はこのcoreに同梱していません。
-releaseのバイナリを取るか`cargo install --git`で入れてください。
-
-```sh
-wlink sdi-print enable        # 一度だけ。wlinkを終了しても転送は続きます(実測)
-wlink sdi-print disable       # 戻す
-```
-
-書き込みと監視をまとめてやることもできます(wlink自身の窓に出ます)。
-
-```sh
-wlink flash --enable-sdi-print --watch-serial ./build/MySketch.ino.elf
-```
-
-wlinkのドキュメントは**firmware 2.10以降**のWCH-LinkEを条件に挙げています。
-
-### 3.4 読む
-
-どれで有効化しても、読み方は同じです。**普通のSerial Monitor**が監視先になります。
-
-```sh
-arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32rv:CH32V103
-```
-
-portは**WCH-LinkE自身のCDC**(`1a86:8010`)です。
-前述のとおり、ここには**UART Serialの出力も一緒に流れてきます**。
-
-**有効化はuploadに含まれません。** `ch32rv monitor --source sdi`が監視の前に有効化します
-(有効化だけなら`ch32rv monitor sdi on`)。WCH-LinkUtility / wlinkでも有効にできます。
-
-## 4. `SerialRTT` — `ch32rv monitor --source rtt`
-
-同梱のch32rvで読めます。**追加で入れるものはありません**。ELFも要りません。
-
-```sh
-ch32rv monitor --source rtt --chip CH32V103
-```
-
-- WCH-LinkでもOEP probeでも読めます(OEP probeはch32rv 0.14.0以降)
-- pollのたびにcoreを一瞬haltします(ch32rvの表示どおり)
-- 打った文字はtargetの`read()`へ届きます(down channel)
-- IDEではprobeのportを選び、monitorの`source`を`rtt`にします
-- WCH-Link経由のattachはtargetのクロックを書き換えることがあります(ch32rvが警告を出します)。
-  sketch自身のクロックで見たいときは`ch32rv run <elf> --no-flash --source rtt`でresetしてから読みます
-
-`probe-rs attach --chip <型番> <firmware.elf>`でも読めます(こちらはELFが要ります)。
-
-## 5. `SerialDMDATA` — `ch32rv monitor --source dmdata` / `minichlink -T`
-
-同梱の書き込みツール ch32rv でも双方向に読み書きできます（`ch32rv monitor --source dmdata`、stdin がターゲットへ）。
-CH32V307 で両方向を確認済み（2026-09-23）。CH32V006 では出力が届かず、調査中です。
-テストハーネスのコンソールもこの経路です（[TEST_PLAN](../tests/TEST_PLAN.ja.md)）。
-
-[ch32fun](https://github.com/cnlohr/ch32fun)のminichlinkでも読めます（こちらは同梱していないので、自分でビルドしてください）。
-
-```sh
-git clone https://github.com/cnlohr/ch32fun
-cd ch32fun/minichlink
-make                     # Linux: libusb-1.0-dev と libudev-dev が要ります
-./minichlink -T
-```
-
-| OS | ビルドに要るもの |
-|---|---|
-| Linux | `sudo apt install build-essential libusb-1.0-0-dev libudev-dev` |
-| macOS | `brew install libusb`、あとは`make` |
-| Windows | MSYS2 (mingw64) で`make`、または同梱のprebuilt binary |
-
-- `-T`は**ターミナルをtty(端末)から読みます**。
-  pipeやリダイレクトで標準入力を与えると、EOFを`0xff`の連打として送り続けるので、
-  **必ず端末から起動してください**
-- 打った文字はtargetの`read()`へ届きます(1往復3 byte)
-- `SerialSDI`と**同じレジスタ**を使うので、両方を1つのsketchで使うことはできません
-
-## 6. つまずきやすいところ
-
-- **`SerialSDI`を有効にするとCDCの下り(host→target)が死ぬことがある。**
-  bannerは読めるのにtargetへ文字が届かない、という形で出ます。
-  probeを挿し直す(WSLなら`usbipd detach`+`attach`)と直ります
-- **probe-rsやminichlinkでflashすると、probeが持っているchip情報が古くなる**ことがあります。
-  直後の`probe-rs info`が失敗したら`wlink reset`、
-  またはbenchの`smoke.py`が使っている**リセット無しの再検出**
-  (vendor commandの`81 0d 01 03`)で戻ります
-- **`--build-path`は中身を消しません。** sketchを差し替えたら、古い`*.elf`を掴まないよう
-  ディレクトリごと消してから使ってください
-- **probeを掴めるのは1つのプロセスだけです。** WCH-LinkUtilityやwlinkを開いたままだと
-  `arduino-cli upload`が失敗します。設定を変えたら閉じてください
-- **WCH-LinkEのattachは、動いているtargetのクロックを書き換えます。** probe-rsでもch32rvでも同じで、
-  メモリを1回読むだけでも起きます。LinkEのfirmwareがattachの中で`RCC_CFGR0`をHSIに戻し、
-  家系ごとに決まったPLL設定に切り替えたまま元に戻しません(家系によってはFLASH ACTLRも変えます)。
-  V307 / V203 / L103 / V006で起き、V003とX035では変わりません。初代WCH-Link(CH549)は書き換えません。
-  coreはSysTickの割り込みの中でクロックが自分の設定と違うことを見つけると1 ms以内に`SystemInit()`をやり直すので、
-  attach後もSerialのbaud・`millis()`・timerは正しいままです(古いcoreやほかのcoreではattach後にconsoleが化けます)。
-  外から読めるRCCはattach直後の値なので、RCCの検査はsketchの内側から読みます(`tests/bench/regs/reg_probe`)
-- **portは固定ではありません。** 抜き差しやreboot、WSLのattach順で番号が変わります。
-  `arduino-cli board list`か、probeのUSB serial(`probe-rs list`)で確認してください
+probe は一度に一つの process だけが開けます。upload、monitor、WCH utility、別 debugger が同じ probe を保持して
+いる場合は、不要な process を終了してから接続します。

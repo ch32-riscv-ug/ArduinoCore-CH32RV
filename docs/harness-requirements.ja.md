@@ -543,4 +543,4 @@ ch32rv `0006` §11 が「相手の文書が更新されたら解消した項目�
 - Q-050(LA channel / connector / 電源)の判断を harness の結論が出るまで保留する
 - 5V 動作の board がベンチにあるかを確認する(C-7)
 - `bench.json` を配線表の置き場所として設計する
-- [R-17](research/upload-programmers.ja.md) の Tier 表に harness の枠を用意する
+- harness は互換書込器の実験的な区分として扱う

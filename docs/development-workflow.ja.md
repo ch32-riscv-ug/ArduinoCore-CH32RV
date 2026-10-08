@@ -217,7 +217,7 @@ prepare の 3 と同じ関数を呼ぶ。1 秒未満、ロック無し（describ
 
 | 作業 | いま | コマンド |
 |---|---|---|
-| ch32rv の同梱版を上げる | 手で JSON を書き換え、.sha256 を 5 つ取り、fetch_tools で確かめる | `tools/index/bump_tool.py <tool> <version>`: Release の assets から `tools_<tool>.json` を作り直し、fetch して checksum と `--version` を確かめ、CHANGELOG の Unreleased に雛形の行を足す |
+| ch32rv の同梱版を上げる | 手で JSON を書き換え、.sha256 を 5 つ取り、fetch_tools で確かめる | `tools/index/bump_tool.py <tool> <version>`: Release の assets から `tools_<tool>.json` を作り直し、fetch して checksum と `--version` を確かめる |
 | プローブの焼き直しと設定 | 手順を毎回組む（compile → upload → attach → config） | `tests/bench/prepare.py`（§5） |
 | プローブの状態の確認 | `oep config show`、`oep dump` を目で見る | `prepare.py --check`（pytest の最初と同じ） |
 | sketch.yaml / testcmd.h の同期 | `sync_profiles.py` / `sync_testcmd.py`（既存） | 変更なし。`generated/`（→ `build/`）が `--check` |

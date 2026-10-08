@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""W-5 prototype: build a Board Manager platform archive and package index.
+"""Build a Board Manager platform archive and package index.
 
 - Packages the platform entries (PLATFORM_ENTRIES) as a .tar.bz2 (single root folder).
 - In the packaged platform.txt, compiler.path is rewritten to the installed

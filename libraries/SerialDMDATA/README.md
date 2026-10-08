@@ -1,7 +1,7 @@
 # SerialDMDATA
 
 A two-way terminal over the debug module's data registers, **with no UART, no
-pin and no wiring** - and 36 bytes of RAM.
+pin and no wiring**.
 
 Same two registers as [SerialSDI](../SerialSDI/README.md) - the debug module's
 `data0`/`data1`, mapped into the hart's address space - but a different
@@ -22,19 +22,17 @@ void setup() {
 
 ## Reading it on the host
 
-This is minichlink's framing, from [ch32fun](https://github.com/cnlohr/ch32fun).
-**This core does not ship minichlink** - build it from that repository:
+```
+ch32rv monitor --source dmdata
+```
 
-```
-minichlink -T
-```
+In the IDE, select the probe port and set the monitor `source` to `dmdata`.
+[ch32fun](https://github.com/cnlohr/ch32fun)'s minichlink can also read this
+framing. It is not bundled; build it from that repository and run
+`minichlink -T` if you use it.
 
 The protocol is implemented here from its documented framing; no ch32fun code
-is used.
-
-**Not the IDE's serial monitor.** That one speaks to serial ports, and this is
-not one; wiring it in would need a pluggable monitor tool of our own
-(docs/todo.ja.md). Per-OS instructions are in
+is used. Per-OS instructions are in
 [docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).
 
 ## It cannot share a sketch with SerialSDI
@@ -45,7 +43,7 @@ other as noise. Pick by the tool you have:
 | | host tool | direction | cost |
 |---|---|---|---|
 | `SerialSDI` | wlink, WCH-LinkUtility | send only | none |
-| **`SerialDMDATA`** | **minichlink** | **two-way** | **none** |
+| **`SerialDMDATA`** | **ch32rv monitor --source dmdata, minichlink** | **two-way** | **none** |
 | `SerialRTT` | ch32rv monitor --source rtt | two-way | RAM |
 
 `SerialRTT` uses neither register, so it can be used alongside this one.
@@ -61,8 +59,8 @@ what makes the channel two-way.
 What arrives is parked in a 16-byte buffer (`CH32RV_DMDATA_RX_SIZE`), and the
 host is held off once there is no room for another frame. The buffer is what
 makes an echo loop work at all: the register holds one frame, and the sketch's
-own next `print()` overwrites it, so without somewhere to put those bytes two
-frames out of three are lost. A sketch that prints far more than it reads can
+own next `print()` overwrites it, so a receive buffer is required to retain
+input. A sketch that prints far more than it reads can
 still overrun it - `available()` often enough is the cure.
 
 ## Changing where printf() goes
@@ -91,14 +89,12 @@ Only **stdio** follows. The name `Serial` is fixed at compile time, so
   V3, `0xE0000380` on V4 and V103). The board states it, from
   `ch32-device-data`'s `evidence/debug_data.csv`, so there is nothing to
   configure.
-- **It costs almost no RAM.** Measured on CH32V003 against an empty sketch
-  (624 bytes flash, 4 bytes RAM), including it costs 700 bytes of flash and 36
-  bytes of RAM - the instance, its vtable and the receive buffer. `SerialRTT`
-  costs 364 bytes of RAM for the same job.
+- RAM is used by the instance, its vtable and the receive buffer. Configure the
+  receive-buffer size with `CH32RV_DMDATA_RX_SIZE`.
 - Seven bytes per handshake is not fast. It is a tracing channel, not a
   replacement for a UART carrying real data.
-- **Not including it costs nothing.** Including it costs the instance and its
-  vtable even if the sketch never calls a method - that is the 700/36 above.
+- Including it links the instance and its vtable even if the sketch never calls
+  a method.
 
 ## examples
 

@@ -21,7 +21,7 @@ void setup() {
 
 ## Reading it on the host
 
-With the bundled ch32rv, through a WCH-Link or an OEP probe (ch32rv 0.14.0 or later):
+With the bundled ch32rv, through a WCH-Link or an OEP probe:
 
 ```
 ch32rv monitor --source rtt --chip CH32V203
@@ -29,36 +29,19 @@ ch32rv monitor --source rtt --chip CH32V203
 
 It finds the control block in RAM by itself (no ELF needed) and halts the
 core briefly for each poll. In the IDE, pick the port and set the monitor's
-`source` to `rtt`. Checked on CH32V203 over a WCH-LinkE and on CH32X035 over
-an OEP probe (2026-10-01).
+`source` to `rtt`.
 `probe-rs attach --chip <part> <firmware.elf>` works as well.
 
-**Not the IDE's serial monitor.** That one speaks to serial ports, and this is
-not one; wiring RTT into it would need a pluggable monitor tool of our own
-(docs/todo.ja.md). On Linux and macOS `socat` can bridge it into a pty if you
-want the IDE window. Per-OS instructions are in
+Per-OS instructions are in
 [docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).
 
-Measured earlier on this bench with probe-rs 0.32.0: `download` and then `attach`
-streams live while the target runs, on CH32V003 (18 lines in 23 s, and typed
-input echoed back) and on CH32V203 alike. Attaching to a target the probe
-happens to have left halted shows only what was printed before - reflash or
-reset it and attach again.
+If a probe has left the target halted, it produces no new output. Reflash or
+reset it to resume execution before attaching.
 
 ## What it costs
 
-RAM, which the other two debug channels do not use. Measured on CH32V003
-against an empty sketch (624 bytes flash, 4 bytes RAM):
-
-| | flash | RAM |
-|---|---|---|
-| not included | 0 | 0 |
-| `SerialSDI`, for comparison | +364 | +20 |
-| `SerialDMDATA`, for comparison | +700 | +36 |
-| `SerialRTT`, buffers 256/16 (default) | +656 | +364 |
-| `SerialRTT`, buffers 64/8 | +640 | +164 |
-
-The buffers are the bulk of the RAM, and they are `#define`s:
+Unlike the debug-register channels, RTT allocates buffers in RAM. Their sizes
+are configurable `#define`s:
 
 ```
 -DCH32RV_RTT_UP_SIZE=64        // target to host, default 256
@@ -66,15 +49,15 @@ The buffers are the bulk of the RAM, and they are `#define`s:
 ```
 
 Pass them through `build_opt.h` beside the sketch, or
-`--build-property build.extra_flags=...` from arduino-cli. On a 2 KB part that
-is worth doing; on a 20 KB one the default is nothing.
+`--build-property build.extra_flags=...` from arduino-cli. Reduce them on
+RAM-constrained targets.
 
 ## Which debug channel to use
 
 | | host tool | direction | cost |
 |---|---|---|---|
 | `SerialSDI` | wlink, WCH-LinkUtility | send only | none |
-| `SerialDMDATA` | minichlink | two-way | none |
+| `SerialDMDATA` | ch32rv monitor --source dmdata, minichlink | two-way | none |
 | **`SerialRTT`** | **ch32rv monitor --source rtt** | **two-way** | **RAM** |
 
 `SerialSDI` and `SerialDMDATA` share the debug module's data registers and
@@ -101,9 +84,8 @@ Only **stdio** follows. The name `Serial` is fixed at compile time, so
   a single store, but two writers can still interleave their bytes.
 - The buffers survive `end()`: a host that is already attached keeps reading
   what is there rather than seeing the stream corrupt.
-- **Not including it costs nothing.** Including it costs the instance, its
-  vtable *and* the buffers even if the sketch never calls a method - that is
-  the table above.
+- Including it links the instance, its vtable and the buffers even if the
+  sketch never calls a method.
 
 The control block layout is the publicly documented one and the symbol carries
 the name the host tools look for. **No SEGGER code is used.**

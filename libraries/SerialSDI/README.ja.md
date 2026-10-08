@@ -46,7 +46,7 @@ void setup() {
 ch32rv monitor --source sdi --chip CH32V003     # SDI printを有効にしてからCDCを読む
 ```
 
-CH32V003 + WCH-LinkE、ch32rv 0.13.2で確認(2026-10-01)。有効化だけなら`ch32rv monitor sdi on|off`。
+有効化だけなら`ch32rv monitor sdi on|off`。
 WCH純正のツールでもできます。
 
 | | 対応OS | |
@@ -92,8 +92,7 @@ ch32rv_set_stdout(nullptr);         // 捨てる
   こちらでは検証していないので`read()`は常に-1を返します。
 - 1フレーム7バイトで、次を書く前にprobeが取り終える必要があります。
   速くはありませんし、大量出力でUARTを置き換えるものでもありません。
-- **includeしなければゼロ**です。ただしincludeすると、使わなくても
-  インスタンスとvtableのぶん(V003実測でflash 364 byte / RAM 20 byte)は載ります。
+- includeすると、使わなくてもinstanceとvtableがlink対象になります。
 
 ## examples
 

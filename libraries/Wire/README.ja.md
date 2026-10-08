@@ -1,6 +1,6 @@
 # Wire (I2C)
 
-CH32のI2Cペリフェラルを使うmaster専用の実装です。pinはvariantから来るので
+CH32のI2Cペリフェラルを使うmaster/slave実装です。pinはvariantから来るので
 `Wire.begin()`に引数は要りません。別のpinはESP32と同じ形で指定できます:
 `Wire.begin(sda, scl)`、`Wire.begin(sda, scl, 400000)`。
 ライブラリには`TwoWire *`(`&Wire`)で渡し、`SoftWire`もそこへ渡せます。
@@ -27,8 +27,8 @@ seriesごとに違うので、分からなければ表示させてください�
 Serial.print(SCL); Serial.print(' '); Serial.println(SDA);
 ```
 
-**既定routeが全型番でbondされているとは限りません。** CH32X033/X035では
-PA10/PA11ですが、これが出ているのは7型番中2つだけです。
+**既定routeが全packageでbondされているとは限りません。** CH32X033/X035では
+PA10/PA11ですが、このpairを外へ出していないpackageもあります。
 board側に無い場合は移動させます。
 
 ```cpp
@@ -56,8 +56,10 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
 - **バッファは32バイト**(AVRと同じ)。超えると切り捨てて1を返します。
   `-DCH32RV_WIRE_BUFFER_SIZE=128`で増やせますが、
   送受信の両方が、インスタンスごとに増えます。
-- **slaveモードは未実装です。** `begin(address)`・`onReceive()`・`onRequest()`は
-  受け付けますが何もしません(中途半端に動くよりよいと判断しています)。
+- **slaveモードは割り込み駆動です。** `begin(address)`でslaveを選び、
+  `onReceive()`と`onRequest()`のcallbackは割り込みcontextで呼ばれます。
+  1つのinstanceをmasterとslaveに同時利用すること、multi-master arbitration、
+  general callへの応答には対応しません。
 - **2本目は`Wire1`**です。ペリフェラル番号ではなく**バスの順番**で、
   Arduinoエコシステムの慣習に合わせています。
 - タイムアウトは25msで、`endTransmission()`は5を返します。**既定で有効**です
@@ -75,8 +77,8 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
   開き直します。線は内蔵プルアップで解放し、SCLをHighに駆動することはないので、
   clock stretchingするslaveは待ちます(`CH32RV_WIRE_CLEAR_STRETCH_US`、1パルス1 ms)。
 - クロックは`setClock(100000)`で標準モード、それより速い値でfast mode(2:1)。
-  ペリフェラルクロックは`F_CPU`と仮定しています
-  (HSI直結・APB分周1という現在の構成で成り立ちます)。
+  driverはペリフェラルクロックを`F_CPU`と仮定するため、system clockとAPBの設定を
+  変更する場合はこの前提も更新する必要があります。
 
 ## examples
 

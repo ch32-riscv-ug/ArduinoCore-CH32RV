@@ -48,17 +48,6 @@ Adafruit_Something device(&bus);
 
 ## コスト
 
-CH32V003(flash 16 KB)で、同じスケッチをハードの`SPI`で組んだ場合と比較した実測:
-
-| | flash |
-|---|---|
-| ハードの`SPI` | +1056 B |
-| `SoftSPI` | +1376 B |
-
-**`SoftSPI`のほうが大きい**です。`digitalWrite()`がエッジごとの関数呼び出しに
-なるのに対しペリフェラルはレジスタ1回の書き込みで済むこと、そして
-`HardwareSPI`を継承するとvtableが全overrideを保持することが理由です。
-このうち128 Bは`setHalfPeriodUs()`が`delayMicroseconds()`を引き込む分です。
-
-どちらも16 KBの部品に余裕で入り、**ヘッダを`#include`しないスケッチには
-どちらのコストもかかりません**。
+edgeごとに`digitalWrite()`を呼び、`HardwareSPI`のoverrideも保持するため、hardware
+`SPI`より小さくなるとは限りません。正確な使用量はbuild size reportで確認してください。
+ヘッダを`#include`しないsketchにはlinkされません。

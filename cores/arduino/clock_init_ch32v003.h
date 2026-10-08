@@ -5,7 +5,7 @@
  * clock. Order matters, and so does doing it at all - PLLSRC and
  * PLLMULL cannot be changed while PLLON is set, so a PLL left running
  * by a previous program would otherwise keep its configuration.
- * NOT emitted: step 6 (trim) - see docs/todo.ja.md.
+ * NOT emitted because the generator cannot represent it: step 6 (trim).
  */
 #pragma once
 

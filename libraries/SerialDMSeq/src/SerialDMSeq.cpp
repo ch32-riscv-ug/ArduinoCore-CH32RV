@@ -29,9 +29,8 @@ static volatile uint32_t *const CH32RV_DM_DATA1 =
 #define ANSWER_MAX 2u             /* payload bytes an answer carries */
 
 /* CRC-8, poly 0x07, init 0xFF, over the status byte and the payload; stored
- * right after the payload. Four bits at a time from a 16-entry table: as fast
- * as a 256-byte table for 24 bytes more than the bit loop (measured,
- * oep-spec experiments/dm-console-seq). init 0xFF makes an all-zero word
+ * right after the payload. Four bits at a time from a compact table. init
+ * 0xFF makes an all-zero word
  * invalid, so a data0 that holds nothing (a V4 with no debugger attached reads
  * 0) is never taken for an answer. */
 static uint8_t crc8(const uint8_t *p, uint8_t n)

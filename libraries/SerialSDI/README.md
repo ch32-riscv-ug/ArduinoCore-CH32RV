@@ -47,7 +47,6 @@ The bundled ch32rv does it as part of watching:
 ch32rv monitor --source sdi --chip CH32V003     # switches SDI print on, then reads the CDC
 ```
 
-Checked on CH32V003 over a WCH-LinkE with ch32rv 0.13.2 (2026-10-01);
 `ch32rv monitor sdi on|off` switches it alone. WCH's own tools do it too:
 
 | | OS | |

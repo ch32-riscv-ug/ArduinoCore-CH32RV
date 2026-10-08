@@ -105,55 +105,48 @@ EVT_FAMILY = [
 ]
 
 # Our side. (状態, 公開API, 備考). Nothing here is derived - it is the
-# maintainer's record, and it is deliberately explicit about what has been
-# decided and what is only proposed.
+# maintainer's record of implementation coverage.
 #
-#   実装済     コードがあり、少なくとも1枚の実機で確認した
-#   実装中     作業中
-#   予定(初回) 初回releaseに入れる (ユーザ指示のあるものは「決定」と書く)
-#   要判断     方針が決まっていない
-#   対象外     初回releaseでは扱わない
+#   実装済     公開APIと実装がある
+#   一部実装   備考に記載した範囲だけ実装がある
+#   未実装     siliconに機能はあるがcoreの公開API/実装がない
+#   対象外     coreの公開APIとして提供しない
 STATUS = {
     "GPIO": ("実装済", "pinMode/digitalWrite/digitalRead", ""),
     "EXTI (外部割込み)": ("実装済", "attachInterrupt", "X033/X035のEXTI16-23は未対応"),
     "PFIC (割込みコントローラ)": ("実装済", "-", "優先度は全てreset既定のまま"),
     "SysTick": ("実装済", "millis/micros/delay", ""),
-    "RCC (クロック)": ("実装済", "F_CPU", "HSIのみ。PLL/HSEは将来"),
-    "PWR (低消費電力)": ("要判断", "-", "Arduino標準APIが無い。sleep系をどう見せるか"),
-    "FLASH (自己書き換え)": ("要判断", "EEPROM相当",
-                            "Arduinoでは`EEPROM`が定番。**page消去単位と書き込み粒度のデータが無い**"
-                            "(R-20のD-3相当)。products.csvにあるのはflash容量だけ"),
+    "RCC (クロック)": ("一部実装", "F_CPU", "HSIまたはHSI由来PLLを生成設定で選択。HSEは未実装"),
+    "PWR (低消費電力)": ("未実装", "-", "sleep APIは提供していない"),
+    "FLASH (自己書き換え)": ("未実装", "-",
+                            "自己書き換えとEEPROM emulationのAPIは提供していない"),
     "USART": ("実装済", "Serial", ""),
-    "I2C": ("実装済", "Wire", "master専用。X035実機で配線なしの自己検査11項目pass。"
-            "**slave(onReceive/onRequest)は未実装**、実デバイス相手の確認はこれから"),
-    "SPI": ("実装済", "SPI", "controller専用。X035実機で配線なしの自己検査9項目pass。"
-            "**peripheral(slave)は未実装**、実デバイス相手の確認はこれから"),
+    "I2C": ("実装済", "Wire", "controllerはpolling、peripheral(slave)は割込み駆動"),
+    "SPI": ("一部実装", "SPI", "controllerのみ。peripheral(slave)は未実装"),
     "ADC": ("実装済", "analogRead",
-            "分解能は実機未確認。X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替(**未検証**)"),
+            "X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替"),
     "DAC": ("実装済", "analogWrite(CH32RV_DACn_PIN)",
-            "V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来。**実機未確認**"),
+            "V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来"),
     "TIM (PWM/tone/入力捕捉)": ("実装済", "analogWrite/tone",
                                "`tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ"
                                "(`CH32RV_TONE_TIMER`)。V003/X035/M030は空きが無く**PWMと共有**"),
     "LPTIM": ("対象外", "-", "L103のみ"),
-    "DMA": ("対象外", "-", "Arduino APIに露出しない。内部最適化として将来"),
-    "IWDG": ("要判断", "-", "Arduino標準APIが無い"),
-    "WWDG": ("要判断", "-", "同上"),
-    "RTC": ("要判断", "-", "libraryとして出す例が多い"),
+    "DMA": ("対象外", "-", "Arduino APIには露出しない"),
+    "IWDG": ("実装済", "`CH32RV.wdtEnable/wdtFeed`", ""),
+    "WWDG": ("未実装", "-", ""),
+    "RTC": ("未実装", "-", ""),
     "BKP (バックアップレジスタ)": ("対象外", "-", ""),
     "CRC": ("対象外", "-", ""),
     "OPA/コンパレータ": ("対象外", "-", "CH32固有"),
     "TouchKey": ("対象外", "-", "CH32固有"),
     "PIOC (プログラマブルIO)": ("対象外", "-", "X035/V205固有"),
-    "USB (FS device/host)": ("予定(初回)", "TinyUSB",
-                             "**TinyUSB採用が決定**(ADR-0012)。上流の対応はV103/V20x/V30xのみで、"
-                             "X033/X035はPR未マージ、L103/M030/V205は未対応。"
-                             "**X035以外はPLLが先**"),
-    "USB HS": ("予定(初回)", "TinyUSB",
-               "V30x配置は上流済み。V205/V407/X3x5は別配置で未対応(3 seriesで共通)"),
+    "USB (FS device/host)": ("未実装", "-",
+                             "採用stackはTinyUSB。固定sourceはあるがcoreへ未結線"),
+    "USB HS": ("未実装", "-", "採用stackはTinyUSB。coreへ未結線"),
     "USB SS": ("対象外", "-", "X315のみ。当面扱わない"),
-    "USB PD": ("予定(初回・決定)", "未定", "**必ず載せる**(ユーザ指示)"),
-    "CAN": ("対象外", "-", "libraryとして将来"),
+    "USB PD": ("一部実装", "`USBPD`(library)",
+               "sinkはX033/X035で実装。他のUSBPD搭載seriesは`begin()`がfalseを返す"),
+    "CAN": ("対象外", "-", ""),
     "Ethernet": ("対象外", "-", ""),
     "I2S": ("対象外", "-", ""),
     "SDIO": ("対象外", "-", "`SD`libraryの下地にはなる"),
@@ -166,13 +159,16 @@ STATUS = {
     "ARGB (LEDドライバ)": ("対象外", "-", ""),
     "RNG": ("対象外", "-", "`random()`はsoftware実装で足りている"),
     "BLE": ("対象外", "-", "V208のみ。専用stackが要る"),
-    "SDI print (debug出力)": ("実装済", "SerialSDI(library)",
-                              "送信のみ。spikeで受信まで実機確認済み(class実装後の実機確認は未)。"
-                              "**probe側の対応chipはV003/V00x/V103/V20x/V30x/X035/L103のみ**"),
-    "FreeRTOS": ("対象外", "-", "初回release対象外(ユーザ指示)"),
-    "RT-Thread": ("対象外", "-", "同上"),
-    "HarmonyOS": ("対象外", "-", "同上"),
-    "TencentOS": ("対象外", "-", "同上"),
+    "SDI print (debug出力)": ("実装済", "SerialSDI(library)", "送信のみ"),
+    "RTT (debug出力)": ("実装済", "SerialRTT(library)", "双方向。RAM ring bufferを使用"),
+    "DMDATA mailbox (debug出力)": ("実装済", "SerialDMDATA(library)",
+                                      "双方向。SerialSDIと同時使用不可"),
+    "DMSEQ console (debug出力)": ("実装済", "SerialDMSeq(library)",
+                                    "双方向。通し番号とCRC-8を使用"),
+    "FreeRTOS": ("対象外", "-", "coreはbare metal。ADR-0006"),
+    "RT-Thread": ("対象外", "-", "coreはbare metal。ADR-0006"),
+    "HarmonyOS": ("対象外", "-", "coreはbare metal。ADR-0006"),
+    "TencentOS": ("対象外", "-", "coreはbare metal。ADR-0006"),
 }
 
 
@@ -225,12 +221,10 @@ def render(present: dict) -> str:
            "こともあります(V407のSysTick、V103のINTなど)。実装する前に"
            "reference manualか`ch32-device-data`で裏を取ってください。", "",
            "| 状態 | 意味 |", "|---|---|",
-           "| 実装済 | コードがあり、少なくとも1枚の実機で確認した |",
-           "| 実装中 | 作業中 |",
-           "| 一部 | 一部だけ動く(備考を参照) |",
-           "| 予定(初回) | 初回releaseに入れる |",
-           "| 要判断 | 方針が未決。**勝手に決めない** |",
-           "| 対象外 | 初回releaseでは扱わない |", ""]
+           "| 実装済 | 公開APIと実装がある |",
+           "| 一部実装 | 備考に記載した範囲だけ実装がある |",
+           "| 未実装 | siliconに機能はあるがcoreの公開API/実装がない |",
+           "| 対象外 | coreの公開APIとして提供しない |", ""]
 
     for group, title in GROUPS:
         names = order.get(group, [])
@@ -242,7 +236,7 @@ def render(present: dict) -> str:
                    " | ".join(s for _f, s in EVT_FAMILY) + " | 備考 |")
         out.append("|---|---|---|" + "---|" * len(families) + "---|")
         for name in names:
-            state, api, note = STATUS.get(name, ("要判断", "-", ""))
+            state, api, note = STATUS.get(name, ("未実装", "-", ""))
             cells = ["○" if present.get(name, {}).get(f) else ""
                      for f in families]
             out.append(f"| {name} | {state} | {api} | " +
@@ -250,11 +244,7 @@ def render(present: dict) -> str:
         out.append("")
 
     out += ["## この表の使いかた", "",
-            "- 「基本ペリフェラル」で`対象外`/`要判断`のものが、"
-            "初回releaseの範囲を決める議論の対象です。",
-            "- USB PDは**載せると決まっています**(ユーザ指示)。"
-            "USB host/deviceは範囲が未決なので`要判断`のままにしてあります。",
-            "- RTOSは一覧には載せますが初回release対象外です(ユーザ指示)。",
+            "- 状態は repository 内の実装範囲を表します。",
             "- series列が空欄のペリフェラルは、そのfamilyの silicon に無いか"
             "EVTに例が無いかのどちらかです。実装するときは"
             "`ch32-device-data`側でも裏を取ってください。", ""]

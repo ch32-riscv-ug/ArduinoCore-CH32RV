@@ -1,7 +1,7 @@
 # W-3 prototype: 最小Arduino platform
 
 状態: proof of concept(2026-08-19)。compile専用。リリース対象ではありません。
-関連: [環境整備計画](../../docs/infrastructure.ja.md) W-3、[R-03](../../docs/research/board-variants-and-menus.ja.md)、[R-15](../../docs/research/local-install-and-test-env.ja.md)方式A
+board/FQBNの契約は[board layer rules](../../../docs/board-layer-rules.ja.md)を参照してください。
 
 ## 目的
 

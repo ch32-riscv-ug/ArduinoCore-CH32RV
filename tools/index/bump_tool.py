@@ -10,9 +10,8 @@
 The fragment keeps its shape (hosts, comments, URL pattern); only the version, the tag and each
 archive's checksum and size change, taken from the release's own <asset>.sha256 files and the
 served Content-Length. Then the archive for this machine is fetched into <repo>/.tools through
-tools/index/fetch_tools.py (checksum verified there) and `<tool> --version` is run, and a line is
-added to CHANGELOG.md's Unreleased section for the editor to complete. Adopting a version is a
-decision, so this is one command rather than a step in a release.
+tools/index/fetch_tools.py (checksum verified there) and `<tool> --version` is run. Adopting a
+version is one command so the metadata, downloaded archive, and version check stay together.
 """
 from __future__ import annotations
 
@@ -66,14 +65,6 @@ def main() -> int:
             if args.version not in out:
                 print(f"  the binary does not say {args.version}", file=sys.stderr)
                 return 1
-    changelog = REPO / "CHANGELOG.md"
-    s = changelog.read_text(encoding="utf-8")
-    stub = (f"- (EN) The bundled {args.tool} is now {args.version}: <what changed for a user>.\n"
-            f"- (JA) 同梱の {args.tool} を {args.version} にした: <利用者に見える変化>。\n")
-    if f"{args.tool} is now {args.version}" not in s:
-        s = s.replace("## Unreleased\n", "## Unreleased\n" + stub, 1)
-        changelog.write_text(s, encoding="utf-8")
-        print("CHANGELOG.md: a line to complete under Unreleased")
     return 0
 
 

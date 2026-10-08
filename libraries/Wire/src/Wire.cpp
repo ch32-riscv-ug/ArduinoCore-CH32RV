@@ -6,9 +6,9 @@
 
 using namespace arduino;
 
-/* The I2C block hangs off PCLK1, and Milestone 1 leaves both APB prescalers at
- * /1, so PCLK1 is HCLK, which SystemInit makes equal to F_CPU. When a PLL or a
- * non-unity APB prescaler arrives this has to follow (docs/todo.ja.md). */
+/* The I2C block hangs off PCLK1. The supported clock configuration leaves the
+ * APB prescaler at /1, so PCLK1 is HCLK == F_CPU. Any non-unity APB setting
+ * must provide the actual peripheral clock here. */
 static const uint32_t CH32RV_I2C_PCLK1 = F_CPU;
 
 namespace {

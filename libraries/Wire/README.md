@@ -1,6 +1,6 @@
 # Wire (I2C)
 
-Master-mode I2C on the CH32's own peripheral. The pins come from the variant,
+Master/slave I2C on the CH32's own peripheral. The pins come from the variant,
 so `Wire.begin()` takes no arguments; name them as on an ESP32 when you want
 others: `Wire.begin(sda, scl)` or `Wire.begin(sda, scl, 400000)`.
 Libraries take the bus as `TwoWire *` (`&Wire`), and a `SoftWire` passes there too.
@@ -28,7 +28,7 @@ Serial.print(SCL); Serial.print(' '); Serial.println(SDA);
 ```
 
 **The default route is not bonded on every package.** On CH32X033/X035 it
-reaches PA10/PA11, which only two of the seven part numbers bring out. Move the
+reaches PA10/PA11, which some packages do not bring out. Move the
 bus when your board does not have it:
 
 ```cpp
@@ -57,8 +57,10 @@ old pads to inputs.
 - **The buffer is 32 bytes**, as on AVR. Writing more truncates and reports 1.
   Raise it with `-DCH32RV_WIRE_BUFFER_SIZE=128`; both buffers grow, on every
   instance.
-- **Slave mode is not implemented.** `begin(address)`, `onReceive()` and
-  `onRequest()` are accepted and do nothing rather than half-working.
+- **Slave mode is interrupt-driven.** `begin(address)` selects slave mode;
+  `onReceive()` and `onRequest()` callbacks run in interrupt context. An instance
+  cannot act as master and slave simultaneously. Multi-master arbitration and
+  general-call responses are unsupported.
 - **A second bus is `Wire1`**, where the part has one - bus order, as elsewhere
   in the Arduino ecosystem, not the peripheral's number.
 - Timeout: a wait gives up after 25 ms and `endTransmission()` returns 5. That
@@ -77,8 +79,8 @@ old pads to inputs.
   the internal pull-up and SCL is never driven high, so a stretching slave is
   waited for (`CH32RV_WIRE_CLEAR_STRETCH_US`, 1 ms per pulse).
 - Clock: `setClock(100000)` for standard mode, anything higher selects fast
-  mode with a 2:1 duty cycle. The peripheral clock is assumed to be `F_CPU`,
-  which holds while the core runs from HSI with both APB prescalers at /1.
+  mode with a 2:1 duty cycle. The peripheral clock is assumed to be `F_CPU`.
+  Changes to system or APB clock settings must preserve or update this assumption.
 
 ## Examples
 

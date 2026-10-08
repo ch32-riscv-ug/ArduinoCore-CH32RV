@@ -336,7 +336,7 @@
 #define CH32RV_SERIAL1_IRQ CH32RV_IRQN_USART1
 /* NOTE: route af-1 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
- * yet, so this port needs verifying (docs/todo.ja.md). */
+ * and this unsupported port cannot be selected. */
 /* USART2: route af-1, on every part */
 #define CH32RV_SERIAL2_TX PD6
 #define CH32RV_SERIAL2_RX PD7
@@ -354,7 +354,7 @@
 #define CH32RV_SERIAL2_IRQ CH32RV_IRQN_USART2
 /* NOTE: route af-1 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
- * yet, so this port needs verifying (docs/todo.ja.md). */
+ * and this unsupported port cannot be selected. */
 /* USART3: route af-1, on every part */
 #define CH32RV_SERIAL3_TX PC8
 #define CH32RV_SERIAL3_RX PC9
@@ -372,7 +372,7 @@
 #define CH32RV_SERIAL3_IRQ CH32RV_IRQN_USART3
 /* NOTE: route af-1 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
- * yet, so this port needs verifying (docs/todo.ja.md). */
+ * and this unsupported port cannot be selected. */
 /* USART4: route af-1, on every part */
 #define CH32RV_SERIAL4_TX PB12
 #define CH32RV_SERIAL4_RX PB13
@@ -390,7 +390,7 @@
 #define CH32RV_SERIAL4_IRQ CH32RV_IRQN_USART4
 /* NOTE: route af-1 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
- * yet, so this port needs verifying (docs/todo.ja.md). */
+ * and this unsupported port cannot be selected. */
 #ifndef CH32RV_SERIAL_DEFAULT
 #define CH32RV_SERIAL_DEFAULT 1
 #endif
@@ -432,7 +432,7 @@
  * order - see resolve_pin_candidates). */
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
- * yet, so this instance needs verifying (docs/todo.ja.md). */
+ * and this unsupported instance cannot be selected. */
 /* I2C2: route af-3, on every part */
 #define CH32RV_I2C2_SCL PD6
 #define CH32RV_I2C2_SDA PD7
@@ -448,7 +448,7 @@
  * order - see resolve_pin_candidates). */
 /* NOTE: route af-3 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
- * yet, so this instance needs verifying (docs/todo.ja.md). */
+ * and this unsupported instance cannot be selected. */
 /* Arduino's standard names for the first bus (Wire). These are
  * the pads of I2C1's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */
@@ -482,7 +482,7 @@
  * order - see resolve_pin_candidates). */
 /* NOTE: route af-4 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
- * yet, so this instance needs verifying (docs/todo.ja.md). */
+ * and this unsupported instance cannot be selected. */
 /* SPI3: route af-4, on every part */
 #define CH32RV_SPI3_SCK PD11
 #define CH32RV_SPI3_MISO PD13
@@ -503,7 +503,7 @@
  * order - see resolve_pin_candidates). */
 /* NOTE: route af-4 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
- * yet, so this instance needs verifying (docs/todo.ja.md). */
+ * and this unsupported instance cannot be selected. */
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI2's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */

@@ -8,8 +8,6 @@
  *     CH32RV.wdtEnable(2000);                 // reset unless fed every 2 s
  *     CH32RV.wdtFeed();                       // in loop()
  *
- * Design notes, decided 2026-08-25 (docs/research/system-api-esp32-style.ja.md):
- *
  *  - Modeled on ESP8266/ESP32's `ESP.*` because these functions have no
  *    Arduino-standard API and that is the convention users know.
  *  - There is NO wdtDisable(). The IWDG is irreversible by design - the

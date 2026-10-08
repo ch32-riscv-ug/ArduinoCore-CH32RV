@@ -13,13 +13,13 @@ if (USBPD.begin()) {
 void loop() { USBPD.maintain(); }           // PPS契約の維持
 ```
 
-## いまの状態
+## 実装範囲
 
 | 層 | 状態 |
 |---|---|
-| Source Capabilitiesの解析、プロファイル選択、Requestの組み立て | 実装済み。hostのunit test(`tests/unit/test_pd_frames.py`)と実機の自己検査(`tests/bench/basic/pd_selftest`)の両方で検証 |
-| ハードウェアドライバ(CC検出・BMC送受信・GoodCRC・sinkのstate machine) | **CH32X035/X033で実装済み・実際の充電器で検証済み**(2026-10-02、WeAct CH32X035F8U6)。5/9/12/15/20 V固定の充電器と、5/9/12 V + 3.3〜11 V PPSの充電器で、固定の全電圧、PPSの両端と中間、`maintain()`だけで20秒保持、拒否、契約が残ったままの再起動を`tests/bench/basic/pd_sink`で確認 |
-| 他の5 series(L103/M103/V205/X315/H417/M030) | `begin()`は`false`。配置とCC padのdefineがdevice-dataの次回取り込み待ち(`usbpd_hw.h`) |
+| Source Capabilitiesの解析、プロファイル選択、Requestの組み立て | 実装済み |
+| ハードウェアドライバ(CC検出・BMC送受信・GoodCRC・sinkのstate machine) | CH32X035/X033で実装済み。固定契約とPPS契約に対応 |
+| L103/M103/V205/X315/H417/M030 | registerとCC padの定義が無いため`begin()`は`false` |
 
 ドライバが自分でやること(USB PD R3.1に沿う):
 
@@ -62,14 +62,13 @@ void loop() { USBPD.maintain(); }           // PPS契約の維持
 - **中間電圧を勝手に丸めません。** 5/9/12V充電器に`request(8000)`は
   (PPSが無ければ)`false`です。「近いから9V」はしません。
 - **batteryとvariableは列挙するだけ**で、頼む対象にしません。
-- 対象は**USBPDブロックを持つ7 series**(X035/X033、L103/M103、V205、X315、
-  H417、M030)。X035専用ではありません。レジスタの配置は2種類、CCのpadは
-  series毎に違い、それらはvariantのdefineで供給される予定です
-  (device-dataの次回取り込み後に生成。それまで手書きで進める)。
+- USBPD block を持つ series は X035/X033、L103/M103、V205、X315、H417、M030 です。
+  register block の配置、clock enable、IRQ、CC pad は series ごとに異なります。
+  library が hardware 定義を持つのは X035/X033 だけで、他の series では `begin()` が `false` を返します。
 
 ## ロジックとドライバを分けている理由
 
-USB PDで壊れやすいのは、ビットフィールドの配置と5種類の単位換算
+USB PDで壊れやすいのは、ビットフィールドの配置と単位換算
 (10mA / 50mA / 50mV / 100mV / 20mV / 250mW)です。そこは配線が要らないのに、
 実機がないと確認できない場所に置くと一番検証されません。なので
 `pd_frames.c`は**レジスタもArduino.hも知らない純関数**にして、

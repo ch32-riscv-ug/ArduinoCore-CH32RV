@@ -1,77 +1,49 @@
-# 初期設計ドキュメント
+# ドキュメント
 
-文書基準日: 2026-08-17
+このディレクトリには、利用方法、保守に必要な仕様、変更時に必要な設計判断だけを置きます。
+過去の調査、実験、作業メモ、完了済み TODO は Git 履歴で参照します。
 
-このディレクトリは、旧コアの調査結果と新コアの初期設計案を、次の開発セッションへ引き継ぐためのものです。
+文書と実装が矛盾する場合は、生成元、コード、設定、lock file の順で事実を確認し、同じ変更で文書を直します。
 
-## 文書の状態
-
-各文書では、内容を次の3種類に分けます。
-
-- **決定済み**: プロジェクト開始時点で合意済みの事項
-- **提案**: 現在有力だが、ADRまたは実測を経て決定する事項
-- **確認済み事実**: ソース、実装、一次資料などで確認した事項
-
-「提案」を実装上の確定仕様として扱わないでください。重要な決定は[`docs/adr/`](adr/README.ja.md)へ記録します。
-
-## 言語とファイル名
-
-- 日本語文書は`*.ja.md`とする
-- 利用者向けに内容が固まった文書は、英語版を`*.md`として用意する
-- 英語版がまだ必要ない初期調査・設計文書は、日本語版だけでよい
-- 現時点で英語版を持つ利用者向け文書はトップの`README.md`だけである
-- 翻訳版を追加した場合は、相互に言語切替linkを置く
-
-## 読む順序
-
-1. [handoff.ja.md](handoff.ja.md) — 現在地と次の着手点
-2. [project-scope.ja.md](project-scope.ja.md) — 目的、非目的、対応の定義
-3. [architecture.ja.md](architecture.ja.md) — コア全体の境界案
-4. [open-questions.ja.md](open-questions.ja.md) — 次に決める論点
-- [TODO(未対応作業)](todo.ja.md): 簡略化のたびに積み上げる先送り作業の一覧
-- [承認状態](approval-status.ja.md): 実装は入っているが承認されていないもの。**外部公開はここが埋まってから**
-5. 作業内容に応じて以下の各文書
-
-## 文書一覧
+## 利用者向け
 
 | 文書 | 内容 |
 |---|---|
-| [handoff.ja.md](handoff.ja.md) | 新しいスレッド／担当者向けの要約 |
-| [research/README.ja.md](research/README.ja.md) | 事前調査(startup、EVT構造、SKU/board構造、toolchain、テスト環境) |
-| [infrastructure.ja.md](infrastructure.ja.md) | （役目を終えた。記録）環境整備計画(実機なしworkstream、repository分離、GitHub Actions/Pages) |
-| [experiments/](experiments/0001-xpack-multilib-smoke.ja.md) | 実験記録(0001〜。toolchain、startup等価性、platform、generator、index install、newlibサイズ) |
-| [project-scope.ja.md](project-scope.ja.md) | プロジェクト目標、初期スコープ、非目標 |
-| [architecture.ja.md](architecture.ja.md) | Arduino API、内部HAL、SoC、EVT互換の境界 |
-| [timer-design.ja.md](timer-design.ja.md) | SysTick/TIMタイマー、PWM/tone/Servoの所有権と競合規則の設計案 |
-| [device-data.ja.md](device-data.ja.md) | 独立device databaseの配置、repository境界、Arduino consumer方針 |
-| [legacy-audit.ja.md](legacy-audit.ja.md) | 旧リポジトリの構造、問題、継承すべき知見 |
-| [ecosystem.ja.md](ecosystem.ja.md) | Arduino、WCH、ch32fun、書き込みツールの調査 |
-| [vendor-policy.ja.md](vendor-policy.ja.md) | 外部ソースの固定、取込、patch、ライセンス方針 |
-| [toolchain.ja.md](toolchain.ja.md) | toolchainの候補、選定条件、認定matrix |
-| [flash-size.ja.md](flash-size.ja.md) | 何がフラッシュを食うか、map fileの読み方、削り方 |
-| [upload-and-fixture.ja.md](upload-and-fixture.ja.md) | （役目を終えた。記録）uploader、WCH-Link識別、実機fixture |
-| [uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md) | UIAPduinoのHID書き込み、SWIOジグによるboot mode復帰、失敗時の復旧 |
-| [ch32rv-requests.ja.md](ch32rv-requests.ja.md) | 同梱予定uploader `ch32rv` への依頼事項(ドッグフーディング前/同梱リリース前/リリース後の区分)と、コア側の受け入れ作業 |
-| [development-probe-functional-spec.ja.md](development-probe-functional-spec.ja.md) | MCU実装に依存しない開発用プローブの機能仕様。能力class、ペリフェラル別の検証範囲と限界、横展開level |
-| [harness-requirements.ja.md](harness-requirements.ja.md) | （役目を終えた。記録）**harnessへの要求カタログ(ID付き)**。protocol側でのマージ用。相反する要求、コアが「どちらでもよい」もの、将来枠も含む |
-| [harness-probe.ja.md](harness-probe.ja.md) | （役目を終えた。記録）自作probe(DUT harness = 書込+ロジックキャプチャ+周辺エミュ)の評価と依頼事項。方法4の空白、入力側刺激、EmbedBench接続 |
-| [harness-wiring.ja.md](harness-wiring.ja.md) | （役目を終えた。記録）harnessの配線設計。series別のpad群分け、16本割当3案、必要な相手の数、試験できないペリフェラル |
-| [harness-testing.ja.md](harness-testing.ja.md) | （役目を終えた。記録）harnessをどう叩くか。pytestが主、能力宣言と配線表とpinmuxを突き合わせるresolver、セッション/socket、デバイス模型の置き場所 |
-| [development-workflow.ja.md](development-workflow.ja.md) | **開発ワークフローとテスト計画(決定、2026-09-30)**。層(unit / build / bench / manual)、ベンチの定義(`.env` + `tests/benches/*.toml`)、プローブの準備と照合(`tests/bench/prepare.py`)、自動と手動の境界、日々のコマンド、繰り返す作業のコマンド化、移行の順序 |
-| [oep-workflow.ja.md](oep-workflow.ja.md) | **OEP を含む開発ワークフローの最終の形(決定、2026-09-29)**。書き込みの経路、IDE port と discovery、probe の serial port の原則、スロットと bind、monitor(ch32rv)、pytest の道具の家系、β の範囲、各リポジトリに要る変更 |
-| [test-strategy.ja.md](test-strategy.ja.md) | （役目を終えた。記録）unit、host、compile、HIL、logic analyzer、CI |
-| [board-layer-rules.ja.md](board-layer-rules.ja.md) | どの層(series/SKU/board/sketch)が何を定義してよいか。`LED_BUILTIN`とSKU maskの扱い |
-| [examples-build-rules.ja.md](examples-build-rules.ja.md) | examplesのビルド対象宣言、capabilityによるスキップ、簡易テストとsweepの分離 |
-| [software-peripherals.ja.md](software-peripherals.ja.md) | bit-bangで実装できるペリフェラルの調査と仕様(SoftSPI/SoftWire/SoftSerial/OneWire) |
-| [roadmap.ja.md](roadmap.ja.md) | 段階的な実装順と完了条件 |
-| [open-questions.ja.md](open-questions.ja.md) | 未決定事項、必要な実験、判断基準 |
-| [approval-status.ja.md](approval-status.ja.md) | **実装済みだが承認されていないもの**の一覧。動くことと採用が決まっていることは別 |
-| [adr/README.ja.md](adr/README.ja.md) | ADR一覧(0001: device data独立repo、0002: toolchain=xPack直リンク、0003: owned startup/vector/linker、0004: newlib-nano+GNU++17、0005: family board+pnum生成、0006: RTOSはベアメタル+将来ライブラリ、0007: extra_flagsユーザー専用、0008: 書き込みdefault=WCH-LinkE、0011: tool配布を別repositoryで自動ミラー) |
+| [support-status.ja.md](support-status.ja.md) | 系列ごとのビルド、書き込みの実装範囲 |
+| [peripheral-support.ja.md](peripheral-support.ja.md) | ペリフェラル別の実装範囲と制約 |
+| [debug-output.ja.md](debug-output.ja.md) | UART、SDI、RTT、DMDATA、DMSEQ の使い分け |
+| [debugger.ja.md](debugger.ja.md) | `arduino-cli debug` と GDB server の設定 |
+| [uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md) | UIAPduino の HID 書き込みと復旧 |
+| [flash-size.ja.md](flash-size.ja.md) | flash 使用量の調査と削減 |
 
-## 更新規則
+各同梱ライブラリの API と例は `libraries/<name>/README.md` / `README.ja.md` に置きます。
 
-- 外部プロジェクトのversionや状態には確認日を付ける
-- 対応デバイス一覧を文書へ重複して手書きしない。将来はmanifestから生成する
-- 実測していない事項は「未検証」と明記する
-- 方針変更時は、古い記述を静かに上書きせずADRまたは履歴を残す
-- ローカル環境だけで通用するパスやUSB列挙番号を恒久的な識別子として記録しない
+## 保守者向け仕様
+
+| 文書 | 正本とする内容 |
+|---|---|
+| [project-scope.ja.md](project-scope.ja.md) | 対象と非対象 |
+| [architecture.ja.md](architecture.ja.md) | コンポーネント境界と依存方向 |
+| [device-data.ja.md](device-data.ja.md) | `ch32-device-data` の固定と生成物の更新方法 |
+| [board-layer-rules.ja.md](board-layer-rules.ja.md) | series、part、製品 board、sketch の責務 |
+| [timer-design.ja.md](timer-design.ja.md) | SysTick/TIM の所有権と競合規則 |
+| [software-peripherals.ja.md](software-peripherals.ja.md) | SoftSPI / SoftWire 等の採用基準 |
+| [toolchain.ja.md](toolchain.ja.md) | compiler と C/C++ runtime の固定方針 |
+| [vendor-policy.ja.md](vendor-policy.ja.md) | 第三者ソースの取込、lock、license |
+| [adr/README.ja.md](adr/README.ja.md) | 現行設計の判断理由 |
+
+生成器と配布ツールの操作は、それぞれ
+[`tools/generate/README.ja.md`](../tools/generate/README.ja.md) と
+[`tools/index/README.ja.md`](../tools/index/README.ja.md) を参照してください。
+
+## 文書を追加する基準
+
+次のいずれかに当てはまる内容だけを追加します。
+
+- 利用者が API やツールを正しく使うために必要
+- コードだけでは表現できない制約や互換性契約
+- 将来の変更時に、同じ判断をやり直さないための決定と理由
+- 第三者成果物の由来、固定方法、ライセンス上の扱い
+
+調査過程、比較候補の羅列、セッション引き継ぎ、承認待ち一覧、完了済み作業は置きません。
+未完了作業は issue、release ごとの差分は GitHub Releases と Git 履歴、再現可能な事実はテストまたは生成器で管理します。

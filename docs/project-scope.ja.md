@@ -1,82 +1,37 @@
-# プロジェクトの目的とスコープ
+# プロジェクトの対象
 
-## 背景と課題
+## 対象
 
-CH32シリーズはSTM32に似た周辺機能構成を持ちますが、実際の開発環境はWCH EVT、ch32fun、STM32由来の独自SDK、各種HALなどに分かれています。同じ機能でもheader、define、初期化方法、割込み規約が一致しません。
+ArduinoCore-CH32RV は、WCH の CH32 RISC-V マイコンを Arduino IDE と arduino-cli から
+利用できるようにする platform です。
 
-旧ArduinoコアはEVTサンプルをほぼそのまま利用できることを重視していました。一方で、EVT全体をC++ビルドへ露出し、SDK更新のたびにpatchを追加する構成になっていました。
+- Generic board は silicon series 単位で提供する
+- 型番ごとの flash、RAM、package を Part Number メニューで選択できる
+- Arduino 標準 API と、CH32 固有機能に必要な同梱ライブラリを提供する
+- compiler、書き込みツール、Board Manager 配布物を再現可能に固定する
+- 対応状況を「ビルド可能」「書き込み可能」「実機確認済み」に分けて表示する
 
-旧コアがEVTへ依存した主な理由の1つはサンプル数の多さでした。しかし、数の多さとArduino利用者にとっての実用性は一致しません。実際の開発ではEVTだけで足りず、datasheet/reference manualを読みながら`ch32fun`等を参考に直接レジスタを操作する場面が残っています。新コアではEVTサンプルの収録数を互換性や完成度の指標にせず、実用的なArduino sketchとlibrary APIで置き換えます。
+個別系列と型番の状態は [support-status.ja.md](support-status.ja.md)、API ごとの状態は
+[peripheral-support.ja.md](peripheral-support.ja.md) が正本です。
 
-本プロジェクトでは、Arduino利用者へ安定したAPIを提供しつつ、低レベルSDKの差異をコアの内部または明示的な互換レイヤーへ閉じ込めます。
+## 対象外
 
-## 目標
+- Arm 系の CH32F
+- 無線 stack を必要とする CH32V208W、CH58x、CH59x 等の無線 SoC 機能
+- WCH EVT / SPL 互換 API
+- コア内蔵 RTOS
+- ベンダ IDE プロジェクトとのバイナリ互換
+- センサ、表示器、ファイルシステム等の汎用デバイスドライバ
 
-- Arduino IDE 2およびArduino CLIからインストール、ビルド、書き込みできる
-- Arduinoの基本APIと標準的なライブラリAPIを一貫して提供する
-- 公開APIのsignatureと挙動は可能な限りArduino標準と`ArduinoCore-API`へ準拠し、移植可能なsketchをCH32固有APIへ不必要に書き換えさせない
-- 割込みなど低レベル知識が必要になりやすい機能もArduino APIと実用的なexampleから利用でき、通常利用でEVT APIへ降りる必要をなくす
-- exampleは機能数ではなく、実用性、説明、対象SKU、compile結果、実機検証状態で評価する
-- exact SKU、package、memory、clock、pin mapごとに正しい成果物を生成する
-- CとC++の境界を明確にし、`-fpermissive`に依存しない
-- 入力、toolchain、生成物、packageを固定し、オフラインで再現ビルドできる
-- 新しいデバイスやEVT更新を、manifestとテストの追加として扱える
-- 複数DUTを安全に識別し、自動書き込みとHILを実行できる
-- 既存toolで書き込み、識別、自動試験の要件を満たせない場合は独立toolの新規開発も認め、Arduino以外のCH32開発環境からも再利用できる形で公開する
-- 対応済み、compile-only、未検証を利用者が区別できる
+これらを必要とする機能は、Arduino API または独立ライブラリの境界で実装します。
+コアへベンダ API の互換層を追加しないのは、系列差と SDK 更新を利用者 API から隔離するためです。
 
-## 初期スコープ案
+## 対応の意味
 
-初期段階では、次のRISC-V CH32系列を設計対象の候補とします。
+「対応」は一つの状態ではありません。
 
-- 小容量RV32E系
-- CH32V1系
-- CH32V2系
-- CH32V3系
-- CH32X0系
-- CH32L1系
+1. 生成データがあり、対象 FQBN をビルドできる
+2. 同梱 `ch32rv` が対象を識別し、安全に書き込める
+3. 実機でコアの動作を確認している
 
-これはfamily全体の対応宣言ではありません。実際の対応単位は正確な型番とpackageです。
-
-## 初期段階の非目標
-
-- EVTに含まれる全サンプルの無条件な互換
-- EVT APIまたはEVT exampleとの互換を初期releaseの完成条件にすること
-- すべてのCH32/CH5xx製品への同時対応
-- CH32FなどArm系列の初期リリースへの収容
-- RTOS、BLE、Ethernet、USB Hostなど大規模stackの最初からの同梱
-- ch32fun、EVT、STM32 HAL間の完全なソース互換
-- 旧コアとのバイナリ互換
-- 独自programmer hardwareを最初のリリース条件にすること
-
-上記は将来の対応を否定するものではなく、最初の安定した縦切り実装から切り離すための境界です。
-
-## 「対応」の定義案
-
-| Tier | 意味 | リリース条件 |
-|---|---|---|
-| Tier A | 正式対応 | 全リリースでcompile、flash、基本HIL、主要周辺機能を確認 |
-| Tier B | 制限付き対応 | nightly compile/HIL、既知の制限を文書化 |
-| Experimental | 実験的 | compileまたは一部実機確認のみ。安定性を保証しない |
-| Unsupported | 非対応 | 理由または不足している検証を記載 |
-
-family名だけを`Supported`と表示しません。少なくともSKU、package、board、clock、pin map、memory構成を対応表へ含めます。
-
-## 設計原則
-
-1. 公開APIは安定させ、vendor固有APIを暗黙に公開しない
-2. 正本を1つにし、重複する設定ファイルは生成する
-3. 実測していないハードウェアを正式対応にしない
-4. 曖昧な書き込み対象には書き込まない
-5. vendor更新は自動mergeせず、差分とテスト結果をレビューする
-6. 失敗時にbuild、flash、Serial、波形、fixture情報を追跡できるようにする
-7. コードサイズとRAM使用量をAPI互換性と同じく回帰対象にする
-8. 第三者コードの由来と利用条件を失わない
-9. `ch32fun`を実用上の比較基準とし、同等以上を目標にする。ただし、不明確な利用・再配布条件と引き換えに最適化を追わない
-10. silicon仕様はdatasheet/reference manualを一次情報とし、EVTと`ch32fun`は相互確認する参照実装として扱い、通常のArduino利用経路へ露出させない
-11. 標準化されていない拡張は、ESP32等の主要Arduino coreで定着した公開APIと利用方法を先に調査し、合理的な既存慣例がない場合だけCH32固有APIを設計する
-12. toolは既存実装とupstream改善を先に評価し、満たせない要件が明確な場合に新規開発する。新規toolをArduinoのdirectory構造や内部APIへ不必要に結合しない
-
-## プロジェクト識別子
-
-GitHub organizationは`ch32-riscv-ug`です。Arduino packageのpackager IDには、公式性を誤認させる`WCH`ではなく、プロジェクトまたはorganization固有の識別子を用いる案が有力です。実際のpackager名、architecture名、FQBNは未決定です。
+README や board 名だけで 3 を暗示せず、[support-status.ja.md](support-status.ja.md) に明記します。

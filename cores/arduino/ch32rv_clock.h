@@ -5,8 +5,7 @@
  * on its own: tests/test_clock_prescaler.py compiles this against every ratio
  * both encodings can and cannot express.
  *
- * Milestone 1 has no PLL, so F_CPU can only be the oscillator divided down.
- * Inputs are the three -D values boards.txt carries per family.
+ * Inputs are the generated -D values boards.txt carries per family.
  */
 #pragma once
 
@@ -38,7 +37,7 @@ came with it. Both are generated together; regenerate boards.txt."
 #endif
 #if F_CPU > CH32RV_CLOCK_SYSCLK_HZ
 #error "F_CPU is above SYSCLK. The AHB prescaler can only divide, so this \
-needs a different clock configuration (see docs/todo.ja.md, clock section)."
+needs a different generated clock configuration."
 #endif
 #if (CH32RV_CLOCK_SYSCLK_HZ % F_CPU) != 0
 #error "F_CPU must divide SYSCLK exactly: the AHB prescaler is the only thing \

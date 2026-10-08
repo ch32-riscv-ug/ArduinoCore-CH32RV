@@ -1,53 +1,46 @@
-# Device dataの配置と利用方針
+# Device data の利用
 
-文書状態: 決定済みの配置と、未決定のconsumer設計
+## 正本と固定
 
-文書基準日: 2026-08-17
+デバイス、型番、package、memory、pin、route、割り込み等の正本は
+[`ch32-riscv-ug/ch32-device-data`](https://github.com/ch32-riscv-ug/ch32-device-data) です。
+このリポジトリは consumer であり、通常ビルド時に上流へアクセスしません。
 
-## 配置
+採用 revision は `vendor/ch32-device-data.lock.toml` に次の値で固定します。
 
-機械可読なCH32 device databaseの正本は、独立repository [`ch32-device-data`](https://github.com/ch32-riscv-ug/ch32-device-data)に置きます。このrepositoryに仮置きしていたschema、8 sample record、validator、調査文書は移動済みです。
+- Git commit
+- consumer surface の schema version
+- `index/manifest.csv` の SHA-256
 
-この決定の背景と境界は[ADR-0001](adr/0001-device-data-repository.ja.md)に記録します。schema、対象family、初期対応SKUまで確定したという意味ではありません。
+manifest は consumer が読む全ファイルの hash を含むため、固定 commit と合わせて入力を一意にします。
 
-## Repositoryごとの役割
+## このリポジトリに置くもの
 
-| Repository | 役割 |
-|---|---|
-| `ch32-device-data` | schema、検証済みsource data、validator、provenance、data releaseの正本 |
-| `ArduinoCore-CH32RV` | 固定data versionを読むconsumer、Arduino用descriptor・pin table・linker入力等のgeneratorと生成物 |
-| `ch32_riscv_tools` | 将来のpin検索viewer、CSV/表等の生成先候補。既存手製表は正本にしない |
-| family別datasheet/EVT mirror | 公式資料の取得・履歴・hash対象。構造化dataの正本にはしない |
+- `boards.txt`
+- `variants/<SERIES>/pins_arduino.h`
+- 型番ごとの linker script
+- vector、IRQ、EXTI、clock 初期化に必要な生成 header
+- 生成元を特定する lock file
 
-公式PDF、EVT tree、旧Arduino core source、`ch32_riscv_tools`の手製pin表は`ch32-device-data`へコピーしません。data recordには公式URL、mirror commit/path、file SHA-256、文書version、locatorを保持します。
+これらは release 時にネットワークなしでビルドできるよう commit します。生成物は手編集せず、
+生成器で再作成します。
 
-## Arduino側への渡し方
+## 更新
 
-通常のArduino build中にnetwork取得は行いません。次の流れを候補として検証します。
+```sh
+uv run --no-project python tools/generate/generate.py \
+  --tables /path/to/ch32-device-data --platform .
+uv run --no-project python tools/generate/generate.py \
+  --tables /path/to/ch32-device-data --platform . --check
+```
 
-1. `ch32-device-data`のtagまたはfull commitをlockする
-2. archive/tree hash、schema version、入力record hashを検証する
-3. Arduino用artifactを生成する
-4. generator version、data lock、review可能な生成差分をこのrepositoryへ保存する
-5. Board Manager releaseを生成済みartifactだけでoffline build可能にする
+正確な取得、差分確認、lock 更新の手順は
+[`tools/generate/README.ja.md`](../tools/generate/README.ja.md) を参照してください。
 
-release方式、lock file形式、生成物の範囲はまだ未決定です。
+更新時は、入力 revision、lock、生成物を同じ変更として review します。データ不足をこのリポジトリの
+手書き例外で恒久化せず、再利用可能な事実は `ch32-device-data` 側で修正します。
 
-## Versioning案
+## リポジトリを分ける理由
 
-- schema compatibilityはrecord内の`schema_version`で判定する
-- data repository releaseはSemVerを候補とする
-- consumerはfloating branchではなくtagまたはfull commitとhashを固定する
-- source document更新とdata訂正をchangelogで区別する
-- `coverage`や`verification`の低下を通常更新として黙って受け入れない
-
-## 次に決めること
-
-- canonical signal IDとvendor表記の分離
-- silicon/package/exact SKUの正規化
-- pinを持たないinternal routeの表現
-- verificationの粒度
-- CH32F等のArm系を同じdatabaseへ含めるか
-- data releaseとArduino consumer lockの形式
-
-schema作業の詳細は`ch32-device-data/docs/handoff.ja.md`を参照してください。
+device data は Arduino core だけでなく uploader、probe、viewer、文書生成からも利用されます。
+独立した正本にすることで、Arduino 固有形式へ閉じ込めず、全 consumer が同じ provenance と schema を参照できます。

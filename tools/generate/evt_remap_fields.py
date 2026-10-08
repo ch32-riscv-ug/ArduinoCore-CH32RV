@@ -23,9 +23,8 @@ Why this exists: ch32-device-data's remap selectors used to carry a single
 `register` column, but on L103/M103 a selector spans PCFR1 *and* PCFR2, so the
 field could not be written down. index/routes.csv now qualifies every bit with
 its register (`PCFR1:2;PCFR2:26`), and --compare checks that against what EVT
-does. The data belongs upstream (docs/research/signal-name-normalization.ja.md,
-D-0) and so does this tool; it sits here until they have room for it, and
-should be deleted rather than kept in step once it lands there.
+does. The register-qualified route data belongs in ch32-device-data; this tool
+validates that data against EVT and should move with the owning schema.
 
 EVT is read in place and never copied, the same way import_vectors.py does it.
 """

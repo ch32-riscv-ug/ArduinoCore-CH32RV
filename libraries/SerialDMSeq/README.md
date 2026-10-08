@@ -25,14 +25,12 @@ SerialDMDATA speaks minichlink's framing, which has no sequence numbers. When
 the probe's answer to a frame silently fails to land - it happens over flying
 wires - the probe reads the same frame again and the bytes arrive twice; and a
 probe that rewrites its answer to cover for that cannot tell a re-read from the
-sketch printing the same thing twice, so it drops characters instead. Both were
-measured (a CH32L103 behind an RP2350, a CH32V003 behind an ESP32). dmseq tells
+sketch printing the same thing twice, so it drops characters instead. dmseq tells
 the two apart, and the CRC throws away anything corrupted, including the words
 an attach or a flash leaves in `data0`.
 
 The framing is specified in oep-spec `docs/target-console-dmseq.ja.md`
-(`target.console` framing 2); the experiment that chose it, with fault
-injection, is oep-spec `experiments/dm-console-seq`.
+(`target.console` framing 2).
 
 ## Reading it on the host
 
@@ -76,15 +74,9 @@ nothing is lost.
   `alive()` reports that and clears itself. A host that polls at least once a
   second loses nothing. The waits count register polls, not `millis()`, so they
   end with interrupts masked too.
-- **It costs more than SerialDMDATA.** On CH32V003 against an empty sketch
-  (624 bytes flash, 4 bytes RAM), a sketch that begins, reads and writes costs
-  **+1268 bytes of flash and +52 bytes of RAM** (SerialDMDATA: +700 / +36). The
-  CRC uses a 16-entry table: as fast as a 256-byte one, 24 bytes more than a
-  bit loop.
-- **Speed** (1270-byte stream, measured): 41 kB/s on a CH32X035 behind an
-  ESP32-P4, 8.4 kB/s on a CH32V003 behind an ESP32 over SWIO, 9.2 kB/s on a
-  CH32L103 behind an RP2350. Over a WCH-LinkE every access is a USB round trip,
-  so expect a few kB/s. It is a console, not a data link.
+- **It keeps more state than SerialDMDATA.** The CRC uses a small table, and
+  the receive-buffer size is configurable with `CH32RV_DMSEQ_RX_SIZE`.
+- Each frame requires a probe round trip. It is a console, not a data link.
 - **The address differs per family**; the board states it from
   `ch32-device-data`, so there is nothing to configure.
 

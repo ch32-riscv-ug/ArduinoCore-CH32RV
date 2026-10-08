@@ -4,7 +4,7 @@
 
 文書状態: 提案および要実機検証
 
-書き込み経路×familyの対応表、互換programmerのエコシステム、upload_methodメニュー構成案は[R-17調査](research/upload-programmers.ja.md)を参照。
+書き込みの現行契約は [ADR-0008](adr/0008-upload-strategy.ja.md) を参照。
 
 ## 問題設定
 
@@ -186,7 +186,7 @@ wlink status → Connected to WCH-Link v2.12(v32) (WCH-Link-CH549)
 
 ### arduino-cli側で選択子を渡す経路(2026-08-19実測)
 
-[実験0009](experiments/0009-arduino-cli-upload-and-pytest-harness.ja.md)。
+この経路は Git 履歴の実験記録で確認した。
 
 | 経路 | 結果 |
 |---|---|

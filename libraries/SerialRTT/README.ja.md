@@ -20,41 +20,24 @@ void setup() {
 
 ## host側での受け取り方
 
-同梱のch32rvで、WCH-LinkでもOEP probeでも読めます(OEP probeはch32rv 0.14.0以降)。
+同梱のch32rvで、WCH-LinkでもOEP probeでも読めます。
 
 ```
 ch32rv monitor --source rtt --chip CH32V203
 ```
 
 control blockはRAMから自分で探すのでELFは要りません。pollのたびにcoreを一瞬止めます。
-IDEではportを選び、monitorの`source`を`rtt`にします。CH32V203 + WCH-LinkE と CH32X035 + OEP probeで確認(2026-10-01)。
+IDEではportを選び、monitorの`source`を`rtt`にします。
 `probe-rs attach --chip <型番> <firmware.elf>`でも読めます。
 
-**IDEのSerial Monitorでは読めません。** あれはserial portを開くものだからで、
-繋ぐには自前のpluggable monitorが要ります(docs/todo.ja.md)。
-Linux/macOSなら`socat`でptyに橋渡しすればIDEの窓でも読めます。
 OSごとの手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にまとめてあります。
 
-以前このベンチで測った値(probe-rs 0.32.0): `download`してから`attach`すれば、
-走行中のストリームがそのまま出ます。**CH32V003でも動きます**
-(23秒で18行、打ち込んだ文字のecho back込み)。CH32V203も同様。
-probeがhaltしたまま残した状態にattachすると、それ以前の出力しか出てきません。
-書き直すかresetしてからattachしてください。
+probeがtargetをhaltしたままにしていると新しい出力は生成されません。書き直すかresetして
+実行を再開してからattachしてください。
 
 ## 何を払うか
 
-他の2方式が使わないRAMを使います。CH32V003で空sketch(flash 624 byte、RAM 4 byte)
-との差を実測した値です。
-
-| | flash | RAM |
-|---|---|---|
-| includeしない | 0 | 0 |
-| 参考: `SerialSDI` | +364 | +20 |
-| 参考: `SerialDMDATA` | +700 | +36 |
-| `SerialRTT`、バッファ256/16(既定) | +656 | +364 |
-| `SerialRTT`、バッファ64/8 | +640 | +164 |
-
-RAMの大半はバッファで、`#define`で変えられます。
+debug register方式と異なりRAMにbufferを確保します。buffer sizeは`#define`で変更できます。
 
 ```
 -DCH32RV_RTT_UP_SIZE=64        // target→host、既定256
@@ -63,14 +46,14 @@ RAMの大半はバッファで、`#define`で変えられます。
 
 sketchの隣に`build_opt.h`を置くか、arduino-cliの
 `--build-property build.extra_flags=...`で渡します。
-RAM 2 KBの部品ではやる価値がありますし、20 KBの部品では既定のままで問題ありません。
+RAMに余裕がないtargetではbufferを小さくしてください。
 
 ## どのdebugチャネルを使うか
 
 | | host側ツール | 方向 | 代償 |
 |---|---|---|---|
 | `SerialSDI` | wlink、WCH-LinkUtility | 送信のみ | なし |
-| `SerialDMDATA` | minichlink | 双方向 | なし |
+| `SerialDMDATA` | ch32rv monitor --source dmdata、minichlink | 双方向 | なし |
 | **`SerialRTT`** | **ch32rv monitor --source rtt** | **双方向** | **RAM** |
 
 `SerialSDI`と`SerialDMDATA`はdebug moduleの同じレジスタを使うので併用できません。
@@ -96,8 +79,7 @@ ch32rv_set_stdout(nullptr);         // 捨てる
   書き手が2つあるとバイトが混ざります。
 - `end()`してもバッファは残します。既にattachしているhostから見て、
   ストリームが壊れたのではなく終わったように見えるためです。
-- **includeしなければゼロ**です。includeすると、メソッドを一度も呼ばなくても
-  インスタンス・vtable・バッファのぶん(上の表)は載ります。
+- includeすると、メソッドを一度も呼ばなくてもinstance、vtable、bufferがlink対象になります。
 
 control blockのレイアウトは公開されている仕様のもので、
 シンボル名もhost側ツールが探す名前です。**SEGGERのコードは使っていません。**
