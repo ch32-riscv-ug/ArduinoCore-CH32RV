@@ -1,58 +1,58 @@
 {
-  "comment": "ch32rv 0.18.0 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.18.0. No mirror is needed (ADR-0011 applies to third-party tools): this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
+  "comment": "ch32rv 0.19.0 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.19.0. No mirror is needed (ADR-0011 applies to third-party tools): this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
   "name": "ch32rv",
-  "version": "0.18.0",
-  "upstreamTag": "v0.18.0",
+  "version": "0.19.0",
+  "upstreamTag": "v0.19.0",
   "systems": [
     {
       "host": "x86_64-pc-linux-gnu",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.18.0/ch32rv-0.18.0-x86_64-unknown-linux-gnu.tar.gz",
-      "archiveFileName": "ch32rv-0.18.0-x86_64-unknown-linux-gnu.tar.gz",
-      "checksum": "SHA-256:231d5b30487508545227230cf2d5030db40ab78e0eba6adb7976de3e72265330",
-      "size": "1848053"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.19.0/ch32rv-0.19.0-x86_64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-0.19.0-x86_64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:eff024b67a42a0004b17cc060b4c9603239e2121fcdd7b566c23c070331e6ab9",
+      "size": "2000497"
     },
     {
       "host": "aarch64-linux-gnu",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.18.0/ch32rv-0.18.0-aarch64-unknown-linux-gnu.tar.gz",
-      "archiveFileName": "ch32rv-0.18.0-aarch64-unknown-linux-gnu.tar.gz",
-      "checksum": "SHA-256:ca90ea80e95121cfb023783cec48d4d4ed3daf21a89d8735bd378558ea9a69f4",
-      "size": "1799235"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.19.0/ch32rv-0.19.0-aarch64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-0.19.0-aarch64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:63f7139f2517f73dfbd12ddf54fd543a108bf0bbf9cb16a2a6a5433dd4c8233a",
+      "size": "1939120"
     },
     {
       "host": "x86_64-apple-darwin",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.18.0/ch32rv-0.18.0-x86_64-apple-darwin.tar.gz",
-      "archiveFileName": "ch32rv-0.18.0-x86_64-apple-darwin.tar.gz",
-      "checksum": "SHA-256:deb6e700b51080dfe388cb2ba739da392d6cf1e9c7c39a646665b1e671a8fdfa",
-      "size": "1749637"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.19.0/ch32rv-0.19.0-x86_64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-0.19.0-x86_64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:8345d10030a4510c2681aaf31f38fdf91d4dc280590d0ba90696376e8dce30dc",
+      "size": "1893299"
     },
     {
       "host": "arm64-apple-darwin",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.18.0/ch32rv-0.18.0-aarch64-apple-darwin.tar.gz",
-      "archiveFileName": "ch32rv-0.18.0-aarch64-apple-darwin.tar.gz",
-      "checksum": "SHA-256:eb518ed5e6fa23b40fda42bdbc8a446861ead55e9d4aca168ddc1ca324ea2b58",
-      "size": "1682911"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.19.0/ch32rv-0.19.0-aarch64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-0.19.0-aarch64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:eb7d035b9ca40b333ff594da39c21a3b2bfaf4d79f1abd39350e60d576648fdb",
+      "size": "1812311"
     },
     {
       "host": "x86_64-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.18.0/ch32rv-0.18.0-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.18.0-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:e0c5b87991bd063da6848921e7c1621c94290ab9451845dc849141fdf0c5830d",
-      "size": "1673014"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.19.0/ch32rv-0.19.0-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.19.0-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:a24e4af19d74d1e2df5c671f53e55a8c6486041558217d252567b59ef2ba3c77",
+      "size": "1825095"
     },
     {
       "host": "i686-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.18.0/ch32rv-0.18.0-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.18.0-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:e0c5b87991bd063da6848921e7c1621c94290ab9451845dc849141fdf0c5830d",
-      "size": "1673014",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.19.0/ch32rv-0.19.0-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.19.0-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:a24e4af19d74d1e2df5c671f53e55a8c6486041558217d252567b59ef2ba3c77",
+      "size": "1825095",
       "comment": "no 32-bit build: 64-bit Windows runs the x64 binary, and arduino-cli picks a host slot, not an architecture"
     },
     {
       "host": "arm64-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.18.0/ch32rv-0.18.0-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.18.0-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:e0c5b87991bd063da6848921e7c1621c94290ab9451845dc849141fdf0c5830d",
-      "size": "1673014",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.19.0/ch32rv-0.19.0-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.19.0-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:a24e4af19d74d1e2df5c671f53e55a8c6486041558217d252567b59ef2ba3c77",
+      "size": "1825095",
       "comment": "no native arm64 build: Windows on ARM runs the x64 binary under emulation, and USB access goes through the ordinary Win32 APIs"
     }
   ]
