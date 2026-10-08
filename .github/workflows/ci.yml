@@ -1,5 +1,3 @@
-# W-6: no-hardware CI over the prototype verification scripts.
-# See docs/infrastructure.ja.md. All jobs run without target hardware.
 name: CI
 
 on:
@@ -12,195 +10,58 @@ defaults:
   run:
     shell: bash
 
-env:
-  # On a laptop a missing tool is a skip; in CI it means provisioning broke and
-  # the run would go green having checked nothing. See tests/conftest.py.
-  CH32_TESTS_REQUIRE_TOOLS: "1"
-
 jobs:
-  # W-2: unified startup vs EVT startup ELF equivalence (13 variants)
-  startup-equivalence:
+  board-free-workspace:
+    name: Board-free workspace
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      # Everything the tests need goes into <repo>/.tools, at versions taken from
-      # the tool definition fragments and verified against their checksums.
-      # Same command a contributor runs, so CI and a laptop are the same setup.
-      - name: Cache the downloaded archives
-        uses: actions/cache@v4
-        with:
-          path: .tools/cache
-          key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
-      - name: Fetch tools
-        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      - name: Clone EVT mirrors (sparse, SRC only)
-        run: |
-          mkdir -p ~/mirrors && cd ~/mirrors
-          for repo in CH32V003 CH32V006 CH32V103 CH32V20x CH32V205 CH32M030 CH32V307 CH32V407 CH32X035 CH32X315 CH32L103; do
-            git clone --depth 1 --filter=blob:none --sparse "https://github.com/ch32-riscv-ug/$repo"
-            git -C "$repo" sparse-checkout set EVT/EXAM/SRC
-          done
-      - name: Startup equivalence and interrupt tables
+      - name: Run checks without hardware
         working-directory: tests
-        run: CH32_MIRROR_ROOT="$HOME/mirrors" uv run pytest -q build/startup
+        run: uv run --locked pytest
 
-  # W-4: committed generated files must match regeneration from the locked
-  # ch32-device-data commit (recorded in vendor/ch32-device-data.lock.toml)
   generated-sync:
+    name: Generated platform and example profiles
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      # fetch_tools.py checks out the commit the lock records, so this compares
-      # against exactly the tables the committed files were generated from.
-      - name: Fetch the device-data tables at the locked commit
+      - name: Fetch pinned device data
         run: uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
-      # The layout check rides along: it needs no toolchain, and a category
-      # directory that stops being collected is invisible in every other job.
-      - name: Generated files, sketch profiles and the test layout
-        working-directory: tests
-        run: uv run pytest -q build/generated unit/test_tests_layout.py
+      - name: Check generated platform files
+        run: uv run --no-project python tools/generate/generate.py --tables .tools/ch32-device-data --platform . --check
+      - name: Check bundled example profiles
+        run: uv run --no-project python tools/generate/sync_example_profiles.py --check
 
-  # Every vendored snapshot against its lock: cores/arduino/api byte-identical
-  # to the commit pinned in vendor/arduino-core-api.lock.toml (ADR-0009), and
-  # libraries/TinyUSB/src hashing to what vendor/tinyusb.lock.toml records.
-  # The whole directory rather than one file, so a new lock is covered the day
-  # it is added instead of the day someone remembers this workflow.
-  vendor-sync:
+  vendor-provenance:
+    name: Upstream source provenance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      # The udev rules shipped at the platform root are a copy of the bundled
-      # ch32rv's (request B-6); the check needs that tool's archive.
-      - name: Fetch the bundled ch32rv
-        run: uv run --no-project python tools/index/fetch_tools.py --tool ch32rv
-      - name: Verify every vendored snapshot against its lock
-        working-directory: tests
-        run: uv run pytest -q build/vendor
+      - name: Compare ArduinoCore-API with the pinned upstream commit
+        run: uv run --no-project python tools/vendor/check_api_sync.py "${{ runner.temp }}/api-sync"
+      - name: Check TinyUSB source lock
+        run: uv run --no-project python tools/vendor/vendor_tinyusb.py --check
 
-  # W-3/W-7: symlink-mode compile matrix over all generated part numbers
-  #
-  # Four groups per OS, each its own job, so the wall-clock is the longest
-  # group (a few minutes) rather than their sum: the part-number matrix, the
-  # examples on the two fast boards, the bench sketches x their profiles, and
-  # the size baseline. Every group re-fetches the (cached) toolchain, about a
-  # minute; runner minutes are cheap and a release waits on this workflow.
-  compile-matrix:
-    name: compile-matrix (${{ matrix.group }}, ${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        group: [parts, examples, profiles, sizebench]
-        include:
-          # The prescaler test rides with the parts: a _Static_assert probe that
-          # needs riscv-none-elf-gcc and nothing else.
-          - group: parts
-            tests: build/compile/test_compile_matrix.py unit/test_clock_prescaler.py
-          - group: examples
-            tests: build/compile/test_examples.py build/compile/test_uiapduino_compile.py
-          - group: profiles
-            tests: build/sketches/test_sketch_profiles.py
-          - group: sizebench
-            tests: build/sizebench
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - uses: arduino/setup-arduino-cli@v2
-      # Everything the tests need goes into <repo>/.tools, at versions taken from
-      # the tool definition fragments and verified against their checksums.
-      # Same command a contributor runs, so CI and a laptop are the same setup.
-      - name: Cache the downloaded archives
-        uses: actions/cache@v4
-        with:
-          path: .tools/cache
-          key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
-      - name: Fetch tools
-        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      # One pytest run per group, so a failure names the check rather than a
-      # shell exit code.
-      - name: ${{ matrix.group }}
-        working-directory: tests
-        run: uv run pytest -q ${{ matrix.tests }}
-
-  # Every example for every series (~20 min). Its own job, Linux only, because
-  # what it checks is the target's C code, not the host OS - the OS axis is
-  # already covered by compile-matrix above, and multiplying 20 minutes by
-  # three runners buys nothing. See docs/examples-build-rules.ja.md.
-  #
-  # Which series an example is built for is the example's own `requires:` line,
-  # not a list kept in CI.
-  #
-  # Four shards in parallel (every fourth series each, tests/conftest.py
-  # --sweep-shard), so the sweep takes about five minutes of wall-clock instead
-  # of twenty. A failure still names the example and the series.
-  example-sweep:
-    name: example-sweep (${{ matrix.shard }})
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: ["1/4", "2/4", "3/4", "4/4"]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - uses: arduino/setup-arduino-cli@v2
-      - name: Cache the downloaded archives
-        uses: actions/cache@v4
-        with:
-          path: .tools/cache
-          key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
-      - name: Fetch tools
-        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      - name: Build every example for every series (shard ${{ matrix.shard }})
-        working-directory: tests
-        run: uv run pytest -q --sweep --sweep-shard ${{ matrix.shard }} build/compile/test_examples_sweep.py
-
-  # W-5: clean Board Manager install via local HTTP, then compile with no overrides
-  #
-  # Windows matters here: arduino-cli refuses a tool archive whose files are not
-  # under a single root directory, and nothing else notices. ch32rv (ADR-0008,
-  # the bundled uploader) ships archives that already carry one. The failure
-  # this guards against reads "searching package root dir: files in archive must
-  # be placed in a subdirectory" - it is how the old probe-rs upstream zip broke
-  # this job, which is why ADR-0011's mirror existed.
   install-test:
-    name: install-test (${{ matrix.check }}, ${{ matrix.os }})
+    name: Package install (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        check: [package, profiles]
-        include:
-          - check: package
-            tests: build/package
-          - check: profiles
-            tests: build/sketches/test_sketch_profile_build.py
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - uses: arduino/setup-arduino-cli@v2
-      # Everything the tests need goes into <repo>/.tools, at versions taken from
-      # the tool definition fragments and verified against their checksums.
-      # Same command a contributor runs, so CI and a laptop are the same setup.
-      - name: Cache the downloaded archives
+      - name: Cache tool archives
         uses: actions/cache@v4
         with:
           path: .tools/cache
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
-      - name: Fetch tools
+      - name: Fetch pinned toolchain
         run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
-      # Two checks, each its own job (they used to share one because both serve
-      # a generated index on loopback and fetch the toolchain; the fetch is
-      # cached and the wall-clock matters more). build/sketches/
-      # test_sketch_profile_build.py covers what neither the compile sweeps nor
-      # the install test do - `arduino-cli compile --profile` on a shipped
-      # example, the command the instructions tell a user to type, resolving
-      # the platform through the index rather than through --fqbn.
-      - name: ${{ matrix.check }}
-        working-directory: tests
-        run: uv run pytest -q ${{ matrix.tests }}
+      - name: Install package and compile in isolated directories
+        run: uv run --no-project python tools/index/install_check.py "${{ runner.temp }}/ch32-package-check"

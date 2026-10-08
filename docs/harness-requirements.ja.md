@@ -289,7 +289,7 @@
 | H-188 | D | **診断語彙とイベント行の形を揃える**。揃えないなら「diff は機能的な署名だけ」と最初に決める | ◎ | EmbedBench `B-004`。準拠キットは語彙を検査していないので**語彙が違っても両方とも準拠**。**後から変えると diff の作り直しになる** |
 | H-189 | B | **`caps` に凍結 IF の版**(`embedbench_if: {version, revision}`) | ○ | EmbedBench `B-005`。模型の版とは別に効く |
 | H-190 | E | **`channelWrite` を「効果を起こしうる経路」として遅延配送の規律に載せる** | ◎ | EmbedBench §4。**23 種中 6 つが `channelWrite` から `HostPort` を呼ぶ**。effect-free は `reset`/`channelRead`/`dump` の 3 つだけ |
-| H-191 | E | **`tests/conformance/` を第 3 の環境の受け入れ門にする** | ○ | EmbedBench §5。既存 2 実装が同じ判定に達することを確認する試験が実在。**新たに考案しなくてよい** |
+| H-191 | E | **`tests-legacy/conformance/` を第 3 の環境の受け入れ門にする** | ○ | EmbedBench §5。既存 2 実装が同じ判定に達することを確認する試験が実在。**新たに考案しなくてよい** |
 
 ## 2. 需要側の数字 — DUT は何本・何台を要求するか
 

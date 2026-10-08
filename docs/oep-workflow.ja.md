@@ -248,7 +248,7 @@ wireskein           純粋なモジュール（pip）。runlog は標準ライ�
 ```
 
 - conftest は設定だけ。ch32rv のプラグインと wireskein のプラグインの結び付き（`oep_host` のキャプチャを `ws_run` へ）は、両方が
-  入っているときだけの任意の連携。今の `tests/manual/oep_smoke/trace_kit.py` の `Run` はこれに置き換わる。
+  入っているときだけの任意の連携。今の `tests-legacy/manual/oep_smoke/trace_kit.py` の `Run` はこれに置き換わる。
 - **runtime は `dut` のまま、profile の platform が自前の monitor（`pluggable_monitor.pattern.<protocol>`）を持つときだけ自動で
   `arduino-cli monitor -m <profile> -p <port> -l serial --quiet` の子プロセスで受ける**（pyserial の URL handler として `dut` の裏に置く）。
   `pdut` は作らない。pyserial に固定する逃げ道は option。marker は使わない。tool を直接呼ぶ形は option としても持たない。close は

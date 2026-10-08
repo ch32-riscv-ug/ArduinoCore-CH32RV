@@ -55,8 +55,7 @@ def sha256(path: pathlib.Path) -> str:
 
 
 # The repo root doubles as the Arduino platform directory (R-15 method A), so a
-# release archive is an allowlist, not the whole tree. Keep in sync with
-# PLATFORM_ENTRIES in tests/build/compile/compile_matrix.py.
+# release archive is an allowlist, not the whole tree.
 # Arduino platform files that a release archive must carry. Entries absent from the
 # tree are skipped, so this can list things the platform does not have yet.
 PLATFORM_ENTRIES = (
@@ -142,8 +141,7 @@ def sync_version_defines(platform_dir: pathlib.Path, version: str) -> bool:
     The release workflow sets version= (bump_version.py), runs this script, then
     commits platform.txt back, so writing the line in the source tree here is
     what keeps CH32RV_VERSION_MAJOR/MINOR/PATCH right in both the archive and
-    main. Between releases the two already agree (tests/unit/test_version_macros.py)
-    and this changes nothing. True when the file was rewritten."""
+    main. True when the file was rewritten."""
     major, minor, patch = (int(x) for x in version.split("."))
     want = (f"{VERSION_DEFINES_KEY}-DCH32RV_VERSION_MAJOR={major} "
             f"-DCH32RV_VERSION_MINOR={minor} -DCH32RV_VERSION_PATCH={patch}")

@@ -1,0 +1,54 @@
+# W-3 prototype: 最小Arduino platform
+
+状態: proof of concept(2026-08-19)。compile専用。リリース対象ではありません。
+board/FQBNの契約は[board layer rules](../../../docs/board-layer-rules.ja.md)を参照してください。
+
+## 目的
+
+arduino-cliのsymlink方式で、暫定FQBN(`ch32-riscv-ug:ch32rv:CH32V00X:pnum=...`)からBlinkのcompile/linkを一周させ、以下のメカニズムを検証する。
+
+- boards.txtのpnumメニュー → build.board/series/ldscript/march/mabi/startup定義の注入
+- 統合startup(crt0_ch32.S)+own linker script+own vector includeによるvendorファイル非依存のビルド
+- 「toolchain未installでも`--build-property compiler.path=`で差し込める」開発フロー
+
+## 暫定ID(Q-015の仮決め。公開IDはQ-017のADRで確定)
+
+- packager: `ch32-riscv-ug`(ユーザーグループ。WCH公式ではない。lang-ship系とは別名前空間)
+- architecture: `ch32rv`(2026-10-01 に `ch32v` から変更)
+- FQBN例: `ch32-riscv-ug:ch32rv:CH32V00X:pnum=CH32V006K8U7`
+
+## 使い方
+
+```sh
+uv run tests-legacy/compile/compile_matrix.py /tmp/w3-work
+```
+事前に`uv run tools/index/fetch_tools.py`を一度実行しておけば、環境変数の指定は不要です
+(`<repo>/.tools`から探します。設定済みの`CH32RV_*`があればそちらが優先されます)。
+
+
+サンドボックス化した`ARDUINO_DIRECTORIES_*`を使うため、実環境の`~/.arduino15`や`~/Arduino`には触れない。
+
+## 構成
+
+```
+ch32rv/
+  platform.txt              最小recipe(c/cpp/S/ar/link/objcopy/size)。compiler.path未指定時はPATH
+  boards.txt                生成物(prototypes/generator/generate.py、pnum 26項目)。手編集禁止
+  cores/arduino/
+    Arduino.h main.cpp wiring_stub.c   compile専用スタブAPI
+    crt0_ch32.S             正本は ../startup/crt0_ch32.S(同期が必要。将来は生成/共有化)
+    vectors_ch32v00x.inc    割込み番号表の自前転記(EVT抽出仕様との一致をdiffで検証済み)
+  variants/CH32V00X/
+    pins_arduino.h          スタブ
+    sections.ld             own実装の共通セクション定義(init_array系symbolを含む)
+    ch32v00x_{16k_4k,32k_6k,62k_8k}.ld   生成物(ユニークなFLASH/SRAM組合せ別)
+```
+
+`compile_matrix.py`はboards.txtの全pnum(26 SKU)をcompileするcompile matrixとして動き、`<workdir>/sizes.tsv`へ各SKUのtext/data/bssを出力する。[check_sizes.py](check_sizes.py)が[sizes_baseline.json](sizes_baseline.json)との**完全一致**を検証する(W-7。toolchain固定下ではビルドは決定的)。サイズが意図的に変わる変更では、同じPRで`check_sizes.py --update`によりbaselineを再生成してcommitする。
+
+## 既知の制限(実装時に解消する)
+
+- グローバルコンストラクタはcrt0が`.init_array`ループで呼び出す(`CH32RV_NO_INIT_ARRAY`で無効化可)。compile_matrix.pyが「sketchのctorが.init_arrayに載る+crt0に呼出ループがある」ことを静的検査するが、**実行はHIL待ち**
+- API/pinはスタブ。upload/デバッグrecipeなし
+- vendorヘッダ・SPLを一切含まないため、実ペリフェラル操作はできない
+- `crt0_ch32.S`が`prototypes/startup/`と二重管理(prototype段階の割り切り)

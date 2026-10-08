@@ -1,62 +1,12 @@
 [project]
 name = "arduinocore-ch32-tests"
 version = "0.0.0"
-description = "Hardware and build tests for the ArduinoCore-CH32RV platform"
-readme = "README.ja.md"
+description = "Board-free checks for ArduinoCore-CH32RV"
 requires-python = ">=3.13"
-license = "MIT"
-authors = [{ name = "TANAKA Masayuki" }]
-dependencies = [
-  "pytest>=8",
-  # The bench tests: upload and monitor through arduino-cli, and this core's
-  # fixtures (ch32rv, oep_host, ch32_uart). Lower bounds only - a lock file pins,
-  # and a breaking release should break the run so it gets fixed.
-  "pytest-embedded-arduino-cli>=1.8.0",
-  "pytest-embedded-arduino-cli-ch32rv>=0.0.4",
-  # The bench's OEP probes, driven directly (benchdef, tracekit, the trace tests).
-  # Its README asks for the same X.Y.Z as the probe firmware: keep this floor at
-  # the firmware the tests/benches/*.toml files name.
-  "oep-client-python>=0.0.28",
-  # The trace tests: a WireSkein record per test (ws_run), checked at teardown;
-  # the tests also read wireskein.runlog directly.
-  "pytest-embedded-wireskein>=0.0.4",
-  "wireskein>=0.0.13",
-  # The WCH-Link's UART bridge, for a sketch whose UART is under test (smoke.py).
-  "pyserial>=3.5",
-  "pytest-html>=4.1.1",
-  # Bench-only: lets detected_chip() send the WCH-LinkE redetect command
-  # (Control subcommand 3) that clears the stale-target state without a reset.
-  "pyusb>=1.2",
-]
+dependencies = ["pytest>=8"]
 
 [tool.pytest.ini_options]
-# One entry point for everything: `pytest` walks the whole tree and each kind of
-# check lives in its own directory (unit, build/<kind>; bench and manual are
-# reached by name). The layout itself is a test - see
-# unit/test_tests_layout.py - so a stray file at the root fails rather than
-# quietly running from the wrong place.
-#
-# `.` rather than the eight directories by name: a new category that nobody
-# remembered to list here would be collected silently by the first form and
-# silently *not* collected by the second, and a check that never runs is worse
-# than one that runs in the wrong order.
-testpaths = ["."]
-# This replaces pytest's default list rather than adding to it, so everything
-# that has to stay out is named here - including the dot-directories the
-# default `.*` entry used to cover.
-#   bench    needs the bench (a probe and a board behind --profile); reached by
-#            naming the directory: `pytest bench --profile <board>`
-#   manual   needs a person too; reached only by naming a file
-#   */build  harness scratch, when a run was interrupted mid-compile (not
-#            tests/build itself: that pattern has a slash)
-# Nothing is called `dist` on purpose: that name is in pytest's own default
-# list, so a directory with it would vanish from collection the day this line
-# is simplified. The Board Manager install test lives in package/.
-norecursedirs = [".venv", ".tools", ".git", ".pytest_cache", "__pycache__",
-                 "bench", "manual", "*/build"]
-addopts = "-ra --strict-markers"
-markers = [
-  "slow: takes minutes (the compile sweeps)",
-  "sweep: builds every example for every series; needs --sweep",
-  "hardware: needs a board attached",
-]
+testpaths = ["unit", "build"]
+norecursedirs = [".*", "__pycache__", "single", "loopback", "peer",
+                "instrumented", "manual", "fixtures", "diagnostics"]
+addopts = "-ra --strict-markers --import-mode=importlib"

@@ -319,7 +319,7 @@ CH340×3が使っていたため、WCH-Linkは1台しか挿さらなかった。
 
 そもそも**全toolがどのprobeを使うかを言われる必要がある**(`CH32_PROBE`)ので、
 同時接続が要るtestは今のところ無い。1台だけ繋ぐ運用にすれば選択が要らなくなる。
-切り替えは[`tests/manual/probe_switch`](../tests/manual/probe_switch/probe_switch.py)で
+切り替えは[`tests-legacy/manual/probe_switch`](../tests-legacy/manual/probe_switch/probe_switch.py)で
 約5秒。
 
 **識別はUSB serialで行う。** 同じprobeに3つの呼び名があるが、持ち運べるのは1つだけ。
@@ -418,12 +418,12 @@ X035のI2C1は6 routeあるが、行き先が限られる。
 **エラッタによる追加制約**([device-data errata](device-data.ja.md))
 
 - `x035-adc-ch-i2c-unavailable`(ロット番号の下から5桁目=0): **ADC ch3/7/11/15とI2Cが使えない**
-  - **2026-09-22 実測（fixture の X035F8U6）**: ch3（PA3）/ ch7（PA7）/ ch15（VREFINT）が無い。無い channel は 0 ではなく**直前の変換の残留電荷**を読み、1000 変換あたり数 % 減衰する（単発読みは正しく見える）。一方 **I2C は動く**（route 2 で write/read OK）ので、ADC 条項と I2C 条項は必ず一緒に来るとは限らない。ロット刻印は未確認（`tests/manual/oep_adc_trace/`）
+  - **2026-09-22 実測（fixture の X035F8U6）**: ch3（PA3）/ ch7（PA7）/ ch15（VREFINT）が無い。無い channel は 0 ではなく**直前の変換の残留電荷**を読み、1000 変換あたり数 % 減衰する（単発読みは正しく見える）。一方 **I2C は動く**（route 2 で write/read OK）ので、ADC 条項と I2C 条項は必ず一緒に来るとは限らない。ロット刻印は未確認（`tests-legacy/manual/oep_adc_trace/`）
   - fixtureのADC試験には**ch3/7/11/15以外**(A0/A1等)を割り当て、影響ロットでもADC試験が成立するようにする
   - I2C試験には非該当ロットの個体が必要。fixture inventoryにロット番号を記録する
 - `x035-no-gpio-open-drain`(X033/X035 全パッケージ): X0 系の GPIO block には汎用 open-drain 出力が無い。CNF=01 の出力は push-pull と同じく high を駆動する（ch32-data `gpio_x0` の CNF=01 は "Floating input, no Open Drain output"、2026-09-22 に PA0/PA5/PB3/PB12/PC14 で実測）。AF open-drain（CNF=11）だけが release するが、その pad は peripheral のもの。core は `pinMode(OUTPUT_OPENDRAIN)` を「release = floating input、low = push-pull low」で**エミュレート**する（`wiring_digital.c`）。
 - `x035-exticr-2bit`(X033/X035/M030/V00x、core 側の不具合として修正済み): AFIO_EXTICR は 1 line 2 bit・1 register 16 line。STM32-F1 流の 4 bit × 4 で書くと port B/C の pin で別 line を設定してしまい割込みが来ない（2026-09-22 PB3 で確定、`tools/generate` が `CH32RV_EXTICR_FIELD_BITS` を variant ごとに出す）。
-- fixture の事実（2026-09-22、`tests/manual/oep_i2c_trace/`）: **route 2（PC16/PC17 ↔ P4 GPIO52/50）に bus pull-up が無い**。P4 の IDF slave driver は内部 pull-up を有効にせず外付けも無い。X035 の INPUT / emulated open-drain release は線上 0、INPUT_PULLUP で 1。`Wire` が動くのは X035 の AF 出力が high を能動駆動するため。emulated OD を試す時は pull-up を用意する。**同日修正**: probe の `p4.i2c-target` が slave 生成後に P4 内部 pull-up（約 45 kΩ）を掛けるので、target が plan にいる間は bus に pull-up がある（gpio / capture だけの plan では無い）
+- fixture の事実（2026-09-22、`tests-legacy/manual/oep_i2c_trace/`）: **route 2（PC16/PC17 ↔ P4 GPIO52/50）に bus pull-up が無い**。P4 の IDF slave driver は内部 pull-up を有効にせず外付けも無い。X035 の INPUT / emulated open-drain release は線上 0、INPUT_PULLUP で 1。`Wire` が動くのは X035 の AF 出力が high を能動駆動するため。emulated OD を試す時は pull-up を用意する。**同日修正**: probe の `p4.i2c-target` が slave 生成後に P4 内部 pull-up（約 45 kΩ）を掛けるので、target が plan にいる間は bus に pull-up がある（gpio / capture だけの plan では無い）
 - `x035-usb-pads-open-drain`(全パッケージ): PC16(UDM)/PC17(UDP)はUSB PHYのpadで、`AFIO_CTLR.USB_PHY_V33`(reset値0x45で1)が立っている間はGPIO/AFのopen-drain出力が「release」してもhighを駆動し、外部デバイスがlowに引けない(2026-09-22、OEP probeの`fixture.capture`とP4 slaveで実測)。I2C route 2/4の`Wire`はこのためaddress NACKしか返さなかった。`ch32rv_gpio_set_config()`がPC16/PC17を出力系に設定する時にこのbitを落とす。USBを使うコードは自分で立て直すこと。
 - PC14 / PC15(USB PDのCC): INPUT_PULLUPで0を読む(約5 kΩのpull-downが見える)。`USBPD_PORT`のreset値は
   0x00030003(CC_PD=1)だが、これを落としても上がらない。push-pullのhighは出る。pull-downの出どころは未確定(2026-09-22)

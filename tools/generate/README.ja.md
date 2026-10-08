@@ -38,6 +38,15 @@ uv run --no-project python tools/generate/generate.py \
 
 ## 更新時に確認すること
 
+同梱 examples の profile は、テストや実機ベンチに依存しない生成器で同期します。
+
+```sh
+uv run --no-project python tools/generate/sync_example_profiles.py
+uv run --no-project python tools/generate/sync_example_profiles.py --check
+```
+
+要件の宣言と対象選択は [examples のビルド規則](../../docs/examples-build-rules.ja.md)を参照してください。
+
 - 既存の board ID、pin 値、既定 route、memory size が意図せず変わっていないか
 - 新しい series / part が適切な ISA、ABI、vector variant、clock 設定を使うか
 - lock file の commit、schema version、manifest hash が入力と一致するか

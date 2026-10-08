@@ -586,7 +586,7 @@ UIAPduinoは、製品の標準書込み経路がsoftware USB HID bootloader `120
 | serial bus peer | ESP32 I2C target / SPI target ↔ DUT | DUTのI2C/SPI controllerを独立peerとして検証 |
 
 実装と実行手順は
-[`tests/manual/uiapduino_fixture/`](../tests/manual/uiapduino_fixture/README.ja.md)、HIDとSWIOによる
+[`tests-legacy/manual/uiapduino_fixture/`](../tests-legacy/manual/uiapduino_fixture/README.ja.md)、HIDとSWIOによる
 復旧手順は[`uiapduino-hid-upload`](uiapduino-hid-upload.ja.md)にある。13,780 byteの製品用imageを
 HIDから書き込み、UART、header 12信号、ADC 6入力、I2C、SPIを1 suiteで確認した。
 

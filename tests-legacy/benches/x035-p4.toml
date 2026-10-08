@@ -1,0 +1,91 @@
+# The X035 bench: an ESP32-P4 OEP probe and a CH32X035F8U6 fixture (E143 wiring).
+#
+# This file is the jig's design - what is wired to what, and which probe firmware
+# and settings the tests were checked against. Build the same jig and it applies.
+# Which unit is on this machine, and its IDE port, is the machine's business and
+# lives in tests-legacy/.env:
+#
+#   TEST_SERIAL_PORT_CH32X035=oep://30eda0e31108/x035
+#   TEST_BENCH_CH32X035=x035-p4
+#
+# tests-legacy/bench/prepare.py --profile ch32x035 brings a probe to this state (erase,
+# flash the release named here, write the slot / binds / plan, save) and
+# `--check`, which tests-legacy/bench/conftest.py runs first, compares the probe to it.
+
+[probe]
+kind = "oep"
+model = "esp32p4"                             # oep.core describe: model (the chip; "esp32-p4-devkit" before 0.0.8)
+firmware = "0.0.29-dev+873c8f0"                           # oep.core describe: firmware = the oep-probe-arduino release version (from 0.0.5)
+release = "v0.0.28"                           # oep-probe-arduino tag prepare.py flashes
+example = "Firmware/OepProbe"                # examples/<example> in that tag: one sketch per probe chip since 0.0.8, the jig is all settings
+sketch_profile = "esp32p4"                   # its sketch.yaml profile for this probe
+update = "dfu"                               # prepare.py: the release's app image over USB DFU on the HS port (0.0.16+); --usj for a blank probe
+erase = "all"                                # the usj route erases the whole flash before flashing
+
+[dut]
+board = "CH32X035"                           # the profile
+part = "CH32X035F8U6"                        # what is soldered on; recorded, not enforced
+console = "dmseq"                            # the harness talks over the debug module, no pin
+
+[uart]                                       # the DUT UART the probe listens to: USART4 route 0, PB0 (TX) -> 12, PB1 (RX) <- 6
+usart = 4
+route = 0
+tx = "PB0"                                   # the DUT pads it uses; the GPIO matrix leaves them alone
+rx = "PB1"
+
+[slot]                                       # oep config slot
+name = "x035"
+wire = "rvswd"
+pins = [2, 54]
+attach = "at-boot"
+retry_s = 1
+mechanism = "dmseq"
+max_speed = 0                                # RVSWD clock limit in Hz (0: the probe's fastest); the L103 needs 1000000 and idle_clock = "low"
+idle_clock = "high"
+
+[[bind]]                                     # oep config bind: what each serial port carries
+port = 1
+stream = "slot:x035"
+
+[[bind]]
+port = 3
+stream = "slot:x035"
+
+[[plan]]                                     # oep config plan: pins an interface keeps
+interface = "oep.fixture.uart#0"
+roles = { rx = 12, tx = 6 }
+
+[[idle]]                                     # oep config idle: how a channel rests when nothing owns it
+channel = 6                                  # the DUT's USART4 RX: pulled up so it never floats (the old sketch had this built in)
+mode = "pull-up"
+
+[wiring]                                     # DUT pad -> probe channel. A pad not here is not wired; a test asking for it skips.
+PA0 = 46
+PA1 = 47
+PA2 = 48
+PA3 = 49
+PA4 = 53
+PA5 = 4
+PA6 = 11
+PA7 = 5
+PB0 = 12
+PB1 = 6
+PB3 = 13
+PB11 = 9
+PB12 = 14
+PC14 = 10
+PC15 = 15
+PC16 = 52
+PC17 = 50
+
+[facts]                                      # measured on this jig; tests use them as thresholds and skips
+adc = ["PA0", "PA1", "PA2", "PA3", "PA4", "PA5", "PA6", "PA7"]   # the ADC-capable pads the probe can drive
+adc_absent = ["PA3", "PA7"]                  # errata x035-adc-ch-i2c-unavailable on this part (ch3 / ch7 read residual charge)
+adc_high_min = 960                           # probe rail == DUT VDD (both 3.3 V); 997 seen 2026-09-29
+external_pullup = []                         # DUT pads a board pull-up holds high (idle high even in INPUT_PULLDOWN)
+slow_release = ["PB3", "PB11", "PB12"]       # release slowly after the probe drives high (channels 13 / 9 / 14). Once put down to the P4's SD-card pads, but the WeAct jig shows the same three DUT pads on channels 2 / 54 / 53, so the X035 side is as likely (unsettled, 2026-10-02)
+pulled_low = ["PC14", "PC15"]                # the X035's CC1 / CC2: the part holds them low, so they never float high (open-drain release, INPUT_PULLUP idle read 0)
+capture_max_hz = 20000000                    # PARLIO
+i2c = { scl = "PC16", sda = "PC17", route = 2 }
+spi = { sck = "PA5", mosi = "PA7", miso = "PA6", cs = "PA4", pclk_hz = 48000000 }
+pwm = "PA1"

@@ -13,7 +13,7 @@ index pulled down.
 
   uv run tools/index/install_check.py <workdir>
 
-Normally reached through `pytest` (tests/package/test_package_install.py).
+This tool is independent of the test workspace and only builds sketches.
 
 The xPack archive is served from <repo>/.tools/cache rather than fetched from
 GitHub on every run (400 MB). CH32_CH32RV_ARCHIVE does the same for the
@@ -40,13 +40,13 @@ import threading
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(REPO / "tests" / "build" / "compile"))
-sys.path.insert(0, str(REPO / "tests" / "build" / "sketches"))
 
 import gen_index                                    # noqa: E402
-from compile_matrix import Failure                  # noqa: E402
 from fetch_tools import env_defaults                # noqa: E402
-from stage import stage_sketch                      # noqa: E402
+
+
+class Failure(Exception):
+    """Package installation or compilation failed."""
 
 PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32rv"
@@ -57,7 +57,7 @@ FQBN_LIBRARIES = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"
 # Nothing of the repository's own scaffolding may reach a user's machine.
 # gen_index.py packages an allowlist, so a leak means the allowlist grew
 # something it should not have.
-FORBIDDEN = ("tests", "docs", "tools", "vendor", ".git", ".github")
+FORBIDDEN = ("tests", "tests-legacy", "docs", "tools", "vendor", ".git", ".github")
 
 # Measured, not guessed: `riscv-none-elf-g++ -E -v` prints this include
 # directory verbatim, unresolved dot-dots and all, and GCC opens it that way -
@@ -93,6 +93,19 @@ LIBRARIES = """\
 void setup() {
   Wire.begin();
   SPI.begin();
+}
+void loop() {}
+"""
+
+ACCEPTANCE = """\
+#include <SerialDMSeq.h>
+struct Marker { int value; Marker() : value(42) {} };
+Marker marker;
+void setup() {
+  SerialDMSeq.begin(115200);
+  pinMode(PA1, OUTPUT);
+  digitalWrite(PA1, marker.value == 42 ? HIGH : LOW);
+  SerialDMSeq.println(marker.value);
 }
 void loop() {}
 """
@@ -184,25 +197,11 @@ def cli(*args, env, check=True, capture=True):
     return (proc.stdout or "") + (proc.stderr or "")
 
 
-def sketch(work: pathlib.Path, name: str, source=None, copy_from=None):
-    """One sketch directory to compile, from a literal source or a real case.
-
-    copy_from names a case *directory*, not its .ino: a case carries more than
-    one buildable file (testcmd.h), and copying only the .ino produced exactly
-    one error message per board rather than one. stage_sketch() owns that rule,
-    shared with the three harnesses under tests/. The main file is then renamed,
-    because arduino-cli requires it to match the directory it sits in and this
-    directory is named after what the check is called here.
-    """
+def sketch(work: pathlib.Path, name: str, source: str):
+    """Create an isolated compile-only sketch from this tool's own source."""
     d = work / name
     d.mkdir(parents=True, exist_ok=True)
-    if copy_from is not None:
-        stage_sketch(copy_from, d)
-        main = d / f"{copy_from.name}.ino"
-        if main.name != f"{name}.ino":
-            main.rename(d / f"{name}.ino")
-    else:
-        (d / f"{name}.ino").write_text(source, encoding="utf-8")
+    (d / f"{name}.ino").write_text(source, encoding="utf-8")
     return d
 
 
@@ -283,8 +282,7 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
         for name, fqbn, src in (
                 ("Blink", FQBN_BLINK, sketch(work, "Blink", BLINK)),
                 ("Acceptance", FQBN_ACCEPTANCE,
-                 sketch(work, "Acceptance", copy_from=REPO / "tests"
-                        / "bench" / "basic" / "serial_println")),
+                 sketch(work, "Acceptance", ACCEPTANCE)),
                 ("Libraries", FQBN_LIBRARIES,
                  sketch(work, "Libraries", LIBRARIES)),
         ):

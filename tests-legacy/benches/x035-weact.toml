@@ -1,0 +1,82 @@
+# A WeAct CH32X035F8U6 board behind the ESP32-P4 30eda0e34a0e (added 2026-10-02).
+# Powered from the P4's 3V3; its USB-C (PC16 / PC17, CC on PC14 / PC15) goes to a USB PD charger for
+# the PD tests, so PC16 / PC17 are not wired to the probe. Wiring found by driving each pad through the debug
+# module and reading the P4's channels (both pulls agree).
+[probe]
+kind = "oep"
+model = "esp32p4"
+firmware = "0.0.29-dev+3169721"
+release = "v0.0.28"
+example = "Firmware/OepProbe"
+sketch_profile = "esp32p4"
+update = "dfu"
+erase = "all"
+
+[dut]
+board = "CH32X035"
+part = "CH32X035F8U6"
+console = "dmseq"
+
+[uart]                                       # USART4 route 0, PB0 (TX) -> 4, PB1 (RX) <- 3
+usart = 4
+route = 0
+tx = "PB0"
+rx = "PB1"
+
+[slot]
+name = "weact"
+wire = "rvswd"
+pins = [22, 23]
+attach = "at-boot"
+retry_s = 1
+mechanism = "dmseq"
+max_speed = 0
+idle_clock = "high"
+
+[[bind]]
+port = 1
+stream = "slot:weact"
+
+[[bind]]
+port = 3
+stream = "slot:weact"
+
+[[plan]]
+interface = "oep.fixture.uart#0"
+roles = { rx = 4, tx = 3 }
+
+[[idle]]
+channel = 3                                  # the DUT's USART4 RX: pulled up so it never floats
+mode = "pull-up"
+
+[wiring]
+PA0 = 15
+PA1 = 14
+PA2 = 13
+PA3 = 12
+PA4 = 11
+PA5 = 10
+PA6 = 9
+PA7 = 6
+PB0 = 4
+PB1 = 3
+PB3 = 2
+PB11 = 54
+PB12 = 53
+
+[facts]
+adc = ["PA0", "PA1", "PA2", "PA3", "PA4", "PA5", "PA6", "PA7"]
+adc_absent = []                              # ch3 / ch7 and VREFINT work on this unit (no x035-adc-ch-i2c-unavailable lot), measured 2026-10-02
+adc_high_min = 960                           # probe rail == DUT VDD (the DUT runs from the probe's 3V3)
+external_pullup = []
+slow_release = ["PB3", "PB11", "PB12"]       # probe channels 2 / 54 / 53 release slowly after driving high (measured 2026-10-02)
+pulled_low = []
+# pd_source = true when a USB PD charger is on the board's USB-C (CC1 / CC2 are not wired to the probe: a lead
+# that long loads CC enough that no message decodes); tests-legacy/bench/basic/pd_sink runs only then. Removed
+# 2026-10-02 with the charger; put it back with one. What the charger offers is read from it, not declared here.
+# Jumper-wiring limit of this jig (not the core, not the probe; the X035 P4 jig passes it on the same probe build):
+# spi_peer fails at 24 MHz (MISO a bit late; 12 MHz and below fine, 2026-10-02). It shows as a failure; no fact caps
+# it yet. (uart_sweep's DUT->probe at ~2 Mbaud fails now and then on both P4 jigs: a probe issue, not this wiring.)
+capture_max_hz = 20000000
+spi = { sck = "PA5", mosi = "PA7", miso = "PA6", cs = "PA4", pclk_hz = 48000000 }
+pwm = "PA1"

@@ -1,26 +1,26 @@
-# Test plan (entry points and how to run)
+# Test plan
 
-> Japanese: [TEST_PLAN.ja.md](TEST_PLAN.ja.md) is the reference; this is a summary.
+[Japanese plan](TEST_PLAN.ja.md) is the reference.
+[Coverage](../docs/test-coverage.ja.md) inventories implementation and test definitions, not run results.
 
-The policy - layers, the bench definition, probe preparation, the automated / manual line and the
-migration order - is in [docs/development-workflow.ja.md](../docs/development-workflow.ja.md).
+The redesign targets native Linux. Preserving the existing tests, harness, wiring or directory layout is not a requirement.
+The new tests/ workspace runs board-free checks only. Tests, CI and maintenance tools do not depend on the archived suite.
+Hardware directories contain documentation scaffolds, not sketches or executable fixtures; the hardware runner and local configuration resolver are not implemented.
 
-Directories are cut by what a check **needs**, so each maps to one way of running it:
+Execution directories are split by equipment: board-free unit/host checks, builds, a single DUT, loopback, peers, instrumentation and manual operation.
+Contracts distinguish core behavior, series/part/board differences, Arduino ecosystem integration, USB data, USB PD and bootloader HID.
 
-| directory | needs | run | CI |
-|---|---|---|---|
-| `unit/` | nothing | `uv run pytest unit` | every PR |
-| `build/` | the toolchain, arduino-cli, device-data | `uv run pytest build` (`-m "not slow"` for seconds) | every PR |
-| `bench/` | one permanent bench (probe + DUT behind `--profile`); builds the working tree (version-less profiles, the repo linked into the sketchbook, tools via `bench/install_tools.py`) | `uv run --env-file .env pytest bench --profile <board>` | self-hosted runner (later) |
-| `manual/` | a person or outside equipment | name the file: `uv run --env-file .env pytest manual/<case>/<case>.py -s` | none |
-| `benches/` | (data) the jigs' definitions, `<name>.toml`, named by `TEST_BENCH_<PROFILE>` | — | — |
+Shared templates describe logical signals, required capabilities and safety. Physical wiring, identities, ports and calibration belong in ignored local configuration.
+Use isolated Arduino CLI directories, the working-tree DUT core, pinned external dependencies and standard plugin DUT/peer lifecycle.
 
-`bench/` and `manual/` are in `norecursedirs`; `manual/` entry points carry no `test_` prefix. A bare
-`pytest` never flashes a board. `pytest bench` checks the probe against its bench file first and refuses
-the run (with the `bench/prepare.py` command to fix it) when they differ.
+Separate missing implementation, missing test definitions, limited self-checks, external observations and actual execution results.
+A required contract cannot pass a gate because missing equipment caused a skip.
+Keep minimal Arduino upload/reset/monitor E2E here; probe internals belong to their owning repositories.
 
-The bench cases: `basic/` (the fourteen self-checking sketches, and `pd_sink`, which negotiates with a real USB PD charger on a bench whose file says `facts.pd_source`; its manual companion `pd_vbus.py`, named on the command line, checks VBUS with the VBUS meter rig of `manual/vbus_meter`), `trace/` (waveforms recorded and checked
-through WireSkein: periph_probe, gpio_probe, adc_probe, reset_probe, i2c_probe, uart_probe),
-`startup/crt0_probe` (the probe fills RAM and resets) and `regs/reg_probe` (registers read through the
-probe against device-data; needs oep-probe-arduino 0.0.7 or later). Tests ask the bench file by
-pad name and skip, with the reason, when a pad, a capture or a target is not wired.
+USB covers both DUT host / peer device and DUT device / peer host as equal, separate scenarios.
+Do not assign a fixed USB role to CH32X035 or ESP32S3; select role-specific profiles and verify capabilities and power for each case.
+Keep separate coverage and results for each role, with control logs independent of the USB link under test.
+Enable USB only after both sides are prepared. A cheaper CH32X035 peer does not replace independent interoperability evidence.
+TinyUSB vendoring is not Arduino USB integration.
+
+The [README](README.ja.md) describes the new board-free workspace.

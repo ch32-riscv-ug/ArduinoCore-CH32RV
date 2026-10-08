@@ -30,6 +30,8 @@
 | [software-peripherals.ja.md](software-peripherals.ja.md) | SoftSPI / SoftWire 等の採用基準 |
 | [toolchain.ja.md](toolchain.ja.md) | compiler と C/C++ runtime の固定方針 |
 | [vendor-policy.ja.md](vendor-policy.ja.md) | 第三者ソースの取込、lock、license |
+| [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | テストの保証対象、設備、環境分離、責務分担 |
+| [test-coverage.ja.md](test-coverage.ja.md) | 実装範囲と既存テストの保証・不足 |
 | [adr/README.ja.md](adr/README.ja.md) | 現行設計の判断理由 |
 
 生成器と配布ツールの操作は、それぞれ

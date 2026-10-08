@@ -1,130 +1,182 @@
-# テスト計画（入口の一覧と実行手順）
+# テスト計画
 
 > English: [TEST_PLAN.md](TEST_PLAN.md)
 
-方針・層の切り方・ベンチの定義・プローブの準備・自動と手動の境界・移行の順序は
-[docs/development-workflow.ja.md](../docs/development-workflow.ja.md)（決定、2026-09-30）にあります。ここはその写しではなく、
-**何がどこにあり、どう回すか**だけを書きます。
+この文書は再設計の概要です。新しい検査・CI・保守ツールは旧テストと設定に依存しません。
+新ベンチの基準環境はネイティブ Linux です。tests/ の実行コードはボード不要の検査だけです。
+実機用の構成は README のみの雛形で、実機 runner やローカル設定解決は実装していません。
+[カバレッジ](../docs/test-coverage.ja.md)は実装とテスト定義の照合、
+[README](README.ja.md)は新 workspace の操作を扱います。
 
-## 層とディレクトリ
+## 保証対象
 
-ディレクトリは「何を確かめるか」ではなく「**何を要するか**」で切ります（pytest-embedded-arduino-cli のガイドの規則）。
-各ディレクトリが 1 つの回し方に対応します。
+単位は機能名ではなく「条件、刺激、観測、期待結果」で定義した契約にします。
+Wire の正常通信、NACK、バス回復、slave 受信、slave 応答は別契約です。
+コンパイル成功、自己検査、外部観測、別実装との相互運用は互いに代用できません。
 
-| ディレクトリ | 要るもの | 回し方 | CI |
-|---|---|---|---|
-| `unit/` | 何も要らない | `uv run pytest unit`（数秒） | 全 PR |
-| `build/` | toolchain、arduino-cli、device-data（`uv run tools/index/fetch_tools.py`） | `uv run pytest build`（`-m "not slow"` で数秒、全部で数分） | 全 PR（sweep は専用 job） |
-| `bench/` | 常設ベンチ 1 台（probe + DUT、`--profile` の先） | `uv run --env-file .env pytest bench --profile <board>` | 正式ベンチの self-hosted runner（未） |
-| `manual/` | 人か臨時の機材 | ファイルを名指し: `uv run --env-file .env pytest manual/<case>/<case>.py -s` | 無し |
-| `benches/` | （データ）治具の定義 `<name>.toml` | `TEST_BENCH_<PROFILE>` が指す | — |
+| 論点 | 保証するもの | 方法 |
+|---|---|---|
+| 定義・生成物 | device-data、pin/route、割り込み、board/options、固定依存 | ボード不要の検査・再生成 |
+| ビルド・runtime | API、link、startup、constructor、heap、Print/Stream、境界値 | native / host core、全対象のビルド、実機起動 |
+| コア基本機能 | GPIO、時間、UART、Wire、SPI、ADC、PWM と異常時の動作 | DUT、独立した peer / 計測器 |
+| 系列・part・製品 board | instance、package の端子、クロック、reset、製品 pin map | 生成する build matrix と代表実機 |
+| Arduino エコシステム | 配布物、FQBN、標準 API、外部 library、upload/discovery/monitor、HID | 隔離した Arduino CLI と実機 |
+| USB / USB PD | データ通信の role/class/復旧、または CC 交渉と実電圧 | USB peer、PD source、電圧計測 |
 
-`bench/` と `manual/` は `norecursedirs` に入っていて、引数なしの `pytest` が実機を焼くことはありません。`manual/` の入口は
-`test_` を付けず、ファイルを名指ししたときだけ走ります（二重の防護）。この規約自体は `unit/test_tests_layout.py` が検査します。
+各ケースには安定した contract ID、対象 API、前提、刺激、期待値と許容差、観測方法、必要 capability、
+対象 profile、終了時の安全状態を付けます。「全 API を呼んで PASS」だけでは保証にしません。
 
-## 入口の一覧
+## ディレクトリ案
 
-### unit/（何も要らない）
+上位は必要設備、下位は契約で分けます。
 
-| 入口 | 何を見るか |
-|---|---|
-| `test_tests_layout.py` | この計画の規約そのもの（カテゴリ、接頭辞、conftest の唯一性、入口の一覧との一致） |
-| `test_board_layer.py` | board レイヤの定義権限（variant が `LED_BUILTIN` を定義しない、`requires:` が実在 capability を指す） |
-| `test_support_status.py` | docs/support-status.ja.md の系列ごとの状態が、ベンチファイル(実機で確認)・`ch32rv_chips.csv`(書き込み可)・`boards.txt`(系列の一覧)と一致し、ボード名に状態を入れていないこと |
-| `test_uiapduino_board.py` | UIAPduino V1.4 専用 board、HID upload recipe、pin 番号の互換 |
-| `test_ch32rv_recipes.py` | platform.txt が ch32rv に渡すコマンド行(upload / program / HID / discovery / monitor)の固定、`--chip auto` で書く entry が無いこと、[compile only] の板が系列名を渡すこと |
-| `test_version_macros.py` | platform.txt の `compiler.version_defines`(`CH32RV_VERSION_MAJOR/MINOR/PATCH`)が `version=` と一致し、系列名マクロが `CH32RV_SERIES_<series>` で渡ること |
-| `test_peripheral_table.py` | `docs/peripheral-support.ja.md` の○が device-data の clock enable と矛盾しない |
-| `test_startup_parameters.py` | startup harness の march / mabi / startup 定義が boards.txt の生成値と一致 |
-| `test_adc_instances.py` | ADC instance を持つ variant で pad と channel が揃う |
-| `test_clock_prescaler.py` | AHB 分周器の符号化表（compile 時 assert、riscv gcc だけ要る） |
-| `test_pd_frames.py` | USB PD のフレームロジック（host の cc で共有ライブラリにして ctypes） |
-
-### build/（toolchain が要る）
-
-| 入口 | 何を見るか |
-|---|---|
-| `generated/test_generated.py` | boards.txt / variant / vector include が device-data の locked commit からの再生成と一致。`sync_profiles.py --check`、`sync_testcmd.py --check` |
-| `vendor/test_vendored_api.py` | ArduinoCore-API snapshot が lock の commit と同一 |
-| `vendor/test_vendored_tinyusb.py` | TinyUSB snapshot が lock の SHA-256 と一致 |
-| `vendor/test_udev_rules.py` | platform ルートの `60-ch32rv.rules` が同梱 ch32rv の rule（archive、`doctor --emit-udev`）と byte 一致、`post_install.sh` がある（B-6） |
-| `vendor/test_ch32rv_chips.py` | `tools/index/ch32rv_chips.csv`(生成器が `--chip` を引く表)が同梱 ch32rv の `db list --json` と一致 |
-| `startup/test_startup_equivalence.py` | 自作 crt0 と EVT startup の ELF 等価性（`slow`、EVT mirror 要） |
-| `startup/test_interrupt_tables.py` | interrupts.csv が EVT startup assembly と一致（EVT mirror 要） |
-| `compile/test_compile_matrix.py` | 全 part number の compile と size baseline（`slow`） |
-| `compile/test_uiapduino_compile.py` | UIAPduino の `pnum=ANY` で FQBN 解決から link まで |
-| `compile/test_examples.py` | 同梱 examples が代表 2 枚（X035 / V003）で compile（`slow`） |
-| `compile/test_examples_sweep.py` | 同梱 examples が全 24 series で compile（`--sweep`、約 20 分、Actions 専用） |
-| `sizebench/test_sizebench.py` | newlib のサイズ計測 harness（`slow`） |
-| `package/test_package_install.py` | 生成した index から clean install → 上書きなし compile → upgrade / rollback（`slow`） |
-| `sketches/test_sketch_profiles.py` | bench の全 sketch × sketch.yaml の全 board を compile（`slow`） |
-| `sketches/test_sketch_profile_build.py` | 同梱 examples の `arduino-cli compile --profile`（版 pin、loopback の index 経由）で全 example × 全 profile（`slow`）。bench の profile は版無し（作業ツリー）なのでここでは見ない |
-
-`build/sketches/` には bench の sketch の道具も置きます: `testcmd.h`（コマンド規約の原本。各 case へ `sync_testcmd.py` が配る）、
-`sync_profiles.py`（`sketch.yaml` の `profiles:` を生成）、`stage.py`、`compile_all.py`、`profile_build.py`。
-
-### bench/（常設ベンチ）
-
-**1 case = 1 ディレクトリ、1 module 1 test が原則**（section の独立した trace は 1 module に複数 test）。中身は
-`<case>.ino`、`sketch.yaml`（生成物）、`testcmd.h`（生成物）、`test_<case>.py`。fixture は
-pytest-embedded-arduino-cli（`dut`）、pytest-embedded-arduino-cli-ch32rv（`ch32rv` / `oep_host` / `ch32_uart`）、
-pytest-embedded-wireskein（`ws_run`）、そして `bench/conftest.py` の `bench`（治具の定義）です。共有コードは
-`bench_kit.py`（READY / PING / UART の指名）と `tracekit.py`（OEP の plan / capture / gpio / uart、decoder）。
-
-| 場所 | case | 何を見るか | 要る治具 |
-|---|---|---|---|
-| `basic/` | `serial_println` `serial_echo` `core_api` `heap_string` `print_format` `stdio_printf` `route_selftest` `spi_selftest` `wire_selftest` `tone_selftest` `servo_selftest` `pd_selftest` `hooks_selftest` `system_selftest` | 自己検査（sketch が PASS / FAIL を出し、host は順に読む）。UART の 3 本は probe の UART を相手にする | どのベンチでも（UART は `[uart]`） |
-| | `pd_sink` | 実際の USB PD 充電器と交渉: 固定の全電圧、PPS の両端と中間・maintain() だけで 20 秒保持、拒否、契約が残ったままの再起動 | USB-C に PD 充電器、`facts.pd_source` |
-| | `pd_sink/pd_vbus.py`（手動: ファイルを指定） | 契約ごとに VBUS が動いたか（4.5 V 以上 ±10 %）を電圧計リグで | 上に加えて `manual/vbus_meter` のリグ、`TEST_VBUS_METER` |
-| `trace/` | `periph_probe`（PWM / tone / timing / SPI / SPI peer） | 線上の実測。capture で記録し、WireSkein が照合 | OEP + capture、`facts.pwm` / `facts.spi` |
-| | `gpio_probe` | 配線された全 pad を両側から駆動・観測、EXTI | OEP + fixture.gpio、`[wiring]` |
-| | `adc_probe` | analogRead を probe の rail で、X035 の無い channel の判定 | OEP、`facts.adc` |
-| | `reset_probe` | software / debug reset → setup() の時間、resetReason | OEP + capture、`facts.pwm` |
-| | `i2c_probe` | Wire master を線上で decode（write / read / repeated START / 400 kHz / setClock / stretch / stuck bus） | OEP + I2C target + capture、`facts.i2c` |
-| | `uart_probe` | UART を probe の UART と両方向、overflow、64 KiB、reset 後; sweep（`slow`）は F_CPU × baud × format と線上の baud | OEP + fixture.uart、`[uart]` |
-| `startup/` | `crt0_probe` | crt0 が渡す RAM（probe が RAM を埋めて reset） | OEP |
-| `regs/` | `reg_probe` | デバッガでレジスタを読み device-data と照合（方法 3）。console は bench の UART（halt / resume を挟むと dmseq は数秒黙る） | OEP（oep-probe-arduino 0.0.7 以降）、device-data |
-
-治具に無いもの（pad、capture、I2C target）を要する test は理由付きで **skip** します。skip の一覧が「このベンチが確かめていないこと」です。
-
-### manual/（人か臨時の機材）
-
-| 入口 | 何をするか |
-|---|---|
-| `gpio_loopback/gpio_loopback.py` | ジャンパ 1 本で GPIO（レベル / pull / 別ポートの EXTI / PWM duty）。LinkE 経路 |
-| `i2c_loopback/i2c_loopback.py` | ジャンパ 2 本 + pull-up で Wire の slave。LinkE 経路 |
-| `uiapduino_fixture/` `uiapduino_pin_map/` `uiapduino_timer_fixture/` | UIAPduino の治具と pin 表 |
-| `chip_info/chip_info.py` `uart_scan/uart_scan.py` `probe_switch/probe_switch.py` | ベンチの道具（何が繋がっているか / どの USART route か / USB/IP の切り替え）。LinkE 経路 |
-| `vbus_meter/vbus_meter.py` | VBUS 電圧計リグ（XY-FZ25 を負荷オフで）の読み取りと疎通確認。`TEST_VBUS_METER` のときだけ。資料は `manual/vbus_meter/README.ja.md` |
-| `smoke/smoke.py` | 上の道具が共有する LinkE 経路のライブラリ（sketch の再生は bench/ に移り、無くなった） |
-
-LinkE 経路のものは probe-rs / ch32rv を直接呼ぶ古い形で、正式ベンチ（家系ごとの P4）が揃ったら bench/ に移すか消します。
-
-## 実行手順
-
-```sh
-uv run tools/index/fetch_tools.py         # toolchain / device-data を <repo>/.tools へ（版は tools/index/tools_*.json）
-cd tests && uv sync
-cp .env.example .env                      # このベンチの port と bench file（TEST_SERIAL_PORT_<P>、TEST_BENCH_<P>）
+```text
+tests/
+  unit/                         ボード不要: 定義・純粋ロジック・host core
+  build/                        toolchain: targets / examples / package
+  single/<feature>/<case>/      DUT のみ
+  loopback/<feature>/<case>/    DUT と折返し配線
+  peer/<feature>/<case>/        DUT と対向機
+    peer_reference/             対向機 sketch と独立した profile
+  instrumented/<feature>/<case>/ DUT と刺激・波形・電圧計測
+  manual/<feature>/<case>/      人の操作または臨時設備
+  fixtures/                     共有設備要件・安全なテンプレート
+  harness/                      設定解決・結果保存の最小限の補助
+  diagnostics/                  準備・接続確認（合否テストではない）
+  sketch_support/               sketch 共通の制御 protocol
 ```
 
-| 場面 | コマンド |
+設備別ディレクトリには雛形のみを置き、実機ケースはまだ配置しません。通常の pytest はボード不要の範囲だけを選び、
+実機書き込みは設備群を明示選択します。手動は高度なテストではなく、人や臨時設備が必要なテストです。
+
+通常の Python 検査は sketch と別ディレクトリに置きます。同じディレクトリの .ino が build/upload を開始するためです。
+unit 内の host core sketch は物理ボード不要の profile に限定します。
+DUT/peer lifecycle、port/profile 解決、build mode、lock は plugin 標準を優先し、
+独自 peer framework や全体に効く autouse DUT fixture は作りません。基本は 1 module に 1 scenario とします。
+
+## 対象と設備
+
+silicon capability、part/package の端子、コア実装、board 配線、fixture の刺激・観測能力を分けます。
+系列代表の実機成功は、その系列の全 part/route/instance の保証ではありません。
+
+| 設備 | 主な責務 | それだけでは保証できないもの |
+|---|---|---|
+| P4 と各系列の代表 DUT | 起動、共通 API、外部刺激・波形、系列固有資源 | 未装着 part、未配線 route、独立アナログ基準、USB 相互運用 |
+| LinkE と代表 DUT | upload/reset/monitor と基本動作の経路差 | P4 capture を前提とした精密判定 |
+| Link と CH32V103 | V103 の経路別回帰 | 他系列の経路 |
+| UIAPduino HID | 製品 pin map、HID upload、再接続、sketch 起動 | sketch 内 USB API |
+| CH32X035 と ESP32S3 | USB host/device 両側の契約と異なる実装間の通信 | 他 controller/speed、PD |
+| DUT と安価な peer | 指定通信契約の繰り返し検証 | 独立実装との相互運用の代替 |
+| PD source と電圧計 | CC 交渉、VBUS、電源復旧 | USB データ通信 |
+
+LinkE の代表は V203 を候補としますが、手持ち part/package と必要端子で決めます。
+系列代表を共通 API の基準とし、小 RAM、別 ABI、複数 ADC/I2C、DAC、別 USB controller、製品 pin map など
+実装差分の理由がある対象を追加します。build は生成対象全体、実機は代表と差分を確認し、
+未検証 part/route は明示します。clock/baud/mode/buffer 境界の組合せは契約ごとに選びます。
+
+## 環境分離
+
+共有するのは論理信号名、必要機能、安全条件、一般的な許容差です。
+個体 ID、port、実配線、電源操作先、計測器、実測補正値はローカル設定に置きます。
+配線テンプレートは共有できますが、特定個体の識別子や実測値は含めません。
+
+fixture 設定は、共有の安全な default → Git 管理外の *.local.toml → 環境変数 → CLI の順に解決する設計です。
+相対パスの基準、未知キー、型、範囲を検証し、配列の置換とテーブルのキー別上書きを定義します。
+接続先 default は空にし、別ボードへ書き込める default を作りません。ローカル探索場所を限定します。
+
+port は plugin の規約を維持します。
+
+- primary: CLI → `TEST_SERIAL_PORT_<PROFILE>` → `TEST_SERIAL_PORT` → sketch profile の port。
+- peer: `--peer-port name:port` → `TEST_SERIAL_PORT_PEER_<NAME>_<PROFILE>` → `TEST_SERIAL_PORT_PEER_<NAME>` → peer profile の port。
+- peer profile は primary を継承せず、`--peer-profile name:profile` または peer の default profile で指定します。
+- .env は明示的に uv run --env-file .env ... で読みます。ローカル設定からの port 引渡しは harness で一本化します。
+
+pin は I2C_SDA / SPI_CS / UART_RX などの論理名で DUT と対向側の pad に対応させます。
+GPIO の数値を board 共通の pin と仮定しません。build define を使う場合も必須値を検証します。
+build_config の未設定環境値は空文字になり得るため、それを正常な配線として扱いません。
+
+Linux の udev/アクセス権、安定した identity、再列挙後の再解決、排他、給電、GND を前提検査にします。
+WSL/USB-IP はベンチ標準手順に含めません。Arduino CLI の data/download/user、生成物、cache は隔離し、
+通常の sketchbook や ~/.arduino15 を変更しません。DUT は作業ツリー、外部 peer core/library/tool は固定して検証します。
+実際の core 所在、commit/dirty、tool/firmware を記録し、PATH の新しい版を暗黙に選びません。
+
+## 判定と証拠
+
+既存ケースは再利用を前提にせず、次の条件を満たすかで採否を決めます。
+
+- API の出力と期待結果に因果関係がある。呼んだ直後の無条件 PASS は除外する。
+- 同じ時刻源・controller・codec だけで正しさを証明しない。
+- 初期化と安全な終了処理をケースごとに行う。upload/reset が外部機器や全周辺状態を消すと仮定しない。
+- 単独・全体・順序変更で結果が変わらない。
+- 機能判定と時間精度を分け、計測分解能、負荷、許容差を明示する。
+
+primary 未設定は環境エラーです。plugin の未解決 peer は skip ですが、必須設備群では
+「必要契約が未実行」としてゲートを通しません。任意設備不足、silicon に機能なし、コア未実装、
+テスト未定義を同じ skip にまとめません。候補 firmware の READY 失敗を根拠なく設備故障にしません。
+
+結果は contract × target × environment × observation ごとに PASS / FAIL / 環境エラー / 未実行 / 対象外を保存します。
+core/sketch/tool/firmware、解決済み設定、build/flash と両側ログ、波形・measurement、skip 理由を紐付けます。
+認証値は除外し、個体情報を含む実行 artifact をソース管理へ混ぜません。
+実装・テスト定義と実行結果は分離し、リリース状態、テスト総数、機能総数は管理しません。
+全対象 build の結果収集は fail-fast を避け、必須対象の合否ゲートとは分けます。
+
+常設 HIL では未信頼 fork の firmware を直接実行しません。承認した source/artifact を入力にします。
+DUT の lock だけでなく、共有 probe・電源・計測器も排他対象にし、異常終了時も出力と給電を安全状態へ戻します。
+
+## USB peer 計画
+
+USB データ、USB PD、HID bootloader は別契約です。TinyUSB source の存在を Arduino USB API 実装済みとは扱いません。
+
+host と device は両方を検証対象とし、CH32X035 と ESP32S3 の役割をボード名で固定しません。
+DUT host / peer device と DUT device / peer host を対等な別ケースとして定義し、
+それぞれの role 用 profile、契約、実行結果を分けます。一方の成功を他方の保証にしません。
+ケースごとに board/firmware/driver/VBUS が指定 role を満たすことを確認します。
+host と device の組を成立させ、同じ role 同士の接続を通信検証として扱いません。
+P4 の書き込み・観測と USB host は別の役割です。
+
+| 契約 | 観測と期待結果 |
 |---|---|
-| 保存のたび | `uv run pytest unit` |
-| コミット前 | `uv run pytest`（unit + build、約 7 分。`-m "not slow"` で数秒） |
-| 触った機能 | `uv run --env-file .env pytest bench/<dir>/<case> --profile <board> -s` |
-| ベンチ 1 台の全部 | `uv run --env-file .env pytest bench --profile <board>` |
-| マージ前 / リリース前 | `uv run pytest --clean` と、各ベンチの `pytest --clean bench --profile <board>` |
-| プローブを焼き直す / 設定を戻す | `uv run --env-file .env bench/prepare.py --profile <board>`（`--check` は照合だけ） |
-| ch32rv の同梱版を上げる | `uv run tools/index/bump_tool.py ch32rv <version>` |
-| リリース | GitHub Actions の Release（`bump_version.py` が platform.txt と sketch.yaml を同時に動かす） |
+| 列挙・control transfer | descriptor/configuration、request 応答、無効 request |
+| CDC / bulk | 双方向の既知 payload、連番/長さ/CRC、packet・buffer 境界、short/zero-length |
+| HID / interrupt | report descriptor/report の一致、入出力、採用する class request |
+| 復旧 | bus reset、切断/再接続、stall/clear、peer reset 後の再通信 |
+| コアとの共存 | timer/UART 等との同時動作 |
 
-`pytest bench` は収集の直後にプローブを bench file と照合し、合わなければ usage error で止まります（`prepare.py` を案内）。
-ベンチ上の作業は同時に 1 つです。
+API/class の採用範囲が未確定なものは、契約確定後に実装対象へ加えます。
+両側の制御ログは被測定 USB と別経路にします。両側を書き込み、READY 問合せを完了してから USB を有効にします。
+primary が先に upload されるため、setup 直後の通信開始は peer upload 中の reset を誤検出します。
+状態を再問合せ可能にし、開始応答の待受けで列挙ログを読み捨てないようにします。
 
-## 関連
+VBUS の給電元、逆流防止、切断方法、GND は wiring と安全条件に含めます。
+FS のペアで HS を保証しません。安価な CH32X035 peer に替えても contract ID と payload を維持します。
+同じ stack 同士に共通の不具合があっても通るため、ESP32S3 等との独立相互運用検証は残します。
 
-- [docs/development-workflow.ja.md](../docs/development-workflow.ja.md) — 方針と決定
-- [docs/oep-workflow.ja.md](../docs/oep-workflow.ja.md) — OEP を含む最終の形
-- [tests/README.ja.md](README.ja.md) — セットアップと道具の在処
-- [tests/manual/README.ja.md](manual/README.ja.md) — 残っている手動試験と道具
+## プローブとの責務分担
+
+| 保持先 | 保証対象 |
+|---|---|
+| このコア | Arduino CLI recipe、DUT upload/reset/monitor、HID、公開 API、経路別の最小 E2E |
+| ch32rv / プローブ | transport/protocol、転送境界、設定永続化、flash/debug 内部処理、firmware update |
+| plugin / 計測側 | fixture lifecycle、port/peer 解決、lock、capture、decoder |
+
+プローブ内部の検証一式は複製しません。既存 tcp_link のようなケースは DUT E2E とプローブ単体に分解します。
+具体的な移動は相手リポジトリの入口と対応させてから行います。通常テストからプローブを勝手に書き換えません。
+
+## 作り直す依存順序
+
+1. contract ID、capability/対象 matrix、設定 schema、安全条件を定義する。
+2. Linux で隔離 build → 一意な DUT へ upload → READY → GPIO 外部観測 → 証拠保存を通す。
+3. 共通 API と系列差分を分け、SoftWire/SoftSPI、独立 peer による Wire slave、ADC/PWM 設定、DAC の不足を埋める。
+4. USB host/device 両側の実装範囲を定義し、role 別に独立 peer の契約を実装する。
+5. 経路別 Arduino E2E、package、外部 library を追加し、旧ケースを契約単位で置換・撤去する。
+
+完了条件は既存テストの温存ではなく、対象契約を観測でき、必要 target/経路で実行でき、
+設定と証拠から別の Linux 環境で再現できることです。
+
+## 参照
+
+設備別分類と peer/初期化の方針は
+[基礎ガイド](https://github.com/tanakamasayuki/pytest-embedded-arduino-cli/blob/main/TESTING_BASICS.ja.md)、
+[詳細ガイド](https://github.com/tanakamasayuki/pytest-embedded-arduino-cli/blob/main/TESTING_ADVANCED.ja.md)、
+[peer の例](https://github.com/tanakamasayuki/pytest-embedded-arduino-cli/tree/main/examples/12_peer_host_core)
+を参考にしています。plugin の peer skip と、この計画の必須契約ゲートは別の層です。

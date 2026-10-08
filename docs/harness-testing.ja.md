@@ -8,7 +8,7 @@
 [harness-wiring](harness-wiring.ja.md)(どの pad に繋ぐか)。本文書は**その上で誰がどう叩くか**を決める。
 関連: [test-strategy](test-strategy.ja.md)(HIL protocol と論理信号名)、
 [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md)(検証方法 1〜4)、
-[../tests/manual/README.ja.md](../tests/manual/README.ja.md)(既存の手動テスト)
+[../tests-legacy/manual/README.ja.md](../tests-legacy/manual/README.ja.md)(既存の手動テスト)
 
 > **位置づけ**: 本文書は**コア側の立場**であり、protocol 側との合意ではない。
 > 最終的な調整は `wch-protocols` で各リポジトリの要望を突き合わせて行われる。
@@ -186,7 +186,7 @@ resolver が pinmux DB を引いて route を選ぶ。
 | **passive** | **利用者が書くのと同じ普通のスケッチ**。テスト用の細工なし | 「例が本当に動く」。忠実度が最も高い | DUT が何を受け取ったか(harness の観測だけが頼り) |
 | **agent** | host が API を名指しで呼ばせる遠隔操作スケッチ(`reg_probe` の `TESTCMD` 方式) | API の conformance、境界値、戻り値 | 利用者の書き方で動くか |
 
-**両方要る**。コアは既に両方を持っている(`tests/sketches/` が前者、`manual/reg_probe/` が後者)。
+**両方要る**。コアは既に両方を持っている(`tests-legacy/sketches/` が前者、`manual/reg_probe/` が後者)。
 
 ### 4.2 agent の制御チャネルを UART から外す(重要)
 
@@ -220,7 +220,7 @@ harness は DMI を持つので、**制御チャネルを `SerialRTT` / `SerialD
 
 ### 4.3 生成ヘッダはほとんど要らなくなる
 
-いま `tests/manual/env_config.py` は「pin は Arduino では**コンパイル時**の値なので、
+いま `tests-legacy/manual/env_config.py` は「pin は Arduino では**コンパイル時**の値なので、
 実行時に serial で渡せない」ため、ビルド前に `env_config.h` を書き出している。
 
 **agent が実行時に pin と route を受け取れば、この生成ヘッダは多くのケースで不要になる。**
@@ -270,9 +270,9 @@ SKIPPED: i2c_target を DUT の I2C1 に束縛できない
 
 | 既存 | どうなるか |
 |---|---|
-| `tests/manual/conftest.py` の `bench` fixture | 配線表と caps も読むように拡張。probe 選択(`smoke.resolve_bench`)はそのまま |
-| `tests/manual/bench.json` | **配線表の置き場所になる**。いまは USART route の上書きだけで中身が空 |
-| `tests/manual/env_config.py` | agent が実行時に受け取れば、多くのケースで不要(§4.3) |
+| `tests-legacy/manual/conftest.py` の `bench` fixture | 配線表と caps も読むように拡張。probe 選択(`smoke.resolve_bench`)はそのまま |
+| `tests-legacy/manual/bench.json` | **配線表の置き場所になる**。いまは USART route の上書きだけで中身が空 |
+| `tests-legacy/manual/env_config.py` | agent が実行時に受け取れば、多くのケースで不要(§4.3) |
 | `reg_probe.py` の `Reader` 抽象 | **`HarnessReader` を足すだけ**。既に `ProbeRsReader` / `Ch32rvReader` の 2 実装がある形 |
 | `reg_probe` の `TESTCMD` | **agent protocol の原型**。作り直さず拡張する |
 | `Check` / `Report` / `Tables` | device-data から期待値を組む仕組みはそのまま使える |
@@ -294,7 +294,7 @@ harness を 3 つ目の実装として足せば、`reg_probe` の 200〜400 項�
 | 3 | **保存した capture の replay** | decoder の回帰([test-strategy](test-strategy.ja.md) の replay 層) |
 
 これで **テストコード自体が CI でテストされる**ようになる。
-いま `tests/manual/` は「人が実行する層」で、**そこにあるコードは誰も検証していない**
+いま `tests-legacy/manual/` は「人が実行する層」で、**そこにあるコードは誰も検証していない**
 (`norecursedirs` に入っているので `pytest` を素で回しても走らない)。
 
 段 2 で EmbedBench を使うと、[harness-probe](harness-probe.ja.md) §6 の
@@ -472,9 +472,9 @@ probe(harness)
 2. **役割の語彙の正本**(`i2c_target` / `uart_peer` / `spi_target` / `gpio_out` / `analog_in` …)。
    probe 側の `caps` とは別の辞書なので、**どちらの repository が持つか**。
 3. **resolver の置き場所**。device-data と `boards.txt`/variant の両方を引くので、
-   当面はコアの `tests/` に置き、安定したら切り出す、が素直か。
+   当面はコアの `tests-legacy/` に置き、安定したら切り出す、が素直か。
 4. **agent protocol を `reg_probe` から切り出すか。**
-   いまは 1 スケッチの中のコマンド表。共通化すると `tests/sketches/` からも使える。
+   いまは 1 スケッチの中のコマンド表。共通化すると `tests-legacy/sketches/` からも使える。
 5. **セッション中の排他**。DUT の flash を harness がやるのか ch32rv が別にやるのか。
    後者なら**セッションを一度閉じる**必要がある(advisory lock、[harness-probe](harness-probe.ja.md) の依頼 5-6c)。
 6. **passive スケッチの観測だけで足りる範囲**。agent を使わずに済むケースを増やせるか。

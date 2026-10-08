@@ -60,7 +60,7 @@ jobs:
           set -euo pipefail
           V=${{ steps.ver.outputs.version }}
           uv run --no-project python tools/index/bump_version.py "$V"
-          uv run tests/build/sketches/sync_profiles.py --check
+          uv run --no-project python tools/generate/sync_example_profiles.py --check
 
       - name: Build the archive and the index
         run: |

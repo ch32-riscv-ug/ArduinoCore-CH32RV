@@ -159,7 +159,7 @@ NACK、bus stuck 等の刺激を与えます」**。その peer が今は存在�
 
 | 範囲 | 提案 |
 |---|---|
-| ベンチ / 手動テスト(`tests/manual/`) | **採用してよい**。既に人が介在する層なので、失敗してもリリースに波及しない |
+| ベンチ / 手動テスト(`tests-legacy/manual/`) | **採用してよい**。既に人が介在する層なので、失敗してもリリースに波及しない |
 | CI(self-hosted runner、board farm) | **段階的に**。fixture health の self-test が揃ってから |
 | 同梱アップローダ | **1.0 前は不可**。[ADR-0008](adr/0008-upload-strategy.ja.md) の「同梱は ch32rv に一本化」を動かさない |
 | 対外的な位置づけ | 互換書込器の **Tier 3(実験的)** として扱う |
@@ -329,7 +329,7 @@ I2C は clock stretch、SD は busy token で待てるが、**UART は待たせ�
 |---|---|
 | デバイス IF | `src/embedbench_device.h`、**凍結済み(v1 / rev 004)**。include は `<stddef.h>` / `<stdint.h>` のみ。Arduino 型なし |
 | 模型 | **23 種**、純粋 C++11、模型のソース 2,996 行。動的確保なし。register-map センサ / SD カード / Modbus slave / UWB / **わざと壊れる部品** まで(数値は EmbedBench `docs/FACTS.ja.md` が正本。**自分で数えない**) |
-| 環境実装 | **既に 2 つ**(host 環境 1,457 行 / 純ネイティブ `nenv` 464 行)。「環境はプラットホーム別の実装例」と明記。`tests/conformance/` が**環境の受け入れ試験**を持つ |
+| 環境実装 | **既に 2 つ**(host 環境 1,457 行 / 純ネイティブ `nenv` 464 行)。「環境はプラットホーム別の実装例」と明記。`tests-legacy/conformance/` が**環境の受け入れ試験**を持つ |
 | 契約 | 再入禁止・効果の遅延配送・借用バッファ・`advanceTo` 単調・容量超過は必ず診断 |
 
 つまり **harness を 3 つ目の環境にすれば、22 種の模型がそのまま本物の線の上で動く**。
@@ -416,7 +416,7 @@ EmbedBench の `DEVICE_IF_SCOPE.ja.md` §3.3 は
 - **Q-050(LA channel / connector / 電源)の判断を harness の結論が出るまで保留**にする。
   16ch LA + FX2LP + 治具の**購入判断を先にしない**。
 - harness は互換書込器の **Tier 3** として扱う。
-- `tests/manual/` に harness を使う case を置く場所を決める(既存の 1 case 1 ディレクトリ規約に従う)。
+- `tests-legacy/manual/` に harness を使う case を置く場所を決める(既存の 1 case 1 ディレクトリ規約に従う)。
 
 ---
 
@@ -442,7 +442,7 @@ EmbedBench の `DEVICE_IF_SCOPE.ja.md` §3.3 は
 [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) /
 [ADR-0008](adr/0008-upload-strategy.ja.md) / [debug-output](debug-output.ja.md) / [debugger](debugger.ja.md) /
 [software-peripherals](software-peripherals.ja.md) / [device-data](device-data.ja.md) /
-互換書込器の調査 / `tests/manual/reg_probe/`
+互換書込器の調査 / `tests-legacy/manual/reg_probe/`
 
 **外部 repository**(パスは開発環境のもの):
 

@@ -66,7 +66,8 @@ tools/index/          Board Manager 配布物の生成
 tools/vendor/         第三者ソースの固定内容を検証するツール
 vendor/               上流 revision、hash、license の lock file
 docs/                 現行仕様、利用手順、ADR
-tests/                テスト一式
+tests/                実機不要の検査と新テストの雛形
+tests-legacy/         旧テスト・ベンチ設定
 ```
 
 Board Manager の配布物は allowlist 方式で作られます。正確な対象は

@@ -10,7 +10,8 @@ a vendored file is invisible until an upstream bump silently reverts it.
 
   uv run tools/vendor/check_api_sync.py <workdir>
 
-Normally reached through `pytest` (tests/vendor/test_vendored_api.py).
+The upstream comparison is run directly by CI. Offline hash checks live in
+tests/build/test_source_locks.py.
 
 Four things are checked, and they catch different mistakes:
   1. the pinned commit really carries the pinned api/ tree  (a bad pin)
