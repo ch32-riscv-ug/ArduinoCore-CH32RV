@@ -220,6 +220,7 @@ def test_spi_peer(fx, ws_run, bench):
     """The probe's SPI target answers on MISO while the capture watches all four lines: what the DUT got, what the
     target received, and the wire decode all have to agree."""
     from oep_client.fixture import SpiTarget
+    from oep_client.host import Unsupported
     tk.need(bench, *spi_pads(fx))
     cap_max = int(bench.facts.get("capture_max_hz", 0))
     decode_ok = cap_max >= 5_000_000
@@ -230,6 +231,12 @@ def test_spi_peer(fx, ws_run, bench):
                             cs=fx.channel(pads[3])) + (cap.assignments(*pads) if cap else []))
     # Warm-up before arming: the DUT's first SPI command runs SPI.begin() and pinMode(CS); with CS floating until
     # then the target sees a spurious frame that would consume the armed transaction.
+    # A target that needs time between CS and the first clock declares it (describe cs_setup_ns; the classic ESP32's
+    # CS gate, 15 us): the DUT keeps it, as a real master would.
+    lead_us = -(-spi.cs_setup_ns // 1000)
+    fx.console.ask(f"CSLEAD {lead_us}", "CSLEAD us=")
+    if lead_us:
+        print(f"[spi peer] the target declares cs_setup_ns={spi.cs_setup_ns}: the DUT waits {lead_us} us after CS")
     spi.configure(0)
     spi_transfer(fx, None, 1_000_000, 0, PAYLOAD, 0)
     time.sleep(0.05)
@@ -242,8 +249,19 @@ def test_spi_peer(fx, ws_run, bench):
                                          (4_000_000, 0), (4_000_000, 3), (12_000_000, 0), (12_000_000, 3),
                                          (24_000_000, 0)) if hz <= top]
     print(f"[spi peer] the target declares max_clock_hz={declared}")
+    # A mode the target does not offer is refused (unsupported; the classic ESP32's takes modes 0 and 2 only): that
+    # mode is the probe's limit, not a DUT failure, so its cases are skipped. Mode 0 every target has to take.
+    refused = set()
     for hz, mode in cases:
-        spi.configure(mode)
+        if mode in refused:
+            continue
+        try:
+            spi.configure(mode)
+        except Unsupported as e:
+            refused.add(mode)
+            print(f"[spi peer] the target refuses mode {mode} ({e}): its cases skipped")
+            ws_run.note(f"spi target refuses mode {mode}")
+            continue
         spi.arm(len(PAYLOAD), ANSWER)
         rate = spi_rate(hz, cap_max or 1)
         wire = decode_ok and hz <= SPI_DECODE_MAX_HZ
@@ -281,14 +299,16 @@ def test_spi_peer(fx, ws_run, bench):
               + ("" if ok else f" | DUT got {first_diff(got, long_answer)} | target rx {first_diff(rx, long_payload)}"))
         if not ok:
             bad.append(("64-byte", n))
-    spi.configure(3)
+    burst_mode = 0 if 3 in refused else 3
+    spi.configure(burst_mode)
     burst_ok = 0
     burst_hz = min(4_000_000, top)
     for n in range(5):
         spi.arm(4, ANSWER)
-        line, _ = spi_transfer(fx, None, burst_hz, 3, PAYLOAD, 0)
+        line, _ = spi_transfer(fx, None, burst_hz, burst_mode, PAYLOAD, 0)
         got = bytes.fromhex(line.split("got=")[1]) if "got=" in line else b""
         pending, bits, rx = spi.read_rx()
         burst_ok += got == ANSWER and rx == PAYLOAD
-    print(f"[spi peer burst, 5 x 4-byte at {burst_hz / 1e6:g} MHz mode 3] {burst_ok}/5 both ways")
+    print(f"[spi peer burst, 5 x 4-byte at {burst_hz / 1e6:g} MHz mode {burst_mode}] {burst_ok}/5 both ways")
+    assert 0 not in refused, "the SPI target refuses mode 0"
     assert burst_ok == 5 and not bad, f"SPI peer mismatches: {bad}, burst {burst_ok}/5"

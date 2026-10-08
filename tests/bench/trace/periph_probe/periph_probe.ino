@@ -7,6 +7,7 @@
 //   TOGGLE0 <count>       digitalWrite high / low pairs, no delay                    -> "TOGGLE0 done"
 //   MILLIS <ms> <count>   toggle pwm every <ms> ms using millis()                    -> "MILLIS done"
 //   SPI <hz> <mode> <hex> SPI (the variant's default route), cs driven as GPIO       -> "SPI got=<hex>"
+//   CSLEAD <us>           wait <us> after CS goes low before SPI's first clock      -> "CSLEAD us=<us>"
 // No pin is baked in: the host reads the bench file and sends PINS first. The defaults, PA1 / PA2, are the
 // two pads every tier A/B variant has (CH32V003's port A is just those two) - the sketch has to compile for all of them.
 #define TC_CMD_MAX 192   // a 64-byte SPI payload is 128 hex characters
@@ -14,6 +15,7 @@
 #include <SPI.h>
 
 static uint8_t PWM_PIN = PA1, CS_PIN = PA2;
+static unsigned long cs_lead_us = 0;   // CS low -> first clock: a target's declared cs_setup_ns
 static uint8_t hexval(char c) { return c <= '9' ? c - '0' : (c | 0x20) - 'a' + 10; }
 
 void setup() { tc_begin("periph_probe"); pinMode(PWM_PIN, OUTPUT); digitalWrite(PWM_PIN, LOW); }
@@ -54,11 +56,13 @@ void loop() {
     const uint8_t modes[] = {SPI_MODE0, SPI_MODE1, SPI_MODE2, SPI_MODE3};
     SPI.beginTransaction(SPISettings(a, MSBFIRST, modes[b & 3]));
     digitalWrite(CS_PIN, LOW);
+    if (cs_lead_us) delayMicroseconds(cs_lead_us);
     SPI.transfer(buf, count);
     digitalWrite(CS_PIN, HIGH);
     SPI.endTransaction();
     Console.print("SPI got=");
     for (size_t i = 0; i < count; ++i) { if (buf[i] < 16) Console.print('0'); Console.print(buf[i], HEX); }
     Console.println();
+  } else if (!strcmp(verb, "CSLEAD")) { cs_lead_us = a; Console.print("CSLEAD us="); Console.println(a);
   } else { Console.print("ERR verb "); Console.println(verb); }
 }

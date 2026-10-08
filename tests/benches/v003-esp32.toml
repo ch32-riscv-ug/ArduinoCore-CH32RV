@@ -7,13 +7,13 @@
 #   TEST_BENCH_CH32V003_UPLOAD=/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394   # the same UART flashes the ESP32
 #
 # The CH340 (1a86:7523) drops bytes in long bursts, so this jig is for the debug wire and the UART;
-# capture is the ESP32's GPIO sampler (0.4-2 MHz, 1 byte/sample, windows under 164 ms).
+# capture is the ESP32's GPIO sampler (1 kHz-300 kHz, 1 byte/sample, at most 60000 samples a segment).
 
 [probe]
 kind = "oep"
 transport = "serial"                         # the OEP link is the probe's serial port (the oep:// address's probe part elsewhere)
 model = "esp32"                              # oep.core describe: model
-firmware = "0.0.29-dev+3169721"                           # oep.core describe: firmware = the oep-probe-arduino release version
+firmware = "0.0.29-dev+4c7877b"                           # oep.core describe: firmware = the oep-probe-arduino release version
 release = "v0.0.28"                           # oep-probe-arduino tag prepare.py flashes
 example = "Firmware/OepProbe"                # examples/<example> in that tag
 sketch_profile = "esp32"                     # its sketch.yaml profile for this probe
@@ -78,6 +78,6 @@ i2c = { scl = "PC2", sda = "PC1", route = 0 }  # I2C1 default route, the board's
 spi = { sck = "PC5", mosi = "PC6", miso = "PC7", cs = "PC4", pclk_hz = 48000000 }   # SPI1 default route; CS is a GPIO
 pwm = "PC3"                                  # TIM1 CH3
 external_pullup = ["PC1", "PC2"]             # the board's 2.2 k I2C pull-ups (R4 / R5)
-capture_max_hz = 2000000                     # the ESP32's GPIO sampler
+capture_max_hz = 300000                      # the ESP32's GPIO sampler: rate_range 1 kHz-300 kHz (oep-probe-arduino 4c7877b)
 capture_time_base_slips = true               # the sampler falls behind (time_base_slipped) and can miss a slow burst: the wire is kept, not judged
 uart_long_bytes = 6144                       # the probe's fixture-UART ring is 8 KiB, and a 115200 OEP link cannot carry a 115200 UART in full

@@ -237,10 +237,12 @@ def wanted_items(bench: Bench, hst) -> list:
 
 
 def _item_view(it) -> tuple:
-    """An item as the check compares and prints it: a wifi item by index, ssid and whether a passphrase is set (get
-    never shows the passphrase, and nothing here may print it)."""
+    """An item as the check compares and prints it. A wifi item by its index, a digest of its ssid and whether a
+    passphrase is set: neither the ssid nor the passphrase may reach a log (get never shows the passphrase)."""
     if type(it).__name__ == "Wifi":
-        return ("wifi", it.index, it.ssid, "passphrase set" if it.passphrase is not None else "open")
+        import hashlib
+        tag = hashlib.sha256(it.ssid.encode()).hexdigest()[:8]
+        return ("wifi", it.index, f"ssid#{tag}", "passphrase set" if it.passphrase is not None else "open")
     return dataclasses.astuple(it)
 
 
@@ -276,6 +278,8 @@ def open_probe(bench: Bench, ch32rv: pathlib.Path | str | None = None):
             endpoint = None
     if endpoint:
         hst = link.open_host(f"tcp://{endpoint}")
+    elif bench.port.startswith("tcp:"):                # tcp:<ip>:<port>, the bench run over the probe's Wi-Fi
+        hst = link.open_host("tcp://" + bench.port[len("tcp:"):])
     elif bench.probe.get("transport") == "serial":
         hst = link.open_host(bench.serial_device())
     else:
