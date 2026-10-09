@@ -42,7 +42,7 @@ uv run --project tests --locked --extra hardware python tests/run_hardware.py \
 | hid / upload.hid-runtime | UIAPduino V003、ソフトUSB、OEP SWIO＋NRST。HID権限、Arduino upload recipe、独立DMSEQ上の新build IDとruntime | Arduino USB stack、USB PD、bootloader領域の書換え |
 | power / usb.port-cycle | 指定PPPSハブ。対象だけのUSB消失、再列挙、個体照合、DUT再attach | VDDが0 Vまで落ちること、DUTのcold boot証明 |
 
-現在の配線ではLink＋V103、LinkE＋V307、ESP32＋V003、RP2350＋L103を対象にできます。L103にUART配線は宣言していません。GPIOはESP32側のV003に設定したpadだけです。P4フル結線、USB対向機、未接続系列は配線・契約の確定後に追加します。
+現在の配線ではLink＋V103、LinkE＋V307、ESP32＋V003、RP2350＋L103、追加のLinkE＋V003を対象にできます。L103と追加のLinkE＋V003にUART配線は宣言していません。GPIOはESP32側のV003に設定したpadだけです。P4フル結線、USB対向機、未接続系列は配線・契約の確定後に追加します。
 
 UIAPduino V003は `upload_port = "hid://<soft_usb_topology>"` を設定します。runtime／UART／GPIOでも毎回SWIO＋NRSTからbootloaderへ移行し、HIDで書き込み、ESP32上のDMSEQとfixtureで観測します。RP2350は `upload_port = "oep://<usb_serial>/<slot>"` を設定します。console用のserial pathとupload先をそれぞれ指定します。
 
