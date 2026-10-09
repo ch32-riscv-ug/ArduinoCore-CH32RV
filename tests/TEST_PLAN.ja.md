@@ -166,6 +166,11 @@ FS のペアで HS を保証しません。安価な CH32X035 peer に替えて�
 プローブ内部の検証一式は複製しません。既存 tcp_link のようなケースは DUT E2E とプローブ単体に分解します。
 具体的な移動は相手リポジトリの入口と対応させてから行います。通常テストからプローブを勝手に書き換えません。
 
+このコアは利用したfirmware版・protocol/interface revisionとhost tool/client版を結果に保存します。
+プローブfirmwareの最低版をこのコアで一律に定義せず、ケースに必要な機能の互換性判断は所有側のtool/clientへ委ねます。
+既知不良の判定・最低対応版・更新imageと更新処理はch32rv／OEP側、設備個体と配線はhost-local設定で管理します。
+版情報が取れない場合はunknownとして理由を記録し、最新版や互換性を推定しません。
+
 ## 作り直す依存順序
 
 1. contract ID、capability/対象 matrix、設定 schema、安全条件を定義する。

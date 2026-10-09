@@ -3,6 +3,7 @@
 import argparse
 import fcntl
 import hashlib
+import importlib.metadata
 import json
 import os
 import pathlib
@@ -13,6 +14,7 @@ import time
 import uuid
 
 from harness.bench import CASES, check_identity, check_target, load_bench
+from harness.provenance import oep_snapshot
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 TESTS = REPO / "tests"
@@ -114,6 +116,24 @@ def target_info(tool, target, log, env):
     return check_target(target, info)
 
 
+def record_probe(tool, target, directory, env):
+    directory.mkdir(parents=True, exist_ok=True)
+    try:
+        if target["usb_vid"] == "1a86" and target["usb_pid"] == "8010":
+            reported = json.loads(invoke([str(tool), "--probe", f"port:{target['port']}",
+                "--non-interactive", "--json", "probe", "info"], directory / "probe-info.log", env=env))
+            if not reported.get("ok"):
+                raise RuntimeError("probe.info did not succeed")
+            snapshot = reported.get("probe") or reported.get("result", {})
+        else:
+            snapshot = oep_snapshot(target["port"])
+        snapshot["metadata_status"] = "reported" if snapshot.get("firmware") else "missing_firmware"
+    except Exception as error:
+        snapshot = dict(metadata_status="unavailable", firmware=None, error=str(error))
+    (directory / "probe.json").write_text(json.dumps(snapshot, indent=2) + "\n")
+    return snapshot
+
+
 def enter_hid(target):
     from oep_client import core, link, riscv, uiapduino
     # The uploader's broker can retain the exclusive serial handle for a short idle period.
@@ -180,7 +200,13 @@ def main():
     env = isolated_environment(work, tool, gcc)
     report = dict(execute=args.execute, tools=versions,
                   commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
-                  dirty=bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=REPO)), cases=[])
+                  dirty=bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=REPO)), cases=[], probes={})
+    packages = ("pytest", "pytest-embedded", "pytest-embedded-arduino-cli",
+                "pytest-embedded-arduino-cli-ch32rv", "oep-client-python")
+    report["host"] = dict(python=sys.version, packages={p: importlib.metadata.version(p) for p in packages},
+        arduino_cli=invoke(["arduino-cli", "version"], work / "host/arduino-cli.log", env=env).strip(),
+        ch32rv=json.loads(invoke([str(tool), "--json", "version"], work / "host/ch32rv.log", env=env)),
+        uv_lock_sha256=hashlib.sha256((TESTS / "uv.lock").read_bytes()).hexdigest())
     (work / "bench.json").write_text(json.dumps(bench, indent=2))
     def save():
         (work / "result.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -198,6 +224,8 @@ def main():
             if args.execute:
                 try:
                     check_identity(target)
+                    report["probes"][name] = record_probe(tool, target, work / f"preflight/{name}", env)
+                    save()
                     info = target_info(tool, target, work / f"preflight/{name}/info.log", env)
                     # Read and retain user flash before the first upload. The system bootloader is not written.
                     size = info["flash_bytes"]

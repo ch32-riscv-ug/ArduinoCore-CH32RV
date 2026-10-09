@@ -16,6 +16,8 @@ Use isolated Arduino CLI directories, the working-tree DUT core, pinned external
 Separate missing implementation, missing test definitions, limited self-checks, external observations and actual execution results.
 A required contract cannot pass a gate because missing equipment caused a skip.
 Keep minimal Arduino upload/reset/monitor E2E here; probe internals belong to their owning repositories.
+Record the actual host tool/client versions and reported probe firmware, protocol/interface revisions in run artifacts.
+Do not impose a blanket minimum probe firmware here. The owning ch32rv/OEP tools handle compatibility, known-bad releases and firmware updates; this suite pins host dependencies and verifies its DUT contracts.
 
 USB covers both DUT host / peer device and DUT device / peer host as equal, separate scenarios.
 Do not assign a fixed USB role to CH32X035 or ESP32S3; select role-specific profiles and verify capabilities and power for each case.
