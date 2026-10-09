@@ -1,4 +1,4 @@
-"""The new workspace cannot collect legacy or physical-board scenarios."""
+"""Default collection stays board-free even with opt-in hardware contracts installed."""
 import configparser
 import ast
 import pathlib
@@ -12,20 +12,19 @@ HARDWARE = ("single", "loopback", "peer", "instrumented", "manual")
 def test_default_collection_is_board_free():
     config = tomllib.loads((TESTS / "pyproject.toml").read_text())
     pytest_config = config["tool"]["pytest"]["ini_options"]
-    assert pytest_config["testpaths"] == ["unit", "build"]
+    assert pytest_config["testpaths"] == ["unit", "platform"]
     assert set(HARDWARE) <= set(pytest_config["norecursedirs"])
     root_config = configparser.ConfigParser()
     root_config.read(REPO / "pytest.ini")
     assert root_config["pytest"]["testpaths"].split() == [
-        "tests/unit", "tests/build"
+        "tests/unit", "tests/platform"
     ]
 
 
-def test_hardware_directories_are_non_executable_scaffolds():
+def test_hardware_contracts_cannot_trigger_an_upload_when_collected():
     for directory in HARDWARE:
-        paths = list((TESTS / directory).rglob("*"))
         assert (TESTS / directory / "README.ja.md").is_file()
-        assert not [p for p in paths if p.is_file() and p.suffix != ".md"]
+        assert not list((TESTS / directory).rglob("*.ino"))
 
 
 def test_new_workspace_has_no_board_sketch_or_legacy_harness():
@@ -34,7 +33,8 @@ def test_new_workspace_has_no_board_sketch_or_legacy_harness():
         p for p in TESTS.rglob("*")
         if p.is_file() and not ignored.intersection(p.relative_to(TESTS).parts)
     ]
-    assert not [p for p in sources if p.suffix == ".ino"]
+    assert all("sketch_support" in p.relative_to(TESTS).parts
+               for p in sources if p.suffix == ".ino")
     assert not [p for p in sources if p.name == "conftest.py"]
     config = tomllib.loads((TESTS / "pyproject.toml").read_text())
     assert config["project"]["dependencies"] == ["pytest>=8"]

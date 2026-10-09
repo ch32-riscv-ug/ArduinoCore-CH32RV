@@ -3,8 +3,8 @@
 > English: [TEST_PLAN.md](TEST_PLAN.md)
 
 この文書は再設計の概要です。新しい検査・CI・保守ツールは旧テストと設定に依存しません。
-新ベンチの基準環境はネイティブ Linux です。tests/ の実行コードはボード不要の検査だけです。
-実機用の構成は README のみの雛形で、実機 runner やローカル設定解決は実装していません。
+新ベンチの基準環境はネイティブ Linux です。通常のpytestはunit/とplatform/のボード不要検査を実行します。
+実機契約はrun_hardware.pyの明示入口で、local TOMLの接続先と配線を検証して実行します。
 初期 bring-up の明示実行は [独立した診断入口](../tools/diagnostics/core-bringup/README.ja.md) に置き、
 通常の pytest に実機操作を持ち込みません。
 [カバレッジ](../docs/test-coverage.ja.md)は実装とテスト定義の照合、
@@ -35,7 +35,7 @@ Wire の正常通信、NACK、バス回復、slave 受信、slave 応答は別�
 ```text
 tests/
   unit/                         ボード不要: 定義・純粋ロジック・host core
-  build/                        toolchain: targets / examples / package
+  platform/                     toolchain: targets / examples / package
   single/<feature>/<case>/      DUT のみ
   loopback/<feature>/<case>/    DUT と折返し配線
   peer/<feature>/<case>/        DUT と対向機
@@ -48,7 +48,7 @@ tests/
   sketch_support/               sketch 共通の制御 protocol
 ```
 
-設備別ディレクトリには雛形のみを置き、実機ケースはまだ配置しません。通常の pytest はボード不要の範囲だけを選び、
+single/runtime、instrumented/uart・gpio・powerに最初の実機契約を配置します。通常の pytest はボード不要の範囲だけを選び、
 実機書き込みは設備群を明示選択します。手動は高度なテストではなく、人や臨時設備が必要なテストです。
 
 通常の Python 検査は sketch と別ディレクトリに置きます。同じディレクトリの .ino が build/upload を開始するためです。
@@ -71,7 +71,8 @@ silicon capability、part/package の端子、コア実装、board 配線、fixt
 | DUT と安価な peer | 指定通信契約の繰り返し検証 | 独立実装との相互運用の代替 |
 | PD source と電圧計 | CC 交渉、VBUS、電源復旧 | USB データ通信 |
 
-LinkE の代表は V203 を候補としますが、手持ち part/package と必要端子で決めます。
+現構成の経路代表はLink＋V103、LinkE＋V307、ESP32＋UIAPduino V003、RP2350＋L103です。
+P4の系列代表とは別に、配線済みのUARTとGPIO、製品HID、PPPSの復帰を明示実行します。
 系列代表を共通 API の基準とし、小 RAM、別 ABI、複数 ADC/I2C、DAC、別 USB controller、製品 pin map など
 実装差分の理由がある対象を追加します。build は生成対象全体、実機は代表と差分を確認し、
 未検証 part/route は明示します。clock/baud/mode/buffer 境界の組合せは契約ごとに選びます。
@@ -82,7 +83,8 @@ LinkE の代表は V203 を候補としますが、手持ち part/package と必
 個体 ID、port、実配線、電源操作先、計測器、実測補正値はローカル設定に置きます。
 配線テンプレートは共有できますが、特定個体の識別子や実測値は含めません。
 
-fixture 設定は、共有の安全な default → Git 管理外の *.local.toml → 環境変数 → CLI の順に解決する設計です。
+拡張時のfixture設定は、共有の安全な default → Git 管理外の *.local.toml → 環境変数 → CLI の順に解決する設計です。
+現在の入口は --bench でlocal TOMLを明示し、未知キー、接続先、電源対象、GPIO配線を検証します。
 相対パスの基準、未知キー、型、範囲を検証し、配列の置換とテーブルのキー別上書きを定義します。
 接続先 default は空にし、別ボードへ書き込める default を作りません。ローカル探索場所を限定します。
 

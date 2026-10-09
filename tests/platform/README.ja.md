@@ -1,4 +1,4 @@
-# build
+# platform
 
 実機を使わない source・生成物・compile の契約検査を置きます。
 現在の入口は test_source_locks.py で、固定 source の一覧と hash をオフラインで確認します。

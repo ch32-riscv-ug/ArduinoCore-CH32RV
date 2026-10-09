@@ -18,15 +18,20 @@
 
 ## 新 workspace の実行検査
 
-tests/ の実行コードは実機不要です。現行の検査・CI・保守ツールは旧 suite に依存しません。
-実機用ディレクトリの README は雛形であり、テスト定義としてカバレッジに含めません。
+通常のpytestとCIはunit/・platform/の実機不要検査です。現行の検査・CI・保守ツールは旧suiteに依存しません。
+明示runnerが扱う実機契約は下表の範囲に限定します。実行結果はlocal artifactで確認します。
 
 | 入口 | 保証するもの | 保証しないもの |
 |---|---|---|
-| tests/unit/test_workspace.py | 通常の収集範囲、実機雛形の非実行性、旧 harness との分離 | コア API の動作 |
+| tests/unit/test_workspace.py | 通常の収集範囲、Pythonテストとsketchの分離、旧 harness との分離 | コア API の動作 |
 | tests/unit/test_core_bringup_safety.py | 復元 prefix の保存性、書込み不能領域に非 blank がある場合の拒否 | 実際の消去・復元、実機動作 |
 | tests/unit/test_maintenance_tools.py | profile 同期、version 更新の対象限定、package 入力の自己完結、CI の旧 suite 非依存 | CH32 compile、実機動作 |
-| tests/build/test_source_locks.py | ArduinoCore-API/TinyUSB のファイル一覧と lock の hash のオフライン一致 | upstream commit の由来、compile、実機動作 |
+| tests/platform/test_source_locks.py | ArduinoCore-API/TinyUSB のファイル一覧と lock の hash のオフライン一致 | upstream commit の由来、compile、実機動作 |
+| tests/unit/test_bench_safety.py | 誤ったDUT・USB topology・raw tty・無関係な電源port・設定typoの拒否 | 実際の実機操作 |
+| tests/single/runtime/test_runtime_contract.py | build IDとchallenge応答、data/bss/constructor、Print/String/malloc、粗い時間進行。HID後も独立consoleで確認 | OOM、時間精度、全clock・console方式 |
+| tests/instrumented/uart/test_uart_contract.py | 標準UARTの115200 8N1で独立UARTと64 byte binary往復 | 他instance/route/baud/format、overflow、波形 |
+| tests/instrumented/gpio/test_gpio_contract.py | 設定したpadの出力を独立観測し、外部刺激をDUTで読む | 全pad、analog、PWM、interrupt |
+| tests/instrumented/power/test_power_contract.py | USBの対象だけの消失と再列挙、descriptor identity、runnerによるDUT再attach | VDD低下の測定とcold boot証明 |
 
 ## 現行 CI の保証と未整備の検証
 
@@ -36,7 +41,7 @@ package 確認は独立ツール内の compile-only source を使い、旧ベン
 全型番 compile matrix、全 example × profile の compile、startup 等価性、割り込み表比較、size baseline、
 製品 board compile、recipe/udev/chip database の個別契約は、新しい実行入口が未整備です。
 旧 job は呼び出しません。新 suite が成功しても、これらが検証されたとは扱いません。
-実機契約は通常の pytest suite では未整備です。
+実機契約は通常のpytestの収集対象にせず、tests/run_hardware.pyで接続先を明示します。
 明示実行用の [core bring-up](../tools/diagnostics/core-bringup/README.ja.md) は、
 V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 要求/応答・時間 API の進行を扱います。
 結果はローカル artifact で管理し、系列全体や OEP、外部周辺機能の保証に拡張しません。
@@ -123,7 +128,7 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 
 | 契約 | 実装 | 旧検証の参考（新 suite では未整備） | 不足する保証 / 必要設備 |
 |---|---|---|---|
-| TinyUSB source の固定 | あり | 現行: tests/build/test_source_locks.py、tools/vendor/vendor_tinyusb.py | 動作保証ではない。source/patch/lock の整合のみ |
+| TinyUSB source の固定 | あり | 現行: tests/platform/test_source_locks.py、tools/vendor/vendor_tinyusb.py | 動作保証ではない。source/patch/lock の整合のみ |
 | Arduino USB 初期化・device API | 未実装 | なし | core/IRQ/clock/descriptor/lifecycle の結線、CH32X035 device と独立 host |
 | Arduino USB host API | 未実装 | なし | core/IRQ/clock/driver/lifecycle の結線、CH32X035 host と独立 device |
 | CDC/HID 等の sketch USB class | 未実装 | なし | host 側 driver と device 側 class の control/data/error/復旧契約を別々に検証。対向機と role 別 profile |
@@ -131,7 +136,7 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 | USB PD frame / fixed / PPS 計算 | あり | あり・限定: unit/test_pd_frames、pd_selftest | 境界・不正入力と target 差。native と実機 |
 | USB PD sink 交渉 | X033/X035 に実装 | あり・限定: pd_sink、pd_vbus | 脱着/再接続、source reset、fault、交渉と VBUS の独立照合。PD source と電圧計/電源制御 |
 | USB PD source | 未実装 | なし | sink の成功で source 対応とはしない。採用範囲の決定が先 |
-| UIAPduino HID upload recipe | あり（外部 bootloader 経路） | 定義・build 検査あり、専用 upload E2E なし | HID 書込み→再列挙→sketch 起動、復旧、製品 pin map。UIAPduino と独立 console |
+| UIAPduino HID upload recipe | あり（外部 bootloader 経路） | あり・限定: run_hardwareのhid＋独立console上のruntime | HID 書込み→再列挙→sketch 起動、復旧、製品 pin map。UIAPduino と独立 console |
 
 USB データは CH32X035–ESP32S3 を基準に、DUT host / peer device と DUT device / peer host の両構成を検証します。
 ボードの role は固定せず、ケースごとの profile で指定します。host と device のカバレッジ・実行結果は別々に記録します。

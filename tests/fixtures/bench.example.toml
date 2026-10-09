@@ -1,0 +1,23 @@
+# Copy to bench.local.toml and replace every empty identity/path field.
+lock_file = "" # Absolute path shared with other tools and uhubctl users.
+
+[targets.v103-link]
+port = "" # /run/board-identify/by-id/... or /dev/serial/by-id/...
+chip = "CH32V103R8T6"
+fqbn = "ch32-riscv-ug:ch32rv:CH32V103:pnum=CH32V103R8T6"
+f_cpu = 72000000
+usb_topology = "" # This host's live USB device topology.
+usb_vid = "1a86"
+usb_pid = "8010"
+usb_serial = ""
+dut_uid = ""
+cases = ["runtime", "uart", "power"]
+power_ports = [] # Explicit probe port on the parent hub.
+
+# OEP: use dut_chip_id when target.info does not expose a DUT UID.
+# Dedicated OEP USB probes also need upload_port = "oep://<unit-id>/<slot>".
+# UIAPduino: chip CH32V003F4U6, fqbn ch32-riscv-ug:ch32rv:UIAPDUINO_V003_V14.
+# HID: add soft_usb_topology and nrst_channel; power_ports contains both USB connections.
+# Use upload_port = "hid://<soft_usb_topology>" for every UIAPduino upload.
+# GPIO: gpio = [{ pad = "PA1", channel = <measured probe channel> }, ...].
+# Declare only wired cases; UART-less L103 uses ["runtime", "power"].

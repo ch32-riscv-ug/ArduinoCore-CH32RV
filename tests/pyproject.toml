@@ -5,8 +5,14 @@ description = "Board-free checks for ArduinoCore-CH32RV"
 requires-python = ">=3.13"
 dependencies = ["pytest>=8"]
 
+[project.optional-dependencies]
+hardware = [
+    "oep-client-python==0.0.31",
+    "pytest-embedded-arduino-cli-ch32rv==0.0.4",
+]
+
 [tool.pytest.ini_options]
-testpaths = ["unit", "build"]
+testpaths = ["unit", "platform"]
 norecursedirs = [".*", "__pycache__", "single", "loopback", "peer",
                 "instrumented", "manual", "fixtures", "diagnostics"]
 addopts = "-ra --strict-markers --import-mode=importlib"
