@@ -10,11 +10,11 @@ uv sync --locked
 uv run --locked pytest
 ```
 
-repository rootからは `uv run --project tests --locked pytest` です。通常の収集範囲は `unit/` と `platform/` で、Arduinoへの書込み、monitor、電源操作をしません。`platform/` は旧 `build/` の名前を変更したもので、固定sourceのオフライン整合検査を置きます。生成物のディレクトリではありません。
+repository rootからは `uv run --project tests --locked pytest -c tests/pyproject.toml` です。通常の収集範囲は `unit/` と `platform/` で、Arduinoへの書込み、monitor、電源操作をしません。`platform/` は旧 `build/` の名前を変更したもので、固定sourceのオフライン整合検査を置きます。生成物のディレクトリではありません。
 
 ## 実機契約
 
-ネイティブLinuxで固定toolを取得し、[bench.example.toml](fixtures/bench.example.toml)を `fixtures/bench.local.toml` へコピーして接続先を埋めます。個体ID、USB topology、実配線と共通ロックはGit管理外です。以下はrepository rootで実行します。
+ネイティブLinuxで固定toolを取得し、[bench.example.toml](fixtures/bench.example.toml)を `fixtures/bench.local.toml` へコピーして接続先を埋めます。個体ID、USB topology、実配線と共通ロックはGit管理外です。接続情報はこの明示的な設定だけから読み、別のリポジトリや隣接checkoutは検索しません。以下はrepository rootで実行します。
 
 `arduino-cli` をPATHへ配置し、serial／HIDへのアクセス権を準備します。power caseにはPPPS対応ハブ、`uhubctl`、USBとsysfs port disable属性の権限が必要です。
 
@@ -27,10 +27,19 @@ uv sync --project tests --locked --extra hardware
 uv run --project tests --locked --extra hardware python tests/run_hardware.py \
   --bench tests/fixtures/bench.local.toml --case runtime --out work/runtime-compile
 
-# 個体照合、Flash退避、書込み、観測、指定ポートの電源操作
+# 個体照合、書込み、観測、宣言したcaseの実行
 uv run --project tests --locked --extra hardware python tests/run_hardware.py \
   --bench tests/fixtures/bench.local.toml --execute --out work/hardware-run
 ```
+
+[.env.example](.env.example)を `tests/.env` へコピーすれば、設備TOMLと既存の共通ロック、結果の親ディレクトリを設定できます。設定値は `uv --env-file` で明示的に読み込みます。CLIの `--bench`、`--lock`、`--out` が環境変数より優先します。`--out` を省略すると `OEP_HW_RESULTS` 内に実行ごとの新しいディレクトリを作ります。書込みには常に `--execute` が必要です。
+
+```sh
+uv run --project tests --locked --extra hardware --env-file tests/.env \
+  python tests/run_hardware.py --target configured-target --case runtime --execute
+```
+
+OEPでは `probe_unit_id` に完全な個体IDを設定してください。専用OEP USBの `usb_serial` からも照合できます。USB-UART bridgeを使う場合は、そのserialとOEP個体IDを別々に設定します。プローブの個体照合に失敗した場合、DUTの操作には進みません。共通ロックは設備管理側で作成済みのファイルを指定し、テスト側では作成・コピーしません。
 
 `--target <名前>` と `--case runtime|uart|gpio|hid|power` は繰り返し指定できます。省略時はlocal設定に明記したtargetと、そのtargetが宣言したcaseだけを実行します。未配線caseの明示要求は設定エラーで、skipによる成功にはしません。
 
@@ -54,7 +63,7 @@ out内のArduino CLI wrapperはupload時のdiscovery timeoutを10秒にします
 
 実機時は共通ロックを全期間保持し、stable serial pathとUSB topology／VID／PID／serialを照合します。Link側はDUT UID、現在のOEP target.infoがUIDを返さない経路ではchip IDとSKUを照合します。OEPのchip IDは系列・構成の識別で、DUT個体のUID保証とは区別します。
 
-`preflight/<target>/flash-before.bin` にuser Flashを退避してから最初のuploadを行います。退避の長さとSHA-256、接続先情報、コアcommit/dirty、tool版、build ID、コマンド、pytestログ、DUTログ、JUnit、`result.json` を保存します。caseごとの失敗を記録して後続targetも処理します。
+Flashの退避は行わず、指定したテストsketchを書き込んで使用します。接続先情報、コアcommit/dirty、tool版、build ID、コマンド、pytestログ、DUTログ、JUnit、`result.json` を保存します。caseごとの失敗を記録して後続targetも処理します。
 
 テスト後はテストsketchがDUTに残ります。自動復元は行いません。V003のsystem bootloader領域は操作しません。PPPSのOFF区間はfinallyでONへ戻し、GPIOはINPUTへ解放します。中断時はartifactと機材状態を確認してから再開してください。
 
@@ -64,7 +73,7 @@ out内のArduino CLI wrapperはupload時のdiscovery timeoutを10秒にします
 
 `result.json` の `host` は実際のArduino CLI・ch32rv（DB/stub digestを含む）・Python・plugin/client版とuv.lockのhashを記録します。`probes.<target>` と `preflight/<target>/probe.json` はプローブの申告版・model・個体情報を記録します。WCHはraw／正規化版／WCH表記とknown_badを、OEPはfirmware文字列をそのまま保存し、protocol revision、interface revisionとdescribe宣言も保存します。ホストclientの版とプローブfirmwareの版は別項目です。取得失敗・版なしは `metadata_status` とエラー／nullで明示し、推測で埋めません。compile-onlyではプローブ情報を取得しません。
 
-このコアではプローブfirmwareの数値的な最低版を一律に指定しません。ケースの実行に必要な機能・interface revisionの互換性はch32rv／OEP client／pluginの判定と実行結果に従います。版やcapabilityの記録だけで互換性をPASSにしません。プローブ側の既知不良・最低対応版・更新imageの検証はch32rv／OEP側、host依存の固定はこのsuiteのlockで管理します。新しい最低版が必要な不具合を見つけたときは、根拠となる契約と修正を所有リポジトリへ渡します。
+このコアではプローブfirmwareの数値的な最低版を一律に指定しません。ケースの実行に必要な機能・interface revisionの互換性はch32rv／OEP client／pluginの判定と実行結果に従います。版やcapabilityの記録だけで互換性をPASSにしません。プローブ側の既知不良・対応条件・更新imageの検証はプローブ提供側、host依存の固定はこのsuiteのlockで管理します。新しい最低版が必要な不具合を見つけたときは、根拠となる契約と修正を所有リポジトリへ渡します。
 
 ## 配置
 

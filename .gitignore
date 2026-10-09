@@ -34,6 +34,8 @@ boards.local.txt
 
 # Local configuration; the old bench example is tests-legacy/.env.example
 tests/.env
+tests/.env.*
+!tests/.env.example
 tests-legacy/.env
 /tests/**/*.local.toml
 /tests-legacy/**/*.local.toml

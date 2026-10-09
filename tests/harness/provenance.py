@@ -9,7 +9,7 @@ def oep_snapshot(port):
     deadline = time.monotonic() + 12
     while True:
         try:
-            host = link.open_host(port)
+            host = link.open_host(port, keep_session=False)
             break
         except link.PortBusy:
             if time.monotonic() >= deadline:

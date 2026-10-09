@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Compile contracts by default; explicitly execute against a host-local bench with --execute."""
 import argparse
-import fcntl
 import hashlib
 import importlib.metadata
 import json
@@ -13,7 +12,7 @@ import sys
 import time
 import uuid
 
-from harness.bench import CASES, check_identity, check_target, load_bench
+from harness.bench import CASES, check_identity, check_target, check_probe, load_bench, shared_lock
 from harness.provenance import oep_snapshot
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -179,15 +178,28 @@ def enter_hid(target):
     raise RuntimeError("HID bootloader has no accessible hidraw node after udev settling")
 
 
-def main():
+def parse_options(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--bench", type=pathlib.Path, required=True)
-    parser.add_argument("--out", type=pathlib.Path, required=True, help="new artifact directory")
+    parser.add_argument("--bench", type=pathlib.Path, default=os.environ.get("CH32_TEST_CONFIG"), help="explicit config; otherwise CH32_TEST_CONFIG")
+    parser.add_argument("--out", type=pathlib.Path, help="new run directory; otherwise auto-number under OEP_HW_RESULTS")
+    parser.add_argument("--lock", default=os.environ.get("OEP_HW_LOCK"), help="existing shared lock; otherwise OEP_HW_LOCK or config lock_file")
     parser.add_argument("--target", action="append", help="default: all configured targets")
     parser.add_argument("--case", action="append", choices=sorted(CASES), help="default: each target's declared cases")
-    parser.add_argument("--execute", action="store_true", help="back up flash, upload test sketches and operate configured USB power")
-    args = parser.parse_args()
-    bench = load_bench(args.bench)
+    parser.add_argument("--execute", action="store_true", help="upload test sketches, observe and operate explicitly configured USB power")
+    args = parser.parse_args(argv)
+    if args.bench is None:
+        parser.error("--bench or CH32_TEST_CONFIG is required; no implicit equipment discovery")
+    if args.out is None:
+        root = os.environ.get("OEP_HW_RESULTS")
+        if not root:
+            parser.error("--out or OEP_HW_RESULTS is required")
+        args.out = pathlib.Path(root) / ("core-" + time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "-" + uuid.uuid4().hex[:8])
+    return args, parser
+
+
+def main(argv=None):
+    args, parser = parse_options(argv)
+    bench = load_bench(args.bench, lock_path=args.lock)
     targets = args.target or list(bench["targets"])
     if len(set(targets)) != len(targets) or set(targets) - bench["targets"].keys():
         parser.error("unknown or duplicate target")
@@ -200,7 +212,10 @@ def main():
     env = isolated_environment(work, tool, gcc)
     report = dict(execute=args.execute, tools=versions,
                   commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
-                  dirty=bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=REPO)), cases=[], probes={})
+                  dirty=bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=REPO)), cases=[], probes={},
+                  flash_backup=False, firmware_restore=False, probe_firmware_update=False,
+                  configuration_path=str(args.bench.resolve()),
+                  configuration_sha256=hashlib.sha256(args.bench.read_bytes()).hexdigest())
     packages = ("pytest", "pytest-embedded", "pytest-embedded-arduino-cli",
                 "pytest-embedded-arduino-cli-ch32rv", "oep-client-python")
     report["host"] = dict(python=sys.version, packages={p: importlib.metadata.version(p) for p in packages},
@@ -214,10 +229,9 @@ def main():
     lock = None
     try:
         if args.execute:
-            lock_path = pathlib.Path(bench["lock_file"])
-            lock_path.parent.mkdir(parents=True, exist_ok=True)
-            lock = lock_path.open("a")
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            holder = shared_lock(bench["lock_file"])
+            holder.__enter__()
+            lock = holder
         for name in targets:
             target = bench["targets"][name]
             cases = args.case or target["cases"]
@@ -225,17 +239,9 @@ def main():
                 try:
                     check_identity(target)
                     report["probes"][name] = record_probe(tool, target, work / f"preflight/{name}", env)
+                    check_probe(target, report["probes"][name])
                     save()
-                    info = target_info(tool, target, work / f"preflight/{name}/info.log", env)
-                    # Read and retain user flash before the first upload. The system bootloader is not written.
-                    size = info["flash_bytes"]
-                    backup = work / f"preflight/{name}/flash-before.bin"
-                    invoke([str(tool), "--probe", f"port:{target['port']}", "--chip", target["chip"], "--non-interactive",
-                            "read", "--range", f"0x08000000+{size}", "-o", str(backup)], backup.with_suffix(".log"), env=env)
-                    if backup.stat().st_size != size:
-                        raise RuntimeError("incomplete user flash backup")
-                    (backup.parent / "backup.json").write_text(json.dumps(dict(chip=target["chip"], size=size,
-                        sha256=hashlib.sha256(backup.read_bytes()).hexdigest()), indent=2))
+                    target_info(tool, target, work / f"preflight/{name}/info.log", env)
                 except Exception as error:
                     report["cases"].extend(dict(target=name, case=case, status="ENVIRONMENT_ERROR", error=str(error)) for case in cases)
                     save()
@@ -281,7 +287,7 @@ def main():
                     print(f"{name}/{case}: {result['status']}", flush=True)
     finally:
         if lock:
-            lock.close()
+            lock.__exit__(None, None, None)
         save()
     print(work / "result.json")
     return int(any(r["status"] in {"FAIL", "ENVIRONMENT_ERROR"} for r in report["cases"]))

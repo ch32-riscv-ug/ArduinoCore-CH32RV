@@ -91,3 +91,33 @@ def test_serial_path_must_reach_the_expected_usb_device(tmp_path):
     target = dict(port=str(port), usb_topology=expected.name, usb_vid="1a86", usb_pid="8010")
     with pytest.raises(ValueError, match="different USB topology"):
         bench.check_identity(target, sysfs=sysfs, tty_root=tty)
+
+
+def test_oep_identity_mismatch_stops_target_operations():
+    target = dict(usb_vid='1a86', usb_pid='7523', probe_unit_id='0070070d9394')
+    for snapshot in ({}, dict(unit_id='another-probe')):
+        with pytest.raises(ValueError, match='unit ID mismatch'):
+            bench.check_probe(target, snapshot)
+    bench.check_probe(target, dict(unit_id='0070070D9394', firmware=None))
+
+
+def test_shared_lock_is_existing_and_exclusive(tmp_path):
+    lock = tmp_path / 'shared.lock'
+    with pytest.raises(FileNotFoundError):
+        with bench.shared_lock(lock):
+            pytest.fail('missing lock was created')
+    assert not lock.exists()
+    lock.touch()
+    inode = lock.stat().st_ino
+    with bench.shared_lock(lock):
+        with pytest.raises(BlockingIOError):
+            with bench.shared_lock(lock):
+                pytest.fail('busy lock was acquired')
+    with bench.shared_lock(lock):
+        assert lock.stat().st_ino == inode
+
+
+def test_explicit_lock_path_overrides_legacy_config(tmp_path):
+    source = config(tmp_path, 'power_ports = [1]')
+    loaded = bench.load_bench(source, lock_path=tmp_path / 'other.lock')
+    assert loaded['lock_file'] == str(tmp_path / 'other.lock')

@@ -14,6 +14,8 @@ dut_uid = ""
 cases = ["runtime", "uart", "power"]
 power_ports = [] # Explicit probe port on the parent hub.
 
+# OEP: probe_unit_id = "<complete-unit-id>" is required for USB-UART bridges.
+# Dedicated OEP USB serial may supply the same identity.
 # OEP: use dut_chip_id when target.info does not expose a DUT UID.
 # Dedicated OEP USB probes also need upload_port = "oep://<unit-id>/<slot>".
 # UIAPduino: chip CH32V003F4U6, fqbn ch32-riscv-ug:ch32rv:UIAPDUINO_V003_V14.

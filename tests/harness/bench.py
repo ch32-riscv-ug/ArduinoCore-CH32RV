@@ -2,20 +2,23 @@
 import pathlib
 import re
 import tomllib
+from contextlib import contextmanager
 
 CASES = {"runtime", "uart", "gpio", "hid", "power"}
 TARGET_KEYS = {
     "port", "chip", "fqbn", "f_cpu", "usb_topology", "usb_vid", "usb_pid",
     "usb_serial", "dut_uid", "dut_chip_id", "cases", "power_ports", "gpio",
-    "soft_usb_topology", "nrst_channel", "upload_port",
+    "soft_usb_topology", "nrst_channel", "upload_port", "probe_unit_id",
 }
 
 
-def load_bench(path):
+def load_bench(path, *, lock_path=None):
     path = pathlib.Path(path).resolve()
     data = tomllib.loads(path.read_text())
     if set(data) != {"lock_file", "targets"}:
         raise ValueError("bench needs only lock_file and targets")
+    if lock_path is not None:
+        data["lock_file"] = str(pathlib.Path(lock_path).resolve())
     if not isinstance(data["lock_file"], str) or not data["lock_file"]:
         raise ValueError("an explicit shared lock_file is required")
     lock = pathlib.Path(data["lock_file"])
@@ -53,6 +56,11 @@ def load_bench(path):
         topologies.add(target["usb_topology"])
         if not target.get("dut_uid") and not target.get("dut_chip_id"):
             raise ValueError("expected DUT UID or chip ID is required")
+        if "probe_unit_id" in target and not re.fullmatch(r"[0-9a-fA-F]{12,32}", target["probe_unit_id"]):
+            raise ValueError("probe_unit_id must be a complete OEP hexadecimal unit ID")
+        if (target["usb_vid"], target["usb_pid"]) != ("1a86", "8010"):
+            if not target.get("probe_unit_id") and not ((target["usb_vid"], target["usb_pid"]) == ("1209", "4f45") and target.get("usb_serial")):
+                raise ValueError("OEP target needs an expected probe unit ID")
         if "soft_usb_topology" in target and not re.fullmatch(r"\d+-\d+(?:\.\d+)+", target["soft_usb_topology"]):
             raise ValueError("invalid soft USB topology")
         if "nrst_channel" in target and (type(target["nrst_channel"]) is not int or not 0 <= target["nrst_channel"] <= 65535):
@@ -100,6 +108,26 @@ def load_bench(path):
             if target["chip"] != "CH32V003F4U6" or not target.get("soft_usb_topology") or type(target.get("nrst_channel")) is not int:
                 raise ValueError("hid needs UIAPduino, soft USB topology and NRST wiring")
     return data
+
+
+@contextmanager
+def shared_lock(path):
+    """Use the existing shared inode throughout hardware operation; never create a private lock."""
+    import fcntl
+    with pathlib.Path(path).open("r+") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+def check_probe(target, snapshot):
+    if (target["usb_vid"], target["usb_pid"]) == ("1a86", "8010"):
+        return
+    expected = target.get("probe_unit_id") or target.get("usb_serial")
+    if not expected or (snapshot.get("unit_id") or "").lower() != expected.lower():
+        raise ValueError("OEP probe unit ID mismatch or unavailable; refusing target operations")
 
 
 def check_identity(target, *, sysfs=pathlib.Path("/sys/bus/usb/devices"), tty_root=pathlib.Path("/sys/class/tty")):
