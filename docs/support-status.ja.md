@@ -1,7 +1,9 @@
 # 系列ごとの実装範囲
 
 全系列を `Generic <SERIES>` として build できます。upload の「未実装」は、同梱の `ch32rv` が
-target 定義を持たず、`target-not-in-db` で probe を開く前に終了する系列です。
+書き込み手段を持たず、`capability-unsupported` で終了する系列です。
+「実装済（未検証）」は、ch32rv が同じ family の手順で書き込みますが、その系列では実機で確認していないものです。
+経路別、probe 別の対応は [upload-routes.ja.md](upload-routes.ja.md) を参照してください。
 
 | 系列 | build | upload |
 |---|---|---|
@@ -22,11 +24,11 @@ target 定義を持たず、`target-not-in-db` で probe を開く前に終了�
 | CH32X033 | 実装済 | 実装済 |
 | CH32X035 | 実装済 | 実装済 |
 | CH32L103 | 実装済 | 実装済 |
-| CH32M103 | 実装済 | 未実装 |
+| CH32M103 | 実装済 | 実装済（未検証） |
 | CH32V205 | 実装済 | 実装済 |
 | CH32V407 | 実装済 | 未実装 |
 | CH32V467 | 実装済 | 未実装 |
-| CH32X305 | 実装済 | 未実装 |
+| CH32X305 | 実装済 | 実装済（未検証） |
 | CH32X315 | 実装済 | 実装済 |
 | CH32M030 | 実装済 | 未実装 |
 

@@ -5,9 +5,21 @@
 
 ## 通常の書き込み
 
-1. RESET を押したまま USB へ接続し、HID bootloader を起動する
-2. Arduino IDE で UIAPduino board と `1209:b803` の port を選ぶ
+1. RESET を押したまま USB へ接続し、**接続したらすぐ RESET を離す**
+2. `1209:b803` が現れたら、Arduino IDE で UIAPduino board とその port を選ぶ
 3. Upload を実行する
+
+RESET を押し続けると bootloader に入らず、application が起動します。`1209:b803` が現れないときは、
+USB を抜いて 1 からやり直します。USB に接続したまま RESET を押しても bootloader には入りません。
+
+理由:
+
+- bootloader は、RESET ピンによる reset の履歴（`RCC_RSTSCKR.PINRSTF`）があるときだけ留まります。
+  電源投入だけではこの flag が立たないので、接続時に RESET を押します。
+- RESET を離して bootloader が起動した後、短い時間内に host から USB の通信が来ないと application へ移ります。
+  source の設定では約 525 ms です（`BOOTLOADER_TIMEOUT_PWR = 7`）。
+- この board は D- を 3.3 V へ固定で pull-up しているので、host は接続した瞬間から列挙を始めます。
+  RESET を押している間は応答できないので、押し続けると host が列挙をあきらめ、bootloader の待ち時間内に通信が来ません。
 
 CLI から binary を直接書く場合:
 

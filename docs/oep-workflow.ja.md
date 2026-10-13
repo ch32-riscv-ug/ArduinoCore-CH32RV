@@ -52,7 +52,7 @@ wire（線。debug の線を駆動するインターフェース: `oep.wire.rvsw
 | **A. WCH-Link / LinkE**（RVSWD、V003 / V00x は SWIO） | 全部 | 常時 | 現状維持（ch32rv `flash`） |
 | **B. OEP の probe**（RVSWD / SWIO） | 全部 | 常時 | **ch32rv で対応する**。pytest も arduino-cli 経由で書く。client の `ch32_flash` は ch32rv の OEP の書き込みが入った時点で消す |
 | **E. UIAPduino の HID ブートローダー**（`1209:b803`） | ブートローダーを入れた V003 の板 | **手動の pin reset**（probe があれば A / B を使う） | 現状維持（ch32rv `boot hid flash`）+ discovery |
-| **C. factory ISP、USB**（`4348:55e0`） | BOOT0 / BOOT1 ピンの家系（V103 / V20x / V30x / V31x / L103 / V407）。X035 / X315 はソフトからしか入れない | BOOT ピン、または app の協力 | **設計は決めた。最初の β には入れず、後から足す**（§3.5） |
+| **C. factory ISP、USB**（`4348:55e0`） | BOOT0 / BOOT1 ピンの家系（V103 / V20x / V30x / V31x / L103 / V407）。X033 / X035 は PC17（USB D+）が BOOT 検出ピン。X305 / X315 は [upload-routes.ja.md](upload-routes.ja.md) | BOOT ピン（X03x は電源投入時の PC17 = High）、または app の協力 | **設計は決めた。最初の β には入れず、後から足す**（§3.5） |
 | D. factory ISP、UART | V003 / V00x（app の協力が要る）ほか | — | **対応しない**。変換チップを足すなら、その ESP32 を OEP の probe にする |
 | F. 独自のブートローダー（DFU / UF2 / UART） | そのブートローダーを入れた板（今は無い） | — | **対応しない**。DFU の板が現れたら recipe を足すだけ（discovery は arduino-cli の組み込み） |
 
