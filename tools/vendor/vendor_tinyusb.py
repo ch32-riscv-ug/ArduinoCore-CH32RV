@@ -38,8 +38,12 @@ REPO = HERE.parents[1]
 LOCK = REPO / "vendor" / "tinyusb.lock.toml"
 DEST = REPO / "libraries" / "TinyUSB" / "src"
 
-TAG = "0.21.0"
-URL = f"https://github.com/hathach/tinyusb/archive/refs/tags/{TAG}.tar.gz"
+# The pinned upstream revision. A release tag when one carries what we need;
+# otherwise a master commit, and REF_NOTE says why.
+REF = "de4940525876259efb17f14e775312365bfdf97c"
+REF_NOTE = ("master at the merge of PR #3703 (CH32X035/X033 USBFS port, "
+            "2026-09-27); no release carries it yet - 0.21.0 is older")
+URL = f"https://github.com/hathach/tinyusb/archive/{REF}.tar.gz"
 
 # Which of upstream src/ comes in. Everything outside portable/ is generic and
 # small; inside portable/ only the drivers a CH32 build can reach.
@@ -51,7 +55,7 @@ KEEP_PORTABLE = ("portable/wch", "portable/st/stm32_fsdev")
 # Files we add next to the vendored tree. They are ours, so the lock ignores
 # them - but they must not collide with an upstream path, and a future upstream
 # version that adds one of these names has to be noticed, so they are listed.
-OURS = ("tusb_config.h", "TinyUSB.h", "TinyUSB.cpp", "ch32_tusb_glue.cpp")
+OURS = ("tusb_config.h", "TinyUSB.h", "TinyUSB.cpp", "ch32_tusb_glue.cpp", "ch32x035.h")
 
 
 class Failure(Exception):
@@ -77,10 +81,10 @@ def fetch() -> dict:
     with urllib.request.urlopen(URL, timeout=120) as response:
         blob = response.read()
     out = {}
-    prefix = f"tinyusb-{TAG}/src/"
+    prefix = f"tinyusb-{REF}/src/"
     # The licence sits at the repository root, not in src/, and MIT requires it
     # to travel with the copy - so it comes along as LICENSE inside dest.
-    license_path = f"tinyusb-{TAG}/LICENSE"
+    license_path = f"tinyusb-{REF}/LICENSE"
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tar:
         for member in tar.getmembers():
             if not member.isfile():
@@ -110,7 +114,8 @@ def write_lock(files: dict) -> None:
         "[[source]]",
         'id = "tinyusb"',
         'url = "https://github.com/hathach/tinyusb.git"',
-        f'tag = "{TAG}"',
+        f'commit = "{REF}"',
+        f"# {REF_NOTE}",
         'license = "MIT"',
         'license_file = "libraries/TinyUSB/src/LICENSE"',
         f'dest = "{DEST.relative_to(REPO).as_posix()}"',
@@ -194,7 +199,7 @@ def check() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--update", action="store_true",
-                    help="fetch the pinned tag and re-vendor (needs network)")
+                    help="fetch the pinned revision and re-vendor (needs network)")
     ap.add_argument("--check", action="store_true",
                     help="verify the working copy against the lock (offline)")
     args = ap.parse_args()

@@ -1,30 +1,9 @@
 /*
- * The MIT License (MIT)
- *
- * Copyright (c) 2019 Nathan Conrad
- *
- * Portions:
- * Copyright (c) 2019 Ha Thach (tinyusb.org)
- * Copyright (c) 2022 Simon Küppers (skuep)
- * Copyright (c) 2022 HiFiPhile
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * SPDX-FileCopyrightText: Copyright (c) 2019 Nathan Conrad
+ * SPDX-FileCopyrightText: Copyright (c) 2019 Ha Thach (tinyusb.org)
+ * SPDX-FileCopyrightText: Copyright (c) 2022 Simon Küppers (skuep)
+ * SPDX-FileCopyrightText: Copyright (c) 2022 HiFiPhile (Zixun LI)
+ * SPDX-License-Identifier: MIT
  *
  * This file is part of the TinyUSB stack.
  */
@@ -856,7 +835,17 @@ void dcd_edpt_clear_stall(uint8_t rhport, uint8_t ep_addr) {
   ep_reg &= U_EPREG_MASK | EP_STAT_MASK(dir) | EP_DTOG_MASK(dir);
 
   if (!ep_is_iso(ep_reg)) {
-    ep_change_status(&ep_reg, dir, EP_STAT_NAK);
+    // Only knock a genuinely STALLED endpoint down to NAK (the class then re-arms it). If the
+    // endpoint is armed (VALID) - e.g. a clear-halt used purely to reset the data toggle, as in
+    // usbtest case 29 - leave STAT untouched so the in-flight transfer isn't disarmed with no
+    // completion, which would leak the usbd claim and starve the endpoint. Masking the STAT bits
+    // to 0 writes no toggle, so an armed/idle endpoint keeps its current status.
+    const uint8_t stat_pos = (uint8_t) (U_EPTX_STAT_Pos + (dir == TUSB_DIR_IN ? 0u : 8u));
+    if (((ep_reg >> stat_pos) & 0x3u) == EP_STAT_STALL) {
+      ep_change_status(&ep_reg, dir, EP_STAT_NAK);
+    } else {
+      ep_reg &= ~EP_STAT_MASK(dir);
+    }
   }
   ep_change_dtog(&ep_reg, dir, 0); // Reset to DATA0
   ep_write(ep_idx, ep_reg, true);

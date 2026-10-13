@@ -1,26 +1,8 @@
 /*
- * The MIT License (MIT)
- *
- * Copyright (c) 2020 Reinhard Panhuber, Jerzy Kasenberg
- * Copyright (c) 2023 HiFiPhile
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * SPDX-FileCopyrightText: Copyright (c) 2020 Reinhard Panhuber, Jerzy Kasenberg
+ * SPDX-FileCopyrightText: Copyright (c) 2023 HiFiPhile (Zixun LI)
+ * SPDX-FileCopyrightText: Copyright (c) 2020 Ha Thach (tinyusb.org)
+ * SPDX-License-Identifier: MIT
  *
  * This file is part of the TinyUSB stack.
  */
@@ -1179,9 +1161,6 @@ static bool audiod_set_interface(uint8_t rhport, tusb_control_request_t const *p
             is_feedback_ep = (desc_ep->bmAttributes.usage == 1);
           }
 
-          //TODO: We need to set EP non busy since this is not taken care of right now in ep_close() - THIS IS A WORKAROUND!
-          usbd_edpt_clear_stall(rhport, ep_addr);
-
 #if CFG_TUD_AUDIO_ENABLE_EP_IN
           // For data or data with implicit feedback IN EP
           if (tu_edpt_dir(ep_addr) == TUSB_DIR_IN && is_data_ep)
@@ -1862,7 +1841,7 @@ static bool audiod_calc_tx_packet_sz(audiod_function_t *audio) {
 
 static uint16_t audiod_tx_packet_size(const uint16_t *nominal_size, uint16_t data_count, uint16_t fifo_depth, uint16_t fifo_threshold, uint16_t max_depth) {
   // Flow control need a FIFO size of at least 4*Navg
-  if (nominal_size[1] && nominal_size[1] <= fifo_depth * 4) {
+  if (nominal_size[1] && nominal_size[1] * 4 <= fifo_depth) {
     // Use blackout to prioritize normal size packet
     static int ctrl_blackout = 0;
     uint16_t packet_size;
