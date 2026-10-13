@@ -5,6 +5,8 @@
 #include "tusb.h"
 #include "TinyUSB.h"
 
+#if CH32RV_TINYUSB_DEVICE
+
 /* ---------------------------------------------------------- identity
  * pid.codes test VID:PID - fine on a bench, not for a product. A product board
  * or a sketch sets its own with -DCH32RV_USB_VID= / -DCH32RV_USB_PID=. */
@@ -227,3 +229,30 @@ extern "C" const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t lang
     desc_str[0] = (uint16_t)((TUSB_DESC_STRING << 8) | (2 * n + 2));
     return desc_str;
 }
+
+#else /* !CH32RV_TINYUSB_DEVICE: no USB device on this series (tusb_config.h) */
+
+extern "C" void ch32rv_tusb_start(void)
+{
+}
+
+bool TinyUSBDevice::mounted()
+{
+    return false;
+}
+
+bool TinyUSBDevice::suspended()
+{
+    return false;
+}
+
+/* No factory USB bootloader to go to: a plain system reset. */
+[[noreturn]] void TinyUSBDevice::enterBootloader()
+{
+    noInterrupts();
+    CH32RV_PFIC_CFGR = CH32RV_PFIC_KEY3 | CH32RV_PFIC_SYSRST;
+    for (;;) {
+    }
+}
+
+#endif

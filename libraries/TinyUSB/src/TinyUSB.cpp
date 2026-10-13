@@ -6,6 +6,8 @@ extern "C" void ch32rv_tusb_start(void);
 
 USBCDC SerialUSB;
 
+#if CH32RV_TINYUSB_DEVICE
+
 static bool boot_touch_enabled = true;
 
 void USBCDC::begin(unsigned long baud)
@@ -114,3 +116,78 @@ extern "C" void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
         TinyUSBDevice::enterBootloader();
     }
 }
+
+#else /* !CH32RV_TINYUSB_DEVICE: a port that never opens (tusb_config.h) */
+
+void USBCDC::begin(unsigned long baud)
+{
+    (void)baud;
+}
+
+void USBCDC::end()
+{
+}
+
+int USBCDC::available()
+{
+    return 0;
+}
+
+int USBCDC::peek()
+{
+    return -1;
+}
+
+int USBCDC::read()
+{
+    return -1;
+}
+
+int USBCDC::availableForWrite()
+{
+    return 0;
+}
+
+void USBCDC::flush()
+{
+}
+
+size_t USBCDC::write(uint8_t c)
+{
+    (void)c;
+    return 0;
+}
+
+size_t USBCDC::write(const uint8_t *buf, size_t size)
+{
+    (void)buf;
+    (void)size;
+    return 0;
+}
+
+USBCDC::operator bool()
+{
+    return false;
+}
+
+bool USBCDC::dtr()
+{
+    return false;
+}
+
+bool USBCDC::rts()
+{
+    return false;
+}
+
+uint32_t USBCDC::baud()
+{
+    return 0;
+}
+
+void USBCDC::setBootTouchEnabled(bool enabled)
+{
+    (void)enabled;
+}
+
+#endif

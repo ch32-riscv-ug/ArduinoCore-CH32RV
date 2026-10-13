@@ -8,16 +8,22 @@
 extern "C" {
 #endif
 
+/* CH32RV_TINYUSB_DEVICE says whether this series has the device wired up. On
+ * the others the stack compiles to nothing and SerialUSB is a port that never
+ * opens (begin() returns, operator bool stays false), so a sketch still builds
+ * for every board - the same contract USBPD keeps. */
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
+#define CH32RV_TINYUSB_DEVICE    1
 #define CFG_TUSB_MCU             OPT_MCU_CH32X035
 #else
-#error "TinyUSB: USB device is not wired up for this series yet"
+#define CH32RV_TINYUSB_DEVICE    0
+#define CFG_TUSB_MCU             OPT_MCU_NONE
 #endif
 
 #define CFG_TUSB_OS              OPT_OS_NONE
 #define CFG_TUSB_DEBUG           0
 
-#define CFG_TUD_ENABLED          1
+#define CFG_TUD_ENABLED          CH32RV_TINYUSB_DEVICE
 #define CFG_TUH_ENABLED          0
 #define CFG_TUD_MAX_SPEED        OPT_MODE_FULL_SPEED
 
