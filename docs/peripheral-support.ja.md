@@ -59,7 +59,7 @@ uv run --no-project python tools/generate/peripheral_matrix.py \
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| USB (FS device/host) | 未実装 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | 採用stackはTinyUSB。固定sourceはあるがcoreへ未結線 |
+| USB (FS device/host) | 一部実装 | `TinyUSB`(library: `SerialUSB`) |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  | 採用stackはTinyUSB。deviceのCDCはX033/X035で実装(X035で実機確認)。他seriesはbuildのみで`SerialUSB`は開かない。hostは未実装 |
 | USB HS | 未実装 | - |  |  |  |  | ○ |  | ○ |  |  |  | ○ | 採用stackはTinyUSB。coreへ未結線 |
 | USB SS | 対象外 | - |  |  |  |  |  |  |  |  |  |  | ○ | X315のみ。当面扱わない |
 | USB PD | 一部実装 | `USBPD`(library) |  |  |  |  | ○ |  |  | ○ | ○ | ○ | ○ | sinkはX033/X035で実装。他のUSBPD搭載seriesは`begin()`がfalseを返す |

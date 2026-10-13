@@ -8,7 +8,8 @@ USB device / host を実装する際は TinyUSB を使用し、独自 stack や 
 必要な CH32 対応は可能な限り TinyUSB upstream へ反映し、恒久 fork を持ちません。
 
 固定した TinyUSB source は `libraries/TinyUSB/src/`、revision と hash は `vendor/tinyusb.lock.toml` で管理します。
-固定 source は Arduino library として結線しておらず、USB API は未実装です。
+Arduino からは `libraries/TinyUSB`（`TinyUSB.h`、`SerialUSB`）として使います。device の CDC を CH32X033 / X035 で結線済みで、
+他系列と host は未実装です。stack の処理は core の weak hook `ch32rv_usb_task()` から、`loop()` の後と `delay()` の中で行います。
 
 ## 理由
 
