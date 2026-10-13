@@ -286,6 +286,9 @@ void delay(unsigned long ms)
     const uint32_t start = ch32rv_millis_counter;
 
     while ((uint32_t)(ch32rv_millis_counter - start) < (uint32_t)ms) {
+        if (ch32rv_usb_task) {
+            ch32rv_usb_task();
+        }
         yield();
     }
 }

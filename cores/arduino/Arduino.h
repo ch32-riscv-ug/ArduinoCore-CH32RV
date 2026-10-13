@@ -17,6 +17,17 @@ using namespace arduino;
 #include "api/Common.h"
 #endif
 
+/* Background work for the USB device stack. The TinyUSB library defines it;
+ * main() calls it after every loop() and delay() calls it while waiting. Weak,
+ * so a sketch without USB carries neither the stack nor the call. */
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void ch32rv_usb_task(void) __attribute__((weak));
+#ifdef __cplusplus
+}
+#endif
+
 /* Pad names, per-port validity masks and analog aliases for the selected
  * series (generated; see ADR-0010). */
 #include "pins_arduino.h"

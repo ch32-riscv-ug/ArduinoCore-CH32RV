@@ -16,6 +16,10 @@
  *                   in HardwareSerial.cpp, so it only gets linked into sketches
  *                   that use Serial. Everywhere else the pointer is null and
  *                   the call is skipped.
+ *
+ * ch32rv_usb_task() is ours, the same weak-pointer shape: the TinyUSB library
+ * defines it, and it runs after every loop() and inside delay(). It is not
+ * hung on yield(), because a sketch may define its own yield().
  */
 #include "Arduino.h"
 
@@ -32,6 +36,9 @@ int main(void)
     setup();
     for (;;) {
         loop();
+        if (ch32rv_usb_task) {
+            ch32rv_usb_task();
+        }
         if (serialEventRun) {
             serialEventRun();
         }
