@@ -244,10 +244,7 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
             # it differs by die, V203 UART4 PB0 / PB1) has no single value a
             # board-wide FIX could write: it is left to setPins() and the part
             # number's own table.
-            values_of: dict = {}
-            for value, pads, _v1, _v2 in rows:
-                values_of.setdefault(pads, set()).add(value)
-            seen = {pads for pads, values in values_of.items() if len(values) > 1}
+            seen = die_ambiguous(series, parts, pins_by_kind[kind], remap, kind, roles, n)
             for value, pads, v1, v2 in rows:
                 # Two routes can put the same pins in these roles and differ only
                 # in a signal the menu does not name (NSS, CK): one entry, the
@@ -1722,16 +1719,30 @@ def emit_routes(out: list, prefix: str, roles: tuple, rows: list) -> None:
     out.append("}")
 
 
-def routes_conflict(rows: list) -> bool:
-    """True when the union table is ambiguous: one route number on two pad
-    sets, or one pad set under two route numbers - which happens only when
-    pads move between the packages of the series."""
-    by_value, by_pads = {}, {}
+def die_ambiguous(series: str, parts: list, pins: dict, remap: dict, kind: str,
+                  roles: tuple, index: int) -> set:
+    """Pad sets that no single route value selects on every part that has
+    them (V203 UART4: PB0 / PB1 is value 0 on the small die and value 1 on
+    RBT6). A pad set two values both select on each part - V003 SPI1, whose
+    routes 0 and 1 differ only in NSS - is not ambiguous: either value works."""
+    values = {}
+    for pn in parts:
+        per_part = {}
+        for value, pads, _v1, _v2 in route_table(series, [pn], pins, remap, kind, roles, index):
+            per_part.setdefault(pads, set()).add(value)
+        for pads, vals in per_part.items():
+            values.setdefault(pads, []).append(vals)
+    return {pads for pads, sets in values.items() if not set.intersection(*sets)}
+
+
+def routes_conflict(rows: list, ambiguous: set) -> bool:
+    """True when the union table cannot serve every part: one route number on
+    two pad sets (the pads move between packages), or a pad set whose value
+    depends on the die."""
+    by_value = {}
     for value, pads, _v1, _v2 in rows:
         by_value.setdefault(value, set()).add(pads)
-        by_pads.setdefault(pads, set()).add(value)
-    return (any(len(v) > 1 for v in by_value.values()) or
-            any(len(v) > 1 for v in by_pads.values()))
+    return any(len(v) > 1 for v in by_value.values()) or bool(ambiguous)
 
 
 def emit_instance_routes(out: list, prefix: str, roles: tuple, series: str,
@@ -1757,7 +1768,8 @@ def emit_instance_routes(out: list, prefix: str, roles: tuple, series: str,
         out.append(f"#if {cond}")
         out.append(f"#define CH32RV_{prefix}_ABSENT 1   /* not on this part */")
         out.append("#endif")
-    if not routes_conflict(union) and series_default:
+    if not routes_conflict(union, die_ambiguous(series, parts, pins, remap, kind, roles, index)) \
+            and series_default:
         emit_routes(out, prefix, roles, union)
         return False
     bits = remap.get((series, kind, index))

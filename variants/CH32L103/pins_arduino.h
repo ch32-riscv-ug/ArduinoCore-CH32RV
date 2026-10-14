@@ -366,7 +366,6 @@
 #define CH32RV_SPI1_REMAP_VAL  0x00000000u
 #define CH32RV_SPI1_REMAP2_MASK 0x01000000u
 #define CH32RV_SPI1_REMAP2_VAL  0x00000000u
-#if defined(CH32RV_PART_CH32L103C8T6) || defined(CH32RV_PART_CH32L103K8U6) || defined(CH32RV_PART_CH32L103K8U7)
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
 #define CH32RV_SPI1_ROUTE_COUNT 4
 #define CH32RV_SPI1_ROUTES { \
@@ -375,30 +374,6 @@
     { 2, { PB6, PB8, PB7 }, 0x00000000u, 0x01000000u }, \
     { 3, { PB6, PB8, PB7 }, 0x00000001u, 0x01000000u }, \
 }
-#elif defined(CH32RV_PART_CH32L103F8P6) || defined(CH32RV_PART_CH32L103G8R6)
-/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32RV_SPI1_ROUTE_COUNT 3
-#define CH32RV_SPI1_ROUTES { \
-    { 0, { PA5, PA6, PA7 }, 0x00000000u, 0x00000000u }, \
-    { 2, { PB6, PB8, PB7 }, 0x00000000u, 0x01000000u }, \
-    { 3, { PB6, PB8, PB7 }, 0x00000001u, 0x01000000u }, \
-}
-#elif defined(CH32RV_PART_CH32L103F8U6)
-/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32RV_SPI1_ROUTE_COUNT 1
-#define CH32RV_SPI1_ROUTES { \
-    { 0, { PA5, PA6, PA7 }, 0x00000000u, 0x00000000u }, \
-}
-#else   /* ANY, or a board that sets no part: the series union */
-/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32RV_SPI1_ROUTE_COUNT 4
-#define CH32RV_SPI1_ROUTES { \
-    { 0, { PA5, PA6, PA7 }, 0x00000000u, 0x00000000u }, \
-    { 1, { PB3, PB4, PB5 }, 0x00000001u, 0x00000000u }, \
-    { 2, { PB6, PB8, PB7 }, 0x00000000u, 0x01000000u }, \
-    { 3, { PB6, PB8, PB7 }, 0x00000001u, 0x01000000u }, \
-}
-#endif
 /* SPI2: route default, on 3 of 6 parts */
 #define CH32RV_SPI2_SCK PB13
 #define CH32RV_SPI2_MISO PB14

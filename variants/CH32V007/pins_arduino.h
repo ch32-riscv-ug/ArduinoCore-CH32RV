@@ -269,14 +269,6 @@
 #define CH32RV_SPI1_CLKEN_MASK 0x00001000u
 #define CH32RV_SPI1_REMAP_MASK 0x00000007u
 #define CH32RV_SPI1_REMAP_VAL  0x00000003u
-#if defined(CH32RV_PART_CH32V007E8R6) || defined(CH32RV_PART_CH32V007E8R7)
-/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32RV_SPI1_ROUTE_COUNT 2
-#define CH32RV_SPI1_ROUTES { \
-    { 2, { PD2, PB3, PD3 }, 0x00000002u, 0x00000000u }, \
-    { 4, { PD4, PD5, PD6 }, 0x00000004u, 0x00000000u }, \
-}
-#elif defined(CH32RV_PART_CH32V007K8U6) || defined(CH32RV_PART_CH32V007K8U7)
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
 #define CH32RV_SPI1_ROUTE_COUNT 7
 #define CH32RV_SPI1_ROUTES { \
@@ -288,19 +280,6 @@
     { 5, { PA1, PB5, PA2 }, 0x00000005u, 0x00000000u }, \
     { 6, { PB5, PC7, PB4 }, 0x00000006u, 0x00000000u }, \
 }
-#else   /* ANY, or a board that sets no part: the series union */
-/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32RV_SPI1_ROUTE_COUNT 7
-#define CH32RV_SPI1_ROUTES { \
-    { 0, { PC5, PC7, PC6 }, 0x00000000u, 0x00000000u }, \
-    { 1, { PC5, PC7, PC6 }, 0x00000001u, 0x00000000u }, \
-    { 2, { PD2, PB3, PD3 }, 0x00000002u, 0x00000000u }, \
-    { 3, { PB1, PB2, PC0 }, 0x00000003u, 0x00000000u }, \
-    { 4, { PD4, PD5, PD6 }, 0x00000004u, 0x00000000u }, \
-    { 5, { PA1, PB5, PA2 }, 0x00000005u, 0x00000000u }, \
-    { 6, { PB5, PC7, PB4 }, 0x00000006u, 0x00000000u }, \
-}
-#endif
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI1's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */
