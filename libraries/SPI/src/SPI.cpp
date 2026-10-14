@@ -170,8 +170,17 @@ const RouteSet route_sets[1] = {};
 constexpr uint8_t SPI_COUNT = 0;
 #endif
 
+/* A series with one SPI has one bus object (SPI) and one instance, so there
+ * is nothing to share and nobody else to own it: no owner table, no search. */
+#if defined(CH32RV_SPI1_SCK) + defined(CH32RV_SPI2_SCK) + defined(CH32RV_SPI3_SCK) == 1
+#define CH32RV_SPI_SINGLE 1
+#else
+#define CH32RV_SPI_SINGLE 0
+#endif
+#if !CH32RV_SPI_SINGLE
 /* Which bus holds each SPI. */
 CH32RVSPIClass *owner[SPI_COUNT > 0 ? SPI_COUNT : 1];
+#endif
 
 inline uint8_t index_of(uint8_t slot)
 {
@@ -188,9 +197,13 @@ Found find_route(uint8_t prefer, const uint8_t *want, const CH32RVSPIClass *self
 {
     Found first = {-1, nullptr};
     for (uint8_t i = 0; i < SPI_COUNT; i++) {
+#if !CH32RV_SPI_SINGLE
         if (owner[i] && owner[i] != self) {
             continue;
         }
+#else
+        (void)self;
+#endif
         const RouteSet &set = route_sets[i];
         for (uint8_t r = 0; r < set.count; r++) {
             const uint8_t *p = set.rows[r].pins;
@@ -225,6 +238,22 @@ void CH32RVSPIClass::begin()
     if (_slot) {
         end();
     }
+#if CH32RV_SPI_SINGLE
+    if (SPI_COUNT == 0) {
+        return;                /* the SPI is Disable on this board */
+    }
+    /* Its own constant rather than &spis[0].def: a pointer into the table
+     * would keep the whole table in flash for 12 bytes of it. */
+#if defined(CH32RV_SPI_HAS_1)
+    static const ch32rv_route_t def = CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_1);
+#elif defined(CH32RV_SPI_HAS_2)
+    static const ch32rv_route_t def = CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_2);
+#else
+    static const ch32rv_route_t def = CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_3);
+#endif
+    const uint8_t index = 0;
+    const ch32rv_route_t *route = _want ? _want : &def;
+#else
     uint8_t index = _want_index;
     const ch32rv_route_t *route = _want;
     if (!route) {
@@ -246,8 +275,11 @@ void CH32RVSPIClass::begin()
     if (owner[index] && owner[index] != this) {
         return;
     }
+#endif
     const SpiDesc &d = spis[index];
+#if !CH32RV_SPI_SINGLE
     owner[index] = this;
+#endif
     _slot = (uint8_t)(index + 1);
     _base = d.base;
     _sck_pin = route->pins[0];
@@ -334,7 +366,9 @@ void CH32RVSPIClass::end()
     const SpiDesc &d = spis[index_of(_slot)];
     CH32RV_SPI_CTLR1(_base) = 0;
     ch32rv_clock_disable_at(d.clken_addr, d.clken_mask);
+#if !CH32RV_SPI_SINGLE
     owner[index_of(_slot)] = nullptr;
+#endif
     _slot = 0;
     _started = false;
 }
