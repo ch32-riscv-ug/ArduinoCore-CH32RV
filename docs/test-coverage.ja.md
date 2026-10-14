@@ -32,6 +32,7 @@
 | tests/instrumented/uart/test_uart_contract.py | 標準UARTの115200 8N1で独立UARTと64 byte binary往復 | 他instance/route/baud/format、overflow、波形 |
 | tests/instrumented/gpio/test_gpio_contract.py | 設定したpadの出力を独立観測し、外部刺激をDUTで読む | 全pad、analog、PWM、interrupt |
 | tests/instrumented/power/test_power_contract.py | USBの対象だけの消失と再列挙、descriptor identity、runnerによるDUT再attach | VDD低下の測定とcold boot証明 |
+| tests/instrumented/usb/test_usb_classes_contract.py | X035 のベンダー（バルク）・MSC（FAT RAM ディスク）・CCID の複合デバイス。BOS の WebUSB / MS OS 2.0 の中身、ベンダーの往復とリクエスト、MSC のブロック読み書きとホストが置いたファイルの読み戻し、CCID の ATR と APDU 往復 | Windows / Chrome での実動作、PC/SC、MSC の速度、OS のマウント |
 | tests/instrumented/usb/test_usb_contract.py | X035 の CH32RVUsbDevice 複合デバイスの列挙と build 照合、CDC・HID（レポートID、ベンダー、キー入力）・MIDI の往復、`end()`→`begin()` の再列挙、DFU_DETACH / 1200bps タッチでの ISP 移行と自動復帰 | 大量転送の速度、suspend / resume、VBUS 依存、ISP での書き込み、他系列、PC 以外のホスト役 |
 
 ## 現行 CI の保証と未整備の検証
@@ -130,7 +131,7 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 | 契約 | 実装 | 旧検証の参考（新 suite では未整備） | 不足する保証 / 必要設備 |
 |---|---|---|---|
 | TinyUSB source の固定 | あり | 現行: tests/platform/test_source_locks.py、tools/vendor/vendor_tinyusb.py | 動作保証ではない。source/patch/lock の整合のみ |
-| Arduino USB 初期化・device API | 一部（X033/X035 の CDC・HID・MIDI・DFU runtime） | 現行: tests/instrumented/usb（X035、ホスト役は PC）。手動確認: 全 example の列挙と動作、CDC 双方向 32 KiB、`ch32rv isp flash --entry auto` での書き込み | 他系列、suspend / resume、大量転送、PC 以外のホスト役 |
+| Arduino USB 初期化・device API | 一部（X033/X035 の CDC・HID・MIDI・ベンダー・MSC・CCID・DFU runtime、WebUSB / MS OS 2.0） | 現行: tests/instrumented/usb（X035、ホスト役は PC）。手動確認: 全 example の列挙と動作、CDC 双方向 32 KiB、`ch32rv isp flash --entry auto` での書き込み | 他系列、suspend / resume、大量転送、PC 以外のホスト役 |
 | Arduino USB host API | 未実装 | なし | core/IRQ/clock/driver/lifecycle の結線、CH32X035 host と独立 device |
 | CDC/HID 等の sketch USB class | 未実装 | なし | host 側 driver と device 側 class の control/data/error/復旧契約を別々に検証。対向機と role 別 profile |
 | USB controller/speed の系列差 | Arduino 統合は未実装 | source 固定のみ | vendor driver の存在だけで対応とはしない。実装採用対象ごとの build と実機 |

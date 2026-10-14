@@ -31,13 +31,13 @@ static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
     return sizeof d;
 }
 
-static const CH32RVUsbFunctionType cdc_type = {&cdc_driver, cdc_descriptor, 2, CFG_TUD_CDC};
+static const CH32RVUsbFunctionType cdc_type = {&cdc_driver, cdc_descriptor, 2, CFG_TUD_CDC, nullptr, 0};
 
 /* TinyUSB reports by instance; this finds the object. */
 static CH32RVUsbDeviceCdcSerial *ports[CFG_TUD_CDC];
 
 CH32RVUsbDeviceCdcSerial::CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device, const char *name)
-    : CH32RVUsbDeviceFunction(device, cdc_type, name ? name : "CDC")
+    : CH32RVUsbDeviceFunction(device, cdc_type, name ? name : CH32RV_USB_CDC_NAME)
 {
     if (attached()) {
         ports[instance()] = this;
@@ -201,10 +201,10 @@ static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint1
     return 0;
 }
 
-static const CH32RVUsbFunctionType cdc_type = {nullptr, cdc_descriptor, 2, 1};
+static const CH32RVUsbFunctionType cdc_type = {nullptr, cdc_descriptor, 2, 1, nullptr, 0};
 
 CH32RVUsbDeviceCdcSerial::CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device, const char *name)
-    : CH32RVUsbDeviceFunction(device, cdc_type, name ? name : "CDC")
+    : CH32RVUsbDeviceFunction(device, cdc_type, name ? name : CH32RV_USB_CDC_NAME)
 {
 }
 

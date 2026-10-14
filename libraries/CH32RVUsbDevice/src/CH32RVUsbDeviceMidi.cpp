@@ -99,16 +99,16 @@ static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ds
     return at;
 }
 
-static const CH32RVUsbFunctionType midi_type = {&midi_driver, midi_descriptor, 2, CFG_TUD_MIDI};
+static const CH32RVUsbFunctionType midi_type = {&midi_driver, midi_descriptor, 2, CFG_TUD_MIDI, nullptr, 0};
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t cableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, "MIDI"), _inCables(clamp_cables(cableCount)),
+    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(cableCount)),
       _outCables(clamp_cables(cableCount))
 {
 }
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t inCableCount, uint8_t outCableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, "MIDI"), _inCables(clamp_cables(inCableCount)),
+    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(inCableCount)),
       _outCables(clamp_cables(outCableCount))
 {
 }
@@ -139,16 +139,16 @@ static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint
     return 0;
 }
 
-static const CH32RVUsbFunctionType midi_type = {nullptr, midi_descriptor, 2, 1};
+static const CH32RVUsbFunctionType midi_type = {nullptr, midi_descriptor, 2, 1, nullptr, 0};
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t cableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, "MIDI"), _inCables(clamp_cables(cableCount)),
+    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(cableCount)),
       _outCables(clamp_cables(cableCount))
 {
 }
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t inCableCount, uint8_t outCableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, "MIDI"), _inCables(clamp_cables(inCableCount)),
+    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(inCableCount)),
       _outCables(clamp_cables(outCableCount))
 {
 }

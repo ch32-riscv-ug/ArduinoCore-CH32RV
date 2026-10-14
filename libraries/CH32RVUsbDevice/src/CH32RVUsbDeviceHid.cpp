@@ -133,11 +133,11 @@ static const usbd_class_driver_t hid_driver = {
 class HidInterface;
 static uint16_t hid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
                                uint8_t *ep, uint8_t str);
-static const CH32RVUsbFunctionType hid_type = {&hid_driver, hid_descriptor, 1, CFG_TUD_HID};
+static const CH32RVUsbFunctionType hid_type = {&hid_driver, hid_descriptor, 1, CFG_TUD_HID, &CH32RVUsbDeviceConfig::hidInterfaceName, 0};
 
 class HidInterface : public CH32RVUsbDeviceFunction {
 public:
-    explicit HidInterface(CH32RVUsbDevice &device) : CH32RVUsbDeviceFunction(device, hid_type, "HID") {}
+    explicit HidInterface(CH32RVUsbDevice &device) : CH32RVUsbDeviceFunction(device, hid_type, CH32RV_USB_HID_NAME) {}
 
     bool add(CH32RVUsbDeviceHidClass *c)
     {

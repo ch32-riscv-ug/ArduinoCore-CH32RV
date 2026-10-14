@@ -47,17 +47,91 @@ enum class CH32RVUsbController : uint8_t {
     Usbd,          /* the device-only USBD of CH32V20x */
 };
 
+/* How the Microsoft OS 2.0 descriptor set names the interfaces Windows should
+ * bind WinUSB to (EspUsbDeviceMsOs20Layout). Windows resolves a function
+ * subset only through usbccgp.sys, which it loads for a composite device, so a
+ * single-interface device needs the flat form. */
+enum CH32RVUsbDeviceMsOs20Layout : uint8_t {
+    /* Subsets when the configuration has more than one interface, flat with
+     * exactly one. */
+    CH32RV_USB_DEVICE_MS_OS_20_AUTO = 0,
+    CH32RV_USB_DEVICE_MS_OS_20_FLAT,
+    CH32RV_USB_DEVICE_MS_OS_20_SUBSETS,
+};
+
+/* Every default string and identity, overridable from build_opt.h
+ * (-DCH32RV_USB_DEVICE_PRODUCT='"My gadget"'); most can also be changed at run
+ * time - CH32RVUsbDeviceConfig, or setName() on a class object. */
+#ifndef CH32RV_USB_DEVICE_VID
+#define CH32RV_USB_DEVICE_VID 0x1209          /* pid.codes test VID:PID */
+#endif
+#ifndef CH32RV_USB_DEVICE_PID
+#define CH32RV_USB_DEVICE_PID 0x0001
+#endif
+#ifndef CH32RV_USB_DEVICE_VERSION
+#define CH32RV_USB_DEVICE_VERSION 0x0100
+#endif
+#ifndef CH32RV_USB_DEVICE_MANUFACTURER
+#define CH32RV_USB_DEVICE_MANUFACTURER "ch32-riscv-ug"
+#endif
+#ifndef CH32RV_USB_DEVICE_PRODUCT
+#define CH32RV_USB_DEVICE_PRODUCT "CH32RV Arduino"
+#endif
+/* Interface names (iInterface) - what the host shows for each function. */
+#ifndef CH32RV_USB_CDC_NAME
+#define CH32RV_USB_CDC_NAME "CDC"
+#endif
+#ifndef CH32RV_USB_HID_NAME
+#define CH32RV_USB_HID_NAME "HID"
+#endif
+#ifndef CH32RV_USB_MIDI_NAME
+#define CH32RV_USB_MIDI_NAME "MIDI"
+#endif
+#ifndef CH32RV_USB_VENDOR_NAME
+#define CH32RV_USB_VENDOR_NAME "Vendor"
+#endif
+#ifndef CH32RV_USB_MSC_NAME
+#define CH32RV_USB_MSC_NAME "Mass storage"
+#endif
+#ifndef CH32RV_USB_CCID_NAME
+#define CH32RV_USB_CCID_NAME "Smart card reader"
+#endif
+/* The DFU runtime's: ch32rv's discovery lists a device whose DFU runtime
+ * interface carries "CH32RV" as an upload port. Another name keeps the
+ * interface working (DFU_DETACH still enters the bootloader) but takes the
+ * device out of that list. */
+#ifndef CH32RV_USB_DFU_RUNTIME_NAME
+#define CH32RV_USB_DFU_RUNTIME_NAME "CH32RV"
+#endif
+/* SCSI INQUIRY of CH32RVUsbDeviceMsc (8 / 16 / 4 characters) and the FAT RAM
+ * disk's volume label (11). */
+#ifndef CH32RV_USB_MSC_VENDOR
+#define CH32RV_USB_MSC_VENDOR "CH32RV"
+#endif
+#ifndef CH32RV_USB_MSC_PRODUCT
+#define CH32RV_USB_MSC_PRODUCT "MSC"
+#endif
+#ifndef CH32RV_USB_MSC_REVISION
+#define CH32RV_USB_MSC_REVISION "1.0"
+#endif
+#ifndef CH32RV_USB_MSC_VOLUME_LABEL
+#define CH32RV_USB_MSC_VOLUME_LABEL "CH32RV"
+#endif
+
 struct CH32RVUsbDeviceConfig {
     /* The pid.codes test VID:PID: fine on a bench, not for a product. A
      * product needs its own (pid.codes, or the USB-IF). */
-    uint16_t vid = 0x1209;
-    uint16_t pid = 0x0001;
+    uint16_t vid = CH32RV_USB_DEVICE_VID;
+    uint16_t pid = CH32RV_USB_DEVICE_PID;
     /* bcdDevice, BCD: 0x0100 = 1.00. */
-    uint16_t deviceVersion = 0x0100;
-    const char *manufacturer = "ch32-riscv-ug";
-    const char *product = "CH32RV Arduino";
-    /* nullptr: the chip's 64-bit unique ID in hex, so two boards on one host
-     * stay apart. The strings must outlive the device. */
+    uint16_t deviceVersion = CH32RV_USB_DEVICE_VERSION;
+    const char *manufacturer = CH32RV_USB_DEVICE_MANUFACTURER;
+    const char *product = CH32RV_USB_DEVICE_PRODUCT;
+    /* nullptr: the chip's 64-bit unique ID in hex - unique per chip, by
+     * contract: two boards on one host stay apart, and ch32rv's discovery
+     * names the upload port after it (ch32rv-app://<serial>), so the port
+     * keeps its name on another USB socket. The strings must outlive the
+     * device. */
     const char *serialNumber = nullptr;
     uint16_t maxPowerMilliamps = 100;
     bool selfPowered = false;
@@ -68,6 +142,30 @@ struct CH32RVUsbDeviceConfig {
      * linked, since this is a run-time choice - -DCH32RV_USB_NO_DEFAULT_DFU in
      * build_opt.h removes it from the build as well. */
     bool dfuRuntime = true;
+    /* Names of the two interfaces a sketch has no object for: the default DFU
+     * runtime (CH32RV_USB_DFU_RUNTIME_NAME - see there before changing it)
+     * and the HID interface all HID classes share. nullptr keeps the default. */
+    const char *dfuRuntimeName = nullptr;
+    const char *hidInterfaceName = nullptr;
+    /* WebUSB: a browser may reach the device, and shows webusbUrl (the
+     * landing page) when it is plugged in. Needs a BOS, so a vendor interface
+     * or the DFU runtime has to be there. */
+    bool webusbEnabled = false;
+    const char *webusbUrl = nullptr;
+    /* Microsoft OS 2.0 descriptors: what makes Windows bind WinUSB to the
+     * vendor and DFU runtime interfaces without a driver install. */
+    CH32RVUsbDeviceMsOs20Layout msOs20Layout = CH32RV_USB_DEVICE_MS_OS_20_AUTO;
+    /* The DeviceInterfaceGUIDs Windows records for the vendor interface: what
+     * a host application looks the device up by. "{8-4-4-4-12}", braces
+     * included; anything else fails begin() with InvalidArgument. nullptr
+     * keeps EspUsbDevice's default - give a product its own. */
+    const char *deviceInterfaceGuid = nullptr;
+    /* Ask Windows to treat the device as composite whatever its interface
+     * count (MS_OS_20_FEATURE_CCGP_DEVICE); forces the subset layout. */
+    bool msOs20CcgpDevice = false;
+    /* wVendorRevision. Windows re-reads the properties only when it changes;
+     * 0 derives it from the set's own bytes, so it moves with them. */
+    uint16_t msOs20VendorRevision = 0;
     CH32RVUsbController controller = CH32RVUsbController::Auto;
 };
 
@@ -82,6 +180,7 @@ enum class CH32RVUsbDeviceError : uint8_t {
     TooManyInstances,     /* more of one class than its CFG_TUD_* allows */
     OutOfEndpoints,       /* the functions need more endpoints than exist */
     DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (320) bytes */
+    InvalidArgument,      /* a config field is malformed (deviceInterfaceGuid) */
 };
 
 #ifndef CH32RV_USB_MAX_FUNCTIONS
@@ -100,6 +199,12 @@ struct CH32RVUsbFunctionType {
                            uint8_t itf, uint8_t *ep, uint8_t str);
     uint8_t interfaces;
     uint8_t maxInstances;         /* the class's CFG_TUD_* count */
+    /* The config field that names this interface, when the sketch has no
+     * object to call setName() on (the HID interface, the default DFU). */
+    const char *CH32RVUsbDeviceConfig::*configName;
+    /* Windows should bind WinUSB to this interface (MS OS 2.0): 1 with the
+     * compatible ID alone, 2 with DeviceInterfaceGUIDs as well. */
+    uint8_t winusb;
 };
 
 /* Base of every class object. Declaring one attaches it to the device. */
@@ -109,9 +214,15 @@ public:
      * begin(); the string must outlive the device. */
     void setName(const char *name) { _name = name; }
     const char *name() const { return _name; }
+    /* What the host is shown: name(), or the config field that overrides it
+     * (CH32RVUsbDeviceConfig::hidInterfaceName / dfuRuntimeName). */
+    const char *interfaceName() const;
     /* Which of its class this is (0 for the first CDC port, 1 for the
      * second ...): TinyUSB's instance number. */
     uint8_t instance() const { return _instance; }
+    /* Its first interface number, once the device has begun. */
+    uint8_t interfaceNumber() const { return _interface; }
+    uint8_t winusb() const { return _type.winusb; }
     /* False when the device refused it (see CH32RVUsbDevice::lastError()). */
     bool attached() const { return _attached; }
     CH32RVUsbDevice &device() const { return _device; }
@@ -126,6 +237,7 @@ private:
     const CH32RVUsbFunctionType &_type;
     const char *_name;
     uint8_t _instance = 0;
+    uint8_t _interface = 0;
     bool _attached = false;
 };
 
@@ -178,6 +290,17 @@ public:
     bool sendHidReport(uint8_t instance, uint8_t reportId, const void *data, size_t length,
                        uint32_t timeoutMs = 100);
 
+    /* The BOS and Microsoft OS 2.0 set in use (null / 0 without one), and
+     * the wVendorRevision that applied. */
+    const uint8_t *bosDescriptor() const;
+    uint16_t bosDescriptorLength() const;
+    const uint8_t *microsoftOs20Descriptor() const;
+    uint16_t microsoftOs20DescriptorLength() const;
+    uint16_t microsoftOs20VendorRevision() const;
+    bool microsoftOs20UsesSubsets() const;
+    /* Interfaces in the configuration (after begin()). */
+    uint8_t interfaceCount() const;
+
     /* For the class objects (EspUsbDevice::addClass). */
     bool attach(CH32RVUsbDeviceFunction &f);
     bool addClass(CH32RVUsbDeviceFunction *f) { return f && attach(*f); }
@@ -198,3 +321,6 @@ extern CH32RVUsbDevice USBDevice;
 #include "CH32RVUsbDeviceDfuRuntime.h"
 #include "CH32RVUsbDeviceHid.h"
 #include "CH32RVUsbDeviceMidi.h"
+#include "CH32RVUsbDeviceVendor.h"
+#include "CH32RVUsbDeviceMsc.h"
+#include "CH32RVUsbDeviceCcid.h"

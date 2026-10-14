@@ -64,8 +64,12 @@ extern "C" {
 #ifndef CFG_TUD_DFU_RUNTIME
 #define CFG_TUD_DFU_RUNTIME      1
 #endif
-#define CFG_TUD_MSC              0
-#define CFG_TUD_VENDOR           0
+#ifndef CFG_TUD_MSC
+#define CFG_TUD_MSC              1
+#endif
+#ifndef CFG_TUD_VENDOR
+#define CFG_TUD_VENDOR           1
+#endif
 
 /* Buffers, per instance. CDC 256 B each way keeps a 115200-baud burst; 64 B
  * saves 384 B of RAM per port on a part that needs it. */
@@ -84,6 +88,17 @@ extern "C" {
 #endif
 #ifndef CFG_TUD_MIDI_TX_BUFSIZE
 #define CFG_TUD_MIDI_TX_BUFSIZE  64
+#endif
+/* Vendor (bulk): the FIFOs behind available()/read() and write(). */
+#ifndef CFG_TUD_VENDOR_RX_BUFSIZE
+#define CFG_TUD_VENDOR_RX_BUFSIZE 128
+#endif
+#ifndef CFG_TUD_VENDOR_TX_BUFSIZE
+#define CFG_TUD_VENDOR_TX_BUFSIZE 128
+#endif
+/* MSC: one transfer buffer; a block (512) moves in one piece. */
+#ifndef CFG_TUD_MSC_EP_BUFSIZE
+#define CFG_TUD_MSC_EP_BUFSIZE   512
 #endif
 
 #ifdef __cplusplus

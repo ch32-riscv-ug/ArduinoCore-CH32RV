@@ -1,6 +1,7 @@
 # CH32RVUsbDevice — チップの USB をデバイスとして使う
 
 CDC シリアル、HID（キーボード・マウス・ゲームパッド・メディアキー・システム制御・ベンダー・カスタム）、MIDI、
+ベンダー（バルク。WebUSB と MS OS 2.0 ディスクリプタ付き）、MSC（RAM ディスク付き）、スマートカードリーダー（CCID）、
 DFU ランタイム（書き込みの入口）を、宣言するだけで組み合わせられる USB デバイスのライブラリです。
 API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) に合わせてあり、名前の `Esp` を `CH32RV` に
 置き換えれば、たいていのスケッチはそのまま動きます。土台は同梱の TinyUSB（[CH32RVTinyUSB](../CH32RVTinyUSB/)）です。
@@ -50,8 +51,12 @@ void loop() {
   動かせます。
 - **個数とバッファはビルド時に決まります。** CDC を2つ以上使うときは、スケッチの `build_opt.h` に
   `-DCFG_TUD_CDC=2` と書きます。EspUsbDevice の実行時の設定（`setRxBufferSize()` など）はありません。
-- **まだ無いもの**: ベンダー（バルク）、MSC、CCID、オーディオ、ビデオ、USB ネットワーク、ファームウェア更新の各クラス、
-  WebUSB / MS OS 2.0 の設定項目（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
+- **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
+  EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
+- **無いもの**: オーディオ、ビデオ、USB ネットワーク、ファームウェア更新の各クラス、SD カードのディスク、ベンダーの
+  直接転送（`writeDirect()` は `NotSupported`）（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
+- **既定の文字列と ID はすべて `build_opt.h` の define で上書きできます**（VID/PID、メーカー名、製品名、
+  インターフェース名、MSC の INQUIRY、FAT のボリュームラベル）。
 - **DFU ランタイムが既定で付きます**（EspUsbDevice には無い動作）。USB を使うスケッチは、何も書かなくても USB から
   書き込み直せます。`config.dfuRuntime = false` で外せます。
 - **このライブラリだけのもの**: `CH32RVUsbDeviceDfuRuntime`（ISP への入口）、`SerialUSB` / `USBDevice` の定義済み
@@ -71,7 +76,11 @@ void loop() {
 | `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID（ドライバ不要のデータ通信）。`sendInput()`、`onOutputReport()`、`onFeatureReport()` |
 | `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID |
 | `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル）。`noteOn(channel, note, velocity, cable)`、`readPacket()` |
-| `CH32RVUsbDeviceDfuRuntime` | DFU_DETACH を受けて工場出荷の USB ISP ブートローダーに入る入口。DFU のランタイムインターフェースだけで、DFU モードやダウンロードはありません。**既定で付きます**（`config.dfuRuntime = false` で外す）。宣言するのは `onDetach()` を使うときだけ |
+| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`write()`、`flush()`、`waitWritable()`、`onRx()`、`onControlRequest()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
+| `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`、`isWritable()`、`vendorID()` など |
+| `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
+| `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |
+| `CH32RVUsbDeviceDfuRuntime` | DFU_DETACH を受けて工場出荷の USB ISP ブートローダーに入る入口。DFU のランタイムインターフェースだけで、DFU モードやダウンロードはありません。**既定で付きます**（`config.dfuRuntime = false` で外す）。宣言するのは `onDetach()` を使うときだけ。インターフェース名 "CH32RV" が ch32rv の discovery の目印 |
 
 HID のクラスは、いくつ宣言しても1つの HID インターフェースにまとまります（EspUsbDevice と同じ）。1つだけなら
 そのまま（キーボードとマウスは BIOS でも使えるブートデバイス）、2つ以上ならレポート ID で区別します。
@@ -84,9 +93,13 @@ HID のクラスは、いくつ宣言しても1つの HID インターフェー�
 | Keyboard、KeyboardNKRO、Mouse、KeyboardMouse、MediaKeys、Gamepad | HID。**起動すると自動で入力を送ります**（EspUsbDevice の例と同じ） |
 | VendorHID、CustomHID | ベンダー HID / 自分のレポートディスクリプタ |
 | MIDI、MIDIController、MIDIInterface | MIDI。MIDIInterface は UART の MIDI と USB MIDI の変換 |
+| USBVendor | ベンダー（バルク）と WebUSB、ベンダーリクエスト |
+| MSC、MSCFatRamDisk | RAM ディスク / FAT の RAM ディスク（X035 の RAM に合わせて 8〜10 KB に縮小） |
+| CompositeHidCdcMsc | キーボード + CDC + MSC の複合デバイス |
+| SmartCardReader | CCID のカードリーダー |
 | SerialUSBEcho、CustomDevice、DfuRuntime | このライブラリ独自: `SerialUSB` だけの形、設定と失敗の表示、書き込みの入口だけ |
 
-EspUsbDevice の同名の例を移植したもの（Serial〜MIDIInterface）は、名前の置き換えとピン・VID/PID の変更だけで、
+EspUsbDevice の同名の例を移植したもの（Serial〜SmartCardReader）は、名前の置き換えとピン・VID/PID の変更だけで、
 中身は元のままです。
 
 ## 対応

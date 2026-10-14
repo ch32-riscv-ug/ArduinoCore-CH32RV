@@ -4,24 +4,17 @@
 
 ## 製品ボード別のテンプレート（examples）
 
-製品ボードごとに、使えるペリフェラルをなるべく全部初期化して使う雛形を examples に置く。同時に使えないものは、
-コメントを外せば使えるようにしておく。
-
-- **WeAct CH32X035 Core Board**: USB デバイス（CDC）、PD、UART、I2C、SPI、ADC、PWM、LED。I2C は USB か SWD の
-  端子にしか出ていないので、その切り替えをコメントで示す。
-- **UIAPduino Pro Micro CH32V003 V1.4**: UART・I2C・SPI（ハードウェアは各1系統）、ADC、PWM、LED（PC0）。
-  SPI は既定の AUTO のままにし、メーカーのピン配置図にある2通りの route（NSS が PC1 か PC0 か）はテンプレートの
-  コメントで示す。
-- 板の数はいま2つ。増えたら同じ形で足す。
-
-決まったこと: DFU ランタイムは USB デバイスの初期化で既定で付き、`config.dfuRuntime = false` で外せる（実装済み）。
+WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32RV/examples/Board*）。板が増えたら同じ形で
+足す（`board:` 宣言でその板だけビルドする）。
 
 ## USB
 
-- EspUsbDevice の残りのクラス（ベンダー〔バルク〕・WebUSB / MS OS 2.0 の設定、MSC、CCID。オーディオ・ビデオ・
-  USB ネットワークは X035 で動くかを試してから）。[docs/usb.ja.md](docs/usb.ja.md#今後の予定)
+- EspUsbDevice の残りのクラス: オーディオ・ビデオ・USB ネットワーク（X035 で動くかを試してから）、SD カードの MSC。
+  [docs/usb.ja.md](docs/usb.ja.md#今後の予定)
 - Arduino IDE の書き込み（upload recipe）を `ch32rv isp flash --entry auto --app-device port:...` にする。
-  DFU ランタイムだけのスケッチ（tty が無い）を IDE のポートとして見せる discovery を ch32rv 側と相談する。
+  ch32rv の discovery（9846fac、f20aee7）は `ch32rv-app://<USB シリアル>`（DFU ランタイムの名前が "CH32RV" のデバイス。
+  モニタは同じデバイスの CDC で、ch32rv 側で確認済み）と `ch32rv-isp://<位置>`（1a86:55e0）を出す。その版を同梱したら
+  platform.txt に `upload.tool.ch32rv-app` / `ch32rv-isp` と pluggable_monitor の対応を足す。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。
 - **UIAPduino のソフトウェア USB（rv003usb）をアプリモードでも動かす**。今はブートローダー（1209:b003）だけで使っている。
   rv003usb をそのまま持ってくるか、同じような処理を自作するかから検討する（ライセンス、CH32RVUsbDevice と同じ API に

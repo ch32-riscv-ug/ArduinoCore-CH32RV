@@ -4,7 +4,7 @@
 
 | ライブラリ | 役割 | スケッチから |
 |---|---|---|
-| [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/) | チップの USB をデバイスとして使う（CDC・HID・MIDI・DFU ランタイム） | `#include <CH32RVUsbDevice.h>` |
+| [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/) | チップの USB をデバイスとして使う（CDC・HID・MIDI・ベンダー・MSC・CCID・DFU ランタイム） | `#include <CH32RVUsbDevice.h>` |
 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/) | USB-C の PD 充電器に電圧を頼む（シンク） | `#include <CH32RVUsbPd.h>` |
 | [CH32RVTinyUSB](../libraries/CH32RVTinyUSB/) | 同梱の TinyUSB 本体と設定 | 直接は使わない |
 
@@ -64,6 +64,10 @@ API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) に合わ
 | `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID。ドライバ不要のデータ通信（hidapi、WebHID） | VendorHID |
 | `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID | CustomHID |
 | `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル） | MIDI、MIDIController、MIDIInterface |
+| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（libusb、WebUSB、WinUSB からドライバ不要で使う）。`onControlRequest()` でベンダーリクエストにも答えられる | USBVendor |
+| `CH32RVUsbDeviceMsc` | USB メモリ（マスストレージ）。ブロックは `onRead()` / `onWrite()` か、下の RAM ディスクから | MSC、MSCFatRamDisk、CompositeHidCdcMsc |
+| `CH32RVUsbDeviceMscRamDisk` / `MscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム（スケッチからファイルを置く・ホストが置いたファイルを読む） | MSC、MSCFatRamDisk |
+| `CH32RVUsbDeviceCcid` | スマートカードリーダー（スロット1つ）。ホストの PC/SC から見えるカードの中身をスケッチが答える | SmartCardReader |
 | `CH32RVUsbDeviceDfuRuntime` | USB だけで書き込み直す入口。既定で付くので、宣言するのは `onDetach()` を使うときだけ（[書き込み](#書き込み) を参照） | DfuRuntime |
 
 HID のクラスは、いくつ宣言しても1つの HID インターフェースにまとまります。1つだけならそのまま（キーボードとマウスは
@@ -95,9 +99,29 @@ void setup() {
 }
 ```
 
-- `serialNumber` を省略すると、チップの固有 ID（64 bit）を使います。同じ PC に2枚つないでも区別できます。
+- `serialNumber` を省略すると、チップの固有 ID（64 bit、16 桁の16進）を使います。**チップごとに一意であることを仕様とします。**
+  同じ PC に2枚つないでも区別でき、ch32rv の discovery はこれを書き込みポートの名前（`ch32rv-app://<シリアル>`）に
+  使うので、別の USB ポートに挿し直しても IDE のポート名が変わりません。スケッチが固定のシリアルを付けて複数台を
+  つないだ場合、ch32rv は重なったものを USB の位置の名前（`ch32rv-app://usb-<位置>`）に落とします。
 - インターフェースの名前は `setName()` で変えられます（`console.setName("Console")`）。
 - 1209:0001 は pid.codes のテスト用 ID です。机の上の試作には使えますが、製品には使えません。
+- スケッチがオブジェクトを持たない2つのインターフェースの名前は、設定で変えます: `config.hidInterfaceName`（HID を
+  まとめたインターフェース）、`config.dfuRuntimeName`（既定の DFU ランタイム。変える前に [書き込み](#書き込み) の
+  discovery の説明を読んでください）。
+
+**既定の文字列と ID は、すべて `build_opt.h` で上書きできます。** スケッチを書き換えずに板や製品ごとに変えたいときに
+使います（実行時の設定や `setName()` があれば、そちらが優先です）。
+
+| define | 既定 | 何の既定か |
+|---|---|---|
+| `CH32RV_USB_DEVICE_VID` / `_PID` / `CH32RV_USB_DEVICE_VERSION` | 0x1209 / 0x0001 / 0x0100 | `config.vid` / `pid` / `deviceVersion` |
+| `CH32RV_USB_DEVICE_MANUFACTURER` / `_PRODUCT` | "ch32-riscv-ug" / "CH32RV Arduino" | `config.manufacturer` / `product` |
+| `CH32RV_USB_CDC_NAME`、`_HID_NAME`、`_MIDI_NAME`、`_VENDOR_NAME`、`_MSC_NAME`、`_CCID_NAME` | "CDC"、"HID"、"MIDI"、"Vendor"、"Mass storage"、"Smart card reader" | 各インターフェースの名前（iInterface） |
+| `CH32RV_USB_DFU_RUNTIME_NAME` | "CH32RV" | DFU ランタイムの名前。ch32rv の discovery の目印 |
+| `CH32RV_USB_MSC_VENDOR` / `_PRODUCT` / `_REVISION` | "CH32RV" / "MSC" / "1.0" | MSC の SCSI INQUIRY（`vendorID()` などで変更） |
+| `CH32RV_USB_MSC_VOLUME_LABEL` | "CH32RV" | FAT RAM ディスクの `format()` のボリュームラベル |
+
+文字列の define は `-DCH32RV_USB_DEVICE_PRODUCT='"My gadget"'` のように引用符ごと書きます。
 
 例: [CustomDevice](../libraries/CH32RVUsbDevice/examples/CustomDevice/CustomDevice.ino)
 
@@ -107,11 +131,12 @@ void setup() {
 |---|---|
 | `Unsupported` | この系列ではまだ USB デバイスが使えない |
 | `PortUnavailable` | `config.port` に、この部品に無いコントローラを指定した |
-| `TooManyFunctions` | クラスが `CH32RV_USB_MAX_FUNCTIONS`（既定 4）より多い |
+| `TooManyFunctions` | クラスが `CH32RV_USB_MAX_FUNCTIONS`（既定 6）より多い |
 | `TooManyInstances` | 同じクラスが上限（`CFG_TUD_CDC` など、既定 1）より多い |
 | `NotStarted` / `NotReady` | `begin()` の前、またはホストが構成していないときに HID のレポートを送ろうとした |
 | `OutOfEndpoints` | エンドポイントが足りない（X035 は 7 本） |
-| `DescriptorTooLarge` | 構成ディスクリプタが `CH32RV_USB_CONFIG_MAX`（既定 256 B）を超えた |
+| `DescriptorTooLarge` | 構成ディスクリプタが `CH32RV_USB_CONFIG_MAX`（既定 320 B）を超えた |
+| `InvalidArgument` | 設定の値が正しくない（`deviceInterfaceGuid` の形） |
 
 ### 4. 同じクラスを2つ以上：`build_opt.h`
 
@@ -126,19 +151,41 @@ void setup() {
 
 | 設定 | 既定 | 意味 |
 |---|---|---|
-| `CFG_TUD_CDC` / `CFG_TUD_MIDI` / `CFG_TUD_DFU_RUNTIME` | 1 | そのクラスをいくつまで持てるか（HID は常に1つのインターフェースにまとまるので増やす必要はない） |
+| `CFG_TUD_CDC` / `CFG_TUD_MIDI` / `CFG_TUD_VENDOR` / `CFG_TUD_DFU_RUNTIME` | 1 | そのクラスをいくつまで持てるか（HID は常に1つのインターフェースにまとまるので増やす必要はない） |
 | `CH32RV_USB_MAX_HID_CLASSES` | 6 | 1つのデバイスに宣言できる HID クラスの数 |
 | `CH32RV_USB_HID_REPORT_MAX` | 288 | HID を合成したレポートディスクリプタの大きさ（RAM） |
 | `CFG_TUD_CDC_RX_BUFSIZE` / `CFG_TUD_CDC_TX_BUFSIZE` | 256 | CDC 1ポートあたりのバッファ |
 | `CFG_TUD_HID_EP_BUFSIZE` | 64 | HID のレポートの最大長 |
 | `CFG_TUD_MIDI_RX_BUFSIZE` / `CFG_TUD_MIDI_TX_BUFSIZE` | 64 | MIDI のバッファ |
-| `CH32RV_USB_MAX_FUNCTIONS` | 4 | デバイスに付けられるクラスの数 |
-| `CH32RV_USB_CONFIG_MAX` | 256 | 構成ディスクリプタの組み立て用バッファ（RAM） |
+| `CFG_TUD_VENDOR_RX_BUFSIZE` / `CFG_TUD_VENDOR_TX_BUFSIZE` | 128 | ベンダー（バルク）のバッファ |
+| `CFG_TUD_MSC_EP_BUFSIZE` | 512 | MSC の転送バッファ（1ブロック） |
+| `CH32RV_USB_DEVICE_CCID_BUFFER_SIZE` | 280 | CCID のメッセージの最大長（受信と送信に1つずつ） |
+| `CH32RV_USB_MAX_FUNCTIONS` | 6 | デバイスに付けられるクラスの数 |
+| `CH32RV_USB_CONFIG_MAX` | 320 | 構成ディスクリプタの組み立て用バッファ（RAM） |
 
 上限を上げても、そのクラスを宣言しなければ費用はかかりません。ただし宣言した場合は、上限の数だけ RAM を確保します
 （CDC 1つあたり約 0.7 KB）。
 
 例: [SerialMulti](../libraries/CH32RVUsbDevice/examples/SerialMulti/)（`build_opt.h` で CDC を2つ）
+
+## WebUSB と Windows（MS OS 2.0）
+
+ベンダー（バルク）のインターフェースか DFU ランタイムがあると、デバイスは BOS ディスクリプタ（bcdUSB 2.10）を持ち、
+次の2つを載せます。並べ方・ベンダーコード・既定の GUID は EspUsbDevice と同じなので、どちら向けに書いたホストの
+プログラムも、そのまま相手を見つけられます。
+
+- **Microsoft OS 2.0 ディスクリプタ**: Windows がベンダーと DFU のインターフェースに WinUSB をドライバのインストール
+  なしで当てます。ベンダーには `DeviceInterfaceGUIDs`（ホストのアプリが探す GUID）も付けます。
+  - `config.deviceInterfaceGuid`: 製品ごとに自分の GUID を付けます（`{8-4-4-4-12}` の形。違うと `begin()` が
+    `InvalidArgument`）。既定は EspUsbDevice と同じ GUID です。
+  - `config.msOs20Layout`: `AUTO`（インターフェースが2つ以上ならサブセット形式、1つなら平らな形式）、`FLAT`、`SUBSETS`。
+  - `config.msOs20CcgpDevice`: 1機能でも複合デバイスとして扱わせる。`config.msOs20VendorRevision`: 0 なら内容から
+    自動で決まり、内容が変わると Windows が読み直します。
+- **WebUSB**: `config.webusbEnabled = true` と `config.webusbUrl` で、Chrome などがデバイスを開けるようになり、つないだ
+  ときにそのページを案内します。
+
+X035 の実機で、BOS・MS OS 2.0 の中身（互換 ID 2つ、GUID）・WebUSB の URL をホストから読み出して確かめています
+（tests/instrumented/usb）。Windows での動作はまだ確かめていません。
 
 ## スタックの動かし方
 
@@ -169,6 +216,13 @@ ch32rv --non-interactive isp flash sketch.ino.elf --entry auto --app-device port
 **DFU ランタイムは既定で付きます。** USB デバイスを使うスケッチなら、何も書かなくても USB から書き込み直せます。
 外すときは `config.dfuRuntime = false` です（インターフェースが無くなります）。実行時の設定なのでコードは残ります。
 ビルドからも外すには、スケッチの `build_opt.h` に `-DCH32RV_USB_NO_DEFAULT_DFU` と書きます。
+
+**ch32rv の discovery**: DFU ランタイムのインターフェース名が "CH32RV"（`CH32RV_USB_DFU_RUNTIME_NAME`）のデバイスは、
+ch32rv の discovery が書き込み先のポート（`ch32rv-app://<USB シリアル>`、表示は「<製品名> (CH32RV, USB)」。モニタは同じデバイスの
+CDC）として出します（ch32rv f20aee7）。
+VID:PID ではこのコアのスケッチだと判定できないので、この名前を目印にしています。名前を変えると DFU_DETACH 自体は
+動きますが、このポートには出なくなります。工場出荷のブートローダーにいる間は `ch32rv-isp://<USB の位置>` が出ます。
+IDE からこれらのポートで書き込むには、ch32rv の新しい版と platform.txt の対応が要ります（[今後の予定](#今後の予定)）。
 
 **DFU は入口だけです。** `CH32RVUsbDeviceDfuRuntime` は DFU のランタイムインターフェース（DFU_DETACH を受ける
 だけのもの）で、DFU モードもダウンロードもありません。ディスクリプタでも書き込みができる（CAN_DOWNLOAD）とは
@@ -223,15 +277,22 @@ void loop() { USBPD.maintain(); }    // PPS の契約を保つ
 | `SerialUSB`（既定の DFU ランタイム込み） | +12.4 KB | +3.2 KB |
 | キーボード1つ（US 配列、DFU ランタイム込み） | +14.6 KB | +3.0 KB |
 | CDC + DFU + HID 6種（合成）+ 2ケーブルの MIDI、日本語配列 | +23.1 KB | +4.3 KB |
+| DFU ランタイムだけ（`USBDevice.begin()`） | +10.5 KB | +3.4 KB |
+| ベンダー（バルク）の往復（DFU 込み、BOS / MS OS 2.0 も込み） | +13.1 KB | +3.9 KB |
+| MSC + 8 KB の RAM ディスク（DFU 込み。RAM はディスクの 8 KB を含む） | +15.1 KB | +12.1 KB |
+| 同じ大きさの FAT RAM ディスク（`format()`・`addTextFile()`） | +16.9 KB | +12.1 KB |
+| CCID（DFU 込み） | +13.3 KB | +4.2 KB |
 
 内訳の大半は、TinyUSB のデバイス層（約 3.7 KB）とコントローラのドライバ（約 2.2 KB / 1.3 KB）で、どのクラスを使っても
 1回だけかかります。キーボードのレイアウトは1種あたり約 1 KB です。
 
 ## 今後の予定
 
-- **EspUsbDevice の残りのクラス**: ベンダー（バルク転送）と WebUSB / MS OS 2.0 の設定項目、MSC（RAM ディスク・
-  自分で読み書きする形）、CCID を次に移植します。オーディオ・ビデオ・USB ネットワーク（NCM）は、X035 の容量
-  （Flash 62 KB / RAM 20 KB）と USBFS の転送方式で動くかを試してから決めます。
+- **EspUsbDevice の残りのクラス**: オーディオ・ビデオ・USB ネットワーク（NCM）は、X035 の容量（Flash 62 KB /
+  RAM 20 KB）と USBFS の転送方式で動くかを試してから決めます。SD カードの MSC（`EspUsbDeviceMscSdCard`）は、
+  このコアに SD のライブラリが入ってから。ベンダーの直接転送（`writeDirect()`）は持たず、常に `NotSupported` です。
+- **IDE から USB で書き込む**: ch32rv の discovery（`ch32rv-app` / `ch32rv-isp`、ch32rv 9846fac）が入った版を同梱したら、
+  platform.txt に書き込みとモニタの対応を足します。
 - **ホスト（`CH32RVUsbHost`）**: EspUsbHost と同じく、ホスト本体にクラスのオブジェクトを付ける形にします。同梱の
   TinyUSB のホストドライバは CH32V20x 用しかないので、V20x から始めます。X035 などはドライバから書く必要があります。
 - **コントローラを2つ持つ系列（V30x の FS / HS、V20x の USBD / USBFS）**: `config.controller` で実行時に選べるように

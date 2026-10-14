@@ -1,7 +1,7 @@
 /* The device: the functions attached to it, the descriptors laid out from
  * them, the chip side of TinyUSB (clocks and PHY, the interrupt, the task
  * hook), and the reset into the factory USB bootloader. */
-#include "CH32RVUsbDevice.h"
+#include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
@@ -16,6 +16,46 @@ CH32RVUsbDeviceFunction::CH32RVUsbDeviceFunction(CH32RVUsbDevice &device,
     : _device(device), _type(type), _name(name)
 {
     device.attach(*this);
+}
+
+/* The config names the interfaces a sketch has no object for. */
+const char *CH32RVUsbDeviceFunction::interfaceName() const
+{
+    const char *name = _type.configName ? _device.config().*(_type.configName) : nullptr;
+    return name ? name : _name;
+}
+
+/* Filled by CH32RVUsbDevicePlatform.cpp, when linked. */
+CH32RVUsbPlatform ch32rv_usb_platform;
+
+const uint8_t *CH32RVUsbDevice::bosDescriptor() const
+{
+    return ch32rv_usb_platform.bosLength ? ch32rv_usb_platform.bos : nullptr;
+}
+
+uint16_t CH32RVUsbDevice::bosDescriptorLength() const
+{
+    return ch32rv_usb_platform.bosLength;
+}
+
+const uint8_t *CH32RVUsbDevice::microsoftOs20Descriptor() const
+{
+    return ch32rv_usb_platform.msOs20Length ? ch32rv_usb_platform.msOs20 : nullptr;
+}
+
+uint16_t CH32RVUsbDevice::microsoftOs20DescriptorLength() const
+{
+    return ch32rv_usb_platform.msOs20Length;
+}
+
+uint16_t CH32RVUsbDevice::microsoftOs20VendorRevision() const
+{
+    return ch32rv_usb_platform.msOs20Revision;
+}
+
+bool CH32RVUsbDevice::microsoftOs20UsesSubsets() const
+{
+    return ch32rv_usb_platform.msOs20Length && ch32rv_usb_platform.msOs20Subsets;
 }
 
 bool CH32RVUsbDevice::attach(CH32RVUsbDeviceFunction &f)
@@ -59,6 +99,7 @@ const char *CH32RVUsbDevice::lastErrorName() const
     case CH32RVUsbDeviceError::TooManyInstances: return "TooManyInstances";
     case CH32RVUsbDeviceError::OutOfEndpoints: return "OutOfEndpoints";
     case CH32RVUsbDeviceError::DescriptorTooLarge: return "DescriptorTooLarge";
+    case CH32RVUsbDeviceError::InvalidArgument: return "InvalidArgument";
     }
     return "?";
 }
@@ -163,7 +204,8 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     uint16_t len = TUD_CONFIG_DESC_LEN;
     uint8_t itf = 0, ep = 1;
     for (uint8_t i = 0; i < _count; i++) {
-        const CH32RVUsbDeviceFunction &f = *_functions[i];
+        CH32RVUsbDeviceFunction &f = *_functions[i];
+        f._interface = itf;
         const uint16_t n = f._type.descriptor(f, desc_configuration + len,
                                               (uint16_t)(sizeof desc_configuration - len), itf, &ep,
                                               (uint8_t)(FIRST_FUNCTION_STRING + i));
@@ -195,6 +237,11 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     h[8] = (uint8_t)(config.maxPowerMilliamps > 500 ? 250 : config.maxPowerMilliamps / 2);
 
     _config = config;
+    /* The BOS and the Microsoft OS 2.0 set need the interface numbers. */
+    if (ch32rv_usb_platform.build && !ch32rv_usb_platform.build(*this)) {
+        _error = CH32RVUsbDeviceError::InvalidArgument;
+        return false;
+    }
     active = this;
     usb_phy_on();
     tusb_rhport_init_t init = {};
@@ -220,6 +267,11 @@ void CH32RVUsbDevice::end()
 bool CH32RVUsbDevice::mounted() const
 {
     return _started && tud_mounted();
+}
+
+uint8_t CH32RVUsbDevice::interfaceCount() const
+{
+    return desc_configuration[4];
 }
 
 bool CH32RVUsbDevice::suspended() const
@@ -403,10 +455,14 @@ extern "C" const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t lang
         }
     } else {
         const CH32RVUsbDeviceFunction *f = active->function((uint8_t)(index - FIRST_FUNCTION_STRING));
-        if (!f || !f->name()) {
+        if (!f) {
             return NULL;
         }
-        n = ascii_to_desc(f->name());
+        const char *name = f->interfaceName();
+        if (!name) {
+            return NULL;
+        }
+        n = ascii_to_desc(name);
     }
     desc_str[0] = (uint16_t)((TUSB_DESC_STRING << 8) | (2 * n + 2));
     return desc_str;
@@ -428,6 +484,11 @@ void CH32RVUsbDevice::end()
 bool CH32RVUsbDevice::mounted() const
 {
     return false;
+}
+
+uint8_t CH32RVUsbDevice::interfaceCount() const
+{
+    return 0;
 }
 
 bool CH32RVUsbDevice::suspended() const
