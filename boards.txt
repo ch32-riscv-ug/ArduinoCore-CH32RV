@@ -202,7 +202,33 @@ CH32V002.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB
 CH32V002.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V002.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
 CH32V002.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V002.build.periph_defines=
+CH32V002.menu.usart1.auto=AUTO (bind at begin())
+CH32V002.menu.usart1.auto.build.usart1_mode=
+CH32V002.menu.usart1.disable=Disable
+CH32V002.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V002.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
+CH32V002.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V002.menu.usart1.fix1=FIX (TX:PD6, RX:PD5)
+CH32V002.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD6 -DCH32RV_USART1_FIX_RX=PD5 -DCH32RV_USART1_FIX_V1=0x00000040u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V002.menu.i2c1.auto=AUTO (bind at begin())
+CH32V002.menu.i2c1.auto.build.i2c1_mode=
+CH32V002.menu.i2c1.disable=Disable
+CH32V002.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V002.menu.i2c1.fix0=FIX (SCL:PC2, SDA:PC1)
+CH32V002.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC2 -DCH32RV_I2C1_FIX_SDA=PC1 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V002.menu.i2c1.fix1=FIX (SCL:PD1, SDA:PD0) [debug/strap pin]
+CH32V002.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD1 -DCH32RV_I2C1_FIX_SDA=PD0 -DCH32RV_I2C1_FIX_V1=0x00000008u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V002.menu.i2c1.fix2=FIX (SCL:PC5, SDA:PC6)
+CH32V002.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC5 -DCH32RV_I2C1_FIX_SDA=PC6 -DCH32RV_I2C1_FIX_V1=0x00000010u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V002.menu.spi1.auto=AUTO (bind at begin())
+CH32V002.menu.spi1.auto.build.spi1_mode=
+CH32V002.menu.spi1.disable=Disable
+CH32V002.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V002.menu.spi1.fix0=FIX (SCK:PC5, MISO:PC7, MOSI:PC6)
+CH32V002.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V002.menu.spi1.fix4=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
+CH32V002.menu.spi1.fix4.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V002.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
 CH32V004.name=Generic CH32V004
@@ -260,7 +286,33 @@ CH32V004.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V004.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V004.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V004.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V004.build.periph_defines=
+CH32V004.menu.usart1.auto=AUTO (bind at begin())
+CH32V004.menu.usart1.auto.build.usart1_mode=
+CH32V004.menu.usart1.disable=Disable
+CH32V004.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V004.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
+CH32V004.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V004.menu.usart1.fix1=FIX (TX:PD6, RX:PD5)
+CH32V004.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD6 -DCH32RV_USART1_FIX_RX=PD5 -DCH32RV_USART1_FIX_V1=0x00000040u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V004.menu.i2c1.auto=AUTO (bind at begin())
+CH32V004.menu.i2c1.auto.build.i2c1_mode=
+CH32V004.menu.i2c1.disable=Disable
+CH32V004.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V004.menu.i2c1.fix0=FIX (SCL:PC2, SDA:PC1)
+CH32V004.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC2 -DCH32RV_I2C1_FIX_SDA=PC1 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V004.menu.i2c1.fix1=FIX (SCL:PD1, SDA:PD0) [debug/strap pin]
+CH32V004.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD1 -DCH32RV_I2C1_FIX_SDA=PD0 -DCH32RV_I2C1_FIX_V1=0x00000008u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V004.menu.i2c1.fix2=FIX (SCL:PC5, SDA:PC6)
+CH32V004.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC5 -DCH32RV_I2C1_FIX_SDA=PC6 -DCH32RV_I2C1_FIX_V1=0x00000010u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V004.menu.spi1.auto=AUTO (bind at begin())
+CH32V004.menu.spi1.auto.build.spi1_mode=
+CH32V004.menu.spi1.disable=Disable
+CH32V004.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V004.menu.spi1.fix0=FIX (SCK:PC5, MISO:PC7, MOSI:PC6)
+CH32V004.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V004.menu.spi1.fix4=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
+CH32V004.menu.spi1.fix4.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V004.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
 CH32V005.name=Generic CH32V005
@@ -338,7 +390,43 @@ CH32V005.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V005.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V005.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V005.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V005.build.periph_defines=
+CH32V005.menu.usart1.auto=AUTO (bind at begin())
+CH32V005.menu.usart1.auto.build.usart1_mode=
+CH32V005.menu.usart1.disable=Disable
+CH32V005.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V005.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
+CH32V005.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V005.menu.usart1.fix1=FIX (TX:PD6, RX:PD5)
+CH32V005.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD6 -DCH32RV_USART1_FIX_RX=PD5 -DCH32RV_USART1_FIX_V1=0x00000040u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V005.menu.usart2.auto=AUTO (bind at begin())
+CH32V005.menu.usart2.auto.build.usart2_mode=
+CH32V005.menu.usart2.disable=Disable
+CH32V005.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V005.menu.usart2.fix1=FIX (TX:PA4, RX:PA5)
+CH32V005.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA4 -DCH32RV_USART2_FIX_RX=PA5 -DCH32RV_USART2_FIX_V1=0x00100000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V005.menu.i2c1.auto=AUTO (bind at begin())
+CH32V005.menu.i2c1.auto.build.i2c1_mode=
+CH32V005.menu.i2c1.disable=Disable
+CH32V005.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V005.menu.i2c1.fix0=FIX (SCL:PC2, SDA:PC1)
+CH32V005.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC2 -DCH32RV_I2C1_FIX_SDA=PC1 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V005.menu.i2c1.fix1=FIX (SCL:PD1, SDA:PD0) [debug/strap pin]
+CH32V005.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD1 -DCH32RV_I2C1_FIX_SDA=PD0 -DCH32RV_I2C1_FIX_V1=0x00000008u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V005.menu.i2c1.fix2=FIX (SCL:PC5, SDA:PC6) [debug/strap pin]
+CH32V005.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC5 -DCH32RV_I2C1_FIX_SDA=PC6 -DCH32RV_I2C1_FIX_V1=0x00000010u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V005.menu.i2c1.fix4=FIX (SCL:PB3, SDA:PD1) [debug/strap pin]
+CH32V005.menu.i2c1.fix4.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB3 -DCH32RV_I2C1_FIX_SDA=PD1 -DCH32RV_I2C1_FIX_V1=0x00000020u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V005.menu.spi1.auto=AUTO (bind at begin())
+CH32V005.menu.spi1.auto.build.spi1_mode=
+CH32V005.menu.spi1.disable=Disable
+CH32V005.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V005.menu.spi1.fix0=FIX (SCK:PC5, MISO:PC7, MOSI:PC6) [debug/strap pin]
+CH32V005.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V005.menu.spi1.fix2=FIX (SCK:PD2, MISO:PB3, MOSI:PD3) [debug/strap pin]
+CH32V005.menu.spi1.fix2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD2 -DCH32RV_SPI1_FIX_MISO=PB3 -DCH32RV_SPI1_FIX_MOSI=PD3 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V005.menu.spi1.fix4=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
+CH32V005.menu.spi1.fix4.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V005.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
 CH32V006.name=Generic CH32V006
@@ -456,7 +544,53 @@ CH32V006.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB
 CH32V006.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V006.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
 CH32V006.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V006.build.periph_defines=
+CH32V006.menu.usart1.auto=AUTO (bind at begin())
+CH32V006.menu.usart1.auto.build.usart1_mode=
+CH32V006.menu.usart1.disable=Disable
+CH32V006.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V006.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
+CH32V006.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V006.menu.usart1.fix1=FIX (TX:PD6, RX:PD5)
+CH32V006.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD6 -DCH32RV_USART1_FIX_RX=PD5 -DCH32RV_USART1_FIX_V1=0x00000040u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V006.menu.usart2.auto=AUTO (bind at begin())
+CH32V006.menu.usart2.auto.build.usart2_mode=
+CH32V006.menu.usart2.disable=Disable
+CH32V006.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V006.menu.usart2.fix0=FIX (TX:PA7, RX:PB3) [debug/strap pin]
+CH32V006.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA7 -DCH32RV_USART2_FIX_RX=PB3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V006.menu.usart2.fix1=FIX (TX:PA4, RX:PA5)
+CH32V006.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA4 -DCH32RV_USART2_FIX_RX=PA5 -DCH32RV_USART2_FIX_V1=0x00100000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V006.menu.i2c1.auto=AUTO (bind at begin())
+CH32V006.menu.i2c1.auto.build.i2c1_mode=
+CH32V006.menu.i2c1.disable=Disable
+CH32V006.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V006.menu.i2c1.fix0=FIX (SCL:PC2, SDA:PC1)
+CH32V006.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC2 -DCH32RV_I2C1_FIX_SDA=PC1 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V006.menu.i2c1.fix1=FIX (SCL:PD1, SDA:PD0) [debug/strap pin]
+CH32V006.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD1 -DCH32RV_I2C1_FIX_SDA=PD0 -DCH32RV_I2C1_FIX_V1=0x00000008u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V006.menu.i2c1.fix2=FIX (SCL:PC5, SDA:PC6) [debug/strap pin]
+CH32V006.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC5 -DCH32RV_I2C1_FIX_SDA=PC6 -DCH32RV_I2C1_FIX_V1=0x00000010u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V006.menu.i2c1.fix3=FIX (SCL:PB5, SDA:PB6)
+CH32V006.menu.i2c1.fix3.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB5 -DCH32RV_I2C1_FIX_SDA=PB6 -DCH32RV_I2C1_FIX_V1=0x00000018u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V006.menu.i2c1.fix4=FIX (SCL:PB3, SDA:PD1) [debug/strap pin]
+CH32V006.menu.i2c1.fix4.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB3 -DCH32RV_I2C1_FIX_SDA=PD1 -DCH32RV_I2C1_FIX_V1=0x00000020u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V006.menu.spi1.auto=AUTO (bind at begin())
+CH32V006.menu.spi1.auto.build.spi1_mode=
+CH32V006.menu.spi1.disable=Disable
+CH32V006.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V006.menu.spi1.fix0=FIX (SCK:PC5, MISO:PC7, MOSI:PC6) [debug/strap pin]
+CH32V006.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V006.menu.spi1.fix2=FIX (SCK:PD2, MISO:PB3, MOSI:PD3) [debug/strap pin]
+CH32V006.menu.spi1.fix2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD2 -DCH32RV_SPI1_FIX_MISO=PB3 -DCH32RV_SPI1_FIX_MOSI=PD3 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V006.menu.spi1.fix3=FIX (SCK:PB1, MISO:PB2, MOSI:PC0)
+CH32V006.menu.spi1.fix3.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB1 -DCH32RV_SPI1_FIX_MISO=PB2 -DCH32RV_SPI1_FIX_MOSI=PC0 -DCH32RV_SPI1_FIX_V1=0x00000003u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V006.menu.spi1.fix4=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
+CH32V006.menu.spi1.fix4.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V006.menu.spi1.fix5=FIX (SCK:PA1, MISO:PB5, MOSI:PA2)
+CH32V006.menu.spi1.fix5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PB5 -DCH32RV_SPI1_FIX_MOSI=PA2 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V006.menu.spi1.fix6=FIX (SCK:PB5, MISO:PC7, MOSI:PB4)
+CH32V006.menu.spi1.fix6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PB4 -DCH32RV_SPI1_FIX_V1=0x00000006u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V006.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
 CH32V007.name=Generic CH32V007
@@ -534,7 +668,53 @@ CH32V007.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V007.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V007.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V007.build.periph_defines=
+CH32V007.menu.usart1.auto=AUTO (bind at begin())
+CH32V007.menu.usart1.auto.build.usart1_mode=
+CH32V007.menu.usart1.disable=Disable
+CH32V007.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V007.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
+CH32V007.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V007.menu.usart1.fix1=FIX (TX:PD6, RX:PD5)
+CH32V007.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD6 -DCH32RV_USART1_FIX_RX=PD5 -DCH32RV_USART1_FIX_V1=0x00000040u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V007.menu.usart2.auto=AUTO (bind at begin())
+CH32V007.menu.usart2.auto.build.usart2_mode=
+CH32V007.menu.usart2.disable=Disable
+CH32V007.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V007.menu.usart2.fix0=FIX (TX:PA7, RX:PB3) [debug/strap pin]
+CH32V007.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA7 -DCH32RV_USART2_FIX_RX=PB3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V007.menu.usart2.fix1=FIX (TX:PA4, RX:PA5)
+CH32V007.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA4 -DCH32RV_USART2_FIX_RX=PA5 -DCH32RV_USART2_FIX_V1=0x00100000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V007.menu.i2c1.auto=AUTO (bind at begin())
+CH32V007.menu.i2c1.auto.build.i2c1_mode=
+CH32V007.menu.i2c1.disable=Disable
+CH32V007.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V007.menu.i2c1.fix0=FIX (SCL:PC2, SDA:PC1)
+CH32V007.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC2 -DCH32RV_I2C1_FIX_SDA=PC1 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V007.menu.i2c1.fix1=FIX (SCL:PD1, SDA:PD0) [debug/strap pin]
+CH32V007.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD1 -DCH32RV_I2C1_FIX_SDA=PD0 -DCH32RV_I2C1_FIX_V1=0x00000008u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V007.menu.i2c1.fix2=FIX (SCL:PC5, SDA:PC4) [debug/strap pin]
+CH32V007.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC5 -DCH32RV_I2C1_FIX_SDA=PC4 -DCH32RV_I2C1_FIX_V1=0x00000010u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V007.menu.i2c1.fix3=FIX (SCL:PB5, SDA:PB6)
+CH32V007.menu.i2c1.fix3.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB5 -DCH32RV_I2C1_FIX_SDA=PB6 -DCH32RV_I2C1_FIX_V1=0x00000018u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V007.menu.i2c1.fix4=FIX (SCL:PB3, SDA:PD1) [debug/strap pin]
+CH32V007.menu.i2c1.fix4.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB3 -DCH32RV_I2C1_FIX_SDA=PD1 -DCH32RV_I2C1_FIX_V1=0x00000020u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V007.menu.spi1.auto=AUTO (bind at begin())
+CH32V007.menu.spi1.auto.build.spi1_mode=
+CH32V007.menu.spi1.disable=Disable
+CH32V007.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V007.menu.spi1.fix0=FIX (SCK:PC5, MISO:PC7, MOSI:PC6) [debug/strap pin]
+CH32V007.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V007.menu.spi1.fix2=FIX (SCK:PD2, MISO:PB3, MOSI:PD3) [debug/strap pin]
+CH32V007.menu.spi1.fix2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD2 -DCH32RV_SPI1_FIX_MISO=PB3 -DCH32RV_SPI1_FIX_MOSI=PD3 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V007.menu.spi1.fix3=FIX (SCK:PB1, MISO:PB2, MOSI:PC0)
+CH32V007.menu.spi1.fix3.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB1 -DCH32RV_SPI1_FIX_MISO=PB2 -DCH32RV_SPI1_FIX_MOSI=PC0 -DCH32RV_SPI1_FIX_V1=0x00000003u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V007.menu.spi1.fix4=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
+CH32V007.menu.spi1.fix4.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V007.menu.spi1.fix5=FIX (SCK:PA1, MISO:PB5, MOSI:PA2)
+CH32V007.menu.spi1.fix5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PB5 -DCH32RV_SPI1_FIX_MOSI=PA2 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V007.menu.spi1.fix6=FIX (SCK:PB5, MISO:PC7, MOSI:PB4)
+CH32V007.menu.spi1.fix6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PB4 -DCH32RV_SPI1_FIX_V1=0x00000006u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V007.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
 CH32M007.name=Generic CH32M007
@@ -612,7 +792,39 @@ CH32M007.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32M007.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M007.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32M007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32M007.build.periph_defines=
+CH32M007.menu.usart1.auto=AUTO (bind at begin())
+CH32M007.menu.usart1.auto.build.usart1_mode=
+CH32M007.menu.usart1.disable=Disable
+CH32M007.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32M007.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
+CH32M007.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32M007.menu.usart1.fix1=FIX (TX:PD6, RX:PD5)
+CH32M007.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD6 -DCH32RV_USART1_FIX_RX=PD5 -DCH32RV_USART1_FIX_V1=0x00000040u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32M007.menu.usart2.auto=AUTO (bind at begin())
+CH32M007.menu.usart2.auto.build.usart2_mode=
+CH32M007.menu.usart2.disable=Disable
+CH32M007.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32M007.menu.usart2.fix1=FIX (TX:PA4, RX:PA5)
+CH32M007.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA4 -DCH32RV_USART2_FIX_RX=PA5 -DCH32RV_USART2_FIX_V1=0x00100000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32M007.menu.i2c1.auto=AUTO (bind at begin())
+CH32M007.menu.i2c1.auto.build.i2c1_mode=
+CH32M007.menu.i2c1.disable=Disable
+CH32M007.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32M007.menu.i2c1.fix0=FIX (SCL:PC2, SDA:PC1)
+CH32M007.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC2 -DCH32RV_I2C1_FIX_SDA=PC1 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32M007.menu.i2c1.fix2=FIX (SCL:PC5, SDA:PC4) [debug/strap pin]
+CH32M007.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC5 -DCH32RV_I2C1_FIX_SDA=PC4 -DCH32RV_I2C1_FIX_V1=0x00000010u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32M007.menu.i2c1.fix4=FIX (SCL:PB3, SDA:PD1) [debug/strap pin]
+CH32M007.menu.i2c1.fix4.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB3 -DCH32RV_I2C1_FIX_SDA=PD1 -DCH32RV_I2C1_FIX_V1=0x00000020u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32M007.menu.spi1.auto=AUTO (bind at begin())
+CH32M007.menu.spi1.auto.build.spi1_mode=
+CH32M007.menu.spi1.disable=Disable
+CH32M007.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32M007.menu.spi1.fix2=FIX (SCK:PD2, MISO:PB3, MOSI:PD3) [debug/strap pin]
+CH32M007.menu.spi1.fix2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD2 -DCH32RV_SPI1_FIX_MISO=PB3 -DCH32RV_SPI1_FIX_MOSI=PD3 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M007.menu.spi1.fix4=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
+CH32M007.menu.spi1.fix4.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M007.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
 CH32V103.name=Generic CH32V103
@@ -690,7 +902,57 @@ CH32V103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V103.build.periph_defines=
+CH32V103.menu.usart1.auto=AUTO (bind at begin())
+CH32V103.menu.usart1.auto.build.usart1_mode=
+CH32V103.menu.usart1.disable=Disable
+CH32V103.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V103.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V103.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V103.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V103.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V103.menu.usart2.auto=AUTO (bind at begin())
+CH32V103.menu.usart2.auto.build.usart2_mode=
+CH32V103.menu.usart2.disable=Disable
+CH32V103.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V103.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V103.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V103.menu.usart3.auto=AUTO (bind at begin())
+CH32V103.menu.usart3.auto.build.usart3_mode=
+CH32V103.menu.usart3.disable=Disable
+CH32V103.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V103.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V103.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V103.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V103.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V103.menu.i2c1.auto=AUTO (bind at begin())
+CH32V103.menu.i2c1.auto.build.i2c1_mode=
+CH32V103.menu.i2c1.disable=Disable
+CH32V103.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V103.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V103.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V103.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V103.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V103.menu.i2c2.auto=AUTO (bind at begin())
+CH32V103.menu.i2c2.auto.build.i2c2_mode=
+CH32V103.menu.i2c2.disable=Disable
+CH32V103.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32V103.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32V103.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32V103.menu.spi1.auto=AUTO (bind at begin())
+CH32V103.menu.spi1.auto.build.spi1_mode=
+CH32V103.menu.spi1.disable=Disable
+CH32V103.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V103.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V103.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V103.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V103.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V103.menu.spi2.auto=AUTO (bind at begin())
+CH32V103.menu.spi2.auto.build.spi2_mode=
+CH32V103.menu.spi2.disable=Disable
+CH32V103.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V103.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V103.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V103.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
 CH32V203.name=Generic CH32V203
@@ -849,7 +1111,57 @@ CH32V203.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V203.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V203.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V203.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V203.build.periph_defines=
+CH32V203.menu.usart1.auto=AUTO (bind at begin())
+CH32V203.menu.usart1.auto.build.usart1_mode=
+CH32V203.menu.usart1.disable=Disable
+CH32V203.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V203.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V203.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V203.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V203.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V203.menu.usart2.auto=AUTO (bind at begin())
+CH32V203.menu.usart2.auto.build.usart2_mode=
+CH32V203.menu.usart2.disable=Disable
+CH32V203.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V203.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V203.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V203.menu.usart3.auto=AUTO (bind at begin())
+CH32V203.menu.usart3.auto.build.usart3_mode=
+CH32V203.menu.usart3.disable=Disable
+CH32V203.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V203.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V203.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V203.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V203.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V203.menu.i2c1.auto=AUTO (bind at begin())
+CH32V203.menu.i2c1.auto.build.i2c1_mode=
+CH32V203.menu.i2c1.disable=Disable
+CH32V203.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V203.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V203.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V203.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V203.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V203.menu.i2c2.auto=AUTO (bind at begin())
+CH32V203.menu.i2c2.auto.build.i2c2_mode=
+CH32V203.menu.i2c2.disable=Disable
+CH32V203.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32V203.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32V203.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32V203.menu.spi1.auto=AUTO (bind at begin())
+CH32V203.menu.spi1.auto.build.spi1_mode=
+CH32V203.menu.spi1.disable=Disable
+CH32V203.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V203.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V203.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V203.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V203.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V203.menu.spi2.auto=AUTO (bind at begin())
+CH32V203.menu.spi2.auto.build.spi2_mode=
+CH32V203.menu.spi2.disable=Disable
+CH32V203.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V203.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V203.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V203.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
 CH32V208.name=Generic CH32V208
@@ -927,7 +1239,65 @@ CH32V208.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V208.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V208.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V208.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V208.build.periph_defines=
+CH32V208.menu.usart1.auto=AUTO (bind at begin())
+CH32V208.menu.usart1.auto.build.usart1_mode=
+CH32V208.menu.usart1.disable=Disable
+CH32V208.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V208.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V208.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V208.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V208.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V208.menu.usart2.auto=AUTO (bind at begin())
+CH32V208.menu.usart2.auto.build.usart2_mode=
+CH32V208.menu.usart2.disable=Disable
+CH32V208.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V208.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V208.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V208.menu.usart3.auto=AUTO (bind at begin())
+CH32V208.menu.usart3.auto.build.usart3_mode=
+CH32V208.menu.usart3.disable=Disable
+CH32V208.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V208.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V208.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V208.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V208.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V208.menu.usart4.auto=AUTO (bind at begin())
+CH32V208.menu.usart4.auto.build.usart4_mode=
+CH32V208.menu.usart4.disable=Disable
+CH32V208.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32V208.menu.usart4.fix0=FIX (TX:PC10, RX:PC11)
+CH32V208.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PC10 -DCH32RV_USART4_FIX_RX=PC11 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32V208.menu.usart4.fix1=FIX (TX:PB0, RX:PB1)
+CH32V208.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32V208.menu.i2c1.auto=AUTO (bind at begin())
+CH32V208.menu.i2c1.auto.build.i2c1_mode=
+CH32V208.menu.i2c1.disable=Disable
+CH32V208.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V208.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V208.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V208.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V208.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V208.menu.i2c2.auto=AUTO (bind at begin())
+CH32V208.menu.i2c2.auto.build.i2c2_mode=
+CH32V208.menu.i2c2.disable=Disable
+CH32V208.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32V208.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32V208.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32V208.menu.spi1.auto=AUTO (bind at begin())
+CH32V208.menu.spi1.auto.build.spi1_mode=
+CH32V208.menu.spi1.disable=Disable
+CH32V208.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V208.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V208.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V208.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V208.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V208.menu.spi2.auto=AUTO (bind at begin())
+CH32V208.menu.spi2.auto.build.spi2_mode=
+CH32V208.menu.spi2.disable=Disable
+CH32V208.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V208.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V208.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V208.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
 CH32V303.name=Generic CH32V303
@@ -1015,7 +1385,83 @@ CH32V303.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V303.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V303.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V303.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V303.build.periph_defines=
+CH32V303.menu.usart1.auto=AUTO (bind at begin())
+CH32V303.menu.usart1.auto.build.usart1_mode=
+CH32V303.menu.usart1.disable=Disable
+CH32V303.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V303.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V303.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V303.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V303.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V303.menu.usart2.auto=AUTO (bind at begin())
+CH32V303.menu.usart2.auto.build.usart2_mode=
+CH32V303.menu.usart2.disable=Disable
+CH32V303.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V303.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V303.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V303.menu.usart2.fix1=FIX (TX:PD5, RX:PD6)
+CH32V303.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PD5 -DCH32RV_USART2_FIX_RX=PD6 -DCH32RV_USART2_FIX_V1=0x00000008u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V303.menu.usart3.auto=AUTO (bind at begin())
+CH32V303.menu.usart3.auto.build.usart3_mode=
+CH32V303.menu.usart3.disable=Disable
+CH32V303.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V303.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V303.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V303.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V303.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V303.menu.usart4.auto=AUTO (bind at begin())
+CH32V303.menu.usart4.auto.build.usart4_mode=
+CH32V303.menu.usart4.disable=Disable
+CH32V303.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32V303.menu.usart4.fix0=FIX (TX:PC10, RX:PC11)
+CH32V303.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PC10 -DCH32RV_USART4_FIX_RX=PC11 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32V303.menu.usart4.fix1=FIX (TX:PB0, RX:PB1)
+CH32V303.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32V303.menu.usart5.auto=AUTO (bind at begin())
+CH32V303.menu.usart5.auto.build.usart5_mode=
+CH32V303.menu.usart5.disable=Disable
+CH32V303.menu.usart5.disable.build.usart5_mode=-DCH32RV_USART5_MODE=0
+CH32V303.menu.usart5.fix0=FIX (TX:PC12, RX:PD2)
+CH32V303.menu.usart5.fix0.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PC12 -DCH32RV_USART5_FIX_RX=PD2 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00000000u
+CH32V303.menu.usart5.fix1=FIX (TX:PB4, RX:PB5)
+CH32V303.menu.usart5.fix1.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PB4 -DCH32RV_USART5_FIX_RX=PB5 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00040000u
+CH32V303.menu.i2c1.auto=AUTO (bind at begin())
+CH32V303.menu.i2c1.auto.build.i2c1_mode=
+CH32V303.menu.i2c1.disable=Disable
+CH32V303.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V303.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V303.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V303.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V303.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V303.menu.i2c2.auto=AUTO (bind at begin())
+CH32V303.menu.i2c2.auto.build.i2c2_mode=
+CH32V303.menu.i2c2.disable=Disable
+CH32V303.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32V303.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32V303.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32V303.menu.spi1.auto=AUTO (bind at begin())
+CH32V303.menu.spi1.auto.build.spi1_mode=
+CH32V303.menu.spi1.disable=Disable
+CH32V303.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V303.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V303.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V303.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V303.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V303.menu.spi2.auto=AUTO (bind at begin())
+CH32V303.menu.spi2.auto.build.spi2_mode=
+CH32V303.menu.spi2.disable=Disable
+CH32V303.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V303.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V303.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V303.menu.spi3.auto=AUTO (bind at begin())
+CH32V303.menu.spi3.auto.build.spi3_mode=
+CH32V303.menu.spi3.disable=Disable
+CH32V303.menu.spi3.disable.build.spi3_mode=-DCH32RV_SPI3_MODE=0
+CH32V303.menu.spi3.fix0=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V303.menu.spi3.fix0.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V303.menu.spi3.fix1=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
+CH32V303.menu.spi3.fix1.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V303.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
 CH32V305.name=Generic CH32V305
@@ -1093,7 +1539,81 @@ CH32V305.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V305.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V305.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V305.build.periph_defines=
+CH32V305.menu.usart1.auto=AUTO (bind at begin())
+CH32V305.menu.usart1.auto.build.usart1_mode=
+CH32V305.menu.usart1.disable=Disable
+CH32V305.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V305.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V305.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V305.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V305.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V305.menu.usart2.auto=AUTO (bind at begin())
+CH32V305.menu.usart2.auto.build.usart2_mode=
+CH32V305.menu.usart2.disable=Disable
+CH32V305.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V305.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V305.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V305.menu.usart3.auto=AUTO (bind at begin())
+CH32V305.menu.usart3.auto.build.usart3_mode=
+CH32V305.menu.usart3.disable=Disable
+CH32V305.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V305.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V305.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V305.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V305.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V305.menu.usart4.auto=AUTO (bind at begin())
+CH32V305.menu.usart4.auto.build.usart4_mode=
+CH32V305.menu.usart4.disable=Disable
+CH32V305.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32V305.menu.usart4.fix0=FIX (TX:PC10, RX:PC11)
+CH32V305.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PC10 -DCH32RV_USART4_FIX_RX=PC11 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32V305.menu.usart4.fix1=FIX (TX:PB0, RX:PB1)
+CH32V305.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32V305.menu.usart5.auto=AUTO (bind at begin())
+CH32V305.menu.usart5.auto.build.usart5_mode=
+CH32V305.menu.usart5.disable=Disable
+CH32V305.menu.usart5.disable.build.usart5_mode=-DCH32RV_USART5_MODE=0
+CH32V305.menu.usart5.fix0=FIX (TX:PC12, RX:PD2)
+CH32V305.menu.usart5.fix0.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PC12 -DCH32RV_USART5_FIX_RX=PD2 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00000000u
+CH32V305.menu.usart5.fix1=FIX (TX:PB4, RX:PB5)
+CH32V305.menu.usart5.fix1.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PB4 -DCH32RV_USART5_FIX_RX=PB5 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00040000u
+CH32V305.menu.i2c1.auto=AUTO (bind at begin())
+CH32V305.menu.i2c1.auto.build.i2c1_mode=
+CH32V305.menu.i2c1.disable=Disable
+CH32V305.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V305.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V305.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V305.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V305.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V305.menu.i2c2.auto=AUTO (bind at begin())
+CH32V305.menu.i2c2.auto.build.i2c2_mode=
+CH32V305.menu.i2c2.disable=Disable
+CH32V305.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32V305.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32V305.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32V305.menu.spi1.auto=AUTO (bind at begin())
+CH32V305.menu.spi1.auto.build.spi1_mode=
+CH32V305.menu.spi1.disable=Disable
+CH32V305.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V305.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V305.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V305.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V305.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V305.menu.spi2.auto=AUTO (bind at begin())
+CH32V305.menu.spi2.auto.build.spi2_mode=
+CH32V305.menu.spi2.disable=Disable
+CH32V305.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V305.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V305.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V305.menu.spi3.auto=AUTO (bind at begin())
+CH32V305.menu.spi3.auto.build.spi3_mode=
+CH32V305.menu.spi3.disable=Disable
+CH32V305.menu.spi3.disable.build.spi3_mode=-DCH32RV_SPI3_MODE=0
+CH32V305.menu.spi3.fix0=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V305.menu.spi3.fix0.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V305.menu.spi3.fix1=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
+CH32V305.menu.spi3.fix1.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V305.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
 CH32V307.name=Generic CH32V307
@@ -1161,7 +1681,83 @@ CH32V307.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V307.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V307.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V307.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V307.build.periph_defines=
+CH32V307.menu.usart1.auto=AUTO (bind at begin())
+CH32V307.menu.usart1.auto.build.usart1_mode=
+CH32V307.menu.usart1.disable=Disable
+CH32V307.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V307.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V307.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V307.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V307.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V307.menu.usart2.auto=AUTO (bind at begin())
+CH32V307.menu.usart2.auto.build.usart2_mode=
+CH32V307.menu.usart2.disable=Disable
+CH32V307.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V307.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V307.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V307.menu.usart2.fix1=FIX (TX:PD5, RX:PD6)
+CH32V307.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PD5 -DCH32RV_USART2_FIX_RX=PD6 -DCH32RV_USART2_FIX_V1=0x00000008u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V307.menu.usart3.auto=AUTO (bind at begin())
+CH32V307.menu.usart3.auto.build.usart3_mode=
+CH32V307.menu.usart3.disable=Disable
+CH32V307.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V307.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V307.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V307.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V307.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V307.menu.usart4.auto=AUTO (bind at begin())
+CH32V307.menu.usart4.auto.build.usart4_mode=
+CH32V307.menu.usart4.disable=Disable
+CH32V307.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32V307.menu.usart4.fix0=FIX (TX:PC10, RX:PC11)
+CH32V307.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PC10 -DCH32RV_USART4_FIX_RX=PC11 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32V307.menu.usart4.fix1=FIX (TX:PB0, RX:PB1)
+CH32V307.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32V307.menu.usart5.auto=AUTO (bind at begin())
+CH32V307.menu.usart5.auto.build.usart5_mode=
+CH32V307.menu.usart5.disable=Disable
+CH32V307.menu.usart5.disable.build.usart5_mode=-DCH32RV_USART5_MODE=0
+CH32V307.menu.usart5.fix0=FIX (TX:PC12, RX:PD2)
+CH32V307.menu.usart5.fix0.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PC12 -DCH32RV_USART5_FIX_RX=PD2 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00000000u
+CH32V307.menu.usart5.fix1=FIX (TX:PB4, RX:PB5)
+CH32V307.menu.usart5.fix1.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PB4 -DCH32RV_USART5_FIX_RX=PB5 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00040000u
+CH32V307.menu.i2c1.auto=AUTO (bind at begin())
+CH32V307.menu.i2c1.auto.build.i2c1_mode=
+CH32V307.menu.i2c1.disable=Disable
+CH32V307.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V307.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V307.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V307.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V307.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V307.menu.i2c2.auto=AUTO (bind at begin())
+CH32V307.menu.i2c2.auto.build.i2c2_mode=
+CH32V307.menu.i2c2.disable=Disable
+CH32V307.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32V307.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32V307.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32V307.menu.spi1.auto=AUTO (bind at begin())
+CH32V307.menu.spi1.auto.build.spi1_mode=
+CH32V307.menu.spi1.disable=Disable
+CH32V307.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V307.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V307.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V307.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V307.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V307.menu.spi2.auto=AUTO (bind at begin())
+CH32V307.menu.spi2.auto.build.spi2_mode=
+CH32V307.menu.spi2.disable=Disable
+CH32V307.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V307.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V307.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V307.menu.spi3.auto=AUTO (bind at begin())
+CH32V307.menu.spi3.auto.build.spi3_mode=
+CH32V307.menu.spi3.disable=Disable
+CH32V307.menu.spi3.disable.build.spi3_mode=-DCH32RV_SPI3_MODE=0
+CH32V307.menu.spi3.fix0=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V307.menu.spi3.fix0.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V307.menu.spi3.fix1=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
+CH32V307.menu.spi3.fix1.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V307.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
 CH32V317.name=Generic CH32V317
@@ -1219,7 +1815,83 @@ CH32V317.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V317.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V317.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V317.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V317.build.periph_defines=
+CH32V317.menu.usart1.auto=AUTO (bind at begin())
+CH32V317.menu.usart1.auto.build.usart1_mode=
+CH32V317.menu.usart1.disable=Disable
+CH32V317.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V317.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V317.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V317.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V317.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V317.menu.usart2.auto=AUTO (bind at begin())
+CH32V317.menu.usart2.auto.build.usart2_mode=
+CH32V317.menu.usart2.disable=Disable
+CH32V317.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V317.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V317.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V317.menu.usart2.fix1=FIX (TX:PD5, RX:PD6)
+CH32V317.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PD5 -DCH32RV_USART2_FIX_RX=PD6 -DCH32RV_USART2_FIX_V1=0x00000008u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V317.menu.usart3.auto=AUTO (bind at begin())
+CH32V317.menu.usart3.auto.build.usart3_mode=
+CH32V317.menu.usart3.disable=Disable
+CH32V317.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V317.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V317.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V317.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V317.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V317.menu.usart4.auto=AUTO (bind at begin())
+CH32V317.menu.usart4.auto.build.usart4_mode=
+CH32V317.menu.usart4.disable=Disable
+CH32V317.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32V317.menu.usart4.fix0=FIX (TX:PC10, RX:PC11)
+CH32V317.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PC10 -DCH32RV_USART4_FIX_RX=PC11 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32V317.menu.usart4.fix1=FIX (TX:PB0, RX:PB1)
+CH32V317.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32V317.menu.usart5.auto=AUTO (bind at begin())
+CH32V317.menu.usart5.auto.build.usart5_mode=
+CH32V317.menu.usart5.disable=Disable
+CH32V317.menu.usart5.disable.build.usart5_mode=-DCH32RV_USART5_MODE=0
+CH32V317.menu.usart5.fix0=FIX (TX:PC12, RX:PD2)
+CH32V317.menu.usart5.fix0.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PC12 -DCH32RV_USART5_FIX_RX=PD2 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00000000u
+CH32V317.menu.usart5.fix1=FIX (TX:PB4, RX:PB5)
+CH32V317.menu.usart5.fix1.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PB4 -DCH32RV_USART5_FIX_RX=PB5 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00040000u
+CH32V317.menu.i2c1.auto=AUTO (bind at begin())
+CH32V317.menu.i2c1.auto.build.i2c1_mode=
+CH32V317.menu.i2c1.disable=Disable
+CH32V317.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V317.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V317.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V317.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V317.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V317.menu.i2c2.auto=AUTO (bind at begin())
+CH32V317.menu.i2c2.auto.build.i2c2_mode=
+CH32V317.menu.i2c2.disable=Disable
+CH32V317.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32V317.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32V317.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32V317.menu.spi1.auto=AUTO (bind at begin())
+CH32V317.menu.spi1.auto.build.spi1_mode=
+CH32V317.menu.spi1.disable=Disable
+CH32V317.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V317.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V317.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V317.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V317.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V317.menu.spi2.auto=AUTO (bind at begin())
+CH32V317.menu.spi2.auto.build.spi2_mode=
+CH32V317.menu.spi2.disable=Disable
+CH32V317.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V317.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V317.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V317.menu.spi3.auto=AUTO (bind at begin())
+CH32V317.menu.spi3.auto.build.spi3_mode=
+CH32V317.menu.spi3.disable=Disable
+CH32V317.menu.spi3.disable.build.spi3_mode=-DCH32RV_SPI3_MODE=0
+CH32V317.menu.spi3.fix0=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V317.menu.spi3.fix0.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V317.menu.spi3.fix1=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
+CH32V317.menu.spi3.fix1.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V317.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
 CH32X033.name=Generic CH32X033
@@ -1267,7 +1939,55 @@ CH32X033.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32X033.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X033.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32X033.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32X033.build.periph_defines=
+CH32X033.menu.usart1.auto=AUTO (bind at begin())
+CH32X033.menu.usart1.auto.build.usart1_mode=
+CH32X033.menu.usart1.disable=Disable
+CH32X033.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32X033.menu.usart1.fix1=FIX (TX:PA10, RX:PA11)
+CH32X033.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA10 -DCH32RV_USART1_FIX_RX=PA11 -DCH32RV_USART1_FIX_V1=0x00000020u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32X033.menu.usart2.auto=AUTO (bind at begin())
+CH32X033.menu.usart2.auto.build.usart2_mode=
+CH32X033.menu.usart2.disable=Disable
+CH32X033.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32X033.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32X033.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32X033.menu.usart3.auto=AUTO (bind at begin())
+CH32X033.menu.usart3.auto.build.usart3_mode=
+CH32X033.menu.usart3.disable=Disable
+CH32X033.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32X033.menu.usart3.fix1=FIX (TX:PC18, RX:PC19) [debug/strap pin]
+CH32X033.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC18 -DCH32RV_USART3_FIX_RX=PC19 -DCH32RV_USART3_FIX_V1=0x00000400u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32X033.menu.usart4.auto=AUTO (bind at begin())
+CH32X033.menu.usart4.auto.build.usart4_mode=
+CH32X033.menu.usart4.disable=Disable
+CH32X033.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32X033.menu.usart4.fix0=FIX (TX:PB0, RX:PB1)
+CH32X033.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32X033.menu.usart4.fix1=FIX (TX:PA5, RX:PA9)
+CH32X033.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PA5 -DCH32RV_USART4_FIX_RX=PA9 -DCH32RV_USART4_FIX_V1=0x00001000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32X033.menu.i2c1.auto=AUTO (bind at begin())
+CH32X033.menu.i2c1.auto.build.i2c1_mode=
+CH32X033.menu.i2c1.disable=Disable
+CH32X033.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32X033.menu.i2c1.fix0=FIX (SCL:PA10, SDA:PA11)
+CH32X033.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PA10 -DCH32RV_I2C1_FIX_SDA=PA11 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32X033.menu.i2c1.fix2=FIX (SCL:PC16, SDA:PC17)
+CH32X033.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC16 -DCH32RV_I2C1_FIX_SDA=PC17 -DCH32RV_I2C1_FIX_V1=0x00000008u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32X033.menu.i2c1.fix3=FIX (SCL:PC19, SDA:PC18) [debug/strap pin]
+CH32X033.menu.i2c1.fix3.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC19 -DCH32RV_I2C1_FIX_SDA=PC18 -DCH32RV_I2C1_FIX_V1=0x0000000cu -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32X033.menu.i2c1.fix4=FIX (SCL:PC17, SDA:PC16)
+CH32X033.menu.i2c1.fix4.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC17 -DCH32RV_I2C1_FIX_SDA=PC16 -DCH32RV_I2C1_FIX_V1=0x00000010u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32X033.menu.i2c1.fix5=FIX (SCL:PC18, SDA:PC19) [debug/strap pin]
+CH32X033.menu.i2c1.fix5.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC18 -DCH32RV_I2C1_FIX_SDA=PC19 -DCH32RV_I2C1_FIX_V1=0x00000014u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32X033.menu.spi1.auto=AUTO (bind at begin())
+CH32X033.menu.spi1.auto.build.spi1_mode=
+CH32X033.menu.spi1.disable=Disable
+CH32X033.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32X033.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32X033.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32X033.menu.spi1.fix2=FIX (SCK:PA11, MISO:PA9, MOSI:PA10)
+CH32X033.menu.spi1.fix2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA11 -DCH32RV_SPI1_FIX_MISO=PA9 -DCH32RV_SPI1_FIX_MOSI=PA10 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32X033.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
 CH32X035.name=Generic CH32X035
@@ -1533,7 +2253,67 @@ CH32L103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32L103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32L103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32L103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32L103.build.periph_defines=
+CH32L103.menu.usart1.auto=AUTO (bind at begin())
+CH32L103.menu.usart1.auto.build.usart1_mode=
+CH32L103.menu.usart1.disable=Disable
+CH32L103.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32L103.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32L103.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32L103.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32L103.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32L103.menu.usart2.auto=AUTO (bind at begin())
+CH32L103.menu.usart2.auto.build.usart2_mode=
+CH32L103.menu.usart2.disable=Disable
+CH32L103.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32L103.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32L103.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32L103.menu.usart3.auto=AUTO (bind at begin())
+CH32L103.menu.usart3.auto.build.usart3_mode=
+CH32L103.menu.usart3.disable=Disable
+CH32L103.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32L103.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32L103.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32L103.menu.usart4.auto=AUTO (bind at begin())
+CH32L103.menu.usart4.auto.build.usart4_mode=
+CH32L103.menu.usart4.disable=Disable
+CH32L103.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32L103.menu.usart4.fix0=FIX (TX:PB0, RX:PB1)
+CH32L103.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32L103.menu.usart4.fix1=FIX (TX:PA5, RX:PB5)
+CH32L103.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PA5 -DCH32RV_USART4_FIX_RX=PB5 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32L103.menu.i2c1.auto=AUTO (bind at begin())
+CH32L103.menu.i2c1.auto.build.i2c1_mode=
+CH32L103.menu.i2c1.disable=Disable
+CH32L103.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32L103.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32L103.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32L103.menu.i2c1.fix2=FIX (SCL:PA13, SDA:PA12) [debug/strap pin]
+CH32L103.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PA13 -DCH32RV_I2C1_FIX_SDA=PA12 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00800000u
+CH32L103.menu.i2c1.fix3=FIX (SCL:PB9, SDA:PB11)
+CH32L103.menu.i2c1.fix3.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB9 -DCH32RV_I2C1_FIX_SDA=PB11 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00800000u
+CH32L103.menu.i2c2.auto=AUTO (bind at begin())
+CH32L103.menu.i2c2.auto.build.i2c2_mode=
+CH32L103.menu.i2c2.disable=Disable
+CH32L103.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32L103.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32L103.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32L103.menu.spi1.auto=AUTO (bind at begin())
+CH32L103.menu.spi1.auto.build.spi1_mode=
+CH32L103.menu.spi1.disable=Disable
+CH32L103.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32L103.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32L103.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32L103.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32L103.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32L103.menu.spi1.fix2=FIX (SCK:PB6, MISO:PB8, MOSI:PB7)
+CH32L103.menu.spi1.fix2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB6 -DCH32RV_SPI1_FIX_MISO=PB8 -DCH32RV_SPI1_FIX_MOSI=PB7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x01000000u
+CH32L103.menu.spi2.auto=AUTO (bind at begin())
+CH32L103.menu.spi2.auto.build.spi2_mode=
+CH32L103.menu.spi2.disable=Disable
+CH32L103.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32L103.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32L103.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32L103.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
 CH32M103.name=Generic CH32M103
@@ -1581,7 +2361,55 @@ CH32M103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32M103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32M103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32M103.build.periph_defines=
+CH32M103.menu.usart1.auto=AUTO (bind at begin())
+CH32M103.menu.usart1.auto.build.usart1_mode=
+CH32M103.menu.usart1.disable=Disable
+CH32M103.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32M103.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32M103.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32M103.menu.usart2.auto=AUTO (bind at begin())
+CH32M103.menu.usart2.auto.build.usart2_mode=
+CH32M103.menu.usart2.disable=Disable
+CH32M103.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32M103.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32M103.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32M103.menu.usart3.auto=AUTO (bind at begin())
+CH32M103.menu.usart3.auto.build.usart3_mode=
+CH32M103.menu.usart3.disable=Disable
+CH32M103.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32M103.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32M103.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32M103.menu.usart4.auto=AUTO (bind at begin())
+CH32M103.menu.usart4.auto.build.usart4_mode=
+CH32M103.menu.usart4.disable=Disable
+CH32M103.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32M103.menu.usart4.fix0=FIX (TX:PB0, RX:PB1)
+CH32M103.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32M103.menu.usart4.fix1=FIX (TX:PA5, RX:PB5)
+CH32M103.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PA5 -DCH32RV_USART4_FIX_RX=PB5 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32M103.menu.i2c1.auto=AUTO (bind at begin())
+CH32M103.menu.i2c1.auto.build.i2c1_mode=
+CH32M103.menu.i2c1.disable=Disable
+CH32M103.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32M103.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32M103.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32M103.menu.i2c1.fix2=FIX (SCL:PA13, SDA:PA12) [debug/strap pin]
+CH32M103.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PA13 -DCH32RV_I2C1_FIX_SDA=PA12 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00800000u
+CH32M103.menu.i2c2.auto=AUTO (bind at begin())
+CH32M103.menu.i2c2.auto.build.i2c2_mode=
+CH32M103.menu.i2c2.disable=Disable
+CH32M103.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32M103.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32M103.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32M103.menu.spi1.auto=AUTO (bind at begin())
+CH32M103.menu.spi1.auto.build.spi1_mode=
+CH32M103.menu.spi1.disable=Disable
+CH32M103.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32M103.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32M103.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M103.menu.spi1.fix2=FIX (SCK:PB6, MISO:PB8, MOSI:PB7)
+CH32M103.menu.spi1.fix2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB6 -DCH32RV_SPI1_FIX_MISO=PB8 -DCH32RV_SPI1_FIX_MOSI=PB7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x01000000u
+CH32M103.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode}
 
 
 CH32V205.name=Generic CH32V205
@@ -1659,7 +2487,61 @@ CH32V205.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V205.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V205.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V205.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V205.build.periph_defines=
+CH32V205.menu.usart1.auto=AUTO (bind at begin())
+CH32V205.menu.usart1.auto.build.usart1_mode=
+CH32V205.menu.usart1.disable=Disable
+CH32V205.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V205.menu.usart1.fix0=FIX (TX:PB6, RX:PB7)
+CH32V205.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V205.menu.usart2.auto=AUTO (bind at begin())
+CH32V205.menu.usart2.auto.build.usart2_mode=
+CH32V205.menu.usart2.disable=Disable
+CH32V205.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V205.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V205.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V205.menu.usart3.auto=AUTO (bind at begin())
+CH32V205.menu.usart3.auto.build.usart3_mode=
+CH32V205.menu.usart3.disable=Disable
+CH32V205.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V205.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V205.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V205.menu.usart4.auto=AUTO (bind at begin())
+CH32V205.menu.usart4.auto.build.usart4_mode=
+CH32V205.menu.usart4.disable=Disable
+CH32V205.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32V205.menu.usart4.fix0=FIX (TX:PB0, RX:PB1)
+CH32V205.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32V205.menu.usart5.auto=AUTO (bind at begin())
+CH32V205.menu.usart5.auto.build.usart5_mode=
+CH32V205.menu.usart5.disable=Disable
+CH32V205.menu.usart5.disable.build.usart5_mode=-DCH32RV_USART5_MODE=0
+CH32V205.menu.usart5.fix0=FIX (TX:PB4, RX:PB5)
+CH32V205.menu.usart5.fix0.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PB4 -DCH32RV_USART5_FIX_RX=PB5 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00000000u
+CH32V205.menu.i2c1.auto=AUTO (bind at begin())
+CH32V205.menu.i2c1.auto.build.i2c1_mode=
+CH32V205.menu.i2c1.disable=Disable
+CH32V205.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V205.menu.i2c1.fix0=FIX (SCL:PB8, SDA:PB9)
+CH32V205.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V205.menu.i2c2.auto=AUTO (bind at begin())
+CH32V205.menu.i2c2.auto.build.i2c2_mode=
+CH32V205.menu.i2c2.disable=Disable
+CH32V205.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32V205.menu.i2c2.fix0=FIX (SCL:PB10, SDA:PB11)
+CH32V205.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PB10 -DCH32RV_I2C2_FIX_SDA=PB11 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32V205.menu.spi1.auto=AUTO (bind at begin())
+CH32V205.menu.spi1.auto.build.spi1_mode=
+CH32V205.menu.spi1.disable=Disable
+CH32V205.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V205.menu.spi1.fix0=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V205.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V205.menu.spi2.auto=AUTO (bind at begin())
+CH32V205.menu.spi2.auto.build.spi2_mode=
+CH32V205.menu.spi2.disable=Disable
+CH32V205.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V205.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V205.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V205.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
 CH32V407.name=Generic CH32V407
@@ -1727,7 +2609,77 @@ CH32V407.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V407.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V407.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V407.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V407.build.periph_defines=
+CH32V407.menu.usart1.auto=AUTO (bind at begin())
+CH32V407.menu.usart1.auto.build.usart1_mode=
+CH32V407.menu.usart1.disable=Disable
+CH32V407.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V407.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V407.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V407.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V407.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V407.menu.usart2.auto=AUTO (bind at begin())
+CH32V407.menu.usart2.auto.build.usart2_mode=
+CH32V407.menu.usart2.disable=Disable
+CH32V407.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V407.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V407.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V407.menu.usart2.fix1=FIX (TX:PD5, RX:PD6)
+CH32V407.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PD5 -DCH32RV_USART2_FIX_RX=PD6 -DCH32RV_USART2_FIX_V1=0x00000008u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V407.menu.usart3.auto=AUTO (bind at begin())
+CH32V407.menu.usart3.auto.build.usart3_mode=
+CH32V407.menu.usart3.disable=Disable
+CH32V407.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V407.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V407.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V407.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V407.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V407.menu.usart4.auto=AUTO (bind at begin())
+CH32V407.menu.usart4.auto.build.usart4_mode=
+CH32V407.menu.usart4.disable=Disable
+CH32V407.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32V407.menu.usart4.fix0=FIX (TX:PC10, RX:PC11)
+CH32V407.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PC10 -DCH32RV_USART4_FIX_RX=PC11 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32V407.menu.usart4.fix1=FIX (TX:PB0, RX:PB1)
+CH32V407.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32V407.menu.usart5.auto=AUTO (bind at begin())
+CH32V407.menu.usart5.auto.build.usart5_mode=
+CH32V407.menu.usart5.disable=Disable
+CH32V407.menu.usart5.disable.build.usart5_mode=-DCH32RV_USART5_MODE=0
+CH32V407.menu.usart5.fix0=FIX (TX:PC12, RX:PD2)
+CH32V407.menu.usart5.fix0.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PC12 -DCH32RV_USART5_FIX_RX=PD2 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00000000u
+CH32V407.menu.usart5.fix1=FIX (TX:PB4, RX:PB5)
+CH32V407.menu.usart5.fix1.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PB4 -DCH32RV_USART5_FIX_RX=PB5 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00040000u
+CH32V407.menu.i2c1.auto=AUTO (bind at begin())
+CH32V407.menu.i2c1.auto.build.i2c1_mode=
+CH32V407.menu.i2c1.disable=Disable
+CH32V407.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V407.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V407.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V407.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V407.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V407.menu.spi1.auto=AUTO (bind at begin())
+CH32V407.menu.spi1.auto.build.spi1_mode=
+CH32V407.menu.spi1.disable=Disable
+CH32V407.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V407.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V407.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V407.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V407.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V407.menu.spi2.auto=AUTO (bind at begin())
+CH32V407.menu.spi2.auto.build.spi2_mode=
+CH32V407.menu.spi2.disable=Disable
+CH32V407.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V407.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V407.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V407.menu.spi3.auto=AUTO (bind at begin())
+CH32V407.menu.spi3.auto.build.spi3_mode=
+CH32V407.menu.spi3.disable=Disable
+CH32V407.menu.spi3.disable.build.spi3_mode=-DCH32RV_SPI3_MODE=0
+CH32V407.menu.spi3.fix0=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V407.menu.spi3.fix0.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V407.menu.spi3.fix1=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
+CH32V407.menu.spi3.fix1.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V407.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.i2c1_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
 CH32V467.name=Generic CH32V467
@@ -1795,7 +2747,77 @@ CH32V467.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V467.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V467.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V467.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V467.build.periph_defines=
+CH32V467.menu.usart1.auto=AUTO (bind at begin())
+CH32V467.menu.usart1.auto.build.usart1_mode=
+CH32V467.menu.usart1.disable=Disable
+CH32V467.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V467.menu.usart1.fix0=FIX (TX:PA9, RX:PA10)
+CH32V467.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA9 -DCH32RV_USART1_FIX_RX=PA10 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V467.menu.usart1.fix1=FIX (TX:PB6, RX:PB7)
+CH32V467.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB6 -DCH32RV_USART1_FIX_RX=PB7 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V467.menu.usart2.auto=AUTO (bind at begin())
+CH32V467.menu.usart2.auto.build.usart2_mode=
+CH32V467.menu.usart2.disable=Disable
+CH32V467.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32V467.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32V467.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V467.menu.usart2.fix1=FIX (TX:PD5, RX:PD6)
+CH32V467.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PD5 -DCH32RV_USART2_FIX_RX=PD6 -DCH32RV_USART2_FIX_V1=0x00000008u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32V467.menu.usart3.auto=AUTO (bind at begin())
+CH32V467.menu.usart3.auto.build.usart3_mode=
+CH32V467.menu.usart3.disable=Disable
+CH32V467.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32V467.menu.usart3.fix0=FIX (TX:PB10, RX:PB11)
+CH32V467.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB10 -DCH32RV_USART3_FIX_RX=PB11 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V467.menu.usart3.fix1=FIX (TX:PC10, RX:PC11)
+CH32V467.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC10 -DCH32RV_USART3_FIX_RX=PC11 -DCH32RV_USART3_FIX_V1=0x00000010u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32V467.menu.usart4.auto=AUTO (bind at begin())
+CH32V467.menu.usart4.auto.build.usart4_mode=
+CH32V467.menu.usart4.disable=Disable
+CH32V467.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32V467.menu.usart4.fix0=FIX (TX:PC10, RX:PC11)
+CH32V467.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PC10 -DCH32RV_USART4_FIX_RX=PC11 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32V467.menu.usart4.fix1=FIX (TX:PB0, RX:PB1)
+CH32V467.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00010000u
+CH32V467.menu.usart5.auto=AUTO (bind at begin())
+CH32V467.menu.usart5.auto.build.usart5_mode=
+CH32V467.menu.usart5.disable=Disable
+CH32V467.menu.usart5.disable.build.usart5_mode=-DCH32RV_USART5_MODE=0
+CH32V467.menu.usart5.fix0=FIX (TX:PC12, RX:PD2)
+CH32V467.menu.usart5.fix0.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PC12 -DCH32RV_USART5_FIX_RX=PD2 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00000000u
+CH32V467.menu.usart5.fix1=FIX (TX:PB4, RX:PB5)
+CH32V467.menu.usart5.fix1.build.usart5_mode=-DCH32RV_USART5_MODE=2 -DCH32RV_USART5_FIX_TX=PB4 -DCH32RV_USART5_FIX_RX=PB5 -DCH32RV_USART5_FIX_V1=0x00000000u -DCH32RV_USART5_FIX_V2=0x00040000u
+CH32V467.menu.i2c1.auto=AUTO (bind at begin())
+CH32V467.menu.i2c1.auto.build.i2c1_mode=
+CH32V467.menu.i2c1.disable=Disable
+CH32V467.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32V467.menu.i2c1.fix0=FIX (SCL:PB6, SDA:PB7)
+CH32V467.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB6 -DCH32RV_I2C1_FIX_SDA=PB7 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V467.menu.i2c1.fix1=FIX (SCL:PB8, SDA:PB9)
+CH32V467.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB8 -DCH32RV_I2C1_FIX_SDA=PB9 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32V467.menu.spi1.auto=AUTO (bind at begin())
+CH32V467.menu.spi1.auto.build.spi1_mode=
+CH32V467.menu.spi1.disable=Disable
+CH32V467.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32V467.menu.spi1.fix0=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
+CH32V467.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V467.menu.spi1.fix1=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V467.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V467.menu.spi2.auto=AUTO (bind at begin())
+CH32V467.menu.spi2.auto.build.spi2_mode=
+CH32V467.menu.spi2.disable=Disable
+CH32V467.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32V467.menu.spi2.fix0=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
+CH32V467.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V467.menu.spi3.auto=AUTO (bind at begin())
+CH32V467.menu.spi3.auto.build.spi3_mode=
+CH32V467.menu.spi3.disable=Disable
+CH32V467.menu.spi3.disable.build.spi3_mode=-DCH32RV_SPI3_MODE=0
+CH32V467.menu.spi3.fix0=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
+CH32V467.menu.spi3.fix0.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V467.menu.spi3.fix1=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
+CH32V467.menu.spi3.fix1.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V467.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.i2c1_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
 CH32X305.name=Generic CH32X305
@@ -1843,7 +2865,55 @@ CH32X305.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32X305.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X305.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32X305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32X305.build.periph_defines=
+CH32X305.menu.usart1.auto=AUTO (bind at begin())
+CH32X305.menu.usart1.auto.build.usart1_mode=
+CH32X305.menu.usart1.disable=Disable
+CH32X305.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32X305.menu.usart1.fix0=FIX (TX:PD4, RX:PD5)
+CH32X305.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD4 -DCH32RV_USART1_FIX_RX=PD5 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32X305.menu.usart2.auto=AUTO (bind at begin())
+CH32X305.menu.usart2.auto.build.usart2_mode=
+CH32X305.menu.usart2.disable=Disable
+CH32X305.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32X305.menu.usart2.fix0=FIX (TX:PD6, RX:PD7)
+CH32X305.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PD6 -DCH32RV_USART2_FIX_RX=PD7 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32X305.menu.usart3.auto=AUTO (bind at begin())
+CH32X305.menu.usart3.auto.build.usart3_mode=
+CH32X305.menu.usart3.disable=Disable
+CH32X305.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32X305.menu.usart3.fix0=FIX (TX:PC8, RX:PC9)
+CH32X305.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC8 -DCH32RV_USART3_FIX_RX=PC9 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32X305.menu.usart4.auto=AUTO (bind at begin())
+CH32X305.menu.usart4.auto.build.usart4_mode=
+CH32X305.menu.usart4.disable=Disable
+CH32X305.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32X305.menu.usart4.fix0=FIX (TX:PB12, RX:PB13)
+CH32X305.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB12 -DCH32RV_USART4_FIX_RX=PB13 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32X305.menu.i2c1.auto=AUTO (bind at begin())
+CH32X305.menu.i2c1.auto.build.i2c1_mode=
+CH32X305.menu.i2c1.disable=Disable
+CH32X305.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32X305.menu.i2c1.fix0=FIX (SCL:PD4, SDA:PD5)
+CH32X305.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD4 -DCH32RV_I2C1_FIX_SDA=PD5 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32X305.menu.i2c2.auto=AUTO (bind at begin())
+CH32X305.menu.i2c2.auto.build.i2c2_mode=
+CH32X305.menu.i2c2.disable=Disable
+CH32X305.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32X305.menu.i2c2.fix0=FIX (SCL:PD6, SDA:PD7)
+CH32X305.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PD6 -DCH32RV_I2C2_FIX_SDA=PD7 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32X305.menu.spi2.auto=AUTO (bind at begin())
+CH32X305.menu.spi2.auto.build.spi2_mode=
+CH32X305.menu.spi2.disable=Disable
+CH32X305.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32X305.menu.spi2.fix0=FIX (SCK:PB5, MISO:PB7, MOSI:PB6)
+CH32X305.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB5 -DCH32RV_SPI2_FIX_MISO=PB7 -DCH32RV_SPI2_FIX_MOSI=PB6 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32X305.menu.spi3.auto=AUTO (bind at begin())
+CH32X305.menu.spi3.auto.build.spi3_mode=
+CH32X305.menu.spi3.disable=Disable
+CH32X305.menu.spi3.disable.build.spi3_mode=-DCH32RV_SPI3_MODE=0
+CH32X305.menu.spi3.fix0=FIX (SCK:PD11, MISO:PD13, MOSI:PD12)
+CH32X305.menu.spi3.fix0.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PD11 -DCH32RV_SPI3_FIX_MISO=PD13 -DCH32RV_SPI3_FIX_MOSI=PD12 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32X305.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi2_mode} {build.spi3_mode}
 
 
 CH32X315.name=Generic CH32X315
@@ -1911,7 +2981,61 @@ CH32X315.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32X315.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X315.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32X315.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32X315.build.periph_defines=
+CH32X315.menu.usart1.auto=AUTO (bind at begin())
+CH32X315.menu.usart1.auto.build.usart1_mode=
+CH32X315.menu.usart1.disable=Disable
+CH32X315.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32X315.menu.usart1.fix0=FIX (TX:PD4, RX:PD5)
+CH32X315.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD4 -DCH32RV_USART1_FIX_RX=PD5 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32X315.menu.usart2.auto=AUTO (bind at begin())
+CH32X315.menu.usart2.auto.build.usart2_mode=
+CH32X315.menu.usart2.disable=Disable
+CH32X315.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32X315.menu.usart2.fix0=FIX (TX:PD6, RX:PD7)
+CH32X315.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PD6 -DCH32RV_USART2_FIX_RX=PD7 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32X315.menu.usart3.auto=AUTO (bind at begin())
+CH32X315.menu.usart3.auto.build.usart3_mode=
+CH32X315.menu.usart3.disable=Disable
+CH32X315.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32X315.menu.usart3.fix0=FIX (TX:PC8, RX:PC9)
+CH32X315.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC8 -DCH32RV_USART3_FIX_RX=PC9 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32X315.menu.usart4.auto=AUTO (bind at begin())
+CH32X315.menu.usart4.auto.build.usart4_mode=
+CH32X315.menu.usart4.disable=Disable
+CH32X315.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32X315.menu.usart4.fix0=FIX (TX:PA8, RX:PA9)
+CH32X315.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PA8 -DCH32RV_USART4_FIX_RX=PA9 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32X315.menu.i2c1.auto=AUTO (bind at begin())
+CH32X315.menu.i2c1.auto.build.i2c1_mode=
+CH32X315.menu.i2c1.disable=Disable
+CH32X315.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32X315.menu.i2c1.fix0=FIX (SCL:PD4, SDA:PD5)
+CH32X315.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD4 -DCH32RV_I2C1_FIX_SDA=PD5 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32X315.menu.i2c2.auto=AUTO (bind at begin())
+CH32X315.menu.i2c2.auto.build.i2c2_mode=
+CH32X315.menu.i2c2.disable=Disable
+CH32X315.menu.i2c2.disable.build.i2c2_mode=-DCH32RV_I2C2_MODE=0
+CH32X315.menu.i2c2.fix0=FIX (SCL:PD6, SDA:PD7)
+CH32X315.menu.i2c2.fix0.build.i2c2_mode=-DCH32RV_I2C2_MODE=2 -DCH32RV_I2C2_FIX_SCL=PD6 -DCH32RV_I2C2_FIX_SDA=PD7 -DCH32RV_I2C2_FIX_V1=0x00000000u -DCH32RV_I2C2_FIX_V2=0x00000000u
+CH32X315.menu.spi1.auto=AUTO (bind at begin())
+CH32X315.menu.spi1.auto.build.spi1_mode=
+CH32X315.menu.spi1.disable=Disable
+CH32X315.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32X315.menu.spi1.fix0=FIX (SCK:PA5, MISO:PD3, MOSI:PA6)
+CH32X315.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PD3 -DCH32RV_SPI1_FIX_MOSI=PA6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32X315.menu.spi2.auto=AUTO (bind at begin())
+CH32X315.menu.spi2.auto.build.spi2_mode=
+CH32X315.menu.spi2.disable=Disable
+CH32X315.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
+CH32X315.menu.spi2.fix0=FIX (SCK:PB5, MISO:PB7, MOSI:PB6)
+CH32X315.menu.spi2.fix0.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB5 -DCH32RV_SPI2_FIX_MISO=PB7 -DCH32RV_SPI2_FIX_MOSI=PB6 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32X315.menu.spi3.auto=AUTO (bind at begin())
+CH32X315.menu.spi3.auto.build.spi3_mode=
+CH32X315.menu.spi3.disable=Disable
+CH32X315.menu.spi3.disable.build.spi3_mode=-DCH32RV_SPI3_MODE=0
+CH32X315.menu.spi3.fix0=FIX (SCK:PC9, MISO:PD13, MOSI:PD12)
+CH32X315.menu.spi3.fix0.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC9 -DCH32RV_SPI3_FIX_MISO=PD13 -DCH32RV_SPI3_FIX_MOSI=PD12 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32X315.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
 CH32M030.name=Generic CH32M030
@@ -1999,7 +3123,39 @@ CH32M030.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32M030.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M030.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32M030.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32M030.build.periph_defines=
+CH32M030.menu.usart1.auto=AUTO (bind at begin())
+CH32M030.menu.usart1.auto.build.usart1_mode=
+CH32M030.menu.usart1.disable=Disable
+CH32M030.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32M030.menu.usart1.fix0=FIX (TX:PC1, RX:PC0) [debug/strap pin]
+CH32M030.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PC1 -DCH32RV_USART1_FIX_RX=PC0 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32M030.menu.usart1.fix1=FIX (TX:PC1, RX:PC2)
+CH32M030.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PC1 -DCH32RV_USART1_FIX_RX=PC2 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32M030.menu.i2c1.auto=AUTO (bind at begin())
+CH32M030.menu.i2c1.auto.build.i2c1_mode=
+CH32M030.menu.i2c1.disable=Disable
+CH32M030.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+CH32M030.menu.i2c1.fix0=FIX (SCL:PB3, SDA:PB2)
+CH32M030.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PB3 -DCH32RV_I2C1_FIX_SDA=PB2 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32M030.menu.i2c1.fix1=FIX (SCL:PA2, SDA:PB6) [debug/strap pin]
+CH32M030.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PA2 -DCH32RV_I2C1_FIX_SDA=PB6 -DCH32RV_I2C1_FIX_V1=0x00000001u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32M030.menu.i2c1.fix2=FIX (SCL:PA15, SDA:PA14) [debug/strap pin]
+CH32M030.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PA15 -DCH32RV_I2C1_FIX_SDA=PA14 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32M030.menu.i2c1.fix3=FIX (SCL:PA2, SDA:PA3) [debug/strap pin]
+CH32M030.menu.i2c1.fix3.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PA2 -DCH32RV_I2C1_FIX_SDA=PA3 -DCH32RV_I2C1_FIX_V1=0x00000003u -DCH32RV_I2C1_FIX_V2=0x00000000u
+CH32M030.menu.spi1.auto=AUTO (bind at begin())
+CH32M030.menu.spi1.auto.build.spi1_mode=
+CH32M030.menu.spi1.disable=Disable
+CH32M030.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+CH32M030.menu.spi1.fix0=FIX (SCK:PA1, MISO:PC4, MOSI:PC3)
+CH32M030.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PC4 -DCH32RV_SPI1_FIX_MOSI=PC3 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M030.menu.spi1.fix1=FIX (SCK:PB6, MISO:PA4, MOSI:PB5)
+CH32M030.menu.spi1.fix1.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB6 -DCH32RV_SPI1_FIX_MISO=PA4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000020u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M030.menu.spi1.fix2=FIX (SCK:PA1, MISO:PC4, MOSI:PA11)
+CH32M030.menu.spi1.fix2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PC4 -DCH32RV_SPI1_FIX_MOSI=PA11 -DCH32RV_SPI1_FIX_V1=0x00000040u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M030.menu.spi1.fix3=FIX (SCK:PA1, MISO:PA4, MOSI:PA8)
+CH32M030.menu.spi1.fix3.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PA4 -DCH32RV_SPI1_FIX_MOSI=PA8 -DCH32RV_SPI1_FIX_V1=0x00000060u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M030.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
 # Product boards (L2), from tools/generate/boards/*.txt
@@ -2043,3 +3199,28 @@ UIAPDUINO_V003_V14.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big
 UIAPDUINO_V003_V14.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 UIAPDUINO_V003_V14.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
 UIAPDUINO_V003_V14.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+UIAPDUINO_V003_V14.menu.usart1.auto=AUTO (bind at begin())
+UIAPDUINO_V003_V14.menu.usart1.auto.build.usart1_mode=
+UIAPDUINO_V003_V14.menu.usart1.disable=Disable
+UIAPDUINO_V003_V14.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+UIAPDUINO_V003_V14.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
+UIAPDUINO_V003_V14.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+UIAPDUINO_V003_V14.menu.usart1.fix1=FIX (TX:PD0, RX:PD1) [debug/strap pin]
+UIAPDUINO_V003_V14.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD0 -DCH32RV_USART1_FIX_RX=PD1 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+UIAPDUINO_V003_V14.menu.i2c1.auto=AUTO (bind at begin())
+UIAPDUINO_V003_V14.menu.i2c1.auto.build.i2c1_mode=
+UIAPDUINO_V003_V14.menu.i2c1.disable=Disable
+UIAPDUINO_V003_V14.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
+UIAPDUINO_V003_V14.menu.i2c1.fix0=FIX (SCL:PC2, SDA:PC1)
+UIAPDUINO_V003_V14.menu.i2c1.fix0.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC2 -DCH32RV_I2C1_FIX_SDA=PC1 -DCH32RV_I2C1_FIX_V1=0x00000000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+UIAPDUINO_V003_V14.menu.i2c1.fix1=FIX (SCL:PD1, SDA:PD0) [debug/strap pin]
+UIAPDUINO_V003_V14.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD1 -DCH32RV_I2C1_FIX_SDA=PD0 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
+UIAPDUINO_V003_V14.menu.i2c1.fix2=FIX (SCL:PC5, SDA:PC6)
+UIAPDUINO_V003_V14.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC5 -DCH32RV_I2C1_FIX_SDA=PC6 -DCH32RV_I2C1_FIX_V1=0x00400000u -DCH32RV_I2C1_FIX_V2=0x00000000u
+UIAPDUINO_V003_V14.menu.spi1.auto=AUTO (bind at begin())
+UIAPDUINO_V003_V14.menu.spi1.auto.build.spi1_mode=
+UIAPDUINO_V003_V14.menu.spi1.disable=Disable
+UIAPDUINO_V003_V14.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
+UIAPDUINO_V003_V14.menu.spi1.fix0=FIX (SCK:PC5, MISO:PC7, MOSI:PC6)
+UIAPDUINO_V003_V14.menu.spi1.fix0.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+UIAPDUINO_V003_V14.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}

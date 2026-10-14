@@ -176,8 +176,9 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.rtlib=C Runtime Library\n"
 # nothing, FIX fixes one route at build time. The point is to let a small
 # part's board drop what it cannot use, so the menus start on the small series;
 # the core and the Wire / SPI libraries read CH32RV_<KIND>n_MODE and treat a
-# missing one as AUTO.
-PERIPH_MENU_SERIES = ("CH32V003", "CH32X035")
+# missing one as AUTO. Every series gets them; a series where they turn out to
+# be too many can be left out here (None = all).
+PERIPH_MENU_SERIES = None
 
 # kind -> (menu id prefix, macro prefix, roles in route order, instance numbers)
 PERIPH_MENU_KINDS = (
@@ -187,11 +188,29 @@ PERIPH_MENU_KINDS = (
 )
 
 
+# The variant header's own name for each kind's default pins, for an instance
+# with no AFIO field (one fixed route; V205 / X305 / X315, and I2C2 / SPI2 on
+# the larger parts): its menu offers that route alone.
+VARIANT_PIN_PREFIX = {"usart": "SERIAL", "i2c": "I2C", "spi": "SPI"}
+
+
+def default_pins(variant: str, kind: str, n: int, roles: tuple):
+    """The pad names the variant header gives instance n's default route, or None."""
+    names = []
+    for role in roles:
+        m = re.search(rf"^#define CH32RV_{VARIANT_PIN_PREFIX[kind]}{n}_{role} (P[A-Z]\d+)\b",
+                      variant, re.M)
+        if not m:
+            return None
+        names.append(m.group(1))
+    return names
+
+
 def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
-                remap: dict, forbidden: dict = {}) -> list[str]:
+                remap: dict, forbidden: dict = {}, variant: str = "") -> list[str]:
     """The per-instance menus for one board, and the build.periph_defines line
     that collects them. Empty for a series without the menus."""
-    if series not in PERIPH_MENU_SERIES:
+    if PERIPH_MENU_SERIES is not None and series not in PERIPH_MENU_SERIES:
         return [f"{board}.build.periph_defines="]
     lines, uses = [], []
     # A FIX entry on a debug pin (SDI) or a strap (NRST / BOOT) of any part says
@@ -200,8 +219,11 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
     for kind, macro, roles, numbers in PERIPH_MENU_KINDS:
         for n in numbers:
             rows = route_table(series, parts, pins_by_kind[kind], remap, kind, roles, n)
+            fixed = None
             if not rows:
-                continue
+                fixed = default_pins(variant, kind, n, roles)
+                if not fixed:
+                    continue
             key = f"build.{kind}{n}_mode"
             uses.append("{" + key + "}")
             pfx = f"{board}.menu.{kind}{n}"
@@ -209,6 +231,14 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
             lines.append(f"{pfx}.auto.{key}=")
             lines.append(f"{pfx}.disable=Disable")
             lines.append(f"{pfx}.disable.{key}=-DCH32RV_{macro}{n}_MODE=0")
+            if fixed:
+                # No AFIO field: the one route the variant names, no remap to write.
+                label = ", ".join(f"{r}:{x}" for r, x in zip(roles, fixed))
+                fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, fixed))
+                lines.append(f"{pfx}.fix0=FIX ({label})")
+                lines.append(f"{pfx}.fix0.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
+                             f"-DCH32RV_{macro}{n}_FIX_V1=0x00000000u "
+                             f"-DCH32RV_{macro}{n}_FIX_V2=0x00000000u")
             seen = set()
             for value, pads, v1, v2 in rows:
                 # Two routes can put the same pins in these roles and differ only
@@ -2876,10 +2906,14 @@ def main() -> int:
                 facts[SERIES_CONFIG[series]["family"]]["hsi_hz"],
                 clock_configs_t, clock_symbols_t))
         parts = sorted({r["part_number"] for r in rows})
+        variant_text = gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
+                                interrupts[SERIES_CONFIG[series]['vectors']], remap,
+                                route_alts, wide_timers, timer_capabilities, forbidden,
+                                clock_enables, adc_all, adc_bases, cores, esig)
         block = block.rstrip("\n") + "\n" + "\n".join(
             periph_menu(series, series, parts,
                         {"usart": uarts, "i2c": i2cs, "spi": spis}, remap,
-                        forbidden)) + "\n\n"
+                        forbidden, variant_text)) + "\n\n"
         boards_blocks.append(block)
         used_variants.add(SERIES_CONFIG[series]["vectors"])
         # A part on another die variant needs that table emitted too.
@@ -2887,12 +2921,7 @@ def main() -> int:
                              if r["part_number"] in die)
         for name, content in ld_files.items():
             outputs[args.platform / "variants" / series / name] = content
-        outputs[args.platform / "variants" / series / "pins_arduino.h"] = \
-            gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
-                     interrupts[SERIES_CONFIG[series]['vectors']], remap,
-                     route_alts, wide_timers, timer_capabilities, forbidden,
-                     clock_enables,
-                     adc_all, adc_bases, cores, esig)
+        outputs[args.platform / "variants" / series / "pins_arduino.h"] = variant_text
 
     # What the one-to-many lookups resolved, grouped by route kind. Printed
     # every run rather than only on change: "the generator picked one of
@@ -2929,8 +2958,18 @@ def main() -> int:
         return 1
 
     named_board_dir = pathlib.Path(__file__).parent / "boards"
-    named_boards = [p.read_text(encoding="utf-8").rstrip() + "\n"
-                    for p in sorted(named_board_dir.glob("*.txt"))]
+    named_boards = []
+    pins_by_kind = {"usart": uarts, "i2c": i2cs, "spi": spis}
+    for path in sorted(named_board_dir.glob("*.txt")):
+        text = path.read_text(encoding="utf-8").rstrip() + "\n"
+        # A product board gets the same per-instance menus, over its one part.
+        board_id = re.search(r"^(\w+)\.name=", text, re.M).group(1)
+        series = re.search(rf"^{board_id}\.build\.series=(\S+)", text, re.M).group(1)
+        part = re.search(rf"^{board_id}\.build\.part=(\S+)", text, re.M).group(1)
+        variant_text = outputs[args.platform / "variants" / series / "pins_arduino.h"]
+        text += "\n".join(periph_menu(board_id, series, [part], pins_by_kind,
+                                     remap, forbidden, variant_text)) + "\n"
+        named_boards.append(text)
     outputs[args.platform / "boards.txt"] = (
         gen_header() + "\n" + MENU_HEADER + "\n" + "\n".join(boards_blocks)
         + ("\n# Product boards (L2), from tools/generate/boards/*.txt\n\n"
