@@ -8,15 +8,15 @@ url = "https://github.com/hathach/tinyusb.git"
 commit = "de4940525876259efb17f14e775312365bfdf97c"
 # master at the merge of PR #3703 (CH32X035/X033 USBFS port, 2026-09-27); no release carries it yet - 0.21.0 is older
 license = "MIT"
-license_file = "libraries/TinyUSB/src/LICENSE"
-dest = "libraries/TinyUSB/src"
+license_file = "libraries/CH32RVTinyUSB/src/LICENSE"
+dest = "libraries/CH32RVTinyUSB/src"
 # Only part of upstream src/ is vendored; see KEEP_PORTABLE in the tool.
 kept_portable = ["portable/wch", "portable/st/stm32_fsdev"]
 # Deliberate differences from upstream. Empty means the copy is verbatim.
 # Each entry: what it changes and why, so a version bump can re-apply or drop it.
-patches = []
+patches = ["device/usbd.c: CFG_TUD_APP_DRIVERS_ONLY empties the built-in class driver t", "device/usbd.c: closes the #if above"]
 # Files this repository adds next to the vendored tree (not upstream).
-ours = ["tusb_config.h", "TinyUSB.h", "TinyUSB.cpp", "ch32_tusb_glue.cpp", "ch32x035.h"]
+ours = ["tusb_config.h", "ch32x035.h"]
 
 # SHA-256 of every vendored file, relative to dest.
 files = [

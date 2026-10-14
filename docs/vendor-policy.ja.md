@@ -14,7 +14,7 @@
 | lock | 対象 | repository 内の実体 |
 |---|---|---|
 | `vendor/arduino-core-api.lock.toml` | ArduinoCore-API | `cores/arduino/api/` |
-| `vendor/tinyusb.lock.toml` | TinyUSB | `libraries/TinyUSB/src/` |
+| `vendor/tinyusb.lock.toml` | TinyUSB | `libraries/CH32RVTinyUSB/src/` |
 | `vendor/ch32-device-data.lock.toml` | ch32-device-data の consumer surface | 生成物のみ。上流 table は copy しない |
 
 lock file が version と hash の正本です。この文書には変更のたびに動く値を複製しません。

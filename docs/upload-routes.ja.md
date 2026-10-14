@@ -15,7 +15,7 @@ ch32rv の開発版では、下の表で「未確認」「不可」の系列も�
 | OEP probe | OEP probe、デバッグ線 | ○ ch32rv の RAM loader で書く | 不要 | 不要 | 実装済 | 結線済（`oep://`、probe の serial port） |
 | HID bootloader（UIAPduino、`1209:b803`） | USB のみ | 書き込みは自動、入るのは手動 | 必要: RESET を押したまま USB へ接続し、すぐ離す | 不可: bootloader が外部 reset の履歴を確認する | 実装済（CH32V003、16 KiB まで） | 結線済（`hid://`） |
 | factory USB ISP（`4348:55e0`）、BOOT0 ピンで入る系列 | USB | 入るのが手動 | 必要: BOOT0（V103 は BOOT0 / BOOT1） | 未設計 | 未実装（`isp` は予約のみ） | 未結線 |
-| factory USB ISP、X033 / X035 | USB | 初回は手動。`SerialUSB` を使うアプリからは 1200bps touch で入れる | 初回は必要: PC17（USB D+）を High にして電源投入 | 可能: `TinyUSB` library の 1200bps touch → boot mode 設定 → software reset（X035 で実機確認）。DFU detach は未実装 | 開発版で実装（info / flash / verify / erase / reset、X035 で実機確認）。未リリース | upload recipe は未結線 |
+| factory USB ISP、X033 / X035 | USB | 初回は手動。`SerialUSB` を使うアプリからは 1200bps touch で入れる | 初回は必要: PC17（USB D+）を High にして電源投入 | 可能: `CH32RVUsbDevice` の 1200bps touch または DFU_DETACH → boot mode 設定 → software reset（X035 で実機確認）。DFU detach は未実装 | 開発版で実装（info / flash / verify / erase / reset、X035 で実機確認）。未リリース | upload recipe は未結線 |
 | factory USB ISP、X305 / X315 | USB | 未確認 | 未確認 | 可能（予定）: X033 / X035 と同じ | 未実装 | 未結線 |
 | factory UART ISP | USB-UART 変換 | — | — | V00x はアプリ経由、他は BOOT ピン | 未実装 | 対応しない |
 | 独自 bootloader（DFU / UF2 / UART） | 板による | — | — | — | `boot dfu` / `boot uf2` / `boot uart` は予約のみ | 対応しない（該当する板が出たら recipe を足す） |
@@ -109,7 +109,7 @@ X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`STAR
 
 ## USB を使う経路を足すときの前提
 
-- このコアに USB（TinyUSB、[ADR-0012](adr/0012-usb-stack.ja.md)）を結線することが先です。X033 / X035 は `libraries/TinyUSB` で結線済みです。
+- このコアに USB（TinyUSB、[ADR-0012](adr/0012-usb-stack.ja.md)）を結線することが先です。X033 / X035 は `CH32RVUsbDevice` で結線済みです（[docs/usb.ja.md](usb.ja.md)）。
   これがないと、アプリから書き込みモードへ入れません。
 - factory USB ISP は WCH 独自の protocol で、USB DFU class ではありません。書き込みは ch32rv の `isp` が担当します。
 

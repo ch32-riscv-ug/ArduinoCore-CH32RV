@@ -123,13 +123,13 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 
 ## USB・電源・HID
 
-実装根拠: [TinyUSB](../libraries/TinyUSB/README.ja.md)、
-[USBPD](../libraries/USBPD/)、[UIAPduino HID](uiapduino-hid-upload.ja.md)。
+実装根拠: [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/README.ja.md)、
+[CH32RVUsbPd](../libraries/CH32RVUsbPd/)、[UIAPduino HID](uiapduino-hid-upload.ja.md)。
 
 | 契約 | 実装 | 旧検証の参考（新 suite では未整備） | 不足する保証 / 必要設備 |
 |---|---|---|---|
 | TinyUSB source の固定 | あり | 現行: tests/platform/test_source_locks.py、tools/vendor/vendor_tinyusb.py | 動作保証ではない。source/patch/lock の整合のみ |
-| Arduino USB 初期化・device API | 一部（X033/X035 の CDC） | なし（X035 で手動確認: 列挙、CDC 双方向 32 KiB、1200bps touch → ISP → 約 60 s で復帰） | 自動化した実機試験、他系列、host から見た suspend / resume |
+| Arduino USB 初期化・device API | 一部（X033/X035 の CDC・HID・MIDI・DFU runtime） | なし（X035 で手動確認: 全 example の列挙と動作、CDC 双方向 32 KiB、HID / MIDI の往復、1200bps touch / DFU_DETACH → ISP → `ch32rv isp flash`、書き込みが無ければ約 10 s で復帰） | 自動化した実機試験、他系列、host から見た suspend / resume |
 | Arduino USB host API | 未実装 | なし | core/IRQ/clock/driver/lifecycle の結線、CH32X035 host と独立 device |
 | CDC/HID 等の sketch USB class | 未実装 | なし | host 側 driver と device 側 class の control/data/error/復旧契約を別々に検証。対向機と role 別 profile |
 | USB controller/speed の系列差 | Arduino 統合は未実装 | source 固定のみ | vendor driver の存在だけで対応とはしない。実装採用対象ごとの build と実機 |

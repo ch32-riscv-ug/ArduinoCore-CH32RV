@@ -140,11 +140,13 @@ STATUS = {
     "OPA/コンパレータ": ("対象外", "-", "CH32固有"),
     "TouchKey": ("対象外", "-", "CH32固有"),
     "PIOC (プログラマブルIO)": ("対象外", "-", "X035/V205固有"),
-    "USB (FS device/host)": ("未実装", "-",
-                             "採用stackはTinyUSB。固定sourceはあるがcoreへ未結線"),
+    "USB (FS device/host)": ("一部実装", "`CH32RVUsbDevice`(library: `SerialUSB`ほか)",
+                             "採用stackはTinyUSB。deviceのCDC/HID/MIDI/DFU runtimeはX033/X035で実装"
+                             "(X035で実機確認)。他seriesはbuildのみで`begin()`がfalse。hostは未実装"
+                             "(docs/usb.ja.md)"),
     "USB HS": ("未実装", "-", "採用stackはTinyUSB。coreへ未結線"),
     "USB SS": ("対象外", "-", "X315のみ。当面扱わない"),
-    "USB PD": ("一部実装", "`USBPD`(library)",
+    "USB PD": ("一部実装", "`CH32RVUsbPd`(library: `USBPD`)",
                "sinkはX033/X035で実装。他のUSBPD搭載seriesは`begin()`がfalseを返す"),
     "CAN": ("対象外", "-", ""),
     "Ethernet": ("対象外", "-", ""),

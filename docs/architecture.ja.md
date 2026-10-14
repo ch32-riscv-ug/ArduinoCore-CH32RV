@@ -52,7 +52,7 @@ Part Number メニューが型番ごとの memory layout を選びます。製�
 同梱するのは次のいずれかです。
 
 - Arduino で事実上標準の API (`Wire`, `SPI`, `Servo`)
-- コア固有機能を公開するもの (`CH32RV`, debug serial classes, `USBPD`)
+- コア固有機能を公開するもの (`CH32RV`, debug serial classes, `CH32RVUsbDevice`, `CH32RVUsbPd`)
 - hardware resource の調停をコアと共有するため外部化できないもの
 
 一般的なデバイスドライバは同梱しません。examples は Arduino IDE に表示するためライブラリ配下へ置き、

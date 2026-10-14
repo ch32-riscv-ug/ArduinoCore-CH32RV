@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.10"
 # ///
-"""libraries/TinyUSB/src is a pinned TinyUSB snapshot.
+"""libraries/CH32RVTinyUSB/src is a pinned TinyUSB snapshot.
 
 [ADR-0012](../../docs/adr/0012-usb-stack.ja.md) adopts TinyUSB and keeps it
 inside the repository rather than as an external dependency, because we expect
@@ -36,7 +36,7 @@ import urllib.request
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 LOCK = REPO / "vendor" / "tinyusb.lock.toml"
-DEST = REPO / "libraries" / "TinyUSB" / "src"
+DEST = REPO / "libraries" / "CH32RVTinyUSB" / "src"
 
 # The pinned upstream revision. A release tag when one carries what we need;
 # otherwise a master commit, and REF_NOTE says why.
@@ -55,7 +55,49 @@ KEEP_PORTABLE = ("portable/wch", "portable/st/stm32_fsdev")
 # Files we add next to the vendored tree. They are ours, so the lock ignores
 # them - but they must not collide with an upstream path, and a future upstream
 # version that adds one of these names has to be noticed, so they are listed.
-OURS = ("tusb_config.h", "TinyUSB.h", "TinyUSB.cpp", "ch32_tusb_glue.cpp", "ch32x035.h")
+OURS = ("tusb_config.h", "ch32x035.h")
+
+# Deliberate differences from upstream, applied by --update and verified by
+# --check: the file on disk must contain `after`, and with `after` put back to
+# `before` it must hash to the upstream file the lock records. Keep each one
+# small and in a place upstream rarely touches, and say why.
+PATCHES = (
+    {
+        "path": "device/usbd.c",
+        "before": "static const usbd_class_driver_t _usbd_driver[] = {\n",
+        "after": ("static const usbd_class_driver_t _usbd_driver[] = {\n"
+                  "#if !CFG_TUD_APP_DRIVERS_ONLY  /* ch32rv patch: see vendor_tinyusb.py */\n"),
+        "why": ("CFG_TUD_APP_DRIVERS_ONLY empties the built-in class driver table, so "
+                "the drivers come only from usbd_app_driver_get_cb(): a class the "
+                "sketch never declares is not referenced and not linked "
+                "(CH32RVUsbDevice). Upstream lists every enabled class there."),
+    },
+    {
+        "path": "device/usbd.c",
+        "before": "    #endif\n};\n\n// Additional class drivers implemented by application",
+        "after": ("    #endif\n#endif  /* !CFG_TUD_APP_DRIVERS_ONLY */\n};\n\n"
+                  "// Additional class drivers implemented by application"),
+        "why": "closes the #if above",
+    },
+)
+
+
+def apply_patches(files: dict) -> None:
+    for p in PATCHES:
+        text = files[p["path"]].decode("utf-8")
+        if text.count(p["before"]) != 1:
+            raise Failure(f"patch no longer applies to {p['path']}: {p['why']}")
+        files[p["path"]] = text.replace(p["before"], p["after"], 1).encode("utf-8")
+
+
+def unpatched(name: str, blob: bytes) -> bytes:
+    """The upstream bytes of a patched file, or None when a patch is missing."""
+    text = blob.decode("utf-8")
+    for p in reversed([p for p in PATCHES if p["path"] == name]):
+        if text.count(p["after"]) != 1:
+            return None
+        text = text.replace(p["after"], p["before"], 1)
+    return text.encode("utf-8")
 
 
 class Failure(Exception):
@@ -117,13 +159,13 @@ def write_lock(files: dict) -> None:
         f'commit = "{REF}"',
         f"# {REF_NOTE}",
         'license = "MIT"',
-        'license_file = "libraries/TinyUSB/src/LICENSE"',
+        'license_file = "libraries/CH32RVTinyUSB/src/LICENSE"',
         f'dest = "{DEST.relative_to(REPO).as_posix()}"',
         "# Only part of upstream src/ is vendored; see KEEP_PORTABLE in the tool.",
         "kept_portable = [" + ", ".join(f'"{k}"' for k in KEEP_PORTABLE) + "]",
         "# Deliberate differences from upstream. Empty means the copy is verbatim.",
         "# Each entry: what it changes and why, so a version bump can re-apply or drop it.",
-        "patches = []",
+        "patches = [" + ", ".join(f'"{p["path"]}: {p["why"][:60]}"' for p in PATCHES) + "]",
         "# Files this repository adds next to the vendored tree (not upstream).",
         "ours = [" + ", ".join(f'"{o}"' for o in OURS) + "]",
         "",
@@ -155,12 +197,12 @@ def update() -> int:
     files = fetch()
     if DEST.exists():
         shutil.rmtree(DEST)
-    hashes = {}
+    hashes = {name: hashlib.sha256(blob).hexdigest() for name, blob in files.items()}
+    apply_patches(files)
     for name, blob in files.items():
         target = DEST / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(blob)
-        hashes[name] = hashlib.sha256(blob).hexdigest()
     write_lock(hashes)
     print(f"vendored {len(files)} files into {DEST.relative_to(REPO)}")
     print(f"wrote {LOCK.relative_to(REPO)}")
@@ -175,6 +217,12 @@ def check() -> int:
         path = DEST / name
         if not path.exists():
             problems.append(f"missing: {name}")
+        elif any(p["path"] == name for p in PATCHES):
+            upstream = unpatched(name, path.read_bytes())
+            if upstream is None:
+                problems.append(f"patch missing: {name}")
+            elif hashlib.sha256(upstream).hexdigest() != digest:
+                problems.append(f"modified: {name} (beyond its listed patches)")
         elif sha256(path) != digest:
             problems.append(f"modified: {name} (not listed in patches)")
 

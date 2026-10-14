@@ -384,7 +384,7 @@ SoftSPI / SoftWire / SoftSerial、**ARGB**(1 線。PIO でデコードできる)
 | **I2S** | V303/V305/V307/V317/V407/V467 | PIO で slave/master を書く。3〜4 本。追加部品は不要だが**PIO の命令メモリを食う** |
 | **TouchKey** | V00x/M007/V103/V20x/V30x/L103/X03x | 既知容量をアナログスイッチで切り替える治具 |
 | **I3C** | V407/V467 | legacy I2C mode なら ◎。SDR 12.5 MHz の本来の I3C は要検証 |
-| **USB PD** | X033/X035/L103/M030/V205/V407 | **CC 線の PD PHY が要る**。RP2040 単体では不可。`FUSB302` を足すか、**もう 1 枚 CH32X035 を PD の相手にする**(コアの `USBPD` ライブラリがそのまま使える)のが現実的 |
+| **USB PD** | X033/X035/L103/M030/V205/V407 | **CC 線の PD PHY が要る**。RP2040 単体では不可。`FUSB302` を足すか、**もう 1 枚 CH32X035 を PD の相手にする**(コアの `CH32RVUsbPd` ライブラリがそのまま使える)のが現実的 |
 | **SDIO** | V303/V305/V307/V317/V407/V467 | 4 bit SDIO を演じるのは難度が高い。**SPI モードの SD カードなら容易**(EmbedBench に `unit_sdcard_model` が既にある) |
 
 ### 7.4 ✕ / △ — harness class によって線が動くもの

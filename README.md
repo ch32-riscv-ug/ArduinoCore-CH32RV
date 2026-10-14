@@ -92,6 +92,6 @@ Third-party material retains its own license.
 | path | origin | license |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
-| `libraries/TinyUSB/src/` | pinned TinyUSB 0.21.0 snapshot | MIT |
+| `libraries/CH32RVTinyUSB/src/` | pinned TinyUSB snapshot (upstream master after 0.21.0, one recorded patch; see `vendor/tinyusb.lock.toml`) | MIT |
 
 Pinned revisions and file hashes are recorded in `vendor/*.lock.toml` and checked by the vendor tools.
