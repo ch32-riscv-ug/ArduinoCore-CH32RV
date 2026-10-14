@@ -52,6 +52,8 @@ const char *CH32RVUsbDevice::lastErrorName() const
     case CH32RVUsbDeviceError::None: return "None";
     case CH32RVUsbDeviceError::Unsupported: return "Unsupported";
     case CH32RVUsbDeviceError::PortUnavailable: return "PortUnavailable";
+    case CH32RVUsbDeviceError::NotStarted: return "NotStarted";
+    case CH32RVUsbDeviceError::NotReady: return "NotReady";
     case CH32RVUsbDeviceError::AlreadyStarted: return "AlreadyStarted";
     case CH32RVUsbDeviceError::TooManyFunctions: return "TooManyFunctions";
     case CH32RVUsbDeviceError::TooManyInstances: return "TooManyInstances";
@@ -121,12 +123,12 @@ static CH32RVUsbDevice *active;
 static usbd_class_driver_t drivers[CH32RV_USB_MAX_FUNCTIONS];
 static volatile bool bootloader_requested;
 
-/* The configuration descriptor is built here at begin(). 256 bytes hold CDC
- * (66) + MIDI (101) + HID (32) + DFU runtime (18) + the header (9); a second
- * CDC port needs more - begin() then fails with DescriptorTooLarge, and
- * build_opt.h can raise this. */
+/* The configuration descriptor is built here at begin(). 320 bytes hold two
+ * CDC ports (66 each) + MIDI (92) + HID (32) + DFU runtime (18) + the header
+ * (9); beyond that begin() fails with DescriptorTooLarge, and build_opt.h can
+ * raise this. */
 #ifndef CH32RV_USB_CONFIG_MAX
-#define CH32RV_USB_CONFIG_MAX 256
+#define CH32RV_USB_CONFIG_MAX 320
 #endif
 static uint8_t desc_configuration[CH32RV_USB_CONFIG_MAX];
 
@@ -144,26 +146,35 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     if (_started) {
         return true;
     }
-    if (config.port != CH32RVUsbPort::Auto && config.port != CH32RVUsbPort::FullSpeed) {
+    if (config.controller != CH32RVUsbController::Auto &&
+        config.controller != CH32RVUsbController::FullSpeed) {
         _error = CH32RVUsbDeviceError::PortUnavailable;
         return false;
     }
+#ifndef CH32RV_USB_NO_DEFAULT_DFU
+    if (config.dfuRuntime) {
+        /* Best effort: a refusal here (no room) is not the sketch's error. */
+        const CH32RVUsbDeviceError before = _error;
+        CH32RVUsbDeviceDfuRuntime::attachDefault(*this);
+        _error = before;
+    }
+#endif
     /* Interfaces and endpoints are numbered as the functions come. */
     uint16_t len = TUD_CONFIG_DESC_LEN;
     uint8_t itf = 0, ep = 1;
     for (uint8_t i = 0; i < _count; i++) {
         const CH32RVUsbDeviceFunction &f = *_functions[i];
-        uint8_t tmp[96];
-        const uint16_t n = f._type.descriptor(f, tmp, itf, &ep, (uint8_t)(FIRST_FUNCTION_STRING + i));
+        const uint16_t n = f._type.descriptor(f, desc_configuration + len,
+                                              (uint16_t)(sizeof desc_configuration - len), itf, &ep,
+                                              (uint8_t)(FIRST_FUNCTION_STRING + i));
+        if (n == 0) {
+            _error = CH32RVUsbDeviceError::DescriptorTooLarge;
+            return false;
+        }
         if (ep > X03X_USB_LAST_EP + 1u) {
             _error = CH32RVUsbDeviceError::OutOfEndpoints;
             return false;
         }
-        if (len + n > sizeof desc_configuration) {
-            _error = CH32RVUsbDeviceError::DescriptorTooLarge;
-            return false;
-        }
-        memcpy(desc_configuration + len, tmp, n);
         len = (uint16_t)(len + n);
         itf = (uint8_t)(itf + f._type.interfaces);
         drivers[i] = *(const usbd_class_driver_t *)f._type.driver;
@@ -224,6 +235,37 @@ bool CH32RVUsbDevice::remoteWakeup()
 void CH32RVUsbDevice::requestBootloader()
 {
     bootloader_requested = true;
+}
+
+void CH32RVUsbDevice::task()
+{
+    ch32rv_usb_task();
+}
+
+uint8_t CH32RVUsbDevice::maxCdcPorts()
+{
+    return CFG_TUD_CDC;
+}
+
+bool CH32RVUsbDevice::sendHidReport(uint8_t instance, uint8_t reportId, const void *data,
+                                    size_t length, uint32_t timeoutMs)
+{
+    if (!_started) {
+        _error = CH32RVUsbDeviceError::NotStarted;
+        return false;
+    }
+    const uint32_t t0 = millis();
+    for (;;) {
+        ch32rv_usb_task();
+        if (tud_hid_n_ready(instance)) {
+            break;
+        }
+        if (!tud_mounted() || (uint32_t)(millis() - t0) >= timeoutMs) {
+            _error = CH32RVUsbDeviceError::NotReady;
+            return false;
+        }
+    }
+    return tud_hid_n_report(instance, reportId, data, (uint16_t)length);
 }
 
 [[noreturn]] void CH32RVUsbDevice::enterBootloader()
@@ -400,6 +442,21 @@ bool CH32RVUsbDevice::remoteWakeup()
 
 void CH32RVUsbDevice::requestBootloader()
 {
+}
+
+void CH32RVUsbDevice::task()
+{
+}
+
+uint8_t CH32RVUsbDevice::maxCdcPorts()
+{
+    return 0;
+}
+
+bool CH32RVUsbDevice::sendHidReport(uint8_t, uint8_t, const void *, size_t, uint32_t)
+{
+    _error = CH32RVUsbDeviceError::Unsupported;
+    return false;
 }
 
 /* No factory USB bootloader to go to: a plain system reset. */

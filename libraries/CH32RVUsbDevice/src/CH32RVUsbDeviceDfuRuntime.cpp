@@ -54,15 +54,20 @@ static void build_ms_os_20(uint8_t itf)
     ms_os_20_set[22] = itf;
 }
 
-static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint8_t itf,
+static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
                                   uint8_t *ep, uint8_t str)
 {
     (void)self;
     (void)ep;
     build_ms_os_20(itf);
-    /* WILL_DETACH: the device leaves the bus by itself after DFU_DETACH, so
-     * the host does not have to reset it. */
-    const uint8_t d[] = {TUD_DFU_RT_DESCRIPTOR(itf, str, DFU_ATTR_WILL_DETACH | DFU_ATTR_CAN_DOWNLOAD, 1000, 64)};
+    /* WILL_DETACH only: the device leaves the bus by itself after
+     * DFU_DETACH. No CAN_DOWNLOAD - what appears next is the factory ISP
+     * bootloader, not a DFU-mode device, so a DFU download (dfu-util -D)
+     * cannot work and the descriptor must not claim it. */
+    const uint8_t d[] = {TUD_DFU_RT_DESCRIPTOR(itf, str, DFU_ATTR_WILL_DETACH, 1000, 64)};
+    if (sizeof d > room) {
+        return 0;
+    }
     memcpy(out, d, sizeof d);
     return sizeof d;
 }
@@ -76,6 +81,14 @@ CH32RVUsbDeviceDfuRuntime::CH32RVUsbDeviceDfuRuntime(CH32RVUsbDevice &device)
 {
     if (attached()) {
         dfu = this;
+    }
+}
+
+void CH32RVUsbDeviceDfuRuntime::attachDefault(CH32RVUsbDevice &device)
+{
+    if (!dfu) {
+        static CH32RVUsbDeviceDfuRuntime builtin(device);
+        (void)builtin;
     }
 }
 
@@ -116,7 +129,7 @@ extern "C" void tud_dfu_runtime_reboot_to_dfu_cb(void)
 
 #else
 
-static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint8_t, uint8_t *, uint8_t)
+static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t)
 {
     return 0;
 }
@@ -129,5 +142,6 @@ CH32RVUsbDeviceDfuRuntime::CH32RVUsbDeviceDfuRuntime(CH32RVUsbDevice &device)
 }
 
 void CH32RVUsbDeviceDfuRuntime::detach() {}
+void CH32RVUsbDeviceDfuRuntime::attachDefault(CH32RVUsbDevice &) {}
 
 #endif

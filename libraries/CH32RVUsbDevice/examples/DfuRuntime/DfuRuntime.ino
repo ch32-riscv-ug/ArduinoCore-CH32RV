@@ -1,5 +1,9 @@
 /* DfuRuntime - re-upload over USB without a serial port.
  *
+ * Every device gets a DFU runtime interface by default
+ * (CH32RVUsbDeviceConfig::dfuRuntime); declaring one, as here, is only needed
+ * to use onDetach().
+ *
  * A DFU runtime interface has no endpoints and costs about 0.5 KB of flash
  * and 20 bytes of RAM. A host that sends it DFU_DETACH - `dfu-util -e`, or ch32rv -
  * makes the sketch reset into the chip's factory USB bootloader (1a86:55e0),

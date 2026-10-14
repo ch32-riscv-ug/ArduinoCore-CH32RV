@@ -4,7 +4,13 @@
 
 class CH32RVUsbDeviceCdcSerial : public Stream, public CH32RVUsbDeviceFunction {
 public:
-    explicit CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device = USBDevice);
+    typedef void (*LineCodingCallback)(const CH32RVUsbDeviceCdcLineCoding &coding);
+    typedef void (*LineStateCallback)(const CH32RVUsbDeviceCdcLineState &state);
+    typedef void (*RxCallback)(size_t available);
+
+    /* `name` is what the host shows for this port; give each port of a
+     * multi-port device its own (EspUsbDeviceCdcSerial). */
+    explicit CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device = USBDevice, const char *name = nullptr);
 
     /* Starts the device with its default configuration if the sketch has not
      * begun it, so SerialUSB.begin() alone is enough. The baud rate is the
@@ -15,6 +21,7 @@ public:
     int available() override;
     int peek() override;
     int read() override;
+    size_t read(uint8_t *buffer, size_t size);
     int availableForWrite() override;
     void flush() override;
     size_t write(uint8_t c) override;
@@ -24,9 +31,16 @@ public:
      * cable. */
     size_t write(const uint8_t *buf, size_t size) override;
     using Print::write;
+    /* printf() as on HardwareSerial (and ESP32's Print). */
+    CH32RV_PRINTF_MEMBER
 
     /* True while a host has the port open (DTR asserted). */
     operator bool();
+    bool connected();
+    /* This port's index among the device's CDC ports (TinyUSB's instance). */
+    uint8_t port() const { return instance(); }
+    const CH32RVUsbDeviceCdcLineCoding &lineCoding() const { return _lineCoding; }
+    const CH32RVUsbDeviceCdcLineState &lineState() const { return _lineState; }
     bool dtr();
     bool rts();
     /* The line coding the host last set. */
@@ -39,20 +53,23 @@ public:
     bool bootTouchEnabled() const { return _bootTouch; }
 
     /* Called from the USB stack (inside loop()/delay(), not an interrupt)
-     * when the host changes DTR/RTS or the line coding. */
-    typedef void (*LineStateCallback)(bool dtr, bool rts);
-    typedef void (*LineCodingCallback)(uint32_t baud);
+     * when the host changes DTR/RTS or the line coding, or data arrives. */
     void onLineState(LineStateCallback cb) { _onLineState = cb; }
     void onLineCoding(LineCodingCallback cb) { _onLineCoding = cb; }
+    void onRx(RxCallback cb) { _onRx = cb; }
 
     /* For the USB stack's callbacks. */
-    void lineStateChanged(bool dtr, bool rts);
-    void lineCodingChanged(uint32_t baud);
+    void handleLineCoding(uint32_t baud, uint8_t stopBits, uint8_t parity, uint8_t dataBits);
+    void handleLineState(bool dtr, bool rts);
+    void handleRx();
 
 private:
     bool _bootTouch = true;
+    CH32RVUsbDeviceCdcLineCoding _lineCoding;
+    CH32RVUsbDeviceCdcLineState _lineState;
     LineStateCallback _onLineState = nullptr;
     LineCodingCallback _onLineCoding = nullptr;
+    RxCallback _onRx = nullptr;
 };
 
 /* The predefined port on USBDevice (CH32RVUsbDeviceSerialUSB.cpp). */

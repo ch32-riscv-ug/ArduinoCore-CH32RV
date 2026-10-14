@@ -5,7 +5,7 @@
  *
  *     #include <CH32RVUsbDevice.h>
  *
- *     CH32RVUsbDeviceKeyboard keyboard(USBDevice);   // SerialUSB is already there
+ *     CH32RVUsbDeviceHidKeyboard keyboard;            // SerialUSB is already there
  *
  *     void setup() {
  *         CH32RVUsbDeviceConfig config;
@@ -32,12 +32,15 @@
 
 #include <Arduino.h>
 
+#include "CH32RVUsbDeviceTypes.h"
+
 class CH32RVUsbDevice;
 
-/* Which USB controller the device runs on. Auto is the series' usual one;
- * the others name a controller on series that have more than one (V30x: FS
- * and HS, V20x: USBD and USBFS - not supported yet, see docs/usb.ja.md). */
-enum class CH32RVUsbPort : uint8_t {
+/* Which USB controller the device runs on (EspUsbController). Auto is the
+ * series' usual one; the others name a controller on series that have more
+ * than one (V30x: FS and HS, V20x: USBD and USBFS - not supported yet, see
+ * docs/usb.ja.md). */
+enum class CH32RVUsbController : uint8_t {
     Auto = 0,
     FullSpeed,     /* USBFS / OTG_FS */
     HighSpeed,     /* USBHS */
@@ -58,32 +61,42 @@ struct CH32RVUsbDeviceConfig {
     const char *serialNumber = nullptr;
     uint16_t maxPowerMilliamps = 100;
     bool selfPowered = false;
-    CH32RVUsbPort port = CH32RVUsbPort::Auto;
+    /* A DFU runtime interface, so a host can send DFU_DETACH and re-upload
+     * over USB alone (ch32rv isp --entry auto): added at begin() unless the
+     * sketch declared its own CH32RVUsbDeviceDfuRuntime. About 0.5 KB of flash
+     * and 20 bytes of RAM. false leaves the interface out; the code stays
+     * linked, since this is a run-time choice - -DCH32RV_USB_NO_DEFAULT_DFU in
+     * build_opt.h removes it from the build as well. */
+    bool dfuRuntime = true;
+    CH32RVUsbController controller = CH32RVUsbController::Auto;
 };
 
 enum class CH32RVUsbDeviceError : uint8_t {
     None = 0,
     Unsupported,          /* no USB device support on this series (yet) */
-    PortUnavailable,      /* config.port names a controller this part lacks */
+    PortUnavailable,      /* config.controller names one this part lacks */
+    NotStarted,           /* sendHidReport() before begin() */
+    NotReady,             /* the host has not configured the device, or the endpoint stayed busy */
     AlreadyStarted,       /* begin() again, or a function added after begin() */
-    TooManyFunctions,     /* more than CH32RV_USB_MAX_FUNCTIONS declared */
+    TooManyFunctions,     /* more than CH32RV_USB_MAX_FUNCTIONS (6) declared */
     TooManyInstances,     /* more of one class than its CFG_TUD_* allows */
     OutOfEndpoints,       /* the functions need more endpoints than exist */
-    DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (256) bytes */
+    DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (320) bytes */
 };
 
 #ifndef CH32RV_USB_MAX_FUNCTIONS
-#define CH32RV_USB_MAX_FUNCTIONS 4
+#define CH32RV_USB_MAX_FUNCTIONS 6
 #endif
 
 /* What one class contributes. Each class file has one, as a constant; the
  * device reads it at begin(). */
 struct CH32RVUsbFunctionType {
     const void *driver;           /* TinyUSB usbd_class_driver_t */
-    /* Write this function's descriptors for interface `itf` onward, taking
-     * endpoint numbers from *ep (and advancing it); `str` is its string index.
-     * Returns the length written, at most 96 bytes. */
-    uint16_t (*descriptor)(const class CH32RVUsbDeviceFunction &self, uint8_t *out,
+    /* Write this function's descriptors for interface `itf` onward into
+     * `out` (`room` bytes free), taking endpoint numbers from *ep (and
+     * advancing it); `str` is its string index. Returns the length written,
+     * 0 when it does not fit. */
+    uint16_t (*descriptor)(const class CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room,
                            uint8_t itf, uint8_t *ep, uint8_t str);
     uint8_t interfaces;
     uint8_t maxInstances;         /* the class's CFG_TUD_* count */
@@ -129,8 +142,12 @@ public:
     void end();
 
     bool started() const { return _started; }
-    /* The host has configured the device. */
+    /* The host has configured the device. ready() is EspUsbDevice's name. */
     bool mounted() const;
+    bool ready() const { return mounted(); }
+    /* Run the USB stack once. The core already does after every loop() and
+     * inside delay(); a sketch busy elsewhere for long can call it. */
+    void task();
     /* The bus is suspended (the host is asleep or the cable is unplugged
      * while VBUS stays). */
     bool suspended() const;
@@ -148,12 +165,22 @@ public:
      * running inside a USB callback (a DFU_DETACH, a 1200 bps touch). */
     static void requestBootloader();
 
+    /* CDC ports this build holds (CFG_TUD_CDC; build_opt.h raises it). */
+    static uint8_t maxCdcPorts();
+
     /* How many functions are attached, and the one at `i`. */
     uint8_t functionCount() const { return _count; }
     CH32RVUsbDeviceFunction *function(uint8_t i) const { return i < _count ? _functions[i] : nullptr; }
 
-    /* For the class objects. */
+    /* Send an input report on HID interface `instance` (0: this library has
+     * one), waiting up to timeoutMs for the endpoint. EspUsbDevice's
+     * low-level path; the HID classes use it. */
+    bool sendHidReport(uint8_t instance, uint8_t reportId, const void *data, size_t length,
+                       uint32_t timeoutMs = 100);
+
+    /* For the class objects (EspUsbDevice::addClass). */
     bool attach(CH32RVUsbDeviceFunction &f);
+    bool addClass(CH32RVUsbDeviceFunction *f) { return f && attach(*f); }
     const CH32RVUsbDeviceConfig &config() const { return _config; }
 
 private:

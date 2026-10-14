@@ -44,21 +44,33 @@ void loop()  { if (SerialUSB) SerialUSB.println("hello"); delay(1000); }
 インターフェースが並び、`begin()` のときにディスクリプタが組み立てられます。
 
 ```cpp
-CH32RVUsbDeviceKeyboard keyboard;      // 定義済みの USBDevice に付く
+CH32RVUsbDeviceHidKeyboard keyboard;   // 定義済みの USBDevice に付く
 CH32RVUsbDeviceMidi midi;
 
 void setup() { SerialUSB.begin(); }    // CDC + キーボード + MIDI の複合デバイスになる
 ```
 
+API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) に合わせてあり、`Esp` を `CH32RV` に置き換えた
+名前になっています（`EspUsbDeviceHidKeyboard` → `CH32RVUsbDeviceHidKeyboard`、`ESP_USB_HID_KEY_A` →
+`CH32RV_USB_HID_KEY_A`）。違いは [CH32RVUsbDevice の README](../libraries/CH32RVUsbDevice/README.ja.md#espusbdevice-からの置き換え) にまとめています。
+
 | クラス | 内容 | 例 |
 |---|---|---|
-| `CH32RVUsbDeviceCdcSerial` | 仮想 COM ポート（`Stream`）。`SerialUSB` はこれ | SerialUSBEcho、TwoSerialPorts |
-| `CH32RVUsbDeviceKeyboard` | ブートキーボード。`print()` で文字を打つ | Keyboard |
-| `CH32RVUsbDeviceMouse` | ブートマウス | Mouse |
-| `CH32RVUsbDeviceHidGeneric` | ベンダー定義の HID。ドライバ不要のデータ通信（hidapi、WebHID） | HidGenericEcho |
-| `CH32RVUsbDeviceHid` | 任意のレポートディスクリプタの HID | — |
-| `CH32RVUsbDeviceMidi` | USB MIDI（ノート、CC、生パケット） | MidiController |
-| `CH32RVUsbDeviceDfuRuntime` | USB だけで書き込み直す入口（[書き込み](#書き込み) を参照） | DfuRuntime |
+| `CH32RVUsbDeviceCdcSerial` | 仮想 COM ポート（`Stream`）。`SerialUSB` はこれ | Serial、SerialMulti、SerialUSBEcho |
+| `CH32RVUsbDeviceHidKeyboard` | キーボード。19 種のレイアウト（`setLayout()`）、NKRO、Lock LED | Keyboard、KeyboardNKRO |
+| `CH32RVUsbDeviceHidMouse` | マウス | Mouse、KeyboardMouse |
+| `CH32RVUsbDeviceHidGamepad` | ゲームパッド（6 軸、ハット、32 ボタン） | Gamepad |
+| `CH32RVUsbDeviceHidConsumerControl` / `HidSystemControl` | メディアキー / 電源・スタンバイ | MediaKeys |
+| `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID。ドライバ不要のデータ通信（hidapi、WebHID） | VendorHID |
+| `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID | CustomHID |
+| `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル） | MIDI、MIDIController、MIDIInterface |
+| `CH32RVUsbDeviceDfuRuntime` | USB だけで書き込み直す入口。既定で付くので、宣言するのは `onDetach()` を使うときだけ（[書き込み](#書き込み) を参照） | DfuRuntime |
+
+HID のクラスは、いくつ宣言しても1つの HID インターフェースにまとまります。1つだけならそのまま（キーボードとマウスは
+BIOS でも使えるブートデバイス）、2つ以上ならレポート ID（キーボード 1、マウス 2、ゲームパッド 3、メディアキー 4、
+システム 5、ベンダー 6）で区別します。
+
+キーボードレイアウトは、`setLayout()` で名前を挙げたものだけがリンクされます（1種あたり約 1 KB）。
 
 **宣言しなかったクラスはリンクされません。** `#include` しただけのスケッチは、Flash も RAM も増えません。
 
@@ -97,6 +109,7 @@ void setup() {
 | `PortUnavailable` | `config.port` に、この部品に無いコントローラを指定した |
 | `TooManyFunctions` | クラスが `CH32RV_USB_MAX_FUNCTIONS`（既定 4）より多い |
 | `TooManyInstances` | 同じクラスが上限（`CFG_TUD_CDC` など、既定 1）より多い |
+| `NotStarted` / `NotReady` | `begin()` の前、またはホストが構成していないときに HID のレポートを送ろうとした |
 | `OutOfEndpoints` | エンドポイントが足りない（X035 は 7 本） |
 | `DescriptorTooLarge` | 構成ディスクリプタが `CH32RV_USB_CONFIG_MAX`（既定 256 B）を超えた |
 
@@ -113,7 +126,9 @@ void setup() {
 
 | 設定 | 既定 | 意味 |
 |---|---|---|
-| `CFG_TUD_CDC` / `CFG_TUD_HID` / `CFG_TUD_MIDI` / `CFG_TUD_DFU_RUNTIME` | 1 | そのクラスをいくつまで持てるか |
+| `CFG_TUD_CDC` / `CFG_TUD_MIDI` / `CFG_TUD_DFU_RUNTIME` | 1 | そのクラスをいくつまで持てるか（HID は常に1つのインターフェースにまとまるので増やす必要はない） |
+| `CH32RV_USB_MAX_HID_CLASSES` | 6 | 1つのデバイスに宣言できる HID クラスの数 |
+| `CH32RV_USB_HID_REPORT_MAX` | 288 | HID を合成したレポートディスクリプタの大きさ（RAM） |
 | `CFG_TUD_CDC_RX_BUFSIZE` / `CFG_TUD_CDC_TX_BUFSIZE` | 256 | CDC 1ポートあたりのバッファ |
 | `CFG_TUD_HID_EP_BUFSIZE` | 64 | HID のレポートの最大長 |
 | `CFG_TUD_MIDI_RX_BUFSIZE` / `CFG_TUD_MIDI_TX_BUFSIZE` | 64 | MIDI のバッファ |
@@ -123,7 +138,7 @@ void setup() {
 上限を上げても、そのクラスを宣言しなければ費用はかかりません。ただし宣言した場合は、上限の数だけ RAM を確保します
 （CDC 1つあたり約 0.7 KB）。
 
-例: [TwoSerialPorts](../libraries/CH32RVUsbDevice/examples/TwoSerialPorts/)（`build_opt.h` で CDC を2つ）
+例: [SerialMulti](../libraries/CH32RVUsbDevice/examples/SerialMulti/)（`build_opt.h` で CDC を2つ）
 
 ## スタックの動かし方
 
@@ -144,12 +159,21 @@ USB だけで書き込み直す入口は2つあります。どちらも、チッ
 | 入口 | スケッチ側 | ホスト側 | 費用 |
 |---|---|---|---|
 | 1200bps タッチ | CDC ポート（`SerialUSB` など）がある。`setBootTouchEnabled(false)` で無効 | ポートを 1200 baud で開いて閉じる | CDC に含まれる |
-| DFU ランタイム | `CH32RVUsbDeviceDfuRuntime` を宣言 | DFU_DETACH を送る（`dfu-util -e` など） | CDC 構成に足して Flash +532 B、RAM +20 B |
+| DFU_DETACH | 既定で付く（`config.dfuRuntime = false` で外す） | DFU_DETACH を送る | 約 0.5 KB の Flash（CDC 構成に足して +532 B）、RAM +20 B |
 
 ```sh
-# X035 / X033: DETACH またはタッチでブートローダーに入れ、出てきたら書き込む
-ch32rv isp flash sketch.ino.elf --wait 10
+# アプリのデバイスを指定すると、DFU_DETACH かタッチかを ch32rv が選んでブートローダーに入れ、書き込む
+ch32rv --non-interactive isp flash sketch.ino.elf --entry auto --app-device port:/dev/ttyACM0
 ```
+
+**DFU ランタイムは既定で付きます。** USB デバイスを使うスケッチなら、何も書かなくても USB から書き込み直せます。
+外すときは `config.dfuRuntime = false` です（インターフェースが無くなります）。実行時の設定なのでコードは残ります。
+ビルドからも外すには、スケッチの `build_opt.h` に `-DCH32RV_USB_NO_DEFAULT_DFU` と書きます。
+
+**DFU は入口だけです。** `CH32RVUsbDeviceDfuRuntime` は DFU のランタイムインターフェース（DFU_DETACH を受ける
+だけのもの）で、DFU モードもダウンロードもありません。ディスクリプタでも書き込みができる（CAN_DOWNLOAD）とは
+名乗っていません。現れるのは工場出荷の ISP ブートローダーで、書き込みは WCH の ISP プロトコルです。dfu-util では
+書けません（`dfu-util -e` で ISP に入れることはできます）。
 
 - 実測（X035）: DETACH またはタッチから、ブートローダーが現れるまで 0.2〜1 秒です。DETACH → `isp flash` → 新しい
   スケッチの起動、タッチ → `isp flash` → 起動の両方を、デバッグ線なしで通しました。
@@ -158,8 +182,10 @@ ch32rv isp flash sketch.ino.elf --wait 10
 - Windows: DFU のインターフェースには MS OS 2.0 ディスクリプタで WinUSB の互換 ID を付けているので、ドライバの
   インストールなしで dfu-util から開けるはずです（Windows では未確認）。
 - Linux: DETACH を送るプログラムには、そのデバイス（VID:PID）を開く権限が要ります（udev のルール）。
-- ch32rv 側では、`isp flash --entry auto --app-device port:...`（DETACH かタッチかを自動で選ぶ入口）を準備中です。
-  Arduino IDE の書き込みはそれを使う予定です。
+- ch32rv の `--entry` は `auto`（DFU ランタイムがあれば DETACH、CDC ならタッチ、どちらも無ければ案内を出して
+  待つ）、`dfu-detach`、`touch1200`、`probe` です（ch32rv 69b2840 以降）。Arduino IDE の書き込みはこれを使う予定です。
+- DETACH への応答は、ホスト側でよく STALL（Pipe error）になります。ch32rv は警告だけ出して、ブートローダーの
+  出現を待ちます。
 
 起動時に USB を自動で始める仕組み（スケッチが USB を使わなくても書き込める形）は、今は入れていません。
 `setup()` より前に始めても認識される時間は変わらず（0.3〜0.5 秒）、USB を使わないスケッチにも費用がかかる
@@ -194,26 +220,32 @@ void loop() { USBPD.maintain(); }    // PPS の契約を保つ
 | スケッチ | Flash | RAM |
 |---|---|---|
 | `#include <CH32RVUsbDevice.h>` だけ | 0 | 0 |
-| `SerialUSB` | +12.0 KB | +3.0 KB |
-| `CH32RVUsbDeviceDfuRuntime` だけ | +8.8 KB | +2.3 KB |
-| `SerialUSB` + DFU ランタイム | +12.6 KB | +3.1 KB |
-| CDC + DFU + HID + MIDI（全部入り） | +16.5 KB | +3.7 KB |
+| `SerialUSB`（既定の DFU ランタイム込み） | +12.4 KB | +3.2 KB |
+| キーボード1つ（US 配列、DFU ランタイム込み） | +14.6 KB | +3.0 KB |
+| CDC + DFU + HID 6種（合成）+ 2ケーブルの MIDI、日本語配列 | +23.1 KB | +4.3 KB |
 
 内訳の大半は、TinyUSB のデバイス層（約 3.7 KB）とコントローラのドライバ（約 2.2 KB / 1.3 KB）で、どのクラスを使っても
-1回だけかかります。
+1回だけかかります。キーボードのレイアウトは1種あたり約 1 KB です。
 
 ## 今後の予定
 
+- **EspUsbDevice の残りのクラス**: ベンダー（バルク転送）と WebUSB / MS OS 2.0 の設定項目、MSC（RAM ディスク・
+  自分で読み書きする形）、CCID を次に移植します。オーディオ・ビデオ・USB ネットワーク（NCM）は、X035 の容量
+  （Flash 62 KB / RAM 20 KB）と USBFS の転送方式で動くかを試してから決めます。
 - **ホスト（`CH32RVUsbHost`）**: EspUsbHost と同じく、ホスト本体にクラスのオブジェクトを付ける形にします。同梱の
   TinyUSB のホストドライバは CH32V20x 用しかないので、V20x から始めます。X035 などはドライバから書く必要があります。
-- **コントローラを2つ持つ系列（V30x の FS / HS、V20x の USBD / USBFS）**: `config.port` で実行時に選べるように
+- **コントローラを2つ持つ系列（V30x の FS / HS、V20x の USBD / USBFS）**: `config.controller` で実行時に選べるように
   します。両方のドライバを名前を変えて入れ、rhport で振り分ける方法で、V307 でリンクまで確認済みです（Flash +2 KB）。
   実機確認がまだです。
 - **ほかの系列のデバイス対応**: V20x、V30x、L103 など。PHY とクロックの初期化をこのライブラリに足す必要があります。
 
 ## 既知の問題
 
-- DFU_DETACH への応答が、ホスト側で時々 STALL（libusb の Pipe error）として返ります（十数回中数回）。デバイスは毎回
+- DFU_DETACH への応答が、ホスト側でよく STALL（libusb の Pipe error）として返ります。デバイスは毎回
   ブートローダーに入るので、ホスト側は応答のエラーを無視して、ブートローダーの出現を待ってください。
 - Arduino の慣例どおり `delay()` の中でも USB を処理するので、USB のコールバックの中で長い `delay()` を呼ぶと、その
   間の USB 処理は止まります（入れ子にはしません）。
+- **読み出し保護をかけた X035 には、USB から書き込めません**（ch32rv 側の実測、BTVER 2.60）。DFU_DETACH やタッチで
+  BOOT_MODE は立ちますが、ブートローダーが Flash を読めずに止まり、ISP が現れません。また、電源投入後にデバッガが
+  一度でも接続すると、アプリも止まります。解除できるのは、デバッグ線からの `ch32rv recover --method unprotect`
+  （Flash の全消去）だけです。

@@ -1,21 +1,42 @@
-/* USB MIDI: one cable in and out, as 4-byte USB-MIDI event packets, with
- * helpers for the common channel messages. Included by CH32RVUsbDevice.h.
- * Channels are 1..16, as musicians count them. */
+/* USB MIDI 1.0, in EspUsbDevice's shape: 4-byte event packets, channel
+ * messages with a 0-based channel (0..15) first, and up to 16 cables per
+ * direction multiplexed on one pair of bulk endpoints. Included by
+ * CH32RVUsbDevice.h. */
 #pragma once
 
 class CH32RVUsbDeviceMidi : public CH32RVUsbDeviceFunction {
 public:
-    explicit CH32RVUsbDeviceMidi(CH32RVUsbDevice &device = USBDevice);
+    static constexpr uint8_t MAX_CABLES = 16;
 
-    bool noteOn(uint8_t note, uint8_t velocity = 100, uint8_t channel = 1);
-    bool noteOff(uint8_t note, uint8_t velocity = 0, uint8_t channel = 1);
-    bool controlChange(uint8_t controller, uint8_t value, uint8_t channel = 1);
-    bool programChange(uint8_t program, uint8_t channel = 1);
-    bool pitchBend(int16_t value, uint8_t channel = 1);   /* -8192 .. 8191 */
+    /* cableCount is clamped to 1..MAX_CABLES; each cable is a MIDI port on
+     * the host. */
+    explicit CH32RVUsbDeviceMidi(CH32RVUsbDevice &device = USBDevice, uint8_t cableCount = 1);
+    /* IN is device to host (what this device sends), OUT host to device. */
+    CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t inCableCount, uint8_t outCableCount);
 
-    /* Raw USB-MIDI event packets (cable number and code index in byte 0). */
-    bool writePacket(const uint8_t packet[4]);
-    /* Packets waiting from the host. */
+    bool begin() { return true; }
+    uint8_t inCableCount() const { return _inCables; }
+    uint8_t outCableCount() const { return _outCables; }
+    /* Bytes the configuration descriptor takes (a 16-cable one is 572). */
+    uint16_t descriptorLength() const;
+
+    bool readPacket(CH32RVUsbDeviceMidiPacket &packet);
+    bool writePacket(const CH32RVUsbDeviceMidiPacket &packet);
+    /* cable is 0-based (0..inCableCount()-1). Sending to a cable the host was
+     * not told about fails. */
+    bool noteOn(uint8_t channel, uint8_t note, uint8_t velocity, uint8_t cable = 0);
+    bool noteOff(uint8_t channel, uint8_t note, uint8_t velocity, uint8_t cable = 0);
+    bool controlChange(uint8_t channel, uint8_t control, uint8_t value, uint8_t cable = 0);
+    bool programChange(uint8_t channel, uint8_t program, uint8_t cable = 0);
+    bool polyPressure(uint8_t channel, uint8_t note, uint8_t pressure, uint8_t cable = 0);
+    bool channelPressure(uint8_t channel, uint8_t pressure, uint8_t cable = 0);
+    /* 0..16383, 8192 = centre. */
+    bool pitchBend(uint8_t channel, uint16_t value, uint8_t cable = 0);
+    /* Packets waiting from the host (an extension; EspUsbDevice has none). */
     uint32_t available();
-    bool readPacket(uint8_t packet[4]);
+
+private:
+    bool send(uint8_t cin, uint8_t channel, uint8_t a, uint8_t b, uint8_t cable);
+    uint8_t _inCables;
+    uint8_t _outCables;
 };

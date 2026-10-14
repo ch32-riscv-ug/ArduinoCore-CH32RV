@@ -13,14 +13,20 @@ static const usbd_class_driver_t cdc_driver = {
 };
 
 /* Notification IN on endpoint n, data OUT and IN on n + 1. */
-static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint8_t itf,
+static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
                                uint8_t *ep, uint8_t str)
 {
     (void)self;
     const uint8_t n = *ep;
     *ep = (uint8_t)(n + 2);
-    const uint8_t d[] = {TUD_CDC_DESCRIPTOR(itf, str, (uint8_t)(0x80 | n), 8, (uint8_t)(n + 1),
-                                            (uint8_t)(0x80 | (n + 1)), CFG_TUD_CDC_EP_BUFSIZE)};
+    uint8_t d[] = {TUD_CDC_DESCRIPTOR(itf, str, (uint8_t)(0x80 | n), 8, (uint8_t)(n + 1),
+                                      (uint8_t)(0x80 | (n + 1)), CFG_TUD_CDC_EP_BUFSIZE)};
+    /* The macro leaves the association's iFunction 0; Windows names a
+     * composite child from it, so two ports would show the same name. */
+    d[7] = str;
+    if (sizeof d > room) {
+        return 0;
+    }
     memcpy(out, d, sizeof d);
     return sizeof d;
 }
@@ -30,8 +36,8 @@ static const CH32RVUsbFunctionType cdc_type = {&cdc_driver, cdc_descriptor, 2, C
 /* TinyUSB reports by instance; this finds the object. */
 static CH32RVUsbDeviceCdcSerial *ports[CFG_TUD_CDC];
 
-CH32RVUsbDeviceCdcSerial::CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device)
-    : CH32RVUsbDeviceFunction(device, cdc_type, "CDC")
+CH32RVUsbDeviceCdcSerial::CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device, const char *name)
+    : CH32RVUsbDeviceFunction(device, cdc_type, name ? name : "CDC")
 {
     if (attached()) {
         ports[instance()] = this;
@@ -61,6 +67,18 @@ int CH32RVUsbDeviceCdcSerial::read()
 {
     ch32rv_usb_task();
     return tud_cdc_n_available(instance()) ? (int)tud_cdc_n_read_char(instance()) : -1;
+}
+
+size_t CH32RVUsbDeviceCdcSerial::read(uint8_t *buffer, size_t size)
+{
+    ch32rv_usb_task();
+    return buffer && size ? tud_cdc_n_read(instance(), buffer, (uint32_t)size) : 0;
+}
+
+bool CH32RVUsbDeviceCdcSerial::connected()
+{
+    ch32rv_usb_task();
+    return tud_cdc_n_connected(instance());
 }
 
 int CH32RVUsbDeviceCdcSerial::availableForWrite()
@@ -124,48 +142,69 @@ uint32_t CH32RVUsbDeviceCdcSerial::baud()
 /* The 1200 bps touch: the host opens the port at 1200 baud and drops DTR.
  * Acting on the DTR drop (not on the baud change) lets the host finish its
  * own close before the device goes away. */
-void CH32RVUsbDeviceCdcSerial::lineStateChanged(bool dtr, bool rts)
+void CH32RVUsbDeviceCdcSerial::handleLineState(bool dtr, bool rts)
 {
-    if (!dtr && _bootTouch && baud() == 1200) {
+    _lineState.dtr = dtr;
+    _lineState.rts = rts;
+    if (!dtr && _bootTouch && _lineCoding.baud == 1200) {
         CH32RVUsbDevice::requestBootloader();
     }
     if (_onLineState) {
-        _onLineState(dtr, rts);
+        _onLineState(_lineState);
     }
 }
 
-void CH32RVUsbDeviceCdcSerial::lineCodingChanged(uint32_t baud)
+void CH32RVUsbDeviceCdcSerial::handleLineCoding(uint32_t baud, uint8_t stopBits, uint8_t parity,
+                                                uint8_t dataBits)
 {
+    _lineCoding.baud = baud;
+    _lineCoding.stopBits = stopBits;
+    _lineCoding.parity = parity;
+    _lineCoding.dataBits = dataBits;
     if (_onLineCoding) {
-        _onLineCoding(baud);
+        _onLineCoding(_lineCoding);
+    }
+}
+
+void CH32RVUsbDeviceCdcSerial::handleRx()
+{
+    if (_onRx) {
+        _onRx(tud_cdc_n_available(instance()));
     }
 }
 
 extern "C" void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
     if (itf < CFG_TUD_CDC && ports[itf]) {
-        ports[itf]->lineStateChanged(dtr, rts);
+        ports[itf]->handleLineState(dtr, rts);
     }
 }
 
 extern "C" void tud_cdc_line_coding_cb(uint8_t itf, cdc_line_coding_t const *coding)
 {
     if (itf < CFG_TUD_CDC && ports[itf]) {
-        ports[itf]->lineCodingChanged(coding->bit_rate);
+        ports[itf]->handleLineCoding(coding->bit_rate, coding->stop_bits, coding->parity, coding->data_bits);
+    }
+}
+
+extern "C" void tud_cdc_rx_cb(uint8_t itf)
+{
+    if (itf < CFG_TUD_CDC && ports[itf]) {
+        ports[itf]->handleRx();
     }
 }
 
 #else /* !CH32RV_TINYUSB_DEVICE: a port that never opens */
 
-static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint8_t, uint8_t *, uint8_t)
+static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t)
 {
     return 0;
 }
 
 static const CH32RVUsbFunctionType cdc_type = {nullptr, cdc_descriptor, 2, 1};
 
-CH32RVUsbDeviceCdcSerial::CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device)
-    : CH32RVUsbDeviceFunction(device, cdc_type, "CDC")
+CH32RVUsbDeviceCdcSerial::CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device, const char *name)
+    : CH32RVUsbDeviceFunction(device, cdc_type, name ? name : "CDC")
 {
 }
 
@@ -186,7 +225,10 @@ CH32RVUsbDeviceCdcSerial::operator bool() { return false; }
 bool CH32RVUsbDeviceCdcSerial::dtr() { return false; }
 bool CH32RVUsbDeviceCdcSerial::rts() { return false; }
 uint32_t CH32RVUsbDeviceCdcSerial::baud() { return 0; }
-void CH32RVUsbDeviceCdcSerial::lineStateChanged(bool, bool) {}
-void CH32RVUsbDeviceCdcSerial::lineCodingChanged(uint32_t) {}
+size_t CH32RVUsbDeviceCdcSerial::read(uint8_t *, size_t) { return 0; }
+bool CH32RVUsbDeviceCdcSerial::connected() { return false; }
+void CH32RVUsbDeviceCdcSerial::handleLineCoding(uint32_t, uint8_t, uint8_t, uint8_t) {}
+void CH32RVUsbDeviceCdcSerial::handleLineState(bool, bool) {}
+void CH32RVUsbDeviceCdcSerial::handleRx() {}
 
 #endif

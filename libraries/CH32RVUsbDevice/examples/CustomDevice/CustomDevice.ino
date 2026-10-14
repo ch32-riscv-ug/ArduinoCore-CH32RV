@@ -2,7 +2,7 @@
  *
  * Functions join the device when they are declared, in declaration order:
  * here a CDC port, a DFU runtime interface (re-upload without a serial port)
- * and a 64-byte vendor HID. Nothing else of the USB stack is linked. The
+ * and a vendor HID (63-byte reports under report ID 6). Nothing else of the USB stack is linked. The
  * configuration names the device; begin() lays out the descriptors and
  * connects, and says why when it cannot.
  *
@@ -18,16 +18,15 @@ static const int RX_PIN = RX;
 static const int TX_PIN = TX;
 
 CH32RVUsbDevice usb;                          /* one device per sketch */
-CH32RVUsbDeviceCdcSerial console(usb);        /* a COM port */
+CH32RVUsbDeviceCdcSerial console(usb, "Console");   /* a COM port, named */
 CH32RVUsbDeviceDfuRuntime dfu(usb);           /* dfu-util -e resets into the bootloader */
-CH32RVUsbDeviceHidGeneric data(usb, 64);      /* driverless 64-byte reports */
+CH32RVUsbDeviceHidVendor data(usb);           /* driverless 63-byte reports */
 
 void setup() {
   Serial.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
 
-  console.setName("Console");                 /* what the host shows per interface */
-  data.onOutputReport([](uint8_t, const uint8_t *report, uint16_t length) {
-    data.send(report, (uint8_t)length);       /* echo it back */
+  data.onOutputReport([](const CH32RVUsbDeviceHidReport &report) {
+    data.sendInput(report.data, report.length);   /* echo it back */
   });
 
   CH32RVUsbDeviceConfig config;
