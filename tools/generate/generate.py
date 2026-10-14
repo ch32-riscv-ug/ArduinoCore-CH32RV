@@ -168,42 +168,62 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
 MENU_HEADER = ("menu.pnum=Part Number\nmenu.rtlib=C Runtime Library\n"
-               + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 6)))
+               + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 6))
+               + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
+               + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4)))
 
-# Per-USART menus (ADR draft 0015): AUTO binds in begin(), Disable links
-# nothing, FIX(TX, RX) fixes one route at build time. The point is to let a
-# small part's board drop what it cannot use, so the menus start on the small
-# series; the core reads CH32RV_USARTn_MODE and treats a missing one as AUTO.
-USART_MENU_SERIES = ("CH32V003", "CH32X035")
+# Per-instance menus (ADR draft 0015): AUTO binds in begin(), Disable links
+# nothing, FIX fixes one route at build time. The point is to let a small
+# part's board drop what it cannot use, so the menus start on the small series;
+# the core and the Wire / SPI libraries read CH32RV_<KIND>n_MODE and treat a
+# missing one as AUTO.
+PERIPH_MENU_SERIES = ("CH32V003", "CH32X035")
+
+# kind -> (menu id prefix, macro prefix, roles in route order, instance numbers)
+PERIPH_MENU_KINDS = (
+    ("usart", "USART", ("TX", "RX"), range(1, 6)),
+    ("i2c", "I2C", ("SCL", "SDA"), range(1, 3)),
+    ("spi", "SPI", ("SCK", "MISO", "MOSI"), range(1, 4)),
+)
 
 
-def usart_menu(board: str, series: str, parts: list, uarts: dict,
-               remap: dict) -> list[str]:
-    """The USARTn menus for one board, and the build.periph_defines line that
-    collects them. Empty for a series without the menus."""
-    if series not in USART_MENU_SERIES:
+def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
+                remap: dict) -> list[str]:
+    """The per-instance menus for one board, and the build.periph_defines line
+    that collects them. Empty for a series without the menus."""
+    if series not in PERIPH_MENU_SERIES:
         return [f"{board}.build.periph_defines="]
     lines, uses = [], []
-    for n in range(1, 6):
-        rows = route_table(series, parts, uarts, remap, "usart", ("TX", "RX"), n)
-        if not rows:
-            continue
-        key = f"build.usart{n}_mode"
-        uses.append("{" + key + "}")
-        pfx = f"{board}.menu.usart{n}"
-        lines.append(f"{pfx}.auto=AUTO (begin() で割り当て)")
-        lines.append(f"{pfx}.auto.{key}=")
-        lines.append(f"{pfx}.disable=Disable")
-        lines.append(f"{pfx}.disable.{key}=-DCH32RV_USART{n}_MODE=0")
-        for value, pads, v1, v2 in rows:
-            tx, rx = (pad_name(*p) for p in pads)
-            lines.append(f"{pfx}.fix{value}=FIX (TX:{tx}, RX:{rx})")
-            lines.append(f"{pfx}.fix{value}.{key}=-DCH32RV_USART{n}_MODE=2 "
-                         f"-DCH32RV_USART{n}_FIX_TX={tx} -DCH32RV_USART{n}_FIX_RX={rx} "
-                         f"-DCH32RV_USART{n}_FIX_V1=0x{v1:08x}u "
-                         f"-DCH32RV_USART{n}_FIX_V2=0x{v2:08x}u")
+    for kind, macro, roles, numbers in PERIPH_MENU_KINDS:
+        for n in numbers:
+            rows = route_table(series, parts, pins_by_kind[kind], remap, kind, roles, n)
+            if not rows:
+                continue
+            key = f"build.{kind}{n}_mode"
+            uses.append("{" + key + "}")
+            pfx = f"{board}.menu.{kind}{n}"
+            lines.append(f"{pfx}.auto=AUTO (begin() で割り当て)")
+            lines.append(f"{pfx}.auto.{key}=")
+            lines.append(f"{pfx}.disable=Disable")
+            lines.append(f"{pfx}.disable.{key}=-DCH32RV_{macro}{n}_MODE=0")
+            seen = set()
+            for value, pads, v1, v2 in rows:
+                # Two routes can put the same pins in these roles and differ only
+                # in a signal the menu does not name (NSS, CK): one entry, the
+                # lower route number, so the list has no identical labels.
+                if pads in seen:
+                    continue
+                seen.add(pads)
+                names = [pad_name(*p) for p in pads]
+                label = ", ".join(f"{r}:{x}" for r, x in zip(roles, names))
+                fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, names))
+                lines.append(f"{pfx}.fix{value}=FIX ({label})")
+                lines.append(f"{pfx}.fix{value}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
+                             f"-DCH32RV_{macro}{n}_FIX_V1=0x{v1:08x}u "
+                             f"-DCH32RV_{macro}{n}_FIX_V2=0x{v2:08x}u")
     lines.append(f"{board}.build.periph_defines={' '.join(uses)}")
     return lines
+
 
 # newlib-nano always; floating point in printf / scanf is opt-in (ADR-0004,
 # approved 2026-10-01). The menu id and entry ids are the ones the WCH core,
@@ -2853,7 +2873,8 @@ def main() -> int:
                 clock_configs_t, clock_symbols_t))
         parts = sorted({r["part_number"] for r in rows})
         block = block.rstrip("\n") + "\n" + "\n".join(
-            usart_menu(series, series, parts, uarts, remap)) + "\n\n"
+            periph_menu(series, series, parts,
+                        {"usart": uarts, "i2c": i2cs, "spi": spis}, remap)) + "\n\n"
         boards_blocks.append(block)
         used_variants.add(SERIES_CONFIG[series]["vectors"])
         # A part on another die variant needs that table emitted too.
