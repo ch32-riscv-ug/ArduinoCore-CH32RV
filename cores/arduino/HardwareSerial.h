@@ -113,15 +113,17 @@ public:
     uint8_t number(void) const { return _number; }
 
 private:
-    bool bind(uint8_t tx, uint8_t rx);
+    bool bind(uint8_t index, const ch32rv_route_t &route);
     void start(void);
 
     const uint8_t _number;
     /* 0 = closed; otherwise 1 + index into the USART table. */
     uint8_t _slot;
-    /* Pins chosen by setPins() / setRoute() for the next begin(); 0 = none. */
-    uint8_t _want_tx;
-    uint8_t _want_rx;
+    /* Route chosen by setPins() / setRoute() for the next begin(), already
+     * looked up, so begin() itself never searches: a sketch that does not name
+     * pins links no route table and no search. nullptr = the default. */
+    uint8_t _want_index;
+    const ch32rv_route_t *_want;
     uint8_t _tx_pin;
     uint8_t _rx_pin;
     uint16_t _config;

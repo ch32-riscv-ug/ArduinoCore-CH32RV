@@ -84,12 +84,17 @@ struct UsartDesc {
     uint32_t clken_mask;
     uint32_t remap_mask;     /* PCFR1 field, 0 = none */
     uint32_t remap2_mask;    /* PCFR2 half, where the field spans it */
-    const ch32rv_route_t *routes;
-    uint8_t route_count;
+    ch32rv_route_t def;      /* the route a begin() without pins uses */
     uint8_t irqn;
     uint8_t number;          /* n of USARTn */
-    uint8_t default_tx;      /* pins a begin() without pins uses */
-    uint8_t default_rx;
+};
+
+/* Every route a USART can take, for setPins() / setRoute() / begin() with pins
+ * only. Kept apart from the table above so that a sketch which never names
+ * pins does not link it. */
+struct RouteSet {
+    const ch32rv_route_t *rows;
+    uint8_t count;
 };
 
 /* AUTO: the variant's routes, or its one default route where the variant has
@@ -161,47 +166,39 @@ CH32RV_USART_ROWS(5)
 #endif
 
 /* A FIX USART's default pins are its fixed pins; AUTO's are the variant's. */
-#define CH32RV_USART_DEFAULT_PINS(n) CH32RV_USART_DEF_TX_##n, CH32RV_USART_DEF_RX_##n
+#define CH32RV_USART_ROUTE4(tx, rx, v1, v2) { 0, { tx, rx, CH32RV_ROUTE_NO_PIN }, v1, v2 }
+#define CH32RV_USART_ROUTE(...) CH32RV_USART_ROUTE4(__VA_ARGS__)
 #if CH32RV_USART1_MODE == CH32RV_USART_FIX
-#define CH32RV_USART_DEF_TX_1 CH32RV_USART1_FIX_TX
-#define CH32RV_USART_DEF_RX_1 CH32RV_USART1_FIX_RX
+#define CH32RV_USART_DEF_1 CH32RV_USART1_FIX_TX, CH32RV_USART1_FIX_RX, CH32RV_USART1_FIX_V1, CH32RV_USART1_FIX_V2
 #else
-#define CH32RV_USART_DEF_TX_1 CH32RV_SERIAL1_TX
-#define CH32RV_USART_DEF_RX_1 CH32RV_SERIAL1_RX
+#define CH32RV_USART_DEF_1 CH32RV_SERIAL1_TX, CH32RV_SERIAL1_RX, CH32RV_SERIAL1_REMAP_VAL, CH32RV_SERIAL1_REMAP2_VAL
 #endif
 #if CH32RV_USART2_MODE == CH32RV_USART_FIX
-#define CH32RV_USART_DEF_TX_2 CH32RV_USART2_FIX_TX
-#define CH32RV_USART_DEF_RX_2 CH32RV_USART2_FIX_RX
+#define CH32RV_USART_DEF_2 CH32RV_USART2_FIX_TX, CH32RV_USART2_FIX_RX, CH32RV_USART2_FIX_V1, CH32RV_USART2_FIX_V2
 #else
-#define CH32RV_USART_DEF_TX_2 CH32RV_SERIAL2_TX
-#define CH32RV_USART_DEF_RX_2 CH32RV_SERIAL2_RX
+#define CH32RV_USART_DEF_2 CH32RV_SERIAL2_TX, CH32RV_SERIAL2_RX, CH32RV_SERIAL2_REMAP_VAL, CH32RV_SERIAL2_REMAP2_VAL
 #endif
 #if CH32RV_USART3_MODE == CH32RV_USART_FIX
-#define CH32RV_USART_DEF_TX_3 CH32RV_USART3_FIX_TX
-#define CH32RV_USART_DEF_RX_3 CH32RV_USART3_FIX_RX
+#define CH32RV_USART_DEF_3 CH32RV_USART3_FIX_TX, CH32RV_USART3_FIX_RX, CH32RV_USART3_FIX_V1, CH32RV_USART3_FIX_V2
 #else
-#define CH32RV_USART_DEF_TX_3 CH32RV_SERIAL3_TX
-#define CH32RV_USART_DEF_RX_3 CH32RV_SERIAL3_RX
+#define CH32RV_USART_DEF_3 CH32RV_SERIAL3_TX, CH32RV_SERIAL3_RX, CH32RV_SERIAL3_REMAP_VAL, CH32RV_SERIAL3_REMAP2_VAL
 #endif
 #if CH32RV_USART4_MODE == CH32RV_USART_FIX
-#define CH32RV_USART_DEF_TX_4 CH32RV_USART4_FIX_TX
-#define CH32RV_USART_DEF_RX_4 CH32RV_USART4_FIX_RX
+#define CH32RV_USART_DEF_4 CH32RV_USART4_FIX_TX, CH32RV_USART4_FIX_RX, CH32RV_USART4_FIX_V1, CH32RV_USART4_FIX_V2
 #else
-#define CH32RV_USART_DEF_TX_4 CH32RV_SERIAL4_TX
-#define CH32RV_USART_DEF_RX_4 CH32RV_SERIAL4_RX
+#define CH32RV_USART_DEF_4 CH32RV_SERIAL4_TX, CH32RV_SERIAL4_RX, CH32RV_SERIAL4_REMAP_VAL, CH32RV_SERIAL4_REMAP2_VAL
 #endif
 #if CH32RV_USART5_MODE == CH32RV_USART_FIX
-#define CH32RV_USART_DEF_TX_5 CH32RV_USART5_FIX_TX
-#define CH32RV_USART_DEF_RX_5 CH32RV_USART5_FIX_RX
+#define CH32RV_USART_DEF_5 CH32RV_USART5_FIX_TX, CH32RV_USART5_FIX_RX, CH32RV_USART5_FIX_V1, CH32RV_USART5_FIX_V2
 #else
-#define CH32RV_USART_DEF_TX_5 CH32RV_SERIAL5_TX
-#define CH32RV_USART_DEF_RX_5 CH32RV_SERIAL5_RX
+#define CH32RV_USART_DEF_5 CH32RV_SERIAL5_TX, CH32RV_SERIAL5_RX, CH32RV_SERIAL5_REMAP_VAL, CH32RV_SERIAL5_REMAP2_VAL
 #endif
 #define CH32RV_USART_DESC(n, base)                                                  \
     { base, CH32RV_SERIAL##n##_CLKEN_ADDR, CH32RV_SERIAL##n##_CLKEN_MASK,             \
-      CH32RV_SERIAL##n##_REMAP_MASK, CH32RV_SERIAL##n##_REMAP2_MASK, usart##n##_routes, \
-      (uint8_t)(sizeof usart##n##_routes / sizeof usart##n##_routes[0]),            \
-      CH32RV_SERIAL##n##_IRQ, n, CH32RV_USART_DEFAULT_PINS(n) },
+      CH32RV_SERIAL##n##_REMAP_MASK, CH32RV_SERIAL##n##_REMAP2_MASK,                  \
+      CH32RV_USART_ROUTE(CH32RV_USART_DEF_##n), CH32RV_SERIAL##n##_IRQ, n },
+#define CH32RV_USART_SET(n) \
+    { usart##n##_routes, (uint8_t)(sizeof usart##n##_routes / sizeof usart##n##_routes[0]) },
 
 #if defined(CH32RV_USART_HAS_1) || defined(CH32RV_USART_HAS_2) || defined(CH32RV_USART_HAS_3) || \
     defined(CH32RV_USART_HAS_4) || defined(CH32RV_USART_HAS_5)
@@ -223,9 +220,27 @@ const UsartDesc usarts[] = {
 #endif
 };
 constexpr uint8_t USART_COUNT = (uint8_t)(sizeof usarts / sizeof usarts[0]);
+const RouteSet route_sets[] = {
+#ifdef CH32RV_USART_HAS_1
+    CH32RV_USART_SET(1)
+#endif
+#ifdef CH32RV_USART_HAS_2
+    CH32RV_USART_SET(2)
+#endif
+#ifdef CH32RV_USART_HAS_3
+    CH32RV_USART_SET(3)
+#endif
+#ifdef CH32RV_USART_HAS_4
+    CH32RV_USART_SET(4)
+#endif
+#ifdef CH32RV_USART_HAS_5
+    CH32RV_USART_SET(5)
+#endif
+};
 #else
 /* Every USART is Disable on this board: ports exist, begin() never opens one. */
 const UsartDesc usarts[1] = {};
+const RouteSet route_sets[1] = {};
 constexpr uint8_t USART_COUNT = 0;
 #endif
 
@@ -262,17 +277,17 @@ Found find_route(uint8_t prefer, uint8_t tx, uint8_t rx, const CH32RVHardwareSer
 {
     Found first = {-1, nullptr};
     for (uint8_t i = 0; i < USART_COUNT; i++) {
-        const UsartDesc &d = usarts[i];
         if (owner[i] && owner[i] != self) {
             continue;
         }
-        for (uint8_t r = 0; r < d.route_count; r++) {
-            if (d.routes[r].pins[0] == tx && d.routes[r].pins[1] == rx) {
-                if (d.number == prefer) {
-                    return {(int)i, &d.routes[r]};
+        const RouteSet &set = route_sets[i];
+        for (uint8_t r = 0; r < set.count; r++) {
+            if (set.rows[r].pins[0] == tx && set.rows[r].pins[1] == rx) {
+                if (usarts[i].number == prefer) {
+                    return {(int)i, &set.rows[r]};
                 }
                 if (first.index < 0) {
-                    first = {(int)i, &d.routes[r]};
+                    first = {(int)i, &set.rows[r]};
                 }
             }
         }
@@ -412,22 +427,19 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::start(void)
     ch32rv_irq_enable(d.irqn);
 }
 
-/* Take the USART that has (tx, rx) as a route and program it at the remembered
- * baud and framing. The pins of a previous binding are released. */
-__attribute__((always_inline)) inline bool CH32RVHardwareSerial::bind(uint8_t tx, uint8_t rx)
+/* Take USART `index` on `route` and program it at the remembered baud and
+ * framing. Fails when another port holds that USART. */
+__attribute__((always_inline)) inline bool CH32RVHardwareSerial::bind(uint8_t index,
+                                                                    const ch32rv_route_t &route)
 {
-    const Found f = find_route(_number, tx, rx, this);
-    if (f.index < 0) {
+    if (owner[index] && owner[index] != this) {
         return false;
     }
-    if (_slot) {
-        end();
-    }
-    const UsartDesc &d = usarts[f.index];
-    owner[f.index] = this;
-    _slot = (uint8_t)(f.index + 1);
-    _tx_pin = tx;
-    _rx_pin = rx;
+    const UsartDesc &d = usarts[index];
+    owner[index] = this;
+    _slot = (uint8_t)(index + 1);
+    _tx_pin = route.pins[0];
+    _rx_pin = route.pins[1];
 
     ch32rv_clock_enable_at(d.clken_addr, d.clken_mask);
     ch32rv_clock_enable(AFIO);
@@ -437,22 +449,16 @@ __attribute__((always_inline)) inline bool CH32RVHardwareSerial::bind(uint8_t tx
      * PCFR2, and writing only PCFR1 selects a different route with nothing to
      * say so. */
     if (d.remap_mask) {
-        CH32RV_AFIO_PCFR1 = (CH32RV_AFIO_PCFR1 & ~d.remap_mask) | f.row->value;
+        CH32RV_AFIO_PCFR1 = (CH32RV_AFIO_PCFR1 & ~d.remap_mask) | route.value;
     }
     if (d.remap2_mask) {
-        CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~d.remap2_mask) | f.row->value2;
+        CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~d.remap2_mask) | route.value2;
     }
     start();
     return true;
 }
 
 void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config)
-{
-    begin(baudrate, config, -1, -1);
-}
-
-void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config, int rxPin,
-                               int txPin, bool invert)
 {
     if (_slot) {
         end();
@@ -465,32 +471,41 @@ void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config, int rx
      * leaves it closed. The range is fck / 65535 .. fck / 16 (48 MHz: 733 baud
      * .. 3 Mbaud). */
     const unsigned long brr = baudrate ? (F_CPU + baudrate / 2) / baudrate : 0;
-    if (invert || brr < 16 || brr > 0xFFFFul) {
+    if (brr < 16 || brr > 0xFFFFul) {
         return;
-    }
-    if (rxPin >= 0 || txPin >= 0) {
-        if (rxPin < 0 || txPin < 0 || rxPin > 0xFE || txPin > 0xFE) {
-            return;
-        }
-        _want_tx = (uint8_t)CH32RV_PIN_RESOLVE(txPin);
-        _want_rx = (uint8_t)CH32RV_PIN_RESOLVE(rxPin);
     }
     _brr = (uint16_t)brr;
     _config = config;
-    uint8_t tx = _want_tx, rx = _want_rx;
-    if (!tx) {
-        /* Provisional: no pins means USARTn's default (or fixed) pins. */
+    uint8_t index = _want_index;
+    const ch32rv_route_t *route = _want;
+    if (!route) {
+        /* Provisional: no pins means USARTn's default (or fixed) route. */
         for (uint8_t i = 0; i < USART_COUNT; i++) {
             if (usarts[i].number == _number) {
-                tx = usarts[i].default_tx;
-                rx = usarts[i].default_rx;
+                index = i;
+                route = &usarts[i].def;
             }
         }
-        if (!tx) {
-            return;           /* USARTn is Disable on this board */
+        if (!route) {
+            return;            /* USARTn is Disable on this board */
         }
     }
-    bind(tx, rx);
+    bind(index, *route);       /* one call site: bind() is inlined once */
+}
+
+void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config, int rxPin,
+                               int txPin, bool invert)
+{
+    if (_slot) {
+        end();
+    }
+    if (invert) {
+        return;
+    }
+    if ((rxPin >= 0 || txPin >= 0) && !setPins(rxPin, txPin)) {
+        return;
+    }
+    begin(baudrate, config);
 }
 
 void CH32RVHardwareSerial::end(void)
@@ -516,19 +531,19 @@ bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
     if (rxPin < 0 || txPin < 0 || rxPin > 0xFE || txPin > 0xFE) {
         return false;
     }
-    const uint8_t tx = (uint8_t)CH32RV_PIN_RESOLVE(txPin);
-    const uint8_t rx = (uint8_t)CH32RV_PIN_RESOLVE(rxPin);
-    if (find_route(_number, tx, rx, this).index < 0) {
+    const Found f = find_route(_number, (uint8_t)CH32RV_PIN_RESOLVE(txPin),
+                               (uint8_t)CH32RV_PIN_RESOLVE(rxPin), this);
+    if (f.index < 0) {
         return false;
     }
-    _want_tx = tx;
-    _want_rx = rx;
+    _want = f.row;
+    _want_index = (uint8_t)f.index;
     if (_slot) {
         const uint8_t old_tx = _tx_pin, old_rx = _rx_pin;
         end();
         release_pin(old_tx);
         release_pin(old_rx);
-        bind(tx, rx);
+        bind(_want_index, *_want);
     }
     return true;
 }
@@ -536,15 +551,15 @@ bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
 bool CH32RVHardwareSerial::setRoute(uint8_t route)
 {
     for (uint8_t i = 0; i < USART_COUNT; i++) {
-        const UsartDesc &d = usarts[i];
-        if (d.number != _number) {
+        if (usarts[i].number != _number) {
             continue;
         }
-        const int r = ch32rv_route_find(d.routes, d.route_count, route);
+        const RouteSet &set = route_sets[i];
+        const int r = ch32rv_route_find(set.rows, set.count, route);
         if (r < 0) {
             return false;
         }
-        return setPins(d.routes[r].pins[1], d.routes[r].pins[0]);
+        return setPins(set.rows[r].pins[1], set.rows[r].pins[0]);
     }
     return false;
 }
