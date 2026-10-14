@@ -41,7 +41,7 @@ uv run --project tests --locked --extra hardware --env-file tests/.env \
 
 OEPでは `probe_unit_id` に完全な個体IDを設定してください。専用OEP USBの `usb_serial` からも照合できます。USB-UART bridgeを使う場合は、そのserialとOEP個体IDを別々に設定します。プローブの個体照合に失敗した場合、DUTの操作には進みません。共通ロックは設備管理側で作成済みのファイルを指定し、テスト側では作成・コピーしません。
 
-`--target <名前>` と `--case runtime|uart|gpio|hid|power` は繰り返し指定できます。省略時はlocal設定に明記したtargetと、そのtargetが宣言したcaseだけを実行します。未配線caseの明示要求は設定エラーで、skipによる成功にはしません。
+`--target <名前>` と `--case runtime|uart|gpio|hid|power|usb` は繰り返し指定できます。省略時はlocal設定に明記したtargetと、そのtargetが宣言したcaseだけを実行します。未配線caseの明示要求は設定エラーで、skipによる成功にはしません。
 
 | case / contract | 必要設備と確認するもの | 確認しないもの |
 |---|---|---|
@@ -50,8 +50,11 @@ OEPでは `probe_unit_id` に完全な個体IDを設定してください。専�
 | gpio / gpio.external-levels | OEP GPIOと指定DUT pad。出力の外部観測と外部入力刺激、終了時INPUT | 未配線pad、全package、analog/PWM/interrupt |
 | hid / upload.hid-runtime | UIAPduino V003、ソフトUSB、OEP SWIO＋NRST。HID権限、Arduino upload recipe、独立DMSEQ上の新build IDとruntime | Arduino USB stack、USB PD、bootloader領域の書換え |
 | power / usb.port-cycle | 指定PPPSハブ。対象だけのUSB消失、再列挙、個体照合、DUT再attach | VDDが0 Vまで落ちること、DUTのcold boot証明 |
+| usb / usb.enumerate、usb.cdc-round-trip、usb.hid-composite、usb.hid-keyboard、usb.midi-round-trip、usb.reconnect、usb.isp-entry-dfu-detach、usb.isp-entry-touch | DUT自身のUSB端子（`dut_usb_topology`）をホスト役につなぐ。CH32RVUsbDevice の複合デバイス（CDC、キーボード＋ベンダーHID、MIDI、既定のDFUランタイム）の列挙とこのbuildの照合、CDC 64 byte binary、HIDのレポートID・ベンダー往復・キー入力、MIDI往復、`end()`→`begin()` での離脱と再列挙、DFU_DETACH と1200bpsタッチでのISP（1a86:55e0）移行と自動復帰 | 大量転送の速度、サスペンド・レジューム、VBUSに依存する動作、ISPでの書き込み、X035以外の系列 |
 
 現在の配線ではLink＋V103、LinkE＋V307、ESP32＋V003、RP2350＋L103、追加のLinkE＋V003を対象にできます。L103と追加のLinkE＋V003にUART配線は宣言していません。GPIOはESP32側のV003に設定したpadだけです。P4フル結線、USB対向機、未接続系列は配線・契約の確定後に追加します。
+
+usbのホスト役は当面このPCです（`test_usb_contract.py` の `PcUsbHost`。キーボードの入力はHIDのカーネルドライバを外してから送らせるので、PCのデスクトップには届きません）。DUTは SWD で書き込み、DMSEQで指示します。ホスト役を別のマイコン（Pico）に替えるときは `PcUsbHost` だけを置き換えます。DUTはVBUSを使わず `selfPowered` で動かします。
 
 UIAPduino V003は `upload_port = "hid://<soft_usb_topology>"` を設定します。runtime／UART／GPIOでも毎回SWIO＋NRSTからbootloaderへ移行し、HIDで書き込み、ESP32上のDMSEQとfixtureで観測します。RP2350は `upload_port = "oep://<usb_serial>/<slot>"` を設定します。console用のserial pathとupload先をそれぞれ指定します。
 
@@ -82,8 +85,8 @@ Flashの退避は行わず、指定したテストsketchを書き込んで使用
 | unit/ | 設定、identity、電源対象、収集範囲、保守ツールのボード不要検査 |
 | platform/ | 固定sourceの整合検査。toolchainを使うplatform契約の配置先 |
 | single/runtime/ | DUT runtimeとconsoleの契約 |
-| instrumented/uart/、gpio/、power/ | 独立UART、GPIO刺激・観測、USB電源復帰 |
-| sketch_support/core_contracts/ | 実行時にstageするsketch |
+| instrumented/uart/、gpio/、power/、usb/ | 独立UART、GPIO刺激・観測、USB電源復帰、USBデバイス |
+| sketch_support/core_contracts/、usb_contracts/ | 実行時にstageするsketch |
 | fixtures/、harness/ | 設定雛形と最小限の設定・identity照合 |
 | loopback/、peer/、manual/、diagnostics/ | 今後の契約の配置先 |
 

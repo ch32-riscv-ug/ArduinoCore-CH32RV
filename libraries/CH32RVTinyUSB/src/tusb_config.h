@@ -34,6 +34,8 @@ extern "C" {
 
 #define CFG_TUSB_OS              OPT_OS_NONE
 #define CFG_TUSB_DEBUG           0
+/* A failed assertion returns false instead of executing ebreak (ch32rv_port.c). */
+#define CFG_TUSB_DEBUG_BREAKPOINT ch32rv_tusb_breakpoint
 
 #define CFG_TUD_ENABLED          CH32RV_TINYUSB_DEVICE
 #define CFG_TUH_ENABLED          0

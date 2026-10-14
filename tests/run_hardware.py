@@ -23,6 +23,7 @@ MODULES = {
     "gpio": TESTS / "instrumented/gpio/test_gpio_contract.py",
     "hid": TESTS / "single/runtime/test_runtime_contract.py",
     "power": TESTS / "instrumented/power/test_power_contract.py",
+    "usb": TESTS / "instrumented/usb/test_usb_contract.py",
 }
 PLUGINS = ["pytest_embedded.plugin",
            "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin"]
@@ -95,7 +96,8 @@ def stage_case(work, name, case, target):
         settings["gpio"] = [dict(p, pin=((ord(p["pad"][1]) - ord("A") + 2) << 5) | int(p["pad"][2:])) for p in target["gpio"]]
     (directory / "case.json").write_text(json.dumps(settings, indent=2))
     if case != "power":
-        sketch = TESTS / "sketch_support/core_contracts/core_contracts.ino"
+        sketch = TESTS / ("sketch_support/usb_contracts/usb_contracts.ino" if case == "usb"
+                          else "sketch_support/core_contracts/core_contracts.ino")
         shutil.copyfile(sketch, directory / f"{case}.ino")
         # JSON strings are valid YAML scalars. No platform version is requested: use the isolated worktree platform.
         (directory / "sketch.yaml").write_text(

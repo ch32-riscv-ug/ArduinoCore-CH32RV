@@ -55,7 +55,7 @@ KEEP_PORTABLE = ("portable/wch", "portable/st/stm32_fsdev")
 # Files we add next to the vendored tree. They are ours, so the lock ignores
 # them - but they must not collide with an upstream path, and a future upstream
 # version that adds one of these names has to be noticed, so they are listed.
-OURS = ("tusb_config.h", "ch32x035.h")
+OURS = ("tusb_config.h", "ch32x035.h", "ch32rv_port.c")
 
 # Deliberate differences from upstream, applied by --update and verified by
 # --check: the file on disk must contain `after`, and with `after` put back to

@@ -121,3 +121,23 @@ def test_explicit_lock_path_overrides_legacy_config(tmp_path):
     source = config(tmp_path, 'power_ports = [1]')
     loaded = bench.load_bench(source, lock_path=tmp_path / 'other.lock')
     assert loaded['lock_file'] == str(tmp_path / 'other.lock')
+
+
+def usb_config(tmp_path, topology):
+    file = config(tmp_path, f'dut_usb_topology = "{topology}"')
+    file.write_text(file.read_text().replace('cases = ["runtime", "power"]', 'cases = ["usb"]')
+                    .replace("CH32V103:pnum=CH32V103R8T6", "CH32X035:pnum=CH32X035F8U6").replace("CH32V103R8T6", "CH32X035F8U6"))
+    return file
+
+
+def test_usb_needs_the_dut_port_not_the_probe(tmp_path):
+    with pytest.raises(ValueError, match="dut_usb_topology"):
+        bench.load_bench(usb_config(tmp_path, "3-2.3.1"))
+    assert bench.load_bench(usb_config(tmp_path, "3-2.3.2"))["targets"]["test"]["dut_usb_topology"] == "3-2.3.2"
+
+
+def test_usb_needs_a_supported_series(tmp_path):
+    file = usb_config(tmp_path, "3-2.3.2")
+    file.write_text(file.read_text().replace("CH32X035:pnum=CH32X035F8U6", "CH32V103:pnum=CH32V103R8T6").replace("CH32X035F8U6", "CH32V103R8T6"))
+    with pytest.raises(ValueError, match="series"):
+        bench.load_bench(file)

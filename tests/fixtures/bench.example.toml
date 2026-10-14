@@ -23,3 +23,4 @@ power_ports = [] # Explicit probe port on the parent hub.
 # Use upload_port = "hid://<soft_usb_topology>" for every UIAPduino upload.
 # GPIO: gpio = [{ pad = "PA1", channel = <measured probe channel> }, ...].
 # Declare only wired cases; UART-less L103 uses ["runtime", "power"].
+# USB device (CH32X035/X033): cases = ["usb"], dut_usb_topology = "<the DUT's own USB port>".

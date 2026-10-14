@@ -4,11 +4,12 @@ import re
 import tomllib
 from contextlib import contextmanager
 
-CASES = {"runtime", "uart", "gpio", "hid", "power"}
+CASES = {"runtime", "uart", "gpio", "hid", "power", "usb"}
 TARGET_KEYS = {
     "port", "chip", "fqbn", "f_cpu", "usb_topology", "usb_vid", "usb_pid",
     "usb_serial", "dut_uid", "dut_chip_id", "cases", "power_ports", "gpio",
     "soft_usb_topology", "nrst_channel", "upload_port", "probe_unit_id",
+    "dut_usb_topology",
 }
 
 
@@ -107,6 +108,13 @@ def load_bench(path, *, lock_path=None):
         if "hid" in target["cases"]:
             if target["chip"] != "CH32V003F4U6" or not target.get("soft_usb_topology") or type(target.get("nrst_channel")) is not int:
                 raise ValueError("hid needs UIAPduino, soft USB topology and NRST wiring")
+        if "dut_usb_topology" in target and not re.fullmatch(r"\d+-\d+(?:\.\d+)*", target["dut_usb_topology"]):
+            raise ValueError("invalid DUT USB topology")
+        if "usb" in target["cases"]:
+            if not target.get("dut_usb_topology") or target["dut_usb_topology"] in {target["usb_topology"], target.get("soft_usb_topology")}:
+                raise ValueError("usb needs the DUT's own USB port as dut_usb_topology")
+            if not target["chip"].startswith(("CH32X035", "CH32X033")):
+                raise ValueError("usb needs a series CH32RVUsbDevice supports")
     return data
 
 
