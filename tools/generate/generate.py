@@ -188,12 +188,15 @@ PERIPH_MENU_KINDS = (
 
 
 def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
-                remap: dict) -> list[str]:
+                remap: dict, forbidden: dict = {}) -> list[str]:
     """The per-instance menus for one board, and the build.periph_defines line
     that collects them. Empty for a series without the menus."""
     if series not in PERIPH_MENU_SERIES:
         return [f"{board}.build.periph_defines="]
     lines, uses = [], []
+    # A FIX entry on a debug pin (SDI) or a strap (NRST / BOOT) of any part says
+    # so: choosing it is allowed, but the board loses that function.
+    straps = set().union(*(forbidden.get(pn, set()) for pn in parts)) if parts else set()
     for kind, macro, roles, numbers in PERIPH_MENU_KINDS:
         for n in numbers:
             rows = route_table(series, parts, pins_by_kind[kind], remap, kind, roles, n)
@@ -217,7 +220,8 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
                 names = [pad_name(*p) for p in pads]
                 label = ", ".join(f"{r}:{x}" for r, x in zip(roles, names))
                 fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, names))
-                lines.append(f"{pfx}.fix{value}=FIX ({label})")
+                warn = " [debug/strap pin]" if any(p in straps for p in pads) else ""
+                lines.append(f"{pfx}.fix{value}=FIX ({label}){warn}")
                 lines.append(f"{pfx}.fix{value}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
                              f"-DCH32RV_{macro}{n}_FIX_V1=0x{v1:08x}u "
                              f"-DCH32RV_{macro}{n}_FIX_V2=0x{v2:08x}u")
@@ -2874,7 +2878,8 @@ def main() -> int:
         parts = sorted({r["part_number"] for r in rows})
         block = block.rstrip("\n") + "\n" + "\n".join(
             periph_menu(series, series, parts,
-                        {"usart": uarts, "i2c": i2cs, "spi": spis}, remap)) + "\n\n"
+                        {"usart": uarts, "i2c": i2cs, "spi": spis}, remap,
+                        forbidden)) + "\n\n"
         boards_blocks.append(block)
         used_variants.add(SERIES_CONFIG[series]["vectors"])
         # A part on another die variant needs that table emitted too.
