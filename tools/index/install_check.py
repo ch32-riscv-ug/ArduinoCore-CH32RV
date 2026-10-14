@@ -97,6 +97,23 @@ void setup() {
 void loop() {}
 """
 
+# build_opt.h is the platform's own feature (recipe.hooks.prebuild in
+# platform.txt), and its hooks are shell commands that differ per OS - bash on
+# Linux / macOS, cmd on Windows. So it is checked here, on all three. The
+# sketch fails to compile unless the file reached it, and the receive buffer
+# it sets is in the core's HardwareSerial: the RAM figure shows it reached the
+# core too. The same source without build_opt.h is the baseline.
+BUILD_OPT_BASELINE = """\
+void setup() { Serial.begin(115200, SERIAL_8N1, RX, TX); }
+void loop() { if (Serial.available()) Serial.write(Serial.read()); }
+"""
+BUILD_OPT = """\
+#ifndef CH32RV_BUILD_OPT_PROBE
+#error "build_opt.h was not applied"
+#endif
+""" + BUILD_OPT_BASELINE
+BUILD_OPT_H = "-DCH32RV_BUILD_OPT_PROBE=1\n-DCH32RV_SERIAL_RX_BUFFER_SIZE=1024\n"
+
 ACCEPTANCE = """\
 #include <SerialDMSeq.h>
 struct Marker { int value; Marker() : value(42) {} };
@@ -292,6 +309,24 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
             sizes[name] = int(m.group(1)) if m else None
             print(f"{name}: {out.strip().splitlines()[0] if out.strip() else 'built'}",
                   flush=True)
+
+        # 3b) the sketch's build_opt.h reaches the sketch and the core
+        ram = {}
+        for name, src, opt in (("BuildOptBaseline", BUILD_OPT_BASELINE, None),
+                               ("BuildOpt", BUILD_OPT, BUILD_OPT_H)):
+            d = sketch(work, name, src)
+            if opt is not None:
+                (d / "build_opt.h").write_text(opt, encoding="utf-8")
+            # JSON, not the size line: that one follows arduino-cli's locale.
+            out = cli("compile", "--fqbn", FQBN_BLINK, "--build-path",
+                      str(work / f"build-{name}"), str(d), "--format", "json",
+                      env=env)
+            sections = json.loads(out)["builder_result"]["executable_sections_size"]
+            ram[name] = next((x["size"] for x in sections if x["name"] == "data"), None)
+        if None in ram.values() or ram["BuildOpt"] - ram["BuildOptBaseline"] < 900:
+            raise Failure(f"build_opt.h did not reach the core: RAM {ram}")
+        print(f"BUILD_OPT.H OK (RAM {ram['BuildOptBaseline']} -> {ram['BuildOpt']})",
+              flush=True)
 
         installed = work / "data" / "packages" / PACKAGER / "hardware" / ARCH
         leaked = [p for p in installed.glob("*/*") if p.name in FORBIDDEN]

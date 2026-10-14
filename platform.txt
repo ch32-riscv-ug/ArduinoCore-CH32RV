@@ -49,9 +49,8 @@ build.extra_flags=
 # formatters newlib-nano leaves out. Empty for the default entry.
 build.rtlib_flags=
 
-# compiler.<lang>.extra_flags is where arduino-cli injects a sketch's
-# build_opt.h (as @<path>), and where boards.local.txt or --build-property put
-# per-user flags. A recipe that leaves them out silently ignores both, so every
+# compiler.<lang>.extra_flags is where boards.local.txt or --build-property put
+# per-user flags. A recipe that leaves them out silently ignores them, so every
 # recipe references them. Distinct from build.extra_flags, which ADR-0007
 # reserves for the user and the core never writes.
 compiler.c.extra_flags=
@@ -59,9 +58,24 @@ compiler.cpp.extra_flags=
 compiler.S.extra_flags=
 compiler.c.elf.extra_flags=
 
-recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {compiler.c.extra_flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
-recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {compiler.cpp.extra_flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
-recipe.S.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.S.flags} {compiler.S.extra_flags} {compiler.defines} {build.extra_flags} {includes} -c "{source_file}" -o "{object_file}"
+# A sketch's build_opt.h: compiler options, one or more per line, next to the
+# .ino, applied to every C, C++ and assembler file of the build - sketch, core
+# and libraries alike (ADR-0007). arduino-cli has no such feature of its own;
+# the hooks below copy the file into the build directory (an empty one when the
+# sketch has none) and the compile recipes read it with gcc's @file. A property
+# of its own rather than compiler.<lang>.extra_flags, so that a user who sets
+# those from --build-property keeps build_opt.h too.
+build.opt.name=build_opt.h
+build.opt.path={build.path}/{build.opt.name}
+build.opt.flags="@{build.opt.path}"
+recipe.hooks.prebuild.1.pattern=/usr/bin/env bash -c "[ ! -f '{build.source.path}/{build.opt.name}' ] || cp -f '{build.source.path}/{build.opt.name}' '{build.opt.path}'"
+recipe.hooks.prebuild.2.pattern=/usr/bin/env bash -c "[ -f '{build.opt.path}' ] || : > '{build.opt.path}'"
+recipe.hooks.prebuild.1.pattern.windows=cmd /c if exist "{build.source.path}\{build.opt.name}" COPY /y "{build.source.path}\{build.opt.name}" "{build.opt.path}"
+recipe.hooks.prebuild.2.pattern.windows=cmd /c if not exist "{build.opt.path}" type nul > "{build.opt.path}"
+
+recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {compiler.c.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
+recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {compiler.cpp.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
+recipe.S.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.S.flags} {compiler.S.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "{object_file}"
 # newlib-nano is the default runtime; build.rtlib_flags selects float printf/scanf.
 # ADR-0004 proposes newlib-nano as the default runtime with %f as a menu opt-in,
