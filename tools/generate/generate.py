@@ -756,6 +756,20 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
                 and r["field"] == "CLK_DIV" and r["kind"] == "field"):
             adc_ctlr3.add(r["family"])
 
+    # Where AFIO's remap registers sit. Not at one offset everywhere: the
+    # CH32V006 family (V002/V004/V005/V006/V007/M007) has EXTICR at 0x08 and
+    # PCFR1 at 0x0C, where every other family has PCFR1 at 0x04 (CH32V00XRM
+    # AFIO register list). Writing the remap to 0x04 there changes nothing -
+    # measured 2026-10-14 on a CH32V006K8U6: USART1 route 3 only reached PC0
+    # through 0x0C. A family the table is silent on keeps the core's default.
+    afio_off: dict = {}
+    for r in read_table(tables, "registers.csv",
+                        ("family", "type", "register", "offset", "field")):
+        if (r["type"] == "AFIO" and r["register"] in ("PCFR1", "PCFR2")
+                and not r["field"] and r["offset"]):
+            afio_off.setdefault((r["family"], r["register"]), set()).add(
+                int(r["offset"], 16))
+
     # Flash wait states: the LATENCY field is two bits on most families, three
     # on CH32M030 and four on CH32V205, and absent where the flash needs no
     # wait states (CH32V20x/V307/V407 never write ACTLR, so the field is left
@@ -841,6 +855,12 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             iwdg_base=one(family, "the IWDG base",
                           set(iwdg[family])) if family in iwdg else 0,
             dm_data0=dm_data0.get(family, 0),
+            afio_pcfr1=one(family, "the AFIO PCFR1 offset",
+                           afio_off[(family, "PCFR1")])
+            if (family, "PCFR1") in afio_off else None,
+            afio_pcfr2=one(family, "the AFIO PCFR2 offset",
+                           afio_off[(family, "PCFR2")])
+            if (family, "PCFR2") in afio_off else None,
         )
     return facts
 
@@ -2635,7 +2655,11 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         # data1 is not passed: it is data0 + 4 everywhere, checked when the
         # table is read, and two properties that must agree is one too many.
         + (f" -DCH32RV_DM_DATA0_ADDR={fact['dm_data0']:#x}u"
-           if fact['dm_data0'] else ""))
+           if fact['dm_data0'] else "")
+        + (f" -DCH32RV_AFIO_PCFR1_OFFSET={fact['afio_pcfr1']:#x}u"
+           if fact['afio_pcfr1'] is not None else "")
+        + (f" -DCH32RV_AFIO_PCFR2_OFFSET={fact['afio_pcfr2']:#x}u"
+           if fact['afio_pcfr2'] is not None else ""))
     # Its own property, not part of core_defines: a pnum entry has to be able
     # to replace it outright, and a menu value that referred back to the board
     # value would be referring to itself.

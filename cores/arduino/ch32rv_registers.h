@@ -227,8 +227,16 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 /* ----------------------------------------------------------------- AFIO */
 #define CH32RV_AFIO_BASE  (CH32RV_APB2_BASE + 0x0000u)
 #define CH32RV_AFIO_ECR   CH32RV_REG32(CH32RV_AFIO_BASE + 0x00u)
-#define CH32RV_AFIO_PCFR1 CH32RV_REG32(CH32RV_AFIO_BASE + 0x04u)  /* peripheral remap */
-#define CH32RV_AFIO_PCFR2 CH32RV_REG32(CH32RV_AFIO_BASE + 0x1Cu)
+/* The remap registers' offsets come from the board (device-data registers.csv):
+ * the CH32V006 family has PCFR1 at 0x0C, everyone else at 0x04. */
+#ifndef CH32RV_AFIO_PCFR1_OFFSET
+#define CH32RV_AFIO_PCFR1_OFFSET 0x04u
+#endif
+#ifndef CH32RV_AFIO_PCFR2_OFFSET
+#define CH32RV_AFIO_PCFR2_OFFSET 0x1Cu
+#endif
+#define CH32RV_AFIO_PCFR1 CH32RV_REG32(CH32RV_AFIO_BASE + CH32RV_AFIO_PCFR1_OFFSET)  /* peripheral remap */
+#define CH32RV_AFIO_PCFR2 CH32RV_REG32(CH32RV_AFIO_BASE + CH32RV_AFIO_PCFR2_OFFSET)
 /* CH32X035/X033 only: USB pad control. PC16 (UDM) / PC17 (UDP) belong to the
  * USB PHY; while USB_PHY_V33 is set their open-drain "release" cannot be pulled
  * low by another device (measured 2026-09-22, errata x035-usb-pads-open-drain). */
