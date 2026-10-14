@@ -432,6 +432,9 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::start(void)
 __attribute__((always_inline)) inline bool CH32RVHardwareSerial::bind(uint8_t index,
                                                                     const ch32rv_route_t &route)
 {
+    if (USART_COUNT == 1) {
+        index = 0;             /* the only USART: lets the table fold to constants */
+    }
     if (owner[index] && owner[index] != this) {
         return false;
     }

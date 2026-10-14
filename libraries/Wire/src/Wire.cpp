@@ -42,6 +42,174 @@ inline void clear_addr(uint32_t base)
 
 }  // namespace
 
+/* ------------------------------------------------------- board's choice
+ * CH32RV_I2Cn_MODE comes from the board menu (ADR draft 0015):
+ *   0 Disable  the I2C is not in the table: no code, no route, no handler
+ *   1 AUTO     bound in begin(); its routes are searched by setPins()
+ *   2 FIX      one route, the board's: CH32RV_I2Cn_FIX_SCL / _SDA / _V1 / _V2
+ * A board without the menu leaves both on AUTO. */
+#define CH32RV_I2C_DISABLE 0
+#define CH32RV_I2C_AUTO    1
+#define CH32RV_I2C_FIX     2
+#ifndef CH32RV_I2C1_MODE
+#define CH32RV_I2C1_MODE CH32RV_I2C_AUTO
+#endif
+#ifndef CH32RV_I2C2_MODE
+#define CH32RV_I2C2_MODE CH32RV_I2C_AUTO
+#endif
+#if defined(CH32RV_I2C1_SCL) && !defined(CH32RV_I2C1_REMAP_MASK)
+#define CH32RV_I2C1_REMAP_MASK 0u
+#define CH32RV_I2C1_REMAP_VAL  0u
+#endif
+#if defined(CH32RV_I2C1_SCL) && !defined(CH32RV_I2C1_REMAP2_MASK)
+#define CH32RV_I2C1_REMAP2_MASK 0u
+#define CH32RV_I2C1_REMAP2_VAL  0u
+#endif
+#if defined(CH32RV_I2C2_SCL) && !defined(CH32RV_I2C2_REMAP_MASK)
+#define CH32RV_I2C2_REMAP_MASK 0u
+#define CH32RV_I2C2_REMAP_VAL  0u
+#endif
+#if defined(CH32RV_I2C2_SCL) && !defined(CH32RV_I2C2_REMAP2_MASK)
+#define CH32RV_I2C2_REMAP2_MASK 0u
+#define CH32RV_I2C2_REMAP2_VAL  0u
+#endif
+
+namespace {
+
+struct WireDesc {
+    uint32_t base;
+    uint32_t clken_addr;
+    uint32_t clken_mask;
+    uint32_t remap_mask;
+    uint32_t remap2_mask;
+    ch32rv_route_t def;      /* the route a begin() without pins uses */
+    uint8_t ev_irqn;
+    uint8_t er_irqn;
+    uint8_t number;          /* n of I2Cn */
+};
+
+/* Every route an I2C can take, for setPins() / setRoute() only. */
+struct RouteSet {
+    const ch32rv_route_t *rows;
+    uint8_t count;
+};
+
+#define CH32RV_WIRE_ROUTE4(scl, sda, v1, v2) { 0, { scl, sda, CH32RV_ROUTE_NO_PIN }, v1, v2 }
+#define CH32RV_WIRE_ROUTE(...) CH32RV_WIRE_ROUTE4(__VA_ARGS__)
+
+#if defined(CH32RV_I2C1_SCL) && CH32RV_I2C1_MODE != CH32RV_I2C_DISABLE
+#define CH32RV_WIRE_HAS_1 1
+#if CH32RV_I2C1_MODE == CH32RV_I2C_FIX
+#define CH32RV_WIRE_DEF_1 CH32RV_I2C1_FIX_SCL, CH32RV_I2C1_FIX_SDA, CH32RV_I2C1_FIX_V1, CH32RV_I2C1_FIX_V2
+static const ch32rv_route_t wire1_routes[] = { CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF_1) };
+#else
+#define CH32RV_WIRE_DEF_1 CH32RV_I2C1_SCL, CH32RV_I2C1_SDA, CH32RV_I2C1_REMAP_VAL, CH32RV_I2C1_REMAP2_VAL
+#if defined(CH32RV_I2C1_ROUTES)
+static const ch32rv_route_t wire1_routes[] = CH32RV_I2C1_ROUTES;
+#else
+static const ch32rv_route_t wire1_routes[] = { CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF_1) };
+#endif
+#endif
+#endif
+#if defined(CH32RV_I2C2_SCL) && CH32RV_I2C2_MODE != CH32RV_I2C_DISABLE
+#define CH32RV_WIRE_HAS_2 1
+#if CH32RV_I2C2_MODE == CH32RV_I2C_FIX
+#define CH32RV_WIRE_DEF_2 CH32RV_I2C2_FIX_SCL, CH32RV_I2C2_FIX_SDA, CH32RV_I2C2_FIX_V1, CH32RV_I2C2_FIX_V2
+static const ch32rv_route_t wire2_routes[] = { CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF_2) };
+#else
+#define CH32RV_WIRE_DEF_2 CH32RV_I2C2_SCL, CH32RV_I2C2_SDA, CH32RV_I2C2_REMAP_VAL, CH32RV_I2C2_REMAP2_VAL
+#if defined(CH32RV_I2C2_ROUTES)
+static const ch32rv_route_t wire2_routes[] = CH32RV_I2C2_ROUTES;
+#else
+static const ch32rv_route_t wire2_routes[] = { CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF_2) };
+#endif
+#endif
+#endif
+
+#define CH32RV_WIRE_DESC(n)                                                            \
+    { CH32RV_I2C##n##_BASE, CH32RV_I2C##n##_CLKEN_ADDR, CH32RV_I2C##n##_CLKEN_MASK,     \
+      CH32RV_I2C##n##_REMAP_MASK, CH32RV_I2C##n##_REMAP2_MASK,                          \
+      CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF_##n), CH32RV_IRQN_I2C##n##_EV,                 \
+      CH32RV_IRQN_I2C##n##_ER, n },
+#define CH32RV_WIRE_SET(n) \
+    { wire##n##_routes, (uint8_t)(sizeof wire##n##_routes / sizeof wire##n##_routes[0]) },
+
+#if defined(CH32RV_WIRE_HAS_1) || defined(CH32RV_WIRE_HAS_2)
+const WireDesc wires[] = {
+#ifdef CH32RV_WIRE_HAS_1
+    CH32RV_WIRE_DESC(1)
+#endif
+#ifdef CH32RV_WIRE_HAS_2
+    CH32RV_WIRE_DESC(2)
+#endif
+};
+const RouteSet route_sets[] = {
+#ifdef CH32RV_WIRE_HAS_1
+    CH32RV_WIRE_SET(1)
+#endif
+#ifdef CH32RV_WIRE_HAS_2
+    CH32RV_WIRE_SET(2)
+#endif
+};
+constexpr uint8_t WIRE_COUNT = (uint8_t)(sizeof wires / sizeof wires[0]);
+#else
+/* Every I2C is Disable on this board: buses exist, begin() never opens one. */
+const WireDesc wires[1] = {};
+const RouteSet route_sets[1] = {};
+constexpr uint8_t WIRE_COUNT = 0;
+#endif
+
+/* Which bus holds each I2C. The interrupt handler reads it. */
+CH32RVTwoWire *owner[WIRE_COUNT > 0 ? WIRE_COUNT : 1];
+
+/* A series with one I2C has only index 0; saying so lets every table read
+ * become a constant. */
+inline uint8_t index_of(uint8_t slot)
+{
+    return WIRE_COUNT == 1 ? 0 : (uint8_t)(slot - 1);
+}
+
+struct Found {
+    int index;
+    const ch32rv_route_t *row;
+};
+
+/* A free I2C with a route on these pins; this bus's own I2C first. */
+Found find_route(uint8_t prefer, uint8_t scl, uint8_t sda, const CH32RVTwoWire *self)
+{
+    Found first = {-1, nullptr};
+    for (uint8_t i = 0; i < WIRE_COUNT; i++) {
+        if (owner[i] && owner[i] != self) {
+            continue;
+        }
+        const RouteSet &set = route_sets[i];
+        for (uint8_t r = 0; r < set.count; r++) {
+            if (set.rows[r].pins[0] == scl && set.rows[r].pins[1] == sda) {
+                if (wires[i].number == prefer) {
+                    return {(int)i, &set.rows[r]};
+                }
+                if (first.index < 0) {
+                    first = {(int)i, &set.rows[r]};
+                }
+            }
+        }
+    }
+    return first;
+}
+
+void release_pin(uint8_t pin)
+{
+    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
+                         CH32RV_GPIO_CFG_IN_FLOAT);
+}
+
+}  // namespace
+
+uint8_t CH32RVTwoWire::peripheral(void) const
+{
+    return _slot ? wires[index_of(_slot)].number : 0;
+}
+
 bool CH32RVTwoWire::wait_flag1(uint16_t mask, bool set)
 {
     const uint32_t start_us = micros();
@@ -87,15 +255,46 @@ void CH32RVTwoWire::clearWireTimeoutFlag(void)
 
 void CH32RVTwoWire::begin()
 {
-    ch32rv_clock_enable_at(_clken_addr, _clken_mask);
+    if (_slot) {
+        end();
+    }
+    uint8_t index = _want_index;
+    const ch32rv_route_t *route = _want;
+    if (!route) {
+        /* Provisional: no pins means this bus's usual I2C, default (or fixed)
+         * route. */
+        for (uint8_t i = 0; i < WIRE_COUNT; i++) {
+            if (wires[i].number == _number) {
+                index = i;
+                route = &wires[i].def;
+            }
+        }
+        if (!route) {
+            return;            /* that I2C is Disable on this board */
+        }
+    }
+    if (WIRE_COUNT == 1) {
+        index = 0;             /* the only instance: lets the table fold to constants */
+    }
+    if (owner[index] && owner[index] != this) {
+        return;
+    }
+    const WireDesc &d = wires[index];
+    owner[index] = this;
+    _slot = (uint8_t)(index + 1);
+    _base = d.base;
+    _scl_pin = route->pins[0];
+    _sda_pin = route->pins[1];
+
+    ch32rv_clock_enable_at(d.clken_addr, d.clken_mask);
     ch32rv_clock_enable(AFIO);
     /* Written every time, default route included - see HardwareSerial::begin
      * for why "leave the field alone" is the wrong default. */
-    if (_remap_mask) {
-        CH32RV_AFIO_PCFR1 = (CH32RV_AFIO_PCFR1 & ~_remap_mask) | _remap_value;
+    if (d.remap_mask) {
+        CH32RV_AFIO_PCFR1 = (CH32RV_AFIO_PCFR1 & ~d.remap_mask) | route->value;
     }
-    if (_remap2_mask) {
-        CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~_remap2_mask) | _remap2_value;
+    if (d.remap2_mask) {
+        CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~d.remap2_mask) | route->value2;
     }
 
     /* Open drain, because that is what the bus is: both lines are pulled up
@@ -125,6 +324,9 @@ void CH32RVTwoWire::begin(uint8_t address)
      * too: it times its own SCL stretching from it) - then the own address
      * and the interrupt machinery on top. */
     begin();
+    if (!_slot) {
+        return;
+    }
     /* Bit 14 of OADDR1 is documented "must be kept set"; the EVT init does. */
     CH32RV_I2C_OADDR1(_base) = (uint16_t)(0x4000u | ((address & 0x7Fu) << 1));
     _rx_len = 0;
@@ -134,8 +336,8 @@ void CH32RVTwoWire::begin(uint8_t address)
     _slave = true;
     CH32RV_I2C_CTLR2(_base) |= CH32RV_I2C_CTLR2_ITEVTEN | CH32RV_I2C_CTLR2_ITBUFEN |
                              CH32RV_I2C_CTLR2_ITERREN;
-    ch32rv_irq_enable(_ev_irqn);
-    ch32rv_irq_enable(_er_irqn);
+    ch32rv_irq_enable(wires[index_of(_slot)].ev_irqn);
+    ch32rv_irq_enable(wires[index_of(_slot)].er_irqn);
     /* ACK is what makes the peripheral answer its address at all. */
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
 }
@@ -181,16 +383,23 @@ bool CH32RVTwoWire::begin(uint8_t address, int sda, int scl, uint32_t frequency)
 
 void CH32RVTwoWire::end()
 {
+    if (!_slot) {
+        _started = false;
+        return;
+    }
+    const WireDesc &d = wires[index_of(_slot)];
     if (_slave) {
-        ch32rv_irq_disable(_ev_irqn);
-        ch32rv_irq_disable(_er_irqn);
+        ch32rv_irq_disable(d.ev_irqn);
+        ch32rv_irq_disable(d.er_irqn);
         CH32RV_I2C_CTLR2(_base) &= (uint16_t)~(CH32RV_I2C_CTLR2_ITEVTEN |
                                              CH32RV_I2C_CTLR2_ITBUFEN |
                                              CH32RV_I2C_CTLR2_ITERREN);
         _slave = false;
     }
     CH32RV_I2C_CTLR1(_base) = 0;
-    ch32rv_clock_disable_at(_clken_addr, _clken_mask);
+    ch32rv_clock_disable_at(d.clken_addr, d.clken_mask);
+    owner[index_of(_slot)] = nullptr;
+    _slot = 0;
     _started = false;
     _transmitting = false;
     _tx_len = 0;
@@ -198,7 +407,7 @@ void CH32RVTwoWire::end()
     _rx_read = 0;
 }
 
-void CH32RVTwoWire::setClock(uint32_t freq)
+__attribute__((noinline)) void CH32RVTwoWire::setClock(uint32_t freq)
 {
     _clock_hz = freq ? freq : 100000;
     if (!_started) {
@@ -275,10 +484,12 @@ void CH32RVTwoWire::beginTransmission(uint8_t address)
 
 uint8_t CH32RVTwoWire::endTransmission(bool stopBit)
 {
-    if (!_transmitting || _slave) {
+    if (!_transmitting || _slave || !_started) {
         /* A slave starting a master transfer would have to win the bus from
          * the master that is addressing it; this driver does one role at a
-         * time (see the header comment). */
+         * time (see the header comment). A bus that is not open (no begin(),
+         * or its I2C is Disable on this board) has no registers to drive. */
+        _transmitting = false;
         return 4;
     }
     _transmitting = false;
@@ -553,70 +764,20 @@ int CH32RVTwoWire::peek(void)
 }
 
 /* --------------------------------------------------------------- routes */
-/* Reached only from setRoute()/setPins(), so --gc-sections drops the tables
- * from a sketch that never moves its pins. */
-namespace {
-
-struct RouteTable {
-    const ch32rv_route_t *rows;
-    uint8_t count;
-};
-
-RouteTable routes_for(uint32_t base)
-{
-#if defined(CH32RV_I2C1_ROUTES)
-    static const ch32rv_route_t r1[] = CH32RV_I2C1_ROUTES;
-    if (base == CH32RV_I2C1_BASE) {
-        return {r1, CH32RV_I2C1_ROUTE_COUNT};
-    }
-#endif
-#if defined(CH32RV_I2C2_ROUTES)
-    static const ch32rv_route_t r2[] = CH32RV_I2C2_ROUTES;
-    if (base == CH32RV_I2C2_BASE) {
-        return {r2, CH32RV_I2C2_ROUTE_COUNT};
-    }
-#endif
-    (void)base;
-    return {nullptr, 0};
-}
-
-void release_pin(uint8_t pin)
-{
-    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
-                         CH32RV_GPIO_CFG_IN_FLOAT);
-}
-
-}  // namespace
-
-bool CH32RVTwoWire::use_route(const ch32rv_route_t &route)
-{
-    const uint8_t old_scl = _scl_pin;
-    const uint8_t old_sda = _sda_pin;
-    const bool was_started = _started;
-
-    if (was_started) {
-        end();
-        release_pin(old_scl);
-        release_pin(old_sda);
-    }
-    _scl_pin = route.pins[0];
-    _sda_pin = route.pins[1];
-    _remap_value = route.value;
-    _remap2_value = route.value2;
-    if (was_started) {
-        begin();
-    }
-    return true;
-}
-
 bool CH32RVTwoWire::setRoute(uint8_t route)
 {
-    const RouteTable table = routes_for(_base);
-    const int i = ch32rv_route_find(table.rows, table.count, route);
-    if (i < 0) {
-        return false;
+    for (uint8_t i = 0; i < WIRE_COUNT; i++) {
+        if (wires[i].number != _number) {
+            continue;
+        }
+        const RouteSet &set = route_sets[i];
+        const int r = ch32rv_route_find(set.rows, set.count, route);
+        if (r < 0) {
+            return false;
+        }
+        return setPins(set.rows[r].pins[1], set.rows[r].pins[0]);
     }
-    return use_route(table.rows[i]);
+    return false;
 }
 
 bool CH32RVTwoWire::setPins(int sda, int scl)
@@ -624,14 +785,21 @@ bool CH32RVTwoWire::setPins(int sda, int scl)
     if (sda < 0 || scl < 0 || sda > 0xFE || scl > 0xFE) {
         return false;
     }
-    const RouteTable table = routes_for(_base);
-    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)CH32RV_PIN_RESOLVE(scl),
-                                             (uint8_t)CH32RV_PIN_RESOLVE(sda), CH32RV_ROUTE_NO_PIN};
-    const int i = ch32rv_route_match(table.rows, table.count, want);
-    if (i < 0) {
+    const Found f = find_route(_number, (uint8_t)CH32RV_PIN_RESOLVE(scl),
+                               (uint8_t)CH32RV_PIN_RESOLVE(sda), this);
+    if (f.index < 0) {
         return false;
     }
-    return use_route(table.rows[i]);
+    _want = f.row;
+    _want_index = (uint8_t)f.index;
+    if (_started) {
+        const uint8_t old_scl = _scl_pin, old_sda = _sda_pin;
+        end();
+        release_pin(old_scl);
+        release_pin(old_sda);
+        begin();
+    }
+    return true;
 }
 
 /* ------------------------------------------------------- bus clear */
@@ -705,70 +873,36 @@ bool CH32RVTwoWire::clearBus(void)
     return free;
 }
 
-/* ------------------------------------------------------- instances */
-/* Naming follows the Arduino ecosystem rather than this core's Serial: the
- * bare name is the first bus and Wire1 is the second, which is what Due, Zero,
- * STM32duino and arduino-pico all do. A library asking for Wire1 means "the
- * other one", not "I2C1". */
-#ifndef CH32RV_I2C1_REMAP_MASK
-#define CH32RV_I2C1_REMAP_MASK 0u
-#define CH32RV_I2C1_REMAP_VAL  0u
+/* ------------------------------------------------------- interrupts */
+/* One handler for the EV and ER vectors of every enabled I2C (only a slave
+ * enables them): each I2Cn_EV/ER_IRQHandler below is an alias of it, and mcause
+ * says which fired. A Disable I2C gets no alias. The bus objects themselves
+ * live in WireInstance.cpp / Wire1Instance.cpp, one per file, so a sketch links
+ * only the buses it names. */
+extern "C" __attribute__((interrupt)) void ch32rv_wire_irq(void)
+{
+    uint32_t cause;
+    __asm__ volatile("csrr %0, mcause" : "=r"(cause));
+    const uint8_t irqn = (uint8_t)(cause & 0xFFFu);
+    for (uint8_t i = 0; i < WIRE_COUNT; i++) {
+        if (!owner[i]) {
+            continue;
+        }
+        if (wires[i].ev_irqn == irqn) {
+            owner[i]->ev_irq();
+            return;
+        }
+        if (wires[i].er_irqn == irqn) {
+            owner[i]->er_irq();
+            return;
+        }
+    }
+}
+#ifdef CH32RV_WIRE_HAS_1
+extern "C" void I2C1_EV_IRQHandler(void) __attribute__((alias("ch32rv_wire_irq")));
+extern "C" void I2C1_ER_IRQHandler(void) __attribute__((alias("ch32rv_wire_irq")));
 #endif
-#ifndef CH32RV_I2C1_REMAP2_MASK
-#define CH32RV_I2C1_REMAP2_MASK 0u
-#define CH32RV_I2C1_REMAP2_VAL  0u
-#endif
-#ifndef CH32RV_I2C2_REMAP_MASK
-#define CH32RV_I2C2_REMAP_MASK 0u
-#define CH32RV_I2C2_REMAP_VAL  0u
-#endif
-#ifndef CH32RV_I2C2_REMAP2_MASK
-#define CH32RV_I2C2_REMAP2_MASK 0u
-#define CH32RV_I2C2_REMAP2_VAL  0u
-#endif
-
-#if defined(CH32RV_I2C1_SCL)
-arduino::CH32RVTwoWire Wire(CH32RV_I2C1_BASE, CH32RV_I2C1_CLKEN_ADDR, CH32RV_I2C1_CLKEN_MASK,
-                          CH32RV_I2C1_SCL, CH32RV_I2C1_SDA,
-                          CH32RV_I2C1_REMAP_MASK, CH32RV_I2C1_REMAP_VAL,
-                          CH32RV_I2C1_REMAP2_MASK, CH32RV_I2C1_REMAP2_VAL,
-                          CH32RV_IRQN_I2C1_EV, CH32RV_IRQN_I2C1_ER);
-extern "C" __attribute__((interrupt)) void I2C1_EV_IRQHandler(void)
-{
-    Wire.ev_irq();
-}
-extern "C" __attribute__((interrupt)) void I2C1_ER_IRQHandler(void)
-{
-    Wire.er_irq();
-}
-#if defined(CH32RV_I2C2_SCL)
-arduino::CH32RVTwoWire Wire1(CH32RV_I2C2_BASE, CH32RV_I2C2_CLKEN_ADDR, CH32RV_I2C2_CLKEN_MASK,
-                           CH32RV_I2C2_SCL, CH32RV_I2C2_SDA,
-                           CH32RV_I2C2_REMAP_MASK, CH32RV_I2C2_REMAP_VAL,
-                           CH32RV_I2C2_REMAP2_MASK, CH32RV_I2C2_REMAP2_VAL,
-                           CH32RV_IRQN_I2C2_EV, CH32RV_IRQN_I2C2_ER);
-extern "C" __attribute__((interrupt)) void I2C2_EV_IRQHandler(void)
-{
-    Wire1.ev_irq();
-}
-extern "C" __attribute__((interrupt)) void I2C2_ER_IRQHandler(void)
-{
-    Wire1.er_irq();
-}
-#endif
-#elif defined(CH32RV_I2C2_SCL)
-/* A part that bonds only the second instance still gets a plain Wire. */
-arduino::CH32RVTwoWire Wire(CH32RV_I2C2_BASE, CH32RV_I2C2_CLKEN_ADDR, CH32RV_I2C2_CLKEN_MASK,
-                          CH32RV_I2C2_SCL, CH32RV_I2C2_SDA,
-                          CH32RV_I2C2_REMAP_MASK, CH32RV_I2C2_REMAP_VAL,
-                          CH32RV_I2C2_REMAP2_MASK, CH32RV_I2C2_REMAP2_VAL,
-                          CH32RV_IRQN_I2C2_EV, CH32RV_IRQN_I2C2_ER);
-extern "C" __attribute__((interrupt)) void I2C2_EV_IRQHandler(void)
-{
-    Wire.ev_irq();
-}
-extern "C" __attribute__((interrupt)) void I2C2_ER_IRQHandler(void)
-{
-    Wire.er_irq();
-}
+#ifdef CH32RV_WIRE_HAS_2
+extern "C" void I2C2_EV_IRQHandler(void) __attribute__((alias("ch32rv_wire_irq")));
+extern "C" void I2C2_ER_IRQHandler(void) __attribute__((alias("ch32rv_wire_irq")));
 #endif

@@ -1,6 +1,6 @@
 /* SPI for CH32 RISC-V.
  *
- * Controller (master) mode, polled. The pins come from the variant's
+ * Controller (master) mode, polled. The default pins come from the variant's
  * CH32RV_SPIn_SCK/MISO/MOSI; chip select is not among them because Arduino
  * drives it as an ordinary GPIO, which is also what lets one bus carry several
  * devices.
@@ -31,16 +31,18 @@
 
 namespace arduino {
 
+/* One object is one bus. Which SPI it drives is decided in begin(), as for
+ * HardwareSerial and Wire (ADR draft 0015): the object holds state only, each
+ * SPI's constants sit in a const table in SPI.cpp, and an SPI set to Disable
+ * for the board (CH32RV_SPIn_MODE = 0) is not in that table.
+ *
+ * Provisional rule until names and instances are tied together for good: a
+ * begin() without pins binds SPI / SPI1 / SPI2 to the bus they have always
+ * named, on its default route - or the fixed one when the board sets FIX.
+ * begin(sck, miso, mosi) binds to whichever enabled SPI has those pins. */
 class CH32RVSPIClass : public HardwareSPI {
 public:
-    CH32RVSPIClass(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
-                 uint8_t sck_pin, uint8_t miso_pin, uint8_t mosi_pin,
-                 uint32_t remap_mask, uint32_t remap_value,
-                 uint32_t remap2_mask, uint32_t remap2_value)
-        : _base(base), _clken_addr(clken_addr), _clken_mask(clken_mask),
-          _sck_pin(sck_pin), _miso_pin(miso_pin), _mosi_pin(mosi_pin),
-          _remap_mask(remap_mask), _remap_value(remap_value),
-          _remap2_mask(remap2_mask), _remap2_value(remap2_value) {}
+    explicit CH32RVSPIClass(uint8_t number) : _number(number) {}
 
     void begin() override;
     /* arduino-esp32's form: the pins (SCK, MISO, MOSI) named in the call.
@@ -83,6 +85,9 @@ public:
     bool setRoute(uint8_t route);
     bool setPins(int sck, int miso, int mosi);
 
+    /* The SPI number this bus is bound to, 0 while closed. */
+    uint8_t peripheral(void) const;
+
     /* Pre-transaction API. Still used by a lot of library code. */
     void setBitOrder(BitOrder order);
     void setDataMode(uint8_t mode);
@@ -90,22 +95,21 @@ public:
 
 private:
     void apply(uint32_t clock_hz, BitOrder order, uint8_t mode);
-    bool use_route(const ch32rv_route_t &route);
 
-    const uint32_t _base;
-    /* RCC enable register and bit, from the variant (clock_enables.csv). */
-    const uint32_t _clken_addr;
-    const uint32_t _clken_mask;
-    /* Not const: setRoute()/setPins() move the bus between pin sets. */
+    const uint8_t _number;
+    /* The fields below start at zero because a bus is a global object, in
+     * .bss: no initialiser, so the constructor does not store the zeros again.
+     * 0 = closed; otherwise 1 + index into the SPI table. */
+    uint8_t _slot;
+    /* Route chosen by setPins() / setRoute() for the next begin(), already
+     * looked up, so begin() never searches. nullptr = the default. */
+    uint8_t _want_index;
+    const ch32rv_route_t *_want;
+    /* Of the bound SPI; 0 while closed. */
+    uint32_t _base;
     uint8_t _sck_pin;
     uint8_t _miso_pin;
     uint8_t _mosi_pin;
-    /* AFIO route for these pins, written on every begin() - see
-     * HardwareSerial::begin for why the default route is written too. */
-    const uint32_t _remap_mask;
-    uint32_t _remap_value;
-    const uint32_t _remap2_mask;
-    uint32_t _remap2_value;
 
     uint32_t _clock_hz = 4000000;
     BitOrder _order = MSBFIRST;

@@ -1,6 +1,6 @@
 /* Wire (I2C) for CH32 RISC-V.
  *
- * Master mode, polled. The pins come from the variant's CH32RV_I2Cn_SCL/SDA, so
+ * Master mode, polled. The default pins come from the variant's CH32RV_I2Cn_SCL/SDA, so
  * a sketch calls Wire.begin() with no arguments the way it does on AVR, or names
  * them the way it does on an ESP32: Wire.begin(sda, scl[, frequency]). The type
  * libraries take, TwoWire, is the base in <TwoWire.h>.
@@ -61,19 +61,19 @@
 
 namespace arduino {
 
+/* One object is one bus. Which I2C it drives is decided in begin(), as for
+ * HardwareSerial (ADR draft 0015): the object holds state only, each I2C's
+ * constants sit in a const table in Wire.cpp, and an I2C set to Disable for
+ * the board (CH32RV_I2Cn_MODE = 0) is not in that table.
+ *
+ * Provisional rule until names and instances are tied together for good: a
+ * begin() without pins binds Wire to its usual I2C (I2C1, or I2C2 on a part
+ * without I2C1) and Wire1 to I2C2, on the default route - or the fixed one when
+ * the board sets FIX. begin(sda, scl) binds to whichever enabled I2C has those
+ * pins as a route. */
 class CH32RVTwoWire : public ::TwoWire {
 public:
-    CH32RVTwoWire(uint32_t base, uint32_t clken_addr, uint32_t clken_mask,
-                uint8_t scl_pin,
-                uint8_t sda_pin, uint32_t remap_mask, uint32_t remap_value,
-                uint32_t remap2_mask, uint32_t remap2_value,
-                uint8_t ev_irqn, uint8_t er_irqn)
-        : _base(base), _clken_addr(clken_addr), _clken_mask(clken_mask),
-          _scl_pin(scl_pin),
-          _sda_pin(sda_pin), _remap_mask(remap_mask),
-          _remap_value(remap_value), _remap2_mask(remap2_mask),
-          _remap2_value(remap2_value), _ev_irqn(ev_irqn),
-          _er_irqn(er_irqn) {}
+    explicit CH32RVTwoWire(uint8_t number) : _number(number) {}
 
     void begin() override;
     void begin(uint8_t address) override;
@@ -136,6 +136,9 @@ public:
     bool setRoute(uint8_t route);
     bool setPins(int sda, int scl) override;
 
+    /* The I2C number this bus is bound to, 0 while closed. */
+    uint8_t peripheral(void) const;
+
     /* Free a bus that a slave is holding: the classic hang where a slave was
      * cut off mid-byte (a reset, a lost clock) and keeps driving SDA low, so
      * every transfer fails and no amount of re-initialising this peripheral
@@ -165,28 +168,23 @@ protected:
 
 private:
     bool wait_flag1(uint16_t mask, bool set);
-    bool use_route(const ch32rv_route_t &route);
     bool start(uint8_t address, bool read);
     void stop(void);
     void recover(void);
 
-    const uint32_t _base;
-    /* RCC enable register and bit, from the variant (clock_enables.csv). */
-    const uint32_t _clken_addr;
-    const uint32_t _clken_mask;
-    /* Not const: setRoute()/setPins() move the bus between pin sets. */
+    const uint8_t _number;
+    /* The fields below start at zero because a bus is a global object, in
+     * .bss: no initialiser, so the constructor does not store the zeros again.
+     * 0 = closed; otherwise 1 + index into the I2C table. */
+    uint8_t _slot;
+    /* Route chosen by setPins() / setRoute() for the next begin(), already
+     * looked up, so begin() never searches. nullptr = the default. */
+    uint8_t _want_index;
+    const ch32rv_route_t *_want;
+    /* Of the bound I2C; 0 while closed. */
+    uint32_t _base;
     uint8_t _scl_pin;
     uint8_t _sda_pin;
-    /* AFIO field that routes this I2C to _scl_pin/_sda_pin, written on every
-     * begin() for the same reason HardwareSerial writes its own: going back to
-     * the default pins has to be a real write, not an assumption. */
-    const uint32_t _remap_mask;
-    uint32_t _remap_value;
-    const uint32_t _remap2_mask;
-    uint32_t _remap2_value;
-
-    const uint8_t _ev_irqn;
-    const uint8_t _er_irqn;
 
     uint32_t _clock_hz = 100000;
     uint8_t _address = 0;          /* target of the transmission being built */
@@ -229,9 +227,9 @@ private:
 #define WIRE_INTERFACES_COUNT 1
 #endif
 #if defined(CH32RV_I2C1_SCL)
-extern arduino::CH32RVTwoWire Wire;       /* I2C1 */
+extern arduino::CH32RVTwoWire Wire;       /* I2C1 (WireInstance.cpp) */
 #if defined(CH32RV_I2C2_SCL)
-extern arduino::CH32RVTwoWire Wire1;      /* I2C2 */
+extern arduino::CH32RVTwoWire Wire1;      /* I2C2 (Wire1Instance.cpp) */
 #endif
 #elif defined(CH32RV_I2C2_SCL)
 extern arduino::CH32RVTwoWire Wire;       /* I2C2, on a part that has no I2C1 */
