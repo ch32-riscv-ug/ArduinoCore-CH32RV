@@ -1315,7 +1315,12 @@ UART_SIGNAL_RE = [
 SERIAL_BASES = {1: "CH32RV_USART1_BASE", 2: "CH32RV_USART2_BASE",
                 3: "CH32RV_USART3_BASE", 4: "CH32RV_USART4_BASE",
                 5: "CH32RV_USART5_BASE"}
-UART_ROUTE_ORDER = ("default", "main", "af-1", "af-2", "remap-1")
+# Every remap the tables name is loaded: a later one is only ranked after the
+# earlier ones for the default, but it must exist for setRoute() and the FIX
+# menu - V003's USART1 has four routes, and CH32V407KEU6's USART3 exists only
+# on remap-2 (PA13/PA14, the SWD pins: never a default, still selectable).
+ALL_REMAPS = tuple(f"remap-{i}" for i in range(1, 10))
+UART_ROUTE_ORDER = ("default", "main", "af-1", "af-2", "remap-1") + ALL_REMAPS[1:]
 
 # I2C signal naming is not normalized either: V003/X033/X035 say bare SCL/SDA,
 # M030/V002/V006/V407 say I2C_SCL/I2C_SDA, everyone else says I2C1_SCL. The
@@ -1331,8 +1336,7 @@ I2C_SIGNAL_RE = [
 I2C_BASES = {1: "CH32RV_I2C1_BASE", 2: "CH32RV_I2C2_BASE"}
 # X033/X035 reach remap-5, and the af-N families (V205/X305/X315) carry only
 # alternate-function numbers - listed so the chooser can see them and say so.
-I2C_ROUTE_ORDER = ("default", "main", "af-3", "af-7",
-                   "remap-1", "remap-2", "remap-3", "remap-4", "remap-5")
+I2C_ROUTE_ORDER = ("default", "main", "af-3", "af-7") + ALL_REMAPS
 
 # SPI, same three spellings. NSS is deliberately not a role: Arduino drives
 # chip select as an ordinary GPIO, so requiring the peripheral's own NSS pad
@@ -1356,9 +1360,7 @@ DAC_SIGNAL_RE = [
     (re.compile(r"^DAC(\d+)_OUT$"), lambda m: (int(m.group(1)), "OUT")),
 ]
 DAC_ROUTE_ORDER = ("default", "main")
-SPI_ROUTE_ORDER = ("default", "main", "af-4", "af-5",
-                   "remap-1", "remap-2", "remap-3", "remap-4",
-                   "remap-5", "remap-6")
+SPI_ROUTE_ORDER = ("default", "main", "af-4", "af-5") + ALL_REMAPS
 
 
 # AFIO remap. device-data gives the controlling field per series and selector;
@@ -1668,7 +1670,7 @@ def choose_routes(series: str, parts: list, pins: dict, remap: dict, kind: str,
 # the *_ROUTE_ORDER tuples above, which exist to rank one default: here the
 # point is to list everything the core can actually select, so af-N is absent
 # (no AFIO field) and the remap numbers run as far as any series goes.
-ROUTE_TABLE_ORDER = ("default", "main") + tuple(f"remap-{i}" for i in range(1, 8))
+ROUTE_TABLE_ORDER = ("default", "main") + ALL_REMAPS
 
 
 def route_table(series: str, parts: list, pins: dict, remap: dict, kind: str,

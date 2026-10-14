@@ -183,10 +183,12 @@
 #define CH32RV_SERIAL1_REMAP_MASK 0x00200004u
 #define CH32RV_SERIAL1_REMAP_VAL  0x00000000u
 /* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
-#define CH32RV_SERIAL1_ROUTE_COUNT 2
+#define CH32RV_SERIAL1_ROUTE_COUNT 4
 #define CH32RV_SERIAL1_ROUTES { \
     { 0, { PD5, PD6, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PD0, PD1, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
+    { 2, { PD6, PD5, CH32RV_ROUTE_NO_PIN }, 0x00200000u, 0x00000000u }, \
+    { 3, { PC0, PC1, CH32RV_ROUTE_NO_PIN }, 0x00200004u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX

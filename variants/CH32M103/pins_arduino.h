@@ -219,9 +219,11 @@
 #define CH32RV_SERIAL1_REMAP2_MASK 0x00180000u
 #define CH32RV_SERIAL1_REMAP2_VAL  0x00000000u
 /* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
-#define CH32RV_SERIAL1_ROUTE_COUNT 1
+#define CH32RV_SERIAL1_ROUTE_COUNT 3
 #define CH32RV_SERIAL1_ROUTES { \
     { 1, { PB6, PB7, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
+    { 2, { PA4, PA5, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00080000u }, \
+    { 3, { PA5, PA4, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00080000u }, \
 }
 /* USART2: route default, on every part */
 #define CH32RV_SERIAL2_TX PA2
@@ -235,9 +237,11 @@
 #define CH32RV_SERIAL2_REMAP2_MASK 0x00040000u
 #define CH32RV_SERIAL2_REMAP2_VAL  0x00000000u
 /* SERIAL2 routes for setRoute()/setPins(): route number, then TX, RX */
-#define CH32RV_SERIAL2_ROUTE_COUNT 1
+#define CH32RV_SERIAL2_ROUTE_COUNT 3
 #define CH32RV_SERIAL2_ROUTES { \
     { 0, { PA2, PA3, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 2, { PA11, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00040000u }, \
+    { 3, { PA12, PA11, CH32RV_ROUTE_NO_PIN }, 0x00000008u, 0x00040000u }, \
 }
 /* USART3: route default, on every part */
 #define CH32RV_SERIAL3_TX PB10
