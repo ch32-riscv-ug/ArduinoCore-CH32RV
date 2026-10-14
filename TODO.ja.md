@@ -38,7 +38,8 @@
     - 当面は Raspberry Pi Pico。OEP から SWD で書き込み、本体の USB 端子は DUT のホスト専用にする（PIO-USB は不要）。
       試験の指示と結果は OEP 経由でやり取りする。
     - X035 のホストドライバを書いたら、X035 もホスト役にできる（`CH32RVUsbHost` の試験を兼ねる）。
-    - 電源のスイッチは追加しない。VBUS は流さず、DUT も Pico も 3V3 で動かす（Pico は VSYS に 3.3 V を入れる）。
+    - 電源のスイッチは追加しない。VBUS は流さず、DUT も Pico も 3V3 で動かす（Pico は 3V3 端子に入れて 3V3_EN を GND に
+      つなぐか、VSYS に 3.3 V を入れる。採用前にデータシートで確かめる）。
       CH32RVUsbDevice も TinyUSB の X035 用ドライバも VBUS を見ないので、D+ のプルアップだけで接続になる。試験の
       スケッチは `config.selfPowered = true` にする。
     - 抜き差しは、DUT の `device.end()` → `device.begin()`（D+ のプルアップを外して付け直す。ホストからは抜き差しと
