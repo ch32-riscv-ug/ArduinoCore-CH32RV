@@ -167,7 +167,43 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = "menu.pnum=Part Number\nmenu.rtlib=C Runtime Library\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.rtlib=C Runtime Library\n"
+               + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 6)))
+
+# Per-USART menus (ADR draft 0015): AUTO binds in begin(), Disable links
+# nothing, FIX(TX, RX) fixes one route at build time. The point is to let a
+# small part's board drop what it cannot use, so the menus start on the small
+# series; the core reads CH32RV_USARTn_MODE and treats a missing one as AUTO.
+USART_MENU_SERIES = ("CH32V003", "CH32X035")
+
+
+def usart_menu(board: str, series: str, parts: list, uarts: dict,
+               remap: dict) -> list[str]:
+    """The USARTn menus for one board, and the build.periph_defines line that
+    collects them. Empty for a series without the menus."""
+    if series not in USART_MENU_SERIES:
+        return [f"{board}.build.periph_defines="]
+    lines, uses = [], []
+    for n in range(1, 6):
+        rows = route_table(series, parts, uarts, remap, "usart", ("TX", "RX"), n)
+        if not rows:
+            continue
+        key = f"build.usart{n}_mode"
+        uses.append("{" + key + "}")
+        pfx = f"{board}.menu.usart{n}"
+        lines.append(f"{pfx}.auto=AUTO (begin() で割り当て)")
+        lines.append(f"{pfx}.auto.{key}=")
+        lines.append(f"{pfx}.disable=Disable")
+        lines.append(f"{pfx}.disable.{key}=-DCH32RV_USART{n}_MODE=0")
+        for value, pads, v1, v2 in rows:
+            tx, rx = (pad_name(*p) for p in pads)
+            lines.append(f"{pfx}.fix{value}=FIX (TX:{tx}, RX:{rx})")
+            lines.append(f"{pfx}.fix{value}.{key}=-DCH32RV_USART{n}_MODE=2 "
+                         f"-DCH32RV_USART{n}_FIX_TX={tx} -DCH32RV_USART{n}_FIX_RX={rx} "
+                         f"-DCH32RV_USART{n}_FIX_V1=0x{v1:08x}u "
+                         f"-DCH32RV_USART{n}_FIX_V2=0x{v2:08x}u")
+    lines.append(f"{board}.build.periph_defines={' '.join(uses)}")
+    return lines
 
 # newlib-nano always; floating point in printf / scanf is opt-in (ADR-0004,
 # approved 2026-10-01). The menu id and entry ids are the ones the WCH core,
@@ -2815,6 +2851,9 @@ def main() -> int:
                 die_macro_part.get(part) if part else die_macro_series.get(series),
                 facts[SERIES_CONFIG[series]["family"]]["hsi_hz"],
                 clock_configs_t, clock_symbols_t))
+        parts = sorted({r["part_number"] for r in rows})
+        block = block.rstrip("\n") + "\n" + "\n".join(
+            usart_menu(series, series, parts, uarts, remap)) + "\n\n"
         boards_blocks.append(block)
         used_variants.add(SERIES_CONFIG[series]["vectors"])
         # A part on another die variant needs that table emitted too.

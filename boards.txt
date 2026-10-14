@@ -4,6 +4,11 @@
 
 menu.pnum=Part Number
 menu.rtlib=C Runtime Library
+menu.usart1=USART1
+menu.usart2=USART2
+menu.usart3=USART3
+menu.usart4=USART4
+menu.usart5=USART5
 
 CH32V003.name=Generic CH32V003
 CH32V003.build.board=CH32V003
@@ -80,6 +85,16 @@ CH32V003.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB
 CH32V003.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V003.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
 CH32V003.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V003.menu.usart1.auto=AUTO (begin() で割り当て)
+CH32V003.menu.usart1.auto.build.usart1_mode=
+CH32V003.menu.usart1.disable=Disable
+CH32V003.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32V003.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
+CH32V003.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V003.menu.usart1.fix1=FIX (TX:PD0, RX:PD1)
+CH32V003.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD0 -DCH32RV_USART1_FIX_RX=PD1 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32V003.build.periph_defines={build.usart1_mode}
+
 
 CH32V002.name=Generic CH32V002
 CH32V002.build.board=CH32V002
@@ -166,6 +181,8 @@ CH32V002.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB
 CH32V002.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V002.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
 CH32V002.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V002.build.periph_defines=
+
 
 CH32V004.name=Generic CH32V004
 CH32V004.build.board=CH32V004
@@ -222,6 +239,8 @@ CH32V004.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V004.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V004.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V004.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V004.build.periph_defines=
+
 
 CH32V005.name=Generic CH32V005
 CH32V005.build.board=CH32V005
@@ -298,6 +317,8 @@ CH32V005.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V005.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V005.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V005.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V005.build.periph_defines=
+
 
 CH32V006.name=Generic CH32V006
 CH32V006.build.board=CH32V006
@@ -414,6 +435,8 @@ CH32V006.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB
 CH32V006.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V006.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
 CH32V006.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V006.build.periph_defines=
+
 
 CH32V007.name=Generic CH32V007
 CH32V007.build.board=CH32V007
@@ -490,6 +513,8 @@ CH32V007.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V007.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V007.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V007.build.periph_defines=
+
 
 CH32M007.name=Generic CH32M007
 CH32M007.build.board=CH32M007
@@ -566,6 +591,8 @@ CH32M007.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32M007.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M007.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32M007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32M007.build.periph_defines=
+
 
 CH32V103.name=Generic CH32V103
 CH32V103.build.board=CH32V103
@@ -642,6 +669,8 @@ CH32V103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V103.build.periph_defines=
+
 
 CH32V203.name=Generic CH32V203
 CH32V203.build.board=CH32V203
@@ -799,6 +828,8 @@ CH32V203.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V203.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V203.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V203.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V203.build.periph_defines=
+
 
 CH32V208.name=Generic CH32V208
 CH32V208.build.board=CH32V208
@@ -875,6 +906,8 @@ CH32V208.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V208.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V208.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V208.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V208.build.periph_defines=
+
 
 CH32V303.name=Generic CH32V303
 CH32V303.build.board=CH32V303
@@ -961,6 +994,8 @@ CH32V303.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V303.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V303.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V303.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V303.build.periph_defines=
+
 
 CH32V305.name=Generic CH32V305
 CH32V305.build.board=CH32V305
@@ -1037,6 +1072,8 @@ CH32V305.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V305.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V305.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V305.build.periph_defines=
+
 
 CH32V307.name=Generic CH32V307
 CH32V307.build.board=CH32V307
@@ -1103,6 +1140,8 @@ CH32V307.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V307.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V307.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V307.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V307.build.periph_defines=
+
 
 CH32V317.name=Generic CH32V317
 CH32V317.build.board=CH32V317
@@ -1159,6 +1198,8 @@ CH32V317.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V317.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V317.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V317.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V317.build.periph_defines=
+
 
 CH32X033.name=Generic CH32X033
 CH32X033.build.board=CH32X033
@@ -1205,6 +1246,8 @@ CH32X033.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32X033.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X033.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32X033.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32X033.build.periph_defines=
+
 
 CH32X035.name=Generic CH32X035
 CH32X035.build.board=CH32X035
@@ -1311,6 +1354,40 @@ CH32X035.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32X035.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X035.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32X035.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32X035.menu.usart1.auto=AUTO (begin() で割り当て)
+CH32X035.menu.usart1.auto.build.usart1_mode=
+CH32X035.menu.usart1.disable=Disable
+CH32X035.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
+CH32X035.menu.usart1.fix0=FIX (TX:PB10, RX:PB11)
+CH32X035.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB10 -DCH32RV_USART1_FIX_RX=PB11 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32X035.menu.usart1.fix1=FIX (TX:PA10, RX:PA11)
+CH32X035.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA10 -DCH32RV_USART1_FIX_RX=PA11 -DCH32RV_USART1_FIX_V1=0x00000020u -DCH32RV_USART1_FIX_V2=0x00000000u
+CH32X035.menu.usart2.auto=AUTO (begin() で割り当て)
+CH32X035.menu.usart2.auto.build.usart2_mode=
+CH32X035.menu.usart2.disable=Disable
+CH32X035.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
+CH32X035.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
+CH32X035.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32X035.menu.usart2.fix1=FIX (TX:PA20, RX:PA19)
+CH32X035.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA20 -DCH32RV_USART2_FIX_RX=PA19 -DCH32RV_USART2_FIX_V1=0x00000080u -DCH32RV_USART2_FIX_V2=0x00000000u
+CH32X035.menu.usart3.auto=AUTO (begin() で割り当て)
+CH32X035.menu.usart3.auto.build.usart3_mode=
+CH32X035.menu.usart3.disable=Disable
+CH32X035.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
+CH32X035.menu.usart3.fix0=FIX (TX:PB3, RX:PB4)
+CH32X035.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB3 -DCH32RV_USART3_FIX_RX=PB4 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32X035.menu.usart3.fix1=FIX (TX:PC18, RX:PC19)
+CH32X035.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC18 -DCH32RV_USART3_FIX_RX=PC19 -DCH32RV_USART3_FIX_V1=0x00000400u -DCH32RV_USART3_FIX_V2=0x00000000u
+CH32X035.menu.usart4.auto=AUTO (begin() で割り当て)
+CH32X035.menu.usart4.auto.build.usart4_mode=
+CH32X035.menu.usart4.disable=Disable
+CH32X035.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
+CH32X035.menu.usart4.fix0=FIX (TX:PB0, RX:PB1)
+CH32X035.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32X035.menu.usart4.fix1=FIX (TX:PA5, RX:PA9)
+CH32X035.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PA5 -DCH32RV_USART4_FIX_RX=PA9 -DCH32RV_USART4_FIX_V1=0x00001000u -DCH32RV_USART4_FIX_V2=0x00000000u
+CH32X035.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode}
+
 
 CH32L103.name=Generic CH32L103
 CH32L103.build.board=CH32L103
@@ -1407,6 +1484,8 @@ CH32L103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32L103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32L103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32L103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32L103.build.periph_defines=
+
 
 CH32M103.name=Generic CH32M103
 CH32M103.build.board=CH32M103
@@ -1453,6 +1532,8 @@ CH32M103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32M103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32M103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32M103.build.periph_defines=
+
 
 CH32V205.name=Generic CH32V205
 CH32V205.build.board=CH32V205
@@ -1529,6 +1610,8 @@ CH32V205.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V205.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V205.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V205.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V205.build.periph_defines=
+
 
 CH32V407.name=Generic CH32V407
 CH32V407.build.board=CH32V407
@@ -1595,6 +1678,8 @@ CH32V407.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V407.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V407.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V407.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V407.build.periph_defines=
+
 
 CH32V467.name=Generic CH32V467
 CH32V467.build.board=CH32V467
@@ -1661,6 +1746,8 @@ CH32V467.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32V467.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V467.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32V467.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32V467.build.periph_defines=
+
 
 CH32X305.name=Generic CH32X305
 CH32X305.build.board=CH32X305
@@ -1707,6 +1794,8 @@ CH32X305.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32X305.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X305.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32X305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32X305.build.periph_defines=
+
 
 CH32X315.name=Generic CH32X315
 CH32X315.build.board=CH32X315
@@ -1773,6 +1862,8 @@ CH32X315.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32X315.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X315.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32X315.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32X315.build.periph_defines=
+
 
 CH32M030.name=Generic CH32M030
 CH32M030.build.board=CH32M030
@@ -1859,6 +1950,8 @@ CH32M030.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32M030.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M030.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32M030.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+CH32M030.build.periph_defines=
+
 
 # Product boards (L2), from tools/generate/boards/*.txt
 
