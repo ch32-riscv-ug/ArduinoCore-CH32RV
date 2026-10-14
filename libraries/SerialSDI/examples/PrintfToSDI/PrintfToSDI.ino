@@ -15,7 +15,7 @@
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
     SerialSDI.begin(115200);
 
     printf("this line goes to the UART\n");

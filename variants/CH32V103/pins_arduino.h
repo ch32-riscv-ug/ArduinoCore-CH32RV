@@ -342,27 +342,19 @@
 #define CH32RV_SERIAL3_IRQ CH32RV_IRQN_USART3
 #define CH32RV_SERIAL3_REMAP_MASK 0x00000030u
 #define CH32RV_SERIAL3_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V103C6T6)
+#define CH32RV_SERIAL3_ABSENT 1   /* not on this part */
+#endif
 /* SERIAL3 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL3_ROUTE_COUNT 2
 #define CH32RV_SERIAL3_ROUTES { \
     { 0, { PB10, PB11, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PC10, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
 }
-#ifndef CH32RV_SERIAL_DEFAULT
-#define CH32RV_SERIAL_DEFAULT 1
-#endif
-/* The monitor port's default pads (Serial = SerialN, N above). */
+/* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
-#if CH32RV_SERIAL_DEFAULT == 1
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
 #define PIN_SERIAL_RX CH32RV_SERIAL1_RX
-#elif CH32RV_SERIAL_DEFAULT == 2
-#define PIN_SERIAL_TX CH32RV_SERIAL2_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL2_RX
-#elif CH32RV_SERIAL_DEFAULT == 3
-#define PIN_SERIAL_TX CH32RV_SERIAL3_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL3_RX
-#endif
 #endif
 #if defined(PIN_SERIAL_TX) && !defined(TX)
 #define TX PIN_SERIAL_TX
@@ -389,6 +381,9 @@
 #define CH32RV_I2C2_SDA PB11
 #define CH32RV_I2C2_CLKEN_ADDR 0x4002101cu
 #define CH32RV_I2C2_CLKEN_MASK 0x00400000u
+#if defined(CH32RV_PART_CH32V103C6T6)
+#define CH32RV_I2C2_ABSENT 1   /* not on this part */
+#endif
 /* Arduino's standard names for the first bus (Wire). These are
  * the pads of I2C1's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */
@@ -422,6 +417,9 @@
 #define CH32RV_SPI2_MOSI PB15
 #define CH32RV_SPI2_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SPI2_CLKEN_MASK 0x00004000u
+#if defined(CH32RV_PART_CH32V103C6T6)
+#define CH32RV_SPI2_ABSENT 1   /* not on this part */
+#endif
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI1's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */

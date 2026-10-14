@@ -6,71 +6,50 @@
 
 using namespace arduino;
 
-/* ------------------------------------------------------- board's choice
- * CH32RV_USARTn_MODE comes from the board menu (ADR draft 0015):
- *   0 Disable  the USART is not in the table: no code, no route, no handler
- *   1 AUTO     bound in begin(); its routes are searched
- *   2 FIX      one route, the board's: CH32RV_USARTn_FIX_TX / _RX / _V1 / _V2
- * A board without the menu leaves every USART on AUTO, which is how the core
- * behaved before the menu existed. */
-#define CH32RV_USART_DISABLE 0
-#define CH32RV_USART_AUTO    1
-#define CH32RV_USART_FIX     2
-
-#ifndef CH32RV_USART1_MODE
-#define CH32RV_USART1_MODE CH32RV_USART_AUTO
-#endif
-#ifndef CH32RV_USART2_MODE
-#define CH32RV_USART2_MODE CH32RV_USART_AUTO
-#endif
-#ifndef CH32RV_USART3_MODE
-#define CH32RV_USART3_MODE CH32RV_USART_AUTO
-#endif
-#ifndef CH32RV_USART4_MODE
-#define CH32RV_USART4_MODE CH32RV_USART_AUTO
-#endif
-#ifndef CH32RV_USART5_MODE
-#define CH32RV_USART5_MODE CH32RV_USART_AUTO
-#endif
+/* Which USARTs are in the table, and the board's choice for each (Disable /
+ * AUTO / FIX): ch32rv_instances.h, through HardwareSerial.h. */
+#define CH32RV_USART_DISABLE CH32RV_PERIPH_DISABLE
+#define CH32RV_USART_AUTO    CH32RV_PERIPH_AUTO
+#define CH32RV_USART_FIX     CH32RV_PERIPH_FIX
 
 /* A variant that knows no AFIO field for a USART names no masks. */
-#if defined(CH32RV_SERIAL1_TX) && !defined(CH32RV_SERIAL1_REMAP_MASK)
+#if defined(CH32RV_SERIAL1_CLKEN_ADDR) && !defined(CH32RV_SERIAL1_REMAP_MASK)
 #define CH32RV_SERIAL1_REMAP_MASK 0u
 #define CH32RV_SERIAL1_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL1_TX) && !defined(CH32RV_SERIAL1_REMAP2_MASK)
+#if defined(CH32RV_SERIAL1_CLKEN_ADDR) && !defined(CH32RV_SERIAL1_REMAP2_MASK)
 #define CH32RV_SERIAL1_REMAP2_MASK 0u
 #define CH32RV_SERIAL1_REMAP2_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL2_TX) && !defined(CH32RV_SERIAL2_REMAP_MASK)
+#if defined(CH32RV_SERIAL2_CLKEN_ADDR) && !defined(CH32RV_SERIAL2_REMAP_MASK)
 #define CH32RV_SERIAL2_REMAP_MASK 0u
 #define CH32RV_SERIAL2_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL2_TX) && !defined(CH32RV_SERIAL2_REMAP2_MASK)
+#if defined(CH32RV_SERIAL2_CLKEN_ADDR) && !defined(CH32RV_SERIAL2_REMAP2_MASK)
 #define CH32RV_SERIAL2_REMAP2_MASK 0u
 #define CH32RV_SERIAL2_REMAP2_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL3_TX) && !defined(CH32RV_SERIAL3_REMAP_MASK)
+#if defined(CH32RV_SERIAL3_CLKEN_ADDR) && !defined(CH32RV_SERIAL3_REMAP_MASK)
 #define CH32RV_SERIAL3_REMAP_MASK 0u
 #define CH32RV_SERIAL3_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL3_TX) && !defined(CH32RV_SERIAL3_REMAP2_MASK)
+#if defined(CH32RV_SERIAL3_CLKEN_ADDR) && !defined(CH32RV_SERIAL3_REMAP2_MASK)
 #define CH32RV_SERIAL3_REMAP2_MASK 0u
 #define CH32RV_SERIAL3_REMAP2_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL4_TX) && !defined(CH32RV_SERIAL4_REMAP_MASK)
+#if defined(CH32RV_SERIAL4_CLKEN_ADDR) && !defined(CH32RV_SERIAL4_REMAP_MASK)
 #define CH32RV_SERIAL4_REMAP_MASK 0u
 #define CH32RV_SERIAL4_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL4_TX) && !defined(CH32RV_SERIAL4_REMAP2_MASK)
+#if defined(CH32RV_SERIAL4_CLKEN_ADDR) && !defined(CH32RV_SERIAL4_REMAP2_MASK)
 #define CH32RV_SERIAL4_REMAP2_MASK 0u
 #define CH32RV_SERIAL4_REMAP2_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL5_TX) && !defined(CH32RV_SERIAL5_REMAP_MASK)
+#if defined(CH32RV_SERIAL5_CLKEN_ADDR) && !defined(CH32RV_SERIAL5_REMAP_MASK)
 #define CH32RV_SERIAL5_REMAP_MASK 0u
 #define CH32RV_SERIAL5_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_SERIAL5_TX) && !defined(CH32RV_SERIAL5_REMAP2_MASK)
+#if defined(CH32RV_SERIAL5_CLKEN_ADDR) && !defined(CH32RV_SERIAL5_REMAP2_MASK)
 #define CH32RV_SERIAL5_REMAP2_MASK 0u
 #define CH32RV_SERIAL5_REMAP2_VAL  0u
 #endif
@@ -105,93 +84,120 @@ struct RouteSet {
 #define CH32RV_USART_ONE_ROUTE(n)                                                   \
     { { 0, { CH32RV_SERIAL##n##_TX, CH32RV_SERIAL##n##_RX, CH32RV_ROUTE_NO_PIN },   \
         CH32RV_SERIAL##n##_REMAP_VAL, CH32RV_SERIAL##n##_REMAP2_VAL } }
+/* A USART the variant lists no route for (none it can name for ANY): a row
+ * that matches no pin. */
+#define CH32RV_USART_NO_ROUTE                                                       \
+    { { 0, { CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0u, 0u } }
 #define CH32RV_USART_FIX_ROUTE(n)                                                   \
     { { 0, { CH32RV_USART##n##_FIX_TX, CH32RV_USART##n##_FIX_RX, CH32RV_ROUTE_NO_PIN }, \
         CH32RV_USART##n##_FIX_V1, CH32RV_USART##n##_FIX_V2 } }
 
-#if defined(CH32RV_SERIAL1_TX) && CH32RV_USART1_MODE != CH32RV_USART_DISABLE
+#if CH32RV_USART_ON_1
 #if CH32RV_USART1_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_ROUTES_1 CH32RV_USART_FIX_ROUTE(1)
 #elif defined(CH32RV_SERIAL1_ROUTES)
 #define CH32RV_USART_ROUTES_1 CH32RV_SERIAL1_ROUTES
-#else
+#elif defined(CH32RV_SERIAL1_TX)
 #define CH32RV_USART_ROUTES_1 CH32RV_USART_ONE_ROUTE(1)
+#else
+#define CH32RV_USART_ROUTES_1 CH32RV_USART_NO_ROUTE
 #endif
 CH32RV_USART_ROWS(1)
 #define CH32RV_USART_HAS_1 1
 #endif
-#if defined(CH32RV_SERIAL2_TX) && CH32RV_USART2_MODE != CH32RV_USART_DISABLE
+#if CH32RV_USART_ON_2
 #if CH32RV_USART2_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_ROUTES_2 CH32RV_USART_FIX_ROUTE(2)
 #elif defined(CH32RV_SERIAL2_ROUTES)
 #define CH32RV_USART_ROUTES_2 CH32RV_SERIAL2_ROUTES
-#else
+#elif defined(CH32RV_SERIAL2_TX)
 #define CH32RV_USART_ROUTES_2 CH32RV_USART_ONE_ROUTE(2)
+#else
+#define CH32RV_USART_ROUTES_2 CH32RV_USART_NO_ROUTE
 #endif
 CH32RV_USART_ROWS(2)
 #define CH32RV_USART_HAS_2 1
 #endif
-#if defined(CH32RV_SERIAL3_TX) && CH32RV_USART3_MODE != CH32RV_USART_DISABLE
+#if CH32RV_USART_ON_3
 #if CH32RV_USART3_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_ROUTES_3 CH32RV_USART_FIX_ROUTE(3)
 #elif defined(CH32RV_SERIAL3_ROUTES)
 #define CH32RV_USART_ROUTES_3 CH32RV_SERIAL3_ROUTES
-#else
+#elif defined(CH32RV_SERIAL3_TX)
 #define CH32RV_USART_ROUTES_3 CH32RV_USART_ONE_ROUTE(3)
+#else
+#define CH32RV_USART_ROUTES_3 CH32RV_USART_NO_ROUTE
 #endif
 CH32RV_USART_ROWS(3)
 #define CH32RV_USART_HAS_3 1
 #endif
-#if defined(CH32RV_SERIAL4_TX) && CH32RV_USART4_MODE != CH32RV_USART_DISABLE
+#if CH32RV_USART_ON_4
 #if CH32RV_USART4_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_ROUTES_4 CH32RV_USART_FIX_ROUTE(4)
 #elif defined(CH32RV_SERIAL4_ROUTES)
 #define CH32RV_USART_ROUTES_4 CH32RV_SERIAL4_ROUTES
-#else
+#elif defined(CH32RV_SERIAL4_TX)
 #define CH32RV_USART_ROUTES_4 CH32RV_USART_ONE_ROUTE(4)
+#else
+#define CH32RV_USART_ROUTES_4 CH32RV_USART_NO_ROUTE
 #endif
 CH32RV_USART_ROWS(4)
 #define CH32RV_USART_HAS_4 1
 #endif
-#if defined(CH32RV_SERIAL5_TX) && CH32RV_USART5_MODE != CH32RV_USART_DISABLE
+#if CH32RV_USART_ON_5
 #if CH32RV_USART5_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_ROUTES_5 CH32RV_USART_FIX_ROUTE(5)
 #elif defined(CH32RV_SERIAL5_ROUTES)
 #define CH32RV_USART_ROUTES_5 CH32RV_SERIAL5_ROUTES
-#else
+#elif defined(CH32RV_SERIAL5_TX)
 #define CH32RV_USART_ROUTES_5 CH32RV_USART_ONE_ROUTE(5)
+#else
+#define CH32RV_USART_ROUTES_5 CH32RV_USART_NO_ROUTE
 #endif
 CH32RV_USART_ROWS(5)
 #define CH32RV_USART_HAS_5 1
 #endif
 
-/* A FIX USART's default pins are its fixed pins; AUTO's are the variant's. */
+/* A FIX USART's default pins are its fixed pins; AUTO's are the variant's, and
+ * a USART the variant has no default route for has none: begin() without pins
+ * fails on it. */
+#define CH32RV_USART_NO_DEF CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, 0u, 0u
 #define CH32RV_USART_ROUTE4(tx, rx, v1, v2) { 0, { tx, rx, CH32RV_ROUTE_NO_PIN }, v1, v2 }
 #define CH32RV_USART_ROUTE(...) CH32RV_USART_ROUTE4(__VA_ARGS__)
 #if CH32RV_USART1_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_DEF_1 CH32RV_USART1_FIX_TX, CH32RV_USART1_FIX_RX, CH32RV_USART1_FIX_V1, CH32RV_USART1_FIX_V2
-#else
+#elif defined(CH32RV_SERIAL1_TX)
 #define CH32RV_USART_DEF_1 CH32RV_SERIAL1_TX, CH32RV_SERIAL1_RX, CH32RV_SERIAL1_REMAP_VAL, CH32RV_SERIAL1_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_1 CH32RV_USART_NO_DEF
 #endif
 #if CH32RV_USART2_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_DEF_2 CH32RV_USART2_FIX_TX, CH32RV_USART2_FIX_RX, CH32RV_USART2_FIX_V1, CH32RV_USART2_FIX_V2
-#else
+#elif defined(CH32RV_SERIAL2_TX)
 #define CH32RV_USART_DEF_2 CH32RV_SERIAL2_TX, CH32RV_SERIAL2_RX, CH32RV_SERIAL2_REMAP_VAL, CH32RV_SERIAL2_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_2 CH32RV_USART_NO_DEF
 #endif
 #if CH32RV_USART3_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_DEF_3 CH32RV_USART3_FIX_TX, CH32RV_USART3_FIX_RX, CH32RV_USART3_FIX_V1, CH32RV_USART3_FIX_V2
-#else
+#elif defined(CH32RV_SERIAL3_TX)
 #define CH32RV_USART_DEF_3 CH32RV_SERIAL3_TX, CH32RV_SERIAL3_RX, CH32RV_SERIAL3_REMAP_VAL, CH32RV_SERIAL3_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_3 CH32RV_USART_NO_DEF
 #endif
 #if CH32RV_USART4_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_DEF_4 CH32RV_USART4_FIX_TX, CH32RV_USART4_FIX_RX, CH32RV_USART4_FIX_V1, CH32RV_USART4_FIX_V2
-#else
+#elif defined(CH32RV_SERIAL4_TX)
 #define CH32RV_USART_DEF_4 CH32RV_SERIAL4_TX, CH32RV_SERIAL4_RX, CH32RV_SERIAL4_REMAP_VAL, CH32RV_SERIAL4_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_4 CH32RV_USART_NO_DEF
 #endif
 #if CH32RV_USART5_MODE == CH32RV_USART_FIX
 #define CH32RV_USART_DEF_5 CH32RV_USART5_FIX_TX, CH32RV_USART5_FIX_RX, CH32RV_USART5_FIX_V1, CH32RV_USART5_FIX_V2
-#else
+#elif defined(CH32RV_SERIAL5_TX)
 #define CH32RV_USART_DEF_5 CH32RV_SERIAL5_TX, CH32RV_SERIAL5_RX, CH32RV_SERIAL5_REMAP_VAL, CH32RV_SERIAL5_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_5 CH32RV_USART_NO_DEF
 #endif
 #define CH32RV_USART_DESC(n, base)                                                  \
     { base, CH32RV_SERIAL##n##_CLKEN_ADDR, CH32RV_SERIAL##n##_CLKEN_MASK,             \
@@ -266,8 +272,8 @@ void release_pin(uint8_t pin)
 }
 
 /* A free USART with a route on these pins: (index, row), or index -1. The
- * port's own USART (number n) is tried first, so a sketch that names the pins
- * of USARTn on SerialN gets USARTn even where another USART shares them. */
+ * port's own row (`prefer`) is tried first, so where two USARTs share the pins
+ * the name keeps the one it would get without pins. */
 struct Found {
     int index;
     const ch32rv_route_t *row;
@@ -283,7 +289,7 @@ Found find_route(uint8_t prefer, uint8_t tx, uint8_t rx, const CH32RVHardwareSer
         const RouteSet &set = route_sets[i];
         for (uint8_t r = 0; r < set.count; r++) {
             if (set.rows[r].pins[0] == tx && set.rows[r].pins[1] == rx) {
-                if (usarts[i].number == prefer) {
+                if (i == prefer) {
                     return {(int)i, &set.rows[r]};
                 }
                 if (first.index < 0) {
@@ -482,15 +488,15 @@ void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config)
     uint8_t index = _want_index;
     const ch32rv_route_t *route = _want;
     if (!route) {
-        /* Provisional: no pins means USARTn's default (or fixed) route. */
-        for (uint8_t i = 0; i < USART_COUNT; i++) {
-            if (usarts[i].number == _number) {
-                index = i;
-                route = &usarts[i].def;
-            }
+        /* No pins named: the fallback, this name's row on its default (or
+         * fixed) pins. */
+        if (USART_COUNT == 0) {
+            return;            /* every USART is Disable on this board */
         }
-        if (!route) {
-            return;            /* USARTn is Disable on this board */
+        index = USART_COUNT == 1 ? 0 : _number;
+        route = &usarts[index].def;
+        if (route->pins[0] == CH32RV_ROUTE_NO_PIN) {
+            return;            /* no default route: pins have to be named */
         }
     }
     bind(index, *route);       /* one call site: bind() is inlined once */
@@ -553,18 +559,15 @@ bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
 
 bool CH32RVHardwareSerial::setRoute(uint8_t route)
 {
-    for (uint8_t i = 0; i < USART_COUNT; i++) {
-        if (usarts[i].number != _number) {
-            continue;
-        }
-        const RouteSet &set = route_sets[i];
-        const int r = ch32rv_route_find(set.rows, set.count, route);
-        if (r < 0) {
-            return false;
-        }
-        return setPins(set.rows[r].pins[1], set.rows[r].pins[0]);
+    if (USART_COUNT == 0) {
+        return false;
     }
-    return false;
+    const RouteSet &set = route_sets[USART_COUNT == 1 ? 0 : _number];
+    const int r = ch32rv_route_find(set.rows, set.count, route);
+    if (r < 0) {
+        return false;
+    }
+    return setPins(set.rows[r].pins[1], set.rows[r].pins[0]);
 }
 
 /* ------------------------------------------------------- data */
@@ -633,35 +636,28 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
  * rather than naming Serial1..5, so it pulls in no port the sketch does not
  * use.
  *
- * serialEvent() belongs to the monitor port (the one `Serial` names), and
- * serialEvent1..5() to the numbered ports. On a board where Serial is
- * Serial1, defining both means both run; that overlap is inherited from AVR. */
+ * serialEvent() belongs to Serial and serialEvent1..4() to Serial1..4, by
+ * name: the name a port was declared as, not the USART it landed on. */
 void serialEvent(void) __attribute__((weak));
 void serialEvent1(void) __attribute__((weak));
 void serialEvent2(void) __attribute__((weak));
 void serialEvent3(void) __attribute__((weak));
 void serialEvent4(void) __attribute__((weak));
-void serialEvent5(void) __attribute__((weak));
 
 namespace arduino {
 
 void serialEventRun(void)
 {
-    static void (*const events[])(void) = {serialEvent1, serialEvent2, serialEvent3,
-                                           serialEvent4, serialEvent5};
+    static void (*const events[])(void) = {serialEvent, serialEvent1, serialEvent2,
+                                           serialEvent3, serialEvent4};
     for (uint8_t i = 0; i < USART_COUNT; i++) {
         CH32RVHardwareSerial *port = owner[i];
         if (!port || port->available() <= 0) {
             continue;
         }
         const uint8_t n = port->number();
-#ifdef CH32RV_SERIAL_DEFAULT
-        if (serialEvent && n == CH32RV_SERIAL_DEFAULT) {
-            serialEvent();
-        }
-#endif
-        if (n >= 1 && n <= 5 && events[n - 1]) {
-            events[n - 1]();
+        if (n < sizeof events / sizeof events[0] && events[n]) {
+            events[n]();
         }
     }
 }

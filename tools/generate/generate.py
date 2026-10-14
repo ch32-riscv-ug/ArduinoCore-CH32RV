@@ -235,11 +235,19 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
                 # No AFIO field: the one route the variant names, no remap to write.
                 label = ", ".join(f"{r}:{x}" for r, x in zip(roles, fixed))
                 fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, fixed))
-                lines.append(f"{pfx}.fix0=FIX ({label})")
-                lines.append(f"{pfx}.fix0.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
+                ident = "fix_" + "_".join(x.lower() for x in fixed)
+                lines.append(f"{pfx}.{ident}=FIX ({label})")
+                lines.append(f"{pfx}.{ident}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
                              f"-DCH32RV_{macro}{n}_FIX_V1=0x00000000u "
                              f"-DCH32RV_{macro}{n}_FIX_V2=0x00000000u")
-            seen = set()
+            # A pad set listed under two route numbers (the value that selects
+            # it differs by die, V203 UART4 PB0 / PB1) has no single value a
+            # board-wide FIX could write: it is left to setPins() and the part
+            # number's own table.
+            values_of: dict = {}
+            for value, pads, _v1, _v2 in rows:
+                values_of.setdefault(pads, set()).add(value)
+            seen = {pads for pads, values in values_of.items() if len(values) > 1}
             for value, pads, v1, v2 in rows:
                 # Two routes can put the same pins in these roles and differ only
                 # in a signal the menu does not name (NSS, CK): one entry, the
@@ -251,8 +259,11 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
                 label = ", ".join(f"{r}:{x}" for r, x in zip(roles, names))
                 fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, names))
                 warn = " [debug/strap pin]" if any(p in straps for p in pads) else ""
-                lines.append(f"{pfx}.fix{value}=FIX ({label}){warn}")
-                lines.append(f"{pfx}.fix{value}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
+                # The option id names the pins, in role order, so an FQBN says
+                # what it selects: ...:i2c1=fix_pc2_pc1 is SCL PC2, SDA PC1.
+                ident = "fix_" + "_".join(x.lower() for x in names)
+                lines.append(f"{pfx}.{ident}=FIX ({label}){warn}")
+                lines.append(f"{pfx}.{ident}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
                              f"-DCH32RV_{macro}{n}_FIX_V1=0x{v1:08x}u "
                              f"-DCH32RV_{macro}{n}_FIX_V2=0x{v2:08x}u")
     lines.append(f"{board}.build.periph_defines={' '.join(uses)}")
@@ -1684,12 +1695,14 @@ def route_table(series: str, parts: list, pins: dict, remap: dict, kind: str,
             entry = pins.get(pn, {}).get((index, route))
             if entry and set(roles) <= set(entry):
                 pads_by_part[pn] = tuple(entry[r] for r in roles)
-        variants = set(pads_by_part.values())
-        if len(variants) != 1:
-            continue          # absent, or it moves between packages
+        # A route whose pads move between packages (V203 USART4 value 0: PB0 /
+        # PB1 on the small die, PC10 / PC11 on RB) gives one row per pad set:
+        # the ANY table is the union, and naming pads the chip at hand does
+        # not have is the sketch's mistake (ADR draft 0015).
         mv = remap_mask_value(bits, value)
-        rows.append((value, next(iter(variants)),
-                     mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1]))
+        for pads in sorted(set(pads_by_part.values())):
+            rows.append((value, pads,
+                         mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1]))
     return rows
 
 
@@ -1707,6 +1720,100 @@ def emit_routes(out: list, prefix: str, roles: tuple, rows: list) -> None:
         out.append(f"    {{ {value}, {{ {', '.join(names)} }}, "
                    f"0x{v1:08x}u, 0x{v2:08x}u }}, \\")
     out.append("}")
+
+
+def routes_conflict(rows: list) -> bool:
+    """True when the union table is ambiguous: one route number on two pad
+    sets, or one pad set under two route numbers - which happens only when
+    pads move between the packages of the series."""
+    by_value, by_pads = {}, {}
+    for value, pads, _v1, _v2 in rows:
+        by_value.setdefault(value, set()).add(pads)
+        by_pads.setdefault(pads, set()).add(value)
+    return (any(len(v) > 1 for v in by_value.values()) or
+            any(len(v) > 1 for v in by_pads.values()))
+
+
+def emit_instance_routes(out: list, prefix: str, roles: tuple, series: str,
+                         parts: list, pins: dict, remap: dict, kind: str,
+                         index: int, route_order: tuple, forbidden: dict,
+                         series_default: bool) -> bool:
+    """The instance's route table, and for an instance without a series-wide
+    default, its default pins and remap value per part.
+
+    One table for the series where that is unambiguous. Where the pads move
+    between packages, a selected part number gets its own table (and its own
+    default, chosen by the same rule as the series-wide one), and ANY gets the
+    union - in which a pad set listed under two route numbers resolves to the
+    first. Returns True when the remap value of the default was emitted here."""
+    union = route_table(series, parts, pins, remap, kind, roles, index)
+    # A selected part that does not bond the instance at all does not have it:
+    # ch32rv_instances.h leaves it out, so its name does not exist either.
+    absent = [pn for pn in parts
+              if not any(i == index and set(roles) <= set(entry)
+                         for (i, _r), entry in pins.get(pn, {}).items())]
+    if absent:
+        cond = " || ".join(f"defined(CH32RV_PART_{m})" for m in absent)
+        out.append(f"#if {cond}")
+        out.append(f"#define CH32RV_{prefix}_ABSENT 1   /* not on this part */")
+        out.append("#endif")
+    if not routes_conflict(union) and series_default:
+        emit_routes(out, prefix, roles, union)
+        return False
+    bits = remap.get((series, kind, index))
+    groups: dict = {}
+    for pn in parts:
+        rows = tuple(route_table(series, [pn], pins, remap, kind, roles, index))
+        default = None
+        if not series_default:
+            pick = choose_routes(series, [pn], pins, remap, kind, roles,
+                                 route_order, {index}, forbidden).get(index)
+            if pick and route_remap_value(pick[1]) is not None:
+                _cov, route, pads = pick
+                mv = remap_mask_value(bits, route_remap_value(route)) if bits else {}
+                default = (pads, mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1])
+        groups.setdefault((rows, default), []).append(pn)
+    first = True
+    regs = set(remap_mask_value(bits, 0)) if bits else set()
+
+    def vals(v1: int, v2: int) -> None:
+        if "PCFR1" in regs:
+            out.append(f"#define CH32RV_{prefix}_REMAP_VAL  0x{v1:08x}u")
+        if "PCFR2" in regs:
+            out.append(f"#define CH32RV_{prefix}_REMAP2_VAL 0x{v2:08x}u")
+
+    for (rows, default), members in groups.items():
+        cond = " || ".join(f"defined(CH32RV_PART_{m})" for m in members)
+        out.append(f"{'#if' if first else '#elif'} {cond}")
+        first = False
+        if not series_default:
+            if default:
+                pads, v1, v2 = default
+                for role, pad in zip(roles, pads):
+                    out.append(f"#define CH32RV_{prefix}_{role} {pad_name(*pad)}")
+            vals(*((default[1], default[2]) if default else (0, 0)))
+        emit_routes(out, prefix, roles, list(rows))
+    out.append("#else   /* ANY, or a board that sets no part: the series union */")
+    if not series_default:
+        vals(0, 0)
+    emit_routes(out, prefix, roles, union)
+    out.append("#endif")
+    return not series_default
+
+
+def without_default(series: str, parts: list, pins: dict, remap: dict, kind: str,
+                    roles: tuple, chosen: dict, indices) -> dict:
+    """Instances with routes but no series-wide default route (their pads move
+    between packages), as chosen-style entries with route None: the variant
+    still declares them, so a sketch that names pins can use them."""
+    extra = {}
+    present = {i for pn in parts for (i, _r) in pins.get(pn, {})}
+    for index in sorted(present - set(chosen)):
+        if indices is not None and index not in indices:
+            continue
+        if route_table(series, parts, pins, remap, kind, roles, index):
+            extra[index] = (0, None, None)
+    return extra
 
 
 def choose_uarts(series: str, parts: list, uarts: dict, handler_of: dict,
@@ -2291,23 +2398,33 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         if m:
             handler_of.setdefault(int(m.group(1)), name)
     chosen = choose_uarts(series, parts, uarts, handler_of, remap, forbidden)
+    with_default = dict(chosen)
+    chosen.update(without_default(series, parts, uarts, remap, "usart", ("TX", "RX"),
+                                  chosen, {i for i in SERIAL_BASES if i in handler_of}))
     if chosen:
         out.append("/* ---- USART pins (device-data; one route per USART, chosen for")
         out.append(" *      the whole series - see choose_uarts in generate.py) ---- */")
-        for index, (coverage, route, (tx, rx)) in sorted(chosen.items()):
-            where = ("on every part" if coverage == len(parts)
-                     else f"on {coverage} of {len(parts)} parts")
-            out.append(f"/* USART{index}: route {route}, {where} */")
-            out.append(f"#define CH32RV_SERIAL{index}_TX {pad_name(*tx)}")
-            out.append(f"#define CH32RV_SERIAL{index}_RX {pad_name(*rx)}")
-            out.extend(alternatives("uart", index, route, ("TX", "RX")))
+        for index, (coverage, route, pads) in sorted(chosen.items()):
+            if route is None:
+                out.append(f"/* USART{index}: no default route for the whole series (its pads")
+                out.append(" * move between packages, or sit on debug / strap pads). With a")
+                out.append(" * part number selected it may have one below; otherwise begin()")
+                out.append(" * has to name the pins. */")
+            else:
+                tx, rx = pads
+                where = ("on every part" if coverage == len(parts)
+                         else f"on {coverage} of {len(parts)} parts")
+                out.append(f"/* USART{index}: route {route}, {where} */")
+                out.append(f"#define CH32RV_SERIAL{index}_TX {pad_name(*tx)}")
+                out.append(f"#define CH32RV_SERIAL{index}_RX {pad_name(*rx)}")
+                out.extend(alternatives("uart", index, route, ("TX", "RX")))
             name = handler_of[index]
             out.append(f"#define CH32RV_SERIAL{index}_HANDLER {name}")
             out.extend(clken_defines(f"CH32RV_SERIAL{index}",
                                      f"USART{index}", f"UART{index}"))
             out.append(f"#define CH32RV_SERIAL{index}_IRQ "
                        f"CH32RV_IRQN_{name.removesuffix('_IRQHandler')}")
-            value = route_remap_value(route)
+            value = route_remap_value(route) if route else 0
             bits = remap.get((series, "usart", index))
             if value is None:
                 out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
@@ -2329,43 +2446,25 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                     suffix = "" if register == "PCFR1" else "2"
                     out.append(f"#define CH32RV_SERIAL{index}_REMAP{suffix}_MASK "
                                f"0x{mask:08x}u")
-                    out.append(f"#define CH32RV_SERIAL{index}_REMAP{suffix}_VAL  "
-                               f"0x{val:08x}u")
+                    if route is not None:   # else per part, below
+                        out.append(f"#define CH32RV_SERIAL{index}_REMAP{suffix}_VAL  "
+                                   f"0x{val:08x}u")
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
                 out.append(f" * has no AFIO field for USART{index} in this series. */")
-            emit_routes(out, f"SERIAL{index}", ("TX", "RX"),
-                        route_table(series, parts, uarts, remap, "usart",
-                                    ("TX", "RX"), index))
-        # Serial points at the USART that reaches the most part numbers.
-        # Serial is the lowest-numbered USART on its reset-default pins;
-        # that is what a board's silkscreen almost always means by "UART".
-        def rank(i):
-            coverage, route, _pads = chosen[i]
-            value = route_remap_value(route)
-            programmable = value == 0 or (value is not None and
-                                          (series, "usart", i) in remap)
-            return (programmable, route in ("default", "main"), -i)
-        default = max(sorted(chosen), key=rank)
-        # A board can wire a different USART than the series-wide choice: the
-        # generator optimises for the ANY entry (pins present on every part),
-        # while a real board only has to work for itself. Overridable with
-        # -DCH32RV_SERIAL_DEFAULT=<n>, which is what the uart_scan manual
-        # test reports.
-        out.append("#ifndef CH32RV_SERIAL_DEFAULT")
-        out.append(f"#define CH32RV_SERIAL_DEFAULT {default}")
-        out.append("#endif")
-        # TX / RX: the pads of Serial's port, in the shape arduino-esp32's
-        # pins_arduino.h has them (TX, RX next to SDA, SCL, SS ...). They
-        # follow CH32RV_SERIAL_DEFAULT, so a board that overrides it gets the
-        # matching pads.
-        out.append("/* The monitor port's default pads (Serial = SerialN, N above). */")
+            emit_instance_routes(out, f"SERIAL{index}", ("TX", "RX"), series, parts,
+                                 uarts, remap, "usart", index, UART_ROUTE_ORDER,
+                                 forbidden, route is not None)
+        # TX / RX: the pads of the first USART's default route, in the shape
+        # arduino-esp32's pins_arduino.h has them (TX, RX next to SDA, SCL, SS
+        # ...). With every USART on AUTO that is where Serial.begin() without
+        # pins lands (ch32rv_instances.h); like SDA / SCL they are a fact about
+        # the chip, not a claim about how a board is wired.
+        first = min(with_default)
+        out.append("/* Arduino's standard names for the first USART's default pads. */")
         out.append("#ifndef PIN_SERIAL_TX")
-        for n, i in enumerate(sorted(chosen)):
-            out.append(f"#{'if' if n == 0 else 'elif'} CH32RV_SERIAL_DEFAULT == {i}")
-            out.append(f"#define PIN_SERIAL_TX CH32RV_SERIAL{i}_TX")
-            out.append(f"#define PIN_SERIAL_RX CH32RV_SERIAL{i}_RX")
-        out.append("#endif")
+        out.append(f"#define PIN_SERIAL_TX CH32RV_SERIAL{first}_TX")
+        out.append(f"#define PIN_SERIAL_RX CH32RV_SERIAL{first}_RX")
         out.append("#endif")
         out.append("#if defined(PIN_SERIAL_TX) && !defined(TX)")
         out.append("#define TX PIN_SERIAL_TX")
@@ -2377,18 +2476,29 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     # Same shape as the USART block, and for the same reason: the pair has to
     # come from one route, and the route has to be one the core can select.
     chosen_i2c = choose_i2cs(series, parts, i2cs, remap, forbidden)
+    i2c_with_default = dict(chosen_i2c)
+    chosen_i2c.update(without_default(series, parts, i2cs, remap, "i2c", ("SCL", "SDA"),
+                                      chosen_i2c, set(I2C_BASES)))
     if chosen_i2c:
         out.append("/* ---- I2C pins (device-data; one route per instance,")
         out.append(" *      chosen for the whole series - see choose_i2cs) ---- */")
-        for index, (coverage, route, (scl, sda)) in sorted(chosen_i2c.items()):
-            where = ("on every part" if coverage == len(parts)
-                     else f"on {coverage} of {len(parts)} parts")
-            out.append(f"/* I2C{index}: route {route}, {where} */")
-            out.append(f"#define CH32RV_I2C{index}_SCL {pad_name(*scl)}")
-            out.append(f"#define CH32RV_I2C{index}_SDA {pad_name(*sda)}")
-            out.extend(clken_defines(f"CH32RV_I2C{index}", f"I2C{index}"))
-            out.extend(alternatives("i2c", index, route, ("SCL", "SDA")))
-            value = route_remap_value(route)
+        for index, (coverage, route, pads) in sorted(chosen_i2c.items()):
+            if route is None:
+                out.append(f"/* I2C{index}: no default route for the whole series (its pads")
+                out.append(" * move between packages, or sit on debug / strap pads). With a")
+                out.append(" * part number selected it may have one below; otherwise begin()")
+                out.append(" * has to name the pins. */")
+                out.extend(clken_defines(f"CH32RV_I2C{index}", f"I2C{index}"))
+            else:
+                scl, sda = pads
+                where = ("on every part" if coverage == len(parts)
+                         else f"on {coverage} of {len(parts)} parts")
+                out.append(f"/* I2C{index}: route {route}, {where} */")
+                out.append(f"#define CH32RV_I2C{index}_SCL {pad_name(*scl)}")
+                out.append(f"#define CH32RV_I2C{index}_SDA {pad_name(*sda)}")
+                out.extend(clken_defines(f"CH32RV_I2C{index}", f"I2C{index}"))
+                out.extend(alternatives("i2c", index, route, ("SCL", "SDA")))
+            value = route_remap_value(route) if route else 0
             bits = remap.get((series, "i2c", index))
             if value is None:
                 out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
@@ -2400,14 +2510,15 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                     suffix = "" if register == "PCFR1" else "2"
                     out.append(f"#define CH32RV_I2C{index}_REMAP{suffix}_MASK "
                                f"0x{mask:08x}u")
-                    out.append(f"#define CH32RV_I2C{index}_REMAP{suffix}_VAL  "
-                               f"0x{val:08x}u")
+                    if route is not None:   # else per part, below
+                        out.append(f"#define CH32RV_I2C{index}_REMAP{suffix}_VAL  "
+                                   f"0x{val:08x}u")
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
                 out.append(f" * has no AFIO field for I2C{index} in this series. */")
-            emit_routes(out, f"I2C{index}", ("SCL", "SDA"),
-                        route_table(series, parts, i2cs, remap, "i2c",
-                                    ("SCL", "SDA"), index))
+            emit_instance_routes(out, f"I2C{index}", ("SCL", "SDA"), series, parts,
+                                 i2cs, remap, "i2c", index, I2C_ROUTE_ORDER,
+                                 forbidden, route is not None)
         # No CH32RV_WIRE_DEFAULT to match CH32RV_SERIAL_DEFAULT: the Arduino
         # ecosystem names I2C buses Wire/Wire1 in bus order, so the library
         # binds the bare name to the first instance itself.
@@ -2415,7 +2526,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         # The standard aliases point at that same first instance. Libraries
         # written for other cores use PIN_WIRE_SDA or the bare SDA, and a core
         # that defines neither simply fails to compile them.
-        first = min(chosen_i2c)
+        first = min(i2c_with_default)
         out.append("/* Arduino's standard names for the first bus (Wire). These are")
         out.append(" * the pads of I2C%d's default route in the datasheet - a fact about"
                    % first)
@@ -2430,21 +2541,32 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
 
     # --- SPI ---
     chosen_spi = choose_spis(series, parts, spis, remap, forbidden)
+    spi_with_default = dict(chosen_spi)
+    chosen_spi.update(without_default(series, parts, spis, remap, "spi",
+                                      ("SCK", "MISO", "MOSI"), chosen_spi, set(SPI_BASES)))
     if chosen_spi:
         out.append("/* ---- SPI pins (device-data; one route per instance,")
         out.append(" *      chosen for the whole series - see choose_spis).")
         out.append(" *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */")
-        for index, (coverage, route, (sck, miso, mosi)) in sorted(chosen_spi.items()):
-            where = ("on every part" if coverage == len(parts)
-                     else f"on {coverage} of {len(parts)} parts")
-            out.append(f"/* SPI{index}: route {route}, {where} */")
-            out.append(f"#define CH32RV_SPI{index}_SCK {pad_name(*sck)}")
-            out.append(f"#define CH32RV_SPI{index}_MISO {pad_name(*miso)}")
-            out.append(f"#define CH32RV_SPI{index}_MOSI {pad_name(*mosi)}")
-            out.extend(clken_defines(f"CH32RV_SPI{index}", f"SPI{index}"))
-            out.extend(alternatives("spi", index, route,
-                                    ("SCK", "MISO", "MOSI")))
-            value = route_remap_value(route)
+        for index, (coverage, route, pads) in sorted(chosen_spi.items()):
+            if route is None:
+                out.append(f"/* SPI{index}: no default route for the whole series (its pads")
+                out.append(" * move between packages, or sit on debug / strap pads). With a")
+                out.append(" * part number selected it may have one below; otherwise begin()")
+                out.append(" * has to name the pins. */")
+                out.extend(clken_defines(f"CH32RV_SPI{index}", f"SPI{index}"))
+            else:
+                sck, miso, mosi = pads
+                where = ("on every part" if coverage == len(parts)
+                         else f"on {coverage} of {len(parts)} parts")
+                out.append(f"/* SPI{index}: route {route}, {where} */")
+                out.append(f"#define CH32RV_SPI{index}_SCK {pad_name(*sck)}")
+                out.append(f"#define CH32RV_SPI{index}_MISO {pad_name(*miso)}")
+                out.append(f"#define CH32RV_SPI{index}_MOSI {pad_name(*mosi)}")
+                out.extend(clken_defines(f"CH32RV_SPI{index}", f"SPI{index}"))
+                out.extend(alternatives("spi", index, route,
+                                        ("SCK", "MISO", "MOSI")))
+            value = route_remap_value(route) if route else 0
             bits = remap.get((series, "spi", index))
             if value is None:
                 out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
@@ -2456,15 +2578,16 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                     suffix = "" if register == "PCFR1" else "2"
                     out.append(f"#define CH32RV_SPI{index}_REMAP{suffix}_MASK "
                                f"0x{mask:08x}u")
-                    out.append(f"#define CH32RV_SPI{index}_REMAP{suffix}_VAL  "
-                               f"0x{val:08x}u")
+                    if route is not None:   # else per part, below
+                        out.append(f"#define CH32RV_SPI{index}_REMAP{suffix}_VAL  "
+                                   f"0x{val:08x}u")
             elif value:
                 out.append(f"/* NOTE: route {route} needs an AFIO remap but device-data")
                 out.append(f" * has no AFIO field for SPI{index} in this series. */")
-            emit_routes(out, f"SPI{index}", ("SCK", "MISO", "MOSI"),
-                        route_table(series, parts, spis, remap, "spi",
-                                    ("SCK", "MISO", "MOSI"), index))
-        first = min(chosen_spi)
+            emit_instance_routes(out, f"SPI{index}", ("SCK", "MISO", "MOSI"), series,
+                                 parts, spis, remap, "spi", index, SPI_ROUTE_ORDER,
+                                 forbidden, route is not None)
+        first = min(spi_with_default)
         out.append("/* Arduino's standard names for the first bus (SPI). These are")
         out.append(" * the pads of SPI%d's default route in the datasheet - a fact about"
                    % first)

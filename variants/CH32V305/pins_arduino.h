@@ -336,6 +336,9 @@
 #define CH32RV_SERIAL2_IRQ CH32RV_IRQN_USART2
 #define CH32RV_SERIAL2_REMAP_MASK 0x00000008u
 #define CH32RV_SERIAL2_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V305FBP6) || defined(CH32RV_PART_CH32V305GBU6)
+#define CH32RV_SERIAL2_ABSENT 1   /* not on this part */
+#endif
 /* SERIAL2 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL2_ROUTE_COUNT 1
 #define CH32RV_SERIAL2_ROUTES { \
@@ -365,6 +368,9 @@
 #define CH32RV_SERIAL4_IRQ CH32RV_IRQN_UART4
 #define CH32RV_SERIAL4_REMAP2_MASK 0x00030000u
 #define CH32RV_SERIAL4_REMAP2_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V305FBP6)
+#define CH32RV_SERIAL4_ABSENT 1   /* not on this part */
+#endif
 /* SERIAL4 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL4_ROUTE_COUNT 2
 #define CH32RV_SERIAL4_ROUTES { \
@@ -380,33 +386,19 @@
 #define CH32RV_SERIAL5_IRQ CH32RV_IRQN_UART5
 #define CH32RV_SERIAL5_REMAP2_MASK 0x000c0000u
 #define CH32RV_SERIAL5_REMAP2_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V305FBP6)
+#define CH32RV_SERIAL5_ABSENT 1   /* not on this part */
+#endif
 /* SERIAL5 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL5_ROUTE_COUNT 2
 #define CH32RV_SERIAL5_ROUTES { \
     { 0, { PC12, PD2, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PB4, PB5, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00040000u }, \
 }
-#ifndef CH32RV_SERIAL_DEFAULT
-#define CH32RV_SERIAL_DEFAULT 1
-#endif
-/* The monitor port's default pads (Serial = SerialN, N above). */
+/* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
-#if CH32RV_SERIAL_DEFAULT == 1
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
 #define PIN_SERIAL_RX CH32RV_SERIAL1_RX
-#elif CH32RV_SERIAL_DEFAULT == 2
-#define PIN_SERIAL_TX CH32RV_SERIAL2_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL2_RX
-#elif CH32RV_SERIAL_DEFAULT == 3
-#define PIN_SERIAL_TX CH32RV_SERIAL3_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL3_RX
-#elif CH32RV_SERIAL_DEFAULT == 4
-#define PIN_SERIAL_TX CH32RV_SERIAL4_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL4_RX
-#elif CH32RV_SERIAL_DEFAULT == 5
-#define PIN_SERIAL_TX CH32RV_SERIAL5_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL5_RX
-#endif
 #endif
 #if defined(PIN_SERIAL_TX) && !defined(TX)
 #define TX PIN_SERIAL_TX
@@ -454,6 +446,9 @@
 #define CH32RV_SPI1_CLKEN_MASK 0x00001000u
 #define CH32RV_SPI1_REMAP_MASK 0x00000001u
 #define CH32RV_SPI1_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V305FBP6)
+#define CH32RV_SPI1_ABSENT 1   /* not on this part */
+#endif
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
 #define CH32RV_SPI1_ROUTE_COUNT 2
 #define CH32RV_SPI1_ROUTES { \
@@ -478,6 +473,9 @@
  * order - see resolve_pin_candidates). */
 #define CH32RV_SPI3_REMAP_MASK 0x10000000u
 #define CH32RV_SPI3_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V305FBP6)
+#define CH32RV_SPI3_ABSENT 1   /* not on this part */
+#endif
 /* SPI3 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
 #define CH32RV_SPI3_ROUTE_COUNT 2
 #define CH32RV_SPI3_ROUTES { \

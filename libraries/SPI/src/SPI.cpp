@@ -27,43 +27,32 @@ static uint16_t br_for(uint32_t clock_hz)
     return 7u;
 }
 
-/* ------------------------------------------------------- board's choice
- * CH32RV_SPIn_MODE comes from the board menu (ADR draft 0015):
- *   0 Disable, 1 AUTO (bound in begin()), 2 FIX (CH32RV_SPIn_FIX_SCK / _MISO /
- *   _MOSI / _V1 / _V2). A board without the menu leaves every SPI on AUTO. */
-#define CH32RV_SPI_DISABLE 0
-#define CH32RV_SPI_AUTO    1
-#define CH32RV_SPI_FIX     2
-#ifndef CH32RV_SPI1_MODE
-#define CH32RV_SPI1_MODE CH32RV_SPI_AUTO
-#endif
-#if defined(CH32RV_SPI1_SCK) && !defined(CH32RV_SPI1_REMAP_MASK)
+/* Which SPIs are in the table, and the board's choice for each (Disable /
+ * AUTO / FIX): ch32rv_instances.h, through SPI.h. */
+#define CH32RV_SPI_DISABLE CH32RV_PERIPH_DISABLE
+#define CH32RV_SPI_AUTO    CH32RV_PERIPH_AUTO
+#define CH32RV_SPI_FIX     CH32RV_PERIPH_FIX
+#if defined(CH32RV_SPI1_CLKEN_ADDR) && !defined(CH32RV_SPI1_REMAP_MASK)
 #define CH32RV_SPI1_REMAP_MASK 0u
 #define CH32RV_SPI1_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_SPI1_SCK) && !defined(CH32RV_SPI1_REMAP2_MASK)
+#if defined(CH32RV_SPI1_CLKEN_ADDR) && !defined(CH32RV_SPI1_REMAP2_MASK)
 #define CH32RV_SPI1_REMAP2_MASK 0u
 #define CH32RV_SPI1_REMAP2_VAL  0u
 #endif
-#ifndef CH32RV_SPI2_MODE
-#define CH32RV_SPI2_MODE CH32RV_SPI_AUTO
-#endif
-#if defined(CH32RV_SPI2_SCK) && !defined(CH32RV_SPI2_REMAP_MASK)
+#if defined(CH32RV_SPI2_CLKEN_ADDR) && !defined(CH32RV_SPI2_REMAP_MASK)
 #define CH32RV_SPI2_REMAP_MASK 0u
 #define CH32RV_SPI2_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_SPI2_SCK) && !defined(CH32RV_SPI2_REMAP2_MASK)
+#if defined(CH32RV_SPI2_CLKEN_ADDR) && !defined(CH32RV_SPI2_REMAP2_MASK)
 #define CH32RV_SPI2_REMAP2_MASK 0u
 #define CH32RV_SPI2_REMAP2_VAL  0u
 #endif
-#ifndef CH32RV_SPI3_MODE
-#define CH32RV_SPI3_MODE CH32RV_SPI_AUTO
-#endif
-#if defined(CH32RV_SPI3_SCK) && !defined(CH32RV_SPI3_REMAP_MASK)
+#if defined(CH32RV_SPI3_CLKEN_ADDR) && !defined(CH32RV_SPI3_REMAP_MASK)
 #define CH32RV_SPI3_REMAP_MASK 0u
 #define CH32RV_SPI3_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_SPI3_SCK) && !defined(CH32RV_SPI3_REMAP2_MASK)
+#if defined(CH32RV_SPI3_CLKEN_ADDR) && !defined(CH32RV_SPI3_REMAP2_MASK)
 #define CH32RV_SPI3_REMAP2_MASK 0u
 #define CH32RV_SPI3_REMAP2_VAL  0u
 #endif
@@ -88,14 +77,21 @@ struct RouteSet {
 
 #define CH32RV_SPI_ROUTE5(sck, miso, mosi, v1, v2) { 0, { sck, miso, mosi }, v1, v2 }
 #define CH32RV_SPI_ROUTE(...) CH32RV_SPI_ROUTE5(__VA_ARGS__)
+/* An SPI the variant names no default route for (its pins move between the
+ * packages of the series): begin() without pins fails on it. */
+#define CH32RV_SPI_NO_DEF CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, 0u, 0u
 
-#if defined(CH32RV_SPI1_SCK) && CH32RV_SPI1_MODE != CH32RV_SPI_DISABLE
+#if CH32RV_SPI_ON_1
 #define CH32RV_SPI_HAS_1 1
 #if CH32RV_SPI1_MODE == CH32RV_SPI_FIX
 #define CH32RV_SPI_DEF_1 CH32RV_SPI1_FIX_SCK, CH32RV_SPI1_FIX_MISO, CH32RV_SPI1_FIX_MOSI, CH32RV_SPI1_FIX_V1, CH32RV_SPI1_FIX_V2
 static const ch32rv_route_t spi1_routes[] = { CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_1) };
 #else
+#if defined(CH32RV_SPI1_SCK)
 #define CH32RV_SPI_DEF_1 CH32RV_SPI1_SCK, CH32RV_SPI1_MISO, CH32RV_SPI1_MOSI, CH32RV_SPI1_REMAP_VAL, CH32RV_SPI1_REMAP2_VAL
+#else
+#define CH32RV_SPI_DEF_1 CH32RV_SPI_NO_DEF
+#endif
 #if defined(CH32RV_SPI1_ROUTES)
 static const ch32rv_route_t spi1_routes[] = CH32RV_SPI1_ROUTES;
 #else
@@ -103,13 +99,17 @@ static const ch32rv_route_t spi1_routes[] = { CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_1)
 #endif
 #endif
 #endif
-#if defined(CH32RV_SPI2_SCK) && CH32RV_SPI2_MODE != CH32RV_SPI_DISABLE
+#if CH32RV_SPI_ON_2
 #define CH32RV_SPI_HAS_2 1
 #if CH32RV_SPI2_MODE == CH32RV_SPI_FIX
 #define CH32RV_SPI_DEF_2 CH32RV_SPI2_FIX_SCK, CH32RV_SPI2_FIX_MISO, CH32RV_SPI2_FIX_MOSI, CH32RV_SPI2_FIX_V1, CH32RV_SPI2_FIX_V2
 static const ch32rv_route_t spi2_routes[] = { CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_2) };
 #else
+#if defined(CH32RV_SPI2_SCK)
 #define CH32RV_SPI_DEF_2 CH32RV_SPI2_SCK, CH32RV_SPI2_MISO, CH32RV_SPI2_MOSI, CH32RV_SPI2_REMAP_VAL, CH32RV_SPI2_REMAP2_VAL
+#else
+#define CH32RV_SPI_DEF_2 CH32RV_SPI_NO_DEF
+#endif
 #if defined(CH32RV_SPI2_ROUTES)
 static const ch32rv_route_t spi2_routes[] = CH32RV_SPI2_ROUTES;
 #else
@@ -117,13 +117,17 @@ static const ch32rv_route_t spi2_routes[] = { CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_2)
 #endif
 #endif
 #endif
-#if defined(CH32RV_SPI3_SCK) && CH32RV_SPI3_MODE != CH32RV_SPI_DISABLE
+#if CH32RV_SPI_ON_3
 #define CH32RV_SPI_HAS_3 1
 #if CH32RV_SPI3_MODE == CH32RV_SPI_FIX
 #define CH32RV_SPI_DEF_3 CH32RV_SPI3_FIX_SCK, CH32RV_SPI3_FIX_MISO, CH32RV_SPI3_FIX_MOSI, CH32RV_SPI3_FIX_V1, CH32RV_SPI3_FIX_V2
 static const ch32rv_route_t spi3_routes[] = { CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_3) };
 #else
+#if defined(CH32RV_SPI3_SCK)
 #define CH32RV_SPI_DEF_3 CH32RV_SPI3_SCK, CH32RV_SPI3_MISO, CH32RV_SPI3_MOSI, CH32RV_SPI3_REMAP_VAL, CH32RV_SPI3_REMAP2_VAL
+#else
+#define CH32RV_SPI_DEF_3 CH32RV_SPI_NO_DEF
+#endif
 #if defined(CH32RV_SPI3_ROUTES)
 static const ch32rv_route_t spi3_routes[] = CH32RV_SPI3_ROUTES;
 #else
@@ -170,9 +174,10 @@ const RouteSet route_sets[1] = {};
 constexpr uint8_t SPI_COUNT = 0;
 #endif
 
-/* A series with one SPI has one bus object (SPI) and one instance, so there
- * is nothing to share and nobody else to own it: no owner table, no search. */
-#if defined(CH32RV_SPI1_SCK) + defined(CH32RV_SPI2_SCK) + defined(CH32RV_SPI3_SCK) == 1
+/* A board with one enabled SPI has one bus object (SPI) and one instance, so
+ * there is nothing to share and nobody else to own it: no owner table, no
+ * search. */
+#if CH32RV_SPI_COUNT == 1
 #define CH32RV_SPI_SINGLE 1
 #else
 #define CH32RV_SPI_SINGLE 0
@@ -208,7 +213,7 @@ Found find_route(uint8_t prefer, const uint8_t *want, const CH32RVSPIClass *self
         for (uint8_t r = 0; r < set.count; r++) {
             const uint8_t *p = set.rows[r].pins;
             if (p[0] == want[0] && p[1] == want[1] && p[2] == want[2]) {
-                if (spis[i].number == prefer) {
+                if (i == prefer) {
                     return {(int)i, &set.rows[r]};
                 }
                 if (first.index < 0) {
@@ -252,21 +257,23 @@ void CH32RVSPIClass::begin()
     static const ch32rv_route_t def = CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_3);
 #endif
     const uint8_t index = 0;
+    if (!_want && def.pins[0] == CH32RV_ROUTE_NO_PIN) {
+        return;                /* no default route: pins have to be named */
+    }
     const ch32rv_route_t *route = _want ? _want : &def;
 #else
     uint8_t index = _want_index;
     const ch32rv_route_t *route = _want;
     if (!route) {
-        /* Provisional: no pins means this bus's usual SPI, default (or fixed)
-         * route. */
-        for (uint8_t i = 0; i < SPI_COUNT; i++) {
-            if (spis[i].number == _number) {
-                index = i;
-                route = &spis[i].def;
-            }
+        /* No pins named: the fallback, this name's row on its default (or
+         * fixed) pins. */
+        if (SPI_COUNT == 0) {
+            return;            /* every SPI is Disable on this board */
         }
-        if (!route) {
-            return;            /* that SPI is Disable on this board */
+        index = _number;
+        route = &spis[index].def;
+        if (route->pins[0] == CH32RV_ROUTE_NO_PIN) {
+            return;            /* no default route: pins have to be named */
         }
     }
     if (SPI_COUNT == 1) {
@@ -474,18 +481,15 @@ void CH32RVSPIClass::transfer(void *buf, size_t count)
 /* --------------------------------------------------------------- routes */
 bool CH32RVSPIClass::setRoute(uint8_t route)
 {
-    for (uint8_t i = 0; i < SPI_COUNT; i++) {
-        if (spis[i].number != _number) {
-            continue;
-        }
-        const RouteSet &set = route_sets[i];
-        const int r = ch32rv_route_find(set.rows, set.count, route);
-        if (r < 0) {
-            return false;
-        }
-        return setPins(set.rows[r].pins[0], set.rows[r].pins[1], set.rows[r].pins[2]);
+    if (SPI_COUNT == 0) {
+        return false;
     }
-    return false;
+    const RouteSet &set = route_sets[SPI_COUNT == 1 ? 0 : _number];
+    const int r = ch32rv_route_find(set.rows, set.count, route);
+    if (r < 0) {
+        return false;
+    }
+    return setPins(set.rows[r].pins[0], set.rows[r].pins[1], set.rows[r].pins[2]);
 }
 
 bool CH32RVSPIClass::setPins(int sck, int miso, int mosi)

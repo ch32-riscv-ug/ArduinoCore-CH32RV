@@ -1,7 +1,8 @@
 # SPI
 
-Controller-mode SPI on the CH32's own peripheral, polled. The pins come from
-the variant; chip select is an ordinary GPIO, as on every Arduino core.
+Controller-mode SPI on the CH32's own peripheral, polled. Name the pins with
+`SPI.begin(sck, miso, mosi, ss)`; chip select is an ordinary GPIO, as on every
+Arduino core.
 
 ```cpp
 #include <SPI.h>
@@ -9,7 +10,7 @@ the variant; chip select is an ordinary GPIO, as on every Arduino core.
 void setup() {
   pinMode(SS, OUTPUT);
   digitalWrite(SS, HIGH);
-  SPI.begin();
+  SPI.begin(SCK, MISO, MOSI, SS);   // the pads you wired
 
   SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
   digitalWrite(SS, LOW);
@@ -21,7 +22,14 @@ void setup() {
 
 ## Which pins
 
-`SCK`, `MISO` and `MOSI` name the first bus's default route. `SS` names the
+The bus takes whichever free SPI has the pins as a route; a name is not tied to
+an SPI number, and `peripheral()` tells which SPI a bus landed on.
+
+`SPI.begin()` without pins is the fallback: the board's enabled SPIs in number
+order (`SPI` the first, `SPI1` the second, `SPI2` the third) on their default
+pins - the board menu's FIX pins, or the variant's default route under AUTO.
+
+`SCK`, `MISO` and `MOSI` name the first SPI's default route. `SS` names the
 peripheral's own NSS pad where device-data has one - the driver never uses it,
 because chip select is a GPIO, but it is the pad the wiring diagrams show.
 
@@ -51,8 +59,8 @@ Both return `false` and change nothing if the route does not exist, and
 - **Peripheral (slave) mode is not implemented**, and
   `SPI_HAS_PERIPHERAL_MODE` is deliberately left undefined so a library can
   test for it.
-- **A second bus is `SPI1`, a third is `SPI2`** - bus order, not the
-  peripheral's number.
+- **Names are `SPI`, `SPI1`, `SPI2`**, one per SPI the board enables. Using a
+  name the board does not have fails to compile.
 - The legacy `setBitOrder()` / `setDataMode()` / `setClockDivider()` are
   provided, because enough libraries still call them.
 

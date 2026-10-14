@@ -23,7 +23,7 @@ static void on_edge()
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
     while (!Serial) {
     }
     pinMode(BUTTON, INPUT_PULLUP);

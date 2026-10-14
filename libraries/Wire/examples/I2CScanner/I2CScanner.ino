@@ -5,25 +5,32 @@
  * pull-ups nothing answers and every address reports an error - which this
  * sketch shows as a timeout rather than as silence.
  *
- * The pins come from the variant: SDA and SCL are the first I2C bus's default
- * route, and the sketch prints them so you know where to put the wires. Some
- * packages do not bond that route - use Wire.setPins() to move the bus if the
- * pads printed here are not on your board's headers.
+ * The pads below are the chip's default ones for its first I2C (SDA, SCL) and
+ * first USART (RX, TX). Some packages do not bond them - change them to the
+ * pads your board wires: each bus takes whichever enabled peripheral has them
+ * as a route.
  */
 #include <Wire.h>
 
+static const int SDA_PIN = SDA;
+static const int SCL_PIN = SCL;
+static const int RX_PIN = RX;
+static const int TX_PIN = TX;
+
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
     while (!Serial) {
     }
-    Wire.begin();
+    Wire.begin(SDA_PIN, SCL_PIN);
 
     Serial.println();
-    Serial.print("scanning I2C on SCL=pad ");
-    Serial.print(SCL);
+    Serial.print("scanning I2C");
+    Serial.print(Wire.peripheral());
+    Serial.print(" on SCL=pad ");
+    Serial.print(SCL_PIN);
     Serial.print(", SDA=pad ");
-    Serial.println(SDA);
+    Serial.println(SDA_PIN);
 
     unsigned found = 0;
     for (uint8_t address = 1; address < 127; address++) {

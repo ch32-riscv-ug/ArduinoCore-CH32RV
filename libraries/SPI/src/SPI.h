@@ -1,9 +1,10 @@
 /* SPI for CH32 RISC-V.
  *
- * Controller (master) mode, polled. The default pins come from the variant's
- * CH32RV_SPIn_SCK/MISO/MOSI; chip select is not among them because Arduino
- * drives it as an ordinary GPIO, which is also what lets one bus carry several
- * devices.
+ * Controller (master) mode, polled. A sketch names the pins with
+ * SPI.begin(sck, miso, mosi, ss); SPI.begin() with no arguments is the
+ * fallback onto the board's default pins (ch32rv_instances.h). Chip select is
+ * not among the bus pins because Arduino drives it as an ordinary GPIO, which
+ * is also what lets one bus carry several devices.
  *
  * Peripheral (slave) mode is not implemented, so SPI_HAS_PERIPHERAL_MODE is
  * deliberately not defined - a library can test for it rather than discover it
@@ -15,6 +16,7 @@
 #include "ch32rv_pins.h"
 #include "ch32rv_route.h"
 #include "pins_arduino.h"
+#include "ch32rv_instances.h"
 
 #include <stdint.h>
 
@@ -36,10 +38,10 @@ namespace arduino {
  * SPI's constants sit in a const table in SPI.cpp, and an SPI set to Disable
  * for the board (CH32RV_SPIn_MODE = 0) is not in that table.
  *
- * Provisional rule until names and instances are tied together for good: a
- * begin() without pins binds SPI / SPI1 / SPI2 to the bus they have always
- * named, on its default route - or the fixed one when the board sets FIX.
- * begin(sck, miso, mosi) binds to whichever enabled SPI has those pins. */
+ * `number` is the name's position (SPI = 0, SPI1 = 1, SPI2 = 2), which is also
+ * its row in the table of enabled SPIs: begin(sck, miso, mosi) takes any free
+ * SPI those pins are a route of, this row first; begin() without pins takes
+ * this row on its default pins (ch32rv_instances.h). */
 class CH32RVSPIClass : public HardwareSPI {
 public:
     explicit CH32RVSPIClass(uint8_t number) : _number(number) {}
@@ -119,27 +121,15 @@ private:
 
 }  // namespace arduino
 
-#if defined(CH32RV_SPI1_SCK) + defined(CH32RV_SPI2_SCK) + defined(CH32RV_SPI3_SCK) == 3
-#define SPI_INTERFACES_COUNT 3
-#elif defined(CH32RV_SPI1_SCK) + defined(CH32RV_SPI2_SCK) + defined(CH32RV_SPI3_SCK) == 2
-#define SPI_INTERFACES_COUNT 2
-#elif defined(CH32RV_SPI1_SCK) || defined(CH32RV_SPI2_SCK) || defined(CH32RV_SPI3_SCK)
-#define SPI_INTERFACES_COUNT 1
+/* As many names as the board has enabled SPIs (ch32rv_instances.h), in the
+ * Arduino ecosystem's order: the bare name first. */
+#if CH32RV_SPI_COUNT > 0
+#define SPI_INTERFACES_COUNT CH32RV_SPI_COUNT
+extern arduino::CH32RVSPIClass SPI;        /* SPIInstance.cpp */
 #endif
-
-/* Bus order, as everywhere else in the Arduino ecosystem: the bare name is the
- * first bus. */
-#if defined(CH32RV_SPI1_SCK)
-extern arduino::CH32RVSPIClass SPI;        /* SPI1 */
-#if defined(CH32RV_SPI2_SCK)
-extern arduino::CH32RVSPIClass SPI1;       /* SPI2 */
+#if CH32RV_SPI_COUNT > 1
+extern arduino::CH32RVSPIClass SPI1;       /* SPI1Instance.cpp */
 #endif
-#if defined(CH32RV_SPI3_SCK)
-extern arduino::CH32RVSPIClass SPI2;       /* SPI3 */
-#endif
-#elif defined(CH32RV_SPI2_SCK)
-extern arduino::CH32RVSPIClass SPI;        /* SPI2, on a part with no SPI1 */
-#if defined(CH32RV_SPI3_SCK)
-extern arduino::CH32RVSPIClass SPI1;       /* SPI3 */
-#endif
+#if CH32RV_SPI_COUNT > 2
+extern arduino::CH32RVSPIClass SPI2;       /* SPI2Instance.cpp */
 #endif

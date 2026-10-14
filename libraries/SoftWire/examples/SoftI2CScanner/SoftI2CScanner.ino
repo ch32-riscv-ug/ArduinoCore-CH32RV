@@ -18,7 +18,7 @@ SoftWire bus(SDA_PIN, SCL_PIN);
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
     while (!Serial) {
     }
     bus.begin();

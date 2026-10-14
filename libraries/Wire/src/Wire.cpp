@@ -42,34 +42,24 @@ inline void clear_addr(uint32_t base)
 
 }  // namespace
 
-/* ------------------------------------------------------- board's choice
- * CH32RV_I2Cn_MODE comes from the board menu (ADR draft 0015):
- *   0 Disable  the I2C is not in the table: no code, no route, no handler
- *   1 AUTO     bound in begin(); its routes are searched by setPins()
- *   2 FIX      one route, the board's: CH32RV_I2Cn_FIX_SCL / _SDA / _V1 / _V2
- * A board without the menu leaves both on AUTO. */
-#define CH32RV_I2C_DISABLE 0
-#define CH32RV_I2C_AUTO    1
-#define CH32RV_I2C_FIX     2
-#ifndef CH32RV_I2C1_MODE
-#define CH32RV_I2C1_MODE CH32RV_I2C_AUTO
-#endif
-#ifndef CH32RV_I2C2_MODE
-#define CH32RV_I2C2_MODE CH32RV_I2C_AUTO
-#endif
-#if defined(CH32RV_I2C1_SCL) && !defined(CH32RV_I2C1_REMAP_MASK)
+/* Which I2Cs are in the table, and the board's choice for each (Disable /
+ * AUTO / FIX): ch32rv_instances.h, through Wire.h. */
+#define CH32RV_I2C_DISABLE CH32RV_PERIPH_DISABLE
+#define CH32RV_I2C_AUTO    CH32RV_PERIPH_AUTO
+#define CH32RV_I2C_FIX     CH32RV_PERIPH_FIX
+#if defined(CH32RV_I2C1_CLKEN_ADDR) && !defined(CH32RV_I2C1_REMAP_MASK)
 #define CH32RV_I2C1_REMAP_MASK 0u
 #define CH32RV_I2C1_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_I2C1_SCL) && !defined(CH32RV_I2C1_REMAP2_MASK)
+#if defined(CH32RV_I2C1_CLKEN_ADDR) && !defined(CH32RV_I2C1_REMAP2_MASK)
 #define CH32RV_I2C1_REMAP2_MASK 0u
 #define CH32RV_I2C1_REMAP2_VAL  0u
 #endif
-#if defined(CH32RV_I2C2_SCL) && !defined(CH32RV_I2C2_REMAP_MASK)
+#if defined(CH32RV_I2C2_CLKEN_ADDR) && !defined(CH32RV_I2C2_REMAP_MASK)
 #define CH32RV_I2C2_REMAP_MASK 0u
 #define CH32RV_I2C2_REMAP_VAL  0u
 #endif
-#if defined(CH32RV_I2C2_SCL) && !defined(CH32RV_I2C2_REMAP2_MASK)
+#if defined(CH32RV_I2C2_CLKEN_ADDR) && !defined(CH32RV_I2C2_REMAP2_MASK)
 #define CH32RV_I2C2_REMAP2_MASK 0u
 #define CH32RV_I2C2_REMAP2_VAL  0u
 #endif
@@ -96,14 +86,21 @@ struct RouteSet {
 
 #define CH32RV_WIRE_ROUTE4(scl, sda, v1, v2) { 0, { scl, sda, CH32RV_ROUTE_NO_PIN }, v1, v2 }
 #define CH32RV_WIRE_ROUTE(...) CH32RV_WIRE_ROUTE4(__VA_ARGS__)
+/* An I2C the variant names no default route for (its pins move between the
+ * packages of the series): begin() without pins fails on it. */
+#define CH32RV_WIRE_NO_DEF CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, 0u, 0u
 
-#if defined(CH32RV_I2C1_SCL) && CH32RV_I2C1_MODE != CH32RV_I2C_DISABLE
+#if CH32RV_I2C_ON_1
 #define CH32RV_WIRE_HAS_1 1
 #if CH32RV_I2C1_MODE == CH32RV_I2C_FIX
 #define CH32RV_WIRE_DEF_1 CH32RV_I2C1_FIX_SCL, CH32RV_I2C1_FIX_SDA, CH32RV_I2C1_FIX_V1, CH32RV_I2C1_FIX_V2
 static const ch32rv_route_t wire1_routes[] = { CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF_1) };
 #else
+#if defined(CH32RV_I2C1_SCL)
 #define CH32RV_WIRE_DEF_1 CH32RV_I2C1_SCL, CH32RV_I2C1_SDA, CH32RV_I2C1_REMAP_VAL, CH32RV_I2C1_REMAP2_VAL
+#else
+#define CH32RV_WIRE_DEF_1 CH32RV_WIRE_NO_DEF
+#endif
 #if defined(CH32RV_I2C1_ROUTES)
 static const ch32rv_route_t wire1_routes[] = CH32RV_I2C1_ROUTES;
 #else
@@ -111,13 +108,17 @@ static const ch32rv_route_t wire1_routes[] = { CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF
 #endif
 #endif
 #endif
-#if defined(CH32RV_I2C2_SCL) && CH32RV_I2C2_MODE != CH32RV_I2C_DISABLE
+#if CH32RV_I2C_ON_2
 #define CH32RV_WIRE_HAS_2 1
 #if CH32RV_I2C2_MODE == CH32RV_I2C_FIX
 #define CH32RV_WIRE_DEF_2 CH32RV_I2C2_FIX_SCL, CH32RV_I2C2_FIX_SDA, CH32RV_I2C2_FIX_V1, CH32RV_I2C2_FIX_V2
 static const ch32rv_route_t wire2_routes[] = { CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF_2) };
 #else
+#if defined(CH32RV_I2C2_SCL)
 #define CH32RV_WIRE_DEF_2 CH32RV_I2C2_SCL, CH32RV_I2C2_SDA, CH32RV_I2C2_REMAP_VAL, CH32RV_I2C2_REMAP2_VAL
+#else
+#define CH32RV_WIRE_DEF_2 CH32RV_WIRE_NO_DEF
+#endif
 #if defined(CH32RV_I2C2_ROUTES)
 static const ch32rv_route_t wire2_routes[] = CH32RV_I2C2_ROUTES;
 #else
@@ -185,7 +186,7 @@ Found find_route(uint8_t prefer, uint8_t scl, uint8_t sda, const CH32RVTwoWire *
         const RouteSet &set = route_sets[i];
         for (uint8_t r = 0; r < set.count; r++) {
             if (set.rows[r].pins[0] == scl && set.rows[r].pins[1] == sda) {
-                if (wires[i].number == prefer) {
+                if (i == prefer) {
                     return {(int)i, &set.rows[r]};
                 }
                 if (first.index < 0) {
@@ -261,16 +262,15 @@ void CH32RVTwoWire::begin()
     uint8_t index = _want_index;
     const ch32rv_route_t *route = _want;
     if (!route) {
-        /* Provisional: no pins means this bus's usual I2C, default (or fixed)
-         * route. */
-        for (uint8_t i = 0; i < WIRE_COUNT; i++) {
-            if (wires[i].number == _number) {
-                index = i;
-                route = &wires[i].def;
-            }
+        /* No pins named: the fallback, this name's row on its default (or
+         * fixed) pins. */
+        if (WIRE_COUNT == 0) {
+            return;            /* every I2C is Disable on this board */
         }
-        if (!route) {
-            return;            /* that I2C is Disable on this board */
+        index = _number;
+        route = &wires[WIRE_COUNT == 1 ? 0 : index].def;
+        if (route->pins[0] == CH32RV_ROUTE_NO_PIN) {
+            return;            /* no default route: pins have to be named */
         }
     }
     if (WIRE_COUNT == 1) {
@@ -766,18 +766,15 @@ int CH32RVTwoWire::peek(void)
 /* --------------------------------------------------------------- routes */
 bool CH32RVTwoWire::setRoute(uint8_t route)
 {
-    for (uint8_t i = 0; i < WIRE_COUNT; i++) {
-        if (wires[i].number != _number) {
-            continue;
-        }
-        const RouteSet &set = route_sets[i];
-        const int r = ch32rv_route_find(set.rows, set.count, route);
-        if (r < 0) {
-            return false;
-        }
-        return setPins(set.rows[r].pins[1], set.rows[r].pins[0]);
+    if (WIRE_COUNT == 0) {
+        return false;
     }
-    return false;
+    const RouteSet &set = route_sets[WIRE_COUNT == 1 ? 0 : _number];
+    const int r = ch32rv_route_find(set.rows, set.count, route);
+    if (r < 0) {
+        return false;
+    }
+    return setPins(set.rows[r].pins[1], set.rows[r].pins[0]);
 }
 
 bool CH32RVTwoWire::setPins(int sda, int scl)

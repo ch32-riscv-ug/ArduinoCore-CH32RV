@@ -15,7 +15,7 @@ static volatile uint32_t ticks;        /* other, so they are read together */
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
     while (!Serial) {
     }
     Serial.println("noInterrupts() does not nest - one interrupts() re-enables");

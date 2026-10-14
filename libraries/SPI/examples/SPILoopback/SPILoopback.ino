@@ -6,23 +6,35 @@
  *
  * Without the jumper MISO is pulled up and every byte reads back 0xFF, which
  * the sketch reports as "no loopback" rather than as a failure.
+ *
+ * The pads below are the chip's default ones for its first SPI (SCK, MISO,
+ * MOSI) and first USART (RX, TX). Change them to the pads your board wires:
+ * each bus takes whichever enabled peripheral has them as a route.
  */
 #include <SPI.h>
 
+static const int SCK_PIN = SCK;
+static const int MISO_PIN = MISO;
+static const int MOSI_PIN = MOSI;
+static const int RX_PIN = RX;
+static const int TX_PIN = TX;
+
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
     while (!Serial) {
     }
-    SPI.begin();
+    SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, -1);
 
     Serial.println();
-    Serial.print("SPI on SCK=pad ");
-    Serial.print(SCK);
+    Serial.print("SPI");
+    Serial.print(SPI.peripheral());
+    Serial.print(" on SCK=pad ");
+    Serial.print(SCK_PIN);
     Serial.print(", MISO=pad ");
-    Serial.print(MISO);
+    Serial.print(MISO_PIN);
     Serial.print(", MOSI=pad ");
-    Serial.println(MOSI);
+    Serial.println(MOSI_PIN);
     Serial.println("connect MOSI to MISO for the loopback");
 }
 

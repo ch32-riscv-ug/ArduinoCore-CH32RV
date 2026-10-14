@@ -242,6 +242,30 @@
 #define CH32RV_SERIAL2_ROUTES { \
     { 0, { PA2, PA3, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
 }
+/* USART3: no default route for the whole series (its pads
+ * move between packages, or sit on debug / strap pads). With a
+ * part number selected it may have one below; otherwise begin()
+ * has to name the pins. */
+#define CH32RV_SERIAL3_HANDLER USART3_IRQHandler
+#define CH32RV_SERIAL3_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERIAL3_CLKEN_MASK 0x00040000u
+#define CH32RV_SERIAL3_IRQ CH32RV_IRQN_USART3
+#define CH32RV_SERIAL3_REMAP_MASK 0x00000c00u
+#if defined(CH32RV_PART_CH32X033F8P6)
+#define CH32RV_SERIAL3_REMAP_VAL  0x00000000u
+/* SERIAL3 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL3_ROUTE_COUNT 1
+#define CH32RV_SERIAL3_ROUTES { \
+    { 1, { PC18, PC19, CH32RV_ROUTE_NO_PIN }, 0x00000400u, 0x00000000u }, \
+}
+#else   /* ANY, or a board that sets no part: the series union */
+#define CH32RV_SERIAL3_REMAP_VAL  0x00000000u
+/* SERIAL3 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL3_ROUTE_COUNT 1
+#define CH32RV_SERIAL3_ROUTES { \
+    { 1, { PC18, PC19, CH32RV_ROUTE_NO_PIN }, 0x00000400u, 0x00000000u }, \
+}
+#endif
 /* USART4: route default, on every part */
 #define CH32RV_SERIAL4_TX PB0
 #define CH32RV_SERIAL4_RX PB1
@@ -257,21 +281,10 @@
     { 0, { PB0, PB1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PA5, PA9, CH32RV_ROUTE_NO_PIN }, 0x00001000u, 0x00000000u }, \
 }
-#ifndef CH32RV_SERIAL_DEFAULT
-#define CH32RV_SERIAL_DEFAULT 2
-#endif
-/* The monitor port's default pads (Serial = SerialN, N above). */
+/* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
-#if CH32RV_SERIAL_DEFAULT == 1
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
 #define PIN_SERIAL_RX CH32RV_SERIAL1_RX
-#elif CH32RV_SERIAL_DEFAULT == 2
-#define PIN_SERIAL_TX CH32RV_SERIAL2_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL2_RX
-#elif CH32RV_SERIAL_DEFAULT == 4
-#define PIN_SERIAL_TX CH32RV_SERIAL4_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL4_RX
-#endif
 #endif
 #if defined(PIN_SERIAL_TX) && !defined(TX)
 #define TX PIN_SERIAL_TX

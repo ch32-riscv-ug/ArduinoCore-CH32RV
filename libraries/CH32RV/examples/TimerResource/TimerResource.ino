@@ -29,7 +29,7 @@ static const CH32RVTimerOwner owner = {
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
 
     /* A 1 us counter tick and a 1 ms update.  This is an API demonstration;
      * millis() is the better solution for ordinary 1 ms application work. */

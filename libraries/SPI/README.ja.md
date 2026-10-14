@@ -1,7 +1,8 @@
 # SPI
 
 CH32のSPIペリフェラルを使うcontroller専用の実装(polling)です。
-pinはvariantから来ます。チップセレクトは他のArduinoコアと同じく**ただのGPIO**です。
+pinは`SPI.begin(sck, miso, mosi, ss)`で指定します。
+チップセレクトは他のArduinoコアと同じく**ただのGPIO**です。
 
 ```cpp
 #include <SPI.h>
@@ -9,7 +10,7 @@ pinはvariantから来ます。チップセレクトは他のArduinoコアと同
 void setup() {
   pinMode(SS, OUTPUT);
   digitalWrite(SS, HIGH);
-  SPI.begin();
+  SPI.begin(SCK, MISO, MOSI, SS);   // 実際に配線したpadを書く
 
   SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
   digitalWrite(SS, LOW);
@@ -21,7 +22,14 @@ void setup() {
 
 ## どのpinを使うか
 
-`SCK` / `MISO` / `MOSI`が1本目のバスの既定routeです。
+指定したpinをrouteに持つ、空いているSPIが割り当てられます。名前とSPIの番号は
+結び付いていません。`peripheral()`で、実際に使っているSPIの番号が分かります。
+
+`SPI.begin()`のようにpinを省略した場合は救済として、ボードで有効なSPIの
+何番目かに当たるもの(`SPI`は1つ目、`SPI1`は2つ目、`SPI2`は3つ目)を既定のpinで
+開きます。ボードメニューでFIXにしたSPIはそのpin、AUTOはvariantの既定routeです。
+
+`SCK` / `MISO` / `MOSI`が1本目のSPIの既定routeです。
 `SS`はdevice-dataがNSS padを持っているseriesでのみ定義されます。
 ドライバはNSSを使いませんが(CSはGPIOなので)、配線図に出てくるのはこのpadです。
 
@@ -49,7 +57,8 @@ SPI.setPins(PB3, PB4, PB5);       // SCK, MISO, MOSI。すべて同じrouteか�
   sketch側で面倒を見る必要があります。
 - **peripheral(slave)モードは未実装**で、`SPI_HAS_PERIPHERAL_MODE`は
   意図的に未定義にしてあります(ライブラリが判定できるように)。
-- **2本目は`SPI1`、3本目は`SPI2`**です。ペリフェラル番号ではなくバスの順番。
+- **名前は`SPI`、`SPI1`、`SPI2`の順**で、ボードで有効なSPIの数だけあります。
+  無い名前を使うとコンパイルエラーになります。
 - 旧APIの`setBitOrder()` / `setDataMode()` / `setClockDivider()`も用意しています。
   呼ぶライブラリがまだ多いためです。
 

@@ -13,7 +13,7 @@ static const uint8_t PWM_PIN = PA1;
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
     while (!Serial) {
     }
     pinMode(PWM_PIN, OUTPUT);

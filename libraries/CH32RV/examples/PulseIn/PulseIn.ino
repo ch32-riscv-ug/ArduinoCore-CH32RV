@@ -17,7 +17,7 @@ static const uint8_t ECHO = PA2;
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
     while (!Serial) {
     }
     pinMode(TRIGGER, OUTPUT);

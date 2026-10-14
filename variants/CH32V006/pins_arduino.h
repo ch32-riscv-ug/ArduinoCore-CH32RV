@@ -214,6 +214,9 @@
 #define CH32RV_SERIAL1_IRQ CH32RV_IRQN_USART1
 #define CH32RV_SERIAL1_REMAP_MASK 0x000003c0u
 #define CH32RV_SERIAL1_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V006D8U7)
+#define CH32RV_SERIAL1_ABSENT 1   /* not on this part */
+#endif
 /* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL1_ROUTE_COUNT 2
 #define CH32RV_SERIAL1_ROUTES { \
@@ -229,24 +232,19 @@
 #define CH32RV_SERIAL2_IRQ CH32RV_IRQN_USART2
 #define CH32RV_SERIAL2_REMAP_MASK 0x00700000u
 #define CH32RV_SERIAL2_REMAP_VAL  0x00100000u
+#if defined(CH32RV_PART_CH32V006D8U7) || defined(CH32RV_PART_CH32V006F4U6) || defined(CH32RV_PART_CH32V006F8P7) || defined(CH32RV_PART_CH32V006F8U7)
+#define CH32RV_SERIAL2_ABSENT 1   /* not on this part */
+#endif
 /* SERIAL2 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL2_ROUTE_COUNT 2
 #define CH32RV_SERIAL2_ROUTES { \
     { 0, { PA7, PB3, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PA4, PA5, CH32RV_ROUTE_NO_PIN }, 0x00100000u, 0x00000000u }, \
 }
-#ifndef CH32RV_SERIAL_DEFAULT
-#define CH32RV_SERIAL_DEFAULT 1
-#endif
-/* The monitor port's default pads (Serial = SerialN, N above). */
+/* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
-#if CH32RV_SERIAL_DEFAULT == 1
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
 #define PIN_SERIAL_RX CH32RV_SERIAL1_RX
-#elif CH32RV_SERIAL_DEFAULT == 2
-#define PIN_SERIAL_TX CH32RV_SERIAL2_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL2_RX
-#endif
 #endif
 #if defined(PIN_SERIAL_TX) && !defined(TX)
 #define TX PIN_SERIAL_TX
@@ -292,6 +290,26 @@
 #define CH32RV_SPI1_CLKEN_MASK 0x00001000u
 #define CH32RV_SPI1_REMAP_MASK 0x00000007u
 #define CH32RV_SPI1_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V006D8U7)
+#define CH32RV_SPI1_ABSENT 1   /* not on this part */
+#endif
+#if defined(CH32RV_PART_CH32V006D8U7)
+#elif defined(CH32RV_PART_CH32V006E8R6) || defined(CH32RV_PART_CH32V006E8R7)
+/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32RV_SPI1_ROUTE_COUNT 2
+#define CH32RV_SPI1_ROUTES { \
+    { 2, { PD2, PB3, PD3 }, 0x00000002u, 0x00000000u }, \
+    { 4, { PD4, PD5, PD6 }, 0x00000004u, 0x00000000u }, \
+}
+#elif defined(CH32RV_PART_CH32V006F4U6) || defined(CH32RV_PART_CH32V006F8P7) || defined(CH32RV_PART_CH32V006F8U7)
+/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32RV_SPI1_ROUTE_COUNT 3
+#define CH32RV_SPI1_ROUTES { \
+    { 0, { PC5, PC7, PC6 }, 0x00000000u, 0x00000000u }, \
+    { 1, { PC5, PC7, PC6 }, 0x00000001u, 0x00000000u }, \
+    { 4, { PD4, PD5, PD6 }, 0x00000004u, 0x00000000u }, \
+}
+#elif defined(CH32RV_PART_CH32V006K8U6) || defined(CH32RV_PART_CH32V006K8U7)
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
 #define CH32RV_SPI1_ROUTE_COUNT 7
 #define CH32RV_SPI1_ROUTES { \
@@ -303,6 +321,19 @@
     { 5, { PA1, PB5, PA2 }, 0x00000005u, 0x00000000u }, \
     { 6, { PB5, PC7, PB4 }, 0x00000006u, 0x00000000u }, \
 }
+#else   /* ANY, or a board that sets no part: the series union */
+/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32RV_SPI1_ROUTE_COUNT 7
+#define CH32RV_SPI1_ROUTES { \
+    { 0, { PC5, PC7, PC6 }, 0x00000000u, 0x00000000u }, \
+    { 1, { PC5, PC7, PC6 }, 0x00000001u, 0x00000000u }, \
+    { 2, { PD2, PB3, PD3 }, 0x00000002u, 0x00000000u }, \
+    { 3, { PB1, PB2, PC0 }, 0x00000003u, 0x00000000u }, \
+    { 4, { PD4, PD5, PD6 }, 0x00000004u, 0x00000000u }, \
+    { 5, { PA1, PB5, PA2 }, 0x00000005u, 0x00000000u }, \
+    { 6, { PB5, PC7, PB4 }, 0x00000006u, 0x00000000u }, \
+}
+#endif
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI1's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */

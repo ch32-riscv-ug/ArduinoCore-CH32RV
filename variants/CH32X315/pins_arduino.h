@@ -430,24 +430,10 @@
 /* NOTE: route af-1 is a per-pin alternate-function
  * selector, not an AFIO remap. The core does not program it
  * and this unsupported port cannot be selected. */
-#ifndef CH32RV_SERIAL_DEFAULT
-#define CH32RV_SERIAL_DEFAULT 1
-#endif
-/* The monitor port's default pads (Serial = SerialN, N above). */
+/* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
-#if CH32RV_SERIAL_DEFAULT == 1
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
 #define PIN_SERIAL_RX CH32RV_SERIAL1_RX
-#elif CH32RV_SERIAL_DEFAULT == 2
-#define PIN_SERIAL_TX CH32RV_SERIAL2_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL2_RX
-#elif CH32RV_SERIAL_DEFAULT == 3
-#define PIN_SERIAL_TX CH32RV_SERIAL3_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL3_RX
-#elif CH32RV_SERIAL_DEFAULT == 4
-#define PIN_SERIAL_TX CH32RV_SERIAL4_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL4_RX
-#endif
 #endif
 #if defined(PIN_SERIAL_TX) && !defined(TX)
 #define TX PIN_SERIAL_TX

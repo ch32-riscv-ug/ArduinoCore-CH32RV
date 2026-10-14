@@ -1,9 +1,7 @@
-/* SPI on its own: the linker takes this file only when a sketch names it. The
- * bare name is the first bus, as everywhere else in the Arduino ecosystem. */
+/* SPI on its own: the linker takes this file only when a sketch names it.
+ * It is row 0 of the enabled SPIs (ch32rv_instances.h). */
 #include "SPI.h"
 
-#if defined(CH32RV_SPI1_SCK)
-arduino::CH32RVSPIClass SPI(1);
-#elif defined(CH32RV_SPI2_SCK)
-arduino::CH32RVSPIClass SPI(2);      /* a part with no SPI1 */
+#if CH32RV_SPI_COUNT > 0
+arduino::CH32RVSPIClass SPI(0);
 #endif

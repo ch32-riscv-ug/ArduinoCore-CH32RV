@@ -1,8 +1,8 @@
 /* Wire (I2C) for CH32 RISC-V.
  *
- * Master mode, polled. The default pins come from the variant's CH32RV_I2Cn_SCL/SDA, so
- * a sketch calls Wire.begin() with no arguments the way it does on AVR, or names
- * them the way it does on an ESP32: Wire.begin(sda, scl[, frequency]). The type
+ * Master mode, polled. A sketch names the pins the way it does on an ESP32,
+ * Wire.begin(sda, scl[, frequency]); Wire.begin() with no arguments, as on AVR,
+ * is the fallback onto the board's default pins (ch32rv_instances.h). The type
  * libraries take, TwoWire, is the base in <TwoWire.h>.
  *
  * Slave mode (begin(address), onReceive, onRequest) is interrupt-driven -
@@ -32,6 +32,7 @@
 #include "ch32rv_pins.h"
 #include "ch32rv_route.h"
 #include "pins_arduino.h"
+#include "ch32rv_instances.h"
 
 #include <stdint.h>
 
@@ -66,11 +67,10 @@ namespace arduino {
  * constants sit in a const table in Wire.cpp, and an I2C set to Disable for
  * the board (CH32RV_I2Cn_MODE = 0) is not in that table.
  *
- * Provisional rule until names and instances are tied together for good: a
- * begin() without pins binds Wire to its usual I2C (I2C1, or I2C2 on a part
- * without I2C1) and Wire1 to I2C2, on the default route - or the fixed one when
- * the board sets FIX. begin(sda, scl) binds to whichever enabled I2C has those
- * pins as a route. */
+ * `number` is the name's position (Wire = 0, Wire1 = 1), which is also its
+ * row in the table of enabled I2Cs: begin(sda, scl) takes any free I2C those
+ * pins are a route of, this row first; begin() without pins takes this row on
+ * its default pins (ch32rv_instances.h). */
 class CH32RVTwoWire : public ::TwoWire {
 public:
     explicit CH32RVTwoWire(uint8_t number) : _number(number) {}
@@ -219,18 +219,12 @@ private:
 
 }  // namespace arduino
 
-/* The bare name is the first bus and Wire1 the second, as elsewhere in the
- * Arduino ecosystem - see the note above the instances in Wire.cpp. */
-#if defined(CH32RV_I2C1_SCL) && defined(CH32RV_I2C2_SCL)
-#define WIRE_INTERFACES_COUNT 2
-#elif defined(CH32RV_I2C1_SCL) || defined(CH32RV_I2C2_SCL)
-#define WIRE_INTERFACES_COUNT 1
+/* As many names as the board has enabled I2Cs (ch32rv_instances.h): the bare
+ * name first and Wire1 second, as elsewhere in the Arduino ecosystem. */
+#if CH32RV_WIRE_COUNT > 0
+#define WIRE_INTERFACES_COUNT CH32RV_WIRE_COUNT
+extern arduino::CH32RVTwoWire Wire;       /* WireInstance.cpp */
 #endif
-#if defined(CH32RV_I2C1_SCL)
-extern arduino::CH32RVTwoWire Wire;       /* I2C1 (WireInstance.cpp) */
-#if defined(CH32RV_I2C2_SCL)
-extern arduino::CH32RVTwoWire Wire1;      /* I2C2 (Wire1Instance.cpp) */
-#endif
-#elif defined(CH32RV_I2C2_SCL)
-extern arduino::CH32RVTwoWire Wire;       /* I2C2, on a part that has no I2C1 */
+#if CH32RV_WIRE_COUNT > 1
+extern arduino::CH32RVTwoWire Wire1;      /* Wire1Instance.cpp */
 #endif

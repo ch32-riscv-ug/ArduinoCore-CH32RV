@@ -296,6 +296,9 @@
 #define CH32RV_SERIAL1_IRQ CH32RV_IRQN_USART1
 #define CH32RV_SERIAL1_REMAP_MASK 0x00000060u
 #define CH32RV_SERIAL1_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32X035D8U6) || defined(CH32RV_PART_CH32X035F7P6) || defined(CH32RV_PART_CH32X035F8U6)
+#define CH32RV_SERIAL1_ABSENT 1   /* not on this part */
+#endif
 /* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL1_ROUTE_COUNT 2
 #define CH32RV_SERIAL1_ROUTES { \
@@ -341,30 +344,19 @@
 #define CH32RV_SERIAL4_IRQ CH32RV_IRQN_USART4
 #define CH32RV_SERIAL4_REMAP_MASK 0x00007000u
 #define CH32RV_SERIAL4_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32X035D8U6) || defined(CH32RV_PART_CH32X035F7P6)
+#define CH32RV_SERIAL4_ABSENT 1   /* not on this part */
+#endif
 /* SERIAL4 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL4_ROUTE_COUNT 2
 #define CH32RV_SERIAL4_ROUTES { \
     { 0, { PB0, PB1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PA5, PA9, CH32RV_ROUTE_NO_PIN }, 0x00001000u, 0x00000000u }, \
 }
-#ifndef CH32RV_SERIAL_DEFAULT
-#define CH32RV_SERIAL_DEFAULT 1
-#endif
-/* The monitor port's default pads (Serial = SerialN, N above). */
+/* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
-#if CH32RV_SERIAL_DEFAULT == 1
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
 #define PIN_SERIAL_RX CH32RV_SERIAL1_RX
-#elif CH32RV_SERIAL_DEFAULT == 2
-#define PIN_SERIAL_TX CH32RV_SERIAL2_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL2_RX
-#elif CH32RV_SERIAL_DEFAULT == 3
-#define PIN_SERIAL_TX CH32RV_SERIAL3_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL3_RX
-#elif CH32RV_SERIAL_DEFAULT == 4
-#define PIN_SERIAL_TX CH32RV_SERIAL4_TX
-#define PIN_SERIAL_RX CH32RV_SERIAL4_RX
-#endif
 #endif
 #if defined(PIN_SERIAL_TX) && !defined(TX)
 #define TX PIN_SERIAL_TX

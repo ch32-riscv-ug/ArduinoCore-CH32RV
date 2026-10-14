@@ -1,15 +1,14 @@
 # Wire (I2C)
 
-Master/slave I2C on the CH32's own peripheral. The pins come from the variant,
-so `Wire.begin()` takes no arguments; name them as on an ESP32 when you want
-others: `Wire.begin(sda, scl)` or `Wire.begin(sda, scl, 400000)`.
+Master/slave I2C on the CH32's own peripheral. Name the pins as on an ESP32:
+`Wire.begin(sda, scl)` or `Wire.begin(sda, scl, 400000)`.
 Libraries take the bus as `TwoWire *` (`&Wire`), and a `SoftWire` passes there too.
 
 ```cpp
 #include <Wire.h>
 
 void setup() {
-  Wire.begin();
+  Wire.begin(SDA, SCL);           // the pads you wired
   Wire.beginTransmission(0x3C);
   Wire.write(0x00);
   if (Wire.endTransmission() == 0) {
@@ -20,7 +19,15 @@ void setup() {
 
 ## Which pins
 
-`SDA` and `SCL` name the first bus's default route, as the datasheet defines
+The bus takes whichever free I2C has the pins as a route. A name is not tied
+to an I2C number: `Wire` on I2C2's pins and `Wire1` on I2C1's is fine.
+`peripheral()` tells which I2C a bus landed on (0 while closed).
+
+`Wire.begin()` without pins is the fallback: the board's enabled I2Cs in
+number order, `Wire` the first and `Wire1` the second, on their default pins -
+the board menu's FIX pins, or the variant's default route under AUTO.
+
+`SDA` and `SCL` name the first I2C's default route, as the datasheet defines
 it. Print them if you are unsure - they differ per series:
 
 ```cpp
@@ -61,8 +68,8 @@ old pads to inputs.
   `onReceive()` and `onRequest()` callbacks run in interrupt context. An instance
   cannot act as master and slave simultaneously. Multi-master arbitration and
   general-call responses are unsupported.
-- **A second bus is `Wire1`**, where the part has one - bus order, as elsewhere
-  in the Arduino ecosystem, not the peripheral's number.
+- **Names are `Wire`, `Wire1`**, one per I2C the board enables (not set to
+  Disable in the menu). Using a name the board does not have fails to compile.
 - Timeout: a wait gives up after 25 ms and `endTransmission()` returns 5. That
   is **on by default**, unlike AVR, where a stuck bus hangs the sketch until
   the sketch asks for a timeout. `setWireTimeout(us)` changes it and

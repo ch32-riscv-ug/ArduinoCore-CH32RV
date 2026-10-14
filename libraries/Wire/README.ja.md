@@ -1,15 +1,14 @@
 # Wire (I2C)
 
-CH32のI2Cペリフェラルを使うmaster/slave実装です。pinはvariantから来るので
-`Wire.begin()`に引数は要りません。別のpinはESP32と同じ形で指定できます:
-`Wire.begin(sda, scl)`、`Wire.begin(sda, scl, 400000)`。
+CH32のI2Cペリフェラルを使うmaster/slave実装です。pinはESP32と同じ形で
+指定します: `Wire.begin(sda, scl)`、`Wire.begin(sda, scl, 400000)`。
 ライブラリには`TwoWire *`(`&Wire`)で渡し、`SoftWire`もそこへ渡せます。
 
 ```cpp
 #include <Wire.h>
 
 void setup() {
-  Wire.begin();
+  Wire.begin(SDA, SCL);           // 実際に配線したpadを書く
   Wire.beginTransmission(0x3C);
   Wire.write(0x00);
   if (Wire.endTransmission() == 0) {
@@ -20,7 +19,15 @@ void setup() {
 
 ## どのpinを使うか
 
-`SDA`と`SCL`が1本目のバスの既定route(データシートどおり)を指します。
+指定したpinをrouteに持つ、空いているI2Cが割り当てられます。名前とI2Cの番号は
+結び付いていません(`Wire`にI2C2のpin、`Wire1`にI2C1のpinを渡してもかまいません)。
+`peripheral()`で、実際に使っているI2Cの番号が分かります(開いていなければ0)。
+
+`Wire.begin()`のようにpinを省略した場合は救済として、ボードで有効なI2Cの
+何番目かに当たるもの(`Wire`は1つ目、`Wire1`は2つ目)を既定のpinで開きます。
+ボードメニューでFIXにしたI2Cはそのpin、AUTOはvariantの既定routeです。
+
+`SDA`と`SCL`が1本目のI2Cの既定route(データシートどおり)を指します。
 seriesごとに違うので、分からなければ表示させてください。
 
 ```cpp
@@ -60,8 +67,8 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
   `onReceive()`と`onRequest()`のcallbackは割り込みcontextで呼ばれます。
   1つのinstanceをmasterとslaveに同時利用すること、multi-master arbitration、
   general callへの応答には対応しません。
-- **2本目は`Wire1`**です。ペリフェラル番号ではなく**バスの順番**で、
-  Arduinoエコシステムの慣習に合わせています。
+- **名前は`Wire`、`Wire1`の順**で、ボードで有効な(メニューでDisableにしていない)
+  I2Cの数だけあります。無い名前を使うとコンパイルエラーになります。
 - タイムアウトは25msで、`endTransmission()`は5を返します。**既定で有効**です
   (AVRは既定で無効で、バスが固まるとスケッチが永久に止まります)。
   `setWireTimeout(us)`で変更、`setWireTimeout(0)`で無効。

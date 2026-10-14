@@ -2,8 +2,9 @@
  *
  * Transmit is interrupt-driven through a ring buffer so that print() does not
  * block on the wire; receive is interrupt-driven into a second ring buffer.
- * Serial1..5 are defined one per file (HardwareSerial1.cpp ...), so a sketch
- * links only the ports it names; the USARTs they run on are bound in begin().
+ * Serial, Serial1 .. Serial4 are defined one per file (HardwareSerial0.cpp
+ * ...), so a sketch links only the ports it names; the USARTs they run on are
+ * bound in begin(). See ch32rv_instances.h for how names reach USARTs.
  */
 #pragma once
 
@@ -12,14 +13,15 @@
 #include "ch32rv_printf.h"
 #include "ch32rv_ringbuffer.h"
 #include "ch32rv_route.h"
-/* Not just for the pad names: CH32RV_SERIALn_TX and CH32RV_SERIAL_DEFAULT below
- * come from here, and this header has to work when it is included first.
+/* Not just for the pad names: CH32RV_SERIAL_COUNT below comes from the
+ * variant, and this header has to work when it is included first.
  * HardwareSerial.cpp includes it before Arduino.h, and when the variant was
  * only reachable through Arduino.h that left SERIAL_PORT_MONITOR undefined for
  * exactly one translation unit - the one holding the printf() bridge, which
  * then compiled to `return 0` and made every stdio write to Serial a silent
  * no-op. */
 #include "pins_arduino.h"
+#include "ch32rv_instances.h"
 
 #include <stdint.h>
 
@@ -51,11 +53,10 @@ namespace arduino {
  * HardwareSerial.cpp, and a USART set to Disable for the board
  * (CH32RV_USARTn_MODE = 0) is not in that table at all.
  *
- * Provisional rule until names and USARTs are tied together for good: a
- * begin() without pins binds SerialN to USARTn - its fixed pins when the board
- * sets FIX, the variant's default pins otherwise - which is what every sketch
- * already relies on. begin() with pins binds to whichever enabled USART has
- * them as a route. */
+ * `number` is the name's position (Serial = 0, Serial1 = 1, ...), which is
+ * also its row in the table of enabled USARTs: begin() with pins takes any free
+ * USART those pins are a route of, this row first; begin() without pins takes
+ * this row on its default pins (ch32rv_instances.h). */
 class CH32RVHardwareSerial : public HardwareSerial {
 public:
     explicit CH32RVHardwareSerial(uint8_t number) : _number(number) {}
@@ -99,16 +100,16 @@ public:
 
     /* Choose the pins for the next begin(), or move an open port onto them.
      *
-     * setRoute() names a route of USARTn (this port's provisional USART);
-     * setPins() names the pins, and any enabled USART whose route they are
-     * will do. Both return false and change nothing when no enabled USART has
+     * setRoute() names a route of this name's own row (the USART a begin()
+     * without pins would take); setPins() names the pins, and any enabled
+     * USART whose route they are will do. Both return false and change nothing when no enabled USART has
      * that route, and setPins() refuses a TX and an RX from different routes -
      * the hardware cannot do that. CTS / RTS must stay -1: hardware flow
      * control is not supported. setPins() takes RX first, as on an ESP32. */
     bool setRoute(uint8_t route);
     bool setPins(int rxPin, int txPin, int ctsPin = -1, int rtsPin = -1);
 
-    /* For the shared interrupt handler only. */
+    /* For the shared interrupt handler and serialEvent() only. */
     void irq(uint32_t base);
     uint8_t number(void) const { return _number; }
 
@@ -135,39 +136,27 @@ private:
 
 }  // namespace arduino
 
-/* The variant names the USART whose pins exist on every part in the series. */
-#if defined(CH32RV_SERIAL1_TX)
+/* As many names as the board has enabled USARTs (ch32rv_instances.h). */
+#if CH32RV_SERIAL_COUNT >= 1
+extern arduino::CH32RVHardwareSerial Serial;
+#define SERIAL_PORT_MONITOR  Serial
+#define SERIAL_PORT_HARDWARE Serial
+#endif
+#if CH32RV_SERIAL_COUNT >= 2
 extern arduino::CH32RVHardwareSerial Serial1;
+#define SERIAL_PORT_HARDWARE1 Serial1
 #endif
-#if defined(CH32RV_SERIAL2_TX)
+#if CH32RV_SERIAL_COUNT >= 3
 extern arduino::CH32RVHardwareSerial Serial2;
+#define SERIAL_PORT_HARDWARE2 Serial2
 #endif
-#if defined(CH32RV_SERIAL3_TX)
+#if CH32RV_SERIAL_COUNT >= 4
 extern arduino::CH32RVHardwareSerial Serial3;
+#define SERIAL_PORT_HARDWARE3 Serial3
 #endif
-#if defined(CH32RV_SERIAL4_TX)
+#if CH32RV_SERIAL_COUNT >= 5
 extern arduino::CH32RVHardwareSerial Serial4;
-#endif
-#if defined(CH32RV_SERIAL5_TX)
-extern arduino::CH32RVHardwareSerial Serial5;
-#endif
-
-#if !defined(SERIAL_PORT_MONITOR) && defined(CH32RV_SERIAL_DEFAULT)
-#if CH32RV_SERIAL_DEFAULT == 1
-#define SERIAL_PORT_MONITOR Serial1
-#elif CH32RV_SERIAL_DEFAULT == 2
-#define SERIAL_PORT_MONITOR Serial2
-#elif CH32RV_SERIAL_DEFAULT == 3
-#define SERIAL_PORT_MONITOR Serial3
-#elif CH32RV_SERIAL_DEFAULT == 4
-#define SERIAL_PORT_MONITOR Serial4
-#elif CH32RV_SERIAL_DEFAULT == 5
-#define SERIAL_PORT_MONITOR Serial5
-#endif
-#endif
-
-#if defined(SERIAL_PORT_MONITOR) && !defined(Serial)
-#define Serial SERIAL_PORT_MONITOR
+#define SERIAL_PORT_HARDWARE4 Serial4
 #endif
 
 /* Retarget printf()/puts()/stderr. The default is the monitor port above.

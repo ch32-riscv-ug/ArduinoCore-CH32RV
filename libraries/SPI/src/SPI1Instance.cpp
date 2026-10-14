@@ -1,8 +1,7 @@
-/* SPI1 (the second bus) on its own. */
+/* SPI1 on its own: the linker takes this file only when a sketch names it.
+ * It is row 1 of the enabled SPIs (ch32rv_instances.h). */
 #include "SPI.h"
 
-#if defined(CH32RV_SPI1_SCK) && defined(CH32RV_SPI2_SCK)
-arduino::CH32RVSPIClass SPI1(2);
-#elif !defined(CH32RV_SPI1_SCK) && defined(CH32RV_SPI2_SCK) && defined(CH32RV_SPI3_SCK)
-arduino::CH32RVSPIClass SPI1(3);
+#if CH32RV_SPI_COUNT > 1
+arduino::CH32RVSPIClass SPI1(1);
 #endif
