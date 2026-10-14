@@ -50,3 +50,26 @@ def test_ci_and_release_do_not_run_archived_tests():
     for name in ("ci.yml", "release.yml"):
         source = (REPO / ".github" / "workflows" / name).read_text()
         assert "tests-legacy" not in source
+
+
+def test_board_specific_example_builds_for_that_board_only(tmp_path):
+    tools = REPO / "tools/generate"
+    sys.path.insert(0, str(tools))
+    try:
+        requirements = load_tool("tools/generate/sketch_requirements.py", "sketch_requirements")
+    finally:
+        sys.path.remove(str(tools))
+    sketch = tmp_path / "Template"
+    sketch.mkdir()
+    ino = sketch / "Template.ino"
+    ino.write_text("/* A template.\n *\n * board: CH32X035:pnum=CH32X035F8U6\n */\n")
+    assert requirements.target_board(sketch) == "CH32X035:pnum=CH32X035F8U6"
+    ino.write_text("/* keyboard: any key */\n")
+    assert requirements.target_board(sketch) is None
+    for wrong in ("NOSUCHBOARD", "CH32X035:pnum=NOSUCHPART"):
+        ino.write_text(f"/* board: {wrong} */\n")
+        try:
+            requirements.target_board(sketch)
+        except requirements.BadRequirement:
+            continue
+        raise AssertionError(f"{wrong} was accepted")

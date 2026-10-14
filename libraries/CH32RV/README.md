@@ -43,6 +43,20 @@ and most numbers in between belong to no pad (0..63 are kept for a product
 board's printed numbers). That sketch asks the variant instead
 of guessing.
 
+### Product board templates
+
+One per product board: every peripheral the board brings out, set up with all
+its pins named, to start from and cut down. What cannot run together with the
+rest is commented out, saying what it would cost. Each is built for its own
+board (fqbn) only (`board:`, `docs/examples-build-rules.ja.md`).
+
+| Example | Board | Sets up |
+|---|---|---|
+| BoardWeActCH32X035 | WeAct CH32X035 Core Board (CH32X035F8U6) | USB (`SerialUSB` + the DFU runtime for uploads), USB PD (5 V), two UARTs, SPI, two analog inputs, PWM, the LED (PB12). I2C exists only on the USB or SWD pins, so it is commented out |
+| BoardUIAPduinoProMicro | UIAPduino Pro Micro CH32V003 V1.4 | UART, I2C (a bus scan), SPI, three analog inputs, PWM, the LED (PC0). SPI stays AUTO in the board menu; the maker's NSS pads (PC1 / PC0) are I2C's SDA and the LED, so CS is PC3, with the alternatives in comments |
+
+Both were run on the boards (2026-10-14).
+
 ## The escape hatch
 
 ```cpp

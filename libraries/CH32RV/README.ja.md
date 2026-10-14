@@ -63,6 +63,19 @@ CH32のpin番号は`((port + 2) << 5) | bit`なので飛び飛びで、
 PA0が64、PB0が96、その間のほとんどの番号はpadに対応しません(0〜63は製品boardの印刷番号用)。
 このsketchは推測せずvariantに問い合わせます。
 
+### 製品ボードのテンプレート
+
+製品ボードごとに、その板が出しているペリフェラルを全部初期化して使う雛形です。板のpinをすべて名前付きで書いて
+あり、要らないものを消して使い始めます。同時に使えないものはコメントで外してあり、何と引き換えになるかを書いて
+います。その板（fqbn）だけでビルドします（`board:` 宣言、`docs/examples-build-rules.ja.md`）。
+
+| example | 板 | 初期化するもの |
+|---|---|---|
+| BoardWeActCH32X035 | WeAct CH32X035 Core Board（CH32X035F8U6） | USB（`SerialUSB` + 書き込み用の DFU ランタイム）、USB PD（5 V）、UART 2系統、SPI、ADC 2本、PWM、LED（PB12）。I2C は USB か SWD の端子にしか出ていないのでコメントで外してある |
+| BoardUIAPduinoProMicro | UIAPduino Pro Micro CH32V003 V1.4 | UART、I2C（スキャン）、SPI、ADC 3本、PWM、LED（PC0）。SPI はボードメニューの AUTO のまま。メーカーの配置図にある NSS（PC1 / PC0）は I2C と LED に重なるので、CS は PC3 にしてコメントで示す |
+
+どちらも実機で動作を確かめています（2026-10-14）。
+
 ## 逃げ道
 
 ```cpp

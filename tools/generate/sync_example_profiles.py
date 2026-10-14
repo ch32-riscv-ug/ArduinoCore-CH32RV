@@ -5,7 +5,7 @@ import pathlib
 import re
 import sys
 
-from sketch_requirements import all_boards, requirements, series_capabilities, unmet
+from sketch_requirements import all_boards, requirements, series_capabilities, target_board, unmet
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 INDEX_URL = ("https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/"
@@ -31,6 +31,20 @@ def render(source: pathlib.Path) -> str:
         "profiles:",
     ]
     kept = []
+    fixed = target_board(source)
+    if fixed:
+        name = fixed.split(":")[0].lower()
+        lines.extend([
+            f"  {name}:",
+            f"    fqbn: ch32-riscv-ug:ch32rv:{fixed}",
+            "    platforms:",
+            f"      - platform: ch32-riscv-ug:ch32rv ({version})",
+            f"        platform_index_url: {INDEX_URL}",
+            "",
+            f"default_profile: {name}",
+            "",
+        ])
+        return "\n".join(lines)
     for board in generic_boards:
         reason = unmet(need, board)
         if reason:

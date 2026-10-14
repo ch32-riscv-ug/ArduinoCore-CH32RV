@@ -21,6 +21,13 @@ example が追加の機能を必要とする場合は .ino に宣言します。
 
 capability は生成 header の CH32RV_CLKEN_<name>_ADDR に対応します。
 flash=/ram= は ANY menu entry に対する下限です。未知の capability/key はエラーにします。
+
+製品ボードのテンプレートのように特定の板だけのための example は、板を宣言します。代表 board ごとの profile の代わりに、
+その fqbn（`ch32-riscv-ug:ch32rv:` より後ろ）の profile を1つだけ作ります。boards.txt に無い板や menu の値はエラーにします。
+
+```c
+/* board: CH32X035:pnum=CH32X035F8U6 */
+```
 silicon capability はコア API の実装範囲や実機設備とは別です。
 
 sketch.yaml は全文生成してソース管理に含めます。

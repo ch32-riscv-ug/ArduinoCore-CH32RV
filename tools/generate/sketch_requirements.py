@@ -82,6 +82,32 @@ def requirements(src: pathlib.Path) -> dict:
     return need
 
 
+def target_board(src: pathlib.Path):
+    """The one board a board-specific example is for, or None.
+
+    `/* board: CH32X035:pnum=CH32X035F8U6 */` names a boards.txt entry and its
+    menu options (the fqbn after `ch32-riscv-ug:ch32rv:`). Such an example - a
+    product board's template - is built for that board only, instead of one
+    generic board per series.
+    """
+    ino = src / f"{src.name}.ino"
+    if not ino.exists():
+        return None
+    match = re.search(r"^\s*(?:/\*|\*)\s*board:\s*([A-Za-z0-9_]+)((?::[A-Za-z0-9_]+=[A-Za-z0-9_]+(?:,[A-Za-z0-9_]+=[A-Za-z0-9_]+)*)?)\s",
+                      ino.read_text(encoding="utf-8"), re.M)
+    if not match:
+        return None
+    board, options = match.group(1), match.group(2).lstrip(":")
+    if board not in all_boards():
+        raise BadRequirement(f"{ino.name}: no board {board!r} in boards.txt")
+    text = (REPO / "boards.txt").read_text(encoding="utf-8")
+    for option in filter(None, options.split(",")):
+        menu, _, value = option.partition("=")
+        if not re.search(rf"^{board}\.menu\.{menu}\.{value}=", text, re.M):
+            raise BadRequirement(f"{ino.name}: {board} has no {menu}={value}")
+    return board + (":" + options if options else "")
+
+
 def unmet(need: dict, board: str):
     """Why `board` cannot run this sketch, in the sketch's own words, or None."""
     caps = series_capabilities().get(board, ())
