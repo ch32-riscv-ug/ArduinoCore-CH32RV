@@ -202,7 +202,7 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
             key = f"build.{kind}{n}_mode"
             uses.append("{" + key + "}")
             pfx = f"{board}.menu.{kind}{n}"
-            lines.append(f"{pfx}.auto=AUTO (begin() で割り当て)")
+            lines.append(f"{pfx}.auto=AUTO (bind at begin())")
             lines.append(f"{pfx}.auto.{key}=")
             lines.append(f"{pfx}.disable=Disable")
             lines.append(f"{pfx}.disable.{key}=-DCH32RV_{macro}{n}_MODE=0")

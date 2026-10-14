@@ -90,7 +90,7 @@ CH32V003.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB
 CH32V003.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V003.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
 CH32V003.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32V003.menu.usart1.auto=AUTO (begin() で割り当て)
+CH32V003.menu.usart1.auto=AUTO (bind at begin())
 CH32V003.menu.usart1.auto.build.usart1_mode=
 CH32V003.menu.usart1.disable=Disable
 CH32V003.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
@@ -98,7 +98,7 @@ CH32V003.menu.usart1.fix0=FIX (TX:PD5, RX:PD6)
 CH32V003.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD5 -DCH32RV_USART1_FIX_RX=PD6 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
 CH32V003.menu.usart1.fix1=FIX (TX:PD0, RX:PD1)
 CH32V003.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PD0 -DCH32RV_USART1_FIX_RX=PD1 -DCH32RV_USART1_FIX_V1=0x00000004u -DCH32RV_USART1_FIX_V2=0x00000000u
-CH32V003.menu.i2c1.auto=AUTO (begin() で割り当て)
+CH32V003.menu.i2c1.auto=AUTO (bind at begin())
 CH32V003.menu.i2c1.auto.build.i2c1_mode=
 CH32V003.menu.i2c1.disable=Disable
 CH32V003.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
@@ -108,7 +108,7 @@ CH32V003.menu.i2c1.fix1=FIX (SCL:PD1, SDA:PD0)
 CH32V003.menu.i2c1.fix1.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PD1 -DCH32RV_I2C1_FIX_SDA=PD0 -DCH32RV_I2C1_FIX_V1=0x00000002u -DCH32RV_I2C1_FIX_V2=0x00000000u
 CH32V003.menu.i2c1.fix2=FIX (SCL:PC5, SDA:PC6)
 CH32V003.menu.i2c1.fix2.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC5 -DCH32RV_I2C1_FIX_SDA=PC6 -DCH32RV_I2C1_FIX_V1=0x00400000u -DCH32RV_I2C1_FIX_V2=0x00000000u
-CH32V003.menu.spi1.auto=AUTO (begin() で割り当て)
+CH32V003.menu.spi1.auto=AUTO (bind at begin())
 CH32V003.menu.spi1.auto.build.spi1_mode=
 CH32V003.menu.spi1.disable=Disable
 CH32V003.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
@@ -1375,7 +1375,7 @@ CH32X035.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32X035.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X035.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32X035.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
-CH32X035.menu.usart1.auto=AUTO (begin() で割り当て)
+CH32X035.menu.usart1.auto=AUTO (bind at begin())
 CH32X035.menu.usart1.auto.build.usart1_mode=
 CH32X035.menu.usart1.disable=Disable
 CH32X035.menu.usart1.disable.build.usart1_mode=-DCH32RV_USART1_MODE=0
@@ -1383,7 +1383,7 @@ CH32X035.menu.usart1.fix0=FIX (TX:PB10, RX:PB11)
 CH32X035.menu.usart1.fix0.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PB10 -DCH32RV_USART1_FIX_RX=PB11 -DCH32RV_USART1_FIX_V1=0x00000000u -DCH32RV_USART1_FIX_V2=0x00000000u
 CH32X035.menu.usart1.fix1=FIX (TX:PA10, RX:PA11)
 CH32X035.menu.usart1.fix1.build.usart1_mode=-DCH32RV_USART1_MODE=2 -DCH32RV_USART1_FIX_TX=PA10 -DCH32RV_USART1_FIX_RX=PA11 -DCH32RV_USART1_FIX_V1=0x00000020u -DCH32RV_USART1_FIX_V2=0x00000000u
-CH32X035.menu.usart2.auto=AUTO (begin() で割り当て)
+CH32X035.menu.usart2.auto=AUTO (bind at begin())
 CH32X035.menu.usart2.auto.build.usart2_mode=
 CH32X035.menu.usart2.disable=Disable
 CH32X035.menu.usart2.disable.build.usart2_mode=-DCH32RV_USART2_MODE=0
@@ -1391,7 +1391,7 @@ CH32X035.menu.usart2.fix0=FIX (TX:PA2, RX:PA3)
 CH32X035.menu.usart2.fix0.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA2 -DCH32RV_USART2_FIX_RX=PA3 -DCH32RV_USART2_FIX_V1=0x00000000u -DCH32RV_USART2_FIX_V2=0x00000000u
 CH32X035.menu.usart2.fix1=FIX (TX:PA20, RX:PA19)
 CH32X035.menu.usart2.fix1.build.usart2_mode=-DCH32RV_USART2_MODE=2 -DCH32RV_USART2_FIX_TX=PA20 -DCH32RV_USART2_FIX_RX=PA19 -DCH32RV_USART2_FIX_V1=0x00000080u -DCH32RV_USART2_FIX_V2=0x00000000u
-CH32X035.menu.usart3.auto=AUTO (begin() で割り当て)
+CH32X035.menu.usart3.auto=AUTO (bind at begin())
 CH32X035.menu.usart3.auto.build.usart3_mode=
 CH32X035.menu.usart3.disable=Disable
 CH32X035.menu.usart3.disable.build.usart3_mode=-DCH32RV_USART3_MODE=0
@@ -1399,7 +1399,7 @@ CH32X035.menu.usart3.fix0=FIX (TX:PB3, RX:PB4)
 CH32X035.menu.usart3.fix0.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PB3 -DCH32RV_USART3_FIX_RX=PB4 -DCH32RV_USART3_FIX_V1=0x00000000u -DCH32RV_USART3_FIX_V2=0x00000000u
 CH32X035.menu.usart3.fix1=FIX (TX:PC18, RX:PC19)
 CH32X035.menu.usart3.fix1.build.usart3_mode=-DCH32RV_USART3_MODE=2 -DCH32RV_USART3_FIX_TX=PC18 -DCH32RV_USART3_FIX_RX=PC19 -DCH32RV_USART3_FIX_V1=0x00000400u -DCH32RV_USART3_FIX_V2=0x00000000u
-CH32X035.menu.usart4.auto=AUTO (begin() で割り当て)
+CH32X035.menu.usart4.auto=AUTO (bind at begin())
 CH32X035.menu.usart4.auto.build.usart4_mode=
 CH32X035.menu.usart4.disable=Disable
 CH32X035.menu.usart4.disable.build.usart4_mode=-DCH32RV_USART4_MODE=0
@@ -1407,7 +1407,7 @@ CH32X035.menu.usart4.fix0=FIX (TX:PB0, RX:PB1)
 CH32X035.menu.usart4.fix0.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PB0 -DCH32RV_USART4_FIX_RX=PB1 -DCH32RV_USART4_FIX_V1=0x00000000u -DCH32RV_USART4_FIX_V2=0x00000000u
 CH32X035.menu.usart4.fix1=FIX (TX:PA5, RX:PA9)
 CH32X035.menu.usart4.fix1.build.usart4_mode=-DCH32RV_USART4_MODE=2 -DCH32RV_USART4_FIX_TX=PA5 -DCH32RV_USART4_FIX_RX=PA9 -DCH32RV_USART4_FIX_V1=0x00001000u -DCH32RV_USART4_FIX_V2=0x00000000u
-CH32X035.menu.i2c1.auto=AUTO (begin() で割り当て)
+CH32X035.menu.i2c1.auto=AUTO (bind at begin())
 CH32X035.menu.i2c1.auto.build.i2c1_mode=
 CH32X035.menu.i2c1.disable=Disable
 CH32X035.menu.i2c1.disable.build.i2c1_mode=-DCH32RV_I2C1_MODE=0
@@ -1423,7 +1423,7 @@ CH32X035.menu.i2c1.fix4=FIX (SCL:PC17, SDA:PC16)
 CH32X035.menu.i2c1.fix4.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC17 -DCH32RV_I2C1_FIX_SDA=PC16 -DCH32RV_I2C1_FIX_V1=0x00000010u -DCH32RV_I2C1_FIX_V2=0x00000000u
 CH32X035.menu.i2c1.fix5=FIX (SCL:PC18, SDA:PC19)
 CH32X035.menu.i2c1.fix5.build.i2c1_mode=-DCH32RV_I2C1_MODE=2 -DCH32RV_I2C1_FIX_SCL=PC18 -DCH32RV_I2C1_FIX_SDA=PC19 -DCH32RV_I2C1_FIX_V1=0x00000014u -DCH32RV_I2C1_FIX_V2=0x00000000u
-CH32X035.menu.spi1.auto=AUTO (begin() で割り当て)
+CH32X035.menu.spi1.auto=AUTO (bind at begin())
 CH32X035.menu.spi1.auto.build.spi1_mode=
 CH32X035.menu.spi1.disable=Disable
 CH32X035.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
