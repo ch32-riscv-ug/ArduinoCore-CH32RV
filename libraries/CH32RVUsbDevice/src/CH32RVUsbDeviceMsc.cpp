@@ -1,6 +1,6 @@
 /* USB mass storage: TinyUSB's msc_device (bulk-only transport, SCSI), one
  * logical unit. */
-#include "CH32RVUsbDevice.h"
+#include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
@@ -99,11 +99,11 @@ static const usbd_class_driver_t msc_driver = {
 static CH32RVUsbDeviceMsc *msc;
 
 static uint16_t msc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str)
+                               uint8_t *ep, uint8_t str, bool hs)
 {
     (void)self;
     const uint8_t n = (*ep)++;
-    const uint8_t d[] = {TUD_MSC_DESCRIPTOR(itf, str, n, (uint8_t)(0x80 | n), 64)};
+    const uint8_t d[] = {TUD_MSC_DESCRIPTOR(itf, str, n, (uint8_t)(0x80 | n), ch32rv_usb_bulk_size(hs))};
     if (sizeof d > room) {
         return 0;
     }
@@ -194,7 +194,7 @@ extern "C" int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void
 
 #else
 
-static uint16_t msc_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t)
+static uint16_t msc_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
 {
     return 0;
 }

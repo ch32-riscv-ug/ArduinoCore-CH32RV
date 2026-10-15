@@ -19,10 +19,11 @@ static const usbd_class_driver_t dfu_rt_driver = {
  * libusb opens a WinUSB device without one). */
 
 static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                  uint8_t *ep, uint8_t str)
+                                  uint8_t *ep, uint8_t str, bool hs)
 {
     (void)self;
     (void)ep;
+    (void)hs;
     /* WILL_DETACH only: the device leaves the bus by itself after
      * DFU_DETACH. No CAN_DOWNLOAD - what appears next is the factory ISP
      * bootloader, not a DFU-mode device, so a DFU download (dfu-util -D)
@@ -73,7 +74,7 @@ extern "C" void tud_dfu_runtime_reboot_to_dfu_cb(void)
 
 #else
 
-static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t)
+static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
 {
     return 0;
 }

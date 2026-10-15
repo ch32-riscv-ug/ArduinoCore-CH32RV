@@ -1,7 +1,7 @@
 /* HID: the shared interface every HID class of the device sits on, and the
  * classes themselves (ported from EspUsbDevice: same report descriptors, same
  * report layouts, same behaviour). */
-#include "CH32RVUsbDevice.h"
+#include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
@@ -132,7 +132,7 @@ static const usbd_class_driver_t hid_driver = {
 
 class HidInterface;
 static uint16_t hid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str);
+                               uint8_t *ep, uint8_t str, bool hs);
 static const CH32RVUsbFunctionType hid_type = {&hid_driver, hid_descriptor, 1, CFG_TUD_HID, &CH32RVUsbDeviceConfig::hidInterfaceName, 0};
 
 class HidInterface : public CH32RVUsbDeviceFunction {
@@ -226,7 +226,7 @@ static HidInterface &interface_for(CH32RVUsbDevice &device)
 }
 
 static uint16_t hid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str)
+                               uint8_t *ep, uint8_t str, bool hs)
 {
     HidInterface &h = const_cast<HidInterface &>(static_cast<const HidInterface &>(self));
     if (h.count == 0 || (h.composite() && !h.merge())) {
@@ -253,7 +253,8 @@ static uint16_t hid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
     const uint8_t n = (*ep)++;
     if (out_ep) {
         const uint8_t d[] = {TUD_HID_INOUT_DESCRIPTOR(itf, str, boot, h.reportLength(), n,
-                                                      (uint8_t)(0x80 | n), size, 10)};
+                                                      (uint8_t)(0x80 | n), size,
+                                                      ch32rv_usb_interval(hs, 10))};
         if (sizeof d > room) {
         return 0;
     }
@@ -261,7 +262,7 @@ static uint16_t hid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
         return sizeof d;
     }
     const uint8_t d[] = {TUD_HID_DESCRIPTOR(itf, str, boot, h.reportLength(), (uint8_t)(0x80 | n),
-                                            size, 10)};
+                                            size, ch32rv_usb_interval(hs, 10))};
     if (sizeof d > room) {
         return 0;
     }

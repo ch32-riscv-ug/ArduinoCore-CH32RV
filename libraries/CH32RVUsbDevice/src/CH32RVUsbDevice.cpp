@@ -157,6 +157,17 @@ static void usb_phy_off(void)
     CH32RV_AFIO_CTLR &= ~(X03X_AFIO_UDP_PUE_MASK | X03X_AFIO_UDM_PUE_MASK | X03X_AFIO_USB_IOEN);
 }
 
+/* What the device layer asks of the controller it runs on. */
+static bool port_high_speed(void)
+{
+    return false;
+}
+
+static uint8_t port_last_endpoint(void)
+{
+    return X03X_USB_LAST_EP;
+}
+
 /* ---------------------------------------------------------- the running device
  * TinyUSB runs one device stack, and its callbacks are plain functions, so the
  * device that began is kept here. */
@@ -200,42 +211,19 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
         _error = before;
     }
 #endif
-    /* Interfaces and endpoints are numbered as the functions come. */
-    uint16_t len = TUD_CONFIG_DESC_LEN;
-    uint8_t itf = 0, ep = 1;
+    /* Lay the configuration out once for each speed the controller can run
+     * at, so a function that does not fit fails here rather than at
+     * enumeration. The descriptor itself is rebuilt for the speed the host
+     * chose whenever it asks (tud_descriptor_configuration_cb). */
+    _config = config;
     for (uint8_t i = 0; i < _count; i++) {
-        CH32RVUsbDeviceFunction &f = *_functions[i];
-        f._interface = itf;
-        const uint16_t n = f._type.descriptor(f, desc_configuration + len,
-                                              (uint16_t)(sizeof desc_configuration - len), itf, &ep,
-                                              (uint8_t)(FIRST_FUNCTION_STRING + i));
-        if (n == 0) {
-            _error = CH32RVUsbDeviceError::DescriptorTooLarge;
-            return false;
-        }
-        if (ep > X03X_USB_LAST_EP + 1u) {
-            _error = CH32RVUsbDeviceError::OutOfEndpoints;
-            return false;
-        }
-        len = (uint16_t)(len + n);
-        itf = (uint8_t)(itf + f._type.interfaces);
-        drivers[i] = *(const usbd_class_driver_t *)f._type.driver;
+        drivers[i] = *(const usbd_class_driver_t *)_functions[i]->_type.driver;
     }
-    /* The configuration header (TUD_CONFIG_DESCRIPTOR, written out because
-     * its fields are run-time values here). Bit 7 of bmAttributes is reserved
-     * and set; bMaxPower counts 2 mA units. */
-    uint8_t *h = desc_configuration;
-    h[0] = TUD_CONFIG_DESC_LEN;
-    h[1] = TUSB_DESC_CONFIGURATION;
-    h[2] = (uint8_t)len;
-    h[3] = (uint8_t)(len >> 8);
-    h[4] = itf;
-    h[5] = 1;
-    h[6] = 0;
-    h[7] = (uint8_t)(0x80u | TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP |
-                     (config.selfPowered ? TUSB_DESC_CONFIG_ATT_SELF_POWERED : 0u));
-    h[8] = (uint8_t)(config.maxPowerMilliamps > 500 ? 250 : config.maxPowerMilliamps / 2);
-
+    for (uint8_t hs = 0; hs <= (port_high_speed() ? 1 : 0); hs++) {
+        if (!buildConfiguration(desc_configuration, sizeof desc_configuration, hs, TUSB_DESC_CONFIGURATION)) {
+            return false;
+        }
+    }
     _config = config;
     /* The BOS and the Microsoft OS 2.0 set need the interface numbers. */
     if (ch32rv_usb_platform.build && !ch32rv_usb_platform.build(*this)) {
@@ -246,11 +234,52 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     usb_phy_on();
     tusb_rhport_init_t init = {};
     init.role = TUSB_ROLE_DEVICE;
-    init.speed = TUSB_SPEED_FULL;
+    init.speed = port_high_speed() ? TUSB_SPEED_HIGH : TUSB_SPEED_FULL;
     tusb_init(0, &init);
     _started = true;
     _error = CH32RVUsbDeviceError::None;
     return true;
+}
+
+/* The configuration descriptor for one speed, into `out`: the functions in
+ * declaration order, numbering interfaces and endpoints as they come. 0, with
+ * lastError() set, when it does not fit or needs more endpoints than the
+ * controller has. `type` is CONFIGURATION, or OTHER_SPEED_CONFIGURATION for
+ * a high-speed device's other-speed descriptor. */
+uint16_t CH32RVUsbDevice::buildConfiguration(uint8_t *out, uint16_t room, bool hs, uint8_t type)
+{
+    uint16_t len = TUD_CONFIG_DESC_LEN;
+    uint8_t itf = 0, ep = 1;
+    for (uint8_t i = 0; i < _count; i++) {
+        CH32RVUsbDeviceFunction &f = *_functions[i];
+        f._interface = itf;
+        const uint16_t n = f._type.descriptor(f, out + len, (uint16_t)(room - len), itf, &ep,
+                                              (uint8_t)(FIRST_FUNCTION_STRING + i), hs);
+        if (n == 0) {
+            _error = CH32RVUsbDeviceError::DescriptorTooLarge;
+            return 0;
+        }
+        if (ep > port_last_endpoint() + 1u) {
+            _error = CH32RVUsbDeviceError::OutOfEndpoints;
+            return 0;
+        }
+        len = (uint16_t)(len + n);
+        itf = (uint8_t)(itf + f._type.interfaces);
+    }
+    /* The header (TUD_CONFIG_DESCRIPTOR, written out because its fields are
+     * run-time values). Bit 7 of bmAttributes is reserved and set; bMaxPower
+     * counts 2 mA units. */
+    out[0] = TUD_CONFIG_DESC_LEN;
+    out[1] = type;
+    out[2] = (uint8_t)len;
+    out[3] = (uint8_t)(len >> 8);
+    out[4] = itf;
+    out[5] = 1;
+    out[6] = 0;
+    out[7] = (uint8_t)(0x80u | TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP |
+                       (_config.selfPowered ? TUSB_DESC_CONFIG_ATT_SELF_POWERED : 0u));
+    out[8] = (uint8_t)(_config.maxPowerMilliamps > 500 ? 250 : _config.maxPowerMilliamps / 2);
+    return len;
 }
 
 void CH32RVUsbDevice::end()
@@ -411,11 +440,56 @@ extern "C" const uint8_t *tud_descriptor_device_cb(void)
     return (const uint8_t *)&desc_device;
 }
 
+static bool running_high_speed(void)
+{
+#if TUD_OPT_HIGH_SPEED
+    return tud_speed_get() == TUSB_SPEED_HIGH;
+#else
+    return false;
+#endif
+}
+
 extern "C" const uint8_t *tud_descriptor_configuration_cb(uint8_t index)
 {
     (void)index;
+    active->buildConfiguration(desc_configuration, sizeof desc_configuration, running_high_speed(),
+                               TUSB_DESC_CONFIGURATION);
     return desc_configuration;
 }
+
+#if TUD_OPT_HIGH_SPEED
+/* A high-speed capable device describes itself at the other speed too
+ * (USB 2.0 9.6.2, 9.6.4); a full-speed only controller stalls both. */
+extern "C" const uint8_t *tud_descriptor_other_speed_configuration_cb(uint8_t index)
+{
+    (void)index;
+    if (!port_high_speed()) {
+        return NULL;
+    }
+    active->buildConfiguration(desc_configuration, sizeof desc_configuration, !running_high_speed(),
+                               TUSB_DESC_OTHER_SPEED_CONFIG);
+    return desc_configuration;
+}
+
+extern "C" const uint8_t *tud_descriptor_device_qualifier_cb(void)
+{
+    static tusb_desc_device_qualifier_t q;
+    if (!port_high_speed()) {
+        return NULL;
+    }
+    const tusb_desc_device_t *d = (const tusb_desc_device_t *)tud_descriptor_device_cb();
+    q.bLength = sizeof q;
+    q.bDescriptorType = TUSB_DESC_DEVICE_QUALIFIER;
+    q.bcdUSB = d->bcdUSB;
+    q.bDeviceClass = d->bDeviceClass;
+    q.bDeviceSubClass = d->bDeviceSubClass;
+    q.bDeviceProtocol = d->bDeviceProtocol;
+    q.bMaxPacketSize0 = d->bMaxPacketSize0;
+    q.bNumConfigurations = 1;
+    q.bReserved = 0;
+    return (const uint8_t *)&q;
+}
+#endif
 
 /* String descriptors: UTF-16LE built on request, ASCII only. */
 static uint16_t desc_str[1 + 32];

@@ -79,7 +79,12 @@ extern "C" {
 #ifndef CFG_TUD_CDC_TX_BUFSIZE
 #define CFG_TUD_CDC_TX_BUFSIZE   256
 #endif
+/* One packet of the fastest speed built in: 64 at full speed, 512 at high. */
+#if CFG_TUD_MAX_SPEED == OPT_MODE_HIGH_SPEED
+#define CFG_TUD_CDC_EP_BUFSIZE   512
+#else
 #define CFG_TUD_CDC_EP_BUFSIZE   64
+#endif
 #ifndef CFG_TUD_HID_EP_BUFSIZE
 #define CFG_TUD_HID_EP_BUFSIZE   64
 #endif

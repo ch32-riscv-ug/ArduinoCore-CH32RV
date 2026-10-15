@@ -1,5 +1,5 @@
 /* CDC-ACM serial: TinyUSB's cdc_device behind Stream. */
-#include "CH32RVUsbDevice.h"
+#include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
@@ -14,13 +14,13 @@ static const usbd_class_driver_t cdc_driver = {
 
 /* Notification IN on endpoint n, data OUT and IN on n + 1. */
 static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str)
+                               uint8_t *ep, uint8_t str, bool hs)
 {
     (void)self;
     const uint8_t n = *ep;
     *ep = (uint8_t)(n + 2);
     uint8_t d[] = {TUD_CDC_DESCRIPTOR(itf, str, (uint8_t)(0x80 | n), 8, (uint8_t)(n + 1),
-                                      (uint8_t)(0x80 | (n + 1)), CFG_TUD_CDC_EP_BUFSIZE)};
+                                      (uint8_t)(0x80 | (n + 1)), ch32rv_usb_bulk_size(hs))};
     /* The macro leaves the association's iFunction 0; Windows names a
      * composite child from it, so two ports would show the same name. */
     d[7] = str;
@@ -196,7 +196,7 @@ extern "C" void tud_cdc_rx_cb(uint8_t itf)
 
 #else /* !CH32RV_TINYUSB_DEVICE: a port that never opens */
 
-static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t)
+static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
 {
     return 0;
 }

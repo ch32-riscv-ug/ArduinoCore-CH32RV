@@ -1,7 +1,7 @@
 /* USB CCID (smart card reader). TinyUSB has no CCID class, so the driver is
  * here (EspUsbDevice's, with static buffers instead of heap ones); a sketch
  * without a card reader links none of it. */
-#include "CH32RVUsbDevice.h"
+#include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
@@ -32,7 +32,12 @@
 
 #define HEADER_SIZE  10
 #define MESSAGE_SIZE CH32RV_USB_DEVICE_CCID_BUFFER_SIZE
-#define BULK_EP_SIZE 64
+/* The receive buffer holds one packet of the fastest speed built in. */
+#if TUD_OPT_HIGH_SPEED
+#define BULK_EP_BUF 512
+#else
+#define BULK_EP_BUF 64
+#endif
 #define NOTIFY_EP_SIZE 8
 #define NOTIFY_INTERVAL_MS 16
 
@@ -86,14 +91,14 @@ uint8_t CH32RVUsbDeviceCcid::iccStatus() const
 static struct {
     uint8_t rhport;
     uint8_t ep_in, ep_out, ep_notify;
-    uint16_t ep_in_size;
+    uint16_t ep_in_size, ep_out_size;
     /* One PC_to_RDR message being assembled: `received` counts all the host
      * sent for it, `stored` what fitted. */
     uint32_t received, stored;
     bool zlp_pending;
 } drv;
 
-CFG_TUSB_MEM_ALIGN static uint8_t ep_out_buf[BULK_EP_SIZE];
+CFG_TUSB_MEM_ALIGN static uint8_t ep_out_buf[BULK_EP_BUF];
 CFG_TUSB_MEM_ALIGN static uint8_t notify_buf[NOTIFY_EP_SIZE];
 CFG_TUSB_MEM_ALIGN static uint8_t message[MESSAGE_SIZE];
 /* Responses are built here and sent from here: CCID is one command at a
@@ -104,7 +109,7 @@ static CH32RVUsbDeviceCcid *ccid;
 
 static bool arm_receive(void)
 {
-    return drv.ep_out && usbd_edpt_xfer(drv.rhport, drv.ep_out, ep_out_buf, BULK_EP_SIZE, false);
+    return drv.ep_out && usbd_edpt_xfer(drv.rhport, drv.ep_out, ep_out_buf, drv.ep_out_size, false);
 }
 
 static bool driver_send(size_t length)
@@ -168,6 +173,8 @@ static uint16_t ccidd_open(uint8_t rhport, tusb_desc_interface_t const *itf, uin
                 drv.ep_in_size = tu_edpt_packet_size(ep);
             } else {
                 drv.ep_out = ep->bEndpointAddress;
+                drv.ep_out_size = tu_edpt_packet_size(ep);
+                TU_ASSERT(drv.ep_out_size <= BULK_EP_BUF, 0);
             }
         }
         p = tu_desc_next(p);
@@ -243,7 +250,7 @@ static bool ccidd_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result,
             }
             drv.received = drv.stored = 0;
         }
-    } else if (xferred < BULK_EP_SIZE) {
+    } else if (xferred < drv.ep_out_size) {
         /* A short packet before a whole header: the host ended the transfer. */
         drv.received = drv.stored = 0;
     }
@@ -257,7 +264,7 @@ static const usbd_class_driver_t ccid_driver = {
 
 /* One interface: bulk OUT/IN on endpoint n, interrupt IN on n + 1. */
 static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                uint8_t *ep, uint8_t str)
+                                uint8_t *ep, uint8_t str, bool hs)
 {
     (void)self;
     const uint16_t len = 9 + 54 + 3 * 7;
@@ -289,9 +296,10 @@ static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ou
     c[49] = 0xFF;
     c[53] = 1;
     const uint8_t eps[] = {
-        7, TUSB_DESC_ENDPOINT, n, TUSB_XFER_BULK, BULK_EP_SIZE, 0, 0,
-        7, TUSB_DESC_ENDPOINT, (uint8_t)(0x80 | n), TUSB_XFER_BULK, BULK_EP_SIZE, 0, 0,
-        7, TUSB_DESC_ENDPOINT, (uint8_t)(0x80 | (n + 1)), TUSB_XFER_INTERRUPT, NOTIFY_EP_SIZE, 0, NOTIFY_INTERVAL_MS,
+        7, TUSB_DESC_ENDPOINT, n, TUSB_XFER_BULK, U16_TO_U8S_LE(ch32rv_usb_bulk_size(hs)), 0,
+        7, TUSB_DESC_ENDPOINT, (uint8_t)(0x80 | n), TUSB_XFER_BULK, U16_TO_U8S_LE(ch32rv_usb_bulk_size(hs)), 0,
+        7, TUSB_DESC_ENDPOINT, (uint8_t)(0x80 | (n + 1)), TUSB_XFER_INTERRUPT, NOTIFY_EP_SIZE, 0,
+        ch32rv_usb_interval(hs, NOTIFY_INTERVAL_MS),
     };
     memcpy(out + 9 + 54, eps, sizeof eps);
     return len;
@@ -527,7 +535,7 @@ void CH32RVUsbDeviceCcid::handleMessage(const uint8_t *m, size_t length)
 
 #else
 
-static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t)
+static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
 {
     return 0;
 }

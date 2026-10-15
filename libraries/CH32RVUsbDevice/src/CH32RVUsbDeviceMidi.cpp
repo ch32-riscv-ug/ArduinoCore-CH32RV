@@ -1,5 +1,5 @@
 /* USB MIDI: TinyUSB's midi_device, with EspUsbDevice's multi-cable descriptor. */
-#include "CH32RVUsbDevice.h"
+#include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
@@ -46,7 +46,7 @@ static const usbd_class_driver_t midi_driver = {
  * The bulk IN endpoint lists the embedded OUT jacks and the bulk OUT one the
  * embedded IN jacks - the class document names jacks from the device's side. */
 static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uint16_t room,
-                                uint8_t itf, uint8_t *ep, uint8_t str)
+                                uint8_t itf, uint8_t *ep, uint8_t str, bool hs)
 {
     const CH32RVUsbDeviceMidi &m = static_cast<const CH32RVUsbDeviceMidi &>(self);
     if (m.descriptorLength() > room) {
@@ -77,7 +77,7 @@ static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ds
         at = (uint16_t)(at + sizeof jack);
     }
     {
-        const uint8_t e[] = {TUD_MIDI_DESC_EP(n, 64, out)};
+        const uint8_t e[] = {TUD_MIDI_DESC_EP(n, ch32rv_usb_bulk_size(hs), out)};
         memcpy(dst + at, e, sizeof e);
         at = (uint16_t)(at + sizeof e);
     }
@@ -85,7 +85,7 @@ static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ds
         dst[at++] = TUD_MIDI_JACKID_IN_EMB(cable);
     }
     {
-        const uint8_t e[] = {TUD_MIDI_DESC_EP((uint8_t)(0x80 | n), 64, in)};
+        const uint8_t e[] = {TUD_MIDI_DESC_EP((uint8_t)(0x80 | n), ch32rv_usb_bulk_size(hs), in)};
         memcpy(dst + at, e, sizeof e);
         at = (uint16_t)(at + sizeof e);
     }
@@ -134,7 +134,7 @@ uint32_t CH32RVUsbDeviceMidi::available()
 
 #else
 
-static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t)
+static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
 {
     return 0;
 }

@@ -193,10 +193,11 @@ struct CH32RVUsbFunctionType {
     const void *driver;           /* TinyUSB usbd_class_driver_t */
     /* Write this function's descriptors for interface `itf` onward into
      * `out` (`room` bytes free), taking endpoint numbers from *ep (and
-     * advancing it); `str` is its string index. Returns the length written,
-     * 0 when it does not fit. */
+     * advancing it); `str` is its string index; `hs` asks for the high-speed
+     * form (512-byte bulk endpoints, intervals in microframes). Returns the
+     * length written, 0 when it does not fit. */
     uint16_t (*descriptor)(const class CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room,
-                           uint8_t itf, uint8_t *ep, uint8_t str);
+                           uint8_t itf, uint8_t *ep, uint8_t str, bool hs);
     uint8_t interfaces;
     uint8_t maxInstances;         /* the class's CFG_TUD_* count */
     /* The config field that names this interface, when the sketch has no
@@ -300,6 +301,11 @@ public:
     bool microsoftOs20UsesSubsets() const;
     /* Interfaces in the configuration (after begin()). */
     uint8_t interfaceCount() const;
+
+    /* The configuration descriptor for one speed (CONFIGURATION or
+     * OTHER_SPEED_CONFIGURATION), written into `out`; 0 when it cannot be
+     * laid out (lastError()). For the USB stack's callbacks. */
+    uint16_t buildConfiguration(uint8_t *out, uint16_t room, bool highSpeed, uint8_t descriptorType);
 
     /* For the class objects (EspUsbDevice::addClass). */
     bool attach(CH32RVUsbDeviceFunction &f);

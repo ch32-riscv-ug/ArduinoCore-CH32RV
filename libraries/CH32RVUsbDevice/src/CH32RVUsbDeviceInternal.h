@@ -21,3 +21,25 @@ struct CH32RVUsbPlatform {
 };
 extern CH32RVUsbPlatform ch32rv_usb_platform;
 void ch32rv_usb_platform_use(void);
+
+/* Endpoint parameters by speed. Bulk: 64 bytes at full speed, 512 at high
+ * speed. Interrupt intervals: milliseconds at full speed; at high speed the
+ * descriptor counts 2^(bInterval-1) microframes of 125 us, so the period is
+ * rounded down to a power of two (10 ms -> 8 ms), never slower than asked. */
+static inline uint16_t ch32rv_usb_bulk_size(bool hs)
+{
+    return hs ? 512 : 64;
+}
+
+static inline uint8_t ch32rv_usb_interval(bool hs, uint8_t ms)
+{
+    if (!hs) {
+        return ms ? ms : 1;
+    }
+    /* b gives 2^(b-4) ms: the largest that is not longer than ms. */
+    uint8_t b = 4;
+    while (b < 16 && (1u << (b - 3)) <= ms) {
+        b++;
+    }
+    return b;
+}

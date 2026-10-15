@@ -42,11 +42,12 @@ static const usbd_class_driver_t vendor_driver = {
 static CH32RVUsbDeviceVendor *vendors[CFG_TUD_VENDOR];
 
 static uint16_t vendor_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                  uint8_t *ep, uint8_t str)
+                                  uint8_t *ep, uint8_t str, bool hs)
 {
     const CH32RVUsbDeviceVendor &v = static_cast<const CH32RVUsbDeviceVendor &>(self);
     const uint8_t n = (*ep)++;
-    const uint8_t d[] = {TUD_VENDOR_DESCRIPTOR(itf, str, n, (uint8_t)(0x80 | n), v.endpointSize())};
+    const uint8_t d[] = {TUD_VENDOR_DESCRIPTOR(itf, str, n, (uint8_t)(0x80 | n),
+                                               hs ? ch32rv_usb_bulk_size(hs) : v.endpointSize())};
     if (sizeof d > room) {
         return 0;
     }
@@ -221,7 +222,7 @@ extern "C" void tud_vendor_tx_cb(uint8_t idx, uint32_t sent_bytes)
 
 #else
 
-static uint16_t vendor_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t)
+static uint16_t vendor_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
 {
     return 0;
 }
