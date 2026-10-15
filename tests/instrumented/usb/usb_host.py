@@ -96,6 +96,15 @@ class PcUsbHost:
 
         return Claim()
 
+    def net_interface(self, timeout=10):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            names = sorted(glob.glob(str(self.sysfs) + "/*/net/*"))
+            if names:
+                return NetInterface(os.path.basename(names[0]))
+            time.sleep(0.1)
+        raise AssertionError("no network interface under " + self.topology)
+
     def dfu_detach(self):
         dev = self.device()
         itf = next(i.bInterfaceNumber for i in dev.get_active_configuration()
@@ -121,3 +130,25 @@ def interface(dev, cls, sub=None):
 
 def endpoints(itf):
     return (next(e for e in itf if e.bEndpointAddress & 0x80), next(e for e in itf if not e.bEndpointAddress & 0x80))
+
+
+class NetInterface:
+    """A network interface the host made for the device (sysfs only: no root needed)."""
+
+    def __init__(self, name):
+        self.path = pathlib.Path("/sys/class/net") / name
+
+    def address(self):
+        return (self.path / "address").read_text().strip()
+
+    def rx_packets(self):
+        return int((self.path / "statistics/rx_packets").read_text())
+
+    def wait_up(self, timeout):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if (self.path / "operstate").read_text().strip() in ("up", "unknown"):
+                return True
+            time.sleep(0.1)
+        return False
+

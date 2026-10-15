@@ -25,6 +25,8 @@ const char *CH32RVUsbDeviceFunction::interfaceName() const
     return name ? name : _name;
 }
 
+const char *(*ch32rv_usb_extra_string)(uint8_t index);
+
 /* Filled by CH32RVUsbDevicePlatform.cpp, when linked. */
 CH32RVUsbPlatform ch32rv_usb_platform;
 
@@ -527,6 +529,12 @@ extern "C" const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t lang
         for (n = 0; n < 16; n++) {
             desc_str[1 + n] = (uint8_t)hex[(uid >> (60 - 4 * n)) & 0xF];
         }
+    } else if (index >= CH32RV_USB_EXTRA_STRING) {
+        const char *text = ch32rv_usb_extra_string ? ch32rv_usb_extra_string(index) : nullptr;
+        if (!text) {
+            return NULL;
+        }
+        n = ascii_to_desc(text);
     } else {
         const CH32RVUsbDeviceFunction *f = active->function((uint8_t)(index - FIRST_FUNCTION_STRING));
         if (!f) {

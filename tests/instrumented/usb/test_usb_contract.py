@@ -1,5 +1,5 @@
 """usb.enumerate, usb.cdc-round-trip, usb.hid-composite, usb.hid-keyboard, usb.midi-round-trip,
-usb.reconnect, usb.isp-entry-dfu-detach, usb.isp-entry-touch.
+usb.net-frames, usb.reconnect, usb.isp-entry-dfu-detach, usb.isp-entry-touch.
 
 The DUT runs tests/sketch_support/usb_contracts; the test host is this PC (PcUsbHost in usb_host.py), which
 reaches the DUT's own USB port at the configured dut_usb_topology. A host microcontroller (a Pico on
@@ -37,7 +37,7 @@ def test_usb_contract(dut, record_property):
         time.sleep(0.05)
     assert host.product().endswith(build_id), "the device is not this build: " + host.product()
     classes = {(c, s) for _n, c, s, _p in host.interfaces()}
-    assert {(0x02, 0x02), (0x0A, 0x00), (0x03, 0x00), (0x01, 0x03), (0xFE, 0x01)} <= classes
+    assert {(0x02, 0x02), (0x02, 0x0D), (0x0A, 0x00), (0x03, 0x00), (0x01, 0x03), (0xFE, 0x01)} <= classes
 
     # usb.cdc-round-trip: 64 binary bytes through the echo.
     payload = bytes([0, 255, 85, 170]) + secrets.token_bytes(60)
@@ -76,6 +76,29 @@ def test_usb_contract(dut, record_property):
         ep_in, ep_out = endpoints(interface(dev, 0x01, 0x03))
         ep_out.write(bytes([0x09, 0x90, 0x40, 0x7F]))
         assert bytes(ep_in.read(64, timeout=2000))[:4] == bytes([0x09, 0x90, 0x4C, 0x7F])
+
+    # usb.net-frames: the host binds the NCM interface with the MAC the device names, frames flow
+    # both ways (the host's own IPv6 traffic in; a broadcast frame out), without root.
+    dut.write("net\n")
+    mac = dut.expect(rb"NET \d+ ([0-9A-F]{12})\r?\n", timeout=5).group(1).decode().lower()
+    iface = host.net_interface(timeout=10)
+    assert iface.address() == ":".join(mac[i:i + 2] for i in range(0, 12, 2))
+    assert iface.wait_up(20), "the host did not bring the NCM interface up"
+    before = iface.rx_packets()
+    dut.write("netsend\n")
+    dut.expect_exact("NETSEND 1", timeout=5)
+    deadline = time.monotonic() + 5
+    while iface.rx_packets() == before and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert iface.rx_packets() > before, "the device's frame did not reach the host"
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        dut.write("net\n")
+        if int(dut.expect(rb"NET (\d+) ", timeout=5).group(1)) > 0:
+            break
+        time.sleep(1)
+    else:
+        raise AssertionError("no frame from the host reached the device")
 
     # usb.reconnect: end() + begin() looks like an unplug and a plug to the host.
     dut.write("replug\n")

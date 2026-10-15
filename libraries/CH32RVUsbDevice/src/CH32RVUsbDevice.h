@@ -93,6 +93,9 @@ enum CH32RVUsbDeviceMsOs20Layout : uint8_t {
 #ifndef CH32RV_USB_MSC_NAME
 #define CH32RV_USB_MSC_NAME "Mass storage"
 #endif
+#ifndef CH32RV_USB_NET_NAME
+#define CH32RV_USB_NET_NAME "Network"
+#endif
 #ifndef CH32RV_USB_CCID_NAME
 #define CH32RV_USB_CCID_NAME "Smart card reader"
 #endif
@@ -330,3 +333,4 @@ extern CH32RVUsbDevice USBDevice;
 #include "CH32RVUsbDeviceVendor.h"
 #include "CH32RVUsbDeviceMsc.h"
 #include "CH32RVUsbDeviceCcid.h"
+#include "CH32RVUsbDeviceNet.h"

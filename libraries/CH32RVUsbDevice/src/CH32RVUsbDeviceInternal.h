@@ -20,6 +20,11 @@ struct CH32RVUsbPlatform {
     bool (*vendorRequest)(uint8_t rhport, uint8_t stage, const void *request);
 };
 extern CH32RVUsbPlatform ch32rv_usb_platform;
+
+/* String descriptors a function needs besides its name (the NCM MAC address):
+ * indexes from CH32RV_USB_EXTRA_STRING up, answered by this hook. */
+#define CH32RV_USB_EXTRA_STRING 0xE0
+extern const char *(*ch32rv_usb_extra_string)(uint8_t index);
 void ch32rv_usb_platform_use(void);
 
 /* Endpoint parameters by speed. Bulk: 64 bytes at full speed, 512 at high

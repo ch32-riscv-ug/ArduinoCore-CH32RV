@@ -70,6 +70,9 @@ extern "C" {
 #ifndef CFG_TUD_VENDOR
 #define CFG_TUD_VENDOR           1
 #endif
+#ifndef CFG_TUD_NCM
+#define CFG_TUD_NCM              1
+#endif
 
 /* Buffers, per instance. CDC 256 B each way keeps a 115200-baud burst; 64 B
  * saves 384 B of RAM per port on a part that needs it. */
@@ -100,6 +103,14 @@ extern "C" {
 #endif
 #ifndef CFG_TUD_VENDOR_TX_BUFSIZE
 #define CFG_TUD_VENDOR_TX_BUFSIZE 128
+#endif
+/* NCM: one transfer block each way, the size the NCM spec sets as the
+ * minimum a host must accept (2048); 4.2 KB of RAM once declared. */
+#ifndef CFG_TUD_NCM_IN_NTB_MAX_SIZE
+#define CFG_TUD_NCM_IN_NTB_MAX_SIZE  2048
+#endif
+#ifndef CFG_TUD_NCM_OUT_NTB_MAX_SIZE
+#define CFG_TUD_NCM_OUT_NTB_MAX_SIZE 2048
 #endif
 /* MSC: one transfer buffer; a block (512) moves in one piece. */
 #ifndef CFG_TUD_MSC_EP_BUFSIZE
