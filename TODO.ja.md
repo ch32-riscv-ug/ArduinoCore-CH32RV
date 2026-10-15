@@ -64,20 +64,31 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   Hard Reset で 5 V に戻る）。
 - 実際の電圧が出ているかは範囲外（基板側の仕事）。
 
-## 系列で限られているもの（2026-10-15 の調査）
+## 系列で限られているもの（2026-10-15 の調査と対応）
 
-[peripheral-support.ja.md](docs/peripheral-support.ja.md) の ○ / ◐ の中身。silicon にはあるが core が使っていないもの。
-- **V205・X305 / X315 の Serial / Wire / SPI / PWM が端子に出ない**。この3系列は端子ごとの AF 選択（af-N）で、
-  core はそれを設定しない（generate.py の route_remap_value() が None、variant に NOTE だけ出る）。インスタンスは
-  ビルドでき、ボードメニューにも出るので、気づかずに使われる。いちばん影響が大きい。
-- **X033 / X035 の `wdtEnable()` が false**。ch32-device-data に LSI 周波数が無いため（IWDG はある）。
-- Serial は 5 まで: V30x の UART6〜8、V205 の USART6〜8、V407 / V467 の USART6〜10 は出していない。
-- X035 の Serial 送信はポーリング（割込み送信の不具合を調査中）。同じ silicon の X033 には入っていない。
-- PWM は TIM1〜3 の既定ピンだけ（TIM4 / 5、remap 先、CHxN は無し）。timer 管理は TIM1〜7（V30x / V4x7 の TIM8〜10 は無し）。
-- ADC の内部チャネル（温度、Vrefint）と `analogReference()`。
-- クロックは系列ごとに固定（HSI のみ）。L103 / M103・V205・M030 は 8 MHz で PLL 未使用、V00x は 24 MHz（48 MHz まで出る）。
-  USB の L103 / M103・V205・M030 もこの決定待ち（上の USB の項）。
-- PD は X033 / X035 だけ（L103 / M103、V205、X305 / X315、M030 にも USBPD がある）。
+[peripheral-support.ja.md](docs/peripheral-support.ja.md) の ○ / ◐ の中身。
+
+直したもの（実機で確かめていないものは、その旨を書く）:
+- V205・X305 / X315 の Serial / Wire / SPI / PWM: 端子ごとの AF 番号（AFIO GPIOx_AFLR / AFHR）を書くようにした。
+  ルート表は AF 番号ごとに端子の組み合わせを全部並べ、FIX メニューにも出る。**ビルドのみ**。V205 / X315 の実機で
+  Serial・Wire・SPI・analogWrite の信号が端子に出ることを確かめる。
+- X033 / X035 の IWDG: LSI が無く HSI / 1024 で動くので、その周波数（46.875 kHz）を使う。X035 で 1 秒のリセットを実測。
+- Serial6〜9: V205 の USART6〜8、V30x の UART6〜8、V407 / V467 の USART6〜10（Serial9 まで）。**ビルドのみ**。
+- PWM: TIM4 / TIM5 の既定ピンを追加（tone / Servo が使うタイマーは除く）。タイマー管理に TIM8〜10（V30x）/ TIM8（V4x7）。
+- ADC の内部チャネル: `analogReadVref()`・`analogReadTemp()`・`CH32RV.getVddMillivolts()`。X035・L103・V103・V307 で実測
+  （VDD 3.2〜3.4 V。温度は L103 25 ℃、V307 24 ℃、V103 46 ℃ — V103 はデータシートの V25 が 1.1〜1.6 V と広い）。
+- **L103 / M103 の analogRead() が約 620 カウント低かった**: EVT と同じ VDDA / 2 のオフセット補正を入れた（L103 で実測）。
+  V20x / V30x の EVT にも校正値の扱い（Get_CalibrationValue: 校正直後の RDATAR を 2048 から引く）があるが、V307 では
+  その値が 1728 で、当てると VDD が 2.64 V になり不自然（当てない今は 3.19 V）。入れていない。外部の電圧計と照合して決める。
+- X033 の送信ポーリングを X035 と揃えた。
+
+残り（方針待ち・新しい API・実機が要る）:
+- クロックは系列ごとに固定（HSI のみ）。L103 / M103・V205・M030 は 8 MHz で PLL 未使用、V00x は 24 MHz。USB の
+  L103 / M103・V205・M030 と、PD の他系列（USBPD は 48 / 24 / 12 MHz が要る）もこの決定待ち（上の USB の項）。
+- PD の他系列（L103 / M103、V205、X305 / X315、M030）: CC 端子と上のクロック。
+- PWM の remap 先と CHxN、TIM8〜10 の PWM。
+- 新しい API: スリープ、Flash の自己書き換え / EEPROM、WWDG、RTC、SPI のスレーブ、GPIO 以外の EXTI。
+- `analogReference()` はハードウェアに基準電圧の選択が無い。
 
 ## ライブラリの配布
 

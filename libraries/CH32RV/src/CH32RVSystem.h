@@ -17,8 +17,9 @@
  *  - The watchdog timeout is approximate: the LSI oscillator it runs from is
  *    specified as loosely as 25..60 kHz around a typical, and the typical is
  *    what the conversion uses (CH32RV_LSI_HZ, generated per family from
- *    ch32-device-data's F_LSI). The rounding is toward a *shorter* real
- *    timeout, never a longer one.
+ *    ch32-device-data's F_LSI; X033/X035 have no LSI and clock the IWDG from
+ *    HSI / 1024 instead). The rounding is toward a *shorter* real timeout,
+ *    never a longer one.
  *  - resetReason() latches on first read and clears the hardware flags, so
  *    the answer stays stable for the sketch's lifetime and the *next* boot
  *    reads its own cause instead of an accumulation of history.
@@ -28,6 +29,8 @@
 #include <stdint.h>
 
 #include "pins_arduino.h"   /* CH32RV_ESIG_* decide which members exist */
+
+extern "C" uint32_t ch32rv_adc_vdd_millivolts(void);   /* wiring_analog.c */
 
 /* Values mirror the meaning (not the numbers) of esp_reset_reason_t. */
 typedef enum {
@@ -57,8 +60,7 @@ public:
      * least every `ms` (approximately - see the header comment). Clamped to
      * the hardware range; at the slowest prescaler the ceiling is around
      * half a minute depending on the family's LSI. False where this family
-     * has no IWDG or its LSI frequency is not in the data (CH32X033/X035
-     * today; requested upstream). Cannot be undone - see above. */
+     * has no IWDG (CH32M030). Cannot be undone - see above. */
     bool wdtEnable(uint32_t ms);
     void wdtFeed();
 
@@ -69,6 +71,10 @@ public:
      * (fragmented - one allocation of this size may still fail). */
     uint32_t getFreeHeap();
     uint32_t getCpuFreqMHz() { return (uint32_t)(F_CPU / 1000000UL); }
+    /* The supply voltage in mV, from the ADC's internal reference (typical
+     * value, so within a few percent); 0 where the family has none in the
+     * data (CH32M030). Die temperature: analogReadTemp(). */
+    uint32_t getVddMillivolts() { return ch32rv_adc_vdd_millivolts(); }
     /* The series this sketch was built for ("CH32V003"). A binary only runs on
      * its own series, so this is the chip it is running on. */
     const char *getChipModel();

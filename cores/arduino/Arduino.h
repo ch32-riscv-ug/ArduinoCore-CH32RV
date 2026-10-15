@@ -213,6 +213,16 @@ void SystemInit(void);
  * cannot call a function the core has had all along. */
 void analogReadResolution(int bits);
 void analogWriteResolution(int bits);
+/* The ADC's internal channels (arduino-pico's names). analogReadVref(): the
+ * internal reference as analogRead() would return it - 0 where the family
+ * has none in the data (CH32M030). analogReadTemp(): the die temperature in
+ * degrees C from the datasheet's typical sensor constants, NAN where there is
+ * no sensor (V00x, X033/X035, X305/X315, M030). */
+int analogReadVref(void);
+float analogReadTemp(void);
+/* The supply (VDDA) in mV, measured against Vrefint; 0 where unknown.
+ * CH32RV.getVddMillivolts() is the same thing. */
+uint32_t ch32rv_adc_vdd_millivolts(void);
 /* arduino-esp32's: the PWM frequency analogWrite() uses from now on, in Hz
  * (default 1000). A timer is shared by its channels, so the pads on the same
  * timer follow at their next analogWrite(), as LEDC channels on one timer do

@@ -158,6 +158,26 @@ extern arduino::CH32RVHardwareSerial Serial3;
 extern arduino::CH32RVHardwareSerial Serial4;
 #define SERIAL_PORT_HARDWARE4 Serial4
 #endif
+#if CH32RV_SERIAL_COUNT >= 6
+extern arduino::CH32RVHardwareSerial Serial5;
+#define SERIAL_PORT_HARDWARE5 Serial5
+#endif
+#if CH32RV_SERIAL_COUNT >= 7
+extern arduino::CH32RVHardwareSerial Serial6;
+#define SERIAL_PORT_HARDWARE6 Serial6
+#endif
+#if CH32RV_SERIAL_COUNT >= 8
+extern arduino::CH32RVHardwareSerial Serial7;
+#define SERIAL_PORT_HARDWARE7 Serial7
+#endif
+#if CH32RV_SERIAL_COUNT >= 9
+extern arduino::CH32RVHardwareSerial Serial8;
+#define SERIAL_PORT_HARDWARE8 Serial8
+#endif
+#if CH32RV_SERIAL_COUNT >= 10
+extern arduino::CH32RVHardwareSerial Serial9;
+#define SERIAL_PORT_HARDWARE9 Serial9
+#endif
 
 /* Retarget printf()/puts()/stderr. The default is the monitor port above.
  *

@@ -14,6 +14,9 @@ CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / 
 CH32RV.resetReasonName();                // "software" など、印字用
 CH32RV.wdtEnable(2000);                  // 2秒ごとに餌をやらないとリセット
 CH32RV.wdtFeed();                        // loop()で呼ぶ
+CH32RV.getVddMillivolts();               // 電源電圧(mV)、ADCの内部基準から
+analogReadTemp();                        // チップの温度(℃)、センサが無ければNAN (core)
+analogReadVref();                        // 内部基準をanalogRead()と同じ幅で (core)
 ```
 
 注意:
@@ -23,7 +26,11 @@ CH32RV.wdtFeed();                        // loop()で呼ぶ
 - **timeoutは近似です**。時計のLSIは仕様上±50%近くばらつきます。
   換算は「実timeoutが頼んだ値より短くなる」側に倒してあります
 - 対応しない部品では`wdtEnable()`が**falseを返します**——
-  CH32M030(IWDGが無い)、CH32X033/X035(LSI周波数のデータが未着、依頼中)
+  CH32M030(IWDGが無い)。CH32X033/X035はLSIが無く、IWDGはHSI/1024(46.875 kHz)で動きます
+- **電圧と温度は典型値からの計算です**。内部基準(Vrefint)はデータシートの典型値で、
+  ばらつきは数%。温度は校正していないので、系列によっては数十℃ずれます
+  (V103はデータシートのV25が1.1〜1.6 Vと広い)。温度センサがあるのは
+  V103・V20x・V205・V30x・V407/V467・L103/M103。M030は内部基準のデータが無く0を返します
 
 同居している理由は、Arduinoのプラットフォームが**ライブラリ経由でしかexamplesを
 配れない**ことと、ライブラリには最低1つヘッダが要ることです。

@@ -40,15 +40,15 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | RCC (クロック) | 一部実装 | F_CPU | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | HSI(とHSI由来PLL)で系列ごとに1つの固定周波数。V103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、V407/V467・X305/X315 20 MHz、L103/M103・V205・M030 8 MHz(PLL未使用)。HSEは未実装(USB HSのみHSEを使う) |
 | PWR (低消費電力) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | sleep APIは提供していない |
 | FLASH (自己書き換え) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 自己書き換えとEEPROM emulationのAPIは提供していない |
-| USART | 実装済 | Serial | ● | ● | ● | ● | ○ | ● | ● | ● | ● | ● | ○ | Serial1〜5まで。V30xのUART6〜8、V205のUSART6〜8、V407/V467のUSART6〜10は未対応。V205・X305/X315はピンの割り当てが端子ごとのAF選択で、coreが設定しないため使えない。X035は送信をポーリングで行う(割込み送信の不具合の回避) |
-| I2C | 実装済 | Wire | ● | ● | ● | ● | ○ | ● | ● | ● | ● | ● | ○ | controllerはpolling、peripheral(slave)は割込み駆動。V205・X305/X315は端子ごとのAF選択が未対応で使えない |
-| SPI | 一部実装 | SPI | ◐ | ◐ | ◐ | ◐ | ○ | ◐ | ◐ | ◐ | ◐ | ◐ | ○ | controllerのみ。peripheral(slave)は未実装。V205・X305/X315は端子ごとのAF選択が未対応で使えない。X305はSPI1が無くSPI2/3、M103はSPI1のみ |
-| ADC | 実装済 | analogRead | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替。温度センサ・Vrefintなど内部チャネルと`analogReference()`は未対応。V003は10 bit |
+| USART | 実装済 | Serial | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 全インスタンス(V205/V30x/V407/V467のUSART6〜10も、Serial9まで)。V205・X305/X315は端子ごとのAF番号を書く(ビルドのみ確認)。X033/X035は送信をポーリングで行う(割込み送信の不具合の回避) |
+| I2C | 実装済 | Wire | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | controllerはpolling、peripheral(slave)は割込み駆動。V205・X305/X315は端子ごとのAF番号を書く(ビルドのみ確認) |
+| SPI | 一部実装 | SPI | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | controllerのみ。peripheral(slave)は未実装。V205・X305/X315は端子ごとのAF番号を書く(ビルドのみ確認)。M103はSPI1のみ |
+| ADC | 実装済 | analogRead | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替。内部チャネルは`analogReadVref()`・`analogReadTemp()`・`CH32RV.getVddMillivolts()`(M030はdevice-dataに無く未対応、温度センサはV103/V20x/V205/V30x/V4x7/L103のみ、校正なしの典型値)。L103/M103はEVTと同じVDDA/2のオフセット補正をかける。基準電圧は選べない(`analogReference()`は何もしない)。V003は10 bit |
 | DAC | 実装済 | analogWrite(CH32RV_DACn_PIN) |  |  |  |  |  | ● | ● |  |  |  |  | V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来 |
-| TIM (PWM/tone/入力捕捉) | 実装済 | analogWrite/tone | ● | ● | ● | ● | ◐ | ● | ● | ● | ● | ● | ◐ | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V00x/X035/M030は空きが無く**PWMと共有**。PWMはTIM1〜3の既定ピンのみ(TIM4/5、remap先、CHxNは未対応)、tone/ServoのtimerはTIM1〜7(V30x/V4x7のTIM8〜10は未使用)。V205・X305/X315は端子ごとのAF選択が未対応のためPWMが出ない(tone/Servoは使える) |
+| TIM (PWM/tone/入力捕捉) | 実装済 | analogWrite/tone | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V00x/X035/M030は空きが無く**PWMと共有**。PWMはTIM1〜5の既定ピン(tone/Servoが使うtimerは除く。remap先とCHxNは未対応)、V205・X305/X315は端子ごとのAF番号で出す(ビルドのみ確認)。timer管理はTIM1〜10(V30xのTIM8〜10、V4x7のTIM8) |
 | LPTIM | 対象外 | - |  |  |  |  |  |  |  | − |  |  |  | L103のみ |
 | DMA | 対象外 | - | − | − | − | − | − | − | − | − | − | − | − | Arduino APIには露出しない |
-| IWDG | 実装済 | `CH32RV.wdtEnable/wdtFeed` | ● | ● | ● | ● | ● | ● | ● | ● |  | ○ | ● | X033/X035はdevice-dataにLSI周波数が無く`wdtEnable()`がfalse。M030はIWDGが無い |
+| IWDG | 実装済 | `CH32RV.wdtEnable/wdtFeed` | ● | ● | ● | ● | ● | ● | ● | ● |  | ● | ● | X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い |
 | WWDG | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
 | RTC | 未実装 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ |  |
 | BKP (バックアップレジスタ) | 対象外 | - |  |  | − | − | − | − | − | − |  |  |  |  |

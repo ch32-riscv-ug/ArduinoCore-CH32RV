@@ -20,6 +20,9 @@ wdtFeed	KEYWORD2
 getHeapSize	KEYWORD2
 getFreeHeap	KEYWORD2
 getCpuFreqMHz	KEYWORD2
+getVddMillivolts	KEYWORD2
+analogReadVref	KEYWORD2
+analogReadTemp	KEYWORD2
 getChipModel	KEYWORD2
 getSketchSize	KEYWORD2
 getFreeSketchSpace	KEYWORD2

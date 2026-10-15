@@ -324,6 +324,15 @@
     (c) == 15 ? PC5 : \
     NOT_A_PIN)
 
+/* ---- ADC internal channels (device-data adc_internal.csv):
+ *      analogReadVref(), analogReadTemp(), CH32RV.getVddMillivolts() ---- */
+#define CH32RV_ADC_VREFINT_CHANNEL 17
+#define CH32RV_ADC_VREFINT_MV 1200
+#define CH32RV_ADC_TEMP_CHANNEL 16
+#define CH32RV_ADC_TEMP_V25_MV 1400
+#define CH32RV_ADC_TEMP_SLOPE_UV 4300
+#define CH32RV_ADC_INTERNAL_ENABLE (1u << 23)   /* CTLR2.TSVREFE */
+
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
  *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */
 #define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u
@@ -418,6 +427,91 @@
     { 2, { PE8, PE9, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00080000u }, \
     { 3, { PE8, PE9, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x000c0000u }, \
 }
+/* USART6: route default, on every part */
+#define CH32RV_SERIAL6_TX PC0
+#define CH32RV_SERIAL6_RX PC1
+#define CH32RV_SERIAL6_HANDLER USART6_IRQHandler
+#define CH32RV_SERIAL6_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERIAL6_CLKEN_MASK 0x00000040u
+#define CH32RV_SERIAL6_IRQ CH32RV_IRQN_USART6
+#define CH32RV_SERIAL6_REMAP2_MASK 0x00300000u
+#define CH32RV_SERIAL6_REMAP2_VAL  0x00000000u
+/* SERIAL6 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL6_ROUTE_COUNT 4
+#define CH32RV_SERIAL6_ROUTES { \
+    { 0, { PC0, PC1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PB8, PB9, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00100000u }, \
+    { 2, { PE10, PE11, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00200000u }, \
+    { 3, { PC0, PC1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00300000u }, \
+}
+/* USART7: route default, on every part */
+#define CH32RV_SERIAL7_TX PC2
+#define CH32RV_SERIAL7_RX PC3
+#define CH32RV_SERIAL7_HANDLER USART7_IRQHandler
+#define CH32RV_SERIAL7_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERIAL7_CLKEN_MASK 0x00000080u
+#define CH32RV_SERIAL7_IRQ CH32RV_IRQN_USART7
+#define CH32RV_SERIAL7_REMAP2_MASK 0x00c00000u
+#define CH32RV_SERIAL7_REMAP2_VAL  0x00000000u
+/* SERIAL7 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL7_ROUTE_COUNT 4
+#define CH32RV_SERIAL7_ROUTES { \
+    { 0, { PC2, PC3, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PA6, PA7, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00400000u }, \
+    { 2, { PA9, PA10, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00800000u }, \
+    { 3, { PA9, PA10, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00c00000u }, \
+}
+/* USART8: route default, on every part */
+#define CH32RV_SERIAL8_TX PC4
+#define CH32RV_SERIAL8_RX PC5
+#define CH32RV_SERIAL8_HANDLER USART8_IRQHandler
+#define CH32RV_SERIAL8_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERIAL8_CLKEN_MASK 0x00000100u
+#define CH32RV_SERIAL8_IRQ CH32RV_IRQN_USART8
+#define CH32RV_SERIAL8_REMAP2_MASK 0x03000000u
+#define CH32RV_SERIAL8_REMAP2_VAL  0x00000000u
+/* SERIAL8 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL8_ROUTE_COUNT 4
+#define CH32RV_SERIAL8_ROUTES { \
+    { 0, { PC4, PC5, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PA14, PA15, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x01000000u }, \
+    { 2, { PB15, PB14, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x02000000u }, \
+    { 3, { PB15, PB14, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x03000000u }, \
+}
+/* USART9: route remap-1, on every part */
+#define CH32RV_SERIAL9_TX PA4
+#define CH32RV_SERIAL9_RX PA5
+#define CH32RV_SERIAL9_HANDLER USART9_IRQHandler
+#define CH32RV_SERIAL9_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERIAL9_CLKEN_MASK 0x00000200u
+#define CH32RV_SERIAL9_IRQ CH32RV_IRQN_USART9
+#define CH32RV_SERIAL9_REMAP2_MASK 0x30000000u
+#define CH32RV_SERIAL9_REMAP2_VAL  0x10000000u
+/* SERIAL9 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL9_ROUTE_COUNT 4
+#define CH32RV_SERIAL9_ROUTES { \
+    { 0, { PB1, PB2, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PA4, PA5, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x10000000u }, \
+    { 2, { PE3, PE4, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x20000000u }, \
+    { 3, { PE3, PE4, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x30000000u }, \
+}
+/* USART10: route default, on 2 of 3 parts */
+#define CH32RV_SERIAL10_TX PE0
+#define CH32RV_SERIAL10_RX PE1
+#define CH32RV_SERIAL10_HANDLER USART10_IRQHandler
+#define CH32RV_SERIAL10_CLKEN_ADDR 0x4002101cu
+#define CH32RV_SERIAL10_CLKEN_MASK 0x00000400u
+#define CH32RV_SERIAL10_IRQ CH32RV_IRQN_USART10
+#define CH32RV_SERIAL10_REMAP2_MASK 0xc0000000u
+#define CH32RV_SERIAL10_REMAP2_VAL  0x00000000u
+/* SERIAL10 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL10_ROUTE_COUNT 4
+#define CH32RV_SERIAL10_ROUTES { \
+    { 0, { PE0, PE1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PB8, PB9, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x40000000u }, \
+    { 2, { PD11, PD12, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x80000000u }, \
+    { 3, { PD11, PD12, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0xc0000000u }, \
+}
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
@@ -504,8 +598,8 @@
 #define SS PIN_SPI_SS
 #endif
 
-/* ---- PWM: 12 pads on TIM1/TIM2/TIM3, default route ---- */
-#define CH32RV_PWM_PIN_COUNT 12
+/* ---- PWM: 16 pads on TIM1/TIM2/TIM3/TIM4, default route ---- */
+#define CH32RV_PWM_PIN_COUNT 16
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \
     (p) == PA8 ? 1 : \
     (p) == PA9 ? 1 : \
@@ -519,6 +613,10 @@
     (p) == PA7 ? 3 : \
     (p) == PB0 ? 3 : \
     (p) == PB1 ? 3 : \
+    (p) == PB6 ? 4 : \
+    (p) == PB7 ? 4 : \
+    (p) == PB8 ? 4 : \
+    (p) == PB9 ? 4 : \
     0)
 #define CH32RV_PWM_PIN_TO_CHANNEL(p) ( \
     (p) == PA8 ? 1 : \
@@ -533,6 +631,10 @@
     (p) == PA7 ? 2 : \
     (p) == PB0 ? 3 : \
     (p) == PB1 ? 4 : \
+    (p) == PB6 ? 1 : \
+    (p) == PB7 ? 2 : \
+    (p) == PB8 ? 3 : \
+    (p) == PB9 ? 4 : \
     0)
 
 /* ---- DAC: analogWrite() drives the converter on these pads,
@@ -545,7 +647,7 @@
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,
  * clock-enable address/mask, update IRQ, update handler. ---- */
-#define CH32RV_TIMER_COUNT 7
+#define CH32RV_TIMER_COUNT 8
 #define CH32RV_TIMER_TABLE(X) \
     X(1, 1, 16, 4, 1, CH32RV_TIM1_BASE, 0x40021018u, 0x00000800u, CH32RV_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
     X(2, 2, 16, 4, 0, CH32RV_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32RV_IRQN_TIM2, TIM2_IRQHandler) \
@@ -553,7 +655,8 @@
     X(4, 2, 16, 4, 0, CH32RV_TIM4_BASE, 0x4002101cu, 0x00000004u, CH32RV_IRQN_TIM4, TIM4_IRQHandler) \
     X(5, 2, 16, 4, 0, CH32RV_TIM5_BASE, 0x4002101cu, 0x00000008u, CH32RV_IRQN_TIM5, TIM5_IRQHandler) \
     X(6, 2, 16, 0, 0, CH32RV_TIM6_BASE, 0x4002101cu, 0x00000010u, CH32RV_IRQN_TIM6, TIM6_IRQHandler) \
-    X(7, 2, 16, 0, 0, CH32RV_TIM7_BASE, 0x4002101cu, 0x00000020u, CH32RV_IRQN_TIM7, TIM7_IRQHandler)
+    X(7, 2, 16, 0, 0, CH32RV_TIM7_BASE, 0x4002101cu, 0x00000020u, CH32RV_IRQN_TIM7, TIM7_IRQHandler) \
+    X(8, 1, 16, 4, 1, CH32RV_TIM8_BASE, 0x40021018u, 0x00002000u, CH32RV_IRQN_TIM8_UP, TIM8_UP_IRQHandler)
 
 /* ---- tone(): preferred TIM7, free of PWM pads. ---- */
 #define CH32RV_TONE_TIMER 7

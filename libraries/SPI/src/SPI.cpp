@@ -301,6 +301,9 @@ void CH32RVSPIClass::begin()
     if (d.remap2_mask) {
         CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~d.remap2_mask) | route->value2;
     }
+    ch32rv_pin_set_af(_sck_pin, route->value);
+    ch32rv_pin_set_af(_miso_pin, route->value);
+    ch32rv_pin_set_af(_mosi_pin, route->value);
 
     const uint8_t sck_port = (uint8_t)CH32RV_PIN_PORT(_sck_pin);
     const uint8_t miso_port = (uint8_t)CH32RV_PIN_PORT(_miso_pin);

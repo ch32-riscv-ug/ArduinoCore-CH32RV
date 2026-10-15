@@ -272,6 +272,12 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_USART3_BASE (CH32RV_APB1_BASE + 0x4800u)
 #define CH32RV_USART4_BASE (CH32RV_APB1_BASE + 0x4C00u)   /* UART4 */
 #define CH32RV_USART5_BASE (CH32RV_APB1_BASE + 0x5000u)   /* UART5 */
+/* USART6..10: V205 (6..8), V30x (UART6..8), V407 / V467 (6..10). */
+#define CH32RV_USART6_BASE (CH32RV_APB1_BASE + 0x1800u)
+#define CH32RV_USART7_BASE (CH32RV_APB1_BASE + 0x1C00u)
+#define CH32RV_USART8_BASE (CH32RV_APB1_BASE + 0x2000u)
+#define CH32RV_USART9_BASE (CH32RV_APB1_BASE + 0x7800u)
+#define CH32RV_USART10_BASE (CH32RV_APB1_BASE + 0x7C00u)
 
 #define CH32RV_USART_STATR(b) CH32RV_REG16((b) + 0x00u)
 #define CH32RV_USART_DATAR(b) CH32RV_REG16((b) + 0x04u)
@@ -474,6 +480,12 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
 #define CH32RV_TIM5_BASE (CH32RV_APB1_BASE + 0x0C00u)
 #define CH32RV_TIM6_BASE (CH32RV_APB1_BASE + 0x1000u)
 #define CH32RV_TIM7_BASE (CH32RV_APB1_BASE + 0x1400u)
+/* The extra advanced timers of V30x (TIM8..10) and V4x7 (TIM8), on APB2.
+ * Same addresses on every family that has them (EVT ch32v30x.h / ch32v4x7.h,
+ * also ch32v10x.h). */
+#define CH32RV_TIM8_BASE (CH32RV_APB2_BASE + 0x3400u)
+#define CH32RV_TIM9_BASE (CH32RV_APB2_BASE + 0x4C00u)
+#define CH32RV_TIM10_BASE (CH32RV_APB2_BASE + 0x5000u)
 
 #define CH32RV_TIM_CTLR1(b)   CH32RV_REG16((b) + 0x00u)
 #define CH32RV_TIM_DMAINTENR(b) CH32RV_REG16((b) + 0x0Cu) /* interrupt enables */

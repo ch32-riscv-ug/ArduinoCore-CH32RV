@@ -259,6 +259,13 @@
     (c) == 11 ? PB5 : \
     NOT_A_PIN)
 
+/* ---- ADC internal channels (device-data adc_internal.csv):
+ *      analogReadVref(), analogReadTemp(), CH32RV.getVddMillivolts() ---- */
+#define CH32RV_ADC_VREFINT_CHANNEL 12
+#define CH32RV_ADC_VREFINT_MV 1200
+#define CH32RV_ADC_INTERNAL_ENABLE (1u << 23)   /* CTLR2.VREFE */
+#define CH32RV_ADC_BUFFER_ENABLE (1u << 26)   /* CTLR1.BUFEN */
+
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
  *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */
 #define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u
@@ -317,6 +324,10 @@
     (p) == PA1 ? 4 : \
     1)
 
+/* Pads take their alternate function one by one (AFIO GPIOx_AFLR /
+ * AFHR); a route's value below is that function number. */
+#define CH32RV_GPIO_PER_PIN_AF 1
+
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
 /* USART1: route af-1, on every part */
@@ -334,9 +345,24 @@
 #define CH32RV_SERIAL1_CLKEN_ADDR 0x40021018u
 #define CH32RV_SERIAL1_CLKEN_MASK 0x00004000u
 #define CH32RV_SERIAL1_IRQ CH32RV_IRQN_USART1
-/* NOTE: route af-1 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * and this unsupported port cannot be selected. */
+#define CH32RV_SERIAL1_REMAP_MASK 0x00000000u
+#define CH32RV_SERIAL1_REMAP_VAL  0x00000001u
+/* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL1_ROUTE_COUNT 12
+#define CH32RV_SERIAL1_ROUTES { \
+    { 1, { PD4, PD5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA11, PA10, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA11, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA11, PC5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA11, PD5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PC4, PA10, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PC4, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PC4, PC5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PC4, PD5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PD4, PA10, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PD4, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PD4, PC5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+}
 /* USART2: route af-1, on every part */
 #define CH32RV_SERIAL2_TX PD6
 #define CH32RV_SERIAL2_RX PD7
@@ -352,9 +378,22 @@
 #define CH32RV_SERIAL2_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL2_CLKEN_MASK 0x00020000u
 #define CH32RV_SERIAL2_IRQ CH32RV_IRQN_USART2
-/* NOTE: route af-1 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * and this unsupported port cannot be selected. */
+#define CH32RV_SERIAL2_REMAP_MASK 0x00000000u
+#define CH32RV_SERIAL2_REMAP_VAL  0x00000001u
+/* SERIAL2 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL2_ROUTE_COUNT 10
+#define CH32RV_SERIAL2_ROUTES { \
+    { 1, { PD6, PD7, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA4, PA5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA4, PC13, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA4, PD7, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PC12, PA5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PC12, PC13, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PC12, PD7, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PD6, PA5, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PD6, PC13, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 2, { PA14, PA13, CH32RV_ROUTE_NO_PIN }, 0x00000002u, 0x00000000u }, \
+}
 /* USART3: route af-1, on every part */
 #define CH32RV_SERIAL3_TX PC8
 #define CH32RV_SERIAL3_RX PC9
@@ -370,9 +409,16 @@
 #define CH32RV_SERIAL3_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL3_CLKEN_MASK 0x00040000u
 #define CH32RV_SERIAL3_IRQ CH32RV_IRQN_USART3
-/* NOTE: route af-1 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * and this unsupported port cannot be selected. */
+#define CH32RV_SERIAL3_REMAP_MASK 0x00000000u
+#define CH32RV_SERIAL3_REMAP_VAL  0x00000001u
+/* SERIAL3 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL3_ROUTE_COUNT 4
+#define CH32RV_SERIAL3_ROUTES { \
+    { 1, { PC8, PC9, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA13, PA14, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA13, PC9, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PC8, PA14, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+}
 /* USART4: route af-1, on every part */
 #define CH32RV_SERIAL4_TX PB12
 #define CH32RV_SERIAL4_RX PB13
@@ -388,9 +434,16 @@
 #define CH32RV_SERIAL4_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL4_CLKEN_MASK 0x00080000u
 #define CH32RV_SERIAL4_IRQ CH32RV_IRQN_USART4
-/* NOTE: route af-1 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * and this unsupported port cannot be selected. */
+#define CH32RV_SERIAL4_REMAP_MASK 0x00000000u
+#define CH32RV_SERIAL4_REMAP_VAL  0x00000001u
+/* SERIAL4 routes for setRoute()/setPins(): route number, then TX, RX */
+#define CH32RV_SERIAL4_ROUTE_COUNT 4
+#define CH32RV_SERIAL4_ROUTES { \
+    { 1, { PB12, PB13, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA8, PA9, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PA8, PB13, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+    { 1, { PB12, PA9, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+}
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
@@ -416,9 +469,37 @@
  * the selection rule picked the one above (never a debug
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
-/* NOTE: route af-3 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * and this unsupported instance cannot be selected. */
+#define CH32RV_I2C1_REMAP_MASK 0x00000000u
+#define CH32RV_I2C1_REMAP_VAL  0x00000003u
+/* I2C1 routes for setRoute()/setPins(): route number, then SCL, SDA */
+#define CH32RV_I2C1_ROUTE_COUNT 25
+#define CH32RV_I2C1_ROUTES { \
+    { 3, { PD4, PD5, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA0, PA1, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA0, PA9, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA0, PA13, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA0, PB15, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA0, PD5, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA8, PA1, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA8, PA9, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA8, PA13, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA8, PB15, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA8, PD5, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA14, PA1, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA14, PA9, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA14, PA13, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA14, PB15, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA14, PD5, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB14, PA1, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB14, PA9, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB14, PA13, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB14, PB15, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB14, PD5, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PD4, PA1, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PD4, PA9, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PD4, PA13, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PD4, PB15, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+}
 /* I2C2: route af-3, on every part */
 #define CH32RV_I2C2_SCL PD6
 #define CH32RV_I2C2_SDA PD7
@@ -432,9 +513,28 @@
  * the selection rule picked the one above (never a debug
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
-/* NOTE: route af-3 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * and this unsupported instance cannot be selected. */
+#define CH32RV_I2C2_REMAP_MASK 0x00000000u
+#define CH32RV_I2C2_REMAP_VAL  0x00000003u
+/* I2C2 routes for setRoute()/setPins(): route number, then SCL, SDA */
+#define CH32RV_I2C2_ROUTE_COUNT 16
+#define CH32RV_I2C2_ROUTES { \
+    { 3, { PD6, PD7, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA11, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA11, PB10, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA11, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PA11, PD7, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB9, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB9, PB10, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB9, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PB9, PD7, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PC10, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PC10, PB10, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PC10, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PC10, PD7, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PD6, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PD6, PB10, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+    { 3, { PD6, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
+}
 /* Arduino's standard names for the first bus (Wire). These are
  * the pads of I2C1's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */
@@ -448,6 +548,62 @@
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
+/* SPI1: no default route for the whole series (its pads
+ * move between packages, or sit on debug / strap pads). With a
+ * part number selected it may have one below; otherwise begin()
+ * has to name the pins. */
+#define CH32RV_SPI1_CLKEN_ADDR 0x40021018u
+#define CH32RV_SPI1_CLKEN_MASK 0x00001000u
+#define CH32RV_SPI1_REMAP_MASK 0x00000000u
+#if defined(CH32RV_PART_CH32X305RCT6)
+#define CH32RV_SPI1_REMAP_VAL  0x00000000u
+/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32RV_SPI1_ROUTE_COUNT 18
+#define CH32RV_SPI1_ROUTES { \
+    { 4, { PA5, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA7, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA7, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA7, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA15, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA15, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA15, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PD3, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PD3, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA7, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA7, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA7, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA15, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA15, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA15, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PD3, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PD3, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
+}
+#else   /* ANY, or a board that sets no part: the series union */
+#define CH32RV_SPI1_REMAP_VAL  0x00000000u
+/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32RV_SPI1_ROUTE_COUNT 18
+#define CH32RV_SPI1_ROUTES { \
+    { 4, { PA5, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA7, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA7, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA7, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA15, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA15, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PA15, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PD3, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PD3, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA7, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA7, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA7, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA15, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA15, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PA15, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PD3, PA6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PD3, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA13, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
+}
+#endif
 /* SPI2: route af-4, on every part */
 #define CH32RV_SPI2_SCK PB5
 #define CH32RV_SPI2_MISO PB7
@@ -466,9 +622,20 @@
  * the selection rule picked the one above (never a debug
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
-/* NOTE: route af-4 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * and this unsupported instance cannot be selected. */
+#define CH32RV_SPI2_REMAP_MASK 0x00000000u
+#define CH32RV_SPI2_REMAP_VAL  0x00000004u
+/* SPI2 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32RV_SPI2_ROUTE_COUNT 8
+#define CH32RV_SPI2_ROUTES { \
+    { 4, { PB5, PB7, PB6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PB5, PB7, PB14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PB5, PB15, PB6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PB5, PB15, PB14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PB13, PB7, PB6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PB13, PB7, PB14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PB13, PB15, PB6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PB13, PB15, PB14 }, 0x00000004u, 0x00000000u }, \
+}
 /* SPI3: route af-4, on every part */
 #define CH32RV_SPI3_SCK PD11
 #define CH32RV_SPI3_MISO PD13
@@ -487,9 +654,39 @@
  * the selection rule picked the one above (never a debug
  * or strap pad, prefer a pad on every part, else table
  * order - see resolve_pin_candidates). */
-/* NOTE: route af-4 is a per-pin alternate-function
- * selector, not an AFIO remap. The core does not program it
- * and this unsupported instance cannot be selected. */
+#define CH32RV_SPI3_REMAP_MASK 0x00000000u
+#define CH32RV_SPI3_REMAP_VAL  0x00000004u
+/* SPI3 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
+#define CH32RV_SPI3_ROUTE_COUNT 27
+#define CH32RV_SPI3_ROUTES { \
+    { 4, { PD11, PD13, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PC7, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PC7, PC10 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PC7, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PC11, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PC11, PC10 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PC11, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PD13, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PD13, PC10 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC5, PD13, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PC7, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PC7, PC10 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PC7, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PC11, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PC11, PC10 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PC11, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PD13, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PD13, PC10 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PC9, PD13, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PD11, PC7, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PD11, PC7, PC10 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PD11, PC7, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PD11, PC11, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PD11, PC11, PC10 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PD11, PC11, PD12 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PD11, PD13, PC6 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PD11, PD13, PC10 }, 0x00000004u, 0x00000000u }, \
+}
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI2's default route in the datasheet - a fact about
  * the chip, NOT a claim about how any board is wired. */
@@ -503,6 +700,96 @@
 #define PIN_SPI_SS PB4
 #define SS PIN_SPI_SS
 #endif
+
+/* ---- PWM: 27 pads on TIM1/TIM2/TIM3, per-pin alternate function ---- */
+#define CH32RV_PWM_PIN_COUNT 27
+#define CH32RV_PWM_PIN_TO_TIMER(p) ( \
+    (p) == PA10 ? 1 : \
+    (p) == PB8 ? 1 : \
+    (p) == PC4 ? 1 : \
+    (p) == PA11 ? 1 : \
+    (p) == PB9 ? 1 : \
+    (p) == PC5 ? 1 : \
+    (p) == PA12 ? 1 : \
+    (p) == PB10 ? 1 : \
+    (p) == PC6 ? 1 : \
+    (p) == PB11 ? 1 : \
+    (p) == PC7 ? 1 : \
+    (p) == PA4 ? 2 : \
+    (p) == PB4 ? 2 : \
+    (p) == PA5 ? 2 : \
+    (p) == PB5 ? 2 : \
+    (p) == PA6 ? 2 : \
+    (p) == PB6 ? 2 : \
+    (p) == PA7 ? 2 : \
+    (p) == PB7 ? 2 : \
+    (p) == PC8 ? 3 : \
+    (p) == PD3 ? 3 : \
+    (p) == PC9 ? 3 : \
+    (p) == PD4 ? 3 : \
+    (p) == PC10 ? 3 : \
+    (p) == PD5 ? 3 : \
+    (p) == PA15 ? 3 : \
+    (p) == PC11 ? 3 : \
+    0)
+#define CH32RV_PWM_PIN_TO_CHANNEL(p) ( \
+    (p) == PA10 ? 1 : \
+    (p) == PB8 ? 1 : \
+    (p) == PC4 ? 1 : \
+    (p) == PA11 ? 2 : \
+    (p) == PB9 ? 2 : \
+    (p) == PC5 ? 2 : \
+    (p) == PA12 ? 3 : \
+    (p) == PB10 ? 3 : \
+    (p) == PC6 ? 3 : \
+    (p) == PB11 ? 4 : \
+    (p) == PC7 ? 4 : \
+    (p) == PA4 ? 1 : \
+    (p) == PB4 ? 1 : \
+    (p) == PA5 ? 2 : \
+    (p) == PB5 ? 2 : \
+    (p) == PA6 ? 3 : \
+    (p) == PB6 ? 3 : \
+    (p) == PA7 ? 4 : \
+    (p) == PB7 ? 4 : \
+    (p) == PC8 ? 1 : \
+    (p) == PD3 ? 1 : \
+    (p) == PC9 ? 2 : \
+    (p) == PD4 ? 2 : \
+    (p) == PC10 ? 3 : \
+    (p) == PD5 ? 3 : \
+    (p) == PA15 ? 4 : \
+    (p) == PC11 ? 4 : \
+    0)
+#define CH32RV_PWM_PIN_TO_AF(p) ( \
+    (p) == PA10 ? 6 : \
+    (p) == PB8 ? 6 : \
+    (p) == PC4 ? 6 : \
+    (p) == PA11 ? 6 : \
+    (p) == PB9 ? 6 : \
+    (p) == PC5 ? 6 : \
+    (p) == PA12 ? 6 : \
+    (p) == PB10 ? 6 : \
+    (p) == PC6 ? 6 : \
+    (p) == PB11 ? 6 : \
+    (p) == PC7 ? 6 : \
+    (p) == PA4 ? 6 : \
+    (p) == PB4 ? 6 : \
+    (p) == PA5 ? 6 : \
+    (p) == PB5 ? 6 : \
+    (p) == PA6 ? 6 : \
+    (p) == PB6 ? 6 : \
+    (p) == PA7 ? 6 : \
+    (p) == PB7 ? 6 : \
+    (p) == PC8 ? 7 : \
+    (p) == PD3 ? 7 : \
+    (p) == PC9 ? 7 : \
+    (p) == PD4 ? 7 : \
+    (p) == PC10 ? 7 : \
+    (p) == PD5 ? 7 : \
+    (p) == PA15 ? 7 : \
+    (p) == PC11 ? 7 : \
+    0)
 
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,
@@ -526,14 +813,16 @@
  * replicated into both halves. See ch32rv_registers.h. */
 #define CH32RV_TONE_TIMER_BITS 32
 
-/* ---- Servo: preferred TIM3, free of PWM pads. ---- */
+/* ---- Servo: preferred TIM3, also a PWM timer here, so
+ *      analogWrite() on PA15, PC10, PC11, PC8, PC9, PD3, PD4, PD5
+ *      is disturbed while a servo is attached. ---- */
 #define CH32RV_SERVO_TIMER 3
 #define CH32RV_SERVO_TIMER_BASE CH32RV_TIM3_BASE
 #define CH32RV_SERVO_TIMER_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERVO_TIMER_CLKEN_MASK 0x00000002u
 #define CH32RV_SERVO_TIMER_IRQ CH32RV_IRQN_TIM3
 #define CH32RV_SERVO_TIMER_HANDLER TIM3_IRQHandler
-#define CH32RV_SERVO_SHARES_PWM 0
+#define CH32RV_SERVO_SHARES_PWM 1
 #define CH32RV_SERVO_TIMER_BITS 16
 
 /* No LED_BUILTIN: a Generic board is a silicon series, not a

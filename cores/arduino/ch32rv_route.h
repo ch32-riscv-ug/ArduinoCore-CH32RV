@@ -1,10 +1,14 @@
 /* Alternate-function routes for one peripheral instance.
  *
- * A CH32 peripheral does not have per-pin alternate functions the way an
+ * Most CH32 families do not have per-pin alternate functions the way an
  * STM32F4 or an ESP32 does: one AFIO field moves the whole peripheral to one
  * of a handful of numbered pin sets. TX cannot move without RX, and SCL cannot
  * move without SDA. So the unit a sketch selects is the route, and picking
  * pins is really "find the route whose pins these are".
+ *
+ * V205, X305 and X315 do choose per pin (CH32RV_GPIO_PER_PIN_AF): there a
+ * route is one function number and one combination of the pads that offer it,
+ * and the variant lists every combination, so the same lookup still works.
  *
  * The variant generates one table per instance (CH32RV_SERIAL1_ROUTES and
  * friends) from ch32-device-data. The controlling field's mask is not in the
@@ -31,7 +35,9 @@ typedef struct {
      * first remap. Not the array index - a series can skip a number. */
     uint8_t route;
     uint8_t pins[CH32RV_ROUTE_PINS];
-    uint32_t value;    /* bits to write into PCFR1, within the instance mask */
+    uint32_t value;    /* bits to write into PCFR1, within the instance mask;
+                        * on the per-pin families (CH32RV_GPIO_PER_PIN_AF) the
+                        * function number each pad of the route is set to */
     uint32_t value2;   /* same for PCFR2, where the field spans it */
 } ch32rv_route_t;
 

@@ -20,6 +20,7 @@ Usage:
   generate.py --tables <ch32-device-data checkout root> --platform <platform dir> [--check]
 """
 import argparse
+import itertools
 import csv
 import difflib
 import hashlib
@@ -168,7 +169,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
 MENU_HEADER = ("menu.pnum=Part Number\nmenu.rtlib=C Runtime Library\n"
-               + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 6))
+               + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4)))
 
@@ -182,7 +183,7 @@ PERIPH_MENU_SERIES = None
 
 # kind -> (menu id prefix, macro prefix, roles in route order, instance numbers)
 PERIPH_MENU_KINDS = (
-    ("usart", "USART", ("TX", "RX"), range(1, 6)),
+    ("usart", "USART", ("TX", "RX"), range(1, 11)),
     ("i2c", "I2C", ("SCL", "SDA"), range(1, 3)),
     ("spi", "SPI", ("SCK", "MISO", "MOSI"), range(1, 4)),
 )
@@ -741,6 +742,69 @@ def load_adc_bases(tables: pathlib.Path) -> dict:
     return out
 
 
+def load_adc_internal(tables: pathlib.Path) -> dict:
+    """family -> {"vrefint" | "temperature_sensor": row} from adc_internal.csv:
+    the internal channel's number, its datasheet constants, and the CTLR2 bit
+    that switches it on (none: always connected). Rows without a channel
+    (CH32M030: searched, not found) are left out."""
+    out: dict = {}
+    for r in read_table(tables, "adc_internal.csv", ("family", "source", "channel")):
+        if not r["channel"]:
+            continue
+        out.setdefault(r["family"], {})[r["source"]] = r
+    return out
+
+
+# Families whose ADC has an input buffer (CTLR1 bit 26, EVT ADC_BufferCmd) that
+# the internal channels need: the EVT's Internal_Temperature examples turn it
+# on before reading them, and without it CH32L103 read Vrefint about 40 %
+# low (measured 2026-10-15). Not in device-data.
+ADC_BUFFER_FAMILIES = {"CH32V006", "CH32V20x", "CH32V205", "CH32V307",
+                       "CH32L103", "CH32X315"}
+
+
+# Families whose ADC needs the EVT's offset correction: Get_CalibrationValue()
+# converts the internal VDDA / 2 channel and adds 2048 minus that to every
+# result. CH32L103 read VDDA / 2 as 1426 instead of 2048 without it (measured
+# 2026-10-15) - every pad about 620 counts low. Channel 18 there
+# (ADC_Channel_CalInternal). Not in device-data.
+ADC_OFFSET_CAL_CHANNEL = {"CH32L103": 18}
+
+
+def adc_internal_defines(info: dict, family: str = "") -> list:
+    """The variant lines for analogReadVref() / analogReadTemp()."""
+    out = []
+    if family in ADC_OFFSET_CAL_CHANNEL:
+        out.append("/* ADC offset correction: VDDA / 2 on this channel should read 2048 */")
+        out.append(f"#define CH32RV_ADC_CAL_CHANNEL {ADC_OFFSET_CAL_CHANNEL[family]}")
+        out.append("")
+    vref = info.get("vrefint")
+    temp = info.get("temperature_sensor")
+    if not vref:
+        return out
+    out.append("/* ---- ADC internal channels (device-data adc_internal.csv):")
+    out.append(" *      analogReadVref(), analogReadTemp(), CH32RV.getVddMillivolts() ---- */")
+    out.append(f"#define CH32RV_ADC_VREFINT_CHANNEL {int(vref['channel'])}")
+    mv = vref["vrefint_mv"] or ""
+    if not mv and vref["vrefint_mv_min"] and vref["vrefint_mv_max"]:
+        mv = str((int(vref["vrefint_mv_min"]) + int(vref["vrefint_mv_max"])) // 2)
+    if mv:
+        out.append(f"#define CH32RV_ADC_VREFINT_MV {int(float(mv))}")
+    if temp and temp["v25_mv"] and temp["avg_slope_uv_c"]:
+        out.append(f"#define CH32RV_ADC_TEMP_CHANNEL {int(temp['channel'])}")
+        out.append(f"#define CH32RV_ADC_TEMP_V25_MV {int(float(temp['v25_mv']))}")
+        out.append(f"#define CH32RV_ADC_TEMP_SLOPE_UV {int(float(temp['avg_slope_uv_c']))}")
+    bit = (temp or vref).get("enable_bit") or vref.get("enable_bit")
+    reg = (temp or vref).get("enable_register") or vref.get("enable_register")
+    if bit and reg == "CTLR2":
+        out.append(f"#define CH32RV_ADC_INTERNAL_ENABLE (1u << {int(bit)})   "
+                   f"/* CTLR2.{(temp or vref)['enable_field']} */")
+    if family in ADC_BUFFER_FAMILIES:
+        out.append("#define CH32RV_ADC_BUFFER_ENABLE (1u << 26)   /* CTLR1.BUFEN */")
+    out.append("")
+    return out
+
+
 def load_esig(tables: pathlib.Path) -> dict:
     """family -> {register: address} from index/esig.csv (R-35): FLACAP (16 bit,
     KiB) and UNIID1..3 (32 bit each, UNIID1 the low word)."""
@@ -759,6 +823,10 @@ def _family_series(tables: pathlib.Path) -> dict:
     """family -> its series names. families.csv is the only place that says so."""
     return {r["family"]: r["series"].split(";")
             for r in read_table(tables, "families.csv", ("family", "series"))}
+
+
+# Families whose IWDG runs from HSI through a fixed divider instead of an LSI.
+IWDG_HSI_DIVIDER = {"CH32X035": 1024}
 
 
 def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
@@ -803,8 +871,11 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # so the *largest* unqualified typical is taken: assuming a fast LSI makes
     # a requested watchdog timeout come out shorter than asked, never longer,
     # and "shorter than asked" is the survivable direction for a watchdog.
-    # X033/X035 publish no F_LSI at all (requested upstream); those families
-    # simply get no CH32RV_LSI_HZ and wdtEnable() says so.
+    # X033/X035 publish no F_LSI because they have no LSI: their reference
+    # manual's clock tree feeds AWU and IWDG from HSI / 1024 (CH32X035RM
+    # 3.3.3.3: IWDG forces HSI on), 46.875 kHz at 48 MHz - which the EVT's
+    # "prescaler 32, reload 4000 = 2.7 s" agrees with. IWDG_HSI_DIVIDER says so,
+    # and CH32RV_LSI_HZ there is that clock.
     lsi: dict = {}
     for r in read_table(tables, "operating_conditions.csv",
                         ("series", "symbol", "condition", "typ", "unit")):
@@ -949,7 +1020,9 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             adc_clk_ctlr3=(1 if family not in adcpre and family in adc_ctlr3
                            else 0),
             adc_clk_known=family in adcpre or family in adc_ctlr3,
-            lsi_hz=lsi.get(family, 0),
+            lsi_hz=lsi.get(family, 0) or (
+                one(family, "the HSI frequency", set(hsi.get(family, ())))
+                // IWDG_HSI_DIVIDER[family] if family in IWDG_HSI_DIVIDER else 0),
             iwdg_base=one(family, "the IWDG base",
                           set(iwdg[family])) if family in iwdg else 0,
             dm_data0=dm_data0.get(family, 0),
@@ -1311,18 +1384,25 @@ UART_SIGNAL_RE = [
 ]
 # Route preference: the first one present wins. Families that expose no
 # "default" route (V205/X305/X315) only carry af-N alternate-function numbers.
-# USART instances the core can drive: base address and whether the peripheral
-# hangs off APB1. UART6..8 sit at a different offset and use different RCC bits,
-# so this core does not expose them.
-SERIAL_BASES = {1: "CH32RV_USART1_BASE", 2: "CH32RV_USART2_BASE",
-                3: "CH32RV_USART3_BASE", 4: "CH32RV_USART4_BASE",
-                5: "CH32RV_USART5_BASE"}
+# USART instances the core can drive (ch32rv_registers.h names their bases).
+# 6..10 are V205's USART6..8, V30x's UART6..8 and V407 / V467's USART6..10;
+# their clock-enable bits come from device-data like the others.
+SERIAL_BASES = {n: f"CH32RV_USART{n}_BASE" for n in range(1, 11)}
 # Every remap the tables name is loaded: a later one is only ranked after the
 # earlier ones for the default, but it must exist for setRoute() and the FIX
 # menu - V003's USART1 has four routes, and CH32V407KEU6's USART3 exists only
 # on remap-2 (PA13/PA14, the SWD pins: never a default, still selectable).
 ALL_REMAPS = tuple(f"remap-{i}" for i in range(1, 10))
+# The af-N families (V205, X305, X315) select a function per pin: AFIO's
+# GPIOx_AFLR / AFHR hold one 4-bit number per pad, and route af-N in
+# device-data is "these pads, each set to function N" (checked against the
+# EVT's GPIO_PinAFConfig calls: V205 USART2 PA2 / PA3 is af-2 and AF2). Every
+# number is loaded so setPins() and the FIX menu can reach all of them; the
+# ones the *_ROUTE_ORDER tuples name first still rank first for a default.
+ALL_AFS = tuple(f"af-{i}" for i in range(16))
+PER_PIN_AF_SERIES = {"CH32V205", "CH32X305", "CH32X315"}
 UART_ROUTE_ORDER = ("default", "main", "af-1", "af-2", "remap-1") + ALL_REMAPS[1:]
+UART_ROUTE_ORDER += tuple(a for a in ALL_AFS if a not in UART_ROUTE_ORDER)
 
 # I2C signal naming is not normalized either: V003/X033/X035 say bare SCL/SDA,
 # M030/V002/V006/V407 say I2C_SCL/I2C_SDA, everyone else says I2C1_SCL. The
@@ -1339,6 +1419,7 @@ I2C_BASES = {1: "CH32RV_I2C1_BASE", 2: "CH32RV_I2C2_BASE"}
 # X033/X035 reach remap-5, and the af-N families (V205/X305/X315) carry only
 # alternate-function numbers - listed so the chooser can see them and say so.
 I2C_ROUTE_ORDER = ("default", "main", "af-3", "af-7") + ALL_REMAPS
+I2C_ROUTE_ORDER += tuple(a for a in ALL_AFS if a not in I2C_ROUTE_ORDER)
 
 # SPI, same three spellings. NSS is deliberately not a role: Arduino drives
 # chip select as an ordinary GPIO, so requiring the peripheral's own NSS pad
@@ -1363,6 +1444,7 @@ DAC_SIGNAL_RE = [
 ]
 DAC_ROUTE_ORDER = ("default", "main")
 SPI_ROUTE_ORDER = ("default", "main", "af-4", "af-5") + ALL_REMAPS
+SPI_ROUTE_ORDER += tuple(a for a in ALL_AFS if a not in SPI_ROUTE_ORDER)
 
 
 # AFIO remap. device-data gives the controlling field per series and selector;
@@ -1428,6 +1510,20 @@ def remap_mask_value(bits: list, value: int) -> dict:
             val |= 1 << bit
         out[register] = (mask, val)
     return out
+
+
+def route_af_value(route: str):
+    """N for an af-N route (the per-pin function number), else None."""
+    m = re.match(r"^af-(\d+)$", route or "")
+    return int(m.group(1)) if m else None
+
+
+def route_value(series: str, route: str):
+    """What selects `route` on this series: the AFIO remap value, or on the
+    per-pin families the function number. None if the core cannot select it."""
+    if series in PER_PIN_AF_SERIES:
+        return route_af_value(route)
+    return route_remap_value(route)
 
 
 def route_remap_value(route: str):
@@ -1660,6 +1756,8 @@ def choose_routes(series: str, parts: list, pins: dict, remap: dict, kind: str,
             value = route_remap_value(route)
             programmable = value == 0 or (value is not None and
                                           (series, kind, index) in remap)
+            if series in PER_PIN_AF_SERIES:
+                programmable = route_af_value(route) is not None
             score = (programmable, -route_order.index(route), coverage)
             if best is None or score > best[0]:
                 best = (score, coverage, route, next(iter(variants)))
@@ -1683,6 +1781,8 @@ def route_table(series: str, parts: list, pins: dict, remap: dict, kind: str,
     field the core cannot select a route, and a table it cannot act on would
     only invite setRoute() to lie.
     """
+    if series in PER_PIN_AF_SERIES:
+        return af_route_table(series, parts, pins, kind, roles, index)
     bits = remap.get((series, kind, index))
     if not bits:
         return []
@@ -1704,6 +1804,47 @@ def route_table(series: str, parts: list, pins: dict, remap: dict, kind: str,
         for pads in sorted(set(pads_by_part.values())):
             rows.append((value, pads,
                          mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1]))
+    return rows
+
+
+# Set by main(): family -> internal ADC channels (load_adc_internal).
+ADC_INTERNAL: dict = {}
+
+# Set by main(): every pad device-data offers per (kind, part, index, route,
+# role), where load_pin_routes() kept only one in the pin dicts.
+ROUTE_ALTS: dict = {}
+ALT_KIND = {"usart": "uart"}
+
+
+def af_route_table(series: str, parts: list, pins: dict, kind: str,
+                   roles: tuple, index: int) -> list:
+    """route_table() for the per-pin families: [(N, pads, N, 0)].
+
+    The pads of one role are alternatives there, not a contradiction, so every
+    combination is a row: TX on PA2 or PD5 with RX on PA3 or PD6. The row's
+    value is the function number the core writes into each pad's AFR nibble.
+    The chosen (collapsed) pads come first so a route lookup by number finds
+    the variant's default. Pads of different function numbers are not mixed:
+    one row, one number."""
+    rows = []
+    numbers = sorted({route_af_value(r) for pn in parts
+                      for (i, r) in pins.get(pn, {})
+                      if i == index and route_af_value(r) is not None})
+    for af in numbers:
+        route = f"af-{af}"
+        first, rest = [], set()
+        for pn in parts:
+            entry = pins.get(pn, {}).get((index, route))
+            if not entry or not set(roles) <= set(entry):
+                continue
+            chosen = tuple(entry[r] for r in roles)
+            if chosen not in first:
+                first.append(chosen)
+            cands = [ROUTE_ALTS.get((ALT_KIND.get(kind, kind), pn, index, route, r))
+                     or [entry[r]] for r in roles]
+            rest.update(itertools.product(*cands))
+        for pads in first + sorted(rest - set(first)):
+            rows.append((af, pads, af, 0))
     return rows
 
 
@@ -1772,6 +1913,9 @@ def emit_instance_routes(out: list, prefix: str, roles: tuple, series: str,
         out.append(f"#if {cond}")
         out.append(f"#define CH32RV_{prefix}_ABSENT 1   /* not on this part */")
         out.append("#endif")
+    if series in PER_PIN_AF_SERIES and series_default:
+        emit_routes(out, prefix, roles, union)
+        return False
     if not routes_conflict(union, die_ambiguous(series, parts, pins, remap, kind, roles, index)) \
             and series_default:
         emit_routes(out, prefix, roles, union)
@@ -1784,7 +1928,10 @@ def emit_instance_routes(out: list, prefix: str, roles: tuple, series: str,
         if not series_default:
             pick = choose_routes(series, [pn], pins, remap, kind, roles,
                                  route_order, {index}, forbidden).get(index)
-            if pick and route_remap_value(pick[1]) is not None:
+            if pick and series in PER_PIN_AF_SERIES and route_af_value(pick[1]) is not None:
+                _cov, route, pads = pick
+                default = (pads, route_af_value(route), 0)
+            elif pick and route_remap_value(pick[1]) is not None:
                 _cov, route, pads = pick
                 mv = remap_mask_value(bits, route_remap_value(route)) if bits else {}
                 default = (pads, mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1])
@@ -1793,6 +1940,9 @@ def emit_instance_routes(out: list, prefix: str, roles: tuple, series: str,
     regs = set(remap_mask_value(bits, 0)) if bits else set()
 
     def vals(v1: int, v2: int) -> None:
+        if series in PER_PIN_AF_SERIES:
+            out.append(f"#define CH32RV_{prefix}_REMAP_VAL  0x{v1:08x}u")
+            return
         if "PCFR1" in regs:
             out.append(f"#define CH32RV_{prefix}_REMAP_VAL  0x{v1:08x}u")
         if "PCFR2" in regs:
@@ -1950,18 +2100,26 @@ EXTI_GPIO_LINES_DEFAULT = 16
 # the break/dead-time setup that analogWrite() has no way to express.
 PWM_PERIPHERAL_RE = re.compile(r"^TIM(\d+)$")
 PWM_ROLE_RE = re.compile(r"^CH(\d)(?:_ETR)?$")
-# Timers at a known base with a known clock-enable bit. TIM1 is the advanced
-# one on APB2; TIM2/TIM3 are general purpose on APB1.
-PWM_TIMERS = (1, 2, 3)
+# Timers with output channels at a known base (ch32rv_registers.h): TIM1 the
+# advanced one, TIM2..TIM5 general purpose. TIM6/7 are basic (no channels).
+# analogWrite() still needs the timer in the variant's CH32RV_TIMER_TABLE; a
+# pad on a timer the series lacks there falls back to a digital level.
+PWM_TIMERS = (1, 2, 3, 4, 5)
 
 
 def load_pwm_pins(tables: pathlib.Path) -> dict:
-    """part -> {(port, bit): (timer, channel)} for the default route only."""
+    """part -> {(port, bit): (timer, channel, af)}.
+
+    The default route only (af None), plus the af-N routes of the per-pin
+    families, where af is the function number the pad has to be set to. One
+    pad, one timer: where a pad offers two, the lower timer number wins, so
+    adding a timer never moves a pad that already had PWM."""
     _, functions = load_pin_functions(tables)
     out: dict = {}
     plain: dict = {}          # part -> pads that already have a plain CH<k>
     for r in functions:
-        if r["route"] not in ("default", "main"):
+        af = route_af_value(r["route"])
+        if r["route"] not in ("default", "main") and af is None:
             continue
         pm_ = PWM_PERIPHERAL_RE.match(r.get("peripheral", ""))
         rm_ = PWM_ROLE_RE.match(r.get("role", ""))
@@ -1980,9 +2138,14 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
         seen = plain.setdefault(r["part_number"], set())
         if shared and key in seen:
             continue
+        have = out.get(r["part_number"], {}).get(key)
+        if have and have[2] is None and af is not None:
+            continue          # a default route beats an af-N one
+        if have and (have[2] is None) == (af is None) and have[0] <= 3 < timer:
+            continue          # TIM4/TIM5 never displace TIM1..3
         if not shared:
             seen.add(key)
-        out.setdefault(r["part_number"], {})[key] = (timer, channel)
+        out.setdefault(r["part_number"], {})[key] = (timer, channel, af)
     return out
 
 
@@ -2336,6 +2499,13 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"    (c) == {ch} ? {pad_name(port, bit)} : \\")
         out.append("    NOT_A_PIN)")
         out.append("")
+    # The internal channels of the family most of the series' parts are on
+    # (CH32V203 counts one CH32V205 part among its CH32V20x ones).
+    fam_count: dict = {}
+    for r in rows:
+        fam_count[r.get("family", "")] = fam_count.get(r.get("family", ""), 0) + 1
+    main_family = max(fam_count, key=fam_count.get) if fam_count else ""
+    out.extend(adc_internal_defines(ADC_INTERNAL.get(main_family, {}), main_family))
     sigs = {tuple(sorted(esig.get(r.get("family", ""), {}).items())) for r in rows}
     if len(sigs) == 1 and sigs != {()}:
         regs = dict(sigs.pop())
@@ -2417,6 +2587,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     with_default = dict(chosen)
     chosen.update(without_default(series, parts, uarts, remap, "usart", ("TX", "RX"),
                                   chosen, {i for i in SERIAL_BASES if i in handler_of}))
+    if series in PER_PIN_AF_SERIES:
+        out.append("/* Pads take their alternate function one by one (AFIO GPIOx_AFLR /")
+        out.append(" * AFHR); a route's value below is that function number. */")
+        out.append("#define CH32RV_GPIO_PER_PIN_AF 1")
+        out.append("")
     if chosen:
         out.append("/* ---- USART pins (device-data; one route per USART, chosen for")
         out.append(" *      the whole series - see choose_uarts in generate.py) ---- */")
@@ -2442,10 +2617,16 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                        f"CH32RV_IRQN_{name.removesuffix('_IRQHandler')}")
             value = route_remap_value(route) if route else 0
             bits = remap.get((series, "usart", index))
-            if value is None:
-                out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
-                out.append(" * selector, not an AFIO remap. The core does not program it")
-                out.append(" * and this unsupported port cannot be selected. */")
+            if series in PER_PIN_AF_SERIES:
+                # No AFIO field: the mask is 0 and the value is the function
+                # number begin() writes into each pad's AFR nibble.
+                out.append(f"#define CH32RV_SERIAL{index}_REMAP_MASK 0x00000000u")
+                if route is not None:
+                    out.append(f"#define CH32RV_SERIAL{index}_REMAP_VAL  "
+                               f"0x{route_af_value(route):08x}u")
+            elif value is None:
+                out.append(f"/* NOTE: route {route} is not an AFIO remap and this")
+                out.append(" * series has no per-pin selector: it cannot be selected. */")
             elif bits:
                 # Emitted for the default route (value 0) too, so begin()
                 # writes the field rather than assuming it. Re-initialising a
@@ -2516,10 +2697,14 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 out.extend(alternatives("i2c", index, route, ("SCL", "SDA")))
             value = route_remap_value(route) if route else 0
             bits = remap.get((series, "i2c", index))
-            if value is None:
-                out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
-                out.append(" * selector, not an AFIO remap. The core does not program it")
-                out.append(" * and this unsupported instance cannot be selected. */")
+            if series in PER_PIN_AF_SERIES:
+                out.append(f"#define CH32RV_I2C{index}_REMAP_MASK 0x00000000u")
+                if route is not None:
+                    out.append(f"#define CH32RV_I2C{index}_REMAP_VAL  "
+                               f"0x{route_af_value(route):08x}u")
+            elif value is None:
+                out.append(f"/* NOTE: route {route} is not an AFIO remap and this")
+                out.append(" * series has no per-pin selector: it cannot be selected. */")
             elif bits:
                 for register, (mask, val) in sorted(
                         remap_mask_value(bits, value).items()):
@@ -2584,10 +2769,14 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                                         ("SCK", "MISO", "MOSI")))
             value = route_remap_value(route) if route else 0
             bits = remap.get((series, "spi", index))
-            if value is None:
-                out.append(f"/* NOTE: route {route} is a per-pin alternate-function")
-                out.append(" * selector, not an AFIO remap. The core does not program it")
-                out.append(" * and this unsupported instance cannot be selected. */")
+            if series in PER_PIN_AF_SERIES:
+                out.append(f"#define CH32RV_SPI{index}_REMAP_MASK 0x00000000u")
+                if route is not None:
+                    out.append(f"#define CH32RV_SPI{index}_REMAP_VAL  "
+                               f"0x{route_af_value(route):08x}u")
+            elif value is None:
+                out.append(f"/* NOTE: route {route} is not an AFIO remap and this")
+                out.append(" * series has no per-pin selector: it cannot be selected. */")
             elif bits:
                 for register, (mask, val) in sorted(
                         remap_mask_value(bits, value).items()):
@@ -2640,18 +2829,37 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     conflicting = set()
     for pn in parts:
         for padkey, tc in pwm.get(pn, {}).items():
+            if tc[2] is not None and series not in PER_PIN_AF_SERIES:
+                continue
             prev = pwm_pads.setdefault(padkey, tc)
             if prev != tc:
                 conflicting.add(padkey)
     for padkey in conflicting:
         pwm_pads.pop(padkey, None)
     pwm_pads = {k: v for k, v in pwm_pads.items() if k in set(union)}
+    # TIM4/TIM5 pads only where tone() and Servo do not want that timer: they
+    # take the highest-numbered timer free of PWM (below), and the timers
+    # TIM1..3 leave free are exactly what keeps them off analogWrite() pins.
+    # Picked here the same way, from TIM1..3 alone; their timers get no PWM.
+    update_timers = sorted({int(m.group(1)) for name in handlers if name
+                            for m in [re.match(r"^TIM(\d+)(?:_UP)?_IRQHandler$", name)]
+                            if m and int(m.group(1)) <= 7})
+    base_timers = {tc[0] for tc in pwm_pads.values() if tc[0] <= 3}
+    free = [t for t in update_timers if t not in base_timers]
+    reserved = set(free[-2:])
+    pwm_pads = {k: v for k, v in pwm_pads.items()
+                if v[0] <= 3 or v[0] not in reserved}
     if pwm_pads:
         ordered = sorted(pwm_pads.items(), key=lambda kv: (kv[1], kv[0]))
-        out.append(f"/* ---- PWM: {len(ordered)} pads on TIM1/TIM2/TIM3, "
-                   "default route ---- */")
+        timers = "/".join(f"TIM{t}" for t in sorted({tc[0] for tc in pwm_pads.values()}))
+        how = ("per-pin alternate function" if series in PER_PIN_AF_SERIES
+               else "default route")
+        out.append(f"/* ---- PWM: {len(ordered)} pads on {timers}, {how} ---- */")
         out.append(f"#define CH32RV_PWM_PIN_COUNT {len(ordered)}")
-        for name, index in (("TIMER", 0), ("CHANNEL", 1)):
+        names = (("TIMER", 0), ("CHANNEL", 1))
+        if series in PER_PIN_AF_SERIES:
+            names += (("AF", 2),)
+        for name, index in names:
             out.append(f"#define CH32RV_PWM_PIN_TO_{name}(p) ( \\")
             for padkey, tc in ordered:
                 out.append(f"    (p) == {pad_name(*padkey)} ? {tc[index]} : \\")
@@ -2692,9 +2900,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         if not m:
             continue
         number = int(m.group(1))
-        # Only the timers ch32rv_registers.h names. V30x/V4x7 also have TIM8..10
-        # on APB2, which the core does not expose.
-        if number > 7:
+        # Only the timers ch32rv_registers.h names (TIM1..TIM10; TIM8..10 are
+        # the extra advanced timers of V30x / V4x7 on APB2).
+        if number > 10:
             continue
         # A whole-timer vector is preferred over the update-only one when a
         # family somehow has both.
@@ -2721,7 +2929,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                   "": 0}
     for family in sorted(families):
         for number, cap in timers_by_family.get(family, {}).items():
-            if number > 7 or number not in candidates:
+            if number > 10 or number not in candidates:
                 continue
             previous = timer_caps.get(number)
             if previous and previous != cap:
@@ -2787,9 +2995,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                    f"{32 if number in wide_timers else 16}")
         out.append("")
 
-    tone_timer = pick(sorted(candidates))
+    # tone() and Servo stay on TIM1..TIM7: TIM8..10 are in the timer table for
+    # sketches, not a reason to move what tone() and Servo already use.
+    pool = sorted(t for t in candidates if t <= 7)
+    tone_timer = pick(pool)
     emit_timer("tone()", tone_timer, "a tone plays")
-    emit_timer("Servo", pick([t for t in sorted(candidates) if t != tone_timer]),
+    emit_timer("Servo", pick([t for t in pool if t != tone_timer]),
                "a servo is attached")
 
     # --- no LED_BUILTIN ---
@@ -2983,7 +3194,7 @@ def main() -> int:
     pads, adc, adc_all, unresolved = load_pin_tables(args.tables)
     # Where one (instance, route, role) names several pads. Not an error - see
     # load_pin_routes - but the pick has to be visible rather than silent.
-    route_alts: dict = {}
+    route_alts = ROUTE_ALTS
     uarts = load_uart_pins(args.tables, route_alts)
     i2cs = load_i2c_pins(args.tables, route_alts)
     spis = load_spi_pins(args.tables, route_alts)
@@ -2995,6 +3206,7 @@ def main() -> int:
     clock_enables = load_clock_enables(args.tables)
     adc_bases = load_adc_bases(args.tables)
     esig = load_esig(args.tables)
+    ADC_INTERNAL.update(load_adc_internal(args.tables))
     cores = {r["series"]: r["core"]
              for r in read_table(args.tables, "series.csv", ("series", "core"))}
     pwm = load_pwm_pins(args.tables)

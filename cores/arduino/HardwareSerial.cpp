@@ -53,6 +53,46 @@ using namespace arduino;
 #define CH32RV_SERIAL5_REMAP2_MASK 0u
 #define CH32RV_SERIAL5_REMAP2_VAL  0u
 #endif
+#if defined(CH32RV_SERIAL6_CLKEN_ADDR) && !defined(CH32RV_SERIAL6_REMAP_MASK)
+#define CH32RV_SERIAL6_REMAP_MASK 0u
+#define CH32RV_SERIAL6_REMAP_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL6_CLKEN_ADDR) && !defined(CH32RV_SERIAL6_REMAP2_MASK)
+#define CH32RV_SERIAL6_REMAP2_MASK 0u
+#define CH32RV_SERIAL6_REMAP2_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL7_CLKEN_ADDR) && !defined(CH32RV_SERIAL7_REMAP_MASK)
+#define CH32RV_SERIAL7_REMAP_MASK 0u
+#define CH32RV_SERIAL7_REMAP_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL7_CLKEN_ADDR) && !defined(CH32RV_SERIAL7_REMAP2_MASK)
+#define CH32RV_SERIAL7_REMAP2_MASK 0u
+#define CH32RV_SERIAL7_REMAP2_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL8_CLKEN_ADDR) && !defined(CH32RV_SERIAL8_REMAP_MASK)
+#define CH32RV_SERIAL8_REMAP_MASK 0u
+#define CH32RV_SERIAL8_REMAP_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL8_CLKEN_ADDR) && !defined(CH32RV_SERIAL8_REMAP2_MASK)
+#define CH32RV_SERIAL8_REMAP2_MASK 0u
+#define CH32RV_SERIAL8_REMAP2_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL9_CLKEN_ADDR) && !defined(CH32RV_SERIAL9_REMAP_MASK)
+#define CH32RV_SERIAL9_REMAP_MASK 0u
+#define CH32RV_SERIAL9_REMAP_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL9_CLKEN_ADDR) && !defined(CH32RV_SERIAL9_REMAP2_MASK)
+#define CH32RV_SERIAL9_REMAP2_MASK 0u
+#define CH32RV_SERIAL9_REMAP2_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL10_CLKEN_ADDR) && !defined(CH32RV_SERIAL10_REMAP_MASK)
+#define CH32RV_SERIAL10_REMAP_MASK 0u
+#define CH32RV_SERIAL10_REMAP_VAL  0u
+#endif
+#if defined(CH32RV_SERIAL10_CLKEN_ADDR) && !defined(CH32RV_SERIAL10_REMAP2_MASK)
+#define CH32RV_SERIAL10_REMAP2_MASK 0u
+#define CH32RV_SERIAL10_REMAP2_VAL  0u
+#endif
 
 /* ------------------------------------------------------- the USART table */
 namespace {
@@ -157,6 +197,71 @@ CH32RV_USART_ROWS(4)
 CH32RV_USART_ROWS(5)
 #define CH32RV_USART_HAS_5 1
 #endif
+#if CH32RV_USART_ON_6
+#if CH32RV_USART6_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_ROUTES_6 CH32RV_USART_FIX_ROUTE(6)
+#elif defined(CH32RV_SERIAL6_ROUTES)
+#define CH32RV_USART_ROUTES_6 CH32RV_SERIAL6_ROUTES
+#elif defined(CH32RV_SERIAL6_TX)
+#define CH32RV_USART_ROUTES_6 CH32RV_USART_ONE_ROUTE(6)
+#else
+#define CH32RV_USART_ROUTES_6 CH32RV_USART_NO_ROUTE
+#endif
+CH32RV_USART_ROWS(6)
+#define CH32RV_USART_HAS_6 1
+#endif
+#if CH32RV_USART_ON_7
+#if CH32RV_USART7_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_ROUTES_7 CH32RV_USART_FIX_ROUTE(7)
+#elif defined(CH32RV_SERIAL7_ROUTES)
+#define CH32RV_USART_ROUTES_7 CH32RV_SERIAL7_ROUTES
+#elif defined(CH32RV_SERIAL7_TX)
+#define CH32RV_USART_ROUTES_7 CH32RV_USART_ONE_ROUTE(7)
+#else
+#define CH32RV_USART_ROUTES_7 CH32RV_USART_NO_ROUTE
+#endif
+CH32RV_USART_ROWS(7)
+#define CH32RV_USART_HAS_7 1
+#endif
+#if CH32RV_USART_ON_8
+#if CH32RV_USART8_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_ROUTES_8 CH32RV_USART_FIX_ROUTE(8)
+#elif defined(CH32RV_SERIAL8_ROUTES)
+#define CH32RV_USART_ROUTES_8 CH32RV_SERIAL8_ROUTES
+#elif defined(CH32RV_SERIAL8_TX)
+#define CH32RV_USART_ROUTES_8 CH32RV_USART_ONE_ROUTE(8)
+#else
+#define CH32RV_USART_ROUTES_8 CH32RV_USART_NO_ROUTE
+#endif
+CH32RV_USART_ROWS(8)
+#define CH32RV_USART_HAS_8 1
+#endif
+#if CH32RV_USART_ON_9
+#if CH32RV_USART9_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_ROUTES_9 CH32RV_USART_FIX_ROUTE(9)
+#elif defined(CH32RV_SERIAL9_ROUTES)
+#define CH32RV_USART_ROUTES_9 CH32RV_SERIAL9_ROUTES
+#elif defined(CH32RV_SERIAL9_TX)
+#define CH32RV_USART_ROUTES_9 CH32RV_USART_ONE_ROUTE(9)
+#else
+#define CH32RV_USART_ROUTES_9 CH32RV_USART_NO_ROUTE
+#endif
+CH32RV_USART_ROWS(9)
+#define CH32RV_USART_HAS_9 1
+#endif
+#if CH32RV_USART_ON_10
+#if CH32RV_USART10_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_ROUTES_10 CH32RV_USART_FIX_ROUTE(10)
+#elif defined(CH32RV_SERIAL10_ROUTES)
+#define CH32RV_USART_ROUTES_10 CH32RV_SERIAL10_ROUTES
+#elif defined(CH32RV_SERIAL10_TX)
+#define CH32RV_USART_ROUTES_10 CH32RV_USART_ONE_ROUTE(10)
+#else
+#define CH32RV_USART_ROUTES_10 CH32RV_USART_NO_ROUTE
+#endif
+CH32RV_USART_ROWS(10)
+#define CH32RV_USART_HAS_10 1
+#endif
 
 /* A FIX USART's default pins are its fixed pins; AUTO's are the variant's, and
  * a USART the variant has no default route for has none: begin() without pins
@@ -199,6 +304,41 @@ CH32RV_USART_ROWS(5)
 #else
 #define CH32RV_USART_DEF_5 CH32RV_USART_NO_DEF
 #endif
+#if CH32RV_USART6_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_DEF_6 CH32RV_USART6_FIX_TX, CH32RV_USART6_FIX_RX, CH32RV_USART6_FIX_V1, CH32RV_USART6_FIX_V2
+#elif defined(CH32RV_SERIAL6_TX)
+#define CH32RV_USART_DEF_6 CH32RV_SERIAL6_TX, CH32RV_SERIAL6_RX, CH32RV_SERIAL6_REMAP_VAL, CH32RV_SERIAL6_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_6 CH32RV_USART_NO_DEF
+#endif
+#if CH32RV_USART7_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_DEF_7 CH32RV_USART7_FIX_TX, CH32RV_USART7_FIX_RX, CH32RV_USART7_FIX_V1, CH32RV_USART7_FIX_V2
+#elif defined(CH32RV_SERIAL7_TX)
+#define CH32RV_USART_DEF_7 CH32RV_SERIAL7_TX, CH32RV_SERIAL7_RX, CH32RV_SERIAL7_REMAP_VAL, CH32RV_SERIAL7_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_7 CH32RV_USART_NO_DEF
+#endif
+#if CH32RV_USART8_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_DEF_8 CH32RV_USART8_FIX_TX, CH32RV_USART8_FIX_RX, CH32RV_USART8_FIX_V1, CH32RV_USART8_FIX_V2
+#elif defined(CH32RV_SERIAL8_TX)
+#define CH32RV_USART_DEF_8 CH32RV_SERIAL8_TX, CH32RV_SERIAL8_RX, CH32RV_SERIAL8_REMAP_VAL, CH32RV_SERIAL8_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_8 CH32RV_USART_NO_DEF
+#endif
+#if CH32RV_USART9_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_DEF_9 CH32RV_USART9_FIX_TX, CH32RV_USART9_FIX_RX, CH32RV_USART9_FIX_V1, CH32RV_USART9_FIX_V2
+#elif defined(CH32RV_SERIAL9_TX)
+#define CH32RV_USART_DEF_9 CH32RV_SERIAL9_TX, CH32RV_SERIAL9_RX, CH32RV_SERIAL9_REMAP_VAL, CH32RV_SERIAL9_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_9 CH32RV_USART_NO_DEF
+#endif
+#if CH32RV_USART10_MODE == CH32RV_USART_FIX
+#define CH32RV_USART_DEF_10 CH32RV_USART10_FIX_TX, CH32RV_USART10_FIX_RX, CH32RV_USART10_FIX_V1, CH32RV_USART10_FIX_V2
+#elif defined(CH32RV_SERIAL10_TX)
+#define CH32RV_USART_DEF_10 CH32RV_SERIAL10_TX, CH32RV_SERIAL10_RX, CH32RV_SERIAL10_REMAP_VAL, CH32RV_SERIAL10_REMAP2_VAL
+#else
+#define CH32RV_USART_DEF_10 CH32RV_USART_NO_DEF
+#endif
 #define CH32RV_USART_DESC(n, base)                                                  \
     { base, CH32RV_SERIAL##n##_CLKEN_ADDR, CH32RV_SERIAL##n##_CLKEN_MASK,             \
       CH32RV_SERIAL##n##_REMAP_MASK, CH32RV_SERIAL##n##_REMAP2_MASK,                  \
@@ -207,7 +347,9 @@ CH32RV_USART_ROWS(5)
     { usart##n##_routes, (uint8_t)(sizeof usart##n##_routes / sizeof usart##n##_routes[0]) },
 
 #if defined(CH32RV_USART_HAS_1) || defined(CH32RV_USART_HAS_2) || defined(CH32RV_USART_HAS_3) || \
-    defined(CH32RV_USART_HAS_4) || defined(CH32RV_USART_HAS_5)
+    defined(CH32RV_USART_HAS_4) || defined(CH32RV_USART_HAS_5) || defined(CH32RV_USART_HAS_6) || \
+    defined(CH32RV_USART_HAS_7) || defined(CH32RV_USART_HAS_8) || defined(CH32RV_USART_HAS_9) || \
+    defined(CH32RV_USART_HAS_10)
 const UsartDesc usarts[] = {
 #ifdef CH32RV_USART_HAS_1
     CH32RV_USART_DESC(1, CH32RV_USART1_BASE)
@@ -223,6 +365,21 @@ const UsartDesc usarts[] = {
 #endif
 #ifdef CH32RV_USART_HAS_5
     CH32RV_USART_DESC(5, CH32RV_USART5_BASE)
+#endif
+#ifdef CH32RV_USART_HAS_6
+    CH32RV_USART_DESC(6, CH32RV_USART6_BASE)
+#endif
+#ifdef CH32RV_USART_HAS_7
+    CH32RV_USART_DESC(7, CH32RV_USART7_BASE)
+#endif
+#ifdef CH32RV_USART_HAS_8
+    CH32RV_USART_DESC(8, CH32RV_USART8_BASE)
+#endif
+#ifdef CH32RV_USART_HAS_9
+    CH32RV_USART_DESC(9, CH32RV_USART9_BASE)
+#endif
+#ifdef CH32RV_USART_HAS_10
+    CH32RV_USART_DESC(10, CH32RV_USART10_BASE)
 #endif
 };
 constexpr uint8_t USART_COUNT = (uint8_t)(sizeof usarts / sizeof usarts[0]);
@@ -241,6 +398,21 @@ const RouteSet route_sets[] = {
 #endif
 #ifdef CH32RV_USART_HAS_5
     CH32RV_USART_SET(5)
+#endif
+#ifdef CH32RV_USART_HAS_6
+    CH32RV_USART_SET(6)
+#endif
+#ifdef CH32RV_USART_HAS_7
+    CH32RV_USART_SET(7)
+#endif
+#ifdef CH32RV_USART_HAS_8
+    CH32RV_USART_SET(8)
+#endif
+#ifdef CH32RV_USART_HAS_9
+    CH32RV_USART_SET(9)
+#endif
+#ifdef CH32RV_USART_HAS_10
+    CH32RV_USART_SET(10)
 #endif
 };
 #else
@@ -380,6 +552,21 @@ CH32RV_USART_ALIAS(4)
 #ifdef CH32RV_USART_HAS_5
 CH32RV_USART_ALIAS(5)
 #endif
+#ifdef CH32RV_USART_HAS_6
+CH32RV_USART_ALIAS(6)
+#endif
+#ifdef CH32RV_USART_HAS_7
+CH32RV_USART_ALIAS(7)
+#endif
+#ifdef CH32RV_USART_HAS_8
+CH32RV_USART_ALIAS(8)
+#endif
+#ifdef CH32RV_USART_HAS_9
+CH32RV_USART_ALIAS(9)
+#endif
+#ifdef CH32RV_USART_HAS_10
+CH32RV_USART_ALIAS(10)
+#endif
 
 /* ------------------------------------------------------- binding */
 uint8_t CH32RVHardwareSerial::peripheral(void) const
@@ -463,6 +650,8 @@ __attribute__((always_inline)) inline bool CH32RVHardwareSerial::bind(uint8_t in
     if (d.remap2_mask) {
         CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~d.remap2_mask) | route.value2;
     }
+    ch32rv_pin_set_af(route.pins[0], route.value);
+    ch32rv_pin_set_af(route.pins[1], route.value);
     start();
     return true;
 }
@@ -609,8 +798,8 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
         return 0;
     }
     const uint32_t base = usarts[index_of(_slot)].base;
-#if defined(CH32RV_VARIANT_CH32X035)
-    /* X035's USART TXE interrupt path is not yet reliable on every USART:
+#if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
+    /* X035's (and the same die's X033) USART TXE interrupt path is not yet reliable on every USART:
      * a burst larger than the 63-byte ring capacity can otherwise wait here
      * forever. Polling TXE is bounded by one character time and keeps Serial
      * correct while the interrupt-route issue is investigated. */
@@ -633,23 +822,30 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
 /* Arduino calls serialEvent() after every loop() when the port has data. main()
  * holds only a weak reference to the dispatcher, so a sketch that never touches
  * Serial links none of this. The dispatcher walks the ports that are open
- * rather than naming Serial1..5, so it pulls in no port the sketch does not
+ * rather than naming Serial1..9, so it pulls in no port the sketch does not
  * use.
  *
- * serialEvent() belongs to Serial and serialEvent1..4() to Serial1..4, by
+ * serialEvent() belongs to Serial and serialEvent1..9() to Serial1..9, by
  * name: the name a port was declared as, not the USART it landed on. */
 void serialEvent(void) __attribute__((weak));
 void serialEvent1(void) __attribute__((weak));
 void serialEvent2(void) __attribute__((weak));
 void serialEvent3(void) __attribute__((weak));
 void serialEvent4(void) __attribute__((weak));
+void serialEvent5(void) __attribute__((weak));
+void serialEvent6(void) __attribute__((weak));
+void serialEvent7(void) __attribute__((weak));
+void serialEvent8(void) __attribute__((weak));
+void serialEvent9(void) __attribute__((weak));
 
 namespace arduino {
 
 void serialEventRun(void)
 {
     static void (*const events[])(void) = {serialEvent, serialEvent1, serialEvent2,
-                                           serialEvent3, serialEvent4};
+                                           serialEvent3, serialEvent4, serialEvent5,
+                                           serialEvent6, serialEvent7, serialEvent8,
+                                           serialEvent9};
     for (uint8_t i = 0; i < USART_COUNT; i++) {
         CH32RVHardwareSerial *port = owner[i];
         if (!port || port->available() <= 0) {

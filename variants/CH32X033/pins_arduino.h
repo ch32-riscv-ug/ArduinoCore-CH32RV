@@ -205,6 +205,11 @@
     (c) == 13 ? PC3 : \
     NOT_A_PIN)
 
+/* ---- ADC internal channels (device-data adc_internal.csv):
+ *      analogReadVref(), analogReadTemp(), CH32RV.getVddMillivolts() ---- */
+#define CH32RV_ADC_VREFINT_CHANNEL 15
+#define CH32RV_ADC_VREFINT_MV 1200
+
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
  *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */
 #define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u

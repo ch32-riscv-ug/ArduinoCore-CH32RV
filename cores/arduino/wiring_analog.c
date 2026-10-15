@@ -27,6 +27,10 @@
 /* Arduino sketches assume 0..1023 unless told otherwise. */
 static uint8_t ch32rv_adc_read_bits = 10;
 static uint8_t ch32rv_adc_started;
+#ifdef CH32RV_ADC_CAL_CHANNEL
+/* Added to every conversion (see ch32rv_adc_begin). */
+static int16_t ch32rv_adc_offset;
+#endif
 
 #if defined(CH32RV_ADC_INSTANCE_COUNT) && CH32RV_ADC_INSTANCE_COUNT > 1
 /* base, and the RCC register and bit that turns the instance on. */
@@ -65,6 +69,8 @@ void analogReference(uint8_t mode)
      * analog supply. Accepting the call keeps portable sketches compiling. */
     (void)mode;
 }
+
+static uint32_t ch32rv_adc_convert_raw(uint32_t base, uint32_t channel);
 
 static void ch32rv_adc_begin(uint8_t index)
 {
@@ -115,11 +121,37 @@ static void ch32rv_adc_begin(uint8_t index)
     CH32RV_ADC_CTLR2_AT(base) |= CH32RV_ADC_CTLR2_CAL;
     while (CH32RV_ADC_CTLR2_AT(base) & CH32RV_ADC_CTLR2_CAL) {
     }
+#ifdef CH32RV_ADC_CAL_CHANNEL
+    /* The EVT's Get_CalibrationValue(): VDDA / 2 should read mid-scale; the
+     * difference, from the middle six of ten sorted readings, is added to
+     * every conversion from now on. */
+    {
+        uint16_t buf[10];
+        for (uint8_t i = 0; i < 10; i++) {
+            buf[i] = (uint16_t)ch32rv_adc_convert_raw(base, CH32RV_ADC_CAL_CHANNEL);
+        }
+        for (uint8_t i = 0; i < 10; i++) {
+            for (uint8_t j = 0; j + 1 < 10 - i; j++) {
+                if (buf[j] > buf[j + 1]) {
+                    const uint16_t t = buf[j];
+                    buf[j] = buf[j + 1];
+                    buf[j + 1] = t;
+                }
+            }
+        }
+        uint32_t sum = 0;
+        for (uint8_t i = 2; i < 8; i++) {
+            sum += buf[i];
+        }
+        ch32rv_adc_offset = (int16_t)((int32_t)(1u << (CH32RV_ADC_BITS - 1u)) -
+                                      (int32_t)((sum + 3u) / 6u));
+    }
+#endif
     CH32RV_ADC_MARK_STARTED(index);
 }
 
-/* One conversion of `channel` at the hardware's native width. */
-static uint32_t ch32rv_adc_convert(uint32_t base, uint32_t channel)
+/* One conversion of `channel` at the hardware's native width, uncorrected. */
+static uint32_t ch32rv_adc_convert_raw(uint32_t base, uint32_t channel)
 {
     CH32RV_ADC_RSQR1_AT(base) = 0;        /* one conversion in the sequence */
     CH32RV_ADC_RSQR3_AT(base) = channel;
@@ -127,6 +159,19 @@ static uint32_t ch32rv_adc_convert(uint32_t base, uint32_t channel)
     while ((CH32RV_ADC_STATR_AT(base) & CH32RV_ADC_STATR_EOC) == 0u) {
     }
     return CH32RV_ADC_RDATAR_AT(base) & ((1u << CH32RV_ADC_BITS) - 1u);
+}
+
+/* The same, with the family's offset correction where it has one. */
+static uint32_t ch32rv_adc_convert(uint32_t base, uint32_t channel)
+{
+    const uint32_t raw = ch32rv_adc_convert_raw(base, channel);
+#ifdef CH32RV_ADC_CAL_CHANNEL
+    const int32_t value = (int32_t)raw + ch32rv_adc_offset;
+    const int32_t full = (int32_t)((1u << CH32RV_ADC_BITS) - 1u);
+    return (uint32_t)(value < 0 ? 0 : value > full ? full : value);
+#else
+    return raw;
+#endif
 }
 
 #ifdef NUM_ANALOG_INPUTS
@@ -149,6 +194,88 @@ static uint32_t ch32rv_adc_prepare(pin_size_t pin, uint8_t *index)
 }
 #endif
 
+/* Scale a native-width reading to analogReadResolution()'s width. */
+static uint32_t ch32rv_adc_scale(uint32_t value)
+{
+    if (ch32rv_adc_read_bits > CH32RV_ADC_BITS) {
+        value <<= (ch32rv_adc_read_bits - CH32RV_ADC_BITS);
+    } else if (ch32rv_adc_read_bits < CH32RV_ADC_BITS) {
+        value >>= (CH32RV_ADC_BITS - ch32rv_adc_read_bits);
+    }
+    return value;
+}
+
+#ifdef CH32RV_ADC_VREFINT_CHANNEL
+/* One conversion of an internal channel on ADC1, at the native width. The
+ * variant names the channels (device-data adc_internal.csv); where they have
+ * a switch (CTLR2.TSVREFE, X315's VREFE) it is turned on once and left on -
+ * the sensor needs about 10 us to start. The first conversion after a channel
+ * change is thrown away: the sample capacitor still holds the last pad. */
+static uint32_t ch32rv_adc_read_internal(uint32_t channel)
+{
+    ch32rv_adc_begin(0);
+    const uint32_t base = CH32RV_ADC_BASE(0);
+#ifdef CH32RV_ADC_INTERNAL_ENABLE
+    if ((CH32RV_ADC_CTLR2_AT(base) & CH32RV_ADC_INTERNAL_ENABLE) == 0u) {
+        CH32RV_ADC_CTLR2_AT(base) |= CH32RV_ADC_INTERNAL_ENABLE;
+        delayMicroseconds(20);
+    }
+#endif
+#ifdef CH32RV_ADC_BUFFER_ENABLE
+    /* The input buffer, on for the internal channel only: the EVT calibrates
+     * and reads pads without it. */
+    CH32RV_ADC_CTLR1_AT(base) |= CH32RV_ADC_BUFFER_ENABLE;
+#endif
+    (void)ch32rv_adc_convert(base, channel);
+    const uint32_t value = ch32rv_adc_convert(base, channel);
+#ifdef CH32RV_ADC_BUFFER_ENABLE
+    CH32RV_ADC_CTLR1_AT(base) &= ~CH32RV_ADC_BUFFER_ENABLE;
+#endif
+    return value;
+}
+#endif
+
+int analogReadVref(void)
+{
+#ifdef CH32RV_ADC_VREFINT_CHANNEL
+    return (int)ch32rv_adc_scale(ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL));
+#else
+    return 0;
+#endif
+}
+
+uint32_t ch32rv_adc_vdd_millivolts(void)
+{
+#if defined(CH32RV_ADC_VREFINT_CHANNEL) && defined(CH32RV_ADC_VREFINT_MV)
+    const uint32_t raw = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL);
+    if (raw == 0u) {
+        return 0;
+    }
+    const uint32_t full = (1u << CH32RV_ADC_BITS) - 1u;
+    return (CH32RV_ADC_VREFINT_MV * full + raw / 2u) / raw;
+#else
+    return 0;
+#endif
+}
+
+float analogReadTemp(void)
+{
+#if defined(CH32RV_ADC_TEMP_CHANNEL) && defined(CH32RV_ADC_VREFINT_MV)
+    /* The sensor voltage against Vrefint rather than an assumed 3.3 V supply:
+     * T = (V25 - Vsense) / slope + 25, the datasheet's typicals (+/- several
+     * degrees uncalibrated). */
+    const uint32_t vref = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL);
+    const uint32_t sense = ch32rv_adc_read_internal(CH32RV_ADC_TEMP_CHANNEL);
+    if (vref == 0u) {
+        return __builtin_nanf("");
+    }
+    const float mv = (float)sense * (float)CH32RV_ADC_VREFINT_MV / (float)vref;
+    return ((float)CH32RV_ADC_TEMP_V25_MV - mv) * 1000.0f / (float)CH32RV_ADC_TEMP_SLOPE_UV + 25.0f;
+#else
+    return __builtin_nanf("");
+#endif
+}
+
 int analogRead(pin_size_t pin)
 {
 #ifdef NUM_ANALOG_INPUTS
@@ -157,15 +284,7 @@ int analogRead(pin_size_t pin)
     if (channel == NOT_AN_ANALOG_PIN) {
         return 0;
     }
-    uint32_t value = ch32rv_adc_convert(CH32RV_ADC_BASE(index), channel);
-
-    /* Scale the hardware's native width to the requested one, both ways. */
-    if (ch32rv_adc_read_bits > CH32RV_ADC_BITS) {
-        value <<= (ch32rv_adc_read_bits - CH32RV_ADC_BITS);
-    } else if (ch32rv_adc_read_bits < CH32RV_ADC_BITS) {
-        value >>= (CH32RV_ADC_BITS - ch32rv_adc_read_bits);
-    }
-    return (int)value;
+    return (int)ch32rv_adc_scale(ch32rv_adc_convert(CH32RV_ADC_BASE(index), channel));
 #else
     (void)pin;
     return 0;

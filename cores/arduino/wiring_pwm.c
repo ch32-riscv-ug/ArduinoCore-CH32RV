@@ -1,8 +1,11 @@
-/* analogWrite() on TIM1/TIM2/TIM3.
+/* analogWrite() on TIM1..TIM5.
  *
  * The variant says which timer and channel a pad reaches on its default route
- * (generated from device-data). Pads with no PWM fall back to a plain digital
- * level, which is what the AVR core does for non-PWM pins.
+ * (generated from device-data) - on the per-pin families (V205, X305, X315)
+ * also the alternate-function number that connects the pad to it. TIM4/TIM5
+ * pads are listed only where tone() and Servo do not want that timer. Pads
+ * with no PWM fall back to a plain digital level, which is what the AVR core
+ * does for non-PWM pins.
  */
 #include "Arduino.h"
 #include "CH32RVTimer.h"
@@ -17,9 +20,8 @@
 #define CH32RV_PWM_HZ    1000u
 
 #ifndef CH32RV_PWM_PIN_COUNT
-/* X305/X315 reach their timers only through per-pin alternate-function
- * selectors, which the variant does not describe. Every
- * pin then falls through to the digital path below. */
+/* A series with no timer channel on any pad: every pin falls through to the
+ * digital path below. */
 #define CH32RV_PWM_PIN_TO_TIMER(p)   ((void)(p), 0)
 #define CH32RV_PWM_PIN_TO_CHANNEL(p) ((void)(p), 0)
 #endif
@@ -126,6 +128,9 @@ void analogWrite(pin_size_t pin, int value)
     ch32rv_gpio_clock_enable(port);
     ch32rv_gpio_set_config(port, (uint8_t)CH32RV_PIN_BIT(pin),
                          CH32RV_GPIO_CFG_AF_PP_50M);
+#ifdef CH32RV_PWM_PIN_TO_AF
+    ch32rv_pin_set_af((uint8_t)pin, (uint32_t)CH32RV_PWM_PIN_TO_AF(pin));
+#endif
 
     uint32_t prescale = F_CPU / (ch32rv_pwm_hz * CH32RV_PWM_STEPS);
     if (prescale == 0u) {

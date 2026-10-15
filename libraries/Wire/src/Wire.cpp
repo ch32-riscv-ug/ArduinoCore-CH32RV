@@ -296,6 +296,8 @@ void CH32RVTwoWire::begin()
     if (d.remap2_mask) {
         CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~d.remap2_mask) | route->value2;
     }
+    ch32rv_pin_set_af(_scl_pin, route->value);
+    ch32rv_pin_set_af(_sda_pin, route->value);
 
     /* Open drain, because that is what the bus is: both lines are pulled up
      * externally and every device only ever pulls them down. */
