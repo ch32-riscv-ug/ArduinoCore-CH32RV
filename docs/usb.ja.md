@@ -258,7 +258,9 @@ ch32rv の discovery が書き込み先のポート（`ch32rv-app://<USB シリ�
 CDC）として出します（ch32rv f20aee7）。
 VID:PID ではこのコアのスケッチだと判定できないので、この名前を目印にしています。名前を変えると DFU_DETACH 自体は
 動きますが、このポートには出なくなります。工場出荷のブートローダーにいる間は `ch32rv-isp://<USB の位置>` が出ます。
-IDE からこれらのポートで書き込むには、ch32rv の新しい版と platform.txt の対応が要ります（[今後の予定](#今後の予定)）。
+Arduino IDE ではこのポートを選んで「書き込み」を押すだけで、USB だけで書き込めます（ch32rv 0.20.0 以降。`isp flash --entry auto`）。
+モニタは同じデバイスの CDC を開きます（CDC が無ければ開けない旨を表示）。X035 で、`ch32rv-app` ポートからの書き込みと、
+従来のプローブ（`oep://`）からの書き込みの両方を確かめています。
 
 **DFU は入口だけです。** `CH32RVUsbDeviceDfuRuntime` は DFU のランタイムインターフェース（DFU_DETACH を受ける
 だけのもの）で、DFU モードもダウンロードもありません。ディスクリプタでも書き込みができる（CAN_DOWNLOAD）とは
@@ -339,8 +341,6 @@ V305 / V307 / V317 は USBFS と USBHS の両方のドライバが入るので�
 - **ベンダーの直接転送**（`writeDirect()`）: USBHS の DMA で入れる。今は `NotSupported`。
 - **USB ネットワークの IP 層**（EspUsbDevice の `ipConfig()` / `dhcpServer()` / `beginNetwork()`）: IP スタック
   （lwIP など）が要るので、入れるかは方針の確認待ち。
-- **IDE から USB で書き込む**: ch32rv の discovery（`ch32rv-app` / `ch32rv-isp`）が入った版を同梱したら、
-  platform.txt に書き込みとモニタの対応を足します。
 - **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は今 X035 / X033 だけが
   ブートローダーに入ります。ほかの系列は普通のリセットです。
 - **ホスト（`CH32RVUsbHost`）**: EspUsbHost と同じく、ホスト本体にクラスのオブジェクトを付ける形にします。同梱の

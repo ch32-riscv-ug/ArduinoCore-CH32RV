@@ -22,10 +22,6 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口。今は X035 / X033 だけ）。
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
   - ファームウェア更新のクラス（本物の DFU、MSC での更新）は、工場出荷の ISP で書く今の方針と合わせて別に決める。
-- Arduino IDE の書き込み（upload recipe）を `ch32rv isp flash --entry auto --app-device port:...` にする。
-  ch32rv の discovery（9846fac、f20aee7）は `ch32rv-app://<USB シリアル>`（DFU ランタイムの名前が "CH32RV" のデバイス。
-  モニタは同じデバイスの CDC で、ch32rv 側で確認済み）と `ch32rv-isp://<位置>`（1a86:55e0）を出す。その版を同梱したら
-  platform.txt に `upload.tool.ch32rv-app` / `ch32rv-isp` と pluggable_monitor の対応を足す。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。
 - **UIAPduino のソフトウェア USB（rv003usb）をアプリモードでも動かす**。今はブートローダー（1209:b003）だけで使っている。
   rv003usb をそのまま持ってくるか、同じような処理を自作するかから検討する（ライセンス、CH32RVUsbDevice と同じ API に

@@ -127,15 +127,22 @@ tools.ch32rv.cmd.windows=ch32rv.exe
 #   wchlink  wchlink://<serial>, from ch32rv's discovery
 #   oep      oep://<probe>/<slot>, from ch32rv's discovery
 #   hid      hid://<topology>, the UIAPduino bootloader
+#   ch32rv-app  ch32rv-app://<USB serial>, a running sketch with CH32RVUsbDevice's
+#            DFU runtime (its interface named "CH32RV"); written over USB alone
+#   ch32rv-isp  ch32rv-isp://<USB position>, the factory USB bootloader (1a86:55e0)
 # ch32rv resolves the address itself (--probe port:); on a probe with several
 # slots it picks the one whose chip family matches --chip and refuses when that
 # is not exactly one.
-upload.tool=ch32rv
+# No plain `upload.tool`: arduino-cli takes it before the per-protocol keys
+# below (measured, arduino-cli 1.5.1), so a ch32rv-app port would be handed to
+# the debug-probe recipe. `upload.tool.default` covers an upload with no port.
 upload.tool.default=ch32rv
 upload.tool.serial=ch32rv
 upload.tool.wchlink=ch32rv
 upload.tool.oep=ch32rv
 upload.tool.hid=ch32rv_hid
+upload.tool.ch32rv-app=ch32rv_isp
+upload.tool.ch32rv-isp=ch32rv_isp
 
 # --progress none because a recipe's stdout is not a tty; ch32rv defaults to a
 # progress bar only on one, but saying so keeps the log identical either way.
@@ -153,6 +160,18 @@ tools.ch32rv.program.params.verbose=--verbose
 tools.ch32rv.program.params.quiet=
 tools.ch32rv.program.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.probe_args}
 
+# Over USB alone, through the factory USB ISP bootloader (docs/usb.ja.md). On a
+# ch32rv-app port, --entry auto sends DFU_DETACH (or the 1200 bps touch) to the
+# running sketch and waits for the bootloader; on a ch32rv-isp port the
+# bootloader is already there and is written directly. --chip makes the ISP
+# refuse a different part. The image is ISP protocol, not DFU download.
+tools.ch32rv_isp.path={runtime.tools.ch32rv.path}
+tools.ch32rv_isp.cmd=ch32rv
+tools.ch32rv_isp.cmd.windows=ch32rv.exe
+tools.ch32rv_isp.upload.params.verbose=--verbose
+tools.ch32rv_isp.upload.params.quiet=
+tools.ch32rv_isp.upload.pattern="{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto --app-device "port:{upload.port.address}" {upload.verbose}
+
 # UIAPduino Pro Micro CH32V003 V1.4 product bootloader. rv003usb takes the raw
 # binary, and boot entry still needs an external action (docs/uiapduino-hid-upload.ja.md).
 tools.ch32rv_hid.path={runtime.tools.ch32rv.path}
@@ -166,7 +185,9 @@ tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none
 # ch32rv lists what a plain serial scan cannot see or name: every WCH-Link as
 # wchlink://<serial>, every OEP probe's slot as oep://<probe>/<slot> (a device
 # with the OEP project USB ID 1209:4F45), and the UIAPduino
-# bootloader as hid://. It never opens an ordinary serial port. Declaring one
+# bootloader as hid://, a running CH32RVUsbDevice sketch as ch32rv-app:// and
+# the factory USB bootloader as ch32rv-isp://. It never opens an ordinary
+# serial port. Declaring one
 # discovery means the built-in ones have to be named too.
 pluggable_discovery.required.0=builtin:serial-discovery
 pluggable_discovery.required.1=builtin:mdns-discovery
@@ -182,6 +203,10 @@ pluggable_discovery.ch32rv.pattern="{runtime.tools.ch32rv.path}/ch32rv" arduino 
 pluggable_monitor.pattern.serial="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol serial
 pluggable_monitor.pattern.wchlink="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol wchlink
 pluggable_monitor.pattern.oep="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol oep
+# ch32rv-app opens the sketch's own CDC port (none: the monitor says so);
+# ch32rv-isp has nothing to show and refuses.
+pluggable_monitor.pattern.ch32rv-app="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-app
+pluggable_monitor.pattern.ch32rv-isp="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-isp
 
 # ---------------------------------------------------------------- debug
 # `arduino-cli debug` (and the IDE's debugger) drive GDB plus a GDB server.
