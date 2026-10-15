@@ -9,10 +9,16 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 
 ## USB
 
-- EspUsbDevice の残りのクラス: オーディオ・ビデオ・USB ネットワーク（NCM）。X035 ではなく系列全体を対象に、送れる量を
-  コントローラ（USBFS 64 B / EP3 1023 B / USBHS）に合わせる。先にほかの系列のデバイス対応を入れ、USBHS の系列と X035 の
-  両方で確かめる。SD カードの MSC。ベンダーの直接転送（USBHS で）。
-  [docs/usb.ja.md](docs/usb.ja.md#今後の予定)
+- **CH32RVUsbDevice は FS / HS / SS（H417 の USBSS）まで動くライブラリとして、EspUsbDevice の全機能を実装する。**
+  クラスの有無を系列で削らず、送れる量（サンプリング周波数、解像度、バッファ、バースト）をコントローラに合わせる。
+  - 土台: ディスクリプタの組み立てを速度ごとにする（HS の device qualifier / other speed、SS のエンドポイント
+    コンパニオンと BOS の SS 能力、EP0 512 B）。今は FS 用の1種類だけ。
+  - 系列: V20x / V30x / L103 / V407・V467 / X305・X315 のデバイス対応（PHY とクロック）。USBHS で確かめる。
+  - H417: まずボードとして入れる（loadcode 起動の2コアのため生成器が外している）。USBSS は TinyUSB に無いので、
+    dcd と TinyUSB 側の SS 対応（パッチか拡張）が要る。ベンチに H417 あり。
+  - クラス: オーディオ、ビデオ、USB ネットワーク（NCM、lwIP 連携まで）、SD カードの MSC、ベンダーの直接転送
+    （USBHS / USBSS の DMA で）。確かめるのは各コントローラ（X035 の USBFS、V307 の USBHS、H417 の USBSS）。
+  - ファームウェア更新のクラス（本物の DFU、MSC での更新）は、工場出荷の ISP で書く今の方針と合わせて別に決める。
 - Arduino IDE の書き込み（upload recipe）を `ch32rv isp flash --entry auto --app-device port:...` にする。
   ch32rv の discovery（9846fac、f20aee7）は `ch32rv-app://<USB シリアル>`（DFU ランタイムの名前が "CH32RV" のデバイス。
   モニタは同じデバイスの CDC で、ch32rv 側で確認済み）と `ch32rv-isp://<位置>`（1a86:55e0）を出す。その版を同梱したら
