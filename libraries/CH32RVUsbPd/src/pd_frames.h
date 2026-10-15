@@ -151,6 +151,39 @@ uint32_t pd_sink_pdo_fixed(uint16_t mv, uint16_t ma, uint32_t flags);
 #define PD_SINK_HIGHER_CAPABILITY (1ul << 28)   /* needs more than vSafe5V for full function */
 
 /* "Fixed" / "PPS" / "Battery" / "Variable" / "?" - for listings. */
+/* ---- the source side ------------------------------------------------------
+ * A source's messages carry its roles in the header: power role Source (B8)
+ * and, as the side that started as the host, data role DFP (B5). */
+uint16_t pd_header_source(uint8_t type, uint8_t count, uint8_t message_id,
+                          uint8_t rev);
+
+/* Source PDOs for Source_Capabilities. Fixed: B19..10 voltage in 50 mV,
+ * B9..0 maximum current in 10 mA, `flags` the B29..25 bits as-is (dual-role
+ * power, USB suspend, unconstrained power, USB communications, dual-role
+ * data). PPS (an SPR programmable APDO): B24..17 maximum voltage and B15..8
+ * minimum voltage in 100 mV, B6..0 maximum current in 50 mA. */
+#define PD_SRC_UNCONSTRAINED  (1ul << 27)
+#define PD_SRC_USB_COMM       (1ul << 26)
+uint32_t pd_source_pdo_fixed(uint16_t mv, uint16_t ma, uint32_t flags);
+uint32_t pd_source_pdo_pps(uint16_t min_mv, uint16_t max_mv, uint16_t ma);
+
+/* What a sink's Request asks for, checked against the PDOs offered (as
+ * pd_parse_source_caps() reads them back). */
+typedef struct {
+    uint8_t  index;          /* 0-based position in the offer               */
+    uint8_t  pps;            /* the PDO asked for is a PPS one               */
+    uint16_t mv;             /* fixed: the PDO's voltage; PPS: what is asked */
+    uint16_t ma;             /* operating current asked for                  */
+    uint8_t  mismatch;       /* the sink says this does not cover its needs  */
+} pd_request_t;
+
+/* 1 and *out filled when the Request is valid against `offer`: a position
+ * that exists, a fixed or PPS PDO, an operating current within the PDO's
+ * maximum (and, for fixed, a maximum operating current within it unless the
+ * sink flags a capability mismatch), and for PPS a voltage inside the range.
+ * 0 otherwise - the source answers Reject. */
+int pd_check_request(const pd_caps_t *offer, uint32_t rdo, pd_request_t *out);
+
 const char *pd_supply_name(uint8_t kind);
 
 #ifdef __cplusplus

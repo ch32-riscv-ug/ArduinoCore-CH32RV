@@ -42,6 +42,11 @@
 #define CH32RV_USBPD_AFIO_CTLR CH32RV_REG32(CH32RV_AFIO_BASE + 0x18u)
 #define CH32RV_USBPD_IN_HVT    (1u << 9)
 #define CH32RV_USBPD_PHY_V33   (1u << 8)
+/* The CC pads. A source tells an open line (no sink) from a sink's Rd by
+ * reading the pad as a GPIO: with Rp on, an open line rises above the input
+ * high threshold, a sink's Rd holds it under (the EVT's USBPD_SRC). */
+#define CH32RV_USBPD_CC1_PIN   PC14
+#define CH32RV_USBPD_CC2_PIN   PC15
 #endif
 
 #ifdef CH32RV_USBPD_BASE
@@ -87,10 +92,18 @@
 /* PORT_CC1 / PORT_CC2 */
 #define CH32RV_UPD_PA_CC_AI     (1u << 0)    /* comparator output            */
 #define CH32RV_UPD_CC_PD        (1u << 1)    /* present Rd (we are a sink)   */
+#define CH32RV_UPD_CC_PU_MASK   (3u << 2)    /* present Rp (we are a source):  */
+#define CH32RV_UPD_CC_PU_330    (1u << 2)    /*   330 uA: 3.0 A advertised     */
+#define CH32RV_UPD_CC_PU_180    (2u << 2)    /*   180 uA: 1.5 A                */
+#define CH32RV_UPD_CC_PU_80     (3u << 2)    /*    80 uA: Default USB power    */
 #define CH32RV_UPD_CC_LVE       (1u << 4)    /* drive the line (transmit)    */
 #define CH32RV_UPD_CC_CMP_MASK  (7u << 5)
 #define CH32RV_UPD_CC_CMP_22    (2u << 5)    /* 0.22 V: "a source is there"  */
 #define CH32RV_UPD_CC_CMP_66    (5u << 5)    /* 0.66 V: idle threshold       */
+
+/* The one USBPD interrupt goes to whichever role began (usbpd_irq.cpp);
+ * null when none has. A role refuses to begin while the other holds it. */
+extern void (*ch32rv_usbpd_irq_hook)(void);
 
 /* TX_SEL: the K-code preamble to send. SOP for messages, RST for hard reset. */
 #define CH32RV_UPD_SOP0         0x00u        /* SYNC1 SYNC1 SYNC1 SYNC2      */

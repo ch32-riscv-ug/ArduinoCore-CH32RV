@@ -138,7 +138,7 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 | USB controller/speed の系列差 | Arduino 統合は未実装 | source 固定のみ | vendor driver の存在だけで対応とはしない。実装採用対象ごとの build と実機 |
 | USB PD frame / fixed / PPS 計算 | あり | あり・限定: unit/test_pd_frames、pd_selftest | 境界・不正入力と target 差。native と実機 |
 | USB PD sink 交渉 | X033/X035 に実装 | あり・限定: pd_sink、pd_vbus | 脱着/再接続、source reset、fault、交渉と VBUS の独立照合。PD source と電圧計/電源制御 |
-| USB PD source | 未実装 | なし | sink の成功で source 対応とはしない。採用範囲の決定が先 |
+| USB PD source | X033/X035 に実装 | あり・限定: unit/test_pd_frames_source（Source_Capabilities の PDO、Request の検証）、例のビルド | X035 どうしの対向（Rd 検出と向き、固定/PPS 契約、Reset、PPS 途絶、取り外し、コールバックの失敗）。実際の電圧は範囲外 |
 | UIAPduino HID upload recipe | あり（外部 bootloader 経路） | あり・限定: run_hardwareのhid＋独立console上のruntime | HID 書込み→再列挙→sketch 起動、復旧、製品 pin map。UIAPduino と独立 console |
 
 USB データは CH32X035–ESP32S3 を基準に、DUT host / peer device と DUT device / peer host の両構成を検証します。

@@ -53,20 +53,16 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       電源の入れ直しは、OEP からのリセット（NRST / デバッグ線）で代える。
     - VBUS の有無に依存する動作は試せない（今のライブラリには無い。VBUS の検出を入れるなら別の確認が要る）。
 
-## USB PD ソース（CH32RVUsbPd）
+## USB PD ソース（CH32RVUsbPd）の実機確認
 
-製品として使える設計で、ソース（電源を出す側）を実装する。電圧が実際に出ているかの確認は範囲外（基板側の仕事）。
-- シンク（`USBPD`）とは別のオブジェクト `CH32RVUsbPdSource`。使わなければリンクされない。シンクと同じ名前の
-  `begin()` / `attached()` / `ready()` / `voltage()` / `current()` / `contractProfile()` / `maintain()`。
-- `setRpCurrent()`（Default / 1.5 A / 3.0 A）、`addFixed(mV, mA)` / `addPps(minmV, maxmV, mA)`（最大7つ、先頭は 5 V 固定）。
-- `onVbus(on)`（接続で vSafe5V、切断で vSafe0V）と `onSetVoltage(mV, mA, pps)` は**必須**。未登録なら `begin()` が失敗する。
-  コールバックが false を返したら、その要求は通さない（VBUS なら接続しない、電圧なら Reject）。試験のスケッチは
-  両方を登録して明示的に true を返す。
-- 製品として満たすこと: Rp による接続検出と向き、Source_Capabilities の再送、Request の検証（名乗った範囲、電流）と
-  Accept / Reject、切り替え後の PS_RDY、Get_Source_Cap、Soft_Reset / Hard_Reset、PPS の Request の途絶、未対応の
-  要求への Not_Supported。
-- まず X035 / X033。試験は X035 どうしの対向（シンク ⇔ ソース）。ソースにする WeAct の板は CC の 5.1 kΩ（R4 / R5）を
-  外す（回路図では SB2 / SB3 で PC14 / PC15 につながる Rd。実物で確認）。
+ソース（`USBPDSource`、`CH32RVUsbPdSource`）は実装済み（ビルドとフレームの単体試験まで）。残りは実機での確認。
+- X035 どうしの対向（シンク `USBPD` ⇔ ソース `USBPDSource`）。ソースにする WeAct の板は CC の 5.1 kΩ（R4 / R5）を
+  外す（回路図では SB2 / SB3 で PC14 / PC15 につながる Rd。実物で確認）。試験のスケッチは両方のコールバックを
+  登録して明示的に true を返す。
+- 確かめること: Rd の検出と向き（表裏）、固定と PPS の契約、Get_Source_Cap、Soft_Reset / Hard_Reset、PPS の途絶
+  （15 秒）、Reject（名乗っていない電流）、取り外し、コールバックが false を返したとき（VBUS: 接続しない、電圧:
+  Hard Reset で 5 V に戻る）。
+- 実際の電圧が出ているかは範囲外（基板側の仕事）。
 
 ## ライブラリの配布
 

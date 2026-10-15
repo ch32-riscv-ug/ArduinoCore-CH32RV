@@ -1,4 +1,4 @@
-# CH32RVUsbPd — ask a USB PD charger for a voltage (sink)
+# CH32RVUsbPd — ask a USB PD charger for a voltage (sink), or offer voltages (source)
 
 Formerly the `USBPD` library (`USBPD.h`); the predefined object is still `USBPD`. The USB guide
 (Japanese) is [docs/usb.ja.md](../../docs/usb.ja.md).
@@ -34,3 +34,35 @@ fixed profile because a PPS contract dies unless re-requested every few
 seconds (`maintain()` does that from `loop()`). Battery and variable
 profiles are listed but never requested. See README.ja.md for the full API
 and design notes.
+
+## Source (`USBPDSource`)
+
+The same library also makes the board a USB PD source (CH32X035/X033). The
+board switches its own supply through two callbacks; both are required and
+`begin()` fails without them (`lastErrorName()` says why). Whether the supply
+really reaches the voltage is the board's job.
+
+```cpp
+bool vbus(bool on) { /* load switch */ return true; }
+bool setVoltage(uint16_t mv, uint16_t ma, bool pps) { /* regulator */ return true; }
+
+USBPDSource.setRpCurrent(PD_RP_3A0);
+USBPDSource.addFixed(5000, 3000);           // the first profile must be 5 V fixed
+USBPDSource.addFixed(9000, 2000);
+USBPDSource.addPps(3300, 11000, 2000);
+USBPDSource.onVbus(vbus);
+USBPDSource.onSetVoltage(setVoltage);
+USBPDSource.begin();
+void loop() { USBPDSource.maintain(); }
+```
+
+It presents Rp, debounces a sink's Rd and picks its CC line, switches VBUS
+on, sends Source_Capabilities until acknowledged, checks each Request against
+the offer (Reject if outside it), and after Accept calls `onSetVoltage()` and
+sends PS_RDY. A callback that returns false: VBUS false leaves the sink
+unpowered until it detaches; voltage false ends in a Hard Reset back to 5 V.
+It also answers Get_Source_Cap and Soft_Reset, recovers from Hard Reset
+(VBUS off for tSrcRecover), drops a PPS contract the sink stops renewing
+(15 s), and switches VBUS off on detach. Sink and source share the USBPD
+block, so only one runs at a time (`Busy`). A board used as a source must not
+have Rd resistors on CC (the WeAct CH32X035 board: remove R4/R5).

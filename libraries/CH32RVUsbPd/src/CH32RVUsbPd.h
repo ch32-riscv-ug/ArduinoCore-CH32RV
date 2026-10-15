@@ -136,3 +136,5 @@ public:
 }  // namespace arduino
 
 extern arduino::CH32RVUsbPd USBPD;
+
+#include "CH32RVUsbPdSource.h"

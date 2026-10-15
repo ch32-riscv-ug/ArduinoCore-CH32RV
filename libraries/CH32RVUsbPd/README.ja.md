@@ -1,4 +1,4 @@
-# CH32RVUsbPd — PD充電器に電圧を頼む(sink)
+# CH32RVUsbPd — PD充電器に電圧を頼む(sink)、電圧を出す(source)
 
 旧名は `USBPD` ライブラリ（`USBPD.h`）です。定義済みのオブジェクト名 `USBPD` は変わりません。USB デバイスと合わせた使い方は
 [docs/usb.ja.md](../../docs/usb.ja.md) にあります。
@@ -85,3 +85,36 @@ wagiminatorの`CH32X035-USB-PD-Adapter`(CC BY-SA)を**参照のみ**で
 
 CC線は短く。WeActの板でCCからprobeのピンへ長いリードを引いたところ、
 負荷でメッセージが1つもdecodeできなくなりました。
+
+## ソース(`USBPDSource`)
+
+同じライブラリで板を USB PD のソース(電源を出す側)にもできます(CH32X035/X033)。電源の切り替えは板の仕事で、
+2つのコールバックで行います。**両方とも必須**で、無ければ`begin()`が失敗します(理由は`lastErrorName()`)。
+実際にその電圧が出ているかの確認はこのライブラリの範囲外です。
+
+```cpp
+bool vbus(bool on) { /* ロードスイッチ */ return true; }
+bool setVoltage(uint16_t mv, uint16_t ma, bool pps) { /* レギュレータ */ return true; }
+
+USBPDSource.setRpCurrent(PD_RP_3A0);
+USBPDSource.addFixed(5000, 3000);           // 先頭は 5 V 固定
+USBPDSource.addFixed(9000, 2000);
+USBPDSource.addPps(3300, 11000, 2000);
+USBPDSource.onVbus(vbus);
+USBPDSource.onSetVoltage(setVoltage);
+USBPDSource.begin();
+void loop() { USBPDSource.maintain(); }
+```
+
+- Rp を出してシンクの Rd を検出(tCCDebounce)、つながった CC 線を選び、`onVbus(true)` で VBUS を入れる。
+- Source_Capabilities を GoodCRC が返るまで tTypeCSendSourceCap ごとに送る(nCapsCount 回で諦めると Type-C のみ:
+  `attached()`だが`ready()`にならない)。
+- Request は名乗ったもの(位置、電流、PPS の範囲)と照合し、外れていれば Reject。通れば Accept、tSrcTransition 後に
+  `onSetVoltage()`、PS_RDY。
+- コールバックが false を返したら: VBUS は入れない(取り外されるまで`VbusFailed`)、電圧は Hard Reset で 5 V に戻す
+  (`VoltageFailed`)。Accept を送った後なので Reject にはできない。
+- Get_Source_Cap、Soft_Reset に答え、Hard Reset からは VBUS を tSrcRecover の間落として戻す。PPS 契約は 15 秒
+  Request が途絶えたら Hard Reset。実装していないものには Not_Supported(PD 3.0)/ Reject(PD 2.0)。
+- 取り外し(Rd が消えた)で`onVbus(false)`。
+- シンクとソースは同じ USBPD ブロックを使うので、同時にはどちらか一方(もう一方が動いていれば`Busy`)。
+- ソースにする板の CC に Rd があってはいけない。WeAct の CH32X035 の板は R4 / R5(5.1 kΩ)を外す。

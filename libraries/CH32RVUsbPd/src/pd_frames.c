@@ -166,6 +166,65 @@ uint32_t pd_sink_pdo_fixed(uint16_t mv, uint16_t ma, uint32_t flags)
            | ((uint32_t)ma / 10u & 0x3FFu);
 }
 
+/* ---- the source side ------------------------------------------------------ */
+
+uint16_t pd_header_source(uint8_t type, uint8_t count, uint8_t message_id,
+                          uint8_t rev)
+{
+    return (uint16_t)(pd_header(type, count, message_id, rev)
+                      | (1u << 8)      /* power role: Source */
+                      | (1u << 5));    /* data role: DFP     */
+}
+
+uint32_t pd_source_pdo_fixed(uint16_t mv, uint16_t ma, uint32_t flags)
+{
+    return (flags & 0x3E000000ul)               /* B29..25 only; B31..30 = 00 */
+           | (((uint32_t)mv / 50u & 0x3FFu) << 10)
+           | ((uint32_t)ma / 10u & 0x3FFu);
+}
+
+uint32_t pd_source_pdo_pps(uint16_t min_mv, uint16_t max_mv, uint16_t ma)
+{
+    return (3ul << 30)                          /* APDO; B29..28 = 00: SPR PPS */
+           | (((uint32_t)max_mv / 100u & 0xFFu) << 17)
+           | (((uint32_t)min_mv / 100u & 0xFFu) << 8)
+           | ((uint32_t)ma / 50u & 0x7Fu);
+}
+
+int pd_check_request(const pd_caps_t *offer, uint32_t rdo, pd_request_t *out)
+{
+    const uint8_t position = (uint8_t)((rdo >> 28) & 0x7u);   /* 1-based */
+    if (position == 0 || position > offer->count) {
+        return 0;
+    }
+    const pd_pdo_t *p = &offer->pdo[position - 1];
+    out->index = (uint8_t)(position - 1);
+    out->mismatch = (uint8_t)((rdo >> 26) & 1u);
+    if (p->kind == PD_SUPPLY_FIXED) {
+        const uint16_t operating = (uint16_t)(((rdo >> 10) & 0x3FFu) * 10u);
+        const uint16_t maximum = (uint16_t)((rdo & 0x3FFu) * 10u);
+        if (operating > p->max_ma || (maximum > p->max_ma && !out->mismatch)) {
+            return 0;
+        }
+        out->pps = 0;
+        out->mv = p->max_mv;
+        out->ma = operating;
+        return 1;
+    }
+    if (p->kind == PD_SUPPLY_PPS) {
+        const uint16_t mv = (uint16_t)(((rdo >> 9) & 0x7FFu) * 20u);
+        const uint16_t ma = (uint16_t)((rdo & 0x7Fu) * 50u);
+        if (mv < p->min_mv || mv > p->max_mv || ma > p->max_ma) {
+            return 0;
+        }
+        out->pps = 1;
+        out->mv = mv;
+        out->ma = ma;
+        return 1;
+    }
+    return 0;                                   /* nothing else is offered here */
+}
+
 const char *pd_supply_name(uint8_t kind)
 {
     switch (kind) {
