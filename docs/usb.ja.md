@@ -288,9 +288,23 @@ void loop() { USBPD.maintain(); }    // PPS の契約を保つ
 
 ## 今後の予定
 
-- **EspUsbDevice の残りのクラス**: オーディオ・ビデオ・USB ネットワーク（NCM）は、X035 の容量（Flash 62 KB /
-  RAM 20 KB）と USBFS の転送方式で動くかを試してから決めます。SD カードの MSC（`EspUsbDeviceMscSdCard`）は、
-  このコアに SD のライブラリが入ってから。ベンダーの直接転送（`writeDirect()`）は持たず、常に `NotSupported` です。
+- **ほかの系列のデバイス対応を先に**: V20x、V30x、L103、V407 / V467、X305 / X315 など。PHY とクロックの初期化を
+  このライブラリに足します。クラスの対応範囲は、系列ではなく「そのコントローラで何が送れるか」で決まります。
+
+  | コントローラ | 系列 | エンドポイント | 容量（ANY） |
+  |---|---|---|---|
+  | USBFS（Full Speed） | X035 / X033、L103、M103、M030、V103 | 64 B（アイソクロナスも 64 B/ms） | 62〜64 KB / 10〜20 KB |
+  | USBFS（EP3 だけ 1023 B） | V20x、V30x | アイソクロナスは EP3 で 1023 B/ms | 32〜256 KB / 10〜64 KB |
+  | USBHS（High Speed） | V305 / V307 / V317、V407 / V467、X305 / X315 | 512 B（バルク）、1024 B × 3（アイソクロナス） | 192〜512 KB / 32〜200 KB |
+
+- **EspUsbDevice の残りのクラス**: オーディオ・ビデオ・USB ネットワーク（NCM）は、どの系列でも使える API として
+  作り、送れる量（サンプリング周波数、解像度、バッファ）をコントローラと容量に合わせます。X035 の USBFS では
+  オーディオは 16 bit で 32 kHz モノラル / 16 kHz ステレオまで、ビデオは小さい画像までですが、USBHS の系列なら
+  48 kHz ステレオのオーディオや MJPEG のビデオ、lwIP 付きの NCM が現実的です。確認は USBHS の系列（V307 など）と
+  X035 の両方で行います。
+- **SD カードの MSC**（`EspUsbDeviceMscSdCard`）: このコアに SD のライブラリが入ってから。
+- **ベンダーの直接転送**（`writeDirect()`）: USBFS のドライバは必ず自前の 64 B のバッファを経由するので、今は
+  `NotSupported` です。USBHS（DMA で直接送れる）に対応するときに入れます。
 - **IDE から USB で書き込む**: ch32rv の discovery（`ch32rv-app` / `ch32rv-isp`、ch32rv 9846fac）が入った版を同梱したら、
   platform.txt に書き込みとモニタの対応を足します。
 - **ホスト（`CH32RVUsbHost`）**: EspUsbHost と同じく、ホスト本体にクラスのオブジェクトを付ける形にします。同梱の

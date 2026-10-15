@@ -9,7 +9,9 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 
 ## USB
 
-- EspUsbDevice の残りのクラス: オーディオ・ビデオ・USB ネットワーク（X035 で動くかを試してから）、SD カードの MSC。
+- EspUsbDevice の残りのクラス: オーディオ・ビデオ・USB ネットワーク（NCM）。X035 ではなく系列全体を対象に、送れる量を
+  コントローラ（USBFS 64 B / EP3 1023 B / USBHS）に合わせる。先にほかの系列のデバイス対応を入れ、USBHS の系列と X035 の
+  両方で確かめる。SD カードの MSC。ベンダーの直接転送（USBHS で）。
   [docs/usb.ja.md](docs/usb.ja.md#今後の予定)
 - Arduino IDE の書き込み（upload recipe）を `ch32rv isp flash --entry auto --app-device port:...` にする。
   ch32rv の discovery（9846fac、f20aee7）は `ch32rv-app://<USB シリアル>`（DFU ランタイムの名前が "CH32RV" のデバイス。
