@@ -165,6 +165,109 @@ extern "C" {
 #define CFG_TUD_MSC_EP_BUFSIZE   512
 #endif
 
+/* ---- video ---- */
+/* USB Video Class (CH32RVUsbDeviceVideo): one camera with one stream. */
+#ifndef CFG_TUD_VIDEO
+#define CFG_TUD_VIDEO            1
+#endif
+#ifndef CFG_TUD_VIDEO_STREAMING
+#define CFG_TUD_VIDEO_STREAMING  1
+#endif
+/* Bulk streaming by default. Isochronous on USBFS (X035/X033) is one
+ * 64-byte packet per 1 ms - about 62 KB/s of picture - while bulk takes what
+ * the bus has left and the host retries lost packets. 0 here (build_opt.h:
+ * -DCFG_TUD_VIDEO_STREAMING_BULK=0) gives a classic isochronous camera. Read
+ * only by CH32RVUsbDeviceVideo's descriptor; TinyUSB follows the descriptor. */
+#ifndef CFG_TUD_VIDEO_STREAMING_BULK
+#define CFG_TUD_VIDEO_STREAMING_BULK 1
+#endif
+/* The payload buffer: one UVC payload (2-byte header + picture) is assembled
+ * here, and it caps the dwMaxPayloadTransferSize committed to the host.
+ * Isochronous needs it no larger than the endpoint - 64 on USBFS (X035/X033),
+ * up to 1023 on a high-speed controller. Bulk accepts more, but a payload
+ * bigger than one packet needs frame lengths whose last payload is not a
+ * whole number of packets (CH32RVUsbDeviceVideo::sendFrame() refuses the
+ * rest), so the default is one packet: 64 at full speed, 512 bulk / 1023
+ * isochronous at high speed. */
+#ifndef CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE
+#if CFG_TUD_MAX_SPEED == OPT_MODE_HIGH_SPEED
+#if CFG_TUD_VIDEO_STREAMING_BULK
+#define CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE 512
+#else
+#define CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE 1023
+#endif
+#else
+#define CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE 64
+#endif
+#endif
+/* ---- end video ---- */
+
+/* ---- audio ---- */
+/* USB Audio, UAC1 / UAC2 (CH32RVUsbAudioFunction): one function with a
+ * playback (OUT) and a capture (IN) isochronous endpoint, and UAC2's
+ * feedback endpoint. Like every class here it is compiled but linked only
+ * when a sketch declares the function; until then these buffers take no RAM.
+ * Declared with the defaults below they take about 0.8 KB.
+ *
+ * Packet sizes are per (micro)frame. Full speed carries one packet per 1 ms
+ * frame, and the USBFS of CH32X035/X033 caps every endpoint, isochronous ones
+ * included, at 64 bytes: 64 bytes a millisecond is 16-bit mono up to 32 kHz
+ * or 16-bit stereo up to 16 kHz (CH32RVUsbAudioFunction refuses a format
+ * that does not fit). High speed sends one packet per 125 us microframe, so a
+ * high-speed controller (USBHS) takes 48 kHz 16-bit stereo; a high-speed
+ * build defaults to 196 bytes, what 48 kHz stereo needs if the host runs the
+ * port at full speed. On another full-speed controller build_opt.h may raise
+ * them, e.g. for 48 kHz 16-bit stereo:
+ *     -DCFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX=196
+ *     -DCFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX=196
+ * The SW_BUF sizes are the FIFOs between the endpoints and read() / write():
+ * four packets (4 ms at full speed) by default. */
+#ifndef CFG_TUD_AUDIO
+#define CFG_TUD_AUDIO            1
+#endif
+#ifndef CFG_TUD_AUDIO_ENABLE_EP_IN
+#define CFG_TUD_AUDIO_ENABLE_EP_IN 1
+#endif
+#ifndef CFG_TUD_AUDIO_ENABLE_EP_OUT
+#define CFG_TUD_AUDIO_ENABLE_EP_OUT 1
+#endif
+#ifndef CFG_TUD_AUDIO_ENABLE_FEEDBACK_EP
+#define CFG_TUD_AUDIO_ENABLE_FEEDBACK_EP 1
+#endif
+#ifndef CFG_TUD_AUDIO_ENABLE_INTERRUPT_EP
+#define CFG_TUD_AUDIO_ENABLE_INTERRUPT_EP 0
+#endif
+#ifndef CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX
+#if CFG_TUD_MAX_SPEED == OPT_MODE_HIGH_SPEED
+#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX 196
+#else
+#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX 64
+#endif
+#endif
+#ifndef CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX
+#if CFG_TUD_MAX_SPEED == OPT_MODE_HIGH_SPEED
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX 196
+#else
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX 64
+#endif
+#endif
+#ifndef CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ
+#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ (4 * CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX)
+#endif
+#ifndef CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ (4 * CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX)
+#endif
+/* The largest control answer: a UAC2 sample-rate RANGE (2 + 12 bytes per
+ * rate; one rate here). 64 shares EP0's buffer instead of taking its own. */
+#ifndef CFG_TUD_AUDIO_CTRL_BUF_SZ
+#define CFG_TUD_AUDIO_CTRL_BUF_SZ 64
+#endif
+#if (defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)) && \
+    (CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX > 64 || CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX > 64)
+#error "CH32X035/X033 USBFS endpoints hold 64 bytes: CFG_TUD_AUDIO_FUNC_1_EP_*_SZ_MAX must not exceed 64"
+#endif
+/* ---- end audio ---- */
+
 #ifdef __cplusplus
 }
 #endif

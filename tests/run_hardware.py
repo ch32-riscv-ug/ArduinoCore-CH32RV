@@ -25,15 +25,18 @@ MODULES = {
     "power": TESTS / "instrumented/power/test_power_contract.py",
     "usb": TESTS / "instrumented/usb/test_usb_contract.py",
     "usb-classes": TESTS / "instrumented/usb/test_usb_classes_contract.py",
+    "usb-media": TESTS / "instrumented/usb/test_usb_media_contract.py",
 }
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
 SKETCHES = {
     "usb": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
+    "usb-media": TESTS / "sketch_support/usb_media/usb_media.ino",
 }
 HELPERS = {
     "usb": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-classes": [TESTS / "instrumented/usb/usb_host.py"],
+    "usb-media": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
 }
 PLUGINS = ["pytest_embedded.plugin",
            "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin"]

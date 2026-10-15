@@ -10,14 +10,17 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 ## USB
 
 - **CH32RVUsbDevice は FS / HS / SS（H417 の USBSS）まで動くライブラリとして、EspUsbDevice の全機能を実装する。**
-  クラスの有無を系列で削らず、送れる量（サンプリング周波数、解像度、バッファ、バースト）をコントローラに合わせる。
-  - 土台: ディスクリプタの組み立てを速度ごとにする（HS の device qualifier / other speed、SS のエンドポイント
-    コンパニオンと BOS の SS 能力、EP0 512 B）。今は FS 用の1種類だけ。
-  - 系列: V20x / V30x / L103 / V407・V467 / X305・X315 のデバイス対応（PHY とクロック）。USBHS で確かめる。
-  - H417: まずボードとして入れる（loadcode 起動の2コアのため生成器が外している）。USBSS は TinyUSB に無いので、
-    dcd と TinyUSB 側の SS 対応（パッチか拡張）が要る。ベンチに H417 あり。
-  - クラス: オーディオ、ビデオ、USB ネットワーク（NCM、lwIP 連携まで）、SD カードの MSC、ベンダーの直接転送
-    （USBHS / USBSS の DMA で）。確かめるのは各コントローラ（X035 の USBFS、V307 の USBHS、H417 の USBSS）。
+  済み: 速度ごとのディスクリプタ（FS / HS）、V103 / V20x（USBFS）/ V30x（USBFS・USBHS を実行時に選ぶ）、NCM、
+  オーディオ、ビデオ、SD カードの MSC。残り:
+  - 新しい系列の実機確認（ベンチの DUT の USB 端子を配線してから）。HSI から作る 48 MHz の精度、V103 の EP4〜7 の
+    自動トグル、HS の PHY と HSE。
+  - L103 / M103、M030、V205: USB には既定の 8 MHz より高いシステムクロックが要る（ボード既定の変更は方針の確認待ち）。
+  - V20x の USBD（fsdev）: USBFS と実行時に選べるようにする（USBD しか無い V203F6P6 / G6U6 のため）。
+  - 第2世代 USBHS（V407 / V467、X305 / X315、V205）の dcd を新しく書く。下書きは work/usbport/others（git 管理外）。
+  - H417: ボードとして入れてから USBSS（TinyUSB に無い）。
+  - ベンダーの直接転送（USBHS の DMA で）。NCM の IP 層（lwIP など外部ライブラリ。方針の確認待ち）。
+  - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口。今は X035 / X033 だけ）。
+  - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
   - ファームウェア更新のクラス（本物の DFU、MSC での更新）は、工場出荷の ISP で書く今の方針と合わせて別に決める。
 - Arduino IDE の書き込み（upload recipe）を `ch32rv isp flash --entry auto --app-device port:...` にする。
   ch32rv の discovery（9846fac、f20aee7）は `ch32rv-app://<USB シリアル>`（DFU ランタイムの名前が "CH32RV" のデバイス。
@@ -27,7 +30,7 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 - **UIAPduino のソフトウェア USB（rv003usb）をアプリモードでも動かす**。今はブートローダー（1209:b003）だけで使っている。
   rv003usb をそのまま持ってくるか、同じような処理を自作するかから検討する（ライセンス、CH32RVUsbDevice と同じ API に
   載せられるか、V003 の Flash 16 KB / RAM 2 KB に収まるか）。
-- V20x / V30x / L103 のデバイス対応、コントローラの実行時選択（V307 でリンクまで確認済み）、ホスト（`CH32RVUsbHost`）。
+- ホスト（`CH32RVUsbHost`）。
 - **USB デバイスの実機試験のホスト役を PC から別のマイコンに替える**。試験は `tests/instrumented/usb`（`--case usb`）に
   あり、X035 で列挙・CDC / HID / MIDI の往復・`end()`→`begin()`・DFU_DETACH / 1200bps タッチでの ISP 移行を確かめている。
   ホスト役は今は PC（`PcUsbHost`）で、`ch32rv isp flash --entry auto` での書き込みの往復はまだ入っていない。

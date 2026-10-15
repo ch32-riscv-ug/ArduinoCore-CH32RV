@@ -27,6 +27,12 @@ class PcUsbHost:
         except OSError:
             return None
 
+    def devnum(self):
+        try:
+            return int((self.sysfs / "devnum").read_text())
+        except OSError:
+            return None
+
     def wait_ids(self, wanted, timeout):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:

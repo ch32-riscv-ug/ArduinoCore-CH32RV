@@ -93,6 +93,12 @@ enum CH32RVUsbDeviceMsOs20Layout : uint8_t {
 #ifndef CH32RV_USB_MSC_NAME
 #define CH32RV_USB_MSC_NAME "Mass storage"
 #endif
+#ifndef CH32RV_USB_AUDIO_NAME
+#define CH32RV_USB_AUDIO_NAME "Audio"
+#endif
+#ifndef CH32RV_USB_VIDEO_NAME
+#define CH32RV_USB_VIDEO_NAME "Camera"
+#endif
 #ifndef CH32RV_USB_NET_NAME
 #define CH32RV_USB_NET_NAME "Network"
 #endif
@@ -334,3 +340,5 @@ extern CH32RVUsbDevice USBDevice;
 #include "CH32RVUsbDeviceMsc.h"
 #include "CH32RVUsbDeviceCcid.h"
 #include "CH32RVUsbDeviceNet.h"
+#include "CH32RVUsbDeviceVideo.h"
+#include "CH32RVUsbDeviceAudio.h"

@@ -51,7 +51,7 @@ static void reply(const char *command)
         SerialDMSeq.println(keyboard.write("ab", 0) ? 1 : 0);
     } else if (strcmp(command, "replug") == 0) {
         USBDevice.end();
-        delay(500);
+        delay(1000);                 /* longer than a hub's status poll */
         SerialDMSeq.print("REPLUG ");
         SerialDMSeq.println(USBDevice.begin(config) ? 1 : 0);
     } else if (strcmp(command, "net") == 0) {

@@ -1,8 +1,8 @@
 # CH32RVUsbDevice — チップの USB をデバイスとして使う
 
 CDC シリアル、HID（キーボード・マウス・ゲームパッド・メディアキー・システム制御・ベンダー・カスタム）、MIDI、
-ベンダー（バルク。WebUSB と MS OS 2.0 ディスクリプタ付き）、MSC（RAM ディスク付き）、スマートカードリーダー（CCID）、
-DFU ランタイム（書き込みの入口）を、宣言するだけで組み合わせられる USB デバイスのライブラリです。
+ベンダー（バルク。WebUSB と MS OS 2.0 ディスクリプタ付き）、MSC（RAM ディスク・SD カード）、スマートカードリーダー（CCID）、
+USB ネットワーク（CDC-NCM）、オーディオ（UAC1 / UAC2）、カメラ（UVC）、DFU ランタイム（書き込みの入口）を、宣言するだけで組み合わせられる USB デバイスのライブラリです。
 API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) に合わせてあり、名前の `Esp` を `CH32RV` に
 置き換えれば、たいていのスケッチはそのまま動きます。土台は同梱の TinyUSB（[CH32RVTinyUSB](../CH32RVTinyUSB/)）です。
 使い方の全体は [docs/usb.ja.md](../../docs/usb.ja.md) にあります。
@@ -53,8 +53,8 @@ void loop() {
   `-DCFG_TUD_CDC=2` と書きます。EspUsbDevice の実行時の設定（`setRxBufferSize()` など）はありません。
 - **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
   EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
-- **無いもの**: オーディオ、ビデオ、USB ネットワーク、ファームウェア更新の各クラス、SD カードのディスク、ベンダーの
-  直接転送（`writeDirect()` は `NotSupported`）（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
+- **無いもの**: ファームウェア更新の各クラス、USB ネットワークの IP 層（このコアに IP スタックが無いので、
+  `CH32RVUsbDeviceNet` は生の Ethernet フレームを扱う）、ベンダーの直接転送（`writeDirect()` は `NotSupported`）（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
 - **既定の文字列と ID はすべて `build_opt.h` の define で上書きできます**（VID/PID、メーカー名、製品名、
   インターフェース名、MSC の INQUIRY、FAT のボリュームラベル）。
 - **DFU ランタイムが既定で付きます**（EspUsbDevice には無い動作）。USB を使うスケッチは、何も書かなくても USB から
@@ -80,6 +80,10 @@ void loop() {
 | `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`、`isWritable()`、`vendorID()` など |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |
+| `CH32RVUsbDeviceMscSdCard` | SPI の SD カードを MSC の中身にする。`begin(cs, SPI)`、`attach(msc)`（`#include <CH32RVUsbDeviceMscSdCard.h>`） |
+| `CH32RVUsbDeviceNet` | USB ネットワーク（CDC-NCM）。`onFrame()`、`sendFrame()`、`macAddress()`、`linkUp()` |
+| `CH32RVUsbAudioFunction` | オーディオ（UAC1 / UAC2）。`addPlaybackStream()` / `addCaptureStream()`、`read()` / `write()`、ミュート・音量、`pollEvent()`。録音側の `availableForWrite()` はこのライブラリの追加 |
+| `CH32RVUsbDeviceVideo` | カメラ（UVC）。`setFormat()`、`setFrameSize()`、`sendFrame()`、`onCommit()`。`onFillPayload()` / `sendGeneratedFrame()`（フレームを持たずに作る）はこのライブラリの追加 |
 | `CH32RVUsbDeviceDfuRuntime` | DFU_DETACH を受けて工場出荷の USB ISP ブートローダーに入る入口。DFU のランタイムインターフェースだけで、DFU モードやダウンロードはありません。**既定で付きます**（`config.dfuRuntime = false` で外す）。宣言するのは `onDetach()` を使うときだけ。インターフェース名 "CH32RV" が ch32rv の discovery の目印 |
 
 HID のクラスは、いくつ宣言しても1つの HID インターフェースにまとまります（EspUsbDevice と同じ）。1つだけなら
@@ -97,6 +101,10 @@ HID のクラスは、いくつ宣言しても1つの HID インターフェー�
 | MSC、MSCFatRamDisk | RAM ディスク / FAT の RAM ディスク（X035 の RAM に合わせて 8〜10 KB に縮小） |
 | CompositeHidCdcMsc | キーボード + CDC + MSC の複合デバイス |
 | SmartCardReader | CCID のカードリーダー |
+| MSCSdCard | SD カードを USB メモリにする |
+| AudioSpeaker、AudioMicrophone、AudioHeadset | オーディオ（X035 の 64 B/ms に合わせて 16〜32 kHz） |
+| VideoCamera | 80x60 のカラーバーを流すカメラ |
+| UsbNetworkPing | USB ネットワークで ARP と ping に答える（このライブラリ独自） |
 | SerialUSBEcho、CustomDevice、DfuRuntime | このライブラリ独自: `SerialUSB` だけの形、設定と失敗の表示、書き込みの入口だけ |
 
 EspUsbDevice の同名の例を移植したもの（Serial〜SmartCardReader）は、名前の置き換えとピン・VID/PID の変更だけで、
@@ -104,8 +112,9 @@ EspUsbDevice の同名の例を移植したもの（Serial〜SmartCardReader）�
 
 ## 対応
 
-CH32X035 / X033（USBFS）。X035（WeAct CH32X035F8U6 の板）で実機確認しています。ほかの系列では `begin()` が
-`false`（`Unsupported`）を返し、スケッチはそのままビルドできます。
+CH32X035 / X033（USBFS）。X035（WeAct CH32X035F8U6 の板）で実機確認しています。CH32V103、V203 / V208、V303（USBFS）、
+V305 / V307 / V317（USBFS か USBHS を `config.controller` で選ぶ）も入っています（ビルドのみ、実機は未確認）。
+ほかの系列では `begin()` が `false`（`Unsupported`）を返し、スケッチはそのままビルドできます。
 
 ## 書き込み
 
