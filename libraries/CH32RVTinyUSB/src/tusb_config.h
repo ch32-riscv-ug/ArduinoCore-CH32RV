@@ -92,13 +92,40 @@ extern "C" {
 #define CFG_TUSB_MCU             OPT_MCU_NONE
 #endif
 
+/* CH32RV_TINYUSB_HOST: the series has the host side (CH32RVUsbHost) wired up.
+ * Our own controller driver, ch32rv_hcd_usbfs.c, drives the USBFS block in
+ * host mode; device and host share the block, one role at a time, so the
+ * host runs on TinyUSB's rhport 1 while the device keeps rhport 0. */
+#if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
+#define CH32RV_TINYUSB_HOST      1
+#define CH32RV_HCD_USBFS         1
+#define CH32RV_HCD_USBFS_BASE    0x40023400u
+#define CH32RV_HCD_USBFS_IRQ     CH32RV_IRQN_USBFS
+#define CH32RV_HCD_USBFS_LAYOUT  1
+#elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208) || \
+      defined(CH32RV_SERIES_CH32V303) || defined(CH32RV_SERIES_CH32V305) || \
+      defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
+/* USBFS (OTG_FS): PB6 / PB7 on V20x, PA11 / PA12 on V30x. */
+#define CH32RV_TINYUSB_HOST      1
+#define CH32RV_HCD_USBFS         1
+#define CH32RV_HCD_USBFS_BASE    0x50000000u
+#define CH32RV_HCD_USBFS_IRQ     CH32RV_IRQN_USBFS
+#define CH32RV_HCD_USBFS_LAYOUT  2
+#else
+#define CH32RV_TINYUSB_HOST      0
+#endif
+#define CH32RV_TUH_RHPORT        1
+/* Upstream's portable/wch/hcd_ch32_usbfs.c stays out: ch32rv_hcd_usbfs.c is
+ * the host driver here (tusb_mcu.h turns upstream's on for V20x by default). */
+#define CFG_TUH_WCH_USBIP_USBFS  0
+
 #define CFG_TUSB_OS              OPT_OS_NONE
 #define CFG_TUSB_DEBUG           0
 /* A failed assertion returns false instead of executing ebreak (ch32rv_port.c). */
 #define CFG_TUSB_DEBUG_BREAKPOINT ch32rv_tusb_breakpoint
 
 #define CFG_TUD_ENABLED          CH32RV_TINYUSB_DEVICE
-#define CFG_TUH_ENABLED          0
+#define CFG_TUH_ENABLED          CH32RV_TINYUSB_HOST
 #ifndef CFG_TUD_MAX_SPEED
 #define CFG_TUD_MAX_SPEED        OPT_MODE_FULL_SPEED
 #endif
@@ -177,6 +204,74 @@ extern "C" {
 /* MSC: one transfer buffer; a block (512) moves in one piece. */
 #ifndef CFG_TUD_MSC_EP_BUFSIZE
 #define CFG_TUD_MSC_EP_BUFSIZE   512
+#endif
+
+/* ---- host ---- */
+/* Like the device: the class drivers come from the CH32RVUsbHost class
+ * objects (usbh_app_driver_get_cb), so a sketch links only what it declares
+ * (CFG_TUH_APP_DRIVERS_ONLY, the matching patch to host/usbh.c). The counts
+ * below size TinyUSB's tables. A hub is supported: one level, the devices
+ * behind it share the full-speed bus. */
+#define CFG_TUH_APP_DRIVERS_ONLY 1
+#ifndef CFG_TUH_HUB
+#define CFG_TUH_HUB              1
+#endif
+#ifndef CFG_TUH_DEVICE_MAX
+#define CFG_TUH_DEVICE_MAX       (CFG_TUH_HUB ? 4 : 1)
+#endif
+#ifndef CFG_TUH_ENUMERATION_BUFSIZE
+#define CFG_TUH_ENUMERATION_BUFSIZE 256
+#endif
+#ifndef CFG_TUH_INTERFACE_MAX
+#define CFG_TUH_INTERFACE_MAX    8
+#endif
+#ifndef CFG_TUH_CDC
+#define CFG_TUH_CDC              2
+#endif
+/* The USB-serial chips TinyUSB's CDC host also speaks. */
+#ifndef CFG_TUH_CDC_FTDI
+#define CFG_TUH_CDC_FTDI         1
+#endif
+#ifndef CFG_TUH_CDC_CP210X
+#define CFG_TUH_CDC_CP210X       1
+#endif
+#ifndef CFG_TUH_CDC_CH34X
+#define CFG_TUH_CDC_CH34X        1
+#endif
+#ifndef CFG_TUH_CDC_PL2303
+#define CFG_TUH_CDC_PL2303       1
+#endif
+/* What a newly mounted port gets before the sketch says otherwise: DTR and RTS
+ * on (most CDC devices only talk once DTR is set) and 115200 8N1. */
+#ifndef CFG_TUH_CDC_LINE_CONTROL_ON_ENUM
+#define CFG_TUH_CDC_LINE_CONTROL_ON_ENUM (CDC_CONTROL_LINE_STATE_DTR | CDC_CONTROL_LINE_STATE_RTS)
+#endif
+#ifndef CFG_TUH_CDC_LINE_CODING_ON_ENUM
+#define CFG_TUH_CDC_LINE_CODING_ON_ENUM { 115200, CDC_LINE_CODING_STOP_BITS_1, CDC_LINE_CODING_PARITY_NONE, 8 }
+#endif
+#ifndef CFG_TUH_CDC_RX_BUFSIZE
+#define CFG_TUH_CDC_RX_BUFSIZE   128
+#endif
+#ifndef CFG_TUH_CDC_TX_BUFSIZE
+#define CFG_TUH_CDC_TX_BUFSIZE   128
+#endif
+#ifndef CFG_TUH_HID
+#define CFG_TUH_HID              4
+#endif
+#ifndef CFG_TUH_HID_EPIN_BUFSIZE
+#define CFG_TUH_HID_EPIN_BUFSIZE 64
+#endif
+#ifndef CFG_TUH_HID_EPOUT_BUFSIZE
+#define CFG_TUH_HID_EPOUT_BUFSIZE 64
+#endif
+#ifndef CFG_TUH_MSC
+#define CFG_TUH_MSC              1
+#endif
+#ifndef CFG_TUH_MIDI
+#define CFG_TUH_MIDI             1
+#endif
+#ifndef CFG_TUH_API_EDPT_XFER
+#define CFG_TUH_API_EDPT_XFER    1   /* vendor / raw endpoints */
 #endif
 
 /* ---- video ---- */

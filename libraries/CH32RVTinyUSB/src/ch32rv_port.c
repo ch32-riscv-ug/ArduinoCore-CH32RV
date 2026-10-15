@@ -1,5 +1,7 @@
 /* What this core adds to the vendored TinyUSB without patching it (listed as
  * OURS in tools/vendor/vendor_tinyusb.py). */
+#include <stdint.h>
+
 #include "tusb_option.h"
 
 /* A failed TU_ASSERT returns false and the caller reports it; it must not stop
@@ -29,5 +31,22 @@ bool dcd_deinit(uint8_t rhport)
     USBOTG_FS->INT_FG = 0xFF;
     USBOTG_FS->BASE_CTRL = 0;
     return true;
+}
+#endif
+
+/* TinyUSB's clock: the device stack's and the host's (deferred calls,
+ * debouncing, timeouts). */
+#if CFG_TUD_ENABLED || CFG_TUH_ENABLED
+extern unsigned long millis(void);
+extern void delay(unsigned long ms);
+
+uint32_t tusb_time_millis_api(void)
+{
+    return (uint32_t)millis();
+}
+
+void tusb_time_delay_ms_api(uint32_t ms)
+{
+    delay(ms);
 }
 #endif

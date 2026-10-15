@@ -56,7 +56,8 @@ KEEP_PORTABLE = ("portable/wch", "portable/st/stm32_fsdev")
 # them - but they must not collide with an upstream path, and a future upstream
 # version that adds one of these names has to be noticed, so they are listed.
 OURS = ("tusb_config.h", "ch32x035.h", "ch32v10x.h", "ch32v20x.h", "ch32v30x.h", "ch32rv_port.c",
-        "ch32rv_dcd_usbfs.c", "ch32rv_dcd_usbhs.c", "ch32rv_dcd_usbd.c", "ch32rv_dcd_dual.c", "ch32rv_dcd_dual.h")
+        "ch32rv_dcd_usbfs.c", "ch32rv_dcd_usbhs.c", "ch32rv_dcd_usbd.c", "ch32rv_dcd_dual.c", "ch32rv_dcd_dual.h",
+        "ch32rv_hcd_usbfs.c", "ch32rv_usbfs_irq.c", "ch32rv_usbfs_irq.h")
 
 # Deliberate differences from upstream, applied by --update and verified by
 # --check: the file on disk must contain `after`, and with `after` put back to
@@ -79,6 +80,52 @@ PATCHES = (
         "after": ("    #endif\n#endif  /* !CFG_TUD_APP_DRIVERS_ONLY */\n};\n\n"
                   "// Additional class drivers implemented by application"),
         "why": "closes the #if above",
+    },
+    {
+        "path": "host/usbh.c",
+        "before": "static usbh_class_driver_t const usbh_class_drivers[] = {\n",
+        "after": ("static usbh_class_driver_t const usbh_class_drivers[] = {\n"
+                  "#if !CFG_TUH_APP_DRIVERS_ONLY  /* ch32rv patch: see vendor_tinyusb.py */\n"),
+        "why": ("CFG_TUH_APP_DRIVERS_ONLY does for the host what CFG_TUD_APP_DRIVERS_ONLY "
+                "does for the device: the class drivers come only from "
+                "usbh_app_driver_get_cb() (CH32RVUsbHost), so a sketch links the "
+                "host classes it declares and no others."),
+    },
+    {
+        "path": "host/usbh.c",
+        "before": "  #endif\n\n};\n\n// Additional class drivers implemented by application",
+        "after": ("  #endif\n#endif  /* !CFG_TUH_APP_DRIVERS_ONLY */\n\n};\n\n"
+                  "// Additional class drivers implemented by application"),
+        "why": "closes the #if above",
+    },
+    {
+        "path": "tusb.c",
+        "before": "tusb_role_t _tusb_rhport_role[TUP_USBIP_CONTROLLER_NUM] = { TUSB_ROLE_INVALID };\n",
+        "after": ("#if CFG_TUD_ENABLED && CFG_TUH_ENABLED  /* ch32rv patch: see vendor_tinyusb.py */\n"
+                  "#pragma weak tud_rhport_init\n#pragma weak tud_inited\n#pragma weak tud_deinit\n"
+                  "#pragma weak dcd_int_handler\n#pragma weak usbd_edpt_claim\n"
+                  "#pragma weak usbd_edpt_release\n#pragma weak usbd_edpt_xfer\n"
+                  "#pragma weak usbd_edpt_xfer_fifo\n"
+                  "#pragma weak tuh_rhport_init\n#pragma weak tuh_inited\n#pragma weak tuh_deinit\n"
+                  "#pragma weak hcd_int_handler\n#pragma weak usbh_edpt_claim\n"
+                  "#pragma weak usbh_edpt_release\n#pragma weak usbh_edpt_xfer_with_callback\n"
+                  "#endif\n\n"
+                  "tusb_role_t _tusb_rhport_role[TUP_USBIP_CONTROLLER_NUM] = { TUSB_ROLE_INVALID };\n"),
+        "why": ("with both stacks enabled, tusb.c refers to each of them (role dispatch, "
+                "endpoint streams), so a device-only sketch linked usbh and the HCD "
+                "(about 3.5 KB of RAM, too much for a 10 KB CH32V203) and a host-only "
+                "sketch linked usbd. Weak references link a stack only when the library "
+                "that runs it is used; the other side's branches are never taken then."),
+    },
+    {
+        "path": "common/tusb_private.h",
+        "before": "void usbd_edpt_rx_consume(uint8_t rhport, uint8_t ep_addr);\n#else\n",
+        "after": ("void usbd_edpt_rx_consume(uint8_t rhport, uint8_t ep_addr);\n"
+                  "  #if CFG_TUH_ENABLED  /* ch32rv patch: see vendor_tinyusb.py */\n"
+                  "  #pragma weak usbd_edpt_rx_consume\n"
+                  "  #endif\n#else\n"),
+        "why": ("the same for the inline stream helper the host CDC driver uses: its "
+                "device-only branch must not link usbd into a host-only sketch"),
     },
 )
 

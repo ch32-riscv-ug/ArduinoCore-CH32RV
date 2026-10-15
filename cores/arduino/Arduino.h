@@ -24,6 +24,8 @@ using namespace arduino;
 extern "C" {
 #endif
 extern void ch32rv_usb_task(void) __attribute__((weak));
+/* The same for the USB host stack (CH32RVUsbHost). */
+extern void ch32rv_usb_host_task(void) __attribute__((weak));
 #ifdef __cplusplus
 }
 #endif

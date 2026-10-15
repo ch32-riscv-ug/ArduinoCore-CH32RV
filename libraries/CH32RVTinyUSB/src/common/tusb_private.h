@@ -148,6 +148,9 @@ uint32_t tu_edpt_stream_read_xfer(tu_edpt_stream_t *s);
 #if CFG_TUD_ENABLED
 // Release an OUT endpoint's RX_PENDING hold once its buffer is consumed, allowing it to be claimed
 void usbd_edpt_rx_consume(uint8_t rhport, uint8_t ep_addr);
+  #if CFG_TUH_ENABLED  /* ch32rv patch: see vendor_tinyusb.py */
+  #pragma weak usbd_edpt_rx_consume
+  #endif
 #else
   #define usbd_edpt_rx_consume(_rhport, _ep_addr)
 #endif

@@ -192,6 +192,7 @@ enum class CH32RVUsbDeviceError : uint8_t {
     OutOfEndpoints,       /* the functions need more endpoints than exist */
     DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (512) bytes */
     InvalidArgument,      /* a config field is malformed (deviceInterfaceGuid) */
+    Busy,                 /* the controller is a USB host right now (CH32RVUsbHost) */
 };
 
 #ifndef CH32RV_USB_MAX_FUNCTIONS

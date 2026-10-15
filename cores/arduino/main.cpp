@@ -18,7 +18,7 @@
  *                   the call is skipped.
  *
  * ch32rv_usb_task() is ours, the same weak-pointer shape: the TinyUSB library
- * defines it, and it runs after every loop() and inside delay(). It is not
+ * defines it (and ch32rv_usb_host_task() for the host side), and it runs after every loop() and inside delay(). It is not
  * hung on yield(), because a sketch may define its own yield().
  */
 #include "Arduino.h"
@@ -38,6 +38,9 @@ int main(void)
         loop();
         if (ch32rv_usb_task) {
             ch32rv_usb_task();
+        }
+        if (ch32rv_usb_host_task) {
+            ch32rv_usb_host_task();
         }
         if (serialEventRun) {
             serialEventRun();

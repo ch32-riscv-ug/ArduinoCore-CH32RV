@@ -102,6 +102,7 @@ const char *CH32RVUsbDevice::lastErrorName() const
     case CH32RVUsbDeviceError::OutOfEndpoints: return "OutOfEndpoints";
     case CH32RVUsbDeviceError::DescriptorTooLarge: return "DescriptorTooLarge";
     case CH32RVUsbDeviceError::InvalidArgument: return "InvalidArgument";
+    case CH32RVUsbDeviceError::Busy: return "Busy";
     }
     return "?";
 }
@@ -163,6 +164,12 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     _config = config;
     /* The controller first: which one decides the speed, and so the
      * descriptors. */
+#if CH32RV_USB_SHARED_IRQ
+    if (ch32rv_usbfs_irq_hook && ch32rv_usbfs_irq_hook != port_irq) {
+        _error = CH32RVUsbDeviceError::Busy;
+        return false;
+    }
+#endif
     const CH32RVUsbDeviceError port = port_open(config.controller);
     if (port != CH32RVUsbDeviceError::None) {
         _error = port;
@@ -185,10 +192,15 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
         return false;
     }
     active = this;
+#if CH32RV_USB_SHARED_IRQ
+    ch32rv_usbfs_irq_hook = port_irq;
+#endif
     tusb_rhport_init_t init = {};
     init.role = TUSB_ROLE_DEVICE;
     init.speed = port_high_speed() ? TUSB_SPEED_HIGH : TUSB_SPEED_FULL;
-    tusb_init(0, &init);
+    /* tud_rhport_init, not tusb_init: tusb.c also refers to the host stack,
+     * which would pull usbh and the HCD into every device sketch. */
+    tud_rhport_init(0, &init);
     _started = true;
     _error = CH32RVUsbDeviceError::None;
     return true;
@@ -241,8 +253,11 @@ void CH32RVUsbDevice::end()
         return;
     }
     tud_disconnect();
-    tusb_deinit(0);
+    tud_deinit(0);
     port_close();
+#if CH32RV_USB_SHARED_IRQ
+    ch32rv_usbfs_irq_hook = nullptr;
+#endif
     _started = false;
 }
 
@@ -354,11 +369,7 @@ extern "C" void ch32rv_usb_task(void)
     busy = false;
 }
 
-
-extern "C" uint32_t tusb_time_millis_api(void)
-{
-    return millis();
-}
+/* tusb_time_millis_api(): CH32RVTinyUSB's ch32rv_port.c, shared with the host. */
 
 /* ---------------------------------------------------------- descriptors */
 static tusb_desc_device_t desc_device;

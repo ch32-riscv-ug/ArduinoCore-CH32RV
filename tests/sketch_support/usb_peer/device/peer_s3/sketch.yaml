@@ -1,0 +1,11 @@
+# The ESP32-S3 as the USB host for tests/peer/usb (the DUT is the device).
+# Pinned core and library: the peer is a fixed reference, not under test.
+profiles:
+  s3_host:
+    fqbn: esp32:esp32:esp32s3:USBMode=default
+    platforms:
+      - platform: esp32:esp32 (3.3.12)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - EspUsbHost (2.10.0)
+default_profile: s3_host

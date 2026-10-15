@@ -1,20 +1,21 @@
 # USB の使い方（デバイス・PD）
 
-このコアの USB は、次の3つのライブラリで構成します。スタックは TinyUSB です（[ADR-0012](adr/0012-usb-stack.ja.md)）。
+このコアの USB は、次の4つのライブラリで構成します。スタックは TinyUSB です（[ADR-0012](adr/0012-usb-stack.ja.md)）。
 
 | ライブラリ | 役割 | スケッチから |
 |---|---|---|
 | [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/) | チップの USB をデバイスとして使う（CDC・HID・MIDI・ベンダー・MSC・CCID・ネットワーク・オーディオ・ビデオ・DFU ランタイム） | `#include <CH32RVUsbDevice.h>` |
 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/) | USB-C の PD 充電器に電圧を頼む（シンク）、PD で電圧を出す（ソース） | `#include <CH32RVUsbPd.h>` |
-| [CH32RVTinyUSB](../libraries/CH32RVTinyUSB/) | 同梱の TinyUSB 本体と設定 | 直接は使わない |
+| [CH32RVUsbHost](../libraries/CH32RVUsbHost/) | チップの USB をホストとして使う（HID・CDC シリアル・MIDI・MSC・ベンダー・CCID） | `#include <CH32RVUsbHost.h>` |
+| [CH32RVTinyUSB](../libraries/CH32RVTinyUSB/) | 同梱の TinyUSB 本体と設定（ホストコントローラのドライバはこのコアのもの） | 直接は使わない |
 
-ホスト（`CH32RVUsbHost`）はまだありません（[今後の予定](#今後の予定)）。
+ホストは [CH32RVUsbHost](../libraries/CH32RVUsbHost/)（`#include <CH32RVUsbHost.h>`）です（[ホスト](#ホストch32rvusbhost)）。
 
 ## 対応状況
 
 | 系列 | デバイス | PD | 確認 |
 |---|---|---|---|
-| CH32X035 / X033 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認（PD ソースはビルドのみ） |
+| CH32X035 / X033 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認。ホストを PC と ESP32-S3（EspUsbHost）の両方にして全クラスを確認（PD ソースはビルドのみ） |
 | CH32V103 | USBFS（PA11 / PA12） | — | ビルドのみ |
 | CH32V203 / V208 | USBFS（PB6 / PB7）と USBD（PA11 / PA12）を `config.controller` で選ぶ。`Auto` は USBFS（USBD しか無い V203F6P6 / G6U6 は USBD。USBFS しか無い F8P6 / F8U6 で `Usbd` は `PortUnavailable`） | — | ビルドのみ |
 | CH32V303 | USBFS（PA11 / PA12） | — | ビルドのみ |
@@ -335,6 +336,39 @@ V305 / V307 / V317 は USBFS と USBHS の、V203 / V208 は USBFS と USBD の�
 内訳の大半は、TinyUSB のデバイス層（約 3.7 KB）とコントローラのドライバ（約 2.2 KB / 1.3 KB）で、どのクラスを使っても
 1回だけかかります。キーボードのレイアウトは1種あたり約 1 KB です。
 
+## ホスト（CH32RVUsbHost）
+
+チップの USB ポートをホストにして、キーボード・マウス・USB シリアル・MIDI・USB メモリ・ベンダーのバルク・
+スマートカードリーダーをつなぎます。API は EspUsbHost（同じ作者の ESP32 用）のものを `CH32RVUsbHost` と読み替えた形です。
+
+```cpp
+#include <CH32RVUsbHost.h>
+
+CH32RVUsbHost usb;
+CH32RVUsbHostCdcSerial port(usb);       // USB シリアルを Stream として
+
+void setup() {
+  usb.onKeyboard([](const CH32RVUsbHostKeyboardEvent &e) { if (e.pressed && e.ascii) Serial.print((char)e.ascii); });
+  port.begin(115200);
+  usb.begin();
+}
+void loop() { while (port.available()) Serial.write(port.read()); }
+```
+
+| 系列 | ポート | 確認 |
+|---|---|---|
+| CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS（PC16 / PC17） | ビルドのみ |
+| CH32X035 F8U6 / F7P6 / D8U6、X033 | シリコンにホストが無い（データシートの型番表）。`begin()` が `Unsupported` | F8U6 で実機確認 |
+| CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
+| CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
+
+- VBUS は基板が供給します（チップには入り切りの機能がありません）。
+- ホストとデバイスは同じコントローラを使うので、同時にはどちらか一方です（もう一方が動いていれば `Busy`）。
+- ホストコントローラのドライバは、同梱の TinyUSB の V20x 用（ビジー待ちで転送が1本ずつ）ではなく、このコアで
+  書いたもの（`ch32rv_hcd_usbfs.c`）です。開いているエンドポイントごとに転送を持ち、NAK は次のフレームで再試行します。
+- 詳しくは [CH32RVUsbHost の README](../libraries/CH32RVUsbHost/README.ja.md)。対向試験は
+  [tests/peer/usb](../tests/peer/usb/README.ja.md)（ESP32-S3 がホストのときの X035 のデバイス機能も、ここで確かめています）。
+
 ## 今後の予定
 
 - **残りの系列**:
@@ -347,8 +381,9 @@ V305 / V307 / V317 は USBFS と USBHS の、V203 / V208 は USBFS と USBD の�
   （lwIP など）が要るので、入れるかは方針の確認待ち。
 - **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は今 X035 / X033 だけが
   ブートローダーに入ります。ほかの系列は普通のリセットです。
-- **ホスト（`CH32RVUsbHost`）**: EspUsbHost と同じく、ホスト本体にクラスのオブジェクトを付ける形にします。同梱の
-  TinyUSB のホストドライバは CH32V20x 用しかないので、V20x から始めます。X035 などはドライバから書く必要があります。
+- **ホストの実機確認**: ホスト機能を持つ X035（R8T6 / C8T6 / G8U6 / G8R6）か V20x / V30x を ESP32-S3 につなぎ、
+  tests/peer/usb/host を流す。ベンチの X035 は F8U6 でホストを持たない。
+- **ホストのアイソクロナスと USB ネットワーク**（オーディオ、ビデオ、NCM）: 今は無し。
 
 ## 既知の問題
 

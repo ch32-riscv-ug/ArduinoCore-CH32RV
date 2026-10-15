@@ -66,7 +66,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| USB (FS device/host) | 一部実装 | `CH32RVUsbDevice`(library: `SerialUSB`ほか) |  |  | ● | ● | ○ | ● |  | ○ | ○ | ● |  | 採用stackはTinyUSB。deviceのみ(hostは未実装)。V20xはUSBFSとUSBD(fsdev)を実行時に選ぶ。実機で確認したのはX035だけで、V103/V20x/V30xはビルドのみ。L103/M103・V205・M030はクロック方針の決定待ちで未実装。工場ISPへの切り替えはX033/X035のみ(docs/usb.ja.md) |
+| USB (FS device/host) | 一部実装 | `CH32RVUsbDevice` / `CH32RVUsbHost` |  |  | ● | ● | ○ | ● |  | ○ | ○ | ● |  | 採用stackはTinyUSB。deviceはX035で実機確認(ホストはPCとESP32-S3)。V20xはUSBFSとUSBD(fsdev)を実行時に選ぶ。V103/V20x/V30xはビルドのみ。hostはX035(R8T6/C8T6/G8U6/G8R6、F8U6などはシリコンに無い)・V20x・V30xのUSBFSでビルドのみ(HCDは自前)。L103/M103・V205・M030はクロック方針の決定待ちで未実装。工場ISPへの切り替えはX033/X035のみ(docs/usb.ja.md) |
 | USB HS | 一部実装 | `CH32RVUsbDevice`(`UsbPort::HighSpeed`) |  |  |  |  | ○ | ● | ○ |  |  |  | ○ | V305/V307/V317(第1世代USBHS、HSEが要る)。ビルドのみ。V303はUSBHSが無い。V205・V407/V467・X305/X315の第2世代USBHSは新しいドライバが要り未実装 |
 | USB SS | 対象外 | - |  |  |  |  |  |  |  |  |  |  | − | X315のみ。当面扱わない |
 | USB PD | 一部実装 | `CH32RVUsbPd`(library: `USBPD`、`USBPDSource`) |  |  |  |  | ○ |  |  | ○ | ○ | ● | ○ | sink(X035で実機確認)とsource(ビルドのみ)をX033/X035で実装。他のUSBPD搭載seriesは`begin()`がfalseを返す |

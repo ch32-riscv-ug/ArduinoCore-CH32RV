@@ -4,12 +4,17 @@ import re
 import tomllib
 from contextlib import contextmanager
 
-CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media"}
+CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media",
+         "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net",
+         "usb-peer-host", "usb-peer-host-classes"}
+# Cases with an ESP32-S3 USB peer on the DUT's own USB port (tests/peer/usb).
+PEER_CASES = {"usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net",
+              "usb-peer-host", "usb-peer-host-classes"}
 TARGET_KEYS = {
     "port", "chip", "fqbn", "f_cpu", "usb_topology", "usb_vid", "usb_pid",
     "usb_serial", "dut_uid", "dut_chip_id", "cases", "power_ports", "gpio",
     "soft_usb_topology", "nrst_channel", "upload_port", "probe_unit_id",
-    "dut_usb_topology",
+    "dut_usb_topology", "usb_peer_port",
 }
 
 
@@ -75,6 +80,12 @@ def load_bench(path, *, lock_path=None):
                    and re.fullmatch(r"[a-zA-Z0-9_-]+", target["upload_port"][len(prefix):]))
             if not hid and not oep:
                 raise ValueError("upload_port must name this target's OEP slot or UIAPduino HID topology")
+        if PEER_CASES & set(target["cases"]):
+            peer = target.get("usb_peer_port")
+            if not isinstance(peer, str) or not peer.startswith(("/dev/serial/by-id/", "/run/board-identify/by-id/")):
+                raise ValueError("usb-peer cases need usb_peer_port, the ESP32-S3 peer's stable serial path")
+            if peer == target["port"]:
+                raise ValueError("usb_peer_port must not be the DUT's console")
         if "power" in target["cases"]:
             power_ports = target.get("power_ports")
             if not isinstance(power_ports, list) or not power_ports or any(type(p) is not int or p < 1 for p in power_ports):

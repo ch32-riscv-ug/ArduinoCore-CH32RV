@@ -12,7 +12,7 @@ import sys
 import time
 import uuid
 
-from harness.bench import CASES, check_identity, check_target, check_probe, load_bench, shared_lock
+from harness.bench import CASES, PEER_CASES, check_identity, check_target, check_probe, load_bench, shared_lock
 from harness.provenance import oep_snapshot
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -26,17 +26,49 @@ MODULES = {
     "usb": TESTS / "instrumented/usb/test_usb_contract.py",
     "usb-classes": TESTS / "instrumented/usb/test_usb_classes_contract.py",
     "usb-media": TESTS / "instrumented/usb/test_usb_media_contract.py",
+    "usb-peer": TESTS / "peer/usb/device/test_usb_peer_device.py",
+    "usb-peer-classes": TESTS / "peer/usb/device/test_usb_peer_classes.py",
+    "usb-peer-media": TESTS / "peer/usb/device/test_usb_peer_media.py",
+    "usb-peer-net": TESTS / "peer/usb/device/test_usb_peer_net.py",
+    "usb-peer-host": TESTS / "peer/usb/host/hid/test_usb_peer_host.py",
+    "usb-peer-host-classes": TESTS / "peer/usb/host/classes/test_usb_peer_host_classes.py",
 }
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
 SKETCHES = {
     "usb": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-media": TESTS / "sketch_support/usb_media/usb_media.ino",
+    "usb-peer": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
+    "usb-peer-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
+    "usb-peer-media": TESTS / "sketch_support/usb_media/usb_media.ino",
+    "usb-peer-net": TESTS / "sketch_support/usb_net/usb_net.ino",
+    "usb-peer-host": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
+    "usb-peer-host-classes": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
+}
+# build_opt.h lines staged beside a case's DUT sketch.
+BUILD_OPTS = {
+    # EspUsbHost 2.10.0 starts a bulk UVC stream but never reads it.
+    "usb-peer-media": "-DCFG_TUD_VIDEO_STREAMING_BULK=0\n",
+}
+# The peer sketch directory staged beside a case's test (pytest-embedded-arduino-cli's peer_<name>/).
+PEERS = {
+    "usb-peer": TESTS / "sketch_support/usb_peer/device/peer_s3",
+    "usb-peer-classes": TESTS / "sketch_support/usb_peer/device/peer_s3",
+    "usb-peer-media": TESTS / "sketch_support/usb_peer/device/peer_s3",
+    "usb-peer-net": TESTS / "sketch_support/usb_peer/device/peer_s3",
+    "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_s3",
+    "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_s3",
 }
 HELPERS = {
     "usb": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-classes": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-media": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
+    "usb-peer": [TESTS / "peer/usb/device/s3_peer.py"],
+    "usb-peer-classes": [TESTS / "peer/usb/device/s3_peer.py"],
+    "usb-peer-media": [TESTS / "peer/usb/device/s3_peer.py"],
+    "usb-peer-net": [TESTS / "peer/usb/device/s3_peer.py"],
+    "usb-peer-host": [TESTS / "peer/usb/host/host_peer.py"],
+    "usb-peer-host-classes": [TESTS / "peer/usb/host/host_peer.py"],
 }
 PLUGINS = ["pytest_embedded.plugin",
            "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin"]
@@ -67,8 +99,17 @@ def isolated_environment(work, tool, gcc):
     env = dict(os.environ)
     for key in ("CH32RV_PROBE", "CH32RV_CHIP", "CH32RV_DB", "CH32RV_REPLAY", "CH32RV_CAPTURE", "ARDUINO_CONFIG_FILE"):
         env.pop(key, None)
-    for name in ("user", "data", "downloads"):
-        env[f"ARDUINO_DIRECTORIES_{name.upper()}"] = str(work / name)
+    env["ARDUINO_DIRECTORIES_USER"] = str(work / "user")
+    # Packages a profile installs (an ESP32 peer's pinned core and libraries)
+    # live in a cache of the bench's own, kept between runs: a fresh one would
+    # download the ESP32 toolchains every time. This core never comes from
+    # there - it is the work tree, linked under user/hardware below - and
+    # ~/.arduino15 is not touched.
+    cache = pathlib.Path(os.environ.get("CH32_TEST_ARDUINO_CACHE",
+                                        pathlib.Path.home() / ".cache/ch32rv-core-bench/arduino"))
+    for name in ("data", "downloads"):
+        (cache / name).mkdir(parents=True, exist_ok=True)
+        env[f"ARDUINO_DIRECTORIES_{name.upper()}"] = str(cache / name)
     env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
     # A short discovery timeout can fall back to serial before OEP/HID add events arrive.
     # Keep the standard plugin lifecycle and give the real CLI time to discover typed ports.
@@ -105,6 +146,10 @@ def stage_case(work, name, case, target):
     shutil.copyfile(MODULES[case], module)
     for helper in HELPERS.get(case, []):
         shutil.copyfile(helper, directory / helper.name)
+    if case in PEERS:
+        shutil.copytree(PEERS[case], directory / "peer_s3")
+    if case in BUILD_OPTS:
+        (directory / "build_opt.h").write_text(BUILD_OPTS[case])
     build_id = uuid.uuid4().hex[:12]
     settings = dict(build_id=build_id, target=target, f_cpu=target["f_cpu"])
     if case == "gpio":
@@ -285,6 +330,8 @@ def main(argv=None):
                                 "--run-mode", "all" if args.execute else "build",
                                 "--device-lock", "required", "--root-logdir", str(module.parent / "logs"),
                                 "--junitxml", str(module.parent / "junit.xml"), "-o", "junit_family=xunit1", "-s", "-q"]
+                    if case in PEER_CASES:
+                        command += ["--peer-port", "s3:" + target["usb_peer_port"]]
                     if case == "hid":
                         command += ["--flash-port", "hid://" + target["soft_usb_topology"]]
                     elif target.get("upload_port"):

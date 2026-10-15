@@ -234,6 +234,7 @@ CFG_TUH_MEM_SECTION static usbh_epbuf_t _usbh_epbuf;
 #endif
 
 static usbh_class_driver_t const usbh_class_drivers[] = {
+#if !CFG_TUH_APP_DRIVERS_ONLY  /* ch32rv patch: see vendor_tinyusb.py */
   #if CFG_TUH_CDC
   {
       .name       = DRIVER_NAME("CDC"),
@@ -317,6 +318,7 @@ static usbh_class_driver_t const usbh_class_drivers[] = {
       .close      = hub_close
   },
   #endif
+#endif  /* !CFG_TUH_APP_DRIVERS_ONLY */
 
 };
 

@@ -26,6 +26,24 @@
 #pragma diag_suppress = Pe111
 #endif
 
+#if CFG_TUD_ENABLED && CFG_TUH_ENABLED  /* ch32rv patch: see vendor_tinyusb.py */
+#pragma weak tud_rhport_init
+#pragma weak tud_inited
+#pragma weak tud_deinit
+#pragma weak dcd_int_handler
+#pragma weak usbd_edpt_claim
+#pragma weak usbd_edpt_release
+#pragma weak usbd_edpt_xfer
+#pragma weak usbd_edpt_xfer_fifo
+#pragma weak tuh_rhport_init
+#pragma weak tuh_inited
+#pragma weak tuh_deinit
+#pragma weak hcd_int_handler
+#pragma weak usbh_edpt_claim
+#pragma weak usbh_edpt_release
+#pragma weak usbh_edpt_xfer_with_callback
+#endif
+
 tusb_role_t _tusb_rhport_role[TUP_USBIP_CONTROLLER_NUM] = { TUSB_ROLE_INVALID };
 
 //--------------------------------------------------------------------

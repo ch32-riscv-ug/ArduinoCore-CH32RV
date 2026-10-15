@@ -1,0 +1,47 @@
+"""usb.peer-classes: the DUT (tests/sketch_support/usb_classes - vendor bulk
+with a vendor request, a FAT RAM disk, a smart card reader, DFU runtime) as a
+device, the ESP32-S3 (EspUsbHost) as the host."""
+import pathlib
+import secrets
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+from s3_peer import command, dut_ready, settings, wait_enumerated
+
+
+def test_usb_peer_classes(dut, peers):
+    s3 = peers["s3"]
+    build_id = settings(__file__)["build_id"]
+    dut_ready(dut, build_id)
+    dev = wait_enumerated(s3, build_id)
+    assert {(0xFF, 0x00), (0x08, 0x06), (0x0B, 0x00), (0xFE, 0x01)} <= set(dev["interfaces"])
+
+    # Vendor bulk echoes; vendor request 0x10 answers "CH32".
+    data = secrets.token_bytes(48)
+    assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
+    m = command(s3, "vreq", rb"VREQ (\d) (\S*)")
+    assert m.group(1) == b"1" and m.group(2) == b"CH32"
+
+    # Mass storage: inquiry and capacity, a raw block written, read back and
+    # restored, the volume's README read and a file written for the DUT.
+    m = command(s3, "msc", rb"MSC (\d) (\S+) (.+) (\d+) (\d+)", timeout=20)
+    assert m.group(1) == b"1" and int(m.group(5)) == 512 and int(m.group(4)) >= 16
+    assert command(s3, "mscraw 19", rb"MSCRAW (\d)", timeout=20).group(1) == b"1"
+    m = command(s3, "mscread", rb"MSCREAD (\d) ([^\r\n]*)", timeout=20)
+    assert m.group(1) == b"1" and build_id.encode() in m.group(2)
+    text = "from the S3 " + secrets.token_hex(4)
+    assert command(s3, "mscwrite " + text, rb"MSCWRITE (\d)", timeout=20).group(1) == b"1"
+    dut.write("file\n")
+    m = dut.expect(rb"FILE (\d+) ([^\r\n]*)\r?\n", timeout=5)
+    assert m.group(2).decode() == text
+
+    # Smart card: power on returns the DUT's ATR, an APDU comes back reversed + 90 00.
+    m = command(s3, "ccid", rb"CCID (\d) (\w*)", timeout=15)
+    assert m.group(1) == b"1" and bytes.fromhex(m.group(2).decode())[:2] == b"\x3b\x8a"
+    apdu = bytes([0x00, 0xA4, 0x04, 0x00, 0x03, 0x01, 0x02, 0x03])
+    m = command(s3, "apdu " + apdu.hex(), rb"APDU (\d) (\w*) (\w{4})", timeout=15)
+    assert m.group(1) == b"1" and m.group(3) == b"9000"
+    assert bytes.fromhex(m.group(2).decode()) == apdu[::-1]     # EspUsbHost returns SW apart
+    dut.write("card\n")
+    m = dut.expect(rb"CARD (\d) (\d) (\d+)\r?\n", timeout=5)
+    assert m.group(1) == b"1" and m.group(2) == b"1" and int(m.group(3)) >= 1

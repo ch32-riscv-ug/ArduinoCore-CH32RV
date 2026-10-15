@@ -1,0 +1,60 @@
+#######################################
+# CH32RVUsbHost keyword highlighting
+#######################################
+
+CH32RVUsbHost	KEYWORD1
+CH32RVUsbHostCdcSerial	KEYWORD1
+CH32RVUsbHostDeviceInfo	KEYWORD1
+CH32RVUsbHostKeyboardEvent	KEYWORD1
+CH32RVUsbHostMouseEvent	KEYWORD1
+CH32RVUsbHostMidiMessage	KEYWORD1
+
+begin	KEYWORD2
+end	KEYWORD2
+ready	KEYWORD2
+task	KEYWORD2
+lastError	KEYWORD2
+lastErrorName	KEYWORD2
+onDeviceConnected	KEYWORD2
+onDeviceDisconnected	KEYWORD2
+getDevices	KEYWORD2
+getDevice	KEYWORD2
+getInterfaces	KEYWORD2
+getEndpoints	KEYWORD2
+printDeviceInfo	KEYWORD2
+vendorControlTransfer	KEYWORD2
+vendorControlIn	KEYWORD2
+vendorControlOut	KEYWORD2
+onKeyboard	KEYWORD2
+onMouse	KEYWORD2
+onConsumerControl	KEYWORD2
+onSystemControl	KEYWORD2
+onGamepad	KEYWORD2
+onHIDVendorInput	KEYWORD2
+onHIDInput	KEYWORD2
+setKeyboardLayout	KEYWORD2
+setKeyboardLeds	KEYWORD2
+sendHIDReport	KEYWORD2
+sendHIDVendorOutput	KEYWORD2
+onSerialData	KEYWORD2
+sendSerial	KEYWORD2
+setSerialBaudRate	KEYWORD2
+onMidiMessage	KEYWORD2
+midiSendNoteOn	KEYWORD2
+midiSendNoteOff	KEYWORD2
+mscReady	KEYWORD2
+mscInquiry	KEYWORD2
+mscCapacity	KEYWORD2
+mscReadBlocks	KEYWORD2
+mscWriteBlocks	KEYWORD2
+vendorOpen	KEYWORD2
+vendorWrite	KEYWORD2
+vendorRead	KEYWORD2
+onVendorData	KEYWORD2
+ccidOpen	KEYWORD2
+ccidPowerOn	KEYWORD2
+ccidApdu	KEYWORD2
+
+CH32RV_USB_HOST_ANY_ADDRESS	LITERAL1
+CH32RV_USB_HOST_KEYBOARD_LAYOUT_EN_US	LITERAL1
+CH32RV_USB_HOST_KEYBOARD_LAYOUT_JA_JP	LITERAL1

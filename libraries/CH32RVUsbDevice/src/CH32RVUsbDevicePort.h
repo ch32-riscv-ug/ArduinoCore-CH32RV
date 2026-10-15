@@ -14,6 +14,7 @@
 #pragma once
 
 #include "ch32rv_registers.h"
+#include "ch32rv_usbfs_irq.h"
 
 /* RCC_CFGR0 USBPRE: the USB 48 MHz is PLLCLK divided by it. Written while
  * the USB clock gate is still off. */
@@ -89,7 +90,10 @@ static uint8_t port_last_endpoint(void)
     return 7;
 }
 
-extern "C" __attribute__((interrupt)) void USBFS_IRQHandler(void)
+/* The USBFS vector is shared with CH32RVUsbHost (ch32rv_usbfs_irq.c): the role
+ * that starts claims it. */
+#define CH32RV_USB_SHARED_IRQ 1
+static void port_irq(void)
 {
     tud_int_handler(0);
 }
@@ -239,7 +243,9 @@ static uint8_t port_last_endpoint(void)
 
 /* Both report as rhport 0 (ch32rv_dcd_dual.c). USBD's two interrupts are
  * shared with CAN1. */
-extern "C" __attribute__((interrupt)) void USBFS_IRQHandler(void)
+/* The USBFS vector is shared with CH32RVUsbHost (ch32rv_usbfs_irq.c). */
+#define CH32RV_USB_SHARED_IRQ 1
+static void port_irq(void)
 {
     tud_int_handler(0);
 }
@@ -300,7 +306,9 @@ static uint8_t port_last_endpoint(void)
     return 7;
 }
 
-extern "C" __attribute__((interrupt)) void USBFS_IRQHandler(void)
+/* The USBFS vector is shared with CH32RVUsbHost (ch32rv_usbfs_irq.c). */
+#define CH32RV_USB_SHARED_IRQ 1
+static void port_irq(void)
 {
     tud_int_handler(0);
 }
@@ -431,7 +439,9 @@ static uint8_t port_last_endpoint(void)
 }
 
 /* Both report as rhport 0 (ch32rv_dcd_dual.c). */
-extern "C" __attribute__((interrupt)) void USBFS_IRQHandler(void)
+/* The USBFS vector is shared with CH32RVUsbHost (ch32rv_usbfs_irq.c). */
+#define CH32RV_USB_SHARED_IRQ 1
+static void port_irq(void)
 {
     tud_int_handler(0);
 }
