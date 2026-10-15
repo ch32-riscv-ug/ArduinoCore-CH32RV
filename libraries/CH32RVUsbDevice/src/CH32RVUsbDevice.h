@@ -182,7 +182,7 @@ enum class CH32RVUsbDeviceError : uint8_t {
     TooManyFunctions,     /* more than CH32RV_USB_MAX_FUNCTIONS (6) declared */
     TooManyInstances,     /* more of one class than its CFG_TUD_* allows */
     OutOfEndpoints,       /* the functions need more endpoints than exist */
-    DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (320) bytes */
+    DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (512) bytes */
     InvalidArgument,      /* a config field is malformed (deviceInterfaceGuid) */
 };
 

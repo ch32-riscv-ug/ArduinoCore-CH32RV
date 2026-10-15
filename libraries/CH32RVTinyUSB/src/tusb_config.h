@@ -27,6 +27,52 @@ extern "C" {
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
 #define CH32RV_TINYUSB_DEVICE    1
 #define CFG_TUSB_MCU             OPT_MCU_CH32X035
+
+#elif defined(CH32RV_SERIES_CH32V103)
+/* USBFS, the older IP (one control register per endpoint). */
+#define CH32RV_TINYUSB_DEVICE    1
+#define CFG_TUSB_MCU             OPT_MCU_CH32V103
+
+#elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208)
+/* USBFS (OTG_FS, PB6/PB7). The USBD block (PA11/PA12, the parts that have
+ * only that one) is not wired up yet. */
+#define CH32RV_TINYUSB_DEVICE    1
+#define CFG_TUSB_MCU             OPT_MCU_CH32V20X
+#define CFG_TUD_WCH_USBIP_USBFS  1
+
+#elif defined(CH32RV_SERIES_CH32V303)
+/* USBFS only: V303 has no USBHS. */
+#define CH32RV_TINYUSB_DEVICE    1
+#define CFG_TUSB_MCU             OPT_MCU_CH32V307
+#define CFG_TUD_WCH_USBIP_USBFS  1
+#define CFG_TUD_WCH_USBIP_USBHS  0
+
+#elif defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || \
+      defined(CH32RV_SERIES_CH32V317)
+/* USBFS and USBHS (its own PHY). Both drivers are built, under fs_ / hs_
+ * names (ch32rv_dcd_usbfs.c, ch32rv_dcd_usbhs.c), and ch32rv_dcd_dual.c
+ * forwards TinyUSB's dcd_* to the one CH32RVUsbDeviceConfig::controller chose.
+ *
+ * The vendored dcd_ch32_usbfs.c / dcd_ch32_usbhs.c are still compiled on
+ * their own (the builder compiles every .c under src/) and must come out
+ * empty: USBFS 0 empties the FS one; USBHS 2 empties the HS one (it tests
+ * == 1) while tusb_mcu.h, which only tests it for truth, still builds usbd
+ * for a high-speed port with 16 endpoints and the close API. */
+#define CH32RV_TINYUSB_DEVICE    1
+#define CH32RV_TUSB_DUAL_DCD     1
+#define CFG_TUSB_MCU             OPT_MCU_CH32V307
+#if defined(CH32RV_DCD_BUILDING_USBFS)
+#define CFG_TUD_WCH_USBIP_USBFS  1
+#define CFG_TUD_WCH_USBIP_USBHS  2
+#elif defined(CH32RV_DCD_BUILDING_USBHS)
+#define CFG_TUD_WCH_USBIP_USBFS  0
+#define CFG_TUD_WCH_USBIP_USBHS  1
+#else
+#define CFG_TUD_WCH_USBIP_USBFS  0
+#define CFG_TUD_WCH_USBIP_USBHS  2
+#endif
+#define CFG_TUD_MAX_SPEED        OPT_MODE_HIGH_SPEED
+
 #else
 #define CH32RV_TINYUSB_DEVICE    0
 #define CFG_TUSB_MCU             OPT_MCU_NONE
@@ -39,7 +85,9 @@ extern "C" {
 
 #define CFG_TUD_ENABLED          CH32RV_TINYUSB_DEVICE
 #define CFG_TUH_ENABLED          0
+#ifndef CFG_TUD_MAX_SPEED
 #define CFG_TUD_MAX_SPEED        OPT_MODE_FULL_SPEED
+#endif
 
 /* The USBFS DMA reads endpoint buffers straight from SRAM. */
 #define CFG_TUSB_MEM_SECTION

@@ -16,7 +16,7 @@ kept_portable = ["portable/wch", "portable/st/stm32_fsdev"]
 # Each entry: what it changes and why, so a version bump can re-apply or drop it.
 patches = ["device/usbd.c: CFG_TUD_APP_DRIVERS_ONLY empties the built-in class driver t", "device/usbd.c: closes the #if above"]
 # Files this repository adds next to the vendored tree (not upstream).
-ours = ["tusb_config.h", "ch32x035.h", "ch32rv_port.c"]
+ours = ["tusb_config.h", "ch32x035.h", "ch32v10x.h", "ch32v20x.h", "ch32v30x.h", "ch32rv_port.c", "ch32rv_dcd_usbfs.c", "ch32rv_dcd_usbhs.c", "ch32rv_dcd_dual.c", "ch32rv_dcd_dual.h"]
 
 # SHA-256 of every vendored file, relative to dest.
 files = [

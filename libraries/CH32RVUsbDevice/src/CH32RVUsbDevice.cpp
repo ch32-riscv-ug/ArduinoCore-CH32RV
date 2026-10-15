@@ -116,59 +116,7 @@ bool CH32RVUsbDevice::begin()
 
 #if CH32RV_TINYUSB_DEVICE
 
-/* ---------------------------------------------------------- X033 / X035 PHY
- * AFIO_CTLR: USB_IOEN hands PC16/PC17 to the USB PHY, USB_PHY_V33 selects the
- * 3.3 V PHY supply (VDD = 3.3 V on every board this core targets so far), and
- * UDP_PUE = 11b puts the 1.5 kOhm full-speed pull-up on D+. Values from the
- * CH32X035 EVT (USBFS_Device_Init). */
-#define X03X_AFIO_UDM_PUE_MASK 0x00000003u
-#define X03X_AFIO_UDP_PUE_MASK 0x0000000Cu
-#define X03X_AFIO_UDP_PUE_1K5  0x0000000Cu
-#define X03X_AFIO_USB_PHY_V33  0x00000040u
-#define X03X_AFIO_USB_IOEN     0x00000080u
-/* USBFS: endpoints 1..7 besides EP0. */
-#define X03X_USB_LAST_EP       7u
-
-/* FLASH_STATR.BOOT_MODE: after the next software reset, run the BOOT area
- * (the factory bootloader). Unlocked by the flash keys, then the boot-mode
- * keys - the sequence ch32rv's `isp enter --via probe` uses (measured on
- * CH32X035F8U6, ch32rv docs/protocol/factory-isp.ja.md). */
-#define X03X_FLASH_KEYR          CH32RV_REG32(CH32RV_FLASH_BASE + 0x04u)
-#define X03X_FLASH_STATR         CH32RV_REG32(CH32RV_FLASH_BASE + 0x0Cu)
-#define X03X_FLASH_CTLR          CH32RV_REG32(CH32RV_FLASH_BASE + 0x10u)
-#define X03X_FLASH_BOOT_MODEKEYR CH32RV_REG32(CH32RV_FLASH_BASE + 0x28u)
-#define X03X_FLASH_KEY1          0x45670123u
-#define X03X_FLASH_KEY2          0xCDEF89ABu
-#define X03X_FLASH_STATR_BOOT_MODE (1u << 14)
-#define X03X_FLASH_CTLR_LOCK     (1u << 7)
-
-static void usb_phy_on(void)
-{
-    ch32rv_clock_enable(AFIO);
-    ch32rv_clock_enable(USBFS);
-    /* PC16 (D-) floating input, PC17 (D+) input with pull-up, as the EVT does;
-     * the PHY takes the pads once USB_IOEN is set. */
-    pinMode(PC16, INPUT);
-    pinMode(PC17, INPUT_PULLUP);
-    CH32RV_AFIO_CTLR = (CH32RV_AFIO_CTLR & ~(X03X_AFIO_UDP_PUE_MASK | X03X_AFIO_UDM_PUE_MASK)) |
-                       X03X_AFIO_USB_PHY_V33 | X03X_AFIO_UDP_PUE_1K5 | X03X_AFIO_USB_IOEN;
-}
-
-static void usb_phy_off(void)
-{
-    CH32RV_AFIO_CTLR &= ~(X03X_AFIO_UDP_PUE_MASK | X03X_AFIO_UDM_PUE_MASK | X03X_AFIO_USB_IOEN);
-}
-
-/* What the device layer asks of the controller it runs on. */
-static bool port_high_speed(void)
-{
-    return false;
-}
-
-static uint8_t port_last_endpoint(void)
-{
-    return X03X_USB_LAST_EP;
-}
+#include "CH32RVUsbDevicePort.h"
 
 /* ---------------------------------------------------------- the running device
  * TinyUSB runs one device stack, and its callbacks are plain functions, so the
@@ -177,12 +125,12 @@ static CH32RVUsbDevice *active;
 static usbd_class_driver_t drivers[CH32RV_USB_MAX_FUNCTIONS];
 static volatile bool bootloader_requested;
 
-/* The configuration descriptor is built here at begin(). 320 bytes hold two
- * CDC ports (66 each) + MIDI (92) + HID (32) + DFU runtime (18) + the header
- * (9); beyond that begin() fails with DescriptorTooLarge, and build_opt.h can
- * raise this. */
+/* The configuration descriptor is built here. 512 bytes hold a UAC1 headset
+ * (191) + a UVC camera (158) + CDC (66) + HID (32) + DFU runtime (18) + the
+ * header (9); beyond that begin() fails with DescriptorTooLarge, and
+ * build_opt.h can raise (or, on a tight part, lower) this. */
 #ifndef CH32RV_USB_CONFIG_MAX
-#define CH32RV_USB_CONFIG_MAX 320
+#define CH32RV_USB_CONFIG_MAX 512
 #endif
 static uint8_t desc_configuration[CH32RV_USB_CONFIG_MAX];
 
@@ -200,11 +148,6 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     if (_started) {
         return true;
     }
-    if (config.controller != CH32RVUsbController::Auto &&
-        config.controller != CH32RVUsbController::FullSpeed) {
-        _error = CH32RVUsbDeviceError::PortUnavailable;
-        return false;
-    }
 #ifndef CH32RV_USB_NO_DEFAULT_DFU
     if (config.dfuRuntime) {
         /* Best effort: a refusal here (no room) is not the sketch's error. */
@@ -218,11 +161,19 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
      * enumeration. The descriptor itself is rebuilt for the speed the host
      * chose whenever it asks (tud_descriptor_configuration_cb). */
     _config = config;
+    /* The controller first: which one decides the speed, and so the
+     * descriptors. */
+    const CH32RVUsbDeviceError port = port_open(config.controller);
+    if (port != CH32RVUsbDeviceError::None) {
+        _error = port;
+        return false;
+    }
     for (uint8_t i = 0; i < _count; i++) {
         drivers[i] = *(const usbd_class_driver_t *)_functions[i]->_type.driver;
     }
     for (uint8_t hs = 0; hs <= (port_high_speed() ? 1 : 0); hs++) {
         if (!buildConfiguration(desc_configuration, sizeof desc_configuration, hs, TUSB_DESC_CONFIGURATION)) {
+            port_close();
             return false;
         }
     }
@@ -230,10 +181,10 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     /* The BOS and the Microsoft OS 2.0 set need the interface numbers. */
     if (ch32rv_usb_platform.build && !ch32rv_usb_platform.build(*this)) {
         _error = CH32RVUsbDeviceError::InvalidArgument;
+        port_close();
         return false;
     }
     active = this;
-    usb_phy_on();
     tusb_rhport_init_t init = {};
     init.role = TUSB_ROLE_DEVICE;
     init.speed = port_high_speed() ? TUSB_SPEED_HIGH : TUSB_SPEED_FULL;
@@ -291,7 +242,7 @@ void CH32RVUsbDevice::end()
     }
     tud_disconnect();
     tusb_deinit(0);
-    usb_phy_off();
+    port_close();
     _started = false;
 }
 
@@ -357,19 +308,16 @@ bool CH32RVUsbDevice::sendHidReport(uint8_t instance, uint8_t reportId, const vo
      * the next transfer timeout; the bootloader then enumerates as 1a86:55e0. */
     if (active && active->started()) {
         tud_disconnect();
+        port_close();
     }
-    usb_phy_off();
     const uint32_t t0 = millis();
     while ((uint32_t)(millis() - t0) < 50u) {
     }
 
     noInterrupts();
-    X03X_FLASH_KEYR = X03X_FLASH_KEY1;
-    X03X_FLASH_KEYR = X03X_FLASH_KEY2;
-    X03X_FLASH_BOOT_MODEKEYR = X03X_FLASH_KEY1;
-    X03X_FLASH_BOOT_MODEKEYR = X03X_FLASH_KEY2;
-    X03X_FLASH_STATR |= X03X_FLASH_STATR_BOOT_MODE;
-    X03X_FLASH_CTLR |= X03X_FLASH_CTLR_LOCK;
+#ifdef CH32RV_USB_FACTORY_ISP_ENTRY
+    port_set_boot_mode();
+#endif
     CH32RV_PFIC_CFGR = CH32RV_PFIC_KEY3 | CH32RV_PFIC_SYSRST;
     for (;;) {
     }
@@ -406,10 +354,6 @@ extern "C" void ch32rv_usb_task(void)
     busy = false;
 }
 
-extern "C" __attribute__((interrupt)) void USBFS_IRQHandler(void)
-{
-    tud_int_handler(0);
-}
 
 extern "C" uint32_t tusb_time_millis_api(void)
 {
