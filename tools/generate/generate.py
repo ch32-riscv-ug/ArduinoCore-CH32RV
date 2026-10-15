@@ -1073,7 +1073,9 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
     """
     want = [r for r in configs
             if r["family"] == family and r["source"] == "HSI"
-            and f"SYSCLK={hz}" in r["domains"].split(";")[0]]
+            # An exact match: a substring test took "SYSCLK=80000000" (the
+            # 80 MHz PLL setting) for 8 MHz on CH32V205.
+            and r["domains"].split(";")[0] == f"SYSCLK={hz}"]
     if not want:
         if hz == hsi_hz:
             # The reset default: no setter configures it because nothing has to
@@ -1285,7 +1287,7 @@ def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
         hz = int(fam["f_cpu"].rstrip("L"))
         want = {r["flash_latency"] for r in configs
                 if r["family"] == family and r["source"] == "HSI"
-                and not r["pll"] and f"SYSCLK={hz}" in r["domains"]
+                and not r["pll"] and f"SYSCLK={hz}" in r["domains"].split(";")
                 and r["flash_latency"]}
         if want and want != {str(fam["flash_latency"])}:
             bad.append(f"{family}: flash_latency={fam['flash_latency']} but the "
