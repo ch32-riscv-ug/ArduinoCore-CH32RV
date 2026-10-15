@@ -135,7 +135,7 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 | Arduino USB 初期化・device API | 一部（X033/X035 の CDC・HID・MIDI・ベンダー・MSC・CCID・NCM・オーディオ・ビデオ・DFU runtime、WebUSB / MS OS 2.0。V103 / V20x / V30x はビルドのみ） | 現行: tests/instrumented/usb（X035、ホスト役は PC）。手動確認: 全 example の列挙と動作、CDC 双方向 32 KiB、`ch32rv isp flash --entry auto` での書き込み | 他系列、suspend / resume、大量転送、PC 以外のホスト役 |
 | Arduino USB host API | 未実装 | なし | core/IRQ/clock/driver/lifecycle の結線、CH32X035 host と独立 device |
 | CDC/HID 等の sketch USB class | 未実装 | なし | host 側 driver と device 側 class の control/data/error/復旧契約を別々に検証。対向機と role 別 profile |
-| USB controller/speed の系列差 | Arduino 統合は未実装 | source 固定のみ | vendor driver の存在だけで対応とはしない。実装採用対象ごとの build と実機 |
+| USB controller/speed の系列差 | V103/V20x(USBFS・USBD)/V303/V305/V307/V317(USBFS・USBHS)に統合 | ビルドのみ(実機は X035) | vendor driver の存在だけで対応とはしない。実装採用対象ごとの build と実機 |
 | USB PD frame / fixed / PPS 計算 | あり | あり・限定: unit/test_pd_frames、pd_selftest | 境界・不正入力と target 差。native と実機 |
 | USB PD sink 交渉 | X033/X035 に実装 | あり・限定: pd_sink、pd_vbus | 脱着/再接続、source reset、fault、交渉と VBUS の独立照合。PD source と電圧計/電源制御 |
 | USB PD source | X033/X035 に実装 | あり・限定: unit/test_pd_frames_source（Source_Capabilities の PDO、Request の検証）、例のビルド | X035 どうしの対向（Rd 検出と向き、固定/PPS 契約、Reset、PPS 途絶、取り外し、コールバックの失敗）。実際の電圧は範囲外 |

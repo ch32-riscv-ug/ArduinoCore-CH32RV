@@ -64,6 +64,21 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   Hard Reset で 5 V に戻る）。
 - 実際の電圧が出ているかは範囲外（基板側の仕事）。
 
+## 系列で限られているもの（2026-10-15 の調査）
+
+[peripheral-support.ja.md](docs/peripheral-support.ja.md) の ○ / ◐ の中身。silicon にはあるが core が使っていないもの。
+- **V205・X305 / X315 の Serial / Wire / SPI / PWM が端子に出ない**。この3系列は端子ごとの AF 選択（af-N）で、
+  core はそれを設定しない（generate.py の route_remap_value() が None、variant に NOTE だけ出る）。インスタンスは
+  ビルドでき、ボードメニューにも出るので、気づかずに使われる。いちばん影響が大きい。
+- **X033 / X035 の `wdtEnable()` が false**。ch32-device-data に LSI 周波数が無いため（IWDG はある）。
+- Serial は 5 まで: V30x の UART6〜8、V205 の USART6〜8、V407 / V467 の USART6〜10 は出していない。
+- X035 の Serial 送信はポーリング（割込み送信の不具合を調査中）。同じ silicon の X033 には入っていない。
+- PWM は TIM1〜3 の既定ピンだけ（TIM4 / 5、remap 先、CHxN は無し）。timer 管理は TIM1〜7（V30x / V4x7 の TIM8〜10 は無し）。
+- ADC の内部チャネル（温度、Vrefint）と `analogReference()`。
+- クロックは系列ごとに固定（HSI のみ）。L103 / M103・V205・M030 は 8 MHz で PLL 未使用、V00x は 24 MHz（48 MHz まで出る）。
+  USB の L103 / M103・V205・M030 もこの決定待ち（上の USB の項）。
+- PD は X033 / X035 だけ（L103 / M103、V205、X305 / X315、M030 にも USBPD がある）。
+
 ## ライブラリの配布
 
 CH32RVUsbDevice / CH32RVTinyUSB / CH32RVUsbPd をボードマネージャーに同梱するか、別のライブラリとして分けるかを決める。

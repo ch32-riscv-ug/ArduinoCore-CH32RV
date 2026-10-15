@@ -19,7 +19,7 @@
  * frame (12 KB) and not much more. sendGeneratedFrame() (an extension) needs
  * no frame buffer at all - the bytes are asked for payload by payload - so a
  * generated or line-by-line source can send 160x120 or larger. A high-speed
- * controller (USBHS, not wired up yet) has 512-byte bulk and 1024-byte
+ * controller (USBHS on V305/V307/V317) has 512-byte bulk and 1024-byte
  * isochronous packets every 125 us.
  *
  * Differences from EspUsbDeviceVideo: callbacks are plain function pointers;

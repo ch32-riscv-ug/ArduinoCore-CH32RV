@@ -21,9 +21,9 @@ struct CH32RVUsbDeviceVendorControlRequest {
     const void *rawRequest = nullptr;
 };
 
-/* EspUsbDeviceVendorDirectError. The USBFS driver always copies through its
- * own 64-byte endpoint buffer, so writeDirect() reports NotSupported for now;
- * the direct path belongs with USBHS support. */
+/* EspUsbDeviceVendorDirectError. The USBFS and USBD drivers always copy
+ * through their own endpoint buffers, so writeDirect() reports NotSupported on
+ * every series for now - USBHS included, whose DMA path is not wired to it. */
 enum class CH32RVUsbDeviceVendorDirectError : uint8_t {
     None = 0,
     NotSupported,

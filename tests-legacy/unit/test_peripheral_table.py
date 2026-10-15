@@ -8,7 +8,7 @@ that EVT has no example.
 
 That asymmetry is why this checks one direction only.
 
-  O with no clock enable anywhere in the group  ->  a claim the device tables
+  a mark with no clock enable anywhere in the group  ->  a claim the device tables
                                                     contradict. Asserted.
   blank where a clock enable exists             ->  the documented "EVT has no
                                                     example" case. Ignored.
@@ -141,7 +141,7 @@ def test_a_mark_is_backed_by_a_clock_enable(label):
         if row_label != label:
             continue
         for column, mark in cells.items():
-            if column not in groups or mark != "○":
+            if column not in groups or not mark:
                 continue
             if (label, column) in KNOWN_DISAGREEMENTS:
                 continue
@@ -164,7 +164,7 @@ def test_known_disagreements_still_disagree(key):
     caps = series_capabilities()
     groups = _group_to_series()
     tokens = CLOCK_GATED[label]
-    marked = any(cells.get(column) == "○"
+    marked = any(cells.get(column)
                  for row_label, cells in _rows() if row_label == label)
     backed = any(token in caps.get(series, ())
                  for series in groups[column] for token in tokens)

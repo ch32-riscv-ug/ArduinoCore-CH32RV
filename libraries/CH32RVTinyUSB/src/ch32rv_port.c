@@ -9,8 +9,9 @@ void ch32rv_tusb_breakpoint(void)
 {
 }
 
-/* The single-controller USBFS builds (X035/X033, V103, V20x, V303); the V30x
- * parts with both controllers get theirs in ch32rv_dcd_usbfs.c. */
+/* The single-controller USBFS builds (X035/X033, V103, V303); the dual builds
+ * (V20x USBFS + USBD, V305/V307/V317 USBFS + USBHS) get theirs in
+ * ch32rv_dcd_usbfs.c. */
 #if CFG_TUD_ENABLED && defined(TUP_USBIP_WCH_USBFS) && CFG_TUD_WCH_USBIP_USBFS && !defined(CH32RV_TUSB_DUAL_DCD)
 #include "device/dcd.h"
 #include "portable/wch/ch32_usbfs_reg.h"

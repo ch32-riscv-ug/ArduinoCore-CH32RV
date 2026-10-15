@@ -5,7 +5,7 @@
 | ライブラリ | 役割 | スケッチから |
 |---|---|---|
 | [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/) | チップの USB をデバイスとして使う（CDC・HID・MIDI・ベンダー・MSC・CCID・ネットワーク・オーディオ・ビデオ・DFU ランタイム） | `#include <CH32RVUsbDevice.h>` |
-| [CH32RVUsbPd](../libraries/CH32RVUsbPd/) | USB-C の PD 充電器に電圧を頼む（シンク） | `#include <CH32RVUsbPd.h>` |
+| [CH32RVUsbPd](../libraries/CH32RVUsbPd/) | USB-C の PD 充電器に電圧を頼む（シンク）、PD で電圧を出す（ソース） | `#include <CH32RVUsbPd.h>` |
 | [CH32RVTinyUSB](../libraries/CH32RVTinyUSB/) | 同梱の TinyUSB 本体と設定 | 直接は使わない |
 
 ホスト（`CH32RVUsbHost`）はまだありません（[今後の予定](#今後の予定)）。
@@ -14,14 +14,16 @@
 
 | 系列 | デバイス | PD | 確認 |
 |---|---|---|---|
-| CH32X035 / X033 | 動く（USBFS） | 動く（シンク） | X035（WeAct CH32X035F8U6 の板）で実機確認 |
+| CH32X035 / X033 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認（PD ソースはビルドのみ） |
 | CH32V103 | USBFS（PA11 / PA12） | — | ビルドのみ |
-| CH32V203 / V208 | USBFS（PB6 / PB7）と USBD（PA11 / PA12）を `config.controller` で選ぶ。`Auto` は USBFS（USBD しか無い V203F6P6 / G6U6 は USBD） | — | ビルドのみ |
+| CH32V203 / V208 | USBFS（PB6 / PB7）と USBD（PA11 / PA12）を `config.controller` で選ぶ。`Auto` は USBFS（USBD しか無い V203F6P6 / G6U6 は USBD。USBFS しか無い F8P6 / F8U6 で `Usbd` は `PortUnavailable`） | — | ビルドのみ |
 | CH32V303 | USBFS（PA11 / PA12） | — | ビルドのみ |
-| CH32V305 / V307 / V317 | USBFS（PA11 / PA12）と USBHS（PB6 / PB7、High Speed）を `config.controller` で選ぶ | — | ビルドのみ |
+| CH32V305 / V307 / V317 | USBFS（PA11 / PA12）と USBHS（PB6 / PB7、High Speed、HSE が要る）を `config.controller` で選ぶ。`Auto` は USBFS（USBHS しか無い V305FBP6 / GBU6 は USBHS） | — | ビルドのみ |
 | ほかの系列 | `begin()` が `false`（`Unsupported`） | `begin()` が `false` | ビルドのみ |
 
 「ビルドのみ」の系列は、ベンチの DUT の USB 端子がまだ配線されていないため、実機では確かめていません。
+
+系列ごとのほかのペリフェラルとまとめた表は [peripheral-support.ja.md](peripheral-support.ja.md) にあります。
 
 USB の無い系列でも、同じスケッチはビルドできます。動かないことは `begin()` の戻り値で分かります。
 
@@ -201,7 +203,8 @@ device qualifier と other speed configuration も返す）。システムクロ
 | コントローラ | 系列 | パケット | 目安 |
 |---|---|---|---|
 | USBFS | X035 / X033、V103 | 64 B（アイソクロナスも 1 ms に 64 B） | オーディオは 16 bit で 32 kHz モノラル / 16 kHz ステレオまで。ビデオはバルクで小さい画像 |
-| USBFS（EP3 だけ 1023 B） | V20x、V30x | アイソクロナスは EP3 で 1 ms に 1023 B まで（エンドポイントは宣言順に割り当て） | — |
+| USBFS（EP3 IN だけ 1023 B） | V20x、V30x | アイソクロナスの IN は EP3 なら 1 ms に 1023 B まで。ほかのエンドポイントと OUT は 64 B（エンドポイントは宣言順に割り当て） | — |
+| USBD（fsdev） | V20x | 64 B。パケット用のメモリ 512 B を CAN1 と共有 | — |
 | USBHS | V305 / V307 / V317 | バルク 512 B、アイソクロナス 1024 B（125 µs ごと） | 48 kHz ステレオのオーディオ、大きめのビデオ |
 
 ## WebUSB と Windows（MS OS 2.0）
@@ -285,7 +288,9 @@ Arduino IDE ではこのポートを選んで「書き込み」を押すだけ�
 
 ## PD（CH32RVUsbPd）
 
-USB-C の PD 充電器から、固定電圧や PPS の電圧を受け取ります（シンク）。
+USB-C の PD 充電器から、固定電圧や PPS の電圧を受け取ります（シンク、`USBPD`）。板を PD の電源にすることも
+できます（ソース、`USBPDSource`。例: [PowerSource](../libraries/CH32RVUsbPd/examples/PowerSource/)）。電源の切り替えは
+スケッチのコールバックで行い、実際にその電圧が出ているかはライブラリの範囲外です。シンクとソースは同時には動きません。
 
 ```cpp
 #include <CH32RVUsbPd.h>
@@ -304,7 +309,8 @@ void loop() { USBPD.maintain(); }    // PPS の契約を保つ
 - 詳しくは [CH32RVUsbPd の README](../libraries/CH32RVUsbPd/README.ja.md)。
 - PD とデバイスは同じ USB-C で同時に使えます（CC は PC14 / PC15、データは PC16 / PC17）。ただし、データ
   通信のできる PD 電源（PD に対応した PC のポートなど）でなければ、両方が同時に役立つ場面はありません。
-- 確認: 固定電圧と PPS の充電器を相手に、X035 で実機確認済みです。名前を変えた後も、PD の無い電源（PC のポート）を
+- 確認: シンクは固定電圧と PPS の充電器を相手に、X035 で実機確認済みです。ソースはビルドと単体試験のみで、X035 どうしの
+  対向試験はまだです（ソースにする板は CC の Rd、WeAct なら R4 / R5 を外す）。名前を変えた後も、PD の無い電源（PC のポート）を
   正しく判定することを確かめています。
 
 ## 費用（X035、空のスケッチ Flash 728 B / RAM 4 B との差）
@@ -324,7 +330,7 @@ void loop() { USBPD.maintain(); }    // PPS の契約を保つ
 | オーディオ（マイク・スピーカー・ヘッドセットのどれか、DFU 込み） | 約 +30 KB | 約 +4.4 KB |
 | ビデオ（UVC、DFU 込み） | 約 +25.6 KB | 約 +4.1 KB |
 
-V305 / V307 / V317 は USBFS と USBHS の両方のドライバが入るので、同じスケッチで約 3.6 KB 多くなります。
+V305 / V307 / V317 は USBFS と USBHS の、V203 / V208 は USBFS と USBD の両方のドライバが入るので、同じスケッチで数 KB 多くなります（V30x で約 3.6 KB）。
 
 内訳の大半は、TinyUSB のデバイス層（約 3.7 KB）とコントローラのドライバ（約 2.2 KB / 1.3 KB）で、どのクラスを使っても
 1回だけかかります。キーボードのレイアウトは1種あたり約 1 KB です。

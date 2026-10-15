@@ -1,5 +1,5 @@
 /* MIDIInterface - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Runs on CH32X035/X033.
+ * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Runs wherever CH32RVUsbDevice does (see docs/usb.ja.md).
  * docs/usb.ja.md describes the library.
  *
  * requires: USBFS

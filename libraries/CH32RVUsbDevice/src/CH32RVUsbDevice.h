@@ -26,8 +26,10 @@
  * event. A sketch that blocks elsewhere for long starves it; the host then sees
  * a stalled device, not a lost one.
  *
- * Runs on CH32X035/X033 (USBFS). On the other series begin() returns false
- * with lastError() == Unsupported, so the same sketch still builds there. */
+ * Runs on CH32X035/X033, V103, V203/V208 (USBFS or USBD), V303 (USBFS) and
+ * V305/V307/V317 (USBFS or USBHS); only X035 is checked on hardware. On the
+ * other series begin() returns false with lastError() == Unsupported, so the
+ * same sketch still builds there. */
 #pragma once
 
 #include <Arduino.h>
