@@ -22,6 +22,20 @@ Generic board は実在する基板を表さないため、`LED_BUILTIN` や水�
 
 `ANY` は series 内の最小 flash / RAM を使います。基板の pin 配置や機能を選ぶ menu ではありません。
 
+`ANY` の容量は安全側（最小）、pin と周辺機能は最大（全 part の和集合）です。
+
+| 項目 | `ANY` | part を選んだとき |
+|---|---|---|
+| flash / RAM、linker script | series 内の最小 | その part の値 |
+| 使える pad（`digitalPinIsValid()`、`CH32RV_PORT_MASK_*`） | 全 part の和集合 | その package に bond されている pad |
+| 周辺機能の instance | すべてある | bond されていない instance は `CH32RV_<名前>_ABSENT` で無くなる |
+| route の表（`setRoute()` / `setPins()`、board menu の FIX） | 全 part の和集合 | その part の表（pad が package で動く場合） |
+| 既定の pin（pin なしの `begin()`） | なるべく全 part にある pad。debug / strap pad は使わない | 同じ規則で、その part にある pad |
+
+`ANY` で書いたスケッチが、実際の part に無い pad を使うことは止めません。どの part でも動くことを確かめたい
+ときは `digitalPinIsCommon()`（`CH32RV_PORT_COMMON_MASK_*`、全 part に bond されている pad）で判定します。
+これは参考の判定で、`ANY` で使える pad を制限するものではありません。
+
 ## 製品 board
 
 製品 board は series の定義を再利用し、基板上で確定するものだけを追加します。
