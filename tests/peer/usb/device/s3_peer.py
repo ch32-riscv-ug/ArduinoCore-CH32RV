@@ -12,7 +12,9 @@ import secrets
 import time
 
 DEVICE_VID_PID = ("1209", "0001")       # CH32RVUsbDevice's default identity
-ISP_VID_PID = ("1a86", "55e0")          # the CH32X035 factory bootloader
+# The CH32X035 factory bootloader: 1a86:55e0 on the F8U6, 4348:55e0 on the C8T6
+# (both WCH vendor IDs; which one depends on the ROM).
+ISP_ID_PATTERN = rb"(?:1a86|4348) 55e0"
 
 
 def settings(test_file):

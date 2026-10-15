@@ -680,7 +680,11 @@ void hcd_int_handler(uint8_t rhport, bool in_isr)
 {
     const uint8_t flags = INT_FG;
 
-    if (flags & UIF_DETECT) {
+    /* Only while DETECT is enabled: during a port reset the SE0 raises the flag
+     * and DEV_ATTACH reads 0, and another interrupt (SOF) would otherwise take
+     * that for a detach and end the enumeration. hcd_port_reset_end() clears
+     * the flag before enabling it again. */
+    if ((flags & UIF_DETECT) && (INT_EN & UIE_DETECT)) {
         INT_FG = UIF_DETECT;
         if (MIS_ST & UMS_DEV_ATTACH) {
             hcd_event_device_attach(rhport, in_isr);

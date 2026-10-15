@@ -160,7 +160,7 @@ STATUS = {
     "USB (FS device/host)": ("一部実装", "`CH32RVUsbDevice` / `CH32RVUsbHost`",
                              "採用stackはTinyUSB。deviceはX035で実機確認(ホストはPCとESP32-S3)。V20xはUSBFSと"
                              "USBD(fsdev)を実行時に選ぶ。V103/V20x/V30xはビルドのみ。hostはX035(R8T6/C8T6/G8U6/G8R6、"
-                             "F8U6などはシリコンに無い)・V20x・V30xのUSBFSでビルドのみ(HCDは自前)。"
+                             "F8U6などはシリコンに無い)・V20x・V30xのUSBFS(HCDは自前)。X035 C8T6でESP32-S3相手に実機確認、V20x/V30xはビルドのみ。"
                              "L103/M103・V205・M030はクロック方針の決定待ちで未実装。"
                              "工場ISPへの切り替えはX033/X035のみ(docs/usb.ja.md)"),
     "USB HS": ("一部実装", "`CH32RVUsbDevice`(`UsbPort::HighSpeed`)",

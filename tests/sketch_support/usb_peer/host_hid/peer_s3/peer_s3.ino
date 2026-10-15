@@ -54,11 +54,18 @@ static void run(char *cmd)
   {
     int dx = 0, dy = 0, b = 0;
     sscanf(arg, "%d %d %d", &dx, &dy, &b);
-    const bool ok = mouse.move(dx, dy, 0, b) && mouse.move(0, 0, 0, 0);
+    /* EspUsbDevice 2.6.0 ignores the timeout: a report while the previous
+     * one is still waiting for the host's IN fails at once, so the release
+     * is retried until the press has gone. */
+    bool ok = mouse.move(dx, dy, 0, b);
+    if (ok) {
+      const uint32_t t0 = millis();
+      while (!(ok = mouse.move(0, 0, 0, 0)) && millis() - t0 < 500) delay(1);
+    }
     Serial.printf("S3D MOUSE %u\n", ok ? 1 : 0);
   }
   else if (!strcmp(cmd, "consumer")) Serial.printf("S3D CONSUMER %u\n", consumer.click(strtoul(arg, nullptr, 0)) ? 1 : 0);
-  else if (!strcmp(cmd, "leds")) Serial.printf("S3D LEDS %u\n", keyboard.ledState());
+  else if (!strcmp(cmd, "leds")) Serial.printf("S3D LEDS %u\n", keyboard.ledState().leds);
   else if (!strcmp(cmd, "file"))
   {
     char text[80] = {};
@@ -83,6 +90,11 @@ void setup()
   Serial.begin(115200);
   disk.format("S3PEER");
   disk.addTextFile("README.TXT", "EspUsbDevice peer\r\n");
+  /* The RAM disk's attach() installs the block callbacks but leaves the
+   * medium absent: without these TEST UNIT READY keeps failing, and TinyUSB's
+   * MSC host retries it forever, so the whole device never mounts. */
+  msc.mediaPresent(true);
+  msc.isWritable(true);
   disk.attach(msc);
   vendor.onOutputReport([](const EspUsbDeviceHidReport &r)
                         {

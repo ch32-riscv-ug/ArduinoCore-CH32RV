@@ -27,8 +27,13 @@ S3 の制約で試験の形を合わせたところ（詳しくは各試験の d
   レートは記録に残します。
 - S3 の IN エンドポイントは 4 本までなので、ホスト側の試験は S3 のデバイス構成を 2 つ（hid / classes）に分けています。
 
+- EspUsbDevice 2.6.0 は HID のレポートを続けて送れない（timeout を使わず即失敗）ので、マウスの「離す」は取られる
+  まで再試行します。RAM ディスクはメディアを「あり」にしないので、S3 側で `mediaPresent(true)` を呼びます。
+
 ホスト側（usb-peer-host*）は、ホスト機能を持つ DUT が必要です。CH32X035 では R8T6 / C8T6 / G8U6 / G8R6 だけが
 ホストを持ち、ベンチの WeAct 板の F8U6 は持ちません（`begin()` が `Unsupported`）。V20x / V30x の USBFS でも動きます。
+CH32X035C8T6 と ESP32-S3 で usb-peer-host / usb-peer-host-classes の両方が通っています（デバイス側の usb-peer も
+同じ組み合わせで通ります。工場 ISP の VID は C8T6 が 4348、F8U6 が 1a86 で、試験はどちらも受け付けます）。
 
 ## 配線と設定
 

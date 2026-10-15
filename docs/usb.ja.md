@@ -357,7 +357,7 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 
 | 系列 | ポート | 確認 |
 |---|---|---|
-| CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS（PC16 / PC17） | ビルドのみ |
+| CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS（PC16 / PC17） | C8T6 で ESP32-S3（EspUsbDevice）相手に HID・CDC・MSC・MIDI・ベンダー・CCID を実機確認 |
 | CH32X035 F8U6 / F7P6 / D8U6、X033 | シリコンにホストが無い（データシートの型番表）。`begin()` が `Unsupported` | F8U6 で実機確認 |
 | CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
 | CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
@@ -381,8 +381,11 @@ void loop() { while (port.available()) Serial.write(port.read()); }
   （lwIP など）が要るので、入れるかは方針の確認待ち。
 - **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は今 X035 / X033 だけが
   ブートローダーに入ります。ほかの系列は普通のリセットです。
-- **ホストの実機確認**: ホスト機能を持つ X035（R8T6 / C8T6 / G8U6 / G8R6）か V20x / V30x を ESP32-S3 につなぎ、
-  tests/peer/usb/host を流す。ベンチの X035 は F8U6 でホストを持たない。
+- **ホストの V20x / V30x での実機確認**: X035 は C8T6 と ESP32-S3 で確認済み。V20x / V30x（レジスタ配置が別）は
+  ビルドのみ。
+- **準備できない MSC でデバイス全体が止まる**: TinyUSB の MSC ホストは列挙中の TEST UNIT READY を上限なく
+  繰り返すため、メディアの無いカードリーダーのような MSC をつなぐと、同じデバイスの HID や CDC もマウント
+  されない（upstream の TODO。回数か時間で打ち切る修正を入れるか検討）。
 - **ホストのアイソクロナスと USB ネットワーク**（オーディオ、ビデオ、NCM）: 今は無し。
 
 ## 既知の問題

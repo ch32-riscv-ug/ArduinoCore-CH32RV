@@ -11,7 +11,7 @@ import secrets
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from s3_peer import DEVICE_VID_PID, ISP_VID_PID, command, dut_ready, settings, wait_enumerated
+from s3_peer import DEVICE_VID_PID, ISP_ID_PATTERN, command, dut_ready, settings, wait_enumerated
 
 
 def test_usb_peer_device(dut, peers, record_property):
@@ -62,6 +62,6 @@ def test_usb_peer_device(dut, peers, record_property):
     wait_enumerated(s3, build_id)
     command(s3, "dfu", rb"DFU 1")
     s3.expect(rb"S3 DISCONNECTED \d+ 1209 0001", timeout=10)
-    s3.expect(rb"S3 CONNECTED \d+ " + "{} {}".format(*ISP_VID_PID).encode(), timeout=10)
+    s3.expect(rb"S3 CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
     s3.expect(rb"S3 CONNECTED \d+ 1209 0001", timeout=40)
     wait_enumerated(s3, build_id)

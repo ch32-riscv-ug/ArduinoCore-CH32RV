@@ -11,7 +11,8 @@ import usb.core
 import usb.util
 
 APP = ("1209", "0001")
-ISP = ("1a86", "55e0")
+# The CH32X035 factory bootloader: 1a86:55e0 on the F8U6, 4348:55e0 on the C8T6.
+ISP = frozenset({("1a86", "55e0"), ("4348", "55e0")})
 
 
 class PcUsbHost:
@@ -36,7 +37,8 @@ class PcUsbHost:
     def wait_ids(self, wanted, timeout):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            if self.ids() == wanted:
+            ids = self.ids()
+            if ids == wanted or (isinstance(wanted, frozenset) and ids in wanted):
                 return True
             time.sleep(0.02)
         return False

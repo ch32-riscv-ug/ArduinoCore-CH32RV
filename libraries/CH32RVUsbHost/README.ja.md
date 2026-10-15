@@ -23,7 +23,7 @@ void loop() { }          // スタックは loop() の後と delay() の中で�
 
 | 系列 | ポート | 確認 |
 |---|---|---|
-| CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS（PC16 / PC17） | ビルドのみ |
+| CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS（PC16 / PC17） | C8T6 で ESP32-S3（EspUsbDevice）相手に HID・CDC・MSC・MIDI・ベンダー・CCID を実機確認 |
 | CH32X035 F8U6 / F7P6 / D8U6、CH32X033 | — （シリコンにホストが無い。`begin()` が `Unsupported`） | F8U6 で `Unsupported` を実機確認 |
 | CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
 | CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
@@ -31,7 +31,7 @@ void loop() { }          // スタックは loop() の後と delay() の中で�
 
 X035 のどの型番がホストを持つかはデータシートの型番表のとおりで、`begin()` は BASE_CTRL のホストモードのビットが
 立つかどうかで実際に確かめます（F8U6 では立ちません）。対向試験は [tests/peer/usb/host](../../tests/peer/usb/host/)
-にあり、ホストを持つ X035 などを ESP32-S3 につなげば実行できます。
+にあり、CH32X035C8T6 と ESP32-S3 で両方（usb-peer-host / usb-peer-host-classes）が通っています。
 
 **VBUS は基板が供給します。** チップには VBUS を入り切りする機能がありません。
 

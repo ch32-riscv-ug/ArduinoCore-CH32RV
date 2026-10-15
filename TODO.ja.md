@@ -92,9 +92,12 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 
 ## USB ホスト（CH32RVUsbHost）と ESP32-S3 との対向試験（2026-10-15）
 
-- ホスト側の実機確認: ベンチの X035 は F8U6 でシリコンにホストが無い（`begin()` が `Unsupported` を実機確認）。
-  ホストを持つ X035（R8T6 / C8T6 / G8U6 / G8R6）か V20x / V30x の USBFS を ESP32-S3 につなぎ、
-  `usb-peer-host` / `usb-peer-host-classes`（tests/peer/usb/host）を流す。どの板をつなぐかを決める。
+- ホスト側の実機確認: CH32X035C8T6（WCH-LinkE FC928F068181）と ESP32-S3 e4b063b49f2c で `usb-peer-host` /
+  `usb-peer-host-classes` が PASS。ベンチの WeAct 板の F8U6 はシリコンにホストが無い（`Unsupported` を実機確認）。
+  V20x / V30x（OTG_FS のレジスタ配置）はビルドのみ。
+- 準備できない MSC でデバイス全体が止まる: TinyUSB の MSC ホストは列挙中の TEST UNIT READY を上限なく繰り返し
+  （upstream の TODO）、そのあいだ同じデバイスの HID や CDC もマウントされない。回数か時間で打ち切るパッチを
+  入れるか決める（対向試験は S3 側でメディアを「あり」にして回避）。
 - ホストで未対応: アイソクロナス（オーディオ・ビデオ）、USB ネットワーク（NCM / ECM）、MSC のファイルシステム、
   ハブ越しの低速デバイス（PRE PID の実機確認）、V103（旧 USBFS）と USBHS のホスト。
 - 対向試験（X035 デバイス ⇔ S3 ホスト）は usb-peer / -classes / -media / -net の 4 つで PASS。PC ホストの試験
@@ -111,6 +114,16 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 - `audioSend()`（押し込み型）は待たずに受け取り、送れない分を捨てる。`onAudioOutputRequest()`（引き出し型）なら欠けない。
 - `sendHIDVendorOutput()` はデータの先頭バイトをレポート ID として扱う（CH32RVUsbHost は ID を別に付ける）。
 - S3（DWC2）のホストチャネルは 8 本で、CDC・HID・MIDI のあとに NCM を開けない。
+
+### EspUsbDevice 2.6.0 側で見つかったこと（対向試験で回避している）
+
+- `sendHidReport()`（マウスの `move()` など）は timeoutMs を使わず、前のレポートがまだ取られていないと即 false。
+  押す → 離すを続けて送ると 2 つ目が必ず失敗するので、試験側で取られるまで再試行している。
+- `EspUsbDeviceMscRamDisk` / `EspUsbDeviceMscFatRamDisk` の `attach()` はメディアを「あり」にしない
+  （`FirmwareDisk` はする）。`msc.mediaPresent(true)` を呼ばないと TEST UNIT READY が失敗し続ける。
+- `keyboard.ledState()` は構造体（`.leds` がビット）を返す。
+- S3 は書き込みの直後、同じ USB ポートに内蔵の USB シリアル / JTAG（303a:1001）を出してから自分のデバイスに
+  切り替わる。DUT のホストには一度つながって切れるように見える。
 
 ## ライブラリの配布
 

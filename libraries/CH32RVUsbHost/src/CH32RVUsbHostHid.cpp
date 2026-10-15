@@ -353,12 +353,24 @@ extern "C" void tuh_hid_umount_cb(uint8_t daddr, uint8_t idx)
     }
 }
 
+/* The report is copied and the endpoint armed again before the sketch's
+ * callbacks run: they may take a while (print to a slow console), and the
+ * device cannot send its next report until the host asks for it - a mouse
+ * press and release in a row timed out on the device that way. */
 extern "C" void tuh_hid_report_received_cb(uint8_t daddr, uint8_t idx, const uint8_t *data, uint16_t len)
 {
-    if (idx < CFG_TUH_HID && hids[idx].mounted && len) {
-        report(daddr, idx, data, len);
+    uint8_t copy[CFG_TUH_HID_EPIN_BUFSIZE];
+    const bool use = idx < CFG_TUH_HID && hids[idx].mounted && len;
+    if (len > sizeof copy) {
+        len = sizeof copy;
+    }
+    if (use) {
+        memcpy(copy, data, len);
     }
     tuh_hid_receive_report(daddr, idx);
+    if (use) {
+        report(daddr, idx, copy, len);
+    }
 }
 
 /* ------------------------------------------------------------- the API */
