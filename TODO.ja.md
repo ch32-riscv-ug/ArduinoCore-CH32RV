@@ -103,27 +103,10 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 - 対向試験（X035 デバイス ⇔ S3 ホスト）は usb-peer / -classes / -media / -net の 4 つで PASS。PC ホストの試験
   （usb / usb-classes / usb-media）は、X035 の USB を PC に戻したときに使う。
 
-### EspUsbHost 2.10.0 側で見つかったこと（対向試験で回避している）
+### ESP32-S3 側（EspUsbHost 2.10.0 / EspUsbDevice 2.6.0）の挙動
 
-- バルクの UVC ストリームは `videoStart()` が true を返すが、IN を一度も取りに来ない（payloads=0）。
-  アイソクロナスなら届く。試験はカメラをアイソクロナスでビルドしている。
-- アイソクロナスを 2 本同時に流すと（マイク入力 + スピーカー出力、マイク + カメラ）、パケットを落とす。
-  `audioInputStop()` が無いので、入力を止めてから他を流すこともできない。
-- マイク入力（32 kHz 16 bit モノラル、1 ms あたり 64 バイト）を毎フレーム取りに来ず、約 46 KB/s になる。
-  X035 側は書き込みを拒否されていない（ホストが取りに来た分だけ送っている）。
-- `audioSend()`（押し込み型）は待たずに受け取り、送れない分を捨てる。`onAudioOutputRequest()`（引き出し型）なら欠けない。
-- `sendHIDVendorOutput()` はデータの先頭バイトをレポート ID として扱う（CH32RVUsbHost は ID を別に付ける）。
-- S3（DWC2）のホストチャネルは 8 本で、CDC・HID・MIDI のあとに NCM を開けない。
-
-### EspUsbDevice 2.6.0 側で見つかったこと（対向試験で回避している）
-
-- `sendHidReport()`（マウスの `move()` など）は timeoutMs を使わず、前のレポートがまだ取られていないと即 false。
-  押す → 離すを続けて送ると 2 つ目が必ず失敗するので、試験側で取られるまで再試行している。
-- `EspUsbDeviceMscRamDisk` / `EspUsbDeviceMscFatRamDisk` の `attach()` はメディアを「あり」にしない
-  （`FirmwareDisk` はする）。`msc.mediaPresent(true)` を呼ばないと TEST UNIT READY が失敗し続ける。
-- `keyboard.ledState()` は構造体（`.leds` がビット）を返す。
-- S3 は書き込みの直後、同じ USB ポートに内蔵の USB シリアル / JTAG（303a:1001）を出してから自分のデバイスに
-  切り替わる。DUT のホストには一度つながって切れるように見える。
+対向試験で回避しているもの。一覧と回避のしかたは [tests/peer/usb/README.ja.md](tests/peer/usb/README.ja.md) の
+「ESP32-S3 側の挙動」。版を上げたら、直っているかを確かめて回避を外せるか見直す。
 
 ## ライブラリの配布
 
