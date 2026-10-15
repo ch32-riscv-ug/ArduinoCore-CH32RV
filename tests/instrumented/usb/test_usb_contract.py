@@ -101,14 +101,23 @@ def test_usb_contract(dut, record_property):
         raise AssertionError("no frame from the host reached the device")
 
     # usb.reconnect: end() + begin() looks like an unplug and a plug to the host.
-    # A fast re-enumeration can replace the sysfs node between two polls, so a new device number
-    # counts as having left the bus too.
-    devnum = host.devnum()
+    # What the host shows depends on when its hub thread looks: gone and back, a new device number,
+    # or - if it only gets to the port after the device is back - a reset and re-verify of the same
+    # device. In every case the host configures the device again, which the DUT counts.
+    dut.write("mounts\n")
+    mounts = int(dut.expect(rb"MOUNTS (\d+)\r?\n", timeout=5).group(1))
     dut.write("replug\n")
-    left = host.wait_gone(APP, 3)
+    host.wait_gone(APP, 3)
     dut.expect_exact("REPLUG 1", timeout=5)
     assert host.wait_ids(APP, 10), "the device did not come back"
-    assert left or host.devnum() != devnum, "the device did not leave the bus"
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        dut.write("mounts\n")
+        if int(dut.expect(rb"MOUNTS (\d+)\r?\n", timeout=5).group(1)) > mounts:
+            break
+        time.sleep(0.5)
+    else:
+        raise AssertionError("the host did not configure the device again after end() / begin()")
 
     # usb.isp-entry-*: both entries reach the factory ISP at the same topology; without an upload
     # it returns to this build by itself.

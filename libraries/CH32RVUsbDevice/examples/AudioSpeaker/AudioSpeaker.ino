@@ -4,7 +4,9 @@
  *
  * A USB Audio Class 1 speaker the host plays into; the sketch counts what
  * arrives and logs it on Serial. 16 kHz 16-bit stereo (Esp: 48 kHz): a
- * full-speed X035 endpoint holds 64 bytes, one millisecond of it. */
+ * full-speed X035 endpoint holds 64 bytes, one millisecond of it. *
+ * requires: flash=48K
+ */
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;

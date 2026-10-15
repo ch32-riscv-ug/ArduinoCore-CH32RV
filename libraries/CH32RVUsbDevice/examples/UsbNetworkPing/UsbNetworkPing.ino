@@ -10,7 +10,7 @@
  * needs an IP stack this core does not ship.
  *
  * Runs on the series with a USB device port (CH32X035/X033 today).
- * requires: ram=8K */
+ * requires: ram=16K */
 #include <CH32RVUsbDevice.h>
 #include <string.h>
 

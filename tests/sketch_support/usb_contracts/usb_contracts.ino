@@ -7,6 +7,7 @@
  *   ready <nonce>   READY <nonce> <build id> <USB started 0/1> <last error>
  *   keys            the keyboard types "ab"   -> KEYS 1 / KEYS 0
  *   replug          end() then begin(): the host sees an unplug and a plug
+ *   mounts          MOUNTS <times the host configured the device>
  *   net             NET <frames received> <MAC as 12 hex digits>
  *   netsend         one broadcast frame (EtherType 0x88B5) -> NETSEND 1 / 0
  *
@@ -32,6 +33,8 @@ static uint8_t vendorData[63];
 static uint16_t vendorLength;
 static volatile bool vendorPending;
 static volatile uint32_t netFrames;
+static uint32_t mounts;
+static bool wasMounted;
 static char line[80];
 static uint8_t used;
 
@@ -54,6 +57,9 @@ static void reply(const char *command)
         delay(1000);                 /* longer than a hub's status poll */
         SerialDMSeq.print("REPLUG ");
         SerialDMSeq.println(USBDevice.begin(config) ? 1 : 0);
+    } else if (strcmp(command, "mounts") == 0) {
+        SerialDMSeq.print("MOUNTS ");
+        SerialDMSeq.println((unsigned long)mounts);
     } else if (strcmp(command, "net") == 0) {
         static const char hex[] = "0123456789ABCDEF";
         SerialDMSeq.print("NET ");
@@ -96,6 +102,11 @@ void setup()
 
 void loop()
 {
+    const bool mounted = USBDevice.mounted();
+    if (mounted && !wasMounted) {
+        mounts++;
+    }
+    wasMounted = mounted;
     while (SerialUSB.available()) {
         SerialUSB.write(SerialUSB.read());
     }

@@ -6,7 +6,7 @@
 #define CH32RV_DCD_BUILDING_USBHS 1    /* tusb_config.h: USBHS 1 in this TU */
 #include "tusb_option.h"
 
-#if CFG_TUD_ENABLED && defined(CH32RV_TUSB_DUAL_DCD)
+#if CFG_TUD_ENABLED && defined(CH32RV_TUSB_DUAL_DCD) && !defined(CH32RV_TUSB_DUAL_USBD)
 
 #define dcd_init                  hs_dcd_init
 #define dcd_deinit                hs_dcd_deinit

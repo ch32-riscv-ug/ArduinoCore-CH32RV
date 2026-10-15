@@ -34,11 +34,25 @@ extern "C" {
 #define CFG_TUSB_MCU             OPT_MCU_CH32V103
 
 #elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208)
-/* USBFS (OTG_FS, PB6/PB7). The USBD block (PA11/PA12, the parts that have
- * only that one) is not wired up yet. */
+/* USBFS (OTG_FS, PB6/PB7) and USBD (ST fsdev compatible, PA11/PA12; some
+ * parts have only one of them). Both are built, USBFS as fs_ and USBD as
+ * ud_ (ch32rv_dcd_usbfs.c, ch32rv_dcd_usbd.c), and ch32rv_dcd_dual.c forwards
+ * to the one CH32RVUsbDeviceConfig::controller chose. Everywhere else both
+ * vendored drivers come out empty (USBFS 0, FSDEV 0). */
 #define CH32RV_TINYUSB_DEVICE    1
+#define CH32RV_TUSB_DUAL_DCD     1
+#define CH32RV_TUSB_DUAL_USBD    1
 #define CFG_TUSB_MCU             OPT_MCU_CH32V20X
+#if defined(CH32RV_DCD_BUILDING_USBFS)
 #define CFG_TUD_WCH_USBIP_USBFS  1
+#define CFG_TUD_WCH_USBIP_FSDEV  0
+#elif defined(CH32RV_DCD_BUILDING_USBD)
+#define CFG_TUD_WCH_USBIP_USBFS  0
+#define CFG_TUD_WCH_USBIP_FSDEV  1
+#else
+#define CFG_TUD_WCH_USBIP_USBFS  0
+#define CFG_TUD_WCH_USBIP_FSDEV  0
+#endif
 
 #elif defined(CH32RV_SERIES_CH32V303)
 /* USBFS only: V303 has no USBHS. */

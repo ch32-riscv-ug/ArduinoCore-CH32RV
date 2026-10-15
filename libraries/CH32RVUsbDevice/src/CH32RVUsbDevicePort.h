@@ -145,12 +145,16 @@ extern "C" __attribute__((interrupt)) void USBFS_IRQHandler(void)
     tud_int_handler(0);
 }
 
-/* ======================================================= CH32V203 / V208 / V303
- * USBFS (OTG_FS): V20x on PB6 (D-) / PB7 (D+), V303 on PA11 / PA12; the
- * PHY takes the pads once enabled, they only have to be left as inputs.
+/* ======================================================= CH32V203 / V208
+ * USBFS (OTG_FS, PB6 D- / PB7 D+) and USBD (ST fsdev compatible, PA11 D- /
+ * PA12 D+, its 512-byte packet memory shared with CAN1). Both drivers are
+ * linked; ch32rv_dcd_dual.c forwards to the chosen one, always as rhport 0.
+ * Auto takes USBFS, or USBD on the parts that have only USBD. The pads are
+ * taken by the PHY once enabled; they only have to be left as inputs.
  * RCC_CFGR0[23:22] USBPRE: 00 = /1, 01 = /2, 10 = /3. */
-#elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208) || \
-      defined(CH32RV_SERIES_CH32V303)
+#elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208)
+
+#include "ch32rv_dcd_dual.h"
 
 #if CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 48000000
 #define V2X_USBPRE 0u
@@ -159,33 +163,130 @@ extern "C" __attribute__((interrupt)) void USBFS_IRQHandler(void)
 #elif CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 144000000
 #define V2X_USBPRE 2u
 #endif
-#if defined(CH32RV_SERIES_CH32V303)
-#define V2X_USB_DM PA11
-#define V2X_USB_DP PA12
+#if defined(CH32RV_PART_CH32V203F6P6) || defined(CH32RV_PART_CH32V203G6U6)
+#define V20X_NO_USBFS 1      /* USBD only */
+#endif
+#if defined(CH32RV_PART_CH32V203F8P6) || defined(CH32RV_PART_CH32V203F8U6)
+#define V20X_NO_USBD 1       /* USBFS only */
+#endif
+#define V20X_EXTEN_CTR       CH32RV_REG32(0x40023800u)
+#define V20X_EXTEN_USBD_PU   0x00000002u
+
+static uint8_t v20x_port;
+
+static CH32RVUsbDeviceError port_open(CH32RVUsbController controller)
+{
+#ifdef V2X_USBPRE
+    bool usbd;
+    if (controller == CH32RVUsbController::Usbd) {
+        usbd = true;
+    } else if (controller == CH32RVUsbController::FullSpeed) {
+        usbd = false;
+    } else if (controller == CH32RVUsbController::Auto) {
+#ifdef V20X_NO_USBFS
+        usbd = true;
 #else
-#define V2X_USB_DM PB6
-#define V2X_USB_DP PB7
+        usbd = false;
+#endif
+    } else {
+        return CH32RVUsbDeviceError::PortUnavailable;
+    }
+#ifdef V20X_NO_USBFS
+    if (!usbd) {
+        return CH32RVUsbDeviceError::PortUnavailable;
+    }
+#endif
+#ifdef V20X_NO_USBD
+    if (usbd) {
+        return CH32RVUsbDeviceError::PortUnavailable;
+    }
+#endif
+    CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~(3u << CH32RV_USB_USBPRE_SHIFT)) |
+                       (V2X_USBPRE << CH32RV_USB_USBPRE_SHIFT);
+    if (usbd) {
+        pinMode(PA11, INPUT);
+        pinMode(PA12, INPUT);
+        ch32rv_clock_enable(USB);
+        ch32rv_dcd_select(CH32RV_DCD_USBD);
+    } else {
+        pinMode(PB6, INPUT);
+        pinMode(PB7, INPUT);
+        ch32rv_clock_enable(USBFS);
+        ch32rv_dcd_select(CH32RV_DCD_USBFS);
+    }
+    v20x_port = usbd ? CH32RV_DCD_USBD : CH32RV_DCD_USBFS;
+    return CH32RVUsbDeviceError::None;
+#else
+    (void)controller;
+    return CH32RVUsbDeviceError::PortUnavailable;   /* no 48 MHz from this clock */
+#endif
+}
+
+static void port_close(void)
+{
+    if (v20x_port == CH32RV_DCD_USBD) {
+        V20X_EXTEN_CTR &= ~V20X_EXTEN_USBD_PU;
+        ch32rv_clock_disable(USB);
+    } else {
+        ch32rv_clock_disable(USBFS);
+    }
+}
+
+static uint8_t port_last_endpoint(void)
+{
+    return 7;
+}
+
+/* Both report as rhport 0 (ch32rv_dcd_dual.c). USBD's two interrupts are
+ * shared with CAN1. */
+extern "C" __attribute__((interrupt)) void USBFS_IRQHandler(void)
+{
+    tud_int_handler(0);
+}
+
+extern "C" __attribute__((interrupt)) void USB_HP_CAN1_TX_IRQHandler(void)
+{
+    tud_int_handler(0);
+}
+
+extern "C" __attribute__((interrupt)) void USB_LP_CAN1_RX0_IRQHandler(void)
+{
+    tud_int_handler(0);
+}
+
+extern "C" __attribute__((interrupt)) void USBWakeUp_IRQHandler(void)
+{
+    tud_int_handler(0);
+}
+
+/* ======================================================= CH32V303
+ * USBFS (OTG_FS) on PA11 (D-) / PA12 (D+); V303 has no USBHS.
+ * RCC_CFGR0[23:22] USBPRE: 00 = /1, 01 = /2, 10 = /3. */
+#elif defined(CH32RV_SERIES_CH32V303)
+
+#if CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 48000000
+#define V2X_USBPRE 0u
+#elif CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 96000000
+#define V2X_USBPRE 1u
+#elif CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 144000000
+#define V2X_USBPRE 2u
 #endif
 
 static CH32RVUsbDeviceError port_open(CH32RVUsbController controller)
 {
-#if defined(CH32RV_PART_CH32V203F6P6) || defined(CH32RV_PART_CH32V203G6U6)
-    /* These have only the USBD block, not wired up yet. */
-    (void)controller;
-    return CH32RVUsbDeviceError::PortUnavailable;
-#elif defined(V2X_USBPRE)
+#ifdef V2X_USBPRE
     if (controller != CH32RVUsbController::Auto && controller != CH32RVUsbController::FullSpeed) {
         return CH32RVUsbDeviceError::PortUnavailable;
     }
     CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~(3u << CH32RV_USB_USBPRE_SHIFT)) |
                        (V2X_USBPRE << CH32RV_USB_USBPRE_SHIFT);
-    pinMode(V2X_USB_DM, INPUT);
-    pinMode(V2X_USB_DP, INPUT);
+    pinMode(PA11, INPUT);
+    pinMode(PA12, INPUT);
     ch32rv_clock_enable(USBFS);
     return CH32RVUsbDeviceError::None;
 #else
     (void)controller;
-    return CH32RVUsbDeviceError::PortUnavailable;   /* no 48 MHz from this clock */
+    return CH32RVUsbDeviceError::PortUnavailable;
 #endif
 }
 

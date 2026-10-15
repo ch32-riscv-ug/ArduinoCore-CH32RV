@@ -13,6 +13,7 @@ extern "C" {
 
 #define CH32RV_DCD_USBFS 0u
 #define CH32RV_DCD_USBHS 1u
+#define CH32RV_DCD_USBD  2u   /* V20x */
 
 bool ch32rv_dcd_select(uint8_t which);
 uint8_t ch32rv_dcd_selected(void);

@@ -15,7 +15,6 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   - 新しい系列の実機確認（ベンチの DUT の USB 端子を配線してから）。HSI から作る 48 MHz の精度、V103 の EP4〜7 の
     自動トグル、HS の PHY と HSE。
   - L103 / M103、M030、V205: USB には既定の 8 MHz より高いシステムクロックが要る（ボード既定の変更は方針の確認待ち）。
-  - V20x の USBD（fsdev）: USBFS と実行時に選べるようにする（USBD しか無い V203F6P6 / G6U6 のため）。
   - 第2世代 USBHS（V407 / V467、X305 / X315、V205）の dcd を新しく書く。下書きは work/usbport/others（git 管理外）。
   - H417: ボードとして入れてから USBSS（TinyUSB に無い）。
   - ベンダーの直接転送（USBHS の DMA で）。NCM の IP 層（lwIP など外部ライブラリ。方針の確認待ち）。

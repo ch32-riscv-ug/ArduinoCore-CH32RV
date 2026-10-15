@@ -16,7 +16,7 @@
 |---|---|---|---|
 | CH32X035 / X033 | 動く（USBFS） | 動く（シンク） | X035（WeAct CH32X035F8U6 の板）で実機確認 |
 | CH32V103 | USBFS（PA11 / PA12） | — | ビルドのみ |
-| CH32V203 / V208 | USBFS（PB6 / PB7）。USBD しか無い V203F6P6 / G6U6 は `PortUnavailable` | — | ビルドのみ |
+| CH32V203 / V208 | USBFS（PB6 / PB7）と USBD（PA11 / PA12）を `config.controller` で選ぶ。`Auto` は USBFS（USBD しか無い V203F6P6 / G6U6 は USBD） | — | ビルドのみ |
 | CH32V303 | USBFS（PA11 / PA12） | — | ビルドのみ |
 | CH32V305 / V307 / V317 | USBFS（PA11 / PA12）と USBHS（PB6 / PB7、High Speed）を `config.controller` で選ぶ | — | ビルドのみ |
 | ほかの系列 | `begin()` が `false`（`Unsupported`） | `begin()` が `false` | ビルドのみ |
@@ -187,10 +187,10 @@ void setup() {
 
 | 値 | 意味 |
 |---|---|
-| `Auto`（既定） | その系列の標準。V305 / V307 / V317 は USBFS（HS のピンしか無い V305FBP6 / GBU6 は USBHS） |
+| `Auto`（既定） | その系列の標準。V305 / V307 / V317 は USBFS（HS のピンしか無い V305FBP6 / GBU6 は USBHS）。V203 / V208 は USBFS（USBD しか無い V203F6P6 / G6U6 は USBD） |
 | `FullSpeed` | USBFS |
 | `HighSpeed` | USBHS（V305 / V307 / V317）。HS の PHY は HSE（水晶）が要る。周波数は `CH32RV_HSE_HZ`（既定 8 MHz、`build_opt.h` で変更）。水晶が立たなければ `begin()` が `PortUnavailable` |
-| `Usbd` | V20x の USBD。まだ使えない（`PortUnavailable`） |
+| `Usbd` | V20x の USBD（ST の fsdev 互換、PA11 / PA12。パケットメモリと割り込みを CAN1 と共用） |
 
 ディスクリプタは速度に合わせて作り直します（HS ではバルク 512 B、割り込みの間隔はマイクロフレーム単位、
 device qualifier と other speed configuration も返す）。システムクロックは HSI の PLL のままで、USB の
@@ -334,8 +334,6 @@ V305 / V307 / V317 は USBFS と USBHS の両方のドライバが入るので�
 - **残りの系列**:
   - L103 / M103、M030、V205: USB のコントローラは今の USBFS の仕組みで動きますが、ボードの既定クロックが
     8 MHz（PLL なし）で、USB を動かすには既定のクロックを上げる必要があります（方針の確認待ち）。
-  - V20x の USBD（ST の fsdev 互換。V203F6P6 / G6U6 はこれしか無い）: ドライバは同梱済み。USBFS と実行時に
-    選べるようにする（V30x と同じ形）。
   - V407 / V467、X305 / X315、V205 の USBHS: V307 とは別の「第2世代」の USBHS で、ドライバを新しく書く必要が
     あります。H417 の USBSS（SuperSpeed）はその後。
 - **ベンダーの直接転送**（`writeDirect()`）: USBHS の DMA で入れる。今は `NotSupported`。

@@ -112,8 +112,8 @@ EspUsbDevice の同名の例を移植したもの（Serial〜SmartCardReader）�
 
 ## 対応
 
-CH32X035 / X033（USBFS）。X035（WeAct CH32X035F8U6 の板）で実機確認しています。CH32V103、V203 / V208、V303（USBFS）、
-V305 / V307 / V317（USBFS か USBHS を `config.controller` で選ぶ）も入っています（ビルドのみ、実機は未確認）。
+CH32X035 / X033（USBFS）。X035（WeAct CH32X035F8U6 の板）で実機確認しています。CH32V103、V303（USBFS）、
+V203 / V208（USBFS か USBD）、V305 / V307 / V317（USBFS か USBHS）も入っています（後の2つは `config.controller` で選ぶ）（ビルドのみ、実機は未確認）。
 ほかの系列では `begin()` が `false`（`Unsupported`）を返し、スケッチはそのままビルドできます。
 
 ## 書き込み

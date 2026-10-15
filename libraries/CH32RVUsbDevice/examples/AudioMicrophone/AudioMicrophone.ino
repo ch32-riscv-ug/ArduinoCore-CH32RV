@@ -6,7 +6,9 @@
  * mono (Esp: 48 kHz): a full-speed X035 endpoint holds 64 bytes, one
  * millisecond of it. The tone comes from a table instead of sinf(), which in
  * software floating point would take longer than the samples last, and the
- * sketch writes as many samples as the time that passed calls for. */
+ * sketch writes as many samples as the time that passed calls for. *
+ * requires: flash=48K
+ */
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;

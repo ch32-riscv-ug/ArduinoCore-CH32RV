@@ -112,9 +112,18 @@ class PcUsbHost:
         raise AssertionError("no network interface under " + self.topology)
 
     def dfu_detach(self):
-        dev = self.device()
-        itf = next(i.bInterfaceNumber for i in dev.get_active_configuration()
-                   if (i.bInterfaceClass, i.bInterfaceSubClass) == (0xFE, 0x01))
+        # Right after a reconnect the kernel may still be resetting and re-verifying the device;
+        # look it up again rather than fail on a handle that is about to go stale.
+        for attempt in range(20):
+            try:
+                dev = self.device()
+                itf = next(i.bInterfaceNumber for i in dev.get_active_configuration()
+                           if (i.bInterfaceClass, i.bInterfaceSubClass) == (0xFE, 0x01))
+                break
+            except (usb.core.USBError, AssertionError):
+                if attempt == 19:
+                    raise
+                time.sleep(0.5)
         try:
             dev.ctrl_transfer(0x21, 0, 1000, itf, None, timeout=1000)
         except usb.core.USBError:

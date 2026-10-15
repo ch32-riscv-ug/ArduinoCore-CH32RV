@@ -5,7 +5,9 @@
  * A USB Audio Class 1 headset that sends back what the host plays: speaker
  * and microphone, 32 kHz 16-bit mono each (Esp: 48 kHz). A full-speed X035
  * endpoint holds 64 bytes, one millisecond of it, and both streams share the
- * one clock, so they run at the same rate. */
+ * one clock, so they run at the same rate. *
+ * requires: flash=48K
+ */
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
