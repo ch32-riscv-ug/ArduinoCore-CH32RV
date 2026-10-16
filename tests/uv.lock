@@ -18,7 +18,7 @@ hardware = [
 
 [package.metadata]
 requires-dist = [
-    { name = "oep-client-python", marker = "extra == 'hardware'", specifier = "==0.0.33" },
+    { name = "oep-client-python", marker = "extra == 'hardware'", specifier = "==0.0.34" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-embedded-arduino-cli-ch32rv", marker = "extra == 'hardware'", specifier = "==0.0.5" },
 ]
@@ -53,15 +53,15 @@ wheels = [
 
 [[package]]
 name = "oep-client-python"
-version = "0.0.33"
+version = "0.0.34"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyserial" },
     { name = "pyusb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/8d/9fbdfba4b7953d7b56dae6eca976b31906afaf7c94d5197adcfd583ffef8/oep_client_python-0.0.33.tar.gz", hash = "sha256:395ad556921be480eb3c85d948e713f2c6eb7153fa5ad0becd30e710bd463abd", size = 2110004, upload-time = "2026-10-16T07:55:40.305Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/bd/e97cc5d939aa677710a0f7925790dda263feb688a1eca6876b3099fddf52/oep_client_python-0.0.34.tar.gz", hash = "sha256:4cdb094a9da73db4f323f452315a931a13826867f808233ca252bf0951f33633", size = 2112659, upload-time = "2026-10-16T11:18:46.736Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/a4/1b3f33eb8cac0090950c9105a56d2416c1c84a8795cb9a06802f9c16fc95/oep_client_python-0.0.33-py3-none-any.whl", hash = "sha256:15024721130f64444b57e14e6b74909c03bdf3f8ea4a12247f2d79e2080f94b6", size = 842212, upload-time = "2026-10-16T07:55:38.682Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/ef/7189ec77c1d9b956d18efcbf2905a5e0d0e4d9341113f7b2b18399109b6f/oep_client_python-0.0.34-py3-none-any.whl", hash = "sha256:cab7959d155a24ab535afdb101cf5a28ff5f2779dc775be580650fdb1f25b077", size = 843604, upload-time = "2026-10-16T11:18:44.741Z" },
 ]
 
 [[package]]

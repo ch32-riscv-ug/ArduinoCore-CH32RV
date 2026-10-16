@@ -4,7 +4,7 @@
 実機で確かめて直す。個々の仕様は各リポジトリの文書が正で、ここは分担と、リポジトリをまたぐ決定を置く。
 
 **2026-10-16 の更新**: OEP の仕様が作り直され（oep-spec 675288a、3b32b12。probe は oep-probe-arduino 0.0.32 以降、ch32rv 0.21.1、
-oep-client-python 0.0.33）、**スロット、attach policy、bind は廃止**された。口（port）は probe に保存したピンのラベル `S.N` の `S`、
+oep-client-python 0.0.34）、**スロット、attach policy、bind は廃止**された。口（port）は probe に保存したピンのラベル `S.N` の `S`、
 アドレスは `oep://<probe>[/<port>[/<target>]]`（oep-spec host guide §5.3）、素の端末へのコンソールは probe.config の
 `console-passthrough`。§0・§3・§5・§6 はこの形に直した。§12 は 2026-09-29 の実測の記録としてそのまま残す。
 
