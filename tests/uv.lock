@@ -20,7 +20,7 @@ hardware = [
 requires-dist = [
     { name = "oep-client-python", marker = "extra == 'hardware'", specifier = "==0.0.33" },
     { name = "pytest", specifier = ">=8" },
-    { name = "pytest-embedded-arduino-cli-ch32rv", marker = "extra == 'hardware'", specifier = "==0.0.4" },
+    { name = "pytest-embedded-arduino-cli-ch32rv", marker = "extra == 'hardware'", specifier = "==0.0.5" },
 ]
 provides-extras = ["hardware"]
 
@@ -178,7 +178,7 @@ wheels = [
 
 [[package]]
 name = "pytest-embedded-arduino-cli-ch32rv"
-version = "0.0.4"
+version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "oep-client-python" },
@@ -186,9 +186,9 @@ dependencies = [
     { name = "pytest" },
     { name = "pytest-embedded-arduino-cli" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ea/37/0b90e03d19b3d18ef420fe1d89608bfcd70de0afae584d1255f59eb74666/pytest_embedded_arduino_cli_ch32rv-0.0.4.tar.gz", hash = "sha256:12b08f47f7759e8797804bfaadb22f5ab43c562c839b6ab5d23c0e1d659cd7ff", size = 27294, upload-time = "2026-09-30T15:11:23.821Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/3e/844d3bb51ba75f7579b93d5144768e44594fdc539bfb819769abbb7bf921/pytest_embedded_arduino_cli_ch32rv-0.0.5.tar.gz", hash = "sha256:c82430e175a019bfa9fa45c8414a26dc95e31df6db884facdd631b4d671f1d73", size = 28655, upload-time = "2026-10-16T10:40:45.682Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fe/8d/58d9eb63ca19db55b12d0f594dc1c87a437f15293e0d5cf74b4d5625f3ef/pytest_embedded_arduino_cli_ch32rv-0.0.4-py3-none-any.whl", hash = "sha256:512fee15d72946eff976eb324ab1593ed37c1b2191d3290afd04e48447f7899d", size = 7465, upload-time = "2026-09-30T15:11:22.612Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/1b/d18dd92358e1feaaf13ddd60338900e4a046aedea3660a4fe9a6b84d604d/pytest_embedded_arduino_cli_ch32rv-0.0.5-py3-none-any.whl", hash = "sha256:4caea6f184be592f1549a5e0a049e09acb35a2e740337211251541eb84baeb2d", size = 8221, upload-time = "2026-10-16T10:40:44.279Z" },
 ]
 
 [[package]]
