@@ -35,6 +35,20 @@ static volatile size_t vendorEchoLength;
 static char line[200];
 static size_t used;
 
+/* EspUsbDevice 2.6.0's sendHidReport() ignores its timeout: a report while
+ * the previous one still waits for the host's IN fails at once. Every report
+ * here is retried until the host has taken the one before (up to 500 ms). */
+#define RETRY(expr) ({ bool ok_; const uint32_t t0_ = millis(); \
+                       while (!(ok_ = (expr)) && millis() - t0_ < 500) delay(1); ok_; })
+
+static bool typeText(const char *text)
+{
+  for (const char *p = text; *p; p++)
+    if (!RETRY(keyboard.pressKey(*p)) || !RETRY(keyboard.releaseAll()))
+      return false;
+  return true;
+}
+
 static int hexval(char c)
 {
   if (c >= '0' && c <= '9') return c - '0';
@@ -49,22 +63,19 @@ static void run(char *cmd)
   if (arg) *arg++ = '\0';
   else arg = cmd + strlen(cmd);
   if (!strcmp(cmd, "?")) Serial.printf("S3D READY %u\n", device.ready() ? 1 : 0);
-  else if (!strcmp(cmd, "type")) Serial.printf("S3D TYPED %u\n", keyboard.write(arg) ? 1 : 0);
+  else if (!strcmp(cmd, "type")) Serial.printf("S3D TYPED %u\n", typeText(arg) ? 1 : 0);
   else if (!strcmp(cmd, "mouse"))
   {
     int dx = 0, dy = 0, b = 0;
     sscanf(arg, "%d %d %d", &dx, &dy, &b);
-    /* EspUsbDevice 2.6.0 ignores the timeout: a report while the previous
-     * one is still waiting for the host's IN fails at once, so the release
-     * is retried until the press has gone. */
-    bool ok = mouse.move(dx, dy, 0, b);
-    if (ok) {
-      const uint32_t t0 = millis();
-      while (!(ok = mouse.move(0, 0, 0, 0)) && millis() - t0 < 500) delay(1);
-    }
+    const bool ok = RETRY(mouse.move(dx, dy, 0, b)) && RETRY(mouse.move(0, 0, 0, 0));
     Serial.printf("S3D MOUSE %u\n", ok ? 1 : 0);
   }
-  else if (!strcmp(cmd, "consumer")) Serial.printf("S3D CONSUMER %u\n", consumer.click(strtoul(arg, nullptr, 0)) ? 1 : 0);
+  else if (!strcmp(cmd, "consumer"))
+  {
+    const uint16_t usage = (uint16_t)strtoul(arg, nullptr, 0);
+    Serial.printf("S3D CONSUMER %u\n", RETRY(consumer.press(usage)) && RETRY(consumer.release()) ? 1 : 0);
+  }
   else if (!strcmp(cmd, "leds")) Serial.printf("S3D LEDS %u\n", keyboard.ledState().leds);
   else if (!strcmp(cmd, "file"))
   {

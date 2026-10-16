@@ -71,8 +71,9 @@ CH32X035C8T6 と ESP32-S3 で usb-peer-host / usb-peer-host-classes の両方が
 - **IN エンドポイントが 4 本まで。** HID・CDC・MSC・MIDI・ベンダー・CCID を一度に出せないので、S3 のデバイス
   構成を host_hid と host_classes の 2 つに分けています。
 - **`sendHidReport()`（マウスの `move()` など）は timeoutMs を使わない。** 前のレポートがまだホストに取られて
-  いないと、待たずに即 false を返します。「押す → 離す」を続けて送ると 2 つ目が必ず失敗するので、S3 のスケッチで
-  取られるまで再試行します（最大 500 ms）。キーボードの `write()` はキーの間に待ちが入るので通ります。
+  いないと、待たずに即 false を返します。「押す → 離す」を続けて送ると 2 つ目が必ず失敗するので、S3 のスケッチでは
+  キーボード・マウス・コンシューマのどのレポートも、取られるまで再試行します（最大 500 ms）。キーボードの `write()` は
+  キーの間に 5 ms 待つだけなので、ホストが取りに来るのが遅いと途中で失敗します（実機で一度起きた）。
 - **RAM ディスクの `attach()` はメディアを「あり」にしない。** `EspUsbDeviceMscRamDisk` /
   `EspUsbDeviceMscFatRamDisk` の `attach()` は読み書きのコールバックを入れるだけで、`mediaPresent(true)` を呼びません
   （`EspUsbDeviceMscFirmwareDisk` は呼びます）。このままだと TEST UNIT READY が失敗し続け、TinyUSB の MSC ホストが
