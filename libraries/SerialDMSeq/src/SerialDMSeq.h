@@ -96,7 +96,7 @@ private:
     bool _long = false;           /* the posted frame reaches data1 */
     bool _wrote = false;          /* the sketch wrote since available() last looked */
     uint32_t _w0 = 0, _w1 = 0;    /* the posted frame, to post again */
-    uint32_t _stale_ms = 0;       /* while latched: when the frame last went up */
+    uint32_t _stale_ms = 0;       /* while latched or reading zero: when the frame last went up */
     uint32_t _stale_calls = 0;    /* ... and calls since, for when millis() stands still */
     uint32_t _stale_limit = 1;
 
@@ -105,7 +105,7 @@ private:
     void post(const uint8_t *p, uint8_t n);
     void repost(void);
     bool service(void);
-    void stale(void);
+    void stale(bool zero = false);
     bool waitAnswered(void);
 };
 

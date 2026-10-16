@@ -3150,8 +3150,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         # A series ch32rv has no name for flashes nothing: its own name, which
         # ch32rv refuses with target-not-in-db (see ch32rv_chip()).
         lines.append(f"{pfx}.build.ch32rv_chip={known or series}")
-        # The same value for ch32rv's monitor (its DESCRIBE `chip`): it picks the
-        # probe's slot by it and refuses a debug-module source on another chip.
+        # The same value for ch32rv's monitor (its DESCRIBE `chip`): it refuses a
+        # debug-module source when the attached chip is another one.
         # `auto` where ch32rv has no name: the monitor only reads, and a name it
         # rejects would keep even a plain UART monitor from opening.
         for proto in MONITOR_PROTOCOLS:

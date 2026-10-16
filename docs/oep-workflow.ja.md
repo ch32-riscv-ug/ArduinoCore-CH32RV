@@ -3,17 +3,21 @@
 文書基準日: 2026-09-29。状態: **決定**（2026-09-29 の議論で決めた最終の形。未決の点は §10 に列挙）。ここから実装を進め、
 実機で確かめて直す。個々の仕様は各リポジトリの文書が正で、ここは分担と、リポジトリをまたぐ決定を置く。
 
+**2026-10-16 の更新**: OEP の仕様が作り直され（oep-spec 675288a、3b32b12。probe は oep-probe-arduino 0.0.32 以降、ch32rv 0.21.1、
+oep-client-python 0.0.33）、**スロット、attach policy、bind は廃止**された。口（port）は probe に保存したピンのラベル `S.N` の `S`、
+アドレスは `oep://<probe>[/<port>[/<target>]]`（oep-spec host guide §5.3）、素の端末へのコンソールは probe.config の
+`console-passthrough`。§0・§3・§5・§6 はこの形に直した。§12 は 2026-09-29 の実測の記録としてそのまま残す。
+
 ## 0. 用語（英語で決め、日本語は訳）
 
 | English | 日本語 | 意味 |
 |---|---|---|
 | **transport** | トランスポート | OEP のフレームを運べるもの。vendor bulk、HID、USB CDC、USB-Serial/JTAG、UART bridge、TCP |
-| **serial port** | シリアルポート | transport のうち、OS からシリアルデバイスに見えるもの（USB CDC の interface、USB-Serial/JTAG、UART bridge）。probe が番号で宣言する。常に OEP を受け、それ以外のバイトは bind したストリームへ流す。vendor bulk と HID は transport だが serial port ではない |
+| **serial port** | シリアルポート | transport のうち、OS からシリアルデバイスに見えるもの（USB CDC の interface、USB-Serial/JTAG、UART bridge）。probe が番号で宣言する。常に OEP を受け、それ以外のバイトは console-passthrough の流す先（§5.2）になる。vendor bulk と HID は transport だが serial port ではない |
 | **stream** | ストリーム | probe の中の位置付きのバイト列。target console と fixture UART の受信。読んでも消えず、読み手が複数いてよい |
-| **slot** | スロット | 登録された 1 つの「場所」: wire、pins、name、attach policy、console mechanism。IDE port はスロットごと |
-| **connection** | 接続 | スロットへの生きている attach |
-| **bind** | バインド | serial port → stream の対応（1 port に 1 stream） |
-| **attach policy** | attach の方針 | host / at boot（+ 再試行の間隔） |
+| **port** | 口 | probe のどのピンの組か。probe に保存した設定のラベル `S.N`（`S.swdio`、`S.swclk`、`S.swio`、`S.nrst`、`S.rx`、`S.tx`）の `S` が名前。名前つきの口が無い probe は、名前の無い口を 1 つ持つとみなす（`any` でだけ選べる）。IDE port は口ごと |
+| **connection** | 接続 | 口への生きている attach。attach のたびに新しく作る |
+| **console-passthrough** | コンソールの素通し | probe.config の項目。serial port（fn 0 の transport の番号）ごとに、セッションが来ていない間だけ probe が止めない attach をしてコンソールをその口へ流す。旧仕様の attach policy（at boot）と bind の代わり |
 | **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行。probe の serial port とは別の概念 |
 | **broker** | ブローカー | probe ごとに 1 つ、誰の子でもない ch32rv のプロセス。probe のセッションを持ち、client（ch32rv の各コマンド、pytest）を束ねる。client が 0 になったら終わる |
 
@@ -39,7 +43,7 @@ wire（線。debug の線を駆動するインターフェース: `oep.wire.rvsw
 | 場面 | 書き込み | 実行中の出力を見る | 波形 |
 |---|---|---|---|
 | 利用者、WCH-LinkE | ch32rv（LinkE の CDC か `wchlink://` を選ぶ） | ch32rv の monitor（uart / sdi / dmdata / dmseq / rtt） | — |
-| 利用者、OEP の probe | ch32rv（`oep://<probe>/<slot>` か、probe の serial port を選ぶ） | ch32rv の monitor（同じ IDE port） | — |
+| 利用者、OEP の probe | ch32rv（`oep://<probe>/<port>` か、probe の serial port を選ぶ） | ch32rv の monitor（同じ IDE port） | — |
 | 利用者、UIAPduino（USB だけ） | ch32rv（HID のブートローダー。手動の pin reset） | 無し（LinkE / OEP の側） | — |
 | 開発、ベンチ（pytest） | arduino-cli → ch32rv | arduino-cli monitor → ch32rv | OEP の client → WireSkein |
 
@@ -69,8 +73,8 @@ Uno と同じく、プログラマの選択は要らない。板は `upload.prot
 |---|---|---|
 | LinkE の CDC（serial） | ch32rv が `probe list` の `ports` から Link を引く（`--probe port:<path>`。シリアル番号が無くても topology で辿れる） | LinkE |
 | `wchlink://<serial>` | discovery（実装済み） | LinkE |
-| `oep://<probe>/<slot>` | discovery（専用 PID の probe だけ、§3.3） | そのスロット |
-| OEP の probe の serial port（専用 PID の無い probe） | ch32rv が開いて describe が返る | 板の家系に合うスロット（§3.4） |
+| `oep://<probe>/<port>` | discovery（§3.3） | その口 |
+| OEP の probe の serial port（専用 PID の無い probe） | ch32rv が開いて describe が返る | 口が 1 つに決まればそこ（§3.4） |
 | `hid://<topology>`（UIAPduino） | discovery | HID ブートローダー |
 | ポート無し | `upload.tool.default` | ch32rv が USB を走査し、候補が 1 つならそこ。複数なら候補を並べて断る |
 
@@ -87,7 +91,7 @@ platform.txt の `pluggable_discovery.ch32rv.pattern` で登録する（1 つで
 | 出すもの | 条件 | 中身 |
 |---|---|---|
 | `wchlink://<serial>` | LinkE（`1a86:8010` / `8012`） | USB の記述子だけ。target は引かない（LinkE の attach は target のクロックを組み替える） |
-| `oep://<probe>/<slot>` | **専用 PID の USB で列挙する probe だけ**（P4 の HS の口、RP2350。OEP は pid.codes で PID を取る） | ロック無しの describe / config で登録（スロット）と状態を読む。**HID の口があれば HID で読む**（他の道具が CDC / vendor を握っていても読める。競合しない）。無ければ CDC / vendor を短く開き、busy なら前回の写し |
+| `oep://<probe>/<port>` | 専用 PID の USB で列挙する probe（P4 の HS の口、RP2350。OEP は pid.codes で PID を取る）と、DNS-SD で見つかる TCP の probe | ラベルのある口ごとに 1 つ。名前つきの口が無い probe は `oep://<probe>/any` を 1 つ（ch32rv 0.21.1 から。`oep://<probe>` は probe 自身を指し、attach するコマンドは exit 2 で止まる）。ロック無しで設定のラベルを読む |
 | `hid://<topology>` | UIAPduino のブートローダー（`1209:b803` / `b003`） | boards.txt の `upload_port.0.vid/pid` で板名を出す |
 | `isp://<topology>`（後で） | ISP で待つ device（`4348:55e0`） | Identify で chip を読み、LinkE の IAP は除く。properties の `chip` で boards.txt の `upload_port.N.protocol=isp` / `.chip=…` と照合して板名を出す |
 
@@ -99,16 +103,25 @@ OEP の probe は、取得したプロジェクトの USB ID **1209:4F45** で�
 device を開いて describe の unit_id で確かめる。以前の仮の ID（303a:0002）と名前（iProduct が `OEP` で始まる）での判定は、
 2026-10-06 の一斉切り替えで互換を残さずにやめた。
 
-`oep://<probe>/<slot>` の `<slot>` はスロットの name（1〜32 byte、`a-z 0-9 - _`、probe の中で重ならない）。address は
-sketch.yaml や pytest の `--port` に書かれるので、読めることを優先した。name を変えると address も変わる。
+`oep://<probe>/<port>` の `<port>` は口の名前（ラベル `S.N` の `S`。どの段も `a-z 0-9 - .`、`any` は予約語）。address は
+sketch.yaml や pytest の `--port` に書かれるので、読めることを優先した。ラベルを変えると address も変わる。3 段目の target
+（`<family>-<UID の 16 進>`）は任意で、探す鍵ではなく照合の値: 付ければ、書き込みなどの副作用の前に、作業の接続でその個体かを
+確かめ、違えば何もせず止める。discovery は attach しないので UID を知らず、IDE の既定は `oep://<probe>/<port>` まで。治具で
+個体を固定したいときに、設定で target を書く。
 
-### 3.4 スロットの選び方（専用 PID の無い probe の serial port を選んだとき）
+### 3.4 口の選び方
 
-書き込みもモニタも同じ規則。利用者が IDE で選んだ板の家系（recipe の `--chip {build.ch32rv_chip}`。monitor には boards.txt の
-`monitor_port.serial.chip=<家系>` を CONFIGURE で渡す）に合うスロットが **1 つならそこ**。接続済みのスロットの chip は probe が
-持つ状態（§5.3）から、未接続のスロットは止めない attach で読む（利用者の操作なので線を駆動してよい）。**0 か 2 つ以上なら止めて**、
-スロットの一覧と理由を出す。動きは挿さっているチップの組で決まり、登録の数では変わらない。ch32rv の `--chip` の fail-closed と同じ。
-専用 PID の probe では、raw の serial port を選んだ upload は常に断る（`oep://…` を選ぶ）。
+書き込みもモニタも同じ規則（oep-spec host guide §5.3 の「解決」）。attach せずに分かる情報だけで probe と口を絞る: discovery の
+unit_id、口の名前、target の家系が使う wire をその口が持つか（V003 なら swio、L103 / X035 なら rvswd）。**残りが 1 つでなければ
+止める**（0 なら見つからない、2 つ以上なら曖昧。一覧を出す）。旧仕様の「板の家系に合うスロットを attach して探す」動きは無い。
+家系は wire の有無の絞り込みと、attach 後の fail-closed の照合（ch32rv の `--chip`、monitor の `chip`）にだけ使う。
+
+- 名前つきの口がある probe: `oep://<probe>/<port>` で名指す（discovery の IDE port を選ぶのがいちばん迷わない）。その名前の口が
+  無ければ止まる（ch32rv は exit 10、口の一覧つき）。口が 1 つだけなら `oep://<probe>/any` でも決まる（2 つ以上なら exit 23）。
+- 名前つきの口が無い probe: 名前の無い口を 1 つ持つとみなし、`oep://<probe>/any` で選ぶ。
+- 専用 PID の無い probe の serial port（`port:<serial port>`）や `tcp:` を選んだときも同じ規則で、口が 1 つならそこ、名前の無いまま
+  複数なら止まる（exit 23、一覧つき）。そのときは `oep://<probe>/<port>` を選ぶか、ラベルつきの口を 1 つにする。
+- ピンは口のラベル `S.swdio` / `S.swclk` / `S.swio` から取る。ピンを host が選ぶ wire でラベルが無ければ止まり、scan で組を探さない。
 
 ### 3.5 C（factory ISP、USB）を後から足すときの形
 
@@ -121,11 +134,11 @@ monitor は無い。2 段目（X035 / X315）: core に USB CDC（TinyUSB の結
 ### 4.1 常に OEP を受け、それ以外はコンソールへ
 
 1. シリアルに見える transport（USB CDC、USB-Serial/JTAG、UART bridge）は、いつでも OEP のフレームを受ける。フレーム以外の
-   バイトは bind したストリームへ流す（bind が無ければ捨てる）。
+   バイトは console-passthrough のコンソールが流れる先になる（設定が無ければ何も流れない）。
 2. vendor bulk / HID を持つ probe では host はそちらで OEP を話す（core §3.3 の順）。CDC は実際にはコンソールだけが流れるが、
    OEP を受けなくなるわけではない（Web Serial や権限の無い環境からは CDC で話せる）。
 3. どの transport から来た要求も、セッションとロックは 1 つ（core §3.3）。
-4. 起動モード（setup / debugger）は持たない。設定は同じ口で行い、bind はすぐ効く。再起動も、setup へ戻る手段も要らない。
+4. 起動モード（setup / debugger）は持たない。設定は同じ口で行い、すぐ効く。再起動も、setup へ戻る手段も要らない。
 
 ### 4.2 フレームの形と共用の規則
 
@@ -170,46 +183,23 @@ UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数�
 
 ### 5.1 流れ
 
-1. ブラウザの設定ページ（OEP 側のリポジトリ）で、probe に合う transport（CDC は Web Serial、HID は WebHID、vendor は WebUSB）を
-   開く。どれも同じ OEP（describe、session、probe.config）。
-2. `scan` で target を探し、見つかったピンの組をスロットとして登録する（wire、pins、name、attach policy、console mechanism）。
-3. serial port ごとに bind（流すストリーム 1 つ）を決める。
-4. `save`。すぐ効く。再起動は要らない。
+1. ブラウザの設定ページか `oep config`（OEP 側のリポジトリ）で probe を開く。どの transport でも同じ OEP（describe、session、
+   probe.config）。
+2. 口ごとにピンへラベルを付ける（`S.swdio` / `S.swclk`、`S.swio`、`S.nrst`、fixture UART の `S.rx` / `S.tx`）。ラベルは probe に
+   保存されるので、どの host からも同じ名前で見える。ラベルは「チップ」ではなく「場所」の名前で、チップを付け替えても直さない。
+3. 素の端末でコンソールを見たい serial port には `console-passthrough` を設定する（下）。
+4. `save`。
 
-### 5.2 スロット
+### 5.2 console-passthrough
 
-- 登録は「チップ」ではなく「場所」。チップを付け替えても登録は直さない。どのチップかは使うときに分かる（書き込みは板の家系と実際の
-  チップの照合で守る）。
-- **同時に持てる接続の数は probe が宣言する**（宣言が無ければ 1）。ロックは probe に 1 つのまま（接続ごとのロックは足さない）。複数の
-  host の同時制御は transport の分離（TCP、host 側のブローカー）で、protocol の外。
-- 登録の上限は protocol では決めず、probe が宣言する（ピンの数、保存の容量、ピン固定なら 1）。
-- 仕様に要るもの: 数の宣言、今ある接続の一覧の操作、スロットの項目（今の bind が持つ pins と attach を移す）。
-
-### 5.3 attach policy と確認
-
-- policy は host / at boot の 2 つ。at boot に**再試行の間隔**（`retry_s`、0 なら再試行しない）を持たせ、いないスロットは
-  probe がその間隔で止めない attach をやり直す。policy が host のスロットは確認しない。
-- 「serial port が開かれたら attach」（on open）は持たない。開いたことは DTR でしか分からず、UART bridge・pty・DTR を立てない
-  terminal では取れない。取れないことのある event に動きを結び付けない。IDE と pytest の monitor は ch32rv が自分で attach する
-  （host）。素の terminal で見たいスロットは at boot にする（OEP の probe の止めない attach は動いているアプリを乱さず、クロックも
-  変えないので、常に attach しておく代償は小さい）。
-- **接続は使うときに作るのが基本。自動 attach は、接続に時間がかかる場合があるのを先払いするプリフェッチ。** 外れていれば使うときに
-  attach からやり直す。登録に前回の速さを保存すれば短くなる。
-- at boot のスロットの数は同時に持てる数まで（超える set は断る。順序は意味を持たない）。席が埋まっているときの host の attach は、
-  bind だけが使っている接続のうちいちばん古いものを外して席を空ける（host も使っている接続は外さない）。押し出されたスロットは
-  そのまま。再 attach は at boot の再試行か host の attach で起き、**bind はどの接続にも乗る**。
-- **スロットの状態**（接続あり / いない（最後に試した時刻））は probe が describe にロック無しで出し、discovery でも
-  OEP の client でも同じものが読める。host は線を駆動しない。線を駆動せずに「つながっているか」を知る方法は無い（内蔵プルでも、
-  容量の戻り時間でも、接続ピンと未接続ピンで差が無かった）。
-- 自動 attach は止めない attach だけ。
-
-### 5.4 bind（serial port に何を流すか）
-
-bind は serial port 1 つにストリーム 1 つ（スロットのコンソールか fixture UART の受信）。入力はそのストリームへ送る。
-
-- 替えるときは host が bind を set し直す。セッションの間は進めず、終わったら止めた位置から続ける（あふれていれば一番古いバイトから）。
-- 同じスロットを 2 つの port に bind してよい（x035-p4 の port 1 と port 3）。
-- fixture UART のストリームは接続が無くても流れる。
+- probe.config の項目。key は serial port（fn 0 の transport の番号）、data は wire_fn、swdio、swclk、max_speed、console_fn、
+  mechanism。例: `oep config console-passthrough <port> 0 oep.wire.swio 16 --console oep.target.console --mechanism dmseq --save`。
+- その口からセッションの要求が来ておらず、セッションがそのピンを取っていない間だけ、probe が止めない attach をしてコンソールを
+  口へ流す。セッションが来れば素通しが先に退く。IDE と pytest の monitor は ch32rv が自分で attach する（ブローカーのセッション）。
+- 試し直しは、swio は probe が決める間隔で行う。rvswd は wake が target をリセットしうるので、条件が成り立つたびに 1 回だけ。
+  旧仕様の `retry_s` のような設定は無い。
+- rvswd の休ませ方は probe が target_id から決める（oep-spec debug §3.1。CH32L103 は low）。口ごとの設定 `rvswd-rest` で止められる。
+- fixture UART のピンは口の `rx` / `tx` のラベルから plan する。
 
 ## 6. IDE との結び付き
 
@@ -222,7 +212,7 @@ bind は serial port 1 つにストリーム 1 つ（スロットのコンソー
   受け、pluggable monitor の TCP へ流す（§7.2）。
 - 設定の優先順は `--config` > profile の `port_config` > 板の既定（boards.txt `monitor_port.serial.<id>`）。`-m <profile>` のときは
   top-level の `default_port_config` は届かない。monitor が宣言しないキーを profile に書くと arduino-cli が exit 7 で止まる。
-- 板の既定として `monitor_port.serial.chip=<家系>` を持たせ、ch32rv の monitor が §3.4 のスロットの選択に使う。
+- 板の既定として `monitor_port.serial.chip=<家系>` を持たせる。ch32rv の monitor は attach する source でこれと実際のチップを照合し、合わなければ OPEN を error にする（口の選択には使わない。§3.4）。
 
 ### 6.2 ch32rv の monitor に要る作り
 
@@ -320,6 +310,8 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
 - 設定ページと JavaScript の client の置き場（OEP 側で決める）。
 
 ## 11. 各リポジトリに要る変更
+
+（2026-09-29 の計画。スロット・bind・retry_s は 2026-10-16 の仕様の作り直しで口のラベルと console-passthrough に置き換わった。冒頭の更新を参照）
 
 | リポジトリ | 変更 |
 |---|---|

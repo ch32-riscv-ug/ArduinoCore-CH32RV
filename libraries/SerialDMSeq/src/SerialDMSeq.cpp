@@ -92,16 +92,16 @@ void CH32RVSerialDMSeq::repost(void)
     *CH32RV_DM_DATA0 = _w0;
 }
 
-/* While latched, keep the frame posted - actively. A probe attach may rewrite
+/* While latched - or while data0 reads zero - keep the frame posted, actively. A probe attach may rewrite
  * data0: 0xffffffff (bit 7 set) reads as our own frame, so we would wait, while an
  * unsynced host takes it as invalid and never answers; a zero word reads as
  * silence. Either way both sides would stay stuck. So every short wait the frame
  * goes up again (oep-spec docs/target-console-dmseq.ja.md, found by the ch32rv
  * side). Timed by millis() where it runs, and by a call count where it does not
  * (interrupts masked); whichever comes first. */
-void CH32RVSerialDMSeq::stale(void)
+void CH32RVSerialDMSeq::stale(bool zero)
 {
-    if (!_latched) {
+    if (!_latched && !zero) {
         return;
     }
     if ((uint32_t)(millis() - _stale_ms) >= CH32RV_DMSEQ_WAIT_MS || ++_stale_calls >= _stale_limit) {
@@ -140,12 +140,15 @@ bool CH32RVSerialDMSeq::service(void)
     }
     /* A zero word is no answer at all: a host writes only over a frame, and every
      * answer has a CRC that a zero word fails. It is what data0 reads on a V4
-     * with no debugger attached, where the register holds nothing - posting
-     * again there would be a wasted store on every available() (24 million of
-     * them in one idle run, found by the ch32rv side). The wait runs out as it
-     * would with a silent host. */
+     * with no debugger attached, where the register holds nothing, and what a
+     * debug module reset leaves - a CH32L103 resets its DM whenever the probe
+     * lets SWCLK rest high, as it does between connections since the reworked
+     * OEP spec (2026-10-16). The frame is gone then, and a sketch that only
+     * calls available() would wait for its answer forever, so it goes up again -
+     * once per short wait, not on every available() (that was 24 million wasted
+     * stores in one idle run on a V4, found by the ch32rv side). */
     if (w == 0u) {
-        stale();
+        stale(true);
         return false;
     }
     const uint8_t a[4] = {(uint8_t)w, (uint8_t)(w >> 8), (uint8_t)(w >> 16),
@@ -221,6 +224,9 @@ void CH32RVSerialDMSeq::begin(unsigned long baudrate, uint16_t config)
     _latched = false;
     _long = false;
     _wrote = false;
+    _stale_ms = millis();
+    _stale_calls = 0;
+    _stale_limit = waitPolls();   /* the short wait: _host is false here */
     _started = true;
 }
 

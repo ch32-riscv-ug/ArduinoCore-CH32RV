@@ -79,7 +79,7 @@ def load_bench(path, *, lock_path=None):
             oep = (target.get("usb_serial") and target["upload_port"].startswith(prefix)
                    and re.fullmatch(r"[a-zA-Z0-9_-]+", target["upload_port"][len(prefix):]))
             if not hid and not oep:
-                raise ValueError("upload_port must name this target's OEP slot or UIAPduino HID topology")
+                raise ValueError("upload_port must name this target's OEP port or UIAPduino HID topology")
         if PEER_CASES & set(target["cases"]):
             peer = target.get("usb_peer_port")
             if not isinstance(peer, str) or not peer.startswith(("/dev/serial/by-id/", "/run/board-identify/by-id/")):

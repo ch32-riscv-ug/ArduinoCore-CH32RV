@@ -58,7 +58,7 @@ OEPでは `probe_unit_id` に完全な個体IDを設定してください。専�
 
 usbのホスト役は当面このPCです（`test_usb_contract.py` の `PcUsbHost`。キーボードの入力はHIDのカーネルドライバを外してから送らせるので、PCのデスクトップには届きません）。DUTは SWD で書き込み、DMSEQで指示します。ホスト役を別のマイコン（Pico）に替えるときは `PcUsbHost` だけを置き換えます。DUTはVBUSを使わず `selfPowered` で動かします。
 
-UIAPduino V003は `upload_port = "hid://<soft_usb_topology>"` を設定します。runtime／UART／GPIOでも毎回SWIO＋NRSTからbootloaderへ移行し、HIDで書き込み、ESP32上のDMSEQとfixtureで観測します。RP2350は `upload_port = "oep://<usb_serial>/<slot>"` を設定します。console用のserial pathとupload先をそれぞれ指定します。
+UIAPduino V003は `upload_port = "hid://<soft_usb_topology>"` を設定します。runtime／UART／GPIOでも毎回SWIO＋NRSTからbootloaderへ移行し、HIDで書き込み、ESP32上のDMSEQとfixtureで観測します。RP2350は `upload_port = "oep://<usb_serial>/<port>"` を設定します（`<port>` は probe に保存したピンのラベル `S.swdio` などの `S`）。console用のserial pathとupload先をそれぞれ指定します。
 
 ## 実行とartifact
 

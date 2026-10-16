@@ -125,14 +125,15 @@ tools.ch32rv.cmd.windows=ch32rv.exe
 # no programmer is asked for, and the tool follows the port's protocol:
 #   serial   a probe's serial port - a WCH-Link's CDC, an OEP probe's USJ / CDC
 #   wchlink  wchlink://<serial>, from ch32rv's discovery
-#   oep      oep://<probe>/<slot>, from ch32rv's discovery
+#   oep      oep://<probe>/<port>, from ch32rv's discovery (<port> is the
+#            name the probe's saved pin labels give, S of S.swdio / S.swio)
 #   hid      hid://<topology>, the UIAPduino bootloader
 #   ch32rv-app  ch32rv-app://<USB serial>, a running sketch with CH32RVUsbDevice's
 #            DFU runtime (its interface named "CH32RV"); written over USB alone
 #   ch32rv-isp  ch32rv-isp://<USB position>, the factory USB bootloader (1a86:55e0)
-# ch32rv resolves the address itself (--probe port:); on a probe with several
-# slots it picks the one whose chip family matches --chip and refuses when that
-# is not exactly one.
+# ch32rv resolves the address itself (--probe port:). A port is chosen by its
+# name, without attaching; a probe with several ports and none named is refused
+# with the list (ch32rv 0.21, the reworked OEP spec: slots are gone).
 # No plain `upload.tool`: arduino-cli takes it before the per-protocol keys
 # below (measured, arduino-cli 1.5.1), so a ch32rv-app port would be handed to
 # the debug-probe recipe. `upload.tool.default` covers an upload with no port.
@@ -183,7 +184,7 @@ tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none
 
 # ---------------------------------------------------------------- discovery
 # ch32rv lists what a plain serial scan cannot see or name: every WCH-Link as
-# wchlink://<serial>, every OEP probe's slot as oep://<probe>/<slot> (a device
+# wchlink://<serial>, every labelled port of an OEP probe as oep://<probe>/<port> (a device
 # with the OEP project USB ID 1209:4F45), and the UIAPduino
 # bootloader as hid://, a running CH32RVUsbDevice sketch as ch32rv-app:// and
 # the factory USB bootloader as ch32rv-isp://. It never opens an ordinary

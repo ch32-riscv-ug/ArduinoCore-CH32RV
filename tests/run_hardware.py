@@ -194,8 +194,24 @@ def record_probe(tool, target, directory, env):
     return snapshot
 
 
+def swio_wire(host):
+    """oep.wire.swio on the probe's one named port (host guide §5.3: the pins come from the port's saved
+    labels, `S.swio`; since the reworked spec an attach names its pins). uiapduino attaches without pins,
+    so they are put on the wire's attach."""
+    from oep_client import config, riscv
+    labels = [(item.channel, item.text) for item in config.ProbeConfig(host).items() if isinstance(item, config.Label)]
+    ports = config.ports_named(labels)
+    swio = config.line_from_labels(labels, "swio", ports[0] if len(ports) == 1 else None)
+    if swio is None:
+        raise RuntimeError(f"no single swio line in the probe's labels (ports {ports}): label it <port>.swio")
+    wire = riscv.Wire(host, "oep.wire.swio")
+    attach = wire.attach
+    wire.attach = lambda *args, **kw: attach(*args, **{"pins": (swio, 0xFFFF), **kw})
+    return wire
+
+
 def enter_hid(target):
-    from oep_client import core, link, riscv, uiapduino
+    from oep_client import core, link, uiapduino
     # The uploader's broker can retain the exclusive serial handle for a short idle period.
     deadline = time.monotonic() + 12
     while True:
@@ -210,7 +226,7 @@ def enter_hid(target):
         core.take(host, 30000, owner="ArduinoCore HID contract")
         gpio = core.find(host, "oep.fixture.gpio")
         core.plan_apply(host, [(gpio, 1, target["nrst_channel"])])
-        uiapduino.enter_bootloader(host, riscv.Wire(host, "oep.wire.swio"), gpio, target["nrst_channel"])
+        uiapduino.enter_bootloader(host, swio_wire(host), gpio, target["nrst_channel"])
     finally:
         try:
             host.end()

@@ -19,8 +19,9 @@ def oep_snapshot(port):
         limits = core.confirm(host)
         declaration = core.describe(host)
         tags = registry.CORE.tlv["describe"]
+        # The reworked spec (oep-spec 675288a) dropped confirm's flags byte and added the transport.
         result = dict(kind="oep", protocol={k: limits[k] for k in
-                      ("revision", "flags", "max_frame", "window", "max_inflight", "boot_id")})
+                      ("revision", "max_frame", "window", "max_inflight", "boot_id", "transport") if k in limits})
         for field in ("firmware", "model", "unit_id", "chip"):
             values = [value.decode("utf-8", errors="replace") for tag, value in declaration if tag == tags[field]]
             result[field] = values[0] if values else None
