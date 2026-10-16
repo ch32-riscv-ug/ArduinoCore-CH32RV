@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* MSCSdCard - ported from EspUsbDevice's example of the same name: an SD
  * card on SPI shows up on the PC as a USB drive.
  *

@@ -12,7 +12,7 @@
 | [support-status.ja.md](support-status.ja.md) | 系列ごとのビルド、書き込みの実装範囲 |
 | [upload-routes.ja.md](upload-routes.ja.md) | 書き込み経路、デバッグ線、書き込みモードへの入り方 |
 | [peripheral-support.ja.md](peripheral-support.ja.md) | ペリフェラル別の実装範囲と制約 |
-| [usb.ja.md](usb.ja.md) | USB デバイス（CDC、HID、MIDI、DFU runtime）と PD の使い方、USB からの書き込み |
+| [usb.ja.md](usb.ja.md) | USB Device・Host・PD、全38サンプルの入口、配線・操作と USB 書き込み |
 | [debug-output.ja.md](debug-output.ja.md) | UART、SDI、RTT、DMDATA、DMSEQ の使い分け |
 | [debugger.ja.md](debugger.ja.md) | `arduino-cli debug` と GDB server の設定 |
 | [uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md) | UIAPduino の HID 書き込みと復旧 |

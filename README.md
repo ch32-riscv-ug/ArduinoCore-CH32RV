@@ -79,6 +79,7 @@ Board Manager archives use an allowlist. `PLATFORM_ENTRIES` in
 - [Documentation index](docs/README.ja.md) (Japanese)
 - [Series and hardware support](docs/support-status.ja.md) (Japanese)
 - [Peripheral support](docs/peripheral-support.ja.md) (Japanese)
+- [USB Device, Host, PD and example guides](docs/usb.ja.md) (Japanese; each example also has an English README)
 - [Debug output](docs/debug-output.ja.md) (Japanese)
 - [Debugger setup](docs/debugger.ja.md) (Japanese)
 - [Flash-size analysis](docs/flash-size.ja.md) (Japanese)
@@ -92,6 +93,6 @@ Third-party material retains its own license.
 | path | origin | license |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
-| `libraries/CH32RVTinyUSB/src/` | pinned TinyUSB snapshot (upstream master after 0.21.0, one recorded patch; see `vendor/tinyusb.lock.toml`) | MIT |
+| `libraries/CH32RVTinyUSB/src/` | pinned TinyUSB snapshot and recorded patches; see `vendor/tinyusb.lock.toml` for revision and changes | MIT |
 
 Pinned revisions and file hashes are recorded in `vendor/*.lock.toml` and checked by the vendor tools.

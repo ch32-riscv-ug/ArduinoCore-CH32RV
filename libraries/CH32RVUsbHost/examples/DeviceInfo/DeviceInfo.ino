@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Print every USB device plugged into the board's USB port: identity, strings,
  * interfaces and endpoints. EspUsbHost's EspUsbHostDeviceInfo.
  *

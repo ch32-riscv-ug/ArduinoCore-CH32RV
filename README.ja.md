@@ -78,6 +78,7 @@ Board Manager の配布物は allowlist 方式で作られます。正確な対�
 - [ドキュメント一覧](docs/README.ja.md)
 - [系列ごとの実装範囲](docs/support-status.ja.md)
 - [ペリフェラル対応状況](docs/peripheral-support.ja.md)
+- [USB Device・Host・PD とサンプルの使い方](docs/usb.ja.md)
 - [デバッグ出力](docs/debug-output.ja.md)
 - [デバッガ](docs/debugger.ja.md)
 - [フラッシュ使用量の調べ方](docs/flash-size.ja.md)
@@ -91,6 +92,6 @@ Board Manager の配布物は allowlist 方式で作られます。正確な対�
 | path | 由来 | ライセンス |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
-| `libraries/CH32RVTinyUSB/src/` | TinyUSB の固定コピー（0.21.0 以降の upstream master、記録済みのパッチ1つ。`vendor/tinyusb.lock.toml`） | MIT |
+| `libraries/CH32RVTinyUSB/src/` | TinyUSB の固定コピーと記録済みパッチ。revision・変更点は `vendor/tinyusb.lock.toml` | MIT |
 
 固定 revision とファイル hash は `vendor/*.lock.toml` に記録し、検証ツールで一致を確認します。

@@ -1,5 +1,6 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* AudioSpeaker - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, Esp -> CH32RV). Runs on CH32X035/X033.
+ * EspUsbDevice -> CH32RVUsbDevice, Esp -> CH32RV). Controller support and wiring: see the adjacent README files.
  * docs/usb.ja.md describes the library.
  *
  * A USB Audio Class 1 speaker the host plays into; the sketch counts what

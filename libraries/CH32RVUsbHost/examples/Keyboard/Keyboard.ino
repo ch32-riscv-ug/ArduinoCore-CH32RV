@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Type on a USB keyboard and see the characters on Serial. Caps Lock and Num
  * Lock drive the keyboard's LEDs. EspUsbHost's EspUsbHostKeyboard.
  *

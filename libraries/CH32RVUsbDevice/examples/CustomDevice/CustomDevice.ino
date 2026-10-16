@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* CustomDevice - your own identity and several functions in one device.
  *
  * Functions join the device when they are declared, in declaration order:

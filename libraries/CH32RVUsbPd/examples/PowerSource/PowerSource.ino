@@ -1,7 +1,8 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Be a USB PD source: offer 5 V and 9 V fixed and a 3.3-11 V PPS range to
  * whatever sink is plugged into the USB-C, and print each contract.
  *
- * Runs on CH32X035/X033. The board must not have Rd resistors on CC (the
+ * Controller support and wiring: see the adjacent README files. The board must not have Rd resistors on CC (the
  * WeAct CH32X035 board has them as R4/R5 - remove both), and the actual
  * supply is yours: the two callbacks below switch it. They are required;
  * begin() fails without them. Each returns true only once the supply has

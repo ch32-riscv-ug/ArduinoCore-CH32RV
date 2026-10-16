@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* List what a USB PD charger offers, then ask it for 9 V.
  *
  * Runs on CH32X035/X033 (checked on a WeAct CH32X035F8U6 board); on the

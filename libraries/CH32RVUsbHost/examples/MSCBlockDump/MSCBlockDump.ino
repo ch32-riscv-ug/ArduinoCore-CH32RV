@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Identify a USB flash drive or card reader and dump its first block.
  * EspUsbHost's EspUsbHostMSCBlockDump.
  *

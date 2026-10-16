@@ -1,6 +1,6 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* AudioMicrophone - ported from EspUsbDevice's example of the same name
- * (renamed EspUsbDevice -> CH32RVUsbDevice, Esp -> CH32RV). Runs on
- * CH32X035/X033. docs/usb.ja.md describes the library.
+ * (renamed EspUsbDevice -> CH32RVUsbDevice, Esp -> CH32RV). Controller support and wiring: see the adjacent README files. docs/usb.ja.md describes the library.
  *
  * A USB Audio Class 1 microphone that sends a 440 Hz tone. 32 kHz 16-bit
  * mono (Esp: 48 kHz): a full-speed X035 endpoint holds 64 bytes, one

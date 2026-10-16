@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Print what a USB mouse does: movement, wheel and buttons. The report layout
  * comes from the mouse's report descriptor, so 16-bit and many-button mice
  * work too. EspUsbHost's EspUsbHostMouse.

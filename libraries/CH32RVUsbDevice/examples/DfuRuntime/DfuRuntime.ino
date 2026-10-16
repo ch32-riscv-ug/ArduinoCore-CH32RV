@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* DfuRuntime - re-upload over USB without a serial port.
  *
  * Every device gets a DFU runtime interface by default
@@ -6,9 +7,10 @@
  *
  * A DFU runtime interface has no endpoints and costs about 0.5 KB of flash
  * and 20 bytes of RAM. A host that sends it DFU_DETACH - `dfu-util -e`, or ch32rv -
- * makes the sketch reset into the chip's factory USB bootloader (1a86:55e0),
+ * on X035/X033 resets into the factory USB bootloader (1a86:55e0),
  * where `ch32rv isp` writes the new sketch. Without an upload the bootloader
- * returns to this sketch after about 10 s.
+ * returns to this sketch after about 10 s. Other series currently reset
+ * normally instead; see README.md for the supported upload entry.
  *
  * Add it to any device - it does not need a CDC port, which the 1200 bps
  * touch does. onDetach() can refuse, e.g. while a motor is running.

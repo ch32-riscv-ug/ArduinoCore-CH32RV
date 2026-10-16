@@ -1,5 +1,6 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* CompositeHidCdcMsc - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Runs on CH32X035/X033.
+ * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
  * docs/usb.ja.md describes the library.
  * The disk is 10 KB of RAM (EspUsbDevice's is 48 KB; X035 has 20 KB).
  * requires: ram=16K */
@@ -10,20 +11,17 @@
 // CH32RVUsbDevice instance and call begin() once; the library assigns interface
 // numbers and endpoints and builds the composite configuration descriptor.
 //
-// This reaches the ESP32-S3 non-control IN endpoint limit: keyboard, CDC
-// notification, CDC data-in, and MSC bulk-in. Duplex data endpoints share their
-// IN/OUT endpoint number. Adding MIDI or bulk Vendor exceeds the S3 IN limit.
-// See docs/DESIGN_NOTES.ja.md
-// "複合時の endpoint 予算の上限".
+// On CH32 this uses four endpoint numbers: one HID, two CDC, one MSC.
+// The controller budget is checked by begin(). See README.md for the CH32
+// setup; ESP32-specific IN endpoint limits do not apply here.
 
 CH32RVUsbDevice device;
 CH32RVUsbDeviceHidKeyboard keyboard(device);
 CH32RVUsbDeviceCdcSerial UsbSerial(device);
 CH32RVUsbDeviceMsc msc(device);
 
-// 48 KB RAM disk: kept small enough that the composite's .bss also fits the
-// ESP32-S2 DRAM budget (a 96 KB disk overflows S2 by ~27 KB at link time; S3/P4
-// have more DRAM). FAT12 still formats fine at this size.
+// Ten KiB of RAM, including FAT metadata, sized for the X035 memory budget.
+// File contents are recreated after reset.
 static uint8_t storage[10 * 1024];
 CH32RVUsbDeviceMscFatRamDisk disk(storage, sizeof(storage));
 

@@ -1,7 +1,8 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* UsbNetworkPing - a USB network adapter (CDC-NCM) that answers ping.
  *
- * The board appears to the PC as a wired network adapter (no driver install
- * on Windows 10+, macOS or Linux). This core has no IP stack, so the sketch
+ * The board appears as a network adapter on a host with a CDC-NCM driver.
+ * This core has no IP stack, so the sketch
  * answers the two things `ping` needs straight from the Ethernet frames: ARP
  * ("who has 192.168.7.1?") and ICMP echo. Give the PC's new interface an
  * address on 192.168.7.0/24 (e.g. 192.168.7.2/24) and run `ping 192.168.7.1`.
@@ -9,7 +10,7 @@
  * EspUsbDevice's UsbNetwork example serves a web page through lwIP; that
  * needs an IP stack this core does not ship.
  *
- * Runs on the series with a USB device port (CH32X035/X033 today).
+ * See README.md for controller support and the limited IPv4 parser scope.
  * requires: ram=16K */
 #include <CH32RVUsbDevice.h>
 #include <string.h>

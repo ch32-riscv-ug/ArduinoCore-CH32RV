@@ -1,5 +1,6 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* MSCFatRamDisk - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Runs on CH32X035/X033.
+ * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
  * docs/usb.ja.md describes the library.
  * The disk is 10 KB of RAM (EspUsbDevice's is 64 KB; X035 has 20 KB).
  * requires: ram=16K */
@@ -8,9 +9,8 @@
 CH32RVUsbDevice device;
 CH32RVUsbDeviceMsc msc(device);
 
-// Keep the example small enough for the ESP32-S2's internal DRAM after the
-// library-owned TinyUSB class buffers are linked. Larger RAM disks should use
-// PSRAM explicitly; persistent or substantially larger media should use SD.
+// Ten KiB leaves space for USB buffers on a 20-KiB X035. The disk includes
+// FAT metadata and is recreated on reset; use SD for persistent storage.
 static uint8_t storage[10 * 1024];
 CH32RVUsbDeviceMscFatRamDisk disk(storage, sizeof(storage));
 

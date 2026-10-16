@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* CycleVoltages - step through a USB PD charger's fixed voltages with a button.
  *
  * Each press asks for the next fixed profile the charger offers (5 V, 9 V,

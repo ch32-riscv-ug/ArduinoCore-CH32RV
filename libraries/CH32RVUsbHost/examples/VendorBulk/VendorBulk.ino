@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Talk to a vendor-specific bulk interface: open it when the device appears,
  * print what it sends, and send it whatever arrives on Serial. EspUsbHost's
  * EspUsbHostVendorBulk.

@@ -1,10 +1,13 @@
 # CH32RVUsbDevice — チップの USB をデバイスとして使う
 
+[English](README.md)
+
 CDC シリアル、HID（キーボード・マウス・ゲームパッド・メディアキー・システム制御・ベンダー・カスタム）、MIDI、
 ベンダー（バルク。WebUSB と MS OS 2.0 ディスクリプタ付き）、MSC（RAM ディスク・SD カード）、スマートカードリーダー（CCID）、
 USB ネットワーク（CDC-NCM）、オーディオ（UAC1 / UAC2）、カメラ（UVC）、DFU ランタイム（書き込みの入口）を、宣言するだけで組み合わせられる USB デバイスのライブラリです。
-API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) に合わせてあり、名前の `Esp` を `CH32RV` に
-置き換えれば、たいていのスケッチはそのまま動きます。土台は同梱の TinyUSB（[CH32RVTinyUSB](../CH32RVTinyUSB/)）です。
+API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) と名前・操作をそろえています。
+移植時には下記の API 差分と、CH32 の pin・RAM・endpoint・帯域の制約を確認します。
+土台は同梱の TinyUSB（[CH32RVTinyUSB](../CH32RVTinyUSB/)）です。
 使い方の全体は [docs/usb.ja.md](../../docs/usb.ja.md) にあります。
 
 ```cpp
@@ -28,6 +31,9 @@ void loop() {
 ```
 
 `USBDevice` と `SerialUSB` は `Serial` と同じく定義済みなので、`SerialUSB.begin()` だけでも使えます。
+
+配線・ビルド・UART と USB CDC の区別・エラー対処は[サンプル共通ガイド](examples/README.ja.md)へ、
+最小の動作確認は [SerialUSBEcho](examples/SerialUSBEcho/README.ja.md) へ進んでください。
 
 ## EspUsbDevice からの置き換え
 
@@ -57,8 +63,9 @@ void loop() {
   `CH32RVUsbDeviceNet` は生の Ethernet フレームを扱う）、ベンダーの直接転送（`writeDirect()` は `NotSupported`）（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
 - **既定の文字列と ID はすべて `build_opt.h` の define で上書きできます**（VID/PID、メーカー名、製品名、
   インターフェース名、MSC の INQUIRY、FAT のボリュームラベル）。
-- **DFU ランタイムが既定で付きます**（EspUsbDevice には無い動作）。USB を使うスケッチは、何も書かなくても USB から
-  書き込み直せます。`config.dfuRuntime = false` で外せます。
+- **DFU ランタイムが既定で付きます。** `config.dfuRuntime = false` で外せます。
+  このコアは WCH ISP への入口として使い、EspUsbDevice の OTA/DFU download とは仕組みが異なります。
+  ISP への移行実装は現在 X035/X033 のみで、ほかの系列では通常 reset です。
 - **このライブラリだけのもの**: `CH32RVUsbDeviceDfuRuntime`（ISP への入口）、`SerialUSB` / `USBDevice` の定義済み
   オブジェクト、`enterBootloader()`。
 
@@ -107,8 +114,51 @@ HID のクラスは、いくつ宣言しても1つの HID インターフェー�
 | UsbNetworkPing | USB ネットワークで ARP と ping に答える（このライブラリ独自） |
 | SerialUSBEcho、CustomDevice、DfuRuntime | このライブラリ独自: `SerialUSB` だけの形、設定と失敗の表示、書き込みの入口だけ |
 
-EspUsbDevice の同名の例を移植したもの（Serial〜SmartCardReader）は、名前の置き換えとピン・VID/PID の変更だけで、
-中身は元のままです。
+各例の[個別 README と一覧](examples/README.ja.md)には、必要な機器、操作、期待する出力、変更する定数と制約を記載しています。
+EspUsbDevice からの移植例も、CH32 の RAM に合わせた disk、音声の sample rate、frame buffer を持たない映像等の差があります。
+
+## クラスを組み合わせるとき
+
+同じ `device` を各 function の constructor に渡し、設定を済ませてから `device.begin(config)` を呼びます。
+追加する順序は interface/endpoint の割当てにも影響します。default DFU は endpoint を使いません。
+HID の複数機能は report ID で一つの interface を共有します。
+
+| 構成 | endpoint 番号の消費例 |
+|---|---|
+| キーボードのみ | HID に1 |
+| CDC のみ | 通知用1、データ IN/OUT用1の計2 |
+| CDC二つ | 計4。`CFG_TUD_CDC=2` も必要 |
+| Keyboard + CDC + MSC | 1 + 2 + 1の計4 |
+
+IN/OUT の endpoint 数、packet memory、ISO 能力は controller ごとに異なります。ESP32 の「IN endpoint が四つ」等の
+制約をそのまま使わず、[USB controller の対応表](../../docs/usb.ja.md#コントローラと速度)を確認します。
+`OutOfEndpoints` は割当て不足、`TooManyInstances` は class 個数不足で、対処する設定も異なります。
+
+## 各クラスの確認方法
+
+| 機能 | ホスト側で確認するもの |
+|---|---|
+| CDC | 端末を DTR 有効で開く。baud は USB バス速度とは別 |
+| HID | 入力先アプリまたは raw report viewer。report ID と payload を区別 |
+| MIDI | MIDI モニタや音源。channel は0始まり |
+| MSC | raw blockなら [MSC](examples/MSC/README.ja.md)、ファイルなら [MSCFatRamDisk](examples/MSCFatRamDisk/README.ja.md) |
+| Vendor bulk | libusb/WinUSB/WebUSB のアプリ。COM端末では開かない |
+| CCID | PC/SC の ATR/APDU。callback の応答に SW1/SW2 も含める |
+| Audio | 再生/録音アプリ。PCM format の一致と FIFO の読み書き |
+| Video | 対応する解像度・YUY2と転送方式を選べる UVC アプリ |
+| NCM | NIC と静的IP。IP処理はスケッチ側で実装 |
+
+callback は関数ポインタで、受信 buffer は後の処理まで所有し続けるものではありません。
+保持が必要ならコピーし、Device callback の長い待ちや再入に頼らないでください。
+`loop()` と `delay()` が USB 処理を進めます。音声や映像で `write()` 等が返した長さを無視するとデータを失う場合があります。
+
+### サンプル固有の制約
+
+- HID の自動入力例は接続後に文字・クリック・音量操作を送ります。テスト用の入力先を用意します。
+- [MIDIController](examples/MIDIController/README.ja.md) の変換式は12-bit入力、このコアの既定 ADC は10-bitです。全 CC 範囲を使う設定方法を個別 README に記載しています。
+- AudioSpeaker は受信数の表示のみ、AudioMicrophone は合成音、AudioHeadset は USB loopbackです。実 codec の駆動例ではありません。
+- VideoCamera は80×60のテストパターンを payload ごとに生成します。X035でISOを選ぶ場合は frame rateも調整します。
+- UsbNetworkPing は小さな通常の ARP/ICMP の実験用で、DHCP/Web/汎用 IP parser はありません。
 
 ## 対応
 
@@ -118,6 +168,7 @@ V203 / V208（USBFS か USBD）、V305 / V307 / V317（USBFS か USBHS）も入�
 
 ## 書き込み
 
-1200bps タッチ（CDC がある場合）か DFU_DETACH（`CH32RVUsbDeviceDfuRuntime` がある場合）で工場出荷の USB
+X035/X033 では1200bps タッチ（CDC がある場合）か DFU_DETACH（`CH32RVUsbDeviceDfuRuntime` がある場合）で工場出荷の USB
 ISP ブートローダー（1a86:55e0）に入れ、`ch32rv isp flash --entry auto` で書き込みます。DFU は入口に使うだけで、
-書き込みは WCH の ISP プロトコルです（dfu-util では書けません）。詳しくは [docs/usb.ja.md](../../docs/usb.ja.md#書き込み)。
+書き込みは WCH の ISP プロトコルです（dfu-util では書けません）。ほかの系列は現在通常 reset になります。
+詳しくは [docs/usb.ja.md](../../docs/usb.ja.md#書き込み)。

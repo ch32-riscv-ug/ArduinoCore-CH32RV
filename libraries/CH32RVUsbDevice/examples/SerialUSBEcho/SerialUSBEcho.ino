@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* SerialUSBEcho - the simplest USB device: a virtual COM port.
  *
  * SerialUSB is predefined, like Serial: SerialUSB.begin() starts the chip's
@@ -5,13 +6,14 @@
  * port. Open the port from a terminal and type; every line comes back, and a
  * counter is printed every second while the port is open.
  *
- * Wiring: the board's USB connector to the PC. Runs on CH32X035/X033 (checked
- * on a WeAct CH32X035F8U6 board); on other series SerialUSB never opens.
+ * Wiring: the board's USB data connector to the PC. See README.md for
+ * implemented controllers and the difference between build and hardware checks.
  *
  * Uploading again over USB: opening the port at 1200 baud and closing it (the
- * Arduino "1200 bps touch") resets the chip into its factory USB bootloader
+ * Arduino "1200 bps touch") on X035/X033 enters the factory USB bootloader
  * (1a86:55e0), where `ch32rv isp` writes it. With no upload it comes back to
- * this sketch after about 10 s. See docs/usb.ja.md.
+ * this sketch after about 10 s. Other series currently reset normally. See
+ * README.md and docs/usb.ja.md for upload routes.
  */
 #include <CH32RVUsbDevice.h>
 

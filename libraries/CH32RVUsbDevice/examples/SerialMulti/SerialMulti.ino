@@ -1,5 +1,6 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* SerialMulti - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Runs on CH32X035/X033.
+ * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
  * docs/usb.ja.md describes the library.
  *
  * CH32: build_opt.h next to this sketch raises the number of CDC ports the USB
@@ -14,13 +15,9 @@
 // buffers, line coding and DTR state. A common use is separating a machine
 // protocol from a human console so log output never corrupts a command stream.
 //
-// How many ports fit is decided by the controller, not by this sketch: each
-// port costs two IN endpoints (notification + data). An S2/S3 has four
-// non-control IN endpoints, so two ports is its maximum and nothing else fits
-// beside them. The ESP32-P4's high-speed controller has seven, which leaves
-// room for two ports plus HID and Vendor, or for three ports on their own.
-// Exceeding the budget makes begin() fail with ESP_ERR_INVALID_SIZE before the
-// PHY is started, so the host never sees a half-built device.
+// Each CDC function uses a notification endpoint number and a duplex data
+// endpoint number. Two functions use four numbers on CH32. begin() checks the
+// controller budget; build_opt.h sets the TinyUSB instance count to two.
 
 CH32RVUsbDevice device;
 
@@ -30,12 +27,8 @@ CH32RVUsbDevice device;
 CH32RVUsbDeviceCdcSerial Console(device, "Console");
 CH32RVUsbDeviceCdcSerial DataLink(device, "Data Link");
 
-// The third port exists only where the endpoint budget has room for it. Two
-// ports already spend all four of the S2/S3 controller's non-control IN
-// endpoints; the P4's high-speed controller has seven, so a third fits with one
-// to spare. Registering it on an S3 would not fail quietly - begin() would
-// return ESP_ERR_INVALID_SIZE and the device would never enumerate - so the
-// port is compiled in only where it can actually exist.
+// This ESP32-P4 conditional variant is inactive in CH32 builds. The CH32
+// example exposes Console and DataLink only, matching CFG_TUD_CDC=2.
 #if defined(CONFIG_IDF_TARGET_ESP32P4)
 #define SERIAL_MULTI_HAS_THIRD_PORT 1
 CH32RVUsbDeviceCdcSerial Telemetry(device, "Telemetry");
@@ -97,9 +90,7 @@ void setup()
   CH32RVUsbDeviceConfig config;
   config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
   config.pid = 0x0001;
-  // The P4 defaults to its high-speed controller, which is where the third
-  // port's endpoints come from. Selecting FullSpeed here would drop the budget
-  // back to the S3's four IN endpoints and make begin() refuse the third port.
+  // Auto selects this CH32 part's default available controller; see README.md.
   config.controller = CH32RVUsbController::Auto;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice DualSerial";

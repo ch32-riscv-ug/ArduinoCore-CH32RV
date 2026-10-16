@@ -1,4 +1,4 @@
-# USB の使い方（デバイス・PD）
+# USB の使い方（デバイス・ホスト・PD）
 
 このコアの USB は、次の4つのライブラリで構成します。スタックは TinyUSB です（[ADR-0012](adr/0012-usb-stack.ja.md)）。
 
@@ -10,6 +10,21 @@
 | [CH32RVTinyUSB](../libraries/CH32RVTinyUSB/) | 同梱の TinyUSB 本体と設定（ホストコントローラのドライバはこのコアのもの） | 直接は使わない |
 
 ホストは [CH32RVUsbHost](../libraries/CH32RVUsbHost/)（`#include <CH32RVUsbHost.h>`）です（[ホスト](#ホストch32rvusbhost)）。
+
+## サンプルから始める
+
+各サンプルフォルダに日本語と英語の README があり、必要な機器、配線、操作、期待するログ、設定値と制約を記載しています。
+共通の配線とビルド方法を確認してから、個別の例へ進んでください。
+
+| 目的 | 最初の例 | 全サンプルと接続手順 |
+|---|---|---|
+| ボードを PC の USB Device にする | [SerialUSBEcho](../libraries/CH32RVUsbDevice/examples/SerialUSBEcho/README.ja.md) | [Device 共通ガイドと27例](../libraries/CH32RVUsbDevice/examples/README.ja.md) |
+| ボードへ USB 周辺機器を接続する | [DeviceInfo](../libraries/CH32RVUsbHost/examples/DeviceInfo/README.ja.md) | [Host 共通ガイドと8例](../libraries/CH32RVUsbHost/examples/README.ja.md) |
+| PD 充電器/電源を扱う | [ListProfiles](../libraries/CH32RVUsbPd/examples/ListProfiles/README.ja.md) | [PD 共通ガイドと3例](../libraries/CH32RVUsbPd/examples/README.ja.md) |
+
+`Serial` はハードウェア UART、`SerialUSB` / Device の `UsbSerial` は USB CDC、Host の `CH32RVUsbHostCdcSerial` は
+接続した USB シリアル機器への窓口です。ログを見る端子と、テストする USB データ端子を区別します。
+Device では WeAct X035F8U6、Host では X035C8T6 を実機基準にしており、同じ X035 でも Host の有無が異なります。
 
 ## 対応状況
 
@@ -143,7 +158,7 @@ void setup() {
 | 値 | 意味 |
 |---|---|
 | `Unsupported` | この系列ではまだ USB デバイスが使えない |
-| `PortUnavailable` | `config.port` に、この部品に無いコントローラを指定した |
+| `PortUnavailable` | `config.controller` に、この部品に無いコントローラを指定した、または必要な HSE を使えない |
 | `TooManyFunctions` | クラスが `CH32RV_USB_MAX_FUNCTIONS`（既定 6）より多い |
 | `TooManyInstances` | 同じクラスが上限（`CFG_TUD_CDC` など、既定 1）より多い |
 | `NotStarted` / `NotReady` | `begin()` の前、またはホストが構成していないときに HID のレポートを送ろうとした |
@@ -297,13 +312,22 @@ USB-C の PD 充電器から、固定電圧や PPS の電圧を受け取りま�
 #include <CH32RVUsbPd.h>
 
 void setup() {
-  if (USBPD.begin()) {
-    while (!USBPD.ready()) { }       // 充電器との交渉を待つ
-    USBPD.request(9000);             // 9 V（ミリボルト）
+  if (!USBPD.begin()) {
+    return;
   }
+  const uint32_t start = millis();
+  while (!USBPD.ready()) {
+    if (millis() - start >= 5000) {
+      return;                       // 未接続・PD 非対応もある
+    }
+  }
+  USBPD.request(9000);               // 9 V。実アプリでは戻り値も確認
 }
 void loop() { USBPD.maintain(); }    // PPS の契約を保つ
 ```
+
+この要求で VBUS 自体が9 Vに上がります。電源入力回路・負荷の定格を確認し、
+最初の接続は [PD サンプルの準備](../libraries/CH32RVUsbPd/examples/README.ja.md)に従ってください。
 
 - 例: [ListProfiles](../libraries/CH32RVUsbPd/examples/ListProfiles/)（充電器が出せる電圧の一覧）、
   [CycleVoltages](../libraries/CH32RVUsbPd/examples/CycleVoltages/)（ボタンで固定電圧を切り替える）
@@ -348,9 +372,12 @@ CH32RVUsbHost usb;
 CH32RVUsbHostCdcSerial port(usb);       // USB シリアルを Stream として
 
 void setup() {
+  Serial.begin(115200);
   usb.onKeyboard([](const CH32RVUsbHostKeyboardEvent &e) { if (e.pressed && e.ascii) Serial.print((char)e.ascii); });
   port.begin(115200);
-  usb.begin();
+  if (!usb.begin()) {
+    Serial.println(usb.lastErrorName());
+  }
 }
 void loop() { while (port.available()) Serial.write(port.read()); }
 ```

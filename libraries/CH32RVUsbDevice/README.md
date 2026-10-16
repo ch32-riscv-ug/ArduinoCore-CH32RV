@@ -1,12 +1,14 @@
 # CH32RVUsbDevice — the chip's own USB as a device
 
+[日本語](README.ja.md)
+
 CDC serial, HID (keyboard, mouse, gamepad, media keys, system control, vendor,
 custom), MIDI, vendor bulk (with WebUSB and the Microsoft OS 2.0 descriptors),
 mass storage (RAM disks, an SD card), a smart card reader (CCID), a network
 adapter (CDC-NCM), audio (UAC1/UAC2), a camera (UVC) and a DFU runtime
 interface (an upload entry), combined by declaring them. The API follows
-[EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice): rename `Esp`
-to `CH32RV` and most sketches carry over. Built on the vendored TinyUSB
+[EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice); migration also
+requires checking API differences, pins, RAM, endpoints and bandwidth below. Built on the vendored TinyUSB
 ([CH32RVTinyUSB](../CH32RVTinyUSB/)). The full guide (Japanese) is
 [docs/usb.ja.md](../../docs/usb.ja.md).
 
@@ -32,6 +34,10 @@ void loop() {
 
 `USBDevice` and `SerialUSB` are predefined like `Serial`, so `SerialUSB.begin()`
 alone works too.
+
+Start with [SerialUSBEcho](examples/SerialUSBEcho/README.md). The
+[example guide](examples/README.md) covers wiring, building, UART versus USB
+CDC, and troubleshooting. Every example has English and Japanese instructions.
 
 ## Coming from EspUsbDevice
 
@@ -62,9 +68,9 @@ Differences:
   stack in this core: `CH32RVUsbDeviceNet` exchanges raw Ethernet frames),
   and the vendor class's direct (zero-copy) path (`writeDirect()` reports
   `NotSupported`).
-- **A DFU runtime interface comes by default** (EspUsbDevice has none), so
-  any USB sketch can be re-uploaded over USB; `config.dfuRuntime = false`
-  leaves it out.
+- **A DFU runtime interface comes by default**; `config.dfuRuntime = false`
+  leaves it out. It enters WCH ISP on X035/X033; other series currently reset
+  normally. This differs from EspUsbDevice OTA/DFU download support.
 - **Only here**: `CH32RVUsbDeviceDfuRuntime` (the ISP entry), predefined
   `SerialUSB` / `USBDevice`, `enterBootloader()`.
 
@@ -97,10 +103,57 @@ more are told apart by report ID.
 Serial, SerialMulti, Keyboard, KeyboardNKRO, Mouse, KeyboardMouse, MediaKeys,
 Gamepad, VendorHID, CustomHID, MIDI, MIDIController, MIDIInterface, USBVendor,
 MSC, MSCFatRamDisk, MSCSdCard, CompositeHidCdcMsc, SmartCardReader,
-AudioSpeaker, AudioMicrophone, AudioHeadset, VideoCamera - ported
-from EspUsbDevice's examples of the same name with only the renames, pins and
-VID/PID changed (RAM disks shrunk to fit 20 KB of RAM; the HID ones send input on their own once running, as the
-originals do). SerialUSBEcho, CustomDevice, DfuRuntime and UsbNetworkPing are this library's.
+AudioSpeaker, AudioMicrophone, AudioHeadset and VideoCamera are adapted from
+EspUsbDevice, with CH32-specific memory, audio-rate and generated-video changes.
+HID examples generate input automatically. SerialUSBEcho, CustomDevice,
+DfuRuntime and UsbNetworkPing are this library's.
+
+The [complete example index](examples/README.md) links hardware, operation,
+expected output, settings and limitations for each sketch.
+
+## Composite configuration and runtime
+
+Declare functions on the same device and call begin once after configuring
+them. Declaration order affects interface/endpoint allocation. Multiple HID
+functions share one HID interface with report IDs. Default DFU uses no endpoint.
+
+| Configuration | Endpoint-number usage |
+|---|---|
+| Keyboard | One for HID |
+| CDC | Two: notification and duplex data |
+| Two CDC ports | Four, plus CFG_TUD_CDC=2 |
+| Keyboard + CDC + MSC | One + two + one = four |
+
+Controllers differ in IN/OUT resources, packet memory and ISO limits. Do not
+apply ESP32-specific endpoint counts to CH32. OutOfEndpoints and
+TooManyInstances indicate different resource limits; see the
+[controller table](../../docs/usb.ja.md#コントローラと速度).
+
+begin success means the stack started; mounted means the host configured it.
+CDC connected means DTR is active. Callbacks use function pointers; copy
+received data if needed later and keep device callbacks short. Tasks run after
+loop and during delay; call device.task inside long processing loops.
+
+## Choosing the matching host application
+
+| Class | Host-side check |
+|---|---|
+| CDC | Serial terminal with DTR; baud is not bus speed |
+| HID | Input window or raw report viewer; distinguish ID from payload |
+| MIDI | MIDI monitor/synthesizer; API channels are zero-based |
+| MSC | MSC for raw blocks, MSCFatRamDisk for files |
+| Vendor | libusb/WinUSB/WebUSB application, not a serial terminal |
+| CCID | PC/SC ATR and APDU; device responses include SW1/SW2 |
+| Audio | Playback/recording with the advertised PCM format |
+| Video | UVC viewer supporting the resolution, YUY2 and transport |
+| NCM | A NIC and static IP; application implements IP handling |
+
+The MIDIController sketch maps 12-bit readings while the core defaults to
+10 bits; its README explains how to use the full CC range. AudioSpeaker counts
+received PCM, AudioMicrophone generates a tone, and AudioHeadset loops PCM back;
+none drives a physical codec. VideoCamera generates an 80×60 pattern per payload;
+ISO on X035 needs a lower frame rate. UsbNetworkPing handles ordinary small
+ARP/ICMP packets, without DHCP, web serving or a general IP parser.
 
 ## Support
 
@@ -112,7 +165,8 @@ builds.
 
 ## Uploading
 
-A 1200 bps touch (with a CDC port) or a DFU_DETACH (with
+On X035/X033, a 1200 bps touch (with a CDC port) or a DFU_DETACH (with
 `CH32RVUsbDeviceDfuRuntime`) resets into the factory USB ISP bootloader
 (1a86:55e0), where `ch32rv isp flash --entry auto` writes the chip. DFU is
-only the entry; the write is WCH's ISP protocol, not a DFU download.
+only the entry; the write is WCH's ISP protocol, not a DFU download. Other
+series currently reset normally and require their supported upload route.

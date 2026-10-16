@@ -1,20 +1,33 @@
 # CH32RVUsbPd — PD充電器に電圧を頼む(sink)、電圧を出す(source)
 
+[English](README.md)
+
 旧名は `USBPD` ライブラリ（`USBPD.h`）です。定義済みのオブジェクト名 `USBPD` は変わりません。USB デバイスと合わせた使い方は
 [docs/usb.ja.md](../../docs/usb.ja.md) にあります。
 
 ```cpp
 #include <CH32RVUsbPd.h>
 
-if (USBPD.begin()) {
-    while (!USBPD.ready()) { }              // 充電器の列挙を待つ
-    for (uint8_t i = 0; i < USBPD.profileCount(); i++) {
-        PDProfile p = USBPD.profile(i);     // 充電器が出せるもの
+void setup() {
+    if (!USBPD.begin()) {
+        return;
     }
-    USBPD.request(9000);                    // 9 V ください
+    const uint32_t start = millis();
+    while (!USBPD.ready()) {
+        if (millis() - start >= 5000) {
+            return;                       // PD 非対応や未接続もある
+        }
+    }
+    USBPD.request(9000);                   // 9 V。実アプリでは戻り値を確認
 }
 void loop() { USBPD.maintain(); }           // PPS契約の維持
 ```
+
+この例は VBUS の電圧を変えるので、入力電源回路と負荷を要求電圧に対応させます。
+最初の操作、CC/UART配線、成功/失敗の表示は[サンプル共通ガイド](examples/README.ja.md)を参照してください。
+充電器の一覧と要求は [ListProfiles](examples/ListProfiles/README.ja.md)、ボタン操作は
+[CycleVoltages](examples/CycleVoltages/README.ja.md)、Source の電源制御の骨格は
+[PowerSource](examples/PowerSource/README.ja.md)にあります。
 
 ## 実装範囲
 
@@ -92,17 +105,22 @@ CC線は短く。WeActの板でCCからprobeのピンへ長いリードを引い
 2つのコールバックで行います。**両方とも必須**で、無ければ`begin()`が失敗します(理由は`lastErrorName()`)。
 実際にその電圧が出ているかの確認はこのライブラリの範囲外です。
 
+下記は callback の形を示す骨格です。print や `return true` だけでは電源は切り替わりません。
+実際の VBUS スイッチと可変電源を制御し、要求した状態になった後に true を返す実装へ置き換えてから使います。
+
 ```cpp
 bool vbus(bool on) { /* ロードスイッチ */ return true; }
 bool setVoltage(uint16_t mv, uint16_t ma, bool pps) { /* レギュレータ */ return true; }
 
-USBPDSource.setRpCurrent(PD_RP_3A0);
-USBPDSource.addFixed(5000, 3000);           // 先頭は 5 V 固定
-USBPDSource.addFixed(9000, 2000);
-USBPDSource.addPps(3300, 11000, 2000);
-USBPDSource.onVbus(vbus);
-USBPDSource.onSetVoltage(setVoltage);
-USBPDSource.begin();
+void setup() {
+    USBPDSource.setRpCurrent(PD_RP_3A0);
+    USBPDSource.addFixed(5000, 3000);       // 先頭は 5 V 固定
+    USBPDSource.addFixed(9000, 2000);
+    USBPDSource.addPps(3300, 11000, 2000);
+    USBPDSource.onVbus(vbus);
+    USBPDSource.onSetVoltage(setVoltage);
+    USBPDSource.begin();
+}
 void loop() { USBPDSource.maintain(); }
 ```
 

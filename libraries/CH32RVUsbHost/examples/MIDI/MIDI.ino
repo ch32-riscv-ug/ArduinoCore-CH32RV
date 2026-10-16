@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Print the messages a USB MIDI device sends, and play a note on it once a
  * second. EspUsbHost's EspUsbHostMIDI.
  *

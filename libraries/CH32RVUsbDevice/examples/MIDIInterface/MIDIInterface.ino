@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* MIDIInterface - ported from EspUsbDevice's example of the same name (renamed
  * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Runs wherever CH32RVUsbDevice does (see docs/usb.ja.md).
  * docs/usb.ja.md describes the library.

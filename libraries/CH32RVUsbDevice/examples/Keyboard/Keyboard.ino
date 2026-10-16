@@ -1,5 +1,6 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Keyboard - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Runs on CH32X035/X033.
+ * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
  * docs/usb.ja.md describes the library. */
 #include <CH32RVUsbDevice.h>
 

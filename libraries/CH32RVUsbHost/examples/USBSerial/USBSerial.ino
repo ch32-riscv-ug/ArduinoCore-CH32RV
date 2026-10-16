@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* A bridge between Serial and a USB serial device plugged into the board -
  * a CDC-ACM device, or an FTDI / CP210x / CH34x / PL2303 adapter.
  * EspUsbHost's EspUsbHostUSBSerial.

@@ -1,3 +1,4 @@
+/* Wiring, operation and expected output: README.md / README.ja.md. */
 /* Read a smart card through a USB CCID reader: the ATR when a card is
  * inserted, then a SELECT of the master file. EspUsbHost's
  * EspUsbHostCcidReader.

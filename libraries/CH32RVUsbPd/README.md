@@ -1,17 +1,33 @@
 # CH32RVUsbPd — ask a USB PD charger for a voltage (sink), or offer voltages (source)
 
+[日本語](README.ja.md)
+
 Formerly the `USBPD` library (`USBPD.h`); the predefined object is still `USBPD`. The USB guide
 (Japanese) is [docs/usb.ja.md](../../docs/usb.ja.md).
 
 ```cpp
 #include <CH32RVUsbPd.h>
 
-if (USBPD.begin()) {
-    while (!USBPD.ready()) { }
-    USBPD.request(9000);                    // 9 V please (millivolts!)
+void setup() {
+    if (!USBPD.begin()) {
+        return;
+    }
+    const uint32_t start = millis();
+    while (!USBPD.ready()) {
+        if (millis() - start >= 5000) {
+            return;                       // absent or non-PD source
+        }
+    }
+    USBPD.request(9000);                   // 9 V; check the result in real code
 }
 void loop() { USBPD.maintain(); }           // keeps a PPS contract alive
 ```
+
+This changes VBUS voltage; board input circuitry and loads must tolerate it.
+See [shared setup](examples/README.md),
+[ListProfiles](examples/ListProfiles/README.md),
+[CycleVoltages](examples/CycleVoltages/README.md) and
+[PowerSource](examples/PowerSource/README.md) for wiring, steps and results.
 
 The hardware driver is implemented for CH32X035/X033 and supports fixed and
 PPS contracts. On the other series with a USBPD block, `begin()` returns false
@@ -42,17 +58,23 @@ board switches its own supply through two callbacks; both are required and
 `begin()` fails without them (`lastErrorName()` says why). Whether the supply
 really reaches the voltage is the board's job.
 
+The callbacks below show signatures only. Replace them with actual VBUS and
+regulator control, returning true only when switching has completed. Printing
+or returning true alone does not change the physical supply.
+
 ```cpp
 bool vbus(bool on) { /* load switch */ return true; }
 bool setVoltage(uint16_t mv, uint16_t ma, bool pps) { /* regulator */ return true; }
 
-USBPDSource.setRpCurrent(PD_RP_3A0);
-USBPDSource.addFixed(5000, 3000);           // the first profile must be 5 V fixed
-USBPDSource.addFixed(9000, 2000);
-USBPDSource.addPps(3300, 11000, 2000);
-USBPDSource.onVbus(vbus);
-USBPDSource.onSetVoltage(setVoltage);
-USBPDSource.begin();
+void setup() {
+    USBPDSource.setRpCurrent(PD_RP_3A0);
+    USBPDSource.addFixed(5000, 3000);       // the first profile must be 5 V fixed
+    USBPDSource.addFixed(9000, 2000);
+    USBPDSource.addPps(3300, 11000, 2000);
+    USBPDSource.onVbus(vbus);
+    USBPDSource.onSetVoltage(setVoltage);
+    USBPDSource.begin();
+}
 void loop() { USBPDSource.maintain(); }
 ```
 
