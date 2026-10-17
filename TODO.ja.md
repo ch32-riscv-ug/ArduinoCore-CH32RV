@@ -2,6 +2,9 @@
 
 決まったことは ADR や各文書に移し、ここからは消します。
 
+クラス・主要動作モードの追加候補と、現行で対象外の機能の採否検討は
+[追加機能の採否検討](FEATURE_CANDIDATES.ja.md) にまとめます。
+
 ## 製品ボード別のテンプレート（examples）
 
 WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32RV/examples/Board*）。板が増えたら同じ形で
