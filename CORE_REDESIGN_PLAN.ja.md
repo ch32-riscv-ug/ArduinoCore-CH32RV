@@ -6,8 +6,8 @@
 高位モデルを使う局面は、全体像の設計、実験条件の設計、結果に基づく最終仕様の選択、重大な前提変更の再設計である。
 通常の実験・実装・検査は、作業範囲を定義して別モデル・別セッションへ渡す。モデルは利用者が手動で切り替える。
 
-更新日：2026-10-19。P0 の全体設計案を作成済み。次は P1 の比較条件と実験設計。
-P0 の完了は設計候補を記述したことを示す。方式の採用、実験・本実装の完了を意味しない。
+更新日：2026-10-19。P0 の全体設計案と P1 の比較実験仕様を作成済み。次は通常モデルで P2 の EXP-00。
+P1 では実験条件を定めた。方式の採用、実験・本実装の完了を意味しない。
 
 ## 前提と検証対象
 
@@ -111,11 +111,14 @@ P0 の成果物は [全体設計案](planning/core-redesign/design-draft.ja.md)�
   観測最大時間を期限保証と呼ばない。学びやすさは説明・変更課題で別評価する。
 
 各実験には「この結果ならどの判断が変わるか」を付ける。判断に使わない測定を増やさない。
-比較契約は `planning/core-redesign/experiment-spec.ja.md` にまとめ、個々の作業依頼から参照する。
+比較契約は [比較実験仕様 P1-1](planning/core-redesign/experiment-spec.ja.md)にまとめた。
+[用途と刺激](planning/core-redesign/workloads.ja.md)で容量・入力・期待結果を定め、
+[実行順と作業範囲](planning/core-redesign/experiment-tasks.ja.md)で判断と実験を対応付ける。
 
 ## 比較実験のまとまり
 
-以下は P1 で具体化する実験候補。順序は部品の採用順や製品の追加順ではない。
+以下は実験のまとまり。P1-1 で具体化した条件と開始順は [実行仕様](planning/core-redesign/experiment-tasks.ja.md)を参照する。
+順序は部品の採用順や製品の追加順ではない。
 
 | ID | 対象 | 主な比較と得たい判断 |
 |---|---|---|
@@ -261,7 +264,8 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 | 機能候補・用途調査 | 予備調査済み。ビルド再現・実機評価はこれから |
 | リンク費用の小実験 | 実施済み。実コアの費用・実行モデルの選択を証明するものではない |
 | P0 理想像 | DESIGN-01 完了。全体設計案 P0-1 と利用例を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-01/result.ja.md) |
-| P1〜P7 | 未着手。個別の既存実装を各フェーズの完了と数えない |
+| P1 比較条件と実験設計 | DESIGN-02 完了。P1-1 と EXP-00 依頼を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-02/result.ja.md) |
+| P2〜P7 | 未着手。個別の既存実装を各フェーズの完了と数えない |
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
 
@@ -271,14 +275,18 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 - 完了条件：V003 の小用途と X035 の PD 操作画面を同じ規則で説明でき、
   V006 の sleep、永続化、H417 の境界、教材の流れを含め、P1 へ渡す比較点が絞れている。
 
-次は **DESIGN-02：P1 の実験仕様と brief 作成**を高位モデルで行う。
+**DESIGN-02：P1 の実験仕様と brief 作成**は完了。
 
 - 入力：この計画、P0-1 の2文書、DESIGN-01 の結果、TODO の一次資料と用途調査。
-- 出力：`planning/core-redesign/experiment-spec.ja.md`、実験の依存順と判定条件、通常モデル向けの作業依頼。
+- 出力：[比較契約](planning/core-redesign/experiment-spec.ja.md)、[用途と刺激](planning/core-redesign/workloads.ja.md)、
+  [実行順](planning/core-redesign/experiment-tasks.ja.md)、[EXP-00 の依頼](planning/core-redesign/tasks/EXP-00/brief.ja.md)。
 - 内容：D01〜D12 の判断と EXP-00〜06 の対応、三案の同等機能・容量・入力・失敗条件、
   予算候補の根拠、host／compile／実機の分担、系列の物理調査、独立 stack 対照を作る条件を定める。
 - 完了条件：通常モデルが方式の採否を独断で補わず、比較を実行・記録できる。
   不足設備や未確認の物理仕様を列挙し、現時点で実行可能な作業と区別する。
 
-最初の通常モデル向け作業は EXP-00 とし、既存 probe の条件・再現性・記録方式を確認する。
+次は **P2／EXP-00：既存 probe の再現と記録**を通常モデルで行う。
+[実行依頼](planning/core-redesign/tasks/EXP-00/brief.ja.md)を指定して別セッションへ渡せる。
+既存18構成を2回再現し、サイズ・symbol・入力と tool の版を照合する。実機操作は含めない。
 EXP-00 は実行モデルを採用する作業ではない。最終像の比較を成立させる準備として実行する。
+EXP-00 の後は P2 の対象固定・対照実装へ進み、P3〜P4 の比較結果を P5 の高位判断へ渡す。

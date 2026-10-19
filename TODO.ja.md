@@ -19,7 +19,10 @@ P0 の成果物として [全体設計案 P0-1](planning/core-redesign/design-dr
 [利用例・状態遷移](planning/core-redesign/usage-sketches.ja.md)を作成済み。
 明示 step、短い work、宛先 event の三案と D01〜D12 の比較軸を具体化した。
 いずれも未採用で、以下の TODO や機能候補の採否は変更していない。
-次の P1 で同等機能・容量・入力条件・測定方法を定義する。
+P1 で [比較契約](planning/core-redesign/experiment-spec.ja.md)、
+[用途・刺激](planning/core-redesign/workloads.ja.md)、[実行順](planning/core-redesign/experiment-tasks.ja.md)を定義済み。
+次は通常モデルで [EXP-00 の再現・記録](planning/core-redesign/tasks/EXP-00/brief.ja.md)を実行する。
+方式の採否は未決定。物理条件・実機・教材の未検証を分けて P2〜P4 で証拠を集める。
 
 ### 理想像のたたき台と検証したい仮説
 
