@@ -6,3 +6,26 @@ upstream の由来、API 互換、CH32 compile、実機動作の保証ではあ�
 
 toolchain を必要とする検査を追加する場合は前提を明示します。
 生成物の確認と通常のテストはリポジトリを変更せず、build は隔離した作業領域に出力します。
+
+## 実行モデルの未使用時リンク費用を調べる実験
+
+`probe_execution_link_cost.py` は手動実行の比較実験です。通常の pytest 収集では実行しません。
+固定済みの RISC-V compiler と未作成の出力先を明示します。
+
+```sh
+python3 tests/platform/probe_execution_link_cost.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/execution-link-cost
+```
+
+RV32E／ILP32E と RV32IMAC／ILP32 で、呼び出し無効、未定義 weak hook、空の hook、
+archive 内の未使用処理、直接リンクした未使用処理、使用中の処理、constructor による登録を比較します。
+`-Os`・セクション分離・`--gc-sections` を使用し、LTO は使用しません。
+この実験は例外情報も無効化した独立した最小プログラムで、実際の core／CRT／Arduino ライブラリはリンクしません。
+constructor のケースは `.init_array` を保持する linker による到達性の検査で、起動時の実行検証ではありません。
+
+出力には入力ソース、全コマンド、compiler とスクリプトの hash、ELF、map、逆アセンブル、symbol、
+section 一覧、`result.json` を保存します。Flash は生の binary の長さ（配置の隙間を含む）、
+静的 RAM は `.data`＋`.bss` として計算し、baseline との差も出します。
+stack／heap の実行時最大量、CPU cycle、遅延、コア全体の追加サイズ、H417 の動作は測りません。
+出力 ELF は MCU に書き込める firmware ではなく、実機への接続・書き込みは行いません。
