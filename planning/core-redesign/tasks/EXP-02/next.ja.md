@@ -3,6 +3,10 @@
 通常モデルで続ける。現在の直列文脈・trivial payloadの部品と容量測定を出発点とする。
 P4までの全体範囲は[実行状況](../../execution-status.ja.md)を維持し、個別部品の成功で他の契約を埋めない。
 
+2026-10-20追記：[寿命・共有単位](shared-result.ja.md)で、下記1〜4のhost境界と
+5の追加ABI比較を実施した。実機の保護、休止への接続、ring／message／poolの共有は残る。
+次の通常作業はEXP-03の実行器・起動通知・待機接続とする。
+
 1. 非自明な型について、placement storage、moveとdestroy、満杯・回収・破棄の寿命を比較する。
    任意のconstructor／destructorをISRへ許すという意味にはしない。
 2. 単一コアISR共有の保護policyを、通常処理専用と分ける。

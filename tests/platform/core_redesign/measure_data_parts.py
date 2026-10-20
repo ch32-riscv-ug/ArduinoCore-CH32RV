@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EXP-02 serial-data code/storage matrix; link-only, no hardware or cycle claims."""
+"""EXP-02 data code/storage matrices; link-only, no hardware or cycle claims."""
 import argparse
 import hashlib
 import json
@@ -37,16 +37,40 @@ def cases(smoke):
     return result
 
 
+def shared_cases(smoke):
+    result = [("baseline", 0, 4, 16, 0, 1), ("unused-owned-manual", 1, 4, 16, 0, 0)]
+    if smoke: return result
+    result.extend([("unused-irq-v003", 2, 4, 16, 0, 0),
+                   ("unused-irq-x035", 2, 4, 16, 1, 0), ("unused-spsc", 3, 4, 16, 0, 0)])
+    for n in (1, 4, 16):
+        result.extend([(f"owned-manual-{n}", 1, n, 16, 0, 1),
+                       (f"irq-v003-{n}", 2, n, 16, 0, 1),
+                       (f"irq-x035-{n}", 2, n, 16, 1, 1),
+                       (f"spsc-{n}", 3, n, 16, 0, 1)])
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--smoke", action="store_true", help="baseline and unused queue only")
+    parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
+    parser.add_argument("--matrix", choices=("serial", "shared"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
     report = {"scope":"serial context, instrumented link-only; no runtime/IRQ guarantees",
               "status":"running", "results":[], "input_hashes":{}}
+    source = SOURCE
+    inputs = [SOURCE, HEADER]
+    selected_cases = cases(args.smoke)
+    if args.matrix == "shared":
+        source = Path(__file__).with_name("shared_entry.cpp")
+        inputs = [source, HEADER, source.with_name("irq_gate.hpp"),
+                  HEADER.with_name("owned_queue.hpp"), HEADER.with_name("shared_channels.hpp")]
+        selected_cases = shared_cases(args.smoke)
+        report["scope"] = "lifetime, IRQ-gate assembly and SPSC link-only; no runtime/IRQ/cache guarantees"
+    report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")
     def run(command):
@@ -59,10 +83,10 @@ def main():
         return result.stdout
     save()
     try:
-        for source in (SOURCE, HEADER, Path(__file__).resolve(), REPO / "tools/index/tools_xpack_gcc.json"):
-            relative = source.relative_to(REPO); target = out / "inputs" / relative
-            target.parent.mkdir(parents=True, exist_ok=True); shutil.copyfile(source, target)
-            report["input_hashes"][str(relative)] = sha(source)
+        for input_path in (*inputs, Path(__file__).resolve(), REPO / "tools/index/tools_xpack_gcc.json"):
+            relative = input_path.relative_to(REPO); target = out / "inputs" / relative
+            target.parent.mkdir(parents=True, exist_ok=True); shutil.copyfile(input_path, target)
+            report["input_hashes"][str(relative)] = sha(input_path)
         report["compiler"] = run([compiler,"--version"]).splitlines()[0]
         report["compiler_sha256"] = sha(compiler)
         report["tool_hashes"] = {}
@@ -73,13 +97,16 @@ def main():
             report["tool_hashes"][name] = sha(Path(prefix + name))
         report["libraries"] = {}
         for arch, march, abi in (("rv32e","rv32ec_zicsr","ilp32e"),("rv32i","rv32imac_zicsr","ilp32")):
+            # Both IRQ policies are cross-compiled for inspection. X035's SDK
+            # uses fence.i; the shared matrix needs its explicit ISA extension.
+            if args.matrix == "shared": march += "_zifencei"
             report["libraries"][arch] = {}
             for name, query in (("libgcc", "-print-libgcc-file-name"), ("libc", "-print-file-name=libc.a")):
                 path = Path(run([compiler, f"-march={march}", f"-mabi={abi}", query]).strip()).resolve()
                 report["libraries"][arch][name] = sha(path)
             for lto in (False, True):
                 baseline = None
-                for label, part, capacity, width, variant, used in cases(args.smoke):
+                for label, part, capacity, width, variant, used in selected_cases:
                     dest = out / f"{arch}-lto{int(lto)}" / label; dest.mkdir(parents=True)
                     ld = dest / "data.ld"
                     ld.write_text("""ENTRY(data_entry)
@@ -99,7 +126,7 @@ SECTIONS {
                     defines=[f"-DPART={part}",f"-DCAPACITY={capacity}",f"-DWIDTH={width}",
                              f"-DVARIANT={variant}",f"-DUSED={used}"]
                     obj=dest/"data.o"; elf=dest/"data.elf"
-                    run([compiler,*flags,*defines,"-c",SOURCE,"-o",obj])
+                    run([compiler,*flags,*defines,"-c",source,"-o",obj])
                     run([compiler,*flags,"-nostdlib","-Wl,--gc-sections","-Wl,--no-warn-rwx-segments",
                          f"-T{ld}",f"-Wl,-Map,{dest/'data.map'}",obj,"-lc","-lgcc","-o",elf])
                     section_text=run([prefix+"size","-A",elf]); (dest/"sections.txt").write_text(section_text)

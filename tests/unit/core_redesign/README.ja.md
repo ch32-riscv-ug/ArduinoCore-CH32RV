@@ -51,7 +51,7 @@ clockの周回・実PD・実IRQ・物理busを確認した扱いにはしない�
 固定queue／借用storageのqueue、部分操作・借用範囲付きbyte ring、全体受理のmessage buffer、
 flag、semaphore、owner付きtry lock、世代付き固定block poolを含む。
 使用文脈は直列実行に限定する。ISR・複数producer・コア間で共有するための保護はまだ含まない。
-非自明な型をqueueへ格納する方式も別の比較として残る。
+非自明な型と共有policyは、以下の独立比較を使う。
 
 queueのWakeFlagは空→非空の遷移で短いflagを設定する。
 ユーザーcallbackやwaitは呼ばない。consumerはdrain・条件再確認を行う必要があり、
@@ -73,3 +73,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py \
 16 byte payloadは全wordを観測し、flagはset／clear／takeを別操作にして、
 測ろうとする状態やcopyを入口だけで消してしまう条件を避ける。
 値は観測用入口・libc／libgccを含むプログラムの追加量で、class単独の理論費用ではない。
+
+`owned_queue.hpp` はmove-only型の寿命、`shared_channels.hpp` はgate付きqueueとSPSCを扱う。
+`shared_driver.cpp`／`test_shared_channels.py` で所有権ledger、IRQ登録境界の到着、
+hostの複数producerとSPSCのcounter周回・payload公開を検査する。
+gateによる保護とatomicの適合条件を混同せず、host成功で実IRQ／cacheを確認した扱いにしない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_shared_channels.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix shared \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp02-shared-matrix
+```
+
+shared matrixはX035のSDK命令に合わせ `zifencei` を明示する。
+OwnedQueueのMCU入口は明示構築で、global destructor登録の費用は含まない。
+TSanの別実行と一次資料・未確認条件は[結果](../../../planning/core-redesign/tasks/EXP-02/shared-result.ja.md)に記録する。

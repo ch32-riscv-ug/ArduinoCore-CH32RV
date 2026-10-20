@@ -1,0 +1,1326 @@
+{
+  "scope": "lifetime, IRQ-gate assembly and SPSC link-only; no runtime/IRQ/cache guarantees",
+  "status": "passed",
+  "results": [
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "694ec352b1a14fd41eb2ce0f22cdc34e3390742e211eaa7e990e6c344615d882"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-owned-manual",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "694ec352b1a14fd41eb2ce0f22cdc34e3390742e211eaa7e990e6c344615d882"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-irq-v003",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "694ec352b1a14fd41eb2ce0f22cdc34e3390742e211eaa7e990e6c344615d882"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-irq-x035",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "694ec352b1a14fd41eb2ce0f22cdc34e3390742e211eaa7e990e6c344615d882"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-spsc",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "694ec352b1a14fd41eb2ce0f22cdc34e3390742e211eaa7e990e6c344615d882"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "owned-manual-1",
+      "flash_bytes": 342,
+      "static_ram_bytes": 36,
+      "delta_flash": 314,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 342,
+        ".bss": 36,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "37609cd7f07c617aded0de5e9ea5f85d1d42bfc4023724ed69dafbb6878def17"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "irq-v003-1",
+      "flash_bytes": 440,
+      "static_ram_bytes": 44,
+      "delta_flash": 412,
+      "delta_ram": 32,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 412,
+        ".data": 28,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "ef914328e0737c377b4e9823d8a68ee3eb2a14c87b477c35f4e17e2f44663842"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "irq-x035-1",
+      "flash_bytes": 488,
+      "static_ram_bytes": 44,
+      "delta_flash": 460,
+      "delta_ram": 32,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 460,
+        ".data": 28,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "922370bdbc2605fc076f6001751ac8dfb8b3d638c2565f471cbef37be3f1c7b6"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "spsc-1",
+      "flash_bytes": 240,
+      "static_ram_bytes": 36,
+      "delta_flash": 212,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 240,
+        ".bss": 36,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "bc66e9592349ff68dc317dafc4b9b009ff98c4bcc30310d9d61e57349aefb380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "owned-manual-4",
+      "flash_bytes": 336,
+      "static_ram_bytes": 84,
+      "delta_flash": 308,
+      "delta_ram": 72,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 336,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "22c3adf9e873d09305060bfd8e9e89dd6452188fefce6e6afbb434cdb320164b"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "irq-v003-4",
+      "flash_bytes": 508,
+      "static_ram_bytes": 92,
+      "delta_flash": 480,
+      "delta_ram": 80,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 432,
+        ".data": 76,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "868b931549db8aaf4732770f14c10f097751f4a442466a1940f5568dfd1a599f"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "irq-x035-4",
+      "flash_bytes": 556,
+      "static_ram_bytes": 92,
+      "delta_flash": 528,
+      "delta_ram": 80,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 480,
+        ".data": 76,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "5ba1178852eb7b7832adec1fa22ccd81305f102f94680f567b78a01a596663f2"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "spsc-4",
+      "flash_bytes": 264,
+      "static_ram_bytes": 84,
+      "delta_flash": 236,
+      "delta_ram": 72,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 264,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "21b362f4149cc6595c4e97933ea1e98b54bad91fcd7b7d595f9a218acafbdc73"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "owned-manual-16",
+      "flash_bytes": 370,
+      "static_ram_bytes": 276,
+      "delta_flash": 342,
+      "delta_ram": 264,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 370,
+        ".bss": 276,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "5deea506c6d99e5f1d4973b6eb978b1d2519dac83a2121943b1c8368b1657ba9"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "irq-v003-16",
+      "flash_bytes": 700,
+      "static_ram_bytes": 284,
+      "delta_flash": 672,
+      "delta_ram": 272,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 432,
+        ".data": 268,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "27c63b76f2cf5e2df652e165112339c6c8e13b6d68dbc75d3752a50378e89255"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "irq-x035-16",
+      "flash_bytes": 748,
+      "static_ram_bytes": 284,
+      "delta_flash": 720,
+      "delta_ram": 272,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 480,
+        ".data": 268,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "822221d2f8bd39478bc1e4ce23ff9ef2993041f047cb84721ad05c92a3514e5f"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "spsc-16",
+      "flash_bytes": 264,
+      "static_ram_bytes": 276,
+      "delta_flash": 236,
+      "delta_ram": 264,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 264,
+        ".bss": 276,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "53414f81975ea5a50dc8f11e91ae06bc31621e12d671282e4866daaeed91f9a4"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "76fac795aa1d88a0258cd567c016f69ae4e06474c42a6d0018803800ef111da0"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-owned-manual",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "76fac795aa1d88a0258cd567c016f69ae4e06474c42a6d0018803800ef111da0"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-irq-v003",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "76fac795aa1d88a0258cd567c016f69ae4e06474c42a6d0018803800ef111da0"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-irq-x035",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "76fac795aa1d88a0258cd567c016f69ae4e06474c42a6d0018803800ef111da0"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-spsc",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "76fac795aa1d88a0258cd567c016f69ae4e06474c42a6d0018803800ef111da0"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "owned-manual-1",
+      "flash_bytes": 332,
+      "static_ram_bytes": 36,
+      "delta_flash": 304,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 332,
+        ".bss": 36,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "e756c7f1b59dc0f1c8ea13007a83a5cd125f7277d920b56a86d1fc8ec454001c"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "irq-v003-1",
+      "flash_bytes": 336,
+      "static_ram_bytes": 44,
+      "delta_flash": 308,
+      "delta_ram": 32,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 308,
+        ".data": 28,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "2ede20e5d2bf00728e77aed38a9e0619cda488a0aba5b18d4d7bd310c976c363"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "irq-x035-1",
+      "flash_bytes": 352,
+      "static_ram_bytes": 44,
+      "delta_flash": 324,
+      "delta_ram": 32,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 324,
+        ".data": 28,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "02a6dcda9c2706ee9e1ad80ecc721c6c6577bcd1ad79355983c2de72bd4a7ded"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "spsc-1",
+      "flash_bytes": 208,
+      "static_ram_bytes": 36,
+      "delta_flash": 180,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 208,
+        ".bss": 36,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "f9dd7bc0fdfc4837658e07c66036557ebcef3c41e09a4faa96859be503d4d05e"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "owned-manual-4",
+      "flash_bytes": 328,
+      "static_ram_bytes": 84,
+      "delta_flash": 300,
+      "delta_ram": 72,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 328,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "edc3edfe90b474b408136b99d4831fb9340facc43ad3f9f587c95df6b082f2a7"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "irq-v003-4",
+      "flash_bytes": 406,
+      "static_ram_bytes": 92,
+      "delta_flash": 378,
+      "delta_ram": 80,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 330,
+        ".data": 76,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "cb58eeceeeacf0e409ca70d255b11e03811896b108121c50eb4080c21812ea24"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "irq-x035-4",
+      "flash_bytes": 422,
+      "static_ram_bytes": 92,
+      "delta_flash": 394,
+      "delta_ram": 80,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 346,
+        ".data": 76,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "41e1f4962d40ae9ec835feb2c4e2e4829c5a928680141a6f2bf8a2e401d77f9d"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "spsc-4",
+      "flash_bytes": 220,
+      "static_ram_bytes": 84,
+      "delta_flash": 192,
+      "delta_ram": 72,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 220,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "8bc0d58f69f18b4b1dae4434c54642c26ade04f6875edb493c663d928d4d8d21"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "owned-manual-16",
+      "flash_bytes": 362,
+      "static_ram_bytes": 276,
+      "delta_flash": 334,
+      "delta_ram": 264,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 362,
+        ".bss": 276,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "40dc9922dfe4134c5912db65bcae8eca8cca2527cc7a4aed0c4e48057cba188b"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "irq-v003-16",
+      "flash_bytes": 598,
+      "static_ram_bytes": 284,
+      "delta_flash": 570,
+      "delta_ram": 272,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 330,
+        ".data": 268,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "6f747bee14c9bf1e675e31aa49f34e49496b2876b3cf94b2cfe495b0a082c80a"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "irq-x035-16",
+      "flash_bytes": 614,
+      "static_ram_bytes": 284,
+      "delta_flash": 586,
+      "delta_ram": 272,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 346,
+        ".data": 268,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 65
+      },
+      "elf_sha256": "8168a96571b8459a3c1bb3a5562999f3977d02484571af2bd50d8b5bebbb8826"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "spsc-16",
+      "flash_bytes": 220,
+      "static_ram_bytes": 276,
+      "delta_flash": 192,
+      "delta_ram": 264,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 220,
+        ".bss": 276,
+        ".comment": 51,
+        ".riscv.attributes": 61
+      },
+      "elf_sha256": "39398eca2dcfc10c102761f30ebca44751e668548e1a2fcaa79e7bc1afdfde0f"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "6fd421a8cdb3b5916cccec574e1e1ce6cecfbc7276913241f5fb2283164cdfa1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-owned-manual",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "6fd421a8cdb3b5916cccec574e1e1ce6cecfbc7276913241f5fb2283164cdfa1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-irq-v003",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "6fd421a8cdb3b5916cccec574e1e1ce6cecfbc7276913241f5fb2283164cdfa1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-irq-x035",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "6fd421a8cdb3b5916cccec574e1e1ce6cecfbc7276913241f5fb2283164cdfa1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-spsc",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "6fd421a8cdb3b5916cccec574e1e1ce6cecfbc7276913241f5fb2283164cdfa1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "owned-manual-1",
+      "flash_bytes": 314,
+      "static_ram_bytes": 36,
+      "delta_flash": 286,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 314,
+        ".bss": 36,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "e27e4e85801c03cd71789bf5377985df8ff774065b77a5a66b6ab98728abe50b"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "irq-v003-1",
+      "flash_bytes": 440,
+      "static_ram_bytes": 44,
+      "delta_flash": 412,
+      "delta_ram": 32,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 412,
+        ".data": 28,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "64813cb901628f6600750d552dd26025b17a74a49f8bf749e2763af22d775296"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "irq-x035-1",
+      "flash_bytes": 492,
+      "static_ram_bytes": 44,
+      "delta_flash": 464,
+      "delta_ram": 32,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 464,
+        ".data": 28,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "d0e6cab636e121a4fefb49c7918b82f493171b6ada24797aca60382f94c12eec"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "spsc-1",
+      "flash_bytes": 226,
+      "static_ram_bytes": 36,
+      "delta_flash": 198,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 226,
+        ".bss": 36,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "78b6069aef46c9b630c25590964ab7098a2726f93d7555cfda76232d013999e1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "owned-manual-4",
+      "flash_bytes": 336,
+      "static_ram_bytes": 84,
+      "delta_flash": 308,
+      "delta_ram": 72,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 336,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "61e3ae8cf09191d3c612033040aca8be05322f48d79faa3df7294354289b4f9f"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "irq-v003-4",
+      "flash_bytes": 510,
+      "static_ram_bytes": 92,
+      "delta_flash": 482,
+      "delta_ram": 80,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 434,
+        ".data": 76,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "8a6a172866d156ca6f673c780ae4e945948bdb8fda2743c702ba9c425fa45da8"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "irq-x035-4",
+      "flash_bytes": 562,
+      "static_ram_bytes": 92,
+      "delta_flash": 534,
+      "delta_ram": 80,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 486,
+        ".data": 76,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "a1f0f5091bca1dcccbe8cf4f5b04349076d834dca1bcebd2327a51711a652991"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "spsc-4",
+      "flash_bytes": 246,
+      "static_ram_bytes": 84,
+      "delta_flash": 218,
+      "delta_ram": 72,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 246,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "4fc8eaf3769e04f854ce7a615be60e8c724c12c42d1dd64d152c18546014264b"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "owned-manual-16",
+      "flash_bytes": 370,
+      "static_ram_bytes": 276,
+      "delta_flash": 342,
+      "delta_ram": 264,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 370,
+        ".bss": 276,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "02bcffbee9b78fcd0b398f5da5885f413fd15976331cced83fd276dd2a65beb5"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "irq-v003-16",
+      "flash_bytes": 700,
+      "static_ram_bytes": 284,
+      "delta_flash": 672,
+      "delta_ram": 272,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 432,
+        ".data": 268,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "b633d5c5fa3d8d3b84ccd4c34294b93c0a82f74775764b848c9f5cc5b86807ef"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "irq-x035-16",
+      "flash_bytes": 752,
+      "static_ram_bytes": 284,
+      "delta_flash": 724,
+      "delta_ram": 272,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 484,
+        ".data": 268,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "46a203f1f255087a883af360e19ea81ecbab106da1a8be57e2cf3bb9c887f3e6"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "spsc-16",
+      "flash_bytes": 246,
+      "static_ram_bytes": 276,
+      "delta_flash": 218,
+      "delta_ram": 264,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 246,
+        ".bss": 276,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "c150893a70af089c4ee5edbd5628ae5b9e0b3efd77047cc56adaa2b41ed430a9"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "e7e0bf1016cf7c121073c5401e04b41f8673249a5b613b110f0482a36306c671"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-owned-manual",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "e7e0bf1016cf7c121073c5401e04b41f8673249a5b613b110f0482a36306c671"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-irq-v003",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "e7e0bf1016cf7c121073c5401e04b41f8673249a5b613b110f0482a36306c671"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-irq-x035",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "e7e0bf1016cf7c121073c5401e04b41f8673249a5b613b110f0482a36306c671"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-spsc",
+      "flash_bytes": 28,
+      "static_ram_bytes": 12,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 28,
+        ".bss": 12,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "e7e0bf1016cf7c121073c5401e04b41f8673249a5b613b110f0482a36306c671"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "owned-manual-1",
+      "flash_bytes": 322,
+      "static_ram_bytes": 36,
+      "delta_flash": 294,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 322,
+        ".bss": 36,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "edcbaaae91aed390d4fd82918fb11ba80fa6da02c6cd4323d10d95df30d3c8cf"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "irq-v003-1",
+      "flash_bytes": 340,
+      "static_ram_bytes": 44,
+      "delta_flash": 312,
+      "delta_ram": 32,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 312,
+        ".data": 28,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "44c23423fa23bb4b25f7fc79ebc9623617e40260bbb1668c73be4c6fb2c48c5e"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "irq-x035-1",
+      "flash_bytes": 356,
+      "static_ram_bytes": 44,
+      "delta_flash": 328,
+      "delta_ram": 32,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 328,
+        ".data": 28,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "8d47c2661755148f0271f908cb9e24baffdfd3a548d701b4bf91528bd5832732"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "spsc-1",
+      "flash_bytes": 200,
+      "static_ram_bytes": 36,
+      "delta_flash": 172,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 200,
+        ".bss": 36,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "1ea4f990c4facf66a9988c589ab7826dde8bfea77d49689916169bade110cddc"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "owned-manual-4",
+      "flash_bytes": 344,
+      "static_ram_bytes": 84,
+      "delta_flash": 316,
+      "delta_ram": 72,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 344,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "803d658da0ffe40a0b64792a9496c67467d66e8e4f5d5d7eda585aa09ce0d215"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "irq-v003-4",
+      "flash_bytes": 414,
+      "static_ram_bytes": 92,
+      "delta_flash": 386,
+      "delta_ram": 80,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 338,
+        ".data": 76,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "a0dfc080b06b1408587a683e72e4efae65e8824e9075b23845a92df281321f02"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "irq-x035-4",
+      "flash_bytes": 430,
+      "static_ram_bytes": 92,
+      "delta_flash": 402,
+      "delta_ram": 80,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 354,
+        ".data": 76,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "abc87b8538294a44dde4de4f96289754b93aa8fc3efb13fdd4de2f4f118f5973"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "spsc-4",
+      "flash_bytes": 216,
+      "static_ram_bytes": 84,
+      "delta_flash": 188,
+      "delta_ram": 72,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 216,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "42e96803cf894aed4a6971a681d5248318df1003726b6a40ce7c79745c9db99f"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "owned-manual-16",
+      "flash_bytes": 376,
+      "static_ram_bytes": 276,
+      "delta_flash": 348,
+      "delta_ram": 264,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 376,
+        ".bss": 276,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "da6734532408baf80b1d708f21f357c31137e63557b73c8f7176f65a8022eb60"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "irq-v003-16",
+      "flash_bytes": 606,
+      "static_ram_bytes": 284,
+      "delta_flash": 578,
+      "delta_ram": 272,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 338,
+        ".data": 268,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "5328453cdcf4321d2b14d52178522e3563a939687e249d2fcb8062fb429e50e4"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "irq-x035-16",
+      "flash_bytes": 622,
+      "static_ram_bytes": 284,
+      "delta_flash": 594,
+      "delta_ram": 272,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 354,
+        ".data": 268,
+        ".bss": 16,
+        ".comment": 51,
+        ".riscv.attributes": 103
+      },
+      "elf_sha256": "c8eebc338edd16f82e7af050481c8ba5f709a323fde1b51aa88b48fb2297b89d"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "spsc-16",
+      "flash_bytes": 216,
+      "static_ram_bytes": 276,
+      "delta_flash": 188,
+      "delta_ram": 264,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 216,
+        ".bss": 276,
+        ".comment": 51,
+        ".riscv.attributes": 99
+      },
+      "elf_sha256": "9fe483f5582acd57c47d81e81ba50640e468e328d4f7272f64062772a94d485f"
+    }
+  ],
+  "input_hashes": {
+    "tests/platform/core_redesign/shared_entry.cpp": "80ee575642b2f8d33210e041463b6b17025868758d037daf4e6284514025cc46",
+    "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+    "tests/platform/core_redesign/irq_gate.hpp": "7cb9bdd3b445a323c071a5d973aba1d74694063e4457fa84a516909281e713e4",
+    "tests/unit/core_redesign/owned_queue.hpp": "95079197ebf28a528ece96168e2e6e324b19fbe0d8765946887f6c8c32c41bd6",
+    "tests/unit/core_redesign/shared_channels.hpp": "86f198800b18b736b21842bf949cc14489ef9150ecb5ab1e2bb4cb4aee3a1458",
+    "tests/platform/core_redesign/measure_data_parts.py": "d71b93db4f66a1a68f9f586141e2f72415312b1cf4e6847889f06d826bcc2377",
+    "tools/index/tools_xpack_gcc.json": "a654200c9f061204c6b3503848a442b9973f31d9c87656758368fad3b7150c7e"
+  },
+  "matrix": "shared",
+  "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+  "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+  "tool_hashes": {
+    "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+    "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+    "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+    "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+    "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+    "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+    "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+    "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+  },
+  "libraries": {
+    "rv32e": {
+      "libgcc": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f",
+      "libc": "aa7c9d68d8f56a2b2dc72e14933ef79cf8c97ef570bd23642f698032044c6802"
+    },
+    "rv32i": {
+      "libgcc": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+      "libc": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc"
+    }
+  },
+  "unused_zero": true,
+  "host": {
+    "input_hashes": {
+      "tests/unit/core_redesign/owned_queue.hpp": "95079197ebf28a528ece96168e2e6e324b19fbe0d8765946887f6c8c32c41bd6",
+      "tests/unit/core_redesign/shared_channels.hpp": "86f198800b18b736b21842bf949cc14489ef9150ecb5ab1e2bb4cb4aee3a1458",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/shared_driver.cpp": "ab8f59ccbc5859bf53a4bac491ae36e56ef446128456bbe06f46fa634d244dfc",
+      "tests/unit/core_redesign/test_shared_channels.py": "d5471d004bcf761e8ce3bc784236d28bc2754a1f7dbcdc2cfa1a456b13657ba6"
+    },
+    "commands": [
+      {
+        "command": [
+          "uv",
+          "run",
+          "--project",
+          "tests",
+          "--locked",
+          "pytest",
+          "-c",
+          "tests/pyproject.toml",
+          "tests/unit/core_redesign/test_shared_channels.py",
+          "-q",
+          "-o",
+          "junit_family=xunit1",
+          "--junitxml=work/exp02-shared-host-20261020/junit.xml"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "/usr/bin/x86_64-linux-gnu-g++-15",
+          "--version"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "/usr/bin/x86_64-linux-gnu-g++-15",
+          "-std=c++17",
+          "-O1",
+          "-g",
+          "-pthread",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fsanitize=thread",
+          "tests/unit/core_redesign/shared_driver.cpp",
+          "-o",
+          "work/exp02-shared-host-20261020/tsan-control"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "work/exp02-shared-host-20261020/tsan-control",
+          "mpsc",
+          "0"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "work/exp02-shared-host-20261020/tsan-control",
+          "spsc1",
+          "0"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "work/exp02-shared-host-20261020/tsan-control",
+          "spsc4",
+          "0"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "work/exp02-shared-host-20261020/tsan-control",
+          "spsc64",
+          "0"
+        ],
+        "returncode": 0
+      }
+    ],
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d"
+  },
+  "sources": [
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Core/core_riscv.h",
+      "commit": "12d9aed0eae0276a133db00eb16bd492e8189f2d",
+      "file": "CH32V003-core_riscv.h",
+      "sha256": "00d6e17fe714c3c8f7c58aadeb38a893b3c70d3c15299cd9c0a0ae843e920607"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Core/core_riscv.h",
+      "commit": "327874484eda7e50cb4cf40271718e68fafbc850",
+      "file": "CH32X035-core_riscv.h",
+      "sha256": "8585fa0d0c3b87738ed3350f701a5dba601e92e272ed9407153fba1c934022f3"
+    }
+  ],
+  "evidence_archive": {
+    "path": "work/exp02-shared-20261020-evidence.tar.gz",
+    "bytes": 897321,
+    "sha256": "36bdcdc5f89e9dfc6e53be717049df351a028eeae50c32d44f74c96071cb899b"
+  }
+}
