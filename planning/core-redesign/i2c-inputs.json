@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-20",
+  "base_profiles": "runtime-inputs.json",
+  "scope": "serialized IRQ-off, externally prepared clock/pins; register-model and link probe only",
+  "request_pclk_hz": 48000000,
+  "request_rates_hz": [
+    100000,
+    400000
+  ],
+  "buffer_capacities": [
+    8,
+    32,
+    64
+  ],
+  "sources": [
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Peripheral/src/ch32v00x_i2c.c",
+      "file": "CH32V003-i2c.c",
+      "bytes": 30546,
+      "sha256": "acbbebaa6e6f32d7d75196b355d6321ef4978165d6cc58ea62c2a8600ab77753"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/I2C/I2C_7bit_Mode/User/main.c",
+      "file": "CH32V003-I2C_7bit-main.c",
+      "bytes": 4554,
+      "sha256": "d2a9c9f82be83ec5b21d208cda79b52bb162225a0543b286202e995ddcb5d4b7"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Peripheral/src/ch32x035_i2c.c",
+      "file": "CH32X035-i2c.c",
+      "bytes": 30449,
+      "sha256": "175cf1d48c51688276065751f31e1e544e3b17f40132a818ca0719366105a38f"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/I2C/I2C_7bit_Mode/User/main.c",
+      "file": "CH32X035-I2C_7bit-main.c",
+      "bytes": 4698,
+      "sha256": "d977a32ae80b93afca78f873cfabd969696f81a8edff3c98ba5aa2af78b7d369"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/datasheet_en/CH32V003RM.PDF",
+      "file": "CH32V003RM.PDF",
+      "bytes": 2472575,
+      "sha256": "2758a463045dc6e9ec36600a76317d7c5e75ffd421b5a44d8f58a060e6f271ff"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/datasheet_en/CH32X035RM.PDF",
+      "file": "CH32X035RM.PDF",
+      "bytes": 2568824,
+      "sha256": "c5dc49eb6a0086857bc120cf4c1646fa8530006fe5a21e7bbb632a075daf036a"
+    }
+  ]
+}

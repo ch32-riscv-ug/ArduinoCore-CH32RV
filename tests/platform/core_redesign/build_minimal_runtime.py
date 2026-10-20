@@ -23,7 +23,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compiler',type=Path,required=True);parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--sources',type=Path,help='pinned files; if omitted download hash-checked references into out')
-    parser.add_argument('--suite',choices=['runtime','clock-time'],default='runtime')
+    parser.add_argument('--suite',choices=['runtime','clock-time','i2c-master'],default='runtime')
     args=parser.parse_args();args.out.mkdir(parents=True,exist_ok=False);out=args.out.resolve()
     compiler=args.compiler.resolve();prefix=str(compiler)[:-3]
     config=json.loads(MANIFEST.read_text());commands=[]
@@ -35,6 +35,12 @@ def main():
         cases=[('empty',0,0),('clock48',1,0),('counter-low',2,0),('counter-native',3,0),
                ('duration-variable-rate',4,0),('combined',5,0),('unused-clock',6,0),('unused-counter',7,0),
                ('duration-constant-rate',8,0),('duration-specialized-32',9,0)]
+    elif args.suite=='i2c-master':
+        manifest=REPO/'planning/core-redesign/i2c-inputs.json';extra_inputs.append(manifest)
+        config['sources']+=json.loads(manifest.read_text())['sources']
+        config['sources']=list({r['file']:r for r in config['sources']}.values())
+        cases=[('empty',0,0),('guarded-8',1,0),('guarded-32',2,0),('guarded-64',3,0),
+               ('raw-8',4,0),('raw-32',5,0),('raw-64',6,0),('unused-guarded',7,0),('unused-raw',8,0)]
     report=dict(status='running',suite=args.suite,scope=__doc__,results=[],negative_checks=[],inputs={},reference_sources=config['sources'])
     def save():
         (out/'result.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -68,7 +74,7 @@ def main():
                 flags=[f"-march={profile['march']}",f"-mabi={profile['abi']}",'-Os','-ffunction-sections','-fdata-sections',
                        '-fno-exceptions','-fno-rtti','-fno-threadsafe-statics','-fno-unwind-tables','-fno-asynchronous-unwind-tables','-fstack-usage']
                 if lto:flags.append('-flto')
-                if args.suite=='clock-time':
+                if args.suite in ['clock-time','i2c-master']:
                     library=Path(run([compiler,*flags,'-print-libgcc-file-name']).stdout.strip()).resolve()
                     report.setdefault('libgcc',{})[profile['part']]=dict(path=str(library),sha256=sha(library))
                 def layout(dest,arrays):
@@ -79,7 +85,8 @@ def main():
                     dest.mkdir();layout(dest,arrays)
                     defines=[f"-DTARGET_X035={int(profile['x035'])}",f"-DVECTOR_COUNT={profile['vector_count']}",f'-DCRT_ARRAYS={arrays}',f'-DCASE={case}']
                     objects=[]
-                    sources=['reset.S','entry.cpp','sketch.cpp'] if args.suite=='runtime' else ['reset.S','clock_time_entry.cpp']
+                    entries={'runtime':['entry.cpp','sketch.cpp'],'clock-time':['clock_time_entry.cpp'],'i2c-master':['i2c_master_entry.cpp']}
+                    sources=['reset.S',*entries[args.suite]]
                     for source in sources:
                         obj=dest/(source+'.o');objects.append(obj)
                         extra=['-std=c++17'] if source.endswith('.cpp') else []
@@ -87,7 +94,7 @@ def main():
                     return objects
                 def link(dest,objects,expect=True,extra=()):
                     return run([compiler,*flags,'-nostdlib','-Wl,--gc-sections','-Wl,--no-warn-rwx-segments',f"-T{dest/'image.ld'}",
-                                f"-Wl,-Map,{dest/'image.map'}",*extra,*objects,*(['-lgcc'] if args.suite=='clock-time' else []),'-o',dest/'image.elf'],expect)
+                                f"-Wl,-Map,{dest/'image.map'}",*extra,*objects,*(['-lgcc'] if args.suite in ['clock-time','i2c-master'] else []),'-o',dest/'image.elf'],expect)
                 for label,case,arrays in cases:
                     dest=group/label;objects=compile_case(dest,case,arrays);link(dest,objects)
                     run([prefix+'objcopy','-O','binary',dest/'image.elf',dest/'image.bin'])
