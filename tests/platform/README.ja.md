@@ -204,3 +204,16 @@ callerが取得した4 PDFと固定SDKのhash／Git blobを確認し、304通知
 スクリプトはnetwork・実機・core buildにアクセスしない。資料downloadと失敗した検証の記録はevidence archiveへ保存した。
 入力のURL・hashと必要な6 SDKファイルは[測定記録](../../planning/core-redesign/tasks/EXP-06/v006-sleep-measurements.json)を参照する。
 MCUのサイズ・時間・電流の測定ではない。
+
+## Core再設計：休止・I/O・時刻の結合ABI
+
+```sh
+python3 tests/platform/core_redesign/measure_sleep_flow.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp06-sleep-flow-NEW
+```
+
+明示2参加者・registry容量2／4、対照、未使用条件の計36 ELFをV003／X035 profileで測る。
+V006用途の純粋な構造のABI比較で、V006 MMIOや起動のELFではない。
+participant table、coordinator、2 I/O、clock／timer、harnessのstorageを別々に記録する。
+[結果と制限](../../planning/core-redesign/tasks/EXP-06/v006-sleep-flow-result.ja.md)を参照する。

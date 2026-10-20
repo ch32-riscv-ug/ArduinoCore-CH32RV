@@ -1,0 +1,269 @@
+{
+  "date": "2026-10-20",
+  "status": "passed",
+  "implementation_commit": "2a56a1d",
+  "scope": "Serial fake composition; declared atomic entry, hardware quiescence and restoration only. No core/USB changes, real WFI/WFE, V006 MMIO, physical elapsed measurement, ISR safety or API adoption.",
+  "tests": {
+    "new_native": 64,
+    "existing_boundary": 54,
+    "workspace": 3,
+    "total": 121
+  },
+  "native": {
+    "command": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-O0",
+      "-g1",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/sleep_coordinator_driver.cpp",
+      "-o",
+      "/tmp/pytest-of-mt/pytest-1102/sleep-coordinator0/control"
+    ],
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "binary_sha256": "85a635dd416145aeebf85d42f43d1d90709352dcab2e9a805717b98179552ca8",
+    "stdout": "",
+    "stderr": "",
+    "inputs": {
+      "tests/unit/core_redesign/sleep_coordinator.hpp": "6cc7fae2c54bc347d97137c2b2e09b3049905a67ed44c7da24b6e71f72d4a5c0",
+      "tests/unit/core_redesign/sleep_coordinator_driver.cpp": "0fbdb1548307cf21b58bbb3e18e820fa03c3c134451a0f5809513e4f0e4a42fb",
+      "tests/unit/core_redesign/test_sleep_coordinator.py": "d16706ecdd96442a5fb4339e862fd05bda66a474ac1801b2283d4b47bd092aae",
+      "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "tests/unit/core_redesign/logical_time.hpp": "ae6eff038954114d4e3a2775d3d26825152caa213d81efbb2578caf7895e326c",
+      "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+      "planning/core-redesign/sleep-flow-inputs.json": "295f3a6dd3bf9647682aaf6746f1eda01a63ff8e702de0af7d68d6f03ef49e1d"
+    }
+  },
+  "abi": {
+    "builds": 36,
+    "unused_zero_additional_image_and_ram": 12,
+    "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "tools": {
+      "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+      "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+      "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+      "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+      "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+      "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+      "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+      "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+    },
+    "libgcc": {
+      "CH32V003F4P6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/rv32ec/ilp32e/libgcc.a",
+        "sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f"
+      },
+      "CH32X035C8T6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+        "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+      }
+    },
+    "inputs": {
+      "tests/platform/core_redesign/measure_sleep_flow.py": "4862c187bbca530978acf4c3cab0b7ee07cb7a5b069c7cacef08dc0690487d98",
+      "planning/core-redesign/sleep-flow-inputs.json": "295f3a6dd3bf9647682aaf6746f1eda01a63ff8e702de0af7d68d6f03ef49e1d",
+      "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+      "tests/unit/core_redesign/sleep_coordinator.hpp": "6cc7fae2c54bc347d97137c2b2e09b3049905a67ed44c7da24b6e71f72d4a5c0",
+      "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "tests/unit/core_redesign/logical_time.hpp": "ae6eff038954114d4e3a2775d3d26825152caa213d81efbb2578caf7895e326c",
+      "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+      "tests/platform/core_redesign/sleep_flow_entry.cpp": "62f3342054c4d45d1c55610383c93a67994bed67821cbf884ed8b86e82b2fc52",
+      "tests/platform/core_redesign/sleep_flow_support.cpp": "264378d07dfb98d2d4a602dad6ba71635c7c62b30286c85bc3dbe318778f8956",
+      "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
+    },
+    "matrix_sha256": "69f77726cd08c2581fa8d884b87f036ecb107aa542b377964bdc26a2a0f55111",
+    "support_lto": false,
+    "common_objects_bytes": 236,
+    "participants_bytes": {
+      "explicit": 12,
+      "registry2": 32,
+      "registry4": 56
+    }
+  },
+  "analysis": {
+    "status": "passed",
+    "scope": "Retained native binary; declared time and restoration only, no MCU timing",
+    "native_binary_sha256": "85a635dd416145aeebf85d42f43d1d90709352dcab2e9a805717b98179552ca8",
+    "script_sha256": "2e3023cffa54ef885d5d07a9a3741d9030016c12a57870f241ff67de76453a0c",
+    "workloads": [
+      {
+        "name": "unknown-elapsed",
+        "variants": [
+          {
+            "variant": 0,
+            "operations": 26,
+            "stamp_after_resume": [
+              0,
+              2,
+              0
+            ],
+            "timer_poll": 5,
+            "notice": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "final_phase": 1,
+            "commands_sha256": "41ff09f0f91eebe8c9eee30f7a11afd952477ac32a4340ee4dda1dea508b1008",
+            "stdout_sha256": "d020a524f2d7f45a3b16273cfddd4c5dd469596be96f7a09d464cd54ae15e90c"
+          },
+          {
+            "variant": 2,
+            "operations": 26,
+            "stamp_after_resume": [
+              0,
+              2,
+              0
+            ],
+            "timer_poll": 5,
+            "notice": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "final_phase": 1,
+            "commands_sha256": "41ff09f0f91eebe8c9eee30f7a11afd952477ac32a4340ee4dda1dea508b1008",
+            "stdout_sha256": "f5e9f2dbe652e7e12f1ac4efbee0ee7e30e2a4d4fe4c37e3aef926421f438e03"
+          },
+          {
+            "variant": 4,
+            "operations": 26,
+            "stamp_after_resume": [
+              0,
+              2,
+              0
+            ],
+            "timer_poll": 5,
+            "notice": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "final_phase": 1,
+            "commands_sha256": "41ff09f0f91eebe8c9eee30f7a11afd952477ac32a4340ee4dda1dea508b1008",
+            "stdout_sha256": "f5e9f2dbe652e7e12f1ac4efbee0ee7e30e2a4d4fe4c37e3aef926421f438e03"
+          }
+        ],
+        "differential_equal": true
+      },
+      {
+        "name": "known-elapsed",
+        "variants": [
+          {
+            "variant": 0,
+            "operations": 26,
+            "stamp_after_resume": [
+              12500000,
+              1,
+              0
+            ],
+            "timer_poll": 0,
+            "notice": [
+              12000000,
+              1,
+              0,
+              1
+            ],
+            "final_phase": 1,
+            "commands_sha256": "6e8b81bdaa2ef0211e5fda17ecaa721d729c2215106efdae36de5aaf1665e3a9",
+            "stdout_sha256": "bd8becc825e022b67008620d7568a050f9b52ea52d4a443a37c99c87216adfc2"
+          },
+          {
+            "variant": 2,
+            "operations": 26,
+            "stamp_after_resume": [
+              12500000,
+              1,
+              0
+            ],
+            "timer_poll": 0,
+            "notice": [
+              12000000,
+              1,
+              0,
+              1
+            ],
+            "final_phase": 1,
+            "commands_sha256": "6e8b81bdaa2ef0211e5fda17ecaa721d729c2215106efdae36de5aaf1665e3a9",
+            "stdout_sha256": "a053084bdcfea0645d1d82f768ab74ca6083cf1c2282585c74eb3d178a53378b"
+          },
+          {
+            "variant": 4,
+            "operations": 26,
+            "stamp_after_resume": [
+              12500000,
+              1,
+              0
+            ],
+            "timer_poll": 0,
+            "notice": [
+              12000000,
+              1,
+              0,
+              1
+            ],
+            "final_phase": 1,
+            "commands_sha256": "6e8b81bdaa2ef0211e5fda17ecaa721d729c2215106efdae36de5aaf1665e3a9",
+            "stdout_sha256": "a053084bdcfea0645d1d82f768ab74ca6083cf1c2282585c74eb3d178a53378b"
+          }
+        ],
+        "differential_equal": true
+      },
+      {
+        "name": "restore-retry",
+        "variant": 0,
+        "operations": 15,
+        "partial_start": 4,
+        "fault_phase": 6,
+        "final_phase": 1,
+        "input_preserved": true,
+        "commands_sha256": "d997286b9c5b4404272292ed0e475589373d217945a5f219f0a0103cc7eeb3f0",
+        "stdout_sha256": "1411907e52e848acae8cba314f0cd4da8c2c2850a0d896e31940b585209dc16e"
+      },
+      {
+        "name": "restore-retry",
+        "variant": 2,
+        "operations": 15,
+        "partial_start": 4,
+        "fault_phase": 6,
+        "final_phase": 1,
+        "input_preserved": true,
+        "commands_sha256": "d997286b9c5b4404272292ed0e475589373d217945a5f219f0a0103cc7eeb3f0",
+        "stdout_sha256": "0711ceb094964fdcbbf83260e1016c3a17eb708fe3c3a8acf1d72a85c887ce74"
+      },
+      {
+        "name": "restore-retry",
+        "variant": 4,
+        "operations": 15,
+        "partial_start": 4,
+        "fault_phase": 6,
+        "final_phase": 1,
+        "input_preserved": true,
+        "commands_sha256": "d997286b9c5b4404272292ed0e475589373d217945a5f219f0a0103cc7eeb3f0",
+        "stdout_sha256": "0711ceb094964fdcbbf83260e1016c3a17eb708fe3c3a8acf1d72a85c887ce74"
+      }
+    ]
+  },
+  "artifacts": {
+    "native": "work/exp06-sleep-flow-host-20261020",
+    "final_abi": "work/exp06-sleep-flow-abi-20261020-r2",
+    "failed_abi": "work/exp06-sleep-flow-abi-20261020",
+    "failed_abi_reason": "Probe used Registry<2>::Token for Registry<4>; corrected the probe to the selected List::Token. Native library comparisons had passed.",
+    "analysis": "work/exp06-sleep-flow-analysis-20261020",
+    "archive": "work/exp06-sleep-flow-20261020-evidence.tar.gz",
+    "archive_bytes": 1560802,
+    "archive_sha256": "7c89eee59ee2053de3ab81e0d6e397996116dcfffb3906730abb640c1303aa35"
+  },
+  "reproduce": {
+    "native": "EXP06_SLEEP_FLOW_EVIDENCE=work/NEW-native uv run --project tests --locked pytest -c tests/pyproject.toml tests/unit/core_redesign/test_sleep_coordinator.py tests/unit/core_redesign/test_sleep_boundary.py tests/unit/test_workspace.py -q -o junit_family=xunit1 --junitxml=work/NEW-junit.xml",
+    "abi": "python3 tests/platform/core_redesign/measure_sleep_flow.py --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ --out work/NEW-abi"
+  }
+}

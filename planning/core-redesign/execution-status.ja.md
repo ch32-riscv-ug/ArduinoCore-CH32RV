@@ -14,7 +14,7 @@
 | EXP-04 保存 | [媒体・領域準備](tasks/EXP-04/region-result.ja.md)：host138件、ELF40・想定link拒否80・artifact故障検出150。[形式比較](tasks/EXP-04/format-result.ja.md)：host200件、105容量条件。[C++試作](tasks/EXP-04/store-result.ja.md)：native272件・中断7,442条件・ABI198。[予算付き読出しと所有](tasks/EXP-04/scan-result.ja.md)：native353件・ABI76、最大32 byte／pollと古い結果の拒否 | 受理／key変更への走査・所有統合、非同期媒体と回収、予約とdomainの整合、所有期間・公平性、追記・整理、物理再program規則、driverと実upload経路 | 実電断・CPU／IRQ停止・upload保持 |
 | EXP-05 拡張 | タッチ追加のR対照 | 表示交換・独立library・能力差・H417所有modelと資料確認 | 実cache可視性・両コア・reset |
 | EXP-06 完成用途 | [K0 R/A/B/Cと容量2変更](tasks/EXP-06/k0-result.ja.md)：host82件、ABI116構成。[X0追加比較](tasks/EXP-06/x0-result.ja.md)：host55件、ABI116構成、同じ進行機会・故障・50Hzタッチ。[X0機能除去](tasks/EXP-06/x0-features-result.ja.md)：host88件・ABI116構成 | 表示交換・独立library等の変更課題、K0の物理接続 | 実通信・電流・PPS source・教材の利用者レビュー |
-| V006休止 | [資料と待機境界](tasks/EXP-06/v006-sleep-result.ja.md)：一次資料4 PDF・固定SDK、host54件、304順序とAWU30条件。資料内のreset極性差を明記 | 通常10秒・表示cancelと回収・論理時刻・復帰の結合、明示一覧／manager比較、adapterの待機契約とABI | option byteと実復帰、wake競合・可視性、静止電流 |
+| V006休止 | [資料と待機境界](tasks/EXP-06/v006-sleep-result.ja.md)：一次資料4 PDF・固定SDK、host54件、304順序とAWU30条件。[I/O・時刻・一覧の結合](tasks/EXP-06/v006-sleep-flow-result.ja.md)：native64件・ABI36、通常10秒・取消と明示回収・既知／不明の復帰、一覧とregistry2／4 | 実driver停止・再設定と待機adapter、timer等の能力除去、段階失敗・一覧の完全性、IRQ接続 | option byteと実復帰、wake競合・可視性、静止電流 |
 | 取得buffer | [2 block所有と回収](tasks/EXP-02/acquisition-result.ja.md)：native50件・ABI32構成、生成元先行／利用側停止と逆順返却、未使用12条件の追加0 B | 完了枠との結合、所有者識別・実ISR共有、停止／再設定のadapter契約 | 実ADC/DMA、循環書込み停止・可視性、物理欠落と時間 |
 | P4教育 | 教材案、[X0機能除去](tasks/EXP-06/x0-feature-exercise.ja.md)、[時刻読出し](tasks/EXP-01/time-read-exercise.ja.md)、[I2Cの貸出](tasks/EXP-01/i2c-loan-exercise.ja.md)、[保存容量と保持](tasks/EXP-04/region-exercise.ja.md)、[形式と更新途中](tasks/EXP-04/format-exercise.ja.md) | 残る変更課題の教材化、変更差分・必要状態の比較 | 人が予測・変更した結果のレビュー |
 
@@ -48,6 +48,7 @@
 - [EXP-04 予算付き読出しと所有](tasks/EXP-04/scan-result.ja.md)：明示pollのbyte上限、共有台帳の重複拒否とticket、結果保持と解放後の無効化。書込み側への統合・ISR／core間共有は残す。
 - [EXP-06 X0機能除去](tasks/EXP-06/x0-features-result.ja.md)：固定off／on・専用対照・旧runtime比較と変更課題。
 - [EXP-06 V006資料と待機境界](tasks/EXP-06/v006-sleep-result.ja.md)：保持・clock・SDK入口、条件付きの待機反例、AWUの設定時間幅。[教材](tasks/EXP-06/v006-sleep-exercise.ja.md)は人による評価前。V006用途全体と実機SLEEP-01は未完了。
+- [EXP-06 休止準備・回収・時刻の結合](tasks/EXP-06/v006-sleep-flow-result.ja.md)：明示一覧と任意registryの同条件比較、部分復帰・失敗retry・登録忘れの限界。[分割処理の課題](tasks/EXP-06/v006-sleep-flow-exercise.ja.md)は人による評価前。実V006 adapter・待機命令・電流は含まない。
 
 次は論理時刻の実source・sleep接続とI2Cの周辺準備／所有／IRQ結合、X0の残る変更課題、保存・系列・休止、実共有条件を進める。
 P2の実backend待ちで、pureな部品とhost契約の検査を止めない。

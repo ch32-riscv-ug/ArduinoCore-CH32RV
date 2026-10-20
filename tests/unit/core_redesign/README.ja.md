@@ -398,3 +398,19 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 
 [資料・反例・未検証範囲](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-result.ja.md)と
 [予測課題](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-exercise.ja.md)を参照する。
+
+## EXP-06 休止準備とI/O・時刻の結合
+
+`sleep_coordinator.hpp`は既存IoSlot・論理clock・timerを、明示2参加者／任意registry容量2／4へ接続する。
+cancel後の明示回収、input・期限通知、既知／不明復帰、部分再設定・失敗retryを比較する。
+入口と再設定はfakeの能力宣言であり、実V006 adapterやISR共有の実装ではない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_sleep_coordinator.py tests/unit/core_redesign/test_sleep_boundary.py \
+  tests/unit/test_workspace.py -o junit_family=xunit1
+```
+
+検査に使ったnative binary・入力snapshot・hashを残す場合は`EXP06_SLEEP_FLOW_EVIDENCE=新しい出力先`を指定する。
+[費用と保証範囲](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-flow-result.ja.md)と
+[小さな状態へ分ける課題](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-flow-exercise.ja.md)を参照する。
