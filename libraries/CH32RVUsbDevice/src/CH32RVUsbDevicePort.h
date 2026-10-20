@@ -70,7 +70,7 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
     case CH32RVUsbController::Auto:
     case CH32RVUsbController::SuperSpeed:
-        return &ch32rv_usb_dcd_usbss_h417;
+        return &ch32rv_usb_dcd_usbss;
 #else
     case CH32RVUsbController::Auto:
         return &ch32rv_usb_dcd_usbfs_otg;
@@ -110,8 +110,8 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
 
 /* ======================================================= CH32X305 / X315, CH32V407 / V467
  * The second-generation USBHS (CH32RVUsbDcdUsbhs2.cpp); V407 / V467 have two,
- * USBHS1 by default and USBHS2 as HighSpeed2. X315's USBSS comes with its
- * driver. */
+ * USBHS1 by default and USBHS2 as HighSpeed2; X315's USBSS is SuperSpeed
+ * (CH32RVUsbDcdUsbss.cpp). */
 #elif defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || \
     defined(CH32RV_SERIES_CH32V467)
 
@@ -123,6 +123,11 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
 #if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
     if (controller == CH32RVUsbController::HighSpeed2) {
         return &ch32rv_usb_dcd_usbhs2_b;
+    }
+#endif
+#if defined(CH32RV_SERIES_CH32X315)
+    if (controller == CH32RVUsbController::SuperSpeed) {
+        return &ch32rv_usb_dcd_usbss;                    /* device only; needs the 20 MHz HSE */
     }
 #endif
     return nullptr;

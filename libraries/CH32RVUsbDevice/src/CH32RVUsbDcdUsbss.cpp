@@ -33,8 +33,14 @@
  * own; this one is SuperSpeed only.
  *
  * Everything this core links lives in the shared SRAM (sections_loadcode.ld),
- * which is the only memory the USB DMA reaches. */
-#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
+ * which is the only memory the USB DMA reaches.
+ *
+ * CH32X315 has the same controller (USBSSD_TypeDef with the same offsets) at
+ * 0x40038000, device only, with its own bring-up in its EVT: USBSS PLL and
+ * PIPE in RCC_CTLR (26 / 27 / 28) from a 20 MHz HSE, no UTMI, 6 dB
+ * de-emphasis, LINK_U3_WKUP_EN, another set of PHY values and no PHY trim.
+ * Build only there. */
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32X315)
 
 #include <Arduino.h>
 #include <stdlib.h>
@@ -43,7 +49,11 @@
 #include "ch32rv_registers.h"
 #include "CH32RVUsbDcd.h"
 
+#if defined(CH32RV_SERIES_CH32X315)
+#define SS_BASE 0x40038000u
+#else
 #define SS_BASE 0x40034000u
+#endif
 #define R8(o)  (*(volatile uint8_t *)(SS_BASE + (o)))
 #define R16(o) (*(volatile uint16_t *)(SS_BASE + (o)))
 #define R32(o) (*(volatile uint32_t *)(SS_BASE + (o)))
@@ -86,9 +96,9 @@
 #define EP_CHAIN_NUMP(b)    R8((b) + 0x8)          /* TX: EXP_NUMP, RX: MAX_NUMP; writing arms */
 #define EP_DMA_OFS(b)       R16((b) + 0xA)
 #define EP_DMA(b)           R32((b) + 0xC)
-/* The PHY window and trim (EVT USBSS_PHY_Cfg / USBSS_CFG_MOD). */
-#define PHY_CFG_CR          (*(volatile uint32_t *)0x400341F8u)
-#define PHY_CFG_DAT         (*(volatile uint32_t *)0x400341FCu)
+/* The PHY window (EVT USBSS_PHY_Cfg), and on H41x a trim word. */
+#define PHY_CFG_CR          (*(volatile uint32_t *)(SS_BASE + 0x1F8u))
+#define PHY_CFG_DAT         (*(volatile uint32_t *)(SS_BASE + 0x1FCu))
 #define PHY_TRIM            (*(volatile uint32_t *)0x5003C018u)
 
 #define U3_LINK_RESET       0x80000000u
@@ -169,14 +179,27 @@
 #define EP_FC_ST            0x40u
 #define EP_CHAIN_IF         0x40u
 
-/* RCC: the USBSS PLL takes HSE (its reference select defaults to 25 MHz,
- * the evaluation board's crystal), the PIPE and UTMI clocks sit in CFGR0. */
+/* RCC: the USBSS PLL takes HSE (its reference select defaults to the
+ * evaluation boards' crystal, 25 MHz on H41x, 20 MHz on X315). H41x: PLL in
+ * RCC_CTLR 22 / 23, PIPE and UTMI in CFGR0 22 / 23. X315: PLL in RCC_CTLR
+ * 26 / 27, PIPE in RCC_CTLR 28, no UTMI. */
 #define RCC_CTLR_HSEON        (1u << 16)
 #define RCC_CTLR_HSERDY       (1u << 17)
+#if defined(CH32RV_SERIES_CH32X315)
+#define RCC_CTLR_USBSS_PLLON  (1u << 26)
+#define RCC_CTLR_USBSS_PLLRDY (1u << 27)
+#define PIPE_REG              CH32RV_RCC_CTLR
+#define PIPE_BITS             (1u << 28)
+#define LINK_DEEMPH           0u                         /* 6 dB */
+#define LINK_CTRL_EXTRA       0x00000400u                /* LINK_U3_WKUP_EN */
+#else
 #define RCC_CTLR_USBSS_PLLON  (1u << 22)
 #define RCC_CTLR_USBSS_PLLRDY (1u << 23)
-#define RCC_CFGR0_PIPEON      (1u << 22)
-#define RCC_CFGR0_UTMION      (1u << 23)
+#define PIPE_REG              CH32RV_RCC_CFGR0
+#define PIPE_BITS             ((1u << 22) | (1u << 23))   /* PIPE, UTMI */
+#define LINK_DEEMPH           LINK_TX_DEEMPH_MASK
+#define LINK_CTRL_EXTRA       0u
+#endif
 
 #define EP0_SIZE   512u
 #define CHAIN_MAX  16u            /* packets per chain, and the ERDY window offered */
@@ -350,25 +373,32 @@ static void engine_reset(void)
 
 static void link_start(void)
 {
-    LINK_CFG = LINK_RX_EQ_EN | LINK_TX_DEEMPH_MASK | LINK_PHY_RESET;
+    LINK_CFG = LINK_RX_EQ_EN | LINK_DEEMPH | LINK_PHY_RESET;
     LINK_CTRL = LINK_P2_MODE | LINK_GO_DISABLED;
-    LINK_CFG = LINK_RX_EQ_EN | LINK_TX_DEEMPH_MASK | LINK_LTSSM_MODE | LINK_TOUT_MODE;
+    LINK_CFG = LINK_RX_EQ_EN | LINK_DEEMPH | LINK_LTSSM_MODE | LINK_TOUT_MODE;
     LINK_LPM_CR |= LINK_LPM_EN;
     LINK_CFG |= LINK_RX_TERM_EN;
     LINK_INT_CTRL = LINK_IF_TX_LMP | LINK_IF_RX_LMP | LINK_IF_RX_LMP_TOUT | LINK_IF_STATE_CHG |
                     LINK_IF_WARM_RST | LINK_IF_TERM_PRES;
-    LINK_CTRL = LINK_P2_MODE;
+    LINK_CTRL = LINK_P2_MODE | LINK_CTRL_EXTRA;
     LINK_U1_WKUP_TMR = 120;
     LINK_U1_WKUP_FILTER = 50;
     LINK_U2_WKUP_FILTER = 0;
     LINK_U3_WKUP_FILTER = 0;
     controller_reset();
+#if defined(CH32RV_SERIES_CH32X315)
+    phy_cfg(0x0C, 0x285D);
+    phy_cfg(0x11, 0x0501);
+    phy_cfg(0x10, 0xED29);
+    phy_cfg(0x0D, 0xBAAA);
+#else
     phy_cfg(0x03, 0x7C12);
     phy_cfg(0x0D, 0x79AA);
     phy_cfg(0x15, 0x4430);
     phy_cfg(0x13, 0x0010);
     phy_cfg(0x11, 0x0501);
     PHY_TRIM = 0xB0054000u;
+#endif
     UEP_TX_EN = 0;
     UEP_RX_EN = 0;
     engine_reset();
@@ -402,7 +432,7 @@ static bool clocks_on(void)
         }
     }
     ch32rv_clock_enable(USBSS);
-    CH32RV_RCC_CFGR0 |= RCC_CFGR0_PIPEON | RCC_CFGR0_UTMION;
+    PIPE_REG |= PIPE_BITS;
     return true;
 }
 
@@ -441,7 +471,7 @@ static void dcd_close(void)
         free(xout[ep].bounce);
         xin[ep].bounce = xout[ep].bounce = nullptr;
     }
-    CH32RV_RCC_CFGR0 &= ~RCC_CFGR0_PIPEON;
+    PIPE_REG &= ~PIPE_BITS;
     ch32rv_clock_disable(USBSS);
     CH32RV_RCC_CTLR &= ~RCC_CTLR_USBSS_PLLON;
 }
@@ -662,7 +692,7 @@ static void clock_check(void)
 {
     const bool ok = (CH32RV_RCC_CTLR & (RCC_CTLR_HSERDY | RCC_CTLR_USBSS_PLLRDY)) ==
                         (RCC_CTLR_HSERDY | RCC_CTLR_USBSS_PLLRDY) &&
-                    (CH32RV_RCC_CFGR0 & (RCC_CFGR0_PIPEON | RCC_CFGR0_UTMION)) == (RCC_CFGR0_PIPEON | RCC_CFGR0_UTMION);
+                    (PIPE_REG & PIPE_BITS) == PIPE_BITS;
     if (ok || !clocks_on()) {
         return;
     }
@@ -936,8 +966,8 @@ extern "C" __attribute__((interrupt)) void USBSS_IRQHandler(void)
     }
 }
 
-const CH32RVUsbDcd ch32rv_usb_dcd_usbss_h417 = {
-    "USBSS (CH32H417/H416)", 8, 1024, 1u << (uint8_t)CH32RVUsbSpeed::Super,
+const CH32RVUsbDcd ch32rv_usb_dcd_usbss = {
+    "USBSS (CH32H417/H416/X315)", 8, 1024, 1u << (uint8_t)CH32RVUsbSpeed::Super,
     dcd_open, dcd_close, dcd_connect, dcd_speed, dcd_set_address,
     dcd_ep_open, dcd_ep_close, dcd_ep_close_all, dcd_xfer, dcd_abort, dcd_stall, dcd_ep0_stall, dcd_remote_wakeup,
     dcd_poll,

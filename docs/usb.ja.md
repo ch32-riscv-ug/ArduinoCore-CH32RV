@@ -42,9 +42,9 @@ USB のコントローラを持つ系列と、それぞれの IP の種類、ド
 | USB（旧 IP） | V103 | なし | 次に作る |
 | USBD（fsdev 型、CAN と共用） | V203 / V208 | なし | 次に作る |
 | USBHS 第 1 世代 | V305 / V307 / V317 | なし | 次に作る |
-| USBHS 第 2 世代 | H417 / H416 / H415 | `CH32RVUsbDcdUsbhsH41x.cpp` | ビルドのみ |
+| USBHS 第 2 世代 | H417 / H416 / H415 | `CH32RVUsbDcdUsbhs2.cpp` | ビルドのみ |
 | 〃 | V205、X305 / X315、V407 / V467（2 基） | なし（H41x のドライバを広げる） | 次に作る |
-| USBSS | H417 / H416 | `CH32RVUsbDcdUsbssH417.cpp` | 実機（H417、5000M で列挙） |
+| USBSS | H417 / H416 | `CH32RVUsbDcdUsbss.cpp` | 実機（H417、5000M で列挙） |
 | 〃（構造体が少し違う） | X315 | なし | 次に作る |
 
 V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラがありません。
@@ -67,7 +67,7 @@ V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラ�
 そのクロックと PHY の立ち上げ（コミット 3ab1761 の `CH32RVUsbDevicePort.h`）を使ってドライバを足していきます。
 ディスクリプタとクラスは Full / High / SuperSpeed のどれでも組めるようにしてあります。
 
-H417 / H416 は USBSS（`CH32RVUsbDcdUsbssH417.cpp`）で、SuperSpeed のホストにだけつながります。
+H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホストにだけつながります。
 - **USB 2.0 に切り替える経路はありません。** USB 2.0 の線（USBHS、PB8 / PB9）は SWCLK / SWDIO と兼用で、
   デバッグ機能は止められません（TinyUSB PR #3779 の実測）。WCH-Link をつないだまま USB 2.0 を使えないためです。
 - **USBHS のドライバは別に用意します。**
