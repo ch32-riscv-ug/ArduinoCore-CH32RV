@@ -6,7 +6,7 @@ These examples connect the board as a device to a PC or another USB host. Start 
 
 ## Boards and wiring
 
-The device hardware baseline is a WeAct CH32X035F8U6. V103/V20x/V30x are implemented and build-checked but not hardware-verified here; consult the [support table](../../../docs/usb.ja.md#対応状況) for part-specific exceptions. H417 SuperSpeed is not currently supported by these examples.
+The device hardware baseline is a WeAct CH32X035F8U6. Only X035/X033 has a controller driver for now; the V103/V20x/V30x rows are the wiring once their drivers return; consult the [support table](../../../docs/usb.ja.md#対応状況) for part-specific exceptions. H417 SuperSpeed is not currently supported by these examples.
 
 | Controller | D− | D+ | Selection |
 |---|---|---|---|

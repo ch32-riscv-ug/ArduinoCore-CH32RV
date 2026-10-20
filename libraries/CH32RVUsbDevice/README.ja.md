@@ -57,7 +57,7 @@ void loop() {
   動かせます。
 - **同じクラスの数には上限があります**（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。上限の中なら
   宣言するだけで使えます。CDC のバッファは `setBuffers()` でスケッチのものに差し替えられます
-  （EspUsbDevice の `setRxBufferSize()` などはありません）。
+  （EspUsbDevice には無い拡張です）。
 - **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
   EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
 - **無いもの**: ファームウェア更新の各クラス、USB ネットワークの IP 層（このコアに IP スタックが無いので、
@@ -163,9 +163,9 @@ callback は関数ポインタで、受信 buffer は後の処理まで所有し
 
 ## 対応
 
-CH32X035 / X033（USBFS）。X035（WeAct CH32X035F8U6 の板）で実機確認しています。CH32V103、V303（USBFS）、
-V203 / V208（USBFS か USBD）、V305 / V307 / V317（USBFS か USBHS）も入っています（後の2つは `config.controller` で選ぶ）（ビルドのみ、実機は未確認）。
-ほかの系列では `begin()` が `false`（`Unsupported`）を返し、スケッチはそのままビルドできます。
+CH32X035 / X033（USBFS）。X035（WeAct CH32X035F8U6 の板）で実機確認しています。V103、V20x、V30x のコントローラの
+ドライバは、自前のスタックへの移行に合わせて作り直すところです（TinyUSB の時代には入っていた）。それまでこれらの
+系列とほかの系列では `begin()` が `false`（`Unsupported`）を返し、スケッチはそのままビルドできます。
 
 ## 書き込み
 

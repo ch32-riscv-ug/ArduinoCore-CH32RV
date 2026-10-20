@@ -635,8 +635,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 ## USB
 
 - **CH32RVUsbDevice は FS / HS / SS（H417 の USBSS）まで動くライブラリとして、EspUsbDevice の全機能を実装する。**
-  済み: 速度ごとのディスクリプタ（FS / HS）、V103 / V20x（USBFS）/ V30x（USBFS・USBHS を実行時に選ぶ）、NCM、
-  オーディオ、ビデオ、SD カードの MSC。残り:
+  済み: 速度ごとのディスクリプタ（FS / HS / SS）、NCM、オーディオ、ビデオ、SD カードの MSC（ブロックだけ）。
+  V103 / V20x / V30x のドライバは TinyUSB の時代のもので、自前のスタックでは作り直し（下の移行の項）。残り:
   - 新しい系列の実機確認（ベンチの DUT の USB 端子を配線してから）。HSI から作る 48 MHz の精度、V103 の EP4〜7 の
     自動トグル、HS の PHY と HSE。
   - L103 / M103、M030、V205: USB には既定の 8 MHz より高いシステムクロックが要る。ボード既定を変えるか USB 用の

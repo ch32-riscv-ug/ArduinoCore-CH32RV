@@ -158,9 +158,9 @@ ARP/ICMP packets, without DHCP, web serving or a general IP parser.
 
 ## Support
 
-CH32X035 / X033 (USBFS), checked on a WeAct CH32X035F8U6 board. CH32V103,
-V303 (USBFS), V203 / V208 (USBFS or USBD) and V305 / V307 / V317 (USBFS or
-USBHS), the latter two chosen by `config.controller`, build and are wired up, not yet checked on hardware. On
+CH32X035 / X033 (USBFS), checked on a WeAct CH32X035F8U6 board. The
+controller drivers for V103, V20x and V30x are being rewritten for the own
+stack (they existed in the TinyUSB days). Until then, on those and the
 other series `begin()` returns false (`Unsupported`) and the sketch still
 builds.
 
