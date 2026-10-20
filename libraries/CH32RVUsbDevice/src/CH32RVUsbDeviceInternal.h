@@ -3,6 +3,9 @@
 
 #include "CH32RVUsbDevice.h"
 
+/* String index of function i: the device's own are 1..3. */
+#define CH32RV_USB_FIRST_FUNCTION_STRING 4
+
 /* The BOS and Microsoft OS 2.0 descriptor set (CH32RVUsbDevicePlatform.cpp).
  * `build` is set only when a function that needs them is declared (the
  * vendor interface, the DFU runtime), so a device without one links none of
@@ -18,6 +21,11 @@ struct CH32RVUsbPlatform {
     /* Vendor requests the platform descriptors do not answer
      * (CH32RVUsbDeviceVendor::onControlRequest). */
     bool (*vendorRequest)(uint8_t rhport, uint8_t stage, const void *request);
+    /* Vendor requests to the device, as the device stack hands them over
+     * (set when the platform descriptors are linked), and the ones the
+     * descriptors do not answer (CH32RVUsbDeviceVendor::onControlRequest). */
+    bool (*request)(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup);
+    bool (*vendorControl)(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup);
 };
 extern CH32RVUsbPlatform ch32rv_usb_platform;
 

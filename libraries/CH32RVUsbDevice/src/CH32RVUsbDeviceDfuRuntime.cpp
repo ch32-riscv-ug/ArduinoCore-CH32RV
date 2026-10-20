@@ -1,22 +1,16 @@
-/* DFU runtime: TinyUSB's dfu_rt_device; DFU_DETACH resets into the factory
- * USB bootloader. */
+/* DFU runtime (DFU 1.1): DFU_DETACH resets into the factory USB bootloader.
+ *
+ * Windows has no in-box driver for a DFU interface; dfu-util (libusb) needs
+ * WinUSB on it, which the Microsoft OS 2.0 set names
+ * (CH32RVUsbDevicePlatform.cpp: compatible ID only, no DeviceInterfaceGUIDs -
+ * libusb opens a WinUSB device without one). */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
-#include "tusb.h"
-#include "device/usbd_pvt.h"
-
-#if CH32RV_TINYUSB_DEVICE
-
-static const usbd_class_driver_t dfu_rt_driver = {
-    NULL, dfu_rtd_init, dfu_rtd_deinit, dfu_rtd_reset, dfu_rtd_open, dfu_rtd_control_xfer_cb, NULL, NULL, NULL,
-};
-
-/* Windows has no in-box driver for a DFU interface; dfu-util (libusb) needs
- * WinUSB on it, which the Microsoft OS 2.0 set names
- * (CH32RVUsbDevicePlatform.cpp: compatible ID only, no DeviceInterfaceGUIDs -
- * libusb opens a WinUSB device without one). */
+#define DFU_DETACH    0
+#define DFU_GETSTATUS 3
+#define DFU_GETSTATE  5
 
 static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
                                   uint8_t *ep, uint8_t str, bool hs)
@@ -27,8 +21,12 @@ static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *
     /* WILL_DETACH only: the device leaves the bus by itself after
      * DFU_DETACH. No CAN_DOWNLOAD - what appears next is the factory ISP
      * bootloader, not a DFU-mode device, so a DFU download (dfu-util -D)
-     * cannot work and the descriptor must not claim it. */
-    const uint8_t d[] = {TUD_DFU_RT_DESCRIPTOR(itf, str, DFU_ATTR_WILL_DETACH, 1000, 64)};
+     * cannot work and the descriptor must not claim it. Detach timeout
+     * 1000 ms, transfer size 64, DFU 1.1. */
+    const uint8_t d[] = {
+        9, 4, itf, 0, 0, 0xFE, 0x01, 0x01, str,
+        9, 0x21, 0x08, 0xE8, 0x03, 64, 0, 0x10, 0x01,
+    };
     if (sizeof d > room) {
         return 0;
     }
@@ -36,7 +34,8 @@ static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *
     return sizeof d;
 }
 
-static const CH32RVUsbFunctionType dfu_rt_type = {&dfu_rt_driver, dfu_rt_descriptor, 1, CFG_TUD_DFU_RUNTIME, &CH32RVUsbDeviceConfig::dfuRuntimeName, 1};
+static const CH32RVUsbFunctionType dfu_rt_type = {nullptr, dfu_rt_descriptor, 1, 1,
+                                                  &CH32RVUsbDeviceConfig::dfuRuntimeName, 1};
 
 static CH32RVUsbDeviceDfuRuntime *dfu;
 
@@ -65,28 +64,24 @@ void CH32RVUsbDeviceDfuRuntime::detach()
     CH32RVUsbDevice::requestBootloader();
 }
 
-extern "C" void tud_dfu_runtime_reboot_to_dfu_cb(void)
+bool CH32RVUsbDeviceDfuRuntime::usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &s)
 {
-    if (dfu) {
-        dfu->detach();
+    if ((s.bmRequestType & 0x60) != 0x20) {
+        return false;
     }
+    switch (s.bRequest) {
+    case DFU_DETACH:                             /* leave once the status stage is out */
+        if (stage == CH32RVUsbControlStage::Setup) {
+            return device().controlStatus();
+        }
+        if (stage == CH32RVUsbControlStage::Ack) {
+            detach();
+        }
+        return true;
+    case DFU_GETSTATUS:
+        return stage != CH32RVUsbControlStage::Setup || device().controlIn(_status, sizeof _status);
+    case DFU_GETSTATE:
+        return stage != CH32RVUsbControlStage::Setup || device().controlIn(_status + 4, 1);
+    }
+    return false;
 }
-
-#else
-
-static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
-{
-    return 0;
-}
-
-static const CH32RVUsbFunctionType dfu_rt_type = {nullptr, dfu_rt_descriptor, 1, 1, nullptr, 0};
-
-CH32RVUsbDeviceDfuRuntime::CH32RVUsbDeviceDfuRuntime(CH32RVUsbDevice &device)
-    : CH32RVUsbDeviceFunction(device, dfu_rt_type, CH32RV_USB_DFU_RUNTIME_NAME)
-{
-}
-
-void CH32RVUsbDeviceDfuRuntime::detach() {}
-void CH32RVUsbDeviceDfuRuntime::attachDefault(CH32RVUsbDevice &) {}
-
-#endif

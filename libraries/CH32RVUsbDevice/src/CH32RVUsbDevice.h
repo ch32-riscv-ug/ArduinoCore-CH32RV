@@ -244,8 +244,46 @@ protected:
     CH32RVUsbDeviceFunction(CH32RVUsbDevice &device, const CH32RVUsbFunctionType &type,
                             const char *name);
 
+    /* The device stack (CH32RVUsbDeviceCore.cpp) calls these in normal context
+     * - from loop() / delay() through ch32rv_usb_task(), never from the
+     * interrupt. */
+    /* A bus reset, end(), or the host unconfigured the device: forget the
+     * transfers in flight (their buffers are free again). */
+    virtual void usbReset() {}
+    /* The host chose the configuration; this function's endpoints (alternate
+     * setting 0) are open. */
+    virtual void usbConfigured(bool highSpeed) { (void)highSpeed; }
+    /* A class or vendor request for one of its interfaces or endpoints, or a
+     * standard GET_DESCRIPTOR to one of its interfaces. In the Setup stage
+     * answer with device().controlIn / controlOut / controlStatus and return
+     * true, or return false to stall. Data: the controlOut() buffer is full.
+     * Ack: the status stage went out. */
+    virtual bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup)
+    {
+        (void)stage;
+        (void)setup;
+        return false;
+    }
+    /* SET_INTERFACE on one of its interfaces; the stack has already opened
+     * the endpoints of `alternate`. False stalls the request. */
+    virtual bool usbSetInterface(uint8_t interfaceNumber, uint8_t alternate)
+    {
+        (void)interfaceNumber;
+        return alternate == 0;
+    }
+    /* A transfer on one of its endpoints (address, bit 7 for IN) finished;
+     * `length` is what moved (an OUT transfer ends early on a short packet). */
+    virtual void usbTransferred(uint8_t address, uint16_t length)
+    {
+        (void)address;
+        (void)length;
+    }
+    /* The host cleared a halt on one of its endpoints (data toggle back to DATA0). */
+    virtual void usbHaltCleared(uint8_t address) { (void)address; }
+
 private:
     friend class CH32RVUsbDevice;
+    friend struct CH32RVUsbDeviceCore;
     CH32RVUsbDevice &_device;
     const CH32RVUsbFunctionType &_type;
     const char *_name;
@@ -255,6 +293,8 @@ private:
 };
 
 class CH32RVUsbDevice {
+    friend struct CH32RVUsbDeviceCore;
+
 public:
     constexpr CH32RVUsbDevice() {}
 
@@ -319,6 +359,21 @@ public:
      * laid out (lastError()). For the USB stack's callbacks. */
     uint16_t buildConfiguration(uint8_t *out, uint16_t room, bool highSpeed, uint8_t descriptorType);
 
+    /* For the classes: transfers on their endpoints (address, bit 7 for IN).
+     * The buffer stays theirs until usbTransferred(). False while a transfer
+     * is in flight there, or when the device is not configured. */
+    bool transfer(uint8_t address, void *buffer, uint16_t length);
+    bool transferBusy(uint8_t address) const;
+    void stall(uint8_t address);
+    bool stalled(uint8_t address) const;
+    /* Answers to a request in usbControl()'s Setup stage. controlIn sends at
+     * most wLength bytes; the data must stay valid until the Ack stage. */
+    bool controlIn(const void *data, uint16_t length);
+    bool controlOut(void *buffer, uint16_t length);
+    bool controlStatus();
+    /* The speed the host chose. */
+    bool highSpeed() const;
+
     /* For the class objects (EspUsbDevice::addClass). */
     bool attach(CH32RVUsbDeviceFunction &f);
     bool addClass(CH32RVUsbDeviceFunction *f) { return f && attach(*f); }
@@ -328,6 +383,7 @@ private:
     CH32RVUsbDeviceFunction *_functions[CH32RV_USB_MAX_FUNCTIONS] = {};
     CH32RVUsbDeviceConfig _config;
     uint8_t _count = 0;
+    uint8_t _endpoints = 8;       /* the controller's endpoint numbers 0.._endpoints-1 */
     bool _started = false;
     CH32RVUsbDeviceError _error = CH32RVUsbDeviceError::None;
 };

@@ -57,7 +57,7 @@ KEEP_PORTABLE = ("portable/wch", "portable/st/stm32_fsdev")
 # version that adds one of these names has to be noticed, so they are listed.
 OURS = ("tusb_config.h", "ch32x035.h", "ch32v10x.h", "ch32v20x.h", "ch32v30x.h", "ch32rv_port.c",
         "ch32rv_dcd_usbfs.c", "ch32rv_dcd_usbhs.c", "ch32rv_dcd_usbd.c", "ch32rv_dcd_dual.c", "ch32rv_dcd_dual.h",
-        "ch32rv_hcd_usbfs.c", "ch32rv_usbfs_irq.c", "ch32rv_usbfs_irq.h")
+        "ch32rv_hcd_usbfs.c")
 
 # Deliberate differences from upstream, applied by --update and verified by
 # --check: the file on disk must contain `after`, and with `after` put back to

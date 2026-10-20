@@ -17,6 +17,9 @@ public:
      * host's business; the argument exists for Serial compatibility. */
     void begin(unsigned long baud = 115200);
     void end() {}
+    /* Use the sketch's buffers instead of the built-in 256 + 256 bytes (any
+     * size from 2; one byte of each stays free). Before begin(). */
+    void setBuffers(uint8_t *rx, uint16_t rxSize, uint8_t *tx, uint16_t txSize);
 
     int available() override;
     int peek() override;
@@ -37,7 +40,7 @@ public:
     /* True while a host has the port open (DTR asserted). */
     operator bool();
     bool connected();
-    /* This port's index among the device's CDC ports (TinyUSB's instance). */
+    /* This port's index among the device's CDC ports. */
     uint8_t port() const { return instance(); }
     const CH32RVUsbDeviceCdcLineCoding &lineCoding() const { return _lineCoding; }
     const CH32RVUsbDeviceCdcLineState &lineState() const { return _lineState; }
@@ -63,7 +66,26 @@ public:
     void handleLineState(bool dtr, bool rts);
     void handleRx();
 
+    /* Endpoints, set while the descriptors are laid out. */
+    uint8_t _epNotify = 0, _epData = 0;
+
+protected:
+    void usbReset() override;
+    void usbConfigured(bool highSpeed) override;
+    bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
+    void usbTransferred(uint8_t address, uint16_t length) override;
+
 private:
+    void receive();
+    void push();
+    uint8_t _rxStore[256], _txStore[256];
+    uint8_t *_rx = _rxStore, *_tx = _txStore;
+    uint16_t _rxSize = sizeof _rxStore, _txSize = sizeof _txStore;
+    uint16_t _rxHead = 0, _rxTail = 0, _txHead = 0, _txTail = 0;
+    uint8_t _outPacket[64], _inPacket[64];
+    uint8_t _coding[7] = {0, 0, 0, 0, 0, 0, 8};
+    uint16_t _packet = 64;
+    bool _outBusy = false, _inBusy = false, _zlp = false;
     bool _bootTouch = true;
     CH32RVUsbDeviceCdcLineCoding _lineCoding;
     CH32RVUsbDeviceCdcLineState _lineState;

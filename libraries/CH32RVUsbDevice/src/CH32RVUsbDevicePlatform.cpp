@@ -9,9 +9,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "tusb.h"
 
-#if CH32RV_TINYUSB_DEVICE
 
 #define WEBUSB_VENDOR_CODE   0x01
 #define MS_OS_20_VENDOR_CODE 0x02
@@ -205,8 +203,8 @@ static bool build(const CH32RVUsbDevice &device)
     uint8_t caps = 0;
     if (c.webusbEnabled) {
         bos[o] = 24;
-        bos[o + 1] = TUSB_DESC_DEVICE_CAPABILITY;
-        bos[o + 2] = DEVICE_CAPABILITY_PLATFORM;
+        bos[o + 1] = 0x10;
+        bos[o + 2] = 0x05;
         bos[o + 3] = 0;
         memcpy(bos + o + 4, webusb_uuid, 16);
         put16(bos + o + 20, 0x0100);
@@ -217,8 +215,8 @@ static bool build(const CH32RVUsbDevice &device)
     }
     if (p.msOs20Length) {
         bos[o] = 28;
-        bos[o + 1] = TUSB_DESC_DEVICE_CAPABILITY;
-        bos[o + 2] = DEVICE_CAPABILITY_PLATFORM;
+        bos[o + 1] = 0x10;
+        bos[o + 2] = 0x05;
         bos[o + 3] = 0;
         memcpy(bos + o + 4, ms_os_20_uuid, 16);
         put32(bos + o + 20, 0x06030000);
@@ -230,7 +228,7 @@ static bool build(const CH32RVUsbDevice &device)
     }
     if (caps) {
         bos[0] = 5;
-        bos[1] = TUSB_DESC_BOS;
+        bos[1] = 15;
         put16(bos + 2, o);
         bos[4] = caps;
         p.bos = bos;
@@ -239,32 +237,19 @@ static bool build(const CH32RVUsbDevice &device)
     return true;
 }
 
-void ch32rv_usb_platform_use(void)
-{
-    ch32rv_usb_platform.build = build;
-}
-
-extern "C" uint8_t const *tud_descriptor_bos_cb(void)
-{
-    return ch32rv_usb_platform.bosLength ? ch32rv_usb_platform.bos : NULL;
-}
-
 /* Vendor requests to the device: the WebUSB landing page, the MS OS 2.0
  * set, and the rest to CH32RVUsbDeviceVendor::onControlRequest. A request
- * nobody answers is stalled. */
-extern "C" bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage,
-                                           tusb_control_request_t const *request)
+ * nobody answers is stalled. Every device has one stack; the active device's
+ * config is what applies, and that is the one begin() built from. */
+static bool platform_request(CH32RVUsbControlStage stage, const CH32RVUsbSetup &s)
 {
     const CH32RVUsbPlatform &p = ch32rv_usb_platform;
-    const bool vendor = request->bmRequestType_bit.type == TUSB_REQ_TYPE_VENDOR;
-    if (vendor && request->bRequest == WEBUSB_VENDOR_CODE && p.bosLength && USBDevice.config().webusbEnabled) {
-        if (stage != CONTROL_STAGE_SETUP) {
+    if (s.bRequest == WEBUSB_VENDOR_CODE && p.bosLength && USBDevice.config().webusbEnabled) {
+        if (stage != CH32RVUsbControlStage::Setup) {
             return true;
         }
-        /* Every device has one stack; the active device's config is what
-         * applies, and that is the one begin() built from. */
         const char *url = USBDevice.config().webusbUrl;
-        if (!url || request->wIndex != 2) {
+        if (!url || s.wIndex != 2) {
             return false;
         }
         uint8_t scheme = 1;
@@ -282,19 +267,19 @@ extern "C" bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage,
         url_desc[1] = 3;          /* WEBUSB URL */
         url_desc[2] = scheme;
         memcpy(url_desc + 3, url, n);
-        return tud_control_xfer(rhport, request, url_desc, url_desc[0]);
+        return USBDevice.controlIn(url_desc, url_desc[0]);
     }
-    if (vendor && request->bRequest == MS_OS_20_VENDOR_CODE && request->wIndex == 7 && p.msOs20Length) {
-        if (stage != CONTROL_STAGE_SETUP) {
+    if (s.bRequest == MS_OS_20_VENDOR_CODE && s.wIndex == 7 && p.msOs20Length) {
+        if (stage != CH32RVUsbControlStage::Setup) {
             return true;
         }
-        return tud_control_xfer(rhport, request, (void *)p.msOs20, p.msOs20Length);
+        return USBDevice.controlIn(p.msOs20, p.msOs20Length);
     }
-    return p.vendorRequest ? p.vendorRequest(rhport, stage, request) : false;
+    return p.vendorControl ? p.vendorControl(stage, s) : false;
 }
 
-#else
-
-void ch32rv_usb_platform_use(void) {}
-
-#endif
+void ch32rv_usb_platform_use(void)
+{
+    ch32rv_usb_platform.build = build;
+    ch32rv_usb_platform.request = platform_request;
+}

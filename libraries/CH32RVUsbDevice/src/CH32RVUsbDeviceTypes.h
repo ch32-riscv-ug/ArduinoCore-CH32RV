@@ -283,3 +283,20 @@ struct CH32RVUsbDeviceMidiPacket {
     uint8_t byte2 = 0;
     uint8_t byte3 = 0;
 };
+
+/* A USB control request (SETUP packet), as the device stack hands it to a
+ * class (CH32RVUsbDeviceFunction::usbControl). */
+struct CH32RVUsbSetup {
+    uint8_t bmRequestType;
+    uint8_t bRequest;
+    uint16_t wValue;
+    uint16_t wIndex;
+    uint16_t wLength;
+};
+
+enum class CH32RVUsbControlStage : uint8_t {
+    Setup,
+    Data,
+    Ack,
+};
+

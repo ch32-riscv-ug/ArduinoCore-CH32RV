@@ -25,6 +25,10 @@ public:
      * declared its own. Best effort: a device with no room left goes without. */
     static void attachDefault(CH32RVUsbDevice &device);
 
+protected:
+    bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
+
 private:
     DetachCallback _onDetach = nullptr;
+    uint8_t _status[6] = {0, 0, 0, 0, 0, 0};    /* OK, poll 0, appIDLE */
 };
