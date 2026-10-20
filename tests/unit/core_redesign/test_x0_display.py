@@ -128,6 +128,16 @@ def test_faults_stall_sessions_and_frozen_view(display_native,candidate,panel):
     assert rows[-1]['rejected'] == 0 and rows[-1]['confirmed'] >= 5000
 
 
+@pytest.mark.parametrize('candidate',CONFIG['candidates'])
+@pytest.mark.parametrize('panel',range(4))
+def test_input_burst_full_and_latest_apply_do_not_depend_on_display(display_native,candidate,panel):
+    commands = ['attach','key 1','key 0','key 1','key 0','key 1','step',*ticks(0,3500)]
+    rows = replay(display_native,candidate,panel,commands)
+    assert rows[-1]['accepted'] == 4 and rows[-1]['rejected'] == 1
+    assert rows[-1]['desired'] == rows[-1]['confirmed'] == 5040
+    assert rows[-1]['displayed_revision'] == rows[-1]['revision']
+
+
 @pytest.mark.parametrize('panel',range(4))
 @pytest.mark.parametrize('domain,opted',[(0,False),(1,False),(1,True)])
 def test_explicit_and_automatic_opportunity_gates(display_native,panel,domain,opted):
