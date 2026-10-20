@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "scope": "Serial resource-ledger connection to existing finite I2C engine; declared PCLK and pin readiness, no new MMIO setup",
+  "slots": 2,
+  "resource_mask": {"peripheral": 1, "scl": 2, "sda": 4},
+  "buffer_bytes": 64,
+  "clock_range_hz": [2000000, 48000000],
+  "clock_granularity_hz": 1000000,
+  "seeds": [0, 1, 2, 3],
+  "ledger_operations": 600,
+  "counter_bits": [8, 32],
+  "separate_notification_and_collection": true,
+  "hardware_clock_pin_setup": false,
+  "irq_backend": false
+}
