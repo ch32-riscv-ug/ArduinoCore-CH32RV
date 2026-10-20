@@ -70,3 +70,4 @@ void ch32rv_usbd_isr_resume(void);
 /* The drivers this build has (CH32RVUsbDevicePort.h picks one). */
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbfs_x03x;
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbss_h417;
+extern const CH32RVUsbDcd ch32rv_usb_dcd_usbfs_otg;

@@ -53,18 +53,35 @@ static void port_set_boot_mode(void)
     X03X_FLASH_CTLR |= X03X_FLASH_CTLR_LOCK;
 }
 
-/* ======================================================= CH32H417 / H416 */
-#elif defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
+/* ======================================================= CH32H417 / H416 / H415 */
+#elif defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
 
-/* USBSS only for now. USBHS (PB8/PB9) shares its pins with SWCLK/SWDIO and
- * USBFS (PA11/PA12, where the factory bootloader listens) has no driver yet. */
+/* Auto: USBSS where the part has it (H417 / H416), else USBFS. USBHS (PB8 /
+ * PB9) shares its pins with SWCLK / SWDIO and has no driver. USBFS sits on
+ * PA11 / PA12, where the factory bootloader listens too. */
 static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
 {
-    if (controller != CH32RVUsbController::Auto && controller != CH32RVUsbController::SuperSpeed) {
+    switch (controller) {
+    case CH32RVUsbController::FullSpeed:
+        return &ch32rv_usb_dcd_usbfs_otg;
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
+    case CH32RVUsbController::Auto:
+    case CH32RVUsbController::SuperSpeed:
+        return &ch32rv_usb_dcd_usbss_h417;
+#else
+    case CH32RVUsbController::Auto:
+        return &ch32rv_usb_dcd_usbfs_otg;
+#endif
+    default:
         return nullptr;
     }
-    return &ch32rv_usb_dcd_usbss_h417;
 }
+
+/* No factory-ISP entry yet. The X035's way (FLASH_STATR.BOOT_MODE, then a
+ * software reset) does reach the BOOT area here, but on the bench
+ * (2026-10-20) no bootloader appeared on USBFS, BOOT_MODE then survived every
+ * reset, and the application started through the BOOT area faulted. Until the
+ * H417's bootloader is understood, enterBootloader() is a plain reset. */
 
 /* ======================================================= the rest: no driver yet */
 #else
