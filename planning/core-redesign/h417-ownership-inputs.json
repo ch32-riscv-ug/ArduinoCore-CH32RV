@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "scope": "Serial contract comparisons, not a shared executor or H417 backend",
+  "policies": [
+    "single",
+    "fixed-owner",
+    "shared-access"
+  ],
+  "domain": 7,
+  "message_words": 4,
+  "message_capacity": 4,
+  "block_bytes": 64,
+  "block_count": 2,
+  "quiescent_attestations": {
+    "producer": 1,
+    "consumer": 2,
+    "dma_or_other_writer": 4
+  },
+  "trace_seeds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "trace_operations": 600,
+  "counter_sensitivity_bits": 8,
+  "source_audit": "h417-inputs.json",
+  "public_api_decided": false
+}
