@@ -532,6 +532,7 @@ struct Enumeration {
     Request queue[REQUESTS];
     uint8_t queued;
     uint8_t speed, address, tries, polls;
+    uint16_t configLength;         /* what GET_DESCRIPTOR(configuration) brought */
     uint32_t t;
     volatile bool waiting;         /* a control transfer of ours in flight */
     volatile uint8_t result;
@@ -834,6 +835,7 @@ void en_step(void)
             en_retry();
             return;
         }
+        en.configLength = en.actual;
         if (en_control(en.address, 0x00, 9, devs[en.address].configValue, 0, nullptr, 0)) {   /* SET_CONFIGURATION */
             en.state = E_SET_CFG;
         }
@@ -845,7 +847,7 @@ void en_step(void)
         }
         Device &d = devs[en.address];
         d.state = DEV_MOUNTED;
-        en_claim(en.address, en.buf, en.actual);
+        en_claim(en.address, en.buf, en.configLength);
         d.configurePending = true;
         d.infoPending = true;
         en.address = 0;
