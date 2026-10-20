@@ -1,19 +1,14 @@
-/* USB Audio (UAC1 / UAC2): TinyUSB's audio_device with EspUsbDevice's
+/* USB Audio (UAC1 / UAC2) on the device stack, with EspUsbDevice's
  * topology, controls and events (EspUsbAudio.cpp and its internal model,
  * control, request and event files, folded into one). The descriptor is in
  * CH32RVUsbDeviceAudioDescriptor.cpp.
  *
- * Data moves in the USB interrupt (TinyUSB's xfer_isr hook): the transfer
- * callbacks below run there and touch only the volatile counters and the
- * FIFOs, which read() / write() reach with the interrupt masked. Control
- * requests, and so every event, come from the USB task, i.e. the sketch's
- * own thread (after loop(), inside delay()). */
+ * Everything - packets, control requests, and so every event - happens in
+ * the USB task, i.e. the sketch's own thread (after loop(), inside delay()),
+ * so the FIFOs need no locking. */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
-
-#include "tusb.h"
-#include "device/usbd_pvt.h"
 
 namespace {
 
@@ -58,24 +53,14 @@ uint8_t slot(CH32RVUsbAudioDirection d)
 }
 
 uint16_t audio_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                          uint8_t *ep, uint8_t str, bool hs)
+                          uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
-    return static_cast<const CH32RVUsbAudioFunction &>(self).writeDescriptor(out, room, itf, ep, str, hs);
+    return static_cast<const CH32RVUsbAudioFunction &>(self).writeDescriptor(out, room, itf, ep, str, speed);
 }
-
-#if CH32RV_TINYUSB_DEVICE
-const usbd_class_driver_t audio_driver = {
-    NULL, audiod_init, audiod_deinit, audiod_reset, audiod_open, audiod_control_xfer_cb, audiod_xfer_cb,
-    audiod_xfer_isr, audiod_sof_isr,
-};
-#define AUDIO_DRIVER (&audio_driver)
-#else
-#define AUDIO_DRIVER nullptr
-#endif
 
 /* Not const: the interface count follows the streams the sketch adds (one
  * audio function per device, so one type object serves it). */
-CH32RVUsbFunctionType audio_type = {AUDIO_DRIVER, audio_descriptor, 1, 1, nullptr, 0};
+CH32RVUsbFunctionType audio_type = {audio_descriptor, 1, 1, nullptr, 0};
 
 } // namespace
 
@@ -88,12 +73,12 @@ CH32RVUsbAudioFunction::CH32RVUsbAudioFunction(CH32RVUsbDevice &device, CH32RVUs
     }
 }
 
-uint16_t CH32RVUsbAudioFunction::endpointLimit(CH32RVUsbAudioDirection d, bool hs)
+uint16_t CH32RVUsbAudioFunction::endpointLimit(bool hs) const
 {
-    const uint32_t buffer = d == CH32RVUsbAudioDirection::Playback ? CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX
-                                                                   : CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX;
+    const uint32_t controller = device().maxPacketSize();
     const uint32_t bus = hs ? 1024u : 1023u;
-    return (uint16_t)(buffer < bus ? buffer : bus);
+    const uint32_t limit = controller < bus ? controller : bus;
+    return (uint16_t)(limit < CH32RV_USB_MAX_PACKET ? limit : CH32RV_USB_MAX_PACKET);
 }
 
 void CH32RVUsbAudioFunction::updateInterfaceCount()
@@ -411,12 +396,38 @@ void CH32RVUsbAudioCaptureStream::resetStats()
     ch32rv_irq_restore(irq);
 }
 
-#if CH32RV_TINYUSB_DEVICE
-
 /* ---------------------------------------------------------- data */
+static void fifo_put(uint8_t *fifo, uint16_t depth, uint16_t &head, uint16_t &count, const uint8_t *data,
+                     uint16_t n)
+{
+    for (uint16_t i = 0; i < n; i++) {
+        fifo[(head + count) % depth] = data[i];
+        if (count < depth) {
+            count++;
+        } else {
+            head = (uint16_t)((head + 1) % depth);   /* full: the oldest byte goes */
+        }
+    }
+}
+
+static uint16_t fifo_get(const uint8_t *fifo, uint16_t depth, uint16_t &head, uint16_t &count, uint8_t *data,
+                         uint16_t n)
+{
+    if (n > count) {
+        n = count;
+    }
+    for (uint16_t i = 0; i < n; i++) {
+        data[i] = fifo[head];
+        head = (uint16_t)((head + 1) % depth);
+    }
+    count = (uint16_t)(count - n);
+    return n;
+}
+
 int CH32RVUsbAudioPlaybackStream::available() const
 {
-    return (int)tud_audio_available();
+    ch32rv_usb_task();
+    return _function._rxCount;
 }
 
 size_t CH32RVUsbAudioPlaybackStream::read(void *data, size_t length)
@@ -424,98 +435,166 @@ size_t CH32RVUsbAudioPlaybackStream::read(void *data, size_t length)
     if (!data || length == 0) {
         return 0;
     }
-    /* The receive interrupt may move the read index (overflow repair). */
-    const uint32_t irq = ch32rv_irq_save();
-    const uint16_t n = tud_audio_read(data, (uint16_t)(length > 0xffffu ? 0xffffu : length));
-    ch32rv_irq_restore(irq);
-    return n;
+    ch32rv_usb_task();
+    CH32RVUsbAudioFunction &f = _function;
+    return fifo_get(f._rxFifo, f._rxDepth ? f._rxDepth : 1, f._rxHead, f._rxCount, (uint8_t *)data,
+                    (uint16_t)(length > 0xffffu ? 0xffffu : length));
 }
 
 bool CH32RVUsbAudioPlaybackStream::clearBuffer()
 {
-    const uint32_t irq = ch32rv_irq_save();
-    const bool ok = tud_audio_clear_ep_out_ff();
-    ch32rv_irq_restore(irq);
-    return ok;
+    _function._rxHead = _function._rxCount = 0;
+    return true;
 }
 
 size_t CH32RVUsbAudioCaptureStream::write(const void *data, size_t length)
 {
-    if (!data || length == 0) {
+    CH32RVUsbAudioFunction &f = _function;
+    if (!data || length == 0 || !f._txDepth) {
         return 0;
     }
-    const uint16_t requested = (uint16_t)(length > 0xffffu ? 0xffffu : length);
-    const uint32_t irq = ch32rv_irq_save();
-    tu_fifo_t *fifo = tud_audio_get_ep_in_ff();
-    uint32_t overwritten = 0;
-    if (fifo) {
-        const uint16_t count = tu_fifo_count(fifo);
-        const uint16_t remaining = (uint16_t)(fifo->depth - count);
-        overwritten = requested >= fifo->depth ? (uint32_t)count + requested - fifo->depth
-                                               : (requested > remaining ? (uint32_t)(requested - remaining) : 0u);
-    }
-    const uint16_t written = tud_audio_write(data, requested);
-    if (overwritten) {
+    ch32rv_usb_task();
+    const uint16_t n = (uint16_t)(length > f._txDepth ? f._txDepth : length);
+    const uint16_t room = (uint16_t)(f._txDepth - f._txCount);
+    if (n > room || length > n) {
         _overrunCount = _overrunCount + 1;
-        _overrunBytes = _overrunBytes + overwritten;
+        _overrunBytes = _overrunBytes + (uint32_t)(length - n) + (n > room ? (uint32_t)(n - room) : 0u);
     }
-    ch32rv_irq_restore(irq);
-    return written;
+    /* Only the last FIFO's worth of a longer write can stay. */
+    fifo_put(f._txFifo, f._txDepth, f._txHead, f._txCount, (const uint8_t *)data + (length - n), n);
+    return length;
 }
 
 int CH32RVUsbAudioCaptureStream::availableForWrite()
 {
-    const uint32_t irq = ch32rv_irq_save();
-    tu_fifo_t *fifo = tud_audio_get_ep_in_ff();
-    const int room = fifo ? (int)(fifo->depth - tu_fifo_count(fifo)) : 0;
-    ch32rv_irq_restore(irq);
-    return room;
+    ch32rv_usb_task();
+    return _function._txDepth - _function._txCount;
 }
 
 bool CH32RVUsbAudioCaptureStream::clearBuffer()
 {
-    const uint32_t irq = ch32rv_irq_save();
-    const bool ok = tud_audio_clear_ep_in_ff();
-    ch32rv_irq_restore(irq);
-    return ok;
+    _function._txHead = _function._txCount = 0;
+    return true;
 }
 
-/* In the USB interrupt: count, and when the host outran read() put the
- * FIFO's read index back on the oldest byte still there. */
-bool CH32RVUsbAudioFunction::handlePlaybackTransfer(uint16_t bytes, uint8_t alternateSetting)
+void CH32RVUsbAudioFunction::usbReset()
 {
-    if (alternateSetting == 0 || !_playbackEnabled) {
-        return true;
-    }
-    _playback._transferredBytes = _playback._transferredBytes + bytes;
-    tu_fifo_t *fifo = tud_audio_get_ep_out_ff();
-    if (fifo) {
-        const uint16_t count = tu_ff_overflow_count(fifo->depth, fifo->wr_idx, fifo->rd_idx);
-        if (count > fifo->depth) {
-            tu_fifo_correct_read_pointer(fifo);
-            _playback._overrunCount = _playback._overrunCount + 1;
-            _playback._overrunBytes = _playback._overrunBytes + (uint32_t)(count - fifo->depth);
+    for (uint8_t i = 0; i < 2; i++) {
+        if (_streams[i].alternate) {
+            _streams[i].alternate = 0;
+            CH32RVUsbAudioEvent e;
+            e.type = CH32RVUsbAudioEventType::StreamStateChanged;
+            e.target = i ? CH32RVUsbAudioEventTarget::Capture : CH32RVUsbAudioEventTarget::Playback;
+            pushEvent(e);
         }
     }
-    return true;
 }
 
-/* In the USB interrupt: a packet shorter than one (micro)frame's nominal
- * samples means write() fell behind. */
-bool CH32RVUsbAudioFunction::handleCaptureTransfer(uint16_t bytes, uint8_t alternateSetting)
+/* The FIFOs: four nominal packets of this speed's, within what fits. */
+void CH32RVUsbAudioFunction::usbConfigured(CH32RVUsbSpeed speed)
 {
-    if (alternateSetting == 0 || !_captureEnabled) {
-        return true;
+    _highSpeed = speed != CH32RVUsbSpeed::Full;
+    _rxPacketSize = stream(CH32RVUsbAudioDirection::Playback)
+                        ? packetSize(_streams[0].format, CH32RVUsbAudioDirection::Playback, _highSpeed)
+                        : 0;
+    _txPacketSize = stream(CH32RVUsbAudioDirection::Capture)
+                        ? packetSize(_streams[1].format, CH32RVUsbAudioDirection::Capture, _highSpeed)
+                        : 0;
+    const uint16_t rx = (uint16_t)(4 * _rxPacketSize), tx = (uint16_t)(4 * _txPacketSize);
+    _rxDepth = rx < FIFO_SIZE ? rx : FIFO_SIZE;
+    _txDepth = tx < FIFO_SIZE ? tx : FIFO_SIZE;
+    if (_rxPacketSize) {
+        const uint16_t frame = (uint16_t)(_streams[0].format.channels * _streams[0].format.bytesPerSample);
+        _rxDepth = (uint16_t)(_rxDepth - _rxDepth % frame);
     }
-    _capture._transferredBytes = _capture._transferredBytes + bytes;
+    if (_txPacketSize) {
+        const uint16_t frame = (uint16_t)(_streams[1].format.channels * _streams[1].format.bytesPerSample);
+        _txDepth = (uint16_t)(_txDepth - _txDepth % frame);
+    }
+    _rxHead = _rxCount = _txHead = _txCount = 0;
+    _txRemainder = 0;
+}
+
+void CH32RVUsbAudioFunction::receivePacket()
+{
+    if (_streams[0].alternate) {
+        device().transfer(_streams[0].dataEndpoint, _rxPacket, _rxPacketSize);
+    }
+}
+
+/* One (micro)frame's samples: the nominal count, its fraction carried to the
+ * next packet. Short when write() fell behind. */
+void CH32RVUsbAudioFunction::sendPacket()
+{
+    if (!_streams[1].alternate) {
+        return;
+    }
     const CH32RVUsbAudioFormat &f = _streams[1].format;
-    const uint32_t perSecond = f.sampleRate * f.channels * f.bytesPerSample;
-    const uint32_t minimum = perSecond / (tud_speed_get() == TUSB_SPEED_HIGH ? 8000u : 1000u);
-    if (bytes < minimum) {
-        _capture._underrunCount = _capture._underrunCount + 1;
-        _capture._underrunBytes = _capture._underrunBytes + (minimum - bytes);
+    const uint32_t frames = _highSpeed ? 8000u : 1000u;
+    _txRemainder += f.sampleRate;
+    uint32_t samples = _txRemainder / frames;
+    _txRemainder %= frames;
+    const uint16_t frameBytes = (uint16_t)(f.channels * f.bytesPerSample);
+    uint32_t want = samples * frameBytes;
+    if (want > _txPacketSize) {
+        want = _txPacketSize;
     }
-    return true;
+    uint16_t n = (uint16_t)(_txCount < want ? _txCount - _txCount % frameBytes : want);
+    n = fifo_get(_txFifo, _txDepth, _txHead, _txCount, _txPacket, n);
+    if (n < want) {
+        _capture._underrunCount = _capture._underrunCount + 1;
+        _capture._underrunBytes = _capture._underrunBytes + (uint32_t)(want - n);
+    }
+    device().transfer(_streams[1].dataEndpoint, _txPacket, n);
+}
+
+/* UAC2 playback is asynchronous: the feedback endpoint steers the host by
+ * the receive FIFO's level, around half full - samples per frame in 10.14
+ * (3 bytes) at full speed, per microframe in 16.16 at high speed. */
+void CH32RVUsbAudioFunction::sendFeedback()
+{
+    const Stream &s = _streams[0];
+    if (!s.alternate || !s.feedbackEndpoint) {
+        return;
+    }
+    const uint32_t frames = _highSpeed ? 8000u : 1000u;
+    const uint8_t shift = _highSpeed ? 16 : 14;
+    const uint32_t nominal = (uint32_t)(((uint64_t)s.format.sampleRate << shift) / frames);
+    const int32_t frameBytes = s.format.channels * s.format.bytesPerSample;
+    /* Off from half full by k sample frames: ask for k/32 more or fewer per
+     * frame, at most one. */
+    int32_t k = ((int32_t)_rxDepth / 2 - (int32_t)_rxCount) / frameBytes;
+    int32_t adjust = (int32_t)(((int64_t)k << shift) / 32);
+    const int32_t one = (int32_t)1 << shift;
+    adjust = adjust > one ? one : adjust < -one ? -one : adjust;
+    put32(_feedback, (uint32_t)((int32_t)nominal + adjust));
+    device().transfer(s.feedbackEndpoint, _feedback, _highSpeed ? 4 : 3);
+}
+
+void CH32RVUsbAudioFunction::usbTransferred(uint8_t address, uint16_t length)
+{
+    Stream &ps = _streams[0], &cs = _streams[1];
+    if (_playbackEnabled && address == ps.dataEndpoint) {
+        if (!ps.alternate) {
+            return;
+        }
+        _playback._transferredBytes = _playback._transferredBytes + length;
+        const uint16_t room = (uint16_t)(_rxDepth - _rxCount);
+        if (length > room) {
+            _playback._overrunCount = _playback._overrunCount + 1;
+            _playback._overrunBytes = _playback._overrunBytes + (uint32_t)(length - room);
+        }
+        fifo_put(_rxFifo, _rxDepth, _rxHead, _rxCount, _rxPacket, length);
+        receivePacket();
+    } else if (_playbackEnabled && ps.feedbackEndpoint && address == ps.feedbackEndpoint) {
+        sendFeedback();
+    } else if (_captureEnabled && address == cs.dataEndpoint) {
+        if (!cs.alternate) {
+            return;
+        }
+        _capture._transferredBytes = _capture._transferredBytes + length;
+        sendPacket();
+    }
 }
 
 /* ---------------------------------------------------------- requests */
@@ -527,34 +606,33 @@ static uint16_t clip(uint16_t n, uint16_t wLength)
 /* GET on an entity: the UAC2 clock (rate, validity) or a feature unit
  * (mute, volume); UAC1 has only the feature units. wLength is the host's
  * buffer, so the answer is cut to it rather than refused. */
-bool CH32RVUsbAudioFunction::handleGetEntityRequest(uint8_t rhport, const void *raw)
+bool CH32RVUsbAudioFunction::getEntity(const CH32RVUsbSetup &r, uint16_t &length)
 {
-    const tusb_control_request_t *r = static_cast<const tusb_control_request_t *>(raw);
-    if (!r || r->wLength == 0) {
+    if (r.wLength == 0) {
         return false;
     }
-    const uint8_t itf = (uint8_t)(r->wIndex & 0xff), entity = (uint8_t)(r->wIndex >> 8);
-    const uint8_t channel = (uint8_t)(r->wValue & 0xff), selector = (uint8_t)(r->wValue >> 8);
+    const uint8_t itf = (uint8_t)(r.wIndex & 0xff), entity = (uint8_t)(r.wIndex >> 8);
+    const uint8_t channel = (uint8_t)(r.wValue & 0xff), selector = (uint8_t)(r.wValue >> 8);
     if (itf != _controlInterface) {
         return false;
     }
-    uint8_t buf[16];
+    uint8_t *buf = _ctl;
     uint16_t n = 0;
     if (_protocol == CH32RVUsbAudioProtocol::Uac2 && entity == CLOCK_ID) {
         if (channel != 0) {
             return false;
         }
-        if (selector == SEL_SAMPLE_RATE && r->bRequest == UAC2_CUR) {
+        if (selector == SEL_SAMPLE_RATE && r.bRequest == UAC2_CUR) {
             put32(buf, _sampleRate);
             n = 4;
-        } else if (selector == SEL_SAMPLE_RATE && r->bRequest == UAC2_RANGE) {
+        } else if (selector == SEL_SAMPLE_RATE && r.bRequest == UAC2_RANGE) {
             /* One discrete rate; Linux first reads only wNumSubRanges. */
             put16(buf, 1);
             put32(buf + 2, _sampleRate);
             put32(buf + 6, _sampleRate);
             put32(buf + 10, 0);
             n = 14;
-        } else if (selector == SEL_CLOCK_VALID && r->bRequest == UAC2_CUR) {
+        } else if (selector == SEL_CLOCK_VALID && r.bRequest == UAC2_CUR) {
             buf[0] = 1;
             n = 1;
         } else {
@@ -566,7 +644,7 @@ bool CH32RVUsbAudioFunction::handleGetEntityRequest(uint8_t rhport, const void *
         if (!s || !controlValue(*s, selector, channel, value)) {
             return false;
         }
-        const bool cur = r->bRequest == (_protocol == CH32RVUsbAudioProtocol::Uac2 ? UAC2_CUR : UAC1_GET_CUR);
+        const bool cur = r.bRequest == (_protocol == CH32RVUsbAudioProtocol::Uac2 ? UAC2_CUR : UAC1_GET_CUR);
         if (cur) {
             if (selector == SEL_MUTE) {
                 buf[0] = (uint8_t)value;
@@ -578,7 +656,7 @@ bool CH32RVUsbAudioFunction::handleGetEntityRequest(uint8_t rhport, const void *
         } else if (selector != SEL_VOLUME) {
             return false;
         } else if (_protocol == CH32RVUsbAudioProtocol::Uac2) {
-            if (r->bRequest != UAC2_RANGE) {
+            if (r.bRequest != UAC2_RANGE) {
                 return false;
             }
             put16(buf, 1);
@@ -587,10 +665,10 @@ bool CH32RVUsbAudioFunction::handleGetEntityRequest(uint8_t rhport, const void *
             put16(buf + 6, (uint16_t)(int16_t)VOLUME_RESOLUTION);
             n = 8;
         } else {
-            const int32_t v = r->bRequest == UAC1_GET_MIN   ? VOLUME_MIN
-                              : r->bRequest == UAC1_GET_MAX ? VOLUME_MAX
-                              : r->bRequest == UAC1_GET_RES ? VOLUME_RESOLUTION
-                                                            : 1;
+            const int32_t v = r.bRequest == UAC1_GET_MIN   ? VOLUME_MIN
+                              : r.bRequest == UAC1_GET_MAX ? VOLUME_MAX
+                              : r.bRequest == UAC1_GET_RES ? VOLUME_RESOLUTION
+                                                           : 1;
             if (v == 1) {
                 return false;
             }
@@ -598,46 +676,45 @@ bool CH32RVUsbAudioFunction::handleGetEntityRequest(uint8_t rhport, const void *
             n = 2;
         }
     }
-    return tud_audio_buffer_and_schedule_control_xfer(rhport, r, buf, clip(n, r->wLength));
+    length = clip(n, r.wLength);
+    return true;
 }
 
 /* SET_CUR on an entity. The clock takes only the one rate it has. */
-bool CH32RVUsbAudioFunction::handleSetEntityRequest(const void *raw, const uint8_t *data)
+bool CH32RVUsbAudioFunction::setEntity(const CH32RVUsbSetup &r, const uint8_t *data)
 {
-    const tusb_control_request_t *r = static_cast<const tusb_control_request_t *>(raw);
-    if (!r || !data || r->bRequest != (_protocol == CH32RVUsbAudioProtocol::Uac2 ? UAC2_CUR : UAC1_SET_CUR)) {
+    if (r.bRequest != (_protocol == CH32RVUsbAudioProtocol::Uac2 ? UAC2_CUR : UAC1_SET_CUR)) {
         return false;
     }
-    const uint8_t itf = (uint8_t)(r->wIndex & 0xff), entity = (uint8_t)(r->wIndex >> 8);
-    const uint8_t channel = (uint8_t)(r->wValue & 0xff), selector = (uint8_t)(r->wValue >> 8);
+    const uint8_t itf = (uint8_t)(r.wIndex & 0xff), entity = (uint8_t)(r.wIndex >> 8);
+    const uint8_t channel = (uint8_t)(r.wValue & 0xff), selector = (uint8_t)(r.wValue >> 8);
     if (itf != _controlInterface) {
         return false;
     }
     if (_protocol == CH32RVUsbAudioProtocol::Uac2 && entity == CLOCK_ID) {
-        if (channel != 0 || selector != SEL_SAMPLE_RATE || r->wLength != 4) {
+        if (channel != 0 || selector != SEL_SAMPLE_RATE || r.wLength != 4) {
             return false;
         }
         const uint32_t rate = (uint32_t)data[0] | ((uint32_t)data[1] << 8) | ((uint32_t)data[2] << 16) |
                               ((uint32_t)data[3] << 24);
         return rate == _sampleRate;
     }
-    if (selector == SEL_MUTE && r->wLength == 1) {
+    if (selector == SEL_MUTE && r.wLength == 1) {
         return applyControl(entity, SEL_MUTE, channel, data[0]);
     }
-    if (selector == SEL_VOLUME && r->wLength == 2) {
+    if (selector == SEL_VOLUME && r.wLength == 2) {
         return applyControl(entity, SEL_VOLUME, channel, (int16_t)(uint16_t)(data[0] | (data[1] << 8)));
     }
     return false;
 }
 
 /* UAC1's sampling frequency control on a data endpoint: one fixed rate. */
-bool CH32RVUsbAudioFunction::handleGetEndpointRequest(uint8_t rhport, const void *raw)
+bool CH32RVUsbAudioFunction::getEndpoint(const CH32RVUsbSetup &r, uint16_t &length)
 {
-    const tusb_control_request_t *r = static_cast<const tusb_control_request_t *>(raw);
-    if (_protocol != CH32RVUsbAudioProtocol::Uac1 || !r) {
+    if (_protocol != CH32RVUsbAudioProtocol::Uac1) {
         return false;
     }
-    const uint8_t ep = (uint8_t)(r->wIndex & 0xff), selector = (uint8_t)(r->wValue >> 8);
+    const uint8_t ep = (uint8_t)(r.wIndex & 0xff), selector = (uint8_t)(r.wValue >> 8);
     const Stream *s = nullptr;
     for (uint8_t i = 0; i < 2; i++) {
         if (stream(i ? CH32RVUsbAudioDirection::Capture : CH32RVUsbAudioDirection::Playback) &&
@@ -645,21 +722,23 @@ bool CH32RVUsbAudioFunction::handleGetEndpointRequest(uint8_t rhport, const void
             s = &_streams[i];
         }
     }
-    if (!s || selector != 1 || r->wLength != 3 || r->bRequest < UAC1_GET_CUR || r->bRequest > UAC1_GET_RES) {
+    if (!s || selector != 1 || r.wLength != 3 || r.bRequest < UAC1_GET_CUR || r.bRequest > UAC1_GET_RES) {
         return false;
     }
-    const uint32_t rate = r->bRequest == UAC1_GET_RES ? 0 : s->format.sampleRate;
-    uint8_t buf[3] = {(uint8_t)rate, (uint8_t)(rate >> 8), (uint8_t)(rate >> 16)};
-    return tud_audio_buffer_and_schedule_control_xfer(rhport, r, buf, sizeof buf);
+    const uint32_t rate = r.bRequest == UAC1_GET_RES ? 0 : s->format.sampleRate;
+    _ctl[0] = (uint8_t)rate;
+    _ctl[1] = (uint8_t)(rate >> 8);
+    _ctl[2] = (uint8_t)(rate >> 16);
+    length = 3;
+    return true;
 }
 
-bool CH32RVUsbAudioFunction::handleSetEndpointRequest(const void *raw, const uint8_t *data)
+bool CH32RVUsbAudioFunction::setEndpoint(const CH32RVUsbSetup &r, const uint8_t *data)
 {
-    const tusb_control_request_t *r = static_cast<const tusb_control_request_t *>(raw);
-    if (_protocol != CH32RVUsbAudioProtocol::Uac1 || !r || !data) {
+    if (_protocol != CH32RVUsbAudioProtocol::Uac1) {
         return false;
     }
-    const uint8_t ep = (uint8_t)(r->wIndex & 0xff), selector = (uint8_t)(r->wValue >> 8);
+    const uint8_t ep = (uint8_t)(r.wIndex & 0xff), selector = (uint8_t)(r.wValue >> 8);
     const Stream *s = nullptr;
     for (uint8_t i = 0; i < 2; i++) {
         if (stream(i ? CH32RVUsbAudioDirection::Capture : CH32RVUsbAudioDirection::Playback) &&
@@ -667,25 +746,48 @@ bool CH32RVUsbAudioFunction::handleSetEndpointRequest(const void *raw, const uin
             s = &_streams[i];
         }
     }
-    if (!s || r->bRequest != UAC1_SET_CUR || selector != 1 || r->wLength != 3) {
+    if (!s || r.bRequest != UAC1_SET_CUR || selector != 1 || r.wLength != 3) {
         return false;
     }
     const uint32_t rate = (uint32_t)data[0] | ((uint32_t)data[1] << 8) | ((uint32_t)data[2] << 16);
     return rate == s->format.sampleRate;
 }
 
-/* SET_INTERFACE on a streaming interface: alt 1 opens the stream, 0 closes. */
-bool CH32RVUsbAudioFunction::handleSetInterface(const void *raw)
+bool CH32RVUsbAudioFunction::usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &r)
 {
-    const tusb_control_request_t *r = static_cast<const tusb_control_request_t *>(raw);
-    if (!r) {
+    if ((r.bmRequestType & 0x60) != 0x20) {
         return false;
     }
-    const uint8_t itf = (uint8_t)(r->wIndex & 0xff), alt = (uint8_t)(r->wValue & 0xff);
+    const bool endpoint = (r.bmRequestType & 0x1F) == 2;
+    if (r.bmRequestType & 0x80) {                /* GET */
+        if (stage != CH32RVUsbControlStage::Setup) {
+            return true;
+        }
+        uint16_t n = 0;
+        if (!(endpoint ? getEndpoint(r, n) : getEntity(r, n))) {
+            return false;
+        }
+        return device().controlIn(_ctl, n);
+    }
+    if (stage == CH32RVUsbControlStage::Setup) {   /* SET: the value first */
+        return r.wLength && r.wLength <= sizeof _ctl && device().controlOut(_ctl, r.wLength);
+    }
+    if (stage == CH32RVUsbControlStage::Data) {
+        return endpoint ? setEndpoint(r, _ctl) : setEntity(r, _ctl);
+    }
+    return true;
+}
+
+/* SET_INTERFACE on a streaming interface: alt 1 opens the stream, 0 closes. */
+bool CH32RVUsbAudioFunction::usbSetInterface(uint8_t itf, uint8_t alt)
+{
     for (uint8_t i = 0; i < 2; i++) {
         Stream *s = stream(i ? CH32RVUsbAudioDirection::Capture : CH32RVUsbAudioDirection::Playback);
         if (!s || s->interfaceNumber != itf) {
             continue;
+        }
+        if (alt > 1) {
+            return false;
         }
         if (s->alternate != alt) {
             s->alternate = alt;
@@ -696,89 +798,16 @@ bool CH32RVUsbAudioFunction::handleSetInterface(const void *raw)
             e.enabled = alt != 0;
             pushEvent(e);
         }
-        break;
+        if (alt) {
+            if (i == 0) {
+                receivePacket();
+                sendFeedback();
+            } else {
+                _txRemainder = 0;
+                sendPacket();
+            }
+        }
+        return true;
     }
-    return true;
+    return alt == 0;
 }
-
-/* ---------------------------------------------------------- TinyUSB callbacks
- * Here, in the file the class object pulls in, so that they replace
- * audio_device.c's weak ones whenever the audio driver is linked. */
-extern "C" bool tud_audio_get_req_entity_cb(uint8_t rhport, const tusb_control_request_t *request)
-{
-    return g_audio && g_audio->handleGetEntityRequest(rhport, request);
-}
-
-extern "C" bool tud_audio_set_req_entity_cb(uint8_t, const tusb_control_request_t *request, uint8_t *data)
-{
-    return g_audio && g_audio->handleSetEntityRequest(request, data);
-}
-
-extern "C" bool tud_audio_get_req_ep_cb(uint8_t rhport, const tusb_control_request_t *request)
-{
-    return g_audio && g_audio->handleGetEndpointRequest(rhport, request);
-}
-
-extern "C" bool tud_audio_set_req_ep_cb(uint8_t, const tusb_control_request_t *request, uint8_t *data)
-{
-    return g_audio && g_audio->handleSetEndpointRequest(request, data);
-}
-
-extern "C" bool tud_audio_get_req_itf_cb(uint8_t, const tusb_control_request_t *)
-{
-    return false;
-}
-
-extern "C" bool tud_audio_set_req_itf_cb(uint8_t, const tusb_control_request_t *, uint8_t *)
-{
-    return false;
-}
-
-extern "C" bool tud_audio_set_itf_cb(uint8_t, const tusb_control_request_t *request)
-{
-    return g_audio && g_audio->handleSetInterface(request);
-}
-
-extern "C" bool tud_audio_set_itf_close_ep_cb(uint8_t, const tusb_control_request_t *)
-{
-    return g_audio != nullptr;
-}
-
-extern "C" bool tud_audio_rx_done_isr(uint8_t, uint16_t bytes, uint8_t, uint8_t, uint8_t alternateSetting)
-{
-    return g_audio && g_audio->handlePlaybackTransfer(bytes, alternateSetting);
-}
-
-extern "C" bool tud_audio_tx_done_isr(uint8_t, uint16_t bytes, uint8_t, uint8_t, uint8_t alternateSetting)
-{
-    return g_audio && g_audio->handleCaptureTransfer(bytes, alternateSetting);
-}
-
-/* UAC2 playback is asynchronous: the feedback endpoint steers the host by
- * the receive FIFO's level, around half full. */
-extern "C" void tud_audio_feedback_params_cb(uint8_t, uint8_t, audio_feedback_params_t *params)
-{
-    if (!params || !g_audio) {
-        return;
-    }
-    params->method = AUDIO_FEEDBACK_METHOD_FIFO_COUNT;
-    params->sample_freq = g_audio->currentSampleRate();
-}
-
-#else /* !CH32RV_TINYUSB_DEVICE: begin() of the device fails, nothing moves */
-
-int CH32RVUsbAudioPlaybackStream::available() const { return 0; }
-size_t CH32RVUsbAudioPlaybackStream::read(void *, size_t) { return 0; }
-bool CH32RVUsbAudioPlaybackStream::clearBuffer() { return false; }
-size_t CH32RVUsbAudioCaptureStream::write(const void *, size_t) { return 0; }
-int CH32RVUsbAudioCaptureStream::availableForWrite() { return 0; }
-bool CH32RVUsbAudioCaptureStream::clearBuffer() { return false; }
-bool CH32RVUsbAudioFunction::handlePlaybackTransfer(uint16_t, uint8_t) { return false; }
-bool CH32RVUsbAudioFunction::handleCaptureTransfer(uint16_t, uint8_t) { return false; }
-bool CH32RVUsbAudioFunction::handleGetEntityRequest(uint8_t, const void *) { return false; }
-bool CH32RVUsbAudioFunction::handleSetEntityRequest(const void *, const uint8_t *) { return false; }
-bool CH32RVUsbAudioFunction::handleGetEndpointRequest(uint8_t, const void *) { return false; }
-bool CH32RVUsbAudioFunction::handleSetEndpointRequest(const void *, const uint8_t *) { return false; }
-bool CH32RVUsbAudioFunction::handleSetInterface(const void *) { return false; }
-
-#endif

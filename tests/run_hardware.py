@@ -48,7 +48,7 @@ SKETCHES = {
 # build_opt.h lines staged beside a case's DUT sketch.
 BUILD_OPTS = {
     # EspUsbHost 2.10.0 starts a bulk UVC stream but never reads it.
-    "usb-peer-media": "-DCFG_TUD_VIDEO_STREAMING_BULK=0\n",
+    "usb-peer-media": "-DUSB_MEDIA_ISOCHRONOUS=1\n",
 }
 # The peer sketch directory staged beside a case's test (pytest-embedded-arduino-cli's peer_<name>/).
 PEERS = {
@@ -352,7 +352,10 @@ def main(argv=None):
                         command += ["--flash-port", "hid://" + target["soft_usb_topology"]]
                     elif target.get("upload_port"):
                         command += ["--flash-port", target["upload_port"]]
-                    invoke(command, module.parent / "pytest.log", env=case_env, timeout=300)
+                    # A peer case builds the ESP32 sketch inside pytest too; on a loaded
+                    # host that alone can take minutes.
+                    invoke(command, module.parent / "pytest.log", env=case_env,
+                           timeout=900 if case in PEER_CASES else 300)
                     result["status"] = "PASS" if args.execute else "COMPILE_PASS"
                     if args.execute and case == "power":
                         # Wait for board-identify, then check the target through the reopened connection.

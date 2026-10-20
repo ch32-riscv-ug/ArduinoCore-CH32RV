@@ -1,12 +1,9 @@
-/* USB CCID (smart card reader). TinyUSB has no CCID class, so the driver is
- * here (EspUsbDevice's, with static buffers instead of heap ones); a sketch
- * without a card reader links none of it. */
+/* USB CCID (smart card reader) on the device stack: EspUsbDevice's reader,
+ * with static buffers instead of heap ones; a sketch without a card reader
+ * links none of it. */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
-
-#include "tusb.h"
-#include "device/usbd_pvt.h"
 
 /* PC_to_RDR message types (CCID 1.1 section 6.1). */
 #define PC_TO_RDR_SET_PARAMETERS   0x61
@@ -32,12 +29,8 @@
 
 #define HEADER_SIZE  10
 #define MESSAGE_SIZE CH32RV_USB_DEVICE_CCID_BUFFER_SIZE
-/* The receive buffer holds one packet of the fastest speed built in. */
-#if TUD_OPT_HIGH_SPEED
-#define BULK_EP_BUF 512
-#else
-#define BULK_EP_BUF 64
-#endif
+/* The receive buffer holds one packet of the fastest speed the part has. */
+#define BULK_EP_BUF CH32RV_USB_MAX_PACKET
 #define NOTIFY_EP_SIZE 8
 #define NOTIFY_INTERVAL_MS 16
 
@@ -85,186 +78,53 @@ uint8_t CH32RVUsbDeviceCcid::iccStatus() const
     return _cardPowered ? CH32RV_USB_DEVICE_CCID_ICC_ACTIVE : CH32RV_USB_DEVICE_CCID_ICC_INACTIVE;
 }
 
-#if CH32RV_TINYUSB_DEVICE
-
 /* ---------------------------------------------------------- the driver */
 static struct {
-    uint8_t rhport;
     uint8_t ep_in, ep_out, ep_notify;
-    uint16_t ep_in_size, ep_out_size;
+    uint16_t packet;
     /* One PC_to_RDR message being assembled: `received` counts all the host
      * sent for it, `stored` what fitted. */
     uint32_t received, stored;
-    bool zlp_pending;
+    bool zlp_pending, configured;
 } drv;
 
-CFG_TUSB_MEM_ALIGN static uint8_t ep_out_buf[BULK_EP_BUF];
-CFG_TUSB_MEM_ALIGN static uint8_t notify_buf[NOTIFY_EP_SIZE];
-CFG_TUSB_MEM_ALIGN static uint8_t message[MESSAGE_SIZE];
+static uint8_t ep_out_buf[BULK_EP_BUF] __attribute__((aligned(4)));
+static uint8_t notify_buf[NOTIFY_EP_SIZE] __attribute__((aligned(4)));
+static uint8_t message[MESSAGE_SIZE] __attribute__((aligned(4)));
 /* Responses are built here and sent from here: CCID is one command at a
  * time, so the next one cannot overwrite a response still in flight. */
-CFG_TUSB_MEM_ALIGN static uint8_t response[MESSAGE_SIZE];
+static uint8_t response[MESSAGE_SIZE] __attribute__((aligned(4)));
 
 static CH32RVUsbDeviceCcid *ccid;
 
-static bool arm_receive(void)
+static void arm_receive(void)
 {
-    return drv.ep_out && usbd_edpt_xfer(drv.rhport, drv.ep_out, ep_out_buf, drv.ep_out_size, false);
+    if (ccid && drv.configured && !ccid->device().transferBusy(drv.ep_out)) {
+        ccid->device().transfer(drv.ep_out, ep_out_buf, drv.packet);
+    }
 }
 
 static bool driver_send(size_t length)
 {
-    if (!drv.ep_in || !length || length > MESSAGE_SIZE || !usbd_edpt_claim(drv.rhport, drv.ep_in)) {
+    if (!ccid || !drv.configured || !length || length > MESSAGE_SIZE || ccid->device().transferBusy(drv.ep_in)) {
         return false;
     }
-    drv.zlp_pending = drv.ep_in_size && length % drv.ep_in_size == 0;
-    return usbd_edpt_xfer(drv.rhport, drv.ep_in, response, (uint16_t)length, false);
+    drv.zlp_pending = length % drv.packet == 0;
+    return ccid->device().transfer(drv.ep_in, response, (uint16_t)length);
 }
 
 static bool driver_notify(const uint8_t *data, size_t length)
 {
-    if (!drv.ep_notify || !usbd_edpt_claim(drv.rhport, drv.ep_notify)) {
+    if (!ccid || !drv.configured || ccid->device().transferBusy(drv.ep_notify)) {
         return false;
     }
     memcpy(notify_buf, data, length);
-    return usbd_edpt_xfer(drv.rhport, drv.ep_notify, notify_buf, (uint16_t)length, false);
+    return ccid->device().transfer(drv.ep_notify, notify_buf, (uint16_t)length);
 }
-
-static void ccidd_init(void)
-{
-    memset(&drv, 0, sizeof drv);
-}
-
-static bool ccidd_deinit(void)
-{
-    memset(&drv, 0, sizeof drv);
-    return true;
-}
-
-static void ccidd_reset(uint8_t rhport)
-{
-    (void)rhport;
-    memset(&drv, 0, sizeof drv);
-    if (ccid) {
-        ccid->handleBusDetached();
-    }
-}
-
-static uint16_t ccidd_open(uint8_t rhport, tusb_desc_interface_t const *itf, uint16_t max_len)
-{
-    TU_VERIFY(itf->bInterfaceClass == 0x0B && itf->bInterfaceSubClass == 0 && itf->bInterfaceProtocol == 0, 0);
-    const uint8_t *end = (const uint8_t *)itf + max_len;
-    const uint8_t *p = tu_desc_next(itf);
-    drv.rhport = rhport;
-    drv.ep_in = drv.ep_out = drv.ep_notify = 0;
-    drv.received = drv.stored = 0;
-    while (tu_desc_in_bounds(p, end)) {
-        const uint8_t type = tu_desc_type(p);
-        if (type == TUSB_DESC_INTERFACE || type == TUSB_DESC_INTERFACE_ASSOCIATION) {
-            break;
-        }
-        if (type == TUSB_DESC_ENDPOINT) {
-            const tusb_desc_endpoint_t *ep = (const tusb_desc_endpoint_t *)p;
-            TU_ASSERT(usbd_edpt_open(rhport, ep), 0);
-            if (ep->bmAttributes.xfer == TUSB_XFER_INTERRUPT) {
-                drv.ep_notify = ep->bEndpointAddress;
-            } else if (tu_edpt_dir(ep->bEndpointAddress) == TUSB_DIR_IN) {
-                drv.ep_in = ep->bEndpointAddress;
-                drv.ep_in_size = tu_edpt_packet_size(ep);
-            } else {
-                drv.ep_out = ep->bEndpointAddress;
-                drv.ep_out_size = tu_edpt_packet_size(ep);
-                TU_ASSERT(drv.ep_out_size <= BULK_EP_BUF, 0);
-            }
-        }
-        p = tu_desc_next(p);
-    }
-    TU_ASSERT(drv.ep_in && drv.ep_out, 0);
-    TU_ASSERT(arm_receive(), 0);
-    /* Configured: tell the host the slot state without its having to poll. */
-    if (ccid) {
-        ccid->handleBusAttached();
-    }
-    return (uint16_t)(p - (const uint8_t *)itf);
-}
-
-static bool ccidd_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request)
-{
-    if (request->bmRequestType_bit.type != TUSB_REQ_TYPE_CLASS) {
-        return false;
-    }
-    if (stage != CONTROL_STAGE_SETUP) {
-        return true;
-    }
-    /* GET_CLOCK_FREQUENCIES / GET_DATA_RATES are only legal when the class
-     * descriptor lists several; it lists one, so they stall. */
-    if (request->bRequest == REQUEST_ABORT) {
-        if (ccid) {
-            ccid->handleAbort(tu_u16_low(request->wValue), tu_u16_high(request->wValue));
-        }
-        return tud_control_status(rhport, request);
-    }
-    return false;
-}
-
-static bool ccidd_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint32_t xferred)
-{
-    (void)rhport;
-    if (ep_addr == drv.ep_in) {
-        if (drv.zlp_pending) {
-            drv.zlp_pending = false;
-            if (usbd_edpt_claim(drv.rhport, drv.ep_in)) {
-                usbd_edpt_xfer(drv.rhport, drv.ep_in, response, 0, false);
-            }
-        }
-        return true;
-    }
-    if (ep_addr == drv.ep_notify) {
-        if (ccid) {
-            ccid->handleNotifyComplete();
-        }
-        return true;
-    }
-    if (ep_addr != drv.ep_out) {
-        return true;
-    }
-    if (result != XFER_RESULT_SUCCESS) {
-        drv.received = drv.stored = 0;
-        arm_receive();
-        return true;
-    }
-    drv.received += xferred;
-    if (drv.stored < MESSAGE_SIZE) {
-        const uint32_t room = MESSAGE_SIZE - drv.stored;
-        const uint32_t n = xferred < room ? xferred : room;
-        memcpy(message + drv.stored, ep_out_buf, n);
-        drv.stored += n;
-    }
-    if (drv.stored >= HEADER_SIZE) {
-        const uint32_t total = HEADER_SIZE + get32(message + 1);
-        if (drv.received >= total) {
-            if (ccid && total <= MESSAGE_SIZE) {
-                ccid->handleMessage(message, total);
-            } else if (ccid) {
-                ccid->handleOverrun(message[0], message[5], message[6]);
-            }
-            drv.received = drv.stored = 0;
-        }
-    } else if (xferred < drv.ep_out_size) {
-        /* A short packet before a whole header: the host ended the transfer. */
-        drv.received = drv.stored = 0;
-    }
-    arm_receive();
-    return true;
-}
-
-static const usbd_class_driver_t ccid_driver = {
-    NULL, ccidd_init, ccidd_deinit, ccidd_reset, ccidd_open, ccidd_control_xfer_cb, ccidd_xfer_cb, NULL, NULL,
-};
 
 /* One interface: bulk OUT/IN on endpoint n, interrupt IN on n + 1. */
 static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                uint8_t *ep, uint8_t str, bool hs)
+                                uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
     (void)self;
     const uint16_t len = 9 + 54 + 3 * 7;
@@ -273,7 +133,10 @@ static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ou
     }
     const uint8_t n = *ep;
     *ep = (uint8_t)(n + 2);
-    const uint8_t head[] = {9, TUSB_DESC_INTERFACE, itf, 0, 3, 0x0B, 0, 0, str};
+    drv.ep_out = n;
+    drv.ep_in = (uint8_t)(0x80 | n);
+    drv.ep_notify = (uint8_t)(0x80 | (n + 1));
+    const uint8_t head[] = {9, 4, itf, 0, 3, 0x0B, 0, 0, str};
     memcpy(out, head, sizeof head);
     /* CCID class descriptor (CCID 1.1 section 5.1). */
     uint8_t *c = out + 9;
@@ -295,17 +158,17 @@ static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ou
     c[48] = 0xFF;
     c[49] = 0xFF;
     c[53] = 1;
+    const uint16_t mps = ch32rv_usb_bulk_size(speed);
     const uint8_t eps[] = {
-        7, TUSB_DESC_ENDPOINT, n, TUSB_XFER_BULK, U16_TO_U8S_LE(ch32rv_usb_bulk_size(hs)), 0,
-        7, TUSB_DESC_ENDPOINT, (uint8_t)(0x80 | n), TUSB_XFER_BULK, U16_TO_U8S_LE(ch32rv_usb_bulk_size(hs)), 0,
-        7, TUSB_DESC_ENDPOINT, (uint8_t)(0x80 | (n + 1)), TUSB_XFER_INTERRUPT, NOTIFY_EP_SIZE, 0,
-        ch32rv_usb_interval(hs, NOTIFY_INTERVAL_MS),
+        7, 5, n, 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
+        7, 5, (uint8_t)(0x80 | n), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
+        7, 5, (uint8_t)(0x80 | (n + 1)), 3, NOTIFY_EP_SIZE, 0, ch32rv_usb_interval(speed, NOTIFY_INTERVAL_MS),
     };
     memcpy(out + 9 + 54, eps, sizeof eps);
     return len;
 }
 
-static const CH32RVUsbFunctionType ccid_type = {&ccid_driver, ccid_descriptor, 1, 1, nullptr, 0};
+static const CH32RVUsbFunctionType ccid_type = {ccid_descriptor, 1, 1, nullptr, 0};
 
 CH32RVUsbDeviceCcid::CH32RVUsbDeviceCcid(CH32RVUsbDevice &device)
     : CH32RVUsbDeviceFunction(device, ccid_type, CH32RV_USB_CCID_NAME)
@@ -317,7 +180,85 @@ CH32RVUsbDeviceCcid::CH32RVUsbDeviceCcid(CH32RVUsbDevice &device)
 
 bool CH32RVUsbDeviceCcid::mounted() const
 {
-    return ccid == this && drv.ep_in && drv.ep_out;
+    return ccid == this && drv.configured;
+}
+
+/* ---------------------------------------------------------- the stack's side */
+void CH32RVUsbDeviceCcid::usbReset()
+{
+    drv.configured = drv.zlp_pending = false;
+    drv.received = drv.stored = 0;
+    handleBusDetached();
+}
+
+void CH32RVUsbDeviceCcid::usbConfigured(CH32RVUsbSpeed speed)
+{
+    drv.packet = ch32rv_usb_bulk_size(speed);
+    drv.received = drv.stored = 0;
+    drv.zlp_pending = false;
+    drv.configured = true;
+    arm_receive();
+    /* Configured: tell the host the slot state without its having to poll. */
+    handleBusAttached();
+}
+
+bool CH32RVUsbDeviceCcid::usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &s)
+{
+    if ((s.bmRequestType & 0x60) != 0x20) {
+        return false;
+    }
+    /* GET_CLOCK_FREQUENCIES / GET_DATA_RATES are only legal when the class
+     * descriptor lists several; it lists one, so they stall. */
+    if (s.bRequest != REQUEST_ABORT) {
+        return false;
+    }
+    if (stage == CH32RVUsbControlStage::Setup) {
+        handleAbort((uint8_t)s.wValue, (uint8_t)(s.wValue >> 8));
+        return device().controlStatus();
+    }
+    return true;
+}
+
+void CH32RVUsbDeviceCcid::usbTransferred(uint8_t address, uint16_t length)
+{
+    if (address == drv.ep_in) {
+        if (drv.zlp_pending) {
+            drv.zlp_pending = false;
+            device().transfer(drv.ep_in, response, 0);
+        }
+        return;
+    }
+    if (address == drv.ep_notify) {
+        handleNotifyComplete();
+        return;
+    }
+    if (address != drv.ep_out) {
+        return;
+    }
+    drv.received += length;
+    if (drv.stored < MESSAGE_SIZE) {
+        const uint32_t room = MESSAGE_SIZE - drv.stored;
+        const uint32_t n = length < room ? length : room;
+        memcpy(message + drv.stored, ep_out_buf, n);
+        drv.stored += n;
+    }
+    if (drv.stored >= HEADER_SIZE) {
+        const uint32_t total = HEADER_SIZE + get32(message + 1);
+        if (drv.received >= total) {
+            drv.received = drv.stored = 0;
+            arm_receive();
+            if (total <= MESSAGE_SIZE) {
+                handleMessage(message, total);
+            } else {
+                handleOverrun(message[0], message[5], message[6]);
+            }
+            return;
+        }
+    } else if (length < drv.packet) {
+        /* A short packet before a whole header: the host ended the transfer. */
+        drv.received = drv.stored = 0;
+    }
+    arm_receive();
 }
 
 /* ---------------------------------------------------------- the reader */
@@ -532,29 +473,3 @@ void CH32RVUsbDeviceCcid::handleMessage(const uint8_t *m, size_t length)
         return;
     }
 }
-
-#else
-
-static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
-{
-    return 0;
-}
-
-static const CH32RVUsbFunctionType ccid_type = {nullptr, ccid_descriptor, 1, 1, nullptr, 0};
-
-CH32RVUsbDeviceCcid::CH32RVUsbDeviceCcid(CH32RVUsbDevice &device)
-    : CH32RVUsbDeviceFunction(device, ccid_type, CH32RV_USB_CCID_NAME)
-{
-}
-
-bool CH32RVUsbDeviceCcid::mounted() const { return false; }
-bool CH32RVUsbDeviceCcid::insertCard(const uint8_t *, size_t) { return false; }
-void CH32RVUsbDeviceCcid::removeCard() {}
-void CH32RVUsbDeviceCcid::handleMessage(const uint8_t *, size_t) {}
-void CH32RVUsbDeviceCcid::handleOverrun(uint8_t, uint8_t, uint8_t) {}
-void CH32RVUsbDeviceCcid::handleAbort(uint8_t, uint8_t) {}
-void CH32RVUsbDeviceCcid::handleNotifyComplete() {}
-void CH32RVUsbDeviceCcid::handleBusAttached() {}
-void CH32RVUsbDeviceCcid::handleBusDetached() {}
-
-#endif

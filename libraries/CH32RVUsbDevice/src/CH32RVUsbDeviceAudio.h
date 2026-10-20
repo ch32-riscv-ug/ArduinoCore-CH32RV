@@ -14,9 +14,11 @@
  * 125 us microframe at high speed. Full speed on CH32X035/X033 caps every
  * endpoint at 64 bytes, so a stream there is at most 64 bytes per
  * millisecond: 16-bit mono up to 32 kHz, 16-bit stereo up to 16 kHz.
- * addFormat() refuses a format that does not fit (the sizes are
- * CFG_TUD_AUDIO_* in CH32RVTinyUSB's tusb_config.h). A high-speed controller
+ * addFormat() refuses a format that does not fit. A high-speed controller
  * takes 48 kHz stereo.
+ *
+ * Packets move in ch32rv_usb_task() (after loop(), inside delay()): a sketch
+ * that blocks for longer than the FIFOs hold (4 packets) loses samples.
  *
  * Differences from EspUsbDevice: one format per stream (Esp accepted more but
  * its begin() refused them), the function joins the device when declared,
@@ -137,7 +139,7 @@ private:
 
 class CH32RVUsbAudioFunction : public CH32RVUsbDeviceFunction {
 public:
-    /* One audio function per device (CFG_TUD_AUDIO); a second is refused
+    /* One audio function per device; a second is refused
      * with TooManyInstances. */
     explicit CH32RVUsbAudioFunction(CH32RVUsbDevice &device = USBDevice,
                                     CH32RVUsbAudioProtocol protocol = CH32RVUsbAudioProtocol::Uac1);
@@ -184,21 +186,18 @@ public:
     uint32_t droppedEvents() const;
     void clearEvents();
 
-    /* For the USB stack's callbacks (EspUsbAudioFunction has the same):
-     * `request` is a TinyUSB tusb_control_request_t. */
-    bool handleGetEntityRequest(uint8_t rhport, const void *request);
-    bool handleSetEntityRequest(const void *request, const uint8_t *data);
-    bool handleGetEndpointRequest(uint8_t rhport, const void *request);
-    bool handleSetEndpointRequest(const void *request, const uint8_t *data);
-    bool handleSetInterface(const void *request);
-    bool handlePlaybackTransfer(uint16_t bytes, uint8_t alternateSetting);
-    bool handleCaptureTransfer(uint16_t bytes, uint8_t alternateSetting);
-
-    /* The configuration descriptor part (CH32RVUsbFunctionType::descriptor):
-     * full speed (hs = false) or high speed. 0 when it does not fit or the
-     * function cannot be described. */
+    /* The configuration descriptor part (CH32RVUsbFunctionType::descriptor)
+     * at a speed. 0 when it does not fit or the function cannot be
+     * described. */
     uint16_t writeDescriptor(uint8_t *out, uint16_t room, uint8_t itf, uint8_t *ep, uint8_t str,
-                             bool hs) const;
+                             CH32RVUsbSpeed speed) const;
+
+protected:
+    void usbReset() override;
+    void usbConfigured(CH32RVUsbSpeed speed) override;
+    bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
+    bool usbSetInterface(uint8_t interfaceNumber, uint8_t alternate) override;
+    void usbTransferred(uint8_t address, uint16_t length) override;
 
 private:
     friend class CH32RVUsbAudioPlaybackStream;
@@ -236,11 +235,19 @@ private:
     /* wMaxPacketSize for a format: one (micro)frame's nominal sample frames
      * plus one, within the endpoint's limit. 0 when the format is malformed
      * or its nominal packet does not fit (CH32RVUsbDeviceAudioDescriptor.cpp). */
-    static uint16_t packetSize(const CH32RVUsbAudioFormat &format, CH32RVUsbAudioDirection direction,
-                               bool hs);
-    /* The largest packet an endpoint takes: the CFG_TUD_AUDIO_FUNC_1_EP_*_SZ_MAX
-     * buffers, within the bus limit (CH32RVUsbDeviceAudio.cpp). */
-    static uint16_t endpointLimit(CH32RVUsbAudioDirection direction, bool hs);
+    uint16_t packetSize(const CH32RVUsbAudioFormat &format, CH32RVUsbAudioDirection direction, bool hs) const;
+    /* The largest packet an endpoint takes: the controller's, within the bus
+     * limit (CH32RVUsbDeviceAudio.cpp). */
+    uint16_t endpointLimit(bool hs) const;
+    /* Requests on the control interface's entities, and UAC1's on a data
+     * endpoint: the answer to a GET goes into _ctl. */
+    bool getEntity(const CH32RVUsbSetup &setup, uint16_t &length);
+    bool setEntity(const CH32RVUsbSetup &setup, const uint8_t *data);
+    bool getEndpoint(const CH32RVUsbSetup &setup, uint16_t &length);
+    bool setEndpoint(const CH32RVUsbSetup &setup, const uint8_t *data);
+    void receivePacket();
+    void sendPacket();
+    void sendFeedback();
 
     CH32RVUsbAudioProtocol _protocol;
     bool _playbackEnabled = false;
@@ -254,4 +261,20 @@ private:
     volatile uint8_t _eventHead = 0;
     volatile uint8_t _eventTail = 0;
     uint32_t _droppedEvents = 0;
+
+    /* The streams' data: a ring each way between the endpoint and read() /
+     * write(), four packets deep, and the packet in flight. Transfers
+     * finish in ch32rv_usb_task(), the sketch's own thread. */
+    static constexpr uint16_t FIFO_SIZE = 4 * CH32RV_USB_MAX_PACKET;
+    uint8_t _rxFifo[FIFO_SIZE];
+    uint8_t _txFifo[FIFO_SIZE];
+    uint8_t _rxPacket[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
+    uint8_t _txPacket[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
+    uint8_t _feedback[4] __attribute__((aligned(4)));
+    uint8_t _ctl[16] __attribute__((aligned(4)));
+    uint16_t _rxHead = 0, _rxCount = 0, _rxDepth = 0;
+    uint16_t _txHead = 0, _txCount = 0, _txDepth = 0;
+    uint16_t _rxPacketSize = 0, _txPacketSize = 0;
+    uint32_t _txRemainder = 0;                /* sample frames' fraction carried between packets */
+    bool _highSpeed = false;
 };

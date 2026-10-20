@@ -19,7 +19,7 @@ UVC を扱える PC アプリと UART モニタ。80×60 YUY2を選べるアプ�
 
 1 frame は9600 bytesですが、`onFillPayload()` が payloadごとに生成するため frame全体の RAM buffer は使いません。`sendGeneratedFrame()` は loop 側で周期投入し、完了 callback は短く保ちます。
 
-ISO に切り替えるには `build_opt.h` へ `-DCFG_TUD_VIDEO_STREAMING_BULK=0` を追加します。X035 の64 B/msではヘッダも必要なので、10 fps の維持は期待できません。frame rate を下げて転送量に合わせます。
+ISO に切り替えるには `device.begin()` の前に `Camera.setTransferType(CH32RVUsbDeviceVideoTransfer::Isochronous)` を呼びます。X035 の64 B/msではヘッダも必要なので、10 fps の維持は期待できません。frame rate を下げて転送量に合わせます。
 
 ## 関連資料
 

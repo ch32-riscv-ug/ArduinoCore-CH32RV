@@ -111,7 +111,8 @@ void endpoint(Out &o, uint8_t address, uint8_t attributes, uint16_t size, uint8_
 
 } // namespace
 
-uint16_t CH32RVUsbAudioFunction::packetSize(const CH32RVUsbAudioFormat &f, CH32RVUsbAudioDirection d, bool hs)
+uint16_t CH32RVUsbAudioFunction::packetSize(const CH32RVUsbAudioFormat &f, CH32RVUsbAudioDirection d,
+                                            bool hs) const
 {
     /* UAC1 carries the rate in 3 bytes; both versions cap channels at the
      * two the descriptors here describe. */
@@ -124,7 +125,8 @@ uint16_t CH32RVUsbAudioFunction::packetSize(const CH32RVUsbAudioFormat &f, CH32R
     const uint32_t frames = hs ? 8000u : 1000u;
     const uint32_t frameBytes = (uint32_t)f.channels * f.bytesPerSample;
     const uint32_t nominal = (f.sampleRate + frames - 1u) / frames;
-    const uint32_t limit = endpointLimit(d, hs);
+    (void)d;
+    const uint32_t limit = endpointLimit(hs);
     if (nominal * frameBytes > limit) {
         return 0;
     }
@@ -168,8 +170,9 @@ uint8_t CH32RVUsbAudioFunction::physicalTerminalId(CH32RVUsbAudioDirection d) co
  * UAC2's feedback); capture takes the IN of the same n when it is free,
  * otherwise the next number. */
 uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, uint8_t itf, uint8_t *ep,
-                                                 uint8_t str, bool hs) const
+                                                 uint8_t str, CH32RVUsbSpeed speed) const
 {
+    const bool hs = speed != CH32RVUsbSpeed::Full;
     if (!describable()) {
         return 0;
     }

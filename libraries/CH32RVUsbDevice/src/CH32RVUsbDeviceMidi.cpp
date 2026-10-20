@@ -1,29 +1,24 @@
-/* USB MIDI: TinyUSB's midi_device, with EspUsbDevice's multi-cable descriptor. */
+/* USB MIDI 1.0 on the device stack, with EspUsbDevice's multi-cable descriptor. */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
-#include "tusb.h"
-#include "device/usbd_pvt.h"
 
 static uint8_t clamp_cables(uint8_t n)
 {
     return n < 1 ? 1 : n > CH32RVUsbDeviceMidi::MAX_CABLES ? CH32RVUsbDeviceMidi::MAX_CABLES : n;
 }
 
-/* TUD_MIDI_DESC_JACK_DESC() emits all four jacks of a cable, i.e. a cable in
- * both directions. These emit the pair a one-way cable needs, with the same
- * jack ID formula (EspUsbDevice). */
+/* Jack IDs: four per cable, numbered from the device's side - embedded IN,
+ * external IN, embedded OUT, external OUT (as TinyUSB and EspUsbDevice). A
+ * cable in both directions has all four jacks; a one-way cable the pair its
+ * direction needs. */
+#define JACK_IN_EMB(c)  (uint8_t)(((c) - 1) * 4 + 1)
+#define JACK_IN_EXT(c)  (uint8_t)(((c) - 1) * 4 + 2)
+#define JACK_OUT_EMB(c) (uint8_t)(((c) - 1) * 4 + 3)
+#define JACK_OUT_EXT(c) (uint8_t)(((c) - 1) * 4 + 4)
 #define MIDI_ONE_WAY_JACK_LEN (6 + 9)
-#define MIDI_DESC_JACK_IN_ONLY(_cablenum) \
-    6, TUSB_DESC_CS_INTERFACE, MIDI_CS_INTERFACE_IN_JACK, MIDI_JACK_EXTERNAL, TUD_MIDI_JACKID_IN_EXT(_cablenum), 0, \
-    9, TUSB_DESC_CS_INTERFACE, MIDI_CS_INTERFACE_OUT_JACK, MIDI_JACK_EMBEDDED, TUD_MIDI_JACKID_OUT_EMB(_cablenum), 1, TUD_MIDI_JACKID_IN_EXT(_cablenum), 1, 0
-#define MIDI_DESC_JACK_OUT_ONLY(_cablenum) \
-    6, TUSB_DESC_CS_INTERFACE, MIDI_CS_INTERFACE_IN_JACK, MIDI_JACK_EMBEDDED, TUD_MIDI_JACKID_IN_EMB(_cablenum), 0, \
-    9, TUSB_DESC_CS_INTERFACE, MIDI_CS_INTERFACE_OUT_JACK, MIDI_JACK_EXTERNAL, TUD_MIDI_JACKID_OUT_EXT(_cablenum), 1, TUD_MIDI_JACKID_IN_EMB(_cablenum), 1, 0
 
-/* TinyUSB's TUD_MIDI_DESC_HEAD_LEN, _JACK_LEN and _EP_LEN(n), here because
- * usbd.h does not define them on a series without the device stack. */
 #define MIDI_HEAD_LEN   (9 + 9 + 9 + 7)
 #define MIDI_JACK_LEN   (6 + 6 + 9 + 9)
 #define MIDI_EP_LEN(n)  (9 + 4 + (n))
@@ -36,70 +31,85 @@ uint16_t CH32RVUsbDeviceMidi::descriptorLength() const
                       MIDI_EP_LEN(_outCables) + MIDI_EP_LEN(_inCables));
 }
 
-#if CH32RV_TINYUSB_DEVICE
-
-static const usbd_class_driver_t midi_driver = {
-    NULL, midid_init, midid_deinit, midid_reset, midid_open, midid_control_xfer_cb, midid_xfer_cb, NULL, NULL,
-};
-
 /* Audio control + MIDI streaming (two interfaces), OUT and IN on endpoint n.
  * The bulk IN endpoint lists the embedded OUT jacks and the bulk OUT one the
  * embedded IN jacks - the class document names jacks from the device's side. */
 static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uint16_t room,
-                                uint8_t itf, uint8_t *ep, uint8_t str, bool hs)
+                                uint8_t itf, uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
-    const CH32RVUsbDeviceMidi &m = static_cast<const CH32RVUsbDeviceMidi &>(self);
+    CH32RVUsbDeviceMidi &m = const_cast<CH32RVUsbDeviceMidi &>(static_cast<const CH32RVUsbDeviceMidi &>(self));
     if (m.descriptorLength() > room) {
         return 0;
     }
     const uint8_t in = m.inCableCount(), out = m.outCableCount();
     const uint8_t both = in < out ? in : out;
     const uint8_t n = (*ep)++;
+    const uint16_t mps = ch32rv_usb_bulk_size(speed);
+    m._ep = n;
     uint16_t at = 0;
     {
-        const uint8_t head[] = {TUD_MIDI_DESC_HEAD(itf, str, in)};
+        const uint8_t head[] = {
+            9, 4, itf, 0, 0, 1, 1, 0, str,                            /* audio control */
+            9, 0x24, 1, 0x00, 0x01, 9, 0, 1, (uint8_t)(itf + 1),      /* AC header */
+            9, 4, (uint8_t)(itf + 1), 0, 2, 1, 3, 0, 0,               /* MIDI streaming */
+            7, 0x24, 1, 0x00, 0x01, 0, 0,                             /* MS header (length below) */
+        };
         memcpy(dst + at, head, sizeof head);
         at = (uint16_t)(at + sizeof head);
     }
-    for (uint8_t cable = 1; cable <= both; cable++) {
-        const uint8_t jack[] = {TUD_MIDI_DESC_JACK_DESC(cable, 0)};
+    for (uint8_t c = 1; c <= both; c++) {
+        const uint8_t jack[] = {
+            6, 0x24, 2, 1, JACK_IN_EMB(c), 0,
+            6, 0x24, 2, 2, JACK_IN_EXT(c), 0,
+            9, 0x24, 3, 1, JACK_OUT_EMB(c), 1, JACK_IN_EXT(c), 1, 0,
+            9, 0x24, 3, 2, JACK_OUT_EXT(c), 1, JACK_IN_EMB(c), 1, 0,
+        };
         memcpy(dst + at, jack, sizeof jack);
         at = (uint16_t)(at + sizeof jack);
     }
-    for (uint8_t cable = (uint8_t)(both + 1); cable <= in; cable++) {
-        const uint8_t jack[] = {MIDI_DESC_JACK_IN_ONLY(cable)};
+    for (uint8_t c = (uint8_t)(both + 1); c <= in; c++) {
+        const uint8_t jack[] = {
+            6, 0x24, 2, 2, JACK_IN_EXT(c), 0,
+            9, 0x24, 3, 1, JACK_OUT_EMB(c), 1, JACK_IN_EXT(c), 1, 0,
+        };
         memcpy(dst + at, jack, sizeof jack);
         at = (uint16_t)(at + sizeof jack);
     }
-    for (uint8_t cable = (uint8_t)(both + 1); cable <= out; cable++) {
-        const uint8_t jack[] = {MIDI_DESC_JACK_OUT_ONLY(cable)};
+    for (uint8_t c = (uint8_t)(both + 1); c <= out; c++) {
+        const uint8_t jack[] = {
+            6, 0x24, 2, 1, JACK_IN_EMB(c), 0,
+            9, 0x24, 3, 2, JACK_OUT_EXT(c), 1, JACK_IN_EMB(c), 1, 0,
+        };
         memcpy(dst + at, jack, sizeof jack);
         at = (uint16_t)(at + sizeof jack);
     }
     {
-        const uint8_t e[] = {TUD_MIDI_DESC_EP(n, ch32rv_usb_bulk_size(hs), out)};
+        /* Audio 1.0 endpoints are 9 bytes; then the MS endpoint with its jacks. */
+        const uint8_t e[] = {9, 5, n, 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0, 0, 0,
+                             (uint8_t)(4 + out), 0x25, 1, out};
         memcpy(dst + at, e, sizeof e);
         at = (uint16_t)(at + sizeof e);
     }
-    for (uint8_t cable = 1; cable <= out; cable++) {
-        dst[at++] = TUD_MIDI_JACKID_IN_EMB(cable);
+    for (uint8_t c = 1; c <= out; c++) {
+        dst[at++] = JACK_IN_EMB(c);
     }
     {
-        const uint8_t e[] = {TUD_MIDI_DESC_EP((uint8_t)(0x80 | n), ch32rv_usb_bulk_size(hs), in)};
+        const uint8_t e[] = {9, 5, (uint8_t)(0x80 | n), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0, 0, 0,
+                             (uint8_t)(4 + in), 0x25, 1, in};
         memcpy(dst + at, e, sizeof e);
         at = (uint16_t)(at + sizeof e);
     }
-    for (uint8_t cable = 1; cable <= in; cable++) {
-        dst[at++] = TUD_MIDI_JACKID_OUT_EMB(cable);
+    for (uint8_t c = 1; c <= in; c++) {
+        dst[at++] = JACK_OUT_EMB(c);
     }
     /* wTotalLength of the MS header covers it and everything after it. */
-    const uint16_t ms_total = (uint16_t)(at - (TUD_MIDI_DESC_HEAD_LEN - 7));
-    dst[TUD_MIDI_DESC_HEAD_LEN - 2] = (uint8_t)(ms_total & 0xff);
-    dst[TUD_MIDI_DESC_HEAD_LEN - 1] = (uint8_t)(ms_total >> 8);
+    const uint16_t ms_total = (uint16_t)(at - (MIDI_HEAD_LEN - 7));
+    dst[MIDI_HEAD_LEN - 2] = (uint8_t)(ms_total & 0xff);
+    dst[MIDI_HEAD_LEN - 1] = (uint8_t)(ms_total >> 8);
     return at;
 }
 
-static const CH32RVUsbFunctionType midi_type = {&midi_driver, midi_descriptor, 2, CFG_TUD_MIDI, nullptr, 0};
+static const CH32RVUsbFunctionType midi_type = {midi_descriptor, 2, 4, nullptr, 0};
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t cableCount)
     : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(cableCount)),
@@ -113,51 +123,94 @@ CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t inCabl
 {
 }
 
+/* ---------------------------------------------------------- the stack's side */
+void CH32RVUsbDeviceMidi::usbReset()
+{
+    _outBusy = _inBusy = false;
+}
+
+void CH32RVUsbDeviceMidi::usbConfigured(CH32RVUsbSpeed speed)
+{
+    _packet = ch32rv_usb_bulk_size(speed);
+    if (_packet > sizeof _out) {
+        _packet = sizeof _out;
+    }
+    _rxHead = _rxTail = _txHead = _txTail = 0;
+    receive();
+}
+
+/* The next OUT transfer only while every packet it may carry fits. */
+void CH32RVUsbDeviceMidi::receive()
+{
+    const uint16_t used = (uint16_t)(_rxHead - _rxTail);
+    if (_outBusy || !device().mounted() || (uint16_t)(RX_PACKETS - used) * 4u < _packet) {
+        return;
+    }
+    _outBusy = device().transfer(_ep, _out, _packet);
+}
+
+void CH32RVUsbDeviceMidi::push()
+{
+    if (_inBusy || !device().mounted() || _txHead == _txTail) {
+        return;
+    }
+    uint16_t n = 0;
+    while (_txTail != _txHead && n + 4u <= _packet && n + 4u <= sizeof _in) {
+        memcpy(_in + n, _tx[_txTail % TX_PACKETS], 4);
+        _txTail++;
+        n = (uint16_t)(n + 4);
+    }
+    _inBusy = device().transfer((uint8_t)(0x80 | _ep), _in, n);
+}
+
+void CH32RVUsbDeviceMidi::usbTransferred(uint8_t address, uint16_t length)
+{
+    if (address == _ep) {
+        _outBusy = false;
+        for (uint16_t i = 0; i + 4u <= length; i += 4) {
+            if (_out[i] == 0) {
+                continue;                            /* padding */
+            }
+            memcpy(_rx[_rxHead % RX_PACKETS], _out + i, 4);
+            _rxHead++;
+        }
+        receive();
+    } else if (address == (uint8_t)(0x80 | _ep)) {
+        _inBusy = false;
+        push();
+    }
+}
+
+/* ---------------------------------------------------------- the API */
 bool CH32RVUsbDeviceMidi::readPacket(CH32RVUsbDeviceMidiPacket &packet)
 {
     ch32rv_usb_task();
-    return tud_midi_n_packet_read(instance(), reinterpret_cast<uint8_t *>(&packet));
+    if (_rxHead == _rxTail) {
+        return false;
+    }
+    memcpy(&packet, _rx[_rxTail % RX_PACKETS], 4);
+    _rxTail++;
+    receive();
+    return true;
 }
 
 bool CH32RVUsbDeviceMidi::writePacket(const CH32RVUsbDeviceMidiPacket &packet)
 {
     ch32rv_usb_task();
-    return tud_midi_n_mounted(instance()) &&
-           tud_midi_n_packet_write(instance(), reinterpret_cast<const uint8_t *>(&packet));
+    if (!device().mounted() || (uint16_t)(_txHead - _txTail) >= TX_PACKETS) {
+        return false;
+    }
+    memcpy(_tx[_txHead % TX_PACKETS], &packet, 4);
+    _txHead++;
+    push();
+    return true;
 }
 
 uint32_t CH32RVUsbDeviceMidi::available()
 {
     ch32rv_usb_task();
-    return tud_midi_n_available(instance(), 0) / 4u;
+    return (uint16_t)(_rxHead - _rxTail);
 }
-
-#else
-
-static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
-{
-    return 0;
-}
-
-static const CH32RVUsbFunctionType midi_type = {nullptr, midi_descriptor, 2, 1, nullptr, 0};
-
-CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t cableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(cableCount)),
-      _outCables(clamp_cables(cableCount))
-{
-}
-
-CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t inCableCount, uint8_t outCableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(inCableCount)),
-      _outCables(clamp_cables(outCableCount))
-{
-}
-
-bool CH32RVUsbDeviceMidi::readPacket(CH32RVUsbDeviceMidiPacket &) { return false; }
-bool CH32RVUsbDeviceMidi::writePacket(const CH32RVUsbDeviceMidiPacket &) { return false; }
-uint32_t CH32RVUsbDeviceMidi::available() { return 0; }
-
-#endif
 
 /* Channel messages (EspUsbDevice): header = cable << 4 | code index, status =
  * code index << 4 | channel, data clamped to 7 bits. */

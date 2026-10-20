@@ -6,7 +6,7 @@
  * single class is the interface as it stands (a keyboard or mouse alone is a
  * boot device, usable in a PC's BIOS); two or more are merged into one report
  * descriptor, each class under its own report ID (CH32RV_USB_DEVICE_HID_REPORT_ID_*).
- * TinyUSB therefore holds one HID instance whatever the sketch declares.
+ * The device therefore has one HID interface whatever the sketch declares.
  *
  * Callbacks are plain function pointers (EspUsbDevice takes std::function):
  * a lambda without captures converts; one with captures does not. They run

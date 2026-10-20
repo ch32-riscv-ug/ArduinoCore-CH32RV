@@ -208,9 +208,9 @@ static void dcd_close(void)
     }
 }
 
-static bool dcd_high_speed(void)
+static CH32RVUsbSpeed dcd_speed(void)
 {
-    return false;
+    return CH32RVUsbSpeed::Full;
 }
 
 static void dcd_set_address(uint8_t address)
@@ -294,6 +294,28 @@ static bool dcd_xfer(uint8_t address, uint8_t *buffer, uint16_t length)
     }
     interrupts();
     return true;
+}
+
+static void dcd_abort(uint8_t address)
+{
+    const uint8_t ep = address & 0x0F;
+    if (ep == 0 || ep > 7) {
+        return;
+    }
+    noInterrupts();
+    if (address & 0x80) {
+        xin[ep].active = false;
+        EP_LEN(ep) = 0;
+        if ((EP_CTL(ep) & T_MASK) != T_STALL) {
+            set_t(ep, xin[ep].iso ? T_NONE : T_NAK);
+        }
+    } else {
+        xout[ep].active = false;
+        if ((EP_CTL(ep) & R_MASK) != R_STALL) {
+            set_r(ep, xout[ep].iso ? R_NONE : R_NAK);
+        }
+    }
+    interrupts();
 }
 
 static void dcd_stall(uint8_t address, bool on)
@@ -429,9 +451,9 @@ static void isr(void)
 }
 
 const CH32RVUsbDcd ch32rv_usb_dcd_usbfs_x03x = {
-    "USBFS (CH32X035/X033)", 8, 64, false,
-    dcd_open, dcd_close, dcd_connect, dcd_high_speed, dcd_set_address,
-    dcd_ep_open, dcd_ep_close, dcd_ep_close_all, dcd_xfer, dcd_stall, dcd_ep0_stall, dcd_remote_wakeup,
+    "USBFS (CH32X035/X033)", 8, 64, 1u << (uint8_t)CH32RVUsbSpeed::Full,
+    dcd_open, dcd_close, dcd_connect, dcd_speed, dcd_set_address,
+    dcd_ep_open, dcd_ep_close, dcd_ep_close_all, dcd_xfer, dcd_abort, dcd_stall, dcd_ep0_stall, dcd_remote_wakeup,
 };
 
 #endif

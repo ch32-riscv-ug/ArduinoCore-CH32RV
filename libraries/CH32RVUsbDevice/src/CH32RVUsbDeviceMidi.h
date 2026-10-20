@@ -35,8 +35,27 @@ public:
     /* Packets waiting from the host (an extension; EspUsbDevice has none). */
     uint32_t available();
 
+    /* The endpoint pair, set while the descriptors are laid out. */
+    uint8_t _ep = 0;
+
+protected:
+    void usbReset() override;
+    void usbConfigured(CH32RVUsbSpeed speed) override;
+    void usbTransferred(uint8_t address, uint16_t length) override;
+
 private:
+    /* 4-byte event packets kept from the host: two full OUT packets' worth. */
+    static constexpr uint16_t RX_PACKETS = CH32RV_USB_MAX_PACKET / 2;
+    static constexpr uint16_t TX_PACKETS = 32;
     bool send(uint8_t cin, uint8_t channel, uint8_t a, uint8_t b, uint8_t cable);
+    void receive();
+    void push();
     uint8_t _inCables;
     uint8_t _outCables;
+    uint8_t _out[CH32RV_USB_MAX_PACKET];         /* one OUT packet */
+    uint8_t _in[64];
+    uint8_t _rx[RX_PACKETS][4], _tx[TX_PACKETS][4];
+    uint16_t _rxHead = 0, _rxTail = 0, _txHead = 0, _txTail = 0;
+    uint16_t _packet = 64;
+    bool _outBusy = false, _inBusy = false;
 };

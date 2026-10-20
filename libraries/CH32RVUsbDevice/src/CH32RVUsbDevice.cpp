@@ -66,8 +66,7 @@ bool CH32RVUsbDevice::attach(CH32RVUsbDeviceFunction &f)
         _error = CH32RVUsbDeviceError::TooManyFunctions;
         return false;
     }
-    /* TinyUSB numbers the instances of a class in interface order, which is
-     * attach order here. */
+    /* The instances of a class are numbered in attach order. */
     uint8_t same = 0;
     for (uint8_t i = 0; i < _count; i++) {
         if (&_functions[i]->_type == &f._type) {
@@ -117,7 +116,7 @@ bool CH32RVUsbDevice::begin()
  * controller has (`endpoints`: numbers 0..endpoints-1). `type` is
  * CONFIGURATION (2), or OTHER_SPEED_CONFIGURATION (7) for a high-speed
  * device's other-speed descriptor. */
-uint16_t CH32RVUsbDevice::buildConfiguration(uint8_t *out, uint16_t room, bool hs, uint8_t type)
+uint16_t CH32RVUsbDevice::buildConfiguration(uint8_t *out, uint16_t room, CH32RVUsbSpeed speed, uint8_t type)
 {
     if (room < 9) {
         _error = CH32RVUsbDeviceError::DescriptorTooLarge;
@@ -129,7 +128,7 @@ uint16_t CH32RVUsbDevice::buildConfiguration(uint8_t *out, uint16_t room, bool h
         CH32RVUsbDeviceFunction &f = *_functions[i];
         f._interface = itf;
         const uint16_t n = f._type.descriptor(f, out + len, (uint16_t)(room - len), itf, &ep,
-                                              (uint8_t)(CH32RV_USB_FIRST_FUNCTION_STRING + i), hs);
+                                              (uint8_t)(CH32RV_USB_FIRST_FUNCTION_STRING + i), speed);
         if (n == 0) {
             _error = CH32RVUsbDeviceError::DescriptorTooLarge;
             return 0;
@@ -140,6 +139,29 @@ uint16_t CH32RVUsbDevice::buildConfiguration(uint8_t *out, uint16_t room, bool h
         }
         len = (uint16_t)(len + n);
         itf = (uint8_t)(itf + f._type.interfaces);
+    }
+    /* SuperSpeed: an endpoint companion after every endpoint (USB 3.2 9.6.7):
+     * no bursts, no streams; a periodic endpoint moves one packet per
+     * interval. */
+    if (speed == CH32RVUsbSpeed::Super) {
+        for (uint16_t at = 9; at + 1 < len && out[at]; at = (uint16_t)(at + out[at])) {
+            if (out[at + 1] != 5) {
+                continue;
+            }
+            if ((uint16_t)(len + 6) > room) {
+                _error = CH32RVUsbDeviceError::DescriptorTooLarge;
+                return 0;
+            }
+            const uint16_t after = (uint16_t)(at + out[at]);
+            const bool periodic = (out[at + 3] & 1) != 0;      /* isochronous or interrupt */
+            const uint16_t mps = (uint16_t)(out[at + 4] | out[at + 5] << 8);
+            memmove(out + after + 6, out + after, (size_t)(len - after));
+            const uint8_t companion[6] = {6, 0x30, 0, 0, (uint8_t)(periodic ? mps : 0),
+                                          (uint8_t)(periodic ? mps >> 8 : 0)};
+            memcpy(out + after, companion, 6);
+            len = (uint16_t)(len + 6);
+            at = after;                                        /* the companion is skipped next */
+        }
     }
     /* The header. Bit 7 of bmAttributes is reserved and set, bit 5 offers
      * remote wakeup, bit 6 says self-powered; bMaxPower counts 2 mA units. */

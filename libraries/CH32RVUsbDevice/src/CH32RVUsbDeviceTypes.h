@@ -300,3 +300,10 @@ enum class CH32RVUsbControlStage : uint8_t {
     Ack,
 };
 
+/* The bus speed the host chose, and what the descriptors are laid out for. */
+enum class CH32RVUsbSpeed : uint8_t {
+    Full,                         /* 12 Mbit/s: bulk 64, EP0 64 */
+    High,                         /* 480 Mbit/s: bulk 512, intervals in microframes */
+    Super,                        /* 5 Gbit/s and up: bulk 1024, EP0 512, endpoint companions */
+};
+

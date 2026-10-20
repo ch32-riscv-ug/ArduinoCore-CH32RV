@@ -1,10 +1,8 @@
-/* Vendor (bulk): TinyUSB's vendor_device, buffered. */
+/* Vendor (bulk) on the device stack, buffered. */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
-#include "tusb.h"
-#include "device/usbd_pvt.h"
 
 const char *CH32RVUsbDeviceVendor::lastDirectErrorName() const
 {
@@ -32,22 +30,22 @@ static uint16_t clamp_ep(uint16_t n)
     return n >= 64 ? 64 : n >= 32 ? 32 : n >= 16 ? 16 : 8;
 }
 
-#if CH32RV_TINYUSB_DEVICE
+#define VENDORS_MAX 2
 
-static const usbd_class_driver_t vendor_driver = {
-    NULL, vendord_init, vendord_deinit, vendord_reset, vendord_open, vendord_control_xfer_cb, vendord_xfer_cb, NULL,
-    NULL,
-};
-
-static CH32RVUsbDeviceVendor *vendors[CFG_TUD_VENDOR];
+static CH32RVUsbDeviceVendor *vendors[VENDORS_MAX];
 
 static uint16_t vendor_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                  uint8_t *ep, uint8_t str, bool hs)
+                                  uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
-    const CH32RVUsbDeviceVendor &v = static_cast<const CH32RVUsbDeviceVendor &>(self);
+    CH32RVUsbDeviceVendor &v = const_cast<CH32RVUsbDeviceVendor &>(static_cast<const CH32RVUsbDeviceVendor &>(self));
     const uint8_t n = (*ep)++;
-    const uint8_t d[] = {TUD_VENDOR_DESCRIPTOR(itf, str, n, (uint8_t)(0x80 | n),
-                                               hs ? ch32rv_usb_bulk_size(hs) : v.endpointSize())};
+    v._ep = n;
+    const uint16_t mps = speed == CH32RVUsbSpeed::Full ? v.endpointSize() : ch32rv_usb_bulk_size(speed);
+    const uint8_t d[] = {
+        9, 4, itf, 0, 2, 0xFF, 0, 0, str,
+        7, 5, n, 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
+        7, 5, (uint8_t)(0x80 | n), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
+    };
     if (sizeof d > room) {
         return 0;
     }
@@ -56,12 +54,13 @@ static uint16_t vendor_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *
 }
 
 /* winusb 2: the compatible ID and DeviceInterfaceGUIDs. */
-static const CH32RVUsbFunctionType vendor_type = {&vendor_driver, vendor_descriptor, 1, CFG_TUD_VENDOR, nullptr, 2};
+static const CH32RVUsbFunctionType vendor_type = {vendor_descriptor, 1, VENDORS_MAX, nullptr, 2};
 
-static bool vendor_request(uint8_t rhport, uint8_t stage, const void *request)
+/* Vendor requests to the device that the platform descriptors do not answer. */
+static bool vendor_request(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup)
 {
-    for (uint8_t i = 0; i < CFG_TUD_VENDOR; i++) {
-        if (vendors[i] && vendors[i]->handleControlRequest(rhport, stage, request)) {
+    for (uint8_t i = 0; i < VENDORS_MAX; i++) {
+        if (vendors[i] && vendors[i]->handleControlRequest(stage, setup)) {
             return true;
         }
     }
@@ -74,19 +73,104 @@ CH32RVUsbDeviceVendor::CH32RVUsbDeviceVendor(CH32RVUsbDevice &device, uint16_t e
     if (attached()) {
         vendors[instance()] = this;
         ch32rv_usb_platform_use();
-        ch32rv_usb_platform.vendorRequest = vendor_request;
+        ch32rv_usb_platform.vendorControl = vendor_request;
     }
 }
 
+/* ---------------------------------------------------------- the stack's side */
+void CH32RVUsbDeviceVendor::usbReset()
+{
+    _outBusy = _inBusy = _zlp = false;
+}
+
+void CH32RVUsbDeviceVendor::usbConfigured(CH32RVUsbSpeed speed)
+{
+    _packet = speed == CH32RVUsbSpeed::Full ? _endpointSize : ch32rv_usb_bulk_size(speed);
+    _rxHead = _rxTail = _rxEnd = 0;
+    _txHead = _txTail = 0;
+    receive();
+}
+
+uint16_t CH32RVUsbDeviceVendor::rxUsed() const
+{
+    return _rxEnd ? (uint16_t)(_rxEnd - _rxTail + _rxHead) : (uint16_t)(_rxHead - _rxTail);
+}
+
+void CH32RVUsbDeviceVendor::receive()
+{
+    if (_outBusy || !mounted()) {
+        return;
+    }
+    if (!_rxEnd && _rxHead == _rxTail) {
+        _rxHead = _rxTail = 0;
+    }
+    if (!_rxEnd && (uint16_t)(BUFFER - _rxHead) < _packet) {
+        if (_rxTail <= _packet) {
+            return;
+        }
+        _rxEnd = _rxHead;
+        _rxHead = 0;
+    }
+    if (_rxEnd && (uint16_t)(_rxTail - _rxHead) <= _packet) {
+        return;
+    }
+    _outBusy = device().transfer(_ep, _rx + _rxHead, _packet);
+}
+
+void CH32RVUsbDeviceVendor::push()
+{
+    if (_inBusy || !mounted()) {
+        return;
+    }
+    if (_txHead == _txTail) {
+        if (_zlp && device().transfer((uint8_t)(0x80 | _ep), _tx, 0)) {
+            _zlp = false;
+            _inBusy = true;
+            _txSending = 0;
+        }
+        return;
+    }
+    _txSending = _txHead > _txTail ? (uint16_t)(_txHead - _txTail) : (uint16_t)(BUFFER - _txTail);
+    _inBusy = device().transfer((uint8_t)(0x80 | _ep), _tx + _txTail, _txSending);
+}
+
+void CH32RVUsbDeviceVendor::usbTransferred(uint8_t address, uint16_t length)
+{
+    if (address == _ep) {
+        _outBusy = false;
+        _rxHead = (uint16_t)(_rxHead + length);
+        receive();
+        if (length) {
+            handleRx();
+        }
+    } else if (address == (uint8_t)(0x80 | _ep)) {
+        _inBusy = false;
+        const uint16_t sent = _txSending;
+        if (_txSending) {
+            _txTail = (uint16_t)((_txTail + _txSending) % BUFFER);
+            _zlp = _txHead == _txTail && (_txSending % _packet) == 0;
+            _txSending = 0;
+        }
+        push();
+        handleTxComplete(sent);
+    }
+}
+
+bool CH32RVUsbDeviceVendor::usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup)
+{
+    return (setup.bmRequestType & 0x60) == 0x40 && handleControlRequest(stage, setup);
+}
+
+/* ---------------------------------------------------------- the API */
 bool CH32RVUsbDeviceVendor::mounted() const
 {
-    return attached() && device().started() && tud_vendor_n_mounted(instance());
+    return attached() && device().mounted();
 }
 
 int CH32RVUsbDeviceVendor::available()
 {
     ch32rv_usb_task();
-    return attached() && device().started() ? (int)tud_vendor_n_available(instance()) : 0;
+    return rxUsed();
 }
 
 int CH32RVUsbDeviceVendor::read()
@@ -98,10 +182,16 @@ int CH32RVUsbDeviceVendor::read()
 size_t CH32RVUsbDeviceVendor::read(uint8_t *buffer, size_t size)
 {
     ch32rv_usb_task();
-    if (!attached() || !device().started() || !buffer) {
-        return 0;
+    size_t n = 0;
+    while (buffer && n < size && rxUsed()) {
+        buffer[n++] = _rx[_rxTail++];
+        if (_rxEnd && _rxTail == _rxEnd) {
+            _rxTail = 0;
+            _rxEnd = 0;
+        }
     }
-    return tud_vendor_n_read(instance(), buffer, (uint32_t)size);
+    receive();
+    return n;
 }
 
 size_t CH32RVUsbDeviceVendor::write(uint8_t data)
@@ -115,19 +205,28 @@ size_t CH32RVUsbDeviceVendor::write(const uint8_t *buffer, size_t size)
     if (!mounted() || !buffer) {
         return 0;
     }
-    const uint32_t n = tud_vendor_n_write(instance(), buffer, (uint32_t)size);
+    size_t n = 0;
+    while (n < size && writeAvailable()) {
+        _tx[_txHead] = buffer[n++];
+        _txHead = (uint16_t)(_txHead + 1 == BUFFER ? 0 : _txHead + 1);
+    }
+    push();
     ch32rv_usb_task();
     return n;
 }
 
 size_t CH32RVUsbDeviceVendor::writeAvailable() const
 {
-    return mounted() ? tud_vendor_n_write_available(instance()) : 0;
+    if (!mounted()) {
+        return 0;
+    }
+    const uint16_t used = _txHead >= _txTail ? (uint16_t)(_txHead - _txTail) : (uint16_t)(BUFFER - _txTail + _txHead);
+    return (size_t)(BUFFER - 1 - used);
 }
 
 size_t CH32RVUsbDeviceVendor::writeCapacity()
 {
-    return CFG_TUD_VENDOR_TX_BUFSIZE;
+    return BUFFER - 1;
 }
 
 bool CH32RVUsbDeviceVendor::waitWritable(size_t bytes, uint32_t timeoutMs)
@@ -153,29 +252,27 @@ bool CH32RVUsbDeviceVendor::waitWritable(size_t bytes, uint32_t timeoutMs)
 
 void CH32RVUsbDeviceVendor::flush()
 {
-    if (mounted()) {
-        tud_vendor_n_write_flush(instance());
-        ch32rv_usb_task();
-    }
+    push();
+    ch32rv_usb_task();
 }
 
+/* Answer at stage SETUP: data, or a status stage when none. */
 bool CH32RVUsbDeviceVendor::sendControlResponse(const CH32RVUsbDeviceVendorControlRequest &request,
                                                 const void *data, size_t length)
 {
-    const tusb_control_request_t *raw = static_cast<const tusb_control_request_t *>(request.rawRequest);
-    if (!raw) {
+    if (request.stage != CH32RV_USB_DEVICE_CONTROL_STAGE_SETUP) {
         return false;
     }
     if (!data || !length) {
-        return tud_control_status(request.rhport, raw);
+        return device().controlStatus();
     }
-    return tud_control_xfer(request.rhport, raw, const_cast<void *>(data), (uint16_t)length);
+    return device().controlIn(data, (uint16_t)length);
 }
 
 void CH32RVUsbDeviceVendor::handleRx()
 {
     if (_onRx) {
-        _onRx(tud_vendor_n_available(instance()));
+        _onRx(rxUsed());
     }
 }
 
@@ -186,70 +283,20 @@ void CH32RVUsbDeviceVendor::handleTxComplete(size_t sentBytes)
     }
 }
 
-bool CH32RVUsbDeviceVendor::handleControlRequest(uint8_t rhport, uint8_t stage, const void *request)
+bool CH32RVUsbDeviceVendor::handleControlRequest(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup)
 {
-    const tusb_control_request_t *raw = static_cast<const tusb_control_request_t *>(request);
     if (!_onControl) {
         return false;
     }
     CH32RVUsbDeviceVendorControlRequest r;
-    r.rhport = rhport;
-    r.stage = stage;
-    r.bmRequestType = raw->bmRequestType;
-    r.bRequest = raw->bRequest;
-    r.wValue = raw->wValue;
-    r.wIndex = raw->wIndex;
-    r.wLength = raw->wLength;
-    r.rawRequest = raw;
+    r.stage = stage == CH32RVUsbControlStage::Setup ? CH32RV_USB_DEVICE_CONTROL_STAGE_SETUP
+              : stage == CH32RVUsbControlStage::Data ? CH32RV_USB_DEVICE_CONTROL_STAGE_DATA
+                                                     : CH32RV_USB_DEVICE_CONTROL_STAGE_ACK;
+    r.bmRequestType = setup.bmRequestType;
+    r.bRequest = setup.bRequest;
+    r.wValue = setup.wValue;
+    r.wIndex = setup.wIndex;
+    r.wLength = setup.wLength;
+    r.rawRequest = &setup;
     return _onControl(r);
 }
-
-extern "C" void tud_vendor_rx_cb(uint8_t idx, const uint8_t *buffer, uint32_t bufsize)
-{
-    (void)buffer;
-    (void)bufsize;
-    if (idx < CFG_TUD_VENDOR && vendors[idx]) {
-        vendors[idx]->handleRx();
-    }
-}
-
-extern "C" void tud_vendor_tx_cb(uint8_t idx, uint32_t sent_bytes)
-{
-    if (idx < CFG_TUD_VENDOR && vendors[idx]) {
-        vendors[idx]->handleTxComplete(sent_bytes);
-    }
-}
-
-#else
-
-static uint16_t vendor_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
-{
-    return 0;
-}
-
-static const CH32RVUsbFunctionType vendor_type = {nullptr, vendor_descriptor, 1, 1, nullptr, 2};
-
-CH32RVUsbDeviceVendor::CH32RVUsbDeviceVendor(CH32RVUsbDevice &device, uint16_t endpointSize)
-    : CH32RVUsbDeviceFunction(device, vendor_type, CH32RV_USB_VENDOR_NAME), _endpointSize(clamp_ep(endpointSize))
-{
-}
-
-bool CH32RVUsbDeviceVendor::mounted() const { return false; }
-int CH32RVUsbDeviceVendor::available() { return 0; }
-int CH32RVUsbDeviceVendor::read() { return -1; }
-size_t CH32RVUsbDeviceVendor::read(uint8_t *, size_t) { return 0; }
-size_t CH32RVUsbDeviceVendor::write(uint8_t) { return 0; }
-size_t CH32RVUsbDeviceVendor::write(const uint8_t *, size_t) { return 0; }
-size_t CH32RVUsbDeviceVendor::writeAvailable() const { return 0; }
-size_t CH32RVUsbDeviceVendor::writeCapacity() { return 0; }
-bool CH32RVUsbDeviceVendor::waitWritable(size_t, uint32_t) { return false; }
-void CH32RVUsbDeviceVendor::flush() {}
-bool CH32RVUsbDeviceVendor::sendControlResponse(const CH32RVUsbDeviceVendorControlRequest &, const void *, size_t)
-{
-    return false;
-}
-void CH32RVUsbDeviceVendor::handleRx() {}
-void CH32RVUsbDeviceVendor::handleTxComplete(size_t) {}
-bool CH32RVUsbDeviceVendor::handleControlRequest(uint8_t, uint8_t, const void *) { return false; }
-
-#endif

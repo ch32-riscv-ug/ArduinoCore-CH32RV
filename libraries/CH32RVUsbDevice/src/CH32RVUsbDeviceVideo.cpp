@@ -1,16 +1,10 @@
-/* USB Video Class camera: TinyUSB's video_device, with EspUsbDeviceVideo's
- * descriptor.
- *
- * The descriptor is written here rather than through the TUD_VIDEO_DESC_*
- * macros because those take the frame size, rate and bit rate as macro
- * arguments, and this class decides them from what the sketch set. The bytes
- * are the same as EspUsbDevice's (pinned there by tests/single/
- * video_descriptor). */
+/* USB Video Class camera on the device stack, with EspUsbDeviceVideo's
+ * descriptor (the bytes pinned there by tests/single/video_descriptor):
+ * probe / commit on EP0, payloads of one packet each on a bulk or
+ * isochronous IN endpoint. */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
-
-#include "tusb.h"
 
 namespace {
 
@@ -86,45 +80,23 @@ struct Writer {
 
 } // namespace
 
-/* ---------------------------------------------------------- build options */
-#if CH32RV_TINYUSB_DEVICE
-static_assert(CFG_TUD_VIDEO_STREAMING >= CFG_TUD_VIDEO,
-              "CFG_TUD_VIDEO_STREAMING must be at least CFG_TUD_VIDEO: each camera has one stream");
-/* USBFS on X035/X033 and V103 has 64-byte endpoints only, isochronous ones
- * included (dcd_edpt_iso_alloc refuses more), so the payload must fit 64. */
-#if !CFG_TUD_VIDEO_STREAMING_BULK && CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE > 64 && \
-    (CFG_TUSB_MCU == OPT_MCU_CH32X035 || CFG_TUSB_MCU == OPT_MCU_CH32V103)
-#error "this USBFS has 64-byte isochronous endpoints: CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE must be 64 or less without CFG_TUD_VIDEO_STREAMING_BULK"
-#endif
-#if CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE > 1023
-#error "CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE must be 1023 or less: wMaxPacketSize and the full-speed isochronous limit"
-#endif
-#define VIDEO_EP_BUFSIZE CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE
-#define VIDEO_BULK       CFG_TUD_VIDEO_STREAMING_BULK
-#else
-#define VIDEO_EP_BUFSIZE 0
-#define VIDEO_BULK       0
-#endif
-
-uint16_t CH32RVUsbDeviceVideo::payloadBufferSize()
-{
-    return VIDEO_EP_BUFSIZE;
-}
-
-bool CH32RVUsbDeviceVideo::bulkStreaming()
-{
-    return VIDEO_BULK != 0;
-}
-
 /* Full speed reserves one packet per 1 ms frame, at most 1023 bytes; high
- * speed one per 125 us microframe, at most 1024. TinyUSB opens the streaming
- * alternate setting only when the endpoint is at least the committed payload,
- * which is capped by the payload buffer - so the buffer is the size. */
-uint16_t CH32RVUsbDeviceVideo::isochronousPacketSize(bool highSpeed)
+ * speed one per 125 us microframe, at most 1024; the controller may hold
+ * less. */
+uint16_t CH32RVUsbDeviceVideo::isochronousPacketSize(bool highSpeed) const
 {
     const uint16_t limit = highSpeed ? 1024 : 1023;
-    const uint16_t staging = VIDEO_EP_BUFSIZE;
-    return staging == 0 || staging > limit ? limit : staging;
+    const uint16_t controller = device().maxPacketSize();
+    const uint16_t n = controller < limit ? controller : limit;
+    return n < CH32RV_USB_MAX_PACKET ? n : CH32RV_USB_MAX_PACKET;
+}
+
+uint16_t CH32RVUsbDeviceVideo::payloadBufferSize() const
+{
+    if (bulkStreaming()) {
+        return ch32rv_usb_bulk_size(_highSpeed ? CH32RVUsbSpeed::High : CH32RVUsbSpeed::Full);
+    }
+    return isochronousPacketSize(_highSpeed);
 }
 
 /* ---------------------------------------------------------- settings */
@@ -139,6 +111,15 @@ bool CH32RVUsbDeviceVideo::setFormat(CH32RVUsbDeviceVideoFormat format)
         return false;
     }
     _format = format;
+    return true;
+}
+
+bool CH32RVUsbDeviceVideo::setTransferType(CH32RVUsbDeviceVideoTransfer type)
+{
+    if (!configurable()) {
+        return false;
+    }
+    _transfer = type;
     return true;
 }
 
@@ -195,13 +176,11 @@ uint16_t CH32RVUsbDeviceVideo::descriptorLength(bool highSpeed) const
     return length;
 }
 
-/* The streaming endpoint each camera was given, for the commit callback. */
-static uint8_t video_endpoint[CH32RV_TINYUSB_DEVICE ? CFG_TUD_VIDEO : 1];
-
-static uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uint16_t room, uint8_t itf,
-                                 uint8_t *ep, uint8_t str, bool hs)
+uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uint16_t room, uint8_t itf,
+                          uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
-    const CH32RVUsbDeviceVideo &v = static_cast<const CH32RVUsbDeviceVideo &>(self);
+    const bool hs = speed != CH32RVUsbSpeed::Full;
+    CH32RVUsbDeviceVideo &v = const_cast<CH32RVUsbDeviceVideo &>(static_cast<const CH32RVUsbDeviceVideo &>(self));
     if (v.descriptorLength(hs) > room) {
         return 0;
     }
@@ -209,11 +188,10 @@ static uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *d
     const uint8_t vcInterface = itf;
     const uint8_t vsInterface = (uint8_t)(itf + 1);
     const uint8_t endpointAddress = (uint8_t)(0x80 | (*ep)++);
-    if (self.instance() < sizeof video_endpoint) {
-        video_endpoint[self.instance()] = endpointAddress;
-    }
+    v._ep = endpointAddress;
+    v._vcInterface = vcInterface;
     const bool uncompressed = v.format() == CH32RVUsbDeviceVideoFormat::Yuy2;
-    const bool bulk = CH32RVUsbDeviceVideo::bulkStreaming();
+    const bool bulk = v.bulkStreaming();
     const uint32_t frameBytes = v.maxFrameSize();
     const uint32_t frameInterval = 10000000u / v.frameRate();
     const uint32_t bitRate = frameBytes * 8u * v.frameRate();
@@ -242,8 +220,7 @@ static uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *d
     w.u8(ITF_PROTOCOL_15);
     w.u8(name);
 
-    /* VC header. wTotalLength covers it and the two terminals; TinyUSB finds
-     * the end of the control interface by it. */
+    /* VC header. wTotalLength covers it and the two terminals. */
     w.u8(13);
     w.u8(DESC_CS_INTERFACE);
     w.u8(VC_HEADER);
@@ -378,12 +355,12 @@ static uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *d
     w.u8(endpointAddress);
     if (bulk) {
         w.u8(0x02);
-        w.u16(ch32rv_usb_bulk_size(hs));
+        w.u16(ch32rv_usb_bulk_size(speed));
         w.u8(0);
     } else {
         /* Isochronous, asynchronous; every frame (FS) / microframe (HS). */
         w.u8(0x05);
-        w.u16(CH32RVUsbDeviceVideo::isochronousPacketSize(hs));
+        w.u16(v.isochronousPacketSize(hs));
         w.u8(1);
     }
 
@@ -393,124 +370,246 @@ static uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *d
     return w.offset;
 }
 
-#if CH32RV_TINYUSB_DEVICE
-
-#include "device/usbd_pvt.h"
-
-static const usbd_class_driver_t video_driver = {
-    NULL, videod_init, videod_deinit, videod_reset, videod_open, videod_control_xfer_cb, videod_xfer_cb, NULL, NULL,
-};
-
-static const CH32RVUsbFunctionType video_type = {&video_driver, video_descriptor, 2, CFG_TUD_VIDEO, nullptr, 0};
-
-/* TinyUSB numbers the video functions in interface order, which is the
- * declaration order, i.e. instance(). */
-static CH32RVUsbDeviceVideo *cameras[CFG_TUD_VIDEO];
-
-static CH32RVUsbDeviceVideo *camera(uint_fast8_t ctl_idx)
-{
-    return ctl_idx < CFG_TUD_VIDEO ? cameras[ctl_idx] : nullptr;
-}
-
-extern "C" void tud_video_frame_xfer_complete_cb(uint_fast8_t ctl_idx, uint_fast8_t stm_idx)
-{
-    (void)stm_idx;
-    if (CH32RVUsbDeviceVideo *v = camera(ctl_idx)) {
-        v->handleFrameComplete();
-    }
-}
-
-/* Accepting whatever the host committed to is right for a device that
- * advertises one format at one size: it can only have chosen that, and the
- * frame interval is a pacing hint. */
-extern "C" int tud_video_commit_cb(uint_fast8_t ctl_idx, uint_fast8_t stm_idx,
-                                   video_probe_and_commit_control_t const *parameters)
-{
-    (void)stm_idx;
-    CH32RVUsbDeviceVideo *v = camera(ctl_idx);
-    if (v && parameters) {
-        CH32RVUsbDeviceVideoCommit c;
-        c.formatIndex = parameters->bFormatIndex;
-        c.frameIndex = parameters->bFrameIndex;
-        c.frameInterval = parameters->dwFrameInterval;
-        c.maxVideoFrameSize = parameters->dwMaxVideoFrameSize;
-        c.maxPayloadTransferSize = parameters->dwMaxPayloadTransferSize;
-        /* Linux stops a bulk stream with CLEAR_FEATURE(ENDPOINT_HALT), which
-         * drops the transfer in flight but leaves the endpoint claimed, so
-         * every later frame would be refused. A commit starts a new stream:
-         * let go of a claim no transfer holds (a busy endpoint keeps it). */
-        usbd_edpt_release(0, video_endpoint[ctl_idx]);
-        v->handleCommit(c);
-    }
-    return VIDEO_ERROR_NONE;
-}
-
-extern "C" void tud_video_prepare_payload_cb(uint_fast8_t ctl_idx, uint_fast8_t stm_idx,
-                                             tud_video_payload_request_t *request)
-{
-    (void)stm_idx;
-    CH32RVUsbDeviceVideo *v = camera(ctl_idx);
-    uint8_t *dst = (uint8_t *)request->buf;
-    const size_t length = request->length;
-    if (v) {
-        v->handleFill(dst, length, (uint32_t)request->offset);
-    } else {
-        memset(dst, 0, length);
-    }
-}
+static const CH32RVUsbFunctionType video_type = {video_descriptor, 2, 2, nullptr, 0};
 
 CH32RVUsbDeviceVideo::CH32RVUsbDeviceVideo(CH32RVUsbDevice &device, const char *name)
     : CH32RVUsbDeviceFunction(device, video_type, name ? name : CH32RV_USB_VIDEO_NAME)
 {
-    if (attached()) {
-        cameras[instance()] = this;
-    }
 }
 
 bool CH32RVUsbDeviceVideo::streaming() const
 {
     ch32rv_usb_task();
-    return attached() && device().started() && tud_video_n_streaming(instance(), 0);
+    return attached() && device().mounted() && _streaming;
 }
 
-/* A bulk payload larger than one packet ends only on a short packet: the host
- * reads dwMaxPayloadTransferSize per transfer, and a last payload that is a
- * whole number of packets but shorter than that runs on into the next
- * frame's first payload (TinyUSB sends no zero-length packet). Such a length
- * is refused rather than sent torn. Never the case with the default payload
- * buffer, which is one packet. */
-static bool bulk_length_ok(uint32_t payload, size_t length)
+/* ---------------------------------------------------------- probe and commit */
+#define VS_PROBE_CONTROL  1
+#define VS_COMMIT_CONTROL 2
+#define VC_REQUEST_ERROR_CODE_CONTROL 2
+#define UVC_SET_CUR  0x01
+#define UVC_GET_CUR  0x81
+#define UVC_GET_MIN  0x82
+#define UVC_GET_MAX  0x83
+#define UVC_GET_RES  0x84
+#define UVC_GET_LEN  0x85
+#define UVC_GET_INFO 0x86
+#define UVC_GET_DEF  0x87
+
+static void put16(uint8_t *p, uint16_t v)
 {
-    if (!CH32RVUsbDeviceVideo::bulkStreaming() || payload <= 2) {
-        return true;
-    }
-    const uint32_t packet = ch32rv_usb_bulk_size(tud_speed_get() == TUSB_SPEED_HIGH);
-    if (payload <= packet) {
-        return true;
-    }
-    const uint32_t rest = (uint32_t)(length % (payload - 2u));
-    const uint32_t last = rest ? rest + 2u : payload;
-    return last == payload || last % packet != 0;
+    p[0] = (uint8_t)v;
+    p[1] = (uint8_t)(v >> 8);
 }
 
-bool CH32RVUsbDeviceVideo::arm(void *frame, size_t length)
+static void put32(uint8_t *p, uint32_t v)
 {
-    if (length == 0 || length > maxFrameSize() || _inFlight || !streaming() ||
-        !bulk_length_ok(_commit.maxPayloadTransferSize, length)) {
+    put16(p, (uint16_t)v);
+    put16(p + 2, (uint16_t)(v >> 16));
+}
+
+static uint32_t get32(const uint8_t *p)
+{
+    return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24;
+}
+
+/* The one format, frame and rate there is, and a payload of one packet. */
+void CH32RVUsbDeviceVideo::defaultProbe(uint8_t *p) const
+{
+    memset(p, 0, 48);
+    p[2] = 1;                                    /* bFormatIndex */
+    p[3] = 1;                                    /* bFrameIndex */
+    put32(p + 4, 10000000u / _frameRate);
+    put32(p + 18, maxFrameSize());
+    put32(p + 22, payloadBufferSize());
+    put32(p + 26, CLOCK_FREQUENCY);
+    p[30] = 0x03;                                /* bmFramingInfo: FID and EOF used */
+    p[31] = p[32] = p[33] = 1;                   /* payload format version 1 */
+}
+
+bool CH32RVUsbDeviceVideo::usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &s)
+{
+    if ((s.bmRequestType & 0x60) != 0x20 || (s.bmRequestType & 0x1F) != 1) {
         return false;
     }
-    _inFlight = true;
-    if (!tud_video_n_frame_xfer(instance(), 0, frame, length)) {
-        _inFlight = false;
+    const uint8_t itf = (uint8_t)s.wIndex, selector = (uint8_t)(s.wValue >> 8);
+    const bool setup = stage == CH32RVUsbControlStage::Setup;
+    if (itf == _vcInterface) {
+        /* The control interface has no controls; the error code of the last
+         * request (none) is all a host may read. */
+        if (selector == VC_REQUEST_ERROR_CODE_CONTROL && s.bRequest == UVC_GET_CUR && (s.wValue & 0xff) == 0) {
+            if (setup) {
+                _probe[47] = 0;
+                return device().controlIn(&_probe[47], 1);
+            }
+            return true;
+        }
         return false;
     }
+    if (itf != (uint8_t)(_vcInterface + 1) || (selector != VS_PROBE_CONTROL && selector != VS_COMMIT_CONTROL)) {
+        return false;
+    }
+    static uint8_t answer[48] __attribute__((aligned(4)));
+    switch (s.bRequest) {
+    case UVC_SET_CUR:
+        if (setup) {
+            return s.wLength >= 26 && s.wLength <= sizeof answer && device().controlOut(answer, s.wLength);
+        }
+        if (stage == CH32RVUsbControlStage::Data) {
+            /* Only what there is: format 1, frame 1, and the host's frame
+             * interval when it gives one (a pacing hint). */
+            const uint32_t interval = get32(answer + 4);
+            defaultProbe(_probe);
+            if (interval) {
+                put32(_probe + 4, interval);
+            }
+            if (selector == VS_COMMIT_CONTROL) {
+                CH32RVUsbDeviceVideoCommit c;
+                c.formatIndex = _probe[2];
+                c.frameIndex = _probe[3];
+                c.frameInterval = get32(_probe + 4);
+                c.maxVideoFrameSize = get32(_probe + 18);
+                c.maxPayloadTransferSize = get32(_probe + 22);
+                stop();
+                if (bulkStreaming()) {
+                    _streaming = true;           /* bulk: the commit starts the stream */
+                }
+                handleCommit(c);
+            }
+        }
+        return true;
+    case UVC_GET_CUR:
+    case UVC_GET_MIN:
+    case UVC_GET_MAX:
+    case UVC_GET_DEF:
+        if (setup) {
+            if (s.bRequest == UVC_GET_CUR && _probe[2]) {
+                memcpy(answer, _probe, sizeof answer);
+            } else {
+                defaultProbe(answer);
+            }
+            return device().controlIn(answer, s.wLength < sizeof answer ? s.wLength : sizeof answer);
+        }
+        return true;
+    case UVC_GET_RES:
+        if (setup) {
+            memset(answer, 0, sizeof answer);
+            return device().controlIn(answer, s.wLength < sizeof answer ? s.wLength : sizeof answer);
+        }
+        return true;
+    case UVC_GET_LEN:
+        if (setup) {
+            put16(answer, sizeof answer);
+            return device().controlIn(answer, 2);
+        }
+        return true;
+    case UVC_GET_INFO:
+        if (setup) {
+            answer[0] = 0x03;                    /* GET and SET supported */
+            return device().controlIn(answer, 1);
+        }
+        return true;
+    }
+    return false;
+}
+
+/* ---------------------------------------------------------- the stream */
+void CH32RVUsbDeviceVideo::usbReset()
+{
+    _streaming = false;
+    _inFlight = false;
+    _frame = nullptr;
+    memset(_probe, 0, sizeof _probe);
+}
+
+void CH32RVUsbDeviceVideo::usbConfigured(CH32RVUsbSpeed speed)
+{
+    _highSpeed = speed != CH32RVUsbSpeed::Full;
+    usbReset();
+}
+
+/* Drop a frame in flight; no completion for it. */
+void CH32RVUsbDeviceVideo::stop()
+{
+    if (_inFlight || device().transferBusy(_ep)) {
+        device().abort(_ep);
+    }
+    _streaming = false;
+    _inFlight = false;
+    _frame = nullptr;
+}
+
+bool CH32RVUsbDeviceVideo::usbSetInterface(uint8_t interfaceNumber, uint8_t alternate)
+{
+    if (interfaceNumber != (uint8_t)(_vcInterface + 1) || alternate > (bulkStreaming() ? 0 : 1)) {
+        return interfaceNumber == _vcInterface && alternate == 0;
+    }
+    stop();
+    _streaming = alternate == 1;                 /* isochronous: the bandwidth is reserved now */
     return true;
+}
+
+/* Linux stops a bulk stream with CLEAR_FEATURE(ENDPOINT_HALT): what was in
+ * flight is stale, and the next commit starts over. */
+void CH32RVUsbDeviceVideo::usbHaltCleared(uint8_t address)
+{
+    if (address == _ep) {
+        stop();
+    }
+}
+
+/* The next payload: the header, then as much of the frame as one packet
+ * holds. The last payload carries end-of-frame. */
+void CH32RVUsbDeviceVideo::sendPayload()
+{
+    const uint16_t size = payloadBufferSize();
+    const uint32_t left = _length - _offset;
+    _sending = (uint16_t)(left < (uint32_t)(size - 2) ? left : (uint32_t)(size - 2));
+    const bool last = _offset + _sending >= _length;
+    _payload[0] = 2;
+    _payload[1] = (uint8_t)(0x80 | _fid | (last ? 0x02 : 0));   /* EOH, FID, EOF */
+    if (_frame) {
+        memcpy(_payload + 2, _frame + _offset, _sending);
+    } else {
+        handleFill(_payload + 2, _sending, _offset);
+    }
+    if (!device().transfer(_ep, _payload, (uint16_t)(2 + _sending))) {
+        stop();
+    }
+}
+
+void CH32RVUsbDeviceVideo::usbTransferred(uint8_t address, uint16_t length)
+{
+    (void)length;
+    if (address != _ep || !_inFlight) {
+        return;
+    }
+    _offset += _sending;
+    if (_offset < _length) {
+        sendPayload();
+        return;
+    }
+    _fid ^= 1;
+    _frame = nullptr;
+    handleFrameComplete();
+}
+
+bool CH32RVUsbDeviceVideo::arm(const uint8_t *frame, size_t length)
+{
+    if (length == 0 || length > maxFrameSize() || _inFlight || !streaming()) {
+        return false;
+    }
+    _frame = frame;
+    _length = (uint32_t)length;
+    _offset = 0;
+    _inFlight = true;
+    sendPayload();
+    return _inFlight;
 }
 
 bool CH32RVUsbDeviceVideo::sendFrame(const void *frame, size_t length)
 {
-    /* const_cast: TinyUSB only reads a frame it is given. */
-    return frame && arm(const_cast<void *>(frame), length);
+    return frame && arm(static_cast<const uint8_t *>(frame), length);
 }
 
 bool CH32RVUsbDeviceVideo::sendGeneratedFrame(size_t length)
@@ -518,25 +617,13 @@ bool CH32RVUsbDeviceVideo::sendGeneratedFrame(size_t length)
     return _onFill && arm(nullptr, length);
 }
 
-#else
-
-static const CH32RVUsbFunctionType video_type = {nullptr, video_descriptor, 2, 1, nullptr, 0};
-
-CH32RVUsbDeviceVideo::CH32RVUsbDeviceVideo(CH32RVUsbDevice &device, const char *name)
-    : CH32RVUsbDeviceFunction(device, video_type, name ? name : CH32RV_USB_VIDEO_NAME)
-{
-}
-
-bool CH32RVUsbDeviceVideo::streaming() const { return false; }
-bool CH32RVUsbDeviceVideo::arm(void *, size_t) { return false; }
-bool CH32RVUsbDeviceVideo::sendFrame(const void *, size_t) { return false; }
-bool CH32RVUsbDeviceVideo::sendGeneratedFrame(size_t) { return false; }
-
-#endif
-
 void CH32RVUsbDeviceVideo::end()
 {
+    if (device().mounted()) {
+        stop();
+    }
     _inFlight = false;
+    _frame = nullptr;
     _commit = CH32RVUsbDeviceVideoCommit();
 }
 
@@ -548,7 +635,7 @@ void CH32RVUsbDeviceVideo::handleFrameComplete()
     }
 }
 
-/* A commit restarts the stream: TinyUSB has dropped any frame it held. */
+/* A commit restarts the stream: any frame in flight was dropped. */
 void CH32RVUsbDeviceVideo::handleCommit(const CH32RVUsbDeviceVideoCommit &commit)
 {
     _commit = commit;

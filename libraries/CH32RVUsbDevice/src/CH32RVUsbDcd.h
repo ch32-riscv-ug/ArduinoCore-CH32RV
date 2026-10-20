@@ -11,6 +11,8 @@
 
 #include <stdint.h>
 
+#include "CH32RVUsbDeviceTypes.h"
+
 enum CH32RVUsbXferType : uint8_t {
     CH32RV_USB_XFER_CONTROL = 0,
     CH32RV_USB_XFER_ISOCHRONOUS = 1,
@@ -22,13 +24,13 @@ struct CH32RVUsbDcd {
     const char *name;
     uint8_t endpoints;            /* endpoint numbers 0..endpoints-1 */
     uint16_t maxPacket;           /* largest packet any endpoint takes */
-    bool highSpeedCapable;
+    uint8_t speeds;               /* bit n: CH32RVUsbSpeed n (Full, High, Super) can be reached */
     /* Clocks, pins, PHY, the controller reset, the interrupt. False when the
      * part cannot (the controller is missing, or taken by the USB host). */
     bool (*open)(void);
     void (*close)(void);
     void (*connect)(bool on);     /* the D+ pull-up */
-    bool (*highSpeed)(void);      /* the speed the host chose (after a reset) */
+    CH32RVUsbSpeed (*speed)(void);   /* the speed the host chose (after a reset) */
     void (*setAddress)(uint8_t address);
     /* Open one endpoint direction (address with bit 7 for IN). */
     bool (*epOpen)(uint8_t address, uint8_t type, uint16_t maxPacket);
@@ -38,11 +40,19 @@ struct CH32RVUsbDcd {
      * transfer ends on a short packet or when `length` is reached. The
      * buffer stays the caller's until the completion. */
     bool (*xfer)(uint8_t address, uint8_t *buffer, uint16_t length);
+    /* Drop the transfer in flight without completing it; the endpoint NAKs
+     * (isochronous: sends nothing) until the next xfer. */
+    void (*abort)(uint8_t address);
     /* Stall, or clear the stall and reset the data toggle to DATA0. */
     void (*stall)(uint8_t address, bool on);
     void (*ep0Stall)(void);       /* both directions, until the next SETUP */
-    void (*remoteWakeup)(void);
+    void (*remoteWakeup)(void);   /* resume signalling (SuperSpeed: function wake) */
 };
+
+static inline bool ch32rv_usb_dcd_can(const CH32RVUsbDcd &dcd, CH32RVUsbSpeed speed)
+{
+    return (dcd.speeds >> (uint8_t)speed) & 1u;
+}
 
 /* From a driver's interrupt. */
 extern "C" {

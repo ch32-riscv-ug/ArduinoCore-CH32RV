@@ -1,26 +1,39 @@
-/* USB network adapter: TinyUSB's ncm_device. */
+/* USB network adapter on the device stack: CDC-NCM with 16-bit transfer
+ * blocks (NTB16). One block each way at a time; a block from the host may
+ * carry several frames, the device sends one frame per block. */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
-#include "tusb.h"
-#include "device/usbd_pvt.h"
-
 #define NET_MTU 1514
+/* The smallest transfer block NCM 1.0 lets a function declare (3.2.1). */
+#define NTB_MAX 2048
+#define NOTIFY_EP_SIZE 16
+#define NTH16_SIGNATURE 0x484D434Eu   /* "NCMH" */
+#define NDP16_SIGNATURE 0x304D434Eu   /* "NCM0", no CRC */
 
-#if CH32RV_TINYUSB_DEVICE && CFG_TUD_NCM
+static struct {
+    uint8_t ep_notify, ep_out, ep_in, itf;
+    uint16_t packet;
+    uint16_t sequence;
+    uint32_t in_max;          /* SET_NTB_INPUT_SIZE */
+    bool up, in_busy, zlp, notify_busy;
+    uint8_t notify_step;      /* speed, then connection */
+} drv;
 
-#include "class/net/net_device.h"
-
-static const usbd_class_driver_t net_driver = {
-    NULL, netd_init, netd_deinit, netd_reset, netd_open, netd_control_xfer_cb, netd_xfer_cb, NULL, NULL,
-};
-
-/* TinyUSB names the MAC through this global (iMACAddress). */
-uint8_t tud_network_mac_address[6];
+static uint8_t mac[6];
 static bool mac_set;
 static char mac_text[13];
 static CH32RVUsbDeviceNet *net;
+static uint8_t ntb_out[NTB_MAX] __attribute__((aligned(4)));
+static uint8_t ntb_in[NTB_MAX] __attribute__((aligned(4)));
+static uint8_t notify_buf[NOTIFY_EP_SIZE] __attribute__((aligned(4)));
+static uint8_t ctl[28] __attribute__((aligned(4)));
+
+static uint16_t get16(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
+static uint32_t get32(const uint8_t *p) { return get16(p) | (uint32_t)get16(p + 2) << 16; }
+static void put16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8); }
+static void put32(uint8_t *p, uint32_t v) { put16(p, (uint16_t)v); put16(p + 2, (uint16_t)(v >> 16)); }
 
 static const char *mac_string(uint8_t index)
 {
@@ -28,9 +41,10 @@ static const char *mac_string(uint8_t index)
 }
 
 /* Two interfaces (control, data); notification IN on endpoint n, bulk OUT
- * and IN on n + 1. */
+ * and IN on n + 1. The data interface has no endpoints until the host picks
+ * alternate setting 1, which is when the link is up. */
 static uint16_t net_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str, bool hs)
+                               uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
     (void)self;
     if (!mac_set) {
@@ -38,26 +52,40 @@ static uint16_t net_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
         const uint32_t lo = *(volatile const uint32_t *)CH32RV_ESIG_UNIID1_ADDR;
         const uint32_t hi = *(volatile const uint32_t *)CH32RV_ESIG_UNIID2_ADDR;
         const uint32_t mix = lo ^ (hi * 2654435761u);
-        tud_network_mac_address[0] = 0x02;
-        tud_network_mac_address[1] = (uint8_t)(hi >> 8);
-        tud_network_mac_address[2] = (uint8_t)(mix >> 24);
-        tud_network_mac_address[3] = (uint8_t)(mix >> 16);
-        tud_network_mac_address[4] = (uint8_t)(mix >> 8);
-        tud_network_mac_address[5] = (uint8_t)mix;
+        mac[0] = 0x02;
+        mac[1] = (uint8_t)(hi >> 8);
+        mac[2] = (uint8_t)(mix >> 24);
+        mac[3] = (uint8_t)(mix >> 16);
+        mac[4] = (uint8_t)(mix >> 8);
+        mac[5] = (uint8_t)mix;
     }
     static const char hex[] = "0123456789ABCDEF";
     for (uint8_t i = 0; i < 6; i++) {
-        mac_text[2 * i] = hex[tud_network_mac_address[i] >> 4];
-        mac_text[2 * i + 1] = hex[tud_network_mac_address[i] & 15];
+        mac_text[2 * i] = hex[mac[i] >> 4];
+        mac_text[2 * i + 1] = hex[mac[i] & 15];
     }
     mac_text[12] = 0;
     const uint8_t n = *ep;
     *ep = (uint8_t)(n + 2);
-    uint8_t d[] = {TUD_CDC_NCM_DESCRIPTOR(itf, str, CH32RV_USB_EXTRA_STRING, (uint8_t)(0x80 | n), 64,
-                                          (uint8_t)(n + 1), (uint8_t)(0x80 | (n + 1)),
-                                          ch32rv_usb_bulk_size(hs), NET_MTU, ch32rv_usb_interval(hs, 16), 0)};
-    /* The association names the function too, as for CDC. */
-    d[7] = str;
+    drv.itf = itf;
+    drv.ep_notify = (uint8_t)(0x80 | n);
+    drv.ep_out = (uint8_t)(n + 1);
+    drv.ep_in = (uint8_t)(0x80 | (n + 1));
+    const uint16_t mps = ch32rv_usb_bulk_size(speed);
+    const uint8_t d[] = {
+        8, 11, itf, 2, 2, 0x0D, 0, str,                             /* association: the function's name too */
+        9, 4, itf, 0, 1, 2, 0x0D, 0, str,                           /* communication interface, NCM */
+        5, 0x24, 0x00, 0x10, 0x01,                                  /* header, CDC 1.10 */
+        5, 0x24, 0x06, itf, (uint8_t)(itf + 1),                     /* union */
+        13, 0x24, 0x0F, CH32RV_USB_EXTRA_STRING, 0, 0, 0, 0,        /* Ethernet: iMACAddress, no statistics */
+        (uint8_t)NET_MTU, (uint8_t)(NET_MTU >> 8), 0, 0, 0,
+        6, 0x24, 0x1A, 0x00, 0x01, 0,                               /* NCM 1.0, no optional requests */
+        7, 5, (uint8_t)(0x80 | n), 3, NOTIFY_EP_SIZE, 0, ch32rv_usb_interval(speed, 16),
+        9, 4, (uint8_t)(itf + 1), 0, 0, 0x0A, 0, 1, 0,              /* data, alternate 0: no link */
+        9, 4, (uint8_t)(itf + 1), 1, 2, 0x0A, 0, 1, 0,              /* data, alternate 1 */
+        7, 5, (uint8_t)(n + 1), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
+        7, 5, (uint8_t)(0x80 | (n + 1)), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
+    };
     if (sizeof d > room) {
         return 0;
     }
@@ -65,7 +93,7 @@ static uint16_t net_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
     return sizeof d;
 }
 
-static const CH32RVUsbFunctionType net_type = {&net_driver, net_descriptor, 2, 1, nullptr, 0};
+static const CH32RVUsbFunctionType net_type = {net_descriptor, 2, 1, nullptr, 0};
 
 CH32RVUsbDeviceNet::CH32RVUsbDeviceNet(CH32RVUsbDevice &device)
     : CH32RVUsbDeviceFunction(device, net_type, CH32RV_USB_NET_NAME)
@@ -76,42 +104,211 @@ CH32RVUsbDeviceNet::CH32RVUsbDeviceNet(CH32RVUsbDevice &device)
     }
 }
 
-void CH32RVUsbDeviceNet::macAddress(const uint8_t mac[6])
+void CH32RVUsbDeviceNet::macAddress(const uint8_t value[6])
 {
-    memcpy(tud_network_mac_address, mac, 6);
+    memcpy(mac, value, 6);
     mac_set = true;
 }
 
 const uint8_t *CH32RVUsbDeviceNet::macAddress() const
 {
-    return tud_network_mac_address;
+    return mac;
 }
 
 bool CH32RVUsbDeviceNet::linkUp() const
 {
-    return net == this && device().mounted();
+    return net == this && drv.up && device().mounted();
 }
 
+/* ---------------------------------------------------------- the stack's side */
+void CH32RVUsbDeviceNet::usbReset()
+{
+    drv.up = drv.in_busy = drv.zlp = drv.notify_busy = false;
+    drv.notify_step = 0;
+}
+
+void CH32RVUsbDeviceNet::usbConfigured(CH32RVUsbSpeed speed)
+{
+    drv.packet = ch32rv_usb_bulk_size(speed);
+    drv.in_max = NTB_MAX;
+    drv.sequence = 0;
+    usbReset();
+}
+
+/* The link state after the host picks the data interface's setting: the
+ * speed first, then "connected" (Linux takes the carrier from the second). */
+void CH32RVUsbDeviceNet::notify()
+{
+    if (drv.notify_busy || drv.notify_step == 0) {
+        return;
+    }
+    memset(notify_buf, 0, sizeof notify_buf);
+    notify_buf[0] = 0xA1;
+    put16(notify_buf + 4, drv.itf);
+    uint16_t n = 8;
+    if (drv.notify_step == 2) {
+        notify_buf[1] = 0x2A;                    /* CONNECTION_SPEED_CHANGE */
+        put16(notify_buf + 6, 8);
+        const uint32_t bps = drv.packet >= 512 ? 480000000u : 12000000u;
+        put32(notify_buf + 8, bps);
+        put32(notify_buf + 12, bps);
+        n = 16;
+    } else {
+        notify_buf[1] = 0x00;                    /* NETWORK_CONNECTION */
+        put16(notify_buf + 2, drv.up ? 1 : 0);
+    }
+    drv.notify_busy = device().transfer(drv.ep_notify, notify_buf, n);
+}
+
+bool CH32RVUsbDeviceNet::usbSetInterface(uint8_t interfaceNumber, uint8_t alternate)
+{
+    if (interfaceNumber != (uint8_t)(drv.itf + 1) || alternate > 1) {
+        return false;
+    }
+    drv.up = alternate == 1;
+    drv.in_busy = drv.zlp = false;
+    if (drv.up) {
+        device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
+    }
+    drv.notify_busy = device().transferBusy(drv.ep_notify);
+    drv.notify_step = drv.up ? 2 : 1;
+    notify();
+    return true;
+}
+
+bool CH32RVUsbDeviceNet::usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &s)
+{
+    if ((s.bmRequestType & 0x60) != 0x20) {
+        return false;
+    }
+    const bool setup = stage == CH32RVUsbControlStage::Setup;
+    switch (s.bRequest) {
+    case 0x80:                                   /* GET_NTB_PARAMETERS */
+        if (setup) {
+            memset(ctl, 0, sizeof ctl);
+            put16(ctl, sizeof ctl);
+            put16(ctl + 2, 1);                   /* NTB16 only */
+            put32(ctl + 4, NTB_MAX);
+            put16(ctl + 8, 4);                   /* datagrams in on 4-byte boundaries */
+            put16(ctl + 12, 4);
+            put32(ctl + 16, NTB_MAX);
+            put16(ctl + 20, 4);
+            put16(ctl + 24, 4);
+            return device().controlIn(ctl, sizeof ctl);
+        }
+        return true;
+    case 0x83:                                   /* GET_NTB_FORMAT: NTB16 */
+        if (setup) {
+            put16(ctl, 0);
+            return device().controlIn(ctl, 2);
+        }
+        return true;
+    case 0x84:                                   /* SET_NTB_FORMAT */
+        return !setup || (s.wValue == 0 && device().controlStatus());
+    case 0x85:                                   /* GET_NTB_INPUT_SIZE */
+        if (setup) {
+            put32(ctl, drv.in_max);
+            return device().controlIn(ctl, 4);
+        }
+        return true;
+    case 0x86:                                   /* SET_NTB_INPUT_SIZE */
+        if (setup) {
+            return s.wLength >= 4 && s.wLength <= sizeof ctl && device().controlOut(ctl, s.wLength);
+        }
+        if (stage == CH32RVUsbControlStage::Data) {
+            const uint32_t v = get32(ctl);
+            drv.in_max = v < NTB_MAX ? v : NTB_MAX;
+        }
+        return true;
+    case 0x43:                                   /* SET_ETHERNET_PACKET_FILTER: everything goes up */
+        return !setup || device().controlStatus();
+    }
+    return false;
+}
+
+/* Each frame in a block from the host, in its NDP16 order. */
+void CH32RVUsbDeviceNet::receiveBlock(uint16_t length)
+{
+    if (length < 12 || get32(ntb_out) != NTH16_SIGNATURE || get16(ntb_out + 4) != 12) {
+        return;
+    }
+    const uint16_t block = get16(ntb_out + 8) < length ? get16(ntb_out + 8) : length;
+    uint16_t ndp = get16(ntb_out + 10);
+    for (uint8_t guard = 0; ndp && guard < 8; guard++) {
+        if ((uint32_t)ndp + 16 > block || get32(ntb_out + ndp) != NDP16_SIGNATURE) {
+            return;
+        }
+        const uint16_t end = (uint16_t)(ndp + get16(ntb_out + ndp + 4));
+        for (uint16_t p = (uint16_t)(ndp + 8); p + 4 <= end && p + 4 <= block; p += 4) {
+            const uint16_t index = get16(ntb_out + p), size = get16(ntb_out + p + 2);
+            if (!index || !size) {
+                break;
+            }
+            if ((uint32_t)index + size <= block) {
+                handleFrame(ntb_out + index, size);
+            }
+        }
+        ndp = get16(ntb_out + ndp + 6);
+    }
+}
+
+void CH32RVUsbDeviceNet::usbTransferred(uint8_t address, uint16_t length)
+{
+    if (address == drv.ep_out) {
+        if (drv.up) {
+            receiveBlock(length);
+            device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
+        }
+    } else if (address == drv.ep_in) {
+        drv.in_busy = false;
+        if (drv.zlp) {
+            drv.zlp = false;                     /* the block ended on a full packet */
+            drv.in_busy = device().transfer(drv.ep_in, ntb_in, 0);
+        }
+    } else if (address == drv.ep_notify) {
+        drv.notify_busy = false;
+        if (drv.notify_step) {
+            drv.notify_step--;
+        }
+        notify();
+    }
+}
+
+/* ---------------------------------------------------------- the sketch's side */
 bool CH32RVUsbDeviceNet::sendFrame(const uint8_t *data, size_t length, uint32_t timeoutMs)
 {
+    const uint16_t block = (uint16_t)(28 + length);   /* NTH16, one NDP16, the frame */
     if (!data || !length || length > NET_MTU) {
         return false;
     }
     const uint32_t t0 = millis();
     for (;;) {
-        if (!linkUp()) {
+        ch32rv_usb_task();
+        if (!linkUp() || block > drv.in_max) {
             return false;
         }
-        if (tud_network_can_xmit((uint16_t)length)) {
-            /* Copies through tud_network_xmit_cb() before it returns. */
-            tud_network_xmit((void *)data, (uint16_t)length);
-            return true;
+        if (!drv.in_busy) {
+            break;
         }
         if ((uint32_t)(millis() - t0) >= timeoutMs) {
             return false;
         }
-        ch32rv_usb_task();
     }
+    put32(ntb_in, NTH16_SIGNATURE);
+    put16(ntb_in + 4, 12);
+    put16(ntb_in + 6, drv.sequence++);
+    put16(ntb_in + 8, block);
+    put16(ntb_in + 10, 12);
+    put32(ntb_in + 12, NDP16_SIGNATURE);
+    put16(ntb_in + 16, 16);
+    put16(ntb_in + 18, 0);
+    put16(ntb_in + 20, 28);
+    put16(ntb_in + 22, (uint16_t)length);
+    put32(ntb_in + 24, 0);                       /* the terminating entry */
+    memcpy(ntb_in + 28, data, length);
+    drv.zlp = block < drv.in_max && block % drv.packet == 0;
+    drv.in_busy = device().transfer(drv.ep_in, ntb_in, block);
+    return drv.in_busy;
 }
 
 void CH32RVUsbDeviceNet::handleFrame(const uint8_t *data, size_t length)
@@ -120,46 +317,3 @@ void CH32RVUsbDeviceNet::handleFrame(const uint8_t *data, size_t length)
         _onFrame(data, length);
     }
 }
-
-extern "C" bool tud_network_recv_cb(const uint8_t *src, uint16_t size)
-{
-    if (net && src && size) {
-        net->handleFrame(src, size);
-    }
-    /* Copied (or dropped) already: the buffer can take the next frame. */
-    tud_network_recv_renew();
-    return true;
-}
-
-extern "C" uint16_t tud_network_xmit_cb(uint8_t *dst, void *ref, uint16_t arg)
-{
-    memcpy(dst, ref, arg);
-    return arg;
-}
-
-extern "C" void tud_network_init_cb(void)
-{
-}
-
-#else
-
-static uint16_t net_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *, uint8_t, bool)
-{
-    return 0;
-}
-
-static const CH32RVUsbFunctionType net_type = {nullptr, net_descriptor, 2, 1, nullptr, 0};
-static const uint8_t no_mac[6] = {};
-
-CH32RVUsbDeviceNet::CH32RVUsbDeviceNet(CH32RVUsbDevice &device)
-    : CH32RVUsbDeviceFunction(device, net_type, CH32RV_USB_NET_NAME)
-{
-}
-
-void CH32RVUsbDeviceNet::macAddress(const uint8_t *) {}
-const uint8_t *CH32RVUsbDeviceNet::macAddress() const { return no_mac; }
-bool CH32RVUsbDeviceNet::sendFrame(const uint8_t *, size_t, uint32_t) { return false; }
-bool CH32RVUsbDeviceNet::linkUp() const { return false; }
-void CH32RVUsbDeviceNet::handleFrame(const uint8_t *, size_t) {}
-
-#endif

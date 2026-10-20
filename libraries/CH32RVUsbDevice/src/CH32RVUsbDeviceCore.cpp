@@ -45,7 +45,11 @@ struct CH32RVUsbDeviceCore {
     static uint8_t reply[2];
 
     /* The configuration. */
-    static bool configured, high_speed, suspended, remote_wakeup;
+    static bool configured, suspended, remote_wakeup;
+    static CH32RVUsbSpeed speed;
+    static uint8_t ss_features;                      /* GET_STATUS bits 2-4: U1, U2, LTM enabled */
+    static uint16_t ep0_mps;
+    static uint8_t sel[6];                           /* SET_SEL: the exit latencies (not acted on) */
     static uint8_t alt[MAX_ITF];
     static CH32RVUsbDeviceFunction *ep_owner[MAX_EP];
     static uint16_t busy_in, busy_out, halt_in, halt_out;
@@ -75,7 +79,11 @@ bool CH32RVUsbDeviceCore::answered, CH32RVUsbDeviceCore::zlp;
 uint16_t CH32RVUsbDeviceCore::in_length;
 uint8_t CH32RVUsbDeviceCore::pending_address;
 uint8_t CH32RVUsbDeviceCore::reply[2];
-bool CH32RVUsbDeviceCore::configured, CH32RVUsbDeviceCore::high_speed, CH32RVUsbDeviceCore::suspended,
+CH32RVUsbSpeed CH32RVUsbDeviceCore::speed;
+uint8_t CH32RVUsbDeviceCore::ss_features;
+uint16_t CH32RVUsbDeviceCore::ep0_mps = 64;
+uint8_t CH32RVUsbDeviceCore::sel[6];
+bool CH32RVUsbDeviceCore::configured, CH32RVUsbDeviceCore::suspended,
     CH32RVUsbDeviceCore::remote_wakeup;
 uint8_t CH32RVUsbDeviceCore::alt[MAX_ITF];
 CH32RVUsbDeviceFunction *CH32RVUsbDeviceCore::ep_owner[MAX_EP];
@@ -93,6 +101,31 @@ typedef CH32RVUsbDeviceCore Core;
 static uint8_t desc_configuration[CH32RV_USB_CONFIG_MAX];
 static uint8_t desc_device[18];
 static uint8_t desc_string[2 + 2 * 32];
+static void build_device_descriptor(const CH32RVUsbDeviceConfig &c);
+
+/* A SuperSpeed device needs a BOS even without the platform descriptors: the
+ * USB 2.0 extension (LPM) and the SuperSpeed USB capability (all speeds,
+ * functionality from full speed, U1 / U2 exit latencies left to the driver's
+ * defaults). */
+static const uint8_t ss_bos[] = {
+    5, 15, 22, 0, 2,
+    7, 0x10, 0x02, 0x02, 0, 0, 0,
+    10, 0x10, 0x03, 0x00, 0x0E, 0x00, 0x01, 0x0A, 0xFF, 0x07,
+};
+
+static const uint8_t *bos(uint16_t *length)
+{
+    if (ch32rv_usb_platform.bosLength) {
+        *length = ch32rv_usb_platform.bosLength;
+        return ch32rv_usb_platform.bos;
+    }
+    if (ch32rv_usb_dcd_can(*Core::dcd, CH32RVUsbSpeed::Super)) {
+        *length = sizeof ss_bos;
+        return ss_bos;
+    }
+    *length = 0;
+    return nullptr;
+}
 
 /* ------------------------------------------------------------ from the driver's interrupt */
 extern "C" void ch32rv_usbd_isr_reset(void)
@@ -183,14 +216,14 @@ void Core::set_configuration(bool on)
     if (!on) {
         return;
     }
-    device->buildConfiguration(desc_configuration, sizeof desc_configuration, high_speed, 2);
+    device->buildConfiguration(desc_configuration, sizeof desc_configuration, speed, 2);
     const uint8_t interfaces = desc_configuration[4];
     for (uint8_t itf = 0; itf < interfaces && itf < MAX_ITF; itf++) {
         open_interface(itf, 0, true);
     }
     configured = true;
     for (uint8_t i = 0; i < device->_count; i++) {
-        device->_functions[i]->usbConfigured(high_speed);
+        device->_functions[i]->usbConfigured(speed);
     }
 }
 
@@ -203,16 +236,23 @@ void Core::reset_state()
     pending_address = 0;
     suspended = false;
     remote_wakeup = false;
-    high_speed = dcd->highSpeed();
+    ss_features = 0;
+    speed = dcd->speed();
+    ep0_mps = speed == CH32RVUsbSpeed::Super ? 512 : 64;
+    build_device_descriptor(device->_config);
 }
 
 /* ------------------------------------------------------------ descriptors */
 static void build_device_descriptor(const CH32RVUsbDeviceConfig &c)
 {
-    /* 2.10 when there is a BOS: a host reads it only from a 2.1 device. IAD:
-     * CDC, MIDI, audio and video are interfaces bound together. */
-    const uint16_t bcd = ch32rv_usb_platform.bosLength ? 0x0210 : 0x0200;
-    const uint8_t d[18] = {18, 1, (uint8_t)bcd, (uint8_t)(bcd >> 8), 0xEF, 0x02, 0x01, 64,
+    /* bcdUSB 3.20 at SuperSpeed (EP0 then 2^9 bytes); otherwise 2.10 when
+     * there is a BOS - a host reads it only from a 2.1 device. IAD: CDC,
+     * MIDI, audio and video are interfaces bound together. */
+    uint16_t bos_length;
+    bos(&bos_length);
+    const bool ss = Core::speed == CH32RVUsbSpeed::Super;
+    const uint16_t bcd = ss ? 0x0320 : bos_length ? 0x0210 : 0x0200;
+    const uint8_t d[18] = {18, 1, (uint8_t)bcd, (uint8_t)(bcd >> 8), 0xEF, 0x02, 0x01, (uint8_t)(ss ? 9 : 64),
                            (uint8_t)c.vid, (uint8_t)(c.vid >> 8), (uint8_t)c.pid, (uint8_t)(c.pid >> 8),
                            (uint8_t)c.deviceVersion, (uint8_t)(c.deviceVersion >> 8), 1, 2, 3, 1};
     memcpy(desc_device, d, sizeof d);
@@ -278,12 +318,16 @@ bool Core::get_descriptor(const CH32RVUsbSetup &s)
         return device->controlIn(desc_device, sizeof desc_device);
     case 2:                                              /* CONFIGURATION */
     case 7: {                                            /* OTHER_SPEED_CONFIGURATION */
+        /* Only a high-speed capable device running at full or high speed
+         * describes the other one (USB 2.0 9.6.2, 9.6.4). */
         const bool other = (s.wValue >> 8) == 7;
-        if (other && !dcd->highSpeedCapable) {
+        if (other && (!ch32rv_usb_dcd_can(*dcd, CH32RVUsbSpeed::High) || speed == CH32RVUsbSpeed::Super)) {
             return false;
         }
-        const uint16_t n = device->buildConfiguration(desc_configuration, sizeof desc_configuration,
-                                                      other ? !high_speed : high_speed, (uint8_t)(s.wValue >> 8));
+        const CH32RVUsbSpeed as = !other ? speed : speed == CH32RVUsbSpeed::High ? CH32RVUsbSpeed::Full
+                                                                                 : CH32RVUsbSpeed::High;
+        const uint16_t n = device->buildConfiguration(desc_configuration, sizeof desc_configuration, as,
+                                                      (uint8_t)(s.wValue >> 8));
         return n && device->controlIn(desc_configuration, n);
     }
     case 3: {                                            /* STRING */
@@ -291,7 +335,7 @@ bool Core::get_descriptor(const CH32RVUsbSetup &s)
         return n && device->controlIn(desc_string, n);
     }
     case 6:                                              /* DEVICE_QUALIFIER: high-speed capable only */
-        if (!dcd->highSpeedCapable) {
+        if (!ch32rv_usb_dcd_can(*dcd, CH32RVUsbSpeed::High) || speed == CH32RVUsbSpeed::Super) {
             return false;
         } else {
             static uint8_t q[10];
@@ -302,8 +346,11 @@ bool Core::get_descriptor(const CH32RVUsbSetup &s)
             q[9] = 0;
             return device->controlIn(q, sizeof q);
         }
-    case 15:                                             /* BOS */
-        return ch32rv_usb_platform.bosLength && device->controlIn(ch32rv_usb_platform.bos, ch32rv_usb_platform.bosLength);
+    case 15: {                                           /* BOS */
+        uint16_t n;
+        const uint8_t *p = bos(&n);
+        return p && device->controlIn(p, n);
+    }
     }
     return false;
 }
@@ -328,16 +375,25 @@ bool Core::standard(const CH32RVUsbSetup &s)
             reply[0] = configured ? 1 : 0;
             return device->controlIn(reply, 1);
         case 0:                                          /* GET_STATUS */
-            reply[0] = (uint8_t)((device->_config.selfPowered ? 1 : 0) | (remote_wakeup ? 2 : 0));
+            reply[0] = (uint8_t)((device->_config.selfPowered ? 1 : 0) | (remote_wakeup ? 2 : 0) | ss_features);
             reply[1] = 0;
             return device->controlIn(reply, 2);
         case 1:                                          /* CLEAR_FEATURE */
         case 3:                                          /* SET_FEATURE */
-            if (s.wValue != 1) {                         /* only DEVICE_REMOTE_WAKEUP */
-                return false;
+            if (s.wValue == 1 && speed != CH32RVUsbSpeed::Super) {   /* DEVICE_REMOTE_WAKEUP */
+                remote_wakeup = s.bRequest == 3;
+                return device->controlStatus();
             }
-            remote_wakeup = s.bRequest == 3;
-            return device->controlStatus();
+            if (s.wValue >= 48 && s.wValue <= 50 && speed == CH32RVUsbSpeed::Super) {   /* U1, U2, LTM */
+                const uint8_t bit = (uint8_t)(4u << (s.wValue - 48));
+                ss_features = (uint8_t)(s.bRequest == 3 ? ss_features | bit : ss_features & ~bit);
+                return device->controlStatus();
+            }
+            return false;
+        case 0x30:                                       /* SET_SEL (SuperSpeed) */
+            return speed == CH32RVUsbSpeed::Super && device->controlOut(sel, sizeof sel);
+        case 0x31:                                       /* SET_ISOCH_DELAY (SuperSpeed) */
+            return speed == CH32RVUsbSpeed::Super && device->controlStatus();
         }
         return false;
     }
@@ -351,6 +407,12 @@ bool Core::standard(const CH32RVUsbSetup &s)
         case 0:                                          /* GET_STATUS */
             reply[0] = reply[1] = 0;
             return device->controlIn(reply, 2);
+        case 1:                                          /* CLEAR_FEATURE */
+        case 3:                                          /* SET_FEATURE: FUNCTION_SUSPEND (SuperSpeed) */
+            if (s.wValue != 0 || speed != CH32RVUsbSpeed::Super) {
+                return false;
+            }
+            return device->controlStatus();
         case 10:                                         /* GET_INTERFACE */
             reply[0] = alt[itf];
             return device->controlIn(reply, 1);
@@ -568,10 +630,13 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     }
     _config = config;
     _endpoints = dcd->endpoints;
+    _maxPacket = dcd->maxPacket;
     /* Lay the configuration out once for each speed, so a function that does
      * not fit fails here rather than at enumeration. */
-    for (uint8_t hs = 0; hs <= (dcd->highSpeedCapable ? 1 : 0); hs++) {
-        if (!buildConfiguration(desc_configuration, sizeof desc_configuration, hs, 2)) {
+    Core::dcd = dcd;
+    for (uint8_t sp = 0; sp < 3; sp++) {
+        if (ch32rv_usb_dcd_can(*dcd, (CH32RVUsbSpeed)sp) &&
+            !buildConfiguration(desc_configuration, sizeof desc_configuration, (CH32RVUsbSpeed)sp, 2)) {
             return false;
         }
     }
@@ -580,7 +645,6 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
         _error = CH32RVUsbDeviceError::InvalidArgument;
         return false;
     }
-    build_device_descriptor(config);
     if (!dcd->open()) {
         _error = CH32RVUsbDeviceError::Busy;
         return false;
@@ -638,9 +702,9 @@ bool CH32RVUsbDevice::remoteWakeup()
     return true;
 }
 
-bool CH32RVUsbDevice::highSpeed() const
+CH32RVUsbSpeed CH32RVUsbDevice::speed() const
 {
-    return _started && Core::high_speed;
+    return _started ? Core::speed : CH32RVUsbSpeed::Full;
 }
 
 void CH32RVUsbDevice::requestBootloader()
@@ -682,6 +746,25 @@ bool CH32RVUsbDevice::transferBusy(uint8_t address) const
     return (((address & 0x80) ? Core::busy_in : Core::busy_out) >> ep) & 1u;
 }
 
+void CH32RVUsbDevice::abort(uint8_t address)
+{
+    const uint8_t ep = address & 0x0F;
+    if (!_started || ep == 0 || ep >= MAX_EP) {
+        return;
+    }
+    const uint16_t bit = (uint16_t)(1u << ep);
+    Core::dcd->abort(address);
+    noInterrupts();
+    if (address & 0x80) {
+        Core::done_in = (uint16_t)(Core::done_in & ~bit);   /* a completion not yet handled is void too */
+        Core::busy_in = (uint16_t)(Core::busy_in & ~bit);
+    } else {
+        Core::done_out = (uint16_t)(Core::done_out & ~bit);
+        Core::busy_out = (uint16_t)(Core::busy_out & ~bit);
+    }
+    interrupts();
+}
+
 void CH32RVUsbDevice::stall(uint8_t address)
 {
     const uint8_t ep = address & 0x0F;
@@ -709,7 +792,7 @@ bool CH32RVUsbDevice::controlIn(const void *data, uint16_t length)
     Core::answered = true;
     const uint16_t n = length < Core::req.wLength ? length : Core::req.wLength;
     Core::in_length = n;
-    Core::zlp = n < Core::req.wLength && n && (n % 64) == 0;
+    Core::zlp = n < Core::req.wLength && n && (n % Core::ep0_mps) == 0;
     Core::ep0 = Core::DATA_IN;
     return Core::dcd->xfer(0x80, (uint8_t *)data, n);
 }
@@ -758,14 +841,7 @@ bool CH32RVUsbDevice::controlStatus()
     }
 }
 
-/* Until the HID and CDC classes move onto this stack (they still name
- * TinyUSB's): no HID path, and the CDC limit below. */
-bool CH32RVUsbDevice::sendHidReport(uint8_t, uint8_t, const void *, size_t, uint32_t)
-{
-    _error = CH32RVUsbDeviceError::Unsupported;
-    return false;
-}
-
+/* The CDC ports one device can hold (CH32RVUsbDeviceCdcSerial.cpp). */
 uint8_t CH32RVUsbDevice::maxCdcPorts()
 {
     return 4;

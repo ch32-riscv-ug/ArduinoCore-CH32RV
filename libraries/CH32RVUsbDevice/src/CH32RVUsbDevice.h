@@ -1,5 +1,6 @@
-/* CH32RVUsbDevice - the chip's own USB as a device, on TinyUSB (ADR-0012,
- * docs/usb.ja.md).
+/* CH32RVUsbDevice - the chip's own USB as a device, on this library's own
+ * device stack (CH32RVUsbDeviceCore.cpp, a controller driver per
+ * CH32RVUsbDcd.h; ADR-0012, docs/usb.ja.md).
  *
  * One device object, and the functions it offers declared against it:
  *
@@ -16,20 +17,20 @@
  * A function joins the device when it is declared (its constructor), in
  * declaration order, and the configuration descriptor is laid out from them
  * when begin() runs. A function the sketch never declares is not linked: the
- * TinyUSB class drivers come in only through these objects. USBDevice and
- * SerialUSB are predefined the way Serial is; a sketch that names neither
- * links neither, and may declare its own CH32RVUsbDevice instead (one device
- * per sketch - TinyUSB runs one device stack).
+ * classes come in only through these objects. USBDevice and SerialUSB are
+ * predefined the way Serial is; a sketch that names neither links neither,
+ * and may declare its own CH32RVUsbDevice instead (one device per sketch -
+ * the stack runs one).
  *
  * The stack runs from ch32rv_usb_task(): after every loop(), inside delay(),
  * and in each SerialUSB call, and only does work when the controller raised an
  * event. A sketch that blocks elsewhere for long starves it; the host then sees
  * a stalled device, not a lost one.
  *
- * Runs on CH32X035/X033, V103, V203/V208 (USBFS or USBD), V303 (USBFS) and
- * V305/V307/V317 (USBFS or USBHS); only X035 is checked on hardware. On the
- * other series begin() returns false with lastError() == Unsupported, so the
- * same sketch still builds there. */
+ * Runs on CH32X035/X033, the one series with a controller driver so far; on
+ * the others begin() returns false with lastError() == Unsupported, so the
+ * same sketch still builds there. Descriptors are laid out for full, high and
+ * SuperSpeed alike, for the drivers to come. */
 #pragma once
 
 #include <Arduino.h>
@@ -188,12 +189,25 @@ enum class CH32RVUsbDeviceError : uint8_t {
     NotReady,             /* the host has not configured the device, or the endpoint stayed busy */
     AlreadyStarted,       /* begin() again, or a function added after begin() */
     TooManyFunctions,     /* more than CH32RV_USB_MAX_FUNCTIONS (6) declared */
-    TooManyInstances,     /* more of one class than its CFG_TUD_* allows */
+    TooManyInstances,     /* more of one class than the device takes */
     OutOfEndpoints,       /* the functions need more endpoints than exist */
     DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (512) bytes */
     InvalidArgument,      /* a config field is malformed (deviceInterfaceGuid) */
     Busy,                 /* the controller is a USB host right now (CH32RVUsbHost) */
 };
+
+/* The largest bulk packet this series' controllers reach (full speed 64,
+ * high speed 512, SuperSpeed 1024): what the classes' default buffers are
+ * sized from. A property of the chip, not a setting. */
+#if defined(CH32RV_SERIES_CH32H417)
+#define CH32RV_USB_MAX_PACKET 1024
+#elif defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || \
+    defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || \
+    defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
+#define CH32RV_USB_MAX_PACKET 512
+#else
+#define CH32RV_USB_MAX_PACKET 64
+#endif
 
 #ifndef CH32RV_USB_MAX_FUNCTIONS
 #define CH32RV_USB_MAX_FUNCTIONS 6
@@ -202,16 +216,16 @@ enum class CH32RVUsbDeviceError : uint8_t {
 /* What one class contributes. Each class file has one, as a constant; the
  * device reads it at begin(). */
 struct CH32RVUsbFunctionType {
-    const void *driver;           /* TinyUSB usbd_class_driver_t */
     /* Write this function's descriptors for interface `itf` onward into
      * `out` (`room` bytes free), taking endpoint numbers from *ep (and
-     * advancing it); `str` is its string index; `hs` asks for the high-speed
-     * form (512-byte bulk endpoints, intervals in microframes). Returns the
+     * advancing it); `str` is its string index; `speed` the form (bulk 64 /
+     * 512 / 1024, intervals in frames or microframes). SuperSpeed endpoint
+     * companions are added by the stack after each endpoint. Returns the
      * length written, 0 when it does not fit. */
     uint16_t (*descriptor)(const class CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room,
-                           uint8_t itf, uint8_t *ep, uint8_t str, bool hs);
+                           uint8_t itf, uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed);
     uint8_t interfaces;
-    uint8_t maxInstances;         /* the class's CFG_TUD_* count */
+    uint8_t maxInstances;         /* how many of the class one device takes */
     /* The config field that names this interface, when the sketch has no
      * object to call setName() on (the HID interface, the default DFU). */
     const char *CH32RVUsbDeviceConfig::*configName;
@@ -231,7 +245,7 @@ public:
      * (CH32RVUsbDeviceConfig::hidInterfaceName / dfuRuntimeName). */
     const char *interfaceName() const;
     /* Which of its class this is (0 for the first CDC port, 1 for the
-     * second ...): TinyUSB's instance number. */
+     * second ...), in declaration order. */
     uint8_t instance() const { return _instance; }
     /* Its first interface number, once the device has begun. */
     uint8_t interfaceNumber() const { return _interface; }
@@ -252,7 +266,7 @@ protected:
     virtual void usbReset() {}
     /* The host chose the configuration; this function's endpoints (alternate
      * setting 0) are open. */
-    virtual void usbConfigured(bool highSpeed) { (void)highSpeed; }
+    virtual void usbConfigured(CH32RVUsbSpeed speed) { (void)speed; }
     /* A class or vendor request for one of its interfaces or endpoints, or a
      * standard GET_DESCRIPTOR to one of its interfaces. In the Setup stage
      * answer with device().controlIn / controlOut / controlStatus and return
@@ -330,7 +344,7 @@ public:
      * running inside a USB callback (a DFU_DETACH, a 1200 bps touch). */
     static void requestBootloader();
 
-    /* CDC ports this build holds (CFG_TUD_CDC; build_opt.h raises it). */
+    /* CDC ports one device takes. */
     static uint8_t maxCdcPorts();
 
     /* How many functions are attached, and the one at `i`. */
@@ -357,13 +371,15 @@ public:
     /* The configuration descriptor for one speed (CONFIGURATION or
      * OTHER_SPEED_CONFIGURATION), written into `out`; 0 when it cannot be
      * laid out (lastError()). For the USB stack's callbacks. */
-    uint16_t buildConfiguration(uint8_t *out, uint16_t room, bool highSpeed, uint8_t descriptorType);
+    uint16_t buildConfiguration(uint8_t *out, uint16_t room, CH32RVUsbSpeed speed, uint8_t descriptorType);
 
     /* For the classes: transfers on their endpoints (address, bit 7 for IN).
      * The buffer stays theirs until usbTransferred(). False while a transfer
      * is in flight there, or when the device is not configured. */
     bool transfer(uint8_t address, void *buffer, uint16_t length);
     bool transferBusy(uint8_t address) const;
+    /* Drop the transfer in flight there: no usbTransferred() for it. */
+    void abort(uint8_t address);
     void stall(uint8_t address);
     bool stalled(uint8_t address) const;
     /* Answers to a request in usbControl()'s Setup stage. controlIn sends at
@@ -372,18 +388,23 @@ public:
     bool controlOut(void *buffer, uint16_t length);
     bool controlStatus();
     /* The speed the host chose. */
-    bool highSpeed() const;
+    CH32RVUsbSpeed speed() const;
+    bool highSpeed() const { return speed() != CH32RVUsbSpeed::Full; }
 
     /* For the class objects (EspUsbDevice::addClass). */
     bool attach(CH32RVUsbDeviceFunction &f);
     bool addClass(CH32RVUsbDeviceFunction *f) { return f && attach(*f); }
     const CH32RVUsbDeviceConfig &config() const { return _config; }
+    /* The largest packet the controller's endpoints hold (once begun; before,
+     * the series' largest). */
+    uint16_t maxPacketSize() const { return _maxPacket; }
 
 private:
     CH32RVUsbDeviceFunction *_functions[CH32RV_USB_MAX_FUNCTIONS] = {};
     CH32RVUsbDeviceConfig _config;
     uint8_t _count = 0;
     uint8_t _endpoints = 8;       /* the controller's endpoint numbers 0.._endpoints-1 */
+    uint16_t _maxPacket = CH32RV_USB_MAX_PACKET;   /* the largest packet its endpoints hold */
     bool _started = false;
     CH32RVUsbDeviceError _error = CH32RVUsbDeviceError::None;
 };

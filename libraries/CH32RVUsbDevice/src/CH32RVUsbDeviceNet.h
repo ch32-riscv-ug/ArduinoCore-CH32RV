@@ -32,6 +32,15 @@ public:
     /* For the USB stack's callbacks. */
     void handleFrame(const uint8_t *data, size_t length);
 
+protected:
+    void usbReset() override;
+    void usbConfigured(CH32RVUsbSpeed speed) override;
+    bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
+    bool usbSetInterface(uint8_t interfaceNumber, uint8_t alternate) override;
+    void usbTransferred(uint8_t address, uint16_t length) override;
+
 private:
+    void notify();
+    void receiveBlock(uint16_t length);
     FrameCallback _onFrame = nullptr;
 };

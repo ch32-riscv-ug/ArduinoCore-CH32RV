@@ -18,9 +18,6 @@ struct CH32RVUsbPlatform {
     uint16_t msOs20Length;
     uint16_t msOs20Revision;
     bool msOs20Subsets;
-    /* Vendor requests the platform descriptors do not answer
-     * (CH32RVUsbDeviceVendor::onControlRequest). */
-    bool (*vendorRequest)(uint8_t rhport, uint8_t stage, const void *request);
     /* Vendor requests to the device, as the device stack hands them over
      * (set when the platform descriptors are linked), and the ones the
      * descriptors do not answer (CH32RVUsbDeviceVendor::onControlRequest). */
@@ -36,17 +33,18 @@ extern const char *(*ch32rv_usb_extra_string)(uint8_t index);
 void ch32rv_usb_platform_use(void);
 
 /* Endpoint parameters by speed. Bulk: 64 bytes at full speed, 512 at high
- * speed. Interrupt intervals: milliseconds at full speed; at high speed the
- * descriptor counts 2^(bInterval-1) microframes of 125 us, so the period is
- * rounded down to a power of two (10 ms -> 8 ms), never slower than asked. */
-static inline uint16_t ch32rv_usb_bulk_size(bool hs)
+ * speed, 1024 at SuperSpeed. Interrupt intervals: milliseconds at full speed;
+ * at high speed and SuperSpeed the descriptor counts 2^(bInterval-1) units
+ * of 125 us, so the period is rounded down to a power of two (10 ms -> 8 ms),
+ * never slower than asked. */
+static inline uint16_t ch32rv_usb_bulk_size(CH32RVUsbSpeed speed)
 {
-    return hs ? 512 : 64;
+    return speed == CH32RVUsbSpeed::Super ? 1024 : speed == CH32RVUsbSpeed::High ? 512 : 64;
 }
 
-static inline uint8_t ch32rv_usb_interval(bool hs, uint8_t ms)
+static inline uint8_t ch32rv_usb_interval(CH32RVUsbSpeed speed, uint8_t ms)
 {
-    if (!hs) {
+    if (speed == CH32RVUsbSpeed::Full) {
         return ms ? ms : 1;
     }
     /* b gives 2^(b-4) ms: the largest that is not longer than ms. */
@@ -56,3 +54,4 @@ static inline uint8_t ch32rv_usb_interval(bool hs, uint8_t ms)
     }
     return b;
 }
+

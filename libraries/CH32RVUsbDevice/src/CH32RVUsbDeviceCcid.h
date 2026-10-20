@@ -68,6 +68,12 @@ public:
     void handleBusAttached();
     void handleBusDetached();
 
+protected:
+    void usbReset() override;
+    void usbConfigured(CH32RVUsbSpeed speed) override;
+    bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
+    void usbTransferred(uint8_t address, uint16_t length) override;
+
 private:
     void writeHeader(uint8_t messageType, uint32_t dataLength, uint8_t slot, uint8_t sequence, uint8_t icc,
                      uint8_t commandStatus, uint8_t error, uint8_t parameter);

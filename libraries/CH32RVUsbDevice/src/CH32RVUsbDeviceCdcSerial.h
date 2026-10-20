@@ -17,8 +17,11 @@ public:
      * host's business; the argument exists for Serial compatibility. */
     void begin(unsigned long baud = 115200);
     void end() {}
-    /* Use the sketch's buffers instead of the built-in 256 + 256 bytes (any
-     * size from 2; one byte of each stays free). Before begin(). */
+    /* Use the sketch's buffers instead of the built-in ones (twice the
+     * largest packet each: 256 bytes on a full-speed part). The receive
+     * buffer needs room for two packets at the speed the host picks (128 /
+     * 1024 / 2048 bytes); a smaller one cannot take data at that speed.
+     * Before begin(). */
     void setBuffers(uint8_t *rx, uint16_t rxSize, uint8_t *tx, uint16_t txSize);
 
     int available() override;
@@ -71,18 +74,22 @@ public:
 
 protected:
     void usbReset() override;
-    void usbConfigured(bool highSpeed) override;
+    void usbConfigured(CH32RVUsbSpeed speed) override;
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
 
 private:
     void receive();
     void push();
-    uint8_t _rxStore[256], _txStore[256];
+    uint16_t rxUsed() const;
+    uint8_t _rxStore[CH32RV_USB_MAX_PACKET < 128 ? 256 : 2 * CH32RV_USB_MAX_PACKET];
+    uint8_t _txStore[CH32RV_USB_MAX_PACKET < 128 ? 256 : 2 * CH32RV_USB_MAX_PACKET];
     uint8_t *_rx = _rxStore, *_tx = _txStore;
     uint16_t _rxSize = sizeof _rxStore, _txSize = sizeof _txStore;
-    uint16_t _rxHead = 0, _rxTail = 0, _txHead = 0, _txTail = 0;
-    uint8_t _outPacket[64], _inPacket[64];
+    /* Receive: OUT transfers land straight in the buffer, a packet's worth of
+     * contiguous room at a time; _rxEnd marks where the data wraps early. */
+    uint16_t _rxHead = 0, _rxTail = 0, _rxEnd = 0;
+    uint16_t _txHead = 0, _txTail = 0, _txSending = 0;
     uint8_t _coding[7] = {0, 0, 0, 0, 0, 0, 8};
     uint16_t _packet = 64;
     bool _outBusy = false, _inBusy = false, _zlp = false;

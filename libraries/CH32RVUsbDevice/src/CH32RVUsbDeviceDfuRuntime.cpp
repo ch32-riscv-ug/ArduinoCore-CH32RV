@@ -13,11 +13,11 @@
 #define DFU_GETSTATE  5
 
 static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                  uint8_t *ep, uint8_t str, bool hs)
+                                  uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
     (void)self;
     (void)ep;
-    (void)hs;
+    (void)speed;
     /* WILL_DETACH only: the device leaves the bus by itself after
      * DFU_DETACH. No CAN_DOWNLOAD - what appears next is the factory ISP
      * bootloader, not a DFU-mode device, so a DFU download (dfu-util -D)
@@ -34,7 +34,7 @@ static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *
     return sizeof d;
 }
 
-static const CH32RVUsbFunctionType dfu_rt_type = {nullptr, dfu_rt_descriptor, 1, 1,
+static const CH32RVUsbFunctionType dfu_rt_type = {dfu_rt_descriptor, 1, 1,
                                                   &CH32RVUsbDeviceConfig::dfuRuntimeName, 1};
 
 static CH32RVUsbDeviceDfuRuntime *dfu;

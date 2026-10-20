@@ -79,6 +79,9 @@ void setup()
     speaker.addFormat({RATE, 1, 2, 16});
     mic.addFormat({RATE, 1, 2, 16});
     camera.setFormat(CH32RVUsbDeviceVideoFormat::Yuy2);
+#ifdef USB_MEDIA_ISOCHRONOUS
+    camera.setTransferType(CH32RVUsbDeviceVideoTransfer::Isochronous);
+#endif
     camera.setFrameSize(80, 60);
     camera.setFrameRate(10);
     camera.onFillPayload(fill);

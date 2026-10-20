@@ -5,7 +5,7 @@
  * CH32RVUsbDevice.h. */
 #pragma once
 
-/* CH32RVUsbDeviceVendorControlRequest::stage (TinyUSB's control stages). */
+/* CH32RVUsbDeviceVendorControlRequest::stage: setup, data, status. */
 static constexpr uint8_t CH32RV_USB_DEVICE_CONTROL_STAGE_SETUP = 1;
 static constexpr uint8_t CH32RV_USB_DEVICE_CONTROL_STAGE_DATA = 2;
 static constexpr uint8_t CH32RV_USB_DEVICE_CONTROL_STAGE_ACK = 3;
@@ -61,7 +61,7 @@ public:
     CH32RV_PRINTF_MEMBER
     /* Room in the transmit FIFO now; write() never takes more. */
     size_t writeAvailable() const;
-    /* The transmit FIFO's size (CFG_TUD_VENDOR_TX_BUFSIZE; build_opt.h). */
+    /* The transmit buffer's size (twice the largest packet, at least 256). */
     static size_t writeCapacity();
     /* Wait until the FIFO has room for `bytes` (clamped to writeCapacity()),
      * running the stack meanwhile. Flushes first. */
@@ -89,9 +89,28 @@ public:
     /* For the USB stack's callbacks. */
     void handleRx();
     void handleTxComplete(size_t sentBytes);
-    bool handleControlRequest(uint8_t rhport, uint8_t stage, const void *request);
+    bool handleControlRequest(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup);
+
+    /* The endpoint pair, set while the descriptors are laid out. */
+    uint8_t _ep = 0;
+
+protected:
+    void usbReset() override;
+    void usbConfigured(CH32RVUsbSpeed speed) override;
+    bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
+    void usbTransferred(uint8_t address, uint16_t length) override;
 
 private:
+    static constexpr uint16_t BUFFER = CH32RV_USB_MAX_PACKET < 128 ? 256 : 2 * CH32RV_USB_MAX_PACKET;
+    void receive();
+    void push();
+    uint16_t rxUsed() const;
+    uint8_t _rx[BUFFER], _tx[BUFFER];
+    /* As CH32RVUsbDeviceCdcSerial: OUT straight into _rx, wrapping early at _rxEnd. */
+    uint16_t _rxHead = 0, _rxTail = 0, _rxEnd = 0;
+    uint16_t _txHead = 0, _txTail = 0, _txSending = 0;
+    uint16_t _packet = 64;
+    bool _outBusy = false, _inBusy = false, _zlp = false;
     uint16_t _endpointSize;
     RxCallback _onRx = nullptr;
     TxCompleteCallback _onTxComplete = nullptr;

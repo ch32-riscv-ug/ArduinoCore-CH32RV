@@ -11,9 +11,9 @@
  * and there is no frame buffer - sendGeneratedFrame() asks fillPayload() for
  * the bytes of each payload as it goes out, so the picture costs no RAM. A
  * sketch with real pixels in memory uses sendFrame(buffer, length) exactly as
- * on the ESP32. Full speed on USBFS streams bulk by default (tusb_config.h);
- * with -DCFG_TUD_VIDEO_STREAMING_BULK=0 in build_opt.h it is isochronous at
- * 64 bytes per millisecond, about 6 fps of this picture.
+ * on the ESP32. Full speed on USBFS streams bulk by default; with
+ * Camera.setTransferType(CH32RVUsbDeviceVideoTransfer::Isochronous) it is
+ * isochronous at 64 bytes per millisecond, about 6 fps of this picture.
  */
 #include <CH32RVUsbDevice.h>
 
@@ -113,8 +113,8 @@ void setup()
   }
   Serial.printf("UVC camera ready: %ux%u YUY2 at %u fps, %s, %u-byte payloads\n",
                 kWidth, kHeight, kFrameRate,
-                CH32RVUsbDeviceVideo::bulkStreaming() ? "bulk" : "isochronous",
-                (unsigned)CH32RVUsbDeviceVideo::payloadBufferSize());
+                Camera.bulkStreaming() ? "bulk" : "isochronous",
+                (unsigned)Camera.payloadBufferSize());
   Serial.println("Open it wherever your OS lists webcams.");
 }
 

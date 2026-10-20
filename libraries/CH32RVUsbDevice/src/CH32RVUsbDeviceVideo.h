@@ -3,24 +3,27 @@
  * Included by CH32RVUsbDevice.h.
  *
  * The device is the source; there is no host-to-device direction. Give it a
- * frame with sendFrame() and TinyUSB's video driver cuts it into payloads
- * (a 2-byte UVC header each) and sends them, calling the completion callback
- * when the last one has gone. One frame is in flight at a time.
+ * frame with sendFrame() and the class cuts it into payloads (a 2-byte UVC
+ * header each, one packet per payload) and sends them, calling the
+ * completion callback when the last one has gone. One frame is in flight at a
+ * time.
  *
  * Bandwidth is the thing to decide first. On CH32X035/X033 (USBFS, full
  * speed) every endpoint is 64 bytes, isochronous ones included, so:
- *   - bulk streaming (the default here, CFG_TUD_VIDEO_STREAMING_BULK=1) gets
- *     whatever the bus has left - several hundred KB/s on an idle bus, and the
- *     host retries a lost packet, so no frame is torn;
- *   - isochronous (-DCFG_TUD_VIDEO_STREAMING_BULK=0 in build_opt.h) is one
- *     64-byte packet per 1 ms frame: 62 bytes of picture, about 62 KB/s -
- *     a 64x48 YUY2 frame (6 KB) at 10 fps.
+ *   - bulk streaming (the default) gets whatever the bus has left - several
+ *     hundred KB/s on an idle bus, and the host retries a lost packet, so no
+ *     frame is torn;
+ *   - isochronous (setTransferType(Isochronous)) is one 64-byte packet per
+ *     1 ms frame: 62 bytes of picture, about 62 KB/s - a 64x48 YUY2 frame
+ *     (6 KB) at 10 fps.
  * RAM bounds the frame before the bus does: a 20 KB part holds a 96x64 YUY2
  * frame (12 KB) and not much more. sendGeneratedFrame() (an extension) needs
  * no frame buffer at all - the bytes are asked for payload by payload - so a
  * generated or line-by-line source can send 160x120 or larger. A high-speed
  * controller (USBHS on V305/V307/V317) has 512-byte bulk and 1024-byte
  * isochronous packets every 125 us.
+ *
+ * Payloads move in ch32rv_usb_task() (after loop(), inside delay()).
  *
  * Differences from EspUsbDeviceVideo: callbacks are plain function pointers;
  * the setters work until the device begins (the descriptor is laid out at
@@ -38,6 +41,13 @@ enum class CH32RVUsbDeviceVideoFormat : uint8_t {
     Yuy2,
 };
 
+/* How the stream travels: bulk (what the bus has spare, retried) or
+ * isochronous (a fixed share, reserved when the host starts streaming). */
+enum class CH32RVUsbDeviceVideoTransfer : uint8_t {
+    Bulk = 0,
+    Isochronous,
+};
+
 /* What the host committed to after probe/commit negotiation. It can differ
  * from what was advertised (a host may ask for a slower frame interval), so a
  * sketch that cares reads it here. */
@@ -47,8 +57,7 @@ struct CH32RVUsbDeviceVideoCommit {
     /* 100 ns units, as UVC counts: 333333 is 30 fps. */
     uint32_t frameInterval = 0;
     uint32_t maxVideoFrameSize = 0;
-    /* Most the host accepts in one payload, header included; TinyUSB caps it
-     * at CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE. */
+    /* Most the host accepts in one payload, header included: one packet. */
     uint32_t maxPayloadTransferSize = 0;
 };
 
@@ -64,9 +73,10 @@ public:
      * IAD and iInterface on both interfaces); CH32RV_USB_VIDEO_NAME otherwise. */
     explicit CH32RVUsbDeviceVideo(CH32RVUsbDevice &device = USBDevice, const char *name = nullptr);
 
-    /* All four take effect when the device begins and are refused after,
+    /* All five take effect when the device begins and are refused after,
      * because the host has read the descriptor by then. */
     bool setFormat(CH32RVUsbDeviceVideoFormat format);
+    bool setTransferType(CH32RVUsbDeviceVideoTransfer type);
     /* Even, 2..4096 each way (YUY2 packs two pixels into four bytes). */
     bool setFrameSize(uint16_t width, uint16_t height);
     /* 1..120. */
@@ -87,16 +97,17 @@ public:
     uint16_t height() const { return _height; }
     uint8_t frameRate() const { return _frameRate; }
     uint32_t maxFrameSize() const;
+    CH32RVUsbDeviceVideoTransfer transferType() const { return _transfer; }
+    bool bulkStreaming() const { return _transfer == CH32RVUsbDeviceVideoTransfer::Bulk; }
     /* Bytes the descriptor takes at the given speed. */
     uint16_t descriptorLength(bool highSpeed = false) const;
-    /* wMaxPacketSize of the isochronous endpoint at that speed: the payload
-     * buffer, capped at 1023 (FS) / 1024 (HS). On USBFS (X035) 64 at most. */
-    static uint16_t isochronousPacketSize(bool highSpeed);
-    /* CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE as the library was built (0 on a
-     * series without USB device support). */
-    static uint16_t payloadBufferSize();
-    /* CFG_TUD_VIDEO_STREAMING_BULK as the library was built. */
-    static bool bulkStreaming();
+    /* wMaxPacketSize of the isochronous endpoint at that speed: the
+     * controller's largest packet, capped at 1023 (FS) / 1024 (HS). On USBFS
+     * (X035) 64. */
+    uint16_t isochronousPacketSize(bool highSpeed) const;
+    /* One payload, header included: a packet at the speed the host runs the
+     * bus (full speed before it has). */
+    uint16_t payloadBufferSize() const;
 
     /* The host has committed and (isochronous) selected the streaming
      * alternate setting. False before, and after unplug. */
@@ -107,8 +118,8 @@ public:
      * the host streams, or on a null, empty or oversized frame. */
     bool sendFrame(const void *frame, size_t length);
     /* Send a `length`-byte frame with no buffer: the fill callback supplies
-     * each payload's bytes as it goes out. An extension (TinyUSB's
-     * tud_video_prepare_payload_cb); the way to send frames bigger than RAM. */
+     * each payload's bytes as it goes out. An extension; the way to send
+     * frames bigger than RAM. */
     bool sendGeneratedFrame(size_t length);
     bool frameInFlight() const { return _inFlight; }
 
@@ -121,14 +132,25 @@ public:
     /* What the host committed to, or zeros before it has. */
     CH32RVUsbDeviceVideoCommit commit() const { return _commit; }
 
-    /* For the USB stack's callbacks. Not part of the sketch API. */
+protected:
+    void usbReset() override;
+    void usbConfigured(CH32RVUsbSpeed speed) override;
+    bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
+    bool usbSetInterface(uint8_t interfaceNumber, uint8_t alternate) override;
+    void usbTransferred(uint8_t address, uint16_t length) override;
+    void usbHaltCleared(uint8_t address) override;
+
+private:
+    friend uint16_t video_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *,
+                                     uint8_t, CH32RVUsbSpeed);
+    bool configurable() const;
+    bool arm(const uint8_t *frame, size_t length);
+    void defaultProbe(uint8_t *probe) const;
+    void sendPayload();
+    void stop();
     void handleFrameComplete();
     void handleCommit(const CH32RVUsbDeviceVideoCommit &commit);
     void handleFill(uint8_t *dst, size_t length, uint32_t offset);
-
-private:
-    bool configurable() const;
-    bool arm(void *frame, size_t length);
 
     CH32RVUsbDeviceVideoFormat _format = CH32RVUsbDeviceVideoFormat::Mjpeg;
     uint16_t _width = 320;
@@ -140,4 +162,18 @@ private:
     CommitCallback _onCommit = nullptr;
     FillCallback _onFill = nullptr;
     CH32RVUsbDeviceVideoCommit _commit;
+    CH32RVUsbDeviceVideoTransfer _transfer = CH32RVUsbDeviceVideoTransfer::Bulk;
+
+    /* Set when the descriptor is laid out. */
+    uint8_t _ep = 0;
+    uint8_t _vcInterface = 0;
+    /* The stream: committed (bulk) or alternate 1 (isochronous). */
+    bool _streaming = false;
+    bool _highSpeed = false;
+    uint8_t _fid = 0;                   /* the frame ID bit, toggled each frame */
+    const uint8_t *_frame = nullptr;    /* null: sendGeneratedFrame() */
+    uint32_t _length = 0, _offset = 0;
+    uint16_t _sending = 0;              /* frame bytes in the payload in flight */
+    uint8_t _probe[48] __attribute__((aligned(4)));   /* UVC 1.5 probe / commit */
+    uint8_t _payload[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
 };

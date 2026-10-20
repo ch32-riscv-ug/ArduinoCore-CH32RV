@@ -56,7 +56,35 @@ public:
     int32_t write10(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size);
     bool writable() const { return _writable; }
 
+    /* The endpoint pair, set while the descriptors are laid out. */
+    uint8_t _ep = 0;
+
+protected:
+    void usbReset() override;
+    void usbConfigured(CH32RVUsbSpeed speed) override;
+    bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
+    void usbTransferred(uint8_t address, uint16_t length) override;
+    void usbHaltCleared(uint8_t address) override;
+
 private:
+    /* Bulk-only transport: a command block, its data, a status. */
+    enum class Stage : uint8_t { Command, DataIn, DataOut, Status, Stalled, Reset };
+    void receiveCommand();
+    void command();
+    void sendData(uint16_t length);
+    void readNext();
+    void writeNext();
+    void fail(uint8_t key, uint8_t asc, uint8_t ascq);
+    void status();
+    Stage _stage = Stage::Command;
+    /* One block, or a command and its answer; a whole packet at any speed. */
+    uint8_t _buffer[CH32RV_USB_MAX_PACKET > 512 ? CH32RV_USB_MAX_PACKET : 512] __attribute__((aligned(4)));
+    uint8_t _csw[13];
+    uint8_t _cmd[16];
+    uint32_t _tag = 0, _expected = 0, _residue = 0, _lba = 0, _total = 0, _done = 0;
+    uint16_t _packet = 64, _chunk = 0;
+    bool _in = false, _failed = false;
+    uint8_t _senseKey = 0, _asc = 0, _ascq = 0;
     char _vendor[9] = CH32RV_USB_MSC_VENDOR;
     char _product[17] = CH32RV_USB_MSC_PRODUCT;
     char _revision[5] = CH32RV_USB_MSC_REVISION;
