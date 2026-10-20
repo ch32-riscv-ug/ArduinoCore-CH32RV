@@ -648,13 +648,17 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - ボード（H415 / H416 / H417、V3F 単独、共有 SRAM で実行）。
       - USBSS のデバイスのドライバ（ビルドのみ）。
     - 残り:
-      - 実機確認。書込みの経路は ch32rv が WCH-Link 経由で準備中。
+      - USBSS の実機での続き。列挙と CDC までは確認済み。
+        - EP0 の 96 バイトを超える応答が壊れる件の修正を確かめる。
+        - BOS に SuperSpeed の能力のディスクリプタがない件。
+        - SS を挿したままでは SWD が使えないので、書き込みは DFU で行う。
       - USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
-      - USBFS のドライバ。
+      - USBFS は済み（CH32RVUsbDcdUsbfsOtg）。DFU での書き換えも済み（ch32rv_flash）。
+        - DFU を Arduino の upload に組み込む（dfu-util を同梱するか、ch32rv に DFU を足すか）。
       - USBSS のホスト。
       - HSE と PLL で既定のクロックを上げること。今は HSI 25 MHz。
       - V5F を使う形（タスク周りの入れ替えと合わせて）。
-      - 工場出荷 ISP への入口。ISP は USBFS にある。
+      - 工場出荷 ISP は、電源投入時の DP=high の条件がいるので、ソフトウェアからは入れない。
   - ライブラリをボードマネージャーに同梱するか分けるか（下の「ライブラリの配布」）。
   - ベンダーの直接転送（USBHS の DMA で）。
   - **USB の外で要るスタック（ファイルシステム・IP）。タスク周りの入れ替えが終わってから取りかかる**（USB スタックの

@@ -44,8 +44,23 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbssH417.cpp`）で、SuperSpeed のホス
 - **USBHS のドライバは別に用意します。**
 - **USBFS（PA11 / PA12）は `CH32RVUsbDcdUsbfsOtg.cpp`。** V20x / V30x の USBFS と同じレジスタ配置。
   `config.controller = CH32RVUsbController::FullSpeed` で選びます。48 MHz は USBHS PLL（HSE から）÷10。
-- **工場出荷のブートローダーへの入口は未対応。** BOOT_MODE を立ててリセットすると BOOT 域には入りますが、
-  USBFS にブートローダーが現れず、BOOT_MODE も残りました（2026-10-20）。`enterBootloader()` は普通のリセットです。
+- **書き込みは DFU で行えます（プローブ不要）。** H41x はプログラムを RAM で動かすので、動いているスケッチが
+  自分の flash を書き換えられます。DFU_DETACH で DFU モード（DFU のインターフェースだけ）として出直し、
+  `dfu-util -d 1209:0001 -D <sketch>.bin` の DNLOAD を flash の先頭から書いて、最後にリセットします。
+  FS と SS のどちらでも同じです。H417 の実機で、FS 経由の書き換えと SWD での照合を確かめました（2026-10-21）。
+- **工場出荷のブートローダー（ROM の ISP）は、ソフトウェアからは入れません。**
+  - 入る条件は、電源投入時に DP（PA12）が high で DM（PA11）が low のときです（評価ボードの説明書 §5）。
+  - option byte の USER の bit6 / bit7（USBFSDLEN / USARTDLEN）が 0 だと、ISP は開きません。
+  - BOOT_MODE を立ててリセットすると BOOT 域を通りますが、そこからはそのままスケッチが 0x08000000 から起動します
+    （起動処理はこの経路でも動くようにしてあります）。
+  - `enterBootloader()` は普通のリセットです。
+- **USB 2.0 の線（USBHS）と SWD は同じピン（PB8 / PB9）です。**
+  - 評価ボードでは、USB3.0-A の D+ / D− とデバッグ用ヘッダー（P3）に直結されています。
+  - デバッグのピンを別のピンへ移す設定はありません。
+  - AFIO_PCFR1 の SW_CFG = 100b で SDI を止められますが、止めても SWD が使えなくなるだけです。
+  - USB3.0-A を PC に挿していると、ホストが D+ / D− を見て SWD を乱すため、プローブで書けません。そのため、
+    書き込みは DFU で行い、プローブは USB を外した状態での復旧用と考えます（NRST を配線すれば
+    `ch32rv --connect-under-reset` が使えます）。
 - **USBSS の PLL は HSE を基準にします。** 25 MHz の水晶を前提にしており、HSE が立たなければ
   `begin()` が失敗します。
 - **手順の出どころ:** EVT の USBSS デモと、TinyUSB PR #3779 の実測による注意点に沿っています。
