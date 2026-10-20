@@ -28,13 +28,14 @@
 4. 実ISR投稿の保護policy、producerの複数性、bufferとpoolの共有を接続する。
    単一コアIRQ禁止をコア間lockの代用にしない。型番・実clock・backendが未確認ならhostの値で埋めない。
 5. 複数timer、tick／次期限方式、時計変更とsleepの接続を比較する。
+   [論理時刻とtimer境界](../EXP-01/logical-time-result.ja.md)では端数とdomain変更・半周guardを模型で確認したが、物理の観測上限・保持・精度は確定していない。
    32 bitの半周を超える停止は、広い時計・復帰時再基準化・保証外の明示を別条件で扱う。
 6. 独立stackのport・静的容量と深さ制限付き再入を基準から分けて調べる。
    固定版・target適合・stack／制御情報を記録する。成立する場合だけX035以上で実測し、host値で代用しない。
 
 正しさが通った構成からABIの容量・初期化表・symbol・stack情報を取得する。
 実cycle、IRQ禁止時間、stack peak、実protocolには実機の証拠が必要。
-[EXP-01のclock/time入口](../EXP-01/clock-time-result.ja.md)の後続である論理時刻の伸長・不連続とI2Cの周辺準備／所有結合、EXP-04保存、
+[EXP-01の論理時刻](../EXP-01/logical-time-result.ja.md)の実source接続とI2Cの周辺準備／所有結合、EXP-04保存、
 EXP-05系列／拡張、休止・取得bufferも独立して進める。
 これはagentの並列起動を要求する意味ではない。
 公開文脈・所有・寿命の比較契約を変える必要があるときだけ高位判断へ戻す。

@@ -353,3 +353,18 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 明示的な証拠保存は`EXP04_SCAN_EVIDENCE=新しい出力先`を設定する。
 検査に使ったnative binary・入力hash・build記録を保存し、既存の出力先は上書きしない。
 [費用と条件](../../../planning/core-redesign/tasks/EXP-04/scan-result.ja.md)を参照する。
+
+## EXP-01 論理時刻の端数と不連続
+
+`logical_time.hpp`は32／64 bit sampleからの論理µs、端数、sourceと論理epoch、明示停止と再開を比較する。
+`logical_time_oracle.py`は有理数と絶対期限で参照し、timer境界・推定・overflow・失敗時の出力保持も照合する。
+物理の観測上限・周波数・sleep保持を測るものではない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_logical_time.py tests/unit/core_redesign/test_deadline_timer.py \
+  tests/unit/test_workspace.py -o junit_family=xunit1
+```
+
+検査時のnative証拠を保存する場合は`EXP01_TIME_EVIDENCE=新しい出力先`を指定する。
+[結果と必要な外部条件](../../../planning/core-redesign/tasks/EXP-01/logical-time-result.ja.md)を参照する。

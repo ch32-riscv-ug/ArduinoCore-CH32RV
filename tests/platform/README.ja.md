@@ -164,3 +164,16 @@ python3 tests/platform/core_redesign/measure_flash_scan.py \
 読出し専用の同期対照、byte予算付きreader、共有所有台帳、未使用をlinkして費用を記録する。
 媒体は仮実装で、実FlashやCoreのstartup・時間を検証しない。
 [結果と所有条件](../../planning/core-redesign/tasks/EXP-04/scan-result.ja.md)を参照する。
+
+## Core再設計：論理時刻とtimer domain
+
+```sh
+python3 tests/platform/core_redesign/measure_logical_time.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp01-logical-time
+```
+
+観測上限の宣言・推定・native64、端数、既知／不明停止、timer境界の算術候補をlinkする。
+partの宣言counter幅に合う候補だけを測り、libgccと支援関数の費用も含める。
+実source・sleep・時間・stack peakは検証しない。
+[結果・変更前後・制約](../../planning/core-redesign/tasks/EXP-01/logical-time-result.ja.md)を参照する。

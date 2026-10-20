@@ -1,5 +1,8 @@
 # EXP-01 clock切替の有限処理とSysTickの読出し
 
+後続の[論理時刻の伸長・不連続・timer境界](logical-time-result.ja.md)を別の模型として記録した。
+本単位のcounter自体に伸長・sleep補完を追加したものではない。
+
 2026-10-20。入力作成時のHEAD `6eacd3d`、検査済み試作 `fa62a49`。
 製品coreとUSB実装を変更せず、独立runtimeへclock／counterの比較入口を追加した。
 実機の周波数、精度、起動、IRQ、MMIO順序・stallは未確認。
