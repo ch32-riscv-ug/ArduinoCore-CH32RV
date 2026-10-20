@@ -94,6 +94,8 @@ P3では R/A/B/C に同じI/O backendを接続し、以下を比較する。
 低水準を直接使う変更課題では、資源の引渡しと再初期化を検査する。
 D05／D08／D12について、常設初期化・汎用request・wrapperを必要に応じて分離できるか判断する。
 起動が実機未確認ならcompile結果として残し、実runtimeの最小費用と断定しない。
+[I2C資源利用権の接続](tasks/EXP-01/i2c-resource-result.ja.md)はnative47件・ABI28構成で、open失敗の返却とend／takeまでのclock・pin保持を検査した。
+PCLKとpin準備はadapterの宣言であり、実clock／pinmux／IRQ backendの成立とは分ける。
 
 ### EXP-02 データと同期
 

@@ -111,6 +111,7 @@ python3 tests/platform/core_redesign/build_minimal_runtime.py --suite i2c-master
 
 通常作業で続ける対象は、clock／pin／bus所有の結合、ISRと完了recordの共有、旧IoSlotとの結果意味の調整、
 busyを返す基準と固定arbiter／完了枠の比較、timeoutと回復、実際の表示用途への接続である。
+[clock・pin利用権との接続](i2c-resource-result.ja.md)は直列台帳で追加検査した。実PCLK・pinmuxとIRQ共有は未接続。
 実機ではSCL／SDA、受信末尾、NACK／STOP、線を保持する相手、IRQ介入と占有時間を確認する。
 slave、DMA等も別の比較として残し、今回未実装という理由で対象外に決めない。
 [利用者向けの貸出・小分け処理課題](i2c-loan-exercise.ja.md)を追加したが、人による教育効果の評価は残る。
