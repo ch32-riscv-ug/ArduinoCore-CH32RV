@@ -648,11 +648,25 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     エンドポイントコンパニオン）とこのライブラリのディスクリプタ（SS 用、BOS の SS 能力）に手が入る。
   - ライブラリをボードマネージャーに同梱するか分けるか（下の「ライブラリの配布」）。
   - ベンダーの直接転送（USBHS の DMA で）。
-  - NCM の IP 層（lwIP など）は単独で決めない。RJ45（Ethernet MAC を持つ V307 / V208 / V407 など）や将来の
-    ほかのネットワークとどう統合するか（IP スタックを1つにして各インターフェースを載せるか、など）を全体として検討する。
+  - **USB の外で要るスタック（ファイルシステム・IP）。タスク周りの入れ替えが終わってから取りかかる**（USB スタックの
+    入れ替えと同時にはしない）。ADR-0013 は「今はまだ入れない」という扱いで、入れないと決めたものではない。
+    - ファイルシステム: MSC（デバイスの SD カード、ホストの `mscMount()`）が FAT につながらないのは不足として扱う。
+      ブロックデバイスの抽象（SD・MSC デバイス / ホスト・RAM ディスク・内蔵 Flash）の上に FS / File の API を置く形を
+      考える。実装は候補を実測して選ぶ（FatFs、FatFs の小型版、SdFat、littlefs など。ESP32 は FAT / SPIFFS /
+      LittleFS を並べて選べる形）。Flash・RAM・速度・ライセンス・長いファイル名・書き込みの安全性で比べる。
+    - IP: NCM（デバイス / ホスト）と Ethernet MAC（V307 / V208 / V407 など）を1つの IP スタックに載せる形を考える。
+      候補（lwIP、uIP、FNET ほか）を、OS 無し・協調実行で動くか、RAM（X035 は 20 KB）、ライセンスで比べる。
+      EspUsbDevice の `ipConfig()` / `dhcpServer()` / `dhcpClient()` / `beginNetwork()` / `localIP()` はこの上に作る。
   - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口。今は X035 / X033 だけ）。
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
-  - ファームウェア更新のクラス（本物の DFU、MSC での更新）は、工場出荷の ISP で書く今の方針と合わせて別に決める。
+  - ファームウェア更新のクラス（EspUsbDevice の FirmwareUpdate、MscFirmwareDisk（UF2）、DFU の Download）は優先度低。
+    使わなければ費用がかからない形なら入れてもよい。工場出荷の ISP より得があるのは、読み出し保護をかけたまま更新
+    したいとき、道具を入れずにドラッグ＆ドロップ（UF2）で更新させたいとき、署名の確かめや A/B の巻き戻しが要るとき、
+    USB 以外（ネットワークなど）から更新したいとき。下地に Flash の自己書き換えが要る。
+  - EspUsbDevice との差（2026-10-20 の洗い出し）: `onAnyControlRequest()`、記述子を取り出す API
+    （`deviceDescriptor()` / `configurationDescriptor()` / `stringDescriptor()` / `hidReportDescriptor()` ほか。
+    Info の例 3 本がこれを使う）、マウント / サスペンドのイベント、コールバックのユーザーデータ。ホストは
+    Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。
 - **USB デバイスを自作のスタックへ移す（2026-10-20 に自作と決めた。ADR-0012 の追記）。** X035 で先行し、ほかの系列の
   拡張点（`CH32RVUsbDcd.h` のドライバの表、`CH32RVUsbDevicePort.h`）と FS / HS / SS を見込んで作る。
