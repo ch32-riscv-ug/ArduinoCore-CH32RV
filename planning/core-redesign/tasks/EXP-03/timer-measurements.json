@@ -1,0 +1,416 @@
+{
+  "scope": "TIME-01/02 deadline model link-only; no hardware clock, sleep, tick or cycle proof",
+  "status": "passed",
+  "results": [
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 40,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 40,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "fbf642ad02cdc4a452c86984faefe6c526f6fa726e36ce67da32113bf87ec331"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-timer",
+      "flash_bytes": 40,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 40,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "fbf642ad02cdc4a452c86984faefe6c526f6fa726e36ce67da32113bf87ec331"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "runtime-period",
+      "flash_bytes": 482,
+      "static_ram_bytes": 44,
+      "delta_flash": 442,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 482,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "081dd07436d233fe2e76e04496d257aab05b997b81bf42a688fb39b645687059"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "oneshot",
+      "flash_bytes": 474,
+      "static_ram_bytes": 44,
+      "delta_flash": 434,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 474,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "6ce97dc80735243b08375cd4b8c42d984d6a20d30a4dfe2ef38324dd660620d9"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "period10",
+      "flash_bytes": 474,
+      "static_ram_bytes": 44,
+      "delta_flash": 434,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 474,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "84e6422d1afbe0ac2131dc18e9660df9d8a2028bd4dcde3d8d2cca9e4b4f0f99"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 40,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 40,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "95e430dec5a7bc380dca2d422809b346ac653a4a49432aacab4450d0aaf18267"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-timer",
+      "flash_bytes": 40,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 40,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "95e430dec5a7bc380dca2d422809b346ac653a4a49432aacab4450d0aaf18267"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "runtime-period",
+      "flash_bytes": 482,
+      "static_ram_bytes": 44,
+      "delta_flash": 442,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 482,
+        ".bss": 44,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "9f06b788393feacfd397e5ee86bbefa3cb34e8772d89c123e0bb77b1fa0327f5"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "oneshot",
+      "flash_bytes": 474,
+      "static_ram_bytes": 44,
+      "delta_flash": 434,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 474,
+        ".bss": 44,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "4e110c59b0bda7cdceb4d7e2a6089b40b627ac927e37d29a4e8d7a0a4378d3eb"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "period10",
+      "flash_bytes": 474,
+      "static_ram_bytes": 44,
+      "delta_flash": 434,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 474,
+        ".bss": 44,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "35a6e38da3b10bd607b14aaf63c785f5180331c20cd30ef4f6cba3d4e6ac9322"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 40,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 40,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "e6205db02a8c4f83fc560e7616ddc54a5efa290e1a15d5e79175982994f384a9"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-timer",
+      "flash_bytes": 40,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 40,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "e6205db02a8c4f83fc560e7616ddc54a5efa290e1a15d5e79175982994f384a9"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "runtime-period",
+      "flash_bytes": 282,
+      "static_ram_bytes": 44,
+      "delta_flash": 242,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 282,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0990c772266fcf31d32c67154946b1f532fafbfde2b1fae61b98ae8da4f2669d"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "oneshot",
+      "flash_bytes": 272,
+      "static_ram_bytes": 44,
+      "delta_flash": 232,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 272,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "892f4774233f4628aed3b4f1c043ca82001c3bd63d995a07a3d4ca144d0ad8df"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "period10",
+      "flash_bytes": 272,
+      "static_ram_bytes": 44,
+      "delta_flash": 232,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 272,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "8d4c958e8fee13bf37cf7c35482603f87601df7f2bd575528c93897f3b0c0371"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 40,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 40,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3fc5b7c1e71860b4af788d072a0f427b893fec440bf23d11989f69f995820c39"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-timer",
+      "flash_bytes": 40,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 40,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3fc5b7c1e71860b4af788d072a0f427b893fec440bf23d11989f69f995820c39"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "runtime-period",
+      "flash_bytes": 282,
+      "static_ram_bytes": 44,
+      "delta_flash": 242,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 282,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "2627771bd0eeeffa3bb07aa2e6af624ad3e9acfdb4c713ed03b8fb34bebfbbe9"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "oneshot",
+      "flash_bytes": 272,
+      "static_ram_bytes": 44,
+      "delta_flash": 232,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 272,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "398c744bb90951cd601e76426f79b8fb1bfd9312370d255711d831d6f379ed5f"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "period10",
+      "flash_bytes": 272,
+      "static_ram_bytes": 44,
+      "delta_flash": 232,
+      "delta_ram": 24,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 272,
+        ".bss": 44,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "d7ba7601178a5657b5d82ae9a888533053b02d7fbf5cebcc75b620a8dc755a4d"
+    }
+  ],
+  "input_hashes": {
+    "tests/platform/core_redesign/timer_entry.cpp": "0626f9f7f49711bab8db572be40aa3b9e32fd0e988ffbe72a8f32ac18d02dfb9",
+    "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+    "tests/platform/core_redesign/measure_data_parts.py": "0823cb472ce1bfd4accae06429e22926fadb8d1125db85d24f2d46e3ddd2a60b",
+    "tools/index/tools_xpack_gcc.json": "a654200c9f061204c6b3503848a442b9973f31d9c87656758368fad3b7150c7e"
+  },
+  "matrix": "timer",
+  "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+  "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+  "tool_hashes": {
+    "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+    "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+    "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+    "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+    "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+    "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+    "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+    "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+  },
+  "libraries": {
+    "rv32e": {
+      "libgcc": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f",
+      "libc": "aa7c9d68d8f56a2b2dc72e14933ef79cf8c97ef570bd23642f698032044c6802"
+    },
+    "rv32i": {
+      "libgcc": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+      "libc": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc"
+    }
+  },
+  "unused_zero": true,
+  "host": {
+    "input_hashes": {
+      "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+      "tests/unit/core_redesign/timer_driver.cpp": "3846728a42213af50dd1700c29e8c6a8ffe59446994d144bcd1783ec9ac068d8",
+      "tests/unit/core_redesign/test_deadline_timer.py": "21e121b17a6e213ecb131c837faa5eb91e633d0f88739b61fde8d4cce6bbdbef"
+    },
+    "commands": [
+      {
+        "command": [
+          "uv",
+          "run",
+          "--project",
+          "tests",
+          "--locked",
+          "pytest",
+          "-c",
+          "tests/pyproject.toml",
+          "tests/unit/core_redesign/test_deadline_timer.py",
+          "-q",
+          "-o",
+          "junit_family=xunit1",
+          "--junitxml=work/exp03-timer-host-20261020-final/junit.xml"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "/usr/bin/x86_64-linux-gnu-g++-15",
+          "--version"
+        ],
+        "returncode": 0
+      }
+    ],
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d"
+  },
+  "evidence_archive": {
+    "path": "work/exp03-timer-20261020-evidence.tar.gz",
+    "bytes": 166821,
+    "sha256": "8574c9900fce047d1231a1f0131a0e2a7b1a31b619dcdab39dfe0249467863a5"
+  }
+}

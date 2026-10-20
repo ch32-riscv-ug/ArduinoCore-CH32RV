@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EXP-02 data code/storage matrices; link-only, no hardware or cycle claims."""
+"""Core-redesign component matrices; link-only, no hardware or cycle claims."""
 import argparse
 import hashlib
 import json
@@ -70,12 +70,20 @@ def io_cases(smoke):
     return result
 
 
+def timer_cases(smoke):
+    result = [("baseline", 0, 1, 1, 0, 1), ("unused-timer", 1, 1, 1, 0, 0)]
+    if not smoke:
+        result.extend([(label, 1, 1, 1, variant, 1) for variant, label in
+                       enumerate(("runtime-period", "oneshot", "period10"))])
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
-    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io"), default="serial")
+    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
@@ -100,6 +108,11 @@ def main():
         inputs = [source, HEADER.with_name("io_lifecycle.hpp")]
         selected_cases = io_cases(args.smoke)
         report["scope"] = "IO-01/04 lease/state model link-only; no physical I/O, startup, ISR or cycle proof"
+    elif args.matrix == "timer":
+        source = Path(__file__).with_name("timer_entry.cpp")
+        inputs = [source, HEADER.with_name("deadline_timer.hpp")]
+        selected_cases = timer_cases(args.smoke)
+        report["scope"] = "TIME-01/02 deadline model link-only; no hardware clock, sleep, tick or cycle proof"
     report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")

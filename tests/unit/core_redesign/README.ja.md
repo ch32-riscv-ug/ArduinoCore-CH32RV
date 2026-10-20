@@ -127,3 +127,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix io \
 
 観測用FNVと所有検査を含むmodelの費用であり、製品driverの費用にはしない。
 結果と残作業は[準備結果](../../../planning/core-redesign/tasks/EXP-01/io-preparation.ja.md)を参照する。
+
+## EXP-03 期限model
+
+`deadline_timer.hpp` は時刻を渡して明示的に期限判定する独立試作。
+`timer_driver.cpp`／`test_deadline_timer.py` が周回、半周、周期集約、保留通知、stop／再設定を検査する。
+Python側の時計は周回しない整数を使う。tickや自動callbackは持たない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_deadline_timer.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix timer \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp03-timer-matrix
+```
+
+正常な再設定で古い通知を置換する条件も含め、意味と未検証は
+[準備結果](../../../planning/core-redesign/tasks/EXP-03/timer-preparation.ja.md)を参照する。

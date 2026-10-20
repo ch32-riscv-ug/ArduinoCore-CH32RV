@@ -5,6 +5,8 @@ EXP-01との結合やEXP-03全体を完了にしない。[全作業の状態](..
 
 2026-10-20追記：項目1の独立host契約は [I/O所有model](../EXP-01/io-preparation.ja.md)で検査した。
 物理backend・配達済み通知とendの接続・診断なし費用は残る。次はtimerと宛先mailboxへの結合。
+項目2の期限と通知保持の独立部分は[期限model](timer-preparation.ja.md)で検査した。
+時計管理・sleep・複数timer管理と実行器への結合は残る。
 
 1. EXP-01のhost I/O契約を先に固定・検査する。受理／busy／不正／未対応、終端結果のsticky保持、
    cancel受理とhardware停止の区別、成功・失敗・cancelの両順序、end後の古い通知抑止、buffer回収。

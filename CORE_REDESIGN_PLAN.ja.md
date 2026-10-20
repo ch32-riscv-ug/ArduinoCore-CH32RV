@@ -270,6 +270,7 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 | P3 | EXP-02の直列・寿命・共有単位を実施。host92＋31件、link200＋68構成、TSan4条件。[作業別状態](planning/core-redesign/execution-status.ja.md)を参照 |
 | P3の実行準備 | EXP-03の有限workをhost41件・link56構成で検査。I/Oとの結合・timer・mailbox・waitは残る |
 | P3のI/O準備 | EXP-01の所有modelをhost22件・ABI48構成で検査。実起動・物理backend・診断なし費用は残る |
+| P3の時間準備 | EXP-03の期限modelをhost20件・ABI20構成で検査。周回・周期集約・通知保持を確認。時計と実行器の結合は残る |
 | P4 | 未完了。同等機能のA〜Cと完成用途、変更課題・利用者レビューが残る |
 | P5〜P7 | 未着手。方式の採用と最終仕様はP5で扱う |
 
@@ -307,4 +308,5 @@ EXP-03への接続と残る共有条件へ進め、P4まで通常の実装・実
 [有限workの独立準備](planning/core-redesign/tasks/EXP-03/work-preparation.ja.md)を記録済み。
 次はEXP-01のI/O契約とEXP-03の残る接続を進める。
 [I/Oの所有model](planning/core-redesign/tasks/EXP-01/io-preparation.ja.md)を記録し、終端・取消・回収のhost契約を検査した。
+[期限model](planning/core-redesign/tasks/EXP-03/timer-preparation.ja.md)も記録し、次は宛先通知と実行器への結合へ進む。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。
