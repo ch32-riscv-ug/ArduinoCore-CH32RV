@@ -95,8 +95,31 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
     defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103) || \
     defined(CH32RV_SERIES_CH32M030)
 
+/* CH32V203F6P6 / G6U6 bring out only USBD, F8P6 / F8U6 only USBFS
+ * (TinyUSB-era port table, 3ab1761). */
+#if defined(CH32RV_PART_CH32V203F6P6) || defined(CH32RV_PART_CH32V203G6U6)
+#define PORT_NO_USBFS 1
+#endif
+#if defined(CH32RV_PART_CH32V203F8P6) || defined(CH32RV_PART_CH32V203F8U6)
+#define PORT_NO_USBD 1
+#endif
+
 static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
 {
+#if defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208)
+#ifndef PORT_NO_USBD
+    if (controller == CH32RVUsbController::Usbd
+#ifdef PORT_NO_USBFS
+        || controller == CH32RVUsbController::Auto
+#endif
+    ) {
+        return &ch32rv_usb_dcd_usbd;                     /* PA11 / PA12; not with CAN1 */
+    }
+#endif
+#ifdef PORT_NO_USBFS
+    return nullptr;
+#endif
+#endif
     if (controller == CH32RVUsbController::Auto || controller == CH32RVUsbController::FullSpeed) {
         return &ch32rv_usb_dcd_usbfs_otg;
     }
