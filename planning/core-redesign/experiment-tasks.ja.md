@@ -145,6 +145,8 @@ D09／D08について、公開RAWの範囲、キー方式・保証、容量指�
 表示交換、タッチ追加、独立ライブラリ接続、別系列のbackend、H417のmessage・block返却を実装する。
 [表示交換と独立renderer](tasks/EXP-05/display-result.ja.md)は4 mock形式・chunkと配置の変更、独立build、16結合構成のhost／ABIを記録した。
 実controllerのprotocol・停止／回収・物理wireと、H417等の能力確認は残る。
+[H417の一次資料と公開順序](tasks/EXP-05/h417-preparation.ja.md)は5 PDF・固定SDK21 fileを照合し、
+公開／取得／通知の3条件を有限模型で比較した。HSEMの成功判定の記述差、実可視性・DMA・resetは未解決。
 H417は単一コア、コア別owner、共有実行器を別条件にし、コアごとのstack・制御情報と共有領域を数える。
 片側停止・再起動、通知前後の可視性、cache／DMAの条件を独立に検査する。
 

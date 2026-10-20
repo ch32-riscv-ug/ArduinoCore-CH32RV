@@ -1,0 +1,437 @@
+{
+  "date": "2026-10-21",
+  "implementation_commit": "96e0e96",
+  "inputs": [
+    {
+      "path": "planning/core-redesign/h417-inputs.json",
+      "sha256": "3d3fd20f4af6c8b6473fa015ada76627c6bb4b4ee7a489dd8b077e789dcf31f6"
+    },
+    {
+      "path": "tests/platform/core_redesign/audit_h417_sources.py",
+      "sha256": "454caa4a49731462fff5a046ff91f00f3528b5ce899f3e64a708572e5a761ae1"
+    },
+    {
+      "path": "tests/unit/core_redesign/h417_publication_model.py",
+      "sha256": "c5b06701cf91668b4bb5dfe94e89accbdb1dc98c2dd2c4eb4388280ab305ce04"
+    },
+    {
+      "path": "tests/unit/core_redesign/test_h417_publication.py",
+      "sha256": "55743f4d0f2c16830b1c9baede5f9df634651cb4d67dcf504723221cbe8f5fb3"
+    },
+    {
+      "path": "tests/unit/core_redesign/test_h417_source_audit.py",
+      "sha256": "f7cd70d39b0ca3b8ea3cc8d534184118e371a9125da898b8fee78ccbbb35df47"
+    }
+  ],
+  "audit": {
+    "config_sha256": "3d3fd20f4af6c8b6473fa015ada76627c6bb4b4ee7a489dd8b077e789dcf31f6",
+    "model_sha256": "c5b06701cf91668b4bb5dfe94e89accbdb1dc98c2dd2c4eb4388280ab305ce04",
+    "verified_sources": [
+      {
+        "file": "reference-en.pdf",
+        "bytes": 9661015,
+        "sha256": "072365c32f93a5540b4e05bd86e85bbc16513a19fcbfd3ad58e8532788121917"
+      },
+      {
+        "file": "datasheet-en.pdf",
+        "bytes": 1718702,
+        "sha256": "097d8e56799f3599b07cebd0012aa2636aea0a31356e143e1321d4b9f725d61f"
+      },
+      {
+        "file": "core-v3-en.pdf",
+        "bytes": 645007,
+        "sha256": "e8cf8a3d2cf2f26427b9b03fdd4dac9913fb6135df76d9c380baf4e254a498c3"
+      },
+      {
+        "file": "core-v5-en.pdf",
+        "bytes": 567573,
+        "sha256": "0095d6edad602bc770dad1478397a826c9941ff0e665d681f0540af0f18319ea"
+      },
+      {
+        "file": "reference-zh.pdf",
+        "bytes": 8176884,
+        "sha256": "4eab3aaefc47a73c33c98ef5b9d7c5f775105352e57886524933206dc15eafd2"
+      },
+      {
+        "file": "sdk/EVT/EXAM/SRC/Core/core_riscv.h",
+        "bytes": 25422,
+        "sha256": "36f38f1b8a6994c3c27a4dab871f13b59485895bdb363f8e272accb65580dfe2"
+      },
+      {
+        "file": "sdk/EVT/EXAM/SRC/Core/core_riscv.c",
+        "bytes": 12570,
+        "sha256": "d398c9475b79b5b1e12266d74cad8d7d8c6bf571fe40ad92cb17a7e2bd725d81"
+      },
+      {
+        "file": "sdk/EVT/EXAM/SRC/Peripheral/src/ch32h417_hsem.c",
+        "bytes": 7987,
+        "sha256": "4006792b51d88b53ac290a25cd257980fdd069009ddbbb54c112eb4d3d522427"
+      },
+      {
+        "file": "sdk/EVT/EXAM/SRC/Peripheral/inc/ch32h417_hsem.h",
+        "bytes": 2414,
+        "sha256": "6ccc891209efec91424b9d74d3cff31b197f28101aff80c24dedfd5b602ccef2"
+      },
+      {
+        "file": "sdk/EVT/EXAM/SRC/Peripheral/src/ch32h417_ipc.c",
+        "bytes": 8003,
+        "sha256": "46d5940b04524bd8fc0445022a1bad8787a7639772da8eca86ba0d319e4dc8a1"
+      },
+      {
+        "file": "sdk/EVT/EXAM/SRC/Peripheral/inc/ch32h417_ipc.h",
+        "bytes": 2747,
+        "sha256": "97f3b0de33090a2cbd541bfc04d251c5e78e11b2ed97e29b2eb9f63b29415aff"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/HSEM/HSEM_DataSharing/Common/shared.h",
+        "bytes": 883,
+        "sha256": "9abe62647aaaa5f81c00124c1e0d5f3bcd202e033daedf746414848556b81180"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/HSEM/HSEM_DataSharing/V3F/User/shared.c",
+        "bytes": 879,
+        "sha256": "fb5f5c5b7dbb44fd0e5bceac406fbd1ebd920110b6073941ea52c8fb890df4e6"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/HSEM/HSEM_DataSharing/V3F/User/main.c",
+        "bytes": 1638,
+        "sha256": "7af6b22cab293429c64fd09656aca8b6d691271befdb8e018ef1209a53225baa"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/HSEM/HSEM_DataSharing/V5F/User/main.c",
+        "bytes": 1253,
+        "sha256": "9226e6a618c6631cce3bd9b5e19c8ba89f53a1dceac4a0fea599aac379e38f6d"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/HSEM/HSEM_DataSharing/Common/Ld/V3F/Link_v3f.ld",
+        "bytes": 5082,
+        "sha256": "4a100042c2694bfd65c883d1eebdd46b4e209e4a7c139faa5c495a1608c727c6"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/HSEM/HSEM_DataSharing/Common/Ld/V5F/Link_v5f.ld",
+        "bytes": 5164,
+        "sha256": "ab6003350e29b3bce2e2458241133df08797f2330caea07b62d9f8ecdb03f53c"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/IPC/IPC/V3F/User/main.c",
+        "bytes": 1490,
+        "sha256": "387a948ddc71630018b2618fe89a1dd70893cdd7df2fca45ab3f303a62af3f2d"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/IPC/IPC/V5F/User/main.c",
+        "bytes": 1245,
+        "sha256": "146590b1f2b5087ace6b8dfe8608e3e008b3647a89a8ec97b61d08d20dd7421a"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/ICache/V3F/User/main.c",
+        "bytes": 1683,
+        "sha256": "fd77a671792595366d61a9d1c2ab0c9dc9ceedcb4180f18a1807291f1c11a6d5"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/ICache/V5F/User/main.c",
+        "bytes": 1240,
+        "sha256": "9c66342f9f0e4513a0f6d93060be053e087f233dea02e68a95d4ea9940717f6a"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/HSEM/HSEM_DataSharing/Common/hardware.c",
+        "bytes": 2718,
+        "sha256": "bec047d6d985ea30511619d99a04829fb536d6f458865f5a34b433928633e06f"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/HSEM/HSEM_DataSharing/Common/hardware.h",
+        "bytes": 879,
+        "sha256": "3c13ffad1f79a63c7eb96677bce7ce5f43b330ce5f0723ae4a45a257b4e55f0f"
+      },
+      {
+        "file": "sdk/EVT/EXAM/SRC/Startup/startup_ch32h417_v3f.S",
+        "bytes": 17983,
+        "sha256": "a6482b14360d1eae7ba7346ed5ab553f578d741078c3f7b4f97c5b06f14f14c6"
+      },
+      {
+        "file": "sdk/EVT/EXAM/SRC/Startup/startup_ch32h417_v5f.S",
+        "bytes": 17590,
+        "sha256": "7b2d724b62a2c4d0211ed24835b3bc4278111a79ee5db931d34816d2765d35af"
+      },
+      {
+        "file": "sdk/EVT/EXAM/CPU/ICache/Common/hardware.c",
+        "bytes": 1693,
+        "sha256": "eb6fce1935ab9419d98ef309efad7dd8748be7532f10a8c7f64fc6202ef5de51"
+      }
+    ],
+    "visibility": [
+      {
+        "release": false,
+        "acquire": false,
+        "ordered_notify": false,
+        "orders": 2520,
+        "accepted": 1680,
+        "bad_reads": 1260,
+        "missed_once": 840,
+        "bad_witness": {
+          "order": [
+            "write_a",
+            "publish",
+            "notify",
+            "check",
+            "read_a",
+            "read_b",
+            "write_b"
+          ],
+          "accepted": true,
+          "payload": [
+            1,
+            0
+          ],
+          "bad_read": true,
+          "missed_once": false
+        },
+        "missed_witness": {
+          "order": [
+            "write_a",
+            "write_b",
+            "notify",
+            "check",
+            "publish",
+            "read_a",
+            "read_b"
+          ],
+          "accepted": false,
+          "payload": [
+            1,
+            1
+          ],
+          "bad_read": false,
+          "missed_once": true
+        }
+      },
+      {
+        "release": false,
+        "acquire": false,
+        "ordered_notify": true,
+        "orders": 840,
+        "accepted": 840,
+        "bad_reads": 630,
+        "missed_once": 0,
+        "bad_witness": {
+          "order": [
+            "write_a",
+            "publish",
+            "notify",
+            "check",
+            "read_a",
+            "read_b",
+            "write_b"
+          ],
+          "accepted": true,
+          "payload": [
+            1,
+            0
+          ],
+          "bad_read": true,
+          "missed_once": false
+        },
+        "missed_witness": null
+      },
+      {
+        "release": false,
+        "acquire": true,
+        "ordered_notify": false,
+        "orders": 420,
+        "accepted": 168,
+        "bad_reads": 72,
+        "missed_once": 252,
+        "bad_witness": {
+          "order": [
+            "write_a",
+            "publish",
+            "notify",
+            "check",
+            "read_a",
+            "read_b",
+            "write_b"
+          ],
+          "accepted": true,
+          "payload": [
+            1,
+            0
+          ],
+          "bad_read": true,
+          "missed_once": false
+        },
+        "missed_witness": {
+          "order": [
+            "write_a",
+            "write_b",
+            "notify",
+            "check",
+            "publish",
+            "read_a",
+            "read_b"
+          ],
+          "accepted": false,
+          "payload": [
+            1,
+            1
+          ],
+          "bad_read": false,
+          "missed_once": true
+        }
+      },
+      {
+        "release": false,
+        "acquire": true,
+        "ordered_notify": true,
+        "orders": 84,
+        "accepted": 84,
+        "bad_reads": 36,
+        "missed_once": 0,
+        "bad_witness": {
+          "order": [
+            "write_a",
+            "publish",
+            "notify",
+            "check",
+            "read_a",
+            "read_b",
+            "write_b"
+          ],
+          "accepted": true,
+          "payload": [
+            1,
+            0
+          ],
+          "bad_read": true,
+          "missed_once": false
+        },
+        "missed_witness": null
+      },
+      {
+        "release": true,
+        "acquire": false,
+        "ordered_notify": false,
+        "orders": 840,
+        "accepted": 336,
+        "bad_reads": 174,
+        "missed_once": 504,
+        "bad_witness": {
+          "order": [
+            "write_a",
+            "notify",
+            "read_a",
+            "read_b",
+            "write_b",
+            "publish",
+            "check"
+          ],
+          "accepted": true,
+          "payload": [
+            1,
+            0
+          ],
+          "bad_read": true,
+          "missed_once": false
+        },
+        "missed_witness": {
+          "order": [
+            "write_a",
+            "write_b",
+            "notify",
+            "check",
+            "publish",
+            "read_a",
+            "read_b"
+          ],
+          "accepted": false,
+          "payload": [
+            1,
+            1
+          ],
+          "bad_read": false,
+          "missed_once": true
+        }
+      },
+      {
+        "release": true,
+        "acquire": false,
+        "ordered_notify": true,
+        "orders": 84,
+        "accepted": 84,
+        "bad_reads": 36,
+        "missed_once": 0,
+        "bad_witness": {
+          "order": [
+            "write_a",
+            "read_a",
+            "read_b",
+            "write_b",
+            "publish",
+            "notify",
+            "check"
+          ],
+          "accepted": true,
+          "payload": [
+            1,
+            0
+          ],
+          "bad_read": true,
+          "missed_once": false
+        },
+        "missed_witness": null
+      },
+      {
+        "release": true,
+        "acquire": true,
+        "ordered_notify": false,
+        "orders": 140,
+        "accepted": 16,
+        "bad_reads": 0,
+        "missed_once": 124,
+        "bad_witness": null,
+        "missed_witness": {
+          "order": [
+            "write_a",
+            "write_b",
+            "notify",
+            "check",
+            "publish",
+            "read_a",
+            "read_b"
+          ],
+          "accepted": false,
+          "payload": [
+            1,
+            1
+          ],
+          "bad_read": false,
+          "missed_once": true
+        }
+      },
+      {
+        "release": true,
+        "acquire": true,
+        "ordered_notify": true,
+        "orders": 4,
+        "accepted": 4,
+        "bad_reads": 0,
+        "missed_once": 0,
+        "bad_witness": null,
+        "missed_witness": null
+      }
+    ],
+    "limits": "Finite declared visibility constraints; not an ISA, cache, DMA, reset or timing proof."
+  },
+  "tests": {
+    "passed": 21,
+    "publication": 10,
+    "audit": 8,
+    "workspace": 3,
+    "junit": "junit-final.xml",
+    "command": "uv run --project tests --locked pytest -c tests/pyproject.toml tests/unit/core_redesign/test_h417_publication.py tests/unit/core_redesign/test_h417_source_audit.py tests/unit/test_workspace.py -q --disable-warnings -o junit_family=xunit1 --junitxml=work/exp05-h417-research-20261021/junit-final.xml"
+  },
+  "audit_command": "python3 tests/platform/core_redesign/audit_h417_sources.py --bundle work/exp05-h417-research-20261021 --out work/exp05-h417-research-20261021/audit.json",
+  "archive": {
+    "path": "work/exp05-h417-20261021-evidence.tar.gz",
+    "bytes": 20602972,
+    "sha256": "0c43c6225ad36c1ccb9082fb5bdb8f49226430b08b797dbf108180428725b06f"
+  }
+}
