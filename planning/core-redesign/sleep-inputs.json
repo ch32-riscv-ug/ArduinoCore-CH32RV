@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "scope": "V006 document audit, abstract wake race enumeration and ideal AWU counter intervals; no MCU implementation or power measurement",
+  "protocol_backends": [
+    {"id": "irq-masked-wake-assumed", "latched": false, "masked_wake": true},
+    {"id": "irq-no-masked-wake", "latched": false, "masked_wake": false},
+    {"id": "event-latched-assumed", "latched": true, "masked_wake": false}
+  ],
+  "max_posts": 2,
+  "lsi_hz_min_nominal_max": [90000, 128000, 172000],
+  "prescalers": [[0, 1], [2, 2], [3, 4], [4, 8], [5, 16], [6, 32], [7, 64], [8, 128], [9, 256], [10, 512], [11, 1024], [12, 2048], [13, 4096], [14, 10240], [15, 61440]],
+  "maximum_windows_for_sensitivity": [62, 63],
+  "target_seconds": [1, 2, 10, 30, 60],
+  "policies": ["nearest-nominal", "counter-at-least", "counter-at-most"],
+  "sources": {
+    "reference": {"url": "https://www.wch-ic.com/download/file?id=399", "version": "1.5", "sha256": "3983a3912e4356d17a2c32d4d36b721c13b9e6cbdba01e67478af62e1f337334"},
+    "datasheet": {"url": "https://www.wch-ic.com/download/file?id=396", "version": "2.0", "sha256": "806ff03d11ebe8f522b6a10bfce20040f30f3cff6a751bd982efca788f9601f2"},
+    "core": {"url": "https://www.wch-ic.com/download/file?id=369", "version": "1.3", "sha256": "a7d0c2cd9aa4a5a7153a3aeb97c1947376e96114514fad1077f9a6d48c39e1cc"},
+    "sdk": {"repo": "https://github.com/openwch/ch32v002_004_005_006_007", "commit": "189c91b555bfb3d22e9c1f41db9b6707e7fc19ab"}
+  }
+}
