@@ -10,10 +10,10 @@
 | P2 用途対照 | PREP-01と02、K0と結合X0のhost検査、ABI link | 最小起動、I/O backend、上流のbuild専用再現 | 実IRQ共有、wire、PD、実機起動 |
 | EXP-01 最小構成・I/O | [I/O所有model](tasks/EXP-01/io-preparation.ja.md)：host22件、ABI48構成、未使用8行が0 B | 独立runtime、物理I/O backend、raw／型付き・定数／実行時入口と除去比較 | 実起動・周辺・IRQ時間 |
 | EXP-02 データと同期 | [直列単位](tasks/EXP-02/result.ja.md)と[寿命・共有単位](tasks/EXP-02/shared-result.ja.md)：host92＋31件、link200＋68構成、未使用36＋16行が0 B、TSan4条件 | 実行器への待機接続、ring／message／poolの共有条件 | 実ISR／コア間の同期と禁止時間 |
-| EXP-03 実行・通知 | [work](tasks/EXP-03/work-preparation.ja.md)・[期限](tasks/EXP-03/timer-preparation.ja.md)・[宛先とI/O結合](tasks/EXP-03/event-preparation.ja.md)・[待機policy](tasks/EXP-03/wait-result.ja.md)：host134件、ABI176構成 | X0同等用途、資源保有と待機依存、IRQ共有、完了枠／arbiter、別stack対照 | MCU時間・stack観測、採否はP5 |
+| EXP-03 実行・通知 | [work](tasks/EXP-03/work-preparation.ja.md)・[期限](tasks/EXP-03/timer-preparation.ja.md)・[宛先とI/O結合](tasks/EXP-03/event-preparation.ja.md)・[待機policy](tasks/EXP-03/wait-result.ja.md)：host134件、ABI176構成 | X0の機能除去と変更課題、資源保有と待機依存、IRQ共有、完了枠／arbiter、別stack対照 | MCU時間・stack観測、採否はP5 |
 | EXP-04 保存 | V003／X035の消去方式の資料確認 | read／program条件、媒体model、RAW／blob／key、1／2／4単位、領域・linker・設定の検査 | 実電断・停止・upload保持 |
 | EXP-05 拡張 | タッチ追加のR対照 | 表示交換・独立library・能力差・H417所有modelと資料確認 | 実cache可視性・両コア・reset |
-| EXP-06 完成用途 | [K0 R/A/B/Cと容量2変更](tasks/EXP-06/k0-result.ja.md)：host82件、ABI116構成。Rの結合X0とgolden | X0の同等用途・故障・残る変更課題、K0の物理接続 | 実通信・電流・PPS source・教材の利用者レビュー |
+| EXP-06 完成用途 | [K0 R/A/B/Cと容量2変更](tasks/EXP-06/k0-result.ja.md)：host82件、ABI116構成。[X0追加比較](tasks/EXP-06/x0-result.ja.md)：host55件、ABI116構成、同じ進行機会・故障・50Hzタッチ | X0のcompile時機能除去・残る変更課題、K0の物理接続 | 実通信・電流・PPS source・教材の利用者レビュー |
 | V006休止 | 未実施 | 保持条件の資料確認、fake timeとwake競合、休止調停の比較 | 復帰実機・静止電流 |
 | 取得buffer | 未実施 | 2 blockの所有と返却、生成量・consumer停止をmodel化 | 実ADC/DMA、欠落と時間 |
 | P4教育 | 教材案まで | 同じ課題と説明、変更差分・必要状態を比較する素材を作る | 人が予測・変更した結果のレビュー |
@@ -34,6 +34,7 @@
 - [EXP-03宛先結合](tasks/EXP-03/event-preparation.ja.md)：FIFO／集約bit、満杯でもI/O・timer保持、fan-out、配達前解除。
 - [EXP-06 K0同等比較](tasks/EXP-06/k0-result.ja.md)：同一入力のR/A/B/C、M/S/U、設定容量2の変更課題。
 - [EXP-03待機policy](tasks/EXP-03/wait-result.ja.md)：try／非同期／同期、A/B/Cとproducer進行範囲、禁止文脈・期限観測。
+- [EXP-06 X0追加比較](tasks/EXP-06/x0-result.ja.md)：R/A/B/C-static-batch。固定1宛先の追加条件を汎用Cと区別。
 
-次はX0の同等用途と資源保有・待機依存、EXP-01の残るruntime、EXP-02の残る実共有条件を進める。
+次はX0のcompile時機能除去・変更課題と資源保有・待機依存、EXP-01の残るruntime、EXP-02の残る実共有条件を進める。
 P2の実backend待ちで、pureな部品とhost契約の検査を止めない。

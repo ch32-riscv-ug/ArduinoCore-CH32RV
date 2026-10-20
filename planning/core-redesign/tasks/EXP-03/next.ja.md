@@ -14,9 +14,10 @@
 
 ## 次の通常作業
 
-1. X0に同じI/O・データ・時刻・rendererを接続してR/A/B/Cを比較する。
-   input、PD、計測、表示、touchのstorageとmetadataを数え、宛先FIFOと入力queueを二重計上しない。
-   同じ進行機会と外部入力で受理・拒否・出力・回収を照合し、候補だけに有利な処理量を与えない。
+1. [X0追加比較](../EXP-06/x0-result.ja.md)の後続として、タッチのcompile時除去と用途変更課題を比較する。
+   現結果は実行時flagで、基準にもタッチの状態とbufferが残る。
+   C-static-batchは固定1宛先であり、動的登録を持つ汎用Cと能力を揃えた比較へ読み替えない。
+   実I/Oへの接続、資源ごとのsystem／user分類、周回時計・sleepも別に検査する。
 2. 資源を保持した待機を追加する。waiterがbus／buffer／lockを保有し、producerに同じ資源が必要な条件、
    producerが未参加userである条件、callback内からの禁止された待機を検査する。
    循環待ちをtimeoutで抜けたことを成功にしない。能力の宣言と、実backendで検出できる事実を分ける。

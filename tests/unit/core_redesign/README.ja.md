@@ -200,3 +200,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix wait \
 
 link入口はpolicy単体のtoy predicateで、queue／実行器を含まない。
 timeout観測、宣言する進行能力、非同期driverの観測窓と未検証は[待機結果](../../../planning/core-redesign/tasks/EXP-03/wait-result.ja.md)を参照する。
+
+## EXP-06 X0のR/A/B/C-static-batch
+
+`x0_candidates.hpp`／`x0_driver.cpp`／`test_x0_candidates.py` はPPS・表示・計測・タッチを同じ仮想I/Oへ接続する。
+Cの追加条件は `static_mailbox.hpp` の固定1宛先・有限batchで、汎用EventExecutorとは分ける。
+P1のタッチ50回／秒を20 tick周期で検査し、旧PREP-02の50 tick周期とは区別する。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_x0_candidates.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix x0 \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp06-x0-matrix
+```
+
+テストのfixtureは各テストmodule内に置き、tests以下へconftest.pyを追加しない。
+[結果と比較の境界](../../../planning/core-redesign/tasks/EXP-06/x0-result.ja.md)を参照する。
