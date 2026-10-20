@@ -225,9 +225,14 @@ static void set_address(uint8_t a)
     USB_CONTROL = (USB_CONTROL & 0x00FFFFFFu) | ((uint32_t)a << 24);
 }
 
+/* The DMA address is written with every arm: the controller's address
+ * registers advance as packets move (TinyUSB's CH569 / H417 notes), and a
+ * configuration descriptor read once came back with its bytes from offset 96
+ * on taken from 32 bytes earlier (bench, 2026-10-20). */
 static void ep0_arm_in(uint16_t n)
 {
     UEP0_TX_CTRL = 0;
+    UEP0_TX_DMA = (uint32_t)(uintptr_t)ep0_buf;
     UEP0_TX_CTRL = EP0_TX_DPH | n | ((uint32_t)ep0_tx_seq << 16) | EP0_TX_ERDY;
     ep0_tx_seq = (uint8_t)((ep0_tx_seq + 1u) & 0x1Fu);
 }
@@ -235,6 +240,7 @@ static void ep0_arm_in(uint16_t n)
 static void ep0_arm_out(void)
 {
     UEP0_RX_CTRL = 0;
+    UEP0_RX_DMA = (uint32_t)(uintptr_t)ep0_buf;
     UEP0_RX_CTRL = EP0_RX_ERDY | EP0_RX_ACK | ((uint32_t)ep0_rx_seq << 16);
 }
 
