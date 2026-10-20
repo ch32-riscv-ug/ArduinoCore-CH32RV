@@ -57,13 +57,16 @@ static void port_set_boot_mode(void)
 #elif defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
 
 /* Auto: USBSS where the part has it (H417 / H416), else USBFS. USBHS (PB8 /
- * PB9) shares its pins with SWCLK / SWDIO and has no driver. USBFS sits on
- * PA11 / PA12, where the factory bootloader listens too. */
+ * PB9) shares its pins with SWCLK / SWDIO and takes them from the debug
+ * interface, so only an explicit HighSpeed picks it. USBFS sits on PA11 /
+ * PA12, where the factory bootloader listens too. */
 static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
 {
     switch (controller) {
     case CH32RVUsbController::FullSpeed:
         return &ch32rv_usb_dcd_usbfs_otg;
+    case CH32RVUsbController::HighSpeed:
+        return &ch32rv_usb_dcd_usbhs_h41x;
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
     case CH32RVUsbController::Auto:
     case CH32RVUsbController::SuperSpeed:
