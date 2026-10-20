@@ -17,7 +17,7 @@ ADR には、現行実装を拘束する決定と、その決定を変更する�
 | [0008](0008-upload-strategy.ja.md) | upload / discovery / monitor は `ch32rv` に一本化する |
 | [0009](0009-arduinocore-api-import.ja.md) | ArduinoCore-API 1.5.2 を固定 copy として持つ |
 | [0010](0010-pin-numbering.ja.md) | pad 名を安定した sparse pin 番号で表す |
-| [0012](0012-usb-stack.ja.md) | USB stack には TinyUSB を使う |
+| [0012](0012-usb-stack.ja.md) | USB stack には TinyUSB を使う（2026-10-20 にデバイス・ホストとも自前のスタックへ置き換え） |
 | [0013](0013-bundled-libraries.ja.md) | 同梱 library の範囲と examples の置き場所を限定する |
 
 番号 0011 と 0014 は現行 platform が依存しない tool 配布案だったため、文書から除外しました。

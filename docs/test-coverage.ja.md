@@ -131,7 +131,7 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 
 | 契約 | 実装 | 旧検証の参考（新 suite では未整備） | 不足する保証 / 必要設備 |
 |---|---|---|---|
-| TinyUSB source の固定 | あり | 現行: tests/platform/test_source_locks.py、tools/vendor/vendor_tinyusb.py | 動作保証ではない。source/patch/lock の整合のみ |
+| TinyUSB source の固定 | 撤去 | TinyUSB は 2026-10-20 に外した（USB は自前のスタック） | — |
 | Arduino USB 初期化・device API | 一部（X033/X035 の CDC・HID・MIDI・ベンダー・MSC・CCID・NCM・オーディオ・ビデオ・DFU runtime、WebUSB / MS OS 2.0。V103 / V20x / V30x はビルドのみ） | 現行: tests/instrumented/usb（X035、ホスト役は PC）。手動確認: 全 example の列挙と動作、CDC 双方向 32 KiB、`ch32rv isp flash --entry auto` での書き込み | 他系列、suspend / resume、大量転送、PC 以外のホスト役 |
 | Arduino USB host API | X035 R8T6/C8T6/G8U6/G8R6・V20x・V30x の USBFS（CH32RVUsbHost、HID・CDC・MIDI・MSC・ベンダー・CCID・ハブ） | 現行: peer/usb/host（usb-peer-host / -classes、CH32X035C8T6 と ESP32-S3 の EspUsbDevice）。F8U6 で Unsupported を実機確認。V20x / V30x はビルドのみ | V20x / V30x での実行、ハブ越し、低速デバイス、準備できない MSC |
 | CDC/HID 等の sketch USB class | 未実装 | なし | host 側 driver と device 側 class の control/data/error/復旧契約を別々に検証。対向機と role 別 profile |

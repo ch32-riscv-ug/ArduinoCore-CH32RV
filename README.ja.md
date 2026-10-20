@@ -92,6 +92,6 @@ Board Manager の配布物は allowlist 方式で作られます。正確な対�
 | path | 由来 | ライセンス |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
-| `libraries/CH32RVTinyUSB/src/` | TinyUSB の固定コピーと記録済みパッチ。revision・変更点は `vendor/tinyusb.lock.toml` | MIT |
+| `libraries/CH32RVUsbHost/src/CH32RVUsbHostCdc.cpp` の USB シリアルチップの手順 | TinyUSB の cdc_host.c（Linux のドライバ由来）を書き直したもの | MIT |
 
 固定 revision とファイル hash は `vendor/*.lock.toml` に記録し、検証ツールで一致を確認します。

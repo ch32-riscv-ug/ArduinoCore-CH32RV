@@ -13,8 +13,8 @@ and CH32V303/V305/V307/V317 (PA11/PA12). Verified on a CH32X035C8T6 against an
 ESP32-S3 (HID, CDC, MSC, MIDI, vendor, CCID); V20x / V30x are build-only. The board
 supplies VBUS. Not here: isochronous audio / video and USB networking.
 
-The host controller driver (`ch32rv_hcd_usbfs.c` in CH32RVTinyUSB) is this
-core's own: every open endpoint can have a transfer pending, NAKs are retried
+The host stack is this library's own (CH32RVUsbHost.cpp, no TinyUSB), and so
+is the host controller driver (CH32RVUsbHcdUsbfs.cpp behind CH32RVUsbHcd.h): every open endpoint can have a transfer pending, NAKs are retried
 at the next frame (interrupt endpoints at their interval), STALL / no response
 / toggle errors are told apart, control transfers give up after 5 s. See
 README.ja.md for the full description, and tests/peer/usb/host for the peer
@@ -113,8 +113,8 @@ for when a device appears. Check write return counts for partial transfers.
 serialReady/serialPortCount/getSerialPortInfo expose class state. Baud is the
 peer UART line coding, not USB bus speed.
 
-When its receive ring fills, this implementation stops draining TinyUSB's
-FIFO. Do not assume EspUsbHost's old-byte-drop policy. End-to-end losses still
+When its receive ring fills, this implementation stops taking packets (the
+device is NAKed). Do not assume EspUsbHost's old-byte-drop policy. End-to-end losses still
 depend on the peripheral/UART and how often the application reads.
 
 MIDI channel numbers are zero-based. Messages need a sound generator to
@@ -130,31 +130,22 @@ APDU command success are distinct.
 
 Exact signatures and structures are in the [public header](src/CH32RVUsbHost.h).
 
-## Compile-time limits
+## Limits
 
-Set options in the sketch's build_opt.h, for example:
-
-```text
--DCFG_TUH_ENUMERATION_BUFSIZE=512
--DCH32RV_USB_HOST_CDC_RX_BUFFER_SIZE=512
--DCFG_TUH_CDC_RX_BUFSIZE=512
-```
+Fixed counts: 5 devices (a hub and what is behind it), 2 hubs, 4 HID
+interfaces, 2 USB serial ports, 1 mass storage, 1 MIDI. Configuration
+descriptors are read up to 256 bytes. Receive buffers can be sized in the
+sketch's build_opt.h:
 
 | Define | Default | Resource |
 |---|---|---|
-| CFG_TUH_DEVICE_MAX | 4 with hubs enabled | Device slots |
-| CFG_TUH_HUB | 1 | Hub slots |
-| CFG_TUH_ENUMERATION_BUFSIZE | 256 | Enumeration buffer |
-| CFG_TUH_INTERFACE_MAX | 8 | Interfaces |
-| CFG_TUH_CDC / CFG_TUH_HID | 2 / 4 | Class instances |
-| CFG_TUH_MSC / CFG_TUH_MIDI | 1 / 1 | Class instances |
 | CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE | 128 | Stream receive ring |
-| CFG_TUH_CDC_RX_BUFSIZE / CFG_TUH_CDC_TX_BUFSIZE | 128 | TinyUSB FIFOs |
 | CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE | 256 | Vendor receive ring |
 | CH32RV_USB_HOST_CCID_BUFFER_SIZE | 272 | CCID message buffer |
+| CH32RV_USB_HOST_HID_REPORTS | 8 | Report IDs kept per HID interface |
+| CH32RV_USB_HOST_STRING_MAX | 32 | One string descriptor |
 
 Larger buffers consume more RAM. There is no runtime setRxBufferSize method.
-Increasing counts does not add an unsupported class implementation.
 
 ## Errors and EspUsbHost differences
 
@@ -163,8 +154,8 @@ failed operation: Unsupported (part/implementation), Busy (device owns the
 controller), NotStarted/NotConnected, NotSupported (function absent/not open),
 Timeout, Stalled, TransferFailed, InvalidArgument, InvalidResponse or NoMemory.
 
-This core uses TinyUSB, function-pointer callbacks and cooperative task
-processing. It does not provide ESP32 task/PHY/channel configuration,
+This core uses its own host stack, function-pointer callbacks and
+cooperative task processing. It does not provide ESP32 task/PHY/channel configuration,
 listener lists, MSC filesystem mounting, host ISO audio/video or USB
 networking. One hub level is supported. Sharing API vocabulary does not mean
 all current EspUsbHost examples and features carry over.

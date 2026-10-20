@@ -1,13 +1,12 @@
 # USB の使い方（デバイス・ホスト・PD）
 
-このコアの USB は、次の4つのライブラリで構成します。デバイスはこのコア自身のスタック、ホストは TinyUSB です（[ADR-0012](adr/0012-usb-stack.ja.md)。ホストも自前に移す予定です）。
+このコアの USB は、次の3つのライブラリで構成します。デバイスもホストもこのコア自身のスタックで、TinyUSB は使いません（[ADR-0012](adr/0012-usb-stack.ja.md)）。
 
 | ライブラリ | 役割 | スケッチから |
 |---|---|---|
 | [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/) | チップの USB をデバイスとして使う（CDC・HID・MIDI・ベンダー・MSC・CCID・ネットワーク・オーディオ・ビデオ・DFU ランタイム） | `#include <CH32RVUsbDevice.h>` |
 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/) | USB-C の PD 充電器に電圧を頼む（シンク）、PD で電圧を出す（ソース） | `#include <CH32RVUsbPd.h>` |
 | [CH32RVUsbHost](../libraries/CH32RVUsbHost/) | チップの USB をホストとして使う（HID・CDC シリアル・MIDI・MSC・ベンダー・CCID） | `#include <CH32RVUsbHost.h>` |
-| [CH32RVTinyUSB](../libraries/CH32RVTinyUSB/) | 同梱の TinyUSB 本体と設定。今はホストだけが使う（ホストコントローラのドライバはこのコアのもの） | 直接は使わない |
 
 ホストは [CH32RVUsbHost](../libraries/CH32RVUsbHost/)（`#include <CH32RVUsbHost.h>`）です（[ホスト](#ホストch32rvusbhost)）。
 
@@ -264,8 +263,9 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 
 - VBUS は基板が供給します（チップには入り切りの機能がありません）。
 - ホストとデバイスは同じコントローラを使うので、同時にはどちらか一方です（もう一方が動いていれば `Busy`）。
-- ホストコントローラのドライバは、同梱の TinyUSB の V20x 用（ビジー待ちで転送が1本ずつ）ではなく、このコアで
-  書いたもの（`ch32rv_hcd_usbfs.c`）です。開いているエンドポイントごとに転送を持ち、NAK は次のフレームで再試行します。
+- ホストのスタックとコントローラのドライバ（`CH32RVUsbHcdUsbfs.cpp`、`CH32RVUsbHcd.h` の表）はこのコアのものです。
+  開いているエンドポイントごとに転送を持ち、NAK は次のフレームで再試行します。列挙はルートポートとハブのポートを
+  ノンブロッキングの状態機械で進めます。
 - 詳しくは [CH32RVUsbHost の README](../libraries/CH32RVUsbHost/README.ja.md)。対向試験は
   [tests/peer/usb](../tests/peer/usb/README.ja.md)（ESP32-S3 がホストのときの X035 のデバイス機能も、ここで確かめています）。
 
@@ -273,7 +273,6 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 
 - **デバイスのコントローラのドライバ**: V103 の USBFS、V20x の USBFS と USBD、V30x の USBFS と USBHS（TinyUSB の
   時代の立ち上げはコミット 3ab1761）。
-- **ホストを自前のスタックに移す**（デバイスと同じ形）。
 - **残りの系列**:
   - L103 / M103、M030、V205: USB のコントローラは今の USBFS の仕組みで動きますが、ボードの既定クロックが
     8 MHz（PLL なし）で、USB を動かすには既定のクロックを上げる必要があります（方針の確認待ち）。
@@ -286,9 +285,6 @@ void loop() { while (port.available()) Serial.write(port.read()); }
   ブートローダーに入ります。ほかの系列は普通のリセットです。
 - **ホストの V20x / V30x での実機確認**: X035 は C8T6 と ESP32-S3 で確認済み。V20x / V30x（レジスタ配置が別）は
   ビルドのみ。
-- **準備できない MSC でデバイス全体が止まる**（ホスト）: TinyUSB の MSC ホストは列挙中の TEST UNIT READY を上限なく
-  繰り返すため、メディアの無いカードリーダーのような MSC をつなぐと、同じデバイスの HID や CDC もマウント
-  されない（upstream の TODO。回数か時間で打ち切る修正を入れるか検討）。
 - **ホストのアイソクロナスと USB ネットワーク**（オーディオ、ビデオ、NCM）: 今は無し。
 
 ## 既知の問題

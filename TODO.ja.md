@@ -676,10 +676,12 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     USBFS ドライバ、全クラス（CDC、HID、MIDI、ベンダー + WebUSB / MS OS 2.0、MSC、CCID、NCM、UAC1 / UAC2、UVC、
     DFU ランタイム）。CH32RVUsbDevice は TinyUSB を参照しない。ビルド時の個数・バッファの define は廃止
     （クラスごとの上限、`setBuffers()`、`setTransferType()`、`maxPacketSize()`）。
-  - 実機（X035 F8U6、ホストは ESP32-S3）: CDC の往復（1〜4096 バイト）・ボーレート・再接続・DFU → ISP → 復帰まで。
-  - 残り: usb-peer / -classes / -media / -net の実機試験、例の一括ビルドと単体試験、費用の測り直し、
-    ほかの系列のドライバ（V103、V20x の USBFS と USBD、V30x の USBFS と USBHS、第2世代 USBHS、H417 の USBSS）、
-    ホスト（CH32RVUsbHost）も自作に移して CH32RVTinyUSB を外す。
+  - 実機: X035 F8U6 で usb-peer / -classes / -media / -net、X035 C8T6 で usb-peer と usb-peer-host / -host-classes
+    （ESP32-S3 相手）が通った。例は X035 で全部ビルドが通る。費用は docs/usb.ja.md（TinyUSB 版より小さい）。
+  - ホスト（CH32RVUsbHost）も自作に移し、CH32RVTinyUSB・vendor/tinyusb.lock.toml・vendor_tinyusb.py を外した
+    （2026-10-20）。
+  - 残り: ほかの系列のデバイスのドライバ（V103、V20x の USBFS と USBD、V30x の USBFS と USBHS、第2世代 USBHS、
+    H417 の USBSS）。ホストの V20x / V30x の実機確認。
 - （経緯）**USB スタックを TinyUSB のまま拡張するか、自作するかを決める（基本は 1 つに統合する）。**
   - CherryUSB は見送りの方向（2026-10-20 の調査）。upstream 1.6.1（Apache-2.0）の WCH 向け移植は X035 / X033 に無く
     （USBFS は V20x / V30x の配置だけ）、デバイス側は割り込みの中でクラスのコールバックを呼ぶ。ホスト側は独立した
@@ -795,7 +797,7 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 
 ## ライブラリの配布
 
-CH32RVUsbDevice / CH32RVTinyUSB / CH32RVUsbPd をボードマネージャーに同梱するか、別のライブラリとして分けるかを決める。
+CH32RVUsbDevice / CH32RVUsbHost / CH32RVUsbPd をボードマネージャーに同梱するか、別のライブラリとして分けるかを決める。
 判断の目安は「CH32RV 向けのパッチや依存があるなら同梱、TinyUSB を使う他のボード（Pico など）でもそのまま使えるなら分離」。
 今の依存（同梱寄り）:
 - コアのフック（`loop()` / `delay()` からの `ch32rv_usb_task()`）、variant の生成データ（クロック許可、IRQ 番号）、

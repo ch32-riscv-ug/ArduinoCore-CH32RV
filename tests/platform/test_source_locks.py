@@ -10,7 +10,8 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 
 # A lock whose vendoring tool carries deliberate patches: the file on disk must
 # hold each patch, and with it taken out must hash to the recorded upstream file.
-PATCH_TOOLS = {"tinyusb.lock.toml": REPO / "tools" / "vendor" / "vendor_tinyusb.py"}
+# (None now: TinyUSB, the one that had them, is gone.)
+PATCH_TOOLS = {}
 
 
 def patch_tool(lock_name):
@@ -25,7 +26,6 @@ def patch_tool(lock_name):
 
 @pytest.mark.parametrize("lock_name", [
     "arduino-core-api.lock.toml",
-    "tinyusb.lock.toml",
 ])
 def test_source_inventory_and_hashes_match_lock(lock_name):
     lock = tomllib.loads((REPO / "vendor" / lock_name).read_text())

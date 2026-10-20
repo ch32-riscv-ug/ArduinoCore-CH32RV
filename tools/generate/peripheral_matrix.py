@@ -158,13 +158,13 @@ STATUS = {
     "TouchKey": ("対象外", "-", "CH32固有"),
     "PIOC (プログラマブルIO)": ("対象外", "-", "X035/V205固有"),
     "USB (FS device/host)": ("一部実装", "`CH32RVUsbDevice` / `CH32RVUsbHost`",
-                             "採用stackはTinyUSB。deviceはX035で実機確認(ホストはPCとESP32-S3)。V20xはUSBFSと"
-                             "USBD(fsdev)を実行時に選ぶ。V103/V20x/V30xはビルドのみ。hostはX035(R8T6/C8T6/G8U6/G8R6、"
-                             "F8U6などはシリコンに無い)・V20x・V30xのUSBFS(HCDは自前)。X035 C8T6でESP32-S3相手に実機確認、V20x/V30xはビルドのみ。"
+                             "stackは自前(TinyUSBは2026-10-20に撤去)。deviceはX035/X033で実機確認(ホストはPCとESP32-S3)。"
+                             "V103/V20x/V30xのdeviceドライバは作り直し中。hostはX035(R8T6/C8T6/G8U6/G8R6、"
+                             "F8U6などはシリコンに無い)・V20x・V30xのUSBFS。X035 C8T6でESP32-S3相手に実機確認、V20x/V30xはビルドのみ。"
                              "L103/M103・V205・M030はクロック方針の決定待ちで未実装。"
                              "工場ISPへの切り替えはX033/X035のみ(docs/usb.ja.md)"),
     "USB HS": ("一部実装", "`CH32RVUsbDevice`(`UsbPort::HighSpeed`)",
-               "V305/V307/V317(第1世代USBHS、HSEが要る)。ビルドのみ。V303はUSBHSが無い。"
+               "V305/V307/V317(第1世代USBHS、HSEが要る)。自前スタックのドライバは未移植。V303はUSBHSが無い。"
                "V205・V407/V467・X305/X315の第2世代USBHSは新しいドライバが要り未実装"),
     "USB SS": ("対象外", "-", "X315のみ。当面扱わない"),
     "USB PD": ("一部実装", "`CH32RVUsbPd`(library: `USBPD`、`USBPDSource`)",

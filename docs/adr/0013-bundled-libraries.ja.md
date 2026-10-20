@@ -11,6 +11,8 @@
 3. timer 等の hardware resource を core と調停する必要がある
 
 一般的な sensor、display、filesystem driver は同梱しません。
+（2026-10-20 補足: ファイルシステムと IP スタックは「今はまだ入れない」という扱いで、入れないと決めたものではない。
+USB の MSC・NCM がつながる先として、タスク周りの入れ替えのあとに検討する。TODO.ja.md の USB の項。）
 
 Arduino IDE は library 配下の examples を列挙するため、core API の examples は `libraries/CH32RV/examples/` に置きます。
 各同梱 library は README、examples、`keywords.txt` を持ち、利用条件を自身で説明します。

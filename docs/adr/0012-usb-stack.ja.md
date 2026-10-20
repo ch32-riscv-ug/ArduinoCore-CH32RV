@@ -1,6 +1,6 @@
 # ADR-0012: USB stack には TinyUSB を使う
 
-- Status: Accepted（device は 2026-10-20 の追記で自作の stack に置き換え）
+- Status: Accepted（2026-10-20 の追記で device・host とも自作の stack に置き換え、TinyUSB は撤去）
 
 ## 決定
 
@@ -49,4 +49,13 @@ device は TinyUSB をやめ、`CH32RVUsbDevice` 自身の stack（`CH32RVUsbDev
   driver が知らせる packet の上限（`maxPacketSize()`）で決めます。残る define は識別の既定の文字列と、
   合成 buffer の上限だけです（docs/usb.ja.md）。
 - 上の「upstream を共有する」理由は device については取り下げます。
+
+## 追記: host も自作の stack にし、TinyUSB を外す（2026-10-20）
+
+host（`CH32RVUsbHost`）も同じ形に移しました。controller driver は `CH32RVUsbHcd.h` の表（device の `CH32RVUsbDcd.h`
+と対）、列挙は root port と hub の port を non-blocking の状態機械で進め、class（HID、CDC と USB serial chip、MSC、
+MIDI、vendor、CCID）は通常の文脈で動きます。MSC の TEST UNIT READY は回数で打ち切ります（TinyUSB では無限に
+繰り返して他の interface の mount を止めていた）。これで `CH32RVTinyUSB`、`vendor/tinyusb.lock.toml`、
+`tools/vendor/vendor_tinyusb.py` を外しました。USB serial chip の手順は TinyUSB の `cdc_host.c`（MIT）を書き直したもので、
+出所は該当ファイルに記します。
 

@@ -1,4 +1,5 @@
-/* CH32RVUsbHost - the chip's own USB as a host, on TinyUSB (docs/usb.ja.md).
+/* CH32RVUsbHost - the chip's own USB as a host, on this library's own stack
+ * (CH32RVUsbHost.cpp, a controller driver per CH32RVUsbHcd.h; docs/usb.ja.md).
  *
  *     #include <CH32RVUsbHost.h>
  *
@@ -31,15 +32,15 @@
  * buffers and bandwidth this part does not have.
  *
  * Differences from EspUsbHost: callbacks are plain function pointers (no
- * std::function, no listener lists); there is no task to configure - TinyUSB
+ * std::function, no listener lists); there is no task to configure - the stack
  * runs from ch32rv_usb_host_task() after every loop() and inside delay(), and
  * the blocking calls below drive it while they wait. Callbacks run from there,
  * never from an interrupt, and may call the blocking API. The devices are
- * TinyUSB's addresses 1..CFG_TUH_DEVICE_MAX; CH32RV_USB_HOST_ANY_ADDRESS (the
+ * addresses 1..5 (a hub and what is behind it); CH32RV_USB_HOST_ANY_ADDRESS (the
  * default everywhere) means "the first device that has the function".
  *
  * Only what a sketch uses is linked: each function group lives in a file of its
- * own and brings its TinyUSB class driver with it.
+ * own and brings its class driver with it.
  *
  * Host and device share the controller: CH32RVUsbHost::begin() fails with
  * Busy while CH32RVUsbDevice runs, and the other way round.
@@ -553,7 +554,7 @@ public:
     }
 };
 
-/* The one host TinyUSB runs (begin() makes it current). */
+/* The one host the stack runs (begin() makes it current). */
 extern CH32RVUsbHost *ch32rv_usb_host_active;
 
 /* ------------------------------------------------------------- CDC serial */

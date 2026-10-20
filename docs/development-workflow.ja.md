@@ -9,7 +9,6 @@
 ```sh
 uv run --project tests --locked pytest
 uv run --no-project python tools/generate/sync_example_profiles.py --check
-uv run --no-project python tools/vendor/vendor_tinyusb.py --check
 ```
 
 device-data の取得・再生成確認は [生成器の手順](../tools/generate/README.ja.md)に従います。

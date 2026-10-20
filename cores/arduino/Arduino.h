@@ -17,7 +17,7 @@ using namespace arduino;
 #include "api/Common.h"
 #endif
 
-/* Background work for the USB device stack. The TinyUSB library defines it;
+/* Background work for the USB device stack. CH32RVUsbDevice defines it;
  * main() calls it after every loop() and delay() calls it while waiting. Weak,
  * so a sketch without USB carries neither the stack nor the call. */
 #ifdef __cplusplus

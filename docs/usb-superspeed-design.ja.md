@@ -2,6 +2,12 @@
 
 調査日: 2026-10-16。実装前の設計検討であり、対応済み機能を示すものではない。
 
+**2026-10-20 追記: 前提が変わった。** USB はデバイス・ホストとも TinyUSB をやめ、このコア自身のスタックにした
+（[ADR-0012](adr/0012-usb-stack.ja.md) の追記）。デバイスのコアとクラスは Full / High / SuperSpeed の記述子・
+SS の標準要求（SET_SEL、U1/U2 など）・エンドポイントコンパニオンをすでに持つので、H417 の SS は
+`CH32RVUsbDcd.h` の表に USBSS のドライバを足す形になる。下の TinyUSB の拡張・PR の採用の検討は、当時の記録として残す。
+以下で参照している `libraries/CH32RVTinyUSB/` のファイルはコミット 3ab1761 の時点のもの。
+
 対象は 5 Gbit/s の SS。10 Gbit/s 以上の SuperSpeedPlus は初期実装の対象外とする。DCD は Device Controller Driver、HCD は Host Controller Driver、BSP はボード側の初期化・接続部分を指す。
 
 ## 結論
@@ -22,7 +28,7 @@
 | 対象 | 読み取った版と状態 |
 |---|---|
 | ArduinoCore-CH32RV | `980e1ff30bd45c603e9c7e584ecb164f511306c2`。調査開始時の作業ツリーに変更なし |
-| 同梱 TinyUSB | `de4940525876259efb17f14e775312365bfdf97c`。正本は [tinyusb.lock.toml](../vendor/tinyusb.lock.toml) |
+| 同梱 TinyUSB | `de4940525876259efb17f14e775312365bfdf97c`。正本は tinyusb.lock.toml（3ab1761 時点） |
 | TinyUSB master | `ea1d867ced5259d49679f481e5d4e21a36dc11b0`。2026-10-16 取得時点で `src/` に SS の速度定義・DCD はない |
 | PR #3779 head | `35cd5e47520e84e15cd80f7a2aee1c383f9c6b9a`。Open、未マージ。API 上の変更は 141 files、うち `src/` は 28 files |
 | PR #3782 head | `a262c7b009dc84ab0ba3f43461526ce580976323`。Open、未マージ。API 上の変更は 94 files、うち `src/` は 55 files |
@@ -204,7 +210,7 @@ WCH EVT には SS/HS の列挙・転送ソースに加え `libRV3UFI.a` を使�
 
 [ADR-0012](adr/0012-usb-stack.ja.md) に従い、最終的には上流の固定 commit を共有する。評価中も commit と差分の由来を記録し、`libraries/CH32RVTinyUSB/src/` の直接編集だけで済ませない。共通 SS 差分は上流評価ブランチ側にまとめ、Arduino 固有 glue と分離する。
 
-取り込み時は [vendor_tinyusb.py](../tools/vendor/vendor_tinyusb.py) の固定 revision、既存の class-driver-table/weak-reference パッチ、追加ファイル一覧、[lock](../vendor/tinyusb.lock.toml) を整合させ、`--check` で検証する。SS 対応のために以前の upstream tree へ戻すことはしない。
+取り込み時は vendor_tinyusb.py（3ab1761 時点） の固定 revision、既存の class-driver-table/weak-reference パッチ、追加ファイル一覧、lock（同） を整合させ、`--check` で検証する。SS 対応のために以前の upstream tree へ戻すことはしない。
 
 EVT ファイルには WCH 製 MCU 向けの利用条件が記載されている。共通 SS 層は TinyUSB のライセンスで保守できる実装とし、WCH のコードや SDK を参照・取り込む際は由来と notice を保持して [vendor-policy.ja.md](vendor-policy.ja.md) に従う。EVT をそのまま他社 MCU に使える汎用コードとして移す前提にはしない。
 
@@ -254,11 +260,11 @@ USB 電気特性やリンク適合性の認証は、PC での列挙・転送試�
 - **T6**: [#3782 DCD API](https://github.com/hathach/tinyusb/blob/a262c7b009dc84ab0ba3f43461526ce580976323/src/device/dcd.h)、[共通 Device 実装](https://github.com/hathach/tinyusb/blob/a262c7b009dc84ab0ba3f43461526ce580976323/src/device/usbd.c)。
 - **T7**: [#3779 に残る課題の記録](https://github.com/hathach/tinyusb/blob/35cd5e47520e84e15cd80f7a2aee1c383f9c6b9a/docs/superpowers/todo/pr3779-wch-superspeed.md)。ベンダーの errata ではなく、PR 内の開発記録。
 - **T8**: [調査時 master の Host 実装](https://github.com/hathach/tinyusb/blob/ea1d867ced5259d49679f481e5d4e21a36dc11b0/src/host/usbh.c)。
-- **A1**: [このコアの TinyUSB 設定](../libraries/CH32RVTinyUSB/src/tusb_config.h)。
+- **A1**: [このコアの TinyUSB 設定](https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/blob/3ab1761/libraries/CH32RVTinyUSB/src/tusb_config.h)。
 - **A2**: [Device 本体](../libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.cpp)、[内部 helper](../libraries/CH32RVUsbDevice/src/CH32RVUsbDeviceInternal.h)。
 - **A3**: [BOS 生成](../libraries/CH32RVUsbDevice/src/CH32RVUsbDevicePlatform.cpp)、[独自 CCID](../libraries/CH32RVUsbDevice/src/CH32RVUsbDeviceCcid.cpp)。
 - **A4**: [Device ポート接続](../libraries/CH32RVUsbDevice/src/CH32RVUsbDevicePort.h)。
-- **A5**: [現在の USBFS HCD](../libraries/CH32RVTinyUSB/src/ch32rv_hcd_usbfs.c)。
+- **A5**: [現在の USBFS HCD](https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/blob/3ab1761/libraries/CH32RVTinyUSB/src/ch32rv_hcd_usbfs.c)。
 
 [U1]: https://www.usb.org/document-library/usb-32-revision-11-june-2022
 [W1]: ../../CH32H417/datasheet_en/CH32H417DS0.PDF
@@ -275,8 +281,8 @@ USB 電気特性やリンク適合性の認証は、PC での列挙・転送試�
 [T6]: https://github.com/hathach/tinyusb/blob/a262c7b009dc84ab0ba3f43461526ce580976323/src/device/dcd.h
 [T7]: https://github.com/hathach/tinyusb/blob/35cd5e47520e84e15cd80f7a2aee1c383f9c6b9a/docs/superpowers/todo/pr3779-wch-superspeed.md
 [T8]: https://github.com/hathach/tinyusb/blob/ea1d867ced5259d49679f481e5d4e21a36dc11b0/src/host/usbh.c
-[A1]: ../libraries/CH32RVTinyUSB/src/tusb_config.h
+[A1]: https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/blob/3ab1761/libraries/CH32RVTinyUSB/src/tusb_config.h
 [A2]: ../libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.cpp
 [A3]: ../libraries/CH32RVUsbDevice/src/CH32RVUsbDevicePlatform.cpp
 [A4]: ../libraries/CH32RVUsbDevice/src/CH32RVUsbDevicePort.h
-[A5]: ../libraries/CH32RVTinyUSB/src/ch32rv_hcd_usbfs.c
+[A5]: https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/blob/3ab1761/libraries/CH32RVTinyUSB/src/ch32rv_hcd_usbfs.c

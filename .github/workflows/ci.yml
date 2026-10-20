@@ -42,8 +42,6 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Compare ArduinoCore-API with the pinned upstream commit
         run: uv run --no-project python tools/vendor/check_api_sync.py "${{ runner.temp }}/api-sync"
-      - name: Check TinyUSB source lock
-        run: uv run --no-project python tools/vendor/vendor_tinyusb.py --check
 
   install-test:
     name: Package install (${{ matrix.os }})

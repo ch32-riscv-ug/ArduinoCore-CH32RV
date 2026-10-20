@@ -16,7 +16,7 @@ A CDC-ACM, FTDI, CP210x, CH34x or PL2303 device, powered host wiring and a 11520
 
 ## Settings and limits
 
-Serial is the log UART; port is the hosted USB serial stream. begin(115200) stores settings before connection. The first matching port is selected unless setAddress/setPort pins it. There is no runtime setRxBufferSize: configure CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE (default 128 bytes) and TinyUSB FIFO options at build time. Handle partial write results when adapting this byte bridge to bulk traffic.
+Serial is the log UART; port is the hosted USB serial stream. begin(115200) stores settings before connection. The first matching port is selected unless setAddress/setPort pins it. There is no runtime setRxBufferSize: configure CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE (default 128 bytes) at build time. Handle partial write results when adapting this byte bridge to bulk traffic.
 
 ## Related documentation
 

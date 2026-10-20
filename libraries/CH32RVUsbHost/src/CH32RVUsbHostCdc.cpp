@@ -4,7 +4,7 @@
  * The chips' requests, baud rate encodings and start-up sequences follow
  * TinyUSB's cdc_host.c (MIT; Ha Thach, Heiko Kuester and contributors), which
  * took them from the Linux kernel drivers; here they run as blocking control
- * transfers from the task. */
+ * transfers from the task. TinyUSB's license: ../LICENSE.tinyusb. */
 #include "CH32RVUsbHostInternal.h"
 
 #include <string.h>

@@ -62,7 +62,7 @@ X035 のどの型番がホストを持つかはデータシートの型番表の
 ## EspUsbHost との違い
 
 - コールバックは関数ポインタです（`std::function` もリスナーの複数登録もありません）。RAM が 20 KB のため。
-- タスクの設定はありません。TinyUSB は `loop()` の後と `delay()` の中で動き、待つ API はその間スタックを回します。
+- タスクの設定はありません。スタックは `loop()` の後と `delay()` の中で動き、待つ API はその間スタックを回します。
   コールバックは割り込みからではなくそこから呼ばれ、待つ API を呼んでもかまいません。
 - アイソクロナス（オーディオ・ビデオ）と USB ネットワークはありません。帯域とバッファがこのチップには足りません。
 - MSC はブロック単位だけです（`mscMount` / `EspUsbHostMscFS` に当たるものはありません）。
@@ -136,7 +136,7 @@ callback 形式なら `onSerialData()` / `sendSerial()`、状態は `serialReady
 `getSerialPortInfo()` で確認します。USB の baud 設定は対向 UART の line coding で、FS バスの速度とは別です。
 大量転送では `write()` の戻り値を確認して再送位置を進めます。
 
-受信リングが埋まるとこの実装は TinyUSB FIFO からの取り出しを止めます。Esp 側の「古いデータを捨てる」説明を
+受信リングが埋まると、この実装は次のパケットを受け取りません（機器は NAK で待ちます）。Esp 側の「古いデータを捨てる」説明を
 そのまま適用しないでください。最終的な損失の有無は対向機器・UART・読み出し頻度にも依存します。
 
 ### MIDI
@@ -163,30 +163,20 @@ SW の2 bytesも収まるよう確保します。通信成功と `SW=9000` の�
 
 ## 容量の設定と失敗の確認
 
-スケッチと同じディレクトリに `build_opt.h` を置きます。次は大きな descriptor と CDC 受信に合わせる例です。
+持てる数は決まっています: デバイス 5（ハブとその先）、ハブ 2、HID インタフェース 4、USB シリアル 2 ポート、
+MSC 1、MIDI 1。構成記述子は 256 バイトまで読みます（その先のインタフェースは割り当てません）。
 
-```text
--DCFG_TUH_ENUMERATION_BUFSIZE=512
--DCH32RV_USB_HOST_CDC_RX_BUFFER_SIZE=512
--DCFG_TUH_CDC_RX_BUFSIZE=512
-```
+受信バッファの大きさだけは、スケッチと同じディレクトリの `build_opt.h` で変えられます。
 
 | define | 既定 | 対象 |
 |---|---|---|
-| `CFG_TUH_DEVICE_MAX` | 4（hub有効時） | Device の管理数 |
-| `CFG_TUH_HUB` | 1 | hub の管理数 |
-| `CFG_TUH_ENUMERATION_BUFSIZE` | 256 | 列挙用 buffer |
-| `CFG_TUH_INTERFACE_MAX` | 8 | interface 管理 |
-| `CFG_TUH_CDC` | 2 | CDC/対応VCP instance |
-| `CFG_TUH_HID` | 4 | HID instance |
-| `CFG_TUH_MSC` / `CFG_TUH_MIDI` | 1 | MSC / MIDI instance |
-| `CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE` | 128 | wrapper の受信リング |
-| `CFG_TUH_CDC_RX_BUFSIZE` / `CFG_TUH_CDC_TX_BUFSIZE` | 128 | TinyUSB CDC FIFO |
-| `CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE` | 256 | Vendor 受信リング |
-| `CH32RV_USB_HOST_CCID_BUFFER_SIZE` | 272 | CCID message buffer |
+| `CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE` | 128 | USB シリアル（Stream）の受信リング |
+| `CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE` | 256 | ベンダーの受信リング |
+| `CH32RV_USB_HOST_CCID_BUFFER_SIZE` | 272 | CCID のメッセージ |
+| `CH32RV_USB_HOST_HID_REPORTS` | 8 | HID インタフェースごとに覚えるレポート ID |
+| `CH32RV_USB_HOST_STRING_MAX` | 32 | 文字列記述子1つ（終端込み） |
 
-容量を増やすと使用 RAM も増えます。どの define がどの buffer に作用するかを確認し、使用しないクラスの数を
-増やすだけで実際の機能が追加されるとは考えないでください。
+容量を増やすと使用 RAM も増えます。
 
 | エラー | 意味 |
 |---|---|
@@ -214,9 +204,10 @@ SW の2 bytesも収まるよう確保します。通信成功と `SW=9000` の�
 
 ## 中身
 
-- TinyUSB のホストスタックを使います（[CH32RVTinyUSB](../CH32RVTinyUSB/)）。ホストコントローラのドライバ
-  （`ch32rv_hcd_usbfs.c`）はこのコアで書いたもので、開いているエンドポイントごとに転送を持ち、1 本しかない
+- ホストスタックはこのライブラリ自身のものです（`CH32RVUsbHost.cpp`。TinyUSB は使いません）。割り込みは転送の
+  完了とポートの変化を記録するだけで、制御転送の段階・列挙（ルートポートとハブ）・クラスの処理は通常の文脈で
+  動きます。ホストコントローラのドライバ（`CH32RVUsbHcdUsbfs.cpp`、`CH32RVUsbHcd.h` の表）は、開いているエンドポイントごとに転送を持ち、1 本しかない
   トランザクションエンジンで順に流します。NAK は次のフレーム（インタラプトは bInterval ごと）で再試行し、STALL・
   無応答・トグル違いを区別します。制御転送は 5 秒（USB 仕様の上限）で打ち切ります。
-- スケッチが使う機能のファイルだけがリンクされ、TinyUSB のクラスドライバもそれと一緒に入ります。
+- スケッチが使う機能のファイルだけがリンクされます（ハブはいつも入ります）。
 - デバイス（CH32RVUsbDevice）とは同じコントローラを使うので、同時にはどちらか一方です（もう一方が動いていれば `Busy`）。

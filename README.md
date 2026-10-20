@@ -93,6 +93,6 @@ Third-party material retains its own license.
 | path | origin | license |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
-| `libraries/CH32RVTinyUSB/src/` | pinned TinyUSB snapshot and recorded patches; see `vendor/tinyusb.lock.toml` for revision and changes | MIT |
+| USB serial chip sequences in `libraries/CH32RVUsbHost/src/CH32RVUsbHostCdc.cpp` | rewritten from TinyUSB's cdc_host.c (after the Linux drivers) | MIT |
 
 Pinned revisions and file hashes are recorded in `vendor/*.lock.toml` and checked by the vendor tools.
