@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-20",
+  "scope": "geometry and conservative media/partition experiment; no hardware driver or selected product storage format",
+  "targets": [
+    {
+      "part": "CH32V003F4P6",
+      "flash_bytes": 16384,
+      "physical_origin": 134217728,
+      "link_origin": 0,
+      "ram_bytes": 2048,
+      "march": "rv32ec_zicsr",
+      "abi": "ilp32e",
+      "read_unit": 1,
+      "modes": {
+        "fast": {
+          "program_unit": 64,
+          "erase_unit": 64,
+          "buffer_load_unit": 4,
+          "reference_section": "16.4.6-7"
+        },
+        "fast-erase-1k": {
+          "program_unit": 64,
+          "erase_unit": 1024,
+          "buffer_load_unit": 4,
+          "reference_section": "16.2.1,16.4.4,16.4.6"
+        },
+        "standard": {
+          "program_unit": 2,
+          "erase_unit": 1024,
+          "buffer_load_unit": 2,
+          "reference_section": "16.4.3-4"
+        }
+      }
+    },
+    {
+      "part": "CH32X035C8T6",
+      "flash_bytes": 63488,
+      "physical_origin": 134217728,
+      "link_origin": 0,
+      "ram_bytes": 20480,
+      "march": "rv32imac_zicsr",
+      "abi": "ilp32",
+      "read_unit": 1,
+      "modes": {
+        "fast": {
+          "program_unit": 256,
+          "erase_unit": 256,
+          "buffer_load_unit": 4,
+          "reference_section": "20.4.5-6"
+        },
+        "fast-erase-1k": {
+          "program_unit": 256,
+          "erase_unit": 1024,
+          "buffer_load_unit": 4,
+          "reference_section": "20.2.1,20.4.3,20.4.5"
+        }
+      }
+    }
+  ],
+  "sources": [
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/datasheet_en/CH32V003DS0.PDF",
+      "file": "CH32V003DS0.PDF",
+      "bytes": 723483,
+      "sha256": "186210d35123325ea49305e3a0152cbfa6e377d8e6efc2e610e3497daabe17f8"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/datasheet_en/CH32V003RM.PDF",
+      "file": "CH32V003RM.PDF",
+      "bytes": 2472575,
+      "sha256": "2758a463045dc6e9ec36600a76317d7c5e75ffd421b5a44d8f58a060e6f271ff"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/datasheet_en/CH32X035DS0.PDF",
+      "file": "CH32X035DS0.PDF",
+      "bytes": 815038,
+      "sha256": "1714c07d9448bc87ec667a602eba3e4c784a6ca7ca25ef125445df0ee4cc755d"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/datasheet_en/CH32X035RM.PDF",
+      "file": "CH32X035RM.PDF",
+      "bytes": 2568824,
+      "sha256": "c5dc49eb6a0086857bc120cf4c1646fa8530006fe5a21e7bbb632a075daf036a"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Peripheral/src/ch32v00x_flash.c",
+      "file": "CH32V003-flash.c",
+      "bytes": 31459,
+      "sha256": "f18bae19ac0a58cd9e84f33282547177ef314687894e305c62311a0791234ff4"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Peripheral/src/ch32x035_flash.c",
+      "file": "CH32X035-flash.c",
+      "bytes": 30063,
+      "sha256": "5053f00fb6ec4bd792634b60770e2a66190ed8283d8e5968e2183302de70603a"
+    }
+  ],
+  "model": {
+    "reprogram": "at most one attempt per program unit after completed erase; conservative experiment restriction, hardware allowance not established",
+    "interruption": "selected bit subsets only; actual affected locations/voltages and recoverability not established",
+    "read_alignment": "byte read chosen from RM 8/16/32-bit memory access",
+    "critical_conditions": "HSI on; physical ownership, IRQ/CPU stalls, timing, endurance, upload effects pending"
+  },
+  "unresolved": [
+    "Reprogram eligibility and partial programming rules",
+    "Physical power-cut effects and locality",
+    "CPU/IRQ/DMA access during flash operations",
+    "Timing/endurance/power constraints for each part",
+    "X035 standard programming: not assumed from SDK function names; RM fast path used"
+  ]
+}
