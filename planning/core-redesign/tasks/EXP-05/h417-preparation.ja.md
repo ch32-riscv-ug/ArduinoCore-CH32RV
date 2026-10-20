@@ -76,6 +76,9 @@ conftest.pyは追加していない。ABI・Flash／RAM・実CPU時間は今回�
 
 ## 次に作る比較と実機への入口
 
+[所有・回復の直列比較](h417-ownership-result.ja.md)で下記1の所有部分を先行検査した。
+shared-accessの権限比較を共有実行器と同一視せず、実行器・並列同期・実layoutと実機の作業を残す。
+
 1. 既定用途の16 byte message×4枠と64 byte block×2個について、単一コア、コア別owner、共有実行器を同じ入力で比較する。所有・回収・満杯・通知集約・古いticketを記録し、共有方式を採用済みにしない。
 2. 両imageの共有領域・通常RAM・stackをlink結果で照合する。起動前の共有初期化担当、開始handshake、世代の確定時点、再起動時のNOLOAD状態を明示する。
 3. 公開／取得／再利用の境界をbackendへ分け、生成命令・配置・alignmentを確認する。HSEM／AMO／IPCとSRAM／MMIOの組合せで必要な順序を実機確認する。汎用fence設定を先に決めない。

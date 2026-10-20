@@ -147,6 +147,8 @@ D09／D08について、公開RAWの範囲、キー方式・保証、容量指�
 実controllerのprotocol・停止／回収・物理wireと、H417等の能力確認は残る。
 [H417の一次資料と公開順序](tasks/EXP-05/h417-preparation.ja.md)は5 PDF・固定SDK21 fileを照合し、
 公開／取得／通知の3条件を有限模型で比較した。HSEMの成功判定の記述差、実可視性・DMA・resetは未解決。
+[所有・回復の直列比較](tasks/EXP-05/h417-ownership-result.ja.md)はmessage16 B×4とblock64 B×2をsingle／fixed／shared-accessへ接続し、
+native79件・ABI32構成で検査した。shared-accessは所有権限の比較であり、共有実行器は別途必要。
 H417は単一コア、コア別owner、共有実行器を別条件にし、コアごとのstack・制御情報と共有領域を数える。
 片側停止・再起動、通知前後の可視性、cache／DMAの条件を独立に検査する。
 
