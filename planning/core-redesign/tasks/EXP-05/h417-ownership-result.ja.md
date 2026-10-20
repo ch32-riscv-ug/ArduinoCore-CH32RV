@@ -110,5 +110,6 @@ source snapshot、compilerとbinaryのhash、79 full trace、ELF／map／disasm�
 同名出力先は再利用せず、hashとbyte数は測定JSONを参照する。
 
 残るP4作業は、message／blockを独立利用した場合の依存除去、実行器への接続、固定ownerと共有実行器の比較、
-両imageの共有layoutと起動handshake、hostの実thread同期、H417 backendと生成命令、実可視性・DMA・片側reset。
+両imageの共有layoutと起動handshake、H417 backendと生成命令、実可視性・DMA・片側reset。
+[hostの実thread同期](h417-thread-result.ja.md)は追加検査済み。所有headerとABI入力は変更していない。
 [教材](h417-ownership-exercise.ja.md)は準備したが、人による実施は未確認。
