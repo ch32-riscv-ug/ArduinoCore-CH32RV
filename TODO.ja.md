@@ -673,8 +673,21 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       （どちらも S3 側の上限の範囲。S3 は 64 バイトごとに 1 ms 待つ）。
     - 未確認: PC（Windows / macOS / Linux）での列挙（F8U6 の USB は S3 につないでいる）、サスペンド・
       レジューム、リモートウェイクアップ、通知 EP の送信、複数のクラスの組み合わせ、DFU ランタイム・MS OS 2.0。
-  - 次: PC ホストでの列挙、複合デバイス（CDC + HID など）での大きさ、コアの再設計の I/O 契約に載せた形、
-    第 2 世代 USBHS / USBSS の扱い（どちらにしても自作のドライバが要る）を見て決める。
+  - **複合デバイスの試作（2026-10-20、work/minusb/MinUsbComposite）**: 汎用のコア（EP0・標準要求・クラス / vendor
+    要求をインターフェースの持ち主へ・EP の送受信、完了は通常の文脈で関数へ）と X035 のドライバ（EP1〜3・5〜7、
+    IN / OUT とも。EP4 は EP0 と共有なので使わない）、クラス 5 つ（CDC、ベンダー HID（レポート ID 6、
+    CH32RVUsbDeviceHidVendor と同じ）、MIDI、vendor のバルク + 要求 0x10、DFU ランタイム）。構成は実行時に組み、
+    `end()` → `begin()` で入れ替えられる。
+    - 実機（ホストは ESP32-S3 の EspUsbHost）: X035 F8U6（P4 の OEP）と X035 C8T6（WCH-LinkE）の両方で、
+      列挙（6 インターフェース）・CDC の往復と 4000 バイト・ラインコーディング・ベンダー HID の往復・MIDI の往復・
+      再接続・構成の入れ替え（vendor のバルクと要求）・DFU_DETACH → 工場 ISP（1a86 / 4348:55e0）→ 自動で復帰が
+      すべて通った。F8U6 で再接続 20 回（毎回 CDC の往復）と 4000 バイトの往復 10 回も失敗なし。
+    - 大きさ（CDC + ベンダー HID + MIDI + DFU ランタイム、USB 無しのスケッチとの差）: 自作 Flash +7.9 KB /
+      RAM +2.5 KB、TinyUSB + CH32RVUsbDevice Flash +21.0 KB / RAM +5.1 KB（TinyUSB 版は WebUSB / MS OS 2.0 の
+      記述子 約 1.6 KB を含む。自作版の RAM は使わない EP の分まで取った EP バッファ 約 0.6 KB を含む）。
+  - 残る確認: PC ホスト（Windows / macOS / Linux）での列挙（今の配線では不可）、MSC・CCID・NCM・オーディオ・
+    ビデオ・WebUSB / MS OS 2.0（BOS）・サスペンド / レジューム・リモートウェイクアップ、ほかの系列のドライバ
+    （V103、V20x の USBFS と USBD、V30x の USBFS と USBHS）、ホスト側（CH32RVUsbHost）の扱い。
 - **UIAPduino のソフトウェア USB（rv003usb）をアプリモードでも動かす**。今はブートローダー（1209:b003）だけで使っている。
   rv003usb をそのまま持ってくるか、同じような処理を自作するかから検討する（ライセンス、CH32RVUsbDevice と同じ API に
   載せられるか、V003 の Flash 16 KB / RAM 2 KB に収まるか）。
