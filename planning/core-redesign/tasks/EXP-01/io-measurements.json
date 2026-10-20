@@ -1,0 +1,893 @@
+{
+  "scope": "IO-01/04 lease/state model link-only; no physical I/O, startup, ISR or cycle proof",
+  "status": "passed",
+  "results": [
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "06271522d163706693fc8a7fbf657b018c4f999e52282a01fff510aff6de4c4c"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-buffer",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "06271522d163706693fc8a7fbf657b018c4f999e52282a01fff510aff6de4c4c"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-slot",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "06271522d163706693fc8a7fbf657b018c4f999e52282a01fff510aff6de4c4c"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "buffer-8",
+      "flash_bytes": 96,
+      "static_ram_bytes": 52,
+      "delta_flash": 66,
+      "delta_ram": 12,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 96,
+        ".bss": 52,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "d2b0cb9626590b24fa05939fc268e5e6094a9a4222df59fc08e23d72e1592fb5"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "slot-8",
+      "flash_bytes": 976,
+      "static_ram_bytes": 84,
+      "delta_flash": 946,
+      "delta_ram": 44,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 976,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "cb7ad76e36e4f410072c78ac34bdd4ac44cbb006b8589325dcd147b41ccfc972"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "two-slots-8",
+      "flash_bytes": 1088,
+      "static_ram_bytes": 128,
+      "delta_flash": 1058,
+      "delta_ram": 88,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1088,
+        ".bss": 128,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "d70d02ea5c08600f4a3dd0a2c49beb2f760b1aafdd03b81693eb1fa884e7e5f6"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "buffer-32",
+      "flash_bytes": 96,
+      "static_ram_bytes": 76,
+      "delta_flash": 66,
+      "delta_ram": 36,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 96,
+        ".bss": 76,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "bee6e79c0d83aa71bd34ca576b9ee200092c246a6e285a5dc30168547baacc01"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "slot-32",
+      "flash_bytes": 976,
+      "static_ram_bytes": 108,
+      "delta_flash": 946,
+      "delta_ram": 68,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 976,
+        ".bss": 108,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34f939ddc39c74351828f93cbcfffdf946d2fbcd6236f2da0b2cef65d85cc1fb"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "two-slots-32",
+      "flash_bytes": 1092,
+      "static_ram_bytes": 176,
+      "delta_flash": 1062,
+      "delta_ram": 136,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1092,
+        ".bss": 176,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "f9b717597a7a11c10b62b8716f5bed47028a6fc1d0218bf4cfde98c981b70153"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "buffer-128",
+      "flash_bytes": 100,
+      "static_ram_bytes": 172,
+      "delta_flash": 70,
+      "delta_ram": 132,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 100,
+        ".bss": 172,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "2cc4ab0c96c0ab4b00a2787cc0a00298f84d2b55b3fdd0dec457b07cf96b30d7"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "slot-128",
+      "flash_bytes": 988,
+      "static_ram_bytes": 204,
+      "delta_flash": 958,
+      "delta_ram": 164,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 988,
+        ".bss": 204,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "9469ad7f9725b287d4602f3ff0d5593a5b332cf0816e11a1d312efe971a71ad8"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "two-slots-128",
+      "flash_bytes": 1076,
+      "static_ram_bytes": 368,
+      "delta_flash": 1046,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1076,
+        ".bss": 368,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "9bb7e693baa2ef9ffd1c58a1ea673c8aa39f33d04c4f46d5d680a588a328961e"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "2920a040a43e6b869ca6fdb7bb0078d8b56581a9b79c82b207a16708de1e06ad"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-buffer",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "2920a040a43e6b869ca6fdb7bb0078d8b56581a9b79c82b207a16708de1e06ad"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-slot",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "2920a040a43e6b869ca6fdb7bb0078d8b56581a9b79c82b207a16708de1e06ad"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "buffer-8",
+      "flash_bytes": 96,
+      "static_ram_bytes": 52,
+      "delta_flash": 66,
+      "delta_ram": 12,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 96,
+        ".bss": 52,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "80d5b514b6b8c1c2e8346d0390a7ee5ca9491c24aa918aa85d5d71457b59735a"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "slot-8",
+      "flash_bytes": 968,
+      "static_ram_bytes": 84,
+      "delta_flash": 938,
+      "delta_ram": 44,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 968,
+        ".bss": 84,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "f561126d245d2079fbf1e86e280dcfc35028106b4eb7363dfbb32bf06f27fdd8"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "two-slots-8",
+      "flash_bytes": 1088,
+      "static_ram_bytes": 128,
+      "delta_flash": 1058,
+      "delta_ram": 88,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1088,
+        ".bss": 128,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "5bc7cb57a5549a6546058bdf7a816311cc958c8448895b82e4e101c529295349"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "buffer-32",
+      "flash_bytes": 96,
+      "static_ram_bytes": 76,
+      "delta_flash": 66,
+      "delta_ram": 36,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 96,
+        ".bss": 76,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "4ba8c06cb82bdce83f4a0afbce65ccf55c12758ba2d8424fe2578472e57a5781"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "slot-32",
+      "flash_bytes": 968,
+      "static_ram_bytes": 108,
+      "delta_flash": 938,
+      "delta_ram": 68,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 968,
+        ".bss": 108,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "5a80bcb7971311373924f0672d66e570376f87b44c073122c7245437eadee8d1"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "two-slots-32",
+      "flash_bytes": 1088,
+      "static_ram_bytes": 176,
+      "delta_flash": 1058,
+      "delta_ram": 136,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1088,
+        ".bss": 176,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "7b2b2fa540d1542c5bda31ececc4c7f9077e31bbf366beb5d2d6ac787b632841"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "buffer-128",
+      "flash_bytes": 100,
+      "static_ram_bytes": 172,
+      "delta_flash": 70,
+      "delta_ram": 132,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 100,
+        ".bss": 172,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "776eafe1d71a113b446f6b551cee872c2371d719f72d658461ec0dfefce39feb"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "slot-128",
+      "flash_bytes": 980,
+      "static_ram_bytes": 204,
+      "delta_flash": 950,
+      "delta_ram": 164,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 980,
+        ".bss": 204,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "6b4f22a2b946062113226b2d79c996367a44b9879186ced72ffdad51bacf6164"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "two-slots-128",
+      "flash_bytes": 1072,
+      "static_ram_bytes": 368,
+      "delta_flash": 1042,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1072,
+        ".bss": 368,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "7ba09005c54c1a1054d288f0f2d24a52678343e6b4d063a6ded81997ca723e8a"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "531cddfef6971939d49e715d66ff241171145f9e5dd7c9eaf312ea1860e617dd"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-buffer",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "531cddfef6971939d49e715d66ff241171145f9e5dd7c9eaf312ea1860e617dd"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-slot",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "531cddfef6971939d49e715d66ff241171145f9e5dd7c9eaf312ea1860e617dd"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "buffer-8",
+      "flash_bytes": 94,
+      "static_ram_bytes": 52,
+      "delta_flash": 64,
+      "delta_ram": 12,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 94,
+        ".bss": 52,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "5ebbe134daea40ab79381a45577f81e61c4a32658e62afe8ea5a9e7133d54253"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "slot-8",
+      "flash_bytes": 764,
+      "static_ram_bytes": 84,
+      "delta_flash": 734,
+      "delta_ram": 44,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 764,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "23c601563d410409d365f56f4cc857befa0c8ddfc3df421a894a099464772a2c"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "two-slots-8",
+      "flash_bytes": 864,
+      "static_ram_bytes": 128,
+      "delta_flash": 834,
+      "delta_ram": 88,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 864,
+        ".bss": 128,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3038790e4a1972c71456ebe429625ac58efc70400ebbdfee7d1d1910f22fa1ca"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "buffer-32",
+      "flash_bytes": 94,
+      "static_ram_bytes": 76,
+      "delta_flash": 64,
+      "delta_ram": 36,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 94,
+        ".bss": 76,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "b601c5c70384a3a3d8b59fdcc2f10bb128e4bf0c5dde6fe10004cfaef10f6d4e"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "slot-32",
+      "flash_bytes": 764,
+      "static_ram_bytes": 108,
+      "delta_flash": 734,
+      "delta_ram": 68,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 764,
+        ".bss": 108,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "4111931bff66abd03fe3823035a388673d62bdbb4e95d9ea8546421fb236c3f7"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "two-slots-32",
+      "flash_bytes": 868,
+      "static_ram_bytes": 176,
+      "delta_flash": 838,
+      "delta_ram": 136,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 868,
+        ".bss": 176,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "35147366a71a3cac9c606cbc0810aa42f0334677387bbcfd128dde98d733a6af"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "buffer-128",
+      "flash_bytes": 98,
+      "static_ram_bytes": 172,
+      "delta_flash": 68,
+      "delta_ram": 132,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 98,
+        ".bss": 172,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "578d717eec779a756a168cfecfc60a12171037058e00262d8ca28d887256435c"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "slot-128",
+      "flash_bytes": 756,
+      "static_ram_bytes": 204,
+      "delta_flash": 726,
+      "delta_ram": 164,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 756,
+        ".bss": 204,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "e0570945b090eb1122b3345b0e88effda38f2d676638ea9ba19dabf75f97bf89"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "two-slots-128",
+      "flash_bytes": 868,
+      "static_ram_bytes": 368,
+      "delta_flash": 838,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 868,
+        ".bss": 368,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "d5e0dc407abdcec8bc95cd37080394d0fea7b08b4854e23c9df4865309149c81"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0fbc32d799357f29a1f986ba0e1d9dfc539e8f0e061a907613e4e8d2e22b537c"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-buffer",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0fbc32d799357f29a1f986ba0e1d9dfc539e8f0e061a907613e4e8d2e22b537c"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-slot",
+      "flash_bytes": 30,
+      "static_ram_bytes": 40,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 40,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0fbc32d799357f29a1f986ba0e1d9dfc539e8f0e061a907613e4e8d2e22b537c"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "buffer-8",
+      "flash_bytes": 94,
+      "static_ram_bytes": 52,
+      "delta_flash": 64,
+      "delta_ram": 12,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 94,
+        ".bss": 52,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "d0df0fa88a0b6ef82052eeaf0a3800fdebabcb6630db1cfe980264f859075074"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "slot-8",
+      "flash_bytes": 756,
+      "static_ram_bytes": 84,
+      "delta_flash": 726,
+      "delta_ram": 44,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 756,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "c41b0005c8eba53b67ca5c9d9cbeb005ba70d9c8bfe103221bcd100428868680"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "two-slots-8",
+      "flash_bytes": 864,
+      "static_ram_bytes": 128,
+      "delta_flash": 834,
+      "delta_ram": 88,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 864,
+        ".bss": 128,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "7101f08d6b8b8db2d30e489544389a059521de5e358f35d46dfa44ea5670ba1c"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "buffer-32",
+      "flash_bytes": 94,
+      "static_ram_bytes": 76,
+      "delta_flash": 64,
+      "delta_ram": 36,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 94,
+        ".bss": 76,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "ae24bc212c9108d3f4e003c44eb891132d8767ee11cc20f081f85bdfb8ace9c7"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "slot-32",
+      "flash_bytes": 756,
+      "static_ram_bytes": 108,
+      "delta_flash": 726,
+      "delta_ram": 68,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 756,
+        ".bss": 108,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "77b550c07208533cb27552a125882eaa67529ef8bd2979fb201c722da14fc09f"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "two-slots-32",
+      "flash_bytes": 868,
+      "static_ram_bytes": 176,
+      "delta_flash": 838,
+      "delta_ram": 136,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 868,
+        ".bss": 176,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "25d40e8e69178c5ef67d1a4d86279ee01083e855e5ac0e2c76f828d80fb50771"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "buffer-128",
+      "flash_bytes": 98,
+      "static_ram_bytes": 172,
+      "delta_flash": 68,
+      "delta_ram": 132,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 98,
+        ".bss": 172,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "e697856045f5930c42f67e21002c6d5d1051cce6fe2768d30817c61d0d1d0bea"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "slot-128",
+      "flash_bytes": 756,
+      "static_ram_bytes": 204,
+      "delta_flash": 726,
+      "delta_ram": 164,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 756,
+        ".bss": 204,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "1ba5ee714fe9c193a1508600cdc6926d7ac974d40298479cf543f865b7041c33"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "two-slots-128",
+      "flash_bytes": 868,
+      "static_ram_bytes": 368,
+      "delta_flash": 838,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 868,
+        ".bss": 368,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "853ed2b6aeb282c636ef430f21f03368648d7699c443b023d84f35428293b1d5"
+    }
+  ],
+  "input_hashes": {
+    "tests/platform/core_redesign/io_entry.cpp": "1dfefde59f0d5088d2707bb45072a3d59b99d81d15e44b12bf3b7f6a17984029",
+    "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+    "tests/platform/core_redesign/measure_data_parts.py": "ff2ce489d3c9b6767e8e755a6188469ded538cbddb1fe17c768627a48df9b845",
+    "tools/index/tools_xpack_gcc.json": "a654200c9f061204c6b3503848a442b9973f31d9c87656758368fad3b7150c7e"
+  },
+  "matrix": "io",
+  "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+  "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+  "tool_hashes": {
+    "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+    "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+    "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+    "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+    "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+    "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+    "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+    "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+  },
+  "libraries": {
+    "rv32e": {
+      "libgcc": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f",
+      "libc": "aa7c9d68d8f56a2b2dc72e14933ef79cf8c97ef570bd23642f698032044c6802"
+    },
+    "rv32i": {
+      "libgcc": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+      "libc": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc"
+    }
+  },
+  "unused_zero": true,
+  "host": {
+    "input_hashes": {
+      "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "tests/unit/core_redesign/io_driver.cpp": "7cc5aae0450c3e09672e9f81ce2761f7f4df5cfa6ba37e518233a8de6bd8466c",
+      "tests/unit/core_redesign/io_oracle.py": "35865c51911536172506f6cd0282d9f14ff66841796dadf6043a25c7bd5cd254",
+      "tests/unit/core_redesign/test_io_lifecycle.py": "10413680eb34cc5995c594dcf407886534cc075682be3332917986c5dff8ce79"
+    },
+    "commands": [
+      {
+        "command": [
+          "uv",
+          "run",
+          "--project",
+          "tests",
+          "--locked",
+          "pytest",
+          "-c",
+          "tests/pyproject.toml",
+          "tests/unit/core_redesign/test_io_lifecycle.py",
+          "-q",
+          "-o",
+          "junit_family=xunit1",
+          "--junitxml=work/exp01-io-host-20261020/junit.xml"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "/usr/bin/x86_64-linux-gnu-g++-15",
+          "--version"
+        ],
+        "returncode": 0
+      }
+    ],
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d"
+  },
+  "evidence_archive": {
+    "path": "work/exp01-io-20261020-evidence.tar.gz",
+    "bytes": 670082,
+    "sha256": "d3fe363460b9209b25942556ae7220fb635a3ed65c04714144300f3e87912fe3"
+  }
+}

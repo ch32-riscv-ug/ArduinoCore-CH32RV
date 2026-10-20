@@ -60,12 +60,22 @@ def work_cases(smoke):
     return result
 
 
+def io_cases(smoke):
+    result = [("baseline", 0, 32, 1, 0, 1), ("unused-buffer", 1, 32, 1, 0, 0)]
+    if smoke: return result
+    result.append(("unused-slot", 2, 32, 1, 0, 0))
+    for n in (8, 32, 128):
+        result.extend([(f"buffer-{n}", 1, n, 1, 0, 1),
+                       (f"slot-{n}", 2, n, 1, 0, 1), (f"two-slots-{n}", 2, n, 1, 1, 1)])
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
-    parser.add_argument("--matrix", choices=("serial", "shared", "work"), default="serial")
+    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
@@ -85,6 +95,11 @@ def main():
         inputs = [source, HEADER.with_name("work_executor.hpp")]
         selected_cases = work_cases(args.smoke)
         report["scope"] = "RUN-01/02 coalesced-work preparation, link-only; no I/O, timer, stack peak or cycle proof"
+    elif args.matrix == "io":
+        source = Path(__file__).with_name("io_entry.cpp")
+        inputs = [source, HEADER.with_name("io_lifecycle.hpp")]
+        selected_cases = io_cases(args.smoke)
+        report["scope"] = "IO-01/04 lease/state model link-only; no physical I/O, startup, ISR or cycle proof"
     report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")

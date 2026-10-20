@@ -109,3 +109,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix work \
 
 通常stack上のsnapshotも含め、対象数の費用を観測する。
 実行文脈と未検証は[準備結果](../../../planning/core-redesign/tasks/EXP-03/work-preparation.ja.md)を参照する。
+
+## EXP-01 I/Oの所有model
+
+`io_lifecycle.hpp` は物理I/Oを持たない独立した所有・終端のmodel。
+`io_driver.cpp`、`io_oracle.py`、`test_io_lifecycle.py` で2 slot／2 buffer、
+取消・停止・回収の区別、sticky通知、endと古い世代を比較する。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_io_lifecycle.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix io \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp01-io-matrix
+```
+
+観測用FNVと所有検査を含むmodelの費用であり、製品driverの費用にはしない。
+結果と残作業は[準備結果](../../../planning/core-redesign/tasks/EXP-01/io-preparation.ja.md)を参照する。
