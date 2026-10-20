@@ -96,6 +96,7 @@ source、固定linker、compiler／binutils hash、commandと失敗診断、ELF�
 archiveのhash・byte数は測定JSONを参照する。
 
 次のP4作業は共有予約の容量／未使用設定、共有表現とcore-local view、初期化handshake・実行器接続・共有実行器比較。
+[容量と未使用の派生link実験](h417-reservation-result.ja.md)は追加で行った。公開設定・実起動への採用は未決定。
 実upload・backend・可視性・DMA・片側resetは未検証。
 教材では「使用256 Bと予約32 KiBの違い」「NOBITSなら2本目のuploadで保持されるか」「gate参照を共有してよいか」を先に予測する。
 人による教材実施・理解度レビューは未確認。

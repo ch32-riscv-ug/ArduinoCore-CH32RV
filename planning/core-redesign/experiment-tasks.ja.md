@@ -155,6 +155,8 @@ native79件・ABI32構成で検査した。shared-accessは所有権限の比較
 [feature型のhost並列](tasks/EXP-05/h417-feature-thread-result.ja.md)は別途ASan／UBSan83件・TSan80件で検査した。実行器・H417同期とは分ける。
 [H417共有配置](tasks/EXP-05/h417-layout-result.ja.md)は固定SDK linkerで6 pairを検査し、通常RAM／stackからの分離を確認した。
 固定32 KiB予約と使用byte数を区別し、NOBITSだけでupload保持を保証しない。共有C++ objectと初期化handshakeは未接続。
+[共有予約の容量／未使用実験](tasks/EXP-05/h417-reservation-result.ja.md)は派生scriptの8 pair、link拒否8条件・混在拒否3条件で比較した。
+未使用時はV3F通常RAMへ予約を戻す。pair照合をruntime handshakeの代わりにはしない。
 H417は単一コア、コア別owner、共有実行器を別条件にし、コアごとのstack・制御情報と共有領域を数える。
 片側停止・再起動、通知前後の可視性、cache／DMAの条件を独立に検査する。
 
