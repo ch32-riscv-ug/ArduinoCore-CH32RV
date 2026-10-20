@@ -4,6 +4,7 @@
   "source_manifest": "h417-inputs.json",
   "march": "rv32imafc_zicsr",
   "abi": "ilp32f",
+  "elf_flags": 3,
   "alignment": 16,
   "shared_origin": 538411008,
   "shared_capacity": 32768,

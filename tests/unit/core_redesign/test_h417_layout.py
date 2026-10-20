@@ -42,7 +42,7 @@ def test_valid_pair_and_touching_region_boundaries():
 FAULTS=['shared-address','shared-size','shared-progbits','shared-executable','shared-align8','shared-align24',
         'missing-symbol','symbol-size','region','abi','abi-difference','ctor','bss-bounds','data-load',
         'stack-bounds','stack-size','bss-stack','outside-private','load-shared','orphan-shared',
-        'orphan-overlap','entry','core','reserved-overlap']
+        'orphan-overlap','entry','core','reserved-overlap','both-rve','both-no-rvc']
 
 
 @pytest.mark.parametrize('fault',FAULTS)
@@ -78,6 +78,10 @@ def test_invalid_layout_rejected(fault):
         area=copy.deepcopy(CONFIG['cores']['V3F']['regions']['RAM'])
         config['cores']['V5F']['regions']['EXTRA']=area
         v['regions']['EXTRA']=area
+    elif fault=='both-rve':
+        for image in images.values():image['flags']=11
+    elif fault=='both-no-rvc':
+        for image in images.values():image['flags']=2
     with pytest.raises(ValueError):layout.validate_pair(images,config,256)
 
 

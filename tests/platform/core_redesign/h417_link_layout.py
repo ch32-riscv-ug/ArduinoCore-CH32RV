@@ -58,7 +58,7 @@ def validate_pair(images,config,shared_bytes):
     for core,image in images.items():
         regions=config['cores'][core]['regions'];sections=image['sections'];symbols=image['symbols']
         require(image['regions']==regions,f'{core}: MEMORY reservation mismatch')
-        require(image['flags']&6==2,f'{core}: single-float ABI required')
+        require(image['flags']==config['elf_flags'],f'{core}: unexpected ELF ABI flags')
         for name,region in regions.items(): reserved.append((core,name,region))
         def symbol(name):
             require(name in symbols,f'{core}: missing symbol {name}')
