@@ -70,3 +70,21 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 それぞれLTOなし／ありを別条件にし、入力・コマンド・libraryのhashとELF等を記録します。
 通常pytestでは実行しません。入口と対象範囲は [host対照のREADME](../unit/core_redesign/README.ja.md)を参照してください。
 最小起動・IRQ・実I2C／PDを含まないため、完成アプリの容量・実機動作はこの成功で検証済みとは扱いません。
+
+## Core再設計：独立reset／CRT
+
+次は明示実行のlink・命令検査で、実機へuploadしない。製品coreのstartupも変更しない。
+
+```sh
+python3 tests/platform/core_redesign/build_minimal_runtime.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp01-runtime-link
+
+python3 tests/platform/core_redesign/check_runtime_faults.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --evidence work/exp01-runtime-link --out work/exp01-runtime-faults
+```
+
+固定参照の自動取得を避ける場合は最初のコマンドへ `--sources 保存先` を指定する。
+出力先は未作成の場所を使う。constructor本体やmain・周辺は命令harnessでは実行しない。
+[結果・限界](../../planning/core-redesign/tasks/EXP-01/runtime-result.ja.md)を参照する。

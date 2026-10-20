@@ -88,3 +88,9 @@ SHA-256 `d3fe363460b9209b25942556ae7220fb635a3ed65c04714144300f3e87912fe3`。初
 通知が配達済みでもendした世代へcallbackしない接続を、dispatcher側で追加検査する。
 raw借用／型付き所有、完了枠予約、arbiterは別の費用比較として扱う。
 EXP-01の最小runtime、GPIO・時間・I2Cの物理backend、定数／実行時入口、低水準への資源引渡しは残る。
+
+## 独立runtimeへの後続
+
+[reset／GPIO入口](runtime-result.ja.md)に、IRQ無効の独立ELF、data／bss・constructor呼出しの命令検査、
+定数／実行時pinのrawとclass比較を記録した。実起動やI/O取消・停止を検証した意味ではない。
+clock・時刻源・I2C、ISR入口、所有modelとの接続は引き続き別の作業として残す。

@@ -254,3 +254,16 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix x0-features 
 
 [結果と比較条件](../../../planning/core-redesign/tasks/EXP-06/x0-features-result.ja.md)、
 [教材用の変更課題](../../../planning/core-redesign/tasks/EXP-06/x0-feature-exercise.ja.md)を参照する。
+
+## EXP-01 独立runtimeとGPIO入口
+
+`runtime_gpio_driver.cpp`／`test_runtime_gpio.py` は実験用low-eight pinのregister transactionをFakeへ照合する。
+実MMIOをhostから呼ばず、GPIO class自体の実機成立とは区別する。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_runtime_gpio.py -o junit_family=xunit1
+```
+
+reset／vector／data・bssのELFと命令検査は明示的に実行する別のplatform実験。
+[結果と手順](../../../planning/core-redesign/tasks/EXP-01/runtime-result.ja.md)を参照する。

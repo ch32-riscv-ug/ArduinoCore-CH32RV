@@ -310,5 +310,6 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [X0の追加比較](planning/core-redesign/tasks/EXP-06/x0-result.ja.md)では固定1宛先のC-static-batchを別条件として記録した。
 [資源を保持した待機](planning/core-redesign/tasks/EXP-03/dependency-result.ja.md)もhost／ABIで検査し、既知の依存と不明を分けた。
 [X0のcompile時機能除去](planning/core-redesign/tasks/EXP-06/x0-features-result.ja.md)と[変更課題素材](planning/core-redesign/tasks/EXP-06/x0-feature-exercise.ja.md)も記録した。
-次は残るruntime・backend、用途変更課題、共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
+[独立reset／GPIO入口](planning/core-redesign/tasks/EXP-01/runtime-result.ja.md)では、ELFと命令検査を追加した。実機起動・clock・IRQは未確認。
+次はclock・時刻・I2C backend、用途変更課題、共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

@@ -33,6 +33,7 @@
 
 正しさが通った構成からABIの容量・初期化表・symbol・stack情報を取得する。
 実cycle、IRQ禁止時間、stack peak、実protocolには実機の証拠が必要。
-EXP-01のruntime・物理backend、EXP-04保存、EXP-05系列／拡張、休止・取得bufferも独立して進める。
+[EXP-01のreset／GPIO入口](../EXP-01/runtime-result.ja.md)の後続clock・時刻・I2C、EXP-04保存、
+EXP-05系列／拡張、休止・取得bufferも独立して進める。
 これはagentの並列起動を要求する意味ではない。
 公開文脈・所有・寿命の比較契約を変える必要があるときだけ高位判断へ戻す。

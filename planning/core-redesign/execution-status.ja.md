@@ -7,8 +7,8 @@
 | 領域 | 現在の証拠 | 進める作業 | 実機・レビュー等が残る部分 |
 |---|---|---|---|
 | P2 再現 | EXP-00、36 build一致 | 測定の拡張時も入力と生成物を記録 | 実runtimeとは別 |
-| P2 用途対照 | PREP-01と02、K0と結合X0のhost検査、ABI link | 最小起動、I/O backend、上流のbuild専用再現 | 実IRQ共有、wire、PD、実機起動 |
-| EXP-01 最小構成・I/O | [I/O所有model](tasks/EXP-01/io-preparation.ja.md)：host22件、ABI48構成、未使用8行が0 B | 独立runtime、物理I/O backend、raw／型付き・定数／実行時入口と除去比較 | 実起動・周辺・IRQ時間 |
+| P2 用途対照 | PREP-01と02、用途のhost／ABI。[独立runtime ELF](tasks/EXP-01/runtime-result.ja.md) | 実起動とclock、I/O backend、上流のbuild専用再現 | 実IRQ共有、wire、PD、実機起動 |
+| EXP-01 最小構成・I/O | [I/O所有model](tasks/EXP-01/io-preparation.ja.md)：host22件、ABI48構成。[reset／GPIO入口](tasks/EXP-01/runtime-result.ja.md)：host16件・ELF40・拒否link12・初期化故障12 | clock・時刻・I2C backend、ISRと資源引渡し・回収の接続 | 実起動・周辺・IRQ時間 |
 | EXP-02 データと同期 | [直列単位](tasks/EXP-02/result.ja.md)と[寿命・共有単位](tasks/EXP-02/shared-result.ja.md)：host92＋31件、link200＋68構成、未使用36＋16行が0 B、TSan4条件 | 実行器への待機接続、ring／message／poolの共有条件 | 実ISR／コア間の同期と禁止時間 |
 | EXP-03 実行・通知 | [work](tasks/EXP-03/work-preparation.ja.md)・[期限](tasks/EXP-03/timer-preparation.ja.md)・[宛先とI/O結合](tasks/EXP-03/event-preparation.ja.md)・[待機policy](tasks/EXP-03/wait-result.ja.md)・[資源依存](tasks/EXP-03/dependency-result.ja.md)：host151件、ABI212構成 | X0の変更課題、依存台帳の実backend接続、IRQ共有、完了枠／arbiter、別stack対照 | MCU時間・stack観測、採否はP5 |
 | EXP-04 保存 | V003／X035の消去方式の資料確認 | read／program条件、媒体model、RAW／blob／key、1／2／4単位、領域・linker・設定の検査 | 実電断・停止・upload保持 |
@@ -37,7 +37,8 @@
 - [EXP-03 資源依存](tasks/EXP-03/dependency-result.ja.md)：保有したbus／buffer／lock、既知・未知の依存、同期と明示poll。
 - [EXP-06 X0追加比較](tasks/EXP-06/x0-result.ja.md)：R/A/B/C-static-batch。固定1宛先の追加条件を汎用Cと区別。
 
+- [EXP-01 reset／GPIO入口](tasks/EXP-01/runtime-result.ja.md)：vector・data／bss・ctor呼出しの命令検査、raw／class比較。実起動は未確認。
 - [EXP-06 X0機能除去](tasks/EXP-06/x0-features-result.ja.md)：固定off／on・専用対照・旧runtime比較と変更課題。
 
-次はEXP-01の残るruntime・backend、X0の残る変更課題、保存・系列・休止、実共有条件を進める。
+次はEXP-01のclock・時刻・I2C backend、X0の残る変更課題、保存・系列・休止、実共有条件を進める。
 P2の実backend待ちで、pureな部品とhost契約の検査を止めない。
