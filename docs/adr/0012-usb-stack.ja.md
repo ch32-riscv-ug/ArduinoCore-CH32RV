@@ -1,6 +1,6 @@
 # ADR-0012: USB stack には TinyUSB を使う
 
-- Status: Accepted
+- Status: Accepted（device は 2026-10-20 の追記で自作の stack に置き換え）
 
 ## 決定
 
@@ -32,3 +32,21 @@ protocol stack を独自保守せず、他 platform の修正も利用できま�
   使わない sketch にも費用（X035 で Flash 約 11 KB、RAM 約 2.5 KB）がかかるためです。
 - USB からの書き込みの入口は、1200bps touch（CDC）と DFU_DETACH（DFU runtime）の2つです。ch32rv 側は
   `isp flash --entry auto` で両方を扱う予定です。
+
+## 追記: device は自作の stack にする（2026-10-20）
+
+device は TinyUSB をやめ、`CH32RVUsbDevice` 自身の stack（`CH32RVUsbDeviceCore.cpp`）にします。host も同じ形に移す予定で、
+それまで `CH32RVTinyUSB` は host だけが使います。
+
+- 理由: 今のクラスの形（宣言で付け、`begin()` で descriptor を組む）では、TinyUSB の class driver はほとんど使って
+  いませんでした。残っていたのは patch 6 つ、EVT の代わりの header、build 時の define（個数・buffer）の多さです。
+  X035 での試作（work/minusb）は、同じ CDC + HID + MIDI + DFU で Flash 約 13 KB、RAM 約 2.6 KB 小さく、実機の
+  往復も速く通りました。CherryUSB は X035 の port が無く、callback を割り込みの中で呼ぶため見送りました。
+- 形: 割り込みでは SETUP の取り込みと終わった転送の記録だけを行い、要求の処理・descriptor・クラスの callback は
+  通常の文脈（`ch32rv_usb_task()`）で行います。controller は driver の表（`CH32RVUsbDcd.h`）で抽象化し、系列ごとに
+  1 つずつ足します。descriptor とクラスは Full / High / SuperSpeed を速度の引数で組み分けます。
+- build 時の define は個数・buffer には使いません。クラスごとの上限、`setBuffers()`、`setTransferType()`、
+  driver が知らせる packet の上限（`maxPacketSize()`）で決めます。残る define は識別の既定の文字列と、
+  合成 buffer の上限だけです（docs/usb.ja.md）。
+- 上の「upstream を共有する」理由は device については取り下げます。
+

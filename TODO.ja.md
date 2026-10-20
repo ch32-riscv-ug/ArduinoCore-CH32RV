@@ -654,7 +654,17 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
   - ファームウェア更新のクラス（本物の DFU、MSC での更新）は、工場出荷の ISP で書く今の方針と合わせて別に決める。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。
-- **USB スタックを TinyUSB のまま拡張するか、自作するかを決める（基本は 1 つに統合する）。**
+- **USB デバイスを自作のスタックへ移す（2026-10-20 に自作と決めた。ADR-0012 の追記）。** X035 で先行し、ほかの系列の
+  拡張点（`CH32RVUsbDcd.h` のドライバの表、`CH32RVUsbDevicePort.h`）と FS / HS / SS を見込んで作る。
+  - 済み: コア（EP0・標準要求・SS の要求と BOS・速度ごとのディスクリプタと SS のコンパニオン）、X035 / X033 の
+    USBFS ドライバ、全クラス（CDC、HID、MIDI、ベンダー + WebUSB / MS OS 2.0、MSC、CCID、NCM、UAC1 / UAC2、UVC、
+    DFU ランタイム）。CH32RVUsbDevice は TinyUSB を参照しない。ビルド時の個数・バッファの define は廃止
+    （クラスごとの上限、`setBuffers()`、`setTransferType()`、`maxPacketSize()`）。
+  - 実機（X035 F8U6、ホストは ESP32-S3）: CDC の往復（1〜4096 バイト）・ボーレート・再接続・DFU → ISP → 復帰まで。
+  - 残り: usb-peer / -classes / -media / -net の実機試験、例の一括ビルドと単体試験、費用の測り直し、
+    ほかの系列のドライバ（V103、V20x の USBFS と USBD、V30x の USBFS と USBHS、第2世代 USBHS、H417 の USBSS）、
+    ホスト（CH32RVUsbHost）も自作に移して CH32RVTinyUSB を外す。
+- （経緯）**USB スタックを TinyUSB のまま拡張するか、自作するかを決める（基本は 1 つに統合する）。**
   - CherryUSB は見送りの方向（2026-10-20 の調査）。upstream 1.6.1（Apache-2.0）の WCH 向け移植は X035 / X033 に無く
     （USBFS は V20x / V30x の配置だけ）、デバイス側は割り込みの中でクラスのコールバックを呼ぶ。ホスト側は独立した
     スタックのスレッド（ハブ・列挙、既定 2 KB）とブロックする待ちが要り、OS 無しの OSAL が無い。コアの再設計
