@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-20",
+  "status": "passed",
+  "implementation_commit": "222f13a",
+  "scope": "Serial two-block ownership model and bare ABI. No core/USB changes, real ADC/DMA, IRQ sharing, timing guarantee or public API adoption.",
+  "native": {
+    "tests": 50,
+    "workspace_tests": 3,
+    "compiler": "/usr/bin/g++",
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "flags": [
+      "-std=c++17",
+      "-O1",
+      "-g1",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer"
+    ],
+    "binary_sha256": "0e838089b6298511d758bbc9d8074ac563ae09c492504010c5c3c5774e27371c",
+    "inputs": {
+      "tests/unit/core_redesign/acquisition_buffers.hpp": "053750e6bc410c4a7d56174431c5390fb8d2d52b7e7da3f0898dc03ce10122a2",
+      "tests/unit/core_redesign/acquisition_driver.cpp": "6a0e13f28a2ceb4dd574d121642cc2009f9b0c90a4bd34a6e91bdee49f29e4b6",
+      "tests/unit/core_redesign/acquisition_oracle.py": "7e4db39d3a3098d5c6bad090058d4051ca46d7a37f9f2e8ec6af6a43d7e4d8bd",
+      "tests/unit/core_redesign/test_acquisition_buffers.py": "b2565140f5d1b867142248f7d89723bc4c20aea3a041d22388f9c75dd6f8fcd9",
+      "planning/core-redesign/acquisition-inputs.json": "3c0916f7fb35b34428e1bf7ba31dcb7087178c6ecc210f009a0020a7a9af84b4"
+    }
+  },
+  "abi": {
+    "builds": 32,
+    "unused_zero_additional_image_and_ram": 12,
+    "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "tools": {
+      "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+      "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+      "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+      "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+      "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+      "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+      "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+      "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+    },
+    "libgcc": {
+      "CH32V003F4P6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/rv32ec/ilp32e/libgcc.a",
+        "sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f"
+      },
+      "CH32X035C8T6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+        "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+      }
+    },
+    "support_lto": false,
+    "inputs": {
+      "tests/platform/core_redesign/measure_acquisition_buffers.py": "9e14228c71b4cdb813f71d007d9c1806df465f21743c5ac7db91c47a93d6c734",
+      "planning/core-redesign/acquisition-inputs.json": "3c0916f7fb35b34428e1bf7ba31dcb7087178c6ecc210f009a0020a7a9af84b4",
+      "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+      "tests/unit/core_redesign/acquisition_buffers.hpp": "053750e6bc410c4a7d56174431c5390fb8d2d52b7e7da3f0898dc03ce10122a2",
+      "tests/platform/core_redesign/acquisition_entry.cpp": "9918559274b83c7e9bec3090c9ce0fe116d1c4981d71b182d9401d4c67fc29c2",
+      "tests/platform/core_redesign/acquisition_support.cpp": "264378d07dfb98d2d4a602dad6ba71635c7c62b30286c85bc3dbe318778f8956",
+      "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
+    },
+    "matrix_sha256": "875bd40d278e87e2373d0c652b7666f8256887b6f5768a5176db313df89ee748"
+  },
+  "workload": {
+    "scope": "abstract serial arrivals; not physical ADC rate or hardware stop evidence",
+    "workloads": [
+      {
+        "mode": "software-rearm",
+        "stall_ticks": 0,
+        "arrivals": 40,
+        "accepted_blocks": 40,
+        "deferred_starts": 0,
+        "known_lost_samples": 0,
+        "borrowed_blocks": 40,
+        "released_blocks": 40,
+        "operations": 5323,
+        "returncode": 0,
+        "commands_sha256": "227b3ff799e9fdeb5dfa89de36bc90f1d6031679558caf2087701884b320f331",
+        "stdout_sha256": "55865844b849a1934aa31d5d0095dd1b910e8803bb6f42e2b6dc29cea7d9b39f"
+      },
+      {
+        "mode": "software-rearm",
+        "stall_ticks": 3,
+        "arrivals": 40,
+        "accepted_blocks": 21,
+        "deferred_starts": 19,
+        "known_lost_samples": 0,
+        "borrowed_blocks": 21,
+        "released_blocks": 21,
+        "operations": 2706,
+        "returncode": 0,
+        "commands_sha256": "c3c7ecfdef184d66100ead2e369ab85e33ebac153630342db8644a5240977cc2",
+        "stdout_sha256": "01d36caeb9f82618bab26869bce9da141072a0d888de0cf99d8671688baf6199"
+      },
+      {
+        "mode": "software-rearm",
+        "stall_ticks": 12,
+        "arrivals": 40,
+        "accepted_blocks": 7,
+        "deferred_starts": 33,
+        "known_lost_samples": 0,
+        "borrowed_blocks": 7,
+        "released_blocks": 7,
+        "operations": 1000,
+        "returncode": 0,
+        "commands_sha256": "ae7b783467e238694f82dea0a8a18ca3a9d663a3a1a752fa5ec48f9cfcce1d17",
+        "stdout_sha256": "7834cfe227a244ad910249309d9985a427de518fd3226d4c6a0ed6269c37ac58"
+      },
+      {
+        "mode": "unavoidable-arrival",
+        "stall_ticks": 0,
+        "arrivals": 40,
+        "accepted_blocks": 40,
+        "deferred_starts": 0,
+        "known_lost_samples": 0,
+        "borrowed_blocks": 40,
+        "released_blocks": 40,
+        "operations": 5323,
+        "returncode": 0,
+        "commands_sha256": "227b3ff799e9fdeb5dfa89de36bc90f1d6031679558caf2087701884b320f331",
+        "stdout_sha256": "55865844b849a1934aa31d5d0095dd1b910e8803bb6f42e2b6dc29cea7d9b39f"
+      },
+      {
+        "mode": "unavoidable-arrival",
+        "stall_ticks": 3,
+        "arrivals": 40,
+        "accepted_blocks": 21,
+        "deferred_starts": 0,
+        "known_lost_samples": 1216,
+        "borrowed_blocks": 21,
+        "released_blocks": 21,
+        "operations": 2706,
+        "returncode": 0,
+        "commands_sha256": "c3c7ecfdef184d66100ead2e369ab85e33ebac153630342db8644a5240977cc2",
+        "stdout_sha256": "01d36caeb9f82618bab26869bce9da141072a0d888de0cf99d8671688baf6199"
+      },
+      {
+        "mode": "unavoidable-arrival",
+        "stall_ticks": 12,
+        "arrivals": 40,
+        "accepted_blocks": 7,
+        "deferred_starts": 0,
+        "known_lost_samples": 2112,
+        "borrowed_blocks": 7,
+        "released_blocks": 7,
+        "operations": 1000,
+        "returncode": 0,
+        "commands_sha256": "ae7b783467e238694f82dea0a8a18ca3a9d663a3a1a752fa5ec48f9cfcce1d17",
+        "stdout_sha256": "7834cfe227a244ad910249309d9985a427de518fd3226d4c6a0ed6269c37ac58"
+      }
+    ],
+    "native_binary_sha256": "0e838089b6298511d758bbc9d8074ac563ae09c492504010c5c3c5774e27371c",
+    "analysis_script_sha256": "583fc99a41710ba9a95173ef100cf908ae4224105e41980bc3dac2cf45bd1b31"
+  },
+  "artifacts": {
+    "native": "work/exp02-acquisition-host-20261020",
+    "abi": "work/exp02-acquisition-abi-20261020",
+    "analysis": "work/exp02-acquisition-analysis-20261020",
+    "archive": "work/exp02-acquisition-20261020-evidence.tar.gz",
+    "archive_bytes": 708122,
+    "archive_sha256": "52048d4a2cbc5a5d8f5f97d89605e085de37836fa19098ca8022924b31771e89"
+  },
+  "reproduce": {
+    "native": "EXP02_ACQUISITION_EVIDENCE=work/NEW-native uv run --project tests --locked pytest -c tests/pyproject.toml tests/unit/core_redesign/test_acquisition_buffers.py tests/unit/test_workspace.py -q -o junit_family=xunit1 --junitxml=work/NEW-junit.xml",
+    "abi": "python3 tests/platform/core_redesign/measure_acquisition_buffers.py --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ --out work/NEW-abi"
+  }
+}

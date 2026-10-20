@@ -15,7 +15,7 @@
 | EXP-05 拡張 | タッチ追加のR対照 | 表示交換・独立library・能力差・H417所有modelと資料確認 | 実cache可視性・両コア・reset |
 | EXP-06 完成用途 | [K0 R/A/B/Cと容量2変更](tasks/EXP-06/k0-result.ja.md)：host82件、ABI116構成。[X0追加比較](tasks/EXP-06/x0-result.ja.md)：host55件、ABI116構成、同じ進行機会・故障・50Hzタッチ。[X0機能除去](tasks/EXP-06/x0-features-result.ja.md)：host88件・ABI116構成 | 表示交換・独立library等の変更課題、K0の物理接続 | 実通信・電流・PPS source・教材の利用者レビュー |
 | V006休止 | 未実施 | 保持条件の資料確認、fake timeとwake競合、休止調停の比較 | 復帰実機・静止電流 |
-| 取得buffer | 未実施 | 2 blockの所有と返却、生成量・consumer停止をmodel化 | 実ADC/DMA、欠落と時間 |
+| 取得buffer | [2 block所有と回収](tasks/EXP-02/acquisition-result.ja.md)：native50件・ABI32構成、生成元先行／利用側停止と逆順返却、未使用12条件の追加0 B | 完了枠との結合、所有者識別・実ISR共有、停止／再設定のadapter契約 | 実ADC/DMA、循環書込み停止・可視性、物理欠落と時間 |
 | P4教育 | 教材案、[X0機能除去](tasks/EXP-06/x0-feature-exercise.ja.md)、[時刻読出し](tasks/EXP-01/time-read-exercise.ja.md)、[I2Cの貸出](tasks/EXP-01/i2c-loan-exercise.ja.md)、[保存容量と保持](tasks/EXP-04/region-exercise.ja.md)、[形式と更新途中](tasks/EXP-04/format-exercise.ja.md) | 残る変更課題の教材化、変更差分・必要状態の比較 | 人が予測・変更した結果のレビュー |
 
 不足する設備や上位判断は該当部分の未検証として残し、独立した作業を続ける。
@@ -28,6 +28,7 @@
 - [P2-PREP-02](tasks/P2-PREP-02/result.ja.md)：X0の共有bus・周期・結合ロジック。
 - [EXP-02直列単位](tasks/EXP-02/result.ja.md)：データ部品・容量・未使用除去。
 - [EXP-02寿命・共有単位](tasks/EXP-02/shared-result.ja.md)：move-only、gate、登録競合、MPSC／SPSCのhost検査とABI比較。
+- [EXP-02取得buffer](tasks/EXP-02/acquisition-result.ja.md)：2 blockの生成元／利用側所有、通知と回収、取消と停止、部分生成、入力契約別の負荷集計。[課題](tasks/EXP-02/acquisition-exercise.ja.md)は人による評価前。
 - [EXP-03有限work準備](tasks/EXP-03/work-preparation.ja.md)：有限snapshot、再投稿、公平性、M/S/U、非再入と解除。
 - [EXP-01 I/O所有model](tasks/EXP-01/io-preparation.ja.md)：受理、取消、sticky終端、世代、end、buffer回収。
 - [EXP-03期限model](tasks/EXP-03/timer-preparation.ja.md)：半周・周回・周期集約・未回収通知・停止／再設定。

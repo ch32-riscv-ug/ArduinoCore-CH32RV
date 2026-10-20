@@ -177,3 +177,16 @@ python3 tests/platform/core_redesign/measure_logical_time.py \
 partの宣言counter幅に合う候補だけを測り、libgccと支援関数の費用も含める。
 実source・sleep・時間・stack peakは検証しない。
 [結果・変更前後・制約](../../planning/core-redesign/tasks/EXP-01/logical-time-result.ja.md)を参照する。
+
+## Core再設計：取得buffer 2 block
+
+```sh
+python3 tests/platform/core_redesign/measure_acquisition_buffers.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp02-acquisition-NEW
+```
+
+V003／X035、LTO off／on、sample容量8／64／128を含む32 ELFを測る。
+payloadだけの対照は所有管理を持たず、同等機能として順位付けしない。
+probeは実機起動やADC／DMAの動作、時間・stack peakを検証するものではない。
+[結果と条件](../../planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md)を参照する。

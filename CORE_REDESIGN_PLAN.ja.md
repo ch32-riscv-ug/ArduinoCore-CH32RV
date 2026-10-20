@@ -318,5 +318,6 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [保存形式のC++試作](planning/core-redesign/tasks/EXP-04/store-result.ja.md)ではnative272件、初回／置換中断7,442条件、ABI198構成を確認した。実Flash driverと起動は含まず、走査分割・所有・実機の保護は残す。
 [予算付き読出しと所有](planning/core-redesign/tasks/EXP-04/scan-result.ja.md)ではnative353件・ABI76構成でbyte上限とcacheの寿命を確認した。受理／key変更・実媒体への統合と所有期間の比較は残す。
 [論理時刻の伸長と不連続](planning/core-redesign/tasks/EXP-01/logical-time-result.ja.md)ではhost123件・最終ABI52構成と変更前52構成を記録した。観測上限は外部の宣言であり、実source・sleep・精度は未検証。
-次は論理時刻の実source接続、I2Cのclock／pin／所有結合、用途変更課題、共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
+[取得bufferの所有と回収](planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md)ではnative50件・ABI32構成を記録した。64 sample×2 blockは管理込み300 B、未使用12条件の追加0 B。生成側の停止宣言と物理停止を区別し、[変更課題](planning/core-redesign/tasks/EXP-02/acquisition-exercise.ja.md)を用意した。実ADC／DMA・IRQ共有は未検証。
+次は論理時刻の実source接続、I2Cのclock／pin／所有結合、取得bufferのadapter契約、用途変更課題、共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

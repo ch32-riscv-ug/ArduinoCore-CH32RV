@@ -368,3 +368,18 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 
 検査時のnative証拠を保存する場合は`EXP01_TIME_EVIDENCE=新しい出力先`を指定する。
 [結果と必要な外部条件](../../../planning/core-redesign/tasks/EXP-01/logical-time-result.ja.md)を参照する。
+
+## EXP-02 取得buffer 2 block
+
+`acquisition_buffers.hpp`は直列のfake生成元と利用側の所有を比較する。実ADC／DMAへの接続は含まない。
+取消要求・停止宣言・結果保持・貸出・返却を区別し、8／64／128 sampleと生成元先行を検査する。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_acquisition_buffers.py tests/unit/test_workspace.py \
+  -o junit_family=xunit1
+```
+
+検査時のnative binaryと入力hashを残す場合は`EXP02_ACQUISITION_EVIDENCE=新しい出力先`を指定する。
+[結果と入力契約](../../../planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md)、
+[所有と分割処理の課題](../../../planning/core-redesign/tasks/EXP-02/acquisition-exercise.ja.md)を参照する。
