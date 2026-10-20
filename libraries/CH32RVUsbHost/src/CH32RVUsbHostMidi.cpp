@@ -1,61 +1,196 @@
-/* CH32RVUsbHost: USB MIDI 1.0 (TinyUSB's MIDI host driver). Messages are the
- * 4-byte USB-MIDI event packets; onMidiMessage() gets them decoded. */
+/* CH32RVUsbHost: USB MIDI 1.0. Messages are the 4-byte USB-MIDI event
+ * packets; onMidiMessage() gets them decoded. */
 #include "CH32RVUsbHostInternal.h"
 
 #include <string.h>
 
-#if 0 /* moving to the own host stack */
+#if CH32RV_USB_HOST_STACK
 
 namespace {
 
-const usbh_class_driver_t midi_driver = {
-    "MIDI", midih_init, midih_deinit, midih_open, midih_set_config, midih_xfer_cb, midih_close,
-};
+#define RX_PACKETS 32
 
 struct Port {
     bool mounted;
     uint8_t daddr, itf, rxCables, txCables;
+    uint8_t epIn, epOut;
+    uint16_t mpsIn, mpsOut;
+    volatile bool inBusy, outDone;
+    volatile uint8_t outResult;
+    volatile uint8_t head, tail;               /* rx ring of packets */
+    uint8_t rx[RX_PACKETS][4];
+    uint8_t in[64] __attribute__((aligned(4)));
 };
-Port ports[CFG_TUH_MIDI];
+Port ports[1];
 CH32RVUsbHost::MidiMessageCallback message_cb;
 
+uint16_t midi_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
+void midi_configured(uint8_t daddr, uint8_t itf);
 void poll(CH32RVUsbHost &host);
-CH32RVUsbHostGroup midi_group = {&midi_driver, poll, nullptr, nullptr};
+void midi_detach(uint8_t daddr);
+CH32RVUsbHostGroup midi_group = {midi_open, midi_configured, poll, midi_detach, nullptr};
 
 struct Join {
     Join() { ch32rv_usb_host_join(midi_group); }
 } join;
 
+uint8_t rx_free(const Port &p)
+{
+    return (uint8_t)(RX_PACKETS - 1 - (uint8_t)((p.head + RX_PACKETS - p.tail) % RX_PACKETS));
+}
+
+void in_done(void *user, uint8_t result, uint16_t length);
+
+/* Armed only with room for a whole packet's worth: otherwise the device is
+ * NAKed until the sketch has read. */
+void arm_in(Port &p)
+{
+    if (!p.mounted || p.inBusy || rx_free(p) < p.mpsIn / 4) {
+        return;
+    }
+    p.inBusy = ch32rv_usb_host_xfer(p.daddr, p.epIn, p.in, p.mpsIn, in_done, &p);
+}
+
+void in_done(void *user, uint8_t result, uint16_t length)
+{
+    Port &p = *(Port *)user;
+    p.inBusy = false;
+    if (!p.mounted) {
+        return;
+    }
+    if (result == CH32RV_USBH_OK) {
+        for (uint16_t at = 0; at + 4 <= length; at += 4) {
+            if (p.in[at] == 0 && p.in[at + 1] == 0) {
+                continue;              /* padding */
+            }
+            const uint8_t next = (uint8_t)((p.head + 1) % RX_PACKETS);
+            if (next == p.tail) {
+                break;
+            }
+            memcpy(p.rx[p.head], p.in + at, 4);
+            p.head = next;
+        }
+    }
+    arm_in(p);
+}
+
+/* A MIDI streaming interface (audio class, subclass 3), with the audio
+ * control interface in front of it when there is one: both are taken. The
+ * cable counts are the embedded jacks the class-specific endpoint
+ * descriptors name. */
+uint16_t midi_open(uint8_t daddr, const uint8_t *itf, uint16_t length)
+{
+    if (itf[5] != 1 || ports[0].daddr) {
+        return 0;
+    }
+    uint16_t at = 0;
+    if (itf[6] == 1) {                 /* audio control: the streaming interface follows */
+        at = itf[0];
+        while (at + 2 <= length && itf[at] >= 2 && itf[at + 1] != 4) {
+            at = (uint16_t)(at + itf[at]);
+        }
+        if (at + 9 > length || itf[at + 5] != 1 || itf[at + 6] != 3) {
+            return 0;
+        }
+    } else if (itf[6] != 3) {
+        return 0;
+    }
+    Port p = {};
+    const uint8_t *ms = itf + at;
+    p.daddr = daddr;
+    p.itf = ms[2];
+    uint16_t k = (uint16_t)(at + ms[0]);
+    uint8_t last = 0;                  /* the endpoint the next class-specific descriptor is about */
+    while (k + 2 <= length && itf[k] >= 2 && itf[k + 1] != 4 && itf[k + 1] != 11) {
+        const uint8_t *d = itf + k;
+        if (d[1] == 5 && d[0] >= 7 && (d[3] & 3) == 2) {
+            last = d[2];
+            const uint16_t mps = (uint16_t)((d[4] | d[5] << 8) & 0x7FF);
+            if ((d[2] & 0x80) && !p.epIn && ch32rv_usb_host_ep_open(daddr, d)) {
+                p.epIn = d[2];
+                p.mpsIn = mps < sizeof p.in ? mps : sizeof p.in;
+            } else if (!(d[2] & 0x80) && !p.epOut && ch32rv_usb_host_ep_open(daddr, d)) {
+                p.epOut = d[2];
+                p.mpsOut = mps;
+            }
+        } else if (d[1] == 0x25 && d[0] >= 4 && d[2] == 1) {   /* CS_ENDPOINT, MS_GENERAL */
+            if (last & 0x80) {
+                p.rxCables = d[3];
+            } else if (last) {
+                p.txCables = d[3];
+            }
+        }
+        k = (uint16_t)(k + d[0]);
+    }
+    if (!p.epIn && !p.epOut) {
+        return 0;
+    }
+    ports[0] = p;
+    return k;
+}
+
+void midi_configured(uint8_t daddr, uint8_t itf)
+{
+    Port &p = ports[0];
+    if (p.daddr != daddr || p.mounted || (itf != p.itf && itf + 1 != p.itf)) {
+        return;
+    }
+    p.mounted = true;
+    ch32rv_usb_host_mark_claimed(daddr, p.itf);
+    if (p.itf) {
+        ch32rv_usb_host_mark_claimed(daddr, (uint8_t)(p.itf - 1u));   /* audio control */
+    }
+    if (p.epIn) {
+        arm_in(p);
+    }
+}
+
+void midi_detach(uint8_t daddr)
+{
+    if (ports[0].daddr == daddr) {
+        memset(&ports[0], 0, sizeof ports[0]);
+    }
+}
+
 void poll(CH32RVUsbHost &host)
 {
     (void)host;
-    if (!message_cb) {
+    Port &p = ports[0];
+    if (!p.mounted || !message_cb) {
         return;
     }
-    for (uint8_t i = 0; i < CFG_TUH_MIDI; i++) {
-        if (!ports[i].mounted) {
-            continue;
-        }
-        uint8_t p[4];
-        while (tuh_midi_packet_read(i, p)) {
-            CH32RVUsbHostMidiMessage m;
-            m.address = ports[i].daddr;
-            m.interfaceNumber = ports[i].itf;
-            m.cable = (uint8_t)(p[0] >> 4);
-            m.codeIndex = (uint8_t)(p[0] & 0x0F);
-            m.status = p[1];
-            m.data1 = p[2];
-            m.data2 = p[3];
-            m.raw = p;
-            m.length = 4;
-            message_cb(m);
-        }
+    while (p.tail != p.head) {
+        uint8_t pk[4];
+        memcpy(pk, p.rx[p.tail], 4);
+        p.tail = (uint8_t)((p.tail + 1) % RX_PACKETS);
+        CH32RVUsbHostMidiMessage m;
+        m.address = p.daddr;
+        m.interfaceNumber = p.itf;
+        m.cable = (uint8_t)(pk[0] >> 4);
+        m.codeIndex = (uint8_t)(pk[0] & 0x0F);
+        m.status = pk[1];
+        m.data1 = pk[2];
+        m.data2 = pk[3];
+        m.raw = pk;
+        m.length = 4;
+        message_cb(m);
     }
+    if (p.epIn) {
+        arm_in(p);
+    }
+}
+
+void out_done(void *user, uint8_t result, uint16_t length)
+{
+    (void)length;
+    Port &p = *(Port *)user;
+    p.outResult = result;
+    p.outDone = true;
 }
 
 int index_of(uint8_t address)
 {
-    for (int i = 0; i < CFG_TUH_MIDI; i++) {
+    for (int i = 0; i < (int)(sizeof ports / sizeof ports[0]); i++) {
         if (ports[i].mounted && (address == CH32RV_USB_HOST_ANY_ADDRESS || ports[i].daddr == address)) {
             return i;
         }
@@ -70,29 +205,6 @@ uint8_t cin_of(uint8_t status)
 }
 
 }  // namespace
-
-extern "C" void tuh_midi_mount_cb(uint8_t idx, const tuh_midi_mount_cb_t *info)
-{
-    if (idx < CFG_TUH_MIDI) {
-        Port &p = ports[idx];
-        p.daddr = info->daddr;
-        p.itf = info->bInterfaceNumber;
-        p.rxCables = info->rx_cable_count;
-        p.txCables = info->tx_cable_count;
-        p.mounted = true;
-        ch32rv_usb_host_mark_claimed(info->daddr, info->bInterfaceNumber);
-        if (info->bInterfaceNumber) {
-            ch32rv_usb_host_mark_claimed(info->daddr, (uint8_t)(info->bInterfaceNumber - 1u)); /* audio control */
-        }
-    }
-}
-
-extern "C" void tuh_midi_umount_cb(uint8_t idx)
-{
-    if (idx < CFG_TUH_MIDI) {
-        ports[idx].mounted = false;
-    }
-}
 
 void CH32RVUsbHost::onMidiMessage(MidiMessageCallback cb) { message_cb = cb; }
 
@@ -123,17 +235,26 @@ bool CH32RVUsbHost::midiSend(const uint8_t *data, size_t length, uint8_t address
     if (!data || length % 4) {
         return fail(CH32RVUsbHostError::InvalidArgument);
     }
-    const uint32_t t0 = millis();
+    Port &p = ports[i];
+    if (!p.epOut) {
+        return fail(CH32RVUsbHostError::NotSupported);
+    }
     size_t done = 0;
     while (done < length) {
-        done += tuh_midi_packet_write_n((uint8_t)i, data + done, (uint32_t)(length - done));
-        tuh_midi_write_flush((uint8_t)i);
-        if (done < length) {
-            tuh_task_ext(0, false);
-            if (!ports[i].mounted || (uint32_t)(millis() - t0) > 1000u) {
-                return fail(ports[i].mounted ? CH32RVUsbHostError::Timeout : CH32RVUsbHostError::NotConnected);
-            }
+        const size_t room = p.mpsOut - p.mpsOut % 4;
+        const size_t n = length - done < room ? length - done : room;
+        p.outDone = false;
+        if (!ch32rv_usb_host_xfer(p.daddr, p.epOut, const_cast<uint8_t *>(data + done), (uint16_t)n, out_done, &p)) {
+            return fail(CH32RVUsbHostError::TransferFailed);
         }
+        if (!ch32rv_usb_host_wait(p.outDone, 1000)) {
+            ch32rv_usb_host_abort(p.daddr, p.epOut);
+            return fail(p.mounted ? CH32RVUsbHostError::Timeout : CH32RVUsbHostError::NotConnected);
+        }
+        if (p.outResult != CH32RV_USBH_OK) {
+            return fail(ch32rv_usb_host_result_error(p.outResult));
+        }
+        done += n;
     }
     return ok();
 }

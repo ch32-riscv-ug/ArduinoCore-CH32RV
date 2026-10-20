@@ -324,6 +324,42 @@ void ch32rv_usb_host_abort(uint8_t daddr, uint8_t address)
     events_void(daddr, address);
 }
 
+namespace {
+struct XferWait {
+    volatile bool done;
+    volatile uint8_t result;
+    volatile uint16_t length;
+};
+
+void xfer_wait_done(void *user, uint8_t result, uint16_t length)
+{
+    XferWait &w = *(XferWait *)user;
+    w.result = result;
+    w.length = length;
+    w.done = true;
+}
+}  // namespace
+
+uint8_t ch32rv_usb_host_xfer_sync(uint8_t daddr, uint8_t address, uint8_t *buffer, uint16_t length,
+                                  uint16_t *actualLength, uint32_t timeoutMs)
+{
+    XferWait w = {false, CH32RV_USBH_FAILED, 0};
+    if (actualLength) {
+        *actualLength = 0;
+    }
+    if (!ch32rv_usb_host_xfer(daddr, address, buffer, length, xfer_wait_done, &w)) {
+        return CH32RV_USBH_FAILED;
+    }
+    if (!ch32rv_usb_host_wait(w.done, timeoutMs)) {
+        ch32rv_usb_host_abort(daddr, address);   /* w lives on this stack: nothing may reach it later */
+        return CH32RV_USBH_TIMEOUT;
+    }
+    if (actualLength) {
+        *actualLength = w.length;
+    }
+    return w.result;
+}
+
 CH32RVUsbHostError ch32rv_usb_host_result_error(uint8_t result)
 {
     switch (result) {

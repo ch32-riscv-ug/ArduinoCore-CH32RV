@@ -76,6 +76,10 @@ void ch32rv_usb_host_ep_close(uint8_t daddr, uint8_t address);
 bool ch32rv_usb_host_xfer(uint8_t daddr, uint8_t address, uint8_t *buffer, uint16_t length,
                           CH32RVUsbHostXferDone done, void *user);
 bool ch32rv_usb_host_xfer_busy(uint8_t daddr, uint8_t address);
+/* A transfer and the wait for it; on a timeout it is aborted before this
+ * returns, so the buffer is the caller's again. The result as CH32RV_USBH_*. */
+uint8_t ch32rv_usb_host_xfer_sync(uint8_t daddr, uint8_t address, uint8_t *buffer, uint16_t length,
+                                  uint16_t *actualLength, uint32_t timeoutMs);
 void ch32rv_usb_host_abort(uint8_t daddr, uint8_t address);
 /* CLEAR_FEATURE(ENDPOINT_HALT) and the toggle back to DATA0; blocking. */
 bool ch32rv_usb_host_clear_halt(uint8_t daddr, uint8_t address);

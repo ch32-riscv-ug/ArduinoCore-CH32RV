@@ -1,22 +1,51 @@
 /* CH32RVUsbHost: HID (keyboards, mice, consumer / system control, gamepads,
- * vendor reports). TinyUSB's HID host driver does the transfers; this file
- * turns reports into EspUsbHost's events. */
+ * vendor reports): the interfaces, their report descriptors and interrupt
+ * endpoints, and the reports turned into EspUsbHost's events. */
 #include "CH32RVUsbHostInternal.h"
 
 #include <string.h>
 
 #include "CH32RVUsbHostHidLayout.h"
 
-#if 0 /* moving to the own host stack */
+#if CH32RV_USB_HOST_STACK
 
 namespace {
 
-/* One mounted HID interface (TinyUSB's index). */
+#define HID_INTERFACES 4
+#define HID_REPORT_MAX 64
+
+#define HID_PAGE_DESKTOP 0x01
+#define HID_PAGE_CONSUMER 0x0C
+#define HID_USAGE_JOYSTICK 0x04
+#define HID_USAGE_GAMEPAD 0x05
+#define HID_USAGE_KEYBOARD 0x06
+#define HID_USAGE_MOUSE 0x02
+#define HID_USAGE_SYSTEM_CONTROL 0x80
+#define HID_ITF_PROTOCOL_KEYBOARD 1
+#define HID_ITF_PROTOCOL_MOUSE 2
+#define HID_REQ_GET_REPORT 0x01
+#define HID_REQ_SET_IDLE 0x0A
+#define HID_REQ_SET_REPORT 0x09
+#define HID_REQ_SET_PROTOCOL 0x0B
+
+/* One top-level application collection of a report descriptor. */
+struct ReportInfo {
+    uint8_t report_id;
+    uint8_t usage;
+    uint16_t usage_page;
+};
+
+/* One mounted HID interface. */
 struct HidItf {
     bool mounted;
     uint8_t daddr, itf, protocol;            /* itf protocol: 1 keyboard, 2 mouse */
+    uint8_t subclass;
+    uint8_t epIn, epOut;
+    uint16_t mpsIn;
+    uint16_t descriptorLength;               /* the report descriptor's */
+    volatile bool inBusy, outBusy;
     uint8_t reportCount;
-    tuh_hid_report_info_t reports[CH32RV_USB_HOST_HID_REPORTS];
+    ReportInfo reports[CH32RV_USB_HOST_HID_REPORTS];
     CH32RVUsbHostMouseReportLayout mouse;
     uint8_t lastKeys[8];
     uint16_t lastMouseButtons;
@@ -25,8 +54,22 @@ struct HidItf {
     uint8_t lastGamepad[16];
     uint8_t lastGamepadLength;
     uint8_t leds;                            /* what setKeyboardLeds() last sent */
+    uint8_t in[HID_REPORT_MAX] __attribute__((aligned(4)));
+    uint8_t out[HID_REPORT_MAX] __attribute__((aligned(4)));
 };
-HidItf hids[CFG_TUH_HID];
+HidItf hids[HID_INTERFACES];
+
+/* Reports wait here for the task: the endpoint is armed again at once, and
+ * the sketch's callbacks (which may print to a slow console) run from the
+ * task, not from inside a transfer's completion. */
+struct Queued {
+    uint8_t idx;
+    uint8_t length;
+    uint8_t data[HID_REPORT_MAX];
+};
+#define QUEUE 4
+Queued queue[QUEUE];
+volatile uint8_t q_head, q_tail;
 
 CH32RVUsbHost::KeyboardCallback keyboard_cb;
 CH32RVUsbHost::MouseCallback mouse_cb;
@@ -38,21 +81,16 @@ CH32RVUsbHost::HIDInputCallback input_cb;
 CH32RVUsbHost::HIDReportDescriptorCallback descriptor_cb;
 const CH32RVUsbHostKeyboardLayout *layout;
 
-const usbh_class_driver_t hid_driver = {
-    "HID", hidh_init, hidh_deinit, hidh_open, hidh_set_config, hidh_xfer_cb, hidh_close,
-};
+uint16_t hid_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
+void hid_configured(uint8_t daddr, uint8_t itf);
+void hid_poll(CH32RVUsbHost &host);
+void hid_detach(uint8_t daddr);
 
-CH32RVUsbHostGroup hid_group = {&hid_driver, nullptr, nullptr, nullptr};
+CH32RVUsbHostGroup hid_group = {hid_open, hid_configured, hid_poll, hid_detach, nullptr};
 
-/* Joins when this file is linked: something in it was called. Report
- * protocol, as a host OS runs it: the report descriptor then says what
- * arrives, report IDs included (HID 1.11 7.2.6). */
+/* Joins when this file is linked: something in it was called. */
 struct Join {
-    Join()
-    {
-        tuh_hid_set_default_protocol(HID_PROTOCOL_REPORT);
-        ch32rv_usb_host_join(hid_group);
-    }
+    Join() { ch32rv_usb_host_join(hid_group); }
 } join;
 
 const CH32RVUsbHostKeyboardLayout &current_layout()
@@ -118,7 +156,7 @@ uint16_t keycode_unicode(uint8_t keycode, uint8_t modifiers, bool capsLock, bool
 
 int find_index(uint8_t daddr, uint8_t itf)
 {
-    for (int i = 0; i < CFG_TUH_HID; i++) {
+    for (int i = 0; i < HID_INTERFACES; i++) {
         if (hids[i].mounted && hids[i].daddr == daddr && (itf == 0xFF || hids[i].itf == itf)) {
             return i;
         }
@@ -130,7 +168,7 @@ int find_index(uint8_t daddr, uint8_t itf)
  * `usagePage`; -1 when none. */
 int find_by_page(uint8_t address, uint16_t usagePage, uint8_t *reportId)
 {
-    for (int i = 0; i < CFG_TUH_HID; i++) {
+    for (int i = 0; i < HID_INTERFACES; i++) {
         const HidItf &h = hids[i];
         if (!h.mounted || (address != CH32RV_USB_HOST_ANY_ADDRESS && h.daddr != address)) {
             continue;
@@ -252,7 +290,7 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
     }
     /* Which report this is: by ID when the descriptor uses IDs, else the one
      * (or the interface's boot protocol). */
-    const tuh_hid_report_info_t *info = nullptr;
+    const ReportInfo *info = nullptr;
     const uint8_t *body = raw;
     size_t len = rawLength;
     const bool ids = h.reportCount && h.reports[0].report_id != 0;
@@ -269,13 +307,13 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
     }
     const uint16_t page = info ? info->usage_page : 0;
     const uint8_t usage = info ? info->usage : 0;
-    if ((page == HID_USAGE_PAGE_DESKTOP && usage == HID_USAGE_DESKTOP_KEYBOARD) ||
+    if ((page == HID_PAGE_DESKTOP && usage == HID_USAGE_KEYBOARD) ||
         (!info && h.protocol == HID_ITF_PROTOCOL_KEYBOARD)) {
         keyboard_report(h, raw, rawLength, body, len);
-    } else if ((page == HID_USAGE_PAGE_DESKTOP && usage == HID_USAGE_DESKTOP_MOUSE) ||
+    } else if ((page == HID_PAGE_DESKTOP && usage == HID_USAGE_MOUSE) ||
                (!info && h.protocol == HID_ITF_PROTOCOL_MOUSE)) {
         mouse_report(h, raw, rawLength, body, len);
-    } else if (page == HID_USAGE_PAGE_CONSUMER && len >= 2) {
+    } else if (page == HID_PAGE_CONSUMER && len >= 2) {
         const uint16_t u = (uint16_t)(body[0] | (body[1] << 8));
         if (u != h.lastConsumer && consumer_cb) {
             CH32RVUsbHostConsumerControlEvent e;
@@ -286,7 +324,7 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
             consumer_cb(e);
         }
         h.lastConsumer = u;
-    } else if (page == HID_USAGE_PAGE_DESKTOP && usage == HID_USAGE_DESKTOP_SYSTEM_CONTROL && len >= 1) {
+    } else if (page == HID_PAGE_DESKTOP && usage == HID_USAGE_SYSTEM_CONTROL && len >= 1) {
         const uint8_t u = body[0];
         if (u != h.lastSystem && system_cb) {
             CH32RVUsbHostSystemControlEvent e;
@@ -297,9 +335,8 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
             system_cb(e);
         }
         h.lastSystem = u;
-    } else if (page == HID_USAGE_PAGE_DESKTOP &&
-               (usage == HID_USAGE_DESKTOP_GAMEPAD || usage == HID_USAGE_DESKTOP_JOYSTICK)) {
-        const size_t n = TU_MIN(len, sizeof h.lastGamepad);
+    } else if (page == HID_PAGE_DESKTOP && (usage == HID_USAGE_GAMEPAD || usage == HID_USAGE_JOYSTICK)) {
+        const size_t n = ch32rv_min(len, sizeof h.lastGamepad);
         const bool changed = n != h.lastGamepadLength || memcmp(body, h.lastGamepad, n) != 0;
         if (gamepad_cb && changed) {
             CH32RVUsbHostGamepadEvent e;
@@ -316,62 +353,236 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
     }
 }
 
-}  // namespace
-
-/* ------------------------------------------------------------- TinyUSB */
-extern "C" void tuh_hid_mount_cb(uint8_t daddr, uint8_t idx, const uint8_t *desc, uint16_t len)
+/* The top-level application collections of a report descriptor and their
+ * report IDs - which report is a keyboard, which a mouse. */
+uint8_t parse_reports(ReportInfo *out, uint8_t capacity, const uint8_t *d, uint16_t length)
 {
-    if (idx >= CFG_TUH_HID) {
+    uint8_t count = 0;
+    uint8_t depth = 0;
+    uint16_t page = 0;
+    uint8_t usage = 0;
+    for (uint16_t at = 0; at < length;) {
+        const uint8_t prefix = d[at];
+        if (prefix == 0xFE) {                       /* long item */
+            if (at + 2 >= length) {
+                break;
+            }
+            at = (uint16_t)(at + 3 + d[at + 1]);
+            continue;
+        }
+        static const uint8_t sizes[4] = {0, 1, 2, 4};
+        const uint8_t size = sizes[prefix & 3];
+        if (at + 1u + size > length) {
+            break;
+        }
+        uint32_t value = 0;
+        for (uint8_t i = 0; i < size; i++) {
+            value |= (uint32_t)d[at + 1 + i] << (8 * i);
+        }
+        const uint8_t tag = (uint8_t)(prefix & 0xFC);
+        switch (tag) {
+        case 0x04:                                  /* Usage Page */
+            page = (uint16_t)value;
+            break;
+        case 0x08:                                  /* Usage */
+            if (depth == 0) {
+                usage = (uint8_t)value;
+                if (size == 4) {
+                    page = (uint16_t)(value >> 16);
+                }
+            }
+            break;
+        case 0xA0:                                  /* Collection */
+            if (depth == 0 && count < capacity) {
+                out[count].report_id = 0;
+                out[count].usage = usage;
+                out[count].usage_page = page;
+                count++;
+            }
+            depth++;
+            break;
+        case 0xC0:                                  /* End Collection */
+            if (depth) {
+                depth--;
+            }
+            break;
+        case 0x84:                                  /* Report ID */
+            if (depth && count) {
+                ReportInfo &r = out[count - 1];
+                if (r.report_id == 0) {
+                    r.report_id = (uint8_t)value;
+                } else if (count < capacity) {      /* another report in the same collection */
+                    out[count] = r;
+                    out[count].report_id = (uint8_t)value;
+                    count++;
+                }
+            }
+            break;
+        }
+        at = (uint16_t)(at + 1 + size);
+    }
+    return count;
+}
+
+void in_done(void *user, uint8_t result, uint16_t length);
+
+void arm_in(HidItf &h)
+{
+    if (h.mounted && !h.inBusy) {
+        const uint16_t n = h.mpsIn < sizeof h.in ? h.mpsIn : sizeof h.in;
+        h.inBusy = ch32rv_usb_host_xfer(h.daddr, h.epIn, h.in, n, in_done, &h);
+    }
+}
+
+void in_done(void *user, uint8_t result, uint16_t length)
+{
+    HidItf &h = *(HidItf *)user;
+    h.inBusy = false;
+    if (!h.mounted) {
+        return;
+    }
+    if (result == CH32RV_USBH_OK && length) {
+        const uint8_t next = (uint8_t)((q_head + 1) % QUEUE);
+        if (next != q_tail) {                       /* full: this one is dropped */
+            Queued &q = queue[q_head];
+            q.idx = (uint8_t)(&h - hids);
+            q.length = (uint8_t)(length < sizeof q.data ? length : sizeof q.data);
+            memcpy(q.data, h.in, q.length);
+            q_head = next;
+        }
+    }
+    arm_in(h);
+}
+
+void out_done(void *user, uint8_t result, uint16_t length)
+{
+    (void)result;
+    (void)length;
+    ((HidItf *)user)->outBusy = false;
+}
+
+/* An interface of class HID: its interrupt endpoints. The report descriptor
+ * waits for the configuration. */
+uint16_t hid_open(uint8_t daddr, const uint8_t *itf, uint16_t length)
+{
+    if (itf[5] != 3) {
+        return 0;
+    }
+    HidItf *h = nullptr;
+    for (HidItf &x : hids) {
+        if (!x.mounted && !x.daddr) {
+            h = &x;
+            break;
+        }
+    }
+    if (!h) {
+        return 0;
+    }
+    uint8_t epIn = 0, epOut = 0;
+    uint16_t mpsIn = 0, descriptorLength = 0;
+    const uint8_t *eps[2] = {};
+    uint16_t at = itf[0];
+    while (at + 2 <= length && itf[at] >= 2 && itf[at + 1] != 4 && itf[at + 1] != 11) {
+        const uint8_t *d = itf + at;
+        if (d[1] == 0x21 && d[0] >= 9) {
+            descriptorLength = (uint16_t)(d[7] | d[8] << 8);
+        } else if (d[1] == 5 && d[0] >= 7 && (d[3] & 3) == 3) {
+            if ((d[2] & 0x80) && !epIn) {
+                epIn = d[2];
+                mpsIn = (uint16_t)((d[4] | d[5] << 8) & 0x7FF);
+                eps[0] = d;
+            } else if (!(d[2] & 0x80) && !epOut) {
+                epOut = d[2];
+                eps[1] = d;
+            }
+        }
+        at = (uint16_t)(at + d[0]);
+    }
+    if (!epIn || !ch32rv_usb_host_ep_open(daddr, eps[0])) {
+        return 0;
+    }
+    if (epOut && !ch32rv_usb_host_ep_open(daddr, eps[1])) {
+        epOut = 0;
+    }
+    memset(h, 0, sizeof *h);
+    h->daddr = daddr;
+    h->itf = itf[2];
+    h->subclass = itf[6];
+    h->protocol = itf[7];
+    h->epIn = epIn;
+    h->epOut = epOut;
+    h->mpsIn = mpsIn;
+    h->descriptorLength = descriptorLength;
+    return at;
+}
+
+/* Report protocol, as a host OS runs it: the report descriptor then says
+ * what arrives, report IDs included (HID 1.11 7.2.6). */
+void hid_configured(uint8_t daddr, uint8_t itf)
+{
+    const int idx = [&] {
+        for (int i = 0; i < HID_INTERFACES; i++) {
+            if (!hids[i].mounted && hids[i].daddr == daddr && hids[i].itf == itf) {
+                return i;
+            }
+        }
+        return -1;
+    }();
+    if (idx < 0) {
         return;
     }
     HidItf &h = hids[idx];
-    memset(&h, 0, sizeof h);
-    tuh_itf_info_t info;
-    h.daddr = daddr;
-    h.itf = tuh_hid_itf_get_info(daddr, idx, &info) ? info.desc.bInterfaceNumber : idx;
-    h.protocol = tuh_hid_interface_protocol(daddr, idx);
-    h.reportCount = tuh_hid_parse_report_descriptor(h.reports, CH32RV_USB_HOST_HID_REPORTS, desc, len);
-    ch32rvUsbHostParseMouseReportLayout(desc, len, h.mouse);
+    ch32rv_usb_host_control_sync(daddr, 0x21, HID_REQ_SET_IDLE, 0, itf, nullptr, 0, nullptr, 1000);   /* may STALL */
+    if (h.subclass == 1) {
+        ch32rv_usb_host_control_sync(daddr, 0x21, HID_REQ_SET_PROTOCOL, 1, itf, nullptr, 0, nullptr, 1000);
+    }
+    uint8_t *desc = ch32rv_usb_host_scratch;
+    uint16_t len = h.descriptorLength < sizeof ch32rv_usb_host_scratch ? h.descriptorLength
+                                                                       : (uint16_t)sizeof ch32rv_usb_host_scratch;
+    uint16_t got = 0;
+    if (!len || ch32rv_usb_host_control_sync(daddr, 0x81, 6, 0x2200, itf, desc, len, &got, 1000) != CH32RV_USBH_OK) {
+        got = 0;
+    }
+    h.reportCount = parse_reports(h.reports, CH32RV_USB_HOST_HID_REPORTS, desc, got);
+    ch32rvUsbHostParseMouseReportLayout(desc, got, h.mouse);
+    if (!ch32rv_usb_host_connected(daddr)) {
+        return;
+    }
     h.mounted = true;
     ch32rv_usb_host_mark_claimed(daddr, h.itf);
-    if (descriptor_cb) {
+    if (descriptor_cb && got) {
         CH32RVUsbHostHIDReportDescriptor d;
         d.address = daddr;
         d.interfaceNumber = h.itf;
         d.data = desc;
-        d.length = len;
+        d.length = got;
         descriptor_cb(d);
     }
-    tuh_hid_receive_report(daddr, idx);
+    arm_in(h);
 }
 
-extern "C" void tuh_hid_umount_cb(uint8_t daddr, uint8_t idx)
+void hid_poll(CH32RVUsbHost &host)
 {
-    (void)daddr;
-    if (idx < CFG_TUH_HID) {
-        hids[idx].mounted = false;
+    (void)host;
+    while (q_tail != q_head) {
+        Queued q = queue[q_tail];
+        q_tail = (uint8_t)((q_tail + 1) % QUEUE);
+        if (q.idx < HID_INTERFACES && hids[q.idx].mounted) {
+            report(hids[q.idx].daddr, q.idx, q.data, q.length);
+        }
     }
 }
 
-/* The report is copied and the endpoint armed again before the sketch's
- * callbacks run: they may take a while (print to a slow console), and the
- * device cannot send its next report until the host asks for it - a mouse
- * press and release in a row timed out on the device that way. */
-extern "C" void tuh_hid_report_received_cb(uint8_t daddr, uint8_t idx, const uint8_t *data, uint16_t len)
+void hid_detach(uint8_t daddr)
 {
-    uint8_t copy[CFG_TUH_HID_EPIN_BUFSIZE];
-    const bool use = idx < CFG_TUH_HID && hids[idx].mounted && len;
-    if (len > sizeof copy) {
-        len = sizeof copy;
-    }
-    if (use) {
-        memcpy(copy, data, len);
-    }
-    tuh_hid_receive_report(daddr, idx);
-    if (use) {
-        report(daddr, idx, copy, len);
+    for (HidItf &h : hids) {
+        if (h.daddr == daddr) {
+            memset(&h, 0, sizeof h);
+        }
     }
 }
+
+}  // namespace
 
 /* ------------------------------------------------------------- the API */
 void CH32RVUsbHost::onKeyboard(KeyboardCallback cb) { keyboard_cb = cb; }
@@ -386,7 +597,7 @@ void CH32RVUsbHost::setKeyboardLayout(const CH32RVUsbHostKeyboardLayout &l) { la
 
 bool CH32RVUsbHost::hidReady(uint8_t address) const
 {
-    for (int i = 0; i < CFG_TUH_HID; i++) {
+    for (int i = 0; i < HID_INTERFACES; i++) {
         if (hids[i].mounted && (address == CH32RV_USB_HOST_ANY_ADDRESS || hids[i].daddr == address)) {
             return true;
         }
@@ -398,8 +609,7 @@ bool CH32RVUsbHost::sendSetProtocol(uint8_t interfaceNumber, uint8_t address, bo
 {
     const uint8_t daddr = address == CH32RV_USB_HOST_ANY_ADDRESS ? resolve(address) : address;
     /* SET_PROTOCOL: class, interface; wValue 0 boot, 1 report. */
-    return ch32rv_usb_host_control(*this, daddr, 0x21, HID_REQ_CONTROL_SET_PROTOCOL,
-                                   bootProtocol ? HID_PROTOCOL_BOOT : HID_PROTOCOL_REPORT, interfaceNumber,
+    return ch32rv_usb_host_control(*this, daddr, 0x21, HID_REQ_SET_PROTOCOL, bootProtocol ? 0 : 1, interfaceNumber,
                                    nullptr, 0, nullptr, 1000);
 }
 
@@ -408,7 +618,7 @@ bool CH32RVUsbHost::sendHIDReport(uint8_t interfaceNumber, uint8_t reportType, u
 {
     int idx = find_index(address == CH32RV_USB_HOST_ANY_ADDRESS ? 0 : address, interfaceNumber);
     if (address == CH32RV_USB_HOST_ANY_ADDRESS) {
-        for (int i = 0; i < CFG_TUH_HID && idx < 0; i++) {
+        for (int i = 0; i < HID_INTERFACES && idx < 0; i++) {
             if (hids[i].mounted && hids[i].itf == interfaceNumber) {
                 idx = i;
             }
@@ -428,7 +638,7 @@ bool CH32RVUsbHost::sendHIDReport(uint8_t interfaceNumber, uint8_t reportType, u
     }
     memcpy(buf + n, data, length);
     n += length;
-    return ch32rv_usb_host_control(*this, hids[idx].daddr, 0x21, HID_REQ_CONTROL_SET_REPORT,
+    return ch32rv_usb_host_control(*this, hids[idx].daddr, 0x21, HID_REQ_SET_REPORT,
                                    (uint16_t)((reportType << 8) | reportId), hids[idx].itf, buf, (uint16_t)n,
                                    nullptr, 1000);
 }
@@ -437,7 +647,7 @@ bool CH32RVUsbHost::getHIDReport(uint8_t interfaceNumber, uint8_t reportType, ui
                                  size_t length, size_t *actualLength, uint8_t address)
 {
     int idx = -1;
-    for (int i = 0; i < CFG_TUH_HID && idx < 0; i++) {
+    for (int i = 0; i < HID_INTERFACES && idx < 0; i++) {
         if (hids[i].mounted && hids[i].itf == interfaceNumber &&
             (address == CH32RV_USB_HOST_ANY_ADDRESS || hids[i].daddr == address)) {
             idx = i;
@@ -446,7 +656,7 @@ bool CH32RVUsbHost::getHIDReport(uint8_t interfaceNumber, uint8_t reportType, ui
     if (idx < 0) {
         return fail(CH32RVUsbHostError::NotSupported);
     }
-    return ch32rv_usb_host_control(*this, hids[idx].daddr, 0xA1, HID_REQ_CONTROL_GET_REPORT,
+    return ch32rv_usb_host_control(*this, hids[idx].daddr, 0xA1, HID_REQ_GET_REPORT,
                                    (uint16_t)((reportType << 8) | reportId), hids[idx].itf, data,
                                    (uint16_t)length, actualLength, 1000);
 }
@@ -459,11 +669,19 @@ bool CH32RVUsbHost::sendHIDVendorOutput(const uint8_t *data, size_t length, uint
         return fail(CH32RVUsbHostError::NotSupported);
     }
     /* The interrupt OUT endpoint when there is one, SET_REPORT otherwise (or
-     * when it is busy). tuh_hid_send_ready() is also true for an interface
-     * without an OUT endpoint, so the send itself decides. */
-    if (tuh_hid_send_ready(hids[idx].daddr, (uint8_t)idx) &&
-        tuh_hid_send_report(hids[idx].daddr, (uint8_t)idx, id, data, (uint16_t)length)) {
-        return ok();
+     * when it is busy). */
+    HidItf &h = hids[idx];
+    const size_t n = length + (id ? 1u : 0u);
+    if (h.epOut && !h.outBusy && n <= sizeof h.out && (length == 0 || data)) {
+        size_t k = 0;
+        if (id) {
+            h.out[k++] = id;
+        }
+        memcpy(h.out + k, data, length);
+        h.outBusy = ch32rv_usb_host_xfer(h.daddr, h.epOut, h.out, (uint16_t)n, out_done, &h);
+        if (h.outBusy) {
+            return ok();
+        }
     }
     return sendHIDReport(hids[idx].itf, CH32RV_USB_HOST_HID_REPORT_TYPE_OUTPUT, id, data, length,
                          hids[idx].daddr);
@@ -486,7 +704,7 @@ bool CH32RVUsbHost::setKeyboardLeds(bool numLock, bool capsLock, bool scrollLock
                                    (capsLock ? CH32RV_USB_HOST_KEYBOARD_LED_CAPS_LOCK : 0) |
                                    (scrollLock ? CH32RV_USB_HOST_KEYBOARD_LED_SCROLL_LOCK : 0));
     bool any = false;
-    for (int i = 0; i < CFG_TUH_HID; i++) {
+    for (int i = 0; i < HID_INTERFACES; i++) {
         HidItf &h = hids[i];
         if (!h.mounted || (address != CH32RV_USB_HOST_ANY_ADDRESS && h.daddr != address)) {
             continue;
@@ -494,8 +712,7 @@ bool CH32RVUsbHost::setKeyboardLeds(bool numLock, bool capsLock, bool scrollLock
         uint8_t id = 0;
         bool keyboard = !h.reportCount && h.protocol == HID_ITF_PROTOCOL_KEYBOARD;
         for (uint8_t r = 0; r < h.reportCount; r++) {
-            if (h.reports[r].usage_page == HID_USAGE_PAGE_DESKTOP &&
-                h.reports[r].usage == HID_USAGE_DESKTOP_KEYBOARD) {
+            if (h.reports[r].usage_page == HID_PAGE_DESKTOP && h.reports[r].usage == HID_USAGE_KEYBOARD) {
                 keyboard = true;
                 id = h.reports[r].report_id;
             }
@@ -514,7 +731,7 @@ bool CH32RVUsbHost::setKeyboardLeds(bool numLock, bool capsLock, bool scrollLock
 
 static uint8_t keyboard_leds(uint8_t address)
 {
-    for (int i = 0; i < CFG_TUH_HID; i++) {
+    for (int i = 0; i < HID_INTERFACES; i++) {
         if (hids[i].mounted && (address == CH32RV_USB_HOST_ANY_ADDRESS || hids[i].daddr == address) &&
             hids[i].leds) {
             return hids[i].leds;
