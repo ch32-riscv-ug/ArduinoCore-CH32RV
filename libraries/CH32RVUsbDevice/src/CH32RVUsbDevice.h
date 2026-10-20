@@ -178,6 +178,7 @@ struct CH32RVUsbDescriptorWriter {
     void (*visit)(void *context, const uint8_t *head, uint8_t headLength) = nullptr;
     void *context = nullptr;
     bool done = false;            /* a visitor that has what it wanted: the rest is skipped */
+    uint16_t *crc = nullptr;      /* CRC-16/CCITT of every byte, when set */
 
     void put(const uint8_t *data, uint16_t n);
     void u8(uint8_t v);

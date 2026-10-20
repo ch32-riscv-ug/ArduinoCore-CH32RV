@@ -149,6 +149,13 @@ void CH32RVUsbDescriptorWriter::emit(uint8_t v)
     if (out && length >= skip && length - skip < room) {
         out[length - skip] = v;
     }
+    if (crc) {
+        uint16_t c = (uint16_t)(*crc ^ (v << 8));
+        for (uint8_t b = 0; b < 8; b++) {
+            c = (uint16_t)(c & 0x8000 ? (c << 1) ^ 0x1021 : c << 1);
+        }
+        *crc = c;
+    }
     length++;
 }
 

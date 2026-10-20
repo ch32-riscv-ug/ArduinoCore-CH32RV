@@ -91,24 +91,22 @@ static uint16_t ms_os_20_length(void)
 /* The Microsoft OS 2.0 descriptor set (MS OS 2.0 descriptors spec 1.0). */
 static void ms_os_20_write(CH32RVUsbDescriptorWriter &w)
 {
-    w.u16(10);
-    w.u16(0);                      /* MS_OS_20_SET_HEADER_DESCRIPTOR */
-    w.u32(0x06030000);             /* Windows 8.1 and later */
-    w.u16(ms_os_20_length());
+    const uint16_t total = ms_os_20_length(), parts = functions_part();
+    const uint8_t r0 = (uint8_t)set.revision, r1 = (uint8_t)(set.revision >> 8);
+    /* SET_HEADER, Windows 8.1 and later */
+    const uint8_t head[10] = {10, 0, 0, 0, 0x00, 0x00, 0x03, 0x06, (uint8_t)total, (uint8_t)(total >> 8)};
+    w.put(head, sizeof head);
     if (set.ccgp) {
-        w.u16(4);
-        w.u16(7);                  /* MS_OS_20_FEATURE_CCGP_DEVICE */
+        static const uint8_t ccgp[4] = {4, 0, 7, 0};               /* FEATURE_CCGP_DEVICE */
+        w.put(ccgp, sizeof ccgp);
     }
     if (!set.subsets) {
-        w.u16(6);
-        w.u16(8);                  /* MS_OS_20_FEATURE_VENDOR_REVISION */
-        w.u16(set.revision);
+        const uint8_t rev[6] = {6, 0, 8, 0, r0, r1};                /* FEATURE_VENDOR_REVISION */
+        w.put(rev, sizeof rev);
     } else {
-        w.u16(8);
-        w.u16(1);                  /* MS_OS_20_SUBSET_HEADER_CONFIGURATION */
-        w.u8(0);
-        w.u8(0);
-        w.u16((uint16_t)(8 + functions_part()));
+        const uint16_t n = (uint16_t)(8 + parts);
+        const uint8_t config[8] = {8, 0, 1, 0, 0, 0, (uint8_t)n, (uint8_t)(n >> 8)};   /* SUBSET_HEADER_CONFIGURATION */
+        w.put(config, sizeof config);
     }
     /* The functions in interface order, which is declaration order. */
     for (uint8_t i = 0; i < set.device->functionCount(); i++) {
@@ -117,24 +115,19 @@ static void ms_os_20_write(CH32RVUsbDescriptorWriter &w)
             continue;
         }
         if (set.subsets) {
-            w.u16(8);
-            w.u16(2);              /* MS_OS_20_SUBSET_HEADER_FUNCTION */
-            w.u8(f.interfaceNumber());
-            w.u8(0);
-            w.u16(function_part(f));
-            w.u16(6);
-            w.u16(8);
-            w.u16(set.revision);
+            const uint16_t n = function_part(f);
+            const uint8_t sub[14] = {8, 0, 2, 0, f.interfaceNumber(), 0, (uint8_t)n, (uint8_t)(n >> 8),   /* SUBSET_HEADER_FUNCTION */
+                                     6, 0, 8, 0, r0, r1};                                               /* its revision */
+            w.put(sub, sizeof sub);
         }
         static const uint8_t compat[20] = {20, 0, 3, 0, 'W', 'I', 'N', 'U', 'S', 'B'};
         w.put(compat, sizeof compat);
         if (f.winusb() == 2) {
-            w.u16(132);
-            w.u16(4);              /* MS_OS_20_FEATURE_REG_PROPERTY */
-            w.u16(7);              /* REG_MULTI_SZ */
-            w.u16(42);
+            static const uint8_t prop[8] = {132, 0, 4, 0, 7, 0, 42, 0};   /* FEATURE_REG_PROPERTY, REG_MULTI_SZ */
+            static const uint8_t data_length[2] = {80, 0};
+            w.put(prop, sizeof prop);
             put_utf16(w, "DeviceInterfaceGUIDs", false);
-            w.u16(80);
+            w.put(data_length, sizeof data_length);
             put_utf16(w, set.guid, true);
         }
     }
@@ -142,24 +135,12 @@ static void ms_os_20_write(CH32RVUsbDescriptorWriter &w)
 
 /* CRC-16/CCITT of the set (its revision fields 0), folded to 15 bits plus
  * one: never 0. */
-static uint16_t set_revision(uint16_t length)
+static uint16_t set_revision(void)
 {
     uint16_t crc = 0xFFFF;
-    uint8_t chunk[32];
-    for (uint16_t at = 0; at < length; at = (uint16_t)(at + sizeof chunk)) {
-        CH32RVUsbDescriptorWriter w;
-        w.out = chunk;
-        w.skip = at;
-        w.room = sizeof chunk;
-        ms_os_20_write(w);
-        const uint16_t n = (uint16_t)(length - at < sizeof chunk ? length - at : sizeof chunk);
-        for (uint16_t i = 0; i < n; i++) {
-            crc ^= (uint16_t)(chunk[i] << 8);
-            for (uint8_t b = 0; b < 8; b++) {
-                crc = (uint16_t)(crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1);
-            }
-        }
-    }
+    CH32RVUsbDescriptorWriter w;
+    w.crc = &crc;
+    ms_os_20_write(w);
     return (uint16_t)((crc & 0x7FFF) + 1);
 }
 
@@ -218,7 +199,7 @@ static bool build(const CH32RVUsbDevice &device)
         set.guid = c.deviceInterfaceGuid ? c.deviceInterfaceGuid : default_guid;
         set.revision = 0;
         const uint16_t n = ms_os_20_length();
-        set.revision = c.msOs20VendorRevision ? c.msOs20VendorRevision : set_revision(n);
+        set.revision = c.msOs20VendorRevision ? c.msOs20VendorRevision : set_revision();
         p.msOs20Length = n;
         p.msOs20Revision = set.revision;
         p.msOs20Subsets = set.subsets;
@@ -241,36 +222,25 @@ static bool platform_request(CH32RVUsbControlStage stage, const CH32RVUsbSetup &
         if (stage != CH32RVUsbControlStage::Setup) {
             return true;
         }
-        const char *url = USBDevice.config().webusbUrl;
+        static const char *url;
+        static uint8_t url_head[3];
+        url = USBDevice.config().webusbUrl;
         if (!url || s.wIndex != 2) {
             return false;
         }
-        size_t n = strlen(url);
+        url_head[2] = 1;           /* https:// */
         if (strncmp(url, "https://", 8) == 0) {
-            n -= 8;
+            url += 8;
         } else if (strncmp(url, "http://", 7) == 0) {
-            n -= 7;
+            url_head[2] = 0;
+            url += 7;
         }
-        if (n > 252) {
-            n = 252;
-        }
-        return ch32rv_usb_control_in_written(USBDevice, (uint16_t)(n + 3), [](CH32RVUsbDescriptorWriter &w) {
-            const char *u = USBDevice.config().webusbUrl;
-            uint8_t scheme = 1;
-            if (strncmp(u, "https://", 8) == 0) {
-                u += 8;
-            } else if (strncmp(u, "http://", 7) == 0) {
-                scheme = 0;
-                u += 7;
-            }
-            size_t k = strlen(u);
-            if (k > 252) {
-                k = 252;
-            }
-            w.u8((uint8_t)(k + 3));
-            w.u8(3);               /* WEBUSB URL */
-            w.u8(scheme);
-            w.put((const uint8_t *)u, (uint16_t)k);
+        const size_t n = strlen(url);
+        url_head[0] = (uint8_t)(n > 252 ? 255 : n + 3);
+        url_head[1] = 3;           /* WEBUSB URL */
+        return ch32rv_usb_control_in_written(USBDevice, url_head[0], [](CH32RVUsbDescriptorWriter &w) {
+            w.put(url_head, 3);
+            w.put((const uint8_t *)url, (uint16_t)(url_head[0] - 3));
         });
     }
     if (s.bRequest == MS_OS_20_VENDOR_CODE && s.wIndex == 7 && p.msOs20Length) {
