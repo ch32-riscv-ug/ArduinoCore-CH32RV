@@ -130,12 +130,23 @@ def dependency_cases(smoke):
     return result
 
 
+def x0_feature_cases(smoke):
+    result = [("baseline", 0, 4, 0, 2, 1), ("unused-R-off", 1, 4, 0, 2, 0)]
+    if not smoke:
+        for part, candidate in enumerate(("R", "A", "B", "C"), 1):
+            for variant, mode in ((2, "off"), (3, "on")):
+                if part != 1 or variant != 2: result.append((f"unused-{candidate}-{mode}", part, 4, 0, variant, 0))
+            for variant, mode in enumerate(("runtime0", "runtime1", "off", "on", "manual")):
+                result.append((f"{candidate}-{mode}", part, 4, 0, variant, 1))
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
-    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event", "k0", "wait", "x0", "dependencies"), default="serial")
+    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event", "k0", "wait", "x0", "dependencies", "x0-features"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
@@ -195,6 +206,13 @@ def main():
                   HEADER.with_name("wait_dependencies.hpp")]
         selected_cases = dependency_cases(args.smoke)
         report["scope"] = "bounded declared dependency inspection/Drive guard link-only with toy predicate; no I/O, ownership discovery, dispatcher, atomic snapshot or cycle proof"
+    elif args.matrix == "x0-features":
+        source = Path(__file__).with_name("x0_features_entry.cpp")
+        inputs = [source, HEADER, HEADER.with_name("work_executor.hpp"), HEADER.with_name("event_executor.hpp"),
+                  HEADER.with_name("static_mailbox.hpp"), HEADER.with_name("x0_candidates.hpp"),
+                  HEADER.with_name("r_application.hpp"), HEADER.with_name("r_workloads.hpp"), HEADER.with_name("x0_features.hpp")]
+        selected_cases = x0_feature_cases(args.smoke)
+        report["scope"] = "X0 fixed absent/present touch versus hand-stripped and historical runtime controls; M-only logic link; no physical PD/I2C, startup, ISR, stack peak or cycle proof"
     report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")

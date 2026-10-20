@@ -1,0 +1,4259 @@
+{
+  "scope": "X0 fixed absent/present touch versus hand-stripped and historical runtime controls; M-only logic link; no physical PD/I2C, startup, ISR, stack peak or cycle proof",
+  "status": "passed",
+  "results": [
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-R-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-R-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-runtime0",
+      "flash_bytes": 3294,
+      "static_ram_bytes": 372,
+      "delta_flash": 3264,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2942,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "ac9dbd58e4fe0cd74c284799e266a90420836281c60dcd5a05669e4953404f38"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-runtime1",
+      "flash_bytes": 3298,
+      "static_ram_bytes": 372,
+      "delta_flash": 3268,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2946,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "eb45fc2d344c55250d8e4231512a836172b5805da447d2c16e8d3dbd428a5d41"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-off",
+      "flash_bytes": 3106,
+      "static_ram_bytes": 348,
+      "delta_flash": 3076,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2778,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "893321951918de7537931dd2b65b9294c65475ace933e32f6b7c9c7d623b0b55"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-on",
+      "flash_bytes": 3310,
+      "static_ram_bytes": 376,
+      "delta_flash": 3280,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2954,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "4fabbdbaa6a219c54d76bfd188895566390512b6885dfaaa1fa8d87ea4e3865a"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-manual",
+      "flash_bytes": 3106,
+      "static_ram_bytes": 348,
+      "delta_flash": 3076,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2778,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "1e37984a064da61bd854d6dd327a3edfd80be42e6ad10498487938015a499325"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-A-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-A-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-runtime0",
+      "flash_bytes": 3294,
+      "static_ram_bytes": 372,
+      "delta_flash": 3264,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2942,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "cb71c179e11a0350c495165bf32fafdae0dece684e8df6d74b20c021c4e0f3cc"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-runtime1",
+      "flash_bytes": 3298,
+      "static_ram_bytes": 372,
+      "delta_flash": 3268,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2946,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "ea7c2b28292b185c072e960fd94e0ad8022422d4c3127a4a2a6b38510a2e06a3"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-off",
+      "flash_bytes": 3106,
+      "static_ram_bytes": 348,
+      "delta_flash": 3076,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2778,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "340d203e0af84b09834c80cf571af4781696762233386269a8ac32f970b61c1d"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-on",
+      "flash_bytes": 3310,
+      "static_ram_bytes": 376,
+      "delta_flash": 3280,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2954,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "2555bafba1c2a52299d695233d6a2a199230759e2101fbc9c64190e529a54a6a"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-manual",
+      "flash_bytes": 3106,
+      "static_ram_bytes": 348,
+      "delta_flash": 3076,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2778,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "d047dbd41414235d1e4818bd1c12b72b439fb57f810f64abf62c5ce84ca2d999"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-B-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-B-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-runtime0",
+      "flash_bytes": 3778,
+      "static_ram_bytes": 400,
+      "delta_flash": 3748,
+      "delta_ram": 380,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3398,
+        ".data": 380,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "6ac73051218bb76f7235363af9dffca44baf78a6db0e062bb9abcf350ff9bb30"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-runtime1",
+      "flash_bytes": 3786,
+      "static_ram_bytes": 400,
+      "delta_flash": 3756,
+      "delta_ram": 380,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3406,
+        ".data": 380,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "810ed36e4b8750bc9a2e3c09754863dd03940f72c02b6dcc99421dd79fa7ad27"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-off",
+      "flash_bytes": 3562,
+      "static_ram_bytes": 376,
+      "delta_flash": 3532,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3206,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "4290d87e372288172dc98f1050d5586a16027a0501edafe04ec2edb8ca2aa573"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-on",
+      "flash_bytes": 3774,
+      "static_ram_bytes": 404,
+      "delta_flash": 3744,
+      "delta_ram": 384,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3390,
+        ".data": 384,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "c5b7e3589f3c90486cbe8f4ce4a8b98bd75b40b3cf8bf3c50658d88ffbb577b6"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-manual",
+      "flash_bytes": 3562,
+      "static_ram_bytes": 376,
+      "delta_flash": 3532,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3206,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "3a65a6905b8d8dde9bc2189b36837371c1a9f018964f0d4fff8b03a365e83c6f"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-C-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-C-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "34161d3beb15175e8913f3cb8140cf0e6724e9bd7946681e219c8883d6072651"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-runtime0",
+      "flash_bytes": 3906,
+      "static_ram_bytes": 384,
+      "delta_flash": 3876,
+      "delta_ram": 364,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3542,
+        ".data": 364,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "cb3b101c4aafb51c38b03dbee5564fb366096fc617d0d668abf960799f50000b"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-runtime1",
+      "flash_bytes": 3914,
+      "static_ram_bytes": 384,
+      "delta_flash": 3884,
+      "delta_ram": 364,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3550,
+        ".data": 364,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "77403d4089accb0e2ee8ed664733ae6b642494d834a54ce7faa41fce4444801d"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-off",
+      "flash_bytes": 3702,
+      "static_ram_bytes": 360,
+      "delta_flash": 3672,
+      "delta_ram": 340,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3362,
+        ".data": 340,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "cf2d1f0f32d1c24dfb04c905a18ebb3ec347b15b0171820481f18e026fa9c00e"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-on",
+      "flash_bytes": 3918,
+      "static_ram_bytes": 388,
+      "delta_flash": 3888,
+      "delta_ram": 368,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3550,
+        ".data": 368,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "424573d3e8ce7b176b99dc6cd4f72b16cbfa6fdde8fb510e477875b989d0e808"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-manual",
+      "flash_bytes": 3702,
+      "static_ram_bytes": 360,
+      "delta_flash": 3672,
+      "delta_ram": 340,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3362,
+        ".data": 340,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7a0af8459ef54a2890e8440915344095110a9e0bd48976a7fd19da0c102e9119"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-R-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-R-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-runtime0",
+      "flash_bytes": 3222,
+      "static_ram_bytes": 372,
+      "delta_flash": 3192,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2870,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "eec3984854536ef55e656b36f168a702784ce4fed84235e3fea456d26290b151"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-runtime1",
+      "flash_bytes": 3226,
+      "static_ram_bytes": 372,
+      "delta_flash": 3196,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2874,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "9300d5adaac194ade6d85fbb8e14efd697f4032e54c8da6b884dd774078a7ed1"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-off",
+      "flash_bytes": 3014,
+      "static_ram_bytes": 348,
+      "delta_flash": 2984,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2686,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "81a759e54495bb0ba5ae93ac180490fcf2562f313ef8518838134c9e5d9d1e7a"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-on",
+      "flash_bytes": 3226,
+      "static_ram_bytes": 376,
+      "delta_flash": 3196,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2870,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "a9b2ddc8a21aa95b574b76bf3fa6772f565e43cea38869163b1da35295cd6068"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-manual",
+      "flash_bytes": 3014,
+      "static_ram_bytes": 348,
+      "delta_flash": 2984,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2686,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "0efef2bd6cb982a0a624f15418f7c9230ec6c99ceb52c29c4af21079ddef7912"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-A-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-A-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-runtime0",
+      "flash_bytes": 3242,
+      "static_ram_bytes": 372,
+      "delta_flash": 3212,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2890,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "da3878a4a26d614d4ff0415c971cfa6918f13670469fdeb3eddb4daf54467d91"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-runtime1",
+      "flash_bytes": 3246,
+      "static_ram_bytes": 372,
+      "delta_flash": 3216,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2894,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "0f7364da436dfd75ee770f46724c0897a2b17730452ddbe82bb18a21164bb82a"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-off",
+      "flash_bytes": 3038,
+      "static_ram_bytes": 348,
+      "delta_flash": 3008,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2710,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "e999a7dea5141d11185e31157c164abfb52b2c2beddc501f644cedcbe2ee923f"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-on",
+      "flash_bytes": 3254,
+      "static_ram_bytes": 376,
+      "delta_flash": 3224,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2898,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "cce59c1b941323ba8e2160d84ee466c7b7cdbda421539cbb5f12797d88074e15"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-manual",
+      "flash_bytes": 3038,
+      "static_ram_bytes": 348,
+      "delta_flash": 3008,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2710,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "09e9d397d64a8b373f4895cc88b5dedc7981d0802240c9bf8aeec9f040237b27"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-B-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-B-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-runtime0",
+      "flash_bytes": 3674,
+      "static_ram_bytes": 400,
+      "delta_flash": 3644,
+      "delta_ram": 380,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3294,
+        ".data": 380,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "9b8fbdda446b17e32c55321d7841ab30243566652574eaa4ebd45065c646762c"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-runtime1",
+      "flash_bytes": 3678,
+      "static_ram_bytes": 400,
+      "delta_flash": 3648,
+      "delta_ram": 380,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3298,
+        ".data": 380,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "debf19d1937985d0b9642d0b3c04651d1fa151d6367313a2ff4923ffb39b0ecd"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-off",
+      "flash_bytes": 3478,
+      "static_ram_bytes": 376,
+      "delta_flash": 3448,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3122,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "19a10fb4cce0047c88ee39f5c94a9ad2119caf41e10593636212281335d12183"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-on",
+      "flash_bytes": 3654,
+      "static_ram_bytes": 404,
+      "delta_flash": 3624,
+      "delta_ram": 384,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3270,
+        ".data": 384,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "9291d49410480b6fd0f11e3f1c16754a4d9ef312947c600f1cfb8abe64db818f"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-manual",
+      "flash_bytes": 3478,
+      "static_ram_bytes": 376,
+      "delta_flash": 3448,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3122,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "98a9983fdaebce686a2a0be69be6ca74365c436e20db7a68bf706c342050e490"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-C-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-C-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "7cbf53ec6040aec0d52aba9c99cf0ed3c610e57f3abcc0723f9bb3fd5bb98380"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-runtime0",
+      "flash_bytes": 3858,
+      "static_ram_bytes": 384,
+      "delta_flash": 3828,
+      "delta_ram": 364,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3494,
+        ".data": 364,
+        ".bss": 20,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "03dad25ffad07359ae5199fde9a20a34d642309cad2c8d1b9eac68c86d076bde"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-runtime1",
+      "flash_bytes": 3866,
+      "static_ram_bytes": 384,
+      "delta_flash": 3836,
+      "delta_ram": 364,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3502,
+        ".data": 364,
+        ".bss": 20,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "ce242ffd3765c86d1055305d166b6deab8151b136c2b90ca29ecc2b5f68c253a"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-off",
+      "flash_bytes": 3562,
+      "static_ram_bytes": 360,
+      "delta_flash": 3532,
+      "delta_ram": 340,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3222,
+        ".data": 340,
+        ".bss": 20,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "5a83d908897b1323e132177c16c90ce9fe95607221955f5f38320cdf2fe707f4"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-on",
+      "flash_bytes": 3862,
+      "static_ram_bytes": 388,
+      "delta_flash": 3832,
+      "delta_ram": 368,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3494,
+        ".data": 368,
+        ".bss": 20,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "89f789d5df64a54ba74f17b4908ed4dbd8240accd1f31d3eb0d49608bdf2e11d"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-manual",
+      "flash_bytes": 3562,
+      "static_ram_bytes": 360,
+      "delta_flash": 3532,
+      "delta_ram": 340,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3222,
+        ".data": 340,
+        ".bss": 20,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "5716e0b224b12d5e35a7c3717f765a87e7d954141f528190dbbda6a382e40e68"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-R-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-R-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-runtime0",
+      "flash_bytes": 2950,
+      "static_ram_bytes": 372,
+      "delta_flash": 2920,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2598,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "1e8b2befbeb7a03f37c60a47f80f7f0721a65b95bac27fa3dc6573d5406ab80f"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-runtime1",
+      "flash_bytes": 2954,
+      "static_ram_bytes": 372,
+      "delta_flash": 2924,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2602,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "400db2664de8347f8e43e4e06aee78895d9cb066c2fc84262863c2f29bf1d810"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-off",
+      "flash_bytes": 2790,
+      "static_ram_bytes": 348,
+      "delta_flash": 2760,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2462,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "bc2908079649780d03ea445fd4fc5f0e8c6ae2eeceb9c472c785db5f0b266eaa"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-on",
+      "flash_bytes": 2966,
+      "static_ram_bytes": 376,
+      "delta_flash": 2936,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2610,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "25e46b42ff7ea5d3c05807be2e2f7b9a5b7851e0d360cc92411ced97d35d00d6"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-manual",
+      "flash_bytes": 2790,
+      "static_ram_bytes": 348,
+      "delta_flash": 2760,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2462,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "9ab7cf55107dfe979358ec778ba832d416c7210186fdafea337fba2bf19dcb1d"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-A-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-A-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-runtime0",
+      "flash_bytes": 2950,
+      "static_ram_bytes": 372,
+      "delta_flash": 2920,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2598,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "1951570375eea766e03f5a4276b715ba59f75e045a3f58381d26990172c620cf"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-runtime1",
+      "flash_bytes": 2954,
+      "static_ram_bytes": 372,
+      "delta_flash": 2924,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2602,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "e9226b4d479ff99d4421d4778e6a217aed84a0249fa74c779fa5f0c43fcb5b43"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-off",
+      "flash_bytes": 2790,
+      "static_ram_bytes": 348,
+      "delta_flash": 2760,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2462,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "caf6a0abdf6608b63d79e7714a056b756b961e2eac0f35975f35fa533084accc"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-on",
+      "flash_bytes": 2966,
+      "static_ram_bytes": 376,
+      "delta_flash": 2936,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2610,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "035aa51072044ebdb3d72e33ef498cc4b6b488077297557faf01b0b4ca21d657"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-manual",
+      "flash_bytes": 2790,
+      "static_ram_bytes": 348,
+      "delta_flash": 2760,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2462,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "4a9b02610696498b89d435ae513fbc2547ae4f47e7450c6754bd5a5cb3df6a25"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-B-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-B-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-runtime0",
+      "flash_bytes": 3434,
+      "static_ram_bytes": 400,
+      "delta_flash": 3404,
+      "delta_ram": 380,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3054,
+        ".data": 380,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "d9ffc501b250fb28f735236ff8165c2d7ee4e85ac6eef3805ffa886a40e18ec7"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-runtime1",
+      "flash_bytes": 3438,
+      "static_ram_bytes": 400,
+      "delta_flash": 3408,
+      "delta_ram": 380,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3058,
+        ".data": 380,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "2586df240a584e11716212deb86ef799ff24eb8ccaa5f431c49cd52bf8d11bb1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-off",
+      "flash_bytes": 3254,
+      "static_ram_bytes": 376,
+      "delta_flash": 3224,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2898,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "ccf852f80fface0c1a2162afab3e8039044434f6374f42f11bcc282b63f82c10"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-on",
+      "flash_bytes": 3426,
+      "static_ram_bytes": 404,
+      "delta_flash": 3396,
+      "delta_ram": 384,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3042,
+        ".data": 384,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "156e9c7689a9a4d484ed7adbb96b2f12ae1df4b9160108f38ccb160f887566e2"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-manual",
+      "flash_bytes": 3254,
+      "static_ram_bytes": 376,
+      "delta_flash": 3224,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2898,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "ce8f6bc2c987ed35dead96da7cbac25712553525754f749fa7f54f834a26cf45"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-C-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-C-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3d3fd0a0b1ad2e9fb655b343216735e658fbc9f022df45d7075566d432a30d57"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-runtime0",
+      "flash_bytes": 3562,
+      "static_ram_bytes": 384,
+      "delta_flash": 3532,
+      "delta_ram": 364,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3198,
+        ".data": 364,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "e5544f6d57f5d9558a0cb716737f0324f1d726728fb4c50ef23966454e8e688c"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-runtime1",
+      "flash_bytes": 3566,
+      "static_ram_bytes": 384,
+      "delta_flash": 3536,
+      "delta_ram": 364,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3202,
+        ".data": 364,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "13add91ed994c92e8ee987e21582d268dfbe7f82b898e12b65398f4db81ec665"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-off",
+      "flash_bytes": 3382,
+      "static_ram_bytes": 360,
+      "delta_flash": 3352,
+      "delta_ram": 340,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3042,
+        ".data": 340,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "cafdeee042819384844fa72737c158e887cbec75cd1ffb33a096022be2d95fbf"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-on",
+      "flash_bytes": 3570,
+      "static_ram_bytes": 388,
+      "delta_flash": 3540,
+      "delta_ram": 368,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3202,
+        ".data": 368,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "4a05464244e7d9f4f64361ed61383979ffdc032702c9cdaf3c4e6e46a8a6bd3a"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-manual",
+      "flash_bytes": 3382,
+      "static_ram_bytes": 360,
+      "delta_flash": 3352,
+      "delta_ram": 340,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3042,
+        ".data": 340,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "4f4d632a26bd9de079aa766aa1ea3de1b85ac5f5f79fd8f9cd9067b45103d062"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-R-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-R-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-runtime0",
+      "flash_bytes": 2850,
+      "static_ram_bytes": 372,
+      "delta_flash": 2820,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2498,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "9405c7ebe69f6284a6b0540eb607aa1481b9fa014e6d2b7e8b800d6314ebf6ec"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-runtime1",
+      "flash_bytes": 2850,
+      "static_ram_bytes": 372,
+      "delta_flash": 2820,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2498,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "7d83f61859bf39d6e1f50e6e578562576af306419b36a554a763a5f6016d979e"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-off",
+      "flash_bytes": 2658,
+      "static_ram_bytes": 348,
+      "delta_flash": 2628,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2330,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "35f5d89561c2f020e3bb846e9a2c311d324ae15c50a74fa50cc3a23bc0b423da"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-on",
+      "flash_bytes": 2846,
+      "static_ram_bytes": 376,
+      "delta_flash": 2816,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2490,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "d1e797a968a27b80338045fabd640f68b2e8becae15a5612571fa9a31fd1b034"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-manual",
+      "flash_bytes": 2658,
+      "static_ram_bytes": 348,
+      "delta_flash": 2628,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2330,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "06d7f70ac0c71515eb28d3522bec004879697bbcac45005b61cebca29452e444"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-A-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-A-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-runtime0",
+      "flash_bytes": 2874,
+      "static_ram_bytes": 372,
+      "delta_flash": 2844,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2522,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "e36af167fcd9e2e0bed14ec19d96ae92f73e74555023cc34ea6e7506bfebde56"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-runtime1",
+      "flash_bytes": 2878,
+      "static_ram_bytes": 372,
+      "delta_flash": 2848,
+      "delta_ram": 352,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2526,
+        ".data": 352,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "2a531df317541a8e0de8bb9dcc4d1e4b71f07ff29e868eb8ddbc38a1640c48da"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-off",
+      "flash_bytes": 2682,
+      "static_ram_bytes": 348,
+      "delta_flash": 2652,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2354,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0f85abc310939c8517f230547ddb326f5c7e9b8dfbb3768afd92f40ccbe6615e"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-on",
+      "flash_bytes": 2874,
+      "static_ram_bytes": 376,
+      "delta_flash": 2844,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2518,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "5ad439b5519ec66945dda85313d77bb15b2f8d0d28484f6e8b6aaf912f8448dd"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-manual",
+      "flash_bytes": 2682,
+      "static_ram_bytes": 348,
+      "delta_flash": 2652,
+      "delta_ram": 328,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2354,
+        ".data": 328,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "5b36fd02598aea009063dffed12065e053c7707494f138319e75d9406a99d4c8"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-B-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-B-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-runtime0",
+      "flash_bytes": 3322,
+      "static_ram_bytes": 400,
+      "delta_flash": 3292,
+      "delta_ram": 380,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2942,
+        ".data": 380,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "daa0fd11a394f9eaf8921cba3e57739cd334978edd2319d0cafd07ae13fdd3a0"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-runtime1",
+      "flash_bytes": 3326,
+      "static_ram_bytes": 400,
+      "delta_flash": 3296,
+      "delta_ram": 380,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2946,
+        ".data": 380,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "8ee425d65eeaa5a335e803c17f327554d4d4f747f641be49399bd06513d64cc3"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-off",
+      "flash_bytes": 3158,
+      "static_ram_bytes": 376,
+      "delta_flash": 3128,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2802,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "f2fcce8092f2ba4460d9554d4a903aa5325e5f12ebadbe2c8e976856b82e99f8"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-on",
+      "flash_bytes": 3314,
+      "static_ram_bytes": 404,
+      "delta_flash": 3284,
+      "delta_ram": 384,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2930,
+        ".data": 384,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "f7b2023ef92f098bfdd164a71568f0883104add6683584f8d157ab908b496617"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-manual",
+      "flash_bytes": 3158,
+      "static_ram_bytes": 376,
+      "delta_flash": 3128,
+      "delta_ram": 356,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2802,
+        ".data": 356,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "fb67a9df44e62986d59fc2f30318495e220e6e0070b9504475b60418252845ac"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-C-off",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-C-on",
+      "flash_bytes": 30,
+      "static_ram_bytes": 20,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 20,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0986ba48be6c8b9bea6ba58b1923b00c543c60529a02718a36f389e791548534"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-runtime0",
+      "flash_bytes": 3486,
+      "static_ram_bytes": 384,
+      "delta_flash": 3456,
+      "delta_ram": 364,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3122,
+        ".data": 364,
+        ".bss": 20,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "df0b33c6ba1cd2eeb3e634dfd182a7ff208c76e208a572532056299eb2633cd6"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-runtime1",
+      "flash_bytes": 3490,
+      "static_ram_bytes": 384,
+      "delta_flash": 3460,
+      "delta_ram": 364,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3126,
+        ".data": 364,
+        ".bss": 20,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "78ef08fd91310cb173da9521c60d19250903a25e7830d2fee5e810488f750ff1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-off",
+      "flash_bytes": 3198,
+      "static_ram_bytes": 360,
+      "delta_flash": 3168,
+      "delta_ram": 340,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2858,
+        ".data": 340,
+        ".bss": 20,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "d9fae7ec1d36b303e9abe84a1ad86166493d21f6f5d84cb4887eff6d2fdf0c2b"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-on",
+      "flash_bytes": 3478,
+      "static_ram_bytes": 388,
+      "delta_flash": 3448,
+      "delta_ram": 368,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 3110,
+        ".data": 368,
+        ".bss": 20,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "2f9be858ceba4ac8046d09080d702094f70779ba581fb27a1bd5900ed97e1cb4"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-manual",
+      "flash_bytes": 3198,
+      "static_ram_bytes": 360,
+      "delta_flash": 3168,
+      "delta_ram": 340,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2858,
+        ".data": 340,
+        ".bss": 20,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "fe8f7f7b3be5e33f43b2054966bc2dc98cbcd83f79d332ff39d9f767edd316e7"
+    }
+  ],
+  "input_hashes": {
+    "tests/platform/core_redesign/x0_features_entry.cpp": "b2ca46ce085191c4b313a81b5e1d1347d64cb3ce94e945b319509e26fe006e7b",
+    "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+    "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+    "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+    "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+    "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+    "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+    "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+    "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+    "tests/platform/core_redesign/measure_data_parts.py": "d3beb3ceb2044aa579825fb9a52fd9115aa15e6339e945733bc2023459b99574",
+    "tools/index/tools_xpack_gcc.json": "a654200c9f061204c6b3503848a442b9973f31d9c87656758368fad3b7150c7e"
+  },
+  "matrix": "x0-features",
+  "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+  "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+  "tool_hashes": {
+    "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+    "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+    "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+    "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+    "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+    "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+    "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+    "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+  },
+  "libraries": {
+    "rv32e": {
+      "libgcc": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f",
+      "libc": "aa7c9d68d8f56a2b2dc72e14933ef79cf8c97ef570bd23642f698032044c6802"
+    },
+    "rv32i": {
+      "libgcc": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+      "libc": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc"
+    }
+  },
+  "unused_zero": true,
+  "host": {
+    "status": "passed",
+    "tests": 91,
+    "new_feature_tests": 88,
+    "workspace_tests": 3,
+    "warnings": 91,
+    "returncode": 0,
+    "input_hashes": {
+      "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+      "tests/unit/core_redesign/wait_policy.hpp": "862219f16aefaedefecf8563a271af6b3ca72342f35fcb3d2ff2abe4ea67b644",
+      "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+      "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+      "tests/unit/core_redesign/shared_channels.hpp": "86f198800b18b736b21842bf949cc14489ef9150ecb5ab1e2bb4cb4aee3a1458",
+      "tests/unit/core_redesign/wait_dependencies.hpp": "702adf10ba3ad55117df70f54a92c4e38baa347c79969a7b1df359c8c37c89ae",
+      "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/owned_queue.hpp": "95079197ebf28a528ece96168e2e6e324b19fbe0d8765946887f6c8c32c41bd6",
+      "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+      "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+      "tests/unit/core_redesign/k0_candidates.hpp": "f75a1c11509ea3095df01015332a49d6c12615f947145284e5fe223a0e8af374",
+      "tests/unit/core_redesign/x0_features_driver.cpp": "2615555e3e3625403d9d125d3a94b526c3e64017ce4ea9a61499f057447f12e0",
+      "tests/unit/core_redesign/test_x0_features.py": "82c778c8704ff43454153c093a17d6151fea76589cc1f68f6b0d6ae719f0ce99",
+      "tests/unit/core_redesign/app_oracle.py": "2e1ae9824dd34c70f1774382efed6fb285012af9d952d6c4c818c438b27de332",
+      "tests/unit/core_redesign/oracle.py": "67f6f7cc913d20d8bc5de079e86244aea1f925ab0fca3bc8bf9aae8ba6ef3c6c",
+      "tests/unit/test_workspace.py": "ecadb4329b91981d88cc3a5f962d578a090380aa835cabc2b281f11fe28776b3",
+      "tests/pyproject.toml": "2345703d5a238cc32a8aac6a4f020ab8a73f65c04a331f852bdaeb84c331d7f4",
+      "tests/uv.lock": "99e06f301d7c468807053449f926cb529574a1361e1a62771e3c7ed9e66b51d0"
+    },
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "junit_sha256": "8d61932127100da5800e62a1090b8fc7ab320b46d98467829bf313fe437c6a39",
+    "command": [
+      "uv",
+      "run",
+      "--project",
+      "tests",
+      "--locked",
+      "pytest",
+      "-c",
+      "tests/pyproject.toml",
+      "tests/unit/core_redesign/test_x0_features.py",
+      "tests/unit/test_workspace.py",
+      "-q",
+      "-o",
+      "junit_family=xunit1",
+      "--junitxml=work/exp06-x0-features-host-20261020/junit.xml"
+    ]
+  },
+  "ram_region_audit": [
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "baseline",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-R-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-R-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-runtime0",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-runtime1",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-off",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-on",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "R-manual",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-A-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-A-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-runtime0",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-runtime1",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-off",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-on",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "A-manual",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-B-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-B-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-runtime0",
+      "span": 400,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 380
+        },
+        {
+          "section": ".bss",
+          "address": 536871292,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-runtime1",
+      "span": 400,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 380
+        },
+        {
+          "section": ".bss",
+          "address": 536871292,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-off",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-on",
+      "span": 404,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 384
+        },
+        {
+          "section": ".bss",
+          "address": 536871296,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "B-manual",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-C-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-C-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-runtime0",
+      "span": 384,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 364
+        },
+        {
+          "section": ".bss",
+          "address": 536871276,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-runtime1",
+      "span": 384,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 364
+        },
+        {
+          "section": ".bss",
+          "address": 536871276,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-off",
+      "span": 360,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 340
+        },
+        {
+          "section": ".bss",
+          "address": 536871252,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-on",
+      "span": 388,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 368
+        },
+        {
+          "section": ".bss",
+          "address": 536871280,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "C-manual",
+      "span": 360,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 340
+        },
+        {
+          "section": ".bss",
+          "address": 536871252,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "baseline",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-R-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-R-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-runtime0",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-runtime1",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-off",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-on",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "R-manual",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-A-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-A-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-runtime0",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-runtime1",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-off",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-on",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "A-manual",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-B-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-B-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-runtime0",
+      "span": 400,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 380
+        },
+        {
+          "section": ".bss",
+          "address": 536871292,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-runtime1",
+      "span": 400,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 380
+        },
+        {
+          "section": ".bss",
+          "address": 536871292,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-off",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-on",
+      "span": 404,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 384
+        },
+        {
+          "section": ".bss",
+          "address": 536871296,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "B-manual",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-C-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-C-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-runtime0",
+      "span": 384,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 364
+        },
+        {
+          "section": ".bss",
+          "address": 536871276,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-runtime1",
+      "span": 384,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 364
+        },
+        {
+          "section": ".bss",
+          "address": 536871276,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-off",
+      "span": 360,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 340
+        },
+        {
+          "section": ".bss",
+          "address": 536871252,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-on",
+      "span": 388,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 368
+        },
+        {
+          "section": ".bss",
+          "address": 536871280,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "C-manual",
+      "span": 360,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 340
+        },
+        {
+          "section": ".bss",
+          "address": 536871252,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "baseline",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-R-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-R-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-runtime0",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-runtime1",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-off",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-on",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "R-manual",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-A-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-A-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-runtime0",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-runtime1",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-off",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-on",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "A-manual",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-B-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-B-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-runtime0",
+      "span": 400,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 380
+        },
+        {
+          "section": ".bss",
+          "address": 536871292,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-runtime1",
+      "span": 400,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 380
+        },
+        {
+          "section": ".bss",
+          "address": 536871292,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-off",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-on",
+      "span": 404,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 384
+        },
+        {
+          "section": ".bss",
+          "address": 536871296,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "B-manual",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-C-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-C-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-runtime0",
+      "span": 384,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 364
+        },
+        {
+          "section": ".bss",
+          "address": 536871276,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-runtime1",
+      "span": 384,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 364
+        },
+        {
+          "section": ".bss",
+          "address": 536871276,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-off",
+      "span": 360,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 340
+        },
+        {
+          "section": ".bss",
+          "address": 536871252,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-on",
+      "span": 388,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 368
+        },
+        {
+          "section": ".bss",
+          "address": 536871280,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "C-manual",
+      "span": 360,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 340
+        },
+        {
+          "section": ".bss",
+          "address": 536871252,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "baseline",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-R-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-R-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-runtime0",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-runtime1",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-off",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-on",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "R-manual",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-A-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-A-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-runtime0",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-runtime1",
+      "span": 372,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 352
+        },
+        {
+          "section": ".bss",
+          "address": 536871264,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-off",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-on",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "A-manual",
+      "span": 348,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 328
+        },
+        {
+          "section": ".bss",
+          "address": 536871240,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-B-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-B-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-runtime0",
+      "span": 400,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 380
+        },
+        {
+          "section": ".bss",
+          "address": 536871292,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-runtime1",
+      "span": 400,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 380
+        },
+        {
+          "section": ".bss",
+          "address": 536871292,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-off",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-on",
+      "span": 404,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 384
+        },
+        {
+          "section": ".bss",
+          "address": 536871296,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "B-manual",
+      "span": 376,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 356
+        },
+        {
+          "section": ".bss",
+          "address": 536871268,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-C-off",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-C-on",
+      "span": 20,
+      "regions": [
+        {
+          "section": ".bss",
+          "address": 536870912,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-runtime0",
+      "span": 384,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 364
+        },
+        {
+          "section": ".bss",
+          "address": 536871276,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-runtime1",
+      "span": 384,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 364
+        },
+        {
+          "section": ".bss",
+          "address": 536871276,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-off",
+      "span": 360,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 340
+        },
+        {
+          "section": ".bss",
+          "address": 536871252,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-on",
+      "span": 388,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 368
+        },
+        {
+          "section": ".bss",
+          "address": 536871280,
+          "bytes": 20
+        }
+      ]
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "C-manual",
+      "span": 360,
+      "regions": [
+        {
+          "section": ".data",
+          "address": 536870912,
+          "bytes": 340
+        },
+        {
+          "section": ".bss",
+          "address": 536871252,
+          "bytes": 20
+        }
+      ]
+    }
+  ],
+  "feature_pairs": [
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "candidate": "R",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 204,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "candidate": "A",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 204,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "candidate": "B",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 212,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "candidate": "C",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 216,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "candidate": "R",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 212,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "candidate": "A",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 216,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "candidate": "B",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 176,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "candidate": "C",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 300,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "candidate": "R",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 176,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "candidate": "A",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 176,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "candidate": "B",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 172,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "candidate": "C",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 188,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "candidate": "R",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 188,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "candidate": "A",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 192,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "candidate": "B",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 156,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "candidate": "C",
+      "off_minus_manual_flash": 0,
+      "off_minus_manual_ram": 0,
+      "off_manual_binary_equal": true,
+      "on_minus_off_flash": 280,
+      "on_minus_off_ram": 28,
+      "off_minus_runtime0_ram": -24,
+      "on_minus_runtime1_ram": 4
+    }
+  ],
+  "unused_audit": {
+    "rows": 32,
+    "baseline_binary_equal": true,
+    "related_symbols_absent": true
+  },
+  "evidence_archive": {
+    "path": "work/exp06-x0-features-20261020-evidence.tar.gz",
+    "bytes": 4945533,
+    "sha256": "901c66711e43ad42c6f02e936c3cf41c526aa4f48807d5bf2f5eb600ee5f5175"
+  }
+}

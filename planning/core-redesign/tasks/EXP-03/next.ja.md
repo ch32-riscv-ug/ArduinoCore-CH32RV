@@ -15,8 +15,8 @@
 
 ## 次の通常作業
 
-1. [X0追加比較](../EXP-06/x0-result.ja.md)の後続として、タッチのcompile時除去と用途変更課題を比較する。
-   現結果は実行時flagで、基準にもタッチの状態とbufferが残る。
+1. [X0のcompile時除去](../EXP-06/x0-features-result.ja.md)の後続として、表示交換・独立library等の用途変更課題を比較する。
+   固定off／onの比較と旧runtime条件を分け、固定型で実行時切替までできたことにしない。
    C-static-batchは固定1宛先であり、動的登録を持つ汎用Cと能力を揃えた比較へ読み替えない。
    実I/Oへの接続、資源ごとのsystem／user分類、周回時計・sleepも別に検査する。
 2. [資源依存の模型](dependency-result.ja.md)を実I/O・所有台帳へ接続する。

@@ -236,3 +236,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix dependencies
 
 実backendの依存を自動発見する機能ではない。NoKnownBlockを進行保証としない。
 費用と検出範囲は[資源依存の結果](../../../planning/core-redesign/tasks/EXP-03/dependency-result.ja.md)を参照する。
+
+## EXP-06 X0のcompile時機能除去
+
+`x0_features.hpp`／`x0_features_driver.cpp`／`test_x0_features.py` は固定off／on、
+タッチを除いた専用対照、旧runtime0／1を同じ意味へ照合する。旧X0のソースと測定値は保持する。
+無効時のtouch bufferと3番目のbus枠を除き、固定型と実行時切替の能力を区別する。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_x0_features.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix x0-features \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp06-x0-features-matrix
+```
+
+[結果と比較条件](../../../planning/core-redesign/tasks/EXP-06/x0-features-result.ja.md)、
+[教材用の変更課題](../../../planning/core-redesign/tasks/EXP-06/x0-feature-exercise.ja.md)を参照する。
