@@ -664,6 +664,18 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
           切り替えを表す列もない。今は generate.py の FAMILY["CH32H417"]["h41x_clock"] で名前を足して
           clock_symbols.csv から引いている。行に入ったら FAMILY の側を消す。
       - V5F を使う形（タスク周りの入れ替えと合わせて）。
+      - HSADC（2026-10-21、scratch の HsAdc スケッチ）: 100 MHz（PLL_CLK / 4）で 20.0 Msps を SS で連続して
+        流せた（ホストが libusb の非同期転送で要求を並べれば、取りこぼし 0）。値の換算が合わない: PC0 を出力の
+        Low にすると 0 だが、High（3.3 V）でも 432 にしかならない。プルダウンの値はクロックで変わる
+        （サンプリング容量の充電）。既知の電圧（DAC など）を入れて確かめる。較正や基準の設定が要るかもしれない。
+      - GPIO のロジックキャプチャ（scratch の LogicCap）: TIM1 の更新で DMA1 がポート E の INDR を 16 ビットずつ
+        読む形で、10 MS/s まで規則正しく取れた（PE3 の PWM の周期が 76 / 77 サンプルに揃う）。設定を上げても
+        10〜12.5 MS/s で頭打ち。
+      - OEP の probe にする件。このコアの側で要るもの: Vendor の subclass / protocol の設定、`writeDirect` の
+        ゼロコピー（USBSS は呼び出し側のバッファから DMA できる）、文脈を持てるコールバック、大きい
+        バッファ、HID の 64 バイトを超える report と usage の設定。oep-probe-arduino の側（依頼する）:
+        ARDUINO_ARCH_CH32RV の分岐（unit id など）、ProbeConfig の保存先、FreeRTOS を使わない
+        DirectBulkStream、キャプチャの backend を ESP32-P4 の PARLIO から切り離すこと。
       - 工場出荷 ISP は、電源投入時の DP=high の条件がいるので、ソフトウェアからは入れない。
   - ライブラリをボードマネージャーに同梱するか分けるか（下の「ライブラリの配布」）。
   - ベンダーの直接転送（USBHS の DMA で）。
