@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "scope": "Host two-thread mutex/atomic gate validation; no H417 backend or scheduling decision",
+  "ownership_inputs": "h417-ownership-inputs.json",
+  "gates": ["mutex", "atomic"],
+  "modes": ["fixed", "shared"],
+  "seeds": [0, 1, 2, 3],
+  "messages_per_producer": 1200,
+  "blocks_per_producer": 160,
+  "threads": 2,
+  "block_bytes": 64,
+  "sanitizers": ["address,undefined", "thread"],
+  "hardware_dma": false,
+  "concurrent_snapshot": false,
+  "recover_while_workers_parked": true
+}
