@@ -96,6 +96,10 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホスト�
     `ch32rv --connect-under-reset` が使えます）。
 - **USBSS の PLL は HSE を基準にします。** 25 MHz の水晶を前提にしており、HSE が立たなければ
   `begin()` が失敗します。
+- **SuperSpeed の速さ（2026-10-21、CH32H417、Linux の xHCI に直結）:** 32 KB の `transfer()` を完了のたびに出し直すと、
+  バルク IN 246 MB/s、OUT 233 MB/s で、データはすべて一致しました。バルクのエンドポイントは bMaxBurst 3
+  （4 パケット）で記述します。0 だと IN 205 MB/s、OUT 138 MB/s でした。同じ測り方で、FS は IN 1.0 MB/s、
+  OUT 0.7 MB/s です。Vendor クラスの `write()` は 1 バイトずつ FIFO に入れるので、ここまでは出ません。
 - **USBSS にはシステムクロックの速さが要ります。** HSI の 25 MHz のまま動かしていたときは、DMA が
   リンクに追いつかず、EP0 IN の 96 バイト目以降で 32 バイトの塊が重複していました。既定の
   400 MHz（V3F と HCLK は 100 MHz）では、512 バイトまで正しく返ります（2026-10-21）。
