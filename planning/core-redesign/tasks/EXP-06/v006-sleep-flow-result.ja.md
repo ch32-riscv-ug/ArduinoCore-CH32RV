@@ -1,6 +1,9 @@
 # 休止準備・I/O回収・時刻・参加者の結合
 
 2026-10-20。[資料と待機境界](v006-sleep-result.ja.md)の次のhost／ABI単位。
+
+追試の[timer依存除去と段階失敗](v006-sleep-features-result.ja.md)では同じソースのtimerあり／なしを比較し、clock guardと失敗時の状態を追加検査した。
+本ページの数値はcommit `2a56a1d`の記録であり、更新後のソースの費用は追試を参照する。
 コア本体・USB・実WFI／WFEは変更せず、実行方式や公開APIを採用するものではない。
 [入力](../../sleep-flow-inputs.json)は明示一覧2個、任意registry容量2／4の3条件。
 

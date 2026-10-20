@@ -217,3 +217,15 @@ python3 tests/platform/core_redesign/measure_sleep_flow.py \
 V006用途の純粋な構造のABI比較で、V006 MMIOや起動のELFではない。
 participant table、coordinator、2 I/O、clock／timer、harnessのstorageを別々に記録する。
 [結果と制限](../../planning/core-redesign/tasks/EXP-06/v006-sleep-flow-result.ja.md)を参照する。
+
+## Core再設計：休止のtimer依存除去
+
+```sh
+python3 tests/platform/core_redesign/measure_sleep_features.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp06-sleep-features-NEW
+```
+
+同じソースで3一覧方式×timerあり／なし、対照、未使用条件の64 ELFを測る。
+timerなしではobjectとpointerの除去を確認する。個々の機能除去と未使用構成全体の除去を区別する。
+[差の条件と全行](../../planning/core-redesign/tasks/EXP-06/v006-sleep-features-result.ja.md)を参照する。

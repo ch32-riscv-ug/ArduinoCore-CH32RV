@@ -321,5 +321,6 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [取得bufferの所有と回収](planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md)ではnative50件・ABI32構成を記録した。64 sample×2 blockは管理込み300 B、未使用12条件の追加0 B。生成側の停止宣言と物理停止を区別し、[変更課題](planning/core-redesign/tasks/EXP-02/acquisition-exercise.ja.md)を用意した。実ADC／DMA・IRQ共有は未検証。
 [V006休止の資料と待機境界](planning/core-redesign/tasks/EXP-06/v006-sleep-result.ja.md)では一次資料4 PDFとSDKを固定し、host54件・通知順序304通り・AWU30条件を記録した。休止用途のI/O／時刻結合・方式比較と実機復帰・電流は残す。
 [休止準備・回収・時刻の結合](planning/core-redesign/tasks/EXP-06/v006-sleep-flow-result.ja.md)ではnative64件・ABI36構成を記録した。明示一覧／registry2／4の同条件、部分復帰・失敗・未登録資源の反例を比較し、実V006の待機・再設定・電流とは分けた。
-次は論理時刻の実source接続、I2Cのclock／pin／所有結合、取得bufferと休止のadapter契約・能力除去、用途変更課題、共有・保存・系列を進め、P4まで通常の実装・実験を継続する。
+[休止のtimer依存除去と故障](planning/core-redesign/tasks/EXP-06/v006-sleep-features-result.ja.md)ではnative82＋156件・ABI64構成を記録した。timer40 Bと参照4 Bを構成から除去し、6段階の失敗とclock喪失をfake adapterで検査した。実driverの故障・IRQ共有は未検証。
+次は論理時刻の実source接続、I2Cのclock／pin／所有結合、取得bufferと休止のadapter契約・能動I/Oと故障、用途変更課題、共有・保存・系列を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

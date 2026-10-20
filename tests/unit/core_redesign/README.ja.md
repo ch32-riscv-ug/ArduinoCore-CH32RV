@@ -414,3 +414,18 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 検査に使ったnative binary・入力snapshot・hashを残す場合は`EXP06_SLEEP_FLOW_EVIDENCE=新しい出力先`を指定する。
 [費用と保証範囲](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-flow-result.ja.md)と
 [小さな状態へ分ける課題](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-flow-exercise.ja.md)を参照する。
+
+## EXP-06 timerなし構成と段階失敗
+
+`Coordinator`の期限依存を`NoDeadline`で除き、入力wake・clock・I/O所有は維持する。
+`sleep_fault_driver.cpp`は操作後にWaiting／Failedを返すadapterと、Quietでの論理clock喪失を刺激する。
+IRQ共有、実bus故障、転送中の全タイミングとの組合せは含まない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_sleep_coordinator.py tests/unit/core_redesign/test_sleep_faults.py \
+  tests/unit/test_workspace.py -o junit_family=xunit1
+```
+
+native証拠を残す場合は`EXP06_SLEEP_FLOW_EVIDENCE=新しい出力先1`と`EXP06_SLEEP_FAULT_EVIDENCE=新しい出力先2`を指定する。
+binary、入力snapshotとhashを保存する。[能力差と費用](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-features-result.ja.md)を参照する。
