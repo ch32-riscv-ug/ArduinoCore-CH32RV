@@ -70,8 +70,10 @@ Port ports[CDC_PORTS];
  * NAKed until someone reads). */
 struct Rx {
     CH32RVUsbHostCdcSerial *owner;
-    uint8_t buf[CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE];
+    uint8_t *buf;                  /* the owner's (setBuffer()) or `own` */
+    uint16_t size;
     uint16_t head, tail;
+    uint8_t own[CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE];
 };
 Rx rx[CDC_PORTS];
 CH32RVUsbHost::SerialDataCallback data_cb;
@@ -88,7 +90,7 @@ struct Join {
 
 uint16_t rx_count(const Rx &r)
 {
-    return (uint16_t)((r.head + sizeof r.buf - r.tail) % sizeof r.buf);
+    return r.size ? (uint16_t)((r.head + r.size - r.tail) % r.size) : 0;
 }
 
 /* The port index for (address, port); -1 when there is none. */
@@ -693,13 +695,13 @@ void poll(CH32RVUsbHost &host)
         if (!data_cb && !r.owner) {
             continue;              /* nobody listens: the device waits */
         }
-        if (r.owner && (uint16_t)(sizeof r.buf - 1u - rx_count(r)) < n) {
+        if (r.owner && (uint16_t)(r.size - 1u - rx_count(r)) < n) {
             continue;              /* the Stream is full: wait for its reader */
         }
         if (r.owner) {
             for (uint8_t k = 0; k < n; k++) {
                 r.buf[r.head] = p.in[k];
-                r.head = (uint16_t)((r.head + 1u) % sizeof r.buf);
+                r.head = (uint16_t)((r.head + 1u) % r.size);
             }
         }
         if (data_cb) {
@@ -829,6 +831,16 @@ bool CH32RVUsbHost::setSerialControlLines(bool dtr, bool rts, uint8_t address, u
 /* ------------------------------------------------------------- the Stream */
 CH32RVUsbHostCdcSerial::CH32RVUsbHostCdcSerial(CH32RVUsbHost &host) : _host(host) {}
 
+bool CH32RVUsbHostCdcSerial::setBuffer(uint8_t *buffer, uint16_t size)
+{
+    if (_begun || !buffer || size < 66) {    /* a packet and one more byte at least */
+        return false;
+    }
+    _rxBuffer = buffer;
+    _rxSize = size;
+    return true;
+}
+
 static int bound_index(CH32RVUsbHostCdcSerial &s, uint8_t address, uint8_t port)
 {
     const int idx = index_of(address, port);
@@ -839,8 +851,11 @@ static int bound_index(CH32RVUsbHostCdcSerial &s, uint8_t address, uint8_t port)
             }
         }
         if (!rx[idx].owner) {
-            rx[idx].owner = &s;
-            rx[idx].head = rx[idx].tail = 0;
+            Rx &r = rx[idx];
+            r.owner = &s;
+            r.buf = s.rxBuffer() ? s.rxBuffer() : r.own;
+            r.size = s.rxBuffer() ? s.rxSize() : (uint16_t)sizeof r.own;
+            r.head = r.tail = 0;
         }
     }
     return idx >= 0 && rx[idx].owner == &s ? idx : -1;
@@ -899,7 +914,7 @@ int CH32RVUsbHostCdcSerial::read()
         return -1;
     }
     const uint8_t c = r.buf[r.tail];
-    r.tail = (uint16_t)((r.tail + 1u) % sizeof r.buf);
+    r.tail = (uint16_t)((r.tail + 1u) % r.size);
     return c;
 }
 
@@ -970,6 +985,7 @@ bool CH32RVUsbHost::setSerialConfig(const CH32RVUsbHostSerialConfig &, uint8_t, 
 bool CH32RVUsbHost::setSerialControlLines(bool, bool, uint8_t, uint8_t) { return fail(CH32RVUsbHostError::Unsupported); }
 
 CH32RVUsbHostCdcSerial::CH32RVUsbHostCdcSerial(CH32RVUsbHost &host) : _host(host) {}
+bool CH32RVUsbHostCdcSerial::setBuffer(uint8_t *, uint16_t) { return false; }
 bool CH32RVUsbHostCdcSerial::begin(uint32_t) { return false; }
 void CH32RVUsbHostCdcSerial::end() {}
 bool CH32RVUsbHostCdcSerial::connected() const { return false; }

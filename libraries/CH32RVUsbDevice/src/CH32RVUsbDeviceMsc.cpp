@@ -88,8 +88,8 @@ int32_t CH32RVUsbDeviceMsc::write10(uint32_t lba, uint32_t offset, uint8_t *buff
     return _storage ? _storage->write(lba, offset, buffer, size) : -1;
 }
 
-static uint16_t msc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+static bool msc_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
+                               uint8_t str, CH32RVUsbSpeed speed)
 {
     CH32RVUsbDeviceMsc &m = const_cast<CH32RVUsbDeviceMsc &>(static_cast<const CH32RVUsbDeviceMsc &>(self));
     const uint8_t n = (*ep)++;
@@ -100,11 +100,8 @@ static uint16_t msc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
         7, 5, n, 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
         7, 5, (uint8_t)(0x80 | n), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
     };
-    if (sizeof d > room) {
-        return 0;
-    }
-    memcpy(out, d, sizeof d);
-    return sizeof d;
+    w.put(d, sizeof d);
+    return true;
 }
 
 static const CH32RVUsbFunctionType msc_type = {msc_descriptor, 1, 1, nullptr, 0};

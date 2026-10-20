@@ -10,7 +10,9 @@
 namespace {
 
 CH32RVUsbHostPipe pipe;
-uint8_t ring[CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE];
+uint8_t own_ring[CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE];
+uint8_t *ring = own_ring;
+uint16_t ring_size = sizeof own_ring;
 
 void poll(CH32RVUsbHost &host)
 {
@@ -52,6 +54,16 @@ bool matches(uint8_t address)
 
 }  // namespace
 
+bool CH32RVUsbHost::setVendorBuffer(uint8_t *buffer, size_t size)
+{
+    if (!buffer || size < 65 || size > 0xFFFF || pipe.open) {
+        return fail(CH32RVUsbHostError::InvalidArgument);
+    }
+    ring = buffer;
+    ring_size = (uint16_t)size;
+    return ok();
+}
+
 bool CH32RVUsbHost::vendorOpen(uint8_t address, uint8_t interfaceNumber)
 {
     if (!_started) {
@@ -65,7 +77,7 @@ bool CH32RVUsbHost::vendorOpen(uint8_t address, uint8_t interfaceNumber)
         if (!ch32rv_usb_host_device(a)) {
             continue;
         }
-        if (ch32rv_usb_host_pipe_open(pipe, a, interfaceNumber, 0xFF, ring, sizeof ring)) {
+        if (ch32rv_usb_host_pipe_open(pipe, a, interfaceNumber, 0xFF, ring, ring_size)) {
             return ok();
         }
     }
@@ -130,6 +142,7 @@ uint16_t CH32RVUsbHost::vendorInPacketSize(uint8_t address) const
 
 #else /* no host */
 
+bool CH32RVUsbHost::setVendorBuffer(uint8_t *, size_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::vendorOpen(uint8_t, uint8_t) { return fail(CH32RVUsbHostError::Unsupported); }
 void CH32RVUsbHost::vendorClose() {}
 bool CH32RVUsbHost::vendorReady(uint8_t) const { return false; }

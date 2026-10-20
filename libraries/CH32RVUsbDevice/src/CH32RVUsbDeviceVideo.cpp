@@ -46,37 +46,6 @@ constexpr uint16_t MAX_DIMENSION = 4096;
 const uint8_t GUID_YUY2[16] = {0x59, 0x55, 0x59, 0x32, 0x00, 0x00, 0x10, 0x00,
                                0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71};
 
-struct Writer {
-    uint8_t *dst;
-    uint16_t capacity;
-    uint16_t offset;
-    bool overflowed;
-
-    void u8(uint8_t value)
-    {
-        if (offset >= capacity) {
-            overflowed = true;
-            return;
-        }
-        dst[offset++] = value;
-    }
-    void u16(uint16_t value)
-    {
-        u8((uint8_t)(value & 0xff));
-        u8((uint8_t)(value >> 8));
-    }
-    void u32(uint32_t value)
-    {
-        u16((uint16_t)(value & 0xffff));
-        u16((uint16_t)(value >> 16));
-    }
-    void bytes(const uint8_t *data, uint16_t length)
-    {
-        for (uint16_t i = 0; i < length; i++) {
-            u8(data[i]);
-        }
-    }
-};
 
 } // namespace
 
@@ -176,14 +145,11 @@ uint16_t CH32RVUsbDeviceVideo::descriptorLength(bool highSpeed) const
     return length;
 }
 
-uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uint16_t room, uint8_t itf,
-                          uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+bool video_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
+                      uint8_t str, CH32RVUsbSpeed speed)
 {
     const bool hs = ch32rv_usb_series_can(CH32RVUsbSpeed::High) && speed != CH32RVUsbSpeed::Full;
     CH32RVUsbDeviceVideo &v = const_cast<CH32RVUsbDeviceVideo &>(static_cast<const CH32RVUsbDeviceVideo &>(self));
-    if (v.descriptorLength(hs) > room) {
-        return 0;
-    }
     const uint8_t name = self.interfaceName() ? str : 0;
     const uint8_t vcInterface = itf;
     const uint8_t vsInterface = (uint8_t)(itf + 1);
@@ -196,7 +162,7 @@ uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uin
     const uint32_t frameInterval = 10000000u / v.frameRate();
     const uint32_t bitRate = frameBytes * 8u * v.frameRate();
 
-    Writer w = {dst, room, 0, false};
+    const uint32_t start = w.length;
 
     /* Interface association: the two interfaces are one function. */
     w.u8(8);
@@ -364,10 +330,7 @@ uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uin
         w.u8(1);
     }
 
-    if (w.overflowed || w.offset != v.descriptorLength(hs)) {
-        return 0;
-    }
-    return w.offset;
+    return w.length - start == v.descriptorLength(hs);
 }
 
 static const CH32RVUsbFunctionType video_type = {video_descriptor, 2, 2, nullptr, 0};

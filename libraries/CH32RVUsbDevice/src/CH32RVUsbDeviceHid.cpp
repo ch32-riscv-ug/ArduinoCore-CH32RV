@@ -113,14 +113,6 @@ static bool declares_report_id(const uint8_t *desc, uint16_t length)
 }
 
 /* ---------------------------------------------------------- the shared interface */
-#ifndef CH32RV_USB_MAX_HID_CLASSES
-#define CH32RV_USB_MAX_HID_CLASSES 6
-#endif
-/* The merged report descriptor of a device with more than one HID class.
- * Keyboard + mouse + consumer + system + gamepad + vendor is about 250 bytes. */
-#ifndef CH32RV_USB_HID_REPORT_MAX
-#define CH32RV_USB_HID_REPORT_MAX 288
-#endif
 /* The interrupt endpoints' packet, and the largest report (ID included). */
 #define HID_EP_SIZE 64
 
@@ -132,8 +124,8 @@ static bool declares_report_id(const uint8_t *desc, uint16_t length)
 #define HID_SET_PROTOCOL 0x0B
 
 class HidInterface;
-static uint16_t hid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed);
+static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
+                           uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed);
 static const CH32RVUsbFunctionType hid_type = {hid_descriptor, 1, 1, &CH32RVUsbDeviceConfig::hidInterfaceName, 0};
 
 class HidInterface : public CH32RVUsbDeviceFunction {
@@ -142,33 +134,46 @@ public:
 
     bool add(CH32RVUsbDeviceHidClass *c)
     {
-        if (!attached() || device().started() || count >= CH32RV_USB_MAX_HID_CLASSES) {
+        if (!attached() || device().started()) {
             return false;
         }
-        classes[count++] = c;
+        CH32RVUsbDeviceHidClass **p = &first;
+        while (*p) {
+            p = &(*p)->_hidNext;
+        }
+        *p = c;
+        count++;
         return true;
     }
     bool composite() const { return count > 1; }
 
-    /* The report descriptor the host is given. */
-    const uint8_t *report() const
+    CH32RVUsbDeviceHidClass *at(uint8_t i) const
     {
-        return composite() ? merged : (count ? classes[0]->hidReportDescriptor() : nullptr);
+        CH32RVUsbDeviceHidClass *c = first;
+        while (c && i--) {
+            c = c->_hidNext;
+        }
+        return c;
     }
-    uint16_t reportLength() const
+
+    /* The report descriptor's length: one class's own, or the merged one's. */
+    uint16_t reportLength()
     {
-        return composite() ? mergedLength : (count ? classes[0]->hidReportDescriptorLength() : 0);
+        if (!composite()) {
+            return count ? first->hidReportDescriptorLength() : 0;
+        }
+        CH32RVUsbDescriptorWriter c;
+        return merge(c) ? (uint16_t)c.length : 0;
     }
 
     /* Every class under its own Report ID, inserted right after its
      * Collection (Application); a Report ID the class declares itself is
      * replaced, not duplicated (EspUsbDevice::buildDescriptors). */
-    bool merge()
+    bool merge(CH32RVUsbDescriptorWriter &w)
     {
-        mergedLength = 0;
         for (uint8_t i = 0; i < count; i++) {
-            const uint8_t *src = classes[i]->hidReportDescriptor();
-            const uint16_t length = classes[i]->hidReportDescriptorLength();
+            const uint8_t *src = at(i)->hidReportDescriptor();
+            const uint16_t length = at(i)->hidReportDescriptorLength();
             size_t at = 0;
             bool written = false, just = false;
             while (at < length) {
@@ -183,18 +188,11 @@ public:
                     continue;
                 }
                 just = false;
-                if (mergedLength + n > sizeof merged) {
-                    return false;
-                }
-                memcpy(merged + mergedLength, src + at, n);
-                mergedLength = (uint16_t)(mergedLength + n);
+                w.put(src + at, (uint16_t)n);
                 at += n;
                 if (!written && (prefix & 0xfc) == HID_ITEM_COLLECTION) {
-                    if (mergedLength + 2 > sizeof merged) {
-                        return false;
-                    }
-                    merged[mergedLength++] = 0x85;
-                    merged[mergedLength++] = idOf(i);
+                    w.u8(0x85);
+                    w.u8(idOf(i));
                     written = just = true;
                 }
             }
@@ -207,7 +205,7 @@ public:
 
     uint8_t idOf(uint8_t i) const
     {
-        const uint8_t id = classes[i]->hidReportId();
+        const uint8_t id = at(i)->hidReportId();
         return id ? id : CH32RV_USB_DEVICE_HID_REPORT_ID_KEYBOARD;
     }
 
@@ -228,11 +226,11 @@ public:
             }
             for (uint8_t i = 0; i < count; i++) {
                 if (idOf(i) == report_id) {
-                    target = classes[i];
+                    target = at(i);
                 }
             }
         } else {
-            target = classes[0];
+            target = first;
             const uint8_t own = target->hidReportId();
             if (report_id == 0 && size > 0 && own && buffer[0] == own &&
                 declares_report_id(target->hidReportDescriptor(), target->hidReportDescriptorLength())) {
@@ -275,7 +273,7 @@ public:
     void usbReset() override
     {
         for (uint8_t i = 0; i < count; i++) {
-            classes[i]->onBusDetached();
+            at(i)->onBusDetached();
         }
     }
 
@@ -287,7 +285,7 @@ public:
             device().transfer(epOut, out, sizeof out);
         }
         for (uint8_t i = 0; i < count; i++) {
-            classes[i]->onBusAttached();
+            at(i)->onBusAttached();
         }
     }
 
@@ -305,11 +303,24 @@ public:
             if (stage != CH32RVUsbControlStage::Setup) {
                 return true;
             }
+            const uint16_t rl = reportLength();
             if ((s.wValue >> 8) == 0x22) {
-                return device().controlIn(report(), reportLength());
+                if (!composite()) {
+                    return count && device().controlIn(first->hidReportDescriptor(), rl);
+                }
+                /* Merged as each EP0 packet goes out: nothing kept in RAM. */
+                return device().controlInGenerated(rl, [](void *context, uint32_t offset, uint8_t *buffer, uint16_t n) {
+                    CH32RVUsbDescriptorWriter w;
+                    w.out = buffer;
+                    w.skip = offset;
+                    w.room = n;
+                    static_cast<HidInterface *>(context)->merge(w);
+                }, this);
             }
             if ((s.wValue >> 8) == 0x21) {
-                return device().controlIn(desc + 9, 9);
+                hidDescriptor[7] = (uint8_t)rl;
+                hidDescriptor[8] = (uint8_t)(rl >> 8);
+                return device().controlIn(hidDescriptor, sizeof hidDescriptor);
             }
             return false;
         }
@@ -346,7 +357,7 @@ public:
             if (stage == CH32RVUsbControlStage::Ack) {
                 protocol = (uint8_t)s.wValue;
                 for (uint8_t i = 0; i < count; i++) {
-                    classes[i]->onHidSetProtocol(protocol);
+                    at(i)->onHidSetProtocol(protocol);
                 }
             }
             return true;
@@ -356,11 +367,9 @@ public:
         return false;
     }
 
-    CH32RVUsbDeviceHidClass *classes[CH32RV_USB_MAX_HID_CLASSES] = {};
+    CH32RVUsbDeviceHidClass *first = nullptr;   /* the classes, in declaration order */
     uint8_t count = 0;
-    uint8_t merged[CH32RV_USB_HID_REPORT_MAX];
-    uint16_t mergedLength = 0;
-    uint8_t desc[32];                            /* interface + HID descriptor + endpoints, as given */
+    uint8_t hidDescriptor[9] = {9, 0x21, 0x11, 0x01, 0, 1, 0x22, 0, 0};
     uint8_t epIn = 0, epOut = 0;
     uint8_t idle = 0, protocol = 1;
     uint8_t in[HID_EP_SIZE], out[HID_EP_SIZE], ctrl[HID_EP_SIZE];
@@ -375,25 +384,25 @@ static HidInterface &interface_for(CH32RVUsbDevice &device)
     return shared;
 }
 
-static uint16_t hid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
+                           uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
     HidInterface &h = const_cast<HidInterface &>(static_cast<const HidInterface &>(self));
-    if (h.count == 0 || (h.composite() && !h.merge())) {
-        return 0;
+    if (h.count == 0) {
+        return false;
     }
     uint16_t size = h.composite() ? 16 : 64;
     uint8_t boot = 0;
     bool out_ep = true;
     if (!h.composite()) {
-        CH32RVUsbDeviceHidClass *c = h.classes[0];
+        CH32RVUsbDeviceHidClass *c = h.first;
         size = c->hidInEndpointSize() ? c->hidInEndpointSize() : 64;
         boot = c->hidBootProtocol();
         out_ep = c->hidOutEndpoint();
     } else {
         for (uint8_t i = 0; i < h.count; i++) {
-            if (h.classes[i]->hidInEndpointSize() > size) {
-                size = h.classes[i]->hidInEndpointSize();
+            if (h.at(i)->hidInEndpointSize() > size) {
+                size = h.at(i)->hidInEndpointSize();
             }
         }
     }
@@ -402,29 +411,24 @@ static uint16_t hid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
     }
     const uint8_t n = (*ep)++;
     const uint16_t rl = h.reportLength();
+    if (!rl) {
+        return false;                            /* a report descriptor that does not parse */
+    }
     const uint8_t interval = ch32rv_usb_interval(speed, 10);
     h.epIn = (uint8_t)(0x80 | n);
     h.epOut = out_ep ? n : 0;
-    uint8_t *d = h.desc;
     const uint8_t head[] = {
         9, 4, itf, 0, (uint8_t)(out_ep ? 2 : 1), 3, (uint8_t)(boot ? 1 : 0), boot, str,   /* interface */
         9, 0x21, 0x11, 0x01, 0, 1, 0x22, (uint8_t)rl, (uint8_t)(rl >> 8),                 /* HID 1.11 */
     };
-    memcpy(d, head, sizeof head);
-    uint16_t len = sizeof head;
+    w.put(head, sizeof head);
     if (out_ep) {
         const uint8_t e[] = {7, 5, n, 3, (uint8_t)size, (uint8_t)(size >> 8), interval};
-        memcpy(d + len, e, sizeof e);
-        len = (uint16_t)(len + sizeof e);
+        w.put(e, sizeof e);
     }
     const uint8_t e[] = {7, 5, (uint8_t)(0x80 | n), 3, (uint8_t)size, (uint8_t)(size >> 8), interval};
-    memcpy(d + len, e, sizeof e);
-    len = (uint16_t)(len + sizeof e);
-    if (len > room) {
-        return 0;
-    }
-    memcpy(out, d, len);
-    return len;
+    w.put(e, sizeof e);
+    return true;
 }
 
 CH32RVUsbDeviceHidClass::CH32RVUsbDeviceHidClass(CH32RVUsbDevice &device) : _device(device)
@@ -436,7 +440,7 @@ uint8_t CH32RVUsbDeviceHidClass::classReportId() const
 {
     if (hid && hid->composite()) {
         for (uint8_t i = 0; i < hid->count; i++) {
-            if (hid->classes[i] == this) {
+            if (hid->at(i) == this) {
                 return hid->idOf(i);
             }
         }

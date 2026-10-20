@@ -19,8 +19,7 @@ public:
     /* EspUsbDeviceClass::begin(); nothing to do here - the device begins. */
     bool begin() { return true; }
     CH32RVUsbDevice &device() const { return _device; }
-    /* False when the device refused it (more HID classes than
-     * CH32RV_USB_MAX_HID_CLASSES, or declared after begin()). */
+    /* False when the device refused it (declared after begin()). */
     bool attached() const { return _attached; }
 
     /* For the shared interface. */
@@ -51,6 +50,10 @@ protected:
 
     CH32RVUsbDevice &_device;
     bool _attached = false;
+
+private:
+    friend class HidInterface;
+    CH32RVUsbDeviceHidClass *_hidNext = nullptr;   /* the shared interface's next class */
 };
 
 /* ---------------------------------------------------------- keyboard */

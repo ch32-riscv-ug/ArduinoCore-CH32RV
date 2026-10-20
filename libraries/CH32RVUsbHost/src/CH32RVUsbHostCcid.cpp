@@ -23,12 +23,15 @@ enum : uint8_t {
 };
 
 CH32RVUsbHostPipe pipe;
-uint8_t ring[CH32RV_USB_HOST_CCID_BUFFER_SIZE];
+uint8_t own_ring[CH32RV_USB_HOST_CCID_BUFFER_SIZE];
+uint8_t *ring = own_ring;
 CH32RVUsbHostCcidInterface info;
 uint8_t seq;
 uint8_t atr[33];
 uint8_t atr_len;
-uint8_t message[CH32RV_USB_HOST_CCID_BUFFER_SIZE];   /* one response, assembled */
+uint8_t own_message[CH32RV_USB_HOST_CCID_BUFFER_SIZE];
+uint8_t *message = own_message;   /* one response, assembled */
+uint16_t buffer_size = CH32RV_USB_HOST_CCID_BUFFER_SIZE;
 uint8_t slot_bits;                                    /* last NotifySlotChange */
 bool int_busy;
 uint8_t int_buf[8] __attribute__((aligned(4)));
@@ -136,7 +139,7 @@ bool matches(uint8_t address)
 bool exchange(CH32RVUsbHost &host, uint8_t type, uint8_t slot, const uint8_t params[3], const uint8_t *data,
               size_t length, uint32_t *dataLength, uint32_t timeoutMs)
 {
-    if (10u + length > sizeof message) {
+    if (10u + length > buffer_size) {
         return host.fail(CH32RVUsbHostError::InvalidArgument);
     }
     uint8_t *cmd = message;
@@ -165,10 +168,10 @@ bool exchange(CH32RVUsbHost &host, uint8_t type, uint8_t slot, const uint8_t par
     for (;;) {
         ch32rv_usb_host_pump();
         ch32rv_usb_host_pipe_poll(pipe);
-        have += ch32rv_usb_host_pipe_read(pipe, message + have, (uint16_t)(sizeof message - have));
+        have += ch32rv_usb_host_pipe_read(pipe, message + have, (uint16_t)(buffer_size - have));
         if (have >= 10) {
             const uint32_t want = 10u + le32(message + 1);
-            if (want > sizeof message) {
+            if (want > buffer_size) {
                 return host.fail(CH32RVUsbHostError::NoMemory);
             }
             if (have >= want) {
@@ -195,6 +198,17 @@ bool exchange(CH32RVUsbHost &host, uint8_t type, uint8_t slot, const uint8_t par
 
 }  // namespace
 
+bool CH32RVUsbHost::setCcidBuffers(uint8_t *ringBuffer, uint8_t *messageBuffer, size_t size)
+{
+    if (!ringBuffer || !messageBuffer || size < 74 || size > 0xFFFF || pipe.open) {
+        return fail(CH32RVUsbHostError::InvalidArgument);
+    }
+    ring = ringBuffer;
+    message = messageBuffer;
+    buffer_size = (uint16_t)size;
+    return ok();
+}
+
 bool CH32RVUsbHost::ccidOpen(uint8_t address, uint8_t interfaceNumber)
 {
     if (!_started) {
@@ -204,7 +218,7 @@ bool CH32RVUsbHost::ccidOpen(uint8_t address, uint8_t interfaceNumber)
         if ((address != CH32RV_USB_HOST_ANY_ADDRESS && a != address) || !ch32rv_usb_host_device(a)) {
             continue;
         }
-        if (!ch32rv_usb_host_pipe_open(pipe, a, interfaceNumber, 0x0B, ring, sizeof ring)) {
+        if (!ch32rv_usb_host_pipe_open(pipe, a, interfaceNumber, 0x0B, ring, buffer_size)) {
             continue;
         }
         info = CH32RVUsbHostCcidInterface();
@@ -425,6 +439,7 @@ bool CH32RVUsbHost::ccidEscape(const uint8_t *tx, size_t txLength, uint8_t *rx, 
 
 #else /* no host */
 
+bool CH32RVUsbHost::setCcidBuffers(uint8_t *, uint8_t *, size_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::ccidOpen(uint8_t, uint8_t) { return fail(CH32RVUsbHostError::Unsupported); }
 void CH32RVUsbHost::ccidClose() {}
 bool CH32RVUsbHost::ccidReady(uint8_t) const { return false; }

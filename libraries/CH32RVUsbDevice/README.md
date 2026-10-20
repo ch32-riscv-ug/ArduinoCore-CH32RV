@@ -92,8 +92,9 @@ into the factory USB ISP bootloader; no DFU mode, no DFU download). Its
 interface name, "CH32RV", is what ch32rv's discovery lists as an upload port.
 
 Every default string and ID (VID/PID, manufacturer, product, interface names,
-MSC inquiry, FAT volume label) is a `#ifndef` define that `build_opt.h` can
-override; see docs/usb.ja.md.
+MSC inquiry, FAT volume label) is changed at run time - CH32RVUsbDeviceConfig,
+setName(), vendorID() and the like - not from build_opt.h. Nothing is limited
+at build time either: descriptors are produced as the host reads them.
 
 All HID classes of a device share one HID interface, as in EspUsbDevice: one
 class alone stays as it is (a keyboard or mouse alone is a boot device), two or

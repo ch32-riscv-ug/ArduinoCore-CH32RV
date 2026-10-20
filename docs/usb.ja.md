@@ -43,11 +43,10 @@ Device では WeAct X035F8U6、Host では X035C8T6 を実機基準にしてお�
 |---|---|
 | `Unsupported` | この系列ではまだ USB デバイスが使えない |
 | `PortUnavailable` | `config.controller` に、この部品に無いコントローラを指定した、または必要な HSE を使えない |
-| `TooManyFunctions` | クラスが `CH32RV_USB_MAX_FUNCTIONS`（既定 6）より多い |
 | `TooManyInstances` | 同じクラスがクラスごとの上限（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）より多い |
 | `NotStarted` / `NotReady` | `begin()` の前、またはホストが構成していないときに HID のレポートを送ろうとした |
 | `OutOfEndpoints` | エンドポイントが足りない（X035 は 7 本） |
-| `DescriptorTooLarge` | 構成ディスクリプタが `CH32RV_USB_CONFIG_MAX`（既定 512 B）を超えた |
+| `DescriptorTooLarge` | クラスの記述子が組めない（HID のレポート記述子が解析できない、など） |
 | `InvalidArgument` | 設定の値が正しくない（`deviceInterfaceGuid` の形） |
 
 ### 4. 同じクラスを2つ以上
@@ -55,19 +54,15 @@ Device では WeAct X035F8U6、Host では X035C8T6 を実機基準にしてお�
 同じクラスは、クラスごとの上限まで宣言するだけで持てます（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。
 ビルド時の設定は要りません。宣言しなかったクラスはリンクされず、宣言した分だけ RAM を使います。
 
-バッファの大きさは、パケットの大きさ（コントローラと速度で決まる）から決めます。CDC は `setBuffers()` で
+バッファの大きさは、パケットの大きさ（コントローラと速度で決まる）から決めます。CDC と CCID は `setBuffers()` で
 スケッチの配列に差し替えられます。オーディオとビデオのパケットの上限は、コントローラのドライバが知らせる値
 （`device.maxPacketSize()`）です。ビデオをバルクで送るかアイソクロナスで送るかは `setTransferType()` で選びます。
 
-残っている define（スケッチのフォルダーの `build_opt.h` で変えられる。[ADR-0007](adr/0007-user-build-option-injection.ja.md)）:
-
-| 設定 | 既定 | 意味 |
-|---|---|---|
-| `CH32RV_USB_MAX_HID_CLASSES` | 6 | 1つのデバイスに宣言できる HID クラスの数 |
-| `CH32RV_USB_HID_REPORT_MAX` | 288 | HID を合成したレポートディスクリプタの大きさ（RAM） |
-| `CH32RV_USB_DEVICE_CCID_BUFFER_SIZE` | 280 | CCID のメッセージの最大長（受信と送信に1つずつ） |
-| `CH32RV_USB_MAX_FUNCTIONS` | 6 | デバイスに付けられるクラスの数 |
-| `CH32RV_USB_CONFIG_MAX` | 512 | 構成ディスクリプタの組み立て用バッファ（RAM） |
+ビルド時の上限はありません。クラスの数、HID クラスの数、構成記述子・HID の合成レポート記述子・BOS・
+Microsoft OS 2.0 の大きさは、どれも RAM に組み立てて置かず、ホストが読むときに EP0 のパケットごとに作るので、
+決まった上限がありません（エンドポイントの数はコントローラで決まります）。識別と名前の既定値も define では
+変えません（`CH32RVUsbDeviceConfig`、`setName()`、`vendorID()` などで実行時に変えます）。残っている define は、既定の
+DFU ランタイムをビルドから外す `CH32RV_USB_NO_DEFAULT_DFU` だけです。
 
 例: [SerialMulti](../libraries/CH32RVUsbDevice/examples/SerialMulti/)（CDC を2つ）
 

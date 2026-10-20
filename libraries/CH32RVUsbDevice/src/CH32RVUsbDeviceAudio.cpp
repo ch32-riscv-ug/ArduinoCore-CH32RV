@@ -52,10 +52,10 @@ uint8_t slot(CH32RVUsbAudioDirection d)
     return d == CH32RVUsbAudioDirection::Playback ? 0 : 1;
 }
 
-uint16_t audio_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                          uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+bool audio_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
+                      uint8_t str, CH32RVUsbSpeed speed)
 {
-    return static_cast<const CH32RVUsbAudioFunction &>(self).writeDescriptor(out, room, itf, ep, str, speed);
+    return static_cast<const CH32RVUsbAudioFunction &>(self).writeDescriptor(w, itf, ep, str, speed);
 }
 
 /* Not const: the interface count follows the streams the sketch adds (one

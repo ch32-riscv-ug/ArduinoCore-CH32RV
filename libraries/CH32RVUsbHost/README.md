@@ -134,18 +134,16 @@ Exact signatures and structures are in the [public header](src/CH32RVUsbHost.h).
 
 Fixed counts: 5 devices (a hub and what is behind it), 2 hubs, 4 HID
 interfaces, 2 USB serial ports, 1 mass storage, 1 MIDI. Configuration
-descriptors are read up to 256 bytes. Receive buffers can be sized in the
-sketch's build_opt.h:
+descriptors are read up to 256 bytes. Receive buffers have defaults and
+take the sketch's own arrays instead (no build-time settings):
 
-| Define | Default | Resource |
+| Default | Resource | Replace with |
 |---|---|---|
-| CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE | 128 | Stream receive ring |
-| CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE | 256 | Vendor receive ring |
-| CH32RV_USB_HOST_CCID_BUFFER_SIZE | 272 | CCID message buffer |
-| CH32RV_USB_HOST_HID_REPORTS | 8 | Report IDs kept per HID interface |
-| CH32RV_USB_HOST_STRING_MAX | 32 | One string descriptor |
+| 128 | Stream receive ring | CH32RVUsbHostCdcSerial::setBuffer() |
+| 256 | Vendor receive ring | setVendorBuffer(), before vendorOpen() |
+| 272 | CCID ring and response | setCcidBuffers(), before ccidOpen() |
 
-Larger buffers consume more RAM. There is no runtime setRxBufferSize method.
+Report IDs kept per HID interface: 8; one string descriptor: 32 characters.
 
 ## Errors and EspUsbHost differences
 

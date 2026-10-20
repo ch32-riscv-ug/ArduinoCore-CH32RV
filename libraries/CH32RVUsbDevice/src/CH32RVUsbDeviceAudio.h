@@ -187,10 +187,9 @@ public:
     void clearEvents();
 
     /* The configuration descriptor part (CH32RVUsbFunctionType::descriptor)
-     * at a speed. 0 when it does not fit or the function cannot be
-     * described. */
-    uint16_t writeDescriptor(uint8_t *out, uint16_t room, uint8_t itf, uint8_t *ep, uint8_t str,
-                             CH32RVUsbSpeed speed) const;
+     * at a speed. False when the function cannot be described. */
+    bool writeDescriptor(CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep, uint8_t str,
+                         CH32RVUsbSpeed speed) const;
 
 protected:
     void usbReset() override;

@@ -103,6 +103,7 @@ struct Xfer {
     uint16_t mps;
     uint8_t last;                 /* bytes in the IN packet in flight */
     bool active, iso;
+    uint8_t held;                                    /* iso OUT: a packet that came while none was asked for */
 };
 static Xfer xin[8], xout[8];
 
@@ -300,6 +301,14 @@ static bool dcd_xfer(uint8_t address, uint8_t *buffer, uint16_t length)
         x.buf = buffer;
         x.len = length;
         x.done = 0;
+        if (x.iso && x.held) {         /* a packet is already here */
+            const uint16_t n = x.held < length ? x.held : length;
+            memcpy(buffer, out_buf(ep), n);
+            x.held = 0;
+            ch32rv_usbd_isr_xfer(ep, n);   /* as from the interrupt, which is masked here */
+            interrupts();
+            return true;
+        }
         x.active = true;
         set_r(ep, x.iso ? R_NONE : R_ACK);
     }
@@ -421,6 +430,12 @@ static void isr(void)
                     EP_CTL(ep) ^= R_TOG;
                 }
                 if (!x.active) {
+                    if (x.iso) {
+                        /* Kept in the DMA buffer for the next xfer(): the stack
+                         * re-arms from the task, and a packet a frame is not
+                         * waited for. A newer one replaces it. */
+                        x.held = (uint8_t)(RX_LEN > x.mps ? x.mps : RX_LEN);
+                    }
                     set_r(ep, x.iso ? R_NONE : R_NAK);
                     break;
                 }

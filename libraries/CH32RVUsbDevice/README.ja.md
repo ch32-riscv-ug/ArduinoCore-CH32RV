@@ -56,14 +56,14 @@ void loop() {
 - **スタックは `loop()` と `delay()` から動きます**（RTOS のタスクではありません）。`device.task()` で明示的にも
   動かせます。
 - **同じクラスの数には上限があります**（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。上限の中なら
-  宣言するだけで使えます。CDC のバッファは `setBuffers()` でスケッチのものに差し替えられます
-  （EspUsbDevice には無い拡張です）。
+  宣言するだけで使えます。CDC と CCID のバッファは `setBuffers()` でスケッチのものに差し替えられます
+  （EspUsbDevice には無い拡張です）。クラスの総数や記述子の大きさには、ビルド時の上限がありません。
 - **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
   EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
 - **無いもの**: ファームウェア更新の各クラス、USB ネットワークの IP 層（このコアに IP スタックが無いので、
   `CH32RVUsbDeviceNet` は生の Ethernet フレームを扱う）、ベンダーの直接転送（`writeDirect()` は `NotSupported`）（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
-- **既定の文字列と ID はすべて `build_opt.h` の define で上書きできます**（VID/PID、メーカー名、製品名、
-  インターフェース名、MSC の INQUIRY、FAT のボリュームラベル）。
+- **既定の文字列と ID は実行時に変えます**（`CH32RVUsbDeviceConfig` の VID/PID・メーカー名・製品名、`setName()`
+  のインターフェース名、MSC の `vendorID()` など、FAT の `format()` のボリュームラベル）。`build_opt.h` の define では変えません。
 - **DFU ランタイムが既定で付きます。** `config.dfuRuntime = false` で外せます。
   このコアは WCH ISP への入口として使い、EspUsbDevice の OTA/DFU download とは仕組みが異なります。
   ISP への移行実装は現在 X035/X033 のみで、ほかの系列では通常 reset です。

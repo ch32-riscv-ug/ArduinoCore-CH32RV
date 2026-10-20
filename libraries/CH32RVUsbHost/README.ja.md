@@ -166,17 +166,15 @@ SW の2 bytesも収まるよう確保します。通信成功と `SW=9000` の�
 持てる数は決まっています: デバイス 5（ハブとその先）、ハブ 2、HID インタフェース 4、USB シリアル 2 ポート、
 MSC 1、MIDI 1。構成記述子は 256 バイトまで読みます（その先のインタフェースは割り当てません）。
 
-受信バッファの大きさだけは、スケッチと同じディレクトリの `build_opt.h` で変えられます。
+受信バッファは既定の大きさを持ち、スケッチの配列に差し替えられます（ビルド時の設定はありません）。
 
-| define | 既定 | 対象 |
+| 既定 | 対象 | 差し替え |
 |---|---|---|
-| `CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE` | 128 | USB シリアル（Stream）の受信リング |
-| `CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE` | 256 | ベンダーの受信リング |
-| `CH32RV_USB_HOST_CCID_BUFFER_SIZE` | 272 | CCID のメッセージ |
-| `CH32RV_USB_HOST_HID_REPORTS` | 8 | HID インタフェースごとに覚えるレポート ID |
-| `CH32RV_USB_HOST_STRING_MAX` | 32 | 文字列記述子1つ（終端込み） |
+| 128 | USB シリアル（Stream）の受信リング | `CH32RVUsbHostCdcSerial::setBuffer()` |
+| 256 | ベンダーの受信リング | `setVendorBuffer()`（`vendorOpen()` の前） |
+| 272 | CCID の受信リングと応答 | `setCcidBuffers()`（`ccidOpen()` の前） |
 
-容量を増やすと使用 RAM も増えます。
+HID インタフェースごとに覚えるレポート ID は 8、文字列記述子は1つ 32 文字（終端込み）までです。
 
 | エラー | 意味 |
 |---|---|

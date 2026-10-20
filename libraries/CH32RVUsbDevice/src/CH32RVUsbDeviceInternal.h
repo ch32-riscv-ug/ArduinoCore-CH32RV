@@ -12,9 +12,11 @@
  * it; begin() calls it once the interfaces are numbered. */
 struct CH32RVUsbPlatform {
     bool (*build)(const CH32RVUsbDevice &device);
-    const uint8_t *bos;
+    /* The BOS and the Microsoft OS 2.0 set are produced when asked for, not
+     * kept: their writers, lengths (0: none) and the set's revision. */
+    void (*bosWrite)(CH32RVUsbDescriptorWriter &w);
     uint16_t bosLength;
-    const uint8_t *msOs20;
+    void (*msOs20Write)(CH32RVUsbDescriptorWriter &w);
     uint16_t msOs20Length;
     uint16_t msOs20Revision;
     bool msOs20Subsets;
@@ -24,6 +26,9 @@ struct CH32RVUsbPlatform {
     bool (*request)(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup);
     bool (*vendorControl)(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup);
 };
+/* Answer a GET with what `write` produces, an EP0 packet at a time. */
+bool ch32rv_usb_control_in_written(CH32RVUsbDevice &device, uint16_t length,
+                                   void (*write)(CH32RVUsbDescriptorWriter &w));
 extern CH32RVUsbPlatform ch32rv_usb_platform;
 
 /* String descriptors a function needs besides its name (the NCM MAC address):

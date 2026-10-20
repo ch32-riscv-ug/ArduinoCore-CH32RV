@@ -41,43 +41,7 @@ constexpr uint8_t ISO_ASYNC = 0x05;
 constexpr uint8_t ISO_ADAPTIVE = 0x09;
 constexpr uint8_t ISO_FEEDBACK = 0x11;
 
-/* Writes up to `room`; past it only counts, so ok() tells whether it fit. */
-struct Out {
-    uint8_t *p;
-    uint16_t room;
-    uint16_t len = 0;
-
-    void u8(uint8_t v)
-    {
-        if (len < room) {
-            p[len] = v;
-        }
-        len++;
-    }
-    void u16(uint16_t v)
-    {
-        u8((uint8_t)v);
-        u8((uint8_t)(v >> 8));
-    }
-    void u24(uint32_t v)
-    {
-        u16((uint16_t)v);
-        u8((uint8_t)(v >> 16));
-    }
-    void u32(uint32_t v)
-    {
-        u16((uint16_t)v);
-        u16((uint16_t)(v >> 16));
-    }
-    void patch16(uint16_t at, uint16_t v)
-    {
-        if (at + 1u < room) {
-            p[at] = (uint8_t)v;
-            p[at + 1] = (uint8_t)(v >> 8);
-        }
-    }
-    bool ok() const { return len <= room; }
-};
+typedef CH32RVUsbDescriptorWriter Out;
 
 /* Front left + right for stereo, front centre for mono (EspUsbDevice). */
 uint32_t channelConfig(uint8_t channels)
@@ -169,12 +133,12 @@ uint8_t CH32RVUsbAudioFunction::physicalTerminalId(CH32RVUsbAudioDirection d) co
  * taken so the IDs match UAC2's. Playback takes endpoint n OUT (and n IN for
  * UAC2's feedback); capture takes the IN of the same n when it is free,
  * otherwise the next number. */
-uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, uint8_t itf, uint8_t *ep,
-                                                 uint8_t str, CH32RVUsbSpeed speed) const
+bool CH32RVUsbAudioFunction::writeDescriptor(CH32RVUsbDescriptorWriter &o, uint8_t itf, uint8_t *ep, uint8_t str,
+                                             CH32RVUsbSpeed speed) const
 {
     const bool hs = ch32rv_usb_series_can(CH32RVUsbSpeed::High) && speed != CH32RVUsbSpeed::Full;
     if (!describable()) {
-        return 0;
+        return false;
     }
     const bool uac2 = _protocol == CH32RVUsbAudioProtocol::Uac2;
     const bool play = _playbackEnabled, cap = _captureEnabled;
@@ -200,7 +164,15 @@ uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, ui
     const uint8_t streams = (uint8_t)((play ? 1 : 0) + (cap ? 1 : 0));
     const uint8_t protocol = uac2 ? PROTOCOL_UAC2 : PROTOCOL_UAC1;
 
-    Out o{dst, room};
+    /* The AC interface's class-specific part, for its header's wTotalLength. */
+    uint16_t acLength = uac2 ? (uint16_t)(9 + 8) : (uint16_t)(8 + streams);
+    for (uint8_t i = 0; i < 2; i++) {
+        if (!(i == 0 ? play : cap)) {
+            continue;
+        }
+        const uint8_t ch = _streams[i].format.channels;
+        acLength = (uint16_t)(acLength + (uac2 ? 17 + 6 + (ch + 1) * 4 + 12 : 12 + 8 + ch + 9));
+    }
     /* IAD and the AC interface. */
     o.u8(8);
     o.u8(DESC_INTERFACE_ASSOCIATION);
@@ -212,7 +184,6 @@ uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, ui
     o.u8(str);
     interface(o, itf, 0, 0, SUBCLASS_CONTROL, protocol, str);
 
-    const uint16_t acStart = o.len;
     const CH32RVUsbAudioDirection P = CH32RVUsbAudioDirection::Playback, C = CH32RVUsbAudioDirection::Capture;
     if (uac2) {
         o.u8(9);
@@ -220,7 +191,7 @@ uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, ui
         o.u8(AC_HEADER);
         o.u16(0x0200);
         o.u8(play && cap ? CATEGORY_HEADSET : play ? CATEGORY_SPEAKER : CATEGORY_MICROPHONE);
-        o.u16(0);                           /* wTotalLength, patched below */
+        o.u16(acLength);
         o.u8(0);
         /* Clock source 1: internal programmable; frequency read/write,
          * validity read-only. */
@@ -237,7 +208,7 @@ uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, ui
         o.u8(DESC_CS_INTERFACE);
         o.u8(AC_HEADER);
         o.u16(0x0100);
-        o.u16(0);                           /* wTotalLength, patched below */
+        o.u16(acLength);
         o.u8(streams);
         if (play) {
             o.u8(ps.interfaceNumber);
@@ -335,7 +306,6 @@ uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, ui
         featureUnit(featureId(C), physicalTerminalId(C), ch);
         outputTerminal(usbTerminalId(C), TERMINAL_USB_STREAMING, featureId(C));
     }
-    o.patch16((uint16_t)(acStart + (uac2 ? 6 : 5)), (uint16_t)(o.len - acStart));
 
     /* One AS interface per stream. */
     for (uint8_t i = 0; i < 2; i++) {
@@ -347,7 +317,7 @@ uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, ui
         const CH32RVUsbAudioFormat &f = s.format;
         const uint16_t size = packetSize(f, d, hs);
         if (!size) {
-            return 0;
+            return false;
         }
         const uint8_t endpoints = (uint8_t)(1 + (s.feedbackEndpoint ? 1 : 0));
         interface(o, s.interfaceNumber, 0, 0, SUBCLASS_STREAMING, protocol, 0);
@@ -417,7 +387,7 @@ uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, ui
             o.u16(0);
         }
     }
-    return o.ok() ? o.len : 0;
+    return true;
 }
 
 bool CH32RVUsbAudioFunction::describable() const

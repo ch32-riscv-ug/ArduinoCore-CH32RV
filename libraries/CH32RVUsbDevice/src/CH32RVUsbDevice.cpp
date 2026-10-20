@@ -26,9 +26,20 @@ const char *(*ch32rv_usb_extra_string)(uint8_t index);
 /* Filled by CH32RVUsbDevicePlatform.cpp, when linked. */
 CH32RVUsbPlatform ch32rv_usb_platform;
 
+/* For a sketch that looks: the descriptors are not kept, so these produce
+ * them into a buffer of their own - linked only when called. */
 const uint8_t *CH32RVUsbDevice::bosDescriptor() const
 {
-    return ch32rv_usb_platform.bosLength ? ch32rv_usb_platform.bos : nullptr;
+    static uint8_t buf[5 + 24 + 28];
+    const CH32RVUsbPlatform &p = ch32rv_usb_platform;
+    if (!p.bosLength || p.bosLength > sizeof buf) {
+        return nullptr;
+    }
+    CH32RVUsbDescriptorWriter w;
+    w.out = buf;
+    w.room = sizeof buf;
+    p.bosWrite(w);
+    return buf;
 }
 
 uint16_t CH32RVUsbDevice::bosDescriptorLength() const
@@ -36,9 +47,20 @@ uint16_t CH32RVUsbDevice::bosDescriptorLength() const
     return ch32rv_usb_platform.bosLength;
 }
 
+/* Up to 512 bytes (four functions with DeviceInterfaceGUIDs); longer sets are
+ * still served to the host, only not shown here. */
 const uint8_t *CH32RVUsbDevice::microsoftOs20Descriptor() const
 {
-    return ch32rv_usb_platform.msOs20Length ? ch32rv_usb_platform.msOs20 : nullptr;
+    static uint8_t buf[512];
+    const CH32RVUsbPlatform &p = ch32rv_usb_platform;
+    if (!p.msOs20Length || p.msOs20Length > sizeof buf) {
+        return nullptr;
+    }
+    CH32RVUsbDescriptorWriter w;
+    w.out = buf;
+    w.room = sizeof buf;
+    p.msOs20Write(w);
+    return buf;
 }
 
 uint16_t CH32RVUsbDevice::microsoftOs20DescriptorLength() const
@@ -62,14 +84,14 @@ bool CH32RVUsbDevice::attach(CH32RVUsbDeviceFunction &f)
         _error = CH32RVUsbDeviceError::AlreadyStarted;
         return false;
     }
-    if (_count >= CH32RV_USB_MAX_FUNCTIONS) {
-        _error = CH32RVUsbDeviceError::TooManyFunctions;
-        return false;
-    }
     /* The instances of a class are numbered in attach order. */
     uint8_t same = 0;
-    for (uint8_t i = 0; i < _count; i++) {
-        if (&_functions[i]->_type == &f._type) {
+    CH32RVUsbDeviceFunction **at = &_first;
+    for (; *at; at = &(*at)->_next) {
+        if (*at == &f) {
+            return true;
+        }
+        if (&(*at)->_type == &f._type) {
             same++;
         }
     }
@@ -79,8 +101,19 @@ bool CH32RVUsbDevice::attach(CH32RVUsbDeviceFunction &f)
     }
     f._instance = same;
     f._attached = true;
-    _functions[_count++] = &f;
+    f._next = nullptr;
+    *at = &f;
+    _count++;
     return true;
+}
+
+CH32RVUsbDeviceFunction *CH32RVUsbDevice::function(uint8_t i) const
+{
+    CH32RVUsbDeviceFunction *f = _first;
+    while (f && i--) {
+        f = f->_next;
+    }
+    return f;
 }
 
 const char *CH32RVUsbDevice::lastErrorName() const
@@ -110,69 +143,130 @@ bool CH32RVUsbDevice::begin()
     return begin(CH32RVUsbDeviceConfig());
 }
 
-/* The configuration descriptor for one speed, into `out`: the functions in
- * declaration order, numbering interfaces and endpoints as they come. 0, with
- * lastError() set, when it does not fit or needs more endpoints than the
- * controller has (`endpoints`: numbers 0..endpoints-1). `type` is
- * CONFIGURATION (2), or OTHER_SPEED_CONFIGURATION (7) for a high-speed
- * device's other-speed descriptor. */
-uint16_t CH32RVUsbDevice::buildConfiguration(uint8_t *out, uint16_t room, CH32RVUsbSpeed speed, uint8_t type)
+/* ---------------------------------------------------------- descriptors */
+void CH32RVUsbDescriptorWriter::emit(uint8_t v)
 {
-    if (room < 9) {
-        _error = CH32RVUsbDeviceError::DescriptorTooLarge;
-        return 0;
+    if (out && length >= skip && length - skip < room) {
+        out[length - skip] = v;
     }
-    uint16_t len = 9;
-    uint8_t itf = 0, ep = 1;
-    for (uint8_t i = 0; i < _count; i++) {
-        CH32RVUsbDeviceFunction &f = *_functions[i];
-        f._interface = itf;
-        const uint16_t n = f._type.descriptor(f, out + len, (uint16_t)(room - len), itf, &ep,
-                                              (uint8_t)(CH32RV_USB_FIRST_FUNCTION_STRING + i), speed);
-        if (n == 0) {
-            _error = CH32RVUsbDeviceError::DescriptorTooLarge;
-            return 0;
-        }
-        if (ep > _endpoints) {
-            _error = CH32RVUsbDeviceError::OutOfEndpoints;
-            return 0;
-        }
-        len = (uint16_t)(len + n);
-        itf = (uint8_t)(itf + f._type.interfaces);
+    length++;
+}
+
+void CH32RVUsbDescriptorWriter::put(const uint8_t *data, uint16_t n)
+{
+    if (done) {
+        return;
     }
-    /* SuperSpeed: an endpoint companion after every endpoint (USB 3.2 9.6.7):
-     * no bursts, no streams; a periodic endpoint moves one packet per
-     * interval. */
-    if (ch32rv_usb_at(speed, CH32RVUsbSpeed::Super)) {
-        for (uint16_t at = 9; at + 1 < len && out[at]; at = (uint16_t)(at + out[at])) {
-            if (out[at + 1] != 5) {
-                continue;
+    for (uint16_t i = 0; i < n; i++) {
+        const uint8_t b = data[i];
+        emit(b);
+        if (_left == 0) {
+            _left = b ? b : 1;         /* a zero length would never end */
+            _have = 0;
+        }
+        if (_have < sizeof _head) {
+            _head[_have++] = b;
+        }
+        if (--_left) {
+            continue;
+        }
+        if (visit) {
+            visit(context, _head, _have);
+            if (done) {
+                return;
             }
-            if ((uint16_t)(len + 6) > room) {
+        }
+        if (companions && _have >= 6 && _head[1] == 5) {
+            const bool periodic = (_head[3] & 1) != 0;      /* isochronous or interrupt */
+            const uint8_t c[6] = {6, 0x30, 0, 0, (uint8_t)(periodic ? _head[4] : 0), (uint8_t)(periodic ? _head[5] : 0)};
+            for (uint8_t k = 0; k < sizeof c; k++) {
+                emit(c[k]);
+            }
+        }
+    }
+}
+
+void CH32RVUsbDescriptorWriter::u8(uint8_t v)
+{
+    put(&v, 1);
+}
+
+void CH32RVUsbDescriptorWriter::u16(uint16_t v)
+{
+    const uint8_t b[2] = {(uint8_t)v, (uint8_t)(v >> 8)};
+    put(b, 2);
+}
+
+void CH32RVUsbDescriptorWriter::u24(uint32_t v)
+{
+    const uint8_t b[3] = {(uint8_t)v, (uint8_t)(v >> 8), (uint8_t)(v >> 16)};
+    put(b, 3);
+}
+
+void CH32RVUsbDescriptorWriter::u32(uint32_t v)
+{
+    const uint8_t b[4] = {(uint8_t)v, (uint8_t)(v >> 8), (uint8_t)(v >> 16), (uint8_t)(v >> 24)};
+    put(b, 4);
+}
+
+namespace {
+/* The functions' part of the configuration, interfaces and endpoints
+ * numbered as they come. */
+struct Layout {
+    uint8_t interfaces;
+    bool ok;
+};
+}  // namespace
+
+/* The configuration descriptor for one speed: the functions in declaration
+ * order. Counted first - the header carries the total and the interface
+ * count - then written. 0, with lastError() set, when the functions need more
+ * endpoints than the controller has (`_endpoints`: numbers 0.._endpoints-1)
+ * or one cannot be described. `type` is CONFIGURATION (2), or
+ * OTHER_SPEED_CONFIGURATION (7) for a high-speed device's other-speed
+ * descriptor. */
+uint16_t CH32RVUsbDevice::buildConfiguration(CH32RVUsbDescriptorWriter &w, CH32RVUsbSpeed speed, uint8_t type)
+{
+    const bool companions = ch32rv_usb_at(speed, CH32RVUsbSpeed::Super);
+    auto functions = [&](CH32RVUsbDescriptorWriter &to) -> Layout {
+        uint8_t itf = 0, ep = 1, i = 0;
+        for (CH32RVUsbDeviceFunction *f = _first; f; f = f->_next, i++) {
+            f->_interface = itf;
+            if (!f->_type.descriptor(*f, to, itf, &ep, (uint8_t)(CH32RV_USB_FIRST_FUNCTION_STRING + i), speed)) {
                 _error = CH32RVUsbDeviceError::DescriptorTooLarge;
-                return 0;
+                return {itf, false};
             }
-            const uint16_t after = (uint16_t)(at + out[at]);
-            const bool periodic = (out[at + 3] & 1) != 0;      /* isochronous or interrupt */
-            const uint16_t mps = (uint16_t)(out[at + 4] | out[at + 5] << 8);
-            memmove(out + after + 6, out + after, (size_t)(len - after));
-            const uint8_t companion[6] = {6, 0x30, 0, 0, (uint8_t)(periodic ? mps : 0),
-                                          (uint8_t)(periodic ? mps >> 8 : 0)};
-            memcpy(out + after, companion, 6);
-            len = (uint16_t)(len + 6);
-            at = after;                                        /* the companion is skipped next */
+            if (ep > _endpoints) {
+                _error = CH32RVUsbDeviceError::OutOfEndpoints;
+                return {itf, false};
+            }
+            itf = (uint8_t)(itf + f->_type.interfaces);
         }
+        return {itf, true};
+    };
+    if (w.visit) {                 /* walking: no header totals needed */
+        const uint8_t head[9] = {9, type};
+        w.companions = companions;
+        w.put(head, sizeof head);
+        return functions(w).ok ? 9 : 0;
+    }
+    CH32RVUsbDescriptorWriter count;
+    count.companions = companions;
+    const Layout l = functions(count);
+    const uint32_t len = 9 + count.length;
+    if (!l.ok || len > 0xFFFFu) {
+        if (l.ok) {
+            _error = CH32RVUsbDeviceError::DescriptorTooLarge;
+        }
+        return 0;
     }
     /* The header. Bit 7 of bmAttributes is reserved and set, bit 5 offers
      * remote wakeup, bit 6 says self-powered; bMaxPower counts 2 mA units. */
-    out[0] = 9;
-    out[1] = type;
-    out[2] = (uint8_t)len;
-    out[3] = (uint8_t)(len >> 8);
-    out[4] = itf;
-    out[5] = 1;
-    out[6] = 0;
-    out[7] = (uint8_t)(0x80u | 0x20u | (_config.selfPowered ? 0x40u : 0u));
-    out[8] = (uint8_t)(_config.maxPowerMilliamps > 500 ? 250 : _config.maxPowerMilliamps / 2);
-    return len;
+    const uint8_t head[9] = {9, type, (uint8_t)len, (uint8_t)(len >> 8), l.interfaces, 1, 0,
+                             (uint8_t)(0x80u | 0x20u | (_config.selfPowered ? 0x40u : 0u)),
+                             (uint8_t)(_config.maxPowerMilliamps > 500 ? 250 : _config.maxPowerMilliamps / 2)};
+    w.companions = companions;
+    w.put(head, sizeof head);
+    functions(w);
+    return (uint16_t)len;
 }

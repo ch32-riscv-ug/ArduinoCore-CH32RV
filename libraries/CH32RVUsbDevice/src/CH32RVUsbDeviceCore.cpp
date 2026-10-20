@@ -5,21 +5,15 @@
  * The controller driver (CH32RVUsbDcd.h) only records events in its
  * interrupt; everything here, and every class callback, runs in normal
  * context from ch32rv_usb_task() (loop() / delay()). One device runs at a
- * time. Nothing is sized at build time beyond the configuration descriptor's
- * buffer (CH32RV_USB_CONFIG_MAX). */
+ * time. No descriptor set is kept in RAM: each is produced again when it is
+ * asked for (CH32RVUsbDescriptorWriter), an EP0 packet at a time, so nothing
+ * here is sized for the largest configuration. */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
 #include "ch32rv_registers.h"
 #include "CH32RVUsbDevicePort.h"
-
-/* The configuration descriptor is built here. 512 bytes hold a UAC1 headset
- * (191) + a UVC camera (158) + CDC (66) + HID (32) + DFU runtime (18) + the
- * header (9); beyond that begin() fails with DescriptorTooLarge. */
-#ifndef CH32RV_USB_CONFIG_MAX
-#define CH32RV_USB_CONFIG_MAX 512
-#endif
 
 #define MAX_EP 16
 #define MAX_ITF 16
@@ -41,6 +35,10 @@ struct CH32RVUsbDeviceCore {
     static CH32RVUsbDeviceFunction *owner;            /* who answers the request */
     static bool answered, zlp;
     static uint16_t in_length;
+    /* A generated answer (controlInGenerated): where the next packet starts. */
+    static void (*gen_fill)(void *context, uint32_t offset, uint8_t *buffer, uint16_t n);
+    static void *gen_context;
+    static uint16_t gen_offset, gen_chunk;
     static uint8_t pending_address;
     static uint8_t reply[2];
 
@@ -77,6 +75,9 @@ CH32RVUsbSetup CH32RVUsbDeviceCore::req;
 CH32RVUsbDeviceFunction *CH32RVUsbDeviceCore::owner;
 bool CH32RVUsbDeviceCore::answered, CH32RVUsbDeviceCore::zlp;
 uint16_t CH32RVUsbDeviceCore::in_length;
+void (*CH32RVUsbDeviceCore::gen_fill)(void *, uint32_t, uint8_t *, uint16_t);
+void *CH32RVUsbDeviceCore::gen_context;
+uint16_t CH32RVUsbDeviceCore::gen_offset, CH32RVUsbDeviceCore::gen_chunk;
 uint8_t CH32RVUsbDeviceCore::pending_address;
 uint8_t CH32RVUsbDeviceCore::reply[2];
 CH32RVUsbSpeed CH32RVUsbDeviceCore::speed;
@@ -98,7 +99,8 @@ typedef CH32RVUsbDeviceCore Core;
 #define EV_SUSPEND 0x04
 #define EV_RESUME  0x08
 
-static uint8_t desc_configuration[CH32RV_USB_CONFIG_MAX];
+/* One EP0 packet of a generated answer. */
+static uint8_t ep0_packet[ch32rv_usb_series_can(CH32RVUsbSpeed::Super) ? 512 : 64] __attribute__((aligned(4)));
 static uint8_t desc_device[18];
 static uint8_t desc_string[2 + 2 * 32];
 static void build_device_descriptor(const CH32RVUsbDeviceConfig &c);
@@ -113,18 +115,28 @@ static const uint8_t ss_bos[] = {
     10, 0x10, 0x03, 0x00, 0x0E, 0x00, 0x01, 0x0A, 0xFF, 0x07,
 };
 
-static const uint8_t *bos(uint16_t *length)
+/* The BOS's length (0: none) - the platform's, or the SuperSpeed one. */
+static uint16_t bos_length(void)
 {
     if (ch32rv_usb_platform.bosLength) {
-        *length = ch32rv_usb_platform.bosLength;
-        return ch32rv_usb_platform.bos;
+        return ch32rv_usb_platform.bosLength;
     }
-    if (ch32rv_usb_dcd_can(*Core::dcd, CH32RVUsbSpeed::Super)) {
-        *length = sizeof ss_bos;
-        return ss_bos;
-    }
-    *length = 0;
-    return nullptr;
+    return ch32rv_usb_dcd_can(*Core::dcd, CH32RVUsbSpeed::Super) ? (uint16_t)sizeof ss_bos : 0;
+}
+
+static void (*written_by)(CH32RVUsbDescriptorWriter &w);
+
+bool ch32rv_usb_control_in_written(CH32RVUsbDevice &device, uint16_t length,
+                                   void (*write)(CH32RVUsbDescriptorWriter &w))
+{
+    written_by = write;
+    return device.controlInGenerated(length, [](void *, uint32_t offset, uint8_t *buffer, uint16_t n) {
+        CH32RVUsbDescriptorWriter w;
+        w.out = buffer;
+        w.skip = offset;
+        w.room = n;
+        written_by(w);
+    }, nullptr);
 }
 
 /* ------------------------------------------------------------ from the driver's interrupt */
@@ -160,8 +172,7 @@ extern "C" void ch32rv_usbd_isr_resume(void) { Core::events |= EV_RESUME; }
 /* ------------------------------------------------------------ the configuration */
 CH32RVUsbDeviceFunction *Core::interface_owner(uint8_t itf)
 {
-    for (uint8_t i = 0; i < device->_count; i++) {
-        CH32RVUsbDeviceFunction *f = device->_functions[i];
+    for (CH32RVUsbDeviceFunction *f = device->_first; f; f = f->_next) {
         if (itf >= f->_interface && itf < f->_interface + f->_type.interfaces) {
             return f;
         }
@@ -170,23 +181,38 @@ CH32RVUsbDeviceFunction *Core::interface_owner(uint8_t itf)
 }
 
 /* Open (or close) the endpoints of one alternate setting of an interface, as
- * the configuration descriptor lists them. */
+ * the configuration descriptor lists them: produced again and visited. */
+namespace {
+struct OpenWalk {
+    uint8_t itf, alternate;
+    bool open, mine;
+    CH32RVUsbDeviceFunction *owner;
+    CH32RVUsbDescriptorWriter *writer;
+};
+}  // namespace
+
 void Core::open_interface(uint8_t itf, uint8_t alternate, bool open)
 {
-    const uint16_t total = (uint16_t)(desc_configuration[2] | desc_configuration[3] << 8);
-    bool mine = false;
-    CH32RVUsbDeviceFunction *f = interface_owner(itf);
-    for (uint16_t at = desc_configuration[0]; at + 1 < total && desc_configuration[at]; at += desc_configuration[at]) {
-        const uint8_t *d = desc_configuration + at;
-        if (d[1] == 4) {                                 /* INTERFACE */
-            mine = d[2] == itf && d[3] == alternate;
-        } else if (d[1] == 5 && mine) {                  /* ENDPOINT */
+    CH32RVUsbDescriptorWriter w;
+    OpenWalk walk = {itf, alternate, open, false, interface_owner(itf), &w};
+    w.context = &walk;
+    w.visit = [](void *context, const uint8_t *d, uint8_t n) {
+        OpenWalk &k = *(OpenWalk *)context;
+        if (n >= 4 && d[1] == 4) {                       /* INTERFACE */
+            k.mine = d[2] == k.itf && d[3] == k.alternate;
+            if (d[2] > k.itf) {
+                k.writer->done = true;                   /* interfaces come in order: nothing more */
+            }
+        } else if (n >= 6 && d[1] == 5 && k.mine) {      /* ENDPOINT */
             const uint8_t address = d[2], ep = address & 0x0F;
             const uint16_t mps = (uint16_t)((d[4] | d[5] << 8) & 0x7FF);
             const uint16_t bit = (uint16_t)(1u << ep);
-            if (open) {
+            if (ep >= MAX_EP) {
+                return;
+            }
+            if (k.open) {
                 dcd->epOpen(address, (uint8_t)(d[3] & 3), mps);
-                ep_owner[ep] = f;
+                ep_owner[ep] = k.owner;
             } else {
                 dcd->epClose(address);
             }
@@ -198,7 +224,8 @@ void Core::open_interface(uint8_t itf, uint8_t alternate, bool open)
                 halt_out &= (uint16_t)~bit;
             }
         }
-    }
+    };
+    device->buildConfiguration(w, speed, 2);
 }
 
 void Core::set_configuration(bool on)
@@ -209,21 +236,20 @@ void Core::set_configuration(bool on)
     memset(alt, 0, sizeof alt);
     if (configured) {
         configured = false;
-        for (uint8_t i = 0; i < device->_count; i++) {
-            device->_functions[i]->usbReset();
+        for (CH32RVUsbDeviceFunction *f = device->_first; f; f = f->_next) {
+            f->usbReset();
         }
     }
     if (!on) {
         return;
     }
-    device->buildConfiguration(desc_configuration, sizeof desc_configuration, speed, 2);
-    const uint8_t interfaces = desc_configuration[4];
+    const uint8_t interfaces = device->interfaceCount();
     for (uint8_t itf = 0; itf < interfaces && itf < MAX_ITF; itf++) {
         open_interface(itf, 0, true);
     }
     configured = true;
-    for (uint8_t i = 0; i < device->_count; i++) {
-        device->_functions[i]->usbConfigured(speed);
+    for (CH32RVUsbDeviceFunction *f = device->_first; f; f = f->_next) {
+        f->usbConfigured(speed);
     }
 }
 
@@ -248,10 +274,9 @@ static void build_device_descriptor(const CH32RVUsbDeviceConfig &c)
     /* bcdUSB 3.20 at SuperSpeed (EP0 then 2^9 bytes); otherwise 2.10 when
      * there is a BOS - a host reads it only from a 2.1 device. IAD: CDC,
      * MIDI, audio and video are interfaces bound together. */
-    uint16_t bos_length;
-    bos(&bos_length);
+    const uint16_t bos_size = bos_length();
     const bool ss = ch32rv_usb_at(Core::speed, CH32RVUsbSpeed::Super);
-    const uint16_t bcd = ss ? 0x0320 : bos_length ? 0x0210 : 0x0200;
+    const uint16_t bcd = ss ? 0x0320 : bos_size ? 0x0210 : 0x0200;
     const uint8_t d[18] = {18, 1, (uint8_t)bcd, (uint8_t)(bcd >> 8), 0xEF, 0x02, 0x01, (uint8_t)(ss ? 9 : 64),
                            (uint8_t)c.vid, (uint8_t)(c.vid >> 8), (uint8_t)c.pid, (uint8_t)(c.pid >> 8),
                            (uint8_t)c.deviceVersion, (uint8_t)(c.deviceVersion >> 8), 1, 2, 3, 1};
@@ -324,11 +349,23 @@ bool Core::get_descriptor(const CH32RVUsbSetup &s)
         if (other && (!ch32rv_usb_dcd_can(*dcd, CH32RVUsbSpeed::High) || ch32rv_usb_at(speed, CH32RVUsbSpeed::Super))) {
             return false;
         }
-        const CH32RVUsbSpeed as = !other ? speed : ch32rv_usb_at(speed, CH32RVUsbSpeed::High) ? CH32RVUsbSpeed::Full
-                                                                                 : CH32RVUsbSpeed::High;
-        const uint16_t n = device->buildConfiguration(desc_configuration, sizeof desc_configuration, as,
-                                                      (uint8_t)(s.wValue >> 8));
-        return n && device->controlIn(desc_configuration, n);
+        static struct {
+            CH32RVUsbSpeed speed;
+            uint8_t type;
+        } which;
+        which.speed = !other ? speed : ch32rv_usb_at(speed, CH32RVUsbSpeed::High) ? CH32RVUsbSpeed::Full
+                                                                                   : CH32RVUsbSpeed::High;
+        which.type = (uint8_t)(s.wValue >> 8);
+        CH32RVUsbDescriptorWriter count;
+        const uint16_t n = device->buildConfiguration(count, which.speed, which.type);
+        return n && device->controlInGenerated(n, [](void *context, uint32_t offset, uint8_t *buffer, uint16_t length) {
+            auto &c = *(decltype(which) *)context;
+            CH32RVUsbDescriptorWriter w;
+            w.out = buffer;
+            w.skip = offset;
+            w.room = length;
+            Core::device->buildConfiguration(w, c.speed, c.type);
+        }, &which);
     }
     case 3: {                                            /* STRING */
         const uint16_t n = string_descriptor((uint8_t)s.wValue);
@@ -346,11 +383,11 @@ bool Core::get_descriptor(const CH32RVUsbSetup &s)
             q[9] = 0;
             return device->controlIn(q, sizeof q);
         }
-    case 15: {                                           /* BOS */
-        uint16_t n;
-        const uint8_t *p = bos(&n);
-        return p && device->controlIn(p, n);
-    }
+    case 15:                                             /* BOS */
+        if (ch32rv_usb_platform.bosLength) {
+            return ch32rv_usb_control_in_written(*device, ch32rv_usb_platform.bosLength, ch32rv_usb_platform.bosWrite);
+        }
+        return bos_length() && device->controlIn(ss_bos, sizeof ss_bos);
     }
     return false;
 }
@@ -474,6 +511,7 @@ void Core::handle_setup()
     s.wLength = (uint16_t)(setup_raw[6] | setup_raw[7] << 8);
     owner = nullptr;
     answered = false;
+    gen_fill = nullptr;
     ep0 = IDLE;
     bool ok = false;
     const uint8_t type = s.bmRequestType & 0x60, recipient = s.bmRequestType & 0x1F;
@@ -500,6 +538,17 @@ void Core::handle_setup()
 void Core::ep0_done(bool in, uint16_t length)
 {
     (void)length;
+    if (in && ep0 == DATA_IN && gen_fill) {
+        gen_offset = (uint16_t)(gen_offset + gen_chunk);
+        if (gen_offset < in_length) {                    /* the next packet of a generated answer */
+            const uint16_t left = (uint16_t)(in_length - gen_offset);
+            gen_chunk = left < ep0_mps ? left : ep0_mps;
+            gen_fill(gen_context, gen_offset, ep0_packet, gen_chunk);
+            dcd->xfer(0x80, ep0_packet, gen_chunk);
+            return;
+        }
+        gen_fill = nullptr;
+    }
     if (in && ep0 == DATA_IN) {
         if (zlp) {                                       /* a full last packet shorter than asked */
             zlp = false;
@@ -635,8 +684,8 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
      * not fit fails here rather than at enumeration. */
     Core::dcd = dcd;
     for (uint8_t sp = 0; sp < 3; sp++) {
-        if (ch32rv_usb_dcd_can(*dcd, (CH32RVUsbSpeed)sp) &&
-            !buildConfiguration(desc_configuration, sizeof desc_configuration, (CH32RVUsbSpeed)sp, 2)) {
+        CH32RVUsbDescriptorWriter count;
+        if (ch32rv_usb_dcd_can(*dcd, (CH32RVUsbSpeed)sp) && !buildConfiguration(count, (CH32RVUsbSpeed)sp, 2)) {
             return false;
         }
     }
@@ -685,7 +734,11 @@ bool CH32RVUsbDevice::mounted() const
 
 uint8_t CH32RVUsbDevice::interfaceCount() const
 {
-    return desc_configuration[4];
+    uint8_t n = 0;
+    for (const CH32RVUsbDeviceFunction *f = _first; f; f = f->_next) {
+        n = (uint8_t)(n + f->_type.interfaces);
+    }
+    return n;
 }
 
 bool CH32RVUsbDevice::suspended() const
@@ -795,6 +848,29 @@ bool CH32RVUsbDevice::controlIn(const void *data, uint16_t length)
     Core::zlp = n < Core::req.wLength && n && (n % Core::ep0_mps) == 0;
     Core::ep0 = Core::DATA_IN;
     return Core::dcd->xfer(0x80, (uint8_t *)data, n);
+}
+
+bool CH32RVUsbDevice::controlInGenerated(uint16_t length,
+                                         void (*fill)(void *context, uint32_t offset, uint8_t *buffer, uint16_t n),
+                                         void *context)
+{
+    if (Core::answered || !fill) {
+        return false;
+    }
+    Core::answered = true;
+    const uint16_t n = length < Core::req.wLength ? length : Core::req.wLength;
+    Core::in_length = n;
+    Core::zlp = n < Core::req.wLength && n && (n % Core::ep0_mps) == 0;
+    Core::ep0 = Core::DATA_IN;
+    if (!n) {
+        return Core::dcd->xfer(0x80, nullptr, 0);
+    }
+    Core::gen_fill = fill;
+    Core::gen_context = context;
+    Core::gen_offset = 0;
+    Core::gen_chunk = n < Core::ep0_mps ? n : Core::ep0_mps;
+    fill(context, 0, ep0_packet, Core::gen_chunk);
+    return Core::dcd->xfer(0x80, ep0_packet, Core::gen_chunk);
 }
 
 bool CH32RVUsbDevice::controlOut(void *buffer, uint16_t length)

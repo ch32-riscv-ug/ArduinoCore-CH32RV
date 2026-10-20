@@ -8,8 +8,8 @@
 #define CDC_PORTS_MAX 4
 
 /* Notification IN on endpoint n, data OUT and IN on n + 1. */
-static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+static bool cdc_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
+                               uint8_t str, CH32RVUsbSpeed speed)
 {
     CH32RVUsbDeviceCdcSerial &cdc = const_cast<CH32RVUsbDeviceCdcSerial &>(
         static_cast<const CH32RVUsbDeviceCdcSerial &>(self));
@@ -32,11 +32,8 @@ static uint16_t cdc_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
         7, 5, (uint8_t)(n + 1), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
         7, 5, (uint8_t)(0x80 | (n + 1)), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
     };
-    if (sizeof d > room) {
-        return 0;
-    }
-    memcpy(out, d, sizeof d);
-    return sizeof d;
+    w.put(d, sizeof d);
+    return true;
 }
 
 static const CH32RVUsbFunctionType cdc_type = {cdc_descriptor, 2, CDC_PORTS_MAX, nullptr, 0};

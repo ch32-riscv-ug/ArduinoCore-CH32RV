@@ -23,11 +23,9 @@ enum CH32RVUsbDeviceCcidError : uint8_t {
 /* Longest ATR ISO 7816-3 allows. */
 static constexpr size_t CH32RV_USB_DEVICE_CCID_MAX_ATR = 33;
 
-/* Largest CCID message (10-byte header + data) received or sent; covers a
- * short APDU exchange (10 + 261). Each byte here is RAM twice over. */
-#ifndef CH32RV_USB_DEVICE_CCID_BUFFER_SIZE
-#define CH32RV_USB_DEVICE_CCID_BUFFER_SIZE 280
-#endif
+/* The message buffers by default: a 10-byte header and a short APDU
+ * exchange (261). Larger exchanges: setBuffers(). */
+static constexpr uint16_t CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE = 10 + 261;
 
 class CH32RVUsbDeviceCcid : public CH32RVUsbDeviceFunction {
 public:
@@ -40,6 +38,11 @@ public:
     typedef void (*PowerCallback)(bool on);
 
     explicit CH32RVUsbDeviceCcid(CH32RVUsbDevice &device = USBDevice);
+
+    /* The sketch's buffers for one received and one sent message, `size`
+     * bytes each (12 at least); before the device begins. The host is told
+     * the size (dwMaxCCIDMessageLength). */
+    bool setBuffers(uint8_t *message, uint8_t *response, uint16_t size);
 
     /* Put a card in the slot, answering IccPowerOn with this ATR (2..33
      * bytes), and tell the host. */

@@ -89,21 +89,14 @@
 #define CH32RV_USB_HOST_HID_REPORT_ID_SYSTEM_CONTROL   5
 #define CH32RV_USB_HOST_HID_REPORT_ID_VENDOR           6
 
-#ifndef CH32RV_USB_HOST_STRING_MAX
-#define CH32RV_USB_HOST_STRING_MAX 32      /* per string, with the terminator */
-#endif
-#ifndef CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE
+/* Fixed sizes; the receive buffers' defaults, which the sketch can replace
+ * with its own (CH32RVUsbHostCdcSerial::setBuffer(), setVendorBuffer(),
+ * setCcidBuffers()). */
+#define CH32RV_USB_HOST_STRING_MAX 32               /* per string, with the terminator */
 #define CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE 128
-#endif
-#ifndef CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE
 #define CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE 256
-#endif
-#ifndef CH32RV_USB_HOST_CCID_BUFFER_SIZE
-#define CH32RV_USB_HOST_CCID_BUFFER_SIZE 272   /* 10-byte header + a short APDU response */
-#endif
-#ifndef CH32RV_USB_HOST_HID_REPORTS
-#define CH32RV_USB_HOST_HID_REPORTS 8           /* report IDs remembered per HID interface */
-#endif
+#define CH32RV_USB_HOST_CCID_BUFFER_SIZE 272        /* 10-byte header + a short APDU response */
+#define CH32RV_USB_HOST_HID_REPORTS 8               /* report IDs remembered per HID interface */
 
 enum class CH32RVUsbHostError : uint8_t {
     None = 0,
@@ -495,6 +488,8 @@ public:
     /* Open a vendor (0xFF) interface with a bulk IN and/or OUT endpoint - the
      * first one, or `interfaceNumber`. Received data then goes to
      * onVendorData() and to vendorRead(). One open interface at a time. */
+    /* The sketch's receive ring for the next vendorOpen() (default 256 bytes). */
+    bool setVendorBuffer(uint8_t *buffer, size_t size);
     bool vendorOpen(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint8_t interfaceNumber = 0xFF);
     void vendorClose();
     bool vendorReady(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
@@ -509,6 +504,9 @@ public:
     /* ---- CCID smart-card readers ---- */
     void onCcidCardInserted(CcidSlotChangeCallback cb) { _ccidInserted = cb; }
     void onCcidCardRemoved(CcidSlotChangeCallback cb) { _ccidRemoved = cb; }
+    /* The sketch's receive ring and response buffer for the next ccidOpen(),
+     * `size` bytes each (default 272: a short APDU). */
+    bool setCcidBuffers(uint8_t *ring, uint8_t *message, size_t size);
     bool ccidOpen(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint8_t interfaceNumber = 0xFF);
     void ccidClose();
     bool ccidReady(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
@@ -569,6 +567,8 @@ extern CH32RVUsbHost *ch32rv_usb_host_active;
 class CH32RVUsbHostCdcSerial : public Stream {
 public:
     explicit CH32RVUsbHostCdcSerial(CH32RVUsbHost &host);
+    /* The sketch's receive ring instead of the port's own 128 bytes. */
+    bool setBuffer(uint8_t *buffer, uint16_t size);
     bool begin(uint32_t baud = 115200);
     void end();
     bool connected() const;
@@ -599,6 +599,13 @@ private:
     uint32_t _baud = 115200;
     bool _begun = false;
     bool _dtr = true, _rts = true;
+    uint8_t *_rxBuffer = nullptr;
+    uint16_t _rxSize = 0;
+
+public:
+    /* For the port it is bound to. */
+    uint8_t *rxBuffer() const { return _rxBuffer; }
+    uint16_t rxSize() const { return _rxSize; }
 };
 
 /* Printing helpers, EspUsbHost's espUsbHostPrint* under this library's name. */

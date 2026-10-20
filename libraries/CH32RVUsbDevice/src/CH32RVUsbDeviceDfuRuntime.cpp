@@ -12,8 +12,8 @@
 #define DFU_GETSTATUS 3
 #define DFU_GETSTATE  5
 
-static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                  uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+static bool dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
+                                  uint8_t str, CH32RVUsbSpeed speed)
 {
     (void)self;
     (void)ep;
@@ -27,11 +27,8 @@ static uint16_t dfu_rt_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *
         9, 4, itf, 0, 0, 0xFE, 0x01, 0x01, str,
         9, 0x21, 0x08, 0xE8, 0x03, 64, 0, 0x10, 0x01,
     };
-    if (sizeof d > room) {
-        return 0;
-    }
-    memcpy(out, d, sizeof d);
-    return sizeof d;
+    w.put(d, sizeof d);
+    return true;
 }
 
 static const CH32RVUsbFunctionType dfu_rt_type = {dfu_rt_descriptor, 1, 1,

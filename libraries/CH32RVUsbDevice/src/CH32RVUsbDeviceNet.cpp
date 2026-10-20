@@ -43,8 +43,8 @@ static const char *mac_string(uint8_t index)
 /* Two interfaces (control, data); notification IN on endpoint n, bulk OUT
  * and IN on n + 1. The data interface has no endpoints until the host picks
  * alternate setting 1, which is when the link is up. */
-static uint16_t net_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                               uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+static bool net_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
+                               uint8_t str, CH32RVUsbSpeed speed)
 {
     (void)self;
     if (!mac_set) {
@@ -86,11 +86,8 @@ static uint16_t net_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out
         7, 5, (uint8_t)(n + 1), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
         7, 5, (uint8_t)(0x80 | (n + 1)), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
     };
-    if (sizeof d > room) {
-        return 0;
-    }
-    memcpy(out, d, sizeof d);
-    return sizeof d;
+    w.put(d, sizeof d);
+    return true;
 }
 
 static const CH32RVUsbFunctionType net_type = {net_descriptor, 2, 1, nullptr, 0};

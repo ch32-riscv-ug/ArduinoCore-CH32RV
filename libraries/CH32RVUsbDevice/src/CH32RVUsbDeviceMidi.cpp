@@ -34,28 +34,25 @@ uint16_t CH32RVUsbDeviceMidi::descriptorLength() const
 /* Audio control + MIDI streaming (two interfaces), OUT and IN on endpoint n.
  * The bulk IN endpoint lists the embedded OUT jacks and the bulk OUT one the
  * embedded IN jacks - the class document names jacks from the device's side. */
-static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uint16_t room,
-                                uint8_t itf, uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+static bool midi_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
+                            uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
     CH32RVUsbDeviceMidi &m = const_cast<CH32RVUsbDeviceMidi &>(static_cast<const CH32RVUsbDeviceMidi &>(self));
-    if (m.descriptorLength() > room) {
-        return 0;
-    }
     const uint8_t in = m.inCableCount(), out = m.outCableCount();
     const uint8_t both = in < out ? in : out;
     const uint8_t n = (*ep)++;
     const uint16_t mps = ch32rv_usb_bulk_size(speed);
     m._ep = n;
-    uint16_t at = 0;
+    /* wTotalLength of the MS header covers it and everything after it. */
+    const uint16_t ms_total = (uint16_t)(m.descriptorLength() - (MIDI_HEAD_LEN - 7));
     {
         const uint8_t head[] = {
             9, 4, itf, 0, 0, 1, 1, 0, str,                            /* audio control */
             9, 0x24, 1, 0x00, 0x01, 9, 0, 1, (uint8_t)(itf + 1),      /* AC header */
             9, 4, (uint8_t)(itf + 1), 0, 2, 1, 3, 0, 0,               /* MIDI streaming */
-            7, 0x24, 1, 0x00, 0x01, 0, 0,                             /* MS header (length below) */
+            7, 0x24, 1, 0x00, 0x01, (uint8_t)ms_total, (uint8_t)(ms_total >> 8),   /* MS header */
         };
-        memcpy(dst + at, head, sizeof head);
-        at = (uint16_t)(at + sizeof head);
+        w.put(head, sizeof head);
     }
     for (uint8_t c = 1; c <= both; c++) {
         const uint8_t jack[] = {
@@ -64,49 +61,40 @@ static uint16_t midi_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ds
             9, 0x24, 3, 1, JACK_OUT_EMB(c), 1, JACK_IN_EXT(c), 1, 0,
             9, 0x24, 3, 2, JACK_OUT_EXT(c), 1, JACK_IN_EMB(c), 1, 0,
         };
-        memcpy(dst + at, jack, sizeof jack);
-        at = (uint16_t)(at + sizeof jack);
+        w.put(jack, sizeof jack);
     }
     for (uint8_t c = (uint8_t)(both + 1); c <= in; c++) {
         const uint8_t jack[] = {
             6, 0x24, 2, 2, JACK_IN_EXT(c), 0,
             9, 0x24, 3, 1, JACK_OUT_EMB(c), 1, JACK_IN_EXT(c), 1, 0,
         };
-        memcpy(dst + at, jack, sizeof jack);
-        at = (uint16_t)(at + sizeof jack);
+        w.put(jack, sizeof jack);
     }
     for (uint8_t c = (uint8_t)(both + 1); c <= out; c++) {
         const uint8_t jack[] = {
             6, 0x24, 2, 1, JACK_IN_EMB(c), 0,
             9, 0x24, 3, 2, JACK_OUT_EXT(c), 1, JACK_IN_EMB(c), 1, 0,
         };
-        memcpy(dst + at, jack, sizeof jack);
-        at = (uint16_t)(at + sizeof jack);
+        w.put(jack, sizeof jack);
     }
     {
         /* Audio 1.0 endpoints are 9 bytes; then the MS endpoint with its jacks. */
         const uint8_t e[] = {9, 5, n, 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0, 0, 0,
                              (uint8_t)(4 + out), 0x25, 1, out};
-        memcpy(dst + at, e, sizeof e);
-        at = (uint16_t)(at + sizeof e);
+        w.put(e, sizeof e);
     }
     for (uint8_t c = 1; c <= out; c++) {
-        dst[at++] = JACK_IN_EMB(c);
+        w.u8(JACK_IN_EMB(c));
     }
     {
         const uint8_t e[] = {9, 5, (uint8_t)(0x80 | n), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0, 0, 0,
                              (uint8_t)(4 + in), 0x25, 1, in};
-        memcpy(dst + at, e, sizeof e);
-        at = (uint16_t)(at + sizeof e);
+        w.put(e, sizeof e);
     }
     for (uint8_t c = 1; c <= in; c++) {
-        dst[at++] = JACK_OUT_EMB(c);
+        w.u8(JACK_OUT_EMB(c));
     }
-    /* wTotalLength of the MS header covers it and everything after it. */
-    const uint16_t ms_total = (uint16_t)(at - (MIDI_HEAD_LEN - 7));
-    dst[MIDI_HEAD_LEN - 2] = (uint8_t)(ms_total & 0xff);
-    dst[MIDI_HEAD_LEN - 1] = (uint8_t)(ms_total >> 8);
-    return at;
+    return true;
 }
 
 static const CH32RVUsbFunctionType midi_type = {midi_descriptor, 2, 4, nullptr, 0};

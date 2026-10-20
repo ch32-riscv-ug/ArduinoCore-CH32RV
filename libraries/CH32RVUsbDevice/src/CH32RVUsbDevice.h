@@ -62,73 +62,35 @@ enum CH32RVUsbDeviceMsOs20Layout : uint8_t {
     CH32RV_USB_DEVICE_MS_OS_20_SUBSETS,
 };
 
-/* Every default string and identity, overridable from build_opt.h
- * (-DCH32RV_USB_DEVICE_PRODUCT='"My gadget"'); most can also be changed at run
- * time - CH32RVUsbDeviceConfig, or setName() on a class object. */
-#ifndef CH32RV_USB_DEVICE_VID
+/* Every default string and identity. They are changed at run time, not
+ * from build_opt.h: CH32RVUsbDeviceConfig, setName() on a class object,
+ * CH32RVUsbDeviceMsc::vendorID() and the like. */
 #define CH32RV_USB_DEVICE_VID 0x1209          /* pid.codes test VID:PID */
-#endif
-#ifndef CH32RV_USB_DEVICE_PID
 #define CH32RV_USB_DEVICE_PID 0x0001
-#endif
-#ifndef CH32RV_USB_DEVICE_VERSION
 #define CH32RV_USB_DEVICE_VERSION 0x0100
-#endif
-#ifndef CH32RV_USB_DEVICE_MANUFACTURER
 #define CH32RV_USB_DEVICE_MANUFACTURER "ch32-riscv-ug"
-#endif
-#ifndef CH32RV_USB_DEVICE_PRODUCT
 #define CH32RV_USB_DEVICE_PRODUCT "CH32RV Arduino"
-#endif
 /* Interface names (iInterface) - what the host shows for each function. */
-#ifndef CH32RV_USB_CDC_NAME
 #define CH32RV_USB_CDC_NAME "CDC"
-#endif
-#ifndef CH32RV_USB_HID_NAME
 #define CH32RV_USB_HID_NAME "HID"
-#endif
-#ifndef CH32RV_USB_MIDI_NAME
 #define CH32RV_USB_MIDI_NAME "MIDI"
-#endif
-#ifndef CH32RV_USB_VENDOR_NAME
 #define CH32RV_USB_VENDOR_NAME "Vendor"
-#endif
-#ifndef CH32RV_USB_MSC_NAME
 #define CH32RV_USB_MSC_NAME "Mass storage"
-#endif
-#ifndef CH32RV_USB_AUDIO_NAME
 #define CH32RV_USB_AUDIO_NAME "Audio"
-#endif
-#ifndef CH32RV_USB_VIDEO_NAME
 #define CH32RV_USB_VIDEO_NAME "Camera"
-#endif
-#ifndef CH32RV_USB_NET_NAME
 #define CH32RV_USB_NET_NAME "Network"
-#endif
-#ifndef CH32RV_USB_CCID_NAME
 #define CH32RV_USB_CCID_NAME "Smart card reader"
-#endif
 /* The DFU runtime's: ch32rv's discovery lists a device whose DFU runtime
  * interface carries "CH32RV" as an upload port. Another name keeps the
  * interface working (DFU_DETACH still enters the bootloader) but takes the
  * device out of that list. */
-#ifndef CH32RV_USB_DFU_RUNTIME_NAME
 #define CH32RV_USB_DFU_RUNTIME_NAME "CH32RV"
-#endif
 /* SCSI INQUIRY of CH32RVUsbDeviceMsc (8 / 16 / 4 characters) and the FAT RAM
  * disk's volume label (11). */
-#ifndef CH32RV_USB_MSC_VENDOR
 #define CH32RV_USB_MSC_VENDOR "CH32RV"
-#endif
-#ifndef CH32RV_USB_MSC_PRODUCT
 #define CH32RV_USB_MSC_PRODUCT "MSC"
-#endif
-#ifndef CH32RV_USB_MSC_REVISION
 #define CH32RV_USB_MSC_REVISION "1.0"
-#endif
-#ifndef CH32RV_USB_MSC_VOLUME_LABEL
 #define CH32RV_USB_MSC_VOLUME_LABEL "CH32RV"
-#endif
 
 struct CH32RVUsbDeviceConfig {
     /* The pid.codes test VID:PID: fine on a bench, not for a product. A
@@ -188,7 +150,7 @@ enum class CH32RVUsbDeviceError : uint8_t {
     NotStarted,           /* sendHidReport() before begin() */
     NotReady,             /* the host has not configured the device, or the endpoint stayed busy */
     AlreadyStarted,       /* begin() again, or a function added after begin() */
-    TooManyFunctions,     /* more than CH32RV_USB_MAX_FUNCTIONS (6) declared */
+    TooManyFunctions,     /* not returned any more: a device takes any number */
     TooManyInstances,     /* more of one class than the device takes */
     OutOfEndpoints,       /* the functions need more endpoints than exist */
     DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (512) bytes */
@@ -196,21 +158,51 @@ enum class CH32RVUsbDeviceError : uint8_t {
     Busy,                 /* the controller is a USB host right now (CH32RVUsbHost) */
 };
 
-#ifndef CH32RV_USB_MAX_FUNCTIONS
-#define CH32RV_USB_MAX_FUNCTIONS 6
-#endif
+/* Where descriptors go. Nothing is laid out in RAM: a descriptor set is
+ * produced again whenever it is needed, and the writer keeps what the moment
+ * wants -
+ *   counting       how long it is (no buffer);
+ *   a window       the bytes [skip, skip + room) into `out`: GET_DESCRIPTOR
+ *                  is answered one EP0 packet at a time this way;
+ *   visiting       each descriptor's first bytes handed to `visit` (the stack
+ *                  finds the endpoints of an alternate setting so).
+ * With `companions` set (SuperSpeed) a 6-byte endpoint companion follows every
+ * endpoint descriptor (USB 3.2 9.6.7: no bursts, no streams, a periodic
+ * endpoint moving one packet per interval). Whole descriptors only, in order. */
+struct CH32RVUsbDescriptorWriter {
+    uint8_t *out = nullptr;
+    uint32_t skip = 0;
+    uint32_t room = 0;
+    uint32_t length = 0;          /* bytes produced so far */
+    bool companions = false;
+    void (*visit)(void *context, const uint8_t *head, uint8_t headLength) = nullptr;
+    void *context = nullptr;
+    bool done = false;            /* a visitor that has what it wanted: the rest is skipped */
+
+    void put(const uint8_t *data, uint16_t n);
+    void u8(uint8_t v);
+    void u16(uint16_t v);
+    void u24(uint32_t v);
+    void u32(uint32_t v);
+    void bytes(const uint8_t *data, uint16_t n) { put(data, n); }
+
+private:
+    void emit(uint8_t v);
+    uint8_t _left = 0;            /* bytes of the current descriptor still to come */
+    uint8_t _have = 0;
+    uint8_t _head[8] = {};
+};
 
 /* What one class contributes. Each class file has one, as a constant; the
  * device reads it at begin(). */
 struct CH32RVUsbFunctionType {
-    /* Write this function's descriptors for interface `itf` onward into
-     * `out` (`room` bytes free), taking endpoint numbers from *ep (and
-     * advancing it); `str` is its string index; `speed` the form (bulk 64 /
-     * 512 / 1024, intervals in frames or microframes). SuperSpeed endpoint
-     * companions are added by the stack after each endpoint. Returns the
-     * length written, 0 when it does not fit. */
-    uint16_t (*descriptor)(const class CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room,
-                           uint8_t itf, uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed);
+    /* Write this function's descriptors for interface `itf` onward to `w`,
+     * taking endpoint numbers from *ep (and advancing it); `str` is its
+     * string index; `speed` the form (bulk 64 / 512 / 1024, intervals in
+     * frames or microframes). Called whenever the descriptor is needed, so
+     * the same every time. False when the function cannot be described. */
+    bool (*descriptor)(const class CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
+                       uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed);
     uint8_t interfaces;
     uint8_t maxInstances;         /* how many of the class one device takes */
     /* The config field that names this interface, when the sketch has no
@@ -288,6 +280,7 @@ private:
     CH32RVUsbDevice &_device;
     const CH32RVUsbFunctionType &_type;
     const char *_name;
+    CH32RVUsbDeviceFunction *_next = nullptr;   /* the device's next function */
     uint8_t _instance = 0;
     uint8_t _interface = 0;
     bool _attached = false;
@@ -336,7 +329,7 @@ public:
 
     /* How many functions are attached, and the one at `i`. */
     uint8_t functionCount() const { return _count; }
-    CH32RVUsbDeviceFunction *function(uint8_t i) const { return i < _count ? _functions[i] : nullptr; }
+    CH32RVUsbDeviceFunction *function(uint8_t i) const;
 
     /* Send an input report on HID interface `instance` (0: this library has
      * one), waiting up to timeoutMs for the endpoint. EspUsbDevice's
@@ -356,9 +349,14 @@ public:
     uint8_t interfaceCount() const;
 
     /* The configuration descriptor for one speed (CONFIGURATION or
-     * OTHER_SPEED_CONFIGURATION), written into `out`; 0 when it cannot be
-     * laid out (lastError()). For the USB stack's callbacks. */
-    uint16_t buildConfiguration(uint8_t *out, uint16_t room, CH32RVUsbSpeed speed, uint8_t descriptorType);
+     * OTHER_SPEED_CONFIGURATION) to `w`; its length, 0 when it cannot be laid
+     * out (lastError()). For the USB stack. */
+    uint16_t buildConfiguration(CH32RVUsbDescriptorWriter &w, CH32RVUsbSpeed speed, uint8_t descriptorType);
+    /* Answer a GET request with bytes produced as each EP0 packet goes out:
+     * fill(context, offset, buffer, n) writes bytes [offset, offset + n) of a
+     * `length`-byte answer. For descriptors that are not kept in RAM. */
+    bool controlInGenerated(uint16_t length, void (*fill)(void *context, uint32_t offset, uint8_t *buffer, uint16_t n),
+                            void *context);
 
     /* For the classes: transfers on their endpoints (address, bit 7 for IN).
      * The buffer stays theirs until usbTransferred(). False while a transfer
@@ -387,7 +385,7 @@ public:
     uint16_t maxPacketSize() const { return _maxPacket; }
 
 private:
-    CH32RVUsbDeviceFunction *_functions[CH32RV_USB_MAX_FUNCTIONS] = {};
+    CH32RVUsbDeviceFunction *_first = nullptr;   /* the functions, in declaration order */
     CH32RVUsbDeviceConfig _config;
     uint8_t _count = 0;
     uint8_t _endpoints = 8;       /* the controller's endpoint numbers 0.._endpoints-1 */

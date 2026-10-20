@@ -28,7 +28,6 @@
 #define REQUEST_ABORT  0x01
 
 #define HEADER_SIZE  10
-#define MESSAGE_SIZE CH32RV_USB_DEVICE_CCID_BUFFER_SIZE
 /* The receive buffer holds one packet of the fastest speed the part has. */
 #define BULK_EP_BUF CH32RV_USB_MAX_PACKET
 #define NOTIFY_EP_SIZE 8
@@ -90,11 +89,15 @@ static struct {
 
 static uint8_t ep_out_buf[BULK_EP_BUF] __attribute__((aligned(4)));
 static uint8_t notify_buf[NOTIFY_EP_SIZE] __attribute__((aligned(4)));
-static uint8_t message[MESSAGE_SIZE] __attribute__((aligned(4)));
-/* Responses are built here and sent from here: CCID is one command at a
- * time, so the next one cannot overwrite a response still in flight. */
-static uint8_t response[MESSAGE_SIZE] __attribute__((aligned(4)));
-
+/* One message being received, and the response built and sent from its own
+ * buffer: CCID is one command at a time, so the next one cannot overwrite a
+ * response still in flight. setBuffers() replaces both. */
+static uint8_t default_message[CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE] __attribute__((aligned(4)));
+static uint8_t default_response[CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE] __attribute__((aligned(4)));
+static uint8_t *message = default_message;
+static uint8_t *response = default_response;
+static uint16_t message_size = CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE;
+#define MESSAGE_SIZE message_size
 static CH32RVUsbDeviceCcid *ccid;
 
 static void arm_receive(void)
@@ -123,24 +126,19 @@ static bool driver_notify(const uint8_t *data, size_t length)
 }
 
 /* One interface: bulk OUT/IN on endpoint n, interrupt IN on n + 1. */
-static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+static bool ccid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
+                            uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
     (void)self;
-    const uint16_t len = 9 + 54 + 3 * 7;
-    if (len > room) {
-        return 0;
-    }
     const uint8_t n = *ep;
     *ep = (uint8_t)(n + 2);
     drv.ep_out = n;
     drv.ep_in = (uint8_t)(0x80 | n);
     drv.ep_notify = (uint8_t)(0x80 | (n + 1));
     const uint8_t head[] = {9, 4, itf, 0, 3, 0x0B, 0, 0, str};
-    memcpy(out, head, sizeof head);
+    w.put(head, sizeof head);
     /* CCID class descriptor (CCID 1.1 section 5.1). */
-    uint8_t *c = out + 9;
-    memset(c, 0, 54);
+    uint8_t c[54] = {};
     c[0] = 54;
     c[1] = 0x21;
     put16(c + 2, 0x0110);       /* bcdCCID 1.10 */
@@ -154,7 +152,7 @@ static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ou
     /* The reader does activation, clock, baud rate, PPS and parameters
      * itself, and exchanges whole short APDUs. */
     put32(c + 40, 0x000204FE);
-    put32(c + 44, HEADER_SIZE + 261);
+    put32(c + 44, message_size);   /* dwMaxCCIDMessageLength */
     c[48] = 0xFF;
     c[49] = 0xFF;
     c[53] = 1;
@@ -164,8 +162,9 @@ static uint16_t ccid_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *ou
         7, 5, (uint8_t)(0x80 | n), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
         7, 5, (uint8_t)(0x80 | (n + 1)), 3, NOTIFY_EP_SIZE, 0, ch32rv_usb_interval(speed, NOTIFY_INTERVAL_MS),
     };
-    memcpy(out + 9 + 54, eps, sizeof eps);
-    return len;
+    w.put(c, sizeof c);
+    w.put(eps, sizeof eps);
+    return true;
 }
 
 static const CH32RVUsbFunctionType ccid_type = {ccid_descriptor, 1, 1, nullptr, 0};
@@ -176,6 +175,17 @@ CH32RVUsbDeviceCcid::CH32RVUsbDeviceCcid(CH32RVUsbDevice &device)
     if (attached()) {
         ccid = this;
     }
+}
+
+bool CH32RVUsbDeviceCcid::setBuffers(uint8_t *messageBuffer, uint8_t *responseBuffer, uint16_t size)
+{
+    if (device().started() || !messageBuffer || !responseBuffer || size < HEADER_SIZE + 2) {
+        return false;
+    }
+    message = messageBuffer;
+    response = responseBuffer;
+    message_size = size;
+    return true;
 }
 
 bool CH32RVUsbDeviceCcid::mounted() const

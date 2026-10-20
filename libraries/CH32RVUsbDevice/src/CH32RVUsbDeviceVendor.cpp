@@ -34,8 +34,8 @@ static uint16_t clamp_ep(uint16_t n)
 
 static CH32RVUsbDeviceVendor *vendors[VENDORS_MAX];
 
-static uint16_t vendor_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *out, uint16_t room, uint8_t itf,
-                                  uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
+static bool vendor_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
+                                  uint8_t str, CH32RVUsbSpeed speed)
 {
     CH32RVUsbDeviceVendor &v = const_cast<CH32RVUsbDeviceVendor &>(static_cast<const CH32RVUsbDeviceVendor &>(self));
     const uint8_t n = (*ep)++;
@@ -46,11 +46,8 @@ static uint16_t vendor_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *
         7, 5, n, 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
         7, 5, (uint8_t)(0x80 | n), 2, (uint8_t)mps, (uint8_t)(mps >> 8), 0,
     };
-    if (sizeof d > room) {
-        return 0;
-    }
-    memcpy(out, d, sizeof d);
-    return sizeof d;
+    w.put(d, sizeof d);
+    return true;
 }
 
 /* winusb 2: the compatible ID and DeviceInterfaceGUIDs. */

@@ -141,8 +141,8 @@ protected:
     void usbHaltCleared(uint8_t address) override;
 
 private:
-    friend uint16_t video_descriptor(const CH32RVUsbDeviceFunction &, uint8_t *, uint16_t, uint8_t, uint8_t *,
-                                     uint8_t, CH32RVUsbSpeed);
+    friend bool video_descriptor(const CH32RVUsbDeviceFunction &, CH32RVUsbDescriptorWriter &, uint8_t, uint8_t *,
+                                 uint8_t, CH32RVUsbSpeed);
     bool configurable() const;
     bool arm(const uint8_t *frame, size_t length);
     void defaultProbe(uint8_t *probe) const;
