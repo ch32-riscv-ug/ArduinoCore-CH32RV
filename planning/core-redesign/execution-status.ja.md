@@ -9,7 +9,7 @@
 | P2 再現 | EXP-00、36 build一致 | 測定の拡張時も入力と生成物を記録 | 実runtimeとは別 |
 | P2 用途対照 | PREP-01と02、K0と結合X0のhost検査、ABI link | 最小起動、I/O backend、上流のbuild専用再現 | 実IRQ共有、wire、PD、実機起動 |
 | EXP-01 最小構成・I/O | logic-only linkまで | 独立runtime、I/O契約、定数／実行時入口と除去比較 | 実起動・周辺・IRQ時間 |
-| EXP-02 データと同期 | 未実施 | queue／ring／message／flag／semaphore／lock／pool、容量と接続方式、host意味検査とtargetサイズ | 実ISR／コア間の同期と禁止時間 |
+| EXP-02 データと同期 | [直列単位](tasks/EXP-02/result.ja.md)：host92件、link200構成、未使用36行が0 B | 非自明型・保護policy・通知の登録競合、必要な待機接続の比較 | 実ISR／コア間の同期と禁止時間 |
 | EXP-03 実行・通知 | Rの明示stepまで | A/B/Cの同等契約、再投稿・満杯・timer・M/S/U・wait・cancel、別stack対照の範囲調査 | MCU時間・stack観測、採否はP5 |
 | EXP-04 保存 | V003／X035の消去方式の資料確認 | read／program条件、媒体model、RAW／blob／key、1／2／4単位、領域・linker・設定の検査 | 実電断・停止・upload保持 |
 | EXP-05 拡張 | タッチ追加のR対照 | 表示交換・独立library・能力差・H417所有modelと資料確認 | 実cache可視性・両コア・reset |
@@ -26,6 +26,7 @@
 
 - [P2-PREP-01](tasks/P2-PREP-01/result.ja.md)：対象・個別ロジック。
 - [P2-PREP-02](tasks/P2-PREP-02/result.ja.md)：X0の共有bus・周期・結合ロジック。
+- [EXP-02直列単位](tasks/EXP-02/result.ja.md)：データ部品・容量・未使用除去。
 
-次はEXP-02の実行器なしで使えるデータ部品と容量比較を進め、並行する依存ではなく独立した開始条件として扱う。
+次はEXP-02の残る型・保護・通知接続とEXP-03を進める。
 P2の実backend待ちで、pureな部品とhost契約の検査を止めない。

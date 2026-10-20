@@ -44,3 +44,32 @@ stackの観測peak、cycle、周辺の動作、完成用途のfitはこの入口
 fake busは実行中1件と終端1件を同じ受理slotに保持し、回収前の再利用を拒否する。
 周期が遅れたら最新1回へ集約し、画面が不変ならrevisionを増やさない。
 clockの周回・実PD・実IRQ・物理busを確認した扱いにはしない。
+
+## EXP-02 データ部品の比較
+
+`data_parts.hpp` と `data_driver.cpp` は実行器を使わない比較試作。
+固定queue／借用storageのqueue、部分操作・借用範囲付きbyte ring、全体受理のmessage buffer、
+flag、semaphore、owner付きtry lock、世代付き固定block poolを含む。
+使用文脈は直列実行に限定する。ISR・複数producer・コア間で共有するための保護はまだ含まない。
+非自明な型をqueueへ格納する方式も別の比較として残る。
+
+queueのWakeFlagは空→非空の遷移で短いflagを設定する。
+ユーザーcallbackやwaitは呼ばない。consumerはdrain・条件再確認を行う必要があり、
+このflagだけで割り込みとの間の待機登録競合が解決した扱いにしない。
+poolは古いtokenを拒否し、世代番号が尽きたblockを退役させる。
+世代の保護費用を含むため、indexだけを返すpoolと同じ保証として比べない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_data_parts.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp02-data-matrix
+```
+
+容量・payload・固定／借用／通知付き、RV32E／RV32IMAC、LTOなし／ありを分ける。
+各部品の未使用objectもlinkし、constructor・登録表・symbolの保持を確認する。
+16 byte payloadは全wordを観測し、flagはset／clear／takeを別操作にして、
+測ろうとする状態やcopyを入口だけで消してしまう条件を避ける。
+値は観測用入口・libc／libgccを含むプログラムの追加量で、class単独の理論費用ではない。

@@ -267,7 +267,8 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 | P0 理想像 | DESIGN-01 完了。全体設計案 P0-1 と利用例を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-01/result.ja.md) |
 | P1 比較条件と実験設計 | DESIGN-02 完了。P1-1 と EXP-00 依頼を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-02/result.ja.md) |
 | P2 再現基盤と対照準備 | 進行中。EXP-00、PREP-01と02完了。bus・周期のhost結合済み。起動・実周辺backendは未検証 |
-| P3〜P4 | 独立した部品から開始可能。[作業別状態](planning/core-redesign/execution-status.ja.md)を参照 |
+| P3 | EXP-02の直列データ部品を実施中。host92件とlink200構成。[作業別状態](planning/core-redesign/execution-status.ja.md)を参照 |
+| P4 | 未完了。同等機能のA〜Cと完成用途、変更課題・利用者レビューが残る |
 | P5〜P7 | 未着手。方式の採用と最終仕様はP5で扱う |
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
@@ -298,5 +299,6 @@ K0のwire受理と実IRQ共有、X0の実PD処理、clock初期化は未検証�
 
 **P2-PREP-02：X0共有busと周期処理の結合**は[結果](planning/core-redesign/tasks/P2-PREP-02/result.ja.md)を記録済み。
 最小起動と実周辺backend、未確認の物理条件は別の準備単位として残す。
-次はEXP-02の独立したデータ部品から進め、P4まで通常の実装・実験を継続する。
+EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完了。
+型の寿命・保護・通知接続とEXP-03へ進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。
