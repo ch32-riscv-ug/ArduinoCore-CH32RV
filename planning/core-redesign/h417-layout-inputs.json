@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "Link-only placement with pinned SDK scripts; opaque bytes, no shared C++ object or runnable startup",
+  "source_manifest": "h417-inputs.json",
+  "march": "rv32imafc_zicsr",
+  "abi": "ilp32f",
+  "alignment": 16,
+  "shared_origin": 538411008,
+  "shared_capacity": 32768,
+  "shared_bytes": [256, 1024, 32768],
+  "stack_bytes": 2048,
+  "cores": {
+    "V3F": {
+      "linker": "EVT/EXAM/CPU/HSEM/HSEM_DataSharing/Common/Ld/V3F/Link_v3f.ld",
+      "regions": {"FLASH": [0, 65536], "RAM_CODE": [537919488, 65536], "RAM": [537985280, 425728], "RAM_LOAD": [537985024, 256], "RAM_SHARED": [538411008, 32768]}
+    },
+    "V5F": {
+      "linker": "EVT/EXAM/CPU/HSEM/HSEM_DataSharing/Common/Ld/V5F/Link_v5f.ld",
+      "regions": {"FLASH": [65536, 131072], "RAM_CODE": [537526272, 131072], "RAM": [537658112, 261376], "RAM_LOAD": [537657856, 256], "RAM_SHARED": [538411008, 32768]}
+    }
+  }
+}
