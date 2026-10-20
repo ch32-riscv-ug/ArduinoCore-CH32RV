@@ -37,6 +37,19 @@ cannot divide by."
 
 static volatile uint32_t ch32rv_millis_counter;
 
+/* CH32H417 has one SysTick per core: SysTick0 (this address) is the V3F's,
+ * vector SysTick0_Handler, and its status word is shared - bit 0 is the
+ * V3F's match, bit 1 the V5F's (SysTick1). Clear only ours there. */
+#ifdef CH32RV_IRQN_SysTick0
+#define CH32RV_IRQN_SYSTICK      CH32RV_IRQN_SysTick0
+#define CH32RV_SYSTICK_HANDLER   SysTick0_Handler
+#define CH32RV_SYSTICK_SR_CLEAR() (CH32RV_SYSTICK_SR &= ~1u)
+#else
+#define CH32RV_IRQN_SYSTICK      CH32RV_IRQN_SysTick
+#define CH32RV_SYSTICK_HANDLER   SysTick_Handler
+#define CH32RV_SYSTICK_SR_CLEAR() (CH32RV_SYSTICK_SR = 0u)
+#endif
+
 void SystemInit(void)
 {
     /* Put RCC back where reset leaves it before touching anything. This used
@@ -149,7 +162,7 @@ void SystemInit(void)
     /* 1 kHz tick off HCLK - or HCLK/8 on CH32V103, which cannot select. */
     CH32RV_SYSTICK_CTLR = 0u;
 #if !CH32RV_SYSTICK_V103
-    CH32RV_SYSTICK_SR = 0u;
+    CH32RV_SYSTICK_SR_CLEAR();
 #endif
 #if CH32RV_SYSTICK_V103
     CH32RV_SYSTICK_WRITE8(0x04u, 0u);
@@ -164,7 +177,7 @@ void SystemInit(void)
     CH32RV_SYSTICK_CMP_HI = 0u;
 #endif
 #endif
-    ch32rv_irq_enable(CH32RV_IRQN_SysTick);
+    ch32rv_irq_enable(CH32RV_IRQN_SYSTICK);
 #if CH32RV_SYSTICK_V103
     /* STE is the whole configuration here: the other two bits do not exist
      * (writing 0x7 reads back 0x1), the PFIC enable above is what lets the
@@ -207,7 +220,7 @@ static inline int ch32rv_clock_is_ours(void)
 }
 
 /* Rewind the counter in software so every supported family uses one path. */
-__attribute__((interrupt)) void SysTick_Handler(void)
+__attribute__((interrupt)) void CH32RV_SYSTICK_HANDLER(void)
 {
     /* Put the clock back within a millisecond of a probe moving it. Here and
      * not between loop() calls, because a sketch blocked in delay(), a busy
@@ -221,7 +234,7 @@ __attribute__((interrupt)) void SysTick_Handler(void)
     CH32RV_SYSTICK_WRITE8(0x04u, 0u);
     CH32RV_SYSTICK_WRITE8(0x08u, 0u);
 #else
-    CH32RV_SYSTICK_SR = 0u;
+    CH32RV_SYSTICK_SR_CLEAR();
     CH32RV_SYSTICK_CNT = 0u;
 #if CH32RV_SYSTICK_64
     CH32RV_SYSTICK_CNT_HI = 0u;

@@ -33,6 +33,8 @@ SOURCES = {
     "x035":     "CH32X035/EVT/EXAM/SRC/Startup/startup_ch32x035.S",
     "x3x5":     "CH32X315/EVT/EXAM/SRC/Startup/startup_ch32x3x5.S",
     "l103":     "CH32L103/EVT/EXAM/SRC/Startup/startup_ch32l103.S",
+    # The V3F and V5F startups carry the same table (compared word for word).
+    "h417":     "CH32H417/EVT/EXAM/SRC/Startup/startup_ch32h417_v3f.S",
     # CH32V103's table holds jump instructions rather than addresses; the
     # startup selects that with mtvec mode 1.
     "v103":     "CH32V103/EVT/EXAM/SRC/Startup/startup_ch32v10x.S",

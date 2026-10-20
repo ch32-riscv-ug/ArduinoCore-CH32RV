@@ -465,8 +465,12 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
 #define CH32RV_EXTI_FTENR  CH32RV_REG32(CH32RV_EXTI_BASE + 0x0Cu)
 #define CH32RV_EXTI_SWIEVR CH32RV_REG32(CH32RV_EXTI_BASE + 0x10u)
 #define CH32RV_EXTI_INTFR  CH32RV_REG32(CH32RV_EXTI_BASE + 0x14u)
-/* Which port drives EXTI line n: four lines per word, four bits each. */
-#define CH32RV_AFIO_EXTICR(n) CH32RV_REG32(CH32RV_AFIO_BASE + 0x08u + 4u * (n))
+/* Which port drives EXTI line n (field layout: exti_<variant>.h). The first
+ * word sits at 0x08 except where the board says otherwise (CH32H417: 0x3C). */
+#ifndef CH32RV_AFIO_EXTICR_OFFSET
+#define CH32RV_AFIO_EXTICR_OFFSET 0x08u
+#endif
+#define CH32RV_AFIO_EXTICR(n) CH32RV_REG32(CH32RV_AFIO_BASE + CH32RV_AFIO_EXTICR_OFFSET + 4u * (n))
 
 /* ---------------------------------------------------------------- timers */
 /* TIM1 is the advanced timer on APB2; TIM2/TIM3 are general purpose on APB1.

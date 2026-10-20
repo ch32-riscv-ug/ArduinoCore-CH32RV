@@ -10,6 +10,10 @@
  *   CH32RV_CSR_BC1        optional, value for csr 0xbc1
  *   CH32RV_CSR805_CLR     optional, bitmask cleared in csr 0x805 (csrc)
  *   CH32RV_HIGHCODE       optional, copy .highcode from flash to RAM
+ *   CH32RV_LOADCODE       optional, run everything from RAM: the reset jump
+ *                       and the copy stay in flash (.reset), the vector
+ *                       table and the rest are one image copied at reset
+ *                       (sections_loadcode.ld; CH32H417)
  *   CH32RV_NO_INIT_ARRAY  optional, skip calling C++ global constructors
  */
 
@@ -48,6 +52,21 @@
  * _vector_base|3 with the table at 0x40 reads mtvec back as 0x00000003.
  * Base 0 is aligned for every core generation, so all families use one layout.
  * tests/startup/compare.py checks the base stays 0. */
+#ifdef CH32RV_LOADCODE
+/* The table lives in RAM (sections_loadcode.ld); the reset address holds a
+ * jump of its own, and entry 0 of the table is never taken. */
+    .section  .reset, "ax", @progbits
+    .globl    _start
+_start:
+    j       handle_reset
+
+    .section  .vector, "ax", @progbits
+    .globl    _vector_base
+    .align    2
+_vector_base:
+    .option norvc;
+    .word   0
+#else
     .section  .vector, "ax", @progbits
     .globl    _start
     .globl    _vector_base
@@ -56,6 +75,7 @@ _start:
 _vector_base:
     .option norvc;
     j       handle_reset
+#endif
 #include CH32RV_VECTORS_FILE(CH32RV_VECTORS)
     .option rvc;
 
@@ -83,7 +103,11 @@ Default_Handler:
 #include CH32RV_VECTORS_FILE(CH32RV_VECTORS)
 
 /* ---- reset ---- */
+#ifdef CH32RV_LOADCODE
+    .section  .reset, "ax", @progbits
+#else
     .section  .text.handle_reset, "ax", @progbits
+#endif
     .weak     handle_reset
     .align    1
 handle_reset:
@@ -93,6 +117,21 @@ handle_reset:
 .option pop
     la sp, _eusrstack
 
+#ifdef CH32RV_LOADCODE
+/* Copy the image (vectors, code, constants, data) from flash to RAM. Runs
+ * from flash, at the reset clock; everything after it is in RAM. */
+    la a0, _image_lma
+    la a1, _image_vma
+    la a2, _edata
+    bgeu a1, a2, 2f
+1:
+    lw t0, (a0)
+    sw t0, (a1)
+    addi a0, a0, 4
+    addi a1, a1, 4
+    bltu a1, a2, 1b
+2:
+#else
 #ifdef CH32RV_HIGHCODE
 /* Load highcode section from flash to RAM */
     la a0, _highcode_lma
@@ -120,6 +159,7 @@ handle_reset:
     addi a1, a1, 4
     bltu a1, a2, 1b
 2:
+#endif
 /* Clear bss section */
     la a0, _sbss
     la a1, _ebss
@@ -154,7 +194,12 @@ handle_reset:
     ori t0, t0, CH32RV_MTVEC_MODE
     csrw mtvec, t0
 
+#ifdef CH32RV_LOADCODE
+    la t0, SystemInit                /* in RAM, out of jal's reach */
+    jalr t0
+#else
     jal SystemInit
+#endif
 
 #ifndef CH32RV_NO_INIT_ARRAY
 /* Call C++ global constructors (.init_array). Not done by the EVT startups;

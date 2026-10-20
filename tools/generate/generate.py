@@ -120,7 +120,32 @@ FAMILY = {
                      defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 "
                              "-DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0),
-    # Excluded, same reason as tests/build/startup/: CH32H417 boots via loadcode.
+    # CH32H417: the V3F (hart 0, the core that runs from reset) on its own; the
+    # V5F stays asleep. Same QingKe V3F as CH32X315, same CSR values in the EVT
+    # startup. The code is copied from flash into the shared SRAM and runs
+    # there (CH32RV_LOADCODE, sections_loadcode.ld): the code flash is not
+    # zero-wait, and the EVT runs nothing from it but the copy.
+    "CH32H417": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="25000000L",
+                     defines="-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 "
+                             "-DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01 "
+                             "-DCH32RV_LOADCODE=1",
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
+}
+
+# Families whose code runs from RAM: the whole image (vectors, code, read-only
+# data, initialised data) is copied there from flash at reset, and nothing but
+# the reset jump and the copy runs from flash (CH32RV_LOADCODE,
+# cores/arduino/sections_loadcode.ld). Value: (RAM origin, RAM length) - the
+# region that then holds code, data and stack together.
+#
+# CH32H417: the V3F runs zero-wait only from SRAM; its code flash is not
+# zero-wait, and the EVT copies everything out of it the same way. The region
+# is the 512 KiB "shared code and data area" at 0x20100000 (RM 1.2.1), all of
+# it given to the V3F while the V5F sleeps; ITCM / DTCM belong to the V5F.
+# The tables carry the area's base (memory_map.csv SRAM) but not its size or
+# the boot model, so both are ours.
+LOADCODE_RAM = {
+    "CH32H417": (0x20100000, 512 * 1024),
 }
 
 # One board per silicon series, so the board name matches the chip marking.
@@ -160,6 +185,9 @@ SERIES_CONFIG = {
     "CH32X305": dict(family="CH32X315", vectors="x3x5"),
     "CH32X315": dict(family="CH32X315", vectors="x3x5"),
     "CH32M030": dict(family="CH32M030", vectors="m030"),
+    "CH32H415": dict(family="CH32H417", vectors="h417"),
+    "CH32H416": dict(family="CH32H417", vectors="h417"),
+    "CH32H417": dict(family="CH32H417", vectors="h417"),
 }
 
 # CH32V203CCT6 is a CH32V205 die sold under a V203 part number: it ships in the
@@ -931,13 +959,27 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # AFIO register list). Writing the remap to 0x04 there changes nothing -
     # measured 2026-10-14 on a CH32V006K8U6: USART1 route 3 only reached PC0
     # through 0x0C. A family the table is silent on keeps the core's default.
+    #
+    # The same table places the first EXTICR word and, on the per-pin-AF
+    # families, GPIOA_AFLR (one AFLR/AFHR pair per port from there). The core
+    # assumes EXTICR at 0x08 and AFLR at 0x20 for PA..PE; CH32H417 has its AF
+    # registers from 0x04 for PA..PF and EXTICR from 0x3C (RM AFIO list).
     afio_off: dict = {}
+    afio_ports: dict = {}
     for r in read_table(tables, "registers.csv",
                         ("family", "type", "register", "offset", "field")):
-        if (r["type"] == "AFIO" and r["register"] in ("PCFR1", "PCFR2")
-                and not r["field"] and r["offset"]):
-            afio_off.setdefault((r["family"], r["register"]), set()).add(
-                int(r["offset"], 16))
+        if r["type"] != "AFIO" or not r["offset"]:
+            continue
+        reg = r["register"]
+        if reg in ("PCFR1", "PCFR2") and not r["field"]:
+            afio_off.setdefault((r["family"], reg), set()).add(int(r["offset"], 16))
+        elif reg in ("EXTICR", "EXTICR1", "EXTICR[0]"):
+            afio_off.setdefault((r["family"], "EXTICR"), set()).add(int(r["offset"], 16))
+        elif reg == "GPIOA_AFLR":
+            afio_off.setdefault((r["family"], "AFLR"), set()).add(int(r["offset"], 16))
+        m = re.fullmatch(r"GPIO([A-Z])_AFLR", reg)
+        if m:
+            afio_ports.setdefault(r["family"], set()).add(m.group(1))
 
     # Flash wait states: the LATENCY field is two bits on most families, three
     # on CH32M030 and four on CH32V205, and absent where the flash needs no
@@ -1032,6 +1074,13 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             afio_pcfr2=one(family, "the AFIO PCFR2 offset",
                            afio_off[(family, "PCFR2")])
             if (family, "PCFR2") in afio_off else None,
+            afio_exticr=one(family, "the AFIO EXTICR offset",
+                            afio_off[(family, "EXTICR")])
+            if (family, "EXTICR") in afio_off else None,
+            afio_aflr=one(family, "the AFIO GPIOA_AFLR offset",
+                          afio_off[(family, "AFLR")])
+            if (family, "AFLR") in afio_off else None,
+            afio_af_ports=len(afio_ports.get(family, ())),
         )
     return facts
 
@@ -1400,7 +1449,7 @@ ALL_REMAPS = tuple(f"remap-{i}" for i in range(1, 10))
 # number is loaded so setPins() and the FIX menu can reach all of them; the
 # ones the *_ROUTE_ORDER tuples name first still rank first for a default.
 ALL_AFS = tuple(f"af-{i}" for i in range(16))
-PER_PIN_AF_SERIES = {"CH32V205", "CH32X305", "CH32X315"}
+PER_PIN_AF_SERIES = {"CH32V205", "CH32X305", "CH32X315", "CH32H415", "CH32H416", "CH32H417"}
 UART_ROUTE_ORDER = ("default", "main", "af-1", "af-2", "remap-1") + ALL_REMAPS[1:]
 UART_ROUTE_ORDER += tuple(a for a in ALL_AFS if a not in UART_ROUTE_ORDER)
 
@@ -2156,6 +2205,7 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
 # the wrong line (2026-09-22: PB3 EXTI on CH32X035 ended up selecting line 6).
 EXTICR_LAYOUT = {
     "m030": (2, 16), "v003": (2, 16), "v00x": (2, 16), "x035": (2, 16), "x3x5": (2, 16),
+    "h417": (4, 8),
 }
 EXTICR_LAYOUT_DEFAULT = (4, 4)
 
@@ -3099,7 +3149,15 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         + (f" -DCH32RV_AFIO_PCFR1_OFFSET={fact['afio_pcfr1']:#x}u"
            if fact['afio_pcfr1'] is not None else "")
         + (f" -DCH32RV_AFIO_PCFR2_OFFSET={fact['afio_pcfr2']:#x}u"
-           if fact['afio_pcfr2'] is not None else ""))
+           if fact['afio_pcfr2'] is not None else "")
+        # Only where they differ from the core's defaults (ch32rv_registers.h,
+        # ch32rv_gpio.h), so the families that match keep their command line.
+        + (f" -DCH32RV_AFIO_EXTICR_OFFSET={fact['afio_exticr']:#x}u"
+           if fact['afio_exticr'] not in (None, 0x08) else "")
+        + (f" -DCH32RV_AFIO_AFLR_OFFSET={fact['afio_aflr']:#x}u"
+           if fact['afio_aflr'] not in (None, 0x20) else "")
+        + (f" -DCH32RV_AFIO_AF_PORTS={fact['afio_af_ports']}u"
+           if fact['afio_af_ports'] not in (0, 5) else ""))
     # Its own property, not part of core_defines: a pnum entry has to be able
     # to replace it outright, and a menu value that referred back to the board
     # value would be referring to itself.
@@ -3109,17 +3167,37 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
 
     ld_files = {}
 
+    loadcode = LOADCODE_RAM.get(cfg["family"])
+
     def ld_for(flash: int, sram: int) -> str:
         name = f"{series.lower()}_{kb(flash)}k_{kb(sram)}k.ld"
         if name not in ld_files:
-            ld_files[name] = (
-                ld_header()
-                + f"/* FLASH {kb(flash)}K, SRAM {kb(sram)}K */\n"
-                + "ENTRY( _start )\n\nMEMORY\n{\n"
-                + f"    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = {flash}\n"
-                + f"    RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = {sram}\n"
-                + "}\n\nINCLUDE sections.ld\n")
+            if loadcode:
+                origin, length = loadcode
+                ld_files[name] = (
+                    ld_header()
+                    + f"/* FLASH {kb(flash)}K, SRAM {kb(sram)}K, of which the {kb(length)}K at\n"
+                    + f" * 0x{origin:08x} holds the code and the data (CH32RV_LOADCODE) */\n"
+                    + "ENTRY( _start )\n\nMEMORY\n{\n"
+                    + f"    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = {flash}\n"
+                    + f"    RAM (xrw)  : ORIGIN = 0x{origin:08x}, LENGTH = {length}\n"
+                    + "}\n\nINCLUDE sections_loadcode.ld\n")
+            else:
+                ld_files[name] = (
+                    ld_header()
+                    + f"/* FLASH {kb(flash)}K, SRAM {kb(sram)}K */\n"
+                    + "ENTRY( _start )\n\nMEMORY\n{\n"
+                    + f"    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = {flash}\n"
+                    + f"    RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = {sram}\n"
+                    + "}\n\nINCLUDE sections.ld\n")
         return name
+
+    def limits(flash: int, sram: int) -> tuple[int, int]:
+        """upload.maximum_size / maximum_data_size: with the code copied into
+        RAM, both share the one RAM region, which bounds either alone."""
+        if loadcode:
+            return min(flash, loadcode[1]), loadcode[1]
+        return flash, sram
 
     # "Any" entry first, so it is the menu default. It declares the smallest
     # flash and RAM in the series: a binary built for it fits every part, and
@@ -3143,8 +3221,9 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         # (platform.txt), whichever part is picked.
         lines.append(f"{pfx}.build.part={pn}")
         lines.append(f"{pfx}.build.ldscript={ld_for(flash, sram)}")
-        lines.append(f"{pfx}.upload.maximum_size={flash}")
-        lines.append(f"{pfx}.upload.maximum_data_size={sram}")
+        max_code, max_data = limits(flash, sram)
+        lines.append(f"{pfx}.upload.maximum_size={max_code}")
+        lines.append(f"{pfx}.upload.maximum_data_size={max_data}")
         # `auto` for a series ch32rv has no name for: see ch32rv_chip().
         known = ch32rv_chip(pn, series, ordered, ch32rv)
         # A series ch32rv has no name for flashes nothing: its own name, which

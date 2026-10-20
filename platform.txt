@@ -99,8 +99,10 @@ recipe.objcopy.hex.pattern="{compiler.path}{compiler.objcopy.cmd}" -O ihex "{bui
 recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
 
 recipe.size.pattern="{compiler.path}{compiler.size.cmd}" -A "{build.path}/{build.project_name}.elf"
-recipe.size.regex=^(?:\.init|\.vector|\.text|\.rodata|\.data|\.init_array|\.preinit_array|\.fini_array)\s+([0-9]+).*
-recipe.size.regex.data=^(?:\.data|\.bss)\s+([0-9]+).*
+# .reset / .image: CH32RV_LOADCODE (sections_loadcode.ld) - the image is stored
+# in flash and runs from RAM, so it counts on both sides.
+recipe.size.regex=^(?:\.init|\.vector|\.text|\.rodata|\.data|\.init_array|\.preinit_array|\.fini_array|\.reset|\.image)\s+([0-9]+).*
+recipe.size.regex.data=^(?:\.data|\.bss|\.image)\s+([0-9]+).*
 
 # ---------------------------------------------------------------- upload
 # ch32rv (ADR-0008). `flash --reset run --confirm-run` writes the image, starts

@@ -53,19 +53,26 @@ static inline void ch32rv_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cf
 }
 
 /* The alternate function a pad carries, on the families that choose it per
- * pin (V205, X305, X315: AFIO GPIOx_AFLR / AFHR, one 4-bit number per pad,
- * from AFIO + 0x20, two registers per port). A route's value is that number
- * there (ch32rv_route.h). Elsewhere a route moves as a whole through PCFR1 and
- * this does nothing. */
+ * pin (V205, X305, X315, H417: AFIO GPIOx_AFLR / AFHR, one 4-bit number per
+ * pad, two registers per port from GPIOA_AFLR - AFIO + 0x20, or where the
+ * board says: CH32H417 has them from 0x04 for PA..PF). A route's value is
+ * that number there (ch32rv_route.h). Elsewhere a route moves as a whole
+ * through PCFR1 and this does nothing. */
+#ifndef CH32RV_AFIO_AFLR_OFFSET
+#define CH32RV_AFIO_AFLR_OFFSET 0x20u
+#endif
+#ifndef CH32RV_AFIO_AF_PORTS
+#define CH32RV_AFIO_AF_PORTS 5u
+#endif
 static inline void ch32rv_pin_set_af(uint8_t pin, uint32_t af)
 {
 #if CH32RV_GPIO_PER_PIN_AF
     const uint32_t port = (uint32_t)CH32RV_PIN_PORT(pin);
     const uint32_t bit = (uint32_t)CH32RV_PIN_BIT(pin);
-    if (bit >= 16u || port >= 5u) {
-        return;   /* AFLR / AFHR cover PA..PE, pins 0..15 */
+    if (bit >= 16u || port >= CH32RV_AFIO_AF_PORTS) {
+        return;   /* no AFLR / AFHR for this port */
     }
-    volatile uint32_t *reg = &CH32RV_REG32(CH32RV_AFIO_BASE + 0x20u + port * 8u +
+    volatile uint32_t *reg = &CH32RV_REG32(CH32RV_AFIO_BASE + CH32RV_AFIO_AFLR_OFFSET + port * 8u +
                                            (bit >= 8u ? 4u : 0u));
     const uint32_t shift = (bit & 7u) * 4u;
     *reg = (*reg & ~(0xFu << shift)) | ((af & 0xFu) << shift);
