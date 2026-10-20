@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "scope": "serial coordinator integrating existing I/O leases, clock and timer; fake atomic entry and restoration declarations; no physical sleep",
+  "variants": [0, 2, 4],
+  "variant_meanings": {"0": "explicit two typed participants", "2": "optional callback registry capacity two", "4": "optional callback registry capacity four, two initially registered"},
+  "io_bytes": 32,
+  "normal_seconds": 10,
+  "declared_counter_hz": 6000000,
+  "counter_scope": "fake shared six-tick-per-microsecond input, not a claim about V006 hardware clock",
+  "trace_seeds": [0, 1, 2, 3, 4, 5, 6, 7],
+  "trace_operations": 500,
+  "ticket_bits": 32,
+  "retirement_test_bits": 8,
+  "abi_scope": "same host-validated composition linked under existing V003/X035 profiles, not V006 MMIO or runnable firmware"
+}
