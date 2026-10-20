@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "scope": "standalone renderer library and X0 display substitution, mock byte streams, not real controller protocol or physical throughput",
+  "panels": [
+    {"id": "mono64-32", "bytes": 1024, "chunk": 32, "layout": "128x64 page mono"},
+    {"id": "compact32-31", "bytes": 512, "chunk": 31, "layout": "128x32 page mono, status moved alongside first line"},
+    {"id": "mono64-16", "bytes": 1024, "chunk": 16, "layout": "same pixels as mono64-32"},
+    {"id": "rgb96-64", "bytes": 12288, "chunk": 64, "layout": "96x64 little-endian green RGB565 mock stream"}
+  ],
+  "candidates": ["R", "A", "B", "C"],
+  "measurement_period_ticks": 100,
+  "touch_period_ticks": 20,
+  "frame_period_ticks": 100,
+  "wire_cost": "1 + ceil(payload_bytes / 16) abstract ticks per transaction",
+  "baseline_ticks": 3000,
+  "seeds": [0, 1, 2, 3],
+  "generated_operations": 300,
+  "generated_drain_ticks": 3500,
+  "abi_scope": "V003 and X035 pure structural profiles, no startup or physical display connection"
+}
