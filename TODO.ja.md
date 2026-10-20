@@ -649,8 +649,7 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - USBSS のデバイスのドライバ（ビルドのみ）。
     - 残り:
       - USBSS の実機での続き。列挙と CDC までは確認済み。
-        - EP0 の 96 バイトを超える応答が壊れる件。送信バッファを分けても、UEP0_TX/RX_DMA_OFS を 0 にしても
-          同じだった（2026-10-21）。クロックを上げた後に確かめる。
+        - EP0 の 96 バイトを超える応答が壊れる件は、クロックを 100 MHz に上げて直った（2026-10-21）。
         - SS を挿したままでは SWD が使えないので、書き込みは FS の DFU で行う。実験用スケッチは、SS で
           configured にならないと FS に移る（UART / CDC のコマンドでも切り替える。scratch の UsbFallback.h）。
       - USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
@@ -659,7 +658,7 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - USBSS のホスト。
       - 既定のクロックは HSI×16 の 400 MHz、V3F（F_CPU）は 100 MHz にした（2026-10-21、EVT の
         SetSYSCLK_400M_CoreCLK_V5F_400M_V3F_100M_HSI と同じ）。25 MHz では USBSS の EP0 の 96 バイト目以降で
-        32 バイトの重複が出ていた。100 MHz で直るかは SS を挿して確かめる。
+        32 バイトの重複が出ていた。100 MHz で直った（512 バイトまで一致、SS 経由の DFU も確認）。
         - **device-data のリモートセッションに変更を依頼する。** clock_configs.csv の CH32H417 の 400M の行の
           pll 列に RCC_PLLMUL16 がなく、FPRE（V3F の分周、RCC_FPRE_DIV4）と SYSPLL_SEL / SYSPLL_GATE の
           切り替えを表す列もない。今は generate.py の FAMILY["CH32H417"]["h41x_clock"] で名前を足して

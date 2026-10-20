@@ -63,7 +63,7 @@ V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラ�
 | 系列 | デバイス | PD | 確認 |
 |---|---|---|---|
 | CH32X035 / X033 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認（PD ソースはビルドのみ） |
-| CH32H417 / H416 / H415 | USBFS（PA11 / PA12）、H417 / H416 は USBSS（SuperSpeed） | なし | FS は H417 で CDC の送受信を確認。SS は 5000M で列挙と CDC を確認（EP0 の 96 バイトを超える応答が壊れる不具合あり） |
+| CH32H417 / H416 / H415 | USBFS（PA11 / PA12）、H417 / H416 は USBSS（SuperSpeed） | なし | FS は H417 で CDC の送受信を確認。SS は 5000M で列挙、CDC、EP0 の 512 バイトまでの応答、SS 経由の DFU を確認 |
 | ほかの系列 | `begin()` が `false`（`Unsupported`） | `begin()` が `false` | ビルドのみ |
 
 デバイスは自前のスタックに移したところで、コントローラのドライバ（`CH32RVUsbDcd.h` の表）は X035 / X033 の USBFS
@@ -96,6 +96,9 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホスト�
     `ch32rv --connect-under-reset` が使えます）。
 - **USBSS の PLL は HSE を基準にします。** 25 MHz の水晶を前提にしており、HSE が立たなければ
   `begin()` が失敗します。
+- **USBSS にはシステムクロックの速さが要ります。** HSI の 25 MHz のまま動かしていたときは、DMA が
+  リンクに追いつかず、EP0 IN の 96 バイト目以降で 32 バイトの塊が重複していました。既定の
+  400 MHz（V3F と HCLK は 100 MHz）では、512 バイトまで正しく返ります（2026-10-21）。
 - **手順の出どころ:** EVT の USBSS デモと、TinyUSB PR #3779 の実測による注意点に沿っています。
   ファイル冒頭にまとめてあります。
 
