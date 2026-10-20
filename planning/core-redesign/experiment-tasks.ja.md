@@ -150,6 +150,8 @@ D09／D08について、公開RAWの範囲、キー方式・保証、容量指�
 [所有・回復の直列比較](tasks/EXP-05/h417-ownership-result.ja.md)はmessage16 B×4とblock64 B×2をsingle／fixed／shared-accessへ接続し、
 native79件・ABI32構成で検査した。shared-accessは所有権限の比較であり、共有実行器は別途必要。
 [host 2 threadの同期](tasks/EXP-05/h417-thread-result.ja.md)は同じ所有headerをmutex／atomic gateへ接続し、ASan／UBSanとTSanで検査した。
+[message／block機能除去](tasks/EXP-05/h417-features-result.ja.md)は別headerで4機能構成を作り、native184件・ABI112構成で独立storageと未使用除去を検査した。
+新headerは直列検査であり、以前のTSan成功を新headerの証拠として数えない。
 H417は単一コア、コア別owner、共有実行器を別条件にし、コアごとのstack・制御情報と共有領域を数える。
 片側停止・再起動、通知前後の可視性、cache／DMAの条件を独立に検査する。
 
