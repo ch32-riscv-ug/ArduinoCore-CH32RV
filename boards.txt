@@ -19,6 +19,7 @@ menu.i2c2=I2C2
 menu.spi1=SPI1
 menu.spi2=SPI2
 menu.spi3=SPI3
+menu.vio18=VIO18 Supply
 
 CH32V003.name=Generic CH32V003
 CH32V003.build.board=CH32V003
@@ -4403,6 +4404,17 @@ CH32H415.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32H415.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H415.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32H415.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32H415.menu.vio18.hw=Hardware default (XO strap)
+CH32H415.menu.vio18.hw.build.vio18_defines=
+CH32H415.menu.vio18.3v3=3.3 V
+CH32H415.menu.vio18.3v3.build.vio18_defines=-DCH32RV_VIO18_MV=3300
+CH32H415.menu.vio18.2v5=2.5 V
+CH32H415.menu.vio18.2v5.build.vio18_defines=-DCH32RV_VIO18_MV=2500
+CH32H415.menu.vio18.1v8=1.8 V
+CH32H415.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
+CH32H415.menu.vio18.1v2=1.2 V
+CH32H415.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
 CH32H415.menu.usart1.auto=AUTO (bind at begin())
 CH32H415.menu.usart1.auto.build.usart1_mode=
 CH32H415.menu.usart1.disable=Disable
@@ -4662,6 +4674,17 @@ CH32H416.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32H416.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H416.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32H416.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32H416.menu.vio18.hw=Hardware default (XO strap)
+CH32H416.menu.vio18.hw.build.vio18_defines=
+CH32H416.menu.vio18.3v3=3.3 V
+CH32H416.menu.vio18.3v3.build.vio18_defines=-DCH32RV_VIO18_MV=3300
+CH32H416.menu.vio18.2v5=2.5 V
+CH32H416.menu.vio18.2v5.build.vio18_defines=-DCH32RV_VIO18_MV=2500
+CH32H416.menu.vio18.1v8=1.8 V
+CH32H416.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
+CH32H416.menu.vio18.1v2=1.2 V
+CH32H416.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
 CH32H416.menu.usart1.auto=AUTO (bind at begin())
 CH32H416.menu.usart1.auto.build.usart1_mode=
 CH32H416.menu.usart1.disable=Disable
@@ -4865,6 +4888,17 @@ CH32H417.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
 CH32H417.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H417.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
 CH32H417.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32H417.menu.vio18.hw=Hardware default (XO strap)
+CH32H417.menu.vio18.hw.build.vio18_defines=
+CH32H417.menu.vio18.3v3=3.3 V
+CH32H417.menu.vio18.3v3.build.vio18_defines=-DCH32RV_VIO18_MV=3300
+CH32H417.menu.vio18.2v5=2.5 V
+CH32H417.menu.vio18.2v5.build.vio18_defines=-DCH32RV_VIO18_MV=2500
+CH32H417.menu.vio18.1v8=1.8 V
+CH32H417.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
+CH32H417.menu.vio18.1v2=1.2 V
+CH32H417.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
 CH32H417.menu.usart1.auto=AUTO (bind at begin())
 CH32H417.menu.usart1.auto.build.usart1_mode=
 CH32H417.menu.usart1.disable=Disable

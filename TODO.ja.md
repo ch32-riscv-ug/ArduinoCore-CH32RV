@@ -669,7 +669,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         VDDIO につながっておらず（R11 は未実装、P11 の 7-8 はジャンパなし）、内部の LDO の起動時の値（XO の
         判定で 1.2 V、実測 1.36 V）で動くので、これらのピンの High は 3.3 V にならない。PWR_CTLR の
         VIO_SW_CR（bit 9）と VSEL_VIO18（[12:10]、3 = 3.3 V）で 3.3 V にでき、PC0 / PC1 / PB0 の High は
-        3.31 V になった。コアで既定にするか（ボードによっては VIO18 に 1.8 V の部品がある）を決める。
+        3.31 V になった。ボードメニュー VIO18 Supply（既定はハードの初期値）と CH32RV.setVio18Millivolts() を
+        入れた（ユーザーの判断、2026-10-21）。実機での確認が残っている（scratch の Vio18 スケッチ）。
       - HSADC（scratch の HsAdc）: PLL_CLK / 4 = 100 MHz で 20.0 Msps を SS で連続して流せる（ホストが libusb の
         非同期転送を並べれば取りこぼし 0）。VIO18 を 3.3 V にすれば、出力の High で 1022〜1023、12 ビットの ADC と
         約 3 % 以内で一致する。手を離したピンは、サンプリング容量（1.1 pF）との電荷の分配で 1 µs ほどで落ちる。

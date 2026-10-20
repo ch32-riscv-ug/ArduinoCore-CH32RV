@@ -11,6 +11,7 @@
 #include "Arduino.h"
 #include "ch32rv_clock.h"
 #include "ch32rv_registers.h"
+#include "ch32rv_vio18.h"
 #ifndef CH32RV_CLOCK_INIT
 #error "CH32RV_CLOCK_INIT is required (see build.clock_init in boards.txt)"
 #endif
@@ -206,6 +207,10 @@ void SystemInit(void)
 #endif
 #endif
     ch32rv_irq_enable(CH32RV_IRQN_SYSTICK);
+#if defined(CH32RV_HAS_VIO18) && defined(CH32RV_VIO18_MV)
+    /* The VIO18 Supply menu: before setup() drives any of those pins. */
+    (void)ch32rv_vio18_set_mv(CH32RV_VIO18_MV);
+#endif
 #if CH32RV_SYSTICK_V103
     /* STE is the whole configuration here: the other two bits do not exist
      * (writing 0x7 reads back 0x1), the PFIC enable above is what lets the

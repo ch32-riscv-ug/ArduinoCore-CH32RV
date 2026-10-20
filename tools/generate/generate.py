@@ -214,7 +214,8 @@ INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 MENU_HEADER = ("menu.pnum=Part Number\nmenu.rtlib=C Runtime Library\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
-               + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4)))
+               + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
+               + "menu.vio18=VIO18 Supply\n")
 
 # Per-instance menus (ADR draft 0015): AUTO binds in begin(), Disable links
 # nothing, FIX fixes one route at build time. The point is to let a small
@@ -325,6 +326,28 @@ RTLIB_MENU = (
     ("nanofps", "Newlib Nano + Float Printf/Scanf",
      "-Wl,-u,_printf_float -Wl,-u,_scanf_float", 31),
 )
+
+
+# CH32H41x: the supply of the high-speed pins (VIO18 - PB0-1, PC0-3, PD0-7,
+# PE7-15 and more). The chip's LDO starts at the voltage its XO strap selects,
+# which on the evaluation board is 1.2 V, so those pins drive 1.2 V highs until
+# something says otherwise. The default leaves the strap alone: a board may
+# have 1.8 V parts on VIO18. CH32RV.setVio18Millivolts() changes it at run time.
+VIO18_MENU = (
+    ("hw", "Hardware default (XO strap)", ""),
+    ("3v3", "3.3 V", "-DCH32RV_VIO18_MV=3300"),
+    ("2v5", "2.5 V", "-DCH32RV_VIO18_MV=2500"),
+    ("1v8", "1.8 V", "-DCH32RV_VIO18_MV=1800"),
+    ("1v2", "1.2 V", "-DCH32RV_VIO18_MV=1200"),
+)
+
+
+def vio18_menu(board: str) -> list[str]:
+    lines = []
+    for key, label, flags in VIO18_MENU:
+        lines.append(f"{board}.menu.vio18.{key}={label}")
+        lines.append(f"{board}.menu.vio18.{key}.build.vio18_defines={flags}")
+    return lines
 
 
 def rtlib_menu(board: str, min_flash: int) -> list[str]:
@@ -3319,6 +3342,9 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
 
     lines += rtlib_menu(board, min_flash)
     lines.append("")
+    if fam.get("h41x_clock"):
+        lines += vio18_menu(board)
+        lines.append("")
 
     return "\n".join(lines), ld_files
 

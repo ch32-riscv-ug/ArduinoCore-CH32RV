@@ -29,6 +29,7 @@
 #include <stdint.h>
 
 #include "pins_arduino.h"   /* CH32RV_ESIG_* decide which members exist */
+#include "ch32rv_vio18.h"
 
 extern "C" uint32_t ch32rv_adc_vdd_millivolts(void);   /* wiring_analog.c */
 
@@ -94,6 +95,17 @@ public:
      * Deliberately not called getEfuseMac() as on an ESP32: it is not a MAC
      * address, and the name would invite using it as one. */
     uint64_t getUniqueId();
+#endif
+
+#ifdef CH32RV_HAS_VIO18
+    /* CH32H41x: the supply of the high-speed pins (VIO18 - PB0-1, PC0-3,
+     * PD0-7, PE7-15 and more, ch32rv_vio18.h), so the voltage their highs
+     * reach. 1200, 1800, 2500 or 3300 mV; false for anything else. Mind what
+     * else the board has on VIO18 before raising it. The VIO18 Supply menu
+     * sets it before setup() instead. */
+    bool setVio18Millivolts(uint32_t mv) { return ch32rv_vio18_set_mv(mv); }
+    /* What software set, or 0 while the XO strap's voltage still applies. */
+    uint32_t getVio18Millivolts() { return ch32rv_vio18_mv(); }
 #endif
 
 private:
