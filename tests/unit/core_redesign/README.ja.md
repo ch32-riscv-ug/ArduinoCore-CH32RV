@@ -310,3 +310,17 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 
 [比較条件と結果](../../../planning/core-redesign/tasks/EXP-04/region-result.ja.md)、
 [容量と保持の課題](../../../planning/core-redesign/tasks/EXP-04/region-exercise.ja.md)を参照する。
+
+## EXP-04 保存形式の条件付きhost模型
+
+`flash_formats.py`／`test_flash_formats.py`はRAW、固定blob、最大2件の数値key snapshotを比較する。
+上書き・2 bank・別program単位の完了印、指定bitの中断、再走査・再更新を検査する。
+独占・直列の領域操作を前提とし、物理driverやRAW／keyのleaseはまだ含まない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_flash_formats.py -o junit_family=xunit1
+```
+
+[比較結果と条件](../../../planning/core-redesign/tasks/EXP-04/format-result.ja.md)、
+[更新途中を予測する課題](../../../planning/core-redesign/tasks/EXP-04/format-exercise.ja.md)を参照する。

@@ -118,6 +118,9 @@ artifact故障検査は元の入力hashが現行sourceと一致することも�
 
 ## 次の比較
 
+後続の[RAW／blob／数値keyの条件付き比較](format-result.ja.md)を記録した。
+以下のうちsnapshot形式と有限の中断集合をhostで検査済みとし、物理条件・別形式・MCU費用は引き続き残す。
+
 RAW、固定blob、数値keyを1／2／4消去単位で比較する。公開RAWと内部専用、上書きと旧値保持、
 commit marker、CRC等の検出、満杯・整理・世代上限・中断後の再更新を別の能力として扱う。
 高速pageを一度だけprogramする条件では、同じpageへcommit markerを後付けする案を無条件に使えない。

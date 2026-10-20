@@ -127,3 +127,15 @@ python3 tests/platform/core_redesign/check_flash_region_faults.py \
 後段は保存したartifactを改変して、検査が破損を検出できるか確認する。
 製品linker・boards.txtを変更せず、uploadや実Flash操作も行わない。
 [結果と再実行条件](../../planning/core-redesign/tasks/EXP-04/region-result.ja.md)を参照する。
+
+## Core再設計：保存形式のhost比較記録
+
+```sh
+python3 tests/platform/core_redesign/compare_flash_formats.py \
+  --out work/exp04-format-model
+```
+
+RAW／blob／数値keyの上書き・2 bank・完了印を条件付き媒体模型で比較し、
+容量・媒体操作回数・中断後の読出しと再更新を記録する。出力先は未作成の場所を使う。
+MCUのcode／RAM・時間や、実電断耐性を測定するものではない。
+[結果と注入集合](../../planning/core-redesign/tasks/EXP-04/format-result.ja.md)を参照する。

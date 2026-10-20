@@ -1,0 +1,106 @@
+part,mode,erase_units,candidate,program_unit,erase_unit,kind,policy,commit,banks,reserved_bytes,bank_bytes,header_bytes,footer_allocated_bytes,configured_payload_bytes,max_payload_bytes,record_program_bytes,supported,protection,normal_erase_operations,normal_program_operations,cut_scenarios,old_outcomes,new_outcomes,invalid_outcomes,unvalidated_other_outcomes
+CH32V003F4P6,fast,1,raw,64,64,raw,overwrite,False,1,64,64,0,0,8,64,64,True,unvalidated,1,1,17,2,3,0,12
+CH32V003F4P6,fast,1,blob-overwrite,64,64,blob,overwrite,False,1,64,64,16,0,8,48,64,True,CRC-conditioned host model,1,1,17,2,3,12,0
+CH32V003F4P6,fast,1,blob-two-bank,64,64,blob,two-bank,False,2,64,0,16,0,8,0,64,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast,1,keys-overwrite,64,64,keys,overwrite,False,1,64,64,16,0,12,48,64,True,CRC-conditioned host model,1,1,17,2,3,12,0
+CH32V003F4P6,fast,1,keys-two-bank,64,64,keys,two-bank,False,2,64,0,16,0,12,0,64,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast,1,blob-two-bank-commit,64,64,blob,two-bank,True,2,64,0,16,64,8,0,128,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast,1,keys-two-bank-commit,64,64,keys,two-bank,True,2,64,0,16,64,12,0,128,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast,2,raw,64,64,raw,overwrite,False,1,128,128,0,0,8,128,64,True,unvalidated,2,1,25,2,3,0,20
+CH32V003F4P6,fast,2,blob-overwrite,64,64,blob,overwrite,False,1,128,128,16,0,8,112,64,True,CRC-conditioned host model,2,1,25,2,3,20,0
+CH32V003F4P6,fast,2,blob-two-bank,64,64,blob,two-bank,False,2,128,64,16,0,8,48,64,True,CRC-conditioned host model,1,1,17,14,3,0,0
+CH32V003F4P6,fast,2,keys-overwrite,64,64,keys,overwrite,False,1,128,128,16,0,12,112,64,True,CRC-conditioned host model,2,1,25,2,3,20,0
+CH32V003F4P6,fast,2,keys-two-bank,64,64,keys,two-bank,False,2,128,64,16,0,12,48,64,True,CRC-conditioned host model,1,1,17,14,3,0,0
+CH32V003F4P6,fast,2,blob-two-bank-commit,64,64,blob,two-bank,True,2,128,64,16,64,8,0,128,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast,2,keys-two-bank-commit,64,64,keys,two-bank,True,2,128,64,16,64,12,0,128,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast,4,raw,64,64,raw,overwrite,False,1,256,256,0,0,8,256,64,True,unvalidated,4,1,41,2,3,0,36
+CH32V003F4P6,fast,4,blob-overwrite,64,64,blob,overwrite,False,1,256,256,16,0,8,240,64,True,CRC-conditioned host model,4,1,41,2,3,36,0
+CH32V003F4P6,fast,4,blob-two-bank,64,64,blob,two-bank,False,2,256,128,16,0,8,112,64,True,CRC-conditioned host model,2,1,25,22,3,0,0
+CH32V003F4P6,fast,4,keys-overwrite,64,64,keys,overwrite,False,1,256,256,16,0,12,240,64,True,CRC-conditioned host model,4,1,41,2,3,36,0
+CH32V003F4P6,fast,4,keys-two-bank,64,64,keys,two-bank,False,2,256,128,16,0,12,112,64,True,CRC-conditioned host model,2,1,25,22,3,0,0
+CH32V003F4P6,fast,4,blob-two-bank-commit,64,64,blob,two-bank,True,2,256,128,16,64,8,48,128,True,CRC-conditioned host model,2,2,33,30,3,0,0
+CH32V003F4P6,fast,4,keys-two-bank-commit,64,64,keys,two-bank,True,2,256,128,16,64,12,48,128,True,CRC-conditioned host model,2,2,33,30,3,0,0
+CH32V003F4P6,fast-erase-1k,1,raw,64,1024,raw,overwrite,False,1,1024,1024,0,0,8,1024,64,True,unvalidated,1,1,17,2,3,0,12
+CH32V003F4P6,fast-erase-1k,1,blob-overwrite,64,1024,blob,overwrite,False,1,1024,1024,16,0,8,1008,64,True,CRC-conditioned host model,1,1,17,2,3,12,0
+CH32V003F4P6,fast-erase-1k,1,blob-two-bank,64,1024,blob,two-bank,False,2,1024,0,16,0,8,0,64,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast-erase-1k,1,keys-overwrite,64,1024,keys,overwrite,False,1,1024,1024,16,0,12,1008,64,True,CRC-conditioned host model,1,1,17,2,3,12,0
+CH32V003F4P6,fast-erase-1k,1,keys-two-bank,64,1024,keys,two-bank,False,2,1024,0,16,0,12,0,64,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast-erase-1k,1,blob-two-bank-commit,64,1024,blob,two-bank,True,2,1024,0,16,64,8,0,128,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast-erase-1k,1,keys-two-bank-commit,64,1024,keys,two-bank,True,2,1024,0,16,64,12,0,128,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,fast-erase-1k,2,raw,64,1024,raw,overwrite,False,1,2048,2048,0,0,8,2048,64,True,unvalidated,2,1,25,2,3,0,20
+CH32V003F4P6,fast-erase-1k,2,blob-overwrite,64,1024,blob,overwrite,False,1,2048,2048,16,0,8,2032,64,True,CRC-conditioned host model,2,1,25,2,3,20,0
+CH32V003F4P6,fast-erase-1k,2,blob-two-bank,64,1024,blob,two-bank,False,2,2048,1024,16,0,8,1008,64,True,CRC-conditioned host model,1,1,17,14,3,0,0
+CH32V003F4P6,fast-erase-1k,2,keys-overwrite,64,1024,keys,overwrite,False,1,2048,2048,16,0,12,2032,64,True,CRC-conditioned host model,2,1,25,2,3,20,0
+CH32V003F4P6,fast-erase-1k,2,keys-two-bank,64,1024,keys,two-bank,False,2,2048,1024,16,0,12,1008,64,True,CRC-conditioned host model,1,1,17,14,3,0,0
+CH32V003F4P6,fast-erase-1k,2,blob-two-bank-commit,64,1024,blob,two-bank,True,2,2048,1024,16,64,8,944,128,True,CRC-conditioned host model,1,2,25,22,3,0,0
+CH32V003F4P6,fast-erase-1k,2,keys-two-bank-commit,64,1024,keys,two-bank,True,2,2048,1024,16,64,12,944,128,True,CRC-conditioned host model,1,2,25,22,3,0,0
+CH32V003F4P6,fast-erase-1k,4,raw,64,1024,raw,overwrite,False,1,4096,4096,0,0,8,4096,64,True,unvalidated,4,1,41,2,3,0,36
+CH32V003F4P6,fast-erase-1k,4,blob-overwrite,64,1024,blob,overwrite,False,1,4096,4096,16,0,8,4080,64,True,CRC-conditioned host model,4,1,41,2,3,36,0
+CH32V003F4P6,fast-erase-1k,4,blob-two-bank,64,1024,blob,two-bank,False,2,4096,2048,16,0,8,2032,64,True,CRC-conditioned host model,2,1,25,22,3,0,0
+CH32V003F4P6,fast-erase-1k,4,keys-overwrite,64,1024,keys,overwrite,False,1,4096,4096,16,0,12,4080,64,True,CRC-conditioned host model,4,1,41,2,3,36,0
+CH32V003F4P6,fast-erase-1k,4,keys-two-bank,64,1024,keys,two-bank,False,2,4096,2048,16,0,12,2032,64,True,CRC-conditioned host model,2,1,25,22,3,0,0
+CH32V003F4P6,fast-erase-1k,4,blob-two-bank-commit,64,1024,blob,two-bank,True,2,4096,2048,16,64,8,1968,128,True,CRC-conditioned host model,2,2,33,30,3,0,0
+CH32V003F4P6,fast-erase-1k,4,keys-two-bank-commit,64,1024,keys,two-bank,True,2,4096,2048,16,64,12,1968,128,True,CRC-conditioned host model,2,2,33,30,3,0,0
+CH32V003F4P6,standard,1,raw,2,1024,raw,overwrite,False,1,1024,1024,0,0,8,1024,8,True,unvalidated,1,4,41,2,2,0,37
+CH32V003F4P6,standard,1,blob-overwrite,2,1024,blob,overwrite,False,1,1024,1024,16,0,8,1008,24,True,CRC-conditioned host model,1,12,105,2,2,101,0
+CH32V003F4P6,standard,1,blob-two-bank,2,1024,blob,two-bank,False,2,1024,0,16,0,8,0,24,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,standard,1,keys-overwrite,2,1024,keys,overwrite,False,1,1024,1024,16,0,12,1008,28,True,CRC-conditioned host model,1,14,121,2,2,117,0
+CH32V003F4P6,standard,1,keys-two-bank,2,1024,keys,two-bank,False,2,1024,0,16,0,12,0,28,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,standard,1,blob-two-bank-commit,2,1024,blob,two-bank,True,2,1024,0,16,12,8,0,36,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,standard,1,keys-two-bank-commit,2,1024,keys,two-bank,True,2,1024,0,16,12,12,0,40,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32V003F4P6,standard,2,raw,2,1024,raw,overwrite,False,1,2048,2048,0,0,8,2048,8,True,unvalidated,2,4,49,2,2,0,45
+CH32V003F4P6,standard,2,blob-overwrite,2,1024,blob,overwrite,False,1,2048,2048,16,0,8,2032,24,True,CRC-conditioned host model,2,12,113,2,2,109,0
+CH32V003F4P6,standard,2,blob-two-bank,2,1024,blob,two-bank,False,2,2048,1024,16,0,8,1008,24,True,CRC-conditioned host model,1,12,105,103,2,0,0
+CH32V003F4P6,standard,2,keys-overwrite,2,1024,keys,overwrite,False,1,2048,2048,16,0,12,2032,28,True,CRC-conditioned host model,2,14,129,2,2,125,0
+CH32V003F4P6,standard,2,keys-two-bank,2,1024,keys,two-bank,False,2,2048,1024,16,0,12,1008,28,True,CRC-conditioned host model,1,14,121,119,2,0,0
+CH32V003F4P6,standard,2,blob-two-bank-commit,2,1024,blob,two-bank,True,2,2048,1024,16,12,8,996,36,True,CRC-conditioned host model,1,18,153,151,2,0,0
+CH32V003F4P6,standard,2,keys-two-bank-commit,2,1024,keys,two-bank,True,2,2048,1024,16,12,12,996,40,True,CRC-conditioned host model,1,20,169,167,2,0,0
+CH32V003F4P6,standard,4,raw,2,1024,raw,overwrite,False,1,4096,4096,0,0,8,4096,8,True,unvalidated,4,4,65,2,2,0,61
+CH32V003F4P6,standard,4,blob-overwrite,2,1024,blob,overwrite,False,1,4096,4096,16,0,8,4080,24,True,CRC-conditioned host model,4,12,129,2,2,125,0
+CH32V003F4P6,standard,4,blob-two-bank,2,1024,blob,two-bank,False,2,4096,2048,16,0,8,2032,24,True,CRC-conditioned host model,2,12,113,111,2,0,0
+CH32V003F4P6,standard,4,keys-overwrite,2,1024,keys,overwrite,False,1,4096,4096,16,0,12,4080,28,True,CRC-conditioned host model,4,14,145,2,2,141,0
+CH32V003F4P6,standard,4,keys-two-bank,2,1024,keys,two-bank,False,2,4096,2048,16,0,12,2032,28,True,CRC-conditioned host model,2,14,129,127,2,0,0
+CH32V003F4P6,standard,4,blob-two-bank-commit,2,1024,blob,two-bank,True,2,4096,2048,16,12,8,2020,36,True,CRC-conditioned host model,2,18,161,159,2,0,0
+CH32V003F4P6,standard,4,keys-two-bank-commit,2,1024,keys,two-bank,True,2,4096,2048,16,12,12,2020,40,True,CRC-conditioned host model,2,20,177,175,2,0,0
+CH32X035C8T6,fast,1,raw,256,256,raw,overwrite,False,1,256,256,0,0,8,256,256,True,unvalidated,1,1,17,2,3,0,12
+CH32X035C8T6,fast,1,blob-overwrite,256,256,blob,overwrite,False,1,256,256,16,0,8,240,256,True,CRC-conditioned host model,1,1,17,2,3,12,0
+CH32X035C8T6,fast,1,blob-two-bank,256,256,blob,two-bank,False,2,256,0,16,0,8,0,256,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast,1,keys-overwrite,256,256,keys,overwrite,False,1,256,256,16,0,12,240,256,True,CRC-conditioned host model,1,1,17,2,3,12,0
+CH32X035C8T6,fast,1,keys-two-bank,256,256,keys,two-bank,False,2,256,0,16,0,12,0,256,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast,1,blob-two-bank-commit,256,256,blob,two-bank,True,2,256,0,16,256,8,0,512,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast,1,keys-two-bank-commit,256,256,keys,two-bank,True,2,256,0,16,256,12,0,512,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast,2,raw,256,256,raw,overwrite,False,1,512,512,0,0,8,512,256,True,unvalidated,2,1,25,2,3,0,20
+CH32X035C8T6,fast,2,blob-overwrite,256,256,blob,overwrite,False,1,512,512,16,0,8,496,256,True,CRC-conditioned host model,2,1,25,2,3,20,0
+CH32X035C8T6,fast,2,blob-two-bank,256,256,blob,two-bank,False,2,512,256,16,0,8,240,256,True,CRC-conditioned host model,1,1,17,14,3,0,0
+CH32X035C8T6,fast,2,keys-overwrite,256,256,keys,overwrite,False,1,512,512,16,0,12,496,256,True,CRC-conditioned host model,2,1,25,2,3,20,0
+CH32X035C8T6,fast,2,keys-two-bank,256,256,keys,two-bank,False,2,512,256,16,0,12,240,256,True,CRC-conditioned host model,1,1,17,14,3,0,0
+CH32X035C8T6,fast,2,blob-two-bank-commit,256,256,blob,two-bank,True,2,512,256,16,256,8,0,512,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast,2,keys-two-bank-commit,256,256,keys,two-bank,True,2,512,256,16,256,12,0,512,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast,4,raw,256,256,raw,overwrite,False,1,1024,1024,0,0,8,1024,256,True,unvalidated,4,1,41,2,3,0,36
+CH32X035C8T6,fast,4,blob-overwrite,256,256,blob,overwrite,False,1,1024,1024,16,0,8,1008,256,True,CRC-conditioned host model,4,1,41,2,3,36,0
+CH32X035C8T6,fast,4,blob-two-bank,256,256,blob,two-bank,False,2,1024,512,16,0,8,496,256,True,CRC-conditioned host model,2,1,25,22,3,0,0
+CH32X035C8T6,fast,4,keys-overwrite,256,256,keys,overwrite,False,1,1024,1024,16,0,12,1008,256,True,CRC-conditioned host model,4,1,41,2,3,36,0
+CH32X035C8T6,fast,4,keys-two-bank,256,256,keys,two-bank,False,2,1024,512,16,0,12,496,256,True,CRC-conditioned host model,2,1,25,22,3,0,0
+CH32X035C8T6,fast,4,blob-two-bank-commit,256,256,blob,two-bank,True,2,1024,512,16,256,8,240,512,True,CRC-conditioned host model,2,2,33,30,3,0,0
+CH32X035C8T6,fast,4,keys-two-bank-commit,256,256,keys,two-bank,True,2,1024,512,16,256,12,240,512,True,CRC-conditioned host model,2,2,33,30,3,0,0
+CH32X035C8T6,fast-erase-1k,1,raw,256,1024,raw,overwrite,False,1,1024,1024,0,0,8,1024,256,True,unvalidated,1,1,17,2,3,0,12
+CH32X035C8T6,fast-erase-1k,1,blob-overwrite,256,1024,blob,overwrite,False,1,1024,1024,16,0,8,1008,256,True,CRC-conditioned host model,1,1,17,2,3,12,0
+CH32X035C8T6,fast-erase-1k,1,blob-two-bank,256,1024,blob,two-bank,False,2,1024,0,16,0,8,0,256,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast-erase-1k,1,keys-overwrite,256,1024,keys,overwrite,False,1,1024,1024,16,0,12,1008,256,True,CRC-conditioned host model,1,1,17,2,3,12,0
+CH32X035C8T6,fast-erase-1k,1,keys-two-bank,256,1024,keys,two-bank,False,2,1024,0,16,0,12,0,256,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast-erase-1k,1,blob-two-bank-commit,256,1024,blob,two-bank,True,2,1024,0,16,256,8,0,512,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast-erase-1k,1,keys-two-bank-commit,256,1024,keys,two-bank,True,2,1024,0,16,256,12,0,512,False,CRC-conditioned host model,0,0,0,0,0,0,0
+CH32X035C8T6,fast-erase-1k,2,raw,256,1024,raw,overwrite,False,1,2048,2048,0,0,8,2048,256,True,unvalidated,2,1,25,2,3,0,20
+CH32X035C8T6,fast-erase-1k,2,blob-overwrite,256,1024,blob,overwrite,False,1,2048,2048,16,0,8,2032,256,True,CRC-conditioned host model,2,1,25,2,3,20,0
+CH32X035C8T6,fast-erase-1k,2,blob-two-bank,256,1024,blob,two-bank,False,2,2048,1024,16,0,8,1008,256,True,CRC-conditioned host model,1,1,17,14,3,0,0
+CH32X035C8T6,fast-erase-1k,2,keys-overwrite,256,1024,keys,overwrite,False,1,2048,2048,16,0,12,2032,256,True,CRC-conditioned host model,2,1,25,2,3,20,0
+CH32X035C8T6,fast-erase-1k,2,keys-two-bank,256,1024,keys,two-bank,False,2,2048,1024,16,0,12,1008,256,True,CRC-conditioned host model,1,1,17,14,3,0,0
+CH32X035C8T6,fast-erase-1k,2,blob-two-bank-commit,256,1024,blob,two-bank,True,2,2048,1024,16,256,8,752,512,True,CRC-conditioned host model,1,2,25,22,3,0,0
+CH32X035C8T6,fast-erase-1k,2,keys-two-bank-commit,256,1024,keys,two-bank,True,2,2048,1024,16,256,12,752,512,True,CRC-conditioned host model,1,2,25,22,3,0,0
+CH32X035C8T6,fast-erase-1k,4,raw,256,1024,raw,overwrite,False,1,4096,4096,0,0,8,4096,256,True,unvalidated,4,1,41,2,3,0,36
+CH32X035C8T6,fast-erase-1k,4,blob-overwrite,256,1024,blob,overwrite,False,1,4096,4096,16,0,8,4080,256,True,CRC-conditioned host model,4,1,41,2,3,36,0
+CH32X035C8T6,fast-erase-1k,4,blob-two-bank,256,1024,blob,two-bank,False,2,4096,2048,16,0,8,2032,256,True,CRC-conditioned host model,2,1,25,22,3,0,0
+CH32X035C8T6,fast-erase-1k,4,keys-overwrite,256,1024,keys,overwrite,False,1,4096,4096,16,0,12,4080,256,True,CRC-conditioned host model,4,1,41,2,3,36,0
+CH32X035C8T6,fast-erase-1k,4,keys-two-bank,256,1024,keys,two-bank,False,2,4096,2048,16,0,12,2032,256,True,CRC-conditioned host model,2,1,25,22,3,0,0
+CH32X035C8T6,fast-erase-1k,4,blob-two-bank-commit,256,1024,blob,two-bank,True,2,4096,2048,16,256,8,1776,512,True,CRC-conditioned host model,2,2,33,30,3,0,0
+CH32X035C8T6,fast-erase-1k,4,keys-two-bank-commit,256,1024,keys,two-bank,True,2,4096,2048,16,256,12,1776,512,True,CRC-conditioned host model,2,2,33,30,3,0,0

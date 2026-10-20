@@ -1,0 +1,161 @@
+{
+  "date": "2026-10-20",
+  "prototype_commit": "4d91ac7",
+  "scope": "EXP-04 conditional host format capacity/cut traces; no MCU or hardware upload.",
+  "host": {
+    "status": "passed",
+    "formats_cases": 200,
+    "geometry_and_medium_cases": 138,
+    "workspace_cases": 3,
+    "inputs": {
+      "tests/unit/core_redesign/flash_formats.py": "7b1cba269c310ca9d41fca792c1ee8a892f210f34c7fdbfcaef9dc1e6813c53a",
+      "tests/unit/core_redesign/test_flash_formats.py": "3f04e48ae7af7342591cefa56fb77e13481dec50c9412f1cab0d797fb1573e68",
+      "tests/unit/core_redesign/flash_model.py": "47d95b649683d0724ecba1606de352fc613554ea27a8703d38a644a7222f0c16",
+      "tests/unit/core_redesign/test_flash_model.py": "c9feb203905d8b535a750a3b67cd8abe3f0a7df1670f10c9b228b640616c9cf2",
+      "tests/unit/core_redesign/test_flash_regions.py": "51e3108c9cc2f1d897bb95822302d7d9da29da57169e41469bce396a106c94a6",
+      "tests/platform/core_redesign/flash_regions.py": "16e2c88d8176d6b50d35d7de44413f4aecea0940afb15446cdb79c380fa25848",
+      "tests/unit/test_workspace.py": "ecadb4329b91981d88cc3a5f962d578a090380aa835cabc2b281f11fe28776b3",
+      "planning/core-redesign/flash-format-inputs.json": "34a4adbcf229ec6878fae26f5bdb2a468448a788a105ce692328f0b2da39be88",
+      "planning/core-redesign/flash-inputs.json": "003cddefdccadadfaa025d0cc2e66a5680c8ad82c4deb2ba9c15b8393511912a",
+      "tests/pyproject.toml": "2345703d5a238cc32a8aac6a4f020ab8a73f65c04a331f852bdaeb84c331d7f4"
+    },
+    "junit_sha256": "feb32d4ca1d38023c564b627a68f6e39f12f4572b8028bc9f0903c0cb3419970",
+    "python": "3.13.16 (main, Oct  3 2026, 01:06:22) [Clang 22.1.3 ]",
+    "python_binary_sha256": "44db706d51fb08f679c5aeb5ba81f50646eec5bea7bb4b0f7d3e20ffaf48b9ca",
+    "zlib": {
+      "runtime": "1.3.2",
+      "origin": "built-in"
+    },
+    "command": [
+      "uv",
+      "run",
+      "--project",
+      "tests",
+      "--locked",
+      "pytest",
+      "-c",
+      "tests/pyproject.toml",
+      "tests/unit/core_redesign/test_flash_formats.py",
+      "tests/unit/core_redesign/test_flash_regions.py",
+      "tests/unit/core_redesign/test_flash_model.py",
+      "tests/unit/test_workspace.py",
+      "-q",
+      "-o",
+      "junit_family=xunit1",
+      "--junitxml=work/exp04-formats-host-20261020.xml"
+    ]
+  },
+  "model": {
+    "path": "work/exp04-formats-model-20261020",
+    "result_sha256": "38cceb364d1c703cb1310c7e0d3d699dd3dc4a38d258d55e9cfc44b7392d552e",
+    "trace_sha256": "6c7752033f8b698f9a5460cac874dac61a87925b0c4f25301aa0e9dc78683dd6",
+    "input_hashes": {
+      "tests/platform/core_redesign/compare_flash_formats.py": "0de30176be11bcc4d3868a780e4ed62bc80ea657ebaa9a989a37451271013566",
+      "planning/core-redesign/flash-format-inputs.json": "34a4adbcf229ec6878fae26f5bdb2a468448a788a105ce692328f0b2da39be88",
+      "planning/core-redesign/flash-inputs.json": "003cddefdccadadfaa025d0cc2e66a5680c8ad82c4deb2ba9c15b8393511912a",
+      "tests/unit/core_redesign/flash_formats.py": "7b1cba269c310ca9d41fca792c1ee8a892f210f34c7fdbfcaef9dc1e6813c53a",
+      "tests/unit/core_redesign/flash_model.py": "47d95b649683d0724ecba1606de352fc613554ea27a8703d38a644a7222f0c16"
+    },
+    "rows": 105,
+    "supported": 81,
+    "unsupported": 24,
+    "scenarios": 3721
+  },
+  "matrix": {
+    "path": "format-size-matrix.csv",
+    "sha256": "4e954e600e09661455111e72e89fff899719e68682804d5b03cd5f1fcbc871ba",
+    "rows": 105
+  },
+  "summary": [
+    {
+      "candidate": "raw",
+      "supported": 15,
+      "unsupported": 0,
+      "scenarios": 487,
+      "old": 30,
+      "new": 42,
+      "invalid": 0,
+      "unvalidated_other": 415
+    },
+    {
+      "candidate": "blob-overwrite",
+      "supported": 15,
+      "unsupported": 0,
+      "scenarios": 679,
+      "old": 30,
+      "new": 42,
+      "invalid": 607,
+      "unvalidated_other": 0
+    },
+    {
+      "candidate": "blob-two-bank",
+      "supported": 10,
+      "unsupported": 5,
+      "scenarios": 386,
+      "old": 358,
+      "new": 28,
+      "invalid": 0,
+      "unvalidated_other": 0
+    },
+    {
+      "candidate": "keys-overwrite",
+      "supported": 15,
+      "unsupported": 0,
+      "scenarios": 727,
+      "old": 30,
+      "new": 42,
+      "invalid": 655,
+      "unvalidated_other": 0
+    },
+    {
+      "candidate": "keys-two-bank",
+      "supported": 10,
+      "unsupported": 5,
+      "scenarios": 418,
+      "old": 390,
+      "new": 28,
+      "invalid": 0,
+      "unvalidated_other": 0
+    },
+    {
+      "candidate": "blob-two-bank-commit",
+      "supported": 8,
+      "unsupported": 7,
+      "scenarios": 496,
+      "old": 474,
+      "new": 22,
+      "invalid": 0,
+      "unvalidated_other": 0
+    },
+    {
+      "candidate": "keys-two-bank-commit",
+      "supported": 8,
+      "unsupported": 7,
+      "scenarios": 528,
+      "old": 506,
+      "new": 22,
+      "invalid": 0,
+      "unvalidated_other": 0
+    }
+  ],
+  "parent_geometry_evidence": {
+    "path": "work/exp04-flash-regions-20261020-evidence.tar.gz",
+    "bytes": 6374932,
+    "sha256": "d91e1eedb7568b7cc55b7321bd62073944acee90775c0c4ce458bba872c2986f"
+  },
+  "mcu_code_bytes": null,
+  "mcu_ram_bytes": null,
+  "mcu_stall_time": null,
+  "limits": [
+    "Exclusive serialized region access is a caller precondition, not a lease implementation",
+    "Recreated scanners retain the same host medium history; no physical reboot proof",
+    "CRC-conditioned results for the listed finite cut masks; no collision or physical locality proof",
+    "Numeric uint16 keys and uint32 values, at most two in the configured comparison; no Preferences compatibility claim",
+    "Explicit corrupt-region replacement is used after corruption; it does not restore lost values"
+  ],
+  "archive": {
+    "path": "work/exp04-formats-20261020-evidence.tar.gz",
+    "bytes": 48454,
+    "sha256": "b793c5f27627e243a6f5a8048e2063c305c630f0ca1dc6d6e6a377c8fbdd757c"
+  }
+}
