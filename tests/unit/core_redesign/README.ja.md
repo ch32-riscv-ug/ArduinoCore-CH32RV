@@ -383,3 +383,18 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 検査時のnative binaryと入力hashを残す場合は`EXP02_ACQUISITION_EVIDENCE=新しい出力先`を指定する。
 [結果と入力契約](../../../planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md)、
 [所有と分割処理の課題](../../../planning/core-redesign/tasks/EXP-02/acquisition-exercise.ja.md)を参照する。
+
+## EXP-06 V006休止の待機境界
+
+`sleep_boundary_model.py`は5手順と3 backend条件の有限順序を列挙し、通知が残ったまま眠る反例を記録する。
+実WFI／WFE・SDK・MCUのemulatorではなく、必要なbackend条件を明示する比較模型。
+同じ入力ファイルのLSI範囲とAWU候補から理想的なカウンタ時間幅も比較する。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_sleep_boundary.py tests/unit/test_workspace.py \
+  -o junit_family=xunit1
+```
+
+[資料・反例・未検証範囲](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-result.ja.md)と
+[予測課題](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-exercise.ja.md)を参照する。

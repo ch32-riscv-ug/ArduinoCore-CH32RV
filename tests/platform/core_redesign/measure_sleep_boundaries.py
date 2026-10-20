@@ -53,9 +53,10 @@ def main():
             dest = args.out/'inputs'/path.relative_to(REPO)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, dest)
-        for name in ['reference', 'datasheet', 'core']:
-            source = config['sources'][name]
-            path = args.research/f'{name}-en.pdf'
+        for name, source in config['sources'].items():
+            if name == 'sdk':
+                continue
+            path = args.research/source.get('file', f'{name}-en.pdf')
             assert path.read_bytes().startswith(b'%PDF-')
             assert sha(path) == source['sha256'], name
             record['sources'][name] = source

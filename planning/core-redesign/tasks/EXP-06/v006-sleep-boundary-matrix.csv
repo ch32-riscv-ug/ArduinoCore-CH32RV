@@ -1,0 +1,16 @@
+backend,protocol,scenarios,stranded,counterexample_posts,counterexample_stale
+irq-masked-wake-assumed,check-wait,10,2,1,False
+irq-masked-wake-assumed,check-drain-wait,15,5,1,False
+irq-masked-wake-assumed,drain-check-wait,15,2,2,False
+irq-masked-wake-assumed,guard-check-wait,15,0,,
+irq-masked-wake-assumed,guard-check-unmask-wait,21,9,1,False
+irq-no-masked-wake,check-wait,10,2,1,False
+irq-no-masked-wake,check-drain-wait,15,5,1,False
+irq-no-masked-wake,drain-check-wait,15,2,2,False
+irq-no-masked-wake,guard-check-wait,15,9,1,False
+irq-no-masked-wake,guard-check-unmask-wait,21,9,1,False
+event-latched-assumed,check-wait,20,0,,
+event-latched-assumed,check-drain-wait,30,4,1,False
+event-latched-assumed,drain-check-wait,30,0,,
+event-latched-assumed,guard-check-wait,30,0,,
+event-latched-assumed,guard-check-unmask-wait,42,0,,

@@ -1,0 +1,937 @@
+{
+  "date": "2026-10-20",
+  "status": "passed",
+  "base_implementation_commit": "25356a1",
+  "scope": "Document audit, abstract boundary model and ideal counter arithmetic. No core/USB changes, MCU emulator, sleep API adoption, physical wake guarantee, ABI, time or power measurement.",
+  "python": "3.14.4",
+  "test_counts": {
+    "new": 54,
+    "workspace": 3,
+    "total": 57
+  },
+  "inputs": {
+    "tests/platform/core_redesign/measure_sleep_boundaries.py": "94016cf2b49e1ea8dff6c0de6849ee22acd5746e6fe08dfdc8656c888f8995f3",
+    "planning/core-redesign/sleep-inputs.json": "ef9bbbe211b20757e3bd50b9e224a69baa6071a743292010845e685d000b0284",
+    "tests/unit/core_redesign/sleep_boundary_model.py": "f12a74cee80d43effe81e890f172503ca8e10574ad1b78e60b2932f9371655dc",
+    "tests/unit/core_redesign/test_sleep_boundary.py": "860fe0ddd899637a6d729a4a5134ba206d6da1be49329735b1ec0ca45831531d"
+  },
+  "sources": {
+    "reference": {
+      "url": "https://www.wch-ic.com/download/file?id=399",
+      "version": "1.5",
+      "sha256": "3983a3912e4356d17a2c32d4d36b721c13b9e6cbdba01e67478af62e1f337334"
+    },
+    "reference_zh": {
+      "file": "reference-zh.pdf",
+      "url": "https://file.wch.cn/download/file?id=472",
+      "version": "1.5",
+      "sha256": "7d216d69fd04d990c4d1c1bf276f741c66023fd6747b6d0a2bba50a03b30c3df"
+    },
+    "datasheet": {
+      "url": "https://www.wch-ic.com/download/file?id=396",
+      "version": "2.0",
+      "sha256": "806ff03d11ebe8f522b6a10bfce20040f30f3cff6a751bd982efca788f9601f2"
+    },
+    "core": {
+      "url": "https://www.wch-ic.com/download/file?id=369",
+      "version": "1.3",
+      "sha256": "a7d0c2cd9aa4a5a7153a3aeb97c1947376e96114514fad1077f9a6d48c39e1cc"
+    },
+    "sdk": {
+      "repo": "https://github.com/openwch/ch32v002_004_005_006_007",
+      "commit": "189c91b555bfb3d22e9c1f41db9b6707e7fc19ab",
+      "files": [
+        {
+          "path": "EVT/EXAM/SRC/Core/core_riscv.h",
+          "url": "https://raw.githubusercontent.com/openwch/ch32v002_004_005_006_007/189c91b555bfb3d22e9c1f41db9b6707e7fc19ab/EVT/EXAM/SRC/Core/core_riscv.h",
+          "bytes": 11672,
+          "sha256": "9bac791a67ac56c7c0d423cd89144846584ed7d4b6ce85074d26c9e879335b18"
+        },
+        {
+          "path": "EVT/EXAM/SRC/Peripheral/src/ch32v00X_pwr.c",
+          "url": "https://raw.githubusercontent.com/openwch/ch32v002_004_005_006_007/189c91b555bfb3d22e9c1f41db9b6707e7fc19ab/EVT/EXAM/SRC/Peripheral/src/ch32v00X_pwr.c",
+          "bytes": 6556,
+          "sha256": "d9a5a7bed8f079d87e9a4f059cbb3be4798e15671176466743128c136e75f943"
+        },
+        {
+          "path": "EVT/EXAM/SRC/Peripheral/inc/ch32v00X_pwr.h",
+          "url": "https://raw.githubusercontent.com/openwch/ch32v002_004_005_006_007/189c91b555bfb3d22e9c1f41db9b6707e7fc19ab/EVT/EXAM/SRC/Peripheral/inc/ch32v00X_pwr.h",
+          "bytes": 2682,
+          "sha256": "33c9f0e2baff1159f052a03e0b7808a0d1522abc26c9d5a9d36d9e054779fbe1"
+        },
+        {
+          "path": "EVT/EXAM/PWR/Sleep_Mode/User/main.c",
+          "url": "https://raw.githubusercontent.com/openwch/ch32v002_004_005_006_007/189c91b555bfb3d22e9c1f41db9b6707e7fc19ab/EVT/EXAM/PWR/Sleep_Mode/User/main.c",
+          "bytes": 3360,
+          "sha256": "8c4e8cd33b3b3301a53618cbe97b5a7b1b95c0ed3a1cb2d9c4f237f110e5fec1"
+        },
+        {
+          "path": "EVT/EXAM/PWR/Standby_Mode/User/main.c",
+          "url": "https://raw.githubusercontent.com/openwch/ch32v002_004_005_006_007/189c91b555bfb3d22e9c1f41db9b6707e7fc19ab/EVT/EXAM/PWR/Standby_Mode/User/main.c",
+          "bytes": 3298,
+          "sha256": "bd6c77592bedc71e96a0f2d3d6f1fb32e280d2ed3f2b50331c3443a7b97c3d43"
+        },
+        {
+          "path": "EVT/EXAM/SRC/Peripheral/inc/ch32v00X.h",
+          "url": "https://raw.githubusercontent.com/openwch/ch32v002_004_005_006_007/189c91b555bfb3d22e9c1f41db9b6707e7fc19ab/EVT/EXAM/SRC/Peripheral/inc/ch32v00X.h",
+          "bytes": 171610,
+          "sha256": "346d414cf5de70279412cd26f639be59a025166167a328819d024506aa0c2b4a"
+        }
+      ]
+    }
+  },
+  "junit_sha256": "c9f7302a85d177e37b2e737428ea350f8cee93299fc67824f62646e0a6b85cf7",
+  "boundary": {
+    "protocols": 5,
+    "backends": 3,
+    "total_scenarios": 304,
+    "max_posts": 2,
+    "semantics": "Sticky work condition; does not count or retain all hardware input edges. Latch and masked-wake properties are hypotheses, not verified V006 properties.",
+    "matrix_sha256": "6e068f87cf590a304ce000c4458f33337e1cc0a05b78395e3b35838013d9690b",
+    "results": [
+      {
+        "backend": "irq-masked-wake-assumed",
+        "protocol": "check-wait",
+        "scenarios": 10,
+        "stranded": 2,
+        "counterexample_posts": "1",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "irq-masked-wake-assumed",
+        "protocol": "check-drain-wait",
+        "scenarios": 15,
+        "stranded": 5,
+        "counterexample_posts": "1",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "irq-masked-wake-assumed",
+        "protocol": "drain-check-wait",
+        "scenarios": 15,
+        "stranded": 2,
+        "counterexample_posts": "2",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "irq-masked-wake-assumed",
+        "protocol": "guard-check-wait",
+        "scenarios": 15,
+        "stranded": 0,
+        "counterexample_posts": "",
+        "counterexample_stale": ""
+      },
+      {
+        "backend": "irq-masked-wake-assumed",
+        "protocol": "guard-check-unmask-wait",
+        "scenarios": 21,
+        "stranded": 9,
+        "counterexample_posts": "1",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "irq-no-masked-wake",
+        "protocol": "check-wait",
+        "scenarios": 10,
+        "stranded": 2,
+        "counterexample_posts": "1",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "irq-no-masked-wake",
+        "protocol": "check-drain-wait",
+        "scenarios": 15,
+        "stranded": 5,
+        "counterexample_posts": "1",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "irq-no-masked-wake",
+        "protocol": "drain-check-wait",
+        "scenarios": 15,
+        "stranded": 2,
+        "counterexample_posts": "2",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "irq-no-masked-wake",
+        "protocol": "guard-check-wait",
+        "scenarios": 15,
+        "stranded": 9,
+        "counterexample_posts": "1",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "irq-no-masked-wake",
+        "protocol": "guard-check-unmask-wait",
+        "scenarios": 21,
+        "stranded": 9,
+        "counterexample_posts": "1",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "event-latched-assumed",
+        "protocol": "check-wait",
+        "scenarios": 20,
+        "stranded": 0,
+        "counterexample_posts": "",
+        "counterexample_stale": ""
+      },
+      {
+        "backend": "event-latched-assumed",
+        "protocol": "check-drain-wait",
+        "scenarios": 30,
+        "stranded": 4,
+        "counterexample_posts": "1",
+        "counterexample_stale": false
+      },
+      {
+        "backend": "event-latched-assumed",
+        "protocol": "drain-check-wait",
+        "scenarios": 30,
+        "stranded": 0,
+        "counterexample_posts": "",
+        "counterexample_stale": ""
+      },
+      {
+        "backend": "event-latched-assumed",
+        "protocol": "guard-check-wait",
+        "scenarios": 30,
+        "stranded": 0,
+        "counterexample_posts": "",
+        "counterexample_stale": ""
+      },
+      {
+        "backend": "event-latched-assumed",
+        "protocol": "guard-check-unmask-wait",
+        "scenarios": 42,
+        "stranded": 0,
+        "counterexample_posts": "",
+        "counterexample_stale": ""
+      }
+    ]
+  },
+  "awu": {
+    "candidates_by_window": {
+      "62": 945,
+      "63": 960
+    },
+    "comparisons": [
+      {
+        "maximum_window": 62,
+        "target_seconds": 1,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 12,
+          "divisor": 2048,
+          "window": 61,
+          "ticks": 126976,
+          "minimum": {
+            "numerator": 3968,
+            "denominator": 5375,
+            "seconds": 0.7382325581395349
+          },
+          "nominal": {
+            "numerator": 124,
+            "denominator": 125,
+            "seconds": 0.992
+          },
+          "maximum": {
+            "numerator": 7936,
+            "denominator": 5625,
+            "seconds": 1.4108444444444443
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 1,
+        "policy": "counter-at-least",
+        "choice": {
+          "code": 13,
+          "divisor": 4096,
+          "window": 41,
+          "ticks": 172032,
+          "minimum": {
+            "numerator": 5376,
+            "denominator": 5375,
+            "seconds": 1.000186046511628
+          },
+          "nominal": {
+            "numerator": 168,
+            "denominator": 125,
+            "seconds": 1.344
+          },
+          "maximum": {
+            "numerator": 3584,
+            "denominator": 1875,
+            "seconds": 1.9114666666666666
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 1,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 12,
+          "divisor": 2048,
+          "window": 42,
+          "ticks": 88064,
+          "minimum": {
+            "numerator": 64,
+            "denominator": 125,
+            "seconds": 0.512
+          },
+          "nominal": {
+            "numerator": 86,
+            "denominator": 125,
+            "seconds": 0.688
+          },
+          "maximum": {
+            "numerator": 5504,
+            "denominator": 5625,
+            "seconds": 0.9784888888888889
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 2,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 14,
+          "divisor": 10240,
+          "window": 24,
+          "ticks": 256000,
+          "minimum": {
+            "numerator": 64,
+            "denominator": 43,
+            "seconds": 1.4883720930232558
+          },
+          "nominal": {
+            "numerator": 2,
+            "denominator": 1,
+            "seconds": 2.0
+          },
+          "maximum": {
+            "numerator": 128,
+            "denominator": 45,
+            "seconds": 2.8444444444444446
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 2,
+        "policy": "counter-at-least",
+        "choice": {
+          "code": 14,
+          "divisor": 10240,
+          "window": 33,
+          "ticks": 348160,
+          "minimum": {
+            "numerator": 2176,
+            "denominator": 1075,
+            "seconds": 2.0241860465116277
+          },
+          "nominal": {
+            "numerator": 68,
+            "denominator": 25,
+            "seconds": 2.72
+          },
+          "maximum": {
+            "numerator": 4352,
+            "denominator": 1125,
+            "seconds": 3.8684444444444446
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 2,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 13,
+          "divisor": 4096,
+          "window": 42,
+          "ticks": 176128,
+          "minimum": {
+            "numerator": 128,
+            "denominator": 125,
+            "seconds": 1.024
+          },
+          "nominal": {
+            "numerator": 172,
+            "denominator": 125,
+            "seconds": 1.376
+          },
+          "maximum": {
+            "numerator": 11008,
+            "denominator": 5625,
+            "seconds": 1.9569777777777777
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 10,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 20,
+          "ticks": 1290240,
+          "minimum": {
+            "numerator": 8064,
+            "denominator": 1075,
+            "seconds": 7.501395348837209
+          },
+          "nominal": {
+            "numerator": 252,
+            "denominator": 25,
+            "seconds": 10.08
+          },
+          "maximum": {
+            "numerator": 1792,
+            "denominator": 125,
+            "seconds": 14.336
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 10,
+        "policy": "counter-at-least",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 27,
+          "ticks": 1720320,
+          "minimum": {
+            "numerator": 10752,
+            "denominator": 1075,
+            "seconds": 10.001860465116279
+          },
+          "nominal": {
+            "numerator": 336,
+            "denominator": 25,
+            "seconds": 13.44
+          },
+          "maximum": {
+            "numerator": 7168,
+            "denominator": 375,
+            "seconds": 19.11466666666667
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 10,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 13,
+          "ticks": 860160,
+          "minimum": {
+            "numerator": 5376,
+            "denominator": 1075,
+            "seconds": 5.000930232558139
+          },
+          "nominal": {
+            "numerator": 168,
+            "denominator": 25,
+            "seconds": 6.72
+          },
+          "maximum": {
+            "numerator": 3584,
+            "denominator": 375,
+            "seconds": 9.557333333333334
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 30,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 61,
+          "ticks": 3809280,
+          "minimum": {
+            "numerator": 23808,
+            "denominator": 1075,
+            "seconds": 22.146976744186045
+          },
+          "nominal": {
+            "numerator": 744,
+            "denominator": 25,
+            "seconds": 29.76
+          },
+          "maximum": {
+            "numerator": 15872,
+            "denominator": 375,
+            "seconds": 42.32533333333333
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 30,
+        "policy": "counter-at-least",
+        "choice": null
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 30,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 42,
+          "ticks": 2641920,
+          "minimum": {
+            "numerator": 384,
+            "denominator": 25,
+            "seconds": 15.36
+          },
+          "nominal": {
+            "numerator": 516,
+            "denominator": 25,
+            "seconds": 20.64
+          },
+          "maximum": {
+            "numerator": 11008,
+            "denominator": 375,
+            "seconds": 29.354666666666667
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 60,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 62,
+          "ticks": 3870720,
+          "minimum": {
+            "numerator": 24192,
+            "denominator": 1075,
+            "seconds": 22.504186046511627
+          },
+          "nominal": {
+            "numerator": 756,
+            "denominator": 25,
+            "seconds": 30.24
+          },
+          "maximum": {
+            "numerator": 5376,
+            "denominator": 125,
+            "seconds": 43.008
+          }
+        }
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 60,
+        "policy": "counter-at-least",
+        "choice": null
+      },
+      {
+        "maximum_window": 62,
+        "target_seconds": 60,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 62,
+          "ticks": 3870720,
+          "minimum": {
+            "numerator": 24192,
+            "denominator": 1075,
+            "seconds": 22.504186046511627
+          },
+          "nominal": {
+            "numerator": 756,
+            "denominator": 25,
+            "seconds": 30.24
+          },
+          "maximum": {
+            "numerator": 5376,
+            "denominator": 125,
+            "seconds": 43.008
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 1,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 12,
+          "divisor": 2048,
+          "window": 61,
+          "ticks": 126976,
+          "minimum": {
+            "numerator": 3968,
+            "denominator": 5375,
+            "seconds": 0.7382325581395349
+          },
+          "nominal": {
+            "numerator": 124,
+            "denominator": 125,
+            "seconds": 0.992
+          },
+          "maximum": {
+            "numerator": 7936,
+            "denominator": 5625,
+            "seconds": 1.4108444444444443
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 1,
+        "policy": "counter-at-least",
+        "choice": {
+          "code": 13,
+          "divisor": 4096,
+          "window": 41,
+          "ticks": 172032,
+          "minimum": {
+            "numerator": 5376,
+            "denominator": 5375,
+            "seconds": 1.000186046511628
+          },
+          "nominal": {
+            "numerator": 168,
+            "denominator": 125,
+            "seconds": 1.344
+          },
+          "maximum": {
+            "numerator": 3584,
+            "denominator": 1875,
+            "seconds": 1.9114666666666666
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 1,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 12,
+          "divisor": 2048,
+          "window": 42,
+          "ticks": 88064,
+          "minimum": {
+            "numerator": 64,
+            "denominator": 125,
+            "seconds": 0.512
+          },
+          "nominal": {
+            "numerator": 86,
+            "denominator": 125,
+            "seconds": 0.688
+          },
+          "maximum": {
+            "numerator": 5504,
+            "denominator": 5625,
+            "seconds": 0.9784888888888889
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 2,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 14,
+          "divisor": 10240,
+          "window": 24,
+          "ticks": 256000,
+          "minimum": {
+            "numerator": 64,
+            "denominator": 43,
+            "seconds": 1.4883720930232558
+          },
+          "nominal": {
+            "numerator": 2,
+            "denominator": 1,
+            "seconds": 2.0
+          },
+          "maximum": {
+            "numerator": 128,
+            "denominator": 45,
+            "seconds": 2.8444444444444446
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 2,
+        "policy": "counter-at-least",
+        "choice": {
+          "code": 14,
+          "divisor": 10240,
+          "window": 33,
+          "ticks": 348160,
+          "minimum": {
+            "numerator": 2176,
+            "denominator": 1075,
+            "seconds": 2.0241860465116277
+          },
+          "nominal": {
+            "numerator": 68,
+            "denominator": 25,
+            "seconds": 2.72
+          },
+          "maximum": {
+            "numerator": 4352,
+            "denominator": 1125,
+            "seconds": 3.8684444444444446
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 2,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 13,
+          "divisor": 4096,
+          "window": 42,
+          "ticks": 176128,
+          "minimum": {
+            "numerator": 128,
+            "denominator": 125,
+            "seconds": 1.024
+          },
+          "nominal": {
+            "numerator": 172,
+            "denominator": 125,
+            "seconds": 1.376
+          },
+          "maximum": {
+            "numerator": 11008,
+            "denominator": 5625,
+            "seconds": 1.9569777777777777
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 10,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 20,
+          "ticks": 1290240,
+          "minimum": {
+            "numerator": 8064,
+            "denominator": 1075,
+            "seconds": 7.501395348837209
+          },
+          "nominal": {
+            "numerator": 252,
+            "denominator": 25,
+            "seconds": 10.08
+          },
+          "maximum": {
+            "numerator": 1792,
+            "denominator": 125,
+            "seconds": 14.336
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 10,
+        "policy": "counter-at-least",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 27,
+          "ticks": 1720320,
+          "minimum": {
+            "numerator": 10752,
+            "denominator": 1075,
+            "seconds": 10.001860465116279
+          },
+          "nominal": {
+            "numerator": 336,
+            "denominator": 25,
+            "seconds": 13.44
+          },
+          "maximum": {
+            "numerator": 7168,
+            "denominator": 375,
+            "seconds": 19.11466666666667
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 10,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 13,
+          "ticks": 860160,
+          "minimum": {
+            "numerator": 5376,
+            "denominator": 1075,
+            "seconds": 5.000930232558139
+          },
+          "nominal": {
+            "numerator": 168,
+            "denominator": 25,
+            "seconds": 6.72
+          },
+          "maximum": {
+            "numerator": 3584,
+            "denominator": 375,
+            "seconds": 9.557333333333334
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 30,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 61,
+          "ticks": 3809280,
+          "minimum": {
+            "numerator": 23808,
+            "denominator": 1075,
+            "seconds": 22.146976744186045
+          },
+          "nominal": {
+            "numerator": 744,
+            "denominator": 25,
+            "seconds": 29.76
+          },
+          "maximum": {
+            "numerator": 15872,
+            "denominator": 375,
+            "seconds": 42.32533333333333
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 30,
+        "policy": "counter-at-least",
+        "choice": null
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 30,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 42,
+          "ticks": 2641920,
+          "minimum": {
+            "numerator": 384,
+            "denominator": 25,
+            "seconds": 15.36
+          },
+          "nominal": {
+            "numerator": 516,
+            "denominator": 25,
+            "seconds": 20.64
+          },
+          "maximum": {
+            "numerator": 11008,
+            "denominator": 375,
+            "seconds": 29.354666666666667
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 60,
+        "policy": "nearest-nominal",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 63,
+          "ticks": 3932160,
+          "minimum": {
+            "numerator": 24576,
+            "denominator": 1075,
+            "seconds": 22.86139534883721
+          },
+          "nominal": {
+            "numerator": 768,
+            "denominator": 25,
+            "seconds": 30.72
+          },
+          "maximum": {
+            "numerator": 16384,
+            "denominator": 375,
+            "seconds": 43.690666666666665
+          }
+        }
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 60,
+        "policy": "counter-at-least",
+        "choice": null
+      },
+      {
+        "maximum_window": 63,
+        "target_seconds": 60,
+        "policy": "counter-at-most",
+        "choice": {
+          "code": 15,
+          "divisor": 61440,
+          "window": 63,
+          "ticks": 3932160,
+          "minimum": {
+            "numerator": 24576,
+            "denominator": 1075,
+            "seconds": 22.86139534883721
+          },
+          "nominal": {
+            "numerator": 768,
+            "denominator": 25,
+            "seconds": 30.72
+          },
+          "maximum": {
+            "numerator": 16384,
+            "denominator": 375,
+            "seconds": 43.690666666666665
+          }
+        }
+      }
+    ],
+    "semantics": "Ideal whole-window counter intervals using declared LSI range; phase, startup, external wake, IRQ and foreground latency excluded. No measured elapsed time."
+  },
+  "artifacts": {
+    "research": "work/exp06-v006-sleep-research-20261020",
+    "final_analysis": "work/exp06-v006-sleep-analysis-20261020-r3",
+    "preliminary_analysis": "work/exp06-v006-sleep-analysis-20261020-r2",
+    "failed_source_validation": "work/exp06-v006-sleep-analysis-20261020",
+    "failed_validation_reason": "Initial SDK tree lookup used the commit identifier; final validation explicitly fetched the root tree object named by the commit and checked all six Git blobs.",
+    "archive": "work/exp06-v006-sleep-20261020-evidence.tar.gz",
+    "archive_bytes": 7173286,
+    "archive_sha256": "778434043058ac36f47f9e3b3f6e335c1a8a6a5ea4639ecf864011f2de84f45a"
+  },
+  "reproduce": {
+    "tests": "uv run --project tests --locked pytest -c tests/pyproject.toml tests/unit/core_redesign/test_sleep_boundary.py tests/unit/test_workspace.py -q -o junit_family=xunit1 --junitxml=work/NEW-junit.xml",
+    "report": "python3 tests/platform/core_redesign/measure_sleep_boundaries.py --research work/exp06-v006-sleep-research-20261020 --junit work/NEW-junit.xml --out work/NEW-analysis"
+  }
+}

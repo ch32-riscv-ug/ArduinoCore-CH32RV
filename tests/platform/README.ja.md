@@ -190,3 +190,17 @@ V003／X035、LTO off／on、sample容量8／64／128を含む32 ELFを測る。
 payloadだけの対照は所有管理を持たず、同等機能として順位付けしない。
 probeは実機起動やADC／DMAの動作、時間・stack peakを検証するものではない。
 [結果と条件](../../planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md)を参照する。
+
+## Core再設計：V006資料と待機境界の集計
+
+```sh
+python3 tests/platform/core_redesign/measure_sleep_boundaries.py \
+  --research work/exp06-v006-sleep-research-20261020 \
+  --junit work/exp06-v006-sleep-20261020-junit.xml \
+  --out work/exp06-v006-sleep-NEW
+```
+
+callerが取得した4 PDFと固定SDKのhash／Git blobを確認し、304通知順序と30時間幅条件を集計する。
+スクリプトはnetwork・実機・core buildにアクセスしない。資料downloadと失敗した検証の記録はevidence archiveへ保存した。
+入力のURL・hashと必要な6 SDKファイルは[測定記録](../../planning/core-redesign/tasks/EXP-06/v006-sleep-measurements.json)を参照する。
+MCUのサイズ・時間・電流の測定ではない。

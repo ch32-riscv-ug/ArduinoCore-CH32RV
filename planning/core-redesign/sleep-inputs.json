@@ -14,6 +14,7 @@
   "policies": ["nearest-nominal", "counter-at-least", "counter-at-most"],
   "sources": {
     "reference": {"url": "https://www.wch-ic.com/download/file?id=399", "version": "1.5", "sha256": "3983a3912e4356d17a2c32d4d36b721c13b9e6cbdba01e67478af62e1f337334"},
+    "reference_zh": {"file": "reference-zh.pdf", "url": "https://file.wch.cn/download/file?id=472", "version": "1.5", "sha256": "7d216d69fd04d990c4d1c1bf276f741c66023fd6747b6d0a2bba50a03b30c3df"},
     "datasheet": {"url": "https://www.wch-ic.com/download/file?id=396", "version": "2.0", "sha256": "806ff03d11ebe8f522b6a10bfce20040f30f3cff6a751bd982efca788f9601f2"},
     "core": {"url": "https://www.wch-ic.com/download/file?id=369", "version": "1.3", "sha256": "a7d0c2cd9aa4a5a7153a3aeb97c1947376e96114514fad1077f9a6d48c39e1cc"},
     "sdk": {"repo": "https://github.com/openwch/ch32v002_004_005_006_007", "commit": "189c91b555bfb3d22e9c1f41db9b6707e7fc19ab"}
