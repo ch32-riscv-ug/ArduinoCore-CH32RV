@@ -109,6 +109,9 @@ struct CH32RVUsbDeviceConfig {
      * keeps its name on another USB socket. The strings must outlive the
      * device. */
     const char *serialNumber = nullptr;
+    /* The crystal on HSE, for controllers whose PHY needs it (V30x USBHS:
+     * 3/4/5/8 MHz references divided from it). */
+    uint32_t hseHz = 8000000;
     uint16_t maxPowerMilliamps = 100;
     bool selfPowered = false;
     /* A DFU runtime interface, so a host can send DFU_DETACH and re-upload

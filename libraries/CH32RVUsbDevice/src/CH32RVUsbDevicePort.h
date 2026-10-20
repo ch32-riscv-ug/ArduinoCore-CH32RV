@@ -104,6 +104,10 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
     if (controller == CH32RVUsbController::HighSpeed) {
         return &ch32rv_usb_dcd_usbhs2;                   /* needs HSE */
     }
+#elif defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
+    if (controller == CH32RVUsbController::HighSpeed) {
+        return &ch32rv_usb_dcd_usbhs1;                   /* needs HSE (config.hseHz) */
+    }
 #endif
     return nullptr;
 }

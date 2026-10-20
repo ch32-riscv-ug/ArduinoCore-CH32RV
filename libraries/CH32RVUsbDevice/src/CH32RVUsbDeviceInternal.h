@@ -71,3 +71,7 @@ static inline uint8_t ch32rv_usb_interval(CH32RVUsbSpeed speed, uint8_t ms)
  * USB callback (CH32RVUsbDeviceDfuRuntime's switch to DFU mode, which ends and
  * begins the device). */
 extern void (*volatile ch32rv_usb_deferred)(void);
+
+/* CH32RVUsbDeviceConfig::hseHz of the device that is opening its
+ * controller, for drivers whose PHY clock is divided from the crystal. */
+extern uint32_t ch32rv_usb_hse_hz;

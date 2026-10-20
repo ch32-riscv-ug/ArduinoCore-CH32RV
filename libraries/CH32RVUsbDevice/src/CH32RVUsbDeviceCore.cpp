@@ -119,6 +119,7 @@ const uint8_t ch32rv_usb_ss_caps[17] = {
     10, 0x10, 0x03, 0x00, 0x0E, 0x00, 0x01, 0x0A, 0xFF, 0x07,
 };
 bool ch32rv_usb_bos_super;
+uint32_t ch32rv_usb_hse_hz = 8000000;
 
 /* The BOS's length (0: none) - the platform's, or the SuperSpeed one. */
 static uint16_t bos_length(void)
@@ -709,6 +710,7 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
         _error = CH32RVUsbDeviceError::InvalidArgument;
         return false;
     }
+    ch32rv_usb_hse_hz = config.hseHz;
     if (!dcd->open()) {
         _error = CH32RVUsbDeviceError::Busy;
         return false;
