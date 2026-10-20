@@ -470,10 +470,12 @@ bool CH32RVUsbDeviceVideo::usbControl(CH32RVUsbControlStage stage, const CH32RVU
                 c.frameInterval = get32(_probe + 4);
                 c.maxVideoFrameSize = get32(_probe + 18);
                 c.maxPayloadTransferSize = get32(_probe + 22);
+                /* A commit drops the frame in flight. Bulk: it also starts the
+                 * stream; isochronous streams while alternate 1 is selected,
+                 * which the host may set before or after the commit. */
+                const bool selected = _streaming && !bulkStreaming();
                 stop();
-                if (bulkStreaming()) {
-                    _streaming = true;           /* bulk: the commit starts the stream */
-                }
+                _streaming = bulkStreaming() || selected;
                 handleCommit(c);
             }
         }

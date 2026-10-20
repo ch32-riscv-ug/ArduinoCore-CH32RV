@@ -132,13 +132,22 @@ static void load_in(uint8_t ep)
     set_t(ep, x.iso ? T_NONE : T_ACK);
 }
 
+/* Both directions' enable bits go on together, even for an endpoint used one
+ * way: with only TX enabled the SIE takes the IN data from the start of the
+ * region instead of +64, which would move the buffer under the driver. The
+ * unused direction stays NAK. */
+static uint8_t opened_in, opened_out;
+
 static void mode_bits(uint8_t ep, bool in, bool on)
 {
     static const uint8_t rx_bit[8] = {0, 0x80, 0x08, 0x80, 0x08, 0x02, 0x08, 0x20};
     static const uint8_t tx_bit[8] = {0, 0x40, 0x04, 0x40, 0x04, 0x01, 0x04, 0x10};
     volatile uint8_t &reg = ep == 1 || ep == 4 ? UEP4_1_MOD : ep <= 3 ? UEP2_3_MOD : UEP567_MOD;
-    const uint8_t bit = in ? tx_bit[ep] : rx_bit[ep];
-    reg = (uint8_t)(on ? (reg | bit) : (reg & ~bit));
+    const uint8_t bit = (uint8_t)(1u << ep);
+    uint8_t &opened = in ? opened_in : opened_out;
+    opened = (uint8_t)(on ? (opened | bit) : (opened & ~bit));
+    const bool any = ((opened_in | opened_out) & bit) != 0;
+    reg = (uint8_t)(any ? (reg | rx_bit[ep] | tx_bit[ep]) : (reg & ~(rx_bit[ep] | tx_bit[ep])));
 }
 
 /* ------------------------------------------------------------ table */
@@ -163,6 +172,7 @@ static bool dcd_open(void)
     UEP4_1_MOD = 0;
     UEP2_3_MOD = 0;
     UEP567_MOD = 0;
+    opened_in = opened_out = 0;
     R32(0x10) = (uint32_t)ep0_region;
     for (uint8_t ep = 1; ep < 8; ep++) {
         if (ep != 4) {
@@ -268,6 +278,7 @@ static void dcd_ep_close_all(void)
     UEP4_1_MOD = 0;
     UEP2_3_MOD = 0;
     UEP567_MOD = 0;
+    opened_in = opened_out = 0;
 }
 
 static bool dcd_xfer(uint8_t address, uint8_t *buffer, uint16_t length)
