@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "experiment": "EXP-02 acquisition buffers",
+  "blocks": 2,
+  "sample_bits": 16,
+  "required_samples_per_block": 64,
+  "sensitivity_samples_per_block": [8, 128],
+  "generation_bits": 32,
+  "retirement_test_bits": 8,
+  "trace_seeds": [0, 1, 2, 3, 4, 5, 6, 7],
+  "trace_operations": 500,
+  "workload_arrivals": 40,
+  "workload_stall_ticks": [0, 3, 12],
+  "source_modes": ["software-rearm", "unavoidable-arrival"],
+  "scope": "serial fake prefix producer, quiescence declaration, no MCU time or real ADC/DMA"
+}
