@@ -267,8 +267,9 @@ bool CH32RVUsbDeviceDfuRuntime::usbControl(CH32RVUsbControlStage stage, const CH
             if (n > size - _offset) {
                 n = size - _offset;
             }
-            /* Read through the 0x0 alias of the code flash. */
-            const uint8_t *src = (const uint8_t *)(uintptr_t)_offset;
+            /* Read at the flash's own address: 0x0 shows the system flash
+             * when the BOOT area started us. */
+            const uint8_t *src = (const uint8_t *)(uintptr_t)(0x08000000u + _offset);
             _offset += n;
             setState(n < s.wLength ? DFU_IDLE : DFU_UPLOAD_IDLE, ST_OK);
             return device().controlIn(src, (uint16_t)n);

@@ -206,6 +206,7 @@ static bool status_waiting;      /* a control OUT / no-data status stage is arme
 static bool status_done;         /* UDIF_STATUS came before the stack asked for the status */
 
 /* Link */
+static bool connected;           /* dcd_connect(true) and not since disconnected */
 static bool link_up;             /* Port Config exchanged: enumerating at SuperSpeed */
 static bool low_power;           /* PHY reconfigured for U1/U2/U3 */
 static bool suspended;           /* U3 */
@@ -386,7 +387,7 @@ static void link_stop(void)
 }
 
 /* ------------------------------------------------------------ table */
-static bool dcd_open(void)
+static bool clocks_on(void)
 {
     CH32RV_RCC_CTLR |= RCC_CTLR_HSEON;
     for (uint32_t t0 = millis(); !(CH32RV_RCC_CTLR & RCC_CTLR_HSERDY);) {
@@ -402,6 +403,14 @@ static bool dcd_open(void)
     }
     ch32rv_clock_enable(USBSS);
     CH32RV_RCC_CFGR0 |= RCC_CFGR0_PIPEON | RCC_CFGR0_UTMION;
+    return true;
+}
+
+static bool dcd_open(void)
+{
+    if (!clocks_on()) {
+        return false;
+    }
     memset(xin, 0, sizeof xin);
     memset(xout, 0, sizeof xout);
     xin[0].mps = xout[0].mps = EP0_SIZE;
@@ -411,6 +420,7 @@ static bool dcd_open(void)
 
 static void dcd_connect(bool on)
 {
+    connected = on;
     if (on) {
         link_start();
         ch32rv_irq_enable(CH32RV_IRQN_USBSS);
@@ -644,11 +654,32 @@ static void dcd_remote_wakeup(void)
     LINK_CTRL |= LINK_TX_UX_EXIT;
 }
 
+
+/* SystemInit() runs again when a debug probe has rewritten RCC (wiring_time.c)
+ * and its reset sequence turns HSE and the USBSS PLL off, and the PIPE / UTMI
+ * clocks with CFGR0: the link is gone. Bring the clocks back and train again. */
+static void clock_check(void)
+{
+    const bool ok = (CH32RV_RCC_CTLR & (RCC_CTLR_HSERDY | RCC_CTLR_USBSS_PLLRDY)) ==
+                        (RCC_CTLR_HSERDY | RCC_CTLR_USBSS_PLLRDY) &&
+                    (CH32RV_RCC_CFGR0 & (RCC_CFGR0_PIPEON | RCC_CFGR0_UTMION)) == (RCC_CFGR0_PIPEON | RCC_CFGR0_UTMION);
+    if (ok || !clocks_on()) {
+        return;
+    }
+    if (connected) {
+        if (link_up) {
+            ch32rv_usbd_isr_suspend();
+        }
+        link_start();
+    }
+}
+
 /* A link that fails to train against a quiet far end loops Disabled ->
  * RxDetect -> Polling at hardware speed; after three in a row it is held in
  * Disabled for 20 ms (TinyUSB measured the storm starving the debug link). */
 static void dcd_poll(void)
 {
+    clock_check();
     const uint32_t at = release_at;
     if (at && (int32_t)(millis() - at) >= 0) {
         release_at = 0;

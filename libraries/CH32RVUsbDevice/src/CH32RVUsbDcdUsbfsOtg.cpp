@@ -125,6 +125,17 @@ static bool clock_on(void)
     return true;
 }
 
+/* SystemInit() runs again whenever a debug probe has rewritten RCC
+ * (wiring_time.c), and its EVT reset sequence turns HSE and the USBHS PLL off
+ * and clears CFGR2: USB stops dead while staying on the bus (seen after a
+ * `ch32rv verify`). Put the clock back from the task. */
+static void dcd_poll(void)
+{
+    if (!(CH32RV_RCC_CTLR & RCC_CTLR_USBHS_PLLRDY) || (RCC_CFGR2 & 0x001F0000u) != ((1u << 20) | (7u << 16))) {
+        clock_on();
+    }
+}
+
 /* ------------------------------------------------------------ helpers */
 static void set_t(uint8_t ep, uint8_t res)
 {
@@ -464,7 +475,7 @@ const CH32RVUsbDcd ch32rv_usb_dcd_usbfs_otg = {
     "USBFS (USBOTG_FS layout)", 8, 64, 1u << (uint8_t)CH32RVUsbSpeed::Full,
     dcd_open, dcd_close, dcd_connect, dcd_speed, dcd_set_address,
     dcd_ep_open, dcd_ep_close, dcd_ep_close_all, dcd_xfer, dcd_abort, dcd_stall, dcd_ep0_stall, dcd_remote_wakeup,
-    nullptr,
+    dcd_poll,
 };
 
 #endif

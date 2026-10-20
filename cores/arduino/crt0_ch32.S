@@ -31,6 +31,10 @@
 #ifndef CH32RV_MTVEC_MODE
 #define CH32RV_MTVEC_MODE 3
 #endif
+/* Where the flash holding the LOADCODE image sits besides its 0x0 alias. */
+#ifndef CH32RV_LOADCODE_FLASH
+#define CH32RV_LOADCODE_FLASH 0x08000000
+#endif
 
 /* ---- vector table (pass 1: table words) ---- */
     .macro CH32RV_IRQ name
@@ -111,18 +115,29 @@ Default_Handler:
     .weak     handle_reset
     .align    1
 handle_reset:
+#ifdef CH32RV_LOADCODE
+/* Absolute addresses only, from here to the jump into RAM: this runs from
+ * flash at 0x0 after a reset, but at the flash's own address (0x08000000)
+ * when the BOOT-area bootloader starts the application, and a PC-relative
+ * `la` would then be off by that much (measured on CH32H417: mtvec read
+ * 0x28100003). The image is read through 0x08000000 too, because with the BOOT
+ * area mapped 0x0 shows the system flash. */
 .option push
 .option norelax
-    la gp, __global_pointer$
+    lui gp, %hi(__global_pointer$)
+    addi gp, gp, %lo(__global_pointer$)
 .option pop
-    la sp, _eusrstack
+    lui sp, %hi(_eusrstack)
+    addi sp, sp, %lo(_eusrstack)
 
-#ifdef CH32RV_LOADCODE
 /* Copy the image (vectors, code, constants, data) from flash to RAM. Runs
  * from flash, at the reset clock; everything after it is in RAM. */
-    la a0, _image_lma
-    la a1, _image_vma
-    la a2, _edata
+    lui a0, %hi(_image_lma + CH32RV_LOADCODE_FLASH)
+    addi a0, a0, %lo(_image_lma + CH32RV_LOADCODE_FLASH)
+    lui a1, %hi(_image_vma)
+    addi a1, a1, %lo(_image_vma)
+    lui a2, %hi(_edata)
+    addi a2, a2, %lo(_edata)
     bgeu a1, a2, 2f
 1:
     lw t0, (a0)
@@ -131,7 +146,21 @@ handle_reset:
     addi a1, a1, 4
     bltu a1, a2, 1b
 2:
+/* Continue in RAM, where PC-relative addressing holds again. */
+    lui t0, %hi(ch32rv_loadcode_ram)
+    addi t0, t0, %lo(ch32rv_loadcode_ram)
+    jr t0
+
+    .section  .text.ch32rv_loadcode_ram, "ax", @progbits
+    .align    1
+ch32rv_loadcode_ram:
 #else
+.option push
+.option norelax
+    la gp, __global_pointer$
+.option pop
+    la sp, _eusrstack
+
 #ifdef CH32RV_HIGHCODE
 /* Load highcode section from flash to RAM */
     la a0, _highcode_lma
