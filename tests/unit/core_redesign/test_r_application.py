@@ -14,6 +14,15 @@ spec = importlib.util.spec_from_file_location("p2_integrated_reference", HERE / 
 reference = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(reference)
 
+_native_spec = importlib.util.spec_from_file_location("p2_native_build", HERE / "native_build.py")
+native_build = importlib.util.module_from_spec(_native_spec)
+_native_spec.loader.exec_module(native_build)
+
+
+@pytest.fixture(scope="session")
+def native_control(tmp_path_factory):
+    return native_build.build(tmp_path_factory)
+
 
 def ticks(start, stop):
     return [command for t in range(start, stop) for command in (f"time {t}", "step")]

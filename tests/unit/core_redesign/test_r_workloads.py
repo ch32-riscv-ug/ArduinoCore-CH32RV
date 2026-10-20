@@ -18,6 +18,15 @@ spec.loader.exec_module(oracle)
 TRACES = json.loads((HERE / "traces.json").read_text())["traces"]
 MODELS = {"knob": oracle.KnobOracle, "pps": oracle.PpsOracle, "screen": oracle.ScreenOracle}
 
+_native_spec = importlib.util.spec_from_file_location("p2_native_build", HERE / "native_build.py")
+native_build = importlib.util.module_from_spec(_native_spec)
+_native_spec.loader.exec_module(native_build)
+
+
+@pytest.fixture(scope="session")
+def native_control(tmp_path_factory):
+    return native_build.build(tmp_path_factory)
+
 
 def run_control(executable, target, commands):
     result = subprocess.run([executable, target], input="\n".join(commands) + "\n",
