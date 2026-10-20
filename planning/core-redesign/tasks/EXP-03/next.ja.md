@@ -10,6 +10,7 @@
 - [期限model](timer-preparation.ja.md)：半周、周回、周期集約、通知保持、stop／再設定。
 - [宛先結合](event-preparation.ja.md)：payloadと集約通知、満杯時のI/O／timer保持、fan-out、配達前解除。
 - [待機policy](wait-result.ja.md)：try／非同期／同期、producerと許可pump、禁止文脈、期限観測。
+- [資源依存](dependency-result.ja.md)：bus／buffer／lockを保有した待機、既知の阻害と不明、非同期での明示返却。
 - [K0同等用途](../EXP-06/k0-result.ja.md)：R/A/B/C、M/S/U、設定容量2の変更課題。
 
 ## 次の通常作業
@@ -18,9 +19,9 @@
    現結果は実行時flagで、基準にもタッチの状態とbufferが残る。
    C-static-batchは固定1宛先であり、動的登録を持つ汎用Cと能力を揃えた比較へ読み替えない。
    実I/Oへの接続、資源ごとのsystem／user分類、周回時計・sleepも別に検査する。
-2. 資源を保持した待機を追加する。waiterがbus／buffer／lockを保有し、producerに同じ資源が必要な条件、
-   producerが未参加userである条件、callback内からの禁止された待機を検査する。
-   循環待ちをtimeoutで抜けたことを成功にしない。能力の宣言と、実backendで検出できる事実を分ける。
+2. [資源依存の模型](dependency-result.ja.md)を実I/O・所有台帳へ接続する。
+   模型の所有・依存情報が実backendでも取得できるか、snapshotの同期費用を確認する。
+   能力の宣言と検出可能な事実を分け、未知を拒否する比較条件を公開APIの採用へ読み替えない。
 3. 完了枠予約と固定arbiterを基準のbusy方式から分離して比較する。
    end／取消／回収・古い通知、fan-out途中拒否を維持し、通常mailbox満杯で終端を失わない。
 4. 実ISR投稿の保護policy、producerの複数性、bufferとpoolの共有を接続する。

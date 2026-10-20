@@ -308,5 +308,6 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [K0の同等比較と容量2変更](planning/core-redesign/tasks/EXP-06/k0-result.ja.md)と
 [待機policy](planning/core-redesign/tasks/EXP-03/wait-result.ja.md)のhost／ABI検査も記録済み。
 [X0の追加比較](planning/core-redesign/tasks/EXP-06/x0-result.ja.md)では固定1宛先のC-static-batchを別条件として記録した。
-次はX0のcompile時機能除去・変更課題、資源を保持する待機、残るruntime・共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
+[資源を保持した待機](planning/core-redesign/tasks/EXP-03/dependency-result.ja.md)もhost／ABIで検査し、既知の依存と不明を分けた。
+次はX0のcompile時機能除去・変更課題、依存の実backend接続、残るruntime・共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

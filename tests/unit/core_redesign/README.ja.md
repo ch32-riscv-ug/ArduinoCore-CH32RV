@@ -218,3 +218,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix x0 \
 
 テストのfixtureは各テストmodule内に置き、tests以下へconftest.pyを追加しない。
 [結果と比較の境界](../../../planning/core-redesign/tasks/EXP-06/x0-result.ja.md)を参照する。
+
+## EXP-03 資源を保持した待機
+
+`wait_dependencies.hpp` は明示した依存の有限検査とDrive guardの比較試作。
+`dependency_driver.cpp`／`test_wait_dependencies.py` は同じ資源を実際のtryと検査が参照するhost模型を使う。
+所有者不明と未参加user、直接／間接のwaiter依存、他actorの循環、非同期での明示返却を区別する。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_wait_dependencies.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix dependencies \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp03-dependencies-matrix
+```
+
+実backendの依存を自動発見する機能ではない。NoKnownBlockを進行保証としない。
+費用と検出範囲は[資源依存の結果](../../../planning/core-redesign/tasks/EXP-03/dependency-result.ja.md)を参照する。

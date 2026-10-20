@@ -120,12 +120,22 @@ def x0_cases(smoke):
     return result
 
 
+def dependency_cases(smoke):
+    result = [("baseline", 0, 4, 3, 0, 1), ("unused-graph", 1, 4, 3, 0, 0)]
+    if not smoke:
+        result.append(("unused-guard", 2, 4, 3, 0, 0))
+        for actors, resources in ((2, 1), (4, 3), (8, 3), (16, 16)):
+            result.append((f"inspect-{actors}x{resources}", 1, actors, resources, 0, 1))
+        result.extend([("guarded-wait-4x3", 2, 4, 3, 0, 1), ("plain-wait", 3, 4, 3, 0, 1)])
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
-    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event", "k0", "wait", "x0"), default="serial")
+    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event", "k0", "wait", "x0", "dependencies"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
@@ -179,6 +189,12 @@ def main():
                   HEADER.with_name("r_application.hpp"), HEADER.with_name("r_workloads.hpp")]
         selected_cases = x0_cases(args.smoke)
         report["scope"] = "X0 equivalent R/A/B/C-static-batch logic link-only; runtime touch flag; no physical PD/I2C, startup, ISR, stack peak or cycle proof"
+    elif args.matrix == "dependencies":
+        source = Path(__file__).with_name("dependency_entry.cpp")
+        inputs = [source, HEADER.with_name("work_executor.hpp"), HEADER.with_name("wait_policy.hpp"),
+                  HEADER.with_name("wait_dependencies.hpp")]
+        selected_cases = dependency_cases(args.smoke)
+        report["scope"] = "bounded declared dependency inspection/Drive guard link-only with toy predicate; no I/O, ownership discovery, dispatcher, atomic snapshot or cycle proof"
     report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")
