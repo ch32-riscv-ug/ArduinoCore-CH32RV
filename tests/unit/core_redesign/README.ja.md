@@ -182,3 +182,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix k0 \
 
 物理I2CやIRQのatomicityは未検証。
 結果と観測の限界は[K0比較結果](../../../planning/core-redesign/tasks/EXP-06/k0-result.ja.md)を参照する。
+
+## EXP-03 待機policy
+
+`wait_policy.hpp` はloop専用同期wrapperと状態を残す非同期pollの独立試作。
+`wait_driver.cpp`／`test_wait_policy.py` がA/B/Cの実host dispatchと、IRQ／通常／別コアのfake producerを接続する。
+IRQ／別コアの刺激は直列化しており、実共有やcacheを証明しない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_wait_policy.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix wait \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp03-wait-matrix
+```
+
+link入口はpolicy単体のtoy predicateで、queue／実行器を含まない。
+timeout観測、宣言する進行能力、非同期driverの観測窓と未検証は[待機結果](../../../planning/core-redesign/tasks/EXP-03/wait-result.ja.md)を参照する。

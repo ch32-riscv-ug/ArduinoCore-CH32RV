@@ -305,6 +305,7 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [有限work](planning/core-redesign/tasks/EXP-03/work-preparation.ja.md)、
 [期限model](planning/core-redesign/tasks/EXP-03/timer-preparation.ja.md)、
 [宛先結合](planning/core-redesign/tasks/EXP-03/event-preparation.ja.md)を記録し、通常文脈の終端・取消・回収と一部配達を検査した。
-次は同等用途・待機条件、残るruntime・共有・保存・系列と休止の検査へ進め、P4まで通常の実装・実験を継続する。
-[K0の同等比較と容量2変更](planning/core-redesign/tasks/EXP-06/k0-result.ja.md)を検査済み。X0と待機・残る独立実験を継続する。
+[K0の同等比較と容量2変更](planning/core-redesign/tasks/EXP-06/k0-result.ja.md)と
+[待機policy](planning/core-redesign/tasks/EXP-03/wait-result.ja.md)のhost／ABI検査も記録済み。
+次はX0の同等用途、資源を保持する待機、残るruntime・共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

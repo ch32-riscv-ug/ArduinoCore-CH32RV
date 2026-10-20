@@ -101,12 +101,20 @@ def k0_cases(smoke):
     return result
 
 
+def wait_cases(smoke):
+    result = [("baseline", 0, 1, 1, 0, 1), ("unused-wrapper", 1, 1, 1, 0, 0)]
+    if not smoke:
+        result.extend([("unused-async", 2, 1, 1, 0, 0), ("try", 3, 1, 1, 0, 1),
+                       ("async", 2, 1, 1, 0, 1), ("blocking", 1, 1, 1, 0, 1)])
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
-    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event", "k0"), default="serial")
+    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event", "k0", "wait"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
@@ -148,6 +156,11 @@ def main():
                   HEADER.with_name("k0_candidates.hpp")]
         selected_cases = k0_cases(args.smoke)
         report["scope"] = "K0 equivalent R/A/B/C logic link-only; no physical I2C, startup, ISR atomicity or cycle proof"
+    elif args.matrix == "wait":
+        source = Path(__file__).with_name("wait_entry.cpp")
+        inputs = [source, HEADER.with_name("work_executor.hpp"), HEADER.with_name("wait_policy.hpp")]
+        selected_cases = wait_cases(args.smoke)
+        report["scope"] = "RUN-03 wait policy/continuation link-only with toy predicate; no dispatcher, queue, physical producer or cycle proof"
     report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")
