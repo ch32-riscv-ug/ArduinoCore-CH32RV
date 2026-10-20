@@ -1,0 +1,186 @@
+{
+  "version": "P2-host-1",
+  "contract": "P1-1",
+  "date": "2026-10-20",
+  "purpose": "host oracle and instrumented logic ABI checks; hardware backend not yet implemented",
+  "targets": [
+    {
+      "id": "K0",
+      "part": "CH32V003F4P6",
+      "package": "TSSOP20",
+      "march": "rv32ec_zicsr",
+      "abi": "ilp32e",
+      "flash_bytes": 16384,
+      "ram_bytes": 2048,
+      "link_origin": 0,
+      "flash_physical_origin": 134217728,
+      "ram_origin": 536870912,
+      "requested_clock_hz": 48000000,
+      "clock_configuration": "HSI+PLL x2, to be implemented and verified",
+      "i2c": {
+        "instance": "I2C1",
+        "sda": "PC1",
+        "scl": "PC2",
+        "route": "default",
+        "requested_hz": [
+          100000,
+          400000
+        ]
+      },
+      "input_pads": [
+        "PD2",
+        "PD3",
+        "PD4"
+      ],
+      "debug": [
+        "PD1"
+      ],
+      "irq_numbers": {
+        "I2C1_EV": 30,
+        "I2C1_ER": 31,
+        "EXTI7_0": 20
+      },
+      "flash_erase_modes_bytes": {
+        "standard": 1024,
+        "fast": 64
+      },
+      "baseline_persistent_reservation_bytes": 0,
+      "baseline_codeflash_boot_reservation_bytes": 0
+    },
+    {
+      "id": "X0",
+      "part": "CH32X035C8T6",
+      "package": "LQFP48",
+      "march": "rv32imac_zicsr",
+      "abi": "ilp32",
+      "flash_bytes": 63488,
+      "ram_bytes": 20480,
+      "link_origin": 0,
+      "flash_physical_origin": 134217728,
+      "ram_origin": 536870912,
+      "requested_clock_hz": 48000000,
+      "clock_configuration": "HSI 48MHz, to be implemented and verified",
+      "i2c": {
+        "instance": "I2C1",
+        "sda": "PA11",
+        "scl": "PA10",
+        "route": "I2C1_RM=000",
+        "requested_hz": [
+          100000,
+          400000
+        ]
+      },
+      "input_pads": [
+        "PA2",
+        "PA3",
+        "PA4"
+      ],
+      "debug": [
+        "PC18",
+        "PC19"
+      ],
+      "pd_pads": [
+        "PC14",
+        "PC15"
+      ],
+      "irq_numbers": {
+        "I2C1_EV": 30,
+        "I2C1_ER": 31,
+        "USBPD": 49,
+        "USBPDWakeUp": 50
+      },
+      "flash_erase_modes_bytes": {
+        "standard": 1024,
+        "fast": 256
+      },
+      "baseline_persistent_reservation_bytes": 0,
+      "baseline_codeflash_boot_reservation_bytes": 0
+    }
+  ],
+  "sources": [
+    {
+      "publisher": "WCH",
+      "mirror_repository": "ch32-riscv-ug/CH32V003",
+      "commit": "12d9aed0eae0276a133db00eb16bd492e8189f2d",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/datasheet_en/CH32V003DS0.PDF",
+      "path": "CH32V003DS0.PDF",
+      "bytes": 723483,
+      "sha256": "186210d35123325ea49305e3a0152cbfa6e377d8e6efc2e610e3497daabe17f8",
+      "retrieved": "2026-10-20"
+    },
+    {
+      "publisher": "WCH",
+      "mirror_repository": "ch32-riscv-ug/CH32V003",
+      "commit": "12d9aed0eae0276a133db00eb16bd492e8189f2d",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/datasheet_en/CH32V003RM.PDF",
+      "path": "CH32V003RM.PDF",
+      "bytes": 2472575,
+      "sha256": "2758a463045dc6e9ec36600a76317d7c5e75ffd421b5a44d8f58a060e6f271ff",
+      "retrieved": "2026-10-20"
+    },
+    {
+      "publisher": "WCH",
+      "mirror_repository": "ch32-riscv-ug/CH32X035",
+      "commit": "327874484eda7e50cb4cf40271718e68fafbc850",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/datasheet_en/CH32X035DS0.PDF",
+      "path": "CH32X035DS0.PDF",
+      "bytes": 815038,
+      "sha256": "1714c07d9448bc87ec667a602eba3e4c784a6ca7ca25ef125445df0ee4cc755d",
+      "retrieved": "2026-10-20"
+    },
+    {
+      "publisher": "WCH",
+      "mirror_repository": "ch32-riscv-ug/CH32X035",
+      "commit": "327874484eda7e50cb4cf40271718e68fafbc850",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/datasheet_en/CH32X035RM.PDF",
+      "path": "CH32X035RM.PDF",
+      "bytes": 2568824,
+      "sha256": "c5dc49eb6a0086857bc120cf4c1646fa8530006fe5a21e7bbb632a075daf036a",
+      "retrieved": "2026-10-20"
+    },
+    {
+      "publisher": "WCH",
+      "mirror_repository": "ch32-riscv-ug/CH32V003",
+      "commit": "12d9aed0eae0276a133db00eb16bd492e8189f2d",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Peripheral/inc/ch32v00x.h",
+      "path": "ch32v00x.h",
+      "bytes": 153101,
+      "sha256": "29a97c98e027c40b0b7484adae3c688d8d17733611ef34e7236754015e938500",
+      "retrieved": "2026-10-20"
+    },
+    {
+      "publisher": "WCH",
+      "mirror_repository": "ch32-riscv-ug/CH32X035",
+      "commit": "327874484eda7e50cb4cf40271718e68fafbc850",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Peripheral/inc/ch32x035.h",
+      "path": "ch32x035.h",
+      "bytes": 209585,
+      "sha256": "72e5644a1266275e5e9bc3d51cec495a8381f92b50277514f52b9b242824a59a",
+      "retrieved": "2026-10-20"
+    }
+  ],
+  "boot_policy": "compile-only bare codeFlash profile; existing board bootloader and upload settings are not applied",
+  "renderer": {
+    "width": 128,
+    "height": 64,
+    "format": "SSD1306 page bytes, original 3x5 glyphs with one blank column",
+    "chunk_payload_bytes": 32,
+    "status": "data payload fixed; controller setup and I2C headers pending",
+    "golden": "tests/unit/core_redesign/frame-golden.json",
+    "golden_sha256": "c32d8ad931c9478f9d1df41767a0ca57922b905a942a18d074c4163858def396",
+    "number_format": "five decimal digits, zero-padded; negative values display five dashes"
+  },
+  "unverified": [
+    "K0 ACK/NACK frontend timing",
+    "real IRQ sharing",
+    "clock initialization",
+    "PD protocol backend and required deadlines",
+    "full I2C frame headers",
+    "physical fixtures",
+    "V006 sleep",
+    "H417 shared memory",
+    "Flash programming stalls and power-loss behavior"
+  ],
+  "trace_sha256": "52c0178403ca1fb9d09605fac6f8ce8f4ea68699921c21ea658a658d2aa74bf8",
+  "input_envelope": "X0 commands keep their acceptance session as separate metadata; Apply requires the current session"
+}

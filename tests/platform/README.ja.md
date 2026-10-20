@@ -63,3 +63,10 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 ```
 
 今回の結果と別作業領域での再生成手順は [EXP-00の結果](../../planning/core-redesign/tasks/EXP-00/result.ja.md)を参照してください。
+
+## P2 の対照ロジックのABI確認
+
+`core_redesign/build_logic_controls.py` は、K0／X0のhost対照と同じC++ロジックを対象ABIへcompile/linkします。
+それぞれLTOなし／ありを別条件にし、入力・コマンド・libraryのhashとELF等を記録します。
+通常pytestでは実行しません。入口と対象範囲は [host対照のREADME](../unit/core_redesign/README.ja.md)を参照してください。
+最小起動・IRQ・実I2C／PDを含まないため、完成アプリの容量・実機動作はこの成功で検証済みとは扱いません。

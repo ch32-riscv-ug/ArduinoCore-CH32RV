@@ -1,0 +1,148 @@
+{
+  "task": "P2-PREP-01",
+  "version": "P2-host-1",
+  "date": "2026-10-20",
+  "head": "b6639ed40a2f3f8d2664b710b37238d8eec134dc",
+  "inputs": {
+    "tests/unit/core_redesign/test_r_workloads.py": "9e6df2f2703cd47dd822f6a0c19943889b1be36d047d8f04d3d0d2e6499d9710",
+    "tests/unit/core_redesign/oracle.py": "67f6f7cc913d20d8bc5de079e86244aea1f925ab0fca3bc8bf9aae8ba6ef3c6c",
+    "tests/unit/core_redesign/r_workloads.hpp": "adbd07f21487487a449e9bd73523d8cc98546fe22f37b6400d8e591f1f595500",
+    "tests/unit/core_redesign/host_driver.cpp": "58b6643a2077d6d8e1e6cac3d41a6c30bea95075d8262641ac87c4617bbd783f",
+    "tests/unit/core_redesign/traces.json": "52c0178403ca1fb9d09605fac6f8ce8f4ea68699921c21ea658a658d2aa74bf8",
+    "tests/unit/core_redesign/frame-golden.json": "c32d8ad931c9478f9d1df41767a0ca57922b905a942a18d074c4163858def396",
+    "tests/platform/core_redesign/build_logic_controls.py": "e4580309fad7fb91e7adf1489a3a21432621b2d14a25e9f6dcc396c27dc2fa1a",
+    "tests/platform/core_redesign/logic_entry.cpp": "efca7681767cd3581e04f77a94aa7f72769ca1e300eaa05791216f8e2b2c813d",
+    "planning/core-redesign/p2-inputs.json": "dd07908dbb49fe08fed6816afbb256eb69a97b78b5b428356da4e2c26c9ad64c",
+    "planning/core-redesign/p2-preparation.ja.md": "c4bbdc2e1e8c4957ac06617955e88d3cb40fb4504272500c728a9590b6797bfe",
+    "planning/core-redesign/workloads.ja.md": "8f990e1a2a6d4fa2ed16d509595641880f1561fee6c8818cbd365e0a5f045276",
+    "planning/core-redesign/experiment-spec.ja.md": "a4eac8e9dd0ef6832fa1eb6c03d9c8c01e65bda06d08538365cf9d02cee597d7",
+    "tests/uv.lock": "99e06f301d7c468807053449f926cb529574a1361e1a62771e3c7ed9e66b51d0"
+  },
+  "native_compiler": {
+    "sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "version": "x86_64-linux-gnu-g++-15 (Ubuntu 15.2.0-16ubuntu1) 15.2.0"
+  },
+  "tests": {
+    "passed": 51,
+    "fixed_traces": 25,
+    "golden_frames": 4,
+    "generated_steps": 200000,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "junit_sha256": "63ee18daaf7477ebf2a5c869ca3794b5dc12f3c13fa7b0f7df2874bc793e92bd",
+    "command": "uv run --project tests --locked pytest -c tests/pyproject.toml tests/unit/core_redesign/test_r_workloads.py -o junit_family=xunit1 --junitxml=<new-out>/junit.xml"
+  },
+  "cross_builds": {
+    "scope": "P2 instrumented logic only; not MCU firmware or complete application footprint",
+    "status": "passed",
+    "results": [
+      {
+        "target": "CH32V003F4P6",
+        "workload": "K0",
+        "lto": false,
+        "sections": {
+          ".text": 992,
+          ".data": 60,
+          ".bss": 20,
+          ".comment": 51,
+          ".riscv.attributes": 49
+        },
+        "flash_image_bytes": 1052,
+        "static_ram_bytes": 80,
+        "libgcc_sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f",
+        "libc_sha256": "aa7c9d68d8f56a2b2dc72e14933ef79cf8c97ef570bd23642f698032044c6802",
+        "elf_sha256": "196815ed9e3c8907189b5835b698a9719f441fc3753c749988bf262a31076350",
+        "stack_peak_bytes": null
+      },
+      {
+        "target": "CH32V003F4P6",
+        "workload": "K0",
+        "lto": true,
+        "sections": {
+          ".text": 976,
+          ".data": 60,
+          ".bss": 20,
+          ".comment": 51,
+          ".riscv.attributes": 49
+        },
+        "flash_image_bytes": 1036,
+        "static_ram_bytes": 80,
+        "libgcc_sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f",
+        "libc_sha256": "aa7c9d68d8f56a2b2dc72e14933ef79cf8c97ef570bd23642f698032044c6802",
+        "elf_sha256": "bbc605347e3e3ee02130e91ae020dfbf581cf18962d4c701800c753fc20f8833",
+        "stack_peak_bytes": null
+      },
+      {
+        "target": "CH32X035C8T6",
+        "workload": "X0",
+        "lto": false,
+        "sections": {
+          ".text": 1750,
+          ".data": 224,
+          ".bss": 20,
+          ".comment": 51,
+          ".riscv.attributes": 87
+        },
+        "flash_image_bytes": 1974,
+        "static_ram_bytes": 244,
+        "libgcc_sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+        "libc_sha256": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc",
+        "elf_sha256": "6c77261a789b3882b80089c94c7ac6b6327a29390cfcd52ed0cf5ba7845a529e",
+        "stack_peak_bytes": null
+      },
+      {
+        "target": "CH32X035C8T6",
+        "workload": "X0",
+        "lto": true,
+        "sections": {
+          ".text": 1534,
+          ".data": 224,
+          ".bss": 20,
+          ".comment": 51,
+          ".riscv.attributes": 87
+        },
+        "flash_image_bytes": 1758,
+        "static_ram_bytes": 244,
+        "libgcc_sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+        "libc_sha256": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc",
+        "elf_sha256": "d24d4b7bad6110162dba4877de964e555800197ed43eb4fe44f9fa256662e2a0",
+        "stack_peak_bytes": null
+      }
+    ],
+    "unverified": [
+      "startup",
+      "IRQ synchronization",
+      "I2C",
+      "USB-PD",
+      "shared bus",
+      "timing",
+      "stack peak",
+      "heap peak",
+      "full-application fit"
+    ],
+    "compiler_version": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "inputs": {
+      "planning/core-redesign/p2-inputs.json": "dd07908dbb49fe08fed6816afbb256eb69a97b78b5b428356da4e2c26c9ad64c",
+      "tests/platform/core_redesign/logic_entry.cpp": "efca7681767cd3581e04f77a94aa7f72769ca1e300eaa05791216f8e2b2c813d",
+      "tests/platform/core_redesign/build_logic_controls.py": "e4580309fad7fb91e7adf1489a3a21432621b2d14a25e9f6dcc396c27dc2fa1a",
+      "tests/unit/core_redesign/r_workloads.hpp": "adbd07f21487487a449e9bd73523d8cc98546fe22f37b6400d8e591f1f595500",
+      "tests/unit/core_redesign/traces.json": "52c0178403ca1fb9d09605fac6f8ce8f4ea68699921c21ea658a658d2aa74bf8"
+    }
+  },
+  "unverified": [
+    "real IRQ synchronization",
+    "startup",
+    "shared bus integration",
+    "periodic measurement integration",
+    "I2C ACK/NACK",
+    "PD protocol",
+    "actual clock",
+    "session generation wrap",
+    "timing",
+    "stack peak",
+    "application fit"
+  ]
+}

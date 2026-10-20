@@ -6,8 +6,8 @@
 高位モデルを使う局面は、全体像の設計、実験条件の設計、結果に基づく最終仕様の選択、重大な前提変更の再設計である。
 通常の実験・実装・検査は、作業範囲を定義して別モデル・別セッションへ渡す。モデルは利用者が手動で切り替える。
 
-更新日：2026-10-20。P2 の EXP-00 を完了。次は通常モデルで対象・入力の固定と対照実装の準備。
-P0〜P1 の設計と最初のリンク実験を終えた段階で、実行方式の採用・本実装はこれから。
+更新日：2026-10-20。P2 の EXP-00 と P2-PREP-01（対象・host対照ロジック）を完了。
+P2は進行中。次はX0の共有bus・周期処理を結合した対照を準備する。実行方式の採用・本実装はこれから。
 
 ## 前提と検証対象
 
@@ -265,7 +265,7 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 | リンク費用の小実験 | EXP-00で18構成×2runを再現・照合。[結果](planning/core-redesign/tasks/EXP-00/result.ja.md)。実コアの費用・実行モデルの選択は未確定 |
 | P0 理想像 | DESIGN-01 完了。全体設計案 P0-1 と利用例を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-01/result.ja.md) |
 | P1 比較条件と実験設計 | DESIGN-02 完了。P1-1 と EXP-00 依頼を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-02/result.ja.md) |
-| P2 再現基盤と対照準備 | 進行中。EXP-00完了。対象・物理資料・用途入力の固定とK0／X0の対照準備が残る |
+| P2 再現基盤と対照準備 | 進行中。EXP-00、P2-PREP-01完了。[固定対象とhostロジック](planning/core-redesign/p2-preparation.ja.md)。bus・周期の結合、起動・実周辺backendが残る |
 | P3〜P7 | 未着手。個別の既存実装を各フェーズの完了と数えない |
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
@@ -290,6 +290,10 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 [結果と再実行手順](planning/core-redesign/tasks/EXP-00/result.ja.md)に36 build結果と入力・tool・証拠を記録した。
 実機操作は行っていない。実行モデルの採用は決めていない。
 
-次は通常モデルで [P2 の対象・入力固定](planning/core-redesign/experiment-tasks.ja.md#p2-で先に固定する入力)を進める。
-正確なpart・一次資料・tool・容量・renderer・traceと設備不足を記録し、K0／X0のhost参照モデルとR対照を準備する。
+**P2-PREP-01：対象とhost対照ロジックの準備**は完了。
+[結果](planning/core-redesign/tasks/P2-PREP-01/result.ja.md)に、一次資料、25固定trace、51件のhost検査、4構成のlogic linkを記録した。
+K0のwire受理と実IRQ共有、X0の実PD処理、clock初期化は未検証であり、P2全体の完了には数えない。
+
+次は通常モデルで [P2-PREP-02：X0共有busと周期処理の結合](planning/core-redesign/tasks/P2-PREP-02/brief.ja.md)を進める。
+最小起動と実周辺backend、未確認の物理条件は別の準備単位として残す。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。
