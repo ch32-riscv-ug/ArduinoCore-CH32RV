@@ -323,5 +323,6 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [休止準備・回収・時刻の結合](planning/core-redesign/tasks/EXP-06/v006-sleep-flow-result.ja.md)ではnative64件・ABI36構成を記録した。明示一覧／registry2／4の同条件、部分復帰・失敗・未登録資源の反例を比較し、実V006の待機・再設定・電流とは分けた。
 [休止のtimer依存除去と故障](planning/core-redesign/tasks/EXP-06/v006-sleep-features-result.ja.md)ではnative82＋156件・ABI64構成を記録した。timer40 Bと参照4 Bを構成から除去し、6段階の失敗とclock喪失をfake adapterで検査した。実driverの故障・IRQ共有は未検証。
 [生きたleaseと休止準備失敗](planning/core-redesign/tasks/EXP-06/v006-sleep-lease-fault-result.ja.md)では追加432件と全traceを記録した。最後の明示回収まで所有と受理閉鎖を保つ条件を確認し、未回収をFault／通常待ちのどちらで公開するかはP5へ渡す。runtimeとABI入力は変更していない。
-次は用途変更課題、論理時刻の実source接続、I2Cのclock／pin／所有結合、取得bufferと休止のadapter契約、共有・保存・系列を進め、P4まで通常の実装・実験を継続する。
+[表示交換と独立renderer](planning/core-redesign/tasks/EXP-05/display-result.ja.md)では4 mock形式×R/A/B/Cをhost72件・ABI164構成で比較した。独立部品は実行器・busに依存せず、12,288 B frameのprofileも64 B chunkで生成する。実controller・速度・IRQ共有は未検証。
+次は実controller・独立部品のdriver接続、論理時刻の実source接続、I2Cのclock／pin／所有結合、取得bufferと休止のadapter契約、共有・保存・系列を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

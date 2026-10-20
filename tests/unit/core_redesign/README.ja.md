@@ -445,3 +445,19 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 native証拠は`EXP06_SLEEP_FAULT_EVIDENCE=新しい出力先`で保存する。
 [結果・所有の境界](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-lease-fault-result.ja.md)と
 [順序を予測する課題](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-lease-fault-exercise.ja.md)を参照する。
+
+## EXP-05 表示交換と独立renderer
+
+`display_parts.hpp`は`stdint.h`だけを使う限定rendererとframe状態。`x0_display.hpp`が共有bus・PPS・計測・タッチへ接続する。
+4 mock形式×R/A/B/Cの16構成を全画像・transaction台帳へ照合する。実controllerのwire protocolは含まない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_x0_display.py tests/unit/test_workspace.py \
+  -o junit_family=xunit1
+```
+
+`EXP05_DISPLAY_EVIDENCE=新しい出力先`でapp／library単独のbinaryと入力hashを保存する。
+部品単独は隔離directoryで`-nostdinc++`を使いbuildする。
+[共有busと費用](../../../planning/core-redesign/tasks/EXP-05/display-result.ja.md)、
+[交換する層の課題](../../../planning/core-redesign/tasks/EXP-05/display-exercise.ja.md)を参照する。

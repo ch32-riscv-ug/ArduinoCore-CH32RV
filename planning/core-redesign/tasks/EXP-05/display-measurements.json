@@ -1,0 +1,257 @@
+{
+  "date": "2026-10-21",
+  "status": "passed",
+  "implementation_commit": "c968c85",
+  "scope": "Mock display byte streams, independent bounded renderer and serial X0 composition. No core/USB edits, real controller, I2C/SPI/PD, startup, IRQ safety, physical timing, stack peak or API adoption.",
+  "tests": {
+    "display": 72,
+    "workspace": 3,
+    "total": 75
+  },
+  "native": {
+    "builds": [
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-std=c++17",
+          "-O0",
+          "-g1",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fsanitize=address,undefined",
+          "-fno-sanitize-recover=all",
+          "-fno-omit-frame-pointer",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/x0_display_driver.cpp",
+          "-o",
+          "/tmp/pytest-of-mt/pytest-1126/x0-display0/app"
+        ],
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-std=c++17",
+          "-O0",
+          "-g1",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fsanitize=address,undefined",
+          "-fno-sanitize-recover=all",
+          "-fno-omit-frame-pointer",
+          "-nostdinc++",
+          "/tmp/pytest-of-mt/pytest-1126/x0-display0/isolated/display_library_driver.cpp",
+          "-o",
+          "/tmp/pytest-of-mt/pytest-1126/x0-display0/library"
+        ],
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "binaries": {
+      "app": "dabf26cbc32c9747107da59ea6bf35aa35a101537b94b9dabf2670adb0beef5b",
+      "library": "52f06896465ee7c2308aecd3f70e937ac8c680625b1fcee57447a1655d78f061"
+    },
+    "inputs": {
+      "tests/unit/core_redesign/display_parts.hpp": "42e411ab14852b813b0621e38b08822d6b93a06d7404b9d576f5d56ee1fd02b7",
+      "tests/unit/core_redesign/x0_display.hpp": "02a41b2c1a25ea6047f77750640d62e5ae85ee220602145e840d8fef16c8e012",
+      "tests/unit/core_redesign/x0_display_driver.cpp": "faa14b307a000f5879eeccf32a3b0578b9dd0bb3a97f3d05a9603e9067def42e",
+      "tests/unit/core_redesign/display_library_driver.cpp": "a02aa12c2db6d2f340ffe8cccac5dcbbc2bf5bc7b4c278686d5e7380e16ef374",
+      "tests/unit/core_redesign/display_oracle.py": "b1a39edb82d838f21df2da54928f4d03bce3c1662231e52f92937e7e3571ac58",
+      "tests/unit/core_redesign/test_x0_display.py": "432aa7f325da22d7367c003de9391bd5e646f9dde937ab094cf6be51e805c636",
+      "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+      "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+      "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+      "tests/unit/core_redesign/app_oracle.py": "2e1ae9824dd34c70f1774382efed6fb285012af9d952d6c4c818c438b27de332",
+      "tests/unit/core_redesign/oracle.py": "67f6f7cc913d20d8bc5de079e86244aea1f925ab0fca3bc8bf9aae8ba6ef3c6c",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+      "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+      "planning/core-redesign/display-inputs.json": "43b6f4851bac0d904b23a364a7882c5fbdcc0815cbe93b7116cbba71fcd33a66"
+    }
+  },
+  "independent_library": {
+    "isolated_directory": true,
+    "nostdincpp": true,
+    "header_dependency": "stdint.h only",
+    "framework_symbols_absent_in_used_library_builds": 16
+  },
+  "abi": {
+    "builds": 164,
+    "unused_zero_additional_image_and_ram": 80,
+    "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "tools": {
+      "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+      "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+      "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+      "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+      "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+      "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+      "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+      "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+    },
+    "libgcc": {
+      "CH32V003F4P6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/rv32ec/ilp32e/libgcc.a",
+        "sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f"
+      },
+      "CH32X035C8T6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+        "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+      }
+    },
+    "support_lto": false,
+    "inputs": {
+      "tests/platform/core_redesign/measure_display_parts.py": "be4fd30d72493b8842a7e8849f0a07a9acb30637d9d8be38487703cbcd57718f",
+      "planning/core-redesign/display-inputs.json": "43b6f4851bac0d904b23a364a7882c5fbdcc0815cbe93b7116cbba71fcd33a66",
+      "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+      "tests/unit/core_redesign/display_parts.hpp": "42e411ab14852b813b0621e38b08822d6b93a06d7404b9d576f5d56ee1fd02b7",
+      "tests/unit/core_redesign/x0_display.hpp": "02a41b2c1a25ea6047f77750640d62e5ae85ee220602145e840d8fef16c8e012",
+      "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+      "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+      "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+      "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+      "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/platform/core_redesign/display_entry.cpp": "8e28b63f9e11905e95ec51e30d733e834bc3150b51bc151e8c2b10f421699a8a",
+      "tests/platform/core_redesign/sleep_flow_support.cpp": "264378d07dfb98d2d4a602dad6ba71635c7c62b30286c85bc3dbe318778f8956",
+      "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
+    },
+    "matrix_sha256": "22dd199be11cbb54ab482fdfff13c0d5f3ad989a53abdc9e60096ae7732762b7",
+    "screen_object_bytes": [
+      116,
+      116,
+      100,
+      148
+    ],
+    "harness_object_bytes": 68
+  },
+  "workload": {
+    "status": "passed",
+    "scope": "abstract wire 1+ceil(bytes/16), explicit opportunity each tick, no physical time or controller",
+    "binary_sha256": "dabf26cbc32c9747107da59ea6bf35aa35a101537b94b9dabf2670adb0beef5b",
+    "script_sha256": "adad2257261b6420a078afee46fef7546f8d47a63a748375fea1ec0f23286225",
+    "commands_sha256": "cb0a75c5c973c0057551bf92029576852a15e20eab81cd0dda9015c7b2255818",
+    "results": [
+      {
+        "panel": "mono64-32",
+        "bytes_per_frame": 1024,
+        "chunk_capacity": 32,
+        "tail_bytes": 32,
+        "display_transactions": 64,
+        "total_transactions": 244,
+        "frame_finished_ticks": [
+          112,
+          220
+        ],
+        "pd_confirmed_tick": 5,
+        "measurement_max_delay_ticks": 5,
+        "touch_max_delay_ticks": 7,
+        "displayed_hash": 2915894629,
+        "frames": 2,
+        "measurement_done": 30,
+        "touch_done": 150,
+        "final_revision": 3,
+        "displayed_revision": 3,
+        "equal_candidate_outputs": true,
+        "stdout_sha256": "2bd990ef81a46fe061da48d3ca8bc2a554813301f94dd152cf3621cdadc6bd90"
+      },
+      {
+        "panel": "compact32-31",
+        "bytes_per_frame": 512,
+        "chunk_capacity": 31,
+        "tail_bytes": 16,
+        "display_transactions": 34,
+        "total_transactions": 214,
+        "frame_finished_ticks": [
+          58,
+          158
+        ],
+        "pd_confirmed_tick": 5,
+        "measurement_max_delay_ticks": 5,
+        "touch_max_delay_ticks": 7,
+        "displayed_hash": 157779725,
+        "frames": 2,
+        "measurement_done": 30,
+        "touch_done": 150,
+        "final_revision": 3,
+        "displayed_revision": 3,
+        "equal_candidate_outputs": true,
+        "stdout_sha256": "162c5698256a981f8299de16f3a92c985ccd613684f8f71305d740c6d0e094a0"
+      },
+      {
+        "panel": "mono64-16",
+        "bytes_per_frame": 1024,
+        "chunk_capacity": 16,
+        "tail_bytes": 16,
+        "display_transactions": 128,
+        "total_transactions": 308,
+        "frame_finished_ticks": [
+          148,
+          292
+        ],
+        "pd_confirmed_tick": 5,
+        "measurement_max_delay_ticks": 4,
+        "touch_max_delay_ticks": 6,
+        "displayed_hash": 2915894629,
+        "frames": 2,
+        "measurement_done": 30,
+        "touch_done": 150,
+        "final_revision": 4,
+        "displayed_revision": 4,
+        "equal_candidate_outputs": true,
+        "stdout_sha256": "d306250844255594fa17bfd905c0188be4757b8ecb87e84161923b2c3e8e1710"
+      },
+      {
+        "panel": "rgb96-64",
+        "bytes_per_frame": 12288,
+        "chunk_capacity": 64,
+        "tail_bytes": 64,
+        "display_transactions": 384,
+        "total_transactions": 564,
+        "frame_finished_ticks": [
+          1092,
+          2182
+        ],
+        "pd_confirmed_tick": 5,
+        "measurement_max_delay_ticks": 7,
+        "touch_max_delay_ticks": 9,
+        "displayed_hash": 1989157064,
+        "frames": 2,
+        "measurement_done": 30,
+        "touch_done": 150,
+        "final_revision": 4,
+        "displayed_revision": 4,
+        "equal_candidate_outputs": true,
+        "stdout_sha256": "5179827b7d8927ffa36e399090fc148fa4db0f2c069152113d215d694154ee5e"
+      }
+    ]
+  },
+  "artifacts": {
+    "native": "work/exp05-display-host-20261021-r3",
+    "abi": "work/exp05-display-abi-20261021-r2",
+    "analysis": "work/exp05-display-analysis-20261021",
+    "initial_native_failure": "work/exp05-display-host-20261021",
+    "initial_native_failure_reason": "Evidence input list named nonexistent event_parts.hpp; corrected the list to actual transitive headers before tests ran successfully.",
+    "initial_abi_failure": "work/exp05-display-abi-20261021",
+    "initial_abi_failure_reason": "Probe assigned void PPS completion result; corrected probe to call completion without assignment.",
+    "archive": "work/exp05-display-20261021-evidence-r2.tar.gz",
+    "archive_bytes": 6375213,
+    "archive_sha256": "d3387910f3ee792ec3f9d81e22ab6f5613d8dd4b7ea3ee98472c3885728b0c32",
+    "preliminary_native": "work/exp05-display-host-20261021-r2",
+    "workload_binary_note": "Canonical workload used the retained r2 app; its SHA256 is identical to the final r3 app. The extension added input-burst tests, not C++ behavior."
+  },
+  "reproduce": {
+    "native": "EXP05_DISPLAY_EVIDENCE=work/NEW-native uv run --project tests --locked pytest -c tests/pyproject.toml tests/unit/core_redesign/test_x0_display.py tests/unit/test_workspace.py -q -o junit_family=xunit1 --junitxml=work/NEW-junit.xml",
+    "abi": "python3 tests/platform/core_redesign/measure_display_parts.py --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ --out work/NEW-abi"
+  },
+  "validation_commit": "e80ddd5"
+}

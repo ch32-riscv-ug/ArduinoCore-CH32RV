@@ -229,3 +229,16 @@ python3 tests/platform/core_redesign/measure_sleep_features.py \
 同じソースで3一覧方式×timerあり／なし、対照、未使用条件の64 ELFを測る。
 timerなしではobjectとpointerの除去を確認する。個々の機能除去と未使用構成全体の除去を区別する。
 [差の条件と全行](../../planning/core-redesign/tasks/EXP-06/v006-sleep-features-result.ja.md)を参照する。
+
+## Core再設計：表示交換とlibrary単独のABI
+
+```sh
+python3 tests/platform/core_redesign/measure_display_parts.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp05-display-NEW
+```
+
+4 mock形式×4結合候補、library単独、各未使用条件の164 ELFをV003／X035・LTO off／onで測る。
+library単独は実行器・queue・busのheaderを含めず、関連symbolが残らないことも確認した。
+描画CPU時間・実wire・IRQ込みstack peak・起動を測るものではない。
+[全行と条件](../../planning/core-redesign/tasks/EXP-05/display-result.ja.md)を参照する。
