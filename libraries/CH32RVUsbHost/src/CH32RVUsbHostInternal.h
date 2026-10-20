@@ -59,6 +59,9 @@ uint16_t ch32rv_usb_host_config_descriptor(uint8_t daddr);
 /* The device record, or nullptr if `daddr` is not a known device. */
 const CH32RVUsbHostDeviceInfo *ch32rv_usb_host_device(uint8_t daddr);
 bool ch32rv_usb_host_connected(uint8_t daddr);
+/* Its device descriptor (18 bytes), from enumeration on: the groups'
+ * open() can tell a USB serial chip by VID and PID. */
+const uint8_t *ch32rv_usb_host_device_descriptor(uint8_t daddr);
 
 /* A synchronous control transfer with a timeout; sets host.lastError(). */
 bool ch32rv_usb_host_control(CH32RVUsbHost &host, uint8_t daddr, uint8_t requestType, uint8_t request,

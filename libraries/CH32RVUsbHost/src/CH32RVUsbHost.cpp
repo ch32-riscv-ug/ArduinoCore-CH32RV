@@ -263,6 +263,11 @@ bool ch32rv_usb_host_connected(uint8_t daddr)
     return hcd && daddr && daddr <= CH32RV_USB_HOST_DEVICES && devs[daddr].state == DEV_MOUNTED;
 }
 
+const uint8_t *ch32rv_usb_host_device_descriptor(uint8_t daddr)
+{
+    return daddr && daddr <= CH32RV_USB_HOST_DEVICES && devs[daddr].state != DEV_FREE ? devs[daddr].desc : nullptr;
+}
+
 bool ch32rv_usb_host_ep_open(uint8_t daddr, const uint8_t *d)
 {
     if (!hcd || daddr > CH32RV_USB_HOST_DEVICES || devs[daddr].state == DEV_FREE || d[0] < 7 || d[1] != 5) {
