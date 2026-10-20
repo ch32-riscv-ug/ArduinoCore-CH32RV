@@ -63,7 +63,9 @@
       "tests/platform/core_redesign/acquisition_support.cpp": "264378d07dfb98d2d4a602dad6ba71635c7c62b30286c85bc3dbe318778f8956",
       "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
     },
-    "matrix_sha256": "875bd40d278e87e2373d0c652b7666f8256887b6f5768a5176db313df89ee748"
+    "matrix_sha256": "66f054e0d1cb57b8bcb78d63181fd08f6abb09fc83e620cb667d26733bbc63ae",
+    "raw_matrix_sha256": "875bd40d278e87e2373d0c652b7666f8256887b6f5768a5176db313df89ee748",
+    "matrix_note": "Committed CSV uses LF; raw analysis CSV in the evidence archive uses csv.DictWriter default CRLF. Numeric rows are identical."
   },
   "workload": {
     "scope": "abstract serial arrivals; not physical ADC rate or hardware stop evidence",
