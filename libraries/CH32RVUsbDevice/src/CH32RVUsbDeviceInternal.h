@@ -39,12 +39,12 @@ void ch32rv_usb_platform_use(void);
  * never slower than asked. */
 static inline uint16_t ch32rv_usb_bulk_size(CH32RVUsbSpeed speed)
 {
-    return speed == CH32RVUsbSpeed::Super ? 1024 : speed == CH32RVUsbSpeed::High ? 512 : 64;
+    return ch32rv_usb_at(speed, CH32RVUsbSpeed::Super) ? 1024 : ch32rv_usb_at(speed, CH32RVUsbSpeed::High) ? 512 : 64;
 }
 
 static inline uint8_t ch32rv_usb_interval(CH32RVUsbSpeed speed, uint8_t ms)
 {
-    if (speed == CH32RVUsbSpeed::Full) {
+    if (!ch32rv_usb_series_can(CH32RVUsbSpeed::High) || speed == CH32RVUsbSpeed::Full) {
         return ms ? ms : 1;
     }
     /* b gives 2^(b-4) ms: the largest that is not longer than ms. */

@@ -51,8 +51,9 @@ struct CH32RVUsbDcd {
 
 static inline bool ch32rv_usb_dcd_can(const CH32RVUsbDcd &dcd, CH32RVUsbSpeed speed)
 {
-    return (dcd.speeds >> (uint8_t)speed) & 1u;
+    return ch32rv_usb_series_can(speed) && ((dcd.speeds >> (uint8_t)speed) & 1u);
 }
+
 
 /* From a driver's interrupt. */
 extern "C" {

@@ -143,7 +143,7 @@ uint16_t CH32RVUsbDevice::buildConfiguration(uint8_t *out, uint16_t room, CH32RV
     /* SuperSpeed: an endpoint companion after every endpoint (USB 3.2 9.6.7):
      * no bursts, no streams; a periodic endpoint moves one packet per
      * interval. */
-    if (speed == CH32RVUsbSpeed::Super) {
+    if (ch32rv_usb_at(speed, CH32RVUsbSpeed::Super)) {
         for (uint16_t at = 9; at + 1 < len && out[at]; at = (uint16_t)(at + out[at])) {
             if (out[at + 1] != 5) {
                 continue;

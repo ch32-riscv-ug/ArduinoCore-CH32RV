@@ -493,7 +493,7 @@ void CH32RVUsbAudioFunction::usbReset()
 /* The FIFOs: four nominal packets of this speed's, within what fits. */
 void CH32RVUsbAudioFunction::usbConfigured(CH32RVUsbSpeed speed)
 {
-    _highSpeed = speed != CH32RVUsbSpeed::Full;
+    _highSpeed = ch32rv_usb_series_can(CH32RVUsbSpeed::High) && speed != CH32RVUsbSpeed::Full;
     _rxPacketSize = stream(CH32RVUsbAudioDirection::Playback)
                         ? packetSize(_streams[0].format, CH32RVUsbAudioDirection::Playback, _highSpeed)
                         : 0;

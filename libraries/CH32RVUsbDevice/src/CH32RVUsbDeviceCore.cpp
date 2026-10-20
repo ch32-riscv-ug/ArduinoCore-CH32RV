@@ -238,7 +238,7 @@ void Core::reset_state()
     remote_wakeup = false;
     ss_features = 0;
     speed = dcd->speed();
-    ep0_mps = speed == CH32RVUsbSpeed::Super ? 512 : 64;
+    ep0_mps = ch32rv_usb_at(speed, CH32RVUsbSpeed::Super) ? 512 : 64;
     build_device_descriptor(device->_config);
 }
 
@@ -250,7 +250,7 @@ static void build_device_descriptor(const CH32RVUsbDeviceConfig &c)
      * MIDI, audio and video are interfaces bound together. */
     uint16_t bos_length;
     bos(&bos_length);
-    const bool ss = Core::speed == CH32RVUsbSpeed::Super;
+    const bool ss = ch32rv_usb_at(Core::speed, CH32RVUsbSpeed::Super);
     const uint16_t bcd = ss ? 0x0320 : bos_length ? 0x0210 : 0x0200;
     const uint8_t d[18] = {18, 1, (uint8_t)bcd, (uint8_t)(bcd >> 8), 0xEF, 0x02, 0x01, (uint8_t)(ss ? 9 : 64),
                            (uint8_t)c.vid, (uint8_t)(c.vid >> 8), (uint8_t)c.pid, (uint8_t)(c.pid >> 8),
@@ -321,10 +321,10 @@ bool Core::get_descriptor(const CH32RVUsbSetup &s)
         /* Only a high-speed capable device running at full or high speed
          * describes the other one (USB 2.0 9.6.2, 9.6.4). */
         const bool other = (s.wValue >> 8) == 7;
-        if (other && (!ch32rv_usb_dcd_can(*dcd, CH32RVUsbSpeed::High) || speed == CH32RVUsbSpeed::Super)) {
+        if (other && (!ch32rv_usb_dcd_can(*dcd, CH32RVUsbSpeed::High) || ch32rv_usb_at(speed, CH32RVUsbSpeed::Super))) {
             return false;
         }
-        const CH32RVUsbSpeed as = !other ? speed : speed == CH32RVUsbSpeed::High ? CH32RVUsbSpeed::Full
+        const CH32RVUsbSpeed as = !other ? speed : ch32rv_usb_at(speed, CH32RVUsbSpeed::High) ? CH32RVUsbSpeed::Full
                                                                                  : CH32RVUsbSpeed::High;
         const uint16_t n = device->buildConfiguration(desc_configuration, sizeof desc_configuration, as,
                                                       (uint8_t)(s.wValue >> 8));
@@ -335,7 +335,7 @@ bool Core::get_descriptor(const CH32RVUsbSetup &s)
         return n && device->controlIn(desc_string, n);
     }
     case 6:                                              /* DEVICE_QUALIFIER: high-speed capable only */
-        if (!ch32rv_usb_dcd_can(*dcd, CH32RVUsbSpeed::High) || speed == CH32RVUsbSpeed::Super) {
+        if (!ch32rv_usb_dcd_can(*dcd, CH32RVUsbSpeed::High) || ch32rv_usb_at(speed, CH32RVUsbSpeed::Super)) {
             return false;
         } else {
             static uint8_t q[10];
@@ -380,20 +380,20 @@ bool Core::standard(const CH32RVUsbSetup &s)
             return device->controlIn(reply, 2);
         case 1:                                          /* CLEAR_FEATURE */
         case 3:                                          /* SET_FEATURE */
-            if (s.wValue == 1 && speed != CH32RVUsbSpeed::Super) {   /* DEVICE_REMOTE_WAKEUP */
+            if (s.wValue == 1 && !ch32rv_usb_at(speed, CH32RVUsbSpeed::Super)) {   /* DEVICE_REMOTE_WAKEUP */
                 remote_wakeup = s.bRequest == 3;
                 return device->controlStatus();
             }
-            if (s.wValue >= 48 && s.wValue <= 50 && speed == CH32RVUsbSpeed::Super) {   /* U1, U2, LTM */
+            if (s.wValue >= 48 && s.wValue <= 50 && ch32rv_usb_at(speed, CH32RVUsbSpeed::Super)) {   /* U1, U2, LTM */
                 const uint8_t bit = (uint8_t)(4u << (s.wValue - 48));
                 ss_features = (uint8_t)(s.bRequest == 3 ? ss_features | bit : ss_features & ~bit);
                 return device->controlStatus();
             }
             return false;
         case 0x30:                                       /* SET_SEL (SuperSpeed) */
-            return speed == CH32RVUsbSpeed::Super && device->controlOut(sel, sizeof sel);
+            return ch32rv_usb_at(speed, CH32RVUsbSpeed::Super) && device->controlOut(sel, sizeof sel);
         case 0x31:                                       /* SET_ISOCH_DELAY (SuperSpeed) */
-            return speed == CH32RVUsbSpeed::Super && device->controlStatus();
+            return ch32rv_usb_at(speed, CH32RVUsbSpeed::Super) && device->controlStatus();
         }
         return false;
     }
@@ -409,7 +409,7 @@ bool Core::standard(const CH32RVUsbSetup &s)
             return device->controlIn(reply, 2);
         case 1:                                          /* CLEAR_FEATURE */
         case 3:                                          /* SET_FEATURE: FUNCTION_SUSPEND (SuperSpeed) */
-            if (s.wValue != 0 || speed != CH32RVUsbSpeed::Super) {
+            if (s.wValue != 0 || !ch32rv_usb_at(speed, CH32RVUsbSpeed::Super)) {
                 return false;
             }
             return device->controlStatus();

@@ -172,7 +172,7 @@ uint8_t CH32RVUsbAudioFunction::physicalTerminalId(CH32RVUsbAudioDirection d) co
 uint16_t CH32RVUsbAudioFunction::writeDescriptor(uint8_t *dst, uint16_t room, uint8_t itf, uint8_t *ep,
                                                  uint8_t str, CH32RVUsbSpeed speed) const
 {
-    const bool hs = speed != CH32RVUsbSpeed::Full;
+    const bool hs = ch32rv_usb_series_can(CH32RVUsbSpeed::High) && speed != CH32RVUsbSpeed::Full;
     if (!describable()) {
         return 0;
     }

@@ -196,19 +196,6 @@ enum class CH32RVUsbDeviceError : uint8_t {
     Busy,                 /* the controller is a USB host right now (CH32RVUsbHost) */
 };
 
-/* The largest bulk packet this series' controllers reach (full speed 64,
- * high speed 512, SuperSpeed 1024): what the classes' default buffers are
- * sized from. A property of the chip, not a setting. */
-#if defined(CH32RV_SERIES_CH32H417)
-#define CH32RV_USB_MAX_PACKET 1024
-#elif defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || \
-    defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || \
-    defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
-#define CH32RV_USB_MAX_PACKET 512
-#else
-#define CH32RV_USB_MAX_PACKET 64
-#endif
-
 #ifndef CH32RV_USB_MAX_FUNCTIONS
 #define CH32RV_USB_MAX_FUNCTIONS 6
 #endif

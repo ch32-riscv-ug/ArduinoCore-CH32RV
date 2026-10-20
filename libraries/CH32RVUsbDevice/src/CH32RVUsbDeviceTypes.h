@@ -301,9 +301,37 @@ enum class CH32RVUsbControlStage : uint8_t {
 };
 
 /* The bus speed the host chose, and what the descriptors are laid out for. */
+/* The largest bulk packet this series' controllers reach (full speed 64,
+ * high speed 512, SuperSpeed 1024): what the classes' default buffers are
+ * sized from. A property of the chip, not a setting. */
+#if defined(CH32RV_SERIES_CH32H417)
+#define CH32RV_USB_MAX_PACKET 1024
+#elif defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || \
+    defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || \
+    defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
+#define CH32RV_USB_MAX_PACKET 512
+#else
+#define CH32RV_USB_MAX_PACKET 64
+#endif
+
 enum class CH32RVUsbSpeed : uint8_t {
     Full,                         /* 12 Mbit/s: bulk 64, EP0 64 */
     High,                         /* 480 Mbit/s: bulk 512, intervals in microframes */
     Super,                        /* 5 Gbit/s and up: bulk 1024, EP0 512, endpoint companions */
 };
+
+/* Whether a speed can happen on this series at all: none of its controllers
+ * goes faster than CH32RV_USB_MAX_PACKET says. Constant, so the code for a
+ * speed the chip cannot reach drops out. */
+static constexpr bool ch32rv_usb_series_can(CH32RVUsbSpeed speed)
+{
+    return speed == CH32RVUsbSpeed::Full || (speed == CH32RVUsbSpeed::High && CH32RV_USB_MAX_PACKET >= 512) ||
+           (speed == CH32RVUsbSpeed::Super && CH32RV_USB_MAX_PACKET >= 1024);
+}
+
+/* `actual == speed`, known false at build time when the series cannot reach it. */
+static inline bool ch32rv_usb_at(CH32RVUsbSpeed actual, CH32RVUsbSpeed speed)
+{
+    return ch32rv_usb_series_can(speed) && actual == speed;
+}
 

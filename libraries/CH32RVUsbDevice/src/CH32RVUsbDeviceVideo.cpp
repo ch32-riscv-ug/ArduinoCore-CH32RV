@@ -179,7 +179,7 @@ uint16_t CH32RVUsbDeviceVideo::descriptorLength(bool highSpeed) const
 uint16_t video_descriptor(const CH32RVUsbDeviceFunction &self, uint8_t *dst, uint16_t room, uint8_t itf,
                           uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
-    const bool hs = speed != CH32RVUsbSpeed::Full;
+    const bool hs = ch32rv_usb_series_can(CH32RVUsbSpeed::High) && speed != CH32RVUsbSpeed::Full;
     CH32RVUsbDeviceVideo &v = const_cast<CH32RVUsbDeviceVideo &>(static_cast<const CH32RVUsbDeviceVideo &>(self));
     if (v.descriptorLength(hs) > room) {
         return 0;
@@ -526,7 +526,7 @@ void CH32RVUsbDeviceVideo::usbReset()
 
 void CH32RVUsbDeviceVideo::usbConfigured(CH32RVUsbSpeed speed)
 {
-    _highSpeed = speed != CH32RVUsbSpeed::Full;
+    _highSpeed = ch32rv_usb_series_can(CH32RVUsbSpeed::High) && speed != CH32RVUsbSpeed::Full;
     usbReset();
 }
 
