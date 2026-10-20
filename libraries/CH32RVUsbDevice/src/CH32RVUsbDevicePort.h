@@ -66,7 +66,7 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
     case CH32RVUsbController::FullSpeed:
         return &ch32rv_usb_dcd_usbfs_otg;
     case CH32RVUsbController::HighSpeed:
-        return &ch32rv_usb_dcd_usbhs_h41x;
+        return &ch32rv_usb_dcd_usbhs2;
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
     case CH32RVUsbController::Auto:
     case CH32RVUsbController::SuperSpeed:
@@ -100,6 +100,31 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
     if (controller == CH32RVUsbController::Auto || controller == CH32RVUsbController::FullSpeed) {
         return &ch32rv_usb_dcd_usbfs_otg;
     }
+#if defined(CH32RV_SERIES_CH32V205)
+    if (controller == CH32RVUsbController::HighSpeed) {
+        return &ch32rv_usb_dcd_usbhs2;                   /* needs HSE */
+    }
+#endif
+    return nullptr;
+}
+
+/* ======================================================= CH32X305 / X315, CH32V407 / V467
+ * The second-generation USBHS (CH32RVUsbDcdUsbhs2.cpp); V407 / V467 have two,
+ * USBHS1 by default and USBHS2 as HighSpeed2. X315's USBSS comes with its
+ * driver. */
+#elif defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || \
+    defined(CH32RV_SERIES_CH32V467)
+
+static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
+{
+    if (controller == CH32RVUsbController::Auto || controller == CH32RVUsbController::HighSpeed) {
+        return &ch32rv_usb_dcd_usbhs2;
+    }
+#if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
+    if (controller == CH32RVUsbController::HighSpeed2) {
+        return &ch32rv_usb_dcd_usbhs2_b;
+    }
+#endif
     return nullptr;
 }
 
