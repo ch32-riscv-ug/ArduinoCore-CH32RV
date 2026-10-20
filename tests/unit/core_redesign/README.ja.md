@@ -429,3 +429,19 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 
 native証拠を残す場合は`EXP06_SLEEP_FLOW_EVIDENCE=新しい出力先1`と`EXP06_SLEEP_FAULT_EVIDENCE=新しい出力先2`を指定する。
 binary、入力snapshotとhashを保存する。[能力差と費用](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-features-result.ja.md)を参照する。
+
+## EXP-06 生きたleaseと準備／中止の失敗
+
+`sleep_fault_driver.cpp lease ...`は、片方／両方の転送中にPrepare／Abortを失敗させる。
+終端だけでは回収されないこと、逆順回収、古いticketが次の要求を解放しないことを432条件で追加検査する。
+runtimeは変更せず、ABIの再測定件数にも加算しない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_sleep_faults.py tests/unit/test_workspace.py \
+  -o junit_family=xunit1
+```
+
+native証拠は`EXP06_SLEEP_FAULT_EVIDENCE=新しい出力先`で保存する。
+[結果・所有の境界](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-lease-fault-result.ja.md)と
+[順序を予測する課題](../../../planning/core-redesign/tasks/EXP-06/v006-sleep-lease-fault-exercise.ja.md)を参照する。

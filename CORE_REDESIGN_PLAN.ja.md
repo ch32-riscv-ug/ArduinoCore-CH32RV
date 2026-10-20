@@ -6,7 +6,7 @@
 高位モデルを使う局面は、全体像の設計、実験条件の設計、結果に基づく最終仕様の選択、重大な前提変更の再設計である。
 通常の実験・実装・検査は、作業範囲を定義して別モデル・別セッションへ渡す。モデルは利用者が手動で切り替える。
 
-更新日：2026-10-20。P2 の EXP-00、P2-PREP-01、P2-PREP-02（結合X0のhost対照）を完了。
+更新日：2026-10-21。P2 の EXP-00、P2-PREP-01、P2-PREP-02（結合X0のhost対照）を完了。
 P2は進行中。利用者指示に従い、P4までの通常モデルで実行できる作業を続ける。
 [実行状況](planning/core-redesign/execution-status.ja.md)で、未実施・実機待ち・レビュー待ちを区別する。
 
@@ -322,5 +322,6 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [V006休止の資料と待機境界](planning/core-redesign/tasks/EXP-06/v006-sleep-result.ja.md)では一次資料4 PDFとSDKを固定し、host54件・通知順序304通り・AWU30条件を記録した。休止用途のI/O／時刻結合・方式比較と実機復帰・電流は残す。
 [休止準備・回収・時刻の結合](planning/core-redesign/tasks/EXP-06/v006-sleep-flow-result.ja.md)ではnative64件・ABI36構成を記録した。明示一覧／registry2／4の同条件、部分復帰・失敗・未登録資源の反例を比較し、実V006の待機・再設定・電流とは分けた。
 [休止のtimer依存除去と故障](planning/core-redesign/tasks/EXP-06/v006-sleep-features-result.ja.md)ではnative82＋156件・ABI64構成を記録した。timer40 Bと参照4 Bを構成から除去し、6段階の失敗とclock喪失をfake adapterで検査した。実driverの故障・IRQ共有は未検証。
-次は論理時刻の実source接続、I2Cのclock／pin／所有結合、取得bufferと休止のadapter契約・能動I/Oと故障、用途変更課題、共有・保存・系列を進め、P4まで通常の実装・実験を継続する。
+[生きたleaseと休止準備失敗](planning/core-redesign/tasks/EXP-06/v006-sleep-lease-fault-result.ja.md)では追加432件と全traceを記録した。最後の明示回収まで所有と受理閉鎖を保つ条件を確認し、未回収をFault／通常待ちのどちらで公開するかはP5へ渡す。runtimeとABI入力は変更していない。
+次は用途変更課題、論理時刻の実source接続、I2Cのclock／pin／所有結合、取得bufferと休止のadapter契約、共有・保存・系列を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-20",
+  "status": "passed",
+  "implementation_commit": "2996e92",
+  "scope": "New host stimuli only. Runtime, core, USB and Flash implementation unchanged. Serial fake stop witnesses and post-action failures, not hardware quiescence, ISR safety, timing or new ABI measurements.",
+  "tests": {
+    "new_live_lease": 432,
+    "existing_stage_fault": 156,
+    "workspace": 3,
+    "total": 591
+  },
+  "native": {
+    "command": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-O0",
+      "-g1",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/sleep_fault_driver.cpp",
+      "-o",
+      "/tmp/pytest-of-mt/pytest-1117/sleep-faults0/control"
+    ],
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "binary_sha256": "74f25ce2f3bbc62956a7012e0e3cc5b409b3d2d1f000c100a0d620a628143183",
+    "stdout": "",
+    "stderr": "",
+    "inputs": {
+      "tests/unit/core_redesign/sleep_fault_driver.cpp": "d4e19db61d72a4676186e59e88a43f833835e3a8c2bb3b6489e764beb6cf3ce4",
+      "tests/unit/core_redesign/test_sleep_faults.py": "50a5a7e30823d9f27755debee2cd7dcd35002ead91e9a347b3be490908a762ea",
+      "tests/unit/core_redesign/sleep_coordinator.hpp": "669dc067aa1dcb9de67811f44a08642f7f2fe65566c35c309a85bf1633da6e9e",
+      "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "tests/unit/core_redesign/logical_time.hpp": "ae6eff038954114d4e3a2775d3d26825152caa213d81efbb2578caf7895e326c",
+      "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+      "planning/core-redesign/sleep-features-inputs.json": "e0ebcb79e9d3a832658796bb9ddcdd3f65bfb53e7d5db4f480f0ec27a73c8a67",
+      "planning/core-redesign/sleep-lease-fault-inputs.json": "63455be9e34fc6d6384529632aa97692770ea44b7b6555ed50d8bee6f9cf0b8d"
+    }
+  },
+  "analysis": {
+    "native_binary_sha256": "74f25ce2f3bbc62956a7012e0e3cc5b409b3d2d1f000c100a0d620a628143183",
+    "script_sha256": "60924f2f45dbc8c8e2a3370445b936737c1fd55c9340ee7239f1f02a28ecf497",
+    "replayed_cases": 432,
+    "equivalent_groups": 72,
+    "equivalence": "all six list/timer variants produce byte-identical observations within each group",
+    "matrix_sha256": "3a7e0163241fbc4a9101f4ed6586c3a654314b11dbdc2e45c0f985bfbe1c568d"
+  },
+  "abi_reference": {
+    "measurements": "planning/core-redesign/tasks/EXP-06/v006-sleep-features-measurements.json",
+    "sha256": "745e64bf6ecc4c84e6947d4ba7c42290f1dbed126b41eaa506fdfb8867db0d82",
+    "runtime_inputs_unchanged": {
+      "tests/unit/core_redesign/sleep_coordinator.hpp": "669dc067aa1dcb9de67811f44a08642f7f2fe65566c35c309a85bf1633da6e9e",
+      "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "tests/unit/core_redesign/logical_time.hpp": "ae6eff038954114d4e3a2775d3d26825152caa213d81efbb2578caf7895e326c",
+      "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+      "tests/platform/core_redesign/sleep_flow_entry.cpp": "02bcdd1abc5fc592ec5f681534d4afb4b1266e1ca0121e85a3826523d0cbf3ff"
+    },
+    "note": "No new ABI build. Five runtime/entry inputs match the prior 64-ELF unit; do not count the old ELF matrix as new measurement."
+  },
+  "artifacts": {
+    "native": "work/exp06-sleep-lease-fault-host-20261020",
+    "analysis": "work/exp06-sleep-lease-fault-analysis-20261020",
+    "archive": "work/exp06-sleep-lease-fault-20261020-evidence.tar.gz",
+    "archive_bytes": 323418,
+    "archive_sha256": "93f023861cf5e7753dc39b30699f1d9ab709183e4eb7554ef91630bc7b519204"
+  },
+  "reproduce": {
+    "native": "EXP06_SLEEP_FAULT_EVIDENCE=work/NEW-native uv run --project tests --locked pytest -c tests/pyproject.toml tests/unit/core_redesign/test_sleep_faults.py tests/unit/test_workspace.py -q -o junit_family=xunit1 --junitxml=work/NEW-junit.xml"
+  },
+  "recorded_on": "2026-10-21"
+}

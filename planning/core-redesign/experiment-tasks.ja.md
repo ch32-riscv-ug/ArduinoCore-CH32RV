@@ -156,7 +156,8 @@ host模型が通っても共有memoryの実動作を確認した扱いにしな�
 K0とX0はR/A/B/Cの必須比較。取得bufferとV006休止は境界確認用、H417は独立した拡張確認として扱う。
 [V006の資料と待機境界](tasks/EXP-06/v006-sleep-result.ja.md)と[回収・時刻・一覧の結合](tasks/EXP-06/v006-sleep-flow-result.ja.md)はhost／ABIで準備済み。
 実driverの停止・再設定、待機adapterと実機SLEEP-01は残る。
-[timer依存除去と段階失敗](tasks/EXP-06/v006-sleep-features-result.ja.md)は同じソースで追試した。能動I/Oと複合故障・実driverへの接続は別に残す。
+[timer依存除去と段階失敗](tasks/EXP-06/v006-sleep-features-result.ja.md)は同じソースで追試した。転送を持たない条件として、以下の追加分と証拠を区別する。
+[能動leaseとPrepare／Abort失敗](tasks/EXP-06/v006-sleep-lease-fault-result.ja.md)の432条件は追加済み。実driver・回収不能・IRQ共有の成立とは分ける。
 完成用途で追加状態・buffer・バスの待機が増えることも含めてB0／B1／B2を評価する。
 部品単体で最小だったものを組むだけで、完成用途も最小だと推測しない。
 
