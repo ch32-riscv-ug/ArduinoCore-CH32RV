@@ -664,13 +664,24 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
           切り替えを表す列もない。今は generate.py の FAMILY["CH32H417"]["h41x_clock"] で名前を足して
           clock_symbols.csv から引いている。行に入ったら FAMILY の側を消す。
       - V5F を使う形（タスク周りの入れ替えと合わせて）。
-      - HSADC（2026-10-21、scratch の HsAdc スケッチ）: 100 MHz（PLL_CLK / 4）で 20.0 Msps を SS で連続して
-        流せた（ホストが libusb の非同期転送で要求を並べれば、取りこぼし 0）。値の換算が合わない: PC0 を出力の
-        Low にすると 0 だが、High（3.3 V）でも 432 にしかならない。プルダウンの値はクロックで変わる
-        （サンプリング容量の充電）。既知の電圧（DAC など）を入れて確かめる。較正や基準の設定が要るかもしれない。
-      - GPIO のロジックキャプチャ（scratch の LogicCap）: TIM1 の更新で DMA1 がポート E の INDR を 16 ビットずつ
-        読む形で、10 MS/s まで規則正しく取れた（PE3 の PWM の周期が 76 / 77 サンプルに揃う）。設定を上げても
-        10〜12.5 MS/s で頭打ち。
+      - **VIO18 の電圧（2026-10-21）。** PA13〜PA15、PB0〜PB1、PB10〜PB14、PC0〜PC3、PC6〜PC12、PD0〜PD7、
+        PD9〜PD15、PE0〜PE1、PE7〜PE15、PF0〜PF5、PF11〜PF14 は VIO18 から給電される。評価ボードでは VIO18 が
+        VDDIO につながっておらず（R11 は未実装、P11 の 7-8 はジャンパなし）、内部の LDO の起動時の値（XO の
+        判定で 1.2 V、実測 1.36 V）で動くので、これらのピンの High は 3.3 V にならない。PWR_CTLR の
+        VIO_SW_CR（bit 9）と VSEL_VIO18（[12:10]、3 = 3.3 V）で 3.3 V にでき、PC0 / PC1 / PB0 の High は
+        3.31 V になった。コアで既定にするか（ボードによっては VIO18 に 1.8 V の部品がある）を決める。
+      - HSADC（scratch の HsAdc）: PLL_CLK / 4 = 100 MHz で 20.0 Msps を SS で連続して流せる（ホストが libusb の
+        非同期転送を並べれば取りこぼし 0）。VIO18 を 3.3 V にすれば、出力の High で 1022〜1023、12 ビットの ADC と
+        約 3 % 以内で一致する。手を離したピンは、サンプリング容量（1.1 pF）との電荷の分配で 1 µs ほどで落ちる。
+      - GPIO のロジックキャプチャ（scratch の LogicCap）: タイマーの要求で DMA が INDR を読む形は、1 回に
+        HCLK の 8 クロックかかり、要求が来ても処理中なら捨てられる。100 MHz で 12.5 MS/s まで、周期は正確で
+        連続。DMA1 / DMA2、書き込み先（共有 SRAM / DTCM）で変わらず、DTCM ではかえって遅い。M2M（タイマー
+        なし）は 5 クロック = 20 MS/s で、1 回取りのみ。間隔は DMA の速さで決まり、バスを取り合うと揺れる
+        （16 ビットで約 320 周期中 6 か所）。UHSIF はハンドシェイクのある並列バス（libUHSIF.a はバイナリ）で、
+        DVP は外部の画素クロックが要るので、配線なしのロジックアナライザには使えない。
+      - SS を挿したままの復旧: `ch32rv --connect-under-reset reset`（WCH-LinkE の RST → NRST）でリセットできる。
+        書き込みは失敗する（プローブの誤り 0x55）。止まったファームの調べ物には、同じ方法での読み書きが使える。
+      - QingKe V3F では `csrr mcycle` が例外になる（実験のスケッチで踏んだ）。
       - OEP の probe にする件。このコアの側で要るもの: Vendor の subclass / protocol の設定、`writeDirect` の
         ゼロコピー（USBSS は呼び出し側のバッファから DMA できる）、文脈を持てるコールバック、大きい
         バッファ、HID の 64 バイトを超える report と usage の設定。oep-probe-arduino の側（依頼する）:
