@@ -111,3 +111,19 @@ python3 tests/platform/core_redesign/build_minimal_runtime.py --suite i2c-master
 8／32／64 byteのraw・保護付きbufferと未使用構成をlinkする。
 clock・pin設定済み、周辺の排他的所有、IRQ-offを前提にした比較入口で、main以降や実通信は実行しない。
 [検証範囲・結果](../../planning/core-redesign/tasks/EXP-01/i2c-master-result.ja.md)を参照する。
+
+## Core再設計：保存領域の予約とimage
+
+```sh
+python3 tests/platform/core_redesign/check_flash_regions.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp04-flash-link
+
+python3 tests/platform/core_redesign/check_flash_region_faults.py \
+  --evidence work/exp04-flash-link --out work/exp04-flash-faults
+```
+
+独立linkerで予約0／1／2／4単位を生成し、ELF・bin・hexと想定link拒否を検査する。
+後段は保存したartifactを改変して、検査が破損を検出できるか確認する。
+製品linker・boards.txtを変更せず、uploadや実Flash操作も行わない。
+[結果と再実行条件](../../planning/core-redesign/tasks/EXP-04/region-result.ja.md)を参照する。

@@ -295,3 +295,18 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 
 [比較範囲と結果](../../../planning/core-redesign/tasks/EXP-01/i2c-master-result.ja.md)、
 [貸出と小分け処理の課題](../../../planning/core-redesign/tasks/EXP-01/i2c-loan-exercise.ja.md)を参照する。
+
+## EXP-04 Flash媒体と領域の模型
+
+`flash_model.py`は消去済みprogram単位へ一度だけ試みる条件と、指定bitの中断を扱う。
+`test_flash_regions.py`は物理粒度、予約・boot容量、整列、宣言されたupload消去範囲を検査する。
+実Flash操作や電断耐性の検証ではなく、保存形式を比較するための条件付きhost模型である。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_flash_regions.py tests/unit/core_redesign/test_flash_model.py \
+  tests/unit/test_workspace.py -o junit_family=xunit1
+```
+
+[比較条件と結果](../../../planning/core-redesign/tasks/EXP-04/region-result.ja.md)、
+[容量と保持の課題](../../../planning/core-redesign/tasks/EXP-04/region-exercise.ja.md)を参照する。
