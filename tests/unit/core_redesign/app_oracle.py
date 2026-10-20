@@ -10,7 +10,8 @@ PpsOracle, render_frame, fnv = _parts.PpsOracle, _parts.render_frame, _parts.fnv
 
 
 class ApplicationOracle:
-    def __init__(self):
+    def __init__(self, touch_period=50):
+        self.touch_period = touch_period  # Default preserves the historical PREP-02 profile.
         self.pd = PpsOracle()
         self.now = 0
         self.source = (5000, 1000)
@@ -86,10 +87,10 @@ class ApplicationOracle:
             self.measure_pending = True
             self.next_measure += 100 * deadlines
         if self.touch and self.now >= self.next_touch:
-            deadlines = (self.now - self.next_touch) // 50 + 1
+            deadlines = (self.now - self.next_touch) // self.touch_period + 1
             self.missed_touch += deadlines - 1 + int(self.touch_pending)
             self.touch_pending = True
-            self.next_touch += 50 * deadlines
+            self.next_touch += self.touch_period * deadlines
         if self.frame is None and self.revision != self.displayed_revision and self.now >= self.next_frame:
             self.frame = render_frame(*self.latest_view)
             self.frame_revision = self.revision
