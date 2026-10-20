@@ -1,0 +1,1376 @@
+{
+  "scope": "targeted event and I/O/timer model link-only; no physical protocol, startup, IRQ or cycle proof",
+  "status": "passed",
+  "results": [
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "431464e9ab48d367b658b53be3e2762d0057e8f6b6e545c7ce67a406e2a7e4ff"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-event",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "431464e9ab48d367b658b53be3e2762d0057e8f6b6e545c7ce67a406e2a7e4ff"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "unused-bridge",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "431464e9ab48d367b658b53be3e2762d0057e8f6b6e545c7ce67a406e2a7e4ff"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-1-mailbox1-quota4",
+      "flash_bytes": 1258,
+      "static_ram_bytes": 84,
+      "delta_flash": 1228,
+      "delta_ram": 60,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1258,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "fc2c41a616d07074ea821ddd930656b8919387a1b5fc17cef97e2cfa03fad404"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-1-mailbox4-quota4",
+      "flash_bytes": 1274,
+      "static_ram_bytes": 132,
+      "delta_flash": 1244,
+      "delta_ram": 108,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1274,
+        ".bss": 132,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "c51aaf500853a9ba201eaec2ea1ed5e4f74fab52b28351dc41e020c74dae90d7"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-1-mailbox8-quota4",
+      "flash_bytes": 1306,
+      "static_ram_bytes": 196,
+      "delta_flash": 1276,
+      "delta_ram": 172,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1306,
+        ".bss": 196,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "2b56d921d8ec88cef05a8bf4c8b340ce0bb3d13987d85621e831d37607b1911c"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-4-mailbox1-quota4",
+      "flash_bytes": 1598,
+      "static_ram_bytes": 240,
+      "delta_flash": 1568,
+      "delta_ram": 216,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1598,
+        ".bss": 240,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "2911d6471f65797dfb94137d3464288efb5a7ed8609fe1a2bc3cf55f79f726b2"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-4-mailbox4-quota4",
+      "flash_bytes": 1626,
+      "static_ram_bytes": 432,
+      "delta_flash": 1596,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1626,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "ab2ae81fc2cdaec84d3a6125695accad11f95e2c87c2b6956f28d8092c11bed2"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-4-mailbox8-quota4",
+      "flash_bytes": 1654,
+      "static_ram_bytes": 688,
+      "delta_flash": 1624,
+      "delta_ram": 664,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1654,
+        ".bss": 688,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "ffe572ef9d94cd8255e78c4753ad88c12871076d40d5096009d90ab3a04c4856"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-8-mailbox1-quota4",
+      "flash_bytes": 1606,
+      "static_ram_bytes": 448,
+      "delta_flash": 1576,
+      "delta_ram": 424,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1606,
+        ".bss": 448,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "a56dd6ec5f88e62c635b7af82dba7c0d33628c77dcfef15c08026de016bfa72e"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-8-mailbox4-quota4",
+      "flash_bytes": 1634,
+      "static_ram_bytes": 832,
+      "delta_flash": 1604,
+      "delta_ram": 808,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1634,
+        ".bss": 832,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "d4c6044140e7f6e8395d943dc3e177e2b67dface7977e68d8b297a1fd9a03283"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-8-mailbox8-quota4",
+      "flash_bytes": 1662,
+      "static_ram_bytes": 1344,
+      "delta_flash": 1632,
+      "delta_ram": 1320,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1662,
+        ".bss": 1344,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "07f2e31b2c465fbebba221371bd6345fd256a5e6ae96b30793143926e69841fb"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-4-mailbox4-delay-S",
+      "flash_bytes": 1634,
+      "static_ram_bytes": 432,
+      "delta_flash": 1604,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1634,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "f9a58d048ddd0550ff68003adfadb32d785a678dc8bbdfd0deb340567d511dad"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-4-mailbox4-delay-U",
+      "flash_bytes": 1662,
+      "static_ram_bytes": 432,
+      "delta_flash": 1632,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1662,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "773f5c491f719682539d2809d7adfea328c0d2997184304ab32f996909181f13"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-4-mailbox4-delay-M",
+      "flash_bytes": 1046,
+      "static_ram_bytes": 432,
+      "delta_flash": 1016,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1046,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "2544ead52854e894d8956c851e85e14bc8b7b54426428c8af3cd0a00b6e37371"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-4-mailbox4-quota1",
+      "flash_bytes": 1618,
+      "static_ram_bytes": 432,
+      "delta_flash": 1588,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1618,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "d399cb59a88b02eeaaf04f9d0ad8d7df20795f05287dabddc0a5c11d39b908b6"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "event-4-mailbox4-quota8",
+      "flash_bytes": 1626,
+      "static_ram_bytes": 432,
+      "delta_flash": 1596,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1626,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "3a95bf0d63ea7ce2ae02aca9384387d33bc7db9e561df0509ee32b40298a4681"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "bridge-1-mailbox1",
+      "flash_bytes": 2032,
+      "static_ram_bytes": 180,
+      "delta_flash": 2002,
+      "delta_ram": 156,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2032,
+        ".bss": 180,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "88e378889a9f719294a6c1ae727c7b224b9c16ca69e01d0a2c988dd240a5f759"
+    },
+    {
+      "arch": "rv32e",
+      "lto": false,
+      "case": "bridge-4-mailbox4",
+      "flash_bytes": 2444,
+      "static_ram_bytes": 528,
+      "delta_flash": 2414,
+      "delta_ram": 504,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2444,
+        ".bss": 528,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "be1f1e00802f20774f6ccd2a7b52f2e6f1b1e2f996931b2e9efcf0a1ff7ca027"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "13f8ad725ffacffe3c6166a16a7624c22fe003c3515cbd5e2123cbfe4eb76bb8"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-event",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "13f8ad725ffacffe3c6166a16a7624c22fe003c3515cbd5e2123cbfe4eb76bb8"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "unused-bridge",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "13f8ad725ffacffe3c6166a16a7624c22fe003c3515cbd5e2123cbfe4eb76bb8"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-1-mailbox1-quota4",
+      "flash_bytes": 1366,
+      "static_ram_bytes": 84,
+      "delta_flash": 1336,
+      "delta_ram": 60,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1366,
+        ".bss": 84,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "5ca90414395fa0c923c5efef031f624eee7c119486345d77acc7887a5fc3557d"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-1-mailbox4-quota4",
+      "flash_bytes": 1374,
+      "static_ram_bytes": 132,
+      "delta_flash": 1344,
+      "delta_ram": 108,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1374,
+        ".bss": 132,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "a3f842a6c4554dadf6a1bfe284e18370a3c821376a082c223d8aa4998a455470"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-1-mailbox8-quota4",
+      "flash_bytes": 1402,
+      "static_ram_bytes": 196,
+      "delta_flash": 1372,
+      "delta_ram": 172,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1402,
+        ".bss": 196,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "47c90be72ab979c40b71a320396360f73fc7e06a0728ea034f9490db2934e4c9"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-4-mailbox1-quota4",
+      "flash_bytes": 1590,
+      "static_ram_bytes": 240,
+      "delta_flash": 1560,
+      "delta_ram": 216,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1590,
+        ".bss": 240,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "afe1081f2bbc57be409e9097cd7dc1024635424fc1199f9a9ec8e8e307cd7d58"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-4-mailbox4-quota4",
+      "flash_bytes": 1602,
+      "static_ram_bytes": 432,
+      "delta_flash": 1572,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1602,
+        ".bss": 432,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "ae7418c86cf2410caac878b0a6ca5bf021dd07551c3504f6cf0362f7e55e22cf"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-4-mailbox8-quota4",
+      "flash_bytes": 1630,
+      "static_ram_bytes": 688,
+      "delta_flash": 1600,
+      "delta_ram": 664,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1630,
+        ".bss": 688,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "63eddce145ab310e44c198ccb7a83b96983a394a4925a1a001b20ce06eb7d323"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-8-mailbox1-quota4",
+      "flash_bytes": 1598,
+      "static_ram_bytes": 448,
+      "delta_flash": 1568,
+      "delta_ram": 424,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1598,
+        ".bss": 448,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "0d53dd647e9e7ae63cf4f1c902802a6c1c013bedef8efb53a590ba1bc9662baf"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-8-mailbox4-quota4",
+      "flash_bytes": 1610,
+      "static_ram_bytes": 832,
+      "delta_flash": 1580,
+      "delta_ram": 808,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1610,
+        ".bss": 832,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "a826b85cd37f800c03791741342d3fbd6ed953e4d9320d2b63811288b6f1810f"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-8-mailbox8-quota4",
+      "flash_bytes": 1638,
+      "static_ram_bytes": 1344,
+      "delta_flash": 1608,
+      "delta_ram": 1320,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1638,
+        ".bss": 1344,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "8416ac4106abf91a442a17f3237148db60e1df2146995ba6109c85d6134b7290"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-4-mailbox4-delay-S",
+      "flash_bytes": 1614,
+      "static_ram_bytes": 432,
+      "delta_flash": 1584,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1614,
+        ".bss": 432,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "d4eb96c6d13a03af9abf242ffce2537fcd2e6957ba42b00fe25d36d1d975029e"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-4-mailbox4-delay-U",
+      "flash_bytes": 1638,
+      "static_ram_bytes": 432,
+      "delta_flash": 1608,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1638,
+        ".bss": 432,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "086112fbb6d7081985b4c1c92f44229094456da91b5820c2eb9963992a8c5368"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-4-mailbox4-delay-M",
+      "flash_bytes": 1102,
+      "static_ram_bytes": 432,
+      "delta_flash": 1072,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1102,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 49
+      },
+      "elf_sha256": "9252339b05736504348cb86e51e530f61cbace353686d1edfa37d4cce7dc9f26"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-4-mailbox4-quota1",
+      "flash_bytes": 1598,
+      "static_ram_bytes": 432,
+      "delta_flash": 1568,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1598,
+        ".bss": 432,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "fa25aa8a21e9ea16af95dccf38b5d63c90ddf7113449f9c81eff6903db298837"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "event-4-mailbox4-quota8",
+      "flash_bytes": 1606,
+      "static_ram_bytes": 432,
+      "delta_flash": 1576,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1606,
+        ".bss": 432,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "40771aa76e1118af9b8e9389135592195d472b81491aa593a367806ceed76c08"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "bridge-1-mailbox1",
+      "flash_bytes": 1992,
+      "static_ram_bytes": 180,
+      "delta_flash": 1962,
+      "delta_ram": 156,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1992,
+        ".bss": 180,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "4be8193cbc9bf4b514e453a7c588425571f3e1794c0d58019da5868a6b55dad3"
+    },
+    {
+      "arch": "rv32e",
+      "lto": true,
+      "case": "bridge-4-mailbox4",
+      "flash_bytes": 2400,
+      "static_ram_bytes": 528,
+      "delta_flash": 2370,
+      "delta_ram": 504,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2400,
+        ".bss": 528,
+        ".riscv.attributes": 49,
+        ".comment": 51
+      },
+      "elf_sha256": "66c8bbbf65ad199e2111d59858a6dd0e155fc0375d5249ac74afbceb6c259e7f"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "fa4374e03385200dfe0d784619542da4b04744410ad55c77d47ec3347a2976b1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-event",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "fa4374e03385200dfe0d784619542da4b04744410ad55c77d47ec3347a2976b1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "unused-bridge",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "fa4374e03385200dfe0d784619542da4b04744410ad55c77d47ec3347a2976b1"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-1-mailbox1-quota4",
+      "flash_bytes": 1076,
+      "static_ram_bytes": 84,
+      "delta_flash": 1046,
+      "delta_ram": 60,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1076,
+        ".bss": 84,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "22aa4a941b987a2ff7f703811fe46b37bc58879d77ed7585e5f2c1ada05ec5cf"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-1-mailbox4-quota4",
+      "flash_bytes": 1098,
+      "static_ram_bytes": 132,
+      "delta_flash": 1068,
+      "delta_ram": 108,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1098,
+        ".bss": 132,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "493edb3e5515287363fa78ca28ac4aabb5a205fe26fd92134bf65d6aa6d93d92"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-1-mailbox8-quota4",
+      "flash_bytes": 1126,
+      "static_ram_bytes": 196,
+      "delta_flash": 1096,
+      "delta_ram": 172,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1126,
+        ".bss": 196,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "89e26ed4795822f433aa4c5f6b27ab31469240bb4a5e14c7fc778bc06897b367"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-4-mailbox1-quota4",
+      "flash_bytes": 1328,
+      "static_ram_bytes": 240,
+      "delta_flash": 1298,
+      "delta_ram": 216,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1328,
+        ".bss": 240,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "60c94a69602974f593863531103e4e4097e7b24b47a8f153bba473e6d27a3a4b"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-4-mailbox4-quota4",
+      "flash_bytes": 1360,
+      "static_ram_bytes": 432,
+      "delta_flash": 1330,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1360,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "d7417e08e3d3dabc7f41d05ecdff5cce69786add6b07e780fcb6b8207d01b9cf"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-4-mailbox8-quota4",
+      "flash_bytes": 1388,
+      "static_ram_bytes": 688,
+      "delta_flash": 1358,
+      "delta_ram": 664,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1388,
+        ".bss": 688,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "609615c051fd386bbde1c1901055b52f05e752992b19c520331063737140c09f"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-8-mailbox1-quota4",
+      "flash_bytes": 1358,
+      "static_ram_bytes": 448,
+      "delta_flash": 1328,
+      "delta_ram": 424,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1358,
+        ".bss": 448,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "725bf72b40500c203f90cb0f7fd6a3fc926acb2640017c41af0d7c64efa3cac3"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-8-mailbox4-quota4",
+      "flash_bytes": 1390,
+      "static_ram_bytes": 832,
+      "delta_flash": 1360,
+      "delta_ram": 808,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1390,
+        ".bss": 832,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "43c6470babec678714f1752d03eea3c8791dfb4e7c94ab93308f979de3b7fe76"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-8-mailbox8-quota4",
+      "flash_bytes": 1418,
+      "static_ram_bytes": 1344,
+      "delta_flash": 1388,
+      "delta_ram": 1320,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1418,
+        ".bss": 1344,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "f99f99f390a037d2b4b2c05a7d396dd8c7d7542e412d0cfc24672b500fe7389e"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-4-mailbox4-delay-S",
+      "flash_bytes": 1364,
+      "static_ram_bytes": 432,
+      "delta_flash": 1334,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1364,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "6b54ebcaa17a8d989b896ba67e29761c3ca7d744e5e36c615c0e8319504c8b00"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-4-mailbox4-delay-U",
+      "flash_bytes": 1382,
+      "static_ram_bytes": 432,
+      "delta_flash": 1352,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1382,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "140cb18bd8521ddac22f83ce4badd37349faabe54df23958b99fe0d7457aaa8e"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-4-mailbox4-delay-M",
+      "flash_bytes": 820,
+      "static_ram_bytes": 432,
+      "delta_flash": 790,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 820,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "a844bc8018dee96af1768264c4e88a4b566cc98d5dc72250707e9124e9956a25"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-4-mailbox4-quota1",
+      "flash_bytes": 1376,
+      "static_ram_bytes": 432,
+      "delta_flash": 1346,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1376,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "3c679638e617f10f0565aab402d53e2f01a86bffd2469341ca30fb5978b0acce"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "event-4-mailbox4-quota8",
+      "flash_bytes": 1364,
+      "static_ram_bytes": 432,
+      "delta_flash": 1334,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1364,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "bdce281fde791b6c64a3bd53cd343a5a9405979f85a8575e2811574eb96da578"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "bridge-1-mailbox1",
+      "flash_bytes": 1756,
+      "static_ram_bytes": 180,
+      "delta_flash": 1726,
+      "delta_ram": 156,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1756,
+        ".bss": 180,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "9dcc8cb29b9656f75065048e1f300cde472e42c10163bd8f37d5bfc2d9899273"
+    },
+    {
+      "arch": "rv32i",
+      "lto": false,
+      "case": "bridge-4-mailbox4",
+      "flash_bytes": 2012,
+      "static_ram_bytes": 528,
+      "delta_flash": 1982,
+      "delta_ram": 504,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 2012,
+        ".bss": 528,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "0d2ba1fbe1b1ecdbd8665544db413770966b21882b160e4835afb81e613d343c"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "baseline",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "ad0d9a914652c06392f15d72629e1a074db430d016c9e22e2de4318a5cac602b"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-event",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "ad0d9a914652c06392f15d72629e1a074db430d016c9e22e2de4318a5cac602b"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "unused-bridge",
+      "flash_bytes": 30,
+      "static_ram_bytes": 24,
+      "delta_flash": 0,
+      "delta_ram": 0,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 30,
+        ".bss": 24,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "ad0d9a914652c06392f15d72629e1a074db430d016c9e22e2de4318a5cac602b"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-1-mailbox1-quota4",
+      "flash_bytes": 1136,
+      "static_ram_bytes": 84,
+      "delta_flash": 1106,
+      "delta_ram": 60,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1136,
+        ".bss": 84,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "3cd99fd2ae3788ae704f5861f61d973e933c40b6efe3bdd874050ba6ceee7136"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-1-mailbox4-quota4",
+      "flash_bytes": 1166,
+      "static_ram_bytes": 132,
+      "delta_flash": 1136,
+      "delta_ram": 108,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1166,
+        ".bss": 132,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "667b82c23ec336e993e7235cd207dc539d61a906f7f19bfbbb0b4c0a77365b24"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-1-mailbox8-quota4",
+      "flash_bytes": 1194,
+      "static_ram_bytes": 196,
+      "delta_flash": 1164,
+      "delta_ram": 172,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1194,
+        ".bss": 196,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "5b805eebd772bc807382011a92cee9803419aefc81a3be6e8f0726a3fa8123cf"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-4-mailbox1-quota4",
+      "flash_bytes": 1304,
+      "static_ram_bytes": 240,
+      "delta_flash": 1274,
+      "delta_ram": 216,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1304,
+        ".bss": 240,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "cdc39417da133e6f2c5c177815d3abf6caf72cc856720f2d7ffc20073cf6d8af"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-4-mailbox4-quota4",
+      "flash_bytes": 1336,
+      "static_ram_bytes": 432,
+      "delta_flash": 1306,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1336,
+        ".bss": 432,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "786f4cc26d62fef7420a309c251604262914c154160fcb035c88027926dfdf94"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-4-mailbox8-quota4",
+      "flash_bytes": 1364,
+      "static_ram_bytes": 688,
+      "delta_flash": 1334,
+      "delta_ram": 664,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1364,
+        ".bss": 688,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "430fc12810de58044d24b2f05c76222632f52b4c3e6fba26f60b86beb5916ba4"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-8-mailbox1-quota4",
+      "flash_bytes": 1334,
+      "static_ram_bytes": 448,
+      "delta_flash": 1304,
+      "delta_ram": 424,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1334,
+        ".bss": 448,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "298d50bba5d165a989f6e5ee06cc678d7698b2867e95d1081d4237fe3e67942d"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-8-mailbox4-quota4",
+      "flash_bytes": 1366,
+      "static_ram_bytes": 832,
+      "delta_flash": 1336,
+      "delta_ram": 808,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1366,
+        ".bss": 832,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "fed2e05cbd6900c0ea7f13fc41eaa81fbb4ce16a0c7cbe176e1c262e5c31d56a"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-8-mailbox8-quota4",
+      "flash_bytes": 1394,
+      "static_ram_bytes": 1344,
+      "delta_flash": 1364,
+      "delta_ram": 1320,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1394,
+        ".bss": 1344,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "6269f0de978a69939b2903833bb7460270622a1d07780565734e1d54575f07cd"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-4-mailbox4-delay-S",
+      "flash_bytes": 1340,
+      "static_ram_bytes": 432,
+      "delta_flash": 1310,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1340,
+        ".bss": 432,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "1c62924928886504a261f9613874187a86acc7b779d0a3128d188eaaeb6a6162"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-4-mailbox4-delay-U",
+      "flash_bytes": 1362,
+      "static_ram_bytes": 432,
+      "delta_flash": 1332,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1362,
+        ".bss": 432,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "880f3759fa4a5cbf82bcd7ecc91298f798b617d2e4c45be674fea6b3b38d52ab"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-4-mailbox4-delay-M",
+      "flash_bytes": 886,
+      "static_ram_bytes": 432,
+      "delta_flash": 856,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 886,
+        ".bss": 432,
+        ".comment": 51,
+        ".riscv.attributes": 87
+      },
+      "elf_sha256": "bdcaa1dc357ce8209b2ad813ce3085a81aab39fbd19bc9d0752203b9e5e995ed"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-4-mailbox4-quota1",
+      "flash_bytes": 1352,
+      "static_ram_bytes": 432,
+      "delta_flash": 1322,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1352,
+        ".bss": 432,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "6e4b6e643d9213d8d563cdd7640e57f188f97935af859b3239a73bbf26347ee4"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "event-4-mailbox4-quota8",
+      "flash_bytes": 1340,
+      "static_ram_bytes": 432,
+      "delta_flash": 1310,
+      "delta_ram": 408,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1340,
+        ".bss": 432,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "64d0442908eb85c75305dc921c53e264ac7b90f32c3f93242d981f2c22e7fdee"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "bridge-1-mailbox1",
+      "flash_bytes": 1740,
+      "static_ram_bytes": 180,
+      "delta_flash": 1710,
+      "delta_ram": 156,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1740,
+        ".bss": 180,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "76da089eab1c950b3b93fdbd4743d8bb15296dd32e46ea1ff3bc667725363975"
+    },
+    {
+      "arch": "rv32i",
+      "lto": true,
+      "case": "bridge-4-mailbox4",
+      "flash_bytes": 1980,
+      "static_ram_bytes": 528,
+      "delta_flash": 1950,
+      "delta_ram": 504,
+      "init_array_bytes": 0,
+      "sections": {
+        ".text": 1980,
+        ".bss": 528,
+        ".riscv.attributes": 87,
+        ".comment": 51
+      },
+      "elf_sha256": "7bb76ee077634536247f7a57ce849a037fb5d9f3a0d72f5d250ff084c6086369"
+    }
+  ],
+  "input_hashes": {
+    "tests/platform/core_redesign/event_entry.cpp": "d9b513b9b18ba5553ec132a212ce9d66be5fbbbf2b430349fc40dec2ffbb27ea",
+    "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+    "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+    "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+    "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+    "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+    "tests/platform/core_redesign/measure_data_parts.py": "5a24af043685a26f8d940e7893a64d9d833712d14d12e1828112aeacc08dc409",
+    "tools/index/tools_xpack_gcc.json": "a654200c9f061204c6b3503848a442b9973f31d9c87656758368fad3b7150c7e"
+  },
+  "matrix": "event",
+  "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+  "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+  "tool_hashes": {
+    "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+    "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+    "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+    "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+    "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+    "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+    "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+    "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+  },
+  "libraries": {
+    "rv32e": {
+      "libgcc": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f",
+      "libc": "aa7c9d68d8f56a2b2dc72e14933ef79cf8c97ef570bd23642f698032044c6802"
+    },
+    "rv32i": {
+      "libgcc": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+      "libc": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc"
+    }
+  },
+  "unused_zero": true,
+  "host": {
+    "input_hashes": {
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/event_driver.cpp": "e73121ffa813762fdcd3e30a3d57437bcbbc876d22849b194e260f507bc751e5",
+      "tests/unit/core_redesign/test_event_executor.py": "8f68485394fcbf747402b828f874ec2d6cd0a0f513df6692532da9ebe2027f5c",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486"
+    },
+    "commands": [
+      {
+        "command": [
+          "uv",
+          "run",
+          "--project",
+          "tests",
+          "--locked",
+          "pytest",
+          "-c",
+          "tests/pyproject.toml",
+          "tests/unit/core_redesign/test_event_executor.py",
+          "-q",
+          "-o",
+          "junit_family=xunit1",
+          "--junitxml=work/exp03-event-host-20261020/junit.xml"
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "/usr/bin/x86_64-linux-gnu-g++-15",
+          "--version"
+        ],
+        "returncode": 0
+      }
+    ],
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d"
+  },
+  "evidence_archive": {
+    "path": "work/exp03-event-20261020-evidence.tar.gz",
+    "bytes": 3783718,
+    "sha256": "33f5a17694e2731aafd88464369a33b4ac1c4186cbe440b18c6685271efb1a8f"
+  }
+}

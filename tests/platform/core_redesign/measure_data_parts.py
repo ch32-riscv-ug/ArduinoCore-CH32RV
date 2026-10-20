@@ -78,12 +78,24 @@ def timer_cases(smoke):
     return result
 
 
+def event_cases(smoke):
+    result = [("baseline", 0, 4, 4, 0, 1), ("unused-event", 1, 4, 4, 0, 0)]
+    if smoke: return result
+    result.append(("unused-bridge", 2, 4, 4, 0, 0))
+    for n in (1, 4, 8):
+        for capacity in (1, 4, 8): result.append((f"event-{n}-mailbox{capacity}-quota4", 1, n, capacity, 0, 1))
+    for variant, label in ((1, "delay-S"), (2, "delay-U"), (3, "delay-M"), (4, "quota1"), (5, "quota8")):
+        result.append((f"event-4-mailbox4-{label}", 1, 4, 4, variant, 1))
+    for n, capacity in ((1, 1), (4, 4)): result.append((f"bridge-{n}-mailbox{capacity}", 2, n, capacity, 0, 1))
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
-    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer"), default="serial")
+    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
@@ -113,6 +125,12 @@ def main():
         inputs = [source, HEADER.with_name("deadline_timer.hpp")]
         selected_cases = timer_cases(args.smoke)
         report["scope"] = "TIME-01/02 deadline model link-only; no hardware clock, sleep, tick or cycle proof"
+    elif args.matrix == "event":
+        source = Path(__file__).with_name("event_entry.cpp")
+        inputs = [source, HEADER, HEADER.with_name("work_executor.hpp"), HEADER.with_name("event_executor.hpp"),
+                  HEADER.with_name("io_lifecycle.hpp"), HEADER.with_name("deadline_timer.hpp")]
+        selected_cases = event_cases(args.smoke)
+        report["scope"] = "targeted event and I/O/timer model link-only; no physical protocol, startup, IRQ or cycle proof"
     report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")

@@ -145,3 +145,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix timer \
 
 正常な再設定で古い通知を置換する条件も含め、意味と未検証は
 [準備結果](../../../planning/core-redesign/tasks/EXP-03/timer-preparation.ja.md)を参照する。
+
+## EXP-03 宛先mailboxとI/O／timerの結合
+
+`event_executor.hpp` は通常直列文脈用の固定宛先・固定FIFOと集約bitの試作。
+`event_driver.cpp`／`test_event_executor.py` で有限snapshot、世代、M/S/U、満杯、fan-outと
+I/O／timerの保持・配達前解除を検査する。IRQ投稿や公開APIは未確定。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_event_executor.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix event \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp03-event-matrix
+```
+
+payload全wordの整合性と、生成後に残った受理messageのdrainまで照合する。
+結果・費用・未検証は[宛先結合の結果](../../../planning/core-redesign/tasks/EXP-03/event-preparation.ja.md)を参照する。
