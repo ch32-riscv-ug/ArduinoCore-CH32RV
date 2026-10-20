@@ -314,6 +314,12 @@ enum class CH32RVUsbControlStage : uint8_t {
 #define CH32RV_USB_MAX_PACKET 64
 #endif
 
+/* SuperSpeed bulk endpoints: packets a burst takes (bMaxBurst + 1 in the
+ * endpoint companion). The USBSS driver offers the same OUT ERDY window. 4
+ * measured on CH32H417 (2026-10-21, 32 KB transfers): IN 205 -> 234 MB/s, OUT
+ * 138 -> 231 MB/s, data checked; 16 was no faster. */
+#define CH32RV_USB_SS_BULK_BURST 4u
+
 enum class CH32RVUsbSpeed : uint8_t {
     Full,                         /* 12 Mbit/s: bulk 64, EP0 64 */
     High,                         /* 480 Mbit/s: bulk 512, intervals in microframes */

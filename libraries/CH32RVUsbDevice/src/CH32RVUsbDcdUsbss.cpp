@@ -94,6 +94,7 @@
 #define EP_CHAIN_ST(b)      R8((b) + 0x5)
 #define EP_CHAIN_LEN(b)     R16((b) + 0x6)
 #define EP_CHAIN_NUMP(b)    R8((b) + 0x8)          /* TX: EXP_NUMP, RX: MAX_NUMP; writing arms */
+#define EP_RX_CHAIN_NUMP(b) R8((b) + 0x9)          /* RX: packets the chain received */
 #define EP_DMA_OFS(b)       R16((b) + 0xA)
 #define EP_DMA(b)           R32((b) + 0xC)
 /* The PHY window (EVT USBSS_PHY_Cfg), and on H41x a trim word. */
@@ -203,7 +204,10 @@
 
 #define EP0_SIZE   512u
 #define CHAIN_MAX  16u            /* packets per chain, and the ERDY window offered */
-#define RX_BURST   1u             /* packets an OUT arm takes (bMaxBurst 0) */
+/* The OUT ERDY window: packets the host may send ahead, the bulk bMaxBurst + 1
+ * the descriptors give. A window of 1 with a multi-packet chain stalled after
+ * two packets (bench, 2026-10-21); 4 and 16 move data. */
+#define RX_WINDOW  CH32RV_USB_SS_BULK_BURST
 
 static uint8_t ep0_buf[EP0_SIZE] __attribute__((aligned(16)));
 
@@ -329,15 +333,25 @@ static void arm_in(uint8_t ep)
     x.armed = (uint16_t)((uint16_t)(npkt - 1u) * x.mps + last);
 }
 
+/* An OUT chain takes as many whole packets as the room left holds, up to
+ * CHAIN_MAX, at a stride of one packet: it writes a full maximum packet
+ * whatever arrives, so less room than that (or an unaligned buffer) goes one
+ * packet at a time through the bounce buffer. RX_CHAIN_NUMP then says how
+ * many came (bench, 2026-10-21: 16-packet chains at bMaxBurst 15). */
 static void arm_out(uint8_t ep)
 {
     Xfer &x = xout[ep];
     const uint32_t b = EP_RX(ep);
     uint8_t *dst = x.buf + x.done;
-    x.bounced = (uint16_t)(x.len - x.done) < x.mps || ((uintptr_t)dst & 3u) != 0;
+    const uint16_t room = (uint16_t)(x.len - x.done);
+    x.bounced = room < x.mps || ((uintptr_t)dst & 3u) != 0;
+    uint16_t npkt = x.bounced ? 1u : (uint16_t)(room / x.mps);
+    if (npkt > CHAIN_MAX) {
+        npkt = CHAIN_MAX;
+    }
     EP_DMA(b) = (uint32_t)(uintptr_t)(x.bounced ? x.bounce : dst);
     EP_DMA_OFS(b) = x.mps;
-    EP_CHAIN_NUMP(b) = RX_BURST;
+    EP_CHAIN_NUMP(b) = (uint8_t)npkt;
     EP_ST(b) = EP_FC_ST;
 }
 
@@ -516,7 +530,7 @@ static bool dcd_ep_open(uint8_t address, uint8_t type, uint16_t mps)
         const uint32_t b = EP_RX(ep);
         EP_CFG(b) = EP_CHAIN_AUTO | EP_ERDY_AUTO | EP_SEQ_AUTO | (x.iso ? EP_ISO_MODE : 0);
         EP_CR(b) = EP_CLR | EP_CHAIN_CLR;
-        EP_CR(b) = RX_BURST;
+        EP_CR(b) = RX_WINDOW;
         UEP_RX_EN |= (uint16_t)(1u << ep);
     }
     return true;
@@ -630,7 +644,7 @@ static void dcd_abort(uint8_t address)
         EP_CR(EP_TX(ep)) = (uint8_t)((EP_CR(EP_TX(ep)) & EP_HALT) | EP_CHAIN_CLR | CHAIN_MAX);
     } else {
         xout[ep].active = false;
-        EP_CR(EP_RX(ep)) = (uint8_t)((EP_CR(EP_RX(ep)) & EP_HALT) | EP_CHAIN_CLR | RX_BURST);
+        EP_CR(EP_RX(ep)) = (uint8_t)((EP_CR(EP_RX(ep)) & EP_HALT) | EP_CHAIN_CLR | RX_WINDOW);
     }
     interrupts();
 }
@@ -643,7 +657,7 @@ static void dcd_stall(uint8_t address, bool on)
     }
     const bool in = address & 0x80;
     const uint32_t b = in ? EP_TX(ep) : EP_RX(ep);
-    const uint8_t nump = in ? CHAIN_MAX : RX_BURST;
+    const uint8_t nump = in ? CHAIN_MAX : RX_WINDOW;
     Xfer &x = in ? xin[ep] : xout[ep];
     noInterrupts();
     if (on) {
@@ -905,21 +919,20 @@ static void ep_out_isr(uint8_t ep)
 {
     Xfer &x = xout[ep];
     const uint32_t b = EP_RX(ep);
-    const uint16_t n = EP_CHAIN_LEN(b);
+    const uint16_t last = EP_CHAIN_LEN(b);          /* the last packet's length */
+    const uint8_t got = EP_RX_CHAIN_NUMP(b);         /* packets in this chain */
     EP_CHAIN_ST(b) = EP_CHAIN_IF;
     if (!x.active) {
         return;
     }
+    const uint32_t n = got ? (uint32_t)(got - 1u) * x.mps + last : last;
     const uint16_t room = (uint16_t)(x.len - x.done);
-    uint16_t take = n < room ? n : room;
-    if (take > x.mps) {
-        take = x.mps;
-    }
+    const uint16_t take = n < room ? (uint16_t)n : room;
     if (x.bounced && take) {
         memcpy(x.buf + x.done, x.bounce, take);
     }
     x.done = (uint16_t)(x.done + take);
-    if (x.done >= x.len || n < x.mps) {
+    if (x.done >= x.len || last < x.mps) {
         x.active = false;
         ch32rv_usbd_isr_xfer(ep, x.done);
     } else {

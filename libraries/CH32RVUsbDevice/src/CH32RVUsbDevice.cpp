@@ -185,7 +185,9 @@ void CH32RVUsbDescriptorWriter::put(const uint8_t *data, uint16_t n)
         }
         if (companions && _have >= 6 && _head[1] == 5) {
             const bool periodic = (_head[3] & 1) != 0;      /* isochronous or interrupt */
-            const uint8_t c[6] = {6, 0x30, 0, 0, (uint8_t)(periodic ? _head[4] : 0), (uint8_t)(periodic ? _head[5] : 0)};
+            const bool bulk = (_head[3] & 3) == 2;
+            const uint8_t c[6] = {6, 0x30, (uint8_t)(bulk ? CH32RV_USB_SS_BULK_BURST - 1u : 0), 0,
+                                  (uint8_t)(periodic ? _head[4] : 0), (uint8_t)(periodic ? _head[5] : 0)};
             for (uint8_t k = 0; k < sizeof c; k++) {
                 emit(c[k]);
             }
