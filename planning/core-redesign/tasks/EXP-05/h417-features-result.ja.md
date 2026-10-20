@@ -94,7 +94,8 @@ python3 tests/platform/core_redesign/measure_h417_features.py \
 source・compiler／binary hash・184 full trace・JUnit・112 ELFとmap／disasm／stack情報・analysisを含む。
 archiveのbyte数・hashは測定JSONを参照する。同名出力先は再利用しない。
 
-残るP4作業は、新しいfeature型へのhost並列検査、実行器への接続、固定ownerと共有実行器の比較、
+[新しいfeature型のhost並列検査](h417-feature-thread-result.ja.md)は追加で実行した。headerとABI入力は不変。
+残るP4作業は、実行器への接続、固定ownerと共有実行器の比較、
 H417共有layout・起動handshake・実backend・DMA・片側reset。
 messageとblockを別domainにするか、回復時の破棄をどう公開するかは、この試作から採用を決めない。
 教材では、本体費用とharness込み費用、回復管理だけ使用と完全未使用、機能除去と両方有効時の増分を分けて読む。

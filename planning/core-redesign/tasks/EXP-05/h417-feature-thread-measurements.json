@@ -1,0 +1,3009 @@
+{
+  "date": "2026-10-21",
+  "scope": "Host parallel feature validation, not H417 shared memory or DMA",
+  "runs": [
+    {
+      "label": "host",
+      "tests": 83,
+      "build": {
+        "compiler": "/usr/bin/g++",
+        "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+        "sanitizer": "address,undefined",
+        "derived_sha256": "6b2158250f264bf6ec5014ede8725878f518eba1e1c45145a95523c2dfec6be9",
+        "inputs": {
+          "tests/unit/core_redesign/h417_features.hpp": "0d6badf9afb43fac091da475b671cf0ddad5c4fa1c98e6f1727762f334f3d939",
+          "tests/unit/core_redesign/h417_thread_driver.cpp": "92c59ba20b7fb8c51d9ccfed546805589d56f44fa7d22290658e124c9c6c2a29",
+          "tests/unit/core_redesign/test_h417_feature_threads.py": "bea2bafe87b6e8145eac4ee96d4ae8cbeab3a2737df4937f06a34f1d2bb02291",
+          "planning/core-redesign/h417-feature-thread-inputs.json": "edd44d176242b9d3d9c7bf81f27e33ba8e0b156b83a995f33e6eba32a7b92025"
+        },
+        "builds": [
+          {
+            "features": 0,
+            "command": [
+              "/usr/bin/g++",
+              "-std=c++17",
+              "-O1",
+              "-g1",
+              "-pthread",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-fsanitize=address,undefined",
+              "-fno-sanitize-recover=all",
+              "-fno-omit-frame-pointer",
+              "-DFEATURES=0",
+              "-I",
+              "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign",
+              "/tmp/pytest-of-mt/pytest-1136/h417-feature-threads0/derived.cpp",
+              "-o",
+              "/tmp/pytest-of-mt/pytest-1136/h417-feature-threads0/control-0"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "binary_sha256": "9daebb6310d63882886a025937e04ca2b061b910126d7c98ec4577bebc04d3dd"
+          },
+          {
+            "features": 1,
+            "command": [
+              "/usr/bin/g++",
+              "-std=c++17",
+              "-O1",
+              "-g1",
+              "-pthread",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-fsanitize=address,undefined",
+              "-fno-sanitize-recover=all",
+              "-fno-omit-frame-pointer",
+              "-DFEATURES=1",
+              "-I",
+              "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign",
+              "/tmp/pytest-of-mt/pytest-1136/h417-feature-threads0/derived.cpp",
+              "-o",
+              "/tmp/pytest-of-mt/pytest-1136/h417-feature-threads0/control-1"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "binary_sha256": "3a2720c82a989ef2c32d1f8fea3149069bf2a2d73187aba290b8fd8b431ab5f6"
+          },
+          {
+            "features": 2,
+            "command": [
+              "/usr/bin/g++",
+              "-std=c++17",
+              "-O1",
+              "-g1",
+              "-pthread",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-fsanitize=address,undefined",
+              "-fno-sanitize-recover=all",
+              "-fno-omit-frame-pointer",
+              "-DFEATURES=2",
+              "-I",
+              "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign",
+              "/tmp/pytest-of-mt/pytest-1136/h417-feature-threads0/derived.cpp",
+              "-o",
+              "/tmp/pytest-of-mt/pytest-1136/h417-feature-threads0/control-2"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "binary_sha256": "fd2c2cc3002e458b3a73961c9f20430664ca29fb7125144f22b643d3e843d6f8"
+          },
+          {
+            "features": 3,
+            "command": [
+              "/usr/bin/g++",
+              "-std=c++17",
+              "-O1",
+              "-g1",
+              "-pthread",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-fsanitize=address,undefined",
+              "-fno-sanitize-recover=all",
+              "-fno-omit-frame-pointer",
+              "-DFEATURES=3",
+              "-I",
+              "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign",
+              "/tmp/pytest-of-mt/pytest-1136/h417-feature-threads0/derived.cpp",
+              "-o",
+              "/tmp/pytest-of-mt/pytest-1136/h417-feature-threads0/control-3"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "binary_sha256": "9fb3eaee93706b117e5ddeb5cacf8b44c74b086a063a75d68b6b9be47512785c"
+          }
+        ]
+      },
+      "linked_libraries": {
+        "/usr/lib/x86_64-linux-gnu/libasan.so.8": "b49a5ec136d444f8b40cf24964c20ef01434fc4e6dcf68dc272f5028d65b5496",
+        "/usr/lib/x86_64-linux-gnu/libstdc++.so.6": "5bb0d21308f123b6ad46c6f35b42cedfcb8d6d439a53aa3dae04d880aaffdde3",
+        "/usr/lib/x86_64-linux-gnu/libm.so.6": "1c488db6f4fe8cecb72456bc018de000b7a9b539c2994864b0416b5e8371b3d8",
+        "/usr/lib/x86_64-linux-gnu/libubsan.so.1": "1bdb7eae5853277e4d5dfa17431a63944feb16289fa707d8e4d1d8d3825de68e",
+        "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1": "9d339ecb409578d6a5d587e6c537a8f9589b8a13fefba30d167433a4b5758bee",
+        "/usr/lib/x86_64-linux-gnu/libc.so.6": "85e64f97e348786a8fb4d9f3d52fec289e2fb86bba20f0731dfe61990525e0f7",
+        "/lib64/ld-linux-x86-64.so.2": "bda779ea9e9ad234f60315477d7cfd0bdde861cd8ddd9df8cdaf62f18c4cec14"
+      },
+      "totals": {
+        "0": {
+          "messages": 0,
+          "blocks": 0,
+          "stress_runs": 16
+        },
+        "1": {
+          "messages": 28800,
+          "blocks": 0,
+          "stress_runs": 16
+        },
+        "2": {
+          "messages": 0,
+          "blocks": 3840,
+          "stress_runs": 16
+        },
+        "3": {
+          "messages": 28800,
+          "blocks": 3840,
+          "stress_runs": 16
+        }
+      },
+      "cases": [
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 4
+          },
+          "artifact_sha256": "880b69b0f2f53c970cd3711d561e9547136087b6b726b1ef7e7b96b3d1526fc2"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "06dabf92207f3e8bdf666cd62a9f09191227d6caf82b62f3639c93b94c69e7a0"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "9ec0de0711d2fa4546255859f0071cf6f2b76fe70b9c0a55da2046f591b478bb"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "3a9d3e3b6fa9ad305c9eaabb4ab35cd0f8210a110531e7e1258f6651f9866c79"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "9eff2387e34fc5a9243c590dec26cdfa8f8cf0928eb37297ebacfdfd826782ab"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "7304a266c1218f53eb49f86b774529470833720529d70c5886c25b7b333ff1c0"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "2de12a973d893e429628c7513d7d880465453fbbb8d76cc66e48898f9705191d"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "6feb28af8ad3b291b99d95ec23b9bc74bdf62e30f7547628a6b5a8f1b3b9681c"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "49c3978b0f010d8f6d9d7c0866f7e4ef5069e61604b1086eaa76b6335eced13a"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 4
+          },
+          "artifact_sha256": "df845bd7243347ee920f432fa51d9213396a03b0f72348d34cab270f65415d61"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "a62d1b923a9d6d942651c1ac1e0ad3edab4ee7aa7b952812bb7b364b4816a619"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "23c28578469eceb4f3bc49d6296dcb6970741fcf622126e2d5f6ee594ec02b90"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "439e0f0c71b3e4b249685a1d48b7c31732c7f9626bf59a0df1a7390768afb201"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "fb004378b82c65581e14323e5b757b6cf6c52d74084b5e2de4808e7b0118faba"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "19fa7d0ec947acb1ac8cb94aa4c970b209e6dc3831dd362ac3ca59b4a7400097"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "90118a9066bca6f0140410ea1a940f7d9eb1134117713250d0d52381b992809f"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "68c4c42c26950803478d9ddc75531bfe741528cd975afcd1dfcdef19ac7dae3b"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "11b337b606fb3e6d666f8bfdb68f113e64e4935d8098cd1ba27999a63591128f"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 6
+          },
+          "artifact_sha256": "2c33312aa98c5499f88c4137893735409c2b9f1591a4006b5e957f1f3ae2d9ac"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 9983,
+            "busy": 0
+          },
+          "artifact_sha256": "6f17b7836f6d0f23ac7aac53375224236bf4eb4f24edfeca6368e46a7e55739f"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 9888,
+            "busy": 0
+          },
+          "artifact_sha256": "0b1fc7fdbc9e156e4bd3358e98bb2dcb7b433cb977b50db261fb38f61c4092d9"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 12184,
+            "busy": 1059
+          },
+          "artifact_sha256": "26ad5cbf3d7908f2d371854a40eaeb91c1f3979f153c96ed3d831899cbb559ad"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 11727,
+            "busy": 1439
+          },
+          "artifact_sha256": "c898bd2cf02cbf64adf47d735f12d66a7fee311afe1752bae8fa9084179ae5a9"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 7656,
+            "busy": 0
+          },
+          "artifact_sha256": "f714d519eedc9d5817dba1aa968944545a3a2a0a6071d6b33edb171a1709d82c"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 28502,
+            "busy": 2924
+          },
+          "artifact_sha256": "9097faf453d36019de7aeb5486f8840ef617c97eca595bc29ccf240f4fdc3ae8"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 8769,
+            "busy": 1343
+          },
+          "artifact_sha256": "21f0c6d0779e3b63690a72ac89d3d1c9b439399d656b8ea02c51605a4b0418f6"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 8668,
+            "busy": 1116
+          },
+          "artifact_sha256": "59290f263262931a19017d2c4e324422763f6962ade5d8171b19d38fc3b45bdc"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 6
+          },
+          "artifact_sha256": "fdf419e97b66e4af0e5852897c49d837046b3e84bace83ba3cc6cc8f3a91444d"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 9983,
+            "busy": 0
+          },
+          "artifact_sha256": "3393a9d4cd98a1c88caa2b96f65e897c5d426103c40877c05bc1f5baeaeea28d"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 12586,
+            "busy": 1761
+          },
+          "artifact_sha256": "c3d05bc1cebf9810106177f5f9d45d03a4e8d8789a7b46ec3bcfe19bf4d13cdf"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 13038,
+            "busy": 1597
+          },
+          "artifact_sha256": "839202b2cc1f91f145e60aadee1dd432a3b19d0ad3eeb1feeb95a25bc713f2a6"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 12157,
+            "busy": 1846
+          },
+          "artifact_sha256": "f2122a68c5ac214dff7c3ea06d894dc1a4e0205b6722d25cb2d4bc8c8d1bc6a0"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 59584,
+            "busy": 2532
+          },
+          "artifact_sha256": "1779f498eee5946523a8c9761e8b47c706beed6adea28108a4493f80fb7648ee"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 23001,
+            "busy": 2377
+          },
+          "artifact_sha256": "28357fee411f74d233c06582d8bac7694038f0a970512d963c8c83cebb0703f3"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 9511,
+            "busy": 1982
+          },
+          "artifact_sha256": "4ce0a1dc1c4366103b1f56927be636f55be26883b0d2bf8528bb927022c19984"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 9348,
+            "busy": 1977
+          },
+          "artifact_sha256": "05b45dcf5b9aa5eacad0caaa6b269bce3170c66a56478e5dc59a9d8cd155376e"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 10
+          },
+          "artifact_sha256": "d9a7abdc8bb4d10903ad0507b70454a4604e763f4638f495088ff859dbf5e2f7"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 403663,
+            "busy": 14375
+          },
+          "artifact_sha256": "d9ad396838c07a833eb49d81753313dc932002080753da39b28147a8301ee3eb"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 57477,
+            "busy": 14176
+          },
+          "artifact_sha256": "79c940a8e9f5da3eef8e1014822962da9f9f7fd0f7318280ab9089120ec5ef56"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 53980,
+            "busy": 14188
+          },
+          "artifact_sha256": "e0814ad8802ce6956428b63ffe4e25c3fcf358ec72e5338c18197c277180d783"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 53192,
+            "busy": 14969
+          },
+          "artifact_sha256": "1a5f35a03e78b7dd256bc39f9497c76e61ef7aa0d5d8f334ef29473894fb5ae6"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "recovery-fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "5ac4c2bb8213a294fa5dea9b9c978f154656e732b372dd0cc2d0637077034739"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "recovery-shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "f8fd8f6005dc81422ab1b74682ff345ae1bf1bfe85219e95745ed8f8bbbb1b09"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 256964,
+            "busy": 25164
+          },
+          "artifact_sha256": "65ba974e996f82b4cb8b875ad36120049898877da0cd6951a99d338f6cb24c92"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 216722,
+            "busy": 46305
+          },
+          "artifact_sha256": "f8b1fc7c52b67be198449ea8545833402bb5daf3271c6a1c92ead144d1defbd6"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 187306,
+            "busy": 58074
+          },
+          "artifact_sha256": "67053cea43e8c193233fc26ee7b451ecf4e8ee3b4ad2589a614e16fd67246f69"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 188342,
+            "busy": 57119
+          },
+          "artifact_sha256": "e5d8a3f95b462799e213e6cc22c570fc882ea6f06b85bbce8eb2d93d1105d60e"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 10
+          },
+          "artifact_sha256": "0277f7be6a555a94d89796a80c4b55496ebfd88550c8a96d9cc98becae634c71"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 40384,
+            "busy": 2208
+          },
+          "artifact_sha256": "fa7438ead2979a3e0d6abd437399427c6cb233f5fa70cb84ecc0830501e1e854"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 69212,
+            "busy": 15860
+          },
+          "artifact_sha256": "7d0c1cc3dc0ab75ad4f3e859151010ac26594ebcca61d76c75c299765ea44bbc"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 54406,
+            "busy": 16101
+          },
+          "artifact_sha256": "b31a319ddc0599e197104c66a253f2a2ef1702fb9494d4bb4f409cf38790b3a5"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 53929,
+            "busy": 16245
+          },
+          "artifact_sha256": "05588f3996da5d48ba0292d8bf57a72eda82e597d05e339e0fb8d0e42523fc95"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "recovery-fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "8a10e9ddf839ca1f5f659133c51a7a0c670b7e76443d0d09de1c2ad088829a81"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "recovery-shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "26a7eef24df3f3cc24f947ff8b3f942aa4e5af51833be94a3d014a30004e2ac4"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 205409,
+            "busy": 80293
+          },
+          "artifact_sha256": "110ce0cbb3dce89dc31604838a4422e1c98fa6670ae8f986b67424af253e1acd"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 184012,
+            "busy": 64786
+          },
+          "artifact_sha256": "6f7f0e3c12ea7c53631fe992a55730e637a2d943b498fdb26569aca4265a5f0d"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 188395,
+            "busy": 64420
+          },
+          "artifact_sha256": "30efe428377875fe6e4950fb20a0aef3b115fac82f58bd71846b99f9275f439f"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 202409,
+            "busy": 75580
+          },
+          "artifact_sha256": "41918f19dafe42c03d0662c524b41d914383f25037714e476218def4a2a7a1bc"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 12
+          },
+          "artifact_sha256": "4bbb8d00efc5e37ab14db18976e9b599a8ff412e3d4bb29ad6bef20d69d86ac1"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 54695,
+            "busy": 0
+          },
+          "artifact_sha256": "1ff742764832f2f9c0c0b85c63021f267fd07286b0e10d4aff89f027eb98c02f"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 86888,
+            "busy": 23373
+          },
+          "artifact_sha256": "3def163267764c2294ab2623c8eb664912cba7ea8b226886faeb843810c68c4f"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 102811,
+            "busy": 21225
+          },
+          "artifact_sha256": "b27bf523900f5d6d34a0e28ef60aab10b61c4e4605e081cf61d4bd8e03e3ac42"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 82708,
+            "busy": 25478
+          },
+          "artifact_sha256": "57a1b01976d6db46da2e011f10f2196b6b30ae6156a1de2edd8ca62d7b810722"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "recovery-fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "834abacee9c7a62c3378664274e6b392d90091d91e2684d38906dc4fdd7fb36b"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "recovery-shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "963b5f4ded406c979f3264aa4015994e76a5f84528b8c6525110459f190b3f9f"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 284488,
+            "busy": 88139
+          },
+          "artifact_sha256": "f11619be735ecaeb18c07a760ea73a14355477ba025ddbc0030992480f950551"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 289707,
+            "busy": 100971
+          },
+          "artifact_sha256": "cb1f552ecc2f9afcdde9084484a24c614202bb5c691650a8c619e0828af165e0"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 290280,
+            "busy": 100586
+          },
+          "artifact_sha256": "b0712fd1a7b60da5a035b2716c3e94f1952518d0e4ddf0a5a6f460ba7cf1744f"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 292946,
+            "busy": 103145
+          },
+          "artifact_sha256": "f4071172d23d4fe4f542b1c51a66339dda09a8ea5ba6704fdf7e2a12ab2df3bf"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 12
+          },
+          "artifact_sha256": "498484e9f4b3d6b593e6f724b4a2a4964bd9aef8c759f86a6c43c8a2e93bdde9"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 97219,
+            "busy": 24133
+          },
+          "artifact_sha256": "a63ba3c2819c41e0a545e1bb422ba60663d30d5cd969422d348c7fada1fbfa4f"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 93799,
+            "busy": 25275
+          },
+          "artifact_sha256": "98138e45db0bf9cd37e5a862cdc52f68edcde61e8a81ee96145243982337d2be"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 78001,
+            "busy": 26005
+          },
+          "artifact_sha256": "b9338784b4bd34976389e31112fcfa29b4c0a5588cdaccf38c26c695e0b72c24"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 79075,
+            "busy": 24696
+          },
+          "artifact_sha256": "c9beef73022954a1293b1c5edf253ce8cd1a6079bd73982dc9a59ff3e1906394"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "recovery-fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "ac2236c8ca396ee3ed2c20ac86a1f963759be03a2e961c7abfefc1f9d4f207a4"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "recovery-shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "fcd22cd23f025f99fab907550b32fd3aee99663588558cb9d402733c5bf940c7"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 317011,
+            "busy": 144327
+          },
+          "artifact_sha256": "c537704e63e2150f64fb54138e16c95d64084f12b9372402fee6bae3a4183db1"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 286714,
+            "busy": 109394
+          },
+          "artifact_sha256": "bf163fd320e351e9e5c2ce2034d6ba0d06d0bab8b8785c9245179b1fff7ac77e"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 289725,
+            "busy": 123296
+          },
+          "artifact_sha256": "b2afd0510f55a675930ab70f58df83fb670ec5640201ff062fefaf9cdc60e7b3"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 289367,
+            "busy": 119548
+          },
+          "artifact_sha256": "c9e6f461c7cf51fd4b2cc7540946e05f504708f17186153d36d2b215be4fa364"
+        }
+      ]
+    },
+    {
+      "label": "tsan",
+      "tests": 80,
+      "build": {
+        "compiler": "/usr/bin/g++",
+        "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+        "sanitizer": "thread",
+        "derived_sha256": "6b2158250f264bf6ec5014ede8725878f518eba1e1c45145a95523c2dfec6be9",
+        "inputs": {
+          "tests/unit/core_redesign/h417_features.hpp": "0d6badf9afb43fac091da475b671cf0ddad5c4fa1c98e6f1727762f334f3d939",
+          "tests/unit/core_redesign/h417_thread_driver.cpp": "92c59ba20b7fb8c51d9ccfed546805589d56f44fa7d22290658e124c9c6c2a29",
+          "tests/unit/core_redesign/test_h417_feature_threads.py": "bea2bafe87b6e8145eac4ee96d4ae8cbeab3a2737df4937f06a34f1d2bb02291",
+          "planning/core-redesign/h417-feature-thread-inputs.json": "edd44d176242b9d3d9c7bf81f27e33ba8e0b156b83a995f33e6eba32a7b92025"
+        },
+        "builds": [
+          {
+            "features": 0,
+            "command": [
+              "/usr/bin/g++",
+              "-std=c++17",
+              "-O1",
+              "-g1",
+              "-pthread",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-fsanitize=thread",
+              "-fno-sanitize-recover=all",
+              "-fno-omit-frame-pointer",
+              "-DFEATURES=0",
+              "-I",
+              "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign",
+              "/tmp/pytest-of-mt/pytest-1137/h417-feature-threads0/derived.cpp",
+              "-o",
+              "/tmp/pytest-of-mt/pytest-1137/h417-feature-threads0/control-0"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "binary_sha256": "a979c8e965bea8601f49bf4cf7e87bcc7efedcf421f1a32f500cfe8517330542"
+          },
+          {
+            "features": 1,
+            "command": [
+              "/usr/bin/g++",
+              "-std=c++17",
+              "-O1",
+              "-g1",
+              "-pthread",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-fsanitize=thread",
+              "-fno-sanitize-recover=all",
+              "-fno-omit-frame-pointer",
+              "-DFEATURES=1",
+              "-I",
+              "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign",
+              "/tmp/pytest-of-mt/pytest-1137/h417-feature-threads0/derived.cpp",
+              "-o",
+              "/tmp/pytest-of-mt/pytest-1137/h417-feature-threads0/control-1"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "binary_sha256": "15e02e5f2187b8e0efb351a133a9ec8b56d3ed68bc28fce396c9e6edd5124cdf"
+          },
+          {
+            "features": 2,
+            "command": [
+              "/usr/bin/g++",
+              "-std=c++17",
+              "-O1",
+              "-g1",
+              "-pthread",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-fsanitize=thread",
+              "-fno-sanitize-recover=all",
+              "-fno-omit-frame-pointer",
+              "-DFEATURES=2",
+              "-I",
+              "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign",
+              "/tmp/pytest-of-mt/pytest-1137/h417-feature-threads0/derived.cpp",
+              "-o",
+              "/tmp/pytest-of-mt/pytest-1137/h417-feature-threads0/control-2"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "binary_sha256": "7768cefa3a0dae4d333e76589ea2bf0d075a8136bb9332e466c6f18b9301fabf"
+          },
+          {
+            "features": 3,
+            "command": [
+              "/usr/bin/g++",
+              "-std=c++17",
+              "-O1",
+              "-g1",
+              "-pthread",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-fsanitize=thread",
+              "-fno-sanitize-recover=all",
+              "-fno-omit-frame-pointer",
+              "-DFEATURES=3",
+              "-I",
+              "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign",
+              "/tmp/pytest-of-mt/pytest-1137/h417-feature-threads0/derived.cpp",
+              "-o",
+              "/tmp/pytest-of-mt/pytest-1137/h417-feature-threads0/control-3"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "binary_sha256": "f2611d3769a431afe96ebe953eec6533d2e1e2f1a3d24cd719190fb57a9cf066"
+          }
+        ]
+      },
+      "linked_libraries": {
+        "/usr/lib/x86_64-linux-gnu/libtsan.so.2": "f0ce9b593b87933db0bc418269fc1489eb925fab0e21fa425ead64cbe0d47d8e",
+        "/usr/lib/x86_64-linux-gnu/libstdc++.so.6": "5bb0d21308f123b6ad46c6f35b42cedfcb8d6d439a53aa3dae04d880aaffdde3",
+        "/usr/lib/x86_64-linux-gnu/libm.so.6": "1c488db6f4fe8cecb72456bc018de000b7a9b539c2994864b0416b5e8371b3d8",
+        "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1": "9d339ecb409578d6a5d587e6c537a8f9589b8a13fefba30d167433a4b5758bee",
+        "/usr/lib/x86_64-linux-gnu/libc.so.6": "85e64f97e348786a8fb4d9f3d52fec289e2fb86bba20f0731dfe61990525e0f7",
+        "/lib64/ld-linux-x86-64.so.2": "bda779ea9e9ad234f60315477d7cfd0bdde861cd8ddd9df8cdaf62f18c4cec14"
+      },
+      "totals": {
+        "0": {
+          "messages": 0,
+          "blocks": 0,
+          "stress_runs": 16
+        },
+        "1": {
+          "messages": 28800,
+          "blocks": 0,
+          "stress_runs": 16
+        },
+        "2": {
+          "messages": 0,
+          "blocks": 3840,
+          "stress_runs": 16
+        },
+        "3": {
+          "messages": 28800,
+          "blocks": 3840,
+          "stress_runs": 16
+        }
+      },
+      "cases": [
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 4
+          },
+          "artifact_sha256": "880b69b0f2f53c970cd3711d561e9547136087b6b726b1ef7e7b96b3d1526fc2"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "06dabf92207f3e8bdf666cd62a9f09191227d6caf82b62f3639c93b94c69e7a0"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "9ec0de0711d2fa4546255859f0071cf6f2b76fe70b9c0a55da2046f591b478bb"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "3a9d3e3b6fa9ad305c9eaabb4ab35cd0f8210a110531e7e1258f6651f9866c79"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "9eff2387e34fc5a9243c590dec26cdfa8f8cf0928eb37297ebacfdfd826782ab"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "7304a266c1218f53eb49f86b774529470833720529d70c5886c25b7b333ff1c0"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "2de12a973d893e429628c7513d7d880465453fbbb8d76cc66e48898f9705191d"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "6feb28af8ad3b291b99d95ec23b9bc74bdf62e30f7547628a6b5a8f1b3b9681c"
+        },
+        {
+          "features": 0,
+          "args": [
+            "atomic",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "49c3978b0f010d8f6d9d7c0866f7e4ef5069e61604b1086eaa76b6335eced13a"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 4
+          },
+          "artifact_sha256": "df845bd7243347ee920f432fa51d9213396a03b0f72348d34cab270f65415d61"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "a62d1b923a9d6d942651c1ac1e0ad3edab4ee7aa7b952812bb7b364b4816a619"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "23c28578469eceb4f3bc49d6296dcb6970741fcf622126e2d5f6ee594ec02b90"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "439e0f0c71b3e4b249685a1d48b7c31732c7f9626bf59a0df1a7390768afb201"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "fb004378b82c65581e14323e5b757b6cf6c52d74084b5e2de4808e7b0118faba"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "19fa7d0ec947acb1ac8cb94aa4c970b209e6dc3831dd362ac3ca59b4a7400097"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "90118a9066bca6f0140410ea1a940f7d9eb1134117713250d0d52381b992809f"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "68c4c42c26950803478d9ddc75531bfe741528cd975afcd1dfcdef19ac7dae3b"
+        },
+        {
+          "features": 0,
+          "args": [
+            "mutex",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 0,
+            "attempts": 0,
+            "busy": 0
+          },
+          "artifact_sha256": "11b337b606fb3e6d666f8bfdb68f113e64e4935d8098cd1ba27999a63591128f"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 6
+          },
+          "artifact_sha256": "2c33312aa98c5499f88c4137893735409c2b9f1591a4006b5e957f1f3ae2d9ac"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 28851,
+            "busy": 7458
+          },
+          "artifact_sha256": "31ad5806cbdc2b4c7548f0750d9ef880b841f690390d82e352eef165088040b8"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 15791,
+            "busy": 6753
+          },
+          "artifact_sha256": "2f9e161ecf58f2730c136d566d481593219253dd95425fc902889d8aa7bc9540"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 14303,
+            "busy": 6878
+          },
+          "artifact_sha256": "97d5622f550fddb329ca9e2de53103bb3448b5d38b343ad9bb02c94cf5c8f2b6"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 17702,
+            "busy": 6736
+          },
+          "artifact_sha256": "ca57a4c31d26362a868a72c3f45dabe9d0497d821fb8fa3d20641dc0be22fed1"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 16634,
+            "busy": 8450
+          },
+          "artifact_sha256": "a9d63b4ebdac528b817a4672f3d02fef4fc2d931c351259b9a7919f5c3586130"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 20940,
+            "busy": 6880
+          },
+          "artifact_sha256": "c3fa01bf04b6ee224c5c73949cbd9d1ac14c63bf65ef889eadde02cd25cbdcc3"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 19988,
+            "busy": 11334
+          },
+          "artifact_sha256": "f91c347cf725d6fd5fe29430ffeff7cbf7cf83c543bc7d11d940fdba10d13ca6"
+        },
+        {
+          "features": 1,
+          "args": [
+            "atomic",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 16089,
+            "busy": 7783
+          },
+          "artifact_sha256": "eb9e11e4966736e182287ac4da4e362dc74d802d9955c32a87a41e70da53c116"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 6
+          },
+          "artifact_sha256": "fdf419e97b66e4af0e5852897c49d837046b3e84bace83ba3cc6cc8f3a91444d"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 19387,
+            "busy": 14228
+          },
+          "artifact_sha256": "a889ba3d22b92337e9c2eb9b157a1d34593ffa7fc539d081887cfc92c1c68a4a"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 21888,
+            "busy": 13397
+          },
+          "artifact_sha256": "ef97b1d591e86370ac48edce3ba2a3b42d3a9a5b97297e04794b81baa9f50681"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 19197,
+            "busy": 13648
+          },
+          "artifact_sha256": "951b766d2cb6c534aabfe2a8250dee6cd99248ce845c7cc8224c651b6963347b"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 0,
+            "attempts": 20898,
+            "busy": 14530
+          },
+          "artifact_sha256": "478759c181e714b29ba16ac4fc4783d34312db6d5f2b1a296b53fff27e6a1e45"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 36682,
+            "busy": 18307
+          },
+          "artifact_sha256": "ac97e70930e42a4a30d068dd7b5b55bc4e61be17b898132e5451a4e6bfdeeb85"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 35403,
+            "busy": 25328
+          },
+          "artifact_sha256": "c6c6f99870efc7f99140e4afd633069d3e6622b6b033659690d51cb691b87199"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 34191,
+            "busy": 26811
+          },
+          "artifact_sha256": "5b6bf967c24f711e879c3fb478f180592a95e1d30efeb52b9b19b82e7988b3e0"
+        },
+        {
+          "features": 1,
+          "args": [
+            "mutex",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 0,
+            "attempts": 32591,
+            "busy": 24491
+          },
+          "artifact_sha256": "008fe471d3e7269fd019b0e7b7c294eb4262ad19877f6dc37d6bc7fd5b1914be"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 10
+          },
+          "artifact_sha256": "d9a7abdc8bb4d10903ad0507b70454a4604e763f4638f495088ff859dbf5e2f7"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 54616,
+            "busy": 6991
+          },
+          "artifact_sha256": "72ae57a265d00cd33df5ae61cc44feab93130c2f6a237eb92734d8c14cbdf1eb"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 90394,
+            "busy": 45366
+          },
+          "artifact_sha256": "e12926ea53dfe6232743c3f3286047cbc8bd94d6db23b730f0a78f9cd20d768f"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 76371,
+            "busy": 35229
+          },
+          "artifact_sha256": "53d11f4f0cd73f99fcabf309e741cde78f550fc7e70091fff7cfd78014586084"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 89144,
+            "busy": 34863
+          },
+          "artifact_sha256": "953c309cb48982f52fd4cf19ef486d12cff006d79c379b97e4cbee467f49e1d1"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "recovery-fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "5ac4c2bb8213a294fa5dea9b9c978f154656e732b372dd0cc2d0637077034739"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "recovery-shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "f8fd8f6005dc81422ab1b74682ff345ae1bf1bfe85219e95745ed8f8bbbb1b09"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 205034,
+            "busy": 91607
+          },
+          "artifact_sha256": "eea70bda1adbf74bb29da478eec10c861bda19fb36685866a07865a67356fb35"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 213746,
+            "busy": 96602
+          },
+          "artifact_sha256": "25e8c9d59a0f11097f4cad523a26aedb705e77fa9fbded6df9e8059978f2fc63"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 217696,
+            "busy": 104264
+          },
+          "artifact_sha256": "47bdd475453a75bbd4788b8b3f3c42a5245778cbbc7421e5f2bc717eaaee1708"
+        },
+        {
+          "features": 2,
+          "args": [
+            "atomic",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 182916,
+            "busy": 61920
+          },
+          "artifact_sha256": "22b1cdaed1c8aab3f19ca2672c9c46941defba276b29bb2026330221938cdfe6"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 10
+          },
+          "artifact_sha256": "0277f7be6a555a94d89796a80c4b55496ebfd88550c8a96d9cc98becae634c71"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 142042,
+            "busy": 92792
+          },
+          "artifact_sha256": "76939614a21202f76fc34158088a13002b7b11851e35ce912102c96ae6770c9c"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 137454,
+            "busy": 94209
+          },
+          "artifact_sha256": "6fafbe97480c23be417aecf622b2a9c9afb15cffade1c6018b61a35214b49191"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 153860,
+            "busy": 95450
+          },
+          "artifact_sha256": "6e20a2d5960f3be6e45976c06c9b989efa8e2362ea1b0787a2b824c323c62fc5"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 160,
+            "attempts": 149640,
+            "busy": 91085
+          },
+          "artifact_sha256": "f3ca33bfa2ba1f0322b642f5d5f25bf04686bfcf28072ffb5f58d33513c43376"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "recovery-fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "8a10e9ddf839ca1f5f659133c51a7a0c670b7e76443d0d09de1c2ad088829a81"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "recovery-shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "26a7eef24df3f3cc24f947ff8b3f942aa4e5af51833be94a3d014a30004e2ac4"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 390657,
+            "busy": 234238
+          },
+          "artifact_sha256": "d20149bbfec09868a66331680469123cd71679a06d1999d6d212e3ce876ee2ce"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 351518,
+            "busy": 237418
+          },
+          "artifact_sha256": "958ef2a74f7b3462018c4d692802c0997367cb267f40f4267c0d78b135853621"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 255261,
+            "busy": 136958
+          },
+          "artifact_sha256": "c9e92873ff84f430d47e34d0ff01dae19f907f47e90d961f1757ef9860249ef0"
+        },
+        {
+          "features": 2,
+          "args": [
+            "mutex",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 0,
+            "blocks": 320,
+            "attempts": 326207,
+            "busy": 210712
+          },
+          "artifact_sha256": "f3efa69f4a98f438efadd6bf02d0b564ac05e303e14f4f10a81c6ec4afc34da7"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 12
+          },
+          "artifact_sha256": "4bbb8d00efc5e37ab14db18976e9b599a8ff412e3d4bb29ad6bef20d69d86ac1"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 91674,
+            "busy": 15135
+          },
+          "artifact_sha256": "47e153ee443753d9615ac10acccfe30f5bc7dbc2a6da17e63438e9daedbf7c30"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 192565,
+            "busy": 82096
+          },
+          "artifact_sha256": "a6737baa04f227141dbbbd78cb5432af91de62513aa2b3a9eee1cca94124433a"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 178982,
+            "busy": 82835
+          },
+          "artifact_sha256": "87d74e014b99383639ac3b34df527f2c09a1e034f9a902ede87a0c27afd41ba2"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 189887,
+            "busy": 83901
+          },
+          "artifact_sha256": "b7cb1da791f73228c528d5a5975d414ca1774b02d727ed13a7f1cfbf9265da86"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "recovery-fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "834abacee9c7a62c3378664274e6b392d90091d91e2684d38906dc4fdd7fb36b"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "recovery-shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "963b5f4ded406c979f3264aa4015994e76a5f84528b8c6525110459f190b3f9f"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 353729,
+            "busy": 176140
+          },
+          "artifact_sha256": "18d8e44aac32da2ab2f8761f6ad35d0b37ba2c01edb9c97013f0c88cb27d3225"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 208704,
+            "busy": 40200
+          },
+          "artifact_sha256": "979ef97ff9c7ac8ad5f03cdc6d2eb33972e0a5409a5d218aff720fb3bd5d245a"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 304420,
+            "busy": 124963
+          },
+          "artifact_sha256": "cfcebc06b8b4b11761a3d9193bf494b6cc291e7503a25eb925ea6c697c27b9a1"
+        },
+        {
+          "features": 3,
+          "args": [
+            "atomic",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 344923,
+            "busy": 172745
+          },
+          "artifact_sha256": "fdadd8a9e850af68f50e3630007f30d144498014934d432fcd34da5569a5916b"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "busy",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "rejected": 12,
+            "busy": 12
+          },
+          "artifact_sha256": "498484e9f4b3d6b593e6f724b4a2a4964bd9aef8c759f86a6c43c8a2e93bdde9"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 207673,
+            "busy": 131733
+          },
+          "artifact_sha256": "d1ff44ef1100cbcaba6053960a22ceb9e8880a7c5082eece9c1dc8764a048126"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "fixed",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 222295,
+            "busy": 142141
+          },
+          "artifact_sha256": "a348a939c8c4330bcd3308963f36a2384ad0fe5e023dc83cc160d15907260c13"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "fixed",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 224601,
+            "busy": 155212
+          },
+          "artifact_sha256": "e31dad6f123adc8b7c09bc7ee367ccb3c3259b312a6cb2330aebd5e5a008b5f3"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "fixed",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 1200,
+            "blocks": 160,
+            "attempts": 215153,
+            "busy": 126587
+          },
+          "artifact_sha256": "eb57472b0fe8a20b06835d542a32f829e2c4b03238056db88f8c4aeed3952cb6"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "recovery-fixed",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "ac2236c8ca396ee3ed2c20ac86a1f963759be03a2e961c7abfefc1f9d4f207a4"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "recovery-shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "epoch": 2,
+            "old_calls_rejected": 5,
+            "fresh_bytes": 64
+          },
+          "artifact_sha256": "fcd22cd23f025f99fab907550b32fd3aee99663588558cb9d402733c5bf940c7"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "shared",
+            "0",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 510497,
+            "busy": 326848
+          },
+          "artifact_sha256": "63f6dcc7a752414bebdf8e78b36ed30645f8bb864d143a394dfe0b24e199c34a"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "shared",
+            "1",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 470973,
+            "busy": 287977
+          },
+          "artifact_sha256": "50d5c822eebe56507e2d16ea6ef530c0c0482dad619b19ffced25752d91c3639"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "shared",
+            "2",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 562094,
+            "busy": 400488
+          },
+          "artifact_sha256": "2aa5113f4ff9f6a29d2a39a5285b2b81b2e4a768fbfcd2396ebf6a5ddbb47774"
+        },
+        {
+          "features": 3,
+          "args": [
+            "mutex",
+            "shared",
+            "3",
+            "1200",
+            "160"
+          ],
+          "result": {
+            "messages": 2400,
+            "blocks": 320,
+            "attempts": 472971,
+            "busy": 288728
+          },
+          "artifact_sha256": "7fd3b4020ccd6e0878a96c4b2711fd998747afc2b2a7e0103edd365b9c469466"
+        }
+      ]
+    }
+  ],
+  "initial_attempts": [
+    {
+      "label": "host",
+      "failures": 4,
+      "reason": "Harness post-unlock reserve probe assumed block storage existed; corrected derived probe only."
+    },
+    {
+      "label": "tsan",
+      "failures": 4,
+      "reason": "Harness post-unlock reserve probe assumed block storage existed; corrected derived probe only."
+    }
+  ],
+  "abi_reused": {
+    "builds": 112,
+    "reason": "All feature ABI input hashes unchanged; host-only additions."
+  },
+  "compiler_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "archive": {
+    "path": "work/exp05-h417-feature-thread-20261021-evidence.tar.gz",
+    "bytes": 2116513,
+    "sha256": "ecc576f8401d19de9e18aa38959958060108a0631ddba8c5fea0d8b47cbe338b"
+  }
+}
