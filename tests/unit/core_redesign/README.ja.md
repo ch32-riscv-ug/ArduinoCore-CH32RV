@@ -267,3 +267,17 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 
 reset／vector／data・bssのELFと命令検査は明示的に実行する別のplatform実験。
 [結果と手順](../../../planning/core-redesign/tasks/EXP-01/runtime-result.ja.md)を参照する。
+
+## EXP-01 clock/time入口
+
+`clock_time_driver.cpp`／`clock_time_oracle.py`／`test_clock_time.py` は、
+clock ready待ちを有限のstepで進め、owned counterのepochと読出しを独立模型へ照合する。
+実MMIOをhostから呼ばない。連続時刻の伸長やArduino millis／microsの成立とは区別する。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_clock_time.py -o junit_family=xunit1
+```
+
+[結果](../../../planning/core-redesign/tasks/EXP-01/clock-time-result.ja.md)、
+[時刻を読む課題](../../../planning/core-redesign/tasks/EXP-01/time-read-exercise.ja.md)を参照する。

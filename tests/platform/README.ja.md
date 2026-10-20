@@ -88,3 +88,14 @@ python3 tests/platform/core_redesign/check_runtime_faults.py \
 固定参照の自動取得を避ける場合は最初のコマンドへ `--sources 保存先` を指定する。
 出力先は未作成の場所を使う。constructor本体やmain・周辺は命令harnessでは実行しない。
 [結果・限界](../../planning/core-redesign/tasks/EXP-01/runtime-result.ja.md)を参照する。
+
+## Core再設計：clock/time入口
+
+```sh
+python3 tests/platform/core_redesign/build_minimal_runtime.py --suite clock-time \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp01-clock-time-link
+```
+
+固定資料をhash検証し、clock・counter・変換の入口をlinkする。実MMIOやmain以降をharnessで実行しない。
+[結果・範囲](../../planning/core-redesign/tasks/EXP-01/clock-time-result.ja.md)を参照する。

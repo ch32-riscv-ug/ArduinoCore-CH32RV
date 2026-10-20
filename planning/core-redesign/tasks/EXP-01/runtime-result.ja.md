@@ -136,3 +136,8 @@ raw-dynamic条件のpreprocessor選択も照合し、最終runではrequested_pi
 次はclock設定・時刻源・I2Cの実backend、ISR入口と共有、資源引渡し・取消／停止を接続する。
 IRQ無効のELFから任意のC++ ISRの成立を推定しない。
 完成core、R/A/B/Cの実I/O比較、実stack peakと実時間、利用者の理解を確認したことにはしない。
+
+## clock/timeの後続
+
+[clock/time入口](clock-time-result.ja.md)では有限のclock切替、32／64 bit SysTick読出し、epochと区間変換を追加比較した。
+このruntimeの40 binaryも回帰確認した。実周波数・精度・起動、継続する論理時刻を確認した意味ではない。
