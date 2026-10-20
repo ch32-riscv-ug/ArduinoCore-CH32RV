@@ -3108,6 +3108,11 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     # ch32rv's own `target-not-in-db` (exit 20, before the probe is opened)
     # instead of arduino-cli asking for a programmer.
     lines.append(f"{board}.upload.protocol=ch32rv")
+    if cfg["family"] in LOADCODE_RAM:
+        # The sketch runs from RAM and rewrites its own flash by DFU; the
+        # factory USB ISP needs DP held high at power-on (platform.txt
+        # ch32rv_dfu).
+        lines.append(f"{board}.upload.tool.ch32rv-app=ch32rv_dfu")
     lines.append(f"{board}.build.variant={board}")
     lines.append(f"{board}.build.march={fam['march']}")
     lines.append(f"{board}.build.mabi={fam['mabi']}")

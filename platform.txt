@@ -175,6 +175,19 @@ tools.ch32rv_isp.upload.params.verbose=--verbose
 tools.ch32rv_isp.upload.params.quiet=
 tools.ch32rv_isp.upload.pattern="{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto --app-device "port:{upload.port.address}" {upload.verbose}
 
+# Over USB alone, on the parts whose sketch rewrites its own flash
+# (CH32H41x, CH32RV_FLASH_SELF_WRITE): the running sketch's DFU interface
+# takes DFU_DETACH, comes back in DFU mode and is written by DFU download from
+# flash offset 0 (docs/usb.ja.md). Their factory ISP is out of reach of
+# software, so boards.txt points their ch32rv-app ports here instead of at
+# ch32rv_isp. Needs a ch32rv with `boot dfu` (main 729ec53, not yet released).
+tools.ch32rv_dfu.path={runtime.tools.ch32rv.path}
+tools.ch32rv_dfu.cmd=ch32rv
+tools.ch32rv_dfu.cmd.windows=ch32rv.exe
+tools.ch32rv_dfu.upload.params.verbose=--verbose
+tools.ch32rv_dfu.upload.params.quiet=
+tools.ch32rv_dfu.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot dfu flash "{build.path}/{build.project_name}.bin" --format bin --probe "port:{upload.port.address}" {upload.verbose}
+
 # UIAPduino Pro Micro CH32V003 V1.4 product bootloader. rv003usb takes the raw
 # binary, and boot entry still needs an external action (docs/uiapduino-hid-upload.ja.md).
 tools.ch32rv_hid.path={runtime.tools.ch32rv.path}
