@@ -658,7 +658,13 @@ extern "C" void ch32rv_usb_task(void)
     busy = true;
     Core::task();
     busy = false;
+    if (void (*f)(void) = ch32rv_usb_deferred) {
+        ch32rv_usb_deferred = nullptr;
+        f();
+    }
 }
+
+void (*volatile ch32rv_usb_deferred)(void);
 
 /* ------------------------------------------------------------ the device's API */
 bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
@@ -728,6 +734,21 @@ void CH32RVUsbDevice::end()
     Core::dcd->close();
     _started = false;
     Core::device = nullptr;
+}
+
+bool CH32RVUsbDevice::restartWithOnly(CH32RVUsbDeviceFunction &only)
+{
+    end();
+    const uint32_t t0 = millis();
+    while ((uint32_t)(millis() - t0) < 50u) {           /* long enough for the host to see it go */
+    }
+    only._next = nullptr;
+    _first = &only;
+    _count = 1;
+    only._instance = 0;
+    CH32RVUsbDeviceConfig c = _config;
+    c.dfuRuntime = false;
+    return begin(c);
 }
 
 bool CH32RVUsbDevice::mounted() const

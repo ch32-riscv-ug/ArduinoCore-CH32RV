@@ -326,6 +326,12 @@ public:
      * running inside a USB callback (a DFU_DETACH, a 1200 bps touch). */
     static void requestBootloader();
 
+    /* Leave the bus and come back with `only` as the device's one function -
+     * the DFU mode of CH32RVUsbDeviceDfuRuntime, which ends in a reset. The
+     * other functions are dropped for good. False if the device cannot begin
+     * again. */
+    bool restartWithOnly(CH32RVUsbDeviceFunction &only);
+
     /* CDC ports one device takes. */
     static uint8_t maxCdcPorts();
 

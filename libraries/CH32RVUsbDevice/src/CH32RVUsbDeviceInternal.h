@@ -60,3 +60,7 @@ static inline uint8_t ch32rv_usb_interval(CH32RVUsbSpeed speed, uint8_t ms)
     return b;
 }
 
+/* Run once from the device task, after the stack's own work and outside any
+ * USB callback (CH32RVUsbDeviceDfuRuntime's switch to DFU mode, which ends and
+ * begins the device). */
+extern void (*volatile ch32rv_usb_deferred)(void);
