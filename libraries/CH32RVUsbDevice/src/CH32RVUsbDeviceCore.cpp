@@ -654,9 +654,14 @@ extern "C" void ch32rv_usb_task(void)
     /* Leave only once the reply to the request that asked for it is out: the
      * status stage of a DFU_DETACH, the host's close after a 1200 bps touch. */
     static uint32_t leave_at;
+    static bool leaving;
     if (Core::bootloader) {
-        if (!leave_at) {
-            leave_at = millis() | 1u;
+        /* A flag of its own: a timestamp forced odd to mean "set" can be a
+         * millisecond ahead of millis(), and the difference then wraps and
+         * leaves at once, before the reply is out. */
+        if (!leaving) {
+            leaving = true;
+            leave_at = millis();
         } else if ((uint32_t)(millis() - leave_at) >= 20u) {
             CH32RVUsbDevice::enterBootloader();
         }
