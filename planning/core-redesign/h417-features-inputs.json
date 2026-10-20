@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "scope": "Build-time message/block storage removal; same serial ownership and recovery assumptions",
+  "features": {
+    "none": 0,
+    "message": 1,
+    "block": 2,
+    "both": 3
+  },
+  "policies": [
+    "single",
+    "fixed",
+    "shared-access"
+  ],
+  "seeds": [
+    0,
+    1
+  ],
+  "operations": 300,
+  "baseline_tests": "test_h417_ownership.py",
+  "counter_bits": [
+    8,
+    32
+  ],
+  "quiescence_mask": 7,
+  "public_api_decided": false
+}
