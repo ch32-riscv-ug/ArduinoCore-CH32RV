@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "scope": "Host parallel validation of build-time feature storage; no H417 backend or shared executor",
+  "features": [0, 1, 2, 3],
+  "gates": ["mutex", "atomic"],
+  "modes": ["fixed", "shared"],
+  "seeds": [0, 1, 2, 3],
+  "messages_per_producer": 1200,
+  "blocks_per_producer": 160,
+  "block_bytes": 64,
+  "sanitizers": ["address,undefined", "thread"],
+  "source_workload": "tests/unit/core_redesign/h417_thread_driver.cpp",
+  "changes_to_workload": ["header", "namespace", "Fabric template feature arguments", "disabled workload counts set to zero", "post-unlock block reserve probe expects rejection when block storage is absent and ack confirms gate reuse"],
+  "busy_gate_calls": {"0": 4, "1": 6, "2": 10, "3": 12},
+  "hardware_dma": false,
+  "recover_while_workers_parked": true
+}
