@@ -1,0 +1,41 @@
+{
+  "version": "EXP01-logical-time-host-1",
+  "date": "2026-10-20",
+  "scope": "arithmetic and timer-domain comparison; no physical clock, gap measurement, sleep or realtime guarantee",
+  "source_inputs": "clock-time-inputs.json",
+  "variants": [
+    {"id": "low32-bounded", "bits": 32, "assumed": false, "fixed_six": false},
+    {"id": "low32-assumed", "bits": 32, "assumed": true, "fixed_six": false},
+    {"id": "native64", "bits": 64, "assumed": false, "fixed_six": false},
+    {"id": "six32-bounded", "bits": 32, "assumed": false, "fixed_six": true},
+    {"id": "six32-assumed", "bits": 32, "assumed": true, "fixed_six": true},
+    {"id": "six64", "bits": 64, "assumed": false, "fixed_six": true}
+  ],
+  "rates_for_sensitivity": [3, 7, 1000, 32768, 6000000, 48000000, 4294967295],
+  "contract": {
+    "low32": "caller-declared elapsed upper bound from last accepted sample, strictly below 2^32 ticks; raw delta cannot verify declaration",
+    "assumed": "if bound unknown, assume fewer than one counter revolution; mark quality assumed until a new logical domain",
+    "native64": "same source epoch and rate, raw never wraps or resets; backward samples refuse without updating output",
+    "fraction": "carry fractional microseconds inside the same rate; variable rate stores numerator/rate, fixed 6MHz stores ticks/6",
+    "known_pause": "caller supplies integral microseconds since last accepted sample; same rate preserves fraction; changed rate requires explicit permission to discard nonzero fraction",
+    "unknown_pause": "explicit new logical epoch and caller-chosen anchor; no claim about unobserved elapsed duration",
+    "outputs": "unsuccessful begin/observe/resume preserves output and drop report; diagnostic history is not current time",
+    "epoch": "nonzero object-local generation, refuse wrap; source epoch and logical epoch are distinct",
+    "concurrency": "serialized, one clock object domain per timer client; no cross-object or cross-core identity guarantee"
+  },
+  "quality_bits": {"assumed": 1, "rounded_boundary": 2},
+  "timer_adapter": {
+    "implementation": "existing 32-bit DeadlineTimer",
+    "observation_gap_us": "strictly below 2^31; checked using accepted uint64 stamp",
+    "quality": "compare strict rejection versus explicit acceptance of assumed/rounded stamps",
+    "domain_change_or_invalid_gap": "stop future schedule, retain already pending notification with its old epoch",
+    "delivery": "explicit poll and take only, no callback or hidden work"
+  },
+  "unverified": [
+    "source gap bounds and stable epoch/rate must be established externally",
+    "hardware frequency and calibration, debug halt and stalls",
+    "V006 and other series sleep retention and wakeup conditions",
+    "IRQ/core sharing and physical counter adaptation",
+    "timer/mailbox lifecycle integration and API adoption"
+  ]
+}
