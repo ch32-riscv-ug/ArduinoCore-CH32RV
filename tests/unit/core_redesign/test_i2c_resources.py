@@ -156,6 +156,19 @@ def test_two_clock_only_clients_can_fill_the_table_without_holding_pins(native):
     assert rows[8]['domain'][2:4]==[1,0] and not rows[9]['status']
 
 
+@pytest.mark.parametrize('phase',['start','stop'])
+def test_stalled_controller_never_releases_resources_just_because_polling_repeats(native,phase):
+    commands=[*ready(),'open 100000','start 1 0 60']
+    if phase=='stop':commands+=['event 1 3','step','cancel 1','step','end']
+    for _ in range(100):commands+=['step','change','pins 0']
+    stalled=len(commands)-1
+    commands+=['end','quiet 0','step','step','take 1','change']
+    rows=replay(native,commands)
+    assert rows[stalled]['active'] and not rows[stalled]['terminal'] and rows[stalled]['held']==[1,0]
+    assert rows[stalled]['domain']==[48000000,1,1,7,0]
+    assert rows[-2]['out'][0]==3 and rows[-2]['held']==[0,0] and rows[-1]['status']==1
+
+
 @pytest.mark.parametrize('kind',['read','write','combined'])
 @pytest.mark.parametrize('seed',CONFIG['seeds'])
 def test_exact_i2c_transcript_matches_unwrapped_engine(native,kind,seed):
