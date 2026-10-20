@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-20",
+  "base_profiles": "runtime-inputs.json",
+  "clock_request_hz": 48000000,
+  "systick_width_bits": {
+    "CH32V003F4P6": 32,
+    "CH32X035C8T6": 64
+  },
+  "counter_clock_sources": [
+    "declared HCLK",
+    "declared HCLK/8"
+  ],
+  "coherent_read_attempts": 3,
+  "scope": "exclusive serialized MMIO; no frequency, calibration accuracy, stall or hardware IRQ proof",
+  "sources": [
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Core/core_riscv.h",
+      "file": "CH32V003-core_riscv.h",
+      "bytes": 12730,
+      "sha256": "00d6e17fe714c3c8f7c58aadeb38a893b3c70d3c15299cd9c0a0ae843e920607"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/ADC/ADC_DMA/User/system_ch32v00x.c",
+      "file": "CH32V003-system_ch32v00x.c",
+      "bytes": 13373,
+      "sha256": "af66846471211a12d797734184c9614b896e7fd180419eeb604195799ad20c57"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Core/core_riscv.h",
+      "file": "CH32X035-core_riscv.h",
+      "bytes": 18236,
+      "sha256": "8585fa0d0c3b87738ed3350f701a5dba601e92e272ed9407153fba1c934022f3"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/ADC/ADC_DMA/User/system_ch32x035.c",
+      "file": "CH32X035-system_ch32x035.c",
+      "bytes": 7293,
+      "sha256": "9d0ba46e52b1b47647a2c33de0651c43f613248ce76bb9a021a2790beda1474a"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/datasheet_en/CH32V003RM.PDF",
+      "file": "CH32V003RM.PDF",
+      "bytes": 2472575,
+      "sha256": "2758a463045dc6e9ec36600a76317d7c5e75ffd421b5a44d8f58a060e6f271ff"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/datasheet_en/CH32X035RM.PDF",
+      "file": "CH32X035RM.PDF",
+      "bytes": 2568824,
+      "sha256": "c5dc49eb6a0086857bc120cf4c1646fa8530006fe5a21e7bbb632a075daf036a"
+    }
+  ]
+}

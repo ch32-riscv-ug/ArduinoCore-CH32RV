@@ -23,10 +23,19 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compiler',type=Path,required=True);parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--sources',type=Path,help='pinned files; if omitted download hash-checked references into out')
+    parser.add_argument('--suite',choices=['runtime','clock-time'],default='runtime')
     args=parser.parse_args();args.out.mkdir(parents=True,exist_ok=False);out=args.out.resolve()
     compiler=args.compiler.resolve();prefix=str(compiler)[:-3]
     config=json.loads(MANIFEST.read_text());commands=[]
-    report=dict(status='running',scope=__doc__,results=[],negative_checks=[],inputs={},reference_sources=config['sources'])
+    extra_inputs=[];cases=CASES
+    if args.suite=='clock-time':
+        clock_manifest=REPO/'planning/core-redesign/clock-time-inputs.json';extra_inputs.append(clock_manifest)
+        config['sources']+=json.loads(clock_manifest.read_text())['sources']
+        config['sources']=list({r['file']:r for r in config['sources']}.values())
+        cases=[('empty',0,0),('clock48',1,0),('counter-low',2,0),('counter-native',3,0),
+               ('duration-variable-rate',4,0),('combined',5,0),('unused-clock',6,0),('unused-counter',7,0),
+               ('duration-constant-rate',8,0),('duration-specialized-32',9,0)]
+    report=dict(status='running',suite=args.suite,scope=__doc__,results=[],negative_checks=[],inputs={},reference_sources=config['sources'])
     def save():
         (out/'result.json').write_text(json.dumps(report,indent=2)+'\n')
         (out/'commands.json').write_text(json.dumps(commands,indent=2)+'\n')
@@ -38,7 +47,7 @@ def main():
         return r
     save()
     try:
-        for p in [Path(__file__).resolve(),MANIFEST,*ROOT.glob('*')]:
+        for p in [Path(__file__).resolve(),MANIFEST,*extra_inputs,*ROOT.glob('*')]:
             if not p.is_file():continue
             relative=p.relative_to(REPO);dest=out/'inputs'/relative;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,dest)
             report['inputs'][str(relative)]=sha(p)
@@ -59,6 +68,9 @@ def main():
                 flags=[f"-march={profile['march']}",f"-mabi={profile['abi']}",'-Os','-ffunction-sections','-fdata-sections',
                        '-fno-exceptions','-fno-rtti','-fno-threadsafe-statics','-fno-unwind-tables','-fno-asynchronous-unwind-tables','-fstack-usage']
                 if lto:flags.append('-flto')
+                if args.suite=='clock-time':
+                    library=Path(run([compiler,*flags,'-print-libgcc-file-name']).stdout.strip()).resolve()
+                    report.setdefault('libgcc',{})[profile['part']]=dict(path=str(library),sha256=sha(library))
                 def layout(dest,arrays):
                     text=(ROOT/'layout.ld.in').read_text()
                     for key,value in dict(FLASH=profile['flash_bytes'],RAM=profile['ram_bytes'],STACK=config['stack_reservation'],ARRAYS=arrays).items():text=text.replace('@'+key+'@',str(value))
@@ -67,15 +79,16 @@ def main():
                     dest.mkdir();layout(dest,arrays)
                     defines=[f"-DTARGET_X035={int(profile['x035'])}",f"-DVECTOR_COUNT={profile['vector_count']}",f'-DCRT_ARRAYS={arrays}',f'-DCASE={case}']
                     objects=[]
-                    for source in ['reset.S','entry.cpp','sketch.cpp']:
+                    sources=['reset.S','entry.cpp','sketch.cpp'] if args.suite=='runtime' else ['reset.S','clock_time_entry.cpp']
+                    for source in sources:
                         obj=dest/(source+'.o');objects.append(obj)
                         extra=['-std=c++17'] if source.endswith('.cpp') else []
                         run([compiler,*flags,*extra,*defines,'-c',ROOT/source,'-o',obj])
                     return objects
                 def link(dest,objects,expect=True,extra=()):
                     return run([compiler,*flags,'-nostdlib','-Wl,--gc-sections','-Wl,--no-warn-rwx-segments',f"-T{dest/'image.ld'}",
-                                f"-Wl,-Map,{dest/'image.map'}",*extra,*objects,'-o',dest/'image.elf'],expect)
-                for label,case,arrays in CASES:
+                                f"-Wl,-Map,{dest/'image.map'}",*extra,*objects,*(['-lgcc'] if args.suite=='clock-time' else []),'-o',dest/'image.elf'],expect)
+                for label,case,arrays in cases:
                     dest=group/label;objects=compile_case(dest,case,arrays);link(dest,objects)
                     run([prefix+'objcopy','-O','binary',dest/'image.elf',dest/'image.bin'])
                     nm=run([prefix+'nm','-n',dest/'image.elf']).stdout;(dest/'symbols.txt').write_text(nm)
@@ -83,11 +96,12 @@ def main():
                     (dest/'sections.txt').write_text(run([prefix+'size','-A',dest/'image.elf']).stdout)
                     result=boot.inspect((dest/'image.elf').read_bytes(),(dest/'image.bin').read_bytes(),dis,nm,profile['ram_bytes'],profile['x035'])
                     result.update(part=profile['part'],lto=lto,case=label,elf_sha256=sha(dest/'image.elf'),image_sha256=sha(dest/'image.bin'))
-                    if case==2:assert len(result['constructor_hooks'])==3
+                    if args.suite=='runtime' and case==2:assert len(result['constructor_hooks'])==3
                     else:assert not result['constructor_hooks']
-                    if case in [6,7]:assert 'requested_pin' in boot.symbols(nm)
-                    if case in [3,4]:assert result['flash_bytes'] > next(r['flash_bytes'] for r in report['results'] if r['part']==profile['part'] and r['lto']==lto and r['case']=='empty')
+                    if args.suite=='runtime' and case in [6,7]:assert 'requested_pin' in boot.symbols(nm)
+                    if args.suite=='runtime' and case in [3,4]:assert result['flash_bytes'] > next(r['flash_bytes'] for r in report['results'] if r['part']==profile['part'] and r['lto']==lto and r['case']=='empty')
                     report['results'].append(result);save()
+                if args.suite!='runtime':continue
                 # These are expected rejections, not successful runtime behavior.
                 dest=group/'reject-constructors';objects=compile_case(dest,2,0);r=link(dest,objects,False)
                 assert 'constructor arrays disabled' in r.stderr
