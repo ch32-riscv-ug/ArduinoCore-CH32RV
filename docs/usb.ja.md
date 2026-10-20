@@ -30,12 +30,23 @@ Device では WeAct X035F8U6、Host では X035C8T6 を実機基準にしてお�
 | 系列 | デバイス | PD | 確認 |
 |---|---|---|---|
 | CH32X035 / X033 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認（PD ソースはビルドのみ） |
+| CH32H417 / H416 | USBSS（SuperSpeed、5 Gbit/s）のドライバ | なし | ビルドのみ（書込み手段の準備待ち） |
 | ほかの系列 | `begin()` が `false`（`Unsupported`） | `begin()` が `false` | ビルドのみ |
 
 デバイスは自前のスタックに移したところで、コントローラのドライバ（`CH32RVUsbDcd.h` の表）は X035 / X033 の USBFS
 だけです。V103、V20x（USBFS・USBD）、V30x（USBFS・USBHS）は TinyUSB の時代には動いていた（ビルドのみ）ので、
 そのクロックと PHY の立ち上げ（コミット 3ab1761 の `CH32RVUsbDevicePort.h`）を使ってドライバを足していきます。
 ディスクリプタとクラスは Full / High / SuperSpeed のどれでも組めるようにしてあります。
+
+H417 / H416 は USBSS（`CH32RVUsbDcdUsbssH417.cpp`）で、SuperSpeed のホストにだけつながります。
+- **USB 2.0 に切り替える経路はありません。** USB 2.0 の線（USBHS、PB8 / PB9）は SWCLK / SWDIO と兼用で、
+  デバッグ機能は止められません（TinyUSB PR #3779 の実測）。WCH-Link をつないだまま USB 2.0 を使えないためです。
+- **USBHS のドライバは別に用意します。**
+- **工場出荷のブートローダーは USBFS（PA11 / PA12）にあります。**
+- **USBSS の PLL は HSE を基準にします。** 25 MHz の水晶を前提にしており、HSE が立たなければ
+  `begin()` が失敗します。
+- **手順の出どころ:** EVT の USBSS デモと、TinyUSB PR #3779 の実測による注意点に沿っています。
+  ファイル冒頭にまとめてあります。
 
 `begin()` が失敗する理由（`lastError()`）:
 
@@ -273,8 +284,9 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 - **残りの系列**:
   - L103 / M103、M030、V205: USB のコントローラは今の USBFS の仕組みで動きますが、ボードの既定クロックが
     8 MHz（PLL なし）で、USB を動かすには既定のクロックを上げる必要があります（方針の確認待ち）。
-  - V407 / V467、X305 / X315、V205 の USBHS: V307 とは別の「第2世代」の USBHS で、ドライバを新しく書く必要が
-    あります。H417 の USBSS（SuperSpeed）はその後。
+  - V407 / V467、X305 / X315、V205、H417 の USBHS: V307 とは別の「第2世代」の USBHS で、ドライバを新しく書く必要が
+    あります（H417 のものは EP の配置がさらに違う）。
+  - H417: USBSS の実機確認（書込み手段の準備待ち）、USBFS、USBSS のホスト、V5F の利用。
 - **ベンダーの直接転送**（`writeDirect()`）: USBHS の DMA で入れる。今は `NotSupported`。
 - **USB ネットワークの IP 層**（EspUsbDevice の `ipConfig()` / `dhcpServer()` / `beginNetwork()`）: IP スタック
   （lwIP など）が要るので、入れるかは方針の確認待ち。

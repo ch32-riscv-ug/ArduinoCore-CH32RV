@@ -588,6 +588,9 @@ void Core::ep0_done(bool in, uint16_t length)
 /* ------------------------------------------------------------ the task */
 void Core::task()
 {
+    if (dcd->poll) {
+        dcd->poll();
+    }
     noInterrupts();
     const uint8_t e = events;
     const uint16_t din = done_in, dout = done_out;

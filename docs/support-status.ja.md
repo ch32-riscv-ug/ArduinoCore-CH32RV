@@ -31,12 +31,19 @@
 | CH32X305 | 実装済 | 実装済（未検証） |
 | CH32X315 | 実装済 | 実装済 |
 | CH32M030 | 実装済 | 未実装 |
+| CH32H415 | 実装済 | 未実装 |
+| CH32H416 | 実装済 | 未実装 |
+| CH32H417 | 実装済 | 未実装 |
 
 ## 製品ボード固有機能
 
 CH32X315 の書込み対象は zero-wait Flash の 192 KiB です。
 追加の nonzero-wait 領域を合わせた物理容量を upload.maximum_size に使用しません。
 upload の実装と、Arduino の周辺 API・各接続経路の実機検証範囲は別です。
+
+CH32H415 / H416 / H417 は V3F コアだけを使います（V5F は起動しません）。
+イメージは flash に置き、リセット時に共有 SRAM（0x20100000 からの 512 KiB）へ全体を複製して実行します。
+code・data・stack の合計がこの 512 KiB に収まる必要があるので、upload.maximum_size と maximum_data_size はどちらも 512 KiB です。
 
 | ボード | 実装範囲 |
 |---|---|

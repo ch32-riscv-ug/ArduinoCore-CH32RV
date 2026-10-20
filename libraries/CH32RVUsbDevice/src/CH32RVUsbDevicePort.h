@@ -53,6 +53,19 @@ static void port_set_boot_mode(void)
     X03X_FLASH_CTLR |= X03X_FLASH_CTLR_LOCK;
 }
 
+/* ======================================================= CH32H417 / H416 */
+#elif defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
+
+/* USBSS only for now. USBHS (PB8/PB9) shares its pins with SWCLK/SWDIO and
+ * USBFS (PA11/PA12, where the factory bootloader listens) has no driver yet. */
+static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
+{
+    if (controller != CH32RVUsbController::Auto && controller != CH32RVUsbController::SuperSpeed) {
+        return nullptr;
+    }
+    return &ch32rv_usb_dcd_usbss_h417;
+}
+
 /* ======================================================= the rest: no driver yet */
 #else
 

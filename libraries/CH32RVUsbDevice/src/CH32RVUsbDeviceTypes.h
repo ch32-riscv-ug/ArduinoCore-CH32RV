@@ -304,9 +304,9 @@ enum class CH32RVUsbControlStage : uint8_t {
 /* The largest bulk packet this series' controllers reach (full speed 64,
  * high speed 512, SuperSpeed 1024): what the classes' default buffers are
  * sized from. A property of the chip, not a setting. */
-#if defined(CH32RV_SERIES_CH32H417)
-#define CH32RV_USB_MAX_PACKET 1024
-#elif defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || \
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
+#define CH32RV_USB_MAX_PACKET 1024           /* USBSS; CH32H415 has USBHS only (DS resource table) */
+#elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || \
     defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || \
     defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
 #define CH32RV_USB_MAX_PACKET 512

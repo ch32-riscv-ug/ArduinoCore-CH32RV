@@ -48,6 +48,7 @@ enum class CH32RVUsbController : uint8_t {
     FullSpeed,     /* USBFS / OTG_FS */
     HighSpeed,     /* USBHS */
     Usbd,          /* the device-only USBD of CH32V20x */
+    SuperSpeed,    /* USBSS (CH32H417/H416) */
 };
 
 /* How the Microsoft OS 2.0 descriptor set names the interfaces Windows should

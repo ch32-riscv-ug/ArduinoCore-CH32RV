@@ -102,6 +102,7 @@ EVT_FAMILY = [
     ("CH32M030", "M030"),
     ("CH32X035", "X033/X035"),
     ("CH32X315", "X305/X315"),
+    ("CH32H417", "H415/H416/H417"),
 ]
 
 # Our side. (状態, 公開API, 備考). Nothing here is derived - it is the
@@ -120,7 +121,8 @@ STATUS = {
     "RCC (クロック)": ("一部実装", "F_CPU",
                        "HSI(とHSI由来PLL)で系列ごとに1つの固定周波数。V103 72 MHz、V20x/V30x 96 MHz、"
                        "X033/X035 48 MHz、V00x/M007 24 MHz、V407/V467・X305/X315 20 MHz、"
-                       "L103/M103・V205・M030 8 MHz(PLL未使用)。HSEは未実装(USB HSのみHSEを使う)"),
+                       "L103/M103・V205・M030 8 MHz(PLL未使用)、H415/H416/H417 25 MHz(V3Fのみ)。"
+                       "HSEは未実装(USB HSとH417のUSB SSのみHSEを使う)"),
     "PWR (低消費電力)": ("未実装", "-", "sleep APIは提供していない"),
     "FLASH (自己書き換え)": ("未実装", "-",
                             "自己書き換えとEEPROM emulationのAPIは提供していない"),
@@ -166,7 +168,8 @@ STATUS = {
     "USB HS": ("一部実装", "`CH32RVUsbDevice`(`UsbPort::HighSpeed`)",
                "V305/V307/V317(第1世代USBHS、HSEが要る)。自前スタックのドライバは未移植。V303はUSBHSが無い。"
                "V205・V407/V467・X305/X315の第2世代USBHSは新しいドライバが要り未実装"),
-    "USB SS": ("対象外", "-", "X315のみ。当面扱わない"),
+    "USB SS": ("一部実装", "`CH32RVUsbDevice`(`CH32RVUsbController::SuperSpeed`)",
+               "H417/H416のUSBSS deviceドライバ(ビルドのみ、実機確認待ち)。USB 2.0への切り替えとhostは無し"),
     "USB PD": ("一部実装", "`CH32RVUsbPd`(library: `USBPD`、`USBPDSource`)",
                "sink(X035で実機確認)とsource(ビルドのみ)をX033/X035で実装。"
                "他のUSBPD搭載seriesは`begin()`がfalseを返す"),

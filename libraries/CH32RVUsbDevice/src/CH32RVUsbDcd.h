@@ -47,6 +47,9 @@ struct CH32RVUsbDcd {
     void (*stall)(uint8_t address, bool on);
     void (*ep0Stall)(void);       /* both directions, until the next SETUP */
     void (*remoteWakeup)(void);   /* resume signalling (SuperSpeed: function wake) */
+    /* Optional: called from the device task, for work a driver must not do
+     * in its interrupt or has to time (USBSS: releasing a held link). */
+    void (*poll)(void);
 };
 
 static inline bool ch32rv_usb_dcd_can(const CH32RVUsbDcd &dcd, CH32RVUsbSpeed speed)
@@ -66,3 +69,4 @@ void ch32rv_usbd_isr_resume(void);
 
 /* The drivers this build has (CH32RVUsbDevicePort.h picks one). */
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbfs_x03x;
+extern const CH32RVUsbDcd ch32rv_usb_dcd_usbss_h417;

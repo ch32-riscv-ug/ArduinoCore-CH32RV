@@ -643,9 +643,18 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     メニューにするかは、**実機ベンチがそろってから検討する**。
   - 第2世代 USBHS（V407 / V467、X305 / X315、V205）の dcd を新しく書く。**実機ベンチがそろってから検討する**。
     調査の下書きは work/usbport/others（git 管理外）。
-  - H417: ボードとして入れてから USBSS。TinyUSB には SuperSpeed が無く（速度は FS / HS まで）、dcd を足すだけでは
-    済まない。USBSS の dcd の新規作成に加え、TinyUSB 本体（速度、EP0 512 B、SET_SEL などの標準要求、SS の
-    エンドポイントコンパニオン）とこのライブラリのディスクリプタ（SS 用、BOS の SS 能力）に手が入る。
+  - H417（2026-10-20）:
+    - 済み:
+      - ボード（H415 / H416 / H417、V3F 単独、共有 SRAM で実行）。
+      - USBSS のデバイスのドライバ（ビルドのみ）。
+    - 残り:
+      - 実機確認。書込みの経路は ch32rv が WCH-Link 経由で準備中。
+      - USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
+      - USBFS のドライバ。
+      - USBSS のホスト。
+      - HSE と PLL で既定のクロックを上げること。今は HSI 25 MHz。
+      - V5F を使う形（タスク周りの入れ替えと合わせて）。
+      - 工場出荷 ISP への入口。ISP は USBFS にある。
   - ライブラリをボードマネージャーに同梱するか分けるか（下の「ライブラリの配布」）。
   - ベンダーの直接転送（USBHS の DMA で）。
   - **USB の外で要るスタック（ファイルシステム・IP）。タスク周りの入れ替えが終わってから取りかかる**（USB スタックの
@@ -680,8 +689,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     （ESP32-S3 相手）が通った。例は X035 で全部ビルドが通る。費用は docs/usb.ja.md（TinyUSB 版より小さい）。
   - ホスト（CH32RVUsbHost）も自作に移し、CH32RVTinyUSB・vendor/tinyusb.lock.toml・vendor_tinyusb.py を外した
     （2026-10-20）。
-  - 残り: ほかの系列のデバイスのドライバ（V103、V20x の USBFS と USBD、V30x の USBFS と USBHS、第2世代 USBHS、
-    H417 の USBSS）。ホストの V20x / V30x の実機確認。
+  - 残り: ほかの系列のデバイスのドライバ（V103、V20x の USBFS と USBD、V30x の USBFS と USBHS、第2世代 USBHS）。
+    H417 の USBSS は書いた（実機確認待ち）。ホストの V20x / V30x の実機確認。
 - （経緯）**USB スタックを TinyUSB のまま拡張するか、自作するかを決める（基本は 1 つに統合する）。**
   - CherryUSB は見送りの方向（2026-10-20 の調査）。upstream 1.6.1（Apache-2.0）の WCH 向け移植は X035 / X033 に無く
     （USBFS は V20x / V30x の配置だけ）、デバイス側は割り込みの中でクラスのコールバックを呼ぶ。ホスト側は独立した

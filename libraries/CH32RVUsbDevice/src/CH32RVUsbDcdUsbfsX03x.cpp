@@ -479,7 +479,7 @@ static void isr(void)
 const CH32RVUsbDcd ch32rv_usb_dcd_usbfs_x03x = {
     "USBFS (CH32X035/X033)", 8, 64, 1u << (uint8_t)CH32RVUsbSpeed::Full,
     dcd_open, dcd_close, dcd_connect, dcd_speed, dcd_set_address,
-    dcd_ep_open, dcd_ep_close, dcd_ep_close_all, dcd_xfer, dcd_abort, dcd_stall, dcd_ep0_stall, dcd_remote_wakeup,
+    dcd_ep_open, dcd_ep_close, dcd_ep_close_all, dcd_xfer, dcd_abort, dcd_stall, dcd_ep0_stall, dcd_remote_wakeup, nullptr,
 };
 
 #endif
