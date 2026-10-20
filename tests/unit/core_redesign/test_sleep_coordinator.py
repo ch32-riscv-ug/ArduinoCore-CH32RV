@@ -43,8 +43,8 @@ def sleep_native(tmp_path_factory):
     return exe
 
 
-def replay(exe, variant, commands, short=False):
-    p = subprocess.run([str(exe), str(variant), 'short' if short else 'normal'],
+def replay(exe, variant, commands, short=False, timed=True):
+    p = subprocess.run([str(exe), str(variant), 'short' if short else 'normal', 'timer' if timed else 'notimer'],
                        input='\n'.join(commands)+'\n', capture_output=True, text=True, timeout=60)
     assert p.returncode == 0, p.stderr
     assert not p.stderr
@@ -226,3 +226,36 @@ def test_same_serial_stimuli_for_explicit_and_registry(sleep_native, seed):
     for rows in traces:
         for row in rows: row.pop('registration')
     assert traces[0] == traces[1] == traces[2]
+
+
+@pytest.mark.parametrize('variant', VARIANTS)
+@pytest.mark.parametrize('known', [False, True])
+@pytest.mark.parametrize('injection', [0, 2])
+def test_no_timer_keeps_io_input_clock_and_recovery(sleep_native, variant, known, injection):
+    commands = ['init', 'observe 1 60000000 60000000', 'start 0 4', 'request',
+                'finish 0 1 3 4 66 1', 'take 0 1', 'poll', f'enter 1 1 1 {injection}']
+    if not injection: commands += ['wake 1']
+    commands += [f'restore 1 2 0 {int(known)} 2500000 0', 'ready 0 1', 'ready 1 1', 'poll', 'input_take']
+    traces = [replay(sleep_native, variant, commands, timed=timed) for timed in (False, True)]
+    assert traces[0][-2]['phase'] == 1 and traces[0][-1]['status'] == int(bool(injection))
+    assert all(not row['timer_enabled'] for row in traces[0])
+    for rows in traces:
+        for row in rows:
+            for key in ['timer_enabled', 'timer', 'notice']: row.pop(key)
+    assert traces[0] == traces[1]
+
+
+@pytest.mark.parametrize('variant', VARIANTS)
+def test_no_timer_commands_are_unavailable_not_silent_success(sleep_native, variant):
+    rows = replay(sleep_native, variant, ['init', 'arm 0 0', 'timer_poll', 'timer_take', 'request'], timed=False)
+    assert [row['status'] for row in rows[1:4]] == [-1, -1, -1]
+    assert rows[-1]['status'] == 1 and rows[-1]['phase'] == 2
+
+
+@pytest.mark.parametrize('variant', VARIANTS)
+def test_no_timer_attempt_tickets_still_retire(sleep_native, variant):
+    commands = ['init']
+    for _ in range(255): commands += ['request', 'abort']
+    commands += ['request', 'enter 1 1 1 0']
+    rows = replay(sleep_native, variant, commands, short=True, timed=False)
+    assert rows[-2]['status'] == 0 and rows[-2]['attempt'] == 255 and rows[-1]['status'] == 0

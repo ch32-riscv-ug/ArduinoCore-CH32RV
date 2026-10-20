@@ -1,5 +1,13 @@
 #include "../../unit/core_redesign/sleep_coordinator.hpp"
 using namespace sleep_experiment;
+#ifndef NO_TIMER
+#define NO_TIMER 0
+#endif
+#if NO_TIMER
+using Deadlines = NoDeadline;
+#else
+using Deadlines = Timer;
+#endif
 #if CASE == 2
 using List = Registry<2>;
 #elif CASE == 3
@@ -10,9 +18,11 @@ using List = Explicit<Port<>, Port<>>;
 #if CASE > 0
 Port<> ports_probe[2];
 Clock clock_probe;
+#if !NO_TIMER
 Timer timer_probe;
+#endif
 List list_probe;
-Coordinator<List> coordinator_probe;
+Coordinator<List, uint32_t, Deadlines> coordinator_probe;
 #endif
 #if CASE > 0 && !UNUSED
 volatile uint32_t operation, argument[10], observed[20];
@@ -50,7 +60,11 @@ extern "C" __attribute__((section(".text.entry"), noreturn)) void probe_main() {
             observed[0] = list_probe.add(&ports_probe[0], &Port<>::callback, registration_probe);
             observed[0] = list_probe.add(&ports_probe[1], &Port<>::callback, registration_probe);
 #endif
+#if NO_TIMER
+            observed[0] = coordinator_probe.bind(list_probe, clock_probe);
+#else
             observed[0] = coordinator_probe.bind(list_probe, clock_probe, timer_probe);
+#endif
 #endif
             break;
 #if CASE != 5
@@ -62,9 +76,11 @@ extern "C" __attribute__((section(".text.entry"), noreturn)) void probe_main() {
 #endif
 #if CASE != 4
         case 6: clock_status = clock_probe.observe(source, {argument[3], true}, stamp_probe); break;
+#if !NO_TIMER
         case 7: observed[0] = timer_probe.arm(current, stamp_probe, argument[3], argument[4]); break;
         case 8: observed[0] = unsigned(timer_probe.poll(current, stamp_probe)); break;
         case 9: observed[0] = timer_probe.take(notice_probe); break;
+#endif
 #endif
 #if CASE >= 1 && CASE <= 3
         case 10: observed[0] = coordinator_probe.request(request_probe); break;
@@ -104,10 +120,12 @@ extern "C" __attribute__((section(".text.entry"), noreturn)) void probe_main() {
         observed[8] = uint32_t(stamp_probe.us);
         observed[9] = uint32_t(stamp_probe.us >> 32);
         observed[10] = stamp_probe.epoch;
+#if !NO_TIMER
         observed[11] = timer_probe.armed() | (unsigned(timer_probe.pending()) << 8);
         observed[12] = notice_probe.expiration.latest_due;
         observed[13] = notice_probe.expiration.skipped;
         observed[14] = notice_probe.epoch;
+#endif
 #endif
 #if CASE >= 1 && CASE <= 3
         observed[15] = unsigned(coordinator_probe.phase());

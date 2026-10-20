@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "scope": "optional timer dependency and stage failure injection in serial fake adapters; no WFI/WFE or hardware faults",
+  "variants": [0, 2, 4],
+  "timer_modes": [true, false],
+  "fault_actions": ["Prepare", "Quiet", "Off", "Restore", "Activate", "Abort", "ClockLostAtQuiet"],
+  "fault_sides": [0, 1],
+  "fault_replies": [0, 2],
+  "fault_reply_meanings": {"0": "Waiting", "2": "Failed"},
+  "fault_contract": "invoke bounded adapter action first, then override reply; Prepare must close admission even on failure; no callback reentry",
+  "no_timer_contract": "input wake and clock accounting remain, timer arm/poll/take absent, no timer object or retained timer pointer",
+  "abi_expected_builds": 64,
+  "abi_profiles": "planning/core-redesign/runtime-inputs.json"
+}

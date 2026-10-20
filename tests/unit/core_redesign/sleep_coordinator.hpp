@@ -13,6 +13,19 @@ enum class Injection : uint8_t { None, BeforeCheck, AfterOff, AfterWait };
 using Callback = Reply (*)(void*, Action);
 using Clock = time_experiment::LogicalClock<32, false, time_experiment::SixMHz>;
 using Timer = time_experiment::DomainTimer<>;
+struct NoDeadline {};
+
+template<class Deadline> class DeadlineBinding {
+    Deadline* deadlines = nullptr;
+protected:
+    void attach(Deadline& source) { deadlines = &source; }
+    bool deadline_pending() const { return deadlines->pending(); }
+};
+// Empty base: no placeholder object, pointer, table or runtime branch required.
+template<> class DeadlineBinding<NoDeadline> {
+protected:
+    bool deadline_pending() const { return false; }
+};
 
 template<unsigned Bytes = 32> struct Port {
     experiment::IoBuffer<Bytes> buffer;
@@ -158,16 +171,21 @@ public:
     }
 };
 
-template<class Participants, class Generation = uint32_t> class Coordinator {
+template<class Participants, class Generation = uint32_t, class Deadline = Timer>
+class Coordinator : private DeadlineBinding<Deadline> {
     static_assert(std::is_unsigned<Generation>::value && !std::is_same<Generation, bool>::value,
                   "unsigned generation");
     Participants* participants = nullptr;
     Clock* clock = nullptr;
-    Timer* timer = nullptr;
     Generation generation = 0;
     Phase state = Phase::Unbound;
     bool input = false, time_restored = true;
-    bool pending() const { return input || timer->pending(); }
+    bool pending() const { return input || this->deadline_pending(); }
+    bool bind_common(Participants& list, Clock& source) {
+        if (state != Phase::Unbound || source.phase() != time_experiment::State::Running) return false;
+        participants = &list; clock = &source; state = Phase::Active;
+        return true;
+    }
     void abort_prepare() {
         if (participants->visit(Action::Abort) != Reply::Ready) {
             participants->visit(Action::Prepare); state = Phase::Fault; return;
@@ -179,13 +197,18 @@ public:
     Coordinator() = default;
     Coordinator(const Coordinator&) = delete;
     Coordinator& operator=(const Coordinator&) = delete;
-    bool bind(Participants& list, Clock& source, Timer& deadlines) {
-        if (state != Phase::Unbound || source.phase() != time_experiment::State::Running) return false;
-        participants = &list; clock = &source; timer = &deadlines; state = Phase::Active;
+    bool bind(Participants& list, Clock& source, Deadline& deadlines) {
+        if (!bind_common(list, source)) return false;
+        this->attach(deadlines);
         return true;
     }
+    bool bind(Participants& list, Clock& source) {
+        static_assert(std::is_same<Deadline, NoDeadline>::value, "timer dependency requires a source");
+        return bind_common(list, source);
+    }
     bool request(Generation& out) {
-        if (state != Phase::Active || pending() || generation == std::numeric_limits<Generation>::max()) return false;
+        if (state != Phase::Active || clock->phase() != time_experiment::State::Running ||
+            pending() || generation == std::numeric_limits<Generation>::max()) return false;
         if (!participants->freeze()) return false;
         ++generation; out = generation;
         state = Phase::Quiescing;
@@ -209,7 +232,7 @@ public:
                 if (reply == Reply::Failed) state = Phase::Fault;
                 else state = reply == Reply::Ready ? Phase::Armed : Phase::Quiescing;
             }
-        } else if (state == Phase::Recovering && time_restored) {
+        } else if (state == Phase::Recovering && clock_ready()) {
             const Reply reply = participants->visit(Action::Restore);
             if (reply == Reply::Failed) state = Phase::Fault;
             else if (reply == Reply::Ready) {
@@ -226,7 +249,9 @@ public:
         if (injection == Injection::BeforeCheck) post_input();
         if (pending()) { abort_prepare(); return Entry::Rejected; }
         if (!wake_armed || !atomic_gate_supported) return Entry::Unsupported;
-        if (participants->visit(Action::Quiet) != Reply::Ready) { state = Phase::Quiescing; return Entry::Rejected; }
+        const Reply quiet = participants->visit(Action::Quiet);
+        if (quiet == Reply::Failed) { state = Phase::Fault; return Entry::Fault; }
+        if (quiet == Reply::Waiting) { state = Phase::Quiescing; return Entry::Rejected; }
         if (!clock->pause()) { state = Phase::Fault; return Entry::Fault; }
         time_restored = false;
         if (participants->visit(Action::Off) != Reply::Ready) { state = Phase::Fault; return Entry::Fault; }
@@ -244,7 +269,7 @@ public:
                                         bool elapsed_known, uint64_t elapsed, uint64_t anchor,
                                         time_experiment::Stamp& out) {
         using namespace time_experiment;
-        if ((state != Phase::Recovering && state != Phase::Fault) || !token || token != generation || time_restored)
+        if ((state != Phase::Recovering && state != Phase::Fault) || !token || token != generation || clock_ready())
             return Result::Closed;
         Dropped drop{};
         const Result result = elapsed_known ? clock->resume_known(sample, elapsed, false, out, drop)
@@ -259,6 +284,8 @@ public:
     Phase phase() const { return state; }
     Generation attempt() const { return generation; }
     bool input_pending() const { return input; }
-    bool clock_ready() const { return time_restored; }
+    bool clock_ready() const {
+        return time_restored && clock && clock->phase() == time_experiment::State::Running;
+    }
 };
 } // namespace sleep_experiment

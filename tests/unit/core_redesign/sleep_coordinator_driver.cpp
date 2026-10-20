@@ -4,13 +4,14 @@
 #include <string>
 using namespace sleep_experiment;
 
-template<unsigned Capacity, class G> int run() {
+template<unsigned Capacity, class G, bool Timed = true> int run() {
     using List = typename std::conditional<Capacity == 0, Explicit<Port<>, Port<>>, Registry<Capacity ? Capacity : 1, G>>::type;
-    using Flow = Coordinator<List, G>;
+    using Deadlines = typename std::conditional<Timed, Timer, NoDeadline>::type;
+    using Flow = Coordinator<List, G, Deadlines>;
     List list;
     Flow flow;
     Clock clock;
-    Timer timer;
+    Deadlines timer;
     Port<> ports[5];
     G attempt = 0;
     unsigned reg_generation = 0, reg_index = 99;
@@ -41,7 +42,8 @@ template<unsigned Capacity, class G> int run() {
                     ok = list.add(&ports[1], &Port<>::callback, token) && ok;
                     reg_generation = token.generation; reg_index = token.index;
                 }
-                status = ok && flow.bind(list, clock, timer);
+                if constexpr (Timed) status = ok && flow.bind(list, clock, timer);
+                else status = ok && flow.bind(list, clock);
             }
         } else if (op == "start" && i < 5) status = int(ports[i].start(unsigned(a[1])));
         else if (op == "finish" && i < 5)
@@ -51,9 +53,16 @@ template<unsigned Capacity, class G> int run() {
         else if (op == "ready" && i < 5 && a[1] <= 2) { ports[i].restoration = Reply(a[1]); status = 1; }
         else if (op == "observe") {
             clock_status = clock.observe({a[1], uint32_t(a[0]), 6000000}, {a[2], true}, stamp); status = int(clock_status);
-        } else if (op == "arm") status = timer.arm(source_status(), stamp, uint32_t(a[0]), uint32_t(a[1]));
-        else if (op == "timer_poll") status = int(timer.poll(source_status(), stamp));
-        else if (op == "timer_take") status = timer.take(notice);
+        } else if (op == "arm") {
+            if constexpr (Timed) status = timer.arm(source_status(), stamp, uint32_t(a[0]), uint32_t(a[1]));
+            else status = -1;
+        } else if (op == "timer_poll") {
+            if constexpr (Timed) status = int(timer.poll(source_status(), stamp));
+            else status = -1;
+        } else if (op == "timer_take") {
+            if constexpr (Timed) status = timer.take(notice);
+            else status = -1;
+        }
         else if (op == "request") status = flow.request(attempt);
         else if (op == "poll") status = int(flow.poll());
         else if (op == "post") flow.post_input();
@@ -82,8 +91,10 @@ template<unsigned Capacity, class G> int run() {
                   << ",\"clock_status\":" << unsigned(clock_status)
                   << ",\"clock\":[" << unsigned(clock.phase()) << ',' << clock.history_us() << ',' << clock.epoch() << ',' << clock.source()
                   << "],\"stamp\":[" << stamp.us << ',' << stamp.epoch << ',' << unsigned(stamp.quality)
-                  << "],\"timer\":[" << timer.armed() << ',' << timer.pending() << ',' << timer.epoch()
-                  << "],\"notice\":[" << notice.expiration.latest_due << ',' << notice.expiration.skipped << ',' << notice.expiration.saturated << ',' << notice.epoch
+                  << "],\"timer_enabled\":" << int(Timed) << ",\"timer\":[";
+        if constexpr (Timed) std::cout << timer.armed() << ',' << timer.pending() << ',' << timer.epoch();
+        else std::cout << "0,0,0";
+        std::cout << "],\"notice\":[" << notice.expiration.latest_due << ',' << notice.expiration.skipped << ',' << notice.expiration.saturated << ',' << notice.epoch
                   << "],\"read\":" << unsigned(output) << ",\"registered\":[";
         for (unsigned n = 0; n < 5; ++n) {
             if (n) std::cout << ',';
@@ -103,12 +114,13 @@ template<unsigned Capacity, class G> int run() {
     return 0;
 }
 int main(int argc, char** argv) {
-    if (argc != 3) return 2;
+    if (argc != 3 && argc != 4) return 2;
     const bool small = std::string(argv[2]) == "short";
+    const bool timed = argc == 3 || std::string(argv[3]) != "notimer";
     switch (std::stoi(argv[1])) {
-    case 0: return small ? run<0, uint8_t>() : run<0, uint32_t>();
-    case 2: return small ? run<2, uint8_t>() : run<2, uint32_t>();
-    case 4: return small ? run<4, uint8_t>() : run<4, uint32_t>();
+    case 0: return timed ? (small ? run<0, uint8_t>() : run<0, uint32_t>()) : (small ? run<0, uint8_t, false>() : run<0, uint32_t, false>());
+    case 2: return timed ? (small ? run<2, uint8_t>() : run<2, uint32_t>()) : (small ? run<2, uint8_t, false>() : run<2, uint32_t, false>());
+    case 4: return timed ? (small ? run<4, uint8_t>() : run<4, uint32_t>()) : (small ? run<4, uint8_t, false>() : run<4, uint32_t, false>());
     default: return 2;
     }
 }
