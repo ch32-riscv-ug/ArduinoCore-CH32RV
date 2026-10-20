@@ -7,7 +7,7 @@ CDC シリアル、HID（キーボード・マウス・ゲームパッド・メ�
 USB ネットワーク（CDC-NCM）、オーディオ（UAC1 / UAC2）、カメラ（UVC）、DFU ランタイム（書き込みの入口）を、宣言するだけで組み合わせられる USB デバイスのライブラリです。
 API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) と名前・操作をそろえています。
 移植時には下記の API 差分と、CH32 の pin・RAM・endpoint・帯域の制約を確認します。
-土台は同梱の TinyUSB（[CH32RVTinyUSB](../CH32RVTinyUSB/)）です。
+土台はこのライブラリ自身のデバイススタックで、TinyUSB は使いません（[ADR-0012](../../docs/adr/0012-usb-stack.ja.md)）。
 使い方の全体は [docs/usb.ja.md](../../docs/usb.ja.md) にあります。
 
 ```cpp
@@ -55,8 +55,9 @@ void loop() {
   全部終わるまで待ちます（EspUsbDevice は書けた分だけ返します）。1200bps タッチでブートローダーに入れます。
 - **スタックは `loop()` と `delay()` から動きます**（RTOS のタスクではありません）。`device.task()` で明示的にも
   動かせます。
-- **個数とバッファはビルド時に決まります。** CDC を2つ以上使うときは、スケッチの `build_opt.h` に
-  `-DCFG_TUD_CDC=2` と書きます。EspUsbDevice の実行時の設定（`setRxBufferSize()` など）はありません。
+- **同じクラスの数には上限があります**（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。上限の中なら
+  宣言するだけで使えます。CDC のバッファは `setBuffers()` でスケッチのものに差し替えられます
+  （EspUsbDevice の `setRxBufferSize()` などはありません）。
 - **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
   EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
 - **無いもの**: ファームウェア更新の各クラス、USB ネットワークの IP 層（このコアに IP スタックが無いので、
@@ -100,7 +101,7 @@ HID のクラスは、いくつ宣言しても1つの HID インターフェー�
 
 | 例 | 内容 |
 |---|---|
-| Serial、SerialMulti | CDC。SerialMulti は `build_opt.h` で CDC を2つにする |
+| Serial、SerialMulti | CDC。SerialMulti は CDC を2つ持つ |
 | Keyboard、KeyboardNKRO、Mouse、KeyboardMouse、MediaKeys、Gamepad | HID。**起動すると自動で入力を送ります**（EspUsbDevice の例と同じ） |
 | VendorHID、CustomHID | ベンダー HID / 自分のレポートディスクリプタ |
 | MIDI、MIDIController、MIDIInterface | MIDI。MIDIInterface は UART の MIDI と USB MIDI の変換 |
@@ -127,7 +128,7 @@ HID の複数機能は report ID で一つの interface を共有します。
 |---|---|
 | キーボードのみ | HID に1 |
 | CDC のみ | 通知用1、データ IN/OUT用1の計2 |
-| CDC二つ | 計4。`CFG_TUD_CDC=2` も必要 |
+| CDC二つ | 計4 |
 | Keyboard + CDC + MSC | 1 + 2 + 1の計4 |
 
 IN/OUT の endpoint 数、packet memory、ISO 能力は controller ごとに異なります。ESP32 の「IN endpoint が四つ」等の

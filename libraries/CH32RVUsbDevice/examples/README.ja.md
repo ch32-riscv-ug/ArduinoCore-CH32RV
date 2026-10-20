@@ -42,7 +42,6 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 
 手元の開発中 core を検証する場合は、Arduino CLI が参照する platform がこの作業ツリーであることを確認します。`sketch.yaml` の profile は配布版を固定するビルド条件であり、実機検証済みボードの一覧ではありません。
 
-- `SerialMulti` は同じフォルダの `build_opt.h` が必要です。`.ino` だけを別フォルダへコピーしないでください。
 - Audio の例には `flash=48K`、RAM disk 等には `ram=16K` の profile 下限があります。実際の容量は使用する Part Number とリンク結果で確認します。
 - `pnum=ANY` のメモリ容量は系列内の最小値です。実ボードに大きな RAM があるのにリンクできないときは正確な型番を選びます。
 - 生成済み `sketch.yaml` は直接編集せず、[examples のビルド規則](../../../docs/examples-build-rules.ja.md)に従います。
@@ -58,7 +57,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 | 名前、VID/PID、serial number | `.ino` の `CH32RVUsbDeviceConfig`。`1209:0001` はテスト用 |
 | 複数台の識別 | 固定 serial number を台ごとに変えるか、`nullptr` でチップ固有値を使う |
 | controller | `config.controller`。HS 選択は USBHS の物理端子と HSE を確認 |
-| クラス個数・FIFO | `build_opt.h` の `CFG_TUD_*`。実行時に増やす API ではない |
+| クラス個数・バッファ | 個数はクラスごとの上限（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。CDC のバッファは `setBuffers()` で差し替え |
 | キーボードの文字配列 | `setLayout()` と PC の配列。raw usage 送信とは区別 |
 | 音声/映像の format | 各例の rate/channel/frame 設定。USB endpoint の帯域にも合わせる |
 
@@ -71,7 +70,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 | UART に何も出ない | UART の RX/TX、115200 bps、GND、リセット後のモニタ開始。USB CDC と UART の取り違え |
 | `USB_BEGIN_FAILED Unsupported` | 現在のライブラリでその系列の Device が実装済みか |
 | `PortUnavailable` | 型番の controller/端子、HS 用 HSE の有無と `CH32RV_HSE_HZ` |
-| `TooManyInstances` | `CFG_TUD_CDC` 等の個数と `build_opt.h` の反映 |
+| `TooManyInstances` | 同じクラスの数がクラスごとの上限を超えていないか |
 | `OutOfEndpoints` / `DescriptorTooLarge` | 組み合わせた function 数と descriptor の上限 |
 | `NotReady` / HID送信失敗 | PC に列挙されているか、suspend 中でないか |
 | CDC に何も届かない | DTR を有効にしてポートを開いたか、ローカルエコー/改行設定 |

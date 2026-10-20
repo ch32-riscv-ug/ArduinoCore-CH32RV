@@ -1,13 +1,13 @@
 # USB の使い方（デバイス・ホスト・PD）
 
-このコアの USB は、次の4つのライブラリで構成します。スタックは TinyUSB です（[ADR-0012](adr/0012-usb-stack.ja.md)）。
+このコアの USB は、次の4つのライブラリで構成します。デバイスはこのコア自身のスタック、ホストは TinyUSB です（[ADR-0012](adr/0012-usb-stack.ja.md)。ホストも自前に移す予定です）。
 
 | ライブラリ | 役割 | スケッチから |
 |---|---|---|
 | [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/) | チップの USB をデバイスとして使う（CDC・HID・MIDI・ベンダー・MSC・CCID・ネットワーク・オーディオ・ビデオ・DFU ランタイム） | `#include <CH32RVUsbDevice.h>` |
 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/) | USB-C の PD 充電器に電圧を頼む（シンク）、PD で電圧を出す（ソース） | `#include <CH32RVUsbPd.h>` |
 | [CH32RVUsbHost](../libraries/CH32RVUsbHost/) | チップの USB をホストとして使う（HID・CDC シリアル・MIDI・MSC・ベンダー・CCID） | `#include <CH32RVUsbHost.h>` |
-| [CH32RVTinyUSB](../libraries/CH32RVTinyUSB/) | 同梱の TinyUSB 本体と設定（ホストコントローラのドライバはこのコアのもの） | 直接は使わない |
+| [CH32RVTinyUSB](../libraries/CH32RVTinyUSB/) | 同梱の TinyUSB 本体と設定。今はホストだけが使う（ホストコントローラのドライバはこのコアのもの） | 直接は使わない |
 
 ホストは [CH32RVUsbHost](../libraries/CH32RVUsbHost/)（`#include <CH32RVUsbHost.h>`）です（[ホスト](#ホストch32rvusbhost)）。
 
@@ -30,128 +30,13 @@ Device では WeAct X035F8U6、Host では X035C8T6 を実機基準にしてお�
 
 | 系列 | デバイス | PD | 確認 |
 |---|---|---|---|
-| CH32X035 / X033 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認。ホストを PC と ESP32-S3（EspUsbHost）の両方にして全クラスを確認（PD ソースはビルドのみ） |
-| CH32V103 | USBFS（PA11 / PA12） | — | ビルドのみ |
-| CH32V203 / V208 | USBFS（PB6 / PB7）と USBD（PA11 / PA12）を `config.controller` で選ぶ。`Auto` は USBFS（USBD しか無い V203F6P6 / G6U6 は USBD。USBFS しか無い F8P6 / F8U6 で `Usbd` は `PortUnavailable`） | — | ビルドのみ |
-| CH32V303 | USBFS（PA11 / PA12） | — | ビルドのみ |
-| CH32V305 / V307 / V317 | USBFS（PA11 / PA12）と USBHS（PB6 / PB7、High Speed、HSE が要る）を `config.controller` で選ぶ。`Auto` は USBFS（USBHS しか無い V305FBP6 / GBU6 は USBHS） | — | ビルドのみ |
+| CH32X035 / X033 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認（PD ソースはビルドのみ） |
 | ほかの系列 | `begin()` が `false`（`Unsupported`） | `begin()` が `false` | ビルドのみ |
 
-「ビルドのみ」の系列は、ベンチの DUT の USB 端子がまだ配線されていないため、実機では確かめていません。
-
-系列ごとのほかのペリフェラルとまとめた表は [peripheral-support.ja.md](peripheral-support.ja.md) にあります。
-
-USB の無い系列でも、同じスケッチはビルドできます。動かないことは `begin()` の戻り値で分かります。
-
-## 使い始め方
-
-### 1. いちばん簡単な形：`SerialUSB`
-
-`SerialUSB` は `Serial` と同じく定義済みです。`begin()` だけで、既定の名前（1209:0001、"CH32RV Arduino"）の
-デバイスが CDC ポート1つで動き出します。
-
-```cpp
-#include <CH32RVUsbDevice.h>
-
-void setup() { SerialUSB.begin(); }
-void loop()  { if (SerialUSB) SerialUSB.println("hello"); delay(1000); }
-```
-
-- `if (SerialUSB)` は、ホストがポートを開いている（DTR が立っている）間だけ真になります。
-- ホストが開いていないときの書き込みは捨てます。ケーブルが無くてもスケッチは止まりません。
-
-例: [SerialUSBEcho](../libraries/CH32RVUsbDevice/examples/SerialUSBEcho/SerialUSBEcho.ino)
-
-### 2. 機能を足す：宣言するだけ
-
-キーボードや MIDI などの機能（クラス）は、オブジェクトを宣言するとデバイスに付きます。宣言した順に
-インターフェースが並び、`begin()` のときにディスクリプタが組み立てられます。
-
-```cpp
-CH32RVUsbDeviceHidKeyboard keyboard;   // 定義済みの USBDevice に付く
-CH32RVUsbDeviceMidi midi;
-
-void setup() { SerialUSB.begin(); }    // CDC + キーボード + MIDI の複合デバイスになる
-```
-
-API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) に合わせてあり、`Esp` を `CH32RV` に置き換えた
-名前になっています（`EspUsbDeviceHidKeyboard` → `CH32RVUsbDeviceHidKeyboard`、`ESP_USB_HID_KEY_A` →
-`CH32RV_USB_HID_KEY_A`）。違いは [CH32RVUsbDevice の README](../libraries/CH32RVUsbDevice/README.ja.md#espusbdevice-からの置き換え) にまとめています。
-
-| クラス | 内容 | 例 |
-|---|---|---|
-| `CH32RVUsbDeviceCdcSerial` | 仮想 COM ポート（`Stream`）。`SerialUSB` はこれ | Serial、SerialMulti、SerialUSBEcho |
-| `CH32RVUsbDeviceHidKeyboard` | キーボード。19 種のレイアウト（`setLayout()`）、NKRO、Lock LED | Keyboard、KeyboardNKRO |
-| `CH32RVUsbDeviceHidMouse` | マウス | Mouse、KeyboardMouse |
-| `CH32RVUsbDeviceHidGamepad` | ゲームパッド（6 軸、ハット、32 ボタン） | Gamepad |
-| `CH32RVUsbDeviceHidConsumerControl` / `HidSystemControl` | メディアキー / 電源・スタンバイ | MediaKeys |
-| `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID。ドライバ不要のデータ通信（hidapi、WebHID） | VendorHID |
-| `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID | CustomHID |
-| `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル） | MIDI、MIDIController、MIDIInterface |
-| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（libusb、WebUSB、WinUSB からドライバ不要で使う）。`onControlRequest()` でベンダーリクエストにも答えられる | USBVendor |
-| `CH32RVUsbDeviceMsc` | USB メモリ（マスストレージ）。ブロックは `onRead()` / `onWrite()` か、下の RAM ディスクから | MSC、MSCFatRamDisk、CompositeHidCdcMsc |
-| `CH32RVUsbDeviceMscRamDisk` / `MscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム（スケッチからファイルを置く・ホストが置いたファイルを読む） | MSC、MSCFatRamDisk |
-| `CH32RVUsbDeviceCcid` | スマートカードリーダー（スロット1つ）。ホストの PC/SC から見えるカードの中身をスケッチが答える | SmartCardReader |
-| `CH32RVUsbDeviceMscSdCard` | SPI の SD カードを MSC の中身にする（`#include <CH32RVUsbDeviceMscSdCard.h>`。ファイルシステムのライブラリは不要） | MSCSdCard |
-| `CH32RVUsbDeviceNet` | USB ネットワーク（CDC-NCM）。生の Ethernet フレームを送受信する（IP スタックは無い） | UsbNetworkPing |
-| `CH32RVUsbAudioFunction` | USB オーディオ（UAC1 / UAC2）。再生・録音・両方、ミュートと音量 | AudioSpeaker、AudioMicrophone、AudioHeadset |
-| `CH32RVUsbDeviceVideo` | USB カメラ（UVC）。YUY2 / MJPEG、バルクかアイソクロナス。フレームをペイロードごとに作ることもできる | VideoCamera |
-| `CH32RVUsbDeviceDfuRuntime` | USB だけで書き込み直す入口。既定で付くので、宣言するのは `onDetach()` を使うときだけ（[書き込み](#書き込み) を参照） | DfuRuntime |
-
-HID のクラスは、いくつ宣言しても1つの HID インターフェースにまとまります。1つだけならそのまま（キーボードとマウスは
-BIOS でも使えるブートデバイス）、2つ以上ならレポート ID（キーボード 1、マウス 2、ゲームパッド 3、メディアキー 4、
-システム 5、ベンダー 6）で区別します。
-
-キーボードレイアウトは、`setLayout()` で名前を挙げたものだけがリンクされます（1種あたり約 1 KB）。
-
-**宣言しなかったクラスはリンクされません。** `#include` しただけのスケッチは、Flash も RAM も増えません。
-
-### 3. 自分のデバイスにする：設定と失敗の確認
-
-製品名や VID/PID は、`CH32RVUsbDeviceConfig` で `begin()` に渡します。デバイス本体を自分で宣言することもできます
-（1つのスケッチにデバイスは1つです）。
-
-```cpp
-CH32RVUsbDevice usb;
-CH32RVUsbDeviceCdcSerial console(usb);
-CH32RVUsbDeviceDfuRuntime dfu(usb);
-
-void setup() {
-  CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209; config.pid = 0x0001;       // 製品には自分の ID を取る
-  config.manufacturer = "Example Labs";
-  config.product = "My device";
-  if (!usb.begin(config)) {
-    Serial.println(usb.lastErrorName());          // 理由: Unsupported、TooManyInstances など
-  }
-}
-```
-
-- `serialNumber` を省略すると、チップの固有 ID（64 bit、16 桁の16進）を使います。**チップごとに一意であることを仕様とします。**
-  同じ PC に2枚つないでも区別でき、ch32rv の discovery はこれを書き込みポートの名前（`ch32rv-app://<シリアル>`）に
-  使うので、別の USB ポートに挿し直しても IDE のポート名が変わりません。スケッチが固定のシリアルを付けて複数台を
-  つないだ場合、ch32rv は重なったものを USB の位置の名前（`ch32rv-app://usb-<位置>`）に落とします。
-- インターフェースの名前は `setName()` で変えられます（`console.setName("Console")`）。
-- 1209:0001 は pid.codes のテスト用 ID です。机の上の試作には使えますが、製品には使えません。
-- スケッチがオブジェクトを持たない2つのインターフェースの名前は、設定で変えます: `config.hidInterfaceName`（HID を
-  まとめたインターフェース）、`config.dfuRuntimeName`（既定の DFU ランタイム。変える前に [書き込み](#書き込み) の
-  discovery の説明を読んでください）。
-
-**既定の文字列と ID は、すべて `build_opt.h` で上書きできます。** スケッチを書き換えずに板や製品ごとに変えたいときに
-使います（実行時の設定や `setName()` があれば、そちらが優先です）。
-
-| define | 既定 | 何の既定か |
-|---|---|---|
-| `CH32RV_USB_DEVICE_VID` / `_PID` / `CH32RV_USB_DEVICE_VERSION` | 0x1209 / 0x0001 / 0x0100 | `config.vid` / `pid` / `deviceVersion` |
-| `CH32RV_USB_DEVICE_MANUFACTURER` / `_PRODUCT` | "ch32-riscv-ug" / "CH32RV Arduino" | `config.manufacturer` / `product` |
-| `CH32RV_USB_CDC_NAME`、`_HID_NAME`、`_MIDI_NAME`、`_VENDOR_NAME`、`_MSC_NAME`、`_CCID_NAME`、`_NET_NAME`、`_AUDIO_NAME`、`_VIDEO_NAME` | "CDC"、"HID"、"MIDI"、"Vendor"、"Mass storage"、"Smart card reader"、"Network"、"Audio"、"Camera" | 各インターフェースの名前（iInterface） |
-| `CH32RV_USB_DFU_RUNTIME_NAME` | "CH32RV" | DFU ランタイムの名前。ch32rv の discovery の目印 |
-| `CH32RV_USB_MSC_VENDOR` / `_PRODUCT` / `_REVISION` | "CH32RV" / "MSC" / "1.0" | MSC の SCSI INQUIRY（`vendorID()` などで変更） |
-| `CH32RV_USB_MSC_VOLUME_LABEL` | "CH32RV" | FAT RAM ディスクの `format()` のボリュームラベル |
-
-文字列の define は `-DCH32RV_USB_DEVICE_PRODUCT='"My gadget"'` のように引用符ごと書きます。
-
-例: [CustomDevice](../libraries/CH32RVUsbDevice/examples/CustomDevice/CustomDevice.ino)
+デバイスは自前のスタックに移したところで、コントローラのドライバ（`CH32RVUsbDcd.h` の表）は X035 / X033 の USBFS
+だけです。V103、V20x（USBFS・USBD）、V30x（USBFS・USBHS）は TinyUSB の時代には動いていた（ビルドのみ）ので、
+そのクロックと PHY の立ち上げ（コミット 3ab1761 の `CH32RVUsbDevicePort.h`）を使ってドライバを足していきます。
+ディスクリプタとクラスは Full / High / SuperSpeed のどれでも組めるようにしてあります。
 
 `begin()` が失敗する理由（`lastError()`）:
 
@@ -160,48 +45,37 @@ void setup() {
 | `Unsupported` | この系列ではまだ USB デバイスが使えない |
 | `PortUnavailable` | `config.controller` に、この部品に無いコントローラを指定した、または必要な HSE を使えない |
 | `TooManyFunctions` | クラスが `CH32RV_USB_MAX_FUNCTIONS`（既定 6）より多い |
-| `TooManyInstances` | 同じクラスが上限（`CFG_TUD_CDC` など、既定 1）より多い |
+| `TooManyInstances` | 同じクラスがクラスごとの上限（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）より多い |
 | `NotStarted` / `NotReady` | `begin()` の前、またはホストが構成していないときに HID のレポートを送ろうとした |
 | `OutOfEndpoints` | エンドポイントが足りない（X035 は 7 本） |
 | `DescriptorTooLarge` | 構成ディスクリプタが `CH32RV_USB_CONFIG_MAX`（既定 512 B）を超えた |
 | `InvalidArgument` | 設定の値が正しくない（`deviceInterfaceGuid` の形） |
 
-### 4. 同じクラスを2つ以上：`build_opt.h`
+### 4. 同じクラスを2つ以上
 
-同じクラスをいくつ持てるか、バッファの大きさはいくつかは、USB スタックのビルド時に決まります。既定は小さい部品に
-合わせて少なめです（各クラス1つ、CDC のバッファは送受信 256 B）。スケッチと同じフォルダーに `build_opt.h` を置くと、
-そのスケッチだけ変えられます（[ADR-0007](adr/0007-user-build-option-injection.ja.md)）。
+同じクラスは、クラスごとの上限まで宣言するだけで持てます（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。
+ビルド時の設定は要りません。宣言しなかったクラスはリンクされず、宣言した分だけ RAM を使います。
 
-```
--DCFG_TUD_CDC=2
--DCFG_TUD_CDC_RX_BUFSIZE=1024
-```
+バッファの大きさは、パケットの大きさ（コントローラと速度で決まる）から決めます。CDC は `setBuffers()` で
+スケッチの配列に差し替えられます。オーディオとビデオのパケットの上限は、コントローラのドライバが知らせる値
+（`device.maxPacketSize()`）です。ビデオをバルクで送るかアイソクロナスで送るかは `setTransferType()` で選びます。
+
+残っている define（スケッチのフォルダーの `build_opt.h` で変えられる。[ADR-0007](adr/0007-user-build-option-injection.ja.md)）:
 
 | 設定 | 既定 | 意味 |
 |---|---|---|
-| `CFG_TUD_CDC` / `CFG_TUD_MIDI` / `CFG_TUD_VENDOR` / `CFG_TUD_DFU_RUNTIME` | 1 | そのクラスをいくつまで持てるか（HID は常に1つのインターフェースにまとまるので増やす必要はない） |
 | `CH32RV_USB_MAX_HID_CLASSES` | 6 | 1つのデバイスに宣言できる HID クラスの数 |
 | `CH32RV_USB_HID_REPORT_MAX` | 288 | HID を合成したレポートディスクリプタの大きさ（RAM） |
-| `CFG_TUD_CDC_RX_BUFSIZE` / `CFG_TUD_CDC_TX_BUFSIZE` | 256 | CDC 1ポートあたりのバッファ |
-| `CFG_TUD_HID_EP_BUFSIZE` | 64 | HID のレポートの最大長 |
-| `CFG_TUD_MIDI_RX_BUFSIZE` / `CFG_TUD_MIDI_TX_BUFSIZE` | 64 | MIDI のバッファ |
-| `CFG_TUD_VENDOR_RX_BUFSIZE` / `CFG_TUD_VENDOR_TX_BUFSIZE` | 128 | ベンダー（バルク）のバッファ |
-| `CFG_TUD_NCM_IN_NTB_MAX_SIZE` / `CFG_TUD_NCM_OUT_NTB_MAX_SIZE` | 2048 | ネットワークの転送ブロック（仕様の最小） |
-| `CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX` / `_OUT_SZ_MAX` ほか | FS 64 / HS 196 | オーディオのパケットとバッファ（tusb_config.h の audio 節） |
-| `CFG_TUD_VIDEO_STREAMING_BULK` / `CFG_TUD_VIDEO_STREAMING_EP_BUFSIZE` | 1 / FS 64 | ビデオをバルクで送るか、ペイロードの大きさ |
-| `CFG_TUD_MSC_EP_BUFSIZE` | 512 | MSC の転送バッファ（1ブロック） |
 | `CH32RV_USB_DEVICE_CCID_BUFFER_SIZE` | 280 | CCID のメッセージの最大長（受信と送信に1つずつ） |
 | `CH32RV_USB_MAX_FUNCTIONS` | 6 | デバイスに付けられるクラスの数 |
 | `CH32RV_USB_CONFIG_MAX` | 512 | 構成ディスクリプタの組み立て用バッファ（RAM） |
 
-上限を上げても、そのクラスを宣言しなければ費用はかかりません。ただし宣言した場合は、上限の数だけ RAM を確保します
-（CDC 1つあたり約 0.7 KB）。
-
-例: [SerialMulti](../libraries/CH32RVUsbDevice/examples/SerialMulti/)（`build_opt.h` で CDC を2つ）
+例: [SerialMulti](../libraries/CH32RVUsbDevice/examples/SerialMulti/)（CDC を2つ）
 
 ### コントローラと速度
 
-`config.controller` でどの USB を使うかを選びます。
+`config.controller` でどの USB を使うかを選びます。今ドライバがあるのは X035 / X033 の USBFS（`Auto` / `FullSpeed`）
+だけで、下の表のほかの値と系列は、ドライバを足したときの形です。
 
 | 値 | 意味 |
 |---|---|
@@ -340,6 +214,8 @@ void loop() { USBPD.maintain(); }    // PPS の契約を保つ
 
 ## 費用（X035、空のスケッチ Flash 728 B / RAM 4 B との差）
 
+**下の値は TinyUSB の時代のものです。自前のスタックで測り直します。**
+
 | スケッチ | Flash | RAM |
 |---|---|---|
 | `#include <CH32RVUsbDevice.h>` だけ | 0 | 0 |
@@ -398,6 +274,9 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 
 ## 今後の予定
 
+- **デバイスのコントローラのドライバ**: V103 の USBFS、V20x の USBFS と USBD、V30x の USBFS と USBHS（TinyUSB の
+  時代の立ち上げはコミット 3ab1761）。
+- **ホストを自前のスタックに移す**（デバイスと同じ形）。
 - **残りの系列**:
   - L103 / M103、M030、V205: USB のコントローラは今の USBFS の仕組みで動きますが、ボードの既定クロックが
     8 MHz（PLL なし）で、USB を動かすには既定のクロックを上げる必要があります（方針の確認待ち）。
@@ -410,14 +289,14 @@ void loop() { while (port.available()) Serial.write(port.read()); }
   ブートローダーに入ります。ほかの系列は普通のリセットです。
 - **ホストの V20x / V30x での実機確認**: X035 は C8T6 と ESP32-S3 で確認済み。V20x / V30x（レジスタ配置が別）は
   ビルドのみ。
-- **準備できない MSC でデバイス全体が止まる**: TinyUSB の MSC ホストは列挙中の TEST UNIT READY を上限なく
+- **準備できない MSC でデバイス全体が止まる**（ホスト）: TinyUSB の MSC ホストは列挙中の TEST UNIT READY を上限なく
   繰り返すため、メディアの無いカードリーダーのような MSC をつなぐと、同じデバイスの HID や CDC もマウント
   されない（upstream の TODO。回数か時間で打ち切る修正を入れるか検討）。
 - **ホストのアイソクロナスと USB ネットワーク**（オーディオ、ビデオ、NCM）: 今は無し。
 
 ## 既知の問題
 
-- **X035 以外の系列は実機で未確認です。** 次の3点は実機で確かめるまで不確かです。
+- **X035 以外の系列は実機で未確認です。** 次の3点は、ドライバを足して実機で確かめるまで不確かです。
   - USB の 48 MHz を HSI（±1.6〜2.5 %）から作っています。USB の Full Speed が求めるのは ±0.25 % です。X035 は
     HSI で動いていますが、ほかの系列で通信が不安定なら HSE を使う設定が要ります。
   - V103 の USBFS で、エンドポイント 4〜7 の自動トグルが効くか（資料は EP1〜3 とも読める）。

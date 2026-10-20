@@ -3,10 +3,9 @@
  * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
  * docs/usb.ja.md describes the library.
  *
- * CH32: build_opt.h next to this sketch raises the number of CDC ports the USB
- * stack holds to 2 (-DCFG_TUD_CDC=2); X035's USBFS has 7 endpoints besides EP0,
- * so two ports (4) leave room for more. The ESP32-P4-only third port below
- * stays out. */
+ * CH32: a device takes up to four CDC ports; X035's USBFS has 7 endpoints
+ * besides EP0, so two ports (4) leave room for more. The ESP32-P4-only third
+ * port below stays out. */
 #include <CH32RVUsbDevice.h>
 
 // Two independent USB CDC ACM serial ports on one device.
@@ -17,7 +16,7 @@
 //
 // Each CDC function uses a notification endpoint number and a duplex data
 // endpoint number. Two functions use four numbers on CH32. begin() checks the
-// controller budget; build_opt.h sets the TinyUSB instance count to two.
+// controller budget.
 
 CH32RVUsbDevice device;
 
@@ -28,7 +27,7 @@ CH32RVUsbDeviceCdcSerial Console(device, "Console");
 CH32RVUsbDeviceCdcSerial DataLink(device, "Data Link");
 
 // This ESP32-P4 conditional variant is inactive in CH32 builds. The CH32
-// example exposes Console and DataLink only, matching CFG_TUD_CDC=2.
+// example exposes Console and DataLink only.
 #if defined(CONFIG_IDF_TARGET_ESP32P4)
 #define SERIAL_MULTI_HAS_THIRD_PORT 1
 CH32RVUsbDeviceCdcSerial Telemetry(device, "Telemetry");

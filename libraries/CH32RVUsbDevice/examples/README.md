@@ -34,7 +34,6 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 
 For development-core checks, verify that CLI resolves this working tree. Generated sketch profiles pin a distributed platform version; they are not a hardware-validation matrix.
 
-- Keep SerialMulti's `build_opt.h` with its sketch; it enables two CDC instances.
 - Audio profiles require at least 48 KiB flash; RAM-disk profiles require at least 16 KiB RAM. Actual fit depends on the selected part and linked image.
 - `pnum=ANY` declares the series minimum memory. Select the actual part when using its larger RAM/flash.
 - Do not hand-edit generated `sketch.yaml`; see [example build rules](../../../docs/examples-build-rules.ja.md).
@@ -50,7 +49,7 @@ Declare functions on one device, then call `device.begin(config)` once, or use p
 | VID/PID, product, serial | CH32RVUsbDeviceConfig in the sketch; 1209:0001 is a test ID |
 | Multiple board identities | Unique serial per board, or nullptr for the chip-derived default |
 | Controller | config.controller plus matching physical pins and HSE for HS |
-| Counts/FIFOs | CFG_TUD_* in build_opt.h, not runtime buffer setters |
+| Counts/buffers | Per-class limits (CDC and MIDI 4, vendor and video 2, others 1); CDC buffers via setBuffers() |
 | Keyboard characters | setLayout plus the PC keyboard layout |
 | Audio/video format | The example's sample/frame settings and controller bandwidth |
 
@@ -63,7 +62,7 @@ USB tasks run after loop and during delay. Call device.task regularly in long pr
 | No UART log | UART wiring, 115200 baud, GND, monitor timing; do not confuse UART with CDC |
 | Unsupported | Implemented series/controller support |
 | PortUnavailable | Exact part, controller pins, HSE and CH32RV_HSE_HZ |
-| TooManyInstances | CFG_TUD_* counts and build_opt.h |
+| TooManyInstances | More of one class than its limit |
 | OutOfEndpoints / DescriptorTooLarge | Composite function and descriptor limits |
 | NotReady / failed HID report | Host configuration and suspend state |
 | No CDC data | DTR, terminal local echo and newline settings |

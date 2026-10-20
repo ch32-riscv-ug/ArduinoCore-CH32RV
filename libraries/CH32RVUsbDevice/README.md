@@ -8,8 +8,8 @@ mass storage (RAM disks, an SD card), a smart card reader (CCID), a network
 adapter (CDC-NCM), audio (UAC1/UAC2), a camera (UVC) and a DFU runtime
 interface (an upload entry), combined by declaring them. The API follows
 [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice); migration also
-requires checking API differences, pins, RAM, endpoints and bandwidth below. Built on the vendored TinyUSB
-([CH32RVTinyUSB](../CH32RVTinyUSB/)). The full guide (Japanese) is
+requires checking API differences, pins, RAM, endpoints and bandwidth below. Built on its own device stack, not
+TinyUSB. The full guide (Japanese) is
 [docs/usb.ja.md](../../docs/usb.ja.md).
 
 ```cpp
@@ -60,8 +60,9 @@ Differences:
   1200 bps touch.
 - **The stack runs from `loop()` and `delay()`**, not an RTOS task;
   `device.task()` runs it explicitly.
-- **Counts and buffers are fixed at build time**: two CDC ports need
-  `-DCFG_TUD_CDC=2` in the sketch's `build_opt.h`.
+- **Each class has a count limit** (CDC and MIDI 4, vendor and video 2,
+  others 1); within it, declaring is enough. CDC buffers can be replaced with
+  the sketch's own through `setBuffers()`.
 - **Disks are objects the MSC class reads from** (`setStorage()`; `attach()`
   does it), not lambdas bound to `onRead()`.
 - **Not here**: the firmware-update classes, the network IP layer (no IP
@@ -121,7 +122,7 @@ functions share one HID interface with report IDs. Default DFU uses no endpoint.
 |---|---|
 | Keyboard | One for HID |
 | CDC | Two: notification and duplex data |
-| Two CDC ports | Four, plus CFG_TUD_CDC=2 |
+| Two CDC ports | Four |
 | Keyboard + CDC + MSC | One + two + one = four |
 
 Controllers differ in IN/OUT resources, packet memory and ISO limits. Do not
