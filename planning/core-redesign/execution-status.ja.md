@@ -10,7 +10,7 @@
 | P2 用途対照 | PREP-01と02、K0と結合X0のhost検査、ABI link | 最小起動、I/O backend、上流のbuild専用再現 | 実IRQ共有、wire、PD、実機起動 |
 | EXP-01 最小構成・I/O | logic-only linkまで | 独立runtime、I/O契約、定数／実行時入口と除去比較 | 実起動・周辺・IRQ時間 |
 | EXP-02 データと同期 | [直列単位](tasks/EXP-02/result.ja.md)と[寿命・共有単位](tasks/EXP-02/shared-result.ja.md)：host92＋31件、link200＋68構成、未使用36＋16行が0 B、TSan4条件 | 実行器への待機接続、ring／message／poolの共有条件 | 実ISR／コア間の同期と禁止時間 |
-| EXP-03 実行・通知 | Rの明示stepまで | A/B/Cの同等契約、再投稿・満杯・timer・M/S/U・wait・cancel、別stack対照の範囲調査 | MCU時間・stack観測、採否はP5 |
+| EXP-03 実行・通知 | Rの明示stepと[有限work準備](tasks/EXP-03/work-preparation.ja.md)：host41件、link56構成、M/S/U・世代・非再入 | EXP-01との結合、A/B/Cの同等契約、宛先mailbox・timer・wait・cancel、別stack対照の範囲調査 | MCU時間・stack観測、採否はP5 |
 | EXP-04 保存 | V003／X035の消去方式の資料確認 | read／program条件、媒体model、RAW／blob／key、1／2／4単位、領域・linker・設定の検査 | 実電断・停止・upload保持 |
 | EXP-05 拡張 | タッチ追加のR対照 | 表示交換・独立library・能力差・H417所有modelと資料確認 | 実cache可視性・両コア・reset |
 | EXP-06 完成用途 | RのK0／X0、goldenと故障条件 | 同じ用途でR/A/B/Cを結合し費用・変更課題を比較 | 実通信・電流・PPS source・教材の利用者レビュー |
@@ -28,6 +28,7 @@
 - [P2-PREP-02](tasks/P2-PREP-02/result.ja.md)：X0の共有bus・周期・結合ロジック。
 - [EXP-02直列単位](tasks/EXP-02/result.ja.md)：データ部品・容量・未使用除去。
 - [EXP-02寿命・共有単位](tasks/EXP-02/shared-result.ja.md)：move-only、gate、登録競合、MPSC／SPSCのhost検査とABI比較。
+- [EXP-03有限work準備](tasks/EXP-03/work-preparation.ja.md)：有限snapshot、再投稿、公平性、M/S/U、非再入と解除。
 
-次はEXP-03の実行・通知・待機接続とEXP-02の残る実共有条件を進める。
+次はEXP-01のI/O契約、EXP-03のtimer・宛先通知・待機接続、EXP-02の残る実共有条件を進める。
 P2の実backend待ちで、pureな部品とhost契約の検査を止めない。

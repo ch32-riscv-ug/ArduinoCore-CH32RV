@@ -268,6 +268,7 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 | P1 比較条件と実験設計 | DESIGN-02 完了。P1-1 と EXP-00 依頼を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-02/result.ja.md) |
 | P2 再現基盤と対照準備 | 進行中。EXP-00、PREP-01と02完了。bus・周期のhost結合済み。起動・実周辺backendは未検証 |
 | P3 | EXP-02の直列・寿命・共有単位を実施。host92＋31件、link200＋68構成、TSan4条件。[作業別状態](planning/core-redesign/execution-status.ja.md)を参照 |
+| P3の実行準備 | EXP-03の有限workをhost41件・link56構成で検査。I/Oとの結合・timer・mailbox・waitは残る |
 | P4 | 未完了。同等機能のA〜Cと完成用途、変更課題・利用者レビューが残る |
 | P5〜P7 | 未着手。方式の採用と最終仕様はP5で扱う |
 
@@ -302,4 +303,6 @@ K0のwire受理と実IRQ共有、X0の実PD処理、clock初期化は未検証�
 EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完了。
 [寿命・保護・通知登録の単位](planning/core-redesign/tasks/EXP-02/shared-result.ja.md)も記録済み。
 EXP-03への接続と残る共有条件へ進め、P4まで通常の実装・実験を継続する。
+[有限workの独立準備](planning/core-redesign/tasks/EXP-03/work-preparation.ja.md)を記録済み。
+次はEXP-01のI/O契約とEXP-03の残る接続を進める。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

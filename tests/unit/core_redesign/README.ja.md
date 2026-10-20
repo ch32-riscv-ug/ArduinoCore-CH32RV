@@ -91,3 +91,21 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix shared \
 shared matrixはX035のSDK命令に合わせ `zifencei` を明示する。
 OwnedQueueのMCU入口は明示構築で、global destructor登録の費用は含まない。
 TSanの別実行と一次資料・未確認条件は[結果](../../../planning/core-redesign/tasks/EXP-02/shared-result.ja.md)に記録する。
+
+## EXP-03 有限workの準備
+
+`work_executor.hpp` は通常直列文脈用の独立試作で、I/O・timer・mailboxを含まない。
+`work_driver.cpp` と `test_work_executor.py` が有限snapshot、再投稿、公平性、M/S/U、
+再帰抑止、解除・世代を検査する。製品APIやEXP-03全体の完成とはしない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_work_executor.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix work \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp03-work-matrix
+```
+
+通常stack上のsnapshotも含め、対象数の費用を観測する。
+実行文脈と未検証は[準備結果](../../../planning/core-redesign/tasks/EXP-03/work-preparation.ja.md)を参照する。

@@ -50,12 +50,22 @@ def shared_cases(smoke):
     return result
 
 
+def work_cases(smoke):
+    result = [("baseline", 0, 4, 4, 0, 1), ("unused-work", 1, 4, 4, 0, 0)]
+    if smoke: return result
+    for n in (1, 4, 8):
+        for quota in (1, 4, 8): result.append((f"work-{n}-quota{quota}", 1, n, quota, 0, 1))
+    for variant, label in ((1, "S"), (2, "U"), (3, "M")):
+        result.append((f"delay-{label}-4-quota4", 1, 4, 4, variant, 1))
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
-    parser.add_argument("--matrix", choices=("serial", "shared"), default="serial")
+    parser.add_argument("--matrix", choices=("serial", "shared", "work"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
@@ -70,6 +80,11 @@ def main():
                   HEADER.with_name("owned_queue.hpp"), HEADER.with_name("shared_channels.hpp")]
         selected_cases = shared_cases(args.smoke)
         report["scope"] = "lifetime, IRQ-gate assembly and SPSC link-only; no runtime/IRQ/cache guarantees"
+    elif args.matrix == "work":
+        source = Path(__file__).with_name("work_entry.cpp")
+        inputs = [source, HEADER.with_name("work_executor.hpp")]
+        selected_cases = work_cases(args.smoke)
+        report["scope"] = "RUN-01/02 coalesced-work preparation, link-only; no I/O, timer, stack peak or cycle proof"
     report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")
