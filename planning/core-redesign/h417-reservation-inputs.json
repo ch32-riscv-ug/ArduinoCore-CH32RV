@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "scope": "Derived linker reservation experiment; not a board setting or runtime protocol",
+  "baseline": "h417-layout-inputs.json",
+  "capacities": [0, 256, 1024, 32768],
+  "payload_bytes": 256,
+  "alignment": 16,
+  "layout_version": 1,
+  "zero_means": "No shared object or reference; return reservation to V3F normal RAM",
+  "placement": "From the end of the pinned SDK SRAM allocation",
+  "public_configuration_decided": false
+}
