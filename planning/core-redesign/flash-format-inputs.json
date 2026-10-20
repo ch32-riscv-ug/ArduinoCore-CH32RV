@@ -1,0 +1,54 @@
+{
+  "version": "EXP04-format-host-1",
+  "date": "2026-10-20",
+  "geometry_manifest": "flash-inputs.json",
+  "scope": "conditional host sensitivity comparison, not an adopted product format or verified hardware persistence",
+  "erase_units": [1, 2, 4],
+  "blob_bytes": 8,
+  "max_numeric_keys": 2,
+  "key_bits": 16,
+  "value_bits": 32,
+  "header_bytes": 16,
+  "footer_content_bytes": 12,
+  "generation_bits": 32,
+  "endianness": "little",
+  "candidates": [
+    {"id": "raw", "kind": "raw", "policy": "overwrite", "commit": false},
+    {"id": "blob-overwrite", "kind": "blob", "policy": "overwrite", "commit": false},
+    {"id": "blob-two-bank", "kind": "blob", "policy": "two-bank", "commit": false},
+    {"id": "keys-overwrite", "kind": "keys", "policy": "overwrite", "commit": false},
+    {"id": "keys-two-bank", "kind": "keys", "policy": "two-bank", "commit": false},
+    {"id": "blob-two-bank-commit", "kind": "blob", "policy": "two-bank", "commit": true},
+    {"id": "keys-two-bank-commit", "kind": "keys", "policy": "two-bank", "commit": true}
+  ],
+  "record": {
+    "header": "magic[4], generation u32, payload length u16, version u16, crc32 u32",
+    "magic": {"blob": "BLB1", "keys": "KEY1"},
+    "crc_input": "first 12 header bytes followed by payload",
+    "crc_algorithm": "CRC-32/ISO-HDLC as zlib.crc32",
+    "version": 1,
+    "key_payload": "strictly ascending unique uint16 key, uint32 value pairs, 6 bytes per entry",
+    "footer": "END1, generation u32, header checksum u32; padded to whole program units at bank end",
+    "padding": "0xff; not interpreted as additional payload"
+  },
+  "write_policy": {
+    "overwrite": "erase every unit in the one bank, then program body; no old-value retention",
+    "two-bank": "erase every unit of inactive equal bank, program body, optionally footer last; read highest valid generation",
+    "corrupt": "do not erase without explicit replacement flag; equal valid generations refuse selection",
+    "exhaustion": "refuse generation wrap",
+    "progress": "one complete model erase/program operation per explicit step; volatile progress lost on abandon or cut"
+  },
+  "faults": {
+    "boundaries": "before update and after each complete operation",
+    "masks": [0, 1, 7, 85, 170, 255],
+    "additional": "first half of operation bytes affected",
+    "bank_locality": "injected changes stay inside the selected operation; silicon fault domain is not established",
+    "crc_limit": "tested finite patterns only; arbitrary corruption and CRC collisions are not excluded"
+  },
+  "preconditions": [
+    "exclusive serialized region access; RAW and formatted access do not share ownership",
+    "same conservative medium history retained across host scanner recreation",
+    "one program attempt per unit after completed erase",
+    "no MCU driver, ABI cost, stall time, endurance, upload or physical power-cut proof"
+  ]
+}
