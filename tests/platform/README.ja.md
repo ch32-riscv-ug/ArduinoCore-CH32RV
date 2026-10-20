@@ -29,3 +29,37 @@ section 一覧、`result.json` を保存します。Flash は生の binary の�
 静的 RAM は `.data`＋`.bss` として計算し、baseline との差も出します。
 stack／heap の実行時最大量、CPU cycle、遅延、コア全体の追加サイズ、H417 の動作は測りません。
 出力 ELF は MCU に書き込める firmware ではなく、実機への接続・書き込みは行いません。
+
+### EXP-00 の再現と記録
+
+`record_execution_link_cost.py` は上記probeを変更せず、独立した2出力先で実行・照合する手動入口です。
+このprobe専用で、通常のpytest収集ではbuildしません。Python 3.11以降を使います。
+
+```sh
+python3 tests/platform/record_execution_link_cost.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/core-redesign-exp00
+```
+
+18構成×2runの結果を、ELFから再取得したsection・symbol・逆アセンブル・binaryと照合します。
+2run間では数値、symbol、ELF、binary、出力先を正規化したmap、archive抽出の一致を要求します。
+差があれば失敗として記録し、入力やpath等の原因を確認します。Flashの2 byteの配置間隙もsection和と区別します。
+
+出力は `run1/`・`run2/`、`*.audit.json`、`manifest.json`、`commands.json` と各コマンドのstdout／stderr、
+`summary.json`、`sha256.json`、入力文書・probe・記録スクリプトのコピーです。
+manifestはcommit・差分・入力hash、compilerと内部helper・binutilsのhash、ABI別libgcc、tool配布lockとcache archiveを識別します。
+内部helperの版は単独起動で調べず、hashとdriverの版を別々に残します。libgccは本probeではリンクしません。
+archiveがなければ未取得、あればlockとchecksumを照合します。toolの自動取得は行いません。
+
+出力先は未作成に限定し、失敗時もsummary・失敗コマンド・ログ・途中成果物を残します。
+元のprobe内で失敗した場合はそのコマンド一覧と親プロセスのstderrから追跡できます。
+実行時のstack・heap peak・cycle・遅延はnullです。
+
+記録の失敗・上書き・誤集計を防ぐボード不要検査は次で実行します。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/platform/test_execution_link_cost_record.py
+```
+
+今回の結果と別作業領域での再生成手順は [EXP-00の結果](../../planning/core-redesign/tasks/EXP-00/result.ja.md)を参照してください。
