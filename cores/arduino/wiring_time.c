@@ -16,6 +16,17 @@
 #endif
 #include CH32RV_GENERATED_(CH32RV_CLOCK_INIT)
 
+/* Where the PLL word goes: RCC_CFGR0, or (CH32H41x) RCC_PLLCFGR. */
+#ifdef CH32RV_CLOCK_PLL_ADDR
+#define CH32RV_CLOCK_PLL_REG CH32RV_REG32(CH32RV_CLOCK_PLL_ADDR)
+#else
+#define CH32RV_CLOCK_PLL_REG CH32RV_RCC_CFGR0
+#endif
+#ifndef CH32RV_CLOCK_FPRE_MASK
+#define CH32RV_CLOCK_FPRE_MASK 0u
+#define CH32RV_CLOCK_FPRE_VALUE 0u
+#endif
+
 #ifndef CH32RV_FLASH_LATENCY
 #error "CH32RV_FLASH_LATENCY is required (see build.core_defines in boards.txt)"
 #endif
@@ -109,6 +120,12 @@ void SystemInit(void)
     CH32RV_FLASH_ACTLR = (CH32RV_FLASH_ACTLR & ~(uint32_t)CH32RV_FLASH_ACTLR_LATENCY_MASK) |
                        CH32RV_FLASH_LATENCY;
 #endif
+#ifdef CH32RV_CLOCK_ACTLR_ADDR
+    /* CH32H41x: the flash clock (SCK_CFG), HCLK / 2 as EVT sets it for 400 MHz. */
+    CH32RV_REG32(CH32RV_CLOCK_ACTLR_ADDR) =
+        (CH32RV_REG32(CH32RV_CLOCK_ACTLR_ADDR) & ~(uint32_t)CH32RV_CLOCK_ACTLR_MASK) |
+        CH32RV_CLOCK_ACTLR_VALUE;
+#endif
 
     /* Both APB prescalers stay at /1, so PCLK1 == PCLK2 == HCLK == F_CPU and
      * every peripheral divisor in this core can be computed from F_CPU alone.
@@ -127,10 +144,12 @@ void SystemInit(void)
      * being F_CPU and USART2-5, I2C, SPI2/3 and the APB1 timers each need
      * their own divisor - which is why this is worth settling before it
      * spreads. */
+    /* CH32H41x: FPRE (this core and HCLK) before the PLL raises SYSCLK. */
     CH32RV_RCC_CFGR0 &= ~(CH32RV_RCC_CFGR0_SW_MASK | CH32RV_RCC_CFGR0_HPRE_MASK |
-                        CH32RV_RCC_CFGR0_PPRE1_MASK | CH32RV_RCC_CFGR0_PPRE2_MASK);
+                        CH32RV_RCC_CFGR0_PPRE1_MASK | CH32RV_RCC_CFGR0_PPRE2_MASK |
+                        CH32RV_CLOCK_FPRE_MASK);
     CH32RV_RCC_CFGR0 |= CH32RV_RCC_CFGR0_SW_HSI |
-                      CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD);
+                      CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD) | CH32RV_CLOCK_FPRE_VALUE;
     while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
            (CH32RV_RCC_CFGR0_SW_HSI << 2)) {
     }
@@ -147,11 +166,20 @@ void SystemInit(void)
 #if CH32RV_CLOCK_EXTEN_ADDR
     CH32RV_REG32(CH32RV_CLOCK_EXTEN_ADDR) |= (uint32_t)CH32RV_CLOCK_EXTEN_BITS;
 #endif
-    CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~(uint32_t)CH32RV_CLOCK_PLL_MASK) |
-                     (uint32_t)CH32RV_CLOCK_PLL_VALUE;
+    CH32RV_CLOCK_PLL_REG = (CH32RV_CLOCK_PLL_REG & ~(uint32_t)CH32RV_CLOCK_PLL_MASK) |
+                         (uint32_t)CH32RV_CLOCK_PLL_VALUE;
     CH32RV_RCC_CTLR |= CH32RV_RCC_CTLR_PLLON;
     while ((CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_PLLRDY) == 0u) {
     }
+#ifdef CH32RV_CLOCK_SYSPLL_SEL_MASK
+    /* CH32H41x: SYSPLL is a mux of its own (PLL, the USBHS / ETH / SerDes /
+     * USBSS PLLs), switched with its output gate closed - EVT's order. */
+    CH32RV_CLOCK_PLL_REG &= ~(uint32_t)CH32RV_CLOCK_SYSPLL_GATE;
+    CH32RV_CLOCK_PLL_REG &= ~(uint32_t)CH32RV_CLOCK_SYSPLL_SEL_MASK;
+    while ((CH32RV_CLOCK_PLL_REG & (uint32_t)CH32RV_CLOCK_SYSPLL_SEL_MASK) != 0u) {
+    }
+    CH32RV_CLOCK_PLL_REG |= (uint32_t)CH32RV_CLOCK_SYSPLL_GATE;
+#endif
     CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~CH32RV_RCC_CFGR0_SW_MASK) |
                      CH32RV_RCC_CFGR0_SW_PLL;
     while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
@@ -208,13 +236,19 @@ static inline int ch32rv_clock_is_ours(void)
         return 0;
     }
     if ((cfgr0 & (CH32RV_RCC_CFGR0_HPRE_MASK | CH32RV_RCC_CFGR0_PPRE1_MASK |
-                  CH32RV_RCC_CFGR0_PPRE2_MASK)) != CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD)) {
+                  CH32RV_RCC_CFGR0_PPRE2_MASK | CH32RV_CLOCK_FPRE_MASK)) !=
+        (CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD) | CH32RV_CLOCK_FPRE_VALUE)) {
         return 0;
     }
 #if CH32RV_CLOCK_USE_PLL
-    if ((cfgr0 & (uint32_t)CH32RV_CLOCK_PLL_MASK) != (uint32_t)CH32RV_CLOCK_PLL_VALUE) {
+    if ((CH32RV_CLOCK_PLL_REG & (uint32_t)CH32RV_CLOCK_PLL_MASK) != (uint32_t)CH32RV_CLOCK_PLL_VALUE) {
         return 0;
     }
+#ifdef CH32RV_CLOCK_SYSPLL_SEL_MASK
+    if ((CH32RV_CLOCK_PLL_REG & (uint32_t)CH32RV_CLOCK_SYSPLL_SEL_MASK) != 0u) {
+        return 0;
+    }
+#endif
 #endif
     return 1;
 }

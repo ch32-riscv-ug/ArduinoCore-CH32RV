@@ -35,16 +35,22 @@
 #error "CH32RV_CLOCK_SYSCLK_HZ differs from the oscillator but no PLL setting \
 came with it. Both are generated together; regenerate boards.txt."
 #endif
-#if F_CPU > CH32RV_CLOCK_SYSCLK_HZ
+/* CH32H41x: the core this runs on (the V3F) and HCLK are SYSCLK / FPRE,
+ * while HPRE clocks the other core (the V5F), which is left at SYSCLK. */
+#ifndef CH32RV_CLOCK_FPRE_DIV
+#define CH32RV_CLOCK_FPRE_DIV 1
+#endif
+
+#if F_CPU * CH32RV_CLOCK_FPRE_DIV > CH32RV_CLOCK_SYSCLK_HZ
 #error "F_CPU is above SYSCLK. The AHB prescaler can only divide, so this \
 needs a different generated clock configuration."
 #endif
-#if (CH32RV_CLOCK_SYSCLK_HZ % F_CPU) != 0
+#if (CH32RV_CLOCK_SYSCLK_HZ % (F_CPU * CH32RV_CLOCK_FPRE_DIV)) != 0
 #error "F_CPU must divide SYSCLK exactly: the AHB prescaler is the only thing \
 between them."
 #endif
 
-#define CH32RV_AHB_DIV (CH32RV_CLOCK_SYSCLK_HZ / F_CPU)
+#define CH32RV_AHB_DIV (CH32RV_CLOCK_SYSCLK_HZ / F_CPU / CH32RV_CLOCK_FPRE_DIV)
 
 /* The AHB prescaler is four bits in RCC_CFGR0[7:4], and the CH32 line encodes
  * them two different ways. They agree only on /1, so choosing the wrong one is

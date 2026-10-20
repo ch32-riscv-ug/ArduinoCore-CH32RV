@@ -125,11 +125,26 @@ FAMILY = {
     # startup. The code is copied from flash into the shared SRAM and runs
     # there (CH32RV_LOADCODE, sections_loadcode.ld): the code flash is not
     # zero-wait, and the EVT runs nothing from it but the copy.
-    "CH32H417": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="25000000L",
+    #
+    # Its clock is EVT's SetSYSCLK_400M_CoreCLK_V5F_400M_V3F_100M_HSI: SYSCLK =
+    # HSI x16 = 400 MHz, the V5F at SYSCLK (HPRE /1) and the V3F - this core,
+    # HCLK, F_CPU - at SYSCLK / 4 (FPRE). At HSI's 25 MHz the USBSS DMA cannot
+    # keep its 5 Gbit/s link fed: EP0 IN data came back with 32-byte blocks
+    # repeated from byte 96 on (bench, 2026-10-21). The PLL multiplier, FPRE
+    # and the SYSPLL switch are in EVT's setter but not in the device-data row
+    # (its pll column lists only the source and the input divider), so they
+    # are named here and resolved from clock_symbols.csv like the rest.
+    "CH32H417": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="100000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 "
                              "-DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01 "
                              "-DCH32RV_LOADCODE=1",
-                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1,
+                     sysclk=400000000,
+                     h41x_clock=dict(pll_extra=("RCC_PLLMUL16",), fpre="RCC_FPRE_DIV4",
+                                     fpre_mask="RCC_FPRE", fpre_div=4,
+                                     syspll_sel="RCC_SYSPLL_SEL", syspll_gate="RCC_SYSPLL_GATE",
+                                     actlr_mask="FLASH_ACTLR_SCK_CFG",
+                                     actlr="FLASH_ACTLR_LATENCY_HCLK_DIV2")),
 }
 
 # Families whose code runs from RAM: the whole image (vectors, code, read-only
@@ -1176,7 +1191,12 @@ def load_clock(tables: pathlib.Path) -> tuple:
     symbols: dict = {}
     for r in read_table(tables, "clock_symbols.csv",
                         ("family", "symbol", "role", "address", "value")):
-        symbols[(r["family"], r["symbol"])] = r
+        # A name listed as a mask and also as a poll (CH32H417's RCC_PLLSRC)
+        # keeps its mask row: the resolver finds the field a value sits in
+        # through the mask rows.
+        key = (r["family"], r["symbol"])
+        if symbols.get(key, {}).get("role") != "mask":
+            symbols[key] = r
     return configs, symbols
 
 
@@ -1224,12 +1244,18 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
                      if f == family and r["role"] == "mask"),
                     key=len, reverse=True)
     value = mask = 0
-    for name in filter(None, row["pll"].split(";")):
+    h41x = FAMILY[family].get("h41x_clock")
+    names = list(filter(None, row["pll"].split(";")))
+    if h41x:
+        names += list(h41x["pll_extra"])
+    pll_addrs = set()
+    for name in names:
         sym = symbols.get((family, name))
         if sym is None:
             raise SystemExit(f"ERROR: {family}: clock_symbols.csv does not "
                              f"resolve {name}")
         value |= int(sym["value"])
+        pll_addrs.add(int(sym["address"], 16))
         owner = next((f for f in fields if name.startswith(f)), None)
         if owner is None:
             raise SystemExit(f"ERROR: {family}: no mask symbol owns {name}")
@@ -1248,11 +1274,39 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
             raise SystemExit(f"ERROR: {family}: outside_rcc spans two registers")
         exten_addr, exten_bits = addr, exten_bits | int(sym["value"])
 
+    # CH32H41x: the PLL lives in RCC_PLLCFGR rather than CFGR0, is switched in
+    # by SYSPLL_SEL / SYSPLL_GATE there, and the core this sketch runs on (the
+    # V3F) is clocked by FPRE, not HPRE. One register for the whole PLL word,
+    # or SystemInit's single masked write would be wrong.
+    h41x_defs = None
+    if h41x:
+        if len(pll_addrs) != 1:
+            raise SystemExit(f"ERROR: {family}: PLL fields span {sorted(map(hex, pll_addrs))}")
+
+        def sym(name, role):
+            # One row per name survives load_clock; where a name has several
+            # roles (mask / value / poll) they carry the same bits.
+            r = symbols.get((family, name))
+            if r is None:
+                raise SystemExit(f"ERROR: {family}: clock_symbols.csv does not resolve {name} ({role})")
+            return int(r["value"]), int(r["address"], 16)
+
+        fpre_mask, _ = sym(h41x["fpre_mask"], "mask")
+        fpre_value, _ = sym(h41x["fpre"], "value")
+        sel_mask, _ = sym(h41x["syspll_sel"], "mask")
+        gate, _ = sym(h41x["syspll_gate"], "value")
+        actlr_mask, actlr_addr = sym(h41x["actlr_mask"], "mask")
+        actlr_value, _ = sym(h41x["actlr"], "value")
+        h41x_defs = dict(pll_addr=pll_addrs.pop(), fpre_mask=fpre_mask, fpre_value=fpre_value,
+                         fpre_div=h41x["fpre_div"], syspll_sel_mask=sel_mask, syspll_gate=gate,
+                         actlr_addr=actlr_addr, actlr_mask=actlr_mask, actlr_value=actlr_value)
+
     return dict(sysclk=hz, pll_mask=mask, pll_value=value,
                 exten_addr=exten_addr, exten_bits=exten_bits,
                 latency=int(row["flash_latency"]) if row["flash_latency"]
                 else None,
-                config=row["config"] if row["pll"] else None)
+                config=row["config"] if row["pll"] else None,
+                h41x=h41x_defs)
 
 
 # EVT's SystemInit starts by putting RCC back to a known state, and that turns
@@ -3080,7 +3134,17 @@ def clock_defines(clk: dict) -> str:
             f"-DCH32RV_CLOCK_PLL_MASK={clk['pll_mask']:#x}u "
             f"-DCH32RV_CLOCK_PLL_VALUE={clk['pll_value']:#x}u "
             f"-DCH32RV_CLOCK_EXTEN_ADDR={clk['exten_addr']:#x}u "
-            f"-DCH32RV_CLOCK_EXTEN_BITS={clk['exten_bits']:#x}u")
+            f"-DCH32RV_CLOCK_EXTEN_BITS={clk['exten_bits']:#x}u"
+            + ("" if not clk.get("h41x") else
+               (lambda h: f" -DCH32RV_CLOCK_PLL_ADDR={h['pll_addr']:#x}u"
+                          f" -DCH32RV_CLOCK_FPRE_MASK={h['fpre_mask']:#x}u"
+                          f" -DCH32RV_CLOCK_FPRE_VALUE={h['fpre_value']:#x}u"
+                          f" -DCH32RV_CLOCK_FPRE_DIV={h['fpre_div']}"
+                          f" -DCH32RV_CLOCK_SYSPLL_SEL_MASK={h['syspll_sel_mask']:#x}u"
+                          f" -DCH32RV_CLOCK_SYSPLL_GATE={h['syspll_gate']:#x}u"
+                          f" -DCH32RV_CLOCK_ACTLR_ADDR={h['actlr_addr']:#x}u"
+                          f" -DCH32RV_CLOCK_ACTLR_MASK={h['actlr_mask']:#x}u"
+                          f" -DCH32RV_CLOCK_ACTLR_VALUE={h['actlr_value']:#x}u")(clk["h41x"])))
 
 
 def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
@@ -3336,7 +3400,8 @@ def main() -> int:
             series, rows, ch32rv, facts, die,
             lambda part=None, series=series: resolve_clock(
                 SERIES_CONFIG[series]["family"],
-                int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L")),
+                FAMILY[SERIES_CONFIG[series]["family"]].get(
+                    "sysclk", int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L"))),
                 die_macro_part.get(part) if part else die_macro_series.get(series),
                 facts[SERIES_CONFIG[series]["family"]]["hsi_hz"],
                 clock_configs_t, clock_symbols_t))
