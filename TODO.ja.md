@@ -654,6 +654,15 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
   - ファームウェア更新のクラス（本物の DFU、MSC での更新）は、工場出荷の ISP で書く今の方針と合わせて別に決める。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。
+- **USB スタックとして TinyUSB のほかに CherryUSB を検討する。** WCH の EVT に入っていて
+  （CH32V407 / H417 / X315 の `EVT/EXAM/APPLICATION/CherryUSB`）、TinyUSB より小さくなる可能性がある。
+  利用者向けの API はすべてこのコアのクラス（CH32RVUsbDevice / CH32RVUsbHost など）で包むので、スタックを替えても
+  利用者からは差が見えないはず（使い勝手が変わるのは内部の実装だけ）。実測して、どちらを採用するかを決める。
+  - 比べるもの: 同じ構成（CDC だけ、CDC + HID + MSC など）での Flash / RAM、転送速度、対応クラスの範囲
+    （オーディオ・ビデオ・NCM・ホスト）、ライセンスと取り込み・更新のしやすさ。
+  - EVT に入っている系列は、今 TinyUSB にドライバが無いところ（第2世代 USBHS、H417 の USBSS）と重なるので、
+    その dcd を自作するか CherryUSB のポートを使うかの判断にもつながる。
+  - 系列ごとに混ぜる（小さい系列は CherryUSB、ほかは TinyUSB など）か、1つにそろえるかも検討する。
 - **UIAPduino のソフトウェア USB（rv003usb）をアプリモードでも動かす**。今はブートローダー（1209:b003）だけで使っている。
   rv003usb をそのまま持ってくるか、同じような処理を自作するかから検討する（ライセンス、CH32RVUsbDevice と同じ API に
   載せられるか、V003 の Flash 16 KB / RAM 2 KB に収まるか）。
