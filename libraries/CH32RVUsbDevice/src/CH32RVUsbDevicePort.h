@@ -86,6 +86,23 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
  * reset, and the application started through the BOOT area faulted. Until the
  * H417's bootloader is understood, enterBootloader() is a plain reset. */
 
+/* ======================================================= the USBOTG_FS layout
+ * V20x (PB6 / PB7), V30x, V205, L103 / M103, M030 (PA11 / PA12):
+ * CH32RVUsbDcdUsbfsOtg.cpp. Their other controllers (V20x USBD, V30x and V205
+ * USBHS) come with their drivers. */
+#elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_SERIES_CH32V303) || \
+    defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || \
+    defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103) || \
+    defined(CH32RV_SERIES_CH32M030)
+
+static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
+{
+    if (controller == CH32RVUsbController::Auto || controller == CH32RVUsbController::FullSpeed) {
+        return &ch32rv_usb_dcd_usbfs_otg;
+    }
+    return nullptr;
+}
+
 /* ======================================================= the rest: no driver yet */
 #else
 
