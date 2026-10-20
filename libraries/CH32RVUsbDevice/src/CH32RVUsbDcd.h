@@ -71,6 +71,7 @@ void ch32rv_usbd_isr_resume(void);
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbfs_x03x;
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbss;
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbfs_otg;
+extern const CH32RVUsbDcd ch32rv_usb_dcd_usb_v103;   /* V103 USB */
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbd;       /* V20x USBD (fsdev) */
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbhs1;     /* V30x USBHS */
 extern const CH32RVUsbDcd ch32rv_usb_dcd_usbhs2;     /* second-generation USBHS */

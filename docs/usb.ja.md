@@ -39,13 +39,17 @@ USB のコントローラを持つ系列と、それぞれの IP の種類、ド
 | USBFS（X035 型） | X035 / X033 | `CH32RVUsbDcdUsbfsX03x.cpp` | 実機（X035） |
 | USBFS（USBOTG_FS 型） | H417 / H416 / H415 | `CH32RVUsbDcdUsbfsOtg.cpp` | 実機（H417） |
 | 〃 | V203 / V208（PB6 / PB7）、V303 / V305 / V307 / V317、V205、L103 / M103、M030 | 〃 | ビルドのみ |
-| USB（旧 IP） | V103 | なし | 次に作る |
-| USBD（fsdev 型、CAN と共用） | V203 / V208 | なし | 次に作る |
-| USBHS 第 1 世代 | V305 / V307 / V317 | なし | 次に作る |
-| USBHS 第 2 世代 | H417 / H416 / H415 | `CH32RVUsbDcdUsbhs2.cpp` | ビルドのみ |
-| 〃 | V205、X305 / X315、V407 / V467（2 基） | なし（H41x のドライバを広げる） | 次に作る |
+| USB（旧 IP） | V103 | `CH32RVUsbDcdUsbV103.cpp` | ビルドのみ |
+| USBD（fsdev 型、CAN と共用） | V203 / V208 | `CH32RVUsbDcdUsbd.cpp`（`Usbd` を指定） | ビルドのみ |
+| USBHS 第 1 世代 | V305 / V307 / V317 | `CH32RVUsbDcdUsbhs1.cpp`（`HighSpeed`、HSE が要る） | ビルドのみ |
+| USBHS 第 2 世代 | H417 / H416 / H415、V205、X305 / X315、V407 / V467（2 基、2 基目は `HighSpeed2`） | `CH32RVUsbDcdUsbhs2.cpp` | ビルドのみ |
 | USBSS | H417 / H416 | `CH32RVUsbDcdUsbss.cpp` | 実機（H417、5000M で列挙） |
-| 〃（構造体が少し違う） | X315 | なし | 次に作る |
+| 〃 | X315（デバイスのみ） | 〃（`SuperSpeed`） | ビルドのみ |
+
+`Auto` の選び方: 系列のいちばん速いコントローラを選びます。ただし、次の場合は FS を選びます。
+- **ピンが SWD と兼用:** H41x の USBHS。
+- **HSE が要る:** V30x / V205 の USBHS。
+- V203 の USBD しか出ていない品種では USBD を選びます。
 
 V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラがありません。
 

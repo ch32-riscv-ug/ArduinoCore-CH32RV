@@ -160,6 +160,17 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
     return nullptr;
 }
 
+/* ======================================================= CH32V103 */
+#elif defined(CH32RV_SERIES_CH32V103)
+
+static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
+{
+    if (controller == CH32RVUsbController::Auto || controller == CH32RVUsbController::FullSpeed) {
+        return &ch32rv_usb_dcd_usb_v103;
+    }
+    return nullptr;
+}
+
 /* ======================================================= the rest: no driver yet */
 #else
 
