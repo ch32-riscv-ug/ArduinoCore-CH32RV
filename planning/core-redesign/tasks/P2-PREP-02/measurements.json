@@ -1,0 +1,90 @@
+{
+  "task": "P2-PREP-02",
+  "date": "2026-10-20",
+  "head": "6171a05e53d7c14b47b0c51209633d3e7b13be3a",
+  "inputs": {
+    "tests/unit/core_redesign/test_r_workloads.py": "2ce06189e40cfce0412e00ec02c15267c1ee6878dae55ec8514fc2b7f6812b5a",
+    "tests/unit/core_redesign/conftest.py": "d550e5c5c16f1d8f90b8b4a50c8eaab6b2e2f7636bc93d4fac81d7475beba390",
+    "tests/unit/core_redesign/oracle.py": "67f6f7cc913d20d8bc5de079e86244aea1f925ab0fca3bc8bf9aae8ba6ef3c6c",
+    "tests/unit/core_redesign/test_r_application.py": "6a9aa933b59066e6cb9915d5fbf2816b987a337a622efa758f0eb0270726771b",
+    "tests/unit/core_redesign/app_oracle.py": "25b1303af02007b2108f575e64315b2a9057c5d6f6b2145c2eaaf202156e8e7e",
+    "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+    "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+    "tests/unit/core_redesign/host_driver.cpp": "631bb87b0a4e110219781bbb590bcc871964c78d8eb5cc73a14f9c6e3b32d9f3",
+    "tests/unit/core_redesign/traces.json": "52c0178403ca1fb9d09605fac6f8ce8f4ea68699921c21ea658a658d2aa74bf8",
+    "tests/unit/core_redesign/frame-golden.json": "c32d8ad931c9478f9d1df41767a0ca57922b905a942a18d074c4163858def396",
+    "tests/platform/core_redesign/build_logic_controls.py": "1c16d40f1db881a1b06be99f6540c57e08a5a31949f4f4bb435eaa68bce7d393",
+    "tests/platform/core_redesign/logic_entry.cpp": "643e6f87793b6dfb4c3c83de7fbb7b4db28773fa023dabd2060a5681dd868e60",
+    "planning/core-redesign/p2-inputs.json": "dd07908dbb49fe08fed6816afbb256eb69a97b78b5b428356da4e2c26c9ad64c",
+    "planning/core-redesign/tasks/P2-PREP-02/brief.ja.md": "1e4c8a4f11f71345cb78d56b0bf19ef5f6577c99847c5e0d6d792c4b201fa47c"
+  },
+  "host_tests": 72,
+  "new_integrated_tests": 21,
+  "random_integration_steps": 30000,
+  "junit_sha256": "d83311bfac14886e21ac5ce1faecfd011d5cd3a9ff310a90f54f320ca6e46d45",
+  "link": {
+    "scope": "P2 instrumented logic only; not MCU firmware or complete application footprint",
+    "status": "passed",
+    "application": true,
+    "results": [
+      {
+        "target": "CH32X035C8T6",
+        "workload": "X0",
+        "lto": false,
+        "sections": {
+          ".text": 2522,
+          ".data": 344,
+          ".bss": 20,
+          ".comment": 51,
+          ".riscv.attributes": 87
+        },
+        "flash_image_bytes": 2866,
+        "static_ram_bytes": 364,
+        "libgcc_sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+        "libc_sha256": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc",
+        "elf_sha256": "3f7150548455735bed932f924383fa4fc91e4d1488db20f79a3f9ebab4a8352b",
+        "stack_peak_bytes": null
+      },
+      {
+        "target": "CH32X035C8T6",
+        "workload": "X0",
+        "lto": true,
+        "sections": {
+          ".text": 2442,
+          ".data": 344,
+          ".bss": 20,
+          ".comment": 51,
+          ".riscv.attributes": 87
+        },
+        "flash_image_bytes": 2786,
+        "static_ram_bytes": 364,
+        "libgcc_sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875",
+        "libc_sha256": "500e65d16a0a42033ceeb3858fdb72697fcf7867a7e9bbff49650fc1cb1d82bc",
+        "elf_sha256": "2e2b006b14fb9372100b37f0be360a491427616ef90e2639a62e8c0e6a0cd7dc",
+        "stack_peak_bytes": null
+      }
+    ],
+    "unverified": [
+      "startup",
+      "IRQ synchronization",
+      "I2C",
+      "USB-PD",
+      "physical bus",
+      "timing",
+      "stack peak",
+      "heap peak",
+      "full-application fit"
+    ],
+    "compiler_version": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "inputs": {
+      "planning/core-redesign/p2-inputs.json": "dd07908dbb49fe08fed6816afbb256eb69a97b78b5b428356da4e2c26c9ad64c",
+      "tests/platform/core_redesign/logic_entry.cpp": "643e6f87793b6dfb4c3c83de7fbb7b4db28773fa023dabd2060a5681dd868e60",
+      "tests/platform/core_redesign/build_logic_controls.py": "1c16d40f1db881a1b06be99f6540c57e08a5a31949f4f4bb435eaa68bce7d393",
+      "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+      "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+      "tests/unit/core_redesign/traces.json": "52c0178403ca1fb9d09605fac6f8ce8f4ea68699921c21ea658a658d2aa74bf8"
+    }
+  },
+  "physical_validation": false
+}

@@ -11,6 +11,8 @@ P2-host-1。製品APIの実装とは別に、用途の意味と入力を固定�
 | traces.json | P1-1から具体化した固定入力と回帰ケース |
 | frame-golden.json | 4条件の1024 byte画像、hash、入力 |
 | test_r_workloads.py | 固定trace、文字通りの期待結果、seed付き差分、全byte照合 |
+| r_application.hpp | 表示・計測・タッチの共有bus、周期、PPSを結合したR対照 |
+| app_oracle.py、test_r_application.py | 独立した取引ledgerとの照合、故障・保留・容量・公平性の検査 |
 
 hostにg++が必要。通常pytestでMCUへの接続・書き込みは行わず、hostの一時作業領域にcompileする。
 AddressSanitizerとUndefinedBehaviorSanitizerを有効化する。
@@ -36,3 +38,9 @@ K0／X0の各1対象でLTOなし／ありを別にbuildする。
 libcの必要なmemory関数とlibgccをlinkし、各archiveのhashも記録する。
 入力コピー、全コマンド、失敗、ELF・map・逆アセンブル・symbol・`.su`等を出力先へ保存する。
 stackの観測peak、cycle、周辺の動作、完成用途のfitはこの入口では判定しない。
+
+結合X0を含む全host検査は `tests/unit/core_redesign/` を指定して実行する。
+結合X0のABI確認はbuild入口に `--application` を追加する。X035・LTOなし／ありの2構成となる。
+fake busは実行中1件と終端1件を同じ受理slotに保持し、回収前の再利用を拒否する。
+周期が遅れたら最新1回へ集約し、画面が不変ならrevisionを増やさない。
+clockの周回・実PD・実IRQ・物理busを確認した扱いにはしない。

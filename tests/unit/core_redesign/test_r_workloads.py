@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 import random
-import shutil
 import struct
 import subprocess
 
@@ -18,19 +17,6 @@ oracle = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(oracle)
 TRACES = json.loads((HERE / "traces.json").read_text())["traces"]
 MODELS = {"knob": oracle.KnobOracle, "pps": oracle.PpsOracle, "screen": oracle.ScreenOracle}
-
-
-@pytest.fixture(scope="session")
-def native_control(tmp_path_factory):
-    compiler = shutil.which("g++")
-    if not compiler:
-        pytest.fail("P2 logic checks require an explicitly installed host g++")
-    destination = tmp_path_factory.mktemp("p2-native") / "control"
-    subprocess.run([compiler, "-std=c++17", "-O1", "-Wall", "-Wextra", "-Werror",
-                    "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
-                    "-fno-omit-frame-pointer", str(HERE / "host_driver.cpp"), "-o", destination],
-                   check=True, capture_output=True, text=True)
-    return destination
 
 
 def run_control(executable, target, commands):

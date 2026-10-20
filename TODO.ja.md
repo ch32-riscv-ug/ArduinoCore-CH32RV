@@ -22,7 +22,8 @@ P0 の成果物として [全体設計案 P0-1](planning/core-redesign/design-dr
 P1 で [比較契約](planning/core-redesign/experiment-spec.ja.md)、
 [用途・刺激](planning/core-redesign/workloads.ja.md)、[実行順](planning/core-redesign/experiment-tasks.ja.md)を定義済み。
 EXP-00の再現・記録と、[対象・host対照ロジックの準備](planning/core-redesign/p2-preparation.ja.md)を実施済み。
-次は通常モデルで [X0の共有bus・周期処理の結合](planning/core-redesign/tasks/P2-PREP-02/brief.ja.md)を進める。
+X0の共有bus・周期処理もhost対照へ結合済み。[P4までの実行状況](planning/core-redesign/execution-status.ja.md)に従い、
+通常モデルで可能な部品・用途の比較を進める。
 方式の採否は未決定。物理条件・実機・教材の未検証を分けて P2〜P4 で証拠を集める。
 
 ### 理想像のたたき台と検証したい仮説

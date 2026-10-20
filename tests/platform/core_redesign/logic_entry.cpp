@@ -1,6 +1,7 @@
 // Link-only ABI check of the R logic with an externally driven mailbox.
 // No startup, IRQ vectors, clocks, I2C or USB-PD hardware. Do not flash this ELF.
 #include "../../unit/core_redesign/r_workloads.hpp"
+#include "../../unit/core_redesign/r_application.hpp"
 
 struct Mailbox { uint32_t operation; int32_t a, b, c; };
 volatile Mailbox mailbox;
@@ -8,6 +9,8 @@ volatile uint32_t observation;
 
 #if defined(P2_KNOB)
 p2::Knob knob;
+#elif defined(P2_APP)
+p2::Application app;
 #else
 p2::Pps pps;
 p2::Screen screen;
@@ -29,6 +32,20 @@ extern "C" __attribute__((section(".text.entry"))) void p2_logic_entry() {
         case 8: knob.step(); break;
         }
         observation = uint32_t(knob.position) + knob.sequence + knob.status + uint32_t(knob.reply);
+#elif defined(P2_APP)
+        switch (op) {
+        case 1: app.pps.attach(); break;
+        case 2: app.pps.detach(); break;
+        case 3: app.pps.enqueue(static_cast<int16_t>(a)); break;
+        case 4: app.hardware(uint32_t(a)); break;
+        case 5: app.pps.completion(uint32_t(a), uint32_t(b), c != 0); break;
+        case 6: app.source_mv = a; app.source_ma = b; break;
+        case 7: app.step(); break;
+        case 8: app.touch_enabled = a != 0; break;
+        case 9: if (a >= 1 && a <= 3) app.bus.fail_next[a] = true; break;
+        }
+        observation = app.pps.started + app.screen.displayed_hash + app.measurement_done +
+                      app.touch_done + app.bus.corruptions;
 #else
         switch (op) {
         case 1: pps.attach(); break;

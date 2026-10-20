@@ -28,13 +28,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--application", action="store_true", help="build the integrated X0 logic, not separate parts")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve()
     commands = []
     report = {"scope": "P2 instrumented logic only; not MCU firmware or complete application footprint",
-              "status": "running", "results": [], "unverified": ["startup", "IRQ synchronization", "I2C", "USB-PD",
-                    "shared bus", "timing", "stack peak", "heap peak", "full-application fit"]}
+              "status": "running", "application": args.application, "results": [],
+              "unverified": ["startup", "IRQ synchronization", "I2C", "USB-PD",
+                    "physical bus", "timing", "stack peak", "heap peak", "full-application fit"]}
 
     def save():
         (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -57,7 +59,7 @@ def main():
         report["compiler_version"] = run([compiler, "--version"]).splitlines()[0]
         report["compiler_sha256"] = sha(compiler)
         inputs = [PROFILES, SOURCE, Path(__file__), REPO / "tests/unit/core_redesign/r_workloads.hpp",
-                  REPO / "tests/unit/core_redesign/traces.json"]
+                  REPO / "tests/unit/core_redesign/r_application.hpp", REPO / "tests/unit/core_redesign/traces.json"]
         report["inputs"] = {}
         for path in inputs:
             relative = path.resolve().relative_to(REPO)
@@ -66,6 +68,7 @@ def main():
             report["inputs"][str(relative)] = sha(path)
         profiles = json.loads(PROFILES.read_text())
         for profile in profiles["targets"]:
+            if args.application and profile["id"] != "X0": continue
             for lto in (False, True):
                 directory = out / f"{profile['id']}-lto{int(lto)}"; directory.mkdir()
                 linker = directory / "logic.ld"
@@ -85,6 +88,7 @@ SECTIONS {{
                          "-fno-threadsafe-statics", "-fno-unwind-tables", "-fno-asynchronous-unwind-tables",
                          "-fstack-usage"]
                 if profile["id"] == "K0": flags.append("-DP2_KNOB")
+                if args.application: flags.append("-DP2_APP")
                 if lto: flags.append("-flto")
                 obj = directory / "logic.o"; elf = directory / "logic.elf"
                 run([compiler, *flags, "-c", SOURCE, "-o", obj])

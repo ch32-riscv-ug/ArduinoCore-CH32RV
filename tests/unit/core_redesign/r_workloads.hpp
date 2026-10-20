@@ -227,7 +227,14 @@ struct Screen {
         now = time;
         if (active && now >= due) finish(true);
     }
-    void step() {
+    void prepare_chunk() {
+        for (unsigned i = 0; i < 32; ++i) tx[i] = render_byte(frozen, offset + i);
+    }
+    void mark_started() {
+        if (offset == 0) next_frame = now + 100;
+        active = true; terminal = false; due = now + 2;
+    }
+    void step(bool allow_start = true) {
         if (active && terminal) {
             active = false; terminal = false;
             if (!success) { frame = false; next_frame = now + 100; }
@@ -244,9 +251,9 @@ struct Screen {
             frozen = latest; frame_revision = revision; offset = 0;
             frame_hash = 2166136261u; frame = true; next_frame = now + 100;
         }
-        if (frame && !active) {
-            for (unsigned i = 0; i < 32; ++i) tx[i] = render_byte(frozen, offset + i);
-            active = true; terminal = false; due = now + 2;
+        if (frame && !active && allow_start) {
+            prepare_chunk();
+            mark_started();
         }
     }
 };
