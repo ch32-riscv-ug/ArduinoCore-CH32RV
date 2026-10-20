@@ -95,7 +95,129 @@ template<unsigned Capacity, bool Timed> int run(unsigned kind, unsigned side, un
     for (const auto& p : ports) assert(p.port.powered && p.port.admitting && !p.port.io.active());
     return 0;
 }
+
+// Compose preparation/abort failure with live leases. No fake clock sleep or
+// completion is hidden in retry: all terminals and takes below are explicit.
+template<unsigned Capacity, bool Timed>
+int run_lease(unsigned kind, unsigned fault_side, unsigned lease_side, bool both,
+              bool reverse, unsigned outcome) {
+    using List = typename std::conditional<Capacity == 0, Explicit<FaultPort, FaultPort>, Registry<Capacity ? Capacity : 1>>::type;
+    using Deadlines = typename std::conditional<Timed, Timer, NoDeadline>::type;
+    List list;
+    Clock clock;
+    Deadlines timer;
+    Coordinator<List, uint32_t, Deadlines> flow;
+    FaultPort ports[2];
+    experiment::IoSlot<32>::Completion collected[2];
+    time_experiment::Stamp stamp{};
+    uint8_t readback[2] = {222, 222};
+    assert(time_experiment::ready(clock.begin({0, 1, 6000000}, 0, stamp)));
+    for (auto& p : ports) { assert(p.port.init()); p.source = &clock; }
+    if constexpr (Capacity == 0) assert(list.bind(ports[0], ports[1]));
+    else {
+        typename List::Token token{};
+        for (auto& p : ports) assert(list.add(&p, &FaultPort::callback, token));
+    }
+    if constexpr (Timed) assert(flow.bind(list, clock, timer));
+    else assert(flow.bind(list, clock));
+    bool leased[2] = {both || lease_side == 0, both || lease_side == 1};
+    for (unsigned i = 0; i < 2; ++i)
+        if (leased[i]) assert(ports[i].port.start(4) == experiment::IoStart::Accepted);
+    auto& injected = ports[fault_side];
+    injected.action = kind == 0 ? Action::Prepare : Action::Abort;
+    injected.injected = kind == 2 ? Reply::Waiting : Reply::Failed;
+    injected.armed = true;
+    uint32_t attempt = 0;
+    auto snapshot = [&](const char* label) {
+        std::cout << "{\"label\":\"" << label << "\",\"phase\":" << unsigned(flow.phase())
+                  << ",\"attempt\":" << flow.attempt() << ",\"clock_phase\":" << unsigned(clock.phase())
+                  << ",\"frozen\":" << list.frozen() << ",\"input\":" << flow.input_pending() << ",\"ports\":[";
+        for (unsigned i = 0; i < 2; ++i) {
+            auto& p = ports[i].port;
+            if (i) std::cout << ',';
+            std::cout << "{\"powered\":" << p.powered << ",\"admitting\":" << p.admitting << ",\"active\":" << p.io.active()
+                      << ",\"terminal\":" << p.io.terminal() << ",\"cancelled\":" << p.io.cancel_pending()
+                      << ",\"available\":" << p.buffer.available() << ",\"ticket\":" << p.io.token()
+                      << ",\"result\":" << unsigned(collected[i].result) << ",\"count\":" << collected[i].transferred
+                      << ",\"read\":" << unsigned(readback[i]) << '}';
+        }
+        std::cout << "]}\n";
+    };
+    auto retry_once = [&]() {
+        assert(flow.phase() == Phase::Fault && flow.retry());
+        flow.poll();
+    };
+    assert(flow.request(attempt));
+    if (kind != 0) { flow.post_input(); flow.poll(); }
+    assert(flow.phase() == Phase::Fault);
+    snapshot("injected-with-live-lease");
+    injected.armed = false;
+    retry_once();
+    assert(flow.phase() == Phase::Fault);
+    snapshot("retry-before-stop");
+    for (unsigned i = 0; i < 2; ++i) {
+        auto& p = ports[i].port;
+        assert(p.start(4) == experiment::IoStart::Closed);
+        if (!leased[i]) continue;
+        assert(p.io.active() && !p.buffer.available());
+        assert(!p.finish(1, experiment::IoResult::Cancelled, 2, 77, false));
+        assert(!p.finish(2, experiment::IoResult::Cancelled, 2, 77, true));
+        assert(!p.io.take(2, collected[i]));
+        assert(!p.buffer.write(0, 99) && !p.buffer.read(0, readback[i]) && readback[i] == 222);
+    }
+    snapshot("invalid-stop-and-stale-take");
+    const unsigned first = both ? unsigned(reverse) : lease_side;
+    const unsigned count = outcome == unsigned(experiment::IoResult::Success) ? 4 : 2;
+    auto finish_and_take = [&](unsigned i, bool last) {
+        auto& p = ports[i].port;
+        const uint8_t fill = uint8_t(77 + 53*i);
+        assert(p.finish(1, experiment::IoResult(outcome), count, fill, true));
+        assert(!p.buffer.available() && !p.buffer.read(0, readback[i]));
+        retry_once();
+        assert(flow.phase() == Phase::Fault);
+        snapshot(last ? "last-terminal-not-collected" : "first-terminal-not-collected");
+        assert(p.io.take(1, collected[i]));
+        assert(p.buffer.read(0, readback[i]) && readback[i] == fill);
+        assert(p.start(4) == experiment::IoStart::Closed);
+        snapshot(last ? "last-collected-before-retry" : "first-collected-before-retry");
+        retry_once();
+        assert(flow.phase() == (last ? Phase::Active : Phase::Fault));
+        snapshot(last ? "repaired" : "one-lease-still-held");
+    };
+    finish_and_take(first, !both);
+    if (both) finish_and_take(first ^ 1, true);
+    assert(flow.take_input() == (kind != 0));
+    for (unsigned i = 0; i < 2; ++i) if (leased[i]) {
+        auto& p = ports[i].port;
+        assert(!p.finish(1, experiment::IoResult::Success, 4, 99, true));
+        assert(!p.io.take(1, collected[i]));
+    }
+    auto& reused = ports[first].port;
+    assert(reused.start(4) == experiment::IoStart::Accepted && reused.io.token() == 2);
+    assert(!reused.finish(1, experiment::IoResult::Success, 4, 99, true));
+    assert(!reused.io.take(1, collected[first]) && !reused.buffer.available());
+    snapshot("old-result-cannot-release-new-lease");
+    assert(reused.finish(2, experiment::IoResult::Success, 4, 99, true));
+    assert(reused.io.take(2, collected[first]));
+    snapshot("final-collected");
+    assert(flow.phase() == Phase::Active && !list.frozen() && clock.phase() == time_experiment::State::Running);
+    for (const auto& p : ports) assert(!p.port.io.active() && p.port.buffer.available() && p.port.admitting);
+    return 0;
+}
 int main(int argc, char** argv) {
+    if (argc == 10 && std::string(argv[1]) == "lease") {
+        const unsigned variant = unsigned(std::stoul(argv[2])), kind = unsigned(std::stoul(argv[4]));
+        const unsigned fault_side = unsigned(std::stoul(argv[5])), lease_side = unsigned(std::stoul(argv[6]));
+        const bool timed = std::string(argv[3]) == "1", both = std::string(argv[7]) == "1", reverse = std::string(argv[8]) == "1";
+        const unsigned outcome = unsigned(std::stoul(argv[9]));
+        if (kind > 2 || fault_side > 1 || lease_side > 1 || outcome < 1 || outcome > 3) return 2;
+        switch (variant) {
+        case 0: return timed ? run_lease<0, true>(kind, fault_side, lease_side, both, reverse, outcome) : run_lease<0, false>(kind, fault_side, lease_side, both, reverse, outcome);
+        case 2: return timed ? run_lease<2, true>(kind, fault_side, lease_side, both, reverse, outcome) : run_lease<2, false>(kind, fault_side, lease_side, both, reverse, outcome);
+        case 4: return timed ? run_lease<4, true>(kind, fault_side, lease_side, both, reverse, outcome) : run_lease<4, false>(kind, fault_side, lease_side, both, reverse, outcome);
+        default: return 2;
+        }
+    }
     if (argc != 6) return 2;
     const unsigned variant = unsigned(std::stoul(argv[1])), kind = unsigned(std::stoul(argv[3]));
     const unsigned side = unsigned(std::stoul(argv[4])), injected = unsigned(std::stoul(argv[5]));

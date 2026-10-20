@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "scope": "live I/O leases combined with sleep preparation/abort failure and explicit terminal collection; serial fake adapters only",
+  "variants": [0, 2, 4],
+  "timer_modes": [true, false],
+  "failure_modes": ["PrepareFailed", "AbortFailed", "AbortWaiting"],
+  "outcomes": [1, 2, 3],
+  "outcome_meanings": {"1": "success, all four bytes", "2": "failure, two bytes", "3": "cancelled, two bytes"},
+  "topologies": [
+    {"fault_side": 0, "lease_side": 0, "both": false, "reverse": false},
+    {"fault_side": 0, "lease_side": 1, "both": false, "reverse": false},
+    {"fault_side": 1, "lease_side": 0, "both": false, "reverse": false},
+    {"fault_side": 1, "lease_side": 1, "both": false, "reverse": false},
+    {"fault_side": 0, "lease_side": 0, "both": true, "reverse": false},
+    {"fault_side": 0, "lease_side": 0, "both": true, "reverse": true},
+    {"fault_side": 1, "lease_side": 0, "both": true, "reverse": false},
+    {"fault_side": 1, "lease_side": 0, "both": true, "reverse": true}
+  ],
+  "expected_combined_cases": 432,
+  "driver_contract": "post-action fault, explicit hardware stop witness, explicit result take, no ISR sharing or implicit background progress"
+}
