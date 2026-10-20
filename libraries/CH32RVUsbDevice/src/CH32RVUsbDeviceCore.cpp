@@ -114,6 +114,11 @@ static const uint8_t ss_bos[] = {
     7, 0x10, 0x02, 0x02, 0, 0, 0,
     10, 0x10, 0x03, 0x00, 0x0E, 0x00, 0x01, 0x0A, 0xFF, 0x07,
 };
+const uint8_t ch32rv_usb_ss_caps[17] = {
+    7, 0x10, 0x02, 0x02, 0, 0, 0,
+    10, 0x10, 0x03, 0x00, 0x0E, 0x00, 0x01, 0x0A, 0xFF, 0x07,
+};
+bool ch32rv_usb_bos_super;
 
 /* The BOS's length (0: none) - the platform's, or the SuperSpeed one. */
 static uint16_t bos_length(void)
@@ -699,6 +704,7 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
         }
     }
     /* The BOS and the Microsoft OS 2.0 set need the interface numbers. */
+    ch32rv_usb_bos_super = ch32rv_usb_dcd_can(*dcd, CH32RVUsbSpeed::Super);
     if (ch32rv_usb_platform.build && !ch32rv_usb_platform.build(*this)) {
         _error = CH32RVUsbDeviceError::InvalidArgument;
         return false;

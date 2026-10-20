@@ -153,10 +153,15 @@ static void bos_write(CH32RVUsbDescriptorWriter &w)
     static const uint8_t ms_os_20_uuid[16] = {0xDF, 0x60, 0xDD, 0xD8, 0x89, 0x45, 0xC7, 0x4C,
                                               0x9C, 0xD2, 0x65, 0x9D, 0x9E, 0x64, 0x8A, 0x9F};
     const CH32RVUsbPlatform &p = ch32rv_usb_platform;
-    const uint16_t total = (uint16_t)(5 + (webusb_on ? 24 : 0) + (p.msOs20Length ? 28 : 0));
+    const bool ss = ch32rv_usb_series_can(CH32RVUsbSpeed::Super) && ch32rv_usb_bos_super;
+    const uint16_t total = (uint16_t)(5 + (ss ? sizeof ch32rv_usb_ss_caps : 0) + (webusb_on ? 24 : 0) +
+                                      (p.msOs20Length ? 28 : 0));
     const uint8_t head[5] = {5, 15, (uint8_t)total, (uint8_t)(total >> 8),
-                             (uint8_t)((webusb_on ? 1 : 0) + (p.msOs20Length ? 1 : 0))};
+                             (uint8_t)((ss ? 2 : 0) + (webusb_on ? 1 : 0) + (p.msOs20Length ? 1 : 0))};
     w.put(head, sizeof head);
+    if (ss) {
+        w.put(ch32rv_usb_ss_caps, sizeof ch32rv_usb_ss_caps);
+    }
     if (webusb_on) {               /* WebUSB 1.0, iLandingPage 1 */
         const uint8_t cap[4] = {24, 0x10, 0x05, 0};
         const uint8_t tail[4] = {0x00, 0x01, WEBUSB_VENDOR_CODE, 1};
@@ -206,7 +211,9 @@ static bool build(const CH32RVUsbDevice &device)
     }
     webusb_on = c.webusbEnabled;
     if (webusb_on || p.msOs20Length) {
-        p.bosLength = (uint16_t)(5 + (webusb_on ? 24 : 0) + (p.msOs20Length ? 28 : 0));
+        p.bosLength = (uint16_t)(5 + (webusb_on ? 24 : 0) + (p.msOs20Length ? 28 : 0) +
+                                 (ch32rv_usb_series_can(CH32RVUsbSpeed::Super) && ch32rv_usb_bos_super
+                                      ? sizeof ch32rv_usb_ss_caps : 0));
     }
     return true;
 }

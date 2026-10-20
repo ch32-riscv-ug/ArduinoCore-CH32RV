@@ -31,6 +31,13 @@ bool ch32rv_usb_control_in_written(CH32RVUsbDevice &device, uint16_t length,
                                    void (*write)(CH32RVUsbDescriptorWriter &w));
 extern CH32RVUsbPlatform ch32rv_usb_platform;
 
+/* The SuperSpeed part of a BOS (USB 2.0 extension, SuperSpeed USB device
+ * capability), and whether this device's controller reaches SuperSpeed - set
+ * by begin() before the platform builds its BOS, which then carries it too:
+ * a 3.x device must have both. */
+extern const uint8_t ch32rv_usb_ss_caps[17];
+extern bool ch32rv_usb_bos_super;
+
 /* String descriptors a function needs besides its name (the NCM MAC address):
  * indexes from CH32RV_USB_EXTRA_STRING up, answered by this hook. */
 #define CH32RV_USB_EXTRA_STRING 0xE0
