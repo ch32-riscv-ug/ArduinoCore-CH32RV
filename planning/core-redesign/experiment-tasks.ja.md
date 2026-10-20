@@ -153,6 +153,8 @@ native79件・ABI32構成で検査した。shared-accessは所有権限の比較
 [message／block機能除去](tasks/EXP-05/h417-features-result.ja.md)は別headerで4機能構成を作り、native184件・ABI112構成で独立storageと未使用除去を検査した。
 この機能除去の単位は直列検査であり、以前のTSan成功を新headerの証拠として数えない。
 [feature型のhost並列](tasks/EXP-05/h417-feature-thread-result.ja.md)は別途ASan／UBSan83件・TSan80件で検査した。実行器・H417同期とは分ける。
+[H417共有配置](tasks/EXP-05/h417-layout-result.ja.md)は固定SDK linkerで6 pairを検査し、通常RAM／stackからの分離を確認した。
+固定32 KiB予約と使用byte数を区別し、NOBITSだけでupload保持を保証しない。共有C++ objectと初期化handshakeは未接続。
 H417は単一コア、コア別owner、共有実行器を別条件にし、コアごとのstack・制御情報と共有領域を数える。
 片側停止・再起動、通知前後の可視性、cache／DMAの条件を独立に検査する。
 
