@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-20",
+  "scope": "IRQ-disabled reset/CRT and low GPIO probe; not P2 48MHz clock configuration or deployable firmware validation",
+  "stack_reservation": 256,
+  "profiles": [
+    {
+      "part": "CH32V003F4P6",
+      "march": "rv32ec_zicsr",
+      "abi": "ilp32e",
+      "flash_bytes": 16384,
+      "ram_bytes": 2048,
+      "x035": false,
+      "vector_count": 39,
+      "gpio_port": 1073812480,
+      "gpio_clock_mask": 32,
+      "gpio_pin": 0
+    },
+    {
+      "part": "CH32X035C8T6",
+      "march": "rv32imac_zicsr",
+      "abi": "ilp32",
+      "flash_bytes": 63488,
+      "ram_bytes": 20480,
+      "x035": true,
+      "vector_count": 55,
+      "gpio_port": 1073809408,
+      "gpio_clock_mask": 4,
+      "gpio_pin": 0
+    }
+  ],
+  "sources": [
+    {
+      "repository": "CH32V003",
+      "commit": "12d9aed0eae0276a133db00eb16bd492e8189f2d",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Startup/startup_ch32v00x.S",
+      "bytes": 5064,
+      "sha256": "f8ed60bfe3c4d9fc8801d554746f8dcbad39f8280927727f5f5317bcd3c84f2c",
+      "file": "CH32V003-startup_ch32v00x.S",
+      "publisher": "WCH"
+    },
+    {
+      "repository": "CH32X035",
+      "commit": "327874484eda7e50cb4cf40271718e68fafbc850",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Startup/startup_ch32x035.S",
+      "bytes": 8162,
+      "sha256": "6fe72d6df73c82ca2c52ff10a840f515d0476040054c174422e97ddc53d97f0f",
+      "file": "CH32X035-startup_ch32x035.S",
+      "publisher": "WCH"
+    },
+    {
+      "repository": "CH32V003",
+      "commit": "12d9aed0eae0276a133db00eb16bd492e8189f2d",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Ld/Link.ld",
+      "bytes": 4074,
+      "sha256": "3a26b485bfc1666f7caa6253983678f47235dfa8ee829133bf89449bce703b8a",
+      "file": "CH32V003-Link.ld",
+      "publisher": "WCH"
+    },
+    {
+      "repository": "CH32X035",
+      "commit": "327874484eda7e50cb4cf40271718e68fafbc850",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Ld/Link.ld",
+      "bytes": 3509,
+      "sha256": "30b9a1f1ea974b5ad5fb8fd6a318cf3ef45d30541d1e4ec2e215199080624ef6",
+      "file": "CH32X035-Link.ld",
+      "publisher": "WCH"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Peripheral/inc/ch32v00x.h",
+      "sha256": "29a97c98e027c40b0b7484adae3c688d8d17733611ef34e7236754015e938500",
+      "bytes": 153101,
+      "publisher": "WCH",
+      "file": "ch32v00x.h"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Peripheral/inc/ch32x035.h",
+      "sha256": "72e5644a1266275e5e9bc3d51cec495a8381f92b50277514f52b9b242824a59a",
+      "bytes": 209585,
+      "publisher": "WCH",
+      "file": "ch32x035.h"
+    }
+  ]
+}

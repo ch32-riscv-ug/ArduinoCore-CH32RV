@@ -1,0 +1,32 @@
+ENTRY(_start)
+MEMORY {
+ FLASH (rx) : ORIGIN = 0, LENGTH = @FLASH@
+ RAM (rw) : ORIGIN = 0x20000000, LENGTH = @RAM@
+}
+SECTIONS {
+ .reset : { KEEP(*(.reset)) } > FLASH
+ .vectors : { KEEP(*(.vectors)) } > FLASH
+ .text : { *(.text*) *(.rodata*) . = ALIGN(4); } > FLASH
+ .preinit_array : { __preinit_start = .; KEEP(*(.preinit_array)) __preinit_end = .; } > FLASH
+ .init_array : { __init_start = .; KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*))) KEEP(*(.init_array)) __init_end = .; } > FLASH
+ .fini_array : { KEEP(*(.fini_array*)) } > FLASH
+ .data : {
+  __data_start = .; *(.data*) *(.sdata*) *(.srodata*) . = ALIGN(4); __data_end = .;
+ } > RAM AT> FLASH
+ __data_load = LOADADDR(.data);
+ __global_pointer$ = __data_start + 0x800;
+ .bss (NOLOAD) : { __bss_start = .; *(.bss*) *(.sbss*) *(COMMON) . = ALIGN(4); __bss_end = .; } > RAM
+ __static_end = .;
+ .stack ORIGIN(RAM) + LENGTH(RAM) - @STACK@ (NOLOAD) : {
+   __stack_bottom = .; . += @STACK@; __stack_top = .;
+ } > RAM
+ .riscv.attributes 0 : { *(.riscv.attributes) }
+ /DISCARD/ : { *(.comment) *(.note.GNU-stack) }
+}
+ASSERT(ADDR(.reset) == 0, "reset must be first")
+ASSERT((__data_start % 4) == 0 && (__data_end % 4) == 0, "data word alignment")
+ASSERT((__bss_start % 4) == 0 && (__bss_end % 4) == 0, "bss word alignment")
+ASSERT(__static_end <= __stack_bottom, "static RAM overlaps reserved stack")
+ASSERT((__stack_top % 16) == 0, "stack alignment")
+ASSERT(@ARRAYS@ || SIZEOF(.init_array) + SIZEOF(.preinit_array) == 0, "constructor arrays disabled")
+ASSERT(SIZEOF(.fini_array) == 0, "destructors unsupported in runtime experiment")
