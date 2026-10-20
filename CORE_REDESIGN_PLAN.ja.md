@@ -312,5 +312,6 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [X0のcompile時機能除去](planning/core-redesign/tasks/EXP-06/x0-features-result.ja.md)と[変更課題素材](planning/core-redesign/tasks/EXP-06/x0-feature-exercise.ja.md)も記録した。
 [独立reset／GPIO入口](planning/core-redesign/tasks/EXP-01/runtime-result.ja.md)では、ELFと命令検査を追加した。実機起動・clock・IRQは未確認。
 [clock/time入口](planning/core-redesign/tasks/EXP-01/clock-time-result.ja.md)もhost／ELFで検査し、[時刻読出しの課題](planning/core-redesign/tasks/EXP-01/time-read-exercise.ja.md)を用意した。
-次は論理時刻の伸長と不連続、I2C、用途変更課題、共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
+[I2C master入口](planning/core-redesign/tasks/EXP-01/i2c-master-result.ja.md)では有限register進行・貸出をhost59件／ELF36構成で検査し、[貸出の教材素材](planning/core-redesign/tasks/EXP-01/i2c-loan-exercise.ja.md)を作った。実通信・IRQは未検証。
+次は論理時刻の伸長と不連続、I2Cのclock／pin／所有結合、用途変更課題、共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

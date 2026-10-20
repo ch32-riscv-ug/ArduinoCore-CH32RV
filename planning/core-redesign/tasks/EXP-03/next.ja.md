@@ -20,6 +20,7 @@
    C-static-batchは固定1宛先であり、動的登録を持つ汎用Cと能力を揃えた比較へ読み替えない。
    実I/Oへの接続、資源ごとのsystem／user分類、周回時計・sleepも別に検査する。
 2. [資源依存の模型](dependency-result.ja.md)を実I/O・所有台帳へ接続する。
+   [I2C masterのregister試作](../EXP-01/i2c-master-result.ja.md)はhost／linkで検査済みだが、clock／pin準備、IRQ保護、資源台帳との接続はまだ行っていない。
    模型の所有・依存情報が実backendでも取得できるか、snapshotの同期費用を確認する。
    能力の宣言と検出可能な事実を分け、未知を拒否する比較条件を公開APIの採用へ読み替えない。
 3. 完了枠予約と固定arbiterを基準のbusy方式から分離して比較する。
@@ -33,7 +34,7 @@
 
 正しさが通った構成からABIの容量・初期化表・symbol・stack情報を取得する。
 実cycle、IRQ禁止時間、stack peak、実protocolには実機の証拠が必要。
-[EXP-01のclock/time入口](../EXP-01/clock-time-result.ja.md)の後続である論理時刻の伸長・不連続とI2C、EXP-04保存、
+[EXP-01のclock/time入口](../EXP-01/clock-time-result.ja.md)の後続である論理時刻の伸長・不連続とI2Cの周辺準備／所有結合、EXP-04保存、
 EXP-05系列／拡張、休止・取得bufferも独立して進める。
 これはagentの並列起動を要求する意味ではない。
 公開文脈・所有・寿命の比較契約を変える必要があるときだけ高位判断へ戻す。

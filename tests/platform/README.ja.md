@@ -99,3 +99,15 @@ python3 tests/platform/core_redesign/build_minimal_runtime.py --suite clock-time
 
 固定資料をhash検証し、clock・counter・変換の入口をlinkする。実MMIOやmain以降をharnessで実行しない。
 [結果・範囲](../../planning/core-redesign/tasks/EXP-01/clock-time-result.ja.md)を参照する。
+
+## Core再設計：I2C masterのregister入口
+
+```sh
+python3 tests/platform/core_redesign/build_minimal_runtime.py --suite i2c-master \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp01-i2c-link
+```
+
+8／32／64 byteのraw・保護付きbufferと未使用構成をlinkする。
+clock・pin設定済み、周辺の排他的所有、IRQ-offを前提にした比較入口で、main以降や実通信は実行しない。
+[検証範囲・結果](../../planning/core-redesign/tasks/EXP-01/i2c-master-result.ja.md)を参照する。

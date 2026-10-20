@@ -281,3 +281,17 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 
 [結果](../../../planning/core-redesign/tasks/EXP-01/clock-time-result.ja.md)、
 [時刻を読む課題](../../../planning/core-redesign/tasks/EXP-01/time-read-exercise.ja.md)を参照する。
+
+## EXP-01 I2C masterのregister入口
+
+`i2c_master_driver.cpp`／`test_i2c_master.py`はFakeの2段受信場所・ADDR解除・送出BTFを使い、
+write／read／repeated START、取消と回収、raw／保護付きbufferの差を検査する。
+実MMIOや通信・IRQは実行しない。共有fixtureはこのファイル内で定義し、conftestは追加しない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_i2c_master.py -o junit_family=xunit1
+```
+
+[比較範囲と結果](../../../planning/core-redesign/tasks/EXP-01/i2c-master-result.ja.md)、
+[貸出と小分け処理の課題](../../../planning/core-redesign/tasks/EXP-01/i2c-loan-exercise.ja.md)を参照する。
