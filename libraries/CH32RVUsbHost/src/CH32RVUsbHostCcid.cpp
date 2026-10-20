@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-#if CH32RV_TINYUSB_HOST
+#if CH32RV_USB_HOST_STACK
 
 namespace {
 
@@ -31,31 +31,26 @@ uint8_t atr_len;
 uint8_t message[CH32RV_USB_HOST_CCID_BUFFER_SIZE];   /* one response, assembled */
 uint8_t slot_bits;                                    /* last NotifySlotChange */
 bool int_busy;
-TU_ATTR_ALIGNED(4) uint8_t int_buf[8];
+uint8_t int_buf[8] __attribute__((aligned(4)));
 
-void int_done(tuh_xfer_t *xfer);
+void int_done(void *user, uint8_t result, uint16_t length);
 
 void arm_int()
 {
     if (!pipe.open || !pipe.epInt || int_busy) {
         return;
     }
-    tuh_xfer_t x = {};
-    x.daddr = pipe.daddr;
-    x.ep_addr = pipe.epInt;
-    x.buflen = sizeof int_buf;
-    x.buffer = int_buf;
-    x.complete_cb = int_done;
-    int_busy = tuh_edpt_xfer(&x);
+    int_busy = ch32rv_usb_host_xfer(pipe.daddr, pipe.epInt, int_buf, sizeof int_buf, int_done, nullptr);
 }
 
 volatile bool slot_event;
 uint8_t slot_event_bits;
 
-void int_done(tuh_xfer_t *xfer)
+void int_done(void *user, uint8_t result, uint16_t length)
 {
+    (void)user;
     int_busy = false;
-    if (xfer->result == XFER_RESULT_SUCCESS && xfer->actual_len >= 2 &&
+    if (result == CH32RV_USBH_OK && length >= 2 &&
         int_buf[0] == RDR_TO_PC_NOTIFY_SLOT_CHANGE) {
         slot_event_bits = int_buf[1];
         slot_event = true;
@@ -98,7 +93,7 @@ void detach(uint8_t daddr)
     }
 }
 
-CH32RVUsbHostGroup ccid_group = {nullptr, poll, detach, nullptr};
+CH32RVUsbHostGroup ccid_group = {nullptr, nullptr, poll, detach, nullptr};
 
 struct Join {
     Join() { ch32rv_usb_host_join(ccid_group); }
@@ -117,7 +112,7 @@ void read_class_descriptor(uint8_t daddr, uint8_t itf)
     bool here = false;
     for (uint16_t at = 0; at + 2 <= len && cfg[at] >= 2; at = (uint16_t)(at + cfg[at])) {
         const uint8_t *d = cfg + at;
-        if (d[1] == TUSB_DESC_INTERFACE) {
+        if (d[1] == 4) {
             here = d[2] == itf;
         } else if (here && d[1] == 0x21 && d[0] >= 0x36) {
             info.hasClassDescriptor = true;
@@ -168,7 +163,7 @@ bool exchange(CH32RVUsbHost &host, uint8_t type, uint8_t slot, const uint8_t par
     const uint32_t t0 = millis();
     uint32_t have = 0;
     for (;;) {
-        tuh_task_ext(0, false);
+        ch32rv_usb_host_pump();
         ch32rv_usb_host_pipe_poll(pipe);
         have += ch32rv_usb_host_pipe_read(pipe, message + have, (uint16_t)(sizeof message - have));
         if (have >= 10) {
@@ -205,7 +200,7 @@ bool CH32RVUsbHost::ccidOpen(uint8_t address, uint8_t interfaceNumber)
     if (!_started) {
         return fail(CH32RVUsbHostError::NotStarted);
     }
-    for (uint8_t a = 1; a <= CFG_TUH_DEVICE_MAX + CFG_TUH_HUB; a++) {
+    for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
         if ((address != CH32RV_USB_HOST_ANY_ADDRESS && a != address) || !ch32rv_usb_host_device(a)) {
             continue;
         }
@@ -226,10 +221,8 @@ bool CH32RVUsbHost::ccidOpen(uint8_t address, uint8_t interfaceNumber)
             const uint16_t len = ch32rv_usb_host_config_descriptor(a);
             const uint8_t *cfg = ch32rv_usb_host_scratch;
             for (uint16_t at = 0; at + 7 <= len && cfg[at] >= 2; at = (uint16_t)(at + cfg[at])) {
-                if (cfg[at + 1] == TUSB_DESC_ENDPOINT && cfg[at + 2] == pipe.epInt) {
-                    tusb_desc_endpoint_t e;
-                    memcpy(&e, cfg + at, sizeof e);
-                    if (!tuh_edpt_open(a, &e)) {
+                if (cfg[at + 1] == 5 && cfg[at + 2] == pipe.epInt) {
+                    if (!ch32rv_usb_host_ep_open(a, cfg + at)) {
                         pipe.epInt = 0;
                     }
                     break;
@@ -248,8 +241,8 @@ bool CH32RVUsbHost::ccidOpen(uint8_t address, uint8_t interfaceNumber)
 
 void CH32RVUsbHost::ccidClose()
 {
-    if (pipe.open && pipe.epInt && tuh_connected(pipe.daddr)) {
-        tuh_edpt_close(pipe.daddr, pipe.epInt);
+    if (pipe.open && pipe.epInt && ch32rv_usb_host_connected(pipe.daddr)) {
+        ch32rv_usb_host_ep_close(pipe.daddr, pipe.epInt);
     }
     ch32rv_usb_host_pipe_close(pipe);
     int_busy = false;
@@ -320,10 +313,10 @@ bool CH32RVUsbHost::ccidPowerOn(uint8_t *atrOut, size_t atrCapacity, size_t *atr
     if ((message[7] >> 6) != CH32RV_USB_HOST_CCID_COMMAND_OK) {
         return fail(CH32RVUsbHostError::TransferFailed);
     }
-    atr_len = (uint8_t)TU_MIN(n, (uint32_t)sizeof atr);
+    atr_len = (uint8_t)ch32rv_min(n, (uint32_t)sizeof atr);
     memcpy(atr, message + 10, atr_len);
     if (atrOut && atrCapacity) {
-        const size_t k = TU_MIN((size_t)atr_len, atrCapacity);
+        const size_t k = ch32rv_min((size_t)atr_len, atrCapacity);
         memcpy(atrOut, atr, k);
         if (atrLength) {
             *atrLength = k;
@@ -349,7 +342,7 @@ bool CH32RVUsbHost::ccidPowerOff(uint8_t slot, uint8_t address, uint32_t timeout
 
 size_t CH32RVUsbHost::ccidGetAtr(uint8_t *buffer, size_t capacity) const
 {
-    const size_t k = TU_MIN((size_t)atr_len, capacity);
+    const size_t k = ch32rv_min((size_t)atr_len, capacity);
     if (buffer && k) {
         memcpy(buffer, atr, k);
     }

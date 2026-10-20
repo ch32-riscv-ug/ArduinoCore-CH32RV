@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-#if CH32RV_TINYUSB_HOST && CFG_TUH_MIDI
+#if 0 /* moving to the own host stack */
 
 namespace {
 

@@ -7,7 +7,7 @@
 
 #include "CH32RVUsbHostHidLayout.h"
 
-#if CH32RV_TINYUSB_HOST && CFG_TUH_HID
+#if 0 /* moving to the own host stack */
 
 namespace {
 

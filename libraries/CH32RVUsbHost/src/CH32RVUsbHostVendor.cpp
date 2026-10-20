@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-#if CH32RV_TINYUSB_HOST
+#if CH32RV_USB_HOST_STACK
 
 namespace {
 
@@ -39,7 +39,7 @@ void detach(uint8_t daddr)
     }
 }
 
-CH32RVUsbHostGroup vendor_group = {nullptr, poll, detach, nullptr};
+CH32RVUsbHostGroup vendor_group = {nullptr, nullptr, poll, detach, nullptr};
 
 struct Join {
     Join() { ch32rv_usb_host_join(vendor_group); }
@@ -58,14 +58,14 @@ bool CH32RVUsbHost::vendorOpen(uint8_t address, uint8_t interfaceNumber)
         return fail(CH32RVUsbHostError::NotStarted);
     }
     /* ANY: the first device that has a vendor interface. */
-    for (uint8_t a = 1; a <= CFG_TUH_DEVICE_MAX + CFG_TUH_HUB; a++) {
+    for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
         if (address != CH32RV_USB_HOST_ANY_ADDRESS && a != address) {
             continue;
         }
         if (!ch32rv_usb_host_device(a)) {
             continue;
         }
-        if (ch32rv_usb_host_pipe_open(pipe, a, interfaceNumber, TUSB_CLASS_VENDOR_SPECIFIC, ring, sizeof ring)) {
+        if (ch32rv_usb_host_pipe_open(pipe, a, interfaceNumber, 0xFF, ring, sizeof ring)) {
             return ok();
         }
     }
@@ -115,7 +115,7 @@ size_t CH32RVUsbHost::vendorRead(uint8_t *buffer, size_t length, uint8_t address
         return 0;
     }
     ch32rv_usb_host_task();
-    return ch32rv_usb_host_pipe_read(pipe, buffer, (uint16_t)TU_MIN(length, (size_t)0xFFFF));
+    return ch32rv_usb_host_pipe_read(pipe, buffer, (uint16_t)ch32rv_min(length, (size_t)0xFFFF));
 }
 
 uint16_t CH32RVUsbHost::vendorOutPacketSize(uint8_t address) const
