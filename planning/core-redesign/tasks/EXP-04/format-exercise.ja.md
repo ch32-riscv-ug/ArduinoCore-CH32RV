@@ -62,3 +62,15 @@ python3 tests/platform/core_redesign/compare_flash_formats.py \
 RAWの`unvalidated`は破損なしという意味ではない。外側の既知値と比べて初めて、旧値／新値以外と分かる。
 完了した更新、途中でも読めた値、次の更新を開始できた状態を分けて説明する。
 人による予測・変更・説明を確認してから、教材の分量と抽象化の範囲を調整する。
+
+## C++のRAMと呼出し内の仕事量を比べる
+
+[C++試作の結果](store-result.ja.md)で、V003の2 B programと64 B program、X035の256 B programを比較する。
+作業buffer、設定のsnapshot、管理情報、入口の変数、stackを分けてRAMを計算する。
+bufferが小さくなっただけで、予約Flashや更新回数の条件まで同じになるか点検する。
+
+試作はbank全体をRAMへ載せないが、受理時には全bankを同期走査する。
+4 KiB予約の消去済み媒体でbeginは4,096回、putは8,192回のbyte readを行った。
+「1媒体操作ずつstepする」と「受理・走査も短く分割される」を分けて説明する。
+次は1回の走査byte数を制限した場合の追加状態と、走査中に更新を許す条件を予測する。
+hostの読出し回数を、MCUのcycleや実時間にそのまま換算しない。

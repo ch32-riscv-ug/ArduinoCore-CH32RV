@@ -324,3 +324,17 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 
 [比較結果と条件](../../../planning/core-redesign/tasks/EXP-04/format-result.ja.md)、
 [更新途中を予測する課題](../../../planning/core-redesign/tasks/EXP-04/format-exercise.ja.md)を参照する。
+
+## EXP-04 C++形式と初回／置換の中断
+
+`flash_store.hpp`／`flash_store_driver.cpp`はprogram単位の作業bufferと設定snapshotを持つC++試作。
+`test_flash_store.py`がPython模型へ、byte列・媒体操作・走査結果・世代・中断と再更新を照合する。
+backendは失敗時も停止済みで、作業bufferを後から参照しない前提。実driverや領域leaseは含まない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_flash_store.py tests/unit/core_redesign/test_flash_formats.py \
+  tests/unit/test_workspace.py -o junit_family=xunit1
+```
+
+[費用・初回保存・同期走査の範囲](../../../planning/core-redesign/tasks/EXP-04/store-result.ja.md)を参照する。

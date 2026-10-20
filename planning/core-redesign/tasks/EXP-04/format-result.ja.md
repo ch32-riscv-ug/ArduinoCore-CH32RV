@@ -122,6 +122,9 @@ python3 tests/platform/core_redesign/compare_flash_formats.py \
 
 ## 次の通常作業と上位判断
 
+後続の[初回中断・C++／ABI比較](store-result.ja.md)を記録した。
+以下のうちC++試作と初回の有限中断集合は検査済みとし、走査分割・実媒体・別形式の比較は続ける。
+
 通常作業では初回保存の中断、型付きC++試作とABI・未使用除去、実媒体境界と所有・buffer寿命、
 満杯・追記・整理・write amplification・作業RAMを追加比較する。
 毎回bank全体を消去する今回のsnapshot方式は、小更新の耐久性を評価し終えた設計ではない。

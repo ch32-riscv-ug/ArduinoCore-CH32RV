@@ -139,3 +139,16 @@ RAW／blob／数値keyの上書き・2 bank・完了印を条件付き媒体模�
 容量・媒体操作回数・中断後の読出しと再更新を記録する。出力先は未作成の場所を使う。
 MCUのcode／RAM・時間や、実電断耐性を測定するものではない。
 [結果と注入集合](../../planning/core-redesign/tasks/EXP-04/format-result.ja.md)を参照する。
+
+## Core再設計：保存形式のC++ ABI
+
+```sh
+python3 tests/platform/core_redesign/measure_flash_store.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp04-store-abi
+```
+
+固定geometryのC++候補を、LTOなしの仮backend境界へlinkして容量・symbol・stack情報を保存する。
+作業bufferはprogram単位に合わせる。未使用の宣言と、明示した保存領域の予約を分けて検査する。
+実Flash・startup・MCU時間・stack peakの測定ではない。
+[結果と範囲](../../planning/core-redesign/tasks/EXP-04/store-result.ja.md)を参照する。
