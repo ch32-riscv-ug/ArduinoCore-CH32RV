@@ -316,5 +316,6 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [保存媒体と領域準備](planning/core-redesign/tasks/EXP-04/region-result.ja.md)では5 geometry、host138件、ELF40構成と想定拒否・artifact故障を検査し、[容量と保持の教材素材](planning/core-redesign/tasks/EXP-04/region-exercise.ja.md)を作った。保存の実機成立・実電断・実upload保持は未検証。
 [保存形式の条件付き比較](planning/core-redesign/tasks/EXP-04/format-result.ja.md)ではRAW／blob／数値keyの7候補、105容量条件と3,721中断・再更新条件を記録し、[形式と更新途中の教材素材](planning/core-redesign/tasks/EXP-04/format-exercise.ja.md)を作った。当該比較はhostのみで、実機の保護は未検証。
 [保存形式のC++試作](planning/core-redesign/tasks/EXP-04/store-result.ja.md)ではnative272件、初回／置換中断7,442条件、ABI198構成を確認した。実Flash driverと起動は含まず、走査分割・所有・実機の保護は残す。
+[予算付き読出しと所有](planning/core-redesign/tasks/EXP-04/scan-result.ja.md)ではnative353件・ABI76構成でbyte上限とcacheの寿命を確認した。受理／key変更・実媒体への統合と所有期間の比較は残す。
 次は論理時刻の伸長と不連続、I2Cのclock／pin／所有結合、用途変更課題、共有・保存・系列・休止を進め、P4まで通常の実装・実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

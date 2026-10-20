@@ -152,3 +152,15 @@ python3 tests/platform/core_redesign/measure_flash_store.py \
 作業bufferはprogram単位に合わせる。未使用の宣言と、明示した保存領域の予約を分けて検査する。
 実Flash・startup・MCU時間・stack peakの測定ではない。
 [結果と範囲](../../planning/core-redesign/tasks/EXP-04/store-result.ja.md)を参照する。
+
+## Core再設計：保存領域の予算付き読出し
+
+```sh
+python3 tests/platform/core_redesign/measure_flash_scan.py \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp04-scan-abi
+```
+
+読出し専用の同期対照、byte予算付きreader、共有所有台帳、未使用をlinkして費用を記録する。
+媒体は仮実装で、実FlashやCoreのstartup・時間を検証しない。
+[結果と所有条件](../../planning/core-redesign/tasks/EXP-04/scan-result.ja.md)を参照する。

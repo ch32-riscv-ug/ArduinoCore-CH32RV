@@ -11,7 +11,7 @@
 | EXP-01 最小構成・I/O | [I/O所有model](tasks/EXP-01/io-preparation.ja.md)：host22件、ABI48構成。[reset／GPIO入口](tasks/EXP-01/runtime-result.ja.md)：host16件・ELF40・拒否link12・初期化故障12。[clock/time](tasks/EXP-01/clock-time-result.ja.md)：host34件・ELF40。[I2C master](tasks/EXP-01/i2c-master-result.ja.md)：host59件・ELF36、貸出・受信末尾・取消 | 論理時刻の伸長と不連続、I2Cのclock／pin／所有結合、ISRと資源引渡し・回収の接続 | 実起動・周波数・精度・周辺・IRQ時間 |
 | EXP-02 データと同期 | [直列単位](tasks/EXP-02/result.ja.md)と[寿命・共有単位](tasks/EXP-02/shared-result.ja.md)：host92＋31件、link200＋68構成、未使用36＋16行が0 B、TSan4条件 | 実行器への待機接続、ring／message／poolの共有条件 | 実ISR／コア間の同期と禁止時間 |
 | EXP-03 実行・通知 | [work](tasks/EXP-03/work-preparation.ja.md)・[期限](tasks/EXP-03/timer-preparation.ja.md)・[宛先とI/O結合](tasks/EXP-03/event-preparation.ja.md)・[待機policy](tasks/EXP-03/wait-result.ja.md)・[資源依存](tasks/EXP-03/dependency-result.ja.md)：host151件、ABI212構成 | X0の変更課題、依存台帳の実backend接続、IRQ共有、完了枠／arbiter、別stack対照 | MCU時間・stack観測、採否はP5 |
-| EXP-04 保存 | [媒体・領域準備](tasks/EXP-04/region-result.ja.md)：host138件、ELF40・想定link拒否80・artifact故障検出150。[形式比較](tasks/EXP-04/format-result.ja.md)：host200件、105容量条件。[C++試作](tasks/EXP-04/store-result.ja.md)：native272件・初回／置換中断7,442条件・ABI198、未使用28条件で追加0 B | 走査のbyte予算・状態の無効化、非同期媒体と回収、RAW／keyの所有、追記・整理、物理再program規則、driverと実upload経路 | 実電断・CPU／IRQ停止・upload保持 |
+| EXP-04 保存 | [媒体・領域準備](tasks/EXP-04/region-result.ja.md)：host138件、ELF40・想定link拒否80・artifact故障検出150。[形式比較](tasks/EXP-04/format-result.ja.md)：host200件、105容量条件。[C++試作](tasks/EXP-04/store-result.ja.md)：native272件・中断7,442条件・ABI198。[予算付き読出しと所有](tasks/EXP-04/scan-result.ja.md)：native353件・ABI76、最大32 byte／pollと古い結果の拒否 | 受理／key変更への走査・所有統合、非同期媒体と回収、予約とdomainの整合、所有期間・公平性、追記・整理、物理再program規則、driverと実upload経路 | 実電断・CPU／IRQ停止・upload保持 |
 | EXP-05 拡張 | タッチ追加のR対照 | 表示交換・独立library・能力差・H417所有modelと資料確認 | 実cache可視性・両コア・reset |
 | EXP-06 完成用途 | [K0 R/A/B/Cと容量2変更](tasks/EXP-06/k0-result.ja.md)：host82件、ABI116構成。[X0追加比較](tasks/EXP-06/x0-result.ja.md)：host55件、ABI116構成、同じ進行機会・故障・50Hzタッチ。[X0機能除去](tasks/EXP-06/x0-features-result.ja.md)：host88件・ABI116構成 | 表示交換・独立library等の変更課題、K0の物理接続 | 実通信・電流・PPS source・教材の利用者レビュー |
 | V006休止 | 未実施 | 保持条件の資料確認、fake timeとwake競合、休止調停の比較 | 復帰実機・静止電流 |
@@ -43,6 +43,7 @@
 - [EXP-04 媒体・領域準備](tasks/EXP-04/region-result.ja.md)：読出し・program・eraseの粒度、保守的な中断模型、予約とlink／image検査。保存の実機成立・実電断・upload保持は未検証。
 - [EXP-04 形式比較](tasks/EXP-04/format-result.ja.md)：RAW／blob／数値key、上書き／2 bank／別単位の完了印。条件付きhost模型であり、実機の保護は未検証。
 - [EXP-04 C++試作](tasks/EXP-04/store-result.ja.md)：初回／置換の模型照合、作業buffer・ABI費用と未使用除去。同期走査の読出し回数も記録し、実媒体・所有・走査分割は残す。
+- [EXP-04 予算付き読出しと所有](tasks/EXP-04/scan-result.ja.md)：明示pollのbyte上限、共有台帳の重複拒否とticket、結果保持と解放後の無効化。書込み側への統合・ISR／core間共有は残す。
 - [EXP-06 X0機能除去](tasks/EXP-06/x0-features-result.ja.md)：固定off／on・専用対照・旧runtime比較と変更課題。
 
 次は論理時刻の伸長・clock/sleep不連続とI2Cの周辺準備／所有／IRQ結合、X0の残る変更課題、保存・系列・休止、実共有条件を進める。

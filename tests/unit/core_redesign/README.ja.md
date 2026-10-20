@@ -338,3 +338,18 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 ```
 
 [費用・初回保存・同期走査の範囲](../../../planning/core-redesign/tasks/EXP-04/store-result.ja.md)を参照する。
+
+## EXP-04 byte予算付き走査と領域の所有
+
+`flash_scan.hpp`／`flash_scan_driver.cpp`は最大32 byte／poll、共有台帳の重複拒否、ticketと結果の寿命を扱う。
+検査は直列操作とcanonical物理addressを前提とし、書込み受理やkey変更への統合はまだ行わない。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_flash_scan.py tests/unit/core_redesign/test_flash_formats.py \
+  tests/unit/test_workspace.py -o junit_family=xunit1
+```
+
+明示的な証拠保存は`EXP04_SCAN_EVIDENCE=新しい出力先`を設定する。
+検査に使ったnative binary・入力hash・build記録を保存し、既存の出力先は上書きしない。
+[費用と条件](../../../planning/core-redesign/tasks/EXP-04/scan-result.ja.md)を参照する。
