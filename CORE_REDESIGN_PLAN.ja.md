@@ -268,7 +268,7 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 | P1 比較条件と実験設計 | DESIGN-02 完了。P1-1 と EXP-00 依頼を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-02/result.ja.md) |
 | P2 再現基盤と対照準備 | 進行中。EXP-00、PREP-01と02完了。bus・周期のhost結合済み。起動・実周辺backendは未検証 |
 | P3 | 進行中。EXP-01のI/O所有、EXP-02のデータ・同期、EXP-03のwork・期限・宛先と一部結合をhost／ABIで検査。[作業別状態](planning/core-redesign/execution-status.ja.md)を参照。同等用途・wait・実共有・保存等は残る |
-| P4 | 未完了。同等機能のA〜Cと完成用途、変更課題・利用者レビューが残る |
+| P4 | 未完了。K0のR/A/B/Cと設定容量2のhost／ABI比較済み。X0の同等用途、残る変更課題・実機・利用者レビューが残る |
 | P5〜P7 | 未着手。方式の採用と最終仕様はP5で扱う |
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
@@ -306,4 +306,5 @@ EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完�
 [期限model](planning/core-redesign/tasks/EXP-03/timer-preparation.ja.md)、
 [宛先結合](planning/core-redesign/tasks/EXP-03/event-preparation.ja.md)を記録し、通常文脈の終端・取消・回収と一部配達を検査した。
 次は同等用途・待機条件、残るruntime・共有・保存・系列と休止の検査へ進め、P4まで通常の実装・実験を継続する。
+[K0の同等比較と容量2変更](planning/core-redesign/tasks/EXP-06/k0-result.ja.md)を検査済み。X0と待機・残る独立実験を継続する。
 候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。

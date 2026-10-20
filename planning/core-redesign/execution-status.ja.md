@@ -13,7 +13,7 @@
 | EXP-03 実行・通知 | [work](tasks/EXP-03/work-preparation.ja.md)・[期限](tasks/EXP-03/timer-preparation.ja.md)・[宛先とI/O結合](tasks/EXP-03/event-preparation.ja.md)：host122件、ABI152構成 | A/B/Cの同等用途、waitのproducer条件、IRQ共有、完了枠／arbiter、別stack対照 | MCU時間・stack観測、採否はP5 |
 | EXP-04 保存 | V003／X035の消去方式の資料確認 | read／program条件、媒体model、RAW／blob／key、1／2／4単位、領域・linker・設定の検査 | 実電断・停止・upload保持 |
 | EXP-05 拡張 | タッチ追加のR対照 | 表示交換・独立library・能力差・H417所有modelと資料確認 | 実cache可視性・両コア・reset |
-| EXP-06 完成用途 | RのK0／X0、goldenと故障条件 | 同じ用途でR/A/B/Cを結合し費用・変更課題を比較 | 実通信・電流・PPS source・教材の利用者レビュー |
+| EXP-06 完成用途 | [K0 R/A/B/Cと容量2変更](tasks/EXP-06/k0-result.ja.md)：host82件、ABI116構成。Rの結合X0とgolden | X0の同等用途・故障・残る変更課題、K0の物理接続 | 実通信・電流・PPS source・教材の利用者レビュー |
 | V006休止 | 未実施 | 保持条件の資料確認、fake timeとwake競合、休止調停の比較 | 復帰実機・静止電流 |
 | 取得buffer | 未実施 | 2 blockの所有と返却、生成量・consumer停止をmodel化 | 実ADC/DMA、欠落と時間 |
 | P4教育 | 教材案まで | 同じ課題と説明、変更差分・必要状態を比較する素材を作る | 人が予測・変更した結果のレビュー |
@@ -32,6 +32,7 @@
 - [EXP-01 I/O所有model](tasks/EXP-01/io-preparation.ja.md)：受理、取消、sticky終端、世代、end、buffer回収。
 - [EXP-03期限model](tasks/EXP-03/timer-preparation.ja.md)：半周・周回・周期集約・未回収通知・停止／再設定。
 - [EXP-03宛先結合](tasks/EXP-03/event-preparation.ja.md)：FIFO／集約bit、満杯でもI/O・timer保持、fan-out、配達前解除。
+- [EXP-06 K0同等比較](tasks/EXP-06/k0-result.ja.md)：同一入力のR/A/B/C、M/S/U、設定容量2の変更課題。
 
-次はEXP-03の同等用途・待機接続、EXP-01の残るruntime、EXP-02の残る実共有条件を進める。
+次はEXP-03の待機接続、X0の同等用途、EXP-01の残るruntime、EXP-02の残る実共有条件を進める。
 P2の実backend待ちで、pureな部品とhost契約の検査を止めない。

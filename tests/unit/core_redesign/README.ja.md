@@ -163,3 +163,22 @@ python3 tests/platform/core_redesign/measure_data_parts.py --matrix event \
 
 payload全wordの整合性と、生成後に残った受理messageのdrainまで照合する。
 結果・費用・未検証は[宛先結合の結果](../../../planning/core-redesign/tasks/EXP-03/event-preparation.ja.md)を参照する。
+
+## EXP-06 K0のR/A/B/Cと設定容量変更
+
+`k0_candidates.hpp` は同じfrontend・意味へ直接保持、共通Queue、work、宛先FIFOを接続する。
+`k0_driver.cpp`／`test_k0_candidates.py` で凍結K trace、同じM/S/U機会、容量2のFIFO・再送を比較する。
+Cは宛先FIFOを設定保持に使い、二つ目の設定Queueを常設しない。
+1回に設定1件を適用する条件。frontendの開始前にbeginを一度行う。
+
+```sh
+uv run --project tests --locked pytest -c tests/pyproject.toml \
+  tests/unit/core_redesign/test_k0_candidates.py -o junit_family=xunit1
+
+python3 tests/platform/core_redesign/measure_data_parts.py --matrix k0 \
+  --compiler .tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++ \
+  --out work/exp06-k0-matrix
+```
+
+物理I2CやIRQのatomicityは未検証。
+結果と観測の限界は[K0比較結果](../../../planning/core-redesign/tasks/EXP-06/k0-result.ja.md)を参照する。

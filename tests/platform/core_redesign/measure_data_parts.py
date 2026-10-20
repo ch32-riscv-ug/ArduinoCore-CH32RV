@@ -90,12 +90,23 @@ def event_cases(smoke):
     return result
 
 
+def k0_cases(smoke):
+    result = [("baseline", 0, 1, 0, 0, 1), ("unused-R", 1, 1, 0, 0, 0)]
+    if smoke: return result
+    for part, candidate in enumerate(("R", "A", "B", "C"), start=1):
+        if part > 1: result.append((f"unused-{candidate}", part, 1, 0, 0, 0))
+        for capacity in (1, 2):
+            for profile, label in enumerate(("M-explicit", "S-delay", "U-delay")):
+                result.append((f"{candidate}-capacity{capacity}-{label}", part, capacity, profile, 0, 1))
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="baseline and one unused object only")
-    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event"), default="serial")
+    parser.add_argument("--matrix", choices=("serial", "shared", "work", "io", "timer", "event", "k0"), default="serial")
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=False)
     out = args.out.resolve(); compiler = args.compiler.resolve(); prefix = str(compiler)[:-3]
     commands = []
@@ -131,6 +142,12 @@ def main():
                   HEADER.with_name("io_lifecycle.hpp"), HEADER.with_name("deadline_timer.hpp")]
         selected_cases = event_cases(args.smoke)
         report["scope"] = "targeted event and I/O/timer model link-only; no physical protocol, startup, IRQ or cycle proof"
+    elif args.matrix == "k0":
+        source = Path(__file__).with_name("k0_entry.cpp")
+        inputs = [source, HEADER, HEADER.with_name("work_executor.hpp"), HEADER.with_name("event_executor.hpp"),
+                  HEADER.with_name("k0_candidates.hpp")]
+        selected_cases = k0_cases(args.smoke)
+        report["scope"] = "K0 equivalent R/A/B/C logic link-only; no physical I2C, startup, ISR atomicity or cycle proof"
     report["matrix"] = args.matrix
 
     def save(): (out / "result.json").write_text(json.dumps(report, indent=2) + "\n")

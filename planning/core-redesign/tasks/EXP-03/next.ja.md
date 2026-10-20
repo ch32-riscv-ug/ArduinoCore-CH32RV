@@ -9,6 +9,8 @@ EXP-01との結合やEXP-03全体を完了にしない。[全作業の状態](..
 時計管理・sleep・複数timer管理と実行器への結合は残る。
 項目3の通常直列文脈のmailboxとI/O／timer接続は[宛先結合](event-preparation.ja.md)で検査した。
 次は項目4の同等機能と待機条件、項目5の独立対照、および実共有・完成用途を進める。
+K0の同等用途と設定容量2の変更課題は [EXP-06](../EXP-06/k0-result.ja.md)でhost／ABI確認済み。
+X0の同等用途と待機条件は残る。
 
 1. EXP-01のhost I/O契約を先に固定・検査する。受理／busy／不正／未対応、終端結果のsticky保持、
    cancel受理とhardware停止の区別、成功・失敗・cancelの両順序、end後の古い通知抑止、buffer回収。
