@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "scope": "X035 PA10/PA11 default I2C route setup and register recheck; serial cold-quiescent host model, no physical wire validation",
+  "sdk": {
+    "commit": "c6253942b29ff2a3f5e2829182a874afffa45881",
+    "tree": "01e9a41f3d6876934d1c6c823028ebe4c681fdc0",
+    "files": [
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035.h",
+        "bytes": 206544,
+        "sha256": "1842a8c76c7be1596c22b032ff45cb48cf49afbf62ef0a33416aec8a3b5da1b6",
+        "git_blob_sha1": "dd9e458e2fe9fa60a69b7e40736856236eb954dd"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_gpio.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_gpio.h",
+        "bytes": 10775,
+        "sha256": "4a5242ecc74b446a50388bb7e3dab3cc54a55dc636917a722be8d76ca399822b",
+        "git_blob_sha1": "d648110d08cfcbe612cdd586abfdba08f19040d6"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/src/ch32x035_gpio.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/src/ch32x035_gpio.c",
+        "bytes": 30459,
+        "sha256": "f283c24c4e32d26385e3366537053645bab02c97728d6b9c8dcea9c4dabf1b9b",
+        "git_blob_sha1": "8c2ccaeb83b6b87ce637f2440fbd843a1baa2333"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_rcc.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_rcc.h",
+        "bytes": 5151,
+        "sha256": "7faf18ce3a870806709c7bb7102557bf30d96c8aab31bab50f8f4f5e08272556",
+        "git_blob_sha1": "11320da03277fbc2057a32fd02a73faf53e73edc"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/src/ch32x035_rcc.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/src/ch32x035_rcc.c",
+        "bytes": 11525,
+        "sha256": "ab4a50adb0f951798394c9acfd14a33328f51770674e661afb9315b6795ad4cc",
+        "git_blob_sha1": "565d2a6a1adddda8bb54f4b43b251df82f7e76d2"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/src/ch32x035_i2c.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/src/ch32x035_i2c.c",
+        "bytes": 29482,
+        "sha256": "62dedc751636b447924e7025261b283019d4bdc41ab19d2d99aacfc2277b0742",
+        "git_blob_sha1": "97febb0eb621103e89ac744ae2d291a4e6dda981"
+      },
+      {
+        "path": "EVT/EXAM/I2C/I2C_7bit_Mode/User/main.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/I2C/I2C_7bit_Mode/User/main.c",
+        "bytes": 4534,
+        "sha256": "2d8d5ce2847ab4f23a77743ad2637910a54c06762290e6dcde0be1e854c5388a",
+        "git_blob_sha1": "3ae05e6c7fc9cfdaae61afaee2d32c018d886ff6"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Startup/startup_ch32x035.S",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Startup/startup_ch32x035.S",
+        "bytes": 8162,
+        "sha256": "6fe72d6df73c82ca2c52ff10a840f515d0476040054c174422e97ddc53d97f0f",
+        "git_blob_sha1": "1808563c0a6817f65b70b127904154386f1175e5"
+      }
+    ]
+  },
+  "documents": [
+    {
+      "file": "reference-en.pdf",
+      "url": "https://www.wch-ic.com/download/file?id=382",
+      "bytes": 2568824,
+      "sha256": "c5dc49eb6a0086857bc120cf4c1646fa8530006fe5a21e7bbb632a075daf036a"
+    },
+    {
+      "file": "reference-zh.pdf",
+      "url": "https://file.wch.cn/download/file?id=445",
+      "bytes": 2578952,
+      "sha256": "c7e301eac4790ca1ba112f946bf057139ec7f36be28e142cafc1c286bcc9daa4"
+    },
+    {
+      "file": "datasheet-en.pdf",
+      "url": "https://www.wch-ic.com/download/file?id=381",
+      "bytes": 815038,
+      "sha256": "1714c07d9448bc87ec667a602eba3e4c784a6ca7ca25ef125445df0ee4cc755d"
+    }
+  ],
+  "hsi_nominal_hz": 48000000,
+  "hpre_divisors": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "default_route": {
+    "scl": "PA10",
+    "sda": "PA11",
+    "mask": 28,
+    "value": 0
+  },
+  "gpio_high_mask": 65280,
+  "gpio_high_value": 39168,
+  "gate_apb2_mask": 5,
+  "gate_apb1_mask": 2097152,
+  "profile": "CH32X035C8T6",
+  "irq_backend": false,
+  "datasheet_pin_availability_verified": {
+    "part": "CH32X035C8T6",
+    "package": "LQFP48",
+    "scl_pin": 42,
+    "sda_pin": 43,
+    "printed_page": 11,
+    "pdf_page": 13
+  },
+  "physical_wiring_verified": false
+}
