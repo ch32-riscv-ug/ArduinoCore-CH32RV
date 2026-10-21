@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "scope": "N04 finite artificial dependency-pump comparison, not an adopted executor or blocking wrapper",
+  "variants": ["continuation-depth1", "nested-depth1", "nested-depth2", "nested-depth4"],
+  "actors": 5,
+  "resources": 2,
+  "nested_scope": "distinct system handlers only; active handler and nested user never reentered",
+  "operation": "one synchronous dependency attempt retains caller frames; depth limit or unavailable producer returns a distinct outcome; no unbounded retry loop",
+  "continuation": "one callback tries dependency state and returns Pending; explicit rounds eventually retry",
+  "cycles": "same active actor is rejected; depth limit may stop before a longer cycle is reached",
+  "ownership": "caller holds persist during nested attempt and release on unwind; opaque or foreign ownership is preserved",
+  "external": "IRQ or remote completion is an explicit stimulus, never a normal callback or implied successful producer",
+  "not_verified": ["actual stack peak", "elapsed time guarantees", "hardware IRQ sharing", "RTOS or independent-stack switch", "public API adoption"]
+}
