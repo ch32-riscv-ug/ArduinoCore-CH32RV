@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "N02 complete X0 application using frozen X035 route/setup adapter; host/register model and structural ABI, no physical pin/clock/IRQ proof",
+  "base_input": "planning/core-redesign/x0-event-wire-inputs.json",
+  "routes_input": "planning/core-redesign/x035-i2c-route-inputs.json",
+  "candidates": ["R", "A", "B", "C-static-batch"],
+  "routes": [0, 1, 2, 3, 4, 5, 6, 7],
+  "packages": ["C8", "F7"],
+  "unsupported": [{"package": "F7", "routes": [0, 1]}],
+  "modes": ["direct", "event"],
+  "preparation": "explicit cold/quiescent declaration; no automatic prepare in start",
+  "admission": "Manager claims peripheral/pins first, then Setup::ready rechecks nominal PCLK, gates, idle, route/pins and debug release",
+  "debug": "caller/owner already released debug pins; adapter must not disable debugger",
+  "rollback": "failed setup may retain its own lease until explicit abandon with a quiescent declaration",
+  "retained_result": "reprepare and new owner may run after backend reap, before old application take",
+  "boolean_baseline": "same existing direct/event adapter with an externally configured board model and boolean pin declaration",
+  "implementation_note": "new start wrapper reuses existing poll/take/cancel/event code; inherited boolean pins field retained but unused in prepared mode",
+  "normal_ticks": 1200,
+  "abi_memory_profile": "CH32X035C8T6 only; F7 labels test pin/package guard code under this structural map, not F7 physical fit",
+  "abi_matrix": "empty plus boolean family/mode/used-unused plus all package/route/family/mode/used-unused; both LTO settings",
+  "not_verified": ["actual clock precision and switching", "physical pads/I2C/PD/IRQ", "F7 physical memory fit", "dynamic source lifetime", "human review and final API adoption"]
+}
