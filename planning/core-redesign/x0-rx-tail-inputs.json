@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "scope": "N02 RX-tail fault composition in X0 direct and event modes; native host stimuli only, unchanged firmware headers",
+  "base_input": "planning/core-redesign/x0-event-wire-inputs.json",
+  "quantities": ["bus", "current"],
+  "precondition": "one valid 5000 mV/1000 mA pair was already published",
+  "new_raw_words": [18000, 65506],
+  "injected_error_flags": [256, 512, 1024, 2048, 4096],
+  "stages": [
+    "after pointer ACK, before repeated START",
+    "after receive ADDR, FIFO empty",
+    "one byte in FIFO, before BTF pair read",
+    "two bytes in FIFO, before pair read",
+    "both bytes read, before quiet/terminal",
+    "after quiet/reap/close: terminal immutable",
+    "successful pair read, hold Stop until explicit quiesce"
+  ],
+  "fifo_vs_received": "drained FIFO bytes after failure are not counted as valid received prefix",
+  "partial_rx_claim": "RX2 is read as a pair by the existing engine; no claim of a one-byte accepted RX prefix or injection between the two guarded reads",
+  "additional_conditions": ["event FIFO full and unbind/rebind", "raw source changes after RX before quiet/take", "baseline old wire commands"],
+  "abi": "reuse the existing 68-build event/direct experiment only after input-header hash equality; no new target binary or size claim",
+  "not_verified": ["physical error/IRQ timing", "actual STOP/BUSY electrical witness", "X035 preparation composition", "API adoption", "human review"]
+}
