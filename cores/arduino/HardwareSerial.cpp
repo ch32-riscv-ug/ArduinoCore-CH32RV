@@ -661,6 +661,11 @@ void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config)
     if (_slot) {
         end();
     }
+    /* Serial (row 0, SERIAL_PORT_MONITOR) is where printf() goes, from here on,
+     * unless the sketch chose otherwise (ch32rv_stdout.cpp). */
+    if (_number == 0 && ch32rv_stdout_offer) {
+        ch32rv_stdout_offer(this);
+    }
     /* BRR holds USARTDIV * 16 in 16 bits, and below 16 (USARTDIV < 1) the
      * USART does not refuse it: it runs at fck / 16 whatever was asked
      * (measured on X035 and V003, 2026-09-29: 921600 at 8 MHz came out at

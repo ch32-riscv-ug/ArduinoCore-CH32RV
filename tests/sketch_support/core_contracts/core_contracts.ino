@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <SerialDMSeq.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -79,6 +80,16 @@ void reply(const char *command) {
     Serial.flush();
     SerialDMSeq.print("UART COUNT ");
     SerialDMSeq.println(n);
+  } else if (strcmp(command, "stdio") == 0) {
+    // stdout follows Serial once it is begun (setup()); ch32rv_set_stdout() overrides it, nullptr discards.
+    puts("STDIO SERIAL");
+    ch32rv_set_stdout(nullptr);
+    puts("STDIO DISCARDED");
+    ch32rv_set_stdout(&Serial);
+    puts("STDIO BACK");
+    fflush(stdout);
+    Serial.flush();
+    SerialDMSeq.println("STDIO DONE");
   } else if (strncmp(command, "gpio ", 5) == 0) {
     char *end;
     unsigned long rawPin = strtoul(command + 5, &end, 10);

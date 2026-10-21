@@ -179,7 +179,8 @@ extern arduino::CH32RVHardwareSerial Serial9;
 #define SERIAL_PORT_HARDWARE9 Serial9
 #endif
 
-/* Retarget printf()/puts()/stderr. The default is the monitor port above.
+/* Retarget printf()/puts()/stderr. The default is the monitor port above,
+ * from its begin() on (ch32rv_get_stdout() is nullptr until then).
  *
  *   ch32rv_set_stdout(&SerialSDI);   // trace over the debug probe, no wiring
  *   ch32rv_set_stdout(nullptr);      // discard
@@ -190,3 +191,6 @@ extern arduino::CH32RVHardwareSerial Serial9;
  * USB CDC port plugs in the same way, without the core knowing it exists. */
 void ch32rv_set_stdout(arduino::Print *out);
 arduino::Print *ch32rv_get_stdout(void);
+/* For the monitor port's begin(): becomes stdout unless the sketch chose one.
+ * Weak, so a sketch without stdio links neither this nor the bridge. */
+void ch32rv_stdout_offer(arduino::Print *port) __attribute__((weak));
