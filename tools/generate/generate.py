@@ -959,10 +959,15 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # do; CH32M030 does not (its header has no IWDG block), and a wdtEnable()
     # that key-writes into a hole while returning true would be a lie there.
     iwdg: dict = {}
+    # And the random number generator: the families that have one (CH32V30x,
+    # V40x, H41x), for an entropy source that is not a guess (TLS keys).
+    rng: dict = {}
     for r in read_table(tables, "memory_map.csv",
                         ("family", "region", "base_address")):
         if r["region"] == "IWDG" and r["base_address"]:
             iwdg.setdefault(r["family"], set()).add(int(r["base_address"], 16))
+        if r["region"] == "RNG" and r["base_address"]:
+            rng.setdefault(r["family"], set()).add(int(r["base_address"], 16))
 
     # AHB prescaler encoding. The two schemes agree on /1 and differ on /2,
     # which is the cheapest question that separates them: 0x10 counts (/2 is
@@ -1105,6 +1110,8 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
                 // IWDG_HSI_DIVIDER[family] if family in IWDG_HSI_DIVIDER else 0),
             iwdg_base=one(family, "the IWDG base",
                           set(iwdg[family])) if family in iwdg else 0,
+            rng_base=one(family, "the RNG base",
+                         set(rng[family])) if family in rng else 0,
             dm_data0=dm_data0.get(family, 0),
             afio_pcfr1=one(family, "the AFIO PCFR1 offset",
                            afio_off[(family, "PCFR1")])
@@ -3234,6 +3241,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         + (f" -DCH32RV_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
         + (f" -DCH32RV_IWDG_BASE={fact['iwdg_base']:#x}u"
            if fact['iwdg_base'] else "")
+        + (f" -DCH32RV_RNG_BASE={fact['rng_base']:#x}u"
+           if fact['rng_base'] else "")
         # data1 is not passed: it is data0 + 4 everywhere, checked when the
         # table is read, and two properties that must agree is one too many.
         + (f" -DCH32RV_DM_DATA0_ADDR={fact['dm_data0']:#x}u"
