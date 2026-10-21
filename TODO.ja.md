@@ -660,13 +660,14 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - 既定のクロックは HSI×16 の 400 MHz、V3F（F_CPU）は 100 MHz にした（2026-10-21、EVT の
         SetSYSCLK_400M_CoreCLK_V5F_400M_V3F_100M_HSI と同じ）。25 MHz では USBSS の EP0 の 96 バイト目以降で
         32 バイトの重複が出ていた。100 MHz で直った（512 バイトまで一致、SS 経由の DFU も確認）。
-        - **device-data に依頼済み（2026-10-21、ch32-device-data のセッションへ。V20x の RNG の食い違いの確認も一緒に）。** features.csv に CH32V208 の Ethernet
-          （10M の MAC + PHY 内蔵）が無く、V208 のバリアントにも Ethernet のクロック有効化が出ていない
-          （2026-10-21 に気づいた）。V208 はオンボード NIC を持つ系列で一番小さく、IP スタックの設計の下限に使う。
-        - **device-data に依頼済み（2026-10-21）。** clock_configs.csv の CH32H417 の 400M の行の
-          pll 列に RCC_PLLMUL16 がなく、FPRE（V3F の分周、RCC_FPRE_DIV4）と SYSPLL_SEL / SYSPLL_GATE の
-          切り替えを表す列もない。今は generate.py の FAMILY["CH32H417"]["h41x_clock"] で名前を足して
-          clock_symbols.csv から引いている。行に入ったら FAMILY の側を消す。
+        - **device-data c83cf8e で解決（2026-10-21 取り込み）。** V208 の Ethernet は features に入った。
+          そのクロックは RCC ではなく `EXTEN_CTR.EXTEN_ETH_10M_EN`（bit2）で、clock_enables に無いのが正しい
+          ——Ethernet のドライバを書くときはそこを立てる。V20x に RNG は無い（V20x/V103 の幽霊の
+          クロック有効化 11 行が消え、コアでは使っていなかった）。
+        - **device-data c83cf8e で解決（2026-10-21 取り込み）。** H417 の 400M の行に RCC_PLLMUL16・
+          RCC_SYSPLL_GATE・RCC_SYSPLL_SEL=0（field を消すだけ）と fpre 列が入った。generate.py は
+          `NAME=0` を読み、FPRE と Flash の SCK 分周を行から引く。FAMILY に残るのはどの field かの名前だけ。
+          生成値は以前と同じ（boards.txt に差分なし）。
       - V5F を使う形（タスク周りの入れ替えと合わせて）。
       - **VIO18 の電圧（2026-10-21）。** PA13〜PA15、PB0〜PB1、PB10〜PB14、PC0〜PC3、PC6〜PC12、PD0〜PD7、
         PD9〜PD15、PE0〜PE1、PE7〜PE15、PF0〜PF5、PF11〜PF14 は VIO18 から給電される。評価ボードでは VIO18 が

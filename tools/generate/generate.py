@@ -130,21 +130,19 @@ FAMILY = {
     # HSI x16 = 400 MHz, the V5F at SYSCLK (HPRE /1) and the V3F - this core,
     # HCLK, F_CPU - at SYSCLK / 4 (FPRE). At HSI's 25 MHz the USBSS DMA cannot
     # keep its 5 Gbit/s link fed: EP0 IN data came back with 32-byte blocks
-    # repeated from byte 96 on (bench, 2026-10-21). The PLL multiplier, FPRE
-    # and the SYSPLL switch are in EVT's setter but not in the device-data row
-    # (its pll column lists only the source and the input divider), so they
-    # are named here and resolved from clock_symbols.csv like the rest.
+    # repeated from byte 96 on (bench, 2026-10-21). The device-data row gives
+    # the multiplier, the SYSPLL switch, FPRE and the flash SCK divider; what is
+    # named here is only which fields those are.
     "CH32H417": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="100000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 "
                              "-DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01 "
                              "-DCH32RV_LOADCODE=1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1,
                      sysclk=400000000,
-                     h41x_clock=dict(pll_extra=("RCC_PLLMUL16",), fpre="RCC_FPRE_DIV4",
-                                     fpre_mask="RCC_FPRE", fpre_div=4,
+                     h41x_clock=dict(fpre_mask="RCC_FPRE",
                                      syspll_sel="RCC_SYSPLL_SEL", syspll_gate="RCC_SYSPLL_GATE",
                                      actlr_mask="FLASH_ACTLR_SCK_CFG",
-                                     actlr="FLASH_ACTLR_LATENCY_HCLK_DIV2")),
+                                     actlr="FLASH_ACTLR_LATENCY_HCLK_DIV{}")),
 }
 
 # Families whose code runs from RAM: the whole image (vectors, code, read-only
@@ -1217,7 +1215,8 @@ def load_clock(tables: pathlib.Path) -> tuple:
     """(configs, symbols, prescalers) in the shapes the resolver below wants."""
     configs = read_table(tables, "clock_configs.csv",
                          ("family", "config", "source", "condition", "domains",
-                          "hpre", "pll", "flash_latency", "outside_rcc"))
+                          "hpre", "fpre", "pll", "flash_latency", "flash_sck_div",
+                          "outside_rcc"))
     symbols: dict = {}
     for r in read_table(tables, "clock_symbols.csv",
                         ("family", "symbol", "role", "address", "value")):
@@ -1227,11 +1226,14 @@ def load_clock(tables: pathlib.Path) -> tuple:
         key = (r["family"], r["symbol"])
         if symbols.get(key, {}).get("role") != "mask":
             symbols[key] = r
-    return configs, symbols
+    prescalers = {(r["family"], r["field"], r["divider"]): int(r["value"])
+                  for r in read_table(tables, "clock_prescalers.csv",
+                                      ("family", "field", "divider", "value"))}
+    return configs, symbols, prescalers
 
 
 def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
-                  configs: list, symbols: dict) -> dict:
+                  configs: list, symbols: dict, prescalers: dict) -> dict:
     """What SystemInit has to write to run this family's SYSCLK at hz off HSI.
 
     Returns the numbers, not the symbol names: the same name is a different
@@ -1276,15 +1278,24 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
     value = mask = 0
     h41x = FAMILY[family].get("h41x_clock")
     names = list(filter(None, row["pll"].split(";")))
-    if h41x:
-        names += list(h41x["pll_extra"])
+    # CH32H41x's SYSPLL switch is a sequence of its own (SystemInit, after the
+    # PLL locks), not part of the PLL word: the row names it, and it is
+    # checked to be there rather than written with the rest.
+    sequenced = {h41x["syspll_sel"] + "=0", h41x["syspll_gate"]} if h41x else set()
+    if sequenced - set(names):
+        raise SystemExit(f"ERROR: {family}: {row['config']} lacks {sorted(sequenced - set(names))}")
     pll_addrs = set()
     for name in names:
+        if name in sequenced:
+            continue
+        # NAME=0: clear the field and write nothing into it.
+        name, clear_only = (name[:-2], True) if name.endswith("=0") else (name, False)
         sym = symbols.get((family, name))
         if sym is None:
             raise SystemExit(f"ERROR: {family}: clock_symbols.csv does not "
                              f"resolve {name}")
-        value |= int(sym["value"])
+        if not clear_only:
+            value |= int(sym["value"])
         pll_addrs.add(int(sym["address"], 16))
         owner = next((f for f in fields if name.startswith(f)), None)
         if owner is None:
@@ -1321,14 +1332,17 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
                 raise SystemExit(f"ERROR: {family}: clock_symbols.csv does not resolve {name} ({role})")
             return int(r["value"]), int(r["address"], 16)
 
+        fpre_div = row["fpre"]
+        if (family, "FPRE", fpre_div) not in prescalers:
+            raise SystemExit(f"ERROR: {family}: clock_prescalers.csv has no FPRE /{fpre_div}")
         fpre_mask, _ = sym(h41x["fpre_mask"], "mask")
-        fpre_value, _ = sym(h41x["fpre"], "value")
+        fpre_value = prescalers[(family, "FPRE", fpre_div)]
         sel_mask, _ = sym(h41x["syspll_sel"], "mask")
         gate, _ = sym(h41x["syspll_gate"], "value")
         actlr_mask, actlr_addr = sym(h41x["actlr_mask"], "mask")
-        actlr_value, _ = sym(h41x["actlr"], "value")
+        actlr_value, _ = sym(h41x["actlr"].format(row["flash_sck_div"]), "value")
         h41x_defs = dict(pll_addr=pll_addrs.pop(), fpre_mask=fpre_mask, fpre_value=fpre_value,
-                         fpre_div=h41x["fpre_div"], syspll_sel_mask=sel_mask, syspll_gate=gate,
+                         fpre_div=int(fpre_div), syspll_sel_mask=sel_mask, syspll_gate=gate,
                          actlr_addr=actlr_addr, actlr_mask=actlr_mask, actlr_value=actlr_value)
 
     return dict(sysclk=hz, pll_mask=mask, pll_value=value,
@@ -3397,7 +3411,7 @@ def main() -> int:
     facts = load_family_facts(args.tables, pads, products)
     die = load_die_variants(args.tables)
     die_macro_series, die_macro_part = load_die_macros(args.tables)
-    clock_configs_t, clock_symbols_t = load_clock(args.tables)
+    clock_configs_t, clock_symbols_t, clock_prescalers_t = load_clock(args.tables)
     clock_init_t = load_clock_init(args.tables)
     disagreements = check_family_facts(args.tables, facts)
     if disagreements:
@@ -3439,7 +3453,7 @@ def main() -> int:
                     "sysclk", int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L"))),
                 die_macro_part.get(part) if part else die_macro_series.get(series),
                 facts[SERIES_CONFIG[series]["family"]]["hsi_hz"],
-                clock_configs_t, clock_symbols_t))
+                clock_configs_t, clock_symbols_t, clock_prescalers_t))
         parts = sorted({r["part_number"] for r in rows})
         variant_text = gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                                 interrupts[SERIES_CONFIG[series]['vectors']], remap,

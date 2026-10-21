@@ -18,6 +18,6 @@
 [[source]]
 id = "ch32-device-data"
 url = "https://github.com/ch32-riscv-ug/ch32-device-data.git"
-commit = "c9ca0dd0544ab3c96a7e9ca58ef051ca596cbf4f"
-manifest_sha256 = "f2aad9c3c253e6c5917e56f2e1147c1fbe834f56796001a24c067533e6d3fc9c"
+commit = "c83cf8e078a47af17523a54029ddb511540eaba5"
+manifest_sha256 = "0a56f2ce047b37f0c83585a08a4a5dce4a3b16a494773cb9d0dace77d22fe6b7"
 version = 1
