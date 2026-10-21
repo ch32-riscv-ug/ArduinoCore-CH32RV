@@ -18,6 +18,7 @@ static struct {
     uint16_t sequence;
     uint32_t in_max;          /* SET_NTB_INPUT_SIZE */
     bool up, in_busy, zlp, notify_busy;
+    bool out_paused;          /* the receive gate said no: OUT not re-armed, the host waits */
     uint8_t notify_step;      /* speed, then connection */
 } drv;
 
@@ -120,7 +121,7 @@ bool CH32RVUsbDeviceNet::linkUp() const
 /* ---------------------------------------------------------- the stack's side */
 void CH32RVUsbDeviceNet::usbReset()
 {
-    drv.up = drv.in_busy = drv.zlp = drv.notify_busy = false;
+    drv.up = drv.in_busy = drv.zlp = drv.notify_busy = drv.out_paused = false;
     drv.notify_step = 0;
 }
 
@@ -163,7 +164,7 @@ bool CH32RVUsbDeviceNet::usbSetInterface(uint8_t interfaceNumber, uint8_t altern
         return false;
     }
     drv.up = alternate == 1;
-    drv.in_busy = drv.zlp = false;
+    drv.in_busy = drv.zlp = drv.out_paused = false;
     if (drv.up) {
         device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
     }
@@ -254,7 +255,11 @@ void CH32RVUsbDeviceNet::usbTransferred(uint8_t address, uint16_t length)
     if (address == drv.ep_out) {
         if (drv.up) {
             receiveBlock(length);
-            device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
+            if (_receiveGate && !_receiveGate()) {
+                drv.out_paused = true;           /* resumeReceive() re-arms */
+            } else {
+                device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
+            }
         }
     } else if (address == drv.ep_in) {
         drv.in_busy = false;
@@ -306,6 +311,14 @@ bool CH32RVUsbDeviceNet::sendFrame(const uint8_t *data, size_t length, uint32_t 
     drv.zlp = block < drv.in_max && block % drv.packet == 0;
     drv.in_busy = device().transfer(drv.ep_in, ntb_in, block);
     return drv.in_busy;
+}
+
+void CH32RVUsbDeviceNet::resumeReceive()
+{
+    if (drv.up && drv.out_paused && net == this) {
+        drv.out_paused = false;
+        device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
+    }
 }
 
 void CH32RVUsbDeviceNet::handleFrame(const uint8_t *data, size_t length)
