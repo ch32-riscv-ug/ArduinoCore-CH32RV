@@ -901,6 +901,25 @@
       "archive_reference_status": "recorded"
     },
     {
+      "path": "planning/core-redesign/tasks/EXP-06/save-x0-measurements.json",
+      "sha256": "0420f38f0b7f9fda8269044cfa3340216f71c639bf2217cac79baad0c79f161a",
+      "archives": [
+        {
+          "pointer": "/archive/path",
+          "path": "work/exp06-save-x0-20261022-evidence.tar.gz",
+          "expected_sha256": "c7684ade9aea718da4095e552f4793463335797f65f58155e7fa9e20f09d3c1d",
+          "expected_bytes": 18348546,
+          "observed": {
+            "present": true,
+            "sha256": "c7684ade9aea718da4095e552f4793463335797f65f58155e7fa9e20f09d3c1d",
+            "bytes": 18348546
+          },
+          "status": "matched"
+        }
+      ],
+      "archive_reference_status": "recorded"
+    },
+    {
       "path": "planning/core-redesign/tasks/EXP-06/v006-sleep-features-measurements.json",
       "sha256": "745e64bf6ecc4c84e6947d4ba7c42290f1dbed126b41eaa506fdfb8867db0d82",
       "archives": [
@@ -1160,9 +1179,9 @@
       "archive_reference_status": "not-recorded-in-manifest"
     }
   ],
-  "manifest_count": 63,
-  "unique_archive_count": 59,
-  "archive_reference_count": 60,
+  "manifest_count": 64,
+  "unique_archive_count": 60,
+  "archive_reference_count": 61,
   "manifests_without_archive_reference": [
     "planning/core-redesign/tasks/EXP-00/measurements.json",
     "planning/core-redesign/tasks/EXP-02/measurements.json",

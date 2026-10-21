@@ -280,3 +280,9 @@ host ucontext・命令模型・link配置を実MCU結果と分ける。次はFre
 [N04 固定kernel共通列](tasks/EXP-03/kernel-trace-result.ja.md)はnative20件＋workspace3件・ABI18。
 2 taskの協調／preemptionと継続型／2 stackが共通18組で一致。3 stageは保持入力容量が変わる別条件。
 N04のsource／host／整数模型／link範囲を実施し、実fixture統合をN08、実切替・IRQ・peakをN09へ残す。次はN05。
+
+## N05 X035保存共存（2026-10-22）
+
+[prepared X0と同期保存](tasks/EXP-06/save-x0-result.ja.md)でnative92件＋workspace3件・ABI42を記録した。
+1／2／4単位と保存なし、壁時計・tick・入力保持、未回収、媒体失敗とcold-model bootを比較した。
+並行の現行core向け永続化下書きは変更せず、blob8／1 bankを含む候補比較を維持。次はV003 K0。

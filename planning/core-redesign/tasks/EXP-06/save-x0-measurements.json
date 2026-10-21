@@ -1,0 +1,4201 @@
+{
+  "native_tests": 92,
+  "workspace_tests": 3,
+  "host_traces": 386,
+  "commands": 60818,
+  "all_four_equal_groups": 94,
+  "sensitivity": [
+    {
+      "units": 0,
+      "coalesced": false,
+      "capacity": 1,
+      "clock": [
+        100000,
+        100,
+        0,
+        100
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        99,
+        99,
+        99,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "units": 2,
+      "coalesced": true,
+      "capacity": 4,
+      "clock": [
+        100000,
+        98,
+        2,
+        96
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        0,
+        0,
+        0,
+        71,
+        71,
+        71,
+        0,
+        0,
+        0
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 2,
+      "coalesced": true,
+      "capacity": 1,
+      "clock": [
+        100000,
+        98,
+        2,
+        96
+      ],
+      "input": [
+        100,
+        96,
+        4,
+        0
+      ],
+      "pps": [
+        6920,
+        0,
+        0,
+        0,
+        0,
+        96,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        0,
+        0,
+        0,
+        71,
+        71,
+        71,
+        0,
+        0,
+        0
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 4,
+      "coalesced": false,
+      "capacity": 4,
+      "clock": [
+        100000,
+        100,
+        3,
+        93
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 1,
+      "coalesced": false,
+      "capacity": 4,
+      "clock": [
+        100000,
+        100,
+        2,
+        96
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 0,
+      "coalesced": false,
+      "capacity": 4,
+      "clock": [
+        100000,
+        100,
+        0,
+        100
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        99,
+        99,
+        99,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "units": 4,
+      "coalesced": false,
+      "capacity": 1,
+      "clock": [
+        100000,
+        100,
+        3,
+        93
+      ],
+      "input": [
+        100,
+        93,
+        7,
+        0
+      ],
+      "pps": [
+        6860,
+        0,
+        0,
+        0,
+        0,
+        93,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 2,
+      "coalesced": false,
+      "capacity": 1,
+      "clock": [
+        100000,
+        100,
+        2,
+        96
+      ],
+      "input": [
+        100,
+        96,
+        4,
+        0
+      ],
+      "pps": [
+        6920,
+        0,
+        0,
+        0,
+        0,
+        96,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 1,
+      "coalesced": true,
+      "capacity": 4,
+      "clock": [
+        100000,
+        98,
+        2,
+        96
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        0,
+        0,
+        0,
+        71,
+        71,
+        71,
+        0,
+        0,
+        0
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 4,
+      "coalesced": true,
+      "capacity": 1,
+      "clock": [
+        100000,
+        96,
+        3,
+        93
+      ],
+      "input": [
+        100,
+        93,
+        7,
+        0
+      ],
+      "pps": [
+        6860,
+        0,
+        0,
+        0,
+        0,
+        93,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        0,
+        0,
+        0,
+        71,
+        71,
+        71,
+        0,
+        0,
+        0
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 0,
+      "coalesced": true,
+      "capacity": 1,
+      "clock": [
+        100000,
+        100,
+        0,
+        100
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        99,
+        99,
+        99,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "units": 2,
+      "coalesced": false,
+      "capacity": 4,
+      "clock": [
+        100000,
+        100,
+        2,
+        96
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 0,
+      "coalesced": true,
+      "capacity": 4,
+      "clock": [
+        100000,
+        100,
+        0,
+        100
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        99,
+        99,
+        99,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "units": 1,
+      "coalesced": true,
+      "capacity": 1,
+      "clock": [
+        100000,
+        98,
+        2,
+        96
+      ],
+      "input": [
+        100,
+        96,
+        4,
+        0
+      ],
+      "pps": [
+        6920,
+        0,
+        0,
+        0,
+        0,
+        96,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        0,
+        0,
+        0,
+        71,
+        71,
+        71,
+        0,
+        0,
+        0
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 4,
+      "coalesced": true,
+      "capacity": 4,
+      "clock": [
+        100000,
+        96,
+        3,
+        93
+      ],
+      "input": [
+        100,
+        100,
+        0,
+        0
+      ],
+      "pps": [
+        7000,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        0,
+        0,
+        0,
+        71,
+        71,
+        71,
+        0,
+        0,
+        0
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "units": 1,
+      "coalesced": false,
+      "capacity": 1,
+      "clock": [
+        100000,
+        100,
+        2,
+        96
+      ],
+      "input": [
+        100,
+        96,
+        4,
+        0
+      ],
+      "pps": [
+        6920,
+        0,
+        0,
+        0,
+        0,
+        96,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wire": [
+        1,
+        0,
+        2,
+        72,
+        71,
+        71,
+        1,
+        1,
+        1
+      ],
+      "periodic": [
+        1,
+        5,
+        0,
+        0,
+        1
+      ],
+      "save": [
+        4,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    }
+  ],
+  "traces": [
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0144b5e039e8110de56a90635f1321ccfc234dae58951bca4a82f5292fe22e5e.json.gz",
+      "sha256": "c853d171f202e6a7574131be7acafcb5276da7567a4e1579231e0d5bb1d5a5b3",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/018adbf40301a5f2f9e04f73754848a850e56027b26229a4951db5a73a7e358b.json.gz",
+      "sha256": "cc51d2bb3be0fbcf6db58ae0e090556ccacba915a0f17ef6291682d637896cea",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/018ecc23b18304c925d9e069b9f093e2de445023f3310c8d0f59aca0ea8273f4.json.gz",
+      "sha256": "9b1ec92b75b1fc7ce80b88f3954e920968665453b051ce8e982a28a4bba51f16",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/01d828d3099552c398abeadef49ed52ebcde71c33ad54c03ec1d65a9c208bdab.json.gz",
+      "sha256": "93d39604bb3867185655e0729421099b7c88855238c2263a218ac94206bed0cc",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/03c6ccfcca980cdaad34efe41a661e6ae0b029031ad411e019976b0f7051e594.json.gz",
+      "sha256": "1150ee9af67dbec84b43932740e0651bfaaa13fb3859f2cdfaecf3b12c1e6c77",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/04e29ca2277e0663250588ad03619cd103ffdea614eb4928970142008fccb00f.json.gz",
+      "sha256": "90650318e26adf1138d6eab5eb0862982976b7133ccfb8cd02ca336c4bd860f1",
+      "commands": 520
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/067381b0387ee579382758e33300e3fb505b0d4199216fde3555067095e50d34.json.gz",
+      "sha256": "42861b6230cbfaf176bd4733acde9ae2fae69350cb1b4359ffbe9226783b1611",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0728f37b6b1709a6b19ba117fbb8b4c1f1679e3be4f62378c5fd3e1dd11720cd.json.gz",
+      "sha256": "24118f47c05d01bedef35b98eb6c80ddf4cb1d54a65ef0ef5adbaa31f8d95e1b",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0792bd2e50f0504cd1d2b2a1de42bdf42faaa05cf45e9e8108f95751a594bfdb.json.gz",
+      "sha256": "f3c3a6bff90437eb7b82bd27119943a524ff5107444b560e303154001e8054e0",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/090962d429d7cccf023bfcf7176b9b9448045b64129d1b4e1ec1595b2c948959.json.gz",
+      "sha256": "6b94a448b7c9d3e5ca40533cf5fd36d02a115c311d341ff40361ddbf5483c76d",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0a327c73c86c4a8384a8a5cff22aa708ae42435e4592fcd7729c7305dd52b87c.json.gz",
+      "sha256": "55735ccbed55ddb61e78ec99cde10e6fcff8a7d5dbac182d1c24c3adb00caf7b",
+      "commands": 93
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0a6e082e484ff5536c10c4bd42c72f1fae8d4a893d327dcfa9d32248b13fc3f3.json.gz",
+      "sha256": "82d2ee7bd89c2f61f0ca67518b97accdc694086bb4bb91a2f8228e73ea803563",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0b2e67728876309372578cc8fdbf4b43c6032d9d44650def608a8c39e9e9ea38.json.gz",
+      "sha256": "63178c0f453c1bcfb0790c35ff7cbffa5e4da5d87e7bba7071a4117739ea7219",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0c1a4e38cdc6b996f04aceef735b2288ebff1fc07a164c1d498a88218406c5c0.json.gz",
+      "sha256": "d43a4b47dc3202d24bc670807b91ec354cb33ac64b459450001538e949ce629b",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0c392ece9e6f5570897c29e87be2ed87b163b47a001cfe5048507c85035a76b8.json.gz",
+      "sha256": "9e3493596ecbc6fcfefbdcd12f0037eb6d5a416a55476a6451275821d913520f",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0e1f3a7069b6cd2a54ec02849b17cafeb95da6b2899f9aa1e78d567a21e4f6d6.json.gz",
+      "sha256": "97f22aae1498299249ef24f37cfe61202858f7a96cf2fd2bb80bab1a3b8cb5a0",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0e68bb32c641dc45240d11d226171fe4af9e5e28b78965ddebf4eacbd2d8222f.json.gz",
+      "sha256": "7160ddae338c0d9156a8a23280406513738b57cad3f4677b52599fcd5bbfb37a",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0e69df9afc328c9d6702b963ca51a2391c7e5613df8dd5caf1b5d92e78c14ea0.json.gz",
+      "sha256": "f7fecb03b52f1a68766a9f0997607e739a58c793a4b44cf899a97a85f435874c",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0f1babc30bcc1a7833c8bff7026a57e9ebab4083d9da2261668f15952901f07f.json.gz",
+      "sha256": "7298174e75b779ebb6772d8eb01d9f95135788c9ffa5a557106176695d621a27",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0fe654463f2d839a18c8ea3ce24e664fa0107897aa52bbb6ebac7295218c7e58.json.gz",
+      "sha256": "2dae865bf9209044ef5c79923d3f996b4d3be872098acd3c22e36942dd742aa3",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/0ff2e6d064224006f379631369e2d97cbd7e41daeca9182be4abc5b9c1d177a8.json.gz",
+      "sha256": "b1c9d468aa5ecdfa0184981729c019fdf4455fa7a6485c04fd0a681af60c05ee",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/10843ff15dd92e83ff18adce740d92878385d9c7b7a4ebeb2f8a1129be7aa7a9.json.gz",
+      "sha256": "9903b26b3b0507bbb368ea1123a941440ca81d764327622ee946e7fd28ae0de5",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1186987819569e9f1e0bb1df68b738ade929e8dd65fe463c4ba4e46ee889e675.json.gz",
+      "sha256": "b2c62fa7de1412ed022b78e93851041536d06535e4bed5e83876ff16d8e1eaf1",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/11b0be92bedf2db2200ba627301ebc1920fddac7b46d33410ef7ab8e145fa9eb.json.gz",
+      "sha256": "757250c0c26f47c4e374c79679bbb50515a8e626e8901eaa4ac6e45e6dc362c3",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/122eeab36b1e90d128804bae449cc28f1a33acc299811149d0aa6fd3978f80cd.json.gz",
+      "sha256": "9c932c4f9c11d5fe968e14120b43da2f5a77bec969a84b7530ffdd33d7f70d0d",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/124e2ad975f17737fe014605ab3090e10d38c4de45000ec163048178e9239f06.json.gz",
+      "sha256": "49501d2d7a00c5a5591a3960709108e9d6e32f3027b0e1c05bb2de02ad6fcc23",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1269dd713461df96ebcd42c6c1335929d9748ec7031e0dc950f6e74d4ad54a68.json.gz",
+      "sha256": "f48fc1cce82deb74738d568ac80ac9df45f0199d5b135a0445459ea269c77f7b",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/12cfb3cf8a91ed9d020c2db22e0e61e9f47f59250c4bfef600407e140415d612.json.gz",
+      "sha256": "0551fd8a89d0ea642c1550633f16acba7b2573bbed7dc0ed629a64ca33e3c355",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1379c1abd8471e71708df6e99beff38e8a71fd741244163f8e73131f6721b896.json.gz",
+      "sha256": "f48393fd23b9a04046212c486b8d7b8814bf82d2326b5e4bb345f54d6fee74b1",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/138270063754e5528596c80ad42ab78639e228b47ca34bb4f71720ef930b90cc.json.gz",
+      "sha256": "279a4b286153cd589c203eddb9e16f53f66f3ef21a61151ca76d5dc3ffe544d1",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/13f685ea69308a6d3435056155040e0ae0e164ee152452dfca2b86feff13c131.json.gz",
+      "sha256": "f9e812931497b6a573a05daa92b303069e0858a8dfdfa79c435a7f48cd415ff5",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/142125415ea511c0d3c8248b3d4d54cd5b8ea3e723b95cccd396cdbcfba12421.json.gz",
+      "sha256": "cc412b7a2912b62c2bd08d81f6c571a6dcad0b934b16acac4425d1632cec70da",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/147e0c8ca5064d14f3169f8c8de9e4cd27c3fcbebaefb430018463c9b7e9a7f3.json.gz",
+      "sha256": "d7cee03aa02b52ca21bd064690e505ba701121375e68d438530b83a102ed5180",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/15a3d065a415f49295ea9e54c36bb66767dbbaa38f65b2b950cb53e6394b1aba.json.gz",
+      "sha256": "581a0d0872776260ae1c5e9fe43b0461cae2cf589331181aad5633c44dbf8212",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/171506bd63eb09f335ba1cc5f14dccc310b3004876e123afe0ae2a30a767743a.json.gz",
+      "sha256": "1d5aa77de11c5a326594e1065d1e0a705871a57cd8f11165478f89848117619a",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1768f5a2cd807c542dbfdc1ca62df12735ec460be0301016bfded2ff6407d8e0.json.gz",
+      "sha256": "1ff347c26dd204d688d948080e8c161d93d1f79cea2ae6aed732aba5f2003a56",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/177a10663669bcf38ef636bb24a8b388a8e0d81337a2e8806663a1c4b72289d7.json.gz",
+      "sha256": "28bd2225b04ce1febfea1151cbf0a3f239334e6ae85cc29bedae6c41ebd2e09c",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/17ae6551fd3835d305f6e744b76bf115a8dab1b6f4c1a2e961fc4e76768ecfd9.json.gz",
+      "sha256": "517008d88b75f9467f08fd059e1292c629ef09288659c99e373980e5e926d45c",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/17c0c133d0113ee7a2017922d8c9b7ad80d7894f838a216ac661ca99d42c7b5d.json.gz",
+      "sha256": "b028ca17f67e6e6e376d720bf1f3169f47aef7bbd6be206a31340519f82b95b5",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/183b47fa687a739c4ea86f29d13ea5d5a71affc7568b6bdb96efd414406ec2f9.json.gz",
+      "sha256": "523864145b4d4fa50fcf0696c2a385c010253b4f8410ff46375173d97524d3ae",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/18ef78c21a3687ed0be290ef247e2e7427f2363d3c8ed49cf877091fa0f86e79.json.gz",
+      "sha256": "c7d50908b128330b9b21e606975f61fc581ba3ec614f786647226421d05e513e",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/190a5a4da19e7c366fe30c7a7b19001042d59b4d81da5da776c57cc1898b2420.json.gz",
+      "sha256": "17aaffb1e964c3ad22de9b6cc26162218580753a7692cc468c3694f45b532988",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1973947b14af0945748f9fc46cc6c4acdae8a9e678d86b6b9874ba4efa21ea84.json.gz",
+      "sha256": "192091e3fee6c679347516f7a0a7c59c7ea15e71919459778899bf32ad5bd4c8",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1aa809607fb9a4bc8a8d09e5f22e92ed9570d54ea08739fffcc35a5b70be9ae8.json.gz",
+      "sha256": "e69648a2d3e69850f45ad3e3a75b5b115eec345ca47e19722c9558bfb482edce",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1acdca7ef5789ee86e4a50e166cf25c93cf1839000e391a33a7ee3792ae5c061.json.gz",
+      "sha256": "ae8c1ce1de66f05a992f878e3c0587dae1338495f278dbcfbb5164183f92209e",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1ca82bb6cdb8e3f6939627b74006f028a2f36f51dd2a8f360435f366ae76f338.json.gz",
+      "sha256": "02a930c979c882aa0b226f1363fc83dfbc9039b36be0b8fc43ea84ee96006629",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1d6fc4762e96b8bf4979005e2ef9d5f7afe6636eaa46db58573f614b79579cba.json.gz",
+      "sha256": "d842f3d013bbb7614c3755a6ecfeb597f2d9657642db24e21498fbd45dc5a8f7",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1dbc716c088f1fd9e686b8dae3aced17be2384a40c750eb175213543f3df88d2.json.gz",
+      "sha256": "d112c98b22b71d971e102dd78efe8e1ae4b02e3240ffa3e219ae3e60e445ea18",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/1f04e1f877f2024546e3cf45252d7c5b551b57dea1192ed460ff065b211c3710.json.gz",
+      "sha256": "38fa1aba1200f216e6849e4ee2dba27b4b37b424393a51f7935d9cc6e12d0c16",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2020890e5a5e5bea1af09e2129db7aa74a2f29fab62fb5537e185848985c35d5.json.gz",
+      "sha256": "3f7a36ef1b2ffe31391790d332ae26effa7ad2d81fcc35de5ef3fe85f04b8e9c",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/21aa7b42f5516d4103fae4a94a98058b074544a399fcff4c06ffc63acdc77933.json.gz",
+      "sha256": "fe97a763f553c27dfd083107d912beb6b18f47a65673cb4a01e6ebf7fb52c27c",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/21ffcad7ecbb26b525de5eefe17c53a19c9d0690c59743c959e0130e1f58c132.json.gz",
+      "sha256": "bcd86bede21e95f4486dae900110de7be08cd3950baeed1693a567fe6317b940",
+      "commands": 514
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2235c7f90be005aa8a9c3b0d6bdfe67f050a8accfdcd019611319cc2dd86c948.json.gz",
+      "sha256": "042aa3a3d28f5fc18b8b7282631bcd644eab15d35f0d5c1d30d936def57f3ddb",
+      "commands": 523
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/22c299133e41e9dc21854f5f56360456a4541ec579fecec97c0e2df3876fa5b4.json.gz",
+      "sha256": "7844ca2aa90a02e80ac7bfe2b709d58c24e8a796a0881b11f13033bd05d86912",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/22eb3ea2f6f142aa0154b3c77c4b2104abc47f1ae0a46d4d2bc3f98879158ab1.json.gz",
+      "sha256": "e3dbda1692010c96f6468639824f94d656258b5b8697c2d1a641d23f07dbffd5",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/245f154c3f100a357cbede0029be6025bef620c18bc31ab06cdf73206e604200.json.gz",
+      "sha256": "2b35bb68aecd492811be53e05867b7ecc9d7cfe6958dc2de65348729de268ca0",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2500e3d90dca92f588433e79577a19821012214ec2fc65c4f08fbe90cf3166df.json.gz",
+      "sha256": "7e77d65375a4c17622fbd67b163eeaba9bee4506c50e8183c4a3e66a96de89ef",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2584842fde02a9acaaf0fac9391be35dc0d392e8f77d2a9015027793a4477237.json.gz",
+      "sha256": "9e1fc0dc10fb286c325db58e8b972efa76cd502715b6faa5d0cb88253acb3247",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/25ad9604a214a88261842fe18674a7b45ac257dca2c6fd5d01133506c630f780.json.gz",
+      "sha256": "470039d6ab76ff472f822dd5bd8c5b1147ff3c67013dd63f6006925d315e0da2",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/25d64d1570dccfd24f1fc16c8d94cd0adad9ad08ed97bb1bdcf46ce52fdb0ec0.json.gz",
+      "sha256": "23f6699f7d483a3f97cb473c5071dceb90d3a0d71899a272e0b63eff0afbceb6",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/264267a9cc75bc0944e24555323573907611c1f28c22fa149ab6152b674c7017.json.gz",
+      "sha256": "da512e12a3127591cb9487866a4cb55c99badb131a8033cc7b2a34fd96ab2ac7",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/26f3970d14d937f51f49b463c3865d6a7d476edde60bbe0dbdf70035ee83ce74.json.gz",
+      "sha256": "2f5463e9e6dff951a559ef5446f3c5f470cebac073a0475a83d60c8e4edec600",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/277deb786b9c3ae00b12248d331e06833957bd17f0d64c3e211b09b6ee0cbcb2.json.gz",
+      "sha256": "637a21c1397444fe5a2f10fd9a04623b7728952c0a6fee9b95e0ff632cae9347",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/277ef97d33df559f948af0b9811f2119666831182454e53f4b152a6b47d99e27.json.gz",
+      "sha256": "1e03418336b625ed2c5e1204b5342bee3888d0ec40bba00d711a0bcdac9c2870",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/27901ad6a36ab299f2b84012e6e1ae388e3c31bef4dda9d21a4a3fe1e0e33cee.json.gz",
+      "sha256": "40651866370a6b51ce47f8a7e3513329f969ff89ce40b115b1670ad1bc963517",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/27d5e4c5287eee1b8bfdd74fb1c4005ee3dab1abfe99c91a8ff6981636868669.json.gz",
+      "sha256": "005281af3b182a137744204e7478e40d24ba99433c335f04e789a95fb0ebe692",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/282f2e008765fb5c0086a3d301b9bc3d500e75168470e032be0da78bfb443a4c.json.gz",
+      "sha256": "0e7a5af99b0ba87e0f28b7676be2b668a30945c8dec589b006ef3b01366a853e",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/28a1bf610b5fd3f0ed1a77d7aea8de35c6b6ec80490e94afe166b3ec111f67bc.json.gz",
+      "sha256": "ba84d692e7ff2bd26cc52a3078206025dee32d4ee83842a8eceea8adf737d5c7",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/29783a3aa9feaf427b03f2b50535a6a4a31891c26be2b8814d728490cda81cfb.json.gz",
+      "sha256": "0fe397ea0252c1376dd8c18ad4e48faf5c043b6de997538793e90d95fa069f7d",
+      "commands": 514
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/299477da4be94c76eb0aab4758c15ccb8ba95b3ed8390f415c8a72e9d56d8707.json.gz",
+      "sha256": "690a5a68c657c8713a151dc121979f6b15b0de2078e95ad6ec338cc22f9273ee",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2b7fd440afb3120c49279f275bcb6c5f0c0712517093e7f2572f067812202439.json.gz",
+      "sha256": "6a2f5c075a1bb3ffeac2f4774b9b67bd89d5664a6eb63866749bb2b124f20f1c",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2bdccb1ed0afc33c834fb71362e2ed3f68abff12626004c04abe58d4184779ce.json.gz",
+      "sha256": "00030f959ab45f5608a60aec0d62a0c73756c7b648feb0a3f8efc7e3b342ecc4",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2cbdb30508bac2524c6a24b09ae3001bf1090a107012fb0b3d39dbcc336239d8.json.gz",
+      "sha256": "3da2e6ab9588cfe9f1e30e997577ef2af8e17134445f5968ba52f4358e595e03",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2dd973302643e27cd1df94465174857b1abb94ede9f27d20a99166772c75b601.json.gz",
+      "sha256": "8d7f0ebd7cdb1dfc964256a806e34f6e990fc85aeae8fdb59c2c72293adc9c11",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2eb4bcce3dc7d12e5cdd7a0d3f1df80296016a4046dc75a6a0ca086770dadde1.json.gz",
+      "sha256": "c4dd3ff4911845b672c97a1fa406ba7ca151d78d80d7635846f6b1fcb75ba6f3",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2f8d07dbba156893ac7fd72826f1d4733b8e46bcb439a0e309a0494343b7d04f.json.gz",
+      "sha256": "ea6ba70aee28099d1582b9b62b48726387acbc06f718fe5820f52997dd01f609",
+      "commands": 508
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2f984f33feb0f794763a8d29f2d75720e21dcae11cf4f96c8a7360cec34fce3d.json.gz",
+      "sha256": "355ff9ef47206bd23b2c8ee2b6e1f1819370f9eeb1c99616089127e58e19bb30",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/2fa79b3b6ad1ee0d294a6ad95eee603c8676809cff01b9a12b6ec8ed31350862.json.gz",
+      "sha256": "db3279b6149b08ad28462b27595ef9ca29da742f0e483af9764a165b91663259",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/310549d8e6c5bcd016d74238504338a7896ad8d54d210358b71931ce792077c3.json.gz",
+      "sha256": "8048d2efc6a3262e3933c01b3192e154e5184eeec2e59039b978d442c9a1655c",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/31f2aa7a3e1f02449b7eee5b00c72a4de10144c5c894d7148826f5525c880220.json.gz",
+      "sha256": "81177415da9b76cd8c95330ecf206778e29a2de812c14899034ccfbc14b77fdb",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/33a36b612a86d20dbf9565dc03db20726c9ae0587f0df45d83b1d91d425253b7.json.gz",
+      "sha256": "0ea4d0542f1631a720d164bb0912c16701c1879a351ef8b27d0373f1df7b99e6",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/34c82483e258be7719cc79aaec5496456cf705ccd8403ca5f61b7a3ceaa9a34e.json.gz",
+      "sha256": "f9047392c2094d15140a8efd061f0fbb9ffbfde8ddd5d79d089bf71048a6a285",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3503669651eb36ba2630e2d698b1475a5c8538991e5024df1f185049d98c9961.json.gz",
+      "sha256": "821ce351de3591f186bb4b7c6842ef71766f684b881e3b8d0ffa1c205927bde5",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/387b782180fa82ea8b930dc7a0e15bf3112001bceff0b4692fe7ff418ef37dd1.json.gz",
+      "sha256": "286b013015367364d0a33695b7f8c4f4b5a7ae3cac4fb55baed39c746b754998",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/38bcbb855a095d2f644d671371b5bdf4b42b9924bac1e8f8c30e1faad7fa44e0.json.gz",
+      "sha256": "04f29b782fc7d46454919d31b51186b10f64eab08b13776c38c1fec5668d36de",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/38ed292b227d008d529aae7a0cd2a9118e53c920d29b49de80829e06ffc07931.json.gz",
+      "sha256": "dd92d0dc60cd428d4cc5a17effbc068cf104d883ec10ba3b43342e76f08b8cec",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3a49c08418a73b5d8c3b13a4addd1cb820689f07271a67dbbee385c948b72637.json.gz",
+      "sha256": "d7fb083b940fe5a85fe2b127aa68eb674a6674d76ed10e8b51cfee0f51d3b7b2",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3aedc39affd1df174bd2243ef872383d92360797810f047b42b61cc70289bb4f.json.gz",
+      "sha256": "61819a3d3e9b4c73f2be13109285e8526a81e416d167dc68421518b6cc949059",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3af4a8bb516d76462376bcb6e7ba414d05d66330abaecebf6d4bdf4066c7b5af.json.gz",
+      "sha256": "c6eb8ab12f41dd4cc90e69810aefec361f83ae5a2c3d1448ebcad6f0920f6780",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3b50f0447c4bea16b9213d8a5e8bff737a77cdcdb4da48d936c0cdb17274aa50.json.gz",
+      "sha256": "fca21d0225d2277857b5c5b3da24ae73844762c3f50decf880d2780bb6eaf951",
+      "commands": 47
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3bd68e4683cb661712148de00567459081a2381d9ec2e83e109bc02ea78c77c2.json.gz",
+      "sha256": "913f24aab9368cfa4e2f334046ffe0d6d718c4c00a531204888cb954cfa1f0f1",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3ca78c8cf50f7cd486c2f8f3291882b22aab04da155211adededec417fcacb5e.json.gz",
+      "sha256": "37d76d78fdf6908a7d03004c7f158c9d82dcde38c6f26cb34d2228637d2bacca",
+      "commands": 520
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3cb84e0ced43c559e07ddb4d76d2992c44fa77429abb2892c032f20384965de9.json.gz",
+      "sha256": "2a6dcb0c296cb97d3dd35bdd83014900505a749e38d40d020635c7efc52bda97",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3d5f9a5faf9e1c603e2c0fbaa47b74f4f21574e74ad0801c56dc0072140307f7.json.gz",
+      "sha256": "ca7cc5ea42d4f2ea30c5ed934fb9b31f2ceb7ff36e6d8516e8478a4a3e23f869",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3db21c0183508fb64f5c08bdce85d6e98670a2432f91892630456d2bf1aeb9cc.json.gz",
+      "sha256": "872b075d24c922204915d7ad9453f4651efd9c9e2f087d2bcee3358c9a95f76c",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3e19170ec02ce44edc6a0d1bbe5970041097e1a91082e6ca1413fe8f69fa981b.json.gz",
+      "sha256": "b25ab8eea23d065051ff45d59b27f4d00550471f69647f4164063c7ae8c45e9b",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3e8119f51b88bbaaa0af9cf5f3e7a7c0ffe15833e7d5b893c42c68bb7f0469c8.json.gz",
+      "sha256": "e1ef0936b97732b0cc37861e02c79f003972636e6482ea15cd78eb9295f88932",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/3ede4c919cb36ec9d2bc51ac7f2dfe089ebb3104ddc245b1bbf3b2a7d72b250a.json.gz",
+      "sha256": "2164d71ecc4c01ef90e93c4cce8e2b79e26091c4fd8a3564f60b9a2c04662c57",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/40dd5f5629bc95498a27440053a2852fb3422b0b89f51293ba8fd011c33dc4df.json.gz",
+      "sha256": "c6aef8f4d0f0af3148bc007a4dc7f981d9d6d632171271253775e3c5f86add60",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/414ca4b7964af648e78510f992961e0fa5af31924a9e6c363141c4d8e635afed.json.gz",
+      "sha256": "0c7781214e747e73489640276d58ea1bbfca05ec7872a7b9b0ffeab526f98a71",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/42eb7b976d5d9082a51714fd29a7b298598671f110a6dc6cb5a10f68e7132974.json.gz",
+      "sha256": "6e95ce2ee5b224714e8a05df615a5cdb13e3862c7ee9eaae8565aa3b8f99094d",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/43cccec208744360539d04b560ee99dbeaea96833a7943dce69f33793d2d6b69.json.gz",
+      "sha256": "d75a13f9a798890e46b25fb388551dcdadd6718be94555300742100d821c2e67",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/44b1ca1cd300c251f7fb1a2d6f1e46d93f3212a5af1affa4785bd82cd13b8915.json.gz",
+      "sha256": "9b69bcf6ffa20c70bd4ce0ba3b6bd25bed96844a41737885577e28957f0ba181",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/45132760cba70fa66d9d99af4818bdae46155d295671692453860a891223908c.json.gz",
+      "sha256": "f97f354e588ba4ff333e7f4209ff7465b7ef250ecd3eec900bc8fc71213aa7c1",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4611dbac13e637366e457d55bfcbf866f094194ad563fe089ffa168c352205bf.json.gz",
+      "sha256": "b5843dee3056ead99e6adbbd5aebf2157452efb67d829e26d10d1fbd5930b080",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4771df13d816c1620a875b8f33aa3207b2229bcd84c6d2ee9937404a5f1f1f0c.json.gz",
+      "sha256": "98b0f55aacc20ee4ec8c7eec3b1b695b2645f1c8cf2395db28f6481f11a3e1ac",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/47a59baefcf98030ecae3f428bddf20a22c1a94432d438876b1ff298a9e3639c.json.gz",
+      "sha256": "1644f4563f7082d457db84e48ff2de54d5d16ad7012bf5d05b7a4ce0b4db40f4",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/47bc141dd7e27bc2bd8574e82a89a5905078f24ba3aa16c7f59c9094a6bb39a1.json.gz",
+      "sha256": "24915b1d97c3b9c17232acf0ae8264a9ebba47c2413f4eb7a8e217bbc4d72259",
+      "commands": 523
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/47cda517d4003c59731f23670f5ab4bafbe10e0bd2f1025892b10ef9dd0a1d06.json.gz",
+      "sha256": "4fe7a64a2b38e6f56d60e1c62f159ebe766d3107ae11bee5648b75c89ea250b1",
+      "commands": 508
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4a0111d2c140399100006778103b60af3e289c359959d81fd59e1e7ef13703d0.json.gz",
+      "sha256": "8a41faec6b2b6a7b3d13950d53107896b7a3a7ceee9c5ff7687dbea53ba05716",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4a25d40042693246259afb42d9c96d2e2a0f63b95560f55a22dbf487fdfed535.json.gz",
+      "sha256": "6a69423e94cf83cda5f126dd84ef1d64e9e7b3acc3ea268903812eaebff0ed5c",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4cb550b0acecb3177e556b3903131997a16405186da524bafb8dc9444555b456.json.gz",
+      "sha256": "bfedb7f6478885a2de00ab1c7313b83ef7722436ae14cd0d99091ac69410aefb",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4d278a9e7dfa974825e98b68cb9748ca8bed003693f787904d4cb157dbc36ecd.json.gz",
+      "sha256": "11902d9b41d276214ad231ade192426f2b4f7086ef78b88f4a683a6a9ee01c90",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4d4eb29a8b01b568a1632a37798a61e98edcd9229f87944ab6686904aae7c0d6.json.gz",
+      "sha256": "ae0d2d47059964aa356ab8f0c1827d83d5f1cf75e5729419e9fd724d21624633",
+      "commands": 13
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4dcfdab426de12e5bf0eeb55ee921b6eea95b8fdd07d321539d66c9e5fe36dc7.json.gz",
+      "sha256": "58ee4cd8123d620c2c6a738b100349f615c5bec79f9b220d78c7cb4724340082",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4e04f0bb7743af238fc4d6a0e15c3ba06025ccfc584705af1e96fec037dc34cb.json.gz",
+      "sha256": "7d535704085df35421df0c553c69d42a7fe8a1517f2b292a0e44536d48b026f3",
+      "commands": 508
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4ee1cf45bc13b2bcb43d5c4136751e0206ad8b0a77593eb0ca39ebbf9894ff4f.json.gz",
+      "sha256": "1ee8a705ec449685213cde610da42c12c5d3ea89f406622a2dbf3e2217377b05",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4eead1ddd7df6f4e7c1d318c39f9a81ffbde083804519a3c5d5baf344414e370.json.gz",
+      "sha256": "36cbe12d57371401195b417ca70e9a86e77541543d9719bbec5649cede19bda4",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/4fb641310b385ed9264f5b081fb86a8836b41d43ad0f20d320336ccfcce8e530.json.gz",
+      "sha256": "acf9191c57ea8145b6317b0f3f20a174a44213d55fe2bfa49419a78c8198a113",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/501cce0888666af31caabf4b4d74988edaadc4699e45d319a516a052c48c3bcc.json.gz",
+      "sha256": "22e6f6067cb57db428f75b4f605f1a3fdf08d6ea73ddaf500d25ad54e2ede980",
+      "commands": 13
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/506d1e2faea45918e65576632a1b2a15fb34a084d062e6ab2985dc6aa0fdb29a.json.gz",
+      "sha256": "ca7629c0e371ef1f4354edb645b5cb09d95fc4ba0231d84ec3648ef81f0a19b7",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/50d9930e2971d637d897c744b877f08b7431ebe3eb6181b3c788be39dddfc49d.json.gz",
+      "sha256": "665a645b198db2b80fb3cbd790e9994b8d69eadba9baf0fed4317cce871642c5",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/51a12091f03db8ad54af5b858b8b2057a31550217c1a9a76f67cfeef843e5ccd.json.gz",
+      "sha256": "c47da61e4b9938eda01d0d4b9647e76190714f1f78d53b192d4d0ce6b172be40",
+      "commands": 508
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/521e427ad1893627d58111dddd45e2cfd523868df0ec16b97bba5d7a43d21d71.json.gz",
+      "sha256": "414d1a3976a319f817a9565a10ec613b383f3833a8a00567c743ef100006be2b",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5271620c1fbcfc8ac1c0276e1015c21bff590ec1dad9e335c99deb4b4fb30df5.json.gz",
+      "sha256": "d3956ca065101ca04d2d1dfc4ae51a29e85cbfdfc9d2af715871529055a72e6a",
+      "commands": 93
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/52d36d3024b0acd6fc710c73327812fa5b36f9320424db40e5e11a1e3d3c6706.json.gz",
+      "sha256": "1b8db43037e4db4393eb545e7c969e5c55590d80edd24a82f35c26bba6da28bd",
+      "commands": 514
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5384f73408e1f40e65a2d7c804f82f418977f99c8e0b781e0de67652f0af0f4f.json.gz",
+      "sha256": "b1815c3bba2ad002a1bce186a1bd79dc34d2893e9136b767d662c8b40707b914",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/53ad559152e0b32fbc0c87ff188931852a2a3ba3732e0f19808df21b8cebc4b6.json.gz",
+      "sha256": "23f25719501e584611ea4bbb7e8bb7f01adbbf50e2e50cebc918f50ec31eb38e",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/54dc823818aedcdb33b9089b7ba94ad718c7a1526c49a0f21b40ce8e7dc35440.json.gz",
+      "sha256": "71c3bc47074345cd4870d47ad5b26f973cc181f904cc774eb3016dcfdf7c4932",
+      "commands": 93
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/54f86949da3e297ca3ec03b84f6cec5a57fda19275e7d73894621cd10a4d1ff5.json.gz",
+      "sha256": "8f565c27c8811f98de0aba339f6de7ee0bd49c334b43fb1334087dfe1075dda5",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5550329eb3d2c69643a933f1c1c138461678904fc871b13b8732befeb6f48a3b.json.gz",
+      "sha256": "e15b29be6c73665a1b9d7b10c3c72d3f4393fbe74096128b521c014528a70065",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/55518072eb5b596c8406dd1ade25ca13eb7fbd6f54aa00d23570e12a1c3055df.json.gz",
+      "sha256": "a46d610470e0f951cf3841d73d05cb96c0690ae82d638debb4ecd2f6fe360c26",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/570a8d51006738e7b673e178c2e8e7eee3c68245bb0812cc0c81e8c160222c53.json.gz",
+      "sha256": "928a4925b0b3fb2e5772593d4e3f041792fe3e7ce45151baede31732d4447da7",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5993b7b8ebdc885ca295cb0d6f36c09d10bee2d98c35f0db3f9b12dcc60c2b65.json.gz",
+      "sha256": "975bf85a13aeb82520dde0722dca310693d946c37de598a92d5fddc68b2590c0",
+      "commands": 523
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5abad758a534ffd05ccec3657ee2cf471061494b380d48689ee111286d3695a7.json.gz",
+      "sha256": "f1726830c91f0a6bac1c81092e71700a012942abf42eb0a655f886a0759ee484",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5b235f76cb99cb583b08e7d23db50bde5259ed8220c7b70f6cfea5914c0e3ad3.json.gz",
+      "sha256": "8dc201ec21c8745dd853eed88c030ba1559b1fadc9b995c97a64add90f394afa",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5b8b1f6f8c8aeb74b5c47b8489cc0fb6781c4e5ab6ac830a813c1937b6345be7.json.gz",
+      "sha256": "15035e262bf40617b275ce24de5bcab37965be5aa753fcbb961a80c8d54d3926",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5e72417565eb28af7e4a8297613005af01773ae5fc239273da7b2c6b5bea441f.json.gz",
+      "sha256": "58b465ec1ff8329f47733a87d1b1394accab1ef5029e5105080890845e49f810",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/5f92121729137d6ff90d5ec91eff8f904030900a0c53bc878643c38417f54ea0.json.gz",
+      "sha256": "24eb6fd8997affcd8b7fd8c92f09a4c83c2571381d1562ca415302039247076d",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6024f08834a3b17c0161f51ab2150a0c42686c014f63460353055589e1d084a0.json.gz",
+      "sha256": "2892dceb872f91fafa870adc77bc2f0937feb46f3f151f212a4864f519a09e98",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/60b886d9220ed7b92de5765278cb50c04b628de1913fd44e0e6bc09c68f5ef30.json.gz",
+      "sha256": "5cbcdd63d0e5ec68c431a0682e6e69ee1665fed75f087f71b9afde99d506fb52",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/610caeedbcc362c024c4954b1f9784fef6ae7bd7ad8bfdfb8ab06dde4b2276a2.json.gz",
+      "sha256": "7002e4f1fbf6853e557f4e1d48460b9356e7ce7b7b70a269df46dc0c6f52b7a6",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/61b7d811290c8510ef8f92fe6c05b0d428d8ead41e5483c5081b466c75547383.json.gz",
+      "sha256": "257c06034192d48fdbc2c9946b545b5bb2ab05fa54f2963617bda7800de08817",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/627ab0207edacded105099a116e96ffcd3ea09564c799d7696a1a41ab43cf12d.json.gz",
+      "sha256": "8534ece3eec52adcfac35646818c2629dce0f03ec15f3e437a3d435659dbe2de",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/63e63c2b44649af70cdae9fed4edda99c55f60f140c2af1d4767f3bd127a5e90.json.gz",
+      "sha256": "863ea08e74feab11bdbd906d1290c12de778eac8d4f3bf0d0501e951a6b1263b",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/644347cd7215d33e181e2c6da31044d6c7b5906fe005220cc74ec20d897bbfae.json.gz",
+      "sha256": "ca5c946b2571b4c6d0d63ebf2c5d687332cd41f836ffb9770b0b391d722176ce",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/645b319d0dd066d25e5fc2e814535ee95bbe2fddd28dd36f637cae3ee76940d7.json.gz",
+      "sha256": "7b4c40f14fce97cd87df1d6fe0c85f9905d687e8a7c0f3f1b581c803c1054ea3",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/663724fd7bc486512d641b67afcf7584f21e83a248bdf6defd31a87e3c514bf5.json.gz",
+      "sha256": "894668805b988e8ca4a52708fa54989f54fe6042c1ea9e764514320293669ee5",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/664f5f32167b8bbb6c9362c22de17be3cac33843f67956c28e2c3438c88d4394.json.gz",
+      "sha256": "6eb8d15f9e636791925f32a3f1cc3e993af2bcc4f7ad196ade4dfdfc77a519e8",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/66a2b5f142a066a617a9cd6d426ec4304d03db6e12660c55e882275a73265b6e.json.gz",
+      "sha256": "7fda349fbafa455e07115482f8cba9e6e7d13337bed219fcadc648447adba1f0",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/66f96afa2e2e3fb61bd848b670f5b8d65b9aeeec03587c21ebdad9bd62d88ecf.json.gz",
+      "sha256": "7dc5e515e3e501cd4b3aadc5a93a426c2b505d8e1adc989beb09c3a218548534",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/68a94fd37759a2d77c6bafb131cf33e12b169b83dec240ea3e142962fc2f3ffe.json.gz",
+      "sha256": "52e5be5beae7c6e42d84f6aa2e672f532732d5a32098ab90039c4eab92a92d62",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/69583a37b5341612449c6f6c67b1e8cd14da3e8b7d086e545bc3400da3117736.json.gz",
+      "sha256": "e0ddac05e8713cb6b551437388ba780eafc3e005191ba9f83ba01b09d6e3c16b",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6b507e0b98f83d503c25bc9e641e491073de938a72318a99b5482d793c2b3022.json.gz",
+      "sha256": "f3353a60cab964f342bbf2587f761ad9af3f7d250ce22e02dd79820725d30974",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6c8394264988d887ff16156225654b2fc2c807c18aa4c2205045b2cbc5654c81.json.gz",
+      "sha256": "9ae4103422846f206d813db4ff0d1dc76ff1cfb7a51f7e5e1c0c6f0aa53c26a0",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6ccbb2d007dcfd9f148200805346b11d5f4e32b88f67dcad71bcdfe6552529bc.json.gz",
+      "sha256": "1d2dbfc7e6bf3de44b8ff2ec446491df7da87a4fcde9cc3834fdbb71f884cee5",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6ce9bc392ca51e954d288337b3a5519fdb0f81cfc2d6b0e44547f501bfe09540.json.gz",
+      "sha256": "2eb381cebc2805cf08a9a37db7303c514cb1593d5d62d2474e76faee8422bd39",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6cf09e3ebc789d83000a8213d8ed6208e39153b8db6add86af1e2de06fe2a700.json.gz",
+      "sha256": "345813ed1cef53807bff311109b586f539f80bfd2fa4770d7397903bd73e59be",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6d50ab5aed2cfeec327b588d9336df88c362352d7b913d37365f503abeb7b8fc.json.gz",
+      "sha256": "6cb79a626134b9c4e0c8affc4805ea5d31d4a721185c24e1792fd11d8ffbb71e",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6e423e1400e2a8ebb96f96c024b6fc339f196c6601fa9686fd69867c7d72a4b5.json.gz",
+      "sha256": "67588a7dfaf4c98384d57432635bf34130acbe43193965ed98e0d6be95277b8f",
+      "commands": 520
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6efdfbd4bc709249e43dc5d87af56f62c5aa031d0862dd74091f14f02dd00311.json.gz",
+      "sha256": "9bee1d868bcdb34008b3e46cc5e5339f8a78f6b7eae2cf88b2546af56b0e6a67",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/6fb5a569fe7df543bf9bd0882edc415a98ffd05f50289b55e5273ef164058425.json.gz",
+      "sha256": "d56740c687cd19457d1afe4d1090021ab274c84260827b0e44914506e8603725",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7022aa42522f2562f5f20dbcabc2c0c40a7b3e3827ee1c230bcbeae53f6e5096.json.gz",
+      "sha256": "218fb415ccc7f6809c2249a20cf8974eb170ea341cff8133cf9341b9edbdda9b",
+      "commands": 514
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/720c36ca68f1637bacd228b13bed4adf555b74cb4a29b73649b997af857eb51e.json.gz",
+      "sha256": "531995119fc035eca6b76749c8b28f5add164321ab5cc6f8909baa175f83300e",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7315358fc78c677ec5294f054d32cc88226b6e572fecee00aa5cdf586e38015d.json.gz",
+      "sha256": "47f5d86a37d9d37af3f3976bede3fcda47e38892222f36cf016d6dca4ff9caa3",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/732180b2c934c6366b2247218854f2a2b6e60b80301536546b3c44556f3e3fb3.json.gz",
+      "sha256": "7e7732baa4def05e6535b73739f97ff5a06f7f80668d9d3a35d8ca414be0bc35",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/73a2eb8da1a12374babfb725753266ceac25c64eb7ee30cc18b27218f2d916a2.json.gz",
+      "sha256": "6f4c4e77226b70c3960cb16c6aadee371f429ac3e8e98156c49a7c11eccc3b26",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/73d699817eb4e815c920b4a56a20bd4d656e5f69359a04a37782359eeebea1ff.json.gz",
+      "sha256": "93649db87afc51132fefb0380182b3333aa405acb469a78e76920afb142b8ade",
+      "commands": 520
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/74c6a9469fdc834c3b43c8f7fc8f960321f5f29f9f183ac97e2799d480d2f928.json.gz",
+      "sha256": "9b90ca365441de591bb99ec07dc5e60219212d80d8e14673f3252f9a66861f23",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7738d56c77fa6f99614a8287018722b91ec1df4d195cfdd0bbdc133ac20ee609.json.gz",
+      "sha256": "ae6b95d7ae7ded826cefc4c1182c18d8f3e5b403619ad2d0437ce04223c88185",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/77c7d98802a0c59d73365f5d3de9f4c7626b211f235530ee5c4e09bf91a8a8b4.json.gz",
+      "sha256": "23642fbe425c2587088eb8a3e347289ddddaa7d2febfde556766d14c1ab0049c",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/77f8f4035e15d07f5db9731a967085fac42b80b17ed97379086ff54e553506b5.json.gz",
+      "sha256": "82630453dc2a8876adfae394cf21c645bfe973e2a8546b2d09b7c9d0b3c7abd9",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7807f4235b76951763d0842a92fa828e374facf2cdbc888627a5b81a1c534907.json.gz",
+      "sha256": "adb278ada9b53b249cf4acb84a999c0d97b9cbeaff236afe726e275b816e54e7",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/78466236cd8706624db93ca6f7638f6ca96535da152d3d0467572901decb4f43.json.gz",
+      "sha256": "ce75a5a25023d9999b089b04bf38c840122832d6dc084fda57e5e1b585259581",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/789e739e39d762ec68f58061c0092d763da3767abd3d1b46cdec0dc405f21816.json.gz",
+      "sha256": "17258de7347eab577874eed14f0ed2142011e599fd808630eda4fdd7474fec7e",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/79b8b8992054c47c6d16d8dc4ea60b3708d0713901536b8a352e8ccfc5e3d660.json.gz",
+      "sha256": "6b141c2d335896edbdecc4c62b4dde35be5bc67718560c662354303584885911",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/79dd30cf61fe6156469eb6a6b0db5edd36b7c1780a30cda9d51a8f527e159e04.json.gz",
+      "sha256": "034a13d8ee074fcf116fb0020cfbb0c0922b209ea7b468436f48a82429e78a02",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/79f65194becb9ee49beb1312fcdc69c5c92af855ba0c696ac3d7c01432e2f5be.json.gz",
+      "sha256": "6a937edc314fde4593064e80ad56cbac151358b3a73282023bf16a10ed9c4c84",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7a573cc910e7d7b142957170efd81b0e24ff9cb53d899c9c18f096c283379af4.json.gz",
+      "sha256": "97e9495315bfba28f91a0c101600bbb39fcaf43bad07aa3b94498f92daf9753f",
+      "commands": 130
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7b01210b4ed8bbfc4ff68e395c88471186eeb2b024aa281383e81dfa9344934b.json.gz",
+      "sha256": "43f6c8a0b6bdd84ce49688eaaf639bb2ac31854f8a34052c9393d9cdf13991a6",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7c09a35caae65fa94a55038f9315d2b026c5233977bb3c3781372d217a192b6b.json.gz",
+      "sha256": "5050fba4c1355284f2e91b43411bb22d10cecb9c031f723c666298d60bd36c6c",
+      "commands": 47
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7c24f738977d355ff60b5d52af8381ce283a948b0c58fff79d89c6c7e2c6aab2.json.gz",
+      "sha256": "d72ad4af2b6f3a5338fe62f74ae13501a71118ba3c27cc431ea16c93fb8f6f6e",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7c4effca005593721d6a489983722eac1775b50d808285c7b2fd0f1ff2046f11.json.gz",
+      "sha256": "1cb09802a27750fbc6204ed7d8d28ba15d5bce8e8f90b6c85c33da631e0f2721",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7d07816664b966446659f239ba19a2ce21ed2e55f801f114ffbe6400cc93af2a.json.gz",
+      "sha256": "1ee6b78ccc76f88b76b61638c11774f245db5f12ac60ce7a26cc5680c6ab045b",
+      "commands": 514
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7d5ab5ad3eca694cecd669779f78f66983f4f5ae394103b2f701ae1f658c28a5.json.gz",
+      "sha256": "7e54851d222ecb05462a8a1640f2f478f5f163d36940c7ec0a44bd865fdf29dc",
+      "commands": 523
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7df9431306d05a04ff5aa7bd208547cec76e3700ab670e2c738752de6e00f455.json.gz",
+      "sha256": "673dce9fb8d202371eef1c2d20819b398eb5f4568ded7a33ff338e7314a20010",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7eebd529f171240fc9e2207e3ccce7d89db43a17ef0d5b23ebd89f8d1af4f95f.json.gz",
+      "sha256": "a73463a3c63ddd3505f0c2005cd4cae01b5fe1d05943b141d73f321af047d852",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7f99135a8a9878467a0986bd545ca6e6dc360a4c834ed4ed2532ed42b269d488.json.gz",
+      "sha256": "6482d41fc3cd726bdcf767614cfd4d0d7217d0f1aa4ddce345e30cbf61cdfa02",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7fdd71780dc2d60c525dcb945eefb7c4b2d70d9d53bfcea90d074eccaf8e834f.json.gz",
+      "sha256": "2e7600c3b1f45deb28abaced500f4a4933319b5896bff1f36e440cd245c585dc",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/7fded3d34158a2a962bb2585031a65b85b380f46f2dbe08354f8fe89f217ef42.json.gz",
+      "sha256": "a2b427a1910c3d3e9a67243b649c144b25da02d5b13d8d07cb04e24e51932a60",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/800a15e42b60243e44bf6032e93e8bde11c8955e69ac53ee0ac9dea0c7ecb476.json.gz",
+      "sha256": "64da088a1a1df5b6420d32b0c52baa04ec9b42b9c1638cafa54a74d6db65a088",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8057c11175bd09f6fc8b97788411a90add6641fca6e901d0c9b396a527f25f85.json.gz",
+      "sha256": "7a12d585f4e7f9565ee9b150dca4b80300e438e8694827f66c2541093150939e",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8095d3307caaf77cdf4e9a37f52a0aa749954e03e3989910233ae04cef5f507c.json.gz",
+      "sha256": "7838f83aacb481151123c55d1f7af787059bda07017d2c04c8ee6aed43d530d6",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/81077daf5da1de0e58b783489cb9ec85778729016613342013299dcce731a199.json.gz",
+      "sha256": "222e661e6be8775449a258a2874ad5d42e8aa4abd2f51e2f101e6aab025cad69",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8292f669f38a32afde9c1a20f6ca5d3d4c91203c3cded9aec3c72506047328b5.json.gz",
+      "sha256": "ae69d60b8b45ea436c59bbc5fe63a4cf9bc005e3923438c03e1f0122dfdb4118",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/836e2f03ab645bbeb417072ad4cd1a6ffcfa9dd05965b787fadfbe22b6b2d0bb.json.gz",
+      "sha256": "3cc87f8990f1d400f58b69c66d7ab9bce4717de4aab95e7d9072fc724ff61551",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/83772599ea5d95aefda673e567872983fa8856eb2dc6c2a7d266a4ab05eb7fa4.json.gz",
+      "sha256": "720b17cbc73c1496ad92da26fa855788a766ee4d787bead0a67abe2aaf6fafa5",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8387e121878af0339f65161a247a98ce36854fedb7b4f15f287fc76adb0f6013.json.gz",
+      "sha256": "4e7c759d9bd569c83c9cb362e56ca6e759164e61506ecd4bd9fdf0c8b9b2a4aa",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/844debefc7bd60b3ce489810dcc626f424ed59a65090b5124a9f8b1421d44936.json.gz",
+      "sha256": "796fcc6faa5ba1e0ee923ceb4b680d057fcf4108e183c82a44665032a9733908",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/845e267d019793de3faa7584c4c8f530f0bdead5afec6e26032e2a0468f6c91b.json.gz",
+      "sha256": "fe859e8a4c4f20025850b80ea5ac300860bc8e3df5d43aa93e46b118333ed36a",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/846589ecd81343b368ddd62b3a54fd9c4da0c38d9e4c75c8514afc23a9de9262.json.gz",
+      "sha256": "5f8032d093937fbafcf4efabbe7cdd0314e481f7efd0f94157d33b411afaf5e1",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8492bf22c4a71c40e3aa282b39e281828f2b054ff9275738f8ac1e495d4095d9.json.gz",
+      "sha256": "c06b45cac04418717001994bf47cea1973a58c34f400301faffe7a0492c9b1b7",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/84f3a383ac244a4c03004149007cb77f70e18ac284c387d4f1e40dbca767ce27.json.gz",
+      "sha256": "ab04af88547d72e6fb39c107340dd1cb53918b1160759516f146e20757f2dbfe",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8575e4120efa165d6210263c31b12e5f3a17229bbaec7438ef9a71b9c2b6aef0.json.gz",
+      "sha256": "25229af55d3d2f4a6b73d3d83b109c89abc3758bb0997ce82abea5021a05b10f",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/85bc3d0aa565004b5d325ac584b338d8fb1436e0bfcf84e2c998a9e495e4c223.json.gz",
+      "sha256": "695ced20f01cca504a1c2fd678dec89e60201ecfbe6f8003abd3eebba30f1a60",
+      "commands": 514
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/864583ff5dfc471fcdb99ce805991f86c995d42d2766ec070099788dd1bea53f.json.gz",
+      "sha256": "e6aad04132db81302bb9c8c543998fd0aaf37a53f9f11c78a50de4fdb25cddc7",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8728d70e943680a4eb06625bc5f878d19bf936f403f1dfca7d8d97933d698d1a.json.gz",
+      "sha256": "ed9c792377129e97ba641fb462b2bb03b5d3493196bd4758acb08e8c21add3f1",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/875910117d8e144a81ddf8f45eb830d228703c2469fd626a2a98e4f1c5668fa9.json.gz",
+      "sha256": "8ec612b22c232a9ff5cf381aeffe7bdc90eb70064ebeeeffe4bc1235d576b1be",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/87b0b2a1e3ff0479155fce19bfc75fcfc4709ff9b1f37b764c0f5bb4442b46a5.json.gz",
+      "sha256": "9c17c6baec17441e4cbea290538cb91fc978fe6788580d98aa153c11e56c45f9",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/896e52a038822d5b3e0b7ad8e819640b2c0d7193ad39a3fcde4016ac76966099.json.gz",
+      "sha256": "0916efe3f4fc7ee890c31e3df197404141f61cbc68a46bdd46611077a0047455",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8a79b16eb80f41ac8f4559b381231074368e1ec3163ac977b09f84084c38e22c.json.gz",
+      "sha256": "ef8e5e6f3033bbd13250ff15457436842e53981779b368f6c1ecc130d888d7b4",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8a8e0603c3d0d0889abcbeeb767f9ddba597038b9d1d292a8fe6baa6cd007bfd.json.gz",
+      "sha256": "5427d82272c350e6f2e20cf1bbaec5e04217d73b41ae69b49f4e47c0e04845f3",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8a92cee72462821df2fd34edf740b2895c4c55f94404fef3e0b43ad434cde574.json.gz",
+      "sha256": "9f000b5dac936f420c54d79efb8d7dac0c5706c4e61ff78a57c08b2162c96499",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8acb13879e0cebf2717bf4bbd3f965d5c32762fa1b1e3f8730eb2c1ef282c02d.json.gz",
+      "sha256": "f4b44662376582943cb6a2d704be341d710e48a2a0a4993cf09be27e57e94808",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8bd44a26011a07fe3d3d6951a7fb8f7c95619a81c2ae8b73b61f6ad80824d9ce.json.gz",
+      "sha256": "a7ceeb2cc4d50283b8da80962b558274c83b42708320b0179f3195ac7a617ab1",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8bf1d2891b23727ad970206634680ab1defc2783f11e7b651d2abd48df77bb08.json.gz",
+      "sha256": "38073075197c2f7aa5e3f82ca6fe04a700ad894cc8cfeabc0c9a861ad0425a9e",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8c1c1074236ba4ec856520bfc101c19fbb275acf8cb3c43a9568cf87daacea1e.json.gz",
+      "sha256": "bb81fcd33ae614f9bb7e7eaf6ad70cdffc6090de68a6aff9193f24cca5a0decc",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8c81a9ce82220b5c96c4d195868f5fccfc35e0cd0d7835ba7233e4340d91ddf9.json.gz",
+      "sha256": "2a228b1c325b59d95c96b5a8e3305eb51d182715e7f4f1b4ebf54c3c9d11a458",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8f44ca10ed9455dfd7f2021d0417b6461015c87cf3990676c1fd0f547d7c347b.json.gz",
+      "sha256": "b61dbb2e83da32cdc32bcd80e3a00c9b2cf8822cae6b5742479feb9d0530a811",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/8fbb2b4ee5fd576c0992fbfb4c2317db07969a99c0399dd4da3cdfe691b7864d.json.gz",
+      "sha256": "ffbde5f0c8852e39e9ed424cea4ceba6ab7a1f9ab0e85b07fbb7f2948cc72272",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/91388d81553ebd9c7fa1c1d71453b22f4bc0ee0da397ebe1207c0d13c15463f8.json.gz",
+      "sha256": "680da9425225943fd8c61851bda9b37eaecb4488110f08971512928900016ecc",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/91b6dcc57a37db1cdad2c5e2471f499d5068ad8720b3e3a17380ff1e684d889a.json.gz",
+      "sha256": "0f0c9cadb4692ace5a9d842131f96fd953b523dd087773dc27a7c0d7826accfd",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/94454df472437abbcaea86920280e0d4631f73ea9d7ba40bcb20226a59a05d4e.json.gz",
+      "sha256": "967e048f77fccb10c9a139c093f206246a81686e571f284ec2789cd1279663c1",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/94f3c727eafdc42fc424bce5c19f46bb8573809bcd03af8a5a0293b1147d4e9f.json.gz",
+      "sha256": "83f61612e47d3e62206e4e5f50dc42f5938be5905a6a2d800fd9b438069f58d7",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/95180458ed0d9ba0bf6ed03a8dd1f0cd48041cfc0d4ff37dc5aefa856199288a.json.gz",
+      "sha256": "0d6a27a968f70c31a09bbb41e712b03ccf34fccffc816bc0ac15c76c045344ca",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9522a74a23bbbe2d93307f552347193fadc331a3d826c298cb6421362595f6c0.json.gz",
+      "sha256": "16627cd53b7ae826b66e320eaaf0f9acb103c13b0bfeca7ab27635fb229a36f0",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/958b912d6570b19f7fcab80f5e4fdb9769867db229fbc207f06659c04110b194.json.gz",
+      "sha256": "1ccdc8fc7e751b7c577843f4d6df2265b2b2897c398eedadac868a390cbf82f7",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/969d458564c50d7882238abf19d3598a1384e271237c930f5d8a09b818ac833d.json.gz",
+      "sha256": "5cacae0feddf8ebbfe1dfbaad698be6f1b163e634c0823865921453b27dbf3fe",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/976b92b49e475eff5d4699b5926de61bf084a366ea683d95980fad20e2f9147f.json.gz",
+      "sha256": "6081f910c8fc64408e5e9773ca51092bfe708f64acb82499a653596fb3f6a91e",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/97911ed742ae2cd0b6db517ab2cf6a74d752b46fe73919e615df6241fc9a5758.json.gz",
+      "sha256": "d2cda823660f07cd2ae82243be80b710405a52ce08ed883cbf39653804e37fcd",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/98d4665a26e8462f9957115f01974d61c669a1cdacdc59b5bf6226b3d9ecea7b.json.gz",
+      "sha256": "3254d65846b214946509ea81ccadb92eb9fb66e43b46f1509d4aa5cad1b50989",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/997488d29b1b8117e3feb63010bed0c66b12246ebac00436e43716935aa96f8a.json.gz",
+      "sha256": "0c3dc5ec5d73b24e1bd62783f1e8f18aaf96cfcbcf42063ea3921b57840ca21a",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9aa6f8a93811aa0aae830cc8ba1d2a3bb49395e378944fb0d122fa733f8a097a.json.gz",
+      "sha256": "36e8fdb6693afc9aeb47ecb38cffac87fa9a48532be57fa011920117ba170408",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9acea301ecf9f095dc4b4c955be777b802d9bf63dffb9335011fdf88dc2e291c.json.gz",
+      "sha256": "06512a05f445ab8b396f4862a6a8db191f4e5f598d36ff1ca4a6d7aeb20be608",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9bd5b98f05f578bedd71cea0b4a61dc17381b2663b41d5c1663a0dfb7660998c.json.gz",
+      "sha256": "e57e86385c92692380871b49a3161373f58ba70f302ec064a27b260b3da521b0",
+      "commands": 523
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9c8ed6e2190febd451c04c2e6b99d43a3de72a286457ce95525b116913784aca.json.gz",
+      "sha256": "e852bb2fe16bc2f8da1edecfcbf1fca5fb250d902744b77238464d884d65e264",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9ca35bfccb6247d96f370138f9b1cfe7984ceb87a246205114882b24badca480.json.gz",
+      "sha256": "1862b29330151d6971c62e334fa2e333c25d6071c8032822f14d4a997150799a",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9d82ebea9a66a53625bf6c95da2ff9ee6680979a2e77a708aa13218787070da0.json.gz",
+      "sha256": "97f5d4f95bad02e3b925ec6631be15d3f0fd89718dbd68eee88fea1071a050b4",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9e73e221c2ccd30b429231ef51e942b92e4e11f29cf7665f144f594013304202.json.gz",
+      "sha256": "22706cef565436509463b51bcd85e17995906806b8873bf41e4fa4557e8b2c2a",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9e98727e8c8baeac02f371eebbf151829d2d899f1ba8ca136459e2f3307e7970.json.gz",
+      "sha256": "4fee3888be29781a1070c84f3c7e42118b341e0065826e6d0f7ffc7b3f418c54",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9f651762002b8440a1db932cbbbb836609bee19a5989ffa2c7a989284da2b97c.json.gz",
+      "sha256": "41f7714a4d1069fdbbe53b50faed87c403a973cadbb96117d6f6f1862b77987a",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/9fcd54e2e12aa5892e24415e1ff4c16a7fcc39993f0988b84921fea7a42a7d8e.json.gz",
+      "sha256": "295fd4a986b61c4216f01a5b50cc0b1d403c221a890bca86e0845e5ba86de5d4",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a0d462f2132faf94a13953ffd48b5a30780576456038292711ab4f555d101c2d.json.gz",
+      "sha256": "34e5777c64ceb6f620a6d7524402f57a001ada1c911ed4e440cdef07354a58cd",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a250c5d792af13757fad91c06e43fa6c807abaf38057f12aae34079c46f897af.json.gz",
+      "sha256": "6aefb8c9c3c6fff01adf43fcaf8560812b5ede7ccfe0fde373806da7894a8759",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a3b19ee3feb3b9f3916d5e8e69946c753bff897dbf000dcc639af892a15fe7f4.json.gz",
+      "sha256": "e2810af8668e8f8a1fd657388580de9d7a43d76049e2197ea1b9b69829fcafdf",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a45860e63133860c23e59ebae2266fb6caf31a7221329aa1b463b09a6b8dd161.json.gz",
+      "sha256": "fc55bbdfdc209a2e33c997ed6083970d9dc08ac5a808c7193b03e3000675f8e6",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a4fe4fdf78ca3afb6e3d53c98e643221110057826c928ceeb1d15a3bd09dd9ec.json.gz",
+      "sha256": "ae47c0e93928e1b559ce4ca5b1abee8b6639c1c1e6966aa4ab6c543351df8867",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a59aa41b14e2ccf73f3f5ad7e3f6b06f9352e3687a2e1018b4bcb5386690f5a4.json.gz",
+      "sha256": "6e99b5cb2dbe42d814ad179cf5f65f77f2cd2241122ec10d90669d1b5809de0a",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a62724263f7881104c43cada008bcd34dee321e36055caab1f56b711d9e889c6.json.gz",
+      "sha256": "8852aa4206bbf8b4dae7706e159311c5caf8cb93dc9a3092d0adced9311dc8ec",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a677fe0294583758218a44a6185aeefe48ff1e29681553a2f1f73e87897fe120.json.gz",
+      "sha256": "3f716aeb319232949976f430b8e4c99af264242e9d734ef3e5a9e9e7122851bb",
+      "commands": 47
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a728e2204893b55fa0cb1c4ce1163ce2c755bf79a35094525ccf5bcebfbda396.json.gz",
+      "sha256": "3aae58e7638a5d4daa1e2dca31b68a8957979b22067775c6ac4b1886e34ff54f",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a7d866571fd76b89ae8be3e0881d080cf7ec89397cc75416f93ee6de11abd055.json.gz",
+      "sha256": "87bcfbd643616eebaedaa57d6bdaeb222c3a70389622abc8657860dd2a2d7e50",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a84cb246a0cb289a5479fd963e20391762cf6e135e8e2520959e4f382d3d1bae.json.gz",
+      "sha256": "9b794faee760c64a39021598bb250fdf6dc83b5c75b7c146e3e3c2e07b0531ea",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a85c4ced477439c448057d1d479fbb6c4f00b3036aa42d46b5d1b992b61a0fe5.json.gz",
+      "sha256": "b439c24de9f2c8264bb1b73441d83647988e9d4506357b9fe12d8a91ab727e07",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a8aacd72f03bfbc242679cf8fd7841f7d7a7f7b83e310f11172d8f584b282ce5.json.gz",
+      "sha256": "7b31d2e3a971bffe689af93b0a20e40c10a76409eb308c3cbfa3bac1c057d15c",
+      "commands": 93
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a9218e42bd76df9a731f487be053641d57e0fb958347920d18f63e2a7b3d1f69.json.gz",
+      "sha256": "76a7f976d5b80cde2cd146e685d3604cc9651ac792947bec843d2ebefeb02b71",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/a96572eb214e4678c7052fe6c85301d5bf151dfe30c70df1e9c9773df3145ba6.json.gz",
+      "sha256": "0aef328cc7b9e62bef26de2c91e3559e0e05d969dc3f79c4461dea466bfc1377",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/aabc26a593982c7567d076268ab9cb18532e60d1c4cd3b706d2dc789195e5e97.json.gz",
+      "sha256": "6ebe86939694df6311e4b4633fdbd223e593ad44e18f8dfe00567988a26769d2",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/aacf63e73b0f0e40ef80424d0dedb5dcfe9a535975125f75383147e698573caa.json.gz",
+      "sha256": "0f76315e0d0888b60fb71a11a29889ac22750406d67af989b1bf5865adda3a4a",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ad5361ba1781afbcfe316b941a8d3b8ae107561d31fb8605644cd2593c0460b5.json.gz",
+      "sha256": "242c0b202b3da14b3721f5ebabf5426157ecaa6dcfedf3e67dbaf26a4535be34",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/adb427c5ebc697ab03b20a101cba8ca33a23534a2be533c0fb5d8d9dfc498a13.json.gz",
+      "sha256": "0ddc0f257ebf648b830e63362951be96caf58b75ced33f695e7736e0f21418b3",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ae2b1280c75aac6522074de14ab0bde2341987418782db13b48094ad5dabd2d4.json.gz",
+      "sha256": "9bdfb1aff2d09814ee94cc0759ef065f759dfc2090b792af6c2535f0368ca4d2",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ae7d154eb58487932af5357ce464c89c44d5116f3ddc629d2e730e562a9fcceb.json.gz",
+      "sha256": "26ee8ef99c5d2f26db4ef44b57fb97a9c86d788b6849d50ee116fc17a909671c",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/aed737b2300ef822acf9f56316b83ee0f5ff62afe60c4c978acefb6c77ab3ec8.json.gz",
+      "sha256": "ed5fff903422140bdeff683a11eca278b3bb00ee9fb5fcab9d9bae2bb68d5d2f",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/af8ffe91d016615e52642899523f38e497da7757a94e697f336becb633680fd7.json.gz",
+      "sha256": "012895d002f48134f567d713ddf848f955831a04a2cd8564aeff8de070ecdc12",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/afd6950eda6247229b7cbb17aebbf6f8c878f1f87c1008810c2d6b947f6d0921.json.gz",
+      "sha256": "a9cb14842b145781bf9766694bd3db13238b8b29112f4e5327bae2e47f5795e9",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b006ba8692d474ddae644a3bbe20de292e288af740a5c162f40ec313a00fbfa4.json.gz",
+      "sha256": "89a17c64767ead94b996f4385049e22921cacaad521927829a98cc504a982526",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b058a2456d0d67ab354759cffb22752b514721f43bf14aa855347b95ab9671da.json.gz",
+      "sha256": "cafafd092093bec218df8b5596b03334b4d4a49867cb3b4f6ceb50287cb886d8",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b14241ea036de2051af561a0b2c772d5a7b1327ea84b7514d9bd8314bbe283ff.json.gz",
+      "sha256": "9bdf2573ca304573d97c738b82d0630683b692f5ddaad1650097b81b19fa88bb",
+      "commands": 520
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b1485be934ac39578ece3a3c6f750f7eb3a4c05b9a6f91e4ac9b63fcbc5311a9.json.gz",
+      "sha256": "98a63d5cc9d3638940dca62a7439b0b82048921f4aaee02b7c4c15f31a0dd0e1",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b192c79e99b37aea0f7429204baafd799e830a468361a706f68719f8b4ccfecb.json.gz",
+      "sha256": "f613bc9a5d30b579cffa2d80bd605c6f1125ec668ac1637ddc4150c434ecd841",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b231a9731f671da2c7a30cedb8254eacd20a21f0ce34e45a87c565bbc737011b.json.gz",
+      "sha256": "2553078e9852aabec0457fb172d6c0f125230e244c7ef528a142c121f2c156be",
+      "commands": 514
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b2ea46f8c85cabd3b1928ff8b60346288f64bec9f26aacada7f086a44821cfef.json.gz",
+      "sha256": "956adacc4285c363d3a3ebe3bc51456e7ac3cb40429c7188ad552a7eca6b0767",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b35120357ee9ff25cdcccd4b58f49a06260e917571e5937de90ff7a9ae10b122.json.gz",
+      "sha256": "8301a17c48e18120868494b3fec597218a914361ad0cd6bd23edf19732760e66",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b40e3e87aacbe6b555c51fca621c35189e00c5558298257db551574357f05893.json.gz",
+      "sha256": "1ebfdfeb83abcccdc325898c1cb188c4bd26c2f2f64920c8b2b8fcafec99275e",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b588aa1b78f9c33fa69fce8eb07f757bd1426ec1edff02203c5b9f5e2cf4452f.json.gz",
+      "sha256": "fc97d783da977600188ff88a61800739863dc27f6dbc782a9ea2863811e12399",
+      "commands": 129
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b617f68456b48514e4c22507a3bb89ac7b3d9dc32aaf6921c365851a7239b33b.json.gz",
+      "sha256": "bec010733e39be1685c4d60d8b5b77b28d81a1b9498c535909c6535e47cd7487",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b63e641145030f6eb837095d56662c77d07478f012a92dc5ee30815566424c74.json.gz",
+      "sha256": "009f2c9dc54d95737baf8d5b390e8455eff8e04c2eef08f3a4dbc57f570e0303",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b644f8871234f98548322edee7667ccb2cef5a4f85683eb58e6818ce27ac7e9d.json.gz",
+      "sha256": "ff4f47fa210598e62bad3f036fd4fedbbce5eb6eb4621a033d882d7a633f0d2d",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b6fbffac9fa68c42501597b177c602b8867832e0ba8333c8e4f8301e1415d9ab.json.gz",
+      "sha256": "48b1fdddaca9d6d3f7e0fc5c1b8f56cf42c99c29a76c27298c716d2749e7a3c4",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b704e2f56b799bfc0876508e7ce15dc3c850e7f1475a38158270d446105b0b92.json.gz",
+      "sha256": "2f642734df91ce836019873fb8cfcc963e1c4bbde0af2c8ea99d1815c76f5593",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b725db5f0a21b1e19dc398ede4eeadf8411f4de8b41c0a4df846efaf81b36adc.json.gz",
+      "sha256": "be7288012e73b05b9f1001de7323fd619b013e71ae5eaabd1add2c069df95321",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b83b17453c61bac9a7b07af2261cd2cbb4adc682db87c21b1b515bb4010ef4bd.json.gz",
+      "sha256": "f9919f06da4baabc723a5d5a87e7e5697295ed7adfdcf7385481c6d043f8b54e",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b844eb8dfe011c2b9bfbf86a3103df1bc23c0a55e5838ec416c89966cea6f740.json.gz",
+      "sha256": "71d3c1acca9167f4bb4b94d0dc73d676d7aaf70befad1fa40e922c44febd043e",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b8d77f9e2fa4f792b454c5d4dc764ad8a767a31ed3fdeb45157b440153497a1e.json.gz",
+      "sha256": "d17c4ad34f5be53a8df56153ff4be6ddfcc6a0c33ff8ac44830c688fd3839685",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b904c3f85884bccc3fea3e7cc6a2903d97058a5f684c5c7605c05c0e2a30a675.json.gz",
+      "sha256": "cbdd8460aff45b558b07dd00e9f0e8d2ff26396931378580d2539cb2da5bcf21",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/b9fd7332258e790d77dcaa6aeecd974bccf7fa05a09eeb2b41eadf7dc26c99cc.json.gz",
+      "sha256": "e4b810f4ecf7ee3d71cdb74027a7e7410d9da21670b9960ca12dca849481b9d0",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/bac4c6b06b25cf36f71bbe75477c7404b2d619834150f74b70627c3b40f78a4c.json.gz",
+      "sha256": "78dcb6861f5fa85d941d2dbe12a0bfdac8ae51855e2a8d5916ee113251cf5c3b",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/badce9cae9e454d11e4da41445287546df58d8a503f10ed2edc54081c0bfe50e.json.gz",
+      "sha256": "896b0ee1b34e2bcbb72fa8e7a966cd1b897d364a570f380c0ac579d48389bc39",
+      "commands": 47
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/bf7e593e42231afde68a235ba101ce257886ecba9678352952b9cca431be6210.json.gz",
+      "sha256": "3cbf54d2e2996cb9b632364e4cf2ea79247345de50acec2f6560d5dc84dce8eb",
+      "commands": 129
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c0ced0cbf080cfe89a3e96d8a428ed536d3e371f49d1bd631cc126155d2426be.json.gz",
+      "sha256": "c02b6b0b81f49ffbce43f6bf3823103cd5911a3b55ec91309791965864fd7a38",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c203031e412d2e5c1367e65e82ff155964b0d9c3c899d8c748c0befb2c6f4acb.json.gz",
+      "sha256": "8a5745f3b8ab2bf75a1ea9fcc2d963284e62a65d951a0cb6553a3ad8eb337268",
+      "commands": 520
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c26d71c65e5db6bbee8bba5ee0aa2771d6f3475a037dbf6bd725bdba0a171f70.json.gz",
+      "sha256": "80e8b17ea7c773974b9f34274914ce8ea6741e06c033402909a0645b8c6f69b6",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c2dcac62738a2aa68b5f628252d23c6d25366c835c8919d2b5111c90330ec9b1.json.gz",
+      "sha256": "a18aa05bee617a090a44e3cd3e16a890330d6af9b21b03496a2e1614729b50bb",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c2e7aaa9048386f3634e468d8f908cf4c42bf9ae9235bb6dc983069992274436.json.gz",
+      "sha256": "a20fff92b5636cc19072355a60f0eb9f1b606a4f3fce4acd19f00c7fa9287875",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c3b2e61be171a541fd8cf6cb076a35b9eea3f817201fc96333f4305a3a972692.json.gz",
+      "sha256": "df838074ec00fb8178e9f16136f4583c9be0a697f68d51f26cdd010719402c08",
+      "commands": 520
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c5b56ace92e3c46a02d721b42dc75551c8461519da7067009b7ccffbc0589663.json.gz",
+      "sha256": "432c0e8007e6fb9a35e45933048f029aa41288c36928aa552a5ba3536546a326",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c5b663b477cdaa710fc823d9ca8c50435f1096e900bda4143851ff544539c66a.json.gz",
+      "sha256": "60319a7c0f27a85fb2b6c5a8382d8d87537d56b078e06f97b635a42983fbcc11",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c648a8e3251cc31862f7b9b9a083e76de467b1c56d04aa16efcf90df815fa4f5.json.gz",
+      "sha256": "797015d7c3fa367362c6c8bfbdad34c98adf76a9039b93539101b6cbe4dec4a3",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c78e2cb85e6fe141202082b1c62254469bfb1ab85231518e317cfd7c1479a69e.json.gz",
+      "sha256": "430fb1f1c1a3872316e12c2194d13a9a2c5eaccaaed3676de0f5ed8272695dca",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/c8ee4d54e6655cb49bff95414f242a0162c50d7fb98352f732690318dcf8e7c3.json.gz",
+      "sha256": "b26578e5c252d6995d1914765d1f7f9a39e107a4c1988947833f59f7cb77063d",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ca619c5283fe4a2d22a3bce0fdb0ae63b06d281b747bdebb2f577cb9cf462e2c.json.gz",
+      "sha256": "8b0ea2466d1a6e7aa9ea9869f4aa673c78dd527577df2d1708475e4706ffd62a",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ca7e5782a9abbd0eefc2620331c4666232bc21e8c896d903d7a850bebf1980c8.json.gz",
+      "sha256": "136974c6df57da921e7fb7b6b9051068c373aea4ba772b95b249746c8a7d91a4",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/cc30aec13bc969c92a9ae63285e16efaf79a756150588f30cd200486e79a97d1.json.gz",
+      "sha256": "a5061bf1e7f2a5a4f70b190df8e3bad5f0a0861ad0f5418eb1878d73d4207619",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/cc765ca7ab032150cd2656aaf3f544398a05f91581ba235cc6880c3edff795fd.json.gz",
+      "sha256": "b4af51eb9e2dcd3d8ba48e198f828bcdfa52d0815653d71284222a3de045fea4",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/cd9a0bfae9b6de768d5660bbdda71e207617876896b2bec516e77dcec457e10d.json.gz",
+      "sha256": "89aaaa44348831c15e63e1ba34609adf7aa8debd8c8dacb16d3ca83a2becb4db",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/cdb8917f5dc4cc075c968b1d5918fd73d43080deb69cc376665e171bea5d34d2.json.gz",
+      "sha256": "0555906d574478433eb848dfac8122d07564e2e3d32bc0b5bb2c6090f27a3d15",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ce6e0fd900a98e6a8c525365c8ef205b8679f852386c880b44701157818b85da.json.gz",
+      "sha256": "251a34c4ac461dd50deba68c7232055deb807aef06c58ee9f250ed7dded70dd1",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/cee8c4b3c91d2f8d25dca653acf9ee370e2287c60af543299f44c41bfc5db179.json.gz",
+      "sha256": "5f7f928ea84371ddec92bb5573372a5fe138bd35cab75abb3a29dc24f1f43f38",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/cf62e68bf6fcafe35fd03c8ccc6585082c1c7b9178175aa70dccd89bdc8d4799.json.gz",
+      "sha256": "133e17f19f8ebc91728ee4e09c93f0247e53ff3bf7dc4857d4057e7eb5361f14",
+      "commands": 523
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/cfe72117310b8367e927b3c3e1df45b03baaeb5b7cb1803a9fa4b950ee7829a5.json.gz",
+      "sha256": "a6d80ce686220bbd991fa224e623154e5a645393698fab70640f5fc24b428ae2",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d0cfd997ffc76fc092152dd369f3f41f87f513539d24bfef14f6c8bd0bf61b13.json.gz",
+      "sha256": "282f3cc8f3802cdf927fecda3f54648c05d3d58ef1558a68f33e3c146b3e063f",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d0f8d4ec724cba58fb0310863436859776956b69d5f63f9db9cbf9c7cdd717a5.json.gz",
+      "sha256": "28a8307f9f8673ab084515783bc76c848a55723c459e7516bbcbac93b43247f8",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d10e88e7b76181a3422b2f9924d66ad68d2914dd07d9a23a6ea2eeb72943360f.json.gz",
+      "sha256": "9c4930dc1a79f8aabae1b5a1b0eeba5613de724267d4b0ec165d6fce08456829",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d2f7206b9a66613142790dbec9f68343260175272c61c7684a246ceae69b2948.json.gz",
+      "sha256": "9fc9ee1897d7fc2d7ab6b2bfbd23cd4211024c4da92050cc46347890075d600d",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d306a3b4c16fbecbd8d5016f289d124d023b6a22971da641cb55ec0662884d59.json.gz",
+      "sha256": "bf9991495e47f83c27f492f36471ede357465cbc9509c5ee444c7653067ce4b8",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d39aa6e5b375bd1adaa1c471f4af04425b4beade0ca39a015f4e08c9407e129e.json.gz",
+      "sha256": "6989d4f4aaa8e519739ba375d7b3800eef62a6b217e021ea72fb84849c07331d",
+      "commands": 130
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d4451814842f5c5ae609adcaa940ffd0a7843dbd902d14829fbbdbef79ebbbb1.json.gz",
+      "sha256": "b35f58660fb1012618698768a0501301219f12f25d57c6b14323337de49e94b2",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d46a69f740e4748cf43a34b5eb72778600e056fed272fd6ddb00085fa12fbefd.json.gz",
+      "sha256": "70de9ffd9b185a4242150c4c1617ad80adb9cb31b3d5b37954de35a6a0e60bc8",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d4ab3a6f6233df8831c10e9918869a9189e6e7ba06ed062af8d132ec41ee9795.json.gz",
+      "sha256": "a54f22360f24a587cda56257c8ef918de39fd0c74fe37c82c0674d897e59d52f",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d55f29285055c05fd9facbcf6c19a78907becb2ca5de070f43ee5c41ac696033.json.gz",
+      "sha256": "757f814077320013452f7baa921d4a41db371c9a22bb6f244a43e33ebfee51d7",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d5cdcb66449d51a14b90c1c2928e0edb70662128beffe106573ac92d1b7bdd58.json.gz",
+      "sha256": "270c99b608d8c6523b8bd88e4b3a241488f95fb0998d795df650e8f6cad2f7f4",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d690da7add835beb9133a75e4cc1409510f071218f11bf0c3794c25da6529e76.json.gz",
+      "sha256": "e87cefbf0539e01057df9a1ce3ee6072c6121c15d32c962576e0c86614b01562",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d6d5f3b13a65ceb6ed5d4837bdc02155215232b0918a3309496eec6239f53f7d.json.gz",
+      "sha256": "6a0187c2e639954b9bc68271a5ba38b7cbbe101e5be89b799a4859cb9b21f4aa",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d71ca4ba21b844588df4535970c9c9cd6215f5324415e894df951c8df5db9888.json.gz",
+      "sha256": "f87ab7607266db6f424205f7a8e49473257d3ce01f2b6bf8ee2dfeec37a58ab2",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d743669d277a784cf67c9e92c9129f08eeca01a3be3ce58c025680399bcf9980.json.gz",
+      "sha256": "32f5fecd5d5170e433340e9bbde840eeb30adeeca79d36d93b3f3ffe7ee9217e",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d83ac733fc42aea8ef1f8366827f07392434b2f54e2ba0886b52d93f9d5930bb.json.gz",
+      "sha256": "b9ad61a40d84599f2942d6e19ee0b14c756f27a856c5e4a8977d3af5327edd78",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d84e9359e36c3c468b8ea2354e3e6546805792ad59f38145e258edb63bc5df63.json.gz",
+      "sha256": "bea3951c513987c7c8ac91c39a625c5654e6443c18ee4d95000c31fcb7fe2703",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d8cb526d86a23d8c9059b4801483dc18e39f8a8454a18702dce72609c6a832b1.json.gz",
+      "sha256": "91b03292c99438098f0c43a28a0b1ee6e7063823f7df04b49b0264d13f5f9e3f",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d8e52f21bb45ebcd30e448563af77552e4a969ba50b4178e8e4fd53624ceab86.json.gz",
+      "sha256": "97631297a9064f70af6ccd153a7314951591d433ea31ca9555c01135a64ab7de",
+      "commands": 523
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d98cab0623ae4dd6638e84a8e3d2a0a47b806c36191acc660549cd501690f452.json.gz",
+      "sha256": "6e8b5e0560d475a866e0b7449cc1495d1f83cb66139d5c8546377f5698d24bb7",
+      "commands": 51
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/d99c287a4d94e60343d4604f09f1d833c95e46b0b1d23b92c9a3b377aab7275e.json.gz",
+      "sha256": "417066c1b6d94313a90673fdc94028ff3f052de0f0d802d6ccb84b123c6d76eb",
+      "commands": 13
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/da696c114dde758595de0c3ec4e2fbd07da00729e1a410c37bf472ed099512e4.json.gz",
+      "sha256": "768e5d6a37c974906a4cc2588d4d70269f8d83c66be07133d912b938eb1efadd",
+      "commands": 520
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/da72649b2ec6394b0b7489297a46a7bf9801b7ec8e2ce9ac6d602eb75586a9ee.json.gz",
+      "sha256": "626c4628320cce12fb9bba715668499f1124e64f5bac520a17ad1eb73ffc608a",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/dbdd1dd14c9060fac6514668a6b029a37dee768314cfd6155ec8152d3e2d0a3c.json.gz",
+      "sha256": "c987419dfec623475746c2282a35aef825b063eef38335d9a913c7d5db33004a",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/dc604b0ef0a867321f46ebde203f2bdd5c3c2d7ff36c6d4472c3658b753c2818.json.gz",
+      "sha256": "209d484ac5d0a25cf40e993c083c215c067c0f525c8411d5ee434c2ebb1af9ed",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/dd7117db7a35a02a1f333b2e0807b489ab8eb56be0fdf2d50cec241cbe7f8e4c.json.gz",
+      "sha256": "632db95b3bafd762d0cffa2427edbbfaa2cb4f89cab0b98da00fe24a953640a0",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ded12879b4a3e607ebaac0a34e25dead912535e06a87c1c9dba04b1f7811396b.json.gz",
+      "sha256": "f9917e14da2af039290e5aef87465d7c9da75e636ce3ea1de82a89a2fe0c0d12",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/df30c42acb0ff831912ccfaa798fead1c7faa982e881c0b043395394e7afc050.json.gz",
+      "sha256": "d878e4773c98cc25c511fce63f71adb0958873a358a856fab1bfc99da4ab632c",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/df329bfe805a9272eda7ad8dcc2aa9c6fa98754b0bfb71991981ccdc6a42fe93.json.gz",
+      "sha256": "9eb3de3ac830174e192ad64eee790c39a585654612fa6a70f450308ea48594d6",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/dfed4c727d9d700258ce4c801966367ea30d81922d880d10638594231155eafb.json.gz",
+      "sha256": "ba2d5662ab1f4bdfbb4b6b28fca766a38ccb3aa7e466450e39abf48e6fe62d6c",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e1a248ab5e73a8dde057ada23116d2ab6cc3e41905be1ceee3c9014eb9bde9df.json.gz",
+      "sha256": "3d34c25f8407f0084ee7131a4aa1c11742a8a76d4a6a8c31f4f1adcc278a721a",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e1a317cceac59ec83c38a6f4e1694f59643fd37a1dd10c1ac020a7fb31ad9979.json.gz",
+      "sha256": "834b3e4979394be18e8e89c7aa3cfe841cdec204b4d7ce3d6be6b1d6ad68a2d4",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e20660289379a7b47bf138554ad10643e0890788c72134ba6eeb5a5d0a67d449.json.gz",
+      "sha256": "082ed010800d88133cbc5f595cee2438c82483ca616afc7810e52944de3e9538",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e2a59666597d21c4266905935b6b3baa2b1dc1274e18a29ec567287a76a9c2a5.json.gz",
+      "sha256": "1fbb3365f6affd2044d9dae3f036296e9e9cc393a56822956e986e509fb7e728",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e2d48ac387cab8dbe205536cd15ae49059b1e109182f4b4a93bd833343d6d3ae.json.gz",
+      "sha256": "f8425a56df7faf741622d02056f384e91690548dd75d6374bcb6d74d455e616d",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e3443db11b3473b41e78b1d7810c3ddb7827cd1850cc72cc42dd008bacb4c2a8.json.gz",
+      "sha256": "32fdc650bd5e01047bc53031efe254d50b76f3782b45bb925c8b4c3dee3a4de1",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e38ad7f1968d143b9a3e9e315e2652a43e0e10a561bc093555552f4542211130.json.gz",
+      "sha256": "e75b2b7e321f91ed9d5603caa56a64921649247697d38a2a2d23845f986ebf59",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e4128c0db807b3db8aeee9535307053a95b90b9c5442a3b9f4d45b6706d52bba.json.gz",
+      "sha256": "07a2887a4332d7d10ac1aede08a2f2abfb248a26b7e54b2b7ae9f6a2f9aee703",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e64adc9ac2e64d9a12d185b0eae40d7142524b94519f1525885954532696beb4.json.gz",
+      "sha256": "cf1f2ada44f556d0a5215d93b997433dc2a211a048fad3d91c208b9f27e61d28",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e67a45ff8be67c9b9a071ae29c497ca902d7d9583b20c26951b4f12fe90a0089.json.gz",
+      "sha256": "45e508a8b58937246f554973f3ed5ce4dd391cc356e2d5e7deb770df55d04d69",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e7b3859a5266446e44764aa61b7c54de6387201de3f4c4a21ab80af142524ca2.json.gz",
+      "sha256": "9ce41e07aba633f7df5c7af2b593cc605e065237970403503182c828131f73e7",
+      "commands": 130
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e80586308c614150308c0dd59bea3c89fed3f4bcfdf6a5e11c317d61fd3dd5b1.json.gz",
+      "sha256": "64ee1c05f3453f2df7ab5b3277882336202e5c86f06c2a5a4a884ec1154197dc",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e8c984e7b99371469b4721b31de262fed7c919801258f6375e6c396acc2404bc.json.gz",
+      "sha256": "f4e1fb67a9c5dc1ec54a9da1d435650c278473d62976ceaf71837b21cbadad67",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e9a166864f015f8b78fffdff1373b8555568c47e76fb3a85af96b3aa0da84eae.json.gz",
+      "sha256": "42e3adc3dad58ab210ef38151a5c531b8a78b03641d7527b026c9fc75883146a",
+      "commands": 517
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/e9ff5d626d27e8bc69656a1e105f494332ec331ad49cdb79f1b5bf790d2c45f4.json.gz",
+      "sha256": "40702a6173e3cce12c885c888a9e8c7cacaaf893da1b0831bd9c2d1e7815eb6d",
+      "commands": 13
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/eb56b26eb44508b1877140f2b8baee0c0d169204afc46f5f90f9d5bbb6f6acb0.json.gz",
+      "sha256": "69f2f55dd0a248a77a7bc6206ad2d9fd5c79d1408f806892cf8ca4c9affbb647",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ec654ce8b4cb7bd260f011f6f7e94099c314788c990c6a32897aab4e29a2d7f2.json.gz",
+      "sha256": "83194176bdfb0e8b0406f166683bb52f2c9a560bdb6f9f7e3027443b5bc06bdd",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ec860959c28d2e9c601544acbb95dcbe852ea2deaf2a54c2a82d2facc9f1209d.json.gz",
+      "sha256": "97fd6ac9c79c0fb1796e2138366ac100106dcfcc5a67ab6a20c8aec34a42736b",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ed1e52b8a2757cd073a2c52c9c20e6a0fb16af2c4dc5ea94c4e4998102656ad8.json.gz",
+      "sha256": "a73c68a492701a2fc1022510baa5486fc82f2468b5f1eecf5bc4633257840da9",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ed6f60cf12cce5090a295acb54bef69046ef09906456127047ad0968eecf6e40.json.gz",
+      "sha256": "92a59f6f64cdcc150eac89412387fcccc3d72662a2403591234e5ad16e0633c0",
+      "commands": 523
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/eef8ca71be6d6cd291dfbbeb4c7e414e53879d0640c54832339351ba44f435d2.json.gz",
+      "sha256": "41c571d53631e9c12a9f5472ffd60f13883bba3c1db34a59a07d018c98b138da",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ef106f04a2b343167a0e261b74e729d6f4d3b887e98a4e0cb15ef774d96a7728.json.gz",
+      "sha256": "d9135c1cc6c1a83c4d9c3fc464bd7ab56693e551a9d1e329f683f97fc8e8bc6a",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ef1ed49c56f2f0c7ec5eb01de1fd2b8c39d847641dd6bdc2a47591d280c9b4b6.json.gz",
+      "sha256": "680820ad78dc4a98e73e89c8fb0915ed479b596494f96ce73d0e6145afa40915",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ef92ab0459c379b50b91c7677f05b5dcf32e6ecb9fa9c7c3a991c27b90523f28.json.gz",
+      "sha256": "196e22beda1901deb2c2ce570773dbead4dd2dc17914f0b0221c09b13d1dda4c",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f0135c6f344025f126664de359cb2a7ca63dcdc9e8527cff70e9b732cfe044f8.json.gz",
+      "sha256": "5a708eeb09081a910e240abc789562c7758c9d1d4cb569013f9669a701ca5d7c",
+      "commands": 179
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f096a25cd692497199bbe58651705d4f18663e97a6d53dd4d3d0fcb52e8f85f6.json.gz",
+      "sha256": "57c41774d950abe7aa0afea53295ff0d66f1fc4b14f5fa58e8d5801da018a8d9",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f0a8beea41f683ea1291548593e6e7ea8dfe37a5b1349d0bada113e16ba5768d.json.gz",
+      "sha256": "29b66131e9f0d93fb3cf63b8a02ba2c90e4c9508c5c1a257694c79007737b58b",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f1e9ad941d9df9e2f8ba663be76b636af3ee879b4beee394d0924725bdc3f080.json.gz",
+      "sha256": "34ef629a2b816488eea4af736a9ad7abaf73a8473699c62f14e55801fafe0427",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f2df372c913000cf1eacbfc66e41abdccc1aad7d0abdc3002dc32ee644d32594.json.gz",
+      "sha256": "e1321b376f4c0921c3197a6f0abd63738829a774626b8828ba6e5c6c02eae7cf",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f39ab91ce717bcefc3a8c21b141debff94019b42f0a759e402388bc1548466e5.json.gz",
+      "sha256": "1a421fca29526f0dcd4f1a25da2436cda8607f4bd4bd8077ff09b0867481c11f",
+      "commands": 177
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f3ba4151309ba3a19d520704b9f50d55349d27eb29112d2985d281271e7762f0.json.gz",
+      "sha256": "d54d57c05fc2e748dbdd844dd82735175fd08b00d5990da464b13023914b5bde",
+      "commands": 180
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f43bfe2717269c45765848c1028d41c670de3e84ab78b2a09066207defa175a9.json.gz",
+      "sha256": "542c4d3378bc63fe2da1ef62c37484e7a1e0cc6436593199c2918fe52662ce99",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f54b0928b1ff80b6d05c3a6a63b21dafd9b2f5c911bbc73c34f029c970fae822.json.gz",
+      "sha256": "9f8ed7e72be034b05ca9649a67c9769f5011f04781aec1fb01d0f66d46a8cca5",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f644e95f3817d20e1f220e70d8be2e86c0cb7c879e0a5de0637cefa7841ef99d.json.gz",
+      "sha256": "73980dfde6253c39aab5f420faa012f68061a0cfe07f3cd664e0e8731b63c629",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f7acf8b1bbc0d70c0d09bf3d8cf1dd9fda7020e1d00ca44df9e338ac64494a4d.json.gz",
+      "sha256": "c883debfc80bf80c6d8c95f9c20db2151b8b7232f27d831cd0f293ed658a2b1e",
+      "commands": 92
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f832c816286b3327c81f6855e91882a25d1b066aa92f5b2e0ba6255b340b6dba.json.gz",
+      "sha256": "22cdcbe606ab7fa25d3815036015b8e9fd77737c1493f719ae5c8c17f89652cb",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f93c081505a5ae716b397b4f561efaac984bf218bf8e9f281a8a1ae372e62441.json.gz",
+      "sha256": "469017e0a55c426a6d63f6fdfac54582fde016405a0484347a11f4d7f47171a5",
+      "commands": 514
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/f972d891980f016d29d2e31bda041ef2e794da76ef1f8c5e2931e4130f1022f7.json.gz",
+      "sha256": "2a30969fd2584d65ead585a904f535e27eaffc72fec95cdc20b870f846faa884",
+      "commands": 132
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/fa8307a519e3f0949131e8b626285fb588f77967bbf824f5a12f3128c2370895.json.gz",
+      "sha256": "58065a3a74fbde3089272a7bd3ef787479554b2b70a3eb50e813614b5dd51eb8",
+      "commands": 131
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/fb4dc725f3ca594e724100c4668e22d4454a06bb9913fdbcdb1757d19f03653d.json.gz",
+      "sha256": "25eb75b73c27ecc5cca1e9951a158bebd72cb92609bb05b63d28f163b2f7e5a1",
+      "commands": 176
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/fc6587661978dc17fc5114888e8e9a156dd94d6774423422be648da38850b98b.json.gz",
+      "sha256": "ecca141446f278d235531cd9e4ef2b4cda1cc0f22102912fd74043d2453b92b6",
+      "commands": 133
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/fcb36de3aaa441806680c4944a7c6788237b2a03c6789ff53adb25677ad25ace.json.gz",
+      "sha256": "2dc7d7486b55b256d14da7f675b6c1f2225dc23fe64c3aae93c48b91d0720c1d",
+      "commands": 6
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/fd686747a11cdf2c5038dd25a6e88265ad2f5170c6fb76a0fe0a3056b40216d5.json.gz",
+      "sha256": "06de8afa072df70c5a943367cf31c7307cadfd43701504d1481b5a778837b55e",
+      "commands": 178
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/fe381d5176e6ebb37ca9a6e88853336050ce5048fd981446599a94c001ddf47f.json.gz",
+      "sha256": "c58f66768cf6d28218f87e3878088f18e4f5241f571f0368475c8342a4853938",
+      "commands": 134
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022-r2/ff77fd634717c15cc8c49f7d4c7818cda8cd0651961492c88ee95ac62eb680a1.json.gz",
+      "sha256": "f0a84e074801f1c12a3d06098c374c0646c62e2241de919e67d0108de116b6e0",
+      "commands": 178
+    }
+  ],
+  "abi_builds": 42,
+  "used_rows": 32,
+  "unused_zero_rows": 8,
+  "save_object_bytes": 400,
+  "opaque_backend_bytes": 12,
+  "initial_final_images_equal": 42,
+  "negative_link_guards": 2,
+  "physical_flash_backend": false,
+  "stack_peak_bytes": null,
+  "raw_reference_sha256": "0944cd094f1a1794197070156c02da77c619b03755cfee6d2d87fd043c465903",
+  "date": "2026-10-22",
+  "implementation_commit": "9b654b0",
+  "scope": "N05 X035 prepared application plus synchronous storage/blackout model; not N05 overall completion",
+  "native_build": {
+    "command": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-O0",
+      "-g1",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer",
+      "-I",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-10/save-x00",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/save_x0_driver.cpp",
+      "-o",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-10/save-x00/app"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": "",
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "compiler_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "generated": {
+      "i2c_handoff_fake.inc": "c34c049b67336cdcec4db2794b942dcfc3049bc8ae3a4945a4cc1eff6e20204a",
+      "x035_route_fake.inc": "693f1ef8a69cfe3c40197031e031d7973ab1cecaf9af48f8faa83c54916025ac",
+      "x0_prepared_helpers.inc": "4c7d12b6fcc06781d4b88aced3a9a8a5ea0e3b229cc26049244c980aa88bccbd"
+    },
+    "inputs": {
+      "tests/unit/core_redesign/test_save_x0.py": "3fb18b42a35422241626c7779220a1a084289e3d79322103e241a1abec05c634",
+      "planning/core-redesign/save-x0-inputs.json": "c080954e1480b7e50dd7aea24beb792035bcbbd6deeefe442522cbc8b0fb22e5",
+      "tests/platform/core_redesign/runtime/i2c_master.hpp": "8dab6fb317a06f8336c7f2ab839f6046f9fdb3d7ac049177010a3d19007d425f",
+      "tests/unit/core_redesign/acquisition_buffers.hpp": "053750e6bc410c4a7d56174431c5390fb8d2d52b7e7da3f0898dc03ce10122a2",
+      "tests/unit/core_redesign/completion_arbiter.hpp": "18f7a683e94378d0ddc23f22a8b2fd173b2ab1a9f0a5072b9d7103041c01fefa",
+      "tests/unit/core_redesign/completion_delivery.hpp": "a0bc3a1b38678276d81b7e26cc8106b86fd4215b966e0c78cef1b43e8a51805e",
+      "tests/unit/core_redesign/completion_fanout.hpp": "fb51344066e12d11ec32d63be575367a8991e23bf070f675e3e2db1a6afe2430",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/deadline_timer.hpp": "39ef8b8f6210598a9609cf007cde81deebe249e3dc3cdf80ce028ddf81383486",
+      "tests/unit/core_redesign/display_parts.hpp": "42e411ab14852b813b0621e38b08822d6b93a06d7404b9d576f5d56ee1fd02b7",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/flash_integrated.hpp": "f168a7cd9a7bb0a41a52e1a20ec6d80d59f0aef601eb395e0a820a2454900042",
+      "tests/unit/core_redesign/flash_scan.hpp": "49597298b4c6500142d91d6acc72059aa5fa4d27cec57ddd255e85c3388e2d46",
+      "tests/unit/core_redesign/flash_store.hpp": "d95242639a8da28f4205ba8ba516524dde6837f0458ce1c368cafa79704f62be",
+      "tests/unit/core_redesign/h417_features.hpp": "0d6badf9afb43fac091da475b671cf0ddad5c4fa1c98e6f1727762f334f3d939",
+      "tests/unit/core_redesign/h417_ownership.hpp": "5760988a72e659f03fd9f29313c8358c0cd8ac8b31ba752ed6b93749246ca1a2",
+      "tests/unit/core_redesign/i2c_handoff.hpp": "5aae68d17fff3a54371d32bae92091d5a009112828a151b2d71efb2fcaead809",
+      "tests/unit/core_redesign/i2c_managed_handoff.hpp": "3cccbb002e5adde7efbff19ba3dde4758adb6e9f0e1a16857de825460bb65d24",
+      "tests/unit/core_redesign/i2c_resources.hpp": "ef108acc6e088619eef4b9fb69918650b21140367a1d23593335d39547fb84e9",
+      "tests/unit/core_redesign/io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "tests/unit/core_redesign/k0_candidates.hpp": "f75a1c11509ea3095df01015332a49d6c12615f947145284e5fe223a0e8af374",
+      "tests/unit/core_redesign/k0_shared.hpp": "86d22e147b4e8304ba7b650f09fbdc50451abe3d9ce4831c6db9f2455065256e",
+      "tests/unit/core_redesign/k0_slave_register.hpp": "8f59cce4e3215456ff7161e810ceed4934eb71d0de0289debcd4e185176b0e28",
+      "tests/unit/core_redesign/logical_time.hpp": "ae6eff038954114d4e3a2775d3d26825152caa213d81efbb2578caf7895e326c",
+      "tests/unit/core_redesign/owned_queue.hpp": "95079197ebf28a528ece96168e2e6e324b19fbe0d8765946887f6c8c32c41bd6",
+      "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+      "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+      "tests/unit/core_redesign/reentry_depth.hpp": "6f0c2276001e8691a41712e50a7dd5bac0c9327756ffd90932dcd78e1aea7fe7",
+      "tests/unit/core_redesign/save_coexistence.hpp": "a962d6e28e084c2dbb1022bc27b4fdf04968dc4fd0920d8b2012335bb23017d3",
+      "tests/unit/core_redesign/shared_channels.hpp": "86f198800b18b736b21842bf949cc14489ef9150ecb5ab1e2bb4cb4aee3a1458",
+      "tests/unit/core_redesign/sleep_coordinator.hpp": "669dc067aa1dcb9de67811f44a08642f7f2fe65566c35c309a85bf1633da6e9e",
+      "tests/unit/core_redesign/stack_pipeline.hpp": "8392daf4ec7ad6540aa029f7893f005c62b74de75312a3316a2b857ceba34a93",
+      "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+      "tests/unit/core_redesign/wait_dependencies.hpp": "702adf10ba3ad55117df70f54a92c4e38baa347c79969a7b1df359c8c37c89ae",
+      "tests/unit/core_redesign/wait_policy.hpp": "862219f16aefaedefecf8563a271af6b3ca72342f35fcb3d2ff2abe4ea67b644",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/unit/core_redesign/x035_i2c_routes.hpp": "90d9473ddf10d964fe0e5bfcfb6d9c38174c041cf984b6c11234cdcbe68f742b",
+      "tests/unit/core_redesign/x035_i2c_setup.hpp": "1965f0fe8acb58e305668571d2eab3496f0c36be274ea917033575167cbd0772",
+      "tests/unit/core_redesign/x035_setup_fake.hpp": "0eb13ca03385342063a0d284794891e1790642791320f19cadc3ef04d95a63a3",
+      "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+      "tests/unit/core_redesign/x0_display.hpp": "02a41b2c1a25ea6047f77750640d62e5ae85ee220602145e840d8fef16c8e012",
+      "tests/unit/core_redesign/x0_event_wire.hpp": "d568969cee401d902842d1137b687e9b90a29c5d3b20b037040c02d0abd60abf",
+      "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+      "tests/unit/core_redesign/x0_prepared_wire.hpp": "e27a6d2a4b5c1e95d0106c11e226f3621d638d030549ab7b30cc65779776af9b",
+      "tests/unit/core_redesign/x0_register_wire.hpp": "dcb41e309c8e8df926dd17ac210455416c9d15aba02ba52537fb7cc780f0df47",
+      "tests/unit/core_redesign/x0_wire.hpp": "d825a02af9ba326ae8226f2e26f038aedc77e25458b8ec7fee0c65bbbfc1ff2a",
+      "tests/unit/core_redesign/save_x0_driver.cpp": "a8edec2021124fc215259dfc8f8c5fdaa1b0f9affd580aa5c4f4e9ae367624b8",
+      "tests/unit/core_redesign/i2c_master_driver.cpp": "c87d8e85922a35bc21d49a9851eb83b1962f46ff430a5daaf3a687f109839c62",
+      "tests/unit/core_redesign/x0_prepared_wire_driver.cpp": "ccc0afefbcebc40b98730e4d0b8780beab61a57332d5c0918d3f50a222d82cfe",
+      "tests/unit/core_redesign/test_x0_register_wire.py": "c6212520302e77a08b4f335f20a30be7946604d48363f45a7e5376a5e5795021",
+      "tests/unit/core_redesign/x0_wire_oracle.py": "6c03c24dab16980871cd9edcd0f33220c1bd48024df84de2813937d616ca374b",
+      "tests/unit/core_redesign/app_oracle.py": "2e1ae9824dd34c70f1774382efed6fb285012af9d952d6c4c818c438b27de332",
+      "tests/unit/core_redesign/oracle.py": "67f6f7cc913d20d8bc5de079e86244aea1f925ab0fca3bc8bf9aae8ba6ef3c6c"
+    },
+    "executable_sha256": "6e9edc30b1d757abdab5dec46603e8de2e34d8224667143fea500a0a071373f2"
+  },
+  "abi": {
+    "status": "passed",
+    "scope": "EXP-06 N05 prepared X0 plus mounted blob storage; opaque synchronous media backend, no physical Flash/IRQ or total stack fit proof.",
+    "inputs": {
+      "tests/platform/core_redesign/measure_save_x0.py": "9389d3e2f9fb0765f08df98a6d1896ff35ecd2029c8af09f6ba26c7bae216dec",
+      "planning/core-redesign/save-x0-inputs.json": "c080954e1480b7e50dd7aea24beb792035bcbbd6deeefe442522cbc8b0fb22e5",
+      "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+      "tests/unit/core_redesign/save_coexistence.hpp": "a962d6e28e084c2dbb1022bc27b4fdf04968dc4fd0920d8b2012335bb23017d3",
+      "tests/unit/core_redesign/flash_integrated.hpp": "f168a7cd9a7bb0a41a52e1a20ec6d80d59f0aef601eb395e0a820a2454900042",
+      "tests/unit/core_redesign/flash_scan.hpp": "49597298b4c6500142d91d6acc72059aa5fa4d27cec57ddd255e85c3388e2d46",
+      "tests/unit/core_redesign/flash_store.hpp": "d95242639a8da28f4205ba8ba516524dde6837f0458ce1c368cafa79704f62be",
+      "tests/unit/core_redesign/x0_prepared_wire.hpp": "e27a6d2a4b5c1e95d0106c11e226f3621d638d030549ab7b30cc65779776af9b",
+      "tests/unit/core_redesign/x035_i2c_routes.hpp": "90d9473ddf10d964fe0e5bfcfb6d9c38174c041cf984b6c11234cdcbe68f742b",
+      "tests/unit/core_redesign/x035_i2c_setup.hpp": "1965f0fe8acb58e305668571d2eab3496f0c36be274ea917033575167cbd0772",
+      "tests/unit/core_redesign/x0_event_wire.hpp": "d568969cee401d902842d1137b687e9b90a29c5d3b20b037040c02d0abd60abf",
+      "tests/unit/core_redesign/completion_delivery.hpp": "a0bc3a1b38678276d81b7e26cc8106b86fd4215b966e0c78cef1b43e8a51805e",
+      "tests/unit/core_redesign/x0_register_wire.hpp": "dcb41e309c8e8df926dd17ac210455416c9d15aba02ba52537fb7cc780f0df47",
+      "tests/unit/core_redesign/i2c_managed_handoff.hpp": "3cccbb002e5adde7efbff19ba3dde4758adb6e9f0e1a16857de825460bb65d24",
+      "tests/unit/core_redesign/i2c_handoff.hpp": "5aae68d17fff3a54371d32bae92091d5a009112828a151b2d71efb2fcaead809",
+      "tests/unit/core_redesign/i2c_resources.hpp": "ef108acc6e088619eef4b9fb69918650b21140367a1d23593335d39547fb84e9",
+      "tests/unit/core_redesign/x0_wire.hpp": "d825a02af9ba326ae8226f2e26f038aedc77e25458b8ec7fee0c65bbbfc1ff2a",
+      "tests/unit/core_redesign/display_parts.hpp": "42e411ab14852b813b0621e38b08822d6b93a06d7404b9d576f5d56ee1fd02b7",
+      "tests/unit/core_redesign/x0_display.hpp": "02a41b2c1a25ea6047f77750640d62e5ae85ee220602145e840d8fef16c8e012",
+      "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+      "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+      "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+      "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+      "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/platform/core_redesign/save_x0_entry.cpp": "db504a64c15570ed7813fe5719c4cc9f37a79dc56a58ac08d65173b749f6a9d7",
+      "tests/platform/core_redesign/runtime/i2c_master.hpp": "8dab6fb317a06f8336c7f2ab839f6046f9fdb3d7ac049177010a3d19007d425f",
+      "tests/platform/core_redesign/flash_store_backend_probe.cpp": "4bb2d683dd7ef67d0c09f0dbaf5ea5bd40dfc353a56a281bec6b35ae5a6d7f29",
+      "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
+    },
+    "results": [
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "empty",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "523265df6f0130562c5e1a632c809abb62d14c1cb4863ffd2e94f87272fe9f9d"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "R-u0",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 7048,
+        "data_bytes": 664,
+        "bss_bytes": 84,
+        "static_ram_bytes": 748,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "8928c8c4894d9f60190892c63023242dfc22981a15da035e5eecefe61545eb1f",
+        "elf_sha256": "97ffec230dba115a4e9e59de042b1985b65f293c32969012b65e876a73dd470d"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "R-u1",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 1,
+        "reserved_bytes": 256,
+        "app_capacity_bytes": 63232,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9264,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "d495db08d7aa0017ffb6b3af4119c0657dbbae97c8bde7b95216e02337c84cc1",
+        "elf_sha256": "ee182b6cc40a88836e93d2d07905a933561ebe424b49a44a19111c1f7fa0e65c"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "R-u2",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 2,
+        "reserved_bytes": 512,
+        "app_capacity_bytes": 62976,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9296,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "454c4dfda3d982923514d304a384455d23f856d5f588f6058a6cae3f1f09be89",
+        "elf_sha256": "144d04ad5f7800ad9d3c7e356c4928d5b5be7e6a0fcb57b2d7a6d10500a5a869"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "R-u4",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 1024,
+        "app_capacity_bytes": 62464,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9296,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "f23f112ae6ab46c89ee828834e5cb3ad2fe38eec848ac6fedbf63290eadccb0f",
+        "elf_sha256": "0f1f54e7341eeb1656417d40dbf44d6ddda09da22ba27e8d7b377e63f0b63dc0"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-R",
+        "unused": true,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "523265df6f0130562c5e1a632c809abb62d14c1cb4863ffd2e94f87272fe9f9d"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "A-u0",
+        "unused": false,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 7048,
+        "data_bytes": 664,
+        "bss_bytes": 84,
+        "static_ram_bytes": 748,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "8ffbca44d34a8998badac554805b9df287bf4763abcd3da68fc8ba068adfd46c",
+        "elf_sha256": "6c2bf764bc0ebe58a1a2835bcfbccba1cbf0b9d7767f0fd3ad8825c96136e623"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "A-u1",
+        "unused": false,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 1,
+        "reserved_bytes": 256,
+        "app_capacity_bytes": 63232,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9264,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "d623c23d977af40e85b0ad9215939a75be4f996fa84c1d8c436262a727519eff",
+        "elf_sha256": "e2ccc94b7ee77763656f330290c25edd1687e8789447c2943412d80be4a95ec0"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "A-u2",
+        "unused": false,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 2,
+        "reserved_bytes": 512,
+        "app_capacity_bytes": 62976,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9296,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "3b6dc78714ba3ec44132db5c4f523388037d41fc5dc260f10689c81086dad2ce",
+        "elf_sha256": "ac614adf5797837e7ab3176cfd59e729ebed1f78512d10c87e668d05b9568d94"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "A-u4",
+        "unused": false,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 1024,
+        "app_capacity_bytes": 62464,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9296,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "20284dd3011045ecdf9a5ea54970c129ed59e9469ac52e604037211a7f8e9e8e",
+        "elf_sha256": "147cf80d30be21f9501f16008ccce798c0a2930eab378c9afd3f05b32734dd7f"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-A",
+        "unused": true,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "523265df6f0130562c5e1a632c809abb62d14c1cb4863ffd2e94f87272fe9f9d"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "B-u0",
+        "unused": false,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 7544,
+        "data_bytes": 696,
+        "bss_bytes": 84,
+        "static_ram_bytes": 780,
+        "application_object_bytes": 696,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "18984868576f85f722be4301247c41ae9e3633849873432cafa1a09b6b2361a0",
+        "elf_sha256": "d564e430c0ec926dffb6f7982d57abb61dde6de58e8d61dec1abbd295886fe19"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "B-u1",
+        "unused": false,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 1,
+        "reserved_bytes": 256,
+        "app_capacity_bytes": 63232,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9760,
+        "data_bytes": 696,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1192,
+        "application_object_bytes": 696,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "c1218a8709193e511640fa92585bc9a70a3629f1af272b53ae0c37940d85554f",
+        "elf_sha256": "84db37fb6477cfe8f36cf5ca86e95005d17f9abe4799cce90e003d3b12ce0d75"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "B-u2",
+        "unused": false,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 2,
+        "reserved_bytes": 512,
+        "app_capacity_bytes": 62976,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9792,
+        "data_bytes": 696,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1192,
+        "application_object_bytes": 696,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "f6d1f7ba51b51af715351c73ecdb837b2aeede31e61353fbe998ca75d09e2d26",
+        "elf_sha256": "e0af5a6edacecc0bd538361a9dade5c4b64c4b9555b02d6650e4962c5776e7fb"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "B-u4",
+        "unused": false,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 1024,
+        "app_capacity_bytes": 62464,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9792,
+        "data_bytes": 696,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1192,
+        "application_object_bytes": 696,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "0a90ef5e111bc92bd078d37dd391ccbe34d12a6a860749793223111e9989866e",
+        "elf_sha256": "1e6e573bf3979e01340e02b7bc12e0540451cf87fdf29a2ed9f4790471131b36"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-B",
+        "unused": true,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "523265df6f0130562c5e1a632c809abb62d14c1cb4863ffd2e94f87272fe9f9d"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "C-static-batch-u0",
+        "unused": false,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 7576,
+        "data_bytes": 680,
+        "bss_bytes": 84,
+        "static_ram_bytes": 764,
+        "application_object_bytes": 680,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 128,
+        "image_sha256": "8b62c8ff320b482f02d9331234e8243d0871794533e240f5b076ea3c831e2e68",
+        "elf_sha256": "7d948e4885264b4145fb20523a58c86b04673e130bc2f5b1a490f32f4033068c"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "C-static-batch-u1",
+        "unused": false,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 1,
+        "reserved_bytes": 256,
+        "app_capacity_bytes": 63232,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9808,
+        "data_bytes": 680,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1176,
+        "application_object_bytes": 680,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 128,
+        "image_sha256": "260077acf28a538038e6af4bf05160990f6ce7f8c7ced1e3e0d15b5aaecfc0ce",
+        "elf_sha256": "21f23182d9ec22fc16f878fdeae29136428763a4e896a8ef4d7afb391f25c9ad"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "C-static-batch-u2",
+        "unused": false,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 2,
+        "reserved_bytes": 512,
+        "app_capacity_bytes": 62976,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9848,
+        "data_bytes": 680,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1176,
+        "application_object_bytes": 680,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 128,
+        "image_sha256": "c499093ca31299e6791383e96388a34c19d9eb144c5e7ad41928a48938522389",
+        "elf_sha256": "87a526f871082f35a257bec08c71350ef4b4b86a41954d55f56fda8613090cd3"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "C-static-batch-u4",
+        "unused": false,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 1024,
+        "app_capacity_bytes": 62464,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9848,
+        "data_bytes": 680,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1176,
+        "application_object_bytes": 680,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 128,
+        "image_sha256": "474ee1238e8157b3f4cd67c46ed45da8f01c53d4ab8bfc981a5de96bcc4cfa3c",
+        "elf_sha256": "7ce3d82fd73f300fece554321a3228411dfd2f67e4f614bec648da6f03ac9b48"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-C-static-batch",
+        "unused": true,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "523265df6f0130562c5e1a632c809abb62d14c1cb4863ffd2e94f87272fe9f9d"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "empty",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "c73f00e9986c2402dc652b001454558f327a6edefa0ec1f3befb0507a40cd606"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "R-u0",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 6648,
+        "data_bytes": 664,
+        "bss_bytes": 84,
+        "static_ram_bytes": 748,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 128,
+        "image_sha256": "83803ca0910d552bcc3cc89d02b33adf90d9955a8b87dad220009ebe43160573",
+        "elf_sha256": "865d253a56adebcb71adf0bac4692bec3718fc882ea8a7c2c36b4f061d3273c9"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "R-u1",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 1,
+        "reserved_bytes": 256,
+        "app_capacity_bytes": 63232,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8832,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 144,
+        "image_sha256": "54e28822e809198ae1745ae99cdbbb7833e30a0654262f796f0259f610584e5d",
+        "elf_sha256": "c5bbac33689b952cb0249586beb3d53345faae3f99faee42bdbde69cbe20fe12"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "R-u2",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 2,
+        "reserved_bytes": 512,
+        "app_capacity_bytes": 62976,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8856,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 144,
+        "image_sha256": "4e1f1817f910b30034f4367463937db1fcdb328bed365a5ded214cd453d70cc9",
+        "elf_sha256": "91a75f0b36193e53a082d34189026e9d8614ea27aac6ad9f76902c8759fe0e24"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "R-u4",
+        "unused": false,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 1024,
+        "app_capacity_bytes": 62464,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8856,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 144,
+        "image_sha256": "c43e2d26d31b6e419204f94b83df3ccef915a65c6797752dda505c727b4592ee",
+        "elf_sha256": "50f672c547c8db083615767ecdb6b634d2f31df272397a6dac2ba05aaf190270"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-R",
+        "unused": true,
+        "family": 1,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "c73f00e9986c2402dc652b001454558f327a6edefa0ec1f3befb0507a40cd606"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "A-u0",
+        "unused": false,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 6656,
+        "data_bytes": 664,
+        "bss_bytes": 84,
+        "static_ram_bytes": 748,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 128,
+        "image_sha256": "67994362ed71d6118dc52ab85580294553441d3a6691e5594a09dfc4e77c4535",
+        "elf_sha256": "047b0903d68dea3081b4ee512c7949abc311d0cce40077fb7bdbe3c59e835f91"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "A-u1",
+        "unused": false,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 1,
+        "reserved_bytes": 256,
+        "app_capacity_bytes": 63232,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8840,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 144,
+        "image_sha256": "1d7e36849a5a22f825731f31493ac1a8dd132ef3acd26540c70ce5b441d2fb5e",
+        "elf_sha256": "8aa5bee587c5d4503b884d4df22cab1dad7f1b22963a45bd8b9d3bc641e0036f"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "A-u2",
+        "unused": false,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 2,
+        "reserved_bytes": 512,
+        "app_capacity_bytes": 62976,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8872,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 144,
+        "image_sha256": "f67de07efa8d2646fe7d11279c8a01dd50dd79ff9982595113ee13a9daab5578",
+        "elf_sha256": "8a6e4e69fe4683a13b656b3f5dfa8e6065042a5a1d25e52dbf7704a43ef6e633"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "A-u4",
+        "unused": false,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 1024,
+        "app_capacity_bytes": 62464,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8872,
+        "data_bytes": 664,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1160,
+        "application_object_bytes": 664,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 144,
+        "image_sha256": "83782103347bc10c0d209f3906cab06f40413fa49980fd3750f230e80c083923",
+        "elf_sha256": "8031172aa9b6abd7f5812bf72954ee77673cfdf39d6979200c48536fc48f4b0e"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-A",
+        "unused": true,
+        "family": 2,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "c73f00e9986c2402dc652b001454558f327a6edefa0ec1f3befb0507a40cd606"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "B-u0",
+        "unused": false,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 7104,
+        "data_bytes": 696,
+        "bss_bytes": 84,
+        "static_ram_bytes": 780,
+        "application_object_bytes": 696,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "889b06d553ce4de41e5299fc11084cc336fe004c912c17888e0c9fc7e2a2252d",
+        "elf_sha256": "3994156274e748c8a61d09ca94b2e9a51dd64dc26f2092af5a88e8abdf7e1f99"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "B-u1",
+        "unused": false,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 1,
+        "reserved_bytes": 256,
+        "app_capacity_bytes": 63232,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9304,
+        "data_bytes": 696,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1192,
+        "application_object_bytes": 696,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "cc1a0a252d214ad587e7d29206fe89dc3bbcb683dcae1001f07e1ae4429e78e3",
+        "elf_sha256": "67c3a57c33cebd1c0bab053202e6dd54da0891c4b9fa7078938ae401727f8c56"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "B-u2",
+        "unused": false,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 2,
+        "reserved_bytes": 512,
+        "app_capacity_bytes": 62976,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9328,
+        "data_bytes": 696,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1192,
+        "application_object_bytes": 696,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "32ad8e8d8d3e056eeaf291059ba0d3e05e2188857026a55eeb6b870c6f6f5d8c",
+        "elf_sha256": "339a3ac41c24782b3f53e3f1110694b3d4a5e42caefafcf4c13ac545b89b57d3"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "B-u4",
+        "unused": false,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 1024,
+        "app_capacity_bytes": 62464,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9328,
+        "data_bytes": 696,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1192,
+        "application_object_bytes": 696,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 112,
+        "image_sha256": "67bf58ea348daaf65e61022cc4afc31f7a3474dfaa7f2e9da0e85e1b3f351eb8",
+        "elf_sha256": "64571c7f8727a29d5e53c4b7cf54cfc8b240d776ecfb59ab6e76e58fb373cd91"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-B",
+        "unused": true,
+        "family": 3,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "c73f00e9986c2402dc652b001454558f327a6edefa0ec1f3befb0507a40cd606"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "C-static-batch-u0",
+        "unused": false,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 0,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 7200,
+        "data_bytes": 680,
+        "bss_bytes": 84,
+        "static_ram_bytes": 764,
+        "application_object_bytes": 680,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 192,
+        "image_sha256": "29c5acd53a0cdb0c3582b57d56dc09e1337fe4dccb6b183545d6f30940abf237",
+        "elf_sha256": "43b92b505fb1af3b6962cc3db640b0aaff99f933f904924d1dc1eff9c0552114"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "C-static-batch-u1",
+        "unused": false,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 1,
+        "reserved_bytes": 256,
+        "app_capacity_bytes": 63232,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9352,
+        "data_bytes": 680,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1176,
+        "application_object_bytes": 680,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 192,
+        "image_sha256": "fd8817761241a24bb05ad27f07e166000ef99309a3b96c262af961b09ed66f86",
+        "elf_sha256": "f498853b0f646665ef50a956b1394541bf24fe9dffcd801b0950480c0659eb16"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "C-static-batch-u2",
+        "unused": false,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 2,
+        "reserved_bytes": 512,
+        "app_capacity_bytes": 62976,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9376,
+        "data_bytes": 680,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1176,
+        "application_object_bytes": 680,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 192,
+        "image_sha256": "0626511bd6b0e46b53efab189933730e65db03b9173ebfb92d42a3d43e302c56",
+        "elf_sha256": "d414f3b4b55353a2362870647ce9b7da65682c565f596c21ffae84fa9720695a"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "C-static-batch-u4",
+        "unused": false,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 1024,
+        "app_capacity_bytes": 62464,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 9376,
+        "data_bytes": 680,
+        "bss_bytes": 496,
+        "static_ram_bytes": 1176,
+        "application_object_bytes": 680,
+        "saver_object_bytes": 400,
+        "backend_object_bytes": 12,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 84,
+        "max_emitted_frame_bytes": 192,
+        "image_sha256": "286bbf7c6880269808f5e20912509cc77735790506d0fa1467da1dee42cd51a8",
+        "elf_sha256": "20aaac04937d6938d484a4a3615cfedb0714c92e3730bd2c05658d16699688b7"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-C-static-batch",
+        "unused": true,
+        "family": 4,
+        "event_gated": false,
+        "erase_units": 4,
+        "reserved_bytes": 0,
+        "app_capacity_bytes": 63488,
+        "memory_scope": "X035 C8 route0 prepared direct I2C; opaque synchronous storage boundary; no physical Flash/IRQ execution",
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "saver_object_bytes": 0,
+        "backend_object_bytes": 0,
+        "screen_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "c73f00e9986c2402dc652b001454558f327a6edefa0ec1f3befb0507a40cd606"
+      }
+    ],
+    "excluded": [],
+    "libgcc": {
+      "CH32X035C8T6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+        "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+      }
+    },
+    "support_lto": false,
+    "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "tools": {
+      "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+      "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+      "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+      "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+      "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+      "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+      "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+      "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+    }
+  },
+  "preliminary_runs": [
+    {
+      "path": "work/exp06-save-x0-probe-20261022",
+      "scope": "Compiler/API/cold-precondition smoke diagnostics; not counted as final tests"
+    },
+    {
+      "path": "work/exp06-save-x0-host-20261022",
+      "passed": 81,
+      "failed": 4,
+      "reason": "Validator treated multi-progress run command as a single no-read command; fixed prefix handling and added 10 lifecycle conditions"
+    },
+    {
+      "path": "work/exp06-save-x0-abi-20261022",
+      "completed_rows": 0,
+      "reason": "Old matrix prepared variable remained in report"
+    },
+    {
+      "path": "work/exp06-save-x0-abi-20261022-r2",
+      "completed_rows": 42,
+      "reason": "Added explicit NOBITS/region location/input-data rejection validation; all 42 final images equal"
+    }
+  ],
+  "junit": {
+    "path": "work/exp06-save-x0-tests-20261022-r2.xml",
+    "sha256": "dee69f9c92a83484dafff0689e64e9e9452db71164b001ad63e019a553c10570",
+    "tests": 95
+  },
+  "archive": {
+    "path": "work/exp06-save-x0-20261022-evidence.tar.gz",
+    "bytes": 18348546,
+    "sha256": "c7684ade9aea718da4095e552f4793463335797f65f58155e7fa9e20f09d3c1d"
+  },
+  "matrix_sha256": "39a19895e7982e0c66edc459034aee5fb929d08b23f9145c26d0f9971f3bba88",
+  "raw_reference": {
+    "commit": "bbe0ee7",
+    "path": "work/exp06-save-x0-analysis-20261022/flash-raw-reference.ja.md",
+    "sha256": "0944cd094f1a1794197070156c02da77c619b03755cfee6d2d87fd043c465903"
+  },
+  "parallel_draft_context": {
+    "commit": "e6d507f",
+    "path": "work/exp06-save-x0-analysis-20261022/parallel-persistence-draft.ja.md",
+    "sha256": "255bc4f753af07d1546d76cab391c9b8ef9d69c0a043d802a0e0c280a982c56e",
+    "status": "Separate current-core draft; not adopted or modified by this comparison"
+  },
+  "negative_link_records": [
+    {
+      "name": "persistent-data",
+      "scope": "Synthetic linker guard, not hardware execution",
+      "compile": [
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++",
+        "-march=rv32imac_zicsr",
+        "-mabi=ilp32",
+        "-Os",
+        "-x",
+        "c",
+        "-c",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/persistent-data.c",
+        "-o",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/persistent-data.o"
+      ],
+      "command": [
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++",
+        "-march=rv32imac_zicsr",
+        "-mabi=ilp32",
+        "-Os",
+        "-std=c++17",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-fno-tree-loop-distribute-patterns",
+        "-ffunction-sections",
+        "-fdata-sections",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-fno-threadsafe-statics",
+        "-fno-unwind-tables",
+        "-fno-asynchronous-unwind-tables",
+        "-fstack-usage",
+        "-nostdlib",
+        "-Wl,--gc-sections",
+        "-Wl,--no-warn-rwx-segments",
+        "-T/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-abi-20261022-r3/CH32X035C8T6/lto0/R-u1/image.ld",
+        "-Wl,-Map,/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/persistent-data.map",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-abi-20261022-r3/CH32X035C8T6/lto0/R-u1/save_x0_entry.cpp.o",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-abi-20261022-r3/CH32X035C8T6/lto0/R-u1/flash_store_backend_probe.cpp.o",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/persistent-data.o",
+        "-lgcc",
+        "-o",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/persistent-data.elf"
+      ],
+      "returncode": 1,
+      "stderr": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/../lib/gcc/riscv-none-elf/14.3.0/../../../../riscv-none-elf/bin/ld: persistent reservation accepts no input data\ncollect2: error: ld returned 1 exit status\n"
+    },
+    {
+      "name": "oversize-app",
+      "scope": "Synthetic linker guard, not hardware execution",
+      "compile": [
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++",
+        "-march=rv32imac_zicsr",
+        "-mabi=ilp32",
+        "-Os",
+        "-x",
+        "c",
+        "-c",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/oversize-app.c",
+        "-o",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/oversize-app.o"
+      ],
+      "command": [
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/riscv-none-elf-g++",
+        "-march=rv32imac_zicsr",
+        "-mabi=ilp32",
+        "-Os",
+        "-std=c++17",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-fno-tree-loop-distribute-patterns",
+        "-ffunction-sections",
+        "-fdata-sections",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-fno-threadsafe-statics",
+        "-fno-unwind-tables",
+        "-fno-asynchronous-unwind-tables",
+        "-fstack-usage",
+        "-nostdlib",
+        "-Wl,--gc-sections",
+        "-Wl,--no-warn-rwx-segments",
+        "-T/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-abi-20261022-r3/CH32X035C8T6/lto0/R-u1/image.ld",
+        "-Wl,-Map,/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/oversize-app.map",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-abi-20261022-r3/CH32X035C8T6/lto0/R-u1/save_x0_entry.cpp.o",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-abi-20261022-r3/CH32X035C8T6/lto0/R-u1/flash_store_backend_probe.cpp.o",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/oversize-app.o",
+        "-Wl,--undefined=app_fill",
+        "-lgcc",
+        "-o",
+        "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/oversize-app.elf"
+      ],
+      "returncode": 1,
+      "stderr": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/../lib/gcc/riscv-none-elf/14.3.0/../../../../riscv-none-elf/bin/ld: /home/mt/dev_wch/ArduinoCore-CH32RV/work/exp06-save-x0-analysis-20261022/oversize-app.elf section `.app_fill' will not fit in region `FLASH'\n/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/../lib/gcc/riscv-none-elf/14.3.0/../../../../riscv-none-elf/bin/ld: application overlaps persistent reservation\n/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/../lib/gcc/riscv-none-elf/14.3.0/../../../../riscv-none-elf/bin/ld: section .persistent VMA [0000f700,0000f7ff] overlaps section .app_fill VMA [00002198,00011997]\n/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/../lib/gcc/riscv-none-elf/14.3.0/../../../../riscv-none-elf/bin/ld: region `FLASH' overflowed by 9520 bytes\ncollect2: error: ld returned 1 exit status\n"
+    }
+  ],
+  "limits": [
+    "Blackout/tick/latch models are declared assumptions, not composite hardware latency bounds",
+    "Synthetic PPS completion is not real USB PD protocol deadline compliance",
+    "Input capacities 1/4 do not assert real GPIO/IRQ FIFOs",
+    "Quiescent failed operations and model cold boot are not physical arbitrary-time power cuts",
+    "One-bank/two-bank blob8 is a comparison condition, not persistence format adoption",
+    "Target uses opaque media hooks, no physical Flash driver/startup/runtime or stack budget",
+    "V003 K0 coexistence and N05 overall completion remain pending",
+    "No public API adoption or human evaluation"
+  ]
+}
