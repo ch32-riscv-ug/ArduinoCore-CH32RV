@@ -715,11 +715,11 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       ブロックデバイスの抽象（SD・MSC デバイス / ホスト・RAM ディスク・内蔵 Flash）の上に FS / File の API を置く形を
       考える。実装は候補を実測して選ぶ（FatFs、FatFs の小型版、SdFat、littlefs など。ESP32 は FAT / SPIFFS /
       LittleFS を並べて選べる形）。Flash・RAM・速度・ライセンス・長いファイル名・書き込みの安全性で比べる。
-    - IP: NCM（デバイス / ホスト）と Ethernet MAC（V307 / V208 / V407 など）を1つの IP スタックに載せる形を考える。
-      2026-10-21 の調査と提案は docs/network-stack.ja.md（lwIP 2.2.x の NO_SYS、下限は X035 の NCM と V208、
-      段階 (a) 単一 NIC / (b) 複数 NIC・転送・NAPT / (c) WireGuard）。採否と順番はユーザーと決める。
-      候補（lwIP、uIP、FNET ほか）を、OS 無し・協調実行で動くか、RAM（X035 は 20 KB）、ライセンスで比べる。
-      EspUsbDevice の `ipConfig()` / `dhcpServer()` / `dhcpClient()` / `beginNetwork()` / `localIP()` はこの上に作る。
+    - IP: **2026-10-21 に着手を決めた**（タスク周りの入れ替えを待たない）。方針と作業の順番は docs/network-stack.ja.md。
+      対象は Ethernet の MAC を持つ系列（V208 / V307 / V317 / V407 / V467 / H41x）と、その系列の USB の NCM。X035 は対象外。
+      lwIP 2.2.x（NO_SYS、raw API）で一式を作り、測ってから詰める。API は ESP32 の Network ライブラリに合わせる
+      （`NetworkClient` / `NetworkServer` / `NetworkUDP`）。EspUsbDevice の `ipConfig()` / `dhcpServer()` / `dhcpClient()` /
+      `beginNetwork()` / `localIP()` もこの上に作る。Ethernet の MAC のドライバは機材が要るので後。それまでは PC の tap で試す。
   - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口。今は X035 / X033 だけ）。
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
   - **UF2（MscFirmwareDisk）での更新はやる**（2026-10-20）。ほかのファームウェア更新のクラス（EspUsbDevice の
