@@ -1,0 +1,568 @@
+{
+  "repository": "openwch/ch32x035",
+  "commit": "c6253942b29ff2a3f5e2829182a874afffa45881",
+  "sources": [
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/.cproject",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/.cproject",
+      "bytes": 27918,
+      "git_blob": "24a076f9a4bf3b8719ee60f24d93aad73002d408",
+      "sha256": "5e0a354701abb8787841e9403af153de3a8fc55139214bbf2c3bb61a4087b06b"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/.project",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/.project",
+      "bytes": 1356,
+      "git_blob": "ba1097899a99b48c5c9d17b423b51f7f5c575da7",
+      "sha256": "aa669732bdff26730bbffa25ca932d500ff2cc9a75aa2f1d214d9d4b5d081e89"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/.template",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/.template",
+      "bytes": 628,
+      "git_blob": "ef67dc4b7efd41163d7d5fd941773a973b799b8e",
+      "sha256": "d2738be0e2fe4342128e495b487dcc554d1d41fd9a39c7ca860db20ddf675026"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/Core/core_riscv.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/Core/core_riscv.c",
+      "bytes": 7543,
+      "git_blob": "de160777b0bf7391f06db0cc20b6049833ab2503",
+      "sha256": "ec5eeaba84050cec50e955da613d25c5fe9dcc512fe314213f2c33c1ffd41a7c"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/Core/core_riscv.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/Core/core_riscv.h",
+      "bytes": 17641,
+      "git_blob": "2f7694007e233dd057a81cb4c17933ac90a51857",
+      "sha256": "561dcbff9b1a8de96796ab3cef83889d5c205320653e6824e03ce458473691c1"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS.wvproj",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS.wvproj",
+      "bytes": 202,
+      "git_blob": "2cd99d9829581898ccce5a4795f490281d640232",
+      "sha256": "01db934d03f5250bbc1ecdaae863e37e340147d426a1a3aa280b9211587c153b"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/.gitmodules",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/.gitmodules",
+      "bytes": 390,
+      "git_blob": "aaa2390a63106b622a4f297d909e94469c2cc153",
+      "sha256": "fd4a188f73aa3233d9065de227950fd8f5e7809c46bba7228b06b4b7cc323810"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/croutine.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/croutine.c",
+      "bytes": 15755,
+      "git_blob": "d9bce9b037a673faf6c8e40636e5facc39465891",
+      "sha256": "5fdd540d1fce925145bd80f7efa1096a08555413c7701a2cfc2f15be03695bbd"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/event_groups.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/event_groups.c",
+      "bytes": 31210,
+      "git_blob": "93d9d0d7655b4835cf9753020a8621d377440008",
+      "sha256": "6096b14f49040580ba84b2f0f970f93fddfc084af06f6ca49e65ff01d721926b"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/FreeRTOS.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/FreeRTOS.h",
+      "bytes": 46678,
+      "git_blob": "383f04a70aaeea7bc91563c9f59728eefbe564cb",
+      "sha256": "8d03d0ed43b852a5a136df0d844645302a43ba2d47ad1b91aee4daf6d95b0642"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/StackMacros.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/StackMacros.h",
+      "bytes": 1573,
+      "git_blob": "6ddeb3a95f7231900cd0356ab029931453dab8f8",
+      "sha256": "d91388f19457afdc2e4a48146a91b62608d91fa532611c578e6cb0b571270b6c"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/atomic.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/atomic.h",
+      "bytes": 12842,
+      "git_blob": "8d7c1076fe25356edf23ebb90310f8840e2efdc7",
+      "sha256": "0aa71eb3d7eb2b50bdd6b6d92a0e4e3513bff5dc815f1a83987d7353114d0dcd"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/croutine.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/croutine.h",
+      "bytes": 28155,
+      "git_blob": "51bdd4f3d7cce887c3a31c4bffb5f8e72cada778",
+      "sha256": "d07fbb80a00a83830df8d82f1e2ba71ac9b644a70c9e371bce078e5d2333c27f"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/deprecated_definitions.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/deprecated_definitions.h",
+      "bytes": 7519,
+      "git_blob": "a83314124609610eacdeac3076c53a193d87586d",
+      "sha256": "c6a0cb6229e9326e36797585299afddaf3a92f5ec82a4d83a91430b49f4d5acb"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/event_groups.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/event_groups.h",
+      "bytes": 32051,
+      "git_blob": "601a29ba9f13590387a49bcffe777ab034348d8e",
+      "sha256": "5657af602ad7c322965cdd0cf6968b78f13f488229acb45bb2396c5a09d0bfc5"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/list.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/list.h",
+      "bytes": 23695,
+      "git_blob": "f866f9fd533a2dd1481e489731993123174abc67",
+      "sha256": "92c09b8e4a44b0af1d4a44c3d9d0a33836442070a9489471d5887e7d0673c163"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/message_buffer.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/message_buffer.h",
+      "bytes": 38025,
+      "git_blob": "140626737bee83584d039fbd8ca448c4882196ab",
+      "sha256": "56f905226b1655b377404c959e993f44e0197f922f446dc28b2f5dfa0dadee42"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/mpu_prototypes.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/mpu_prototypes.h",
+      "bytes": 17627,
+      "git_blob": "cb743be5519eee2790dc143a7e6b1dec3be739f4",
+      "sha256": "d76581b40654d2bc3a4024aca0a456fee2aa363e685ddbac53bad3a37904f8e7"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/mpu_wrappers.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/mpu_wrappers.h",
+      "bytes": 12774,
+      "git_blob": "9b6cd7c9232c3a50190f43d7cf42abbca253df52",
+      "sha256": "bb9e85feb820f7ae842af78e84b8876c969a8ade0192b00c3a269e648cf5d473"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/portable.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/portable.h",
+      "bytes": 9516,
+      "git_blob": "0ec6416ae20a8f8e0d4f813047fc61705ba49f7c",
+      "sha256": "bf9c8835d2ef05349e08e065250529fe651e6d6e216b37e0c2880306f73d6000"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/projdefs.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/projdefs.h",
+      "bytes": 6275,
+      "git_blob": "e623bf7d94df37cb5ab76a1e55a1b506af5eb1bb",
+      "sha256": "aede04de56d052a7e505fa86a4b4bd9a4382c5ccebe28e9c7eb1f9b7e3f6938e"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/queue.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/queue.h",
+      "bytes": 65737,
+      "git_blob": "6a92b6bcb02256c7790059048b053e77675f8821",
+      "sha256": "7222b052a47c955cfbabbeac90dbd6f2dffbae9a9f819f2ac7b659770895c0f8"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/semphr.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/semphr.h",
+      "bytes": 49140,
+      "git_blob": "d28d4a045b235eafbcb07f954b839e32cbe0303d",
+      "sha256": "e58611e0481a28b8398ccd724f09c5523935a62250872dfb2697620ae8cb542f"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stack_macros.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stack_macros.h",
+      "bytes": 8523,
+      "git_blob": "cfe5b9532eb2a2b2eb326672cd2faf1d45f6b483",
+      "sha256": "642d22919e5306a9437e3515b905ee3a3c594e2e6bf60fc7ba147e31794a20f9"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stdint.readme",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stdint.readme",
+      "bytes": 2177,
+      "git_blob": "654c62b1a39e6ef8fb8926871c55c1170a3cadce",
+      "sha256": "59f43b5819e6341ba1c9fee13f5f2e8efb5ab5c27675b08d4e35a68eca26bc47"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stream_buffer.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stream_buffer.h",
+      "bytes": 38908,
+      "git_blob": "c2812d41152c913992a0a9db3817cd55ab50484f",
+      "sha256": "5c95b2f414281f783c1ab6632249c05c7962f113009beac8336f44548a22d5da"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/task.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/task.h",
+      "bytes": 136947,
+      "git_blob": "ec80cd9a9ff08c7f090e3d48674992b8b48acd69",
+      "sha256": "f6809520c1b362626326e74b51fde977e6763589a3ce85857896f2e43e0970e8"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/timers.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/timers.h",
+      "bytes": 62755,
+      "git_blob": "2be826c21bf0b6b1acb40915cdac4825d6dd21ca",
+      "sha256": "92337ec802dfe55fc11db2f4817d3b66e79c80897ed40c0040ba5967cf7db013"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/list.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/list.c",
+      "bytes": 9717,
+      "git_blob": "42a2e0989bec5115d03613c36cd36f06121f4f39",
+      "sha256": "f6872bed8dbd82521a73c09637cdabd16fc125970a66e8b455ec3737ea4a18b3"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/Common/mpu_wrappers.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/Common/mpu_wrappers.c",
+      "bytes": 56069,
+      "git_blob": "827c44a199a7853d072c1bf01c86c7b4a71d3731",
+      "sha256": "44851f9c0af5c698b317841161b6d3391db5a89429e5e312b303e29f4caa6bf0"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/Documentation.url",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/Documentation.url",
+      "bytes": 139,
+      "git_blob": "5546f8707e0f1a40b09c618436e94784545cfc39",
+      "sha256": "03b58eac9262370ca618c78e81f36deca511ab3ff9142d719bae84afd9c9e865"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/chip_specific_extensions/RV32I_PFIC_no_extensions/freertos_risc_v_chip_specific_extensions.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/chip_specific_extensions/RV32I_PFIC_no_extensions/freertos_risc_v_chip_specific_extensions.h",
+      "bytes": 5676,
+      "git_blob": "01f9aa2706627d410a359a1b0b7be7adca279434",
+      "sha256": "06208748b47efcf373d8479fc92f09443f80a2d388a0fff4b32fe4dda5bb2b0f"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/chip_specific_extensions/readme.txt",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/chip_specific_extensions/readme.txt",
+      "bytes": 1270,
+      "git_blob": "b24c0b9fb22f21c9d244b3a8dac08e6787f85b2c",
+      "sha256": "9df008f8587b6faaaa48ef37ce9e38f89639290d636c06f5eefb09848ac318d1"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/port.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/port.c",
+      "bytes": 11399,
+      "git_blob": "46fc62a5422d91ef5282377e8fd5a3b3f259ca45",
+      "sha256": "b8d439e020cf5d6290d652932a6cb911ae64da05f0c32a12b7af71eb2c761131"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/portASM.S",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/portASM.S",
+      "bytes": 15175,
+      "git_blob": "2311996913da8eb3eca83bd9c362c8de234703d1",
+      "sha256": "d36df4604f075d40ba8a5f2565225766c5b50173381b4fb353e73a7bd3739ae2"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/portmacro.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/portmacro.h",
+      "bytes": 7705,
+      "git_blob": "0f1686376fc249d572017b89fc9021705c55d056",
+      "sha256": "f5f1dd46c080b101ed27651b068fd6061b068d58d984118e2b633769cc24b22e"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/readme.txt",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/readme.txt",
+      "bytes": 1270,
+      "git_blob": "b24c0b9fb22f21c9d244b3a8dac08e6787f85b2c",
+      "sha256": "9df008f8587b6faaaa48ef37ce9e38f89639290d636c06f5eefb09848ac318d1"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/MemMang/ReadMe.url",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/MemMang/ReadMe.url",
+      "bytes": 120,
+      "git_blob": "28c993773d9b7f713791c5c27826efa517a2f32f",
+      "sha256": "c44abcb1837584d65d00768bde7c1471dbf3fe316275ccbb6922998c6f11ddc9"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/MemMang/heap_4.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/MemMang/heap_4.c",
+      "bytes": 18943,
+      "git_blob": "2676835b7f4a17f3a862e9515932aa01333a5b29",
+      "sha256": "e786b6ec6c2cbb55ceffb67b0b05134db4d43c38feedf7729afabd2d7ff77f7b"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/readme.txt",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/readme.txt",
+      "bytes": 847,
+      "git_blob": "89f6b09cf5c9c29bce7ea50ac7eaf1c1629ffc19",
+      "sha256": "e8738d9630ac5218f576a6bd51b64052966e26d87b61c4673eef963767f43048"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/queue.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/queue.c",
+      "bytes": 123271,
+      "git_blob": "46ed9a4fff3313352f1694de3cecc8cf43e04b45",
+      "sha256": "44b23207c59de82aaa848cfb97b23a05605fc05cc9985b881a83ca2ccc5c76a7"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/stream_buffer.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/stream_buffer.c",
+      "bytes": 52875,
+      "git_blob": "cf6300fc1e2854aa218b91c499f0ad0093dbf26d",
+      "sha256": "63d974bf266dccd9f0deee6bce1c90302575a9f4fff7b80dc0d9a28c2c64c071"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/tasks.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/tasks.c",
+      "bytes": 222188,
+      "git_blob": "d4d9fad7b27175108f773e0107b3be0924088a1f",
+      "sha256": "12e7efe064a0201783d29ae6115e50c510ce673a69d25ba6855a98ab054a08d2"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/timers.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/timers.c",
+      "bytes": 49330,
+      "git_blob": "88d834b9e22470df067c2e3489f1d54b94c58db4",
+      "sha256": "e4790f9a06232f443da45b4edeca42bcde7f828b67639aa10b98c8339b550043"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/Ld/Link.ld",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/Ld/Link.ld",
+      "bytes": 3547,
+      "git_blob": "89d97b94428d306837b95c75bf417a1b3a869f5f",
+      "sha256": "3b74068ee68527528f9e06e742ac5850a5fea843da16e77bc5fb06bf96c7d067"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/Startup/startup_ch32x035.S",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/Startup/startup_ch32x035.S",
+      "bytes": 8164,
+      "git_blob": "69d7b7c30a459a797b980e967c21165e6868c09c",
+      "sha256": "75fa5dfcc0e4056d70e93ef94c851c9caaa3f5da54db0dca2c6d3ced1efbdf40"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/FreeRTOSConfig.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/FreeRTOSConfig.h",
+      "bytes": 6742,
+      "git_blob": "3c74007962f963deecf2437181eb9357eaed3fe7",
+      "sha256": "7c77e2a088154a2b50c834b0ee6ca80fa306a23cf76e5169e5077e4ac5f7071b"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_conf.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_conf.h",
+      "bytes": 1156,
+      "git_blob": "996db410f0abc21107d6c91ddd036e6213615e50",
+      "sha256": "1f5e1d9e6f3aeed47fb2b2727d2947d84edabf1cf78a7b3d3e293bfa8bd4d1dc"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_it.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_it.c",
+      "bytes": 1257,
+      "git_blob": "4d1b1e0fe0f64f9e5669ded1a34c36b65232fa52",
+      "sha256": "032c78d63754576e88b21f93caaee98c950bef25cbf435340562f7eb820f8240"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_it.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_it.h",
+      "bytes": 740,
+      "git_blob": "f24b5bd268b9521d91a98d07a75ec56fcca8ce86",
+      "sha256": "2654442a24fcc239c3c68bba0c988cd8f7be79f90c261eccf5b065fdfb97787c"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/main.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/main.c",
+      "bytes": 3568,
+      "git_blob": "6ce280cc499c56b4a944538e90ad4fc4b5137181",
+      "sha256": "1bf4c9991de57e02bd0b124a7a1552028a872eb6fd3bf136ec2d2bf3d3111332"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/system_ch32x035.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/system_ch32x035.c",
+      "bytes": 7052,
+      "git_blob": "267cc920ec6c528ecd9d28cfbc0c6022485f25f6",
+      "sha256": "753ebbad93ef2df4c3b6a4101103cce977b5517532d3a8676314c627216d43b4"
+    },
+    {
+      "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/system_ch32x035.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/system_ch32x035.h",
+      "bytes": 996,
+      "git_blob": "89ce2a0de843e5fb5cdfdda1aa7e6e1c2d71530d",
+      "sha256": "917c1d6ca4df8b59c2393162d3a0ad4a3d1883e025d40922912638d37eed7c50"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Debug/debug.c",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Debug/debug.c",
+      "bytes": 6604,
+      "git_blob": "4720691ab4a2286627aef9b2a20364813cd3990b",
+      "sha256": "4ae0ec6f88b19717b46e556550a5e33133f81038c6b80a4d6bff9ab3e53698fe"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Debug/debug.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Debug/debug.h",
+      "bytes": 1441,
+      "git_blob": "15e5846f9d2678f7e623bfdd490365db445a5b36",
+      "sha256": "dc2299453f29945ef2448f10f53e88aa972ba08a09811d2ca6846419f0dea55c"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/PIOC_SFR.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/PIOC_SFR.h",
+      "bytes": 14862,
+      "git_blob": "fcb81eae23403ef3c2a1a07ce4943f3b137e6804",
+      "sha256": "4f7f8e61cd5abfbbc17172d565e040911d4a3a0e0435eab8a501f547f67a65e8"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035.h",
+      "bytes": 206544,
+      "git_blob": "dd9e458e2fe9fa60a69b7e40736856236eb954dd",
+      "sha256": "1842a8c76c7be1596c22b032ff45cb48cf49afbf62ef0a33416aec8a3b5da1b6"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_adc.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_adc.h",
+      "bytes": 12639,
+      "git_blob": "ec71306b29488711b24fb65fdad59cccf0320538",
+      "sha256": "3999423146771b37507be55036276332ad7bdf58585ad98ec35e37518b52871a"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_awu.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_awu.h",
+      "bytes": 1818,
+      "git_blob": "01425513b093a5de1b57b2d7400015b1a47e1955",
+      "sha256": "ea75c47a3d0a57240165ccf179382b8e33b146f474dc67818e255f1ef52d1039"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_dbgmcu.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_dbgmcu.h",
+      "bytes": 1587,
+      "git_blob": "398db445bda871bd4be7586e2157c0ec3eb0da20",
+      "sha256": "a060227a22c605fb3c8780fb4e4a6db22ed3c53c5f9d3e363633092ac2662879"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_dma.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_dma.h",
+      "bytes": 9906,
+      "git_blob": "88b6c872fcfc9784bd26a5c9bfccc69aa19a8742",
+      "sha256": "c432f3475379f29ae44d7dada7ba5c969bb2b8625a155cf2233ab8438c78c5fc"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_exti.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_exti.h",
+      "bytes": 4979,
+      "git_blob": "0f16f69d7ed0232cfaf3d0cf583fe89cca29f89f",
+      "sha256": "f555713991d7f1846f5e615965c5a1c91fed65a1f51ddf303b1253e0d85025e8"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_flash.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_flash.h",
+      "bytes": 8718,
+      "git_blob": "6445936e4c52d1f02e78a13acbc5702b1f01b682",
+      "sha256": "ecd3960d46d5cbebf49c3c0712e2359b671d9bcccdf93687fe04548c4f5185d1"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_gpio.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_gpio.h",
+      "bytes": 10775,
+      "git_blob": "d648110d08cfcbe612cdd586abfdba08f19040d6",
+      "sha256": "4a5242ecc74b446a50388bb7e3dab3cc54a55dc636917a722be8d76ca399822b"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_i2c.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_i2c.h",
+      "bytes": 21627,
+      "git_blob": "fd0d02920824d2b5f2fb71be1c97175fc23f6e63",
+      "sha256": "720dcbe2cb97a83123f2bb6ad1388a79dd42cd4c8b4e5cbef2e19a09dfe1b373"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_iwdg.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_iwdg.h",
+      "bytes": 1784,
+      "git_blob": "4afc6222b768c36de0cc35d219b70773a9a26e22",
+      "sha256": "d341066a8f7af6230547683b24e3024df3578331fddcab067f3b7cf3c67b6515"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_misc.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_misc.h",
+      "bytes": 2527,
+      "git_blob": "82390ccb81f7b427663511156cfce26db6d59f06",
+      "sha256": "a8c2683adc3bcc98fe8e868be05e26b2ca976c2a9374aea1d4c99b29bf308136"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_opa.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_opa.h",
+      "bytes": 5835,
+      "git_blob": "e408a6bdc302287f2e9f6e24b82d23f2192d38a7",
+      "sha256": "f90d620c2062dc88c4a9959fc8575cee9d5656fbb12e1b2d054c376c8af7b80d"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_pwr.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_pwr.h",
+      "bytes": 1924,
+      "git_blob": "6dade48592f05bf8b0b2ec45a263c056f6a8612d",
+      "sha256": "fd2d1a455777a109800b1ca3df5ca486ac2d9da64df40f025e50b34b71632621"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_rcc.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_rcc.h",
+      "bytes": 5151,
+      "git_blob": "11320da03277fbc2057a32fd02a73faf53e73edc",
+      "sha256": "7faf18ce3a870806709c7bb7102557bf30d96c8aab31bab50f8f4f5e08272556"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_spi.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_spi.h",
+      "bytes": 7447,
+      "git_blob": "24d61a1c04ab39904990c10ad65ce6f19071cbfd",
+      "sha256": "019d6aeb5d58ed4e915039ad045481cf92c9e456fdf66b3ac0ec0630407f16ff"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_tim.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_tim.h",
+      "bytes": 29254,
+      "git_blob": "0cfda497cbaab1740394fd0fe034d5a3c3002864",
+      "sha256": "d8d33df29000fe78bf4fd42477cf1d3cbbfee8be569483cd65f65a42615d194a"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_usart.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_usart.h",
+      "bytes": 9471,
+      "git_blob": "79fe683da360a6a431d3c2c5e80f425317c2c2ee",
+      "sha256": "e75b2b432504deab7c5ff70761ce21c675a1ceb7fd081cd7c603c3f77c698652"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_usb.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_usb.h",
+      "bytes": 22959,
+      "git_blob": "184b9773616aa3ab64850c5d89301f4fd024899e",
+      "sha256": "1de4f4dbcb9c3a230799c152fe5687cde3d5b6616f4c4bc2c8b19815f92213ab"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_usbpd.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_usbpd.h",
+      "bytes": 24116,
+      "git_blob": "7ca1008305df66d93512126c5cf425d4ce5ef626",
+      "sha256": "88c1533415637a0ca1691aac00d0b28f9fe032aa510e51bec343ce43cb535b99"
+    },
+    {
+      "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_wwdg.h",
+      "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_wwdg.h",
+      "bytes": 1414,
+      "git_blob": "689b6fdfc2048f948ddefddd94c40dc48d033cf9",
+      "sha256": "4d9684c505b39b0af9f83ed877dac9ce24ab3fa1205b904ea514b2104efd2eda"
+    }
+  ],
+  "date": "2026-10-22",
+  "scope": "WCH X035 fixed vendor port for N04 structural comparison, not a core dependency",
+  "stack_words": [
+    64,
+    128,
+    256
+  ],
+  "application_tasks": [
+    2,
+    3
+  ],
+  "preemption": [
+    0,
+    1
+  ],
+  "boot_irq_reservation_bytes": 1024,
+  "queue_count": 4,
+  "queue_capacity": 1,
+  "queue_payload_bytes": 4,
+  "not_verified": [
+    "live interrupt entry",
+    "stack switch execution",
+    "task or IRQ stack peak",
+    "cycle or wait latency",
+    "two-stack-only cooperative port",
+    "API adoption"
+  ],
+  "port_mscratch_offset_bytes": 512,
+  "c_irq_reserved_below_initial_sp_bytes": 512,
+  "reservation_note": "Boot stack is reused for IRQ after scheduler start; fixed port initializes mscratch at IRQ top minus 512, so reserve another 512 below it. Both are declared budgets, not observed peak."
+}
