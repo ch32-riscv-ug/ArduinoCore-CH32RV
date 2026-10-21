@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "scope": "N02 complete X0 application with source-scoped completion hints; serial host and structural ABI only",
+  "base_input": "planning/core-redesign/x0-register-wire-inputs.json",
+  "candidates": ["R", "A", "B", "C-static-batch"],
+  "event_targets": 1,
+  "messages_per_target": 1,
+  "message": "Manager-local request token; fixed context binds the originating Manager",
+  "pump": "explicit enqueue without source ack; Full/Stale leaves result pending",
+  "delivery": "explicit internal handler validates current request and notice, sets a gate only",
+  "collection": "application take after valid hint; only this call returns outer storage",
+  "unbind": "drop queued hints and clear gate, preserve source result for explicit rebind/pump",
+  "virtual_touch": "unchanged direct synthetic completion, no physical controller protocol",
+  "lifetime": "source and internal callback context live throughout the experiment; dynamic source destruction unverified",
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "generated_operations": 10000,
+  "generated_drain_ticks": 2400,
+  "not_in_this_unit": ["RX tail fault composition", "X035 preparation composition", "physical IRQ/timing/PD/wire", "public API adoption", "human review"]
+}
