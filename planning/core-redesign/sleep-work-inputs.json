@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-22",
+  "scope": "N06 serial executor/lease/logical-clock/sleep connection, not physical V006 sleep",
+  "candidates": ["R", "A", "B-work", "C-notification-bridge"],
+  "participant_capacities": [0, 2, 4],
+  "ports": 2,
+  "buffer_bytes": 16,
+  "job": "one accepted job per port, 1..255 explicit steps; one step OR one I/O collection per callback",
+  "sleep": "close job/I/O admission, request cancellation, wait for explicit terminal witness and normal worker collection plus all job steps; then existing Coordinator enter",
+  "timers": [false, true],
+  "opportunities": ["Explicit", "AfterLoop", "Delay"],
+  "profiles": ["M", "S", "U"],
+  "domains": ["System", "User opt-out", "User opt-in"],
+  "negative_control": "ports-only quiet can sleep with pending jobs, never an adopted mode",
+  "not_verified": ["MCU wake gate or instructions", "physical I/O/IRQ", "clock reconstruction from real counter", "shared concurrency", "stack peak", "V006 runtime fit", "H417 executor connection", "API adoption"]
+}
