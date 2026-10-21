@@ -20,6 +20,10 @@ compiler.warning_flags=-Wall
 # semihosting one is linked instead, and its ecall traps at the first malloc.
 # -msave-restore takes 4-5% more but costs ECC 7-9% in speed, so it is a
 # choice in the Optimize menu (opt) in boards.txt, as is building without LTO.
+# With LTO the code is generated again at the link, so the combine recipe
+# repeats the code-generation flags: -Os and the per-function sections that
+# --gc-sections needs (on OepProbe for CH32X035, 48 bytes; it depends on the
+# sketch).
 build.optimize_flags=-flto -ffat-lto-objects
 compiler.common_flags=-march={build.march} -mabi={build.mabi} -Os -g -ffunction-sections -fdata-sections {compiler.warning_flags} {build.optimize_flags}
 # api/deprecated-avr-comp is on the include path so that <avr/dtostrf.h> and
@@ -105,7 +109,7 @@ recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "
 # (Blink stays 932 bytes on CH32X035).
 # --no-warn-rwx-segments: .init_array (writable) shares the single FLASH segment with
 # text; acceptable for MCU flash layout. Revisit with PHDRS in the real core.
-recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -Os {build.optimize_flags} -nostartfiles --specs=nano.specs {build.rtlib_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" {object_files} -Wl,--start-group "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
+recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -Os -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles --specs=nano.specs {build.rtlib_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" {object_files} -Wl,--start-group "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
 recipe.objcopy.hex.pattern="{compiler.path}{compiler.objcopy.cmd}" -O ihex "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
 recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
 
