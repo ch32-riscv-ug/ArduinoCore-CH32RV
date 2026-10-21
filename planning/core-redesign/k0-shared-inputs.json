@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "scope": "N03 logical K0 frontend/normal exchange with single-core maskable-IRQ gate; no slave register or wire ACK proof",
+  "contract": "planning/core-redesign/workloads.ja.md K0",
+  "candidates": ["R", "A", "B", "C-bridge"],
+  "capacities": [1, 2],
+  "data": "one IRQ staging frame, protected completed FIFO, int16 accumulator/sticky flags, published and held 8-byte snapshots",
+  "normal": "protected take, unprotected validation/meaning, protected publication; executor and handlers outside owned gate scopes",
+  "bridge": "normal side checks shared state on each explicit opportunity; IRQ methods do not touch Work/Event executors",
+  "C_comparison": "new C-bridge condition: protected data FIFO plus coalesced targeted notification, not frozen C's frame-carrying FIFO",
+  "negative_controls": ["IRQ after delta read before clear", "read snapshot after first publication byte of 255 to 256"],
+  "probes": ["idle check", "queue pop", "delta read", "delta clear", "normal meaning", "eight publication bytes", "after publish"],
+  "seeded_input": {"seeds": [0,1,2,3,4,5,6,7,8,9], "iterations": 10000, "per_iteration": "one normal input plus one injected IRQ input; 30000 input commands", "expected_position_after_drain": 20000},
+  "target_gate": "fixed SDK mask 0x88, V003 mstatus 0x300 and X035 CSR 0x800, fence.i after disable for both; save/restore previous mask only; link experiment not validated hardware backend",
+  "source_reference": "planning/core-redesign/clock-time-inputs.json",
+  "not_verified": ["actual PFIC/IRQ timing", "NMI or multiple cores", "I2C slave register/ACK mapping", "critical-section cycle length and physical FIFO overrun", "public API adoption", "human review"]
+}
