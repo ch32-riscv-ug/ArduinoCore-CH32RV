@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-21",
+  "scope": "Unchanged I2C split-loan manager connected to logical peripheral/pin/clock Domain; no GPIO setup, actual clocks, IRQ synchronization or wire validation",
+  "clients": 3,
+  "dedicated_records": 3,
+  "pooled_records": 2,
+  "buffer_bytes": 64,
+  "request_generations": [
+    8,
+    32
+  ],
+  "backend_generations": [
+    8,
+    32
+  ],
+  "backend_precondition": "serialized, cooperative non-revocable Domain leases; declared pins.ready; IRQ-off register access; no DMA; all objects outlive loans",
+  "completion": "backend register stop/drain -> explicit reap -> retained result and outer buffer -> explicit user take",
+  "irq_backend": false,
+  "resource_slots": 2,
+  "resource_mask": 7,
+  "resource_generations": [
+    8,
+    32
+  ],
+  "resource_clock_epochs": [
+    8,
+    32
+  ],
+  "resource_release": "explicit close only, after no Queued/Running records; outer Terminal results do not prevent close"
+}
