@@ -84,6 +84,7 @@ SHA-256 `3189b1d0b9c2df0cf171038eb4f40a1d4981f85b78ba0c5a96e327a8a4db8402`。
 
 今回の固定1宛先は、小型用途で共通配信を入れる際の費用を検討する材料。
 直接poll・集約bit・payload FIFOの採否、system専用かuser公開かは、この数値だけでは決めない。
-複数宛先／capacity拡大／fan-out、用途全体の探索・状態管理を含む比較、実I2C backendの回収分離、
+後続の[metadata fan-out](completion-fanout-result.ja.md)では1／2／4宛先・容量1／2のnative356件・ABI108を追加した。
+受信byteの共有や同じtokenからの競合回収とは区別する。用途全体の探索・状態管理を含む比較、実I2C backendの回収分離、
 ISR共有、MCU実行時間とstack観測は残る。時間保証は追加していない。
 [前回の教材案](completion-event-exercise.ja.md)も、この費用表を使った予測課題へ接続できるが、人による評価は未実施。

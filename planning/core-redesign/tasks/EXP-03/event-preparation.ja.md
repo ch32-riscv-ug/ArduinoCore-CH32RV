@@ -46,6 +46,8 @@ queue格納時ackで元のpendingを消すと、解除後に再通知が失わ�
 上記のbit受理時ackも、宛先解除後の再通知まで保証する契約ではない。結果保持と再通知可能性は別に扱う。
 後続の[結合費用](completion-delivery-result.ja.md)は共通接続処理でnative76件・ABI28を確認した。
 1宛先／容量1の配信追加RAM52 Bという測定条件を、汎用の費用へ外挿しない。
+[metadata fan-out](completion-fanout-result.ja.md)はnative356件・ABI108で複数宛先へ広げた別条件。
+全requiredの受取を待つことによる保持の波及と、source end後のコピーの寿命を別に確認した。
 
 ## Hostの証拠
 

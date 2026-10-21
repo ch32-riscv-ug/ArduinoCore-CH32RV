@@ -128,7 +128,9 @@ M/S/U、A/B/C、work／event／timer、再入なし、busyの基準を固定し�
 [配信結合](tasks/EXP-03/completion-event-result.ja.md)はnative74件で満杯retry・宛先解除・end後と古い要求・M/S/Uを確認した。
 queueへの格納時ackでは解除後に再通知が失われる反例も残す。
 [結合target費用](tasks/EXP-03/completion-delivery-result.ja.md)はnative76件・ABI28で、1宛先／容量1の配信追加RAM52 B、未使用8構成の追加0 Bを確認した。
-複数宛先・用途全体・実driver／ISR接続は未検証。
+[metadata fan-out](tasks/EXP-03/completion-fanout-result.ja.md)はnative356件・ABI108で、1／2／4宛先・容量1／2、受理部分保持・解除後retry・停止recipientを比較した。
+source tokenの起動と結果コピーの配信は別の意味として扱い、copy後のend・次sourceの回収まで波及する保持を残す。
+用途全体、複数publication・受信byte共有・実driver／ISR接続は未検証。
 baselineの通常処理専用と、ISRから投稿する場合の費用を分ける。
 独立stack対照は[待機の対照](workloads.ja.md#実行機会と待機の対照)の範囲でportと静的容量を調べる。
 使うkernel／portの固定版・target適合・stack構成を記録できる場合に実装し、候補へ暗黙に混ぜない。
