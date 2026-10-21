@@ -88,3 +88,5 @@ SHA-256 `3189b1d0b9c2df0cf171038eb4f40a1d4981f85b78ba0c5a96e327a8a4db8402`。
 受信byteの共有や同じtokenからの競合回収とは区別する。用途全体の探索・状態管理を含む比較、実I2C backendの回収分離、
 ISR共有、MCU実行時間とstack観測は残る。時間保証は追加していない。
 [前回の教材案](completion-event-exercise.ja.md)も、この費用表を使った予測課題へ接続できるが、人による評価は未実施。
+
+後続の[資源管理付きI2Cとの接続](i2c-event-result.ja.md)では、この配信glueを変更せず、既存register engine・Domain・固定callback2発生元へ接続した。実験register模型での停止／reap／close後の配達と別owner通信中の旧結果回収、同値tokenを別sourceへ誤配信する反例を記録した。実IRQ／wireや発生元識別方式の採用判断は含まない。

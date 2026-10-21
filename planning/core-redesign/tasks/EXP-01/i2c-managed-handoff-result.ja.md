@@ -94,3 +94,5 @@ IRQ禁止・DMAなし・register独占は既存Masterの前提を引き継ぎ、
 SHA-256 `d3d49c0ed158ac8eb5fdbbf63c7f73b830f3b160625cc645924a732730b4bc1b`。
 native実行物2本・108 trace・28 ELF・全入力・tool記録・JUnit・再集計scriptと比較対応表を含む。
 [変更課題](i2c-managed-handoff-exercise.ja.md)は利用者レビュー前である。
+
+後続の[完了callbackとの接続](../EXP-03/i2c-event-result.ja.md)では、このManagedと既存配信glueを変更せず、周辺返却後の結果配達・別owner通信中のcallback回収を検査した。発生元が異なる同値request tokenの誤配信の反例も保存した。実Pins／IRQへの接続は未検証のまま。
