@@ -15,6 +15,8 @@ void link_poll(void);                                  /* moves frames both ways
 uint32_t link_ms(void);
 uint64_t link_us(void);
 void link_stats(void);
+/* link_us() at the last link_poll(): the stack has run since then (the watchdog reads it). */
+extern volatile uint64_t link_last_poll_us;
 /* Optional: asked before each frame goes to the stack; while it says 0, frames wait in the link. */
 void link_rx_gate(int (*ready)(void));
 #ifdef __cplusplus

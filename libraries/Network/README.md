@@ -43,10 +43,20 @@ MDNS.addServiceTxt("http", "tcp", "path", "/");
 - mDNS answers on every interface the library has started, including later ones. Up to 4 services, 96 bytes of TXT each. No queries (`queryHost()` ...) yet.
 - Size (V208): using both adds about 26 KB of flash (lwIP's mDNS 12 KB, newlib's time and time-zone code ...). Sketches that do not use them carry neither.
 
+## Common libraries
+
+These work unchanged, tested on the host (2026-10-21):
+
+- MQTT: PubSubClient and ArduinoMqttClient, also over TLS when given a `NetworkClientSecure`.
+- HTTP client: ArduinoHttpClient, over HTTP and HTTPS.
+- HTTP server: aWOT, handed the connections `NetworkServer::accept()` returns.
+
+Over TLS, connect by host name: the certificate is checked against it.
+
 ## Behaviour
 
 - lwIP runs without an OS (NO_SYS), after each `loop()` and inside `delay()` (the core's `ch32rv_net_task()`). A `loop()` that blocks for long stalls the network too.
-- Calls that wait (`connect()`, `write()`, `Network.hostByName()`) keep the stack running. `available()`, `connected()`, `parsePacket()` and `accept()` run it once when they have nothing.
+- Calls that wait (`connect()`, `write()`, `Network.hostByName()`) keep the stack running. `available()`, `read()`, `peek()`, `connected()`, `parsePacket()` and `accept()` run it once when they have nothing, so Stream's timed reads (`readStringUntil()`, `readBytes()` ...) keep receiving.
 - Not callable from an interrupt.
 - `NetworkClient` copies received data into a buffer of its own (the TCP window's size); the window opens as the sketch reads, so a slow reader slows the sender instead of losing data.
 - `write()` waits for room in the send buffer and gives up after 10 s without progress, returning what it wrote.

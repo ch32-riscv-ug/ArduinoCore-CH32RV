@@ -268,6 +268,24 @@ def tcp_sketch_to_host():
     return {"ok": bytes(got) == pattern(SOURCE_BYTES), "bytes": len(got), "kBps": round(len(got) / dt / 1024, 1)}
 
 
+def tcp_timed_read():
+    """The sketch reads with readStringUntil(); the line comes late and in two pieces."""
+    s = socket.create_connection((DUT, 13), timeout=10)
+    s.settimeout(15)
+    time.sleep(0.5)
+    s.sendall(b"hel")
+    time.sleep(0.5)
+    s.sendall(b"lo world\n")
+    got = b""
+    while not got.endswith(b"\n"):
+        chunk = s.recv(100)
+        if not chunk:
+            break
+        got += chunk
+    s.close()
+    return {"ok": got == b"HELLO WORLD\n", "got": got.decode(errors="replace")}
+
+
 def tcp_parallel(n=4):
     outcome = [None] * n
 
@@ -515,6 +533,7 @@ if ip_line:
     run("tcp_echo", tcp_echo, 120)
     run("tcp_host_to_sketch", tcp_host_to_sketch, 150)
     run("tcp_sketch_to_host", tcp_sketch_to_host, 150)
+    run("tcp_timed_read", tcp_timed_read, 60)
     run("tcp_parallel", tcp_parallel, 150)
     run("tcp_client", tcp_client, 120)
     run("dns", dns_lookup, 60)

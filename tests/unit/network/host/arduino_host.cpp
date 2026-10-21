@@ -1,5 +1,6 @@
 /* millis() and friends on the host, and a main() shaped like the core's. */
 #include "Arduino.h"
+#include "link.h"
 #include <execinfo.h>
 #include <signal.h>
 #include <stdio.h>
@@ -50,15 +51,18 @@ extern "C" int __wrap_settimeofday(const struct timeval *tv, const void *tz)
 void setup();
 void loop();
 
-/* A watchdog for the tests: when one loop() runs for more than five seconds,
- * where it is goes to stdout (once) - a hang shows up as a stack, not just a
- * timeout. */
+/* A watchdog for the tests: when one loop() has run for more than five seconds
+ * and the stack has not run in that time either (no link_poll()), where it is
+ * goes to stdout (once) - a hang shows up as a stack, not just a timeout. A
+ * blocking call that keeps the stack running (a TLS handshake over a lossy
+ * link, a long write) is not a hang. */
 static volatile unsigned long loop_started;
 static volatile bool stack_shown;
 
 static void watchdog(int)
 {
-    if (!stack_shown && loop_started && millis() - loop_started > 5000) {
+    const unsigned long since_poll = (unsigned long)((link_us() - link_last_poll_us) / 1000u);
+    if (!stack_shown && loop_started && millis() - loop_started > 5000 && since_poll > 5000) {
         stack_shown = true;
         static const char head[] = "WATCHDOG loop() stuck:\n";
         if (write(1, head, sizeof head - 1) < 0) {

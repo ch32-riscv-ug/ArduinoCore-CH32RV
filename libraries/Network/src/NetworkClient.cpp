@@ -267,6 +267,11 @@ int NetworkClient::read()
 
 int NetworkClient::read(uint8_t *buf, size_t size)
 {
+    if (_conn && !_conn->rxCount) {
+        /* Stream's timed reads (readStringUntil(), readBytes() ...) call read()
+         * until data comes: the stack has to run for it to come. */
+        ch32rv_net::pump();
+    }
     if (!_conn || !_conn->rxCount) {
         return _conn && !_conn->peerClosed ? 0 : -1;
     }
@@ -285,6 +290,9 @@ int NetworkClient::read(uint8_t *buf, size_t size)
 
 int NetworkClient::peek()
 {
+    if (_conn && !_conn->rxCount) {
+        ch32rv_net::pump();   /* as read() */
+    }
     if (!_conn || !_conn->rxCount) {
         return -1;
     }

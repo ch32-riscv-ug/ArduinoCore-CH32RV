@@ -5,7 +5,9 @@
  * allocated while connected), and the window opens as the sketch reads, so a
  * slow reader slows the sender instead of losing data. write() waits for room
  * in the stack's send buffer, running the stack meanwhile, and gives up after
- * 10 s without progress. */
+ * 10 s without progress. available(), read(), peek() and connected() run the
+ * stack once when nothing has arrived, so a sketch (or Stream's timed reads)
+ * polling them in a loop keeps receiving. */
 #pragma once
 #include <Arduino.h>
 #include <api/Client.h>

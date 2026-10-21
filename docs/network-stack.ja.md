@@ -58,7 +58,21 @@
 6. 系列ごとの `lwipopts.h` と、クロスビルドでの大きさの確認。**済み**(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)
 7. USB の NCM(デバイス)のつなぎ込み。**済み**(案 B: `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出し、中身は Network ライブラリの `NetworkUsbNcm`。PC と X035 の生フレームの試験まで。対象の系列の USB デバイスのドライバ待ち)
 8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。
-9. 段 3 以降。mDNS と SNTP は**済み**(lwIP の apps。PC で試験)。HTTP サーバー、MQTT / HTTP のクライアントはこれから。
+9. 段 3 以降。mDNS と SNTP は**済み**(lwIP の apps。PC で試験)。
+   - HTTP サーバー、MQTT / HTTP のクライアントは、**自前では作らず、Arduino で広く使われている既存のライブラリを使ってもらう**ことにしました(2026-10-21)。
+   - 次のライブラリが、手を入れずに `NetworkClient` / `NetworkClientSecure` / `NetworkServer` の上で動くことを、PC 上で確かめました。
+
+     | ライブラリ | 役目 | 確かめたこと |
+     |---|---|---|
+     | PubSubClient 2.8(MIT) | MQTT | 購読と配信の往復。平文と TLS |
+     | ArduinoMqttClient 0.1.8(LGPL-2.1) | MQTT | 同上 |
+     | ArduinoHttpClient 0.6.2(Apache-2.0) | HTTP クライアント | GET。HTTP と HTTPS |
+     | aWOT 3.5.0(MIT) | HTTP サーバー | GET と POST |
+
+     - 相手は、Python で書いた最小限の MQTT のブローカーと、HTTP(S) のサーバーです。
+     - 試験は作業用の場所で行い、リポジトリには入れていません。外部のライブラリに依存させないためです。
+   - TLS でつなぐときは、IP アドレスではなくホスト名で接続します。証明書の名前と照らし合わせるためで、ESP32 と同じです。
+   - この確認の中で、Network ライブラリの不具合を 1 つ見つけて直しました。`NetworkClient::read()` と `peek()` が、データが無いときにスタックを回していなかったため、`Stream` の待ち付きの読み出し(`readStringUntil()` など。aWOT が使う)が、時間切れまで受信できずにいました。
 
 ## TLS(段 5): mbedTLS と BearSSL の比較(2026-10-21 の測定)
 

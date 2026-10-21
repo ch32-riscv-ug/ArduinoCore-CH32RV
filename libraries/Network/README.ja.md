@@ -65,10 +65,20 @@ MDNS.addServiceTxt("http", "tcp", "path", "/");
 - mDNS は、Network ライブラリが始めたすべてのインターフェースで答えます。後から始めたものも含みます。サービスは 4 つまで、TXT は 1 つにつき 96 バイトまでです。問い合わせ(`queryHost()` など)はまだありません。
 - 大きさ(V208): mDNS と SNTP を両方使うと、Flash が約 26 KB 増えます(lwIP の mDNS が 12 KB、newlib の時刻とタイムゾーンの処理など)。使わないスケッチには入りません。
 
+## よく使われるライブラリ
+
+次のライブラリが、手を入れずに動くことを PC 上で確かめています(2026-10-21)。
+
+- MQTT: PubSubClient、ArduinoMqttClient。`NetworkClientSecure` を渡せば TLS でも動きます。
+- HTTP クライアント: ArduinoHttpClient。HTTP と HTTPS。
+- HTTP サーバー: aWOT。`NetworkServer::accept()` で受けた接続を渡します。
+
+TLS のときは、ホスト名で接続してください(証明書の名前と照らし合わせるため)。
+
 ## 動きの決まり
 
 - lwIP は OS なし(NO_SYS)で、`loop()` の後と `delay()` の中で回ります(コアの `ch32rv_net_task()`)。`loop()` の中で長く止まると、通信も止まります。
-- 待つ呼び出し(`connect()`、`write()`、`Network.hostByName()`)は、待つ間もスタックを回します。`available()`、`connected()`、`parsePacket()`、`accept()` も、データが無いときはスタックを 1 回回します。
+- 待つ呼び出し(`connect()`、`write()`、`Network.hostByName()`)は、待つ間もスタックを回します。`available()`、`read()`、`peek()`、`connected()`、`parsePacket()`、`accept()` も、データが無いときはスタックを 1 回回します。`Stream` の待ち付きの読み出し(`readStringUntil()`、`readBytes()` など)も、これで受信が進みます。
 - 割り込みの中からは呼べません。
 - `NetworkClient` は、受けたデータを自分のバッファ(TCP の窓と同じ大きさ)に写します。スケッチが読むにつれて窓が開くので、読むのが遅いと相手の送信が遅くなり、データは失われません。
 - `write()` は、送信のバッファに空きができるまで待ちます。10 秒進まなければ諦めて、書けた分を返します。

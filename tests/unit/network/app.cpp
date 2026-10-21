@@ -10,6 +10,8 @@
  *   stdout "IP a.b.c.d" once there is an address
  *   UDP 7 echo; TCP 7 echo; TCP 9 discard ("DISCARD <bytes>" when the peer closes);
  *   TCP 19 sends SOURCE_BYTES of PATTERN and closes
+ *   TCP 13 reads one line with Stream::readStringUntil() (timedRead: read() must keep the stack
+ *   running while it waits), answers it upper-cased, and closes
  *   UDP 9999: "C <port>" connects back and sends 256 KiB of PATTERN -> "CDONE 262144" / "CFAIL"
  *             "D <name>" -> "DNS a.b.c.d" / "DNSFAIL"
  *             "T <server>" -> configTime(9 h, 0, server) -> "TIME STARTED"; the SNTP client's
@@ -34,7 +36,7 @@ static TapInterface tap;
 static CH32RVUsbDeviceNet ncm;
 static NetworkInterface *ifc = &tap;
 static NetworkUDP udpEcho, command;
-static NetworkServer echoServer(7, 4), discardServer(9, 2), sourceServer(19, 2);
+static NetworkServer echoServer(7, 4), discardServer(9, 2), sourceServer(19, 2), lineServer(13, 1);
 static NetworkClient echoClients[4];
 static NetworkClient discardClient;
 static uint32_t discarded;
@@ -103,6 +105,7 @@ void setup()
     echoServer.begin();
     discardServer.begin();
     sourceServer.begin();
+    lineServer.begin();
 }
 
 static void serveEcho()
@@ -177,6 +180,19 @@ static void serveSource()
         if (!sendPattern(c, SOURCE_BYTES)) {
             printf("SOURCE FAIL\n");
         }
+        c.stop();
+    }
+}
+
+static void serveLine()
+{
+    NetworkClient c = lineServer.accept();
+    if (c) {
+        c.setTimeout(5000);
+        String line = c.readStringUntil('\n');
+        line.toUpperCase();
+        c.print(line);
+        c.print('\n');
         c.stop();
     }
 }
@@ -292,5 +308,6 @@ void loop()
     serveEcho();
     serveDiscard();
     serveSource();
+    serveLine();
     serveCommands();
 }

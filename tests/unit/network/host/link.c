@@ -63,8 +63,11 @@ static void enqueue(dir_t *d, const uint8_t *f, size_t len)
 
 void link_send(const uint8_t *frame, size_t len) { enqueue(&up, frame, len); }
 
+volatile uint64_t link_last_poll_us;
+
 void link_poll(void)
 {
+    link_last_poll_us = link_us();
     uint8_t buf[2048];
     for (int i = 0; i < 64; i++) {
         ssize_t n = read(fd, buf, sizeof buf);
