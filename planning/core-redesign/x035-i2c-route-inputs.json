@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "scope": "Compile-time route/package comparison; no USB/debug shutdown, IRQ exclusion or physical wire validation",
+  "source_inputs": "x035-i2c-setup-inputs.json",
+  "routes": [
+    {
+      "code": 0,
+      "scl": "PA10",
+      "sda": "PA11",
+      "pin_config": 1073809412,
+      "mask": 65280,
+      "mode": 39168,
+      "gate_apb2": 5
+    },
+    {
+      "code": 1,
+      "scl": "PA13",
+      "sda": "PA14",
+      "pin_config": 1073809412,
+      "mask": 267386880,
+      "mode": 160432128,
+      "gate_apb2": 5
+    },
+    {
+      "code": 2,
+      "scl": "PC16",
+      "sda": "PC17",
+      "pin_config": 1073811484,
+      "mask": 255,
+      "mode": 153,
+      "gate_apb2": 17
+    },
+    {
+      "code": 3,
+      "scl": "PC19",
+      "sda": "PC18",
+      "pin_config": 1073811484,
+      "mask": 65280,
+      "mode": 39168,
+      "gate_apb2": 17
+    },
+    {
+      "code": 4,
+      "scl": "PC17",
+      "sda": "PC16",
+      "pin_config": 1073811484,
+      "mask": 255,
+      "mode": 153,
+      "gate_apb2": 17
+    },
+    {
+      "code": 5,
+      "scl": "PC18",
+      "sda": "PC19",
+      "pin_config": 1073811484,
+      "mask": 65280,
+      "mode": 39168,
+      "gate_apb2": 17
+    },
+    {
+      "code": 6,
+      "scl": "PC17",
+      "sda": "PC16",
+      "pin_config": 1073811484,
+      "mask": 255,
+      "mode": 153,
+      "gate_apb2": 17
+    },
+    {
+      "code": 7,
+      "scl": "PC18",
+      "sda": "PC19",
+      "pin_config": 1073811484,
+      "mask": 65280,
+      "mode": 39168,
+      "gate_apb2": 17
+    }
+  ],
+  "packages": [
+    {
+      "id": 0,
+      "part": "CH32X035C8T6",
+      "package": "LQFP48",
+      "routes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "id": 1,
+      "part": "CH32X035F7P6",
+      "package": "TSSOP20",
+      "routes": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  ],
+  "clock_nominal_hz": 48000000,
+  "flash_bytes": 63488,
+  "ram_bytes": 20480,
+  "march": "rv32imac_zicsr",
+  "abi": "ilp32",
+  "debug_routes": [
+    3,
+    5,
+    7
+  ],
+  "usb_routes": [
+    2,
+    4,
+    6
+  ],
+  "debug_precondition": {
+    "mask": 117440512,
+    "value": 67108864
+  },
+  "peripheral_conflict_backend": false
+}
