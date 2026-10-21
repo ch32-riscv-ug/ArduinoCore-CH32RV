@@ -130,6 +130,8 @@ queueへの格納時ackでは解除後に再通知が失われる反例も残す
 [結合target費用](tasks/EXP-03/completion-delivery-result.ja.md)はnative76件・ABI28で、1宛先／容量1の配信追加RAM52 B、未使用8構成の追加0 Bを確認した。
 [metadata fan-out](tasks/EXP-03/completion-fanout-result.ja.md)はnative356件・ABI108で、1／2／4宛先・容量1／2、受理部分保持・解除後retry・停止recipientを比較した。
 source tokenの起動と結果コピーの配信は別の意味として扱い、copy後のend・次sourceの回収まで波及する保持を残す。
+[用途側optional](tasks/EXP-03/completion-optional-result.ja.md)はnative45件で、制御をrequired、表示を全宛先待ち／1回try／最新状態として比較した。
+表示の進行不足・解除時の保持を分け、共通のbest-effort APIは追加していない。
 用途全体、複数publication・受信byte共有・実driver／ISR接続は未検証。
 baselineの通常処理専用と、ISRから投稿する場合の費用を分ける。
 独立stack対照は[待機の対照](workloads.ja.md#実行機会と待機の対照)の範囲でportと静的容量を調べる。

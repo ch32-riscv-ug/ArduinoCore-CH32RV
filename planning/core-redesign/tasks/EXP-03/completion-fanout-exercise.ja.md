@@ -24,6 +24,8 @@ uv run --project tests --locked pytest -c tests/pyproject.toml \
 変更課題では、画面表示をrequiredから外す案と、PD制御結果の記録だけをrequiredにする案を比較する。
 「外す」の意味を、送らない・一度だけtryする・最新値に置換する、のどれにするか先に定義する。
 今回のPublicationはrequired集合への配信なので、best-effortを同じmaskへ入れたまま無視する実装にはしない。
+[用途側optionalの比較](completion-optional-result.ja.md)には、共通Publicationを変えずに1回try／最新状態を組んだhost結果がある。
+表示が止まる間のdropと鮮度を予測してから照合する。targetの費用比較は未実施。
 配達しない宛先が残ったときのrelease条件と、古いqueue payloadをどう扱うかも変更仕様へ書く。
 
 最後に1→4宛先、容量1→2のRAM増分を結果表から計算する。

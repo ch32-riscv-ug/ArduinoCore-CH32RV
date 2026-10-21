@@ -131,7 +131,9 @@ local archiveのpath・byte数・SHA-256は[測定台帳](completion-fanout-meas
 全commandとcompiler／binutils／libgcc hash、直接回収の対照8 image、集計scriptを含む。
 ABIはreset／CRT・vectorを持たない独立linkの構造測定で、起動・実I/O・実行時間の検証ではない。
 
-コピー配信の採用、required／best-effortの使い分け、配信取消・宛先の放棄・利用者処理完了の確認、
+後続の[用途側optional比較](completion-optional-result.ja.md)はnative45件で、全宛先待ち／1回try／最新状態の違いを確認した。
+共通headerは不変で、実X0と費用比較は未検証。
+コピー配信の採用、required／best-effortの公開境界、配信取消・宛先の放棄・利用者処理完了の確認、
 buffer byte列を複数箇所で共有する所有規則、複数publication、ISR・実driver接続、用途全体・実機stackは残す。
 このmetadata試作だけで、小型用途に汎用fan-outを常備すべきとは判断しない。
 [教材案](completion-fanout-exercise.ja.md)は、人による評価前。

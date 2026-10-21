@@ -1,0 +1,566 @@
+{
+  "date": "2026-10-21",
+  "implementation_commit": "725948e",
+  "native_scenarios": 45,
+  "workspace_tests": 3,
+  "total_passed": 48,
+  "operations": 18690,
+  "host_build": {
+    "command": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-O1",
+      "-g1",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/completion_optional_driver.cpp",
+      "-o",
+      "/tmp/pytest-of-mt/pytest-1160/completion-optional0/control"
+    ],
+    "compiler_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "inputs": {
+      "completion_optional_driver.cpp": "9c8199fecabd576c8b209ae3f7a015978788ef315f382542ae4999861492d531",
+      "test_completion_optional.py": "e0482411a6bd28f690c9ea3212b02f3a9d18aade7981c949fad61924aaa9509b",
+      "completion_optional_oracle.py": "9a6a7190888e85c1e4803417c310765d992d328f12b873211ce9d623e28b9f34",
+      "completion_fanout.hpp": "fb51344066e12d11ec32d63be575367a8991e23bf070f675e3e2db1a6afe2430",
+      "completion_delivery.hpp": "a0bc3a1b38678276d81b7e26cc8106b86fd4215b966e0c78cef1b43e8a51805e",
+      "completion_arbiter.hpp": "18f7a683e94378d0ddc23f22a8b2fd173b2ab1a9f0a5072b9d7103041c01fefa",
+      "io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+      "event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8"
+    },
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "executable_sha256": "e34e876735db9d0507ecc14a0c425f6f55f5a9a92a039205992e34be66c1cd00",
+    "stdout": "",
+    "stderr": "",
+    "returncode": 0
+  },
+  "extra_inputs": {
+    "tests/unit/test_workspace.py": "ecadb4329b91981d88cc3a5f962d578a090380aa835cabc2b281f11fe28776b3",
+    "tests/pyproject.toml": "2345703d5a238cc32a8aac6a4f020ab8a73f65c04a331f852bdaeb84c331d7f4",
+    "tests/uv.lock": "99e06f301d7c468807053449f926cb529574a1361e1a62771e3c7ed9e66b51d0"
+  },
+  "unchanged_headers": {
+    "completion_fanout.hpp": "fb51344066e12d11ec32d63be575367a8991e23bf070f675e3e2db1a6afe2430",
+    "completion_delivery.hpp": "a0bc3a1b38678276d81b7e26cc8106b86fd4215b966e0c78cef1b43e8a51805e",
+    "completion_arbiter.hpp": "18f7a683e94378d0ddc23f22a8b2fd173b2ab1a9f0a5072b9d7103041c01fefa",
+    "io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+    "event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+    "work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+    "data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8"
+  },
+  "traces": [
+    {
+      "file": "03b1f7d17655984372f72bc600a8504680a379c328bebd72a8e8243f0870f14f.json",
+      "policy": "once",
+      "operations": 1010,
+      "sha256": "1ddfbd7e67b913b4fc601cfc4c9ba465735055656cdf6c8bd5e3def207974a69"
+    },
+    {
+      "file": "08bdfc64e0e6b5c755dea78c324f966fd08ee52fa60c02f8d6388c82a7be00b3.json",
+      "policy": "all",
+      "operations": 19,
+      "sha256": "000913baa6485509f7d38cff432b19a454975201dd9a352f31a40353f32caa84"
+    },
+    {
+      "file": "0a5e9e8fbf871b70c32506f820b587b68d9ec95d4779ab1cc2f5fb8d3469aec6.json",
+      "policy": "all",
+      "operations": 17,
+      "sha256": "9c5d99996ac5621726212125c12bd0a5a673f933ef1da54b73e8fe4dba9d7aaf"
+    },
+    {
+      "file": "143a8edba9fcdce4879649028aaab82d1e9023488bfbe986d2dfcf34b077fbd9.json",
+      "policy": "all",
+      "operations": 1010,
+      "sha256": "dc9b6241cf4161d1a529c64c285ab4ae745cdbd9160feae5a69e23aa2cbeb056"
+    },
+    {
+      "file": "17934ce327167fafe6c34e10d1e95028301b0876147df2de35f267eff3eca84f.json",
+      "policy": "latest",
+      "operations": 17,
+      "sha256": "1976052447f7d4d17e74ba576284103d61752d19e798a103e2971df2a44b5106"
+    },
+    {
+      "file": "1ec6ca97b9a042bf87ee63888153ee61dc049808b7e5a9516d15932aee883cdd.json",
+      "policy": "all",
+      "operations": 1010,
+      "sha256": "9326888e8891a3f2a0b15876adee3266a34bc4e4a24fb57e1569cc4632ccd7be"
+    },
+    {
+      "file": "1ffc27aa4e0b659340cf0e1160d4768e4555f7c28702339161be2708c8fa57bc.json",
+      "policy": "latest",
+      "operations": 19,
+      "sha256": "99cdbde2289d9ef371f4417e1dccabd31586726607919d2a05b28c1bb584bae0"
+    },
+    {
+      "file": "284266333834c393c2193e99f2324c2f2e464039acf586b7c1a456d41810b063.json",
+      "policy": "latest",
+      "operations": 20,
+      "sha256": "68204468ccb14359c68ba2a4025a2e7e258f19fe7d1972beee4f29a07e39176d"
+    },
+    {
+      "file": "422f5fbb661419aa38ecea5570ba2b72ac9e1d15daa5c50007978b3041008e54.json",
+      "policy": "latest",
+      "operations": 20,
+      "sha256": "deefc8472cd0358816bd214fc980f99650a2edfc598b56d858592135713b74b6"
+    },
+    {
+      "file": "46aedadac1aa0cc368fa52ebdd901bab6e248845fa4e5e3e1ebfa1fbd4075273.json",
+      "policy": "all",
+      "operations": 20,
+      "sha256": "9ad8b0f5ce07590f72a8cee0803e639c948791d311584cfc932a64bb0ea5049c"
+    },
+    {
+      "file": "4892d50d6c314eaf65228ba8f9b5e0309e94cc06ca5a4f170b991dafbbb3ae15.json",
+      "policy": "latest",
+      "operations": 1010,
+      "sha256": "7ce1e4c2cfc10dae6db6b5fe61bbd19d9042415781793bf515abd276c9f7cb8c"
+    },
+    {
+      "file": "4ba6f213aee0739e0bd9c1b20fde986755ba88ae17ab09f6e656cfaded164d81.json",
+      "policy": "once",
+      "operations": 19,
+      "sha256": "7a5498dcb7b44991bdfbc1fea7614a3496df87ca5326fb5aec8a04189a55ffc0"
+    },
+    {
+      "file": "4f31ff9508fb6e267e4f7b950be9df7c778eae8b586041c8f999e80a554625a6.json",
+      "policy": "once",
+      "operations": 19,
+      "sha256": "93f6737bff0ea5b484f46c81044c8cf2766e308dab10fd3c3bc9554b643dfcd1"
+    },
+    {
+      "file": "56fd86f757f0f6a458007a7af6b8c0589febb5fd1a69f1709ebdc6136b8adeb2.json",
+      "policy": "once",
+      "operations": 20,
+      "sha256": "c5e6735d2037045f178415cbd4affca62b9e2dca278b1609a1b48e13050b18e0"
+    },
+    {
+      "file": "5c4b751057a1c6292e5e99c59496da51f1740f0ab6bd5fd08ce72eace9db4b03.json",
+      "policy": "latest",
+      "operations": 18,
+      "sha256": "fec0b83a86c0d1b5716ea82fe6afdb374cce74ce78d6eee94f8aa7823054ba28"
+    },
+    {
+      "file": "6518f8b910f6018a78884d76f447798486315793de011b344565ceae829337ac.json",
+      "policy": "all",
+      "operations": 19,
+      "sha256": "f91a53c0e89e4720b5b2475b370e6b9a82a507ae31b3960d5e0fd7aac1cf2da8"
+    },
+    {
+      "file": "69fdb8cfdb75fadb48e45c6baee840ce42aa02187fc1d1c69d8991adc5ab367b.json",
+      "policy": "latest",
+      "operations": 19,
+      "sha256": "3dffa05942f88a6b3c7dfe3ab1db2d7352f7ca5244393055521a7d64807ef9ad"
+    },
+    {
+      "file": "7ca3a3701f2970d9d3547a4523c46d2f5ca8f80ae43b6b5f528f4c7d3cdfc077.json",
+      "policy": "latest",
+      "operations": 19,
+      "sha256": "367344cced841ef31260776a60c4da51a02f833b38b07dd69854655860b52959"
+    },
+    {
+      "file": "81be7d8dd2416774675a759c421a37f475b49f8a856dcc2df02e7a44631778af.json",
+      "policy": "all",
+      "operations": 1010,
+      "sha256": "0d8a1278225ddca32e40a90f119433dba4b21c4e1a6b2eec6244f189eff262f6"
+    },
+    {
+      "file": "820f92c8636d7e695d80bd583e0e463f3bfa22a94d7ee8ec6e45351f164bc9a3.json",
+      "policy": "latest",
+      "operations": 1010,
+      "sha256": "4f5f602cf4458bf8bd54fb639640d8f4a9b5ab67bd33110bbfa93cbd5cd385ec"
+    },
+    {
+      "file": "8b14c2af20e26e8fea056643204d59ceca2e773a93c3469d3b5b156de462729b.json",
+      "policy": "once",
+      "operations": 18,
+      "sha256": "3e0fefbf079ece735901864ce79b2ec1ddb061e0afa65b99f349b9981d2eb9ab"
+    },
+    {
+      "file": "8d3f0f21937177489aed106051c96930e8704e6d8af8673013c23ad7baa6cc62.json",
+      "policy": "once",
+      "operations": 1010,
+      "sha256": "3292388355d7b77fc40c5e8ad40ab99f92f1243e1b6bb94087274b1ed8eb7bb2"
+    },
+    {
+      "file": "9bcfb7dfe94ad8cd82f3222cd66d635b4ed842c55e918befc430f88b5b665822.json",
+      "policy": "once",
+      "operations": 1010,
+      "sha256": "2fac98297d84b27ff2a0f9cd809479e946d7d59db7aba91eb497bc04fee9b8d7"
+    },
+    {
+      "file": "9c3c4e2ad3cd83b43e24b2668aa64cd300e77533974f5188c6cb476d42f77a68.json",
+      "policy": "once",
+      "operations": 20,
+      "sha256": "2298ce550c3b30e2eb702c07577c13bb480a351808ff7ffed0c8040cc35246f1"
+    },
+    {
+      "file": "9e993ff5a9ba1de877c8aa7e2ca4bc4c63ec5dd50fffef43dc0e983ca77a167e.json",
+      "policy": "all",
+      "operations": 1010,
+      "sha256": "b4750d708aa11964542e457ddfe309259fdc4c1145b639ec9f448a9974f58345"
+    },
+    {
+      "file": "9f8c6237bedbf981b5ba908d69b83f629cc72d2bd1c08e4684163ebb9dcc70e1.json",
+      "policy": "latest",
+      "operations": 1010,
+      "sha256": "e29e23222f0cd2c2673cc5ff76ec195115606dad00f13e948d864ecfb8e8f082"
+    },
+    {
+      "file": "a09e5c51e554d4926d4633a049b1547c6aa56e7b00b6fe8bd7769d0a6be47762.json",
+      "policy": "once",
+      "operations": 20,
+      "sha256": "dbeaa98c0fd1a332b59970cb12ac48161ac71400bb2fcbfe7d05e429dbbd6c16"
+    },
+    {
+      "file": "a795572c8defef05939b26ff09dcfb94f9d99d64ec942465636e2381f7739dc7.json",
+      "policy": "all",
+      "operations": 1010,
+      "sha256": "01e26da37be79cc6f4c317d96f31e0cc68b628857807fcdcc19ad810bf2f69fb"
+    },
+    {
+      "file": "a7d512748317f470b147a5ad6c438b0ee1eb6a13fb45aec878270c91247f0089.json",
+      "policy": "once",
+      "operations": 17,
+      "sha256": "d18fb5e95002f0b2eadff89c833354b82ce8cfdd90aa3ebcb52d9a497b1d30ab"
+    },
+    {
+      "file": "a7fc83e5b1150ed6ac48267b8a3321f4465b0c8bfd19622e6aba7b5a77dc21ed.json",
+      "policy": "latest",
+      "operations": 1010,
+      "sha256": "6267a7bc374402d127888faa59740db9cad2b7c3f2ad6378a9f77c30eea6c84f"
+    },
+    {
+      "file": "ab626f223c53f3f10f085ddb1a4c36764454e743c3bea892425ebf1ca0955b96.json",
+      "policy": "all",
+      "operations": 20,
+      "sha256": "365908b974c213766488565a17412dae47225b334fd3084b58e3d79c021fbdab"
+    },
+    {
+      "file": "ae117b537d47259ad14488c54404bc4a6113f98ef2ea79f075da662dfe96064d.json",
+      "policy": "once",
+      "operations": 19,
+      "sha256": "b9e9b49df67242c4da1cc14180678d6ca551a6226a9f505da755d8d318224586"
+    },
+    {
+      "file": "b74ae08edca758a0825330e62096617f9d047d7ba350a18e0552032604e27c1e.json",
+      "policy": "once",
+      "operations": 18,
+      "sha256": "033d8b642c36333f030eecf5259029d2c24a03b83fe48903b30be2e8ea3d215f"
+    },
+    {
+      "file": "ba04b382b654416e1fd2cbe13cbe1a17cc8df112db0f62efc056b781e8f7e6ad.json",
+      "policy": "all",
+      "operations": 1010,
+      "sha256": "74f1cb05585239283f791f2c4c1b82408f9263fd4ddb0bf7927c092ab4585ae1"
+    },
+    {
+      "file": "ba544012db4610157f89d69bbbd253b4f1a9ade768867e7e46a64d33108deee2.json",
+      "policy": "all",
+      "operations": 20,
+      "sha256": "acc6ce986734d4d38b1c5543614940f9f6c437dd7fe8601ea79b34c6778bc8ab"
+    },
+    {
+      "file": "c363090f78a720f1b5a19dda1209be3ed25a95a2650685801317cc32e6f9f591.json",
+      "policy": "latest",
+      "operations": 1010,
+      "sha256": "1c911827fb6c96883a1da622b0e1d8eaf0a270aa7530e6e5f5e988558a6bef45"
+    },
+    {
+      "file": "c6b8aa9c4416ca75e462b1512d9544679e2f1d59d51fc1fa484a0360e726787b.json",
+      "policy": "all",
+      "operations": 18,
+      "sha256": "ae624542f551e8d60b38f506668dd8833b52d67dcb28f51b1051be216bc867f2"
+    },
+    {
+      "file": "ce54900f9f5c8e460d8164317ae730e05dd0208dd2c2675a6aa07d5235416d3a.json",
+      "policy": "latest",
+      "operations": 1010,
+      "sha256": "94725342807792ef7c27ea81a902cbf3c4ee6ff38c035fc82e866a4b93ddc1e6"
+    },
+    {
+      "file": "cec9517e363cf9bbc4ccc18ab4985b3058c427d122ed268b28e880999d301c5c.json",
+      "policy": "once",
+      "operations": 1010,
+      "sha256": "1ed637a52e84e0120c9357ac970887942725b088c3d79f788690409a6337d8ef"
+    },
+    {
+      "file": "d5248bfbf2f70a0ed240e5d2d87c7ee756aa0c7853a4507fa08e5660ba263300.json",
+      "policy": "latest",
+      "operations": 20,
+      "sha256": "597c7fcde267cb22fe44917c0a13067184da325e6792ff8b52e2c9835a5a4b0e"
+    },
+    {
+      "file": "db9291f617a3c82eb02a9f277d987bda9122380d23de04b80e00f3a5251fee06.json",
+      "policy": "once",
+      "operations": 1010,
+      "sha256": "14983659971e8bfe074c64f70a05c8ad18599d69adb3cea811b8ade6a863789c"
+    },
+    {
+      "file": "dba7db22a90bb2abad4cb145448ef8c8c100304ac51240244aaf1fb8341a0b2f.json",
+      "policy": "all",
+      "operations": 19,
+      "sha256": "836125069e70d0bc0d34f960601f1dbc8fb90546e41dec74ab57fd05a9978321"
+    },
+    {
+      "file": "e15f7f811f8da4973b5db82977d13f139ad5a7a8f14c2eece851e031be48fd19.json",
+      "policy": "once",
+      "operations": 1010,
+      "sha256": "97721a26cc3f8be00ae37cfabf092ce61e40b9d27e485239b1ef5f9ba49e829e"
+    },
+    {
+      "file": "e5c95759eedeb99b66de0fa4a1b3cd74955775711d0e196db6c68512f66b6250.json",
+      "policy": "latest",
+      "operations": 18,
+      "sha256": "32af397e4dc54ceb4fb9ef22cd3581d25e5aa83272262c379ced8d8645f857b7"
+    },
+    {
+      "file": "f11df49d55ec1f09ec203848ff7d0ef54bce833bceeade56320f88f21c32363b.json",
+      "policy": "all",
+      "operations": 18,
+      "sha256": "5b6a87d53f64524a96b805bc58e4a32f8cd439847dd4b1541cfb0d5cf0f3d036"
+    }
+  ],
+  "cases": {
+    "latest": {
+      "before_draw": {
+        "result": 0,
+        "produced": 3,
+        "taken": 3,
+        "pending": false,
+        "available": true,
+        "phase": 0,
+        "required": 0,
+        "queued": 0,
+        "delivered": 0,
+        "mailboxes": [
+          0,
+          0
+        ],
+        "attached": [
+          true,
+          true
+        ],
+        "offered": 0,
+        "dropped": 0,
+        "removed": 0,
+        "overwritten": 2,
+        "dirty": true,
+        "latest": 3,
+        "control": [
+          1,
+          2,
+          3
+        ],
+        "display": []
+      },
+      "after_draw": {
+        "result": 0,
+        "produced": 3,
+        "taken": 3,
+        "pending": false,
+        "available": true,
+        "phase": 0,
+        "required": 0,
+        "queued": 0,
+        "delivered": 0,
+        "mailboxes": [
+          0,
+          0
+        ],
+        "attached": [
+          true,
+          true
+        ],
+        "offered": 0,
+        "dropped": 0,
+        "removed": 0,
+        "overwritten": 2,
+        "dirty": false,
+        "latest": 3,
+        "control": [
+          1,
+          2,
+          3
+        ],
+        "display": [
+          3
+        ]
+      }
+    },
+    "all": {
+      "before_draw": {
+        "result": 0,
+        "produced": 2,
+        "taken": 1,
+        "pending": true,
+        "available": false,
+        "phase": 2,
+        "required": 3,
+        "queued": 2,
+        "delivered": 1,
+        "mailboxes": [
+          0,
+          1
+        ],
+        "attached": [
+          true,
+          true
+        ],
+        "offered": 0,
+        "dropped": 0,
+        "removed": 0,
+        "overwritten": 0,
+        "dirty": false,
+        "latest": 0,
+        "control": [
+          1
+        ],
+        "display": []
+      },
+      "after_draw": {
+        "result": 0,
+        "produced": 2,
+        "taken": 1,
+        "pending": true,
+        "available": false,
+        "phase": 0,
+        "required": 0,
+        "queued": 0,
+        "delivered": 0,
+        "mailboxes": [
+          0,
+          0
+        ],
+        "attached": [
+          true,
+          true
+        ],
+        "offered": 0,
+        "dropped": 0,
+        "removed": 0,
+        "overwritten": 0,
+        "dirty": false,
+        "latest": 0,
+        "control": [
+          1
+        ],
+        "display": [
+          1
+        ]
+      }
+    },
+    "once": {
+      "before_draw": {
+        "result": 0,
+        "produced": 3,
+        "taken": 3,
+        "pending": false,
+        "available": true,
+        "phase": 0,
+        "required": 0,
+        "queued": 0,
+        "delivered": 0,
+        "mailboxes": [
+          0,
+          1
+        ],
+        "attached": [
+          true,
+          true
+        ],
+        "offered": 3,
+        "dropped": 2,
+        "removed": 0,
+        "overwritten": 0,
+        "dirty": false,
+        "latest": 0,
+        "control": [
+          1,
+          2,
+          3
+        ],
+        "display": []
+      },
+      "after_draw": {
+        "result": 0,
+        "produced": 3,
+        "taken": 3,
+        "pending": false,
+        "available": true,
+        "phase": 0,
+        "required": 0,
+        "queued": 0,
+        "delivered": 0,
+        "mailboxes": [
+          0,
+          0
+        ],
+        "attached": [
+          true,
+          true
+        ],
+        "offered": 3,
+        "dropped": 2,
+        "removed": 0,
+        "overwritten": 0,
+        "dirty": false,
+        "latest": 0,
+        "control": [
+          1,
+          2,
+          3
+        ],
+        "display": [
+          1
+        ]
+      }
+    }
+  },
+  "policies": {
+    "all": "required control and display receipts",
+    "once": "required control; optional display offered once, detached value valid after publication release",
+    "latest": "required control; application latest-state cache, persistent across display detach"
+  },
+  "random": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "choices_per_seed": 1000,
+    "policies": 3
+  },
+  "build_attempts": [
+    {
+      "outcome": "nested payload trait rejected during harness compilation",
+      "native_executed": 0,
+      "workspace_passed": 3,
+      "setup_errors": 45
+    },
+    {
+      "outcome": "48 passed",
+      "native_executed": 45
+    }
+  ],
+  "archive": {
+    "path": "work/exp03-completion-optional-20261021-evidence.tar.gz",
+    "bytes": 234435,
+    "sha256": "7b97865c117ff57d33a4ca94cc120517238bdcd09a3cd7b0248840cc2fe690ac"
+  },
+  "limits": [
+    "application composition only; existing headers unchanged",
+    "no MCU ABI size/time measurement; host vectors and JSON are instrumentation",
+    "no real USB PD, display, I2C, ISR or multicore",
+    "different value retention and loss contracts; no same-semantics ranking",
+    "metadata snapshots do not retain source bytes"
+  ]
+}
