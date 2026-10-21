@@ -681,6 +681,11 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         なし）は 5 クロック = 20 MS/s で、1 回取りのみ。間隔は DMA の速さで決まり、バスを取り合うと揺れる
         （16 ビットで約 320 周期中 6 か所）。UHSIF はハンドシェイクのある並列バス（libUHSIF.a はバイナリ）で、
         DVP は外部の画素クロックが要るので、配線なしのロジックアナライザには使えない。
+      - **CH32RVHsAdc と CH32RVLogicCapture（2026-10-21）は、実機での確認が残っている。** スケッチの直書きで
+        確かめた手順をライブラリにしたもの。HsAdc の `read()` は、DMA なしの 1 回読みと、ピンポンなしの DMA が
+        どちらも実機で不具合を出したので、ピンポンで書き直した（まだ動かしていない）。H417 を戻したら、SS を
+        抜いた状態で SWD による復旧ができることを確かめてから、例 4 本（HsAdcRead / HsAdcStream /
+        LogicBurst / LogicStream）を試す。手順は docs/h417-bench.ja.md。
       - SS を挿したままの復旧: `ch32rv --connect-under-reset reset`（WCH-LinkE の RST → NRST）でリセットできる。
         書き込みは失敗する（プローブの誤り 0x55）。止まったファームの調べ物には、同じ方法での読み書きが使える。
       - QingKe V3F では `csrr mcycle` が例外になる（実験のスケッチで踏んだ）。
