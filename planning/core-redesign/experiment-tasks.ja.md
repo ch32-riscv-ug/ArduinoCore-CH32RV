@@ -254,3 +254,7 @@ P5への結果表には各判断の支持・反証・未検証、比較条件、
 [K0共有結果](tasks/EXP-06/k0-shared-result.ja.md)にnative118件＋workspace3件・ABI132、165 traceを記録した。
 差分・完成設定・snapshotの共有と保護なしの反例を比較した。C-bridgeは従来Cを置換しない追加条件。
 N03のslave register／ACK対応と実IRQは未完了で、次は一次資料との対応を固定する。採用はP5で扱う。
+
+[N03 slave資料照合](tasks/EXP-06/k0-slave-source-result.ja.md)では、固定PDF／SDKから受理とACKの時点、
+STOPF条件、STAR1→STAR2の副作用、read終端、再START観測の不足を整理した。
+register backendと実wireの成立は未完了。拒否後復帰をhostのaccepted値だけで成立扱いにしない。

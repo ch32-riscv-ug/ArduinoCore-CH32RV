@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-21",
+  "implementation_commit": "9574e6f",
+  "scope": "N03 slave source audit; no register backend or hardware proof",
+  "sources": {
+    "scope": "Locked source identity and location audit only; no register simulation or hardware execution",
+    "sources": [
+      {
+        "publisher": "WCH",
+        "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Peripheral/src/ch32v00x_i2c.c",
+        "file": "CH32V003-i2c.c",
+        "bytes": 30546,
+        "sha256": "acbbebaa6e6f32d7d75196b355d6321ef4978165d6cc58ea62c2a8600ab77753",
+        "verified": true
+      },
+      {
+        "publisher": "WCH",
+        "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/datasheet_en/CH32V003RM.PDF",
+        "file": "CH32V003RM.PDF",
+        "bytes": 2472575,
+        "sha256": "2758a463045dc6e9ec36600a76317d7c5e75ffd421b5a44d8f58a060e6f271ff",
+        "verified": true
+      }
+    ],
+    "lock_sha256": "1399182c850865d76802df4e35b977e4a8e18fc7940b0a42e67e0cc3e6b0d5f1",
+    "script_sha256": "891991c6ead764d2045765d202b6cb298b0f9f2faaaa93a784dbe0e273bef66c",
+    "command": [
+      "pdftotext",
+      "-layout",
+      "work/exp06-k0-slave-source-20261021/CH32V003RM.PDF",
+      "work/exp06-k0-slave-source-20261021/CH32V003RM.txt"
+    ],
+    "pdftotext_version": "pdftotext version 26.01.0\nCopyright 2005-2026 The Poppler Developers - http://poppler.freedesktop.org\nCopyright 1996-2011, 2022 Glyph & Cog, LLC",
+    "text_sha256": "8afd7733a68470335cc1ad7d4cb5522016c4d626fa8687a2badc2cc7261d04e3",
+    "section_pdf_pages_1_based": {
+      "13.4 Slave Mode": [
+        149
+      ],
+      "13.5 Error Conditions": [
+        151
+      ],
+      "13.6 Clock Extension": [
+        151
+      ],
+      "13.11.6 I2C Status Register 1": [
+        157
+      ],
+      "13.11.7 I2C Status Register 2": [
+        158
+      ]
+    },
+    "sdk_routines": {
+      "I2C_CheckEvent": {
+        "first_line": 742,
+        "reads_star1_then_star2": true
+      },
+      "I2C_GetLastEvent": {
+        "first_line": 775,
+        "reads_star1_then_star2": true
+      }
+    }
+  },
+  "workspace_tests": 3,
+  "new_native_tests": 0,
+  "new_abi_builds": 0,
+  "source_tamper_check": {
+    "scope": "Same-length SDK modification must fail hash check",
+    "returncode": 1,
+    "stderr": "Traceback (most recent call last):\n  File \"/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/audit_k0_slave_sources.py\", line 72, in <module>\n    main()\n    ~~~~^^\n  File \"/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/audit_k0_slave_sources.py\", line 30, in main\n    assert digest(source) == row['sha256'], source\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: /home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/tmpqs_wa_bz/CH32V003-i2c.c\n"
+  },
+  "artifacts": "work/exp06-k0-slave-source-20261021",
+  "junit": {
+    "path": "work/exp06-k0-slave-source-20261021/workspace.xml",
+    "sha256": "0ada6c4a707b006007989a987b91b9a17e6514c3181b98ab65c7bc571a3c282f"
+  },
+  "archive": {
+    "path": "work/exp06-k0-slave-source-20261021-evidence.tar.gz",
+    "bytes": 2444368,
+    "sha256": "dda311667d951124bdb2f2b2944bdd1fe2d52d2f7ac937f18e9b8ab67eea632a"
+  },
+  "limits": [
+    "ACK/NACK and recovery not observed",
+    "Repeated START to other address not proven observable",
+    "No physical execution or timing",
+    "No API or contract adoption"
+  ]
+}

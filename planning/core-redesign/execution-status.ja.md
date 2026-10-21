@@ -28,6 +28,8 @@
 
 ## 最新の完了単位
 
+- [N03 slave資料の照合](tasks/EXP-06/k0-slave-source-result.ja.md)：固定WCH PDF／SDKの2 fileをbyte数・hash照合。ADDR前のACK、STAR1→STAR2の解除副作用、ACK停止後のSTOPF条件、readのAF終端、他アドレス再STARTの観測不足を対応表へ記録。同じ長さのSDK改変はhash不一致で拒否。workspace3件成功。用途native／ABIの新規実行は0。次は副作用付きregister模型、拒否と復帰の条件付きbackend。
+
 - [N03 K0共有部分](tasks/EXP-06/k0-shared-result.ja.md)：native118件＋workspace3件、ABI132。差分消失と混在snapshotの反例、保護・元のmask復元、容量1／2、10 seed×10,000反復を検査。165 trace・1,203,710操作を保存し、未使用64行は追加0 B。C-bridgeは従来Cと別の通知条件。単一コアIRQ模型の範囲であり、slave register／ACK対応とN03全体は未完了。
 
 - [N02 X035準備の用途接続](tasks/EXP-06/x0-prepared-wire-result.ja.md)：最終native182件＋workspace3件、16実行物・ABI546。840 trace・2,476,232操作で全群一致。全route／packageの可否・open再確認・FaultHeld／abandonと旧結果保持中の再準備・peerを検査。C8 route 0のLTOあり追加RAM16 B、未使用272行は追加0 B。F7はC8 map上のpackage guardで実機fitではなく、非対応32使用行を正常用途の順位へ混ぜない。N02のhost／ABI範囲は実施済み。次はN03。
