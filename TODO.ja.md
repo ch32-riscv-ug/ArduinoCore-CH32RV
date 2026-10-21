@@ -654,8 +654,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
           configured にならないと FS に移る（UART / CDC のコマンドでも切り替える。scratch の UsbFallback.h）。
       - USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
       - USBFS は済み（CH32RVUsbDcdUsbfsOtg）。DFU での書き換えも済み（ch32rv_flash）。
-        - DFU を Arduino の upload に組み込む: 済み（ch32rv の `boot dfu flash`、platform.txt の ch32rv_dfu。
-          ch32rv の次のリリースを待って版を上げる）。
+        - DFU を Arduino の upload に組み込む: 済み（ch32rv の `boot dfu flash`、platform.txt の ch32rv_dfu）。
+          ch32rv 0.22.0 を同梱した（2026-10-21）。Arduino の書き込みボタンからの実機確認は、H417 の復旧の後。
       - USBSS のホスト。
       - 既定のクロックは HSI×16 の 400 MHz、V3F（F_CPU）は 100 MHz にした（2026-10-21、EVT の
         SetSYSCLK_400M_CoreCLK_V5F_400M_V3F_100M_HSI と同じ）。25 MHz では USBSS の EP0 の 96 バイト目以降で

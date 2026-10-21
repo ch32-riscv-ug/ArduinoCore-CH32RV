@@ -182,7 +182,7 @@ tools.ch32rv_isp.upload.pattern="{path}/{cmd}" --non-interactive --progress none
 # takes DFU_DETACH, comes back in DFU mode and is written by DFU download from
 # flash offset 0 (docs/usb.ja.md). Their factory ISP is out of reach of
 # software, so boards.txt points their ch32rv-app ports here instead of at
-# ch32rv_isp. Needs a ch32rv with `boot dfu` (main 729ec53, not yet released).
+# ch32rv_isp. `boot dfu` is in ch32rv 0.22.0 and later.
 tools.ch32rv_dfu.path={runtime.tools.ch32rv.path}
 tools.ch32rv_dfu.cmd=ch32rv
 tools.ch32rv_dfu.cmd.windows=ch32rv.exe
