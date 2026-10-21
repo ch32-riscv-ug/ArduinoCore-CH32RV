@@ -11,7 +11,7 @@ class CH32RVUsbDeviceNet : public CH32RVUsbDeviceFunction {
 public:
     /* callback(frame, length): a whole Ethernet frame from the host. Runs
      * inside the USB stack; the data is valid only during the call. */
-    typedef void (*FrameCallback)(const uint8_t *frame, size_t length);
+    typedef CH32RVCallback<void(const uint8_t *frame, size_t length)> FrameCallback;
 
     explicit CH32RVUsbDeviceNet(CH32RVUsbDevice &device = USBDevice);
 

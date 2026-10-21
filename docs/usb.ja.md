@@ -100,6 +100,8 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホスト�
   バルク IN 246 MB/s、OUT 233 MB/s で、データはすべて一致しました。バルクのエンドポイントは bMaxBurst 3
   （4 パケット）で記述します。0 だと IN 205 MB/s、OUT 138 MB/s でした。同じ測り方で、FS は IN 1.0 MB/s、
   OUT 0.7 MB/s です。Vendor クラスの `write()` は 1 バイトずつ FIFO に入れるので、ここまでは出ません。
+  `writeDirect()`（16 KB のバッファ 2 つを `onTxComplete()` から交互に）で IN 194〜206 MB/s、`onRxData()` に
+  32 KB の `setRxDataBuffer()` を与えて OUT 52 MB/s でした（受け取った側の `memcpy` が律速）。
 - **USBSS にはシステムクロックの速さが要ります。** HSI の 25 MHz のまま動かしていたときは、DMA が
   リンクに追いつかず、EP0 IN の 96 バイト目以降で 32 バイトの塊が重複していました。既定の
   400 MHz（V3F と HCLK は 100 MHz）では、512 バイトまで正しく返ります（2026-10-21）。
@@ -345,7 +347,6 @@ void loop() { while (port.available()) Serial.write(port.read()); }
   - V407 / V467、X305 / X315、V205、H417 の USBHS: V307 とは別の「第2世代」の USBHS で、ドライバを新しく書く必要が
     あります（H417 のものは EP の配置がさらに違う）。
   - H417: USBSS の実機確認（書込み手段の準備待ち）、USBFS、USBSS のホスト、V5F の利用。
-- **ベンダーの直接転送**（`writeDirect()`）: USBHS の DMA で入れる。今は `NotSupported`。
 - **USB ネットワークの IP 層**（EspUsbDevice の `ipConfig()` / `dhcpServer()` / `beginNetwork()`）: IP スタック
   （lwIP など）が要るので、入れるかは方針の確認待ち。
 - **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は今 X035 / X033 だけが

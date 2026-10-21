@@ -129,7 +129,7 @@ private:
  * only; at least 16 blocks (8 KB). */
 class CH32RVUsbDeviceMscFatRamDisk : public CH32RVUsbDeviceMscStorage {
 public:
-    typedef void (*EjectCallback)(void);
+    typedef CH32RVCallback<void(void)> EjectCallback;
 
     CH32RVUsbDeviceMscFatRamDisk(uint8_t *storage, size_t size);
 

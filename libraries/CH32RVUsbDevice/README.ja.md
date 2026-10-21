@@ -47,8 +47,9 @@ void loop() {
 | `lastError()` が `esp_err_t` | `lastError()` が `CH32RVUsbDeviceError`。`lastErrorName()` は同じ |
 
 ### 違い
-- **コールバックは関数ポインタ**です（EspUsbDevice は `std::function`）。キャプチャしないラムダはそのまま渡せます。
-  キャプチャするラムダは渡せません。
+- **コールバックは `CH32RVCallback` です**（EspUsbDevice は `std::function`）。関数ポインタと、取り込みが
+  ポインタ 2 つ分まで（`[this]`、ポインタと小さな値）のラムダを渡せます。ヒープは使いません。もっと大きい取り込みは
+  コンパイルエラーになります。
 - **キーボードレイアウトは、使ったものだけがリンクされます。** 全部（19種）を持つと約 17 KB になるため、
   レイアウトごとに別のオブジェクトにしています。
 - **CDC は `Stream` です。** `print()` などの Arduino の関数がそのまま使え、ホストが開いている間は書き込みが
@@ -61,7 +62,12 @@ void loop() {
 - **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
   EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
 - **無いもの**: ファームウェア更新の各クラス、USB ネットワークの IP 層（このコアに IP スタックが無いので、
-  `CH32RVUsbDeviceNet` は生の Ethernet フレームを扱う）、ベンダーの直接転送（`writeDirect()` は `NotSupported`）（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
+  `CH32RVUsbDeviceNet` は生の Ethernet フレームを扱う）、（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
+- **ベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
+  送ります（`onTxComplete()` で返るまで、バッファは触らず残してください）。EspUsbDevice と違い、ビルド時の設定は
+  要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で直接読みます）。`onRxData()` も実行時に選べ、
+  `setRxDataBuffer()` で受信先を大きなバッファにできます。`setInterfaceProtocol()` で subclass / protocol を、
+  HID ベンダーの `setUsage()` で usage page / usage を変えられます（どちらもこのライブラリだけのもの）。
 - **既定の文字列と ID は実行時に変えます**（`CH32RVUsbDeviceConfig` の VID/PID・メーカー名・製品名、`setName()`
   のインターフェース名、MSC の `vendorID()` など、FAT の `format()` のボリュームラベル）。`build_opt.h` の define では変えません。
 - **DFU ランタイムが既定で付きます。** `config.dfuRuntime = false` で外せます。
@@ -81,10 +87,10 @@ void loop() {
 | `CH32RVUsbDeviceHidGamepad` | ゲームパッド（6 軸、ハット、32 ボタン）。`send()`、`sendReport()` |
 | `CH32RVUsbDeviceHidConsumerControl` | メディアキー。`click(CH32RV_USB_DEVICE_CONSUMER_CONTROL_VOLUME_UP)` など |
 | `CH32RVUsbDeviceHidSystemControl` | 電源オフ・スタンバイ・ホストの起床 |
-| `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID（ドライバ不要のデータ通信）。`sendInput()`、`onOutputReport()`、`onFeatureReport()` |
+| `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID（ドライバ不要のデータ通信）。`sendInput()`、`onOutputReport()`、`onFeatureReport()`、`setUsage()`。レポートは FS だけの系列で 63 バイト、HS / SS の系列で 511 / 1023 バイトまで |
 | `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID |
 | `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル）。`noteOn(channel, note, velocity, cable)`、`readPacket()` |
-| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`write()`、`flush()`、`waitWritable()`、`onRx()`、`onControlRequest()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
+| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`write()`、`flush()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onTxComplete()`、`onRxData()`、`setRxDataBuffer()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
 | `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`、`isWritable()`、`vendorID()` など |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |

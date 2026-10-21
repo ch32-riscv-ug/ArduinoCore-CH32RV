@@ -63,11 +63,11 @@ struct CH32RVUsbDeviceVideoCommit {
 
 class CH32RVUsbDeviceVideo : public CH32RVUsbDeviceFunction {
 public:
-    typedef void (*FrameCompleteCallback)();
-    typedef void (*CommitCallback)(const CH32RVUsbDeviceVideoCommit &commit);
+    typedef CH32RVCallback<void()> FrameCompleteCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbDeviceVideoCommit &commit)> CommitCallback;
     /* Fill dst with `length` bytes of the frame starting at byte `offset`
      * (sendGeneratedFrame()). Runs on the USB task once per payload. */
-    typedef void (*FillCallback)(uint8_t *dst, size_t length, uint32_t offset);
+    typedef CH32RVCallback<void(uint8_t *dst, size_t length, uint32_t offset)> FillCallback;
 
     /* name, when given, is the function name the host shows (iFunction on the
      * IAD and iInterface on both interfaces); CH32RV_USB_VIDEO_NAME otherwise. */

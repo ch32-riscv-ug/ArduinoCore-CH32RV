@@ -35,6 +35,7 @@
 
 #include <Arduino.h>
 
+#include "CH32RVUsbCallback.h"
 #include "CH32RVUsbDeviceTypes.h"
 
 class CH32RVUsbDevice;

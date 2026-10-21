@@ -59,8 +59,8 @@ private:
 /* ---------------------------------------------------------- keyboard */
 class CH32RVUsbDeviceHidKeyboard : public CH32RVUsbDeviceHidClass {
 public:
-    typedef void (*OutputReportCallback)(const CH32RVUsbDeviceHidKeyboardOutputReport &report);
-    typedef void (*ProtocolCallback)(const CH32RVUsbDeviceHidProtocolEvent &event);
+    typedef CH32RVCallback<void(const CH32RVUsbDeviceHidKeyboardOutputReport &report)> OutputReportCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbDeviceHidProtocolEvent &event)> ProtocolCallback;
 
     explicit CH32RVUsbDeviceHidKeyboard(CH32RVUsbDevice &device = USBDevice);
 
@@ -173,9 +173,17 @@ private:
  * out under report ID CH32RV_USB_DEVICE_HID_REPORT_ID_VENDOR (6). */
 class CH32RVUsbDeviceHidVendor : public CH32RVUsbDeviceHidClass {
 public:
-    typedef void (*ReportCallback)(const CH32RVUsbDeviceHidReport &report);
+    typedef CH32RVCallback<void(const CH32RVUsbDeviceHidReport &report)> ReportCallback;
 
+    /* reportSize: up to maxReportSize() - 63 on full-speed-only series, the
+     * largest packet less the report ID on high speed / SuperSpeed ones (511
+     * or 1023). At full speed a report longer than 63 goes in several 64-byte
+     * packets. */
     explicit CH32RVUsbDeviceHidVendor(CH32RVUsbDevice &device = USBDevice, uint16_t reportSize = 63);
+    /* The top-level usage the report descriptor declares (Usage Page,
+     * Usage): what a host looks the interface up by - an OEP probe is
+     * 0xFF4F / 0x45. Before begin(). */
+    void setUsage(uint16_t usagePage, uint8_t usage);
 
     bool sendInput(const void *data, size_t length, uint32_t timeoutMs = 100);
     void onOutputReport(ReportCallback callback) { _outputCallback = callback; }
@@ -192,7 +200,10 @@ public:
                         uint16_t length) override;
 
 private:
+    void build();
     uint16_t _reportSize;
+    uint16_t _usagePage = 0xff00;
+    uint8_t _usage = 0x01;
     uint8_t _desc[32] = {};
     uint8_t _descLength = 0;
     ReportCallback _outputCallback = nullptr;

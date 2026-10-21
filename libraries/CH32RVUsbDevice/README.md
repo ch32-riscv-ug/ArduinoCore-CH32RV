@@ -51,8 +51,10 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
 | `lastError()` returns `esp_err_t` | `lastError()` returns `CH32RVUsbDeviceError`; `lastErrorName()` as before |
 
 Differences:
-- **Callbacks are function pointers** (EspUsbDevice takes `std::function`): a
-  lambda without captures converts, one with captures does not.
+- **Callbacks are `CH32RVCallback`** (EspUsbDevice takes `std::function`): a
+  function pointer, or a lambda capturing at most two pointers' worth
+  (`[this]`, a pointer and a small value). No heap; a bigger capture is a
+  compile error.
 - **Only the keyboard layouts a sketch names are linked**; all 19 together
   would be about 17 KB.
 - **CDC is a `Stream`**, and blocks until everything is written while a host
@@ -66,9 +68,14 @@ Differences:
 - **Disks are objects the MSC class reads from** (`setStorage()`; `attach()`
   does it), not lambdas bound to `onRead()`.
 - **Not here**: the firmware-update classes, the network IP layer (no IP
-  stack in this core: `CH32RVUsbDeviceNet` exchanges raw Ethernet frames),
-  and the vendor class's direct (zero-copy) path (`writeDirect()` reports
-  `NotSupported`).
+  stack in this core: `CH32RVUsbDeviceNet` exchanges raw Ethernet frames).
+- **The vendor class's direct path (`writeDirect()`) works on every series**:
+  one transfer straight from the caller's buffer, which stays untouched until
+  `onTxComplete()` reports it. No build flag and no alignment rule (the USBSS
+  DMA reads a 4-byte-aligned buffer itself). `onRxData()` is a run-time choice
+  too, and `setRxDataBuffer()` gives it a bigger landing buffer. Only here:
+  `setInterfaceProtocol()` (subclass / protocol) and the HID vendor class's
+  `setUsage()`.
 - **A DFU runtime interface comes by default**; `config.dfuRuntime = false`
   leaves it out. It enters WCH ISP on X035/X033; other series currently reset
   normally. This differs from EspUsbDevice OTA/DFU download support.
@@ -132,7 +139,7 @@ TooManyInstances indicate different resource limits; see the
 [controller table](../../docs/usb.ja.md#コントローラと速度).
 
 begin success means the stack started; mounted means the host configured it.
-CDC connected means DTR is active. Callbacks use function pointers; copy
+CDC connected means DTR is active. Callbacks are small (no heap); copy
 received data if needed later and keep device callbacks short. Tasks run after
 loop and during delay; call device.task inside long processing loops.
 

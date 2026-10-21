@@ -113,8 +113,10 @@ static bool declares_report_id(const uint8_t *desc, uint16_t length)
 }
 
 /* ---------------------------------------------------------- the shared interface */
-/* The interrupt endpoints' packet, and the largest report (ID included). */
-#define HID_EP_SIZE 64
+/* The largest report (ID included) and the interrupt endpoints' packet at
+ * high speed and SuperSpeed: the series' largest packet. Full speed caps the
+ * endpoint at 64; a longer report goes out in several packets. */
+#define HID_EP_SIZE (CH32RV_USB_MAX_PACKET > 64 ? CH32RV_USB_MAX_PACKET : 64)
 
 #define HID_GET_REPORT   0x01
 #define HID_GET_IDLE     0x02
@@ -281,8 +283,19 @@ public:
     {
         protocol = 1;                            /* report protocol after a configuration */
         idle = 0;
+        /* Each OUT transfer asks for the longest report: one that is a whole
+         * number of packets then ends the transfer by its length. */
+        outLength = 64;
+        for (uint8_t i = 0; i < count; i++) {
+            if (at(i)->hidInEndpointSize() > outLength) {
+                outLength = at(i)->hidInEndpointSize();
+            }
+        }
+        if (outLength > sizeof out) {
+            outLength = sizeof out;
+        }
         if (epOut) {
-            device().transfer(epOut, out, sizeof out);
+            device().transfer(epOut, out, outLength);
         }
         for (uint8_t i = 0; i < count; i++) {
             at(i)->onBusAttached();
@@ -293,7 +306,7 @@ public:
     {
         if (address == epOut) {
             dispatch(0, 2, out, length);         /* an output report */
-            device().transfer(epOut, out, sizeof out);
+            device().transfer(epOut, out, outLength);
         }
     }
 
@@ -372,6 +385,7 @@ public:
     uint8_t hidDescriptor[9] = {9, 0x21, 0x11, 0x01, 0, 1, 0x22, 0, 0};
     uint8_t epIn = 0, epOut = 0;
     uint8_t idle = 0, protocol = 1;
+    uint16_t outLength = 64;
     uint8_t in[HID_EP_SIZE], out[HID_EP_SIZE], ctrl[HID_EP_SIZE];
 };
 
@@ -406,8 +420,9 @@ static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescrip
             }
         }
     }
-    if (size > HID_EP_SIZE) {
-        size = HID_EP_SIZE;
+    const uint16_t cap = speed == CH32RVUsbSpeed::Full ? 64 : HID_EP_SIZE;
+    if (size > cap) {
+        size = cap;
     }
     const uint8_t n = (*ep)++;
     const uint16_t rl = h.reportLength();
@@ -808,21 +823,40 @@ CH32RVUsbDeviceHidVendor::CH32RVUsbDeviceHidVendor(CH32RVUsbDevice &device, uint
     if (_reportSize == 0 || _reportSize > maxReportSize()) {
         _reportSize = maxReportSize();
     }
+    build();
+}
+
+void CH32RVUsbDeviceHidVendor::setUsage(uint16_t usagePage, uint8_t usage)
+{
+    _usagePage = usagePage;
+    _usage = usage;
+    build();
+}
+
+void CH32RVUsbDeviceHidVendor::build()
+{
     uint8_t *d = _desc;
+    uint8_t at = 0;
     const uint8_t head[] = {
-        0x06, 0x00, 0xff,                           /* Usage Page (Vendor 0xff00) */
-        0x09, 0x01, 0xa1, 0x01,                     /* Usage 1, Collection (Application) */
+        0x06, (uint8_t)_usagePage, (uint8_t)(_usagePage >> 8),   /* Usage Page (vendor 0xff00 by default) */
+        0x09, _usage, 0xa1, 0x01,                   /* Usage, Collection (Application) */
         0x85, CH32RV_USB_DEVICE_HID_REPORT_ID_VENDOR,
         0x15, 0x00, 0x26, 0xff, 0x00, 0x75, 0x08,   /* 0..255, 8 bits */
     };
     memcpy(d, head, sizeof head);
-    uint8_t at = sizeof head;
-    d[at++] = 0x95;                                 /* Report Count */
-    d[at++] = (uint8_t)_reportSize;
+    at = sizeof head;
+    if (_reportSize > 255) {
+        d[at++] = 0x96;                             /* Report Count, 2 bytes */
+        d[at++] = (uint8_t)_reportSize;
+        d[at++] = (uint8_t)(_reportSize >> 8);
+    } else {
+        d[at++] = 0x95;                             /* Report Count */
+        d[at++] = (uint8_t)_reportSize;
+    }
     const uint8_t tail[] = {
-        0x09, 0x01, 0x81, 0x02,                     /* Input */
-        0x09, 0x01, 0x91, 0x02,                     /* Output */
-        0x09, 0x01, 0xb1, 0x02,                     /* Feature */
+        0x09, _usage, 0x81, 0x02,                   /* Input */
+        0x09, _usage, 0x91, 0x02,                   /* Output */
+        0x09, _usage, 0xb1, 0x02,                   /* Feature */
         0xc0,
     };
     memcpy(d + at, tail, sizeof tail);

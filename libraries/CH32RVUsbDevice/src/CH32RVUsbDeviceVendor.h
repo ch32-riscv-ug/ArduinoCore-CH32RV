@@ -21,9 +21,7 @@ struct CH32RVUsbDeviceVendorControlRequest {
     const void *rawRequest = nullptr;
 };
 
-/* EspUsbDeviceVendorDirectError. The USBFS and USBD drivers always copy
- * through their own endpoint buffers, so writeDirect() reports NotSupported on
- * every series for now - USBHS included, whose DMA path is not wired to it. */
+/* EspUsbDeviceVendorDirectError: why writeDirect() refused. */
 enum class CH32RVUsbDeviceVendorDirectError : uint8_t {
     None = 0,
     NotSupported,
@@ -38,14 +36,14 @@ enum class CH32RVUsbDeviceVendorDirectError : uint8_t {
 class CH32RVUsbDeviceVendor : public CH32RVUsbDeviceFunction, public Print {
 public:
     /* callback(bytes available) when data arrives. */
-    typedef void (*RxCallback)(size_t available);
+    typedef CH32RVCallback<void(size_t available)> RxCallback;
     /* callback(sentBytes) when a transmit on the bulk IN endpoint completed. */
-    typedef void (*TxCompleteCallback)(size_t sentBytes);
-    typedef void (*RxDataCallback)(const uint8_t *data, size_t length);
+    typedef CH32RVCallback<void(size_t sentBytes)> TxCompleteCallback;
+    typedef CH32RVCallback<void(const uint8_t *data, size_t length)> RxDataCallback;
     /* A vendor request the library does not answer itself. Return true when
      * handled: answer it at stage SETUP with sendControlResponse(), and
      * return true at the later stages. */
-    typedef bool (*ControlRequestCallback)(const CH32RVUsbDeviceVendorControlRequest &request);
+    typedef CH32RVCallback<bool(const CH32RVUsbDeviceVendorControlRequest &request)> ControlRequestCallback;
 
     /* Full speed: bulk endpoints are 8, 16, 32 or 64 bytes. */
     explicit CH32RVUsbDeviceVendor(CH32RVUsbDevice &device = USBDevice, uint16_t endpointSize = 64);
@@ -70,21 +68,53 @@ public:
      * shorter than the endpoint size. */
     void flush() override;
 
-    /* EspUsbDevice's zero-copy path. Not on USBFS yet: false / NotSupported. */
-    static bool directWriteSupported() { return false; }
+    /* EspUsbDevice's zero-copy path: one bulk IN transfer straight from
+     * `buffer`, which stays the caller's - untouched and alive - until
+     * onTxComplete() reports it. Any length up to 65535 and any alignment;
+     * a length that is a multiple of the packet size gets no zero-length
+     * packet after it (send a short one, or let the host read whole
+     * transfers). Not mixed with write(): refused (Busy) while the FIFO has
+     * data in flight, and write() waits while a direct transfer is out.
+     * Arming the next one from onTxComplete() keeps a stream gapless. The
+     * controllers move it at their own speed: the USBSS DMA reads the buffer
+     * itself (keep it 4-byte aligned, or it goes a packet at a time through a
+     * bounce buffer), the USBFS ones copy a packet at a time. */
+    static bool directWriteSupported() { return true; }
     bool writeDirect(const void *buffer, size_t length);
     CH32RVUsbDeviceVendorDirectError lastDirectError() const { return _directError; }
     const char *lastDirectErrorName() const;
 
     void onRx(RxCallback cb) { _onRx = cb; }
     void onTxComplete(TxCompleteCallback cb) { _onTxComplete = cb; }
-    /* Direct builds only in EspUsbDevice; never called here. */
+    /* Received data, straight from the endpoint buffer, one transfer at a
+     * time; while set, nothing goes to the receive FIFO (available() stays 0).
+     * EspUsbDevice has this on its direct builds only; here it is a run-time
+     * choice. The data is valid during the call. */
     void onRxData(RxDataCallback cb) { _onRxData = cb; }
+    /* Where onRxData() transfers land instead of the class's own buffer (2 x
+     * the largest packet): a bigger one lets SuperSpeed OUT run at speed. It
+     * stays the class's until end(); at most 65535 bytes are used, in whole
+     * packets. nullptr goes back to the class's buffer. */
+    void setRxDataBuffer(void *buffer, size_t size)
+    {
+        _rxData = static_cast<uint8_t *>(buffer);
+        _rxDataSize = size > 65535u ? 65535u : (uint16_t)size;
+    }
     void onControlRequest(ControlRequestCallback cb) { _onControl = cb; }
     /* Answer a request at stage SETUP: data, or a status stage when none. */
     bool sendControlResponse(const CH32RVUsbDeviceVendorControlRequest &request, const void *data = nullptr,
                              size_t length = 0);
     uint16_t endpointSize() const { return _endpointSize; }
+    /* bInterfaceSubClass / bInterfaceProtocol (class stays 0xFF), for a
+     * device a host finds by them - an OEP probe is 0xFF / 0x4F / 0x45.
+     * Before begin(). */
+    void setInterfaceProtocol(uint8_t subclass, uint8_t protocol)
+    {
+        _subclass = subclass;
+        _protocol = protocol;
+    }
+    uint8_t interfaceSubclass() const { return _subclass; }
+    uint8_t interfaceProtocol() const { return _protocol; }
 
     /* For the USB stack's callbacks. */
     void handleRx();
@@ -110,7 +140,10 @@ private:
     uint16_t _rxHead = 0, _rxTail = 0, _rxEnd = 0;
     uint16_t _txHead = 0, _txTail = 0, _txSending = 0;
     uint16_t _packet = 64;
-    bool _outBusy = false, _inBusy = false, _zlp = false;
+    bool _outBusy = false, _inBusy = false, _zlp = false, _direct = false;
+    uint8_t _subclass = 0, _protocol = 0;
+    uint8_t *_rxData = nullptr;
+    uint16_t _rxDataSize = 0;
     uint16_t _endpointSize;
     RxCallback _onRx = nullptr;
     TxCompleteCallback _onTxComplete = nullptr;

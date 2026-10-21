@@ -32,10 +32,10 @@ public:
     /* Answer one exchange: write the response (including SW1 SW2) into
      * `response`, at most `capacity` bytes, and return its length; 0 fails the
      * command (ICC_MUTE). Runs inside the USB stack: no blocking. */
-    typedef size_t (*ApduCallback)(const uint8_t *apdu, size_t length, uint8_t *response, size_t capacity);
+    typedef CH32RVCallback<size_t(const uint8_t *apdu, size_t length, uint8_t *response, size_t capacity)> ApduCallback;
     typedef ApduCallback EscapeCallback;
     /* The host activated (true) or deactivated (false) the card. */
-    typedef void (*PowerCallback)(bool on);
+    typedef CH32RVCallback<void(bool on)> PowerCallback;
 
     explicit CH32RVUsbDeviceCcid(CH32RVUsbDevice &device = USBDevice);
 

@@ -20,7 +20,7 @@
 
 class CH32RVUsbDeviceMscSdCard : public CH32RVUsbDeviceMscStorage {
 public:
-    typedef void (*EjectCallback)(void);
+    typedef CH32RVCallback<void(void)> EjectCallback;
 
     CH32RVUsbDeviceMscSdCard() {}
 

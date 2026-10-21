@@ -20,7 +20,7 @@ public:
 
     /* Called on DFU_DETACH, before the reset. Return false to refuse (the
      * host still sees the request succeed; the device simply stays). */
-    typedef bool (*DetachCallback)(void);
+    typedef CH32RVCallback<bool(void)> DetachCallback;
     void onDetach(DetachCallback cb) { _onDetach = cb; }
 
     /* For the USB stack's callback. */

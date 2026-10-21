@@ -4,9 +4,9 @@
 
 class CH32RVUsbDeviceCdcSerial : public Stream, public CH32RVUsbDeviceFunction {
 public:
-    typedef void (*LineCodingCallback)(const CH32RVUsbDeviceCdcLineCoding &coding);
-    typedef void (*LineStateCallback)(const CH32RVUsbDeviceCdcLineState &state);
-    typedef void (*RxCallback)(size_t available);
+    typedef CH32RVCallback<void(const CH32RVUsbDeviceCdcLineCoding &coding)> LineCodingCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbDeviceCdcLineState &state)> LineStateCallback;
+    typedef CH32RVCallback<void(size_t available)> RxCallback;
 
     /* `name` is what the host shows for this port; give each port of a
      * multi-port device its own (EspUsbDeviceCdcSerial). */
