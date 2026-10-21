@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-22",
+  "scope": "N05 V003 K0 conditional slave register + synchronous storage/blackout model; not physical Flash/I2C",
+  "candidates": [
+    "R",
+    "A",
+    "B",
+    "C-bridge"
+  ],
+  "units": [
+    0,
+    1,
+    2,
+    4
+  ],
+  "geometry": {
+    "program": 64,
+    "erase": 64,
+    "physical_end": 134234112
+  },
+  "format": "blob8: signed position bits uint32 + caller tag uint32; one bank for 1 unit, two for 2/4; no footer",
+  "normal": "explicit application/progress/turn; one synchronous media operation per storage progress; result held until explicit take then bounded rescan",
+  "timing": {
+    "erase_us": 3130,
+    "program_us": 2810,
+    "load_us": 86,
+    "kind": "declared sensitivity inputs, not measured use-case latency bounds"
+  },
+  "clock_models": [
+    "wall-derived milliseconds",
+    "one pending tick per blackout"
+  ],
+  "input_latch_capacities": [
+    1,
+    4
+  ],
+  "input_model": "hypothetical external FIFO/latch, +/- step source; explicit delivery; no real GPIO FIFO claim",
+  "fault_masks": [
+    0,
+    255,
+    256,
+    257,
+    258
+  ],
+  "fault_note": "0/255/half program/erase masks; 257 erase all-zero, 258 erase all-zero plus unstable first-byte reads; quiescent failure after declared operation interval",
+  "raw_reference": {
+    "path": "docs/flash-raw.ja.md",
+    "commit": "bbe0ee7",
+    "sha256": "0944cd094f1a1794197070156c02da77c619b03755cfee6d2d87fd043c465903",
+    "sample_part": "CH32V003F4U6 24MHz",
+    "limits": "Repository experiment summary, not a hard bound; input arrives/IRQ/vector/USB/PD behavior not proven by timing table"
+  },
+  "not_verified": [
+    "real V003 Flash/I2C/IRQ composite",
+    "physical clock stretch and peer timeout",
+    "arbitrary power cut",
+    "stack peak",
+    "full runtime placement",
+    "API adoption"
+  ],
+  "slave": "frozen N03 conditional register fixture, ACK-discard and data-NACK mappings; no automatic peer timeout/progress during blackout; explicit IRQ only"
+}
