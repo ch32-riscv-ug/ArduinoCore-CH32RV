@@ -6,7 +6,7 @@ profiles:
   uiapduino_v003_v14:
     fqbn: ch32-riscv-ug:ch32rv:UIAPDUINO_V003_V14
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.2.1)
+      - platform: ch32-riscv-ug:ch32rv (0.2.2)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
 default_profile: uiapduino_v003_v14
