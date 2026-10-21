@@ -1,0 +1,2352 @@
+{
+  "scope": "Fixed kernel under native test port plus X035 link fixture; no hardware kernel switching proof",
+  "native_tests": 20,
+  "workspace_tests": 3,
+  "native_executables": 5,
+  "vendor_sources_verified": 76,
+  "host_traces": 78,
+  "canonical_commands": 120244,
+  "native_driver_commands": 864430,
+  "all_four_equal_groups": 18,
+  "abi_builds": 18,
+  "unused_zero_addition_rows": 8,
+  "controller_stack_bytes": 512,
+  "controller_tcb_bytes": 60,
+  "initial_completed_images_equal": 10,
+  "stack_peak_bytes": null,
+  "switch_cycles": null,
+  "traces": [
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/00c579f6b7620df8bfe970707683e507542a7dda4129ce5f0fec1f7ad81662e2.json.gz",
+      "sha256": "f2d53d0be2743da038afe326529b826f398c869ce2a6a2a179e575bc9dadf5e7",
+      "commands": 5,
+      "native_driver_commands": 5,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/012f5ac251dfcb8985a20a94c3906deebeda1e07b5339a7780257c35c0680473.json.gz",
+      "sha256": "9174acd22722633e5cb7e012169839cd2d0c48e20320e6109affbb8d43130766",
+      "commands": 18,
+      "native_driver_commands": 18,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/1a192e794b31b03205332450894e8e33a1f13d280fd17e2517626a6e0d5ac064.json.gz",
+      "sha256": "c3175fd14d42704500fa00de07788305e59ca1326af90aa4ca833ac77bb26ee8",
+      "commands": 3,
+      "native_driver_commands": 3,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/1a89d795415a822961eb70b322f2bf01fdef846fa379c1f8fb55a734a31f1a9d.json.gz",
+      "sha256": "71e70980075a89a789cd4d0ddbcbe1bd125299516a52db0cbae365582a0da14d",
+      "commands": 4,
+      "native_driver_commands": 66,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/22137ddf96aac71e9e5c3cb54306025f2283fd1df6cc187599acc62f3ae18782.json.gz",
+      "sha256": "7aa5320e950ab747745a53adca2428f679657716607bc3b695daf9d433be1f90",
+      "commands": 5,
+      "native_driver_commands": 36,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/2215a1857b2cb0fade627e9d0bb5f14b7f5f28a331dec78ea0b81f0a280ab96a.json.gz",
+      "sha256": "5d312cf296a01633ca881e73c7d24e870e1331f88ee9e04b9c485d8cdfc3167f",
+      "commands": 3000,
+      "native_driver_commands": 39487,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/22e2981d1e44bd6f006d5acac7b3f4b80569e02b648cee17343cfd3b565512b0.json.gz",
+      "sha256": "dc6a1e836b09cb663433f7f91b94fabd9b0b14028cd4322e281f50ba4164d219",
+      "commands": 3,
+      "native_driver_commands": 34,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/2a0504ee5413fcdc656fbfa223495b0e094c2e6d4c6eb5098beb5fe7c8f27957.json.gz",
+      "sha256": "453786247cf7ff0b95072eb90ff300757fa5427e3ad0be6f338f4e72b81559f2",
+      "commands": 18,
+      "native_driver_commands": 18,
+      "name": "kernel-p1-tasks3"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/2a456a1f14eb3264bff3ff9d2c2a83f26ce52e2d9f643d9820116ec5f982367e.json.gz",
+      "sha256": "769ccc5ff9c3ce7595e2df38e5676d7e776d69f2bcfc4709fb7c7567fcfc618b",
+      "commands": 4,
+      "native_driver_commands": 66,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/2e5781681285834470b9cd9b41474c558f2cf705fc32b0512c8cd8f3a2088451.json.gz",
+      "sha256": "3085772c8a970d212403310a7db338c0ceff1761c0c9aca3b7a3db54c02ec459",
+      "commands": 4,
+      "native_driver_commands": 35,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/32599061e4c48aa0b09130d1482b728f00ac99c1d704ae7e82ec932d52dcbeb8.json.gz",
+      "sha256": "37528ffe3ba9ba10df2665ca8aad309b2b7bccff91a388b9826a2b6cfac9506e",
+      "commands": 4,
+      "native_driver_commands": 4,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/33d9c95066fedd12e2c8f323686aa22eb0449ecc28f4d27386d6b05b330d1283.json.gz",
+      "sha256": "5a1a7b75c06e2e033bfe34493fb9ee56a2bcab3e2b5cf0b9f39f1c4168a38b08",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/360397742e2efc3cd17e652797efa4884b345961847719362488bb1ecb778ae7.json.gz",
+      "sha256": "a2d2ff201823284cc3b82d875397ec11e38c37696f4019e04fa32680d8c89faa",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/3830ecc5797b5a569c88b28ec523d9a5e716f6495e46117216edfba44245882b.json.gz",
+      "sha256": "50d4af139929b15bb510f91503cd3e1bbde6ed1a33557a2d3d583cacd532c463",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/40d1b52784aba60dc4a80ace1a76d588403e6f8102d85a4fc582821d57be69da.json.gz",
+      "sha256": "a5fc54ac4c694411a217256dbb2c552a643c320faef8d4b9266d0c8a6b3d4e42",
+      "commands": 3000,
+      "native_driver_commands": 40200,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/42ce33f5c114457ebabf74a8f0b1f248df5121db67623102de9115f679b5785c.json.gz",
+      "sha256": "0579cf44aa3e312faee2875ea22874402b0b22c414da9622f9e65180dffbaa32",
+      "commands": 3000,
+      "native_driver_commands": 40138,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/452df893b3ad753ae957c37c30d1b9db326f38927bb9f97c8670cfb0b6dc4663.json.gz",
+      "sha256": "7189014c6bba671d63597ed793d16ea82e87dac59ca87e0e9b78e7b259d158fc",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/484da1e59ec44da70047dae891bae6597e9ae9a5ccc69c4d4b017d8791afdea8.json.gz",
+      "sha256": "0156d343e21d0d22dec6ead70d49e0361584230d15fce5c4115123faff163f20",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/4e9fafcf148e712dfcdf4f2412c11f942615505fa6a2e1900cbf251626467ee2.json.gz",
+      "sha256": "43123cde501e6297ef86d2b9e6140b21fe38e34d22c0f82cec8f1e4394c792e3",
+      "commands": 3,
+      "native_driver_commands": 3,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/56df77de3f9325433af93c067eff5448fb704db24c3c3dff9dcf5753b45815d6.json.gz",
+      "sha256": "3bb57b6b67fd70b931f0a9dacfc8016071bb319060d8754baa0c36c447656fb8",
+      "commands": 3000,
+      "native_driver_commands": 40665,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/5bdb680d0d1282fa5af11c6cd0b7c7104f21496eeb3936ff52c5a4b3063e0979.json.gz",
+      "sha256": "9789d0f529c84257967b714e31b0ce68030cfe83c8e10fa7d9209f69db81e11d",
+      "commands": 5,
+      "native_driver_commands": 5,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/5f4a10aa19467003fdd8251481fa33e730f355d39a5757b5530fcb19e571cacf.json.gz",
+      "sha256": "3fccc008887093ef95d658e96f4d057748a3a2fb33aa5b441c7bd1088dc0ee9c",
+      "commands": 3000,
+      "native_driver_commands": 41378,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/607395975f00d0dc318badc7ddabd5aeed966a1c18cb6905b04c1c70a4333d5c.json.gz",
+      "sha256": "df4fb057c2eb8a9240c228e17961e15552df5a4d2c8c55fe00cce0d2fdb486ad",
+      "commands": 3000,
+      "native_driver_commands": 39797,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/61d86d8c4abf1c4d74f946a4dd0921ec00195d4f24343bec92e3491112ba5d44.json.gz",
+      "sha256": "70a61d275d6992837097f1900fe9524140fe23444805af5446d32f11f792454f",
+      "commands": 3000,
+      "native_driver_commands": 40324,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/623438cda2f2d6285a1e6527e37e451fce03dae7ccca3534b6e9760755147e98.json.gz",
+      "sha256": "1a9e79a0f04683ec1d3c968cfd72bae7f5d7b028baa7fd9d839090ec1585340f",
+      "commands": 5,
+      "native_driver_commands": 5,
+      "name": "kernel-p0-tasks3"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/670cbbaf50183c68a7a06ec62c62d2068d7a1dd7867c14550f83859dde78f28d.json.gz",
+      "sha256": "ea9bcf721410a40a1efb04f37c4f9fe311e03e79bd9995e26cfaeaa7e3be8a1d",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/69663f9af37af05432310a94d26c2225cf5e12422ea0e678443722d084d96182.json.gz",
+      "sha256": "4f2c2e4064f527eb8bf82e0c1d44d8a2c450971a5eeb649d73965b58a1eed43a",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/6c29c0ae5dfe2c1443c29019e4a0fbd7faca1171c72e8d0009341769f05d3df5.json.gz",
+      "sha256": "ae535a0af4ba82294175d0a41dfa80a5e4c6522f1ad0c4a1234043399510421f",
+      "commands": 5,
+      "native_driver_commands": 36,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/6f1d8a060a3508c207b31a987c43cebd8ad2e0e0572bb88a06ab688b299c2717.json.gz",
+      "sha256": "e2f1c1663c782fa7def85cd1cf40066701ff6dc3db380c8fab160338d9e46e9f",
+      "commands": 5,
+      "native_driver_commands": 5,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/70aa35de786d1ec9d24a040b89a67117a8f380e041ed53b174014ff9bccb2491.json.gz",
+      "sha256": "aa2e1b8c1d6ce74768804bd1c60c010da51509f481a8b2b7fb26f96be8df428a",
+      "commands": 3000,
+      "native_driver_commands": 40975,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/7180eb278c83a8095ed267057875c4c0a9bcbcc2d12675307bfc8ed7aef2e454.json.gz",
+      "sha256": "88ebd0c3c8fb7ffa094622548d5d0810bd57be907f4fc6fc40c510c6214afcd5",
+      "commands": 5,
+      "native_driver_commands": 5,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/77a49f6900de643fb1fe7c9ffb43e1a502839231d95e83675f3ba71443dd81e0.json.gz",
+      "sha256": "ec0280fc2c4a10216237e6e39fa571991eadbebf5bdbca316f61fe3562198d97",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/79f1f5fa73ba8a93fed42216c7adf99e9b57c4022cf7056b8b5b23d0ea698726.json.gz",
+      "sha256": "0b426de2819fb344e3f6857b2d6776ec971f8442526a023371da91e4218b4317",
+      "commands": 3,
+      "native_driver_commands": 34,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/7d66f3b9bdcc631f42e5276bdefdcaf5bb5655dde26b6c823b9e60cd187d437a.json.gz",
+      "sha256": "34ae6ac69e4e95394259ce4eab272f122b5c58635ad6ad592a206c49424180f0",
+      "commands": 6,
+      "native_driver_commands": 68,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/866a8e3726799704f4dbc49e2ce841fc5e6184256c065fdf6f807d35d5e522a7.json.gz",
+      "sha256": "cf655a014a2722a705f206c17f49fc3c6679f3bdb34ee9bc6dc6d8d05fb92bff",
+      "commands": 3000,
+      "native_driver_commands": 39890,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/887591628025785d4d0002bb6d91c2187dc49811bbeeb637f9e90f209e0f50ac.json.gz",
+      "sha256": "268ddfc01260757e33d97e5abce81b68f9a7c0d151ae381daf16f543b86846f8",
+      "commands": 3000,
+      "native_driver_commands": 38650,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/8c258242a1f52b0cdd6b58f2f75a2bade765ff4ec307467bd762a3e0866c8f57.json.gz",
+      "sha256": "74a60ce6ce4a5df6a4282bd7c63f168062d66d7413189f948c41161c956b26da",
+      "commands": 6,
+      "native_driver_commands": 6,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/8d4c533c87b6658154b329270ba42c603b48d8c3eba2b8cd0d89e0d5b7067137.json.gz",
+      "sha256": "9941f9fdf6a7c9163df69a3d7f4a630f22b9f7fd312fb02ae85c319c5425cfb4",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/8e2aed6e68b692e0acec75cf498bdf9f52a2055689e91c05e9b4e48b29673a95.json.gz",
+      "sha256": "7a7e14680534b2c51c34ce5c5e507ca07b00ad4162ca1f974b6fdd6215ac1d86",
+      "commands": 3000,
+      "native_driver_commands": 40324,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/9757daf595790d36d873a5dbed1ec66543cff5f167b23745461df8ec605dfbc2.json.gz",
+      "sha256": "c04da8c0eed952161550c99f9b13bd35a4e38a2c8fb5e42b72d481e2a2cbc424",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/9aa66ec3e3e35fa7ed28282125e10ca9a3e40874afdf48a9c96fa6231265a016.json.gz",
+      "sha256": "fd6ffe21e6518dbde6eff8af1d72610c97e8aaf1a264efa4dd5b8ad57229a536",
+      "commands": 3000,
+      "native_driver_commands": 40975,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/9b292411d867dc2bd9dab1222033a00461d33bc7b8d9e74f7a8f5aa2c0311b63.json.gz",
+      "sha256": "a882234a4c78ba63a3a45555082c6ace21790eaee59edf2531807438759048d4",
+      "commands": 4,
+      "native_driver_commands": 66,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/9e2a2c476b92efbab69b6151df8cad9734c56452702d5c1944dc94db7aa8ae13.json.gz",
+      "sha256": "f2ef26a1c8e7ddd29e3873f0f89553f5acbf7108ddc86e3883a0a48d3b442072",
+      "commands": 3,
+      "native_driver_commands": 34,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/9f2d8129b10820ce1eb0ae3bff2f4107541ddb18cb6f3f1ed9f723cd2df8908d.json.gz",
+      "sha256": "a8dcdeaeaf64e420155b2635bb40e035748e38d7211850878a913b031aa68d65",
+      "commands": 6,
+      "native_driver_commands": 6,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/a36b6d4e863fb8c7d3637b4bd8f3d9460002a6497fb7ddb8be356c6e90eecc49.json.gz",
+      "sha256": "cb7d6c54d82870d80aa09bd6dd89c3d33e0b38a004f8ed4e8118e62ca83f3d70",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/a42c5ad4970b1b26697e734ff8d46251738977b04d798baef6db2f30cd7be1fa.json.gz",
+      "sha256": "0e8c3c53ca74763d220755bff9280b0b0f4ceb45ebd695229528e64cfce40e03",
+      "commands": 4,
+      "native_driver_commands": 35,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/a617584bc79cd038264279180fb3c37347ff20b3dcd1653cb8daaa1ebfdc4a82.json.gz",
+      "sha256": "95bb042fd044c868ca6c9f96cb2d285b302a11a831bed7af9cecf51a1fc04de6",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/ab1d9f65d64c0a19d4f299b1e0e5755f48e9df42a2b8b7a0a0f74f36b91c22c2.json.gz",
+      "sha256": "21d4623d90ff95b830b80ea8b33352fb2c563d48c31824d6c359f25c43757d88",
+      "commands": 3000,
+      "native_driver_commands": 40665,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/abb3eccddee0f0c11d790b5fe7689afcee632917849e90a80c680b547cbcd78f.json.gz",
+      "sha256": "9eb7f6a4646ea6b20720cb04d8540537483d2f284ebcd60edbed059f9bc7377a",
+      "commands": 3,
+      "native_driver_commands": 3,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/b0116c51571e41d44de2d07e158410f95ee01bb99b18b52fdd25a9abfb81a911.json.gz",
+      "sha256": "17d62562336b4162e55b681a55e54a06130bced823d772c5aba1566b6a1f747e",
+      "commands": 4,
+      "native_driver_commands": 4,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/b0a669c71f4b84a5c4d7b12be4a64dd8355308fc843f4827f9588c465772d380.json.gz",
+      "sha256": "a32e56e2ae8fdff9fc7d0ba34d2c85eaa572362e43320d89167d221b23f1058a",
+      "commands": 3000,
+      "native_driver_commands": 39890,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/b25751fc8b0ce80714527fed67ada24928734fb30bbe5440f9d5feda0781ae54.json.gz",
+      "sha256": "b0cfe6564b9c076f8565eec01cdde9fc6ea5db0e6b4908ec38d6a0fd7a7e9113",
+      "commands": 4,
+      "native_driver_commands": 4,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/b602ced052648ca2d0288463ccac3a38a6077f65b8099cb776e3683d022fb712.json.gz",
+      "sha256": "21bc1a2bd7edb9a5849afe1666bea2097c39d361d49337f8a6156ee65e1d0abb",
+      "commands": 3000,
+      "native_driver_commands": 40138,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/b715961ca122f7f0bf763cf95376458b229c90eeedd0eede3229232d23c8aab5.json.gz",
+      "sha256": "f9c1ad7ed81de650cd547bf0870a28b37cfb2e25a4f4cc653877978eea6913f7",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/bb27875a99cd5bdd53bad3adc5f6649c250428e390c59567ac7424212cea2b19.json.gz",
+      "sha256": "d2a258c509e4a3d0d4c4c0c59c837a93d9181d540a62e9447bd3fc82241302df",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/bd0cd5e8fd141946144e74291e7bdb1032e0d22f42a84da16b9b5d491d9507c7.json.gz",
+      "sha256": "cc16aa987d41299d03dab272e54db4e4be07ab98e7285b80d62725482a112d92",
+      "commands": 6,
+      "native_driver_commands": 68,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/bd529f2e8de4e96be33808c92e24b1968b6be727fa21069a47cc66a2bbe43f36.json.gz",
+      "sha256": "b8acbc0d537eb2993dd544a14dcc312820b5fee7324f2dbbeefb2faaa2f30aed",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/c003f58a185100d19b29dc28143faf67b9c8b6b0a71c7ad18895304dfbd1dfa3.json.gz",
+      "sha256": "93e379bf8e94ffdc09c2cae21400ea5763e6864d7d102e686fb58f28a18f1211",
+      "commands": 4,
+      "native_driver_commands": 4,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/c062f9ca6488d1d9ddb8559b1de17d1a8ffbd6436ad4065c81ede872312d6cf3.json.gz",
+      "sha256": "6bf15de05aa16208e883d3933447845c308059df7595c2d7d13d965c800c6db4",
+      "commands": 5,
+      "native_driver_commands": 5,
+      "name": "kernel-p1-tasks3"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/c52dd0b30c9a6d50966ddc30f1ba184c7df216379e6743bcf5eb30f11ff232d3.json.gz",
+      "sha256": "47ed00f9bf669c9ec7325bd21d5603b1e0a4f0b603c02499bae6329b8784ac86",
+      "commands": 18,
+      "native_driver_commands": 18,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/c8b9b601d04e182ee978eab11fbe0ab1ba02de4bf329b488d011e63c04e1f141.json.gz",
+      "sha256": "796f9f989171ef5958ddff3e3aa138e6ea3b4fce23a20123cf9b71c49128af24",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/cb5f15f7acb0723fb40f5769e8d2cdf5e6ab08c904a86c2f6ccff9a3902b3eb8.json.gz",
+      "sha256": "2af9bcb0066000902a7aff73e3ddbf5008b06194c67c823ee43d8d658ec1c571",
+      "commands": 18,
+      "native_driver_commands": 18,
+      "name": "kernel-p0-tasks3"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/d9669bc0a63d11804a31dd4bf043be84c45f00cd638b780768745cac2422c0ef.json.gz",
+      "sha256": "c730f27990956fec569cbf4b8dca9eff30e7b63751165e5cdc6a94adabcd9b43",
+      "commands": 4,
+      "native_driver_commands": 66,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/d96c89a554c8ce80ef6006da590d476b78065938d8e9594a5ec7701e94245012.json.gz",
+      "sha256": "b09cd3a8c82c3018fa3b727c0aa0dce326110db849864facb7788aeb1b176070",
+      "commands": 3000,
+      "native_driver_commands": 39487,
+      "name": "reference-stack"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/db40d7c5f1698f5a2982a065dd343ef8ed3448f98eb01a2b23c539cd831ae392.json.gz",
+      "sha256": "e88ffa65783a95b9f30f0ddf7759d3e3f5cfeb30c4a3afcd3065dc8cb0853d86",
+      "commands": 3000,
+      "native_driver_commands": 39797,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/dd04a68aa761f0478eb12c4801c775d6a8979c009a8b1f4b0db08f168d119296.json.gz",
+      "sha256": "8b5e3c13b6ecfd8bf22bdb149eb2cdcb0ca7241c68868997a4fbe6baef98c9fb",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/dede91990cf105711575c4846ef0f6daf73c74de53509048480efd73c4ac5896.json.gz",
+      "sha256": "27af786ba1cd352d3bcbb048a1f6af1eb411f29fb7008b3bd4b8730e8e1884fb",
+      "commands": 4,
+      "native_driver_commands": 4,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/e5fe1b61861825b63e6cb63f9557725e356996f1de5b3479d744698d74962727.json.gz",
+      "sha256": "a00b44ce55404d5942b4c810049fe306e9a621e3721da072e98ad4391d5e3c21",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/e74017097b57b16009eec224907688f54afecfbe381f7d6d99181055b821d488.json.gz",
+      "sha256": "6c46518111e9931e951fbcdf52b91527578decada78a70a3a46a12571d7ad645",
+      "commands": 3,
+      "native_driver_commands": 34,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/e746f43ec7d339deb03cbd5c181061b823090d47ab37145c73afb96261c27f7e.json.gz",
+      "sha256": "14ced8c2c2bf0372cd1f43edd39cf1a840572cd6b9d1baa988ca5600d840ad8f",
+      "commands": 3,
+      "native_driver_commands": 3,
+      "name": "kernel-p0-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/e992f86c3930c7f73ccf30849d6e4955f2f19e220ffa42f5be6fd8bbda4d176f.json.gz",
+      "sha256": "bfd1556b7dec11fe83bcaadd5b9f97a177754db741c1593d1fb411638d228bc0",
+      "commands": 4,
+      "native_driver_commands": 4,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/ebab0eb5f948325499231612762f8efc8003f3958c06a9d4127988ef6b7a4b49.json.gz",
+      "sha256": "a50e48aeded6ce646a095c777b5d146c1c0b9e29065413e96f04bef5f1670fa4",
+      "commands": 3000,
+      "native_driver_commands": 40200,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/ed298e457bf31c2a03d7ba56be0019f60de4190d30da692ff3faf3e536cc1cec.json.gz",
+      "sha256": "761a2225ba30d210838a94c2304f7ee605c89712d218ba0fa2dad3be5425ed1f",
+      "commands": 18,
+      "native_driver_commands": 297,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/f03e3b9c53fe5e53eda44ce6c8ecea34284ed183353be742980eab9a64c11fdb.json.gz",
+      "sha256": "fb0ef1b03e99b4200a19c804b2f35aa1afec3c6bb0f36b859d296e12b7ecee10",
+      "commands": 3000,
+      "native_driver_commands": 41378,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/f6eb3d005abcf9a064921ba53c9f5c485e90bf9aecc33f844fa04eb9008a0009.json.gz",
+      "sha256": "7db8e550994858e681db9989ab175de2c5b35ee8f8f5d45d55fdb04adcf99e6d",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/f7d54a1034ce242c54852c932b94b710f046a8446a4a8cb9a37332af2cab2295.json.gz",
+      "sha256": "cffb36aea1952b043a17f9e86ea8ccea6392bd56127d3c053c2dbec8eca70d0e",
+      "commands": 3000,
+      "native_driver_commands": 3000,
+      "name": "kernel-p1-tasks2"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/faec2c0bb160d6deeeb6544be172e8c9b0d9553e3f1ec0f8391cf13d9a9d390f.json.gz",
+      "sha256": "97af005b914b492f92c4b414c4fbbf58fa8f938c2177d21f5f3cf3962440c8ce",
+      "commands": 3000,
+      "native_driver_commands": 38650,
+      "name": "reference-continuation"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022-r2/fef70ebbb2b5f53f5495727545f4ed854a8b18a90bf0ac7d80056c6bd80bedad.json.gz",
+      "sha256": "4cf0c916c610dc0589164e2a82ae87e0a807b0397c4f2d5427adf41a790bcef4",
+      "commands": 18,
+      "native_driver_commands": 297,
+      "name": "reference-stack"
+    }
+  ],
+  "date": "2026-10-22",
+  "implementation_commit": "f9537c5",
+  "inputs": "planning/core-redesign/kernel-trace-inputs.json",
+  "native_build": {
+    "status": "passed",
+    "scope": "Host LP64 fixed kernel execution; native port replaces WCH hardware port",
+    "commands": [
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/fixture.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-fixture.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host/port.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-port.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/tasks.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-tasks.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/queue.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-queue.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/list.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-list.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host/driver.cpp",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-driver.cpp.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-fsanitize=undefined",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-fixture.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-port.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-tasks.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-queue.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-list.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2-driver.cpp.o",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks2"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/fixture.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-fixture.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host/port.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-port.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/tasks.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-tasks.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/queue.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-queue.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/list.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-list.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=0",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host/driver.cpp",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-driver.cpp.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-fsanitize=undefined",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-fixture.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-port.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-tasks.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-queue.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-list.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3-driver.cpp.o",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p0-tasks3"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/fixture.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-fixture.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host/port.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-port.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/tasks.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-tasks.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/queue.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-queue.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/list.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-list.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=2",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host/driver.cpp",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-driver.cpp.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-fsanitize=undefined",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-fixture.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-port.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-tasks.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-queue.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-list.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2-driver.cpp.o",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks2"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/fixture.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-fixture.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host/port.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-port.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/tasks.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-tasks.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/queue.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-queue.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/gcc",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/list.c",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-list.c.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-D_XOPEN_SOURCE=700",
+          "-DEXP_HOST=1",
+          "-DEXP_TASKS=3",
+          "-DEXP_PREEMPT=1",
+          "-DEXP_STACK_WORDS=8192",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace",
+          "-I/home/mt/dev_wch/ArduinoCore-CH32RV/work/exp03-stack-port-sources-20261022/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include",
+          "-c",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/platform/core_redesign/kernel_trace/host/driver.cpp",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-driver.cpp.o"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-fsanitize=undefined",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-fixture.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-port.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-tasks.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-queue.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-list.c.o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3-driver.cpp.o",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/kernel-p1-tasks3"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/usr/bin/g++",
+          "-std=c++17",
+          "-O1",
+          "-g1",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/stack_pipeline_driver.cpp",
+          "-o",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-8/kernel-trace0/reference"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "inputs": {
+      "tests/unit/core_redesign/test_kernel_trace.py": "abdfd936d5094f5e29cf0fec410c8a46512f8cf8f83470867284a566f833a802",
+      "planning/core-redesign/kernel-trace-inputs.json": "d53a6f5c71044ba492fba0be25da686d74ba5185db1a98933ccd480a3be2d732",
+      "planning/core-redesign/kernel-trace-traces.json": "494af210693a635d83febd6334d7c6d8fd752f0d49d5298ade66ec410e383bda",
+      "tests/unit/core_redesign/stack_pipeline_driver.cpp": "a1332b439b682f7c91bd0d950b8db825a16a9420547b846cfa63b368f70c73fa",
+      "tests/unit/core_redesign/stack_pipeline.hpp": "8392daf4ec7ad6540aa029f7893f005c62b74de75312a3316a2b857ceba34a93",
+      "tests/unit/core_redesign/test_stack_pipeline.py": "5f2c2183de116bcaa251cf09536166b4362f9473f9458da8104d3ba362b46cf6",
+      "tests/platform/core_redesign/kernel_trace/config_values.h": "86c1509a92d25e0ec2db7d1db4c6dd55ba67141eb4a4d6e3b32377dc5e056153",
+      "tests/platform/core_redesign/kernel_trace/fixture.c": "d355a705749432118ac99db80bb8f264850a61073443960df0aef5c502439487",
+      "tests/platform/core_redesign/kernel_trace/fixture.h": "d0eb46cd4660fd324e59ef1db5320d119706496ab8214dd232daf7e7323ed37a",
+      "tests/platform/core_redesign/kernel_trace/target/FreeRTOSConfig.h": "422f83c55432a5acc90572c5eac2cce78a9df93d90297502bc867453df48f1cf",
+      "tests/platform/core_redesign/kernel_trace/target/entry.c": "d4140da3023eb74631fc646dace7f8421a8ed263050bebc7f7beb5cde2e49793",
+      "tests/platform/core_redesign/kernel_trace/host/port.c": "df480bf98a3b0757e78aebf5971c1f7c6cebd13dcabb54f73d51fb0a02f62eff",
+      "tests/platform/core_redesign/kernel_trace/host/FreeRTOSConfig.h": "96c54bcf0c2bbdbf118ac22026b4b40743fce0e707d7b6797065c29f44124836",
+      "tests/platform/core_redesign/kernel_trace/host/driver.cpp": "acb421c1c550ee96661daabc25e11d3e1c40859c7d906831c1fa8ec137221690",
+      "tests/platform/core_redesign/kernel_trace/host/portmacro.h": "a2d552cb72333069783fd94d37ad45c4c7041a7c263d888f74ed8f81c7112e09"
+    },
+    "vendor_sources_verified": 76,
+    "executables": {
+      "kernel-p0-tasks2": "184b46c1f504dc03493142235da0537b7b0f3642876f704fa7f0b97340c4e379",
+      "kernel-p0-tasks3": "3daa9983595869f3a222f2b18536449f7b6dd1d10e9611d52746e23c150ef3c2",
+      "kernel-p1-tasks2": "f3e3850cd6c82897ebf4ca64317394cc43da5337eac1fd18f3ec360b92e6996c",
+      "kernel-p1-tasks3": "4b0d8fe4291ec97a2b32859d2e4bae726f6743d21a73fc96f0d6fcffb7edfda2",
+      "reference": "be21420321251b0835b5e6bdb34587678df96dce913396643b2c350bb8ee3161"
+    },
+    "compilers": {
+      "/usr/bin/gcc": {
+        "sha256": "b5f1b773a7c733738352000c92a077dc5852a1a2fc6d836b1e411be1e9ec5f88",
+        "version": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
+      },
+      "/usr/bin/g++": {
+        "sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+        "version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
+      }
+    }
+  },
+  "abi": {
+    "status": "passed",
+    "scope": "N04 canonical-trace controller fixture with fixed WCH X035 port; compile/link only.",
+    "source_commit": "c6253942b29ff2a3f5e2829182a874afffa45881",
+    "inputs": {
+      "tests/platform/core_redesign/measure_kernel_trace.py": "524b2c6678afeee73730e5df07bd0a3958964a61cfbff8b6b5882ef1a2954847",
+      "planning/core-redesign/kernel-trace-inputs.json": "d53a6f5c71044ba492fba0be25da686d74ba5185db1a98933ccd480a3be2d732",
+      "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+      "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db",
+      "tests/platform/core_redesign/kernel_trace/config_values.h": "86c1509a92d25e0ec2db7d1db4c6dd55ba67141eb4a4d6e3b32377dc5e056153",
+      "tests/platform/core_redesign/kernel_trace/fixture.c": "d355a705749432118ac99db80bb8f264850a61073443960df0aef5c502439487",
+      "tests/platform/core_redesign/kernel_trace/fixture.h": "d0eb46cd4660fd324e59ef1db5320d119706496ab8214dd232daf7e7323ed37a",
+      "tests/platform/core_redesign/kernel_trace/host/FreeRTOSConfig.h": "96c54bcf0c2bbdbf118ac22026b4b40743fce0e707d7b6797065c29f44124836",
+      "tests/platform/core_redesign/kernel_trace/host/driver.cpp": "acb421c1c550ee96661daabc25e11d3e1c40859c7d906831c1fa8ec137221690",
+      "tests/platform/core_redesign/kernel_trace/host/port.c": "df480bf98a3b0757e78aebf5971c1f7c6cebd13dcabb54f73d51fb0a02f62eff",
+      "tests/platform/core_redesign/kernel_trace/host/portmacro.h": "a2d552cb72333069783fd94d37ad45c4c7041a7c263d888f74ed8f81c7112e09",
+      "tests/platform/core_redesign/kernel_trace/target/FreeRTOSConfig.h": "422f83c55432a5acc90572c5eac2cce78a9df93d90297502bc867453df48f1cf",
+      "tests/platform/core_redesign/kernel_trace/target/entry.c": "d4140da3023eb74631fc646dace7f8421a8ed263050bebc7f7beb5cde2e49793",
+      "planning/core-redesign/kernel-trace-traces.json": "494af210693a635d83febd6334d7c6d8fd752f0d49d5298ade66ec410e383bda",
+      "tests/platform/core_redesign/stack_port/support.c": "61668af83a0137d61e1e0f063fd067d40ebcec1c9f7be0a2fdc92f954f7670b8"
+    },
+    "sources": [
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/.cproject",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/.cproject",
+        "bytes": 27918,
+        "git_blob": "24a076f9a4bf3b8719ee60f24d93aad73002d408",
+        "sha256": "5e0a354701abb8787841e9403af153de3a8fc55139214bbf2c3bb61a4087b06b"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/.project",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/.project",
+        "bytes": 1356,
+        "git_blob": "ba1097899a99b48c5c9d17b423b51f7f5c575da7",
+        "sha256": "aa669732bdff26730bbffa25ca932d500ff2cc9a75aa2f1d214d9d4b5d081e89"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/.template",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/.template",
+        "bytes": 628,
+        "git_blob": "ef67dc4b7efd41163d7d5fd941773a973b799b8e",
+        "sha256": "d2738be0e2fe4342128e495b487dcc554d1d41fd9a39c7ca860db20ddf675026"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/Core/core_riscv.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/Core/core_riscv.c",
+        "bytes": 7543,
+        "git_blob": "de160777b0bf7391f06db0cc20b6049833ab2503",
+        "sha256": "ec5eeaba84050cec50e955da613d25c5fe9dcc512fe314213f2c33c1ffd41a7c"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/Core/core_riscv.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/Core/core_riscv.h",
+        "bytes": 17641,
+        "git_blob": "2f7694007e233dd057a81cb4c17933ac90a51857",
+        "sha256": "561dcbff9b1a8de96796ab3cef83889d5c205320653e6824e03ce458473691c1"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS.wvproj",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS.wvproj",
+        "bytes": 202,
+        "git_blob": "2cd99d9829581898ccce5a4795f490281d640232",
+        "sha256": "01db934d03f5250bbc1ecdaae863e37e340147d426a1a3aa280b9211587c153b"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/.gitmodules",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/.gitmodules",
+        "bytes": 390,
+        "git_blob": "aaa2390a63106b622a4f297d909e94469c2cc153",
+        "sha256": "fd4a188f73aa3233d9065de227950fd8f5e7809c46bba7228b06b4b7cc323810"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/croutine.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/croutine.c",
+        "bytes": 15755,
+        "git_blob": "d9bce9b037a673faf6c8e40636e5facc39465891",
+        "sha256": "5fdd540d1fce925145bd80f7efa1096a08555413c7701a2cfc2f15be03695bbd"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/event_groups.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/event_groups.c",
+        "bytes": 31210,
+        "git_blob": "93d9d0d7655b4835cf9753020a8621d377440008",
+        "sha256": "6096b14f49040580ba84b2f0f970f93fddfc084af06f6ca49e65ff01d721926b"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/FreeRTOS.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/FreeRTOS.h",
+        "bytes": 46678,
+        "git_blob": "383f04a70aaeea7bc91563c9f59728eefbe564cb",
+        "sha256": "8d03d0ed43b852a5a136df0d844645302a43ba2d47ad1b91aee4daf6d95b0642"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/StackMacros.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/StackMacros.h",
+        "bytes": 1573,
+        "git_blob": "6ddeb3a95f7231900cd0356ab029931453dab8f8",
+        "sha256": "d91388f19457afdc2e4a48146a91b62608d91fa532611c578e6cb0b571270b6c"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/atomic.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/atomic.h",
+        "bytes": 12842,
+        "git_blob": "8d7c1076fe25356edf23ebb90310f8840e2efdc7",
+        "sha256": "0aa71eb3d7eb2b50bdd6b6d92a0e4e3513bff5dc815f1a83987d7353114d0dcd"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/croutine.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/croutine.h",
+        "bytes": 28155,
+        "git_blob": "51bdd4f3d7cce887c3a31c4bffb5f8e72cada778",
+        "sha256": "d07fbb80a00a83830df8d82f1e2ba71ac9b644a70c9e371bce078e5d2333c27f"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/deprecated_definitions.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/deprecated_definitions.h",
+        "bytes": 7519,
+        "git_blob": "a83314124609610eacdeac3076c53a193d87586d",
+        "sha256": "c6a0cb6229e9326e36797585299afddaf3a92f5ec82a4d83a91430b49f4d5acb"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/event_groups.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/event_groups.h",
+        "bytes": 32051,
+        "git_blob": "601a29ba9f13590387a49bcffe777ab034348d8e",
+        "sha256": "5657af602ad7c322965cdd0cf6968b78f13f488229acb45bb2396c5a09d0bfc5"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/list.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/list.h",
+        "bytes": 23695,
+        "git_blob": "f866f9fd533a2dd1481e489731993123174abc67",
+        "sha256": "92c09b8e4a44b0af1d4a44c3d9d0a33836442070a9489471d5887e7d0673c163"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/message_buffer.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/message_buffer.h",
+        "bytes": 38025,
+        "git_blob": "140626737bee83584d039fbd8ca448c4882196ab",
+        "sha256": "56f905226b1655b377404c959e993f44e0197f922f446dc28b2f5dfa0dadee42"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/mpu_prototypes.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/mpu_prototypes.h",
+        "bytes": 17627,
+        "git_blob": "cb743be5519eee2790dc143a7e6b1dec3be739f4",
+        "sha256": "d76581b40654d2bc3a4024aca0a456fee2aa363e685ddbac53bad3a37904f8e7"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/mpu_wrappers.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/mpu_wrappers.h",
+        "bytes": 12774,
+        "git_blob": "9b6cd7c9232c3a50190f43d7cf42abbca253df52",
+        "sha256": "bb9e85feb820f7ae842af78e84b8876c969a8ade0192b00c3a269e648cf5d473"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/portable.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/portable.h",
+        "bytes": 9516,
+        "git_blob": "0ec6416ae20a8f8e0d4f813047fc61705ba49f7c",
+        "sha256": "bf9c8835d2ef05349e08e065250529fe651e6d6e216b37e0c2880306f73d6000"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/projdefs.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/projdefs.h",
+        "bytes": 6275,
+        "git_blob": "e623bf7d94df37cb5ab76a1e55a1b506af5eb1bb",
+        "sha256": "aede04de56d052a7e505fa86a4b4bd9a4382c5ccebe28e9c7eb1f9b7e3f6938e"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/queue.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/queue.h",
+        "bytes": 65737,
+        "git_blob": "6a92b6bcb02256c7790059048b053e77675f8821",
+        "sha256": "7222b052a47c955cfbabbeac90dbd6f2dffbae9a9f819f2ac7b659770895c0f8"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/semphr.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/semphr.h",
+        "bytes": 49140,
+        "git_blob": "d28d4a045b235eafbcb07f954b839e32cbe0303d",
+        "sha256": "e58611e0481a28b8398ccd724f09c5523935a62250872dfb2697620ae8cb542f"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stack_macros.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stack_macros.h",
+        "bytes": 8523,
+        "git_blob": "cfe5b9532eb2a2b2eb326672cd2faf1d45f6b483",
+        "sha256": "642d22919e5306a9437e3515b905ee3a3c594e2e6bf60fc7ba147e31794a20f9"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stdint.readme",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stdint.readme",
+        "bytes": 2177,
+        "git_blob": "654c62b1a39e6ef8fb8926871c55c1170a3cadce",
+        "sha256": "59f43b5819e6341ba1c9fee13f5f2e8efb5ab5c27675b08d4e35a68eca26bc47"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stream_buffer.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/stream_buffer.h",
+        "bytes": 38908,
+        "git_blob": "c2812d41152c913992a0a9db3817cd55ab50484f",
+        "sha256": "5c95b2f414281f783c1ab6632249c05c7962f113009beac8336f44548a22d5da"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/task.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/task.h",
+        "bytes": 136947,
+        "git_blob": "ec80cd9a9ff08c7f090e3d48674992b8b48acd69",
+        "sha256": "f6809520c1b362626326e74b51fde977e6763589a3ce85857896f2e43e0970e8"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/timers.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/include/timers.h",
+        "bytes": 62755,
+        "git_blob": "2be826c21bf0b6b1acb40915cdac4825d6dd21ca",
+        "sha256": "92337ec802dfe55fc11db2f4817d3b66e79c80897ed40c0040ba5967cf7db013"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/list.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/list.c",
+        "bytes": 9717,
+        "git_blob": "42a2e0989bec5115d03613c36cd36f06121f4f39",
+        "sha256": "f6872bed8dbd82521a73c09637cdabd16fc125970a66e8b455ec3737ea4a18b3"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/Common/mpu_wrappers.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/Common/mpu_wrappers.c",
+        "bytes": 56069,
+        "git_blob": "827c44a199a7853d072c1bf01c86c7b4a71d3731",
+        "sha256": "44851f9c0af5c698b317841161b6d3391db5a89429e5e312b303e29f4caa6bf0"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/Documentation.url",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/Documentation.url",
+        "bytes": 139,
+        "git_blob": "5546f8707e0f1a40b09c618436e94784545cfc39",
+        "sha256": "03b58eac9262370ca618c78e81f36deca511ab3ff9142d719bae84afd9c9e865"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/chip_specific_extensions/RV32I_PFIC_no_extensions/freertos_risc_v_chip_specific_extensions.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/chip_specific_extensions/RV32I_PFIC_no_extensions/freertos_risc_v_chip_specific_extensions.h",
+        "bytes": 5676,
+        "git_blob": "01f9aa2706627d410a359a1b0b7be7adca279434",
+        "sha256": "06208748b47efcf373d8479fc92f09443f80a2d388a0fff4b32fe4dda5bb2b0f"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/chip_specific_extensions/readme.txt",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/chip_specific_extensions/readme.txt",
+        "bytes": 1270,
+        "git_blob": "b24c0b9fb22f21c9d244b3a8dac08e6787f85b2c",
+        "sha256": "9df008f8587b6faaaa48ef37ce9e38f89639290d636c06f5eefb09848ac318d1"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/port.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/port.c",
+        "bytes": 11399,
+        "git_blob": "46fc62a5422d91ef5282377e8fd5a3b3f259ca45",
+        "sha256": "b8d439e020cf5d6290d652932a6cb911ae64da05f0c32a12b7af71eb2c761131"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/portASM.S",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/portASM.S",
+        "bytes": 15175,
+        "git_blob": "2311996913da8eb3eca83bd9c362c8de234703d1",
+        "sha256": "d36df4604f075d40ba8a5f2565225766c5b50173381b4fb353e73a7bd3739ae2"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/portmacro.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/portmacro.h",
+        "bytes": 7705,
+        "git_blob": "0f1686376fc249d572017b89fc9021705c55d056",
+        "sha256": "f5f1dd46c080b101ed27651b068fd6061b068d58d984118e2b633769cc24b22e"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/readme.txt",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/GCC/RISC-V/readme.txt",
+        "bytes": 1270,
+        "git_blob": "b24c0b9fb22f21c9d244b3a8dac08e6787f85b2c",
+        "sha256": "9df008f8587b6faaaa48ef37ce9e38f89639290d636c06f5eefb09848ac318d1"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/MemMang/ReadMe.url",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/MemMang/ReadMe.url",
+        "bytes": 120,
+        "git_blob": "28c993773d9b7f713791c5c27826efa517a2f32f",
+        "sha256": "c44abcb1837584d65d00768bde7c1471dbf3fe316275ccbb6922998c6f11ddc9"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/MemMang/heap_4.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/MemMang/heap_4.c",
+        "bytes": 18943,
+        "git_blob": "2676835b7f4a17f3a862e9515932aa01333a5b29",
+        "sha256": "e786b6ec6c2cbb55ceffb67b0b05134db4d43c38feedf7729afabd2d7ff77f7b"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/readme.txt",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/portable/readme.txt",
+        "bytes": 847,
+        "git_blob": "89f6b09cf5c9c29bce7ea50ac7eaf1c1629ffc19",
+        "sha256": "e8738d9630ac5218f576a6bd51b64052966e26d87b61c4673eef963767f43048"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/queue.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/queue.c",
+        "bytes": 123271,
+        "git_blob": "46ed9a4fff3313352f1694de3cecc8cf43e04b45",
+        "sha256": "44b23207c59de82aaa848cfb97b23a05605fc05cc9985b881a83ca2ccc5c76a7"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/stream_buffer.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/stream_buffer.c",
+        "bytes": 52875,
+        "git_blob": "cf6300fc1e2854aa218b91c499f0ad0093dbf26d",
+        "sha256": "63d974bf266dccd9f0deee6bce1c90302575a9f4fff7b80dc0d9a28c2c64c071"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/tasks.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/tasks.c",
+        "bytes": 222188,
+        "git_blob": "d4d9fad7b27175108f773e0107b3be0924088a1f",
+        "sha256": "12e7efe064a0201783d29ae6115e50c510ce673a69d25ba6855a98ab054a08d2"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/timers.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/FreeRTOS/timers.c",
+        "bytes": 49330,
+        "git_blob": "88d834b9e22470df067c2e3489f1d54b94c58db4",
+        "sha256": "e4790f9a06232f443da45b4edeca42bcde7f828b67639aa10b98c8339b550043"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/Ld/Link.ld",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/Ld/Link.ld",
+        "bytes": 3547,
+        "git_blob": "89d97b94428d306837b95c75bf417a1b3a869f5f",
+        "sha256": "3b74068ee68527528f9e06e742ac5850a5fea843da16e77bc5fb06bf96c7d067"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/Startup/startup_ch32x035.S",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/Startup/startup_ch32x035.S",
+        "bytes": 8164,
+        "git_blob": "69d7b7c30a459a797b980e967c21165e6868c09c",
+        "sha256": "75fa5dfcc0e4056d70e93ef94c851c9caaa3f5da54db0dca2c6d3ced1efbdf40"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/FreeRTOSConfig.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/FreeRTOSConfig.h",
+        "bytes": 6742,
+        "git_blob": "3c74007962f963deecf2437181eb9357eaed3fe7",
+        "sha256": "7c77e2a088154a2b50c834b0ee6ca80fa306a23cf76e5169e5077e4ac5f7071b"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_conf.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_conf.h",
+        "bytes": 1156,
+        "git_blob": "996db410f0abc21107d6c91ddd036e6213615e50",
+        "sha256": "1f5e1d9e6f3aeed47fb2b2727d2947d84edabf1cf78a7b3d3e293bfa8bd4d1dc"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_it.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_it.c",
+        "bytes": 1257,
+        "git_blob": "4d1b1e0fe0f64f9e5669ded1a34c36b65232fa52",
+        "sha256": "032c78d63754576e88b21f93caaee98c950bef25cbf435340562f7eb820f8240"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_it.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/ch32x035_it.h",
+        "bytes": 740,
+        "git_blob": "f24b5bd268b9521d91a98d07a75ec56fcca8ce86",
+        "sha256": "2654442a24fcc239c3c68bba0c988cd8f7be79f90c261eccf5b065fdfb97787c"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/main.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/main.c",
+        "bytes": 3568,
+        "git_blob": "6ce280cc499c56b4a944538e90ad4fc4b5137181",
+        "sha256": "1bf4c9991de57e02bd0b124a7a1552028a872eb6fd3bf136ec2d2bf3d3111332"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/system_ch32x035.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/system_ch32x035.c",
+        "bytes": 7052,
+        "git_blob": "267cc920ec6c528ecd9d28cfbc0c6022485f25f6",
+        "sha256": "753ebbad93ef2df4c3b6a4101103cce977b5517532d3a8676314c627216d43b4"
+      },
+      {
+        "path": "EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/system_ch32x035.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/FreeRTOS/FreeRTOS_Core/User/system_ch32x035.h",
+        "bytes": 996,
+        "git_blob": "89ce2a0de843e5fb5cdfdda1aa7e6e1c2d71530d",
+        "sha256": "917c1d6ca4df8b59c2393162d3a0ad4a3d1883e025d40922912638d37eed7c50"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Debug/debug.c",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Debug/debug.c",
+        "bytes": 6604,
+        "git_blob": "4720691ab4a2286627aef9b2a20364813cd3990b",
+        "sha256": "4ae0ec6f88b19717b46e556550a5e33133f81038c6b80a4d6bff9ab3e53698fe"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Debug/debug.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Debug/debug.h",
+        "bytes": 1441,
+        "git_blob": "15e5846f9d2678f7e623bfdd490365db445a5b36",
+        "sha256": "dc2299453f29945ef2448f10f53e88aa972ba08a09811d2ca6846419f0dea55c"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/PIOC_SFR.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/PIOC_SFR.h",
+        "bytes": 14862,
+        "git_blob": "fcb81eae23403ef3c2a1a07ce4943f3b137e6804",
+        "sha256": "4f7f8e61cd5abfbbc17172d565e040911d4a3a0e0435eab8a501f547f67a65e8"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035.h",
+        "bytes": 206544,
+        "git_blob": "dd9e458e2fe9fa60a69b7e40736856236eb954dd",
+        "sha256": "1842a8c76c7be1596c22b032ff45cb48cf49afbf62ef0a33416aec8a3b5da1b6"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_adc.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_adc.h",
+        "bytes": 12639,
+        "git_blob": "ec71306b29488711b24fb65fdad59cccf0320538",
+        "sha256": "3999423146771b37507be55036276332ad7bdf58585ad98ec35e37518b52871a"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_awu.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_awu.h",
+        "bytes": 1818,
+        "git_blob": "01425513b093a5de1b57b2d7400015b1a47e1955",
+        "sha256": "ea75c47a3d0a57240165ccf179382b8e33b146f474dc67818e255f1ef52d1039"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_dbgmcu.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_dbgmcu.h",
+        "bytes": 1587,
+        "git_blob": "398db445bda871bd4be7586e2157c0ec3eb0da20",
+        "sha256": "a060227a22c605fb3c8780fb4e4a6db22ed3c53c5f9d3e363633092ac2662879"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_dma.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_dma.h",
+        "bytes": 9906,
+        "git_blob": "88b6c872fcfc9784bd26a5c9bfccc69aa19a8742",
+        "sha256": "c432f3475379f29ae44d7dada7ba5c969bb2b8625a155cf2233ab8438c78c5fc"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_exti.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_exti.h",
+        "bytes": 4979,
+        "git_blob": "0f16f69d7ed0232cfaf3d0cf583fe89cca29f89f",
+        "sha256": "f555713991d7f1846f5e615965c5a1c91fed65a1f51ddf303b1253e0d85025e8"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_flash.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_flash.h",
+        "bytes": 8718,
+        "git_blob": "6445936e4c52d1f02e78a13acbc5702b1f01b682",
+        "sha256": "ecd3960d46d5cbebf49c3c0712e2359b671d9bcccdf93687fe04548c4f5185d1"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_gpio.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_gpio.h",
+        "bytes": 10775,
+        "git_blob": "d648110d08cfcbe612cdd586abfdba08f19040d6",
+        "sha256": "4a5242ecc74b446a50388bb7e3dab3cc54a55dc636917a722be8d76ca399822b"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_i2c.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_i2c.h",
+        "bytes": 21627,
+        "git_blob": "fd0d02920824d2b5f2fb71be1c97175fc23f6e63",
+        "sha256": "720dcbe2cb97a83123f2bb6ad1388a79dd42cd4c8b4e5cbef2e19a09dfe1b373"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_iwdg.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_iwdg.h",
+        "bytes": 1784,
+        "git_blob": "4afc6222b768c36de0cc35d219b70773a9a26e22",
+        "sha256": "d341066a8f7af6230547683b24e3024df3578331fddcab067f3b7cf3c67b6515"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_misc.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_misc.h",
+        "bytes": 2527,
+        "git_blob": "82390ccb81f7b427663511156cfce26db6d59f06",
+        "sha256": "a8c2683adc3bcc98fe8e868be05e26b2ca976c2a9374aea1d4c99b29bf308136"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_opa.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_opa.h",
+        "bytes": 5835,
+        "git_blob": "e408a6bdc302287f2e9f6e24b82d23f2192d38a7",
+        "sha256": "f90d620c2062dc88c4a9959fc8575cee9d5656fbb12e1b2d054c376c8af7b80d"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_pwr.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_pwr.h",
+        "bytes": 1924,
+        "git_blob": "6dade48592f05bf8b0b2ec45a263c056f6a8612d",
+        "sha256": "fd2d1a455777a109800b1ca3df5ca486ac2d9da64df40f025e50b34b71632621"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_rcc.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_rcc.h",
+        "bytes": 5151,
+        "git_blob": "11320da03277fbc2057a32fd02a73faf53e73edc",
+        "sha256": "7faf18ce3a870806709c7bb7102557bf30d96c8aab31bab50f8f4f5e08272556"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_spi.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_spi.h",
+        "bytes": 7447,
+        "git_blob": "24d61a1c04ab39904990c10ad65ce6f19071cbfd",
+        "sha256": "019d6aeb5d58ed4e915039ad045481cf92c9e456fdf66b3ac0ec0630407f16ff"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_tim.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_tim.h",
+        "bytes": 29254,
+        "git_blob": "0cfda497cbaab1740394fd0fe034d5a3c3002864",
+        "sha256": "d8d33df29000fe78bf4fd42477cf1d3cbbfee8be569483cd65f65a42615d194a"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_usart.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_usart.h",
+        "bytes": 9471,
+        "git_blob": "79fe683da360a6a431d3c2c5e80f425317c2c2ee",
+        "sha256": "e75b2b432504deab7c5ff70761ce21c675a1ceb7fd081cd7c603c3f77c698652"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_usb.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_usb.h",
+        "bytes": 22959,
+        "git_blob": "184b9773616aa3ab64850c5d89301f4fd024899e",
+        "sha256": "1de4f4dbcb9c3a230799c152fe5687cde3d5b6616f4c4bc2c8b19815f92213ab"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_usbpd.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_usbpd.h",
+        "bytes": 24116,
+        "git_blob": "7ca1008305df66d93512126c5cf425d4ce5ef626",
+        "sha256": "88c1533415637a0ca1691aac00d0b28f9fe032aa510e51bec343ce43cb535b99"
+      },
+      {
+        "path": "EVT/EXAM/SRC/Peripheral/inc/ch32x035_wwdg.h",
+        "url": "https://raw.githubusercontent.com/openwch/ch32x035/c6253942b29ff2a3f5e2829182a874afffa45881/EVT/EXAM/SRC/Peripheral/inc/ch32x035_wwdg.h",
+        "bytes": 1414,
+        "git_blob": "689b6fdfc2048f948ddefddd94c40dc48d033cf9",
+        "sha256": "4d9684c505b39b0af9f83ed877dac9ce24ab3fa1205b904ea514b2104efd2eda"
+      }
+    ],
+    "results": [
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "empty",
+        "used": false,
+        "application_tasks": 2,
+        "preemption": 0,
+        "words_per_stack": 64,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 80,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "82947bf599f05b5ef72fa0f34c4e7ef041c6e959aa94a5bb8eafe7b40051dd80"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "p0-tasks2-w128",
+        "used": true,
+        "application_tasks": 2,
+        "preemption": 0,
+        "words_per_stack": 128,
+        "image_bytes": 6136,
+        "data_bytes": 8,
+        "bss_bytes": 2928,
+        "static_ram_bytes": 2936,
+        "stack_arrays_bytes": 2048,
+        "driver_stack_bytes": 512,
+        "driver_control_bytes": 60,
+        "tcb_objects_bytes": 240,
+        "queue_objects_bytes": 320,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": 512,
+        "c_irq_space_below_initial_sp_bytes": 512,
+        "ram_with_reservation_bytes": 3960,
+        "max_reported_frame_bytes": 96,
+        "stack_peak_bytes": null,
+        "image_sha256": "4e6471abb177589eb9826839faa6a4ba81608a6003c52c7123dcd3bec0c83993",
+        "elf_sha256": "0a1870da44c4e2e83d5cb0627cb8b153c944e873eff2536541abfb205bfb7b54"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-p0-tasks2-w128",
+        "used": false,
+        "application_tasks": 2,
+        "preemption": 0,
+        "words_per_stack": 128,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 80,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "82947bf599f05b5ef72fa0f34c4e7ef041c6e959aa94a5bb8eafe7b40051dd80"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "p0-tasks3-w128",
+        "used": true,
+        "application_tasks": 3,
+        "preemption": 0,
+        "words_per_stack": 128,
+        "image_bytes": 6136,
+        "data_bytes": 8,
+        "bss_bytes": 3500,
+        "static_ram_bytes": 3508,
+        "stack_arrays_bytes": 2560,
+        "driver_stack_bytes": 512,
+        "driver_control_bytes": 60,
+        "tcb_objects_bytes": 300,
+        "queue_objects_bytes": 320,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": 512,
+        "c_irq_space_below_initial_sp_bytes": 512,
+        "ram_with_reservation_bytes": 4532,
+        "max_reported_frame_bytes": 96,
+        "stack_peak_bytes": null,
+        "image_sha256": "528610e50bc00e35598b3c24cc436e33258786631cde9f52fa0e8e89738142ce",
+        "elf_sha256": "977062eb64bf29f445ac5c445d41c1e8d73f94abaa760c111f95992b09e7a496"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-p0-tasks3-w128",
+        "used": false,
+        "application_tasks": 3,
+        "preemption": 0,
+        "words_per_stack": 128,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 80,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "82947bf599f05b5ef72fa0f34c4e7ef041c6e959aa94a5bb8eafe7b40051dd80"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "p1-tasks2-w128",
+        "used": true,
+        "application_tasks": 2,
+        "preemption": 1,
+        "words_per_stack": 128,
+        "image_bytes": 6392,
+        "data_bytes": 8,
+        "bss_bytes": 2928,
+        "static_ram_bytes": 2936,
+        "stack_arrays_bytes": 2048,
+        "driver_stack_bytes": 512,
+        "driver_control_bytes": 60,
+        "tcb_objects_bytes": 240,
+        "queue_objects_bytes": 320,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": 512,
+        "c_irq_space_below_initial_sp_bytes": 512,
+        "ram_with_reservation_bytes": 3960,
+        "max_reported_frame_bytes": 96,
+        "stack_peak_bytes": null,
+        "image_sha256": "0d6748ef967f8c19171645a4a6a2d886aebd0d3451bbb8a4bd7cbe1e51823cad",
+        "elf_sha256": "9609f481f0f5435a579372156b2912d57a0b922e035d6b44eab37db384602cbd"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-p1-tasks2-w128",
+        "used": false,
+        "application_tasks": 2,
+        "preemption": 1,
+        "words_per_stack": 128,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 80,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "82947bf599f05b5ef72fa0f34c4e7ef041c6e959aa94a5bb8eafe7b40051dd80"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "p1-tasks3-w128",
+        "used": true,
+        "application_tasks": 3,
+        "preemption": 1,
+        "words_per_stack": 128,
+        "image_bytes": 6392,
+        "data_bytes": 8,
+        "bss_bytes": 3500,
+        "static_ram_bytes": 3508,
+        "stack_arrays_bytes": 2560,
+        "driver_stack_bytes": 512,
+        "driver_control_bytes": 60,
+        "tcb_objects_bytes": 300,
+        "queue_objects_bytes": 320,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": 512,
+        "c_irq_space_below_initial_sp_bytes": 512,
+        "ram_with_reservation_bytes": 4532,
+        "max_reported_frame_bytes": 96,
+        "stack_peak_bytes": null,
+        "image_sha256": "f337290027083ad0063f9a16550e09d2dab52e237583179373387f47474f044c",
+        "elf_sha256": "a9102c82cd1e6f7a7fc77bd40565e9177ee27901d3cb6fa8483a4670a6ea6b34"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-p1-tasks3-w128",
+        "used": false,
+        "application_tasks": 3,
+        "preemption": 1,
+        "words_per_stack": 128,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 80,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "82947bf599f05b5ef72fa0f34c4e7ef041c6e959aa94a5bb8eafe7b40051dd80"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "empty",
+        "used": false,
+        "application_tasks": 2,
+        "preemption": 0,
+        "words_per_stack": 64,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 32,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "0eaca40a247aa11399f5adfe48454ad84747c4b0273caba096cff0dc35747924"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "p0-tasks2-w128",
+        "used": true,
+        "application_tasks": 2,
+        "preemption": 0,
+        "words_per_stack": 128,
+        "image_bytes": 5112,
+        "data_bytes": 8,
+        "bss_bytes": 2928,
+        "static_ram_bytes": 2936,
+        "stack_arrays_bytes": 2048,
+        "driver_stack_bytes": 512,
+        "driver_control_bytes": 60,
+        "tcb_objects_bytes": 240,
+        "queue_objects_bytes": 320,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": 512,
+        "c_irq_space_below_initial_sp_bytes": 512,
+        "ram_with_reservation_bytes": 3960,
+        "max_reported_frame_bytes": 128,
+        "stack_peak_bytes": null,
+        "image_sha256": "062e1e3dc893a06c265d2da145f310471b0b496546f9f3ffd90f4b602648c315",
+        "elf_sha256": "6f44b82cfdc19b852354352a6aa327f357fa593ff95f74d08dc2e6d227dd22bb"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-p0-tasks2-w128",
+        "used": false,
+        "application_tasks": 2,
+        "preemption": 0,
+        "words_per_stack": 128,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 32,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "0eaca40a247aa11399f5adfe48454ad84747c4b0273caba096cff0dc35747924"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "p0-tasks3-w128",
+        "used": true,
+        "application_tasks": 3,
+        "preemption": 0,
+        "words_per_stack": 128,
+        "image_bytes": 5112,
+        "data_bytes": 8,
+        "bss_bytes": 3504,
+        "static_ram_bytes": 3512,
+        "stack_arrays_bytes": 2560,
+        "driver_stack_bytes": 512,
+        "driver_control_bytes": 60,
+        "tcb_objects_bytes": 300,
+        "queue_objects_bytes": 320,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": 512,
+        "c_irq_space_below_initial_sp_bytes": 512,
+        "ram_with_reservation_bytes": 4536,
+        "max_reported_frame_bytes": 128,
+        "stack_peak_bytes": null,
+        "image_sha256": "632ffe6098e0a19d07f748e63be326a36a1de276f5db6de0a1f678fc7d6c837c",
+        "elf_sha256": "c1c3838b6febf5a44ea28c5f60b405e26190bfaea2e4b0645b21031dcd9f33d3"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-p0-tasks3-w128",
+        "used": false,
+        "application_tasks": 3,
+        "preemption": 0,
+        "words_per_stack": 128,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 32,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "0eaca40a247aa11399f5adfe48454ad84747c4b0273caba096cff0dc35747924"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "p1-tasks2-w128",
+        "used": true,
+        "application_tasks": 2,
+        "preemption": 1,
+        "words_per_stack": 128,
+        "image_bytes": 5368,
+        "data_bytes": 8,
+        "bss_bytes": 2928,
+        "static_ram_bytes": 2936,
+        "stack_arrays_bytes": 2048,
+        "driver_stack_bytes": 512,
+        "driver_control_bytes": 60,
+        "tcb_objects_bytes": 240,
+        "queue_objects_bytes": 320,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": 512,
+        "c_irq_space_below_initial_sp_bytes": 512,
+        "ram_with_reservation_bytes": 3960,
+        "max_reported_frame_bytes": 128,
+        "stack_peak_bytes": null,
+        "image_sha256": "7be21a63b2083bbbdd81268106d776732149f526999ca8788e48f1576f69fe31",
+        "elf_sha256": "525cf30948548bb726559fcb5ff65550e3db487fd9350196795a821267cf94d9"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-p1-tasks2-w128",
+        "used": false,
+        "application_tasks": 2,
+        "preemption": 1,
+        "words_per_stack": 128,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 32,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "0eaca40a247aa11399f5adfe48454ad84747c4b0273caba096cff0dc35747924"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "p1-tasks3-w128",
+        "used": true,
+        "application_tasks": 3,
+        "preemption": 1,
+        "words_per_stack": 128,
+        "image_bytes": 5368,
+        "data_bytes": 8,
+        "bss_bytes": 3504,
+        "static_ram_bytes": 3512,
+        "stack_arrays_bytes": 2560,
+        "driver_stack_bytes": 512,
+        "driver_control_bytes": 60,
+        "tcb_objects_bytes": 300,
+        "queue_objects_bytes": 320,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": 512,
+        "c_irq_space_below_initial_sp_bytes": 512,
+        "ram_with_reservation_bytes": 4536,
+        "max_reported_frame_bytes": 128,
+        "stack_peak_bytes": null,
+        "image_sha256": "ba2323bead4215ea9cde7e8ac9131c0fefd06764b30f6b77c145980f0694d978",
+        "elf_sha256": "b4f0f9c4f1d191f7fe75a00d91920512dc7e398151e09e3e901ad405ef2e56da"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-p1-tasks3-w128",
+        "used": false,
+        "application_tasks": 3,
+        "preemption": 1,
+        "words_per_stack": 128,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "stack_arrays_bytes": 0,
+        "driver_stack_bytes": 0,
+        "driver_control_bytes": 0,
+        "tcb_objects_bytes": 0,
+        "queue_objects_bytes": 0,
+        "boot_irq_reserved_bytes": 1024,
+        "port_mscratch_offset_bytes": null,
+        "c_irq_space_below_initial_sp_bytes": null,
+        "ram_with_reservation_bytes": 1024,
+        "max_reported_frame_bytes": 32,
+        "stack_peak_bytes": null,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "0eaca40a247aa11399f5adfe48454ad84747c4b0273caba096cff0dc35747924"
+      }
+    ],
+    "compiler": "riscv-none-elf-gcc (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "28703b51d9441360f788063bc9686e1c52de3f72bd881a6b4ce731a7e977dd57",
+    "tools": {
+      "cc1": "284552645b9b8b40f698328f5f7c3f9b41607b3b5434e8ad023bcad90f9feab4",
+      "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+      "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+      "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+      "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+      "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+      "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+      "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+    },
+    "libgcc": {
+      "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+      "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+    },
+    "rv32e": "assembler rejected full-register port as expected"
+  },
+  "preliminary_runs": [
+    {
+      "path": "work/exp03-kernel-trace-probe-20261022",
+      "scope": "Initial local compile/queue smoke probe, not added to final counts"
+    },
+    {
+      "path": "work/exp03-kernel-trace-host-20261022",
+      "tests": 23,
+      "status": "passed-before-explicit-source-absence-failure-guard"
+    },
+    {
+      "path": "work/exp03-kernel-trace-abi-20261022",
+      "completed_rows": 10,
+      "status": "failed",
+      "reason": "LTO inlined fixture_drain; validator incorrectly required wrapper symbol name; final retains four actual port entries"
+    }
+  ],
+  "junit": {
+    "path": "work/exp03-kernel-trace-tests-20261022-r2.xml",
+    "sha256": "e6c7e6dee69845482ae6c8379c24f58b7950f096cde05a22668c9331b9542f84",
+    "tests": 23,
+    "skipped": 0
+  },
+  "archive": {
+    "path": "work/exp03-kernel-trace-20261022-evidence.tar.gz",
+    "bytes": 6482943,
+    "sha256": "d923ed5300c3c93274eaf18c1f5f00272a48f878bec2ff686b8c0c26026ef0e8"
+  },
+  "matrix_sha256": "040f470f70a5721b5d428c3536fb02f04f49a196694aae088d5d55bff2bf2967",
+  "limits": [
+    "Fixed kernel native LP64 port is not WCH hardware execution or MCU cost",
+    "No real timer tick or interrupt preemption, WCH stack switching, measured wait latency or peak",
+    "FromISR API called by fixture controller, not real ISR",
+    "Priority-2 controller defines atomic batches and quiescent boundaries; it is test overhead",
+    "Three-stage application has greater in-flight capacity and is not ranked as equal semantics",
+    "Stack arrays and boot/IRQ reservation are candidate budgets, not measured safe minima",
+    "Target has no startup/vector or physical controller integration; N08/N09 work remains",
+    "No public API adoption or human evaluation"
+  ]
+}

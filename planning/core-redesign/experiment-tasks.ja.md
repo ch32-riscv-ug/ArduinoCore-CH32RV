@@ -276,3 +276,7 @@ register backendと実wireの成立は未完了。拒否後復帰をhostのaccep
 [N04 二つの通常stack](tasks/EXP-03/two-stack-result.ja.md)はnative17件＋workspace3件・ABI18。
 同じC++ workflowと継続型を独立oracleへ照合し、生成swap bytesの保存・復元を整数模型で検査した。
 host ucontext・命令模型・link配置を実MCU結果と分ける。次はFreeRTOS共通入力列のfixture境界。
+
+[N04 固定kernel共通列](tasks/EXP-03/kernel-trace-result.ja.md)はnative20件＋workspace3件・ABI18。
+2 taskの協調／preemptionと継続型／2 stackが共通18組で一致。3 stageは保持入力容量が変わる別条件。
+N04のsource／host／整数模型／link範囲を実施し、実fixture統合をN08、実切替・IRQ・peakをN09へ残す。次はN05。

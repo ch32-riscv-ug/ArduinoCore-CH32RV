@@ -28,6 +28,8 @@
 
 ## 最新の完了単位
 
+- [N04 固定kernelの共通入力列](tasks/EXP-03/kernel-trace-result.ja.md)：native20件＋workspace3件・ABI18。vendor kernelをnative test portで実行し、共通78 trace・120,244コマンドを保存。2 taskの協調／preemptionと継続型／2 stackが18組で一致。3 stageは保持入力が2→4件に増える反例を保存。priority-2 controllerはfixtureだけで、targetのstack512 B・TCB60 Bを別計上。N04のsource／host／整数模型／link範囲を実施済みとし、実fixture統合・実IRQ／切替・peakはN08／N09へ残す。次はN05の保存と用途共存。
+
 - [N04 二つの通常stack](tasks/EXP-03/two-stack-result.ja.md)：native17件＋workspace3件・ABI18。継続型と同じC++別stack workflowを34 trace・202,082コマンドで独立oracleへ照合し、17組一致。target swap106 Bの整数模型は1,000 seedの往復を確認。host ucontextとtarget命令模型は別の証拠。未使用8行は追加静的RAM0 B。512 Bの別stackではLTOあり総RAM予約1,776 B、継続型1,132 B。実切替／IRQ／peakとFreeRTOSへの同一列の適用は未検証で、次はfixtureの進行境界をそろえる。
 
 - [N04 X035固定portと配置](tasks/EXP-03/stack-port-result.ja.md)：WCH source76 fileを固定し、最終ABI50・workspace3件。協調／preemption・アプリ2／3 task・stack64／128／256 wordを比較。未使用24行はemptyと同じimage／静的RAM。portのmscratch上端−512 Bを追跡し、起動／IRQ予約を1,024 Bへ修正。各512 Bのstack・2 task＋idleはLTOありFlash4,088 B、RAM総予約3,292 B。実切替・待機・peakは未測定。2 stackだけの協調portと同一仮想I/O列は引き続きN04。
