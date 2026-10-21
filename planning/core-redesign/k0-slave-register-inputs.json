@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "scope": "N03 conditional register adapter and explicit host peripheral assumptions, not K-HW proof",
+  "contract": "planning/core-redesign/workloads.ja.md K0",
+  "sources": "planning/core-redesign/tasks/EXP-06/k0-slave-source-result.ja.md",
+  "candidates": ["R", "A", "B", "C-bridge"],
+  "capacities": [1, 2],
+  "admission_policies": ["ACK-discard", "data-NACK-explicit-rearm"],
+  "protected": true,
+  "data_nack_order": "tentative ACK=0 if completed FIFO full, before STAR2 address release; restore ACK for transmitter direction",
+  "frontend": "unchanged k0_shared.hpp; IRQ adapter only transfers staging/held snapshot, no executor entry",
+  "bounded_irq": "drain at most two RX data then at most one TX data per service; no elapsed time guarantee",
+  "rearm": "only blocked NACK branch and bus idle; explicit caller, not delay/loop hook",
+  "recovery": "fail closed with PE/ACK clear on BERR/ARLO/OVR, explicit recovery only bus idle; preparation external",
+  "model_assumptions": [
+    "address ACK precedes ADDR interrupt; ACK=0 prevents new matched address",
+    "two buffered RX bytes and two TX prefetch slots; physical byte timing is not simulated",
+    "no STOPF for ACK=0 branch; stopped transmitter normally ends by AF",
+    "NACKed RX byte may or may not produce RXNE: test both variants",
+    "STAR1 then STAR2 clears ADDR and releases address stretching",
+    "normal positive fixture uses repeated addressing only to this slave",
+    "foreign repeated START has no adapter event; two alternative foreign STOPF behaviors are counterexamples only"
+  ],
+  "seeded_serial": {"seeds": [0,1,2,3,4,5,6,7,8,9], "iterations": 1000, "oracle": "independent frozen KnobOracle; comparisons at transaction and main-step boundaries"},
+  "not_verified": ["physical ACK/NACK and recovery", "foreign START observability", "physical FIFO and stretch timing", "IRQ priorities and runtime/vector", "100kHz or 400kHz support", "API or admission policy adoption"]
+}
