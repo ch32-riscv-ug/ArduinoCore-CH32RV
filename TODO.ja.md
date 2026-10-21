@@ -706,6 +706,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
           10 MS/s でも 1309 周期中 4 回抜けた。9.09 MS/s と 8.33 MS/s では、周期が計算どおりの組み合わせだけだった。
           以前「12.5 MS/s まで正確」としたのは、PWM が 130 kHz にずれていた頃の測定。
         - SS での速さ: HsAdcStream 41.8 MB/s（20 Msps、ホストが読む間の取りこぼし 0）、LogicStream 19.7 MB/s（9.09 MS/s）。
+        - **キャプチャの深掘り（ユーザーの依頼、2026-10-21、あとで）。** 連続の取り込みで抜ける原因の切り分け
+          （USB を流さない場合、DMA の優先度、DMA1 / DMA2、バッファの置き場所）と、9.09 MS/s より上げられるか。
       - SS を挿したままの復旧: `ch32rv --connect-under-reset reset`（WCH-LinkE の RST → NRST）でリセットできる。
         書き込みは失敗する（プローブの誤り 0x55）。止まったファームの調べ物には、同じ方法での読み書きが使える。
       - QingKe V3F では `csrr mcycle` が例外になる（実験のスケッチで踏んだ）。
