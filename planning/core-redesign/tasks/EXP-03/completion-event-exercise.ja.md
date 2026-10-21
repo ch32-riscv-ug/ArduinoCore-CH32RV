@@ -35,4 +35,6 @@ takeの前後で受理結果がどう違うか、別clientがqueuedならdispatc
 
 最後にqueue容量だけを増やす案を検討する。
 宛先解除による破棄、古いtoken、end後のcleanupが容量増加で解決するかを説明する。
+[直接回収との費用比較](completion-delivery-result.ja.md)には、固定1宛先・容量1の測定値がある。
+そのRAM52 B増分の内訳を説明し、自分の用途に直接回収だけで足りるかを考える。
 容量増加によるFlash／RAMの変化は未測定なので、hostの成功だけからMCUへの採用は決めない。

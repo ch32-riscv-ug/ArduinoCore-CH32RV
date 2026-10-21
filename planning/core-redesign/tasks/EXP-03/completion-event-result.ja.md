@@ -61,7 +61,8 @@ SHA-256 `f15b9b2688aa593389b163c6c425cc40252fd8e9dfd6c7b7ce571923cdebfa5f`。
 実行binary、compiler hash／version／flags、使用headerとtestのsnapshot、74呼出しのargs／stdout／stderr／終了code、最終log／XMLと初回失敗XMLを含む。
 archive自体はignoredなlocal成果物で、追跡する測定台帳にhashを残す。
 
-今回追加したものは結合harnessと検査であり、target向けABI測定は行っていない。
+この単位で追加したものは結合harnessと検査であり、target向けABI測定は行っていない。
+後続の[直接回収との費用比較](completion-delivery-result.ja.md)で、共通接続処理を使うnative76件・ABI28構成を追加した。
 既存headerが不変でも、結合全体のFlash／RAM／stackは個別部品の数値から算出しない。
 nativeのhandler回数は観測値だが、MCU時間やstack peakの数値ではない。
 
