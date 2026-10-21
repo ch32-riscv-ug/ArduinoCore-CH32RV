@@ -35,6 +35,11 @@
 #define TIM_DMAINTENR 0x0Cu
 #define TIM_UDE       (1u << 8)
 
+/* The DMA wrote memory the compiler knows nothing about: keep it from
+ * reusing what the CPU had there before (CH32RVHsAdc's read() returned a
+ * stale marker for exactly this reason). */
+#define DMA_DONE() __asm__ volatile("fence rw, rw" ::: "memory")
+
 static CH32RVLogicCapture *active;
 
 static void quiesce(void *context, uint8_t, uint8_t)
@@ -137,6 +142,7 @@ const uint16_t *CH32RVLogicCapture::readBuffer()
         _ready = (uint8_t)(r & ~(1u << take));
     }
     interrupts();
+    DMA_DONE();
     return take == 0xFF ? nullptr : _buf + (take ? _half : 0u);
 }
 
@@ -184,6 +190,7 @@ uint32_t CH32RVLogicCapture::captureBurst(uint16_t *buffer, uint16_t samples)
     interrupts();
     CH8_CFGR = 0;
     DMA2_INTFCR = CH8_ALL;
+    DMA_DONE();
     return done && us ? (uint32_t)((uint64_t)samples * 1000000u / us) : 0;
 }
 
