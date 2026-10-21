@@ -1,6 +1,6 @@
 """The Network library (libraries/Network) built for the host and run against
 Linux's own TCP/IP over a tap device: addresses (static, DHCP client and
-server), ICMP, UDP, SNTP, mDNS,
+server), ICMP, UDP, SNTP, mDNS, TLS (NetworkClientSecure),
 TCP both ways and in parallel, an outgoing connection, DNS - on a clean link
 and on one that loses and reorders frames.
 
@@ -22,6 +22,7 @@ import pytest
 REPO = pathlib.Path(__file__).resolve().parents[3]
 HERE = pathlib.Path(__file__).resolve().parent
 LIB = REPO / "libraries/Network/src"
+TLS = REPO / "libraries/NetworkClientSecure/src"
 API = ["String", "IPAddress", "Print", "Stream", "Common"]
 
 
@@ -30,16 +31,21 @@ def build(out: pathlib.Path) -> pathlib.Path:
     if not cc or not cxx:
         pytest.skip("no host gcc / g++")
     flags = ["-g", "-O1", "-fsanitize=address,undefined", "-DNETWORK_HOST_TEST",
-             f"-I{HERE / 'host'}", f"-I{REPO / 'cores/arduino'}", f"-I{LIB}"]
+             f"-I{HERE / 'host'}", f"-I{REPO / 'cores/arduino'}", f"-I{LIB}", f"-I{TLS}"]
     objects = []
     flags.append(f"-I{REPO / 'libraries/CH32RVUsbDevice/src'}")   # CH32RVUsbCallback.h for the USB stand-in
-    c_sources = sorted((LIB / "lwip-src").rglob("*.c")) + [
+    c_sources = sorted((LIB / "lwip-src").rglob("*.c")) + sorted((TLS / "mbedtls-src").glob("*.c")) + [
         HERE / "host/link.c", REPO / "cores/arduino/itoa.c", REPO / "cores/arduino/dtostrf.c"]
-    cxx_sources = (sorted(LIB.glob("*.cpp")) + sorted((HERE / "host").glob("*.cpp")) + [HERE / "app.cpp"]
+    cxx_sources = (sorted(LIB.glob("*.cpp")) + sorted(TLS.glob("*.cpp")) + sorted((HERE / "host").glob("*.cpp")) + [HERE / "app.cpp"]
                    + [REPO / f"cores/arduino/api/{name}.cpp" for name in API])
-    for index, source in enumerate(c_sources + cxx_sources):
+    # Mbed TLS's configuration checks: compile-time only, built here so a bad
+    # combination in our two configuration headers fails the test.
+    checks = sorted((TLS.parent / "extras/mbedtls-config-check").glob("*.c"))
+    for index, source in enumerate(c_sources + checks + cxx_sources):
         obj = out / f"{index:03d}-{source.stem}.o"
-        if source.suffix == ".c":
+        if source in checks:
+            command = [cc, *flags, f"-I{TLS / 'mbedtls-src'}", "-w", "-c", str(source), "-o", str(obj)]
+        elif source.suffix == ".c":
             command = [cc, *flags, "-w", "-c", str(source), "-o", str(obj)]
         else:
             command = [cxx, "-std=gnu++17", *flags, "-include", str(HERE / "host/prelude.h"),
@@ -81,10 +87,13 @@ def check(results, names):
 
 ALL = ["address", "ping", "udp_echo", "tcp_echo", "tcp_host_to_sketch", "tcp_sketch_to_host", "tcp_parallel",
        "tcp_client", "dns", "sntp", "mdns_host", "mdns_service"]
+TLS_CASES = ["tls_ecdsa_ca", "tls_ecdsa_bundle", "tls_rsa_bundle", "tls_insecure", "tls_client_certificate",
+             "tls_refuses_wrong_root", "tls_refuses_wrong_name", "tls_bundle_refuses_unknown_root",
+             "tls_bundle_refuses_impostor_root", "tls_ca_refuses_impostor_root"]
 
 
 def test_static_address(sketch):
-    check(drive(sketch, "static"), ALL)
+    check(drive(sketch, "static"), ALL + TLS_CASES)
 
 
 def test_dhcp_client(sketch):

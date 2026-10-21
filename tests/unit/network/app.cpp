@@ -14,9 +14,14 @@
  *             "D <name>" -> "DNS a.b.c.d" / "DNSFAIL"
  *             "T <server>" -> configTime(9 h, 0, server) -> "TIME STARTED"; the SNTP client's
  *                 settimeofday() prints "SETTIME <seconds>" (host/arduino_host.cpp)
+ *             "S <host> <port> <how>" NetworkClientSecure to host:port, sends "hello\n", reads one line
+ *                 how: ca (TLS_CA), wrongca (TLS_CA_WRONG), bundle (TLS_BUNDLE), insecure, client
+ *                 (TLS_CA plus TLS_CLIENT_CERT / TLS_CLIENT_KEY) -> "STLS OK <line>" / "STLS FAIL <error> <flags>"
  *   mDNS: ch32test.local, _http._tcp port 80 with TXT path=/x
+ *   TLS_* in the environment name files (PEM, or the bundle's binary).
  */
 #include <Network.h>
+#include <NetworkClientSecure.h>
 #include <NetworkUsbNcm.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +37,29 @@ static NetworkServer echoServer(7, 4), discardServer(9, 2), sourceServer(19, 2);
 static NetworkClient echoClients[4];
 static NetworkClient discardClient;
 static uint32_t discarded;
+
+/* A file named by an environment variable, NUL-terminated, kept for the run. */
+static char *load(const char *var, size_t *size = nullptr)
+{
+    const char *path = getenv(var);
+    FILE *f = path ? fopen(path, "rb") : nullptr;
+    if (!f) {
+        return nullptr;
+    }
+    fseek(f, 0, SEEK_END);
+    const long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *data = static_cast<char *>(calloc(1, (size_t)n + 1));
+    if (data && fread(data, 1, (size_t)n, f) != (size_t)n) {
+        free(data);
+        data = nullptr;
+    }
+    fclose(f);
+    if (size) {
+        *size = (size_t)n;
+    }
+    return data;
+}
 static bool reported;
 
 void setup()
@@ -179,6 +207,53 @@ static void serveCommands()
         } else {
             reply("CFAIL");
         }
+    } else if (line[0] == 'S') {
+        char host[64] = {0}, how[16] = {0};
+        unsigned port = 0;
+        sscanf(line + 2, "%63s %u %15s", host, &port, how);
+        static NetworkClientSecure tls;
+        static char *ca = load("TLS_CA"), *wrong = load("TLS_CA_WRONG"), *cert = load("TLS_CLIENT_CERT"),
+                    *key = load("TLS_CLIENT_KEY");
+        static size_t bundleSize;
+        static char *bundle = load("TLS_BUNDLE", &bundleSize);
+        tls.setCertificate(nullptr);
+        tls.setPrivateKey(nullptr);
+        if (!strcmp(how, "ca")) {
+            tls.setCACert(ca);
+        } else if (!strcmp(how, "wrongca")) {
+            tls.setCACert(wrong);
+        } else if (!strcmp(how, "bundle")) {
+            tls.setCACertBundle(reinterpret_cast<const uint8_t *>(bundle), bundleSize);
+        } else if (!strcmp(how, "insecure")) {
+            tls.setInsecure();
+        } else if (!strcmp(how, "client")) {
+            tls.setCACert(ca);
+            tls.setCertificate(cert);
+            tls.setPrivateKey(key);
+        }
+        char text[160];
+        if (tls.connect(host, (uint16_t)port)) {
+            tls.print("hello\n");
+            char got[64] = {0};
+            size_t n = 0;
+            const uint32_t start = millis();
+            while (n < sizeof got - 1 && millis() - start < 10000) {
+                const int c = tls.read();
+                if (c < 0) {
+                    delay(1);
+                    continue;
+                }
+                if (c == '\n') {
+                    break;
+                }
+                got[n++] = (char)c;
+            }
+            tls.stop();
+            snprintf(text, sizeof text, "STLS OK %s", got);
+        } else {
+            snprintf(text, sizeof text, "STLS FAIL -0x%04x 0x%x", (unsigned)-tls.lastError(), (unsigned)tls.verifyFlags());
+        }
+        reply(text);
     } else if (line[0] == 'T') {
         configTime(9 * 3600, 0, line + 2);
         reply("TIME STARTED");

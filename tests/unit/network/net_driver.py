@@ -37,8 +37,112 @@ def sh(command):
 
 
 sh("ip link set lo up; ip tuntap add dev tap0 mode tap; ip link set tap0 up; ip addr add 10.9.0.1/24 dev tap0")
+
+
+# ---- a test PKI for NetworkClientSecure, made before the sketch starts (it reads TLS_* then)
+PKI = tempfile.mkdtemp(prefix="net-driver-pki-")
+
+
+def ossl(*args):
+    subprocess.run(["openssl", *args], check=True, capture_output=True, cwd=PKI)
+
+
+def make_key(name, kind):
+    if kind.startswith("rsa"):
+        ossl("genrsa", "-out", f"{name}.key", kind[3:])
+    else:
+        ossl("ecparam", "-name", {"p256": "prime256v1", "p384": "secp384r1"}[kind], "-genkey", "-noout", "-out", f"{name}.key")
+
+
+def make_root(name, kind):
+    make_key(name, kind)
+    ossl("req", "-x509", "-new", "-key", f"{name}.key", "-subj", f"/CN={name}", "-days", "30", "-sha256",
+         "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign,cRLSign",
+         "-out", f"{name}.pem")
+
+
+def make_signed(name, kind, issuer, ca, extra):
+    make_key(name, kind)
+    ossl("req", "-new", "-key", f"{name}.key", "-subj", f"/CN={name}", "-out", f"{name}.csr")
+    with open(os.path.join(PKI, f"{name}.ext"), "w") as f:
+        f.write(extra)
+    ossl("x509", "-req", "-in", f"{name}.csr", "-CA", f"{issuer}.pem", "-CAkey", f"{issuer}.key", "-CAcreateserial",
+         "-days", "30", "-sha256", "-extfile", f"{name}.ext", "-out", f"{name}.pem")
+
+
+CA_EXT = "basicConstraints=critical,CA:TRUE\nkeyUsage=critical,keyCertSign,cRLSign\n"
+SERVER_EXT = "subjectAltName=DNS:tls.lan\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n"
+CLIENT_EXT = "keyUsage=critical,digitalSignature\nextendedKeyUsage=clientAuth\n"
+make_root("ec-root", "p384")
+make_signed("ec-int", "p384", "ec-root", True, CA_EXT)
+make_signed("ec-leaf", "p256", "ec-int", False, SERVER_EXT)
+make_root("rsa-root", "rsa4096")
+make_signed("rsa-int", "rsa2048", "rsa-root", True, CA_EXT)
+make_signed("rsa-leaf", "rsa2048", "rsa-int", False, SERVER_EXT)
+make_root("wrong-root", "p256")
+make_signed("wrong-leaf", "p256", "wrong-root", False, SERVER_EXT)
+# An impostor: a root with the same name as ec-root ("CN=ec-root") and a key of its own. The bundle
+# finds ec-root by that name; only the signature check can tell the chain is not its.
+os.makedirs(os.path.join(PKI, "impostor"))
+make_key("impostor/ec-root", "p384")
+ossl("req", "-x509", "-new", "-key", "impostor/ec-root.key", "-subj", "/CN=ec-root", "-days", "30", "-sha256",
+     "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign,cRLSign",
+     "-out", "impostor/ec-root.pem")
+make_signed("impostor-leaf", "p256", "impostor/ec-root", False, SERVER_EXT)
+make_root("client-root", "p256")
+make_signed("client", "p256", "client-root", False, CLIENT_EXT)
+
+
+def der_items(data, at, end):
+    """The (tag, start of the whole element, start of its content, end) of each DER element in data[at:end]."""
+    out = []
+    while at < end:
+        tag, n = data[at], data[at + 1]
+        head = 2
+        if n & 0x80:
+            k = n & 0x7F
+            n = int.from_bytes(data[at + 2:at + 2 + k], "big")
+            head = 2 + k
+        out.append((tag, at, at + head, at + head + n))
+        at += head + n
+    return out
+
+
+def name_and_key(pem_path):
+    """The subject Name and the SubjectPublicKeyInfo of a certificate, DER."""
+    der = subprocess.run(["openssl", "x509", "-in", pem_path, "-outform", "DER"], check=True, capture_output=True).stdout
+    cert = der_items(der, 0, len(der))[0]
+    tbs = der_items(der, cert[2], cert[3])[0]
+    fields = der_items(der, tbs[2], tbs[3])
+    if fields[0][0] == 0xA0:            # [0] version
+        fields = fields[1:]
+    subject, spki = fields[4], fields[5]  # serial, signature, issuer, validity, subject, spki
+    return der[subject[1]:subject[3]], der[spki[1]:spki[3]]
+
+
+def write_bundle(path, roots):
+    """ESP-IDF's x509_crt_bundle: u32 offsets, then (u16 name len, u16 key len, name, key), sorted by name."""
+    entries = sorted(name_and_key(os.path.join(PKI, r)) for r in roots)
+    blobs = [struct.pack("<HH", len(n), len(k)) + n + k for n, k in entries]
+    offset = 4 * len(blobs)
+    table = b""
+    for b in blobs:
+        table += struct.pack("<I", offset)
+        offset += len(b)
+    with open(path, "wb") as f:
+        f.write(table + b"".join(blobs))
+
+
+write_bundle(os.path.join(PKI, "bundle.bin"), ["ec-root.pem", "rsa-root.pem", "client-root.pem"])
+TLS_ENV = {
+    "TLS_CA": os.path.join(PKI, "ec-root.pem"),
+    "TLS_CA_WRONG": os.path.join(PKI, "wrong-root.pem"),
+    "TLS_BUNDLE": os.path.join(PKI, "bundle.bin"),
+    "TLS_CLIENT_CERT": os.path.join(PKI, "client.pem"),
+    "TLS_CLIENT_KEY": os.path.join(PKI, "client.key"),
+}
 dnsmasq = ["dnsmasq", "-d", "-k", "-i", "tap0", "--bind-interfaces", "--no-resolv", "--no-hosts",
-           "--address=/test.lan/10.9.0.99", "--user=root", "--group=root", "--pid-file=", "--leasefile-ro",
+           "--address=/test.lan/10.9.0.99", "--address=/tls.lan/10.9.0.1", "--address=/wrong.lan/10.9.0.1", "--user=root", "--group=root", "--pid-file=", "--leasefile-ro",
            "--log-facility=-"]
 if MODE == "dhcpc":
     dnsmasq += ["--dhcp-range=10.9.0.50,10.9.0.60,1h", "--dhcp-option=3,10.9.0.1", "--dhcp-option=6,10.9.0.1"]
@@ -49,7 +153,7 @@ lines = queue.Queue()
 log = []
 started = time.time()
 sketch = subprocess.Popen([BINARY], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                          env=dict(os.environ, STACK_MODE=MODE))
+                          env=dict(os.environ, STACK_MODE=MODE, **TLS_ENV))
 
 
 def reader():
@@ -256,6 +360,27 @@ def dhcp_server():
     return {"ok": ok, "first": first, "second": second, "again": again}
 
 
+def tls_servers():
+    """openssl s_server, reversing each line: the ECDSA chain on 4431, the RSA chain on 4432, the
+    ECDSA chain asking for a client certificate on 4433, a root missing from the bundle on 4434, and an
+    impostor of ec-root (same name, another key) on 4435."""
+    def serve(port, leaf, chain, extra=()):
+        return subprocess.Popen(["openssl", "s_server", "-quiet", "-tls1_2", "-accept", f"10.9.0.1:{port}", "-rev",
+                                 "-cert", f"{leaf}.pem", "-key", f"{leaf}.key", "-cert_chain", f"{chain}.pem", *extra],
+                                cwd=PKI, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    servers = [serve(4431, "ec-leaf", "ec-int"), serve(4432, "rsa-leaf", "rsa-int"),
+               serve(4433, "ec-leaf", "ec-int", ("-Verify", "1", "-CAfile", "client-root.pem")),
+               serve(4434, "wrong-leaf", "wrong-root"), serve(4435, "impostor-leaf", "impostor/ec-root")]
+    time.sleep(0.5)
+    return servers
+
+
+def tls(host, port, how, expect_ok):
+    _, reply = command(f"S {host} {port} {how}", 180, 1)
+    ok = reply == "STLS OK olleh" if expect_ok else bool(reply and reply.startswith("STLS FAIL"))
+    return {"ok": ok, "reply": reply}
+
+
 def dns_lookup():
     _, reply = command("D test.lan", 12, 3 if LOSSY else 1)
     return {"ok": reply == "DNS 10.9.0.99", "reply": reply}
@@ -387,10 +512,26 @@ if ip_line:
     run("tcp_client", tcp_client, 120)
     run("dns", dns_lookup, 60)
     run("sntp", sntp, 60)
+    servers = tls_servers()
+    try:
+        run("tls_ecdsa_ca", lambda: tls("tls.lan", 4431, "ca", True), 200)
+        run("tls_ecdsa_bundle", lambda: tls("tls.lan", 4431, "bundle", True), 200)
+        run("tls_rsa_bundle", lambda: tls("tls.lan", 4432, "bundle", True), 200)
+        run("tls_insecure", lambda: tls("tls.lan", 4431, "insecure", True), 200)
+        run("tls_client_certificate", lambda: tls("tls.lan", 4433, "client", True), 200)
+        run("tls_refuses_wrong_root", lambda: tls("tls.lan", 4431, "wrongca", False), 200)
+        run("tls_refuses_wrong_name", lambda: tls("wrong.lan", 4431, "ca", False), 200)
+        run("tls_bundle_refuses_unknown_root", lambda: tls("tls.lan", 4434, "bundle", False), 200)
+        run("tls_bundle_refuses_impostor_root", lambda: tls("tls.lan", 4435, "bundle", False), 200)
+        run("tls_ca_refuses_impostor_root", lambda: tls("tls.lan", 4435, "ca", False), 200)
+    finally:
+        for p in servers:
+            p.terminate()
     run("mdns_host", mdns_host, 30)
     run("mdns_service", mdns_service, 30)
 
 results["alive"] = sketch.poll() is None
+shutil.rmtree(PKI, ignore_errors=True)
 sketch.terminate()
 dns.terminate()
 try:

@@ -724,8 +724,11 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         DHCP サーバー、TCP / UDP、DNS、SNTP の `configTime()`、mDNS の `MDNS`）、USB の NCM のつなぎ（`NetworkUsbNcm`、
         `CH32RVUsbDeviceNet::beginNetwork()` など。受信の流量制御 `receiveGate()`）、PC の試験（tests/unit/network）。
       - 残り: Ethernet の MAC のドライバ（V208 / V307 / V407 / H417、機材待ち）。対象の系列の USB デバイスのドライバが
-        来たら NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント。TLS の採否（docs/network-stack.ja.md の
-        測定。V208 は無理、V307 はぎりぎり）。
+        来たら NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント。
+      - TLS: Mbed TLS 4.1 に決めた（2026-10-21、比較は docs/network-stack.ja.md）。`NetworkClientSecure`（setCACert /
+        setCACertBundle（ESP-IDF の形式）/ setInsecure / クライアント証明書）は PC の試験で通る。実機は未確認。
+        乱数はコアの `ch32rv_rng_read()`（RNG。これも実機は未確認）。V307 は RAM がぎりぎりで、`RAM_CODE_MOD`（Flash と RAM の
+        分け方）のメニューが要りそう（ユーザーと決める）。TLS 1.3 は大きさを測ってから。
   - コアの `time()` / `gettimeofday()` / `settimeofday()`（2026-10-21、syscalls.c）: これまで半ホスティングの `ecall` で
     落ちていた。直したが、実機ではまだ動かしていない。`clock()`、`fopen()` なども失敗を返すようにした。
   - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口。今は X035 / X033 だけ）。

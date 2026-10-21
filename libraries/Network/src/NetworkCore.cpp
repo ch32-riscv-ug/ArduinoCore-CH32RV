@@ -1,6 +1,10 @@
 #include "NetworkCore.h"
 #include "NetworkInterface.h"
 
+#ifdef CH32RV_RNG_BASE
+#include <ch32rv_rng.h>
+#endif
+
 #include "lwip/init.h"
 #include "lwip/timeouts.h"
 
@@ -115,11 +119,18 @@ extern "C" uint32_t sys_now(void)
     return millis();
 }
 
-/* TCP's initial sequence numbers and the DHCP / DNS transaction ids: not
- * cryptographic, but different on every chip and every start. A sketch, or a
- * driver with a hardware generator, can replace it. */
+/* TCP's initial sequence numbers and the DHCP / DNS transaction ids: from the
+ * chip's random number generator where there is one; otherwise not
+ * cryptographic, but different on every chip and every start. A sketch can
+ * replace it. */
 extern "C" __attribute__((weak)) uint32_t network_random(void)
 {
+#ifdef CH32RV_RNG_BASE
+    uint32_t r;
+    if (ch32rv_rng_read(&r, sizeof r)) {
+        return r;
+    }
+#endif
     static uint32_t state;
     if (!state) {
 #ifdef CH32RV_ESIG_UNIID1_ADDR
