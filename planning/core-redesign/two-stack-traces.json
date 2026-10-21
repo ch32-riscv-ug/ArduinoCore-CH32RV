@@ -1,0 +1,50 @@
+{
+  "normal": [
+    "input 1",
+    "turn",
+    "complete 1",
+    "turn",
+    "turn"
+  ],
+  "input-burst": [
+    "input 1",
+    "input 2",
+    "turn",
+    "input 3",
+    "complete 1",
+    "turn",
+    "turn",
+    "turn",
+    "complete 3",
+    "turn",
+    "turn"
+  ],
+  "completion-early": [
+    "complete 7",
+    "input 7",
+    "turn",
+    "turn"
+  ],
+  "completion-burst": [
+    "complete 1",
+    "complete 2",
+    "input 1",
+    "turn",
+    "turn"
+  ],
+  "mismatch": [
+    "input 3",
+    "turn",
+    "complete 4",
+    "turn",
+    "turn"
+  ],
+  "stopped": [
+    "input 9",
+    "complete 9",
+    "observe",
+    "observe",
+    "turn",
+    "turn"
+  ]
+}

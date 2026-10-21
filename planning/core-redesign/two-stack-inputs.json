@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "scope": "N04 experimental two normal stacks versus explicit continuation; no production runtime",
+  "primary_source": {
+    "repository": "riscv-non-isa/riscv-elf-psabi-doc",
+    "commit": "3095deae52ae3feecc54b5e185d14eb177e05d04",
+    "url": "https://raw.githubusercontent.com/riscv-non-isa/riscv-elf-psabi-doc/3095deae52ae3feecc54b5e185d14eb177e05d04/riscv-cc.adoc",
+    "bytes": 53129,
+    "sha256": "d64df459e5a74b77fa8b6dd02ecb79b81a8a031fcabaef24cfda8047ef767556"
+  },
+  "target": {
+    "part": "CH32X035C8T6",
+    "march": "rv32imac_zicsr",
+    "abi": "ilp32",
+    "context_bytes": 64,
+    "saved_bytes": 56,
+    "saved_registers": [
+      "ra",
+      "sp",
+      "s0",
+      "s1",
+      "s2",
+      "s3",
+      "s4",
+      "s5",
+      "s6",
+      "s7",
+      "s8",
+      "s9",
+      "s10",
+      "s11"
+    ],
+    "unchanged_shared_registers": [
+      "gp",
+      "tp"
+    ],
+    "fiber_stack_bytes": [
+      256,
+      512,
+      1024
+    ],
+    "main_stack_reservation_bytes": 1024
+  },
+  "scope_constraints": [
+    "Only normal function-call boundary; never IRQ, NMI, remote core or preemption",
+    "Soft float only; no per-fiber TLS or gp/tp; no vector/FPU context",
+    "Fiber entry never returns; no teardown, cancellation, stack unwinding or restart",
+    "No physical interrupt/vector/clock preparation or observed stack peak"
+  ],
+  "host": "Linux ucontext executes same C++ workflow body under UBSan; not the RISC-V swap and not an MCU cost result",
+  "stimulus": "input token, completion token, explicit turn; workflow then backend; four capacity-one uint32 slots",
+  "not_verified": [
+    "physical swap/IRQ preservation",
+    "safe fiber/main stack budgets",
+    "switch/wait cycles",
+    "FreeRTOS same-trace execution",
+    "API adoption"
+  ]
+}
