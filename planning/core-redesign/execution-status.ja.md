@@ -28,6 +28,8 @@
 
 ## 最新の完了単位
 
+- [N06 H417向け直列実行器接続](tasks/EXP-06/h417-executor-result.ja.md)：native69件＋workspace3件・H417 ABI194。3所有規則×4 featureとR/A/B/Cを接続し、284 trace・197,708コマンド、全4群71組一致。ticket／hint／dataを分け、busy retry、8 B read、容量保持、古いticket／lease、counter上限を検査。late-clearで新hintを消す反例も保存。未使用96 ABI行は追加0 B。SerialGate feedbackと両worker一体objectは共有並列・実配置の証拠ではない。次はN06のshared／core-local分離とhost並列保護。
+
 - [N06 休止と実行器](tasks/EXP-06/sleep-work-result.ja.md)：native104件＋workspace3件・ABI196。2 workerのI/O取消／終端回収／有限jobと休止を接続し、588 trace・109,628コマンド、全4群147組・全12構成45組が一致。M/S/U・domain・文脈、abort・部分Restore・時刻・期限を検査。I/OだけのQuietではjobを残して眠る反例を保存。未使用96 ABI行は追加0 B。V003／X035の構造的ABIで、V006実機・全runtime・peakは未検証。N06全体は未完了で、次はH417と実行器の接続。
 
 - [N05 V003保存との共存](tasks/EXP-06/save-k0-result.ja.md)：native93件＋workspace3件・ABI82。K0 shared／conditional slaveと保存0／1／2／4 fast erase単位を接続し、376 trace・60,300コマンド、全4群94組一致。2 slave policy、保留ADDR／RX／OVR／TX、失敗・boot・未回収・再走査を検査。保存object208 B、R静的RAM差220 B。保存無効時は旧slave binaryと照合、未使用16 ABI行は追加0 B。N05の同期媒体host／link範囲を実施。実Flash／全runtimeはN08、実ACK・IRQ・電断・stackはN09へ残し、次はN06。

@@ -284,6 +284,10 @@ N03の[K0共有部分](planning/core-redesign/tasks/EXP-06/k0-shared-result.ja.m
 I/O取消・通常worker回収・有限jobのdrainと、clock／部分復帰・期限・M/S/Uを接続した。
 休止側のhost／link比較であり、N06全体は未完了。次はH417の公開・通知・返却と片側停止の実行器接続。
 
+[N06 H417向け直列接続](planning/core-redesign/tasks/EXP-06/h417-executor-result.ja.md)でnative69件＋workspace3件・H417 ABI194を追加した。
+公開→epoch ticket→明示hint→通常worker→block返却をつなぎ、busy retry・通知消去順の反例・停止／復旧を比較した。
+N06には、shared／core-localの分離とhint／epoch／受付閉鎖のhost並列保護が残る。直列のgate取得結果を並列契約へ流用しない。
+
 **DESIGN-01：P0 の全体設計案作成**は完了。
 
 - 入力：この計画、TODO のコンセプト・用途・タスク・永続化、FEATURE_CANDIDATES。

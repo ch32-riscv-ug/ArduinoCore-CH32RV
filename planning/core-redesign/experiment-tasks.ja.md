@@ -305,3 +305,12 @@ M/S/Uの進行制限を休止準備でも変えず、abort・部分Restore・clo
 588 trace・109,628コマンド、全4群147組、一覧3種類を含む全12構成45組が一致。
 Timer無効時の空base、未使用96 ABI行の追加0 Bを確認。実MCUのsleep／IRQ／clock保証ではない。
 H417のmessage／block公開・通知・返却と片側停止の実行器接続がN06に残る。実runtimeはN08、物理観測はN09。
+
+
+## N06 H417向け直列接続（2026-10-22）
+
+[Fabricと通常実行器](tasks/EXP-06/h417-executor-result.ja.md)はnative69件＋workspace3件・H417 ABI194。
+公開data、epoch ticket、adapter hint、通常worker、block返却を分離。空probe後のhint消去による停滞とbusy retryを検査した。
+284 trace・197,708コマンド、全4群71組一致。ABIは固定march／ilp32fのflat probeで、両coreの実配置ではない。
+N06には、transport共有状態とcore-local実行器の分離、hint／epoch／受付閉鎖の並列保護、
+call-local結果の区別を保つhost並列接続が残る。高位判断へ移す前に通常の比較実験として続ける。
