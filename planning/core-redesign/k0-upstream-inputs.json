@@ -1,0 +1,148 @@
+{
+  "commit": "5302daa8990ee850de18c963ade8968e4e976350",
+  "retrieved": "2026-10-21",
+  "files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/LICENSE",
+      "bytes": 260,
+      "sha256": "b695d4b496de170d75a2bbd588eec9cc7330eb15921fbc643a5612053ed98d70",
+      "git_blob": "373df33d69b8fe001a01b15db7d6cafbc1d3d978"
+    },
+    {
+      "path": "README.md",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/README.md",
+      "bytes": 9904,
+      "sha256": "8ce7cafd7ca36fe737c09abb8a69252b9bdfb21712f1ab10e6595326f1b7f3c4",
+      "git_blob": "58e48fd34e0d0297d947841f61ab0a825a92f977"
+    },
+    {
+      "path": "software/i2c_knob/bin/i2c_knob.bin",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/bin/i2c_knob.bin",
+      "bytes": 1508,
+      "sha256": "628d0e9fb7b20a0885ed5a01722271005c8b077bd8765990b21654e5b0587752",
+      "git_blob": "104a0a71315214181590a7fa038ce6acbc098f2c"
+    },
+    {
+      "path": "software/i2c_knob/bin/i2c_knob.hex",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/bin/i2c_knob.hex",
+      "bytes": 4264,
+      "sha256": "63a61144737a5b4dfa88773bc4c9d1abd383bfe24fb5b0af278439cda930149a",
+      "git_blob": "bd1764d764f4ab9e9cd42298f87378a0f8987319"
+    },
+    {
+      "path": "software/i2c_knob/config.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/config.h",
+      "bytes": 1509,
+      "sha256": "60520ba712bc8d6090b2ba8828ac85cbbcd1efda6a766d575ffd05ef48059413",
+      "git_blob": "ca353c3279c2ed21f35b5ea7d9063b973e318524"
+    },
+    {
+      "path": "software/i2c_knob/ld/ch32v003.ld",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/ld/ch32v003.ld",
+      "bytes": 2686,
+      "sha256": "a98353727771ef1fd113d407378bc3bf12d6dc69efa0bba4bfd627bfb1b059e8",
+      "git_blob": "36b535ad7795faf17dfc899c6c2f711f042418fc"
+    },
+    {
+      "path": "software/i2c_knob/makefile",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/makefile",
+      "bytes": 4178,
+      "sha256": "b87bc7f5f138073f75f98c4b6ac8e01c80e11a8eb771b899cc57d048ed17f93f",
+      "git_blob": "48b5de90ecad67c420900aed96a68abe10d5df18"
+    },
+    {
+      "path": "software/i2c_knob/platformio.ini",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/platformio.ini",
+      "bytes": 925,
+      "sha256": "d4ae70e1cf8940f0e8eae175471ae571a7994d09365ba7c0116c55c12dde4103",
+      "git_blob": "cfe4ff552918efcfa986b1c15d13197fc0d0b349"
+    },
+    {
+      "path": "software/i2c_knob/src/ch32v003.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/src/ch32v003.h",
+      "bytes": 179422,
+      "sha256": "a4b0867594779c195e51adcbf416c432e9565ad7f1d8a1af2e0528d3d24e472b",
+      "git_blob": "e4f7c8b2f3c294201ea99ebb884fdf92d32129af"
+    },
+    {
+      "path": "software/i2c_knob/src/gpio.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/src/gpio.h",
+      "bytes": 24184,
+      "sha256": "ee5256d334682c380f8e163adc964e1f94b70af34bffff05e3d21b57c4b60faf",
+      "git_blob": "b82b28ec372ea77153eca8de9b5548e95ccc9451"
+    },
+    {
+      "path": "software/i2c_knob/src/i2c_slave.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/src/i2c_slave.c",
+      "bytes": 4339,
+      "sha256": "ce2efec2a437ba978467317a14d1608a6cbb375261e89254f5ebe9bdeb58a610",
+      "git_blob": "a45ace3a660df4c941405c8b722af0082b86e6ba"
+    },
+    {
+      "path": "software/i2c_knob/src/i2c_slave.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/src/i2c_slave.h",
+      "bytes": 2158,
+      "sha256": "11232b46da0a9bbce9377d093a01f3de093121405454c67c80b18b97e5e6e3f2",
+      "git_blob": "57e5a5e617279f1c7041db27c47591265335c2e2"
+    },
+    {
+      "path": "software/i2c_knob/src/main.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/src/main.c",
+      "bytes": 5876,
+      "sha256": "c2a4a1c474ca457b521cdce284317442eec048afb7e59d4890c67a543a82ed70",
+      "git_blob": "f0fc6f16b581d7fdaa8f2bddd4f2bae9dbd8cd30"
+    },
+    {
+      "path": "software/i2c_knob/src/system.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/src/system.c",
+      "bytes": 16261,
+      "sha256": "c66e7e5407388d5c65d4b37d349292650752600921effc5875c945429fe3df75",
+      "git_blob": "b1416157fed8cfeadd35465d9f584390418d6a52"
+    },
+    {
+      "path": "software/i2c_knob/src/system.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32V003-I2C-Knob/5302daa8990ee850de18c963ade8968e4e976350/software/i2c_knob/src/system.h",
+      "bytes": 25848,
+      "sha256": "f5649a95d1c9df83eb37d91b04a2aa0512e75022480110ac155b672b06aa25ac",
+      "git_blob": "6af51766a1faa156f16fa6b2e9f4695e04e1eb79"
+    }
+  ],
+  "scope": "Upstream UC-03 source/compile-only reproduction and contract audit; not function-equivalent to K0 candidates",
+  "publisher": "Stefan Wagner / wagiminator",
+  "repository": "https://github.com/wagiminator/CH32V003-I2C-Knob",
+  "license": "CC BY-SA 3.0 Unported as declared by upstream LICENSE",
+  "project": "software/i2c_knob",
+  "target": "i2c_knob",
+  "compile_sources": [
+    "src/i2c_slave.c",
+    "src/main.c",
+    "src/system.c"
+  ],
+  "original_flags": [
+    "-g",
+    "-Os",
+    "-flto",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-fno-builtin",
+    "-nostdlib",
+    "-march=rv32ec",
+    "-mabi=ilp32e",
+    "-DF_CPU=48000000",
+    "-I/usr/include/newlib",
+    "-Iinclude",
+    "-Isrc",
+    "-I.",
+    "-Wall"
+  ],
+  "original_link_flags": [
+    "-Tld/ch32v003.ld",
+    "-lgcc",
+    "-Wl,--gc-sections,--build-id=none"
+  ],
+  "board": "genericCH32V003J4M6 in upstream platformio.ini",
+  "flash_bytes": 16384,
+  "ram_bytes": 2048,
+  "execution": false
+}
