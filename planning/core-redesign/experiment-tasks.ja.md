@@ -295,3 +295,13 @@ N04のsource／host／整数模型／link範囲を実施し、実fixture統合�
 376 trace・60,300コマンド、全4候補94組が一致。保存object208 B、Rの保存追加静的RAM220 B。
 保持1件では欠落6／9、保持4件では欠落0の100 ms感度分析は、実GPIO／IRQ保証ではない。
 N05のV003／X035同期媒体host／linkを実施。実backend／全runtimeはN08、実機はN09へ残し、次はN06。
+
+
+## N06 休止と実行器の接続（2026-10-22）
+
+[休止・work・I/O回収](tasks/EXP-06/sleep-work-result.ja.md)はnative104件＋workspace3件・ABI196。
+Prepareでjob／I/O受理を閉じ、明示的なquiescent終端と通常worker回収、job全stepの終了を待つ。
+M/S/Uの進行制限を休止準備でも変えず、abort・部分Restore・clock domain・期限を接続した。
+588 trace・109,628コマンド、全4群147組、一覧3種類を含む全12構成45組が一致。
+Timer無効時の空base、未使用96 ABI行の追加0 Bを確認。実MCUのsleep／IRQ／clock保証ではない。
+H417のmessage／block公開・通知・返却と片側停止の実行器接続がN06に残る。実runtimeはN08、物理観測はN09。
