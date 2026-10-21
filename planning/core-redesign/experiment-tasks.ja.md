@@ -211,6 +211,9 @@ K0とX0はR/A/B/Cの必須比較。取得bufferとV006休止は境界確認用�
 同じR/A/B/Cへ表示command／dataと計測pointer／RXを接続した。
 既存golden・共通headerを変えず、84 traceを独立wire台帳と照合。tickは仮想、touchはvirtualと明示する。
 次はN02のI2C register engine・資源台帳接続。controller初期化・校正／変換品質と実機は未検証。
+[N02直接回収の接続](tasks/EXP-06/x0-register-wire-result.ja.md)は最終native84件・ABI36で、
+既存engine／台帳を同じ用途へ接続した。TX途中5 error・取消と別owner通信中の旧takeを検査。
+次は通知満杯・解除／retryとRX tail・準備接続。N02全体の完了ではない。
 部品単体で最小だったものを組むだけで、完成用途も最小だと推測しない。
 
 成果物は全体費用、正常・burst・切断・満杯のtrace、I/Oと入力遅延、残容量、変更課題と利用者レビュー。

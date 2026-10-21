@@ -1,0 +1,4790 @@
+{
+  "scope": "N02 direct application/register/resource composition; event-queue composition remains",
+  "native_tests": 84,
+  "workspace_tests": 3,
+  "host_traces": 272,
+  "equivalent_groups": 68,
+  "operations": 974132,
+  "mmio_events": 3338336,
+  "abi_builds": 36,
+  "preliminary_abi_builds": 36,
+  "abi_images_unchanged_after_initialization_guard": true,
+  "unused_zero_rows": 16,
+  "tests": [
+    {
+      "path": "work/exp06-x0-register-tests-20261021.xml",
+      "tests": 82,
+      "sha256": "e88b976d362bc9e12479e9c3a17dee5f8c83e3ee70776e587130d2e6e25cdf3a"
+    },
+    {
+      "path": "work/exp06-x0-register-tests-20261021-r2.xml",
+      "tests": 87,
+      "sha256": "c72dd795a88af71270127ec268fd82618365b0163963aeb85c5e8429899615a2"
+    }
+  ],
+  "unchanged_source_hashes": {
+    "tests/unit/core_redesign/x0_wire.hpp": "d825a02af9ba326ae8226f2e26f038aedc77e25458b8ec7fee0c65bbbfc1ff2a",
+    "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+    "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+    "tests/unit/core_redesign/display_parts.hpp": "42e411ab14852b813b0621e38b08822d6b93a06d7404b9d576f5d56ee1fd02b7",
+    "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+    "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+    "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+    "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+    "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+    "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+    "tests/unit/core_redesign/i2c_managed_handoff.hpp": "3cccbb002e5adde7efbff19ba3dde4758adb6e9f0e1a16857de825460bb65d24",
+    "tests/unit/core_redesign/i2c_handoff.hpp": "5aae68d17fff3a54371d32bae92091d5a009112828a151b2d71efb2fcaead809",
+    "tests/unit/core_redesign/i2c_resources.hpp": "ef108acc6e088619eef4b9fb69918650b21140367a1d23593335d39547fb84e9",
+    "tests/platform/core_redesign/runtime/i2c_master.hpp": "8dab6fb317a06f8336c7f2ab839f6046f9fdb3d7ac049177010a3d19007d425f"
+  },
+  "traces": [
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/01b8fc86a6b291794b49248bc296a775c0bcf14a73e5da64a6a97082093b9765.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "5bb72cb6e377ebccc69e1cb8ab6989130e3b570110f35da55bd42244afde6138",
+      "mmio_events": 14333,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/04d3e5a99461e27af22538a29ff1c1ff86f0eb969360112df6733e36060d2cb2.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "2e382b8a634c69564ad7f280faf9b281591df147ab92fa9284ffa98ca0a645c9",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/06a3f61894f48329aa4bd73d29dec6aaebffe73f09423719432572bb82a94808.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "7829ac71671a68dab701ba9d89aade8a06ca60c6a28e368da8098046fa7926dc",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/06ef6cc1b7d227fa416a63505de32cebe5418d09a1e37617bdc7487658dff547.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "d2c83ee2e72fab35c9d86debf2ac441b14dbc8bb46db7e7cb2b5444cf4da4a01",
+      "mmio_events": 23430,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2304859352,
+        "measure_done": 141,
+        "touch_done": 277,
+        "mv": 8216,
+        "ma": -4215,
+        "stale": 0,
+        "reclaimed": 826
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/082ceee99c8a623feb2af917fb34894495e1485c2d95403198966a352886af69.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "5a8e68bfd6c37966971c90500ad16560c255ede5c0337b7528acfc4316ee0673",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/0d910c65ecf0b5b21979c38e0452d785d10d33f7e24ea98732ebe6210967557f.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "85055afa604e417abd8fc0f78faf5c3218485f8663684d86bb4d19671db9e984",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/0e0977976272e5e39ea1ede36e1e80ce05613990ab891a29ee0edf1cd54320fe.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "865a2baec4bcd9b85a3b37f240bf3a9b1d969a89fef727fb1115c6b7302fe94c",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/0e6dea8297499da38521be29fd1deee033ac43720234749dd9ff947d0f551c8c.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "0979ec4e5a15b9a17af605b874bb49f5c4605d41ede0a092a7cf449b3e9f0bf1",
+      "mmio_events": 8032,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/0e78fbda8e4cdd393b16f7df2714969871dade0f8653e22f2c31b3169da2f7e3.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "b417af5fcdaf5fd2f11bdba4bbceda4a553b51faf7d6bbcf42110f765915d4d2",
+      "mmio_events": 16128,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1603325316,
+        "measure_done": 141,
+        "touch_done": 273,
+        "mv": 6868,
+        "ma": 12125,
+        "stale": 0,
+        "reclaimed": 756
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/0e9a022c70712059bf0a8cfabd8221c1a42334cb3e8bf64b1edd8b8565d8c25b.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "0c5ab32a2dd65590f9f27e76fe9696c6142ce633e5e5190643aff24c91497920",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/12174592c8074d9901e92b6e532e927083090627c7a4b0a9594da4071de473d3.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "72fdb74f0d9aee9086c7049bd29cf73b14accd6c27760b2bd6bffe3b5ba6c88a",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/1233d9a6abff57bb5756c6d451ad474fe03698678df738d02c745c951772c738.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "5a8e68bfd6c37966971c90500ad16560c255ede5c0337b7528acfc4316ee0673",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/12ba95e478674325b94cecc5088c3cf8b6ffe9925f7c6203b28be50051d2bf79.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "360b06afeba642eb4438927229b67a684a0e3b94dc6d26925388061097a51b77",
+      "mmio_events": 17638,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 2333570195,
+        "measure_done": 150,
+        "touch_done": 280,
+        "mv": 4336,
+        "ma": -13595,
+        "stale": 0,
+        "reclaimed": 773
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/13078f4f4cada105f743140553b590c537f8d3f04b0121afb80662dbd7d291be.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "e9952b9cfd8c386863dbce748622687851a3b31f2099133df0bdce5bf166ee19",
+      "mmio_events": 22758,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 384553533,
+        "measure_done": 141,
+        "touch_done": 269,
+        "mv": 7332,
+        "ma": -19466,
+        "stale": 0,
+        "reclaimed": 803
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/139005617ed5053ef43bf08a2de3b3b50b9eec8662bf91311f8689d11a0a1e7a.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "b417af5fcdaf5fd2f11bdba4bbceda4a553b51faf7d6bbcf42110f765915d4d2",
+      "mmio_events": 16128,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1603325316,
+        "measure_done": 141,
+        "touch_done": 273,
+        "mv": 6868,
+        "ma": 12125,
+        "stale": 0,
+        "reclaimed": 756
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/15bd6e4eee57824615eb7153a4935432a167856b41e9ead5102549a0626b672b.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "dda40016e74cfbb3e3456e10125531df98340c3a915258b6a95b10eaef2d6f3b",
+      "mmio_events": 7883,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/16a3fa1bd0134cc806c6103ac9afb6d3b93d930f22985afab5784d25c349ab97.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "052d694244c8f054044cfc26d5a115e0f22f09723e13e0f49d73e49b8272a2dd",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/16fa88e0ba152e92e32dcec72280f8556424f3b85f2202016868418081805cb3.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "b3e7a74a949de9faa446fe2af5737850d68d69b9aff54a783c87f08b7e1fa7eb",
+      "mmio_events": 7973,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/18252192cd3cd52a2b254ac2f23fb7f8b62006a1063e6148f5b098496595f757.json.gz",
+      "candidate": "B",
+      "operations": 4504,
+      "rows_sha256": "e85c4f67f0dd0a9c03c97e1530ffc6cace16a2599d0440ee02adfee70472407a",
+      "mmio_events": 16304,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 30,
+        "touch_done": 150,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 338
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/187aa6b46cce6ad98f57489380696d5bd9d5d92f33d4c5b2be74aa8882b15ca6.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "098448d12c926ab1e94377b34ec7ef8fa861199e01e3b26deaa2f646ff3f7088",
+      "mmio_events": 22185,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 4276386705,
+        "measure_done": 138,
+        "touch_done": 255,
+        "mv": 8392,
+        "ma": -8049,
+        "stale": 0,
+        "reclaimed": 790
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/19d17a9ee60fc06d6f8314c0aba24e24b30dd3447c136054a4cf2faa332ce9b9.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "0d89049b85f4016715dcd15f91b2260ba22de0fe9948835c21d0a570d42b1b14",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/1a450cbd0cd7baee55fefe983e22167189241e58cfaeffc63494117c349da57a.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "03dff96be7d7b53a41e8b48faaec193c84ac08b6e65fe609a23f8b4b53e6cb53",
+      "mmio_events": 14279,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/1cf81ba354cca1cc84ec68fd5130ddb2789dc87e5d6ab214725bc03bd2d1e123.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "660fe74cb996eab977fdbe94fc06930358690b9b05bf7a86de90f4321eb2aae3",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/1cfdf67baffbbea56918255fce672c3783a11016246d00a2ec7891d492c24915.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "e47d22be5a93abb6c2f00134c22fbc9693970509456d30615f2b6ab578205433",
+      "mmio_events": 23584,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 145206344,
+        "measure_done": 146,
+        "touch_done": 287,
+        "mv": 8068,
+        "ma": 1199,
+        "stale": 0,
+        "reclaimed": 837
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/1f6317d6c55f3b7868ab0a872ab31b0a1c51289fa4e7c176de3f1daddf8fb364.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "502ac4504a3cc56be66f9943a3db811f33fe41f65863b163214d0c1ef65bd56f",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/1fc3d23327534c40715aafc0a2b5a6f91118aafbf6d8377a5b325e9f7acef9cb.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "85055afa604e417abd8fc0f78faf5c3218485f8663684d86bb4d19671db9e984",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/1ffe10b0ca4945bbb2ae67a456ad47dca1e3e333cad1e6d04a8c3e10f1d843bc.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "295488ac042b15ede361bad3e3670782636f700b220320a147ce0f2f2a004810",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2011c971af353af102f042d0c93869ab2814968d863d8febf2d214e4c4448cb5.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "d2c83ee2e72fab35c9d86debf2ac441b14dbc8bb46db7e7cb2b5444cf4da4a01",
+      "mmio_events": 23430,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2304859352,
+        "measure_done": 141,
+        "touch_done": 277,
+        "mv": 8216,
+        "ma": -4215,
+        "stale": 0,
+        "reclaimed": 826
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/20a9d63906c54de4921efadb206c97a507ee2af73675d2d78201aa064341a01e.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "45247fc5d869ccefaf4edfc4c747883c5c81a8755d1fb0df9ab087c8fe274416",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/212ec50be42469a9d9b2eaa580a35f494984889239a2fa3aa468333a59fbfa1a.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "5bb72cb6e377ebccc69e1cb8ab6989130e3b570110f35da55bd42244afde6138",
+      "mmio_events": 14333,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/217791c3407ce384b0f205969cc432123583dad96f5a41e80b0dd6e201de8d2c.json.gz",
+      "candidate": "C",
+      "operations": 1773,
+      "rows_sha256": "b3c0949715ac5ae2c760205b9eae6b43df3b27ebbb8999fc1ffccb51db0e4015",
+      "mmio_events": 7834,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 59,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 148
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/236c26456282f76115402b5ced2a542e38537cf41283e412b1b681f28ec4fa2f.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "186d8b96a15752d0169868548a2df1d438b9df851f1175e4f65d718a4fb3a219",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/237e90bafc4af71b759818af696d076faa239f683180da12175297c122d60b00.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "26801d9977a9d6aaed9050c2e42b2d74d553e3e67dbaac3379eb4921b142503d",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/25248905d5c216d27e7f2675f7f1dfd2ffb0ad08a9a070438ccd5f0523c6c2b3.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "0ef9634bfd21cfeea20fd8b6acbc5e4f2413736b3c0bce202c43378d0245d808",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2524dbf830fbd487ccd050e7c8d55694ac2173b7ccd8ecb30978d8984b332633.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "70c4bcf66bbddeec25302c83f0315063d96e1e1f305074015b002c33e6a9127d",
+      "mmio_events": 22849,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2614395325,
+        "measure_done": 139,
+        "touch_done": 249,
+        "mv": 7760,
+        "ma": -1785,
+        "stale": 0,
+        "reclaimed": 815
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2791c4a864259a4b2b80c456f7ae5687f8d4f25fb88131e5a2fc71ade0096383.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "fa6ada206f11e3da59322389e230ef12262dae37aeea4dea6ca5585286964aa8",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/280b328d75e0543939a2f5ba306a412af6e668836eba9ccfe2f14f88fa81221b.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "0ef9634bfd21cfeea20fd8b6acbc5e4f2413736b3c0bce202c43378d0245d808",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2adb985ad2347c10af98eee3a5c1c4d6f05ff7b058b5fcef38823c18c1725da4.json.gz",
+      "candidate": "A",
+      "operations": 2112,
+      "rows_sha256": "0e68f153186ae76cbb87af74f5a62fbb84e5dab8516f9fbf5a2512e3056d49c6",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2b0c32a9f4b7b867924cfa918373dda3190b3e3bccdd228e13cdef094eb8620d.json.gz",
+      "candidate": "B",
+      "operations": 1773,
+      "rows_sha256": "b3c0949715ac5ae2c760205b9eae6b43df3b27ebbb8999fc1ffccb51db0e4015",
+      "mmio_events": 7834,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 59,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 148
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2cd372e33ad5333a5452daaf7697f0bf18b7b0dcc2b3c6232f5f5be3042b7127.json.gz",
+      "candidate": "R",
+      "operations": 2112,
+      "rows_sha256": "a07a8343f93adf671f52cba3424efd3c753cb4c07446e1afcf4f41ed36aae1da",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2d2abeb9abba8ecfe05bb82ff1a509fb44953741a315119e138c5dcb52e9db66.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "b417af5fcdaf5fd2f11bdba4bbceda4a553b51faf7d6bbcf42110f765915d4d2",
+      "mmio_events": 16128,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1603325316,
+        "measure_done": 141,
+        "touch_done": 273,
+        "mv": 6868,
+        "ma": 12125,
+        "stale": 0,
+        "reclaimed": 756
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2f579eaf908a2e0cf1a675ae212645c41425e190733d1c932fc941f25d305268.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "964eab969da4a7c55b43ebafce7ccc693d5c5523e33dc3838d4f451460f990c8",
+      "mmio_events": 23329,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 4149025699,
+        "measure_done": 144,
+        "touch_done": 287,
+        "mv": 5736,
+        "ma": -9260,
+        "stale": 0,
+        "reclaimed": 853
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/2fb4572d4bea0ad2006a5249524ba67302c3df6bf33ee9cde393b7d352c16b60.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "b0c33e8c0e312221b4236d30d794ce3a44598aa2e032799f7f690d347d71bef5",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/304f719fc760578e3b34e629720fcfa3d47b0f5984f1e1b008aa3ee135095eb5.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "3aeac641808559dc120e50e35eae18979a979d1426c81d1169c64c8cb4e66446",
+      "mmio_events": 7859,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/30be382fc15168d56ec246375c6fbc8e7c640e43707aa727b5eac2747c51feee.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "180132acf54ccb6b0c70e8a8b0a703a4b9a98a8b897e1480ccdd679006a41929",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/31b390149b298a7d213dee1815e9e521550f36c780c50553110698783a66b3be.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "3aeac641808559dc120e50e35eae18979a979d1426c81d1169c64c8cb4e66446",
+      "mmio_events": 7859,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/358400010843c149c9ad308a879a2a325c28f5a5add8a5c151e81f8b59bf1e5c.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "0c5ab32a2dd65590f9f27e76fe9696c6142ce633e5e5190643aff24c91497920",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/36006b863f9cd6954b1747cc2ec75eb5b67ae7a9bc9e1ec610316110ea03f666.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "3cf9b57f67ab27e8286a2ba984defc3d5104d94d5cf9ff35a26debc53b299bf3",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/367c6e078cde5aa7963b8934f1ef3c075e9b00adba4d9da40bc968bce7a76910.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "70c4bcf66bbddeec25302c83f0315063d96e1e1f305074015b002c33e6a9127d",
+      "mmio_events": 22849,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2614395325,
+        "measure_done": 139,
+        "touch_done": 249,
+        "mv": 7760,
+        "ma": -1785,
+        "stale": 0,
+        "reclaimed": 815
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/36f5f9d33924480e96d5fb9ffbc32c36d98901323d380de0b866fad8f1d8a891.json.gz",
+      "candidate": "C",
+      "operations": 1806,
+      "rows_sha256": "36ec64e2c6549c8183d6c651836317af2d56a60b372f2d1d7dbf211f990d2a3f",
+      "mmio_events": 14352,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/3700627e2125df93581d80426f86b5f276f8901d79fcf50189ce89333729d5f6.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "e47d22be5a93abb6c2f00134c22fbc9693970509456d30615f2b6ab578205433",
+      "mmio_events": 23584,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 145206344,
+        "measure_done": 146,
+        "touch_done": 287,
+        "mv": 8068,
+        "ma": 1199,
+        "stale": 0,
+        "reclaimed": 837
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/37ec1c7948c0837a66adb7fb61154545a494f4722c2796763e3c118de2ef0702.json.gz",
+      "candidate": "A",
+      "operations": 1805,
+      "rows_sha256": "cef6c7536e6fe7ab5e8cbc950cf7914b4f8a64ab22d4b9e0ec54e44b55b9748d",
+      "mmio_events": 14394,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/39c4a26607caca92002604f015be5fb5dc0c9f89547e1a0c55e48d25c83bbe8e.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "85055afa604e417abd8fc0f78faf5c3218485f8663684d86bb4d19671db9e984",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/3b4019216a2ff299124eb2620e64ef5429fe8dfd23de71a34185d4f3e55593f1.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "d67a958933d34c3777c9fa0dda3f7d3f4187c164ae276c5a0f14f55cb777f105",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/3c68f563204e19c62c13cac558289378e427e40bd8c6a93cf95bcb7edb03add1.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "73008f1b7cdd4676606f54442ca94ec93434d623a58d17d3a0469eeb10836792",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/3de36051e4c768b37690a09c6ca3c5d6ca63ca01e0a7db5f6e7e3972b112f654.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "bd494d013881f2d253659e3b4bb81750c11b2514cb281eb57a07e091b12f715b",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/3eaa7c6637fc196d89678c2296327726b43e8e83b0c07499277a9806151b55f3.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "9ae9c5c279b4b933366fc2e09f999cac4ee361625473e0f6419c941334fbe7f3",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/3eca24b1fca9c919241f72652a9128fe3e2e16f180f279f76fd37fc636c82eb0.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "a0fece4031531598b87a80c404e20643066d3e304e84557bb7a3b849dcec80d9",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/3f3594b90725f13f0d89e88f0b365d168c52793d0159dd0f2a99a1fbb4c050e5.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "03dff96be7d7b53a41e8b48faaec193c84ac08b6e65fe609a23f8b4b53e6cb53",
+      "mmio_events": 14279,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/3fff1546cbfae0bb5bafd43a42c3b25b4a46bc5c570bf680ac2981cd86df39be.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "5a8e68bfd6c37966971c90500ad16560c255ede5c0337b7528acfc4316ee0673",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/403f3d2e2f4503cc965d9140c72a20a3add44fb220541777d0ae6463fde2261a.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "f7e2a8e6bd168c2a9fe51724b287030393304ecb922d41dfed29b9936acdf791",
+      "mmio_events": 14284,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/41447bd33bd97357d9c3ded6e2469a9685d4d7fb5a979cc5be3e504239ebba64.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "9d3d88c25a232ac7999f2b279c1e68ee10325cd6f4e4032cd07bee3fe0940f07",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/4174d3a6fbadb1156790716d1bee51fd77b201936e774d9857d8c4ea1855ec88.json.gz",
+      "candidate": "B",
+      "operations": 2112,
+      "rows_sha256": "0e68f153186ae76cbb87af74f5a62fbb84e5dab8516f9fbf5a2512e3056d49c6",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/448d52723093689559158045385ed20277b1c3d6150a823239a8a4147ef1d0fd.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "865a2baec4bcd9b85a3b37f240bf3a9b1d969a89fef727fb1115c6b7302fe94c",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/459b50f7754ab50558ba78745b558065def506c2b45887b71bcdfb117b15c0be.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "d3bdf7379a5dcf3841eb2874b4f2d30ef1716945bddffe64dd92a651e1060029",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/45e58c6314e3a8551f28efda315546963136c3ffcf976d6761677dac49260761.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "fa6ada206f11e3da59322389e230ef12262dae37aeea4dea6ca5585286964aa8",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/466838d6f488700e5d6bd5c93a9af1c65711494da8686e7c1097237d45013fd7.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "1f8ac527e7941d89f0204a7e738da6f6c2bdee3330ac3daa0e2ea90384d8645c",
+      "mmio_events": 16570,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 658971556,
+        "measure_done": 146,
+        "touch_done": 275,
+        "mv": 7496,
+        "ma": 13646,
+        "stale": 0,
+        "reclaimed": 792
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/472cdb4a98f0c5f73e2184735628143474e4ae8a7f75598a48e093477aad8d1b.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "0c5ab32a2dd65590f9f27e76fe9696c6142ce633e5e5190643aff24c91497920",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/474b7fc1e10fbc543ced9facdbc1cbf7ed7087593cf20c8574bc78fbf06419a3.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "0979ec4e5a15b9a17af605b874bb49f5c4605d41ede0a092a7cf449b3e9f0bf1",
+      "mmio_events": 8032,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/474e4b1d66d5ea11f7cad0c5e525d62b4e6c152d3943e7b93ef316d91fad5339.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "6a9b3c517333b051d25cbaf62de1f4dc737b938bddecc9c5801947876f8acc3d",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/47725f0bac299eb2e802b38fe199170cbed9e12dc1209823c0b4d7b14245ee7d.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "f7e2a8e6bd168c2a9fe51724b287030393304ecb922d41dfed29b9936acdf791",
+      "mmio_events": 14284,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/484f2f7efcd2f69beaff01739b0a893762c80b3db201fb074baa2ddbdf28c422.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "9743c5b478d9d51f43e66f0a53043e9a34f7a87b8c925675ffecca3a055cb162",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/488756ee7f9f4dedc40dc0425e09310465f76d1d60ba039d5922451b76499aa4.json.gz",
+      "candidate": "B",
+      "operations": 1806,
+      "rows_sha256": "36ec64e2c6549c8183d6c651836317af2d56a60b372f2d1d7dbf211f990d2a3f",
+      "mmio_events": 14352,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/48c9cd590aef6214a3d1f1417cba3ff2e4938060b2e3eebb26c43ada18cb7b1b.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "1f8ac527e7941d89f0204a7e738da6f6c2bdee3330ac3daa0e2ea90384d8645c",
+      "mmio_events": 16570,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 658971556,
+        "measure_done": 146,
+        "touch_done": 275,
+        "mv": 7496,
+        "ma": 13646,
+        "stale": 0,
+        "reclaimed": 792
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/49711b9f73a28dad911de39f7ad38ca69189f0ebc3c3b983725f41bd8c062947.json.gz",
+      "candidate": "R",
+      "operations": 1805,
+      "rows_sha256": "cef6c7536e6fe7ab5e8cbc950cf7914b4f8a64ab22d4b9e0ec54e44b55b9748d",
+      "mmio_events": 14394,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/49d44189af6aa20ee6b2b24fb4863b19499709f09277c404297f3290df073f93.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "6de468491b7f1480f1ff1510f43a2a1db2a1e46334a769629dbc71e66fc76704",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/4a95d623b4f73f856868f897a94c205d0422fce94c607130c22212c44df11b0a.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "a4f77feaa06d198ebdb7cf4a675d7b06f5b92f9d3e0ce67fd513566ea5167058",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/4c40ba72ea9b50bc165e531f6f73a8283e582d8762ba830f1649f03d87ff2393.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "b417af5fcdaf5fd2f11bdba4bbceda4a553b51faf7d6bbcf42110f765915d4d2",
+      "mmio_events": 16128,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1603325316,
+        "measure_done": 141,
+        "touch_done": 273,
+        "mv": 6868,
+        "ma": 12125,
+        "stale": 0,
+        "reclaimed": 756
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/4c4f5f355f3aebcea081c7c98e36e308da0380010f391abb8b613c792e90284d.json.gz",
+      "candidate": "B",
+      "operations": 2112,
+      "rows_sha256": "4696cce8e5aff8663d71551094648fafc229f88e58a586ff2d00ce282cf7c3f5",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/4dd2ca3b3deccc89bacd7c4d7cad185b58289c056b5a185c2701fa7e54b03cd8.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "dda40016e74cfbb3e3456e10125531df98340c3a915258b6a95b10eaef2d6f3b",
+      "mmio_events": 7883,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/4f42c4204e86ec85b5edaa56034df1e9175a04d50541a63689e14d79d30cf351.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "5a8e68bfd6c37966971c90500ad16560c255ede5c0337b7528acfc4316ee0673",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/51acd9fd555c386e431621429f47be79bcc8a210194cee201199b24219c3da5b.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "0d89049b85f4016715dcd15f91b2260ba22de0fe9948835c21d0a570d42b1b14",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/539f3629df149e5e06405f1f6c5e500ea369b3c83b5a3a4703feb474240592ff.json.gz",
+      "candidate": "R",
+      "operations": 2112,
+      "rows_sha256": "0e68f153186ae76cbb87af74f5a62fbb84e5dab8516f9fbf5a2512e3056d49c6",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/578bd6a5ec610bad5643d4fd24be1832abe3fbe2465de48b8bb733a1bc630f3b.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "dda40016e74cfbb3e3456e10125531df98340c3a915258b6a95b10eaef2d6f3b",
+      "mmio_events": 7883,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/59d8e6ffedcfa76eedd8b2ce8e2f48087ab12fcfb053ea6f16056f467f449ae1.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "fbab6ac4a01837a2a6404cc05d77b24275f4adcf54115b29225159dde69cd4b2",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/5a6de70193f34b801c67539607ee46d3cfc4e03f7e01ed9110545e4ad83d30af.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "098448d12c926ab1e94377b34ec7ef8fa861199e01e3b26deaa2f646ff3f7088",
+      "mmio_events": 22185,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 4276386705,
+        "measure_done": 138,
+        "touch_done": 255,
+        "mv": 8392,
+        "ma": -8049,
+        "stale": 0,
+        "reclaimed": 790
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/5a96aa841f1cdbe3631503ee406fd30a6b4ff57e9d341ecd4661a02cb8bcd025.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "186d8b96a15752d0169868548a2df1d438b9df851f1175e4f65d718a4fb3a219",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/5fbe715952f65de4c8bc718a189239a6fe6fde537dfeaeb7e7d179a0ede11771.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "e47d22be5a93abb6c2f00134c22fbc9693970509456d30615f2b6ab578205433",
+      "mmio_events": 23584,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 145206344,
+        "measure_done": 146,
+        "touch_done": 287,
+        "mv": 8068,
+        "ma": 1199,
+        "stale": 0,
+        "reclaimed": 837
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/60e0cefc7960e356abf287927e38d2b81ee825bcec1e3782a338eeaf5f307059.json.gz",
+      "candidate": "B",
+      "operations": 1805,
+      "rows_sha256": "cef6c7536e6fe7ab5e8cbc950cf7914b4f8a64ab22d4b9e0ec54e44b55b9748d",
+      "mmio_events": 14394,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/639c6a6699c60b1297df5d04feccbc7602f8486bd31f56706b20fdceeb74c2bf.json.gz",
+      "candidate": "A",
+      "operations": 4504,
+      "rows_sha256": "e85c4f67f0dd0a9c03c97e1530ffc6cace16a2599d0440ee02adfee70472407a",
+      "mmio_events": 16304,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 30,
+        "touch_done": 150,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 338
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/63a578cf2e3a9135d4642d9f02d7cdfd245f510b25bd90aa2b99cd6485d72f43.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "73008f1b7cdd4676606f54442ca94ec93434d623a58d17d3a0469eeb10836792",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/654c922fcc38fe95161be306934a45645165b42cf6278c6eabfad585cc6de9bd.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "9e51a692229c18a271c26a516dd1f42eead9bd4ec9d89176d0b40d09dc3b335c",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/68c137b8565074c9de088fe761121191a4f65dc2162071b0789aac253e06eded.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "3cf9b57f67ab27e8286a2ba984defc3d5104d94d5cf9ff35a26debc53b299bf3",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/69c148845c3f9b39b1d6589c24dcf38214f9dbc5d3af9f8a426666348d7295ff.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "e96bee8d05d5863727309487fca38a0ce5fdd3ff13d8552498e867faeedec0dc",
+      "mmio_events": 14338,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/6be3626831fca14da3fb182ec4c2fdf2ebcff52f349b5a74a4544040c75e36a7.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "8393fbadf49c85ea4fe5fee89a300b3deb0f8a88f6967c8655b91d344baa5441",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/6bfccb6d5cae3efd1e547951a40a5036da224ffc9765c83efae9a8016417edf0.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "e9952b9cfd8c386863dbce748622687851a3b31f2099133df0bdce5bf166ee19",
+      "mmio_events": 22758,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 384553533,
+        "measure_done": 141,
+        "touch_done": 269,
+        "mv": 7332,
+        "ma": -19466,
+        "stale": 0,
+        "reclaimed": 803
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/6daa88f3d72fbf0fbdf2a490e36a51aed391a3f824750486de9486532290d013.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "72fdb74f0d9aee9086c7049bd29cf73b14accd6c27760b2bd6bffe3b5ba6c88a",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/6e3c5048f06ad1b48c03fd09c4d0c77decacd74ec4cfc0ff7bfe32690affc928.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "186d8b96a15752d0169868548a2df1d438b9df851f1175e4f65d718a4fb3a219",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/6e84d6f2c0bebee038c89025b3d938ae8c7ad0b771a3a31eecc9e1cb64254e29.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "9ae9c5c279b4b933366fc2e09f999cac4ee361625473e0f6419c941334fbe7f3",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/6ee30e494792d62de7792551f809fa6c1824dd2fcefe41344d8c7525bf11e78f.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "e734341cc85f6128211d599d07dc03dee90f61f2470b3426fbf2ed7863011382",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/6fb54881f81ff546f3850dc105d6fac1987464bf2aa0d5bbc7fb16fa1b3cd7bc.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "d67a958933d34c3777c9fa0dda3f7d3f4187c164ae276c5a0f14f55cb777f105",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/714208a22b63abfb7d9dae745e0bb5565f2e56f9a128a6af2536ba0abba3d6da.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "3030eb576b95c5153aa9b2518a0c2e9ead7cf2b22817cea888d53091484ce3f8",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/72d100c433ca633e12d39e31bc516ab3954532ca8ad3a3e34df2be17dbfa482f.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "bf335bd9f8f61962a58ec97098c1899313c2081ff40b091873d21da0a3ff1569",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/741b1a1714d4f7e05c42956e4cb63882ff14aadc05491199287c82edfe9853e8.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "fa6ada206f11e3da59322389e230ef12262dae37aeea4dea6ca5585286964aa8",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/74effe0f824aa2dd575ab413d22da60414bb38db171e2ca75dd74d51373426f6.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "964eab969da4a7c55b43ebafce7ccc693d5c5523e33dc3838d4f451460f990c8",
+      "mmio_events": 23329,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 4149025699,
+        "measure_done": 144,
+        "touch_done": 287,
+        "mv": 5736,
+        "ma": -9260,
+        "stale": 0,
+        "reclaimed": 853
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/754e27b16c5975666b54d1be07ecb427d5c71f60f581aabe2ed149ff7080ecdf.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "6a9b3c517333b051d25cbaf62de1f4dc737b938bddecc9c5801947876f8acc3d",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/75f7d77f66ba5215be01dec18a131983e346f3608bc9b29d877cae9356c036d1.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "660fe74cb996eab977fdbe94fc06930358690b9b05bf7a86de90f4321eb2aae3",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/77896eb250ce82b0c16e346bb1df97c81bcb9739b036c074f5bb05cf30da9f3c.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "26801d9977a9d6aaed9050c2e42b2d74d553e3e67dbaac3379eb4921b142503d",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/779480d86756d3fabf61442e1a609e8c68a4c1ca6554c86946b94997f286fe93.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "70c4bcf66bbddeec25302c83f0315063d96e1e1f305074015b002c33e6a9127d",
+      "mmio_events": 22849,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2614395325,
+        "measure_done": 139,
+        "touch_done": 249,
+        "mv": 7760,
+        "ma": -1785,
+        "stale": 0,
+        "reclaimed": 815
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/7b2cc40335a5ae140c8ec00730e83242956e29bc6f661fff7e77900d1764c9bf.json.gz",
+      "candidate": "B",
+      "operations": 1774,
+      "rows_sha256": "12637a47beb1cd76caff39ce96dcc7e54e37bf1d35ca2f76eccab3d2e1fec694",
+      "mmio_events": 7912,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 59,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 148
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/7bab2e0b323c5033b0d81c6e8d516d66ae00c52695f7335ede97a6ea9bff5fd4.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "0c5ab32a2dd65590f9f27e76fe9696c6142ce633e5e5190643aff24c91497920",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/7c05dd47a8905fb37969cd7d6853f0d6fb38cf05b8b97bd9e8f1e5120bb7a115.json.gz",
+      "candidate": "A",
+      "operations": 1773,
+      "rows_sha256": "b3c0949715ac5ae2c760205b9eae6b43df3b27ebbb8999fc1ffccb51db0e4015",
+      "mmio_events": 7834,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 59,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 148
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/7d1247a1765549dd1fb642336a9af5cdee636f86100a0f1ed90133ec87c783a8.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "1f8ac527e7941d89f0204a7e738da6f6c2bdee3330ac3daa0e2ea90384d8645c",
+      "mmio_events": 16570,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 658971556,
+        "measure_done": 146,
+        "touch_done": 275,
+        "mv": 7496,
+        "ma": 13646,
+        "stale": 0,
+        "reclaimed": 792
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/7ee8ecb3e4e0db7d8609ec2171a65f8d92a68b9bd9a944bd636f7b3d8102dead.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "d67a958933d34c3777c9fa0dda3f7d3f4187c164ae276c5a0f14f55cb777f105",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/7f08c186e65f6e04f778ef6d674f990e4d14e5bdc54b6e6adaade48a0901539d.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "6a9b3c517333b051d25cbaf62de1f4dc737b938bddecc9c5801947876f8acc3d",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/801982664d3658299d4cf91a63b317090b163df300f5334f52850be4f1689153.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "7829ac71671a68dab701ba9d89aade8a06ca60c6a28e368da8098046fa7926dc",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/806634508821fe657d2bf639b0a837d11b5b2223c00f1bc03aaf5371a3eced41.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "9d3d88c25a232ac7999f2b279c1e68ee10325cd6f4e4032cd07bee3fe0940f07",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/810d19f457231856a357ce1720a4129186d9c2ea1327ce5cc198262567f994a7.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "26801d9977a9d6aaed9050c2e42b2d74d553e3e67dbaac3379eb4921b142503d",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/82af4aa30f3e783baf2067aedead6162fd37bd279cdb90a21808bae89e426af3.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "7829ac71671a68dab701ba9d89aade8a06ca60c6a28e368da8098046fa7926dc",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/82c73dbb7e8dcccace99f71573a3f209c2c7689f339b31df55a9f169f487edf4.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "8393fbadf49c85ea4fe5fee89a300b3deb0f8a88f6967c8655b91d344baa5441",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8378c4c63d22ff05e7c3518aa44583bc3b08e2fdb4423c1a8e16d35d1c0dcb7f.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "9743c5b478d9d51f43e66f0a53043e9a34f7a87b8c925675ffecca3a055cb162",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/85093a3c6a89f9e76ea253b25e8ec63d17254d56920db136f60da04a4addc23e.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "b77332c780bf9826e0fa4f553428f84d6327d9e881b874a62b57e0d0ee422856",
+      "mmio_events": 17293,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1022594603,
+        "measure_done": 151,
+        "touch_done": 282,
+        "mv": 6248,
+        "ma": -9641,
+        "stale": 0,
+        "reclaimed": 785
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/853ba2a174f993d2e26cec33a3ee7c0732863859c58ccb609f37a12a59dc065b.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "9ae9c5c279b4b933366fc2e09f999cac4ee361625473e0f6419c941334fbe7f3",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/85fe9c75a49043ecf95cf1ea54c0c2bd9f9d289dd384edaf243eb955ca79cfc4.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "502ac4504a3cc56be66f9943a3db811f33fe41f65863b163214d0c1ef65bd56f",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/866b44ba5dcc57ffcb9da7d0efa05cd287b4d54b9c56b0943b820b61aafe4949.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "b77332c780bf9826e0fa4f553428f84d6327d9e881b874a62b57e0d0ee422856",
+      "mmio_events": 17293,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1022594603,
+        "measure_done": 151,
+        "touch_done": 282,
+        "mv": 6248,
+        "ma": -9641,
+        "stale": 0,
+        "reclaimed": 785
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/867197c1a866a828338d9f8962b68d2082a812f75ca63b97356e1ae5eff368ca.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "9d3d88c25a232ac7999f2b279c1e68ee10325cd6f4e4032cd07bee3fe0940f07",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/87b4afe7b045cd7682930433e2b94290bf9862118fea0a16bda59f8999125fb4.json.gz",
+      "candidate": "A",
+      "operations": 1774,
+      "rows_sha256": "12637a47beb1cd76caff39ce96dcc7e54e37bf1d35ca2f76eccab3d2e1fec694",
+      "mmio_events": 7912,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 59,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 148
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/88efb33f6d7347afde6ef36d593bee50025c046d6daa804b9598de790ce03b00.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "b0c33e8c0e312221b4236d30d794ce3a44598aa2e032799f7f690d347d71bef5",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/893b713477d633b8018e0c1fa4c06fe94b862ff327dd86c9e092173fa18fb3ed.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "f7e2a8e6bd168c2a9fe51724b287030393304ecb922d41dfed29b9936acdf791",
+      "mmio_events": 14284,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/89b152a48f5bdf92cabc195d4cbf4a6ce25098d49e81b71a1b4e4226df21a7c0.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "9743c5b478d9d51f43e66f0a53043e9a34f7a87b8c925675ffecca3a055cb162",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8a947c6a683b38ebdb9ee7e60edf5e34802b5d4378b571643532123403d6859b.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "0293f93ebcaf2d529b85228abc646bd9b56776bf5e888f718b6a9cbbc383a7a7",
+      "mmio_events": 7925,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8b69279e7a9fd9828dfec4a7d727b04e9db27d6f84eede101cd2e5c9ee10a358.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "6de468491b7f1480f1ff1510f43a2a1db2a1e46334a769629dbc71e66fc76704",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8b6ec39e55f09d653af8303a71c35b39d1e736f8b560bf6970dc87745ef49770.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "6de468491b7f1480f1ff1510f43a2a1db2a1e46334a769629dbc71e66fc76704",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8c6bbb5dbf13eee15cf909f5ae7f5c80cb8fd085bf17769222e98f3f18ffa942.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "45247fc5d869ccefaf4edfc4c747883c5c81a8755d1fb0df9ab087c8fe274416",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8d379092823ed3ecb1a4d667e156d952727d1881d2b0935a48eb4dc9d8dee606.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "45247fc5d869ccefaf4edfc4c747883c5c81a8755d1fb0df9ab087c8fe274416",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8d65e35afd798f8be26967b5a6d61335f170b59b40817afdca5f6770f50712fd.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "b3e7a74a949de9faa446fe2af5737850d68d69b9aff54a783c87f08b7e1fa7eb",
+      "mmio_events": 7973,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8d83bf4cbd37a49640d82305b1b0ac14517606413d881af740651123e1b6620b.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "9693da86445d9812c0954b7338abb460c252fdca1f6c1a16e9b9c6b121743c30",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8e51010d5418dfac5b24c864ff2d5e46a9b7306b748214f5b73cbd907af26c25.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "0d89049b85f4016715dcd15f91b2260ba22de0fe9948835c21d0a570d42b1b14",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/8f9a5bbc0b9f7bded6f0931beb74b6139628bce7183b6cb9f80e4a0fb6904f9c.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "d3bdf7379a5dcf3841eb2874b4f2d30ef1716945bddffe64dd92a651e1060029",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/91cc8a5f1ec5265d171a66eafcb1006e52e6a0c4f02dcaa504125dce02db3bee.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "9d3d88c25a232ac7999f2b279c1e68ee10325cd6f4e4032cd07bee3fe0940f07",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/91dbe31061b047e9ef0b70693d02f0184bc8e443a4d8d37e7a29884341b53d5b.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "865a2baec4bcd9b85a3b37f240bf3a9b1d969a89fef727fb1115c6b7302fe94c",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/923cef889849af2ad732e031e80957b0041c451dd179650396da23aa110ed37c.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "75b0b0bf6cb38d0d505d53bb6a06d8cc5687137939d2865d746957be6c78ed4a",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/92656c5d9fb562b4647cea0ae80784044b85b537e0b730b6e7c1da509b690be9.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "6a9b3c517333b051d25cbaf62de1f4dc737b938bddecc9c5801947876f8acc3d",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/92d8901f04ef67665ea0f88d33d5cdd9854d0d26d83bae92055ce621f3a4bacc.json.gz",
+      "candidate": "C",
+      "operations": 2112,
+      "rows_sha256": "4696cce8e5aff8663d71551094648fafc229f88e58a586ff2d00ce282cf7c3f5",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/9592a5a61c75de8d9c8e0bfa934b0e9b77716040b0a56a36778bd959a4a27989.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "3ea41e8ff7edc1c9443bbacf56c1a3855d99ff1c90d32dd8734cf0e3a72b318f",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/95c4508c21fbba735b2be4dd99b5c9eb0d46a403fc542e230174325460a10aa4.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "bf335bd9f8f61962a58ec97098c1899313c2081ff40b091873d21da0a3ff1569",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/96a06b72cbf8b0f3dcd36e4363b1fc8075433cb2a3bd9e95021d9b840afe5e1f.json.gz",
+      "candidate": "R",
+      "operations": 2112,
+      "rows_sha256": "4696cce8e5aff8663d71551094648fafc229f88e58a586ff2d00ce282cf7c3f5",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/979f434627a931e2a13f3d193c0fed251c9d10e4e88adadc4aa659bffb2f35ae.json.gz",
+      "candidate": "C",
+      "operations": 2112,
+      "rows_sha256": "0e68f153186ae76cbb87af74f5a62fbb84e5dab8516f9fbf5a2512e3056d49c6",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/97db03537cb0e9af8e63ee4a73783939adca1175e598cb8cb13a1cc146dbbbb7.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "fbab6ac4a01837a2a6404cc05d77b24275f4adcf54115b29225159dde69cd4b2",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/991d36bf77b9cedfe9ac52713401fcceec4c9c86ccc1e6e2bb06b6b467714f0e.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "73008f1b7cdd4676606f54442ca94ec93434d623a58d17d3a0469eeb10836792",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/9a04f975864e659d57c76fdc521930f72706e2dfd008408a6b1b53d68b932bea.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "9ae9c5c279b4b933366fc2e09f999cac4ee361625473e0f6419c941334fbe7f3",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/9a4d730285ace793b9751b63d41ecc77ed9766e04df4ed34986ee2078ac2682b.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "d2c83ee2e72fab35c9d86debf2ac441b14dbc8bb46db7e7cb2b5444cf4da4a01",
+      "mmio_events": 23430,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2304859352,
+        "measure_done": 141,
+        "touch_done": 277,
+        "mv": 8216,
+        "ma": -4215,
+        "stale": 0,
+        "reclaimed": 826
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/9a76c3d706a8a960f341e3464891755123f1251ffb26bf43be70f9084a4d1c0a.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "fbab6ac4a01837a2a6404cc05d77b24275f4adcf54115b29225159dde69cd4b2",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/9ff0c7bceaf091eb7935d83586d9bd5693d86395b97cdb63c1a9100bd554d985.json.gz",
+      "candidate": "C",
+      "operations": 1805,
+      "rows_sha256": "cef6c7536e6fe7ab5e8cbc950cf7914b4f8a64ab22d4b9e0ec54e44b55b9748d",
+      "mmio_events": 14394,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a067fe1503133fba2bb611061317b6716386727a31416c20399ad5b08f09b5de.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "fbab6ac4a01837a2a6404cc05d77b24275f4adcf54115b29225159dde69cd4b2",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a1e900dbf850925c0edbdfb1a98f7f8a0f0a36608765f15e1d9da5adfac8ecba.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "6de468491b7f1480f1ff1510f43a2a1db2a1e46334a769629dbc71e66fc76704",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a2cd83816799958708a841b65ff60bb7452cc0c6212d9592c8ad0fc80590ada1.json.gz",
+      "candidate": "R",
+      "operations": 1773,
+      "rows_sha256": "b3c0949715ac5ae2c760205b9eae6b43df3b27ebbb8999fc1ffccb51db0e4015",
+      "mmio_events": 7834,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 59,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 148
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a3f669b3644427a277ca6a279be5cde76abbe6c2a6e451f43eedab14019d9fef.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "0979ec4e5a15b9a17af605b874bb49f5c4605d41ede0a092a7cf449b3e9f0bf1",
+      "mmio_events": 8032,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a40e55b82b934170a03f82d36b7662b71bc46de6d2a5570da7e6bd55c1d9927f.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "72fdb74f0d9aee9086c7049bd29cf73b14accd6c27760b2bd6bffe3b5ba6c88a",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a4696cf90d94d28b42b110c13cc256dd858fe3d944a399d8f2d059f3173492b9.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "180132acf54ccb6b0c70e8a8b0a703a4b9a98a8b897e1480ccdd679006a41929",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a5e3470065747baf9976aad8774ed48b96ab2c89f7073f255b8047dbc8fc037f.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "b3e7a74a949de9faa446fe2af5737850d68d69b9aff54a783c87f08b7e1fa7eb",
+      "mmio_events": 7973,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a62524e05a6567e0baf813296876ccf79bebafd7438394ddecd62d4af4fb0087.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "d67a958933d34c3777c9fa0dda3f7d3f4187c164ae276c5a0f14f55cb777f105",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a6f1298bc1a8c70afc11453382dd15df6996a846ee0351d9b5c35cc54c656d7b.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "bd494d013881f2d253659e3b4bb81750c11b2514cb281eb57a07e091b12f715b",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a7cb009051dd584b8fc5559f80d84010b6733a03159c513427b635d9891757ad.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "e734341cc85f6128211d599d07dc03dee90f61f2470b3426fbf2ed7863011382",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/a858286bdf497cc13f0a3cff1044d41abb07108307134d6ebbdb6c0af6b50976.json.gz",
+      "candidate": "B",
+      "operations": 2112,
+      "rows_sha256": "a07a8343f93adf671f52cba3424efd3c753cb4c07446e1afcf4f41ed36aae1da",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/abd8963c6907d9c2af4fd16235b0a0d0ff35c0209e2929253bafe1798162634f.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "a4f77feaa06d198ebdb7cf4a675d7b06f5b92f9d3e0ce67fd513566ea5167058",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/acc884b11b56ac07bb89d28c30ae2afb35142dfd1f937d49fd87b96d7cd81b3f.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "dda40016e74cfbb3e3456e10125531df98340c3a915258b6a95b10eaef2d6f3b",
+      "mmio_events": 7883,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ad29d5eb6531c36cdaf388ca13f8547d011460b03a23a78a2b61815acc1b90b7.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "d3bdf7379a5dcf3841eb2874b4f2d30ef1716945bddffe64dd92a651e1060029",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/adbbc528bbf2e8045761c3f85def4293684707e9c4a3ab3d893be31a4fd3386d.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "295488ac042b15ede361bad3e3670782636f700b220320a147ce0f2f2a004810",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ae47806fef657171703fbd4c48c290c9bb993442aed6dc60ac9ea784228e8eac.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "e47d22be5a93abb6c2f00134c22fbc9693970509456d30615f2b6ab578205433",
+      "mmio_events": 23584,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 145206344,
+        "measure_done": 146,
+        "touch_done": 287,
+        "mv": 8068,
+        "ma": 1199,
+        "stale": 0,
+        "reclaimed": 837
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/aedd2679baacd734f47ef3488a640b30f32af6756be4739499d5970ba8cdcce8.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "d3bdf7379a5dcf3841eb2874b4f2d30ef1716945bddffe64dd92a651e1060029",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b189b4c38d1751516f54748c22f74bd7987baa844ce00f22b88c19f006312fb4.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "3030eb576b95c5153aa9b2518a0c2e9ead7cf2b22817cea888d53091484ce3f8",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b24d9d9092629d51ca9fa95ce38bdcdab5c42b90d4108fdf4d3a2612e092e7da.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "03dff96be7d7b53a41e8b48faaec193c84ac08b6e65fe609a23f8b4b53e6cb53",
+      "mmio_events": 14279,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b3145daa82df497ba067ad1d113e569d541cbc92b38e2234f33bf805cd02fc5c.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "48513cb88f587cce6f9c8c8d8a85428307b101d30072bf712dd24e6dae9a0840",
+      "mmio_events": 7894,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b3386457868e61ba6a1d5e8ccf401da98c5ed1ebd75d6b5843c59f7b50d5ec06.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "8393fbadf49c85ea4fe5fee89a300b3deb0f8a88f6967c8655b91d344baa5441",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b50b160722449824be1cc014abf025b19c09704243730de9b54aa2d0417b6806.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "48513cb88f587cce6f9c8c8d8a85428307b101d30072bf712dd24e6dae9a0840",
+      "mmio_events": 7894,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b524868f681c7e2208e68cef3186867d028410a651e31d97ba34ef9b17e32f24.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "73008f1b7cdd4676606f54442ca94ec93434d623a58d17d3a0469eeb10836792",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b8979de8df367fa85c37b708df70e8dcf1a7a55146c1a44056374f6bf0d2a917.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "0293f93ebcaf2d529b85228abc646bd9b56776bf5e888f718b6a9cbbc383a7a7",
+      "mmio_events": 7925,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b8f63432262f4586a5ea83635159757dc92759481ff6042765e23831869ba619.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "e734341cc85f6128211d599d07dc03dee90f61f2470b3426fbf2ed7863011382",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b94e018de999af8a6146b31b9171c275a98d1afeca07f0cf62c1bf7f8588b1e7.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "052d694244c8f054044cfc26d5a115e0f22f09723e13e0f49d73e49b8272a2dd",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b95f7992029951bfb980458ed43acd4ae197472e348858cf9fd27b6644239e4f.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "964eab969da4a7c55b43ebafce7ccc693d5c5523e33dc3838d4f451460f990c8",
+      "mmio_events": 23329,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 4149025699,
+        "measure_done": 144,
+        "touch_done": 287,
+        "mv": 5736,
+        "ma": -9260,
+        "stale": 0,
+        "reclaimed": 853
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/b9dc3a7efa58ef42b648976ffaea4e382e61426a7736629812c93db09fe5be61.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "3cf9b57f67ab27e8286a2ba984defc3d5104d94d5cf9ff35a26debc53b299bf3",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ba9d8fa7044b51623edde121fbc495b5b6c35636ab955775d6e67da64de08dba.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "660fe74cb996eab977fdbe94fc06930358690b9b05bf7a86de90f4321eb2aae3",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/bab52782d62f6ed9e85d12aea74d6060a1bbee019bd14f256de96b5bdf344175.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "9e51a692229c18a271c26a516dd1f42eead9bd4ec9d89176d0b40d09dc3b335c",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/badfdd72b8f5d479ef9cc7cca83830bacd0b700802658c8a4c8d9f48706b8fe7.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "180132acf54ccb6b0c70e8a8b0a703a4b9a98a8b897e1480ccdd679006a41929",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/baf68b333175b5cd54ed89f1a88be8a514398499931bfdd93fb5c8c01330a7c3.json.gz",
+      "candidate": "A",
+      "operations": 2112,
+      "rows_sha256": "4696cce8e5aff8663d71551094648fafc229f88e58a586ff2d00ce282cf7c3f5",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/bd2a85e644b29e1f12e5b58d10d979b891b7d00e9e7e7ff00698729efdcf1a85.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "85055afa604e417abd8fc0f78faf5c3218485f8663684d86bb4d19671db9e984",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/bed08fd4679106493a802eda59b2a86b77feb1d19800767514e4a43c7cfb1d61.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "a4f77feaa06d198ebdb7cf4a675d7b06f5b92f9d3e0ce67fd513566ea5167058",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/bf39d8cb4408b5f7a758afca9cf174bd5500465ab24e70700a050f17c44f2a18.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "660fe74cb996eab977fdbe94fc06930358690b9b05bf7a86de90f4321eb2aae3",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/bf516ab60d555f6e26c2a804eeede07f248b1284b49cc43aab628cebe203293c.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "360b06afeba642eb4438927229b67a684a0e3b94dc6d26925388061097a51b77",
+      "mmio_events": 17638,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 2333570195,
+        "measure_done": 150,
+        "touch_done": 280,
+        "mv": 4336,
+        "ma": -13595,
+        "stale": 0,
+        "reclaimed": 773
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c030494bc90a702e4a9feee53534c9a88bc243775f5ad66acd94cecd4bd63c7c.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "9693da86445d9812c0954b7338abb460c252fdca1f6c1a16e9b9c6b121743c30",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c18788fcb79725e46eea41cd49ac91073537bf67d325fa3a51767f2519ad5445.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "1f8ac527e7941d89f0204a7e738da6f6c2bdee3330ac3daa0e2ea90384d8645c",
+      "mmio_events": 16570,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 658971556,
+        "measure_done": 146,
+        "touch_done": 275,
+        "mv": 7496,
+        "ma": 13646,
+        "stale": 0,
+        "reclaimed": 792
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c265f677d398b67063ac2ec4fb32e8451e43193a15966cb784513db28f647396.json.gz",
+      "candidate": "C",
+      "operations": 4504,
+      "rows_sha256": "e85c4f67f0dd0a9c03c97e1530ffc6cace16a2599d0440ee02adfee70472407a",
+      "mmio_events": 16304,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 30,
+        "touch_done": 150,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 338
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c292f8ef93fff6fd68aeb942a3c3de5603c020f15070822646f3ac706a765d7a.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "180132acf54ccb6b0c70e8a8b0a703a4b9a98a8b897e1480ccdd679006a41929",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c295f5a47efd3c7dd1016c9420564eeae5af0a0c6678d83fe7c38f30e2786e7e.json.gz",
+      "candidate": "A",
+      "operations": 2112,
+      "rows_sha256": "a07a8343f93adf671f52cba3424efd3c753cb4c07446e1afcf4f41ed36aae1da",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c2a323a3ee25a4b62ce7a2d762fb4efb1a63c8c912f3f7ee80fe4183e2d27879.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "e96bee8d05d5863727309487fca38a0ce5fdd3ff13d8552498e867faeedec0dc",
+      "mmio_events": 14338,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c3e056b28335f505c01b29db0d3422835103f91fa1862ce3c1be6d16263b66be.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "f7e2a8e6bd168c2a9fe51724b287030393304ecb922d41dfed29b9936acdf791",
+      "mmio_events": 14284,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c4d8ab6d45ef803ed8ed57507db706efdd849e3b50d551c1740190b72a48254d.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "052d694244c8f054044cfc26d5a115e0f22f09723e13e0f49d73e49b8272a2dd",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c600b1c0081a88501ce150511bda929da7b920b7f4d6af8ecf6f41a5f4f0fc11.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "bf335bd9f8f61962a58ec97098c1899313c2081ff40b091873d21da0a3ff1569",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c621d49af1b801c20e09068c85147daaafe57b7d987b23348b97bd3b5b43d26e.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "fa6ada206f11e3da59322389e230ef12262dae37aeea4dea6ca5585286964aa8",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/c8d4ecab00107c0f27e39e8d1954278def5f19fc34aa5f6cbc5d20d9ee4648d9.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "295488ac042b15ede361bad3e3670782636f700b220320a147ce0f2f2a004810",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/cab134242bdf3f07c8d3a28014ec23495009aee71449a1b4c7584bc4eb271aa0.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "5bb72cb6e377ebccc69e1cb8ab6989130e3b570110f35da55bd42244afde6138",
+      "mmio_events": 14333,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/cc0378ab9ecbd2a9979beb585a07169ef9ee0c3f3febed40ecef5e7b44db414b.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "70c4bcf66bbddeec25302c83f0315063d96e1e1f305074015b002c33e6a9127d",
+      "mmio_events": 22849,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2614395325,
+        "measure_done": 139,
+        "touch_done": 249,
+        "mv": 7760,
+        "ma": -1785,
+        "stale": 0,
+        "reclaimed": 815
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ccaa5a64a8e9a23e11f5ad254683e38e5998a5e7658106e1a22b2a23187dffd2.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "2e382b8a634c69564ad7f280faf9b281591df147ab92fa9284ffa98ca0a645c9",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ccd4da2a7c0a5fde7a05fd4ed5a5f9888fe2eb171afe0ab03cd7b1a89c979072.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "75b0b0bf6cb38d0d505d53bb6a06d8cc5687137939d2865d746957be6c78ed4a",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/cd442a3deec10400d6a821dcab6b0025f132ac3069d3129d4cf63e3bde844e21.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "3030eb576b95c5153aa9b2518a0c2e9ead7cf2b22817cea888d53091484ce3f8",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d067afbb6be4a93ebd5e4d9d5e03c7c0b495b1b12511b2ab441ac5a72e1313f4.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "0ef9634bfd21cfeea20fd8b6acbc5e4f2413736b3c0bce202c43378d0245d808",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d06a0a61ace296d3a25435b84140dc4b8d8db8e60a0c6255055fa3aa25e6f3d2.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "e734341cc85f6128211d599d07dc03dee90f61f2470b3426fbf2ed7863011382",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d1c3650f6b88f4c73188a5514dc3a04ac5fca02f88e95a0a376397177841890c.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "360b06afeba642eb4438927229b67a684a0e3b94dc6d26925388061097a51b77",
+      "mmio_events": 17638,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 2333570195,
+        "measure_done": 150,
+        "touch_done": 280,
+        "mv": 4336,
+        "ma": -13595,
+        "stale": 0,
+        "reclaimed": 773
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d340e70a862a3163aed3560c6883c8c4db2448deec589d2fcd106d55802c7ab8.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "0ef9634bfd21cfeea20fd8b6acbc5e4f2413736b3c0bce202c43378d0245d808",
+      "mmio_events": 7933,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d36d7ea9c3758c3f865b1c2561a1b490ea1d92264b8d03cd8080b35148ebf263.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "72fdb74f0d9aee9086c7049bd29cf73b14accd6c27760b2bd6bffe3b5ba6c88a",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d525e73f9c62897b6e5527285d0b862e300d1c5939dcfb4c1f1294ec3a696a56.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "0293f93ebcaf2d529b85228abc646bd9b56776bf5e888f718b6a9cbbc383a7a7",
+      "mmio_events": 7925,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d6203f627efc3a6c448ceba0c2ed15f82f68cdf7c7ae3ea6ef015926ceb43dbe.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "bf335bd9f8f61962a58ec97098c1899313c2081ff40b091873d21da0a3ff1569",
+      "mmio_events": 14292,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d7771365b1fd210abecfa664f925e286b71a4955934fcda7e6139fa530150cce.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "186d8b96a15752d0169868548a2df1d438b9df851f1175e4f65d718a4fb3a219",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/d9eef67d478dc2354f1c3679ba9d8b25772d5c9d852125143c224e9b40259d53.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "48513cb88f587cce6f9c8c8d8a85428307b101d30072bf712dd24e6dae9a0840",
+      "mmio_events": 7894,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/da1708ffbd9910a260c10952f0edfcb4b5ec636de31a591df86935bdd941193e.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "75b0b0bf6cb38d0d505d53bb6a06d8cc5687137939d2865d746957be6c78ed4a",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/da26d5e6967cbbcd391ab599092b8ca8c4d504dfb4cc8dcfff74848f00f28867.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "bd494d013881f2d253659e3b4bb81750c11b2514cb281eb57a07e091b12f715b",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/dbca2921fd1f24412b57b2d2b44e47bc73886b81b8faaf656c1e94208755b658.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "3aeac641808559dc120e50e35eae18979a979d1426c81d1169c64c8cb4e66446",
+      "mmio_events": 7859,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/dbf36f0f38a5785b43b77b045544316ede16dedab2dd59706c4575db80c1819e.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "e96bee8d05d5863727309487fca38a0ce5fdd3ff13d8552498e867faeedec0dc",
+      "mmio_events": 14338,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/dbf510e50e118ca3eeccb1db2d42da564868a859aeb919a572c8cb9660caa2ef.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "e9952b9cfd8c386863dbce748622687851a3b31f2099133df0bdce5bf166ee19",
+      "mmio_events": 22758,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 384553533,
+        "measure_done": 141,
+        "touch_done": 269,
+        "mv": 7332,
+        "ma": -19466,
+        "stale": 0,
+        "reclaimed": 803
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/dcc0625f2d560eb8e5d28b55cb1100a7225d19999452dda2d16e68e0eb652b69.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "3ea41e8ff7edc1c9443bbacf56c1a3855d99ff1c90d32dd8734cf0e3a72b318f",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ddc12a83aa47725c45aff5891b2df52ab5346a8074e42438948e7caeccc3b235.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "0d89049b85f4016715dcd15f91b2260ba22de0fe9948835c21d0a570d42b1b14",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/df39b42b88f57676791fefecc6b15ef401929158b6fb31abd01ff4ddbfb7cc0e.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "9693da86445d9812c0954b7338abb460c252fdca1f6c1a16e9b9c6b121743c30",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/dfbfffb7000cb483f1e6b3ce3802455e1ce733d2135352f31a4ce397c3beb8e1.json.gz",
+      "candidate": "R",
+      "operations": 13600,
+      "rows_sha256": "e9952b9cfd8c386863dbce748622687851a3b31f2099133df0bdce5bf166ee19",
+      "mmio_events": 22758,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 384553533,
+        "measure_done": 141,
+        "touch_done": 269,
+        "mv": 7332,
+        "ma": -19466,
+        "stale": 0,
+        "reclaimed": 803
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/dfd4617e92239fc1ea2b7677bfbad6e0f2cde0cd739a204e697cf802b567cab8.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "a0fece4031531598b87a80c404e20643066d3e304e84557bb7a3b849dcec80d9",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e01855a77071537bd2d55b7cd95fe554282b68ffa9b148cd1c4c3518636ad16c.json.gz",
+      "candidate": "C",
+      "operations": 2112,
+      "rows_sha256": "a07a8343f93adf671f52cba3424efd3c753cb4c07446e1afcf4f41ed36aae1da",
+      "mmio_events": 14568,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 14,
+        "touch_done": 70,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 226
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e06f83cf8594ab1269533a653e6afb9ac06ac9d68a021260154e7da9e1390ef2.json.gz",
+      "candidate": "R",
+      "operations": 4504,
+      "rows_sha256": "e85c4f67f0dd0a9c03c97e1530ffc6cace16a2599d0440ee02adfee70472407a",
+      "mmio_events": 16304,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2915894629,
+        "measure_done": 30,
+        "touch_done": 150,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 338
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e2c3e6175704ab5ef2afaa12617f9ab623ef7f0ce835cae5d987991c1edebcb2.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "3aeac641808559dc120e50e35eae18979a979d1426c81d1169c64c8cb4e66446",
+      "mmio_events": 7859,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e2cd2c2d844e0646f4e9b3091eefe0c97a48265b51472544c5a75dc3719a88f5.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "3030eb576b95c5153aa9b2518a0c2e9ead7cf2b22817cea888d53091484ce3f8",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e2f2ff2ab740245dc9b5446ab4c6f752bb19c8b1a6caf62f70a96d0bbc96dcfc.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "8393fbadf49c85ea4fe5fee89a300b3deb0f8a88f6967c8655b91d344baa5441",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e3439508964927acf52b3284ca34b63bd141577c34a302e21c7887e4ab4d4d10.json.gz",
+      "candidate": "C",
+      "operations": 1774,
+      "rows_sha256": "12637a47beb1cd76caff39ce96dcc7e54e37bf1d35ca2f76eccab3d2e1fec694",
+      "mmio_events": 7912,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 59,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 148
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e55d0f422c4f540ac0b3d1f1a6cc2668b53a525b79f2edac9a1d51d3954569f4.json.gz",
+      "candidate": "R",
+      "operations": 1785,
+      "rows_sha256": "48513cb88f587cce6f9c8c8d8a85428307b101d30072bf712dd24e6dae9a0840",
+      "mmio_events": 7894,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e61938dcfc18760d5d916cfc1d1fe1fbf01c1055085524765a7e89a3c20a1efe.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "b3e7a74a949de9faa446fe2af5737850d68d69b9aff54a783c87f08b7e1fa7eb",
+      "mmio_events": 7973,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e6855917a0f622981262b8bc4ba6496759d69e41ce9d55bb90997a6a2a44375a.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "bd494d013881f2d253659e3b4bb81750c11b2514cb281eb57a07e091b12f715b",
+      "mmio_events": 7902,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e6db28ee28f2a29e411bf9012c55167c299ead6d91f56de212fd6bce627eee8c.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "9693da86445d9812c0954b7338abb460c252fdca1f6c1a16e9b9c6b121743c30",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e874f0e6864067fe92c1c40f7a77123cbb2be1ceefca8aa1b8b48582ecfdef75.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "e96bee8d05d5863727309487fca38a0ce5fdd3ff13d8552498e867faeedec0dc",
+      "mmio_events": 14338,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e8fbc2f3b51d847eb8fcceae0b589007303579f102c51747338f76797009a126.json.gz",
+      "candidate": "A",
+      "operations": 1788,
+      "rows_sha256": "9743c5b478d9d51f43e66f0a53043e9a34f7a87b8c925675ffecca3a055cb162",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/e9458e52343b0b116a6708ff62a321d03748f373830cac057ec56f93aa1f9df4.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "b0c33e8c0e312221b4236d30d794ce3a44598aa2e032799f7f690d347d71bef5",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ea3ecdce1c34ee8bccf7364992e79f61946d55942d79aa035365a6bd1daafd8f.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "502ac4504a3cc56be66f9943a3db811f33fe41f65863b163214d0c1ef65bd56f",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ea89f75e9b0edfbd25b34bafc4ffb368b86fdd3fd07d73a0b7a4cb9c43e84c9b.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "b77332c780bf9826e0fa4f553428f84d6327d9e881b874a62b57e0d0ee422856",
+      "mmio_events": 17293,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1022594603,
+        "measure_done": 151,
+        "touch_done": 282,
+        "mv": 6248,
+        "ma": -9641,
+        "stale": 0,
+        "reclaimed": 785
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ea8ce90eb726941776bc51f9ab5e1e744fe999de19a7cd6772ebdc83da62ebdf.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "3cf9b57f67ab27e8286a2ba984defc3d5104d94d5cf9ff35a26debc53b299bf3",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/eaac71efe18eefda01efcb7a380674ffd57a714d1d3ef08fe359704f4dee1569.json.gz",
+      "candidate": "B",
+      "operations": 1785,
+      "rows_sha256": "3ea41e8ff7edc1c9443bbacf56c1a3855d99ff1c90d32dd8734cf0e3a72b318f",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/eafe985d020f5745f51c1f90d07f014b18a5de4b058776ad791e6c46d360949a.json.gz",
+      "candidate": "C",
+      "operations": 1797,
+      "rows_sha256": "5bb72cb6e377ebccc69e1cb8ab6989130e3b570110f35da55bd42244afde6138",
+      "mmio_events": 14333,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ebce1141bd65aca7c0b1d790e10e9baf2454865c7fa85e7986f3ebf0743ce9c4.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "75b0b0bf6cb38d0d505d53bb6a06d8cc5687137939d2865d746957be6c78ed4a",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ec6a15e47485396e280aaa875dca4fa923b8618a4fdad2af1695e60893b5cefa.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "964eab969da4a7c55b43ebafce7ccc693d5c5523e33dc3838d4f451460f990c8",
+      "mmio_events": 23329,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 4149025699,
+        "measure_done": 144,
+        "touch_done": 287,
+        "mv": 5736,
+        "ma": -9260,
+        "stale": 0,
+        "reclaimed": 853
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/edb6c017cba7b5c2b32e1f1042e135ba8fc8758a30371a08ab23d15c16360485.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "098448d12c926ab1e94377b34ec7ef8fa861199e01e3b26deaa2f646ff3f7088",
+      "mmio_events": 22185,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 4276386705,
+        "measure_done": 138,
+        "touch_done": 255,
+        "mv": 8392,
+        "ma": -8049,
+        "stale": 0,
+        "reclaimed": 790
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ee80e3a9ac996b5687e80b55bf9bbabb6b8bd640b519e3168773f1b1b0770f92.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "2e382b8a634c69564ad7f280faf9b281591df147ab92fa9284ffa98ca0a645c9",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ef41012d3f742daa88729c923102a8e98b69cc2a59c56e7277e4791faf998224.json.gz",
+      "candidate": "B",
+      "operations": 1794,
+      "rows_sha256": "2e382b8a634c69564ad7f280faf9b281591df147ab92fa9284ffa98ca0a645c9",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ef55e6c0e66bb2ba25bfd690c8f69dcfe0cf485082dedf848a0c586dc28917b0.json.gz",
+      "candidate": "B",
+      "operations": 1797,
+      "rows_sha256": "9e51a692229c18a271c26a516dd1f42eead9bd4ec9d89176d0b40d09dc3b335c",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f09e9dd054db4149dd4e70cc3872e843101e8ee0c609ae99b71025473f3d2018.json.gz",
+      "candidate": "R",
+      "operations": 1774,
+      "rows_sha256": "12637a47beb1cd76caff39ce96dcc7e54e37bf1d35ca2f76eccab3d2e1fec694",
+      "mmio_events": 7912,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 59,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 148
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f0f9db95ac1f1e12356d3f86b46b75d77b73de0756ab13181f20b06ced4c37f0.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "0293f93ebcaf2d529b85228abc646bd9b56776bf5e888f718b6a9cbbc383a7a7",
+      "mmio_events": 7925,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f1bb884013e633e44c20fd16a1ce70d32dfc1f7188a83eb8e486982700d9634f.json.gz",
+      "candidate": "C",
+      "operations": 1788,
+      "rows_sha256": "03dff96be7d7b53a41e8b48faaec193c84ac08b6e65fe609a23f8b4b53e6cb53",
+      "mmio_events": 14279,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f1cbbcb3e31685776890515bd22d79a1395c1220e4c37568d38c47efc7db63f5.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "502ac4504a3cc56be66f9943a3db811f33fe41f65863b163214d0c1ef65bd56f",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f25defc7e4536f55c5a04c53e6a8793c7ce407cb86284a550ed573a115869768.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "0979ec4e5a15b9a17af605b874bb49f5c4605d41ede0a092a7cf449b3e9f0bf1",
+      "mmio_events": 8032,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f36285d3445f2bbba01ebe06bc74ae9284d30a4bef1092242c29a09a81f221a4.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "b0c33e8c0e312221b4236d30d794ce3a44598aa2e032799f7f690d347d71bef5",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f3c4dab355c27e34388ed4d8fa1509fdf254e880d1159f898e954068b25d75c1.json.gz",
+      "candidate": "R",
+      "operations": 1806,
+      "rows_sha256": "36ec64e2c6549c8183d6c651836317af2d56a60b372f2d1d7dbf211f990d2a3f",
+      "mmio_events": 14352,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f490137c1a36c1e14e93f6e4792063916eb832a2026f6e5b5c9b63a4f38948ff.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "052d694244c8f054044cfc26d5a115e0f22f09723e13e0f49d73e49b8272a2dd",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f5df5552282eb47175edfe848c4439e14658123c5a0d855703edb5402d807c51.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "3ea41e8ff7edc1c9443bbacf56c1a3855d99ff1c90d32dd8734cf0e3a72b318f",
+      "mmio_events": 7867,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f61d83022599403eb76b53c39968bbe118001880cffd0a38d43babf9b4cb0f0a.json.gz",
+      "candidate": "A",
+      "operations": 1785,
+      "rows_sha256": "a4f77feaa06d198ebdb7cf4a675d7b06f5b92f9d3e0ce67fd513566ea5167058",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f63abc4aaa9966d48656b82cec81f1e70b5edb2eec49a1a47d3be6852cce5b40.json.gz",
+      "candidate": "B",
+      "operations": 1788,
+      "rows_sha256": "865a2baec4bcd9b85a3b37f240bf3a9b1d969a89fef727fb1115c6b7302fe94c",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f68ff4df52c10d7c9d8674bdc8f975aad07319fc69e6de82e3833c6a67784903.json.gz",
+      "candidate": "R",
+      "operations": 1794,
+      "rows_sha256": "a0fece4031531598b87a80c404e20643066d3e304e84557bb7a3b849dcec80d9",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f7aaaa43ac0af98e45d6893b96baae04671e1d94965c7c3325b159562c38e5e9.json.gz",
+      "candidate": "C",
+      "operations": 13600,
+      "rows_sha256": "b77332c780bf9826e0fa4f553428f84d6327d9e881b874a62b57e0d0ee422856",
+      "mmio_events": 17293,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1022594603,
+        "measure_done": 151,
+        "touch_done": 282,
+        "mv": 6248,
+        "ma": -9641,
+        "stale": 0,
+        "reclaimed": 785
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f7f8ddf639e9249cd4087caa691c6cd69338152a1499c7d91c7a958d0312ffd1.json.gz",
+      "candidate": "C",
+      "operations": 1785,
+      "rows_sha256": "26801d9977a9d6aaed9050c2e42b2d74d553e3e67dbaac3379eb4921b142503d",
+      "mmio_events": 7891,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 149
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/f8d78204ddde2d58cae9153a478b7416f437b160fcc4501c75bc69d04e65fce0.json.gz",
+      "candidate": "B",
+      "operations": 13600,
+      "rows_sha256": "098448d12c926ab1e94377b34ec7ef8fa861199e01e3b26deaa2f646ff3f7088",
+      "mmio_events": 22185,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 4276386705,
+        "measure_done": 138,
+        "touch_done": 255,
+        "mv": 8392,
+        "ma": -8049,
+        "stale": 0,
+        "reclaimed": 790
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/fac64c8fa63624471ed69b5cb78c8019ad450cd9563c0f04f09b3d3bcd2323ea.json.gz",
+      "candidate": "A",
+      "operations": 1806,
+      "rows_sha256": "36ec64e2c6549c8183d6c651836317af2d56a60b372f2d1d7dbf211f990d2a3f",
+      "mmio_events": 14352,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/fc63936d28f958e1ae1958b8454dcfbef1b48b9634440da88e444a67317710b8.json.gz",
+      "candidate": "R",
+      "operations": 1788,
+      "rows_sha256": "7829ac71671a68dab701ba9d89aade8a06ca60c6a28e368da8098046fa7926dc",
+      "mmio_events": 14287,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 211
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/fccaf1a56a73b8110d765103217c3de159ed27e39d7d12483e4ce739bc6c56b4.json.gz",
+      "candidate": "A",
+      "operations": 1794,
+      "rows_sha256": "a0fece4031531598b87a80c404e20643066d3e304e84557bb7a3b849dcec80d9",
+      "mmio_events": 7981,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/fd1d6580cf7ade4401e49136c1b703579977ebf7b29b9a464d3465dd43b6ea2f.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "360b06afeba642eb4438927229b67a684a0e3b94dc6d26925388061097a51b77",
+      "mmio_events": 17638,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 2333570195,
+        "measure_done": 150,
+        "touch_done": 280,
+        "mv": 4336,
+        "ma": -13595,
+        "stale": 0,
+        "reclaimed": 773
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/fed0147a99d5ce5c44ac0d61cb9995cc059e9aa0c2365bc8fad4003ccfd1c9e6.json.gz",
+      "candidate": "C",
+      "operations": 1794,
+      "rows_sha256": "295488ac042b15ede361bad3e3670782636f700b220320a147ce0f2f2a004810",
+      "mmio_events": 8040,
+      "last": {
+        "frames": 1,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 150
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/fed41e6f34da468c211607e681f5dba218374023f449808f1f5a67ea8509284b.json.gz",
+      "candidate": "A",
+      "operations": 13600,
+      "rows_sha256": "d2c83ee2e72fab35c9d86debf2ac441b14dbc8bb46db7e7cb2b5444cf4da4a01",
+      "mmio_events": 23430,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 2304859352,
+        "measure_done": 141,
+        "touch_done": 277,
+        "mv": 8216,
+        "ma": -4215,
+        "stale": 0,
+        "reclaimed": 826
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ff97d918aaed358f88c2d3dc75197447dcd25d3d4bf38162bfec7068973c987d.json.gz",
+      "candidate": "R",
+      "operations": 1797,
+      "rows_sha256": "45247fc5d869ccefaf4edfc4c747883c5c81a8755d1fb0df9ab087c8fe274416",
+      "mmio_events": 14341,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    },
+    {
+      "path": "work/exp06-x0-register-host-20261021-r2/ffbb329bc3b70ef76b90c14af920ffcc3241e9a7afb9cd6180686c4a98db69d9.json.gz",
+      "candidate": "A",
+      "operations": 1797,
+      "rows_sha256": "9e51a692229c18a271c26a516dd1f42eead9bd4ec9d89176d0b40d09dc3b335c",
+      "mmio_events": 14346,
+      "last": {
+        "frames": 2,
+        "displayed_hash": 1699028764,
+        "measure_done": 12,
+        "touch_done": 60,
+        "mv": 5000,
+        "ma": 1000,
+        "stale": 0,
+        "reclaimed": 212
+      }
+    }
+  ],
+  "date": "2026-10-21",
+  "implementation_commit": "380cb2e",
+  "native_build": {
+    "command": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-O1",
+      "-g1",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer",
+      "-I",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/work/regtmp21/pytest-of-mt/pytest-1/x0-register0",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/x0_register_wire_driver.cpp",
+      "-o",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/work/regtmp21/pytest-of-mt/pytest-1/x0-register0/app"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": "",
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "fake_sha256": "c34c049b67336cdcec4db2794b942dcfc3049bc8ae3a4945a4cc1eff6e20204a",
+    "compiler_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "inputs": {
+      "tests/unit/core_redesign/x0_register_wire.hpp": "dcb41e309c8e8df926dd17ac210455416c9d15aba02ba52537fb7cc780f0df47",
+      "tests/unit/core_redesign/x0_wire.hpp": "d825a02af9ba326ae8226f2e26f038aedc77e25458b8ec7fee0c65bbbfc1ff2a",
+      "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+      "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+      "tests/unit/core_redesign/display_parts.hpp": "42e411ab14852b813b0621e38b08822d6b93a06d7404b9d576f5d56ee1fd02b7",
+      "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+      "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+      "tests/unit/core_redesign/i2c_managed_handoff.hpp": "3cccbb002e5adde7efbff19ba3dde4758adb6e9f0e1a16857de825460bb65d24",
+      "tests/unit/core_redesign/i2c_handoff.hpp": "5aae68d17fff3a54371d32bae92091d5a009112828a151b2d71efb2fcaead809",
+      "tests/unit/core_redesign/i2c_resources.hpp": "ef108acc6e088619eef4b9fb69918650b21140367a1d23593335d39547fb84e9",
+      "tests/unit/core_redesign/x0_register_wire_driver.cpp": "cddc0c2d607b71f798c13c999df3e11a34966e21eee9d6dd477148ecd4d5966b",
+      "tests/unit/core_redesign/x0_wire_oracle.py": "6c03c24dab16980871cd9edcd0f33220c1bd48024df84de2813937d616ca374b",
+      "tests/unit/core_redesign/app_oracle.py": "2e1ae9824dd34c70f1774382efed6fb285012af9d952d6c4c818c438b27de332",
+      "tests/unit/core_redesign/oracle.py": "67f6f7cc913d20d8bc5de079e86244aea1f925ab0fca3bc8bf9aae8ba6ef3c6c",
+      "tests/unit/core_redesign/i2c_master_driver.cpp": "c87d8e85922a35bc21d49a9851eb83b1962f46ff430a5daaf3a687f109839c62",
+      "tests/unit/core_redesign/test_x0_register_wire.py": "c6212520302e77a08b4f335f20a30be7946604d48363f45a7e5376a5e5795021",
+      "tests/platform/core_redesign/runtime/i2c_master.hpp": "8dab6fb317a06f8336c7f2ab839f6046f9fdb3d7ac049177010a3d19007d425f",
+      "planning/core-redesign/x0-register-wire-inputs.json": "540b845274c66ee6a5cc00f57f247b2894d8d518f67b627c805724299bfa6622"
+    },
+    "executable_sha256": "26808cf6b98abc3542302ca7c1e74d08e846f61e112bf235ad4245ecdf976a0e"
+  },
+  "abi": {
+    "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "tools": {
+      "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+      "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+      "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+      "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+      "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+      "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+      "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+      "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+    },
+    "inputs": {
+      "tests/platform/core_redesign/measure_x0_register_wire.py": "f39ae99a0bdfd2f90608f2aa39f32ed221fe3461a2d0ff7fa3ec5f9d23d1960c",
+      "planning/core-redesign/x0-register-wire-inputs.json": "540b845274c66ee6a5cc00f57f247b2894d8d518f67b627c805724299bfa6622",
+      "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+      "tests/unit/core_redesign/x0_register_wire.hpp": "dcb41e309c8e8df926dd17ac210455416c9d15aba02ba52537fb7cc780f0df47",
+      "tests/unit/core_redesign/i2c_managed_handoff.hpp": "3cccbb002e5adde7efbff19ba3dde4758adb6e9f0e1a16857de825460bb65d24",
+      "tests/unit/core_redesign/i2c_handoff.hpp": "5aae68d17fff3a54371d32bae92091d5a009112828a151b2d71efb2fcaead809",
+      "tests/unit/core_redesign/i2c_resources.hpp": "ef108acc6e088619eef4b9fb69918650b21140367a1d23593335d39547fb84e9",
+      "tests/unit/core_redesign/x0_wire.hpp": "d825a02af9ba326ae8226f2e26f038aedc77e25458b8ec7fee0c65bbbfc1ff2a",
+      "tests/unit/core_redesign/display_parts.hpp": "42e411ab14852b813b0621e38b08822d6b93a06d7404b9d576f5d56ee1fd02b7",
+      "tests/unit/core_redesign/x0_display.hpp": "02a41b2c1a25ea6047f77750640d62e5ae85ee220602145e840d8fef16c8e012",
+      "tests/unit/core_redesign/x0_features.hpp": "e225673b9ea0a1c2b518f5ebf3f292fbec8afcd66fd0b3625c26427468023e79",
+      "tests/unit/core_redesign/x0_candidates.hpp": "0548d6192925ccd6d57b867ea2bbf92d958dd2068f609911d6a8819b7a40b5c6",
+      "tests/unit/core_redesign/r_application.hpp": "1efbf3d3aa3d099024a7c07047e1ab2087eb5007429aeb802d90de2f38a4bf5d",
+      "tests/unit/core_redesign/r_workloads.hpp": "7fa957f61f7f8ed67fb8e3f910d0ebf301336ce7005abbf85f8d472787a38e87",
+      "tests/unit/core_redesign/static_mailbox.hpp": "95f5c35d1800a007ce6fd353f918f978afb2f7fdc66d39b4df06bf816a743ea4",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/platform/core_redesign/x0_register_wire_entry.cpp": "b6d394da47fe6863d17b526994c9400591cd0e99d3f119e6d1979f17fed840de",
+      "tests/platform/core_redesign/runtime/i2c_master.hpp": "8dab6fb317a06f8336c7f2ab839f6046f9fdb3d7ac049177010a3d19007d425f",
+      "tests/platform/core_redesign/sleep_flow_support.cpp": "264378d07dfb98d2d4a602dad6ba71635c7c62b30286c85bc3dbe318778f8956",
+      "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
+    },
+    "libgcc": {
+      "CH32V003F4P6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/rv32ec/ilp32e/libgcc.a",
+        "sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f"
+      },
+      "CH32X035C8T6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+        "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+      }
+    },
+    "support_lto": false
+  },
+  "artifacts": {
+    "native": "work/exp06-x0-register-host-20261021-r2",
+    "preliminary_native": "work/exp06-x0-register-host-20261021",
+    "abi": "work/exp06-x0-register-abi-20261021-r2",
+    "preliminary_abi": "work/exp06-x0-register-abi-20261021",
+    "analysis": "work/exp06-x0-register-analysis-20261021"
+  },
+  "archive": {
+    "path": "work/exp06-x0-register-20261021-evidence.tar.gz",
+    "bytes": 18891182,
+    "sha256": "60fafe583e9b594241b408688819fdb21845b5106799df32290064fe0b208c56"
+  },
+  "matrix_sha256": "866701c9a994700275e328ec833f726438fd1f62e03ba7a0004eb34ed591a5c6",
+  "unverified": [
+    "N02 completion queue full, routing/removal/retry in the X0 application",
+    "RX-tail faults in this application composition",
+    "X035 route preparation in this application",
+    "physical startup/IRQ/I2C/PD/clock/pins and stop witness",
+    "controller full initialization and measurement quality",
+    "stack peak, timing, current, persistence coexistence",
+    "human review and final API adoption"
+  ]
+}
