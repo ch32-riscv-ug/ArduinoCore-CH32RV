@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-21",
+  "scope": "Existing X035 route setup, managed I2C and scoped completion callbacks; register model and structural link only",
+  "route_inputs": "x035-i2c-route-inputs.json",
+  "delivery_inputs": "i2c-event-inputs.json",
+  "manager_instances": 2,
+  "clients": 3,
+  "dedicated_records": 3,
+  "pooled_records": 2,
+  "buffer_bytes": 64,
+  "targets": 2,
+  "mailbox_capacity_per_target": 1,
+  "request_generations": [
+    32
+  ],
+  "backend_generations": [
+    32
+  ],
+  "resource_generations": [
+    32
+  ],
+  "irq_backend": false,
+  "precondition": "Serialized cooperative non-revocable leases; cold/quiescent declaration for prepare; IRQ-off Master access; no DMA; stable callback contexts",
+  "setup_fault": "Retain resource lease until explicit external quiescent witness and abandon; no automatic rollback of pin/gate writes"
+}
