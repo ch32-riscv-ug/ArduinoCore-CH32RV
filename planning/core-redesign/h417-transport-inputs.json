@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-22",
+  "scope": "N06 shared transport with core-local views/endpoints and host concurrency; no H417 gate/cache backend",
+  "candidates": ["R", "A", "B-work", "C-notification-bridge"],
+  "policies": ["Single", "Fixed", "Shared"],
+  "features": [0, 1, 2, 3],
+  "gates": ["mutex", "atomic"],
+  "sanitizers": ["address,undefined", "thread"],
+  "seeds": [0, 1],
+  "messages": 256,
+  "blocks": 64,
+  "shared": "Fabric, epoch, hint bits, worker admission, active turn permits, quiescent declarations; protected by one outer try Gate per transport call",
+  "local": "View references, one normal-caller Endpoint, executor registration/callback, in-progress lease, cursor, results and cleanup state",
+  "callback_budget": "one message or one block take/release or at most eight byte reads",
+  "recovery": "close all new operations; wait for active normal turns including retryable close; attest explicit worker offline and DMA quiet declarations; restart epoch",
+  "typed_results": ["Done", "Empty", "Busy", "Closed", "Stale", "Rejected", "Unsupported", "Exhausted", "Full"],
+  "note": "reserve Rejected still combines capacity/generation refusal; typed result experiment is not public API adoption",
+  "not_verified": ["hardware HSEM/cache/IRQ", "actual CPU or DMA stop", "real dual-image placement/startup", "MCU operation time or peak stack", "public architecture adoption"]
+}
