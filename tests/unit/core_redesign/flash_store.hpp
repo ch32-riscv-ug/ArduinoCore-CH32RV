@@ -38,6 +38,30 @@ class Store : private Metadata<K!=Kind::Raw> {
     uint16_t base=0,erase_offset=0,body_offset=0,footer_offset=0;
     uint8_t key_bytes=0;
     Phase state=Phase::Idle;
+    template<class,class,class,Kind,bool,bool,unsigned> friend class IntegratedStore;
+    // Only the ownership/scan adapter may supply this snapshot. The public
+    // synchronous entry points below continue to scan their own media.
+    Start begin_prepared(const uint8_t* data,unsigned size,bool recover_corrupt,const Snapshot& current){
+        if(state==Phase::Closed)return Start::Closed;
+        if(state!=Phase::Idle)return Start::Busy;
+        if((!data&&size)||!schema(data,size))return Start::Invalid;
+        if(!supported()||size>capacity())return Start::NoSpace;
+        if(current.status==Status::Ambiguous)return Start::Ambiguous;
+        if(current.status==Status::Corrupt&&!recover_corrupt)return Start::Corrupt;
+        if(current.generation==0xffffffffu)return Start::Exhausted;
+        for(unsigned i=0;i<size;++i)payload[i]=data[i];
+        key_bytes=uint8_t(size);
+        if constexpr(K!=Kind::Raw){
+            this->generation_value=current.generation+1;
+            uint32_t crc=0xffffffffu;
+            for(unsigned i=0;i<12;++i)crc=crc_byte(crc,prefix_byte(i));
+            for(unsigned i=0;i<size;++i)crc=crc_byte(crc,payload[i]);
+            this->checksum_value=crc^0xffffffffu;
+        }
+        base=uint16_t(Two&&current.status==Status::Valid?(1-current.bank)*bank_bytes():0);
+        erase_offset=body_offset=footer_offset=0;state=Phase::Erase;
+        return Start::Accepted;
+    }
     static uint32_t rounded(uint32_t n){return ((n+G::program()-1)/G::program())*G::program();}
     static uint32_t header(){return K==Kind::Raw?0:16;}
     static uint32_t footer(){return Commit?rounded(12):0;}
