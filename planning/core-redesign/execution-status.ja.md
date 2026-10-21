@@ -4,6 +4,10 @@
 実行方式の採用はP5で扱う。通常の実装修正・資料照合・試作・測定はこのセッションで続け、作業単位ごとにコミットする。
 この一覧は完了監査にも使い、hostの成功で実機・利用者評価を埋めない。
 
+[P2〜P4完了条件監査](tasks/P4-AUDIT-01/result.ja.md)に、D01〜D12の支持・反例・未検証、
+全契約の到達範囲、機能候補76項目との対応、通常モデルの残作業N01〜N10をまとめた。
+部品数を進捗率に置き換えず、用途接続・実機・人の評価を別に扱う。
+
 | 領域 | 現在の証拠 | 進める作業 | 実機・レビュー等が残る部分 |
 |---|---|---|---|
 | P2 再現 | EXP-00、36 build一致 | 測定の拡張時も入力と生成物を記録 | 実runtimeとは別 |
@@ -24,6 +28,7 @@
 
 ## 最新の完了単位
 
+- [P4-AUDIT-01 証拠と残作業の監査](tasks/P4-AUDIT-01/result.ja.md)：51 measurement manifestと明示された47移送archiveを照合。D01〜D12、全契約、76候補の索引を作成。IO-04の内部hint callbackと公開callback破棄の違い、全体fit・stack・時間・乱数条件の不足を記録。P4終了や方式採用ではない。次の通常作業はN01の共通wire adapter。
 - [P2／EXP-06 X0 device入力照合](tasks/EXP-06/x0-device-result.ja.md)：メーカー2 PDFをhash固定。raw word式各65,536条件、golden4 frameのaddress順、136,200位相の整数模型を照合し、再取得でも一致。header込みwire／合成負荷を計数した。上流ADC設定の136.2 ms模型と28 ms Low継続timeoutを、通常task期限や実測へ読み替えない。workspace3件通過。初期化・実driver・CNVR clear解釈・実機は残る。[課題](tasks/EXP-06/x0-device-exercise.ja.md)は利用者レビュー前。
 - [P2／EXP-06 K0上流再現](tasks/EXP-06/k0-upstream-result.ja.md)：固定15 fileから4 ELF、load image 1,348 Bが一致。静的RAM32 B（選択object合計25 B＋整列）、stack／実機は未検証。同梱1,508 B binaryとは不一致。live register10 B・部分反映・循環read・poll入力と固定K0の違いを記録し、workspace3件通過。[課題](tasks/EXP-06/k0-upstream-exercise.ja.md)は利用者レビュー前。
 - [P2／EXP-06 X0上流再現](tasks/EXP-06/x0-upstream-result.ja.md)：固定24 fileを再取得し、元source／flagsで4 ELF、load image 4,984 Bが一致。静的RAM180 B、stack／実機は未検証。同梱5,264 B binaryとは不一致。元OLED／INA関数をI2C記録stubへ接続した16入力×2 copyが一致し、workspace3件通過。128×32 vertical・bitbang配線・ACK無視・入力等のU/X0差を一覧化。既存128×64条件と実controller headerは変更せず、[課題](tasks/EXP-06/x0-upstream-exercise.ja.md)は利用者レビュー前。

@@ -1,0 +1,77 @@
+id,name,decisions,evidence_scope,results,remaining,adoption
+SYS-01,永続設定保存,D08 D09 D12,媒体模型・形式・所有・ABI,planning/core-redesign/tasks/EXP-04/integrated-result.ja.md,用途共存・実媒体・実電断・upload保持,未決定
+SYS-02,Flash 自己書き換え,D05 D08 D09 D12,媒体模型・予約link,planning/core-redesign/tasks/EXP-04/region-result.ja.md,実Flash driver・再program・停止・公開RAW範囲,未決定
+SYS-03,低消費電力,D03 D08 D10 D12,V006休止模型・借用回収,planning/core-redesign/tasks/EXP-06/v006-sleep-lease-fault-result.ja.md,実休止・wake・電流・系列別モード,未決定
+SYS-04,RTC,D08 D10 D12,関連する論理時刻のみ,planning/core-redesign/tasks/EXP-01/logical-time-result.ja.md,RTC設定・暦・alarm・保持の固有実験,未決定
+SYS-05,クロック設定,D05 D08 D10 D11 D12,公称clock確認・論理時刻・資源所有,planning/core-redesign/tasks/EXP-01/clock-time-result.ja.md;planning/core-redesign/tasks/EXP-01/x035-i2c-setup-result.ja.md,実clock切替・周辺共存・精度,未決定
+SYS-06,ウィンドウウォッチドッグ,D03 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+SYS-07,バックアップレジスタ,D03 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+SYS-08,GPIO 以外の EXTI,D03 D04 D10 D12,関連するwake競合模型のみ,planning/core-redesign/tasks/EXP-06/v006-sleep-result.ja.md,非GPIO EXTI source・pending・通知backend,未決定
+SYS-09,割り込み優先度の設定,D03 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-01,SPI スレーブ,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-02,SPI 非同期転送,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-03,SPI ハードウェア CS,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-04,SPI 半二重・片方向モード,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-05,I2C マルチマスター,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-06,I2C マスターとスレーブの兼用,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-07,I2C 拡張アドレス・呼び出し,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-08,UART RS485,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-09,UART 1線式半二重,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-10,UART ハードウェアフロー制御,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-11,UART 受信イベント・エラー通知,D04 D05 D07 D12,関連するデータ・通知の共通部品のみ,planning/core-redesign/tasks/EXP-02/shared-result.ja.md;planning/core-redesign/tasks/EXP-03/event-preparation.ja.md,UART固有IDLE・error・overflow・受信停止境界,未決定
+BUS-12,SoftwareSerial,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-13,CAN,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+BUS-14,I2S,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+TIM-01,利用者向けタイマー API,D03 D08 D12,論理timerの比較のみ,planning/core-redesign/tasks/EXP-03/timer-preparation.ja.md,hardware timer資源・ISR・精度・公開API,未決定
+TIM-02,Ticker 相当,D02 D03 D04 D08 D12,work・論理timer・通知,planning/core-redesign/tasks/EXP-03/timer-preparation.ja.md,実時間源と用途接続・公開callback文脈,未決定
+TIM-03,入力キャプチャ,D03 D05 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+TIM-04,エンコーダ・外部パルス計数,D05 D07 D08 D12,K0の論理入力と上流poll調査のみ,planning/core-redesign/tasks/EXP-06/k0-upstream-result.ja.md,hardware encoder・外部clock・overflow・実入力,未決定
+TIM-05,PWM の端子・タイマー範囲拡張,D03 D05 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+TIM-06,高度な PWM 制御,D03 D05 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+TIM-07,低消費電力タイマー,D08 D10 D11 D12,V006 AWU資料・時間幅模型のみ,planning/core-redesign/tasks/EXP-06/v006-sleep-result.ja.md,LPTIMそのもののbackend・保持・実wake,未決定
+TIM-08,SoftPWM,D03 D05 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+ANA-01,ADC 連続取得,D04 D05 D07 D12,取得bufferの所有模型・ABIのみ,planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md,実ADC/DMA・停止・IRQ・取りこぼし,未決定
+ANA-02,ADC トリガ・監視,D03 D04 D05 D07 D12,関連する取得bufferのみ,planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md,trigger・watchdog・hardware検査,未決定
+ANA-03,ADC 電圧換算,D05 D08 D11 D12,INA219外部計測の換算模型は別機能,planning/core-redesign/tasks/EXP-06/x0-device-result.ja.md,内蔵ADC固有の精度・Vref・校正,未決定
+ANA-04,DAC 連続出力,D03 D05 D07 D12,関連するbuffer所有模型のみ,planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md,DAC出力・trigger・循環・underrun・停止,未決定
+ANA-05,OPA・コンパレータ,D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+ANA-06,TouchKey,D03 D04 D05 D11 D12,X0の仮想touch負荷のみ,planning/core-redesign/tasks/EXP-06/x0-result.ja.md,TouchKey固有の取得・閾値・hardware、外部touchとは分離,未決定
+STO-01,FS／File 共通 API,D05 D07 D08 D09 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+STO-02,SPI SD のファイル利用,D05 D07 D08 D09 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+STO-03,SDIO／SDMMC によるストレージ,D05 D07 D08 D09 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+STO-04,Flash 上のファイルシステム,D05 D08 D09 D12,少量key保存の模型はFSとは別,planning/core-redesign/tasks/EXP-04/store-result.ja.md,FS固有の容量・GC・整合性・外部Flash,未決定
+STO-05,USB Host MSC のファイル利用,D05 D07 D08 D09 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+NET-01,Ethernet,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+NET-02,TCP/IP とネットワーク共通 API,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+NET-03,TLS・ネットワーク上位機能,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+UPD-01,ファームウェア自己更新,D05 D08 D09 D11 D12,保存領域予約のlink検査のみ,planning/core-redesign/tasks/EXP-04/region-result.ja.md,更新image検証・boot切替・破損復旧・実upload,未決定
+UPD-02,更新データの受信経路,D05 D08 D09 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+USB-01,Device の未対応系列・コントローラ,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+USB-02,Host のコントローラ・速度拡張,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+USB-03,USB SuperSpeed Device,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+USB-04,USB SuperSpeed Host,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+USB-05,Host Audio／Video,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+USB-06,Host ネットワーク,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+USB-07,Vendor 直接転送,D04 D05 D07 D11 D12,関連する借用・回収模型のみ,planning/core-redesign/tasks/EXP-01/i2c-handoff-result.ja.md,USB転送固有のDMA・cache・cancel・参照消失,未決定
+USB-08,ISP 移行の系列拡張,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+USB-09,ソフトウェア USB Device,D03 D04 D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+PD-01,USB PD の系列拡張,D03 D05 D11 D12,X0仮想PD・上流sourceの再現のみ,planning/core-redesign/tasks/EXP-06/x0-upstream-result.ja.md,各系列PD backend・clock・実相手・protocol期限,未決定
+PD-02,USB PD DRP・Role Swap,D03 D04 D05 D11 D12,X0仮想SinkはRole Swapの証拠ではない,planning/core-redesign/tasks/EXP-06/x0-result.ja.md,DRP・各Role Swap固有の状態・電源・失敗,未決定
+PD-03,USB PD の電源プロファイル拡張,D03 D05 D11 D12,仮想PPS操作・上流Sink sourceのみ,planning/core-redesign/tasks/EXP-06/x0-upstream-result.ja.md,実PPS成立・Battery/Variable・EPR/AVSの個別調査,未決定
+HW-01,DMA,D04 D05 D07 D11 D12,取得buffer・H417順序模型のみ,planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md;planning/core-redesign/tasks/EXP-05/h417-preparation.ja.md,DMA固有backend・資源・停止・cache・公開範囲,未決定
+HW-02,CRC,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+HW-03,RNG,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+HW-04,PIOC・パルス列送受信,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+HW-05,FSMC,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+HW-06,QSPI,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+HW-07,PSRAM,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+HW-08,I3C,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+HW-09,DVP カメラ入力,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+HW-10,LTDC 表示出力,D05 D07 D11 D12,mock表示交換はLTDCとは別,planning/core-redesign/tasks/EXP-05/display-result.ja.md,LTDC固有の連続取得・framebuffer・帯域・underflow,未決定
+HW-11,ARGB LED 出力,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+SCOPE-01,BLE・無線 SoC 機能,D01 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+SCOPE-02,RTOS,D01 D02 D03 D06 D07 D11 D12,有限work・待機・共有部品の比較,planning/core-redesign/tasks/EXP-03/wait-result.ja.md;planning/core-redesign/tasks/EXP-03/work-preparation.ja.md,再入深さ・固定port別stack対照・最終提供範囲,未決定
+SCOPE-03,汎用センサ・表示器ドライバの同梱,D01 D05 D12,独立renderer・上流・device算術,planning/core-redesign/tasks/EXP-05/display-result.ja.md;planning/core-redesign/tasks/EXP-06/x0-device-result.ja.md,実controllerと用途接続・同梱範囲・教材評価,未決定
+SCOPE-04,WCH EVT／SPL 互換 API,D01 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+SCOPE-05,Arm 系 CH32F,D01 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
+SCOPE-06,ベンダ IDE とのバイナリ互換,D01 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定

@@ -267,9 +267,13 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 | P0 理想像 | DESIGN-01 完了。全体設計案 P0-1 と利用例を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-01/result.ja.md) |
 | P1 比較条件と実験設計 | DESIGN-02 完了。P1-1 と EXP-00 依頼を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-02/result.ja.md) |
 | P2 再現基盤と対照準備 | 進行中。EXP-00、PREP-01と02完了。bus・周期のhost結合済み。起動・実周辺backendは未検証 |
-| P3 | 進行中。EXP-01のI/O所有、EXP-02のデータ・同期、EXP-03のwork・期限・宛先と一部結合をhost／ABIで検査。[作業別状態](planning/core-redesign/execution-status.ja.md)を参照。同等用途・wait・実共有・保存等は残る |
+| P3 | 進行中。I/O・データ・同期・work・期限・宛先・wait・保存・休止・コア間所有をhost／ABIで検査。[作業別状態](planning/core-redesign/execution-status.ja.md)を参照。用途接続・実IRQ・実共有・実媒体等は残る |
 | P4 | 未完了。K0のR/A/B/Cと設定容量2のhost／ABI比較済み。X0追加比較・compile時機能除去・変更課題素材も記録。残る変更課題・実機・利用者レビューが残る |
 | P5〜P7 | 未着手。方式の採用と最終仕様はP5で扱う |
+
+2026-10-21の[完了条件監査](planning/core-redesign/tasks/P4-AUDIT-01/result.ja.md)に、
+D01〜D12の支持・反証・未検証、契約ごとの到達範囲、76候補の対応と通常作業N01〜N10を記録した。
+次はN01のX0共通wire adapterから用途接続を進める。部品の検査件数を完成用途の完了率にはしない。
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
 
