@@ -96,6 +96,8 @@ D05／D08／D12について、常設初期化・汎用request・wrapperを必要
 起動が実機未確認ならcompile結果として残し、実runtimeの最小費用と断定しない。
 [I2C資源利用権の接続](tasks/EXP-01/i2c-resource-result.ja.md)はnative47件・ABI28構成で、open失敗の返却とend／takeまでのclock・pin保持を検査した。
 PCLKとpin準備はadapterの宣言であり、実clock／pinmux／IRQ backendの成立とは分ける。
+[X035準備adapter](tasks/EXP-01/x035-i2c-setup-result.ja.md)は公称PCLK確認・gate・default routeとpin設定をnative100件・ABI18構成で検査した。
+packageごとのrouteと、実clock精度・配線・IRQ共有は別途確認する。
 
 ### EXP-02 データと同期
 

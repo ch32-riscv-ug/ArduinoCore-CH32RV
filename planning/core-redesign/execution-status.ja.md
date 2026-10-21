@@ -8,7 +8,7 @@
 |---|---|---|---|
 | P2 再現 | EXP-00、36 build一致 | 測定の拡張時も入力と生成物を記録 | 実runtimeとは別 |
 | P2 用途対照 | PREP-01と02、用途のhost／ABI。[独立runtime ELF](tasks/EXP-01/runtime-result.ja.md) | 実起動・周波数と精度、I/O backend、上流のbuild専用再現 | 実IRQ共有、wire、PD、実機起動 |
-| EXP-01 最小構成・I/O | [I/O所有model](tasks/EXP-01/io-preparation.ja.md)：host22件、ABI48。[reset／GPIO入口](tasks/EXP-01/runtime-result.ja.md)：host16・ELF40・拒否link12・初期化故障12。[clock/time](tasks/EXP-01/clock-time-result.ja.md)：host34・ELF40。[論理時刻](tasks/EXP-01/logical-time-result.ja.md)：host123・最終ABI52＋変更前52、端数・不連続とtimer境界。[I2C master](tasks/EXP-01/i2c-master-result.ja.md)：host59・ELF36。[I2C資源利用権](tasks/EXP-01/i2c-resource-result.ja.md)：native47件・ABI28 | 実counterとの接続・観測上限の根拠、実PCLK／pinmux adapterとclock喪失、ISRと資源引渡し・回収の接続 | 実起動・周波数・精度・周辺・IRQ時間 |
+| EXP-01 最小構成・I/O | [I/O所有model](tasks/EXP-01/io-preparation.ja.md)：host22件、ABI48。[reset／GPIO入口](tasks/EXP-01/runtime-result.ja.md)：host16・ELF40・拒否link12・初期化故障12。[clock/time](tasks/EXP-01/clock-time-result.ja.md)：host34・ELF40。[論理時刻](tasks/EXP-01/logical-time-result.ja.md)：host123・最終ABI52＋変更前52、端数・不連続とtimer境界。[I2C master](tasks/EXP-01/i2c-master-result.ja.md)：host59・ELF36。[I2C資源利用権](tasks/EXP-01/i2c-resource-result.ja.md)：native47件・ABI28。[X035準備](tasks/EXP-01/x035-i2c-setup-result.ja.md)：native100件・ABI18 | 実counterとの接続・観測上限の根拠、系列別route・package差とclock喪失／停止復帰、ISRと資源引渡し・回収の接続 | 実起動・周波数・精度・周辺・IRQ時間 |
 | EXP-02 データと同期 | [直列単位](tasks/EXP-02/result.ja.md)と[寿命・共有単位](tasks/EXP-02/shared-result.ja.md)：host92＋31件、link200＋68構成、未使用36＋16行が0 B、TSan4条件 | 実行器への待機接続、ring／message／poolの共有条件 | 実ISR／コア間の同期と禁止時間 |
 | EXP-03 実行・通知 | [work](tasks/EXP-03/work-preparation.ja.md)・[期限](tasks/EXP-03/timer-preparation.ja.md)・[宛先とI/O結合](tasks/EXP-03/event-preparation.ja.md)・[待機policy](tasks/EXP-03/wait-result.ja.md)・[資源依存](tasks/EXP-03/dependency-result.ja.md)：host151件、ABI212構成 | X0の変更課題、依存台帳の実backend接続、IRQ共有、完了枠／arbiter、別stack対照 | MCU時間・stack観測、採否はP5 |
 | EXP-04 保存 | [媒体・領域準備](tasks/EXP-04/region-result.ja.md)：host138件、ELF40・想定link拒否80・artifact故障検出150。[形式比較](tasks/EXP-04/format-result.ja.md)：host200件、105容量条件。[C++試作](tasks/EXP-04/store-result.ja.md)：native272件・中断7,442条件・ABI198。[予算付き読出しと所有](tasks/EXP-04/scan-result.ja.md)：native353件・ABI76、最大32 byte／pollと古い結果の拒否 | 受理／key変更への走査・所有統合、非同期媒体と回収、予約とdomainの整合、所有期間・公平性、追記・整理、物理再program規則、driverと実upload経路 | 実電断・CPU／IRQ停止・upload保持 |
@@ -43,6 +43,7 @@
 - [EXP-01 論理時刻](tasks/EXP-01/logical-time-result.ja.md)：上限宣言／推定／native64、端数、既知／不明停止、timerのdomain・半周guard。実sourceの保持・間隔・精度は未検証。
 - [EXP-01 I2C master](tasks/EXP-01/i2c-master-result.ja.md)：有限register進行、受信末尾・取消と貸出、容量8／32／64、未使用8条件の追加0 B。実通信・IRQは未検証。
 - [EXP-01 I2Cの資源利用権](tasks/EXP-01/i2c-resource-result.ja.md)：native47件・ABI28、宣言PCLK／pin準備と資源台帳、open失敗の返却・end／takeまでの保持・進行停止・古いticket。実clock／pinmux／IRQ adapterは未接続。
+- [EXP-01 X035準備adapter](tasks/EXP-01/x035-i2c-setup-result.ja.md)：固定3 PDF・SDK8 file、公称PCLK・gate・PA10／11設定とopen時再確認、native100件・ABI18構成。実配線・電流・clock精度・IRQ共有は未検証。
 - [EXP-04 媒体・領域準備](tasks/EXP-04/region-result.ja.md)：読出し・program・eraseの粒度、保守的な中断模型、予約とlink／image検査。保存の実機成立・実電断・upload保持は未検証。
 - [EXP-04 形式比較](tasks/EXP-04/format-result.ja.md)：RAW／blob／数値key、上書き／2 bank／別単位の完了印。条件付きhost模型であり、実機の保護は未検証。
 - [EXP-04 C++試作](tasks/EXP-04/store-result.ja.md)：初回／置換の模型照合、作業buffer・ABI費用と未使用除去。同期走査の読出し回数も記録し、実媒体・所有・走査分割は残す。

@@ -116,6 +116,7 @@ source・生成Fake・compiler／binary hash・59 full trace・JUnit・28 ELFと
 archiveのhash・byte数は測定JSONを参照する。出力先は新しいdirectoryを使う。
 
 次は実PCLKとpinmux／remap adapter、clock変更失敗・喪失・停止／復帰の手順、ISRと資源引渡し・完了枠、固定arbiterと用途への接続を進める。
+[X035 default routeの設定・再確認](x035-i2c-setup-result.ja.md)は追加で検査した。公称PCLKとregister模型の範囲で、実配線・IRQ・clock故障の成立とは分ける。
 台帳を使わない利用者の扱い、回収不能なhardwareの終了方針、公開範囲は追加証拠とP5の検討に残す。
 教材では「通知ackとtakeとendで何が返るか」「同じslotの古いticket」「なぜPCLK宣言と実clock確認が別なのか」を予想する。
 人による教材実施・理解度レビューは未確認。
