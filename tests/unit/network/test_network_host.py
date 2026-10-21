@@ -32,6 +32,7 @@ def build(out: pathlib.Path) -> pathlib.Path:
     flags = ["-g", "-O1", "-fsanitize=address,undefined", "-DNETWORK_HOST_TEST",
              f"-I{HERE / 'host'}", f"-I{REPO / 'cores/arduino'}", f"-I{LIB}"]
     objects = []
+    flags.append(f"-I{REPO / 'libraries/CH32RVUsbDevice/src'}")   # CH32RVUsbCallback.h for the USB stand-in
     c_sources = sorted((LIB / "lwip-src").rglob("*.c")) + [
         HERE / "host/link.c", REPO / "cores/arduino/itoa.c", REPO / "cores/arduino/dtostrf.c"]
     cxx_sources = (sorted(LIB.glob("*.cpp")) + sorted((HERE / "host").glob("*.cpp")) + [HERE / "app.cpp"]
@@ -93,6 +94,12 @@ def test_dhcp_client(sketch):
 
 def test_dhcp_server(sketch):
     check(drive(sketch, "dhcps"), ["dhcp_server"] + ALL)
+
+
+def test_usb_ncm_espusbdevice_calls(sketch):
+    """CH32RVUsbDeviceNet's ipConfig() / dhcpServer() / dhcpDns() / beginNetwork() on
+    NetworkUsbNcm, over host/CH32RVUsbDevice.h's stand-in for the USB function."""
+    check(drive(sketch, "ncm"), ["dhcp_server"] + ALL)
 
 
 @pytest.mark.parametrize("seed", [1, 4])

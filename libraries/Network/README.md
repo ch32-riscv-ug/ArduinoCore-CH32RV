@@ -5,8 +5,27 @@ IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network librar
 ## Targets and status
 
 - For the series with an Ethernet MAC: CH32V208, V307/V317, V407/V467, H415-H417. Other series stop with an error.
-- **No link drivers yet (Ethernet MAC, USB NCM).** What is here is the IP stack and the API.
+- **No Ethernet MAC drivers yet.** USB NCM is here (`NetworkUsbNcm`, `CH32RVUsbDeviceNet::beginNetwork()` ...), but those series have no USB device driver yet, so it does not run on a chip.
 - Tested on the host against Linux's TCP/IP (`tests/unit/network`): static addresses, the DHCP client and server, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
+
+## USB NCM (as with EspUsbDevice)
+
+```cpp
+#include <CH32RVUsbDevice.h>
+#include <Network.h>
+
+CH32RVUsbDeviceNet usbnet;
+
+void setup() {
+  usbnet.dhcpServer(true);   // the PC gets 192.168.7.2 (the board is 192.168.7.1)
+  USBDevice.begin();
+  usbnet.beginNetwork();
+}
+```
+
+- The board's end takes `CH32RVUsbDeviceNet::macAddress()` (the PC's end) with the last bit flipped.
+- The link is not the board's default route unless `defaultRoute(true)`: it never takes over from Ethernet.
+- Frames from the PC pass through a 4 KB queue to lwIP; when it is short of room, USB stops taking blocks and the PC waits - nothing is dropped.
 
 ## Behaviour
 

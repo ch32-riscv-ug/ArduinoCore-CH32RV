@@ -61,8 +61,12 @@ void loop() {
   （EspUsbDevice には無い拡張です）。クラスの総数や記述子の大きさには、ビルド時の上限がありません。
 - **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
   EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
-- **無いもの**: ファームウェア更新の各クラス、USB ネットワークの IP 層（このコアに IP スタックが無いので、
-  `CH32RVUsbDeviceNet` は生の Ethernet フレームを扱う）、（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
+- **USB ネットワークの IP 層**（`ipConfig()`、`dhcpServer()`、`dhcpClient()`、`dhcpAdvertiseGateway()`、`dhcpDns()`、
+  `defaultRoute()`、`beginNetwork()`、`networkUp()`、`localIP()`）は、Network ライブラリが持っています。使うスケッチは
+  `#include <Network.h>` も書きます。Network ライブラリは Ethernet の MAC を持つ系列（V208、V307 / V317、V407 / V467、
+  H41x）向けで、X035 では使えません。`beginNetwork()` を呼ばなければ、生の Ethernet フレームを扱うだけです。
+  これらの系列の USB デバイスのドライバはまだ無いので、実機では未確認です（PC での試験は `tests/unit/network`）。
+- **無いもの**: ファームウェア更新の各クラス（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
 - **ベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
   送ります（`onTxComplete()` で返るまで、バッファは触らず残してください）。EspUsbDevice と違い、ビルド時の設定は
   要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で直接読みます）。`onRxData()` も実行時に選べ、
@@ -100,7 +104,7 @@ void loop() {
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |
 | `CH32RVUsbDeviceMscSdCard` | SPI の SD カードを MSC の中身にする。`begin(cs, SPI)`、`attach(msc)`（`#include <CH32RVUsbDeviceMscSdCard.h>`） |
-| `CH32RVUsbDeviceNet` | USB ネットワーク（CDC-NCM）。`onFrame()`、`sendFrame()`、`macAddress()`、`linkUp()` |
+| `CH32RVUsbDeviceNet` | USB ネットワーク（CDC-NCM）。`onFrame()`、`sendFrame()`、`macAddress()`、`linkUp()`、受信の流量制御の `receiveGate()` / `resumeReceive()`。IP 層は上記 |
 | `CH32RVUsbAudioFunction` | オーディオ（UAC1 / UAC2）。`addPlaybackStream()` / `addCaptureStream()`、`read()` / `write()`、ミュート・音量、`pollEvent()`。録音側の `availableForWrite()` はこのライブラリの追加 |
 | `CH32RVUsbDeviceVideo` | カメラ（UVC）。`setFormat()`、`setFrameSize()`、`sendFrame()`、`onCommit()`。`onFillPayload()` / `sendGeneratedFrame()`（フレームを持たずに作る）はこのライブラリの追加 |
 | `CH32RVUsbDeviceDfuRuntime` | DFU_DETACH を受けて工場出荷の USB ISP ブートローダーに入る入口。DFU のランタイムインターフェースだけで、DFU モードやダウンロードはありません。**既定で付きます**（`config.dfuRuntime = false` で外す）。宣言するのは `onDetach()` を使うときだけ。インターフェース名 "CH32RV" が ch32rv の discovery の目印 |
@@ -158,7 +162,7 @@ IN/OUT の endpoint 数、packet memory、ISO 能力は controller ごとに異�
 | CCID | PC/SC の ATR/APDU。callback の応答に SW1/SW2 も含める |
 | Audio | 再生/録音アプリ。PCM format の一致と FIFO の読み書き |
 | Video | 対応する解像度・YUY2と転送方式を選べる UVC アプリ |
-| NCM | NIC と静的IP。IP処理はスケッチ側で実装 |
+| NCM | NIC と静的IP。IP 処理はスケッチ側（生フレーム）か、Network ライブラリ（`beginNetwork()`） |
 
 callback は関数ポインタで、受信 buffer は後の処理まで所有し続けるものではありません。
 保持が必要ならコピーし、Device callback の長い待ちや再入に頼らないでください。

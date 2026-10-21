@@ -3,7 +3,7 @@ network namespace, so no root is needed): makes tap0 at 10.9.0.1, starts
 dnsmasq for DHCP and DNS, starts the test sketch, exercises it and prints one
 JSON line of results.
 
-  python3 -I net_driver.py <sketch binary> <static|dhcpc|dhcps>
+  python3 -I net_driver.py <sketch binary> <static|dhcpc|dhcps|ncm>
 
 LINK_* in the environment shapes the emulated link (host/link.c). With
 LINK_LOSS_PPM set, datagram tests allow for the loss and commands are
@@ -260,7 +260,7 @@ def dns_lookup():
     return {"ok": reply == "DNS 10.9.0.99", "reply": reply}
 
 
-if ip_line and MODE == "dhcps":
+if ip_line and MODE in ("dhcps", "ncm"):
     run("dhcp_server", dhcp_server, 120)
 if ip_line:
     run("ping", ping, 30)

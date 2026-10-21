@@ -4,6 +4,8 @@
  *   STACK_MODE=static  10.9.0.2/24, gateway and DNS 10.9.0.1
  *   STACK_MODE=dhcpc   DHCP (the test runs dnsmasq)
  *   STACK_MODE=dhcps   static 10.9.0.2 and a DHCP server: 10.9.0.3-6, DNS 10.9.0.53 offered, no router
+ *   STACK_MODE=ncm     the same as dhcps through CH32RVUsbDeviceNet's EspUsbDevice-style calls,
+ *                      on host/CH32RVUsbDevice.h's stand-in for the USB function
  *
  *   stdout "IP a.b.c.d" once there is an address
  *   UDP 7 echo; TCP 7 echo; TCP 9 discard ("DISCARD <bytes>" when the peer closes);
@@ -12,6 +14,7 @@
  *             "D <name>" -> "DNS a.b.c.d" / "DNSFAIL"
  */
 #include <Network.h>
+#include <NetworkUsbNcm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +22,8 @@
 #include "host/link.h"
 
 static TapInterface tap;
+static CH32RVUsbDeviceNet ncm;
+static NetworkInterface *ifc = &tap;
 static NetworkUDP udpEcho, command;
 static NetworkServer echoServer(7, 4), discardServer(9, 2), sourceServer(19, 2);
 static NetworkClient echoClients[4];
@@ -30,19 +35,33 @@ void setup()
 {
     setvbuf(stdout, nullptr, _IOLBF, 0);
     const char *mode = getenv("STACK_MODE");
-    if (mode && (!strcmp(mode, "static") || !strcmp(mode, "dhcps"))) {
-        tap.config(IPAddress(10, 9, 0, 2), IPAddress(10, 9, 0, 1), IPAddress(255, 255, 255, 0), IPAddress(10, 9, 0, 1));
-    }
-    if (mode && !strcmp(mode, "dhcps")) {
-        tap.dhcpDns(IPAddress(10, 9, 0, 53));
-        if (!tap.dhcpServer(true, 4)) {
-            printf("DHCPS FAIL\n");
+    if (mode && !strcmp(mode, "ncm")) {
+        /* As an EspUsbDevice sketch would. */
+        ncm.ipConfig(IPAddress(10, 9, 0, 2), IPAddress(10, 9, 0, 1), IPAddress(255, 255, 255, 0));
+        ncm.dhcpServer(true);
+        ncm.dhcpDns(IPAddress(10, 9, 0, 53));
+        ncm.begin();
+        if (!ncm.beginNetwork()) {
+            printf("BEGIN FAIL\n");
+            exit(1);
         }
-    }
-    static const uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x02};
-    if (!tap.begin("tap0", mac)) {
-        printf("BEGIN FAIL\n");
-        exit(1);
+        ifc = ncm.networkInterface();
+        ifc->dnsIP(0, IPAddress(10, 9, 0, 1));   /* the sketch's own lookups go to the test's dnsmasq */
+    } else {
+        if (mode && (!strcmp(mode, "static") || !strcmp(mode, "dhcps"))) {
+            tap.config(IPAddress(10, 9, 0, 2), IPAddress(10, 9, 0, 1), IPAddress(255, 255, 255, 0), IPAddress(10, 9, 0, 1));
+        }
+        if (mode && !strcmp(mode, "dhcps")) {
+            tap.dhcpDns(IPAddress(10, 9, 0, 53));
+            if (!tap.dhcpServer(true, 4)) {
+                printf("DHCPS FAIL\n");
+            }
+        }
+        static const uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x02};
+        if (!tap.begin("tap0", mac)) {
+            printf("BEGIN FAIL\n");
+            exit(1);
+        }
     }
     udpEcho.begin(7);
     command.begin(9999);
@@ -168,9 +187,9 @@ static void serveCommands()
 
 void loop()
 {
-    if (!reported && tap.hasIP()) {
+    if (!reported && ifc->hasIP()) {
         reported = true;
-        printf("IP %s\n", tap.localIP().toString().c_str());
+        printf("IP %s\n", ifc->localIP().toString().c_str());
     }
     if (udpEcho.parsePacket() > 0) {
         uint8_t buf[1500];

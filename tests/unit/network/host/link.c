@@ -16,6 +16,9 @@ typedef struct { item_t q[QN]; unsigned head, tail; uint64_t busy_until; unsigne
 static dir_t up, down;          /* up: stack -> host, down: host -> stack */
 static int fd = -1;
 static link_rx_t rx_cb;
+static int (*rx_ready)(void);
+
+void link_rx_gate(int (*ready)(void)) { rx_ready = ready; }
 static long kbps, delay_us, loss_ppm, reorder_ppm;
 static uint64_t rng = 88172645463325252ull;
 
@@ -74,7 +77,7 @@ void link_poll(void)
         if (write(fd, it->d, it->len) < 0) { /* host queue full */ }
         up.head++;
     }
-    while (down.head != down.tail && down.q[down.head % QN].at <= now) {
+    while (down.head != down.tail && down.q[down.head % QN].at <= now && (!rx_ready || rx_ready())) {
         item_t *it = &down.q[down.head % QN];
         down.head++;
         rx_cb(it->d, it->len);

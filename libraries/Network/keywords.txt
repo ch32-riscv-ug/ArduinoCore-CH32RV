@@ -8,6 +8,7 @@ NetworkInterface	KEYWORD1
 NetworkClient	KEYWORD1
 NetworkServer	KEYWORD1
 NetworkUDP	KEYWORD1
+NetworkUsbNcm	KEYWORD1
 
 hostByName	KEYWORD2
 dhcpServer	KEYWORD2

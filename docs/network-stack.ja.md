@@ -56,11 +56,10 @@
 4. DHCP サーバー。**済み**(自前。TinyUSB の dhserver は使わない)
 5. PC の tap での試験を、テストの仕組み(tests/)に入れる。**済み**(`tests/unit/network`)
 6. 系列ごとの `lwipopts.h` と、クロスビルドでの大きさの確認。**済み**(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)
-7. USB の NCM(デバイス)のつなぎ込み。
+7. USB の NCM(デバイス)のつなぎ込み。**済み**(案 B: `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出し、中身は Network ライブラリの `NetworkUsbNcm`。PC と X035 の生フレームの試験まで。対象の系列の USB デバイスのドライバ待ち)
 8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。
 9. 段 3 以降。
 
 ## 決めていないこと
 
 - 段 4 以降の採否(段 2、3 を測ってから)。
-- USB の NCM のつなぎ方。EspUsbDevice は NCM のクラスに `beginNetwork()` を持たせています。`CH32RVUsbDevice` が Network ライブラリに依存しないようにするか(つなぎの小さなクラスを Network 側に置くなど)は、手順 7 で決めます。

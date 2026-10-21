@@ -168,11 +168,16 @@ uint8_t NetworkInterface::subnetCIDR() const
     return bits;
 }
 
+/* Reached only through dhcpServer(): a sketch that never runs a server does
+ * not link it. */
+static NetworkDhcpServer *(*dhcps_start)(struct netif *, uint32_t, uint8_t, uint32_t, uint32_t);
+
 bool NetworkInterface::dhcpServer(bool enable, uint8_t leases)
 {
     if (enable && (!_ip || !leases)) {
         return false;   /* the server needs a static address to hand out after */
     }
+    dhcps_start = NetworkDhcpServer::start;
     _dhcpsLeases = enable ? leases : 0;
     dhcpServerApply();
     return true;
@@ -203,11 +208,11 @@ void NetworkInterface::dhcpServerApply()
         _dhcps->stop();
         _dhcps = nullptr;
     }
-    if (!_netif || !_dhcpsLeases || !_ip) {
+    if (!_netif || !_dhcpsLeases || !_ip || !dhcps_start) {
         return;
     }
     const uint32_t router = _dhcpsGateway ? (_gateway ? _gateway : _ip) : 0;
-    _dhcps = NetworkDhcpServer::start(_netif, lwip_ntohl(_ip) + 1, _dhcpsLeases, router, _dhcpsDns);
+    _dhcps = dhcps_start(_netif, lwip_ntohl(_ip) + 1, _dhcpsLeases, router, _dhcpsDns);
 }
 
 struct netif *NetworkInterface::netif() const
@@ -376,6 +381,12 @@ void NetworkInterface::netifStop()
 
 void NetworkInterface::frameReceived(const uint8_t *frame, size_t length)
 {
+    frameReceived(frame, length, nullptr, 0);
+}
+
+void NetworkInterface::frameReceived(const uint8_t *first, size_t firstLength, const uint8_t *second, size_t secondLength)
+{
+    const size_t length = firstLength + secondLength;
     if (!_netif || length > 0xFFFF) {
         return;
     }
@@ -383,7 +394,10 @@ void NetworkInterface::frameReceived(const uint8_t *frame, size_t length)
     if (!p) {
         return;   /* out of receive buffers: dropped, as a NIC would */
     }
-    pbuf_take(p, frame, (u16_t)length);
+    pbuf_take(p, first, (u16_t)firstLength);
+    if (secondLength) {
+        pbuf_take_at(p, second, (u16_t)secondLength, (u16_t)firstLength);
+    }
     if (_netif->input(p, _netif) != ERR_OK) {
         pbuf_free(p);
     }

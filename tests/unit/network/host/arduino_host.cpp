@@ -22,6 +22,9 @@ extern "C" void delay(unsigned long ms)
 {
     const unsigned long t = millis();
     while (millis() - t < ms) {
+        if (ch32rv_usb_task) {
+            ch32rv_usb_task();
+        }
         if (ch32rv_net_task) {
             ch32rv_net_task();
         }
@@ -64,6 +67,9 @@ int main()
     for (;;) {
         loop_started = millis();
         loop();
+        if (ch32rv_usb_task) {
+            ch32rv_usb_task();
+        }
         if (ch32rv_net_task) {
             ch32rv_net_task();
         }

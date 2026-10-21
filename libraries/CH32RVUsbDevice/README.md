@@ -67,8 +67,15 @@ Differences:
   the sketch's own through `setBuffers()`.
 - **Disks are objects the MSC class reads from** (`setStorage()`; `attach()`
   does it), not lambdas bound to `onRead()`.
-- **Not here**: the firmware-update classes, the network IP layer (no IP
-  stack in this core: `CH32RVUsbDeviceNet` exchanges raw Ethernet frames).
+- **The network's IP layer** (`ipConfig()`, `dhcpServer()`, `dhcpClient()`,
+  `dhcpAdvertiseGateway()`, `dhcpDns()`, `defaultRoute()`, `beginNetwork()`,
+  `networkUp()`, `localIP()`) comes from the Network library: a sketch using it
+  includes `<Network.h>` too. That library is for the series with an Ethernet
+  MAC (V208, V307/V317, V407/V467, H41x), not the X035. Without
+  `beginNetwork()` the function exchanges raw Ethernet frames. Those series
+  have no USB device driver yet, so this is tested on the host only
+  (`tests/unit/network`).
+- **Not here**: the firmware-update classes.
 - **The vendor class's direct path (`writeDirect()`) works on every series**:
   one transfer straight from the caller's buffer, which stays untouched until
   `onTxComplete()` reports it. No build flag and no alignment rule (the USBSS
@@ -163,7 +170,7 @@ loop and during delay; call device.task inside long processing loops.
 | CCID | PC/SC ATR and APDU; device responses include SW1/SW2 |
 | Audio | Playback/recording with the advertised PCM format |
 | Video | UVC viewer supporting the resolution, YUY2 and transport |
-| NCM | A NIC and static IP; application implements IP handling |
+| NCM | A NIC and static IP; IP handled by the sketch (raw frames) or the Network library (`beginNetwork()`) |
 
 The MIDIController sketch maps 12-bit readings while the core defaults to
 10 bits; its README explains how to use the full CC range. AudioSpeaker counts

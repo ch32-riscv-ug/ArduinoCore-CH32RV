@@ -80,8 +80,10 @@ protected:
 
     bool netifStart(const uint8_t mac[6], uint16_t mtu = 1500);
     void netifStop();
-    /* A received frame, copied in. Task context only. */
+    /* A received frame, copied in. Task context only. The second form takes a
+     * frame in two pieces (the end and the start of a ring). */
     void frameReceived(const uint8_t *frame, size_t length);
+    void frameReceived(const uint8_t *first, size_t firstLength, const uint8_t *second, size_t secondLength);
     void setLinkUp(bool up);
 
 private:
