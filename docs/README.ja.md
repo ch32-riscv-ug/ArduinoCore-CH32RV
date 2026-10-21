@@ -30,6 +30,7 @@
 | [board-layer-rules.ja.md](board-layer-rules.ja.md) | series、part、製品 board、sketch の責務 |
 | [timer-design.ja.md](timer-design.ja.md) | SysTick/TIM の所有権と競合規則 |
 | [usb-superspeed-design.ja.md](usb-superspeed-design.ja.md) | CH32H417 の SS 対応に必要な共通層・ドライバ・Arduino 側の改修と、既存 TinyUSB PR の採用検討 |
+| [h417-bench.ja.md](h417-bench.ja.md) | CH32H417 評価ボードで SS を挿したまま書き込みと復旧を回す手順、やってはいけないこと |
 | [software-peripherals.ja.md](software-peripherals.ja.md) | SoftSPI / SoftWire 等の採用基準 |
 | [toolchain.ja.md](toolchain.ja.md) | compiler と C/C++ runtime の固定方針 |
 | [vendor-policy.ja.md](vendor-policy.ja.md) | 第三者ソースの取込、lock、license |
