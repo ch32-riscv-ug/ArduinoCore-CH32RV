@@ -6,6 +6,10 @@
  *   ready <nonce>   READY <nonce> <build id> <USB started 0/1> <last error>
  *   file            FILE <size> <first line of HOST.TXT>, or FILE NONE
  *   card            CARD <present 0/1> <powered 0/1> <APDUs answered>
+ *   events          EVENTS <configured> <resets> <observed requests> <ACKs>
+ *                   <configuration length> <VID:PID from deviceDescriptor()>
+ *                   <HID report length> - onBusEvent(), onAnyControlRequest()
+ *                   and the descriptor getters
  *   vmode fifo|direct   VMODE <mode> <direct transfers completed>: how the
  *                   vendor bulk echo goes - read() / write() through the class
  *                   FIFOs (the default), or onRxData() handing each OUT
@@ -38,6 +42,8 @@ static char line[80];
 static uint8_t used;
 
 /* The direct echo: one OUT transfer at a time, back as one IN transfer. */
+static uint32_t configuredEvents, resetEvents, observed, acks;
+
 static uint8_t echo[64];
 static volatile bool echoBusy;
 static uint32_t directDone;
@@ -127,6 +133,14 @@ static void reply(const char *command)
         SerialDMSeq.print(ccid.cardPowered() ? 1 : 0);
         SerialDMSeq.print(' ');
         SerialDMSeq.println((unsigned long)ccid.apduCount());
+    } else if (strcmp(command, "events") == 0) {
+        const uint8_t *cfg = USBDevice.configurationDescriptor(0);
+        const uint16_t cfgLen = cfg ? (uint16_t)(cfg[2] | cfg[3] << 8) : 0;
+        const uint8_t *dev = USBDevice.deviceDescriptor();
+        SerialDMSeq.printf("EVENTS %lu %lu %lu %lu %u %04x:%04x %u\r\n", (unsigned long)configuredEvents,
+                           (unsigned long)resetEvents, (unsigned long)observed, (unsigned long)acks, cfgLen,
+                           dev ? (unsigned)(dev[8] | dev[9] << 8) : 0u, dev ? (unsigned)(dev[10] | dev[11] << 8) : 0u,
+                           USBDevice.hidReportDescriptorLength());
     } else if (strncmp(command, "vmode ", 6) == 0) {
         set_mode(strcmp(command + 6, "direct") == 0);
         SerialDMSeq.print("VMODE ");
@@ -155,6 +169,19 @@ void setup()
     config.webusbEnabled = true;
     config.webusbUrl = "https://example.com/ch32rv";
     config.deviceInterfaceGuid = "{0B1C2D3E-4F50-6172-8394-A5B6C7D8E9F0}";
+    USBDevice.onBusEvent([](CH32RVUsbBusEvent e) {
+        if (e == CH32RVUsbBusEvent::Configured) {
+            configuredEvents++;
+        } else if (e == CH32RVUsbBusEvent::Reset) {
+            resetEvents++;
+        }
+    });
+    USBDevice.onAnyControlRequest([](const CH32RVUsbDeviceControlRequestInfo &r) {
+        observed++;
+        if (r.stage == CH32RV_USB_DEVICE_CONTROL_STAGE_ACK) {
+            acks++;
+        }
+    });
     USBDevice.begin(config);
 }
 

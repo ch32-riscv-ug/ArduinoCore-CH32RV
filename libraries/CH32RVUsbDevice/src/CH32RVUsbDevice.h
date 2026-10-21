@@ -149,6 +149,32 @@ struct CH32RVUsbDeviceConfig {
     CH32RVUsbController controller = CH32RVUsbController::Auto;
 };
 
+/* One control request, as onAnyControlRequest() reports it
+ * (EspUsbDeviceControlRequestInfo). stage: CH32RV_USB_DEVICE_CONTROL_STAGE_*. */
+struct CH32RVUsbDeviceControlRequestInfo {
+    uint8_t rhport = 0;
+    uint8_t stage = 0;
+    uint8_t bmRequestType = 0;
+    uint8_t bRequest = 0;
+    uint16_t wValue = 0;
+    uint16_t wIndex = 0;
+    uint16_t wLength = 0;
+    /* At ACK: the bytes of the data stage the device answered (IN), 0 when
+     * none. */
+    uint16_t responseLength = 0;
+    /* At SETUP: someone answered it (false: it was stalled). At ACK: true. */
+    bool handled = false;
+};
+
+/* What happened on the bus, as onBusEvent() reports it. */
+enum class CH32RVUsbBusEvent : uint8_t {
+    Reset,          /* a bus reset: the configuration is gone */
+    Configured,     /* SET_CONFIGURATION 1: mounted() is now true */
+    Unconfigured,   /* SET_CONFIGURATION 0 */
+    Suspended,
+    Resumed,
+};
+
 enum class CH32RVUsbDeviceError : uint8_t {
     None = 0,
     Unsupported,          /* no USB device support on this series (yet) */
@@ -396,6 +422,47 @@ public:
     /* The largest packet the controller's endpoints hold (once begun; before,
      * the series' largest). */
     uint16_t maxPacketSize() const { return _maxPacket; }
+
+    /* --- what the host is shown (EspUsbDevice's names) ---
+     * Built when asked, the way the host would get them now, into one shared
+     * heap buffer: a pointer stays valid until the next call of any of these
+     * that builds (configuration, other-speed, BOS, MS OS 2.0, HID report).
+     * nullptr before begin(), when there is no such descriptor, or when the
+     * heap is out. Nothing of this is kept or linked unless a sketch calls
+     * it. */
+    const uint8_t *deviceDescriptor();
+    /* index 0 (the one configuration), at the speed in use - full speed
+     * before a host chose. Its length is bytes 2-3. */
+    const uint8_t *configurationDescriptor(uint8_t index = 0);
+    const uint8_t *configurationDescriptorForSpeed(uint8_t index, bool highSpeed);
+    const uint8_t *configurationDescriptorFor(CH32RVUsbSpeed speed);
+    /* High-speed capable devices only (nullptr otherwise). */
+    const uint8_t *deviceQualifierDescriptor();
+    const uint8_t *otherSpeedConfigurationDescriptor(uint8_t index, bool currentHighSpeed);
+    const uint8_t *bosDescriptor();
+    uint16_t bosDescriptorLength();
+    const uint8_t *microsoftOs20Descriptor();
+    uint16_t microsoftOs20DescriptorLength();
+    /* UTF-16LE, element 0 is (3 << 8) | length in bytes, as TinyUSB's. langid
+     * is not looked at: there is one language (0x0409). Valid until the next
+     * stringDescriptor() call. */
+    const uint16_t *stringDescriptor(uint8_t index, uint16_t langid = 0x0409);
+    /* The HID interface's report descriptor (merged when several classes
+     * share it); instance 0 - there is one HID interface. */
+    const uint8_t *hidReportDescriptor(uint8_t instance = 0);
+    uint16_t hidReportDescriptorLength(uint8_t instance = 0);
+
+    typedef CH32RVCallback<void(const CH32RVUsbDeviceControlRequestInfo &)> ControlRequestObserver;
+    /* Watch control requests, including those the library answers itself
+     * (EspUsbDevice::onAnyControlRequest): at SETUP for every vendor request
+     * (handled false when it was stalled), at ACK for every control transfer
+     * that completes. Only an observer; it runs where the stack runs. */
+    void onAnyControlRequest(ControlRequestObserver observer);
+
+    typedef CH32RVCallback<void(CH32RVUsbBusEvent)> BusEventCallback;
+    /* Reset, configured / unconfigured, suspended / resumed - from the stack's
+     * task, in normal context. */
+    void onBusEvent(BusEventCallback callback);
 
 private:
     CH32RVUsbDeviceFunction *_first = nullptr;   /* the functions, in declaration order */

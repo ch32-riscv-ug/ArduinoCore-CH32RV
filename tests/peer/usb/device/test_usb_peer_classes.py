@@ -20,6 +20,16 @@ def test_usb_peer_classes(dut, peers):
     # Vendor bulk echoes; vendor request 0x10 answers "CH32".
     data = secrets.token_bytes(48)
     assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
+    # onBusEvent() saw the configuration, onAnyControlRequest() the enumeration's
+    # transfers; the descriptor getters give the device's own VID:PID and a
+    # configuration of the length the S3 read (no HID here: 0).
+    dut.write("events\n")
+    m = dut.expect(rb"EVENTS (\d+) (\d+) (\d+) (\d+) (\d+) (\w{4}):(\w{4}) (\d+)\r?\n", timeout=5)
+    assert int(m.group(1)) >= 1 and int(m.group(2)) >= 1
+    assert int(m.group(4)) >= 5 and int(m.group(3)) >= int(m.group(4))
+    assert int(m.group(5)) > 9 * 5
+    assert (m.group(6).decode(), m.group(7).decode()) == (dev["vid"], dev["pid"])
+    assert int(m.group(8)) == 0
     # The same echo through onRxData() and writeDirect(), completions counted
     # by a capturing lambda; then back to the class FIFOs.
     dut.write("vmode direct\n")

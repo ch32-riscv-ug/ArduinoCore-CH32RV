@@ -82,6 +82,7 @@ On X035/X033, 1200-bps touch or DFU_DETACH enters WCH ISP. Avoid 1200 baud durin
 | [CompositeHidCdcMsc](CompositeHidCdcMsc/README.md) | A composite keyboard, CDC port and ten-KiB FAT RAM disk, with keyboard input commanded over CDC. |
 | [CustomDevice](CustomDevice/README.md) | A configurable composite device combining CDC, DFU runtime and Vendor HID, with a HID output-to-input echo. |
 | [CustomHID](CustomHID/README.md) | A custom report descriptor defining an eight-byte input-only HID report. |
+| [DescriptorDump](DescriptorDump/README.md) | Prints the descriptors the host is shown (device, configuration, BOS, MS OS 2.0, strings, HID) and every control request and bus event on the UART. |
 | [DfuRuntime](DfuRuntime/README.md) | A CDC-free DFU runtime upload entry. Holding PA1 low makes `onDetach()` refuse the transition. |
 | [Gamepad](Gamepad/README.md) | Generated HID gamepad input with six axes, a hat and a button bitmap. |
 | [Keyboard](Keyboard/README.md) | A USB keyboard sending text, JIS symbols and a raw HID usage, while receiving Lock LED output reports. |

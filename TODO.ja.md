@@ -654,7 +654,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
           configured にならないと FS に移る（UART / CDC のコマンドでも切り替える。scratch の UsbFallback.h）。
       - USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
       - USBFS は済み（CH32RVUsbDcdUsbfsOtg）。DFU での書き換えも済み（ch32rv_flash）。
-        - DFU を Arduino の upload に組み込む（dfu-util を同梱するか、ch32rv に DFU を足すか）。
+        - DFU を Arduino の upload に組み込む: 済み（ch32rv の `boot dfu flash`、platform.txt の ch32rv_dfu。
+          ch32rv の次のリリースを待って版を上げる）。
       - USBSS のホスト。
       - 既定のクロックは HSI×16 の 400 MHz、V3F（F_CPU）は 100 MHz にした（2026-10-21、EVT の
         SetSYSCLK_400M_CoreCLK_V5F_400M_V3F_100M_HSI と同じ）。25 MHz では USBSS の EP0 の 96 バイト目以降で
@@ -727,11 +728,14 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     土台は「永続化」の項で作るので、それと USB スタック・タスク周りの入れ替えのあとに取りかかる。工場出荷の ISP より得があるのは、読み出し保護をかけたまま更新
     したいとき、道具を入れずにドラッグ＆ドロップ（UF2）で更新させたいとき、署名の確かめや A/B の巻き戻しが要るとき、
     USB 以外（ネットワークなど）から更新したいとき。下地に Flash の自己書き換えが要る。
-  - EspUsbDevice との差（2026-10-20 の洗い出し）: `onAnyControlRequest()`、記述子を取り出す API
-    （`deviceDescriptor()` / `configurationDescriptor()` / `stringDescriptor()` / `hidReportDescriptor()` ほか。
-    Info の例 3 本がこれを使う）、マウント / サスペンドのイベント、コールバックのユーザーデータ。ホストは
-    Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
-- DFU_DETACH の応答がホスト側で STALL になる原因を調べる。
+  - EspUsbDevice との差（2026-10-20 の洗い出し）。デバイスの側は 2026-10-21 に埋めた: `onAnyControlRequest()`、
+    記述子を取り出す API（`deviceDescriptor()` / `configurationDescriptor()` / `stringDescriptor()` /
+    `hidReportDescriptor()` ほか）、バスのイベント（`onBusEvent()`）、コールバックのユーザーデータ（`CH32RVCallback`
+    の取り込み）。X035 の usb-peer-classes で確認。残り: Info の例 3 本の移植、ホストの Audio / Video / Network、
+    複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
+- DFU_DETACH の応答がホスト側で STALL になる原因を調べる。見込み（2026-10-21）: ブートローダーへ移る前の 20 ms の
+  待ちが、印に `millis() | 1` を使っていたため 0 ms になることがあり、ステータス段の応答の前に抜けていた
+  （85f96bb で直した）。H417 では、その後の DETACH → DFU を 10 回ほど続けて通した。PC ホストの X035 で確かめれば閉じられる。
 - **USB デバイスを自作のスタックへ移す（2026-10-20 に自作と決めた。ADR-0012 の追記）。** X035 で先行し、ほかの系列の
   拡張点（`CH32RVUsbDcd.h` のドライバの表、`CH32RVUsbDevicePort.h`）と FS / HS / SS を見込んで作る。
   - 済み: コア（EP0・標準要求・SS の要求と BOS・速度ごとのディスクリプタと SS のコンパニオン）、X035 / X033 の

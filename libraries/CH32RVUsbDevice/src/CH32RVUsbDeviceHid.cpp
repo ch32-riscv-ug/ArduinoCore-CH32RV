@@ -391,10 +391,29 @@ public:
 
 static HidInterface *hid;
 
+/* hidReportDescriptor(): the merged or single report descriptor, written to
+ * `w` (nullptr: only its length). */
+static uint16_t hid_report(CH32RVUsbDescriptorWriter *w)
+{
+    if (!hid || hid->count == 0) {
+        return 0;
+    }
+    const uint16_t n = hid->reportLength();
+    if (w && n) {
+        if (hid->composite()) {
+            hid->merge(*w);
+        } else {
+            w->put(hid->first->hidReportDescriptor(), n);
+        }
+    }
+    return n;
+}
+
 static HidInterface &interface_for(CH32RVUsbDevice &device)
 {
     static HidInterface shared(device);             /* one device per sketch */
     hid = &shared;
+    ch32rv_usb_hid_report = hid_report;
     return shared;
 }
 

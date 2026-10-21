@@ -73,8 +73,13 @@ void loop() {
 - **DFU ランタイムが既定で付きます。** `config.dfuRuntime = false` で外せます。
   このコアは WCH ISP への入口として使い、EspUsbDevice の OTA/DFU download とは仕組みが異なります。
   ISP への移行実装は現在 X035/X033 のみで、ほかの系列では通常 reset です。
+- **記述子を取り出す API は同じ名前です**（`deviceDescriptor()`、`configurationDescriptor()`、`stringDescriptor()`、
+  `bosDescriptor()`、`microsoftOs20Descriptor()`、`hidReportDescriptor()` など）。このライブラリは記述子を常駐させず、
+  呼ばれたときに 1 つの共有のヒープのバッファへ組み立てます。返したポインタは、次に同じ種類の API を呼ぶまで有効です。
+  `onAnyControlRequest()` も同じ動きです（ベンダー要求は SETUP で、すべての制御転送は ACK で知らせる）。
 - **このライブラリだけのもの**: `CH32RVUsbDeviceDfuRuntime`（ISP への入口）、`SerialUSB` / `USBDevice` の定義済み
-  オブジェクト、`enterBootloader()`。
+  オブジェクト、`enterBootloader()`、`onBusEvent()`（リセット・構成・構成の解除・サスペンド・レジューム）、
+  `configurationDescriptorFor(CH32RVUsbSpeed)`。
 
 ## クラス
 

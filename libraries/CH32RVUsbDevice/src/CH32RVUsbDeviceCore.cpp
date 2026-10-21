@@ -62,6 +62,11 @@ struct CH32RVUsbDeviceCore {
     static CH32RVUsbDeviceFunction *interface_owner(uint8_t itf);
     static void ep0_done(bool in, uint16_t length);
     static void task();
+
+    /* onAnyControlRequest() / onBusEvent(). */
+    static CH32RVUsbDevice::ControlRequestObserver observer;
+    static CH32RVUsbDevice::BusEventCallback bus_event;
+    static void observe(uint8_t stage, bool handled, uint16_t response);
 };
 
 CH32RVUsbDevice *CH32RVUsbDeviceCore::device;
@@ -91,8 +96,26 @@ CH32RVUsbDeviceFunction *CH32RVUsbDeviceCore::ep_owner[MAX_EP];
 uint16_t CH32RVUsbDeviceCore::busy_in, CH32RVUsbDeviceCore::busy_out, CH32RVUsbDeviceCore::halt_in,
     CH32RVUsbDeviceCore::halt_out;
 volatile bool CH32RVUsbDeviceCore::bootloader;
+CH32RVUsbDevice::ControlRequestObserver CH32RVUsbDeviceCore::observer;
+CH32RVUsbDevice::BusEventCallback CH32RVUsbDeviceCore::bus_event;
+
+
 
 typedef CH32RVUsbDeviceCore Core;
+
+void Core::observe(uint8_t stage, bool handled, uint16_t response)
+{
+    CH32RVUsbDeviceControlRequestInfo info;
+    info.stage = stage;
+    info.bmRequestType = req.bmRequestType;
+    info.bRequest = req.bRequest;
+    info.wValue = req.wValue;
+    info.wIndex = req.wIndex;
+    info.wLength = req.wLength;
+    info.responseLength = response;
+    info.handled = handled;
+    observer(info);
+}
 
 #define EV_RESET   0x01
 #define EV_SETUP   0x02
@@ -102,7 +125,7 @@ typedef CH32RVUsbDeviceCore Core;
 /* One EP0 packet of a generated answer. */
 static uint8_t ep0_packet[ch32rv_usb_series_can(CH32RVUsbSpeed::Super) ? 512 : 64] __attribute__((aligned(4)));
 static uint8_t desc_device[18];
-static uint8_t desc_string[2 + 2 * 32];
+static uint8_t desc_string[2 + 2 * 32] __attribute__((aligned(2)));   /* stringDescriptor() hands it out as uint16_t */
 static void build_device_descriptor(const CH32RVUsbDeviceConfig &c);
 
 /* A SuperSpeed device needs a BOS even without the platform descriptors: the
@@ -518,6 +541,7 @@ void Core::handle_setup()
     owner = nullptr;
     answered = false;
     gen_fill = nullptr;
+    in_length = 0;
     ep0 = IDLE;
     bool ok = false;
     const uint8_t type = s.bmRequestType & 0x60, recipient = s.bmRequestType & 0x1F;
@@ -534,6 +558,9 @@ void Core::handle_setup()
         /* A vendor request to the device: the WebUSB / MS OS 2.0 descriptors
          * and CH32RVUsbDeviceVendor::onControlRequest. */
         ok = ch32rv_usb_platform.request(CH32RVUsbControlStage::Setup, s) && answered;
+    }
+    if (observer && type == 0x40) {
+        observe(CH32RV_USB_DEVICE_CONTROL_STAGE_SETUP, ok, 0);
     }
     if (!ok) {
         dcd->ep0Stall();
@@ -588,6 +615,9 @@ void Core::ep0_done(bool in, uint16_t length)
         } else if ((req.bmRequestType & 0x60) == 0x40 && ch32rv_usb_platform.request) {
             ch32rv_usb_platform.request(CH32RVUsbControlStage::Ack, req);
         }
+        if (observer) {
+            observe(CH32RV_USB_DEVICE_CONTROL_STAGE_ACK, true, (req.bmRequestType & 0x80) ? in_length : 0);
+        }
     }
 }
 
@@ -606,18 +636,33 @@ void Core::task()
     done_in = done_out = 0;
     interrupts();
 
+    bool was_configured = configured;
     if (e & EV_RESET) {
         reset_state();
+        was_configured = false;
+        if (bus_event) {
+            bus_event(CH32RVUsbBusEvent::Reset);
+        }
     }
     if (e & EV_SUSPEND) {
         suspended = true;
+        if (bus_event) {
+            bus_event(CH32RVUsbBusEvent::Suspended);
+        }
     }
     if (e & EV_RESUME) {
         suspended = false;
+        if (bus_event) {
+            bus_event(CH32RVUsbBusEvent::Resumed);
+        }
     }
     if (e & EV_SETUP) {
         memcpy(setup_raw, s, 8);
         handle_setup();
+    }
+    /* SET_CONFIGURATION answered just now. */
+    if (bus_event && configured != was_configured) {
+        bus_event(configured ? CH32RVUsbBusEvent::Configured : CH32RVUsbBusEvent::Unconfigured);
     }
     if (dout & 1u) {
         ep0_done(false, len_out[0]);
@@ -960,3 +1005,176 @@ uint8_t CH32RVUsbDevice::maxCdcPorts()
     return 4;
 }
 
+/* ------------------------------------------------------------ descriptors for the sketch */
+/* One heap buffer for every descriptor built on request, grown as needed. */
+static uint8_t *scratch;
+static uint16_t scratch_size;
+
+static uint8_t *scratch_for(uint16_t n)
+{
+    if (n > scratch_size) {
+        uint8_t *p = (uint8_t *)realloc(scratch, n);
+        if (!p) {
+            return nullptr;
+        }
+        scratch = p;
+        scratch_size = n;
+    }
+    return scratch;
+}
+
+static const uint8_t *write_to_scratch(uint16_t n, void (*write)(CH32RVUsbDescriptorWriter &w))
+{
+    uint8_t *p = n ? scratch_for(n) : nullptr;
+    if (!p) {
+        return nullptr;
+    }
+    CH32RVUsbDescriptorWriter w;
+    w.out = p;
+    w.room = n;
+    write(w);
+    return p;
+}
+
+const uint8_t *CH32RVUsbDevice::deviceDescriptor()
+{
+    if (!_started || Core::device != this) {
+        return nullptr;
+    }
+    build_device_descriptor(_config);                   /* the speed in use decides bcdUSB / EP0 */
+    return desc_device;
+}
+
+const uint8_t *CH32RVUsbDevice::configurationDescriptorFor(CH32RVUsbSpeed speed)
+{
+    if (!_started || Core::device != this || !ch32rv_usb_dcd_can(*Core::dcd, speed)) {
+        return nullptr;
+    }
+    CH32RVUsbDescriptorWriter count;
+    const uint16_t n = buildConfiguration(count, speed, 2);
+    uint8_t *p = n ? scratch_for(n) : nullptr;
+    if (!p) {
+        return nullptr;
+    }
+    CH32RVUsbDescriptorWriter w;
+    w.out = p;
+    w.room = n;
+    buildConfiguration(w, speed, 2);
+    return p;
+}
+
+const uint8_t *CH32RVUsbDevice::configurationDescriptor(uint8_t index)
+{
+    return index == 0 ? configurationDescriptorFor(_started ? Core::speed : CH32RVUsbSpeed::Full) : nullptr;
+}
+
+const uint8_t *CH32RVUsbDevice::configurationDescriptorForSpeed(uint8_t index, bool highSpeed)
+{
+    return index == 0 ? configurationDescriptorFor(highSpeed ? CH32RVUsbSpeed::High : CH32RVUsbSpeed::Full)
+                      : nullptr;
+}
+
+const uint8_t *CH32RVUsbDevice::deviceQualifierDescriptor()
+{
+    if (!_started || Core::device != this || !ch32rv_usb_dcd_can(*Core::dcd, CH32RVUsbSpeed::High)) {
+        return nullptr;
+    }
+    static uint8_t q[10];
+    build_device_descriptor(_config);
+    memcpy(q, desc_device, 8);
+    q[0] = 10;
+    q[1] = 6;
+    q[8] = 1;
+    q[9] = 0;
+    return q;
+}
+
+const uint8_t *CH32RVUsbDevice::otherSpeedConfigurationDescriptor(uint8_t index, bool currentHighSpeed)
+{
+    if (index != 0 || !_started || Core::device != this || !ch32rv_usb_dcd_can(*Core::dcd, CH32RVUsbSpeed::High)) {
+        return nullptr;
+    }
+    const CH32RVUsbSpeed other = currentHighSpeed ? CH32RVUsbSpeed::Full : CH32RVUsbSpeed::High;
+    CH32RVUsbDescriptorWriter count;
+    const uint16_t n = buildConfiguration(count, other, 7);
+    uint8_t *p = n ? scratch_for(n) : nullptr;
+    if (!p) {
+        return nullptr;
+    }
+    CH32RVUsbDescriptorWriter w;
+    w.out = p;
+    w.room = n;
+    buildConfiguration(w, other, 7);
+    return p;
+}
+
+uint16_t CH32RVUsbDevice::bosDescriptorLength()
+{
+    if (!_started || Core::device != this) {
+        return 0;
+    }
+    return ch32rv_usb_platform.bosLength ? ch32rv_usb_platform.bosLength : bos_length();
+}
+
+const uint8_t *CH32RVUsbDevice::bosDescriptor()
+{
+    const uint16_t n = bosDescriptorLength();
+    if (!n) {
+        return nullptr;
+    }
+    if (ch32rv_usb_platform.bosLength) {
+        return write_to_scratch(n, ch32rv_usb_platform.bosWrite);
+    }
+    return ss_bos;
+}
+
+uint16_t CH32RVUsbDevice::microsoftOs20DescriptorLength()
+{
+    return _started && Core::device == this ? ch32rv_usb_platform.msOs20Length : 0;
+}
+
+const uint8_t *CH32RVUsbDevice::microsoftOs20Descriptor()
+{
+    const uint16_t n = microsoftOs20DescriptorLength();
+    return n ? write_to_scratch(n, ch32rv_usb_platform.msOs20Write) : nullptr;
+}
+
+const uint16_t *CH32RVUsbDevice::stringDescriptor(uint8_t index, uint16_t langid)
+{
+    (void)langid;
+    if (!_started || Core::device != this) {
+        return nullptr;
+    }
+    return string_descriptor(index) ? reinterpret_cast<const uint16_t *>(desc_string) : nullptr;
+}
+
+uint16_t CH32RVUsbDevice::hidReportDescriptorLength(uint8_t instance)
+{
+    return instance == 0 && ch32rv_usb_hid_report ? ch32rv_usb_hid_report(nullptr) : 0;
+}
+
+const uint8_t *CH32RVUsbDevice::hidReportDescriptor(uint8_t instance)
+{
+    const uint16_t n = hidReportDescriptorLength(instance);
+    uint8_t *p = n ? scratch_for(n) : nullptr;
+    if (!p) {
+        return nullptr;
+    }
+    CH32RVUsbDescriptorWriter w;
+    w.out = p;
+    w.room = n;
+    ch32rv_usb_hid_report(&w);
+    return p;
+}
+
+uint16_t (*ch32rv_usb_hid_report)(CH32RVUsbDescriptorWriter *w);
+
+void CH32RVUsbDevice::onAnyControlRequest(ControlRequestObserver observer)
+{
+    Core::observer = observer;
+}
+
+void CH32RVUsbDevice::onBusEvent(BusEventCallback callback)
+{
+    Core::bus_event = callback;
+}

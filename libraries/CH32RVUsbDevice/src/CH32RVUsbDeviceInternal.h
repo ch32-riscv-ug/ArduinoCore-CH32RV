@@ -42,6 +42,10 @@ extern bool ch32rv_usb_bos_super;
  * indexes from CH32RV_USB_EXTRA_STRING up, answered by this hook. */
 #define CH32RV_USB_EXTRA_STRING 0xE0
 extern const char *(*ch32rv_usb_extra_string)(uint8_t index);
+
+/* The HID interface's report descriptor, for hidReportDescriptor(): set when
+ * a HID class exists. Writes it to `w`, returns its length (0: none). */
+extern uint16_t (*ch32rv_usb_hid_report)(CH32RVUsbDescriptorWriter *w);
 void ch32rv_usb_platform_use(void);
 
 /* Endpoint parameters by speed. Bulk: 64 bytes at full speed, 512 at high

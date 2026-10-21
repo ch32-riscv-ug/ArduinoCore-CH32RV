@@ -79,8 +79,16 @@ Differences:
 - **A DFU runtime interface comes by default**; `config.dfuRuntime = false`
   leaves it out. It enters WCH ISP on X035/X033; other series currently reset
   normally. This differs from EspUsbDevice OTA/DFU download support.
+- **The descriptor getters have the same names** (`deviceDescriptor()`,
+  `configurationDescriptor()`, `stringDescriptor()`, `bosDescriptor()`,
+  `microsoftOs20Descriptor()`, `hidReportDescriptor()` and the rest). Nothing
+  is kept resident: each call builds into one shared heap buffer, and a
+  pointer stays valid until the next such call. `onAnyControlRequest()`
+  behaves the same (vendor requests at SETUP, every control transfer at ACK).
 - **Only here**: `CH32RVUsbDeviceDfuRuntime` (the ISP entry), predefined
-  `SerialUSB` / `USBDevice`, `enterBootloader()`.
+  `SerialUSB` / `USBDevice`, `enterBootloader()`, `onBusEvent()` (reset,
+  configured, unconfigured, suspended, resumed),
+  `configurationDescriptorFor(CH32RVUsbSpeed)`.
 
 ## Classes
 
