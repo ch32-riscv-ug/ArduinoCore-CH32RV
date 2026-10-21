@@ -143,6 +143,7 @@ private:
     bool _outBusy = false, _inBusy = false, _zlp = false, _direct = false;
     uint8_t _subclass = 0, _protocol = 0;
     uint8_t *_rxData = nullptr;
+    uint8_t *_rxAt = nullptr;         /* where the OUT transfer in flight lands */
     uint16_t _rxDataSize = 0;
     uint16_t _endpointSize;
     RxCallback _onRx = nullptr;

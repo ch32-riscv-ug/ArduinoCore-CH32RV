@@ -127,6 +127,7 @@ void CH32RVUsbDeviceVendor::receive()
             room = _rxDataSize;
         }
         _outBusy = device().transfer(_ep, at, (uint16_t)(room / _packet * _packet));
+        _rxAt = at;
         return;
     }
     if (!_rxEnd && _rxHead == _rxTail) {
@@ -143,6 +144,7 @@ void CH32RVUsbDeviceVendor::receive()
         return;
     }
     _outBusy = device().transfer(_ep, _rx + _rxHead, _packet);
+    _rxAt = _rx + _rxHead;
 }
 
 void CH32RVUsbDeviceVendor::push()
@@ -168,8 +170,10 @@ void CH32RVUsbDeviceVendor::usbTransferred(uint8_t address, uint16_t length)
         _outBusy = false;
         if (_onRxData) {
             /* Handed over where it landed; the next transfer reuses the room. */
+            /* Where this transfer was armed: one armed before onRxData() was
+             * set lands at the FIFO's head, not at the buffer's start. */
             if (length) {
-                _onRxData(_rxData && _rxDataSize >= _packet ? _rxData : _rx, length);
+                _onRxData(_rxAt, length);
             }
             receive();
             return;

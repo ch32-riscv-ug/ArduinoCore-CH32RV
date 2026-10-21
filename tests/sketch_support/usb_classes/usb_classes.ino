@@ -6,7 +6,13 @@
  *   ready <nonce>   READY <nonce> <build id> <USB started 0/1> <last error>
  *   file            FILE <size> <first line of HOST.TXT>, or FILE NONE
  *   card            CARD <present 0/1> <powered 0/1> <APDUs answered>
+ *   vmode fifo|direct   VMODE <mode> <direct transfers completed>: how the
+ *                   vendor bulk echo goes - read() / write() through the class
+ *                   FIFOs (the default), or onRxData() handing each OUT
+ *                   transfer over and writeDirect() sending it back, its
+ *                   completion counted by a capturing onTxComplete() lambda
  *
+ * The vendor interface is 0xFF / 0x4F / 0x45 (setInterfaceProtocol()).
  * Over USB, without a command: vendor bulk echoes every byte; vendor request
  * 0x10 (IN) answers "CH32"; the FAT disk holds README.TXT; the card answers
  * an APDU with its bytes reversed followed by 90 00. */
@@ -30,6 +36,37 @@ static const uint8_t atr[] = {0x3B, 0x8A, 0x80, 0x01, 'C', 'H', '3', '2', 'R', '
 static CH32RVUsbDeviceConfig config;
 static char line[80];
 static uint8_t used;
+
+/* The direct echo: one OUT transfer at a time, back as one IN transfer. */
+static uint8_t echo[64];
+static volatile bool echoBusy;
+static uint32_t directDone;
+static bool directMode;
+
+static void direct_rx(const uint8_t *data, size_t length)
+{
+    if (echoBusy || length > sizeof echo) {
+        return;                                     /* the host sends one packet and waits for it */
+    }
+    memcpy(echo, data, length);
+    echoBusy = vendor.writeDirect(echo, length);
+}
+
+static void set_mode(bool direct)
+{
+    directMode = direct;
+    if (direct) {
+        uint32_t *done = &directDone;
+        vendor.onTxComplete([done](size_t) {
+            (*done)++;
+            echoBusy = false;
+        });
+        vendor.onRxData(direct_rx);
+    } else {
+        vendor.onRxData(nullptr);
+        vendor.onTxComplete(nullptr);
+    }
+}
 
 static bool vendorRequest(const CH32RVUsbDeviceVendorControlRequest &request)
 {
@@ -90,6 +127,11 @@ static void reply(const char *command)
         SerialDMSeq.print(ccid.cardPowered() ? 1 : 0);
         SerialDMSeq.print(' ');
         SerialDMSeq.println((unsigned long)ccid.apduCount());
+    } else if (strncmp(command, "vmode ", 6) == 0) {
+        set_mode(strcmp(command + 6, "direct") == 0);
+        SerialDMSeq.print("VMODE ");
+        SerialDMSeq.print(directMode ? "direct " : "fifo ");
+        SerialDMSeq.println((unsigned long)directDone);
     } else {
         SerialDMSeq.println("ERROR COMMAND");
     }
@@ -107,6 +149,7 @@ void setup()
     ccid.onApdu(apdu);
     ccid.insertCard(atr, sizeof atr);
     vendor.onControlRequest(vendorRequest);
+    vendor.setInterfaceProtocol(0x4F, 0x45);
     config.product = "CH32RV usb-classes " BENCH_BUILD_ID;
     config.selfPowered = true;
     config.webusbEnabled = true;
@@ -118,7 +161,7 @@ void setup()
 void loop()
 {
     uint8_t buffer[64];
-    const size_t n = vendor.read(buffer, sizeof buffer);
+    const size_t n = directMode ? 0 : vendor.read(buffer, sizeof buffer);
     if (n) {
         size_t sent = 0;
         while (sent < n && vendor.waitWritable(n - sent, 500)) {

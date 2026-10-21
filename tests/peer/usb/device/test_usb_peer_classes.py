@@ -14,9 +14,22 @@ def test_usb_peer_classes(dut, peers):
     build_id = settings(__file__)["build_id"]
     dut_ready(dut, build_id)
     dev = wait_enumerated(s3, build_id)
-    assert {(0xFF, 0x00), (0x08, 0x06), (0x0B, 0x00), (0xFE, 0x01)} <= set(dev["interfaces"])
+    # The vendor interface carries setInterfaceProtocol()'s subclass (0x4F).
+    assert {(0xFF, 0x4F), (0x08, 0x06), (0x0B, 0x00), (0xFE, 0x01)} <= set(dev["interfaces"])
 
     # Vendor bulk echoes; vendor request 0x10 answers "CH32".
+    data = secrets.token_bytes(48)
+    assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
+    # The same echo through onRxData() and writeDirect(), completions counted
+    # by a capturing lambda; then back to the class FIFOs.
+    dut.write("vmode direct\n")
+    before = int(dut.expect(rb"VMODE direct (\d+)\r?\n", timeout=5).group(1))
+    for _ in range(3):
+        data = secrets.token_bytes(48)
+        assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
+    dut.write("vmode fifo\n")
+    after = int(dut.expect(rb"VMODE fifo (\d+)\r?\n", timeout=5).group(1))
+    assert after - before == 3
     data = secrets.token_bytes(48)
     assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
     m = command(s3, "vreq", rb"VREQ (\d) (\S*)")

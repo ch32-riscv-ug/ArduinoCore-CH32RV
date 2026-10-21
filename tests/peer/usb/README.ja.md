@@ -10,7 +10,7 @@ USB ホスト、EspUsbDevice は TinyUSB を S3 の OTG で動かすもの）な
 | ケース | DUT の役割 | DUT スケッチ（sketch_support/） | S3（sketch_support/usb_peer/） | 確かめること |
 |---|---|---|---|---|
 | usb-peer | デバイス | usb_contracts | device/peer_s3（EspUsbHost） | 列挙、CDC（往復・2000 バイト・ボーレート）、キーボード、ベンダー HID、LED、MIDI、再接続、DFU_DETACH → 工場 ISP → 復帰 |
-| usb-peer-classes | デバイス | usb_classes | device/peer_s3 | ベンダーバルクと要求、MSC（INQUIRY・容量・ブロックの読み書き・FAT 上のファイルの読み書き）、CCID（ATR・APDU） |
+| usb-peer-classes | デバイス | usb_classes | device/peer_s3 | ベンダーバルクと要求（FIFO の経路と、`onRxData()` + `writeDirect()` の経路、`setInterfaceProtocol()` の subclass）、MSC（INQUIRY・容量・ブロックの読み書き・FAT 上のファイルの読み書き）、CCID（ATR・APDU） |
 | usb-peer-media | デバイス | usb_media（カメラはアイソクロナス） | device/peer_s3 | スピーカー（合計値の一致）、カメラ（パターン）、マイク（連番） |
 | usb-peer-net | デバイス | usb_net | device/peer_s3 | NCM のフレームの往復 |
 | usb-peer-host | ホスト | usb_peer_host | host_hid/peer_s3（EspUsbDevice: HID・CDC・MSC） | 列挙と文字列、CDC、キーボード・マウス・コンシューマ、LED、ベンダー HID、MSC |
