@@ -153,6 +153,8 @@ host媒体モデルで操作境界の中断を検査し、実機では確認済�
 予約byteの生成、linkerの重複・境界ASSERT、board menu候補、ELF/image・upload経路の整合を検査する。
 `NOLOAD`だけでuploadから保護した扱いにしない。保存中のCPU／IRQ停止とPD等の共存は独立に測る。
 成果物はgeometry表、容量内訳、更新・復旧trace、停止時間、RAM、予約と消去範囲の証拠。
+[走査・所有と更新の統合](tasks/EXP-04/integrated-result.ja.md)はnative234件・新規ABI76で、受理／key変更時のreadを除き、同じticketを保持して再走査と更新を接続した。
+書込み後の旧cacheを無効にし、失敗後の再走査・明示復旧と所有喪失を検査した。非同期媒体・操作単位の所有・用途共存は残る。
 D09／D08について、公開RAWの範囲、キー方式・保証、容量指定、アップロード時保持の成立条件を判断する。
 
 ### EXP-05 拡張と複数コア

@@ -122,3 +122,5 @@ ABI記録は未作成の出力先を指定する。実Flashやboardへuploadし�
 実媒体条件、RAW／keyの所有、buffer回収、追記・整理・wear、より大きな値やkey、schema移行、
 保存中のCPU／IRQ・通信の共存、実upload保持は引き続き残る。
 形式の採用や既定容量はこの測定では決めない。
+後続の[走査・所有と更新の統合](integrated-result.ja.md)では、同じ所有ticketを保った準備済み更新を別経路で比較した。
+この同期経路のpublic APIは維持し、private準備入口を追加した際の既存272件と読出し76 imageの再検査を記録している。

@@ -111,6 +111,8 @@ python3 tests/platform/core_redesign/measure_flash_scan.py \
 native証拠を保存する場合はpytestへ`EXP04_SCAN_EVIDENCE=新しい出力先`を設定する。出力先は上書きしない。
 保存したコピーを直接実行する場合は実行permissionが必要。byteのhashと検査結果はJSONで確認できる。
 
-次はこの所有・走査結果を受理とkey変更へ統合し、二重走査を避ける条件と追加状態を測る。
+後続の[更新への統合](integrated-result.ja.md)でnative234件・新規ABI76を追加し、同じticketの保持中に受理／key変更の再走査を除いた。
+既存の読出し76構成も再生成し、全image hash・静的RAMがこの測定と一致した。
+走査結果を使う条件と追加状態は後続の結果を参照し、今回の読出し専用費用と区別する。
 媒体操作のissue／poll／停止／buffer回収、長期所有と操作単位の所有、待機queue、追記・整理も残る。
 実再program規則、物理中断範囲、CPU／IRQ停止、upload保持、MCU時間は別に検証する。
