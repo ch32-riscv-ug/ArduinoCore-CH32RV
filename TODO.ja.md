@@ -730,7 +730,9 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         乱数はコアの `ch32rv_rng_read()`（RNG。これも実機は未確認）。V307 は RAM がぎりぎりで、`RAM_CODE_MOD`（Flash と RAM の
         分け方）のメニューが要りそう（ユーザーと決める）。TLS 1.3 も入れた（2026-10-21。既定は 1.2 と 1.3 の両方を名乗る。Flash 約 +15 KB）。
   - コアの `time()` / `gettimeofday()` / `settimeofday()`（2026-10-21、syscalls.c）: これまで半ホスティングの `ecall` で
-    落ちていた。直したが、実機ではまだ動かしていない。`clock()`、`fopen()` なども失敗を返すようにした。
+    落ちていた。直した。`clock()`、`fopen()` なども失敗を返すようにした。X035 の実機で確認済み（2026-10-21: settimeofday の後に
+    time / gettimeofday / strftime が経過どおりに進む、clock、fopen / remove が失敗を返す、ecall なし）。millis() の 49.7 日の
+    折り返しの処理だけは未確認。
   - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口。今は X035 / X033 だけ）。
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
   - **UF2（MscFirmwareDisk）での更新はやる**（2026-10-20）。ほかのファームウェア更新のクラス（EspUsbDevice の
