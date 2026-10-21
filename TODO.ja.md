@@ -696,7 +696,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - OEP の probe にする件。このコアの側は入れた（2026-10-21、84b57b0）: `CH32RVCallback`（`[this]` の
         ラムダ）、Vendor の `writeDirect()` / `onRxData()` / `setRxDataBuffer()` / `setInterfaceProtocol()`、
         HID ベンダーの大きいレポートと `setUsage()`。H417 の SS で OEP の流し方を確認（IN 約 200 MB/s、
-        OUT 52 MB/s）。**oep-probe-arduino への依頼（送り先と時期はユーザーと相談）の下書き:**
+        OUT 52 MB/s）。**oep-probe-arduino への依頼は 2026-10-21 に dev-oep のセッションへ送った**（コア 0.2.1 に合わせる、
+        最初は X035、H417 は後。下はその元の下書き）:
         1. `OepPlatform.h` / `Oep.h` に `ARDUINO_ARCH_CH32RV` の分岐: unit id は `CH32RV.getUniqueId()`、
            restart は `CH32RV.restart()`、chip は `CH32RV.getChipModel()`。
         2. `ProbeConfig` の保存先: このコアには永続化の層がまだない（TODO の「永続化」）。当面は保存なしで
