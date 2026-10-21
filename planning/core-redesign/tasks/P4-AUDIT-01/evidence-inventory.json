@@ -395,6 +395,25 @@
       "archive_reference_status": "recorded"
     },
     {
+      "path": "planning/core-redesign/tasks/EXP-03/reentry-depth-measurements.json",
+      "sha256": "4ffee0673acd6af2c3a7789187fa3ca5b58961171435f9a8af49390d5313f12f",
+      "archives": [
+        {
+          "pointer": "/archive/path",
+          "path": "work/exp03-reentry-depth-20261022-evidence.tar.gz",
+          "expected_sha256": "58b4d2d58fc9d87108160abdc4f0cb1997d83f05537209172e6382046170d126",
+          "expected_bytes": 1022148,
+          "observed": {
+            "present": true,
+            "sha256": "58b4d2d58fc9d87108160abdc4f0cb1997d83f05537209172e6382046170d126",
+            "bytes": 1022148
+          },
+          "status": "matched"
+        }
+      ],
+      "archive_reference_status": "recorded"
+    },
+    {
       "path": "planning/core-redesign/tasks/EXP-03/timer-measurements.json",
       "sha256": "f9a945a3a3c3c09b8175b9f1780405bef9ce9b93c79d9b77d7c4cfdeedf0c5f9",
       "archives": [
@@ -1084,9 +1103,9 @@
       "archive_reference_status": "not-recorded-in-manifest"
     }
   ],
-  "manifest_count": 59,
-  "unique_archive_count": 55,
-  "archive_reference_count": 56,
+  "manifest_count": 60,
+  "unique_archive_count": 56,
+  "archive_reference_count": 57,
   "manifests_without_archive_reference": [
     "planning/core-redesign/tasks/EXP-00/measurements.json",
     "planning/core-redesign/tasks/EXP-02/measurements.json",

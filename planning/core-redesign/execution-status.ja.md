@@ -1,6 +1,6 @@
 # P4までの実行状況
 
-2026-10-21。利用者の指示は「P4までで進められるところを全て進め、レビュー・高位判断が必要なところを残す」。
+2026-10-22。利用者の指示は「P4までで進められるところを全て進め、レビュー・高位判断が必要なところを残す」。
 実行方式の採用はP5で扱う。通常の実装修正・資料照合・試作・測定はこのセッションで続け、作業単位ごとにコミットする。
 この一覧は完了監査にも使い、hostの成功で実機・利用者評価を埋めない。
 
@@ -27,6 +27,8 @@
 実機操作を始める場合は既存の明示fixture・identity・lock・終了条件を使い、接続先を推測しない。
 
 ## 最新の完了単位
+
+- [N04 再入深さ](tasks/EXP-03/reentry-depth-result.ja.md)：native78件＋workspace3件・ABI36、137 trace。継続型と入れ子深さ1／2／4、循環・active資源保持・外部完了・禁止文脈を比較。未使用16行は追加0 B。制限で戻るcalleeにもframeがあり、callback深さと関数frame数の差を逆アセンブルで確認。解析経路値は実stack peakではない。別stackの固定port・配置・同じ仮想I/O列は未完了で、N04を続ける。
 
 - [N03 条件付きslave register接続](tasks/EXP-06/k0-slave-register-result.ja.md)：最終native137件＋workspace3件・ABI132。207 trace・298,863コマンド、全4群の51組が一致。受信末尾・STOP／ADDR・TX先読み・AF正常終端・故障復帰・2拒否policyを検査。未使用64行は追加0 B。ACK-discardとdata-NACKはpeerに見える意味が異なり、後者は明示rearmまでreadもNACKする模型。foreign再STARTの反例を残し、実wireは未成立。N03のhost／MMIO link範囲を追加し、次はN04。
 

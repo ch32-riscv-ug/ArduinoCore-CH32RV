@@ -6,7 +6,7 @@
 高位モデルを使う局面は、全体像の設計、実験条件の設計、結果に基づく最終仕様の選択、重大な前提変更の再設計である。
 通常の実験・実装・検査は、作業範囲を定義して別モデル・別セッションへ渡す。モデルは利用者が手動で切り替える。
 
-更新日：2026-10-21。P2 の EXP-00、P2-PREP-01、P2-PREP-02（結合X0のhost対照）を完了。
+更新日：2026-10-22。P2 の EXP-00、P2-PREP-01、P2-PREP-02（結合X0のhost対照）を完了。
 P2は進行中。利用者指示に従い、P4までの通常モデルで実行できる作業を続ける。
 [実行状況](planning/core-redesign/execution-status.ja.md)で、未実施・実機待ち・レビュー待ちを区別する。
 
@@ -278,7 +278,7 @@ D01〜D12の支持・反証・未検証、契約ごとの到達範囲、76候補
 [通知満杯・解除／retry](planning/core-redesign/tasks/EXP-06/x0-event-wire-result.ja.md)も同じ用途へ接続した。
 [RX2末尾](planning/core-redesign/tasks/EXP-06/x0-rx-tail-result.ja.md)も用途で検査した。
 [周辺準備との接続](planning/core-redesign/tasks/EXP-06/x0-prepared-wire-result.ja.md)までN02のhost／ABI比較を実施した。
-N03の[K0共有部分](planning/core-redesign/tasks/EXP-06/k0-shared-result.ja.md)はhost118件＋workspace3件・ABI132で検査した。[slave資料照合](planning/core-redesign/tasks/EXP-06/k0-slave-source-result.ja.md)でACKの時点・STOPF条件・再START観測の不足を整理した。[条件付きslave register接続](planning/core-redesign/tasks/EXP-06/k0-slave-register-result.ja.md)でnative137件＋workspace3件・ABI132を実施した。ACK対応の意味差とforeign再STARTの不足を残し、実wireの成立とはしない。次はN04の待機・再入と別stack対照。実機・寿命・品質は未検証として残し、部品の検査件数を完成用途の完了率にはしない。
+N03の[K0共有部分](planning/core-redesign/tasks/EXP-06/k0-shared-result.ja.md)はhost118件＋workspace3件・ABI132で検査した。[slave資料照合](planning/core-redesign/tasks/EXP-06/k0-slave-source-result.ja.md)でACKの時点・STOPF条件・再START観測の不足を整理した。[条件付きslave register接続](planning/core-redesign/tasks/EXP-06/k0-slave-register-result.ja.md)でnative137件＋workspace3件・ABI132を実施した。ACK対応の意味差とforeign再STARTの不足を残し、実wireの成立とはしない。N04の[再入深さ比較](planning/core-redesign/tasks/EXP-03/reentry-depth-result.ja.md)でnative78件＋workspace3件・ABI36を記録した。次は別stackの固定port適合と最小配置の確認。実機・寿命・品質は未検証として残し、部品の検査件数を完成用途の完了率にはしない。
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
 

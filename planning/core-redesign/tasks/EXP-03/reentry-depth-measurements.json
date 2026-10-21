@@ -1,0 +1,1524 @@
+{
+  "native_tests": 78,
+  "workspace_tests": 3,
+  "host_traces": 137,
+  "commands": 864,
+  "abi_builds": 36,
+  "unused_zero_rows": 16,
+  "initial_final_images_equal": 36,
+  "analytical_paths": [
+    {
+      "part": "CH32V003F4P6",
+      "case": "continuation-depth1",
+      "entry_frame": 28,
+      "invoke_frame": 4,
+      "max_invoke_frames": 1,
+      "analytical_probe_path_bytes": 32,
+      "scope": "Compiler call-path bound for this no-LTO probe only; not observed peak or IRQ-inclusive budget"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "case": "nested-depth1",
+      "entry_frame": 28,
+      "invoke_frame": 16,
+      "max_invoke_frames": 2,
+      "analytical_probe_path_bytes": 60,
+      "scope": "Compiler call-path bound for this no-LTO probe only; not observed peak or IRQ-inclusive budget"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "case": "nested-depth2",
+      "entry_frame": 28,
+      "invoke_frame": 16,
+      "max_invoke_frames": 3,
+      "analytical_probe_path_bytes": 76,
+      "scope": "Compiler call-path bound for this no-LTO probe only; not observed peak or IRQ-inclusive budget"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "case": "nested-depth4",
+      "entry_frame": 28,
+      "invoke_frame": 16,
+      "max_invoke_frames": 5,
+      "analytical_probe_path_bytes": 108,
+      "scope": "Compiler call-path bound for this no-LTO probe only; not observed peak or IRQ-inclusive budget"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "case": "continuation-depth1",
+      "entry_frame": 64,
+      "invoke_frame": 0,
+      "max_invoke_frames": 1,
+      "analytical_probe_path_bytes": 64,
+      "scope": "Compiler call-path bound for this no-LTO probe only; not observed peak or IRQ-inclusive budget"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "case": "nested-depth1",
+      "entry_frame": 64,
+      "invoke_frame": 16,
+      "max_invoke_frames": 2,
+      "analytical_probe_path_bytes": 96,
+      "scope": "Compiler call-path bound for this no-LTO probe only; not observed peak or IRQ-inclusive budget"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "case": "nested-depth2",
+      "entry_frame": 64,
+      "invoke_frame": 16,
+      "max_invoke_frames": 3,
+      "analytical_probe_path_bytes": 112,
+      "scope": "Compiler call-path bound for this no-LTO probe only; not observed peak or IRQ-inclusive budget"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "case": "nested-depth4",
+      "entry_frame": 64,
+      "invoke_frame": 16,
+      "max_invoke_frames": 5,
+      "analytical_probe_path_bytes": 144,
+      "scope": "Compiler call-path bound for this no-LTO probe only; not observed peak or IRQ-inclusive budget"
+    }
+  ],
+  "traces": [
+    {
+      "path": "work/exp03-depth-host-20261022-r2/01637f9d4427c6021b96972dd16cf2cdc4856c433a8eae0e986faedd70a9c4ab.json.gz",
+      "sha256": "4c35c9195a3f294f35b34aff2234920430547ba1cb61205bcf5c6f006ebe5998",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/0362d596d090dc37bf8656d788fd6458100c07e2e96c2d98c7b4971cbd58cb79.json.gz",
+      "sha256": "2259a3b3b9850c9e8c6fd463f40670cef5b85672f4e609c92b2ff5391c5c149c",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/0438b96f35ca77ef5bc5b7f7300050ead8fd736688bea87fc48458f32a586a8f.json.gz",
+      "sha256": "c66f541121938ab6b5a85e20f5bc9d5af84aa6267a633294e99a2f67323d3beb",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/05747ecaee60b1261182a3db11cbd0d16df91559911df1084a8ea1d0c8d83d41.json.gz",
+      "sha256": "9b2730bf402eee64c5c280a2d76b510c70a4114828d31e394a72907d578e9607",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/0734b78d339747d43211ccffa341a0b35dd7f9b43293dfc94c8a8f7adf2a0a23.json.gz",
+      "sha256": "875f5271035931fce7b50ec69d9f1189093e5cf25f4981a46c62e3dcaf2042d2",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/08c5d6c3845fd42a0ff092a5b925428c05f7582b844635f58992e0e003035df2.json.gz",
+      "sha256": "ead5583f71875edb29cc32e28314607c9d828de84c97bbe5de3c8a5433cacfc8",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/0cd367d1be2cef8ca700db7895fce0c84fc613e4d7f2ab21a06f0c82fb900867.json.gz",
+      "sha256": "941a2ed840ea9b177a116754cbd460ecd7672c29c9014285a8a02f12a81c1f87",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/0d61b7c5ff16a705ed4349466b5ccfc4d7d41d63a16108cbcd49dfd2cf8f9922.json.gz",
+      "sha256": "04812a5f0193cc6c4c5ae524f690d862a0b687da38dcfedd8d2f9c24f68d4850",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/0f448820805bc9181d51c7284ecf0522d9381686d0b486fd2a42070e5175c0d4.json.gz",
+      "sha256": "aa91f0c1e569144a74d772bd041ed212c29168d3ac40ee6639c70538f9e0c67d",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/11096ecc6a14f8e5d602704e85a9487bbc6a84ed726fea230b56352e12e1232a.json.gz",
+      "sha256": "e1a7e169d55760a480b480a245b7dbdfb398ba740c39e3058be7744c338c4bef",
+      "commands": 10
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/11180dc47be258f4aa0adc4c0d91d415d52885d4a8bdfc99b75b320e7af31f90.json.gz",
+      "sha256": "041ad614c63f08551f9849d6092aee2cdf9a741c1fe496dbb1f0aeef67284a77",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/1126a78d7fa9790c72a9c4e5c966f01c3f117ed53711cab7e2180b2192e32339.json.gz",
+      "sha256": "ac68b8f28fd8742d9f5bcb418db57add1acb6b7c72aa5b869f4b35abb1588325",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/11335779a09024211f6925ffa9223cf15d326ca8e9cf836ad538535290c190f1.json.gz",
+      "sha256": "de13d65671a163929ebf1fbdcc78e7fc16846f32f3f1d77a29d56c0fa42a7a2a",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/12adcbfae518d9e2ff3d042d3edebb695b8c220528ed06e0884317529a9f456e.json.gz",
+      "sha256": "85a42528e3019e41cd8068e35fe2a6b1253bec7d194eb388a39eb0b62aa5a5c7",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/12b10b89425fe933cddb0e05e51035e9fd01c273d40a364569ce572623d7f723.json.gz",
+      "sha256": "01f9d2fdd85e246c4e20022133aafbfb17a842da8c5f745b1013786c61cc758f",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/145f101c137edd44bdcdf509a0a57b5141151042bef9bca5d760c2d599138433.json.gz",
+      "sha256": "e3a7a4e925a15afca96f65cc98a716049de60eaf3a9739f971d2da655df0921f",
+      "commands": 4
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/19314fe8af7cb71f945d52dbc36f2e8a81cbbcef43e22ffac901049c0c873663.json.gz",
+      "sha256": "e43097299a85f581b260285e4fb5b56bd3d95580b66fb5055602c7f1666fe2d3",
+      "commands": 8
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/1bc0588bd9cfae34e2a23cebffa5d23520a07727389d19879adabea8b9343070.json.gz",
+      "sha256": "ec390fe3bee4a1e3a45cf40cde84a63ce9acc1f4a13f15d5b947957abcfd3c25",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/1d90c9f5eb60b3592ea17ff2e572b62eee3af454a1e37a1271d08f6c5a953c59.json.gz",
+      "sha256": "6720695de1f0aa48335de89c621f3da1dcc9e2bd5511e944ccffcae786fde77a",
+      "commands": 9
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/1e82c6c1a8f7d4cc1fe9c08d5a1c611c9492f1b1370b823303532b7b71acb524.json.gz",
+      "sha256": "49ab1f9e0aca92108dc961a8c2faa4fce9c65a7ea697d274869898e6ca7acb12",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/1efa15a0f8cab1bf89c205ecd9a6b2154caa3ca194cd5d49864a8969f1fa2291.json.gz",
+      "sha256": "842055896a30bf897f20d90e4e51bc0738ef058e6aeb12c8abb69ecd33329f21",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/20aa2f6fe39a6d1e113c9b116f3f03141d77cc2fbb0537709fd0b0c0869339e9.json.gz",
+      "sha256": "1376554d18b1623aa5f8d3b84b7cfe9b28e8c6a5ffabd7e4f36c8a96ac0a803a",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/20ccc93531b67312f6a0aeef06551694e440e6c12a7805a7823af1064d686b42.json.gz",
+      "sha256": "ccb9f1c078e41ce686cc8c45bfb12b8354cc735b4e7cfd1705b9adc5fa6339e1",
+      "commands": 2
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/22c9b4deaf7350af47bda0be765c188619fe82c3b0d0684cfc2334d9bb62bcb7.json.gz",
+      "sha256": "e9dc22a1ba63b097c7425f33ca6404f03428d9f02913497e038c70cd9ffd3910",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/234801cee95a2919aef3cd778f83c78c289965ad3e7a23e1328553542ae5555d.json.gz",
+      "sha256": "175b3c38aee314b323f65509e1efcfdbe44a5e0231237573b27928951c4b9cd7",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/26bd2d69fdab2bd5e32d1165200cc1a827a363487d44266c07b61ac32c8c8638.json.gz",
+      "sha256": "1abf56a75b02e89b942af8f40a2e01798e877884f8290547252b623e77fbd66a",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/2793ddc8503be926d936c8b4d661a09033adbee71ab376e292d23b849aac642f.json.gz",
+      "sha256": "7dc9c4ea4833c516104080f1e9f81eb0d720b31edeb5b87f6657e9122f9b1979",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/27b4e389a69e8bd657905dbea0f8c0ed948130fba2f82a8937e1a91da5528f9c.json.gz",
+      "sha256": "f7bf8fe978ff498feaf8795c9634f39f8b223fa9dfef666f850ec81eb3671451",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/28f67687e194644a941eb0828cc4ac4638b6a7efb5016f9006a5ed0f890345cc.json.gz",
+      "sha256": "924a782b1b9874cdf31703f54a66ece22b528a5cac23c3d7e1d78e9cbd9565b4",
+      "commands": 4
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/2a34f3c2af04fcb1b98f4040d2eb6206b9132c50c51b8014e34e8ea3e3ffcc78.json.gz",
+      "sha256": "4355ccd82964eb1fd21cc176e6e272b8e52559459905799fbd1d2b6a1ab7ebb5",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/2b94d9e9a3e8e1f11fff45066aa2539b7d2866305f87c013809e60b582b5032c.json.gz",
+      "sha256": "8511ba0f1f63ebb75666c81607eeaf660c3aa787f5ec113ed80bba8c4bac6d5e",
+      "commands": 8
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/2f0bafe7335904347f503f1c693709df5fb30b87864c21714489b7c6f043949a.json.gz",
+      "sha256": "801560dbdb1a9d00ef1c27b707a27c87b1fe87fdbe14356f94daa2a39ac31243",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/332744d99f0e0dfaeee9c3cef0e44d39fda4a7cf96b0530abd00e20f81d64381.json.gz",
+      "sha256": "d6b5df99019f54bcf30c27d5ce5e2213ce8569f3903e3f901955a1b1687eefa1",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/346791ac7b3650f35ce7b5d5d43f4de230cf2ddd0026dd74c08e44431a5f4e45.json.gz",
+      "sha256": "2835ee26d13912d6515e2c23796d53035805e7111889c4416b33ddaff5296eeb",
+      "commands": 4
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/37282eae66808d305a76d0c67d6487e7a9a838e8b6a00f9760896b7a95c13aef.json.gz",
+      "sha256": "a356bc4cda7efd9f22da71cc3ebe0504f14a7c7c9b5d0503e3390061859e124e",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/374456a62b4309f00c5daf29051cb7294c08599397c1253886157db387a337db.json.gz",
+      "sha256": "d44c1308b6993fe341e4d3f3052557ca08f57a16f44f928d400af798cd3db6ca",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/3888a6832fab44d731d8afd3091fb02608bdb667b3edb6a00cffea192ce9b2fb.json.gz",
+      "sha256": "f8cccc44ae606254e814157d1f28833433be3f8cb4178e51aee57c74f5c170a5",
+      "commands": 2
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/39e37b9bba340045a2e36d2af2c9b68a7f17f9ee6773ea33a1faea90625530c3.json.gz",
+      "sha256": "849dd16293e53e0416297bc278195ef4de9e0bd991d2b201106f86a3a01bfd89",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/3c274781f3e2a9fb2814198596cbb629f25c30f20479a443c58711fb8636b7e7.json.gz",
+      "sha256": "df835006b79fda3c7e801f52d40a00844465d45ef43423cb92cd9e45c77a578f",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/3cd5e7dfe693180288d9461e50f8872d57e147948299e66f829bbb292ca56c90.json.gz",
+      "sha256": "8371d4da7131e5e77643b91aef08949062545f75e11250c60efb18a556a44a25",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/3e87ceeb66ab277225d1a1e51b6afa23b698b52005db4e83302c0cb4af177210.json.gz",
+      "sha256": "c9ad963248669713ef05fb4660a4f5d0f7968f11097a89d4269359075985a2ba",
+      "commands": 2
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/3f01773c8f1aed6f01d5fca4faba221948fec532e1bee1f74b488a8e79a40df0.json.gz",
+      "sha256": "54305d92cd324412b21543aa0e2f8d76bf0982aaa0b4abb87263f07aa68cee21",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/40348a23baa4cab775057251a2c9219266dfd83ca2cca39bee71e8faaf899ee2.json.gz",
+      "sha256": "6e3703fab64b7c3b3be3bdef7aa80985731f4225b26fd5598c54398b0b881998",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/4182bbf37641953bd6a0595c725ef3d82d5a0e5afcd1e8e42bd044cde3ac684e.json.gz",
+      "sha256": "bfd689be88ea2b39fb439e4e0ed29d41ff91da9ac17dec1ff499f3dbe482f62d",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/437518f701156a5e50328f9de279443f2f8fbfeb51f10773ae9908274865e7c5.json.gz",
+      "sha256": "194a4db5738ab5b7832775ef0ef2a84efac5524dca021b15c62e2e53390ae235",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/47a8da3b31d5627ede37d8ae2157d1aa913c7d99b1cfb4d31cf30f11d84b1b93.json.gz",
+      "sha256": "1593c7719e6f0d6b33ca4d99424f166fd3100dd92f032dedd505c48ea55aaff6",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/492ae6579b04b5ad88d181580d3b0de8ac301ce4aa8c003c4c43f895e7efab61.json.gz",
+      "sha256": "7fb188a8d403b9d8fc5cec60918653cfc66099d0cda51320f0a52de3bf0e5969",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/4ab3b4bcd94734de49dd044514ef6ec36745db651ec714722cbba6a8bda9edd2.json.gz",
+      "sha256": "0551355e80cb35c0b38d1ccf09cdb903db6464e2d72896f2fdf919a75fcf49ba",
+      "commands": 8
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/50cb84d2de3e693a8bb5bdbe8b87fedfb170f90aec319d773f00248f02c9a193.json.gz",
+      "sha256": "4b8e0f6816178c8ecb55c1d8dbd07acb1d095b597edcc08793d12af1d4142bdf",
+      "commands": 4
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/523fdf1d31390073723d62ca6dd6336485a3584048ef5f748b2fee2620738306.json.gz",
+      "sha256": "67c09690f31b28e9e8da06935ed003fa9a21a467a64e01cb41fec0ae5ccac66f",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/557ae7e57666f385babc08248f0738e5cea0d51895d7f048dccc3222d42b7eaf.json.gz",
+      "sha256": "78f15afe08af5ef8140f2fe815a8fd85fde49ba0927b910865a876f2439d491a",
+      "commands": 7
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/5661e016eaa19f22f7dd4507dcc6157820b64cc378dcef24fc8a3b918f8dd1aa.json.gz",
+      "sha256": "4ba50221cc4b3fdc48d2934d0e0972fb5189f554102a6468fe49b7930056412e",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/5b3c5d3585fe97ebf925b5e06b879721c013f4b2073337a9e1b12289ce6852f4.json.gz",
+      "sha256": "a1d866e2effce42abfb4bc224a7f14ecaaf993971e914d395abe5f77d2075cfd",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/5c87b3cafacf3c5732d8b3bc1d440a4084b1b618490e9d90c3501355fc743f47.json.gz",
+      "sha256": "7019965a63db06d70c863e2dc0b3972794a69238475743196e56cef9104047c8",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/5e5c4c9e39f3166779d4671c72ffea3e4855015b3312355a5d9cc2c5704387da.json.gz",
+      "sha256": "7a895e72911d4a27fd4e75cef7162e4d20beba2563c09c78e5f4430fa886e61e",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/5f279a9276b2b8934bbc7de6424110f19e580a01ef21c470403676816486ec2a.json.gz",
+      "sha256": "019f73f05596493e9555a3b1f53f936564d9fe0888f3f196bc1b2efef585cfe3",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/5fabe18b922a76181f0b168c35700aaa9abc60acadfc2374c3d70fdda183129b.json.gz",
+      "sha256": "0fe54d8ccb9ecad0b9bb89af3de244fb576f6451c37fca1f30eea62bab26d634",
+      "commands": 12
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/601c2980086bfee5e8c1f8148be3b24ab6c2ee2b2a40d2f563e75d500ebaf0c8.json.gz",
+      "sha256": "3dad40b0cf7ca09d9c4e58b9288101364e56237b96dfb7721113558d8cb9e76f",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/60abfb49b425d0a0804cebba77c5537025e3067b4f1e77bccdba14d6fbccad65.json.gz",
+      "sha256": "10a3f214b375ebac34d7c07c7b93df8e14794765a70b9ed87dd3394bae1a5cff",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/6131c913f59a4cd9067f87dc42bd8aec1fcadcaae99524df73aec4728a53b436.json.gz",
+      "sha256": "5a4ac1af5cd2a33b8a9242a2143250859e76f317179b31ef491c40b128ca3396",
+      "commands": 12
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/615a704acf717b5f3af0c1eb9ddf964443b0bc40a91820345ecd7d33343528b1.json.gz",
+      "sha256": "131df953dfdc0bb7727fdb7fd2e7ed12c06b61ba58b6ed03eddfa6b44464203e",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/640d489ed525933c31e11c8ce5ceaab010864c97ece5a965c8ac150f824fd228.json.gz",
+      "sha256": "9160e166506046f907b570c3b58e940062b471ea41e8ea96425cd91d582f109e",
+      "commands": 8
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/661b3d497b45949ae647c233b41baef0206e6f9bb5788b033099e259a703fc6d.json.gz",
+      "sha256": "78188963f2a5c3d64ac3390c312000a69beb35fdce2b27b677fba0bc4f47fbf5",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/676b2f9bab8a9c21e9f5b5b14a54309d2b35e5ce09aeddd51a572450695e23c4.json.gz",
+      "sha256": "c55d8518711cd1cae911aa7af808e1dab3ced3fab3e38a1b4400c45741a84d4f",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/6bc49eb4aafbdba993a54801e3f68d789f442d0f022d8586831182c831679bbf.json.gz",
+      "sha256": "55239ab980c6fc92ffed573aa636c1cc499a81e29e03dd0d730761d0561cb6f4",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/6c04bd6e29978668acf42fc785c8060d8074bf2bc59483d8f285445984a89abf.json.gz",
+      "sha256": "1449288285744b9d3c41cc14049bb3e1b4705ead0be397869c7cbc1b3f32b176",
+      "commands": 10
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/6d31fe421b45f4310a2b527e8ccbebe79d0afa8832f99fd6efb77bd9779ea251.json.gz",
+      "sha256": "6426e955fafe49d44b753123bcc498ffec3ea86a4b01195ed8f217c751ced22f",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/6eafe971ebae7be73a8e0d7d1cc552d044c55d99b1259b9d1f6cb054b7245ce0.json.gz",
+      "sha256": "bebdc06b3ec8239b809ac475106de2ee57e0e8bdf1a9082ff6f6de98fbbeab4c",
+      "commands": 2
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/711c42a0c1710324e5b3c2d7fa115a98d2929ae0dd50851d632aa36acb94dd7e.json.gz",
+      "sha256": "e14a62a25542539eeaf18993b0f32bf58aa12f7f6a687ae060c04f571f8819f2",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/743d0f099fb76d11c2815e1a508f4d96448f826480305c161d59d5ba0230e7af.json.gz",
+      "sha256": "60d183b34b54e573a886741b27f1f29ae017ddb1ef23b2c97a9127c26676e497",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/753d95c0cf93c01901070f0afa80bee33a7373f7eea0136b767c96eba64bf33a.json.gz",
+      "sha256": "0b88a6588978b5a158dbf91ca1e7679306ba91a37117cfa61a7874ff992691a5",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/761d0b8f56502022746a24300c79cf80d4e21a53df0e570577610ab65ced08d7.json.gz",
+      "sha256": "2c018dda42d11d5aecce571c026fe3628467e97c2f2ba4c0e16fe830b3004e1d",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/77599237ba04890332a5187340a93ea01d46b59ccaade0611e8a5abe3030b953.json.gz",
+      "sha256": "5c9c6ad58b77d0cc7709e506447bdc76b363af3fa3ba14ef2fd141d9c55086c3",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/798c9d7fe1d5ec4b14f7db0ddadcb06d71b683cd18f343040bcac703c521adb3.json.gz",
+      "sha256": "05bb6ced5899dcc2f7d58502d2f7f4c1a7fdb80d7f28c133ec66ae7c21f3b0a5",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/7ced8547fc2847ec99d26eab68d11bbaa1a66d2bcc65f34aed2e90433644635f.json.gz",
+      "sha256": "4b3753d56a5e3a7c0ed7b849af331aad6f5cd84b498f108bcbed228866f49a78",
+      "commands": 2
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/7d2a47c16c289c7c86737d59437071d522a8d352dd68d18b204573bad6e5dd4c.json.gz",
+      "sha256": "47ee4f793983458468e1023a4ea143f30d85e7b0f73441deef65a56bba76c975",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/7dab590959b16312509205513354dae2a778d13de723397478649e9b0d119ab6.json.gz",
+      "sha256": "83480f92f92f72d38457a31d347d19589a35feccfb99675c391ffb888869aac4",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/8076fd9afd3bfd68dfb4fedc8a3fdbfa80c8446a1df9487e5ff750984f38afb5.json.gz",
+      "sha256": "eb381e0c09e60f9111fb5f14b36804ba8f14d8eef388e4fc8ba89ac0fb395316",
+      "commands": 5
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/813e33eb4cb03be76e49dd176a11fd73bc8032aa3d4bdfd9a75452fa74063b62.json.gz",
+      "sha256": "403103cffc570d3a36473247adf31e897b230938435d51016a94ba8c36ea51d0",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/845b1b7b3a399397d4ce993e76369af0ef76e01c10ce7302c83440fda9f91a69.json.gz",
+      "sha256": "284ce631a1fac6358cff919d7d48ba10c24fc61307d8628bb5d012ff57432ce1",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/8733faf79ad43feb1588544cd042fd242f04936e3cfc0ceb792655942fa6d1a3.json.gz",
+      "sha256": "1ee84ecbcd09302df1780d527ed83502b7d8d01ffdd3180ca8bd33320e99d4c2",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/8a0353eb21213c4259ee7fc7579e1e5de4962606d40e1495c757e997b839f490.json.gz",
+      "sha256": "5032fd4801d6c8b04d84e68e82e14432544c7c9cc9a4163f03db2c7797420e43",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/8c78a2f79d9b2205e317a32f380123297a0d2f533fd20c710f540536c9b7ab98.json.gz",
+      "sha256": "2ee591f039014448f72c772b9b9e96e226092a3df0379ce0f24686a27700dd50",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/8d3d09ac1ac4bc0a51d655ea903870c18faf32266a3d50609bc1fc5cc88c1665.json.gz",
+      "sha256": "8147db4d61d0b2f6279f9e70e1a3c9960500bd083b599879554518305f28a723",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/8eefd45290eb353339e9d59ae8323787e89d75439dd3eaba0b3390560c8e8f39.json.gz",
+      "sha256": "c16ffdb7e922289248df28e23704bb2234c7d8596caff079bde41721b908e4d4",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/9161ef902adaa565c262c71e6eb4de28f0e7c017236c6328b84cc657e8b54b33.json.gz",
+      "sha256": "fd697c196d2ae8061bcf239d0fe2decc169b746e7a57a4e77a69e3aba468b61a",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/92c6c0ba996400e29252865295dd4e75b1dc7ec261ec5d49647f83c580077523.json.gz",
+      "sha256": "5cdc9a8bf5830e60ecab06b22c4711610f7bbadea08524f365cce7a351522d96",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/93c423629df8f1d454804cbfed309190a279a294687c28f9af1c28d861ba23f5.json.gz",
+      "sha256": "39ed635abc78335adae080aee543ab24c8272d22898ee31c950815a61a9c3532",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/95188847b80aac8db7d388b3f3fb1e94ce583ddfc08dbca158842286ea52dafe.json.gz",
+      "sha256": "53a7dd9360eba0addc6b7267a2c87e60affdd9fc0d8b3a3adbf284373c35b7e0",
+      "commands": 10
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/95774e9c0dc02589f28d8ac341e3e43b7b5d1915b7e9007a78550830086b76fc.json.gz",
+      "sha256": "309f342ff256852f4581c71640f11cf39a5bbfedaf21da800f600e98e94aeb53",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/96b6dfb9ed8a9a3e75152f0b078794f59a6d4d4edba652d106af626519f595c4.json.gz",
+      "sha256": "535ee0efa4a54476dc470dcb748ac7e37fa9ee1a5b7b171e2bf6e45a19d221ab",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/99d11884008a98d5b99cea2f50cd4bf87b9841a7ae5f946ee28672d609306c13.json.gz",
+      "sha256": "88ae7d8437e75322061c0c90d904c69257d53a9a3298cab20b9f4d7ae2677b5d",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/9a738419e34ca65c3be778aa12beec95cae2713d9f2c6d5bb1540bfd345b943c.json.gz",
+      "sha256": "1c9cd0f3a0cd6fd7fc809942fccbe00f5e077e0d99e928f4087911703a7869d7",
+      "commands": 9
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/9d49e2e5cf520d54421674aee5c890f61e0e326866e81e452a3efba275f990a5.json.gz",
+      "sha256": "efb19a1d565687ae18c04e7b717e3439b48153a0ad416d08674f063a3a0a6c81",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/9df80fbed3ea559e2a89bfcf16ec215b3fb15b2325d334bce22c2a8506c718e9.json.gz",
+      "sha256": "e756a56b87223d8cd3a854f808b9a519e70b1d7ca2c9f876665c9a9b0b18cf82",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/a0676f0e52ac3922133b2f6230e74d375c2ed98ef1352a47ef2d49290b91b9a6.json.gz",
+      "sha256": "dc169a0592557957c8e75bfa4504b485e12860333cda3b6ab0c7ab4db58b1695",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/a3cb2d1c3121d50e65a13dc5c187de1949571f9525e82fa74cd943f8d5eb55b9.json.gz",
+      "sha256": "9cca6c4335ffa7b03f0054e8549ed2a6901dce553f49267a90f8a48c08e9c090",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/a483408c81caa5f24be204d7075fa06de01534d388992e50712b7d188874405a.json.gz",
+      "sha256": "ece4c9ffb3c44fbf62aeac15fc7c87cefe66154b9761ea6c076d04d788a393b8",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/a5364f560dec93777d6e77948cffcbc93402441fe3ecfb653ca9bb1efdf98bb1.json.gz",
+      "sha256": "f9c5da867384253c190d9d86a1023d681352e828a54a8e31f4a12ef89eb57a22",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/a581f8c62c6b581641e9328df576c85610d7f19a68fb9d92da24b15975c0dd41.json.gz",
+      "sha256": "ae1dac089f14885fc22696c3769e050a3617fd9c9a1d4ccb2dd5bfc486693d59",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/b014eff3c5eba0b64e4353d07f0374e9648f2bd1e67cc9145d78beeda6c47172.json.gz",
+      "sha256": "75adbb943b911956a4985f45b51812bdbda7528361ae87e7beeed5de0a1244dc",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/b175d4ba1f49f473eac32d6d456954f166efa9818c55b5c07d59274ed118bb9f.json.gz",
+      "sha256": "c31485c7a52f7e8cbbcaf1e3e0ad30985c8287952d0d6b34a068bc50c774a0b1",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/b243b954aa8ebae0a0a37088dbaf0f7171a6a4c725d3ba7cbdb64fbda5a979f6.json.gz",
+      "sha256": "2b8c6985090791125a3f4d92029059659b46aeb7eef0fabe61de1101683b7ec0",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/b306c6f493077b0fff5e0376bd8c42979c6a75609525c6c8981932d013263b29.json.gz",
+      "sha256": "e8b02ae827f700d2f7eb4e1e2e43ade0815aa1c66d6849a1ef1fe3cbcdbcd563",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/b3a73ac7537dd6476aed5028dbf15b38f79af42393534702893d04067ade0f7e.json.gz",
+      "sha256": "ae0999056715835d2a461ebb06dad49744e87e362f75935033dba39604892184",
+      "commands": 10
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/b64f2ed493850e54852f8892f7f51eba314e637168987ca6519ef887ea8048a3.json.gz",
+      "sha256": "c78855ebba7cea6904ef3d73703c345d5989457dca0949ba6e37b2f756a52fc3",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/b67b5d952dba1493659b6fb231b8b8c11a0e5a9376ea25b7f8d9c5a5d1b79712.json.gz",
+      "sha256": "44accbda57d6a26af59abe66f5a7895d68fb96b33d313461cb35dade1caa7a85",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/b90db8d648dd4b1b8a8e63b87d5fe7d54272ae17dae034c0ae621a6d48a2b01b.json.gz",
+      "sha256": "100b43994bda8319be0832b75f3fea4f4a49b7777a4f20c983252e763be54f9c",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/bade2102bd3ac30fe3ed1c78992b8712a234d4676e78ffe6d77954c9ee2b21b4.json.gz",
+      "sha256": "8441649ecb6185fa73bed85dbb15f94e1d26a1624cc5f634884a3d2d75b6d4c1",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/bbf24fedb96f5f1188141fe6ba91fdbdcb6789e7dd5b36eb9edc303037a67bb6.json.gz",
+      "sha256": "281587163a15fcac1916b9c0461ac76ae640f514cfcc2be5d3af035dff429b72",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/bed0e283dbd9687a86678cd48079ab149558a203879f5206d6e879a5e16605e6.json.gz",
+      "sha256": "55c6bb0bad4287057b89714c522b1be7941f467fde0f3166aa3106ce868e06cf",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/bef964dae794ea483d6171fde5b841e8df69e6d0bc764259313dfbeef597dbcb.json.gz",
+      "sha256": "0dc5fc6048d96e6b6769b9b219d66d05c8869bb06f16079c485740bd7764da5c",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/c20163ad3cab555911e9489fb3547e543f3b93d8081d75e02b3eb0f401ff9b5a.json.gz",
+      "sha256": "f5d4d86cdf4af95eac4e186eae946aacd69e32e6756f5aa19920eccae3c4ef52",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/cdc2477613390d655e70d6ce35e94972b3cb96fdabeefdeb61a5b85012ffc6c9.json.gz",
+      "sha256": "a37c133f26ce6e7a1a72e1239ffdf12287bd7ffab3aa1bb213abc5c995a0fca4",
+      "commands": 1
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/d121354b2c55a45e2660f76dd3d6c5727fe2912cec2de5cdffc1f0236ecad056.json.gz",
+      "sha256": "59e342706be214b3b2801556ca4d19efe5d8c62785bb897b496b18c551c56868",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/d3262dd375ab969c9623adff14654be8f01e7f2ad238c3939fb78c5cf6572f7a.json.gz",
+      "sha256": "15e4d48869e3f1a94bb096f6f48ec40a6c5f12c4028f34298d23657a8283024c",
+      "commands": 4
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/d41b242f0e155d92c5461bbfafbdb84aebc65ed9a5543e04f64878d72481b967.json.gz",
+      "sha256": "385669e24e1612dd524d0f73b57fffb8b1e2d4d07e9acf2801c3fd3f65b6316b",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/d56db20098caebaf3ce4c8ff9e313c57bf0ee8c2b0d59b6b72b3a62f57e0c263.json.gz",
+      "sha256": "5e378bd7a0f0298d300ec7cec135f05ea2c602ee0f8109fdb9854d8c9e33b5fc",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/d5a4f1a35050a4408666af29aba400ab8f7e502d342fa6ee1c2c9c56e33064e7.json.gz",
+      "sha256": "b96ca53e25cdbfa666d550181ef82f2a33a0df3837cef9616373c5fbb53fd5fb",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/d8eca083f0403a2f6baad1172a1feece9f73281efc36bd7d2f1527b2d4455a65.json.gz",
+      "sha256": "4b684359ba8078c5a20bd82f69c37f2b3f81cd8200197144d795b3ea4f6a7c57",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/dcbd4f079188a6d94fbb077af898c842145a062c19049c2bc5c76782fd6f47de.json.gz",
+      "sha256": "7d5cdd91c25ccc0b16f87c6df46d5f81f067ac246f227daf368104b1c55ef5e6",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/e18b9209c3d41ebfbc191243f242584c14386675d6df689b18a0c2c36882b975.json.gz",
+      "sha256": "81d5c633c29b0d08678cc4bf5133034d2557f79db53e16283ffc680d15e902ac",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/e62b19e28b90f67b934aeb2ef5d18e8dccea4b8f3396f9499383872ed05ef0bc.json.gz",
+      "sha256": "bc9b1ded94d7f12808478c1b039e7819aeacef59ca0adaa77c5972e96e0badae",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/e89bc3af3ad281da90bba3533131905b948168fc449a5a3fc5c66ee2c9ced0dd.json.gz",
+      "sha256": "ebf49d76f6a54728269355f5daab49f2113870f56f96d50b087617a738c4be99",
+      "commands": 2
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/ea294954772637b88c42b2beb7dcbdaf1100e0e5c8029df67c2566e0c7788aef.json.gz",
+      "sha256": "b658dd23128cca962fddb0a2bf8d56ff7dbde6ab88ed3256f8c39ad218193353",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/ea54f0ebb5c97386626b9e2be64d7ae0a9dc2802dd78c10838ebe4bf87ad0b47.json.gz",
+      "sha256": "75849d68cde6ae0ccd205c9a3fb54a0567fa1ae99d01dd7b68a56841b5343c86",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/efb10e3db2f316ea8a04dbbbc7bad0e28853efca5fc7111674f34b51b7744e43.json.gz",
+      "sha256": "18b6b809fff93d43bdec415fa1a4e22f8dc68751f0f4b45bea56ebf88638646f",
+      "commands": 6
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/f0fb606be30fac1e5eceb09e5c619cb6cf606c386c47bad6b4d2a4af37130f3e.json.gz",
+      "sha256": "bc7bc20bec9fea336e31d2dffd7fd1aaa9b2a08b201e43ce95bd98e41386aa18",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/f3603a16bab9ef52cd7e86c263a5596b10b0cd90a297e135f718844ab4ff4014.json.gz",
+      "sha256": "d6d93a01da40e6690b63719e87c3ff27b521cf8617fc4d6113a0d829a7a7adee",
+      "commands": 12
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/f62eb3287b2182ca988a088e17445ab8dadc7a05336e2510103cf2f9804bc165.json.gz",
+      "sha256": "535bb406d61032b4a446a3508afdf96fc7f76eaa7047474cefa770e5d76719c3",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/f77e70b5faa662a86cf5a7414688fd86dcdedefcfbd5e8bcac5758c7eac685bf.json.gz",
+      "sha256": "93a3350227ec424a91d3f7cdcb9cb8c4965d5203c76ca3701367a3f143c12414",
+      "commands": 5
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/f859ab1acf2292737ebd307cde36110de5150988e86da7465c731a6257c8d829.json.gz",
+      "sha256": "b7a23d7085a3fe4b6aa2b8a01bd59405c93b380cb748e5b551fb1659112bb747",
+      "commands": 5
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/f94653d0528544f983041b71af9b0a7e561156c6d14978f8513815721fcc0068.json.gz",
+      "sha256": "9e3b8cd9e3f28e87e7056f27d479d339e082d3f4dd1613b599321de4518f3f77",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/f960a8eb4082696ba966d48fd7db72ab5a2151ff154e0385164cb2219d5eb7ac.json.gz",
+      "sha256": "9d7ceb8a4aa70e6d89d5226d28e8082734eda83fd94e3c281d8306cf4e5d4982",
+      "commands": 9
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/fa02e73ed886db48a17f37dd0d3ac4cdbd16471ad88dd10cc6c3b90d47233a35.json.gz",
+      "sha256": "659a2c4fee299b239b819e69d41b2f58f4a6f20a3987544a9026c4b28648ce39",
+      "commands": 3
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/fc2e59fd84c127bfb02d77bba27fb42e7cffc3d2a68320466f9c72d080757f41.json.gz",
+      "sha256": "2e49d267b9192e79301ed6450cb0d2857d980eeb440b52318f325ea0ebf0309a",
+      "commands": 11
+    },
+    {
+      "path": "work/exp03-depth-host-20261022-r2/ffc13317a255aec709441294435122791d67102d42ec3823a11af4358798d999.json.gz",
+      "sha256": "ec66e2eda36a8dccc0d40fccef63ba4d74a3b003135139f652217251a05b03f1",
+      "commands": 9
+    }
+  ],
+  "date": "2026-10-22",
+  "implementation_commit": "56af967",
+  "scope": "N04 finite artificial dependency-pump depth comparison; separate stack work pending",
+  "native_build": {
+    "command": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-O1",
+      "-g1",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/reentry_depth_driver.cpp",
+      "-o",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-5/depth0/app"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": "",
+    "compiler_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "inputs": {
+      "tests/unit/core_redesign/test_reentry_depth.py": "76ff6da36cfa92811a993ce74c1bbb006524ed64f4d594865a144eda7900c0e4",
+      "tests/unit/core_redesign/reentry_depth.hpp": "6f0c2276001e8691a41712e50a7dd5bac0c9327756ffd90932dcd78e1aea7fe7",
+      "tests/unit/core_redesign/reentry_depth_driver.cpp": "3927ae7267f146747c477054996b54ca185f6393c34dfc68d379fc3a0eb9b9b0",
+      "tests/unit/core_redesign/wait_policy.hpp": "862219f16aefaedefecf8563a271af6b3ca72342f35fcb3d2ff2abe4ea67b644",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "planning/core-redesign/reentry-depth-inputs.json": "ca6d831c58fa9d27e93e03136d14e257e41e1e2273829587b64123e9c5dce8a6"
+    },
+    "executable_sha256": "5eb5c11c92f5b7a145021a7b3d9f738315d6f9d8bb62836201363e6a9fc24eaa"
+  },
+  "abi": {
+    "status": "passed",
+    "scope": "EXP-03 finite dependency-pump depth comparison; structural link only, no stack peak or timing proof.",
+    "inputs": {
+      "tests/platform/core_redesign/measure_reentry_depth.py": "90b51eddfb6dc8d301888a9df6f2c75b0e1766bf0cdedf9522c037288ee7fd03",
+      "planning/core-redesign/reentry-depth-inputs.json": "ca6d831c58fa9d27e93e03136d14e257e41e1e2273829587b64123e9c5dce8a6",
+      "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+      "tests/unit/core_redesign/reentry_depth.hpp": "6f0c2276001e8691a41712e50a7dd5bac0c9327756ffd90932dcd78e1aea7fe7",
+      "tests/unit/core_redesign/wait_policy.hpp": "862219f16aefaedefecf8563a271af6b3ca72342f35fcb3d2ff2abe4ea67b644",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/platform/core_redesign/reentry_depth_entry.cpp": "9ef2b40cd5f32b35fb59a80ae6f72d18bc200776b65e9439492fa243191752b5",
+      "tests/platform/core_redesign/sleep_flow_support.cpp": "264378d07dfb98d2d4a602dad6ba71635c7c62b30286c85bc3dbe318778f8956",
+      "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
+    },
+    "results": [
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "empty",
+        "unused": false,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "825eadbd442d789759595f20f5b02a3cfd443795d30374a6d0bd4d0aa9f304a2"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "continuation-depth1",
+        "unused": false,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 1208,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 28,
+        "image_sha256": "76a2d9c7b11e4a5a56383e05e2de6c6d1f993eb96388cd4ac16e638a79e00cb0",
+        "elf_sha256": "ebf0dde5b574aaef559c9e900b56a76740ea9db73b7e2fab5a5191cf11775642"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "unused-continuation-depth1",
+        "unused": true,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "825eadbd442d789759595f20f5b02a3cfd443795d30374a6d0bd4d0aa9f304a2"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "nested-depth1",
+        "unused": false,
+        "family": 2,
+        "depth_limit": 1,
+        "nested": true,
+        "image_bytes": 1160,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 28,
+        "image_sha256": "c645dcc6c230c8e243500e53a7592b33bdbc0b69d21630ffee38bec8a0864ffc",
+        "elf_sha256": "3e12ad628b36d157eb9812bc89564cc19041a4603509b6f0e758a270a5202d6f"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "unused-nested-depth1",
+        "unused": true,
+        "family": 2,
+        "depth_limit": 1,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "825eadbd442d789759595f20f5b02a3cfd443795d30374a6d0bd4d0aa9f304a2"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "nested-depth2",
+        "unused": false,
+        "family": 3,
+        "depth_limit": 2,
+        "nested": true,
+        "image_bytes": 1176,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 28,
+        "image_sha256": "2eb34562266b2019026b0f914d075da4a2915439ed0ffb06432889e08b622cf9",
+        "elf_sha256": "30c60441304e1ba828517a8e2595086c0ddbb0b61e23aad8d9140c36635c6e52"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "unused-nested-depth2",
+        "unused": true,
+        "family": 3,
+        "depth_limit": 2,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "825eadbd442d789759595f20f5b02a3cfd443795d30374a6d0bd4d0aa9f304a2"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "nested-depth4",
+        "unused": false,
+        "family": 4,
+        "depth_limit": 4,
+        "nested": true,
+        "image_bytes": 1176,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 28,
+        "image_sha256": "2ece1d1e1af0de073bb0b156ca989caad41a19288fbeb7494af3fef8a4f6273a",
+        "elf_sha256": "2b560c8d3c6efb47e4880198ee1b5172e9becf08287d16020ee101c1762947e2"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": false,
+        "case": "unused-nested-depth4",
+        "unused": true,
+        "family": 4,
+        "depth_limit": 4,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "825eadbd442d789759595f20f5b02a3cfd443795d30374a6d0bd4d0aa9f304a2"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "empty",
+        "unused": false,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "f63d0fd598ddde4905e48966dc0e6b35a95dafd58dae587ae23ecbf12699df3d"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "continuation-depth1",
+        "unused": false,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 1112,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 20,
+        "image_sha256": "8e269d38be1104f4cdf629016a4b2c2e38c64a0fd9744323b0a81b71d705c2d5",
+        "elf_sha256": "0f2806f993e8a6fca3324e5a1dd498a3faefb63203d8ed66f718136b578acaa8"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "unused-continuation-depth1",
+        "unused": true,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "f63d0fd598ddde4905e48966dc0e6b35a95dafd58dae587ae23ecbf12699df3d"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "nested-depth1",
+        "unused": false,
+        "family": 2,
+        "depth_limit": 1,
+        "nested": true,
+        "image_bytes": 1192,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 24,
+        "image_sha256": "24d21deaef9bf5f61147c693fa12320ad91b631b6dfcc9df825cd82ef4b3988f",
+        "elf_sha256": "cf4a573d7e82bd220930d7a7f3ef3789a6223f799fdba3308943b7acd34758a8"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "unused-nested-depth1",
+        "unused": true,
+        "family": 2,
+        "depth_limit": 1,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "f63d0fd598ddde4905e48966dc0e6b35a95dafd58dae587ae23ecbf12699df3d"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "nested-depth2",
+        "unused": false,
+        "family": 3,
+        "depth_limit": 2,
+        "nested": true,
+        "image_bytes": 1208,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 24,
+        "image_sha256": "3121234873c6bf9b2970e05a1a0ae79353318e9fed8cdd2bee386a80f93ede38",
+        "elf_sha256": "47ba4b57fe0f6711e896a629ae2c5a1008089d86c2bb6bac7b40b88b33f958a6"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "unused-nested-depth2",
+        "unused": true,
+        "family": 3,
+        "depth_limit": 2,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "f63d0fd598ddde4905e48966dc0e6b35a95dafd58dae587ae23ecbf12699df3d"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "nested-depth4",
+        "unused": false,
+        "family": 4,
+        "depth_limit": 4,
+        "nested": true,
+        "image_bytes": 1208,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 24,
+        "image_sha256": "531589d2e4e55ede536aa6ca82b19538855b837a96b8ee80b8c39ccd294881b4",
+        "elf_sha256": "5a63462cce3a6decf63dcad77cf4d5a35dd05bc25810184517e35fbf2a296f04"
+      },
+      {
+        "part": "CH32V003F4P6",
+        "lto": true,
+        "case": "unused-nested-depth4",
+        "unused": true,
+        "family": 4,
+        "depth_limit": 4,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "f63d0fd598ddde4905e48966dc0e6b35a95dafd58dae587ae23ecbf12699df3d"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "empty",
+        "unused": false,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "a031afc1f607e8188564da47e6bfa7998ad4ad3e9d77420ce64991e84281ac83"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "continuation-depth1",
+        "unused": false,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 920,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 64,
+        "image_sha256": "f701b5503b9ca5fb9a96b104dd764d0c19827aa2b062fb211b97486e481c6f94",
+        "elf_sha256": "ba437634841b8f163dff97021235288c06fc003c7efb57798bad156e8b5a5f59"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-continuation-depth1",
+        "unused": true,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "a031afc1f607e8188564da47e6bfa7998ad4ad3e9d77420ce64991e84281ac83"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "nested-depth1",
+        "unused": false,
+        "family": 2,
+        "depth_limit": 1,
+        "nested": true,
+        "image_bytes": 976,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 64,
+        "image_sha256": "0d35a7f94f1af70889c7504c7eca9ced156d6473aad31c9a4323a8ead6d8d0d9",
+        "elf_sha256": "a8352abbe78fa45955a8dd5bf42073ba4ac80b7ab72f54f5dd63c28da802008e"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-nested-depth1",
+        "unused": true,
+        "family": 2,
+        "depth_limit": 1,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "a031afc1f607e8188564da47e6bfa7998ad4ad3e9d77420ce64991e84281ac83"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "nested-depth2",
+        "unused": false,
+        "family": 3,
+        "depth_limit": 2,
+        "nested": true,
+        "image_bytes": 992,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 64,
+        "image_sha256": "c035f15f4d478353f062ec97b036f8f5aa9f655860a36c107abbff478cb08a2c",
+        "elf_sha256": "b609ee82fe5d2c1117a2f4bac0682c7337a4802681d419b8c24e165631b64781"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-nested-depth2",
+        "unused": true,
+        "family": 3,
+        "depth_limit": 2,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "a031afc1f607e8188564da47e6bfa7998ad4ad3e9d77420ce64991e84281ac83"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "nested-depth4",
+        "unused": false,
+        "family": 4,
+        "depth_limit": 4,
+        "nested": true,
+        "image_bytes": 992,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 64,
+        "image_sha256": "f60eebf095a2ca6b05c3e30b5d0cf9e3633dafe0584fc8bc8227edda20b2ccd7",
+        "elf_sha256": "d3b02bfdf81e35ab50b4fa58b8a39f1618fdcca72cb17503bca24ac3ce78dee2"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": false,
+        "case": "unused-nested-depth4",
+        "unused": true,
+        "family": 4,
+        "depth_limit": 4,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "a031afc1f607e8188564da47e6bfa7998ad4ad3e9d77420ce64991e84281ac83"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "empty",
+        "unused": false,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "915e72114d114aa859bc5be367258ee1578a16eb461caad4a6bcc65d8afb7c27"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "continuation-depth1",
+        "unused": false,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 936,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 64,
+        "image_sha256": "88810c5fc8d48bc4605d9fe45d33f632b2af1864c71ec964c06b43f1c0b9972f",
+        "elf_sha256": "358ce2d9d11c9eb8a4f9427596b9affdd4ee7303b26adac25cbbdf22cbf6044f"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-continuation-depth1",
+        "unused": true,
+        "family": 1,
+        "depth_limit": 1,
+        "nested": false,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "915e72114d114aa859bc5be367258ee1578a16eb461caad4a6bcc65d8afb7c27"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "nested-depth1",
+        "unused": false,
+        "family": 2,
+        "depth_limit": 1,
+        "nested": true,
+        "image_bytes": 1008,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 48,
+        "image_sha256": "dddee057ede9ab7a05f529da432d15bbafbb91fbf062a60d7a6f8e9b029a8cea",
+        "elf_sha256": "2d53d998adab0d9a21532b56a800768fb7808bf4e4f4f89bce322b0273859559"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-nested-depth1",
+        "unused": true,
+        "family": 2,
+        "depth_limit": 1,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "915e72114d114aa859bc5be367258ee1578a16eb461caad4a6bcc65d8afb7c27"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "nested-depth2",
+        "unused": false,
+        "family": 3,
+        "depth_limit": 2,
+        "nested": true,
+        "image_bytes": 1024,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 48,
+        "image_sha256": "7f657afd3e8c0aea6107ab443847cd3bef40155278921c6643147c1dd6ad3011",
+        "elf_sha256": "99b43dba86e32cdf0258712d56f002003cc0f611eb9fdc256f9603cbf274c749"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-nested-depth2",
+        "unused": true,
+        "family": 3,
+        "depth_limit": 2,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "915e72114d114aa859bc5be367258ee1578a16eb461caad4a6bcc65d8afb7c27"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "nested-depth4",
+        "unused": false,
+        "family": 4,
+        "depth_limit": 4,
+        "nested": true,
+        "image_bytes": 1024,
+        "data_bytes": 96,
+        "bss_bytes": 68,
+        "static_ram_bytes": 164,
+        "application_object_bytes": 96,
+        "harness_object_bytes": 68,
+        "max_emitted_frame_bytes": 48,
+        "image_sha256": "69ef0597a6a826810824b1df86b212812f6db4554de63aaf0d5d343257fc15b9",
+        "elf_sha256": "015c97955f0baf294330328598603830dc9353803d49c3ca017720b6b4152baa"
+      },
+      {
+        "part": "CH32X035C8T6",
+        "lto": true,
+        "case": "unused-nested-depth4",
+        "unused": true,
+        "family": 4,
+        "depth_limit": 4,
+        "nested": true,
+        "image_bytes": 8,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "static_ram_bytes": 0,
+        "application_object_bytes": 0,
+        "harness_object_bytes": 0,
+        "max_emitted_frame_bytes": 0,
+        "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+        "elf_sha256": "915e72114d114aa859bc5be367258ee1578a16eb461caad4a6bcc65d8afb7c27"
+      }
+    ],
+    "excluded": [],
+    "libgcc": {
+      "CH32V003F4P6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/rv32ec/ilp32e/libgcc.a",
+        "sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f"
+      },
+      "CH32X035C8T6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+        "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+      }
+    },
+    "support_lto": false,
+    "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "tools": {
+      "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+      "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+      "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+      "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+      "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+      "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+      "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+      "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+    }
+  },
+  "preliminary_runs": {
+    "native": {
+      "junit": "work/exp03-depth-tests-20261022.xml",
+      "passed": 74,
+      "failed": 1,
+      "reason": "Expected HeldByActive instead of earlier DepthLimit at depth1; corrected expectation, added 6 guard cases; implementation unchanged"
+    },
+    "abi": {
+      "path": "work/exp03-depth-abi-20261022",
+      "builds": 36,
+      "reason": "Generic prior probe metadata names replaced with nested/depth_limit; all 36 images equal final"
+    }
+  },
+  "junit": {
+    "path": "work/exp03-depth-tests-20261022-r2.xml",
+    "sha256": "1f1b154fb69487baa8b82ddac6161f8b93c24951b067e801d645cdf661f1736c",
+    "tests": 81
+  },
+  "archive": {
+    "path": "work/exp03-reentry-depth-20261022-evidence.tar.gz",
+    "bytes": 1022148,
+    "sha256": "58b4d2d58fc9d87108160abdc4f0cb1997d83f05537209172e6382046170d126"
+  },
+  "matrix_sha256": "95aa8970a257a2e24e0b36b44c2cd76dd82282814c466a417cb3bd67ede6d055",
+  "limits": [
+    "Analytical probe call paths are not observed stack peaks or IRQ-inclusive budgets",
+    "One finite attempt, not unbounded blocking wait",
+    "Ten small random graphs, not full P1 operation conditions",
+    "No real IRQ, separate stack, context switch or MCU execution",
+    "No API adoption or human evaluation"
+  ]
+}

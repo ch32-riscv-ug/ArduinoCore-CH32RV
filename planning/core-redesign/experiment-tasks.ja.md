@@ -262,3 +262,9 @@ register backendと実wireの成立は未完了。拒否後復帰をhostのaccep
 [N03 条件付きregister接続](tasks/EXP-06/k0-slave-register-result.ja.md)でnative137件＋workspace3件・ABI132を実施した。
 207 trace・51組の全群状態／MMIO一致。ACK-discardとdata-NACKは意味が異なり、foreign再STARTは未解決。
 実wireの成立は未検証。host／MMIO link範囲の後、N04の独立比較を進める。
+
+## N04深さ比較（2026-10-22）
+
+[再入深さの結果](tasks/EXP-03/reentry-depth-result.ja.md)にnative78件＋workspace3件・ABI36を記録した。
+継続型と深さ1／2／4の有限依存呼出し、循環・資源保持・外部完了を比較。
+生成call経路の算定は実stack peakではない。別stackの固定port適合・配置・仮想I/O列は続けて確認する。
