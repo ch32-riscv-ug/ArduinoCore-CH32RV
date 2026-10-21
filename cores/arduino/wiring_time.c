@@ -344,6 +344,9 @@ void delay(unsigned long ms)
         if (ch32rv_usb_host_task) {
             ch32rv_usb_host_task();
         }
+        if (ch32rv_net_task) {
+            ch32rv_net_task();
+        }
         yield();
     }
 }
