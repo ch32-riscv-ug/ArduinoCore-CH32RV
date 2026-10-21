@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-22",
+  "scope": "N06 serial Fabric/executor connection; not concurrent H417 synchronization or public API",
+  "candidates": ["R", "A", "B-work", "C-notification-bridge"],
+  "policies": ["Single", "Fixed", "Shared"],
+  "features": [0, 1, 2, 3],
+  "domain": 9,
+  "message_words": 4,
+  "message_capacity": 4,
+  "block_count": 2,
+  "block_bytes": 64,
+  "callback_read_budget": 8,
+  "pipeline": "publish data, return epoch-tagged ticket, explicit hint delivery, explicit normal opportunity, bounded pop/take/read/release",
+  "notification": "adapter hints cleared before probe; retained after success or contention; distinct from Fabric sticky notice bits",
+  "gate_feedback": "serialized call-local entered flag distinguishes busy from empty; not safe for concurrent use",
+  "recovery": "explicit worker offline and DMA quiet declarations before attest/restart; queued executor hints may survive; stale leases rechecked by epoch",
+  "negative_control": "message-only late clear loses notification published after empty probe",
+  "not_verified": ["shared concurrent composite", "HSEM/cache/backend", "actual intercore IRQ", "physical reset or DMA stop", "global shared executor costs", "peak stack", "H417 runtime placement", "architecture adoption"]
+}
