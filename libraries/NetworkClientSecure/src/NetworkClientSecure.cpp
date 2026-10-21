@@ -279,6 +279,7 @@ int NetworkClientSecure::startTls(const char *host)
     _lastError = 0;
     _verifyFlags = 0;
     _peeked = -1;
+    _version = 0;
     if (!psa_ready) {
         if (psa_crypto_init() != PSA_SUCCESS) {
             _lastError = MBEDTLS_ERR_SSL_HW_ACCEL_FAILED;
@@ -302,6 +303,8 @@ int NetworkClientSecure::startTls(const char *host)
     int ret = mbedtls_ssl_config_defaults(&s->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM,
                                           MBEDTLS_SSL_PRESET_DEFAULT);
     if (ret == 0) {
+        mbedtls_ssl_conf_min_tls_version(&s->conf, (mbedtls_ssl_protocol_version)_minVersion);
+        mbedtls_ssl_conf_max_tls_version(&s->conf, (mbedtls_ssl_protocol_version)_maxVersion);
         if (_insecure) {
             mbedtls_ssl_conf_authmode(&s->conf, MBEDTLS_SSL_VERIFY_NONE);
         } else {
@@ -349,6 +352,7 @@ int NetworkClientSecure::startTls(const char *host)
         stop();
         return 0;
     }
+    _version = (uint16_t)mbedtls_ssl_get_version_number(&s->ssl);
     return 1;
 }
 
@@ -412,7 +416,10 @@ int NetworkClientSecure::read(uint8_t *buf, size_t size)
             return 1;
         }
     }
-    const int ret = mbedtls_ssl_read(&_tls->ssl, buf + got, size - got);
+    int ret;
+    do {   /* a TLS 1.3 server may send session tickets after the handshake: not data */
+        ret = mbedtls_ssl_read(&_tls->ssl, buf + got, size - got);
+    } while (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET);
     if (ret > 0) {
         return (int)got + ret;
     }
@@ -426,7 +433,13 @@ int NetworkClientSecure::peek()
 {
     if (_peeked < 0) {
         uint8_t b;
-        if (_tls && mbedtls_ssl_read(&_tls->ssl, &b, 1) == 1) {
+        int ret = 0;
+        if (_tls) {
+            do {
+                ret = mbedtls_ssl_read(&_tls->ssl, &b, 1);
+            } while (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET);
+        }
+        if (ret == 1) {
             _peeked = b;
         }
     }
@@ -448,6 +461,7 @@ void NetworkClientSecure::stop()
         _tls = nullptr;
     }
     _peeked = -1;
+    _version = 0;
     NetworkClient::stop();
 }
 

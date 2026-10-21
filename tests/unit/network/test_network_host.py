@@ -87,9 +87,11 @@ def check(results, names):
 
 ALL = ["address", "ping", "udp_echo", "tcp_echo", "tcp_host_to_sketch", "tcp_sketch_to_host", "tcp_parallel",
        "tcp_client", "dns", "sntp", "mdns_host", "mdns_service"]
-TLS_CASES = ["tls_ecdsa_ca", "tls_ecdsa_bundle", "tls_rsa_bundle", "tls_insecure", "tls_client_certificate",
-             "tls_refuses_wrong_root", "tls_refuses_wrong_name", "tls_bundle_refuses_unknown_root",
-             "tls_bundle_refuses_impostor_root", "tls_ca_refuses_impostor_root"]
+TLS_CASES = ["tls_ecdsa_ca", "tls_ecdsa_bundle", "tls_rsa_bundle", "tls_rsa_tls12_server", "tls_insecure",
+             "tls_client_certificate", "tls_tls13_only_server", "tls_tls12_only_server", "tls_asked_for_tls12",
+             "tls_tls13_refused_by_tls12_server", "tls_tls12_refused_by_tls13_server", "tls_refuses_wrong_root",
+             "tls_refuses_wrong_name", "tls_bundle_refuses_unknown_root", "tls_bundle_refuses_impostor_root",
+             "tls_ca_refuses_impostor_root"]
 
 
 def test_static_address(sketch):

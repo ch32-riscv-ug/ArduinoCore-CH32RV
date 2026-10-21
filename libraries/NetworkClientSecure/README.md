@@ -6,7 +6,7 @@ TLS over the Network library's `NetworkClient`, with the API of ESP32's Arduino 
 
 - CH32V307/V317, V407/V467 and H415-H417: flash, RAM and a hardware RNG. Other series stop with an error.
 - Tested on the host against openssl servers (`tests/unit/network`):
-  - Connects with ECDSA and RSA chains, a root certificate, a bundle and a client certificate.
+  - Connects with ECDSA and RSA chains, a root certificate, a bundle and a client certificate, over TLS 1.3 and 1.2, including servers that speak only one of them.
   - Refuses a wrong root, a wrong name, a root missing from the bundle, and an impostor root (same name, another key).
 - Not yet run on a chip (no Ethernet driver yet).
 - **V307 RAM:** about 30 KB static plus 30-40 KB of heap in a handshake may not fit in 64 KB. The V307 can trade flash for RAM in its option bytes, which the core does not offer yet.
@@ -37,7 +37,9 @@ void setup() {
 
 ## Behaviour
 
-- TLS 1.2: ECDHE (X25519, P-256, P-384), ECDSA and RSA certificates, AES-GCM and ChaCha20-Poly1305.
+- TLS 1.2 and 1.3. Both are offered by default and the server picks: 1.3 with a server that has it, 1.2 with one that does not.
+- `setTlsVersions(min, max)` narrows the offer, and `tlsVersion()` reports what was agreed (0x0303 is 1.2, 0x0304 is 1.3).
+- Key exchange is ECDHE (X25519, P-256, P-384); certificates are ECDSA or RSA (PKCS#1 v1.5, PSS); ciphers are AES-GCM and ChaCha20-Poly1305.
 - **Dates** are checked once the clock is set (after 2025), by `configTime()` SNTP or `settimeofday()` from an RTC. Before that a certificate is not refused for its dates, as the board cannot judge them.
 - **Randomness:** keys come from the chip's RNG. If the RNG keeps failing, the connection fails instead of carrying on with weak randomness.
 - **Time:** the handshake's public-key work takes about 1-6 s at 144 MHz, depending on the certificates. The limit is 120 s by default (`setHandshakeTimeout()`), and the network keeps running meanwhile.
@@ -47,9 +49,13 @@ void setup() {
 
 An HTTPS GET sketch, Network library included:
 
-- V307: 192 KB of flash, 29.5 KB of static RAM.
-- H417: 199 KB of flash.
-- TLS adds 30-40 KB of heap during a handshake.
+| | V307 | V407 | H417 |
+|---|---|---|---|
+| Flash | 207.8 KB | 206.4 KB | 214.3 KB |
+| Static RAM | 29.6 KB | 69.3 KB | 69.9 KB |
+
+- TLS 1.3 accounts for about 15 KB of flash and 28 bytes of static RAM.
+- The handshake heap is 30-41 KB (measured on the host); TLS 1.3 added at most 0.5 KB to it.
 
 ## License
 

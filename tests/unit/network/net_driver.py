@@ -361,23 +361,30 @@ def dhcp_server():
 
 
 def tls_servers():
-    """openssl s_server, reversing each line: the ECDSA chain on 4431, the RSA chain on 4432, the
-    ECDSA chain asking for a client certificate on 4433, a root missing from the bundle on 4434, and an
-    impostor of ec-root (same name, another key) on 4435."""
+    """openssl s_server, reversing each line, offering TLS 1.2 and 1.3 unless said: the ECDSA chain on
+    4431, the RSA chain on 4432, the ECDSA chain asking for a client certificate on 4433, a root missing
+    from the bundle on 4434, an impostor of ec-root (same name, another key) on 4435, the ECDSA chain on
+    TLS 1.3 only on 4436 and TLS 1.2 only on 4437, and the RSA chain on TLS 1.2 only on 4438."""
     def serve(port, leaf, chain, extra=()):
-        return subprocess.Popen(["openssl", "s_server", "-quiet", "-tls1_2", "-accept", f"10.9.0.1:{port}", "-rev",
+        return subprocess.Popen(["openssl", "s_server", "-quiet", "-accept", f"10.9.0.1:{port}", "-rev",
                                  "-cert", f"{leaf}.pem", "-key", f"{leaf}.key", "-cert_chain", f"{chain}.pem", *extra],
                                 cwd=PKI, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     servers = [serve(4431, "ec-leaf", "ec-int"), serve(4432, "rsa-leaf", "rsa-int"),
                serve(4433, "ec-leaf", "ec-int", ("-Verify", "1", "-CAfile", "client-root.pem")),
-               serve(4434, "wrong-leaf", "wrong-root"), serve(4435, "impostor-leaf", "impostor/ec-root")]
+               serve(4434, "wrong-leaf", "wrong-root"), serve(4435, "impostor-leaf", "impostor/ec-root"),
+               serve(4436, "ec-leaf", "ec-int", ("-tls1_3",)), serve(4437, "ec-leaf", "ec-int", ("-tls1_2",)),
+               serve(4438, "rsa-leaf", "rsa-int", ("-tls1_2",))]
     time.sleep(0.5)
     return servers
 
 
-def tls(host, port, how, expect_ok):
+TLS12, TLS13 = "0x0303", "0x0304"
+
+
+def tls(host, port, how, expect):
+    """expect: the TLS version the connection must agree on, or None for a refusal."""
     _, reply = command(f"S {host} {port} {how}", 180, 1)
-    ok = reply == "STLS OK olleh" if expect_ok else bool(reply and reply.startswith("STLS FAIL"))
+    ok = reply == f"STLS OK olleh {expect}" if expect else bool(reply and reply.startswith("STLS FAIL"))
     return {"ok": ok, "reply": reply}
 
 
@@ -514,16 +521,22 @@ if ip_line:
     run("sntp", sntp, 60)
     servers = tls_servers()
     try:
-        run("tls_ecdsa_ca", lambda: tls("tls.lan", 4431, "ca", True), 200)
-        run("tls_ecdsa_bundle", lambda: tls("tls.lan", 4431, "bundle", True), 200)
-        run("tls_rsa_bundle", lambda: tls("tls.lan", 4432, "bundle", True), 200)
-        run("tls_insecure", lambda: tls("tls.lan", 4431, "insecure", True), 200)
-        run("tls_client_certificate", lambda: tls("tls.lan", 4433, "client", True), 200)
-        run("tls_refuses_wrong_root", lambda: tls("tls.lan", 4431, "wrongca", False), 200)
-        run("tls_refuses_wrong_name", lambda: tls("wrong.lan", 4431, "ca", False), 200)
-        run("tls_bundle_refuses_unknown_root", lambda: tls("tls.lan", 4434, "bundle", False), 200)
-        run("tls_bundle_refuses_impostor_root", lambda: tls("tls.lan", 4435, "bundle", False), 200)
-        run("tls_ca_refuses_impostor_root", lambda: tls("tls.lan", 4435, "ca", False), 200)
+        run("tls_ecdsa_ca", lambda: tls("tls.lan", 4431, "ca", TLS13), 200)
+        run("tls_ecdsa_bundle", lambda: tls("tls.lan", 4431, "bundle", TLS13), 200)
+        run("tls_rsa_bundle", lambda: tls("tls.lan", 4432, "bundle", TLS13), 200)
+        run("tls_rsa_tls12_server", lambda: tls("tls.lan", 4438, "bundle", TLS12), 200)
+        run("tls_insecure", lambda: tls("tls.lan", 4431, "insecure", TLS13), 200)
+        run("tls_client_certificate", lambda: tls("tls.lan", 4433, "client", TLS13), 200)
+        run("tls_tls13_only_server", lambda: tls("tls.lan", 4436, "ca", TLS13), 200)
+        run("tls_tls12_only_server", lambda: tls("tls.lan", 4437, "ca", TLS12), 200)
+        run("tls_asked_for_tls12", lambda: tls("tls.lan", 4431, "ca12", TLS12), 200)
+        run("tls_tls13_refused_by_tls12_server", lambda: tls("tls.lan", 4437, "ca13", None), 200)
+        run("tls_tls12_refused_by_tls13_server", lambda: tls("tls.lan", 4436, "ca12", None), 200)
+        run("tls_refuses_wrong_root", lambda: tls("tls.lan", 4431, "wrongca", None), 200)
+        run("tls_refuses_wrong_name", lambda: tls("wrong.lan", 4431, "ca", None), 200)
+        run("tls_bundle_refuses_unknown_root", lambda: tls("tls.lan", 4434, "bundle", None), 200)
+        run("tls_bundle_refuses_impostor_root", lambda: tls("tls.lan", 4435, "bundle", None), 200)
+        run("tls_ca_refuses_impostor_root", lambda: tls("tls.lan", 4435, "ca", None), 200)
     finally:
         for p in servers:
             p.terminate()

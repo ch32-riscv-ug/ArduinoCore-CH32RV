@@ -16,7 +16,8 @@
  *                 settimeofday() prints "SETTIME <seconds>" (host/arduino_host.cpp)
  *             "S <host> <port> <how>" NetworkClientSecure to host:port, sends "hello\n", reads one line
  *                 how: ca (TLS_CA), wrongca (TLS_CA_WRONG), bundle (TLS_BUNDLE), insecure, client
- *                 (TLS_CA plus TLS_CLIENT_CERT / TLS_CLIENT_KEY) -> "STLS OK <line>" / "STLS FAIL <error> <flags>"
+ *                 (TLS_CA plus TLS_CLIENT_CERT / TLS_CLIENT_KEY), ca12 / ca13 (TLS_CA, TLS 1.2 / 1.3 only)
+ *                 -> "STLS OK <line> <version>" / "STLS FAIL <error> <flags>"
  *   mDNS: ch32test.local, _http._tcp port 80 with TXT path=/x
  *   TLS_* in the environment name files (PEM, or the bundle's binary).
  */
@@ -218,7 +219,12 @@ static void serveCommands()
         static char *bundle = load("TLS_BUNDLE", &bundleSize);
         tls.setCertificate(nullptr);
         tls.setPrivateKey(nullptr);
-        if (!strcmp(how, "ca")) {
+        tls.setTlsVersions(NetworkClientSecure::TlsVersion::TLS1_2, NetworkClientSecure::TlsVersion::TLS1_3);
+        if (!strcmp(how, "ca12") || !strcmp(how, "ca13")) {
+            const auto v = how[3] == '2' ? NetworkClientSecure::TlsVersion::TLS1_2 : NetworkClientSecure::TlsVersion::TLS1_3;
+            tls.setTlsVersions(v, v);
+            tls.setCACert(ca);
+        } else if (!strcmp(how, "ca")) {
             tls.setCACert(ca);
         } else if (!strcmp(how, "wrongca")) {
             tls.setCACert(wrong);
@@ -248,8 +254,9 @@ static void serveCommands()
                 }
                 got[n++] = (char)c;
             }
+            const unsigned version = tls.tlsVersion();
             tls.stop();
-            snprintf(text, sizeof text, "STLS OK %s", got);
+            snprintf(text, sizeof text, "STLS OK %s 0x%04x", got, version);
         } else {
             snprintf(text, sizeof text, "STLS FAIL -0x%04x 0x%x", (unsigned)-tls.lastError(), (unsigned)tls.verifyFlags());
         }

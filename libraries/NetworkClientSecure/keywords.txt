@@ -12,3 +12,6 @@ setPrivateKey	KEYWORD2
 setHandshakeTimeout	KEYWORD2
 lastError	KEYWORD2
 verifyFlags	KEYWORD2
+setTlsVersions	KEYWORD2
+tlsVersion	KEYWORD2
+TlsVersion	KEYWORD1

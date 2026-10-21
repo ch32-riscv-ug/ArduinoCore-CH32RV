@@ -1,5 +1,5 @@
 /* TLS over NetworkClient, as ESP32's NetworkClientSecure: Mbed TLS 4.1, TLS
- * 1.2, the server verified against a root certificate (setCACert), a root
+ * 1.2 and 1.3 (the server picks), the server verified against a root certificate (setCACert), a root
  * bundle in ESP-IDF's format (setCACertBundle - ESP32CertBundle's
  * x509_crt_bundle works as is), or not at all (setInsecure). An optional client
  * certificate and key for services that ask for one.
@@ -43,6 +43,13 @@ public:
     /* A client certificate and its key, PEM; kept by pointer. */
     void setCertificate(const char *clientCA);
     void setPrivateKey(const char *privateKey);
+    /* The versions to offer: TLS 1.2 to 1.3 by default, and the server picks
+     * the newest it has. Narrow them for a server that must not fall back, or
+     * one that mishandles TLS 1.3. */
+    enum class TlsVersion : uint16_t { TLS1_2 = 0x0303, TLS1_3 = 0x0304 };
+    void setTlsVersions(TlsVersion min, TlsVersion max) { _minVersion = min; _maxVersion = max; }
+    /* The version the current connection agreed on: 0x0303 (TLS 1.2), 0x0304 (TLS 1.3), 0 when none. */
+    uint16_t tlsVersion() const { return _version; }
     /* The handshake's whole budget; ESP32's default, as the public-key
      * operations take seconds on these chips. */
     void setHandshakeTimeout(unsigned long seconds) { _handshakeSeconds = seconds; }
@@ -66,4 +73,6 @@ private:
     int _lastError = 0;
     uint32_t _verifyFlags = 0;
     int _peeked = -1;
+    TlsVersion _minVersion = TlsVersion::TLS1_2, _maxVersion = TlsVersion::TLS1_3;
+    uint16_t _version = 0;
 };
