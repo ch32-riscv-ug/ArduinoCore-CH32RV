@@ -98,6 +98,9 @@ D05／D08／D12について、常設初期化・汎用request・wrapperを必要
 上流の128×32 vertical・bitbang I2C・入力／失敗条件は固定X0と異なる。既存payload条件を変えず、controller setup／headerの一次資料照合と同等Rへの接続は残る。
 [K0上流の再現](tasks/EXP-06/k0-upstream-result.ja.md)も固定15 fileから4 ELFの同一load imageを確認し、元のlive register10 B・IRQ・poll入力と固定K0の契約差を整理した。
 両Uのcompile再現は、同等R・実runtime／wireの検証とは分ける。K0のACK／NACK受理、snapshot共有、物理入力は残る。
+[X0 device入力の照合](tasks/EXP-06/x0-device-result.ja.md)はメーカー2 PDFを固定し、address順・scale・変換周期模型とheader込みwireを検査した。
+上流のADC設定では、100 msのread機会を毎回新しい変換と解釈できない。28 ms Low継続timeoutも通常処理停止と実wire状態を対応させて確認する。
+この模型はdriver・panel初期化・実時間の成立を証明せず、P1のglyph・情報量・payload上限は維持する。
 [I2C資源利用権の接続](tasks/EXP-01/i2c-resource-result.ja.md)はnative47件・ABI28構成で、open失敗の返却とend／takeまでのclock・pin保持を検査した。
 PCLKとpin準備はadapterの宣言であり、実clock／pinmux／IRQ backendの成立とは分ける。
 [I2Cの回収分離](tasks/EXP-01/i2c-handoff-result.ja.md)はnative70件・ABI20で、既存register engineからbackend Viewを回収し、外側bufferと結果を利用者takeまで保持した。

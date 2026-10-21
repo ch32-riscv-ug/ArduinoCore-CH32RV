@@ -125,3 +125,5 @@ SHA-256 `ceae947a928abfd49c824049f704ff0f0e5c5363480304908a449da394467eaf`。
 [比較条件を読む課題](x0-upstream-exercise.ja.md)は利用者レビュー前である。
 
 対応する小容量側の[K0上流再現](k0-upstream-result.ja.md)も完了した。両Uを元のsource／flagsで再現したことと、K0／X0の比較契約へ同等化したことを区別して、P3／P4の費用・実機評価へ接続する。
+
+続く[device入力の一次資料照合](x0-device-result.ja.md)では、上流ADC設定のdecode、header込みwire、address順の模型と通信Low継続timeoutを確認した。通信成功・新conversion・用途反映を区別し、この上流build／host呼出しの成功を実更新周期や実wire成立へ読み替えない。

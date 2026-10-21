@@ -122,3 +122,5 @@ appで出力された最大単一frameはV003 48–120 B、X035 80–144 B。lib
 [表示交換の課題](display-exercise.ja.md)に、変更する層と予測する資源を記録する。
 
 後続の[X0上流再現と実device関数の観測](../EXP-06/x0-upstream-result.ja.md)では、上流のSSD1306 128×32 vertical初期化・I2C control・長い同期取引を記録した。ここで比較したmock profileや固定128×64 rendererの実controller protocolを成立済みにしたものではない。
+
+続く[X0 device一次資料の照合](../EXP-06/x0-device-result.ja.md)では、既存goldenのaddress順とheader込みwireの計数を確認した。pixel情報やpayload上限を変えず、controller／計測の実driver接続と実時間・panel表示の確認は別に残す。

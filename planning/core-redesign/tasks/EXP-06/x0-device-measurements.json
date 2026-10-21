@@ -1,0 +1,648 @@
+{
+  "date": "2026-10-21",
+  "implementation_commit": "8520a3b",
+  "timeout_audit_commit": "f6c3be2",
+  "scope": "Manufacturer-document audit and arithmetic/address-order models; no physical timing, device initialization, firmware backend or core-policy adoption",
+  "reproduction_modes": [
+    "locked-local-documents-and-source",
+    "fixed-URL-refetch"
+  ],
+  "modes_identical": true,
+  "sources": [
+    {
+      "id": "ssd1306-1.1",
+      "publisher": "Solomon Systech",
+      "revision": "1.1",
+      "date": "2008-04",
+      "host": "Newhaven Display mirror",
+      "url": "https://newhavendisplay.com/content/app_notes/SSD1306.pdf",
+      "bytes": 1128815,
+      "sha256": "6dd31f090eddcec6cf36c603695e6c49bcd907cf69a7be96bdaa7613219bc503",
+      "text_sha256": "7397a741c7d713d8eb509ae8447200e43c6f53685b99add9e8a76abdc9b143ac",
+      "pages": 59,
+      "retrieved": "2026-10-21"
+    },
+    {
+      "id": "ina219-g",
+      "publisher": "Texas Instruments",
+      "revision": "SBOS448G",
+      "date": "2015-12",
+      "host": "Texas Instruments",
+      "url": "https://www.ti.com/lit/ds/symlink/ina219.pdf",
+      "bytes": 892731,
+      "sha256": "58004eda854d07478e6fc6f4398c114f60a3bcf18d4877471c7c1a306d1fa1cb",
+      "text_sha256": "290ec6415789ee1d10ce0daf97b0669936a68351d682aec863a0a4a5f3e8ed0a",
+      "pages": 38,
+      "retrieved": "2026-10-21"
+    }
+  ],
+  "upstream_files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/LICENSE",
+      "bytes": 260,
+      "sha256": "b695d4b496de170d75a2bbd588eec9cc7330eb15921fbc643a5612053ed98d70",
+      "git_blob": "373df33d69b8fe001a01b15db7d6cafbc1d3d978"
+    },
+    {
+      "path": "software/pd_adapter/src/ina219.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/ina219.c",
+      "bytes": 1867,
+      "sha256": "71e94c5e4ddf3868c5533d4928cc01be3cd76d4ae1fa8a05626d60d427a07789",
+      "git_blob": "4878ff7ed0b6e1013e098f73d68fb34f230bc3ae"
+    },
+    {
+      "path": "software/pd_adapter/src/ina219.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/ina219.h",
+      "bytes": 1893,
+      "sha256": "31a321f008175b423a1098db11e9ba49dd1ffa03b822ca7966976e04b17a4767",
+      "git_blob": "a71a8ee859dfd42d166b563cf0de9c60355cbd0d"
+    },
+    {
+      "path": "software/pd_adapter/src/oled.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/oled.c",
+      "bytes": 7311,
+      "sha256": "f916ea6605d81aa27130180e608bde862f138b03fc115764daa0d52b9a5ef71b",
+      "git_blob": "fa9f35dcca70ece004970c17fe56f9602ad30be0"
+    }
+  ],
+  "inputs": {
+    "planning/core-redesign/x0-device-inputs.json": "fa695ee85db04899bd0095a12485a2286be57b14a8bbfd06a02869e8891546fc",
+    "tests/platform/core_redesign/audit_x0_devices.py": "eb17bf03e2dc78f99f32ede55e3e5999dd117be9e30f6e5f3cc0590c844a44e5",
+    "tests/unit/core_redesign/frame-golden.json": "c32d8ad931c9478f9d1df41767a0ca57922b905a942a18d074c4163858def396"
+  },
+  "extra_inputs": {
+    "tests/unit/test_workspace.py": "ecadb4329b91981d88cc3a5f962d578a090380aa835cabc2b281f11fe28776b3",
+    "tests/pyproject.toml": "2345703d5a238cc32a8aac6a4f020ab8a73f65c04a331f852bdaeb84c331d7f4",
+    "tests/uv.lock": "99e06f301d7c468807053449f926cb529574a1361e1a62771e3c7ed9e66b51d0",
+    "pytest.ini": "8416b1ce9102e39f7e7a31423f92d4965df7c4b45479c05b54d86c9b17097fc1",
+    "planning/core-redesign/p2-inputs.json": "dd07908dbb49fe08fed6816afbb256eb69a97b78b5b428356da4e2c26c9ad64c",
+    "planning/core-redesign/workloads.ja.md": "8f990e1a2a6d4fa2ed16d509595641880f1561fee6c8818cbd365e0a5f045276"
+  },
+  "pdftotext_sha256": "aadbaa027e404c401760e3b8855de7848b18dd442d54c585ba39d461a01c19b2",
+  "pdftotext_version": "pdftotext version 26.01.0\nCopyright 2005-2026 The Poppler Developers - http://poppler.freedesktop.org\nCopyright 1996-2011, 2022 Glyph & Cog, LLC\n",
+  "checks": {
+    "document_pages": {
+      "ssd1306": [
+        20,
+        35
+      ],
+      "ina219": [
+        5,
+        10,
+        13,
+        20,
+        23
+      ]
+    },
+    "raw_voltage_equivalence": 65536,
+    "signed_current_decode": 65536
+  },
+  "models": {
+    "ina219": {
+      "configuration": 10239,
+      "calibration": 4096,
+      "badc": 15,
+      "sadc": 15,
+      "mode": 7,
+      "listed_time_per_quantity_us": 68100,
+      "nominal_complete_cycle_us": 136200,
+      "nominal_complete_cycle_hz": 7.342143906020558,
+      "declared_shunt_milliohms": 10,
+      "current_lsb_ma": 1.0,
+      "documented_low_line_timeout_us": 28000,
+      "timeout_condition": "SCL or SDA continuously low; not a universal normal-task deadline",
+      "cnvr_clear_interpretation": "Unresolved document wording difference between pages 10 and 23; no read-clear policy chosen"
+    },
+    "read_opportunities": {
+      "read_period_us": 100000,
+      "window_us": 1000000,
+      "phases": 136200,
+      "fresh_complete_cycle_tag_histogram": {
+        "7": 89600,
+        "8": 46600
+      },
+      "reads_per_window": 10
+    },
+    "address_order": {
+      "label_mismatches_with_unreordered_vertical": 1022,
+      "golden_frames": 4,
+      "packet_payloads_checked": [
+        1,
+        16,
+        31,
+        32
+      ],
+      "images": [
+        {
+          "input": [
+            5000,
+            0,
+            0
+          ],
+          "ram_sha256": "761e1726a81b7dd1400b33836795928ea4467a1ddc5449ccf4376661a9d7919c",
+          "vertical_unreordered_sha256": "98362012303f907b34bd53bce6d78c2f62333d5f98eef653450723929bad2904",
+          "vertical_reordered_stream_sha256": "180b0cd69171eac93ae55c0cae40dc29b05344cb8643e5364784fdbcebef918c"
+        },
+        {
+          "input": [
+            5020,
+            5000,
+            1
+          ],
+          "ram_sha256": "f2b38e88ebc54f8db6123c6081c247fe1009aa57462ccecfb8644e5816a711e1",
+          "vertical_unreordered_sha256": "7b5e037ddec64d652796956a6116b5ee78a44a8df2751edaf56859caa86ffa90",
+          "vertical_reordered_stream_sha256": "569c95f30764adea462e1709a57d18eae18734b445f9a30539351956ac15b65e"
+        },
+        {
+          "input": [
+            11000,
+            10000,
+            1
+          ],
+          "ram_sha256": "e9e212a65bdd3d4c12e3ec721553ead36c3f191bcb07ae12655a37d3d8c8b5eb",
+          "vertical_unreordered_sha256": "07349b189e5ee316f6c557490956dcc1a7cc67213da6d3d74ba20d1242160e49",
+          "vertical_reordered_stream_sha256": "5a3a1a8065badbeaa86f805107927005741040764c0f45d7fe4e0a6d6538f444"
+        },
+        {
+          "input": [
+            5000,
+            -1,
+            1
+          ],
+          "ram_sha256": "761e1726a81b7dd1400b33836795928ea4467a1ddc5449ccf4376661a9d7919c",
+          "vertical_unreordered_sha256": "98362012303f907b34bd53bce6d78c2f62333d5f98eef653450723929bad2904",
+          "vertical_reordered_stream_sha256": "180b0cd69171eac93ae55c0cae40dc29b05344cb8643e5364784fdbcebef918c"
+        }
+      ]
+    },
+    "display_wire": {
+      "frame_window_command": [
+        0,
+        32,
+        0,
+        33,
+        0,
+        127,
+        34,
+        0,
+        7
+      ],
+      "chunk_window_commands": [
+        [
+          0,
+          32,
+          0,
+          33,
+          0,
+          31,
+          34,
+          0,
+          0
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          32,
+          63,
+          34,
+          0,
+          0
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          64,
+          95,
+          34,
+          0,
+          0
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          96,
+          127,
+          34,
+          0,
+          0
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          0,
+          31,
+          34,
+          1,
+          1
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          32,
+          63,
+          34,
+          1,
+          1
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          64,
+          95,
+          34,
+          1,
+          1
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          96,
+          127,
+          34,
+          1,
+          1
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          0,
+          31,
+          34,
+          2,
+          2
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          32,
+          63,
+          34,
+          2,
+          2
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          64,
+          95,
+          34,
+          2,
+          2
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          96,
+          127,
+          34,
+          2,
+          2
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          0,
+          31,
+          34,
+          3,
+          3
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          32,
+          63,
+          34,
+          3,
+          3
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          64,
+          95,
+          34,
+          3,
+          3
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          96,
+          127,
+          34,
+          3,
+          3
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          0,
+          31,
+          34,
+          4,
+          4
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          32,
+          63,
+          34,
+          4,
+          4
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          64,
+          95,
+          34,
+          4,
+          4
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          96,
+          127,
+          34,
+          4,
+          4
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          0,
+          31,
+          34,
+          5,
+          5
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          32,
+          63,
+          34,
+          5,
+          5
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          64,
+          95,
+          34,
+          5,
+          5
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          96,
+          127,
+          34,
+          5,
+          5
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          0,
+          31,
+          34,
+          6,
+          6
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          32,
+          63,
+          34,
+          6,
+          6
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          64,
+          95,
+          34,
+          6,
+          6
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          96,
+          127,
+          34,
+          6,
+          6
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          0,
+          31,
+          34,
+          7,
+          7
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          32,
+          63,
+          34,
+          7,
+          7
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          64,
+          95,
+          34,
+          7,
+          7
+        ],
+        [
+          0,
+          32,
+          0,
+          33,
+          96,
+          127,
+          34,
+          7,
+          7
+        ]
+      ],
+      "data_control": 64,
+      "required_data_packet_bytes": 33,
+      "rows": [
+        {
+          "layout": "frame-window",
+          "bus_hz": 100000,
+          "payload_bytes": 1024,
+          "window_commands": 1,
+          "data_transactions": 32,
+          "transaction_count": 33,
+          "address_and_control_and_data_bytes": 1098,
+          "scl_clocks": 9882,
+          "ideal_clock_only_us": 98820.0
+        },
+        {
+          "layout": "frame-window",
+          "bus_hz": 400000,
+          "payload_bytes": 1024,
+          "window_commands": 1,
+          "data_transactions": 32,
+          "transaction_count": 33,
+          "address_and_control_and_data_bytes": 1098,
+          "scl_clocks": 9882,
+          "ideal_clock_only_us": 24705.0
+        },
+        {
+          "layout": "chunk-window",
+          "bus_hz": 100000,
+          "payload_bytes": 1024,
+          "window_commands": 32,
+          "data_transactions": 32,
+          "transaction_count": 64,
+          "address_and_control_and_data_bytes": 1408,
+          "scl_clocks": 12672,
+          "ideal_clock_only_us": 126720.0
+        },
+        {
+          "layout": "chunk-window",
+          "bus_hz": 400000,
+          "payload_bytes": 1024,
+          "window_commands": 32,
+          "data_transactions": 32,
+          "transaction_count": 64,
+          "address_and_control_and_data_bytes": 1408,
+          "scl_clocks": 12672,
+          "ideal_clock_only_us": 31680.0
+        }
+      ]
+    }
+  },
+  "stress_models": [
+    {
+      "layout": "frame-window",
+      "bus_hz": 100000,
+      "full_frames_requested_hz": 10,
+      "measurement_pair_requests_hz": 10,
+      "measurement_pair_clocks": 90,
+      "scl_clocks_per_second": 99720,
+      "ideal_clock_only_utilization_percent": 99.72
+    },
+    {
+      "layout": "frame-window",
+      "bus_hz": 400000,
+      "full_frames_requested_hz": 10,
+      "measurement_pair_requests_hz": 10,
+      "measurement_pair_clocks": 90,
+      "scl_clocks_per_second": 99720,
+      "ideal_clock_only_utilization_percent": 24.93
+    },
+    {
+      "layout": "chunk-window",
+      "bus_hz": 100000,
+      "full_frames_requested_hz": 10,
+      "measurement_pair_requests_hz": 10,
+      "measurement_pair_clocks": 90,
+      "scl_clocks_per_second": 127620,
+      "ideal_clock_only_utilization_percent": 127.62
+    },
+    {
+      "layout": "chunk-window",
+      "bus_hz": 400000,
+      "full_frames_requested_hz": 10,
+      "measurement_pair_requests_hz": 10,
+      "measurement_pair_clocks": 90,
+      "scl_clocks_per_second": 127620,
+      "ideal_clock_only_utilization_percent": 31.905
+    }
+  ],
+  "workspace_passed": 3,
+  "evidence": {
+    "path": "work/exp06-x0-device-20261021-evidence.tar.gz",
+    "bytes": 4217530,
+    "sha256": "43aebbe608d8cce42cd6d4a203068b29c295280fbf0ed33623f88dbe46d3be8a"
+  },
+  "limits": [
+    "Ideal SCL clock counts exclude START/STOP timing, setup/hold, stretching, CPU, arbitration, other clients, retries and device power-up",
+    "Address-order model assumes a known window and pointer continuity across STOP, with no reset or other display writer; physical behavior remains to validate",
+    "ADC model sums listed conversion times and uses a steady periodic complete-cycle tag, not actual INA219 register-latch timing or guaranteed deadlines",
+    "Raw-word sweeps verify equations, including words outside usable analog range, not current/voltage accuracy",
+    "Phase sweep uses complete-cycle tags in an ideal steady periodic model, not the real CNVR latch or physical sampling simultaneity",
+    "No low-line timeout, CNVR clear operation, reset recovery or device power sequence executed",
+    "Ten full frames per second in the stress rows is synthetic demand under the cap, not a claim that X0 always emits ten frames or must guarantee completion at that rate"
+  ]
+}

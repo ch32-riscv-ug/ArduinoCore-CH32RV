@@ -1,0 +1,5 @@
+layout,bus_hz,full_frames_requested_hz,measurement_pair_requests_hz,measurement_pair_clocks,scl_clocks_per_second,ideal_clock_only_utilization_percent
+frame-window,100000,10,10,90,99720,99.72
+frame-window,400000,10,10,90,99720,24.93
+chunk-window,100000,10,10,90,127620,127.62
+chunk-window,400000,10,10,90,127620,31.905

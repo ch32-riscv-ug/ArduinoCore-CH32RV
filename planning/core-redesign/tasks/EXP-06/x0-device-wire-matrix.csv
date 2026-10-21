@@ -1,0 +1,5 @@
+layout,bus_hz,payload_bytes,window_commands,data_transactions,transaction_count,address_and_control_and_data_bytes,scl_clocks,ideal_clock_only_us
+frame-window,100000,1024,1,32,33,1098,9882,98820.0
+frame-window,400000,1024,1,32,33,1098,9882,24705.0
+chunk-window,100000,1024,32,32,64,1408,12672,126720.0
+chunk-window,400000,1024,32,32,64,1408,12672,31680.0
