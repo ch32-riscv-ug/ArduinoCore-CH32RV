@@ -45,6 +45,7 @@ The [ADRs](docs/adr/README.ja.md) record the rationale that is still needed to m
 | Menu | Default | Purpose |
 |---|---|---|
 | Part Number (`pnum`) | `ANY` | Exact part; `ANY` declares the smallest flash/RAM in the series so the result fits every part in that series |
+| Optimize (`opt`) | `oslto` | `-Os` with LTO: 9-24% less flash at the same speed (measured on CH32X035). `osltosr` adds `-msave-restore` for another 4-5%, but call-heavy code (elliptic-curve crypto) runs 7-9% slower. `osstd` builds without LTO |
 | C Runtime Library (`rtlib`) | `nano` | Enables floating-point conversion in `printf("%f")` and/or `scanf("%f")` |
 
 The default newlib-nano configuration omits floating-point conversion for `printf` and `scanf`.

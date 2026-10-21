@@ -209,7 +209,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.rtlib=C Runtime Library\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.opt=Optimize\nmenu.rtlib=C Runtime Library\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
@@ -345,6 +345,25 @@ def vio18_menu(board: str) -> list[str]:
     for key, label, flags in VIO18_MENU:
         lines.append(f"{board}.menu.vio18.{key}={label}")
         lines.append(f"{board}.menu.vio18.{key}.build.vio18_defines={flags}")
+    return lines
+
+# Optimisation (platform.txt build.optimize_flags). LTO by default; measured on
+# CH32X035 2026-10-21: LTO 9-24% less flash at the same speed, -msave-restore a
+# further 4-5% for 7-9% slower ECC. The menu id and the first entries are
+# STM32duino's for the same choice.
+OPT_MENU = (
+    ("oslto", "Smallest (-Os) with LTO (default)", "-flto -ffat-lto-objects"),
+    ("osltosr", "Smallest (-Os) with LTO and -msave-restore (slower calls)",
+     "-flto -ffat-lto-objects -msave-restore"),
+    ("osstd", "Smallest (-Os) without LTO", ""),
+)
+
+
+def opt_menu(board: str) -> list[str]:
+    lines = []
+    for key, label, flags in OPT_MENU:
+        lines.append(f"{board}.menu.opt.{key}={label}")
+        lines.append(f"{board}.menu.opt.{key}.build.optimize_flags={flags}")
     return lines
 
 
@@ -3363,6 +3382,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
                 lines.append(f"{pfx}.build.clock_defines={part_clock}")
         lines.append("")
 
+    lines += opt_menu(board)
+    lines.append("")
     lines += rtlib_menu(board, min_flash)
     lines.append("")
     if fam.get("h41x_clock"):

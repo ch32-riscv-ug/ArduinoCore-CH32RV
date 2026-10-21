@@ -3,6 +3,7 @@
 # Regenerate: generate.py --tables <ch32-device-data checkout root> --platform <platform dir>
 
 menu.pnum=Part Number
+menu.opt=Optimize
 menu.rtlib=C Runtime Library
 menu.usart1=USART1
 menu.usart2=USART2
@@ -87,6 +88,13 @@ CH32V003.menu.pnum.CH32V003J4M6.build.ch32rv_chip=CH32V003J4M6
 CH32V003.menu.pnum.CH32V003J4M6.monitor_port.serial.chip=CH32V003J4M6
 CH32V003.menu.pnum.CH32V003J4M6.monitor_port.wchlink.chip=CH32V003J4M6
 CH32V003.menu.pnum.CH32V003J4M6.monitor_port.oep.chip=CH32V003J4M6
+
+CH32V003.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V003.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V003.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V003.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V003.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V003.menu.opt.osstd.build.optimize_flags=
 
 CH32V003.menu.rtlib.nano=Newlib Nano (default)
 CH32V003.menu.rtlib.nano.build.rtlib_flags=
@@ -204,6 +212,13 @@ CH32V002.menu.pnum.CH32V002J4M6.monitor_port.serial.chip=CH32V002J4M6
 CH32V002.menu.pnum.CH32V002J4M6.monitor_port.wchlink.chip=CH32V002J4M6
 CH32V002.menu.pnum.CH32V002J4M6.monitor_port.oep.chip=CH32V002J4M6
 
+CH32V002.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V002.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V002.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V002.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V002.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V002.menu.opt.osstd.build.optimize_flags=
+
 CH32V002.menu.rtlib.nano=Newlib Nano (default)
 CH32V002.menu.rtlib.nano.build.rtlib_flags=
 CH32V002.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB; too big for 16 KB parts)
@@ -293,6 +308,13 @@ CH32V004.menu.pnum.CH32V004F6U1.build.ch32rv_chip=CH32V004F6U1
 CH32V004.menu.pnum.CH32V004F6U1.monitor_port.serial.chip=CH32V004F6U1
 CH32V004.menu.pnum.CH32V004F6U1.monitor_port.wchlink.chip=CH32V004F6U1
 CH32V004.menu.pnum.CH32V004F6U1.monitor_port.oep.chip=CH32V004F6U1
+
+CH32V004.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V004.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V004.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V004.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V004.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V004.menu.opt.osstd.build.optimize_flags=
 
 CH32V004.menu.rtlib.nano=Newlib Nano (default)
 CH32V004.menu.rtlib.nano.build.rtlib_flags=
@@ -403,6 +425,13 @@ CH32V005.menu.pnum.CH32V005F6U6.build.ch32rv_chip=CH32V005F6U6
 CH32V005.menu.pnum.CH32V005F6U6.monitor_port.serial.chip=CH32V005F6U6
 CH32V005.menu.pnum.CH32V005F6U6.monitor_port.wchlink.chip=CH32V005F6U6
 CH32V005.menu.pnum.CH32V005F6U6.monitor_port.oep.chip=CH32V005F6U6
+
+CH32V005.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V005.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V005.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V005.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V005.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V005.menu.opt.osstd.build.optimize_flags=
 
 CH32V005.menu.rtlib.nano=Newlib Nano (default)
 CH32V005.menu.rtlib.nano.build.rtlib_flags=
@@ -582,6 +611,13 @@ CH32V006.menu.pnum.CH32V006K8U7.monitor_port.serial.chip=CH32V006K8U7
 CH32V006.menu.pnum.CH32V006K8U7.monitor_port.wchlink.chip=CH32V006K8U7
 CH32V006.menu.pnum.CH32V006K8U7.monitor_port.oep.chip=CH32V006K8U7
 
+CH32V006.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V006.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V006.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V006.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V006.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V006.menu.opt.osstd.build.optimize_flags=
+
 CH32V006.menu.rtlib.nano=Newlib Nano (default)
 CH32V006.menu.rtlib.nano.build.rtlib_flags=
 CH32V006.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB; too big for 16 KB parts)
@@ -731,6 +767,13 @@ CH32V007.menu.pnum.CH32V007K8U7.build.ch32rv_chip=CH32V007K8U7
 CH32V007.menu.pnum.CH32V007K8U7.monitor_port.serial.chip=CH32V007K8U7
 CH32V007.menu.pnum.CH32V007K8U7.monitor_port.wchlink.chip=CH32V007K8U7
 CH32V007.menu.pnum.CH32V007K8U7.monitor_port.oep.chip=CH32V007K8U7
+
+CH32V007.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V007.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V007.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V007.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V007.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V007.menu.opt.osstd.build.optimize_flags=
 
 CH32V007.menu.rtlib.nano=Newlib Nano (default)
 CH32V007.menu.rtlib.nano.build.rtlib_flags=
@@ -882,6 +925,13 @@ CH32M007.menu.pnum.CH32M007K8U7.monitor_port.serial.chip=CH32V006
 CH32M007.menu.pnum.CH32M007K8U7.monitor_port.wchlink.chip=CH32V006
 CH32M007.menu.pnum.CH32M007K8U7.monitor_port.oep.chip=CH32V006
 
+CH32M007.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32M007.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32M007.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32M007.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32M007.menu.opt.osstd=Smallest (-Os) without LTO
+CH32M007.menu.opt.osstd.build.optimize_flags=
+
 CH32M007.menu.rtlib.nano=Newlib Nano (default)
 CH32M007.menu.rtlib.nano.build.rtlib_flags=
 CH32M007.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -1001,6 +1051,13 @@ CH32V103.menu.pnum.CH32V103R8T6.build.ch32rv_chip=CH32V103R8T6
 CH32V103.menu.pnum.CH32V103R8T6.monitor_port.serial.chip=CH32V103R8T6
 CH32V103.menu.pnum.CH32V103R8T6.monitor_port.wchlink.chip=CH32V103R8T6
 CH32V103.menu.pnum.CH32V103R8T6.monitor_port.oep.chip=CH32V103R8T6
+
+CH32V103.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V103.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V103.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V103.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V103.menu.opt.osstd.build.optimize_flags=
 
 CH32V103.menu.rtlib.nano=Newlib Nano (default)
 CH32V103.menu.rtlib.nano.build.rtlib_flags=
@@ -1211,6 +1268,13 @@ CH32V203.menu.pnum.CH32V203RBT6.monitor_port.wchlink.chip=CH32V203RBT6
 CH32V203.menu.pnum.CH32V203RBT6.monitor_port.oep.chip=CH32V203RBT6
 CH32V203.menu.pnum.CH32V203RBT6.build.vector_variant=v20x_d8
 
+CH32V203.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V203.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V203.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V203.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V203.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V203.menu.opt.osstd.build.optimize_flags=
+
 CH32V203.menu.rtlib.nano=Newlib Nano (default)
 CH32V203.menu.rtlib.nano.build.rtlib_flags=
 CH32V203.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -1346,6 +1410,13 @@ CH32V208.menu.pnum.CH32V208WBU6.build.ch32rv_chip=CH32V208WBU6
 CH32V208.menu.pnum.CH32V208WBU6.monitor_port.serial.chip=CH32V208WBU6
 CH32V208.menu.pnum.CH32V208WBU6.monitor_port.wchlink.chip=CH32V208WBU6
 CH32V208.menu.pnum.CH32V208WBU6.monitor_port.oep.chip=CH32V208WBU6
+
+CH32V208.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V208.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V208.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V208.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V208.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V208.menu.opt.osstd.build.optimize_flags=
 
 CH32V208.menu.rtlib.nano=Newlib Nano (default)
 CH32V208.menu.rtlib.nano.build.rtlib_flags=
@@ -1492,6 +1563,13 @@ CH32V303.menu.pnum.CH32V303VCT6.build.ch32rv_chip=CH32V303VCT6
 CH32V303.menu.pnum.CH32V303VCT6.monitor_port.serial.chip=CH32V303VCT6
 CH32V303.menu.pnum.CH32V303VCT6.monitor_port.wchlink.chip=CH32V303VCT6
 CH32V303.menu.pnum.CH32V303VCT6.monitor_port.oep.chip=CH32V303VCT6
+
+CH32V303.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V303.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V303.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V303.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V303.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V303.menu.opt.osstd.build.optimize_flags=
 
 CH32V303.menu.rtlib.nano=Newlib Nano (default)
 CH32V303.menu.rtlib.nano.build.rtlib_flags=
@@ -1689,6 +1767,13 @@ CH32V305.menu.pnum.CH32V305CCT6.monitor_port.serial.chip=CH32V305CCT6
 CH32V305.menu.pnum.CH32V305CCT6.monitor_port.wchlink.chip=CH32V305CCT6
 CH32V305.menu.pnum.CH32V305CCT6.monitor_port.oep.chip=CH32V305CCT6
 
+CH32V305.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V305.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V305.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V305.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V305.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V305.menu.opt.osstd.build.optimize_flags=
+
 CH32V305.menu.rtlib.nano=Newlib Nano (default)
 CH32V305.menu.rtlib.nano.build.rtlib_flags=
 CH32V305.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -1860,6 +1945,13 @@ CH32V307.menu.pnum.CH32V307WCU6.build.ch32rv_chip=CH32V307WCU6
 CH32V307.menu.pnum.CH32V307WCU6.monitor_port.serial.chip=CH32V307WCU6
 CH32V307.menu.pnum.CH32V307WCU6.monitor_port.wchlink.chip=CH32V307WCU6
 CH32V307.menu.pnum.CH32V307WCU6.monitor_port.oep.chip=CH32V307WCU6
+
+CH32V307.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V307.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V307.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V307.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V307.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V307.menu.opt.osstd.build.optimize_flags=
 
 CH32V307.menu.rtlib.nano=Newlib Nano (default)
 CH32V307.menu.rtlib.nano.build.rtlib_flags=
@@ -2037,6 +2129,13 @@ CH32V317.menu.pnum.CH32V317WCU6.monitor_port.serial.chip=CH32V317WCU6
 CH32V317.menu.pnum.CH32V317WCU6.monitor_port.wchlink.chip=CH32V317WCU6
 CH32V317.menu.pnum.CH32V317WCU6.monitor_port.oep.chip=CH32V317WCU6
 
+CH32V317.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V317.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V317.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V317.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V317.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V317.menu.opt.osstd.build.optimize_flags=
+
 CH32V317.menu.rtlib.nano=Newlib Nano (default)
 CH32V317.menu.rtlib.nano.build.rtlib_flags=
 CH32V317.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -2192,6 +2291,13 @@ CH32X033.menu.pnum.CH32X033F8P6.build.ch32rv_chip=CH32X033F8P6
 CH32X033.menu.pnum.CH32X033F8P6.monitor_port.serial.chip=CH32X033F8P6
 CH32X033.menu.pnum.CH32X033F8P6.monitor_port.wchlink.chip=CH32X033F8P6
 CH32X033.menu.pnum.CH32X033F8P6.monitor_port.oep.chip=CH32X033F8P6
+
+CH32X033.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32X033.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32X033.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32X033.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32X033.menu.opt.osstd=Smallest (-Os) without LTO
+CH32X033.menu.opt.osstd.build.optimize_flags=
 
 CH32X033.menu.rtlib.nano=Newlib Nano (default)
 CH32X033.menu.rtlib.nano.build.rtlib_flags=
@@ -2352,6 +2458,13 @@ CH32X035.menu.pnum.CH32X035R8T6.build.ch32rv_chip=CH32X035R8T6
 CH32X035.menu.pnum.CH32X035R8T6.monitor_port.serial.chip=CH32X035R8T6
 CH32X035.menu.pnum.CH32X035R8T6.monitor_port.wchlink.chip=CH32X035R8T6
 CH32X035.menu.pnum.CH32X035R8T6.monitor_port.oep.chip=CH32X035R8T6
+
+CH32X035.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32X035.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32X035.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32X035.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32X035.menu.opt.osstd=Smallest (-Os) without LTO
+CH32X035.menu.opt.osstd.build.optimize_flags=
 
 CH32X035.menu.rtlib.nano=Newlib Nano (default)
 CH32X035.menu.rtlib.nano.build.rtlib_flags=
@@ -2529,6 +2642,13 @@ CH32L103.menu.pnum.CH32L103K8U7.monitor_port.serial.chip=CH32L103K8U7
 CH32L103.menu.pnum.CH32L103K8U7.monitor_port.wchlink.chip=CH32L103K8U7
 CH32L103.menu.pnum.CH32L103K8U7.monitor_port.oep.chip=CH32L103K8U7
 
+CH32L103.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32L103.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32L103.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32L103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32L103.menu.opt.osstd=Smallest (-Os) without LTO
+CH32L103.menu.opt.osstd.build.optimize_flags=
+
 CH32L103.menu.rtlib.nano=Newlib Nano (default)
 CH32L103.menu.rtlib.nano.build.rtlib_flags=
 CH32L103.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -2648,6 +2768,13 @@ CH32M103.menu.pnum.CH32M103G8R6.build.ch32rv_chip=CH32M103G8R6
 CH32M103.menu.pnum.CH32M103G8R6.monitor_port.serial.chip=CH32M103G8R6
 CH32M103.menu.pnum.CH32M103G8R6.monitor_port.wchlink.chip=CH32M103G8R6
 CH32M103.menu.pnum.CH32M103G8R6.monitor_port.oep.chip=CH32M103G8R6
+
+CH32M103.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32M103.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32M103.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32M103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32M103.menu.opt.osstd=Smallest (-Os) without LTO
+CH32M103.menu.opt.osstd.build.optimize_flags=
 
 CH32M103.menu.rtlib.nano=Newlib Nano (default)
 CH32M103.menu.rtlib.nano.build.rtlib_flags=
@@ -2782,6 +2909,13 @@ CH32V205.menu.pnum.CH32V205VCT6.build.ch32rv_chip=CH32V205VCT6
 CH32V205.menu.pnum.CH32V205VCT6.monitor_port.serial.chip=CH32V205VCT6
 CH32V205.menu.pnum.CH32V205VCT6.monitor_port.wchlink.chip=CH32V205VCT6
 CH32V205.menu.pnum.CH32V205VCT6.monitor_port.oep.chip=CH32V205VCT6
+
+CH32V205.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V205.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V205.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V205.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V205.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V205.menu.opt.osstd.build.optimize_flags=
 
 CH32V205.menu.rtlib.nano=Newlib Nano (default)
 CH32V205.menu.rtlib.nano.build.rtlib_flags=
@@ -3081,6 +3215,13 @@ CH32V407.menu.pnum.CH32V407WEU6.monitor_port.serial.chip=CH32V407WEU6
 CH32V407.menu.pnum.CH32V407WEU6.monitor_port.wchlink.chip=CH32V407WEU6
 CH32V407.menu.pnum.CH32V407WEU6.monitor_port.oep.chip=CH32V407WEU6
 
+CH32V407.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V407.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V407.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V407.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V407.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V407.menu.opt.osstd.build.optimize_flags=
+
 CH32V407.menu.rtlib.nano=Newlib Nano (default)
 CH32V407.menu.rtlib.nano.build.rtlib_flags=
 CH32V407.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -3281,6 +3422,13 @@ CH32V467.menu.pnum.CH32V467WEU6.monitor_port.serial.chip=CH32V467WEU6
 CH32V467.menu.pnum.CH32V467WEU6.monitor_port.wchlink.chip=CH32V467WEU6
 CH32V467.menu.pnum.CH32V467WEU6.monitor_port.oep.chip=CH32V467WEU6
 
+CH32V467.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32V467.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V467.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32V467.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V467.menu.opt.osstd=Smallest (-Os) without LTO
+CH32V467.menu.opt.osstd.build.optimize_flags=
+
 CH32V467.menu.rtlib.nano=Newlib Nano (default)
 CH32V467.menu.rtlib.nano.build.rtlib_flags=
 CH32V467.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -3460,6 +3608,13 @@ CH32X305.menu.pnum.CH32X305RCT6.build.ch32rv_chip=CH32X305RCT6
 CH32X305.menu.pnum.CH32X305RCT6.monitor_port.serial.chip=CH32X305RCT6
 CH32X305.menu.pnum.CH32X305RCT6.monitor_port.wchlink.chip=CH32X305RCT6
 CH32X305.menu.pnum.CH32X305RCT6.monitor_port.oep.chip=CH32X305RCT6
+
+CH32X305.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32X305.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32X305.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32X305.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32X305.menu.opt.osstd=Smallest (-Os) without LTO
+CH32X305.menu.opt.osstd.build.optimize_flags=
 
 CH32X305.menu.rtlib.nano=Newlib Nano (default)
 CH32X305.menu.rtlib.nano.build.rtlib_flags=
@@ -3812,6 +3967,13 @@ CH32X315.menu.pnum.CH32X315WCU6.build.ch32rv_chip=CH32X315WCU6
 CH32X315.menu.pnum.CH32X315WCU6.monitor_port.serial.chip=CH32X315WCU6
 CH32X315.menu.pnum.CH32X315WCU6.monitor_port.wchlink.chip=CH32X315WCU6
 CH32X315.menu.pnum.CH32X315WCU6.monitor_port.oep.chip=CH32X315WCU6
+
+CH32X315.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32X315.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32X315.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32X315.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32X315.menu.opt.osstd=Smallest (-Os) without LTO
+CH32X315.menu.opt.osstd.build.optimize_flags=
 
 CH32X315.menu.rtlib.nano=Newlib Nano (default)
 CH32X315.menu.rtlib.nano.build.rtlib_flags=
@@ -4307,6 +4469,13 @@ CH32M030.menu.pnum.CH32M030K8U7.monitor_port.serial.chip=CH32M030K8U7
 CH32M030.menu.pnum.CH32M030K8U7.monitor_port.wchlink.chip=CH32M030K8U7
 CH32M030.menu.pnum.CH32M030K8U7.monitor_port.oep.chip=CH32M030K8U7
 
+CH32M030.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32M030.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32M030.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32M030.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32M030.menu.opt.osstd=Smallest (-Os) without LTO
+CH32M030.menu.opt.osstd.build.optimize_flags=
+
 CH32M030.menu.rtlib.nano=Newlib Nano (default)
 CH32M030.menu.rtlib.nano.build.rtlib_flags=
 CH32M030.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -4395,6 +4564,13 @@ CH32H415.menu.pnum.CH32H415REU6.build.ch32rv_chip=CH32H415REU6
 CH32H415.menu.pnum.CH32H415REU6.monitor_port.serial.chip=CH32H415REU6
 CH32H415.menu.pnum.CH32H415REU6.monitor_port.wchlink.chip=CH32H415REU6
 CH32H415.menu.pnum.CH32H415REU6.monitor_port.oep.chip=CH32H415REU6
+
+CH32H415.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32H415.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32H415.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32H415.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32H415.menu.opt.osstd=Smallest (-Os) without LTO
+CH32H415.menu.opt.osstd.build.optimize_flags=
 
 CH32H415.menu.rtlib.nano=Newlib Nano (default)
 CH32H415.menu.rtlib.nano.build.rtlib_flags=
@@ -4666,6 +4842,13 @@ CH32H416.menu.pnum.CH32H416RDU6.monitor_port.serial.chip=CH32H416RDU6
 CH32H416.menu.pnum.CH32H416RDU6.monitor_port.wchlink.chip=CH32H416RDU6
 CH32H416.menu.pnum.CH32H416RDU6.monitor_port.oep.chip=CH32H416RDU6
 
+CH32H416.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32H416.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32H416.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32H416.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32H416.menu.opt.osstd=Smallest (-Os) without LTO
+CH32H416.menu.opt.osstd.build.optimize_flags=
+
 CH32H416.menu.rtlib.nano=Newlib Nano (default)
 CH32H416.menu.rtlib.nano.build.rtlib_flags=
 CH32H416.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
@@ -4879,6 +5062,13 @@ CH32H417.menu.pnum.CH32H417WEU6.build.ch32rv_chip=CH32H417WEU6
 CH32H417.menu.pnum.CH32H417WEU6.monitor_port.serial.chip=CH32H417WEU6
 CH32H417.menu.pnum.CH32H417WEU6.monitor_port.wchlink.chip=CH32H417WEU6
 CH32H417.menu.pnum.CH32H417WEU6.monitor_port.oep.chip=CH32H417WEU6
+
+CH32H417.menu.opt.oslto=Smallest (-Os) with LTO (default)
+CH32H417.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32H417.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
+CH32H417.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32H417.menu.opt.osstd=Smallest (-Os) without LTO
+CH32H417.menu.opt.osstd.build.optimize_flags=
 
 CH32H417.menu.rtlib.nano=Newlib Nano (default)
 CH32H417.menu.rtlib.nano.build.rtlib_flags=

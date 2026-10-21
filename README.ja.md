@@ -44,6 +44,7 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | メニュー | 既定 | 内容 |
 |---|---|---|
 | Part Number (`pnum`) | `ANY` | 型番。`ANY` は系列内の最小 flash/RAM を宣言するため、同じ系列のどの型番にも載せられる |
+| Optimize (`opt`) | `oslto` | `-Os` に LTO。flash が 9〜24% 減り、速さは同じ（X035 で実測）。`osltosr` は `-msave-restore` も足してさらに 4〜5% 減るが、関数呼び出しの多い処理（楕円曲線暗号など）が 7〜9% 遅くなる。`osstd` は LTO なし |
 | C Runtime Library (`rtlib`) | `nano` | `printf("%f")` / `scanf("%f")` の浮動小数点変換を追加するか |
 
 既定の newlib-nano では `printf("%f")` と `scanf("%f")` の浮動小数点変換は入りません。
