@@ -273,7 +273,8 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 
 2026-10-21の[完了条件監査](planning/core-redesign/tasks/P4-AUDIT-01/result.ja.md)に、
 D01〜D12の支持・反証・未検証、契約ごとの到達範囲、76候補の対応と通常作業N01〜N10を記録した。
-次はN01のX0共通wire adapterから用途接続を進める。部品の検査件数を完成用途の完了率にはしない。
+[N01のX0共通wire adapter](planning/core-redesign/tasks/EXP-06/x0-wire-result.ja.md)はhost／ABIで実施済み。
+次はN02のregister engine・資源台帳との用途接続。部品の検査件数を完成用途の完了率にはしない。
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
 

@@ -71,7 +71,7 @@ HW-10,LTDC 表示出力,D05 D07 D11 D12,mock表示交換はLTDCとは別,plannin
 HW-11,ARGB LED 出力,D05 D07 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
 SCOPE-01,BLE・無線 SoC 機能,D01 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
 SCOPE-02,RTOS,D01 D02 D03 D06 D07 D11 D12,有限work・待機・共有部品の比較,planning/core-redesign/tasks/EXP-03/wait-result.ja.md;planning/core-redesign/tasks/EXP-03/work-preparation.ja.md,再入深さ・固定port別stack対照・最終提供範囲,未決定
-SCOPE-03,汎用センサ・表示器ドライバの同梱,D01 D05 D12,独立renderer・上流・device算術,planning/core-redesign/tasks/EXP-05/display-result.ja.md;planning/core-redesign/tasks/EXP-06/x0-device-result.ja.md,実controllerと用途接続・同梱範囲・教材評価,未決定
+SCOPE-03,汎用センサ・表示器ドライバの同梱,D01 D05 D12,独立renderer・上流・device算術・用途typed wire接続,planning/core-redesign/tasks/EXP-05/display-result.ja.md;planning/core-redesign/tasks/EXP-06/x0-device-result.ja.md;planning/core-redesign/tasks/EXP-06/x0-wire-result.ja.md,register engine・実controller・品質との接続、同梱範囲・教材評価,未決定
 SCOPE-04,WCH EVT／SPL 互換 API,D01 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
 SCOPE-05,Arm 系 CH32F,D01 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定
 SCOPE-06,ベンダ IDE とのバイナリ互換,D01 D08 D11 D12,この機能・モード固有のP2〜P4実験なし,,対象part・機能契約・backend・費用・失敗条件の個別調査,未決定

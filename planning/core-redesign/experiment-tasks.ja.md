@@ -207,6 +207,10 @@ K0とX0はR/A/B/Cの必須比較。取得bufferとV006休止は境界確認用�
 [timer依存除去と段階失敗](tasks/EXP-06/v006-sleep-features-result.ja.md)は同じソースで追試した。転送を持たない条件として、以下の追加分と証拠を区別する。
 [能動leaseとPrepare／Abort失敗](tasks/EXP-06/v006-sleep-lease-fault-result.ja.md)の432条件は追加済み。実driver・回収不能・IRQ共有の成立とは分ける。
 完成用途で追加状態・buffer・バスの待機が増えることも含めてB0／B1／B2を評価する。
+[N01 typed wire用途接続](tasks/EXP-06/x0-wire-result.ja.md)はnative46件・正本ABI68構成で、
+同じR/A/B/Cへ表示command／dataと計測pointer／RXを接続した。
+既存golden・共通headerを変えず、84 traceを独立wire台帳と照合。tickは仮想、touchはvirtualと明示する。
+次はN02のI2C register engine・資源台帳接続。controller初期化・校正／変換品質と実機は未検証。
 部品単体で最小だったものを組むだけで、完成用途も最小だと推測しない。
 
 成果物は全体費用、正常・burst・切断・満杯のtrace、I/Oと入力遅延、残容量、変更課題と利用者レビュー。
