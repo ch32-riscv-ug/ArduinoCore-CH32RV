@@ -120,3 +120,5 @@ appで出力された最大単一frameはV003 48–120 B、X035 80–144 B。lib
 今回は限定glyphと4 mock形式の比較であり、実controllerの初期化・座標設定・protocol変換・borrowed buffer・停止／回収へ接続する作業は残る。
 実wire・render時間・IRQ共有・cache／DMA・省電力・稼働中切替、利用者が実際に交換するレビューは未実施。
 [表示交換の課題](display-exercise.ja.md)に、変更する層と予測する資源を記録する。
+
+後続の[X0上流再現と実device関数の観測](../EXP-06/x0-upstream-result.ja.md)では、上流のSSD1306 128×32 vertical初期化・I2C control・長い同期取引を記録した。ここで比較したmock profileや固定128×64 rendererの実controller protocolを成立済みにしたものではない。

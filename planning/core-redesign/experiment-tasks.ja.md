@@ -94,6 +94,8 @@ P3では R/A/B/C に同じI/O backendを接続し、以下を比較する。
 低水準を直接使う変更課題では、資源の引渡しと再初期化を検査する。
 D05／D08／D12について、常設初期化・汎用request・wrapperを必要に応じて分離できるか判断する。
 起動が実機未確認ならcompile結果として残し、実runtimeの最小費用と断定しない。
+[X0上流の再現](tasks/EXP-06/x0-upstream-result.ja.md)では固定24 fileから4 ELFの同一load imageを確認し、元OLED／INA関数の16呼出し条件を2 copyで観測した。
+上流の128×32 vertical・bitbang I2C・入力／失敗条件は固定X0と異なる。既存payload条件を変えず、controller setup／headerの一次資料照合と同等Rへの接続は残る。
 [I2C資源利用権の接続](tasks/EXP-01/i2c-resource-result.ja.md)はnative47件・ABI28構成で、open失敗の返却とend／takeまでのclock・pin保持を検査した。
 PCLKとpin準備はadapterの宣言であり、実clock／pinmux／IRQ backendの成立とは分ける。
 [I2Cの回収分離](tasks/EXP-01/i2c-handoff-result.ja.md)はnative70件・ABI20で、既存register engineからbackend Viewを回収し、外側bufferと結果を利用者takeまで保持した。

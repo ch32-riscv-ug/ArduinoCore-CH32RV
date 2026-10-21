@@ -120,3 +120,5 @@ byte frameの展開を含むため、低水準コマンド数は生成ステッ�
 続いてK0のslave frontendと最小起動、X0のI2C／PD backendを実際の所有・IRQ契約へ結び付ける。
 K0／X0のhost対照が個別部品から完成用途へ進んだ後も、実機未検証は明示する。
 V006・H417・Flashの追加物理調査は該当する比較の開始条件として残る。
+
+後続の[X0上流再現と機能差](tasks/EXP-06/x0-upstream-result.ja.md)は、UC-01の元source・flagsによるbuildと、元OLED／INA関数のI2C呼出し記録を固定した。上流128×32 verticalと今回の128×64 rendererは同一ではなく、controller header・setupは未確定のまま。

@@ -1,0 +1,551 @@
+{
+  "date": "2026-10-21",
+  "implementation_commit": "bfb67c4",
+  "scope": "Upstream source/compile-only reproduction and native transaction observation, not physical firmware validation",
+  "upstream_commit": "7eba86abd2467bb53f609189d8c3c7d75e4d6c00",
+  "source_files": 24,
+  "source_inputs_sha256": "12ad003fabed68fa49b312139ea19da234e08291526b52b40d7d74e1754884af",
+  "build_modes": [
+    "locked-local-copy",
+    "explicit-fixed-URL-download"
+  ],
+  "builds": 4,
+  "reproducible_image_sha256": "fa56b7743308274480f3026609a71adc8e6f8750e206867cc0f12a3960390fb1",
+  "image_bytes": 4984,
+  "static_ram_bytes": 180,
+  "data_bytes": 40,
+  "bss_bytes": 140,
+  "vector_bytes": 220,
+  "stack_peak_bytes": null,
+  "provided_binary": {
+    "bytes": 5264,
+    "sha256": "670d3fc772c1c0a84247302372c74fca65802ecf12bf215ef61815996ed6a435",
+    "matches_rebuild": false
+  },
+  "results_by_mode": {
+    "local": [
+      {
+        "repetition": 1,
+        "image_bytes": 4984,
+        "data_bytes": 40,
+        "bss_bytes": 140,
+        "static_ram_bytes": 180,
+        "vector_bytes": 220,
+        "entry": 0,
+        "initial_stack_pointer": 536891392,
+        "image_sha256": "fa56b7743308274480f3026609a71adc8e6f8750e206867cc0f12a3960390fb1",
+        "elf_sha256": "00f6e28332683d252f4eefb868e9557193c04056aa192cd1775bc9d9cd9ca048",
+        "stack_peak_bytes": null,
+        "execution": false
+      },
+      {
+        "repetition": 2,
+        "image_bytes": 4984,
+        "data_bytes": 40,
+        "bss_bytes": 140,
+        "static_ram_bytes": 180,
+        "vector_bytes": 220,
+        "entry": 0,
+        "initial_stack_pointer": 536891392,
+        "image_sha256": "fa56b7743308274480f3026609a71adc8e6f8750e206867cc0f12a3960390fb1",
+        "elf_sha256": "00f6e28332683d252f4eefb868e9557193c04056aa192cd1775bc9d9cd9ca048",
+        "stack_peak_bytes": null,
+        "execution": false
+      }
+    ],
+    "fetch": [
+      {
+        "repetition": 1,
+        "image_bytes": 4984,
+        "data_bytes": 40,
+        "bss_bytes": 140,
+        "static_ram_bytes": 180,
+        "vector_bytes": 220,
+        "entry": 0,
+        "initial_stack_pointer": 536891392,
+        "image_sha256": "fa56b7743308274480f3026609a71adc8e6f8750e206867cc0f12a3960390fb1",
+        "elf_sha256": "6088b3b03bb727cad91d749e9e543b747e2c3ec8b19cb3c36f14534392c4da22",
+        "stack_peak_bytes": null,
+        "execution": false
+      },
+      {
+        "repetition": 2,
+        "image_bytes": 4984,
+        "data_bytes": 40,
+        "bss_bytes": 140,
+        "static_ram_bytes": 180,
+        "vector_bytes": 220,
+        "entry": 0,
+        "initial_stack_pointer": 536891392,
+        "image_sha256": "fa56b7743308274480f3026609a71adc8e6f8750e206867cc0f12a3960390fb1",
+        "elf_sha256": "6088b3b03bb727cad91d749e9e543b747e2c3ec8b19cb3c36f14534392c4da22",
+        "stack_peak_bytes": null,
+        "execution": false
+      }
+    ]
+  },
+  "compiler": "riscv-none-elf-gcc (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+  "compiler_sha256": "28703b51d9441360f788063bc9686e1c52de3f72bd881a6b4ce731a7e977dd57",
+  "tools": {
+    "cc1": "284552645b9b8b40f698328f5f7c3f9b41607b3b5434e8ad023bcad90f9feab4",
+    "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+    "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+    "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+    "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+    "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+    "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+    "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+  },
+  "libgcc": {
+    "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+    "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+  },
+  "dependencies": {
+    "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/include/stdint.h": "86a7914ab7d6a18465a6fb9a7b54f945cad604fdbf3ca0d10e4e0254e0037911",
+    "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/riscv-none-elf/include/stdint.h": "99fe201684856075ccd92704f63b702f6fa882b9dab61bd7a9bcce2588275861",
+    "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/riscv-none-elf/include/machine/_default_types.h": "5d8f9f7ead7927e4b8b7ed00172e84f2ae82ea7f5f6ba3240ff813a9236771b3",
+    "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/riscv-none-elf/include/sys/features.h": "c580ee2a628857e7ebeb0484d078b16cf61049f14b2492b0cac5b54ed1f34cca",
+    "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/riscv-none-elf/include/_newlib_version.h": "f4c14dfb59c9eb36181455ef077c4ec7a0571ed64f79947094ac1cd9a96d3fae",
+    "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/riscv-none-elf/include/sys/_intsup.h": "1af8abe244b43a3a5b5a85f6c834aa206930b6938e8109fbec430bc140b68df5",
+    "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/riscv-none-elf/include/sys/_stdint.h": "49f8328943afa2a83ed4a35fcb808ed08b8c9fcb55373c786fb1b1d3a21952d7"
+  },
+  "inputs": {
+    "planning/core-redesign/x0-upstream-inputs.json": "12ad003fabed68fa49b312139ea19da234e08291526b52b40d7d74e1754884af",
+    "tests/platform/core_redesign/reproduce_x0_upstream.py": "fb85eefcb49929857625174498707ef488e02dbe0b02284a4656036ec7a94875",
+    "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db",
+    "tests/unit/core_redesign/x0_upstream_protocol_driver.c": "c800a4a6d5db394ebbd23c22f5f7f8ec44be2d5dc5010a8277cb4011d40688a4"
+  },
+  "extra_inputs": {
+    "tests/unit/test_workspace.py": "ecadb4329b91981d88cc3a5f962d578a090380aa835cabc2b281f11fe28776b3",
+    "tests/pyproject.toml": "2345703d5a238cc32a8aac6a4f020ab8a73f65c04a331f852bdaeb84c331d7f4",
+    "tests/uv.lock": "99e06f301d7c468807053449f926cb529574a1361e1a62771e3c7ed9e66b51d0",
+    "pytest.ini": "8416b1ce9102e39f7e7a31423f92d4965df7c4b45479c05b54d86c9b17097fc1",
+    "planning/core-redesign/p2-inputs.json": "dd07908dbb49fe08fed6816afbb256eb69a97b78b5b428356da4e2c26c9ad64c",
+    "planning/core-redesign/workloads.ja.md": "8f990e1a2a6d4fa2ed16d509595641880f1561fee6c8818cbd365e0a5f045276"
+  },
+  "native_compiler": {
+    "compiler": "/usr/bin/x86_64-linux-gnu-gcc-15",
+    "compiler_sha256": "b5f1b773a7c733738352000c92a077dc5852a1a2fc6d836b1e411be1e9ec5f88",
+    "compiler_version": "x86_64-linux-gnu-gcc-15 (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+    "executable_sha256": "08f5d0bf52c9d448dad2e2dcf2ef5327dbe9ad7fc0f12dff92428b8dfc947edc"
+  },
+  "native_cases": 16,
+  "native_mode_replays": 32,
+  "native_cases_summary": [
+    {
+      "name": "init",
+      "a": 0,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 10,
+            "tx_sha256": "38f77796ac0c1ffcd1e42ff1b0187acf3f040e10f848b8a82ddf96bc9d2c715e",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "cursor",
+      "a": 0,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 7,
+            "tx_sha256": "f3d23b52cc424236817824438569829fa34a798750745ba3d4c8fb087d72829a",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "cursor",
+      "a": 36,
+      "b": 1,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 7,
+            "tx_sha256": "cb0a4bfbbd7784a7b9eb4b841cc4d270181ad449b9b4c09859ca6681aa5fdecd",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "cursor",
+      "a": 127,
+      "b": 2,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 7,
+            "tx_sha256": "224b8f5f75bda93462815d3f8173923517452719eac7d28c6c0aaa4a974cdaff",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "clear-line",
+      "a": 0,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 7,
+            "tx_sha256": "f3d23b52cc424236817824438569829fa34a798750745ba3d4c8fb087d72829a",
+            "rx": [],
+            "ack": []
+          }
+        ],
+        [
+          {
+            "address": 120,
+            "tx_bytes": 257,
+            "tx_sha256": "904fb9ac59a82e31cfb4b84f96ccf67636407efdd1bf642a1ce2c8b5a8d5c01a",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "clear-line",
+      "a": 2,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 7,
+            "tx_sha256": "67b291b99fc1d1ab10fb3b2556894c307872609a55805e1b37a1c848d0f5b3a2",
+            "rx": [],
+            "ack": []
+          }
+        ],
+        [
+          {
+            "address": 120,
+            "tx_bytes": 257,
+            "tx_sha256": "904fb9ac59a82e31cfb4b84f96ccf67636407efdd1bf642a1ce2c8b5a8d5c01a",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "clear",
+      "a": 0,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 7,
+            "tx_sha256": "f3d23b52cc424236817824438569829fa34a798750745ba3d4c8fb087d72829a",
+            "rx": [],
+            "ack": []
+          }
+        ],
+        [
+          {
+            "address": 120,
+            "tx_bytes": 257,
+            "tx_sha256": "904fb9ac59a82e31cfb4b84f96ccf67636407efdd1bf642a1ce2c8b5a8d5c01a",
+            "rx": [],
+            "ack": []
+          }
+        ],
+        [
+          {
+            "address": 120,
+            "tx_bytes": 7,
+            "tx_sha256": "67b291b99fc1d1ab10fb3b2556894c307872609a55805e1b37a1c848d0f5b3a2",
+            "rx": [],
+            "ack": []
+          }
+        ],
+        [
+          {
+            "address": 120,
+            "tx_bytes": 257,
+            "tx_sha256": "904fb9ac59a82e31cfb4b84f96ccf67636407efdd1bf642a1ce2c8b5a8d5c01a",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "value",
+      "a": 0,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 81,
+            "tx_sha256": "2ed4d12cd1efc8cd61a3c719ba907527c87f670880ea611ab64b833194463d05",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "value",
+      "a": 12345,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 81,
+            "tx_sha256": "24ad6c6b5aa2219b0e392bf4992783c1f87e969bc266fe2636a95883ad020bee",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "value",
+      "a": 65535,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 81,
+            "tx_sha256": "e20829c790b917b0835081622dfffe4ee3fdd822ed79ea12cd38d624519f2ae6",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "pps",
+      "a": 0,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 120,
+            "tx_bytes": 97,
+            "tx_sha256": "90cafb43a64a4b2914f2398c6245441a8abb76cb94d12e19e0ff6f1f3573827e",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "ina-init",
+      "a": 0,
+      "b": 0,
+      "result": 0,
+      "transactions": [
+        [
+          {
+            "address": 128,
+            "tx_bytes": 3,
+            "tx_sha256": "2856efa0bf840183022e60704b0136a1961ed42780a28fea915eedcedcee9b9e",
+            "rx": [],
+            "ack": []
+          }
+        ],
+        [
+          {
+            "address": 128,
+            "tx_bytes": 3,
+            "tx_sha256": "d78becb5328f049744187b779cedd6be6556d620671103786e970d49f2035b4b",
+            "rx": [],
+            "ack": []
+          }
+        ]
+      ]
+    },
+    {
+      "name": "ina-read",
+      "a": 2,
+      "b": 4660,
+      "result": 4660,
+      "transactions": [
+        [
+          {
+            "address": 128,
+            "tx_bytes": 1,
+            "tx_sha256": "dbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986",
+            "rx": [],
+            "ack": []
+          },
+          {
+            "address": 129,
+            "tx_bytes": 0,
+            "tx_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "rx": [
+              18,
+              52
+            ],
+            "ack": [
+              1,
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "name": "ina-read",
+      "a": 4,
+      "b": 65436,
+      "result": 65436,
+      "transactions": [
+        [
+          {
+            "address": 128,
+            "tx_bytes": 1,
+            "tx_sha256": "e52d9c508c502347344d8c07ad91cbd6068afc75ff6292f062a09ca381c89e71",
+            "rx": [],
+            "ack": []
+          },
+          {
+            "address": 129,
+            "tx_bytes": 0,
+            "tx_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "rx": [
+              255,
+              156
+            ],
+            "ack": [
+              1,
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "name": "ina-v",
+      "a": 0,
+      "b": 24000,
+      "result": 12000,
+      "transactions": [
+        [
+          {
+            "address": 128,
+            "tx_bytes": 1,
+            "tx_sha256": "dbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986",
+            "rx": [],
+            "ack": []
+          },
+          {
+            "address": 129,
+            "tx_bytes": 0,
+            "tx_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "rx": [
+              93,
+              192
+            ],
+            "ack": [
+              1,
+              0
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "name": "ina-i",
+      "a": 0,
+      "b": 65436,
+      "result": -100,
+      "transactions": [
+        [
+          {
+            "address": 128,
+            "tx_bytes": 1,
+            "tx_sha256": "e52d9c508c502347344d8c07ad91cbd6068afc75ff6292f062a09ca381c89e71",
+            "rx": [],
+            "ack": []
+          },
+          {
+            "address": 129,
+            "tx_bytes": 0,
+            "tx_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "rx": [
+              255,
+              156
+            ],
+            "ack": [
+              1,
+              0
+            ]
+          }
+        ]
+      ]
+    }
+  ],
+  "workspace_passed": 3,
+  "failed_attempts": [
+    {
+      "name": "initial-builder",
+      "reason": "Missing toolchain-header snapshot directory, corrected before successful runs",
+      "record": "work/exp06-x0-upstream-analysis-20261021/failures/initial-builder/result.json"
+    },
+    {
+      "name": "default-tmp-build",
+      "reason": "Compiler temporary-file disk quota in /tmp, corrected with per-run TMPDIR",
+      "record": "work/exp06-x0-upstream-analysis-20261021/failures/default-tmp-build/result.json"
+    },
+    {
+      "name": "default-tmp-workspace",
+      "reason": "Disk I/O in shared /tmp",
+      "errors": 1,
+      "record": "work/exp06-x0-upstream-analysis-20261021/failures/default-tmp-workspace.xml"
+    },
+    {
+      "name": "long-tmp-workspace",
+      "reason": "AF_UNIX temporary socket path too long",
+      "errors": 3,
+      "record": "work/exp06-x0-upstream-analysis-20261021/failures/long-tmp-workspace.xml"
+    }
+  ],
+  "evidence": {
+    "path": "work/exp06-x0-upstream-20261021-evidence.tar.gz",
+    "bytes": 565350,
+    "sha256": "ceae947a928abfd49c824049f704ff0f0e5c5363480304908a449da394467eaf"
+  },
+  "limits": [
+    "No MCU startup, upload, PD voltage/current/wire or timing validation",
+    "The author-provided binary uses an unrecorded tool environment and differs from this reproducible image",
+    "Native recorder replaces only I2C functions and does not validate software I2C GPIO edges, electrical timing, OLED panel state or IRQ behavior",
+    "Glyph payloads are recorded without a duplicated independent font oracle",
+    "Upstream 128x32 vertical OLED, bitbang bus, inputs and faults differ from the locked 128x64 X0 workload; no direct cost ranking"
+  ]
+}
