@@ -89,9 +89,11 @@
       36
     ],
     "ina219": [
+      5,
       9,
       10,
       12,
+      13,
       14,
       15,
       19,
@@ -103,5 +105,6 @@
     "Ideal SCL clock counts exclude START/STOP timing, setup/hold, stretching, CPU, arbitration, other clients, retries and device power-up",
     "Address-order model assumes a known window and pointer continuity across STOP, with no reset or other display writer; physical behavior remains to validate",
     "ADC model sums listed conversion times and uses a steady periodic complete-cycle tag, not actual INA219 register-latch timing or guaranteed deadlines"
-  ]
+  ],
+  "ina219_low_line_timeout_ms": 28
 }

@@ -64,15 +64,16 @@ def main():
         for page,terms in [(19,['Co','D/C#']), (34,['Horizontal addressing mode','Vertical addressing mode'])]:
             assert all(term in ssd[page] for term in terms)
         assert all(term in ina[19] for term in ['68.10','128','SADC','BADC'])
+        assert '28 ms' in ina[4] and '28-ms' in ina[12]
         assert 'Status register' in ina[9] and 'convert pin' in ina[9] and 'Power Register' in ina[22]
-        report['checks']['document_pages']=dict(ssd1306=[20,35],ina219=[10,20,23])
+        report['checks']['document_pages']=dict(ssd1306=[20,35],ina219=[5,10,13,20,23])
         upstream=(out/'sources/software/pd_adapter/src/ina219.h').read_text()
         word=int(re.search(r'^#define INA_CONFIG\s+(0b[01]+)',upstream,re.M)[1],2)
         calibration=int(re.search(r'^#define INA_CALIB\s+(\d+)',upstream,re.M)[1]);assert word==0x27ff and calibration==4096
         badc=(word>>7)&15;sadc=(word>>3)&15;mode=word&7;assert badc==sadc==15 and mode==7
         cycle=config['ina219_adc_code15_time_us']*2
         lsb=Fraction(4096,100000)/(calibration*Fraction(config['upstream_shunt_milliohms'],1000))
-        report['models']['ina219']=dict(configuration=word,calibration=calibration,badc=badc,sadc=sadc,mode=mode,listed_time_per_quantity_us=config['ina219_adc_code15_time_us'],nominal_complete_cycle_us=cycle,nominal_complete_cycle_hz=float(Fraction(1000000,cycle)),declared_shunt_milliohms=config['upstream_shunt_milliohms'],current_lsb_ma=float(lsb*1000),cnvr_clear_interpretation='Unresolved document wording difference between pages 10 and 23; no read-clear policy chosen')
+        report['models']['ina219']=dict(configuration=word,calibration=calibration,badc=badc,sadc=sadc,mode=mode,listed_time_per_quantity_us=config['ina219_adc_code15_time_us'],nominal_complete_cycle_us=cycle,nominal_complete_cycle_hz=float(Fraction(1000000,cycle)),declared_shunt_milliohms=config['upstream_shunt_milliohms'],current_lsb_ma=float(lsb*1000),documented_low_line_timeout_us=config['ina219_low_line_timeout_ms']*1000,timeout_condition='SCL or SDA continuously low; not a universal normal-task deadline',cnvr_clear_interpretation='Unresolved document wording difference between pages 10 and 23; no read-clear policy chosen')
         for raw in range(65536):
             assert ((raw>>1)&0xfffc)==((raw>>3)*4)
             assert (raw if raw<32768 else raw-65536)==int.from_bytes(raw.to_bytes(2,'big'),'big',signed=True)
