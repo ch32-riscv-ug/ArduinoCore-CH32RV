@@ -29,8 +29,10 @@ void loop()
             rises++;
         }
     }
-    const float period = rises > 1 ? (float)(last - first) / (float)(rises - 1) : 0.0f;
-    Serial.printf("burst at %lu samples/s; PE3: %lu rising edges, %.2f samples a period\r\n",
-                  (unsigned long)rate, (unsigned long)rises, period);
+    /* In hundredths, without float printf (not in the default C runtime). */
+    const uint32_t period100 = rises > 1 ? (last - first) * 100u / (rises - 1) : 0u;
+    Serial.printf("burst at %lu samples/s; PE3: %lu rising edges, %lu.%02lu samples a period\r\n",
+                  (unsigned long)rate, (unsigned long)rises,
+                  (unsigned long)(period100 / 100u), (unsigned long)(period100 % 100u));
     delay(2000);
 }
