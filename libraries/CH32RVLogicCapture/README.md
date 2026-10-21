@@ -31,10 +31,12 @@ modes.
 
 **Continuous**
 - A DMA transfer from a port takes 8 HCLK clocks, and a request arriving
-  during one is dropped. With the USB streaming at the same time, 12.5 MS/s
-  (F_CPU / 8) lost samples in every period of a captured PWM and 10 MS/s now
-  and then; 9.09 MS/s (F_CPU / 11) lost none. So the rate stops there, and
-  `begin()` clamps to it.
+  during one is dropped, so one channel stops at 12.5 MS/s (F_CPU / 8).
+- With the USB streaming at the same time, samples are lost below that too
+  when the buffer shares a 128 KB SRAM bank with the USB's transfers (151 ppm
+  at 9.09 MS/s with the buffer in one bank). `begin()` clamps to F_CPU / 11
+  for now; the buffer placement and a two-channel 20 MS/s mode are being
+  worked out (measurements: docs/h417-capture.ja.md, in Japanese).
 
 **Burst**
 - The interval is the DMA's speed, not a timer's. When the CPU or another DMA

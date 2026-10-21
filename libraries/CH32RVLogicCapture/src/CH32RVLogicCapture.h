@@ -16,10 +16,14 @@
  *  - Continuous: TIM6's update requests DMA2 channel 8 (DMAMUX request 122),
  *    which reads the port into a circular buffer. A DMA transfer from a port
  *    takes 8 HCLK clocks and a request that comes while one is in progress is
- *    dropped. With the USB streaming at the same time (FS or SS), F_CPU / 8
- *    = 12.5 MS/s lost a sample or two in every 125, 10 MS/s 4 in 1309 PWM
- *    periods, and F_CPU / 11 = 9.09 MS/s none (a 100 kHz PWM captured on the
- *    same port, 2026-10-21) - so the rate stops there: begin() clamps to it.
+ *    dropped, so one channel stops at F_CPU / 8 = 12.5 MS/s. With the USB
+ *    streaming the buffer at the same time it loses samples below that too:
+ *    the USB and this DMA contend whenever they are in the same 128 KB SRAM
+ *    bank (a ring in one bank: 151 ppm of a 100 kHz PWM's periods at 9.09
+ *    MS/s; the ring's halves on either side of a bank boundary: none at up to
+ *    11.1 MS/s). begin() clamps to F_CPU / 11 for now; where the buffer goes
+ *    and a two-channel 20 MS/s mode are being worked out - measurements in
+ *    docs/h417-capture.ja.md (2026-10-21).
  *  - Burst (captureBurst()): the DMA copies the port back to back with no
  *    timer, 5 HCLK clocks a sample = 20 MS/s, for up to 65535 samples. The
  *    interval is the DMA's, not a timer's: when the CPU or another DMA uses
