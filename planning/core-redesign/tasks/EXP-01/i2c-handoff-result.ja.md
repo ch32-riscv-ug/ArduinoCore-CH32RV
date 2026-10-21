@@ -129,3 +129,5 @@ target probeのcritical関数はbarrierだけで、IRQ-offはcaller前提。実�
 backend停止後にclock／pinをどこまで返すか、独立stackを含む用途との結合は残る。
 新Managerを公開bus classとして採用したわけではない。
 [回収を分ける教材案](i2c-handoff-exercise.ja.md)は、人による評価前。
+
+後続の[資源台帳との接続](i2c-managed-handoff-result.ja.md)では、このManagerを変更せずにopen／closeをDomainへ接続した。旧結果を保持して周辺を返し、別ownerの通信中に旧takeしても新ownerのleaseを解放しない境界をhost／ABIで検査した。

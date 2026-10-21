@@ -123,3 +123,5 @@ archiveのhash・byte数は測定JSONを参照する。出力先は新しいdire
 
 後続の[回収分離](i2c-handoff-result.ja.md)は、backend take後の結果・bufferを外側へ保持する別経路をnative70件・ABI20で比較した。
 そのManagerと本Domain／Portはまだ接続していない。backendを閉じる条件と物理資源を返す条件を一つの検証として扱わない。
+
+後続の[回収分離Managerとの接続](i2c-managed-handoff-result.ja.md)では、このDomainを変更せず、backend reap・周辺close・利用者takeを分離した。Terminalの旧結果を保持中に資源を返して別ownerへ渡す境界をhost／ABIで検査した。

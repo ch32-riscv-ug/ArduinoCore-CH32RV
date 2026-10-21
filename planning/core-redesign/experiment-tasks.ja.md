@@ -97,7 +97,9 @@ D05／D08／D12について、常設初期化・汎用request・wrapperを必要
 [I2C資源利用権の接続](tasks/EXP-01/i2c-resource-result.ja.md)はnative47件・ABI28構成で、open失敗の返却とend／takeまでのclock・pin保持を検査した。
 PCLKとpin準備はadapterの宣言であり、実clock／pinmux／IRQ backendの成立とは分ける。
 [I2Cの回収分離](tasks/EXP-01/i2c-handoff-result.ja.md)はnative70件・ABI20で、既存register engineからbackend Viewを回収し、外側bufferと結果を利用者takeまで保持した。
-34条件の全MMIOとbyteは元driverに一致。資源台帳／eventとの結合・IRQ共有・実wireは残る。
+34条件の全MMIOとbyteは元driverに一致。
+[資源台帳との接続](tasks/EXP-01/i2c-managed-handoff-result.ja.md)はnative74件・ABI28で、reap後のcloseと旧結果保持を分け、別owner通信中の旧takeを検査した。
+これは協調的な論理台帳との接続で、Pins準備adapter／eventとの結合・IRQ共有・実wireは残る。
 [X035準備adapter](tasks/EXP-01/x035-i2c-setup-result.ja.md)は公称PCLK確認・gate・default routeとpin設定をnative100件・ABI18構成で検査した。
 packageごとのrouteと、実clock精度・配線・IRQ共有は別途確認する。
 [X035 route／package比較](tasks/EXP-01/x035-i2c-route-result.ja.md)はnative136件・ABI68構成。C8 defaultのimage hashを維持し、F7の非対応pinとdebug未解放を拒否した。
