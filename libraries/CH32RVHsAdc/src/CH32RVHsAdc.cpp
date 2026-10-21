@@ -31,6 +31,17 @@
 #define HSADC_SRC_HZ  CH32RV_CLOCK_SYSCLK_HZ
 #define HSADC_MAX_HZ  100000000UL          /* datasheet fHSADC */
 
+/* The DMA writes DMA_LEN + 2 samples into each buffer, all of them new
+ * (measured on CH32H417, 2026-10-21: DMA_LEN 8, 16, 32, 128 and 200 put 10,
+ * 18, 34, 130 and 202 samples in every buffer, and a square wave across the
+ * switch keeps its phase), so a buffer of n samples is programmed as n - 2. */
+#define HSADC_DMA_EXTRA 2u
+
+/* The DMA wrote memory the compiler knows nothing about: without this it
+ * kept a value the CPU had written before (read() returned its 0xFFFF
+ * marker, 1023, every time). */
+#define DMA_DONE() __asm__ volatile("fence rw, rw" ::: "memory")
+
 static CH32RVHsAdc *active;
 
 int CH32RVHsAdc::channelOf(pin_size_t pin)
@@ -105,15 +116,17 @@ uint16_t CH32RVHsAdc::read()
      * without ping-pong kept writing past DMA_LEN. Ping-pong keeps every
      * write inside its two buffers whatever happens, so: two small buffers,
      * wait for the first, stop, keep its last sample (the first ones carry
-     * the setup cycles). The wait has a timeout, not a hang. */
+     * the setup cycles). The wait has a timeout, not a hang; 0xFFFF left in
+     * place says the DMA never got there, and reads as 1023. */
     static uint16_t few[2][8] __attribute__((aligned(4)));
     HSADC_CTLR1 = 0;
     HSADC_STATR = 7u;
     few[0][7] = 0xFFFFu;
+    DMA_DONE();
     HSADC_ADDR0 = (uint32_t)(uintptr_t)few[0];
     HSADC_ADDR1 = (uint32_t)(uintptr_t)few[1];
-    HSADC_CFGR = ((uint32_t)8u << 16) | CFGR_PPMODE | ((uint32_t)_div << 8) | ((uint32_t)_channel << 2) |
-                 CFGR_DMAEN;
+    HSADC_CFGR = ((uint32_t)(8u - HSADC_DMA_EXTRA) << 16) | CFGR_PPMODE | ((uint32_t)_div << 8) |
+                 ((uint32_t)_channel << 2) | CFGR_DMAEN;
     HSADC_CFGR |= CFGR_EN;
     delayMicroseconds(2);                              /* tSTAB, 1 us */
     HSADC_CTLR1 = CTLR1_START;
@@ -126,12 +139,13 @@ uint16_t CH32RVHsAdc::read()
     HSADC_CTLR1 = 0;
     HSADC_CFGR = 0;
     HSADC_STATR = 7u;
+    DMA_DONE();
     return (uint16_t)(few[0][7] & 0x3FFu);
 }
 
 bool CH32RVHsAdc::startContinuous(uint16_t *buf0, uint16_t *buf1, uint16_t samples)
 {
-    if (!_begun || !buf0 || !buf1 || samples == 0) {
+    if (!_begun || !buf0 || !buf1 || samples <= HSADC_DMA_EXTRA) {
         return false;
     }
     stop();
@@ -145,8 +159,8 @@ bool CH32RVHsAdc::startContinuous(uint16_t *buf0, uint16_t *buf1, uint16_t sampl
     HSADC_CTLR2 = 0;
     HSADC_STATR = 7u;
     /* DMA_LEN, ping-pong, divider, 16-bit, channel, DMA */
-    HSADC_CFGR = ((uint32_t)samples << 16) | CFGR_PPMODE | ((uint32_t)_div << 8) | ((uint32_t)_channel << 2) |
-                 CFGR_DMAEN;
+    HSADC_CFGR = ((uint32_t)(samples - HSADC_DMA_EXTRA) << 16) | CFGR_PPMODE | ((uint32_t)_div << 8) |
+                 ((uint32_t)_channel << 2) | CFGR_DMAEN;
     HSADC_CFGR |= CFGR_EN;
     delayMicroseconds(2);
     _running = true;
@@ -179,6 +193,7 @@ const uint16_t *CH32RVHsAdc::readBuffer()
         _ready = (uint8_t)(r & ~(1u << take));
     }
     interrupts();
+    DMA_DONE();
     return take == 0xFF ? nullptr : _buf[take];
 }
 

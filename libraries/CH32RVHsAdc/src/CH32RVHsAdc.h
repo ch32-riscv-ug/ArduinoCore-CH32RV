@@ -42,7 +42,7 @@ public:
     uint16_t read();
 
     /* Fill buf0, then buf1, then buf0 ... `samples` 16-bit values each
-     * (1..65535). False if not begun or the arguments are wrong. */
+     * (3..65535). False if not begun or the arguments are wrong. */
     bool startContinuous(uint16_t *buf0, uint16_t *buf1, uint16_t samples);
     void stop();
     /* The buffer filled since the last call, or nullptr when none is. */
