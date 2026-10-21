@@ -27,6 +27,7 @@ def patch_tool(lock_name):
 @pytest.mark.parametrize("lock_name", [
     "arduino-core-api.lock.toml",
     "lwip.lock.toml",
+    "mbedtls.lock.toml",
 ])
 def test_source_inventory_and_hashes_match_lock(lock_name):
     lock = tomllib.loads((REPO / "vendor" / lock_name).read_text())
