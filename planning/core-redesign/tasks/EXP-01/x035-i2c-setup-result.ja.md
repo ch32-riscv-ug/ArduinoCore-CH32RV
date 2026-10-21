@@ -109,5 +109,6 @@ python3 tests/platform/core_redesign/measure_x035_i2c_setup.py \
 hash・byte数は測定JSONを参照する。同名出力先は再利用しない。
 
 残るP4作業はrouteとpackage能力差、clock喪失・停止／復帰、GPIO／AFIOのIRQ共有、完了枠・arbiter・用途への接続。
+[routeとC8／F7能力差](x035-i2c-route-result.ja.md)は追加のhost／ABI検査を行った。物理pin競合や実配線の成立は未検証。
 実起動・wire・周波数・電流は未確認。教材では「flagとregister再確認」「開く準備と転送中の状態」「idle不明時に資源を返してよいか」を予想する。
 人による教材実施・理解度レビューは未確認。

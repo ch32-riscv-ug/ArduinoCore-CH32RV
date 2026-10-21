@@ -98,6 +98,8 @@ D05／D08／D12について、常設初期化・汎用request・wrapperを必要
 PCLKとpin準備はadapterの宣言であり、実clock／pinmux／IRQ backendの成立とは分ける。
 [X035準備adapter](tasks/EXP-01/x035-i2c-setup-result.ja.md)は公称PCLK確認・gate・default routeとpin設定をnative100件・ABI18構成で検査した。
 packageごとのrouteと、実clock精度・配線・IRQ共有は別途確認する。
+[X035 route／package比較](tasks/EXP-01/x035-i2c-route-result.ja.md)はnative136件・ABI68構成。C8 defaultのimage hashを維持し、F7の非対応pinとdebug未解放を拒否した。
+物理pin競合・USBとの共存は未検証。
 
 ### EXP-02 データと同期
 
