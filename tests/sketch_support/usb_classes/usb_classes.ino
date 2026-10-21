@@ -194,8 +194,10 @@ void setup()
 void loop()
 {
     uint8_t buffer[64];
+    /* read() only after peek() saw data: both run the USB task, and a packet
+     * landing in read()'s would go uncounted either way. */
     const int ahead = directMode ? -1 : vendor.peek();
-    const size_t n = directMode ? 0 : vendor.read(buffer, sizeof buffer);
+    const size_t n = ahead < 0 ? 0 : vendor.read(buffer, sizeof buffer);
     if (n && ahead >= 0) {
         if (buffer[0] == (uint8_t)ahead) {
             peeksMatched++;
