@@ -286,3 +286,12 @@ N04のsource／host／整数模型／link範囲を実施し、実fixture統合�
 [prepared X0と同期保存](tasks/EXP-06/save-x0-result.ja.md)でnative92件＋workspace3件・ABI42を記録した。
 1／2／4単位と保存なし、壁時計・tick・入力保持、未回収、媒体失敗とcold-model bootを比較した。
 並行の現行core向け永続化下書きは変更せず、blob8／1 bankを含む候補比較を維持。次はV003 K0。
+
+
+## N05 V003保存共存（2026-10-22）
+
+[K0 conditional slaveと同期保存](tasks/EXP-06/save-k0-result.ja.md)はnative93件＋workspace3件・ABI82。
+64 B fast eraseの0／1／2／4単位、2 slave policy、未回収・32 B走査・失敗・bootを比較した。
+376 trace・60,300コマンド、全4候補94組が一致。保存object208 B、Rの保存追加静的RAM220 B。
+保持1件では欠落6／9、保持4件では欠落0の100 ms感度分析は、実GPIO／IRQ保証ではない。
+N05のV003／X035同期媒体host／linkを実施。実backend／全runtimeはN08、実機はN09へ残し、次はN06。

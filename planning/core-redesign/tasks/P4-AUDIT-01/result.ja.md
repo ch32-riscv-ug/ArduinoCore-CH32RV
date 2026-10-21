@@ -39,7 +39,7 @@ P4の完成用途・全体費用・実機・人の変更課題評価は未完了
 | D06 待機 | [wait](../EXP-03/wait-result.ja.md)、[依存](../EXP-03/dependency-result.ja.md)でproducer条件と禁止文脈を明示 | 実際にproducerが進めるかはadapterの宣言。期限後に観測した成功を期限内保証にしない | queue・I/O・実時計を一緒にした待機。同期wrapperの適用範囲に直結 |
 | D07 同期と容量 | [データ](../EXP-02/result.ja.md)、[共有と寿命](../EXP-02/shared-result.ja.md)、[取得buffer](../EXP-02/acquisition-result.ja.md)、[H417並列](../EXP-05/h417-feature-thread-result.ja.md) | host mutex／atomicの成功はPFIC・HSEM・cacheの成功ではない。poolとI/O回収は異なる | 実ISR共有・複数producer・実コア間同期。policy／classと所有・固定容量に直結 |
 | D08 runtime | [再現](../EXP-00/result.ja.md)、[入口](../EXP-01/runtime-result.ja.md)、[時刻](../EXP-01/logical-time-result.ja.md)、[予約](../EXP-04/region-result.ja.md) | 起動命令検査は実起動ではない。未使用部品0 Bは登録済み容量の回収を意味しない | 実counter、観測間隔、初期化・予約込みB1。常設機能と除去境界に直結 |
-| D09 保存 | [形式](../EXP-04/format-result.ja.md)、[store](../EXP-04/store-result.ja.md)、[走査・更新統合](../EXP-04/integrated-result.ja.md)、[X035用途共存](../EXP-06/save-x0-result.ja.md) | 1消去単位と2 bankは保証が異なる。同期停止中の入力保持・遅れるmsを分離し、bus進行だけでは損失を検出できない例を保存。中断模型は実電断全域を表さない | V003用途共存、物理媒体停止、再program、upload保持。RAW／key・容量・保証に直結 |
+| D09 保存 | [形式](../EXP-04/format-result.ja.md)、[store](../EXP-04/store-result.ja.md)、[走査・更新統合](../EXP-04/integrated-result.ja.md)、[X035用途共存](../EXP-06/save-x0-result.ja.md)、[V003共存](../EXP-06/save-k0-result.ja.md)で1 fast erase単位を含む故障・入力保持を比較。 | 1消去単位と2 bankは保証が異なる。同期停止中の入力保持・遅れるmsを分離し、bus進行だけでは損失を検出できない例を保存。中断模型は実電断全域を表さない。V003では64 B page半分の失敗programでもheader＋blob8が有効となり得る。 | 実媒体・時刻・全runtime・電断、再program、upload保持。RAW／key・容量・保証に直結 |
 | D10 休止 | [V006資料](../EXP-06/v006-sleep-result.ja.md)、[flow](../EXP-06/v006-sleep-flow-result.ja.md)、[生きたlease](../EXP-06/v006-sleep-lease-fault-result.ja.md) | 登録漏れは一覧だけでは見つからない。未回収leaseで休止できないこととfault公開は別 | 実driver停止・clock復帰・wake競合・電流。休止調停と時間の意味に直結 |
 | D11 系列 | [X035 route](../EXP-01/x035-i2c-route-result.ja.md)、[H417資料](../EXP-05/h417-preparation.ja.md)、[配置](../EXP-05/h417-layout-result.ja.md)、[予約](../EXP-05/h417-reservation-result.ja.md) | F7非対応pin・debug保持条件。link済みopaque領域は共有C++ object起動ではない。HSEM記述差が残る | 別系列backend、両コア起動・可視性・reset。共通規則と規模別構成に直結 |
 | D12 公開と教育 | [表示交換](../EXP-05/display-result.ja.md)、K0／X0と各exercise、[76候補対応](feature-evidence.csv) | worksheet作成・モデルによる解答は利用者評価ではない。汎用部品で未調査の周辺を対応済みにしない | 変更差分集計・人のレビュー・各候補の採否。提供場所・教材・対象外の判断が残る |
@@ -94,7 +94,7 @@ IO-04は特に範囲を狭く読む。
 | N02 X0周辺所有と進行 | host／ABI実施済み。[直接](../EXP-06/x0-register-wire-result.ja.md)、[通知](../EXP-06/x0-event-wire-result.ja.md)、[RX2末尾](../EXP-06/x0-rx-tail-result.ja.md)、[X035準備](../EXP-06/x0-prepared-wire-result.ja.md)を用途接続。準備はnative182件・ABI546、840 trace | 実機・read命令間IRQ・公開callback破棄・変換品質は未検証。N02の模型範囲の終了をP4や全契約の終了にしない。次はN03 |
 | N03 K0共有境界 | [共有部分実施済み](../EXP-06/k0-shared-result.ja.md)：native118件・ABI132。全群の共有frontendで差分・FIFO・snapshotと注入を検査。C-bridgeは追加条件。[slave資料照合](../EXP-06/k0-slave-source-result.ja.md)でACK時点・STOPF条件・再START観測の不足を記録。[条件付きregister接続](../EXP-06/k0-slave-register-result.ja.md)：native137件・ABI132。51組の全群状態／MMIO一致。2拒否policyの意味差とforeign再STARTの反例を保存 | 上流のlive register契約へ変更しない。host／MMIO link範囲は実施済み。実ACK・拒否後復帰・他アドレス再START・実IRQは未検証でN09／N10へ残す。次の独立作業はN04 |
 | N04 待機・再入対照 | [深さ比較実施済み](../EXP-03/reentry-depth-result.ja.md)：native78件・ABI36。継続型と深さ1／2／4、循環・active資源保持・外部完了を比較し、生成call経路を算定。[X035固定port配置](../EXP-03/stack-port-result.ja.md)はABI50、source76 file。[2 stack比較](../EXP-03/two-stack-result.ja.md)はhost17件・ABI18、継続型と17組一致。[固定kernel共通列](../EXP-03/kernel-trace-result.ja.md)はnative20件・ABI18。2 task・協調／preemptionと継続型／2 stackの18組が一致。3 stageの容量差も保存 | この固定RV32I portのRV32E拒否を確認。IRQ上端−512 Bを含む予約1,024 Bを計上。source／host／整数模型／link範囲は実施済み。実fixture統合はN08、実切替・待機・peakはN09。host値をMCU値にしない。次はN05。最終方式の採用はしない |
-| N05 保存と用途共存 | [X035用途接続](../EXP-06/save-x0-result.ja.md)：native92件・ABI42、保存0／1／2／4単位、未回収・再走査・媒体失敗・cold-model bootを比較。壁時計／tick coalescingと仮想入力保持を分離。V003 K0の接続は未完了 | declared感度分析で、物理Flash backendや実IRQ／PD成立ではない。実測記録bbe0ee7は参照snapshotとして保存。V003 K0・全runtime配置・実電断等を続ける。PDの実必須期限を架空の値で作らない |
+| N05 保存と用途共存 | [X035用途接続](../EXP-06/save-x0-result.ja.md)：native92件・ABI42、保存0／1／2／4単位、未回収・再走査・媒体失敗・cold-model bootを比較。壁時計／tick coalescingと仮想入力保持を分離。[V003 K0接続](../EXP-06/save-k0-result.ja.md)：native93件・ABI82、64 B fast eraseの0／1／2／4単位と2 slave policy、保留・故障・boot。N05同期媒体host／link範囲は実施済み | declared感度分析で、物理Flash backendや実IRQ／PD成立ではない。実測記録bbe0ee7は参照snapshotとして保存。実backend・全runtime配置はN08、実電断・ACK・IRQ等はN09で続ける。次の独立作業はN06。PDの実必須期限を架空の値で作らない |
 | N06 休止・コアの接続 | 既存所有・時刻・実行器を使うhost接続例を完成。V006の受理閉鎖〜回収〜復帰、H417のmessage公開〜通知〜返却と片側停止を通す | 実待機・HSEM・cache・resetを代替しない。未解決資料の解釈を採用せず境界を記録 |
 | N07 変更課題の機械比較 | 5課題すべてについてbaseline→変更版の差分、編集file、追加状態、意味の変更、host trace、ABIを同じ様式で記録 | 故障検査があるだけで「切断復旧の追加課題を実施済み」としない。人の成績は別 |
 | N08 測定条件の補完 | seed／操作数の差を一覧化し追加run。N01〜07の同条件B0／B1／B2、初期化・予約・stack予算の不足を一つの表にする | 未観測stackはnull。予算候補を実測peakとして扱わない |
@@ -138,7 +138,7 @@ upload保持、H417両コアの可視性・再起動。必要な観測が揃わ�
 archiveがない形式も欠落として隠さず列挙する。仕様適合の意味をhash一致から導かない。
 過去の測定入力hashを現在の変更済みsourceへ一律照合せず、歴史的測定のsnapshotは各resultを参照する。
 再生成は `python3 tests/platform/core_redesign/inventory_evidence.py --out work/<new-report>.json`。
-N05 X035共存反映後の64 manifest、61 archive参照（重複を除く60個）は全てbyte数・SHA-256が一致。
+N05 V003共存反映後の65 manifest、62 archive参照（重複を除く61個）は全てbyte数・SHA-256が一致。
 archive参照がmanifest内にない4件は報告内に明記し、移送性まで確認したとは扱わない。
 対象は測定記録であり、コア・USB／Networkの並行変更を変更・stageしない。
 
