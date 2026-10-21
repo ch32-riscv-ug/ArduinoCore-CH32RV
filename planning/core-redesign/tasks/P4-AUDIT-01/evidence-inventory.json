@@ -920,6 +920,25 @@
       "archive_reference_status": "recorded"
     },
     {
+      "path": "planning/core-redesign/tasks/EXP-06/x0-prepared-wire-measurements.json",
+      "sha256": "a340a3c456dd59e38986cdbe78570707ef46aab0ed68cc08ca030436fd204745",
+      "archives": [
+        {
+          "pointer": "/archive/path",
+          "path": "work/exp06-x0-prepared-20261021-evidence.tar.gz",
+          "expected_sha256": "92972128888f3a0ded5b969bc1cda10880d5d6078c112726c01703539875635a",
+          "expected_bytes": 91454840,
+          "observed": {
+            "present": true,
+            "sha256": "92972128888f3a0ded5b969bc1cda10880d5d6078c112726c01703539875635a",
+            "bytes": 91454840
+          },
+          "status": "matched"
+        }
+      ],
+      "archive_reference_status": "recorded"
+    },
+    {
       "path": "planning/core-redesign/tasks/EXP-06/x0-register-wire-measurements.json",
       "sha256": "5de87529d2f2f094702d50ff8af993a7116630538762fe208708f9000f7e4f3e",
       "archives": [
@@ -1008,9 +1027,9 @@
       "archive_reference_status": "not-recorded-in-manifest"
     }
   ],
-  "manifest_count": 55,
-  "unique_archive_count": 51,
-  "archive_reference_count": 52,
+  "manifest_count": 56,
+  "unique_archive_count": 52,
+  "archive_reference_count": 53,
   "manifests_without_archive_reference": [
     "planning/core-redesign/tasks/EXP-00/measurements.json",
     "planning/core-redesign/tasks/EXP-02/measurements.json",

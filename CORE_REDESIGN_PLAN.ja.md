@@ -277,7 +277,8 @@ D01〜D12の支持・反証・未検証、契約ごとの到達範囲、76候補
 [N02の直接回収](planning/core-redesign/tasks/EXP-06/x0-register-wire-result.ja.md)もhost／ABIで接続した。
 [通知満杯・解除／retry](planning/core-redesign/tasks/EXP-06/x0-event-wire-result.ja.md)も同じ用途へ接続した。
 [RX2末尾](planning/core-redesign/tasks/EXP-06/x0-rx-tail-result.ja.md)も用途で検査した。
-次は周辺準備との接続。部品の検査件数を完成用途の完了率にはしない。
+[周辺準備との接続](planning/core-redesign/tasks/EXP-06/x0-prepared-wire-result.ja.md)までN02のhost／ABI比較を実施した。
+次はN03のK0共有境界。実機・寿命・品質は未検証として残し、部品の検査件数を完成用途の完了率にはしない。
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
 

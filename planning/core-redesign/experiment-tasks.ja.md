@@ -219,6 +219,9 @@ Full・宛先解除とretry・古いhint、peer通信中の回収を検査。直
 RX tail・X035準備との用途結合は続行する。
 [RX2末尾の用途検査](tasks/EXP-06/x0-rx-tail-result.ja.md)はnative70件で、FIFO排出・read後のFailureと停止待ち、終端後の不変を検査した。
 firmware headerは不変で新規ABI buildは0。次はX035準備との用途接続。read命令間の物理IRQは未検証。
+[X035準備の用途接続](tasks/EXP-06/x0-prepared-wire-result.ja.md)は最終native182件・ABI546で、
+全route／packageの可否と旧結果保持中の再準備・peerを検査した。N02のhost／ABI範囲は実施済み。
+F7の物理fit、実機、read命令間IRQ、動的寿命・変換品質を完了扱いせず、次はN03へ進む。
 部品単体で最小だったものを組むだけで、完成用途も最小だと推測しない。
 
 成果物は全体費用、正常・burst・切断・満杯のtrace、I/Oと入力遅延、残容量、変更課題と利用者レビュー。
