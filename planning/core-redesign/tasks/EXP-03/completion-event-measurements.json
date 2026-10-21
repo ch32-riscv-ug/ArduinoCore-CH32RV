@@ -1,0 +1,1280 @@
+{
+  "date": "2026-10-21",
+  "implementation_commit": "3142cf8",
+  "scope": "serial fake-I/O arbiter and existing EventExecutor composition; FIFO hints, explicit pump",
+  "native_scenarios": 74,
+  "workspace_tests": 3,
+  "total_passed": 77,
+  "matrix_scenarios": 54,
+  "lifetime_scenarios": 8,
+  "registration_scenarios": 4,
+  "context_scenarios": 8,
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "policies": {
+    "dedicated": {
+      "clients": 3,
+      "records": 3
+    },
+    "pooled": {
+      "clients": 3,
+      "records": 2
+    }
+  },
+  "mailbox_targets": 1,
+  "mailbox_capacity": 1,
+  "buffer_bytes": 32,
+  "request_bytes": 4,
+  "inputs": {
+    "completion_event_driver.cpp": "3e177512a163b96718368a413194a5e02f27ae8d6110be99a84eb2314af2c61a",
+    "test_completion_event.py": "8f9860d72737ffe5d4530afa1c77a43ed641f76a4c1944d1fb62b407ae889016",
+    "completion_arbiter.hpp": "18f7a683e94378d0ddc23f22a8b2fd173b2ab1a9f0a5072b9d7103041c01fefa",
+    "io_lifecycle.hpp": "300932a2f971822f1ec33deaa452bb79aa2fd88c4c63897e6147e0795911b395",
+    "event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+    "work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+    "data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8"
+  },
+  "compiler_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+  "executable_sha256": "2ebfc03cd367a61e9cfbdd6e3e7fca25afcc390681aadb28f57bd293ce30b0d8",
+  "archive": {
+    "path": "work/exp03-completion-event-20261021-evidence.tar.gz",
+    "bytes": 94393,
+    "sha256": "f15b9b2688aa593389b163c6c425cc40252fd8e9dfd6c7b7ce571923cdebfa5f"
+  },
+  "build_attempts": [
+    {
+      "outcome": "compile rejected misleading indentation by -Werror",
+      "native_executed": 0,
+      "workspace_passed": 3,
+      "setup_errors": 74
+    },
+    {
+      "outcome": "77 passed",
+      "native_executed": 74
+    }
+  ],
+  "unchanged_headers": [
+    "completion_arbiter.hpp",
+    "io_lifecycle.hpp",
+    "event_executor.hpp",
+    "work_executor.hpp",
+    "data_parts.hpp"
+  ],
+  "target_abi_measured": false,
+  "hardware_executed": false,
+  "traces": [
+    {
+      "file": "dedicated-context-0.json",
+      "args": [
+        "dedicated",
+        "context",
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "89c5ed269baa4e1e26085e2cd60b46311e06a45a5bc2b73945dd9504566d63c8"
+    },
+    {
+      "file": "dedicated-context-1.json",
+      "args": [
+        "dedicated",
+        "context",
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "0073d8a33a5ae94f02b54419e87c436ad5735017285bfa7572536d6a7dc79612"
+    },
+    {
+      "file": "dedicated-context-2.json",
+      "args": [
+        "dedicated",
+        "context",
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "842831d7749631630b2ed047213dd4175a8b8051551310488fc6b2732bae122f"
+    },
+    {
+      "file": "dedicated-context-3.json",
+      "args": [
+        "dedicated",
+        "context",
+        3
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "c5e7eb4b5534151bb92e9c55a5179d0c60c3d6882e1c8429701577eb41d2b37c"
+    },
+    {
+      "file": "dedicated-end.json",
+      "args": [
+        "dedicated",
+        "end"
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 0,
+        "skipped": 1,
+        "all_buffers_returned": true
+      },
+      "sha256": "1ce54e76689ee3282128f2d5a69a9fe5d30298afcef367d0468ca5ef6c76a7fb"
+    },
+    {
+      "file": "dedicated-full.json",
+      "args": [
+        "dedicated",
+        "full"
+      ],
+      "outcome": {
+        "calls": 2,
+        "collected": 2,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "0b39d310f0d7354173c17030ca6229070f0ee6c851fbcf3052412db5d5f24085"
+    },
+    {
+      "file": "dedicated-matrix-0-0-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        0,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "a5a5dd577b32d08b6d961dfb83af7bb0f32da31fd3f944550649b083b8629e3c"
+    },
+    {
+      "file": "dedicated-matrix-0-0-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        0,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "e7b157fd6d2ae192579acc6a9ec11933d912b8bda0337148f5efbf2f5020dfdf"
+    },
+    {
+      "file": "dedicated-matrix-0-0-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        0,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "7aa3b5e96181a529933a23a6347f3658a9fb7dedf011facec7eaa72720577577"
+    },
+    {
+      "file": "dedicated-matrix-0-1-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        1,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "08f15799f93a38e8f3fc51cee92a413699ce0a2fa40a76b249e79995e029e2ae"
+    },
+    {
+      "file": "dedicated-matrix-0-1-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        1,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "52da5f9d2c5cce776206d289450a594a5e07924c966de374aceda65fe69401b9"
+    },
+    {
+      "file": "dedicated-matrix-0-1-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        1,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "03f651ea745f5c48ff568866b3601bbe6e995fc913d4e799287d1a9b897e8c60"
+    },
+    {
+      "file": "dedicated-matrix-0-2-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        2,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "1414e8432f0cf5c30af21e46ced96cbe77b96fd45c546575e17a89e8d133c664"
+    },
+    {
+      "file": "dedicated-matrix-0-2-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        2,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "bb15e12151e0546dbed1bf40d10da10d90bd0c3462db6c04715cc14200e267f1"
+    },
+    {
+      "file": "dedicated-matrix-0-2-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        0,
+        2,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "81d03c0470cfa9c5288d61cea08ddeb985e3aa1e0c2ba0e086d6382a37ea1efb"
+    },
+    {
+      "file": "dedicated-matrix-1-0-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        0,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "4b45a64a4aeaf1498b75d3cf86f2419cbb08807b002ece15e688a4296945a0e4"
+    },
+    {
+      "file": "dedicated-matrix-1-0-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        0,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "a77d1faa1ec45ea084b0ef9436e72e605ae59c38e2594112d83babd5d6511138"
+    },
+    {
+      "file": "dedicated-matrix-1-0-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        0,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "907a47b3a229a7ee49fd8caf06bf1b10167babdf93102063c5c6ecf15c2c7f46"
+    },
+    {
+      "file": "dedicated-matrix-1-1-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        1,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "81b82e961c95fea2844704cd7ffc25c10ba2f9c7bb4fdac69abef3eb20d78132"
+    },
+    {
+      "file": "dedicated-matrix-1-1-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        1,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "d278eb9c85ca8b3c833c41d7cad04b4f4af0b8a89049255dd11bd8ea3c99736f"
+    },
+    {
+      "file": "dedicated-matrix-1-1-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        1,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "e4941c1442154d431e32a3019ddf3c3208c5ef2b7918dc89bc9f4bb9100fd587"
+    },
+    {
+      "file": "dedicated-matrix-1-2-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        2,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "1969286e88bf49ea270254779cadcebd00825115bdfefad0169a1a7ff469693e"
+    },
+    {
+      "file": "dedicated-matrix-1-2-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        2,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "43ddb5d941e86808d8b0938a8dd3ee6ca5af921937265cf3762fc41817d2bae9"
+    },
+    {
+      "file": "dedicated-matrix-1-2-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        1,
+        2,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "28cef88d75111a62496ac55ef0b41fff85cc23780713ae3f912706519817c6e5"
+    },
+    {
+      "file": "dedicated-matrix-2-0-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        0,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "24d86f82a255841729377d06edae56345db123ebcb8e34e5136c737bdab09935"
+    },
+    {
+      "file": "dedicated-matrix-2-0-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        0,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "b2408d696078b87dd14e4d0093b60c36b0d0c5103c1a56be9194708195028f89"
+    },
+    {
+      "file": "dedicated-matrix-2-0-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        0,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "5a8f343b41e1e86e3b5f3ba61c5132c72a92a2111517d67bd1fb6c0068a2e45d"
+    },
+    {
+      "file": "dedicated-matrix-2-1-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        1,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "26b83d2254c78275624bdd5884ec69ac624e4e94cbc8d8f34625b369a00efdda"
+    },
+    {
+      "file": "dedicated-matrix-2-1-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        1,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "d0ff4d02bdcc0e366a61b21ab054185db3d560fc85880ed5d48fb68d7503366a"
+    },
+    {
+      "file": "dedicated-matrix-2-1-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        1,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "b3cda7d7e8511c78fd43b5340751db0f9033b4730b63507f3bd75397210d679b"
+    },
+    {
+      "file": "dedicated-matrix-2-2-0.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        2,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "d7956cfcc19b796dc7319ca5b257bb4745a5ced2016e88af2b7e73f351e1b747"
+    },
+    {
+      "file": "dedicated-matrix-2-2-1.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        2,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "9c776743abad1c222a7eb036eb4f0f60c26fa8f7736cf40da88d2e255d08555b"
+    },
+    {
+      "file": "dedicated-matrix-2-2-2.json",
+      "args": [
+        "dedicated",
+        "matrix",
+        2,
+        2,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "2c44affc859e54ad559d98c5c27e035a3ae22b99deecf7bea4c149edae758aa2"
+    },
+    {
+      "file": "dedicated-reentrant.json",
+      "args": [
+        "dedicated",
+        "reentrant"
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "300bdfd502da751a27481780b89ea5bca96e52b4b7e2612cbf77fd3c4dd7b109"
+    },
+    {
+      "file": "dedicated-stale.json",
+      "args": [
+        "dedicated",
+        "stale"
+      ],
+      "outcome": {
+        "calls": 2,
+        "collected": 1,
+        "skipped": 1,
+        "all_buffers_returned": true
+      },
+      "sha256": "fa8bdbcc2779549c3d61d8dcfc40807e242f9f91f8d452fb0835829d2780b18e"
+    },
+    {
+      "file": "dedicated-unbind-0.json",
+      "args": [
+        "dedicated",
+        "unbind",
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "2f7985224c83d93dd53cf1c2db8ae2efd60f21fcfbb14c13c5a88ad9774a4449"
+    },
+    {
+      "file": "dedicated-unbind-1.json",
+      "args": [
+        "dedicated",
+        "unbind",
+        1
+      ],
+      "outcome": {
+        "calls": 0,
+        "collected": 0,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "f26b4095f90d38fafac4a07a6b0133c2ea93b061994047c91a6c67ad4fb82f34"
+    },
+    {
+      "file": "pooled-context-0.json",
+      "args": [
+        "pooled",
+        "context",
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "a78c45c771a40def13c76e970c846e2b67f45d11b7b96d45fb46314d1db2ebeb"
+    },
+    {
+      "file": "pooled-context-1.json",
+      "args": [
+        "pooled",
+        "context",
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "9be1d3708df31b715696d3544470fadd813a2d2144c1458500a2de7c49ba5f03"
+    },
+    {
+      "file": "pooled-context-2.json",
+      "args": [
+        "pooled",
+        "context",
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "c002c3533df6aed88a25c08f6566cba5c84c69d23ee4dff605569d2d03e929a1"
+    },
+    {
+      "file": "pooled-context-3.json",
+      "args": [
+        "pooled",
+        "context",
+        3
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "71b0fdc86e6bb26f902fcb23c02fa90498e32937b109f16027ff8a109ddff39b"
+    },
+    {
+      "file": "pooled-end.json",
+      "args": [
+        "pooled",
+        "end"
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 0,
+        "skipped": 1,
+        "all_buffers_returned": true
+      },
+      "sha256": "753cba09ac650170b8280accd20276108898844858941f3be7170e95992085cd"
+    },
+    {
+      "file": "pooled-full.json",
+      "args": [
+        "pooled",
+        "full"
+      ],
+      "outcome": {
+        "calls": 2,
+        "collected": 2,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "fa661e9fb3bf45faf9ab39583d2e58dd07bb7a4539c2878cce6967c57c8c35f0"
+    },
+    {
+      "file": "pooled-matrix-0-0-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        0,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "d0fb2d5aa6ece772d02aa0c328aa9d90d4bf5a3bb5b171681bb2a258654f80b6"
+    },
+    {
+      "file": "pooled-matrix-0-0-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        0,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "fe1ef68b160d8ceac1a59a6350faf907287627344234c8e31e2c2e2ca281413c"
+    },
+    {
+      "file": "pooled-matrix-0-0-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        0,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "b111bb5d0dc4cd3d5851cb4dc0e9025c05bcfc471993663d15a7a7b57e9db8d9"
+    },
+    {
+      "file": "pooled-matrix-0-1-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        1,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "0dd2e4e5c44e2968e27def0cf4dfc7b90929afd4fa0a43e8ff986ea9b29f0963"
+    },
+    {
+      "file": "pooled-matrix-0-1-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        1,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "5dc162421b5012cb3be8eaceb5f3a04b411050b39af0f49b4447fd103d75aeb3"
+    },
+    {
+      "file": "pooled-matrix-0-1-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        1,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "06dbd242710d95c340b327cde49cecf21c8a4b6d8da3d8850e647ba81354b90d"
+    },
+    {
+      "file": "pooled-matrix-0-2-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        2,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "1581b16f524da5b7699eec39fb3f80a185a2ab762d4324e5bfc164b617e95fbc"
+    },
+    {
+      "file": "pooled-matrix-0-2-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        2,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "72d50539739fc1ee1d9b06e00c58ec15f01e2b605e3b9d3f059b6c405c10f7bd"
+    },
+    {
+      "file": "pooled-matrix-0-2-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        0,
+        2,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "248146e0f4d3c18b24a9d79a1fa9e85f030321c79e89ad8bad66e09f641a34e6"
+    },
+    {
+      "file": "pooled-matrix-1-0-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        0,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "004c3b1ae9b35ff47a2bad6a3ce53cea1790e667c7b0bd5618d8ed3391e7f2e9"
+    },
+    {
+      "file": "pooled-matrix-1-0-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        0,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "476a93c5c3577bab7917a1a11614689382131a08849893e5569798f96b9bad8d"
+    },
+    {
+      "file": "pooled-matrix-1-0-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        0,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "72da5e7e38e5f1dd24683247a201f8db9c56f3b61c47cd78e527910a081c9682"
+    },
+    {
+      "file": "pooled-matrix-1-1-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        1,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "dccf71eeee41920cba3693c50268cdf6d3053ed149214193a8fc2e7df17bd3a4"
+    },
+    {
+      "file": "pooled-matrix-1-1-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        1,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "f55d5874e963845c71f67cfbb1d067c045ef405d271ee2a8fb66dcd48cb8ca1d"
+    },
+    {
+      "file": "pooled-matrix-1-1-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        1,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "9565af737b182dbca2f7ef1468740ad33503e7e468ee0893d1224c017215be01"
+    },
+    {
+      "file": "pooled-matrix-1-2-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        2,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "b374b7f26a6450a57a14a2b589d5e2ba80d4afbca0c2e74f23311c80020135ae"
+    },
+    {
+      "file": "pooled-matrix-1-2-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        2,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "e2af34d96a5023e6ef78adc894ebae536349747e24f5699195199053efaf5638"
+    },
+    {
+      "file": "pooled-matrix-1-2-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        1,
+        2,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "ea9d74f7c1f59b3f3d9be02ee7361a922fdfccc1d9f3614693b276031ec4f24b"
+    },
+    {
+      "file": "pooled-matrix-2-0-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        0,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "cdf371af1d94dd2b1225273c5e409e862d0774ae03248ab5cd29a4440a1340e5"
+    },
+    {
+      "file": "pooled-matrix-2-0-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        0,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "11f9905b1e47cdc04437f6249480ae02d938d6df2031a00f6b1dcfde4ddcbf99"
+    },
+    {
+      "file": "pooled-matrix-2-0-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        0,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "aaef1aa74589c0e182c8cd9ec67d44bb7b4461f5578ffc95c0dd6b1d13847d3c"
+    },
+    {
+      "file": "pooled-matrix-2-1-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        1,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "e1327d86ee463139241c6cd47ca7d7d562a8dd788e7fef21291742c2f5de2043"
+    },
+    {
+      "file": "pooled-matrix-2-1-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        1,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "e483eb6e47e3360a0be9b6ea730dba1d431af3c86864ea895ced5283930a3993"
+    },
+    {
+      "file": "pooled-matrix-2-1-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        1,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "b1f041e3beff65f265148c956621a623c564b6573078027bb20ff55936335e0f"
+    },
+    {
+      "file": "pooled-matrix-2-2-0.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        2,
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "152ae722fcf18cc773e0373dabd06297c4b848d7bb312bc9635ce51468c43d44"
+    },
+    {
+      "file": "pooled-matrix-2-2-1.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        2,
+        1
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "19efe8b0f3547f327d50865752895fbc121efec5c9ad67594678441e2cfde28f"
+    },
+    {
+      "file": "pooled-matrix-2-2-2.json",
+      "args": [
+        "pooled",
+        "matrix",
+        2,
+        2,
+        2
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "5bb0ae0c62898f6c86b6cabed6d8ee4c00ffaedc33bd82780054b9de17c1d5ad"
+    },
+    {
+      "file": "pooled-reentrant.json",
+      "args": [
+        "pooled",
+        "reentrant"
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "71f84127b440fd7eeba71b5d80f9b72e2d9fed7ecad60760774d848d7fe6f03e"
+    },
+    {
+      "file": "pooled-stale.json",
+      "args": [
+        "pooled",
+        "stale"
+      ],
+      "outcome": {
+        "calls": 2,
+        "collected": 1,
+        "skipped": 1,
+        "all_buffers_returned": true
+      },
+      "sha256": "f145764752d8a47ababe83bab1078fcc3ea9abba24f75cc38ec08b92cb3e1420"
+    },
+    {
+      "file": "pooled-unbind-0.json",
+      "args": [
+        "pooled",
+        "unbind",
+        0
+      ],
+      "outcome": {
+        "calls": 1,
+        "collected": 1,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "4417e1d1fe00d77c95a99bafa9b0c80a42f6b83f952cbc6a6cd110d6cc719966"
+    },
+    {
+      "file": "pooled-unbind-1.json",
+      "args": [
+        "pooled",
+        "unbind",
+        1
+      ],
+      "outcome": {
+        "calls": 0,
+        "collected": 0,
+        "skipped": 0,
+        "all_buffers_returned": true
+      },
+      "sha256": "cea7374271767d3540825f2ad6f304f6b2c4fd421a2131df293855f7e6b8fe04"
+    }
+  ]
+}
