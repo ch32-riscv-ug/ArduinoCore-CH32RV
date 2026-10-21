@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "scope": "N01 X0 whole-application typed wire adapter; synthetic two-tick completion, not physical throughput or device startup",
+  "candidates": ["R", "A", "B", "C-static-batch"],
+  "renderer": "unchanged 128x64 page bytes, 3x5 glyph, 32-byte data payload",
+  "display": {
+    "address_7bit": 60,
+    "window": "per chunk horizontal column/page bounds; 9 command bytes including control",
+    "data_control": 64,
+    "payload_bytes": 32,
+    "full_initialization": false
+  },
+  "measurement": {
+    "address_7bit": 64,
+    "pointers": [2, 4],
+    "tx_bytes": 1,
+    "rx_bytes": 2,
+    "byte_order": "MSB first",
+    "period_ticks": 100,
+    "calibration_assumption": "upstream calibration 4096 and declared 10 milliohm shunt -> 1 mA/LSB; calibration not written by this adapter",
+    "publish": "both reads successful; failed pair keeps previous application value and marks stale",
+    "freshness": "not inferred from read opportunity or CNVR; two registers are not a coherent conversion snapshot",
+    "quality": "raw words are synthetic input; analog accuracy, calibration validity and OVF/CNVR interpretation are not certified"
+  },
+  "touch": {"kind": "virtual, no controller protocol", "payload_bytes": 8, "period_ticks": 20},
+  "transport": {
+    "slots": 1,
+    "tx_capacity": 33,
+    "rx_capacity": 8,
+    "tx_ownership": "copy on acceptance",
+    "rx_ownership": "transport-owned until explicit take; only successful RX copied to caller",
+    "completion_ticks": 2,
+    "tick_is_physical_time": false,
+    "arbitration": "round robin per accepted transaction; measurement pair and display command/data may release bus between transactions"
+  },
+  "primary_source_inputs": "planning/core-redesign/x0-device-inputs.json",
+  "source_audit": "planning/core-redesign/tasks/EXP-06/x0-device-result.ja.md",
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "generated_operations": 10000,
+  "generated_drain_ticks": 2000,
+  "baseline_ticks": 3000,
+  "abi": "V003 and X035 structural profiles, no startup/real IRQ/stack peak; touched buffers and fake counters included"
+}
