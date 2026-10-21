@@ -40,6 +40,7 @@ bit受理後に通知をackしても、結果とbufferの所有は回収まで�
 古いbitが残っていても、再armで置換した古い期限をuserの期限処理として通知しない。
 内部の宛先handlerが条件を確認する呼び出しと、有効な期限を回収する処理を検査で分けた。
 payloadに古いtimer世代を載せる案、複数timer管理、wait接続は別の検査として残る。
+[完了枠予約とbus割当て](completion-arbiter-result.ja.md)は別のfake-I/O単位で比較した。EventExecutorとの配達接続はまだ行っていない。
 
 ## Hostの証拠
 

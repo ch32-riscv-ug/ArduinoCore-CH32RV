@@ -123,6 +123,8 @@ M/S/U、A/B/C、work／event／timer、再入なし、busyの基準を固定し�
 最初はhostで境界trace、次にtargetの費用、最後に実機の進行・遅延を測る。
 
 追加比較は、完了枠予約、arbiter、fan-out 1／2／4宛先、解除・途中拒否、同期wrapper。
+[完了枠とbus割当て](tasks/EXP-03/completion-arbiter-result.ja.md)はnative22件・最終ABI20構成で、専用3枠と共有2枠を比較した。
+受理後の巡回と受理機会の公平性、backend回収と利用側takeを分け、実driver・event配達への接続は残す。
 baselineの通常処理専用と、ISRから投稿する場合の費用を分ける。
 独立stack対照は[待機の対照](workloads.ja.md#実行機会と待機の対照)の範囲でportと静的容量を調べる。
 使うkernel／portの固定版・target適合・stack構成を記録できる場合に実装し、候補へ暗黙に混ぜない。
