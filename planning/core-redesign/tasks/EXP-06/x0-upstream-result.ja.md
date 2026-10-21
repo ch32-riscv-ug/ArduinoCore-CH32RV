@@ -123,3 +123,5 @@ SHA-256 `ceae947a928abfd49c824049f704ff0f0e5c5363480304908a449da394467eaf`。
 最終4 ELF・2 native recorder・全source・元LICENSE・toolchain依存・全command出力・失敗記録・再集計scriptを含む。
 
 [比較条件を読む課題](x0-upstream-exercise.ja.md)は利用者レビュー前である。
+
+対応する小容量側の[K0上流再現](k0-upstream-result.ja.md)も完了した。両Uを元のsource／flagsで再現したことと、K0／X0の比較契約へ同等化したことを区別して、P3／P4の費用・実機評価へ接続する。

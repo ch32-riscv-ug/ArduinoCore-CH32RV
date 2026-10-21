@@ -122,3 +122,5 @@ K0／X0のhost対照が個別部品から完成用途へ進んだ後も、実機
 V006・H417・Flashの追加物理調査は該当する比較の開始条件として残る。
 
 後続の[X0上流再現と機能差](tasks/EXP-06/x0-upstream-result.ja.md)は、UC-01の元source・flagsによるbuildと、元OLED／INA関数のI2C呼出し記録を固定した。上流128×32 verticalと今回の128×64 rendererは同一ではなく、controller header・setupは未確定のまま。
+
+後続の[K0上流再現と契約差](tasks/EXP-06/k0-upstream-result.ja.md)も、UC-03の元source・flagsから同一imageを再生成した。元のlive register10 Bは固定K0のsnapshot／完成設定保持と異なり、そのまま同等機能対照へ置き換えない。実wire・入力・IRQ共有は未検証。

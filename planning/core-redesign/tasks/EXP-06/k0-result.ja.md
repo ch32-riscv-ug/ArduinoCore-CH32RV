@@ -100,3 +100,5 @@ command・終了値・stdout／stderr・map・symbol・disasm・section・.su・
 
 次は待機のproducer進行条件、X0の同等用途、残るruntimeと実共有を進める。
 容量2の変更課題の機械検査は成立したが、利用者が予測・変更した学習結果のレビューは未実施。
+
+後続の[上流再現と契約差](k0-upstream-result.ja.md)は、UC-03の元source／flagsによるbuildを再現した。上流のlive register10 B・直接反映・循環read・poll入力は、ここで固定したK0のsnapshot・完成設定保持・論理差分と同一ではない。元binaryの小ささだけで候補を順位付けせず、実wire受理と同等Rへの対応を確認する。
