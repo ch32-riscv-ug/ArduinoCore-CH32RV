@@ -15,6 +15,7 @@
 |---|---|---|
 | `vendor/arduino-core-api.lock.toml` | ArduinoCore-API | `cores/arduino/api/` |
 | `vendor/ch32-device-data.lock.toml` | ch32-device-data の consumer surface | 生成物のみ。上流 table は copy しない |
+| `vendor/lwip.lock.toml` | lwIP の release(NO_SYS・raw API で使う部分) | `libraries/Network/src/` の `lwip/`・`netif/`・`lwip-src/`。取り込みと照合は `tools/vendor/vendor_lwip.py` |
 
 lock file が version と hash の正本です。この文書には変更のたびに動く値を複製しません。
 

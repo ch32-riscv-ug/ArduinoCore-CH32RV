@@ -26,6 +26,7 @@ def patch_tool(lock_name):
 
 @pytest.mark.parametrize("lock_name", [
     "arduino-core-api.lock.toml",
+    "lwip.lock.toml",
 ])
 def test_source_inventory_and_hashes_match_lock(lock_name):
     lock = tomllib.loads((REPO / "vendor" / lock_name).read_text())
@@ -37,9 +38,11 @@ def test_source_inventory_and_hashes_match_lock(lock_name):
         expected = {entry["path"]: entry["sha256"] for entry in entries}
         assert expected, lock_name
         assert len(expected) == len(entries), "duplicate paths in lock"
+        # A lock with `dirs` owns only those directories under dest; the rest is our code.
+        roots = [destination / d for d in source.get("dirs", [])] or [destination]
         actual = {
             p.relative_to(destination).as_posix()
-            for p in destination.rglob("*") if p.is_file()
+            for root in roots for p in root.rglob("*") if p.is_file()
         }
         additions = set(source.get("ours", []))
         assert actual - additions == set(expected), lock_name
