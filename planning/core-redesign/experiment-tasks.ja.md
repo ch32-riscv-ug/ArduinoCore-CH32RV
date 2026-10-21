@@ -258,3 +258,7 @@ N03のslave register／ACK対応と実IRQは未完了で、次は一次資料と
 [N03 slave資料照合](tasks/EXP-06/k0-slave-source-result.ja.md)では、固定PDF／SDKから受理とACKの時点、
 STOPF条件、STAR1→STAR2の副作用、read終端、再START観測の不足を整理した。
 register backendと実wireの成立は未完了。拒否後復帰をhostのaccepted値だけで成立扱いにしない。
+
+[N03 条件付きregister接続](tasks/EXP-06/k0-slave-register-result.ja.md)でnative137件＋workspace3件・ABI132を実施した。
+207 trace・51組の全群状態／MMIO一致。ACK-discardとdata-NACKは意味が異なり、foreign再STARTは未解決。
+実wireの成立は未検証。host／MMIO link範囲の後、N04の独立比較を進める。

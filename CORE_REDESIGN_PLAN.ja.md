@@ -278,7 +278,7 @@ D01〜D12の支持・反証・未検証、契約ごとの到達範囲、76候補
 [通知満杯・解除／retry](planning/core-redesign/tasks/EXP-06/x0-event-wire-result.ja.md)も同じ用途へ接続した。
 [RX2末尾](planning/core-redesign/tasks/EXP-06/x0-rx-tail-result.ja.md)も用途で検査した。
 [周辺準備との接続](planning/core-redesign/tasks/EXP-06/x0-prepared-wire-result.ja.md)までN02のhost／ABI比較を実施した。
-N03の[K0共有部分](planning/core-redesign/tasks/EXP-06/k0-shared-result.ja.md)はhost118件＋workspace3件・ABI132で検査した。[slave資料照合](planning/core-redesign/tasks/EXP-06/k0-slave-source-result.ja.md)でACKの時点・STOPF条件・再START観測の不足を整理した。次は副作用付きregister模型と拒否後復帰を含むbackendの条件確認。実機・寿命・品質は未検証として残し、部品の検査件数を完成用途の完了率にはしない。
+N03の[K0共有部分](planning/core-redesign/tasks/EXP-06/k0-shared-result.ja.md)はhost118件＋workspace3件・ABI132で検査した。[slave資料照合](planning/core-redesign/tasks/EXP-06/k0-slave-source-result.ja.md)でACKの時点・STOPF条件・再START観測の不足を整理した。[条件付きslave register接続](planning/core-redesign/tasks/EXP-06/k0-slave-register-result.ja.md)でnative137件＋workspace3件・ABI132を実施した。ACK対応の意味差とforeign再STARTの不足を残し、実wireの成立とはしない。次はN04の待機・再入と別stack対照。実機・寿命・品質は未検証として残し、部品の検査件数を完成用途の完了率にはしない。
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
 
