@@ -879,6 +879,14 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 - PD の他系列（L103 / M103、V205、X305 / X315、M030）: CC 端子と上のクロック。
 - PWM の remap 先と CHxN、TIM8〜10 の PWM。
 - 新しい API: スリープ、永続化（上記「永続化の調査と構成検討」。API・方式は未決定）、WWDG、RTC、SPI のスレーブ、GPIO 以外の EXTI。
+  - OEP からの依頼（2026-10-21、dev-oep。急ぎではない）:
+    - SPI のスレーブ: マスターから来る CS 単位の転送を受け、用意したデータを返す。CS が上がったことを知らせるコールバック
+      （またはポーリングできる状態）と、転送 1 回分の受信バッファ。
+    - 汎用 ADC（H41x 以外、X035 / V307 など）の連続変換: タイマーまたは自走で一定のレートを保ち、DMA の 2 面バッファで
+      受ける。CH32RVHsAdc の startContinuous / readBuffer と同じ形。1〜数チャンネル。
+  - Wire のスレーブ: `onReceive` は STOP のときだけ呼ぶ。書き込みのあと repeated START で読みが続くと、`onRequest` が先に
+    呼ばれる（書かれたバイトはその中で `Wire.read()` できる）。AVR の twi は repeated START でも先に `onReceive` を呼ぶので、
+    合わせるか決める（未修正、実機の確認も未）。
 - `analogReference()` はハードウェアに基準電圧の選択が無い。
 
 ## USB ホスト（CH32RVUsbHost）と ESP32-S3 との対向試験（2026-10-15）
