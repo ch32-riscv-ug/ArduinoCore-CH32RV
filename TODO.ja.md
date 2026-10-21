@@ -686,11 +686,19 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         なし）は 5 クロック = 20 MS/s で、1 回取りのみ。間隔は DMA の速さで決まり、バスを取り合うと揺れる
         （16 ビットで約 320 周期中 6 か所）。UHSIF はハンドシェイクのある並列バス（libUHSIF.a はバイナリ）で、
         DVP は外部の画素クロックが要るので、配線なしのロジックアナライザには使えない。
-      - **CH32RVHsAdc と CH32RVLogicCapture（2026-10-21）は、実機での確認が残っている。** スケッチの直書きで
-        確かめた手順をライブラリにしたもの。HsAdc の `read()` は、DMA なしの 1 回読みと、ピンポンなしの DMA が
-        どちらも実機で不具合を出したので、ピンポンで書き直した（まだ動かしていない）。H417 を戻したら、SS を
-        抜いた状態で SWD による復旧ができることを確かめてから、例 4 本（HsAdcRead / HsAdcStream /
-        LogicBurst / LogicStream）を試す。手順は docs/h417-bench.ja.md。
+      - **CH32RVHsAdc と CH32RVLogicCapture は、2026-10-21 に SS を抜いた H417 で確かめた**（SWD で書き込み、
+        例 4 本。ストリームの 2 本は FS で）。見つけて直したもの:
+        - HsAdc の `read()` が常に 1023: DMA が書いたメモリをコンパイラが知らず、先に書いた印 0xFFFF を返していた。
+          DMA の後にメモリバリアを入れた（LogicCapture にも）。直した後は出力 Low 0、High 1018。
+        - HSADC の DMA は、どちらのバッファにも DMA_LEN + 2 個の連続したサンプルを書く（8 → 10、200 → 202。
+          方形波の位相がバッファの境目で続くので、重複ではない）。DMA_LEN を `samples - 2` にした。
+        - `analogWriteFrequency()` が 256 段に固定して分周比を切り捨てていた（H417 で 100 kHz → 130 kHz）。
+          周期を分周比とカウンタの長さに分けて、指定どおりの周波数にした。H417 と V307 で 2 Hz〜100 kHz を確認。
+        - LogicBurst の例が `%.2f` を使っていた（既定の C ランタイムに無い）。
+        - 残り: LogicStream の 12.5 MS/s（`maxContinuousRate()`）は、FS の USB を動かしていると 1 周期 125 の
+          PWM が 122〜125 になる（DMA の要求が捨てられている）。11.1 MS/s ではわずか、10 MS/s では 100 ちょうど。
+          以前に正確と測ったのは SS のとき。SS を挿せるときに、SS で測り直してから上限を決める。
+          HsAdcStream / LogicStream の SS での速さ（40 MB/s、25 MB/s）も、そのときに確かめる。
       - SS を挿したままの復旧: `ch32rv --connect-under-reset reset`（WCH-LinkE の RST → NRST）でリセットできる。
         書き込みは失敗する（プローブの誤り 0x55）。止まったファームの調べ物には、同じ方法での読み書きが使える。
       - QingKe V3F では `csrr mcycle` が例外になる（実験のスケッチで踏んだ）。
