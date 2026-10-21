@@ -1,0 +1,10004 @@
+{
+  "scope": "N03 logical IRQ-sharing comparison; C-bridge is a new coalesced notification condition, not the frozen C FIFO",
+  "native_tests": 118,
+  "workspace_tests": 3,
+  "host_traces": 165,
+  "operations": 1203710,
+  "abi_builds": 132,
+  "unused_zero_rows": 64,
+  "assembly_checks": [
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unguarded-R-n1",
+      "protected": false,
+      "sha256": "76a3312079a4b190a977bdd05ce0b25c4797bdbb81a5cf5d64fd2cc797e8c9d0"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "guarded-R-n1",
+      "protected": true,
+      "sha256": "a6befe025f1aa825f483fb42440182de121f589857e7926fc20b2736d8fc47bc"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unguarded-R-n2",
+      "protected": false,
+      "sha256": "843a8a8364a708fe3c0d6278d1b58989295000d4ed086570993aec2d93089501"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "guarded-R-n2",
+      "protected": true,
+      "sha256": "f167ef166d1705773a5ee6a9b623f9fb883bfc9a3c0addbd444be6835d16129f"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unguarded-A-n1",
+      "protected": false,
+      "sha256": "2020d2abdfe24cc432446fef6a3e3fbb868bc94d35df362109192616026f482f"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "guarded-A-n1",
+      "protected": true,
+      "sha256": "e60b03f1a6ba1e3e512dd6c39d9a4e8d6efd44b0f6b08ec7fe7a7ec04ec60dcd"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unguarded-A-n2",
+      "protected": false,
+      "sha256": "0581584576a25da4f96c93e90e1072be6492449b438f72f22562967de1b86966"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "guarded-A-n2",
+      "protected": true,
+      "sha256": "159c1f747a295af092638b2aeb707ed40eefa1d736c4155abef33b0d9d686776"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unguarded-B-n1",
+      "protected": false,
+      "sha256": "2533cb7374dd711242dac643b4ccbb0ddff00b619cb2caceca0848da8edd8d38"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "guarded-B-n1",
+      "protected": true,
+      "sha256": "81c756351de28afdae1b08541d3889ed07970de6344a9f6f5a0ccf917b21424e"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unguarded-B-n2",
+      "protected": false,
+      "sha256": "0b464fc950772af6a008e8d533e88148f3bcba2878b297d0347b9021e6cffaf5"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "guarded-B-n2",
+      "protected": true,
+      "sha256": "e779e107767d23896e529ef41acd7e9847c28ca0c7a84f67f48ba85a6d3b03b1"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unguarded-C-bridge-n1",
+      "protected": false,
+      "sha256": "e30398105fdcf39eb648923debdf02509b447151a3944a7c3a687ec5045f7ab2"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "guarded-C-bridge-n1",
+      "protected": true,
+      "sha256": "7b5241644c70aa7df15f76a43e56d745adc55012f3787fe8915970751427d96c"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unguarded-C-bridge-n2",
+      "protected": false,
+      "sha256": "9b01ca5d484b7a38187c4ecf436f4b30a6a71b729f89a9af784148c4ecdb8722"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "guarded-C-bridge-n2",
+      "protected": true,
+      "sha256": "3ad790f715f625b65bb2905c9fd7cb5700d4229f9b1efc26c637ffa69503df2c"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unguarded-R-n1",
+      "protected": false,
+      "sha256": "0fb8f13b93254bac278519f2f4d04d06304607cb98579ad4c6162cb67616f0cb"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "guarded-R-n1",
+      "protected": true,
+      "sha256": "33106dba58d26d4ba35925a816ce1cd0d280de34d5156ff3134eec4ad4fe6ab7"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unguarded-R-n2",
+      "protected": false,
+      "sha256": "aa2564f3e362d4bdb8774486d111ca9732251e085e0b44d9027116b1a21ae325"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "guarded-R-n2",
+      "protected": true,
+      "sha256": "cf5d05fbef784d89b687f611b75eeb35dde33a18a05958edaafc39c84f1c30ac"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unguarded-A-n1",
+      "protected": false,
+      "sha256": "bb0d265e223a18f5cf1c01f2fe1523b53fe6f784780d384aa3cc6f086ec3fc33"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "guarded-A-n1",
+      "protected": true,
+      "sha256": "eb954aa94a91c7652e43c1bd51f8a86d9a0126447bd42e59b65cbab6cc816f0f"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unguarded-A-n2",
+      "protected": false,
+      "sha256": "10b9d736f120d5e5af0c4c31ceaa05340b6646316f6d3c8faf3792a74c5c6140"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "guarded-A-n2",
+      "protected": true,
+      "sha256": "5c3f491d7d7090e66fe6bc4173ac3f18ec2c5b027e11186743f66bf36ce184f1"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unguarded-B-n1",
+      "protected": false,
+      "sha256": "48582f1100c9a47ad2edbc4d0ed9de7e970c594b21c043d7eefea4af229359b3"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "guarded-B-n1",
+      "protected": true,
+      "sha256": "ddcb33452ef1f86de27e1e5b4d9fc2405eb3c09dc65fa61acfbc86210a6009cc"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unguarded-B-n2",
+      "protected": false,
+      "sha256": "e2cc129bb260cc26ee8a848d9bfcad78333961dde3917c14ad92bd639bd013b9"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "guarded-B-n2",
+      "protected": true,
+      "sha256": "b19e520d8d244b66c0fb74bbba895d9fd6082e7adbb621bc6f1c0e011cc362bc"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unguarded-C-bridge-n1",
+      "protected": false,
+      "sha256": "faab5b6d82759857db3aa01f74c8ff510b4b22f8a07158345ba9b096bab9fb6d"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "guarded-C-bridge-n1",
+      "protected": true,
+      "sha256": "0d12841981e0ff0916dba52b002c7c3971a99c9b0ea9335e50428d7735503d9a"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unguarded-C-bridge-n2",
+      "protected": false,
+      "sha256": "e000ad4b9cb66ee582b149851e8e4946ecceef8df414390eb2252b4bf15713dc"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "guarded-C-bridge-n2",
+      "protected": true,
+      "sha256": "63f027e5e0a26eba5c3b4f40acbb873cb0a7f55b4c4929d588b9af822cd08c19"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unguarded-R-n1",
+      "protected": false,
+      "sha256": "32ec42aecceb803484b25b30d50063645378561d78c919de21b3f63b2f4935fd"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "guarded-R-n1",
+      "protected": true,
+      "sha256": "513a71ec24c68b62b28ba3e5134fb0bdd37223aedc78249aa73f881352bb3ecb"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unguarded-R-n2",
+      "protected": false,
+      "sha256": "6221e27736ab46ac4327eb1a04aa6c597ea9aedec35fc2c360a35ac8652893fa"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "guarded-R-n2",
+      "protected": true,
+      "sha256": "a0b36aa3e2797f42f5e3233919e4f44ce2560ad55e030524090bc4860eb34349"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unguarded-A-n1",
+      "protected": false,
+      "sha256": "986e16c461c13acceb0509aea067252956ee064a0bec104b78c6255e1515393d"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "guarded-A-n1",
+      "protected": true,
+      "sha256": "ad78d92a079a0a782abe20968400aadf8aab8b6df0512f7490a9ec47ffb9cbf7"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unguarded-A-n2",
+      "protected": false,
+      "sha256": "d055591ac3814a1f14753f74fad105f8208637399768fc054d2cc6c3721d8b50"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "guarded-A-n2",
+      "protected": true,
+      "sha256": "db72f0493c700cf24b4003d187f3275cc855d7b4b7769b7fd3cec3c2ce8140d4"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unguarded-B-n1",
+      "protected": false,
+      "sha256": "0d84d9653877282591c61a6433b2b5917b27c24f8557b824d0e208210ff5d9e9"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "guarded-B-n1",
+      "protected": true,
+      "sha256": "e0bdcfb75fcb0fb5a6a996941053ccbc4bdc7f8fb7baee2129971a904b7def79"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unguarded-B-n2",
+      "protected": false,
+      "sha256": "7499d0bf3223897fc545ab7d09090be52e1cbd22dc7175c00da7235c397b1060"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "guarded-B-n2",
+      "protected": true,
+      "sha256": "1a0a7827d25766bf6ca0c71c37e3bba5c4a553907e9e5f8320672a901924f396"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unguarded-C-bridge-n1",
+      "protected": false,
+      "sha256": "807fdd1ec047000b48f33fe7776ed1e23c3677262e9719769f4c708a01c2c3aa"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "guarded-C-bridge-n1",
+      "protected": true,
+      "sha256": "aac2e3da22f6b70f793b84966a56e53645cb0ac3e98493e25bf41562f3ddacd5"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unguarded-C-bridge-n2",
+      "protected": false,
+      "sha256": "4a85382f3d849fa1d9a41bf6e613b67a01b34f3dab8e89e8298072e4d3570995"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "guarded-C-bridge-n2",
+      "protected": true,
+      "sha256": "112bf79a0e21311a15ac3440647fdd962736fcb97d5b2a2e37928027794700ee"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unguarded-R-n1",
+      "protected": false,
+      "sha256": "d39a62c6e4d45bd98b40475159c1109efcc1f56b0a800cd4368aa370ae7c661b"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "guarded-R-n1",
+      "protected": true,
+      "sha256": "87c8ed6c7982fb17ccb5c3c060493d23f0504ec75484df873861c7be480a528d"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unguarded-R-n2",
+      "protected": false,
+      "sha256": "385a2ccd8d3008bf5e5e86810dee986063cb10f3c1c15ae63e3ede308c41460a"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "guarded-R-n2",
+      "protected": true,
+      "sha256": "4536ec145413130b91e4d9206cf63b2c4625745ac24ee319f987c2715900d4ef"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unguarded-A-n1",
+      "protected": false,
+      "sha256": "947198568902e95252bbdf2253dec678fc55660bee6e6bbe29c933e41ceb05a0"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "guarded-A-n1",
+      "protected": true,
+      "sha256": "36e6aab767f62b05187ad603cdeb4248b20e227db9a7100a761966563f301504"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unguarded-A-n2",
+      "protected": false,
+      "sha256": "7134f5b9abeae89b8e1adab073e8615604a237285db2eb13dad1035cf3718c4a"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "guarded-A-n2",
+      "protected": true,
+      "sha256": "84bc0a561702906a54eb794ac28f8b77e2ef283057570022e837631949494a6e"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unguarded-B-n1",
+      "protected": false,
+      "sha256": "aed36fc51d71633d3d44b8e118d999e73fa01c689771ea3764bee2ae99146dff"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "guarded-B-n1",
+      "protected": true,
+      "sha256": "f9e18fe8207160b98440bf1372db83392c300be4392d107fa7c7ad58a2545c43"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unguarded-B-n2",
+      "protected": false,
+      "sha256": "1fc5b0fe75e8e470207fd21e0bf965d71cb863b4e9abc59a2170435116bfdfcc"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "guarded-B-n2",
+      "protected": true,
+      "sha256": "dd55eb46c5edd4268b503c84bf63bccf0048d294d1c3200101e5103d5e330bcf"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unguarded-C-bridge-n1",
+      "protected": false,
+      "sha256": "d89b36c2feb1771ea0ace5c4277efbb27e51367d2ea36aa1b846b0dd8037f866"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "guarded-C-bridge-n1",
+      "protected": true,
+      "sha256": "89c85b30ef3a92e33731cb5325b7bf09867e3678ecbddae8a0cdc4c6226d0f7d"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unguarded-C-bridge-n2",
+      "protected": false,
+      "sha256": "9ad62acd40aabbb3be15b3f8e76d0bcf1cc74199a81cd62ae46a07d433ffccbc"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "guarded-C-bridge-n2",
+      "protected": true,
+      "sha256": "c2133f312bc24acfcea28ef7097a31321acab12c768bf5d7385e6c3a83423639"
+    }
+  ],
+  "primary_sources": [
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32V003/12d9aed0eae0276a133db00eb16bd492e8189f2d/EVT/EXAM/SRC/Core/core_riscv.h",
+      "file": "CH32V003-core_riscv.h",
+      "bytes": 12730,
+      "sha256": "00d6e17fe714c3c8f7c58aadeb38a893b3c70d3c15299cd9c0a0ae843e920607"
+    },
+    {
+      "publisher": "WCH",
+      "url": "https://raw.githubusercontent.com/ch32-riscv-ug/CH32X035/327874484eda7e50cb4cf40271718e68fafbc850/EVT/EXAM/SRC/Core/core_riscv.h",
+      "file": "CH32X035-core_riscv.h",
+      "bytes": 18236,
+      "sha256": "8585fa0d0c3b87738ed3350f701a5dba601e92e272ed9407153fba1c934022f3"
+    }
+  ],
+  "junit": {
+    "path": "work/exp06-k0-shared-tests-20261021-r2.xml",
+    "sha256": "152f61bf7daec263a44e59419bfc551678f08be984d409e08ff72ee0b8b183c0"
+  },
+  "preliminary_runs": [
+    "native interrupted after 109 passed to remove quadratic repeated command scan",
+    "ABI failed at first protected V003 compile: zifencei ISA declaration was missing"
+  ],
+  "traces": [
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/013518cb895bbc28f0bed8f847acaa017902b59364df85c2bbedd1639daf64b0.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 5,
+      "rows_sha256": "02f995e85b50f6b4cbcfe0d8db535c4039eb7d6a9a18bd57af0cfd561aa3fa77",
+      "last": {
+        "state": [
+          3,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/029497f3188085110940f7b501ff9ccdfd20ac829b7ca2bf2c8c3f173e931fff.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/02ed23de13fd22c7399f73946a254ea4bc4c89c23094c181f31842db7ad0a4e2.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "42b9b151e190f16fdd375d2345f919c1d54860eded55a527ebf20255deea7cc6",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8600,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/03ce72aba381c9e427966b63cb5d199074fff624239e83d92dd67790673b0daa.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/043b5a4b6f0ecb8739e39a3f10fe7a39e9c4afed9faa2469c593df9afcc324af.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 11,
+      "rows_sha256": "72466581ccadaa25d2fe5d94d2e5adac569355a1510bf87a9f07725846c417ed",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/06368a77c4538b88aca9d9a626dbf17993f7bec374ce1aeb969d3f8ef1e93937.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 33,
+      "rows_sha256": "2a258c41550ca1277f61c9a2f56516594afd6a81e198d243e542737d85acfec4",
+      "last": {
+        "state": [
+          0,
+          3,
+          -1000,
+          1000,
+          2,
+          2,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          2,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/063e33492c2910c22ab94a824e40643ab95e7f52f0aac13aec864a2f26f47dec.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "a11c1c00364d3011d96442c7935f61fd39ca692f499e14d00869a3b44b6f08fe",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8585,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/07a94d4112f8ecc11295543697fa4ff385cab14ece8d2604f24a439bd331ab00.json.gz",
+      "mode": "unguarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "32e0b685ed8a1470edf799afd02a7ff2fe1fe4849060dd5030b21264dad85514",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/07f5f94b448d9e3f43117bb7bc84cb32212f938d1488d381dce1f9f0f0664459.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "b04f2d4da1c42e15ed3153b3d03c0a3fbd1eebc080181645f3c734f564d5fa80",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8535,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/080f9e154f178f6ed5c866ae0c660589444023b098ac549a3dc6100c48a4e288.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/098c89c62895a3758c02a153591ea8de828d0602ea3cf9884be316dd367c98ef.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 5,
+      "rows_sha256": "6eaa0304190253cb4f55af0957a54db7a66bb0ffbd37f34db1dfe12a1f36e2f7",
+      "last": {
+        "state": [
+          3,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/0a8698ba44a2b291797db11e232565795b2f6d06cc88c3cea294648b0f732a1a.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/0b1414284770d7aa406748dd478a3b8853cc35222a58cfb3767ac15adc637eff.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "f30ab4cd09563fdacb0cb1dd7978f97d4fcfccdb4e926ec42d5d6b3419cd9c71",
+      "last": {
+        "state": [
+          1000,
+          1,
+          -1000,
+          1000,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          232,
+          3,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/0f0370a8e162c9cb8ff61c6f7c7b3efa8f5c88eebe6a65f1c1fbfc1c775389eb.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/11b69e5b033278d925b925bda214350d4d5465edc12c78374bb60869cebdf1dc.json.gz",
+      "mode": "unguarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "32e0b685ed8a1470edf799afd02a7ff2fe1fe4849060dd5030b21264dad85514",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/139238c394e3cb6574e1b8e05f94183ba745d01f4949b6b7b15c31b924dda0f9.json.gz",
+      "mode": "unguarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "bbddee50be5c3ca69d3340bf6fd9865d80b8a06e1508f35fb53563a1b4135106",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/15a46dc6772a5852cff95100e0a70bc536899fddb13c48ef4ca96edb99cd6495.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 1,
+      "opted": false,
+      "operations": 28,
+      "rows_sha256": "4ea8e8726fb367f930bd8f44d12a67c6c2ee8f7ff2107b8c2eb22690b34e1ed8",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/1757bd5b85be469a72d218c02496af02f855620b79f95c2d327357788f6a4e41.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "530819f03268f207b0955e437741b24f82a704cb9e98b292801efd95cc8cac66",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8554,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/188c1e23416ff373beb65f1b73c3c8fb9c485a777ff1ab668f289dd1ed8b6265.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "ed3b8baa048891f2e5c2d3824f6bdd8012fa16823c78e6ebe95e08ea96c5a347",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/19d96682efae25d2d3bba0959054e81a225aac89c5d5b98e1c90a05bf3eafbc0.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 33,
+      "rows_sha256": "2a258c41550ca1277f61c9a2f56516594afd6a81e198d243e542737d85acfec4",
+      "last": {
+        "state": [
+          0,
+          3,
+          -1000,
+          1000,
+          2,
+          2,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          2,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/1b17e7bfdaca87878ae200cff4b141130c77d480b55e52bbf7a4532812adfc59.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/1b1e0b5f868e3d25cddb0d61bf624937eb7ba81c50dbb0826d5ec420abd8e594.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 6,
+      "rows_sha256": "2103224e3f5fa718d059fe98b5a8eb75cc279a6e7f74c5fc685ca69744e48c88",
+      "last": {
+        "state": [
+          2,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          8
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/1bfb35dd16dd5ab5a56b5b22ad6a36bc2e561062a5da8c695d7a6b81c7e644f7.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "7fac89e7cd50591c0cf7ecdad892e7e0e95a062577425fb851941faa07095094",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8525,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/1f06562f8a09cc9d37c4d45b67e15c7055e36b0ed3b440ca5465cdb5b773dea3.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 23,
+      "rows_sha256": "fce14bf32bda3e425ed076184d3da77a5132a3cbb94b4789e9b832b1d7addd22",
+      "last": {
+        "state": [
+          0,
+          2,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/2026adf3d14e1f142d4d6012107d07c2b8e92455683be6b41f9a1fdd2bddd5c4.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "2d46f24b2b052cd761029c7466b168c95b1717d40fcbcb4158fc8edf94a3ec51",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8569,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/265ac19af95ae8d3f4776c1389be9b5757f317d42741d0dc4c683901193030fb.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "a349e6ec4c499b737692129cc5e2a260fdb4b36edbdf7f3ee71587abe888ef9e",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/28511f80d61b1fcd2f260942162c5866ad2972297786c6e6f254bcb1d7691cfc.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/2a460fff710573bd8dc4068b128037c533ccb6b4cc75b877e05b8e8bb8d99620.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "c38f3fdc7d315ab8dd9a439ccc640a94108fbade1785b9daf35eb9f4fb7106db",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8585,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/2ac0f124806c8d07fd53c62918efde43feeba9242e5c3f2ab5be7b35b8717b3b.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "11a094dbd26a5966217ca518211003787ff26751ad2e5ab2314f74061ff1bacb",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/2e3b8225e237c0e89845ee78b808e67151b5f74173dc8b64bc9eea978541e922.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "e7a5e3b5c894d2421e377943d272c6742bb3921e19544b67a2cec8b7f22412b9",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/303d7015e4b1e9c03cc137fb84d2bd2f2083b503e5a327c427746ab0d0b610a4.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "5ce4ad28562b6a9e9a5ae73f2dfae09267e590ae91dc3e95355402bb3d0d6bf5",
+      "last": {
+        "state": [
+          -1000,
+          1,
+          -1000,
+          1000,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          24,
+          252,
+          255,
+          255,
+          0,
+          0,
+          1,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/33b6b4d479a99eb213dec8ce3913636189c18a22f2109b4936eda6b1160723e5.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "4620732f00a09bcbff263f54e9f5b79075dc741f63f2884d310e40d8620d2905",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8535,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/345cc005f9ec61ea4296736806e49e4ea68ccc50e417c5f596b3fb3fb7ef2376.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/36bf782dacad43b78ccc281a8fcb1b701421cd2a617e3b264bd5d66caded8921.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "9bb29fa5f4b8575eb6f91b1be49a588edc69315f0d01dbf31d795558b088bb77",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/3ab4432bbc7ea902f19b3f4a918de5fbe05823e086b912b30290faa92ece3bc3.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "de8db7f4db747e4a932165ef9b171655f912172d79853f4142fef09a793bd490",
+      "last": {
+        "state": [
+          1000,
+          1,
+          -1000,
+          1000,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          232,
+          3,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/3b80e8730eeebb13a87d27c3ff326de090966dfa5ba44880acd77159ed64e097.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 1,
+      "opted": false,
+      "operations": 28,
+      "rows_sha256": "400fd33b35d4ec5821048c70658ab7dab038fa32c450dfce258718d233d85efd",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          10
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/3c680b549e861348ad8fec4e285b320dccf90e8e24c8e6db408df4534a90bb60.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "a349e6ec4c499b737692129cc5e2a260fdb4b36edbdf7f3ee71587abe888ef9e",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/3c91adc6c865036e6eab758dd72b1e38426cb086c90b6d978c49dbf0edc82278.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "2d46f24b2b052cd761029c7466b168c95b1717d40fcbcb4158fc8edf94a3ec51",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8569,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/3cfc82abf527763ef25a83e8951cdad03b08bda5a8384953526327054fd96930.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 33,
+      "rows_sha256": "459cecb51ea441d138f78e41b5ae08ee8b3e93b2506f12b3e52adb9ac1612bd3",
+      "last": {
+        "state": [
+          0,
+          3,
+          -1000,
+          1000,
+          2,
+          2,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          2,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/3d701cf89f138817b409b564fa7f9f66c9744852bdf52a9b83e9dc173defba2d.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/3dff930a9a6edc3f9d2754eaede7a12594ed3cfedaea2a95ce3f513e48435a93.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 272,
+      "rows_sha256": "e3763d38fd5606576912d3b83da1ade26fc2b08e08f075df785e592e960d694d",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/3f404865a6c84cdcd6fe8aaa22c28881c0070ca5cd269a27f3c6776d056c46f3.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/4101d4c23a4fb305c251b6088c25526ef34886c1684015c49277aa070e96fb1f.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/413b13b24087d82e4b06953edd7ac0eb30d82e1052b9735e512e2e746e2ff550.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "4712108446ef277bfa6eb8743314259d7f8535d028112ed54d92535d3fabcc1b",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/42d5bb691413b9ef53c92bef7e18374558f3af1448697612bc09dd56163e7a60.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "11a094dbd26a5966217ca518211003787ff26751ad2e5ab2314f74061ff1bacb",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/4351e42fad9292de517a10ca20ebae8d7f77185b695cedb490ed863e44ca2470.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "530819f03268f207b0955e437741b24f82a704cb9e98b292801efd95cc8cac66",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8554,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/4b1153a946e49022a7d5f8b7fff8877d7418017af85767a367521a7a68d7d993.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "6f826f1ef93493333e0890adac4bf9b7a0da46db2da92879c31136d3ad7099e3",
+      "last": {
+        "state": [
+          -1000,
+          1,
+          -1000,
+          1000,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          24,
+          252,
+          255,
+          255,
+          0,
+          0,
+          1,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/4df1db479078290411a909d590eaa2ff1b7df54243798faa4e3b011c95156832.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/50a615e890036dc28899a21afe730d334eede9d11d7478b01fee8cd53fee0023.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "af323ef90f68575594f434a29a229555a933a67a389e9fe4da79e51011f48eb0",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8608,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/56442f575641363d3e7e420d3ab87e1d86b2bf9a62ecc57a513f873a2647111e.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/582aa89667926b8d081f8abcf7f5372dccdb35a03de5ab5f83b3772da99ea21a.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "524bcb3a69e5607ca980a9ce2efd3f98e2d81145c2a94bd04fccc3b0bb5bd52d",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8524,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/5b642efaa45613f4bec32c901ecb5e303707828fe3feda3855a66c681e00abe5.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 5,
+      "rows_sha256": "02f995e85b50f6b4cbcfe0d8db535c4039eb7d6a9a18bd57af0cfd561aa3fa77",
+      "last": {
+        "state": [
+          3,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/5b9e6e222753c9521edfad25c50a0125730530cba2d118c6171a5d4dbfedd3eb.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 1,
+      "opted": true,
+      "operations": 28,
+      "rows_sha256": "6c719848cc4c27616da6ae5e24e23e18bfe6287d360cf3d2470546a07bdc9bb6",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          11
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/5d9a658065c39a4c677f0cec591b296f10be20d2343d76570494fd64bdbfbdec.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 6,
+      "rows_sha256": "9237435e38a90fbb79ae3979e131ff7b705d8214c9a36c5f1d54cc16a436dd76",
+      "last": {
+        "state": [
+          2,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/5e08965f6b2632c90359aeb3edf2a3deebf6e2e7791af31a20d2cdf3aa9073d6.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "7d05000a9093f70a47255b7c92bf9e7446ba4156a2474b69d60cf723a98f6655",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8525,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/5ea98b7ff47b26a85984ce60bd06950bdc047420772dc33d3555c6870b386979.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 28,
+      "rows_sha256": "918fb09d5041c0efd0842fc5a805de35a96943eabe17f337b9c854930135b6da",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          13
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/5f0fdeb5a5795f625623947afde13afe1ba82c929c7df7c585d34a3637e10464.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "11a094dbd26a5966217ca518211003787ff26751ad2e5ab2314f74061ff1bacb",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/5ffb66f2a55f71def6d65586cba0e767c0a4b02e7e243f044ba534fa6edcc53a.json.gz",
+      "mode": "unguarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 5,
+      "rows_sha256": "8720ea26b049826b9c1ac044531d630ae271f5a7c488f3b70cacc16f386f2db5",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/61d8bfd8b5151f8493d4be4d03a268a1f33facf063151cc1cf430179c48ee5bc.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 272,
+      "rows_sha256": "e3763d38fd5606576912d3b83da1ade26fc2b08e08f075df785e592e960d694d",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/65fcb42fdc3e7f0b634ff32f7fd0ffc9f46c4ff7a3d9859e573c41573fd68389.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "519ba5011ada6812ed0f9ece986bdbb1aa7c06282ea3f81eeb17bee0b4c30450",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8608,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/67c4673158322fc98c83050ae55069c0b03284ceadb51281d3aa55a6c8660a2a.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "af323ef90f68575594f434a29a229555a933a67a389e9fe4da79e51011f48eb0",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8608,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/685706e042145e9b66d6a367a4d98c4565387190b1c993a8e95f53f1cc4dda8d.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 6,
+      "rows_sha256": "2103224e3f5fa718d059fe98b5a8eb75cc279a6e7f74c5fc685ca69744e48c88",
+      "last": {
+        "state": [
+          2,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          8
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/6a2690481ba8c7245bdcbc14102ce449730545d7057094a9b15a6bce0824641b.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 6,
+      "rows_sha256": "9237435e38a90fbb79ae3979e131ff7b705d8214c9a36c5f1d54cc16a436dd76",
+      "last": {
+        "state": [
+          2,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/6d1ce66aba2fd0ad911264b50e73eb80bd2c7b35cbbeb68eee71767d597b3579.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/6deb5bb5b0708874fc0050dbf7379e3b4eb2a7e4eda19f5e020bca0e15391dab.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "519ba5011ada6812ed0f9ece986bdbb1aa7c06282ea3f81eeb17bee0b4c30450",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8608,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/6ec904b165c35600d0e71498c57f5042441b228d8bdce07423752742c499ace3.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "f177d5d1ef0b18e31e6522b630d9b8e190deb938d2c706ad74182cf900cb1b03",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/721d3f35270e49ec94ca283d153e714d9098c1ad62f1a45311ce38c4092cdda2.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 58,
+      "rows_sha256": "e6166bc51c11389577a7d02b0ff65d698e2d7d34f7f52a28647841dd3fda4a18",
+      "last": {
+        "state": [
+          28,
+          4,
+          -1000,
+          1000,
+          3,
+          6,
+          0,
+          0,
+          0,
+          8,
+          0,
+          1,
+          0
+        ],
+        "published": [
+          28,
+          0,
+          0,
+          0,
+          3,
+          0,
+          6,
+          0
+        ],
+        "held": [
+          8,
+          0,
+          0,
+          0,
+          3,
+          0,
+          2,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          11
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/73fde616d48e2c31313a005885722a54d4fcaf419529ad9f637e8dbd51aec146.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 272,
+      "rows_sha256": "9cc3be67046585bd53cd2a23aa360b39092386b0267408d1a826099411129cad",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/7659e978389aee357c599841c82ef595764bde04fcbbe127ea2c223e6d322a76.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "08e44cecd2caaa011000729a7d26d91298825043437a01e323aff28f3aaaae9f",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8554,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/76fd152257f6096bb11e5e4f09f5ec20a93b38f6505581afeff27ffb79b15a64.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 2,
+      "domain": 0,
+      "opted": false,
+      "operations": 24,
+      "rows_sha256": "78868547977d6f1f66343df6d92bc2123547f4bdcbde21529cf820e76b29b315",
+      "last": {
+        "state": [
+          2,
+          3,
+          -1000,
+          1000,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          2,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/77025d1bab47f5b4c5e00cc26558c6ed48c33c4737a77094416e930e2a12c55e.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 58,
+      "rows_sha256": "e6166bc51c11389577a7d02b0ff65d698e2d7d34f7f52a28647841dd3fda4a18",
+      "last": {
+        "state": [
+          28,
+          4,
+          -1000,
+          1000,
+          3,
+          6,
+          0,
+          0,
+          0,
+          8,
+          0,
+          1,
+          0
+        ],
+        "published": [
+          28,
+          0,
+          0,
+          0,
+          3,
+          0,
+          6,
+          0
+        ],
+        "held": [
+          8,
+          0,
+          0,
+          0,
+          3,
+          0,
+          2,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          11
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/7b5bb155bc671d88b8478d6a607955f879b066f4831bcf2d117c8d36462e1335.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 2,
+      "domain": 0,
+      "opted": false,
+      "operations": 58,
+      "rows_sha256": "e4e2a92d173ed99851c251a66b309894030777afc94847e7ff4dab995eda92d1",
+      "last": {
+        "state": [
+          28,
+          4,
+          -1000,
+          1000,
+          3,
+          4,
+          0,
+          0,
+          0,
+          8,
+          0,
+          1,
+          0
+        ],
+        "published": [
+          28,
+          0,
+          0,
+          0,
+          3,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          8,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          11
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/7fb227e793f85170e9813a8c74e8ebc7bef3cea8e508c7e3ac98331538df4666.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 11,
+      "rows_sha256": "72466581ccadaa25d2fe5d94d2e5adac569355a1510bf87a9f07725846c417ed",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/83d07bf3baefe14abc4e1d1b39279dc2e84466ab6a7fb7962ea115d845417dc8.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/8553ccee63a4c6be03b13a6ed05d205eaa7a2597f0b2d83b0dedcaeda7c14348.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/8834eebcefa6d76bb132676a1aed0d482c6948fc4a4982f52bfb2ac302ac51c2.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "c38f3fdc7d315ab8dd9a439ccc640a94108fbade1785b9daf35eb9f4fb7106db",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8585,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/891f5c395d48e104ebbcb9d25a8c6c535ef803f60827c6979ecc66e3f8c60903.json.gz",
+      "mode": "unguarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 5,
+      "rows_sha256": "e1d09cdc49eb97810093a6d2486e625e17fe64b93732bb5242b3872e1e2cbe4e",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/897dac100cdb670a5a594f05aeabaf7acf08fc5985be9ef31262eff73a7b3217.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 25,
+      "rows_sha256": "daf4f5505b9b4bfa669b5d46eaed5302a676ab3c3d70c11da2170f726c0be09f",
+      "last": {
+        "state": [
+          7,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/89a9502b1a0d0c3d7fb2e65b50cd468052a8d19b0fe717695ebba723fe133794.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 1,
+      "opted": true,
+      "operations": 28,
+      "rows_sha256": "fa9bf242dd3a9c4edc05999f1dba5692265645785b11f54591333a78207119e3",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          12
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/8b022e2d02a0106804a27a87c510c5c79298dde2b7acb529a9cf7d9f73d2e172.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "2ed47a716c385bb1f1b302bdd0111d00b44ba00ff64a92127561aa17fc67dd92",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8524,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/8b8dc4af641af8c719c7d1834fb24abaacbd8604aa7a29b2b4fc314d42d9f27d.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "44d19536675c9aef4b336827eff857d1233428653cc0edb7543e343652a84f70",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8634,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/8cd208e2d1df7425e3f4f65ff963f98a3358064ab7e59786d57df1d5d0e22029.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 5,
+      "rows_sha256": "6eaa0304190253cb4f55af0957a54db7a66bb0ffbd37f34db1dfe12a1f36e2f7",
+      "last": {
+        "state": [
+          3,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/8dea71e670fc06ce740f7e5a8a1be0e3eb76050c644dbe94212794bcd62bc798.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 25,
+      "rows_sha256": "0fe4656275f1155a645a3d46349d0865f251727be4f09cf77caa795f36a139e9",
+      "last": {
+        "state": [
+          7,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/912f6779e7f0a5148a7e0c1813d310b7e1b3131bfddbe2d5aeeb2ca3288267b3.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/922253e65205c32771590f3e35f4e75e8b77a5d413e03401da353a212b17935b.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/9289fcf940936292cad19e75aba1fcbd85f3b5f204155641f88db7d07e447dc1.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "b401e61677dd94eb638c2226ea0e7d27a51ee7a81d1692771075a75c0848a850",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8600,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/940257caabf1acb2a222b2b03eced4dafc8c11aacdec25ec1c95ab063357ffe0.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "42b9b151e190f16fdd375d2345f919c1d54860eded55a527ebf20255deea7cc6",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8600,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/943d0558f80ae083a42237324e17488fd2d65306e31f2107bb5f5332d26e555f.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "3ccf71146f808747b78be5453d5016e6efce0c642347545316399609edaa19aa",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/94f21cb342796c274df020a0721acd1ffb6b0b9580b31291137074419aae910b.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "3ccf71146f808747b78be5453d5016e6efce0c642347545316399609edaa19aa",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/996fc9fbe0ce26788989f922fab22658d69993632b37676eef34d3b2992adfd6.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "11a094dbd26a5966217ca518211003787ff26751ad2e5ab2314f74061ff1bacb",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/9b3c056be29d6c41df83a36d0c9171d9896580461673b2e1dfe29f5d95af6616.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 33,
+      "rows_sha256": "459cecb51ea441d138f78e41b5ae08ee8b3e93b2506f12b3e52adb9ac1612bd3",
+      "last": {
+        "state": [
+          0,
+          3,
+          -1000,
+          1000,
+          2,
+          2,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          2,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/9d3ed626030d64fd12743dd9c7edae461924289153038c7a6b4950b3530d346d.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 25,
+      "rows_sha256": "0fe4656275f1155a645a3d46349d0865f251727be4f09cf77caa795f36a139e9",
+      "last": {
+        "state": [
+          7,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/9e92773cb10891c5ea3f3841d700772172c4a628dec417adc8ccce688e96513a.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/a15e4eeb92085a42bd68e1001dbe7df056bd71527a916617e428a65a26e34a4d.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "524bcb3a69e5607ca980a9ce2efd3f98e2d81145c2a94bd04fccc3b0bb5bd52d",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8524,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/a2c93f5b3619104f9cef8a7f66a71d0ea7589eb907c8102a7209cabdb1d22f66.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 11,
+      "rows_sha256": "2d02029c6bec1b6b1cb4a68a343b3431fdd5916a7eeb99f73686c6cb505cc8bf",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/a62b9b859c4aa0b01d2c535883d41a83388afc4accc6162e8e32896b86d0fb7c.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "7fac89e7cd50591c0cf7ecdad892e7e0e95a062577425fb851941faa07095094",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8525,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/a7d85cabe20f2ec01a064401bc96bfc6fd5724934cda321fc7d71eb0f2b6d3c1.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "f72f832c8d0aeb4b49ed9cff4390b81058e2f85734c616daf4989e9be6176c48",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/a85ab3ed683eda6d321018db453dab130df12d9c0937d858255b453111d40414.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "44d19536675c9aef4b336827eff857d1233428653cc0edb7543e343652a84f70",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8634,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/aad5836a7cb678a422a45f9971deb7583d62022a0eeff424fac807537bcc6afa.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "e39f8a7e0f9d88f8af1017023b1b94f55456c8706ae5762f80e66b482635b4a8",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8569,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/ab936e6a3e53f0c20a370a8ee612108eee0fb589791485b83084b795f449e01d.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "6f826f1ef93493333e0890adac4bf9b7a0da46db2da92879c31136d3ad7099e3",
+      "last": {
+        "state": [
+          -1000,
+          1,
+          -1000,
+          1000,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          24,
+          252,
+          255,
+          255,
+          0,
+          0,
+          1,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/adf8ec7fad10bfe2c6a955a48560e2a593fb11613e57f790ad0ed064c83ccc76.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "b2caeefa7e1af20a796482314fba7964e92b3e0d2eedd5693ffe7cd8b673e40d",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8634,
+          30006
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/af4808f3fb1967486d0699acbfbefe9282df6468e9f9437344acf356f8721532.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "b04f2d4da1c42e15ed3153b3d03c0a3fbd1eebc080181645f3c734f564d5fa80",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8535,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/b27e1ac6d0c96fae9994f81a1147c288f6b8ddca735c7875da96b6d370160fb3.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "1fd446e2d289f74536a5a7bc52943bfa5d02d2e9f59a48f1ab53c69c6a708b10",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8535,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/b2fac3c1b4c3ce2ca914673c59f0edbec262fd2b2c9d37128199d842ada129dc.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "e39f8a7e0f9d88f8af1017023b1b94f55456c8706ae5762f80e66b482635b4a8",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8569,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/b33ca769a3e419ac57b378d040bcbab31eca89a25fea61e9f2b35957511278e0.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 2,
+      "domain": 0,
+      "opted": false,
+      "operations": 24,
+      "rows_sha256": "78868547977d6f1f66343df6d92bc2123547f4bdcbde21529cf820e76b29b315",
+      "last": {
+        "state": [
+          2,
+          3,
+          -1000,
+          1000,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          2,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/b53b4117cea097dfed3355687836afeac35517cf071ba4920789adc669876ead.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/b7b2dbc9cca0b0b0278c33356188365c73a3cfc0cae3cd1e9894091678a34046.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 23,
+      "rows_sha256": "7a1bb78db54f37f82dd81e85481b118dda9b3b4896e3380f16fa90f26329574a",
+      "last": {
+        "state": [
+          0,
+          2,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/b8b9fba3a12c250374e5dccd898d7f6107cf51780b77a4d123359fc595ec694b.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/b941a26fb63711dd3bcc33cfed03078472d9a3eeb749ddc8fa4da1ff74f9a8f5.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 28,
+      "rows_sha256": "706f8a894d2ffa629084589aa09908c85b30e76b99ca3d38579edbab1c272d24",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          16
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/bbc02fb157081911e69efa3a6880d62fbca356ca51af51ab24ef274f366f7714.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 1,
+      "opted": false,
+      "operations": 28,
+      "rows_sha256": "400fd33b35d4ec5821048c70658ab7dab038fa32c450dfce258718d233d85efd",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          10
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/bc91c1e30671862bb0983fdf0ede49b87242e5fb5d82a1d97af9b7eeefe8fb33.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/bd2175d038fde24867dce7c6bd6082db4d78b1e9d9984061c2401c66740e5d46.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/bfda919dbae53c98669e4c7d8bdb566392d1978be8f164f78d684bfd5026b5dc.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 2,
+      "domain": 0,
+      "opted": false,
+      "operations": 58,
+      "rows_sha256": "ce7c8c72b968378c9984f8912c9afadd5bb73939c331aa992fe6f389c87b801b",
+      "last": {
+        "state": [
+          28,
+          4,
+          -1000,
+          1000,
+          3,
+          4,
+          0,
+          0,
+          0,
+          8,
+          0,
+          1,
+          0
+        ],
+        "published": [
+          28,
+          0,
+          0,
+          0,
+          3,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          8,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          16
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/c2e9be7be1608f83b48b7104461712952ea8b9a121177b3116a4d2a8e83eaa41.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "b2caeefa7e1af20a796482314fba7964e92b3e0d2eedd5693ffe7cd8b673e40d",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8634,
+          30006
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/c32f24198f1b57864c175507d6b737879140507e33c04193de0c9f627889749d.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 1,
+      "opted": false,
+      "operations": 28,
+      "rows_sha256": "4ea8e8726fb367f930bd8f44d12a67c6c2ee8f7ff2107b8c2eb22690b34e1ed8",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/c3edc00ce443836f0ea2d8e01059078a7808e2b2716b77abfc7cd18e04173847.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 23,
+      "rows_sha256": "7a1bb78db54f37f82dd81e85481b118dda9b3b4896e3380f16fa90f26329574a",
+      "last": {
+        "state": [
+          0,
+          2,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/c43b6c66d66257c2c80626f0f9f5d4f723c8b277d38223999752d2ec24814207.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/c92fa3705174b59af3e9a7f476e6a01d7bd713b50b36003c27307ac76c7d8a57.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "08e44cecd2caaa011000729a7d26d91298825043437a01e323aff28f3aaaae9f",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8554,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/c9d674d5b2a54e217b6a85ffc781da2ed18a86f349a0d82abfc6caf97238f008.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "abcbf3dc285dca64e0d3ec44d2b268cc1b896a07fbb578f3e1cfd30cfc7c4157",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8535,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/ccca32102e2479d11c6c77dc7896841eb0ef34525076edf04a08fe5a4a99e052.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "b401e61677dd94eb638c2226ea0e7d27a51ee7a81d1692771075a75c0848a850",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8600,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/cd139960dedb716ed02fecd4e2140e55de68b10ae080160ca08732c8c0753789.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 25,
+      "rows_sha256": "daf4f5505b9b4bfa669b5d46eaed5302a676ab3c3d70c11da2170f726c0be09f",
+      "last": {
+        "state": [
+          7,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/cd441e6c5d8098eaba176ba8c019d0ea0705c60348986881d8e69de5c6d598ca.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "ed3b8baa048891f2e5c2d3824f6bdd8012fa16823c78e6ebe95e08ea96c5a347",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/cdbf27a03b5942278b76a77f37520c057098e0336a5af561d242068f23a6370c.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "cf6b7d1b0cd0e1dc5dee7f348de5be889e909d22ad90d80704ab08a7bb0d893c",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/ceeb5d4d11defdd78f3f2df73c29f27ae91fc9b38e6b0fa545d97cb94b62c085.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "f30ab4cd09563fdacb0cb1dd7978f97d4fcfccdb4e926ec42d5d6b3419cd9c71",
+      "last": {
+        "state": [
+          1000,
+          1,
+          -1000,
+          1000,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          232,
+          3,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/cf71a1aa04962e03308aeaf0786d039aa9b1436c4e65f9aad52d7ed5820596e4.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "abcbf3dc285dca64e0d3ec44d2b268cc1b896a07fbb578f3e1cfd30cfc7c4157",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8535,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d0031ce6a176e2d1b196a1e130ffae5c116ecf3a812f331a72c0a41a7f6b5217.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 58,
+      "rows_sha256": "d26602c5d0c2588b7b271086951783939d837951939bdf09068335c081f6cd06",
+      "last": {
+        "state": [
+          28,
+          4,
+          -1000,
+          1000,
+          3,
+          6,
+          0,
+          0,
+          0,
+          8,
+          0,
+          1,
+          0
+        ],
+        "published": [
+          28,
+          0,
+          0,
+          0,
+          3,
+          0,
+          6,
+          0
+        ],
+        "held": [
+          8,
+          0,
+          0,
+          0,
+          3,
+          0,
+          2,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          14
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d12af719a1c68841987548079473b9fe060dd27df932cadf1538d1378ab6ee66.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "5ce4ad28562b6a9e9a5ae73f2dfae09267e590ae91dc3e95355402bb3d0d6bf5",
+      "last": {
+        "state": [
+          -1000,
+          1,
+          -1000,
+          1000,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          24,
+          252,
+          255,
+          255,
+          0,
+          0,
+          1,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d169b7d94353ad09b2d84ebcfc7d298059e8b6b5507a5add5a41ea2d375beda0.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "4712108446ef277bfa6eb8743314259d7f8535d028112ed54d92535d3fabcc1b",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d1d483f61806071acd57885f3ff975c85b8aa09ad6979121e6a7145501aacf30.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "4620732f00a09bcbff263f54e9f5b79075dc741f63f2884d310e40d8620d2905",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8535,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d27fdbf0290489e6b87319721323faa5ece9b522dbcc9b20c00c8c2dad0aa549.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "a11c1c00364d3011d96442c7935f61fd39ca692f499e14d00869a3b44b6f08fe",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8585,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d348b4d00f1dc0160b8c86b22f901e54fd4d7311474e2261dbc2ce42fed2944a.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 23,
+      "rows_sha256": "fce14bf32bda3e425ed076184d3da77a5132a3cbb94b4789e9b832b1d7addd22",
+      "last": {
+        "state": [
+          0,
+          2,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d35485705d280849dd6ea56777a0cc86aab291543791d67c6a866e29cfb1f0e3.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "e7a5e3b5c894d2421e377943d272c6742bb3921e19544b67a2cec8b7f22412b9",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d7e8e7645707f7a16207b337172a7053305f35e3a8bf6305a0d943dac37f752d.json.gz",
+      "mode": "unguarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 5,
+      "rows_sha256": "e1d09cdc49eb97810093a6d2486e625e17fe64b93732bb5242b3872e1e2cbe4e",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d8104b173f5c86550d7f2d0c5ce29df1d843461cb948254afaca08eb337cced4.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "2ed47a716c385bb1f1b302bdd0111d00b44ba00ff64a92127561aa17fc67dd92",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8524,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d90bb5557347c6621b25cb86f4c095777169218b737d38106cafbdac29fb04c6.json.gz",
+      "mode": "unguarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "bbddee50be5c3ca69d3340bf6fd9865d80b8a06e1508f35fb53563a1b4135106",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/d9d9095b5a86b70f05a09b20360258569ea612e4e00447fa80f493c3f76347d2.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "f72f832c8d0aeb4b49ed9cff4390b81058e2f85734c616daf4989e9be6176c48",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/df121eb84a7f2dd1d20d9329413b42702719f7c3be95d2123765f4251c63e848.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/dfea121a78e047a15dcde53fc2348ba47cf2e4b7fa4fe55c27f606a0f7b19c97.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/e06da789119512659fd6648d0de62b0bcb173958488b1e9c077f229f32a72043.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 2,
+      "domain": 0,
+      "opted": false,
+      "operations": 24,
+      "rows_sha256": "d615a54354b8281af18aa283be3f7ceed7c94006413ccf65d93c3a8c7a50d920",
+      "last": {
+        "state": [
+          2,
+          3,
+          -1000,
+          1000,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          2,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/e265316dbd7d39bc4b91435c2b0f507201e719026bc6d60241580c015a5bc3c0.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "de8db7f4db747e4a932165ef9b171655f912172d79853f4142fef09a793bd490",
+      "last": {
+        "state": [
+          1000,
+          1,
+          -1000,
+          1000,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          232,
+          3,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/e381c83b59095740e9532ef23aac0cb70703d81e95f8b97f2017976a142ba82b.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "f177d5d1ef0b18e31e6522b630d9b8e190deb938d2c706ad74182cf900cb1b03",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/e48c8371ba630c9842add5b41f8e7c18d48505e6715ddac3eb69a2d9b45d8cd0.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "4712108446ef277bfa6eb8743314259d7f8535d028112ed54d92535d3fabcc1b",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/e4b4172f0ee1941073ff9126d8730e791cb39987dfac17fd5626231eae76913e.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 28,
+      "rows_sha256": "706f8a894d2ffa629084589aa09908c85b30e76b99ca3d38579edbab1c272d24",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          16
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/e61b9bf2babd41593e0e236feb09315d1cd135cafabf501afb6965fbf6af96a3.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 1,
+      "opted": true,
+      "operations": 28,
+      "rows_sha256": "6c719848cc4c27616da6ae5e24e23e18bfe6287d360cf3d2470546a07bdc9bb6",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          11
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/e6ab6029ae0fa16ef597845632c9b0d7bdb712f8faca97fe1fcbf503ba518334.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "7d05000a9093f70a47255b7c92bf9e7446ba4156a2474b69d60cf723a98f6655",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8525,
+          30008
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/e7c54acd1000b99e327ae5cd58659ea69fe582c11dc85c2b30244d7e5b3b4d6b.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/ee0e541cbd009682d204d47258a3841cc275469a48eb8a51df684f9712dc9622.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 2,
+      "domain": 0,
+      "opted": false,
+      "operations": 58,
+      "rows_sha256": "ce7c8c72b968378c9984f8912c9afadd5bb73939c331aa992fe6f389c87b801b",
+      "last": {
+        "state": [
+          28,
+          4,
+          -1000,
+          1000,
+          3,
+          4,
+          0,
+          0,
+          0,
+          8,
+          0,
+          1,
+          0
+        ],
+        "published": [
+          28,
+          0,
+          0,
+          0,
+          3,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          8,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          16
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/ef6dd6aab2bac551b5d90100d1a89fc10729efb4e996582f2741789c89acc75e.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 28,
+      "rows_sha256": "918fb09d5041c0efd0842fc5a805de35a96943eabe17f337b9c854930135b6da",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          13
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f11dd23e2fbe57bdfc1cf6fc72d767f2f4163e2ea507ed5ce25caf51533fd250.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "4712108446ef277bfa6eb8743314259d7f8535d028112ed54d92535d3fabcc1b",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f1b7c1c4d810436cb59711753d939ff840868edbdafb156e4d4359f4630c40a3.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 2,
+      "domain": 0,
+      "opted": false,
+      "operations": 58,
+      "rows_sha256": "e4e2a92d173ed99851c251a66b309894030777afc94847e7ff4dab995eda92d1",
+      "last": {
+        "state": [
+          28,
+          4,
+          -1000,
+          1000,
+          3,
+          4,
+          0,
+          0,
+          0,
+          8,
+          0,
+          1,
+          0
+        ],
+        "published": [
+          28,
+          0,
+          0,
+          0,
+          3,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          8,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          11
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f1dc0554f1b81d9aead50ddaf697e665bc949e48cfa65c9f8939229ee89db251.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f1e80dec6bdee2f74cdd13e2c3fc22461bef68bdcbf5f73efd9b752ac9a6c443.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 30014,
+      "rows_sha256": "1fd446e2d289f74536a5a7bc52943bfa5d02d2e9f59a48f1ab53c69c6a708b10",
+      "last": {
+        "state": [
+          20000,
+          1,
+          -32768,
+          32767,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          32,
+          78,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          10000,
+          10000,
+          8535,
+          20007
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f1f61971935f50cd2f3d73074161df4627348361b2b44f5b0054705848423a48.json.gz",
+      "mode": "guarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 6,
+      "rows_sha256": "6bc4290bb8e337eee73acce297a2f3f6c3c71e5b18072522604cc820e149c47b",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f2177808a4a0a2f7da80ab5be049569f51cef9c42d91b11bfba911774bb80b4b.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 11,
+      "rows_sha256": "2d02029c6bec1b6b1cb4a68a343b3431fdd5916a7eeb99f73686c6cb505cc8bf",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f3e9e3ca2769417235462f54a830e7bdde3a9de8b01787156907fc8cb7e83c03.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 4,
+      "rows_sha256": "9bb29fa5f4b8575eb6f91b1be49a588edc69315f0d01dbf31d795558b088bb77",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f57614bc0d254d414546e67c00975ad657837634dad4210de20038ed7e7f8dee.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 58,
+      "rows_sha256": "d26602c5d0c2588b7b271086951783939d837951939bdf09068335c081f6cd06",
+      "last": {
+        "state": [
+          28,
+          4,
+          -1000,
+          1000,
+          3,
+          6,
+          0,
+          0,
+          0,
+          8,
+          0,
+          1,
+          0
+        ],
+        "published": [
+          28,
+          0,
+          0,
+          0,
+          3,
+          0,
+          6,
+          0
+        ],
+        "held": [
+          8,
+          0,
+          0,
+          0,
+          3,
+          0,
+          2,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          14
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f57c2b11dbefe576d2f90d5257814f55536c63d45138ea3b7bffe1f470b46dca.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 2,
+      "domain": 0,
+      "opted": false,
+      "operations": 24,
+      "rows_sha256": "d615a54354b8281af18aa283be3f7ceed7c94006413ccf65d93c3a8c7a50d920",
+      "last": {
+        "state": [
+          2,
+          3,
+          -1000,
+          1000,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          2,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f5fa9495634bce19ad3b40178cf60e0ccd17de729ec488cddbfef3dd6575a8c5.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 1,
+      "opted": true,
+      "operations": 28,
+      "rows_sha256": "fa9bf242dd3a9c4edc05999f1dba5692265645785b11f54591333a78207119e3",
+      "last": {
+        "state": [
+          9,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          12
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f67542d40e72d5c026e57275864f3e0de9f72693ec3037d70527c12eb785cc9d.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "0d3c09fd55b5dabe37d18582a00b7966743d13bc05858b4f22a667e90c19be3d",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f7bc1a69e67eaf325e62875f3ab274d894ca40ae05b62f5a33963884e5993e82.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f8677ac4e5620414a28f9fb3d3eada33725170f9ddb19b0abcd87557198242a3.json.gz",
+      "mode": "guarded",
+      "candidate": "A",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 12,
+      "rows_sha256": "cf6b7d1b0cd0e1dc5dee7f348de5be889e909d22ad90d80704ab08a7bb0d893c",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f87c21a772f058e0dc0cda6129727394a7a7bb0a507d435066c6db6990b7b604.json.gz",
+      "mode": "guarded",
+      "candidate": "C-bridge",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/f95ed7b16533ca017b98c5daac86debca514ceca4980a5547be7b7ab7c7e4104.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 272,
+      "rows_sha256": "9cc3be67046585bd53cd2a23aa360b39092386b0267408d1a826099411129cad",
+      "last": {
+        "state": [
+          0,
+          1,
+          -1000,
+          1000,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "published": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/fbed5516aa4ef9a62065533e21dfc6e17880c0838a38b537703a65e1275a1e6c.json.gz",
+      "mode": "guarded",
+      "candidate": "B",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 14,
+      "rows_sha256": "41b26a03206b7ef247ae9e44ba4d949fa82b396a5214a94d99e571f922a0ad0c",
+      "last": {
+        "state": [
+          256,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0,
+          -1,
+          0
+        ],
+        "published": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    {
+      "path": "work/exp06-k0-shared-host-20261021-r2/fcbbf84025d459f0eb2abf564da4427f147f5694f09246144dcd26241b3dab87.json.gz",
+      "mode": "unguarded",
+      "candidate": "R",
+      "capacity": 1,
+      "domain": 0,
+      "opted": false,
+      "operations": 5,
+      "rows_sha256": "8720ea26b049826b9c1ac044531d630ae271f5a7c488f3b70cacc16f386f2db5",
+      "last": {
+        "state": [
+          1,
+          1,
+          -1000,
+          1000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "published": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "held": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gate": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          5
+        ]
+      }
+    }
+  ],
+  "date": "2026-10-21",
+  "implementation_commit": "c4c0f11",
+  "native_build": {
+    "command": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-O1",
+      "-g1",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "-fno-omit-frame-pointer",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/k0_shared_driver.cpp",
+      "-o",
+      "/home/mt/dev_wch/ArduinoCore-CH32RV/work/k0tmp21/pytest-of-mt/pytest-1/k0-shared0/app"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": "",
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "compiler_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "inputs": {
+      "tests/unit/core_redesign/k0_shared.hpp": "86d22e147b4e8304ba7b650f09fbdc50451abe3d9ce4831c6db9f2455065256e",
+      "tests/unit/core_redesign/k0_shared_driver.cpp": "d8513496e8752897ddbc8f4303d4dece16208ef93ee8a886e7fe8e77f57e70ec",
+      "tests/unit/core_redesign/k0_candidates.hpp": "f75a1c11509ea3095df01015332a49d6c12615f947145284e5fe223a0e8af374",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/test_k0_candidates.py": "77a2f500167e3f80bea7d928290dea53205c86206f58984a2e7bd9b8c3611853",
+      "tests/unit/core_redesign/oracle.py": "67f6f7cc913d20d8bc5de079e86244aea1f925ab0fca3bc8bf9aae8ba6ef3c6c",
+      "tests/unit/core_redesign/traces.json": "52c0178403ca1fb9d09605fac6f8ce8f4ea68699921c21ea658a658d2aa74bf8",
+      "tests/unit/core_redesign/test_k0_shared.py": "419099c597dfddf0b910f524b77ab5d9a5cf1eca71b6cd235087958469594319",
+      "planning/core-redesign/k0-shared-inputs.json": "6d39e4d0768b4aac17922e3880081e6c655a0cc21cd92031523bdb8ea506b569",
+      "planning/core-redesign/workloads.ja.md": "8f990e1a2a6d4fa2ed16d509595641880f1561fee6c8818cbd365e0a5f045276"
+    },
+    "executable_sha256": "9a1b17a072781cc0734c63dfff4e2f6b2bb48aed448f3cf511b8413b5bf16e8e"
+  },
+  "abi": {
+    "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+    "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+    "tools": {
+      "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+      "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+      "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+      "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+      "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+      "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+      "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+      "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+    },
+    "inputs": {
+      "tests/platform/core_redesign/measure_k0_shared.py": "fb63ed3a440f7434d4e67b36c08ebbbbe7de401c48ff52ecade44eeb98b78924",
+      "planning/core-redesign/k0-shared-inputs.json": "6d39e4d0768b4aac17922e3880081e6c655a0cc21cd92031523bdb8ea506b569",
+      "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+      "planning/core-redesign/clock-time-inputs.json": "2982f791f641aff4d3caf3a2f0b71e9b9c33cfd782ef4ad675122d14c0301efb",
+      "tests/unit/core_redesign/k0_shared.hpp": "86d22e147b4e8304ba7b650f09fbdc50451abe3d9ce4831c6db9f2455065256e",
+      "tests/unit/core_redesign/k0_candidates.hpp": "f75a1c11509ea3095df01015332a49d6c12615f947145284e5fe223a0e8af374",
+      "tests/unit/core_redesign/event_executor.hpp": "7efc5d1c53ab9abb8068d033f5370c69b3bbf4e367f672c479cc7ce04ce11b2c",
+      "tests/unit/core_redesign/work_executor.hpp": "433006b7babb662ff9fd770d4bf787c3af5c550caab864e7d40dc8ee01683131",
+      "tests/unit/core_redesign/data_parts.hpp": "a4da7be2166efc948936680f7029fdb44ed2ad52940410881976d715d454f8b8",
+      "tests/platform/core_redesign/k0_shared_entry.cpp": "0f9f704c5b63eef3610b45656b8e521039c0ff3f5d07c52c2e94968f3ea2f12a",
+      "tests/platform/core_redesign/irq_gate.hpp": "7cb9bdd3b445a323c071a5d973aba1d74694063e4457fa84a516909281e713e4",
+      "tests/platform/core_redesign/sleep_flow_support.cpp": "264378d07dfb98d2d4a602dad6ba71635c7c62b30286c85bc3dbe318778f8956",
+      "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
+    },
+    "libgcc": {
+      "CH32V003F4P6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/rv32ec/ilp32e/libgcc.a",
+        "sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f"
+      },
+      "CH32X035C8T6": {
+        "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+        "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+      }
+    },
+    "support_lto": false
+  },
+  "effective_isa": [
+    {
+      "part": "CH32V003F4P6",
+      "march": "rv32ec_zicsr_zifencei",
+      "abi": "ilp32e",
+      "csr": "0x300"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "march": "rv32imac_zicsr_zifencei",
+      "abi": "ilp32",
+      "csr": "0x800"
+    }
+  ],
+  "artifacts": {
+    "native": "work/exp06-k0-shared-host-20261021-r2",
+    "interrupted_native": "work/exp06-k0-shared-host-20261021",
+    "abi": "work/exp06-k0-shared-abi-20261021-r2",
+    "failed_abi": "work/exp06-k0-shared-abi-20261021",
+    "analysis": "work/exp06-k0-shared-analysis-20261021"
+  },
+  "archive": {
+    "path": "work/exp06-k0-shared-20261021-evidence.tar.gz",
+    "bytes": 8919850,
+    "sha256": "35337f5582b93736525ac699cc4df24deec6f94a0d70c2cb52dcbdffce335506"
+  },
+  "matrix_sha256": "ce5e34e3ed35091c926e5e370e86eb133a8e862518a6eea8095e3be5d8e79364",
+  "limits": [
+    "logical gate model only, not actual maskable IRQ/NMI/multicore protection",
+    "C-bridge is a separate coalesced-hint condition, not original C payload FIFO",
+    "one injected event at a time, no hardware FIFO overrun proof",
+    "I2C slave/register/ACK boundary not implemented",
+    "no MCU timing, IRQ-off duration or stack peak",
+    "no public API adoption or human review"
+  ]
+}

@@ -92,7 +92,7 @@ IO-04は特に範囲を狭く読む。
 |---|---|---|
 | N01 X0共通wire adapter | [host／ABI実施済み](../EXP-06/x0-wire-result.ja.md)。固定goldenとheader・2回RX、frame途中の失敗・回収・旧値を比較。84 trace・正本ABI68。後続N02でRX2末尾を検査 | 実験内部に隔離。未知のpanel初期化・CNVR clear・touch機器は推測せず残す。コピー方式の内部境界で、公開I/O方式の採用ではない |
 | N02 X0周辺所有と進行 | host／ABI実施済み。[直接](../EXP-06/x0-register-wire-result.ja.md)、[通知](../EXP-06/x0-event-wire-result.ja.md)、[RX2末尾](../EXP-06/x0-rx-tail-result.ja.md)、[X035準備](../EXP-06/x0-prepared-wire-result.ja.md)を用途接続。準備はnative182件・ABI546、840 trace | 実機・read命令間IRQ・公開callback破棄・変換品質は未検証。N02の模型範囲の終了をP4や全契約の終了にしない。次はN03 |
-| N03 K0共有境界 | 凍結wire契約の受理・拒否・snapshot切替と通常処理間の注入点を定義し、同じfrontendを全群へ接続。ACK可能時点と完了枠の関係を検証 | 上流のlive register契約へ変更しない。実slave資料の固定とbyte／IRQ境界の確認が先 |
+| N03 K0共有境界 | [共有部分実施済み](../EXP-06/k0-shared-result.ja.md)：native118件・ABI132。全群の共有frontendで差分・FIFO・snapshotと注入を検査。C-bridgeは追加条件。slave register／ACK対応は未完了 | 上流のlive register契約へ変更しない。次は実slave資料の固定とbyte／IRQ境界、ACK可能時点と完了枠の対応 |
 | N04 待機・再入対照 | 実験仕様どおり深さ1／2／4の人工例で循環依存と有限進行を検査し、call経路とABI費用を比較。別stackは固定portのtarget適合・最小配置から実施可否を記録 | 別stack portがなければhost値をMCU値にしない。最終方式の採用はしない |
 | N05 保存と用途共存 | 同期erase／programの間に通常処理が進まない媒体模型を用途へ接続。保存なし／1／2／4単位、再走査・故障・未回収の影響と全体配置を比較 | 宣言停止時間の感度分析と実停止を分離。PDの実必須期限を架空の値で作らない |
 | N06 休止・コアの接続 | 既存所有・時刻・実行器を使うhost接続例を完成。V006の受理閉鎖〜回収〜復帰、H417のmessage公開〜通知〜返却と片側停止を通す | 実待機・HSEM・cache・resetを代替しない。未解決資料の解釈を採用せず境界を記録 |
@@ -138,7 +138,7 @@ upload保持、H417両コアの可視性・再起動。必要な観測が揃わ�
 archiveがない形式も欠落として隠さず列挙する。仕様適合の意味をhash一致から導かない。
 過去の測定入力hashを現在の変更済みsourceへ一律照合せず、歴史的測定のsnapshotは各resultを参照する。
 再生成は `python3 tests/platform/core_redesign/inventory_evidence.py --out work/<new-report>.json`。
-N02準備接続反映後の56 manifest、53 archive参照（重複を除く52個）は全てbyte数・SHA-256が一致。
+N03共有部分反映後の57 manifest、54 archive参照（重複を除く53個）は全てbyte数・SHA-256が一致。
 archive参照がmanifest内にない4件は報告内に明記し、移送性まで確認したとは扱わない。
 対象は測定記録であり、コア・USB／Networkの並行変更を変更・stageしない。
 
