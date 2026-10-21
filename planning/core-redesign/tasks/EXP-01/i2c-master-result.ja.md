@@ -115,3 +115,6 @@ busyを返す基準と固定arbiter／完了枠の比較、timeoutと回復、�
 実機ではSCL／SDA、受信末尾、NACK／STOP、線を保持する相手、IRQ介入と占有時間を確認する。
 slave、DMA等も別の比較として残し、今回未実装という理由で対象外に決めない。
 [利用者向けの貸出・小分け処理課題](i2c-loan-exercise.ja.md)を追加したが、人による教育効果の評価は残る。
+
+後続の[回収分離](i2c-handoff-result.ja.md)ではMasterを変えずprivateなStorage Viewへ接続し、native70件・ABI20を追加した。
+従来のtakeで返すbackend借用と、利用者の結果・bufferの借用を分けた。実wire・IRQ・clock／pinの成立とは別の証拠である。

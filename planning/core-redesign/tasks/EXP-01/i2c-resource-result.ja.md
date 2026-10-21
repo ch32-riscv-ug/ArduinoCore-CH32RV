@@ -120,3 +120,6 @@ archiveのhash・byte数は測定JSONを参照する。出力先は新しいdire
 台帳を使わない利用者の扱い、回収不能なhardwareの終了方針、公開範囲は追加証拠とP5の検討に残す。
 教材では「通知ackとtakeとendで何が返るか」「同じslotの古いticket」「なぜPCLK宣言と実clock確認が別なのか」を予想する。
 人による教材実施・理解度レビューは未確認。
+
+後続の[回収分離](i2c-handoff-result.ja.md)は、backend take後の結果・bufferを外側へ保持する別経路をnative70件・ABI20で比較した。
+そのManagerと本Domain／Portはまだ接続していない。backendを閉じる条件と物理資源を返す条件を一つの検証として扱わない。

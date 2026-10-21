@@ -127,3 +127,6 @@ python3 tests/platform/core_redesign/measure_completion_arbiter.py \
 hash・byte数は測定JSONを参照する。出力先には新しいdirectoryを使う。
 教材では「busが空いているのに受理できない理由」「通知ackとtake」「dispatchと受理の公平性」「zero初期値とFlash」を予想する。
 人による教材実施・理解度レビューは未確認。
+
+後続の[I2C回収分離](../EXP-01/i2c-handoff-result.ja.md)は、register Masterを使う別経路でnative70件・ABI20を追加した。
+新Managerが外側recordとViewを保持し、backend take後も利用者のbuffer借用を維持する。資源台帳・event・IRQとの結合は残る。

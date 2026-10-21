@@ -1,0 +1,1537 @@
+{
+  "date": "2026-10-21",
+  "implementation_commit": "6aa3b1e",
+  "native_scenarios": 70,
+  "workspace_tests": 3,
+  "total_passed": 73,
+  "trace_counts": {
+    "handoff": 70,
+    "baseline": 17
+  },
+  "operations": {
+    "handoff": 13302,
+    "baseline": 1175
+  },
+  "differential_conditions": 34,
+  "unique_baseline_inputs": 17,
+  "host_build": {
+    "compiler": "/usr/bin/g++",
+    "compiler_sha256": "e6718f7e0c7d057c3ff77b550c603da9bc4030e3ede3c053705acce1293dbe4d",
+    "fake_sha256": "c34c049b67336cdcec4db2794b942dcfc3049bc8ae3a4945a4cc1eff6e20204a",
+    "inputs": {
+      "tests/unit/core_redesign/i2c_handoff.hpp": "5aae68d17fff3a54371d32bae92091d5a009112828a151b2d71efb2fcaead809",
+      "tests/unit/core_redesign/i2c_handoff_driver.cpp": "7559f2ce525ef0ebcf62ce328190c6537ae162d7281c82ba5dd1d2a82cd5b75c",
+      "tests/unit/core_redesign/i2c_master_driver.cpp": "c87d8e85922a35bc21d49a9851eb83b1962f46ff430a5daaf3a687f109839c62",
+      "tests/unit/core_redesign/test_i2c_master.py": "2c4569e7b37299c909ef7747ba80e63af25a715afecbe5965dfe13c2906143af",
+      "tests/unit/core_redesign/test_i2c_handoff.py": "9a505a202901216ecf815c71ffae2be257be0d28226dfba7627c04353f77d984",
+      "tests/platform/core_redesign/runtime/i2c_master.hpp": "8dab6fb317a06f8336c7f2ab839f6046f9fdb3d7ac049177010a3d19007d425f"
+    },
+    "builds": [
+      {
+        "name": "handoff",
+        "command": [
+          "/usr/bin/g++",
+          "-std=c++17",
+          "-O1",
+          "-g1",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fsanitize=address,undefined",
+          "-fno-sanitize-recover=all",
+          "-fno-omit-frame-pointer",
+          "-I",
+          "/tmp/pytest-of-mt/pytest-1165/i2c-handoff0",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/i2c_handoff_driver.cpp",
+          "-o",
+          "/tmp/pytest-of-mt/pytest-1165/i2c-handoff0/handoff"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "",
+        "executable_sha256": "f560f9c3c09352bccb9327b786e5fefdd5fc82444b4184e3a0026ef19b495909"
+      },
+      {
+        "name": "baseline",
+        "command": [
+          "/usr/bin/g++",
+          "-std=c++17",
+          "-O1",
+          "-g1",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fsanitize=address,undefined",
+          "-fno-sanitize-recover=all",
+          "-fno-omit-frame-pointer",
+          "-I",
+          "/tmp/pytest-of-mt/pytest-1165/i2c-handoff0",
+          "/home/mt/dev_wch/ArduinoCore-CH32RV/tests/unit/core_redesign/i2c_master_driver.cpp",
+          "-o",
+          "/tmp/pytest-of-mt/pytest-1165/i2c-handoff0/baseline"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "",
+        "executable_sha256": "052f14179a43506f4ecbd6b5d385ac2eca7004d2b583305d945d19918ee56562"
+      }
+    ]
+  },
+  "host_compiler_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "unchanged_inputs": {
+    "tests/unit/core_redesign/i2c_master_driver.cpp": "c87d8e85922a35bc21d49a9851eb83b1962f46ff430a5daaf3a687f109839c62",
+    "tests/unit/core_redesign/test_i2c_master.py": "2c4569e7b37299c909ef7747ba80e63af25a715afecbe5965dfe13c2906143af",
+    "tests/platform/core_redesign/runtime/i2c_master.hpp": "8dab6fb317a06f8336c7f2ab839f6046f9fdb3d7ac049177010a3d19007d425f"
+  },
+  "unchanged_fake_sha256": "c34c049b67336cdcec4db2794b942dcfc3049bc8ae3a4945a4cc1eff6e20204a",
+  "abi_inputs": {
+    "tests/platform/core_redesign/measure_i2c_handoff.py": "49770aa505a8ca51015821b8ab9121740ef6e6cb168dc523a393676626ec5555",
+    "planning/core-redesign/i2c-handoff-inputs.json": "d827d89128f93e1dbcb002a005c5dfd96472cf00cfa6a5394d085f24ae520d76",
+    "planning/core-redesign/runtime-inputs.json": "f4014a66a73caee7d3e7fa501a718e39a1c63c6bb9f3de8077b5ac0a93fd3b4e",
+    "tests/unit/core_redesign/i2c_handoff.hpp": "5aae68d17fff3a54371d32bae92091d5a009112828a151b2d71efb2fcaead809",
+    "tests/platform/core_redesign/runtime/i2c_master.hpp": "8dab6fb317a06f8336c7f2ab839f6046f9fdb3d7ac049177010a3d19007d425f",
+    "tests/platform/core_redesign/i2c_handoff_entry.cpp": "34e2131a6acb2e0438faeb49fbbac21bf90fd22e8a9edc61167e7e235d235b92",
+    "tests/platform/core_redesign/acquisition_support.cpp": "264378d07dfb98d2d4a602dad6ba71635c7c62b30286c85bc3dbe318778f8956",
+    "tests/platform/core_redesign/runtime/inspect_boot.py": "3f81fd844cf9ce4ea26c0c6234ce2a97b159500f4ce97998f457b680f982c8db"
+  },
+  "compiler": "riscv-none-elf-g++ (xPack GNU RISC-V Embedded GCC x86_64) 14.3.0",
+  "compiler_sha256": "e9402f29fbe238dd623abd8ac127683b4490ca19752fb01e18394b112dd98d28",
+  "tools": {
+    "cc1plus": "01736f50050009457038a92f091183428bf73cbf4772bdf4992151eb6aabf90e",
+    "as": "55ecd2e8859aed135935a62fec7f58558873d29c123884e2f761c77770ae65d5",
+    "ld": "6d5a22d59eaf4bfba6bd803188633a8af6d093cdd9cd94235eb29539812734ca",
+    "collect2": "47ff069688fe49642aab3911ec7ebd6abe572663e0099c9edb4857e706082cca",
+    "nm": "161c8e5fa3ed259b538048dfcd842a765a078c5286c4269ee74d8bcc746fc965",
+    "size": "2e78c21c1421cee91da24b168105c673e6c6200372cc10753840d48a507e860d",
+    "objcopy": "06b28bc98829a7779ffb3267a92e6aa84d8abe422c1963bbd63d01ea4c4c0763",
+    "objdump": "b67ab572f7c3806067447dfaca085407b53e7ac51cabed4ba9b7127c1b6d8944"
+  },
+  "libgcc": {
+    "CH32V003F4P6": {
+      "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/rv32ec/ilp32e/libgcc.a",
+      "sha256": "9fef4320cbe9ad08f5bd6585541be98c7a26a76c610d904aceee7a95e199af0f"
+    },
+    "CH32X035C8T6": {
+      "path": "/home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/lib/gcc/riscv-none-elf/14.3.0/libgcc.a",
+      "sha256": "4bcad539590935c7c1cacf4c01d5e221098f4f2a8ccaf424499a03797a606875"
+    }
+  },
+  "extra_inputs": {
+    "tests/unit/test_workspace.py": "ecadb4329b91981d88cc3a5f962d578a090380aa835cabc2b281f11fe28776b3",
+    "tests/pyproject.toml": "2345703d5a238cc32a8aac6a4f020ab8a73f65c04a331f852bdaeb84c331d7f4",
+    "tests/uv.lock": "99e06f301d7c468807053449f926cb529574a1361e1a62771e3c7ed9e66b51d0"
+  },
+  "results": [
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "empty",
+      "unused": false,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "cf9806efa372ee0de818156d686442f04ffd22f2e68730064c8ac856366e948d"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "dedicated",
+      "unused": false,
+      "image_bytes": 3520,
+      "data_bytes": 0,
+      "bss_bytes": 456,
+      "static_ram_bytes": 456,
+      "manager_object_bytes": 144,
+      "buffer_object_bytes": 204,
+      "harness_object_bytes": 103,
+      "max_emitted_frame_bytes": 32,
+      "image_sha256": "95007e0f2349a9b68877744cdd62a6df7358c8627ab16fdbde9c6e3a866c92de",
+      "elf_sha256": "c2e648978502a2d40a4fecabed7ad1f6aa481fdc532608c2c9bb75c2002dfb7a"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "pooled",
+      "unused": false,
+      "image_bytes": 3536,
+      "data_bytes": 0,
+      "bss_bytes": 420,
+      "static_ram_bytes": 420,
+      "manager_object_bytes": 108,
+      "buffer_object_bytes": 204,
+      "harness_object_bytes": 103,
+      "max_emitted_frame_bytes": 32,
+      "image_sha256": "5b66ebca1cf0cb5e944c44a28c0c6207ff0ccb79389debfa62ca5f4f94a07341",
+      "elf_sha256": "f17a2fe4e17bc0f6437e872087525bfb60245736542b2d0f7b2e78a545e7e121"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unused-dedicated",
+      "unused": true,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "cf9806efa372ee0de818156d686442f04ffd22f2e68730064c8ac856366e948d"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": false,
+      "case": "unused-pooled",
+      "unused": true,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "cf9806efa372ee0de818156d686442f04ffd22f2e68730064c8ac856366e948d"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "empty",
+      "unused": false,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "cbfe59dacdd148a6d143c170601676f89b63d0a636434760fba81b5d0e0722c3"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "dedicated",
+      "unused": false,
+      "image_bytes": 3336,
+      "data_bytes": 0,
+      "bss_bytes": 456,
+      "static_ram_bytes": 456,
+      "manager_object_bytes": 144,
+      "buffer_object_bytes": 204,
+      "harness_object_bytes": 103,
+      "max_emitted_frame_bytes": 32,
+      "image_sha256": "c80656701d1f5d131615cb2a64fdae0a0b6f376ae99729e1f3206ae14af2dd91",
+      "elf_sha256": "91ee2fcf970af291e899844f5ca7edf38d5cc74520524bc7ed3f26b391d0d27e"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "pooled",
+      "unused": false,
+      "image_bytes": 3360,
+      "data_bytes": 0,
+      "bss_bytes": 420,
+      "static_ram_bytes": 420,
+      "manager_object_bytes": 108,
+      "buffer_object_bytes": 204,
+      "harness_object_bytes": 103,
+      "max_emitted_frame_bytes": 32,
+      "image_sha256": "82c25c869f86ce07282b99f90135aec72e98103a20eafb5181065cdee3f5c287",
+      "elf_sha256": "4ba9ca35d838447c92315915df14ecf19999a9f1feeb5c39a40e7dffd7fb9fff"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unused-dedicated",
+      "unused": true,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "cbfe59dacdd148a6d143c170601676f89b63d0a636434760fba81b5d0e0722c3"
+    },
+    {
+      "part": "CH32V003F4P6",
+      "lto": true,
+      "case": "unused-pooled",
+      "unused": true,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "cbfe59dacdd148a6d143c170601676f89b63d0a636434760fba81b5d0e0722c3"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "empty",
+      "unused": false,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "c2a7f988d5d9016476ed3f5aa4ea412ddafe77b34296d445dcaf8fe25d49cc23"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "dedicated",
+      "unused": false,
+      "image_bytes": 3280,
+      "data_bytes": 0,
+      "bss_bytes": 456,
+      "static_ram_bytes": 456,
+      "manager_object_bytes": 144,
+      "buffer_object_bytes": 204,
+      "harness_object_bytes": 103,
+      "max_emitted_frame_bytes": 80,
+      "image_sha256": "2f06da2f18ded452c3b92241a7125c9979a7992fb3757b72217ae9763634ce7e",
+      "elf_sha256": "eb509c47f95f7343e824e2e4a65a91599aca03db82fc789524fa46c6153b3fd1"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "pooled",
+      "unused": false,
+      "image_bytes": 3296,
+      "data_bytes": 0,
+      "bss_bytes": 420,
+      "static_ram_bytes": 420,
+      "manager_object_bytes": 108,
+      "buffer_object_bytes": 204,
+      "harness_object_bytes": 103,
+      "max_emitted_frame_bytes": 80,
+      "image_sha256": "c56e9aeb317932f770c7ec30d9a1bbca20e1e95a56a5390a500e0e7415955f58",
+      "elf_sha256": "fbe37f0dbabe5c7baf69a964520267c34c7bada0babbbce0b651c83cd22d4b21"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unused-dedicated",
+      "unused": true,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "c2a7f988d5d9016476ed3f5aa4ea412ddafe77b34296d445dcaf8fe25d49cc23"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": false,
+      "case": "unused-pooled",
+      "unused": true,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "c2a7f988d5d9016476ed3f5aa4ea412ddafe77b34296d445dcaf8fe25d49cc23"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "empty",
+      "unused": false,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "6241bf45aaea6d33177ef2b16f0358b161eef7a03d9189391e0827ab47b7fb9d"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "dedicated",
+      "unused": false,
+      "image_bytes": 3072,
+      "data_bytes": 0,
+      "bss_bytes": 456,
+      "static_ram_bytes": 456,
+      "manager_object_bytes": 144,
+      "buffer_object_bytes": 204,
+      "harness_object_bytes": 103,
+      "max_emitted_frame_bytes": 80,
+      "image_sha256": "c905afb985e4c353fb6f1c4055e24ce03cd28206fed5e72b43f15ed0fc769584",
+      "elf_sha256": "539d031fb8218afb33398b5c603a6a27b7188e3fc1d6798a54edac4b8fe3aa7e"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "pooled",
+      "unused": false,
+      "image_bytes": 3112,
+      "data_bytes": 0,
+      "bss_bytes": 420,
+      "static_ram_bytes": 420,
+      "manager_object_bytes": 108,
+      "buffer_object_bytes": 204,
+      "harness_object_bytes": 103,
+      "max_emitted_frame_bytes": 80,
+      "image_sha256": "cdef1b71989d21a582476c620674bc7b6fd274fadb6c067591cedc6348ec6779",
+      "elf_sha256": "b3ac143c69ab15d6d3cd1f765d370ba844993b26665594eb1e6e4b7e11bb9889"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unused-dedicated",
+      "unused": true,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "6241bf45aaea6d33177ef2b16f0358b161eef7a03d9189391e0827ab47b7fb9d"
+    },
+    {
+      "part": "CH32X035C8T6",
+      "lto": true,
+      "case": "unused-pooled",
+      "unused": true,
+      "image_bytes": 8,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "static_ram_bytes": 0,
+      "manager_object_bytes": 0,
+      "buffer_object_bytes": 0,
+      "harness_object_bytes": 0,
+      "max_emitted_frame_bytes": 0,
+      "image_sha256": "17c31b99c19cebb6671a12d330f7e0f55761f8632e8bcfecf0484cc77fb83f72",
+      "elf_sha256": "6241bf45aaea6d33177ef2b16f0358b161eef7a03d9189391e0827ab47b7fb9d"
+    }
+  ],
+  "traces": [
+    {
+      "file": "0147143617fd17ba08c55b85679b5f3b5de1bc47bb01c86687de1fcf02251bd1.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "adf03d6210e235e1cfe66ff168cc3e15519acb432435081b005cd3d0e3e0c6f2"
+    },
+    {
+      "file": "02197b487bcb17bb4c32ae0605c6dd40412e8def47e1418a8049ca785a555fe1.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 140,
+      "sha256": "ed2746720ceb413b693d97b1cdc7310d6b6f39a95d713abfade29640cdfd5c4c"
+    },
+    {
+      "file": "02c58c781a58b01bf1f2b54bd462004084bf0f51b0359768c7144fcb63cd89ca.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "backend8"
+      ],
+      "operations": 3835,
+      "sha256": "669e5120f4f0ae0e5ba61e6d409fc7b2720c5e915a13895fdb07102dfe00ce47"
+    },
+    {
+      "file": "04a14924506cafabc4dc207dd776b359c3062a54950c96909b63c08aefa58208.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 16,
+      "sha256": "ed70b09551f5412570df704b384b72a446462447350a27f9da2a7c0b9c7d70b3"
+    },
+    {
+      "file": "04cf8cbc725e373a80c02ad09e78609d12b71fc3b1dd3759ebd21ac19afd3e63.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 32,
+      "sha256": "3126de8e119dd03974b203d2c2408391f4ecf5e1107d78a5fe09d3a04791c5d1"
+    },
+    {
+      "file": "08a385fc5cec6d71bcfb38dc3f83a2eeec982f5b28ddaf0ea193e4ef391f1e72.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "backend8"
+      ],
+      "operations": 3835,
+      "sha256": "4ecab664881e47b488832cee093ad3976c1c0e8e911be91c11d81528a3dedcd3"
+    },
+    {
+      "file": "09db885f0b15f9aaab2be0741679e550d27151b97270bf6075a610ec2a5bab0b.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 44,
+      "sha256": "09f0ec23a3b891183f68dfdd251a454f15226b2733d7afbfa56d21a58e5d0f8d"
+    },
+    {
+      "file": "117e284a6ac51c3162246a2efd866091387bfa723e59dd4db24ee5d8dd8c0944.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 16,
+      "sha256": "fc53f8200da9639a981f85a28c202d0e05b8ad0d299bb722df38833890f08ed5"
+    },
+    {
+      "file": "168c7cee3534402bdb435f44d96beed127b68de795743701a27880f78d6e897b.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 32,
+      "sha256": "0c9530d7862e90883f39bede93d7ff5d7bf5b59b4cc67ffe7a0b3fff03298a9b"
+    },
+    {
+      "file": "2019fea535897fccdab57084153e810e6c99b7ce2a150b18158b2a1b8849c83f.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 11,
+      "sha256": "200a76ef674ef669496bda6d13c8bcb28f24423a3b082f96ba7d360cb808d503"
+    },
+    {
+      "file": "21066189aedc7f387c628e83e642c5d1b6eedabfcf2307bee34a9a4f48baf972.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 16,
+      "sha256": "c325343fbfdd87b81e9488baa3f513c8fa61c575d6383a4ac2103019275d5f28"
+    },
+    {
+      "file": "279d1e09d5e0d85a8b9c955bd4c83edda08b14621b9bf7b0a663c159ce740595.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 18,
+      "sha256": "08ef13e6f02e5766250e61c61d5e0f057a220988cc1880c096b4ffeffd79b922"
+    },
+    {
+      "file": "2b12e62cc33b02c46435586911f1939fd8931550e88ab076bf5c26f6081c8572.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 201,
+      "sha256": "7a95dc9b9fa0c05c866411efb4f7f29de9616f02e54036be771553b4e6542984"
+    },
+    {
+      "file": "2c73e3038c95295e4c3c243342e2d93fa6d649de8782572869ff1a766c59382a.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 206,
+      "sha256": "f8d7ccfe7918d003cd28577ae75feb871df725a8a5497f83c6efeb5bc309cd3a"
+    },
+    {
+      "file": "2ebd2fb2cfa2ced79e4bec55294e08a2add1aaffe426826e0459cb27de513f57.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "2d999c47b93f6896fd9f46193e0e1393ddfaa94d3ef4f7bb35b6d7c5deca0b3b"
+    },
+    {
+      "file": "30aacd4d2df2560d16874c51cfa840e9ea28c1ae74cb2c0141da9b2b2042fdc8.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 12,
+      "sha256": "7d4fb8480602574edcb4a14a946c7d89d93c5297e8210a9f638ce0047c5fbce6"
+    },
+    {
+      "file": "353b51a89b586cda7d16d08419907179b6d2e48a4de34831af22dc7eada1aab2.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 26,
+      "sha256": "3fbcccd966c2368112bd6c8713b916761de2e83dd0275cd63b5c5fa6fc4afcbb"
+    },
+    {
+      "file": "376b05a51cdd821c7eb9c470518595135140c8c97cd8453b408904ae662c06de.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 20,
+      "sha256": "100dac09f297b2503e101b8973d0f72d892b30de7282d2a771592a9d07a705c4"
+    },
+    {
+      "file": "37a6f27033e8ebb0204e338d0d9614e5f6ad6ffa128ef022135b2be8e637336a.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 32,
+      "sha256": "ba7689650ba75cba91feefdb8b8a1b11455339ccc06478221aa49b5cd58d960b"
+    },
+    {
+      "file": "3c51e8d0f5650f755dff43dc723438c08a1a45fdfc1973bd2105a9814086dce0.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 135,
+      "sha256": "4842844de6aad9aef634b1c3624f204ac65593c335a9952678a26cd847ddb5e9"
+    },
+    {
+      "file": "3e73c9c1453754795db63191c7c712ebfd8050f4a72326e1306530ff3a0401ca.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 34,
+      "sha256": "6291842d1cfe7968849000733c45dad1973045e833d03047b9b5f4f3ba13125d"
+    },
+    {
+      "file": "45a9f4b0647bcb1e4919ab8b44fce5f2088a46aac0d05561cd3cbb5f2655534c.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 23,
+      "sha256": "b6d2e866742372ef688b2663d3e280464dfcf4021dbb84981f2ecf60f4f5157c"
+    },
+    {
+      "file": "4666caff432b9c49933ecc0668c1f9c4faa2f4ddfdc782ecdeee5b46b48fe357.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "d0814c2ab7eebcbf583ebec7a33d72b94b26487e571b250f87376f4b582767f4"
+    },
+    {
+      "file": "4871468d7034441790455dcf7f9954dc4605661c52f112cfb1d91a6888008a56.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 13,
+      "sha256": "a0455c90a19d3a8aec8c72f7e1fd2ec88d65e9764f580410e1e241107c46aabf"
+    },
+    {
+      "file": "50f16ca1fd49fb8e10064914a105ced47b49db4423efdbf21a43c3b954447a00.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 28,
+      "sha256": "d2845f894fb5e33f7935f107a0895c97dc0ec4c66b226ca307eed8a16376c988"
+    },
+    {
+      "file": "516aec566f2af762769766c73b64f31da2aa778c55065742ad9672b3a7d44680.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 34,
+      "sha256": "24ec0b33fae64f7e8cb50a65d7c1033f6ce3e54bb5bb427c2186f49c922c022f"
+    },
+    {
+      "file": "5246e29b47d512911d7448b596c0353493f94a13d4966b3ef591bd4252ae44d5.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 12,
+      "sha256": "f3bc66f9602ca6a1335afb10cd470b708a27a7d18f7654d034da9911d18a540b"
+    },
+    {
+      "file": "53164cc3977c9f6e8ae07b8bc1a464b0feba228272206a96df2940e7d0c590f8.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 14,
+      "sha256": "6db1a6fe3f778faa2bad7213ab40d026ef4d0eb4d024c624309083aab26b1ba4"
+    },
+    {
+      "file": "54f56d049545b1343e350f9f9e8a1a58a43ae58a11bf0b7805434d5045d1c60e.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "9265b9119d93cbae4b29bd095732de613d8353cda1a4123e09af1850d803b89c"
+    },
+    {
+      "file": "5541f658be23ca48fefa944af901a6615f71ff2710c58a9db0f07c874429c126.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 206,
+      "sha256": "24b94876119d5de415056dce7465837d06f59adaa6d7ea51ec90053b198a746a"
+    },
+    {
+      "file": "5690d225959ed277c1fd53a8a1d0dcfeb000b5bed99d24d8acb12657a263e2b0.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 21,
+      "sha256": "ff94d29d9c6ea8f8a2cb51957f166518d2efd298c27485453617ebfe9ae58034"
+    },
+    {
+      "file": "5763a4bfd67e07c9ab24d3956af8a7eecaf23f905219bb73daf9800cc523a3c0.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 18,
+      "sha256": "2a40cbaaed0054d48b3dd4bd003029a3a98dbfe3c94c6c2b78917c9ed23b5979"
+    },
+    {
+      "file": "582b7ffebed78fb25f496be2730d93f2cdfdc523ee55fbc6e9e471d536e2f2d6.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "31e61ebe9bfbeb602b0d66a8b98cfe6929c76a0c20cfb77410423201d2456496"
+    },
+    {
+      "file": "5b53cebffbefcfef99621351d937ee55a85aa98a399b1b912c6b59f2b9bb91c1.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 28,
+      "sha256": "bd48fc82a49daa35e037c01573eadb93d69d5b427c5b2741a8268bc659516d29"
+    },
+    {
+      "file": "5daec164d37b887f9720223782da5c3929a29203a75ef7e43fdc92855714b70d.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 31,
+      "sha256": "15d7017330fdb4ab5468eb9e0a2f2c3e6e466c427a7710750ed4591a915174fd"
+    },
+    {
+      "file": "60b55ac7256a4448ea868a323a9d29466f8390143eff53b867ed53c4a0c22c9f.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "e3feeeba8dc34e29641e9a969c2f5b3aca39b52e33484666de0a285a6af26dc8"
+    },
+    {
+      "file": "61fa9680f6f69d227a0b19975f6117c4f121b68815b1ec28f460c9caeed5daaa.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 16,
+      "sha256": "c21c8d26944e7d83399a5e52d26020252037725287a0f1942344749324e16dc6"
+    },
+    {
+      "file": "631200d0c5e6163c6d57373a4cf8634b961f0b78826ce489f1545b87912881b6.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 37,
+      "sha256": "d2aaced2899462f23fccef3bbbd14605a1a80be85c980618b6cfda5e0422ccae"
+    },
+    {
+      "file": "6a593242ac95f7fc5b4322a72bbc7502cc58633449d3bb2759ed51b40f13a404.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 16,
+      "sha256": "0cda59cd3dc7dc3d04816951b0b7885a71a47271e3b304d7969a25d0800a68df"
+    },
+    {
+      "file": "6db4b0b29df82e164a61f28125c8e2a817c597bd11ad3bbc0065e213689f1b76.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 15,
+      "sha256": "1c12007288ce7c2eeb273e25b11c49fbcbb329d0f4f68524f5478f4b045fc9e8"
+    },
+    {
+      "file": "7109a7355caff8d5b0261a0d4bb76615a1b4d994eac5676313373adb2fe7f34e.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 16,
+      "sha256": "2f004a000111beafdb89e1fcc66f88d56ac50977367ab1ecd912b39b5b16f906"
+    },
+    {
+      "file": "78444c1718d6ebaa77d6b6bd39cc60347c3eedf08c8494bb419ea0233613de69.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 398,
+      "sha256": "d68ec2dc1ae29b8f9726572ea1cd2783d0042d1f86cec7f707f4f99b9f8eb369"
+    },
+    {
+      "file": "78c17655605b84cdfe92b274997714af3300e36d79a94f4fb7944fd0155b4dfd.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 24,
+      "sha256": "0caf513b113da37e864a6dac0b4a4c41a3875ecccf1f5cfae86f73158cb484d6"
+    },
+    {
+      "file": "7f63a91fb6ee3da7ef21236255cde5edc1c3b492f16546188965e2b6af88c40d.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 15,
+      "sha256": "35863096125d23971690241aab228f9e539fafb29c019c2e8fd281b0b5c9af53"
+    },
+    {
+      "file": "85f2dbf51d11fc1be1ef14dbf75985be3bc5e4b70667b1fd790405ccf1a94df2.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "3cddf936d7a3e9812a59a76e7c6d46e9b9a92dba22ed16cfa6742a28fc8a1ddf"
+    },
+    {
+      "file": "87fec997811dbe63ab73b199d6299711d7b641bda00a17660965673cdecefcf4.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 27,
+      "sha256": "0653c64db71e22740aeb9c32d233164436cf7aa53bb9f262cb292a0ea1d3dc2a"
+    },
+    {
+      "file": "8f0b904b396857196a14ae3306bb8918ab06db257e989bdfc00c092a891c459c.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 31,
+      "sha256": "24a9328170ab102fb3b4d31f5627adb5c8e7374a2f06ac5d576e52b214766252"
+    },
+    {
+      "file": "904ce463ae62de875562026910a33e3862496fd179f6222aec37a1f101142d2f.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 20,
+      "sha256": "d0b36adda77554c49899eefa01281d185b85641e3925c6d9287229833db10135"
+    },
+    {
+      "file": "922db842c133f512ab909b7c589a7a2abe3d3764dad5bc3c4bedd8b2763ecf5e.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "aa5f8336be27b64adb8857bcfbff0665fc41d67f5a410c8eb518895eaca6a095"
+    },
+    {
+      "file": "94382745825eaae0cb824d0c7a5132b017c5697ad36e45449bf3ff1021e917f1.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 103,
+      "sha256": "9b2afd9fdc6bad8fd7de9d172fc6d271f209dee9e6c20a4044964c274826ea9c"
+    },
+    {
+      "file": "99c45b5811c627261330b005f9fad05241538ae257d8b21b07fa0c78de36394b.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 14,
+      "sha256": "5be47bbf2aac5513907f8dde5ba880e1d6e8cfc51270d02dc185014d3a443c37"
+    },
+    {
+      "file": "9ee261bf35925ed623ce94c9429944df8396a009084b4492267be99e50427166.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 26,
+      "sha256": "e1f93b25559e157aabc8e76598796565c6832da53229a413f977411d9878c7af"
+    },
+    {
+      "file": "a03ab1db9c4a5fa884c4e076bd5d7962d8cf41f637eee573eaf3c5048cf130ec.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "7b0c126b381d8e99efdfff863612cb618a5b1a8f177ae8817540b7837f8f2168"
+    },
+    {
+      "file": "a13618e1c55d834aabce51596fd998d69f55805357cb2b12a39b3dededc326be.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 92,
+      "sha256": "9f052f431649b699c98d33f69fbb0f809090870f55c8dde2ba6de3c30b944e81"
+    },
+    {
+      "file": "a5b67474aed6be00637381fb025add00998f1d63a364d82aad331f7b2d642f9c.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 11,
+      "sha256": "1ff56daf6336f2881ce91ff66dbb64b0072401eca80093e440ca536017c88f18"
+    },
+    {
+      "file": "a8775a3d29f6ef1240be86426a37b616080eaf4fee04372e8a276dcab5bdef8e.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 20,
+      "sha256": "efa86ea08facbf8b176c7a6520a0d0e29fb4e4cfec88fe2c30b2620c67e8add1"
+    },
+    {
+      "file": "a8f1071b4447c0e86fbd4f942911fb3f6f9849de73b4cce15f4201d572ea21a1.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "7aaf5befa72167528333057b1737ccb335463d31bdf8ffa7145286908adcc212"
+    },
+    {
+      "file": "adc2f37edfdd47ab14664f732fb3760a8527c9b5b379e119a1fd88ed9064095f.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 20,
+      "sha256": "44c7a8381854e9feea091223151cb40bf57d03d1bf907395c9167d9ec53c31a0"
+    },
+    {
+      "file": "ae22057c318b368414c0b46055e30535edd0169c2b064ef13f1d42e4f5d2aa3e.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 398,
+      "sha256": "714410559e558a02e95113760f314a986a6e17b07c9d357e48e3ebba3b4d8cf1"
+    },
+    {
+      "file": "af86ece531b7d04766580bd3721d70146b86d01c167170b363eafe07be5189df.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 393,
+      "sha256": "7fdd938ed34dd7890cf6afb207ff2a0cd50b396fd3c85681e9640fd58d9425e6"
+    },
+    {
+      "file": "b337eb50fcb428d49e4e48d8e5f464aa1ca2754b2630992043cb242744de2ff3.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 17,
+      "sha256": "20aa08fa1cf907cc3b199bbb5591cd0c65db8d76d9d8ef1d26058897ea7cb686"
+    },
+    {
+      "file": "b3416b806e85f82d4adf50272a890bf7072c8803d5bd7e439d4bd77126dca6d1.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "request8"
+      ],
+      "operations": 1536,
+      "sha256": "9367515d1dea7bca95dfed79b0221954bf566fc1d23dcf81969f1688456e76b6"
+    },
+    {
+      "file": "b7e6049e158b3f1156f2d3e6320b8a036db0cd19fa95c51d226ea51c4a861020.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 12,
+      "sha256": "22f6bbebf962eeec56f82b85d424644999fc3d8a7f455917bfa5c0e4c6cac045"
+    },
+    {
+      "file": "beca59f381a5537ee335ebb21c7e5eef1ff219957b70c03a7a560c1f70b14c48.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 27,
+      "sha256": "1a3e9a211a7fa10cfe094a0ad4e130e7e403baa80e309710ed14d18d65d403dc"
+    },
+    {
+      "file": "bedddcd0c93c4b0c79e5ba02645ba0772da6c89b97559646c8362b7a0e3f3c53.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "bd9b1bc1cc58be505ae36b3d86e69cc8c24b2fcac8944c378c483435069c0910"
+    },
+    {
+      "file": "bf8ea4018554ba01a8f6a139a3acd8c116c9f9c6f054fa2f1c44b871cdb3b367.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 140,
+      "sha256": "3dd6023c649a5c2d87e5d4fd333ece0d1490689b162aa2b50eca77649d600981"
+    },
+    {
+      "file": "c346250c137f020d828f12a21397cfd10d346bf9025d4470b42f7ef6e6fbf0d5.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 24,
+      "sha256": "9ea3ca8933469f35d6a8a08f7cd4993c70bc37e255d9101c0d803cd2cc61f653"
+    },
+    {
+      "file": "c519880bd8f1104ceb8180da1389d5a378e0afc371b072d9db62cf77b50a2854.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 39,
+      "sha256": "18f38869c0928b17c8474f85f720f82be9245dbdfe794810000abf7a2d2e9b84"
+    },
+    {
+      "file": "cb7eeaebd2eb56501ac9de30cca832b7f92c15085f5944c3d147a2d07d0c97db.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 71,
+      "sha256": "ea75f7cfdbcf65d58491c96a02c465e43a5fb98c37037de6ac4146d600e7748d"
+    },
+    {
+      "file": "cc82e89d0761164d4a4a233be2e5e30c805851fb0d85af7b05d803d4f530c298.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 32,
+      "sha256": "856eb9c4abd5502c3537e0be6d74b425dfb5c72d2d57928e47b9d20b8426a320"
+    },
+    {
+      "file": "cd656822ca20a5f26516d297322235552771d6a3ee0e5f5b14fa153a2e4ea82e.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 44,
+      "sha256": "48e9727b71448ad2a50dcedfd0b658dd63bcd82faf7d53c4d05089242667d8a9"
+    },
+    {
+      "file": "cedbc931455b0717d5bca895ab6ac91fe4d3516d27644ed634e9cc55acd38786.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 12,
+      "sha256": "e672439d6aab48b9e93cf99b659647d35763fd6e06edf2adc1e421961a83b5e5"
+    },
+    {
+      "file": "cf224da51287c27a9181ef32fc8b2b061185c0172d54d029460dd4d93cb12169.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "request8"
+      ],
+      "operations": 771,
+      "sha256": "04c5156461f1f4069d4752a9dd0efc1d2409897edfa04f50a194cbc46c26bcc8"
+    },
+    {
+      "file": "d6c757b7538b9bf6d2a43af4bc28641cf1e001abe79577537c3b0d67a0fe1286.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "f8913f4c5e82e98ede388d838cb2db5b77800ca1d4b16e14916d7c9107fccc40"
+    },
+    {
+      "file": "d7bf103b1040f786c44148ee355f7c5a41fcb840b8f43e8bf7e2c1faca9b33e5.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 76,
+      "sha256": "e663204c50ba936f0495636075b41a43fcd3b881d349b5190b42525510e7920e"
+    },
+    {
+      "file": "da248ac848360d19596f97d6b525b7da6728135caa2c38a4335379cec1e49890.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 70,
+      "sha256": "445cf6c319385753fbc14cb42f2706e3f3463170cc2851f3a66a5b25d58e6bd8"
+    },
+    {
+      "file": "dad5d5ecaca847d0748e711c4f1d89c460cfae7f56a13dad5f5d6467de32b151.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 35,
+      "sha256": "5770b62bf2670e1f91190780bfa304fb2db4531eb91a10a3e4a9d38334b45583"
+    },
+    {
+      "file": "de4f1288e8210948c9658cee1c1052d8b74195fce51c5a92841f6219fa73dbb0.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 62,
+      "sha256": "c3fbde97690c48da8bbf73138b5fbf9216d5628bd6d3c085f760e97ebe460739"
+    },
+    {
+      "file": "e0298d22330f46b7e458db27ef1d129a6c1145f3b1bd42b629c4a8db26dddcce.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 92,
+      "sha256": "bff15ee0ee50826c1252acf41826a24e7054f7523a77ef9bb0e8a7543c1b5269"
+    },
+    {
+      "file": "e80625db42bee76b88ee5fbc14a1413070beaee0714e32ec00130d83e40886d3.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 29,
+      "sha256": "7930ed44a605e745d896dab26abb6f60ecfac00f11c2045f8a178988f92eb1d0"
+    },
+    {
+      "file": "ec3398b271c5b6eb9e43fdaf2850bb95c9cf6a5fce6a32c0f80a9a6d99e45c9a.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 62,
+      "sha256": "523af97232c210755ceea9c991d84fba3fbbf462e53373f336d20936d711459a"
+    },
+    {
+      "file": "ec606bd5f80faf03f375245fa7aed9bfab481eb6a32309ca374f9bdbff8597c3.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "976da02909635580cd778232f24a4c1295f4bd4934ad0fc2380933a35292032c"
+    },
+    {
+      "file": "f30b514d52bd24704b809151606c645684d36f2a54bc5ee5a470959a13e5ba8a.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 22,
+      "sha256": "9f3899ac17bd337e386fe7381f63a0ab8b8988acd0bbac369630203ef5a91c84"
+    },
+    {
+      "file": "f3bf808557a5c89b354f174ad255f02bb2bb4da2d665a68ddf9b3bce0895be98.json",
+      "program": "handoff",
+      "args": [
+        "pooled",
+        "normal"
+      ],
+      "operations": 76,
+      "sha256": "c3633dc271f526d326856269673612759632aafc17605a31da75f0c419a68800"
+    },
+    {
+      "file": "f532cd8e14b8105526d6a9369bda1309a60914d9b82de3e7fb507aef8b238970.json",
+      "program": "handoff",
+      "args": [
+        "dedicated",
+        "normal"
+      ],
+      "operations": 17,
+      "sha256": "4aa6b32e64d68d81aefc295653f78a38673ea5a56a6a2f0341f51a079058b81e"
+    },
+    {
+      "file": "fa1167ad2f2251ebb23f76f1f1f16dd45cca24c4e6c1693bd036ce89d361c34c.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 87,
+      "sha256": "f08156d3ab0b80975de4602e4f5e50b647b14381cab6e1874dd2399a73aad5e7"
+    },
+    {
+      "file": "fb1b7a6e14785563ca14f5dab76a08afc81289f1a85e928d466b583ee008a733.json",
+      "program": "baseline",
+      "args": [
+        "guarded",
+        "normal"
+      ],
+      "operations": 57,
+      "sha256": "b5ecea6c3583cd01edf923b644f422eeb9e704bdefb1ddab6ad7e3036d7c46b9"
+    }
+  ],
+  "comparisons": [
+    {
+      "policy": "pooled",
+      "tx": 0,
+      "rx": 64,
+      "mapped_operations": 135
+    },
+    {
+      "policy": "dedicated",
+      "tx": 2,
+      "rx": 1,
+      "mapped_operations": 27
+    },
+    {
+      "policy": "pooled",
+      "tx": 2,
+      "rx": 8,
+      "mapped_operations": 39
+    },
+    {
+      "policy": "pooled",
+      "tx": 2,
+      "rx": 2,
+      "mapped_operations": 27
+    },
+    {
+      "policy": "dedicated",
+      "tx": 0,
+      "rx": 1,
+      "mapped_operations": 11
+    },
+    {
+      "policy": "dedicated",
+      "tx": 0,
+      "rx": 3,
+      "mapped_operations": 13
+    },
+    {
+      "policy": "dedicated",
+      "tx": 32,
+      "rx": 0,
+      "mapped_operations": 201
+    },
+    {
+      "policy": "dedicated",
+      "tx": 2,
+      "rx": 0,
+      "mapped_operations": 21
+    },
+    {
+      "policy": "dedicated",
+      "tx": 1,
+      "rx": 0,
+      "mapped_operations": 15
+    },
+    {
+      "policy": "dedicated",
+      "tx": 2,
+      "rx": 2,
+      "mapped_operations": 27
+    },
+    {
+      "policy": "pooled",
+      "tx": 2,
+      "rx": 3,
+      "mapped_operations": 29
+    },
+    {
+      "policy": "pooled",
+      "tx": 0,
+      "rx": 8,
+      "mapped_operations": 23
+    },
+    {
+      "policy": "dedicated",
+      "tx": 2,
+      "rx": 3,
+      "mapped_operations": 29
+    },
+    {
+      "policy": "pooled",
+      "tx": 32,
+      "rx": 0,
+      "mapped_operations": 201
+    },
+    {
+      "policy": "pooled",
+      "tx": 0,
+      "rx": 3,
+      "mapped_operations": 13
+    },
+    {
+      "policy": "dedicated",
+      "tx": 0,
+      "rx": 8,
+      "mapped_operations": 23
+    },
+    {
+      "policy": "dedicated",
+      "tx": 0,
+      "rx": 2,
+      "mapped_operations": 11
+    },
+    {
+      "policy": "pooled",
+      "tx": 0,
+      "rx": 1,
+      "mapped_operations": 11
+    },
+    {
+      "policy": "pooled",
+      "tx": 0,
+      "rx": 2,
+      "mapped_operations": 11
+    },
+    {
+      "policy": "dedicated",
+      "tx": 64,
+      "rx": 0,
+      "mapped_operations": 393
+    },
+    {
+      "policy": "pooled",
+      "tx": 1,
+      "rx": 0,
+      "mapped_operations": 15
+    },
+    {
+      "policy": "pooled",
+      "tx": 2,
+      "rx": 0,
+      "mapped_operations": 21
+    },
+    {
+      "policy": "pooled",
+      "tx": 2,
+      "rx": 32,
+      "mapped_operations": 87
+    },
+    {
+      "policy": "pooled",
+      "tx": 0,
+      "rx": 4,
+      "mapped_operations": 15
+    },
+    {
+      "policy": "dedicated",
+      "tx": 0,
+      "rx": 4,
+      "mapped_operations": 15
+    },
+    {
+      "policy": "pooled",
+      "tx": 64,
+      "rx": 0,
+      "mapped_operations": 393
+    },
+    {
+      "policy": "dedicated",
+      "tx": 0,
+      "rx": 64,
+      "mapped_operations": 135
+    },
+    {
+      "policy": "pooled",
+      "tx": 2,
+      "rx": 1,
+      "mapped_operations": 27
+    },
+    {
+      "policy": "dedicated",
+      "tx": 2,
+      "rx": 8,
+      "mapped_operations": 39
+    },
+    {
+      "policy": "dedicated",
+      "tx": 0,
+      "rx": 32,
+      "mapped_operations": 71
+    },
+    {
+      "policy": "dedicated",
+      "tx": 8,
+      "rx": 0,
+      "mapped_operations": 57
+    },
+    {
+      "policy": "dedicated",
+      "tx": 2,
+      "rx": 32,
+      "mapped_operations": 87
+    },
+    {
+      "policy": "pooled",
+      "tx": 8,
+      "rx": 0,
+      "mapped_operations": 57
+    },
+    {
+      "policy": "pooled",
+      "tx": 0,
+      "rx": 32,
+      "mapped_operations": 71
+    }
+  ],
+  "archive": {
+    "path": "work/exp01-i2c-handoff-20261021-evidence.tar.gz",
+    "bytes": 1211195,
+    "sha256": "ec2bd38558b1fac689e5a396a39206cddb269e8fcea6a7f0ad29bcc58e1f7ed5"
+  },
+  "limits": [
+    "register fake and structural ELF only; no physical I2C/IRQ/clock/pin validation",
+    "resource Domain and event executor not connected in this unit",
+    "accepted completion records and outer buffers persist until user take; backend take only releases backend access",
+    "backend exhaustion requires explicit queued cancellation, not automatic failure delivery",
+    "dedicated 3 versus pooled 2 differ in admission/capacity; 64-byte buffers differ from older 32-byte fake-I/O unit",
+    "max single frame is not stack peak"
+  ]
+}
