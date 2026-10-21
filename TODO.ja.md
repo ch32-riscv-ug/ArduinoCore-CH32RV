@@ -684,14 +684,22 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - SS を挿したままの復旧: `ch32rv --connect-under-reset reset`（WCH-LinkE の RST → NRST）でリセットできる。
         書き込みは失敗する（プローブの誤り 0x55）。止まったファームの調べ物には、同じ方法での読み書きが使える。
       - QingKe V3F では `csrr mcycle` が例外になる（実験のスケッチで踏んだ）。
-      - OEP の probe にする件。このコアの側で要るもの: Vendor の subclass / protocol の設定、`writeDirect` の
-        ゼロコピー（USBSS は呼び出し側のバッファから DMA できる）、文脈を持てるコールバック、大きい
-        バッファ、HID の 64 バイトを超える report と usage の設定。oep-probe-arduino の側（依頼する）:
-        ARDUINO_ARCH_CH32RV の分岐（unit id など）、ProbeConfig の保存先、FreeRTOS を使わない
-        DirectBulkStream、キャプチャの backend を ESP32-P4 の PARLIO から切り離すこと。
+      - OEP の probe にする件。このコアの側は入れた（2026-10-21、84b57b0）: `CH32RVCallback`（`[this]` の
+        ラムダ）、Vendor の `writeDirect()` / `onRxData()` / `setRxDataBuffer()` / `setInterfaceProtocol()`、
+        HID ベンダーの大きいレポートと `setUsage()`。H417 の SS で OEP の流し方を確認（IN 約 200 MB/s、
+        OUT 52 MB/s）。**oep-probe-arduino への依頼（送り先と時期はユーザーと相談）の下書き:**
+        1. `OepPlatform.h` / `Oep.h` に `ARDUINO_ARCH_CH32RV` の分岐: unit id は `CH32RV.getUniqueId()`、
+           restart は `CH32RV.restart()`、chip は `CH32RV.getChipModel()`。
+        2. `ProbeConfig` の保存先: このコアには永続化の層がまだない（TODO の「永続化」）。当面は保存なしで
+           動く形にするか、`ch32rv_flash` の 1 ページを使う。
+        3. `DirectBulkStream` を FreeRTOS（portMUX、heap_caps）なしでも動くようにする: このコアの
+           コールバックは `loop()` / `delay()` の中から呼ばれるので、排他は割り込みの禁止で足りる。
+        4. ロジック / アナログのキャプチャの backend を ESP32-P4 の PARLIO / ESP32・RP2 の ADC から切り離す。
+           H417 の側の材料: HSADC（20 Msps、DMA のピンポン）、GPIO のタイマー → DMA（12.5 MS/s 連続）と
+           M2M（20 MS/s、1 回取り）。
+        5. RVSWD / SWD の bit-bang の backend（CH32 の GPIO）。
       - 工場出荷 ISP は、電源投入時の DP=high の条件がいるので、ソフトウェアからは入れない。
   - ライブラリをボードマネージャーに同梱するか分けるか（下の「ライブラリの配布」）。
-  - ベンダーの直接転送（USBHS の DMA で）。
   - **USB の外で要るスタック（ファイルシステム・IP）。タスク周りの入れ替えが終わってから取りかかる**（USB スタックの
     入れ替えと同時にはしない）。ADR-0013 は「今はまだ入れない」という扱いで、入れないと決めたものではない。
     - ファイルシステム: MSC（デバイスの SD カード、ホストの `mscMount()`）が FAT につながらないのは不足として扱う。
