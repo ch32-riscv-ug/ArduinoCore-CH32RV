@@ -99,7 +99,7 @@ PCLKとpin準備はadapterの宣言であり、実clock／pinmux／IRQ backend�
 [I2Cの回収分離](tasks/EXP-01/i2c-handoff-result.ja.md)はnative70件・ABI20で、既存register engineからbackend Viewを回収し、外側bufferと結果を利用者takeまで保持した。
 34条件の全MMIOとbyteは元driverに一致。
 [資源台帳との接続](tasks/EXP-01/i2c-managed-handoff-result.ja.md)はnative74件・ABI28で、reap後のcloseと旧結果保持を分け、別owner通信中の旧takeを検査した。
-これは協調的な論理台帳との接続で、Pins準備adapterとの結合・IRQ共有・実wireは残る。eventへの後続接続はEXP-03に記録する。
+これは協調的な論理台帳との接続で、IRQ共有・実wireは残る。Pins準備adapter／eventへの後続接続はEXP-03に記録する。
 [X035準備adapter](tasks/EXP-01/x035-i2c-setup-result.ja.md)は公称PCLK確認・gate・default routeとpin設定をnative100件・ABI18構成で検査した。
 packageごとのrouteと、実clock精度・配線・IRQ共有は別途確認する。
 [X035 route／package比較](tasks/EXP-01/x035-i2c-route-result.ja.md)はnative136件・ABI68構成。C8 defaultのimage hashを維持し、F7の非対応pinとdebug未解放を拒否した。
@@ -134,7 +134,9 @@ queueへの格納時ackでは解除後に再通知が失われる反例も残す
 [結合target費用](tasks/EXP-03/completion-delivery-result.ja.md)はnative76件・ABI28で、1宛先／容量1の配信追加RAM52 B、未使用8構成の追加0 Bを確認した。
 [資源管理付きI2Cとcallback](tasks/EXP-03/i2c-event-result.ja.md)はnative128件・ABI28で、既存のregister engine・Domain・配信glueを接続。
 周辺返却後と別owner通信中の結果回収、満杯・解除・再利用・M/S/Uを検査した。2発生元の固定callbackで追加RAM96 B、同値tokenの誤配信の反例も保存。
-実IRQ・Pins準備・休止との接続、発生元識別の採否は残る。
+[X035準備との接続](tasks/EXP-03/x035-i2c-event-result.ja.md)はnative192件・ABI134で、既存route／package adapterを同じManagedとcallbackへ接続。
+非対応・debug保持・準備失敗・open再検証、旧結果保持中の再準備と別owner通信中のcallbackを検査した。
+実pin／clock・IRQ・休止との接続、発生元識別の採否は残る。
 [metadata fan-out](tasks/EXP-03/completion-fanout-result.ja.md)はnative356件・ABI108で、1／2／4宛先・容量1／2、受理部分保持・解除後retry・停止recipientを比較した。
 source tokenの起動と結果コピーの配信は別の意味として扱い、copy後のend・次sourceの回収まで波及する保持を残す。
 [用途側optional](tasks/EXP-03/completion-optional-result.ja.md)はnative45件で、制御をrequired、表示を全宛先待ち／1回try／最新状態として比較した。

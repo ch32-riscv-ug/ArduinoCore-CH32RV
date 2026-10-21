@@ -111,3 +111,5 @@ byte数・SHA256は測定JSONを参照する。出力先には新しいdirectory
 実配線・bus・USB／debugとの共存・電流は未検証。
 教材では「同じ系列でもpackageでpinが違う」「I2C routeが選べることとpinが空いていることの違い」「拒否stubと未使用除去」を予想する。
 人による教材実施・理解度レビューは未確認。
+
+後続の[資源管理付きI2Cとcallbackへの接続](../EXP-03/x035-i2c-event-result.ja.md)では、このroute adapterを変更せず、backend reap・周辺close・利用者takeを分けたManagerへ接続した。全route／packageの拒否境界と、旧結果保持中の再準備・別owner通信中のcallbackを検査した。実wire／IRQ・物理pin競合の成立は含まない。

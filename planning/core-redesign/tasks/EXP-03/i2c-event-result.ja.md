@@ -114,3 +114,5 @@ callback contextとManager・bufferは借用回収まで生存させる。handle
 SHA-256 `5c5eb2337635043a30dcc0c9d106ac165211c7a6dcfe823b27892275b4bad79f`。
 native実行物2本・162 trace・初回／最終各28 ELF・入力・tool記録・JUnit・再集計script・差分対応表を含む。
 [変更課題](i2c-event-exercise.ja.md)は利用者レビュー前である。
+
+後続の[X035準備との接続](x035-i2c-event-result.ja.md)では、この実験のbool Pinsを既存route／package adapterへ置き換えた。旧結果を保持中の再準備、open時のregister再検証、別owner通信中のcallbackをhost／ABIで検査した。実pin／IRQ・sleepは未検証のまま。
