@@ -1,0 +1,65 @@
+{
+  "empty": [
+    "observe",
+    "drain",
+    "observe"
+  ],
+  "normal": [
+    "input 1",
+    "drain",
+    "complete 1",
+    "drain"
+  ],
+  "atomic-input-burst": [
+    "input 1",
+    "input 2",
+    "observe",
+    "drain",
+    "complete 1",
+    "drain"
+  ],
+  "early-completion": [
+    "complete 7",
+    "input 7",
+    "drain"
+  ],
+  "completion-burst": [
+    "complete 1",
+    "complete 2",
+    "input 1",
+    "drain"
+  ],
+  "mismatch": [
+    "input 3",
+    "drain",
+    "complete 4",
+    "drain"
+  ],
+  "frozen-controller": [
+    "input 9",
+    "complete 9",
+    "observe",
+    "observe",
+    "drain"
+  ],
+  "stage-capacity": [
+    "input 1",
+    "drain",
+    "input 2",
+    "drain",
+    "input 3",
+    "drain",
+    "input 4",
+    "drain",
+    "input 5",
+    "drain",
+    "complete 1",
+    "drain",
+    "complete 2",
+    "drain",
+    "complete 3",
+    "drain",
+    "complete 4",
+    "drain"
+  ]
+}
