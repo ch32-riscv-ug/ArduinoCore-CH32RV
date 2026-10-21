@@ -1,0 +1,214 @@
+{
+  "commit": "7eba86abd2467bb53f609189d8c3c7d75e4d6c00",
+  "retrieved": "2026-10-21",
+  "files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/LICENSE",
+      "bytes": 260,
+      "sha256": "b695d4b496de170d75a2bbd588eec9cc7330eb15921fbc643a5612053ed98d70",
+      "git_blob": "373df33d69b8fe001a01b15db7d6cafbc1d3d978"
+    },
+    {
+      "path": "README.md",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/README.md",
+      "bytes": 9908,
+      "sha256": "93ea225c7ca0f9f7d0ca0c448fc5dd66f2709c2f654df903caacafe951b2e7a9",
+      "git_blob": "15717498a417f8c9b700176b87adbf25f88a1dd0"
+    },
+    {
+      "path": "software/pd_adapter/bin/pd_adapter.bin",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/bin/pd_adapter.bin",
+      "bytes": 5264,
+      "sha256": "670d3fc772c1c0a84247302372c74fca65802ecf12bf215ef61815996ed6a435",
+      "git_blob": "0c5ddb4ad1f2967a40dab4ef22061dff49c97565"
+    },
+    {
+      "path": "software/pd_adapter/bin/pd_adapter.hex",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/bin/pd_adapter.hex",
+      "bytes": 14844,
+      "sha256": "402b3151b0940703ffe523a5cdba1f014df2a5a64f2abf04bc3b4a4bb1410636",
+      "git_blob": "6acb8bad2ccb16202877e0c0737c36b6dee14811"
+    },
+    {
+      "path": "software/pd_adapter/config.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/config.h",
+      "bytes": 739,
+      "sha256": "0615838d0e4ec8f1c6dd368c445ec28285aa8ef7853ad8a805bdbea3a7098767",
+      "git_blob": "29ca5a087f15e3895bd48796751b445fdf314492"
+    },
+    {
+      "path": "software/pd_adapter/ld/ch32x035.ld",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/ld/ch32x035.ld",
+      "bytes": 2804,
+      "sha256": "1e84cd63e0e87e0a6943d8601ecffcf60bd55f5da9ba74c6ebfa51e02a5ce9ec",
+      "git_blob": "37742771fe14630c20d9e2a097259b91b4ade1a2"
+    },
+    {
+      "path": "software/pd_adapter/makefile",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/makefile",
+      "bytes": 4134,
+      "sha256": "15ff69d2d88f99c46e43745043c999302f44368fc7c323e8f3518f68ed121200",
+      "git_blob": "5baa6ec1f7874daacf8b9c0b276b138d9b526b4c"
+    },
+    {
+      "path": "software/pd_adapter/platformio.ini",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/platformio.ini",
+      "bytes": 955,
+      "sha256": "cdd08db0a0ca8ca6cd9d3598ffe230f142c42b741383c3c6f7d4d7286c8b0185",
+      "git_blob": "a0d665c3dc0f3fda3df88684374c4a2fd8811868"
+    },
+    {
+      "path": "software/pd_adapter/src/ch32x035.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/ch32x035.h",
+      "bytes": 254558,
+      "sha256": "28287f9e631c8971d541bea88c67ab2eec5503951deec263328d21dfb06fb50b",
+      "git_blob": "1757e57e000c938e3369a86297a8f01689238096"
+    },
+    {
+      "path": "software/pd_adapter/src/gpio.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/gpio.h",
+      "bytes": 36774,
+      "sha256": "4fac5694f14d8119172b208be14f8754a5bfd4625cbf7faad92026e45620e159",
+      "git_blob": "463be72bfcd0e3cea22989a9ea4724bf95ad1ee2"
+    },
+    {
+      "path": "software/pd_adapter/src/i2c_soft.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/i2c_soft.c",
+      "bytes": 5317,
+      "sha256": "2187f3c84a676cf57bea52fa39952baa604c04069555a6ea2b58e7501071b74a",
+      "git_blob": "5d191121c387f6dc3ad6b32029aee49315305aaf"
+    },
+    {
+      "path": "software/pd_adapter/src/i2c_soft.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/i2c_soft.h",
+      "bytes": 2162,
+      "sha256": "e9a4e132c83d5f923f6c0bbed76fdb1e81a5987dd5254ffacc55c89d9805e6dc",
+      "git_blob": "c3104607c148165cc2fb6e5c1395d4e7f887f937"
+    },
+    {
+      "path": "software/pd_adapter/src/ina219.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/ina219.c",
+      "bytes": 1867,
+      "sha256": "71e94c5e4ddf3868c5533d4928cc01be3cd76d4ae1fa8a05626d60d427a07789",
+      "git_blob": "4878ff7ed0b6e1013e098f73d68fb34f230bc3ae"
+    },
+    {
+      "path": "software/pd_adapter/src/ina219.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/ina219.h",
+      "bytes": 1893,
+      "sha256": "31a321f008175b423a1098db11e9ba49dd1ffa03b822ca7966976e04b17a4767",
+      "git_blob": "a71a8ee859dfd42d166b563cf0de9c60355cbd0d"
+    },
+    {
+      "path": "software/pd_adapter/src/main.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/main.c",
+      "bytes": 8197,
+      "sha256": "28493ee1b60a6dbcca4405367d3427bf31d4182d4dd840f3a16b89eaf57851d8",
+      "git_blob": "c8639c3bdf0e67d3ded19c2d91186bddec11b675"
+    },
+    {
+      "path": "software/pd_adapter/src/millis.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/millis.c",
+      "bytes": 1327,
+      "sha256": "60d08ed6d5810ac1631342df53b92b41d4e28c411b6c686eb9853a79bb9012dd",
+      "git_blob": "b06ffc26fe5847e0dcba692b7e8753d3f075a661"
+    },
+    {
+      "path": "software/pd_adapter/src/millis.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/millis.h",
+      "bytes": 1001,
+      "sha256": "fd5b7f4dde20744aaf10edf364cb1ce32ca0f4999d9f6a172887faa3d1d653cc",
+      "git_blob": "c7e56422c1be3052311fcef31e3f51101f4b75f2"
+    },
+    {
+      "path": "software/pd_adapter/src/oled.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/oled.c",
+      "bytes": 7311,
+      "sha256": "f916ea6605d81aa27130180e608bde862f138b03fc115764daa0d52b9a5ef71b",
+      "git_blob": "fa9f35dcca70ece004970c17fe56f9602ad30be0"
+    },
+    {
+      "path": "software/pd_adapter/src/oled.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/oled.h",
+      "bytes": 2107,
+      "sha256": "2a806541bcf8c05ef373cc2a6ea459cc48322952b14ac837a6d8a2500fa16145",
+      "git_blob": "47334acdcc18bc54d8510853f3af731f3e80c85e"
+    },
+    {
+      "path": "software/pd_adapter/src/system.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/system.c",
+      "bytes": 15529,
+      "sha256": "678ea069ae5a69975763ab39630c2cf3c0b096c92303f3a21b9a59eb3f8d8d08",
+      "git_blob": "e06c90d18762262732bae0bcc77a68dff86bc7d2"
+    },
+    {
+      "path": "software/pd_adapter/src/system.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/system.h",
+      "bytes": 26073,
+      "sha256": "2112c4583372aae283f7ec35726a79dedaf5fc222975cee0da57e0a92ddf110b",
+      "git_blob": "deb565a400e6bc74e2c259ff0609535e05679b40"
+    },
+    {
+      "path": "software/pd_adapter/src/usbpd.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/usbpd.h",
+      "bytes": 7086,
+      "sha256": "c4083e58374f52d10a274b12d801031a961a948735b888879edf7e73c60d1035",
+      "git_blob": "6892197007be76bdf6ffa6750a3e786a1519777e"
+    },
+    {
+      "path": "software/pd_adapter/src/usbpd_sink.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/usbpd_sink.c",
+      "bytes": 15576,
+      "sha256": "ccd8dbb4131538497531995a4be90105d0a556f320827a04526db9224131c661",
+      "git_blob": "605379946b67c58bf9b93c7c193296c4257fb4d8"
+    },
+    {
+      "path": "software/pd_adapter/src/usbpd_sink.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/usbpd_sink.h",
+      "bytes": 5342,
+      "sha256": "3351ee54bb82708c019d81bd91360ad767a973d3aef46bafb6f31393f4b9deaf",
+      "git_blob": "f11f8f553d23b44be690591950f225207104efa1"
+    }
+  ],
+  "scope": "Upstream UC-01 source/compile-only reproduction and protocol audit; not function-equivalent to X0 candidates",
+  "publisher": "Stefan Wagner / wagiminator",
+  "repository": "https://github.com/wagiminator/CH32X035-USB-PD-Adapter",
+  "license": "CC BY-SA 3.0 Unported as declared by upstream LICENSE",
+  "project": "software/pd_adapter",
+  "compile_sources": [
+    "src/i2c_soft.c",
+    "src/ina219.c",
+    "src/main.c",
+    "src/millis.c",
+    "src/oled.c",
+    "src/system.c",
+    "src/usbpd_sink.c"
+  ],
+  "original_flags": [
+    "-g",
+    "-Os",
+    "-flto",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-fno-builtin",
+    "-nostdlib",
+    "-march=rv32imac",
+    "-mabi=ilp32",
+    "-DF_CPU=48000000",
+    "-I/usr/include/newlib",
+    "-Iinclude",
+    "-Isrc",
+    "-I.",
+    "-Wall"
+  ],
+  "original_link_flags": [
+    "-Tld/ch32x035.ld",
+    "-lgcc",
+    "-Wl,--gc-sections,--build-id=none"
+  ],
+  "board": "genericCH32X035F7P6 in upstream platformio.ini",
+  "flash_bytes": 63488,
+  "ram_bytes": 20480,
+  "execution": false
+}
