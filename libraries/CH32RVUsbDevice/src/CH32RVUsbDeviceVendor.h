@@ -52,6 +52,9 @@ public:
     int available();
     int read();
     size_t read(uint8_t *buffer, size_t size);
+    /* The next byte read() would return, left in place; -1 when none. Not in
+     * EspUsbDevice: for code that parses the stream a byte ahead. */
+    int peek();
     size_t write(uint8_t data) override;
     size_t write(const uint8_t *buffer, size_t size) override;
     using Print::write;

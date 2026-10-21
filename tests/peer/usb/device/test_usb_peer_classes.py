@@ -33,13 +33,16 @@ def test_usb_peer_classes(dut, peers):
     # The same echo through onRxData() and writeDirect(), completions counted
     # by a capturing lambda; then back to the class FIFOs.
     dut.write("vmode direct\n")
-    before = int(dut.expect(rb"VMODE direct (\d+)\r?\n", timeout=5).group(1))
+    before = int(dut.expect(rb"VMODE direct (\d+) \d+ \d+\r?\n", timeout=5).group(1))
     for _ in range(3):
         data = secrets.token_bytes(48)
         assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
     dut.write("vmode fifo\n")
-    after = int(dut.expect(rb"VMODE fifo (\d+)\r?\n", timeout=5).group(1))
+    m = dut.expect(rb"VMODE fifo (\d+) (\d+) (\d+)\r?\n", timeout=5)
+    after = int(m.group(1))
     assert after - before == 3
+    # The FIFO echoes before peeked a byte ahead each time, and it was the one read() returned.
+    assert int(m.group(2)) >= 1 and int(m.group(3)) == 0
     data = secrets.token_bytes(48)
     assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
     m = command(s3, "vreq", rb"VREQ (\d) (\S*)")

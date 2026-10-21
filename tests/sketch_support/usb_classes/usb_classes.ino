@@ -10,7 +10,8 @@
  *                   <configuration length> <VID:PID from deviceDescriptor()>
  *                   <HID report length> - onBusEvent(), onAnyControlRequest()
  *                   and the descriptor getters
- *   vmode fifo|direct   VMODE <mode> <direct transfers completed>: how the
+ *   vmode fifo|direct   VMODE <mode> <direct transfers completed> <peeks that matched
+ *                   the next byte read> <peeks that did not>: how the
  *                   vendor bulk echo goes - read() / write() through the class
  *                   FIFOs (the default), or onRxData() handing each OUT
  *                   transfer over and writeDirect() sending it back, its
@@ -47,6 +48,7 @@ static uint32_t configuredEvents, resetEvents, observed, acks;
 static uint8_t echo[64];
 static volatile bool echoBusy;
 static uint32_t directDone;
+static uint32_t peeksMatched, peeksMissed;   /* peek() against the byte read() returned next */
 static bool directMode;
 
 static void direct_rx(const uint8_t *data, size_t length)
@@ -145,7 +147,11 @@ static void reply(const char *command)
         set_mode(strcmp(command + 6, "direct") == 0);
         SerialDMSeq.print("VMODE ");
         SerialDMSeq.print(directMode ? "direct " : "fifo ");
-        SerialDMSeq.println((unsigned long)directDone);
+        SerialDMSeq.print((unsigned long)directDone);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print((unsigned long)peeksMatched);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println((unsigned long)peeksMissed);
     } else {
         SerialDMSeq.println("ERROR COMMAND");
     }
@@ -188,7 +194,15 @@ void setup()
 void loop()
 {
     uint8_t buffer[64];
+    const int ahead = directMode ? -1 : vendor.peek();
     const size_t n = directMode ? 0 : vendor.read(buffer, sizeof buffer);
+    if (n && ahead >= 0) {
+        if (buffer[0] == (uint8_t)ahead) {
+            peeksMatched++;
+        } else {
+            peeksMissed++;
+        }
+    }
     if (n) {
         size_t sent = 0;
         while (sent < n && vendor.waitWritable(n - sent, 500)) {

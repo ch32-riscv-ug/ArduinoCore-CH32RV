@@ -225,6 +225,12 @@ int CH32RVUsbDeviceVendor::read()
     return read(&c, 1) == 1 ? c : -1;
 }
 
+int CH32RVUsbDeviceVendor::peek()
+{
+    ch32rv_usb_task();
+    return rxUsed() ? _rx[_rxTail] : -1;
+}
+
 size_t CH32RVUsbDeviceVendor::read(uint8_t *buffer, size_t size)
 {
     ch32rv_usb_task();
