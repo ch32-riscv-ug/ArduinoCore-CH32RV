@@ -1,0 +1,44 @@
+#######################################
+# Network keyword highlighting
+#######################################
+
+Network	KEYWORD1
+NetworkManager	KEYWORD1
+NetworkInterface	KEYWORD1
+NetworkClient	KEYWORD1
+NetworkServer	KEYWORD1
+NetworkUDP	KEYWORD1
+
+hostByName	KEYWORD2
+setDefaultInterface	KEYWORD2
+getDefaultInterface	KEYWORD2
+isOnline	KEYWORD2
+getHostname	KEYWORD2
+setHostname	KEYWORD2
+config	KEYWORD2
+dnsIP	KEYWORD2
+started	KEYWORD2
+linkUp	KEYWORD2
+hasIP	KEYWORD2
+setDefault	KEYWORD2
+isDefault	KEYWORD2
+macAddress	KEYWORD2
+localIP	KEYWORD2
+subnetMask	KEYWORD2
+gatewayIP	KEYWORD2
+broadcastIP	KEYWORD2
+networkID	KEYWORD2
+subnetCIDR	KEYWORD2
+setConnectionTimeout	KEYWORD2
+setNoDelay	KEYWORD2
+getNoDelay	KEYWORD2
+remoteIP	KEYWORD2
+remotePort	KEYWORD2
+localPort	KEYWORD2
+accept	KEYWORD2
+hasClient	KEYWORD2
+beginMulticast	KEYWORD2
+beginMulticastPacket	KEYWORD2
+beginPacket	KEYWORD2
+endPacket	KEYWORD2
+parsePacket	KEYWORD2

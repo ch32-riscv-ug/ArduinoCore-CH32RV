@@ -144,4 +144,6 @@ files = [
   { path = "lwip/udp.h", sha256 = "e506bed37fc7e8e0ed0ea6cd5e951e754d9a6323cc2324b27085e7113a09877a" },
   { path = "netif/etharp.h", sha256 = "598f51cc6d1009880bd27d80d5c41ac0a64685b60bd5faff4677515317a8b015" },
   { path = "netif/ethernet.h", sha256 = "6c45b4855110f01cfb8a449ce195caaffa58652db918689d914e79246cbcae69" },
+  { path = "netif/ppp/ppp_impl.h", sha256 = "d3dc3d94fe5f2e0963dca561fa1e43f06758b21f014e81cea6df948562e5f332" },
+  { path = "netif/ppp/ppp_opts.h", sha256 = "6b7faa99686360bf96e5bc223ccd14a81c2b14d30e5fc07ced9744d59d49c0ee" },
 ]

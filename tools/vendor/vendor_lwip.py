@@ -69,7 +69,10 @@ def mapped(name: str):
         if rest.startswith("apps/"):
             return None
         return "lwip/" + rest
-    if name in ("src/include/netif/ethernet.h", "src/include/netif/etharp.h"):
+    # The PPP headers below are included unconditionally (opt.h, init.c)
+    # and compile to nothing with PPP off.
+    if name in ("src/include/netif/ethernet.h", "src/include/netif/etharp.h", "src/include/netif/ppp/ppp_opts.h",
+                "src/include/netif/ppp/ppp_impl.h"):
         return name[len("src/include/"):]
     if name.startswith("src/core/") and name.endswith(".c"):
         return "lwip-src/" + name[len("src/"):]
