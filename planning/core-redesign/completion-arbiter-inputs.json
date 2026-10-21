@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "scope": "Serial fake-I/O completion reservation and explicit bus dispatch; not a physical driver or task scheduler",
+  "clients": 3,
+  "policies": {
+    "dedicated": 3,
+    "pooled": 2
+  },
+  "bytes_per_buffer": 32,
+  "outstanding_per_client": 1,
+  "dispatch": "round-robin over queued clients",
+  "bus_release": "only after stopped hardware terminal",
+  "result_release": "explicit take, independent of notification ack",
+  "seeds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "operations": 600,
+  "counter_bits": [
+    8,
+    32
+  ],
+  "callbacks": false,
+  "irq_backend": false
+}
