@@ -32,7 +32,7 @@ P4の完成用途・全体費用・実機・人の変更課題評価は未完了
 | 判断 | 成立を支持する証拠 | 反例・費用・比較限界 | 未検証と公開境界への影響 |
 |---|---|---|---|
 | D01 共通化の中心 | [K0](../EXP-06/k0-result.ja.md)、[X0](../EXP-06/x0-result.ja.md)、[typed wire](../EXP-06/x0-wire-result.ja.md)と[engine・台帳の用途接続](../EXP-06/x0-register-wire-result.ja.md) | X0のCはC-static-batchで汎用EventExecutorと同機能ではない。R/A同値も全条件で成立しない | event・準備・実I/O接続、完成用途費用。A/B/Cを選ぶ根拠が変わり得る |
-| D02 stack | [work](../EXP-03/work-preparation.ja.md)、[wait](../EXP-03/wait-result.ja.md)、[深さ1／2／4](../EXP-03/reentry-depth-result.ja.md)で非再入・文脈・有限依存呼出しを検査 | 深さを増やしてもcycle・caller保持は解消しない。制限で戻るcalleeもframeを使う。解析call経路と単一frameの.suは観測peakではない | [固定port配置](../EXP-03/stack-port-result.ja.md)の実切替／待機、2 stackだけの協調方式、IRQ込みpeak。再入・stack提供範囲に直結 |
+| D02 stack | [work](../EXP-03/work-preparation.ja.md)、[wait](../EXP-03/wait-result.ja.md)、[深さ1／2／4](../EXP-03/reentry-depth-result.ja.md)で非再入・文脈・有限依存呼出しを検査 | 深さを増やしてもcycle・caller保持は解消しない。制限で戻るcalleeもframeを使う。解析call経路と単一frameの.suは観測peakではない | [固定port配置](../EXP-03/stack-port-result.ja.md)の実切替／待機、[2 stackの整数port／host workflow](../EXP-03/two-stack-result.ja.md)の実切替・IRQ・peak、FreeRTOS同一列。再入・stack提供範囲に直結 |
 | D03 自動進行 | K0／X0と[待機policy](../EXP-03/wait-result.ja.md)のM/S/U・文脈表 | Delay／AfterLoopは刺激として与えた進行機会。実runtimeに組み込んだ証拠ではない | 長時間処理・実PD／I2Cとの共存。delay内／loop外の許可範囲に直結 |
 | D04 配信 | [配信結合](../EXP-03/completion-delivery-result.ja.md)、[fan-out](../EXP-03/completion-fanout-result.ja.md)、[optional](../EXP-03/completion-optional-result.ja.md)、[X0完了hint](../EXP-06/x0-event-wire-result.ja.md) | enqueue時ack＋解除で再通知を失う。required宛先停止は次の回収にも波及。X0の1結果保持で計測／touchも待つ。metadata配信とbuffer貸出は別 | 用途でのrequired／optional接続、発生元寿命と破棄。共通eventの公開範囲に直結 |
 | D05 I/O | [回収分離](../EXP-01/i2c-handoff-result.ja.md)、[資源管理](../EXP-01/i2c-managed-handoff-result.ja.md)、[X035結合](../EXP-03/x035-i2c-event-result.ja.md) | [arbiter](../EXP-03/completion-arbiter-result.ja.md)の受理公平性の反例。別Managerの同値tokenは[誤配信](../EXP-03/i2c-event-result.ja.md)を識別できない | 実IRQ・停止保証・用途と同一backend。Busy／予約／通知／回収の契約に直結 |
@@ -93,7 +93,7 @@ IO-04は特に範囲を狭く読む。
 | N01 X0共通wire adapter | [host／ABI実施済み](../EXP-06/x0-wire-result.ja.md)。固定goldenとheader・2回RX、frame途中の失敗・回収・旧値を比較。84 trace・正本ABI68。後続N02でRX2末尾を検査 | 実験内部に隔離。未知のpanel初期化・CNVR clear・touch機器は推測せず残す。コピー方式の内部境界で、公開I/O方式の採用ではない |
 | N02 X0周辺所有と進行 | host／ABI実施済み。[直接](../EXP-06/x0-register-wire-result.ja.md)、[通知](../EXP-06/x0-event-wire-result.ja.md)、[RX2末尾](../EXP-06/x0-rx-tail-result.ja.md)、[X035準備](../EXP-06/x0-prepared-wire-result.ja.md)を用途接続。準備はnative182件・ABI546、840 trace | 実機・read命令間IRQ・公開callback破棄・変換品質は未検証。N02の模型範囲の終了をP4や全契約の終了にしない。次はN03 |
 | N03 K0共有境界 | [共有部分実施済み](../EXP-06/k0-shared-result.ja.md)：native118件・ABI132。全群の共有frontendで差分・FIFO・snapshotと注入を検査。C-bridgeは追加条件。[slave資料照合](../EXP-06/k0-slave-source-result.ja.md)でACK時点・STOPF条件・再START観測の不足を記録。[条件付きregister接続](../EXP-06/k0-slave-register-result.ja.md)：native137件・ABI132。51組の全群状態／MMIO一致。2拒否policyの意味差とforeign再STARTの反例を保存 | 上流のlive register契約へ変更しない。host／MMIO link範囲は実施済み。実ACK・拒否後復帰・他アドレス再START・実IRQは未検証でN09／N10へ残す。次の独立作業はN04 |
-| N04 待機・再入対照 | [深さ比較実施済み](../EXP-03/reentry-depth-result.ja.md)：native78件・ABI36。継続型と深さ1／2／4、循環・active資源保持・外部完了を比較し、生成call経路を算定。[X035固定port配置](../EXP-03/stack-port-result.ja.md)はABI50、source76 file。2 stackだけの協調port・同じ仮想I/O列は未完了 | この固定RV32I portのRV32E拒否を確認。IRQ上端−512 Bを含む予約1,024 Bを計上。実切替・待機・peakは未測定。host値をMCU値にしない。最終方式の採用はしない |
+| N04 待機・再入対照 | [深さ比較実施済み](../EXP-03/reentry-depth-result.ja.md)：native78件・ABI36。継続型と深さ1／2／4、循環・active資源保持・外部完了を比較し、生成call経路を算定。[X035固定port配置](../EXP-03/stack-port-result.ja.md)はABI50、source76 file。[2 stack比較](../EXP-03/two-stack-result.ja.md)はhost17件・ABI18、継続型と17組一致。FreeRTOS共通入力列のfixture境界は未完了 | この固定RV32I portのRV32E拒否を確認。IRQ上端−512 Bを含む予約1,024 Bを計上。実切替・待機・peakは未測定。host値をMCU値にしない。最終方式の採用はしない |
 | N05 保存と用途共存 | 同期erase／programの間に通常処理が進まない媒体模型を用途へ接続。保存なし／1／2／4単位、再走査・故障・未回収の影響と全体配置を比較 | 宣言停止時間の感度分析と実停止を分離。PDの実必須期限を架空の値で作らない |
 | N06 休止・コアの接続 | 既存所有・時刻・実行器を使うhost接続例を完成。V006の受理閉鎖〜回収〜復帰、H417のmessage公開〜通知〜返却と片側停止を通す | 実待機・HSEM・cache・resetを代替しない。未解決資料の解釈を採用せず境界を記録 |
 | N07 変更課題の機械比較 | 5課題すべてについてbaseline→変更版の差分、編集file、追加状態、意味の変更、host trace、ABIを同じ様式で記録 | 故障検査があるだけで「切断復旧の追加課題を実施済み」としない。人の成績は別 |
@@ -138,7 +138,7 @@ upload保持、H417両コアの可視性・再起動。必要な観測が揃わ�
 archiveがない形式も欠落として隠さず列挙する。仕様適合の意味をhash一致から導かない。
 過去の測定入力hashを現在の変更済みsourceへ一律照合せず、歴史的測定のsnapshotは各resultを参照する。
 再生成は `python3 tests/platform/core_redesign/inventory_evidence.py --out work/<new-report>.json`。
-N04固定port配置反映後の61 manifest、58 archive参照（重複を除く57個）は全てbyte数・SHA-256が一致。
+N04二つの通常stack反映後の62 manifest、59 archive参照（重複を除く58個）は全てbyte数・SHA-256が一致。
 archive参照がmanifest内にない4件は報告内に明記し、移送性まで確認したとは扱わない。
 対象は測定記録であり、コア・USB／Networkの並行変更を変更・stageしない。
 

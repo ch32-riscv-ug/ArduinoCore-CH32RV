@@ -272,3 +272,7 @@ register backendと実wireの成立は未完了。拒否後復帰をhostのaccep
 [N04 X035固定port配置](tasks/EXP-03/stack-port-result.ja.md)はsource76 file・最終ABI50・workspace3件。
 協調／preemption、アプリ2／3 taskとidle、起動／IRQを分け、port上端−512 Bを含む予約を修正した。
 実切替・待機・peak、2 stackだけの協調port、同じ仮想I/O列の実行比較は未完了。N04を続ける。
+
+[N04 二つの通常stack](tasks/EXP-03/two-stack-result.ja.md)はnative17件＋workspace3件・ABI18。
+同じC++ workflowと継続型を独立oracleへ照合し、生成swap bytesの保存・復元を整数模型で検査した。
+host ucontext・命令模型・link配置を実MCU結果と分ける。次はFreeRTOS共通入力列のfixture境界。

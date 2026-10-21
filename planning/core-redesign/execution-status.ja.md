@@ -28,6 +28,8 @@
 
 ## 最新の完了単位
 
+- [N04 二つの通常stack](tasks/EXP-03/two-stack-result.ja.md)：native17件＋workspace3件・ABI18。継続型と同じC++別stack workflowを34 trace・202,082コマンドで独立oracleへ照合し、17組一致。target swap106 Bの整数模型は1,000 seedの往復を確認。host ucontextとtarget命令模型は別の証拠。未使用8行は追加静的RAM0 B。512 Bの別stackではLTOあり総RAM予約1,776 B、継続型1,132 B。実切替／IRQ／peakとFreeRTOSへの同一列の適用は未検証で、次はfixtureの進行境界をそろえる。
+
 - [N04 X035固定portと配置](tasks/EXP-03/stack-port-result.ja.md)：WCH source76 fileを固定し、最終ABI50・workspace3件。協調／preemption・アプリ2／3 task・stack64／128／256 wordを比較。未使用24行はemptyと同じimage／静的RAM。portのmscratch上端−512 Bを追跡し、起動／IRQ予約を1,024 Bへ修正。各512 Bのstack・2 task＋idleはLTOありFlash4,088 B、RAM総予約3,292 B。実切替・待機・peakは未測定。2 stackだけの協調portと同一仮想I/O列は引き続きN04。
 
 - [N04 再入深さ](tasks/EXP-03/reentry-depth-result.ja.md)：native78件＋workspace3件・ABI36、137 trace。継続型と入れ子深さ1／2／4、循環・active資源保持・外部完了・禁止文脈を比較。未使用16行は追加0 B。制限で戻るcalleeにもframeがあり、callback深さと関数frame数の差を逆アセンブルで確認。解析経路値は実stack peakではない。別stackの固定port・配置・同じ仮想I/O列は未完了で、N04を続ける。
