@@ -1,5 +1,6 @@
 """The Network library (libraries/Network) built for the host and run against
-Linux's own TCP/IP over a tap device: addresses (static, DHCP), ICMP, UDP,
+Linux's own TCP/IP over a tap device: addresses (static, DHCP client and
+server), ICMP, UDP,
 TCP both ways and in parallel, an outgoing connection, DNS - on a clean link
 and on one that loses and reorders frames.
 
@@ -88,6 +89,10 @@ def test_dhcp_client(sketch):
     results = drive(sketch, "dhcpc")
     check(results, ALL)
     assert results["address"]["line"].startswith("IP 10.9.0.5"), results["address"]
+
+
+def test_dhcp_server(sketch):
+    check(drive(sketch, "dhcps"), ["dhcp_server"] + ALL)
 
 
 @pytest.mark.parametrize("seed", [1, 4])

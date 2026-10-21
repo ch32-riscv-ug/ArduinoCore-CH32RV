@@ -10,6 +10,10 @@ NetworkServer	KEYWORD1
 NetworkUDP	KEYWORD1
 
 hostByName	KEYWORD2
+dhcpServer	KEYWORD2
+dhcpAdvertiseGateway	KEYWORD2
+dhcpDns	KEYWORD2
+dhcpServerRunning	KEYWORD2
 setDefaultInterface	KEYWORD2
 getDefaultInterface	KEYWORD2
 isOnline	KEYWORD2

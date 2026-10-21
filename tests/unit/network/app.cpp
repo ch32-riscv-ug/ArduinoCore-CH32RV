@@ -3,6 +3,7 @@
  *
  *   STACK_MODE=static  10.9.0.2/24, gateway and DNS 10.9.0.1
  *   STACK_MODE=dhcpc   DHCP (the test runs dnsmasq)
+ *   STACK_MODE=dhcps   static 10.9.0.2 and a DHCP server: 10.9.0.3-6, DNS 10.9.0.53 offered, no router
  *
  *   stdout "IP a.b.c.d" once there is an address
  *   UDP 7 echo; TCP 7 echo; TCP 9 discard ("DISCARD <bytes>" when the peer closes);
@@ -29,8 +30,14 @@ void setup()
 {
     setvbuf(stdout, nullptr, _IOLBF, 0);
     const char *mode = getenv("STACK_MODE");
-    if (mode && !strcmp(mode, "static")) {
+    if (mode && (!strcmp(mode, "static") || !strcmp(mode, "dhcps"))) {
         tap.config(IPAddress(10, 9, 0, 2), IPAddress(10, 9, 0, 1), IPAddress(255, 255, 255, 0), IPAddress(10, 9, 0, 1));
+    }
+    if (mode && !strcmp(mode, "dhcps")) {
+        tap.dhcpDns(IPAddress(10, 9, 0, 53));
+        if (!tap.dhcpServer(true, 4)) {
+            printf("DHCPS FAIL\n");
+        }
     }
     static const uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x02};
     if (!tap.begin("tap0", mac)) {

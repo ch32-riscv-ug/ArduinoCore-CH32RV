@@ -6,7 +6,7 @@ IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network librar
 
 - For the series with an Ethernet MAC: CH32V208, V307/V317, V407/V467, H415-H417. Other series stop with an error.
 - **No link drivers yet (Ethernet MAC, USB NCM).** What is here is the IP stack and the API.
-- Tested on the host against Linux's TCP/IP (`tests/unit/network`): static and DHCP addresses, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
+- Tested on the host against Linux's TCP/IP (`tests/unit/network`): static addresses, the DHCP client and server, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
 
 ## Behaviour
 
@@ -15,6 +15,7 @@ IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network librar
 - Not callable from an interrupt.
 - `NetworkClient` copies received data into a buffer of its own (the TCP window's size); the window opens as the sketch reads, so a slow reader slows the sender instead of losing data.
 - `write()` waits for room in the send buffer and gives up after 10 s without progress, returning what it wrote.
+- The DHCP server (`dhcpServer(true, leases)`) lends `leases` addresses after the static one, an hour each, the same one again to the same MAC. It offers a router (`dhcpAdvertiseGateway()`) and DNS (`dhcpDns()`) only when told to: a device that does not forward would otherwise take over the peer's default route.
 - `NetworkUDP` queues up to four received datagrams and drops the rest; one datagram sent is at most 1472 bytes.
 - IPv4 only.
 

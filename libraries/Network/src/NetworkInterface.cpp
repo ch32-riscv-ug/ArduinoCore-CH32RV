@@ -1,6 +1,7 @@
 #include "NetworkInterface.h"
 #include "NetworkCore.h"
 #include "NetworkManager.h"
+#include "NetworkDhcpServer.h"
 
 #include <string.h>
 
@@ -39,6 +40,7 @@ bool NetworkInterface::config(IPAddress local, IPAddress gateway, IPAddress subn
     _dns[1] = (uint32_t)dns2;
     if (_netif) {
         applyAddress();
+        dhcpServerApply();
     }
     return true;
 }
@@ -166,6 +168,48 @@ uint8_t NetworkInterface::subnetCIDR() const
     return bits;
 }
 
+bool NetworkInterface::dhcpServer(bool enable, uint8_t leases)
+{
+    if (enable && (!_ip || !leases)) {
+        return false;   /* the server needs a static address to hand out after */
+    }
+    _dhcpsLeases = enable ? leases : 0;
+    dhcpServerApply();
+    return true;
+}
+
+void NetworkInterface::dhcpAdvertiseGateway(bool enable)
+{
+    _dhcpsGateway = enable;
+    dhcpServerApply();
+}
+
+void NetworkInterface::dhcpDns(IPAddress dns)
+{
+    _dhcpsDns = (uint32_t)dns;
+    dhcpServerApply();
+}
+
+bool NetworkInterface::dhcpServerRunning() const
+{
+    return _dhcps != nullptr;
+}
+
+/* (Re)starts the server with the current settings, or stops it. Leases are
+ * forgotten on a restart. */
+void NetworkInterface::dhcpServerApply()
+{
+    if (_dhcps) {
+        _dhcps->stop();
+        _dhcps = nullptr;
+    }
+    if (!_netif || !_dhcpsLeases || !_ip) {
+        return;
+    }
+    const uint32_t router = _dhcpsGateway ? (_gateway ? _gateway : _ip) : 0;
+    _dhcps = NetworkDhcpServer::start(_netif, lwip_ntohl(_ip) + 1, _dhcpsLeases, router, _dhcpsDns);
+}
+
 struct netif *NetworkInterface::netif() const
 {
     return _netif;
@@ -188,6 +232,9 @@ size_t NetworkInterface::printTo(Print &out) const
         n += out.print(",DEFAULT");
     }
     n += out.print(_ip ? ",STATIC" : ",DHCP");
+    if (_dhcps) {
+        n += out.print(",DHCP_SERVER");
+    }
     n += out.print("> ");
     n += printDriverInfo(out);
     n += out.print(" ether ");
@@ -303,6 +350,7 @@ bool NetworkInterface::netifStart(const uint8_t mac[6], uint16_t mtu)
     netif_set_up(_netif);
     ch32rv_net::addInterface(this);
     applyAddress();
+    dhcpServerApply();
     if (_link) {
         netif_set_link_up(_netif);
     }
@@ -315,6 +363,10 @@ void NetworkInterface::netifStop()
         return;
     }
     ch32rv_net::removeInterface(this);
+    if (_dhcps) {
+        _dhcps->stop();
+        _dhcps = nullptr;
+    }
     dhcp_release_and_stop(_netif);
     dhcp_cleanup(_netif);
     netif_remove(_netif);

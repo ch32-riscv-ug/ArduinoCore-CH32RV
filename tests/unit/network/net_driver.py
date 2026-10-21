@@ -3,7 +3,7 @@ network namespace, so no root is needed): makes tap0 at 10.9.0.1, starts
 dnsmasq for DHCP and DNS, starts the test sketch, exercises it and prints one
 JSON line of results.
 
-  python3 -I net_driver.py <sketch binary> <static|dhcpc>
+  python3 -I net_driver.py <sketch binary> <static|dhcpc|dhcps>
 
 LINK_* in the environment shapes the emulated link (host/link.c). With
 LINK_LOSS_PPM set, datagram tests allow for the loss and commands are
@@ -13,9 +13,11 @@ import json
 import os
 import queue
 import random
+import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -224,11 +226,42 @@ def tcp_client():
     return {"ok": ok_data and (reply == "CDONE 262144" or (LOSSY and reply is None)), "bytes": len(got), "reply": reply}
 
 
+def dhcp_server():
+    """busybox udhcpc against the sketch's server; the script records what it was given
+    without applying it (tap0 keeps 10.9.0.1). Then as another machine (a new MAC),
+    and back: the first machine gets its address again."""
+    work = tempfile.mkdtemp(prefix="net-driver-")
+    script = os.path.join(work, "udhcpc.sh")
+    record = os.path.join(work, "leases.txt")
+    with open(script, "w") as f:
+        f.write("#!/bin/sh\n[ \"$1\" = bound ] && echo \"ip=$ip subnet=$subnet router=$router dns=$dns lease=$lease\" >> " + record + "\n")
+    os.chmod(script, 0o755)
+
+    def lease(mac):
+        sh(f"ip link set tap0 address {mac}")
+        p = subprocess.run(["busybox", "udhcpc", "-i", "tap0", "-n", "-q", "-f", "-t", "5", "-T", "1", "-s", script],
+                           capture_output=True, text=True, timeout=30)
+        with open(record) as f:
+            return f.read().strip().splitlines()[-1] if p.returncode == 0 else None
+
+    try:
+        first = lease("02:00:00:00:01:01")
+        second = lease("02:00:00:00:01:02")
+        again = lease("02:00:00:00:01:01")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    expected = "ip=10.9.0.3 subnet=255.255.255.0 router= dns=10.9.0.53 lease=3600"
+    ok = (first == expected and second == expected.replace("10.9.0.3", "10.9.0.4") and again == expected)
+    return {"ok": ok, "first": first, "second": second, "again": again}
+
+
 def dns_lookup():
     _, reply = command("D test.lan", 12, 3 if LOSSY else 1)
     return {"ok": reply == "DNS 10.9.0.99", "reply": reply}
 
 
+if ip_line and MODE == "dhcps":
+    run("dhcp_server", dhcp_server, 120)
 if ip_line:
     run("ping", ping, 30)
     run("udp_echo", udp_echo, 300)

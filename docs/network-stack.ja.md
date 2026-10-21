@@ -50,12 +50,12 @@
 
 ## 作業の順番
 
-1. lwIP の取り込み(ロック、取り込みの道具、照合の試験)。
-2. Network ライブラリの土台: lwIP を回す仕組み、`NetworkInterface`(固定アドレス、DHCP のクライアント)、ドライバとの境目。
-3. `NetworkUDP`、`NetworkClient`、`NetworkServer`、`Network.hostByName()`。
-4. DHCP サーバー。
-5. PC の tap での試験を、テストの仕組み(tests/)に入れる。
-6. 系列ごとの `lwipopts.h` と、クロスビルドでの大きさの確認。
+1. lwIP の取り込み(ロック、取り込みの道具、照合の試験)。**済み**
+2. Network ライブラリの土台: lwIP を回す仕組み、`NetworkInterface`(固定アドレス、DHCP のクライアント)、ドライバとの境目。**済み**
+3. `NetworkUDP`、`NetworkClient`、`NetworkServer`、`Network.hostByName()`。**済み**
+4. DHCP サーバー。**済み**(自前。TinyUSB の dhserver は使わない)
+5. PC の tap での試験を、テストの仕組み(tests/)に入れる。**済み**(`tests/unit/network`)
+6. 系列ごとの `lwipopts.h` と、クロスビルドでの大きさの確認。**済み**(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)
 7. USB の NCM(デバイス)のつなぎ込み。
 8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。
 9. 段 3 以降。

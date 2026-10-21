@@ -53,6 +53,18 @@ public:
 
     size_t printTo(Print &out) const override;
 
+    /* A DHCP server on this interface, as EspUsbDevice's NCM network: it hands
+     * out `leases` addresses after the static one config() gave (local + 1,
+     * + 2 ...), an hour each, the same address again to the same MAC. Off by
+     * default; needs a static address. It offers no router and no DNS unless
+     * told to: a host that takes this link as its default route when nothing
+     * forwards behind it loses its other traffic. Call before or after the
+     * driver's begin(). */
+    bool dhcpServer(bool enable, uint8_t leases = 4);
+    void dhcpAdvertiseGateway(bool enable);   /* offer config()'s gateway (option 3) */
+    void dhcpDns(IPAddress dns);              /* offer this DNS server (option 6); 0 = none */
+    bool dhcpServerRunning() const;
+
     /* For the library: lwIP's netif, or nullptr before netifStart(). */
     struct netif *netif() const;
 
@@ -78,7 +90,13 @@ private:
     static int8_t init(struct netif *n);
     static void statusChanged(struct netif *n);
 
+    void dhcpServerApply();
+
     struct netif *_netif = nullptr;    /* allocated by netifStart() */
+    struct NetworkDhcpServer *_dhcps = nullptr;
+    uint32_t _dhcpsDns = 0;
+    uint8_t _dhcpsLeases = 0;          /* 0: the server is off */
+    bool _dhcpsGateway = false;
     uint32_t _ip = 0, _gateway = 0, _mask = 0, _dns[2] = {0, 0};   /* network byte order, as lwIP */
     uint8_t _mac[6] = {0};
     char _hostname[33] = {0};
