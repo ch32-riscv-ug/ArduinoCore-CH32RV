@@ -27,7 +27,7 @@ def completion_event(tmp_path_factory):
         evidence.mkdir(parents=True, exist_ok=False)
         shutil.copy2(executable, evidence / "control")
         inputs = {}
-        for name in ["completion_event_driver.cpp", "test_completion_event.py", "completion_arbiter.hpp",
+        for name in ["completion_event_driver.cpp", "test_completion_event.py", "completion_arbiter.hpp", "completion_delivery.hpp",
                      "io_lifecycle.hpp", "event_executor.hpp", "work_executor.hpp", "data_parts.hpp"]:
             path = source.with_name(name)
             shutil.copy2(path, evidence / name)
@@ -69,7 +69,7 @@ def test_delivery_permissions(completion_event, policy, domain, profile, opportu
 @pytest.mark.parametrize("policy", ["dedicated", "pooled"])
 @pytest.mark.parametrize("scenario,expected", [
     ("full", (2, 2, 0)), ("end", (1, 0, 1)),
-    ("stale", (2, 1, 1)), ("reentrant", (1, 1, 0)),
+    ("stale", (2, 1, 1)), ("reentrant", (1, 1, 0)), ("rejects", (1, 1, 0)),
 ])
 def test_lifetime_and_backpressure(completion_event, policy, scenario, expected):
     value = run(completion_event, policy, scenario)

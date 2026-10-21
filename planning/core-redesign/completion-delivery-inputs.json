@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-21",
+  "scope": "Serial fake-I/O completion hints: direct guarded collection versus explicit EventExecutor FIFO delivery; no startup or hardware",
+  "clients": 3,
+  "buffer_bytes": 32,
+  "mailbox_targets": 1,
+  "mailbox_capacity": 1,
+  "cases": [
+    {"name": "empty", "case": 0, "unused": 0},
+    {"name": "direct-dedicated", "case": 1, "unused": 0},
+    {"name": "direct-pooled", "case": 2, "unused": 0},
+    {"name": "event-dedicated", "case": 3, "unused": 0},
+    {"name": "event-pooled", "case": 4, "unused": 0},
+    {"name": "unused-dedicated", "case": 3, "unused": 1},
+    {"name": "unused-pooled", "case": 4, "unused": 1}
+  ],
+  "common_operations": "arbiter open/end/submit/dispatch/finish/cancel/notice/ack/take, buffer read/write, record observer, guarded collect and counters",
+  "event_operations": "bind/remove/initialize/pump/turn; collect callback uses the same guarded collect",
+  "lto": [false, true],
+  "irq_backend": false
+}
