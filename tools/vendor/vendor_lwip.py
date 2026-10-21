@@ -23,7 +23,8 @@ src/ itself on the include path, so the release's layout is remapped:
   src/core/..., the Ethernet netif, COPYING -> lwip-src/...
 
 Only what a NO_SYS, raw-API build can reach comes in: no sockets / netconn
-(they need an OS), no PPP, 6LoWPAN, SLIP or the other netifs, and no apps yet.
+(they need an OS), no PPP, 6LoWPAN, SLIP or the other netifs, and of the apps
+only the mDNS responder and the SNTP client.
 lwipopts.h and arch/ are ours, next to the vendored directories.
 """
 import argparse
@@ -46,6 +47,10 @@ URL = f"https://download.savannah.nongnu.org/releases/lwip/lwip-{VERSION}.zip"
 ARCHIVE_SHA256 = "7b622662dba2383d71f874f2e494b54ae948531559c17acbe75797966d646878"
 PREFIX = f"lwip-{VERSION}/"
 
+# The apps that come in (mDNS responder, SNTP client): their sources and headers.
+APPS_SOURCES = ("src/apps/mdns/", "src/apps/sntp/")
+APPS_HEADERS = ("apps/mdns", "apps/sntp")
+
 # The vendored directories under DEST. Everything in them is upstream; our own
 # files live outside them.
 VENDORED_DIRS = ("lwip", "netif", "lwip-src")
@@ -66,9 +71,11 @@ def mapped(name: str):
         return "lwip-src/COPYING"
     if name.startswith("src/include/lwip/"):
         rest = name[len("src/include/lwip/"):]
-        if rest.startswith("apps/"):
+        if rest.startswith("apps/") and not rest.startswith(APPS_HEADERS):
             return None
         return "lwip/" + rest
+    if name.startswith(APPS_SOURCES) and name.endswith(".c"):
+        return "lwip-src/" + name[len("src/"):]
     # The PPP headers below are included unconditionally (opt.h, init.c)
     # and compile to nothing with PPP off.
     if name in ("src/include/netif/ethernet.h", "src/include/netif/etharp.h", "src/include/netif/ppp/ppp_opts.h",

@@ -15,6 +15,7 @@ import queue
 import random
 import shutil
 import socket
+import struct
 import subprocess
 import sys
 import tempfile
@@ -260,6 +261,120 @@ def dns_lookup():
     return {"ok": reply == "DNS 10.9.0.99", "reply": reply}
 
 
+NTP_SECONDS = 1893456000   # 2030-01-01 00:00:00 UTC, what the test's NTP server says
+
+
+def ntp_server(stop):
+    """A minimal NTP server on 10.9.0.1:123: answers each request with NTP_SECONDS."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind((HOST, 123))
+    s.settimeout(0.2)
+    while not stop.is_set():
+        try:
+            request, peer = s.recvfrom(512)
+        except socket.timeout:
+            continue
+        if len(request) < 48:
+            continue
+        ntp = NTP_SECONDS + 2208988800
+        reply = bytearray(48)
+        reply[0] = (0 << 6) | (4 << 3) | 4          # no leap warning, version 4, mode 4 (server)
+        reply[1] = 1                                 # stratum 1
+        reply[24:32] = request[40:48]                # originate = the client's transmit time
+        reply[32:40] = struct.pack(">II", ntp, 0)    # receive
+        reply[40:48] = struct.pack(">II", ntp, 0)    # transmit
+        s.sendto(bytes(reply), peer)
+
+
+def sntp():
+    stop = threading.Event()
+    threading.Thread(target=ntp_server, args=(stop,), daemon=True).start()
+    try:
+        _, reply = command(f"T {HOST}", 5, 3 if LOSSY else 1)
+        line = wait_line("SETTIME", 40)
+    finally:
+        stop.set()
+    return {"ok": reply == "TIME STARTED" and line == f"SETTIME {NTP_SECONDS}", "reply": reply, "line": line}
+
+
+def dns_name(data, at):
+    """A (possibly compressed) DNS name at `at`: (name, the offset after it)."""
+    labels, end = [], None
+    while True:
+        n = data[at]
+        if n & 0xC0 == 0xC0:
+            if end is None:
+                end = at + 2
+            at = ((n & 0x3F) << 8) | data[at + 1]
+            continue
+        at += 1
+        if n == 0:
+            break
+        labels.append(data[at:at + n].decode(errors="replace"))
+        at += n
+    return ".".join(labels), (end if end is not None else at)
+
+
+def mdns_query(name, qtype):
+    """A one-shot (legacy unicast) mDNS query from 10.9.0.1: {type: [(owner, rdata), ...]}."""
+    q = struct.pack(">HHHHHH", random.randint(1, 65535), 0, 1, 0, 0, 0)
+    q += b"".join(bytes([len(p)]) + p.encode() for p in name.split(".")) + b"\0" + struct.pack(">HH", qtype, 1)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind((HOST, 0))
+    s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(HOST))
+    s.settimeout(1.0)
+    records = {}
+    for _ in range(3 if LOSSY else 2):
+        s.sendto(q, ("224.0.0.251", 5353))
+        try:
+            data = s.recvfrom(1500)[0]
+        except socket.timeout:
+            continue
+        counts = struct.unpack(">HHHH", data[4:12])
+        at = 12
+        for _ in range(counts[0]):
+            at = dns_name(data, at)[1] + 4
+        for _ in range(counts[1] + counts[2] + counts[3]):
+            owner, at = dns_name(data, at)
+            rtype, _, _, length = struct.unpack(">HHIH", data[at:at + 10])
+            rdata = data[at + 10:at + 10 + length]
+            if rtype == 1:
+                value = socket.inet_ntoa(rdata)
+            elif rtype == 12:
+                value = dns_name(data, at + 10)[0]
+            elif rtype == 33:
+                value = struct.unpack(">H", rdata[4:6])[0]
+            elif rtype == 16:
+                value = [rdata[i + 1:i + 1 + rdata[i]].decode() for i in _txt_offsets(rdata)]
+            else:
+                value = rdata.hex()
+            records.setdefault(rtype, []).append((owner, value))
+            at += 10 + length
+        return records
+    return records
+
+
+def _txt_offsets(rdata):
+    i = 0
+    while i < len(rdata):
+        yield i
+        i += 1 + rdata[i]
+
+
+def mdns_host():
+    records = mdns_query("ch32test.local", 1)
+    return {"ok": ("ch32test.local", DUT) in records.get(1, []), "records": records}
+
+
+def mdns_service():
+    records = mdns_query("_http._tcp.local", 12)
+    instance = "ch32test._http._tcp.local"
+    ok = ((("_http._tcp.local", instance) in records.get(12, []))
+          and (instance, 80) in records.get(33, [])
+          and any(owner == instance and "path=/x" in value for owner, value in records.get(16, [])))
+    return {"ok": ok, "records": {str(k): v for k, v in records.items()}}
+
+
 if ip_line and MODE in ("dhcps", "ncm"):
     run("dhcp_server", dhcp_server, 120)
 if ip_line:
@@ -271,6 +386,9 @@ if ip_line:
     run("tcp_parallel", tcp_parallel, 150)
     run("tcp_client", tcp_client, 120)
     run("dns", dns_lookup, 60)
+    run("sntp", sntp, 60)
+    run("mdns_host", mdns_host, 30)
+    run("mdns_service", mdns_service, 30)
 
 results["alive"] = sketch.poll() is None
 sketch.terminate()

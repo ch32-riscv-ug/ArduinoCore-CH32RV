@@ -6,7 +6,7 @@ lwIP の上の IPv4 のネットワークです。API は ESP32 の Arduino コ�
 
 - 対象は、Ethernet の MAC を持つ系列です: CH32V208、V307 / V317、V407 / V467、H415〜H417。ほかの系列でビルドすると、エラーで止まります。
 - **Ethernet の MAC のドライバはまだありません。** USB の NCM(`NetworkUsbNcm`、`CH32RVUsbDeviceNet` の `beginNetwork()` など)はありますが、これらの系列の USB デバイスのドライバがまだ無いので、実機では動きません。
-- 動作は、PC でビルドし、Linux の TCP/IP を相手に試しています(`tests/unit/network`)。固定アドレス、DHCP のクライアントとサーバー、ICMP、UDP、TCP(両方向、並列、こちらからの接続)、DNS を、パケットの落ちと入れ替わりのある回線でも確かめています。
+- 動作は、PC でビルドし、Linux の TCP/IP を相手に試しています(`tests/unit/network`)。固定アドレス、DHCP のクライアントとサーバー、SNTP、mDNS、ICMP、UDP、TCP(両方向、並列、こちらからの接続)、DNS を、パケットの落ちと入れ替わりのある回線でも確かめています。
 
 ## 使い方(ドライバができたとき)
 
@@ -48,6 +48,22 @@ void setup() {
 - 本機の側の MAC は、`CH32RVUsbDeviceNet::macAddress()`(PC の側が使う)の最後のビットを反転したものです。
 - `defaultRoute(true)` を呼ばない限り、USB の NCM は本機の既定の経路になりません(Ethernet の邪魔をしない)。
 - PC から受けたフレームは、4 KB の待ち行列を通して lwIP に渡します。空きが足りないときは USB で受け取りを止め、PC を待たせるので、取りこぼしません。
+
+## 時刻合わせ(SNTP)と mDNS
+
+```cpp
+configTime(9 * 3600, 0, "pool.ntp.org");   // 日本時間。configTzTime("JST-9", ...) でも同じ
+struct tm t;
+if (getLocalTime(&t)) { /* ... */ }
+
+MDNS.begin("sensor");                       // sensor.local
+MDNS.addService("http", "tcp", 80);         // _http._tcp(ブラウザや Bonjour / Avahi から見える)
+MDNS.addServiceTxt("http", "tcp", "path", "/");
+```
+
+- SNTP は、コアの時計(`settimeofday()`)を合わせます。1 時間ごとに合わせ直します。`time()`、`localtime_r()`、`strftime()` がその時計を読みます。
+- mDNS は、Network ライブラリが始めたすべてのインターフェースで答えます。後から始めたものも含みます。サービスは 4 つまで、TXT は 1 つにつき 96 バイトまでです。問い合わせ(`queryHost()` など)はまだありません。
+- 大きさ(V208): mDNS と SNTP を両方使うと、Flash が約 26 KB 増えます(lwIP の mDNS が 12 KB、newlib の時刻とタイムゾーンの処理など)。使わないスケッチには入りません。
 
 ## 動きの決まり
 

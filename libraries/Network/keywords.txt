@@ -9,6 +9,8 @@ NetworkClient	KEYWORD1
 NetworkServer	KEYWORD1
 NetworkUDP	KEYWORD1
 NetworkUsbNcm	KEYWORD1
+NetworkMdns	KEYWORD1
+MDNS	KEYWORD1
 
 hostByName	KEYWORD2
 dhcpServer	KEYWORD2
@@ -47,3 +49,9 @@ beginMulticastPacket	KEYWORD2
 beginPacket	KEYWORD2
 endPacket	KEYWORD2
 parsePacket	KEYWORD2
+configTime	KEYWORD2
+configTzTime	KEYWORD2
+getLocalTime	KEYWORD2
+setInstanceName	KEYWORD2
+addService	KEYWORD2
+addServiceTxt	KEYWORD2

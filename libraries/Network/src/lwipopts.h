@@ -43,6 +43,7 @@
 #define LWIP_IGMP 1                 /* NetworkUDP::beginMulticast(), and mDNS later */
 #define LWIP_NETIF_HOSTNAME 1       /* sent as DHCP option 12 */
 #define LWIP_NETIF_STATUS_CALLBACK 1
+#define LWIP_NETIF_EXT_STATUS_CALLBACK 1   /* mDNS re-announces when an address changes */
 #define LWIP_NETIF_LINK_CALLBACK 1
 #define LWIP_STATS 0
 #ifndef NETWORK_HOST_TEST
@@ -60,6 +61,17 @@
 #define DNS_MAX_SERVERS 2
 #define ARP_TABLE_SIZE 8
 #define ARP_QUEUEING 1
+
+/* The mDNS responder (NetworkMdns / MDNS) and the SNTP client (configTime()).
+ * Linked only when a sketch uses them. */
+#define LWIP_MDNS_RESPONDER 1
+#define MDNS_MAX_SERVICES 4
+#define LWIP_NUM_NETIF_CLIENT_DATA 1        /* mDNS keeps its per-interface state there */
+#define SNTP_SERVER_DNS 1
+#define SNTP_MAX_SERVERS 3
+#define SNTP_STARTUP_DELAY 0
+#define SNTP_SET_SYSTEM_TIME_US(sec, us) network_sntp_set_time((uint32_t)(sec), (uint32_t)(us))
+#define MEMP_NUM_SYS_TIMEOUT (LWIP_NUM_SYS_TIMEOUT_INTERNAL + 8)
 
 #if UINTPTR_MAX > 0xFFFFFFFFu
 #define MEM_ALIGNMENT 8             /* the host test build */
@@ -99,3 +111,7 @@
 extern "C"
 #endif
 uint32_t network_random(void);
+#ifdef __cplusplus
+extern "C"
+#endif
+void network_sntp_set_time(uint32_t sec, uint32_t us);

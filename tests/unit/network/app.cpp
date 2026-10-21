@@ -12,6 +12,9 @@
  *   TCP 19 sends SOURCE_BYTES of PATTERN and closes
  *   UDP 9999: "C <port>" connects back and sends 256 KiB of PATTERN -> "CDONE 262144" / "CFAIL"
  *             "D <name>" -> "DNS a.b.c.d" / "DNSFAIL"
+ *             "T <server>" -> configTime(9 h, 0, server) -> "TIME STARTED"; the SNTP client's
+ *                 settimeofday() prints "SETTIME <seconds>" (host/arduino_host.cpp)
+ *   mDNS: ch32test.local, _http._tcp port 80 with TXT path=/x
  */
 #include <Network.h>
 #include <NetworkUsbNcm.h>
@@ -63,6 +66,9 @@ void setup()
             exit(1);
         }
     }
+    MDNS.begin("ch32test");
+    MDNS.addService("http", "tcp", 80);
+    MDNS.addServiceTxt("http", "tcp", "path", "/x");
     udpEcho.begin(7);
     command.begin(9999);
     echoServer.begin();
@@ -173,6 +179,9 @@ static void serveCommands()
         } else {
             reply("CFAIL");
         }
+    } else if (line[0] == 'T') {
+        configTime(9 * 3600, 0, line + 2);
+        reply("TIME STARTED");
     } else if (line[0] == 'D') {
         IPAddress ip;
         char text[40];

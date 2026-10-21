@@ -1,6 +1,6 @@
 """The Network library (libraries/Network) built for the host and run against
 Linux's own TCP/IP over a tap device: addresses (static, DHCP client and
-server), ICMP, UDP,
+server), ICMP, UDP, SNTP, mDNS,
 TCP both ways and in parallel, an outgoing connection, DNS - on a clean link
 and on one that loses and reorders frames.
 
@@ -47,7 +47,8 @@ def build(out: pathlib.Path) -> pathlib.Path:
         subprocess.run(command, check=True)
         objects.append(str(obj))
     binary = out / "network-host"
-    subprocess.run([cxx, "-rdynamic", "-fsanitize=address,undefined", *objects, "-o", str(binary)], check=True)
+    subprocess.run([cxx, "-rdynamic", "-fsanitize=address,undefined", "-Wl,--wrap=settimeofday", *objects,
+                    "-o", str(binary)], check=True)
     return binary
 
 
@@ -79,7 +80,7 @@ def check(results, names):
 
 
 ALL = ["address", "ping", "udp_echo", "tcp_echo", "tcp_host_to_sketch", "tcp_sketch_to_host", "tcp_parallel",
-       "tcp_client", "dns"]
+       "tcp_client", "dns", "sntp", "mdns_host", "mdns_service"]
 
 
 def test_static_address(sketch):

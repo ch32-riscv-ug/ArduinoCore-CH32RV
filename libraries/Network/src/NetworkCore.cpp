@@ -41,6 +41,20 @@ bool waitFor(bool (*done)(void *arg), void *arg, uint32_t timeoutMs)
     return true;
 }
 
+static NetifListener netif_listener;
+
+void setNetifListener(NetifListener listener)
+{
+    netif_listener = listener;
+}
+
+void netifChanged(struct netif *n, bool up)
+{
+    if (netif_listener) {
+        netif_listener(n, up);
+    }
+}
+
 void addInterface(NetworkInterface *ifc)
 {
     for (auto &slot : interfaces) {

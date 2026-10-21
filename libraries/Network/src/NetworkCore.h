@@ -9,6 +9,7 @@
 #include <Arduino.h>
 
 class NetworkInterface;
+struct netif;
 
 namespace ch32rv_net {
 
@@ -21,6 +22,13 @@ void pump();
 
 /* Pump until done(arg) or timeoutMs; true when done. */
 bool waitFor(bool (*done)(void *arg), void *arg, uint32_t timeoutMs);
+
+/* A listener for interfaces coming and going (the mDNS responder): called
+ * with each netif as it starts, and before it stops. One listener; nullptr
+ * removes it. */
+typedef void (*NetifListener)(struct netif *n, bool up);
+void setNetifListener(NetifListener listener);
+void netifChanged(struct netif *n, bool up);
 
 /* The interfaces that have started, for the task to poll. */
 void addInterface(NetworkInterface *ifc);

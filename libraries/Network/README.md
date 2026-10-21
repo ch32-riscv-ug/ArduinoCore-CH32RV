@@ -6,7 +6,7 @@ IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network librar
 
 - For the series with an Ethernet MAC: CH32V208, V307/V317, V407/V467, H415-H417. Other series stop with an error.
 - **No Ethernet MAC drivers yet.** USB NCM is here (`NetworkUsbNcm`, `CH32RVUsbDeviceNet::beginNetwork()` ...), but those series have no USB device driver yet, so it does not run on a chip.
-- Tested on the host against Linux's TCP/IP (`tests/unit/network`): static addresses, the DHCP client and server, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
+- Tested on the host against Linux's TCP/IP (`tests/unit/network`): static addresses, the DHCP client and server, SNTP, mDNS, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
 
 ## USB NCM (as with EspUsbDevice)
 
@@ -26,6 +26,22 @@ void setup() {
 - The board's end takes `CH32RVUsbDeviceNet::macAddress()` (the PC's end) with the last bit flipped.
 - The link is not the board's default route unless `defaultRoute(true)`: it never takes over from Ethernet.
 - Frames from the PC pass through a 4 KB queue to lwIP; when it is short of room, USB stops taking blocks and the PC waits - nothing is dropped.
+
+## Time (SNTP) and mDNS
+
+```cpp
+configTime(9 * 3600, 0, "pool.ntp.org");   // Japan; configTzTime("JST-9", ...) is the same
+struct tm t;
+if (getLocalTime(&t)) { /* ... */ }
+
+MDNS.begin("sensor");                       // sensor.local
+MDNS.addService("http", "tcp", 80);         // _http._tcp, seen by browsers and Bonjour / Avahi
+MDNS.addServiceTxt("http", "tcp", "path", "/");
+```
+
+- SNTP sets the core's clock (`settimeofday()`) and resyncs every hour; `time()`, `localtime_r()` and `strftime()` read it.
+- mDNS answers on every interface the library has started, including later ones. Up to 4 services, 96 bytes of TXT each. No queries (`queryHost()` ...) yet.
+- Size (V208): using both adds about 26 KB of flash (lwIP's mDNS 12 KB, newlib's time and time-zone code ...). Sketches that do not use them carry neither.
 
 ## Behaviour
 

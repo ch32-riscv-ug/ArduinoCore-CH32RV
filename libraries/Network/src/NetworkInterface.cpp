@@ -356,6 +356,7 @@ bool NetworkInterface::netifStart(const uint8_t mac[6], uint16_t mtu)
     ch32rv_net::addInterface(this);
     applyAddress();
     dhcpServerApply();
+    ch32rv_net::netifChanged(_netif, true);
     if (_link) {
         netif_set_link_up(_netif);
     }
@@ -367,6 +368,7 @@ void NetworkInterface::netifStop()
     if (!_netif) {
         return;
     }
+    ch32rv_net::netifChanged(_netif, false);
     ch32rv_net::removeInterface(this);
     if (_dhcps) {
         _dhcps->stop();

@@ -58,7 +58,7 @@
 6. 系列ごとの `lwipopts.h` と、クロスビルドでの大きさの確認。**済み**(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)
 7. USB の NCM(デバイス)のつなぎ込み。**済み**(案 B: `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出し、中身は Network ライブラリの `NetworkUsbNcm`。PC と X035 の生フレームの試験まで。対象の系列の USB デバイスのドライバ待ち)
 8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。
-9. 段 3 以降。
+9. 段 3 以降。mDNS と SNTP は**済み**(lwIP の apps。PC で試験)。HTTP サーバー、MQTT / HTTP のクライアントはこれから。
 
 ## 決めていないこと
 

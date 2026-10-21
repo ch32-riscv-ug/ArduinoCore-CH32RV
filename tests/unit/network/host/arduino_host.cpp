@@ -2,6 +2,7 @@
 #include "Arduino.h"
 #include <execinfo.h>
 #include <signal.h>
+#include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
@@ -35,6 +36,16 @@ extern "C" void delay(unsigned long ms)
 /* newlib has these and glibc does not; the core's itoa.c adds only the long forms. */
 extern "C" char *itoa(int value, char *buf, int radix) { return ltoa(value, buf, radix); }
 extern "C" char *utoa(unsigned value, char *buf, int radix) { return ultoa(value, buf, radix); }
+
+/* The host build links with --wrap=settimeofday: the SNTP client's setting is
+ * reported, not applied to the machine's clock. */
+extern "C" int __wrap_settimeofday(const struct timeval *tv, const void *tz)
+{
+    (void)tz;
+    printf("SETTIME %ld\n", (long)tv->tv_sec);
+    fflush(stdout);
+    return 0;
+}
 
 void setup();
 void loop();
