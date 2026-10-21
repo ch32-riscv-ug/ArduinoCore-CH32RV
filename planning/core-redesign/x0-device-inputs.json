@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-21",
+  "scope": "Primary-device input audit and independent arithmetic/address-order models; no controller initialization or core policy adopted",
+  "sources": [
+    {
+      "id": "ssd1306-1.1",
+      "publisher": "Solomon Systech",
+      "revision": "1.1",
+      "date": "2008-04",
+      "host": "Newhaven Display mirror",
+      "url": "https://newhavendisplay.com/content/app_notes/SSD1306.pdf",
+      "bytes": 1128815,
+      "sha256": "6dd31f090eddcec6cf36c603695e6c49bcd907cf69a7be96bdaa7613219bc503",
+      "text_sha256": "7397a741c7d713d8eb509ae8447200e43c6f53685b99add9e8a76abdc9b143ac",
+      "pages": 59,
+      "retrieved": "2026-10-21"
+    },
+    {
+      "id": "ina219-g",
+      "publisher": "Texas Instruments",
+      "revision": "SBOS448G",
+      "date": "2015-12",
+      "host": "Texas Instruments",
+      "url": "https://www.ti.com/lit/ds/symlink/ina219.pdf",
+      "bytes": 892731,
+      "sha256": "58004eda854d07478e6fc6f4398c114f60a3bcf18d4877471c7c1a306d1fa1cb",
+      "text_sha256": "290ec6415789ee1d10ce0daf97b0669936a68351d682aec863a0a4a5f3e8ed0a",
+      "pages": 38,
+      "retrieved": "2026-10-21"
+    }
+  ],
+  "excluded_sources": [
+    {
+      "url": "https://www.sunrom.com/download/SSD1306.pdf",
+      "reason": "Rev 1.2 appears in search cache, but direct PDF retrieval and screenshot returned HTTP 404; not used as locked evidence"
+    }
+  ],
+  "upstream_commit": "7eba86abd2467bb53f609189d8c3c7d75e4d6c00",
+  "upstream_files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/LICENSE",
+      "bytes": 260,
+      "sha256": "b695d4b496de170d75a2bbd588eec9cc7330eb15921fbc643a5612053ed98d70",
+      "git_blob": "373df33d69b8fe001a01b15db7d6cafbc1d3d978"
+    },
+    {
+      "path": "software/pd_adapter/src/ina219.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/ina219.c",
+      "bytes": 1867,
+      "sha256": "71e94c5e4ddf3868c5533d4928cc01be3cd76d4ae1fa8a05626d60d427a07789",
+      "git_blob": "4878ff7ed0b6e1013e098f73d68fb34f230bc3ae"
+    },
+    {
+      "path": "software/pd_adapter/src/ina219.h",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/ina219.h",
+      "bytes": 1893,
+      "sha256": "31a321f008175b423a1098db11e9ba49dd1ffa03b822ca7966976e04b17a4767",
+      "git_blob": "a71a8ee859dfd42d166b563cf0de9c60355cbd0d"
+    },
+    {
+      "path": "software/pd_adapter/src/oled.c",
+      "url": "https://raw.githubusercontent.com/wagiminator/CH32X035-USB-PD-Adapter/7eba86abd2467bb53f609189d8c3c7d75e4d6c00/software/pd_adapter/src/oled.c",
+      "bytes": 7311,
+      "sha256": "f916ea6605d81aa27130180e608bde862f138b03fc115764daa0d52b9a5ef71b",
+      "git_blob": "fa9f35dcca70ece004970c17fe56f9602ad30be0"
+    }
+  ],
+  "golden": "tests/unit/core_redesign/frame-golden.json",
+  "golden_sha256": "c32d8ad931c9478f9d1df41767a0ca57922b905a942a18d074c4163858def396",
+  "width": 128,
+  "height": 64,
+  "payload_bytes": 32,
+  "bus_rates_hz": [
+    100000,
+    400000
+  ],
+  "measurement_period_us": 100000,
+  "phase_grid_us": 1,
+  "phase_window_us": 1000000,
+  "ina219_adc_code15_time_us": 68100,
+  "upstream_shunt_milliohms": 10,
+  "source_pages": {
+    "ssd1306": [
+      19,
+      20,
+      34,
+      35,
+      36
+    ],
+    "ina219": [
+      9,
+      10,
+      12,
+      14,
+      15,
+      19,
+      20,
+      23
+    ]
+  },
+  "model_limits": [
+    "Ideal SCL clock counts exclude START/STOP timing, setup/hold, stretching, CPU, arbitration, other clients, retries and device power-up",
+    "Address-order model assumes a known window and pointer continuity across STOP, with no reset or other display writer; physical behavior remains to validate",
+    "ADC model sums listed conversion times and uses a steady periodic complete-cycle tag, not actual INA219 register-latch timing or guaranteed deadlines"
+  ]
+}
