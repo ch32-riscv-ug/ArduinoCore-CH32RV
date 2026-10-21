@@ -680,6 +680,13 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
           `NAME=0` を読み、FPRE と Flash の SCK 分周を行から引く。FAMILY に残るのはどの field かの名前だけ。
           生成値は以前と同じ（boards.txt に差分なし）。
       - V5F を使う形（タスク周りの入れ替えと合わせて）。
+        - **測定（2026-10-22、docs/h417-multicore.ja.md）。** 設計はまだ。
+          - WAKEIP で起こすと、103 µs で V5F のコードが走った。ほとんどは .bss のゼロ埋めの時間。
+          - V5F は 400 MHz で、同じ計算は V3F の 4.9〜5.8 倍速い。
+          - 両コアの amoadd は失われない。HSEM の排他も働いた。
+          - V5F は GPIO を 20 / 25 MS/s で、揺れなく読めた。
+          - 注意: V5F が V3F のバンクを休みなく読むと V3F が止まり、待ち合わせていると両方が止まる。
+          - 注意: ch32rv のコマンドは、選ばなかったほうのコアを止めたまま終わる。ch32rv-26 に伝える。
       - **VIO18 の電圧（2026-10-21）。** PA13〜PA15、PB0〜PB1、PB10〜PB14、PC0〜PC3、PC6〜PC12、PD0〜PD7、
         PD9〜PD15、PE0〜PE1、PE7〜PE15、PF0〜PF5、PF11〜PF14 は VIO18 から給電される。評価ボードでは VIO18 が
         VDDIO につながっておらず（R11 は未実装、P11 の 7-8 はジャンパなし）、内部の LDO の起動時の値（XO の
@@ -714,7 +721,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         - **キャプチャの深掘り（2026-10-21、docs/h417-capture.ja.md）。** 目標は 20 MS/s。TIM1 の 2 つの比較チャネルで
           DMA1 / DMA2 を半周期ずらし、ダブルバッファでバンクを分けると、20 MS/s を USB 40 MB/s で流しながら 1506 万周期で
           ずれ 1 回。抜けの原因は SRAM の 128 KB のバンクの取り合い。次: ライブラリの形を決める（2 本の DMA、バッファの置き場所、
-          並べ直しをどちらでするか）。V5F はその場の処理（トリガー、圧縮）向けで、V5F の起動と合わせて試す。
+          並べ直しをどちらでするか）。V5F が GPIO を読む形でも、20 / 25 MS/s が揺れなく取れた（短い時間、
+          docs/h417-multicore.ja.md）。USB で流しながらできるかは、SS をつないで測る。
       - SS を挿したままの復旧: `ch32rv --connect-under-reset reset`（WCH-LinkE の RST → NRST）でリセットできる。
         書き込みは失敗する（プローブの誤り 0x55）。止まったファームの調べ物には、同じ方法での読み書きが使える。
       - QingKe V3F では `csrr mcycle` が例外になる（実験のスケッチで踏んだ）。
