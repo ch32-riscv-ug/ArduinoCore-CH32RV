@@ -655,7 +655,13 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
       - USBFS は済み（CH32RVUsbDcdUsbfsOtg）。DFU での書き換えも済み（ch32rv_flash）。
         - DFU を Arduino の upload に組み込む: 済み（ch32rv の `boot dfu flash`、platform.txt の ch32rv_dfu）。
-          ch32rv 0.22.0 を同梱した（2026-10-21）。Arduino の書き込みボタンからの実機確認は、H417 の復旧の後。
+          ch32rv 0.22.0 を同梱した（2026-10-21）。
+          - **arduino-cli からの書き込みを H417（FS）で確かめた（2026-10-21）。** 4 回中 2 回通った（30 KB を 0.12 s、
+            目印の行と稼働時間で確認）。残り 2 回は、DFU_DETACH のすぐ後に `interface is busy`（errno 16）。DFU モードの
+            機器は出ていて、手で `boot dfu flash --probe usb:3-4` を実行すると毎回書ける。upload の間も動く discovery が
+            開いているのと重なっていると見ている。ch32rv のセッションに、EBUSY でのやり直しを依頼した。
+          - arduino-cli で `-p` だけを渡すと口の種類が分からず、デバッグプローブ用の `ch32rv flash` が選ばれる。
+            `-l ch32rv-app` と `--discovery-timeout 10s` が要る（IDE は discovery が種類を渡すので要らない）。
       - USBSS のホスト。
       - 既定のクロックは HSI×16 の 400 MHz、V3F（F_CPU）は 100 MHz にした（2026-10-21、EVT の
         SetSYSCLK_400M_CoreCLK_V5F_400M_V3F_100M_HSI と同じ）。25 MHz では USBSS の EP0 の 96 バイト目以降で

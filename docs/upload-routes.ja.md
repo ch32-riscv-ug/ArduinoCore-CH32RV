@@ -18,7 +18,7 @@ ch32rv の開発版では、下の表で「未確認」「不可」の系列も�
 | factory USB ISP、X033 / X035 | USB | 初回は手動。`SerialUSB` を使うアプリからは 1200bps touch で入れる | 初回は必要: PC17（USB D+）を High にして電源投入 | 可能: `CH32RVUsbDevice` の 1200bps touch または DFU_DETACH → boot mode 設定 → software reset（X035 で実機確認）。DFU detach は未実装 | 開発版で実装（info / flash / verify / erase / reset、X035 で実機確認）。未リリース | upload recipe は未結線 |
 | factory USB ISP、X305 / X315 | USB | 未確認 | 未確認 | 可能（予定）: X033 / X035 と同じ | 未実装 | 未結線 |
 | factory UART ISP | USB-UART 変換 | — | — | V00x はアプリ経由、他は BOOT ピン | 未実装 | 対応しない |
-| DFU（アプリの DFU runtime、CH32H41x） | USB のみ | ○ 動いているアプリの DFU_DETACH で入る | 不要 | 可能（DFU runtime は既定で付く） | 実装済（`boot dfu flash` / `boot dfu info`、ch32rv 0.22.0） | 結線済（CH32H41x の `ch32rv-app://` の口、platform.txt の ch32rv_dfu）。実機での Arduino の書き込みは未確認 |
+| DFU（アプリの DFU runtime、CH32H41x） | USB のみ | ○ 動いているアプリの DFU_DETACH で入る | 不要 | 可能（DFU runtime は既定で付く） | 実装済（`boot dfu flash` / `boot dfu info`、ch32rv 0.22.0） | 結線済（CH32H41x の `ch32rv-app://` の口、platform.txt の ch32rv_dfu）。H417 の FS で arduino-cli から書けた（2026-10-21）。DETACH 直後に開けず失敗することがある（ch32rv 側で対応中） |
 | 独自 bootloader（UF2 / UART） | 板による | — | — | — | `boot uf2` / `boot uart` は予約のみ | 対応しない（該当する板が出たら recipe を足す） |
 
 デバッグ線の経路でも、アプリが SWIO を GPIO にした場合（`pinV32_DisconnectDebug()`）や深い sleep 中は接続できません。
