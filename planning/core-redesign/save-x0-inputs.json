@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-22",
+  "scope": "N05 X035 prepared register application plus synchronous storage/blackout model; not a physical Flash driver",
+  "candidates": [
+    "R",
+    "A",
+    "B",
+    "C-static-batch"
+  ],
+  "units": [
+    0,
+    1,
+    2,
+    4
+  ],
+  "geometry": {
+    "program": 256,
+    "erase": 256,
+    "physical_end": 134281216
+  },
+  "format": "blob8: desired PPS uint32 + caller tag uint32; one bank for 1 unit, two banks for 2/4; no footer",
+  "normal": "explicit application/progress/turn; one synchronous media operation per storage progress; result held until explicit take then bounded rescan",
+  "timing": {
+    "erase_us": 2920,
+    "program_us": 1620,
+    "load_us": 68,
+    "kind": "declared sensitivity inputs, not measured use-case latency bounds"
+  },
+  "clock_models": [
+    "wall-derived milliseconds",
+    "one pending tick per blackout"
+  ],
+  "input_latch_capacities": [
+    1,
+    4
+  ],
+  "input_model": "hypothetical external FIFO/latch; only +/- voltage buttons, explicit delivery after operation; no claim of real GPIO/IRQ FIFO",
+  "fault_masks": [
+    0,
+    255,
+    256,
+    257,
+    258
+  ],
+  "fault_note": "0/255/half program/erase masks; 257 erase all-zero, 258 erase all-zero plus unstable first-byte reads; quiescent failure after declared operation interval",
+  "raw_reference": {
+    "path": "docs/flash-raw.ja.md",
+    "commit": "bbe0ee7",
+    "sha256": "0944cd094f1a1794197070156c02da77c619b03755cfee6d2d87fd043c465903",
+    "sample_part": "CH32X035C8T6 48MHz",
+    "limits": "Repository experiment summary, not a hard bound; input arrives/IRQ/vector/USB/PD behavior not proven by timing table"
+  },
+  "not_verified": [
+    "real raw Flash backend for X035",
+    "wall/tick/IRQ behavior on this composite",
+    "actual PPS/USB protocol deadlines",
+    "wire timing",
+    "stack peak",
+    "V003 K0 composition",
+    "full placement with startup/runtime",
+    "API adoption"
+  ]
+}
