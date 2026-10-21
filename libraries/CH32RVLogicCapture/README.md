@@ -25,16 +25,16 @@ modes.
 | | Continuous (`startContinuous()`) | Burst (`captureBurst()`) |
 |---|---|---|
 | How | TIM6 update requests DMA2 channel 8 | The DMA copies back to back, no timer |
-| Rate | Up to F_CPU / 8 = 12.5 MS/s | 5 clocks a sample = 20 MS/s |
+| Rate | Up to F_CPU / 11 = 9.09 MS/s | 5 clocks a sample = 20 MS/s |
 | Timing | Set by the timer, exact | Set by the DMA; bus contention shifts it |
 | Length | Endless, in a circular buffer | Up to 65535 samples |
 
 **Continuous**
 - A DMA transfer from a port takes 8 HCLK clocks, and a request arriving
-  during one is dropped. So the rate stops at F_CPU / 8, and `begin()`
-  clamps to it.
-- At or below that, every sample is on time: a PWM captured on the same port
-  gave periods exact to the sample.
+  during one is dropped. With the USB streaming at the same time, 12.5 MS/s
+  (F_CPU / 8) lost samples in every period of a captured PWM and 10 MS/s now
+  and then; 9.09 MS/s (F_CPU / 11) lost none. So the rate stops there, and
+  `begin()` clamps to it.
 
 **Burst**
 - The interval is the DMA's speed, not a timer's. When the CPU or another DMA
@@ -52,6 +52,6 @@ modes.
   filled again before the sketch took it counts in `overruns()`, and its data
   is lost.
 - Keep the buffer in RAM the DMA reaches (globals and statics).
-- `LogicStream` streams 12.5 MS/s x 2 bytes = 25 MB/s over SuperSpeed.
+- `LogicStream` streams 9.09 MS/s x 2 bytes = 18 MB/s over SuperSpeed.
 - Inputs go up to the port's supply: PE7-PE15 and others are VIO18 pins (see
   "Input range" in the CH32RVHsAdc README).

@@ -16,9 +16,10 @@
  *  - Continuous: TIM6's update requests DMA2 channel 8 (DMAMUX request 122),
  *    which reads the port into a circular buffer. A DMA transfer from a port
  *    takes 8 HCLK clocks and a request that comes while one is in progress is
- *    dropped, so the rate stops at F_CPU / 8 = 12.5 MS/s: begin() clamps to
- *    it. At or below it every sample is on time - measured with a PWM
- *    captured on the same port, periods exact to the sample.
+ *    dropped. With the USB streaming at the same time (FS or SS), F_CPU / 8
+ *    = 12.5 MS/s lost a sample or two in every 125, 10 MS/s 4 in 1309 PWM
+ *    periods, and F_CPU / 11 = 9.09 MS/s none (a 100 kHz PWM captured on the
+ *    same port, 2026-10-21) - so the rate stops there: begin() clamps to it.
  *  - Burst (captureBurst()): the DMA copies the port back to back with no
  *    timer, 5 HCLK clocks a sample = 20 MS/s, for up to 65535 samples. The
  *    interval is the DMA's, not a timer's: when the CPU or another DMA uses
@@ -41,8 +42,8 @@ enum CH32RVLogicPort : uint8_t { PORT_A = 0, PORT_B, PORT_C, PORT_D, PORT_E, POR
 
 class CH32RVLogicCapture {
 public:
-    /* The fastest continuous rate: F_CPU / 8. */
-    static constexpr uint32_t maxContinuousRate() { return F_CPU / 8u; }
+    /* The fastest continuous rate that kept every sample: F_CPU / 11. */
+    static constexpr uint32_t maxContinuousRate() { return F_CPU / 11u; }
 
     /* `sampleRate` is clamped to maxContinuousRate() and rounded to what the
      * timer reaches (F_CPU / an integer); sampleRate() says what it got. False

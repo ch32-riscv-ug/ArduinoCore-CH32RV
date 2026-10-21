@@ -1,5 +1,5 @@
-/* Port E sampled continuously at 12.5 MS/s (F_CPU / 8) and streamed over USB
- * - 25 MB/s, the CH32H417's SuperSpeed port. Each half of the buffer goes
+/* Port E sampled continuously at 9.09 MS/s (F_CPU / 11) and streamed over USB
+ * - 18 MB/s, the CH32H417's SuperSpeed port. Each half of the buffer goes
  * out as one bulk IN transfer of the vendor interface (class 0xFF), 16-bit
  * samples, bit n = PEn. PE3 carries a 100 kHz PWM to look at.
  *

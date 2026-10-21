@@ -701,10 +701,11 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         - `analogWriteFrequency()` が 256 段に固定して分周比を切り捨てていた（H417 で 100 kHz → 130 kHz）。
           周期を分周比とカウンタの長さに分けて、指定どおりの周波数にした。H417 と V307 で 2 Hz〜100 kHz を確認。
         - LogicBurst の例が `%.2f` を使っていた（既定の C ランタイムに無い）。
-        - 残り: LogicStream の 12.5 MS/s（`maxContinuousRate()`）は、FS の USB を動かしていると 1 周期 125 の
-          PWM が 122〜125 になる（DMA の要求が捨てられている）。11.1 MS/s ではわずか、10 MS/s では 100 ちょうど。
-          以前に正確と測ったのは SS のとき。SS を挿せるときに、SS で測り直してから上限を決める。
-          HsAdcStream / LogicStream の SS での速さ（40 MB/s、25 MB/s）も、そのときに確かめる。
+        - LogicStream の上限（`maxContinuousRate()`）を F_CPU ÷ 8 から ÷ 11 に下げた（2026-10-21、SS と FS で測った）。
+          100 kHz の PWM を同じポートで取り込むと、12.5 MS/s では毎周期 1〜2 サンプル抜け（125 → 123〜124）、
+          10 MS/s でも 1309 周期中 4 回抜けた。9.09 MS/s と 8.33 MS/s では、周期が計算どおりの組み合わせだけだった。
+          以前「12.5 MS/s まで正確」としたのは、PWM が 130 kHz にずれていた頃の測定。
+        - SS での速さ: HsAdcStream 41.8 MB/s（20 Msps、ホストが読む間の取りこぼし 0）、LogicStream 19.7 MB/s（9.09 MS/s）。
       - SS を挿したままの復旧: `ch32rv --connect-under-reset reset`（WCH-LinkE の RST → NRST）でリセットできる。
         書き込みは失敗する（プローブの誤り 0x55）。止まったファームの調べ物には、同じ方法での読み書きが使える。
       - QingKe V3F では `csrr mcycle` が例外になる（実験のスケッチで踏んだ）。
