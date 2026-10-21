@@ -724,8 +724,9 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         - **キャプチャの深掘り（2026-10-21、docs/h417-capture.ja.md）。** 目標は 20 MS/s。TIM1 の 2 つの比較チャネルで
           DMA1 / DMA2 を半周期ずらし、ダブルバッファでバンクを分けると、20 MS/s を USB 40 MB/s で流しながら 1506 万周期で
           ずれ 1 回。抜けの原因は SRAM の 128 KB のバンクの取り合い。次: ライブラリの形を決める（2 本の DMA、バッファの置き場所、
-          並べ直しをどちらでするか）。V5F が GPIO を読む形でも、20 / 25 MS/s が揺れなく取れた（短い時間、
-          docs/h417-multicore.ja.md）。USB で流しながらできるかは、SS をつないで測る。
+          並べ直しをどちらでするか）。V5F が GPIO を読む形でも、SS で流しながら 20 MS/s（40.4 MB/s）・25 MS/s（50.5 MB/s）が
+          続いたが、USB の DMA に押されて 1 サンプルが 1 クロック遅れることが周期の約 740 ppm（DMA の形は 30 秒に約 0.3 回）。
+          docs/h417-multicore.ja.md。
       - SS を挿したままの復旧: `ch32rv --connect-under-reset reset`（WCH-LinkE の RST → NRST）でリセットできる。
         書き込みは失敗する（プローブの誤り 0x55）。止まったファームの調べ物には、同じ方法での読み書きが使える。
       - QingKe V3F では `csrr mcycle` が例外になる（実験のスケッチで踏んだ）。
