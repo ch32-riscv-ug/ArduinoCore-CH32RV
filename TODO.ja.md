@@ -717,6 +717,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       ブロックデバイスの抽象（SD・MSC デバイス / ホスト・RAM ディスク・内蔵 Flash）の上に FS / File の API を置く形を
       考える。実装は候補を実測して選ぶ（FatFs、FatFs の小型版、SdFat、littlefs など。ESP32 は FAT / SPIFFS /
       LittleFS を並べて選べる形）。Flash・RAM・速度・ライセンス・長いファイル名・書き込みの安全性で比べる。
+      **2026-10-21 に着手。** 要件・候補・測った結果は docs/filesystem.ja.md（大きさ、電源断、NOR の摩耗、V307 での速さ）。
+      残り: SD での実測（ベンチに SD が要る）、FAT を NOR に載せる摩耗分散の層、littlefs の設定（block_cycles、媒体の大きさ）を変えたときの値。
     - IP: **2026-10-21 に着手を決めた**（タスク周りの入れ替えを待たない）。方針と作業の順番は docs/network-stack.ja.md。
       対象は Ethernet の MAC を持つ系列（V208 / V307 / V317 / V407 / V467 / H41x）と、その系列の USB の NCM。X035 は対象外。
       lwIP 2.2.x（NO_SYS、raw API）で一式を作り、測ってから詰める。API は ESP32 の Network ライブラリに合わせる
