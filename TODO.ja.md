@@ -720,6 +720,14 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       lwIP 2.2.x（NO_SYS、raw API）で一式を作り、測ってから詰める。API は ESP32 の Network ライブラリに合わせる
       （`NetworkClient` / `NetworkServer` / `NetworkUDP`）。EspUsbDevice の `ipConfig()` / `dhcpServer()` / `dhcpClient()` /
       `beginNetwork()` / `localIP()` もこの上に作る。Ethernet の MAC のドライバは機材が要るので後。それまでは PC の tap で試す。
+      - 2026-10-21 済み: lwIP 2.2.1 の取り込み（vendor/lwip.lock.toml）、`ch32rv_net_task`、Network ライブラリ（固定 / DHCP、
+        DHCP サーバー、TCP / UDP、DNS、SNTP の `configTime()`、mDNS の `MDNS`）、USB の NCM のつなぎ（`NetworkUsbNcm`、
+        `CH32RVUsbDeviceNet::beginNetwork()` など。受信の流量制御 `receiveGate()`）、PC の試験（tests/unit/network）。
+      - 残り: Ethernet の MAC のドライバ（V208 / V307 / V407 / H417、機材待ち）。対象の系列の USB デバイスのドライバが
+        来たら NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント。TLS の採否（docs/network-stack.ja.md の
+        測定。V208 は無理、V307 はぎりぎり）。
+  - コアの `time()` / `gettimeofday()` / `settimeofday()`（2026-10-21、syscalls.c）: これまで半ホスティングの `ecall` で
+    落ちていた。直したが、実機ではまだ動かしていない。`clock()`、`fopen()` なども失敗を返すようにした。
   - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口。今は X035 / X033 だけ）。
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
   - **UF2（MscFirmwareDisk）での更新はやる**（2026-10-20）。ほかのファームウェア更新のクラス（EspUsbDevice の
