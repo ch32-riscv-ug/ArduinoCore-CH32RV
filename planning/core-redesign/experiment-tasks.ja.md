@@ -268,3 +268,7 @@ register backendと実wireの成立は未完了。拒否後復帰をhostのaccep
 [再入深さの結果](tasks/EXP-03/reentry-depth-result.ja.md)にnative78件＋workspace3件・ABI36を記録した。
 継続型と深さ1／2／4の有限依存呼出し、循環・資源保持・外部完了を比較。
 生成call経路の算定は実stack peakではない。別stackの固定port適合・配置・仮想I/O列は続けて確認する。
+
+[N04 X035固定port配置](tasks/EXP-03/stack-port-result.ja.md)はsource76 file・最終ABI50・workspace3件。
+協調／preemption、アプリ2／3 taskとidle、起動／IRQを分け、port上端−512 Bを含む予約を修正した。
+実切替・待機・peak、2 stackだけの協調port、同じ仮想I/O列の実行比較は未完了。N04を続ける。

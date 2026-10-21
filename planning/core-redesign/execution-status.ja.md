@@ -28,6 +28,8 @@
 
 ## 最新の完了単位
 
+- [N04 X035固定portと配置](tasks/EXP-03/stack-port-result.ja.md)：WCH source76 fileを固定し、最終ABI50・workspace3件。協調／preemption・アプリ2／3 task・stack64／128／256 wordを比較。未使用24行はemptyと同じimage／静的RAM。portのmscratch上端−512 Bを追跡し、起動／IRQ予約を1,024 Bへ修正。各512 Bのstack・2 task＋idleはLTOありFlash4,088 B、RAM総予約3,292 B。実切替・待機・peakは未測定。2 stackだけの協調portと同一仮想I/O列は引き続きN04。
+
 - [N04 再入深さ](tasks/EXP-03/reentry-depth-result.ja.md)：native78件＋workspace3件・ABI36、137 trace。継続型と入れ子深さ1／2／4、循環・active資源保持・外部完了・禁止文脈を比較。未使用16行は追加0 B。制限で戻るcalleeにもframeがあり、callback深さと関数frame数の差を逆アセンブルで確認。解析経路値は実stack peakではない。別stackの固定port・配置・同じ仮想I/O列は未完了で、N04を続ける。
 
 - [N03 条件付きslave register接続](tasks/EXP-06/k0-slave-register-result.ja.md)：最終native137件＋workspace3件・ABI132。207 trace・298,863コマンド、全4群の51組が一致。受信末尾・STOP／ADDR・TX先読み・AF正常終端・故障復帰・2拒否policyを検査。未使用64行は追加0 B。ACK-discardとdata-NACKはpeerに見える意味が異なり、後者は明示rearmまでreadもNACKする模型。foreign再STARTの反例を残し、実wireは未成立。N03のhost／MMIO link範囲を追加し、次はN04。
