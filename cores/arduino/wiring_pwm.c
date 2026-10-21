@@ -14,8 +14,8 @@
 
 #include <stdbool.h>
 
-/* Arduino's analogWrite() takes 0..255 unless analogWriteResolution() says
- * otherwise. Counting to exactly 256 keeps duty = value / 256. */
+/* The fewest counter steps a period may have: analogWrite()'s default 0..255
+ * stays exact, and analogWriteFrequency() is capped at F_CPU / 256. */
 #define CH32RV_PWM_STEPS 256u
 #define CH32RV_PWM_HZ    1000u
 
@@ -115,13 +115,32 @@ void analogWrite(pin_size_t pin, int value)
         return;
     }
 
-    /* Scale the caller's range onto the timer's 0..CH32RV_PWM_STEPS. */
+    /* The period in timer ticks, split into the smallest prescaler that fits
+     * the 16-bit counter and a counter length rounded to the frequency. A
+     * fixed 256-step counter could only divide F_CPU by whole multiples of
+     * 256: asked for 100 kHz, CH32H417 (100 MHz) gave 130 kHz and CH32X035
+     * (48 MHz) would give 187.5 kHz. */
+    const uint32_t period = F_CPU / ch32rv_pwm_hz;
+    uint32_t prescale = (period + 65535u) / 65536u;
+    if (prescale == 0u) {
+        prescale = 1u;
+    } else if (prescale > 65536u) {
+        prescale = 65536u;             /* the 16-bit prescaler's end: ~1 Hz at 48 MHz */
+    }
+    uint32_t steps = (period + prescale / 2u) / prescale;
+    if (steps > 65536u) {
+        steps = 65536u;
+    } else if (steps < CH32RV_PWM_STEPS) {
+        steps = CH32RV_PWM_STEPS;
+    }
+
+    /* Scale the caller's range onto the counter's 0..steps. */
     const uint32_t full = (1u << ch32rv_pwm_write_bits) - 1u;
     uint32_t duty = (value <= 0) ? 0u : (uint32_t)value;
     if (duty >= full) {
-        duty = CH32RV_PWM_STEPS;
+        duty = steps;
     } else {
-        duty = (duty * CH32RV_PWM_STEPS) / (full + 1u);
+        duty = (uint32_t)(((uint64_t)duty * steps) / (full + 1u));
     }
 
     const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
@@ -132,16 +151,10 @@ void analogWrite(pin_size_t pin, int value)
     ch32rv_pin_set_af((uint8_t)pin, (uint32_t)CH32RV_PWM_PIN_TO_AF(pin));
 #endif
 
-    uint32_t prescale = F_CPU / (ch32rv_pwm_hz * CH32RV_PWM_STEPS);
-    if (prescale == 0u) {
-        prescale = 1u;
-    } else if (prescale > 65536u) {
-        prescale = 65536u;             /* the 16-bit prescaler's end: ~3 Hz at 48 MHz */
-    }
     const CH32RVTimerRequest request = {
         timer,
         channel,
-        {(uint16_t)(prescale - 1u), CH32RV_PWM_STEPS - 1u,
+        {(uint16_t)(prescale - 1u), (uint16_t)(steps - 1u),
          CH32RV_TIM_CTLR1_ARPE}
     };
     CH32RVTimerLease lease = ch32TimerTakeover(&request, &ch32rv_pwm_owner);
@@ -157,7 +170,9 @@ void analogWrite(pin_size_t pin, int value)
                                                : &CH32RV_TIM_CHCTLR2(base);
     *chctlr = (uint16_t)((*chctlr & ~(0xFFu << shift)) |
                          (CH32RV_TIM_OCMODE_PWM1 << shift));
-    CH32RV_TIM_CHCVR(base, channel) = (uint16_t)duty;
+    /* 100 % is a compare value past the counter's end: steps itself, which is
+     * 65536 only when the counter has all 65536 steps - then one short. */
+    CH32RV_TIM_CHCVR(base, channel) = (uint16_t)(duty > 65535u ? 65535u : duty);
     CH32RV_TIM_CCER(base) |= (uint16_t)(1u << ((channel - 1u) * 4u));
     if (cap->kind == CH32RV_TIMER_KIND_ADVANCED) {
         /* Advanced timers keep every channel output gated behind MOE. */
