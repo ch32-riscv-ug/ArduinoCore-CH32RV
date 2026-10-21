@@ -660,10 +660,10 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - 既定のクロックは HSI×16 の 400 MHz、V3F（F_CPU）は 100 MHz にした（2026-10-21、EVT の
         SetSYSCLK_400M_CoreCLK_V5F_400M_V3F_100M_HSI と同じ）。25 MHz では USBSS の EP0 の 96 バイト目以降で
         32 バイトの重複が出ていた。100 MHz で直った（512 バイトまで一致、SS 経由の DFU も確認）。
-        - **device-data のリモートセッションに変更を依頼する（2 件目）。** features.csv に CH32V208 の Ethernet
+        - **device-data に依頼済み（2026-10-21、ch32-device-data のセッションへ。V20x の RNG の食い違いの確認も一緒に）。** features.csv に CH32V208 の Ethernet
           （10M の MAC + PHY 内蔵）が無く、V208 のバリアントにも Ethernet のクロック有効化が出ていない
           （2026-10-21 に気づいた）。V208 はオンボード NIC を持つ系列で一番小さく、IP スタックの設計の下限に使う。
-        - **device-data のリモートセッションに変更を依頼する。** clock_configs.csv の CH32H417 の 400M の行の
+        - **device-data に依頼済み（2026-10-21）。** clock_configs.csv の CH32H417 の 400M の行の
           pll 列に RCC_PLLMUL16 がなく、FPRE（V3F の分周、RCC_FPRE_DIV4）と SYSPLL_SEL / SYSPLL_GATE の
           切り替えを表す列もない。今は generate.py の FAMILY["CH32H417"]["h41x_clock"] で名前を足して
           clock_symbols.csv から引いている。行に入ったら FAMILY の側を消す。
