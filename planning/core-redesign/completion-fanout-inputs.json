@@ -1,0 +1,202 @@
+{
+  "date": "2026-10-21",
+  "scope": "Serial copied completion metadata fan-out; source result is taken once after publication reservation; no shared byte buffer, IRQ or startup",
+  "clients": 3,
+  "buffer_bytes": 32,
+  "cases": [
+    {
+      "name": "empty",
+      "case": 0,
+      "unused": 0,
+      "targets": 1,
+      "capacity": 1
+    },
+    {
+      "name": "direct-dedicated",
+      "case": 1,
+      "unused": 0,
+      "targets": 1,
+      "capacity": 1
+    },
+    {
+      "name": "direct-pooled",
+      "case": 2,
+      "unused": 0,
+      "targets": 1,
+      "capacity": 1
+    },
+    {
+      "name": "copy-dedicated-n1-c1",
+      "case": 3,
+      "unused": 0,
+      "targets": 1,
+      "capacity": 1
+    },
+    {
+      "name": "copy-pooled-n1-c1",
+      "case": 4,
+      "unused": 0,
+      "targets": 1,
+      "capacity": 1
+    },
+    {
+      "name": "copy-dedicated-n1-c2",
+      "case": 3,
+      "unused": 0,
+      "targets": 1,
+      "capacity": 2
+    },
+    {
+      "name": "copy-pooled-n1-c2",
+      "case": 4,
+      "unused": 0,
+      "targets": 1,
+      "capacity": 2
+    },
+    {
+      "name": "copy-dedicated-n2-c1",
+      "case": 3,
+      "unused": 0,
+      "targets": 2,
+      "capacity": 1
+    },
+    {
+      "name": "copy-pooled-n2-c1",
+      "case": 4,
+      "unused": 0,
+      "targets": 2,
+      "capacity": 1
+    },
+    {
+      "name": "copy-dedicated-n2-c2",
+      "case": 3,
+      "unused": 0,
+      "targets": 2,
+      "capacity": 2
+    },
+    {
+      "name": "copy-pooled-n2-c2",
+      "case": 4,
+      "unused": 0,
+      "targets": 2,
+      "capacity": 2
+    },
+    {
+      "name": "copy-dedicated-n4-c1",
+      "case": 3,
+      "unused": 0,
+      "targets": 4,
+      "capacity": 1
+    },
+    {
+      "name": "copy-pooled-n4-c1",
+      "case": 4,
+      "unused": 0,
+      "targets": 4,
+      "capacity": 1
+    },
+    {
+      "name": "copy-dedicated-n4-c2",
+      "case": 3,
+      "unused": 0,
+      "targets": 4,
+      "capacity": 2
+    },
+    {
+      "name": "copy-pooled-n4-c2",
+      "case": 4,
+      "unused": 0,
+      "targets": 4,
+      "capacity": 2
+    },
+    {
+      "name": "unused-copy-dedicated-n1-c1",
+      "case": 3,
+      "unused": 1,
+      "targets": 1,
+      "capacity": 1
+    },
+    {
+      "name": "unused-copy-pooled-n1-c1",
+      "case": 4,
+      "unused": 1,
+      "targets": 1,
+      "capacity": 1
+    },
+    {
+      "name": "unused-copy-dedicated-n1-c2",
+      "case": 3,
+      "unused": 1,
+      "targets": 1,
+      "capacity": 2
+    },
+    {
+      "name": "unused-copy-pooled-n1-c2",
+      "case": 4,
+      "unused": 1,
+      "targets": 1,
+      "capacity": 2
+    },
+    {
+      "name": "unused-copy-dedicated-n2-c1",
+      "case": 3,
+      "unused": 1,
+      "targets": 2,
+      "capacity": 1
+    },
+    {
+      "name": "unused-copy-pooled-n2-c1",
+      "case": 4,
+      "unused": 1,
+      "targets": 2,
+      "capacity": 1
+    },
+    {
+      "name": "unused-copy-dedicated-n2-c2",
+      "case": 3,
+      "unused": 1,
+      "targets": 2,
+      "capacity": 2
+    },
+    {
+      "name": "unused-copy-pooled-n2-c2",
+      "case": 4,
+      "unused": 1,
+      "targets": 2,
+      "capacity": 2
+    },
+    {
+      "name": "unused-copy-dedicated-n4-c1",
+      "case": 3,
+      "unused": 1,
+      "targets": 4,
+      "capacity": 1
+    },
+    {
+      "name": "unused-copy-pooled-n4-c1",
+      "case": 4,
+      "unused": 1,
+      "targets": 4,
+      "capacity": 1
+    },
+    {
+      "name": "unused-copy-dedicated-n4-c2",
+      "case": 3,
+      "unused": 1,
+      "targets": 4,
+      "capacity": 2
+    },
+    {
+      "name": "unused-copy-pooled-n4-c2",
+      "case": 4,
+      "unused": 1,
+      "targets": 4,
+      "capacity": 2
+    }
+  ],
+  "lto": [
+    false,
+    true
+  ],
+  "irq_backend": false
+}
