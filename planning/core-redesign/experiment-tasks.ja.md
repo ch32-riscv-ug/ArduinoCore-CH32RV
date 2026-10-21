@@ -214,6 +214,9 @@ K0とX0はR/A/B/Cの必須比較。取得bufferとV006休止は境界確認用�
 [N02直接回収の接続](tasks/EXP-06/x0-register-wire-result.ja.md)は最終native84件・ABI36で、
 既存engine／台帳を同じ用途へ接続した。TX途中5 error・取消と別owner通信中の旧takeを検査。
 次は通知満杯・解除／retryとRX tail・準備接続。N02全体の完了ではない。
+[N02通知の用途接続](tasks/EXP-06/x0-event-wire-result.ja.md)はnative53件・ABI68で、
+Full・宛先解除とretry・古いhint、peer通信中の回収を検査。直接回収との同一wireと追加費用を記録した。
+RX tail・X035準備との用途結合は続行する。
 部品単体で最小だったものを組むだけで、完成用途も最小だと推測しない。
 
 成果物は全体費用、正常・burst・切断・満杯のtrace、I/Oと入力遅延、残容量、変更課題と利用者レビュー。

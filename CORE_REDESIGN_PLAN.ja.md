@@ -275,7 +275,8 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 D01〜D12の支持・反証・未検証、契約ごとの到達範囲、76候補の対応と通常作業N01〜N10を記録した。
 [N01のX0共通wire adapter](planning/core-redesign/tasks/EXP-06/x0-wire-result.ja.md)はhost／ABIで実施済み。
 [N02の直接回収](planning/core-redesign/tasks/EXP-06/x0-register-wire-result.ja.md)もhost／ABIで接続した。
-次は同じ用途の通知満杯・解除／retry、RX tail・周辺準備との接続。部品の検査件数を完成用途の完了率にはしない。
+[通知満杯・解除／retry](planning/core-redesign/tasks/EXP-06/x0-event-wire-result.ja.md)も同じ用途へ接続した。
+次はRX tail・周辺準備との接続。部品の検査件数を完成用途の完了率にはしない。
 
 **DESIGN-01：P0 の全体設計案作成**は完了。
 
