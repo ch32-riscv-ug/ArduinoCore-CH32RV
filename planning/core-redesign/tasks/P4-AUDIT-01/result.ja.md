@@ -20,7 +20,7 @@ P4の完成用途・全体費用・実機・人の変更課題評価は未完了
 | P2 設備不足の明示 | 各resultの未検証欄と実行状況表 | 必要機材・相手・観測を一つの実施表へまとめる作業が残る |
 | P3 必要部品・契約・費用・拡張 | EXP-01〜05のresultとmeasurements | 部分成立。文脈・借用・通知等の部品証拠はある。用途接続、実IRQ、深さ対照などは未完了 |
 | P4 K0／X0完成用途比較 | 同一入力のR/A/B/C、容量変更・機能除去・故障trace | hostの用途ロジック比較。実backend・総費用・実測までを満たさない |
-| P4 変更課題5件 | 設定2件、表示交換、タッチ追加の素材と複数のworksheet | queue削減・切断復旧を含む同一条件の変更差分集計が不足。人の評価は全件未実施 |
+| P4 変更課題5件 | [N07 E01〜04共通記録](../EXP-07/comparison-result.ja.md)：K0設定2件化・表示交換・touch追加・queue4→1の96 ABI pair、選択差分・共通準備・状態・意味・検証を整理 | 切断復旧追加E05は未実装。人の評価は全件未実施 |
 | P5入口 D01〜D12の支持・反証・未検証 | 下表 | 索引の初版。重要な未接続が残るので、判断材料が揃ったとは扱わない |
 
 ## D01〜D12の証拠索引
@@ -104,7 +104,7 @@ N08でidle pollの費用・serial寿命・縮小counterによる拒否／復旧�
 | N04 待機・再入対照 | [深さ比較実施済み](../EXP-03/reentry-depth-result.ja.md)：native78件・ABI36。継続型と深さ1／2／4、循環・active資源保持・外部完了を比較し、生成call経路を算定。[X035固定port配置](../EXP-03/stack-port-result.ja.md)はABI50、source76 file。[2 stack比較](../EXP-03/two-stack-result.ja.md)はhost17件・ABI18、継続型と17組一致。[固定kernel共通列](../EXP-03/kernel-trace-result.ja.md)はnative20件・ABI18。2 task・協調／preemptionと継続型／2 stackの18組が一致。3 stageの容量差も保存 | この固定RV32I portのRV32E拒否を確認。IRQ上端−512 Bを含む予約1,024 Bを計上。source／host／整数模型／link範囲は実施済み。実fixture統合はN08、実切替・待機・peakはN09。host値をMCU値にしない。次はN05。最終方式の採用はしない |
 | N05 保存と用途共存 | [X035用途接続](../EXP-06/save-x0-result.ja.md)：native92件・ABI42、保存0／1／2／4単位、未回収・再走査・媒体失敗・cold-model bootを比較。壁時計／tick coalescingと仮想入力保持を分離。[V003 K0接続](../EXP-06/save-k0-result.ja.md)：native93件・ABI82、64 B fast eraseの0／1／2／4単位と2 slave policy、保留・故障・boot。N05同期媒体host／link範囲は実施済み | declared感度分析で、物理Flash backendや実IRQ／PD成立ではない。実測記録bbe0ee7は参照snapshotとして保存。実backend・全runtime配置はN08、実電断・ACK・IRQ等はN09で続ける。次の独立作業はN06。PDの実必須期限を架空の値で作らない |
 | N06 休止・コアの接続 | [休止と実行器](../EXP-06/sleep-work-result.ja.md)：native104件・ABI196。[H417直列](../EXP-06/h417-executor-result.ja.md)：native69件・ABI194。[shared／local並列接続](../EXP-06/h417-transport-result.ja.md)：ASan／UBSan261件・TSan256件・両core ABI388、共有初期値96組一致。実行中permit・close Busy・normal再入を検査 | host／構造的link範囲を実施。2 producer／継続reset負荷・乱数・全runtime／initはN08。実V006待機・H417 gate／cache／IRQ／DMA停止・reset・peakはN09。公開APIの採用ではない。次はN07 |
-| N07 変更課題の機械比較 | 5課題すべてについてbaseline→変更版の差分、編集file、追加状態、意味の変更、host trace、ABIを同じ様式で記録 | 故障検査があるだけで「切断復旧の追加課題を実施済み」としない。人の成績は別 |
+| N07 変更課題の機械比較 | [E01〜04統一記録](../EXP-07/comparison-result.ja.md)と96 ABI pair。旧証拠のmatrix整合と型選択6件。新queue4→1はhost39件・ABI196、164 trace・全4群41組。共通準備と選択差分を別計上 | E05切断復旧追加のbaseline→実装・差分・状態・trace／ABIは未完了。既存fault検査で代用しない。人の成績は全件未実施。次もN07 |
 | N08 測定条件の補完 | seed／操作数の差を一覧化し追加run。新H417 wrapperの2 producer／継続reset負荷、空pollのpermit serial寿命・費用を補う。N01〜07の同条件B0／B1／B2、初期化・予約・stack予算の不足を一つの表にする | 未観測stackはnull。予算候補を実測peakとして扱わない |
 | N09 実機実施依頼 | fixture identity、対象part、配線、相手、計測器、較正、lock、終了条件、run数、回復手順を用途別にまとめる | 設備確認前は書込みしない。既存fixtureがあるだけで今回の用途が成立したとしない |
 | N10 横断監査更新 | 各Nのresultをこの表、契約表、D表へ反映。公開境界へ影響する不足と独立未検証を区別しP5依頼を作成 | 全項目を終了／条件付き未検証として根拠付きで処理する。通常モデル作業を高位判断へ押し付けない |
@@ -146,7 +146,7 @@ upload保持、H417両コアの可視性・再起動。必要な観測が揃わ�
 archiveがない形式も欠落として隠さず列挙する。仕様適合の意味をhash一致から導かない。
 過去の測定入力hashを現在の変更済みsourceへ一律照合せず、歴史的測定のsnapshotは各resultを参照する。
 再生成は `python3 tests/platform/core_redesign/inventory_evidence.py --out work/<new-report>.json`。
-N06 H417並列transport反映後の68 manifest、65 archive参照（重複を除く64個）は全てbyte数・SHA-256が一致。
+N07 4課題反映後の69 manifest、69 archive参照（重複を除く65個）は全てbyte数・SHA-256が一致。
 archive参照がmanifest内にない4件は報告内に明記し、移送性まで確認したとは扱わない。
 対象は測定記録であり、コア・USB／Networkの並行変更を変更・stageしない。
 

@@ -28,6 +28,8 @@
 
 ## 最新の完了単位
 
+- [N07 4変更課題の共通記録](tasks/EXP-07/comparison-result.ja.md)：E01〜04の96 ABI pairを同じ形式へ整理。過去のK0／表示／touchは再実行せず、既存matrix整合と新しい型選択6件を確認。新queue4→1はnative39件＋workspace3件・ABI196、164 trace・209,172コマンド、全4群41組一致。静的RAM24 B減だが連続increment→applyで後者を拒否する条件を保存。共通準備と1行選択差分を別計上。E05切断復旧追加・利用者評価は未完了で、次もN07。
+
 - [N06 shared transport／local実行器](tasks/EXP-06/h417-transport-result.ja.md)：ASan／UBSan native258件＋workspace3件・TSan256件・両core ABI388。共通transportと各coreのView／Endpointを分離し、permit終了まで復旧を待つ。512 host run、負荷のmessage49,152件／block12,288個を照合。normal再入による早期close反例を修正し12境界を追加。共有初期値96組一致、未使用192 ABI行はlocal／sharedとも0 B。N06のhost／構造的link範囲を実施し、次はN07。2 producer／reset負荷、乱数・全runtime／initはN08、物理backendはN09へ残す。
 
 - [N06 H417向け直列実行器接続](tasks/EXP-06/h417-executor-result.ja.md)：native69件＋workspace3件・H417 ABI194。3所有規則×4 featureとR/A/B/Cを接続し、284 trace・197,708コマンド、全4群71組一致。ticket／hint／dataを分け、busy retry、8 B read、容量保持、古いticket／lease、counter上限を検査。late-clearで新hintを消す反例も保存。未使用96 ABI行は追加0 B。SerialGate feedbackと両worker一体objectは共有並列・実配置の証拠ではない。次はN06のshared／core-local分離とhost並列保護。

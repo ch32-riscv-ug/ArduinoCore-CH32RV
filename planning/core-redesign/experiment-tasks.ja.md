@@ -327,3 +327,12 @@ N08に2 producer／継続reset負荷・乱数予算・全runtime・初期化の�
 
 N06試作の追加観測：open_turnの32 bit serialは空pollでも増え、restartでも戻らず上限で拒否する。
 N08でidle時の費用と寿命、縮小counterでの拒否・復旧を比較する。現行の有限counterを最終仕様として採用しない。
+
+
+## N07 4課題の機械比較（2026-10-22）
+
+[共通記録](tasks/EXP-07/comparison-result.ja.md)にE01 K0設定2件化、E02 mock表示交換、E03 touch追加、E04 queue4→1を整理した。
+前3件は既存host／ABI証拠を保持し、selectorが同じ型になるsyntax検査6件を追加した。旧測定を新規実行数へ足さない。
+E04はnative39件＋workspace3件・ABI196で、RAM24 B減、apply拒否と明示的な入力間隔の意味を比較した。
+共通準備のheaderと選択差分、追加状態、契約差、未検証を分ける。人の予測・編集・誤解・支援はnull。
+E05は機能なしbaseline→切断復旧を追加した版の差分・状態・trace／ABIが必要。既存detach testで代用せず、次のN07で進める。

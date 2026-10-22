@@ -1243,6 +1243,61 @@
       "archive_reference_status": "recorded"
     },
     {
+      "path": "planning/core-redesign/tasks/EXP-07/change-exercises-measurements.json",
+      "sha256": "09937c11f30d9e5cd4a4124c737163b15adda8b1c69ea96e3dcea5df3e7b99b4",
+      "archives": [
+        {
+          "pointer": "/historical_evidence/0/archive/path",
+          "path": "work/exp06-k0-slave-register-20261021-evidence.tar.gz",
+          "expected_sha256": "a471c30068750be8f8cded457f6c4926ba74806042e2bdba338f393a9d05f128",
+          "expected_bytes": 6622306,
+          "observed": {
+            "present": true,
+            "sha256": "a471c30068750be8f8cded457f6c4926ba74806042e2bdba338f393a9d05f128",
+            "bytes": 6622306
+          },
+          "status": "matched"
+        },
+        {
+          "pointer": "/historical_evidence/1/archive/path",
+          "path": "work/exp05-display-20261021-evidence-r2.tar.gz",
+          "expected_sha256": "d3387910f3ee792ec3f9d81e22ab6f5613d8dd4b7ea3ee98472c3885728b0c32",
+          "expected_bytes": 6375213,
+          "observed": {
+            "present": true,
+            "sha256": "d3387910f3ee792ec3f9d81e22ab6f5613d8dd4b7ea3ee98472c3885728b0c32",
+            "bytes": 6375213
+          },
+          "status": "matched"
+        },
+        {
+          "pointer": "/historical_evidence/2/archive/path",
+          "path": "work/exp06-x0-features-20261020-evidence.tar.gz",
+          "expected_sha256": "901c66711e43ad42c6f02e936c3cf41c526aa4f48807d5bf2f5eb600ee5f5175",
+          "expected_bytes": 4945533,
+          "observed": {
+            "present": true,
+            "sha256": "901c66711e43ad42c6f02e936c3cf41c526aa4f48807d5bf2f5eb600ee5f5175",
+            "bytes": 4945533
+          },
+          "status": "matched"
+        },
+        {
+          "pointer": "/archive/path",
+          "path": "work/exp07-change-exercises-20261022-evidence.tar.gz",
+          "expected_sha256": "5e49b6ef29cf381fcf89311405911eeaddd4468ae112d2554966a30d4f82532b",
+          "expected_bytes": 26395002,
+          "observed": {
+            "present": true,
+            "sha256": "5e49b6ef29cf381fcf89311405911eeaddd4468ae112d2554966a30d4f82532b",
+            "bytes": 26395002
+          },
+          "status": "matched"
+        }
+      ],
+      "archive_reference_status": "recorded"
+    },
+    {
       "path": "planning/core-redesign/tasks/P2-PREP-01/measurements.json",
       "sha256": "d31c7654ad5d60bbdaf5ece38f6caf1297ee1f84da798d84a01c9d9f26d3bd43",
       "archives": [],
@@ -1255,9 +1310,9 @@
       "archive_reference_status": "not-recorded-in-manifest"
     }
   ],
-  "manifest_count": 68,
-  "unique_archive_count": 64,
-  "archive_reference_count": 65,
+  "manifest_count": 69,
+  "unique_archive_count": 65,
+  "archive_reference_count": 69,
   "manifests_without_archive_reference": [
     "planning/core-redesign/tasks/EXP-00/measurements.json",
     "planning/core-redesign/tasks/EXP-02/measurements.json",

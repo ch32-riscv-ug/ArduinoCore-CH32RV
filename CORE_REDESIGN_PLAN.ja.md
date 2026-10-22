@@ -293,6 +293,10 @@ callback実行中と終了待ちをpermitで分離し、実際のnormal再入に
 共有初期値96組一致とlocal配置を確認。N06の休止・H417 host／構造的link比較を実施した範囲を記録し、次はN07。
 2 producer／reset負荷・乱数・全runtime／初期化はN08、実HSEM／cache／IRQ等はN09に残す。
 
+[N07 変更課題の統一記録](planning/core-redesign/tasks/EXP-07/comparison-result.ja.md)でE01〜04の96 ABI pairを整理した。
+K0設定2件化・表示交換・タッチ追加は既存証拠を型選択6件で対応確認し、新しいqueue4→1はhost39件＋workspace3件・ABI196で比較した。
+queue縮小のRAM−24 Bとapply拒否の反例を分離。E05切断復旧追加と人による評価は未完了で、N07を続ける。
+
 **DESIGN-01：P0 の全体設計案作成**は完了。
 
 - 入力：この計画、TODO のコンセプト・用途・タスク・永続化、FEATURE_CANDIDATES。

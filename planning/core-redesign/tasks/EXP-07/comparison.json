@@ -1,0 +1,2541 @@
+{
+  "scope": "mechanical comparison only; historical evidence stays historical; no educational effectiveness scores",
+  "inputs": {
+    "planning/core-redesign/change-exercises-records.json": "dea944fc50d7944363cc5cbe556bcb6f88439bd3da29216732838f261bfaede7",
+    "planning/core-redesign/tasks/EXP-07/k0-two/before.cpp": "aad3df24f78c87d88c750f63cb27e33ea39922d47e8d8f3e6c0556e73d57b773",
+    "planning/core-redesign/tasks/EXP-07/k0-two/after.cpp": "d2e805b8f4d1ff3931894c39f664a07575fa6108f9a3c2b54d5c39ecbd18c84c",
+    "planning/core-redesign/tasks/EXP-06/k0-slave-register-size-matrix.csv": "62594425317a82cdcdaa8c8921d7cb775c3046a2d49bd4f8b263ee703e6ea826",
+    "planning/core-redesign/tasks/EXP-06/k0-slave-register-measurements.json": "96c49eae650022f700fab8b0139b064388364cd1ebfc7958c788e60df3110321",
+    "planning/core-redesign/tasks/EXP-07/display-change/before.cpp": "c9295cec6075aed62089e5f6b15c696f2c4e1da286f57131ccc4418dce4cc421",
+    "planning/core-redesign/tasks/EXP-07/display-change/after.cpp": "7a357b0edcdb79fd9961ffa79f95bcf5679452161265a7eebb5a577c03bec991",
+    "planning/core-redesign/tasks/EXP-05/display-size-matrix.csv": "22dd199be11cbb54ab482fdfff13c0d5f3ad989a53abdc9e60096ae7732762b7",
+    "planning/core-redesign/tasks/EXP-05/display-measurements.json": "42fbf252a60900a3a44faafb68b97b5d07765221ecbc8c5f43f4bf94a0a2c6f9",
+    "planning/core-redesign/tasks/EXP-07/touch-add/before.cpp": "50a512fc824f64504e39837d184f433350e72893f6a07d2c96b8f940939fea2b",
+    "planning/core-redesign/tasks/EXP-07/touch-add/after.cpp": "9f7a83f690dad9d58173c51d610ff3ad0404bfa20e0684970b073923792ea49f",
+    "planning/core-redesign/tasks/EXP-06/x0-features-size-matrix.csv": "5b670447aab36a9c1a1ef9955affdf37281a9d0c1ba285303a056c95c8351607",
+    "planning/core-redesign/tasks/EXP-06/x0-features-measurements.json": "d23ad68bce5e2e55728d1cc6e5547317fa082c8faff3228db2c411e55add7266",
+    "planning/core-redesign/tasks/EXP-07/queue-change/before.cpp": "6985b91bca73b296d13b3bacf33f68ee9d43575499284d73624aa3e83a4aeb64",
+    "planning/core-redesign/tasks/EXP-07/queue-change/after.cpp": "52e2fc66f82d87063121fe6bc3b17599fd19c700f956b28133ea95e91d7ba2a7",
+    "planning/core-redesign/tasks/EXP-07/queue-change-size-matrix.csv": "703f949182a4140c28ff3cadc8314e13ba740906988a2e5110431ed65605cedb",
+    "tests/unit/core_redesign/x0_capacity.hpp": "beff635987b4e3a79d8a22763a92a08e2b45d94dfc5afbf95f82ec224d1ecae6"
+  },
+  "records": [
+    {
+      "id": "E01",
+      "name": "K0 configuration queue 1 to 2",
+      "status": "historical-normalized",
+      "directory": "k0-two",
+      "abi_csv": "tasks/EXP-06/k0-slave-register-size-matrix.csv",
+      "historical_manifest": "tasks/EXP-06/k0-slave-register-measurements.json",
+      "group_axes": [
+        "part",
+        "lto",
+        "candidate",
+        "policy"
+      ],
+      "candidate_pattern": "-(R|A|B|C-bridge)-n[12]$",
+      "before_filter": {
+        "capacity": "1",
+        "unused": "False"
+      },
+      "after_filter": {
+        "capacity": "2",
+        "unused": "False"
+      },
+      "image_field": "image_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": "application_object_bytes",
+      "shared_preparation": [],
+      "added_state": [
+        "one additional protected K0Frame payload8",
+        "staging/read snapshots/executor capacity unchanged"
+      ],
+      "semantic_change": "second complete configuration can be retained before normal progress; rejection threshold moves, both ACK policies remain distinct",
+      "host_evidence": "tasks/EXP-06/k0-slave-register-result.ja.md",
+      "unverified": [
+        "physical ACK/foreign restart/IRQ",
+        "human prediction and editing"
+      ],
+      "expected_pairs": 32,
+      "matrix_sha_pointer": [
+        "matrix_sha256"
+      ],
+      "logical_edited_files": 1,
+      "selection_lines_added": 1,
+      "selection_lines_removed": 1,
+      "shared_preparation_metrics": [],
+      "abi_pair_count": 32,
+      "pairs": [
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "candidate": "A",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-A-n1",
+          "after_case": "ack-discard-A-n2",
+          "image": {
+            "before": 1664,
+            "after": 1696,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 141,
+            "after": 149,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "candidate": "A",
+            "policy": "1"
+          },
+          "before_case": "data-nack-A-n1",
+          "after_case": "data-nack-A-n2",
+          "image": {
+            "before": 1736,
+            "after": 1768,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 141,
+            "after": 149,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "candidate": "B",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-B-n1",
+          "after_case": "ack-discard-B-n2",
+          "image": {
+            "before": 1896,
+            "after": 1920,
+            "delta": 24
+          },
+          "static_ram": {
+            "before": 181,
+            "after": 189,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 108,
+            "after": 116,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "candidate": "B",
+            "policy": "1"
+          },
+          "before_case": "data-nack-B-n1",
+          "after_case": "data-nack-B-n2",
+          "image": {
+            "before": 1960,
+            "after": 1992,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 181,
+            "after": 189,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 108,
+            "after": 116,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "candidate": "C-bridge",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-C-bridge-n1",
+          "after_case": "ack-discard-C-bridge-n2",
+          "image": {
+            "before": 1952,
+            "after": 1984,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 189,
+            "after": 197,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 120,
+            "after": 128,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "candidate": "C-bridge",
+            "policy": "1"
+          },
+          "before_case": "data-nack-C-bridge-n1",
+          "after_case": "data-nack-C-bridge-n2",
+          "image": {
+            "before": 2024,
+            "after": 2056,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 189,
+            "after": 197,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 120,
+            "after": 128,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "candidate": "R",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-R-n1",
+          "after_case": "ack-discard-R-n2",
+          "image": {
+            "before": 1664,
+            "after": 1696,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 141,
+            "after": 149,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "candidate": "R",
+            "policy": "1"
+          },
+          "before_case": "data-nack-R-n1",
+          "after_case": "data-nack-R-n2",
+          "image": {
+            "before": 1736,
+            "after": 1768,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 141,
+            "after": 149,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "candidate": "A",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-A-n1",
+          "after_case": "ack-discard-A-n2",
+          "image": {
+            "before": 1624,
+            "after": 1656,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 144,
+            "after": 152,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "candidate": "A",
+            "policy": "1"
+          },
+          "before_case": "data-nack-A-n1",
+          "after_case": "data-nack-A-n2",
+          "image": {
+            "before": 1776,
+            "after": 1808,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 144,
+            "after": 152,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "candidate": "B",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-B-n1",
+          "after_case": "ack-discard-B-n2",
+          "image": {
+            "before": 1864,
+            "after": 1888,
+            "delta": 24
+          },
+          "static_ram": {
+            "before": 184,
+            "after": 192,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 108,
+            "after": 116,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "candidate": "B",
+            "policy": "1"
+          },
+          "before_case": "data-nack-B-n1",
+          "after_case": "data-nack-B-n2",
+          "image": {
+            "before": 1928,
+            "after": 1960,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 184,
+            "after": 192,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 108,
+            "after": 116,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "candidate": "C-bridge",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-C-bridge-n1",
+          "after_case": "ack-discard-C-bridge-n2",
+          "image": {
+            "before": 1920,
+            "after": 1944,
+            "delta": 24
+          },
+          "static_ram": {
+            "before": 192,
+            "after": 200,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 120,
+            "after": 128,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "candidate": "C-bridge",
+            "policy": "1"
+          },
+          "before_case": "data-nack-C-bridge-n1",
+          "after_case": "data-nack-C-bridge-n2",
+          "image": {
+            "before": 1984,
+            "after": 2016,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 192,
+            "after": 200,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 120,
+            "after": 128,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "candidate": "R",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-R-n1",
+          "after_case": "ack-discard-R-n2",
+          "image": {
+            "before": 1664,
+            "after": 1696,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 144,
+            "after": 152,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "candidate": "R",
+            "policy": "1"
+          },
+          "before_case": "data-nack-R-n1",
+          "after_case": "data-nack-R-n2",
+          "image": {
+            "before": 1816,
+            "after": 1848,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 144,
+            "after": 152,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "candidate": "A",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-A-n1",
+          "after_case": "ack-discard-A-n2",
+          "image": {
+            "before": 1624,
+            "after": 1648,
+            "delta": 24
+          },
+          "static_ram": {
+            "before": 141,
+            "after": 149,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "candidate": "A",
+            "policy": "1"
+          },
+          "before_case": "data-nack-A-n1",
+          "after_case": "data-nack-A-n2",
+          "image": {
+            "before": 1688,
+            "after": 1720,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 141,
+            "after": 149,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "candidate": "B",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-B-n1",
+          "after_case": "ack-discard-B-n2",
+          "image": {
+            "before": 1848,
+            "after": 1880,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 181,
+            "after": 189,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 108,
+            "after": 116,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "candidate": "B",
+            "policy": "1"
+          },
+          "before_case": "data-nack-B-n1",
+          "after_case": "data-nack-B-n2",
+          "image": {
+            "before": 1912,
+            "after": 1944,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 181,
+            "after": 189,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 108,
+            "after": 116,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "candidate": "C-bridge",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-C-bridge-n1",
+          "after_case": "ack-discard-C-bridge-n2",
+          "image": {
+            "before": 1912,
+            "after": 1944,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 189,
+            "after": 197,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 120,
+            "after": 128,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "candidate": "C-bridge",
+            "policy": "1"
+          },
+          "before_case": "data-nack-C-bridge-n1",
+          "after_case": "data-nack-C-bridge-n2",
+          "image": {
+            "before": 1984,
+            "after": 2016,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 189,
+            "after": 197,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 120,
+            "after": 128,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "candidate": "R",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-R-n1",
+          "after_case": "ack-discard-R-n2",
+          "image": {
+            "before": 1624,
+            "after": 1648,
+            "delta": 24
+          },
+          "static_ram": {
+            "before": 141,
+            "after": 149,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "candidate": "R",
+            "policy": "1"
+          },
+          "before_case": "data-nack-R-n1",
+          "after_case": "data-nack-R-n2",
+          "image": {
+            "before": 1688,
+            "after": 1720,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 141,
+            "after": 149,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "candidate": "A",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-A-n1",
+          "after_case": "ack-discard-A-n2",
+          "image": {
+            "before": 1592,
+            "after": 1624,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 144,
+            "after": 152,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "candidate": "A",
+            "policy": "1"
+          },
+          "before_case": "data-nack-A-n1",
+          "after_case": "data-nack-A-n2",
+          "image": {
+            "before": 1656,
+            "after": 1688,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 144,
+            "after": 152,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "candidate": "B",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-B-n1",
+          "after_case": "ack-discard-B-n2",
+          "image": {
+            "before": 1832,
+            "after": 1864,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 184,
+            "after": 192,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 108,
+            "after": 116,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "candidate": "B",
+            "policy": "1"
+          },
+          "before_case": "data-nack-B-n1",
+          "after_case": "data-nack-B-n2",
+          "image": {
+            "before": 1896,
+            "after": 1928,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 184,
+            "after": 192,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 108,
+            "after": 116,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "candidate": "C-bridge",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-C-bridge-n1",
+          "after_case": "ack-discard-C-bridge-n2",
+          "image": {
+            "before": 1896,
+            "after": 1928,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 192,
+            "after": 200,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 120,
+            "after": 128,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "candidate": "C-bridge",
+            "policy": "1"
+          },
+          "before_case": "data-nack-C-bridge-n1",
+          "after_case": "data-nack-C-bridge-n2",
+          "image": {
+            "before": 1960,
+            "after": 2000,
+            "delta": 40
+          },
+          "static_ram": {
+            "before": 192,
+            "after": 200,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 120,
+            "after": 128,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "candidate": "R",
+            "policy": "0"
+          },
+          "before_case": "ack-discard-R-n1",
+          "after_case": "ack-discard-R-n2",
+          "image": {
+            "before": 1632,
+            "after": 1664,
+            "delta": 32
+          },
+          "static_ram": {
+            "before": 144,
+            "after": 152,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "candidate": "R",
+            "policy": "1"
+          },
+          "before_case": "data-nack-R-n1",
+          "after_case": "data-nack-R-n2",
+          "image": {
+            "before": 1704,
+            "after": 1728,
+            "delta": 24
+          },
+          "static_ram": {
+            "before": 144,
+            "after": 152,
+            "delta": 8
+          },
+          "application_object": {
+            "before": 72,
+            "after": 80,
+            "delta": 8
+          }
+        }
+      ],
+      "human_review": null,
+      "generation_time_as_score": false
+    },
+    {
+      "id": "E02",
+      "name": "X0 mono64 to compact32 mock display",
+      "status": "historical-normalized",
+      "directory": "display-change",
+      "abi_csv": "tasks/EXP-05/display-size-matrix.csv",
+      "historical_manifest": "tasks/EXP-05/display-measurements.json",
+      "group_axes": [
+        "part",
+        "lto",
+        "family"
+      ],
+      "before_filter": {
+        "panel": "0",
+        "unused": "False",
+        "library_only": "False"
+      },
+      "after_filter": {
+        "panel": "1",
+        "unused": "False",
+        "library_only": "False"
+      },
+      "image_field": "image_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": "application_object_bytes",
+      "shared_preparation": [],
+      "added_state": [
+        "tx limit32 to31",
+        "View/frozen state unchanged; no resident whole framebuffer"
+      ],
+      "semantic_change": "mock geometry1024 to512 bytes, status moves, final chunk16; changed wire load and latency, not an identical physical panel",
+      "host_evidence": "tasks/EXP-05/display-result.ja.md",
+      "unverified": [
+        "real panel init/commands/wire",
+        "MCU render time",
+        "human prediction and editing"
+      ],
+      "exclude_cases": [
+        "empty"
+      ],
+      "expected_pairs": 16,
+      "matrix_sha_pointer": [
+        "abi",
+        "matrix_sha256"
+      ],
+      "logical_edited_files": 1,
+      "selection_lines_added": 1,
+      "selection_lines_removed": 1,
+      "shared_preparation_metrics": [],
+      "abi_pair_count": 16,
+      "pairs": [
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "1"
+          },
+          "before_case": "R-mono64-32",
+          "after_case": "R-compact32-31",
+          "image": {
+            "before": 3112,
+            "after": 3200,
+            "delta": 88
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 428,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 356,
+            "after": 356,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "2"
+          },
+          "before_case": "A-mono64-32",
+          "after_case": "A-compact32-31",
+          "image": {
+            "before": 3112,
+            "after": 3200,
+            "delta": 88
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 428,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 356,
+            "after": 356,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "3"
+          },
+          "before_case": "B-mono64-32",
+          "after_case": "B-compact32-31",
+          "image": {
+            "before": 3576,
+            "after": 3680,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 452,
+            "after": 452,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 384,
+            "after": 384,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "4"
+          },
+          "before_case": "C-mono64-32",
+          "after_case": "C-compact32-31",
+          "image": {
+            "before": 3616,
+            "after": 3720,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 436,
+            "after": 436,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 368,
+            "after": 368,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "1"
+          },
+          "before_case": "R-mono64-32",
+          "after_case": "R-compact32-31",
+          "image": {
+            "before": 3104,
+            "after": 3152,
+            "delta": 48
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 428,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 356,
+            "after": 356,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "2"
+          },
+          "before_case": "A-mono64-32",
+          "after_case": "A-compact32-31",
+          "image": {
+            "before": 3120,
+            "after": 3160,
+            "delta": 40
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 428,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 356,
+            "after": 356,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "3"
+          },
+          "before_case": "B-mono64-32",
+          "after_case": "B-compact32-31",
+          "image": {
+            "before": 3528,
+            "after": 3584,
+            "delta": 56
+          },
+          "static_ram": {
+            "before": 452,
+            "after": 452,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 384,
+            "after": 384,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "4"
+          },
+          "before_case": "C-mono64-32",
+          "after_case": "C-compact32-31",
+          "image": {
+            "before": 3704,
+            "after": 3608,
+            "delta": -96
+          },
+          "static_ram": {
+            "before": 436,
+            "after": 436,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 368,
+            "after": 368,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "1"
+          },
+          "before_case": "R-mono64-32",
+          "after_case": "R-compact32-31",
+          "image": {
+            "before": 2840,
+            "after": 2936,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 428,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 356,
+            "after": 356,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "2"
+          },
+          "before_case": "A-mono64-32",
+          "after_case": "A-compact32-31",
+          "image": {
+            "before": 2840,
+            "after": 2936,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 428,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 356,
+            "after": 356,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "3"
+          },
+          "before_case": "B-mono64-32",
+          "after_case": "B-compact32-31",
+          "image": {
+            "before": 3296,
+            "after": 3392,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 452,
+            "after": 452,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 384,
+            "after": 384,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "4"
+          },
+          "before_case": "C-mono64-32",
+          "after_case": "C-compact32-31",
+          "image": {
+            "before": 3344,
+            "after": 3448,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 436,
+            "after": 436,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 368,
+            "after": 368,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "1"
+          },
+          "before_case": "R-mono64-32",
+          "after_case": "R-compact32-31",
+          "image": {
+            "before": 2784,
+            "after": 2832,
+            "delta": 48
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 428,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 356,
+            "after": 356,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "2"
+          },
+          "before_case": "A-mono64-32",
+          "after_case": "A-compact32-31",
+          "image": {
+            "before": 2800,
+            "after": 2856,
+            "delta": 56
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 428,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 356,
+            "after": 356,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "3"
+          },
+          "before_case": "B-mono64-32",
+          "after_case": "B-compact32-31",
+          "image": {
+            "before": 3232,
+            "after": 3288,
+            "delta": 56
+          },
+          "static_ram": {
+            "before": 452,
+            "after": 452,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 384,
+            "after": 384,
+            "delta": 0
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "4"
+          },
+          "before_case": "C-mono64-32",
+          "after_case": "C-compact32-31",
+          "image": {
+            "before": 3232,
+            "after": 3248,
+            "delta": 16
+          },
+          "static_ram": {
+            "before": 436,
+            "after": 436,
+            "delta": 0
+          },
+          "application_object": {
+            "before": 368,
+            "after": 368,
+            "delta": 0
+          }
+        }
+      ],
+      "human_review": null,
+      "generation_time_as_score": false
+    },
+    {
+      "id": "E03",
+      "name": "X0 compile-time touch off to on",
+      "status": "historical-normalized",
+      "directory": "touch-add",
+      "abi_csv": "tasks/EXP-06/x0-features-size-matrix.csv",
+      "historical_manifest": "tasks/EXP-06/x0-features-measurements.json",
+      "group_axes": [
+        "arch",
+        "lto",
+        "candidate"
+      ],
+      "candidate_pattern": "^(R|A|B|C)-(?:off|on)$",
+      "before_suffix": "-off",
+      "after_suffix": "-on",
+      "before_filter": {},
+      "after_filter": {},
+      "image_field": "flash_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": null,
+      "shared_preparation": [],
+      "added_state": [
+        "touch_data8, three uint32 fields, pending flag",
+        "bus adds owner start counter and failure slot"
+      ],
+      "semantic_change": "add periodic 8-byte 50Hz touch traffic to shared bus; compiler-selected feature, not runtime switching",
+      "host_evidence": "tasks/EXP-06/x0-features-result.ja.md",
+      "unverified": [
+        "physical touch protocol/controller",
+        "M/S/U cross-profile ABI for this historical matrix",
+        "human prediction and editing"
+      ],
+      "expected_pairs": 16,
+      "manifest_rows_pointer": [
+        "results"
+      ],
+      "logical_edited_files": 1,
+      "selection_lines_added": 1,
+      "selection_lines_removed": 1,
+      "shared_preparation_metrics": [],
+      "abi_pair_count": 16,
+      "pairs": [
+        {
+          "axes": {
+            "arch": "rv32e",
+            "lto": "False",
+            "candidate": "A"
+          },
+          "before_case": "A-off",
+          "after_case": "A-on",
+          "image": {
+            "before": 3106,
+            "after": 3310,
+            "delta": 204
+          },
+          "static_ram": {
+            "before": 348,
+            "after": 376,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32e",
+            "lto": "False",
+            "candidate": "B"
+          },
+          "before_case": "B-off",
+          "after_case": "B-on",
+          "image": {
+            "before": 3562,
+            "after": 3774,
+            "delta": 212
+          },
+          "static_ram": {
+            "before": 376,
+            "after": 404,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32e",
+            "lto": "False",
+            "candidate": "C"
+          },
+          "before_case": "C-off",
+          "after_case": "C-on",
+          "image": {
+            "before": 3702,
+            "after": 3918,
+            "delta": 216
+          },
+          "static_ram": {
+            "before": 360,
+            "after": 388,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32e",
+            "lto": "False",
+            "candidate": "R"
+          },
+          "before_case": "R-off",
+          "after_case": "R-on",
+          "image": {
+            "before": 3106,
+            "after": 3310,
+            "delta": 204
+          },
+          "static_ram": {
+            "before": 348,
+            "after": 376,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32e",
+            "lto": "True",
+            "candidate": "A"
+          },
+          "before_case": "A-off",
+          "after_case": "A-on",
+          "image": {
+            "before": 3038,
+            "after": 3254,
+            "delta": 216
+          },
+          "static_ram": {
+            "before": 348,
+            "after": 376,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32e",
+            "lto": "True",
+            "candidate": "B"
+          },
+          "before_case": "B-off",
+          "after_case": "B-on",
+          "image": {
+            "before": 3478,
+            "after": 3654,
+            "delta": 176
+          },
+          "static_ram": {
+            "before": 376,
+            "after": 404,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32e",
+            "lto": "True",
+            "candidate": "C"
+          },
+          "before_case": "C-off",
+          "after_case": "C-on",
+          "image": {
+            "before": 3562,
+            "after": 3862,
+            "delta": 300
+          },
+          "static_ram": {
+            "before": 360,
+            "after": 388,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32e",
+            "lto": "True",
+            "candidate": "R"
+          },
+          "before_case": "R-off",
+          "after_case": "R-on",
+          "image": {
+            "before": 3014,
+            "after": 3226,
+            "delta": 212
+          },
+          "static_ram": {
+            "before": 348,
+            "after": 376,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32i",
+            "lto": "False",
+            "candidate": "A"
+          },
+          "before_case": "A-off",
+          "after_case": "A-on",
+          "image": {
+            "before": 2790,
+            "after": 2966,
+            "delta": 176
+          },
+          "static_ram": {
+            "before": 348,
+            "after": 376,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32i",
+            "lto": "False",
+            "candidate": "B"
+          },
+          "before_case": "B-off",
+          "after_case": "B-on",
+          "image": {
+            "before": 3254,
+            "after": 3426,
+            "delta": 172
+          },
+          "static_ram": {
+            "before": 376,
+            "after": 404,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32i",
+            "lto": "False",
+            "candidate": "C"
+          },
+          "before_case": "C-off",
+          "after_case": "C-on",
+          "image": {
+            "before": 3382,
+            "after": 3570,
+            "delta": 188
+          },
+          "static_ram": {
+            "before": 360,
+            "after": 388,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32i",
+            "lto": "False",
+            "candidate": "R"
+          },
+          "before_case": "R-off",
+          "after_case": "R-on",
+          "image": {
+            "before": 2790,
+            "after": 2966,
+            "delta": 176
+          },
+          "static_ram": {
+            "before": 348,
+            "after": 376,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32i",
+            "lto": "True",
+            "candidate": "A"
+          },
+          "before_case": "A-off",
+          "after_case": "A-on",
+          "image": {
+            "before": 2682,
+            "after": 2874,
+            "delta": 192
+          },
+          "static_ram": {
+            "before": 348,
+            "after": 376,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32i",
+            "lto": "True",
+            "candidate": "B"
+          },
+          "before_case": "B-off",
+          "after_case": "B-on",
+          "image": {
+            "before": 3158,
+            "after": 3314,
+            "delta": 156
+          },
+          "static_ram": {
+            "before": 376,
+            "after": 404,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32i",
+            "lto": "True",
+            "candidate": "C"
+          },
+          "before_case": "C-off",
+          "after_case": "C-on",
+          "image": {
+            "before": 3198,
+            "after": 3478,
+            "delta": 280
+          },
+          "static_ram": {
+            "before": 360,
+            "after": 388,
+            "delta": 28
+          },
+          "application_object": null
+        },
+        {
+          "axes": {
+            "arch": "rv32i",
+            "lto": "True",
+            "candidate": "R"
+          },
+          "before_case": "R-off",
+          "after_case": "R-on",
+          "image": {
+            "before": 2658,
+            "after": 2846,
+            "delta": 188
+          },
+          "static_ram": {
+            "before": 348,
+            "after": 376,
+            "delta": 28
+          },
+          "application_object": null
+        }
+      ],
+      "human_review": null,
+      "generation_time_as_score": false
+    },
+    {
+      "id": "E04",
+      "name": "X0 input queue 4 to 1",
+      "status": "new-normalized",
+      "directory": "queue-change",
+      "abi_csv": "tasks/EXP-07/queue-change-size-matrix.csv",
+      "group_axes": [
+        "part",
+        "lto",
+        "family",
+        "touch"
+      ],
+      "before_filter": {
+        "selection_case": "1",
+        "unused": "False"
+      },
+      "after_filter": {
+        "selection_case": "2",
+        "unused": "False"
+      },
+      "image_field": "image_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": "application_object_bytes",
+      "shared_preparation": [
+        "tests/unit/core_redesign/x0_capacity.hpp"
+      ],
+      "added_state": [
+        "no extra application state",
+        "three X0Envelope slots removed: payload24 bytes",
+        "C automatic batch payload24 bytes smaller; not observed stack peak"
+      ],
+      "semantic_change": "same reject-new policy, smaller burst capacity; apply can be refused after increment; lossless producer retry needs separate caller state/budget",
+      "host_evidence": "tasks/EXP-07/queue-change-result.ja.md",
+      "unverified": [
+        "physical PD/I2C/IRQ",
+        "real peak stack",
+        "resident retry producer budget",
+        "human prediction and editing"
+      ],
+      "expected_pairs": 32,
+      "logical_edited_files": 1,
+      "selection_lines_added": 1,
+      "selection_lines_removed": 1,
+      "shared_preparation_metrics": [
+        {
+          "path": "tests/unit/core_redesign/x0_capacity.hpp",
+          "bytes": 2357,
+          "lines": 41
+        }
+      ],
+      "abi_pair_count": 32,
+      "pairs": [
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "1",
+            "touch": "False"
+          },
+          "before_case": "R-t0-before",
+          "after_case": "R-t0-after",
+          "image": {
+            "before": 2912,
+            "after": 2872,
+            "delta": -40
+          },
+          "static_ram": {
+            "before": 412,
+            "after": 388,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 328,
+            "after": 304,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "1",
+            "touch": "True"
+          },
+          "before_case": "R-t1-before",
+          "after_case": "R-t1-after",
+          "image": {
+            "before": 3112,
+            "after": 3048,
+            "delta": -64
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "2",
+            "touch": "False"
+          },
+          "before_case": "A-t0-before",
+          "after_case": "A-t0-after",
+          "image": {
+            "before": 2912,
+            "after": 2872,
+            "delta": -40
+          },
+          "static_ram": {
+            "before": 412,
+            "after": 388,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 328,
+            "after": 304,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "2",
+            "touch": "True"
+          },
+          "before_case": "A-t1-before",
+          "after_case": "A-t1-after",
+          "image": {
+            "before": 3112,
+            "after": 3048,
+            "delta": -64
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "3",
+            "touch": "False"
+          },
+          "before_case": "B-t0-before",
+          "after_case": "B-t0-after",
+          "image": {
+            "before": 3408,
+            "after": 3360,
+            "delta": -48
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "3",
+            "touch": "True"
+          },
+          "before_case": "B-t1-before",
+          "after_case": "B-t1-after",
+          "image": {
+            "before": 3592,
+            "after": 3544,
+            "delta": -48
+          },
+          "static_ram": {
+            "before": 468,
+            "after": 444,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 384,
+            "after": 360,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "4",
+            "touch": "False"
+          },
+          "before_case": "C-static-batch-t0-before",
+          "after_case": "C-static-batch-t0-after",
+          "image": {
+            "before": 3392,
+            "after": 3320,
+            "delta": -72
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 404,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 340,
+            "after": 316,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "4",
+            "touch": "True"
+          },
+          "before_case": "C-static-batch-t1-before",
+          "after_case": "C-static-batch-t1-after",
+          "image": {
+            "before": 3600,
+            "after": 3496,
+            "delta": -104
+          },
+          "static_ram": {
+            "before": 452,
+            "after": 428,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 368,
+            "after": 344,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "1",
+            "touch": "False"
+          },
+          "before_case": "R-t0-before",
+          "after_case": "R-t0-after",
+          "image": {
+            "before": 2872,
+            "after": 2824,
+            "delta": -48
+          },
+          "static_ram": {
+            "before": 412,
+            "after": 388,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 328,
+            "after": 304,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "1",
+            "touch": "True"
+          },
+          "before_case": "R-t1-before",
+          "after_case": "R-t1-after",
+          "image": {
+            "before": 3152,
+            "after": 3088,
+            "delta": -64
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "2",
+            "touch": "False"
+          },
+          "before_case": "A-t0-before",
+          "after_case": "A-t0-after",
+          "image": {
+            "before": 2888,
+            "after": 2840,
+            "delta": -48
+          },
+          "static_ram": {
+            "before": 412,
+            "after": 388,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 328,
+            "after": 304,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "2",
+            "touch": "True"
+          },
+          "before_case": "A-t1-before",
+          "after_case": "A-t1-after",
+          "image": {
+            "before": 3056,
+            "after": 3104,
+            "delta": 48
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "3",
+            "touch": "False"
+          },
+          "before_case": "B-t0-before",
+          "after_case": "B-t0-after",
+          "image": {
+            "before": 3328,
+            "after": 3280,
+            "delta": -48
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "3",
+            "touch": "True"
+          },
+          "before_case": "B-t1-before",
+          "after_case": "B-t1-after",
+          "image": {
+            "before": 3488,
+            "after": 3424,
+            "delta": -64
+          },
+          "static_ram": {
+            "before": 468,
+            "after": 444,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 384,
+            "after": 360,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "4",
+            "touch": "False"
+          },
+          "before_case": "C-static-batch-t0-before",
+          "after_case": "C-static-batch-t0-after",
+          "image": {
+            "before": 3280,
+            "after": 3192,
+            "delta": -88
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 404,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 340,
+            "after": 316,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "4",
+            "touch": "True"
+          },
+          "before_case": "C-static-batch-t1-before",
+          "after_case": "C-static-batch-t1-after",
+          "image": {
+            "before": 3536,
+            "after": 3440,
+            "delta": -96
+          },
+          "static_ram": {
+            "before": 452,
+            "after": 428,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 368,
+            "after": 344,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "1",
+            "touch": "False"
+          },
+          "before_case": "R-t0-before",
+          "after_case": "R-t0-after",
+          "image": {
+            "before": 2648,
+            "after": 2600,
+            "delta": -48
+          },
+          "static_ram": {
+            "before": 412,
+            "after": 388,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 328,
+            "after": 304,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "1",
+            "touch": "True"
+          },
+          "before_case": "R-t1-before",
+          "after_case": "R-t1-after",
+          "image": {
+            "before": 2816,
+            "after": 2752,
+            "delta": -64
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "2",
+            "touch": "False"
+          },
+          "before_case": "A-t0-before",
+          "after_case": "A-t0-after",
+          "image": {
+            "before": 2648,
+            "after": 2600,
+            "delta": -48
+          },
+          "static_ram": {
+            "before": 412,
+            "after": 388,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 328,
+            "after": 304,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "2",
+            "touch": "True"
+          },
+          "before_case": "A-t1-before",
+          "after_case": "A-t1-after",
+          "image": {
+            "before": 2816,
+            "after": 2752,
+            "delta": -64
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "3",
+            "touch": "False"
+          },
+          "before_case": "B-t0-before",
+          "after_case": "B-t0-after",
+          "image": {
+            "before": 3112,
+            "after": 3072,
+            "delta": -40
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "3",
+            "touch": "True"
+          },
+          "before_case": "B-t1-before",
+          "after_case": "B-t1-after",
+          "image": {
+            "before": 3280,
+            "after": 3224,
+            "delta": -56
+          },
+          "static_ram": {
+            "before": 468,
+            "after": 444,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 384,
+            "after": 360,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "4",
+            "touch": "False"
+          },
+          "before_case": "C-static-batch-t0-before",
+          "after_case": "C-static-batch-t0-after",
+          "image": {
+            "before": 3088,
+            "after": 3000,
+            "delta": -88
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 404,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 340,
+            "after": 316,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "4",
+            "touch": "True"
+          },
+          "before_case": "C-static-batch-t1-before",
+          "after_case": "C-static-batch-t1-after",
+          "image": {
+            "before": 3272,
+            "after": 3160,
+            "delta": -112
+          },
+          "static_ram": {
+            "before": 452,
+            "after": 428,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 368,
+            "after": 344,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "1",
+            "touch": "False"
+          },
+          "before_case": "R-t0-before",
+          "after_case": "R-t0-after",
+          "image": {
+            "before": 2528,
+            "after": 2472,
+            "delta": -56
+          },
+          "static_ram": {
+            "before": 412,
+            "after": 388,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 328,
+            "after": 304,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "1",
+            "touch": "True"
+          },
+          "before_case": "R-t1-before",
+          "after_case": "R-t1-after",
+          "image": {
+            "before": 2728,
+            "after": 2664,
+            "delta": -64
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "2",
+            "touch": "False"
+          },
+          "before_case": "A-t0-before",
+          "after_case": "A-t0-after",
+          "image": {
+            "before": 2552,
+            "after": 2496,
+            "delta": -56
+          },
+          "static_ram": {
+            "before": 412,
+            "after": 388,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 328,
+            "after": 304,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "2",
+            "touch": "True"
+          },
+          "before_case": "A-t1-before",
+          "after_case": "A-t1-after",
+          "image": {
+            "before": 2736,
+            "after": 2680,
+            "delta": -56
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "3",
+            "touch": "False"
+          },
+          "before_case": "B-t0-before",
+          "after_case": "B-t0-after",
+          "image": {
+            "before": 3024,
+            "after": 2968,
+            "delta": -56
+          },
+          "static_ram": {
+            "before": 444,
+            "after": 420,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 356,
+            "after": 332,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "3",
+            "touch": "True"
+          },
+          "before_case": "B-t1-before",
+          "after_case": "B-t1-after",
+          "image": {
+            "before": 3168,
+            "after": 3096,
+            "delta": -72
+          },
+          "static_ram": {
+            "before": 468,
+            "after": 444,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 384,
+            "after": 360,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "4",
+            "touch": "False"
+          },
+          "before_case": "C-static-batch-t0-before",
+          "after_case": "C-static-batch-t0-after",
+          "image": {
+            "before": 2960,
+            "after": 2864,
+            "delta": -96
+          },
+          "static_ram": {
+            "before": 428,
+            "after": 404,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 340,
+            "after": 316,
+            "delta": -24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "4",
+            "touch": "True"
+          },
+          "before_case": "C-static-batch-t1-before",
+          "after_case": "C-static-batch-t1-after",
+          "image": {
+            "before": 3200,
+            "after": 3096,
+            "delta": -104
+          },
+          "static_ram": {
+            "before": 452,
+            "after": 428,
+            "delta": -24
+          },
+          "application_object": {
+            "before": 368,
+            "after": 344,
+            "delta": -24
+          }
+        }
+      ],
+      "human_review": null,
+      "generation_time_as_score": false
+    },
+    {
+      "id": "E05",
+      "name": "add disconnect recovery",
+      "status": "pending",
+      "reason": "existing detach/fault tests do not substitute for baseline-to-added-recovery implementation and diff"
+    }
+  ]
+}
