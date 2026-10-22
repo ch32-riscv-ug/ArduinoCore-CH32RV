@@ -779,7 +779,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     落ちていた。直した。`clock()`、`fopen()` なども失敗を返すようにした。X035 の実機で確認済み（2026-10-21: settimeofday の後に
     time / gettimeofday / strftime が経過どおりに進む、clock、fopen / remove が失敗を返す、ecall なし）。millis() の 49.7 日の
     折り返しの処理だけは未確認。
-  - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口。今は X035 / X033 だけ）。
+  - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口）。X305 / X315 は X035 と同じ手順を入れた（2026-10-22、ビルドのみ）。
+    H41x は試して失敗（docs/usb.ja.md）。V20x / V30x / V103 / L103 / V205 / M030 / V4x7 は BOOT_MODE が無く、BOOT0 の端子だけ。
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
   - **UF2（MscFirmwareDisk）での更新はやる**（2026-10-20）。ほかのファームウェア更新のクラス（EspUsbDevice の
     FirmwareUpdate、DFU の Download、CDC / Vendor / ネットワーク経由）も実装予定。使わなければ費用がかからない形にする。
@@ -805,8 +806,9 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     （ESP32-S3 相手）が通った。例は X035 で全部ビルドが通る。費用は docs/usb.ja.md（TinyUSB 版より小さい）。
   - ホスト（CH32RVUsbHost）も自作に移し、CH32RVTinyUSB・vendor/tinyusb.lock.toml・vendor_tinyusb.py を外した
     （2026-10-20）。
-  - 残り: ほかの系列のデバイスのドライバ（V103、V20x の USBFS と USBD、V30x の USBFS と USBHS、第2世代 USBHS）。
-    H417 の USBSS は書いた（実機確認待ち）。ホストの V20x / V30x の実機確認。
+  - 済み: ほかの系列のデバイスのドライバ（V103、V20x の USBFS と USBD、V30x の USBFS と USBHS、第2世代 USBHS、
+    X315 の USBSS。ビルドのみ）。H417 の USBSS は実機確認済み。ホストは USBOTG_FS の全系列（2026-10-22、ビルドのみ）。
+  - 残り: X035 / H417 以外の実機確認。
 - （経緯）**USB スタックを TinyUSB のまま拡張するか、自作するかを決める（基本は 1 つに統合する）。**
   - CherryUSB は見送りの方向（2026-10-20 の調査）。upstream 1.6.1（Apache-2.0）の WCH 向け移植は X035 / X033 に無く
     （USBFS は V20x / V30x の配置だけ）、デバイス側は割り込みの中でクラスのコールバックを呼ぶ。ホスト側は独立した
@@ -896,8 +898,10 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 
 残り（方針待ち・新しい API・実機が要る）:
 - クロックは系列ごとに固定（HSI のみ）。L103 / M103・V205・M030 は 8 MHz で PLL 未使用、V00x は 24 MHz。USB の
-  L103 / M103・V205・M030 と、PD の他系列（USBPD は 48 / 24 / 12 MHz が要る）もこの決定待ち（上の USB の項）。
-- PD の他系列（L103 / M103、V205、X305 / X315、M030）: CC 端子と上のクロック。
+  L103 / M103（PLL が要る）と、V208 / V203RB の Ethernet（HCLK 60 / 120 MHz）がこの決定待ち。
+- PD の他系列（L103 / M103、V205、X305 / X315、H41x、M030 の USBPD0）: 2026-10-22 に入れた（ビルドのみ）。BMC の
+  クロックは F_CPU から計算する（EVT の表は 10〜240 MHz。8 MHz の L103 / V205 / M030 で通るかは実機で確かめる。
+  試験は `--case pd`）。M030 の USBPD1 は未対応。
 - PWM の remap 先と CHxN、TIM8〜10 の PWM。
 - 新しい API: スリープ、永続化（上記「永続化の調査と構成検討」。API・方式は未決定）、WWDG、RTC、SPI のスレーブ、GPIO 以外の EXTI。
   - OEP からの依頼（2026-10-21、dev-oep。急ぎではない）:
