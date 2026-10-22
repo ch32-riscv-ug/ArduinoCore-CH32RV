@@ -765,7 +765,11 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - 2026-10-21 済み: lwIP 2.2.1 の取り込み（vendor/lwip.lock.toml）、`ch32rv_net_task`、Network ライブラリ（固定 / DHCP、
         DHCP サーバー、TCP / UDP、DNS、SNTP の `configTime()`、mDNS の `MDNS`）、USB の NCM のつなぎ（`NetworkUsbNcm`、
         `CH32RVUsbDeviceNet::beginNetwork()` など。受信の流量制御 `receiveGate()`）、PC の試験（tests/unit/network）。
-      - 残り: Ethernet の MAC のドライバ（V208 / V307 / V407 / H417、機材待ち）。対象の系列の USB デバイスのドライバが
+      - 2026-10-22 済み: Ethernet の MAC のドライバ。H417 は実機で HTTPS まで。V407 / V467・V307・V317・V208 / V203RB は
+        EVT から移してビルドまで（docs/network-stack.ja.md の「ほかの系列」）。
+      - 残り: V407 / V307 / V317 / V208 の実機（`--case eth` がそのまま使える）。V208 / V203RB は HCLK 60 / 120 MHz の
+        クロックの選択肢が要る（今の 96 MHz では `ETH.begin()` が false）。V307 のチップのリビジョン 0x20 の回避策。
+        V307 / V317 の HTTPS のヒープ（RAM 64 KB）。対象の系列の USB デバイスのドライバが
         来たら NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント。
       - TLS: Mbed TLS 4.1 に決めた（2026-10-21、比較は docs/network-stack.ja.md）。`NetworkClientSecure`（setCACert /
         setCACertBundle（ESP-IDF の形式）/ setInsecure / クライアント証明書）は PC の試験で通る。実機は未確認。
