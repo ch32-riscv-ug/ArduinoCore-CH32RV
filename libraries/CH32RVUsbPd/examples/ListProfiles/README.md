@@ -6,7 +6,7 @@ Lists charger PDOs and requests 9 V. This actively changes VBUS voltage rather t
 
 ## Hardware and connections
 
-CH32X035/X033 PD CC wiring, a PD charger/cable and a UART monitor. Board power circuitry and loads on VBUS must support the requested 9 V.
+A series with USBPD (CH32X035 and others; CC pads in the library README) PD CC wiring, a PD charger/cable and a UART monitor. Board power circuitry and loads on VBUS must support the requested 9 V.
 
 ## Steps and expected results
 

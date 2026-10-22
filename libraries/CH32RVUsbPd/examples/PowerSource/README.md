@@ -6,7 +6,7 @@ A PD source protocol template with callbacks for a VBUS switch and adjustable su
 
 ## Hardware and connections
 
-CH32X035/X033 source CC circuitry, a current-limited supply, VBUS switch, programmable regulator and UART monitor. On WeAct X035 the sink Rd resistors R4/R5 must be removed for source operation.
+A series with USBPD (CH32X035 and others; CC pads in the library README) source CC circuitry, a current-limited supply, VBUS switch, programmable regulator and UART monitor. On WeAct X035 the sink Rd resistors R4/R5 must be removed for source operation.
 
 ## Steps and expected results
 

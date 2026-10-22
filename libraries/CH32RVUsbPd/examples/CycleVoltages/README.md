@@ -6,7 +6,7 @@ A button cycles through the charger fixed-voltage PDOs and logs contract values.
 
 ## Hardware and connections
 
-CH32X035/X033, a PD charger, a PA1-to-GND button and UART monitor. Board input power circuitry and loads must tolerate the highest fixed voltage offered.
+A series with USBPD (CH32X035 and others; CC pads in the library README), a PD charger, a PA1-to-GND button (PA1 is CC2 on CH32V205: move `BUTTON_PIN`) and UART monitor. Board input power circuitry and loads must tolerate the highest fixed voltage offered.
 
 ## Steps and expected results
 

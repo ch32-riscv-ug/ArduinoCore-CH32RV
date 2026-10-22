@@ -6,7 +6,7 @@ PD Source の protocol と、VBUS スイッチ・可変電源を接続する cal
 
 ## 必要なものと配線
 
-CH32X035/X033 の Source 用 CC 回路、電流制限付き電源、VBUS スイッチ、可変レギュレータ、UART モニタ。WeAct X035 の sink用 Rd は R4/R5で、Source 化には除去が必要です。
+CH32X035 などの USBPD のある系列(CC の端子はライブラリの README) の Source 用 CC 回路、電流制限付き電源、VBUS スイッチ、可変レギュレータ、UART モニタ。WeAct X035 の sink用 Rd は R4/R5で、Source 化には除去が必要です。
 
 ## 操作と期待する結果
 

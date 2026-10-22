@@ -659,12 +659,8 @@ bool CH32RVUsbPdSource::begin()
     pd_parse_source_caps(src.pdo, src.count, &src.offer);
 
     ch32rv_usbpd_irq_hook = source_irq;
-    ch32rv_clock_enable_at(CH32RV_USBPD_CLKEN_ADDR, CH32RV_USBPD_CLKEN_MASK);
-    ch32rv_clock_enable(AFIO);
-    CH32RV_USBPD_AFIO_CTLR |= CH32RV_USBPD_IN_HVT | CH32RV_USBPD_PHY_V33;
-    pinMode(CH32RV_USBPD_CC1_PIN, INPUT);
-    pinMode(CH32RV_USBPD_CC2_PIN, INPUT);
-    CH32RV_USBPD_CONFIG = CH32RV_UPD_PD_DMA_EN;
+    ch32rv_usbpd_phy_init();
+    CH32RV_USBPD_CONFIG = CH32RV_UPD_PD_DMA_EN | CH32RV_USBPD_FILTER;
     CH32RV_USBPD_STATUS = CH32RV_UPD_IF_ALL;
     src.error = PDSourceError::None;
     src.vbus_on = false;

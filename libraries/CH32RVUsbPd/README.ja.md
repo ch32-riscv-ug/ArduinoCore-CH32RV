@@ -34,8 +34,19 @@ void loop() { USBPD.maintain(); }           // PPS契約の維持
 | 層 | 状態 |
 |---|---|
 | Source Capabilitiesの解析、プロファイル選択、Requestの組み立て | 実装済み |
-| ハードウェアドライバ(CC検出・BMC送受信・GoodCRC・sinkのstate machine) | CH32X035/X033で実装済み。固定契約とPPS契約に対応 |
-| L103/M103/V205/X315/H417/M030 | registerとCC padの定義が無いため`begin()`は`false` |
+| ハードウェアドライバ(CC検出・BMC送受信・GoodCRC・sinkのstate machine) | 下の系列で実装済み。固定契約とPPS契約に対応 |
+| X033、M030 | `begin()`は`false`(X033はCCの端子が無い。M030は2ポートで比較器のビットが違い、未実装) |
+
+| 系列 | CC1 / CC2 | 端子 | 状態 |
+|---|---|---|---|
+| CH32X035 | PC14 / PC15 | 入力 | シンクは実機確認、ソースはビルドのみ |
+| CH32L103 / M103 | PB6 / PB7 | 入力 | ビルドのみ |
+| CH32V205 | PA0 / PA1 | AF7 | ビルドのみ(ロット番号の5桁目が0の品にはUSBPDが無い) |
+| CH32X305 / X315 | PD4 / PD5 | AF2 | ビルドのみ |
+| CH32H415 / H416 / H417 | PB3 / PB4 | AF4 | ビルドのみ |
+
+ブロックはどの系列も同じで、違うのは置き場所、CCの端子、PHYのAFIOのビットです(`usbpd_hw.h`)。
+BMCのクロックはF_CPUから計算します(8 MHzのL103 / V205では送信が2.5 %速く、規格の範囲内。実機では未確認)。
 
 ドライバが自分でやること(USB PD R3.1に沿う):
 
@@ -78,9 +89,9 @@ void loop() { USBPD.maintain(); }           // PPS契約の維持
 - **中間電圧を勝手に丸めません。** 5/9/12V充電器に`request(8000)`は
   (PPSが無ければ)`false`です。「近いから9V」はしません。
 - **batteryとvariableは列挙するだけ**で、頼む対象にしません。
-- USBPD block を持つ series は X035/X033、L103/M103、V205、X315、H417、M030 です。
+- USBPD block を持つ series は X035、L103/M103、V205、X305/X315、H41x、M030 です(X033 は CC の端子が無い)。
   register block の配置、clock enable、IRQ、CC pad は series ごとに異なります。
-  library が hardware 定義を持つのは X035/X033 だけで、他の series では `begin()` が `false` を返します。
+  library は X035、L103/M103、V205、X305/X315、H41x の定義を持ちます。X033 と M030 では `begin()` が `false` を返します。
 
 ## ロジックとドライバを分けている理由
 
@@ -101,7 +112,7 @@ CC線は短く。WeActの板でCCからprobeのピンへ長いリードを引い
 
 ## ソース(`USBPDSource`)
 
-同じライブラリで板を USB PD のソース(電源を出す側)にもできます(CH32X035/X033)。電源の切り替えは板の仕事で、
+同じライブラリで板を USB PD のソース(電源を出す側)にもできます(上と同じ系列)。電源の切り替えは板の仕事で、
 2つのコールバックで行います。**両方とも必須**で、無ければ`begin()`が失敗します(理由は`lastErrorName()`)。
 実際にその電圧が出ているかの確認はこのライブラリの範囲外です。
 

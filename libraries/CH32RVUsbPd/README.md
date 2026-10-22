@@ -29,9 +29,20 @@ See [shared setup](examples/README.md),
 [CycleVoltages](examples/CycleVoltages/README.md) and
 [PowerSource](examples/PowerSource/README.md) for wiring, steps and results.
 
-The hardware driver is implemented for CH32X035/X033 and supports fixed and
-PPS contracts. On the other series with a USBPD block, `begin()` returns false
-because their register and CC-pin definitions are not implemented (see `usbpd_hw.h`).
+The hardware driver supports fixed and PPS contracts on these series (the
+block is the same; `usbpd_hw.h` holds where it sits, the CC pads and the PHY's
+AFIO bits). The BMC clock is derived from F_CPU.
+
+| Series | CC1 / CC2 | Pads | Status |
+|---|---|---|---|
+| CH32X035 | PC14 / PC15 | input | sink checked on hardware, source built |
+| CH32L103 / M103 | PB6 / PB7 | input | built only |
+| CH32V205 | PA0 / PA1 | AF7 | built only (lots whose 5th digit is 0 have no USBPD) |
+| CH32X305 / X315 | PD4 / PD5 | AF2 | built only |
+| CH32H415 / H416 / H417 | PB3 / PB4 | AF4 | built only |
+
+CH32X033 bonds no CC pad and CH32M030 (two ports, another comparator encoding)
+is not implemented: `begin()` returns false there.
 
 Every call (`ready()`, `connected()`, `request()`, `maintain()`) moves the
 driver along, so waiting on `ready()` alone reaches a contract. Started
@@ -40,9 +51,6 @@ capabilities back with Soft_Reset, then Hard Reset. It retransmits, follows
 the spec's timers, answers Get_Sink_Cap, says Not_Supported to the rest, and
 re-requests a PPS contract every 5 s while `loop()` calls `maintain()`.
 `contractProfile()` and `pps()` say what the contract is on.
-
-The API also compiles for CH32L103/M103, CH32V205, CH32X315, CH32H417 and
-CH32M030, but those series have no hardware definition in this library.
 
 Everything is millivolts and milliamps. `request()` matches fixed profiles
 exactly and PPS ranges inclusively (20 mV steps, truncated); it prefers a
@@ -53,7 +61,7 @@ and design notes.
 
 ## Source (`USBPDSource`)
 
-The same library also makes the board a USB PD source (CH32X035/X033). The
+The same library also makes the board a USB PD source (the same series). The
 board switches its own supply through two callbacks; both are required and
 `begin()` fails without them (`lastErrorName()` says why). Whether the supply
 really reaches the voltage is the board's job.

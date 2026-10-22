@@ -22,8 +22,8 @@
  * back, PPS at both ends and the middle of its range held 20 s on maintain()
  * alone, refusals, and a restart under a live contract
  * (tests/bench/basic/pd_sink). Implemented for
- * CH32X035/X033; begin() returns false on the other series with the block,
- * whose defines wait on the next device-data adoption (see usbpd_hw.h).
+ * CH32X035 (checked on hardware), L103/M103, V205, X305/X315 and H41x (built
+ * only, usbpd_hw.h); begin() returns false on X033 (no CC pad) and M030.
  *
  * What the driver does on its own, following USB PD R3.1:
  *
@@ -50,10 +50,9 @@
  * Voltages are millivolts, currents milliamps, everywhere. request(9)
  * asking for 9 mV instead of 9 V fails cleanly: no profile offers it.
  *
- * The USBPD block exists on seven series (X035/X033, L103/M103, V205, X315,
- * H417, M030 - two register placements, per-series CC pads), so this library
- * is not X035-specific; the variant will say where its block lives once the
- * defines are generated (blocked on the next device-data adoption).
+ * The USBPD block exists on several series (X035, L103/M103, V205, X305/X315,
+ * H41x, M030 - two register placements, per-series CC pads), so this library
+ * is not X035-specific; usbpd_hw.h says where the block lives on each.
  *
  * Board note: keep the CC lines short. A bench lead from CC to a probe pin
  * (measured on the WeAct board) loads them enough that no message decodes.

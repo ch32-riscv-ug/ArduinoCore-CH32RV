@@ -10,7 +10,8 @@
  * yours) to a USB-serial adapter. A board powered from the charger's VBUS sees
  * every voltage it asks for: make sure its regulator takes the highest one.
  *
- * Runs on CH32X035/X033; on other series begin() is false.
+ * Runs on the series with USBPD (libraries/CH32RVUsbPd/README.md); on the
+ * others begin() is false. PA1 is CC2 on CH32V205: move BUTTON_PIN there.
  */
 #include <CH32RVUsbPd.h>
 

@@ -38,7 +38,7 @@
  *
  * One role at a time: the USBPD block is either this or the sink (USBPD);
  * begin() fails with Busy while the other one runs. Same hardware support as
- * the sink: CH32X035/X033.
+ * the sink (CH32RVUsbPd.h).
  */
 #pragma once
 

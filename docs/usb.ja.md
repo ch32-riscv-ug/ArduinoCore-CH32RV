@@ -62,13 +62,13 @@ V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラ�
 
 | 系列 | デバイス | PD | 確認 |
 |---|---|---|---|
-| CH32X035 / X033 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認（PD ソースはビルドのみ） |
-| CH32H417 / H416 / H415 | USBFS（PA11 / PA12）、H417 / H416 は USBSS（SuperSpeed） | なし | FS は H417 で CDC の送受信を確認。SS は 5000M で列挙、CDC、EP0 の 512 バイトまでの応答、SS 経由の DFU を確認 |
-| ほかの系列 | `begin()` が `false`（`Unsupported`） | `begin()` が `false` | ビルドのみ |
+| CH32X035 | 動く（USBFS） | シンクとソース | X035（WeAct CH32X035F8U6 の板）で実機確認（PD ソースはビルドのみ） |
+| CH32X033 | 動く（USBFS） | なし（CC の端子が無い） | X035 と同じダイ |
+| CH32H417 / H416 / H415 | USBFS（PA11 / PA12）、USBHS、H417 / H416 は USBSS（SuperSpeed） | シンクとソース（PB3 / PB4） | FS は H417 で CDC の送受信を確認。SS は 5000M で列挙、CDC、EP0 の 512 バイトまでの応答、SS 経由の DFU を確認。USBHS と PD はビルドのみ |
+| CH32L103 / M103、V205、X305 / X315 | 上のコントローラの表のとおり | シンクとソース | ビルドのみ。L103 / M103 は既定の 8 MHz ではデバイスの `begin()` が失敗する |
+| CH32M030 | USBFS | なし（2 ポートの PD は未実装） | ビルドのみ |
+| ほかの系列 | 上のコントローラの表のとおり | なし | ビルドのみ |
 
-デバイスは自前のスタックに移したところで、コントローラのドライバ（`CH32RVUsbDcd.h` の表）は X035 / X033 の USBFS
-だけです。V103、V20x（USBFS・USBD）、V30x（USBFS・USBHS）は TinyUSB の時代には動いていた（ビルドのみ）ので、
-そのクロックと PHY の立ち上げ（コミット 3ab1761 の `CH32RVUsbDevicePort.h`）を使ってドライバを足していきます。
 ディスクリプタとクラスは Full / High / SuperSpeed のどれでも組めるようにしてあります。
 
 H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホストにだけつながります。
@@ -339,16 +339,14 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 
 ## 今後の予定
 
-- **デバイスのコントローラのドライバ**: V103 の USBFS、V20x の USBFS と USBD、V30x の USBFS と USBHS（TinyUSB の
-  時代の立ち上げはコミット 3ab1761）。
-- **残りの系列**:
-  - L103 / M103、M030、V205: USB のコントローラは今の USBFS の仕組みで動きますが、ボードの既定クロックが
-    8 MHz（PLL なし）で、USB を動かすには既定のクロックを上げる必要があります（方針の確認待ち）。
-  - V407 / V467、X305 / X315、V205、H417 の USBHS: V307 とは別の「第2世代」の USBHS で、ドライバを新しく書く必要が
-    あります（H417 のものは EP の配置がさらに違う）。
-  - H417: USBSS の実機確認（書込み手段の準備待ち）、USBFS、USBSS のホスト、V5F の利用。
-- **USB ネットワークの IP 層**（EspUsbDevice の `ipConfig()` / `dhcpServer()` / `beginNetwork()`）: IP スタック
-  （lwIP など）が要るので、入れるかは方針の確認待ち。
+- **デバイスのドライバの実機確認**: X035 / X033 と H417（FS・SS）以外は、ドライバはあるがビルドのみ
+  （上のコントローラの表）。
+- **L103 / M103 のクロック**: ボードの既定クロックが 8 MHz（PLL なし）で、USB の 48 MHz が作れずデバイスの
+  `begin()` が失敗します。既定のクロックを上げるか、クロックの選択肢を足すか（方針の確認待ち。V208 / V203RB の
+  Ethernet が要る HCLK 60 / 120 MHz と同じ話）。
+- **PD**: M030 の 2 ポート（比較器のビットが違う）。ほかの系列の実機確認。
+- **H417**: USBHS の実機確認（SWD と端子を共有）、USBSS のホスト、V5F の利用。
+- **USB ネットワークの IP 層**: lwIP の上に作った（`NetworkUsbNcm`、docs/network-stack.ja.md）。実機の NCM は未確認。
 - **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は今 X035 / X033 だけが
   ブートローダーに入ります。ほかの系列は普通のリセットです。
 - **ホストの V20x / V30x での実機確認**: X035 は C8T6 と ESP32-S3 で確認済み。V20x / V30x（レジスタ配置が別）は

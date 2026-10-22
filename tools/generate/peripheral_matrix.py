@@ -179,20 +179,21 @@ STATUS = {
                         "H415/H416/H417。DMAで連続取り込み、USBで流す(HsAdcStream)"),
     "DFSDM (ΣΔフィルタ)": ("未実装", "-", "PDMマイク、ΣΔ変調器の入力。H417"),
     "USB (FS device/host)": ("一部実装", "`CH32RVUsbDevice` / `CH32RVUsbHost`",
-                             "stackは自前(TinyUSBは2026-10-20に撤去)。deviceはX035/X033で実機確認(ホストはPCとESP32-S3)。"
-                             "V103/V20x/V30xのdeviceドライバは作り直し中。hostはX035(R8T6/C8T6/G8U6/G8R6、"
-                             "F8U6などはシリコンに無い)・V20x・V30xのUSBFS。X035 C8T6でESP32-S3相手に実機確認、V20x/V30xはビルドのみ。"
-                             "L103/M103・V205・M030はクロック方針の決定待ちで未実装。"
-                             "工場ISPへの切り替えはX033/X035のみ(docs/usb.ja.md)"),
-    "USB HS": ("一部実装", "`CH32RVUsbDevice`(`UsbPort::HighSpeed`)",
-               "V305/V307/V317(第1世代USBHS、HSEが要る)。自前スタックのドライバは未移植。V303はUSBHSが無い。"
-               "V205・V407/V467・X305/X315の第2世代USBHSは新しいドライバが要り未実装"),
+                             "stackは自前(TinyUSBは2026-10-20に撤去)。deviceはX035/X033とH417で実機確認、"
+                             "V103・V20x(USBFSとUSBD)・V30x・V205・L103/M103・M030はドライバがありビルドのみ"
+                             "(コントローラとドライバの一覧はdocs/usb.ja.md)。L103/M103は既定の8 MHzではPLLを使わず`begin()`が失敗"
+                             "(クロックの方針待ち)。hostはX035(R8T6/C8T6/G8U6/G8R6、F8U6などはシリコンに無い)・V20x・V30xのUSBFS。"
+                             "X035 C8T6でESP32-S3相手に実機確認、V20x/V30xはビルドのみ。工場ISPへの切り替えはX033/X035のみ"),
+    "USB HS": ("一部実装", "`CH32RVUsbDevice`(`CH32RVUsbController::HighSpeed`)",
+               "第1世代USBHS(V305/V307/V317、HSEが要る)と第2世代USBHS(V205・V407/V467・X305/X315・H41x)の"
+               "deviceドライバがあり、どれもビルドのみ。V303はUSBHSが無い。H41xのUSBHSはSWDと端子を共有する"),
     "USB SS": ("一部実装", "`CH32RVUsbDevice`(`CH32RVUsbController::SuperSpeed`)",
-               "H417/H416のUSBSS device。H417で実機確認(DFU、vendor bulkで40〜50 MB/s)。"
-               "X305/X315とhostは未実装"),
+               "H417/H416のUSBSS device。H417で実機確認(DFU、vendor bulkで194〜246 MB/s)。"
+               "X315のdeviceはビルドのみ。hostは未実装"),
     "USB PD": ("一部実装", "`CH32RVUsbPd`(library: `USBPD`、`USBPDSource`)",
-               "sink(X035で実機確認)とsource(ビルドのみ)をX033/X035で実装。"
-               "他のUSBPD搭載seriesは`begin()`がfalseを返す"),
+               "sinkとsource。X035のsinkは実機確認、L103/M103・V205・X305/X315・H41xはビルドのみ"
+               "(CCの端子と設定はlibraries/CH32RVUsbPd/README.ja.md)。X033はCCの端子が無い。"
+               "M030は2ポートで比較器のビットが違い未実装(`begin()`がfalse)"),
     "CAN": ("対象外", "-", ""),
     "Ethernet": ("一部実装", "`ETH`(Network library)",
                  "H417の内蔵MAC+10/100 PHY(`NetworkEthernet.h`)。DHCP〜HTTPSまで実機確認"
@@ -252,11 +253,11 @@ CELLS = {
     "SysTick": {ALL: "●"},
     "RCC (クロック)": {ALL: "◐"},
     "ADC": {ALL: "●"},
-    "USB (FS device/host)": {"V103": "●", "V203/V208": "●", "V303/305/307/317": "●",
-                             "X033/X035": "●", "V205": "○", "L103/M103": "○", "M030": "○"},
-    "USB HS": {"V303/305/307/317": "●", "V205": "○", "V407/V467": "○", "X305/X315": "○"},
-    "USB PD": {"X033/X035": "●", "V205": "○", "L103/M103": "○", "M030": "○", "X305/X315": "○"},
-    "USB SS": {"H415/H416/H417": "◐", "X305/X315": "○"},
+    "USB (FS device/host)": {"V103": "◐", "V203/V208": "◐", "V303/305/307/317": "◐", "X033/X035": "●",
+                             "V205": "◐", "L103/M103": "◐", "M030": "◐", "H415/H416/H417": "◐"},
+    "USB HS": {"V303/305/307/317": "◐", "V205": "◐", "V407/V467": "◐", "X305/X315": "◐", "H415/H416/H417": "◐"},
+    "USB PD": {"X033/X035": "◐", "V205": "◐", "L103/M103": "◐", "M030": "○", "X305/X315": "◐", "H415/H416/H417": "◐"},
+    "USB SS": {"H415/H416/H417": "◐", "X305/X315": "◐"},
     "Ethernet": {"H415/H416/H417": "◐", "V203/V208": "◐", "V303/305/307/317": "◐", "V407/V467": "◐"},
     "FLASH (自己書き換え)": {ALL: "○", "H415/H416/H417": "◐"},
     "RNG": {"V303/305/307/317": "◐", "V407/V467": "◐", "H415/H416/H417": "◐"},

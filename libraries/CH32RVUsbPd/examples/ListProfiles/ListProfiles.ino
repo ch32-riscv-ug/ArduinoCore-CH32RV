@@ -1,8 +1,8 @@
 /* Wiring, operation and expected output: README.md / README.ja.md. */
 /* List what a USB PD charger offers, then ask it for 9 V.
  *
- * Runs on CH32X035/X033 (checked on a WeAct CH32X035F8U6 board); on the
- * other parts begin() is false and the sketch says so - see
+ * Runs on the series with USBPD (checked on a WeAct CH32X035F8U6 board); on
+ * the other parts begin() is false and the sketch says so - see
  * libraries/CH32RVUsbPd/README.md.
  *
  * A board powered from the charger's own VBUS: a 9 V contract raises VBUS
