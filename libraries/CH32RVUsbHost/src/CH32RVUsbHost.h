@@ -47,8 +47,8 @@
  *
  * Runs on CH32X035 R8T6 / C8T6 / G8U6 / G8R6 (USBFS, PC16/PC17; the F8U6,
  * F7P6, D8U6 and the X033 have no host in silicon), CH32V203/V208 (USBFS,
- * PB6/PB7) and CH32V303/V305/V307/V317 (USBFS, PA11/PA12); begin() reports
- * Unsupported elsewhere. The board supplies VBUS to the device - the chip
+ * PB6/PB7), and CH32V303/V305/V307/V317, V205, L103/M103, M030 and H41x
+ * (USBFS, PA11/PA12); begin() reports Unsupported elsewhere. The board supplies VBUS to the device - the chip
  * cannot switch it.
  */
 #pragma once

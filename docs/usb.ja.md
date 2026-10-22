@@ -349,8 +349,8 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 - **USB ネットワークの IP 層**: lwIP の上に作った（`NetworkUsbNcm`、docs/network-stack.ja.md）。実機の NCM は未確認。
 - **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は今 X035 / X033 だけが
   ブートローダーに入ります。ほかの系列は普通のリセットです。
-- **ホストの V20x / V30x での実機確認**: X035 は C8T6 と ESP32-S3 で確認済み。V20x / V30x（レジスタ配置が別）は
-  ビルドのみ。
+- **ホストの X035 以外での実機確認**: X035 は C8T6 と ESP32-S3 で確認済み。V20x / V30x / V205 / L103 / M030 / H41x
+  （USBOTG_FS の配置、`ch32rv_usbfs_otg.h`）はビルドのみ。
 - **ホストのアイソクロナスと USB ネットワーク**（オーディオ、ビデオ、NCM）: 今は無し。
 
 ## 既知の問題

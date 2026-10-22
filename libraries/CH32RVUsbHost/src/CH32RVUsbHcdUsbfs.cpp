@@ -1,5 +1,6 @@
 /* Host controller driver for the WCH USBFS block in host mode
- * (CH32X035/X033 today; the same block is the OTG_FS of V20x/V30x).
+ * (CH32X035/X033, and the OTG_FS of V20x, V30x, V205, L103 / M103, M030 and
+ * H41x).
  *
  * It began as the TinyUSB host controller driver here (TinyUSB's own
  * portable/wch/hcd_ch32_usbfs.c busy-waits, panics on surprises, retries a
@@ -35,11 +36,12 @@
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
 #define CH32RV_HCD_USBFS_BASE   0x40023400u
 #define CH32RV_HCD_USBFS_LAYOUT 1
-#elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208) || \
-      defined(CH32RV_SERIES_CH32V303) || defined(CH32RV_SERIES_CH32V305) || \
-      defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
-#define CH32RV_HCD_USBFS_BASE   0x50000000u
+#else
+#include "ch32rv_usbfs_otg.h"
+#ifdef CH32RV_USBFS_OTG_BASE      /* V20x, V30x, V205, L103 / M103, M030, H41x */
+#define CH32RV_HCD_USBFS_BASE   CH32RV_USBFS_OTG_BASE
 #define CH32RV_HCD_USBFS_LAYOUT 2
+#endif
 #endif
 
 #ifdef CH32RV_HCD_USBFS_BASE
@@ -54,7 +56,8 @@
  * block place them differently (EVT USBFSH_TypeDef):
  *   1  CH32X035 / X033: endpoint registers 4 bytes apart from 0x20, DMA
  *      addresses 16 bit (SRAM's low half), the toggles in bits 7 / 6;
- *   2  CH32V20x / V30x OTG_FS: endpoint registers from 0x30, DMA addresses
+ *   2  the USBOTG_FS layout (V20x, V30x, V205, L103 / M103, M030, H41x - EVT
+ *      USBFSH_TypeDef compared 2026-10-22): endpoint registers from 0x30, DMA addresses
  *      32 bit, HOST_SETUP 16 bit (SOF_EN bit 2, PRE_PID_EN bit 10), both
  *      toggles in bit 2. */
 

@@ -1182,6 +1182,7 @@ extern "C" void ch32rv_usb_host_task(void)
         return;
     }
     busy = true;
+    port_poll();
     pump();
     for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
         Device &d = devs[a];

@@ -7,6 +7,7 @@
  *                     cannot feed the PHY or the part has no such block
  *   port_close()
  *   port_has_host()   whether this die has the host half
+ *   port_poll()       from the task: put back a clock taken away under it
  * Extension point: another controller (V30x USBHS, the second-generation
  * USBHS) becomes a table of its own and a branch here. */
 #pragma once
@@ -40,40 +41,41 @@ static void port_close(void)
     CH32RV_AFIO_CTLR &= ~X03X_AFIO_USB_IOEN;
 }
 
-#else /* V20x / V30x OTG_FS */
+static void port_poll(void) {}
 
-#define USBFS_BASE_CTRL        (*(volatile uint8_t *)0x50000000u)
-/* RCC_CFGR0[23:22] USBPRE: 48 MHz for the PHY from the PLL (as the device). */
-#define HOST_USBPRE_SHIFT 22u
-#if CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 48000000
-#define HOST_USBPRE 0u
-#elif CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 96000000
-#define HOST_USBPRE 1u
-#elif CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 144000000
-#define HOST_USBPRE 2u
-#endif
+#else /* the USBOTG_FS layout: V20x, V30x, V205, L103 / M103, M030, H41x */
 
+#include "ch32rv_usbfs_otg.h"
+
+#define USBFS_BASE_CTRL        (*(volatile uint8_t *)CH32RV_USBFS_OTG_BASE)
+
+/* The 48 MHz and the pads as the device driver makes them; the host's 15 kOhm
+ * pull-downs are the controller's own (HOST_CTRL), set by the driver. */
 static bool port_open(void)
 {
-#if defined(HOST_USBPRE) && !defined(CH32RV_PART_CH32V203F6P6) && !defined(CH32RV_PART_CH32V203G6U6)
-    CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~(3u << HOST_USBPRE_SHIFT)) | (HOST_USBPRE << HOST_USBPRE_SHIFT);
-#if defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208)
-    pinMode(PB6, INPUT);
-    pinMode(PB7, INPUT);
+#if defined(CH32RV_PART_CH32V203F6P6) || defined(CH32RV_PART_CH32V203G6U6)
+    return false;        /* no USBFS on the part */
 #else
-    pinMode(PA11, INPUT);
-    pinMode(PA12, INPUT);
-#endif
-    ch32rv_clock_enable(USBFS);
-    return true;
-#else
-    return false;        /* no 48 MHz for the PHY at this clock, or no USBFS on the part */
+    return ch32rv_usbfs_otg_clock_on();
 #endif
 }
 
 static void port_close(void)
 {
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
+    ch32rv_clock_disable(OTG_FS);
+#else
     ch32rv_clock_disable(USBFS);
+#endif
+}
+
+/* SystemInit() run again by a debug probe turns the extra PLLs off (the
+ * device driver's dcd_poll() does the same). */
+static void port_poll(void)
+{
+    if (!ch32rv_usbfs_otg_clock_ok()) {
+        ch32rv_usbfs_otg_clock_on();
+    }
 }
 
 #endif

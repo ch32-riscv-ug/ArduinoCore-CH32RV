@@ -182,8 +182,9 @@ STATUS = {
                              "stackは自前(TinyUSBは2026-10-20に撤去)。deviceはX035/X033とH417で実機確認、"
                              "V103・V20x(USBFSとUSBD)・V30x・V205・L103/M103・M030はドライバがありビルドのみ"
                              "(コントローラとドライバの一覧はdocs/usb.ja.md)。L103/M103は既定の8 MHzではPLLを使わず`begin()`が失敗"
-                             "(クロックの方針待ち)。hostはX035(R8T6/C8T6/G8U6/G8R6、F8U6などはシリコンに無い)・V20x・V30xのUSBFS。"
-                             "X035 C8T6でESP32-S3相手に実機確認、V20x/V30xはビルドのみ。工場ISPへの切り替えはX033/X035のみ"),
+                             "(クロックの方針待ち)。hostはX035(R8T6/C8T6/G8U6/G8R6、F8U6などはシリコンに無い)と"
+                             "USBOTG_FSの系列(V20x・V30x・V205・L103/M103・M030・H41x)のUSBFS。"
+                             "X035 C8T6でESP32-S3相手に実機確認、ほかはビルドのみ。工場ISPへの切り替えはX033/X035のみ"),
     "USB HS": ("一部実装", "`CH32RVUsbDevice`(`CH32RVUsbController::HighSpeed`)",
                "第1世代USBHS(V305/V307/V317、HSEが要る)と第2世代USBHS(V205・V407/V467・X305/X315・H41x)の"
                "deviceドライバがあり、どれもビルドのみ。V303はUSBHSが無い。H41xのUSBHSはSWDと端子を共有する"),
