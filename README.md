@@ -45,7 +45,7 @@ The [ADRs](docs/adr/README.ja.md) record the rationale that is still needed to m
 | Menu | Default | Purpose |
 |---|---|---|
 | Part Number (`pnum`) | `ANY` | Exact part; `ANY` declares the smallest flash/RAM in the series so the result fits every part in that series |
-| CPU Clock (`clock`) | per series | The system clock. Each entry names the frequency and what it allows (USB, Ethernet). Defaults: V20x / V30x 96 MHz, V103 72 MHz, X035 48 MHz, V00x 24 MHz, L103 / M103 96 MHz, V205 160 MHz, M030 72 MHz (the last three raised from 8 MHz to their EVT default). Ethernet on V208 / V203RB needs `60MHz (Ethernet, no USB)`. Not yet on V407 / X315 / H41x. `getCpuFrequencyMhz()` / `getApbFrequency()` (as in arduino-esp32) return the clock; nothing changes it at run time |
+| CPU Clock (`clock`) | per series | The system clock. Each entry names the frequency and what it allows (USB, Ethernet). Defaults: V20x / V30x 96 MHz, V103 72 MHz, X035 48 MHz, V00x 24 MHz, L103 / M103 and V205 8 MHz, M030 72 MHz (M030 raised to its EVT default after a hardware check; the L103 / M103 and V205 PLL entries say "not checked", and an L103 at 96 MHz once stopped answering the debugger). Ethernet on V208 / V203RB needs `60MHz (Ethernet, no USB)`. Not yet on V407 / X315 / H41x. `getCpuFrequencyMhz()` / `getApbFrequency()` (as in arduino-esp32) return the clock; nothing changes it at run time |
 | Optimize (`opt`) | `oslto` | `-Os` with LTO: 9-24% less flash at the same speed (measured on CH32X035). `osltosr` adds `-msave-restore` for another 4-5%, but call-heavy code (elliptic-curve crypto) runs 7-9% slower. `osstd` builds without LTO |
 | C Runtime Library (`rtlib`) | `nano` | Enables floating-point conversion in `printf("%f")` and/or `scanf("%f")` |
 

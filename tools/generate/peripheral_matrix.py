@@ -133,7 +133,7 @@ STATUS = {
                        "HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。"
                        "取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。"
                        "既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、"
-                       "L103/M103 96 MHz・V205 160 MHz・M030 72 MHz(EVTの既定)。メニューの無いもの: V407/V467・X305/X315 20 MHz、"
+                       "L103/M103・V205 8 MHz、M030 72 MHz(実機で確認してEVTの既定に。L103/M103・V205のPLLの項目は未確認)。メニューの無いもの: V407/V467・X305/X315 20 MHz、"
                        "H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の "
                        "400 MHz、V5F は 400 MHz で停止のまま)。"
                        "HSEは未実装(USB HSとH417のUSB SSのみHSEを使う)"),

@@ -647,7 +647,7 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   V103 / V20x / V30x のドライバは TinyUSB の時代のもので、自前のスタックでは作り直し（下の移行の項）。残り:
   - 新しい系列の実機確認（ベンチの DUT の USB 端子を配線してから）。HSI から作る 48 MHz の精度、V103 の EP4〜7 の
     自動トグル、HS の PHY と HSE。
-  - L103 / M103、M030、V205: 既定のクロックを EVT の既定に上げた（2026-10-22、CPU Clock のメニュー）。
+  - L103 / M103、M030、V205: CPU Clock のメニューで USB の作れるクロックを選べる（2026-10-22）。既定は M030 だけ上げた。
   - 第2世代 USBHS（V407 / V467、X305 / X315、V205）の dcd を新しく書く。**実機ベンチがそろってから検討する**。
     調査の下書きは work/usbport/others（git 管理外）。
   - H417（2026-10-20）:
@@ -900,7 +900,7 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 残り（方針待ち・新しい API・実機が要る）:
 - クロック: 2026-10-22 に CPU Clock のメニュー（項目名に周波数と使えるもの）と取得の API（`getCpuFrequencyMhz()` /
   `getApbFrequency()`）を入れた。実行中に変える API は作らない（F_CPU を定数として使う箇所が約 20、動いている周辺の
-  入れ直しが要る）。既定は L103 / M103 96 MHz、V205 160 MHz、M030 72 MHz（EVT の既定）に上げた。残り: V407 / X315 / H41x
+  入れ直しが要る）。既定は M030 だけ 72 MHz（EVT の既定、実機で確認）に上げた。L103 / M103・V205 は 8 MHz のまま（L103 の 96 MHz のイメージで、OEP の RP2350 probe からデバッグが接続できなくなった。電源の入れ直しでも戻らず、2026-10-22 時点で原因不明。NRST を配線して connect-under-reset で戻す予定）。残り: V407 / X315 / H41x
   のメニュー（HPRE / FPRE の分け方が別）、HSE、各項目の実機確認（UART の速度・ADC・USB）。
   2026-10-22: M030 の既定 72 MHz が起動で止まった（device-data の行の SYSCLK=72 は HCLK で、PLL は 144 MHz 固定。生成器が
   hpre を読んでいなかった）。e3ebb34 で修正し、表は device-data 6fcf406 で直った。M030G8R7 で 72 / 48 / 24 / 8 MHz の

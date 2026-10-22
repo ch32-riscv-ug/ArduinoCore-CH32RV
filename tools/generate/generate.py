@@ -375,16 +375,21 @@ OPT_MENU = (
 #     no entry gives both, as no SYSCLK is both a multiple USBPRE takes and
 #     one ETHPRE takes.
 # V003 / V00x / X035 / V407 / X315 / H41x keep their one clock as default;
-# where USB at a lower clock is not known to work the label says so. The
-# 8 MHz families (L103 / M103, V205, M030) start at their EVT's default.
+# where USB at a lower clock is not known to work the label says so. A PLL
+# entry becomes a default only once it has run on the part: M030 at 72 MHz
+# (G8R7, 2026-10-22); L103 / M103 and V205 stay at 8 MHz.
 _V20X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
                 ("72", 72, 72, "72MHz (no USB)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
 _V30X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
                 ("72", 72, 72, "72MHz (no USB FS)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB FS)")]
 _V00X_CLOCKS = [("24", 24, 24, "24MHz"), ("48", 48, 48, "48MHz"),
                 ("8", 24, 8, "8MHz (lowest power)")]
-_L103_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
-                ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
+# L103 / M103 stay at 8 MHz by default: the one 96 MHz image tried (CH32L103C8T6
+# behind an OEP RP2350 probe, 2026-10-22) left the part answering no debug
+# attach at all, even after a power cycle - not understood yet, and a default
+# must not do that. The PLL entries stay selectable.
+_L103_CLOCKS = [("8", 8, 8, "8MHz (HSI, lowest power, no USB)"), ("96", 96, 96, "96MHz (USB, not checked)"),
+                ("72", 72, 72, "72MHz (USB, not checked)"), ("48", 48, 48, "48MHz (USB, not checked)")]
 _X035_CLOCKS = [("48", 48, 48, "48MHz (USB)"), ("24", 48, 24, "24MHz (USB not checked)"),
                 ("12", 48, 12, "12MHz (USB not checked)"), ("8", 48, 8, "8MHz (lowest power, USB not checked)")]
 CLOCK_MENU = {
@@ -398,9 +403,10 @@ CLOCK_MENU = {
     **{s: _V30X_CLOCKS for s in ("CH32V303", "CH32V305", "CH32V307", "CH32V317")},
     "CH32X033": _X035_CLOCKS, "CH32X035": _X035_CLOCKS,
     "CH32L103": _L103_CLOCKS, "CH32M103": _L103_CLOCKS,
-    "CH32V205": [("160", 160, 160, "160MHz (USB)"), ("120", 120, 120, "120MHz (USB)"),
-                 ("80", 80, 80, "80MHz (USB)"), ("40", 40, 40, "40MHz (USB)"),
-                 ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
+    # V205: 8 MHz by default until a PLL clock has run on one (see _L103_CLOCKS).
+    "CH32V205": [("8", 8, 8, "8MHz (HSI, lowest power, USB)"), ("160", 160, 160, "160MHz (USB, not checked)"),
+                 ("120", 120, 120, "120MHz (USB, not checked)"), ("80", 80, 80, "80MHz (USB, not checked)"),
+                 ("40", 40, 40, "40MHz (USB, not checked)")],
     "CH32M030": [("72", 144, 72, "72MHz (USB)"), ("48", 144, 48, "48MHz (USB)"), ("24", 144, 24, "24MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
 }
