@@ -34,8 +34,11 @@
  * Differences from EspUsbHost: callbacks are plain function pointers (no
  * std::function, no listener lists); there is no task to configure - the stack
  * runs from ch32rv_usb_host_task() after every loop() and inside delay(), and
- * the blocking calls below drive it while they wait. Callbacks run from there,
- * never from an interrupt, and may call the blocking API. The devices are
+ * the blocking calls below drive it while they wait. The callbacks run from
+ * deliverEvents(), which the sketch calls (ch32rv_deliver.h) - never inside
+ * delay() or an interrupt - and may call the blocking API. Until then what
+ * they report waits: reports, bytes and packets in the stack's buffers (a
+ * full one holds the device off), connections in a queue of four. The devices are
  * addresses 1..5 (a hub and what is behind it); CH32RV_USB_HOST_ANY_ADDRESS (the
  * default everywhere) means "the first device that has the function".
  *
@@ -379,6 +382,9 @@ public:
     /* ---- devices ---- */
     void onDeviceConnected(DeviceCallback cb) { _connected = cb; }
     void onDeviceDisconnected(DeviceCallback cb) { _disconnected = cb; }
+    /* Connections and disconnections that did not fit before a
+     * deliverEvents(), since begin(). */
+    uint32_t droppedDeviceEvents() const;
     size_t deviceCount() const;
     size_t getDevices(CH32RVUsbHostDeviceInfo *devices, size_t maxDevices) const;
     bool getDevice(uint8_t address, CH32RVUsbHostDeviceInfo &device) const;

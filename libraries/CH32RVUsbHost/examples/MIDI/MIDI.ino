@@ -26,6 +26,8 @@ void setup() {
 }
 
 void loop() {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   static uint32_t last;
   if (usb.midiReady() && millis() - last >= 1000) {
     last = millis();

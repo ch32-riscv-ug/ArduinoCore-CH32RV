@@ -44,6 +44,8 @@ void setup()
 
 void loop()
 {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   static uint32_t lastSendMs = 0;
   const uint32_t now = millis();
   if (now - lastSendMs < 3000)

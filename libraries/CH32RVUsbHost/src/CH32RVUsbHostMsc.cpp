@@ -25,7 +25,7 @@ uint8_t csw[13] __attribute__((aligned(4)));
 uint16_t msc_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
 void msc_configured(uint8_t daddr, uint8_t itf);
 void msc_detach(uint8_t daddr);
-CH32RVUsbHostGroup msc_group = {msc_open, msc_configured, nullptr, msc_detach, nullptr};
+CH32RVUsbHostGroup msc_group = {msc_open, msc_configured, nullptr, msc_detach, nullptr, nullptr};
 
 struct Join {
     Join() { ch32rv_usb_host_join(msc_group); }

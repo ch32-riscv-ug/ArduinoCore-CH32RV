@@ -15,7 +15,7 @@ public:
     typedef CH32RVCallback<void(const uint8_t *frame, size_t length)> FrameCallback;
     CH32RVUsbDeviceNet();
     const uint8_t *macAddress() const;
-    void onFrame(FrameCallback cb) { _onFrame = cb; }
+    void onStackFrame(FrameCallback cb) { _onFrame = cb; }
     typedef CH32RVCallback<bool()> ReceiveGate;
     void receiveGate(ReceiveGate gate) { _receiveGate = gate; }
     void resumeReceive() {}   /* the stand-in asks the gate before every frame */

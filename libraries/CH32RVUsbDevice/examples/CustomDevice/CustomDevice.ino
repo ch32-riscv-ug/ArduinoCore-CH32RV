@@ -47,6 +47,8 @@ void setup() {
 }
 
 void loop() {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   while (console.available()) {
     console.write(console.read());
   }

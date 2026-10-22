@@ -8,6 +8,7 @@
  * completions - runs in normal context from ch32rv_usb_host_task() (after
  * loop(), inside delay()) and from the blocking calls while they wait. */
 #include "CH32RVUsbHostInternal.h"
+#include "ch32rv_deliver.h"
 #include "ch32rv_service.h"
 
 #include <string.h>
@@ -62,6 +63,33 @@ struct Device {
 Device devs[CH32RV_USB_HOST_DEVICES + 1];   /* by address; 0 is the one being enumerated */
 
 CH32RVUsbHostGroup *groups;
+
+/* onDeviceConnected() / onDeviceDisconnected(), in order, for
+ * deliverEvents(); a copy of the info, since the device may be gone (or its
+ * address taken again) by then. */
+struct DeviceEvent {
+    bool connected;
+    CH32RVUsbHostDeviceInfo info;
+};
+#define DEVICE_EVENTS 4
+DeviceEvent device_events[DEVICE_EVENTS];
+uint8_t device_first, device_count;
+uint32_t device_dropped;
+
+void device_event(bool connected, const CH32RVUsbHostDeviceInfo &info)
+{
+    if (device_count == DEVICE_EVENTS) {
+        device_dropped++;
+        return;
+    }
+    DeviceEvent &e = device_events[(uint8_t)(device_first + device_count) % DEVICE_EVENTS];
+    e.connected = connected;
+    e.info = info;
+    if (!connected) {
+        e.info.manufacturer = e.info.product = e.info.serial = "";   /* their storage is reused */
+    }
+    device_count++;
+}
 
 /* ------------------------------------------------------------- control */
 enum : uint8_t { CTL_IDLE, CTL_SETUP, CTL_DATA, CTL_STATUS };
@@ -1000,7 +1028,7 @@ void hub_detach(uint8_t daddr)
     }
 }
 
-CH32RVUsbHostGroup hub_group = {hub_open, hub_configured, hub_poll, hub_detach, nullptr};
+CH32RVUsbHostGroup hub_group = {hub_open, hub_configured, hub_poll, hub_detach, nullptr, nullptr};
 
 struct HubJoin {
     HubJoin() { ch32rv_usb_host_join(hub_group); }
@@ -1041,7 +1069,7 @@ void remove_device(uint8_t daddr)
     const CH32RVUsbHostDeviceInfo info = d.info;
     memset(&d, 0, sizeof d);
     if (was_known && host && host->_disconnected) {
-        host->_disconnected(info);
+        device_event(false, info);
     }
 }
 
@@ -1155,7 +1183,7 @@ void complete_mount(CH32RVUsbHost &host, uint8_t daddr)
     }
     s.known = true;
     if (host._connected) {
-        host._connected(d);
+        device_event(true, d);
     }
 }
 
@@ -1237,6 +1265,42 @@ const char *CH32RVUsbHost::lastErrorName() const
  * takes it out of the round. */
 static ch32rv_service_t host_service = CH32RV_SERVICE_INIT(ch32rv_usb_host_task);
 
+/* The sketch's callbacks (ch32rv_deliver.h). Attached from the first begin()
+ * on and left attached, so the disconnections end() reports still arrive. */
+static CH32RVUsbHost *delivering;
+
+static size_t host_deliver(void)
+{
+    CH32RVUsbHost *const host = delivering;
+    size_t ran = 0;
+    for (uint8_t n = device_count; n && device_count; n--) {
+        const DeviceEvent e = device_events[device_first];
+        device_first = (uint8_t)((device_first + 1) % DEVICE_EVENTS);
+        device_count--;
+        const CH32RVUsbHost::DeviceCallback cb = e.connected ? host->_connected : host->_disconnected;
+        if (cb) {
+            cb(e.info);
+            ran++;
+        }
+    }
+    if (!host->ready()) {
+        return ran;
+    }
+    for (CH32RVUsbHostGroup *g = groups; g; g = g->next) {
+        if (g->deliver) {
+            ran += g->deliver(*host);
+        }
+    }
+    return ran;
+}
+
+static ch32rv_delivery_t host_delivery = CH32RV_DELIVERY_INIT(host_deliver);
+
+uint32_t CH32RVUsbHost::droppedDeviceEvents() const
+{
+    return device_dropped;
+}
+
 bool CH32RVUsbHost::begin()
 {
     if (_started) {
@@ -1244,6 +1308,8 @@ bool CH32RVUsbHost::begin()
     }
     memset(devs, 0, sizeof devs);
     memset(pending, 0, sizeof pending);
+    device_first = device_count = 0;
+    device_dropped = 0;
     memset(&ctl, 0, sizeof ctl);
     memset(&en, 0, sizeof en);
     memset(hubs, 0, sizeof hubs);
@@ -1266,6 +1332,8 @@ bool CH32RVUsbHost::begin()
     _started = true;
     /* delay() and the return of loop() run the stack from here on. */
     ch32rv_service_attach(&host_service);
+    delivering = this;
+    ch32rv_delivery_attach(&host_delivery);
     if (hcd->connected()) {
         en_queue(0, 0);
     }
@@ -1497,6 +1565,7 @@ bool CH32RVUsbHost::begin() { return fail(CH32RVUsbHostError::Unsupported); }
 void CH32RVUsbHost::end() {}
 bool CH32RVUsbHost::ready() const { return false; }
 void CH32RVUsbHost::task() {}
+uint32_t CH32RVUsbHost::droppedDeviceEvents() const { return 0; }
 uint8_t CH32RVUsbHost::resolve(uint8_t) const { return 0; }
 size_t CH32RVUsbHost::deviceCount() const { return 0; }
 size_t CH32RVUsbHost::getDevices(CH32RVUsbHostDeviceInfo *, size_t) const { return 0; }

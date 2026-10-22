@@ -16,13 +16,20 @@ uint16_t ring_size = sizeof own_ring;
 
 void poll(CH32RVUsbHost &host)
 {
+    (void)host;
     ch32rv_usb_host_pipe_poll(pipe);
+}
+
+/* The data waits in the ring until here; a full ring holds the device off. */
+size_t deliver(CH32RVUsbHost &host)
+{
+    size_t ran = 0;
     if (!host._vendorData || !pipe.open) {
-        return;
+        return ran;
     }
     uint8_t chunk[64];
     uint16_t n;
-    while ((n = ch32rv_usb_host_pipe_read(pipe, chunk, sizeof chunk)) != 0) {
+    while (pipe.open && (n = ch32rv_usb_host_pipe_read(pipe, chunk, sizeof chunk)) != 0) {
         CH32RVUsbHostVendorData d;
         d.address = pipe.daddr;
         d.interfaceNumber = pipe.itf;
@@ -30,7 +37,9 @@ void poll(CH32RVUsbHost &host)
         d.data = chunk;
         d.length = n;
         host._vendorData(d);
+        ran++;
     }
+    return ran;
 }
 
 void detach(uint8_t daddr)
@@ -41,7 +50,7 @@ void detach(uint8_t daddr)
     }
 }
 
-CH32RVUsbHostGroup vendor_group = {nullptr, nullptr, poll, detach, nullptr};
+CH32RVUsbHostGroup vendor_group = {nullptr, nullptr, poll, detach, deliver, nullptr};
 
 struct Join {
     Join() { ch32rv_usb_host_join(vendor_group); }

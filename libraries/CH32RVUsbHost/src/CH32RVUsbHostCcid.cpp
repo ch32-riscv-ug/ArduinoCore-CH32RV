@@ -62,29 +62,38 @@ void int_done(void *user, uint8_t result, uint16_t length)
 
 void poll(CH32RVUsbHost &host)
 {
+    (void)host;
     ch32rv_usb_host_pipe_poll(pipe);
     if (!pipe.open) {
         return;
     }
     arm_int();
-    if (slot_event) {
-        slot_event = false;
-        /* Slot 0: bit 0 present, bit 1 changed. */
-        const bool present = slot_event_bits & 0x01;
-        const bool changed = slot_event_bits & 0x02;
-        if (changed || present != (bool)(slot_bits & 1)) {
-            CH32RVUsbHostCcidSlotEvent e;
-            e.address = pipe.daddr;
-            e.slot = 0;
-            e.present = present;
-            if (present && host._ccidInserted) {
-                host._ccidInserted(e);
-            } else if (!present && host._ccidRemoved) {
-                host._ccidRemoved(e);
-            }
-        }
-        slot_bits = slot_event_bits;
+}
+
+/* The last NotifySlotChange waits here. */
+size_t deliver(CH32RVUsbHost &host)
+{
+    if (!pipe.open || !slot_event) {
+        return 0;
     }
+    slot_event = false;
+    /* Slot 0: bit 0 present, bit 1 changed. */
+    const bool present = slot_event_bits & 0x01;
+    const bool changed = (slot_event_bits & 0x02) || present != (bool)(slot_bits & 1);
+    slot_bits = slot_event_bits;
+    if (!changed) {
+        return 0;
+    }
+    CH32RVUsbHostCcidSlotEvent e;
+    e.address = pipe.daddr;
+    e.slot = 0;
+    e.present = present;
+    const CH32RVUsbHost::CcidSlotChangeCallback cb = present ? host._ccidInserted : host._ccidRemoved;
+    if (!cb) {
+        return 0;
+    }
+    cb(e);
+    return 1;
 }
 
 void detach(uint8_t daddr)
@@ -96,7 +105,7 @@ void detach(uint8_t daddr)
     }
 }
 
-CH32RVUsbHostGroup ccid_group = {nullptr, nullptr, poll, detach, nullptr};
+CH32RVUsbHostGroup ccid_group = {nullptr, nullptr, poll, detach, deliver, nullptr};
 
 struct Join {
     Join() { ch32rv_usb_host_join(ccid_group); }

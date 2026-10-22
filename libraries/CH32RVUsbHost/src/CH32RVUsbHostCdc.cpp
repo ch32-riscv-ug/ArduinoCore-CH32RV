@@ -81,8 +81,9 @@ CH32RVUsbHost::SerialDataCallback data_cb;
 uint16_t cdc_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
 void cdc_configured(uint8_t daddr, uint8_t itf);
 void poll(CH32RVUsbHost &host);
+size_t deliver(CH32RVUsbHost &host);
 void cdc_detach(uint8_t daddr);
-CH32RVUsbHostGroup cdc_group = {cdc_open, cdc_configured, poll, cdc_detach, nullptr};
+CH32RVUsbHostGroup cdc_group = {cdc_open, cdc_configured, poll, cdc_detach, deliver, nullptr};
 
 struct Join {
     Join() { ch32rv_usb_host_join(cdc_group); }
@@ -682,9 +683,11 @@ void cdc_detach(uint8_t daddr)
     }
 }
 
-void poll(CH32RVUsbHost &host)
+/* Each received packet to the bound Stream and, with onSerialData(), to the
+ * sketch; then the next one is received. Returns the callbacks run. */
+size_t hand_on()
 {
-    (void)host;
+    size_t ran = 0;
     for (uint8_t i = 0; i < CDC_PORTS; i++) {
         Port &p = ports[i];
         Rx &r = rx[i];
@@ -715,11 +718,31 @@ void poll(CH32RVUsbHost &host)
             d.port = port;
             d.data = p.in;
             d.length = n;
-            data_cb(d);
+            data_cb(d);    /* p.in is not re-armed until it returns */
+            ran++;
         }
         p.pendingLength = 0;
-        arm_in(p);
+        if (p.mounted) {
+            arm_in(p);
+        }
     }
+    return ran;
+}
+
+/* Without onSerialData() the stack hands the data on itself; with it, the
+ * packet waits for deliverEvents(). */
+void poll(CH32RVUsbHost &host)
+{
+    (void)host;
+    if (!data_cb) {
+        hand_on();
+    }
+}
+
+size_t deliver(CH32RVUsbHost &host)
+{
+    (void)host;
+    return data_cb ? hand_on() : 0;
 }
 
 }  // namespace

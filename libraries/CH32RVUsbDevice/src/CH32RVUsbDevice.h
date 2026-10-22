@@ -306,6 +306,10 @@ protected:
     }
     /* The host cleared a halt on one of its endpoints (data toggle back to DATA0). */
     virtual void usbHaltCleared(uint8_t address) { (void)address; }
+    /* Called from deliverEvents() (ch32rv_deliver.h), outside the stack: run
+     * the sketch's notification callbacks for what the hooks above recorded.
+     * Returns how many ran. */
+    virtual size_t usbDeliver() { return 0; }
 
 private:
     friend class CH32RVUsbDevice;
@@ -456,13 +460,18 @@ public:
     /* Watch control requests, including those the library answers itself
      * (EspUsbDevice::onAnyControlRequest): at SETUP for every vendor request
      * (handled false when it was stalled), at ACK for every control transfer
-     * that completes. Only an observer; it runs where the stack runs. */
+     * that completes. Delivered from deliverEvents(), in order; eight are
+     * kept until then, more are dropped (droppedControlRequests()). */
     void onAnyControlRequest(ControlRequestObserver observer);
 
     typedef CH32RVCallback<void(CH32RVUsbBusEvent)> BusEventCallback;
-    /* Reset, configured / unconfigured, suspended / resumed - from the stack's
-     * task, in normal context. */
+    /* Reset, configured / unconfigured, suspended / resumed, in the order they
+     * happened, from deliverEvents(). Eight are kept until then; more are
+     * dropped (droppedBusEvents()). */
     void onBusEvent(BusEventCallback callback);
+    /* Notifications that did not fit before a deliverEvents(), since begin(). */
+    uint32_t droppedBusEvents() const;
+    uint32_t droppedControlRequests() const;
 
 private:
     CH32RVUsbDeviceFunction *_first = nullptr;   /* the functions, in declaration order */

@@ -121,6 +121,10 @@ static inline uint32_t getApbFrequency(void) { return (uint32_t)F_CPU; }
  * the save / restore pair: ch32rv_irq.h, which CH32RVSyncKit uses too. */
 #include "ch32rv_irq.h"
 
+/* deliverEvents(): where the libraries' notification callbacks (onRx and the
+ * like) run - only there, never inside delay() (ch32rv_deliver.h). */
+#include "ch32rv_deliver.h"
+
 /* api/Common.h declares these two but leaves them to the core.
  *
  * noInterrupts() does not nest: a second call still leaves one interrupts()

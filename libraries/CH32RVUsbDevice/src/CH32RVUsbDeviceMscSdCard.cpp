@@ -260,8 +260,21 @@ bool CH32RVUsbDeviceMscSdCard::startStop(uint8_t powerCondition, bool start, boo
 {
     (void)powerCondition;
     (void)loadEject;
-    if (!start && _onEject) {
-        _onEject();
+    if (!start) {
+        _ejected = true;
     }
     return true;
+}
+
+size_t CH32RVUsbDeviceMscSdCard::deliver()
+{
+    if (!_ejected) {
+        return 0;
+    }
+    _ejected = false;
+    if (!_onEject) {
+        return 0;
+    }
+    _onEject();
+    return 1;
 }

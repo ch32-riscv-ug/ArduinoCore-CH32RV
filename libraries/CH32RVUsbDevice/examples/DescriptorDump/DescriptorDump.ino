@@ -83,6 +83,8 @@ void setup()
 
 void loop()
 {
+    // The callbacks set in setup() run here, and only here.
+    deliverEvents();
     while (Serial.available()) {
         if (Serial.read() == 'd') {
             dumpNow = true;

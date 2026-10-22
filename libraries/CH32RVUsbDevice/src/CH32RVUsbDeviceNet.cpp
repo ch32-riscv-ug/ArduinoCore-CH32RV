@@ -123,6 +123,7 @@ void CH32RVUsbDeviceNet::usbReset()
 {
     drv.up = drv.in_busy = drv.zlp = drv.notify_busy = drv.out_paused = false;
     drv.notify_step = 0;
+    _held = 0;
 }
 
 void CH32RVUsbDeviceNet::usbConfigured(CH32RVUsbSpeed speed)
@@ -165,6 +166,7 @@ bool CH32RVUsbDeviceNet::usbSetInterface(uint8_t interfaceNumber, uint8_t altern
     }
     drv.up = alternate == 1;
     drv.in_busy = drv.zlp = drv.out_paused = false;
+    _held = 0;
     if (drv.up) {
         device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
     }
@@ -224,17 +226,19 @@ bool CH32RVUsbDeviceNet::usbControl(CH32RVUsbControlStage stage, const CH32RVUsb
     return false;
 }
 
-/* Each frame in a block from the host, in its NDP16 order. */
-void CH32RVUsbDeviceNet::receiveBlock(uint16_t length)
+/* Each frame in a block from the host, in its NDP16 order, to `to`.
+ * Returns how many. */
+size_t CH32RVUsbDeviceNet::receiveBlock(uint16_t length, const FrameCallback &to)
 {
+    size_t frames = 0;
     if (length < 12 || get32(ntb_out) != NTH16_SIGNATURE || get16(ntb_out + 4) != 12) {
-        return;
+        return frames;
     }
     const uint16_t block = get16(ntb_out + 8) < length ? get16(ntb_out + 8) : length;
     uint16_t ndp = get16(ntb_out + 10);
     for (uint8_t guard = 0; ndp && guard < 8; guard++) {
         if ((uint32_t)ndp + 16 > block || get32(ntb_out + ndp) != NDP16_SIGNATURE) {
-            return;
+            return frames;
         }
         const uint16_t end = (uint16_t)(ndp + get16(ntb_out + ndp + 4));
         for (uint16_t p = (uint16_t)(ndp + 8); p + 4 <= end && p + 4 <= block; p += 4) {
@@ -242,24 +246,48 @@ void CH32RVUsbDeviceNet::receiveBlock(uint16_t length)
             if (!index || !size) {
                 break;
             }
-            if ((uint32_t)index + size <= block) {
-                handleFrame(ntb_out + index, size);
+            if ((uint32_t)index + size <= block && to) {
+                to(ntb_out + index, size);
+                frames++;
             }
         }
         ndp = get16(ntb_out + ndp + 6);
     }
+    return frames;
+}
+
+/* Re-arm OUT for the next block, unless the receive gate says no. */
+void CH32RVUsbDeviceNet::receiveNext()
+{
+    if (_receiveGate && !_receiveGate()) {
+        drv.out_paused = true;               /* resumeReceive() re-arms */
+    } else {
+        device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
+    }
+}
+
+size_t CH32RVUsbDeviceNet::usbDeliver()
+{
+    if (!_held) {
+        return 0;
+    }
+    /* Still held during the calls: nothing re-arms the endpoint over it. */
+    const size_t ran = receiveBlock(_held, _onFrame);
+    _held = 0;
+    if (drv.up && net == this) {
+        receiveNext();
+    }
+    return ran;
 }
 
 void CH32RVUsbDeviceNet::usbTransferred(uint8_t address, uint16_t length)
 {
     if (address == drv.ep_out) {
-        if (drv.up) {
-            receiveBlock(length);
-            if (_receiveGate && !_receiveGate()) {
-                drv.out_paused = true;           /* resumeReceive() re-arms */
-            } else {
-                device().transfer(drv.ep_out, ntb_out, sizeof ntb_out);
-            }
+        if (drv.up && length && !_stackFrame && _onFrame) {
+            _held = length;                      /* the sketch's: wait for usbDeliver() */
+        } else if (drv.up) {
+            receiveBlock(length, _stackFrame);
+            receiveNext();
         }
     } else if (address == drv.ep_in) {
         drv.in_busy = false;
@@ -321,9 +349,4 @@ void CH32RVUsbDeviceNet::resumeReceive()
     }
 }
 
-void CH32RVUsbDeviceNet::handleFrame(const uint8_t *data, size_t length)
-{
-    if (_onFrame) {
-        _onFrame(data, length);
-    }
-}
+

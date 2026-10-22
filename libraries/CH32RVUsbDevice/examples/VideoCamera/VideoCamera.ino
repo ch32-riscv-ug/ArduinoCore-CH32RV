@@ -120,6 +120,8 @@ void setup()
 
 void loop()
 {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   const bool streaming = Camera.streaming();
   if (streaming && !wasStreaming)
   {

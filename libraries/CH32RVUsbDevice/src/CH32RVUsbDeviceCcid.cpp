@@ -406,20 +406,14 @@ void CH32RVUsbDeviceCcid::handleMessage(const uint8_t *m, size_t length)
             sendStatus(RDR_TO_PC_DATA_BLOCK, slot, seq, COMMAND_FAILED, CH32RV_USB_DEVICE_CCID_ERROR_ICC_MUTE, 0);
             return;
         }
-        const bool was = _cardPowered;
         _cardPowered = true;
-        if (!was && _onPower) {
-            _onPower(true);
-        }
+        _powerPending = true;
         sendData(RDR_TO_PC_DATA_BLOCK, slot, seq, _atr, _atrLength, 0);
         return;
     }
     case PC_TO_RDR_ICC_POWER_OFF: {
-        const bool was = _cardPowered;
         _cardPowered = false;
-        if (was && _onPower) {
-            _onPower(false);
-        }
+        _powerPending = true;
         sendStatus(RDR_TO_PC_SLOT_STATUS, slot, seq, COMMAND_OK, 0, 0);
         return;
     }
@@ -482,4 +476,17 @@ void CH32RVUsbDeviceCcid::handleMessage(const uint8_t *m, size_t length)
         sendStatus(RDR_TO_PC_SLOT_STATUS, slot, seq, COMMAND_FAILED, CH32RV_USB_DEVICE_CCID_ERROR_CMD_NOT_SUPPORTED, 0);
         return;
     }
+}
+
+size_t CH32RVUsbDeviceCcid::usbDeliver()
+{
+    if (!_powerPending) {
+        return 0;
+    }
+    _powerPending = false;
+    if (!_onPower) {
+        return 0;
+    }
+    _onPower(_cardPowered);
+    return 1;
 }

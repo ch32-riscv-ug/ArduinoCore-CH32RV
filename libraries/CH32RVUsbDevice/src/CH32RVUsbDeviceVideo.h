@@ -123,11 +123,15 @@ public:
     bool sendGeneratedFrame(size_t length);
     bool frameInFlight() const { return _inFlight; }
 
-    /* Runs on the USB task when the last payload of a frame has gone. Arming
-     * the next frame from inside it is allowed; keep everything else out. */
+    /* From deliverEvents(), once the last payload of a frame has gone (and
+     * frameInFlight() is false): arming the next frame there keeps the stream
+     * going at the rate the sketch delivers. */
     void onFrameComplete(FrameCompleteCallback callback) { _onFrameComplete = callback; }
-    /* Runs when the host commits its streaming parameters. */
+    /* From deliverEvents(), when the host has committed its streaming
+     * parameters: the latest commit. */
     void onCommit(CommitCallback callback) { _onCommit = callback; }
+    /* The bytes of each payload of sendGeneratedFrame(), as it goes out: a
+     * provider, called inside the USB service while the host waits. */
     void onFillPayload(FillCallback callback) { _onFill = callback; }
     /* What the host committed to, or zeros before it has. */
     CH32RVUsbDeviceVideoCommit commit() const { return _commit; }
@@ -139,6 +143,7 @@ protected:
     bool usbSetInterface(uint8_t interfaceNumber, uint8_t alternate) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
     void usbHaltCleared(uint8_t address) override;
+    size_t usbDeliver() override;
 
 private:
     friend bool video_descriptor(const CH32RVUsbDeviceFunction &, CH32RVUsbDescriptorWriter &, uint8_t, uint8_t *,
@@ -158,6 +163,7 @@ private:
     uint8_t _frameRate = 15;
     uint32_t _maxFrameSize = 0;
     volatile bool _inFlight = false;
+    bool _frameDone = false, _committed = false;   /* for usbDeliver() */
     FrameCompleteCallback _onFrameComplete = nullptr;
     CommitCallback _onCommit = nullptr;
     FillCallback _onFill = nullptr;

@@ -193,6 +193,7 @@ void setup()
 
 void loop()
 {
+    deliverEvents();   /* the callbacks set in setup() run here */
     uint8_t buffer[64];
     /* read() only after peek() saw data: both run the USB task, and a packet
      * landing in read()'s would go uncounted either way. */

@@ -27,7 +27,7 @@ bool NetworkUsbNcm::begin(bool makeDefault)
             return false;
         }
     }
-    _ncm.onFrame([this](const uint8_t *frame, size_t length) { queueFrame(frame, length); });
+    _ncm.onStackFrame([this](const uint8_t *frame, size_t length) { queueFrame(frame, length); });
     /* No room for another block: the host waits rather than frames being dropped. */
     _ncm.receiveGate([this]() { return QUEUE_BYTES - _used >= BLOCK_ROOM; });
     /* The host's end of the link has the function's MAC address; this end
@@ -48,7 +48,7 @@ bool NetworkUsbNcm::begin(bool makeDefault)
 
 void NetworkUsbNcm::end()
 {
-    _ncm.onFrame(nullptr);
+    _ncm.onStackFrame(nullptr);
     _ncm.receiveGate(nullptr);
     _ncm.resumeReceive();
     netifStop();

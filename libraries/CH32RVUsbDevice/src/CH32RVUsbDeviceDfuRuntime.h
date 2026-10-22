@@ -18,7 +18,8 @@ class CH32RVUsbDeviceDfuRuntime : public CH32RVUsbDeviceFunction {
 public:
     explicit CH32RVUsbDeviceDfuRuntime(CH32RVUsbDevice &device = USBDevice);
 
-    /* Called on DFU_DETACH, before the reset. Return false to refuse (the
+    /* Called on DFU_DETACH, before the reset, inside the USB service (a
+     * provider: the reset waits for the answer). Return false to refuse (the
      * host still sees the request succeed; the device simply stays). */
     typedef CH32RVCallback<bool(void)> DetachCallback;
     void onDetach(DetachCallback cb) { _onDetach = cb; }

@@ -100,6 +100,8 @@ void setup()
 
 void loop()
 {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   if (Serial.available() > 0)
   {
     const char command = Serial.read();

@@ -26,8 +26,9 @@ A PC and a UART monitor at 115200 8N1.
 - `onAnyControlRequest()` reports vendor requests at SETUP and every control
   transfer at ACK. The last number on an ACK line is how many bytes the
   device answered.
-- The callbacks run from the USB processing (after `loop()` and in
-  `delay()`); printing on the UART there slows USB down a little.
+- The callbacks run from `deliverEvents()` at the top of `loop()`. Eight
+  requests are kept until then; more are dropped
+  (`USBDevice.droppedControlRequests()`).
 
 ## See also
 

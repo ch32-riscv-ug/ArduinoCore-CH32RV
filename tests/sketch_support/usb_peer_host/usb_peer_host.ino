@@ -386,6 +386,7 @@ void setup()
 
 void loop()
 {
+    deliverEvents();   /* the callbacks set in setup() run here */
     while (SerialDMSeq.available()) {
         const int c = SerialDMSeq.read();
         if (c == '\n') {

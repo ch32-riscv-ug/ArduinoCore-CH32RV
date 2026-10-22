@@ -14,8 +14,8 @@ class NetworkUsbNcm;
 
 class CH32RVUsbDeviceNet : public CH32RVUsbDeviceFunction {
 public:
-    /* callback(frame, length): a whole Ethernet frame from the host. Runs
-     * inside the USB stack; the data is valid only during the call. */
+    /* callback(frame, length): a whole Ethernet frame from the host; the data
+     * is valid only during the call. */
     typedef CH32RVCallback<void(const uint8_t *frame, size_t length)> FrameCallback;
 
     explicit CH32RVUsbDeviceNet(CH32RVUsbDevice &device = USBDevice);
@@ -26,7 +26,14 @@ public:
     void macAddress(const uint8_t mac[6]);
     const uint8_t *macAddress() const;
 
+    /* For the sketch: run from deliverEvents(). The host's block of frames is
+     * held until then (the host waits), and the next one is received once
+     * the last frame's call returns. */
     void onFrame(FrameCallback cb) { _onFrame = cb; }
+    /* For a network stack (the Network library): called inside the USB
+     * service as each frame arrives - copy it and return, never enter the
+     * stack from here. Takes the frames instead of onFrame(). */
+    void onStackFrame(FrameCallback cb) { _stackFrame = cb; }
     /* Flow control for a receiver that queues frames: after each block from
      * the host, gate() is asked whether another block (up to 2 KB of frames)
      * fits. When it says no, the endpoint is not re-armed and the host waits
@@ -68,20 +75,21 @@ public:
      * hasIP(), printTo() ...), or nullptr before the first call above. */
     NetworkUsbNcm *networkInterface() const { return _network; }
 
-    /* For the USB stack's callbacks. */
-    void handleFrame(const uint8_t *data, size_t length);
-
 protected:
     void usbReset() override;
     void usbConfigured(CH32RVUsbSpeed speed) override;
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     bool usbSetInterface(uint8_t interfaceNumber, uint8_t alternate) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
+    size_t usbDeliver() override;
 
 private:
     void notify();
-    void receiveBlock(uint16_t length);
+    size_t receiveBlock(uint16_t length, const FrameCallback &to);
+    void receiveNext();
     FrameCallback _onFrame = nullptr;
+    FrameCallback _stackFrame = nullptr;
+    uint16_t _held = 0;              /* a block waiting for usbDeliver() */
     ReceiveGate _receiveGate = nullptr;
     NetworkUsbNcm *_network = nullptr;   /* created by the Network library on first use */
 };

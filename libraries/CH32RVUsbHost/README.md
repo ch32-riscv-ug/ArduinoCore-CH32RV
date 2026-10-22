@@ -43,7 +43,7 @@ void setup() {
     Serial.println(usb.lastErrorName());
   }
 }
-void loop() {}
+void loop() { deliverEvents(); }   // the callbacks run here
 ```
 
 `Serial` is the hardware UART at 115200 baud, not the hosted USB port.
@@ -62,8 +62,10 @@ V30x host uses USBFS here, even when the chip also contains USBHS.
 | onDeviceConnected / onDeviceDisconnected | Track addresses and connection state |
 | deviceCount / getDevices / getDevice | Inspect connected devices |
 
-Callbacks run in host task context after loop and during delay, not in the
-ISR. Blocking APIs drive processing while waiting. Keep callbacks short;
+Callbacks run from deliverEvents(), which the sketch calls in loop(): never
+inside delay() or the ISR. Until then reports, bytes and packets wait in the
+stack's buffers (a full one holds the device off) and connections in a queue
+of four. Blocking APIs drive processing while waiting. Keep callbacks short;
 several examples set a flag and do class open/transfer work from loop.
 Callbacks are plain function pointers, one slot each. A new registration
 replaces the previous callback. Use captureless lambdas or ordinary functions.

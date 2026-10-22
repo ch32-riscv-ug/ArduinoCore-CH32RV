@@ -16,7 +16,7 @@ USB MIDI Device として動く鍵盤/音源、Host の VBUS、UART モニタ。
 
 ## 設定と制約
 
-channel 0 は通常表記で channel 1です。音源のない MIDI キーボードは受信しても鳴りません。`delay(200)` の間も Host stack は進みますが、長い処理を callback に置くことは避けます。
+channel 0 は通常表記で channel 1です。音源のない MIDI キーボードは受信しても鳴りません。`delay(200)` の間も Host stack は進みます。callback は `loop()` の先頭の `deliverEvents()` で届きます。
 
 ## 関連資料
 

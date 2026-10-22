@@ -102,6 +102,7 @@ void setup()
 
 void loop()
 {
+    deliverEvents();   /* the callbacks set in setup() run here */
     const bool mounted = USBDevice.mounted();
     if (mounted && !wasMounted) {
         mounts++;

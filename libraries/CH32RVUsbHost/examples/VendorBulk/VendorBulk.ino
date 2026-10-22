@@ -24,6 +24,8 @@ void setup() {
 }
 
 void loop() {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   if (want_open) {
     want_open = false;
     Serial.println(usb.vendorOpen() ? "vendorOpen: ok" : "vendorOpen: no vendor interface");

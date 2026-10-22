@@ -7,6 +7,11 @@
 
 #define CDC_PORTS_MAX 4
 
+/* What usbDeliver() has to tell the sketch. */
+#define PENDING_LINE_STATE  0x01
+#define PENDING_LINE_CODING 0x02
+#define PENDING_RX          0x04
+
 /* Notification IN on endpoint n, data OUT and IN on n + 1. */
 static bool cdc_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
                                uint8_t str, CH32RVUsbSpeed speed)
@@ -288,9 +293,7 @@ void CH32RVUsbDeviceCdcSerial::handleLineState(bool dtr, bool rts)
     if (!dtr && _bootTouch && _lineCoding.baud == 1200) {
         CH32RVUsbDevice::requestBootloader();
     }
-    if (_onLineState) {
-        _onLineState(_lineState);
-    }
+    _pending |= PENDING_LINE_STATE;
 }
 
 void CH32RVUsbDeviceCdcSerial::handleLineCoding(uint32_t baud, uint8_t stopBits, uint8_t parity,
@@ -300,14 +303,30 @@ void CH32RVUsbDeviceCdcSerial::handleLineCoding(uint32_t baud, uint8_t stopBits,
     _lineCoding.stopBits = stopBits;
     _lineCoding.parity = parity;
     _lineCoding.dataBits = dataBits;
-    if (_onLineCoding) {
-        _onLineCoding(_lineCoding);
-    }
+    _pending |= PENDING_LINE_CODING;
 }
 
 void CH32RVUsbDeviceCdcSerial::handleRx()
 {
-    if (_onRx) {
-        _onRx(rxUsed());
+    _pending |= PENDING_RX;
+}
+
+size_t CH32RVUsbDeviceCdcSerial::usbDeliver()
+{
+    const uint8_t pending = _pending;
+    _pending = 0;
+    size_t ran = 0;
+    if ((pending & PENDING_LINE_STATE) && _onLineState) {
+        _onLineState(_lineState);
+        ran++;
     }
+    if ((pending & PENDING_LINE_CODING) && _onLineCoding) {
+        _onLineCoding(_lineCoding);
+        ran++;
+    }
+    if ((pending & PENDING_RX) && _onRx && rxUsed()) {
+        _onRx(rxUsed());
+        ran++;
+    }
+    return ran;
 }

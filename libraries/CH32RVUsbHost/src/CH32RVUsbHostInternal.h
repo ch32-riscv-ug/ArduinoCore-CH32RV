@@ -40,6 +40,9 @@ struct CH32RVUsbHostGroup {
     void (*configured)(uint8_t daddr, uint8_t itf);
     void (*poll)(CH32RVUsbHost &host);   /* after every task run (nullptr: nothing) */
     void (*detach)(uint8_t daddr);       /* a device went away (nullptr: nothing) */
+    /* From deliverEvents(), never inside the task: run the sketch's callbacks
+     * for what poll() kept; how many ran (nullptr: the group has none). */
+    size_t (*deliver)(CH32RVUsbHost &host);
     CH32RVUsbHostGroup *next;
 };
 void ch32rv_usb_host_join(CH32RVUsbHostGroup &group);

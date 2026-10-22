@@ -58,8 +58,10 @@ public:
     void setBootTouchEnabled(bool enabled) { _bootTouch = enabled; }
     bool bootTouchEnabled() const { return _bootTouch; }
 
-    /* Called from the USB stack (inside loop()/delay(), not an interrupt)
-     * when the host changes DTR/RTS or the line coding, or data arrives. */
+    /* When the host changes DTR/RTS or the line coding, or data arrives: run
+     * from deliverEvents(), with the state at that time. Several changes
+     * before a delivery arrive as one; onRx() not at all when the data was
+     * read before it. */
     void onLineState(LineStateCallback cb) { _onLineState = cb; }
     void onLineCoding(LineCodingCallback cb) { _onLineCoding = cb; }
     void onRx(RxCallback cb) { _onRx = cb; }
@@ -77,6 +79,7 @@ protected:
     void usbConfigured(CH32RVUsbSpeed speed) override;
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
+    size_t usbDeliver() override;
 
 private:
     void receive();
@@ -94,6 +97,7 @@ private:
     uint16_t _packet = 64;
     bool _outBusy = false, _inBusy = false, _zlp = false;
     bool _bootTouch = true;
+    uint8_t _pending = 0;                        /* notifications for usbDeliver() */
     CH32RVUsbDeviceCdcLineCoding _lineCoding;
     CH32RVUsbDeviceCdcLineState _lineState;
     LineStateCallback _onLineState = nullptr;

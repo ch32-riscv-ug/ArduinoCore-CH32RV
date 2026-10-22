@@ -116,6 +116,8 @@ void setup()
 
 void loop()
 {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   echoLine(Console, "CONSOLE");
   echoLine(DataLink, "DATALINK");
 #if SERIAL_MULTI_HAS_THIRD_PORT

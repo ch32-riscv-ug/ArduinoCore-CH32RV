@@ -101,6 +101,8 @@ void setup()
 
 void loop()
 {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   // Assemble CDC input into lines and act on each completed line.
   while (UsbSerial.available() > 0)
   {

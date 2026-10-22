@@ -56,6 +56,10 @@ void loop() {
   全部終わるまで待ちます（EspUsbDevice は書けた分だけ返します）。1200bps タッチでブートローダーに入れます。
 - **スタックは `loop()` と `delay()` から動きます**（RTOS のタスクではありません）。`device.task()` で明示的にも
   動かせます。
+- **通知の callback は `deliverEvents()` から呼ばれます**（`onRx()`、`onLineState()`、`onBusEvent()`、`onFrame()`
+  など）。スケッチが `loop()` で呼び、`delay()` の中では呼ばれません。それまでデータはクラスの buffer かホスト側で
+  待ちます。ホストが答えを待つ provider（MSC の `onRead()` / `onWrite()`、`onApdu()`、`onControlRequest()`、
+  `onFillPayload()`）はスタックの中から呼ばれます。
 - **同じクラスの数には上限があります**（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。上限の中なら
   宣言するだけで使えます。CDC と CCID のバッファは `setBuffers()` でスケッチのものに差し替えられます
   （EspUsbDevice には無い拡張です）。クラスの総数や記述子の大きさには、ビルド時の上限がありません。
@@ -166,7 +170,7 @@ IN/OUT の endpoint 数、packet memory、ISO 能力は controller ごとに異�
 
 callback は関数ポインタで、受信 buffer は後の処理まで所有し続けるものではありません。
 保持が必要ならコピーし、Device callback の長い待ちや再入に頼らないでください。
-`loop()` と `delay()` が USB 処理を進めます。音声や映像で `write()` 等が返した長さを無視するとデータを失う場合があります。
+`loop()` と `delay()` が USB 処理を進め、通知の callback は `deliverEvents()` で届きます。音声や映像で `write()` 等が返した長さを無視するとデータを失う場合があります。
 
 ### サンプル固有の制約
 

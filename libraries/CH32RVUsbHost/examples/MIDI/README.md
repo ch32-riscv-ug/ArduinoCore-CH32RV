@@ -16,7 +16,7 @@ A keyboard/synthesizer exposing a USB MIDI device port, host VBUS wiring and a U
 
 ## Settings and limits
 
-API channel 0 is conventional channel 1. A MIDI controller without a sound engine will not produce audio from received notes. Host processing continues inside delay(200), but keep callbacks short.
+API channel 0 is conventional channel 1. A MIDI controller without a sound engine will not produce audio from received notes. Host processing continues inside delay(200); the callbacks wait for deliverEvents() at the top of loop().
 
 ## Related documentation
 

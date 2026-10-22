@@ -19,6 +19,8 @@ void setup() {
 }
 
 void loop() {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   if (dumped || !usb.mscReady()) {
     return;
   }

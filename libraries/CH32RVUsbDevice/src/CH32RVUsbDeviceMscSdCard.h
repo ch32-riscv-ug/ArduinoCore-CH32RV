@@ -29,6 +29,7 @@ public:
      * identification phase. False when no card answers. */
     bool begin(int ssPin, arduino::HardwareSPI &spi, uint32_t frequency = 4000000);
     bool attach(CH32RVUsbDeviceMsc &msc);
+    /* The host ejected the card: from deliverEvents(). */
     void onEject(EjectCallback cb) { _onEject = cb; }
     void readOnly(bool value) { _readOnly = value; }
     bool readOnly() const { return _readOnly; }
@@ -43,6 +44,7 @@ public:
     int32_t read(uint32_t lba, uint32_t offset, void *buffer, uint32_t size) override;
     int32_t write(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size) override;
     bool startStop(uint8_t powerCondition, bool start, bool loadEject) override;
+    size_t deliver() override;
 
 private:
     uint8_t command(uint8_t cmd, uint32_t arg);
@@ -58,5 +60,6 @@ private:
     bool _blockAddressing = false;   /* SDHC/SDXC: LBA, not byte address */
     bool _mounted = false;
     bool _readOnly = false;
+    bool _ejected = false;
     EjectCallback _onEject = nullptr;
 };

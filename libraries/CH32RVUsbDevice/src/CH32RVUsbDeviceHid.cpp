@@ -274,15 +274,42 @@ public:
     /* ------------------------------------------------ the stack's side */
     void usbReset() override
     {
+        outHeld = false;
         for (uint8_t i = 0; i < count; i++) {
             at(i)->onBusDetached();
         }
+    }
+
+    bool holding() const
+    {
+        for (uint8_t i = 0; i < count; i++) {
+            if (at(i)->hidHolding()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    size_t usbDeliver() override
+    {
+        size_t ran = 0;
+        for (uint8_t i = 0; i < count; i++) {
+            ran += at(i)->hidDeliver();
+        }
+        if (outHeld && !holding()) {
+            outHeld = false;
+            if (device().mounted()) {
+                device().transfer(epOut, out, outLength);
+            }
+        }
+        return ran;
     }
 
     void usbConfigured(CH32RVUsbSpeed) override
     {
         protocol = 1;                            /* report protocol after a configuration */
         idle = 0;
+        outHeld = false;
         /* Each OUT transfer asks for the longest report: one that is a whole
          * number of packets then ends the transfer by its length. */
         outLength = 64;
@@ -306,7 +333,11 @@ public:
     {
         if (address == epOut) {
             dispatch(0, 2, out, length);         /* an output report */
-            device().transfer(epOut, out, outLength);
+            if (holding()) {
+                outHeld = true;                  /* usbDeliver() takes the next */
+            } else {
+                device().transfer(epOut, out, outLength);
+            }
         }
     }
 
@@ -386,6 +417,7 @@ public:
     uint8_t epIn = 0, epOut = 0;
     uint8_t idle = 0, protocol = 1;
     uint16_t outLength = 64;
+    bool outHeld = false;                        /* OUT not re-armed: a class holds a report */
     uint8_t in[HID_EP_SIZE], out[HID_EP_SIZE], ctrl[HID_EP_SIZE];
 };
 
@@ -686,20 +718,36 @@ void CH32RVUsbDeviceHidKeyboard::onHidSetReport(uint8_t reportId, uint8_t report
         return;
     }
     _leds = data[0];
-    if (_outputCallback) {
-        _outputCallback(ledState());
-    }
+    _ledsPending = true;
 }
 
 void CH32RVUsbDeviceHidKeyboard::onHidSetProtocol(uint8_t protocol)
 {
     _protocol = protocol;
-    if (_protocolCallback) {
-        CH32RVUsbDeviceHidProtocolEvent event;
-        event.instance = 0;
-        event.protocol = protocol;
-        _protocolCallback(event);
+    _protocolPending = true;
+}
+
+size_t CH32RVUsbDeviceHidKeyboard::hidDeliver()
+{
+    size_t ran = 0;
+    if (_ledsPending) {
+        _ledsPending = false;
+        if (_outputCallback) {
+            _outputCallback(ledState());
+            ran++;
+        }
     }
+    if (_protocolPending) {
+        _protocolPending = false;
+        if (_protocolCallback) {
+            CH32RVUsbDeviceHidProtocolEvent event;
+            event.instance = 0;
+            event.protocol = _protocol;
+            _protocolCallback(event);
+            ran++;
+        }
+    }
+    return ran;
 }
 
 /* The host knows nothing is held and has set no LEDs: a chord surviving a
@@ -903,16 +951,43 @@ bool CH32RVUsbDeviceHidVendor::sendInput(const void *data, size_t length, uint32
 void CH32RVUsbDeviceHidVendor::onHidSetReport(uint8_t reportId, uint8_t reportType, const uint8_t *data,
                                               uint16_t length)
 {
-    CH32RVUsbDeviceHidReport report;
-    report.reportId = reportId;
-    report.reportType = reportType;
-    report.data = data;
-    report.length = length;
-    if (reportType == CH32RV_USB_DEVICE_HID_REPORT_TYPE_OUTPUT && _outputCallback) {
-        _outputCallback(report);
-    } else if (reportType == CH32RV_USB_DEVICE_HID_REPORT_TYPE_FEATURE && _featureCallback) {
-        _featureCallback(report);
+    const bool wanted = (reportType == CH32RV_USB_DEVICE_HID_REPORT_TYPE_OUTPUT && _outputCallback) ||
+                        (reportType == CH32RV_USB_DEVICE_HID_REPORT_TYPE_FEATURE && _featureCallback);
+    if (!wanted) {
+        return;
     }
+    if (_heldLength >= 0) {
+        _dropped++;
+        return;
+    }
+    if (length > sizeof _held) {
+        length = sizeof _held;
+    }
+    memcpy(_held, data, length);
+    _heldLength = (int16_t)length;
+    _heldId = reportId;
+    _heldType = reportType;
+}
+
+size_t CH32RVUsbDeviceHidVendor::hidDeliver()
+{
+    if (_heldLength < 0) {
+        return 0;
+    }
+    CH32RVUsbDeviceHidReport report;
+    report.reportId = _heldId;
+    report.reportType = _heldType;
+    report.data = _held;
+    report.length = (uint16_t)_heldLength;
+    const ReportCallback &cb = _heldType == CH32RV_USB_DEVICE_HID_REPORT_TYPE_OUTPUT ? _outputCallback
+                                                                                      : _featureCallback;
+    size_t ran = 0;
+    if (cb) {
+        cb(report);
+        ran = 1;
+    }
+    _heldLength = -1;                            /* free once the call returns */
+    return ran;
 }
 
 /* ---------------------------------------------------------- gamepad */

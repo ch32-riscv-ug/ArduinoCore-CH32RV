@@ -87,12 +87,17 @@ public:
     CH32RVUsbDeviceVendorDirectError lastDirectError() const { return _directError; }
     const char *lastDirectErrorName() const;
 
+    /* From deliverEvents(). onRx(): data waits in the FIFO (not at all when
+     * it was read before). onTxComplete(): the bytes sent since the last
+     * delivery, so a stream armed from it pauses until the sketch delivers. */
     void onRx(RxCallback cb) { _onRx = cb; }
     void onTxComplete(TxCompleteCallback cb) { _onTxComplete = cb; }
     /* Received data, straight from the endpoint buffer, one transfer at a
      * time; while set, nothing goes to the receive FIFO (available() stays 0).
      * EspUsbDevice has this on its direct builds only; here it is a run-time
-     * choice. The data is valid during the call. */
+     * choice. Delivered from deliverEvents(): the transfer is held there until
+     * then (the host waits), and the next one starts once the call returns.
+     * The data is valid during the call. */
     void onRxData(RxDataCallback cb) { _onRxData = cb; }
     /* Where onRxData() transfers land instead of the class's own buffer (2 x
      * the largest packet): a bigger one lets SuperSpeed OUT run at speed. It
@@ -103,6 +108,7 @@ public:
         _rxData = static_cast<uint8_t *>(buffer);
         _rxDataSize = size > 65535u ? 65535u : (uint16_t)size;
     }
+    /* A provider: called inside the USB service while the host waits. */
     void onControlRequest(ControlRequestCallback cb) { _onControl = cb; }
     /* Answer a request at stage SETUP: data, or a status stage when none. */
     bool sendControlResponse(const CH32RVUsbDeviceVendorControlRequest &request, const void *data = nullptr,
@@ -132,6 +138,7 @@ protected:
     void usbConfigured(CH32RVUsbSpeed speed) override;
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
+    size_t usbDeliver() override;
 
 private:
     static constexpr uint16_t BUFFER = CH32RV_USB_MAX_PACKET < 128 ? 256 : 2 * CH32RV_USB_MAX_PACKET;
@@ -148,6 +155,9 @@ private:
     uint8_t *_rxData = nullptr;
     uint8_t *_rxAt = nullptr;         /* where the OUT transfer in flight lands */
     uint16_t _rxDataSize = 0;
+    uint16_t _rxHeld = 0;             /* an onRxData() transfer waiting for usbDeliver() */
+    bool _rxPending = false;          /* onRx() */
+    size_t _txDone = 0;               /* onTxComplete(): bytes since the last delivery */
     uint16_t _endpointSize;
     RxCallback _onRx = nullptr;
     TxCompleteCallback _onTxComplete = nullptr;

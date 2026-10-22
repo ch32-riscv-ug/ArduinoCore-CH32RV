@@ -23,6 +23,8 @@ void setup() {
 }
 
 void loop() {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   while (port.available()) {
     Serial.write(port.read());
   }

@@ -62,6 +62,12 @@ Differences:
   1200 bps touch.
 - **The stack runs from `loop()` and `delay()`**, not an RTOS task;
   `device.task()` runs it explicitly.
+- **Notification callbacks run from `deliverEvents()`** (`onRx()`,
+  `onLineState()`, `onBusEvent()`, `onFrame()` ...), which the sketch calls
+  in `loop()`; never inside `delay()`. Until then the data waits in the
+  class's buffer or the host. Providers the host waits on (`onRead()` /
+  `onWrite()` of MSC, `onApdu()`, `onControlRequest()`, `onFillPayload()`)
+  are called inside the stack.
 - **Each class has a count limit** (CDC and MIDI 4, vendor and video 2,
   others 1); within it, declaring is enough. CDC buffers can be replaced with
   the sketch's own through `setBuffers()`.
@@ -155,8 +161,9 @@ TooManyInstances indicate different resource limits; see the
 
 begin success means the stack started; mounted means the host configured it.
 CDC connected means DTR is active. Callbacks are small (no heap); copy
-received data if needed later and keep device callbacks short. Tasks run after
-loop and during delay; call device.task inside long processing loops.
+received data if needed later and keep device callbacks short. The stack runs
+after loop and during delay; call device.task inside long processing loops.
+Notification callbacks run only in deliverEvents().
 
 ## Choosing the matching host application
 

@@ -87,6 +87,7 @@ void setup()
 
 void loop()
 {
+    deliverEvents();   /* the callbacks set in setup() run here */
     if (echoLength) {
         net.sendFrame(echo, echoLength, 500);
         echoLength = 0;

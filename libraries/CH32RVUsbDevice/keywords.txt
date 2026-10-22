@@ -288,3 +288,8 @@ beginNetwork	KEYWORD2
 networkUp	KEYWORD2
 receiveGate	KEYWORD2
 resumeReceive	KEYWORD2
+onStackFrame	KEYWORD2
+droppedBusEvents	KEYWORD2
+droppedControlRequests	KEYWORD2
+droppedReports	KEYWORD2
+deliverEvents	KEYWORD2

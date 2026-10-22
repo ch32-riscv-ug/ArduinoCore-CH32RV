@@ -8,9 +8,8 @@
  * descriptor, each class under its own report ID (CH32RV_USB_DEVICE_HID_REPORT_ID_*).
  * The device therefore has one HID interface whatever the sketch declares.
  *
- * Callbacks are plain function pointers (EspUsbDevice takes std::function):
- * a lambda without captures converts; one with captures does not. They run
- * inside the USB task - after loop(), in delay() - not in an interrupt. */
+ * The callbacks are notifications: they run from deliverEvents(), never
+ * inside the USB stack (ch32rv_deliver.h). */
 #pragma once
 
 /* Base of the HID classes: what the shared interface asks each of them. */
@@ -40,6 +39,12 @@ public:
     virtual void onHidSetProtocol(uint8_t protocol) { (void)protocol; }
     virtual void onBusAttached() {}
     virtual void onBusDetached() {}
+    /* From deliverEvents(): run the sketch's callbacks for what the hooks
+     * above recorded; how many ran. */
+    virtual size_t hidDeliver() { return 0; }
+    /* A report from the OUT endpoint waits for hidDeliver(): the interface
+     * does not take the next one until then (the host waits). */
+    virtual bool hidHolding() const { return false; }
 
 protected:
     explicit CH32RVUsbDeviceHidClass(CH32RVUsbDevice &device);
@@ -82,9 +87,11 @@ public:
      * press: CH32RV_USB_DEVICE_KEYBOARD_LAYOUT_JA_JP and so on. US by default. */
     void setLayout(const CH32RVUsbDeviceKeyboardLayout &layout) { _layout = &layout; }
     const CH32RVUsbDeviceKeyboardLayout &layout() const;
+    /* From deliverEvents(), with the LEDs then. */
     void onOutputReport(OutputReportCallback callback) { _outputCallback = callback; }
     /* Lock LEDs as the host last set them; cleared on bus reset / unplug. */
     CH32RVUsbDeviceHidKeyboardOutputReport ledState() const;
+    /* From deliverEvents(), with the protocol then. */
     void onProtocol(ProtocolCallback callback) { _protocolCallback = callback; }
     /* 1 report protocol, 0 boot protocol (a BIOS). */
     uint8_t protocol() const { return _protocol; }
@@ -106,6 +113,7 @@ public:
     void onHidSetProtocol(uint8_t protocol) override;
     void onBusAttached() override;
     void onBusDetached() override;
+    size_t hidDeliver() override;
 
 private:
     bool asciiToUsage(char key, uint8_t &usage, uint8_t &modifiers) const;
@@ -117,6 +125,7 @@ private:
     uint8_t _protocol = 1;
     bool _nkro = false;
     volatile uint8_t _leds = 0;
+    bool _ledsPending = false, _protocolPending = false;
     OutputReportCallback _outputCallback = nullptr;
     ProtocolCallback _protocolCallback = nullptr;
 };
@@ -186,8 +195,13 @@ public:
     void setUsage(uint16_t usagePage, uint8_t usage);
 
     bool sendInput(const void *data, size_t length, uint32_t timeoutMs = 100);
+    /* From deliverEvents(). One report is kept until then: from the OUT
+     * endpoint the next waits in the host; by SET_REPORT (a feature report,
+     * or an output report on a composite interface) it is dropped
+     * (droppedReports()). The data is valid during the call. */
     void onOutputReport(ReportCallback callback) { _outputCallback = callback; }
     void onFeatureReport(ReportCallback callback) { _featureCallback = callback; }
+    uint32_t droppedReports() const { return _dropped; }
     uint16_t reportSize() const { return _reportSize; }
     static uint16_t maxReportSize();
 
@@ -198,6 +212,9 @@ public:
     bool hidOutEndpoint() const override { return true; }
     void onHidSetReport(uint8_t reportId, uint8_t reportType, const uint8_t *data,
                         uint16_t length) override;
+    size_t hidDeliver() override;
+    bool hidHolding() const override { return _heldLength >= 0; }
+    void onBusDetached() override { _heldLength = -1; }
 
 private:
     void build();
@@ -208,6 +225,11 @@ private:
     uint8_t _descLength = 0;
     ReportCallback _outputCallback = nullptr;
     ReportCallback _featureCallback = nullptr;
+    /* The report waiting for hidDeliver(); _heldLength -1: none. */
+    uint8_t _held[CH32RV_USB_MAX_PACKET > 64 ? CH32RV_USB_MAX_PACKET : 64];
+    int16_t _heldLength = -1;
+    uint8_t _heldId = 0, _heldType = 0;
+    uint32_t _dropped = 0;
 };
 
 /* ---------------------------------------------------------- gamepad */

@@ -48,6 +48,11 @@ extern const char *(*ch32rv_usb_extra_string)(uint8_t index);
 extern uint16_t (*ch32rv_usb_hid_report)(CH32RVUsbDescriptorWriter *w);
 void ch32rv_usb_platform_use(void);
 
+/* Where the stack reports each control request it observes: set by
+ * onAnyControlRequest() (CH32RVUsbDeviceObserve.cpp), which queues them for
+ * deliverEvents(). Null: nothing is built. */
+extern void (*ch32rv_usb_observe)(const CH32RVUsbDeviceControlRequestInfo &info);
+
 /* Endpoint parameters by speed. Bulk: 64 bytes at full speed, 512 at high
  * speed, 1024 at SuperSpeed. Interrupt intervals: milliseconds at full speed;
  * at high speed and SuperSpeed the descriptor counts 2^(bInterval-1) units

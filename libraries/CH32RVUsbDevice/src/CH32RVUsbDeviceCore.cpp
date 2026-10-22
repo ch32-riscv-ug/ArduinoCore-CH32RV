@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "ch32rv_registers.h"
+#include "ch32rv_deliver.h"
 #include "ch32rv_service.h"
 #include "CH32RVUsbDevicePort.h"
 
@@ -64,10 +65,15 @@ struct CH32RVUsbDeviceCore {
     static void ep0_done(bool in, uint16_t length);
     static void task();
 
-    /* onAnyControlRequest() / onBusEvent(). */
-    static CH32RVUsbDevice::ControlRequestObserver observer;
+    /* onBusEvent(): the bus events wait here, in order, for deliverEvents().
+     * onAnyControlRequest() is ch32rv_usb_observe. */
     static CH32RVUsbDevice::BusEventCallback bus_event;
     static void observe(uint8_t stage, bool handled, uint16_t response);
+    static CH32RVUsbBusEvent bus_queue[8];
+    static uint8_t bus_first, bus_count;
+    static uint32_t bus_dropped;
+    static void bus(CH32RVUsbBusEvent e);
+    static size_t deliver();
 };
 
 CH32RVUsbDevice *CH32RVUsbDeviceCore::device;
@@ -97,8 +103,10 @@ CH32RVUsbDeviceFunction *CH32RVUsbDeviceCore::ep_owner[MAX_EP];
 uint16_t CH32RVUsbDeviceCore::busy_in, CH32RVUsbDeviceCore::busy_out, CH32RVUsbDeviceCore::halt_in,
     CH32RVUsbDeviceCore::halt_out;
 volatile bool CH32RVUsbDeviceCore::bootloader;
-CH32RVUsbDevice::ControlRequestObserver CH32RVUsbDeviceCore::observer;
 CH32RVUsbDevice::BusEventCallback CH32RVUsbDeviceCore::bus_event;
+CH32RVUsbBusEvent CH32RVUsbDeviceCore::bus_queue[8];
+uint8_t CH32RVUsbDeviceCore::bus_first, CH32RVUsbDeviceCore::bus_count;
+uint32_t CH32RVUsbDeviceCore::bus_dropped;
 
 
 
@@ -115,7 +123,48 @@ void Core::observe(uint8_t stage, bool handled, uint16_t response)
     info.wLength = req.wLength;
     info.responseLength = response;
     info.handled = handled;
-    observer(info);
+    ch32rv_usb_observe(info);
+}
+
+void (*ch32rv_usb_observe)(const CH32RVUsbDeviceControlRequestInfo &info);
+
+void Core::bus(CH32RVUsbBusEvent e)
+{
+    if (!bus_event) {
+        return;
+    }
+    if (bus_count == sizeof bus_queue / sizeof bus_queue[0]) {
+        bus_dropped++;
+        return;
+    }
+    bus_queue[(uint8_t)(bus_first + bus_count) % (sizeof bus_queue / sizeof bus_queue[0])] = e;
+    bus_count++;
+}
+
+/* The sketch's side: the bus events in order, then each function's own
+ * notifications. A callback may call delay(), which runs the stack and may
+ * record more; those wait for the next delivery. */
+size_t Core::deliver()
+{
+    size_t ran = 0;
+    for (uint8_t n = bus_count; n && bus_count; n--) {
+        const CH32RVUsbBusEvent e = bus_queue[bus_first];
+        bus_first = (uint8_t)((bus_first + 1) % (sizeof bus_queue / sizeof bus_queue[0]));
+        bus_count--;
+        if (bus_event) {
+            bus_event(e);
+            ran++;
+        }
+    }
+    if (!device) {
+        return ran;
+    }
+    for (CH32RVUsbDeviceFunction *f = device->_first; f; f = f->_next) {
+        if (f->_attached) {
+            ran += f->usbDeliver();
+        }
+    }
+    return ran;
 }
 
 #define EV_RESET   0x01
@@ -560,7 +609,7 @@ void Core::handle_setup()
          * and CH32RVUsbDeviceVendor::onControlRequest. */
         ok = ch32rv_usb_platform.request(CH32RVUsbControlStage::Setup, s) && answered;
     }
-    if (observer && type == 0x40) {
+    if (ch32rv_usb_observe && type == 0x40) {
         observe(CH32RV_USB_DEVICE_CONTROL_STAGE_SETUP, ok, 0);
     }
     if (!ok) {
@@ -616,7 +665,7 @@ void Core::ep0_done(bool in, uint16_t length)
         } else if ((req.bmRequestType & 0x60) == 0x40 && ch32rv_usb_platform.request) {
             ch32rv_usb_platform.request(CH32RVUsbControlStage::Ack, req);
         }
-        if (observer) {
+        if (ch32rv_usb_observe) {
             observe(CH32RV_USB_DEVICE_CONTROL_STAGE_ACK, true, (req.bmRequestType & 0x80) ? in_length : 0);
         }
     }
@@ -641,29 +690,23 @@ void Core::task()
     if (e & EV_RESET) {
         reset_state();
         was_configured = false;
-        if (bus_event) {
-            bus_event(CH32RVUsbBusEvent::Reset);
-        }
+        bus(CH32RVUsbBusEvent::Reset);
     }
     if (e & EV_SUSPEND) {
         suspended = true;
-        if (bus_event) {
-            bus_event(CH32RVUsbBusEvent::Suspended);
-        }
+        bus(CH32RVUsbBusEvent::Suspended);
     }
     if (e & EV_RESUME) {
         suspended = false;
-        if (bus_event) {
-            bus_event(CH32RVUsbBusEvent::Resumed);
-        }
+        bus(CH32RVUsbBusEvent::Resumed);
     }
     if (e & EV_SETUP) {
         memcpy(setup_raw, s, 8);
         handle_setup();
     }
     /* SET_CONFIGURATION answered just now. */
-    if (bus_event && configured != was_configured) {
-        bus_event(configured ? CH32RVUsbBusEvent::Configured : CH32RVUsbBusEvent::Unconfigured);
+    if (configured != was_configured) {
+        bus(configured ? CH32RVUsbBusEvent::Configured : CH32RVUsbBusEvent::Unconfigured);
     }
     if (dout & 1u) {
         ep0_done(false, len_out[0]);
@@ -727,6 +770,8 @@ void (*volatile ch32rv_usb_deferred)(void);
 /* The stack's system service (ch32rv_service.h): begin() attaches it, end()
  * takes it out of the round. */
 static ch32rv_service_t usb_service = CH32RV_SERVICE_INIT(ch32rv_usb_task);
+/* And the delivery of the sketch's notifications (ch32rv_deliver.h). */
+static ch32rv_delivery_t usb_delivery = CH32RV_DELIVERY_INIT(Core::deliver);
 
 bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
 {
@@ -783,7 +828,10 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     _error = CH32RVUsbDeviceError::None;
     /* delay() and the return of loop() run the stack from here on: the sketch
      * never calls a task() for enumeration and transfers to happen. */
+    Core::bus_first = Core::bus_count = 0;
+    Core::bus_dropped = 0;
     ch32rv_service_attach(&usb_service);
+    ch32rv_delivery_attach(&usb_delivery);
     dcd->connect(true);
     return true;
 }
@@ -801,6 +849,7 @@ void CH32RVUsbDevice::end()
     _started = false;
     Core::device = nullptr;
     ch32rv_service_detach(&usb_service);
+    ch32rv_delivery_detach(&usb_delivery);
 }
 
 bool CH32RVUsbDevice::restartWithOnly(CH32RVUsbDeviceFunction &only)
@@ -1178,12 +1227,12 @@ const uint8_t *CH32RVUsbDevice::hidReportDescriptor(uint8_t instance)
 
 uint16_t (*ch32rv_usb_hid_report)(CH32RVUsbDescriptorWriter *w);
 
-void CH32RVUsbDevice::onAnyControlRequest(ControlRequestObserver observer)
-{
-    Core::observer = observer;
-}
-
 void CH32RVUsbDevice::onBusEvent(BusEventCallback callback)
 {
     Core::bus_event = callback;
+}
+
+uint32_t CH32RVUsbDevice::droppedBusEvents() const
+{
+    return Core::bus_dropped;
 }

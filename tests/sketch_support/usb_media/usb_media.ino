@@ -94,6 +94,7 @@ void setup()
 
 void loop()
 {
+    deliverEvents();   /* the callbacks set in setup() run here */
     /* Microphone: as many samples as real time asks for. */
     const uint32_t now = micros();
     uint32_t elapsed = now - lastMicros;

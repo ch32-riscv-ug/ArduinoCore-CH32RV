@@ -34,7 +34,10 @@ public:
      * command (ICC_MUTE). Runs inside the USB stack: no blocking. */
     typedef CH32RVCallback<size_t(const uint8_t *apdu, size_t length, uint8_t *response, size_t capacity)> ApduCallback;
     typedef ApduCallback EscapeCallback;
-    /* The host activated (true) or deactivated (false) the card. */
+    /* The host activated (true) or deactivated (false) the card: from
+     * deliverEvents(), with the state then (several changes before it arrive
+     * as one call). onApdu() and onEscape() are providers:
+     * called inside the USB service while the host waits for the answer. */
     typedef CH32RVCallback<void(bool on)> PowerCallback;
 
     explicit CH32RVUsbDeviceCcid(CH32RVUsbDevice &device = USBDevice);
@@ -76,6 +79,7 @@ protected:
     void usbConfigured(CH32RVUsbSpeed speed) override;
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
+    size_t usbDeliver() override;
 
 private:
     void writeHeader(uint8_t messageType, uint32_t dataLength, uint8_t slot, uint8_t sequence, uint8_t icc,
@@ -90,6 +94,7 @@ private:
     ApduCallback _onApdu = nullptr;
     EscapeCallback _onEscape = nullptr;
     PowerCallback _onPower = nullptr;
+    bool _powerPending = false;     /* the host powered the card on or off */
     uint8_t _atr[CH32RV_USB_DEVICE_CCID_MAX_ATR] = {};
     uint8_t _atrLength = 0;
     volatile bool _cardPresent = false;

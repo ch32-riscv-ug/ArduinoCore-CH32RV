@@ -595,9 +595,7 @@ void CH32RVUsbDeviceVideo::end()
 void CH32RVUsbDeviceVideo::handleFrameComplete()
 {
     _inFlight = false;
-    if (_onFrameComplete) {
-        _onFrameComplete();
-    }
+    _frameDone = true;
 }
 
 /* A commit restarts the stream: any frame in flight was dropped. */
@@ -605,9 +603,28 @@ void CH32RVUsbDeviceVideo::handleCommit(const CH32RVUsbDeviceVideoCommit &commit
 {
     _commit = commit;
     _inFlight = false;
-    if (_onCommit) {
-        _onCommit(commit);
+    _committed = true;
+}
+
+size_t CH32RVUsbDeviceVideo::usbDeliver()
+{
+    size_t ran = 0;
+    if (_committed) {
+        _committed = false;
+        if (_onCommit) {
+            const CH32RVUsbDeviceVideoCommit commit = _commit;
+            _onCommit(commit);
+            ran++;
+        }
     }
+    if (_frameDone) {
+        _frameDone = false;
+        if (_onFrameComplete) {
+            _onFrameComplete();
+            ran++;
+        }
+    }
+    return ran;
 }
 
 void CH32RVUsbDeviceVideo::handleFill(uint8_t *dst, size_t length, uint32_t offset)

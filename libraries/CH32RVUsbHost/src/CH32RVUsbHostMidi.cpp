@@ -26,9 +26,9 @@ CH32RVUsbHost::MidiMessageCallback message_cb;
 
 uint16_t midi_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
 void midi_configured(uint8_t daddr, uint8_t itf);
-void poll(CH32RVUsbHost &host);
+size_t deliver(CH32RVUsbHost &host);
 void midi_detach(uint8_t daddr);
-CH32RVUsbHostGroup midi_group = {midi_open, midi_configured, poll, midi_detach, nullptr};
+CH32RVUsbHostGroup midi_group = {midi_open, midi_configured, nullptr, midi_detach, deliver, nullptr};
 
 struct Join {
     Join() { ch32rv_usb_host_join(midi_group); }
@@ -152,14 +152,16 @@ void midi_detach(uint8_t daddr)
     }
 }
 
-void poll(CH32RVUsbHost &host)
+/* The packets wait in the ring until here; a full one holds the device off. */
+size_t deliver(CH32RVUsbHost &host)
 {
     (void)host;
+    size_t ran = 0;
     Port &p = ports[0];
     if (!p.mounted || !message_cb) {
-        return;
+        return ran;
     }
-    while (p.tail != p.head) {
+    while (p.mounted && p.tail != p.head) {
         uint8_t pk[4];
         memcpy(pk, p.rx[p.tail], 4);
         p.tail = (uint8_t)((p.tail + 1) % RX_PACKETS);
@@ -174,10 +176,12 @@ void poll(CH32RVUsbHost &host)
         m.raw = pk;
         m.length = 4;
         message_cb(m);
+        ran++;
     }
-    if (p.epIn) {
+    if (p.mounted && p.epIn) {
         arm_in(p);
     }
+    return ran;
 }
 
 void out_done(void *user, uint8_t result, uint16_t length)

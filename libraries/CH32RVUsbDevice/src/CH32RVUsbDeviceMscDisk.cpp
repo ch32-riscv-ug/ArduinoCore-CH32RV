@@ -170,10 +170,23 @@ bool CH32RVUsbDeviceMscFatRamDisk::startStop(uint8_t powerCondition, bool start,
 {
     (void)powerCondition;
     (void)loadEject;
-    if (!start && _onEject) {
-        _onEject();
+    if (!start) {
+        _ejected = true;
     }
     return true;
+}
+
+size_t CH32RVUsbDeviceMscFatRamDisk::deliver()
+{
+    if (!_ejected) {
+        return 0;
+    }
+    _ejected = false;
+    if (!_onEject) {
+        return 0;
+    }
+    _onEject();
+    return 1;
 }
 
 bool CH32RVUsbDeviceMscFatRamDisk::addFile(const char *name, const uint8_t *data, size_t size)

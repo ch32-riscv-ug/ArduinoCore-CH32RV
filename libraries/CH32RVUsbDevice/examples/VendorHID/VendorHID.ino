@@ -78,6 +78,8 @@ void setup()
 
 void loop()
 {
+  // The callbacks set in setup() run here, and only here.
+  deliverEvents();
   const uint32_t now = millis();
   if (now - lastInputMs >= 1000)
   {

@@ -44,6 +44,8 @@ struct HidItf {
     uint16_t mpsIn;
     uint16_t descriptorLength;               /* the report descriptor's */
     volatile bool inBusy, outBusy;
+    uint8_t held;                            /* a report left in `in`: the queue was full */
+    bool descriptorPending;                  /* onHIDReportDescriptor() still due */
     uint8_t reportCount;
     ReportInfo reports[CH32RV_USB_HOST_HID_REPORTS];
     CH32RVUsbHostMouseReportLayout mouse;
@@ -59,9 +61,9 @@ struct HidItf {
 };
 HidItf hids[HID_INTERFACES];
 
-/* Reports wait here for the task: the endpoint is armed again at once, and
- * the sketch's callbacks (which may print to a slow console) run from the
- * task, not from inside a transfer's completion. */
+/* Reports wait here for deliverEvents(), which turns them into the sketch's
+ * callbacks. While the queue is full the interface's endpoint is not armed
+ * again: the device keeps its reports until there is room. */
 struct Queued {
     uint8_t idx;
     uint8_t length;
@@ -83,10 +85,10 @@ const CH32RVUsbHostKeyboardLayout *layout;
 
 uint16_t hid_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
 void hid_configured(uint8_t daddr, uint8_t itf);
-void hid_poll(CH32RVUsbHost &host);
+size_t hid_deliver(CH32RVUsbHost &host);
 void hid_detach(uint8_t daddr);
 
-CH32RVUsbHostGroup hid_group = {hid_open, hid_configured, hid_poll, hid_detach, nullptr};
+CH32RVUsbHostGroup hid_group = {hid_open, hid_configured, nullptr, hid_detach, hid_deliver, nullptr};
 
 /* Joins when this file is linked: something in it was called. */
 struct Join {
@@ -443,13 +445,15 @@ void in_done(void *user, uint8_t result, uint16_t length)
     }
     if (result == CH32RV_USBH_OK && length) {
         const uint8_t next = (uint8_t)((q_head + 1) % QUEUE);
-        if (next != q_tail) {                       /* full: this one is dropped */
-            Queued &q = queue[q_head];
-            q.idx = (uint8_t)(&h - hids);
-            q.length = (uint8_t)(length < sizeof q.data ? length : sizeof q.data);
-            memcpy(q.data, h.in, q.length);
-            q_head = next;
+        if (next == q_tail) {
+            h.held = (uint8_t)(length < sizeof h.in ? length : sizeof h.in);
+            return;                                 /* hid_deliver() queues it and re-arms */
         }
+        Queued &q = queue[q_head];
+        q.idx = (uint8_t)(&h - hids);
+        q.length = (uint8_t)(length < sizeof q.data ? length : sizeof q.data);
+        memcpy(q.data, h.in, q.length);
+        q_head = next;
     }
     arm_in(h);
 }
@@ -550,27 +554,69 @@ void hid_configured(uint8_t daddr, uint8_t itf)
     }
     h.mounted = true;
     ch32rv_usb_host_mark_claimed(daddr, h.itf);
-    if (descriptor_cb && got) {
-        CH32RVUsbHostHIDReportDescriptor d;
-        d.address = daddr;
-        d.interfaceNumber = h.itf;
-        d.data = desc;
-        d.length = got;
-        descriptor_cb(d);
-    }
+    h.descriptorPending = descriptor_cb && got;   /* read again for the sketch */
     arm_in(h);
 }
 
-void hid_poll(CH32RVUsbHost &host)
+/* The report descriptor is read again here: the copy the stack parsed lives
+ * in the shared scratch buffer, which is not kept. */
+size_t deliver_descriptor(HidItf &h)
+{
+    h.descriptorPending = false;
+    const uint16_t len = h.descriptorLength < sizeof ch32rv_usb_host_scratch ? h.descriptorLength
+                                                                             : (uint16_t)sizeof ch32rv_usb_host_scratch;
+    uint16_t got = 0;
+    if (!descriptor_cb || !len ||
+        ch32rv_usb_host_control_sync(h.daddr, 0x81, 6, 0x2200, h.itf, ch32rv_usb_host_scratch, len, &got, 1000) !=
+            CH32RV_USBH_OK ||
+        !got || !h.mounted) {
+        return 0;
+    }
+    CH32RVUsbHostHIDReportDescriptor d;
+    d.address = h.daddr;
+    d.interfaceNumber = h.itf;
+    d.data = ch32rv_usb_host_scratch;
+    d.length = got;
+    descriptor_cb(d);
+    return 1;
+}
+
+size_t hid_deliver(CH32RVUsbHost &host)
 {
     (void)host;
-    while (q_tail != q_head) {
+    size_t ran = 0;
+    for (HidItf &h : hids) {
+        if (h.mounted && h.descriptorPending) {
+            ran += deliver_descriptor(h);
+        }
+    }
+    /* Only what is queued now: reports that arrive during the callbacks wait
+     * for the next delivery. */
+    for (uint8_t n = (uint8_t)((q_head + QUEUE - q_tail) % QUEUE); n && q_tail != q_head; n--) {
         Queued q = queue[q_tail];
         q_tail = (uint8_t)((q_tail + 1) % QUEUE);
         if (q.idx < HID_INTERFACES && hids[q.idx].mounted) {
             report(hids[q.idx].daddr, q.idx, q.data, q.length);
+            ran++;
         }
     }
+    /* Room again: the held reports join the queue and their endpoints re-arm. */
+    for (HidItf &h : hids) {
+        const uint8_t next = (uint8_t)((q_head + 1) % QUEUE);
+        if (!h.held || next == q_tail) {
+            continue;
+        }
+        if (h.mounted) {
+            Queued &q = queue[q_head];
+            q.idx = (uint8_t)(&h - hids);
+            q.length = h.held;
+            memcpy(q.data, h.in, q.length);
+            q_head = next;
+        }
+        h.held = 0;
+        arm_in(h);
+    }
+    return ran;
 }
 
 void hid_detach(uint8_t daddr)

@@ -21,6 +21,9 @@ public:
         (void)loadEject;
         return true;
     }
+    /* From deliverEvents(), through the MSC class: run the sketch's
+     * notifications (onEject()); how many ran. */
+    virtual size_t deliver() { return 0; }
 };
 
 class CH32RVUsbDeviceMsc : public CH32RVUsbDeviceFunction {
@@ -39,6 +42,7 @@ public:
     /* No medium (false, the default) reads as "not ready" to the host. */
     void mediaPresent(bool value) { _mediaPresent = value; }
     void isWritable(bool value) { _writable = value; }
+    /* Providers: called inside the USB service while the host waits. */
     void onRead(CH32RVUsbDeviceMscReadCallback cb) { _onRead = cb; }
     void onWrite(CH32RVUsbDeviceMscWriteCallback cb) { _onWrite = cb; }
     /* START STOP UNIT: start false + loadEject true is the host's eject. */
@@ -65,6 +69,7 @@ protected:
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
     void usbHaltCleared(uint8_t address) override;
+    size_t usbDeliver() override { return _storage ? _storage->deliver() : 0; }
 
 private:
     /* Bulk-only transport: a command block, its data, a status. */
@@ -135,6 +140,7 @@ public:
 
     bool format(const char *volumeLabel = CH32RV_USB_MSC_VOLUME_LABEL);
     bool attach(CH32RVUsbDeviceMsc &msc);
+    /* The host ejected the disk: from deliverEvents(). */
     void onEject(EjectCallback cb) { _onEject = cb; }
     bool addFile(const char *name, const uint8_t *data, size_t size);
     bool addTextFile(const char *name, const char *text);
@@ -148,6 +154,7 @@ public:
     int32_t read(uint32_t lba, uint32_t offset, void *buffer, uint32_t size) override;
     int32_t write(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size) override;
     bool startStop(uint8_t powerCondition, bool start, bool loadEject) override;
+    size_t deliver() override;
 
 private:
     bool normalizeName(const char *name, char out[11]) const;
@@ -169,4 +176,5 @@ private:
     uint16_t _nextRootEntry = 0;
     CH32RVUsbDeviceMscRamDisk _blocks;
     EjectCallback _onEject = nullptr;
+    bool _ejected = false;
 };

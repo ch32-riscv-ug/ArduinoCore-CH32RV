@@ -96,6 +96,7 @@ CH32RVUsbDeviceVendor::CH32RVUsbDeviceVendor(CH32RVUsbDevice &device, uint16_t e
 void CH32RVUsbDeviceVendor::usbReset()
 {
     _outBusy = _inBusy = _zlp = _direct = false;
+    _rxHeld = 0;
 }
 
 void CH32RVUsbDeviceVendor::usbConfigured(CH32RVUsbSpeed speed)
@@ -113,7 +114,7 @@ uint16_t CH32RVUsbDeviceVendor::rxUsed() const
 
 void CH32RVUsbDeviceVendor::receive()
 {
-    if (_outBusy || !mounted()) {
+    if (_outBusy || _rxHeld || !mounted()) {
         return;
     }
     if (_onRxData) {
@@ -169,13 +170,14 @@ void CH32RVUsbDeviceVendor::usbTransferred(uint8_t address, uint16_t length)
     if (address == _ep) {
         _outBusy = false;
         if (_onRxData) {
-            /* Handed over where it landed; the next transfer reuses the room. */
-            /* Where this transfer was armed: one armed before onRxData() was
-             * set lands at the FIFO's head, not at the buffer's start. */
+            /* Held where it landed (where this transfer was armed: one armed
+             * before onRxData() was set lands at the FIFO's head) until
+             * usbDeliver() hands it over; the next transfer reuses the room. */
             if (length) {
-                _onRxData(_rxAt, length);
+                _rxHeld = length;
+            } else {
+                receive();
             }
-            receive();
             return;
         }
         _rxHead = (uint16_t)(_rxHead + length);
@@ -323,16 +325,44 @@ bool CH32RVUsbDeviceVendor::sendControlResponse(const CH32RVUsbDeviceVendorContr
 
 void CH32RVUsbDeviceVendor::handleRx()
 {
-    if (_onRx) {
-        _onRx(rxUsed());
-    }
+    _rxPending = true;
 }
 
 void CH32RVUsbDeviceVendor::handleTxComplete(size_t sentBytes)
 {
     if (_onTxComplete) {
-        _onTxComplete(sentBytes);
+        _txDone += sentBytes;
     }
+}
+
+size_t CH32RVUsbDeviceVendor::usbDeliver()
+{
+    size_t ran = 0;
+    if (_rxHeld) {
+        /* Still held during the call: nothing re-arms the endpoint over it. */
+        if (_onRxData) {
+            _onRxData(_rxAt, _rxHeld);
+            ran++;
+        }
+        _rxHeld = 0;
+        receive();
+    }
+    if (_rxPending) {
+        _rxPending = false;
+        if (_onRx && rxUsed()) {
+            _onRx(rxUsed());
+            ran++;
+        }
+    }
+    if (_txDone) {
+        const size_t sent = _txDone;
+        _txDone = 0;
+        if (_onTxComplete) {
+            _onTxComplete(sent);
+            ran++;
+        }
+    }
+    return ran;
 }
 
 bool CH32RVUsbDeviceVendor::handleControlRequest(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup)
