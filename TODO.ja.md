@@ -902,6 +902,9 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   `getApbFrequency()`）を入れた。実行中に変える API は作らない（F_CPU を定数として使う箇所が約 20、動いている周辺の
   入れ直しが要る）。既定は L103 / M103 96 MHz、V205 160 MHz、M030 72 MHz（EVT の既定）に上げた。残り: V407 / X315 / H41x
   のメニュー（HPRE / FPRE の分け方が別）、HSE、各項目の実機確認（UART の速度・ADC・USB）。
+  2026-10-22: M030 の既定 72 MHz が起動で止まった（device-data の行の SYSCLK=72 は HCLK で、PLL は 144 MHz 固定。生成器が
+  hpre を読んでいなかった）。e3ebb34 で修正し、表は device-data 6fcf406 で直った。M030G8R7 で 72 / 48 / 24 / 8 MHz の
+  UART 出力を ch32rv セッションが確認。ほかの系列の項目は実機未確認のまま。
 - PD の他系列（L103 / M103、V205、X305 / X315、H41x、M030 の USBPD0）: 2026-10-22 に入れた（ビルドのみ）。BMC の
   クロックは F_CPU から計算する（EVT の表は 10〜240 MHz。8 MHz の L103 / V205 / M030 で通るかは実機で確かめる。
   試験は `--case pd`）。M030 の USBPD1 は未対応。
