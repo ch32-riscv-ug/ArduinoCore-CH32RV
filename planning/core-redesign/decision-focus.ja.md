@@ -10,12 +10,12 @@
 
 [ARCH-SELECT-01 選択案](tasks/ARCH-SELECT-01/proposal.ja.md)に、A／B／C／別stackの比較、
 G1〜G5の推奨、数値根拠・反対理由・判断を覆す条件をまとめた。
-版3の推奨はA＋S：共通部品と明示stepを基本に、自動進行はsystemだけ。Bは除去可能な任意部品とする。
-[利用コード](tasks/ARCH-SELECT-01/usage.ja.md)と[第三者レビュー依頼](tasks/ARCH-SELECT-01/review-request.ja.md)を更新した。
-[レビュー02](tasks/ARCH-SELECT-01/review-02.ja.md)は版2の構造を支持したが、
-[利用者レビュー03](tasks/ARCH-SELECT-01/review-03.ja.md)で接続負担・容量・実行位置の理解が課題となった。
-[応答](tasks/ARCH-SELECT-01/review-02-03-response.ja.md)に推奨変更と証拠の限界を記録した。R1の用途評価1件であり、初学者予測試験の完了ではない。
-**次は版3のA中心・S限定の選択。追加実験・本実装は自動的に開始しない。**
+版4の推奨はA中心。通常通知／workは明示呼出し、systemはbeginで登録し、専用登録のprotocol providerだけsystem中で呼べる例外を提案する。Bは任意。
+[利用コード](tasks/ARCH-SELECT-01/usage.ja.md)と[レビュー依頼](tasks/ARCH-SELECT-01/review-request.ja.md)を更新した。
+[レビュー04](tasks/ARCH-SELECT-01/review-04.ja.md)は版3を条件付きで支持し、providerの区分と一括配達を求めた。
+[応答](tasks/ARCH-SELECT-01/review-04-response.ja.md)に(a)限定provider例外／(b)内部backend等／(c)明示応答の選択肢と、任意の一括明示配達をまとめた。
+**次はprovider例外と一括配達を含む版4の選択。providerを認めるとdelay中に利用者コードが動くため、厳密なS限定からの変更として判断する。**
+レビュー03のR1用途評価1件は引き継ぐが、初学者予測試験・版4の再レビューは未了。追加実験・本実装は自動的に開始しない。
 OEP port、電池用途、接続漏れ診断を新しい先行必須作業へ増やさない。
 利用者承認なし、P5後半の構造確定は未完了。
 

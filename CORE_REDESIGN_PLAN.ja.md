@@ -269,11 +269,11 @@ P0／P1の案は作成済み。P2〜P4のhost・linkと用途比較は蓄積し�
 個別実験の履歴は[実行状況](planning/core-redesign/execution-status.ja.md)に集約し、この計画に重複して積み上げない。
 
 P5前半の[選択案](planning/core-redesign/tasks/ARCH-SELECT-01/proposal.ja.md)を作成した。
-提案版3はA＋Sを中心に推奨する。userは明示step／run、自動進行はbeginで登録したsystemだけ、Bは任意部品とする。
-[レビュー02](planning/core-redesign/tasks/ARCH-SELECT-01/review-02.ja.md)は版2の構造を支持した。
-[利用者レビュー03](planning/core-redesign/tasks/ARCH-SELECT-01/review-03.ja.md)の用途評価を受け、
-[応答](planning/core-redesign/tasks/ARCH-SELECT-01/review-02-03-response.ja.md)と利用コードを更新した。
-次は[版3の変更点の確認](planning/core-redesign/tasks/ARCH-SELECT-01/review-request.ja.md)と利用者による選択。最終仕様の決定ではない。
+提案版4はA中心を維持し、通常通知／workの明示実行と、専用登録providerをsystem中で呼ぶ例外を提案する。
+[レビュー04](planning/core-redesign/tasks/ARCH-SELECT-01/review-04.ja.md)への
+[応答](planning/core-redesign/tasks/ARCH-SELECT-01/review-04-response.ja.md)に選択肢と推奨を記録した。
+一括通知配達は任意の共通入口とし、Bを必須にしない。providerを使うとdelay中にも利用者関数が動く点は版3からの変更。
+次は[版4の変更点の確認](planning/core-redesign/tasks/ARCH-SELECT-01/review-request.ja.md)と利用者による選択。最終仕様の決定ではない。
 必要な検証はレビューで特定し、構造上の未解決を残したまま本実装へ移らない。
 N08の網羅的な条件補完・H417の負荷拡大へ自動的に進まない。
 当面の成果は「どの全体判断が解けたか」で報告する。テスト件数や消化した作業ID数を全体進捗率にしない。

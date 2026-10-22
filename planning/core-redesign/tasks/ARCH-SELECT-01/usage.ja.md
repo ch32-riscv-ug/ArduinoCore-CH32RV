@@ -1,10 +1,12 @@
 # 選択案の利用者コードと状態の読み合わせ
 
-2026-10-22、提案版3（レビュー02・利用者レビュー03への修正提案）。[全体選択案](proposal.ja.md)のレビュー用。
+2026-10-22、提案版4（レビュー04への修正提案）。[全体選択案](proposal.ja.md)のレビュー用。
 **以下はAPI設計用の疑似C++で、コンパイル済みサンプルや新しい測定結果ではない。**
 型名・関数名は仮。既存の実験API／goldenへそのまま置換する指示ではなく、利用者が持つ状態と接続の責務を示す。
 実protocolのIRQ分担・時間成立は未検証。各APIの命令単位の実装を説明する資料ではない。
-基本はA＋S。自動進行はsystemだけで、利用者の処理は書いた呼出し場所で動く。
+基本はA。通常通知とworkは明示呼出しだけで動く。
+版4は、専用APIで登録したprotocol providerだけをsystem中で呼ぶ例外を提案する。
+providerを使う場合はsetup／loopのdelay中にも利用者の関数が動く。採用は未決定で、全例でproviderが必要という意味ではない。
 以下の基本例からBへの移行を要求しない。Bは末尾の応用比較として扱う。
 
 ## K0：少ない処理は直接つなげる
@@ -74,13 +76,13 @@ void loop() {
     controlStep();
     measureStep();
     displayStep();
-} // 有効化済みsystemだけをAfterLoop hookでも進める。userを自動配達するmodeはない
+} // systemをAfterLoopでも進める。この例は利用者providerを登録せず、通常通知も自動配達しない
 ```
 
 begin失敗は選んだ登録方式で起こり得る失敗を扱う。固定配列なら登録容量不足も含む。複数driverのbeginを一括transactionとはせず、先に成功したdriverの寿命も維持する。
 enterStartupFaultはfault状態を保持する疑似名で、driverの即時破棄や全要求の成功を意味しない。
 既定はsystem自動登録。依存除去・進行位置を選ぶ上級構成では初期化前にManualServiceを指定し、必要なdriverのserviceOnceを同じownerから順次呼べる。
-そのserviceはuser callbackをinline実行せず、非再入とIRQ同期を別々に満たす。
+そのserviceは通常通知をinline実行しない。専用登録したproviderがあれば通常service内で呼ぶ。非再入とIRQ同期は別々に満たす。
 
 ```cpp
 // 手動進行の代替構成。上の既定構成との併用例ではない
@@ -196,7 +198,7 @@ void setup() {
 }
 ```
 
-列挙などのsystem成立を利用者callbackに依存させない。setup中の受信は有限bufferに保持し、容量超過の扱いを明示する。
+列挙などの内部進行を通常の通知callbackに依存させない。providerを要する応答操作は次節の別契約で扱う。setup中の受信は有限bufferに保持し、容量超過の扱いを明示する。
 setup中に受信データを処理したい用途は、明示read／take、または初期化済みuser配達の明示runを使う。
 system serviceを登録したことだけを根拠に、受信lambdaをsetup中のdelayから呼ぶことは推奨しない。
 この違いは既存Arduinoコードの無変更移植より、実行位置の明示を優先する選択として再レビューする。
@@ -205,12 +207,66 @@ system serviceを登録したことだけを根拠に、受信lambdaをsetup中�
 IRQだけで完了する操作まで必ず停止すると一般化しないが、照会の繰返しを汎用の進行手段にはしない。
 setupを抜けた後も、受信をread／takeするか、libraryの明示配達APIを呼ばなければuser処理は進まない。
 
+通知callbackを使う場合の基本例は、共通の配達入口を一行だけ呼ぶ形にする。
+
 ```cpp
+void setup() {
+    initializeApplicationState();
+    if (!usb.onReceive(onRx).ok()) { enterStartupFault(); return; }
+    // 通知登録の成功に、共通の配達元への接続成功を含む。その場では呼ばない
+    if (!usb.begin().ok()) { enterStartupFault(); return; }
+}
 void loop() {
-    usb.deliverUserOnce(); // 登録済み受信callback等を有限件数配達する疑似API
-    controlStep();        // loopのdelayやAfterLoopではこの配達を代行しない
+    if (startupFault()) return;
+    runtime.deliverUserOnce(); // 登録済み通常通知を有限に配達。Bのexecutorは不要
+    controlStep();
+    delay(0);                 // この配達を代行しない
 }
 ```
+
+onRxは短く処理し、配達・runへ再入しない。複数のlibraryへ通知を登録しても配達呼出しは一つ。
+callbackを使わずread／takeするだけなら配達登録も共通一覧も不要。個別配達APIを残す場合も同じ通知状態を消費し、共通配達と二重に取り出さない。
+一括配達を呼ばなければ通常通知は進まず、保持容量の制約が残る。callback登録解除は配達参照がなくなってから行う。
+
+## 選択が必要な例外：応答を作るprovider
+
+これは版3にはなかった例外。相手への返答に必要な短い操作を、利用者が専用APIで委任した場合だけsystem中で呼ぶ。
+以下は事前に準備したreportを応答へコピーする設計例で、現在のUSB APIや全protocolの対応を示すものではない。
+
+```cpp
+ReportSnapshot report; // begin前に有効にし、provider解除・参照終了まで保持
+
+ProviderResult provideReport(ReplyBuffer& out) {
+    return out.copyBounded(report); // 長さ検査を含む有限コピー。準備不足・失敗も返す
+}
+void setup() {
+    initializeReport(report);
+    if (!usb.hid.setSystemProvider(provideReport).ok()) {
+        enterStartupFault(); return;
+    }
+    if (!usb.begin().ok()) { enterStartupFault(); return; }
+    while (!usb.ready()) {
+        if (usb.failed() || startupDeadlineExpired()) { enterStartupFault(); return; }
+        delay(10); // 要求が来ればproviderが呼ばれ得る。通常通知は呼ばない
+    }
+}
+void loop() {
+    if (startupFault()) return;
+    updateReportWithoutYield(report); // 途中でdelayせず、整った状態を公開する
+    delay(10);                       // ここでproviderからreportが参照され得る
+}
+```
+
+要求がなければproviderを呼ぶ必要はない。providerの登録そのものやbegin途中では呼ばない。
+上の例は単一通常ownerとコピー型応答を仮定する。IRQ／他coreもreportを書く場合や借用型応答なら、別の同期・寿命契約が要る。
+MSCの媒体provider等でも実行文脈は同じだが、block操作や書込み完了が短く終わるとは限らない。
+その場合は対応する遅延応答を使うか、未準備／失敗を返す。Pendingの汎用提供や、返った時点での転送buffer解放を仮定しない。
+providerからrun／配達を呼ばず、delay(0)で他処理を進めようとせず、完了までspinしない。
+provider用stateの更新中や必要なlockを保持中にdelayしない。通常通知をproviderからinlineで呼ばない。
+
+providerを登録しない案では、内部backend／事前公開データで応答するか、対応機能の明示request／response処理を利用者が回す。
+「相手が待っている」という理由だけで任意のcallbackを自動実行する許可にはしない。
+通常処理が戻らなければproviderも呼ばれず、いずれの案も相手のtimeout内の応答を一般には保証しない。
 
 ## 応用比較：同じstepを任意のBへ接続する
 
@@ -249,7 +305,7 @@ void loop() {
     if (startupFault()) return;
     app.runOnce();       // user workが動く明示境界
     computeOneChunk();
-    delay(0);            // systemだけ。appや受信callbackは呼ばない
+    delay(0);            // system進行。appや通常通知は呼ばない（provider登録があれば例外）
 }
 ```
 
@@ -292,9 +348,11 @@ Cでも状態通知を使える。比較対象は実装可能性ではなく、�
 
 | 状況 | 推奨案で起きること |
 |---|---|
-| setup中のdelay | begin成功で自動登録されたsystemだけ進む。ManualServiceは対象外。userは明示run／配達まで進まない |
+| setup中のdelay | begin成功で登録済みsystemを進め、専用登録providerは呼ばれ得る。ManualServiceは対象外。通常通知／workは明示run・配達まで進まない |
+| MSC等のproviderを専用登録し、beginが成功 | 要求処理の一部として通常system中で呼ばれ得る。通知用の一括配達を待つ必要はないが、応答時刻は保証しない |
+| 通常通知を登録したが一括配達を呼ばない | 通常通知は配達されない。systemや登録済みproviderの許可は変わらず、buffer満杯は機能の規則に従う |
 | 固定配列方式のbeginで登録枠が不足 | beginが明示失敗する。成功したように見せて内部進行だけ停止する挙動にしない |
-| loopの長い計算途中でdelay(0) | systemだけ進む。driver状態や受信bufferは変わり得るが、user関数は呼ばない |
+| loopの長い計算途中でdelay(0) | systemが進み、登録済みproviderは呼ばれ得る。driver状態・受信buffer・providerが扱うstateは変わり得る。通常通知は配達しない |
 | readyを照会するだけのspin | 通常serviceを進めない。通常側の完了処理が必要なら待ち続ける |
 | control callback内でdelay(0) | 他workは動かない。正常に戻った後の巡を待つ |
 | 同じworkを実行中にIRQがpost | 現在のcallbackは再入せず、次巡のreadyが残る |
@@ -302,7 +360,7 @@ Cでも状態通知を使える。比較対象は実装可能性ではなく、�
 | command queueが満杯 | 新commandを拒否。既存commandは保持し、入力側が表示・再試行等を選ぶ |
 | 切断後もbackendが止まらない | validを落とし、旧bufferは貸出中のまま。明示復旧で静止確認→Aborted等の結果回収ができた場合だけ再利用。timeout／reset命令だけでは返却しない |
 | 外部要因でclockの経過が不明になる | 関係する期限を無効として利用側へ状態公開する。device resetとtime domain変更を同一視しない |
-| userのrun／配達を呼ばない | user処理は進まない。その処理の回収を待つ休止準備も進まない可能性がある |
+| userのrun／配達を呼ばない | 通常user処理は進まない。その処理の回収を待つ休止準備も進まない可能性がある |
 | timerの期限を何回も過ぎる | 既定案では最新1回へ集約して起動。過去callbackを無制限に連続実行しない |
 
 説明を読んだ専門家の正答だけで、初学者への教育効果を証明した扱いにはしない。
