@@ -1,0 +1,14 @@
+CH32RVTaskKit	KEYWORD1
+Work	KEYWORD1
+Executor	KEYWORD1
+WorkStats	KEYWORD1
+RoundStats	KEYWORD1
+post	KEYWORD2
+wakeOn	KEYWORD2
+wakeEvery	KEYWORD2
+wakeWhen	KEYWORD2
+measure	KEYWORD2
+attach	KEYWORD2
+detach	KEYWORD2
+runOnce	KEYWORD2
+anyReady	KEYWORD2

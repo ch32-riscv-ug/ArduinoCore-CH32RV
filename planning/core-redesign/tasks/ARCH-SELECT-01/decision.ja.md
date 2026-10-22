@@ -90,3 +90,4 @@ ESP32SyncKit／ESP32AutoTask／ESP32TaskKit を使った人が、同じ言葉で
 - [x] 実装の順番に異存がない。追加の指示: 割り込み禁止区間（`CriticalSection` 等）の使い方もサンプルで示す（段 2 の examples に入れる）。
 
 承認後に Accepted ADR（実行モデル、所有と回収、公開部品、系列境界）へ反映し、この文書を P6 の依頼の入口にする。
+実行モデルは [ADR-0016](../../../../docs/adr/0016-execution-model.ja.md) に反映した（2026-10-22）。段 1・2・4・5 は実装済み、段 3 は移行の段取り待ち。

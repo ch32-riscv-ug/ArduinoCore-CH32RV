@@ -19,6 +19,7 @@ ADR には、現行実装を拘束する決定と、その決定を変更する�
 | [0010](0010-pin-numbering.ja.md) | pad 名を安定した sparse pin 番号で表す |
 | [0012](0012-usb-stack.ja.md) | USB stack には TinyUSB を使う（2026-10-20 にデバイス・ホストとも自前のスタックへ置き換え） |
 | [0013](0013-bundled-libraries.ja.md) | 同梱 library の範囲と examples の置き場所を限定する |
+| [0016](0016-execution-model.ja.md) | system service は begin で自動、利用者のコードは書いた場所で動く |
 
-番号 0011 と 0014 は現行 platform が依存しない tool 配布案だったため、文書から除外しました。
+番号 0011 と 0014 は現行 platform が依存しない tool 配布案だったため、文書から除外しました。0015 は下書きで使用中です。
 番号は再利用しません。
