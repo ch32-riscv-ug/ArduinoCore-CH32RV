@@ -72,6 +72,10 @@ static inline void ch32rv_pin_set_af(uint8_t pin, uint32_t af)
     if (bit >= 16u || port >= CH32RV_AFIO_AF_PORTS) {
         return;   /* no AFLR / AFHR for this port */
     }
+    /* The selection registers are AFIO's: with its clock off the write is
+     * lost and the pad stays on no function - analogWrite() on CH32H417 gave
+     * a pin stuck high whenever nothing else (Serial) had turned AFIO on. */
+    ch32rv_clock_enable(AFIO);
     volatile uint32_t *reg = &CH32RV_REG32(CH32RV_AFIO_BASE + CH32RV_AFIO_AFLR_OFFSET + port * 8u +
                                            (bit >= 8u ? 4u : 0u));
     const uint32_t shift = (bit & 7u) * 4u;

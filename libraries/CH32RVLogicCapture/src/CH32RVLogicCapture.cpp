@@ -92,6 +92,11 @@
 
 static CH32RVLogicCapture *active;
 
+uint8_t CH32RVLogicCapture::timer()
+{
+    return (uint8_t)LC_TIMER;
+}
+
 static void quiesce(void *context, uint8_t, uint8_t)
 {
     static_cast<CH32RVLogicCapture *>(context)->stop();

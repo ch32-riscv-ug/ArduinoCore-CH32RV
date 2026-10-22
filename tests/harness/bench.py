@@ -4,7 +4,7 @@ import re
 import tomllib
 from contextlib import contextmanager
 
-CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth",
+CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic",
          "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net",
          "usb-peer-host", "usb-peer-host-classes"}
 # Cases with an ESP32-S3 USB peer on the DUT's own USB port (tests/peer/usb).
@@ -14,7 +14,7 @@ TARGET_KEYS = {
     "port", "chip", "fqbn", "f_cpu", "usb_topology", "usb_vid", "usb_pid",
     "usb_serial", "dut_uid", "dut_chip_id", "cases", "power_ports", "gpio",
     "soft_usb_topology", "nrst_channel", "upload_port", "probe_unit_id",
-    "dut_usb_topology", "usb_peer_port",
+    "dut_usb_topology", "usb_peer_port", "logic_pin",
 }
 
 

@@ -65,6 +65,8 @@ public:
     bool begin(CH32RVLogicPort port, uint32_t sampleRate);
     void end();
     uint32_t sampleRate() const { return _rate; }
+    /* The timer it paces with (TIM6, TIM4, TIM3 or TIM2 by family). */
+    static uint8_t timer();
 
     /* Fill `buffer` round and round, `samples` 16-bit values (even, up to
      * 65534); each half is handed over when full. */
