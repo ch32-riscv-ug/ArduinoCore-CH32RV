@@ -314,3 +314,16 @@ H417のmessage／block公開・通知・返却と片側停止の実行器接続�
 284 trace・197,708コマンド、全4群71組一致。ABIは固定march／ilp32fのflat probeで、両coreの実配置ではない。
 N06には、transport共有状態とcore-local実行器の分離、hint／epoch／受付閉鎖の並列保護、
 call-local結果の区別を保つhost並列接続が残る。高位判断へ移す前に通常の比較実験として続ける。
+
+
+## N06 shared／core-local分離とhost並列（2026-10-22）
+
+[新transport／Endpoint](tasks/EXP-06/h417-transport-result.ja.md)でASan／UBSan261件・TSan256件・ABI388。
+outer try Gate下の共有操作と、その外で動くlocal callbackを分離した。実行中permitの終了待ち、close Busyのretry、
+古いepoch、出力保持、M/S/Uを検査。normal再入の早期close反例を修正し全suite／ABIを再実行した。
+96組の共有初期byte一致とprivate領域を確認。owner init／handshake／実起動を実行した証拠ではない。
+次はN07の変更差分・追加状態・意味・trace／ABIを同じ様式でまとめる。
+N08に2 producer／継続reset負荷・乱数予算・全runtime・初期化の補完を残し、物理backend／stack観測はN09。
+
+N06試作の追加観測：open_turnの32 bit serialは空pollでも増え、restartでも戻らず上限で拒否する。
+N08でidle時の費用と寿命、縮小counterでの拒否・復旧を比較する。現行の有限counterを最終仕様として採用しない。

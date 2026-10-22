@@ -825,6 +825,25 @@
       "archive_reference_status": "recorded"
     },
     {
+      "path": "planning/core-redesign/tasks/EXP-06/h417-transport-measurements.json",
+      "sha256": "e3a3b501fac82527ab5832f317876d665b17cfb230664a5ad0cd064080b2092d",
+      "archives": [
+        {
+          "pointer": "/archive/path",
+          "path": "work/exp06-h417-transport-20261022-evidence.tar.gz",
+          "expected_sha256": "af1622b962bf141bd250e77c44b159106d66002942d2eef075d514cde9142383",
+          "expected_bytes": 35947302,
+          "observed": {
+            "present": true,
+            "sha256": "af1622b962bf141bd250e77c44b159106d66002942d2eef075d514cde9142383",
+            "bytes": 35947302
+          },
+          "status": "matched"
+        }
+      ],
+      "archive_reference_status": "recorded"
+    },
+    {
       "path": "planning/core-redesign/tasks/EXP-06/k0-measurements.json",
       "sha256": "6b2d27e5f9a5883973b1a27fa0b1e68f54387fe264433c80d28b52b823cd796c",
       "archives": [
@@ -1236,9 +1255,9 @@
       "archive_reference_status": "not-recorded-in-manifest"
     }
   ],
-  "manifest_count": 67,
-  "unique_archive_count": 63,
-  "archive_reference_count": 64,
+  "manifest_count": 68,
+  "unique_archive_count": 64,
+  "archive_reference_count": 65,
   "manifests_without_archive_reference": [
     "planning/core-redesign/tasks/EXP-00/measurements.json",
     "planning/core-redesign/tasks/EXP-02/measurements.json",

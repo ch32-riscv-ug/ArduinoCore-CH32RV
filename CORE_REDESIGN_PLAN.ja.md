@@ -288,6 +288,11 @@ I/O取消・通常worker回収・有限jobのdrainと、clock／部分復帰・�
 公開→epoch ticket→明示hint→通常worker→block返却をつなぎ、busy retry・通知消去順の反例・停止／復旧を比較した。
 N06には、shared／core-localの分離とhint／epoch／受付閉鎖のhost並列保護が残る。直列のgate取得結果を並列契約へ流用しない。
 
+[N06 shared transport／core-local実行器](planning/core-redesign/tasks/EXP-06/h417-transport-result.ja.md)でASan／UBSan261件・TSan256件・両core ABI388を追加した。
+callback実行中と終了待ちをpermitで分離し、実際のnormal再入による早期close反例を修正・再検証した。
+共有初期値96組一致とlocal配置を確認。N06の休止・H417 host／構造的link比較を実施した範囲を記録し、次はN07。
+2 producer／reset負荷・乱数・全runtime／初期化はN08、実HSEM／cache／IRQ等はN09に残す。
+
 **DESIGN-01：P0 の全体設計案作成**は完了。
 
 - 入力：この計画、TODO のコンセプト・用途・タスク・永続化、FEATURE_CANDIDATES。

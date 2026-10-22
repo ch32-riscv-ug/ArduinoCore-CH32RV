@@ -28,6 +28,8 @@
 
 ## 最新の完了単位
 
+- [N06 shared transport／local実行器](tasks/EXP-06/h417-transport-result.ja.md)：ASan／UBSan native258件＋workspace3件・TSan256件・両core ABI388。共通transportと各coreのView／Endpointを分離し、permit終了まで復旧を待つ。512 host run、負荷のmessage49,152件／block12,288個を照合。normal再入による早期close反例を修正し12境界を追加。共有初期値96組一致、未使用192 ABI行はlocal／sharedとも0 B。N06のhost／構造的link範囲を実施し、次はN07。2 producer／reset負荷、乱数・全runtime／initはN08、物理backendはN09へ残す。
+
 - [N06 H417向け直列実行器接続](tasks/EXP-06/h417-executor-result.ja.md)：native69件＋workspace3件・H417 ABI194。3所有規則×4 featureとR/A/B/Cを接続し、284 trace・197,708コマンド、全4群71組一致。ticket／hint／dataを分け、busy retry、8 B read、容量保持、古いticket／lease、counter上限を検査。late-clearで新hintを消す反例も保存。未使用96 ABI行は追加0 B。SerialGate feedbackと両worker一体objectは共有並列・実配置の証拠ではない。次はN06のshared／core-local分離とhost並列保護。
 
 - [N06 休止と実行器](tasks/EXP-06/sleep-work-result.ja.md)：native104件＋workspace3件・ABI196。2 workerのI/O取消／終端回収／有限jobと休止を接続し、588 trace・109,628コマンド、全4群147組・全12構成45組が一致。M/S/U・domain・文脈、abort・部分Restore・時刻・期限を検査。I/OだけのQuietではjobを残して眠る反例を保存。未使用96 ABI行は追加0 B。V003／X035の構造的ABIで、V006実機・全runtime・peakは未検証。N06全体は未完了で、次はH417と実行器の接続。
