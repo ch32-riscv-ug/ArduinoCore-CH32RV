@@ -9,6 +9,7 @@
  *   http <ip> <port> <path>   HTTP <status> <body bytes> <CRC-32 hex> <ms>
  *   https <ip> <port> <path> <c|i>   c: verify against the CA given, i: no check
  *                             HTTPS <status> <body bytes> <CRC-32 hex> <TLS version hex> <handshake ms> <error>
+ *                             (HTTPS NOTLS on the parts without TLS)
  *   sink                      SINK <bytes> <ms> of the last connection on port 5001
  *   stats                     STATS <rx> <tx> <rx errors> <tx busy> <link ups> <PHY resets> <clock restarts>
  *
@@ -17,7 +18,13 @@
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <Network.h>
+/* No TLS where there is no hardware RNG (CH32V208 / V203RB): https answers HTTPS NOTLS. */
+#if defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_SERIES_CH32V203)
+#define ETH_TLS 0
+#else
+#define ETH_TLS 1
 #include <NetworkClientSecure.h>
+#endif
 #include <lwip/etharp.h>
 #include <string.h>
 
@@ -166,6 +173,10 @@ static void reply(char *command)
             snprintf(out, sizeof out, "HTTP %lu %lu %08lx %lu", (unsigned long)status, (unsigned long)bytes,
                      (unsigned long)crc, (unsigned long)(millis() - t0));
         } else {
+#if !ETH_TLS
+            SerialDMSeq.println("HTTPS NOTLS");
+            return;
+#else
             NetworkClientSecure c;
             if (mode[0] == 'i') {
                 c.setInsecure();
@@ -182,6 +193,7 @@ static void reply(char *command)
             }
             snprintf(out, sizeof out, "HTTPS %lu %lu %08lx %04x %lu %d", (unsigned long)status, (unsigned long)bytes,
                      (unsigned long)crc, version, (unsigned long)hs, error);
+#endif
         }
         SerialDMSeq.println(out);
     } else if (strcmp(command, "sink") == 0) {

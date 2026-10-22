@@ -4,7 +4,7 @@
  * without a sketch's defines, so the configuration is picked here from the
  * series, by how much RAM it has - never from a sketch. Two sizes:
  *
- *   NETWORK_LWIP_SMALL  64 KB of RAM  (CH32V208, V307/V317)
+ *   NETWORK_LWIP_SMALL  64 KB of RAM  (CH32V208, V203RB, V307/V317)
  *   NETWORK_LWIP_LARGE  more          (CH32V407/V467, H415-H417, the host test build)
  *
  * IPv4 only. The pools below bound what the stack itself takes; each
@@ -13,13 +13,14 @@
 #pragma once
 #include <stdint.h>
 
-#if defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
+#if defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_PART_CH32V203RBT6) || defined(CH32RV_SERIES_CH32V307) || \
+    defined(CH32RV_SERIES_CH32V317)
 #define NETWORK_LWIP_SMALL 1
 #elif defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || defined(CH32RV_SERIES_CH32H415) || \
     defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417) || defined(NETWORK_HOST_TEST)
 #define NETWORK_LWIP_LARGE 1
 #else
-#error "The Network library is for the series with an Ethernet MAC: CH32V208, V307/V317, V407/V467, H415-H417 (docs/network-stack.ja.md)"
+#error "The Network library is for the series with an Ethernet MAC: CH32V208, V203RB, V307/V317, V407/V467, H415-H417 (docs/network-stack.ja.md)"
 #endif
 
 /* No OS: raw API only, called from the task (ch32rv_net_task) and never from an interrupt. */
