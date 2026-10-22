@@ -360,11 +360,12 @@ OPT_MENU = (
 
 
 # CPU Clock (ESP32's "CPU Frequency": the frequency, then what it allows).
-# series -> [(key, SYSCLK MHz, HCLK = F_CPU MHz, label)], the first entry the
-# default. Off HSI only, from clock_configs.csv's rows; gen_board refuses an
+# series -> [(key, the row's SYSCLK= number in MHz, HCLK = F_CPU MHz, label)],
+# the first entry the default. Off HSI only, from clock_configs.csv's rows
+# (resolve_clock says what the row's number means; on M030 the 72 MHz row is a
+# 144 MHz PLL over HPRE /2); gen_board refuses an
 # entry the tables cannot make, whose AHB ratio the family cannot express
-# (SYSCLK below HSI is HSI over HPRE, as on V00x and X035: SYSCLK stays the
-# oscillator and only HCLK = F_CPU drops), or
+# (an HCLK below HSI is HSI over HPRE, as on V00x and X035), or
 # that leaves the ADC above its f_ADC at the largest divider. What a label
 # promises is each driver's own clock rule:
 #   USB FS on V103 / V20x / V30x / L103: SYSCLK 48, 96 or 144 MHz (USBPRE /1,
@@ -382,11 +383,11 @@ _V20X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
 _V30X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
                 ("72", 72, 72, "72MHz (no USB FS)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB FS)")]
 _V00X_CLOCKS = [("24", 24, 24, "24MHz"), ("48", 48, 48, "48MHz"),
-                ("8", 24, 8, "8MHz (lowest power)")]
+                ("8", 8, 8, "8MHz (lowest power)")]
 _L103_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
                 ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
-_X035_CLOCKS = [("48", 48, 48, "48MHz (USB)"), ("24", 48, 24, "24MHz (USB not checked)"),
-                ("12", 48, 12, "12MHz (USB not checked)"), ("8", 48, 8, "8MHz (lowest power, USB not checked)")]
+_X035_CLOCKS = [("48", 48, 48, "48MHz (USB)"), ("24", 24, 24, "24MHz (USB not checked)"),
+                ("12", 12, 12, "12MHz (USB not checked)"), ("8", 8, 8, "8MHz (lowest power, USB not checked)")]
 CLOCK_MENU = {
     "CH32V003": _V00X_CLOCKS,
     **{s: _V00X_CLOCKS for s in ("CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007")},
@@ -410,9 +411,16 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
     """The CPU Clock entries: F_CPU and the clock setting for each, checked."""
     lines = []
     max_div = 16 if fact["adc_clk_ctlr3"] else 8
-    for key, sys_mhz, hclk_mhz, label in menu:
-        clk = clock_for(None, sys_mhz * 1000000)
+    for key, nominal_mhz, hclk_mhz, label in menu:
+        clk = clock_for(None, nominal_mhz * 1000000)
         latency = clk["latency"] if clk["latency"] is not None else fam["flash_latency"]
+        # A row with a divider of its own (M030) fixes the HCLK; a row at /1
+        # (V20x's 120 MHz) leaves it to this menu's HPRE - V208's 60 MHz for
+        # Ethernet is that row over /2.
+        if clk["hclk"] != clk["sysclk"] and clk["hclk"] != hclk_mhz * 1000000:
+            raise SystemExit(f"ERROR: {series}: CPU Clock {key}: the SYSCLK={nominal_mhz} MHz row gives "
+                             f"HCLK {clk['hclk']} Hz, not {hclk_mhz} MHz")
+        sys_mhz = clk["sysclk"] // 1000000
         ratio, rem = divmod(sys_mhz, hclk_mhz)
         steps = (tuple(range(1, 9)) + (16, 32, 64, 128, 256) if fact["hpre_linear"]
                  else (1, 2, 4, 8, 16, 64, 128, 256, 512))
@@ -1344,7 +1352,7 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
         if hz == hsi_hz:
             # The reset default: no setter configures it because nothing has to
             # be written. CH32V20x and CH32V30x sit here until raised.
-            return dict(sysclk=hz, pll_mask=0, pll_value=0, exten_addr=0,
+            return dict(sysclk=hz, hclk=hz, pll_mask=0, pll_value=0, exten_addr=0,
                         exten_bits=0, latency=None, config=None)
         raise SystemExit(f"ERROR: {family}: ch32-device-data lists no HSI clock "
                          f"configuration for SYSCLK={hz}")
@@ -1356,6 +1364,30 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
                          f"match SYSCLK={hz} for die {die}: "
                          f"{[r['config'] for r in chosen]}")
     row = chosen[0]
+
+    # What the row's frequencies mean. clock_configs.csv spells two ways:
+    # CH32V407 / H417 rows give "SYSCLK=...;HCLK=..." (or CoreCLK[V3F]) with
+    # the prescaler in hpre / fpre; the CH32M030, X035, V003 and V006 rows
+    # carry the EVT setter's own number as SYSCLK= - which is the HCLK the
+    # setter produces - and the divider in hpre. Read literally, M030's
+    # "SYSCLK=72000000, hpre=2" put the fixed HSI x 18 = 144 MHz PLL on the
+    # core undivided (the part's maximum is 72 MHz: an illegal-instruction
+    # trap in SystemInit's SWS wait, CH32M030G8R7 on the bench 2026-10-22).
+    # So: an explicit HCLK= wins; otherwise the nominal value is the HCLK and
+    # SYSCLK is hpre times it. A row without a PLL must then land on the
+    # oscillator, which checks the reading against every X035 / V00x row.
+    domains = dict(d.split("=", 1) for d in row["domains"].split(";") if "=" in d)
+    nominal = int(domains["SYSCLK"])
+    row_hpre = int(row["hpre"] or 1)
+    if "HCLK" in domains:
+        true_sysclk, hclk = nominal, int(domains["HCLK"])
+    elif "CoreCLK[V3F]" in domains:
+        true_sysclk, hclk = nominal, int(domains["CoreCLK[V3F]"])
+    else:
+        true_sysclk, hclk = nominal * row_hpre, nominal
+    if not row["pll"] and true_sysclk != hsi_hz:
+        raise SystemExit(f"ERROR: {family}: {row['config']} has no PLL but SYSCLK={nominal} "
+                         f"x hpre {row_hpre} is not the oscillator ({hsi_hz})")
 
     # The value is the OR of the named constants; the mask to clear first is
     # the OR of the fields they sit in, found by longest-prefix against the
@@ -1435,7 +1467,7 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
                          fpre_div=int(fpre_div), syspll_sel_mask=sel_mask, syspll_gate=gate,
                          actlr_addr=actlr_addr, actlr_mask=actlr_mask, actlr_value=actlr_value)
 
-    return dict(sysclk=hz, pll_mask=mask, pll_value=value,
+    return dict(sysclk=true_sysclk, hclk=hclk, pll_mask=mask, pll_value=value,
                 exten_addr=exten_addr, exten_bits=exten_bits,
                 latency=int(row["flash_latency"]) if row["flash_latency"]
                 else None,
