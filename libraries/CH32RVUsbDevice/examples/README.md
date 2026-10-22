@@ -53,7 +53,7 @@ Declare functions on one device, then call `device.begin(config)` once, or use p
 | Keyboard characters | setLayout plus the PC keyboard layout |
 | Audio/video format | The example's sample/frame settings and controller bandwidth |
 
-USB tasks run after loop and during delay. Call device.task regularly in long processing loops. Keep device callbacks short and defer work to loop; delay inside a callback does not recursively run the device task.
+The USB stack runs after loop and during delay. Call device.task regularly in long processing loops. Notification callbacks (onRx, onLineState, onBusEvent ...) run only from deliverEvents(), which loop() calls; until then the data waits. Providers the host waits on (MSC onRead/onWrite, CCID onApdu, vendor onControlRequest) run inside the stack: keep them short and without delay. [SerialEvents](SerialEvents/README.md) shows the difference; the [guide (Japanese)](../../../docs/sketch-guide.ja.md) explains it.
 
 ## Troubleshooting and re-upload
 
@@ -96,6 +96,7 @@ On X035/X033, 1200-bps touch or DFU_DETACH enters WCH ISP. Avoid 1200 baud durin
 | [MSCSdCard](MSCSdCard/README.md) | An SPI SD card exposed as USB mass storage; the PC owns the filesystem. |
 | [MediaKeys](MediaKeys/README.md) | Consumer media-key reports plus a declared System Control function. |
 | [Mouse](Mouse/README.md) | A USB mouse generating relative movement, a wheel event and a left-button press/release without external sensors. |
+| [SerialEvents](SerialEvents/README.md) | Where the USB callbacks run: only in `deliverEvents()`. Data sent while `loop()` is busy waits and arrives in one call. |
 | [Serial](Serial/README.md) | An explicitly declared CDC port with UART diagnostics for line coding, DTR/RTS and received data. |
 | [SerialMulti](SerialMulti/README.md) | Two independent CDC ports, Console and Data Link, on one USB device. |
 | [SerialUSBEcho](SerialUSBEcho/README.md) | A minimal CDC ACM device using the predefined `SerialUSB`. It echoes received bytes and sends a counter once a second while the terminal is open. |

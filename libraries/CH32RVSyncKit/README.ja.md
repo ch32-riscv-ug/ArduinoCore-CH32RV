@@ -67,7 +67,7 @@ void loop() {
 
 ## サンプル
 
-[examples/README.ja.md](examples/README.ja.md) にあります。
+[examples/README.ja.md](examples/README.ja.md) にあります。ほかの部品と組み合わせた全体の流れは [スケッチの組み立て方](../../docs/sketch-guide.ja.md) にあります。
 
 ## ライセンス
 

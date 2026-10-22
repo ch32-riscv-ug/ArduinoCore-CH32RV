@@ -55,4 +55,4 @@ Names follow [ESP32SyncKit](https://github.com/tanakamasayuki/ESP32SyncKit), so 
 
 ## Examples
 
-See [examples/README.md](examples/README.md).
+See [examples/README.md](examples/README.md). How the pieces fit into a whole sketch: [the guide to putting a sketch together (Japanese)](../../docs/sketch-guide.ja.md).

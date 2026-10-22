@@ -37,7 +37,7 @@ Generated sketch profiles declare build conditions, not host-capable hardware. A
 
 ## Task processing and selection
 
-Tasks run after loop and during delay. Call usb.task in long processing loops. Callbacks run in host task context and may use blocking APIs, but should remain short. Several examples set a flag and open or transfer from loop.
+The host stack runs after loop and during delay. Call usb.task in long processing loops. Callbacks run only from deliverEvents(), which each example calls at the top of loop(); they may use blocking APIs but should remain short. Several examples set a flag and open or transfer from loop. See the [guide (Japanese)](../../../docs/sketch-guide.ja.md).
 
 usb.ready means the controller started. Use serialReady, midiReady, mscReady and class open results to check a function. ANY_ADDRESS selects the first matching device. With multiple devices use callback addresses and API address arguments, or CDC setAddress/setPort. Do not assume the same USB address survives reconnect.
 

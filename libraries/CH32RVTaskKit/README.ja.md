@@ -42,4 +42,4 @@ void loop()  { app.runOnce(); }       // 仕事が動くのはここだけ
 
 ## サンプル
 
-[examples/README.ja.md](examples/README.ja.md)
+[examples/README.ja.md](examples/README.ja.md)。割り込み・待たない書き方・callback と合わせた全体の流れは [スケッチの組み立て方](../../docs/sketch-guide.ja.md) にあります。

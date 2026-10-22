@@ -61,7 +61,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 | キーボードの文字配列 | `setLayout()` と PC の配列。raw usage 送信とは区別 |
 | 音声/映像の format | 各例の rate/channel/frame 設定。USB endpoint の帯域にも合わせる |
 
-`loop()` の後と `delay()` 中に USB task が進みます。長い計算ループでは `device.task()` を定期的に呼びます。Device callback では長い待機を避け、必要な仕事を `loop()` へ渡します。callback 中の `delay()` で USB task が入れ子に進むことを期待しないでください。
+`loop()` の後と `delay()` 中に USB の処理が進みます。長い計算ループでは `device.task()` を定期的に呼びます。通知の callback（`onRx()`、`onLineState()`、`onBusEvent()` など）は、`loop()` で呼ぶ `deliverEvents()` の中でだけ動き、それまでデータは待ちます。ホストが答えを待つ provider（MSC の `onRead()` / `onWrite()`、CCID の `onApdu()`、Vendor の `onControlRequest()`）は USB の処理の中で動くので、短く、`delay()` を入れずに書きます。違いは [SerialEvents](SerialEvents/README.ja.md) で確かめられ、[スケッチの組み立て方](../../../docs/sketch-guide.ja.md) で説明しています。
 
 ## 認識しない場合
 
@@ -106,6 +106,7 @@ X035/X033 は CDC の1200 bps touch または DFU_DETACH を入口に WCH ISP �
 | [MSCSdCard](MSCSdCard/README.ja.md) | SPI の SD カードを USB MSC の媒体として PC へ公開します。ファイルシステムは PC が扱います。 |
 | [MediaKeys](MediaKeys/README.ja.md) | 音量・再生・トラック操作の Consumer Control と、System Control の宣言例です。 |
 | [Mouse](Mouse/README.ja.md) | 相対移動、ホイール、左ボタンを順に送る USB マウスです。物理スイッチやセンサは使いません。 |
+| [SerialEvents](SerialEvents/README.ja.md) | USB の callback が `deliverEvents()` の中でだけ動くことを確かめます。`loop()` がふさがっている間に届いたデータは、待ってから 1 回で届きます。 |
 | [Serial](Serial/README.ja.md) | 明示的に宣言した CDC ポートの送受信と、ホストによる line coding・DTR/RTS の変更を観察します。USB 通信とハードウェア UART ログを使い分ける例です。 |
 | [SerialMulti](SerialMulti/README.ja.md) | 一つの USB デバイスに独立した二つの CDC ポートを作ります。Console と Data Link を分け、ログと機械向け通信を別の端末で確認できます。 |
 | [SerialUSBEcho](SerialUSBEcho/README.ja.md) | 定義済みの `SerialUSB` だけで始める CDC ACM の最小例です。受信したバイトをそのまま返し、端末を開いている間は毎秒カウンタを送ります。 |

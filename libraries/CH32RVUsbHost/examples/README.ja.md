@@ -37,7 +37,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6 \
 
 ## task と機器の選択
 
-Host task は `loop()` の後と `delay()` 中に進みます。長い計算ループでは `usb.task()` を呼びます。callback は割り込みからではなく Host task から呼ばれます。待つ API も使えますが、callback を短くしてフラグを立て、`loop()` から open/転送する例もあります。
+Host の処理は `loop()` の後と `delay()` 中に進みます。長い計算ループでは `usb.task()` を呼びます。callback は、各例が `loop()` の先頭で呼ぶ `deliverEvents()` の中でだけ動きます。待つ API も使えますが、callback を短くしてフラグを立て、`loop()` から open/転送する例もあります。考え方は [スケッチの組み立て方](../../../docs/sketch-guide.ja.md) にあります。
 
 `usb.ready()` は controller の開始状態です。クラスの接続状態は `serialReady()` / `midiReady()` / `mscReady()` 等で確認します。既定の address は最初の該当機器を選びます。複数機器では callback の `address` を保持し、API の address 引数または CDC wrapper の `setAddress()` / `setPort()` で指定します。抜き挿し後の address を固定値で仮定しないでください。
 

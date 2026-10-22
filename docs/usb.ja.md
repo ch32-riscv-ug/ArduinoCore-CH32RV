@@ -17,7 +17,7 @@
 
 | 目的 | 最初の例 | 全サンプルと接続手順 |
 |---|---|---|
-| ボードを PC の USB Device にする | [SerialUSBEcho](../libraries/CH32RVUsbDevice/examples/SerialUSBEcho/README.ja.md) | [Device 共通ガイドと27例](../libraries/CH32RVUsbDevice/examples/README.ja.md) |
+| ボードを PC の USB Device にする | [SerialUSBEcho](../libraries/CH32RVUsbDevice/examples/SerialUSBEcho/README.ja.md) | [Device 共通ガイドと28例](../libraries/CH32RVUsbDevice/examples/README.ja.md) |
 | ボードへ USB 周辺機器を接続する | [DeviceInfo](../libraries/CH32RVUsbHost/examples/DeviceInfo/README.ja.md) | [Host 共通ガイドと8例](../libraries/CH32RVUsbHost/examples/README.ja.md) |
 | PD 充電器/電源を扱う | [ListProfiles](../libraries/CH32RVUsbPd/examples/ListProfiles/README.ja.md) | [PD 共通ガイドと3例](../libraries/CH32RVUsbPd/examples/README.ja.md) |
 
@@ -188,7 +188,10 @@ USB の処理は、`loop()` の後・`delay()` の中・`SerialUSB` などの各
 
 - `loop()` を長く止める（`delay()` を使わずに待つ）と、その間はホストへの応答が止まります。ホストからは、切断ではなく
   「止まったデバイス」に見えます。
-- クラスのコールバック（`onOutputReport`、`onLineState` など）は、この処理の中から呼ばれます。割り込みからではありません。
+- クラスの通知のコールバック（`onOutputReport`、`onLineState` など）は、この処理の中では呼ばれません。スケッチが `loop()`
+  で `deliverEvents()` を呼んだときに届きます（[スケッチの組み立て方](sketch-guide.ja.md)、例:
+  [SerialEvents](../libraries/CH32RVUsbDevice/examples/SerialEvents/README.ja.md)）。ホストが答えを待つ provider（MSC の
+  `onRead()` / `onWrite()`、CCID の `onApdu()` など）だけは、この処理の中から呼ばれます。
 - 何もしていないときの負荷（X035、`loop()` の1秒あたりの回数）: USB なし 42.8 万回、USB あり 20.7 万回です。毎回処理する
   作りだと 7.8 万回まで落ちるので、イベントがあるときだけ処理しています。
 
@@ -262,7 +265,7 @@ void setup() {
   }
   USBPD.request(9000);               // 9 V。実アプリでは戻り値も確認
 }
-void loop() { USBPD.maintain(); }    // PPS の契約を保つ
+void loop() { }                     // begin() が PPS の契約を保つ
 ```
 
 この要求で VBUS 自体が9 Vに上がります。電源入力回路・負荷の定格を確認し、
@@ -319,7 +322,10 @@ void setup() {
     Serial.println(usb.lastErrorName());
   }
 }
-void loop() { while (port.available()) Serial.write(port.read()); }
+void loop() {
+  deliverEvents();                      // onKeyboard() はここで動く
+  while (port.available()) Serial.write(port.read());
+}
 ```
 
 | 系列 | ポート | 確認 |
@@ -363,8 +369,8 @@ void loop() { while (port.available()) Serial.write(port.read()); }
   - デバッガがクロックを書き換えたあと、コアが `SystemInit()` をやり直すと USB の分周（USBPRE）が消えます。
 - DFU_DETACH への応答が、ホスト側でよく STALL（libusb の Pipe error）として返ります。デバイスは毎回
   ブートローダーに入るので、ホスト側は応答のエラーを無視して、ブートローダーの出現を待ってください。
-- Arduino の慣例どおり `delay()` の中でも USB を処理するので、USB のコールバックの中で長い `delay()` を呼ぶと、その
-  間の USB 処理は止まります（入れ子にはしません）。
+- provider のコールバック（MSC の `onRead()` など）の中で長い `delay()` を呼ぶと、その間の USB 処理は止まります
+  （入れ子にはしません）。通知のコールバックは `deliverEvents()` から呼ばれるので、中の `delay()` でも USB は進みます。
 - **読み出し保護をかけた X035 には、USB から書き込めません**（ch32rv 側の実測、BTVER 2.60）。DFU_DETACH やタッチで
   BOOT_MODE は立ちますが、ブートローダーが Flash を読めずに止まり、ISP が現れません。また、電源投入後にデバッガが
   一度でも接続すると、アプリも止まります。解除できるのは、デバッグ線からの `ch32rv recover --method unprotect`

@@ -42,4 +42,4 @@ The times include interrupts that ran meanwhile (not CPU time); maxima are what 
 
 ## Examples
 
-[examples/README.md](examples/README.md)
+[examples/README.md](examples/README.md). How this fits with interrupts, not waiting and callbacks: [the guide to putting a sketch together (Japanese)](../../docs/sketch-guide.ja.md).
