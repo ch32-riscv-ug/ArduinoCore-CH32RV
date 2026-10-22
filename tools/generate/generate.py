@@ -360,10 +360,9 @@ OPT_MENU = (
 
 
 # CPU Clock (ESP32's "CPU Frequency": the frequency, then what it allows).
-# series -> [(key, the row's SYSCLK= number in MHz, HCLK = F_CPU MHz, label)],
-# the first entry the default. Off HSI only, from clock_configs.csv's rows
-# (resolve_clock says what the row's number means; on M030 the 72 MHz row is a
-# 144 MHz PLL over HPRE /2); gen_board refuses an
+# series -> [(key, SYSCLK MHz, HCLK = F_CPU MHz, label)], the first entry the
+# default. Off HSI only, from clock_configs.csv's rows (M030's 72 MHz is its
+# fixed 144 MHz PLL over HPRE /2); gen_board refuses an
 # entry the tables cannot make, whose AHB ratio the family cannot express
 # (an HCLK below HSI is HSI over HPRE, as on V00x and X035), or
 # that leaves the ADC above its f_ADC at the largest divider. What a label
@@ -383,11 +382,11 @@ _V20X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
 _V30X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
                 ("72", 72, 72, "72MHz (no USB FS)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB FS)")]
 _V00X_CLOCKS = [("24", 24, 24, "24MHz"), ("48", 48, 48, "48MHz"),
-                ("8", 8, 8, "8MHz (lowest power)")]
+                ("8", 24, 8, "8MHz (lowest power)")]
 _L103_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
                 ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
-_X035_CLOCKS = [("48", 48, 48, "48MHz (USB)"), ("24", 24, 24, "24MHz (USB not checked)"),
-                ("12", 12, 12, "12MHz (USB not checked)"), ("8", 8, 8, "8MHz (lowest power, USB not checked)")]
+_X035_CLOCKS = [("48", 48, 48, "48MHz (USB)"), ("24", 48, 24, "24MHz (USB not checked)"),
+                ("12", 48, 12, "12MHz (USB not checked)"), ("8", 48, 8, "8MHz (lowest power, USB not checked)")]
 CLOCK_MENU = {
     "CH32V003": _V00X_CLOCKS,
     **{s: _V00X_CLOCKS for s in ("CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007")},
@@ -402,7 +401,7 @@ CLOCK_MENU = {
     "CH32V205": [("160", 160, 160, "160MHz (USB)"), ("120", 120, 120, "120MHz (USB)"),
                  ("80", 80, 80, "80MHz (USB)"), ("40", 40, 40, "40MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
-    "CH32M030": [("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"), ("24", 24, 24, "24MHz (USB)"),
+    "CH32M030": [("72", 144, 72, "72MHz (USB)"), ("48", 144, 48, "48MHz (USB)"), ("24", 144, 24, "24MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
 }
 
@@ -411,14 +410,14 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
     """The CPU Clock entries: F_CPU and the clock setting for each, checked."""
     lines = []
     max_div = 16 if fact["adc_clk_ctlr3"] else 8
-    for key, nominal_mhz, hclk_mhz, label in menu:
-        clk = clock_for(None, nominal_mhz * 1000000)
+    for key, sysclk_mhz, hclk_mhz, label in menu:
+        clk = clock_for(None, sysclk_mhz * 1000000, hclk_mhz * 1000000)
         latency = clk["latency"] if clk["latency"] is not None else fam["flash_latency"]
         # A row with a divider of its own (M030) fixes the HCLK; a row at /1
         # (V20x's 120 MHz) leaves it to this menu's HPRE - V208's 60 MHz for
         # Ethernet is that row over /2.
         if clk["hclk"] != clk["sysclk"] and clk["hclk"] != hclk_mhz * 1000000:
-            raise SystemExit(f"ERROR: {series}: CPU Clock {key}: the SYSCLK={nominal_mhz} MHz row gives "
+            raise SystemExit(f"ERROR: {series}: CPU Clock {key}: the SYSCLK={sysclk_mhz} MHz row gives "
                              f"HCLK {clk['hclk']} Hz, not {hclk_mhz} MHz")
         sys_mhz = clk["sysclk"] // 1000000
         ratio, rem = divmod(sys_mhz, hclk_mhz)
@@ -1330,8 +1329,19 @@ def load_clock(tables: pathlib.Path) -> tuple:
     return configs, symbols, prescalers
 
 
+def _row_hclk(row: dict) -> int:
+    """The HCLK a clock_configs.csv row produces: HCLK= (CoreCLK[V3F] on
+    CH32H41x) where the setter divides, else SYSCLK= itself."""
+    domains = dict(d.split("=", 1) for d in row["domains"].split(";") if "=" in d)
+    for key in ("HCLK", "CoreCLK[V3F]", "SYSCLK"):
+        if key in domains:
+            return int(domains[key])
+    return 0
+
+
 def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
-                  configs: list, symbols: dict, prescalers: dict) -> dict:
+                  configs: list, symbols: dict, prescalers: dict,
+                  hclk: int | None = None) -> dict:
     """What SystemInit has to write to run this family's SYSCLK at hz off HSI.
 
     Returns the numbers, not the symbol names: the same name is a different
@@ -1348,6 +1358,13 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
             # An exact match: a substring test took "SYSCLK=80000000" (the
             # 80 MHz PLL setting) for 8 MHz on CH32V205.
             and r["domains"].split(";")[0] == f"SYSCLK={hz}"]
+    # One SYSCLK, several setters: CH32V003's 24 MHz row and its 8 MHz row
+    # (HSI over HPRE /3) share SYSCLK=24000000. The HCLK asked for picks the
+    # row; an undivided row serves a menu entry that divides it further here
+    # (CH32V20x's 120 MHz row for V208's 60 MHz).
+    if hclk is not None and len(want) > 1:
+        exact = [r for r in want if _row_hclk(r) == hclk]
+        want = exact or [r for r in want if _row_hclk(r) == hz]
     if not want:
         if hz == hsi_hz:
             # The reset default: no setter configures it because nothing has to
@@ -1365,29 +1382,30 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
                          f"{[r['config'] for r in chosen]}")
     row = chosen[0]
 
-    # What the row's frequencies mean. clock_configs.csv spells two ways:
-    # CH32V407 / H417 rows give "SYSCLK=...;HCLK=..." (or CoreCLK[V3F]) with
-    # the prescaler in hpre / fpre; the CH32M030, X035, V003 and V006 rows
-    # carry the EVT setter's own number as SYSCLK= - which is the HCLK the
-    # setter produces - and the divider in hpre. Read literally, M030's
-    # "SYSCLK=72000000, hpre=2" put the fixed HSI x 18 = 144 MHz PLL on the
-    # core undivided (the part's maximum is 72 MHz: an illegal-instruction
-    # trap in SystemInit's SWS wait, CH32M030G8R7 on the bench 2026-10-22).
-    # So: an explicit HCLK= wins; otherwise the nominal value is the HCLK and
-    # SYSCLK is hpre times it. A row without a PLL must then land on the
-    # oscillator, which checks the reading against every X035 / V00x row.
+    # SYSCLK= is the real system clock; where the setter's HPRE is not /1 the
+    # row also gives HCLK= (CoreCLK[V3F] on CH32H41x), as clock_configs.csv
+    # has it from ch32-device-data 51660a0. Before that revision the M030,
+    # X035, V003 and V006 setters' own number (the HCLK) was written as
+    # SYSCLK=, and reading it as such put the fixed HSI x 18 = 144 MHz PLL on
+    # the CH32M030 undivided (the part's maximum is 72 MHz: an illegal-
+    # instruction trap in SystemInit's SWS wait, G8R7 on the bench
+    # 2026-10-22). A row that divides without saying what it divides to is
+    # refused rather than guessed.
     domains = dict(d.split("=", 1) for d in row["domains"].split(";") if "=" in d)
-    nominal = int(domains["SYSCLK"])
+    true_sysclk = int(domains["SYSCLK"])
     row_hpre = int(row["hpre"] or 1)
     if "HCLK" in domains:
-        true_sysclk, hclk = nominal, int(domains["HCLK"])
+        hclk = int(domains["HCLK"])
     elif "CoreCLK[V3F]" in domains:
-        true_sysclk, hclk = nominal, int(domains["CoreCLK[V3F]"])
+        hclk = int(domains["CoreCLK[V3F]"])
+    elif row_hpre == 1:
+        hclk = true_sysclk
     else:
-        true_sysclk, hclk = nominal * row_hpre, nominal
+        raise SystemExit(f"ERROR: {family}: {row['config']} has hpre {row_hpre} but no HCLK= "
+                         "in its domains; the tables are older than ch32-device-data 51660a0")
     if not row["pll"] and true_sysclk != hsi_hz:
-        raise SystemExit(f"ERROR: {family}: {row['config']} has no PLL but SYSCLK={nominal} "
-                         f"x hpre {row_hpre} is not the oscillator ({hsi_hz})")
+        raise SystemExit(f"ERROR: {family}: {row['config']} has no PLL but SYSCLK={true_sysclk} "
+                         f"is not the oscillator ({hsi_hz})")
 
     # The value is the OR of the named constants; the mask to clear first is
     # the OR of the fields they sit in, found by longest-prefix against the
@@ -1629,7 +1647,7 @@ def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
         hz = int(fam["f_cpu"].rstrip("L"))
         want = {r["flash_latency"] for r in configs
                 if r["family"] == family and r["source"] == "HSI"
-                and not r["pll"] and f"SYSCLK={hz}" in r["domains"].split(";")
+                and not r["pll"] and _row_hclk(r) == hz
                 and r["flash_latency"]}
         if want and want != {str(fam["flash_latency"])}:
             bad.append(f"{family}: flash_latency={fam['flash_latency']} but the "
@@ -3356,7 +3374,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines.append(f"{board}.build.mabi={fam['mabi']}")
     # The clock: the CPU Clock menu's first entry where there is one.
     menu = CLOCK_MENU.get(series)
-    clk = clock_for(None, menu[0][1] * 1000000 if menu else None)
+    clk = clock_for(None, menu[0][1] * 1000000 if menu else None, menu[0][2] * 1000000 if menu else None)
     latency = clk["latency"] if clk["latency"] is not None else fam["flash_latency"]
     f_cpu = f"{menu[0][2] * 1000000}L" if menu else fam["f_cpu"]
     lines.append(f"{board}.build.f_cpu={f_cpu}")
@@ -3490,7 +3508,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
             # A different die can also mean a different PLL encoding, so the
             # clock setting is re-resolved for this part. Emitted only when it
             # actually differs, so the menu stays readable.
-            part_clk = clock_for(pn, menu[0][1] * 1000000 if menu else None)
+            part_clk = clock_for(pn, menu[0][1] * 1000000 if menu else None, menu[0][2] * 1000000 if menu else None)
             part_clock = clock_defines(part_clk, part_clk["latency"] if part_clk["latency"] is not None
                                        else fam["flash_latency"])
             if part_clock != board_clock:
@@ -3589,13 +3607,14 @@ def main() -> int:
         rows = by_board[series]
         block, ld_files = gen_board(
             series, rows, ch32rv, facts, die,
-            lambda part=None, sysclk=None, series=series: resolve_clock(
+            lambda part=None, sysclk=None, hclk=None, series=series: resolve_clock(
                 SERIES_CONFIG[series]["family"],
                 sysclk or FAMILY[SERIES_CONFIG[series]["family"]].get(
                     "sysclk", int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L"))),
                 die_macro_part.get(part) if part else die_macro_series.get(series),
                 facts[SERIES_CONFIG[series]["family"]]["hsi_hz"],
-                clock_configs_t, clock_symbols_t, clock_prescalers_t))
+                clock_configs_t, clock_symbols_t, clock_prescalers_t,
+                hclk or int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L"))))
         parts = sorted({r["part_number"] for r in rows})
         variant_text = gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                                 interrupts[SERIES_CONFIG[series]['vectors']], remap,
