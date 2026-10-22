@@ -141,8 +141,8 @@ static inline bool ch32rv_usbfs_otg_clock_on(void)
 /* V20x, V30x, L103 / M103: the 48 MHz is the PLL divided by USBPRE
  * (RCC_CFGR0 23:22), so it exists only when SYSCLK is that PLL at a multiple
  * of 48 MHz. The encodings differ: V20x / V30x 00 /1, 01 /2, 10 /3; L103
- * 00 /1, 01 /2, 10 /1.5 (EVT RCC_USBCLKConfig). At the boards' default 8 MHz
- * of L103 / M103 there is none, and begin() fails. */
+ * 00 /1, 01 /2, 10 /1.5 (EVT RCC_USBCLKConfig). At a CPU Clock that is none
+ * of these (8 MHz, or V20x's 120 MHz for Ethernet) begin() fails. */
 #if CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 48000000
 #define CH32RV_USBFS_OTG_USBPRE 0u
 #elif CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 96000000

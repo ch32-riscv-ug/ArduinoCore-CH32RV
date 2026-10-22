@@ -209,7 +209,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.opt=Optimize\nmenu.rtlib=C Runtime Library\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.opt=Optimize\nmenu.rtlib=C Runtime Library\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
@@ -357,6 +357,77 @@ OPT_MENU = (
      "-flto -ffat-lto-objects -msave-restore"),
     ("osstd", "Smallest (-Os) without LTO", ""),
 )
+
+
+# CPU Clock (ESP32's "CPU Frequency": the frequency, then what it allows).
+# series -> [(key, SYSCLK MHz, HCLK = F_CPU MHz, label)], the first entry the
+# default. Off HSI only, from clock_configs.csv's rows; gen_board refuses an
+# entry the tables cannot make, whose AHB ratio the family cannot express
+# (SYSCLK below HSI is HSI over HPRE, as on V00x and X035: SYSCLK stays the
+# oscillator and only HCLK = F_CPU drops), or
+# that leaves the ADC above its f_ADC at the largest divider. What a label
+# promises is each driver's own clock rule:
+#   USB FS on V103 / V20x / V30x / L103: SYSCLK 48, 96 or 144 MHz (USBPRE /1,
+#     /2, /3; L103 and V103 /1.5 too, so 72) - ch32rv_usbfs_otg.h and the
+#     V103 / USBD drivers. V205 and M030 make USB from a PLL of their own, so
+#     it works at every entry.
+#   Ethernet on V208 / V203RB: HCLK 60 or 120 MHz (NetworkEthernet10m.cpp);
+#     no entry gives both, as no SYSCLK is both a multiple USBPRE takes and
+#     one ETHPRE takes.
+# V003 / V00x / X035 / V407 / X315 / H41x keep their one clock as default;
+# where USB at a lower clock is not known to work the label says so. The
+# 8 MHz families (L103 / M103, V205, M030) start at their EVT's default.
+_V20X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
+                ("72", 72, 72, "72MHz (no USB)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
+_V30X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
+                ("72", 72, 72, "72MHz (no USB FS)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB FS)")]
+_V00X_CLOCKS = [("24", 24, 24, "24MHz"), ("48", 48, 48, "48MHz"),
+                ("8", 24, 8, "8MHz (lowest power)")]
+_L103_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
+                ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
+_X035_CLOCKS = [("48", 48, 48, "48MHz (USB)"), ("24", 48, 24, "24MHz (USB not checked)"),
+                ("12", 48, 12, "12MHz (USB not checked)"), ("8", 48, 8, "8MHz (lowest power, USB not checked)")]
+CLOCK_MENU = {
+    "CH32V003": _V00X_CLOCKS,
+    **{s: _V00X_CLOCKS for s in ("CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007")},
+    "CH32V103": [("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
+                 ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")],
+    "CH32V203": _V20X_CLOCKS[:3] + [("60", 120, 60, "60MHz (Ethernet on V203RB, no USB)")] + _V20X_CLOCKS[3:],
+    "CH32V208": [("96", 96, 96, "96MHz (USB, no Ethernet)"), ("60", 120, 60, "60MHz (Ethernet, no USB)"),
+                 ("48", 48, 48, "48MHz (USB, no Ethernet)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")],
+    **{s: _V30X_CLOCKS for s in ("CH32V303", "CH32V305", "CH32V307", "CH32V317")},
+    "CH32X033": _X035_CLOCKS, "CH32X035": _X035_CLOCKS,
+    "CH32L103": _L103_CLOCKS, "CH32M103": _L103_CLOCKS,
+    "CH32V205": [("160", 160, 160, "160MHz (USB)"), ("120", 120, 120, "120MHz (USB)"),
+                 ("80", 80, 80, "80MHz (USB)"), ("40", 40, 40, "40MHz (USB)"),
+                 ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
+    "CH32M030": [("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"), ("24", 24, 24, "24MHz (USB)"),
+                 ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
+}
+
+
+def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock_for) -> list[str]:
+    """The CPU Clock entries: F_CPU and the clock setting for each, checked."""
+    lines = []
+    max_div = 16 if fact["adc_clk_ctlr3"] else 8
+    for key, sys_mhz, hclk_mhz, label in menu:
+        clk = clock_for(None, sys_mhz * 1000000)
+        latency = clk["latency"] if clk["latency"] is not None else fam["flash_latency"]
+        ratio, rem = divmod(sys_mhz, hclk_mhz)
+        steps = (tuple(range(1, 9)) + (16, 32, 64, 128, 256) if fact["hpre_linear"]
+                 else (1, 2, 4, 8, 16, 64, 128, 256, 512))
+        if rem or ratio not in steps:
+            raise SystemExit(f"ERROR: {series}: CPU Clock {key}: HCLK {hclk_mhz} MHz is not SYSCLK "
+                             f"{sys_mhz} MHz over a prescaler step")
+        if hclk_mhz * 1000000 / max_div > fact["adc_max_hz"]:
+            raise SystemExit(f"ERROR: {series}: CPU Clock {key}: the ADC would run above "
+                             f"{fact['adc_max_hz']} Hz at /{max_div}")
+        if latency & ~fact["latency_mask"]:
+            raise SystemExit(f"ERROR: {series}: CPU Clock {key}: flash latency {latency} does not fit")
+        lines.append(f"{board}.menu.clock.{key}={label}")
+        lines.append(f"{board}.menu.clock.{key}.build.f_cpu={hclk_mhz * 1000000}L")
+        lines.append(f"{board}.menu.clock.{key}.build.clock_defines={clock_defines(clk, latency)}")
+    return lines
 
 
 def opt_menu(board: str) -> list[str]:
@@ -3194,9 +3265,13 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     return "\n".join(out) + "\n"
 
 
-def clock_defines(clk: dict) -> str:
-    """The resolved clock setting, as the -D values SystemInit reads."""
-    return (f"-DCH32RV_CLOCK_SYSCLK_HZ={clk['sysclk']} "
+def clock_defines(clk: dict, latency: int) -> str:
+    """The resolved clock setting, as the -D values SystemInit reads. The
+    flash wait states are here, not in core_defines: they belong to the clock
+    (CH32V103 wants 0 at 8 MHz and 2 at 72), and a CPU Clock entry replaces
+    this property whole."""
+    return (f"-DCH32RV_FLASH_LATENCY={latency} "
+            f"-DCH32RV_CLOCK_SYSCLK_HZ={clk['sysclk']} "
             f"-DCH32RV_CLOCK_USE_PLL={1 if clk['config'] else 0} "
             f"-DCH32RV_CLOCK_PLL_MASK={clk['pll_mask']:#x}u "
             f"-DCH32RV_CLOCK_PLL_VALUE={clk['pll_value']:#x}u "
@@ -3247,7 +3322,12 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines.append(f"{board}.build.variant={board}")
     lines.append(f"{board}.build.march={fam['march']}")
     lines.append(f"{board}.build.mabi={fam['mabi']}")
-    lines.append(f"{board}.build.f_cpu={fam['f_cpu']}")
+    # The clock: the CPU Clock menu's first entry where there is one.
+    menu = CLOCK_MENU.get(series)
+    clk = clock_for(None, menu[0][1] * 1000000 if menu else None)
+    latency = clk["latency"] if clk["latency"] is not None else fam["flash_latency"]
+    f_cpu = f"{menu[0][2] * 1000000}L" if menu else fam["f_cpu"]
+    lines.append(f"{board}.build.f_cpu={f_cpu}")
     lines.append(f"{board}.build.series={series}")
     lines.append(f"{board}.build.startup_defines={fam['defines']}")
     # One stem, three file names: platform.txt builds vectors_*.inc, irqn_*.h
@@ -3260,15 +3340,12 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     # this F_CPU; families whose setters never write ACTLR fall back to the
     # value in FAMILY, which is 0 and never reaches the register (their
     # LATENCY mask is 0).
-    clk = clock_for()
-    latency = clk["latency"] if clk["latency"] is not None else fam["flash_latency"]
     lines.append(
         f"{board}.build.core_defines="
         f"-DCH32RV_GPIO_PORT_WIDTH={fact['port_width']} "
         f"-DCH32RV_SYSTICK_64={fam['systick64']} "
         f"-DCH32RV_SYSTICK_V103={1 if cfg['family'] == 'CH32V103' else 0} "
         f"-DCH32RV_HSI_HZ={fact['hsi_hz']} "
-        f"-DCH32RV_FLASH_LATENCY={latency} "
         f"-DCH32RV_ADC_BITS={fam['adc_bits']} "
         f"-DCH32RV_I2C_HAS_RTR={fam['i2c_has_rtr']} "
         f"-DCH32RV_HPRE_LINEAR={fact['hpre_linear']} "
@@ -3299,7 +3376,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     # Its own property, not part of core_defines: a pnum entry has to be able
     # to replace it outright, and a menu value that referred back to the board
     # value would be referring to itself.
-    board_clock = clock_defines(clk)
+    board_clock = clock_defines(clk, latency)
     lines.append(f"{board}.build.clock_defines={board_clock}")
     lines.append("")
 
@@ -3381,11 +3458,19 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
             # A different die can also mean a different PLL encoding, so the
             # clock setting is re-resolved for this part. Emitted only when it
             # actually differs, so the menu stays readable.
-            part_clock = clock_defines(clock_for(pn))
+            part_clk = clock_for(pn, menu[0][1] * 1000000 if menu else None)
+            part_clock = clock_defines(part_clk, part_clk["latency"] if part_clk["latency"] is not None
+                                       else fam["flash_latency"])
             if part_clock != board_clock:
+                if menu:
+                    raise SystemExit(f"ERROR: {pn}: its die needs its own clock setting, "
+                                     "which the CPU Clock menu cannot carry yet")
                 lines.append(f"{pfx}.build.clock_defines={part_clock}")
         lines.append("")
 
+    if menu:
+        lines += clock_menu(board, series, menu, fam, fact, clock_for)
+        lines.append("")
     lines += opt_menu(board)
     lines.append("")
     lines += rtlib_menu(board, min_flash)
@@ -3472,9 +3557,9 @@ def main() -> int:
         rows = by_board[series]
         block, ld_files = gen_board(
             series, rows, ch32rv, facts, die,
-            lambda part=None, series=series: resolve_clock(
+            lambda part=None, sysclk=None, series=series: resolve_clock(
                 SERIES_CONFIG[series]["family"],
-                FAMILY[SERIES_CONFIG[series]["family"]].get(
+                sysclk or FAMILY[SERIES_CONFIG[series]["family"]].get(
                     "sysclk", int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L"))),
                 die_macro_part.get(part) if part else die_macro_series.get(series),
                 facts[SERIES_CONFIG[series]["family"]]["hsi_hz"],

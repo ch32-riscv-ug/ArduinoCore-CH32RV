@@ -10,8 +10,8 @@ library), renamed EspUsbHost -> CH32RVUsbHost.
 Runs on CH32X035 R8T6 / C8T6 / G8U6 / G8R6 (the F8U6, F7P6, D8U6 and the X033
 have no host in silicon; `begin()` says Unsupported), CH32V203/V208 (PB6/PB7)
 and CH32V303/V305/V307/V317, CH32V205, CH32L103/M103, CH32M030 and CH32H41x
-(PA11/PA12; L103/M103 need a PLL clock the boards' default 8 MHz does not
-give). Verified on a CH32X035C8T6 against an ESP32-S3 (HID, CDC, MSC, MIDI,
+(PA11/PA12; L103/M103 need a CPU Clock of 48, 72 or 96 MHz - the default
+96 MHz is one). Verified on a CH32X035C8T6 against an ESP32-S3 (HID, CDC, MSC, MIDI,
 vendor, CCID); the others are build-only. The board
 supplies VBUS. Not here: isochronous audio / video and USB networking.
 

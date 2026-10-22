@@ -130,9 +130,11 @@ STATUS = {
     "PFIC (割込みコントローラ)": ("実装済", "-", "優先度は全てreset既定のまま"),
     "SysTick": ("実装済", "millis/micros/delay", ""),
     "RCC (クロック)": ("一部実装", "F_CPU",
-                       "HSI(とHSI由来PLL)で系列ごとに1つの固定周波数。V103 72 MHz、V20x/V30x 96 MHz、"
-                       "X033/X035 48 MHz、V00x/M007 24 MHz、V407/V467・X305/X315 20 MHz、"
-                       "L103/M103・V205・M030 8 MHz(PLL未使用)、H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の "
+                       "HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。"
+                       "取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。"
+                       "既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、"
+                       "L103/M103 96 MHz・V205 160 MHz・M030 72 MHz(EVTの既定)。メニューの無いもの: V407/V467・X305/X315 20 MHz、"
+                       "H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の "
                        "400 MHz、V5F は 400 MHz で停止のまま)。"
                        "HSEは未実装(USB HSとH417のUSB SSのみHSEを使う)"),
     "PWR (低消費電力)": ("未実装", "-", "sleep APIは提供していない"),
@@ -182,8 +184,8 @@ STATUS = {
     "USB (FS device/host)": ("一部実装", "`CH32RVUsbDevice` / `CH32RVUsbHost`",
                              "stackは自前(TinyUSBは2026-10-20に撤去)。deviceはX035/X033とH417で実機確認、"
                              "V103・V20x(USBFSとUSBD)・V30x・V205・L103/M103・M030はドライバがありビルドのみ"
-                             "(コントローラとドライバの一覧はdocs/usb.ja.md)。L103/M103は既定の8 MHzではPLLを使わず`begin()`が失敗"
-                             "(クロックの方針待ち)。hostはX035(R8T6/C8T6/G8U6/G8R6、F8U6などはシリコンに無い)と"
+                             "(コントローラとドライバの一覧はdocs/usb.ja.md)。L103/M103・V20x/V30xはCPU ClockがUSBの作れる周波数のときだけ"
+                             "(メニューの項目に書いてある)。hostはX035(R8T6/C8T6/G8U6/G8R6、F8U6などはシリコンに無い)と"
                              "USBOTG_FSの系列(V20x・V30x・V205・L103/M103・M030・H41x)のUSBFS。"
                              "X035 C8T6でESP32-S3相手に実機確認、ほかはビルドのみ。工場ISPへの切り替えはX033/X035(実機確認)とX305/X315(ビルドのみ)。ほかはBOOT_MODEが無いかH41xのように動かない"),
     "USB HS": ("一部実装", "`CH32RVUsbDevice`(`CH32RVUsbController::HighSpeed`)",

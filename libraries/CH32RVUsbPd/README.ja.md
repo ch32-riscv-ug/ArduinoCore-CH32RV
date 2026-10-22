@@ -47,7 +47,7 @@ void loop() { USBPD.maintain(); }           // PPS契約の維持
 | CH32M030 | PA0 / PA1(USBPD0) | 入力 | ビルドのみ。USBPD1(PA2 / PA3)は使わない。比較器のビット(CC_CE、CC_CVS)は別の値 |
 
 ブロックはどの系列も同じで、違うのは置き場所、CCの端子、PHYのAFIOのビットです(`usbpd_hw.h`)。
-BMCのクロックはF_CPUから計算します(8 MHzのL103 / V205では送信が2.5 %速く、規格の範囲内。実機では未確認)。
+BMCのクロックはF_CPUから計算します(CPU Clockで8 MHzを選ぶと送信が2.5 %速く、規格の範囲内。実機では未確認)。
 
 ドライバが自分でやること(USB PD R3.1に沿う):
 

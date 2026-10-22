@@ -87,6 +87,12 @@ extern const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT];
 #define clockCyclesToMicroseconds(a) ((a) / clockCyclesPerMicrosecond())
 #define microsecondsToClockCycles(a) ((a) * clockCyclesPerMicrosecond())
 
+/* arduino-esp32's clock getters. The clock is the board menu's (CPU Clock) and
+ * fixed for the build, so these are F_CPU; there is no setter. The buses run
+ * at HCLK (both APB prescalers stay /1, wiring_time.c). */
+static inline uint32_t getCpuFrequencyMhz(void) { return (uint32_t)(F_CPU / 1000000UL); }
+static inline uint32_t getApbFrequency(void) { return (uint32_t)F_CPU; }
+
 /* arduino-esp32's spelling of ArduinoCore-API's OUTPUT_OPENDRAIN. */
 #define OUTPUT_OPEN_DRAIN OUTPUT_OPENDRAIN
 

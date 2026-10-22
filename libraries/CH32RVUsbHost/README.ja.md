@@ -33,7 +33,7 @@ void loop() { }          // スタックは loop() の後と delay() の中で�
 | CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
 | CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
 | CH32V205、CH32M030、CH32H415 / H416 / H417 | USBFS（PA11 / PA12） | ビルドのみ。48 MHz の作り方はデバイスと同じ（V205 と H41x は USBHS PLL、M030 は 144 MHz の PLL） |
-| CH32L103 / M103 | USBFS（PA11 / PA12） | ビルドのみ。既定の 8 MHz では 48 MHz が作れず `begin()` が失敗する |
+| CH32L103 / M103 | USBFS（PA11 / PA12） | ビルドのみ。CPU Clock の 8 MHz では 48 MHz が作れず `begin()` が失敗する（既定の 96 MHz は可） |
 | ほかの系列 | — （`begin()` が `Unsupported`） | ビルドのみ |
 
 X035 のどの型番がホストを持つかはデータシートの型番表のとおりで、`begin()` は BASE_CTRL のホストモードのビットが
