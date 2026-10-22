@@ -41,15 +41,23 @@
 #error "unknown QingKe core: say whether sketches run in U mode (gintenr) or M mode (mstatus)"
 #endif
 
+/* fence.i by its encoding: the boards' -march has no Zifencei, so the
+ * assembler does not take the mnemonic. */
+#define CH32RV_FENCE_I ".4byte 0x0000100f"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 static inline void ch32rv_irq_enable_all(void)
 {
-#if CH32RV_IRQ_IN_GINTENR
+#if CH32RV_IRQ_IN_GINTENR || defined(CH32RV_CORE_QINGKE_V3A)
     const uint32_t mask = 0x88u;
+#if CH32RV_IRQ_IN_GINTENR
     __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");
+#else
+    __asm__ volatile ("csrs mstatus, %0" :: "r"(mask) : "memory");
+#endif
 #else
     __asm__ volatile ("csrsi mstatus, 8" ::: "memory");
 #endif
@@ -60,6 +68,9 @@ static inline void ch32rv_irq_disable_all(void)
 #if CH32RV_IRQ_IN_GINTENR
     const uint32_t mask = 0x88u;
     __asm__ volatile ("csrc 0x800, %0" :: "r"(mask) : "memory");
+#elif defined(CH32RV_CORE_QINGKE_V3A)
+    const uint32_t mask = 0x88u;   /* as in ch32rv_irq_save() below */
+    __asm__ volatile ("csrc mstatus, %0\n\t" CH32RV_FENCE_I :: "r"(mask) : "memory");
 #else
     __asm__ volatile ("csrci mstatus, 8" ::: "memory");
 #endif
@@ -80,6 +91,15 @@ static inline uint32_t ch32rv_irq_save(void)
      * set bit. On a V4F gintenr is a full view of mstatus, so that dropped FS
      * and the next ISR that saved an FP register trapped (mcause 2 on fsw). */
     __asm__ volatile ("csrrc %0, 0x800, %1" : "=r"(old) : "r"(mask) : "memory");
+#elif defined(CH32RV_CORE_QINGKE_V3A)
+    /* CH32V103: clearing MIE takes effect a few instructions late. A
+     * critical section of two loads (a 64-bit copy) was still interrupted
+     * between them - torn reads and lost Notify counts under a 10 kHz timer
+     * interrupt (tests/instrumented/synckit, 2026-10-22). WCH's own
+     * __disable_irq for this core clears MIE and MPIE and then runs fence.i;
+     * so does this. */
+    const uint32_t mask = 0x88u;
+    __asm__ volatile ("csrrc %0, mstatus, %1\n\t" CH32RV_FENCE_I : "=r"(old) : "r"(mask) : "memory");
 #else
     __asm__ volatile ("csrrci %0, mstatus, 8" : "=r"(old) :: "memory");
 #endif
@@ -92,6 +112,11 @@ static inline void ch32rv_irq_restore(uint32_t old)
     if (old & 0x88u) {
         const uint32_t mask = 0x88u;
         __asm__ volatile ("csrs 0x800, %0" :: "r"(mask) : "memory");
+    }
+#elif defined(CH32RV_CORE_QINGKE_V3A)
+    if (old & 8u) {
+        const uint32_t mask = 0x88u;
+        __asm__ volatile ("csrs mstatus, %0" :: "r"(mask) : "memory");
     }
 #else
     if (old & 8u) {
