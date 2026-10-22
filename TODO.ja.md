@@ -900,7 +900,10 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 残り（方針待ち・新しい API・実機が要る）:
 - クロック: 2026-10-22 に CPU Clock のメニュー（項目名に周波数と使えるもの）と取得の API（`getCpuFrequencyMhz()` /
   `getApbFrequency()`）を入れた。実行中に変える API は作らない（F_CPU を定数として使う箇所が約 20、動いている周辺の
-  入れ直しが要る）。既定は M030 だけ 72 MHz（EVT の既定、実機で確認）に上げた。L103 / M103・V205 は 8 MHz のまま（L103 の 96 MHz のイメージで、OEP の RP2350 probe からデバッグが接続できなくなった。電源の入れ直しでも戻らず、2026-10-22 時点で原因不明。NRST を配線して connect-under-reset で戻す予定）。残り: V407 / X315 / H41x
+  入れ直しが要る）。既定は M030 だけ 72 MHz（EVT の既定、実機で確認）に上げた。L103 / M103・V205 は 8 MHz のまま（L103 の 96 MHz のイメージで、OEP の RP2350 probe からデバッグが接続できなくなった。電源の入れ直しでも戻らず、2026-10-22 時点で原因不明。NRST を配線して connect-under-reset で戻す予定）。
+  **ベンチの L103（OEP の RP2350 9489dd2ae0953650 の l103）は、物理的に戻すまで使えない（後日）。** 戻し方は NRST を RP2350 の
+  空き GPIO に配線して `l103.nrst` のラベル → `ch32rv --connect-under-reset` で消去、または BOOT0 を high にして電源投入。
+  戻したら 8 MHz で runtime、そのあと 96 MHz の原因を（リセットで戻せる状態で）切り分ける。残り: V407 / X315 / H41x
   のメニュー（HPRE / FPRE の分け方が別）、HSE、各項目の実機確認（UART の速度・ADC・USB）。
   2026-10-22: M030 の既定 72 MHz が起動で止まった（device-data の行の SYSCLK=72 は HCLK で、PLL は 144 MHz 固定。生成器が
   hpre を読んでいなかった）。e3ebb34 で修正し、表は device-data 6fcf406 で直った。M030G8R7 で 72 / 48 / 24 / 8 MHz の
