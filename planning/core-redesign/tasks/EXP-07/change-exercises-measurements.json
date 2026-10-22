@@ -181,7 +181,7 @@
     }
   },
   "comparison": {
-    "path": "planning/core-redesign/tasks/EXP-07/comparison.json",
+    "path": "planning/core-redesign/tasks/EXP-07/comparison-first-four.json",
     "sha256": "87427bd7e29a3a5c62249991a587017748613d2c3e45d5ac3ebda90d0def349e"
   },
   "size_matrix": {

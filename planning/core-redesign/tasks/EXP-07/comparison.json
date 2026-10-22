@@ -1,7 +1,7 @@
 {
   "scope": "mechanical comparison only; historical evidence stays historical; no educational effectiveness scores",
   "inputs": {
-    "planning/core-redesign/change-exercises-records.json": "dea944fc50d7944363cc5cbe556bcb6f88439bd3da29216732838f261bfaede7",
+    "planning/core-redesign/change-exercises-records.json": "c92a0d40799918a49b57fcf211e7d0c29905c018d649fdf71f629f5083ef876b",
     "planning/core-redesign/tasks/EXP-07/k0-two/before.cpp": "aad3df24f78c87d88c750f63cb27e33ea39922d47e8d8f3e6c0556e73d57b773",
     "planning/core-redesign/tasks/EXP-07/k0-two/after.cpp": "d2e805b8f4d1ff3931894c39f664a07575fa6108f9a3c2b54d5c39ecbd18c84c",
     "planning/core-redesign/tasks/EXP-06/k0-slave-register-size-matrix.csv": "62594425317a82cdcdaa8c8921d7cb775c3046a2d49bd4f8b263ee703e6ea826",
@@ -17,7 +17,15 @@
     "planning/core-redesign/tasks/EXP-07/queue-change/before.cpp": "6985b91bca73b296d13b3bacf33f68ee9d43575499284d73624aa3e83a4aeb64",
     "planning/core-redesign/tasks/EXP-07/queue-change/after.cpp": "52e2fc66f82d87063121fe6bc3b17599fd19c700f956b28133ea95e91d7ba2a7",
     "planning/core-redesign/tasks/EXP-07/queue-change-size-matrix.csv": "703f949182a4140c28ff3cadc8314e13ba740906988a2e5110431ed65605cedb",
-    "tests/unit/core_redesign/x0_capacity.hpp": "beff635987b4e3a79d8a22763a92a08e2b45d94dfc5afbf95f82ec224d1ecae6"
+    "tests/unit/core_redesign/x0_capacity.hpp": "beff635987b4e3a79d8a22763a92a08e2b45d94dfc5afbf95f82ec224d1ecae6",
+    "planning/core-redesign/tasks/EXP-07/disconnect-change/before.cpp": "b6c663520c6295832ac0b68f3d5fae353f01841966362cfaf290a4c5aa7fd9ec",
+    "planning/core-redesign/tasks/EXP-07/disconnect-change/after.cpp": "3f95b1b5b08c0600b0aa22867fa9b8914a023e0f3f38628003e248cd4182ef65",
+    "planning/core-redesign/tasks/EXP-07/disconnect-change-size-matrix.csv": "e3a3374d753bb7bc085b2d822b7c582eddc660c5d587251cf6a800082c3fc0e7",
+    "planning/core-redesign/tasks/EXP-07/disconnect-change/before-policy.hpp": "2eacdc2dcb901401a96717296a0da19b7309c6f0bed1f794edd6055762f12668",
+    "planning/core-redesign/tasks/EXP-07/disconnect-change/after-policy.hpp": "e01c29b5a23e8d852ea539234fcb48ddc2162c8d909c635dcbe873bfa49956a4",
+    "tests/unit/core_redesign/connection_types.hpp": "6d9c467ea2bc1be083871433fdbdd3df38a92d5c97e48193a3f63c06dc1e3e7d",
+    "tests/unit/core_redesign/connection_pps.hpp": "d0ea9b1266788a87d8227e0992783bcf13f5e2774c3cfee6ebaa86655d1b1992",
+    "tests/unit/core_redesign/connection_x0.hpp": "5f1eb7ba946483b0121257918cc589d8d66da2511f6468a2526ec6a807012be7"
   },
   "records": [
     {
@@ -61,6 +69,7 @@
         "matrix_sha256"
       ],
       "logical_edited_files": 1,
+      "implementation_diffs": [],
       "selection_lines_added": 1,
       "selection_lines_removed": 1,
       "shared_preparation_metrics": [],
@@ -916,6 +925,7 @@
         "matrix_sha256"
       ],
       "logical_edited_files": 1,
+      "implementation_diffs": [],
       "selection_lines_added": 1,
       "selection_lines_removed": 1,
       "shared_preparation_metrics": [],
@@ -1346,6 +1356,7 @@
         "results"
       ],
       "logical_edited_files": 1,
+      "implementation_diffs": [],
       "selection_lines_added": 1,
       "selection_lines_removed": 1,
       "shared_preparation_metrics": [],
@@ -1716,6 +1727,7 @@
       ],
       "expected_pairs": 32,
       "logical_edited_files": 1,
+      "implementation_diffs": [],
       "selection_lines_added": 1,
       "selection_lines_removed": 1,
       "shared_preparation_metrics": [
@@ -2533,9 +2545,887 @@
     },
     {
       "id": "E05",
-      "name": "add disconnect recovery",
-      "status": "pending",
-      "reason": "existing detach/fault tests do not substitute for baseline-to-added-recovery implementation and diff"
+      "name": "add disconnect recovery to complete X0",
+      "status": "new-normalized",
+      "directory": "disconnect-change",
+      "abi_csv": "tasks/EXP-07/disconnect-change-size-matrix.csv",
+      "group_axes": [
+        "part",
+        "lto",
+        "family",
+        "touch"
+      ],
+      "before_filter": {
+        "selection_case": "1",
+        "unused": "False"
+      },
+      "after_filter": {
+        "selection_case": "2",
+        "unused": "False"
+      },
+      "image_field": "image_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": "application_object_bytes",
+      "shared_preparation": [
+        "tests/unit/core_redesign/connection_types.hpp",
+        "tests/unit/core_redesign/connection_pps.hpp",
+        "tests/unit/core_redesign/connection_x0.hpp"
+      ],
+      "implementation_pairs": [
+        {
+          "before": "before-policy.hpp",
+          "after": "after-policy.hpp",
+          "logical_file": "disconnect-policy.hpp"
+        }
+      ],
+      "added_state": [
+        "four queued inputs gain session4 each:16 bytes",
+        "session and active_session replace baseline used flag",
+        "C automatic batch gains16 bytes; common IO lease state exists in both versions"
+      ],
+      "semantic_change": "baseline fails closed permanently after disconnect; added policy accepts reconnect, drops old-session inputs/results and waits for stopped old backend plus explicit collection; no automatic apply replay",
+      "host_evidence": "tasks/EXP-07/disconnect-change-result.ja.md",
+      "unverified": [
+        "physical USB PD/I2C/IRQ/stop/reinit",
+        "MCU power loss",
+        "real stack/time",
+        "human prediction and editing"
+      ],
+      "expected_pairs": 32,
+      "logical_edited_files": 2,
+      "implementation_diffs": [
+        {
+          "before": "before-policy.hpp",
+          "after": "after-policy.hpp",
+          "logical_file": "disconnect-policy.hpp",
+          "lines_added": 14,
+          "lines_removed": 10
+        }
+      ],
+      "selection_lines_added": 1,
+      "selection_lines_removed": 1,
+      "shared_preparation_metrics": [
+        {
+          "path": "tests/unit/core_redesign/connection_types.hpp",
+          "bytes": 183,
+          "lines": 6
+        },
+        {
+          "path": "tests/unit/core_redesign/connection_pps.hpp",
+          "bytes": 3505,
+          "lines": 68
+        },
+        {
+          "path": "tests/unit/core_redesign/connection_x0.hpp",
+          "bytes": 7172,
+          "lines": 128
+        }
+      ],
+      "abi_pair_count": 32,
+      "pairs": [
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "1",
+            "touch": "False"
+          },
+          "before_case": "R-t0-before",
+          "after_case": "R-t0-after",
+          "image": {
+            "before": 3584,
+            "after": 3680,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 484,
+            "after": 508,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 360,
+            "after": 384,
+            "delta": 24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "1",
+            "touch": "True"
+          },
+          "before_case": "R-t1-before",
+          "after_case": "R-t1-after",
+          "image": {
+            "before": 3768,
+            "after": 3872,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 388,
+            "after": 412,
+            "delta": 24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "2",
+            "touch": "False"
+          },
+          "before_case": "A-t0-before",
+          "after_case": "A-t0-after",
+          "image": {
+            "before": 3592,
+            "after": 3680,
+            "delta": 88
+          },
+          "static_ram": {
+            "before": 492,
+            "after": 508,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 364,
+            "after": 384,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "2",
+            "touch": "True"
+          },
+          "before_case": "A-t1-before",
+          "after_case": "A-t1-after",
+          "image": {
+            "before": 3768,
+            "after": 3872,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 392,
+            "after": 412,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "3",
+            "touch": "False"
+          },
+          "before_case": "B-t0-before",
+          "after_case": "B-t0-after",
+          "image": {
+            "before": 4080,
+            "after": 4176,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 392,
+            "after": 412,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "3",
+            "touch": "True"
+          },
+          "before_case": "B-t1-before",
+          "after_case": "B-t1-after",
+          "image": {
+            "before": 4272,
+            "after": 4368,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 548,
+            "after": 564,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 420,
+            "after": 440,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "4",
+            "touch": "False"
+          },
+          "before_case": "C-static-batch-t0-before",
+          "after_case": "C-static-batch-t0-after",
+          "image": {
+            "before": 4040,
+            "after": 4184,
+            "delta": 144
+          },
+          "static_ram": {
+            "before": 500,
+            "after": 524,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 376,
+            "after": 396,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "False",
+            "family": "4",
+            "touch": "True"
+          },
+          "before_case": "C-static-batch-t1-before",
+          "after_case": "C-static-batch-t1-after",
+          "image": {
+            "before": 4248,
+            "after": 4368,
+            "delta": 120
+          },
+          "static_ram": {
+            "before": 532,
+            "after": 548,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 404,
+            "after": 424,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "1",
+            "touch": "False"
+          },
+          "before_case": "R-t0-before",
+          "after_case": "R-t0-after",
+          "image": {
+            "before": 3504,
+            "after": 3600,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 484,
+            "after": 508,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 360,
+            "after": 384,
+            "delta": 24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "1",
+            "touch": "True"
+          },
+          "before_case": "R-t1-before",
+          "after_case": "R-t1-after",
+          "image": {
+            "before": 3776,
+            "after": 3864,
+            "delta": 88
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 388,
+            "after": 412,
+            "delta": 24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "2",
+            "touch": "False"
+          },
+          "before_case": "A-t0-before",
+          "after_case": "A-t0-after",
+          "image": {
+            "before": 3552,
+            "after": 3648,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 492,
+            "after": 508,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 364,
+            "after": 384,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "2",
+            "touch": "True"
+          },
+          "before_case": "A-t1-before",
+          "after_case": "A-t1-after",
+          "image": {
+            "before": 3800,
+            "after": 3904,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 392,
+            "after": 412,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "3",
+            "touch": "False"
+          },
+          "before_case": "B-t0-before",
+          "after_case": "B-t0-after",
+          "image": {
+            "before": 3968,
+            "after": 4064,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 392,
+            "after": 412,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "3",
+            "touch": "True"
+          },
+          "before_case": "B-t1-before",
+          "after_case": "B-t1-after",
+          "image": {
+            "before": 4176,
+            "after": 4248,
+            "delta": 72
+          },
+          "static_ram": {
+            "before": 548,
+            "after": 564,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 420,
+            "after": 440,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "4",
+            "touch": "False"
+          },
+          "before_case": "C-static-batch-t0-before",
+          "after_case": "C-static-batch-t0-after",
+          "image": {
+            "before": 3952,
+            "after": 4072,
+            "delta": 120
+          },
+          "static_ram": {
+            "before": 500,
+            "after": 524,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 376,
+            "after": 396,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32V003F4P6",
+            "lto": "True",
+            "family": "4",
+            "touch": "True"
+          },
+          "before_case": "C-static-batch-t1-before",
+          "after_case": "C-static-batch-t1-after",
+          "image": {
+            "before": 4224,
+            "after": 4352,
+            "delta": 128
+          },
+          "static_ram": {
+            "before": 532,
+            "after": 548,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 404,
+            "after": 424,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "1",
+            "touch": "False"
+          },
+          "before_case": "R-t0-before",
+          "after_case": "R-t0-after",
+          "image": {
+            "before": 3280,
+            "after": 3384,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 484,
+            "after": 508,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 360,
+            "after": 384,
+            "delta": 24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "1",
+            "touch": "True"
+          },
+          "before_case": "R-t1-before",
+          "after_case": "R-t1-after",
+          "image": {
+            "before": 3448,
+            "after": 3552,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 388,
+            "after": 412,
+            "delta": 24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "2",
+            "touch": "False"
+          },
+          "before_case": "A-t0-before",
+          "after_case": "A-t0-after",
+          "image": {
+            "before": 3288,
+            "after": 3384,
+            "delta": 96
+          },
+          "static_ram": {
+            "before": 492,
+            "after": 508,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 364,
+            "after": 384,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "2",
+            "touch": "True"
+          },
+          "before_case": "A-t1-before",
+          "after_case": "A-t1-after",
+          "image": {
+            "before": 3448,
+            "after": 3552,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 392,
+            "after": 412,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "3",
+            "touch": "False"
+          },
+          "before_case": "B-t0-before",
+          "after_case": "B-t0-after",
+          "image": {
+            "before": 3744,
+            "after": 3848,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 392,
+            "after": 412,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "3",
+            "touch": "True"
+          },
+          "before_case": "B-t1-before",
+          "after_case": "B-t1-after",
+          "image": {
+            "before": 3920,
+            "after": 4024,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 548,
+            "after": 564,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 420,
+            "after": 440,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "4",
+            "touch": "False"
+          },
+          "before_case": "C-static-batch-t0-before",
+          "after_case": "C-static-batch-t0-after",
+          "image": {
+            "before": 3696,
+            "after": 3848,
+            "delta": 152
+          },
+          "static_ram": {
+            "before": 500,
+            "after": 524,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 376,
+            "after": 396,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "False",
+            "family": "4",
+            "touch": "True"
+          },
+          "before_case": "C-static-batch-t1-before",
+          "after_case": "C-static-batch-t1-after",
+          "image": {
+            "before": 3888,
+            "after": 4024,
+            "delta": 136
+          },
+          "static_ram": {
+            "before": 532,
+            "after": 548,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 404,
+            "after": 424,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "1",
+            "touch": "False"
+          },
+          "before_case": "R-t0-before",
+          "after_case": "R-t0-after",
+          "image": {
+            "before": 3200,
+            "after": 3280,
+            "delta": 80
+          },
+          "static_ram": {
+            "before": 484,
+            "after": 508,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 360,
+            "after": 384,
+            "delta": 24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "1",
+            "touch": "True"
+          },
+          "before_case": "R-t1-before",
+          "after_case": "R-t1-after",
+          "image": {
+            "before": 3416,
+            "after": 3504,
+            "delta": 88
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 388,
+            "after": 412,
+            "delta": 24
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "2",
+            "touch": "False"
+          },
+          "before_case": "A-t0-before",
+          "after_case": "A-t0-after",
+          "image": {
+            "before": 3232,
+            "after": 3312,
+            "delta": 80
+          },
+          "static_ram": {
+            "before": 492,
+            "after": 508,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 364,
+            "after": 384,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "2",
+            "touch": "True"
+          },
+          "before_case": "A-t1-before",
+          "after_case": "A-t1-after",
+          "image": {
+            "before": 3440,
+            "after": 3520,
+            "delta": 80
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 392,
+            "after": 412,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "3",
+            "touch": "False"
+          },
+          "before_case": "B-t0-before",
+          "after_case": "B-t0-after",
+          "image": {
+            "before": 3632,
+            "after": 3736,
+            "delta": 104
+          },
+          "static_ram": {
+            "before": 516,
+            "after": 540,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 392,
+            "after": 412,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "3",
+            "touch": "True"
+          },
+          "before_case": "B-t1-before",
+          "after_case": "B-t1-after",
+          "image": {
+            "before": 3800,
+            "after": 3880,
+            "delta": 80
+          },
+          "static_ram": {
+            "before": 548,
+            "after": 564,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 420,
+            "after": 440,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "4",
+            "touch": "False"
+          },
+          "before_case": "C-static-batch-t0-before",
+          "after_case": "C-static-batch-t0-after",
+          "image": {
+            "before": 3616,
+            "after": 3752,
+            "delta": 136
+          },
+          "static_ram": {
+            "before": 500,
+            "after": 524,
+            "delta": 24
+          },
+          "application_object": {
+            "before": 376,
+            "after": 396,
+            "delta": 20
+          }
+        },
+        {
+          "axes": {
+            "part": "CH32X035C8T6",
+            "lto": "True",
+            "family": "4",
+            "touch": "True"
+          },
+          "before_case": "C-static-batch-t1-before",
+          "after_case": "C-static-batch-t1-after",
+          "image": {
+            "before": 3856,
+            "after": 3968,
+            "delta": 112
+          },
+          "static_ram": {
+            "before": 532,
+            "after": 548,
+            "delta": 16
+          },
+          "application_object": {
+            "before": 404,
+            "after": 424,
+            "delta": 20
+          }
+        }
+      ],
+      "human_review": null,
+      "generation_time_as_score": false
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 2026-10-22。実験実装 `ab5913a`。
 [変更前](queue-change/before.cpp)、[変更後](queue-change/after.cpp)、[ABI表](queue-change-size-matrix.csv)、
-[4課題の共通記録](comparison.json)、[共通測定manifest](change-exercises-measurements.json)。
+[変更課題の共通記録](comparison.json)、[共通測定manifest](change-exercises-measurements.json)。
 既存FixedX0Meaning／X0Pps／実行器／production coreは変更せず、実験の容量選択用型を追加した。
 
 ## 差分と準備の費用
