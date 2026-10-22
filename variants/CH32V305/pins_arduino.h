@@ -563,8 +563,8 @@
 #define SS PIN_SPI_SS
 #endif
 
-/* ---- PWM: 16 pads on TIM1/TIM2/TIM3/TIM4, default route ---- */
-#define CH32RV_PWM_PIN_COUNT 16
+/* ---- PWM: 24 pads on TIM1/TIM2/TIM3/TIM4/TIM8/TIM9/TIM10, default route ---- */
+#define CH32RV_PWM_PIN_COUNT 24
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \
     (p) == PA8 ? 1 : \
     (p) == PA9 ? 1 : \
@@ -582,6 +582,14 @@
     (p) == PB7 ? 4 : \
     (p) == PB8 ? 4 : \
     (p) == PB9 ? 4 : \
+    (p) == PC6 ? 8 : \
+    (p) == PC7 ? 8 : \
+    (p) == PC8 ? 8 : \
+    (p) == PC9 ? 8 : \
+    (p) == PA4 ? 9 : \
+    (p) == PC4 ? 9 : \
+    (p) == PC3 ? 10 : \
+    (p) == PC11 ? 10 : \
     0)
 #define CH32RV_PWM_PIN_TO_CHANNEL(p) ( \
     (p) == PA8 ? 1 : \
@@ -600,6 +608,14 @@
     (p) == PB7 ? 2 : \
     (p) == PB8 ? 3 : \
     (p) == PB9 ? 4 : \
+    (p) == PC6 ? 1 : \
+    (p) == PC7 ? 2 : \
+    (p) == PC8 ? 3 : \
+    (p) == PC9 ? 4 : \
+    (p) == PA4 ? 3 : \
+    (p) == PC4 ? 4 : \
+    (p) == PC3 ? 3 : \
+    (p) == PC11 ? 4 : \
     0)
 
 /* ---- DAC: analogWrite() drives the converter on these pads,

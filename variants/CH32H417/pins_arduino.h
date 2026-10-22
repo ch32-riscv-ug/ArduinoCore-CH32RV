@@ -823,8 +823,8 @@
 #define SS PIN_SPI_SS
 #endif
 
-/* ---- PWM: 46 pads on TIM1/TIM2/TIM3/TIM4/TIM5, per-pin alternate function ---- */
-#define CH32RV_PWM_PIN_COUNT 46
+/* ---- PWM: 57 pads on TIM1/TIM2/TIM3/TIM4/TIM5/TIM9/TIM10, per-pin alternate function ---- */
+#define CH32RV_PWM_PIN_COUNT 57
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \
     (p) == PA8 ? 1 : \
     (p) == PE9 ? 1 : \
@@ -872,6 +872,17 @@
     (p) == PC3 ? 5 : \
     (p) == PD14 ? 5 : \
     (p) == PD15 ? 5 : \
+    (p) == PB14 ? 9 : \
+    (p) == PB15 ? 9 : \
+    (p) == PC10 ? 9 : \
+    (p) == PC12 ? 9 : \
+    (p) == PB12 ? 9 : \
+    (p) == PC11 ? 9 : \
+    (p) == PF8 ? 10 : \
+    (p) == PF9 ? 10 : \
+    (p) == PF6 ? 10 : \
+    (p) == PA4 ? 10 : \
+    (p) == PF7 ? 10 : \
     0)
 #define CH32RV_PWM_PIN_TO_CHANNEL(p) ( \
     (p) == PA8 ? 1 : \
@@ -920,6 +931,17 @@
     (p) == PC3 ? 3 : \
     (p) == PD14 ? 3 : \
     (p) == PD15 ? 4 : \
+    (p) == PB14 ? 1 : \
+    (p) == PB15 ? 2 : \
+    (p) == PC10 ? 2 : \
+    (p) == PC12 ? 3 : \
+    (p) == PB12 ? 3 : \
+    (p) == PC11 ? 4 : \
+    (p) == PF8 ? 1 : \
+    (p) == PF9 ? 2 : \
+    (p) == PF6 ? 3 : \
+    (p) == PA4 ? 4 : \
+    (p) == PF7 ? 4 : \
     0)
 #define CH32RV_PWM_PIN_TO_AF(p) ( \
     (p) == PA8 ? 1 : \
@@ -968,6 +990,17 @@
     (p) == PC3 ? 2 : \
     (p) == PD14 ? 6 : \
     (p) == PD15 ? 6 : \
+    (p) == PB14 ? 2 : \
+    (p) == PB15 ? 2 : \
+    (p) == PC10 ? 2 : \
+    (p) == PC12 ? 2 : \
+    (p) == PB12 ? 8 : \
+    (p) == PC11 ? 2 : \
+    (p) == PF8 ? 9 : \
+    (p) == PF9 ? 9 : \
+    (p) == PF6 ? 9 : \
+    (p) == PA4 ? 9 : \
+    (p) == PF7 ? 9 : \
     0)
 
 /* ---- DAC: analogWrite() drives the converter on these pads,

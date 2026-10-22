@@ -2267,10 +2267,11 @@ EXTI_GPIO_LINES_DEFAULT = 16
 PWM_PERIPHERAL_RE = re.compile(r"^TIM(\d+)$")
 PWM_ROLE_RE = re.compile(r"^CH(\d)(?:_ETR)?$")
 # Timers with output channels at a known base (ch32rv_registers.h): TIM1 the
-# advanced one, TIM2..TIM5 general purpose. TIM6/7 are basic (no channels).
+# advanced one, TIM2..TIM5 general purpose, TIM8..TIM10 (V30x, V4x7, H41x)
+# advanced or general by series. TIM6/7 are basic (no channels).
 # analogWrite() still needs the timer in the variant's CH32RV_TIMER_TABLE; a
 # pad on a timer the series lacks there falls back to a digital level.
-PWM_TIMERS = (1, 2, 3, 4, 5)
+PWM_TIMERS = (1, 2, 3, 4, 5, 8, 9, 10)
 
 
 def load_pwm_pins(tables: pathlib.Path) -> dict:
@@ -2279,7 +2280,8 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
     The default route only (af None), plus the af-N routes of the per-pin
     families, where af is the function number the pad has to be set to. One
     pad, one timer: where a pad offers two, the lower timer number wins, so
-    adding a timer never moves a pad that already had PWM."""
+    adding a timer never moves a pad that already had PWM (TIM8..10, added
+    last, only take pads TIM1..5 leave)."""
     _, functions = load_pin_functions(tables)
     out: dict = {}
     plain: dict = {}          # part -> pads that already have a plain CH<k>
@@ -2309,6 +2311,8 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
             continue          # a default route beats an af-N one
         if have and (have[2] is None) == (af is None) and have[0] <= 3 < timer:
             continue          # TIM4/TIM5 never displace TIM1..3
+        if have and have[0] <= 5 < timer:
+            continue          # TIM8..10 (added later) never displace TIM1..5, by any route
         if not shared:
             seen.add(key)
         out.setdefault(r["part_number"], {})[key] = (timer, channel, af)
