@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-22",
+  "scope": "N07 five change exercises: mechanical differences and semantics, not human educational scores or architecture adoption",
+  "fields": ["baseline", "changed", "edited_files", "shared_preparation", "added_state", "semantic_change", "host_trace", "ABI", "unverified"],
+  "exercises": [
+    {"id": "E01", "name": "K0 configuration queue 1 to 2"},
+    {"id": "E02", "name": "X0 display replacement"},
+    {"id": "E03", "name": "X0 add compile-time touch"},
+    {"id": "E04", "name": "X0 input queue 4 to 1", "baseline": "tasks/EXP-07/queue-change/before.cpp", "changed": "tasks/EXP-07/queue-change/after.cpp", "scope": "frozen FixedX0Meaning and PPS/session semantics; capacity change, no physical USB PD"},
+    {"id": "E05", "name": "add disconnect recovery"}
+  ],
+  "human_review": "unperformed; no model generation time or self-score as educational effectiveness"
+}

@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "scope": "mechanical comparison only; historical evidence stays historical; no educational effectiveness scores",
+  "records": [
+    {
+      "id": "E01",
+      "name": "K0 configuration queue 1 to 2",
+      "status": "historical-normalized",
+      "directory": "k0-two",
+      "abi_csv": "tasks/EXP-06/k0-slave-register-size-matrix.csv",
+      "historical_manifest": "tasks/EXP-06/k0-slave-register-measurements.json",
+      "group_axes": [
+        "part",
+        "lto",
+        "candidate",
+        "policy"
+      ],
+      "candidate_pattern": "-(R|A|B|C-bridge)-n[12]$",
+      "before_filter": {
+        "capacity": "1",
+        "unused": "False"
+      },
+      "after_filter": {
+        "capacity": "2",
+        "unused": "False"
+      },
+      "image_field": "image_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": "application_object_bytes",
+      "shared_preparation": [],
+      "added_state": [
+        "one additional protected K0Frame payload8",
+        "staging/read snapshots/executor capacity unchanged"
+      ],
+      "semantic_change": "second complete configuration can be retained before normal progress; rejection threshold moves, both ACK policies remain distinct",
+      "host_evidence": "tasks/EXP-06/k0-slave-register-result.ja.md",
+      "unverified": [
+        "physical ACK/foreign restart/IRQ",
+        "human prediction and editing"
+      ],
+      "expected_pairs": 32,
+      "matrix_sha_pointer": [
+        "matrix_sha256"
+      ]
+    },
+    {
+      "id": "E02",
+      "name": "X0 mono64 to compact32 mock display",
+      "status": "historical-normalized",
+      "directory": "display-change",
+      "abi_csv": "tasks/EXP-05/display-size-matrix.csv",
+      "historical_manifest": "tasks/EXP-05/display-measurements.json",
+      "group_axes": [
+        "part",
+        "lto",
+        "family"
+      ],
+      "before_filter": {
+        "panel": "0",
+        "unused": "False",
+        "library_only": "False"
+      },
+      "after_filter": {
+        "panel": "1",
+        "unused": "False",
+        "library_only": "False"
+      },
+      "image_field": "image_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": "application_object_bytes",
+      "shared_preparation": [],
+      "added_state": [
+        "tx limit32 to31",
+        "View/frozen state unchanged; no resident whole framebuffer"
+      ],
+      "semantic_change": "mock geometry1024 to512 bytes, status moves, final chunk16; changed wire load and latency, not an identical physical panel",
+      "host_evidence": "tasks/EXP-05/display-result.ja.md",
+      "unverified": [
+        "real panel init/commands/wire",
+        "MCU render time",
+        "human prediction and editing"
+      ],
+      "exclude_cases": [
+        "empty"
+      ],
+      "expected_pairs": 16,
+      "matrix_sha_pointer": [
+        "abi",
+        "matrix_sha256"
+      ]
+    },
+    {
+      "id": "E03",
+      "name": "X0 compile-time touch off to on",
+      "status": "historical-normalized",
+      "directory": "touch-add",
+      "abi_csv": "tasks/EXP-06/x0-features-size-matrix.csv",
+      "historical_manifest": "tasks/EXP-06/x0-features-measurements.json",
+      "group_axes": [
+        "arch",
+        "lto",
+        "candidate"
+      ],
+      "candidate_pattern": "^(R|A|B|C)-(?:off|on)$",
+      "before_suffix": "-off",
+      "after_suffix": "-on",
+      "before_filter": {},
+      "after_filter": {},
+      "image_field": "flash_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": null,
+      "shared_preparation": [],
+      "added_state": [
+        "touch_data8, three uint32 fields, pending flag",
+        "bus adds owner start counter and failure slot"
+      ],
+      "semantic_change": "add periodic 8-byte 50Hz touch traffic to shared bus; compiler-selected feature, not runtime switching",
+      "host_evidence": "tasks/EXP-06/x0-features-result.ja.md",
+      "unverified": [
+        "physical touch protocol/controller",
+        "M/S/U cross-profile ABI for this historical matrix",
+        "human prediction and editing"
+      ],
+      "expected_pairs": 16,
+      "manifest_rows_pointer": [
+        "results"
+      ]
+    },
+    {
+      "id": "E04",
+      "name": "X0 input queue 4 to 1",
+      "status": "new-normalized",
+      "directory": "queue-change",
+      "abi_csv": "tasks/EXP-07/queue-change-size-matrix.csv",
+      "group_axes": [
+        "part",
+        "lto",
+        "family",
+        "touch"
+      ],
+      "before_filter": {
+        "selection_case": "1",
+        "unused": "False"
+      },
+      "after_filter": {
+        "selection_case": "2",
+        "unused": "False"
+      },
+      "image_field": "image_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": "application_object_bytes",
+      "shared_preparation": [
+        "tests/unit/core_redesign/x0_capacity.hpp"
+      ],
+      "added_state": [
+        "no extra application state",
+        "three X0Envelope slots removed: payload24 bytes",
+        "C automatic batch payload24 bytes smaller; not observed stack peak"
+      ],
+      "semantic_change": "same reject-new policy, smaller burst capacity; apply can be refused after increment; lossless producer retry needs separate caller state/budget",
+      "host_evidence": "tasks/EXP-07/queue-change-result.ja.md",
+      "unverified": [
+        "physical PD/I2C/IRQ",
+        "real peak stack",
+        "resident retry producer budget",
+        "human prediction and editing"
+      ],
+      "expected_pairs": 32
+    },
+    {
+      "id": "E05",
+      "name": "add disconnect recovery",
+      "status": "pending",
+      "reason": "existing detach/fault tests do not substitute for baseline-to-added-recovery implementation and diff"
+    }
+  ]
+}
