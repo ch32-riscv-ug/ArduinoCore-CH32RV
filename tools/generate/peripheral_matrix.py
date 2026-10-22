@@ -151,7 +151,7 @@ STATUS = {
     "ADC": ("実装済", "analogRead",
             "X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替。"
             "内部チャネルは`analogReadVref()`・`analogReadTemp()`・`CH32RV.getVddMillivolts()`"
-            "(M030はdevice-dataに無く未対応、温度センサはV103/V20x/V205/V30x/V4x7/L103のみ、"
+            "(M030はシリコンに無い(RMに記載なし)、温度センサはV103/V20x/V205/V30x/V4x7/L103/M103/H41xのみ、"
             "校正なしの典型値)。L103/M103はEVTと同じVDDA/2のオフセット補正をかける。"
             "基準電圧は選べない(`analogReference()`は何もしない)。V003は10 bit"),
     "DAC": ("実装済", "analogWrite(CH32RV_DACn_PIN)",

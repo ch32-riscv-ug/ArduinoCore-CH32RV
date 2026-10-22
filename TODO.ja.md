@@ -902,7 +902,7 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 - PD の他系列（L103 / M103、V205、X305 / X315、H41x、M030 の USBPD0）: 2026-10-22 に入れた（ビルドのみ）。BMC の
   クロックは F_CPU から計算する（EVT の表は 10〜240 MHz。8 MHz の L103 / V205 / M030 で通るかは実機で確かめる。
   試験は `--case pd`）。M030 の USBPD1 は未対応。
-- PWM の remap 先と CHxN、TIM8〜10 の PWM。
+- PWM の remap 先と CHxN。TIM8〜10 の PWM は 2026-10-22 に入れた（V30x・V4x7・H41x、TIM1〜5 の端子は奪わない、ビルドのみ。`--case logic` の `logic_pin` でその端子を指定して確かめられる）。
 - 新しい API: スリープ、永続化（上記「永続化の調査と構成検討」。API・方式は未決定）、WWDG、RTC、SPI のスレーブ、GPIO 以外の EXTI。
   - OEP からの依頼（2026-10-21、dev-oep。急ぎではない）:
     - SPI のスレーブ: マスターから来る CS 単位の転送を受け、用意したデータを返す。CS が上がったことを知らせるコールバック
