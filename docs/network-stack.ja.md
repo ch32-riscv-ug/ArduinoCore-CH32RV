@@ -57,7 +57,7 @@
 5. PC の tap での試験を、テストの仕組み(tests/)に入れる。**済み**(`tests/unit/network`)
 6. 系列ごとの `lwipopts.h` と、クロスビルドでの大きさの確認。**済み**(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)
 7. USB の NCM(デバイス)のつなぎ込み。**済み**(案 B: `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出し、中身は Network ライブラリの `NetworkUsbNcm`。PC と X035 の生フレームの試験まで。対象の系列の USB デバイスのドライバ待ち)
-8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。
+8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。**H417 は済み**(2026-10-22、下の「Ethernet(H417)」)。V208 / V307 / V407 は未。
 9. 段 3 以降。mDNS と SNTP は**済み**(lwIP の apps。PC で試験)。
    - HTTP サーバー、MQTT / HTTP のクライアントは、**自前では作らず、Arduino で広く使われている既存のライブラリを使ってもらう**ことにしました(2026-10-21)。
    - 次のライブラリが、手を入れずに `NetworkClient` / `NetworkClientSecure` / `NetworkServer` の上で動くことを、PC 上で確かめました。
@@ -73,6 +73,39 @@
      - 試験は作業用の場所で行い、リポジトリには入れていません。外部のライブラリに依存させないためです。
    - TLS でつなぐときは、IP アドレスではなくホスト名で接続します。証明書の名前と照らし合わせるためで、ESP32 と同じです。
    - この確認の中で、Network ライブラリの不具合を 1 つ見つけて直しました。`NetworkClient::read()` と `peek()` が、データが無いときにスタックを回していなかったため、`Stream` の待ち付きの読み出し(`readStringUntil()` など。aWOT が使う)が、時間切れまで受信できずにいました。
+
+## Ethernet(H417)
+
+`ETH`(`NetworkEthernet.h`、`#include <Network.h>` で入る)。ESP32 の `ETH` と同じく `ETH.begin()` で DHCP を始めます。ヘッダーの名前は ESP32 の `ETH.h` にはしていません。
+
+- **中身:** 内蔵の MAC と 10/100 の PHY。割り込みは使わず、`poll()`(ネットワークの処理の中)で受信の記述子を見て、20 ms ごとに PHY を見ます。受信 8 本、送信 4 本の記述子(1536 B)で、RAM は約 18 KB です。
+- **クロック:** HSE(25 MHz)→ ETH の PLL(RCC CTLR の bit 26)→ MAC のクロック。コアの `SystemInit()` は、デバッガがクロックを動かしたあとに走り直し、HSE と ETH の PLL を切ります(CTLR を `&= 0x6aa6ffff`)。`poll()` は、それを見つけると入れ直します(`clockRestarts()` で数が分かる)。DMSeq のコンソールで試験をすると、毎回 1 回起きます。
+- **PHY:** EVT(`eth_driver_100M.c`)の回避策を 3 つ入れています。リンクが上がらないときの P/N の極性の切り替え、100M のリンクで流れていないときのリセット、ESD のあとのリセットです。リンクが上がったときの PHY の調整の書き込み(0x4002A00C)も EVT のとおりです。
+- **チェックサム:** IPv4、TCP、UDP、ICMP のチェックサムは MAC が付け、確かめます(`LWIP_CHECKSUM_CTRL_PER_NETIF` でこのインターフェースだけ lwIP の計算を止める)。受信は 17.6 → 19.9 Mbit/s、送信は変わらず。
+- **MAC アドレス:** チップの固有 ID から作るローカルなアドレス(先頭 0x06)。USB NCM のものとは別。`setMacAddress()` で変えられます。EVT は ESIG の 6 バイトをそのまま使いますが、それはグローバルな MAC の形になり、他社の OUI と重なりえます。
+- **アドレスの絞り込み:** 自分の MAC、ブロードキャスト、全マルチキャスト(mDNS のため)。
+- **対象:** H417 だけ(ETH は QEU6、MEU6、WEU6 にある)。V208 / V307 / V407 の MAC は別のドライバになります。
+
+### 測った値(2026-10-22、評価ボード、100M 全二重、LAN の PC と)
+
+| 項目 | 値 |
+|---|---|
+| ping(20〜300 回) | 平均 0.30〜0.46 ms |
+| TCP の 64 B のエコー(1000 回) | 中央値 0.26 ms、99% 1.0 ms |
+| TCP で受ける / 送る | 19.6〜19.9 / 23.7〜27.1 Mbit/s |
+| HTTP の GET 100 B | 1 回 1.5 ms |
+| HTTP の GET 1 MB / 200 KB | 2.4 MB/s / 246 ms |
+| HTTPS のハンドシェイク(TLS 1.3) | ECDSA P-256 で 1.72〜1.80 s、RSA-2048 で 1.25〜1.29 s、検証なしで 1.18 s |
+| HTTPS の 1 MB | 137〜154 kB/s |
+| HTTPS で増えるヒープ | 約 33 KB(外のサイトで 37〜40 KB) |
+| 外のサイト(DNS を通して) | example.com、www.google.com につながった(google の 93 KB を 283 kB/s) |
+
+- V3F の 100 MHz での値です。HTTPS の速さは mbedTLS の計算で決まっています。
+- **ベンチの注意:** ベンチの PC は、有線と Wi-Fi の両方で同じサブネットにつながっていて、どちらでも ARP に答えます(`arp_ignore=0`)。ボードの ARP の表で PC が Wi-Fi 側の MAC になると、ボードから PC へのフレームは Wi-Fi のアクセスポイントでビーコン(102.4 ms)ごとにためられ、ping が 100 ms〜900 ms 遅れました。ボードのドライバの問題ではありません。試験は、PC の有線側の MAC を ARP に固定します(`etharp_add_static_entry`。そのために `ETHARP_SUPPORT_STATIC_ENTRIES` を 1 にした)。PC 側で `arp_ignore=1`、`arp_announce=2` にすれば要らなくなります。
+
+### 試験
+
+`tests/run_hardware.py --case eth`(`tests/instrumented/eth/test_eth_contract.py`、スケッチは `tests/sketch_support/eth/eth.ino`)。DHCP、ping、UDP と TCP のエコー、両方向 4 MB の中身、HTTP の GET の CRC、HTTPS(試験ごとに作る CA で ECDSA と RSA を検証、検証なし、別の CA では断られること)を確かめます。速さは junit の property に残し、判定は中身と 5 Mbit/s の下限だけです。
 
 ## TLS(段 5): mbedTLS と BearSSL の比較(2026-10-21 の測定)
 

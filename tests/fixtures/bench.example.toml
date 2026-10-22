@@ -25,3 +25,5 @@ power_ports = [] # Explicit probe port on the parent hub.
 # GPIO: gpio = [{ pad = "PA1", channel = <measured probe channel> }, ...].
 # Declare only wired cases; UART-less L103 uses ["runtime", "power"].
 # USB device (CH32X035/X033): cases = ["usb"], dut_usb_topology = "<the DUT's own USB port>".
+# Ethernet (CH32H417 evaluation board): cases = ["eth"], fqbn = "ch32-riscv-ug:ch32rv:CH32H417",
+# f_cpu = 100000000; the RJ45 on this host's LAN with DHCP, the USB3.0-A (SS) cable out for SWD.

@@ -49,7 +49,7 @@
 #ifndef NETWORK_HOST_TEST
 #define LWIP_NOASSERT 1             /* lwIP's asserts guard its own invariants; on the chip they would only hang */
 #endif
-#define LWIP_CHECKSUM_CTRL_PER_NETIF 0
+#define LWIP_CHECKSUM_CTRL_PER_NETIF 1   /* the Ethernet MAC checks and inserts its own; USB NCM keeps lwIP's */
 #define IP_REASSEMBLY 1
 #define IP_FRAG 1
 #define IP_FORWARD 0
@@ -61,6 +61,7 @@
 #define DNS_MAX_SERVERS 2
 #define ARP_TABLE_SIZE 8
 #define ARP_QUEUEING 1
+#define ETHARP_SUPPORT_STATIC_ENTRIES 1   /* etharp_add_static_entry(): a peer pinned to one MAC (a host that answers ARP on two NICs) */
 
 /* The mDNS responder (NetworkMdns / MDNS) and the SNTP client (configTime()).
  * Linked only when a sketch uses them. */
