@@ -347,8 +347,10 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 - **PD**: M030 の 2 ポート（比較器のビットが違う）。ほかの系列の実機確認。
 - **H417**: USBHS の実機確認（SWD と端子を共有）、USBSS のホスト、V5F の利用。
 - **USB ネットワークの IP 層**: lwIP の上に作った（`NetworkUsbNcm`、docs/network-stack.ja.md）。実機の NCM は未確認。
-- **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は今 X035 / X033 だけが
-  ブートローダーに入ります。ほかの系列は普通のリセットです。
+- **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は X035 / X033 で実機確認。
+  X305 / X315 は同じ FLASH_STATR.BOOT_MODE があるので同じ手順を入れた（未確認。ブートローダーがどのポートで待つかも未確認）。
+  H41x は BOOT_MODE があるが試したら起動に失敗した（上）。V20x / V30x / V103 / L103 / V205 / M030 / V4x7 には BOOT_MODE が
+  無く、ブートローダーには BOOT0 の端子でしか入れないので、普通のリセットです。
 - **ホストの X035 以外での実機確認**: X035 は C8T6 と ESP32-S3 で確認済み。V20x / V30x / V205 / L103 / M030 / H41x
   （USBOTG_FS の配置、`ch32rv_usbfs_otg.h`）はビルドのみ。
 - **ホストのアイソクロナスと USB ネットワーク**（オーディオ、ビデオ、NCM）: 今は無し。

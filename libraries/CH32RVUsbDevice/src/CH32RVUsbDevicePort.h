@@ -8,11 +8,7 @@
  * and, when enterBootloader() can reach the factory USB bootloader,
  * CH32RV_USB_FACTORY_ISP_ENTRY with port_set_boot_mode().
  *
- * Extension point: the series below CH32X035 have no driver yet. Their clock
- * and PHY bring-up from the TinyUSB days (V103 USBFS with USBPRE; V20x USBFS
- * on PB6/PB7 and the USBD (fsdev) on PA11/PA12, USBPRE by SYSCLK, the parts
- * without one or the other; V30x USBFS, and USBHS with its PLL from HSE) is in
- * this file at commit 3ab1761 - each becomes a CH32RVUsbDcd of its own. */
+ * The drivers per controller are listed in docs/usb.ja.md. */
 #pragma once
 
 #include "ch32rv_registers.h"
@@ -27,30 +23,6 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
         return nullptr;
     }
     return &ch32rv_usb_dcd_usbfs_x03x;
-}
-
-/* FLASH_STATR.BOOT_MODE: after the next software reset, run the BOOT area
- * (the factory bootloader). Unlocked by the flash keys, then the boot-mode
- * keys - the sequence ch32rv's `isp enter --via probe` uses (measured on
- * CH32X035F8U6, ch32rv docs/protocol/factory-isp.ja.md). */
-#define CH32RV_USB_FACTORY_ISP_ENTRY 1
-#define X03X_FLASH_KEYR          CH32RV_REG32(CH32RV_FLASH_BASE + 0x04u)
-#define X03X_FLASH_STATR         CH32RV_REG32(CH32RV_FLASH_BASE + 0x0Cu)
-#define X03X_FLASH_CTLR          CH32RV_REG32(CH32RV_FLASH_BASE + 0x10u)
-#define X03X_FLASH_BOOT_MODEKEYR CH32RV_REG32(CH32RV_FLASH_BASE + 0x28u)
-#define X03X_FLASH_KEY1          0x45670123u
-#define X03X_FLASH_KEY2          0xCDEF89ABu
-#define X03X_FLASH_STATR_BOOT_MODE (1u << 14)
-#define X03X_FLASH_CTLR_LOCK     (1u << 7)
-
-static void port_set_boot_mode(void)
-{
-    X03X_FLASH_KEYR = X03X_FLASH_KEY1;
-    X03X_FLASH_KEYR = X03X_FLASH_KEY2;
-    X03X_FLASH_BOOT_MODEKEYR = X03X_FLASH_KEY1;
-    X03X_FLASH_BOOT_MODEKEYR = X03X_FLASH_KEY2;
-    X03X_FLASH_STATR |= X03X_FLASH_STATR_BOOT_MODE;
-    X03X_FLASH_CTLR |= X03X_FLASH_CTLR_LOCK;
 }
 
 /* ======================================================= CH32H417 / H416 / H415 */
@@ -180,4 +152,36 @@ static const CH32RVUsbDcd *port_dcd(CH32RVUsbController controller)
     return nullptr;
 }
 
+#endif
+
+/* ======================================================= the factory bootloader
+ * FLASH_STATR.BOOT_MODE: after the next software reset, run the BOOT area
+ * (the factory bootloader). Unlocked by the flash keys, then the boot-mode
+ * keys - the sequence ch32rv's `isp enter --via probe` uses (measured on
+ * CH32X035F8U6, ch32rv docs/protocol/factory-isp.ja.md). X305 / X315 have the
+ * same registers and bits (RM 23.4, EVT SystemReset_StartMode); not tried
+ * there, nor which port their bootloader listens on. V20x / V30x / V103 /
+ * L103 / V205 / M030 / V4x7 have no BOOT_MODE: their bootloader is reached
+ * by the BOOT0 pin only. */
+#if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033) || defined(CH32RV_SERIES_CH32X305) || \
+    defined(CH32RV_SERIES_CH32X315)
+#define CH32RV_USB_FACTORY_ISP_ENTRY 1
+#define ISP_FLASH_KEYR          CH32RV_REG32(CH32RV_FLASH_BASE + 0x04u)
+#define ISP_FLASH_STATR         CH32RV_REG32(CH32RV_FLASH_BASE + 0x0Cu)
+#define ISP_FLASH_CTLR          CH32RV_REG32(CH32RV_FLASH_BASE + 0x10u)
+#define ISP_FLASH_BOOT_MODEKEYR CH32RV_REG32(CH32RV_FLASH_BASE + 0x28u)
+#define ISP_FLASH_KEY1          0x45670123u
+#define ISP_FLASH_KEY2          0xCDEF89ABu
+#define ISP_FLASH_STATR_BOOT_MODE (1u << 14)
+#define ISP_FLASH_CTLR_LOCK     (1u << 7)
+
+static void port_set_boot_mode(void)
+{
+    ISP_FLASH_KEYR = ISP_FLASH_KEY1;
+    ISP_FLASH_KEYR = ISP_FLASH_KEY2;
+    ISP_FLASH_BOOT_MODEKEYR = ISP_FLASH_KEY1;
+    ISP_FLASH_BOOT_MODEKEYR = ISP_FLASH_KEY2;
+    ISP_FLASH_STATR |= ISP_FLASH_STATR_BOOT_MODE;
+    ISP_FLASH_CTLR |= ISP_FLASH_CTLR_LOCK;
+}
 #endif
