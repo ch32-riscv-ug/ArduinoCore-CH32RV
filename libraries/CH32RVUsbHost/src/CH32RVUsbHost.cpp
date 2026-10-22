@@ -8,6 +8,7 @@
  * completions - runs in normal context from ch32rv_usb_host_task() (after
  * loop(), inside delay()) and from the blocking calls while they wait. */
 #include "CH32RVUsbHostInternal.h"
+#include "ch32rv_service.h"
 
 #include <string.h>
 
@@ -1232,6 +1233,10 @@ const char *CH32RVUsbHost::lastErrorName() const
 
 #if CH32RV_USB_HOST_STACK
 
+/* The stack's system service (ch32rv_service.h): begin() attaches it, end()
+ * takes it out of the round. */
+static ch32rv_service_t host_service = CH32RV_SERVICE_INIT(ch32rv_usb_host_task);
+
 bool CH32RVUsbHost::begin()
 {
     if (_started) {
@@ -1259,6 +1264,8 @@ bool CH32RVUsbHost::begin()
     hcd = driver;
     ch32rv_usb_host_active = this;
     _started = true;
+    /* delay() and the return of loop() run the stack from here on. */
+    ch32rv_service_attach(&host_service);
     if (hcd->connected()) {
         en_queue(0, 0);
     }
@@ -1280,6 +1287,7 @@ void CH32RVUsbHost::end()
     hcd = nullptr;
     port_close();
     _started = false;
+    ch32rv_service_detach(&host_service);
     if (ch32rv_usb_host_active == this) {
         ch32rv_usb_host_active = nullptr;
     }

@@ -20,7 +20,7 @@ void setup() {
     }
     USBPD.request(9000);                   // 9 V; check the result in real code
 }
-void loop() { USBPD.maintain(); }           // keeps a PPS contract alive
+void loop() { }                             // begin() keeps the link (and PPS) alive
 ```
 
 This changes VBUS voltage; board input circuitry and loads must tolerate it.
@@ -44,18 +44,21 @@ AFIO bits). The BMC clock is derived from F_CPU.
 
 CH32X033 bonds no CC pad: `begin()` returns false there.
 
-Every call (`ready()`, `connected()`, `request()`, `maintain()`) moves the
+`begin()` attaches the driver as a system service: `delay()` and the return
+of `loop()` run it, so a sketch never calls a `maintain()` for the link to
+stay up. Every call (`ready()`, `connected()`, `request()`) also moves the
 driver along, so waiting on `ready()` alone reaches a contract. Started
 under a live contract (a reset, a re-flash), it gets the charger's
 capabilities back with Soft_Reset, then Hard Reset. It retransmits, follows
 the spec's timers, answers Get_Sink_Cap, says Not_Supported to the rest, and
-re-requests a PPS contract every 5 s while `loop()` calls `maintain()`.
+re-requests a PPS contract every 5 s from the system service (a `loop()` that
+does not return for seconds stops it; `delay()` does not).
 `contractProfile()` and `pps()` say what the contract is on.
 
 Everything is millivolts and milliamps. `request()` matches fixed profiles
 exactly and PPS ranges inclusively (20 mV steps, truncated); it prefers a
 fixed profile because a PPS contract dies unless re-requested every few
-seconds (`maintain()` does that from `loop()`). Battery and variable
+seconds (the system service does that). Battery and variable
 profiles are listed but never requested. See README.ja.md for the full API
 and design notes.
 
@@ -83,7 +86,7 @@ void setup() {
     USBPDSource.onSetVoltage(setVoltage);
     USBPDSource.begin();
 }
-void loop() { USBPDSource.maintain(); }
+void loop() { }        // begin() attached the driver
 ```
 
 It presents Rp, debounces a sink's Rd and picks its CC line, switches VBUS

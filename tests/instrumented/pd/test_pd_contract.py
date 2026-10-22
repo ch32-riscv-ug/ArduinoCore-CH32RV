@@ -9,7 +9,8 @@ Bench settings on the target:
                  also measured (within 10 %)
 
 Every fixed level up to pd_max_mv and back to 5 V; a PPS profile (if offered)
-at its lowest point and its middle, the middle held 12 s on maintain() alone;
+at its lowest point and its middle, the middle held 12 s on the system service alone (the sketch's loop() calls
+nothing);
 a voltage nothing offers is refused and leaves the contract alone; end() and
 begin() under a live contract get a contract back."""
 import json

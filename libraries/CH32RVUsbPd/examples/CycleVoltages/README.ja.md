@@ -17,7 +17,7 @@ CH32X035 などの USBPD のある系列(CC の端子はライブラリの READM
 
 ## 設定と制約
 
-PPS / battery / variable は循環の対象外です。ボタンは INPUT_PULLUP、押下の falling edge で処理し、専用 debounce はありません。接点の揺れで複数段進む場合は debounce を加えます。`maintain()` は loop ごとに呼びます。
+PPS / battery / variable は循環の対象外です。ボタンは INPUT_PULLUP、押下の falling edge で処理し、専用 debounce はありません。接点の揺れで複数段進む場合は debounce を加えます。接続の維持はドライバが `delay()` と `loop()` の戻りで行います。
 
 ## 関連資料
 

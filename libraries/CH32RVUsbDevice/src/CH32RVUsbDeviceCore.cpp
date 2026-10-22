@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "ch32rv_registers.h"
+#include "ch32rv_service.h"
 #include "CH32RVUsbDevicePort.h"
 
 #define MAX_EP 16
@@ -723,6 +724,10 @@ extern "C" void ch32rv_usb_task(void)
 void (*volatile ch32rv_usb_deferred)(void);
 
 /* ------------------------------------------------------------ the device's API */
+/* The stack's system service (ch32rv_service.h): begin() attaches it, end()
+ * takes it out of the round. */
+static ch32rv_service_t usb_service = CH32RV_SERVICE_INIT(ch32rv_usb_task);
+
 bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
 {
     if (_started) {
@@ -776,6 +781,9 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
     Core::reset_state();
     _started = true;
     _error = CH32RVUsbDeviceError::None;
+    /* delay() and the return of loop() run the stack from here on: the sketch
+     * never calls a task() for enumeration and transfers to happen. */
+    ch32rv_service_attach(&usb_service);
     dcd->connect(true);
     return true;
 }
@@ -792,6 +800,7 @@ void CH32RVUsbDevice::end()
     Core::dcd->close();
     _started = false;
     Core::device = nullptr;
+    ch32rv_service_detach(&usb_service);
 }
 
 bool CH32RVUsbDevice::restartWithOnly(CH32RVUsbDeviceFunction &only)

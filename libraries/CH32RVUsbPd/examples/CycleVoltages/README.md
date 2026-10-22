@@ -17,7 +17,7 @@ A series with USBPD (CH32X035 and others; CC pads in the library README), a PD c
 
 ## Settings and limits
 
-PPS, battery and variable PDOs are skipped. The INPUT_PULLUP button is processed on its falling edge without dedicated debounce; add it if one press skips multiple entries. Keep calling maintain in loop.
+PPS, battery and variable PDOs are skipped. The INPUT_PULLUP button is processed on its falling edge without dedicated debounce; add it if one press skips multiple entries. The driver keeps the link from delay() and the return of loop().
 
 ## Related documentation
 

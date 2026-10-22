@@ -61,5 +61,6 @@ void setup() {
 }
 
 void loop() {
-  USBPD.maintain();   /* keeps a PPS contract alive; harmless otherwise */
+  /* Nothing to call: begin() attached the driver as a system service, and
+   * the return of loop() (and any delay()) keeps the link alive. */
 }

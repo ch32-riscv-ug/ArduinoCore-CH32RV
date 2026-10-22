@@ -114,7 +114,7 @@ void pd_parse_source_caps(const uint32_t *pdo, uint8_t count, pd_caps_t *out);
  *
  * A fixed profile at exactly want_mv wins over a PPS range containing it: a
  * fixed contract holds without attention, while a PPS contract dies unless
- * re-requested every few seconds (see maintain() in CH32RVUsbPd.h), and a sketch
+ * re-requested every few seconds (the driver's system service does that), and a sketch
  * sitting in delay() would lose it. Among fitting PPS ranges the one with the
  * most current wins. Battery and variable profiles are never picked - they
  * are listed for the user, not requested.

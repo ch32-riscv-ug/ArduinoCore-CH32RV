@@ -3,7 +3,7 @@
  *
  * Each press asks for the next fixed profile the charger offers (5 V, 9 V,
  * 12 V ... and back to 5 V) and prints the contract on the UART. The driver
- * keeps the link itself as long as loop() calls maintain().
+ * keeps the link itself: begin() attached it as a system service.
  *
  * Wiring: the board's USB-C to a PD charger, a push button from BUTTON_PIN to
  * GND, and the UART (RX_PIN / TX_PIN, the chip's default pads - change them to
@@ -45,8 +45,6 @@ void setup() {
 }
 
 void loop() {
-  USBPD.maintain();
-
   static bool was_up = true;
   const bool up = digitalRead(BUTTON_PIN) == HIGH;
   if (was_up && !up && USBPD.ready()) {

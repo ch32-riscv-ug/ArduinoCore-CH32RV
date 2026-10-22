@@ -9,18 +9,21 @@
  *         }
  *         USBPD.request(9000);                    // 9 V, please
  *     }
- *     void loop() { USBPD.maintain(); }           // keeps the link (and a PPS contract) alive
+ *     void loop() { }                             // nothing to call: begin() attached the driver
  *
- * Every call - ready(), connected(), request(), maintain() - moves the driver
- * along: attach detection, the spec's timers, retransmission and the PPS
- * keepalive all run from whichever of them the sketch calls, so waiting on
+ * begin() attaches the driver as a system service (ch32rv_service.h): delay()
+ * and the return of loop() run attach detection, the spec's timers,
+ * retransmission and the PPS keepalive, so a sketch never calls a maintain()
+ * for the link to stay up. Every public call - ready(), connected(),
+ * request() - also moves the driver along, so waiting on
  * ready() alone is enough to reach a contract.
  *
  * VERIFIED against real chargers (2026-10-02, CH32X035 on a WeAct board): a
  * 5/9/12/15/20 V fixed supply and a 5/9/12 V + 3.3-11 V PPS one - attach,
  * Source_Capabilities, the driver's own 5 V contract, every fixed level and
  * back, PPS at both ends and the middle of its range held 20 s on maintain()
- * alone, refusals, and a restart under a live contract
+ * alone (before the system service; tests/instrumented/pd now holds it on the
+ * service alone), refusals, and a restart under a live contract
  * (tests/bench/basic/pd_sink). Implemented for
  * CH32X035 (checked on hardware), L103/M103, V205, X305/X315 and H41x (built
  * only, usbpd_hw.h), and M030's USBPD0; begin() returns false on X033 (no
@@ -43,8 +46,8 @@
  *   - answers Get_Sink_Cap with a 5 V Sink_Capabilities, and anything it does
  *     not implement with Not_Supported (PD 3.0) or Reject (PD 2.0)
  *   - re-requests a PPS contract every 5 s (the charger drops one that goes
- *     quiet for 10 s), as long as the sketch calls maintain() - a sketch
- *     holding a PPS contract cannot sit in delay(30000); a fixed one can
+ *     quiet for 10 s) from the system service - delay(30000) is fine; a
+ *     loop() or a callback that does not return for seconds is not
  *   - notices the charger going away when CC falls below vRd-Connect (only
  *     meaningful on a board not powered from that same VBUS)
  *
@@ -121,11 +124,13 @@ public:
     /* The profile the contract is on (an index for profile()), -1 without one. */
     int8_t contractProfile() const;
 
-    /* The contract is on a PPS profile (and so needs maintain()). */
+    /* The contract is on a PPS profile (kept alive by the system service). */
     bool pps() const;
 
-    /* The driver's heartbeat: attach and detach detection, the spec's timers,
-     * retransmission, and the PPS keepalive. Call it from loop(). */
+    /* One step of the driver's heartbeat: attach and detach detection, the
+     * spec's timers, retransmission, and the PPS keepalive. Not needed - the
+     * system service begin() attached runs the same step from delay() and the
+     * return of loop(). Kept for a sketch that wants to step it explicitly. */
     void maintain();
 
     /* Interrupt entry point for the USBPD vector. Public the way

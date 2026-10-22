@@ -29,7 +29,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 
 Alternatively open File → Examples → CH32RVUsbPd in Arduino IDE. Generated profiles declare build conditions, not hardware-verified support.
 
-Sink examples wait about five seconds for the initial contract. connected means CC attach; ready means an explicit PD contract. A Type-C-only supply may never become ready. Request units are mV/mA: 9 V is 9000. Keep calling maintain in loop, particularly for PPS contracts.
+Sink examples wait about five seconds for the initial contract. connected means CC attach; ready means an explicit PD contract. A Type-C-only supply may never become ready. Request units are mV/mA: 9 V is 9000. The driver keeps the link (and a PPS contract) alive from delay() and the return of loop(); nothing has to be called.
 
 Only one sink/source role can own the PD block at a time. USB data-device operation is independent, but simultaneous use requires a peer supporting both power and data roles and suitable connector power wiring.
 
@@ -40,7 +40,7 @@ Only one sink/source role can own the PD block at a time. USB data-device operat
 | begin fails | A series with the block (not X033), required source callbacks, opposite-role Busy |
 | connected but not ready | PD-capable source, CC wiring, wait time |
 | request fails | Advertised PDO, mV/mA units, exact fixed voltage/PPS range and peer rejection |
-| PPS expires | Regular maintain calls and long stalls |
+| PPS expires | A loop() or callback that does not return for seconds |
 | Reboot loop after reset | Contract recovery/Hard Reset dropping VBUS and board power routing |
 | Negotiated and measured voltage differ | Physical source callback and supply implementation |
 

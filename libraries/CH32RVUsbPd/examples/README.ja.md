@@ -27,7 +27,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 
 これはリポジトリルートから、core 導入済みの CLI で使う例です。IDE では「スケッチ例 → CH32RVUsbPd」から開きます。生成 profile の存在は実機確認やその系列の PD 実装を意味しません。
 
-Sink 例は初回契約を約5秒待ちます。`connected()` は CC の接続、`ready()` は PD 明示契約です。Type-C-only の電源は接続しても ready になりません。`request()` の単位は mV/mAで、9 Vは `9000`。PPS を含む接続維持のため `loop()` から `maintain()` を呼びます。
+Sink 例は初回契約を約5秒待ちます。`connected()` は CC の接続、`ready()` は PD 明示契約です。Type-C-only の電源は接続しても ready になりません。`request()` の単位は mV/mAで、9 Vは `9000`。PPS を含む接続の維持はドライバが `delay()` と `loop()` の戻りで行うので、何も呼ぶ必要はありません。
 
 Sink と Source は同じ USBPD ブロックを共有し、一度に一方だけです。USB データの Device 機能とは別に動かせますが、相手が PD 電源とデータホストの両方に対応すること、同じコネクタの電源配線が正しいことを確認します。
 
@@ -38,7 +38,7 @@ Sink と Source は同じ USBPD ブロックを共有し、一度に一方だけ
 | begin が失敗 | ブロックのある系列か(X033 は不可)、Source callback の登録、反対ロールとの Busy |
 | connected だが ready でない | 電源が PD 対応か、CC配線、契約待ち時間 |
 | request が失敗 | 広告 PDO、mV/mA単位、固定値一致/PPS範囲、対向機器の拒否 |
-| PPS が失効 | maintain の継続、長時間の停止 |
+| PPS が失効 | 数秒戻らない `loop()` や callback |
 | reset後に再起動を繰り返す | 既存契約からの復帰と Hard Reset による VBUS 停止、ボードの給電経路 |
 | 契約表示と測定電圧が違う | Source の実制御 callback と電源回路。契約APIは電圧計ではない |
 

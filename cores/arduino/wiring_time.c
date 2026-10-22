@@ -10,6 +10,7 @@
  */
 #include "Arduino.h"
 #include "ch32rv_clock.h"
+#include "ch32rv_service.h"
 #include "ch32rv_registers.h"
 #include "ch32rv_vio18.h"
 #ifndef CH32RV_CLOCK_INIT
@@ -337,15 +338,12 @@ void delay(unsigned long ms)
 {
     const uint32_t start = ch32rv_millis_counter;
 
+    /* The system services the libraries attached when they began
+     * (ch32rv_service.h): USB, the IP stack, USB PD. Never the sketch's own
+     * callbacks, and never nested - inside a service this only waits. */
     while ((uint32_t)(ch32rv_millis_counter - start) < (uint32_t)ms) {
-        if (ch32rv_usb_task) {
-            ch32rv_usb_task();
-        }
-        if (ch32rv_usb_host_task) {
-            ch32rv_usb_host_task();
-        }
-        if (ch32rv_net_task) {
-            ch32rv_net_task();
+        if (ch32rv_services_run) {
+            ch32rv_services_run();
         }
         yield();
     }

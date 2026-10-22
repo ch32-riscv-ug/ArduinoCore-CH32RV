@@ -44,7 +44,6 @@ void setup() {
 
 void loop() {
   static int8_t shown = -2;
-  USBPDSource.maintain();
   const int8_t now = USBPDSource.ready() ? USBPDSource.contractProfile() : -1;
   if (now != shown) {
     shown = now;

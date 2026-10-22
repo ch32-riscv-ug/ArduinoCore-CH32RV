@@ -11,7 +11,7 @@
  *     USBPDSource.onVbus(vbus);                 // required
  *     USBPDSource.onSetVoltage(setVoltage);     // required
  *     USBPDSource.begin();
- *     void loop() { USBPDSource.maintain(); }
+ *     void loop() { }       // begin() attached the driver as a system service
  *
  * Built to be used in a product: the board's supply is the sketch's, reached
  * through the two callbacks, and both are required - begin() fails without
@@ -105,6 +105,9 @@ public:
     int8_t contractProfile() const;
     bool pps() const;
 
+    /* Not needed: begin() attaches the driver as a system service, which
+     * delay() and the return of loop() run. One explicit step for a sketch
+     * that wants it. */
     void maintain();
 
     PDSourceError lastError() const;

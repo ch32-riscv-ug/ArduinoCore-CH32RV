@@ -21,6 +21,7 @@
 #include "CH32RVUsbPd.h"
 
 #include "Arduino.h"
+#include "ch32rv_service.h"
 #include "usbpd_hw.h"
 
 #ifdef CH32RV_USBPD_BASE
@@ -472,7 +473,7 @@ void on_message(uint16_t count)
     }
 }
 
-void poll()
+void poll_once()
 {
     if (!pd.on) {
         return;
@@ -589,6 +590,31 @@ void poll()
     }
 }
 
+/* The one way in to the state machine above: every public call, wait_result()
+ * and the system service go through here. Not reentrant - a callback of the
+ * sketch's (the source's supply switch) that calls delay() runs the system
+ * services, and this is one of them. */
+void poll()
+{
+    static bool busy;
+    if (busy) {
+        return;
+    }
+    busy = true;
+    poll_once();
+    busy = false;
+}
+
+/* The system service (ch32rv_service.h): begin() attaches it, so delay() and
+ * the return of loop() keep the link - and a PPS contract - alive without a
+ * maintain() in loop(). */
+void service_run()
+{
+    poll();
+}
+
+ch32rv_service_t service = CH32RV_SERVICE_INIT(service_run);
+
 /* Wait (up to timeout_ms) for a Request in flight to end. */
 uint8_t wait_result(uint32_t timeout_ms)
 {
@@ -641,6 +667,7 @@ bool CH32RVUsbPd::begin()
     ch32rv_irq_enable(CH32RV_USBPD_IRQ);
     rx_mode();
     pd.last_detect_ms = millis() - T_DETECT_MS;
+    ch32rv_service_attach(&service);
     poll();                     /* look at CC right away */
     return true;
 }
@@ -651,6 +678,7 @@ void CH32RVUsbPd::end()
         return;
     }
     pd.on = false;
+    ch32rv_service_detach(&service);
     ch32rv_irq_disable(CH32RV_USBPD_IRQ);
     ch32rv_usbpd_irq_hook = nullptr;
     CH32RV_USBPD_CONFIG = 0;

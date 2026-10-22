@@ -1,6 +1,8 @@
 /* USB PD sink contracts (tests/instrumented/pd): CH32RVUsbPd against the
  * charger on the DUT's USB-C. Console on SerialDMSeq; loop() calls
- * USBPD.maintain() all the time, so a PPS contract stays up between commands.
+ * nothing: the driver is a system service (begin() attached it), and the
+ * return of loop() keeps a PPS contract up between commands - pd.pps checks
+ * exactly that.
  *
  *   ready <nonce>             READY <nonce> <build id> <begin 0/1> <CC1 pin> <CC2 pin>
  *   wait <ms>                 STATE ... once ready() or after <ms>
@@ -112,7 +114,6 @@ void setup()
 
 void loop()
 {
-    USBPD.maintain();
     while (SerialDMSeq.available()) {
         const int c = SerialDMSeq.read();
         if (c == '\n') {

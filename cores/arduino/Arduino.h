@@ -17,9 +17,10 @@ using namespace arduino;
 #include "api/Common.h"
 #endif
 
-/* Background work for the USB device stack. CH32RVUsbDevice defines it;
- * main() calls it after every loop() and delay() calls it while waiting. Weak,
- * so a sketch without USB carries neither the stack nor the call. */
+/* Background work for the USB device stack. CH32RVUsbDevice defines it and
+ * attaches it as a system service in begin() (ch32rv_service.h), so delay()
+ * and the return of loop() run it; the library's own blocking calls also call
+ * it directly. Weak, so a sketch without USB carries neither. */
 #ifdef __cplusplus
 extern "C" {
 #endif

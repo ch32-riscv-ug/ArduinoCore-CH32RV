@@ -17,12 +17,14 @@
  *                   that use Serial. Everywhere else the pointer is null and
  *                   the call is skipped.
  *
- * ch32rv_usb_task() is ours, the same weak-pointer shape: CH32RVUsbDevice
- * defines it (CH32RVUsbHost ch32rv_usb_host_task(), the Network library
- * ch32rv_net_task()), and it runs after every loop() and inside delay(). It is not
- * hung on yield(), because a sketch may define its own yield().
+ * ch32rv_services_run() is ours, the same weak-pointer shape: the round over
+ * the system services the libraries attached in their begin() (USB device and
+ * host, the IP stack, USB PD - ch32rv_service.h). It runs after every loop()
+ * and inside delay(). It is not hung on yield(), because a sketch may define
+ * its own yield().
  */
 #include "Arduino.h"
+#include "ch32rv_service.h"
 
 /* Empty by default; a variant or a library that needs something to happen
  * before setup() overrides it. */
@@ -37,14 +39,8 @@ int main(void)
     setup();
     for (;;) {
         loop();
-        if (ch32rv_usb_task) {
-            ch32rv_usb_task();
-        }
-        if (ch32rv_usb_host_task) {
-            ch32rv_usb_host_task();
-        }
-        if (ch32rv_net_task) {
-            ch32rv_net_task();
+        if (ch32rv_services_run) {
+            ch32rv_services_run();
         }
         if (serialEventRun) {
             serialEventRun();

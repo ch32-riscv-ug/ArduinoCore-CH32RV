@@ -20,7 +20,7 @@ void setup() {
     }
     USBPD.request(9000);                   // 9 V。実アプリでは戻り値を確認
 }
-void loop() { USBPD.maintain(); }           // PPS契約の維持
+void loop() { }                             // begin()が接続とPPS契約を維持する
 ```
 
 この例は VBUS の電圧を変えるので、入力電源回路と負荷を要求電圧に対応させます。
@@ -51,12 +51,12 @@ BMCのクロックはF_CPUから計算します(CPU Clockで8 MHzを選ぶと送
 
 ドライバが自分でやること(USB PD R3.1に沿う):
 
-- **どの呼び出しでも状態が進む。** `ready()`だけを待つループで契約まで行きます(接続検出・仕様のタイマ・再送・PPS維持は`ready()` / `connected()` / `request()` / `maintain()`のどれからでも回る)。
+- **`begin()`だけで裏で進む。** `begin()`がドライバをsystem serviceとして登録し、`delay()`と`loop()`の戻りで接続検出・仕様のタイマ・再送・PPS維持が回ります。`maintain()`を`loop()`に書く必要はありません。`ready()` / `connected()` / `request()`も状態を進めるので、`ready()`だけを待つループで契約まで行きます。
 - Source_CapabilitiesにはRequestで答える(仕様上の義務)。sketchが最後に得たプロファイルと**同じPDO(生の値まで一致)**が同じ番号にあればそれ、それ以外(別の充電器、表が変わった、不明)はprofile 0(5 V)。取り外しを検出したら選択は忘れる。
 - **契約が残ったまま起動した場合**(リセット、書き込み直後): Source_Capabilitiesが来ないので、tTypeCSinkWaitCap(620 ms)後にSoft_Reset(VBUSは落ちない)、駄目ならHard Reset(VBUSが一旦落ちて5 Vで戻る。VBUSだけで動く板は再起動する)を最大2回。応答しない充電器はType-Cのみ: `connected()`だが`ready()`にならない。
 - GoodCRCが返らないメッセージは2回再送、重複受信は無視、応答タイマ(Accept 30 ms、PS_RDY 550 ms)切れはSoft/Hard Reset。
 - Get_Sink_Capには5 VのSink_Capabilitiesで、実装していないものにはNot_Supported(PD 3.0)/ Reject(PD 2.0)で答える。
-- **PPS契約は5秒ごとに再要求**(充電器は10秒黙ると契約を落とす)。`maintain()`を呼んでいる間だけ。
+- **PPS契約は5秒ごとに再要求**(充電器は10秒黙ると契約を落とす)。system serviceが行うので`delay(30000)`でも保たれる。数秒戻らない`loop()`やcallbackでは落ちる。
 - CCがvRd-Connectを下回り続けたら取り外しとみなす(同じVBUSで給電されていない板でのみ意味がある)。
 
 ## API
@@ -74,8 +74,8 @@ BMCのクロックはF_CPUから計算します(CPU Clockで8 MHzを選ぶと送
 | `requestProfile(i, mV=0, mA=0)` | プロファイルを名指し(固定が同じ電圧にあってもPPSを使いたいとき) |
 | `voltage()` / `current()` | **契約値**(実測ではない)。Requestの刻みで返る(PPSは20 mV / 50 mA切り捨て) |
 | `contractProfile()` | 契約中のプロファイルの番号。契約なしは`-1` |
-| `pps()` | 契約がPPS(=`maintain()`が要る) |
-| `maintain()` | ドライバの心拍(接続・取り外し、タイマ、再送、PPS維持)。`loop()`から呼ぶ |
+| `pps()` | 契約がPPS(system serviceが5秒ごとに再要求する) |
+| `maintain()` | ドライバの心拍を1回進める。**呼ばなくてよい**(`begin()`で登録したsystem serviceが`delay()`と`loop()`の戻りで同じことをする) |
 
 `PDProfile`のフィールドは単位入りの名前です: `kind`(`PD_SUPPLY_FIXED` /
 `PD_SUPPLY_PPS` / `PD_SUPPLY_BATTERY` / `PD_SUPPLY_VARIABLE`)、
@@ -133,7 +133,7 @@ void setup() {
     USBPDSource.onSetVoltage(setVoltage);
     USBPDSource.begin();
 }
-void loop() { USBPDSource.maintain(); }
+void loop() { }        // begin()がドライバを登録済み
 ```
 
 - Rp を出してシンクの Rd を検出(tCCDebounce)、つながった CC 線を選び、`onVbus(true)` で VBUS を入れる。

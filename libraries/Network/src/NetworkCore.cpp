@@ -5,6 +5,8 @@
 #include <ch32rv_rng.h>
 #endif
 
+#include "ch32rv_service.h"
+
 #include "lwip/init.h"
 #include "lwip/timeouts.h"
 
@@ -13,11 +15,16 @@ namespace ch32rv_net {
 static bool started;
 static NetworkInterface *interfaces[4];
 
+/* Every entry point of the library comes through here, so this is where the
+ * IP stack joins the system services that delay() and the return of loop()
+ * run (ch32rv_service.h). */
 void start()
 {
     if (!started) {
         started = true;
         lwip_init();
+        static ch32rv_service_t service = CH32RV_SERVICE_INIT(ch32rv_net_task);
+        ch32rv_service_attach(&service);
     }
 }
 
@@ -95,7 +102,8 @@ NetworkInterface *firstInterface()
 
 }  // namespace ch32rv_net
 
-/* main() runs it after every loop(), and delay() while it waits. Reentry - a
+/* The IP stack's system service (start() attaches it): delay() and the return
+ * of loop() run it, and so do the library's own waits (pump()). Reentry - a
  * callback of ours that pumps - is cut off here: lwIP is not reentrant. */
 extern "C" void ch32rv_net_task(void)
 {
