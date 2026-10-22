@@ -169,9 +169,53 @@
     },
     {
       "id": "E05",
-      "name": "add disconnect recovery",
-      "status": "pending",
-      "reason": "existing detach/fault tests do not substitute for baseline-to-added-recovery implementation and diff"
+      "name": "add disconnect recovery to complete X0",
+      "status": "new-normalized",
+      "directory": "disconnect-change",
+      "abi_csv": "tasks/EXP-07/disconnect-change-size-matrix.csv",
+      "group_axes": [
+        "part",
+        "lto",
+        "family",
+        "touch"
+      ],
+      "before_filter": {
+        "selection_case": "1",
+        "unused": "False"
+      },
+      "after_filter": {
+        "selection_case": "2",
+        "unused": "False"
+      },
+      "image_field": "image_bytes",
+      "ram_field": "static_ram_bytes",
+      "object_field": "application_object_bytes",
+      "shared_preparation": [
+        "tests/unit/core_redesign/connection_types.hpp",
+        "tests/unit/core_redesign/connection_pps.hpp",
+        "tests/unit/core_redesign/connection_x0.hpp"
+      ],
+      "implementation_pairs": [
+        {
+          "before": "before-policy.hpp",
+          "after": "after-policy.hpp",
+          "logical_file": "disconnect-policy.hpp"
+        }
+      ],
+      "added_state": [
+        "four queued inputs gain session4 each:16 bytes",
+        "session and active_session replace baseline used flag",
+        "C automatic batch gains16 bytes; common IO lease state exists in both versions"
+      ],
+      "semantic_change": "baseline fails closed permanently after disconnect; added policy accepts reconnect, drops old-session inputs/results and waits for stopped old backend plus explicit collection; no automatic apply replay",
+      "host_evidence": "tasks/EXP-07/disconnect-change-result.ja.md",
+      "unverified": [
+        "physical USB PD/I2C/IRQ/stop/reinit",
+        "MCU power loss",
+        "real stack/time",
+        "human prediction and editing"
+      ],
+      "expected_pairs": 32
     }
   ]
 }

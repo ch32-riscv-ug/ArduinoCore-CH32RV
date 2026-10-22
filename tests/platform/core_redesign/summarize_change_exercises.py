@@ -21,7 +21,13 @@ def summarize(out):
         folder=BASE/'tasks/EXP-07'/spec['directory'];before=folder/'before.cpp';after=folder/'after.cpp'
         patch=list(difflib.unified_diff(before.read_text().splitlines(keepends=True),after.read_text().splitlines(keepends=True),fromfile=str(before.relative_to(ROOT)),tofile=str(after.relative_to(ROOT))))
         (out/(spec['id']+'.patch')).write_text(''.join(patch))
+        implementation_diffs=[]
         inputs=[before,after,BASE/spec['abi_csv']]
+        for pair in spec.get('implementation_pairs',[]):
+            first,second=folder/pair['before'],folder/pair['after'];inputs.extend([first,second])
+            diff=list(difflib.unified_diff(first.read_text().splitlines(keepends=True),second.read_text().splitlines(keepends=True),fromfile=str(first.relative_to(ROOT)),tofile=str(second.relative_to(ROOT))))
+            (out/(spec['id']+'-implementation.patch')).write_text(''.join(diff))
+            implementation_diffs.append(dict(**pair,lines_added=sum(line.startswith('+') and not line.startswith('+++') for line in diff),lines_removed=sum(line.startswith('-') and not line.startswith('---') for line in diff)))
         if spec.get('historical_manifest'):inputs.append(BASE/spec['historical_manifest'])
         inputs += [ROOT/name for name in spec['shared_preparation']]
         for p in inputs:
@@ -63,7 +69,7 @@ def summarize(out):
         assert len(pairs)==spec['expected_pairs'],(spec['id'],len(pairs),spec['expected_pairs'])
         candidate_axis='candidate' if 'candidate' in spec['group_axes'] else 'family'
         assert len({item['axes'][candidate_axis] for item in pairs})==4,spec['id']
-        report['records'].append({**spec,'logical_edited_files':1,'selection_lines_added':sum(line.startswith('+') and not line.startswith('+++') for line in patch),
+        report['records'].append({**spec,'logical_edited_files':1+len(implementation_diffs),'implementation_diffs':implementation_diffs,'selection_lines_added':sum(line.startswith('+') and not line.startswith('+++') for line in patch),
             'selection_lines_removed':sum(line.startswith('-') and not line.startswith('---') for line in patch),'shared_preparation_metrics':[dict(path=name,bytes=(ROOT/name).stat().st_size,lines=len((ROOT/name).read_text().splitlines())) for name in spec['shared_preparation']],
             'abi_pair_count':len(pairs),'pairs':pairs,'human_review':None,'generation_time_as_score':False})
     (out/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
