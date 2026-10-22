@@ -663,6 +663,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       - USBFS は済み（CH32RVUsbDcdUsbfsOtg）。DFU での書き換えも済み（ch32rv_flash）。
         - DFU を Arduino の upload に組み込む: 済み（ch32rv の `boot dfu flash`、platform.txt の ch32rv_dfu）。
           ch32rv 0.22.0 を同梱した（2026-10-21）。
+          ch32rv 0.22.1 に上げた（2026-10-22。H417 の 2 コアの扱い、`dbg resume --all`、`--release-dm`、
+          `--confirm-run pc`、`boot dfu flash` の busy 待ち、`isp --transport uart`）。H417 の eth / logic の試験は 0.22.1 で通った。
           - **arduino-cli からの書き込みを H417（FS）で確かめた（2026-10-21）。** 4 回中 2 回通った（30 KB を 0.12 s、
             目印の行と稼働時間で確認）。残り 2 回は、DFU_DETACH のすぐ後に `interface is busy`（errno 16）。DFU モードの
             機器は出ていて、手で `boot dfu flash --probe usb:3-4` を実行すると毎回書ける。upload の間も動く discovery が
