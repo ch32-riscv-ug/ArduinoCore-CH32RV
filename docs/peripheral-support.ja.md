@@ -39,27 +39,31 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | SysTick | 実装済 | millis/micros/delay | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |  |
 | RCC (クロック) | 一部実装 | F_CPU | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | HSI(とHSI由来PLL)で系列ごとに1つの固定周波数。V103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、V407/V467・X305/X315 20 MHz、L103/M103・V205・M030 8 MHz(PLL未使用)、H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の 400 MHz、V5F は 400 MHz で停止のまま)。HSEは未実装(USB HSとH417のUSB SSのみHSEを使う) |
 | PWR (低消費電力) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | sleep APIは提供していない |
-| FLASH (自己書き換え) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 自己書き換えとEEPROM emulationのAPIは提供していない |
+| FLASH (自己書き換え) | 一部実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ◐ | 公開APIとEEPROM emulationは無い。H415/H416/H417はコア内部の`ch32rv_flash_erase/write`(DFU runtimeが使う)。他は未実装。実機の数字はdocs/flash-raw.ja.md、保存の案はdocs/persistence-spec.ja.md(下書き) |
 | USART | 実装済 | Serial | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 全インスタンス(V205/V30x/V407/V467のUSART6〜10も、Serial9まで)。V205・X305/X315は端子ごとのAF番号を書く(ビルドのみ確認)。X033/X035は送信をポーリングで行う(割込み送信の不具合の回避) |
 | I2C | 実装済 | Wire | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | controllerはpolling、peripheral(slave)は割込み駆動。V205・X305/X315は端子ごとのAF番号を書く(ビルドのみ確認) |
 | SPI | 一部実装 | SPI | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | controllerのみ。peripheral(slave)は未実装。V205・X305/X315は端子ごとのAF番号を書く(ビルドのみ確認)。M103はSPI1のみ |
 | ADC | 実装済 | analogRead | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替。内部チャネルは`analogReadVref()`・`analogReadTemp()`・`CH32RV.getVddMillivolts()`(M030はdevice-dataに無く未対応、温度センサはV103/V20x/V205/V30x/V4x7/L103のみ、校正なしの典型値)。L103/M103はEVTと同じVDDA/2のオフセット補正をかける。基準電圧は選べない(`analogReference()`は何もしない)。V003は10 bit |
 | DAC | 実装済 | analogWrite(CH32RV_DACn_PIN) |  |  |  |  |  | ● | ● |  |  |  |  | ● | V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来 |
-| TIM (PWM/tone/入力捕捉) | 実装済 | analogWrite/tone | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V00x/X035/M030は空きが無く**PWMと共有**。PWMはTIM1〜5の既定ピン(tone/Servoが使うtimerは除く。remap先とCHxNは未対応)、V205・X305/X315は端子ごとのAF番号で出す(ビルドのみ確認)。timer管理はTIM1〜10(V30xのTIM8〜10、V4x7のTIM8) |
+| TIM (PWM/tone) | 実装済 | analogWrite/tone | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V00x/X035/M030は空きが無く**PWMと共有**。PWMはTIM1〜5の既定ピン(tone/Servoが使うtimerは除く。remap先とCHxNは未対応)、V205・X305/X315は端子ごとのAF番号で出す(ビルドのみ確認)。timer管理はTIM1〜10(V30xのTIM8〜10、V4x7のTIM8)。入力捕捉・エンコーダ・ETR・DMAバーストは未実装(`pulseIn()`はsoftwareで数える)。H415/H416/H417はCH32RVLogicCaptureがTIM+DMAを使う |
 | LPTIM | 対象外 | - |  |  |  |  |  |  |  | − |  |  |  | − | L103のみ |
-| DMA | 対象外 | - | − | − | − | − | − | − | − | − | − | − | − | − | Arduino APIには露出しない |
+| DMA | 対象外 | - | − | − | − | − | − | − | − | − | − | − | − | − | Arduino APIには露出しない。H415/H416/H417ではCH32RVLogicCapture・CH32RVHsAdcが使う |
 | IWDG | 実装済 | `CH32RV.wdtEnable/wdtFeed` | ● | ● | ● | ● | ● | ● | ● | ● |  | ● | ● | ● | X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い |
 | WWDG | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
 | RTC | 未実装 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ | ○ |  |
 | BKP (バックアップレジスタ) | 対象外 | - |  |  | − | − | − | − | − | − |  |  |  |  |  |
 | CRC | 対象外 | - |  |  | − | − | − | − | − | − |  |  | − | − |  |
+| ECDC (AES/SM4) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | AES-128/192/256とSM4、ECBとCTRのみ。TLS(mbedTLS)はsoftwareで計算している |
+| V5F (2つ目のコア)/HSEM/IPC | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | H417。起動、共有メモリ、HSEM、原子操作、GPIOの読み取りを実機で測った(docs/h417-multicore.ja.md)。設計は未 |
 
 ## アナログ・タッチ
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | H415/H416/H417 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | OPA/コンパレータ | 対象外 | - | − | − |  | − | − | − | − | − | − | − |  | − | CH32固有 |
-| TouchKey | 対象外 | - |  | − | − | − | − | − |  | − |  | − |  |  | CH32固有 |
+| TouchKey | 対象外 | - |  | − | − | − | − | − |  | − |  | − |  | − | CH32固有 |
+| HSADC (高速ADC) | 一部実装 | CH32RVHsAdc(library) |  |  |  |  |  |  |  |  |  |  |  | ◐ | H415/H416/H417。DMAで連続取り込み、USBで流す(HsAdcStream) |
+| DFSDM (ΣΔフィルタ) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | PDMマイク、ΣΔ変調器の入力。H417 |
 | PIOC (プログラマブルIO) | 対象外 | - |  |  |  |  | − |  |  |  |  | − |  | − | X035/V205固有 |
 
 ## USB
@@ -68,7 +72,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | USB (FS device/host) | 一部実装 | `CH32RVUsbDevice` / `CH32RVUsbHost` |  |  | ● | ● | ○ | ● |  | ○ | ○ | ● |  | ◐ | stackは自前(TinyUSBは2026-10-20に撤去)。deviceはX035/X033で実機確認(ホストはPCとESP32-S3)。V103/V20x/V30xのdeviceドライバは作り直し中。hostはX035(R8T6/C8T6/G8U6/G8R6、F8U6などはシリコンに無い)・V20x・V30xのUSBFS。X035 C8T6でESP32-S3相手に実機確認、V20x/V30xはビルドのみ。L103/M103・V205・M030はクロック方針の決定待ちで未実装。工場ISPへの切り替えはX033/X035のみ(docs/usb.ja.md) |
 | USB HS | 一部実装 | `CH32RVUsbDevice`(`UsbPort::HighSpeed`) |  |  |  |  | ○ | ● | ○ |  |  |  | ○ | ◐ | V305/V307/V317(第1世代USBHS、HSEが要る)。自前スタックのドライバは未移植。V303はUSBHSが無い。V205・V407/V467・X305/X315の第2世代USBHSは新しいドライバが要り未実装 |
-| USB SS | 一部実装 | `CH32RVUsbDevice`(`CH32RVUsbController::SuperSpeed`) |  |  |  |  |  |  |  |  |  |  | ◐ | ◐ | H417/H416のUSBSS deviceドライバ(ビルドのみ、実機確認待ち)。USB 2.0への切り替えとhostは無し |
+| USB SS | 一部実装 | `CH32RVUsbDevice`(`CH32RVUsbController::SuperSpeed`) |  |  |  |  |  |  |  |  |  |  | ○ | ◐ | H417/H416のUSBSS device。H417で実機確認(DFU、vendor bulkで40〜50 MB/s)。X305/X315とhostは未実装 |
 | USB PD | 一部実装 | `CH32RVUsbPd`(library: `USBPD`、`USBPDSource`) |  |  |  |  | ○ |  |  | ○ | ○ | ● | ○ | ◐ | sink(X035で実機確認)とsource(ビルドのみ)をX033/X035で実装。他のUSBPD搭載seriesは`begin()`がfalseを返す |
 
 ## 通信・外部バス
@@ -76,17 +80,23 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | H415/H416/H417 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | CAN | 対象外 | - |  |  |  | − | − | − | − | − |  |  |  | − |  |
-| Ethernet | 対象外 | - |  |  |  | − |  | − | − |  |  |  |  | − |  |
+| Ethernet | 一部実装 | `ETH`(Network library) |  |  |  | ○ |  | ○ | ○ |  |  |  |  | ◐ | H417の内蔵MAC+10/100 PHY(`NetworkEthernet.h`)。DHCP〜HTTPSまで実機確認(TCP 20/24 Mbit/s、docs/network-stack.ja.md)。H415/H416はETHが無い。V208/V307/V407のMACは未実装 |
 | I2S | 対象外 | - |  |  |  |  |  | − | − |  |  |  |  | − |  |
 | SDIO | 対象外 | - |  |  |  |  |  | − | − |  |  |  |  | − | `SD`libraryの下地にはなる |
-| FSMC | 対象外 | - |  |  |  |  | − | − | − |  |  |  |  |  |  |
+| FSMC/FMC | 対象外 | - |  |  |  |  | − | − | − |  |  |  |  | − | H417のFMCはSDRAMも扱う |
+| SDMMC | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | H417。host(HS200/HS400)とSDIO slave |
+| SAI (音声) | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | TDM、SPDIF出力 |
+| SWPMI | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | NFC/UICCのSWP master |
+| UHSIF (高速パラレル) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | 8〜32 bitの同期パラレル(FPGA・USB3ブリッジ)。レジスタは非公開(EVTは閉じたライブラリ)。docs/unused-peripherals.ja.md |
+| SerDes | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | 1.5 Gbpsの差動リンク |
 | QSPI | 対象外 | - |  |  |  |  | − |  |  |  |  |  |  | − |  |
 | PSRAM | 対象外 | - |  |  |  |  |  |  | − |  |  |  |  |  |  |
 | I3C | 対象外 | - |  |  |  |  |  |  | − |  |  |  |  | − |  |
-| DVP (カメラ) | 対象外 | - |  |  |  |  |  | − | − |  |  |  |  | − |  |
+| DVP (カメラ) | 未実装 | - |  |  |  |  |  | ○ | ○ |  |  |  |  | ○ | パラレル入力(8〜12 bit、外部PCLK)の候補。docs/unused-peripherals.ja.md |
 | LTDC (LCD) | 対象外 | - |  |  |  |  |  |  | − |  |  |  |  | − |  |
+| GPHA (2D DMA) | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − |  |
 | ARGB (LEDドライバ) | 対象外 | - |  |  |  |  |  |  | − |  |  |  | − |  |  |
-| RNG | 対象外 | - |  |  |  |  |  | − | − |  |  |  |  | − | `random()`はsoftware実装で足りている |
+| RNG | 一部実装 | - |  |  |  |  |  | ◐ | ◐ |  |  |  |  | ◐ | TLS(mbedTLS)とTCPの乱数にコア内部で使う(`ch32rv_rng_read`)。公開APIは無い。`random()`はsoftware実装 |
 | BLE | 対象外 | - |  |  |  | − |  |  |  |  |  |  |  |  | V208のみ。専用stackが要る |
 
 ## デバッグ出力
