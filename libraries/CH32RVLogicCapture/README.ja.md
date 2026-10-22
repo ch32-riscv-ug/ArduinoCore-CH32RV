@@ -3,7 +3,19 @@
 [English](README.md)
 
 GPIO のポート 1 つ(16 本の入力)を、DMA でまとめて RAM に取り込むライブラリです。ロジックアナライザの入口に使えます。
-CH32H415 / H416 / H417 用です。
+全系列で使えます。実機で確かめたのは CH32H415 / H416 / H417 だけで、ほかの系列はビルドだけ確かめています。
+
+| 系列 | タイマー | DMA |
+|---|---|---|
+| CH32H415〜H417 | TIM6 | DMA2 チャネル 8(DMAMUX の要求 122) |
+| CH32V303 / V305 / V307 / V317、V407 / V467 | TIM6 | DMA2 チャネル 3 |
+| CH32V103、V203 / V208、V205、L103 / M103、X305 / X315 | TIM4 | DMA1 チャネル 7 |
+| CH32V002〜V007、M007、V003、X033 / X035 | TIM2 | DMA1 チャネル 2 |
+| CH32M030 | TIM3 | DMA1 チャネル 3 |
+
+- 24 本のポート(X033 / X035、X305 / X315)は、下の 16 本だけを取り込みます。
+- TIM2 で PWM や `tone()` も動かす小さな系列では、それらが TIM2 を使っている間は `begin()` が失敗します。
+- 速さの上限(`maxContinuousRate()` = F_CPU / 11)は H417 で測った値です。ほかの系列では測っていません。
 
 ```cpp
 #include <CH32RVLogicCapture.h>
@@ -42,10 +54,10 @@ uint32_t rate = logic.captureBurst(buf, 32768);   // 1 回だけ、速く
 
 ## そのほか
 
-- TIM6 は、コアのタイマー管理(`CH32RVTimer.h`)を通して借ります。`analogWrite()` / `tone()` / Servo と取り合いません。
+- タイマーは、コアのタイマー管理(`CH32RVTimer.h`)を通して借ります。`analogWrite()` / `tone()` / Servo と取り合いません。
 - 連続の方式で `readBuffer()` が返した半分は、次の `readBuffer()` まで使えます。DMA がそこへ戻ってくるまでに処理を済ませてください。
   時間は「半分のサンプル数 ÷ 速さ」です。スケッチが受け取る前に次の回が来た半分は `overruns()` に数え、そのデータは失われます。
 - バッファは、DMA が届く RAM(グローバル変数や static)に置いてください。
-- USB の SuperSpeed で流す例は `LogicStream` です。9.09 MS/s × 2 バイト = 18 MB/s で送ります。
+- USB の SuperSpeed で流す例は `LogicStream` です(H417)。9.09 MS/s × 2 バイト = 18 MB/s で送ります。
 - 入力の電圧は、そのポートの電源の電圧までです。PE7〜PE15 などは VIO18 の端子です(CH32RVHsAdc の README の
   「入力の範囲」を参照)。

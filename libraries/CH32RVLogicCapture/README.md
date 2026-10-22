@@ -3,7 +3,22 @@
 [日本語](README.ja.md)
 
 Sample a whole GPIO port (16 inputs) into RAM by DMA: the front end of a
-logic analyzer. CH32H415 / H416 / H417.
+logic analyzer. Every family; run on CH32H415 / H416 / H417, built (not yet
+run) on the others.
+
+| Series | Timer | DMA |
+|---|---|---|
+| CH32H415-H417 | TIM6 | DMA2 channel 8 (DMAMUX request 122) |
+| CH32V303 / V305 / V307 / V317, V407 / V467 | TIM6 | DMA2 channel 3 |
+| CH32V103, V203 / V208, V205, L103 / M103, X305 / X315 | TIM4 | DMA1 channel 7 |
+| CH32V002-V007, M007, V003, X033 / X035 | TIM2 | DMA1 channel 2 |
+| CH32M030 | TIM3 | DMA1 channel 3 |
+
+- The 24-pin ports (X033 / X035, X305 / X315) are sampled on their low 16 pins.
+- On the small parts whose TIM2 also drives PWM and `tone()`, `begin()` fails
+  while those hold it.
+- The rate limit (`maxContinuousRate()`, F_CPU / 11) was measured on the
+  H417 only.
 
 ```cpp
 #include <CH32RVLogicCapture.h>
@@ -46,7 +61,7 @@ modes.
 
 ## Other notes
 
-- TIM6 is taken through the core's timer manager (`CH32RVTimer.h`), so
+- The timer is taken through the core's timer manager (`CH32RVTimer.h`), so
   `analogWrite()`, `tone()` and Servo leave it alone, and it leaves them
   alone.
 - A continuous half is the sketch's until the next `readBuffer()`. Finish

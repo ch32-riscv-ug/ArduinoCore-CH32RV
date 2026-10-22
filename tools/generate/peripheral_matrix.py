@@ -162,9 +162,9 @@ STATUS = {
                                "PWMはTIM1〜5の既定ピン(tone/Servoが使うtimerは除く。remap先とCHxNは未対応)、"
                                "V205・X305/X315は端子ごとのAF番号で出す(ビルドのみ確認)。timer管理はTIM1〜10"
                                "(V30xのTIM8〜10、V4x7のTIM8)。入力捕捉・エンコーダ・ETR・DMAバーストは未実装"
-                               "(`pulseIn()`はsoftwareで数える)。H415/H416/H417はCH32RVLogicCaptureがTIM+DMAを使う"),
+                               "(`pulseIn()`はsoftwareで数える)。CH32RVLogicCapture(TIM+DMAでポートを取り込む)は全系列、実機はH415/H416/H417のみ"),
     "LPTIM": ("対象外", "-", "L103のみ"),
-    "DMA": ("対象外", "-", "Arduino APIには露出しない。H415/H416/H417ではCH32RVLogicCapture・CH32RVHsAdcが使う"),
+    "DMA": ("対象外", "-", "Arduino APIには露出しない。CH32RVLogicCapture(全系列、実機はH41xのみ)とCH32RVHsAdc(H41x)が使う"),
     "IWDG": ("実装済", "`CH32RV.wdtEnable/wdtFeed`",
              "X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い"),
     "WWDG": ("未実装", "-", ""),

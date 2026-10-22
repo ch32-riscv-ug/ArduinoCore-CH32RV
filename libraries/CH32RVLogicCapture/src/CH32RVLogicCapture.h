@@ -1,5 +1,6 @@
 /* A whole GPIO port (16 inputs) sampled into RAM by DMA - a logic analyzer's
- * front end. CH32H415 / H416 / H417.
+ * front end. Every family: CH32H415-H417 measured, the others built and not
+ * yet run (the timer and DMA channel each uses: CH32RVLogicCapture.cpp).
  *
  *     CH32RVLogicCapture logic;
  *     static uint16_t buf[32768];
@@ -31,14 +32,23 @@
  *    PWM periods were off by a few samples). Interrupts are off while it
  *    runs.
  *
- * TIM6 is taken through the core's timer resource manager (CH32RVTimer.h),
- * so analogWrite() / tone() / Servo leave it alone and the other way round.
+ * The timer (TIM6 where there is a basic one, else TIM2/3/4 - see the .cpp)
+ * is taken through the core's timer resource manager (CH32RVTimer.h), so
+ * analogWrite() / tone() / Servo leave it alone and the other way round: on
+ * the small parts, whose TIM2 also drives PWM and tone(), begin() fails while
+ * they hold it. Only the low 16 pins of the 24-pin ports (X033/X035,
+ * X305/X315) are sampled.
  * The buffer must be in RAM the DMA reaches (globals and statics). */
 #pragma once
 
 #include <Arduino.h>
 
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
+#define CH32RV_LOGIC_DMAMUX 1
+#else
+#define CH32RV_LOGIC_DMAMUX 0
+#endif
+#define CH32RV_LOGIC_CAPTURE 1
 
 #include "CH32RVTimer.h"
 
@@ -51,7 +61,7 @@ public:
 
     /* `sampleRate` is clamped to maxContinuousRate() and rounded to what the
      * timer reaches (F_CPU / an integer); sampleRate() says what it got. False
-     * when the port does not exist or TIM6 is held by someone else. */
+     * when the port does not exist or the timer is held by someone else. */
     bool begin(CH32RVLogicPort port, uint32_t sampleRate);
     void end();
     uint32_t sampleRate() const { return _rate; }
@@ -85,7 +95,3 @@ private:
     volatile uint8_t _ready = 0, _last = 0;
     volatile uint32_t _overruns = 0, _filled = 0;
 };
-
-#else
-#error "CH32RVLogicCapture is for CH32H415 / H416 / H417"
-#endif
