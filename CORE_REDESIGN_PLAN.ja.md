@@ -6,9 +6,11 @@
 高位モデルを使う局面は、全体像の設計、実験条件の設計、結果に基づく最終仕様の選択、重大な前提変更の再設計である。
 通常の実験・実装・検査は、作業範囲を定義して別モデル・別セッションへ渡す。モデルは利用者が手動で切り替える。
 
-更新日：2026-10-22。P2 の EXP-00、P2-PREP-01、P2-PREP-02（結合X0のhost対照）を完了。
-P2は進行中。利用者指示に従い、P4までの通常モデルで実行できる作業を続ける。
-[実行状況](planning/core-redesign/execution-status.ja.md)で、未実施・実機待ち・レビュー待ちを区別する。
+更新日：2026-10-22。全体判断を遅らせていた実験中心の順序を改訂した。
+**現在の優先順は、全体構成の選択 → 判断を分ける最小検証 → 構造の確定 → 本実装・個別最適化。**
+[判断中心の作業計画](planning/core-redesign/decision-focus.ja.md)を現在の実行順の正本とする。
+旧EXP／N一覧の未完了をすべて消化してからP5へ進む運用は終了する。
+[実行状況](planning/core-redesign/execution-status.ja.md)は証拠・履歴の索引として保持する。
 
 ## 前提と検証対象
 
@@ -66,10 +68,11 @@ RTOS、stack 数、イベント配信、delay 中・loop 外の実行、系列�
 | P6 最終仕様への本実装 | 通常モデル | コア・ライブラリ・検査・文書を揃えた実装単位 | 各単位が最終契約に従い、関連する機能と資源予算の検査を通る |
 | P7 教材と配布の整備 | 通常モデル＋利用者レビュー | 完成 examples、説明、回帰基準、対応表 | 新規利用者が同じ規則で段階的に学べ、配布状態を再現できる |
 
-基本の依存順は P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7。
-P3 で成立した候補から P4 を進めてよいが、対照条件を変えない。教材案は P0 から作り、P7 で初めて考え始めない。
-不足する機材がある場合は、可能なビルド・仮想 I/O の検証を続け、実機未検証のまま該当する採否を確定しない。
-期日は現時点では固定せず、P2 で設備・再現性・実験単位が見えた時点で工数を見積もる。
+P0〜P7は成果の分類として維持するが、全実験を直列に完了する順序にはしない。
+P5を「全体構成の選択」と「検証後の構造確定」に分け、その間に必要なP2〜P4だけを挟む。
+教材で教える概念と代表利用コードは選択時に扱い、教材の量産・全件評価は後段へ置く。
+実機結果が公開契約を変え得る場合は確定前に検証し、独立したbackendの対応確認ならその公開前に検証する。
+未検証を対応済みにしない。実験数を増やす目的で、機材待ちの間に無関係な条件追加を続けない。
 
 ## P0 で描く理想像
 
@@ -145,32 +148,34 @@ Flash の保護レベル、PD の相互運用、電流測定などは、仮想 I
 
 ## P5 で確定する事項
 
-P5 では結果を横断して判断する。個々の部品の最小値を寄せ集めても、全体として成立するとは限らない。
+P5前半で既存の証拠から最終型の優先案を選び、後半で判別に必要な追加検証を反映して構造を確定する。
+個々の部品の最小値を寄せ集めても、全体として成立するとは限らない。
+下記の項目は[五つの判断群G1〜G5](planning/core-redesign/decision-focus.ja.md#先に決める五つの判断)として一体で扱う。
 
 1. 主対象と用途、コア・独立ライブラリ・利用者の責務。
 2. 実行モデル、stack、文脈、進行機会、再入、順序、所有・寿命、cancel と失敗の意味。
 3. 公開する部品、待機を提供する範囲、イベント配信の範囲、未使用時の除去条件。
-4. 容量指定、既定値と上限、系列別 backend と能力差、拡張時の契約。
+4. 容量の指定方法と不足時の意味、系列別 backend と能力差、拡張時の契約。具体的な既定容量の調整は採用構成の測定後に行う。
 5. 永続化と省電力の採用範囲、物理条件、失敗時の保証と保証しないこと。
 6. 教材で一貫して教える規則、低水準機能への入口、診断の範囲。
-7. [機能候補](FEATURE_CANDIDATES.ja.md) の各項目の採用・独立提供・対象外・追加検証と根拠。
+7. [機能候補](FEATURE_CANDIDATES.ja.md) の分類と拡張境界。全76項目の個別採否は、その機能の提供前までに記録し、構造確定の一律前提にはしない。
 
 決定表には、候補、選択、測定参照、反証・限界、再検討条件を残す。
-追加検証が必要な項目のうち、公開境界を変えるものは P2〜P4 へ戻す。独立して扱えるものは限定した対象外として明示できる。
+追加検証は、結果によってどの全体判断が変わるかを記した最小のP2〜P4へ絞る。独立して扱えるものは未対応・後段として明示し、候補から自動除外しない。
 最終仕様を実装へ適用するときに docs・ADR・対応表を更新し、既存文書と二重の規則を残さない。
 
 ## P6 の実装段階を決める方法
 
-実装順は P5 で選んだ依存関係から定める。現時点での順序の枠は以下とする。
+実装順はP5で選んだ依存関係から定める。基礎部品をすべて完成させてから用途へ接続する順序にはしない。
 
-1. 最小起動、系列能力、時間・メモリ・資源の基礎を整える。
-2. 選んだデータ部品と実行・通知契約を実装する。
-3. 周辺 I/O と USB・PD 等を最終契約に合わせて接続する。
-4. 採用した永続化・省電力・上位系列の拡張を接続する。
-5. 完成用途、examples、診断、配布・対応表を揃える。
+1. 最終契約の起動・時間・I/O・必要なデータ部品を通して、K0の最小用途を縦に動かす。
+2. 同じ契約でX0の入力・制御・計測・表示を組み、失敗・切断・長い通常処理を含む全体の費用と挙動を確認する。
+3. 設計済みの境界へ、必要な保存・休止・別系列・別コアを接続する。
+4. 採用した構成の容量・速度を最適化し、周辺モード・教材・診断・配布を拡充する。
 
-各段階で意味の検査と費用の回帰を通す。未実装機能のための代替実行モデルを公開しない。
-後段の接続で基礎契約の変更が必要になったら、場当たり的な例外を追加せず高位モデルの再設計へ戻す。
+各段階は同じ最終仕様への実装ステップであり、仮の実行モデルや所有規則を公開しない。
+未実装機能の拡張契約はP5で確認しておく。各機能を公開する前に、対応する実機・資源・意味の検証を通す。
+後段で基礎契約の変更が必要になったら、個別例外を追加せず全体判断へ戻す。
 
 ## 高位モデルへ戻す条件
 
@@ -183,7 +188,7 @@ P5 では結果を横断して判断する。個々の部品の最小値を寄�
 - 機能を揃えると直接実装より不利になる、共通化が理解を妨げる等、中心仮説への反証が出た。
 - 既存の説明で利用者が繰り返し誤る等、教材だけでは解消できない API 上の問題が出た。
 
-この場合も、影響を受けない検証や証拠整理は続けられる。通常モデルが上位仕様を黙って変更しないことが境界である。
+この場合も必要な証拠整理や不具合修正は続けられるが、判断待ちを埋めるための個別実験は増やさない。通常モデルが上位仕様を黙って変更しないことが境界である。
 高位モデルは追加測定、候補の修正、対象範囲の変更のどれかを選び、理由を判断記録へ反映する。
 高位モデルを利用すること自体を、利用者へ毎回承認を求める手順にはしない。
 
@@ -238,11 +243,11 @@ result の短い表と手順は Git 管理する。生ログ・ELF・波形は�
 
 ### 手動で切り替える単位
 
-1. 高位モデルで P0 と P1 を完了し、通常モデルが着手できる brief を作る。
-2. 利用者が選んだモデルの別セッションに brief と対象 checkout を渡す。
-3. 通常モデルで P2〜P4 の比較を進め、result と必要な証拠を残す。
-4. 判断材料が揃ったところで高位モデルへ戻し、P5 または前提変更を扱う。
-5. 確定した実装単位を通常モデルへ渡し、P6〜P7 を進める。
+1. P0／P1の案と既存P2〜P4証拠を、全体判断へ集約する（現在ここまで整理済み）。
+2. **高位モデル**でP5前半：最終型の優先案と、選択を覆す条件を決める。
+3. 通常モデルで、判断を分けるために指定された最小のP2〜P4を実行する。
+4. **高位モデル**でP5後半：構造・公開契約と本実装の依存順を確定する。
+5. 通常モデルでP6〜P7。基礎契約を変える反証が出た場合だけ高位の再設計へ戻す。
 
 切り替えを依頼する短い指示の例：
 
@@ -259,96 +264,10 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 
 ## 現在地と次の作業
 
-| 項目 | 状態 |
-|---|---|
-| 全体計画 | この文書として作成 |
-| 機能候補・用途調査 | 予備調査済み。ビルド再現・実機評価はこれから |
-| リンク費用の小実験 | EXP-00で18構成×2runを再現・照合。[結果](planning/core-redesign/tasks/EXP-00/result.ja.md)。実コアの費用・実行モデルの選択は未確定 |
-| P0 理想像 | DESIGN-01 完了。全体設計案 P0-1 と利用例を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-01/result.ja.md) |
-| P1 比較条件と実験設計 | DESIGN-02 完了。P1-1 と EXP-00 依頼を作成。[結果と引き継ぎ](planning/core-redesign/tasks/DESIGN-02/result.ja.md) |
-| P2 再現基盤と対照準備 | 進行中。EXP-00、PREP-01と02完了。bus・周期のhost結合済み。起動・実周辺backendは未検証 |
-| P3 | 進行中。I/O・データ・同期・work・期限・宛先・wait・保存・休止・コア間所有をhost／ABIで検査。[作業別状態](planning/core-redesign/execution-status.ja.md)を参照。用途接続・実IRQ・実共有・実媒体等は残る |
-| P4 | 未完了。K0のR/A/B/Cと設定容量2のhost／ABI比較済み。X0追加比較・compile時機能除去・変更課題素材も記録。残る変更課題・実機・利用者レビューが残る |
-| P5〜P7 | 未着手。方式の採用と最終仕様はP5で扱う |
+P0／P1の案は作成済み。P2〜P4のhost・linkと用途比較は蓄積しているが、
+実機成立・総資源・人による評価を含む全項目の完了ではない。最終構成は未確定、P6／P7の新仕様実装は未着手。
+個別実験の履歴は[実行状況](planning/core-redesign/execution-status.ja.md)に集約し、この計画に重複して積み上げない。
 
-2026-10-21の[完了条件監査](planning/core-redesign/tasks/P4-AUDIT-01/result.ja.md)に、
-D01〜D12の支持・反証・未検証、契約ごとの到達範囲、76候補の対応と通常作業N01〜N10を記録した。
-[N01のX0共通wire adapter](planning/core-redesign/tasks/EXP-06/x0-wire-result.ja.md)はhost／ABIで実施済み。
-[N02の直接回収](planning/core-redesign/tasks/EXP-06/x0-register-wire-result.ja.md)もhost／ABIで接続した。
-[通知満杯・解除／retry](planning/core-redesign/tasks/EXP-06/x0-event-wire-result.ja.md)も同じ用途へ接続した。
-[RX2末尾](planning/core-redesign/tasks/EXP-06/x0-rx-tail-result.ja.md)も用途で検査した。
-[周辺準備との接続](planning/core-redesign/tasks/EXP-06/x0-prepared-wire-result.ja.md)までN02のhost／ABI比較を実施した。
-N03の[K0共有部分](planning/core-redesign/tasks/EXP-06/k0-shared-result.ja.md)はhost118件＋workspace3件・ABI132で検査した。[slave資料照合](planning/core-redesign/tasks/EXP-06/k0-slave-source-result.ja.md)でACKの時点・STOPF条件・再START観測の不足を整理した。[条件付きslave register接続](planning/core-redesign/tasks/EXP-06/k0-slave-register-result.ja.md)でnative137件＋workspace3件・ABI132を実施した。ACK対応の意味差とforeign再STARTの不足を残し、実wireの成立とはしない。N04の[再入深さ比較](planning/core-redesign/tasks/EXP-03/reentry-depth-result.ja.md)でnative78件＋workspace3件・ABI36を記録した。[X035固定portと配置](planning/core-redesign/tasks/EXP-03/stack-port-result.ja.md)でABI50・workspace3件を記録した。実切替・待機・peakは未測定。[二つの通常stack](planning/core-redesign/tasks/EXP-03/two-stack-result.ja.md)でhost17件＋workspace3件・ABI18と整数swap模型を追加した。[固定kernel共通列](planning/core-redesign/tasks/EXP-03/kernel-trace-result.ja.md)でnative20件＋workspace3件・ABI18、全4方式18組の一致と3 stageの容量差を記録した。N04のsource／host／link範囲は実施済み。実fixture統合はN08、実MCUの切替・IRQ・peakはN09へ残し、[N05 X035共存](planning/core-redesign/tasks/EXP-06/save-x0-result.ja.md)でnative92件＋workspace3件・ABI42、停止・時刻・入力保持・未回収・再走査を比較した。[V003 K0の同期保存共存](planning/core-redesign/tasks/EXP-06/save-k0-result.ja.md)もnative93件＋workspace3件・ABI82で比較した。64 Bを1単位とする保存・2 slave policy・故障／boot・入力保持を検査し、N05の同期媒体host／link範囲を実施した。実backend・全runtimeはN08、物理動作はN09へ残す。次の独立作業はN06の休止・コア接続。実機・寿命・品質は未検証として残し、部品の検査件数を完成用途の完了率にはしない。
-
-[N06 休止と実行器の接続](planning/core-redesign/tasks/EXP-06/sleep-work-result.ja.md)でnative104件＋workspace3件・ABI196を追加した。
-I/O取消・通常worker回収・有限jobのdrainと、clock／部分復帰・期限・M/S/Uを接続した。
-休止側のhost／link比較であり、N06全体は未完了。次はH417の公開・通知・返却と片側停止の実行器接続。
-
-[N06 H417向け直列接続](planning/core-redesign/tasks/EXP-06/h417-executor-result.ja.md)でnative69件＋workspace3件・H417 ABI194を追加した。
-公開→epoch ticket→明示hint→通常worker→block返却をつなぎ、busy retry・通知消去順の反例・停止／復旧を比較した。
-N06には、shared／core-localの分離とhint／epoch／受付閉鎖のhost並列保護が残る。直列のgate取得結果を並列契約へ流用しない。
-
-[N06 shared transport／core-local実行器](planning/core-redesign/tasks/EXP-06/h417-transport-result.ja.md)でASan／UBSan261件・TSan256件・両core ABI388を追加した。
-callback実行中と終了待ちをpermitで分離し、実際のnormal再入による早期close反例を修正・再検証した。
-共有初期値96組一致とlocal配置を確認。N06の休止・H417 host／構造的link比較を実施した範囲を記録し、次はN07。
-2 producer／reset負荷・乱数・全runtime／初期化はN08、実HSEM／cache／IRQ等はN09に残す。
-
-[N07 変更課題の統一記録](planning/core-redesign/tasks/EXP-07/comparison-result.ja.md)でE01〜04の96 ABI pairを整理した。
-K0設定2件化・表示交換・タッチ追加は既存証拠を型選択6件で対応確認し、新しいqueue4→1はhost39件＋workspace3件・ABI196で比較した。
-queue縮小のRAM−24 Bとapply拒否の反例を分離。E05切断復旧追加と人による評価は未完了で、N07を続ける。
-
-**DESIGN-01：P0 の全体設計案作成**は完了。
-
-- 入力：この計画、TODO のコンセプト・用途・タスク・永続化、FEATURE_CANDIDATES。
-- 出力：[全体設計案](planning/core-redesign/design-draft.ja.md)、[利用例](planning/core-redesign/usage-sketches.ja.md)、[結果](planning/core-redesign/tasks/DESIGN-01/result.ja.md)。
-- 変更範囲：検討文書のみ。既存実装の制約を持ち込まず、製品コードや Accepted ADR はこの作業では変更しない。
-- 完了条件：V003 の小用途と X035 の PD 操作画面を同じ規則で説明でき、
-  V006 の sleep、永続化、H417 の境界、教材の流れを含め、P1 へ渡す比較点が絞れている。
-
-**DESIGN-02：P1 の実験仕様と brief 作成**は完了。
-
-- 入力：この計画、P0-1 の2文書、DESIGN-01 の結果、TODO の一次資料と用途調査。
-- 出力：[比較契約](planning/core-redesign/experiment-spec.ja.md)、[用途と刺激](planning/core-redesign/workloads.ja.md)、
-  [実行順](planning/core-redesign/experiment-tasks.ja.md)、[EXP-00 の依頼](planning/core-redesign/tasks/EXP-00/brief.ja.md)。
-- 内容：D01〜D12 の判断と EXP-00〜06 の対応、三案の同等機能・容量・入力・失敗条件、
-  予算候補の根拠、host／compile／実機の分担、系列の物理調査、独立 stack 対照を作る条件を定める。
-- 完了条件：通常モデルが方式の採否を独断で補わず、比較を実行・記録できる。
-  不足設備や未確認の物理仕様を列挙し、現時点で実行可能な作業と区別する。
-
-**P2／EXP-00：既存 probe の再現と記録**は完了。
-[結果と再実行手順](planning/core-redesign/tasks/EXP-00/result.ja.md)に36 build結果と入力・tool・証拠を記録した。
-実機操作は行っていない。実行モデルの採用は決めていない。
-
-**P2-PREP-01：対象とhost対照ロジックの準備**は完了。
-[結果](planning/core-redesign/tasks/P2-PREP-01/result.ja.md)に、一次資料、25固定trace、51件のhost検査、4構成のlogic linkを記録した。
-K0のwire受理と実IRQ共有、X0の実PD処理、clock初期化は未検証であり、P2全体の完了には数えない。
-
-**P2-PREP-02：X0共有busと周期処理の結合**は[結果](planning/core-redesign/tasks/P2-PREP-02/result.ja.md)を記録済み。
-最小起動と実周辺backend、未確認の物理条件は別の準備単位として残す。
-EXP-02の[直列単位](planning/core-redesign/tasks/EXP-02/result.ja.md)は完了。
-[寿命・保護・通知登録の単位](planning/core-redesign/tasks/EXP-02/shared-result.ja.md)も記録済み。
-[I/Oの所有model](planning/core-redesign/tasks/EXP-01/io-preparation.ja.md)、
-[有限work](planning/core-redesign/tasks/EXP-03/work-preparation.ja.md)、
-[期限model](planning/core-redesign/tasks/EXP-03/timer-preparation.ja.md)、
-[宛先結合](planning/core-redesign/tasks/EXP-03/event-preparation.ja.md)を記録し、通常文脈の終端・取消・回収と一部配達を検査した。
-[K0の同等比較と容量2変更](planning/core-redesign/tasks/EXP-06/k0-result.ja.md)と
-[待機policy](planning/core-redesign/tasks/EXP-03/wait-result.ja.md)のhost／ABI検査も記録済み。
-[X0の追加比較](planning/core-redesign/tasks/EXP-06/x0-result.ja.md)では固定1宛先のC-static-batchを別条件として記録した。
-[資源を保持した待機](planning/core-redesign/tasks/EXP-03/dependency-result.ja.md)もhost／ABIで検査し、既知の依存と不明を分けた。
-[X0のcompile時機能除去](planning/core-redesign/tasks/EXP-06/x0-features-result.ja.md)と[変更課題素材](planning/core-redesign/tasks/EXP-06/x0-feature-exercise.ja.md)も記録した。
-[独立reset／GPIO入口](planning/core-redesign/tasks/EXP-01/runtime-result.ja.md)では、ELFと命令検査を追加した。実機起動・clock・IRQは未確認。
-[clock/time入口](planning/core-redesign/tasks/EXP-01/clock-time-result.ja.md)もhost／ELFで検査し、[時刻読出しの課題](planning/core-redesign/tasks/EXP-01/time-read-exercise.ja.md)を用意した。
-[I2C master入口](planning/core-redesign/tasks/EXP-01/i2c-master-result.ja.md)では有限register進行・貸出をhost59件／ELF36構成で検査し、[貸出の教材素材](planning/core-redesign/tasks/EXP-01/i2c-loan-exercise.ja.md)を作った。実通信・IRQは未検証。
-[保存媒体と領域準備](planning/core-redesign/tasks/EXP-04/region-result.ja.md)では5 geometry、host138件、ELF40構成と想定拒否・artifact故障を検査し、[容量と保持の教材素材](planning/core-redesign/tasks/EXP-04/region-exercise.ja.md)を作った。保存の実機成立・実電断・実upload保持は未検証。
-[保存形式の条件付き比較](planning/core-redesign/tasks/EXP-04/format-result.ja.md)ではRAW／blob／数値keyの7候補、105容量条件と3,721中断・再更新条件を記録し、[形式と更新途中の教材素材](planning/core-redesign/tasks/EXP-04/format-exercise.ja.md)を作った。当該比較はhostのみで、実機の保護は未検証。
-[保存形式のC++試作](planning/core-redesign/tasks/EXP-04/store-result.ja.md)ではnative272件、初回／置換中断7,442条件、ABI198構成を確認した。実Flash driverと起動は含まず、走査分割・所有・実機の保護は残す。
-[予算付き読出しと所有](planning/core-redesign/tasks/EXP-04/scan-result.ja.md)ではnative353件・ABI76構成でbyte上限とcacheの寿命を確認した。受理／key変更・実媒体への統合と所有期間の比較は残す。
-[論理時刻の伸長と不連続](planning/core-redesign/tasks/EXP-01/logical-time-result.ja.md)ではhost123件・最終ABI52構成と変更前52構成を記録した。観測上限は外部の宣言であり、実source・sleep・精度は未検証。
-[取得bufferの所有と回収](planning/core-redesign/tasks/EXP-02/acquisition-result.ja.md)ではnative50件・ABI32構成を記録した。64 sample×2 blockは管理込み300 B、未使用12条件の追加0 B。生成側の停止宣言と物理停止を区別し、[変更課題](planning/core-redesign/tasks/EXP-02/acquisition-exercise.ja.md)を用意した。実ADC／DMA・IRQ共有は未検証。
-[V006休止の資料と待機境界](planning/core-redesign/tasks/EXP-06/v006-sleep-result.ja.md)では一次資料4 PDFとSDKを固定し、host54件・通知順序304通り・AWU30条件を記録した。休止用途のI/O／時刻結合・方式比較と実機復帰・電流は残す。
-[休止準備・回収・時刻の結合](planning/core-redesign/tasks/EXP-06/v006-sleep-flow-result.ja.md)ではnative64件・ABI36構成を記録した。明示一覧／registry2／4の同条件、部分復帰・失敗・未登録資源の反例を比較し、実V006の待機・再設定・電流とは分けた。
-[休止のtimer依存除去と故障](planning/core-redesign/tasks/EXP-06/v006-sleep-features-result.ja.md)ではnative82＋156件・ABI64構成を記録した。timer40 Bと参照4 Bを構成から除去し、6段階の失敗とclock喪失をfake adapterで検査した。実driverの故障・IRQ共有は未検証。
-[生きたleaseと休止準備失敗](planning/core-redesign/tasks/EXP-06/v006-sleep-lease-fault-result.ja.md)では追加432件と全traceを記録した。最後の明示回収まで所有と受理閉鎖を保つ条件を確認し、未回収をFault／通常待ちのどちらで公開するかはP5へ渡す。runtimeとABI入力は変更していない。
-[表示交換と独立renderer](planning/core-redesign/tasks/EXP-05/display-result.ja.md)では4 mock形式×R/A/B/Cをhost72件・ABI164構成で比較した。独立部品は実行器・busに依存せず、12,288 B frameのprofileも64 B chunkで生成する。実controller・速度・IRQ共有は未検証。
-次は実controller・独立部品のdriver接続、論理時刻の実source接続、I2Cのclock／pin／所有結合、取得bufferと休止のadapter契約、共有・保存・系列を進め、P4まで通常の実装・実験を継続する。
-候補の測定より先に条件を固定し、P3〜P4の比較結果をP5の高位判断へ渡す。
+次は[判断中心の作業計画](planning/core-redesign/decision-focus.ja.md)のG1〜G5を使い、P5前半の全体構成を選択する。
+N08の網羅的な条件補完・H417の負荷拡大へ自動的に進まない。
+当面の成果は「どの全体判断が解けたか」で報告する。テスト件数や消化した作業ID数を全体進捗率にしない。
