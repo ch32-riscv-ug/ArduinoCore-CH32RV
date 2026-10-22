@@ -40,9 +40,9 @@ AFIO bits). The BMC clock is derived from F_CPU.
 | CH32V205 | PA0 / PA1 | AF7 | built only (lots whose 5th digit is 0 have no USBPD) |
 | CH32X305 / X315 | PD4 / PD5 | AF2 | built only |
 | CH32H415 / H416 / H417 | PB3 / PB4 | AF4 | built only |
+| CH32M030 | PA0 / PA1 (USBPD0) | input | built only; USBPD1 (PA2 / PA3) is not used |
 
-CH32X033 bonds no CC pad and CH32M030 (two ports, another comparator encoding)
-is not implemented: `begin()` returns false there.
+CH32X033 bonds no CC pad: `begin()` returns false there.
 
 Every call (`ready()`, `connected()`, `request()`, `maintain()`) moves the
 driver along, so waiting on `ready()` alone reaches a contract. Started

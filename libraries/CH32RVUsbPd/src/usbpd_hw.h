@@ -25,8 +25,8 @@
  * (the EVTs' ch32*_usbpd.h agree register for register); what differs is where
  * it sits, the CC pads and how they are routed, and which AFIO bits set the
  * PHY up. X035 is checked on hardware, the others are built only. M030 has two
- * ports and another comparator encoding (CC_CVS, CC_CE) - not here. X033 shares
- * the X035's die but bonds no CC pad (device-data's pinout). */
+ * blocks and another comparator encoding (below); X033 shares the X035's die
+ * but bonds no CC pad (device-data's pinout). */
 #if defined(CH32RV_VARIANT_CH32X035)
 #define CH32RV_USBPD_BASE      0x40027000u
 /* AFIO_CTLR bits the PHY needs. IN_HVT raises the CC input threshold while
@@ -80,13 +80,40 @@
 #define CH32RV_USBPD_CC2_PIN   PB4
 #define CH32RV_USBPD_CC_AF     4u
 #define CH32RV_USBPD_FILTER    0u
+#elif defined(CH32RV_VARIANT_CH32M030)
+/* Two blocks, USBPD0 (PA0 / PA1, here) and USBPD1 (PA2 / PA3 at 0x40024400,
+ * not used). The CC comparator is switched on by CC_CE (bit 7) and its
+ * reference is two bits, CC_CVS[6:5]: 01 0.22 V, 00 0.55 V, 10 0.66 V, 11
+ * 1.23 V (RM 15.2.15/16; the EVT header's "00 = 0.44 V" disagrees with the RM).
+ * The RM asks for PWR_CTLR.ISINKEN (bit 10 - the EVT header's 0x0100 is wrong,
+ * its code writes 1 << 10) whenever USBPD is used. No AFIO bits. */
+#define CH32RV_USBPD_BASE      0x40024000u
+#define CH32RV_USBPD_CLKEN_ADDR CH32RV_CLKEN_USBPD0_ADDR
+#define CH32RV_USBPD_CLKEN_MASK CH32RV_CLKEN_USBPD0_MASK
+#define CH32RV_USBPD_IRQ       CH32RV_IRQN_USBPD0
+#define CH32RV_USBPD_IRQ_HANDLER USBPD0_IRQHandler
+#define CH32RV_USBPD_CC1_PIN   PA0
+#define CH32RV_USBPD_CC2_PIN   PA1
+#define CH32RV_USBPD_CC_AF     0u
+#define CH32RV_USBPD_FILTER    0u
+#define CH32RV_UPD_CC_CMP_MASK  ((3u << 5) | (1u << 7))
+#define CH32RV_UPD_CC_CMP_22    ((1u << 5) | (1u << 7))
+#define CH32RV_UPD_CC_CMP_45    ((0u << 5) | (1u << 7))   /* 0.55 V: the nearest */
+#define CH32RV_UPD_CC_CMP_66    ((2u << 5) | (1u << 7))
+#define CH32RV_USBPD_PHY_EXTRA() \
+    (ch32rv_clock_enable_at(CH32RV_CLKEN_PWR_ADDR, CH32RV_CLKEN_PWR_MASK), CH32RV_REG32(0x40007000u) |= 1u << 10)
 #endif
 
 #ifdef CH32RV_USBPD_BASE
 /* The clock enable comes from the variant (clock_enables.csv). */
+#ifndef CH32RV_USBPD_CLKEN_ADDR
 #define CH32RV_USBPD_CLKEN_ADDR CH32RV_CLKEN_USBPD_ADDR
 #define CH32RV_USBPD_CLKEN_MASK CH32RV_CLKEN_USBPD_MASK
+#endif
+#ifndef CH32RV_USBPD_IRQ
 #define CH32RV_USBPD_IRQ       CH32RV_IRQN_USBPD
+#define CH32RV_USBPD_IRQ_HANDLER USBPD_IRQHandler
+#endif
 #endif
 
 #ifdef CH32RV_USBPD_BASE
@@ -137,9 +164,12 @@
 #define CH32RV_UPD_CC_PU_180    (2u << 2)    /*   180 uA: 1.5 A                */
 #define CH32RV_UPD_CC_PU_80     (3u << 2)    /*    80 uA: Default USB power    */
 #define CH32RV_UPD_CC_LVE       (1u << 4)    /* drive the line (transmit)    */
+#ifndef CH32RV_UPD_CC_CMP_MASK          /* the comparator's reference: */
 #define CH32RV_UPD_CC_CMP_MASK  (7u << 5)
 #define CH32RV_UPD_CC_CMP_22    (2u << 5)    /* 0.22 V: "a source is there"  */
+#define CH32RV_UPD_CC_CMP_45    (3u << 5)    /* 0.45 V: a sink's Rd under 1.5 A Rp */
 #define CH32RV_UPD_CC_CMP_66    (5u << 5)    /* 0.66 V: idle threshold       */
+#endif
 
 /* The one USBPD interrupt goes to whichever role began (usbpd_irq.cpp);
  * null when none has. A role refuses to begin while the other holds it. */
@@ -163,8 +193,13 @@ extern void (*ch32rv_usbpd_irq_hook)(void);
 static inline void ch32rv_usbpd_phy_init(void)
 {
     ch32rv_clock_enable_at(CH32RV_USBPD_CLKEN_ADDR, CH32RV_USBPD_CLKEN_MASK);
+#ifdef CH32RV_USBPD_AFIO_REG
     ch32rv_clock_enable(AFIO);
     CH32RV_USBPD_AFIO_REG = (CH32RV_USBPD_AFIO_REG & ~CH32RV_USBPD_AFIO_CLR) | CH32RV_USBPD_AFIO_SET;
+#endif
+#ifdef CH32RV_USBPD_PHY_EXTRA
+    CH32RV_USBPD_PHY_EXTRA();
+#endif
 #if CH32RV_USBPD_CC_AF
     static const uint8_t pads[2] = {(uint8_t)CH32RV_USBPD_CC1_PIN, (uint8_t)CH32RV_USBPD_CC2_PIN};
     for (uint8_t i = 0; i < 2; i++) {

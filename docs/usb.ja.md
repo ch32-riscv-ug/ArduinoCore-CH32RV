@@ -66,7 +66,7 @@ V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラ�
 | CH32X033 | 動く（USBFS） | なし（CC の端子が無い） | X035 と同じダイ |
 | CH32H417 / H416 / H415 | USBFS（PA11 / PA12）、USBHS、H417 / H416 は USBSS（SuperSpeed） | シンクとソース（PB3 / PB4） | FS は H417 で CDC の送受信を確認。SS は 5000M で列挙、CDC、EP0 の 512 バイトまでの応答、SS 経由の DFU を確認。USBHS と PD はビルドのみ |
 | CH32L103 / M103、V205、X305 / X315 | 上のコントローラの表のとおり | シンクとソース | ビルドのみ。L103 / M103 は既定の 8 MHz ではデバイスの `begin()` が失敗する |
-| CH32M030 | USBFS | なし（2 ポートの PD は未実装） | ビルドのみ |
+| CH32M030 | USBFS | シンクとソース（USBPD0、PA0 / PA1） | ビルドのみ |
 | ほかの系列 | 上のコントローラの表のとおり | なし | ビルドのみ |
 
 ディスクリプタとクラスは Full / High / SuperSpeed のどれでも組めるようにしてあります。
@@ -344,7 +344,7 @@ void loop() { while (port.available()) Serial.write(port.read()); }
 - **L103 / M103 のクロック**: ボードの既定クロックが 8 MHz（PLL なし）で、USB の 48 MHz が作れずデバイスの
   `begin()` が失敗します。既定のクロックを上げるか、クロックの選択肢を足すか（方針の確認待ち。V208 / V203RB の
   Ethernet が要る HCLK 60 / 120 MHz と同じ話）。
-- **PD**: M030 の 2 ポート（比較器のビットが違う）。ほかの系列の実機確認。
+- **PD**: M030 の 2 つ目のブロック（USBPD1、PA2 / PA3）。X035 以外の実機確認。
 - **H417**: USBHS の実機確認（SWD と端子を共有）、USBSS のホスト、V5F の利用。
 - **USB ネットワークの IP 層**: lwIP の上に作った（`NetworkUsbNcm`、docs/network-stack.ja.md）。実機の NCM は未確認。
 - **ほかの系列の工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）は X035 / X033 で実機確認。

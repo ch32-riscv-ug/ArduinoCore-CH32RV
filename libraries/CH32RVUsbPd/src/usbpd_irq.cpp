@@ -7,7 +7,7 @@
 
 void (*ch32rv_usbpd_irq_hook)(void);
 
-extern "C" __attribute__((interrupt)) void USBPD_IRQHandler(void)
+extern "C" __attribute__((interrupt)) void CH32RV_USBPD_IRQ_HANDLER(void)
 {
     if (ch32rv_usbpd_irq_hook) {
         ch32rv_usbpd_irq_hook();

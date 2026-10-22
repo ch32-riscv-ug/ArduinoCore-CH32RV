@@ -35,7 +35,7 @@ void loop() { USBPD.maintain(); }           // PPS契約の維持
 |---|---|
 | Source Capabilitiesの解析、プロファイル選択、Requestの組み立て | 実装済み |
 | ハードウェアドライバ(CC検出・BMC送受信・GoodCRC・sinkのstate machine) | 下の系列で実装済み。固定契約とPPS契約に対応 |
-| X033、M030 | `begin()`は`false`(X033はCCの端子が無い。M030は2ポートで比較器のビットが違い、未実装) |
+| X033 | `begin()`は`false`(CCの端子が無い) |
 
 | 系列 | CC1 / CC2 | 端子 | 状態 |
 |---|---|---|---|
@@ -44,6 +44,7 @@ void loop() { USBPD.maintain(); }           // PPS契約の維持
 | CH32V205 | PA0 / PA1 | AF7 | ビルドのみ(ロット番号の5桁目が0の品にはUSBPDが無い) |
 | CH32X305 / X315 | PD4 / PD5 | AF2 | ビルドのみ |
 | CH32H415 / H416 / H417 | PB3 / PB4 | AF4 | ビルドのみ |
+| CH32M030 | PA0 / PA1(USBPD0) | 入力 | ビルドのみ。USBPD1(PA2 / PA3)は使わない。比較器のビット(CC_CE、CC_CVS)は別の値 |
 
 ブロックはどの系列も同じで、違うのは置き場所、CCの端子、PHYのAFIOのビットです(`usbpd_hw.h`)。
 BMCのクロックはF_CPUから計算します(8 MHzのL103 / V205では送信が2.5 %速く、規格の範囲内。実機では未確認)。
@@ -91,7 +92,7 @@ BMCのクロックはF_CPUから計算します(8 MHzのL103 / V205では送信�
 - **batteryとvariableは列挙するだけ**で、頼む対象にしません。
 - USBPD block を持つ series は X035、L103/M103、V205、X305/X315、H41x、M030 です(X033 は CC の端子が無い)。
   register block の配置、clock enable、IRQ、CC pad は series ごとに異なります。
-  library は X035、L103/M103、V205、X305/X315、H41x の定義を持ちます。X033 と M030 では `begin()` が `false` を返します。
+  library は X035、L103/M103、V205、X305/X315、H41x、M030(USBPD0)の定義を持ちます。X033 では `begin()` が `false` を返します。
 
 ## ロジックとドライバを分けている理由
 

@@ -2,11 +2,11 @@
 
 [English](README.md)
 
-USBPD のブロック(CH32X035、L103/M103、V205、X305/X315、H41x)の CC 通信で PD Sink/Source を試します。USB のデータクラスとは別の機能です。X033 と M030 では `begin()` が失敗します。
+USBPD のブロック(CH32X035、L103/M103、V205、X305/X315、H41x、M030)の CC 通信で PD Sink/Source を試します。USB のデータクラスとは別の機能です。X033 では `begin()` が失敗します。
 
 ## 接続と電源
 
-CC1 / CC2 は X035 が `PC14` / `PC15`、L103/M103 が `PB6` / `PB7`、V205 が `PA0` / `PA1`、X305/X315 が `PD4` / `PD5`、H41x が `PB3` / `PB4`。ボードの USB-C と CC/Rd/電源回路を確認します。ログは `RX` / `TX` の UART、115200 bps・8N1で、USB CDC ではありません。CC 配線は短くします。
+CC1 / CC2 は X035 が `PC14` / `PC15`、L103/M103 が `PB6` / `PB7`、V205 が `PA0` / `PA1`、X305/X315 が `PD4` / `PD5`、H41x が `PB3` / `PB4`、M030 が `PA0` / `PA1`。ボードの USB-C と CC/Rd/電源回路を確認します。ログは `RX` / `TX` の UART、115200 bps・8N1で、USB CDC ではありません。CC 配線は短くします。
 
 | 例 | ボードの役割 | 追加機器・配線 |
 |---|---|---|
@@ -35,7 +35,7 @@ Sink と Source は同じ USBPD ブロックを共有し、一度に一方だけ
 
 | 症状 | 確認 |
 |---|---|
-| begin が失敗 | ブロックのある系列か(X033 / M030 は不可)、Source callback の登録、反対ロールとの Busy |
+| begin が失敗 | ブロックのある系列か(X033 は不可)、Source callback の登録、反対ロールとの Busy |
 | connected だが ready でない | 電源が PD 対応か、CC配線、契約待ち時間 |
 | request が失敗 | 広告 PDO、mV/mA単位、固定値一致/PPS範囲、対向機器の拒否 |
 | PPS が失効 | maintain の継続、長時間の停止 |

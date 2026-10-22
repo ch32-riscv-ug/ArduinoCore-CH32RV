@@ -2,11 +2,11 @@
 
 [日本語](README.ja.md)
 
-These examples use the USBPD block (CH32X035, L103/M103, V205, X305/X315, H41x) for PD sink/source operation, independently of USB data classes. On X033 and M030 `begin()` fails.
+These examples use the USBPD block (CH32X035, L103/M103, V205, X305/X315, H41x, M030) for PD sink/source operation, independently of USB data classes. On X033 `begin()` fails.
 
 ## Wiring and power
 
-CC1 / CC2: X035 PC14 / PC15, L103/M103 PB6 / PB7, V205 PA0 / PA1, X305/X315 PD4 / PD5, H41x PB3 / PB4. Check the board Type-C, CC/Rd and power circuits. Logs use hardware UART RX/TX at 115200 baud, 8N1, not CDC. Keep CC wiring short.
+CC1 / CC2: X035 PC14 / PC15, L103/M103 PB6 / PB7, V205 PA0 / PA1, X305/X315 PD4 / PD5, H41x PB3 / PB4, M030 PA0 / PA1. Check the board Type-C, CC/Rd and power circuits. Logs use hardware UART RX/TX at 115200 baud, 8N1, not CDC. Keep CC wiring short.
 
 | Example | Role | Required equipment |
 |---|---|---|
@@ -37,7 +37,7 @@ Only one sink/source role can own the PD block at a time. USB data-device operat
 
 | Symptom | Check |
 |---|---|
-| begin fails | A series with the block (not X033 / M030), required source callbacks, opposite-role Busy |
+| begin fails | A series with the block (not X033), required source callbacks, opposite-role Busy |
 | connected but not ready | PD-capable source, CC wiring, wait time |
 | request fails | Advertised PDO, mV/mA units, exact fixed voltage/PPS range and peer rejection |
 | PPS expires | Regular maintain calls and long stalls |

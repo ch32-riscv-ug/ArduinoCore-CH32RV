@@ -130,7 +130,7 @@ uint16_t rp_bits()
 uint16_t rd_threshold()
 {
     return src.rp == PD_RP_3A0 ? CH32RV_UPD_CC_CMP_66
-         : src.rp == PD_RP_1A5 ? (uint16_t)(3u << 5)          /* 0.45 V */
+         : src.rp == PD_RP_1A5 ? CH32RV_UPD_CC_CMP_45
          : CH32RV_UPD_CC_CMP_22;
 }
 

@@ -23,7 +23,8 @@
  * alone, refusals, and a restart under a live contract
  * (tests/bench/basic/pd_sink). Implemented for
  * CH32X035 (checked on hardware), L103/M103, V205, X305/X315 and H41x (built
- * only, usbpd_hw.h); begin() returns false on X033 (no CC pad) and M030.
+ * only, usbpd_hw.h), and M030's USBPD0; begin() returns false on X033 (no
+ * CC pad).
  *
  * What the driver does on its own, following USB PD R3.1:
  *
