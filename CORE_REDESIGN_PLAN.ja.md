@@ -269,10 +269,11 @@ P0／P1の案は作成済み。P2〜P4のhost・linkと用途比較は蓄積し�
 個別実験の履歴は[実行状況](planning/core-redesign/execution-status.ja.md)に集約し、この計画に重複して積み上げない。
 
 P5前半の[選択案](planning/core-redesign/tasks/ARCH-SELECT-01/proposal.ja.md)を作成した。
-Bを任意に組み込む推奨、A／C／別stackとの比較、G1〜G5、反証条件、利用コードを含む。最終仕様の決定ではない。
-[レビュー01への応答](planning/core-redesign/tasks/ARCH-SELECT-01/review-01-response.ja.md)と提案版2を作成した。
-追記F10・F11を含む更新レビューへ応答済み。beginでsystem自動登録、userは明示参加、実行統計は任意とする修正案を再レビュー対象に含める。
-次は[修正案の再レビュー](planning/core-redesign/tasks/ARCH-SELECT-01/review-request.ja.md)と利用者による選択。
+提案版3はA＋Sを中心に推奨する。userは明示step／run、自動進行はbeginで登録したsystemだけ、Bは任意部品とする。
+[レビュー02](planning/core-redesign/tasks/ARCH-SELECT-01/review-02.ja.md)は版2の構造を支持した。
+[利用者レビュー03](planning/core-redesign/tasks/ARCH-SELECT-01/review-03.ja.md)の用途評価を受け、
+[応答](planning/core-redesign/tasks/ARCH-SELECT-01/review-02-03-response.ja.md)と利用コードを更新した。
+次は[版3の変更点の確認](planning/core-redesign/tasks/ARCH-SELECT-01/review-request.ja.md)と利用者による選択。最終仕様の決定ではない。
 必要な検証はレビューで特定し、構造上の未解決を残したまま本実装へ移らない。
 N08の網羅的な条件補完・H417の負荷拡大へ自動的に進まない。
 当面の成果は「どの全体判断が解けたか」で報告する。テスト件数や消化した作業ID数を全体進捗率にしない。

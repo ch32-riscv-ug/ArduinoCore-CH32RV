@@ -2,11 +2,14 @@
 
 2026-10-22。全体判断を優先する指示により作業順を改訂。
 現在の優先順位と後段化は[判断中心の作業計画](decision-focus.ja.md)を正本とする。
-**レビュー01へ応答し、P5前半の提案版2を作成。次は再レビューと利用者による選択。**
+**P5前半の提案版3を作成。次はA中心・S限定への変更の確認と利用者による選択。**
 [選択案](tasks/ARCH-SELECT-01/proposal.ja.md)、[利用コード](tasks/ARCH-SELECT-01/usage.ja.md)、
-[レビュー依頼](tasks/ARCH-SELECT-01/review-request.ja.md)を用意した。[レビュー01への応答](tasks/ARCH-SELECT-01/review-01-response.ja.md)は修正提案であり、再レビュー完了・採用・承認の記録ではない。
-N08等の網羅的な補完を先に消化せず、レビューで選択を分ける不足だけを追加検証にする。
-追記F10・F11を含む更新レビューへ応答済み。beginでsystem自動登録、userは明示参加、実行統計は任意とする修正案を再レビュー対象に含める。
+[レビュー依頼](tasks/ARCH-SELECT-01/review-request.ja.md)を更新した。
+[レビュー02](tasks/ARCH-SELECT-01/review-02.ja.md)は版2の構造を支持。
+[利用者レビュー03](tasks/ARCH-SELECT-01/review-03.ja.md)の用途評価1件を受け、
+[応答](tasks/ARCH-SELECT-01/review-02-03-response.ja.md)でA＋Sへ推奨変更、Bは任意とした。
+これは版3の承認・初学者評価・実機実験の完了ではない。今回の変更は文書のみ。
+N08等の網羅的補完やOEP port等を先に消化せず、選択を分ける不足だけをR1〜R4へ渡す。
 
 P0／P1の案は作成済み。P2〜P4はhost／link・用途比較の証拠が多い一方、実機・総資源・人の評価は未完了。
 最終構成は未確定、P6／P7の新仕様実装は未着手。実験件数による百分率は使わない。

@@ -10,12 +10,13 @@
 
 [ARCH-SELECT-01 選択案](tasks/ARCH-SELECT-01/proposal.ja.md)に、A／B／C／別stackの比較、
 G1〜G5の推奨、数値根拠・反対理由・判断を覆す条件をまとめた。
-推奨は、単独利用できるI/O・データ部品に任意の短いworkを接続するB案。最終決定ではない。
-[利用コード](tasks/ARCH-SELECT-01/usage.ja.md)と[第三者レビュー依頼](tasks/ARCH-SELECT-01/review-request.ja.md)を用意した。
-[レビュー01](tasks/ARCH-SELECT-01/review-01.ja.md)を受領し、[応答](tasks/ARCH-SELECT-01/review-01-response.ja.md)と提案版2を作成した。
-基本教材をA＋system進行、workを任意接続とする案を明確化。setup、操作の副作用、復旧・clock・同期、callback許可を修正した。
-更新レビューのF10・F11も反映し、必要なsystemはbeginで自動登録、診断は任意とする案を追加した。
-**次は修正案の再レビューと利用者による選択。追加実験・本実装は自動的に開始しない。**
+版3の推奨はA＋S：共通部品と明示stepを基本に、自動進行はsystemだけ。Bは除去可能な任意部品とする。
+[利用コード](tasks/ARCH-SELECT-01/usage.ja.md)と[第三者レビュー依頼](tasks/ARCH-SELECT-01/review-request.ja.md)を更新した。
+[レビュー02](tasks/ARCH-SELECT-01/review-02.ja.md)は版2の構造を支持したが、
+[利用者レビュー03](tasks/ARCH-SELECT-01/review-03.ja.md)で接続負担・容量・実行位置の理解が課題となった。
+[応答](tasks/ARCH-SELECT-01/review-02-03-response.ja.md)に推奨変更と証拠の限界を記録した。R1の用途評価1件であり、初学者予測試験の完了ではない。
+**次は版3のA中心・S限定の選択。追加実験・本実装は自動的に開始しない。**
+OEP port、電池用途、接続漏れ診断を新しい先行必須作業へ増やさない。
 利用者承認なし、P5後半の構造確定は未完了。
 
 ## 計画上の問題と修正
