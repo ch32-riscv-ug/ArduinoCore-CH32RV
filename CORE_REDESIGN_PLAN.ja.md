@@ -268,6 +268,9 @@ P0／P1の案は作成済み。P2〜P4のhost・linkと用途比較は蓄積し�
 実機成立・総資源・人による評価を含む全項目の完了ではない。最終構成は未確定、P6／P7の新仕様実装は未着手。
 個別実験の履歴は[実行状況](planning/core-redesign/execution-status.ja.md)に集約し、この計画に重複して積み上げない。
 
-次は[判断中心の作業計画](planning/core-redesign/decision-focus.ja.md)のG1〜G5を使い、P5前半の全体構成を選択する。
+P5前半の[選択案](planning/core-redesign/tasks/ARCH-SELECT-01/proposal.ja.md)を作成した。
+Bを任意に組み込む推奨、A／C／別stackとの比較、G1〜G5、反証条件、利用コードを含む。最終仕様の決定ではない。
+次は[第三者レビュー](planning/core-redesign/tasks/ARCH-SELECT-01/review-request.ja.md)と利用者による選択。
+必要な検証はレビューで特定し、構造上の未解決を残したまま本実装へ移らない。
 N08の網羅的な条件補完・H417の負荷拡大へ自動的に進まない。
 当面の成果は「どの全体判断が解けたか」で報告する。テスト件数や消化した作業ID数を全体進捗率にしない。

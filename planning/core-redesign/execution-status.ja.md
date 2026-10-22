@@ -2,7 +2,10 @@
 
 2026-10-22。全体判断を優先する指示により作業順を改訂。
 現在の優先順位と後段化は[判断中心の作業計画](decision-focus.ja.md)を正本とする。
-**次はP5前半の全体構成選択。N08等の網羅的な補完を先に消化しない。**
+**P5前半の推奨案を作成済み。次は第三者レビューと利用者による選択。**
+[選択案](tasks/ARCH-SELECT-01/proposal.ja.md)、[利用コード](tasks/ARCH-SELECT-01/usage.ja.md)、
+[レビュー依頼](tasks/ARCH-SELECT-01/review-request.ja.md)を用意した。採用・承認・レビュー実施の記録ではない。
+N08等の網羅的な補完を先に消化せず、レビューで選択を分ける不足だけを追加検証にする。
 
 P0／P1の案は作成済み。P2〜P4はhost／link・用途比較の証拠が多い一方、実機・総資源・人の評価は未完了。
 最終構成は未確定、P6／P7の新仕様実装は未着手。実験件数による百分率は使わない。
@@ -116,4 +119,4 @@ N07 E05は実験コードを `1fa8b70` でコミット済み。結果文書・�
 - [EXP-05 H417共有配置](tasks/EXP-05/h417-layout-result.ja.md)：固定SDK linkerで6 pair・12 ELF、共有3容量×LTO、想定link拒否3条件、配置検査36件。opaque配列の配置であり、C++共有object・実起動・upload保持は未検証。
 - [EXP-05 H417共有予約](tasks/EXP-05/h417-reservation-result.ja.md)：派生scriptで0／256 B／1 KiB／32 KiBの8 pair、link拒否8条件・実imageの混在拒否3条件・予約検査53件。未使用時にV3F通常RAMへ32 KiBを返却。公開設定とruntime handshakeは未決定。
 
-現在の次の作業は[全体構成の選択](decision-focus.ja.md#新しい順序と終了条件)。個別実験の残りを自動的に開始しない。
+現在の次の作業は[第三者レビュー](tasks/ARCH-SELECT-01/review-request.ja.md)と利用者による選択。個別実験の残りを自動的に開始しない。
