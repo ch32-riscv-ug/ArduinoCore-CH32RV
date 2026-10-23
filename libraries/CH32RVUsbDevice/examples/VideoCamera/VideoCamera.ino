@@ -71,8 +71,8 @@ static void fillPayload(uint8_t *dst, size_t length, uint32_t offset)
   }
 }
 
-/* Runs on the USB task when the last payload of a frame has gone. Keep it
- * short; this one only counts. */
+/* Delivered by deliverEvents() after the last payload of a frame has gone.
+ * This notification only counts completed frames. */
 static void frameComplete()
 {
   frameCount = frameCount + 1;
@@ -120,7 +120,7 @@ void setup()
 
 void loop()
 {
-  // The callbacks set in setup() run here, and only here.
+  // Deliver notifications here; fillPayload() is a provider run by the USB task.
   deliverEvents();
   const bool streaming = Camera.streaming();
   if (streaming && !wasStreaming)

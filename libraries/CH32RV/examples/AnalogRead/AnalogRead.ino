@@ -23,9 +23,9 @@ void setup()
 void loop()
 {
     const int raw = analogRead(SENSOR);
-    /* The reference is the 3.3 V supply, and the ADC is 10 or 12 bits
-     * depending on the part - analogRead() always returns the full range it
-     * has, so scale by the maximum it can produce. */
+    /* This voltage estimate assumes 12-bit readings and a 3.3 V reference.
+     * Match the divisor to analogReadResolution(), or request 12 bits before
+     * reading. See README.ja.md for the distinction from the ADC's native bits. */
     Serial.print(raw);
     Serial.print("  ");
     Serial.print((raw * 3.3) / 4095.0, 3);

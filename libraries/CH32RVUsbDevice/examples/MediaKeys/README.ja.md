@@ -18,6 +18,20 @@ English: [README.md](README.md)
 
 電源オフ・standby・wake の呼出しはコメントアウトされており、そのままでは送信しません。実機ボタン等の明示操作へ割り当てる際に有効化します。
 
+## API の使い方と改造のポイント
+
+| API | この例での使い方 |
+|---|---|
+| `CH32RVUsbDeviceHidConsumerControl media(device)` | 音量・再生操作の Consumer Control を追加します。 |
+| `media.click(usage)` | 指定 usage の押下と解放を送ります。キーボードの文字コードは渡しません。 |
+| `CH32RVUsbDeviceHidSystemControl systemControl(device)` | ホストの電源状態に関わる別の HID 機能を追加します。 |
+
+送信成功は、ホストのプレーヤーがその操作を実行した保証ではありません。音量は OS、トラック操作は
+アプリ側の対応も必要です。`bool` の結果で USB の失敗と、ホスト側の反応の有無を切り分けます。
+
+ボタンへ割り当てる場合は debounce を入れ、押した瞬間だけ `click()` します。押している間の毎回の `loop()` で
+呼ぶと繰り返し操作になります。System Control の有効化は、個々の usage の影響を確かめてから行います。
+
 ## 関連資料
 
 - [サンプル共通の準備とトラブルシューティング](../README.ja.md)

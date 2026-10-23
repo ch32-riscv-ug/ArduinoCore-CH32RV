@@ -12,6 +12,8 @@ ESP32 や Raspberry Pi Pico の RTOS に移ったときも、同じ考え方が�
 2. **待たない。** 「今は無理」なら、状態を覚えて `loop()` に戻る。
 3. **自分の関数は、自分が呼んだ場所で動く。** ライブラリの callback は `deliverEvents()` で受け取る。
 
+各例の配線と API の使い方は [サンプルスケッチ案内](examples.ja.md) から参照できます。
+
 判断の理由は [ADR-0016](adr/0016-execution-model.ja.md) にあります。
 
 ## 1 回の `loop()` で起きること
@@ -193,8 +195,9 @@ void loop() {
 }
 ```
 
-- `deliverEvents()` を呼ばない限り callback は動きません。その間、データは捨てられず、クラスの buffer か
-  相手側（USB のホストや機器）で待たされます。`delay()` の中でも USB の転送は進みますが、callback は動きません。
+- 通知 callback は `deliverEvents()` で受け取ります。読み出しが遅いとクラスの buffer が埋まって相手側で待ちが
+  発生する場合があります。通知の保存方法はクラスによって異なり、無制限に保存されるわけではありません。
+  `delay()` の中でも USB の転送は進みますが、通知 callback は動きません。
 - 自分の関数が `loop()` の途中に割り込んで動くことはありません。グローバル変数を callback と `loop()` で
   共有しても、ISR のときのような禁止区間は要りません。
 - 同じ種類の通知が、届く前に何度か起きると、1 回にまとまることがあります（受信の通知、線の状態など）。
@@ -202,7 +205,7 @@ void loop() {
 - 戻り値は、動いた callback の数です。
 
 例外が 1 つあります。USB の相手が答えを待っているもの（MSC の `onRead()` / `onWrite()`、CCID の
-`onApdu()`、Vendor の `onControlRequest()` など）は、相手を待たせられないので、USB の処理の中から
+`onApdu()`、Vendor の `onControlRequest()`、映像の `onFillPayload()`、DFU の `onDetach()` など）は、相手を待たせられないので、USB の処理の中から
 すぐに呼ばれます。これらは短く書き、`delay()` を入れないでください。どれが該当するかは各ライブラリの
 README にあります。
 

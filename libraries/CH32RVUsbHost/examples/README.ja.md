@@ -6,14 +6,8 @@
 
 ## 型番と配線
 
-| 系列 | D− | D+ | 対応 |
-|---|---|---|---|
-| CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | PC16 | PC17 | Host 対応。C8T6 と ESP32-S3 peer で確認 |
-| CH32X035 F8U6 / F7P6 / D8U6、X033 | — | — | シリコンに Host がなく `Unsupported` |
-| CH32V203 / V208 | PB6 | PB7 | USBFS、ビルドのみ |
-| CH32V303 / V305 / V307 / V317 | PA11 | PA12 | USBFS、ビルドのみ |
-
-**同じ X035 でも F8U6 は Device の実機基準であり、Host は C8T6 等が必要です。** V30x でもここで使う Host は USBFS で、USBHS ではありません。H417 の USBSS/USBHS Host も現在の対象外です。
+Host の有無は系列名だけでなく正確な型番で確認します。Device として動くボードが、Host としても動くとは限りません。
+使用できる controller・端子・クロックと実機確認の範囲は [ライブラリの対応表](../README.ja.md#対応) を参照してください。
 
 必要な接続は USB Device の D+/D−、GND と、Device に供給する5 V VBUSです。VBUS は基板の電源回路・スイッチから供給します。`usb.begin()` は USB-C の電源ロールや5 V供給回路を構成しません。Device 用 USB-C コネクタの CC/Rd があるだけでは Host 用の接続条件を満たしません。Type-C Host 接続を使う場合は、ボード側の Source/CC 回路も回路図で確認します。
 
@@ -39,21 +33,35 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6 \
 
 Host の処理は `loop()` の後と `delay()` 中に進みます。長い計算ループでは `usb.task()` を呼びます。callback は、各例が `loop()` の先頭で呼ぶ `deliverEvents()` の中でだけ動きます。待つ API も使えますが、callback を短くしてフラグを立て、`loop()` から open/転送する例もあります。考え方は [スケッチの組み立て方](../../../docs/sketch-guide.ja.md) にあります。
 
-`usb.ready()` は controller の開始状態です。クラスの接続状態は `serialReady()` / `midiReady()` / `mscReady()` 等で確認します。既定の address は最初の該当機器を選びます。複数機器では callback の `address` を保持し、API の address 引数または CDC wrapper の `setAddress()` / `setPort()` で指定します。抜き挿し後の address を固定値で仮定しないでください。
+| API・状態 | 確認すること |
+|---|---|
+| `usb.begin()` / `usb.ready()` | Host controller の起動。目的の USB Device が使用可能という意味ではない |
+| `onDeviceConnected()` | 機器の列挙通知。callback の `address` で今回の機器を識別する |
+| `serialReady()` / `midiReady()` / `mscReady()` 等 | 目的のクラスが使える状態か。媒体やカードの準備はさらに別に確認する |
+| open・転送 API の戻り値 | 開始や転送の成否。`false` なら直後の `lastErrorName()` を確認する |
 
-1段の hub を扱いますが、任意の段数や全組み合わせの保証ではありません。Host の Audio/Video ISO と NCM/ECM は実装していません。EspUsbHost の全サンプルや runtime 設定 API がそのまま利用できるわけではありません。
+既定の address は最初の該当機器を選びます。複数機器では callback の `address` を保持し、API の address 引数または
+CDC wrapper の `setAddress()` / `setPort()` で指定します。抜き挿し後の address を固定値で仮定しません。
+受信 callback の参照・ポインタを保存するなら、自分の領域へ必要な値をコピーします。
+
+待つ API はスケッチの続きの処理を遅らせます。割り込みから呼ばず、callback ではフラグだけを立てて
+`loop()` で処理する形にすると、接続通知と転送処理を分けて考えられます。切断後の未送信データや状態を
+残すか捨てるかも用途に応じて決めます。
+
+複合機器・hub・クラスごとの対応範囲や設定の上限は [ライブラリ README](../README.ja.md) を参照してください。
+Device 側のサンプルを対向機器にすると、通信の方向と期待する応答を照合できます。
 
 ## よくある問題
 
 | 症状 | 確認すること |
 |---|---|
-| `Unsupported` | X035の正確な型番。特に F8U6 と C8T6 の違い |
+| `Unsupported` | 正確な型番と Host の対応表 |
 | `Busy` | 同じ controller で Device が起動していないか。ロール切替前に `end()` |
 | 接続通知がない | VBUS、GND、D+/D−、Device として動く端子か、UART ログ |
 | VID/PID は出るが操作できない | interface class/protocol と対応クラス、`*Ready()`、open の成否 |
 | `Timeout` / `Stalled` | timeout は無応答や処理待ち、STALL は相手が request を拒否。`lastErrorName()` と descriptor を確認 |
-| 大きな複合機器が列挙できない | `CFG_TUH_ENUMERATION_BUFSIZE` 等の上限と使用 RAM |
-| カードリーダーで ready にならない | MSC の媒体を先に入れる。列挙中 TEST UNIT READY の無制限再試行が既知の制約 |
+| 大きな複合機器が列挙できない | ライブラリの構成・記述子の容量条件と使用 RAM |
+| カードリーダーで ready にならない | 媒体の有無とライブラリの既知の制約 |
 | シリアルの取りこぼし | UART/USB双方の読み出し頻度、戻り値、build時 FIFO とリング容量 |
 
 詳細な API と設定値は[ライブラリ README](../README.ja.md)、実機の保証範囲は[peer テスト](../../../tests/peer/usb/README.ja.md)を参照してください。

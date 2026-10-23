@@ -49,3 +49,8 @@ if (const uint16_t *full = hsadc.readBuffer()) {   // loop() から
 - USB の SuperSpeed で流す例は `HsAdcStream` です。20 Msps × 2 バイト = 40 MB/s を Vendor クラスの
   `writeDirect()` で送ります。PC 側は、libusb の非同期転送をいくつも並べて読んでください。同期で 1 回ずつ
   読むと、読み出しの合間にバッファを取りこぼします。
+
+## サンプルの詳しい使い方
+
+- [HsAdcRead](examples/HsAdcRead/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [HsAdcStream](examples/HsAdcStream/README.ja.md)：配線・操作・API の使い方と改造時の注意。

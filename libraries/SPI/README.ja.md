@@ -66,3 +66,7 @@ SPI.setPins(PB3, PB4, PB5);       // SCK, MISO, MOSI。すべて同じrouteか�
 
 - **SPILoopback** — MOSIとMISOをジャンパ1本で繋ぐだけで、
   クロック・データ線・フレーミングをまとめて確認できます。
+
+## サンプルの詳しい使い方
+
+- [SPILoopback](examples/SPILoopback/README.ja.md)：配線・操作・API の使い方と改造時の注意。

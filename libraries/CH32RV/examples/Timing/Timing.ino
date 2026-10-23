@@ -9,8 +9,8 @@
  * 2. **micros() wraps about every 71 minutes** (2^32 microseconds), and
  *    millis() about every 49 days. Subtracting two readings stays correct
  *    across the wrap; comparing them with < does not.
- * 3. delayMicroseconds() is a busy loop, not a sleep. It blocks interrupts
- *    from doing useful work but is accurate at microsecond scale.
+ * 3. delayMicroseconds() is a busy loop, not a sleep. It blocks
+ *    the sketch from doing other work; it does not itself disable interrupts.
  */
 void setup()
 {

@@ -14,9 +14,9 @@ void setup()
 
   keyboard.setLayout(CH32RV_USB_DEVICE_KEYBOARD_LAYOUT_EN_US);
 
-  // The callback fires the moment the host changes the Lock LEDs. It is a single
-  // slot, so keyboard.ledState() below is the way to read the same state when
-  // something else (an integration layer, say) already took it.
+  // deliverEvents() delivers the latest Lock LED state. It is a single slot,
+  // so keyboard.ledState() below can read the state when something else
+  // (an integration layer, say) already owns the callback.
   keyboard.onOutputReport([](const CH32RVUsbDeviceHidKeyboardOutputReport &report)
                           {
                             Serial.printf("LEDS num=%u caps=%u scroll=%u raw=0x%02x\n",

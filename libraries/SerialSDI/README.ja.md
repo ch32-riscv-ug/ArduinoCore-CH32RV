@@ -98,3 +98,8 @@ ch32rv_set_stdout(nullptr);         // 捨てる
 
 - **HelloSDI** — 最小の出力。host側のコマンドも冒頭に書いてあります。
 - **PrintfToSDI** — `printf()`をprobe側へ移し、また戻します。
+
+## サンプルの詳しい使い方
+
+- [HelloSDI](examples/HelloSDI/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [PrintfToSDI](examples/PrintfToSDI/README.ja.md)：配線・操作・API の使い方と改造時の注意。

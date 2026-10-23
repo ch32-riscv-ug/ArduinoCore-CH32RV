@@ -73,3 +73,7 @@ ch32rv monitor --source dmseq
 ## examples
 
 - **HelloDMSeq** - 1秒ごとに印字し、打った文字を大文字にして返します。
+
+## サンプルの詳しい使い方
+
+- [HelloDMSeq](examples/HelloDMSeq/README.ja.md)：配線・操作・API の使い方と改造時の注意。

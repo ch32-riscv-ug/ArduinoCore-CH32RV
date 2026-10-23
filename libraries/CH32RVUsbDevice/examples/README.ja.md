@@ -2,87 +2,132 @@
 
 [English](README.md)
 
-ボードを PC 等の USB ホストへ接続し、CDC、HID、MIDI、MSC、Vendor、CCID、音声、映像、NCM を試す例です。最初は [SerialUSBEcho](SerialUSBEcho/README.ja.md) で USB 配線と列挙を確認し、その後に目的のクラスを選びます。各フォルダの README はそのスケッチの設定・出力に合わせています。
+ボードを PC 等の USB ホストへ接続し、USB の各機能を試すサンプルです。
+まず [SerialUSBEcho](SerialUSBEcho/README.ja.md) で接続を確認し、目的のクラスへ進みます。
+各例の README には、配線・操作・期待する結果と、API の使い方・改造時の注意をまとめています。
 
-## ボードと接続
+## 準備と最初の確認
 
-実機確認の基準は WeAct CH32X035F8U6 の Device 接続です。今ドライバがあるのは X035 / X033 だけで、下の V103/V20x/V30x の行はドライバを足したときの接続です。詳細と型番例外は [USB の対応表](../../../docs/usb.ja.md#対応状況) を参照してください。H417 の SS は現在のサンプルの動作範囲に含みません。
+1. [USB の対応表](../../../docs/usb.ja.md#対応状況) で、正確な型番・controller・必要なクロックを確認します。
+   系列向けのビルド成功だけでは、そのパッケージの端子や実機動作は確認できません。
+2. ボードの回路図で MCU の USB データ端子につながるコネクタを確認し、データ通信できるケーブルで PC へ接続します。
+   USB-UART ブリッジにつながるコネクタと区別します。
+3. Arduino IDE の「ファイル → スケッチ例 → CH32RVUsbDevice」から例を開き、ボードと Part Number を設定します。
+   初回はそのボードで使える書き込み経路で書き込みます。
+4. CDC、HID、音声など、そのクラスを扱う PC アプリを開いて入出力を試します。すべてが COM ポートになるわけではありません。
 
-| 系列・controller | D− | D+ | 選択 |
-|---|---|---|---|
-| X035 / X033 USBFS | PC16 | PC17 | `Auto` |
-| V103 / V303 USBFS | PA11 | PA12 | `Auto` |
-| V203 / V208 USBFS | PB6 | PB7 | `FullSpeed` / 通常の `Auto` |
-| V203 / V208 USBD | PA11 | PA12 | `Usbd`。USBFS のない型番では `Auto` も USBD |
-| V305 / V307 / V317 USBFS | PA11 | PA12 | `FullSpeed` / 通常の `Auto` |
-| V305 / V307 / V317 USBHS | PB6 | PB7 | `HighSpeed`。HSE が必要 |
-
-使う型番・パッケージに端子と controller があることを確認し、ボード回路図の USB データコネクタに接続します。USB-UART ブリッジだけにつながるコネクタへ挿しても Device は列挙されません。
-
-多くの例は `Serial` のハードウェア UART へ115200 bps・8N1でログを出します。これは USB CDC の `SerialUSB` / `UsbSerial` とは別です。
-
-| ボード | UART アダプタ |
-|---|---|
-| `TX` | RX |
-| `RX` | TX（コマンド入力が必要な例） |
-| GND | GND |
-
-端子名 `RX` / `TX` / `SCK` 等の実 pin は選択した board/variant に依存します。UART は基板の I/O 電圧に合わせます。SerialUSBEcho と DfuRuntime は UART を使いません。
-
-## ビルドと書き込み
-
-Arduino IDE ではボードと正確な Part Number を選び、「ファイル → スケッチ例 → CH32RVUsbDevice」から例を開きます。初回は動作する書き込み経路を使い、USB Device が起動してからアプリの USB 入口を試します。
-
-arduino-cli でリポジトリのルートからビルドする例です。対象 core が導入済みであることを前提にします。
+CLI はリポジトリのルートから、導入済みの core を指定してビルドできます。
 
 ```sh
 arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
   libraries/CH32RVUsbDevice/examples/SerialUSBEcho
 ```
 
-手元の開発中 core を検証する場合は、Arduino CLI が参照する platform がこの作業ツリーであることを確認します。`sketch.yaml` の profile は配布版を固定するビルド条件であり、実機検証済みボードの一覧ではありません。
+開発中の core を調べる場合は、CLI が参照する platform がこの作業ツリーであることも確認します。
+`sketch.yaml` の扱いと容量条件は [examples のビルド規則](../../../docs/examples-build-rules.ja.md) を参照してください。
 
-- Audio の例には `flash=48K`、RAM disk 等には `ram=16K` の profile 下限があります。実際の容量は使用する Part Number とリンク結果で確認します。
-- `pnum=ANY` のメモリ容量は系列内の最小値です。実ボードに大きな RAM があるのにリンクできないときは正確な型番を選びます。
-- 生成済み `sketch.yaml` は直接編集せず、[examples のビルド規則](../../../docs/examples-build-rules.ja.md)に従います。
+## UART ログと USB 通信を分ける
 
-## 動作と設定の共通事項
+多くの例の診断ログは `Serial` のハードウェア UART へ出ます。USB CDC の `SerialUSB` / `UsbSerial` とは別です。
+通信条件はスケッチの `Serial.begin(...)` に合わせます。
 
-`CH32RVUsbDevice device;` に各 function を宣言し、`device.begin(config)` を1回呼びます。既定の `USBDevice` に付ける形式もあります。HID の機能は一つの HID interface に合成されます。既定で endpoint を消費しない DFU runtime も付きます。
-
-`begin()` 成功は USB stack の開始で、PC の列挙完了とは別です。`mounted()` で構成済み、CDC の `connected()` / `operator bool` で端末の DTR を見ます。CDC を開いていない状態で周期ログが届かないのは想定した動作です。
-
-| 変更したいもの | 変更箇所 |
+| ボード | UART アダプタ |
 |---|---|
-| 名前、VID/PID、serial number | `.ino` の `CH32RVUsbDeviceConfig`。`1209:0001` はテスト用 |
-| 複数台の識別 | 固定 serial number を台ごとに変えるか、`nullptr` でチップ固有値を使う |
-| controller | `config.controller`。HS 選択は USBHS の物理端子と HSE を確認 |
-| クラス個数・バッファ | 個数はクラスごとの上限（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。CDC のバッファは `setBuffers()` で差し替え |
-| キーボードの文字配列 | `setLayout()` と PC の配列。raw usage 送信とは区別 |
-| 音声/映像の format | 各例の rate/channel/frame 設定。USB endpoint の帯域にも合わせる |
+| TX | RX |
+| RX | TX（コマンド入力がある場合） |
+| GND | GND |
 
-`loop()` の後と `delay()` 中に USB の処理が進みます。長い計算ループでは `device.task()` を定期的に呼びます。通知の callback（`onRx()`、`onLineState()`、`onBusEvent()` など）は、`loop()` で呼ぶ `deliverEvents()` の中でだけ動き、それまでデータは待ちます。ホストが答えを待つ provider（MSC の `onRead()` / `onWrite()`、CCID の `onApdu()`、Vendor の `onControlRequest()`）は USB の処理の中で動くので、短く、`delay()` を入れずに書きます。違いは [SerialEvents](SerialEvents/README.ja.md) で確かめられ、[スケッチの組み立て方](../../../docs/sketch-guide.ja.md) で説明しています。
+UART の電圧はボードの I/O 電圧に合わせます。`RX` / `TX` 等の実際の端子は board/variant と回路図で確認します。
+USB が起動しない場合にも UART ならエラーを読めます。UART を使わない例は個別 README に記載しています。
 
-## 認識しない場合
+## 宣言から通信まで
 
-| 症状 | 最初に確認する箇所 |
+通常はグローバルにデバイスと function を宣言し、設定後にデバイス全体を起動します。
+
+```cpp
+#include <CH32RVUsbDevice.h>
+
+CH32RVUsbDevice device;
+CH32RVUsbDeviceCdcSerial console(device, "Console");
+
+void setup() {
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
+  CH32RVUsbDeviceConfig config;
+  config.product = "My USB console";
+  if (!device.begin(config)) {
+    Serial.println(device.lastErrorName());
+  }
+}
+
+void loop() {
+  while (console.available()) {
+    const int value = console.read();
+    if (value >= 0) console.write(static_cast<uint8_t>(value));
+  }
+}
+```
+
+function は同じ `device` に結び付けます。定義済みの `USBDevice` / `SerialUSB` で始める方法は
+[SerialUSBEcho](SerialUSBEcho/README.ja.md)、複数機能の組み合わせは
+[CustomDevice](CustomDevice/README.ja.md) を参照してください。
+識別情報の文字列、独自 descriptor、差し替えバッファは、USB が使っている間有効に保ちます。
+
+| 状態・API | 意味 |
 |---|---|
-| UART に何も出ない | UART の RX/TX、115200 bps、GND、リセット後のモニタ開始。USB CDC と UART の取り違え |
-| `USB_BEGIN_FAILED Unsupported` | 現在のライブラリでその系列の Device が実装済みか |
-| `PortUnavailable` | 型番の controller/端子、HS 用 HSE の有無と `CH32RV_HSE_HZ` |
-| `TooManyInstances` | 同じクラスの数がクラスごとの上限を超えていないか |
-| `OutOfEndpoints` / `DescriptorTooLarge` | 組み合わせた function 数と descriptor の上限 |
-| `NotReady` / HID送信失敗 | PC に列挙されているか、suspend 中でないか |
-| CDC に何も届かない | DTR を有効にしてポートを開いたか、ローカルエコー/改行設定 |
-| エラーなしで USB が現れない | 充電専用ケーブル、USB-UART 側コネクタ、D+/D− 配線、選択 controller |
+| `device.begin(config)` が `true` | 内部の起動に成功。PC の列挙完了はまだ保証しない |
+| `device.started()` | スタックが起動している |
+| `device.mounted()` / `device.ready()` | ホストがデバイスを構成した。Device ではこの二つは同じ意味 |
+| CDC の `connected()` / `operator bool` | ホストの DTR が有効。端末を開いたかを判断するために使う |
+| 送信 API の成功 | API がそのデータを受け付けた。PC アプリが意味を解釈・処理した保証ではない |
 
-PC の device/interface/endpoint 情報を見るときは Linux の `lsusb -v` や Windows の USBView 等を使います。HID・MSC・音声等は COM ポートとして現れないクラスなので、該当クラスを扱うアプリから開きます。
+CDC の `begin(baud)` は USB バス速度を変えません。ハードウェア UART へ中継する場合、UART 側の baud は別に設定します。
+`write()` は生バイト、`print()` は文字列化した値です。API ごとに待ち方や戻り値が異なるので、
+CDC、Vendor、Audio の `write()` を同じ動作と仮定しません。
 
-## 再書き込み
+## 内部処理と callback
 
-X035/X033 は CDC の1200 bps touch または DFU_DETACH を入口に WCH ISP へ移行できます。通常の端末試験は1200 bpsを避けます。DFU runtime は firmware 本体を DFU_DNLOAD で受け取る実装ではありません。ほかの系列の入口は現在通常 reset で、同じ ISP 移行を保証しません。[USB 書き込み手順](../../../docs/usb.ja.md#書き込み)と[書き込み経路](../../../docs/upload-routes.ja.md)を参照してください。
+USB の内部処理は `loop()` の後と `delay()` 中に進みます。スケッチが戻らない長い計算では
+`device.task()` で進める方法もありますが、基本は処理を区切って `loop()` へ戻します。
+
+| 種類 | 例 | 呼ばれる場所・書き方 |
+|---|---|---|
+| 通知 | CDC の `onRx()`、HID の Output、バス通知、映像の完了通知 | `loop()` の `deliverEvents()` で実行。最新状態にまとまる通知もある |
+| 応答を作る provider・判定 | MSC の読み書き・START STOP、CCID の APDU、Vendor 制御要求、映像の payload 生成、DFU の detach 判定 | USB の処理中に実行。短くし、`delay()` や待ち続けるループを入れない |
+| ポーリング | CDC の `available()`、MIDI の `readPacket()`、Audio の `pollEvent()` | スケッチから読み出す。この方式だけなら通知用の `deliverEvents()` は不要 |
+
+通知が来るまでの保存は無制限ではありません。クラスによって相手を待たせたり、通知がまとまったり、
+記録を取りこぼしたりします。`onRx()` の引数をメッセージ境界と考えず、実際に読み出せた長さを扱います。
+callback の受信ポインタをあとで使う場合は自分の配列へコピーします。
+[SerialEvents](SerialEvents/README.ja.md) と [スケッチの組み立て方](../../../docs/sketch-guide.ja.md) で流れを確認できます。
+
+## 改造するときに確認すること
+
+- 名前・VID/PID・serial number 等は `CH32RVUsbDeviceConfig` で設定します。サンプルの識別情報を製品へそのまま流用せず、
+  複数台の識別には serial number も使います。
+- descriptor に反映される設定は `begin()` より前に済ませます。構成を変えたら PC 側の再認識も確認します。
+- HID は押下と解放を、MIDI は Note On と Note Off を対で扱います。送信失敗時の解放・再試行も考えます。
+- bulk と CDC はストリームです。改行や長さフィールド等でアプリのメッセージ境界を定義します。
+- 音声・映像・連続データでは送信の戻り値を確認し、未送信分を保持するか、破棄を数えるかを決めます。
+- MSC はホストの書き込みキャッシュを考慮し、マウント中の媒体をスケッチから同時に変更しません。
+
+## 動かない場合
+
+| 症状 | 確認すること |
+|---|---|
+| UART にログがない | 端子・速度・GND・リセット。USB CDC と UART を取り違えていないか |
+| `begin()` が失敗 | `lastErrorName()` と [ライブラリ README](../README.ja.md)。型番・controller・クロック・他機能との競合 |
+| PC に現れない | ケーブル、USB データコネクタ、D+/D−、controller の選択 |
+| CDC に届かない | 正しいポートを DTR 有効で開いたか。送信先が UART ではないか |
+| callback が動かない | 通知を登録した場合、`loop()` で `deliverEvents()` を呼んでいるか |
+| 列挙するが操作できない | 対応する PC アプリ、report/PCM 等の形式、interface と endpoint の選択 |
+| 高負荷時だけ欠落する | 処理の戻り値、長い callback、読み出し頻度、送受信量 |
+
+再書き込みの入口と実際の更新方式は系列によって異なります。
+[USB 書き込み手順](../../../docs/usb.ja.md#書き込み) と [書き込み経路](../../../docs/upload-routes.ja.md) を参照してください。
+通常の CDC 試験では、意図せず更新へ移らないよう1200 bps touchにも注意します。
 
 ## サンプル一覧
+
 
 | 例 | 内容 |
 |---|---|

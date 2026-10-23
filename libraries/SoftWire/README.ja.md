@@ -59,3 +59,7 @@ Adafruit_Something device(&bus);
 hardware `Wire`とは実装する状態機械や復旧処理が異なるため、使用量はbuild条件で変わります。
 正確なflash/RAM使用量はbuild size reportで確認してください。ヘッダを`#include`しない
 sketchにはlinkされません。
+
+## サンプルの詳しい使い方
+
+- [SoftI2CScanner](examples/SoftI2CScanner/README.ja.md)：配線・操作・API の使い方と改造時の注意。

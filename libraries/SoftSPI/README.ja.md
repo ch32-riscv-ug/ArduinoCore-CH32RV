@@ -51,3 +51,7 @@ Adafruit_Something device(&bus);
 edgeごとに`digitalWrite()`を呼び、`HardwareSPI`のoverrideも保持するため、hardware
 `SPI`より小さくなるとは限りません。正確な使用量はbuild size reportで確認してください。
 ヘッダを`#include`しないsketchにはlinkされません。
+
+## サンプルの詳しい使い方
+
+- [SoftSPILoopback](examples/SoftSPILoopback/README.ja.md)：配線・操作・API の使い方と改造時の注意。

@@ -17,9 +17,9 @@
 
 | 目的 | 最初の例 | 全サンプルと接続手順 |
 |---|---|---|
-| ボードを PC の USB Device にする | [SerialUSBEcho](../libraries/CH32RVUsbDevice/examples/SerialUSBEcho/README.ja.md) | [Device 共通ガイドと28例](../libraries/CH32RVUsbDevice/examples/README.ja.md) |
-| ボードへ USB 周辺機器を接続する | [DeviceInfo](../libraries/CH32RVUsbHost/examples/DeviceInfo/README.ja.md) | [Host 共通ガイドと8例](../libraries/CH32RVUsbHost/examples/README.ja.md) |
-| PD 充電器/電源を扱う | [ListProfiles](../libraries/CH32RVUsbPd/examples/ListProfiles/README.ja.md) | [PD 共通ガイドと3例](../libraries/CH32RVUsbPd/examples/README.ja.md) |
+| ボードを PC の USB Device にする | [SerialUSBEcho](../libraries/CH32RVUsbDevice/examples/SerialUSBEcho/README.ja.md) | [Device 共通ガイドとサンプル一覧](../libraries/CH32RVUsbDevice/examples/README.ja.md) |
+| ボードへ USB 周辺機器を接続する | [DeviceInfo](../libraries/CH32RVUsbHost/examples/DeviceInfo/README.ja.md) | [Host 共通ガイドとサンプル一覧](../libraries/CH32RVUsbHost/examples/README.ja.md) |
+| PD 充電器/電源を扱う | [ListProfiles](../libraries/CH32RVUsbPd/examples/ListProfiles/README.ja.md) | [PD 共通ガイドとサンプル一覧](../libraries/CH32RVUsbPd/examples/README.ja.md) |
 
 `Serial` はハードウェア UART、`SerialUSB` / Device の `UsbSerial` は USB CDC、Host の `CH32RVUsbHostCdcSerial` は
 接続した USB シリアル機器への窓口です。ログを見る端子と、テストする USB データ端子を区別します。
@@ -46,10 +46,9 @@ USB のコントローラを持つ系列と、それぞれの IP の種類、ド
 | USBSS | H417 / H416 | `CH32RVUsbDcdUsbss.cpp` | 実機（H417、5000M で列挙） |
 | 〃 | X315（デバイスのみ） | 〃（`SuperSpeed`） | ビルドのみ |
 
-`Auto` の選び方: 系列のいちばん速いコントローラを選びます。ただし、次の場合は FS を選びます。
-- **ピンが SWD と兼用:** H41x の USBHS。
-- **HSE が要る:** V30x / V205 の USBHS。
-- V203 の USBD しか出ていない品種では USBD を選びます。
+`Auto` は系列の既定 controller を選びます。必ずしも最速の controller ではありません。
+端子・クロック・他機能との兼用を確認して選択します。選択規則の実装は
+[CH32RVUsbDevicePort.h](../libraries/CH32RVUsbDevice/src/CH32RVUsbDevicePort.h) にあります。
 
 V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラがありません。
 
@@ -74,7 +73,7 @@ V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラ�
 H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホストにだけつながります。
 - **USB 2.0 に切り替える経路はありません。** USB 2.0 の線（USBHS、PB8 / PB9）は SWCLK / SWDIO と兼用で、
   デバッグ機能は止められません（TinyUSB PR #3779 の実測）。WCH-Link をつないだまま USB 2.0 を使えないためです。
-- **USBHS のドライバは別に用意します。**
+- USBHS は USBSS とは別のドライバです。実装・確認状況は上の一覧を参照してください。
 - **USBFS（PA11 / PA12）は `CH32RVUsbDcdUsbfsOtg.cpp`。** V20x / V30x の USBFS と同じレジスタ配置。
   `config.controller = CH32RVUsbController::FullSpeed` で選びます。48 MHz は USBHS PLL（HSE から）÷10。
 - **書き込みは DFU で行えます（プローブ不要）。** H41x はプログラムを RAM で動かすので、動いているスケッチが
@@ -139,19 +138,19 @@ DFU ランタイムをビルドから外す `CH32RV_USB_NO_DEFAULT_DFU` だけ�
 
 ### コントローラと速度
 
-`config.controller` でどの USB を使うかを選びます。今ドライバがあるのは X035 / X033 の USBFS（`Auto` / `FullSpeed`）
-だけで、下の表のほかの値と系列は、ドライバを足したときの形です。
+`config.controller` で使用する物理 controller を選びます。controller と対応系列は上の一覧を参照してください。
 
 | 値 | 意味 |
 |---|---|
-| `Auto`（既定） | その系列の標準。V305 / V307 / V317 は USBFS（HS のピンしか無い V305FBP6 / GBU6 は USBHS）。V203 / V208 は USBFS（USBD しか無い V203F6P6 / G6U6 は USBD） |
-| `FullSpeed` | USBFS |
-| `HighSpeed` | USBHS（V305 / V307 / V317）。HS の PHY は HSE（水晶）が要る。周波数は `CH32RV_HSE_HZ`（既定 8 MHz、`build_opt.h` で変更）。水晶が立たなければ `begin()` が `PortUnavailable` |
-| `Usbd` | V20x の USBD（ST の fsdev 互換、PA11 / PA12。パケットメモリと割り込みを CAN1 と共用） |
+| `Auto` | 系列の既定 controller。接続したケーブルやコネクタの自動検出ではない |
+| `FullSpeed` | USBFS / 旧 USB のポート |
+| `HighSpeed` / `HighSpeed2` | USBHS のポート。2基目の有無や HSE 条件は型番による |
+| `SuperSpeed` | USBSS のポート。対応する配線・ホストが必要 |
+| `Usbd` | V20x の USBD。USBFS と物理端子や共有資源が異なる |
 
-ディスクリプタは速度に合わせて作り直します（HS ではバルク 512 B、割り込みの間隔はマイクロフレーム単位、
-device qualifier と other speed configuration も返す）。システムクロックは HSI の PLL のままで、USB の
-48 MHz はそこから分周します。
+選んだ controller に対応するコネクタへ接続します。`HighSpeed` や `SuperSpeed` を指定しても、
+別 controller の端子がその速度へ切り替わるわけではありません。
+USB のクロックは系列のドライバが設定するため、必要な発振器とボード設定も確認します。
 
 送れる量はコントローラで決まります。
 
@@ -197,8 +196,9 @@ USB の処理は、`loop()` の後・`delay()` の中・`SerialUSB` などの各
 
 ## 書き込み
 
-USB だけで書き込み直す入口は2つあります。どちらも、チップを工場出荷の USB ブートローダー（1a86:55e0）でリセット
-し、`ch32rv isp` で書き込みます。アップロードが無ければ、約 10 秒でスケッチに戻ります。
+USB から更新へ移る入口には、CDC の1200 bps touchと DFU_DETACH があります。
+入口と実際の書き込み方式は区別します。X035/X033 の工場 ISP、H41x の自己書き換え用 DFU mode、
+それ以外の系列の扱いは以下と上の対応表を確認してください。
 
 | 入口 | スケッチ側 | ホスト側 | 費用 |
 |---|---|---|---|
@@ -210,7 +210,7 @@ USB だけで書き込み直す入口は2つあります。どちらも、チッ
 ch32rv --non-interactive isp flash sketch.ino.elf --entry auto --app-device port:/dev/ttyACM0
 ```
 
-**DFU ランタイムは既定で付きます。** USB デバイスを使うスケッチなら、何も書かなくても USB から書き込み直せます。
+**DFU ランタイムは既定で付きます。** 更新へ移行できるかと実際の更新方式は系列の実装に依存します。
 外すときは `config.dfuRuntime = false` です（インターフェースが無くなります）。実行時の設定なのでコードは残ります。
 ビルドからも外すには、スケッチの `build_opt.h` に `-DCH32RV_USB_NO_DEFAULT_DFU` と書きます。
 
@@ -223,10 +223,10 @@ Arduino IDE ではこのポートを選んで「書き込み」を押すだけ�
 モニタは同じデバイスの CDC を開きます（CDC が無ければ開けない旨を表示）。X035 で、`ch32rv-app` ポートからの書き込みと、
 従来のプローブ（`oep://`）からの書き込みの両方を確かめています。
 
-**DFU は入口だけです。** `CH32RVUsbDeviceDfuRuntime` は DFU のランタイムインターフェース（DFU_DETACH を受ける
-だけのもの）で、DFU モードもダウンロードもありません。ディスクリプタでも書き込みができる（CAN_DOWNLOAD）とは
-名乗っていません。現れるのは工場出荷の ISP ブートローダーで、書き込みは WCH の ISP プロトコルです。dfu-util では
-書けません（`dfu-util -e` で ISP に入れることはできます）。
+**工場 ISP と DFU mode は別です。** X035/X033 は DFU_DETACH から工場 ISP へ移り、
+実際の書き込みは WCH の ISP プロトコルを使います。この経路で `dfu-util -D` は使いません。
+H41x の自己書き換えに対応した構成では、DFU_DETACH 後に DFU mode として再列挙し、
+`dfu-util -D` のバイナリを flash の先頭から書き込みます。使用する画像・対象・経路は上の H41x の説明も確認します。
 
 - 実測（X035）: DETACH またはタッチから、ブートローダーが現れるまで 0.2〜1 秒です。DETACH → `isp flash` → 新しい
   スケッチの起動、タッチ → `isp flash` → 起動の両方を、デバッグ線なしで通しました。
@@ -362,7 +362,7 @@ void loop() {
 
 ## 既知の問題
 
-- **X035 以外の系列は実機で未確認です。** 次の3点は、ドライバを足して実機で確かめるまで不確かです。
+- 実機での確認範囲は上の対応表を参照してください。未確認の構成では次の点も確認が必要です。
   - USB の 48 MHz を HSI（±1.6〜2.5 %）から作っています。USB の Full Speed が求めるのは ±0.25 % です。X035 は
     HSI で動いていますが、ほかの系列で通信が不安定なら HSE を使う設定が要ります。
   - V103 の USBFS で、エンドポイント 4〜7 の自動トグルが効くか（資料は EP1〜3 とも読める）。

@@ -69,7 +69,7 @@ void loop() {
   `defaultRoute()`、`beginNetwork()`、`networkUp()`、`localIP()`）は、Network ライブラリが持っています。使うスケッチは
   `#include <Network.h>` も書きます。Network ライブラリは Ethernet の MAC を持つ系列（V208、V307 / V317、V407 / V467、
   H41x）向けで、X035 では使えません。`beginNetwork()` を呼ばなければ、生の Ethernet フレームを扱うだけです。
-  これらの系列の USB デバイスのドライバはまだ無いので、実機では未確認です（PC での試験は `tests/unit/network`）。
+  USB controller とネットワークの実機確認範囲は [USB の対応表](../../docs/usb.ja.md#対応状況) を参照してください。
 - **無いもの**: ファームウェア更新の各クラス（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
 - **ベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
   送ります（`onTxComplete()` で返るまで、バッファは触らず残してください）。EspUsbDevice と違い、ビルド時の設定は
@@ -79,11 +79,11 @@ void loop() {
 - **既定の文字列と ID は実行時に変えます**（`CH32RVUsbDeviceConfig` の VID/PID・メーカー名・製品名、`setName()`
   のインターフェース名、MSC の `vendorID()` など、FAT の `format()` のボリュームラベル）。`build_opt.h` の define では変えません。
 - **DFU ランタイムが既定で付きます。** `config.dfuRuntime = false` で外せます。
-  このコアは WCH ISP への入口として使い、EspUsbDevice の OTA/DFU download とは仕組みが異なります。
-  ISP への移行実装は現在 X035/X033 のみで、ほかの系列では通常 reset です。
+  移行先と更新方式は系列に依存します。工場 ISP、自己書き換えによる DFU mode、通常 reset の違いは
+  [USB の書き込み手順](../../docs/usb.ja.md#書き込み) を参照してください。
 - **記述子を取り出す API は同じ名前です**（`deviceDescriptor()`、`configurationDescriptor()`、`stringDescriptor()`、
   `bosDescriptor()`、`microsoftOs20Descriptor()`、`hidReportDescriptor()` など）。このライブラリは記述子を常駐させず、
-  呼ばれたときに 1 つの共有のヒープのバッファへ組み立てます。返したポインタは、次に同じ種類の API を呼ぶまで有効です。
+  呼ばれたときに 1 つの共有のヒープのバッファへ組み立てます。configuration・BOS・MS OS 2.0・HID report 等のポインタは、別の種類も含め、次に記述子を組み立てる API を呼ぶまで有効です。
   `onAnyControlRequest()` も同じ動きです（ベンダー要求は SETUP で、すべての制御転送は ACK で知らせる）。
 - **このライブラリだけのもの**: `CH32RVUsbDeviceDfuRuntime`（ISP への入口）、`SerialUSB` / `USBDevice` の定義済み
   オブジェクト、`enterBootloader()`、`onBusEvent()`（リセット・構成・構成の解除・サスペンド・レジューム）、
@@ -111,7 +111,7 @@ void loop() {
 | `CH32RVUsbDeviceNet` | USB ネットワーク（CDC-NCM）。`onFrame()`、`sendFrame()`、`macAddress()`、`linkUp()`、受信の流量制御の `receiveGate()` / `resumeReceive()`。IP 層は上記 |
 | `CH32RVUsbAudioFunction` | オーディオ（UAC1 / UAC2）。`addPlaybackStream()` / `addCaptureStream()`、`read()` / `write()`、ミュート・音量、`pollEvent()`。録音側の `availableForWrite()` はこのライブラリの追加 |
 | `CH32RVUsbDeviceVideo` | カメラ（UVC）。`setFormat()`、`setFrameSize()`、`sendFrame()`、`onCommit()`。`onFillPayload()` / `sendGeneratedFrame()`（フレームを持たずに作る）はこのライブラリの追加 |
-| `CH32RVUsbDeviceDfuRuntime` | DFU_DETACH を受けて工場出荷の USB ISP ブートローダーに入る入口。DFU のランタイムインターフェースだけで、DFU モードやダウンロードはありません。**既定で付きます**（`config.dfuRuntime = false` で外す）。宣言するのは `onDetach()` を使うときだけ。インターフェース名 "CH32RV" が ch32rv の discovery の目印 |
+| `CH32RVUsbDeviceDfuRuntime` | DFU_DETACH による更新への入口。移行先は系列依存。**既定で付きます**（`config.dfuRuntime = false` で外す）。明示宣言は `onDetach()` で移行を判定するとき等に使用。インターフェース名 "CH32RV" は ch32rv の discovery の目印 |
 
 HID のクラスは、いくつ宣言しても1つの HID インターフェースにまとまります（EspUsbDevice と同じ）。1つだけなら
 そのまま（キーボードとマウスは BIOS でも使えるブートデバイス）、2つ以上ならレポート ID で区別します。
@@ -168,7 +168,7 @@ IN/OUT の endpoint 数、packet memory、ISO 能力は controller ごとに異�
 | Video | 対応する解像度・YUY2と転送方式を選べる UVC アプリ |
 | NCM | NIC と静的IP。IP 処理はスケッチ側（生フレーム）か、Network ライブラリ（`beginNetwork()`） |
 
-callback は関数ポインタで、受信 buffer は後の処理まで所有し続けるものではありません。
+callback の受信 buffer は後の処理まで所有し続けるものではありません。
 保持が必要ならコピーし、Device callback の長い待ちや再入に頼らないでください。
 `loop()` と `delay()` が USB 処理を進め、通知の callback は `deliverEvents()` で届きます。音声や映像で `write()` 等が返した長さを無視するとデータを失う場合があります。
 
@@ -182,13 +182,12 @@ callback は関数ポインタで、受信 buffer は後の処理まで所有し
 
 ## 対応
 
-CH32X035 / X033（USBFS）。X035（WeAct CH32X035F8U6 の板）で実機確認しています。V103、V20x、V30x のコントローラの
-ドライバは、自前のスタックへの移行に合わせて作り直すところです（TinyUSB の時代には入っていた）。それまでこれらの
-系列とほかの系列では `begin()` が `false`（`Unsupported`）を返し、スケッチはそのままビルドできます。
+controller の実装・型番ごとの例外・端子・クロック・実機確認の範囲は
+[USB の対応表](../../docs/usb.ja.md#対応状況) を参照してください。
+ビルドできることと、その構成で実機動作を確認していることは別です。
 
 ## 書き込み
 
-X035/X033 では1200bps タッチ（CDC がある場合）か DFU_DETACH（`CH32RVUsbDeviceDfuRuntime` がある場合）で工場出荷の USB
-ISP ブートローダー（1a86:55e0）に入れ、`ch32rv isp flash --entry auto` で書き込みます。DFU は入口に使うだけで、
-書き込みは WCH の ISP プロトコルです（dfu-util では書けません）。ほかの系列は現在通常 reset になります。
-詳しくは [docs/usb.ja.md](../../docs/usb.ja.md#書き込み)。
+CDC の1200 bps touch、または DFU_DETACH を更新への入口に使います。
+移行先と書き込み方法は系列によって異なるため、[USB の書き込み手順](../../docs/usb.ja.md#書き込み) を確認してください。
+`onDetach()` は移行の可否をその場で返す処理で、通知用の `deliverEvents()` を待ちません。

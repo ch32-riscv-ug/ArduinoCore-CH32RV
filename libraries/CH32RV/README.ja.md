@@ -39,6 +39,8 @@ analogReadVref();                        // 内部基準をanalogRead()と同じ
 
 ## examples
 
+配線・操作・API と改造時の注意は [基本サンプルの使い方](examples/README.ja.md) と各フォルダの README を参照してください。
+
 `digitalWrite()`・`analogRead()`・`tone()`などはcoreのもので、
 どのライブラリにも属さないので、examplesはここに置いています。すべて共通で:
 
@@ -50,20 +52,21 @@ analogReadVref();                        // 内部基準をanalogRead()と同じ
 
 | example | 何を示すか |
 |---|---|
-| Blink | `pinMode`・`digitalWrite`・`delay` |
-| SerialEcho | `Serial`の入出力 |
-| AnalogRead | `analogRead` |
-| Fade | `analogWrite` |
-| ToneMelody | `tone`・`noTone` |
-| PinInterrupt | `attachInterrupt`とISRとの状態共有 |
-| ShiftOut | 74HC595への`shiftOut` |
-| PulseIn | `pulseIn`・`delayMicroseconds` |
-| Timing | `millis`・`micros`と、その巻き戻り |
-| RandomNumbers | `random`・`randomSeed` |
-| AnalogResolution | `analogReadResolution`・`analogWriteResolution` |
-| CriticalSection | `interrupts`・`noInterrupts`・`volatile` |
-| PrintFormatting | `Print`・`String`・`dtostrf` |
-| PinCapabilities | このチップに実在するpad |
+| [Blink](examples/Blink/README.ja.md) | `pinMode`・`digitalWrite`・`delay` |
+| [SerialEcho](examples/SerialEcho/README.ja.md) | `Serial`の入出力 |
+| [AnalogRead](examples/AnalogRead/README.ja.md) | `analogRead` |
+| [Fade](examples/Fade/README.ja.md) | `analogWrite` |
+| [ToneMelody](examples/ToneMelody/README.ja.md) | `tone`・`noTone` |
+| [PinInterrupt](examples/PinInterrupt/README.ja.md) | `attachInterrupt`とISRとの状態共有 |
+| [ShiftOut](examples/ShiftOut/README.ja.md) | 74HC595への`shiftOut` |
+| [PulseIn](examples/PulseIn/README.ja.md) | `pulseIn`・`delayMicroseconds` |
+| [Timing](examples/Timing/README.ja.md) | `millis`・`micros`と、その巻き戻り |
+| [RandomNumbers](examples/RandomNumbers/README.ja.md) | `random`・`randomSeed` |
+| [AnalogResolution](examples/AnalogResolution/README.ja.md) | `analogReadResolution`・`analogWriteResolution` |
+| [CriticalSection](examples/CriticalSection/README.ja.md) | `interrupts`・`noInterrupts`・`volatile` |
+| [PrintFormatting](examples/PrintFormatting/README.ja.md) | `Print`・`String`・`dtostrf` |
+| [TimerResource](examples/TimerResource/README.ja.md) | タイマーの取得・設定・所有権を扱う上級例 |
+| [PinCapabilities](examples/PinCapabilities/README.ja.md) | このチップに実在するpad |
 
 **知らないboardで最初に走らせるべきはPinCapabilities**です。
 CH32のpin番号は`((port + 2) << 5) | bit`なので飛び飛びで、
@@ -78,8 +81,8 @@ PA0が64、PB0が96、その間のほとんどの番号はpadに対応しませ�
 
 | example | 板 | 初期化するもの |
 |---|---|---|
-| BoardWeActCH32X035 | WeAct CH32X035 Core Board（CH32X035F8U6） | USB（`SerialUSB` + 書き込み用の DFU ランタイム）、USB PD（5 V）、UART 2系統、SPI、ADC 2本、PWM、LED（PB12）。I2C は USB か SWD の端子にしか出ていないのでコメントで外してある |
-| BoardUIAPduinoProMicro | UIAPduino Pro Micro CH32V003 V1.4 | UART、I2C（スキャン）、SPI、ADC 3本、PWM、LED（PC0）。SPI はボードメニューの AUTO のまま。メーカーの配置図にある NSS（PC1 / PC0）は I2C と LED に重なるので、CS は PC3 にしてコメントで示す |
+| [BoardWeActCH32X035](examples/BoardWeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board（CH32X035F8U6） | USB（`SerialUSB` + 書き込み用の DFU ランタイム）、USB PD（5 V）、UART 2系統、SPI、ADC 2本、PWM、LED（PB12）。I2C は USB か SWD の端子にしか出ていないのでコメントで外してある |
+| [BoardUIAPduinoProMicro](examples/BoardUIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro CH32V003 V1.4 | UART、I2C（スキャン）、SPI、ADC 3本、PWM、LED（PC0）。SPI はボードメニューの AUTO のまま。メーカーの配置図にある NSS（PC1 / PC0）は I2C と LED に重なるので、CS は PC3 にしてコメントで示す |
 
 どちらも実機で動作を確かめています（2026-10-14）。
 

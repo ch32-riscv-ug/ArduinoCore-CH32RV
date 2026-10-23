@@ -17,6 +17,12 @@ English: [README.md](README.md)
 
 `waitAll=true` は全ビットがそろったときだけ取り出します。`clearOnExit=false` は見るだけで消しません。同じビットを取り出す前に 2 回立てても 1 回です。
 
+## API の使い方と改造のポイント
+
+`setBits(mask)` で種類ごとの bit を立て、`tryWaitBits(mask, clearOnExit, waitAll)` で条件に合うものを調べます。`clearOnExit` と `waitAll` の引数順を取り違えないようにします。
+
+この例の「両方」は、前回消してから A/B の両イベントが発生した意味です。物理ボタンを同時に押し続けている判定ではありません。同じ種類の発生回数も必要なら、別にカウンタや Queue を使います。
+
 ## 関連資料
 
 - [サンプル共通の準備](../README.ja.md)

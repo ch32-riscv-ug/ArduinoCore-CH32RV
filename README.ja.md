@@ -78,6 +78,7 @@ Board Manager の配布物は allowlist 方式で作られます。正確な対�
 ## ドキュメント
 
 - [ドキュメント一覧](docs/README.ja.md)
+- [サンプルスケッチ案内](docs/examples.ja.md)（目的から例を選び、配線・API・改造時の注意を確認）
 - [スケッチの組み立て方](docs/sketch-guide.ja.md)（割り込み、待たない書き方、callback。Blink の次に読む）
 - [系列ごとの実装範囲](docs/support-status.ja.md)
 - [ペリフェラル対応状況](docs/peripheral-support.ja.md)

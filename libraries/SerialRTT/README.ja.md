@@ -88,3 +88,8 @@ control blockのレイアウトは公開されている仕様のもので、
 
 - **HelloRTT** — 最小の出力。host側のコマンドも冒頭に書いてあります。
 - **RttEcho** — 打った文字を読み返して送り返します。ブロックしません。
+
+## サンプルの詳しい使い方
+
+- [HelloRTT](examples/HelloRTT/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [RttEcho](examples/RttEcho/README.ja.md)：配線・操作・API の使い方と改造時の注意。

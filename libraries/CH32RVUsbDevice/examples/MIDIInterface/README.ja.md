@@ -18,6 +18,22 @@ USB MIDI と 31250 bps UART の MIDI メッセージを双方向に変換する�
 
 UART→USB の parser は status byte で始まる channel voice message のみです。running status、SysEx、system realtime の完全な parser ではありません。残りの bytes を最大10 ms待ち、1回の loop で UART メッセージを一つ処理します。対応範囲を増やす場合は parser を置き換えます。
 
+## API の使い方と改造のポイント
+
+| API・処理 | この例での使い方 |
+|---|---|
+| `Serial1.begin(31250, SERIAL_8N1, ...)` | MIDI 用 UART の配線と通信条件を指定します。UART ログの `Serial` と別にします。 |
+| `MIDI.writePacket(packet)` | UART の status/data bytes を、CIN を付けた USB MIDI packet として送ります。 |
+| `MIDI.readPacket(packet)` | USB 側から packet を取得します。CIN に応じた数だけ MIDI bytes を UART へ書きます。 |
+| `Serial1.flush()` | UART の送信完了を待ちます。受信データの破棄ではありません。 |
+
+DIN MIDI の電気回路と MCU の UART は直結できません。MIDI IN/OUT に適した回路を挟み、
+USB 側のケーブルと UART の RX/TX、ログ用 UART を混同しないようにします。
+
+UART→USB の受信処理は基本的な channel voice メッセージを読む簡易パーサーです。running status、SysEx、
+途中へ挿入される real-time メッセージなどを扱う汎用 MIDI パーサーではありません。対応を広げるなら、
+受信途中の状態を保持するパーサーへ変更し、送信 API の失敗と受信タイムアウトも処理します。
+
 ## 関連資料
 
 - [サンプル共通の準備とトラブルシューティング](../README.ja.md)

@@ -91,3 +91,7 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
 
 - **I2CScanner** — 応答するデバイスを列挙します。
   プルアップが無くてタイムアウトした場合は、そうと分かる表示をします。
+
+## サンプルの詳しい使い方
+
+- [I2CScanner](examples/I2CScanner/README.ja.md)：配線・操作・API の使い方と改造時の注意。

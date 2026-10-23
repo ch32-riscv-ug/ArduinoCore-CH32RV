@@ -2,11 +2,13 @@
 
 [English](README.md)
 
-USBPD のブロック(CH32X035、L103/M103、V205、X305/X315、H41x、M030)の CC 通信で PD Sink/Source を試します。USB のデータクラスとは別の機能です。X033 では `begin()` が失敗します。
+USB-C の CC 通信で PD Sink/Source を試すサンプルです。USB のデータクラスとは別の機能です。
+対応する型番と CC 端子は [ライブラリ README](../README.ja.md) で確認します。
 
 ## 接続と電源
 
-CC1 / CC2 は X035 が `PC14` / `PC15`、L103/M103 が `PB6` / `PB7`、V205 が `PA0` / `PA1`、X305/X315 が `PD4` / `PD5`、H41x が `PB3` / `PB4`、M030 が `PA0` / `PA1`。ボードの USB-C と CC/Rd/電源回路を確認します。ログは `RX` / `TX` の UART、115200 bps・8N1で、USB CDC ではありません。CC 配線は短くします。
+ボードの USB-C と CC・電源回路を回路図で確認します。ログはスケッチが指定する UART で、USB CDC ではありません。
+UART アダプタの RX をボードの TX、TX を RX、GND 同士を接続し、I/O 電圧を合わせます。CC 配線は短くします。
 
 | 例 | ボードの役割 | 追加機器・配線 |
 |---|---|---|
@@ -27,7 +29,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 
 これはリポジトリルートから、core 導入済みの CLI で使う例です。IDE では「スケッチ例 → CH32RVUsbPd」から開きます。生成 profile の存在は実機確認やその系列の PD 実装を意味しません。
 
-Sink 例は初回契約を約5秒待ちます。`connected()` は CC の接続、`ready()` は PD 明示契約です。Type-C-only の電源は接続しても ready になりません。`request()` の単位は mV/mAで、9 Vは `9000`。PPS を含む接続の維持はドライバが `delay()` と `loop()` の戻りで行うので、何も呼ぶ必要はありません。
+Sink 例は初回契約に待ち期限を設けています。`connected()` は CC の接続、`ready()` は PD 明示契約です。Type-C-only の電源は接続しても ready になりません。`request()` の単位は mV/mAで、9 Vは `9000`。PPS を含む接続の維持はドライバが `delay()` と `loop()` の戻りで行うので、何も呼ぶ必要はありません。
 
 Sink と Source は同じ USBPD ブロックを共有し、一度に一方だけです。USB データの Device 機能とは別に動かせますが、相手が PD 電源とデータホストの両方に対応すること、同じコネクタの電源配線が正しいことを確認します。
 
@@ -42,7 +44,7 @@ Sink と Source は同じ USBPD ブロックを共有し、一度に一方だけ
 | reset後に再起動を繰り返す | 既存契約からの復帰と Hard Reset による VBUS 停止、ボードの給電経路 |
 | 契約表示と測定電圧が違う | Source の実制御 callback と電源回路。契約APIは電圧計ではない |
 
-API、PPS の量子化、失敗時の処理は[ライブラリ README](../README.ja.md)を参照してください。Sink は X035 で確認済み、Source はビルド・単体試験段階です。
+API、PPS の量子化、失敗時の処理と実機確認の範囲は [ライブラリ README](../README.ja.md) を参照してください。
 
 ## サンプル一覧
 

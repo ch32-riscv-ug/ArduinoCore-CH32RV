@@ -92,3 +92,7 @@ ch32rv_set_stdout(nullptr);         // 捨てる
 ## examples
 
 - **HelloDMDATA** — 1秒ごとに出力し、打った文字を返します。
+
+## サンプルの詳しい使い方
+
+- [HelloDMDATA](examples/HelloDMDATA/README.ja.md)：配線・操作・API の使い方と改造時の注意。

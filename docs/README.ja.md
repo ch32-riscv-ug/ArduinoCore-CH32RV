@@ -9,11 +9,12 @@
 
 | 文書 | 内容 |
 |---|---|
+| [examples.ja.md](examples.ja.md) | 全同梱サンプルの案内。準備、目的別の入口、各例の API・操作と注意点 |
 | [sketch-guide.ja.md](sketch-guide.ja.md) | スケッチの組み立て方。割り込みは合図だけ、待たない書き方、割り込み禁止、callback と `deliverEvents()`、学ぶ順番の例 |
 | [support-status.ja.md](support-status.ja.md) | 系列ごとのビルド、書き込みの実装範囲 |
 | [upload-routes.ja.md](upload-routes.ja.md) | 書き込み経路、デバッグ線、書き込みモードへの入り方 |
 | [peripheral-support.ja.md](peripheral-support.ja.md) | ペリフェラル別の実装範囲と制約 |
-| [usb.ja.md](usb.ja.md) | USB Device・Host・PD、全39サンプルの入口、配線・操作と USB 書き込み |
+| [usb.ja.md](usb.ja.md) | USB Device・Host・PD、サンプルの入口、配線・操作と USB 書き込み |
 | [debug-output.ja.md](debug-output.ja.md) | UART、SDI、RTT、DMDATA、DMSEQ の使い分け |
 | [debugger.ja.md](debugger.ja.md) | `arduino-cli debug` と GDB server の設定 |
 | [uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md) | UIAPduino の HID 書き込みと復旧 |

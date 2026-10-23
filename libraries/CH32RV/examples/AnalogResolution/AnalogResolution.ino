@@ -21,9 +21,8 @@ void setup()
 
 void loop()
 {
-    /* The default read resolution is whatever the part gives. Asking for 8
-     * bits scales the answer down; asking for 16 scales it up - it does not
-     * invent precision the ADC does not have. */
+    /* Read resolution is the API scale, not the ADC's native precision.
+     * Asking for more bits cannot invent precision the ADC does not have. */
     analogReadResolution(8);
     const int eight = analogRead(A1);
     analogReadResolution(12);

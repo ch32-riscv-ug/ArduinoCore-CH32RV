@@ -42,3 +42,7 @@ void loop() {
 ## examples
 
 - **Sweep** — 端から端まで往復する定番。
+
+## サンプルの詳しい使い方
+
+- [Sweep](examples/Sweep/README.ja.md)：配線・操作・API の使い方と改造時の注意。

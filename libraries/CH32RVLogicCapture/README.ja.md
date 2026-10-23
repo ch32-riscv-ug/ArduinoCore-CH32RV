@@ -61,3 +61,8 @@ uint32_t rate = logic.captureBurst(buf, 32768);   // 1 回だけ、速く
 - USB の SuperSpeed で流す例は `LogicStream` です(H417)。9.09 MS/s × 2 バイト = 18 MB/s で送ります。
 - 入力の電圧は、そのポートの電源の電圧までです。PE7〜PE15 などは VIO18 の端子です(CH32RVHsAdc の README の
   「入力の範囲」を参照)。
+
+## サンプルの詳しい使い方
+
+- [LogicBurst](examples/LogicBurst/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [LogicStream](examples/LogicStream/README.ja.md)：配線・操作・API の使い方と改造時の注意。
