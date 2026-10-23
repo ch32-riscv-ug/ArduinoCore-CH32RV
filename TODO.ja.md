@@ -635,6 +635,123 @@ ESP32 の API の使い勝手は参考になるが、同じ保存エンジン、
 - 採否を決める時点で、対象系列、最小構成、利用者に見える容量、API、保存方式、保護の限界、
   メモリ配置・アップロード契約、測定した費用をまとめる。それまではこの項を検討 TODO として維持する。
 
+## examples の充実：既存例・ESP32・CH32 EVT からの追加候補
+
+- [ ] **機能ごとの最小例と、実際の部品・相手機器を使う例を追加する。** 下の候補を順に具体化する。
+  既存例の説明拡充とは別に、スキャナやループバックだけでは学べない通信手順、状態の変化、失敗時の扱いを補う。
+  表のスケッチ名は案であり、すべてを独立したスケッチにする必要はない。既存例への小さな追加で説明できるものはまとめる。
+
+### 比較元と選び方
+
+- このコアの `libraries/*/examples` と公開ヘッダを確認し、同じ機能の例がある場合は、その例で扱わない使い方を候補にした。
+  `tests/` の検証コードは参考にできるが、配線・操作・結果を説明する利用者向け examples の代わりとはしない。
+- 表中の `ESP:` は、指定された
+  `~/.arduino15/internal/esp32_esp32_3.3.12_feadd113249efafd/libraries/` からの相対パス。
+  `EVT(CH32系列):` は `~/dev_wch/CH32系列/EVT/EXAM/` からの相対パスで、例のディレクトリを示す。
+  調査した SDK は CH32V003 / V006 / V103 / V20x / V205 / V307 / V407 / X035 / X315 / L103 / M030 / H417。
+  同じ機能が複数の SDK にあるときは代表例だけを記す。これは全系列で利用可能という意味ではない。
+- **A は既存 API で例を組み立てる候補、B は公開 API・ドライバ・ライブラリの採否や拡張も先に検討する候補。**
+  SDK に例があるだけで、Arduino の API があるとは扱わない。実装側の検討は
+  [FEATURE_CANDIDATES.ja.md](FEATURE_CANDIDATES.ja.md) と対応付け、着手時にソースと対象ハードウェアで確かめる。
+  サポート状況・測定値・版ごとの制約はこの一覧へ複製せず、各ライブラリの説明へ集約する。
+
+### A. 既存 API を使って追加する例
+
+| 機能 / スケッチ案 | 既存例に足りない使い方・例で示すこと | 比較元・参考例 |
+| --- | --- | --- |
+| 基本入力：`ButtonDebounce` / `AnalogInputToPwm` | `Blink`・`Fade`から、押した瞬間だけ反応する入力、チャタリング除去、可変抵抗で明るさを変える入出力の組合せへ進む。`Timing`の経過時間比較を応用する。 | 既存 `Blink` / `Timing` / `PinInterrupt` / `AnalogRead` / `Fade` の間を埋める。 |
+| システム情報：`SystemInfo` | `CH32RV`のチップ情報、CPU周波数、ヒープ情報、利用可能な場合の固有IDを表示する。固有IDとMACアドレスを区別し、任意機能の有無を判定する。 | `ESP:ESP32/examples/ChipID/GetChipID`、`EVT(CH32V003):RCC/Get_CLK`。 |
+| 再起動と監視：`ResetReason` / `WatchdogRecovery` | `restart()`、`resetReasonName()`、`wdtEnable()`・`wdtFeed()`を使い、通常動作と意図的な給餌停止を比較する。再起動ループを避ける操作、開始後に停止できない監視の性質を説明する。 | `ESP:ESP32/examples/ResetReason/ResetReason`、`ESP:ESP32/examples/Timer/WatchdogTimer`、`EVT(CH32V003):IWDG`。ESP32のタイマによる監視の実装をそのまま移すものではない。 |
+| 内部ADC：`InternalAnalogRead` | `analogReadTemp()`・`analogReadVref()`・`getVddMillivolts()`を使う。外部センサの温度とチップ内部温度、概算値と校正済みの測定値を区別し、未対応時も扱う。 | `EVT(CH32V307):ADC/Internal_Temperature`、既存 `AnalogRead` / `AnalogResolution`。 |
+| PWM：`PwmFrequency` / `RgbLed` | `analogWriteFrequency()`で周波数とdutyを別に設定し、同じタイマを共有するピンへの影響を観察する。RGB LEDの配線、反転、明るさ補正を示す。 | `ESP:ESP32/examples/AnalogOut/ledcFrequency`、`ESP:ESP32/examples/AnalogOut/ledcWrite_RGB`、`EVT(CH32V003):TIM/PWM_Output`。LEDC専用APIは移さない。 |
+| UART：`SerialLineReceiver` / `SerialPacketReceiver` | `SerialEcho`から、受信途中の保持、行末、長すぎる入力、長さ付きバイナリ、タイムアウトへ進む。`available()`・`read()`・`availableForWrite()`を使い、待ち続けずにLED等も処理する。 | `ESP:ESP32/examples/Serial/onReceiveExample`、`EVT(CH32V003):USART/USART_Interrupt`。ESP32の`onReceive`専用APIではなく、このコアの受信APIで書く。 |
+| 複数UART・ピン経路：`SerialBridge` / `PeripheralRoutes` | UART同士の双方向中継と送信詰まりを扱う。`begin(..., rx, tx)`・`setPins()`・`setRoute()`で、選べる経路と不正な組合せを示す。Wire / SPIにも同じ考え方を展開する。 | `ESP:SPI/examples/SPI_Multiple_Buses`、各公開ヘッダのピン経路API。必要な周辺回路数はビルド条件で絞る。 |
+| I2C master：`I2CRegisterRead` / `I2CEeprom` | `I2CScanner`の次に、レジスタ番号を書いて`endTransmission(false)`から`requestFrom()`する読み取り、返却長とNACKの確認、EEPROMのページ境界と書き込み完了待ちを示す。 | `ESP:Wire/examples/WireMaster`、`EVT(CH32V003):I2C/I2C_EEPROM`。 |
+| I2C slave：`I2CSlaveRegister`と対になるmaster | `begin(address)`・`onReceive()`・`onRequest()`で小さなレジスタを公開する。このコアではcallbackが割り込み内で動くため、固定長の受け渡しに留め、表示や重い処理を`loop()`へ渡す。 | `ESP:Wire/examples/WireSlave`、`EVT(CH32V003):I2C/I2C_7bit_Interrupt_Mode`。ESP32例のcallback内ログ出力は踏襲しない。 |
+| I2C異常と復旧：`I2CTimeoutRecovery` | `setWireTimeout()`・timeout flag・`clearBus()`を使う。相手不在と線が解放されない状態を分け、復旧の成否を表示し、自動で延々と再試行しない。 | 既存 `I2CScanner`にない異常系。`libraries/Wire/src/Wire.h`の公開API。 |
+| SPI実機通信：`SpiFlashId` / `SpiSharedBus` | `SPILoopback`の次に、外部SPI FlashのID等を読み、CS、mode、周波数、ビット順を説明する。複数CSを持つ同一バスと、複数SPIバスを区別し、機器ごとにtransactionを組む。 | `ESP:SPI/examples/SPI_Multiple_Buses`、`EVT(CH32X035):SPI/SPI_FLASH`。最初のFlash例は消去・書き込みを行わない。 |
+| ソフトウェアバス：`SoftI2CRegisterRead` / `SoftSpiDevice` | スキャン・ループバックだけでなく、同じ部品をWire / SPI版とソフトウェア版で使う。ピン選択、共有GND、pull-up、CPUを使う転送の違いを比較する。 | 既存 `SoftI2CScanner` / `SoftSPILoopback`、上のI2C / SPI実機通信例。 |
+| Servo：`ServoPulseControl` | `Sweep`の次に、`writeMicroseconds()`・`attach()`・`detach()`と操作入力を示す。パルス幅の範囲、別電源・共通GND、PWM / toneとのタイマ競合を説明する。 | 既存 `Sweep` / `TimerResource`。 |
+| USB入力機器：`ButtonKeyboard` / `ButtonMouse` / `AnalogGamepad` | 自動送信のデモから、ボタン・可変抵抗による操作へ進む。押下と解放、長押し、軸の中央・dead zoneを示し、ホストへの送信成功も確認する。 | `ESP:USB/examples/Mouse/ButtonMouseControl`、`ESP:USB/examples/Keyboard/KeyboardMessage`、`ESP:USB/examples/Gamepad`、既存 `Keyboard` / `Mouse` / `Gamepad`。 |
+| USB MIDI：`MidiChannelsAndReceive` | MIDIチャンネルとUSB cable番号を区別し、受信メッセージでLED等を操作する。constructorでcable数を設定し、送信先cableを明示してPC上の複数portと対応付ける。 | `ESP:USB/examples/MIDI/MidiMultiChannel`、`ESP:USB/examples/MIDI/ReceiveMidi`、既存 `MIDI` / `MIDIController` / `MIDIInterface`。 |
+| USBの継続動作：`UsbReconnect` / `VendorBulkPeer` | 既存のevents例・Host切断通知を踏まえ、送信待ちの扱い、切断後の状態破棄、再接続後の再開まで示す。Vendor転送はPC側の短い送受信例と組にし、部分転送と送信詰まりを再現する。 | `ESP:USB/examples/USBVendor`、既存 `SerialEvents` / `USBVendor` / `VendorBulk` / `DeviceInfo`。単なる通知表示を増やすものにはしない。 |
+| USB Host HID：`HostGamepad` / `HostHidReports` | `onGamepad()`で軸・ボタンを読み、consumer / system controlやraw reportを機器ごとに識別する。既存Keyboard / Mouse例の外にあるreport descriptor、output / feature reportの用途も示す。 | `ESP:USB/examples/USBHostGamepad`、`ESP:USB/examples/USBHostHIDCombo`、既存HostのHID公開API。 |
+| USB Hostの複数機器：`HostHubDevices` / `HostComposite` | hub経由の接続、複合機器の複数interface、機器ごとのaddressとportを表示し、片方を抜いても他方を扱える例にする。VBUSの供給条件、対象とするhub構成をREADMEに書く。 | `ESP:USB/examples/USBHostCDC_MSC_HID`、既存 `DeviceInfo`と`getDevices()` / `getHubInfo()`。 |
+| USB PD：`PpsVoltageControl` | `ListProfiles`・`CycleVoltages`の次に、PPSの範囲を確認して`requestProfile()`へ電圧・電流を渡す。拒否、PPSのない充電器、抜き差しを扱う。入力処理を状態機械にしても、契約要求API自体は待つ呼び出しである点を説明する。 | `EVT(CH32X035):USBPD/USBPD_SNK`、既存PD例と公開API。電圧が実際に変わるので、負荷と基板の許容範囲を先に明示する。 |
+| ネットワーク導入：`EthernetDhcp` / `UsbNcmNetwork` | `Network`の入口として`ETH`またはUSB NCMでリンクとIP取得を確認し、固定IP、DHCP、切断・再接続、待ち時間の上限を示す。`UsbNetworkPing`の手作りARP / ICMPから、IPスタックを使う例へつなぐ。 | `ESP:Ethernet/examples/ETH_LAN8720`、`EVT(CH32V307):ETH/DHCP`、既存 `UsbNetworkPing`。ESP32向けPHY設定ではなくCH32側の接続方法で書く。 |
+| TCP / UDP / 名前解決：`TcpEchoClient` / `TcpEchoServer` / `UdpEcho` | `NetworkClient` / `NetworkServer` / `NetworkUDP`でPCと通信する。TCPの読み取り単位とメッセージ境界の違い、部分送信、UDPの宛先、名前解決失敗、再接続を示す。PC側の確認手順も用意する。 | `EVT(CH32V307):ETH/TCPClient`、`EVT(CH32V307):ETH/TCPServer`、`EVT(CH32V307):ETH/UDPClient`、`EVT(CH32V307):ETH/UDPServer`、`EVT(CH32V307):ETH/DNS`。 |
+| 時刻とサービス公開：`NetworkTime` / `MdnsService` | `configTime()`・`getLocalTime()`で時刻取得の完了を確認し、未同期とタイムゾーンを扱う。`MDNS.begin()`・`addService()`・`addServiceTxt()`でPCから見つけられるサービスを公開する。 | `ESP:ESP32/examples/Time/SimpleTime`、`ESP:ESPmDNS/examples/mDNS-SD_Extended`。Wi-Fi接続部分を持ち込まずEthernet / NCMで示す。 |
+| TLS：`TlsClient` / `MutualTlsClient` | `NetworkClientSecure`でCA検証、ホスト名、接続前の時刻確認、エラー表示を示す。次段階でクライアント証明書を扱い、証明書・鍵の寿命と保管先を説明する。固定の外部サービスや期限付き証明書への依存を避け、ローカル相手の準備手順を付ける。 | `ESP:NetworkClientSecure/examples/WiFiClientSecure`、既存`NetworkClientSecure`の公開API。通信路とメモリの実機確認を前提にし、未検証の組合せを動作済み例として配らない。 |
+| 取り込みデータの利用：`AdcBlockStatistics` / `LogicPulseDecode` | `HsAdcStream` / `LogicStream`の取得APIを使い、平均・最小最大やパルス幅の解析へ進む。取得側と処理側を分け、バッファの所有期間、処理落ちの検出、停止・再開を示す。 | 既存 `HsAdcRead` / `HsAdcStream` / `LogicBurst` / `LogicStream`、`EVT(CH32H417):HSADC/HSADC`。 |
+| タスク・同期の応用：`SensorConsole` | 個々のプリミティブの例から、周期計測・コマンド受付・表示の組合せへ進む。ISRから通知して、短い処理を順に進め、キュー満杯時にも止まらない例にする。 | `ESP:ESP32/examples/FreeRTOS/Queue`、既存TaskKit / SyncKit例。FreeRTOSのスレッドモデルを移すのではなく、このコアの実行モデルで構成する。 |
+
+### B. API・ドライバ・ライブラリ整備と組にする例
+
+ここは「SDKにあるのに例がない」機能を見落とさないための候補。採用を決めたものから公開APIを設計し、
+Arduinoのピン指定・タイマ所有・割り込み・転送バッファの規約に合わせる。
+SDKの初期化をそのまま貼り付けて、コアの管理する周辺回路を上書きするスケッチにはしない。
+
+| 機能 | 追加したい例と先に決めること | 比較元・参考例 |
+| --- | --- | --- |
+| 通常ADCの連続・多チャンネル取得 | DMAのblock取得、チャンネル順、バッファ受け渡し、処理落ち。HSADCの例とは分け、通常ADC用の公開APIを検討する。 | `ESP:ESP32/examples/AnalogReadContinuous`、`EVT(CH32V003):ADC/ADC_DMA`、`EVT(CH32X315):ADC/ADC_ScanOut`。 |
+| ADCのハードウェア連携 | タイマ / 外部入力による開始、injected変換、analog watchdogのしきい値通知、dual ADC。トリガ・DMA・タイマの取得と解放を定義する。 | `EVT(CH32V307):ADC/TIM_Trigger`、`EVT(CH32V003):ADC/AnalogWatchdog`、`EVT(CH32V307):ADC/DualADC_RegSimul`。 |
+| ADC前段・OPA・CMP | 入力増幅、比較器のしきい値、比較結果の割り込み・PWM停止。入力電圧範囲、出力経路、対応するアナログ回路のAPIを決める。 | `EVT(CH32L103):ADC/ADC_PGA`、`EVT(CH32V006):OPA/OPA_PGA`、`EVT(CH32V006):OPA/CMP_BKIN`。 |
+| DAC | 直流出力からタイマ同期の波形出力・DMAへ進む。PWMとの違い、更新率、バッファの寿命を示す公開APIを用意する。 | `EVT(CH32V307):DAC/DAC_Normal_OUT`、`EVT(CH32V307):DAC/DAC_DMA`、`EVT(CH32V307):DAC/DualDAC_SineWave`。 |
+| タイマ入力 | input captureによる周期・duty測定、encoderカウント、外部clock。`PulseIn`の待つ測定、`PinInterrupt`のソフトウェア計測と区別し、既存のタイマ資源APIへ組み込む。 | `EVT(CH32V003):TIM/Input_Capture`、`EVT(CH32V003):TIM/Encoder`、`EVT(CH32V003):TIM/Clock_Select`。 |
+| タイマ出力・同期 | one-pulse、output compare、複数タイマ同期、相補PWM・dead time・break。周期callbackは既存`TimerResource`を入口にし、簡易Tickerが必要かは別途判断する。 | `ESP:Ticker/examples/TickerBasic`、`EVT(CH32V003):TIM/One_Pulse`、`EVT(CH32V003):TIM/ComplementaryOutput_DeadTime`、`EVT(CH32V003):TIM/Synchro_Timer`。 |
+| 低消費電力タイマ | LPTIMの低電力中の周期起床、PWM / one-pulse。通常タイマ、`millis()`、復帰後の時間の関係を定義する。 | `EVT(CH32L103):LPTIM/LPTIM_LP_WakeUp`、`EVT(CH32L103):LPTIM/PWM_OnePulse_SingleMode`。 |
+| UARTの高速受信 | DMA + idleによる可変長受信、二重バッファ、エラーの通知。受信callbackの実行文脈、未処理データの所有権を先に決める。 | `ESP:ESP32/examples/Serial/OnReceiveError_BREAK_Demo`、`EVT(CH32V307):USART/USART_DMA`、`EVT(CH32V307):USART/USART_Idle_Recv`。 |
+| UARTの専用モード | RTS / CTS、RS-485の送信方向制御、half-duplex / single-wire、同期転送。外付けtransceiverと電気的な接続を分けて説明し、必要なAPIを選ぶ。 | `ESP:ESP32/examples/Serial/HardwareFlowControl_Demo`、`ESP:ESP32/examples/Serial/RS485_Echo_Demo`、`EVT(CH32V003):USART/USART_HalfDuplex`、`EVT(CH32V307):USART/USART_SynchronousMode`。 |
+| ソフトウェアUART | 短い送受信と他処理との共存。採用するライブラリ、タイミング制約、受信割り込み・タイマ競合を検討する。 | `EVT(CH32V003):APPLICATION/SoftUART`。 |
+| SPIの専用モード | slave受信とmaster側の対になる例、DMA、hardware NSS、half-duplex、CRC。既存SPI APIの拡張か別APIか、対応範囲を決める。 | `EVT(CH32V003):SPI/SPI_DMA`、`EVT(CH32V003):SPI/FullDuplex_HardNSS`、`EVT(CH32V003):SPI/1Lines_half-duplex`、`EVT(CH32V307):SPI/SPI_CRC`。 |
+| I2Cの追加モード | DMA、10 bit address、PEC、必要なら複数master。通常Wireとの相互運用・未対応時の扱いを決め、ニーズのあるモードから例にする。 | `EVT(CH32V003):I2C/I2C_DMA`、`EVT(CH32V003):I2C/I2C_10bit_Mode`、`EVT(CH32V307):I2C/I2C_PEC`。 |
+| I3C | controllerによる機器列挙・転送、対応する場合のIBI / target。I2Cの例と分け、専用driverと公開APIを検討する。 | `EVT(CH32V407):I3C/I3C_DMA_Controller`、`EVT(CH32H417):I3C/I3C_Controller_Check_ZeroIBI`、`EVT(CH32H417):I3C/I3C_DMA_Target`。 |
+| CAN / CAN FD | 2台での送受信、filter、bus-offからの復帰。transceiver・終端抵抗と対応形式を説明する。共通`HardwareCAN`の型だけでなく実際のdriverが必要。 | `ESP:ESP32/examples/TWAI/TWAItransmit`、`ESP:ESP32/examples/TWAI/TWAIreceive`、`EVT(CH32V307):CAN/Networking`、`EVT(CH32L103):CAN/CANFD`。 |
+| I2S / SAI / DFSDM | tone出力、mic収録、codec loopback、デジタルfilter。USB Audioの生成データと区別し、DMAとaudio bufferのAPIを設計する。 | `ESP:ESP_I2S/examples/Simple_tone`、`ESP:ESP_I2S/examples/Record_to_WAV`、`EVT(CH32V307):I2S/I2S_DMA`、`EVT(CH32H417):SAI/SAI_Play`、`EVT(CH32H417):DFSDM/DFSDM_I2S_Audio`。 |
+| RTC・backup domain | カレンダ設定、alarm、backup register、リセット後の保持。SNTPの時刻例と区別し、電源条件と時刻APIへの橋渡しを決める。 | `EVT(CH32V307):RTC/RTC_Calendar`、`EVT(CH32V307):BKP/BKP`。 |
+| sleep / stop / standby | ボタン、RTC、LPTIMによる復帰、RAMの保持、復帰後の周辺回路の再開。USB / PD / ネットワークを動かしたまま眠れると仮定せず、サービスを止める手順も設計する。 | `ESP:ESP32/examples/DeepSleep/ExternalWakeUp`、`ESP:ESP32/examples/DeepSleep/TimerWakeUp`、`EVT(CH32V307):PWR/Stop_Mode`、`EVT(CH32L103):PWR/Standby_RAM_Mode`。 |
+| 設定保存・Flash | 起動回数、構造体の設定保存、初期化・破損・容量不足の扱い。EEPROM / Preferences相当の方式と予約領域を決めてから例にし、内部Flash書き込み関数だけでユーザー領域を消さない。 | `ESP:Preferences/examples/StartCounter`、`ESP:Preferences/examples/Prefs2Struct`、`EVT(CH32V407):APPLICATION/EEPROM_Emulation`、`EVT(CH32V003):FLASH/FLASH_Program`。上の永続化検討と連動する。 |
+| ファイルシステム・SD | ファイル作成・追記・読み戻し、ディレクトリ、取り外し、満杯時の扱い。SPI / SDIO / SDMMC / eMMCのblock転送と、ファイルシステムの採用を分けて決める。 | `ESP:SD/examples/SD_Test`、`ESP:LittleFS/examples/LITTLEFS_test`、`EVT(CH32V307):SDIO/SDIO_SD_FATFS`、`EVT(CH32H417):APPLICATION/FATFS_eMMC`。既存`MSCSdCard`はファイル操作の例ではない。 |
+| USBストレージとファイルの共有 | Host MSCからファイルを読む、SDをDevice MSCとして公開する際の所有権切替。PCとスケッチが同時に同じFSを書き換えない構成を決める。 | `ESP:USB/examples/USBHostMSC_Test`、`ESP:SD_MMC/examples/SD2USBMSC`、既存 `MSCBlockDump` / `MSCSdCard`。FSとHost側block deviceの接続が前提。 |
+| 更新・bootloader連携 | ファイルからの更新、USB DFU / Firmware MSC、失敗時の復旧。書き込み範囲、イメージ検証、boot手順を確定してから例にする。 | `ESP:USB/examples/FirmwareMSC`、`ESP:Update/examples/SD_Update`、`EVT(CH32V003):USART_IAP`。既存`DfuRuntime`による更新側への移行と、実際の書き換え処理を区別する。 |
+| 外部メモリ | QSPI FlashのID・読み出しからmemory mapへ、FMC / FSMCのSRAM / SDRAM、PSRAMへ進む。起動時設定・リンカ・DMAが参照できる領域を決める。 | `EVT(CH32V205):QSPI/QSPI_FLASH`、`EVT(CH32H417):QSPI/QSPI_MemoryMap`、`EVT(CH32H417):FMC/SDRAM_16bit_DMA`、`EVT(CH32V407):PSRAM/PSRAM`。 |
+| カメラ・表示 | DVPからのframe取得、SPI LCD、LTDC表示、GPHAによる描画。sensor / panel driver、frame bufferとメモリ要件を定義し、その後USB Videoへ実映像を渡す応用を作る。 | `ESP:ESP_Video/examples/dvp_camera`、`EVT(CH32V307):DVP/DVP_TFTLCD`、`EVT(CH32V103):SPI/SPI_LCD`、`EVT(CH32H417):LTDC/LTDC_Display`、`EVT(CH32H417):GPHA/GPHA_M2M_WithLCD`。既存`VideoCamera`はテスト画像の例。 |
+| touch入力 | 単一キー、しきい値・基準値の追従、複数キー。外付け電極の条件と、採用するtouch library / callbackの扱いを決める。 | `ESP:ESP32/examples/Touch/TouchRead`、`ESP:ESP32/examples/Touch/TouchInterrupt`、`EVT(CH32V006):TOUCHKEY/Touch_EX001`、`EVT(CH32H417):TKey/TKey_8keys`。 |
+| 精密な波形入出力・PIOC・ARGB | WS2812、IRの送受信、1-wireを題材にし、PIOC実行codeや専用driver、DMA / タイマとの関係を整理する。ESP32 RMTのAPIの移植とは分ける。 | `ESP:ESP32/examples/RMT/RMTWrite_RGB_LED`、`EVT(CH32X035):APPLICATION/WS2812_LED`、`EVT(CH32X035):PIOC/PIOC_NEC`、`EVT(CH32X035):PIOC/1_Wire`、`EVT(CH32X315):ARGB/Gradient`。 |
+| CRC・乱数・hash | CRCの既知データ検算、RNGの失敗処理、採用した暗号libraryによるhash計算。`random()`と鍵生成用乱数を混同しない公開窓口を検討する。 | `ESP:Hash/examples/SHA2`、`EVT(CH32V307):CRC/CRC_Calculation`、`EVT(CH32V307):RNG/RNG`、既存 `RandomNumbers`。CRC周辺回路だけで暗号hashを実装できるとは扱わない。 |
+| 電源・保護・診断 | PVD通知、電源低下からの復帰、WWDG、Flash / RAM ECC診断。通常のIWDGやリセット理由の例と分け、保護設定の寿命と回復手順を設計する。 | `EVT(CH32V003):PWR/PVD_VoltageJudger`、`EVT(CH32V003):WWDG`、`EVT(CH32M030):FLASH/FLASH_ECC`、`EVT(CH32H417):ECDC/RAM_Block`。 |
+| clock・RAM実行・高性能コアの資源 | clock出力・校正、RAM実行、cacheとDMAの整合、IPC / HSEMによるコア間データ交換。コアの起動・クロック設定との境界、共有メモリと同期APIが前提。単独コアのTaskKit例で代用しない。 | `EVT(CH32V003):RCC/MCO`、`EVT(CH32M030):RCC/HSI_Calibration`、`EVT(CH32X035):RunInRam/RunInRAM_Select`、`EVT(CH32H417):CPU/ICache`、`EVT(CH32H417):CPU/IPC`、`EVT(CH32H417):CPU/HSEM`。 |
+| 特殊な高速・専用インタフェース | UHSIF転送、SerDes、SWPMIの最小通信と相手側の例。必要なボード・相手機器が用意できる用途から、専用driverとAPIを検討する。 | `EVT(CH32H417):UHSIF/UHSIF_SLAVE`、`EVT(CH32H417):SerDes/FullDuxTrans`、`EVT(CH32H417):SWPMI/SWPMI_SwpCard`。 |
+
+### 応用例の採否と追加順
+
+- [ ] 最初は **I2Cレジスタ読み取り・slave、SPI実機通信、UART受信、システム情報・watchdog、PWM周波数**を追加する。
+  手持ちの部品や2台のボードで確認でき、既存APIの使用方法を直接補えるものから進める。
+- [ ] 次に **Ethernet / NCMの接続、TCP / UDP、時刻・mDNS、TLS、操作入力付きUSB HID、PPS**を追加する。
+  相手側のPCプログラム・設定手順を含め、未接続・失敗・再接続の結果まで確認できる例にする。
+- [ ] Bは[機能追加候補](FEATURE_CANDIDATES.ja.md)の採用順と合わせ、まずADC・タイマ・UART / SPIのDMA、
+  RTC / sleep、永続化・ファイル操作など、複数用途の基礎になる機能から例を用意する。
+- [ ] その上で、ESP32のHTTPClient / WebServerやEVTのMQTTを参考にしたHTTP取得・小さなWeb server・telemetry、
+  SDKのETH↔UART中継、audio録音、camera表示などを応用候補にする。
+  TCP / TLSがあるだけでHTTP / MQTTの公開libraryもあるとは扱わず、libraryの採用とメモリ・接続復旧を先に確認する。
+  同様にESP32のWi-Fi bridgeを、そのままCH32の2つのネットワーク間のbridgeとして移さない。
+- ESP32のWi-Fi / BLE / ESP-NOW / Matter / Zigbee / OpenThread / RainMaker、ULP、専用のOTA / provisionerは、
+  同名例をそろえるためには追加しない。CH32の`EVT(CH32V20x):BLE`も含め、対応ハードウェア・通信stack・公開APIの
+  採用を先に判断し、必要な用途が決まったら別項目にする。
+- EVTのFreeRTOS / RT-Thread等のOS移植、CoreMarkやボード固有の製品デモは、一般向けexamplesへ一括で取り込まない。
+  OS向けのqueue / semaphoreの題材はTaskKit / SyncKitの実行モデルで学べる形へ直し、計測や内部検証は`tests/`側へ置く。
+
+### 各例を追加するときの完了条件
+
+- [ ] `.ino`は英日それぞれ1行の概要から始め、重要な操作・状態遷移・エラー処理を初心者向けに説明する。
+  本当に短い注記以外は`// en:`と`// ja:`を別行にする。使い方・配線・長い注意書きは`README.md` / `README.ja.md`へ置く。
+- [ ] READMEは目的、必要な部品・相手、配線、操作、期待する結果、失敗時に確認する点を日英でそろえる。
+  任意の外部libraryやPC側ツールが必要なら導入方法も書き、更新される対応表や内部実装の数値は重複して固定しない。
+- [ ] 対応する周辺回路・ピン・容量を使うビルド条件と`sketch.yaml`を整備する。
+  最小構成でのビルドと実機・相手側の確認を行い、条件付きのものは条件を明記する。
+- [ ] 新しい例を[日本語一覧](docs/examples.ja.md) / [英語一覧](docs/examples.md)へ追加し、library READMEからもたどれるようにする。
+  成功だけでなく、入力なし・相手不在・時間切れ・再接続・buffer満杯など、その例に関係する失敗を扱う。
+
 ## 製品ボード別のテンプレート（examples）
 
 WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32RV/examples/Board*）。板が増えたら同じ形で
