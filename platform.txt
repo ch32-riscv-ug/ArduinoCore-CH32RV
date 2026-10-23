@@ -1,6 +1,6 @@
 # ArduinoCore-CH32RV platform. See docs/adr/README.ja.md (all ADRs currently Proposed).
 name=CH32 RISC-V (ArduinoCore-CH32RV)
-version=0.2.2
+version=0.3.0
 
 # Toolchain lookup: empty compiler.path means PATH lookup. For a pinned toolchain pass
 #   --build-property "compiler.path=/path/to/xpack-riscv-none-elf-gcc/bin/"
@@ -57,7 +57,7 @@ compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO
 # (cores/arduino/ch32rv_version.h). Written from `version=` above by
 # tools/index/gen_index.py, which the release workflow runs before it commits
 # platform.txt back; tests/unit/test_version_macros.py keeps the two equal.
-compiler.version_defines=-DCH32RV_VERSION_MAJOR=0 -DCH32RV_VERSION_MINOR=2 -DCH32RV_VERSION_PATCH=2
+compiler.version_defines=-DCH32RV_VERSION_MAJOR=0 -DCH32RV_VERSION_MINOR=3 -DCH32RV_VERSION_PATCH=0
 
 build.extra_flags=
 # Chosen by the C Runtime Library menu (rtlib) in boards.txt: the float
