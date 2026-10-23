@@ -2323,15 +2323,14 @@ def ch32rv_chip(part: str, series: str, ordered_parts: list, vocab: tuple):
          refuses to flash a part whose family differs from the one actually
          attached (`target-ambiguous`, exit 23), catching the wrong-board
          mistake.
-      2. otherwise the FAMILY name, which ch32rv accepts and probe-rs did not.
+      2. otherwise the FAMILY name, which ch32rv accepts.
          It resolves the real part from chip_id on attach, so the flash
          geometry comes from the silicon rather than from our guess.
 
-    There is deliberately no "some other part of the same series" fallback,
-    which the old probe-rs generator had. probe-rs needed it because it refuses a
-    family name, and it only ever picked a flash *algorithm* with it. ch32rv
-    drives the FLASH controller directly and takes page/erase geometry from the
-    named part, so naming a sibling of a different size would be a real hazard:
+    There is deliberately no "some other part of the same series" fallback.
+    ch32rv drives the FLASH controller directly and takes page/erase geometry
+    from the named part, so naming a sibling of a different size would be a
+    real hazard:
     CH32V006F4U6 is a 16K part and its nearest known sibling CH32V006E8R6 is
     62K. The family name avoids the guess entirely.
 
@@ -3484,7 +3483,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
                         flash, sram))
 
     # rows is sorted smallest flash first, so the ANY fallback below lands on
-    # the smallest part probe-rs knows - which is what ANY declares.
+    # the smallest part ch32rv knows - which is what ANY declares.
     for pn, label, flash, sram in entries:
         pfx = f"{board}.menu.pnum.{pn}"
         lines.append(f"{pfx}={label}")

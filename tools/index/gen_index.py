@@ -33,8 +33,8 @@ import tempfile
 MAINTAINER = "CH32 RISC-V UG"
 WEBSITE = "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV"
 TOOL_NAME = "xpack-riscv-none-elf-gcc"
-# The bundled uploader (ADR-0008). probe-rs is not shipped: the platform
-# declares one upload tool and it is this one.
+# The bundled uploader (ADR-0008): the platform declares one upload tool and
+# it is this one.
 UPLOAD_TOOL_NAME = "ch32rv"
 # Tool versions are not repeated here: the tools_*.json fragment is the single
 # source (fetch_tools.py reads it too). A copy here once said ch32rv 0.9.0 while

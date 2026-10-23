@@ -70,7 +70,6 @@ tools/vendor/         verification of pinned third-party sources
 vendor/               upstream revision, hash, and license lock files
 docs/                 current specifications, user guides, and ADRs
 tests/                board-free checks and new test scaffolds
-tests-legacy/         legacy tests and bench configuration
 ```
 
 Board Manager archives use an allowlist. `PLATFORM_ENTRIES` in

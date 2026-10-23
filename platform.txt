@@ -122,8 +122,7 @@ recipe.size.regex.data=^(?:\.data|\.bss|\.image)\s+([0-9]+).*
 # ---------------------------------------------------------------- upload
 # ch32rv (ADR-0008). `flash --reset run --confirm-run` writes the image, starts
 # the target and checks that it is actually running, which is what a programmer
-# pattern has room for. probe-rs is no longer bundled: the platform ships one
-# uploader, and it is this one.
+# pattern has room for. The platform ships one uploader, and it is this one.
 #
 # {build.ch32rv_chip} is generated per menu entry from
 # tools/index/ch32rv_chips.csv: the exact part where ch32rv knows it, the

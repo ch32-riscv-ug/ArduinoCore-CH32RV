@@ -57,7 +57,7 @@ FQBN_LIBRARIES = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"
 # Nothing of the repository's own scaffolding may reach a user's machine.
 # gen_index.py packages an allowlist, so a leak means the allowlist grew
 # something it should not have.
-FORBIDDEN = ("tests", "tests-legacy", "docs", "tools", "vendor", ".git", ".github")
+FORBIDDEN = ("tests", "docs", "tools", "vendor", ".git", ".github")
 
 # Measured, not guessed: `riscv-none-elf-g++ -E -v` prints this include
 # directory verbatim, unresolved dot-dots and all, and GCC opens it that way -

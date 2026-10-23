@@ -11,9 +11,6 @@
 | `fetch_tools.py` | 固定 tool と device-data を `.tools/` へ取得する |
 | `install_check.py` | 一時 server と空の Arduino data directory で install を検証する |
 
-`tools_probe_rs.json` と `probe_rs_targets.csv` はテスト側の移行が終わるまで残っている互換入力で、
-platform archive の tool dependency ではありません。
-
 ## Archive の内容
 
 `gen_index.py` の `PLATFORM_ENTRIES` が唯一の allowlist です。repository 全体を archive に入れません。

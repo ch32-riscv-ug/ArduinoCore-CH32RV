@@ -8,9 +8,8 @@
 # `ch32rv probe list` prints the serial. Every WCH-Link reports a unique one
 # (experiment 0011), so this is deterministic.
 #
-# The id stays `wch-link` across the move from probe-rs to ch32rv (ADR-0008):
-# it names the probe, not the tool, so every generated sketch.yaml keeps
-# working.
+# The id `wch-link` names the probe, not the tool (ADR-0008), so the
+# generated sketch.yaml files do not depend on which uploader drives it.
 
 wch-link.name=WCH-Link / WCH-LinkE (ch32rv)
 wch-link.program.tool=ch32rv

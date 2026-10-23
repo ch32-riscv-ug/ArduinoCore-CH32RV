@@ -4,8 +4,7 @@
 # ///
 """Put every tool the tests need inside the project, at a predictable path.
 
-The tests need a RISC-V toolchain, the ch32rv uploader (ADR-0008; probe-rs is
-still fetchable because the bench harness identifies parts with it) and the
+The tests need a RISC-V toolchain, the ch32rv uploader (ADR-0008) and the
 ch32-device-data tables.
 Before this they came from environment variables pointing at wherever the
 author happened to have unpacked them, which is not something another machine
@@ -265,8 +264,6 @@ def env_defaults(root: pathlib.Path) -> dict:
             # install_check.py serves this locally instead of pulling it from
             # GitHub on every run.
             out["CH32_XPACK_ARCHIVE"] = root / "cache" / entry["archiveFileName"]
-    if "probe-rs" in frags:
-        out["CH32_PROBE_RS"] = where["probe-rs"]
     if "ch32rv" in frags:
         out["CH32_CH32RV"] = str(pathlib.Path(where["ch32rv"]) / "ch32rv")
     out["CH32_TABLES"] = where[DEVICE_DATA]

@@ -46,12 +46,6 @@ def test_package_acceptance_source_is_self_contained(tmp_path):
         assert sorted(p.name for p in directory.iterdir()) == [f"{name}.ino"]
 
 
-def test_ci_and_release_do_not_run_archived_tests():
-    for name in ("ci.yml", "release.yml"):
-        source = (REPO / ".github" / "workflows" / name).read_text()
-        assert "tests-legacy" not in source
-
-
 def test_board_specific_example_builds_for_that_board_only(tmp_path):
     tools = REPO / "tools/generate"
     sys.path.insert(0, str(tools))
