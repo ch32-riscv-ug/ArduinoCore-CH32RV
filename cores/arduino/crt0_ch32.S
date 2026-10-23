@@ -223,6 +223,19 @@ ch32rv_loadcode_ram:
     ori t0, t0, CH32RV_MTVEC_MODE
     csrw mtvec, t0
 
+/* CH32RV_BOOT_HOLD_MS (build.extra_flags, off unless set): stay on the reset
+   clock, debug pins untouched, for that long before anything else runs, so a
+   debugger's connect-under-reset can halt an image that would otherwise take
+   the clock or the pins away first (wiring_time.c). */
+#if defined(CH32RV_BOOT_HOLD_MS) && CH32RV_BOOT_HOLD_MS > 0
+#ifdef CH32RV_LOADCODE
+    la t0, ch32rv_boot_hold
+    jalr t0
+#else
+    jal ch32rv_boot_hold
+#endif
+#endif
+
 #ifdef CH32RV_LOADCODE
     la t0, SystemInit                /* in RAM, out of jal's reach */
     jalr t0

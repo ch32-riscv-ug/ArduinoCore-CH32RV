@@ -63,6 +63,21 @@ static volatile uint32_t ch32rv_millis_counter;
 #define CH32RV_SYSTICK_SR_CLEAR() (CH32RV_SYSTICK_SR = 0u)
 #endif
 
+#if defined(CH32RV_BOOT_HOLD_MS) && CH32RV_BOOT_HOLD_MS > 0
+/* A wait at power-on and every reset, before SystemInit() changes the clock
+ * or anything uses a pin: crt0 calls it once, when the build sets
+ * -DCH32RV_BOOT_HOLD_MS=<ms>. For an image under test that may stop a debugger
+ * from attaching (a clock the probe cannot follow, the debug pins taken):
+ * NRST plus this long gives connect-under-reset time to halt it. Counted on
+ * the reset clock, which is HSI or slower, at four or more cycles a turn - so
+ * at least the time asked for, longer where reset divides HSI. */
+void ch32rv_boot_hold(void)
+{
+    for (volatile uint32_t n = (uint32_t)CH32RV_BOOT_HOLD_MS * (CH32RV_HSI_HZ / 4000u); n; n--) {
+    }
+}
+#endif
+
 void SystemInit(void)
 {
     /* Put RCC back where reset leaves it before touching anything. This used
