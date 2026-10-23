@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Let an interrupt skip a buffer while loop() is updating it in stages.
+// ja: loop()が分割更新しているバッファを、割り込み側では触らずに飛ばす。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVSyncKit.h>
 
@@ -27,14 +30,19 @@ static void onPress()
 void setup()
 {
   Serial.begin(115200, SERIAL_8N1, RX, TX);
+  // en: The pull-up keeps an open button High; pressing it to GND makes the input Low.
+  // ja: プルアップでボタン開放時をHighに保ち、GNDへ押すとLowになる。
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  // en: Register an interrupt handler for the falling edge; the handler can interrupt loop().
+  // ja: HighからLowへの変化に割り込み関数を登録する。この関数はloop()の途中にも動く。
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), onPress, FALLING);
   Serial.println("TryLock ready");
 }
 
 void loop()
 {
-  // en: Keep ownership across rounds until all partial writes are complete. / ja: 分割した書き込みが完了するまで、巡回をまたいで所有する。
+  // en: Keep ownership across rounds until all partial writes are complete.
+  // ja: 分割した書き込みが完了するまで、巡回をまたいで所有する。
   if (filledUpTo == 0 && !bufferLock.tryLock())
   {
     return;
@@ -47,6 +55,8 @@ void loop()
   if (filledUpTo == sizeof buffer)
   {
     filledUpTo = 0;
+    // en: Release only when the entire staged update is complete, so an ISR never sees half-written data.
+    // ja: 分割更新がすべて終わってから解放し、ISRに更新途中の内容を見せない。
     bufferLock.unlock();
     Serial.print("DONE isr_writes=");
     Serial.print(isrWrites);

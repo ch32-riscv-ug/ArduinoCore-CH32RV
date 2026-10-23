@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Check software SPI loopback under each clock mode.
+// ja: ソフトウェアSPIの各clock modeでループバックを確認する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <SoftSPI.h>
 
@@ -38,6 +41,8 @@ void loop()
     // en: Check the same loopback data under each clock polarity/phase combination.
     // ja: clockの極性と位相の各組み合わせで、同じデータを照合する。
     for (uint8_t mode = 0; mode < 4; mode++) {
+        // en: Apply this mode before shifting bits; transfer() generates the clock and samples the input.
+        // ja: bitを送る前にmodeを設定する。transfer()がclockを作り、入力も読み取る。
         bus.beginTransaction(SPISettings(1000000, MSBFIRST, (SPIMode)mode));
         bool ok = true;
         for (unsigned i = 0; i < sizeof sent; i++) {

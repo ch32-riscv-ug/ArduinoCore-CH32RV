@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Advertise PD source capabilities using placeholder supply callbacks.
+// ja: 電源制御callbackの雛形を使い、PD Sourceの能力を広告する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbPd.h>
 
@@ -24,10 +27,13 @@ void setup() {
   Serial.begin(115200, SERIAL_8N1, RX, TX);
 
   USBPDSource.setRpCurrent(PD_RP_3A0);
-  // en: The first advertised PDO must be fixed 5 V. / ja: 広告する先頭のPDOは固定5 Vにする。
+  // en: The first advertised PDO must be fixed 5 V.
+  // ja: 広告する先頭のPDOは固定5 Vにする。
   USBPDSource.addFixed(5000, 3000);
   USBPDSource.addFixed(9000, 2000);
   USBPDSource.addPps(3300, 11000, 2000);
+  // en: Register the physical supply handlers before starting; the driver relies on their results.
+  // ja: 起動前に実電源を制御する関数を登録する。ドライバはその成否を信頼して動く。
   USBPDSource.onVbus(vbus);
   USBPDSource.onSetVoltage(setVoltage);
   if (!USBPDSource.begin()) {

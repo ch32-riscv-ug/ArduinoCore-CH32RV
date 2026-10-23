@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Initialize and exercise the UIAPduino Pro Micro board peripherals.
+// ja: UIAPduino Pro Microの各周辺機能を初期化して使う。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* board: UIAPDUINO_V003_V14 */
 
 #include <SPI.h>
@@ -15,7 +18,8 @@ static const int I2C_SDA = PC1;
 static const int SPI_SCK = PC5;
 static const int SPI_MISO = PC7;
 static const int SPI_MOSI = PC6;
-// en: Use a GPIO CS to leave I2C and the LED pins available. / ja: I2CとLEDの端子を空けるため、CSは別のGPIOを使う。
+// en: Use a GPIO CS to leave I2C and the LED pins available.
+// ja: I2CとLEDの端子を空けるため、CSは別のGPIOを使う。
 static const int SPI_CS = PC3;
 
 static const int ANALOG_1 = A0;
@@ -37,6 +41,8 @@ void setup()
 
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, -1);
     pinMode(SPI_CS, OUTPUT);
+    // en: Leave CS inactive until sending, so the SPI peripheral does not accept unintended clocks.
+    // ja: 送信まではCSを無効に保ち、相手機器が意図しないclockを受け付けないようにする。
     digitalWrite(SPI_CS, HIGH);
 
     pinMode(ANALOG_1, INPUT);
@@ -77,6 +83,8 @@ void loop()
 
         Serial.print("I2C:");
         for (uint8_t address = 0x08; address < 0x78; address++) {
+            // en: Probe one address at a time; success means an acknowledgement, not identification of a model.
+            // ja: 一つずつアドレスを調べる。成功は応答ありを示し、機器の型を特定するものではない。
             Wire.beginTransmission(address);
             if (Wire.endTransmission() == 0) {
                 Serial.print(' ');

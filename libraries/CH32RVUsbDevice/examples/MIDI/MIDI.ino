@@ -1,7 +1,12 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Send USB MIDI notes and control changes, and log received packets.
+// ja: USB MIDIの音符と制御値を送り、受信packetを表示する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbDeviceMidi MIDI(device);
 
@@ -36,6 +41,8 @@ static void logPacket(const CH32RVUsbDeviceMidiPacket &packet)
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -46,6 +53,8 @@ void setup()
   config.product = "CH32RVUsbDevice MIDI";
   config.serialNumber = "ch32rv-midi";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());
@@ -65,6 +74,8 @@ void loop()
   }
 
   CH32RVUsbDeviceMidiPacket packet;
+  // en: Read all queued MIDI events; true means one packet was copied into packet for this iteration.
+  // ja: 保留中のMIDIを順に読む。trueなら、今回のpacket変数へ一件取り出せたことを示す。
   while (MIDI.readPacket(packet))
   {
     logPacket(packet);

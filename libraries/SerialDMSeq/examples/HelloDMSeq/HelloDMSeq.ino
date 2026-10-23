@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Echo uppercase text over the DMSeq debug terminal.
+// ja: DMSeqのデバッグ端末で、受信文字を大文字にして返す。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <SerialDMSeq.h>
 
@@ -17,6 +20,8 @@ void loop()
         if (c >= 'a' && c <= 'z') {
             c -= 'a' - 'A';
         }
+        // en: Reply through the same debug channel; this is separate from a hardware UART connection.
+        // ja: 受信と同じデバッグ経路へ返信する。ハードウェアUARTの接続とは別。
         SerialDMSeq.write((uint8_t)c);
     }
 

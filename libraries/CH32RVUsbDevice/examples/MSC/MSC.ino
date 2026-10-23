@@ -1,14 +1,20 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Expose a RAM array as raw USB mass-storage blocks.
+// ja: RAM配列を、USBストレージのrawブロックとして公開する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* requires: ram=16K */
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbDeviceMsc msc(device);
 
 static constexpr uint32_t BLOCK_COUNT = 16;
 static constexpr uint16_t BLOCK_SIZE = 512;
-// en: Keep the backing array alive for the entire exposed-medium lifetime. / ja: 媒体として公開している間、保存先の配列を有効に保つ。
+// en: Keep the backing array alive for the entire exposed-medium lifetime.
+// ja: 媒体として公開している間、保存先の配列を有効に保つ。
 static uint8_t storage[BLOCK_COUNT * BLOCK_SIZE];
 CH32RVUsbDeviceMscRamDisk disk(storage, BLOCK_COUNT, BLOCK_SIZE);
 
@@ -24,6 +30,8 @@ static void prepareDisk()
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -34,7 +42,8 @@ void setup()
   msc.productRevision("1.0");
   msc.mediaPresent(true);
   msc.isWritable(true);
-  // en: This provider answers inside USB processing; do not delay here. / ja: USB処理中に応答するprovider。ここで待機しない。
+  // en: This provider answers inside USB processing; do not delay here.
+  // ja: USB処理中に応答するprovider。ここで待機しない。
   msc.onStartStop([](uint8_t powerCondition, bool start, bool loadEject)
                   {
                     Serial.printf("MSC_START_STOP pc=%u start=%u eject=%u\n",
@@ -44,6 +53,8 @@ void setup()
                     return true;
                   });
 
+  // en: Connect the RAM storage implementation to MSC; without it, USB has no blocks to read or write.
+  // ja: RAMの保存先をMSCへ結び付ける。これがないとUSBから読む・書く対象がない。
   if (!disk.attach(msc))
   {
     Serial.println("MSC_ATTACH_FAILED");
@@ -57,6 +68,8 @@ void setup()
   config.product = "CH32RVUsbDevice MSC";
   config.serialNumber = "ch32rv-msc";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());

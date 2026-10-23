@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Scan a hardware I2C bus and print addresses that acknowledge.
+// ja: ハードウェアI2Cを走査し、応答するアドレスを表示する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <Wire.h>
 
@@ -12,6 +15,8 @@ void setup()
     Serial.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
     while (!Serial) {
     }
+    // en: Choose the physical bus pins before probing addresses on that bus.
+    // ja: バスの実端子を指定してから、そのバス上のアドレスを調べる。
     Wire.begin(SDA_PIN, SCL_PIN);
 
     Serial.println();

@@ -1,7 +1,12 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Generate a moving test pattern and send it as USB camera video.
+// ja: 動くテスト画像を作り、USBカメラの映像として送る。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbDeviceVideo Camera(device, "CH32RVUsbDevice Camera");
 
@@ -71,6 +76,8 @@ static void hostCommitted(const CH32RVUsbDeviceVideoCommit &commit)
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -87,6 +94,8 @@ void setup()
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Camera";
   config.serialNumber = "camera-1";
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());
@@ -101,7 +110,8 @@ void setup()
 
 void loop()
 {
-  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
+  // en: Run registered notification handlers here; USB transfer processing runs separately.
+  // ja: 登録した通知関数をここで実行する。USB転送そのものの処理とは別。
   deliverEvents();
   const bool streaming = Camera.streaming();
   if (streaming && !wasStreaming)
@@ -124,9 +134,12 @@ void loop()
     nextFrameDueMs += 1000UL / kFrameRate;
     if ((int32_t)(millis() - nextFrameDueMs) > 0)
     {
-      // en: After a long stall, avoid a burst of catch-up frames. / ja: 長く遅れた後は、追いつくための連続送信を避ける。
+      // en: After a long stall, avoid a burst of catch-up frames.
+      // ja: 長く遅れた後は、追いつくための連続送信を避ける。
       nextFrameDueMs = millis();
     }
+    // en: Freeze the pattern state for this frame so all its separately generated payloads match.
+    // ja: 今回のframeの描画状態を固定し、分割して作るpayloadの内容をそろえる。
     drawingFrame = frameCount;
     Camera.sendGeneratedFrame(kFrameBytes);
   }

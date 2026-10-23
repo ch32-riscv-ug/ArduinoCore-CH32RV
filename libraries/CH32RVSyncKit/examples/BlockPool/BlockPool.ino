@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Pass pooled records from an interrupt to loop() without copying each record.
+// ja: プールで借りた記録を、コピーせずに割り込みからloop()へ渡す。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVSyncKit.h>
 
@@ -17,6 +20,8 @@ static volatile uint32_t noBlock = 0;
 
 static void onPress()
 {
+  // en: Borrow storage before filling it; a null result means all records are still in use.
+  // ja: 書き込む保存先を先に借りる。nullptrなら全レコードが使用中なので今回は処理できない。
   Record *r = pool.tryAllocate();
   if (!r)
   {
@@ -37,7 +42,11 @@ static void onPress()
 void setup()
 {
   Serial.begin(115200, SERIAL_8N1, RX, TX);
+  // en: The pull-up keeps an open button High; pressing it to GND makes the input Low.
+  // ja: プルアップでボタン開放時をHighに保ち、GNDへ押すとLowになる。
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  // en: Register an interrupt handler for the falling edge; the handler can interrupt loop().
+  // ja: HighからLowへの変化に割り込み関数を登録する。この関数はloop()の途中にも動く。
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), onPress, FALLING);
   Serial.println("BlockPool ready");
 }
@@ -45,6 +54,8 @@ void setup()
 void loop()
 {
   Record *r;
+  // en: The queue carries pointers to records; use a record before returning its storage to the pool.
+  // ja: Queueが渡すのはレコードのポインタ。プールへ返す前に中身を使い切る。
   while (filled.tryReceive(r))
   {
     Serial.print("RECORD ms=");
@@ -52,7 +63,8 @@ void loop()
     Serial.print(" us=");
     Serial.print(r->us);
     Serial.print(" free=");
-    // en: Do not access the record after returning it to the pool. / ja: プールへ返した後はこのレコードに触らない。
+    // en: Do not access the record after returning it to the pool.
+    // ja: プールへ返した後はこのレコードに触らない。
     pool.release(r);
     Serial.println(pool.available());
   }

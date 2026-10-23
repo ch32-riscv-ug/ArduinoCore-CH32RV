@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Combine button input, LED blinking and UART commands as scheduled work.
+// ja: ボタン・LED点滅・UARTコマンドを、起動条件付きの仕事として組み合わせる。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVTaskKit.h>
 #include <stdlib.h>
@@ -35,7 +38,8 @@ static void resumeStep()
   {
     return;
   }
-  // en: Disarm the expired deadline so resume happens once per pause. / ja: 期限を解除し、一回のpauseで一度だけ再開する。
+  // en: Disarm the expired deadline so resume happens once per pause.
+  // ja: 期限を解除し、一回のpauseで一度だけ再開する。
   pauseEnds.disarm();
   paused = false;
   Serial.println("RESUME");
@@ -47,7 +51,8 @@ static void buttonStep()
   uint32_t t;
   while (presses.tryReceive(t))
   {
-    // en: Debounce queued timestamps rather than delaying inside the ISR. / ja: ISRで待たず、Queueの時刻でチャタリングを除く。
+    // en: Debounce queued timestamps rather than delaying inside the ISR.
+    // ja: ISRで待たず、Queueの時刻でチャタリングを除く。
     if (t - lastAccepted < 50)
     {
       continue;
@@ -135,7 +140,8 @@ static void runCommand(const char *line)
 
 static void consoleStep()
 {
-  // en: Keep partial lines across work invocations. / ja: 行の途中までの入力を、仕事の呼び出しをまたいで保持する。
+  // en: Keep partial lines across work invocations.
+  // ja: 行の途中までの入力を、仕事の呼び出しをまたいで保持する。
   static char line[32];
   static size_t used;
 
@@ -148,6 +154,8 @@ static void consoleStep()
     }
     if (c == '\n')
     {
+      // en: Only after a full line arrives, terminate it as text and pass it to the command parser.
+      // ja: 一行が完成してから文字列終端を付け、コマンドの判定へ渡す。
       line[used] = 0;
       runCommand(line);
       used = 0;
@@ -172,10 +180,14 @@ void setup()
 {
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   pinMode(LED_PIN, OUTPUT);
+  // en: The pull-up keeps an open button High; pressing it to GND makes the input Low.
+  // ja: プルアップでボタン開放時をHighに保ち、GNDへ押すとLowになる。
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   blink.wakeEvery(blinkPeriod);
   console.wakeWhen(uartHasBytes);
+  // en: Link the resume function to the pause deadline; it still executes only from runOnce().
+  // ja: 再開処理をpauseの期限に結び付ける。実際に実行される場所はrunOnce()だけ。
   resume.wakeOn(pauseEnds);
   blink.measure(blinkStats);
   button.measure(buttonStats);
@@ -186,12 +198,15 @@ void setup()
   app.attach(button);
   app.attach(console);
   app.attach(resume);
+  // en: Register an interrupt handler for the falling edge; the handler can interrupt loop().
+  // ja: HighからLowへの変化に割り込み関数を登録する。この関数はloop()の途中にも動く。
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), onPress, FALLING);
   Serial.println("ButtonBlinkConsole ready: rate <ms>, pause, stats");
 }
 
 void loop()
 {
-  // en: All four work functions execute here, not in the ISR. / ja: 四つの仕事はISRではなくここで動く。
+  // en: All four work functions execute here, not in the ISR.
+  // ja: 四つの仕事はISRではなくここで動く。
   app.runOnce();
 }

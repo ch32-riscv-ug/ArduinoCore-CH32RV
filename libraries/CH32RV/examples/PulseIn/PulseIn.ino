@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Trigger a sensor and measure the duration of its response pulse.
+// ja: センサへトリガーを出し、応答パルスの長さを測る。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 static const uint8_t TRIGGER = PA1;
 static const uint8_t ECHO = PA2;
@@ -15,6 +18,8 @@ void setup()
 
 void loop()
 {
+    // en: Make a short High trigger; the sensor response is measured on the separate ECHO input.
+    // ja: 短いHighのトリガーを出し、別のECHO入力でセンサの応答を測る。
     digitalWrite(TRIGGER, HIGH);
     delayMicroseconds(10);
     digitalWrite(TRIGGER, LOW);
@@ -22,13 +27,16 @@ void loop()
     // en: A zero result means no complete pulse was measured before the timeout.
     // ja: 戻り値0は、期限内にパルス幅を取得できなかったことを示す。
     const unsigned long us = pulseIn(ECHO, HIGH, 30000ul);
+    // en: Handle timeout before converting the duration, so missing input is not shown as a valid distance.
+    // ja: 時間を距離へ換算する前にtimeoutを分け、入力なしを正常な測定と表示しない。
     if (us == 0) {
         Serial.println("no pulse within 30 ms");
     } else {
         Serial.print(us);
         Serial.print(" us  ~= ");
 
-        // en: Ultrasonic echo time includes the outward and return paths. / ja: 超音波の応答時間には往路と復路の両方が含まれる。
+        // en: Ultrasonic echo time includes the outward and return paths.
+        // ja: 超音波の応答時間には往路と復路の両方が含まれる。
         Serial.print(us / 58.0, 1);
         Serial.println(" cm");
     }

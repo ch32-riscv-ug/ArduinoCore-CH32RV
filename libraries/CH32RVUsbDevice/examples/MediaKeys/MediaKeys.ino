@@ -1,7 +1,12 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Send USB media controls such as volume, mute and playback actions.
+// ja: 音量・ミュート・再生操作などをUSBのメディアキーとして送る。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbDeviceHidConsumerControl media(device);
 CH32RVUsbDeviceHidSystemControl systemControl(device);
@@ -26,8 +31,11 @@ static const MediaStep MEDIA_STEPS[] = {
 
 static void sendMediaStep()
 {
+  // en: Choose the next action; modulo wraps the index to the start when it reaches the table end.
+  // ja: 次の操作を表から選ぶ。剰余を使い、末尾を越えたindexを先頭へ戻す。
   const MediaStep &step = MEDIA_STEPS[stepIndex % (sizeof(MEDIA_STEPS) / sizeof(MEDIA_STEPS[0]))];
-  // en: click() sends both press and release for this media usage. / ja: click()はメディアusageの押下と解放を送る。
+  // en: click() sends both press and release for this media usage.
+  // ja: click()はメディアusageの押下と解放を送る。
   if (media.click(step.usage))
   {
     Serial.printf("MEDIA_KEY %s usage=0x%04x\n", step.name, step.usage);
@@ -41,6 +49,8 @@ static void sendMediaStep()
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -51,6 +61,8 @@ void setup()
   config.product = "CH32RVUsbDevice Media Keys";
   config.serialNumber = "ch32rv-media-keys";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());

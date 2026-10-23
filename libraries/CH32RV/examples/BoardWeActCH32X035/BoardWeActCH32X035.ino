@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Combine USB, serial, SPI, ADC and PWM on the WeAct CH32X035 board.
+// ja: WeAct CH32X035でUSB・UART・SPI・ADC・PWMを組み合わせる。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* board: CH32X035:pnum=CH32X035F8U6 */
 
 #include <CH32RVUsbDevice.h>
@@ -25,10 +28,12 @@ static const int ANALOG_2 = A1;
 
 static const int PWM_PIN = PB11;
 
-// en: Debug-pin route; replaces SWD/DMSeq. / ja: デバッグ端子の経路。SWD/DMSeqと排他。
+// en: Debug-pin route; replaces SWD/DMSeq.
+// ja: デバッグ端子の経路。SWD/DMSeqと排他。
 // static const int I2C_SDA = PC18;
 // static const int I2C_SCL = PC19;
-// en: USB-pin route; replaces USB data. / ja: USB端子の経路。USBデータと排他。
+// en: USB-pin route; replaces USB data.
+// ja: USB端子の経路。USBデータと排他。
 // static const int I2C_SDA = PC17;
 // static const int I2C_SCL = PC16;
 
@@ -46,7 +51,8 @@ void setup()
     USBDevice.begin(usb);
     SerialUSB.begin();
 
-    // en: Start attach detection without waiting for a PD source. / ja: PD電源の接続を待たずに検出を始める。
+    // en: Start attach detection without waiting for a PD source.
+    // ja: PD電源の接続を待たずに検出を始める。
     USBPD.begin();
 
     Serial.begin(115200, SERIAL_8N1, UART_RX, UART_TX);
@@ -63,6 +69,8 @@ void setup()
     pinMode(PWM_PIN, OUTPUT);
 }
 
+// en: Accept the common Print interface so the same status routine can write to UART or USB CDC.
+// ja: 共通のPrint型で受け、同じ表示処理をUARTとUSB CDCの両方で使う。
 static void status(Print &out)
 {
     out.print("A0=");
@@ -109,6 +117,8 @@ void loop()
     while (Serial1.available()) {
         SerialUSB.write(Serial1.read());
     }
+    // en: Data arriving over USB is forwarded to the UARTs; the preceding loops handle the opposite direction.
+    // ja: USBから届いた分をUARTへ渡す。上のループは反対向きの中継を行う。
     while (SerialUSB.available()) {
         const int c = SerialUSB.read();
         Serial.write(c);

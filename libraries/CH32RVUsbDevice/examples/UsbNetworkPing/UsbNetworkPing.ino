@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Answer ARP and IPv4 ping over a USB network interface.
+// ja: USBネットワーク経由でARPとIPv4のpingに応答する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* requires: ram=16K */
 
 #include <CH32RVUsbDevice.h>
@@ -27,10 +30,13 @@ static uint16_t checksum(const uint8_t *p, size_t n)
     return (uint16_t)~sum;
 }
 
-// en: Build one pending reply here and transmit it later from loop(). / ja: ここでは返信を一つ準備し、送信は後でloop()から行う。
+// en: Build one pending reply here and transmit it later from loop().
+// ja: ここでは返信を一つ準備し、送信は後でloop()から行う。
 static void onFrame(const uint8_t *f, size_t n)
 {
     frames++;
+    // en: Only one reply slot exists; ignore another frame while that slot is occupied or input is too short.
+    // ja: 返信枠は一つだけ。返信待ちの間や入力が短い場合は、今回のframeを処理しない。
     if (replyLength || n < 42) {
         return;
     }
@@ -38,9 +44,11 @@ static void onFrame(const uint8_t *f, size_t n)
     if (type == 0x0806 && f[21] == 1 && memcmp(f + 38, MY_IP, 4) == 0) {
         memcpy(reply, f + 6, 6);
         memcpy(reply + 6, myMac, 6);
-        // en: Preserve EtherType and ARP address-format fields. / ja: EtherTypeとARPのアドレス形式fieldを引き継ぐ。
+        // en: Preserve EtherType and ARP address-format fields.
+        // ja: EtherTypeとARPのアドレス形式fieldを引き継ぐ。
         memcpy(reply + 12, f + 12, 8);
-        // en: ARP reply operation. / ja: ARPの応答opcode。
+        // en: ARP reply operation.
+        // ja: ARPの応答opcode。
         reply[21] = 2;
         memcpy(reply + 22, myMac, 6);
         memcpy(reply + 28, MY_IP, 4);
@@ -73,6 +81,8 @@ static void onFrame(const uint8_t *f, size_t n)
 
 void setup()
 {
+    // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+    // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
     Serial.begin(115200, SERIAL_8N1, RX, TX);
     net.onFrame(onFrame);
 
@@ -85,13 +95,15 @@ void setup()
     }
 
     memcpy(myMac, net.macAddress(), 6);
-    // en: Keep the device-side responder MAC distinct from the host-side MAC. / ja: 応答側MACがホスト側と同一にならないようにする。
+    // en: Keep the device-side responder MAC distinct from the host-side MAC.
+    // ja: 応答側MACがホスト側と同一にならないようにする。
     myMac[5] ^= 1;
 }
 
 void loop()
 {
-    // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
+    // en: Run registered notification handlers here; USB transfer processing runs separately.
+    // ja: 登録した通知関数をここで実行する。USB転送そのものの処理とは別。
     deliverEvents();
     if (replyLength) {
         net.sendFrame(reply, replyLength);

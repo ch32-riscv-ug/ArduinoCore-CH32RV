@@ -1,8 +1,13 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Bridge basic MIDI messages between USB and a MIDI UART.
+// ja: 基本的なMIDIメッセージをUSBとMIDI用UARTの間で中継する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* requires: USBFS */
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbDeviceMidi MIDI(device);
 
@@ -23,6 +28,8 @@ static bool readSerialMidiMessage(CH32RVUsbDeviceMidiPacket &packet)
     return false;
   }
 
+  // en: A channel message begins with a status byte; the switch chooses its USB CIN and byte count.
+  // ja: channelメッセージはstatus byteから始まり、switchでUSBのCINと必要な長さを決める。
   const uint8_t status = Serial1.read();
   if ((status & 0x80) == 0)
   {
@@ -86,7 +93,8 @@ static bool readSerialMidiMessage(CH32RVUsbDeviceMidiPacket &packet)
 
 static void writeSerialMidiMessage(const CH32RVUsbDeviceMidiPacket &packet)
 {
-  // en: CIN determines how many MIDI bytes this USB event contains. / ja: このUSBイベントに含まれるMIDIバイト数はCINで判断する。
+  // en: CIN determines how many MIDI bytes this USB event contains.
+  // ja: このUSBイベントに含まれるMIDIバイト数はCINで判断する。
   const uint8_t cin = packet.header & 0x0f;
   const int8_t size = CIN_TO_SERIAL_SIZE[cin];
   if (size <= 0)
@@ -108,6 +116,8 @@ static void writeSerialMidiMessage(const CH32RVUsbDeviceMidiPacket &packet)
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -120,6 +130,8 @@ void setup()
   config.product = "CH32RVUsbDevice MIDI Interface";
   config.serialNumber = "ch32rv-midi-interface";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());

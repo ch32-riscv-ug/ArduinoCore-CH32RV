@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Print USB descriptors, control requests and bus events on UART.
+// ja: USB記述子・制御要求・バスの通知をUARTへ表示する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbDevice.h>
 
@@ -63,6 +66,8 @@ static void dump()
 
 void setup()
 {
+    // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+    // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
     Serial.begin(115200);
     // en: Observe requests here; this callback does not provide their replies.
     // ja: ここでは要求を観察するだけで、応答を用意するcallbackではない。
@@ -83,13 +88,16 @@ void setup()
 
 void loop()
 {
-    // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
+    // en: Run registered notification handlers here; USB transfer processing runs separately.
+    // ja: 登録した通知関数をここで実行する。USB転送そのものの処理とは別。
     deliverEvents();
     while (Serial.available()) {
         if (Serial.read() == 'd') {
             dumpNow = true;
         }
     }
+    // en: Do the verbose printing after notification delivery, instead of inside the bus-event callback.
+    // ja: 長い表示はバス通知関数の中に詰め込まず、通知を受け終わってから行う。
     if (dumpNow) {
         dumpNow = false;
         dump();

@@ -1,8 +1,13 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Generate a test tone and send it as USB microphone audio.
+// ja: テスト音を作り、USBマイクの音声として送る。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* requires: flash=48K */
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbAudioFunction audio(device);
 CH32RVUsbAudioCaptureStream &capture = audio.addCaptureStream();
@@ -21,19 +26,25 @@ static const int16_t SINE[64] = {
     -5657, -5075, -4445, -3771, -3061, -2322, -1561, -784,
 };
 
-// en: The top six phase bits index one cycle of the waveform table. / ja: 位相の上位6 bitを、波形tableの一周期内の位置に使う。
+// en: The top six phase bits index one cycle of the waveform table.
+// ja: 位相の上位6 bitを、波形tableの一周期内の位置に使う。
 static uint32_t phase = 0;
 static const uint32_t phaseIncrement =
     static_cast<uint32_t>((static_cast<uint64_t>(TONE_HZ) << 32) / SAMPLE_RATE);
 static uint32_t lastMicros = 0;
-// en: Fractional frames in millionths; retained between loop iterations. / ja: 百万分の一frame単位の端数を、loop()間で保持する。
+// en: Fractional frames in millionths; retained between loop iterations.
+// ja: 百万分の一frame単位の端数を、loop()間で保持する。
 static uint32_t owed = 0;
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
+  // en: Advertise the same sample rate and mono 16-bit format used by the generated sample array.
+  // ja: 生成するsample配列と同じrate・mono・16 bitの形式をホストへ知らせる。
   capture.addFormat({SAMPLE_RATE, 1, 2, 16});
 
   CH32RVUsbDeviceConfig config;
@@ -43,6 +54,8 @@ void setup()
   config.product = "CH32RVUsbDevice Microphone";
   config.serialNumber = "ch32rv-microphone";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());
@@ -57,6 +70,8 @@ void loop()
   const uint32_t now = micros();
   uint32_t elapsed = now - lastMicros;
   lastMicros = now;
+  // en: Limit catch-up after a stall so generating overdue samples does not monopolize the next loop.
+  // ja: 長い遅れの後に過去のsampleを作り続けて、次の巡回を占有しないよう制限する。
   if (elapsed > 10000)
   {
     elapsed = 10000;

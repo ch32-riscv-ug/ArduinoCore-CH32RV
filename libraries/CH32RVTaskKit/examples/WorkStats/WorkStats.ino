@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Measure work execution time to identify functions that delay a round.
+// ja: 仕事の実行時間を測り、一巡を遅らせる処理を見つける。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVTaskKit.h>
 
@@ -45,7 +48,8 @@ static void reportStep()
   Serial.print(rounds.emptyRounds);
   Serial.print(" max_us=");
   Serial.println(rounds.maxUs);
-  // en: Reset after reporting to start the next measurement interval. / ja: 表示後にリセットして、次の集計区間を始める。
+  // en: Reset after reporting to start the next measurement interval.
+  // ja: 表示後にリセットして、次の集計区間を始める。
   fastStats.clear();
   slowStats.clear();
   rounds.clear();
@@ -60,6 +64,8 @@ void setup()
   fastWork.wakeEvery(fast);
   slowWork.wakeEvery(slow);
   reportWork.wakeEvery(report);
+  // en: Attach a counter/timing record to each work item so their costs can be compared separately.
+  // ja: 各仕事に計測先を結び付け、回数と所要時間を仕事ごとに比べられるようにする。
   fastWork.measure(fastStats);
   slowWork.measure(slowStats);
   app.measure(rounds);

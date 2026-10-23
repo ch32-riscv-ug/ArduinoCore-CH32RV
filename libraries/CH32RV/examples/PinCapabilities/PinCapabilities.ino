@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Print the pins and analog mappings described by the selected variant.
+// ja: 選んだvariantの端子とアナログ入力の対応を表示する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 static void describe(uint8_t pin, const char *name)
 {
@@ -14,6 +17,8 @@ static void describe(uint8_t pin, const char *name)
     Serial.print(digitalPinIsCommon(pin) ? "   on every part"
                                          : "   only on some packages");
 #ifdef NUM_ANALOG_INPUTS
+    // en: A valid digital pad does not necessarily connect to an ADC channel; test that separately.
+    // ja: デジタル端子として有効でもADCにつながるとは限らないので、別に確認する。
     if (digitalPinHasADC(pin)) {
         Serial.print(", ADC channel ");
         Serial.print(digitalPinToAnalogChannel(pin));
@@ -68,6 +73,8 @@ void setup()
         Serial.print((char)('A' + port));
         Serial.print(": ");
         for (uint8_t bit = 0; bit < 24; bit++) {
+            // en: Build a pad identifier from port and bit, then ask whether it exists on this variant.
+            // ja: portとbitからpadの識別値を作り、このvariantに存在するか調べる。
             const uint8_t pin = (uint8_t)CH32RV_PIN(port, bit);
             if (digitalPinIsValid(pin)) {
                 Serial.print(bit);

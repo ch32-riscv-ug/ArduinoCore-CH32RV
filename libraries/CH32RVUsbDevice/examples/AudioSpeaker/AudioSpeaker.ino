@@ -1,8 +1,13 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Receive USB playback audio and count PCM bytes without driving a speaker.
+// ja: USBの再生音声を受け、スピーカーを駆動せずPCMのバイト数を数える。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* requires: flash=48K */
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbAudioFunction audio(device);
 CH32RVUsbAudioPlaybackStream &playback = audio.addPlaybackStream();
@@ -13,6 +18,8 @@ static uint32_t receivedBytes = 0;
 static void printEvents()
 {
   CH32RVUsbAudioEvent event;
+  // en: Events describe stream and control changes; PCM audio itself is read separately in loop().
+  // ja: eventは再生状態や制御値の変化を表す。PCM音声そのものはloop()で別に読む。
   while (audio.pollEvent(event))
   {
     if (event.type == CH32RVUsbAudioEventType::StreamStateChanged)
@@ -33,6 +40,8 @@ static void printEvents()
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -47,6 +56,8 @@ void setup()
   config.product = "CH32RVUsbDevice Speaker";
   config.serialNumber = "ch32rv-audio-sink";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());

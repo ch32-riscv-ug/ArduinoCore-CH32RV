@@ -1,14 +1,20 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Combine a USB keyboard, serial port and FAT RAM disk in one device.
+// ja: USBキーボード・シリアル・FAT RAMディスクを一つにまとめる。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* requires: ram=16K */
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbDeviceHidKeyboard keyboard(device);
 CH32RVUsbDeviceCdcSerial UsbSerial(device);
 CH32RVUsbDeviceMsc msc(device);
 
-// en: Keep the backing array alive for the entire exposed-medium lifetime. / ja: 媒体として公開している間、保存先の配列を有効に保つ。
+// en: Keep the backing array alive for the entire exposed-medium lifetime.
+// ja: 媒体として公開している間、保存先の配列を有効に保つ。
 static uint8_t storage[10 * 1024];
 CH32RVUsbDeviceMscFatRamDisk disk(storage, sizeof(storage));
 
@@ -17,6 +23,8 @@ static size_t lineLength = 0;
 
 static void handleCdcLine(const char *line)
 {
+  // en: Separate the command prefix from its text; the keyboard output targets the focused host application.
+  // ja: コマンド名と続きの文字列を分ける。キー入力の宛先はホストで選択中のアプリ。
   if (strncmp(line, "type ", 5) == 0)
   {
     if (keyboard.write(line + 5) && keyboard.tapKey('\n'))
@@ -34,6 +42,8 @@ static void handleCdcLine(const char *line)
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -73,6 +83,8 @@ void setup()
   config.product = "CH32RVUsbDevice Composite";
   config.serialNumber = "ch32rv-composite";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());
@@ -84,7 +96,8 @@ void setup()
 
 void loop()
 {
-  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
+  // en: Run registered notification handlers here; USB transfer processing runs separately.
+  // ja: 登録した通知関数をここで実行する。USB転送そのものの処理とは別。
   deliverEvents();
 
   while (UsbSerial.available() > 0)

@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Switch printf output between the UART and the SDI debug channel.
+// ja: printfの出力先をUARTとSDIの間で切り替える。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <SerialSDI.h>
 #include <stdio.h>
@@ -8,13 +11,17 @@ void setup()
     Serial.begin(115200, SERIAL_8N1, RX, TX);
     SerialSDI.begin(115200);
 
+    // en: The same printf() call follows the selected stdout destination; changing it does not rename Serial.
+    // ja: printf()は選ばれたstdoutへ出る。切り替えてもSerial自体の行き先は変わらない。
     printf("this line goes to the UART\n");
 
-    // en: Redirect stdio only; explicit Serial calls still use UART. / ja: stdioだけを切り替える。Serialの明示呼び出しはUARTのまま。
+    // en: Redirect stdio only; explicit Serial calls still use UART.
+    // ja: stdioだけを切り替える。Serialの明示呼び出しはUARTのまま。
     ch32rv_set_stdout(&SerialSDI);
     printf("and this one goes to the debug probe\n");
 
-    // en: Restore UART before the periodic printf() output. / ja: 周期的なprintf()の前にUARTへ戻す。
+    // en: Restore UART before the periodic printf() output.
+    // ja: 周期的なprintf()の前にUARTへ戻す。
     ch32rv_set_stdout(&Serial);
     printf("back on the UART\n");
 }

@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: List a PD source's capabilities and request a 9 V contract.
+// ja: PD電源の能力を一覧表示し、9 Vの契約を要求する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbPd.h>
 
@@ -23,6 +26,8 @@ void setup() {
 
   Serial.println("the charger offers:");
   for (uint8_t i = 0; i < USBPD.profileCount(); i++) {
+    // en: Each entry describes an advertised supply option; values are millivolts and milliamps.
+    // ja: 各項目は相手が広告した供給候補。値の単位はmVとmA。
     PDProfile p = USBPD.profile(i);
     Serial.print("  [");
     Serial.print(i);

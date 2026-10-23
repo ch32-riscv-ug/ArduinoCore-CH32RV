@@ -1,9 +1,14 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Acquire a shared hardware timer and count its update interrupts.
+// ja: 共有ハードウェアタイマーを取得し、更新割り込みを数える。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVTimer.h>
 
 static uint8_t ownerIdentity;
 static CH32RVTimerLease lease;
+// en: The update ISR increments this count; loop() reads it without doing Serial I/O in the ISR.
+// ja: 更新割り込みが回数を増やし、表示はloop()で行う。ISR内でSerialを使わない。
 static volatile uint32_t ticks;
 static volatile bool running;
 
@@ -33,8 +38,11 @@ void setup()
         {(uint16_t)(F_CPU / 1000000u - 1u), 999u, 0u}
     };
 
-    // en: Use the ownership API before configuring the shared timer. / ja: 共有タイマーを設定する前に所有権を取得する。
+    // en: Use the ownership API before configuring the shared timer.
+    // ja: 共有タイマーを設定する前に所有権を取得する。
     lease = ch32TimerTryAcquire(&request, &owner);
+    // en: Each setup step must succeed; && stops later steps if an earlier one fails.
+    // ja: 各設定の成功を確認する。&&により、途中で失敗すると後続の処理は実行しない。
     running = ch32TimerApplyBase(&lease) &&
               ch32TimerAttachUpdateInterrupt(&lease, onUpdate, nullptr) &&
               ch32TimerStart(&lease);

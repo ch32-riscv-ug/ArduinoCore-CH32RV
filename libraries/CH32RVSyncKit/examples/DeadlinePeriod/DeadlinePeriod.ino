@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Blink periodically while checking an input deadline without waiting.
+// ja: 周期的に点滅しながら、入力期限を待たずに確認する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVSyncKit.h>
 
@@ -18,7 +21,8 @@ void setup()
 
 void loop()
 {
-  // en: Checking a schedule does not wait for it. / ja: 予定時刻の確認だけで、そこまで待機はしない。
+  // en: Checking a schedule does not wait for it.
+  // ja: 予定時刻の確認だけで、そこまで待機はしない。
   if (blink.due())
   {
     ledOn = !ledOn;
@@ -34,10 +38,13 @@ void loop()
   if (!waiting)
   {
     Serial.println("TYPE something within 5 s");
+    // en: Start a fresh input deadline now; later loop() calls check it while the LED continues.
+    // ja: 今から入力期限を設定する。LEDを動かしながら、次以降のloop()で期限を確認する。
     answer.arm(5000);
     waiting = true;
   }
-  // en: Any received byte counts as an answer here, not a complete line. / ja: ここでは行の完成ではなく、1 byteでも受信すれば応答とする。
+  // en: Any received byte counts as an answer here, not a complete line.
+  // ja: ここでは行の完成ではなく、1 byteでも受信すれば応答とする。
   else if (Serial.available())
   {
     while (Serial.available())

@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Scan software I2C for responding addresses on two chosen GPIOs.
+// ja: 選んだ二つのGPIOでソフトウェアI2Cを使い、応答アドレスを探す。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <SoftWire.h>
 
@@ -26,8 +29,11 @@ void loop()
 {
     uint8_t found = 0;
 
-    // en: Skip reserved seven-bit addresses. / ja: 予約済みの7 bitアドレスは除外する。
+    // en: Skip reserved seven-bit addresses.
+    // ja: 予約済みの7 bitアドレスは除外する。
     for (uint8_t address = 0x08; address < 0x78; address++) {
+        // en: Use a seven-bit address; endTransmission() performs the probe and reports whether it was acknowledged.
+        // ja: 7 bitアドレスを指定する。endTransmission()で試行し、相手の応答の有無を読む。
         bus.beginTransmission(address);
         if (bus.endTransmission() == 0) {
             Serial.print("found 0x");
@@ -43,7 +49,8 @@ void loop()
         Serial.println(bus.getWireTimeoutFlag()
                            ? "nothing found, and the bus timed out - pull-ups?"
                            : "nothing found");
-        // en: Clear the sticky timeout after reporting it. / ja: 保持されたtimeoutを表示後に解除する。
+        // en: Clear the sticky timeout after reporting it.
+        // ja: 保持されたtimeoutを表示後に解除する。
         bus.clearWireTimeoutFlag();
     }
     delay(2000);

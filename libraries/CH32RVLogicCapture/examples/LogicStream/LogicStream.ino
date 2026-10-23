@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Continuously capture a GPIO port and stream its samples over USB.
+// ja: GPIOポートを連続取得し、サンプル列をUSBへ送る。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* board: CH32H417 */
 
 #include <CH32RVLogicCapture.h>
@@ -19,6 +22,8 @@ void setup()
     analogWrite(PE3, 128);
     device.begin();
     logic.begin(PORT_E, CH32RVLogicCapture::maxContinuousRate());
+    // en: DMA alternates between halves of one array; readBuffer() returns a completed half, not the whole array.
+    // ja: DMAが一つの配列の前半と後半を交互に埋め、readBuffer()は完成した半分を返す。
     logic.startContinuous(buf, SAMPLES);
 }
 
@@ -30,6 +35,8 @@ void loop()
         if (stream.writeDirect(half, SAMPLES)) {
             sent++;
         } else {
+            // en: Count a refused USB submission; this example discards that half instead of retrying it.
+            // ja: USBへ投入できなかった半分を数える。この例では再送せず、その分を破棄する。
             busy++;
         }
     }

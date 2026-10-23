@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Show when USB notifications run by pausing their delivery deliberately.
+// ja: 通知の受け取りを意図的に止め、USB通知が動く場所を確認する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbDevice.h>
 
@@ -25,7 +28,11 @@ static void onLineCoding(const CH32RVUsbDeviceCdcLineCoding &coding)
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
+  // en: Register the function to call when receive notification is delivered; this line does not call it yet.
+  // ja: 受信通知を届けるときに呼ぶ関数を登録する。この行で関数が実行されるわけではない。
   SerialUSB.onRx(onRx);
   SerialUSB.onLineState(onLineState);
   SerialUSB.onLineCoding(onLineCoding);
@@ -36,7 +43,7 @@ void setup()
 void loop()
 {
   // en: Notification callbacks execute here; the return value counts callbacks, not packets.
-  // ja: 通知callbackはここで実行する。戻り値はpacket数ではなくcallback数。
+  // ja: 登録した通知関数をここで実行する。USB転送そのものの処理とは別。戻り値はpacket数ではなくcallback数。
   const size_t ran = deliverEvents();
   if (ran)
   {

@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Define a custom HID report and periodically send eight data bytes.
+// ja: 独自のHID reportを定義し、8 byteのデータを定期的に送る。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbDevice.h>
 
@@ -17,7 +20,11 @@ static const uint8_t REPORT_DESCRIPTOR[] = {
     0xc0,             // en: End collection. / ja: collection終了。
 };
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
+// en: The descriptor tells the host how to interpret bytes; the last argument is the Input payload size.
+// ja: 記述子はバイト列の意味をホストへ伝える。最後の引数はInputのpayload長。
 CH32RVUsbDeviceHidCustom customHid(device, REPORT_DESCRIPTOR, sizeof(REPORT_DESCRIPTOR), 8);
 
 static uint32_t lastReportMs = 0;
@@ -49,6 +56,8 @@ static void sendCustomReport()
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -59,6 +68,8 @@ void setup()
   config.product = "CH32RVUsbDevice Custom HID";
   config.serialNumber = "ch32rv-custom-hid";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());

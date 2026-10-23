@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Check hardware SPI by looping transmitted bytes back into the receiver.
+// ja: ハードウェアSPIの送信を受信へ折り返し、値を照合する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <SPI.h>
 
@@ -35,6 +38,8 @@ void loop()
     // ja: このtransactionの設定を適用。transfer()は送受信を同時に行う。
     SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
     for (unsigned i = 0; i < sizeof pattern; i++) {
+        // en: The loopback jumper makes the simultaneously received byte equal the transmitted pattern.
+        // ja: ジャンパで折り返しているので、同時に受信した値が送信patternと一致するか確認する。
         const uint8_t got = SPI.transfer(pattern[i]);
         Serial.print("sent 0x");
         Serial.print(pattern[i], HEX);

@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Capture one GPIO-port burst and measure a PWM period in samples.
+// ja: GPIOポートを一度取り込み、PWMの周期をサンプル数で調べる。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* board: CH32H417 */
 
 #include <CH32RVLogicCapture.h>
@@ -20,6 +23,8 @@ void loop()
     // ja: burst中は割り込みが止まる。連続取得のタイマーではなくDMAで間隔が決まる。
     const uint32_t rate = logic.captureBurst(buf, 32768);
     uint32_t rises = 0, first = 0, last = 0;
+    // en: Compare adjacent samples: a zero-to-one transition of bit 3 is a rising edge on PE3.
+    // ja: 隣り合うsampleを比べ、bit 3が0から1へ変わった箇所をPE3の立ち上がりとする。
     for (uint32_t i = 1; i < 32768; i++) {
         if ((buf[i] & (1u << 3)) && !(buf[i - 1] & (1u << 3))) {
             if (!rises) {
@@ -30,7 +35,8 @@ void loop()
         }
     }
 
-    // en: Compute hundredths without floating-point formatting. / ja: 浮動小数点の整形を使わず、百分の一単位で計算する。
+    // en: Compute hundredths without floating-point formatting.
+    // ja: 浮動小数点の整形を使わず、百分の一単位で計算する。
     const uint32_t period100 = rises > 1 ? (last - first) * 100u / (rises - 1) : 0u;
     Serial.printf("burst at %lu samples/s; PE3: %lu rising edges, %lu.%02lu samples a period\r\n",
                   (unsigned long)rate, (unsigned long)rises,

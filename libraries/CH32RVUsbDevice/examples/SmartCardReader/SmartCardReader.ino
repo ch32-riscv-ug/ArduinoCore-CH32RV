@@ -1,7 +1,12 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Emulate a USB smart-card reader and answer a small set of APDUs.
+// ja: USBスマートカードリーダーを模擬し、用意したAPDUに応答する。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 CH32RVUsbDeviceCcid Ccid(device);
 
@@ -52,7 +57,8 @@ static size_t answerApdu(const uint8_t *apdu, size_t length, uint8_t *response, 
     return dataLength + 2;
   }
 
-  // en: Unsupported instruction status (6D00). / ja: 未対応の命令を示すstatus（6D00）。
+  // en: Unsupported instruction status (6D00).
+  // ja: 未対応の命令を示すstatus（6D00）。
   response[0] = 0x6d;
   response[1] = 0x00;
   return 2;
@@ -60,6 +66,8 @@ static size_t answerApdu(const uint8_t *apdu, size_t length, uint8_t *response, 
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -72,19 +80,24 @@ void setup()
   config.product = "CH32RVUsbDevice CCID Reader";
   config.serialNumber = "ch32rv-ccid";
   config.pid = 0x0001;
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("begin failed: %s\n", device.lastErrorName());
     return;
   }
 
+  // en: Report an emulated card as present; its ATR identifies it when the host activates the slot.
+  // ja: 模擬カードを挿入済みとし、ホストがslotを有効化したときにATRで識別情報を返す。
   Ccid.insertCard(CARD_ATR, sizeof(CARD_ATR));
   Serial.println("CCID reader ready. 'i' inserts a card, 'r' removes it.");
 }
 
 void loop()
 {
-  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
+  // en: Run registered notification handlers here; USB transfer processing runs separately.
+  // ja: 登録した通知関数をここで実行する。USB転送そのものの処理とは別。
   deliverEvents();
   if (Serial.available() > 0)
   {

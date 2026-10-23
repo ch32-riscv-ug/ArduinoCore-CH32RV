@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Stream continuous high-speed ADC samples through USB bulk IN.
+// ja: 高速ADCの連続データをUSBのbulk INへ送る。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 /* board: CH32H417 */
 
 #include <CH32RV.h>
@@ -22,11 +25,15 @@ void setup()
     CH32RV.setVio18Millivolts(3300);
     device.begin();
     hsadc.begin(PC0, 20000000);
+    // en: DMA hardware fills the two arrays alternately, without calling analogRead() for every sample.
+    // ja: DMAが二つの配列を交互に埋める。CPUで毎回analogRead()する方式ではない。
     hsadc.startContinuous(bufA, bufB, SAMPLES);
 }
 
 void loop()
 {
+    // en: A non-null pointer means a completed buffer is available; no new buffer means no work this round.
+    // ja: ポインタがあれば完成bufferを処理する。まだなければ今回の巡回では何もしない。
     if (const uint16_t *full = hsadc.readBuffer()) {
         // en: USB must finish reading before ADC DMA reuses this buffer; success only starts the transfer.
         // ja: 成功は転送開始の受付。ADCのDMAが再利用する前にUSBが読み終わる必要がある。

@@ -1,4 +1,7 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Use a button to cycle through a PD source's fixed-voltage profiles.
+// ja: ボタンでPD電源の固定電圧プロファイルを順番に切り替える。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbPd.h>
 
@@ -35,6 +38,8 @@ void setup() {
 
 void loop() {
   static bool was_up = true;
+  // en: Compare this level with the previous one so a held button does not request a new voltage every loop.
+  // ja: 前回の状態と比べ、押している間の全巡回で次の電圧を要求しないようにする。
   const bool up = digitalRead(BUTTON_PIN) == HIGH;
   if (was_up && !up && USBPD.ready()) {
     // en: Search the current advertisement for the next fixed PDO, wrapping at the end.

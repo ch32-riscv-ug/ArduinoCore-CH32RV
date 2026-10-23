@@ -1,14 +1,21 @@
-// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+// en: Expose two independent USB serial ports on one device.
+// ja: 一つのUSB機器に、独立した二つのシリアルポートを作る。
+// en: Wiring and operation: README.md.
+// ja: 配線と操作: README.ja.md。
 
 #include <CH32RVUsbDevice.h>
 
+// en: The device groups USB settings; the objects declared below add functions for the host.
+// ja: deviceがUSB全体をまとめ、下のオブジェクト宣言でホストに見せる機能を追加する。
 CH32RVUsbDevice device;
 
-// en: Each named CDC port has independent input and DTR state. / ja: 名前を付けた各CDCポートは、受信とDTRを独立に持つ。
+// en: Each named CDC port has independent input and DTR state.
+// ja: 名前を付けた各CDCポートは、受信とDTRを独立に持つ。
 CH32RVUsbDeviceCdcSerial Console(device, "Console");
 CH32RVUsbDeviceCdcSerial DataLink(device, "Data Link");
 
-// en: This optional third-port branch is inactive in CH32 builds. / ja: この任意の第三ポート分岐はCH32ビルドでは使わない。
+// en: This optional third-port branch is inactive in CH32 builds.
+// ja: この任意の第三ポート分岐はCH32ビルドでは使わない。
 #if defined(CONFIG_IDF_TARGET_ESP32P4)
 #define SERIAL_MULTI_HAS_THIRD_PORT 1
 CH32RVUsbDeviceCdcSerial Telemetry(device, "Telemetry");
@@ -44,6 +51,8 @@ static void echoLine(CH32RVUsbDeviceCdcSerial &port, const char *label)
 
 void setup()
 {
+  // en: This Serial is hardware UART for diagnostics, separate from the USB connection being demonstrated.
+  // ja: このSerialはログ用のハードウェアUART。ここで試すUSB通信の接続とは別。
   Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
@@ -77,6 +86,8 @@ void setup()
 
   config.serialNumber = "ch32rv-dualserial-0001";
 
+  // en: Start all configured functions together; success starts the stack, while the host configures it afterward.
+  // ja: 設定した機能をまとめて開始する。成功は内部の開始を示し、ホストの認識はその後に進む。
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());
@@ -96,8 +107,11 @@ void setup()
 
 void loop()
 {
-  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
+  // en: Run registered notification handlers here; USB transfer processing runs separately.
+  // ja: 登録した通知関数をここで実行する。USB転送そのものの処理とは別。
   deliverEvents();
+  // en: Poll each independent port; input on one is echoed to that same port, not to the other.
+  // ja: 独立した各ポートを調べ、受けたポート自身へ返信する。もう一方へは送らない。
   echoLine(Console, "CONSOLE");
   echoLine(DataLink, "DATALINK");
 #if SERIAL_MULTI_HAS_THIRD_PORT
