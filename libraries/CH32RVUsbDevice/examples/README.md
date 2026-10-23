@@ -122,6 +122,9 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [CustomHID](CustomHID/README.md) | A custom report descriptor defining an eight-byte input-only HID report. |
 | [DescriptorDump](DescriptorDump/README.md) | Prints the descriptors the host is shown (device, configuration, BOS, MS OS 2.0, strings, HID) and every control request and bus event on the UART. |
 | [DfuRuntime](DfuRuntime/README.md) | A CDC-free DFU runtime upload entry. Holding PA1 low makes `onDetach()` refuse the transition. |
+| [ButtonKeyboard](ButtonKeyboard/README.md) | Hold and release a keyboard key with a debounced switch, retrying unsent state. |
+| [ButtonMouse](ButtonMouse/README.md) | Hold and release the left mouse button with a physical switch and no generated movement. |
+| [AnalogGamepad](AnalogGamepad/README.md) | Send two calibrated analog axes and a debounced button, with a center dead zone. |
 | [Gamepad](Gamepad/README.md) | Generated HID gamepad input with six axes, a hat and a button bitmap. |
 | [Keyboard](Keyboard/README.md) | A USB keyboard sending text, JIS symbols and a raw HID usage, while receiving Lock LED output reports. |
 | [KeyboardMouse](KeyboardMouse/README.md) | Keyboard and mouse functions sharing one HID interface, distinguished by report ID. |

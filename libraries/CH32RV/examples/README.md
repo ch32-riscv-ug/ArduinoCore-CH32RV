@@ -44,6 +44,8 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [PwmFrequency](PwmFrequency/README.md) | Change PWM frequency while keeping the duty scale and value constant. |
 | [SerialLineReceiver](SerialLineReceiver/README.md) | Receive bounded text lines incrementally, with overflow and timeout handling. |
 | [SerialPacketReceiver](SerialPacketReceiver/README.md) | Parse length-prefixed binary packets with a checksum and timeout. |
+| [ButtonDebounce](ButtonDebounce/README.md) | Filter switch bounce and count a new press once, without blocking waits. |
+| [AnalogInputToPwm](AnalogInputToPwm/README.md) | Convert potentiometer readings to PWM duty with explicit ADC and output scales. |
 | [BoardWeActCH32X035](BoardWeActCH32X035/README.md) | A starting point combining the peripherals exposed by the WeAct CH32X035 Core Board, with explicit pin names. |
 | [BoardUIAPduinoProMicro](BoardUIAPduinoProMicro/README.md) | Initialize UART, I2C, SPI, ADC and PWM using the UIAPduino Pro Micro board pin assignments. |
 

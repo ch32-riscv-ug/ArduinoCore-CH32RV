@@ -34,6 +34,13 @@ After `SerialEcho`, try the fixed-buffer [line receiver](../libraries/CH32RV/exa
 [SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.md), [ResetReason](../libraries/CH32RV/examples/ResetReason/README.md) and [WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.md) introduce system APIs using only UART.
 After `Fade`, use [PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.md) to distinguish frequency from duty.
 
+## From physical input to USB HID
+
+Start with [ButtonDebounce](../libraries/CH32RV/examples/ButtonDebounce/README.md), then use
+[ButtonKeyboard](../libraries/CH32RVUsbDevice/examples/ButtonKeyboard/README.md) or [ButtonMouse](../libraries/CH32RVUsbDevice/examples/ButtonMouse/README.md) to turn stable switch state into host input.
+After [AnalogInputToPwm](../libraries/CH32RV/examples/AnalogInputToPwm/README.md) introduces numeric scaling,
+[AnalogGamepad](../libraries/CH32RVUsbDevice/examples/AnalogGamepad/README.md) adds two-axis center calibration and a dead zone.
+
 ## Run an example
 
 1. Read the sketch and its README. Check the exact part, power, input voltage and pins.

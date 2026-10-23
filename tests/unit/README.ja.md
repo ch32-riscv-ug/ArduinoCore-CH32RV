@@ -10,3 +10,7 @@ host core を導入する場合も、その profile と必要 compiler を明示
 `test_example_serial_receivers.py`は、UART受信例の`.ino`をhost C++で直接実行し、
 分割・連続受信、容量超過、checksum不一致、timeoutと時刻の桁あふれを確認します。
 UARTの割り込み・受信バッファ容量や実際の配線は、この検査の対象ではありません。
+
+`test_example_inputs.py`は、物理入力の5例をhost C++で実行し、チャタリング・押下中の起動、
+時刻の桁あふれ、PWMへの換算、HID送信失敗後の解放・再接続、gamepadの校正と軸換算を確認します。
+report型は実ライブラリを使いますが、USB転送・列挙・ADC・配線は実機確認が必要です。

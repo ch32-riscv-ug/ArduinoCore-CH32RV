@@ -37,6 +37,13 @@ UART ログを見るための USB-UART アダプタも、MCU 自身の USB デ�
 [SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.ja.md)・[ResetReason](../libraries/CH32RV/examples/ResetReason/README.ja.md)・[WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.ja.md)はUARTだけで試せるシステムAPIの入口です。
 `Fade`の次は[PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.ja.md)で、周波数とdutyの違いを観察します。
 
+## 物理入力からUSB HIDへ
+
+[ButtonDebounce](../libraries/CH32RV/examples/ButtonDebounce/README.ja.md)で押下・解放を安定させてから、
+[ButtonKeyboard](../libraries/CH32RVUsbDevice/examples/ButtonKeyboard/README.ja.md)・[ButtonMouse](../libraries/CH32RVUsbDevice/examples/ButtonMouse/README.ja.md)でホスト入力へ進みます。
+[AnalogInputToPwm](../libraries/CH32RV/examples/AnalogInputToPwm/README.ja.md)で数値範囲の変換を確認したら、
+[AnalogGamepad](../libraries/CH32RVUsbDevice/examples/AnalogGamepad/README.ja.md)で2軸の中央補正と中立帯を試せます。
+
 ## サンプルを動かす手順
 
 1. 対象の `.ino` と個別 README を読み、正確な型番、電源、入力電圧、使う端子を確認します。

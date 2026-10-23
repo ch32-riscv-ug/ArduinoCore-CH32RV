@@ -48,6 +48,8 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [PwmFrequency](PwmFrequency/README.ja.md) | dutyの数値を保ってPWM周波数を切り替えます。 |
 | [SerialLineReceiver](SerialLineReceiver/README.ja.md) | 文字の到着を待たずに行を組み立て、長さ超過とtimeoutを扱います。 |
 | [SerialPacketReceiver](SerialPacketReceiver/README.ja.md) | 長さ付きバイナリパケットをchecksum・timeout付きで受信します。 |
+| [ButtonDebounce](ButtonDebounce/README.ja.md) | 待ち続けずにチャタリングを除き、新しい押下を一度ずつ数えます。 |
+| [AnalogInputToPwm](AnalogInputToPwm/README.ja.md) | 可変抵抗の読み取りを、ADCとPWMの範囲を明示してdutyへ変換します。 |
 | [BoardWeActCH32X035](BoardWeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board の端子名を明示して、各周辺機能を組み合わせる出発点です。 |
 | [BoardUIAPduinoProMicro](BoardUIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro の基板上の端子名を使って、UART・I2C・SPI・ADC・PWM を初期化します。 |
 
