@@ -1,17 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* UsbNetworkPing - a USB network adapter (CDC-NCM) that answers ping.
- *
- * The board appears as a network adapter on a host with a CDC-NCM driver.
- * This core has no IP stack, so the sketch
- * answers the two things `ping` needs straight from the Ethernet frames: ARP
- * ("who has 192.168.7.1?") and ICMP echo. Give the PC's new interface an
- * address on 192.168.7.0/24 (e.g. 192.168.7.2/24) and run `ping 192.168.7.1`.
- *
- * EspUsbDevice's UsbNetwork example serves a web page through lwIP; that
- * needs an IP stack this core does not ship.
- *
- * See README.md for controller support and the limited IPv4 parser scope.
- * requires: ram=16K */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: ram=16K */
+
 #include <CH32RVUsbDevice.h>
 #include <string.h>
 
@@ -38,8 +27,7 @@ static uint16_t checksum(const uint8_t *p, size_t n)
     return (uint16_t)~sum;
 }
 
-/* Builds the answer in `reply`; loop() sends it (sending from inside the
- * frame callback would re-enter the USB stack). */
+// en: Build one pending reply here and transmit it later from loop(). / ja: ここでは返信を一つ準備し、送信は後でloop()から行う。
 static void onFrame(const uint8_t *f, size_t n)
 {
     frames++;
@@ -47,21 +35,24 @@ static void onFrame(const uint8_t *f, size_t n)
         return;
     }
     const uint16_t type = (uint16_t)(f[12] << 8 | f[13]);
-    if (type == 0x0806 && f[21] == 1 && memcmp(f + 38, MY_IP, 4) == 0) {   /* ARP request for us */
+    if (type == 0x0806 && f[21] == 1 && memcmp(f + 38, MY_IP, 4) == 0) {
         memcpy(reply, f + 6, 6);
         memcpy(reply + 6, myMac, 6);
-        memcpy(reply + 12, f + 12, 8);           /* type, htype, ptype, sizes */
-        reply[21] = 2;                           /* reply */
+        // en: Preserve EtherType and ARP address-format fields. / ja: EtherTypeとARPのアドレス形式fieldを引き継ぐ。
+        memcpy(reply + 12, f + 12, 8);
+        // en: ARP reply operation. / ja: ARPの応答opcode。
+        reply[21] = 2;
         memcpy(reply + 22, myMac, 6);
         memcpy(reply + 28, MY_IP, 4);
-        memcpy(reply + 32, f + 22, 10);          /* the asker's MAC and IP */
+        memcpy(reply + 32, f + 22, 10);
         replyLength = 42;
         arps++;
     } else if (type == 0x0800 && f[23] == 1 && f[34] == 8 && memcmp(f + 30, MY_IP, 4) == 0 && n <= sizeof reply) {
-        /* IPv4 ICMP echo request for us: swap addresses, make it a reply. */
         memcpy(reply, f, n);
         memcpy(reply, f + 6, 6);
         memcpy(reply + 6, myMac, 6);
+        // en: Swap IPv4 endpoints, then recompute both IP and ICMP checksums.
+        // ja: IPv4の送受信先を入れ替え、IPとICMP両方のchecksumを再計算する。
         memcpy(reply + 26, f + 30, 4);
         memcpy(reply + 30, f + 26, 4);
         reply[24] = reply[25] = 0;
@@ -70,7 +61,7 @@ static void onFrame(const uint8_t *f, size_t n)
         reply[25] = (uint8_t)ipsum;
         const size_t ip = 14 + (size_t)(reply[14] & 15) * 4;
         const size_t total = 14 + (size_t)(reply[16] << 8 | reply[17]);
-        reply[ip] = 0;                           /* echo reply */
+        reply[ip] = 0;
         reply[ip + 2] = reply[ip + 3] = 0;
         const uint16_t icmpsum = checksum(reply + ip, total - ip);
         reply[ip + 2] = (uint8_t)(icmpsum >> 8);
@@ -82,7 +73,7 @@ static void onFrame(const uint8_t *f, size_t n)
 
 void setup()
 {
-    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+    Serial.begin(115200, SERIAL_8N1, RX, TX);
     net.onFrame(onFrame);
 
     CH32RVUsbDeviceConfig config;
@@ -92,15 +83,15 @@ void setup()
         Serial.println(USBDevice.lastErrorName());
         return;
     }
-    /* The PC's interface takes macAddress(); this side answers with the same
-     * address and the last bit flipped, so the two differ. */
+
     memcpy(myMac, net.macAddress(), 6);
+    // en: Keep the device-side responder MAC distinct from the host-side MAC. / ja: 応答側MACがホスト側と同一にならないようにする。
     myMac[5] ^= 1;
 }
 
 void loop()
 {
-    // The callbacks set in setup() run here, and only here.
+    // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
     deliverEvents();
     if (replyLength) {
         net.sendFrame(reply, replyLength);

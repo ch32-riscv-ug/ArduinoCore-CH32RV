@@ -32,6 +32,10 @@ For additional APDUs, validate header and Lc against available bytes and keep re
 
 `onApdu()` prepares a USB response immediately and does not wait for `deliverEvents()`. Avoid long operations there. A physical reader additionally needs card circuitry and communication; an ATR alone does not implement a card's behavior.
 
+### What the synthetic ATR describes
+
+`CARD_ATR` imitates a PC/SC contactless storage-card ATR: its historical bytes contain RID `A0 00 00 03 06`, standard `03` and card name `00 01` (MIFARE Classic 1K). This is identification data for the demonstration, not an implementation of that card's memory, authentication or radio protocol.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

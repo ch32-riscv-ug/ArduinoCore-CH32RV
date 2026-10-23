@@ -20,6 +20,12 @@ Read bulk IN as 16-bit little-endian bitmaps. Check the period on bit 3 and the 
 
 Avoid capture DMA overwriting memory while USB reads it. Keep data unchanged until transmission ends, before DMA returns to that half. Available processing time is half-buffer samples divided by actual sample rate. For guarantees, add completion management and stop/discard behavior on overload.
 
+### Host receiver and stream format
+
+Use a USB path with enough bandwidth for the selected capture rate. With the default `1209:0001` identity, select the class `0xff` interface and discover bulk IN from its descriptors. Queue multiple asynchronous libusb reads to keep receiving across transfer completions.
+
+The stream is raw 16-bit little-endian port snapshots without an application header; bit n is PEn. Required payload bandwidth is `logic.sampleRate() × sizeof(uint16_t)` bytes/s. The cumulative sent/lost counters count half-buffers, not individual samples, and do not mark where gaps occur in the stream.
+
 ## Related documentation
 
 - [Sketch](LogicStream.ino)

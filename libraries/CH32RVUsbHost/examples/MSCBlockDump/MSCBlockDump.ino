@@ -1,8 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Identify a USB flash drive or card reader and dump its first block.
- * EspUsbHost's EspUsbHostMSCBlockDump.
- *
- * requires: USBFS */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: USBFS */
+
 #include <CH32RVUsbHost.h>
 
 CH32RVUsbHost usb;
@@ -19,7 +17,7 @@ void setup() {
 }
 
 void loop() {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   if (dumped || !usb.mscReady()) {
     return;
@@ -39,6 +37,7 @@ void loop() {
   Serial.print(blocks);
   Serial.print(" blocks of ");
   Serial.println(size);
+  // en: Read only when the reported block fits this destination. / ja: 報告されたblockが保存先に収まる場合だけ読む。
   if (size == sizeof block && usb.mscReadBlocks(0, block, 1)) {
     for (size_t i = 0; i < sizeof block; i += 16) {
       ch32rvUsbHostPrintHex(block + i, 16);

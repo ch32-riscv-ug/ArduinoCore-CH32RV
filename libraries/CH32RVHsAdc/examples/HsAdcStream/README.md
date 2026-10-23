@@ -20,6 +20,12 @@ Read the vendor bulk IN endpoint as 16-bit little-endian samples. Observe sent, 
 
 `writeDirect()` accepts a transfer; returning does not mean USB released the buffer. Transmission must finish before ADC reuses it. When the host is slow, counters alone cannot guarantee integrity: add completion tracking, buffering and a capture-stop or discard policy.
 
+### Host receiver and stream format
+
+Use a USB path with enough bandwidth for the selected sample rate. The sample uses default identity `1209:0001`; select its class `0xff` interface and discover bulk IN from the descriptors rather than hard-coding endpoint addresses. Queue several asynchronous libusb reads so gaps between synchronous calls do not repeatedly idle the endpoint.
+
+The stream contains raw 16-bit little-endian sample values, with no application message header. The example's ADC values use the range 0–1023. Required payload bandwidth is `sampleRate() × sizeof(uint16_t)` bytes/s. The sent/lost counters count buffers, not samples, and do not identify the positions of missing samples in the raw stream. These counters are cumulative.
+
 ## Related documentation
 
 - [Sketch](HsAdcStream.ino)

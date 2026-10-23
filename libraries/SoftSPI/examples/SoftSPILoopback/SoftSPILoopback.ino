@@ -1,16 +1,5 @@
-/* SoftSPILoopback - bit-banged SPI, checked with one jumper.
- *
- * Wiring: one jumper from MOSI to MISO. Whatever is sent comes straight back,
- * so a correct byte proves the clock, the data line and the framing.
- *
- * Without the jumper MISO floats and the readings are meaningless; the sketch
- * says so rather than calling it a failure.
- *
- * The three pads below are the sketch's own choice - that is the whole point
- * of this library, so change them to whatever your board leaves free. PA1 and
- * PA2 are the only two pad names every CH32 series has, which is the only
- * reason they are the ones here.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <SoftSPI.h>
 
 static const uint8_t SCK_PIN = PA1;
@@ -18,14 +7,16 @@ static const uint8_t MOSI_PIN = PA2;
 #if defined(PA4)
 static const uint8_t MISO_PIN = PA4;
 #else
-static const uint8_t MISO_PIN = PC4;   /* CH32V002 and CH32V003 have no PA4 */
+static const uint8_t MISO_PIN = PC4;
 #endif
 
-SoftSPI bus(SCK_PIN, MISO_PIN, MOSI_PIN);   /* SPI.begin()'s order */
+// en: Constructor order is clock, input, output, matching SPI.begin().
+// ja: constructorの順はclock、input、outputでSPI.begin()と同じ。
+SoftSPI bus(SCK_PIN, MISO_PIN, MOSI_PIN);
 
 void setup()
 {
-    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
+    Serial.begin(115200, SERIAL_8N1, RX, TX);
     while (!Serial) {
     }
     bus.begin();
@@ -44,6 +35,8 @@ void loop()
 {
     static const uint8_t sent[] = {0x00, 0x55, 0xAA, 0xFF, 0x0F};
 
+    // en: Check the same loopback data under each clock polarity/phase combination.
+    // ja: clockの極性と位相の各組み合わせで、同じデータを照合する。
     for (uint8_t mode = 0; mode < 4; mode++) {
         bus.beginTransaction(SPISettings(1000000, MSBFIRST, (SPIMode)mode));
         bool ok = true;

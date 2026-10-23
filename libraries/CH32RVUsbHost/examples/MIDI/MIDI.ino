@@ -1,8 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Print the messages a USB MIDI device sends, and play a note on it once a
- * second. EspUsbHost's EspUsbHostMIDI.
- *
- * requires: USBFS */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: USBFS */
+
 #include <CH32RVUsbHost.h>
 
 CH32RVUsbHost usb;
@@ -26,13 +24,14 @@ void setup() {
 }
 
 void loop() {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   static uint32_t last;
   if (usb.midiReady() && millis() - last >= 1000) {
     last = millis();
     usb.midiSendNoteOn(0, 60, 100);
     delay(200);
+    // en: End the note as well as starting it. / ja: 発音だけでなく停止も送る。
     usb.midiSendNoteOff(0, 60);
   }
 }

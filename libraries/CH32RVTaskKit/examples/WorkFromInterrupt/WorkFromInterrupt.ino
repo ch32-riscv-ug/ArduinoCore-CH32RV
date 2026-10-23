@@ -1,11 +1,8 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* WorkFromInterrupt - an interrupt does not do the work, it asks for it: the
- * ISR stores the press time in a Queue and posts the Work; loop()'s runOnce()
- * runs it. Several presses before the run are one run that drains them all.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVTaskKit.h>
 
-static const int BUTTON_PIN = PA1;   /* a push button to GND: change to your pin */
+static const int BUTTON_PIN = PA1;
 
 static CH32RVTaskKit::Executor app;
 static CH32RVSyncKit::Queue<uint32_t, 8> presses;
@@ -14,6 +11,7 @@ static void handlePresses()
 {
   uint32_t t;
   uint32_t n = 0;
+  // en: One scheduled run drains all pending events. / ja: 一回の起動で保留中のイベントをまとめて処理する。
   while (presses.tryReceive(t))
   {
     n++;
@@ -28,8 +26,10 @@ static CH32RVTaskKit::Work handler(handlePresses);
 
 static void onPress()
 {
-  presses.trySend(millis());   /* the data */
-  handler.post();              /* "please run": from an ISR too */
+  presses.trySend(millis());
+  // en: Schedule work only; queued timestamps preserve individual events.
+  // ja: ここでは実行予約だけを行い、個別イベントの時刻はQueueに残す。
+  handler.post();
 }
 
 void setup()
@@ -44,5 +44,5 @@ void setup()
 void loop()
 {
   app.runOnce();
-  delay(300);   /* a slow loop: presses meanwhile become one run */
+  delay(300);
 }

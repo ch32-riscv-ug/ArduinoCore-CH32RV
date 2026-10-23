@@ -1,20 +1,20 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* CustomHID - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
+// en: Keep report size/count, constructor length and payload length consistent.
+// ja: Report Size・Count、constructorの長さ、payload長を一致させる。
 static const uint8_t REPORT_DESCRIPTOR[] = {
-    0x06, 0x00, 0xff, // Usage Page (Vendor Defined 0xff00)
-    0x09, 0x01,       // Usage (1)
-    0xa1, 0x01,       // Collection (Application)
-    0x15, 0x00,       //   Logical Minimum (0)
-    0x26, 0xff, 0x00, //   Logical Maximum (255)
-    0x75, 0x08,       //   Report Size (8)
-    0x95, 0x08,       //   Report Count (8)
-    0x09, 0x01,       //   Usage (1)
-    0x81, 0x02,       //   Input (Data,Var,Abs)
-    0xc0,             // End Collection
+    0x06, 0x00, 0xff, // en: Vendor Usage Page. / ja: ベンダー定義のUsage Page。
+    0x09, 0x01,       // en: Application usage 1. / ja: アプリのusage 1。
+    0xa1, 0x01,       // en: Application collection. / ja: アプリのcollection開始。
+    0x15, 0x00,       // en: Logical minimum 0. / ja: 論理値の最小は0。
+    0x26, 0xff, 0x00, // en: Logical maximum 255. / ja: 論理値の最大は255。
+    0x75, 0x08,       // en: Eight bits per element. / ja: 1要素は8 bit。
+    0x95, 0x08,       // en: Eight elements per report. / ja: 1 reportは8要素。
+    0x09, 0x01,       // en: Input usage 1. / ja: Inputのusage 1。
+    0x81, 0x02,       // en: Data, variable, absolute Input. / ja: データ・可変・絶対値のInput。
+    0xc0,             // en: End collection. / ja: collection終了。
 };
 
 CH32RVUsbDevice device;
@@ -49,11 +49,11 @@ static void sendCustomReport()
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Custom HID";

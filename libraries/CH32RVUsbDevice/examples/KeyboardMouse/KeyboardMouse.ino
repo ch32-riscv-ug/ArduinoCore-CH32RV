@@ -1,20 +1,20 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* KeyboardMouse - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
 CH32RVUsbDeviceHidKeyboard keyboard(device);
+// en: Both HID functions share this device and are distinguished by report ID.
+// ja: 二つのHID機能は同じデバイスに属し、Report IDで区別する。
 CH32RVUsbDeviceHidMouse mouse(device);
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Keyboard Mouse";

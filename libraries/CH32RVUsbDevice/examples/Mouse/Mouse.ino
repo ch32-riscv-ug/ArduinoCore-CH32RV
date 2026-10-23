@@ -1,7 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Mouse - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -9,11 +7,11 @@ CH32RVUsbDeviceHidMouse mouse(device);
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Mouse";
@@ -59,6 +57,7 @@ void loop()
     ok = mouse.wheel(1);
     break;
   default:
+    // en: A press persists until a corresponding release report is sent. / ja: 押下状態は対応する解放reportを送るまで続く。
     ok = mouse.press(CH32RV_USB_DEVICE_MOUSE_LEFT);
     delay(50);
     ok = ok && mouse.release(CH32RV_USB_DEVICE_MOUSE_LEFT);

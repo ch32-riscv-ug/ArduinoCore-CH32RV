@@ -1,7 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* MediaKeys - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -29,6 +27,7 @@ static const MediaStep MEDIA_STEPS[] = {
 static void sendMediaStep()
 {
   const MediaStep &step = MEDIA_STEPS[stepIndex % (sizeof(MEDIA_STEPS) / sizeof(MEDIA_STEPS[0]))];
+  // en: click() sends both press and release for this media usage. / ja: click()はメディアusageの押下と解放を送る。
   if (media.click(step.usage))
   {
     Serial.printf("MEDIA_KEY %s usage=0x%04x\n", step.name, step.usage);
@@ -42,11 +41,11 @@ static void sendMediaStep()
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Media Keys";
@@ -70,9 +69,8 @@ void loop()
     sendMediaStep();
   }
 
-  // System control keys can affect the host power state. Send them only from
-  // an explicit user action in your own sketch.
-  //
+  // en: Power-state actions: enable only for an explicit user action.
+  // ja: 電源状態を変える操作は、明示的なユーザー操作に割り当てる場合だけ有効にする。
   // systemControl.click(CH32RV_USB_DEVICE_SYSTEM_CONTROL_STANDBY);
   // systemControl.click(CH32RV_USB_DEVICE_SYSTEM_CONTROL_POWER_OFF);
   // systemControl.click(CH32RV_USB_DEVICE_SYSTEM_CONTROL_WAKE_HOST);

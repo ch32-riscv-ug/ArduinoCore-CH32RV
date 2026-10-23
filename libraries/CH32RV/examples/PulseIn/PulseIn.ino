@@ -1,23 +1,11 @@
-/* PulseIn - measure how long a pin stays high.
- *
- * Wiring: anything that produces a pulse. An HC-SR04 ultrasonic module is the
- * classic: trigger it for 10 us and its ECHO pin goes high for as long as the
- * sound takes to come back.
- *
- * **HC-SR04 runs at 5 V** and its ECHO pin will drive 5 V into the CH32. Use a
- * divider, or a module that says it is 3.3 V safe.
- *
- * With nothing connected, pulseIn() returns 0 after the timeout - which is
- * what this sketch shows when it is left unwired.
- */
-/* Change these two to your wiring. PA1 and PA2 are the only two pad names
- * every CH32 series has, which is the only reason they are the ones here. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 static const uint8_t TRIGGER = PA1;
 static const uint8_t ECHO = PA2;
 
 void setup()
 {
-    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
+    Serial.begin(115200, SERIAL_8N1, RX, TX);
     while (!Serial) {
     }
     pinMode(TRIGGER, OUTPUT);
@@ -27,20 +15,20 @@ void setup()
 
 void loop()
 {
-    /* 10 us is what the HC-SR04 asks for. delayMicroseconds() is a busy loop,
-     * so it is accurate at this scale in a way delay() is not. */
     digitalWrite(TRIGGER, HIGH);
     delayMicroseconds(10);
     digitalWrite(TRIGGER, LOW);
 
+    // en: A zero result means no complete pulse was measured before the timeout.
+    // ja: 戻り値0は、期限内にパルス幅を取得できなかったことを示す。
     const unsigned long us = pulseIn(ECHO, HIGH, 30000ul);
     if (us == 0) {
         Serial.println("no pulse within 30 ms");
     } else {
         Serial.print(us);
         Serial.print(" us  ~= ");
-        /* Sound travels about 343 m/s, and the pulse covers the distance
-         * twice. 58 us per centimetre is the usual shorthand. */
+
+        // en: Ultrasonic echo time includes the outward and return paths. / ja: 超音波の応答時間には往路と復路の両方が含まれる。
         Serial.print(us / 58.0, 1);
         Serial.println(" cm");
     }

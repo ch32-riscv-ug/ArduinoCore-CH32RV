@@ -1,25 +1,15 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* CriticalSection - read several variables an ISR writes as one consistent
- * snapshot. Without it, an interrupt between two reads can pair the count
- * of one press with the time of another.
- *
- * A CriticalSection masks this core's interrupts for its scope and puts
- * them back as they were (it nests). Keep it to a few lines: every
- * interrupt - USB, USB PD, the UARTs - waits while it is held. CH32V003 has
- * no atomic instructions, so masking is how a multi-word value is shared
- * with an ISR there. docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVSyncKit.h>
 
-static const int BUTTON_PIN = PA1;   /* a push button to GND: change to your pin */
+static const int BUTTON_PIN = PA1;
 
-/* Written by the ISR; volatile, so every read goes to memory. */
 static volatile uint32_t pressCount = 0;
 static volatile uint32_t lastPressMs = 0;
-static volatile uint64_t sumOfMicros = 0;   /* 64 bits: two words on RV32 */
+static volatile uint64_t sumOfMicros = 0;
 
 static void onPress()
 {
-  /* Inside an ISR this core's interrupts are already off: no guard needed. */
   pressCount = pressCount + 1;
   lastPressMs = millis();
   sumOfMicros = sumOfMicros + micros();
@@ -38,12 +28,15 @@ void loop()
   uint32_t count, last;
   uint64_t sum;
   {
-    CH32RVSyncKit::CriticalSection cs;   /* interrupts off up to the closing brace */
-    count = pressCount;                  /* copy, nothing else */
+    // en: Copy the whole snapshot; scope exit restores the previous interrupt state.
+    // ja: 一組の値をまとめてコピーし、スコープ終了で元の割り込み状態に戻す。
+    CH32RVSyncKit::CriticalSection cs;
+    count = pressCount;
     last = lastPressMs;
     sum = sumOfMicros;
   }
-  /* Printing is slow: do it from the copies, with interrupts on. */
+
+  // en: Print from local copies after leaving the protected scope. / ja: 保護区間を抜けてからローカルのコピーを表示する。
   Serial.print("PRESSES count=");
   Serial.print(count);
   Serial.print(" last_ms=");

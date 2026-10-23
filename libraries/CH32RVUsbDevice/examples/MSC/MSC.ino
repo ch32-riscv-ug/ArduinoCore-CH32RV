@@ -1,9 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* MSC - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library.
- * The disk is 16 blocks of RAM (8 KB).
- * requires: ram=16K */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: ram=16K */
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -11,6 +8,7 @@ CH32RVUsbDeviceMsc msc(device);
 
 static constexpr uint32_t BLOCK_COUNT = 16;
 static constexpr uint16_t BLOCK_SIZE = 512;
+// en: Keep the backing array alive for the entire exposed-medium lifetime. / ja: 媒体として公開している間、保存先の配列を有効に保つ。
 static uint8_t storage[BLOCK_COUNT * BLOCK_SIZE];
 CH32RVUsbDeviceMscRamDisk disk(storage, BLOCK_COUNT, BLOCK_SIZE);
 
@@ -18,14 +16,15 @@ static void prepareDisk()
 {
   disk.clear();
 
-  // This is enough for low-level SCSI/block access tests. It is not a FAT image.
+  // en: A boot signature alone does not make this raw medium a FAT filesystem.
+  // ja: boot署名だけでは、このraw媒体がFATになるわけではない。
   disk.writeByte(0, 510, 0x55);
   disk.writeByte(0, 511, 0xaa);
 }
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   prepareDisk();
@@ -35,6 +34,7 @@ void setup()
   msc.productRevision("1.0");
   msc.mediaPresent(true);
   msc.isWritable(true);
+  // en: This provider answers inside USB processing; do not delay here. / ja: USB処理中に応答するprovider。ここで待機しない。
   msc.onStartStop([](uint8_t powerCondition, bool start, bool loadEject)
                   {
                     Serial.printf("MSC_START_STOP pc=%u start=%u eject=%u\n",
@@ -51,7 +51,7 @@ void setup()
   }
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice MSC";

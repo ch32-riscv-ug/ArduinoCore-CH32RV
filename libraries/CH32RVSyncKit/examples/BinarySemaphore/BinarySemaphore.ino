@@ -1,19 +1,19 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* BinarySemaphore - "it happened" once: the ISR gives, loop() takes. A
- * second give before the take is refused, so loop() learns it was slow.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVSyncKit.h>
 
-static const int BUTTON_PIN = PA1;   /* a push button to GND: change to your pin */
+static const int BUTTON_PIN = PA1;
 
 static CH32RVSyncKit::BinarySemaphore<> pressed;
 static volatile uint32_t missed = 0;
 
 static void onPress()
 {
+  // en: A second pending signal is refused rather than counted by the semaphore.
+  // ja: 未処理の合図があれば拒否され、semaphore自体は回数を数えない。
   if (!pressed.give())
   {
-    missed = missed + 1;   /* given already and not taken yet */
+    missed = missed + 1;
   }
 }
 
@@ -37,5 +37,6 @@ void loop()
     Serial.println(missed);
     missed = 0;
   }
-  delay(1000);   /* slow on purpose: press twice quickly */
+  // en: Deliberately slow the consumer to demonstrate missed signals. / ja: 合図の取りこぼしを見るため、受け手を意図的に遅くする。
+  delay(1000);
 }

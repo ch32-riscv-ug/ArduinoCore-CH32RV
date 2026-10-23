@@ -1,14 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* AudioMicrophone - ported from EspUsbDevice's example of the same name
- * (renamed EspUsbDevice -> CH32RVUsbDevice, Esp -> CH32RV). Controller support and wiring: see the adjacent README files. docs/usb.ja.md describes the library.
- *
- * A USB Audio Class 1 microphone that sends a 440 Hz tone. 32 kHz 16-bit
- * mono (Esp: 48 kHz): a full-speed X035 endpoint holds 64 bytes, one
- * millisecond of it. The tone comes from a table instead of sinf(), which in
- * software floating point would take longer than the samples last, and the
- * sketch writes as many samples as the time that passed calls for. *
- * requires: flash=48K
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: flash=48K */
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -18,7 +10,6 @@ CH32RVUsbAudioCaptureStream &capture = audio.addCaptureStream();
 static constexpr uint32_t SAMPLE_RATE = 32000;
 static constexpr uint32_t TONE_HZ = 440;
 
-/* One period of a sine, amplitude 8000. */
 static const int16_t SINE[64] = {
     0, 784, 1561, 2322, 3061, 3771, 4445, 5075,
     5657, 6184, 6652, 7055, 7391, 7656, 7846, 7961,
@@ -30,22 +21,23 @@ static const int16_t SINE[64] = {
     -5657, -5075, -4445, -3771, -3061, -2322, -1561, -784,
 };
 
-/* Phase as a 32-bit fraction of a period; its top 6 bits index SINE. */
+// en: The top six phase bits index one cycle of the waveform table. / ja: 位相の上位6 bitを、波形tableの一周期内の位置に使う。
 static uint32_t phase = 0;
 static const uint32_t phaseIncrement =
     static_cast<uint32_t>((static_cast<uint64_t>(TONE_HZ) << 32) / SAMPLE_RATE);
 static uint32_t lastMicros = 0;
-static uint32_t owed = 0;   /* sample frames x 1,000,000 not written yet */
+// en: Fractional frames in millionths; retained between loop iterations. / ja: 百万分の一frame単位の端数を、loop()間で保持する。
+static uint32_t owed = 0;
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   capture.addFormat({SAMPLE_RATE, 1, 2, 16});
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Microphone";
@@ -67,8 +59,10 @@ void loop()
   lastMicros = now;
   if (elapsed > 10000)
   {
-    elapsed = 10000;   /* after a long stall, do not try to catch up */
+    elapsed = 10000;
   }
+  // en: Carry fractional sample time across rounds to avoid rounding drift.
+  // ja: 端数のsample時間を次の巡回へ持ち越し、丸めによるずれを防ぐ。
   owed += elapsed * SAMPLE_RATE;
   uint32_t frames = owed / 1000000;
   owed %= 1000000;
@@ -82,6 +76,8 @@ void loop()
       samples[i] = SINE[phase >> 26];
       phase += phaseIncrement;
     }
+    // en: Length is in bytes; this demo does not retain data refused by a short write.
+    // ja: 長さはbytes単位。この例は部分書き込みの残りを保持しない。
     capture.write(samples, n * sizeof(samples[0]));
     frames -= n;
   }

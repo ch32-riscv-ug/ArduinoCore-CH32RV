@@ -1,33 +1,14 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* SerialMulti - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library.
- *
- * CH32: a device takes up to four CDC ports; X035's USBFS has 7 endpoints
- * besides EP0, so two ports (4) leave room for more. The ESP32-P4-only third
- * port below stays out. */
-#include <CH32RVUsbDevice.h>
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
 
-// Two independent USB CDC ACM serial ports on one device.
-//
-// The host sees two COM ports / two /dev/ttyACM* nodes, each with its own
-// buffers, line coding and DTR state. A common use is separating a machine
-// protocol from a human console so log output never corrupts a command stream.
-//
-// Each CDC function uses a notification endpoint number and a duplex data
-// endpoint number. Two functions use four numbers on CH32. begin() checks the
-// controller budget.
+#include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
 
-// The name is what the host shows for each port. Give the ports distinct
-// names: they are otherwise identical ACM functions, and without names a user
-// has no way to tell which node is which.
+// en: Each named CDC port has independent input and DTR state. / ja: 名前を付けた各CDCポートは、受信とDTRを独立に持つ。
 CH32RVUsbDeviceCdcSerial Console(device, "Console");
 CH32RVUsbDeviceCdcSerial DataLink(device, "Data Link");
 
-// This ESP32-P4 conditional variant is inactive in CH32 builds. The CH32
-// example exposes Console and DataLink only.
+// en: This optional third-port branch is inactive in CH32 builds. / ja: この任意の第三ポート分岐はCH32ビルドでは使わない。
 #if defined(CONFIG_IDF_TARGET_ESP32P4)
 #define SERIAL_MULTI_HAS_THIRD_PORT 1
 CH32RVUsbDeviceCdcSerial Telemetry(device, "Telemetry");
@@ -63,7 +44,7 @@ static void echoLine(CH32RVUsbDeviceCdcSerial &port, const char *label)
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   Console.onLineState([](const CH32RVUsbDeviceCdcLineState &state)
@@ -87,14 +68,13 @@ void setup()
 #endif
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
-  // Auto selects this CH32 part's default available controller; see README.md.
+
   config.controller = CH32RVUsbController::Auto;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice DualSerial";
-  // A stable serial number is what lets a host keep the same port names across
-  // replugs, and lets several of these boards coexist on one machine.
+
   config.serialNumber = "ch32rv-dualserial-0001";
 
   if (!device.begin(config))
@@ -116,7 +96,7 @@ void setup()
 
 void loop()
 {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   echoLine(Console, "CONSOLE");
   echoLine(DataLink, "DATALINK");

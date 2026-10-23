@@ -1,13 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* AudioSpeaker - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, Esp -> CH32RV). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library.
- *
- * A USB Audio Class 1 speaker the host plays into; the sketch counts what
- * arrives and logs it on Serial. 16 kHz 16-bit stereo (Esp: 48 kHz): a
- * full-speed X035 endpoint holds 64 bytes, one millisecond of it. *
- * requires: flash=48K
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: flash=48K */
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -40,13 +33,15 @@ static void printEvents()
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
+  // en: Format fields: sample rate, channels, bytes per sample, significant bits.
+  // ja: formatの順はsample rate、channel数、1 sampleのbytes、有効bit数。
   playback.addFormat({16000, 2, 2, 16});
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Speaker";
@@ -63,6 +58,8 @@ void setup()
 void loop()
 {
   uint8_t pcm[256];
+  // en: Count actual bytes consumed; this sample does not drive an audio output.
+  // ja: 実際に読めたバイト数を数える。この例では音声出力回路を駆動しない。
   receivedBytes += playback.read(pcm, sizeof(pcm));
   printEvents();
 

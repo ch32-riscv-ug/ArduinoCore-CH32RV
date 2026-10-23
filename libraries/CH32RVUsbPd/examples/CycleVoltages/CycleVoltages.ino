@@ -1,18 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* CycleVoltages - step through a USB PD charger's fixed voltages with a button.
- *
- * Each press asks for the next fixed profile the charger offers (5 V, 9 V,
- * 12 V ... and back to 5 V) and prints the contract on the UART. The driver
- * keeps the link itself: begin() attached it as a system service.
- *
- * Wiring: the board's USB-C to a PD charger, a push button from BUTTON_PIN to
- * GND, and the UART (RX_PIN / TX_PIN, the chip's default pads - change them to
- * yours) to a USB-serial adapter. A board powered from the charger's VBUS sees
- * every voltage it asks for: make sure its regulator takes the highest one.
- *
- * Runs on the series with USBPD (libraries/CH32RVUsbPd/README.md); on the
- * others begin() is false. PA1 is CC2 on CH32V205: move BUTTON_PIN there.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbPd.h>
 
 static const int RX_PIN = RX;
@@ -35,6 +22,8 @@ void setup() {
     return;
   }
   const uint32_t start = millis();
+  // en: ready() advances negotiation; keep a deadline for a non-PD source.
+  // ja: ready()で交渉も進む。PD非対応の相手に備えて期限を設ける。
   while (!USBPD.ready()) {
     if (millis() - start > 5000) {
       Serial.println(USBPD.connected() ? "a charger without USB PD" : "no charger on the USB-C");
@@ -48,7 +37,8 @@ void loop() {
   static bool was_up = true;
   const bool up = digitalRead(BUTTON_PIN) == HIGH;
   if (was_up && !up && USBPD.ready()) {
-    /* The next fixed profile after the current one, wrapping to profile 0. */
+    // en: Search the current advertisement for the next fixed PDO, wrapping at the end.
+    // ja: 現在の広告から次の固定PDOを探し、末尾なら先頭へ戻る。
     const uint8_t count = USBPD.profileCount();
     uint8_t next = USBPD.contractProfile();
     for (uint8_t tries = 0; tries < count; tries++) {

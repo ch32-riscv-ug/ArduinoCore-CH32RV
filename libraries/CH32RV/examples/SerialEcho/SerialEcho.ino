@@ -1,10 +1,5 @@
-/* SerialEcho - read a line from the serial monitor and send it back.
- *
- * Wiring: the two pads below to a USB-serial adapter, or a WCH-LinkE, which
- * has one built in. Change them to the pads your board wires: Serial takes
- * whichever enabled USART has them as a route. RX and TX are the chip's
- * default pads for its first USART.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 static const int RX_PIN = RX;
 static const int TX_PIN = TX;
 
@@ -22,7 +17,9 @@ void loop()
     if (Serial.available() == 0) {
         return;
     }
-    /* readStringUntil() stops at the newline and drops it. */
+
+    // en: This waits for a newline or timeout; it is not a nonblocking line parser.
+    // ja: 改行またはtimeoutまで待つ。待たない行パーサーではない。
     String line = Serial.readStringUntil('\n');
     line.trim();
     Serial.print("you said: ");

@@ -1,16 +1,12 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* MIDIInterface - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Runs wherever CH32RVUsbDevice does (see docs/usb.ja.md).
- * docs/usb.ja.md describes the library.
- *
- * requires: USBFS
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: USBFS */
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
 CH32RVUsbDeviceMidi MIDI(device);
 
-static constexpr int MIDI_RX_PIN = PA3;  /* MIDI IN / OUT on a second USART: change to your wiring */
+static constexpr int MIDI_RX_PIN = PA3;
 static constexpr int MIDI_TX_PIN = PA2;
 
 static const int8_t CIN_TO_SERIAL_SIZE[16] = {
@@ -70,6 +66,8 @@ static bool readSerialMidiMessage(CH32RVUsbDeviceMidiPacket &packet)
   }
 
   const uint32_t start = millis();
+  // en: Bound the wait for the remaining bytes; this is a basic channel-message parser.
+  // ja: 残りの受信待ちに期限を設ける。基本的なchannelメッセージ用の簡易パーサー。
   while (Serial1.available() < size - 1)
   {
     if (millis() - start > 10)
@@ -88,6 +86,7 @@ static bool readSerialMidiMessage(CH32RVUsbDeviceMidiPacket &packet)
 
 static void writeSerialMidiMessage(const CH32RVUsbDeviceMidiPacket &packet)
 {
+  // en: CIN determines how many MIDI bytes this USB event contains. / ja: このUSBイベントに含まれるMIDIバイト数はCINで判断する。
   const uint8_t cin = packet.header & 0x0f;
   const int8_t size = CIN_TO_SERIAL_SIZE[cin];
   if (size <= 0)
@@ -109,13 +108,13 @@ static void writeSerialMidiMessage(const CH32RVUsbDeviceMidiPacket &packet)
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   Serial1.begin(31250, SERIAL_8N1, MIDI_RX_PIN, MIDI_TX_PIN);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice MIDI Interface";

@@ -1,25 +1,12 @@
-/* HelloSDI - print through the debug probe, with no UART and no wiring.
- *
- * Wiring: none beyond the WCH-LinkE you already flash with. The target writes
- * into the debug module's data registers and the probe forwards them to its
- * own USB serial port, so this costs no pin and never halts the core.
- *
- * The host has to be told to collect it. The bundled ch32rv switches it on
- * and reads it in one go:
- *
- *   ch32rv monitor --source sdi --chip CH32V003
- *
- * (wlink does it too: wlink flash --enable-sdi-print --watch-serial <elf>)
- *
- * Supported on V003/V00x/V103/V20x/V30x/X035/L103. Nothing is lost if no host
- * is listening: the write is dropped after a bounded wait, so unplugging the
- * debugger does not hang the sketch.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <SerialSDI.h>
 
 void setup()
 {
-    SerialSDI.begin(115200);      /* the baud rate is ignored - there is no wire */
+    // en: The baud argument is compatibility-only; no UART clock is configured.
+    // ja: baud引数は互換用で、UART clockは設定しない。
+    SerialSDI.begin(115200);
     SerialSDI.println("hello from the debug module");
 }
 

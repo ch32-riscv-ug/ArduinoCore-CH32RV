@@ -1,20 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* VideoCamera - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library.
- *
- * A USB Video Class camera with no camera: it streams a generated test
- * pattern, so it runs on a bare board. Windows, macOS and Linux bind their
- * own UVC driver with nothing to install.
- *
- * Differences from the ESP32 version: the frames are 80x60 instead of 160x120,
- * and there is no frame buffer - sendGeneratedFrame() asks fillPayload() for
- * the bytes of each payload as it goes out, so the picture costs no RAM. A
- * sketch with real pixels in memory uses sendFrame(buffer, length) exactly as
- * on the ESP32. Full speed on USBFS streams bulk by default; with
- * Camera.setTransferType(CH32RVUsbDeviceVideoTransfer::Isochronous) it is
- * isochronous at 64 bytes per millisecond, about 6 fps of this picture.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -30,17 +15,14 @@ static uint32_t drawingFrame = 0;
 static uint32_t nextFrameDueMs = 0;
 static bool wasStreaming = false;
 
-/* BT.601 colour bars as {Y, U, V}. YUY2 carries one U and one V per pair of
- * pixels and both matter: hold V at 128 and the picture still looks like a
- * plausible test pattern with every colour wrong. */
+// en: BT.601 bars are Y/U/V; each YUY2 pixel pair shares both chroma components.
+// ja: BT.601のY/U/V値。YUY2の2 pixelは両方の色差成分を共有する。
 static const uint8_t bars[8][3] = {
     {235, 128, 128}, {210, 16, 146}, {170, 166, 16}, {145, 54, 34},
     {106, 202, 222}, {81, 90, 240},  {41, 240, 110}, {16, 128, 128}};
 
-/* One byte of the frame: colour bars with a white block that steps across the
- * bottom once per frame. The moving block is the point: a still image cannot
- * tell a live stream from a stuck one. YUY2 packs two pixels into four bytes,
- * Y0 U Y1 V, and a payload may start on any of them. */
+// en: Address bytes as Y0 U Y1 V even when a payload starts mid-pair.
+// ja: payloadがpixel対の途中から始まっても、Y0 U Y1 Vの位置を守る。
 static uint8_t pixelByte(uint32_t at)
 {
   const uint16_t y = (uint16_t)(at / (kWidth * 2));
@@ -62,7 +44,8 @@ static uint8_t pixelByte(uint32_t at)
   return component == 1 ? u : component == 3 ? v : luma;
 }
 
-/* Runs on the USB task for each payload: `length` bytes from `offset`. */
+// en: Provider called during USB processing; fill only this requested range and return.
+// ja: USB処理中のprovider。要求された範囲だけを埋めて戻る。
 static void fillPayload(uint8_t *dst, size_t length, uint32_t offset)
 {
   for (size_t i = 0; i < length; i++)
@@ -71,15 +54,13 @@ static void fillPayload(uint8_t *dst, size_t length, uint32_t offset)
   }
 }
 
-/* Delivered by deliverEvents() after the last payload of a frame has gone.
- * This notification only counts completed frames. */
+// en: Completion is delivered by deliverEvents(), not from the payload provider.
+// ja: 完了通知はpayload生成中ではなくdeliverEvents()で受ける。
 static void frameComplete()
 {
   frameCount = frameCount + 1;
 }
 
-/* The host negotiates before it starts, and what it committed to can differ
- * from what was advertised. */
 static void hostCommitted(const CH32RVUsbDeviceVideoCommit &commit)
 {
   Serial.printf("Host committed: frame %u, %lu ns interval, payload %lu bytes\n",
@@ -90,7 +71,7 @@ static void hostCommitted(const CH32RVUsbDeviceVideoCommit &commit)
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   Camera.setFormat(CH32RVUsbDeviceVideoFormat::Yuy2);
@@ -101,7 +82,7 @@ void setup()
   Camera.onCommit(hostCommitted);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Camera";
@@ -120,7 +101,7 @@ void setup()
 
 void loop()
 {
-  // Deliver notifications here; fillPayload() is a provider run by the USB task.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   const bool streaming = Camera.streaming();
   if (streaming && !wasStreaming)
@@ -135,17 +116,15 @@ void loop()
   }
   wasStreaming = streaming;
 
-  /* One place arms frames, paced to the advertised rate. Arming from the
-   * completion callback instead would send as fast as the endpoint drains,
-   * which is not the frame rate the host was promised. */
+  // en: Pace frames here, not from completion, to honor the advertised rate.
+  // ja: 完了直後に連投せず、広告したframe rateに合わせてここで投入する。
   if (streaming && !Camera.frameInFlight() &&
       (int32_t)(millis() - nextFrameDueMs) >= 0)
   {
     nextFrameDueMs += 1000UL / kFrameRate;
     if ((int32_t)(millis() - nextFrameDueMs) > 0)
     {
-      /* A long stall would otherwise leave the deadline behind and send a
-       * burst to catch up. */
+      // en: After a long stall, avoid a burst of catch-up frames. / ja: 長く遅れた後は、追いつくための連続送信を避ける。
       nextFrameDueMs = millis();
     }
     drawingFrame = frameCount;

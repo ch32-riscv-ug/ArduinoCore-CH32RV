@@ -20,6 +20,10 @@ A pulse produces a duration in µs; otherwise a timeout message appears. The dis
 
 `pulseIn()` waits for a result or timeout. Keep the timeout short with USB and other concurrent work, or record edge times in interrupts instead. Distance estimates depend on conditions such as temperature and target.
 
+### Using an HC-SR04
+
+The trigger sequence and distance conversion assume an HC-SR04-style ultrasonic sensor. A 5 V ECHO must not be connected to an input that cannot tolerate it: use a divider or suitable level conversion. The conversion assumes an approximate sound speed; the measured pulse covers the round trip.
+
 ## Related documentation
 
 - [Sketch](PulseIn.ino)

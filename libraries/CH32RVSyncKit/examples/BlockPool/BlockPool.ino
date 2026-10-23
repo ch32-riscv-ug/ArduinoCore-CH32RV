@@ -1,11 +1,8 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* BlockPool - records too big to copy around: the ISR borrows a block from
- * a pool, fills it and sends its pointer; loop() uses it and gives it back.
- * When every block is out, the ISR is told so and skips the record.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVSyncKit.h>
 
-static const int BUTTON_PIN = PA1;   /* a push button to GND: change to your pin */
+static const int BUTTON_PIN = PA1;
 
 struct Record
 {
@@ -15,7 +12,7 @@ struct Record
 };
 
 static CH32RVSyncKit::BlockPool<Record, 4> pool;
-static CH32RVSyncKit::Queue<Record *, 4> filled;   /* as many places as blocks */
+static CH32RVSyncKit::Queue<Record *, 4> filled;
 static volatile uint32_t noBlock = 0;
 
 static void onPress()
@@ -32,7 +29,9 @@ static void onPress()
   {
     r->samples[i] = (uint8_t)digitalRead(BUTTON_PIN);
   }
-  filled.trySend(r);   /* cannot fail: the queue has a place for every block */
+  // en: The queue has one slot per pool block; ownership now passes to the consumer.
+  // ja: Queueは全ブロック分の枠を持つ。以後は受け手がブロックを管理する。
+  filled.trySend(r);
 }
 
 void setup()
@@ -53,7 +52,8 @@ void loop()
     Serial.print(" us=");
     Serial.print(r->us);
     Serial.print(" free=");
-    pool.release(r);   /* give it back, or the pool runs dry */
+    // en: Do not access the record after returning it to the pool. / ja: プールへ返した後はこのレコードに触らない。
+    pool.release(r);
     Serial.println(pool.available());
   }
   if (noBlock)
@@ -62,5 +62,5 @@ void loop()
     Serial.println(noBlock);
     noBlock = 0;
   }
-  delay(1000);   /* slow on purpose: press quickly to use up the pool */
+  delay(1000);
 }

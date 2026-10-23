@@ -1,9 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Talk to a vendor-specific bulk interface: open it when the device appears,
- * print what it sends, and send it whatever arrives on Serial. EspUsbHost's
- * EspUsbHostVendorBulk.
- *
- * requires: USBFS */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: USBFS */
+
 #include <CH32RVUsbHost.h>
 
 CH32RVUsbHost usb;
@@ -24,8 +21,10 @@ void setup() {
 }
 
 void loop() {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
+  // en: Defer interface opening until the loop, after connection notification.
+  // ja: 接続通知では予約し、interfaceを開く処理はloop()で行う。
   if (want_open) {
     want_open = false;
     Serial.println(usb.vendorOpen() ? "vendorOpen: ok" : "vendorOpen: no vendor interface");

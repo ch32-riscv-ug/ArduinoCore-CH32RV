@@ -1,9 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Read a smart card through a USB CCID reader: the ATR when a card is
- * inserted, then a SELECT of the master file. EspUsbHost's
- * EspUsbHostCcidReader.
- *
- * requires: USBFS */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: USBFS */
+
 #include <CH32RVUsbHost.h>
 
 CH32RVUsbHost usb;
@@ -21,17 +18,18 @@ void setup() {
 }
 
 void loop() {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   if (!check_card) {
     return;
   }
   check_card = false;
   if (!usb.ccidReady() && !usb.ccidOpen()) {
-    return;                     /* not a card reader */
+    return;
   }
   uint8_t atr[33];
   size_t atrLength = 0;
+  // en: Reader readiness does not guarantee a present, activated card. / ja: リーダーの準備完了だけでは、カードの存在と有効化は保証しない。
   if (!usb.ccidPowerOn(atr, sizeof atr, &atrLength)) {
     Serial.println("no card");
     return;
@@ -43,6 +41,7 @@ void loop() {
   uint8_t response[64];
   size_t length = 0;
   uint16_t sw = 0;
+  // en: Transport success does not imply APDU success; inspect sw separately. / ja: 交換の成功とAPDUの成功は別。swも確認する。
   if (usb.ccidApdu(select_mf, sizeof select_mf, response, sizeof response, &length, &sw)) {
     Serial.print("SELECT MF: SW=");
     Serial.println(sw, HEX);

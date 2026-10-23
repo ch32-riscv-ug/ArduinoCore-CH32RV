@@ -1,19 +1,10 @@
-/* AnalogRead - print what the ADC sees on one pin.
- *
- * Wiring: a potentiometer between 3V3 and GND with its wiper on the pin, or
- * nothing at all - an unconnected input floats and the reading wanders, which
- * is itself a useful thing to see once.
- *
- * A1 is whatever the variant maps ADC channel 1 to; the sketch prints the pad
- * name so there is no guessing.
- */
-/* A1, not A0: ADC channel 0 has no pad on CH32M007, so A0 is the one
- * analog alias that is not defined on every series. A1..A6 are. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 static const uint8_t SENSOR = A1;
 
 void setup()
 {
-    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
+    Serial.begin(115200, SERIAL_8N1, RX, TX);
     while (!Serial) {
     }
     Serial.print("reading A1, which is pad number ");
@@ -23,11 +14,11 @@ void setup()
 void loop()
 {
     const int raw = analogRead(SENSOR);
-    /* This voltage estimate assumes 12-bit readings and a 3.3 V reference.
-     * Match the divisor to analogReadResolution(), or request 12 bits before
-     * reading. See README.ja.md for the distinction from the ADC's native bits. */
+
     Serial.print(raw);
     Serial.print("  ");
+    // en: Match this 12-bit voltage estimate to the configured read scale.
+    // ja: 12 bit前提の電圧換算なので、読み取り分解能と分母をそろえる。
     Serial.print((raw * 3.3) / 4095.0, 3);
     Serial.println(" V (assuming 12-bit)");
     delay(500);

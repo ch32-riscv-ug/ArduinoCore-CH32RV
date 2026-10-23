@@ -1,7 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Serial - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -29,7 +27,7 @@ static void printLineState(const CH32RVUsbDeviceCdcLineState &state)
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   UsbSerial.onLineCoding([](const CH32RVUsbDeviceCdcLineCoding &coding)
@@ -44,13 +42,14 @@ void setup()
                           printLineState(state);
                         });
 
+  // en: This callback only logs; loop() consumes the received bytes. / ja: 通知では記録だけを行い、受信バイトはloop()で読む。
   UsbSerial.onRx([](size_t available)
                  {
                    Serial.printf("CDC_RX available=%u\n", static_cast<unsigned>(available));
                  });
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Serial";
@@ -67,7 +66,7 @@ void setup()
 
 void loop()
 {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   while (UsbSerial.available() > 0)
   {
@@ -93,6 +92,7 @@ void loop()
   }
 
   const uint32_t now = millis();
+  // en: An open CDC terminal is separate from successful device startup. / ja: CDC端末が開いている状態と、デバイスの起動成功は別。
   if (UsbSerial.connected() && now - lastMessageMs >= 3000)
   {
     lastMessageMs = now;

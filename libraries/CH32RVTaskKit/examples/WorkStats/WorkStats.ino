@@ -1,8 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* WorkStats - which piece of work is slow? Each Work can count its runs and
- * time them; the executor counts its rounds. One Work here takes about 3 ms
- * on purpose, and the numbers show it.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVTaskKit.h>
 
 static CH32RVTaskKit::Executor app;
@@ -13,12 +10,14 @@ static volatile uint32_t sink;
 
 static void fastStep()
 {
-  sink = sink + 1;   /* almost nothing */
+  sink = sink + 1;
 }
 
 static void slowStep()
 {
-  delayMicroseconds(3000);   /* stands for a calculation that should be split */
+  // en: Deliberately slow work shows how one function delays the whole round.
+  // ja: 一つの仕事が巡回全体を遅らせる様子を見るため、意図的に遅くする。
+  delayMicroseconds(3000);
 }
 
 static void reportStep();
@@ -46,6 +45,7 @@ static void reportStep()
   Serial.print(rounds.emptyRounds);
   Serial.print(" max_us=");
   Serial.println(rounds.maxUs);
+  // en: Reset after reporting to start the next measurement interval. / ja: 表示後にリセットして、次の集計区間を始める。
   fastStats.clear();
   slowStats.clear();
   rounds.clear();

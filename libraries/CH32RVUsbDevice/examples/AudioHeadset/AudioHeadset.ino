@@ -1,14 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* AudioHeadset - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, Esp -> CH32RV). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library.
- *
- * A USB Audio Class 1 headset that sends back what the host plays: speaker
- * and microphone, 32 kHz 16-bit mono each (Esp: 48 kHz). A full-speed X035
- * endpoint holds 64 bytes, one millisecond of it, and both streams share the
- * one clock, so they run at the same rate. *
- * requires: flash=48K
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: flash=48K */
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -18,14 +10,15 @@ CH32RVUsbAudioCaptureStream &capture = audio.addCaptureStream();
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   playback.addFormat({32000, 1, 2, 16});
+  // en: Use the same PCM format in both directions for direct loopback. / ja: 変換せずに返すため、両方向のPCM形式をそろえる。
   capture.addFormat({32000, 1, 2, 16});
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Headset";
@@ -45,6 +38,8 @@ void loop()
   const size_t received = playback.read(pcm, sizeof(pcm));
   if (received)
   {
+    // en: Forward actual received bytes; partial writes need extra buffering in an application.
+    // ja: 実受信分だけ返す。実アプリでは部分書き込みの保留bufferも用意する。
     capture.write(pcm, received);
   }
 

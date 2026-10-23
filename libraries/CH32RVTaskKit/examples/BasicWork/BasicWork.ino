@@ -1,11 +1,8 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* BasicWork - two pieces of work that run only when their trigger says so: an
- * LED on a Period, and a line reader whenever the UART has bytes. loop() is
- * one call to runOnce(), the one place either of them runs.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVTaskKit.h>
 
-static const int LED_PIN = PA1;   /* an LED (with its resistor): change to your pin */
+static const int LED_PIN = PA1;
 
 static CH32RVTaskKit::Executor app;
 static CH32RVSyncKit::Period every250(250);
@@ -19,7 +16,7 @@ static void blinkStep()
 
 static void readStep()
 {
-  /* Take what is there now, then return: the rest waits for the next round. */
+  // en: Consume available input and return; do not wait for the rest of a line. / ja: 今ある入力だけ処理して戻り、行の残りを待たない。
   while (Serial.available())
   {
     const int c = Serial.read();
@@ -40,9 +37,10 @@ static CH32RVTaskKit::Work reader(readStep);
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   pinMode(LED_PIN, OUTPUT);
-  app.attach(blink);                          /* runs once in the first round, then on its trigger */
+  // en: Attached work runs once initially, then when its wake condition is met. / ja: 登録直後は一度実行し、その後は起動条件に従う。
+  app.attach(blink);
   app.attach(reader);
   blink.wakeEvery(every250);
   reader.wakeWhen(uartHasBytes);

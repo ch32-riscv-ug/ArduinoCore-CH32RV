@@ -1,29 +1,20 @@
-/* PrintfToSDI - send printf() to the debug probe instead of the UART.
- *
- * Wiring: none for the SDI half; the UART half needs the usual serial adapter
- * if you want to see the first line.
- *
- * printf() normally reaches the board's monitor port. ch32rv_set_stdout() moves
- * it to anything that derives from Print, which is how a debug channel can
- * take over stdio without the core knowing that channel exists.
- *
- * Note what does *not* change: the name Serial still means the UART. This
- * moves stdio, not the Serial object.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <SerialSDI.h>
 #include <stdio.h>
 
 void setup()
 {
-    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
+    Serial.begin(115200, SERIAL_8N1, RX, TX);
     SerialSDI.begin(115200);
 
     printf("this line goes to the UART\n");
 
+    // en: Redirect stdio only; explicit Serial calls still use UART. / ja: stdioだけを切り替える。Serialの明示呼び出しはUARTのまま。
     ch32rv_set_stdout(&SerialSDI);
     printf("and this one goes to the debug probe\n");
 
-    /* Back again, and then off entirely. */
+    // en: Restore UART before the periodic printf() output. / ja: 周期的なprintf()の前にUARTへ戻す。
     ch32rv_set_stdout(&Serial);
     printf("back on the UART\n");
 }

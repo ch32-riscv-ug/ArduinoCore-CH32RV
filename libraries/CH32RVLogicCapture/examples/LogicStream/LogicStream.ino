@@ -1,11 +1,6 @@
-/* Port E sampled continuously at 9.09 MS/s (F_CPU / 11) and streamed over USB
- * - 18 MB/s, the CH32H417's SuperSpeed port. Each half of the buffer goes
- * out as one bulk IN transfer of the vendor interface (class 0xFF), 16-bit
- * samples, bit n = PEn. PE3 carries a 100 kHz PWM to look at.
- *
- * Read with libusb, several async transfers queued. Serial prints the
- * halves sent and lost each second. *
- * board: CH32H417 */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* board: CH32H417 */
+
 #include <CH32RVLogicCapture.h>
 #include <CH32RVUsbDevice.h>
 
@@ -13,7 +8,7 @@ CH32RVLogicCapture logic;
 CH32RVUsbDevice device;
 CH32RVUsbDeviceVendor stream(device);
 
-static const uint32_t SAMPLES = 32768;                 /* halves of 16384 = 32 KB */
+static const uint32_t SAMPLES = 32768;
 static uint16_t buf[SAMPLES] __attribute__((aligned(16)));
 static uint32_t sent, busy;
 
@@ -30,7 +25,9 @@ void setup()
 void loop()
 {
     if (const uint16_t *half = logic.readBuffer()) {
-        if (stream.writeDirect(half, SAMPLES)) {      /* SAMPLES / 2 values = SAMPLES bytes */
+        // en: Half the uint16_t samples occupy SAMPLES bytes; retain them until USB completes.
+        // ja: uint16_t配列の半分はSAMPLES bytes。USB転送完了まで保持する。
+        if (stream.writeDirect(half, SAMPLES)) {
             sent++;
         } else {
             busy++;

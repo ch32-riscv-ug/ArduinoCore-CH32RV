@@ -1,7 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Gamepad - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -31,6 +29,7 @@ static void sendStep()
   const int8_t z = AXIS[(axisIndex + 4) % 8];
   const int8_t rz = AXIS[(axisIndex + 6) % 8];
   const uint8_t hat = HATS[stepIndex % (sizeof(HATS) / sizeof(HATS[0]))];
+  // en: Send the full button bitmap, not only the changed button. / ja: 変化したボタンだけでなく、全ボタンのbitmapを送る。
   const uint32_t buttons = 1UL << (stepIndex % 8);
 
   if (gamepad.send(x, y, z, rz, -x, -y, hat, buttons))
@@ -53,11 +52,11 @@ static void sendStep()
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Gamepad";

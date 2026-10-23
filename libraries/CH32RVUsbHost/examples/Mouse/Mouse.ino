@@ -1,15 +1,13 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Print what a USB mouse does: movement, wheel and buttons. The report layout
- * comes from the mouse's report descriptor, so 16-bit and many-button mice
- * work too. EspUsbHost's EspUsbHostMouse.
- *
- * requires: USBFS */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: USBFS */
+
 #include <CH32RVUsbHost.h>
 
 CH32RVUsbHost usb;
 
 void setup() {
   Serial.begin(115200);
+  // en: Movement is relative; buttons are the current state bitmap. / ja: 移動は相対量、buttonsは現在の状態bitmap。
   usb.onMouse([](const CH32RVUsbHostMouseEvent &e) {
     Serial.print("x=");
     Serial.print(e.x);
@@ -27,6 +25,6 @@ void setup() {
 }
 
 void loop() {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
 }

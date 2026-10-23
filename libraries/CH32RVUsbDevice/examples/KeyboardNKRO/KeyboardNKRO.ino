@@ -1,18 +1,10 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* KeyboardNKRO - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
-#include <CH32RVUsbDevice.h>
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
 
-// N-key rollover keyboard: any number of keys can be held at once, unlike the
-// 6-key boot report. Enable it with keyboard.enableNkro() before device.begin().
-// The device still answers boot protocol (BIOS) with the 6-key format, and the
-// bitmap covers usages 0x00-0xDF so International/LANG (JIS) keys work too.
+#include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
 CH32RVUsbDeviceHidKeyboard keyboard(device);
 
-// Ten simultaneous keys — impossible with the 6KRO boot report, easy with NKRO.
 static const uint8_t chord[] = {
     CH32RV_USB_HID_KEY_A, CH32RV_USB_HID_KEY_S, CH32RV_USB_HID_KEY_D, CH32RV_USB_HID_KEY_F,
     CH32RV_USB_HID_KEY_G, CH32RV_USB_HID_KEY_H, CH32RV_USB_HID_KEY_J, CH32RV_USB_HID_KEY_K,
@@ -21,14 +13,15 @@ static const uint8_t chord[] = {
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
+  // en: Select the report format before device.begin(). / ja: device.begin()より前にreport形式を選ぶ。
   keyboard.enableNkro();
   keyboard.setLayout(CH32RV_USB_DEVICE_KEYBOARD_LAYOUT_EN_US);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice NKRO Keyboard";
@@ -59,24 +52,22 @@ void loop()
     return;
   }
 
-  // Hold all ten keys down at the same time, then release them together. The
-  // whole held-key state travels as ONE report, so the host sees the chord
-  // appear at once. Calling pressUsage() ten times would work too, but it sends
-  // ten reports and the host would observe the keys arriving one by one.
+  // en: Build the chord first, then send one report so all keys arrive together.
+  // ja: キー集合を組み立ててから一つのreportで送り、同時押しを表す。
   CH32RVUsbDeviceNkroKeyboardReport report;
   for (size_t i = 0; i < sizeof(chord); i++)
   {
     report.press(chord[i]);
   }
-  // Modifier usages (0xE0-0xE7) are routed into report.modifiers, not the
-  // bitmap, so press() takes them like any other key. 0xE1 is Left Shift.
+
+  // en: Left Shift is a modifier usage, stored separately from the key bitmap.
+  // ja: Left Shiftは修飾usageなので、キーbitmapとは別に保存する。
   report.press(0xe1);
   keyboard.sendReport(report);
   delay(200);
+  // en: Release held keys as well as sending their presses. / ja: 押下だけでなく、保持していたキーの解放も送る。
   keyboard.releaseAll();
 
-  // heldState() is what the host was last told, so a state-driven sketch can
-  // diff against it instead of keeping its own copy.
   Serial.printf("after releaseAll: A still down? %s\n",
                 keyboard.heldState().isDown(CH32RV_USB_HID_KEY_A) ? "yes" : "no");
 

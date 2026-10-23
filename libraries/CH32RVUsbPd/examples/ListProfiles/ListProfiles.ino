@@ -1,26 +1,18 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* List what a USB PD charger offers, then ask it for 9 V.
- *
- * Runs on the series with USBPD (checked on a WeAct CH32X035F8U6 board); on
- * the other parts begin() is false and the sketch says so - see
- * libraries/CH32RVUsbPd/README.md.
- *
- * A board powered from the charger's own VBUS: a 9 V contract raises VBUS
- * to 9 V, so make sure the board's regulator takes it.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbPd.h>
 
 void setup() {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
 
   if (!USBPD.begin()) {
     Serial.println("USB PD is not available on this board");
     return;
   }
 
-  /* ready() moves the driver along by itself. Usually under a second; a
-   * charger that only speaks Type-C (no PD) never gets there. */
   const uint32_t start = millis();
+  // en: ready() advances negotiation; connected() alone is not an explicit contract.
+  // ja: ready()で交渉も進む。connected()だけでは明示契約の成立ではない。
   while (!USBPD.ready()) {
     if (millis() - start > 5000) {
       Serial.println(USBPD.connected() ? "a charger without USB PD"
@@ -47,6 +39,8 @@ void setup() {
     Serial.println(" mA");
   }
 
+  // en: Voltage is in millivolts; a successful request can change physical VBUS.
+  // ja: 電圧はmV単位。要求が成立すると実際のVBUS電圧も変わる。
   if (USBPD.request(9000)) {
     Serial.print("now at ");
     Serial.print(USBPD.voltage());
@@ -60,7 +54,7 @@ void setup() {
   }
 }
 
+// en: Returning from loop() lets the registered service maintain the contract.
+// ja: loop()から戻ると、登録済みのserviceが契約を維持する。
 void loop() {
-  /* Nothing to call: begin() attached the driver as a system service, and
-   * the return of loop() (and any delay()) keeps the link alive. */
 }

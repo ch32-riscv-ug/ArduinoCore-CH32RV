@@ -1,7 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Keyboard - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -9,14 +7,12 @@ CH32RVUsbDeviceHidKeyboard keyboard(device);
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   keyboard.setLayout(CH32RV_USB_DEVICE_KEYBOARD_LAYOUT_EN_US);
 
-  // deliverEvents() delivers the latest Lock LED state. It is a single slot,
-  // so keyboard.ledState() below can read the state when something else
-  // (an integration layer, say) already owns the callback.
+  // en: Lock LED notifications are delivered by deliverEvents(). / ja: Lock LEDの通知はdeliverEvents()で受け取る。
   keyboard.onOutputReport([](const CH32RVUsbDeviceHidKeyboardOutputReport &report)
                           {
                             Serial.printf("LEDS num=%u caps=%u scroll=%u raw=0x%02x\n",
@@ -27,7 +23,7 @@ void setup()
                           });
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Keyboard";
@@ -44,7 +40,7 @@ void setup()
 
 void loop()
 {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   static uint32_t lastSendMs = 0;
   const uint32_t now = millis();
@@ -65,10 +61,9 @@ void loop()
   keyboard.tapKey('\n');
   keyboard.setLayout(CH32RV_USB_DEVICE_KEYBOARD_LAYOUT_EN_US);
 
-  // Raw HID usage remains available for keys that are not part of the ASCII wrapper.
+  // en: Raw usages bypass the selected character layout. / ja: raw usageは文字配列の変換を通さない。
   keyboard.tapUsage(CH32RV_USB_HID_KEY_LANG1);
-  // ledState() holds the latest host output report - no need to mirror it into a
-  // global from the callback.
+
   Serial.printf("last_leds=0x%02x caps=%u\n",
                 keyboard.ledState().leds,
                 keyboard.ledState().capsLock ? 1 : 0);

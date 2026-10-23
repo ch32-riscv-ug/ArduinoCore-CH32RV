@@ -1,11 +1,8 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* DeadlinePeriod - two things on their own schedules without delay(): an
- * LED that blinks on a Period, and a Deadline that stops waiting for a line
- * on the UART. loop() never stops; each part only answers "is it time?".
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVSyncKit.h>
 
-static const int LED_PIN = PA1;   /* an LED (with its resistor): change to your pin */
+static const int LED_PIN = PA1;
 
 static CH32RVSyncKit::Period blink(250);
 static CH32RVSyncKit::Deadline answer;
@@ -21,6 +18,7 @@ void setup()
 
 void loop()
 {
+  // en: Checking a schedule does not wait for it. / ja: 予定時刻の確認だけで、そこまで待機はしない。
   if (blink.due())
   {
     ledOn = !ledOn;
@@ -28,7 +26,6 @@ void loop()
   }
   if (blink.missed())
   {
-    /* loop() was late by whole periods: they were skipped, not run in a burst. */
     Serial.print("LATE skipped=");
     Serial.println(blink.missed());
     blink.clearMissed();
@@ -40,6 +37,7 @@ void loop()
     answer.arm(5000);
     waiting = true;
   }
+  // en: Any received byte counts as an answer here, not a complete line. / ja: ここでは行の完成ではなく、1 byteでも受信すれば応答とする。
   else if (Serial.available())
   {
     while (Serial.available())

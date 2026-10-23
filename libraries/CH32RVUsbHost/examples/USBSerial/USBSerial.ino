@@ -1,9 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* A bridge between Serial and a USB serial device plugged into the board -
- * a CDC-ACM device, or an FTDI / CP210x / CH34x / PL2303 adapter.
- * EspUsbHost's EspUsbHostUSBSerial.
- *
- * requires: USBFS */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: USBFS */
+
 #include <CH32RVUsbHost.h>
 
 CH32RVUsbHost usb;
@@ -15,6 +12,7 @@ void setup() {
     Serial.print("connected: ");
     ch32rvUsbHostPrint(device);
   });
+  // en: Store peer serial settings independently of the diagnostic UART. / ja: ログ用UARTとは独立して、対向シリアルの設定を保持する。
   port.begin(115200);
   if (!usb.begin()) {
     Serial.print("usb.begin() failed: ");
@@ -23,12 +21,14 @@ void setup() {
 }
 
 void loop() {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   while (port.available()) {
     Serial.write(port.read());
   }
   while (Serial.available()) {
+    // en: A forwarding application must retain bytes when write() accepts fewer.
+    // ja: 中継へ応用するときは、write()が受け付けなかった分を保持する。
     port.write(Serial.read());
   }
 }

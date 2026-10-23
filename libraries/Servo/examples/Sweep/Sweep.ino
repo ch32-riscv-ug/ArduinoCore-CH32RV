@@ -1,26 +1,15 @@
-/* Sweep - move a servo from end to end and back.
- *
- * Wiring: the servo's signal wire to the pin, and its power to a supply that
- * can take the stall current - **not** the board's 3V3 regulator. Share the
- * ground. A servo browning out the board mid-sweep is the usual first result
- * of skipping that.
- *
- * Which timer the series gave Servo is in the variant header as
- * CH32RV_SERVO_TIMER. It is never the one tone() uses, so a buzzer and a servo
- * can run at once; on the small parts it does share a timer with analogWrite(),
- * and the header names the pads that stop fading while a servo is attached.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <Servo.h>
 
-/* Change to your servo's pin. Servo drives any pad from a timer interrupt, so
- * PA1 is here only because every CH32 series has that pad name. */
 static const uint8_t SERVO_PIN = PA1;
 
 static Servo servo;
 
 void setup()
 {
-    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
+    Serial.begin(115200, SERIAL_8N1, RX, TX);
+    // en: Check timer acquisition before treating the servo as attached. / ja: サーボの接続成功と見なす前に、タイマー取得の成否を確認する。
     if (servo.attach(SERVO_PIN) == INVALID_SERVO) {
         Serial.println("no timer free for Servo on this series");
     }
@@ -30,7 +19,9 @@ void loop()
 {
     for (int angle = 0; angle <= 180; angle += 2) {
         servo.write(angle);
-        delay(15);              /* the servo needs time to get there */
+        // en: Allow mechanical movement; write() does not wait for the target position.
+        // ja: write()は到達を待たないため、機械的に動く時間を取る。
+        delay(15);
     }
     for (int angle = 180; angle >= 0; angle -= 2) {
         servo.write(angle);

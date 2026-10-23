@@ -1,14 +1,5 @@
-/* SoftI2CScanner - find the devices on a bit-banged I2C bus.
- *
- * Wiring: SDA and SCL to the device, and **pull-up resistors to 3V3** - 4.7k
- * is the usual value. Nothing here can substitute for them: I2C is open-drain,
- * so without pull-ups the lines never rise and every address times out.
- *
- * The two pads below are the sketch's own choice - that is the whole point of
- * this library, so change them to whatever your board leaves free. PA1 and PA2
- * are the only two pad names every CH32 series has, which is the only reason
- * they are the ones here.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <SoftWire.h>
 
 static const uint8_t SDA_PIN = PA1;
@@ -18,7 +9,7 @@ SoftWire bus(SDA_PIN, SCL_PIN);
 
 void setup()
 {
-    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
+    Serial.begin(115200, SERIAL_8N1, RX, TX);
     while (!Serial) {
     }
     bus.begin();
@@ -35,7 +26,7 @@ void loop()
 {
     uint8_t found = 0;
 
-    /* 0x00-0x07 and 0x78-0x7F are reserved by the I2C specification. */
+    // en: Skip reserved seven-bit addresses. / ja: 予約済みの7 bitアドレスは除外する。
     for (uint8_t address = 0x08; address < 0x78; address++) {
         bus.beginTransmission(address);
         if (bus.endTransmission() == 0) {
@@ -52,6 +43,7 @@ void loop()
         Serial.println(bus.getWireTimeoutFlag()
                            ? "nothing found, and the bus timed out - pull-ups?"
                            : "nothing found");
+        // en: Clear the sticky timeout after reporting it. / ja: 保持されたtimeoutを表示後に解除する。
         bus.clearWireTimeoutFlag();
     }
     delay(2000);

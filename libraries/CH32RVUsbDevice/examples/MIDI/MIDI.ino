@@ -1,7 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* MIDI - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -16,6 +14,8 @@ static void sendStep()
   const uint8_t previous = NOTES[(stepIndex + 3) % 4];
   const uint8_t current = NOTES[stepIndex];
 
+  // en: Pair note starts with endings; MIDI channel 0 is user-facing channel 1.
+  // ja: 発音には停止も対で送る。APIのchannel 0は表示上のchannel 1。
   MIDI.noteOff(0, previous, 0);
   MIDI.noteOn(0, current, 96);
   MIDI.controlChange(0, 74, 32 + (stepIndex * 24));
@@ -36,11 +36,11 @@ static void logPacket(const CH32RVUsbDeviceMidiPacket &packet)
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice MIDI";

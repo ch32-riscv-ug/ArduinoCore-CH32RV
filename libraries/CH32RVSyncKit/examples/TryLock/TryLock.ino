@@ -1,12 +1,8 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* TryLock - a buffer that loop() fills in several steps, and an ISR that
- * must not touch it meanwhile. The ISR cannot wait for loop() (loop() cannot
- * run until the ISR returns), so it tries the lock and, when it is taken,
- * counts a skip and returns.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVSyncKit.h>
 
-static const int BUTTON_PIN = PA1;   /* a push button to GND: change to your pin */
+static const int BUTTON_PIN = PA1;
 
 static CH32RVSyncKit::TryLock<> bufferLock;
 static uint8_t buffer[16];
@@ -16,13 +12,15 @@ static uint8_t filledUpTo = 0;
 
 static void onPress()
 {
+  // en: The ISR must skip on lock failure; waiting would prevent loop() from releasing it.
+  // ja: ISRはロック失敗時に飛ばす。待つとloop()が解放できなくなる。
   CH32RVSyncKit::TryLock<>::Guard g(bufferLock);
   if (!g.locked())
   {
     isrSkips = isrSkips + 1;
     return;
   }
-  buffer[0] = 0xEE;   /* the ISR's own mark */
+  buffer[0] = 0xEE;
   isrWrites = isrWrites + 1;
 }
 
@@ -36,11 +34,10 @@ void setup()
 
 void loop()
 {
-  /* Fill the buffer 4 bytes per loop(), holding the lock until it is complete:
-   * the one case where a lock is kept from one loop() to the next on purpose. */
+  // en: Keep ownership across rounds until all partial writes are complete. / ja: 分割した書き込みが完了するまで、巡回をまたいで所有する。
   if (filledUpTo == 0 && !bufferLock.tryLock())
   {
-    return;   /* the ISR has it right now: try again next loop() */
+    return;
   }
   for (uint8_t i = 0; i < 4; i++)
   {

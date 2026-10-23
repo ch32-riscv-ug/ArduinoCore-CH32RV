@@ -1,35 +1,20 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* CompositeHidCdcMsc - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library.
- * The disk is 10 KB of RAM (EspUsbDevice's is 48 KB; X035 has 20 KB).
- * requires: ram=16K */
-#include <CH32RVUsbDevice.h>
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: ram=16K */
 
-// Composite (all-in-one) USB device: HID keyboard + CDC ACM serial + MSC FAT
-// RAM disk on a single CH32RVUsbDevice. Register each function with the same
-// CH32RVUsbDevice instance and call begin() once; the library assigns interface
-// numbers and endpoints and builds the composite configuration descriptor.
-//
-// On CH32 this uses four endpoint numbers: one HID, two CDC, one MSC.
-// The controller budget is checked by begin(). See README.md for the CH32
-// setup; ESP32-specific IN endpoint limits do not apply here.
+#include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
 CH32RVUsbDeviceHidKeyboard keyboard(device);
 CH32RVUsbDeviceCdcSerial UsbSerial(device);
 CH32RVUsbDeviceMsc msc(device);
 
-// Ten KiB of RAM, including FAT metadata, sized for the X035 memory budget.
-// File contents are recreated after reset.
+// en: Keep the backing array alive for the entire exposed-medium lifetime. / ja: 媒体として公開している間、保存先の配列を有効に保つ。
 static uint8_t storage[10 * 1024];
 CH32RVUsbDeviceMscFatRamDisk disk(storage, sizeof(storage));
 
 static char lineBuffer[128];
 static size_t lineLength = 0;
 
-// Handle one complete line received over USB CDC. "type <text>" is typed out on
-// the HID keyboard; anything else is echoed back over CDC.
 static void handleCdcLine(const char *line)
 {
   if (strncmp(line, "type ", 5) == 0)
@@ -49,10 +34,11 @@ static void handleCdcLine(const char *line)
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
-  // --- MSC: a FAT-formatted RAM disk that shows up as a removable drive. ---
+  // en: Prepare the medium before exposing all functions with device.begin().
+  // ja: device.begin()で各機能を公開する前に、媒体を準備する。
   if (!disk.format("CH32RV"))
   {
     Serial.println("FAT_FORMAT_FAILED");
@@ -74,22 +60,19 @@ void setup()
     return;
   }
 
-  // --- HID keyboard ---
   keyboard.setLayout(CH32RV_USB_DEVICE_KEYBOARD_LAYOUT_EN_US);
 
-  // --- CDC serial ---
   UsbSerial.onLineState([](const CH32RVUsbDeviceCdcLineState &state)
                         { Serial.printf("CDC_LINE_STATE dtr=%u rts=%u\n",
                                         state.dtr ? 1 : 0, state.rts ? 1 : 0); });
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice Composite";
   config.serialNumber = "ch32rv-composite";
 
-  // A single begin() brings up all three functions as one composite device.
   if (!device.begin(config))
   {
     Serial.printf("USB_BEGIN_FAILED %s\n", device.lastErrorName());
@@ -101,9 +84,9 @@ void setup()
 
 void loop()
 {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
-  // Assemble CDC input into lines and act on each completed line.
+
   while (UsbSerial.available() > 0)
   {
     const int value = UsbSerial.read();
@@ -116,6 +99,8 @@ void loop()
     {
       continue;
     }
+    // en: Only a completed line forms a command; USB transfer boundaries do not.
+    // ja: 改行まで受信して初めてコマンドとする。USBの転送境界とは別。
     if (c == '\n')
     {
       lineBuffer[lineLength] = '\0';
@@ -129,7 +114,6 @@ void loop()
     }
   }
 
-  // Periodic heartbeat over CDC so a connected host sees the device is alive.
   static uint32_t lastTickMs = 0;
   const uint32_t now = millis();
   if (UsbSerial.connected() && now - lastTickMs >= 5000)

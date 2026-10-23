@@ -1,16 +1,5 @@
-/* SPILoopback - send bytes and read them back through a jumper.
- *
- * Wiring: one jumper from MOSI to MISO. That is the whole test rig: whatever
- * the master sends comes straight back, so a correct byte proves the clock,
- * the data line and the framing all work.
- *
- * Without the jumper MISO is pulled up and every byte reads back 0xFF, which
- * the sketch reports as "no loopback" rather than as a failure.
- *
- * The pads below are the chip's default ones for its first SPI (SCK, MISO,
- * MOSI) and first USART (RX, TX). Change them to the pads your board wires:
- * each bus takes whichever enabled peripheral has them as a route.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <SPI.h>
 
 static const int SCK_PIN = SCK;
@@ -42,6 +31,8 @@ void loop()
 {
     static const uint8_t pattern[] = {0x00, 0x55, 0xAA, 0xFF, 0x5A};
 
+    // en: Apply settings for this transaction; transfer() sends and receives together.
+    // ja: このtransactionの設定を適用。transfer()は送受信を同時に行う。
     SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
     for (unsigned i = 0; i < sizeof pattern; i++) {
         const uint8_t got = SPI.transfer(pattern[i]);

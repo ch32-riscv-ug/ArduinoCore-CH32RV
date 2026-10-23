@@ -1,18 +1,12 @@
-/* RandomNumbers - random(), and why it repeats.
- *
- * Wiring: none, though an unconnected analog pin makes the seed better.
- *
- * random() is a software generator: from the same seed it produces the same
- * sequence every run. That is a feature when you are debugging and a problem
- * when you wanted dice. randomSeed() is how you choose which.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 void setup()
 {
-    Serial.begin(115200, SERIAL_8N1, RX, TX);   /* RX, TX: the pads you wired */
+    Serial.begin(115200, SERIAL_8N1, RX, TX);
     while (!Serial) {
     }
 
-    /* Same seed, same numbers - run this twice and compare. */
+    // en: A fixed seed makes the sequence reproducible. / ja: 固定seedなら同じ列を再現できる。
     randomSeed(1);
     Serial.print("seed 1: ");
     for (int i = 0; i < 5; i++) {
@@ -21,9 +15,6 @@ void setup()
     }
     Serial.println();
 
-    /* A floating analog input drifts, so its low bits differ between runs.
-     * It is not a good source of randomness, but it is the classic one. */
-    /* A1, not A0: A0 is not defined on CH32M007. */
     randomSeed((unsigned long)analogRead(A1) ^ micros());
     Serial.print("seeded from noise: ");
     for (int i = 0; i < 5; i++) {
@@ -35,8 +26,8 @@ void setup()
 
 void loop()
 {
-    /* random(min, max) excludes max, like the rest of Arduino. */
     Serial.print("d6: ");
+    // en: The upper bound is excluded. / ja: 上限値は含まれない。
     Serial.println(random(1, 7));
     delay(1000);
 }

@@ -1,7 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* USBVendor - ported from EspUsbDevice's example of the same name (renamed
- * EspUsbDevice -> CH32RVUsbDevice, ESP_USB_ -> CH32RV_USB_). Controller support and wiring: see the adjacent README files.
- * docs/usb.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDevice device;
@@ -25,7 +23,7 @@ static void printHex(const uint8_t *data, size_t length)
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   delay(1500);
 
   UsbVendor.onRx([](size_t available)
@@ -45,6 +43,8 @@ void setup()
                      printHex(buffer, chunk);
                      Serial.println();
 
+                     // en: This demo omits write-length checks; retain unsent bytes when adapting it.
+                     // ja: この例は送信長の確認を省略。応用時は未送信分を保持する。
                      UsbVendor.write(reinterpret_cast<const uint8_t *>("echo: "), 6);
                      UsbVendor.write(buffer, chunk);
                      UsbVendor.write(reinterpret_cast<const uint8_t *>("\r\n"), 2);
@@ -53,6 +53,8 @@ void setup()
                    }
                  });
 
+  // en: Control requests need an immediate provider response; keep this handler short.
+  // ja: 制御要求はその場で応答を用意するprovider。短く処理する。
   UsbVendor.onControlRequest([](const CH32RVUsbDeviceVendorControlRequest &request)
                              {
                                controlCount++;
@@ -77,7 +79,7 @@ void setup()
                              });
 
   CH32RVUsbDeviceConfig config;
-  config.vid = 0x1209;   /* pid.codes test ID: a product needs its own */
+  config.vid = 0x1209;
   config.pid = 0x0001;
   config.manufacturer = "ch32-riscv-ug";
   config.product = "CH32RVUsbDevice USBVendor";
@@ -96,7 +98,7 @@ void setup()
 
 void loop()
 {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
   const uint32_t now = millis();
   if (UsbVendor.mounted() && now - lastStatusMs >= 3000)

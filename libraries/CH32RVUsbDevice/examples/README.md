@@ -87,6 +87,8 @@ Pending storage is finite. Depending on the class, the peer may wait, notificati
 
 ## Adapting examples
 
+The sample VID/PID `1209:0001` is a test identity. Use identifiers appropriate for your product rather than shipping that test identity.
+
 - Set identity in `CH32RVUsbDeviceConfig`. Use appropriate identifiers for a product and distinguish multiple boards by serial number.
 - Complete descriptor-affecting configuration before `begin()`. Check host re-enumeration after changes.
 - Pair HID presses with releases and MIDI Note On with Note Off, including failure/retry behavior.

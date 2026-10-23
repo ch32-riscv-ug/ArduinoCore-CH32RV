@@ -1,10 +1,8 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* NotifyBits - several kinds of event in one object: each ISR raises its
- * own bit, loop() asks for any of them or for all of them at once.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVSyncKit.h>
 
-static const int BUTTON_A = PA1;   /* two push buttons to GND: change to your pins */
+static const int BUTTON_A = PA1;
 static const int BUTTON_B = PA2;
 static const uint32_t BIT_A = 1u << 0;
 static const uint32_t BIT_B = 1u << 1;
@@ -26,13 +24,14 @@ void setup()
 
 void loop()
 {
-  /* Both pressed, in any order, since both were last seen: waitAll=true takes
-   * them only when both are up; clearOnExit=true clears them in the same step. */
+  // en: Require both event bits, then clear them together; this is not simultaneous button state.
+  // ja: 両イベントがそろったらまとめて消す。ボタンの同時押し状態の判定ではない。
   if (events.tryWaitBits(BIT_A | BIT_B, true, true))
   {
     Serial.println("BOTH");
   }
-  /* Look without taking (clearOnExit=false), for a status line. */
+
+  // en: Inspect without consuming pending bits (clearOnExit=false). / ja: clearOnExit=falseで、保留中のbitを消さずに見る。
   const uint32_t up = events.tryWaitBits(BIT_A | BIT_B, false);
   Serial.print("WAITING");
   Serial.print((up & BIT_A) ? "" : " A");

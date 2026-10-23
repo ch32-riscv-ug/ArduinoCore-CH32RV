@@ -1,10 +1,8 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* NotifyCounter - count events without their data: the ISR calls notify(),
- * loop() takes them. A counting semaphore that nobody waits on.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVSyncKit.h>
 
-static const int BUTTON_PIN = PA1;   /* a push button to GND: change to your pin */
+static const int BUTTON_PIN = PA1;
 
 static CH32RVSyncKit::Notify<> presses;
 
@@ -23,7 +21,7 @@ void setup()
 
 void loop()
 {
-  /* How many since the last look, taken in one step. */
+  // en: Take and reset the pending count together. / ja: 保留中の回数を一度に取り出してリセットする。
   const uint32_t n = presses.tryTakeAll();
   if (n)
   {

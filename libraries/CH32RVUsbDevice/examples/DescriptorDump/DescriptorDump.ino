@@ -1,9 +1,5 @@
-/* Print what the host is shown - the device, configuration, BOS, Microsoft
- * OS 2.0, string and HID report descriptors - on the UART, and every control
- * request the host sends, from onAnyControlRequest(). Bus events too.
- *
- * Open the UART monitor (115200) and plug the board in: the descriptors are
- * printed once the host has configured the device, and again on 'd'. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 CH32RVUsbDeviceCdcSerial UsbSerial;
@@ -34,6 +30,8 @@ static void dumpString(uint8_t index, const char *label)
     Serial.println("\"");
 }
 
+// en: Consume each descriptor before another getter reuses shared scratch storage.
+// ja: 共有作業bufferが次のgetterで使われる前に、各記述子を使い切る。
 static void dump()
 {
     if (const uint8_t *d = USBDevice.deviceDescriptor()) {
@@ -66,6 +64,8 @@ static void dump()
 void setup()
 {
     Serial.begin(115200);
+    // en: Observe requests here; this callback does not provide their replies.
+    // ja: ここでは要求を観察するだけで、応答を用意するcallbackではない。
     USBDevice.onAnyControlRequest([](const CH32RVUsbDeviceControlRequestInfo &r) {
         Serial.printf("%s %02x %02x %04x %04x %4u -> %s %u\r\n",
                       r.stage == CH32RV_USB_DEVICE_CONTROL_STAGE_SETUP ? "SETUP" : "ACK  ", r.bmRequestType,
@@ -83,7 +83,7 @@ void setup()
 
 void loop()
 {
-    // The callbacks set in setup() run here, and only here.
+    // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
     deliverEvents();
     while (Serial.available()) {
         if (Serial.read() == 'd') {

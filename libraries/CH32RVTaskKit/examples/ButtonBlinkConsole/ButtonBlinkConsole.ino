@@ -1,32 +1,18 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* ButtonBlinkConsole - a small program put together from pieces of work, the
- * shape docs/sketch-guide.ja.md builds up to. Four Works, each started by a
- * different trigger:
- *
- *   blink    a Period             toggles the LED
- *   button   post() from the ISR  handles the presses the ISR queued
- *   console  a condition          reads UART bytes into a line, runs commands
- *   resume   a Deadline           ends a pause
- *
- * Nothing here waits: each Work does what it can and returns, and loop() is
- * one runOnce(). The ISR only records; the reading of its two counters is the
- * one place interrupts are turned off.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVTaskKit.h>
 #include <stdlib.h>
 #include <string.h>
 
-static const int LED_PIN = PC0;      /* an LED (with its resistor): change to your pin */
-static const int BUTTON_PIN = PA1;   /* a push button to GND: change to your pin */
+static const int LED_PIN = PC0;
+static const int BUTTON_PIN = PA1;
 
 static CH32RVTaskKit::Executor app;
 
-/* ---- what the ISR shares with loop() */
-static CH32RVSyncKit::Queue<uint32_t, 8> presses;   /* press times, in order */
-static volatile uint32_t isrCount;                  /* these two are written together, */
-static volatile uint32_t isrLastMs;                 /* so they are read together */
+static CH32RVSyncKit::Queue<uint32_t, 8> presses;
+static volatile uint32_t isrCount;
+static volatile uint32_t isrLastMs;
 
-/* ---- blink: on a Period */
 static CH32RVSyncKit::Period blinkPeriod(500);
 static bool ledOn = false;
 static bool paused = false;
@@ -41,30 +27,30 @@ static void blinkStep()
   digitalWrite(LED_PIN, ledOn ? HIGH : LOW);
 }
 
-/* ---- resume: on a Deadline */
 static CH32RVSyncKit::Deadline pauseEnds;
 
 static void resumeStep()
 {
   if (!pauseEnds.expired())
   {
-    return;             /* not armed: the first round after attach() */
+    return;
   }
-  pauseEnds.disarm();   /* once: until the next pause arms it again */
+  // en: Disarm the expired deadline so resume happens once per pause. / ja: 期限を解除し、一回のpauseで一度だけ再開する。
+  pauseEnds.disarm();
   paused = false;
   Serial.println("RESUME");
 }
 
-/* ---- button: posted by the ISR */
 static void buttonStep()
 {
   static uint32_t lastAccepted;
   uint32_t t;
   while (presses.tryReceive(t))
   {
+    // en: Debounce queued timestamps rather than delaying inside the ISR. / ja: ISRで待たず、Queueの時刻でチャタリングを除く。
     if (t - lastAccepted < 50)
     {
-      continue;   /* a bounce of the same press */
+      continue;
     }
     lastAccepted = t;
     paused = !paused;
@@ -78,14 +64,14 @@ static CH32RVTaskKit::Work button(buttonStep);
 
 static void onPress()
 {
-  /* Record and return: no printing, no waiting in an ISR. */
-  presses.trySend(millis());   /* a full queue drops this press; loop() catches up */
+  // en: Queue carries data; post() requests execution and may coalesce.
+  // ja: データはQueueへ。post()は実行の合図で、複数回が一回にまとまる。
+  presses.trySend(millis());
   isrCount = isrCount + 1;
   isrLastMs = millis();
   button.post();
 }
 
-/* ---- console: whenever the UART has bytes */
 static CH32RVTaskKit::WorkStats blinkStats, buttonStats, consoleStats;
 static CH32RVTaskKit::RoundStats rounds;
 
@@ -123,7 +109,9 @@ static void runCommand(const char *line)
   {
     uint32_t count, lastMs;
     {
-      CH32RVSyncKit::CriticalSection cs;   /* a consistent pair: copy, nothing else */
+      // en: Copy this ISR-written pair together; print only after restoring interrupts.
+      // ja: ISRが書く二値をまとめてコピーし、割り込みを戻してから表示する。
+      CH32RVSyncKit::CriticalSection cs;
       count = isrCount;
       lastMs = isrLastMs;
     }
@@ -147,9 +135,10 @@ static void runCommand(const char *line)
 
 static void consoleStep()
 {
+  // en: Keep partial lines across work invocations. / ja: 行の途中までの入力を、仕事の呼び出しをまたいで保持する。
   static char line[32];
   static size_t used;
-  /* Take what is there now; a line split across rounds is fine. */
+
   while (Serial.available())
   {
     const int c = Serial.read();
@@ -181,7 +170,7 @@ static CH32RVTaskKit::Work resume(resumeStep);
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log and the commands: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
@@ -203,5 +192,6 @@ void setup()
 
 void loop()
 {
-  app.runOnce();   /* the one place the four Works run */
+  // en: All four work functions execute here, not in the ISR. / ja: 四つの仕事はISRではなくここで動く。
+  app.runOnce();
 }

@@ -1,12 +1,5 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* SerialEvents - where the USB callbacks run: only inside deliverEvents().
- *
- * The callbacks echo what the PC sends and log the port's line state and
- * coding on the UART. Every 10 s loop() is busy for 3 s with delay(): USB
- * keeps working (the PC can still send), but no callback runs. What arrived
- * meanwhile waits in the port's buffer and comes in one onRx() call when
- * loop() delivers again.
- * docs/sketch-guide.ja.md walks through the model. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVUsbDevice.h>
 
 static void onRx(size_t available)
@@ -32,17 +25,18 @@ static void onLineCoding(const CH32RVUsbDeviceCdcLineCoding &coding)
 
 void setup()
 {
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   /* the log: RX, TX are the pads you wired */
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
   SerialUSB.onRx(onRx);
   SerialUSB.onLineState(onLineState);
   SerialUSB.onLineCoding(onLineCoding);
-  SerialUSB.begin();                          /* USB now runs by itself, even inside delay() */
+  SerialUSB.begin();
   Serial.println("SerialEvents ready");
 }
 
 void loop()
 {
-  /* The one place the callbacks above run. */
+  // en: Notification callbacks execute here; the return value counts callbacks, not packets.
+  // ja: 通知callbackはここで実行する。戻り値はpacket数ではなくcallback数。
   const size_t ran = deliverEvents();
   if (ran)
   {
@@ -53,7 +47,9 @@ void loop()
   if (millis() - lastBusy >= 10000)
   {
     Serial.println("BUSY 3 s: type now, the callbacks wait");
-    delay(3000);                              /* USB is serviced in here; callbacks are not */
+    // en: USB processing continues, but notification delivery waits until loop() resumes.
+    // ja: USB処理は進むが、通知はloop()が再開するまで待つ。
+    delay(3000);
     Serial.println("BUSY end");
     lastBusy = millis();
   }

@@ -1,13 +1,9 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* MessageBuffer - messages of different lengths, each kept whole: trySend()
- * stores all of a message or none of it, tryReceive() returns one whole
- * message. Each press queues a short and a long message alternately.
- * docs: ../../README.ja.md describes the library. */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <CH32RVSyncKit.h>
 
-static const int BUTTON_PIN = PA1;   /* a push button to GND: change to your pin */
+static const int BUTTON_PIN = PA1;
 
-/* 48 bytes of storage; each message costs its length + 2. */
 static CH32RVSyncKit::MessageBuffer<48> messages;
 static volatile uint32_t refused = 0;
 
@@ -20,7 +16,7 @@ static void onPress()
                           : messages.trySend(shortMsg, sizeof shortMsg - 1);
   if (!ok)
   {
-    refused = refused + 1;   /* no room for the whole message: nothing stored */
+    refused = refused + 1;
   }
   longOne = !longOne;
 }
@@ -38,10 +34,12 @@ void loop()
   char text[32];
   while (messages.count())
   {
+    // en: Leave one byte for a text terminator; an oversized message remains queued.
+    // ja: 文字列終端の1 byte分を残す。入りきらないメッセージはQueueに残る。
     const size_t n = messages.tryReceive(text, sizeof text - 1);
     if (n == 0 && messages.nextLength() > sizeof text - 1)
     {
-      Serial.println("TOO_LONG for this buffer");   /* not here, but this is how it shows */
+      Serial.println("TOO_LONG for this buffer");
       break;
     }
     text[n] = 0;
@@ -54,5 +52,5 @@ void loop()
     Serial.println(refused);
     refused = 0;
   }
-  delay(2000);   /* slow on purpose: press quickly to fill it */
+  delay(2000);
 }

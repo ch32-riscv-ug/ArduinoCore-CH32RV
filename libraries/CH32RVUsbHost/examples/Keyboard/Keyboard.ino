@@ -1,8 +1,6 @@
-/* Wiring, operation and expected output: README.md / README.ja.md. */
-/* Type on a USB keyboard and see the characters on Serial. Caps Lock and Num
- * Lock drive the keyboard's LEDs. EspUsbHost's EspUsbHostKeyboard.
- *
- * requires: USBFS */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+/* requires: USBFS */
+
 #include <CH32RVUsbHost.h>
 
 CH32RVUsbHost usb;
@@ -10,15 +8,19 @@ static bool caps, num;
 
 void setup() {
   Serial.begin(115200);
-  /* usb.setKeyboardLayout(CH32RV_USB_HOST_KEYBOARD_LAYOUT_JA_JP);  for a JIS keyboard */
+  // en: Optional JIS character conversion. / ja: 任意のJIS文字変換。
+  // usb.setKeyboardLayout(CH32RV_USB_HOST_KEYBOARD_LAYOUT_JA_JP);
   usb.onKeyboard([](const CH32RVUsbHostKeyboardEvent &e) {
+    // en: Ignore releases for text output; stateful controls must handle them too.
+    // ja: 文字表示では解放を無視する。押下状態を扱う用途では解放も処理する。
     if (!e.pressed) {
       return;
     }
-    if (e.keycode == 0x39) {          /* Caps Lock */
+    if (e.keycode == 0x39) {
       caps = !caps;
+      // en: Send LED state back to the keyboard that produced this event. / ja: イベントを出したキーボードへLED状態を返す。
       usb.setKeyboardLeds(num, caps, false, e.address);
-    } else if (e.keycode == 0x53) {   /* Num Lock */
+    } else if (e.keycode == 0x53) {
       num = !num;
       usb.setKeyboardLeds(num, caps, false, e.address);
     } else if (e.ascii == '\r') {
@@ -34,6 +36,6 @@ void setup() {
 }
 
 void loop() {
-  // The callbacks set in setup() run here, and only here.
+  // en: Deliver notifications here. / ja: 通知callbackはここで実行する。
   deliverEvents();
 }

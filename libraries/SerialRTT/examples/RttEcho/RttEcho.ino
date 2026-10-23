@@ -1,18 +1,5 @@
-/* RttEcho - the debug channel in both directions.
- *
- * Unlike SerialSDI, this one can be typed into: the host writes a second ring
- * buffer and the sketch reads it. ch32rv sends what you type (stdin goes to
- * the target):
- *
- *   ch32rv monitor --source rtt --chip CH32V203
- *
- * Type a line and it comes back uppercased. Nothing here blocks, so the LED
- * keeps blinking whether or not a host is attached - which is the point of
- * checking available() rather than waiting for input.
- *
- * The blink needs an LED_BUILTIN, which only a product board or
- * -DLED_BUILTIN defines; without one the echo still works.
- */
+// en: Setup and usage: README.md. / ja: 配線・使い方: README.ja.md。
+
 #include <SerialRTT.h>
 
 void setup()
@@ -26,6 +13,7 @@ void setup()
 
 void loop()
 {
+    // en: Drain available bytes without waiting so LED updates can continue. / ja: 受信済みの分だけ処理し、LED更新を待たせない。
     while (SerialRTT.available() > 0) {
         int c = SerialRTT.read();
         if (c >= 'a' && c <= 'z') {
