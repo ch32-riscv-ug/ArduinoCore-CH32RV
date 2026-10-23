@@ -655,6 +655,15 @@ ESP32 の API の使い勝手は参考になるが、同じ保存エンジン、
   [FEATURE_CANDIDATES.ja.md](FEATURE_CANDIDATES.ja.md) と対応付け、着手時にソースと対象ハードウェアで確かめる。
   サポート状況・測定値・版ごとの制約はこの一覧へ複製せず、各ライブラリの説明へ集約する。
 
+### 第1弾の実装
+
+- [x] 既存APIだけを使う次の10例を追加し、日英README・概要と要点の英日コメント・生成profile・日英一覧への導線を用意する。
+  - CH32RV: `SystemInfo` / `ResetReason` / `WatchdogRecovery` / `PwmFrequency` / `SerialLineReceiver` / `SerialPacketReceiver`。
+  - Wire: `I2CRegisterRead` / `I2CSlaveRegister` / `I2CTimeoutRecovery`。レジスタ読み取りとslaveは2台で対にして試せる構成。
+  - SPI: `SpiFlashId`。外部FlashのJEDEC IDを読み、消去・書き込みは行わない。
+- [ ] 第1弾の実機確認：UARTの操作、PWM波形、I2Cの対向通信・相手不在・復旧、外部SPI FlashのIDを確認する。
+  以下の候補表は機能全体の候補として残す。追加済みの例があっても、EEPROM・共有SPI・他のUART応用まで完了したとは扱わない。
+
 ### A. 既存 API を使って追加する例
 
 | 機能 / スケッチ案 | 既存例に足りない使い方・例で示すこと | 比較元・参考例 |

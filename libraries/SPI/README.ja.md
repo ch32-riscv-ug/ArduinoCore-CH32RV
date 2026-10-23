@@ -70,3 +70,4 @@ SPI.setPins(PB3, PB4, PB5);       // SCK, MISO, MOSI。すべて同じrouteか�
 ## サンプルの詳しい使い方
 
 - [SPILoopback](examples/SPILoopback/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [SpiFlashId](examples/SpiFlashId/README.ja.md): 外部SPI Flashを消去・書き換えせずJEDEC IDを読みます。

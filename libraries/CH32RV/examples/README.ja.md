@@ -42,6 +42,12 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [Timing](Timing/README.ja.md) | `millis()`・`micros()` と、桁あふれをまたげる時刻の引き算を示します。 |
 | [ToneMelody](ToneMelody/README.ja.md) | 周波数と長さを指定して受動ブザーで音階を鳴らします。 |
 | [TimerResource](TimerResource/README.ja.md) | タイマーを借り、基準周期と更新割り込みを設定するライブラリ実装者向けの例です。 |
+| [SystemInfo](SystemInfo/README.ja.md) | ビルド対象・メモリ・利用可能なチップ固有情報を表示します。 |
+| [ResetReason](ResetReason/README.ja.md) | リセット理由と、操作によるソフトウェア再起動を比較します。 |
+| [WatchdogRecovery](WatchdogRecovery/README.ja.md) | 操作でwatchdogを開始し、給餌停止による再起動を確認します。 |
+| [PwmFrequency](PwmFrequency/README.ja.md) | dutyの数値を保ってPWM周波数を切り替えます。 |
+| [SerialLineReceiver](SerialLineReceiver/README.ja.md) | 文字の到着を待たずに行を組み立て、長さ超過とtimeoutを扱います。 |
+| [SerialPacketReceiver](SerialPacketReceiver/README.ja.md) | 長さ付きバイナリパケットをchecksum・timeout付きで受信します。 |
 | [BoardWeActCH32X035](BoardWeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board の端子名を明示して、各周辺機能を組み合わせる出発点です。 |
 | [BoardUIAPduinoProMicro](BoardUIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro の基板上の端子名を使って、UART・I2C・SPI・ADC・PWM を初期化します。 |
 

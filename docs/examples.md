@@ -9,9 +9,9 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | Purpose | Library and guide | Start here |
 |---|---|---|
 | Basic I/O | [CH32RV](../libraries/CH32RV/examples/README.md) | PinCapabilities → Blink / SerialEcho → Timing |
-| Hardware I2C | [Wire](../libraries/Wire/examples/I2CScanner/README.md) | I2CScanner |
+| Hardware I2C | [Wire](../libraries/Wire/examples/I2CScanner/README.md) | I2CScanner → I2CRegisterRead / I2CSlaveRegister → I2CTimeoutRecovery |
 | Software I2C | [SoftWire](../libraries/SoftWire/examples/SoftI2CScanner/README.md) | SoftI2CScanner |
-| Hardware SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.md) | SPILoopback |
+| Hardware SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.md) | SPILoopback → SpiFlashId |
 | Software SPI | [SoftSPI](../libraries/SoftSPI/examples/SoftSPILoopback/README.md) | SoftSPILoopback |
 | Servo control | [Servo](../libraries/Servo/examples/Sweep/README.md) | Sweep |
 | ISR data transfer | [CH32RVSyncKit](../libraries/CH32RVSyncKit/examples/README.md) | QueueFromInterrupt / DeadlinePeriod |
@@ -27,6 +27,12 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | RAM-buffer terminal | [SerialRTT](../libraries/SerialRTT/README.md) | HelloRTT / RttEcho |
 
 Distinguish USB roles first: Device connects as a peripheral to a PC or another host; Host controls connected peripherals; PD negotiates power. A USB-UART adapter for diagnostics is separate from the MCU's own USB data connection.
+
+## Further UART and system examples
+
+After `SerialEcho`, try the fixed-buffer [line receiver](../libraries/CH32RV/examples/SerialLineReceiver/README.md) and [binary packet receiver](../libraries/CH32RV/examples/SerialPacketReceiver/README.md) to process input incrementally.
+[SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.md), [ResetReason](../libraries/CH32RV/examples/ResetReason/README.md) and [WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.md) introduce system APIs using only UART.
+After `Fade`, use [PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.md) to distinguish frequency from duty.
 
 ## Run an example
 

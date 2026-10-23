@@ -10,9 +10,9 @@
 | 用途 | ライブラリ・案内 | 最初に試す例 |
 |---|---|---|
 | 基本の入出力 | [CH32RV](../libraries/CH32RV/examples/README.ja.md) | PinCapabilities → Blink / SerialEcho → Timing |
-| ハードウェア I2C | [Wire](../libraries/Wire/examples/I2CScanner/README.ja.md) | I2CScanner |
+| ハードウェア I2C | [Wire](../libraries/Wire/examples/I2CScanner/README.ja.md) | I2CScanner → I2CRegisterRead / I2CSlaveRegister → I2CTimeoutRecovery |
 | GPIO による I2C | [SoftWire](../libraries/SoftWire/examples/SoftI2CScanner/README.ja.md) | SoftI2CScanner |
-| ハードウェア SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.ja.md) | SPILoopback |
+| ハードウェア SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.ja.md) | SPILoopback → SpiFlashId |
 | GPIO による SPI | [SoftSPI](../libraries/SoftSPI/examples/SoftSPILoopback/README.ja.md) | SoftSPILoopback |
 | サーボ | [Servo](../libraries/Servo/examples/Sweep/README.ja.md) | Sweep |
 | ISR とのデータ受け渡し | [CH32RVSyncKit](../libraries/CH32RVSyncKit/examples/README.ja.md) | QueueFromInterrupt / DeadlinePeriod |
@@ -30,6 +30,12 @@
 USB を使う前に、Device・Host・PD の役割を分けて考えます。
 Device は PC 等につなぐ機器、Host は接続された機器を制御する側、PD は電源の交渉です。
 UART ログを見るための USB-UART アダプタも、MCU 自身の USB データ接続とは別です。
+
+## UART・システム情報の次の例
+
+`SerialEcho`の次は、固定長の[行受信](../libraries/CH32RV/examples/SerialLineReceiver/README.ja.md)と[バイナリ受信](../libraries/CH32RV/examples/SerialPacketReceiver/README.ja.md)で、入力待ちを分割する方法を試せます。
+[SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.ja.md)・[ResetReason](../libraries/CH32RV/examples/ResetReason/README.ja.md)・[WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.ja.md)はUARTだけで試せるシステムAPIの入口です。
+`Fade`の次は[PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.ja.md)で、周波数とdutyの違いを観察します。
 
 ## サンプルを動かす手順
 

@@ -72,3 +72,4 @@ Both return `false` and change nothing if the route does not exist, and
 ## Detailed example guides
 
 - [SPILoopback](examples/SPILoopback/README.md): connections, operation, API use and adaptation notes.
+- [SpiFlashId](examples/SpiFlashId/README.md): Read an external SPI Flash JEDEC ID without erase or programming.

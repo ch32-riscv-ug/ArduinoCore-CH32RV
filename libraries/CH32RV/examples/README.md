@@ -38,6 +38,12 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [Timing](Timing/README.md) | Demonstrate `millis()`, `micros()` and elapsed-time subtraction across wraparound. |
 | [ToneMelody](ToneMelody/README.md) | Play a scale on a passive buzzer by specifying frequency and duration. |
 | [TimerResource](TimerResource/README.md) | An advanced timer-ownership example for library authors: acquire a timer, set its base and attach an update ISR. |
+| [SystemInfo](SystemInfo/README.md) | Print the build target, memory information and optional chip identity. |
+| [ResetReason](ResetReason/README.md) | Compare the current reset reason with a command-triggered software reset. |
+| [WatchdogRecovery](WatchdogRecovery/README.md) | Start the watchdog on command and observe a reset after feeding stops. |
+| [PwmFrequency](PwmFrequency/README.md) | Change PWM frequency while keeping the duty scale and value constant. |
+| [SerialLineReceiver](SerialLineReceiver/README.md) | Receive bounded text lines incrementally, with overflow and timeout handling. |
+| [SerialPacketReceiver](SerialPacketReceiver/README.md) | Parse length-prefixed binary packets with a checksum and timeout. |
 | [BoardWeActCH32X035](BoardWeActCH32X035/README.md) | A starting point combining the peripherals exposed by the WeAct CH32X035 Core Board, with explicit pin names. |
 | [BoardUIAPduinoProMicro](BoardUIAPduinoProMicro/README.md) | Initialize UART, I2C, SPI, ADC and PWM using the UIAPduino Pro Micro board pin assignments. |
 

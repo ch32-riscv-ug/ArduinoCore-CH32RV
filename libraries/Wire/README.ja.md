@@ -95,3 +95,6 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
 ## サンプルの詳しい使い方
 
 - [I2CScanner](examples/I2CScanner/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [I2CRegisterRead](examples/I2CRegisterRead/README.ja.md): レジスタを選んで読み、書き込みエラーと受信長を確認します。
+- [I2CSlaveRegister](examples/I2CSlaveRegister/README.ja.md): 短い割り込みcallbackで小さなレジスタを公開します。
+- [I2CTimeoutRecovery](examples/I2CTimeoutRecovery/README.ja.md): NACKとtimeoutを区別し、明示的な操作でバスを復旧します。

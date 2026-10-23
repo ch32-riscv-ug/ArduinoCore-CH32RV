@@ -97,3 +97,6 @@ old pads to inputs.
 ## Detailed example guides
 
 - [I2CScanner](examples/I2CScanner/README.md): connections, operation, API use and adaptation notes.
+- [I2CRegisterRead](examples/I2CRegisterRead/README.md): Select and read registers, checking write errors and short replies.
+- [I2CSlaveRegister](examples/I2CSlaveRegister/README.md): Expose a small register map with short interrupt callbacks.
+- [I2CTimeoutRecovery](examples/I2CTimeoutRecovery/README.md): Distinguish NACK from timeout and explicitly request bus recovery.

@@ -6,3 +6,7 @@
 
 純粋な Python 検査の隣へ物理ボード用 sketch を置きません。
 host core を導入する場合も、その profile と必要 compiler を明示し、物理ボードなしで完結させます。
+
+`test_example_serial_receivers.py`は、UART受信例の`.ino`をhost C++で直接実行し、
+分割・連続受信、容量超過、checksum不一致、timeoutと時刻の桁あふれを確認します。
+UARTの割り込み・受信バッファ容量や実際の配線は、この検査の対象ではありません。
