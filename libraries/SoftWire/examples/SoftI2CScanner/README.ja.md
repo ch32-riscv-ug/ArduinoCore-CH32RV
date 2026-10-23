@@ -1,5 +1,7 @@
 # SoftI2CScanner
 
+[English](README.md)
+
 任意の GPIO を使ったソフトウェア I2C で、応答するアドレスを探します。
 
 ## 必要なものと配線

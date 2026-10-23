@@ -1,5 +1,7 @@
 # AnalogResolution
 
+[English](README.md)
+
 ADC と PWM の数値のスケールを変える使い方を示します。
 
 ## 必要なものと配線

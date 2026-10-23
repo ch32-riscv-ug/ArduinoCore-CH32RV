@@ -17,6 +17,12 @@ An LED with its resistor on `LED_PIN` (default `PA1`). A 115200-baud 8N1 UART mo
 
 When `loop()` is late by several periods, `due()` is true once and `missed()` counts the skipped ones (no burst). Both are only as punctual as `loop()`.
 
+## API usage and adaptation
+
+`blink.due()` checks the periodic schedule. `answer.arm(ms)` sets a deadline, `expired()` checks it and `remaining()` returns remaining ms. These APIs check time when called; they do not create an interrupting timer.
+
+The example accepts the first received data without waiting for a complete line. To require a complete line by the deadline, combine newline accumulation with the deadline state.
+
 ## Related documentation
 
 - [Shared setup](../README.md)

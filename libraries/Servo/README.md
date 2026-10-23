@@ -43,3 +43,7 @@ void loop() {
 ## Examples
 
 - **Sweep** - end to end and back, the classic.
+
+## Detailed example guides
+
+- [Sweep](examples/Sweep/README.md): connections, operation, API use and adaptation notes.

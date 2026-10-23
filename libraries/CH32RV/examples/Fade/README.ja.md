@@ -1,5 +1,7 @@
 # Fade
 
+[English](README.md)
+
 PWM の duty を変えて LED の明るさを連続的に変えます。
 
 ## 必要なものと配線

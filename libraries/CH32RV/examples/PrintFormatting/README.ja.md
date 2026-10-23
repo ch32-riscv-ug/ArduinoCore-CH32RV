@@ -1,5 +1,7 @@
 # PrintFormatting
 
+[English](README.md)
+
 整数・小数・文字列の表示と、生バイト送信の違いを確かめます。
 
 ## 必要なものと配線

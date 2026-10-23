@@ -1,5 +1,7 @@
 # SPILoopback
 
+[English](README.md)
+
 ハードウェア SPI の送信と受信を、MOSI–MISO の折り返しで確認します。
 
 ## 必要なものと配線

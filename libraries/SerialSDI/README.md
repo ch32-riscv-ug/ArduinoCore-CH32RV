@@ -101,3 +101,8 @@ not follow, so `Serial.println()` still goes where it always did.
 - **HelloSDI** - the smallest thing that prints, with the host command in the
   header.
 - **PrintfToSDI** - move `printf()` to the probe and back.
+
+## Detailed example guides
+
+- [HelloSDI](examples/HelloSDI/README.md): connections, operation, API use and adaptation notes.
+- [PrintfToSDI](examples/PrintfToSDI/README.md): connections, operation, API use and adaptation notes.

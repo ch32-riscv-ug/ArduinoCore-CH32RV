@@ -17,6 +17,12 @@ Push buttons from `BUTTON_A` (default `PA1`) and `BUTTON_B` (default `PA2`) to G
 
 `waitAll=true` takes the bits only when all are up; `clearOnExit=false` looks without clearing. Raising a bit twice before it is taken counts once.
 
+## API usage and adaptation
+
+`setBits(mask)` records event kinds. `tryWaitBits(mask, clearOnExit, waitAll)` checks them; note the argument order.
+
+"Both" means both events occurred since clearing, not that both physical buttons are held simultaneously. Use a counter or queue as well if repeated occurrences of one kind matter.
+
 ## Related documentation
 
 - [Shared setup](../README.md)

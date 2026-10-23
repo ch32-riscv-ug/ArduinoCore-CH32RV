@@ -19,6 +19,19 @@ A PC text editor and UART monitor. Focus the editor before connecting: the sketc
 
 `setLayout()` chooses character-to-usage conversion; it does not change the PC keyboard layout. Match the PC layout when checking symbols. There is one `onOutputReport()` callback slot, and `ledState()` also exposes the latest state.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `setLayout(...)` | Selects ASCII-to-HID conversion. Match the PC keyboard layout as well. |
+| `write("...")` / `tapKey('\n')` | Send text or one character as press/release operations. This is not a UTF-8 Japanese text input API. |
+| `tapUsage(...)` | Sends a raw HID key usage without ASCII conversion. Specify a key identifier, not a character code. |
+| `onOutputReport()` / `ledState()` | Receive or inspect host Lock LED state. Notifications require `deliverEvents()`. |
+
+Changing the device layout changes character conversion, not the PC layout or IME mode. This sample temporarily uses JIS conversion; check PC layout and IME state if symbols differ from those expected.
+
+For physical buttons, call `pressUsage()` on press and `releaseUsage()` or `releaseAll()` on release. Reporting only presses leaves the host believing keys are held. Consider retrying a release after transmission failure.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

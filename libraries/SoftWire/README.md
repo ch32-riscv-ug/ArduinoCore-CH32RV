@@ -61,3 +61,7 @@ The hardware and software drivers implement different state machines and
 recovery paths, so their size relationship varies with the build. Use the
 build size report for exact flash and RAM usage. It is not linked into sketches
 that do not include its header.
+
+## Detailed example guides
+
+- [SoftI2CScanner](examples/SoftI2CScanner/README.md): connections, operation, API use and adaptation notes.

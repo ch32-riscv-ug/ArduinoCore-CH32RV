@@ -45,6 +45,12 @@ Change the pins in the `.ino`. Runs on every series, CH32V003 included.
 - A Work that takes long delays the others; `max_us` in `stats` shows which one. The times include
   any interrupt that ran meanwhile.
 
+## API usage and adaptation
+
+`wakeEvery()`, `wakeWhen()`, `wakeOn()` and `post()` define when work is eligible; `runOnce()` executes it. Period/deadline objects do not create separate tasks.
+
+When adding commands, preserve incremental line accumulation and avoid waiting for an operation to finish inside a command. Split long work into start/progress/completion states. Copy ISR-shared multi-field values together with `CriticalSection`, then print outside.
+
 ## Related documentation
 
 - [How a sketch is put together (Japanese)](../../../../docs/sketch-guide.ja.md)

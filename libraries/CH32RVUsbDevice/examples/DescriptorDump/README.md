@@ -22,13 +22,28 @@ A PC and a UART monitor at 115200 8N1.
 
 - The descriptors come from `deviceDescriptor()`, `configurationDescriptor()`
   and the rest. Nothing is kept resident: each call builds into one shared
-  buffer, valid until the next such call.
+  buffer. Consume it before the next descriptor-building call, including a
+  different getter.
 - `onAnyControlRequest()` reports vendor requests at SETUP and every control
   transfer at ACK. The last number on an ACK line is how many bytes the
   device answered.
-- The callbacks run from `deliverEvents()` at the top of `loop()`. Eight
-  requests are kept until then; more are dropped
-  (`USBDevice.droppedControlRequests()`).
+- The callbacks run from `deliverEvents()` at the top of `loop()`. Pending
+  notification storage is finite; inspect `USBDevice.droppedControlRequests()`
+  for lost observation records.
+
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `deviceDescriptor()` / `configurationDescriptor()` | Inspect identity and interfaces/endpoints. Check for `nullptr` before accessing. |
+| `hidReportDescriptor()` | Reads HID data layout, separately from the HID descriptor in the configuration. |
+| `onAnyControlRequest()` | Observes requests; it does not register their response provider. |
+| `onBusEvent()` / `deliverEvents()` | Deliver bus notifications and request a dump after configuration. |
+| `droppedControlRequests()` | Detect lost observation records. An absent log is not proof a request never arrived. |
+
+Configuration, BOS, MS OS 2.0 and HID report getters share scratch storage. **Display or copy each result before another descriptor-building call, including a different getter.** Use string descriptors before the next `stringDescriptor()` call too.
+
+Large UART dumps take time. Narrow the output when investigating timing, and account for logging overhead. String display is simplified; inspect raw data when validating non-ASCII names.
 
 ## See also
 

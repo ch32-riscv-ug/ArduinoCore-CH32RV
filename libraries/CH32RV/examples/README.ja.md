@@ -1,5 +1,7 @@
 # 基本サンプルの使い方
 
+[English](README.md)
+
 GPIO、UART、ADC、PWM、割り込み等の小さな例です。各フォルダの README で配線・操作・API の役割・改造時の注意を説明します。
 
 ## 最初の準備

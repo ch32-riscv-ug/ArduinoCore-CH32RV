@@ -1,5 +1,7 @@
 # RandomNumbers
 
+[English](README.md)
+
 同じ seed による疑似乱数の再現と、seed を変えた場合の違いを確かめます。
 
 ## 必要なものと配線

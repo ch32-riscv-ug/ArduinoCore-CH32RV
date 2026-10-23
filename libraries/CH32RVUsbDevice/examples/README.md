@@ -2,75 +2,111 @@
 
 [日本語](README.ja.md)
 
-These examples connect the board as a device to a PC or another USB host. Start with [SerialUSBEcho](SerialUSBEcho/README.md), then choose a class below. Each sketch has its own wiring, operation, output and limitations guide.
+Connect the board as a USB device to a PC or another host. Start with [SerialUSBEcho](SerialUSBEcho/README.md), then choose a class. Each example explains wiring, operation, expected results, API use and adaptation notes.
 
-## Boards and wiring
+## Preparation and first checks
 
-The device hardware baseline is a WeAct CH32X035F8U6. Only X035/X033 has a controller driver for now; the V103/V20x/V30x rows are the wiring once their drivers return; consult the [support table](../../../docs/usb.ja.md#対応状況) for part-specific exceptions. H417 SuperSpeed is not currently supported by these examples.
+1. Check the exact part, controller and clock requirements in the [USB support table (Japanese)](../../../docs/usb.ja.md#対応状況). A series-wide build does not validate every package or hardware configuration.
+2. Use the connector wired to the MCU's USB data pins and a data-capable cable. Distinguish it from a connector wired only to a USB-UART bridge.
+3. In Arduino IDE, choose the board and exact Part Number, then File → Examples → CH32RVUsbDevice. Use a working upload route for the initial upload.
+4. Open an application for the class: CDC, HID, audio and so on. Not every class appears as a serial port.
 
-| Controller | D− | D+ | Selection |
-|---|---|---|---|
-| X035/X033 USBFS | PC16 | PC17 | Auto |
-| V103/V303 USBFS | PA11 | PA12 | Auto |
-| V203/V208 USBFS | PB6 | PB7 | FullSpeed, or normally Auto |
-| V203/V208 USBD | PA11 | PA12 | Usbd; Auto on USBD-only parts |
-| V305/V307/V317 USBFS | PA11 | PA12 | FullSpeed, or normally Auto |
-| V305/V307/V317 USBHS | PB6 | PB7 | HighSpeed; requires HSE |
-
-Check the exact part/package and board schematic. Use a USB data cable on the connector wired to the MCU controller; a connector wired only to a USB-UART bridge will not enumerate the device stack.
-
-Most examples log through hardware `Serial` at 115200 baud, 8N1. Connect board TX→adapter RX, board RX→adapter TX for commands, and GND→GND, using the board I/O voltage. Board RX/TX/SCK aliases depend on the selected variant. This UART is separate from USB CDC `SerialUSB`/`UsbSerial`. SerialUSBEcho and DfuRuntime do not use UART.
-
-## Build and upload
-
-In Arduino IDE, choose the board and exact Part Number, then open File → Examples → CH32RVUsbDevice. Initially upload through a known working route before testing the running application's USB upload entry.
-
-From the repository root, with the core installed:
+With the core installed, compile from the repository root:
 
 ```sh
 arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
   libraries/CH32RVUsbDevice/examples/SerialUSBEcho
 ```
 
-For development-core checks, verify that CLI resolves this working tree. Generated sketch profiles pin a distributed platform version; they are not a hardware-validation matrix.
+For development checks, confirm CLI resolves this working tree. See [example build rules (Japanese)](../../../docs/examples-build-rules.ja.md) for `sketch.yaml` and memory conditions.
 
-- Audio profiles require at least 48 KiB flash; RAM-disk profiles require at least 16 KiB RAM. Actual fit depends on the selected part and linked image.
-- `pnum=ANY` declares the series minimum memory. Select the actual part when using its larger RAM/flash.
-- Do not hand-edit generated `sketch.yaml`; see [example build rules](../../../docs/examples-build-rules.ja.md).
+## Keep UART diagnostics separate from USB communication
 
-## Runtime and configuration
+Most examples log on hardware `Serial`, separately from CDC `SerialUSB`/`UsbSerial`. Match the settings in `Serial.begin(...)`.
 
-Declare functions on one device, then call `device.begin(config)` once, or use predefined USBDevice. HID functions share one HID interface; DFU runtime is attached by default without consuming an endpoint.
-
-`begin()` means the stack started. `mounted()` means the host configured it. CDC `connected()`/boolean state means DTR is active, so open a terminal with DTR before expecting periodic CDC output.
-
-| Setting | Where to change it |
+| Board | UART adapter |
 |---|---|
-| VID/PID, product, serial | CH32RVUsbDeviceConfig in the sketch; 1209:0001 is a test ID |
-| Multiple board identities | Unique serial per board, or nullptr for the chip-derived default |
-| Controller | config.controller plus matching physical pins and HSE for HS |
-| Counts/buffers | Per-class limits (CDC and MIDI 4, vendor and video 2, others 1); CDC buffers via setBuffers() |
-| Keyboard characters | setLayout plus the PC keyboard layout |
-| Audio/video format | The example's sample/frame settings and controller bandwidth |
+| TX | RX |
+| RX | TX, when commands are accepted |
+| GND | GND |
 
-The USB stack runs after loop and during delay. Call device.task regularly in long processing loops. Notification callbacks (onRx, onLineState, onBusEvent ...) run only from deliverEvents(), which loop() calls; until then the data waits. Providers the host waits on (MSC onRead/onWrite, CCID onApdu, vendor onControlRequest) run inside the stack: keep them short and without delay. [SerialEvents](SerialEvents/README.md) shows the difference; the [guide (Japanese)](../../../docs/sketch-guide.ja.md) explains it.
+Match I/O voltage and resolve aliases such as RX/TX through the board/variant and schematic. UART can report failures even when USB will not start. Examples without UART say so in their individual guides.
 
-## Troubleshooting and re-upload
+## From declaration to communication
+
+Declare the device and its functions with sufficient lifetime, configure them, then start the device:
+
+```cpp
+#include <CH32RVUsbDevice.h>
+
+CH32RVUsbDevice device;
+CH32RVUsbDeviceCdcSerial console(device, "Console");
+
+void setup() {
+  Serial.begin(115200, SERIAL_8N1, RX, TX);
+  CH32RVUsbDeviceConfig config;
+  config.product = "My USB console";
+  if (!device.begin(config)) {
+    Serial.println(device.lastErrorName());
+  }
+}
+
+void loop() {
+  while (console.available()) {
+    const int value = console.read();
+    if (value >= 0) console.write(static_cast<uint8_t>(value));
+  }
+}
+```
+
+Attach functions to the same `device`. See [SerialUSBEcho](SerialUSBEcho/README.md) for predefined `USBDevice`/`SerialUSB`, and [CustomDevice](CustomDevice/README.md) for composition. Keep identity strings, custom descriptors and replacement buffers valid while USB uses them.
+
+| State/API | Meaning |
+|---|---|
+| `device.begin(config)` returns `true` | Internal startup succeeded; host enumeration need not be complete |
+| `device.started()` | The stack has started |
+| `device.mounted()` / `device.ready()` | The host configured the device; these mean the same thing for Device |
+| CDC `connected()` / boolean conversion | Host DTR is active, commonly used to check whether a terminal opened the port |
+| A successful send API | The API accepted data; it does not prove the PC application interpreted or processed it |
+
+CDC `begin(baud)` does not change USB bus speed. A bridge sets hardware UART baud separately. `write()` sends bytes; `print()` formats values as text. Waiting and return conventions differ between CDC, Vendor and Audio writes.
+
+## Internal processing and callbacks
+
+USB processing runs after `loop()` and during `delay()`. `device.task()` can advance it during long calculations, but the usual approach is to split work and return regularly.
+
+| Kind | Examples | Execution and use |
+|---|---|---|
+| Notification | CDC receive, HID Output, bus events, video completion | Runs inside `deliverEvents()` called by `loop()`; some notifications coalesce to latest state |
+| Response provider or decision | MSC block/START STOP handlers, CCID APDU, vendor control, video payload generation, DFU detach decision | Runs inside USB processing while an answer is needed; keep it short, without `delay()` or waiting loops |
+| Polling | CDC `available()`, MIDI `readPacket()`, Audio `pollEvent()` | Read explicitly; polling alone does not require notification delivery |
+
+Pending storage is finite. Depending on the class, the peer may wait, notifications may coalesce, or observation records may be dropped. An `onRx()` amount is not a message boundary. Use actual read lengths, and copy callback data if it must outlive the callback.
+
+[SerialEvents](SerialEvents/README.md) demonstrates this flow. The [sketch composition guide (Japanese)](../../../docs/sketch-guide.ja.md) explains the execution model.
+
+## Adapting examples
+
+- Set identity in `CH32RVUsbDeviceConfig`. Use appropriate identifiers for a product and distinguish multiple boards by serial number.
+- Complete descriptor-affecting configuration before `begin()`. Check host re-enumeration after changes.
+- Pair HID presses with releases and MIDI Note On with Note Off, including failure/retry behavior.
+- CDC and bulk are streams. Define message boundaries using delimiters or length fields.
+- Check write results for audio, video and continuous data; retain unsent bytes or count discarded data deliberately.
+- Respect host write caches for MSC. Do not modify a host-mounted medium simultaneously from the sketch.
+
+## Troubleshooting
 
 | Symptom | Check |
 |---|---|
-| No UART log | UART wiring, 115200 baud, GND, monitor timing; do not confuse UART with CDC |
-| Unsupported | Implemented series/controller support |
-| PortUnavailable | Exact part, controller pins, HSE and CH32RV_HSE_HZ |
-| TooManyInstances | More of one class than its limit |
-| OutOfEndpoints / DescriptorTooLarge | Composite function and descriptor limits |
-| NotReady / failed HID report | Host configuration and suspend state |
-| No CDC data | DTR, terminal local echo and newline settings |
-| No enumeration | Data cable, correct connector, D+/D− and controller selection |
+| No UART log | Pins, baud, GND, reset, and UART versus USB CDC |
+| `begin()` fails | `lastErrorName()`, [library guide](../README.md), part/controller/clock and resource conflicts |
+| Not visible on PC | Cable, data connector, D+/D− and selected controller |
+| No CDC output | Correct port opened with DTR, and output not routed to UART |
+| Callback does not run | Call `deliverEvents()` in `loop()` for registered notifications |
+| Enumerates but cannot be used | Class application, report/PCM format, interface and endpoint selection |
+| Loss only under load | Return values, long callbacks, read frequency and traffic volume |
 
-HID, MSC, audio and other non-CDC classes do not appear as serial ports. Inspect interfaces with a USB descriptor viewer and open them through the appropriate class application.
-
-On X035/X033, 1200-bps touch or DFU_DETACH enters WCH ISP. Avoid 1200 baud during normal terminal tests. DFU runtime does not implement DFU firmware download. Other series currently reset normally instead of entering ISP. See [USB upload](../../../docs/usb.ja.md#書き込み) and [upload routes](../../../docs/upload-routes.ja.md).
+Update entry and actual programming method depend on the series. See [USB upload](../../../docs/usb.ja.md#書き込み) and [upload routes](../../../docs/upload-routes.ja.md), both in Japanese. Avoid unintentionally triggering 1200-bps touch during normal CDC tests.
 
 ## Examples
 

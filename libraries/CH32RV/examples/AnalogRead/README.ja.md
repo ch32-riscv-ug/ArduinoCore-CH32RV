@@ -1,5 +1,7 @@
 # AnalogRead
 
+[English](README.md)
+
 アナログ入力の生値を UART で観察します。
 
 ## 必要なものと配線

@@ -1,5 +1,7 @@
 # RttEcho
 
+[English](README.md)
+
 RTT の双方向通信で、入力を大文字へ変換しながら LED の点滅を続けます。
 
 ## 必要なものと配線

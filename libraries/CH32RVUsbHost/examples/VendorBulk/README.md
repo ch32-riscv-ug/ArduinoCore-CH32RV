@@ -18,6 +18,19 @@ A USB device with a known bulk IN/OUT protocol; the USBVendor device example on 
 
 The default selects a discovered vendor interface. Knowing VID/PID does not define its protocol; use a known peer rather than sending text to arbitrary vendor devices. Input is logged in hex. Console data is chunked into at most 64 bytes, without preserving application message boundaries.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `onDeviceConnected()` | Flags a later open attempt, keeping class work in `loop()`. |
+| `vendorOpen(address, interfaceNumber)` | Selects and opens a vendor interface; omitted arguments select a candidate automatically. |
+| `onVendorData(callback)` | Receives IN data through `deliverEvents()`; copy data rather than retaining its pointer. |
+| `vendorWrite(buffer, length)` | Sends OUT and returns success. Check `lastErrorName()` on failure. |
+
+Callback chunks are not necessarily complete application messages. Define delimiters or length fields and assemble multiple receives. IN/OUT directions are host-relative.
+
+Connection events also occur for non-vendor devices. Select the intended interface and accept UART input after a successful open to avoid consuming data while disconnected. Add a retry policy for failed sends.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

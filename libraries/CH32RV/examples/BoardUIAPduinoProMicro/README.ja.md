@@ -1,5 +1,7 @@
 # BoardUIAPduinoProMicro
 
+[English](README.md)
+
 UIAPduino Pro Micro の基板上の端子名を使って、UART・I2C・SPI・ADC・PWM を初期化します。
 
 ## 必要なものと配線

@@ -1,5 +1,7 @@
 # PrintfToSDI
 
+[English](README.md)
+
 `printf()` の出力先を UART と SDI の間で切り替えます。
 
 ## 必要なものと配線

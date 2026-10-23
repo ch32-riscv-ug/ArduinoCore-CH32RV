@@ -79,6 +79,7 @@ Board Manager archives use an allowlist. `PLATFORM_ENTRIES` in
 ## Documentation
 
 - [Documentation index](docs/README.ja.md) (Japanese)
+- [Example sketch guide](docs/examples.md): choose examples by purpose, with wiring, API use and adaptation notes
 - [How a sketch is put together](docs/sketch-guide.ja.md) (Japanese; interrupts, not waiting, callbacks - the next read after Blink)
 - [Series and hardware support](docs/support-status.ja.md) (Japanese)
 - [Peripheral support](docs/peripheral-support.ja.md) (Japanese)

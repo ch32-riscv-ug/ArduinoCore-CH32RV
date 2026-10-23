@@ -19,6 +19,20 @@ A PC UVC application able to select 80×60 YUY2, plus a UART monitor.
 
 Each frame is 9600 bytes, generated per payload by onFillPayload rather than stored whole in RAM. Loop schedules sendGeneratedFrame; completion callbacks stay short. To try ISO, call `Camera.setTransferType(CH32RVUsbDeviceVideoTransfer::Isochronous)` before `device.begin()`. X035 at 64 B/ms cannot sustain 10 fps including headers, so reduce the advertised rate to match capacity.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `setFormat()` / `setFrameSize()` / `setFrameRate()` | Configure advertised video before USB startup; check boolean results. |
+| `streaming()` / `frameInFlight()` | Check host streaming and whether the previous frame is still being sent. |
+| `sendGeneratedFrame(bytes)` | Starts a generated frame; payload bytes are requested through `onFillPayload()`. |
+| `onFillPayload(dst, length, offset)` | Fills `length` bytes starting at frame byte `offset`. This provider runs inside USB processing. |
+| `onCommit()` / `onFrameComplete()` | Deliver negotiated parameters and frame completion through `deliverEvents()`. |
+
+`offset` is a byte offset, not a pixel index. Generate correct YUY2 `Y0 U Y1 V` bytes even when requests begin inside a pixel pair. Keep the fill provider short; do not delay or start another frame inside it.
+
+Keep `drawingFrame` stable during a frame. With `sendFrame()`, retain the image buffer until completion too. Match advertised rate to frame scheduling, and interpret the host's committed frame interval in 100 ns units.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

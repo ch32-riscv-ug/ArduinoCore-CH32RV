@@ -1,5 +1,7 @@
 # CriticalSection
 
+[English](README.md)
+
 割り込みと共有する値を、短い割り込み禁止区間でコピーする書き方を示します。
 
 ## 必要なものと配線

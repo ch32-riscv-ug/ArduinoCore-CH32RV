@@ -1,5 +1,7 @@
 # PinCapabilities
 
+[English](README.md)
+
 variant が定義する端子の有無と ADC の対応を調べます。
 
 ## 必要なものと配線

@@ -1,5 +1,7 @@
 # LogicBurst
 
+[English](README.md)
+
 GPIO ポートを一度に取り込み、PWM の周期が何サンプル分かを調べます。
 
 ## 必要なものと配線

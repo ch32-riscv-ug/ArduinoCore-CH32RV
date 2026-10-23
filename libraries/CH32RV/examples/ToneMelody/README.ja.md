@@ -1,5 +1,7 @@
 # ToneMelody
 
+[English](README.md)
+
 周波数と長さを指定して受動ブザーで音階を鳴らします。
 
 ## 必要なものと配線

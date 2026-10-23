@@ -1,5 +1,7 @@
 # PinInterrupt
 
+[English](README.md)
+
 GPIO のエッジを割り込みで数え、表示を `loop()` へ分けます。
 
 ## 必要なものと配線

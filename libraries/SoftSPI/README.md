@@ -53,3 +53,7 @@ Each edge calls `digitalWrite()`, and deriving from `HardwareSPI` retains its
 overrides, so `SoftSPI` is not necessarily smaller than the hardware driver.
 Use the build size report for the exact cost. It is not linked into sketches
 that do not include its header.
+
+## Detailed example guides
+
+- [SoftSPILoopback](examples/SoftSPILoopback/README.md): connections, operation, API use and adaptation notes.

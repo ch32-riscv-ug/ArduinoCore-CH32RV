@@ -18,6 +18,19 @@ A supported device board, PC and UART monitor. The disk alone uses eight KiB of 
 
 There is no FAT filesystem, so failure to mount in a file browser is expected. Use [MSCFatRamDisk](../MSCFatRamDisk/README.md) for files. Reset or power loss clears the contents. Formatting is unnecessary for this raw-block example.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `CH32RVUsbDeviceMscRamDisk disk(storage, blocks, size)` | Uses a sketch-owned RAM array with block count and bytes per block. |
+| `disk.attach(msc)` | Connects capacity and storage to MSC. Do not proceed to USB startup on failure. |
+| `msc.mediaPresent(true)` / `msc.isWritable(true)` | Advertise medium presence and write permission. |
+| `msc.onStartStop(...)` | Answers START STOP UNIT; return whether to accept the request. |
+
+Keep `storage` alive while exposed over USB. Its array must cover `blockCount × blockSize`, with RAM left for other work. Reset loses the contents.
+
+For another medium, use `onRead()` / `onWrite()` or a storage object. The byte position is `lba × blockSize + offset`; return the number of requested bytes processed. These and `onStartStop()` run while USB waits for an answer. Unlike notification callbacks, they must not contain long waits or `delay()`.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

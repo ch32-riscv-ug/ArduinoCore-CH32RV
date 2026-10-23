@@ -68,3 +68,7 @@ Both return `false` and change nothing if the route does not exist, and
 
 - **SPILoopback** - one jumper from MOSI to MISO proves the clock, the data
   line and the framing in one go.
+
+## Detailed example guides
+
+- [SPILoopback](examples/SPILoopback/README.md): connections, operation, API use and adaptation notes.

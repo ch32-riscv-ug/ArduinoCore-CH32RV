@@ -18,6 +18,18 @@ A USB mouse, powered host wiring and a 115200-baud UART monitor.
 
 The report descriptor determines field layout, but unusual proprietary features may need additional handling. The board prints values; it does not forward mouse input to the PC. Rate-limit logging if UART output cannot keep up.
 
+## API usage and adaptation
+
+| API or value | Use in this example |
+|---|---|
+| `usb.onMouse(callback)` | Delivers decoded mouse-report events through `deliverEvents()`. |
+| `e.x` / `e.y` / `e.wheel` | Relative amounts, not absolute screen coordinates or pixels. |
+| `e.buttons` | The current button bitmap, not a click count. |
+
+XOR the previous and current bitmap to find button transitions. Use event data during the callback and save necessary values in your own state.
+
+For missing proprietary controls, inspect the interface with [DeviceInfo](../DeviceInfo/README.md) and its report descriptor. Printing every high-rate event can slow processing; accumulate movement and report periodically if needed.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

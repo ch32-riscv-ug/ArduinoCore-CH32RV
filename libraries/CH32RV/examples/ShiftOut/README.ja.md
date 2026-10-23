@@ -1,5 +1,7 @@
 # ShiftOut
 
+[English](README.md)
+
 シフトレジスタへ1 byteずつ送り、出力を順番に切り替えます。
 
 ## 必要なものと配線

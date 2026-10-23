@@ -1,4 +1,4 @@
-# CH32
+# CH32RV
 
 Two things live here: the **examples for the core's own APIs**, and the
 **register-level escape hatch**.
@@ -8,6 +8,8 @@ one, and a library needs at least one header to be well formed. Rather than the
 empty placeholder other cores use for this, the header does a job.
 
 ## The examples
+
+See [basic example setup](examples/README.md) and each example README for wiring, operation, API roles and adaptation notes.
 
 `digitalWrite()`, `analogRead()`, `tone()` and the rest belong to the core, not
 to any library, so their examples are here. Every one of them:
@@ -22,20 +24,21 @@ to any library, so their examples are here. Every one of them:
 
 | Example | Shows |
 |---|---|
-| Blink | `pinMode`, `digitalWrite`, `delay` |
-| SerialEcho | `Serial` in and out |
-| AnalogRead | `analogRead` |
-| Fade | `analogWrite` |
-| ToneMelody | `tone`, `noTone` |
-| PinInterrupt | `attachInterrupt`, sharing state with an ISR |
-| ShiftOut | `shiftOut` into a 74HC595 |
-| PulseIn | `pulseIn`, `delayMicroseconds` |
-| Timing | `millis`, `micros`, and how they wrap |
-| RandomNumbers | `random`, `randomSeed` |
-| AnalogResolution | `analogReadResolution`, `analogWriteResolution` |
-| CriticalSection | `interrupts`, `noInterrupts`, `volatile` |
-| PrintFormatting | `Print`, `String`, `dtostrf` |
-| PinCapabilities | which pads this chip actually has |
+| [Blink](examples/Blink/README.md) | `pinMode`, `digitalWrite`, `delay` |
+| [SerialEcho](examples/SerialEcho/README.md) | `Serial` in and out |
+| [AnalogRead](examples/AnalogRead/README.md) | `analogRead` |
+| [Fade](examples/Fade/README.md) | `analogWrite` |
+| [ToneMelody](examples/ToneMelody/README.md) | `tone`, `noTone` |
+| [PinInterrupt](examples/PinInterrupt/README.md) | `attachInterrupt`, sharing state with an ISR |
+| [ShiftOut](examples/ShiftOut/README.md) | `shiftOut` into a 74HC595 |
+| [PulseIn](examples/PulseIn/README.md) | `pulseIn`, `delayMicroseconds` |
+| [Timing](examples/Timing/README.md) | `millis`, `micros`, and how they wrap |
+| [RandomNumbers](examples/RandomNumbers/README.md) | `random`, `randomSeed` |
+| [AnalogResolution](examples/AnalogResolution/README.md) | `analogReadResolution`, `analogWriteResolution` |
+| [CriticalSection](examples/CriticalSection/README.md) | `interrupts`, `noInterrupts`, `volatile` |
+| [PrintFormatting](examples/PrintFormatting/README.md) | `Print`, `String`, `dtostrf` |
+| [TimerResource](examples/TimerResource/README.md) | Advanced timer acquisition, setup and ownership |
+| [PinCapabilities](examples/PinCapabilities/README.md) | which pads this chip actually has |
 
 **PinCapabilities is the one to run first on a board you do not know.** CH32 pin
 numbers are `((port + 2) << 5) | bit`, so they are sparse: PA0 is 64, PB0 is 96,
@@ -52,8 +55,8 @@ board (fqbn) only (`board:`, `docs/examples-build-rules.ja.md`).
 
 | Example | Board | Sets up |
 |---|---|---|
-| BoardWeActCH32X035 | WeAct CH32X035 Core Board (CH32X035F8U6) | USB (`SerialUSB` + the DFU runtime for uploads), USB PD (5 V), two UARTs, SPI, two analog inputs, PWM, the LED (PB12). I2C exists only on the USB or SWD pins, so it is commented out |
-| BoardUIAPduinoProMicro | UIAPduino Pro Micro CH32V003 V1.4 | UART, I2C (a bus scan), SPI, three analog inputs, PWM, the LED (PC0). SPI stays AUTO in the board menu; the maker's NSS pads (PC1 / PC0) are I2C's SDA and the LED, so CS is PC3, with the alternatives in comments |
+| [BoardWeActCH32X035](examples/BoardWeActCH32X035/README.md) | WeAct CH32X035 Core Board (CH32X035F8U6) | USB (`SerialUSB` + the DFU runtime for uploads), USB PD (5 V), two UARTs, SPI, two analog inputs, PWM, the LED (PB12). I2C exists only on the USB or SWD pins, so it is commented out |
+| [BoardUIAPduinoProMicro](examples/BoardUIAPduinoProMicro/README.md) | UIAPduino Pro Micro CH32V003 V1.4 | UART, I2C (a bus scan), SPI, three analog inputs, PWM, the LED (PC0). SPI stays AUTO in the board menu; the maker's NSS pads (PC1 / PC0) are I2C's SDA and the LED, so CS is PC3, with the alternatives in comments |
 
 Both were run on the boards (2026-10-14).
 

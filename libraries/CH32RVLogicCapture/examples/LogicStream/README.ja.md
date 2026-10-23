@@ -1,5 +1,7 @@
 # LogicStream
 
+[English](README.md)
+
 GPIO ポートを連続取得し、完成した半バッファを USB Vendor の bulk IN へ送ります。
 
 ## 必要なものと配線

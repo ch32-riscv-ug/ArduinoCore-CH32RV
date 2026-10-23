@@ -1,5 +1,7 @@
 # HsAdcStream
 
+[English](README.md)
+
 高速 ADC の連続データを、USB Vendor の bulk IN へ直接送ります。
 
 ## 必要なものと配線

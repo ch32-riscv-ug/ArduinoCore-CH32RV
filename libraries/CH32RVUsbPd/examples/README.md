@@ -2,11 +2,11 @@
 
 [日本語](README.ja.md)
 
-These examples use the USBPD block (CH32X035, L103/M103, V205, X305/X315, H41x, M030) for PD sink/source operation, independently of USB data classes. On X033 `begin()` fails.
+These examples use Type-C CC communication for PD sink/source operation, independently of USB data classes. Check supported parts and CC pins in the [library README](../README.md).
 
 ## Wiring and power
 
-CC1 / CC2: X035 PC14 / PC15, L103/M103 PB6 / PB7, V205 PA0 / PA1, X305/X315 PD4 / PD5, H41x PB3 / PB4, M030 PA0 / PA1. Check the board Type-C, CC/Rd and power circuits. Logs use hardware UART RX/TX at 115200 baud, 8N1, not CDC. Keep CC wiring short.
+Check Type-C, CC and power circuits against the board schematic. Logs use the sketch's hardware UART, not CDC. Connect adapter RX to board TX, TX to RX, and common GND; match I/O voltage. Keep CC wiring short.
 
 | Example | Role | Required equipment |
 |---|---|---|
@@ -29,7 +29,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 
 Alternatively open File → Examples → CH32RVUsbPd in Arduino IDE. Generated profiles declare build conditions, not hardware-verified support.
 
-Sink examples wait about five seconds for the initial contract. connected means CC attach; ready means an explicit PD contract. A Type-C-only supply may never become ready. Request units are mV/mA: 9 V is 9000. The driver keeps the link (and a PPS contract) alive from delay() and the return of loop(); nothing has to be called.
+Sink examples use a bounded wait for the initial contract. connected means CC attach; ready means an explicit PD contract. A Type-C-only supply may never become ready. Request units are mV/mA: 9 V is 9000. The driver keeps the link (and a PPS contract) alive from delay() and the return of loop(); nothing has to be called.
 
 Only one sink/source role can own the PD block at a time. USB data-device operation is independent, but simultaneous use requires a peer supporting both power and data roles and suitable connector power wiring.
 
@@ -44,7 +44,7 @@ Only one sink/source role can own the PD block at a time. USB data-device operat
 | Reboot loop after reset | Contract recovery/Hard Reset dropping VBUS and board power routing |
 | Negotiated and measured voltage differ | Physical source callback and supply implementation |
 
-See the [library API](../README.md) for quantization and recovery behavior. Sink hardware is checked on X035; source remains build/unit-tested.
+See the [library API](../README.md) for quantization, failure recovery and hardware verification coverage.
 
 ## Examples
 

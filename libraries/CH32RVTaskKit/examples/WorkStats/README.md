@@ -17,6 +17,12 @@ A 115200-baud 8N1 UART monitor on RX/TX.
 
 Times include interrupts that ran meanwhile (not CPU time); the maximum is what was seen, not a bound. `empty` counts rounds with nothing ready, not idle CPU time. Work and executors not measured pay nothing.
 
+## API usage and adaptation
+
+`work.measure(stats)` and `app.measure(rounds)` attach statistics storage. Check a nonzero run count before computing an average; `clear()` starts a new interval. Keep statistics objects alive during measurement.
+
+One function is deliberately slow here. Split long work in applications and reduce logging overhead too. An observed maximum does not guarantee a worst-case real-time bound.
+
 ## Related documentation
 
 - [Shared setup](../README.md)

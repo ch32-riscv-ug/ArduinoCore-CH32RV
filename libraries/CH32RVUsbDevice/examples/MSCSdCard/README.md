@@ -18,6 +18,19 @@ A 3.3 V SD socket/module, card and device board. Use board SCK/MISO/MOSI pins an
 
 The sketch uses 4 MHz SPI. For `SD_BEGIN_FAILED`, check power, CS and SPI wiring first. Since the PC writes blocks directly, another board-side filesystem must not modify the same media while mounted by the PC. Use a backed-up test card.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, -1)` | Selects SPI pins; CS is supplied separately below. |
+| `sdMsc.begin(CS_PIN, SPI, clockHz)` | Initializes SD in SPI mode. Clock units are Hz. |
+| `sdMsc.attach(msc)` | Connects SD block access to USB MSC. |
+| `sdMsc.onEject(...)` | Reports host eject through `deliverEvents()`. |
+
+Initialize in SPI → SD → MSC → USB order. For `SD_BEGIN_FAILED`, check power, CS, data/clock routing and the card before debugging USB. Reduce SPI clock to investigate wiring-related failures.
+
+The PC owns the filesystem. Mounting it simultaneously from the MCU risks conflicting caches and metadata. Transfer ownership only after the host safely ejects and releases the medium.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

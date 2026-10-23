@@ -17,7 +17,21 @@ A CH32X035/X033 with the implemented USB ISP entry, a PC and optionally a PA1-to
 
 ## Settings and limits
 
-The runtime interface does not implement DFU_DNLOAD. Flash through the WCH ISP support in `ch32rv` after detaching. DFU runtime is normally attached by default; this explicit object installs the veto callback. Other series currently reset normally instead of entering their ISP. See the guide for host access permissions and driver binding.
+The steps above check the factory-ISP path. For another series, check the transition destination and programming method in the USB guide, along with host permissions and WinUSB binding.
+
+DFU runtime is attached by default; the explicit object installs the veto callback. Some series enter a self-programming DFU mode instead. Consult the USB guide for coverage.
+
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `CH32RVUsbDeviceDfuRuntime dfu` | Adds a DFU function on predefined `USBDevice` with a configurable transition decision. |
+| `dfu.onDetach(callback)` | Return `true` to allow transition or `false` to remain in the application. This is a decision, not an after-the-fact notification. |
+| `USBDevice.begin(config)` | Exposes DFU without a CDC serial port. |
+
+The detach callback runs inside USB request processing. Keep it to a short state check, such as whether a motor or write operation is active. Separate the decision from cleanup so refusal does not change application state.
+
+Runtime is the interface for entering an update path. Whether it enters factory ISP or DFU mode, and which tool writes firmware, depends on the series. Follow the [USB upload guide (Japanese)](../../../../docs/usb.ja.md#書き込み); runtime enumeration alone does not imply `dfu-util -D` support.
 
 ## Related documentation
 

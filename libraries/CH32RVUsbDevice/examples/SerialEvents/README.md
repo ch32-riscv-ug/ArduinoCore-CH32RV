@@ -29,6 +29,19 @@ A board with USB Device support and a USB data cable, a PC serial terminal (CDC)
 - When the receive buffer (256 bytes at Full Speed) is full, the PC waits before sending more. No data is lost.
 - `SerialUSB` is the USB CDC port, `Serial` the UART.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `onRx(onRx)` | Reports received data. Its argument is the available amount at delivery, not an application message length. |
+| `onLineState()` / `onLineCoding()` | Deliver host control-line and communication settings to the sketch. |
+| `deliverEvents()` | Runs pending notification callbacks here and returns the number run, not a USB packet count. |
+| `delay()` | Continues internal USB processing without invoking notification callbacks. |
+
+Send a short string during `BUSY 3 s` and check that its echo and `RX` log follow `BUSY end`. Several arrivals may produce one notification, so read according to `available()` rather than counting notifications. Reading the data elsewhere before delivery can suppress `onRx()`.
+
+Storage is finite. Slow reading fills buffers and can make the USB host wait. Keep command handlers short and save longer operations as state for subsequent `loop()` iterations.
+
 ## Related documentation
 
 - [How a sketch is put together (Japanese)](../../../../docs/sketch-guide.ja.md): interrupts, not waiting, callbacks

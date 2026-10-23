@@ -1,5 +1,7 @@
 # SerialEcho
 
+[English](README.md)
+
 ハードウェア UART で行を受け取り、前後の空白を除いて返信します。
 
 ## 必要なものと配線

@@ -55,3 +55,8 @@ if (const uint16_t *full = hsadc.readBuffer()) {   // from loop()
 - `HsAdcStream` streams 20 Msps x 2 bytes = 40 MB/s over SuperSpeed with the
   vendor class's `writeDirect()`. Read it with several libusb async transfers
   queued. One synchronous read at a time drops buffers between reads.
+
+## Detailed example guides
+
+- [HsAdcRead](examples/HsAdcRead/README.md): connections, operation, API use and adaptation notes.
+- [HsAdcStream](examples/HsAdcStream/README.md): connections, operation, API use and adaptation notes.

@@ -19,6 +19,20 @@ A series with USBPD (CH32X035 and others; CC pads in the library README) source 
 
 The supplied callbacks always return true after printing. Implement real switching before connecting a sink: otherwise PS_RDY is sent without the requested voltage being applied. setRpCurrent does not make a supply capable of 3 A. USBPD sink and USBPDSource cannot own the PD block simultaneously.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `setRpCurrent(...)` | Advertises pre-contract current over CC; it does not set load current. |
+| `addFixed(mv, ma)` / `addPps(minMv, maxMv, ma)` | Register deliverable capabilities, starting with fixed 5 V. Check registration results. |
+| `onVbus(callback)` | Controls VBUS on/off; return `true` once the requested physical state is reached. |
+| `onSetVoltage(callback)` | Controls contract voltage/current capability; return `false` on failure. |
+| `attached()` / `ready()` | Distinguish sink connection from an explicit contract. |
+
+These callbacks answer whether the driver may proceed; they are not deferred notifications. Do not return `true` merely because a change was scheduled. Nor does `false` mean "call me again later"; check recovery behavior in the [library README](../../README.md).
+
+Verify initial 5 V, voltage changes, detach and reset with the physical circuit. The sample prints PDO indices plus one, unlike zero-based API indices. Do not recursively invoke PD requests from supply callbacks.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

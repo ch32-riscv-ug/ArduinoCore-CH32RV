@@ -83,3 +83,7 @@ nothing is lost.
 ## examples
 
 - **HelloDMSeq** - prints once a second and echoes back what you type, uppercased.
+
+## Detailed example guides
+
+- [HelloDMSeq](examples/HelloDMSeq/README.md): connections, operation, API use and adaptation notes.

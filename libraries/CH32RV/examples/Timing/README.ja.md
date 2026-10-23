@@ -1,5 +1,7 @@
 # Timing
 
+[English](README.md)
+
 `millis()`・`micros()` と、桁あふれをまたげる時刻の引き算を示します。
 
 ## 必要なものと配線

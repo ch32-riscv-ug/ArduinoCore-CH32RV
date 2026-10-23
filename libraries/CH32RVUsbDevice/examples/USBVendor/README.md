@@ -53,6 +53,25 @@ finally:
 check host permissions, driver binding and competing applications. Read again
 if queued status messages precede the echo.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `onRx()` / `read(buffer, size)` | Receive notification through `deliverEvents()` and process only actual bytes read. |
+| `write(buffer, size)` | Returns bytes accepted by the FIFO. Handle partial writes rather than assuming CDC-style waiting. |
+| `flush()` / `waitWritable(bytes, timeoutMs)` | Start short pending output or wait for room with a deadline. Neither clears receive data. |
+| `onControlRequest()` / `sendControlResponse()` | Answer EP0 vendor requests as a provider inside USB processing. |
+
+The echo does not check every write length. For larger replies, advance by the accepted length and retain the remainder for later iterations. Decide what happens on timeout or when the host stops reading IN.
+
+For new control requests, validate direction, recipient, `bRequest`, `wIndex` and `wLength`; return `false` for unsupported requests. Prepare the response at SETUP and avoid repeating side effects at later stages. Request `0x02` has no data in this example; it is not a general variable-length OUT handler.
+
+### Switching to direct transmission
+
+`writeDirect(buffer, length)` transmits from the caller's array. Success does not release the buffer: retain it unchanged until `onTxComplete()` is delivered by `deliverEvents()`. Inspect `lastDirectErrorName()` on failure.
+
+Do not pass a local array and return while it is in use. Plan FIFO/direct-transfer interaction and whether to retain or discard data when the next transfer cannot start. See [HsAdcStream](../../../CH32RVHsAdc/examples/HsAdcStream/README.md) and [LogicStream](../../../CH32RVLogicCapture/examples/LogicStream/README.md).
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

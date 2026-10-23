@@ -1,5 +1,7 @@
 # PulseIn
 
+[English](README.md)
+
 トリガーを出力し、入力パルスの High の継続時間を測ります。
 
 ## 必要なものと配線

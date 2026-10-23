@@ -94,3 +94,8 @@ the name the host tools look for. **No SEGGER code is used.**
 
 - **HelloRTT** - the smallest output, with the host command at the top.
 - **RttEcho** - reads what you type and sends it back, without blocking.
+
+## Detailed example guides
+
+- [HelloRTT](examples/HelloRTT/README.md): connections, operation, API use and adaptation notes.
+- [RttEcho](examples/RttEcho/README.md): connections, operation, API use and adaptation notes.

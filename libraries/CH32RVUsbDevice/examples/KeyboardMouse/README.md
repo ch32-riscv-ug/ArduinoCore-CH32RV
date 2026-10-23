@@ -18,6 +18,19 @@ A PC text editor and UART monitor. Text, movement and clicks are generated autom
 
 Declare both functions on the same `device` and call `begin()` once. The combined HID uses report IDs; its report layout differs from a standalone boot keyboard.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `keyboard(device)` / `mouse(device)` | Add both HID functions to the same device. |
+| `keyboard.write("K")` | Sends a key press and release to the focused PC application. |
+| `mouse.move(40, 0)` | Sends relative rightward movement, not an absolute screen coordinate. |
+| `mouse.click(...)` | Sends a button press and release. |
+
+The functions share an HID interface and are distinguished by Report ID. Raw-report applications must inspect the report descriptor rather than infer functions from interface count alone.
+
+Movement and a click follow keyboard input and may change focus. For physical controls, replace periodic actions with input changes and check each API's boolean result.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

@@ -19,6 +19,19 @@ A PC CDC terminal, text editor, file browser and UART monitor. Select a part wit
 
 Focus a test editor before issuing type commands. The 128-byte command buffer retains at most 127 characters. The RAM disk resets with the board. HID, CDC and MSC use one, two and one endpoint numbers respectively; ESP32-specific IN endpoint limits do not apply to CH32.
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| Each function's `...(device)` | Adds keyboard, CDC and MSC to one device. |
+| `disk.format()` / `disk.addTextFile()` / `disk.attach(msc)` | Prepare RAM storage and connect it to MSC before USB startup. |
+| `UsbSerial.read()` | Accumulates bytes until a newline before interpreting a command. |
+| `keyboard.write()` | Sends text following `type ` as keyboard input, to a different destination from the CDC reply. |
+
+CDC is a stream: one host write need not correspond to one read. `lineBuffer` defines command boundaries independently of USB transfers. For an application, reject overlong lines rather than silently executing truncated commands.
+
+Changing a disk from the sketch while the host has it mounted can conflict with host caches. See [MSCFatRamDisk](../MSCFatRamDisk/README.md) for reading files after an eject notification.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

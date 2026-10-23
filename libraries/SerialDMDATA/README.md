@@ -99,3 +99,7 @@ Only **stdio** follows. The name `Serial` is fixed at compile time, so
 ## examples
 
 - **HelloDMDATA** - prints once a second and echoes back what you type.
+
+## Detailed example guides
+
+- [HelloDMDATA](examples/HelloDMDATA/README.md): connections, operation, API use and adaptation notes.

@@ -1,5 +1,7 @@
 # BoardWeActCH32X035
 
+[English](README.md)
+
 WeAct CH32X035 Core Board の端子名を明示して、各周辺機能を組み合わせる出発点です。
 
 ## 必要なものと配線

@@ -18,6 +18,18 @@ A keyboard/synthesizer exposing a USB MIDI device port, host VBUS wiring and a U
 
 API channel 0 is conventional channel 1. A MIDI controller without a sound engine will not produce audio from received notes. Host processing continues inside delay(200); the callbacks wait for deliverEvents() at the top of loop().
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `usb.onMidiMessage(callback)` | Receives cable, status and data bytes through `deliverEvents()`. |
+| `usb.midiReady()` | Checks usable MIDI functionality, separately from controller startup. |
+| `midiSendNoteOn(channel, note, velocity)` / `midiSendNoteOff(...)` | Send note starts and endings with a zero-based channel. |
+
+A USB MIDI controller need not contain a sound generator. Sending Note On to a keyboard alone may produce no sound. Separate input inspection from output testing on a suitable receiver. Cable numbers and status-byte channel bits are different fields.
+
+USB processing continues during `delay(200)`, but notifications wait for the next delivery. Schedule Note Off by time for prompt handling of other inputs. Check send results and plan for notes left active by failure or disconnection.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)

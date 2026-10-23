@@ -17,6 +17,12 @@ A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N
 
 `loop()` cannot run until the ISR returns, so an ISR waiting for loop()'s lock would never return. Hold a lock from one loop() to the next only on purpose, as here.
 
+## API usage and adaptation
+
+`tryLock()` reports acquisition, and its owner calls `unlock()`. With a `Guard`, check `locked()` before accessing shared memory; scope exit releases an acquired lock.
+
+Never waiting on failure is essential in an ISR. Every access path to the shared buffer must follow the same locking rule; one guarded access does not protect other unguarded accesses.
+
 ## Related documentation
 
 - [Shared setup](../README.md)

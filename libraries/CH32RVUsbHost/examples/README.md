@@ -6,14 +6,7 @@ The board is the USB host; the PC observes its UART. Start with [DeviceInfo](Dev
 
 ## Parts and connections
 
-| Part/controller | D− | D+ | Status |
-|---|---|---|---|
-| X035 R8T6/C8T6/G8U6/G8R6 | PC16 | PC17 | Host present; C8T6 peer-tested |
-| X035 F8U6/F7P6/D8U6, X033 | — | — | No host in silicon; Unsupported |
-| V203/V208 USBFS | PB6 | PB7 | Build-only |
-| V303/V305/V307/V317 USBFS | PA11 | PA12 | Build-only |
-
-The WeAct X035F8U6 device baseline cannot serve as the host baseline. Choose C8T6 or another host-capable part. V30x uses USBFS here, not USBHS. H417 USBSS/USBHS host is not implemented.
+Check the exact part for host capability. A working USB device port does not establish host support. Consult the [library support information](../README.md) for controller, pins, clocks and hardware verification.
 
 Wire D+/D− and GND, and provide 5-V VBUS to the device from the board power circuit/switch. begin does not create a supply or configure the Type-C power role. A device-only Type-C connector with sink Rd resistors does not by itself provide host/source wiring; check the board source/CC circuit.
 
@@ -39,21 +32,30 @@ Generated sketch profiles declare build conditions, not host-capable hardware. A
 
 The host stack runs after loop and during delay. Call usb.task in long processing loops. Callbacks run only from deliverEvents(), which each example calls at the top of loop(); they may use blocking APIs but should remain short. Several examples set a flag and open or transfer from loop. See the [guide (Japanese)](../../../docs/sketch-guide.ja.md).
 
-usb.ready means the controller started. Use serialReady, midiReady, mscReady and class open results to check a function. ANY_ADDRESS selects the first matching device. With multiple devices use callback addresses and API address arguments, or CDC setAddress/setPort. Do not assume the same USB address survives reconnect.
+| API/state | Meaning |
+|---|---|
+| `usb.begin()` / `usb.ready()` | Host controller startup, not readiness of the intended peripheral |
+| `onDeviceConnected()` | Enumeration notification; retain its `address` to identify the device |
+| `serialReady()` / `midiReady()` / `mscReady()` and similar | Usable class function; card or medium readiness can require further checks |
+| Open/transfer result | Check success and inspect `lastErrorName()` immediately on failure |
 
-One hub level is supported, with limits on device/interface/buffer counts. Host audio/video ISO and NCM/ECM networking are not implemented. EspUsbHost runtime configuration and examples do not all carry over.
+The default address selects the first matching device. For multiple peripherals, retain callback addresses and pass explicit address arguments, or CDC `setAddress()`/`setPort()`. Do not assume addresses survive reconnect. Copy callback reference/pointer data if it must be retained.
+
+Waiting APIs delay the rest of the sketch. Do not call them in an ISR. A callback can set a flag and leave open/transfer work to `loop()`. Decide how pending output and state are handled on disconnect.
+
+For hubs, composite devices, class coverage and capacity limits, consult the [library README](../README.md). Device-side examples make useful peers with known protocol behavior.
 
 ## Troubleshooting
 
 | Symptom | Check |
 |---|---|
-| Unsupported | Exact part, especially X035 F8U6 versus C8T6 |
+| Unsupported | Exact part and host support table |
 | Busy | Active device stack on the same controller; end before switching |
 | No connection event | VBUS, GND, D+/D−, device-mode port and UART logging |
 | Identity printed, no class I/O | Class/protocol support, class readiness and open results |
 | Timeout / Stalled | Missing response versus a peer refusing a request; inspect lastErrorName and descriptors |
-| Large composite cannot enumerate | CFG_TUH_ENUMERATION_BUFSIZE and related limits, including RAM cost |
-| Storage reader never ready | Insert media first; enumeration TEST UNIT READY has a known unlimited-retry limitation |
+| Large composite cannot enumerate | Library configuration/descriptor capacity and RAM requirements |
+| Storage reader never ready | Media presence and the library known limitations |
 | Serial losses | Polling frequency, return values and compile-time ring/FIFO sizes |
 
 See the [library API](../README.md) and [peer tests](../../../tests/peer/usb/README.ja.md) for support and verification boundaries.

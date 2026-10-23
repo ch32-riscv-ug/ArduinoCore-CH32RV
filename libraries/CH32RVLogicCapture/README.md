@@ -72,3 +72,8 @@ modes.
 - `LogicStream` streams 9.09 MS/s x 2 bytes = 18 MB/s over SuperSpeed.
 - Inputs go up to the port's supply: PE7-PE15 and others are VIO18 pins (see
   "Input range" in the CH32RVHsAdc README).
+
+## Detailed example guides
+
+- [LogicBurst](examples/LogicBurst/README.md): connections, operation, API use and adaptation notes.
+- [LogicStream](examples/LogicStream/README.md): connections, operation, API use and adaptation notes.

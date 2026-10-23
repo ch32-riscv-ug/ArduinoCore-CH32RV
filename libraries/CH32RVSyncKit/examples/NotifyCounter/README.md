@@ -16,6 +16,12 @@ A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N
 
 Use `tryTake()` to handle them one at a time. The counter stops at its maximum instead of wrapping.
 
+## API usage and adaptation
+
+`notify()` increments the count and `tryTakeAll()` removes the current total together. Events arriving while that result is printed remain for the next call.
+
+This counts ISR events, which include button chatter. Debounce for physical press counts. Use QueueFromInterrupt when individual timestamps or ordering also matter.
+
 ## Related documentation
 
 - [Shared setup](../README.md)

@@ -6,7 +6,7 @@ A CDC-NCM device answering ARP and IPv4 ping directly from Ethernet frames, with
 
 ## Hardware and connections
 
-A PC with CDC-NCM support, a USB data cable and a UART monitor. Profiles require at least 16 KiB RAM.
+A PC with CDC-NCM support, a USB data cable and a UART monitor. See the accompanying `sketch.yaml` for build targets and memory conditions.
 
 ## Steps and expected results
 
@@ -18,6 +18,19 @@ A PC with CDC-NCM support, a USB data cable and a UART monitor. Profiles require
 ## Settings and limits
 
 There is no DHCP. If no NIC appears, check OS NCM support/binding first. Match MY_IP with the PC subnet when changing addresses. Test ordinary small, unfragmented IPv4 ping without IP options: this demo is not a general validated IP parser. The receive callback prepares a response and loop sends it.
+
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `net.onFrame(callback)` | Receives Ethernet frames through `deliverEvents()`; the sketch need not remove USB NCM headers. |
+| `net.sendFrame(data, length)` | Sends an Ethernet-header-inclusive frame; check its boolean result. |
+| `net.macAddress()` | Provides USB-network MAC information. The example makes the PC and responding side use different MACs. |
+| `net.linkUp()` | Checks the USB network link, not IP configuration or ping reachability. |
+
+Copy required data into your reply array instead of retaining the callback pointer. The example has one reply slot. Add queuing/retries if another request can arrive before transmission or `sendFrame()` can fail.
+
+Use distinct PC and `MY_IP` addresses in the same subnet; change both if they conflict with another LAN. Broader networking requires validation of lengths, headers and checksums, preferably through an IP stack.
 
 ## Related documentation
 

@@ -93,3 +93,7 @@ old pads to inputs.
 
 - **I2CScanner** - list the devices that answer, and say so plainly when the
   bus times out because the pull-ups are missing.
+
+## Detailed example guides
+
+- [I2CScanner](examples/I2CScanner/README.md): connections, operation, API use and adaptation notes.

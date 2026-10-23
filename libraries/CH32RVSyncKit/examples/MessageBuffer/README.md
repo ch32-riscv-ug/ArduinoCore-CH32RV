@@ -17,6 +17,12 @@ A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N
 
 A message costs its length + 2 bytes. With a too-small buffer `tryReceive()` returns 0 and keeps the message; `nextLength()` says how much room it needs.
 
+## API usage and adaptation
+
+`trySend(data, bytes)` stores a complete message or nothing. `tryReceive(dst, capacity)` returns its received length. Leave room for a terminator when displaying it as text.
+
+An oversized first message prevents access to later messages, even if they are shorter. Inspect `nextLength()` and match maximum stored length to receive capacity. Protect read/reset of auxiliary refusal counters if exact totals matter.
+
 ## Related documentation
 
 - [Shared setup](../README.md)

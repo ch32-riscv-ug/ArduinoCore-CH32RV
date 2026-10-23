@@ -1,5 +1,7 @@
 # SoftSPILoopback
 
+[English](README.md)
+
 GPIO でクロックを生成する SPI のループバックを確認します。
 
 ## 必要なものと配線

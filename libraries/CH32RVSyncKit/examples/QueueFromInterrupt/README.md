@@ -18,6 +18,12 @@ A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N
 
 In the ISR a failed `trySend()` is counted, never waited on. A full queue refuses the new value and keeps the old ones (no overwrite). Contact bounce can turn one press into several.
 
+## API usage and adaptation
+
+`trySend(value)` copies a value and returns success; `tryReceive(value)` removes one or immediately returns `false` when empty. Queuing a pointer does not manage its target's lifetime or ownership.
+
+The deliberate delay demonstrates overflow. For an application, read more frequently and choose whether full-queue input is discarded or reported. For exact dropped counts, protect the auxiliary counter's copy/reset as one operation too.
+
 ## Related documentation
 
 - [Shared setup](../README.md)

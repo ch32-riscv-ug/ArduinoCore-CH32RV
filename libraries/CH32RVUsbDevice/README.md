@@ -78,9 +78,8 @@ Differences:
   `networkUp()`, `localIP()`) comes from the Network library: a sketch using it
   includes `<Network.h>` too. That library is for the series with an Ethernet
   MAC (V208, V307/V317, V407/V467, H41x), not the X035. Without
-  `beginNetwork()` the function exchanges raw Ethernet frames. Those series
-  have no USB device driver yet, so this is tested on the host only
-  (`tests/unit/network`).
+  `beginNetwork()` the function exchanges raw Ethernet frames. Check controller
+  and networking hardware coverage in the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況).
 - **Not here**: the firmware-update classes.
 - **The vendor class's direct path (`writeDirect()`) works on every series**:
   one transfer straight from the caller's buffer, which stays untouched until
@@ -90,13 +89,16 @@ Differences:
   `setInterfaceProtocol()` (subclass / protocol) and the HID vendor class's
   `setUsage()`.
 - **A DFU runtime interface comes by default**; `config.dfuRuntime = false`
-  leaves it out. It enters WCH ISP on X035/X033; other series currently reset
-  normally. This differs from EspUsbDevice OTA/DFU download support.
+  leaves it out. The transition and programming method depend on the series:
+  factory ISP, self-programming DFU mode, or a normal reset. See
+  [USB uploading (Japanese)](../../docs/usb.ja.md#書き込み).
 - **The descriptor getters have the same names** (`deviceDescriptor()`,
   `configurationDescriptor()`, `stringDescriptor()`, `bosDescriptor()`,
   `microsoftOs20Descriptor()`, `hidReportDescriptor()` and the rest). Nothing
-  is kept resident: each call builds into one shared heap buffer, and a
-  pointer stays valid until the next such call. `onAnyControlRequest()`
+  is kept resident: configuration, BOS, MS OS 2.0 and HID report getters use
+  shared heap storage. Consume or copy the result before the next descriptor-building
+  call, including a different getter. String pointers last until the next
+  `stringDescriptor()` call. `onAnyControlRequest()`
   behaves the same (vendor requests at SETUP, every control transfer at ACK).
 - **Only here**: `CH32RVUsbDeviceDfuRuntime` (the ISP entry), predefined
   `SerialUSB` / `USBDevice`, `enterBootloader()`, `onBusEvent()` (reset,
@@ -115,9 +117,10 @@ Differences:
 `CH32RVUsbDeviceMscSdCard` (its own header), `CH32RVUsbDeviceCcid`,
 `CH32RVUsbDeviceNet` (CDC-NCM, raw frames), `CH32RVUsbAudioFunction`
 (UAC1/UAC2), `CH32RVUsbDeviceVideo` (UVC),
-`CH32RVUsbDeviceDfuRuntime` (a DFU runtime interface only: DFU_DETACH resets
-into the factory USB ISP bootloader; no DFU mode, no DFU download). Its
-interface name, "CH32RV", is what ch32rv's discovery lists as an upload port.
+`CH32RVUsbDeviceDfuRuntime` (an update entry through DFU_DETACH; the next mode
+and programming method depend on the series). It is included by default
+(`config.dfuRuntime = false` disables it); declare it explicitly when adding
+an `onDetach()` decision. Its interface name, "CH32RV", identifies a ch32rv upload port.
 
 Every default string and ID (VID/PID, manufacturer, product, interface names,
 MSC inquiry, FAT volume label) is changed at run time - CH32RVUsbDeviceConfig,
@@ -139,7 +142,7 @@ HID examples generate input automatically. SerialUSBEcho, CustomDevice,
 DfuRuntime and UsbNetworkPing are this library's.
 
 The [complete example index](examples/README.md) links hardware, operation,
-expected output, settings and limitations for each sketch.
+expected output, API use and adaptation notes for each sketch.
 
 ## Composite configuration and runtime
 
@@ -188,16 +191,9 @@ ARP/ICMP packets, without DHCP, web serving or a general IP parser.
 
 ## Support
 
-CH32X035 / X033 (USBFS), checked on a WeAct CH32X035F8U6 board. The
-controller drivers for V103, V20x and V30x are being rewritten for the own
-stack (they existed in the TinyUSB days). Until then, on those and the
-other series `begin()` returns false (`Unsupported`) and the sketch still
-builds.
+See the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況) for implemented controllers, exact-part exceptions, pins, clocks and hardware verification. Compilation and hardware validation are separate checks.
 
 ## Uploading
 
-On X035/X033, a 1200 bps touch (with a CDC port) or a DFU_DETACH (with
-`CH32RVUsbDeviceDfuRuntime`) resets into the factory USB ISP bootloader
-(1a86:55e0), where `ch32rv isp flash --entry auto` writes the chip. DFU is
-only the entry; the write is WCH's ISP protocol, not a DFU download. Other
-series currently reset normally and require their supported upload route.
+CDC 1200-bps touch and DFU_DETACH provide update entry points. The destination and programming method depend on the series; follow the [USB upload guide (Japanese)](../../docs/usb.ja.md#書き込み).
+`onDetach()` makes an immediate transition decision and does not wait for notification delivery through `deliverEvents()`.

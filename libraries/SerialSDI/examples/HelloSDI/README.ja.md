@@ -1,5 +1,7 @@
 # HelloSDI
 
+[English](README.md)
+
 UART を使わず、デバッグ接続を通して文字列を表示します。
 
 ## 必要なものと配線

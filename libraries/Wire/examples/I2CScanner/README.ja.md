@@ -1,5 +1,7 @@
 # I2CScanner
 
+[English](README.md)
+
 I2C のアドレスへ応答する機器を探します。
 
 ## 必要なものと配線

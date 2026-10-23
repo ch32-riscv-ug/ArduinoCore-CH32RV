@@ -1,5 +1,7 @@
 # HsAdcRead
 
+[English](README.md)
+
 高速 ADC で1回ずつ変換し、カウント値と換算電圧を UART に表示します。
 
 ## 必要なものと配線

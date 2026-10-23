@@ -1,5 +1,7 @@
 # Blink
 
+[English](README.md)
+
 GPIO を High/Low に切り替え、スケッチが実行されることを LED で確認します。
 
 ## 必要なものと配線

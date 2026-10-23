@@ -19,6 +19,19 @@ A series with USBPD (CH32X035 and others; CC pads in the library README), a PD c
 
 PPS, battery and variable PDOs are skipped. The INPUT_PULLUP button is processed on its falling edge without dedicated debounce; add it if one press skips multiple entries. The driver keeps the link from delay() and the return of loop().
 
+## API usage and adaptation
+
+| API | Use in this example |
+|---|---|
+| `profileCount()` / `profile(index).kind` | Find fixed PDOs in the advertised list with zero-based indices. |
+| `contractProfile()` | Gets the selected PDO index. Check `ready()` first because a contract may not exist. |
+| `requestProfile(index)` | Requests that fixed PDO; PPS additionally needs a voltage. |
+| `voltage()` / `current()` | Report the successful contract, not a physical voltage measurement. |
+
+The sample detects a High-to-Low transition to avoid requesting on every iteration while held. Add debounce for contact chatter.
+
+Requests wait for negotiation and must not run in an ISR. Confirm a fixed PDO was found and decide whether failures await another press or retry. PDO order can change between sources; do not persist an index as a permanent identifier for 9 V.
+
 ## Related documentation
 
 - [Shared setup and troubleshooting](../README.md)
