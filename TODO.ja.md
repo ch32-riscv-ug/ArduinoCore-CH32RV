@@ -1398,13 +1398,15 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
         `CH32RVUsbDeviceNet::beginNetwork()` など。受信の流量制御 `receiveGate()`）、PC の試験（tests/unit/network）。
       - 2026-10-22 済み: Ethernet の MAC のドライバ。H417 は実機で HTTPS まで。V407 / V467・V307・V317・V208 / V203RB は
         EVT から移してビルドまで（docs/network-stack.ja.md の「ほかの系列」）。
-      - 残り: V407 / V307 / V317 / V208 の実機（`--case eth` がそのまま使える）。V208 / V203RB は HCLK 60 / 120 MHz の
-        クロックの選択肢が要る（今の 96 MHz では `ETH.begin()` が false）。V307 のチップのリビジョン 0x20 の回避策。
-        V307 / V317 の HTTPS のヒープ（RAM 64 KB）。対象の系列の USB デバイスのドライバが
+      - 2026-10-27: V307 の実機で `--case eth` が通った（DHCP、ICMP、TCP / UDP、HTTP。HTTPS は RAM 64 KB で TLS のヒープが
+        足りず、記録だけ）。V407 は P4 の OEP probe の口 v407 につないだが、そのコンソール（dmseq）が reason 0x04 で開かず、
+        ch32rv のセッションが調査中。
+      - 残り: V407 / V317 / V208 の実機。V208 / V203RB は CPU Clock の `60MHz (Ethernet, no USB)` を選ぶ。V307 のチップの
+        リビジョン 0x20 の回避策。V307 / V317 の HTTPS のヒープ（RAM 64 KB）。対象の系列の USB デバイスのドライバが
         来たら NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント。
       - TLS: Mbed TLS 4.1 に決めた（2026-10-21、比較は docs/network-stack.ja.md）。`NetworkClientSecure`（setCACert /
-        setCACertBundle（ESP-IDF の形式）/ setInsecure / クライアント証明書）は PC の試験で通る。実機は未確認。
-        乱数はコアの `ch32rv_rng_read()`（RNG。これも実機は未確認）。V307 は RAM がぎりぎりで、`RAM_CODE_MOD`（Flash と RAM の
+        setCACertBundle（ESP-IDF の形式）/ setInsecure / クライアント証明書）は PC の試験で通る。実機では H417 の `--case eth`
+        で、ECDSA / RSA のサーバー証明書の検証、setInsecure、別の CA を断ること、乱数（コアの `ch32rv_rng_read()`）まで通る。V307 は RAM がぎりぎりで、`RAM_CODE_MOD`（Flash と RAM の
         分け方）のメニューが要りそう（ユーザーと決める）。TLS 1.3 も入れた（2026-10-21。既定は 1.2 と 1.3 の両方を名乗る。Flash 約 +15 KB）。
   - コアの `time()` / `gettimeofday()` / `settimeofday()`（2026-10-21、syscalls.c）: これまで半ホスティングの `ecall` で
     落ちていた。直した。`clock()`、`fopen()` なども失敗を返すようにした。X035 の実機で確認済み（2026-10-21: settimeofday の後に
@@ -1530,10 +1532,10 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 残り（方針待ち・新しい API・実機が要る）:
 - クロック: 2026-10-22 に CPU Clock のメニュー（項目名に周波数と使えるもの）と取得の API（`getCpuFrequencyMhz()` /
   `getApbFrequency()`）を入れた。実行中に変える API は作らない（F_CPU を定数として使う箇所が約 20、動いている周辺の
-  入れ直しが要る）。既定は M030 だけ 72 MHz（EVT の既定、実機で確認）に上げた。L103 / M103・V205 は 8 MHz のまま（L103 の 96 MHz のイメージで、OEP の RP2350 probe からデバッグが接続できなくなった。電源の入れ直しでも戻らず、2026-10-22 時点で原因不明。NRST を配線して connect-under-reset で戻す予定）。
-  **ベンチの L103（OEP の RP2350 9489dd2ae0953650 の l103）は、物理的に戻すまで使えない（後日）。** 戻し方は NRST を RP2350 の
-  空き GPIO に配線して `l103.nrst` のラベル → `ch32rv --connect-under-reset` で消去、または BOOT0 を high にして電源投入。
-  戻したら 8 MHz で runtime、そのあと 96 MHz の原因を（リセットで戻せる状態で）切り分ける。残り: V407 / X315 / H41x
+  入れ直しが要る）。既定は M030 だけ 72 MHz（EVT の既定、実機で確認）に上げた。L103 / M103・V205 は 8 MHz のまま。
+  L103 の 72 / 96 MHz は、OEP probe（RP2350）が動いている L103 に接続できない（2026-10-23。8 / 48 MHz と WCH-LinkE は接続できる。
+  コアのクロックの設定は原因ではない。プローブ側は ch32rv / dev-oep が調査中）。試すイメージには `CH32RV_BOOT_HOLD_MS` を付ける
+  （docs/upload-routes.ja.md）。ベンチの L103 は戻してあり、NRST は RP2350 の GP2（`l103.nrst`）。残り: V407 / X315 / H41x
   のメニュー（HPRE / FPRE の分け方が別）、HSE、各項目の実機確認（UART の速度・ADC・USB）。
   2026-10-22: M030 の既定 72 MHz が起動で止まった（device-data の行の SYSCLK=72 は HCLK で、PLL は 144 MHz 固定。生成器が
   hpre を読んでいなかった）。e3ebb34 で修正し、表は device-data 6fcf406 で直った。M030G8R7 で 72 / 48 / 24 / 8 MHz の
