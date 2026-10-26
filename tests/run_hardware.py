@@ -178,8 +178,15 @@ def stage_case(work, name, case, target):
     return module, build_id
 
 
+def probe_address(target):
+    """How ch32rv names the target's probe: an OEP probe by its port (oep://<probe>/<port>, which a probe
+    with several ports needs), a WCH-Link by its serial path."""
+    upload = target.get("upload_port", "")
+    return upload if upload.startswith("oep://") else f"port:{target['port']}"
+
+
 def target_info(tool, target, log, env):
-    info = json.loads(invoke([str(tool), "--probe", f"port:{target['port']}", "--chip", target["chip"],
+    info = json.loads(invoke([str(tool), "--probe", probe_address(target), "--chip", target["chip"],
                              "--non-interactive", "--json", "target", "info"], log, env=env))
     return check_target(target, info)
 
@@ -358,7 +365,9 @@ def main(argv=None):
                     command = [sys.executable, "-m", "pytest", "-c", str(REPO / "pytest.ini")]
                     for plugin in PLUGINS:
                         command += ["-p", plugin]
-                    command += [str(module), "--profile", name, "--port", target["port"],
+                    # An OEP probe's port goes by its oep:// address: a probe with several ports opens none by its serial path.
+                    port = target["upload_port"] if target.get("upload_port", "").startswith("oep://") else target["port"]
+                    command += [str(module), "--profile", name, "--port", port,
                                 "--run-mode", "all" if args.execute else "build",
                                 "--device-lock", "required", "--root-logdir", str(module.parent / "logs"),
                                 "--junitxml", str(module.parent / "junit.xml"), "-o", "junit_family=xunit1", "-s", "-q"]

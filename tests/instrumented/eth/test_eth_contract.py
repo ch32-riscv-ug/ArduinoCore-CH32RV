@@ -189,9 +189,10 @@ def test_eth_contract(dut, tmp_path, record_property):
         tls = serve(host_ip, context)
         m = ask(dut, f"https {host_ip} {tls.server_port} /body c",
                 rb"HTTPS (\d+) (\d+) ([0-9a-f]{8}) ([0-9a-f]{4}) (\d+) (-?\d+)", timeout=90)
-        if int(m.group(6)) == -0x7F00:
-            # MBEDTLS_ERR_SSL_ALLOC_FAILED: the handshake's heap (30-40 KB) did not fit - the
-            # V307 / V317's 64 KB of RAM (docs/network-stack.ja.md). Recorded, not failed.
+        if int(m.group(6)) in (-0x7F00, -141):
+            # MBEDTLS_ERR_SSL_ALLOC_FAILED, or PSA_ERROR_INSUFFICIENT_MEMORY when the PSA layer runs out
+            # first: the handshake's heap (30-40 KB) did not fit - the V307 / V317's 64 KB of RAM
+            # (docs/network-stack.ja.md). Recorded, not failed.
             record_property("https", "out of memory (MBEDTLS_ERR_SSL_ALLOC_FAILED)")
             tls.shutdown()
             tls_ok = False
