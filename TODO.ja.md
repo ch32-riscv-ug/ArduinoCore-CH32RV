@@ -1546,6 +1546,12 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   Hard Reset で 5 V に戻る）。
 - 実際の電圧が出ているかは範囲外（基板側の仕事）。
 
+## 未実装の周辺の洗い直し（2026-10-28）
+
+[docs/peripheral-plan.ja.md](docs/peripheral-plan.ja.md) に、未実装・対象外の機能を「実装したほうがよい（A: 優先、B: 後で）」と
+「不要そう（C）」に分けた。A は PWR（スリープと起床）、RTC、フラッシュの永続化、CAN、タイマーの入力捕捉とエンコーダ、HSE、
+TouchKey。周辺の一覧は EVT の例と ch32-device-data の register_blocks を合わせて作り直した（周辺機能表の生成器も同じ）。
+
 ## 系列で限られているもの（2026-10-15 の調査と対応）
 
 [peripheral-support.ja.md](docs/peripheral-support.ja.md) の ○ / ◐ の中身。
