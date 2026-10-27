@@ -3,8 +3,9 @@
 [日本語](README.ja.md)
 
 Sample a whole GPIO port (16 inputs) into RAM by DMA: the front end of a
-logic analyzer. Every family; run on CH32H415 / H416 / H417, built (not yet
-run) on the others.
+logic analyzer. Every family; run on CH32H415 / H416 / H417 (both ways, at
+speed), and continuous capture on V003 / V103 / V205 / V307 / X035 / X315
+(LogicPulseDecode and the bench's PWM checks, 2026-10-28); built on the others.
 
 | Series | Timer | DMA |
 |---|---|---|
@@ -77,3 +78,4 @@ modes.
 
 - [LogicBurst](examples/LogicBurst/README.md): connections, operation, API use and adaptation notes.
 - [LogicStream](examples/LogicStream/README.md): connections, operation, API use and adaptation notes.
+- [LogicPulseDecode](examples/LogicPulseDecode/README.md): frequency and duty cycle of a signal, on every family (its own PWM with no wiring).

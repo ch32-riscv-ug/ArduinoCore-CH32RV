@@ -24,7 +24,7 @@
 | USB-C 電源の交渉 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/examples/README.ja.md) | ListProfiles / CycleVoltages |
 | ADC の連続取り込み | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.ja.md) | AdcStreamStats |
 | 高速 ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.ja.md) | HsAdcRead → HsAdcStream |
-| GPIO の取り込み | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.ja.md) | LogicBurst → LogicStream |
+| GPIO の取り込み | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.ja.md) | LogicPulseDecode(全系列)/ LogicBurst → LogicStream(H41x) |
 | デバッグ接続の文字出力 | [SerialSDI](../libraries/SerialSDI/README.ja.md) | HelloSDI / PrintfToSDI |
 | デバッグ接続の双方向端末 | [SerialDMDATA](../libraries/SerialDMDATA/README.ja.md) | HelloDMDATA |
 | デバッグ接続の双方向端末 | [SerialDMSeq](../libraries/SerialDMSeq/README.ja.md) | HelloDMSeq |

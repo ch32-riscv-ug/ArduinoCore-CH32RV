@@ -3,7 +3,7 @@
 [English](README.md)
 
 GPIO のポート 1 つ(16 本の入力)を、DMA でまとめて RAM に取り込むライブラリです。ロジックアナライザの入口に使えます。
-全系列で使えます。実機で確かめたのは CH32H415 / H416 / H417 だけで、ほかの系列はビルドだけ確かめています。
+全系列で使えます。CH32H415 / H416 / H417 では両方の取り込み方を速さまで確かめ、V003 / V103 / V205 / V307 / X035 / X315 では連続の取り込みを確かめました(LogicPulseDecode とベンチの PWM の確認、2026-10-28)。ほかの系列はビルドだけです。
 
 | 系列 | タイマー | DMA |
 |---|---|---|
@@ -66,3 +66,4 @@ uint32_t rate = logic.captureBurst(buf, 32768);   // 1 回だけ、速く
 
 - [LogicBurst](examples/LogicBurst/README.ja.md)：配線・操作・API の使い方と改造時の注意。
 - [LogicStream](examples/LogicStream/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [LogicPulseDecode](examples/LogicPulseDecode/README.ja.md)：信号の周波数とデューティ比を測る。全系列(配線なしで自分の PWM を測れる)。
