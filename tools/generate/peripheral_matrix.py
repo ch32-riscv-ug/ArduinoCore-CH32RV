@@ -176,7 +176,7 @@ STATUS = {
     "RCC (クロック)": ("一部実装", "F_CPU",
         "HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、L103/M103 8 MHz、M030 72 MHz・V205 160 MHz(実機で確認してEVTの既定に。L103/M103のPLLの項目は未確認)。X315は20 MHz(240 MHzも選べる。HSIからUSBHS PLL、EVTの手順の順に書く。X315MCU6で実機確認)。メニューの無いもの: X305 20 MHz、H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の 400 MHz、V5F は 400 MHz で停止のまま)。HSEは未実装(USB HSとH417のUSB SSのみHSEを使う)"),
     "PWR (低消費電力)": ("一部実装", "CH32RV.lightSleep / deepSleep",
-        "V003・V00x・X033/X035のみ(AWUで起こす系列)。RAMを残す深い休止(V00x・X035のスタンバイ)、タイマー(AWU)と端子(EXTI)で起床、millis()は測った分を足す、WDTは休止中は止まって見える(延ばして間で餌)、deepSleep()は休止のあと再起動。RTCの系列(ストップ・スタンバイ)は未実装。設計と実測はdocs/peripheral-a-design.ja.md 5.1"),
+        "V003・V00x・X033/X035はAWU、V20x・V205・V30x・L103/M103はRTCのアラームで起こす。RAMを残す深い休止(V00x・X035のスタンバイ、RTCの系列のストップ)、タイマーと端子(EXTI)で起床、millis()は測った分を足す(RTCの系列は端子での起床も測れる)、WDTは休止中は止まって見える(延ばして間で餌)、deepSleep()はRTCの系列でタイマーだけ・WDTなしなら本物のスタンバイ、ほかは休止のあと再起動。V103・M030・X315・V4x7・H41xは未対応。設計と実測はdocs/peripheral-a-design.ja.md 5.1"),
     "FLASH (自己書き換え)": ("一部実装", "-",
                             "公開APIとEEPROM emulationは無い。H415/H416/H417はコア内部の`ch32rv_flash_erase/write`"
                             "(DFU runtimeが使う)。他は未実装。実機の数字はdocs/flash-raw.ja.md、"
@@ -203,8 +203,10 @@ STATUS = {
     "IWDG": ("実装済", "`CH32RV.wdtEnable/wdtFeed`",
              "X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い"),
     "WWDG": ("未実装", "-", ""),
-    "RTC": ("未実装", "-", ""),
-    "BKP (バックアップレジスタ)": ("対象外", "-", ""),
+    "RTC": ("一部実装", "time() / settimeofday()",
+        "V20x・V205・V30x・L103/M103: time()とsettimeofday()がRTC(LSIを測って1 Hz、カウンタはUNIX秒)を読み書きし、リセットとスタンバイをまたいで時刻が残る。休止のアラームにも使う。V20x・V205・V307・L103で実機確認(2026-10-28)。V103は同じRTCだが休止から起きなかったので外している。LSEは未対応。H41x・V4x7・X315は未実装"),
+    "BKP (バックアップレジスタ)": ("一部実装", "-",
+        "RTCの系列でDR1〜DR4をコアが使う(RTCの印、分周、settimeofday()のずれ)。DR5以降はスケッチが直接使える(APIは無い)"),
     "CRC": ("対象外", "-", ""),
     "ECDC (AES/SM4)": ("未実装", "-", "AES-128/192/256とSM4、ECBとCTRのみ。TLS(mbedTLS)はsoftwareで計算している"),
     "OPA/コンパレータ": ("対象外", "-", "CH32固有"),

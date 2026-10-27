@@ -63,6 +63,11 @@ CH32RVSleepResult CH32RVSystem::lightSleep()
 
 CH32RVSleepResult CH32RVSystem::deepSleep()
 {
+    /* Real standby where there is one and nothing needs it to resume: the
+     * RTC families, woken by the timer alone, with no watchdog to feed. */
+    if (!_wdtOn && ch32rv_power_can_standby()) {
+        ch32rv_power_standby();
+    }
     const CH32RVSleepResult r = lightSleep();
     if (r != CH32RV_SLEEP_OK) {
         return r;

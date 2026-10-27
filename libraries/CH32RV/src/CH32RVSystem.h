@@ -32,9 +32,11 @@
  *     CH32RV.deepSleep();                         // starts again from setup()
  *     if (CH32RV.wakeupCause() == CH32RV_WAKEUP_TIMER) { ... }
  *
- *  - lightSleep() keeps RAM and the pins' states and returns; deepSleep()
- *    sleeps the same way and then restarts the chip (V00x and X035 have no
- *    mode that wakes through a reset), so setup() runs again with RAM fresh.
+ *  - lightSleep() keeps RAM and the pins' states and returns. deepSleep()
+ *    starts again from setup(): in standby on the RTC families when only the
+ *    timer wakes it and the watchdog is off; otherwise it sleeps as
+ *    lightSleep() does and restarts (V00x and X035 have no standby that
+ *    wakes through a reset).
  *  - Nothing sleeps by itself: only these calls do (docs/peripheral-a-design
  *    .ja.md 4.3). Serial sends what it holds before the clock stops.
  *  - millis() keeps counting through a timer wake: the sleep is measured and
@@ -42,7 +44,9 @@
  *  - The watchdog looks paused while asleep: it cannot be stopped, so it is
  *    stretched to its longest and fed between sleep periods - nothing else
  *    runs - and put back as wdtEnable() set it on waking.
- *  - V003, V00x (V002-V007, M007), X033 and X035 so far; elsewhere these
+ *  - V003, V00x (V002-V007, M007) and X033 / X035 wake on the AWU; V20x,
+ *    V205, V30x and L103 / M103 on the RTC alarm (they sleep in stop,
+ *    and millis() is timed by the RTC, a pin wake included). Elsewhere these
  *    return CH32RV_SLEEP_UNSUPPORTED.
  */
 #pragma once

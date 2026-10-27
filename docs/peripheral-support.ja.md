@@ -38,7 +38,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | PFIC (割込みコントローラ) | 実装済 | - | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 優先度は全てreset既定のまま |
 | SysTick | 実装済 | millis/micros/delay | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |  |
 | RCC (クロック) | 一部実装 | F_CPU | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、L103/M103 8 MHz、M030 72 MHz・V205 160 MHz(実機で確認してEVTの既定に。L103/M103のPLLの項目は未確認)。X315は20 MHz(240 MHzも選べる。HSIからUSBHS PLL、EVTの手順の順に書く。X315MCU6で実機確認)。メニューの無いもの: X305 20 MHz、H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の 400 MHz、V5F は 400 MHz で停止のまま)。HSEは未実装(USB HSとH417のUSB SSのみHSEを使う) |
-| PWR (低消費電力) | 一部実装 | CH32RV.lightSleep / deepSleep | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | V003・V00x・X033/X035のみ(AWUで起こす系列)。RAMを残す深い休止(V00x・X035のスタンバイ)、タイマー(AWU)と端子(EXTI)で起床、millis()は測った分を足す、WDTは休止中は止まって見える(延ばして間で餌)、deepSleep()は休止のあと再起動。RTCの系列(ストップ・スタンバイ)は未実装。設計と実測はdocs/peripheral-a-design.ja.md 5.1 |
+| PWR (低消費電力) | 一部実装 | CH32RV.lightSleep / deepSleep | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | V003・V00x・X033/X035はAWU、V20x・V205・V30x・L103/M103はRTCのアラームで起こす。RAMを残す深い休止(V00x・X035のスタンバイ、RTCの系列のストップ)、タイマーと端子(EXTI)で起床、millis()は測った分を足す(RTCの系列は端子での起床も測れる)、WDTは休止中は止まって見える(延ばして間で餌)、deepSleep()はRTCの系列でタイマーだけ・WDTなしなら本物のスタンバイ、ほかは休止のあと再起動。V103・M030・X315・V4x7・H41xは未対応。設計と実測はdocs/peripheral-a-design.ja.md 5.1 |
 | FLASH (自己書き換え) | 一部実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ◐ | 公開APIとEEPROM emulationは無い。H415/H416/H417はコア内部の`ch32rv_flash_erase/write`(DFU runtimeが使う)。他は未実装。実機の数字はdocs/flash-raw.ja.md、保存の案はdocs/persistence-spec.ja.md(下書き) |
 | USART | 実装済 | Serial | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 全インスタンス(V205/V30x/V407/V467のUSART6〜10も、Serial9まで)。V205・X305/X315は端子ごとのAF番号を書く(V205RCT6・X315MCU6で既定のTXの波形を確認)。X033/X035は送信をポーリングで行う(割込み送信の不具合の回避) |
 | I2C | 実装済 | Wire | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | controllerはpolling、peripheral(slave)は割込み駆動。V205・X305/X315は端子ごとのAF番号を書く(未確認。プルアップの配線が要る) |
@@ -50,8 +50,8 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | DMA | 対象外 | - | − | − | − | − | − | − | − | − | − | − | − | − | Arduino APIには露出しない。CH32RVLogicCapture(全系列、実機はH41xのみ)、CH32RVHsAdc(H41x)、CH32RVAdcStream(ADC1の連続取り込み。全系列、V4x7はDMA1のチャネル12、H41xはDMAMUXでDMA1のチャネル1。実機はX035/V307/V103/V205/V407/X315/H417)が使う |
 | IWDG | 実装済 | `CH32RV.wdtEnable/wdtFeed` | ● | ● | ● | ● | ● | ● | ● | ● |  | ● | ● | ● | X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い |
 | WWDG | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
-| RTC | 未実装 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ | ○ |  |
-| BKP (バックアップレジスタ) | 対象外 | - |  |  | − | − | − | − | − | − |  |  |  |  |  |
+| RTC | 一部実装 | time() / settimeofday() |  |  | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |  |  | ◐ | ◐ | V20x・V205・V30x・L103/M103: time()とsettimeofday()がRTC(LSIを測って1 Hz、カウンタはUNIX秒)を読み書きし、リセットとスタンバイをまたいで時刻が残る。休止のアラームにも使う。V20x・V205・V307・L103で実機確認(2026-10-28)。V103は同じRTCだが休止から起きなかったので外している。LSEは未対応。H41x・V4x7・X315は未実装 |
+| BKP (バックアップレジスタ) | 一部実装 | - |  |  | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |  |  |  |  | RTCの系列でDR1〜DR4をコアが使う(RTCの印、分周、settimeofday()のずれ)。DR5以降はスケッチが直接使える(APIは無い) |
 | CRC | 対象外 | - |  |  | − | − | − | − | − | − |  |  | − | − |  |
 | ECDC (AES/SM4) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | AES-128/192/256とSM4、ECBとCTRのみ。TLS(mbedTLS)はsoftwareで計算している |
 | TIM 入力捕捉 | 実装済 | CH32RVTimerInput(library) | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | `CH32RVPulseCapture`: PWM入力モードで周期とHighの時間(割込みなし、`read()`で最新の1周期)。端子はtimerのCH1/CH2(既定の経路)。エッジごとの時刻・通知は未実装。実機はV003/V006/V103/V203/V205/V307/L103/X035/X315/H417(同じ端子をGPIO・tone()・Servoで動かす自己試験)。`pulseIn()`はsoftwareのまま |

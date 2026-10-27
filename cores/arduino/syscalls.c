@@ -27,6 +27,7 @@
 
 unsigned long millis(void);
 
+#include "ch32rv_rtc.h"
 #include "ch32rv_serial_write.h"
 
 #undef errno
@@ -68,8 +69,10 @@ int _unlink(const char *path)  { (void)path; errno = ENOSYS; return -1; }
 int _link(const char *a, const char *b) { (void)a; (void)b; errno = ENOSYS; return -1; }
 int _stat(const char *path, struct stat *st) { (void)path; (void)st; errno = ENOSYS; return -1; }
 
-/* The wall clock: milliseconds since reset, widened to 64 bits, plus the
- * offset settimeofday() sets (an SNTP client, an RTC read at start-up). It
+/* The wall clock. Where there is an RTC (ch32rv_rtc.h) it is the RTC, which
+ * keeps counting through resets and sleep. Elsewhere: milliseconds since
+ * reset, widened to 64 bits, plus the offset settimeofday() sets (an SNTP
+ * client). It
  * reads 1970-01-01 plus the uptime until then. The widening notices the 32-bit
  * millis() wrapping each time it is read, so the clock must be read at least
  * once every 49.7 days (an SNTP client resyncing does). Task context only;
@@ -91,6 +94,16 @@ static uint64_t uptime_ms(void)
 int _gettimeofday(struct timeval *tv, void *tz)
 {
     (void)tz;
+#ifdef CH32RV_HAS_RTC
+    /* The RTC is the clock here: it keeps counting through resets and sleep. */
+    if (tv && ch32rv_rtc_begin()) {
+        uint32_t sec, ms;
+        ch32rv_rtc_get(&sec, &ms);
+        tv->tv_sec = (time_t)sec;
+        tv->tv_usec = (suseconds_t)(ms * 1000u);
+        return 0;
+    }
+#endif
     if (tv) {
         const uint64_t ms = uptime_ms() + wall_offset_ms;
         tv->tv_sec = (time_t)(ms / 1000u);
@@ -106,6 +119,12 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz)
         errno = EINVAL;
         return -1;
     }
+#ifdef CH32RV_HAS_RTC
+    if (ch32rv_rtc_begin()) {
+        ch32rv_rtc_set((uint32_t)tv->tv_sec, (uint32_t)tv->tv_usec / 1000u);
+        return 0;
+    }
+#endif
     const uint64_t ms = (uint64_t)tv->tv_sec * 1000u + (uint64_t)tv->tv_usec / 1000u;
     wall_offset_ms = ms - uptime_ms();
     return 0;

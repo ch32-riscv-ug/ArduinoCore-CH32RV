@@ -57,6 +57,11 @@ void ch32rv_power_clear(void);
  * family. A pin already at its level is a wake without sleeping. */
 int ch32rv_power_sleep(uint32_t wdt_slice_us);
 
+/* deepSleep() on the RTC families: standby when it is woken by the timer
+ * alone (pins other than WKUP cannot wake it). Returns only if it cannot. */
+int ch32rv_power_can_standby(void);
+void ch32rv_power_standby(void);
+
 /* deepSleep(): keep the cause for the next boot (ch32rv_power_boot()). */
 void ch32rv_power_keep_cause(void);
 /* Runs before setup() (a constructor in ch32rv_power.c): takes the kept cause. */

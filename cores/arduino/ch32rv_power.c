@@ -3,6 +3,7 @@
 #include "Arduino.h"
 #include "ch32rv_power.h"
 #include "ch32rv_registers.h"
+#include "ch32rv_rtc.h"
 
 volatile uint32_t ch32rv_time_domain;
 volatile uint8_t ch32rv_wake_cause;
@@ -39,6 +40,19 @@ static struct {
 #define AWU_LINE  27u
 #define AWU_ON_LSI 0
 #define AWU_NOMINAL_HZ (48000000u / 1024u)
+#endif
+
+#if !defined(POWER_AWU) && defined(CH32RV_HAS_RTC)
+/* Stop (RAM kept, resumes) woken by the RTC alarm on EXTI line 17; standby
+ * (RAM lost, wakes through a reset) for deepSleep(). V307 2026-10-28: the
+ * PLL is gone on waking and SystemInit() brings it back. */
+#define POWER_RTC 1
+#define ALARM_LINE 17u
+#define PWR_CSR        CH32RV_REG32(0x40007004u)
+#define PWR_CTLR_LPDS  (1u << 0)
+#define PWR_CTLR_CWUF  (1u << 2)
+#define PWR_CTLR_CSBF  (1u << 3)
+#define PWR_CSR_SBF    (1u << 1)
 #endif
 
 #define PWR_CTLR       CH32RV_REG32(0x40007000u)
@@ -160,7 +174,7 @@ static uint32_t awu_period(uint32_t us, uint8_t *field, uint8_t *window)
 
 int ch32rv_power_supported(void)
 {
-#if POWER_AWU
+#if POWER_AWU || POWER_RTC
     return 1;
 #else
     return 0;
@@ -183,12 +197,54 @@ uint32_t ch32rv_power_awu_max_us(void)
  * this returns. */
 static void deep_wfi(void)
 {
+#if POWER_RTC
+    /* Stop: PDDS clear, the regulator in its low-power mode. */
+    PWR_CTLR = (PWR_CTLR & ~PWR_CTLR_PDDS) | PWR_CTLR_LPDS;
+    PFIC_SCTLR |= SCTLR_SLEEPDEEP;
+    __asm__ volatile ("wfi");
+    PFIC_SCTLR &= ~SCTLR_SLEEPDEEP;
+    PWR_CTLR &= ~PWR_CTLR_LPDS;
+#else
     PWR_CTLR |= PWR_CTLR_PDDS;                 /* the RAM-keeping deep mode on V00x / X035 */
     PFIC_SCTLR |= SCTLR_SLEEPDEEP;
     __asm__ volatile ("wfi");
     PFIC_SCTLR &= ~SCTLR_SLEEPDEEP;
     PWR_CTLR &= ~PWR_CTLR_PDDS;
+#endif
 }
+
+#if POWER_RTC
+static volatile uint32_t alarm_events;
+
+__attribute__((interrupt)) void RTCAlarm_IRQHandler(void)
+{
+    CH32RV_EXTI_INTFR = 1u << ALARM_LINE;
+    CH32RV_REG16(0x40002804u) &= ~(1u << 1);   /* RTC CTLRL.ALRF */
+    alarm_events++;
+}
+
+/* (s, ms) + add ms. */
+static void rtc_add(uint32_t *s, uint32_t *ms, uint32_t add)
+{
+    *s += add / 1000u;
+    *ms += add % 1000u;
+    if (*ms >= 1000u) {
+        *ms -= 1000u;
+        (*s)++;
+    }
+}
+
+/* b - a in milliseconds, b not before a (sleeps are far shorter than 49 days). */
+static uint32_t rtc_diff(uint32_t as, uint32_t ams, uint32_t bs, uint32_t bms)
+{
+    return (bs - as) * 1000u + bms - ams;
+}
+
+static int rtc_before(uint32_t as, uint32_t ams, uint32_t bs, uint32_t bms)
+{
+    return as < bs || (as == bs && ams < bms);
+}
+#endif
 
 int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt_slice_us,
                            uint32_t *slept_ms)
@@ -275,6 +331,93 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
     if (woke == CH32RV_POWER_WOKE_PIN) {
         ch32rv_time_domain++;                  /* part of a period went by unmeasured */
     }
+#elif POWER_RTC
+    /* The RTC times everything, a pin wake included, so millis() is always
+     * advanced by what really passed and timeDomain() never moves. Whole
+     * seconds are slept in stop until the alarm; what is left under a second
+     * in a plain WFI, where SysTick runs and millis() counts by itself. */
+    (void)carry_us;
+    if (!timer_ms && !pin_lines) {
+        if (slept_ms) {
+            *slept_ms = 0;
+        }
+        return 0;
+    }
+    ch32rv_rtc_begin();
+    if (ch32rv_serial_sleep_prepare) {
+        ch32rv_serial_sleep_prepare();
+    }
+    if (!&ch32rv_exti_seen) {
+        pin_lines = 0;
+    }
+    if (pin_lines) {
+        ch32rv_exti_seen &= ~pin_lines;
+    }
+    CH32RV_EXTI_RTENR |= 1u << ALARM_LINE;
+    CH32RV_EXTI_INTENR |= 1u << ALARM_LINE;
+    CH32RV_EXTI_INTFR = 1u << ALARM_LINE;
+    PFIC_IPRR(CH32RV_IRQN_RTCAlarm >> 5) = 1u << (CH32RV_IRQN_RTCAlarm & 31u);
+    ch32rv_irq_enable(CH32RV_IRQN_RTCAlarm);
+
+    uint32_t s0, m0, end_s = 0, end_ms = 0;
+    ch32rv_rtc_raw(&s0, &m0);
+    if (timer_ms) {
+        end_s = s0;
+        end_ms = m0;
+        rtc_add(&end_s, &end_ms, timer_ms);
+    }
+    const uint32_t start_millis = (uint32_t)millis();
+    for (;;) {
+        uint32_t s, m;
+        ch32rv_rtc_raw(&s, &m);
+        if (timer_ms && !rtc_before(s, m, end_s, end_ms)) {
+            woke = CH32RV_POWER_WOKE_TIMER;
+            break;
+        }
+        /* The next stop ends on a whole second: the timer's last whole
+         * second, or half the IWDG's time on, whichever comes first. */
+        uint32_t alarm = 0;
+        if (timer_ms) {
+            alarm = end_s;
+        }
+        if (wdt_slice_us) {
+            const uint32_t w = s + (wdt_slice_us / 1000000u ? wdt_slice_us / 1000000u : 1u);
+            if (!alarm || w < alarm) {
+                alarm = w;
+            }
+        }
+        if (alarm && alarm <= s) {
+            /* Under a second to go: a plain WFI, SysTick wakes it each ms. */
+            __asm__ volatile ("wfi");
+        } else {
+            if (alarm) {
+                ch32rv_rtc_alarm(alarm);
+            }
+            const uint32_t events = alarm_events;
+            uint32_t ss, sm;
+            ch32rv_rtc_raw(&ss, &sm);
+            while (alarm_events == events && !(pin_lines && (ch32rv_exti_seen & pin_lines))) {
+                deep_wfi();
+            }
+            ch32rv_clock_check();
+            ch32rv_rtc_resync();
+            uint32_t es, em;
+            ch32rv_rtc_raw(&es, &em);
+            ch32rv_millis_advance(rtc_diff(ss, sm, es, em));
+        }
+#ifdef CH32RV_IWDG_BASE
+        if (wdt_slice_us) {
+            CH32RV_IWDG_CTLR = CH32RV_IWDG_KEY_FEED;
+        }
+#endif
+        if (pin_lines && (ch32rv_exti_seen & pin_lines)) {
+            woke = CH32RV_POWER_WOKE_PIN;
+            break;
+        }
+    }
+    ch32rv_irq_disable(CH32RV_IRQN_RTCAlarm);
+    CH32RV_EXTI_INTENR &= ~(1u << ALARM_LINE);
+    known_ms = (uint32_t)millis() - start_millis;
 #else
     (void)timer_ms;
     (void)pin_lines;
@@ -351,4 +494,50 @@ __attribute__((constructor)) void ch32rv_power_boot(void)
         ch32rv_wake_cause = (uint8_t)wake_record.cause;
     }
     wake_record.magic = 0;
+#if POWER_RTC
+    /* Out of standby (RAM was lost, so this is the only trace): it was
+     * entered for a timer only (ch32rv_power_standby()). The PWR clock
+     * first, or the flags read 0. */
+    ch32rv_clock_enable(PWR);
+    /* SBF outlives a reset that is not a wake (reflashing pulled the chip
+     * out of standby once), so only with the reset flags a wake leaves: the
+     * power-on flag alone (V307 2026-10-28). */
+    const uint32_t flags = CH32RV_RCC_RSTSCKR & 0xFE000000u;
+    if ((PWR_CSR & PWR_CSR_SBF) && flags == CH32RV_RST_POR) {
+        ch32rv_wake_cause = CH32RV_POWER_WOKE_TIMER;
+        PWR_CTLR |= PWR_CTLR_CSBF | PWR_CTLR_CWUF;
+    }
+#endif
+}
+
+int ch32rv_power_can_standby(void)
+{
+#if POWER_RTC
+    return ch32rv_power_wake.timer_ms && !ch32rv_power_wake.pins;
+#else
+    return 0;
+#endif
+}
+
+void ch32rv_power_standby(void)
+{
+#if POWER_RTC
+    ch32rv_rtc_begin();
+    if (ch32rv_serial_sleep_prepare) {
+        ch32rv_serial_sleep_prepare();
+    }
+    uint32_t s, m;
+    ch32rv_rtc_raw(&s, &m);
+    rtc_add(&s, &m, ch32rv_power_wake.timer_ms);
+    ch32rv_rtc_alarm(s + (m ? 1u : 0u));       /* the alarm is whole seconds: round up */
+    CH32RV_EXTI_RTENR |= 1u << ALARM_LINE;     /* the alarm's rising edge ends standby */
+    CH32RV_EXTI_INTENR |= 1u << ALARM_LINE;
+    CH32RV_EXTI_INTFR = 1u << ALARM_LINE;
+    PWR_CTLR |= PWR_CTLR_CWUF;
+    PWR_CTLR |= PWR_CTLR_PDDS | PWR_CTLR_LPDS;
+    PFIC_SCTLR |= SCTLR_SLEEPDEEP;
+    for (;;) {
+        __asm__ volatile ("wfi");              /* wakes through a reset */
+    }
+#endif
 }
