@@ -4,7 +4,9 @@
  *
  * The ADC is the STM32F1-shaped one every family here has (ch32rv_registers.h);
  * DMA1 is at 0x40020000 with channel 1's registers from 0x08, as
- * CH32RVLogicCapture uses it. analogRead() brings the ADC up (clock divider,
+ * CH32RVLogicCapture uses it. V407 / V467 take ADC1 on DMA1 channel 12
+ * instead (EVT ADC_DMA; its flags are in DMA1_EXTEN at 0xF0, four bits per
+ * channel from channel 9 - ch32v4x7_dma.h). analogRead() brings the ADC up (clock divider,
  * calibration); this file only changes the sequence, the sample time and the
  * mode, and end() puts back what analogRead() expects. */
 #include "CH32RVAdcStream.h"
@@ -12,18 +14,31 @@
 #include "ch32rv_registers.h"
 
 #define DMA1_BASE   0x40020000u
+#if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
+#define DMA_INTFR   CH32RV_REG32(DMA1_BASE + 0xF0u)
+#define DMA_INTFCR  CH32RV_REG32(DMA1_BASE + 0xF4u)
+#define CH_BASE     (DMA1_BASE + 0xD0u)
+#define CH_SHIFT    16u
+#define CH_IRQN     CH32RV_IRQN_DMA1_Channel12
+#define CH_HANDLER  DMA1_Channel12_IRQHandler
+#else
 #define DMA_INTFR   CH32RV_REG32(DMA1_BASE + 0x00u)
 #define DMA_INTFCR  CH32RV_REG32(DMA1_BASE + 0x04u)
-#define CH1_CFGR    CH32RV_REG32(DMA1_BASE + 0x08u)
-#define CH1_CNTR    CH32RV_REG32(DMA1_BASE + 0x0Cu)
-#define CH1_PADDR   CH32RV_REG32(DMA1_BASE + 0x10u)
-#define CH1_MADDR   CH32RV_REG32(DMA1_BASE + 0x14u)
+#define CH_BASE     (DMA1_BASE + 0x08u)
+#define CH_SHIFT    0u
+#define CH_IRQN     CH32RV_IRQN_DMA1_Channel1
+#define CH_HANDLER  DMA1_Channel1_IRQHandler
+#endif
+#define CH1_CFGR    CH32RV_REG32(CH_BASE + 0x00u)
+#define CH1_CNTR    CH32RV_REG32(CH_BASE + 0x04u)
+#define CH1_PADDR   CH32RV_REG32(CH_BASE + 0x08u)
+#define CH1_MADDR   CH32RV_REG32(CH_BASE + 0x0Cu)
 
-/* INTFR / INTFCR, channel 1. */
-#define CH1_GIF   (1u << 0)
-#define CH1_TCIF  (1u << 1)
-#define CH1_HTIF  (1u << 2)
-#define CH1_TEIF  (1u << 3)
+/* INTFR / INTFCR, the channel's four bits. */
+#define CH1_GIF   (1u << (CH_SHIFT + 0u))
+#define CH1_TCIF  (1u << (CH_SHIFT + 1u))
+#define CH1_HTIF  (1u << (CH_SHIFT + 2u))
+#define CH1_TEIF  (1u << (CH_SHIFT + 3u))
 #define CH1_ALL   (CH1_GIF | CH1_TCIF | CH1_HTIF | CH1_TEIF)
 
 /* CFGR */
@@ -211,7 +226,7 @@ bool CH32RVAdcStream::startContinuous(uint16_t *buffer, uint16_t samples)
     CH1_CNTR = (uint32_t)samples * 2u;
     CH1_CFGR = CFGR_MINC | CFGR_CIRC | CFGR_16BIT | CFGR_PL_HI | CFGR_HTIE | CFGR_TCIE | CFGR_EN;
     _running = true;
-    ch32rv_irq_enable(CH32RV_IRQN_DMA1_Channel1);
+    ch32rv_irq_enable(CH_IRQN);
     CH32RV_ADC_CTLR2 |= ADC_CTLR2_CONT | ADC_CTLR2_DMA;
     CH32RV_ADC_CTLR2 |= CH32RV_ADC_CTLR2_SWSTART;
     return true;
@@ -222,7 +237,7 @@ void CH32RVAdcStream::stop()
     if (!_running) {
         return;
     }
-    ch32rv_irq_disable(CH32RV_IRQN_DMA1_Channel1);
+    ch32rv_irq_disable(CH_IRQN);
     adc_halt();
     _running = false;
 }
@@ -262,7 +277,7 @@ void CH32RVAdcStream::isr()
     }
 }
 
-extern "C" __attribute__((interrupt)) void DMA1_Channel1_IRQHandler(void)
+extern "C" __attribute__((interrupt)) void CH_HANDLER(void)
 {
     if (active) {
         active->isr();

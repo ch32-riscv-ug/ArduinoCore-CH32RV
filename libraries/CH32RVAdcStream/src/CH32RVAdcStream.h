@@ -1,7 +1,7 @@
 /* Continuous ADC1 capture into two buffers by DMA, on the families whose ADC1
  * request is DMA1 channel 1 (ch32-device-data index/dma.csv): CH32V003 / V006,
  * V103, V20x, V205, V30x, L103 / M103, M030, X033 / X035 and the ADC1 pads of
- * X305 / X315. The shape is CH32RVHsAdc's:
+ * X305 / X315; and V407 / V467, where it is DMA1 channel 12. The shape is CH32RVHsAdc's:
  *
  *     CH32RVAdcStream adc;
  *     adc.begin(A0, 100000);                // pin, conversions per second
@@ -19,10 +19,10 @@
  *
  * Free-running also sets a floor: the slowest step is the ADC clock over its
  * longest sample time, and nothing slower is possible this way - about 47,600
- * conversions per second on a CH32V307 at 96 MHz, 250,000 on a CH32X035
- * (measured 2026-10-27). Ask for less and the slowest step is what you get;
- * for a slow steady rate, take every n-th value or use analogRead() from a
- * timer.
+ * conversions per second on a CH32V307 at 96 MHz, 250,000 on a CH32X035,
+ * 99,000 on a CH32V407 at 200 MHz (measured 2026-10-27). Ask for less and
+ * the slowest step is what you get; for a slow steady rate, take every n-th
+ * value or use analogRead() from a timer.
  *
  * Several pins (up to six) are converted in turn, one round per sample:
  * the buffer then holds pin 0, pin 1, ... pin 0, pin 1, ..., and
@@ -40,9 +40,8 @@
 
 #include <Arduino.h>
 
-#if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || defined(CH32RV_SERIES_CH32H415) || \
-    defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
-#error "CH32RVAdcStream: ADC1's DMA request is elsewhere on this series (V4x7: DMA2 channel 12, H41x: DMAMUX); not yet"
+#if defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
+#error "CH32RVAdcStream: ADC1's DMA request goes through the DMAMUX on this series; not yet"
 #endif
 
 class CH32RVAdcStream {

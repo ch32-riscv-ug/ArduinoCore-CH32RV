@@ -1553,7 +1553,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     - 汎用 ADC（H41x 以外、X035 / V307 など）の連続変換: タイマーまたは自走で一定のレートを保ち、DMA の 2 面バッファで
       受ける。CH32RVHsAdc の startContinuous / readBuffer と同じ形。1〜数チャンネル。
       → 2026-10-27 に CH32RVAdcStream で入れた（自走、1〜6 本、begin() が段ごとの速さを測って選ぶ。X035 / V307 / V103 の
-      実機で、測ったレートと実際の数が 0.5% 以内）。残り: V407 / V467（DMA2 ch12）と H41x（DMAMUX）、一番遅い段より遅い
+      実機で、測ったレートと実際の数が 0.5% 以内）。V407 / V467 は DMA1 ch12 で同日に追加（V407 の 200 MHz で 99,224/s、3 秒で取りこぼし 0。device-data の dma.csv は
+      ch8〜13 を DMA2 と書いているが、RM の表も EVT ADC_DMA も DMA1。data セッションに連絡済み）。残り: H41x（DMAMUX）、一番遅い段より遅い
       一定のレート（タイマーのトリガ。系列ごとの EXTSEL の対応が device-data に無い）。
   - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
