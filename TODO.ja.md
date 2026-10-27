@@ -1181,6 +1181,9 @@ ESP32 の API の使い勝手は参考になるが、同じ保存エンジン、
   （2026-10-28）。日英README・生成profile（`requires: ETH_MAC` で V307）・日英一覧への導線をそろえた。
   どれもベンチの V307 で、PC 側から確かめた（nc・Python のソケット・curl・mDNS の問い合わせ・PC の時計との比較）。
   切断、DNS の失敗、接続の拒否、長すぎる UDP、存在しないパスも確認済み。残り: TLS（`NetworkClientSecure`）、USB NCM の例。
+- [ ] `#include <Network.h>` を `#include <NetworkClientSecure.h>` より先に書くとリンクに失敗する（`tcp_close` などが未定義。
+  2026-10-28、V307。逆の順なら通る）。ESP32 のスケッチによくある順なので直す。両方の `dot_a_linkage` による .a の並びが疑わしい。
+  そのとき測った TLS の大きさ: 同じ GET のスケッチで Flash +105.3 KB、静的 RAM +2.0 KB（ヒープは docs/network-stack.ja.md）。
 - [x] `LogicPulseDecode`（CH32RVLogicCapture、全系列、自分の PWM を配線なしで測る）と `ServoPulseControl`（Servo、シリアルから
   パルス幅・角度・切り離し）を追加した（2026-10-28）。前者は V307 / X035 / V003 / V103 で 1000.0 Hz・25.0 % を測り、後者は V307 で
   コマンドを確かめ、パルス幅を V103 の LogicCapture で測った（V307 と X035 は Servo と LogicCapture が同じタイマーを使う）。
