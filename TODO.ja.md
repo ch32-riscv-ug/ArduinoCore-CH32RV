@@ -1510,9 +1510,9 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   - 要るもの: (1) 新しい HCD（`CH32RVUsbHcd` の 2 つ目。今は USBFS だけ）。リンクの割り込み、転送、シーケンス番号、
     ERDY / NRDY。(2) host の列挙の SS 対応（EP0 の 512 バイト、BOS、SET_SEL、SET_ISOCH_DELAY、エンドポイントの
     companion 記述子と burst、速さの値 SuperSpeed）。(3) USBHS の host（SS の口の USB 2.0 側。今は無い）は別の項目にする。
-  - 確かめ相手の候補: 市販の USB 3.0 のメモリ（host の MSC クラスで読む。EVT と同じ形で、いちばん早い）、
-    2 枚目の H417（コアの SS の device。常設ベンチの形）、X315（SS の device。ドライバはビルドのみ、基板の SS のコネクタは未確認）。
-    ベンチの H417 の SS の口は DFU の書き込みに使っているので、host にするときは口の使い方を決める。
+  - 確かめ方（2026-10-28 に決定）: 作る間は市販の USB 3.0 のメモリで手作業の試験（host の MSC クラスで読む。EVT と同じ形）。
+    安定したら、H417 どうしのピア試験にする（H417 は 2 台を追加で確保中）。H417 の HS の線を切り離す部品も確保中で、
+    切り離せば SWD で書き換えられる（SS の口を挿したままでも DFU に頼らない）。
 - **USB デバイスの実機試験のホスト役を PC から別のマイコンに替える**。試験は `tests/instrumented/usb`（`--case usb`）に
   あり、X035 で列挙・CDC / HID / MIDI の往復・`end()`→`begin()`・DFU_DETACH / 1200bps タッチでの ISP 移行を確かめている。
   ホスト役は今は PC（`PcUsbHost`）で、`ch32rv isp flash --entry auto` での書き込みの往復はまだ入っていない。
@@ -1534,6 +1534,8 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
     - VBUS の有無に依存する動作は試せない（今のライブラリには無い。VBUS の検出を入れるなら別の確認が要る）。
 
 ## USB PD ソース（CH32RVUsbPd）の実機確認
+
+（2026-10-28）PD の試験は基本は手作業。常設ベンチに置くなら X035 どうしで、片方の CC の抵抗を外してソースにし、シンクとソースのピア試験にする（tests/BENCH.ja.md 7 章）。
 
 ソース（`USBPDSource`、`CH32RVUsbPdSource`）は実装済み（ビルドとフレームの単体試験まで）。残りは実機での確認。
 - X035 どうしの対向（シンク `USBPD` ⇔ ソース `USBPDSource`）。ソースにする WeAct の板は CC の 5.1 kΩ（R4 / R5）を
