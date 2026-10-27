@@ -432,9 +432,10 @@ CLOCK_MENU = {
     # X315: HSI into the USBHS PLL (480 MHz) over 2, HCLK = the core's clock
     # (EVT SetSYSCLK_240M_CoreCLK_240M_HCLK_240M_HSI). The settings whose HCLK
     # is half the core's are not offered (this core takes F_CPU as every bus
-    # clock), nor 312.5 MHz (micros()'s reciprocal, as V407's 175). Not run
-    # yet: the bench has no X315, so 20 MHz stays the default.
-    "CH32X315": [("20", 20, 20, "20MHz (HSI, lowest power)"), ("240", 240, 240, "240MHz (not checked)")],
+    # clock), nor 312.5 MHz (micros()'s reciprocal, as V407's 175). Both run
+    # on a CH32X315MCU6 (2026-10-28: millis() against the wall clock, the loop
+    # rate 12x 20 MHz's); 20 MHz stays the default, as for V407 before its run.
+    "CH32X315": [("20", 20, 20, "20MHz (HSI, lowest power)"), ("240", 240, 240, "240MHz")],
     "CH32M030": [("72", 144, 72, "72MHz (USB)"), ("48", 144, 48, "48MHz (USB)"), ("24", 144, 24, "24MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
 }
@@ -1481,7 +1482,25 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
         if core != hclk:
             raise SystemExit(f"ERROR: {family}: {row['config']} runs the core at {core} Hz and HCLK at "
                              f"{hclk} Hz; this core needs them equal")
-        return dict(sysclk=true_sysclk, hclk=hclk, pll_mask=0, pll_value=0, exten_addr=0, exten_bits=0,
+        # The fields of the row's PLL names that sit in CFGR0, for
+        # ch32rv_clock_is_ours() only: a WCH-LinkE attach leaves SW on the PLL
+        # with another PLLDIV (CFGR0 0x0006000a on X315, 120 MHz), and without
+        # them that read as ours (2026-10-28, X315MCU6: millis() at half speed).
+        cfgr0 = 0x40021004
+        masks = sorted((s for (f, s), r in symbols.items() if f == family and r["role"] == "mask"
+                        and int(r["address"], 16) == cfgr0), key=len, reverse=True)
+        mask = value = 0
+        for name in filter(None, row["pll"].split(";")):
+            sym = symbols.get((family, name.removesuffix("=0")))
+            if sym is None or int(sym["address"], 16) != cfgr0:
+                continue
+            owner = next((m for m in masks if name.startswith(m)), None)
+            if owner is None:
+                raise SystemExit(f"ERROR: {family}: no mask symbol owns {name}")
+            mask |= int(symbols[(family, owner)]["value"])
+            if not name.endswith("=0"):
+                value |= int(sym["value"])
+        return dict(sysclk=true_sysclk, hclk=hclk, pll_mask=mask, pll_value=value, exten_addr=0, exten_bits=0,
                     latency=None, config=row["config"],
                     sequence=sequenced_configs(family, configs).index(row["config"]) + 1)
 
