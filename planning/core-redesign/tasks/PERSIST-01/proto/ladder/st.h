@@ -18,6 +18,16 @@ typedef uint16_t __attribute__((may_alias)) st_u16;  // halfwords inside the uin
 #ifndef ST_CHECK
 #define ST_CHECK 2
 #endif
+#ifndef ST_VERH
+#define ST_VERH 0    // kinds 1, 2: helper keeps {version, size} in the page; load() fails when either differs
+#endif
+#ifndef ST_VERSION
+#define ST_VERSION 1
+#endif
+#define ST_HDR (ST_KIND == 1 ? 60 : 56)  // where the {version, size} halfwords go
+static inline bool st_hdr_ok(const uint8_t *b, uint32_t n) {
+  return *(const uint16_t *)(b + ST_HDR) == ST_VERSION && *(const uint16_t *)(b + ST_HDR + 2) == n;
+}
 
 #if ST_KIND == 1 || ST_KIND == 3
 __attribute__((section(".ch32rv_store"), aligned(64))) uint8_t st_area[64];
@@ -34,6 +44,9 @@ static bool st_load(void *p, uint32_t n) {
 #if ST_BLANK
   if (st_area[63] != 0x5A) return false;
 #endif
+#if ST_VERH
+  if (!st_hdr_ok(st_area, n)) return false;
+#endif
   memcpy(p, st_area, n);
   return true;
 }
@@ -44,6 +57,9 @@ static void st_save(const void *p, uint32_t n) {
   uint32_t w[16]; memset(w, 0xFF, sizeof w); memcpy(w, p, n);
 #if ST_BLANK
   ((uint8_t *)w)[63] = 0x5A;
+#endif
+#if ST_VERH
+  ((st_u16 *)w)[ST_HDR / 2] = ST_VERSION; ((st_u16 *)w)[ST_HDR / 2 + 1] = (uint16_t)n;
 #endif
   lf_write_page((uint32_t)st_area, w);
 }
@@ -63,13 +79,22 @@ static uint16_t st_sum(const uint8_t *p) {
 }
 static int st_ok(const uint8_t *b) { return st_sum(b) == *(const uint16_t *)(b + 62) ? 1 + *(const uint16_t *)(b + 60) : 0; }
 static int st_cur() { const int a = st_ok(st_area), b = st_ok(st_area + 64); return (a || b) ? ((int16_t)(a - b) >= 0 ? 0 : 1) : -1; }
-static bool st_load(void *p, uint32_t n) { const int k = st_cur(); if (k < 0) return false; memcpy(p, st_area + 64 * k, n); return true; }
+static bool st_load(void *p, uint32_t n) {
+  const int k = st_cur(); if (k < 0) return false;
+#if ST_VERH
+  if (!st_hdr_ok(st_area + 64 * k, n)) return false;
+#endif
+  memcpy(p, st_area + 64 * k, n); return true;
+}
 static void st_save(const void *p, uint32_t n) {
   const int k = st_cur();
 #if ST_SKIP
   if (k >= 0 && !memcmp(st_area + 64 * k, p, n)) return;
 #endif
   uint32_t w[16]; uint8_t *b = (uint8_t *)w; memset(w, 0xFF, sizeof w); memcpy(w, p, n);
+#if ST_VERH
+  *(st_u16 *)(b + ST_HDR) = ST_VERSION; *(st_u16 *)(b + ST_HDR + 2) = (uint16_t)n;
+#endif
   *(st_u16 *)(b + 60) = k < 0 ? 0 : *(const uint16_t *)(st_area + 64 * k + 60) + 1;
   *(st_u16 *)(b + 62) = st_sum(b);
   lf_write_page((uint32_t)(st_area + 64 * (k == 0)), w);
