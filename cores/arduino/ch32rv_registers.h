@@ -281,7 +281,11 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 
 #define CH32RV_USART_STATR(b) CH32RV_REG16((b) + 0x00u)
 #define CH32RV_USART_DATAR(b) CH32RV_REG16((b) + 0x04u)
-#define CH32RV_USART_BRR(b)   CH32RV_REG16((b) + 0x08u)
+/* A word, not a halfword: CH32X315's mantissa runs to bit 19, and a 16-bit
+ * store there lands in both halves (BRR 0x000E00AE for 0xAE - 22 baud, the
+ * TX buffer full for good; X315MCU6, 2026-10-28). Every family's BRR is a
+ * 32-bit register. */
+#define CH32RV_USART_BRR(b)   CH32RV_REG32((b) + 0x08u)
 #define CH32RV_USART_CTLR1(b) CH32RV_REG16((b) + 0x0Cu)
 #define CH32RV_USART_CTLR2(b) CH32RV_REG16((b) + 0x10u)
 #define CH32RV_USART_CTLR3(b) CH32RV_REG16((b) + 0x14u)
