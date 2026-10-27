@@ -101,16 +101,19 @@ OEP の常設とは別の、小さな組にします。
 
 ## 7. 相手と設備
 
-| 構成 | 要るもの |
-|---|---|
-| USB device | 電源を個別に切れる USB ハブ（uhubctl）で、各 DUT の USB を PC へ |
-| USB host | ESP32-S3（device の相手）を、host を持つ DUT ごとに。device の相手と host の相手で計 2 台以上 |
-| USB HS / SS | HS / SS のハブとケーブル。PC のポート |
-| Ethernet | スイッチと DHCP のある LAN。相手の PC |
-| PD | PD 電源（ソース）と PD シンク。VBUS の電圧計 |
-| ADC / DAC | 安定した電圧源と DMM（または OEP のアナログ取り込みで代える） |
-| I2C / SPI の相手（DUT が主） | OEP が受け持つ。P4 / P4X は `oep.fixture.i2c-target` と `oep.fixture.spi-target`、RP2350 / RP2040 は I2C の target だけ（2026-10-28、`oep dump --port` で確認） |
-| I2C / SPI の相手（DUT が従） | OEP が受け持つ予定。今は controller が無いので、`oep.fixture.i2c-controller` / `spi-controller` 相当の追加を OEP セッションに依頼した（2026-10-28）。Wire のスレーブと CH32RVSPISlave の試験に使う |
+基本ベンチに、DUT の口ごとに相手をつなぐ。
+
+| DUT の口 | 持っている DUT | 相手 | 理由 |
+|---|---|---|---|
+| RJ45（Ethernet） | V203RBT6（または V208）、V307、V407、H417 | スイッチと DHCP、相手の PC | — |
+| USB FS | V103、V20x、V205、V307、L103、M030、X035、H417 | **ESP32-S3**（host と device の相手） | 今の usb-peer の試験と EspUsbHost / EspUsbDevice がそのまま使える。pico にすると相手側の sketch とライブラリを作り直すことになる |
+| USB HS | V205、V307、V407（2 口）、X315、H417 | **ESP32-P4**（OEP とは別の個体） | EspUsbHost / EspUsbDevice が P4 の HS（480 Mbps）で host と device の両方に対応 |
+| USB SS | H417、X315（どちらも device だけ） | **PC** | コアの USBSS に host は無い。H417 を相手にするには SS の host を作るところから要る |
+| USB-C の CC（PD） | X035、L103、V205、X315、H417、M030 | PD 電源と PD シンク、VBUS の電圧計 | — |
+
+- **device の試験には PC も相手にする**（OS のドライバ: CDC・MSC・HID・NCM・UVC・UAC）。1 つの口にケーブルは 1 本なので、USB の 2:1 の切り替え器を OEP の GPIO で切り替える案と、口ごとに相手を固定する案がある。
+- 電源の入り切りは、USB ハブ（uhubctl）か OEP の GPIO で切るロードスイッチ。
+- ADC / DAC の絶対値は、OEP の `oep.fixture.analog` で足りるか確かめ、足りなければ電圧源と DMM。
 
 ## 8. 決めること
 
@@ -118,8 +121,9 @@ OEP の常設とは別の、小さな組にします。
 2. **P4 の分け方**は配線をしながら決める（1 台に 2 台まで）。
 3. **LinkE 2.12 を残すか**（上げてしまうと版の違いを確かめる手段が無くなる）。
 4. **評価ボードの選定**: 全端子が出ているか、USB・RJ45・CC が出ているか、電源を外から切れるか。
-5. **OEP の I2C / SPI の controller**: OEP セッションに追加を依頼した（主側と従側の両方を OEP で受け持つ）。できるまで、DUT が従になる試験は保留。
-6. **コアの型番の扱い**: V208CBU6 には Ethernet が無いが、コアは V208 の全型番で Network をビルドする（lwipopts.h が系列で判定）。型番で断るように直すかを決める。
+5. **USB の相手の決め方**: FS を ESP32-S3 にするか pico にするか。device の試験で PC と相手を切り替える器具を使うか。
+6. **OEP の I2C / SPI の controller**: OEP セッションに追加を依頼した（主側と従側の両方を OEP で受け持つ）。できるまで、DUT が従になる試験は保留。
+7. **コアの型番の扱い**: V208CBU6 には Ethernet が無いが、コアは V208 の全型番で Network をビルドする（lwipopts.h が系列で判定）。型番で断るように直すかを決める。
 
 ---
 
