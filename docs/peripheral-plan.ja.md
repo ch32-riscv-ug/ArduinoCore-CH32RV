@@ -26,7 +26,6 @@ device-data の漏れ（PIOC、H417 の HSEM / IPC、V103 の USB）と疑わし
 | PWR（スリープ・ストップ・スタンバイと起床。AWU を含む） | 12 | 電池で動かす用途の基本。ESP32 の `esp_sleep_*` に合わせられる。起床の手段（EXTI・RTC のアラーム・LPTIM・AWU）とまとめて設計する | コア（ESP32 に合わせた API） |
 | RTC（BKP を含む） | 8 | リセットをまたいで時刻を保つ、アラームで起こす。今の `settimeofday()` / `time()` と同じ時計につなぐ | コア |
 | フラッシュの永続化（EEPROM / Preferences） | 12 | 設定の保存は定番の需要。設計は docs/persistence-spec.ja.md で進行中 | コア・ライブラリ |
-| CAN（L103 は CAN FD） | 6 | ArduinoCore-API に `HardwareCAN` があり、ESP32 の TWAI の例もある。産業用途の需要が大きい | コア（`HardwareCAN`） |
 | タイマーの入力捕捉とエンコーダ | 12 | 周波数・パルス幅の測定、ロータリーエンコーダ。今は `pulseIn()` がソフトで数えるだけ | ライブラリ |
 | HSE（外付けの水晶） | 12 | 正確なクロック（UART・USB・時刻）。USBHS（V30x）はライブラリが自分で使っているだけで、CPU Clock では選べない | コア（CPU Clock のメニュー） |
 | TouchKey | 7 | ESP32 の `touchRead()` に合わせられる。ボタンを部品なしで作れる | コア（`touchRead()`） |
@@ -35,6 +34,7 @@ device-data の漏れ（PIOC、H417 の HSEM / IPC、V103 の USB）と疑わし
 
 | 機能 | ファミリー | 理由 | 置き場所の案 |
 |---|---|---|---|
+| CAN（L103 は CAN FD） | 6 | ArduinoCore-API に `HardwareCAN` がある。ただしバスにつなぐには外付けのトランシーバー（L103 の FD は FD 対応のもの）と終端が要り、常設ベンチの組み方も重くなるので後にする（2026-10-28）。作るときは、まず内部のループバックとサイレントモードで 1 台で試せる範囲から | コア（`HardwareCAN`） |
 | I2S（SAI を含む） | 3（V30x・V4x7・H41x） | ESP32 の ESP_I2S に合わせた音声の入出力 | ライブラリ |
 | SD カード（SDIO / SDMMC）とファイルシステム | 3 | データの記録。まず SPI の SD で始め、SDIO は速さが要るとき | ライブラリ |
 | ADC のトリガ（タイマー）・アナログウォッチドッグ・デュアル | 12 / 12 / 5 | 遅い一定のレートでの取り込み（AdcStream の残り）、しきい値の割込み | ライブラリ（CH32RVAdcStream の拡張） |
@@ -73,7 +73,6 @@ device-data の漏れ（PIOC、H417 の HSEM / IPC、V103 の USB）と疑わし
 A の 7 つから、ベンチで試しやすく需要の大きいものから取りかかる案です。
 
 1. PWR（スリープと起床）と RTC。一緒に設計する。
-2. CAN。`HardwareCAN` に合わせる。2 台でつなぐ試験は、OEP では受け持てないので、常設ベンチの相手を決める。
-3. タイマーの入力捕捉・エンコーダ。OEP の GPIO と PWM で刺激して試せる。
-4. HSE。基板に水晶が載っているかを、回路図で確かめてから。
-5. TouchKey（`touchRead()`）。
+2. タイマーの入力捕捉・エンコーダ。OEP の GPIO と PWM で刺激して試せる。
+3. HSE。基板に水晶が載っているかを、回路図で確かめてから。
+4. TouchKey（`touchRead()`）。
