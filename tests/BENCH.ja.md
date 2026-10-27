@@ -111,7 +111,7 @@ OEP の常設とは別の、小さな組にします。
 | DUT の口 | 持っている DUT | 相手 |
 |---|---|---|
 | RJ45（Ethernet） | V203RBT6（または V208）、V307、V407、H417 | スイッチと DHCP、相手のマイコン（Ethernet を持つ別の DUT）か常設の PC |
-| USB FS | V103、V20x、V205、V307、L103、M030、X035、H417 | **Pico**（host と device の相手。arduino-pico の Adafruit TinyUSB で相手の sketch を作る）。ESP32-S3 は 1 枚だけ（高いため）で、今の usb-peer の試験（EspUsbHost / EspUsbDevice）を受け持つ |
+| USB FS | V103、V20x、V205、V307、L103、M030、X035、H417 | **常設の標準ベンチは全部 Pico**（host と device の相手。arduino-pico の Adafruit TinyUSB で相手の sketch を作る）。**X035 を 1 台だけ ESP32-S3 と組にする**（今の usb-peer の試験と EspUsbHost / EspUsbDevice をそのまま使い、ESP32 の USB スタックとの相互運用を 1 組確かめる） |
 | USB HS | V205、V307、V407（2 口）、X315、H417 | **ESP32-P4**（OEP とは別の個体。EspUsbHost / EspUsbDevice が P4 の HS で host と device の両方に対応） |
 | USB SS | H417、X315 | **H417 どうし**。DUT が device なら相手の H417 が SS の host、DUT が host なら相手の H417 が SS の device。X315 の SS は device だけ（相手は H417 の host） |
 | USB-C の CC（PD） | X035、L103、V205、X315、H417、M030 | PD 電源と PD シンク、VBUS の電圧計 |
