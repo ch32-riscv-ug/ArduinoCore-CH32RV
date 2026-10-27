@@ -62,6 +62,7 @@ static inline volatile uint16_t &count_tx(uint8_t ep) { return pma16((uint16_t)(
 static inline volatile uint16_t &addr_rx(uint8_t ep) { return pma16((uint16_t)(ep * 8u + 4u)); }
 static inline volatile uint16_t &count_rx(uint8_t ep) { return pma16((uint16_t)(ep * 8u + 6u)); }
 
+namespace {
 struct Xfer {
     uint8_t *buf;
     uint16_t len, done;
@@ -70,6 +71,7 @@ struct Xfer {
     uint16_t pma;                /* its buffer in packet memory */
     bool active, iso;
 };
+}  // namespace
 static Xfer xin[8], xout[8];
 static uint16_t pma_next;        /* the packet memory handed out so far */
 static uint8_t ep_type[8];       /* EPnR type bits per endpoint number */

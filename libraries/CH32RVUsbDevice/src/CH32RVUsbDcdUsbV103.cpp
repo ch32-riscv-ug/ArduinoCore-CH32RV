@@ -87,6 +87,7 @@ static uint8_t ep_region[7][128] __attribute__((aligned(4)));
 static inline uint8_t *out_buf(uint8_t ep) { return ep ? ep_region[ep - 1] : ep0_region; }
 static inline uint8_t *in_buf(uint8_t ep) { return ep ? ep_region[ep - 1] + 64 : ep0_region; }
 
+namespace {
 struct Xfer {
     uint8_t *buf;
     uint16_t len, done;
@@ -95,6 +96,7 @@ struct Xfer {
     bool active, iso;
     uint8_t held;                                    /* iso OUT: a packet that came while none was asked for */
 };
+}  // namespace
 static Xfer xin[8], xout[8];
 
 static void isr(void);

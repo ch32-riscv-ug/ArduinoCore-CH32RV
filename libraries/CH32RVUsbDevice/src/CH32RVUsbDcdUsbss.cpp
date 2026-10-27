@@ -211,6 +211,7 @@
 
 static uint8_t ep0_buf[EP0_SIZE] __attribute__((aligned(16)));
 
+namespace {
 struct Xfer {
     uint8_t *buf;
     uint16_t len, done;
@@ -220,6 +221,7 @@ struct Xfer {
     bool bounced;                /* the chain in flight uses it */
     bool active, iso;
 };
+}  // namespace
 static Xfer xin[8], xout[8];
 
 /* EP0 */

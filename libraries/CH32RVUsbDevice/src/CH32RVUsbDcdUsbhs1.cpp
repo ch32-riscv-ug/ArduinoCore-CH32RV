@@ -95,6 +95,7 @@
 
 static uint8_t ep0_buf[64] __attribute__((aligned(4)));
 
+namespace {
 struct Xfer {
     uint8_t *buf;
     uint16_t len, done;
@@ -103,6 +104,7 @@ struct Xfer {
     uint8_t *bounce;
     bool active, iso;
 };
+}  // namespace
 static Xfer xin[NEP], xout[NEP];
 static bool ep0_tog;
 static bool suspended;
