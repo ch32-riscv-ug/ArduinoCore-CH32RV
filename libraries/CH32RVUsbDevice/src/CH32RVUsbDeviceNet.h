@@ -29,7 +29,7 @@ public:
     /* For the sketch: run from deliverEvents(). The host's block of frames is
      * held until then (the host waits), and the next one is received once
      * the last frame's call returns. */
-    void onFrame(FrameCallback cb) { _onFrame = cb; }
+    void onFrame(FrameCallback cb) { _onFrame = cb; deliverWith(deliverThis); }
     /* For a network stack (the Network library): called inside the USB
      * service as each frame arrives - copy it and return, never enter the
      * stack from here. Takes the frames instead of onFrame(). */
@@ -81,7 +81,8 @@ protected:
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     bool usbSetInterface(uint8_t interfaceNumber, uint8_t alternate) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
-    size_t usbDeliver() override;
+    size_t usbDeliver();
+    static size_t deliverThis(CH32RVUsbDeviceFunction &f) { return static_cast<CH32RVUsbDeviceNet &>(f).usbDeliver(); }
 
 private:
     void notify();

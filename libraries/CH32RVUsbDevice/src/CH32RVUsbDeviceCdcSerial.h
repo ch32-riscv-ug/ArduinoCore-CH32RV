@@ -62,9 +62,9 @@ public:
      * from deliverEvents(), with the state at that time. Several changes
      * before a delivery arrive as one; onRx() not at all when the data was
      * read before it. */
-    void onLineState(LineStateCallback cb) { _onLineState = cb; }
-    void onLineCoding(LineCodingCallback cb) { _onLineCoding = cb; }
-    void onRx(RxCallback cb) { _onRx = cb; }
+    void onLineState(LineStateCallback cb) { _onLineState = cb; deliverWith(deliverThis); }
+    void onLineCoding(LineCodingCallback cb) { _onLineCoding = cb; deliverWith(deliverThis); }
+    void onRx(RxCallback cb) { _onRx = cb; deliverWith(deliverThis); }
 
     /* For the USB stack's callbacks. */
     void handleLineCoding(uint32_t baud, uint8_t stopBits, uint8_t parity, uint8_t dataBits);
@@ -79,7 +79,8 @@ protected:
     void usbConfigured(CH32RVUsbSpeed speed) override;
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
-    size_t usbDeliver() override;
+    size_t usbDeliver();
+    static size_t deliverThis(CH32RVUsbDeviceFunction &f) { return static_cast<CH32RVUsbDeviceCdcSerial &>(f).usbDeliver(); }
 
 private:
     void receive();

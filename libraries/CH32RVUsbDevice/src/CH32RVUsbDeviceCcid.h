@@ -57,7 +57,7 @@ public:
 
     void onApdu(ApduCallback cb) { _onApdu = cb; }
     void onEscape(EscapeCallback cb) { _onEscape = cb; }
-    void onPower(PowerCallback cb) { _onPower = cb; }
+    void onPower(PowerCallback cb) { _onPower = cb; deliverWith(deliverThis); }
 
     /* The host has the interface configured. */
     bool mounted() const;
@@ -79,7 +79,8 @@ protected:
     void usbConfigured(CH32RVUsbSpeed speed) override;
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
-    size_t usbDeliver() override;
+    size_t usbDeliver();
+    static size_t deliverThis(CH32RVUsbDeviceFunction &f) { return static_cast<CH32RVUsbDeviceCcid &>(f).usbDeliver(); }
 
 private:
     void writeHeader(uint8_t messageType, uint32_t dataLength, uint8_t slot, uint8_t sequence, uint8_t icc,

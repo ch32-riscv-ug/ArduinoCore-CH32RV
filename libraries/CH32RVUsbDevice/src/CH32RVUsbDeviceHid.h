@@ -42,9 +42,6 @@ public:
     /* From deliverEvents(): run the sketch's callbacks for what the hooks
      * above recorded; how many ran. */
     virtual size_t hidDeliver() { return 0; }
-    /* A report from the OUT endpoint waits for hidDeliver(): the interface
-     * does not take the next one until then (the host waits). */
-    virtual bool hidHolding() const { return false; }
 
 protected:
     explicit CH32RVUsbDeviceHidClass(CH32RVUsbDevice &device);
@@ -213,8 +210,7 @@ public:
     void onHidSetReport(uint8_t reportId, uint8_t reportType, const uint8_t *data,
                         uint16_t length) override;
     size_t hidDeliver() override;
-    bool hidHolding() const override { return _heldLength >= 0; }
-    void onBusDetached() override { _heldLength = -1; }
+    void onBusDetached() override;
 
 private:
     void build();

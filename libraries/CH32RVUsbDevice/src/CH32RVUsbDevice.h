@@ -306,10 +306,13 @@ protected:
     }
     /* The host cleared a halt on one of its endpoints (data toggle back to DATA0). */
     virtual void usbHaltCleared(uint8_t address) { (void)address; }
-    /* Called from deliverEvents() (ch32rv_deliver.h), outside the stack: run
-     * the sketch's notification callbacks for what the hooks above recorded.
-     * Returns how many ran. */
-    virtual size_t usbDeliver() { return 0; }
+    /* For deliverEvents() (ch32rv_deliver.h), outside the stack: the function
+     * that runs the sketch's notification callbacks for what the hooks above
+     * recorded, returning how many ran. A class names it when the sketch
+     * registers such a callback - a pointer rather than a virtual function,
+     * so a class whose callbacks are never set links none of that code. */
+    typedef size_t (*Deliver)(CH32RVUsbDeviceFunction &function);
+    void deliverWith(Deliver deliver) { _deliver = deliver; }
 
 private:
     friend class CH32RVUsbDevice;
@@ -321,6 +324,7 @@ private:
     uint8_t _instance = 0;
     uint8_t _interface = 0;
     bool _attached = false;
+    Deliver _deliver = nullptr;
 };
 
 class CH32RVUsbDevice {

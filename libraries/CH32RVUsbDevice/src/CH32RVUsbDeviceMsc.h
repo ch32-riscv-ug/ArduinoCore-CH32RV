@@ -48,7 +48,7 @@ public:
     /* START STOP UNIT: start false + loadEject true is the host's eject. */
     void onStartStop(CH32RVUsbDeviceMscStartStopCallback cb) { _onStartStop = cb; }
     /* Serve the blocks from a disk object (the RAM disks do this in attach()). */
-    void setStorage(CH32RVUsbDeviceMscStorage *storage) { _storage = storage; }
+    void setStorage(CH32RVUsbDeviceMscStorage *storage) { _storage = storage; deliverWith(deliverThis); }
 
     /* For the USB stack's callbacks. */
     uint8_t maxLun() const { return 0; }
@@ -69,7 +69,12 @@ protected:
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
     void usbHaltCleared(uint8_t address) override;
-    size_t usbDeliver() override { return _storage ? _storage->deliver() : 0; }
+    /* The storage's notifications (eject); its own setters do not reach here. */
+    static size_t deliverThis(CH32RVUsbDeviceFunction &f)
+    {
+        CH32RVUsbDeviceMsc &m = static_cast<CH32RVUsbDeviceMsc &>(f);
+        return m._storage ? m._storage->deliver() : 0;
+    }
 
 private:
     /* Bulk-only transport: a command block, its data, a status. */

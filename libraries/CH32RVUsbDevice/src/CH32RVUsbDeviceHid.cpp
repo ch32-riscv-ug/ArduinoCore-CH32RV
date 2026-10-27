@@ -125,6 +125,11 @@ static bool declares_report_id(const uint8_t *desc, uint16_t length)
 #define HID_SET_IDLE     0x0A
 #define HID_SET_PROTOCOL 0x0B
 
+/* Reports a class holds for hidDeliver() (the vendor class's, the only one
+ * that holds): while any is held the interface does not take the next OUT
+ * report (the host waits). A count rather than asking every class. */
+static uint8_t hid_held;
+
 class HidInterface;
 static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
                            uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed);
@@ -132,7 +137,11 @@ static const CH32RVUsbFunctionType hid_type = {hid_descriptor, 1, 1, &CH32RVUsbD
 
 class HidInterface : public CH32RVUsbDeviceFunction {
 public:
-    explicit HidInterface(CH32RVUsbDevice &device) : CH32RVUsbDeviceFunction(device, hid_type, CH32RV_USB_HID_NAME) {}
+    explicit HidInterface(CH32RVUsbDevice &device) : CH32RVUsbDeviceFunction(device, hid_type, CH32RV_USB_HID_NAME)
+    {
+        deliverWith(deliverThis);
+    }
+    static size_t deliverThis(CH32RVUsbDeviceFunction &f) { return static_cast<HidInterface &>(f).usbDeliver(); }
 
     bool add(CH32RVUsbDeviceHidClass *c)
     {
@@ -280,17 +289,9 @@ public:
         }
     }
 
-    bool holding() const
-    {
-        for (uint8_t i = 0; i < count; i++) {
-            if (at(i)->hidHolding()) {
-                return true;
-            }
-        }
-        return false;
-    }
+    static bool holding() { return hid_held != 0; }
 
-    size_t usbDeliver() override
+    size_t usbDeliver()
     {
         size_t ran = 0;
         for (uint8_t i = 0; i < count; i++) {
@@ -965,6 +966,7 @@ void CH32RVUsbDeviceHidVendor::onHidSetReport(uint8_t reportId, uint8_t reportTy
     }
     memcpy(_held, data, length);
     _heldLength = (int16_t)length;
+    hid_held++;
     _heldId = reportId;
     _heldType = reportType;
 }
@@ -987,7 +989,16 @@ size_t CH32RVUsbDeviceHidVendor::hidDeliver()
         ran = 1;
     }
     _heldLength = -1;                            /* free once the call returns */
+    hid_held--;
     return ran;
+}
+
+void CH32RVUsbDeviceHidVendor::onBusDetached()
+{
+    if (_heldLength >= 0) {
+        _heldLength = -1;
+        hid_held--;
+    }
 }
 
 /* ---------------------------------------------------------- gamepad */

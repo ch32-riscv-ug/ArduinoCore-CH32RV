@@ -90,15 +90,15 @@ public:
     /* From deliverEvents(). onRx(): data waits in the FIFO (not at all when
      * it was read before). onTxComplete(): the bytes sent since the last
      * delivery, so a stream armed from it pauses until the sketch delivers. */
-    void onRx(RxCallback cb) { _onRx = cb; }
-    void onTxComplete(TxCompleteCallback cb) { _onTxComplete = cb; }
+    void onRx(RxCallback cb) { _onRx = cb; deliverWith(deliverThis); }
+    void onTxComplete(TxCompleteCallback cb) { _onTxComplete = cb; deliverWith(deliverThis); }
     /* Received data, straight from the endpoint buffer, one transfer at a
      * time; while set, nothing goes to the receive FIFO (available() stays 0).
      * EspUsbDevice has this on its direct builds only; here it is a run-time
      * choice. Delivered from deliverEvents(): the transfer is held there until
      * then (the host waits), and the next one starts once the call returns.
      * The data is valid during the call. */
-    void onRxData(RxDataCallback cb) { _onRxData = cb; }
+    void onRxData(RxDataCallback cb) { _onRxData = cb; deliverWith(deliverThis); }
     /* Where onRxData() transfers land instead of the class's own buffer (2 x
      * the largest packet): a bigger one lets SuperSpeed OUT run at speed. It
      * stays the class's until end(); at most 65535 bytes are used, in whole
@@ -138,7 +138,8 @@ protected:
     void usbConfigured(CH32RVUsbSpeed speed) override;
     bool usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
-    size_t usbDeliver() override;
+    size_t usbDeliver();
+    static size_t deliverThis(CH32RVUsbDeviceFunction &f) { return static_cast<CH32RVUsbDeviceVendor &>(f).usbDeliver(); }
 
 private:
     static constexpr uint16_t BUFFER = CH32RV_USB_MAX_PACKET < 128 ? 256 : 2 * CH32RV_USB_MAX_PACKET;

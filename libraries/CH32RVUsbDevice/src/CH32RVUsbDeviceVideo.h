@@ -126,10 +126,10 @@ public:
     /* From deliverEvents(), once the last payload of a frame has gone (and
      * frameInFlight() is false): arming the next frame there keeps the stream
      * going at the rate the sketch delivers. */
-    void onFrameComplete(FrameCompleteCallback callback) { _onFrameComplete = callback; }
+    void onFrameComplete(FrameCompleteCallback callback) { _onFrameComplete = callback; deliverWith(deliverThis); }
     /* From deliverEvents(), when the host has committed its streaming
      * parameters: the latest commit. */
-    void onCommit(CommitCallback callback) { _onCommit = callback; }
+    void onCommit(CommitCallback callback) { _onCommit = callback; deliverWith(deliverThis); }
     /* The bytes of each payload of sendGeneratedFrame(), as it goes out: a
      * provider, called inside the USB service while the host waits. */
     void onFillPayload(FillCallback callback) { _onFill = callback; }
@@ -143,7 +143,8 @@ protected:
     bool usbSetInterface(uint8_t interfaceNumber, uint8_t alternate) override;
     void usbTransferred(uint8_t address, uint16_t length) override;
     void usbHaltCleared(uint8_t address) override;
-    size_t usbDeliver() override;
+    size_t usbDeliver();
+    static size_t deliverThis(CH32RVUsbDeviceFunction &f) { return static_cast<CH32RVUsbDeviceVideo &>(f).usbDeliver(); }
 
 private:
     friend bool video_descriptor(const CH32RVUsbDeviceFunction &, CH32RVUsbDescriptorWriter &, uint8_t, uint8_t *,

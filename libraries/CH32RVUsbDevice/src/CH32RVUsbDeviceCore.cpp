@@ -73,6 +73,17 @@ struct CH32RVUsbDeviceCore {
     static uint8_t bus_first, bus_count;
     static uint32_t bus_dropped;
     static void bus(CH32RVUsbBusEvent e);
+    static size_t deliver_bus();
+    /* Both set by onBusEvent() only: without it neither the queue nor its
+     * delivery is linked. */
+    static void (*bus_record)(CH32RVUsbBusEvent e);
+    static size_t (*bus_deliver)();
+    static void note(CH32RVUsbBusEvent e)
+    {
+        if (bus_record) {
+            bus_record(e);
+        }
+    }
     static size_t deliver();
 };
 
@@ -107,6 +118,8 @@ CH32RVUsbDevice::BusEventCallback CH32RVUsbDeviceCore::bus_event;
 CH32RVUsbBusEvent CH32RVUsbDeviceCore::bus_queue[8];
 uint8_t CH32RVUsbDeviceCore::bus_first, CH32RVUsbDeviceCore::bus_count;
 uint32_t CH32RVUsbDeviceCore::bus_dropped;
+void (*CH32RVUsbDeviceCore::bus_record)(CH32RVUsbBusEvent e);
+size_t (*CH32RVUsbDeviceCore::bus_deliver)();
 
 
 
@@ -144,7 +157,7 @@ void Core::bus(CH32RVUsbBusEvent e)
 /* The sketch's side: the bus events in order, then each function's own
  * notifications. A callback may call delay(), which runs the stack and may
  * record more; those wait for the next delivery. */
-size_t Core::deliver()
+size_t Core::deliver_bus()
 {
     size_t ran = 0;
     for (uint8_t n = bus_count; n && bus_count; n--) {
@@ -156,12 +169,18 @@ size_t Core::deliver()
             ran++;
         }
     }
+    return ran;
+}
+
+size_t Core::deliver()
+{
+    size_t ran = bus_deliver ? bus_deliver() : 0;
     if (!device) {
         return ran;
     }
     for (CH32RVUsbDeviceFunction *f = device->_first; f; f = f->_next) {
-        if (f->_attached) {
-            ran += f->usbDeliver();
+        if (f->_attached && f->_deliver) {
+            ran += f->_deliver(*f);
         }
     }
     return ran;
@@ -690,15 +709,15 @@ void Core::task()
     if (e & EV_RESET) {
         reset_state();
         was_configured = false;
-        bus(CH32RVUsbBusEvent::Reset);
+        note(CH32RVUsbBusEvent::Reset);
     }
     if (e & EV_SUSPEND) {
         suspended = true;
-        bus(CH32RVUsbBusEvent::Suspended);
+        note(CH32RVUsbBusEvent::Suspended);
     }
     if (e & EV_RESUME) {
         suspended = false;
-        bus(CH32RVUsbBusEvent::Resumed);
+        note(CH32RVUsbBusEvent::Resumed);
     }
     if (e & EV_SETUP) {
         memcpy(setup_raw, s, 8);
@@ -706,7 +725,7 @@ void Core::task()
     }
     /* SET_CONFIGURATION answered just now. */
     if (configured != was_configured) {
-        bus(configured ? CH32RVUsbBusEvent::Configured : CH32RVUsbBusEvent::Unconfigured);
+        note(configured ? CH32RVUsbBusEvent::Configured : CH32RVUsbBusEvent::Unconfigured);
     }
     if (dout & 1u) {
         ep0_done(false, len_out[0]);
@@ -767,8 +786,10 @@ extern "C" void ch32rv_usb_task(void)
 void (*volatile ch32rv_usb_deferred)(void);
 
 /* ------------------------------------------------------------ the device's API */
-/* The stack's system service (ch32rv_service.h): begin() attaches it, end()
- * takes it out of the round. */
+/* The stack's system service (ch32rv_service.h): begin() attaches it. end()
+ * leaves it, and the delivery below, in the round - both return at once
+ * without a device - rather than link two detaches into a part that calls
+ * end() only to restart (DFU detach, restartWithOnly()). */
 static ch32rv_service_t usb_service = CH32RV_SERVICE_INIT(ch32rv_usb_task);
 /* And the delivery of the sketch's notifications (ch32rv_deliver.h). */
 static ch32rv_delivery_t usb_delivery = CH32RV_DELIVERY_INIT(Core::deliver);
@@ -848,8 +869,6 @@ void CH32RVUsbDevice::end()
     Core::dcd->close();
     _started = false;
     Core::device = nullptr;
-    ch32rv_service_detach(&usb_service);
-    ch32rv_delivery_detach(&usb_delivery);
 }
 
 bool CH32RVUsbDevice::restartWithOnly(CH32RVUsbDeviceFunction &only)
@@ -1230,6 +1249,8 @@ uint16_t (*ch32rv_usb_hid_report)(CH32RVUsbDescriptorWriter *w);
 void CH32RVUsbDevice::onBusEvent(BusEventCallback callback)
 {
     Core::bus_event = callback;
+    Core::bus_record = Core::bus;
+    Core::bus_deliver = Core::deliver_bus;
 }
 
 uint32_t CH32RVUsbDevice::droppedBusEvents() const
