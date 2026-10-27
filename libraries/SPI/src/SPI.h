@@ -6,9 +6,8 @@
  * not among the bus pins because Arduino drives it as an ordinary GPIO, which
  * is also what lets one bus carry several devices.
  *
- * Peripheral (slave) mode is not implemented, so SPI_HAS_PERIPHERAL_MODE is
- * deliberately not defined - a library can test for it rather than discover it
- * at runtime.
+ * Peripheral (slave) mode is a library of its own, CH32RVSPISlave, so
+ * SPI_HAS_PERIPHERAL_MODE is deliberately not defined here.
  */
 #pragma once
 

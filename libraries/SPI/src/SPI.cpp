@@ -1,4 +1,5 @@
 #include "SPI.h"
+#include "ch32rv_spi_claim.h"
 
 #include "Arduino.h"
 #include "ch32rv_gpio.h"
@@ -183,8 +184,8 @@ constexpr uint8_t SPI_COUNT = 0;
 #define CH32RV_SPI_SINGLE 0
 #endif
 #if !CH32RV_SPI_SINGLE
-/* Which bus holds each SPI. */
-CH32RVSPIClass *owner[SPI_COUNT > 0 ? SPI_COUNT : 1];
+/* Which bus (or CH32RVSPISlave) holds each SPI. */
+const void *owner[SPI_COUNT > 0 ? SPI_COUNT : 1];
 #endif
 
 inline uint8_t index_of(uint8_t slot)
@@ -198,7 +199,7 @@ struct Found {
 };
 
 /* A free SPI with a route on these pins; this bus's own SPI first. */
-Found find_route(uint8_t prefer, const uint8_t *want, const CH32RVSPIClass *self)
+Found find_route(uint8_t prefer, const uint8_t *want, const void *self)
 {
     Found first = {-1, nullptr};
     for (uint8_t i = 0; i < SPI_COUNT; i++) {
@@ -518,4 +519,61 @@ bool CH32RVSPIClass::setPins(int sck, int miso, int mosi)
         begin();
     }
     return true;
+}
+
+/* ------------------------------------------------- for CH32RVSPISlave */
+bool ch32rv_spi_claim(const void *who, int sck, int miso, int mosi, ch32rv_spi_claim_t *out)
+{
+    if (sck < 0 || miso < 0 || mosi < 0 || sck > 0xFE || miso > 0xFE || mosi > 0xFE) {
+        return false;
+    }
+    const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)CH32RV_PIN_RESOLVE(sck),
+                                             (uint8_t)CH32RV_PIN_RESOLVE(miso),
+                                             (uint8_t)CH32RV_PIN_RESOLVE(mosi)};
+    const Found f = find_route(0, want, who);
+    if (f.index < 0) {
+        return false;
+    }
+    const SpiDesc &d = spis[f.index];
+#if !CH32RV_SPI_SINGLE
+    owner[f.index] = who;
+#endif
+    ch32rv_clock_enable_at(d.clken_addr, d.clken_mask);
+    ch32rv_clock_enable(AFIO);
+    if (d.remap_mask) {
+        CH32RV_AFIO_PCFR1 = (CH32RV_AFIO_PCFR1 & ~d.remap_mask) | f.row->value;
+    }
+    if (d.remap2_mask) {
+        CH32RV_AFIO_PCFR2 = (CH32RV_AFIO_PCFR2 & ~d.remap2_mask) | f.row->value2;
+    }
+    for (int i = 0; i < 3; i++) {
+        ch32rv_pin_set_af(want[i], f.row->value);
+        ch32rv_gpio_clock_enable((uint8_t)CH32RV_PIN_PORT(want[i]));
+    }
+    out->base = d.base;
+    out->clken_addr = d.clken_addr;
+    out->clken_mask = d.clken_mask;
+    out->index = (uint8_t)f.index;
+    out->number = d.number;
+    out->sck = want[0];
+    out->miso = want[1];
+    out->mosi = want[2];
+    return true;
+}
+
+void ch32rv_spi_release(const void *who, const ch32rv_spi_claim_t *c)
+{
+    CH32RV_SPI_CTLR1(c->base) = 0;
+    CH32RV_SPI_CTLR2(c->base) = 0;
+    ch32rv_clock_disable_at(c->clken_addr, c->clken_mask);
+#if !CH32RV_SPI_SINGLE
+    if (owner[c->index] == who) {
+        owner[c->index] = nullptr;
+    }
+#else
+    (void)who;
+#endif
+    release_pin(c->sck);
+    release_pin(c->miso);
+    release_pin(c->mosi);
 }

@@ -1,0 +1,9 @@
+CH32RVSPISlave	KEYWORD1
+Result	KEYWORD1
+queue	KEYWORD2
+poll	KEYWORD2
+onTransfer	KEYWORD2
+setFill	KEYWORD2
+numTransactionsInFlight	KEYWORD2
+missed	KEYWORD2
+overruns	KEYWORD2

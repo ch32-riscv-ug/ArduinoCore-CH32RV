@@ -30,7 +30,7 @@ On the families whose ADC1 DMA request is DMA1 channel 1 (ch32-device-data dma.c
 
 - **The ADC runs free.** In continuous mode each conversion starts the next. No timer is used.
 - **The rate comes in steps.** The ADC clock and one of eight sample times set the conversion rate. Each step's rate differs between families and no table gives it, so `begin()` runs every step once, measures it, and takes the fastest at or below the rate asked for. `sampleRate()` is that measured value.
-- **Nothing is slower than the slowest step.** For example about 47,600 conversions per second on a CH32V307 at 96 MHz, 250,000 on a CH32X035 99,000 on a CH32V407 at 200 MHz and 198,000 on a CH32H417 (measured 2026-10-27). Ask for less and you get the slowest step. For a slow steady rate, take every n-th value or call `analogRead()` from a timer.
+- **Nothing is slower than the slowest step.** For example about 47,600 conversions per second on a CH32V307 at 96 MHz, 250,000 on a CH32X035, 99,000 on a CH32V407 at 200 MHz and 198,000 on a CH32H417 (measured 2026-10-27). Ask for less and you get the slowest step. For a slow steady rate, take every n-th value or call `analogRead()` from a timer.
 - **One to six pins.** Several are converted in turn; the buffer holds pin 0, pin 1, ... pin 0, pin 1, ..., and `sampleRate()` counts rounds. A half has to be a multiple of the pin count.
 - **Values are the converter's own** (0 .. 4095 on 12-bit families, 0 .. 1023 on 10-bit ones), without `analogRead()`'s scaling or calibration offset.
 
