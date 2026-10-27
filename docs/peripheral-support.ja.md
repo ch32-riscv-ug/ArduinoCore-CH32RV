@@ -4,10 +4,10 @@
 
 ```
 uv run --no-project python tools/generate/peripheral_matrix.py \
-    --evt-root ~/dev_wch --out docs/peripheral-support.ja.md
+    --evt-root ~/dev_wch --tables ~/dev_wch/ch32-device-data --out docs/peripheral-support.ja.md
 ```
 
-列はfamily(EVTの単位)ごとで、セルは**このcoreがそのfamilyで使えるか**です。siliconにあるかどうかは、EVTに**そのペリフェラルの例があるか**で判断しています(WCHはペリフェラルごとに例を1つ置くので、これが事実上のペリフェラル一覧になります。EVTは**参照のみ**で、このrepositoryには取り込みません)。
+列はfamily(EVTの単位)ごとで、セルは**このcoreがそのfamilyで使えるか**です。siliconにあるかどうかは、EVTに**そのペリフェラルの例があるか**(例の中のサブフォルダ、たとえば`RCC/MCO`や`TIM/Encoder`も含む)と、`ch32-device-data`の`index/register_blocks.csv`に**レジスタのブロックがあるか**のどちらかで判断しています(EVTは**参照のみ**で、このrepositoryには取り込みません)。
 family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無いなど)は備考に書きます。
 
 「状態」と各セルはこのcoreの実装状況で、生成ではなく`peripheral_matrix.py`の`STATUS`と`CELLS`で維持管理しています。実機で確かめた範囲は[test-coverage.ja.md](test-coverage.ja.md)を見てください。
@@ -18,7 +18,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | ◐ | 一部だけ使える(備考に記載) |
 | ○ | siliconにあるが未実装 |
 | − | siliconにあるがcoreでは提供しない |
-| 空欄 | EVTに例が無い |
+| 空欄 | EVTに例が無く、レジスタのブロックも無い |
 
 **空欄は「siliconに無い」とは限りません**。EVTに例が置かれていないだけのこともあります。実装する前にreference manualか`ch32-device-data`で裏を取ってください。
 
@@ -54,7 +54,19 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | BKP (バックアップレジスタ) | 対象外 | - |  |  | − | − | − | − | − | − |  |  |  |  |  |
 | CRC | 対象外 | - |  |  | − | − | − | − | − | − |  |  | − | − |  |
 | ECDC (AES/SM4) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | AES-128/192/256とSM4、ECBとCTRのみ。TLS(mbedTLS)はsoftwareで計算している |
+| TIM 入力捕捉 | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | `pulseIn()`はsoftwareで数える |
+| TIM エンコーダ | 未実装 | - | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
+| TIM 相補PWM・デッドタイム・ワンパルス | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | TIM1/TIM8の相補出力(CHxN)、デッドタイム、ブレーキ、ワンパルス、出力比較 |
+| PVD (電圧検出) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ | 電源電圧の低下の割込み・起床 |
+| MCO (クロック出力) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | クロックを端子に出す。ベンチでクロックを測るのにも使える |
+| HSE (外部水晶) | 未実装 | - |  |  | ○ | ○ | ○ | ○ |  |  |  |  |  |  | CPU ClockはHSIとHSI由来のPLLだけ。USB HS(V30x)とH417のUSB SSはライブラリが自分でHSEを使う |
+| PMP (メモリ保護) | 未実装 | - |  |  |  | ○ |  | ○ | ○ | ○ |  | ○ |  | ○ |  |
+| FPU | 実装済 | float/double |  |  |  |  |  | ● |  |  |  |  | ● | ● | 単精度のFPU。`-march`のfでコンパイラが使う |
+| ICache | 実装済 | - |  |  |  |  |  |  |  |  |  |  |  | ● | 起動時にEVTと同じCORECFGRを書く |
 | V5F (2つ目のコア)/HSEM/IPC | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | H417。起動、共有メモリ、HSEM、原子操作、GPIOの読み取りを実機で測った(docs/h417-multicore.ja.md)。設計は未 |
+| RAM実行 | 未実装 | - |  |  |  |  | ○ |  |  | ○ |  | ○ |  |  | crt0に.highcodeをRAMへ写す処理はあるが、スケッチから関数を置く印が無い |
+| AWU (自動起床) | 未実装 | - |  |  |  |  |  |  |  |  |  | ○ |  |  | X035の低消費電力からの周期起床 |
+| オプションバイト | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 読み出し保護、NRSTの端子をGPIOにする設定など。書き込みツール(ch32rv)の範囲とも重なる |
 
 ## アナログ・タッチ
 
@@ -65,6 +77,10 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | HSADC (高速ADC) | 一部実装 | CH32RVHsAdc(library) |  |  |  |  |  |  |  |  |  |  |  | ◐ | H415/H416/H417。DMAで連続取り込み、USBで流す(HsAdcStream) |
 | DFSDM (ΣΔフィルタ) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | PDMマイク、ΣΔ変調器の入力。H417 |
 | PIOC (プログラマブルIO) | 対象外 | - |  |  |  |  | − |  |  |  |  | − |  | − | X035/V205固有 |
+| ADC 連続・DMA・トリガ | 一部実装 | CH32RVAdcStream(library) | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | 自走の連続変換をDMAの2面バッファで受ける(1〜6本、全系列)。タイマー・外部のトリガ、注入変換は未実装 |
+| ADC アナログウォッチドッグ | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
+| ADC デュアル | 未実装 | - |  |  |  | ○ |  | ○ | ○ |  |  |  | ○ | ○ | ADC1とADC2の同時・交互変換 |
+| コンパレータ | 未実装 | - |  | ○ |  |  | ○ |  |  | ○ | ○ | ○ |  | ○ | OPAの中の比較器(CMP)。割込み・タイマーのブレーキ・起床に使える |
 
 ## USB
 
@@ -98,6 +114,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | ARGB (LEDドライバ) | 対象外 | - |  |  |  |  |  |  | − |  |  |  | − |  |  |
 | RNG | 一部実装 | - |  |  |  |  |  | ◐ | ◐ |  |  |  |  | ◐ | TLS(mbedTLS)とTCPの乱数にコア内部で使う(`ch32rv_rng_read`)。公開APIは無い。`random()`はsoftware実装 |
 | BLE | 対象外 | - |  |  |  | − |  |  |  |  |  |  |  |  | V208のみ。専用stackが要る |
+| LVDS | 未実装 | - |  |  |  |  | ○ |  |  |  |  |  |  |  | V205。用途は未確認(ch32-device-dataに問い合わせ中) |
 
 ## デバッグ出力
 

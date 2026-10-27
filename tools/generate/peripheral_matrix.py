@@ -11,7 +11,7 @@ repository), and they are not present in CI, so this is a tool a maintainer
 runs by hand rather than a test:
 
   uv run --no-project python tools/generate/peripheral_matrix.py \
-      --evt-root ~/dev_wch --out docs/peripheral-support.ja.md
+      --evt-root ~/dev_wch --tables ~/dev_wch/ch32-device-data --out docs/peripheral-support.ja.md
 
 Our own status is the curated half - it cannot be derived from anything - and
 lives in STATUS below, so that regenerating never silently drops it.
@@ -89,6 +89,50 @@ PERIPHERALS = {
 IGNORED = {"SRC", "APPLICATION", "IAP", "USART_IAP", "CPU", "FPU", "PMP",
            "RunInRam", "RunInRam_LP", "VoiceRcgExam"}
 
+# Features WCH shows as an example inside another directory (EXAM/<dir>/<sub>),
+# or as one of the directories above that are not a peripheral but are a
+# feature of the chip. (directory, name prefixes of the example) -> (row, group).
+SUBFEATURES = [
+    (("TIM", ("Input_Capture", "Bothedge_Capture")), ("TIM 入力捕捉", "basic")),
+    (("TIM", ("Encoder",)), ("TIM エンコーダ", "basic")),
+    (("TIM", ("ComplementaryOutput", "Dead_", "PWM_6_Step", "One_Pulse", "Output_Compare")),
+     ("TIM 相補PWM・デッドタイム・ワンパルス", "basic")),
+    (("ADC", ("ADC_DMA", "ADC_ScanOut", "TIM_Trigger", "SLTIM_Trigger", "ExtLines_Trigger")),
+     ("ADC 連続・DMA・トリガ", "analog")),
+    (("ADC", ("AnalogWatchdog",)), ("ADC アナログウォッチドッグ", "analog")),
+    (("ADC", ("DualADC",)), ("ADC デュアル", "analog")),
+    (("OPA", ("CMP",)), ("コンパレータ", "analog")),
+    (("PWR", ("PVD",)), ("PVD (電圧検出)", "basic")),
+    (("RCC", ("MCO",)), ("MCO (クロック出力)", "basic")),
+    (("RCC", ("HSE_CLK",)), ("HSE (外部水晶)", "basic")),
+    (("PMP", ("",)), ("PMP (メモリ保護)", "basic")),
+    (("CPU", ("PMP",)), ("PMP (メモリ保護)", "basic")),
+    (("FPU", ("",)), ("FPU", "basic")),
+    (("CPU", ("FPU",)), ("FPU", "basic")),
+    (("CPU", ("ICache",)), ("ICache", "basic")),
+    (("CPU", ("HSEM", "IPC")), ("V5F (2つ目のコア)/HSEM/IPC", "basic")),
+    (("RunInRam", ("",)), ("RAM実行", "basic")),
+    (("RunInRam_LP", ("",)), ("RAM実行", "basic")),
+]
+
+# The second source: ch32-device-data's register blocks (index/register_blocks.csv,
+# type column), for what has registers but no EVT example. type -> row.
+BLOCK_ROWS = {
+    "ADC": "ADC", "ARGB": "ARGB (LEDドライバ)", "AWU": "AWU (自動起床)", "BKP": "BKP (バックアップレジスタ)",
+    "CAN": "CAN", "CRC": "CRC", "DAC": "DAC", "DFSDM_Channel": "DFSDM (ΣΔフィルタ)",
+    "DFSDM_FLT": "DFSDM (ΣΔフィルタ)", "DMA": "DMA", "DVP": "DVP (カメラ)", "ECDC": "ECDC (AES/SM4)",
+    "ETH": "Ethernet", "ETH10M": "Ethernet", "EXTI": "EXTI (外部割込み)", "FLASH": "FLASH (自己書き換え)",
+    "FMC_Bank1": "FSMC/FMC", "FSMC_Bank1": "FSMC/FMC", "GPHA": "GPHA (2D DMA)", "GPIO": "GPIO",
+    "HSADC": "HSADC (高速ADC)", "I2C": "I2C", "I3C": "I3C", "IWDG": "IWDG", "LPTIM": "LPTIM",
+    "LTDC": "LTDC (LCD)", "LVDS": "LVDS", "OB": "オプションバイト", "OPA": "OPA/コンパレータ",
+    "PSRAM": "PSRAM", "PWR": "PWR (低消費電力)", "QSPI": "QSPI", "RCC": "RCC (クロック)", "RNG": "RNG",
+    "RTC": "RTC", "SAI_Block": "SAI (音声)", "SDIO": "SDIO", "SDMMC": "SDMMC", "SDS": "SerDes",
+    "SPI": "SPI", "SWPMI": "SWPMI", "TIM": "TIM (PWM/tone)", "TKEY": "TouchKey", "UHSIF": "UHSIF (高速パラレル)",
+    "USART": "USART", "USBFSD": "USB (FS device/host)", "USBFSH": "USB (FS device/host)",
+    "USBHSD": "USB HS", "USBHSH": "USB HS", "USBPD": "USB PD", "USBSSD": "USB SS", "USBSSH": "USB SS",
+    "WWDG": "WWDG",
+}
+
 GROUPS = [
     ("basic", "基本ペリフェラル"),
     ("analog", "アナログ・タッチ"),
@@ -130,26 +174,18 @@ STATUS = {
     "PFIC (割込みコントローラ)": ("実装済", "-", "優先度は全てreset既定のまま"),
     "SysTick": ("実装済", "millis/micros/delay", ""),
     "RCC (クロック)": ("一部実装", "F_CPU",
-                       "HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。"
-                       "取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。"
-                       "既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、"
-                       "L103/M103・V205 8 MHz、M030 72 MHz(実機で確認してEVTの既定に。L103/M103・V205のPLLの項目は未確認)。メニューの無いもの: V407/V467・X305/X315 20 MHz、"
-                       "H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の "
-                       "400 MHz、V5F は 400 MHz で停止のまま)。"
-                       "HSEは未実装(USB HSとH417のUSB SSのみHSEを使う)"),
+        "HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、L103/M103 8 MHz、M030 72 MHz・V205 160 MHz(実機で確認してEVTの既定に。L103/M103のPLLの項目は未確認)。X315は20 MHz(240 MHzも選べる。HSIからUSBHS PLL、EVTの手順の順に書く。X315MCU6で実機確認)。メニューの無いもの: X305 20 MHz、H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の 400 MHz、V5F は 400 MHz で停止のまま)。HSEは未実装(USB HSとH417のUSB SSのみHSEを使う)"),
     "PWR (低消費電力)": ("未実装", "-", "sleep APIは提供していない"),
     "FLASH (自己書き換え)": ("一部実装", "-",
                             "公開APIとEEPROM emulationは無い。H415/H416/H417はコア内部の`ch32rv_flash_erase/write`"
                             "(DFU runtimeが使う)。他は未実装。実機の数字はdocs/flash-raw.ja.md、"
                             "保存の案はdocs/persistence-spec.ja.md(下書き)"),
     "USART": ("実装済", "Serial",
-              "全インスタンス(V205/V30x/V407/V467のUSART6〜10も、Serial9まで)。V205・X305/X315は"
-              "端子ごとのAF番号を書く(ビルドのみ確認)。X033/X035は送信をポーリングで行う(割込み送信の不具合の回避)"),
+        "全インスタンス(V205/V30x/V407/V467のUSART6〜10も、Serial9まで)。V205・X305/X315は端子ごとのAF番号を書く(V205RCT6・X315MCU6で既定のTXの波形を確認)。X033/X035は送信をポーリングで行う(割込み送信の不具合の回避)"),
     "I2C": ("実装済", "Wire",
-            "controllerはpolling、peripheral(slave)は割込み駆動。V205・X305/X315は端子ごとのAF番号を書く(ビルドのみ確認)"),
+        "controllerはpolling、peripheral(slave)は割込み駆動。V205・X305/X315は端子ごとのAF番号を書く(未確認。プルアップの配線が要る)"),
     "SPI": ("一部実装", "SPI",
-            "controllerのみ。peripheral(slave)は未実装。V205・X305/X315は端子ごとのAF番号を書く(ビルドのみ確認)。"
-            "M103はSPI1のみ"),
+        "controllerはSPI。peripheral(slave)はCH32RVSPISlave(CS単位の転送、CSは任意の端子、1バイトごとに割込み。実機はV003/V103/V205/V307/X035/X315/L103、自分の端子をGPIOで叩く自己試験)。V205・X305/X315は端子ごとのAF番号を書く(V205・X315でSCKの波形とスレーブの自己試験を確認)。M103はSPI1のみ"),
     "ADC": ("実装済", "analogRead",
             "X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替。"
             "内部チャネルは`analogReadVref()`・`analogReadTemp()`・`CH32RV.getVddMillivolts()`"
@@ -159,15 +195,10 @@ STATUS = {
     "DAC": ("実装済", "analogWrite(CH32RV_DACn_PIN)",
             "V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来"),
     "TIM (PWM/tone)": ("実装済", "analogWrite/tone",
-                               "`tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ"
-                               "(`CH32RV_TONE_TIMER`)。V00x/X035/M030は空きが無く**PWMと共有**。"
-                               "PWMはTIM1〜5とTIM8〜10(V30x・V4x7・H41x。TIM1〜5の端子は奪わない、ビルドのみ)の既定ピン"
-                               "(tone/Servoが使うtimerは除く。remap先とCHxNは未対応)、"
-                               "V205・X305/X315は端子ごとのAF番号で出す(ビルドのみ確認)。timer管理はTIM1〜10"
-                               "(V30xのTIM8〜10、V4x7のTIM8)。入力捕捉・エンコーダ・ETR・DMAバーストは未実装"
-                               "(`pulseIn()`はsoftwareで数える)。CH32RVLogicCapture(TIM+DMAでポートを取り込む)は全系列、実機はH415/H416/H417のみ"),
+        "`tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V00x/X035/M030は空きが無く**PWMと共有**。PWMはTIM1〜5とTIM8〜10(V30x・V4x7・H41x。TIM1〜5の端子は奪わない、ビルドのみ)の既定ピン(tone/Servoが使うtimerは除く。remap先とCHxNは未対応)、V205・X305/X315は端子ごとのAF番号で出す(V205のPA0・X315のPA4でTIM2のPWMを確認)。timer管理はTIM1〜10(V30xのTIM8〜10、V4x7のTIM8)。入力捕捉・エンコーダ・ETR・DMAバーストは未実装(`pulseIn()`はsoftwareで数える)。CH32RVLogicCapture(TIM+DMAでポートを取り込む)は全系列、実機はH415/H416/H417・V205・X315"),
     "LPTIM": ("対象外", "-", "L103のみ"),
-    "DMA": ("対象外", "-", "Arduino APIには露出しない。CH32RVLogicCapture(全系列、実機はH41xのみ)とCH32RVHsAdc(H41x)が使う"),
+    "DMA": ("対象外", "-",
+        "Arduino APIには露出しない。CH32RVLogicCapture(全系列、実機はH41xのみ)、CH32RVHsAdc(H41x)、CH32RVAdcStream(ADC1の連続取り込み。全系列、V4x7はDMA1のチャネル12、H41xはDMAMUXでDMA1のチャネル1。実機はX035/V307/V103/V205/V407/X315/H417)が使う"),
     "IWDG": ("実装済", "`CH32RV.wdtEnable/wdtFeed`",
              "X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い"),
     "WWDG": ("未実装", "-", ""),
@@ -236,7 +267,42 @@ STATUS = {
     "RT-Thread": ("対象外", "-", "coreはbare metal。ADR-0006"),
     "HarmonyOS": ("対象外", "-", "coreはbare metal。ADR-0006"),
     "TencentOS": ("対象外", "-", "coreはbare metal。ADR-0006"),
+    "TIM 入力捕捉": ("未実装", "-",
+        "`pulseIn()`はsoftwareで数える"),
+    "TIM エンコーダ": ("未実装", "-",
+        ""),
+    "TIM 相補PWM・デッドタイム・ワンパルス": ("未実装", "-",
+        "TIM1/TIM8の相補出力(CHxN)、デッドタイム、ブレーキ、ワンパルス、出力比較"),
+    "ADC 連続・DMA・トリガ": ("一部実装", "CH32RVAdcStream(library)",
+        "自走の連続変換をDMAの2面バッファで受ける(1〜6本、全系列)。タイマー・外部のトリガ、注入変換は未実装"),
+    "ADC アナログウォッチドッグ": ("未実装", "-",
+        ""),
+    "ADC デュアル": ("未実装", "-",
+        "ADC1とADC2の同時・交互変換"),
+    "コンパレータ": ("未実装", "-",
+        "OPAの中の比較器(CMP)。割込み・タイマーのブレーキ・起床に使える"),
+    "PVD (電圧検出)": ("未実装", "-",
+        "電源電圧の低下の割込み・起床"),
+    "MCO (クロック出力)": ("未実装", "-",
+        "クロックを端子に出す。ベンチでクロックを測るのにも使える"),
+    "HSE (外部水晶)": ("未実装", "-",
+        "CPU ClockはHSIとHSI由来のPLLだけ。USB HS(V30x)とH417のUSB SSはライブラリが自分でHSEを使う"),
+    "PMP (メモリ保護)": ("未実装", "-",
+        ""),
+    "FPU": ("実装済", "float/double",
+        "単精度のFPU。`-march`のfでコンパイラが使う"),
+    "ICache": ("実装済", "-",
+        "起動時にEVTと同じCORECFGRを書く"),
+    "RAM実行": ("未実装", "-",
+        "crt0に.highcodeをRAMへ写す処理はあるが、スケッチから関数を置く印が無い"),
+    "AWU (自動起床)": ("未実装", "-",
+        "X035の低消費電力からの周期起床"),
+    "LVDS": ("未実装", "-",
+        "V205。用途は未確認(ch32-device-dataに問い合わせ中)"),
+    "オプションバイト": ("未実装", "-",
+        "読み出し保護、NRSTの端子をGPIOにする設定など。書き込みツール(ch32rv)の範囲とも重なる"),
 }
+
 
 
 # The cells. Each family gets a mark for *this core on that family*, not just
@@ -267,6 +333,10 @@ CELLS = {
     "RNG": {"V303/305/307/317": "◐", "V407/V467": "◐", "H415/H416/H417": "◐"},
     "HSADC (高速ADC)": {"H415/H416/H417": "◐"},
     "V5F (2つ目のコア)/HSEM/IPC": {"H415/H416/H417": "○"},
+    "ADC 連続・DMA・トリガ": {ALL: "◐"},
+    # ch32-device-data lists a DAC block for V103, but no V103 part has one (parts.csv; asked upstream).
+    "DAC": {"V103": ""},
+    "FPU": {"V303/305/307/317": "●", "X305/X315": "●", "H415/H416/H417": "●"},
     "SDI print (debug出力)": {ALL: "●"},
     "RTT (debug出力)": {ALL: "●"},
     "DMDATA mailbox (debug出力)": {ALL: "●"},
@@ -279,6 +349,10 @@ EXTRA_ROWS = [
     ("DMDATA mailbox (debug出力)", "debug"),
     ("DMSEQ console (debug出力)", "debug"),
     ("V5F (2つ目のコア)/HSEM/IPC", "basic"),
+    # Only in ch32-device-data's register blocks (no EVT example).
+    ("AWU (自動起床)", "basic"),
+    ("オプションバイト", "basic"),
+    ("LVDS", "comm"),
 ]
 
 
@@ -303,7 +377,14 @@ def scan(evt_root: pathlib.Path) -> dict:
             missing.append(str(exam))
             continue
         for entry in sorted(exam.iterdir()):
-            if not entry.is_dir() or entry.name in IGNORED:
+            if not entry.is_dir():
+                continue
+            for (where, prefixes), (row, _group) in SUBFEATURES:
+                if entry.name != where:
+                    continue
+                if any(sub.is_dir() and sub.name.startswith(prefixes) for sub in entry.iterdir()):
+                    present.setdefault(row, {})[family] = True
+            if entry.name in IGNORED:
                 continue
             known = PERIPHERALS.get(entry.name)
             if known is None:
@@ -316,10 +397,21 @@ def scan(evt_root: pathlib.Path) -> dict:
     return present
 
 
+def scan_blocks(tables: pathlib.Path, present: dict) -> None:
+    """Add what ch32-device-data's register blocks show (index/register_blocks.csv)."""
+    import csv
+    families = {f for f, _s in EVT_FAMILY}
+    with open(tables / "index" / "register_blocks.csv", newline="") as fh:
+        for r in csv.DictReader(fh):
+            row = BLOCK_ROWS.get(r["type"])
+            if row and r["family"] in families:
+                present.setdefault(row, {})[r["family"]] = True
+
+
 def render(present: dict) -> str:
     families = [f for f, _s in EVT_FAMILY]
     order = {}
-    for name, group in list(PERIPHERALS.values()) + EXTRA_ROWS:
+    for name, group in list(PERIPHERALS.values()) + [row for _k, row in SUBFEATURES] + EXTRA_ROWS:
         order.setdefault(group, [])
         if name not in order[group]:
             order[group].append(name)
@@ -330,12 +422,13 @@ def render(present: dict) -> str:
            "",
            "```",
            "uv run --no-project python tools/generate/peripheral_matrix.py \\",
-           "    --evt-root ~/dev_wch --out docs/peripheral-support.ja.md",
+           "    --evt-root ~/dev_wch --tables ~/dev_wch/ch32-device-data --out docs/peripheral-support.ja.md",
            "```", "",
            "列はfamily(EVTの単位)ごとで、セルは**このcoreがそのfamilyで使えるか**です。"
-           "siliconにあるかどうかは、EVTに**そのペリフェラルの例があるか**で判断しています"
-           "(WCHはペリフェラルごとに例を1つ置くので、これが事実上のペリフェラル一覧になります。"
-           "EVTは**参照のみ**で、このrepositoryには取り込みません)。",
+           "siliconにあるかどうかは、EVTに**そのペリフェラルの例があるか**(例の中の"
+           "サブフォルダ、たとえば`RCC/MCO`や`TIM/Encoder`も含む)と、"
+           "`ch32-device-data`の`index/register_blocks.csv`に**レジスタのブロックがあるか**の"
+           "どちらかで判断しています(EVTは**参照のみ**で、このrepositoryには取り込みません)。",
            "family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無いなど)は備考に書きます。",
            "",
            "「状態」と各セルはこのcoreの実装状況で、生成ではなく"
@@ -347,7 +440,7 @@ def render(present: dict) -> str:
            "| ◐ | 一部だけ使える(備考に記載) |",
            "| ○ | siliconにあるが未実装 |",
            "| − | siliconにあるがcoreでは提供しない |",
-           "| 空欄 | EVTに例が無い |", "",
+           "| 空欄 | EVTに例が無く、レジスタのブロックも無い |", "",
            "**空欄は「siliconに無い」とは限りません**。EVTに例が置かれていないだけの"
            "こともあります。実装する前に"
            "reference manualか`ch32-device-data`で裏を取ってください。", "",
@@ -385,9 +478,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--evt-root", type=pathlib.Path, required=True,
                     help="directory holding the per-family EVT trees")
+    ap.add_argument("--tables", type=pathlib.Path, required=True,
+                    help="a ch32-device-data checkout (index/register_blocks.csv)")
     ap.add_argument("--out", type=pathlib.Path, required=True)
     args = ap.parse_args()
-    text = render(scan(args.evt_root.expanduser()))
+    present = scan(args.evt_root.expanduser())
+    scan_blocks(args.tables.expanduser(), present)
+    text = render(present)
     args.out.write_text(text, encoding="utf-8")
     print(f"wrote: {args.out}")
     return 0
