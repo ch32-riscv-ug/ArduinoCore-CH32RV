@@ -151,6 +151,9 @@ bool CH32RVSystem::wdtEnable(uint32_t ms)
     CH32RV_IWDG_RLDR = (uint16_t)ticks;
     CH32RV_IWDG_CTLR = CH32RV_IWDG_KEY_FEED;
     CH32RV_IWDG_CTLR = CH32RV_IWDG_KEY_START;
+    _wdtOn = true;
+    _wdtField = field;
+    _wdtTicks = (uint16_t)ticks;
     return true;
 #else
     /* Either this family has no IWDG block at all (CH32M030), or its F_LSI
@@ -177,6 +180,7 @@ CH32RVClockSource CH32RVSystem::clockSource()
     return CH32RV_CLOCK_SOURCE_HSI;
 #endif
 }
+
 
 }  // namespace arduino
 

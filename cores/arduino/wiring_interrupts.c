@@ -19,6 +19,10 @@
 static voidFuncPtrParam ch32rv_exti_callback[CH32RV_EXTI_LINES];
 static void *ch32rv_exti_param[CH32RV_EXTI_LINES];
 
+/* Every line that has fired, for the low-power code: a pin wakeup is a line
+ * configured here, and the sleep loop asks whether it came (ch32rv_power.c). */
+volatile uint32_t ch32rv_exti_seen;
+
 /* A plain voidFuncPtr is stored in the same table by wrapping it: the wrapper
  * receives the function pointer itself as its parameter. */
 static void ch32rv_exti_call_plain(void *fn)
@@ -91,6 +95,18 @@ void attachInterrupt(pin_size_t pin, voidFuncPtr callback, PinStatus mode)
     }
 }
 
+/* A line that only wakes the chip: its edge as attachInterrupt() would set
+ * it, keeping any callback already attached to that pin. */
+void ch32rv_exti_configure(pin_size_t pin, PinStatus mode)
+{
+    pin = CH32RV_PIN_RESOLVE(pin);
+    const uint8_t bit = (uint8_t)CH32RV_PIN_BIT(pin);
+    if (CH32RV_PIN_PORT(pin) >= CH32RV_PORT_COUNT || bit >= CH32RV_EXTI_LINES) {
+        return;
+    }
+    ch32rv_exti_set(pin, mode, ch32rv_exti_callback[bit], ch32rv_exti_param[bit]);
+}
+
 void detachInterrupt(pin_size_t pin)
 {
     pin = CH32RV_PIN_RESOLVE(pin);
@@ -113,6 +129,7 @@ void detachInterrupt(pin_size_t pin)
 static void ch32rv_exti_dispatch(uint32_t lines)
 {
     uint32_t pending = CH32RV_EXTI_INTFR & lines;
+    ch32rv_exti_seen |= pending;
 
     while (pending) {
         const uint32_t bit = (uint32_t)__builtin_ctz(pending);

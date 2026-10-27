@@ -23,6 +23,27 @@
  *  - resetReason() latches on first read and clears the hardware flags, so
  *    the answer stays stable for the sketch's lifetime and the *next* boot
  *    reads its own cause instead of an accumulation of history.
+ *
+ * Sleep, with ESP32's meanings (esp_sleep_*) under these names:
+ *
+ *     CH32RV.enableTimerWakeup(5 * 1000000ULL);   // in 5 s
+ *     CH32RV.enablePinWakeup(PA1, LOW);           // or when PA1 reads LOW
+ *     CH32RV.lightSleep();                        // returns after waking
+ *     CH32RV.deepSleep();                         // starts again from setup()
+ *     if (CH32RV.wakeupCause() == CH32RV_WAKEUP_TIMER) { ... }
+ *
+ *  - lightSleep() keeps RAM and the pins' states and returns; deepSleep()
+ *    sleeps the same way and then restarts the chip (V00x and X035 have no
+ *    mode that wakes through a reset), so setup() runs again with RAM fresh.
+ *  - Nothing sleeps by itself: only these calls do (docs/peripheral-a-design
+ *    .ja.md 4.3). Serial sends what it holds before the clock stops.
+ *  - millis() keeps counting through a timer wake: the sleep is measured and
+ *    added. A pin wake part-way cannot be measured, and timeDomain() moves on.
+ *  - The watchdog looks paused while asleep: it cannot be stopped, so it is
+ *    stretched to its longest and fed between sleep periods - nothing else
+ *    runs - and put back as wdtEnable() set it on waking.
+ *  - V003, V00x (V002-V007, M007), X033 and X035 so far; elsewhere these
+ *    return CH32RV_SLEEP_UNSUPPORTED.
  */
 #pragma once
 
@@ -44,6 +65,19 @@ typedef enum {
     CH32RV_RESET_LOW_POWER,
 } CH32RVResetReason;
 
+typedef enum {
+    CH32RV_SLEEP_OK,                 /* slept and woke                      */
+    CH32RV_SLEEP_NO_WAKEUP_SOURCE,   /* nothing enabled that could wake it  */
+    CH32RV_SLEEP_UNSUPPORTED,        /* not on this family (yet)            */
+} CH32RVSleepResult;
+
+/* ESP32's esp_sleep_wakeup_cause_t, for the sources this core has. */
+typedef enum {
+    CH32RV_WAKEUP_UNDEFINED,         /* not woken from sleep (a reset)      */
+    CH32RV_WAKEUP_TIMER,
+    CH32RV_WAKEUP_PIN,
+} CH32RVWakeupCause;
+
 /* Where SYSCLK comes from. */
 typedef enum {
     CH32RV_CLOCK_SOURCE_HSI,     /* the internal oscillator               */
@@ -54,6 +88,7 @@ namespace arduino {
 
 class CH32RVSystem {
 public:
+
     /* Reset the whole chip through the PFIC. Does not return. */
     [[noreturn]] void restart();
 
@@ -76,6 +111,25 @@ public:
      * which case the same CPU Clock runs off HSI (F_CPU is unchanged, its
      * accuracy is HSI's). */
     CH32RVClockSource clockSource();
+
+    /* Wake after `us` microseconds (0: no timer). False where the family
+     * cannot sleep yet. */
+    bool enableTimerWakeup(uint64_t us);
+    /* Wake when `pin` reads `level` (HIGH or LOW); up to four pins, each its
+     * own EXTI line (the pin's bit). A pin already at its level makes the
+     * next sleep return at once. attachInterrupt() on the same pin keeps
+     * working. */
+    bool enablePinWakeup(int pin, int level);
+    void disableWakeup();
+    CH32RVSleepResult lightSleep();
+    /* Returns only when it cannot sleep: otherwise the chip restarts. */
+    CH32RVSleepResult deepSleep();
+    /* What ended the last sleep - also across deepSleep()'s restart. */
+    CH32RVWakeupCause wakeupCause();
+    /* Moves on whenever millis() missed time it could not measure (a pin
+     * woke part-way through a sleep). Compare it before and after to know
+     * whether a deadline across the sleep can be trusted. */
+    uint32_t timeDomain();
 
     /* arduino-esp32's ESP.* names for the same facts. */
     /* The heap: the RAM between the end of .bss and the reserved stack. */
@@ -123,6 +177,10 @@ public:
 private:
     uint32_t _latched = 0;     /* RSTSCKR flags, once read */
     bool _read = false;
+    /* wdtEnable()'s setting, put back after a sleep stretched it. */
+    bool _wdtOn = false;
+    uint8_t _wdtField = 0;
+    uint16_t _wdtTicks = 0;
 };
 
 }  // namespace arduino

@@ -60,6 +60,31 @@ board (fqbn) only (`board:`, `docs/examples-build-rules.ja.md`).
 
 Both were run on the boards (2026-10-14).
 
+## Sleep (`lightSleep()` / `deepSleep()`)
+
+ESP32's `esp_sleep_*` meanings, under `CH32RV` names.
+
+```cpp
+CH32RV.enableTimerWakeup(5 * 1000000ULL);  // wake in 5 s
+CH32RV.enablePinWakeup(PA1, LOW);          // or when PA1 reads LOW (set the pin's mode yourself)
+CH32RV.lightSleep();                       // returns on waking; RAM and pin states kept
+CH32RV.deepSleep();                        // starts again from setup() (a software restart)
+CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _UNDEFINED
+CH32RV.timeDomain();                       // moves on whenever unmeasured time was skipped
+```
+
+- **Supported families.** V003, V00x and X033/X035 so far: the families woken by the AWU. Elsewhere the calls return `CH32RV_SLEEP_UNSUPPORTED`.
+- **Nothing sleeps by itself.** Only these calls do. `Serial` finishes sending first.
+- **`millis()` counts the sleep.** The AWU measures the time asleep, and the core adds it.
+  - A pin wake part-way through cannot be measured. It adds nothing and moves `timeDomain()` on instead.
+  - Accuracy (2026-10-28, one chip of each): V003 matched the wall clock within 0.1 %, X035 slept 3 % long, and V006 slept 10 % short. On those two the AWU runs at a different rate asleep than when it is measured awake.
+- **The watchdog looks paused while asleep.** The IWDG cannot be stopped, so the core works around it:
+  - just before sleeping it stretches the IWDG to its longest;
+  - it wakes every half of that to feed it, and nothing else runs;
+  - on waking it puts back the `wdtEnable()` setting.
+- **`deepSleep()`** sleeps like `lightSleep()` and then restarts, because these families have no sleep that wakes through a reset. `wakeupCause()` reads the cause across the restart.
+- **Size.** 0 B unless used. On V003, timer sleep adds about 1.4 KB, and pin wakeups about 0.65 KB more.
+
 ## The escape hatch
 
 ```cpp

@@ -395,6 +395,23 @@ unsigned long millis(void)
     return ch32rv_millis_counter;
 }
 
+/* For the low-power code (ch32rv_power.c): SysTick, and so millis(), stops
+ * while the chip sleeps deeply; what the wake source measured is added back.
+ * And the clock is put back at once after waking, not at the next tick. */
+void ch32rv_millis_advance(uint32_t ms)
+{
+    const uint32_t irq = ch32rv_irq_save();
+    ch32rv_millis_counter += ms;
+    ch32rv_irq_restore(irq);
+}
+
+void ch32rv_clock_check(void)
+{
+    if (!ch32rv_clock_is_ours()) {
+        SystemInit();
+    }
+}
+
 /* ticks -> microseconds without a division. QingKe V2 (CH32V003, rv32ec) has
  * neither divide nor multiply in hardware, and the libgcc division in the
  * old `ticks / CH32RV_TICKS_PER_US` made every micros() call cost several

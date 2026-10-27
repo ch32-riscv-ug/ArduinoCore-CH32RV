@@ -823,6 +823,18 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
 #endif
 }
 
+/* Before a deep sleep (ch32rv_power.c, by a weak reference: linked only with
+ * the low-power code): every open port sends what it holds, or it would stop
+ * mid-byte when the clock does. */
+extern "C" void ch32rv_serial_sleep_prepare(void)
+{
+    for (uint8_t i = 0; i < USART_COUNT; i++) {
+        if (owner[i]) {
+            owner[i]->flush();
+        }
+    }
+}
+
 /* ------------------------------------------------------- serialEvent() */
 /* Arduino calls serialEvent() after every loop() when the port has data. main()
  * holds only a weak reference to the dispatcher, so a sketch that never touches

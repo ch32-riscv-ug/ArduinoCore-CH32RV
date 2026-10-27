@@ -100,6 +100,16 @@ SECTIONS
         PROVIDE( _edata = . );
     } >RAM AT>FLASH
 
+    /* Kept through a reset that leaves RAM powered - a software or watchdog
+     * reset, the restart deepSleep() ends with: startup neither copies nor
+     * clears it. After a power-on it holds whatever the RAM held. */
+    .noinit (NOLOAD) :
+    {
+        . = ALIGN(4);
+        *(.noinit*)
+        . = ALIGN(4);
+    } >RAM
+
     .bss :
     {
         . = ALIGN(4);

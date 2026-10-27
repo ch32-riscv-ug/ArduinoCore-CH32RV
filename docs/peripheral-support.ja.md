@@ -38,7 +38,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | PFIC (割込みコントローラ) | 実装済 | - | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 優先度は全てreset既定のまま |
 | SysTick | 実装済 | millis/micros/delay | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |  |
 | RCC (クロック) | 一部実装 | F_CPU | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、L103/M103 8 MHz、M030 72 MHz・V205 160 MHz(実機で確認してEVTの既定に。L103/M103のPLLの項目は未確認)。X315は20 MHz(240 MHzも選べる。HSIからUSBHS PLL、EVTの手順の順に書く。X315MCU6で実機確認)。メニューの無いもの: X305 20 MHz、H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の 400 MHz、V5F は 400 MHz で停止のまま)。HSEは未実装(USB HSとH417のUSB SSのみHSEを使う) |
-| PWR (低消費電力) | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | sleep APIは提供していない |
+| PWR (低消費電力) | 一部実装 | CH32RV.lightSleep / deepSleep | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | V003・V00x・X033/X035のみ(AWUで起こす系列)。RAMを残す深い休止(V00x・X035のスタンバイ)、タイマー(AWU)と端子(EXTI)で起床、millis()は測った分を足す、WDTは休止中は止まって見える(延ばして間で餌)、deepSleep()は休止のあと再起動。RTCの系列(ストップ・スタンバイ)は未実装。設計と実測はdocs/peripheral-a-design.ja.md 5.1 |
 | FLASH (自己書き換え) | 一部実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ◐ | 公開APIとEEPROM emulationは無い。H415/H416/H417はコア内部の`ch32rv_flash_erase/write`(DFU runtimeが使う)。他は未実装。実機の数字はdocs/flash-raw.ja.md、保存の案はdocs/persistence-spec.ja.md(下書き) |
 | USART | 実装済 | Serial | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 全インスタンス(V205/V30x/V407/V467のUSART6〜10も、Serial9まで)。V205・X305/X315は端子ごとのAF番号を書く(V205RCT6・X315MCU6で既定のTXの波形を確認)。X033/X035は送信をポーリングで行う(割込み送信の不具合の回避) |
 | I2C | 実装済 | Wire | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | controllerはpolling、peripheral(slave)は割込み駆動。V205・X305/X315は端子ごとのAF番号を書く(未確認。プルアップの配線が要る) |
@@ -65,7 +65,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | ICache | 実装済 | - |  |  |  |  |  |  |  |  |  |  |  | ● | 起動時にEVTと同じCORECFGRを書く |
 | V5F (2つ目のコア)/HSEM/IPC | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | H417。起動、共有メモリ、HSEM、原子操作、GPIOの読み取りを実機で測った(docs/h417-multicore.ja.md)。設計は未 |
 | RAM実行 | 未実装 | - |  |  |  |  | ○ |  |  | ○ |  | ○ |  |  | crt0に.highcodeをRAMへ写す処理はあるが、スケッチから関数を置く印が無い |
-| AWU (自動起床) | 未実装 | - |  |  |  |  |  |  |  |  |  | ○ |  |  | X035の低消費電力からの周期起床 |
+| AWU (自動起床) | 実装済 | CH32RV.enableTimerWakeup |  |  |  |  |  |  |  |  |  | ● |  |  | 休止からのタイマー起床に使う(V00xはPWRの中、X035は別のブロック)。V00xのAWUはLSIで、起動後最初の休止で速さを測る |
 | オプションバイト | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 読み出し保護、NRSTの端子をGPIOにする設定など。書き込みツール(ch32rv)の範囲とも重なる |
 
 ## アナログ・タッチ
