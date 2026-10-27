@@ -94,7 +94,8 @@ OEP の常設とは別の、小さな組にします。
 | Ethernet | スイッチと DHCP のある LAN。相手の PC |
 | PD | PD 電源（ソース）と PD シンク。VBUS の電圧計 |
 | ADC / DAC | 安定した電圧源と DMM（または OEP のアナログ取り込みで代える） |
-| I2C / SPI の相手 | OEP のファームが I2C target / SPI slave を持つか確かめる。無ければ ESP32 などの peer |
+| I2C / SPI の相手（DUT が主） | OEP が受け持つ。P4 / P4X は `oep.fixture.i2c-target` と `oep.fixture.spi-target`、RP2350 / RP2040 は I2C の target だけ（2026-10-28、`oep dump --port` で確認） |
+| I2C / SPI の相手（DUT が従） | OEP に I2C / SPI の controller は無い。Wire のスレーブと CH32RVSPISlave の試験には、主になる相手が要る（ESP32 などの peer、または同じ P4 の別の口の DUT を主にする） |
 
 ## 8. 決めること
 
@@ -102,7 +103,7 @@ OEP の常設とは別の、小さな組にします。
 2. **P4 の分け方**は配線をしながら決める（1 台に 2 台まで）。
 3. **LinkE 2.12 を残すか**（上げてしまうと版の違いを確かめる手段が無くなる）。
 4. **評価ボードの選定**: 全端子が出ているか、USB・RJ45・CC が出ているか、電源を外から切れるか。
-5. **I2C / SPI の相手**を OEP が受け持てるか。
+5. **DUT が従になる I2C / SPI の相手**（Wire のスレーブ、CH32RVSPISlave）。OEP には controller が無いので、peer を置くか、別の DUT を主にするか。
 6. **コアの型番の扱い**: V208CBU6 には Ethernet が無いが、コアは V208 の全型番で Network をビルドする（lwipopts.h が系列で判定）。型番で断るように直すかを決める。
 
 ---
