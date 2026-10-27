@@ -43,7 +43,9 @@ void loop() {
 ## Examples
 
 - **Sweep** - end to end and back, the classic.
+- **ServoPulseControl** - pulse width or angle from the serial console, the pulse range, detach and attach.
 
 ## Detailed example guides
 
 - [Sweep](examples/Sweep/README.md): connections, operation, API use and adaptation notes.
+- [ServoPulseControl](examples/ServoPulseControl/README.md): commands, the pulse range and what detach does.
