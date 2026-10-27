@@ -42,6 +42,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [ShiftOut](ShiftOut/README.ja.md) | シフトレジスタへ1 byteずつ送り、出力を順番に切り替えます。 |
 | [Timing](Timing/README.ja.md) | `millis()`・`micros()` と、桁あふれをまたげる時刻の引き算を示します。 |
 | [ToneMelody](ToneMelody/README.ja.md) | 周波数と長さを指定して受動ブザーで音階を鳴らします。 |
+| [TouchRead](TouchRead/README.ja.md) | `touchRead()` で TouchKey のパッドを読み、指が触れたら知らせます（V00x・X035・V20x・V30x）。 |
 | [TimerResource](TimerResource/README.ja.md) | タイマーを借り、基準周期と更新割り込みを設定するライブラリ実装者向けの例です。 |
 | [SystemInfo](SystemInfo/README.ja.md) | ビルド対象・メモリ・利用可能なチップ固有情報を表示します。 |
 | [ResetReason](ResetReason/README.ja.md) | リセット理由と、操作によるソフトウェア再起動を比較します。 |

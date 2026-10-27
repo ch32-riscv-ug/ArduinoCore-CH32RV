@@ -166,6 +166,15 @@ void analogWriteResolution(int bits);
  * no sensor (V00x, X033/X035, X305/X315, M030). */
 int analogReadVref(void);
 float analogReadTemp(void);
+/* arduino-esp32's: the TouchKey's raw count on an analog pin. It moves with
+ * the pin's capacitance, so a finger on a pad changes it; an unconnected pad
+ * reads near mid-scale. 0 where the family or the pin has no TouchKey (so far
+ * V005-V007 / M007, X033 / X035, V20x, V30x). It borrows ADC1 for one
+ * conversion, like analogRead(). touchSetCycles(): the charging time, in ADC
+ * clocks (0: the family's default); a bigger pad wants a longer one. `sleep`
+ * is ESP32's and unused here. */
+uint16_t touchRead(uint8_t pin);
+void touchSetCycles(uint16_t measure, uint16_t sleep);
 /* The supply (VDDA) in mV, measured against Vrefint; 0 where unknown.
  * CH32RV.getVddMillivolts() is the same thing. */
 uint32_t ch32rv_adc_vdd_millivolts(void);

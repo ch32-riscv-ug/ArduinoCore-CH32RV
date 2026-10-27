@@ -1181,6 +1181,11 @@ ESP32 の API の使い勝手は参考になるが、同じ保存エンジン、
   （2026-10-28）。日英README・生成profile（`requires: ETH_MAC` で V307）・日英一覧への導線をそろえた。
   どれもベンチの V307 で、PC 側から確かめた（nc・Python のソケット・curl・mDNS の問い合わせ・PC の時計との比較）。
   切断、DNS の失敗、接続の拒否、長すぎる UDP、存在しないパスも確認済み。残り: TLS（`NetworkClientSecure`）、USB NCM の例。
+- [ ] ベンチの CH32X035C8T6 で `analogRead()` が端子（A0）でも内部の基準電圧でも 0 近く（3〜9）を返す（2026-10-28、18c97fee でも同じなので以前から）。
+  `touchRead()` を 1 回挟むと値が出るが、A0 と Vref が同じ値（約 800）になり、正しい読みとは思えない。ADC のレジスタは前後で同じ。
+  CTLR2 に X035 には無い RSTCAL / CAL のビットを書いている点、基板の VDDA、AdcStream（X035 で動いた記録あり）との初期化の違いを調べる。
+- [ ] V103R8T6（d39e、CH549 の Link）が休止の試験の最初の休止から起きず、デバッガも応答しない（2026-10-28）。Link では電源を切れず、
+  ハブの口の電源でも戻らない。手で電源を入れ直してから、RTC（LSI の測定・アラーム）を調べる。それまで V103 は RTC の系列から外している。
 - [ ] `#include <Network.h>` を `#include <NetworkClientSecure.h>` より先に書くとリンクに失敗する（`tcp_close` などが未定義。
   2026-10-28、V307。逆の順なら通る）。ESP32 のスケッチによくある順なので直す。両方の `dot_a_linkage` による .a の並びが疑わしい。
   そのとき測った TLS の大きさ: 同じ GET のスケッチで Flash +105.3 KB、静的 RAM +2.0 KB（ヒープは docs/network-stack.ja.md）。

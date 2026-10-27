@@ -38,6 +38,7 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [ShiftOut](ShiftOut/README.md) | Send bytes to a shift register and activate its outputs in sequence. |
 | [Timing](Timing/README.md) | Demonstrate `millis()`, `micros()` and elapsed-time subtraction across wraparound. |
 | [ToneMelody](ToneMelody/README.md) | Play a scale on a passive buzzer by specifying frequency and duration. |
+| [TouchRead](TouchRead/README.md) | Read a TouchKey pad with `touchRead()` and report a touch (V00x, X035, V20x, V30x). |
 | [TimerResource](TimerResource/README.md) | An advanced timer-ownership example for library authors: acquire a timer, set its base and attach an update ISR. |
 | [SystemInfo](SystemInfo/README.md) | Print the build target, memory information and optional chip identity. |
 | [ResetReason](ResetReason/README.md) | Compare the current reset reason with a command-triggered software reset. |

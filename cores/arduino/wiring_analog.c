@@ -281,6 +281,76 @@ float analogReadTemp(void)
 #endif
 }
 
+/* TouchKey on ADC1 (the EVTs' TOUCHKEY examples): CTLR1 bit 24 turns the
+ * channel's conversion into a charge (IDATAR1, 0x3C: the charging time, in
+ * ADC clocks) and a discharge (RDATAR written: the discharging time; read:
+ * the count). V20x / V30x add bit 26, the buffer. Measured on the bench
+ * 2026-10-28 (X035, V006, V203, V307): only with the shortest sample time
+ * and EXTTRIG off for the conversion - analogRead()'s longest sample time
+ * read 4095 or 0 - and the count grows with the charging time, so the
+ * default puts an unconnected pad near mid-scale, leaving room both ways.
+ * L103 (same registers, EVT's sequence) read 0 or 4095 whatever the timing,
+ * and V205 / H41x have a TKEY block of their own: not here yet. */
+#if defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
+    defined(CH32RV_SERIES_CH32M007)
+#define CH32RV_TKEY_CTLR1 (1u << 24)
+#define CH32RV_TKEY_CHARGE 0x0Cu                   /* V006K8U6: ~2000 */
+#elif defined(CH32RV_SERIES_CH32X033) || defined(CH32RV_SERIES_CH32X035)
+#define CH32RV_TKEY_CTLR1 (1u << 24)
+#define CH32RV_TKEY_CHARGE 0x30u                   /* X035C8T6: ~1900 */
+#elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_SERIES_CH32V303) || \
+    defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
+#define CH32RV_TKEY_CTLR1 ((1u << 26) | (1u << 24))
+#define CH32RV_TKEY_CHARGE 0x04u                   /* V203C8T6 / V307VCT6: 2000-2800 */
+#endif
+#define CH32RV_TKEY_DISCHARGE 0x8u
+
+#ifdef CH32RV_TKEY_CTLR1
+static uint16_t ch32rv_tkey_charge = CH32RV_TKEY_CHARGE;
+#endif
+
+void touchSetCycles(uint16_t measure, uint16_t sleep)
+{
+    (void)sleep;
+#ifdef CH32RV_TKEY_CTLR1
+    ch32rv_tkey_charge = measure ? measure : CH32RV_TKEY_CHARGE;
+#else
+    (void)measure;
+#endif
+}
+
+uint16_t touchRead(uint8_t pin)
+{
+#if defined(CH32RV_TKEY_CTLR1) && defined(NUM_ANALOG_INPUTS)
+    uint8_t index = 0;
+    const uint32_t channel = ch32rv_adc_prepare((pin_size_t)pin, &index);
+    if (channel == NOT_AN_ANALOG_PIN || index != 0u || channel > 15u) {
+        return 0;
+    }
+    const uint32_t base = CH32RV_ADC_BASE(0);
+    volatile uint32_t *samptr = channel < 10u ? &CH32RV_ADC_SAMPTR2_AT(base) : &CH32RV_ADC_SAMPTR1_AT(base);
+    const uint32_t shift = (channel < 10u ? channel : channel - 10u) * 3u;
+    const uint32_t saved_smp = *samptr, saved_ctlr2 = CH32RV_ADC_CTLR2_AT(base);
+    *samptr = saved_smp & ~(7u << shift);
+    CH32RV_ADC_CTLR2_AT(base) = saved_ctlr2 & ~CH32RV_ADC_CTLR2_EXTTRIG;
+    CH32RV_ADC_CTLR1_AT(base) |= CH32RV_TKEY_CTLR1;
+    CH32RV_ADC_RSQR1_AT(base) = 0;
+    CH32RV_ADC_RSQR3_AT(base) = channel;
+    CH32RV_REG32(base + 0x3Cu) = ch32rv_tkey_charge;
+    CH32RV_ADC_RDATAR_AT(base) = CH32RV_TKEY_DISCHARGE;   /* starts it */
+    while ((CH32RV_ADC_STATR_AT(base) & CH32RV_ADC_STATR_EOC) == 0u) {
+    }
+    const uint16_t count = (uint16_t)CH32RV_ADC_RDATAR_AT(base);
+    CH32RV_ADC_CTLR1_AT(base) &= ~CH32RV_TKEY_CTLR1;      /* analogRead() again */
+    CH32RV_ADC_CTLR2_AT(base) = saved_ctlr2;
+    *samptr = saved_smp;
+    return count;
+#else
+    (void)pin;
+    return 0;
+#endif
+}
+
 int analogRead(pin_size_t pin)
 {
 #ifdef NUM_ANALOG_INPUTS
