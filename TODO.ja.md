@@ -1538,7 +1538,9 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   （docs/upload-routes.ja.md）。ベンチの L103 は戻してあり、NRST は RP2350 の GP2（`l103.nrst`）。V407 / V467 のメニューは
   2026-10-27 に入れた（200 / 120 / 60 / 20 MHz、既定 200 MHz。device-data 53b3b2f の CFGR2 の SYSPLL と Flash の SCKMOD を読む。
   V407WEU6 で millis() と接続を確認、200 MHz で `--case eth` が通る。350 MHz（HCLK 175）は micros() の逆数が 32 ビットで
-  正確にならないので外した）。残り: X315 / H41x のメニュー（PLL の源と FPRE の分け方が別）、HSE、各項目の実機確認（UART の速度・ADC・USB）。
+  正確にならないので外した）。X315 は 2026-10-28 に 20（既定）/ 240 MHz を入れた（device-data ccf49f5 の clock_init.csv にある設定関数の手順を、
+  EVT の順に CH32RV_CLOCK_SEQUENCE() として書く。HCLK がコアの半分の設定と 312.5 MHz は外した。ビルドのみ、ベンチに X315 が無い）。
+  残り: H41x のメニュー、X305、HSE、各項目の実機確認（UART の速度・ADC・USB）。
   2026-10-22: M030 の既定 72 MHz が起動で止まった（device-data の行の SYSCLK=72 は HCLK で、PLL は 144 MHz 固定。生成器が
   hpre を読んでいなかった）。e3ebb34 で修正し、表は device-data 6fcf406 で直った。M030G8R7 で 72 / 48 / 24 / 8 MHz の
   UART 出力を ch32rv セッションが確認。ほかの系列の項目は実機未確認のまま。

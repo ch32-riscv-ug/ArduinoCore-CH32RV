@@ -26,3 +26,88 @@
     CH32RV_REG32(0x40022000u) |= 0x00000800u; \
     CH32RV_REG32(0x40022010u) |= 0x00008080u; \
 } while (0)
+
+/* SetSYSCLK_240M_CoreCLK_240M_HCLK_120M_HSI, in EVT's order: from HSI with the reset above done. */
+#if CH32RV_CLOCK_SEQ == 1
+#define CH32RV_CLOCK_SEQUENCE() do { \
+    CH32RV_REG32(0x40021004u) |= 0x00000000u; \
+    CH32RV_REG32(0x40021004u) |= 0x00000100u; \
+    CH32RV_REG32(0x4002102cu) |= 0x00000101u; \
+    CH32RV_REG32(0x40021000u) |= 0x01000000u; \
+    while ((CH32RV_REG32(0x40021000u) & 0x02000000u) == 0x00000000u) {} \
+    CH32RV_REG32(0x40021004u) |= 0x00020000u; \
+    CH32RV_REG32(0x40022000u) &= 0xfffffffcu; \
+    CH32RV_REG32(0x40022000u) |= 0x00000001u; \
+    CH32RV_REG32(0x40021000u) &= 0x7fffffffu; \
+    CH32RV_REG32(0x40021004u) |= 0x00000002u; \
+    while ((CH32RV_REG32(0x40021004u) & 0x0000000cu) != 0x00000008u) {} \
+} while (0)
+#endif
+
+/* SetSYSCLK_240M_CoreCLK_240M_HCLK_240M_HSI, in EVT's order: from HSI with the reset above done. */
+#if CH32RV_CLOCK_SEQ == 2
+#define CH32RV_CLOCK_SEQUENCE() do { \
+    CH32RV_REG32(0x40021004u) |= 0x00000000u; \
+    CH32RV_REG32(0x40021004u) |= 0x00000000u; \
+    CH32RV_REG32(0x4002102cu) |= 0x00000101u; \
+    CH32RV_REG32(0x40021000u) |= 0x01000000u; \
+    while ((CH32RV_REG32(0x40021000u) & 0x02000000u) == 0x00000000u) {} \
+    CH32RV_REG32(0x40021004u) |= 0x00020000u; \
+    CH32RV_REG32(0x40022000u) &= 0xfffffffcu; \
+    CH32RV_REG32(0x40022000u) |= 0x00000002u; \
+    CH32RV_REG32(0x40021000u) &= 0x7fffffffu; \
+    CH32RV_REG32(0x40021004u) |= 0x00000002u; \
+    while ((CH32RV_REG32(0x40021004u) & 0x0000000cu) != 0x00000008u) {} \
+} while (0)
+#endif
+
+/* SetSYSCLK_312_5M_CoreCLK_312_5M_HCLK_312_5M_HSI, in EVT's order: from HSI with the reset above done. */
+#if CH32RV_CLOCK_SEQ == 3
+#define CH32RV_CLOCK_SEQUENCE() do { \
+    CH32RV_REG32(0x40021004u) |= 0x00000000u; \
+    CH32RV_REG32(0x40021004u) |= 0x00000000u; \
+    CH32RV_REG32(0x4002102cu) |= 0x00000200u; \
+    CH32RV_REG32(0x40021000u) |= 0x04000000u; \
+    while ((CH32RV_REG32(0x40021000u) & 0x08000000u) == 0x00000000u) {} \
+    CH32RV_REG32(0x40021004u) |= 0x00420000u; \
+    CH32RV_REG32(0x40022000u) &= 0xfffffffcu; \
+    CH32RV_REG32(0x40022000u) |= 0x00000003u; \
+    CH32RV_REG32(0x40021000u) &= 0x7fffffffu; \
+    CH32RV_REG32(0x40021004u) |= 0x00000002u; \
+    while ((CH32RV_REG32(0x40021004u) & 0x0000000cu) != 0x00000008u) {} \
+} while (0)
+#endif
+
+/* SetSYSCLK_480M_CoreCLK_480M_HCLK_240M_HSI, in EVT's order: from HSI with the reset above done. */
+#if CH32RV_CLOCK_SEQ == 4
+#define CH32RV_CLOCK_SEQUENCE() do { \
+    CH32RV_REG32(0x40021004u) |= 0x00000000u; \
+    CH32RV_REG32(0x40021004u) |= 0x00000100u; \
+    CH32RV_REG32(0x4002102cu) |= 0x00000101u; \
+    CH32RV_REG32(0x40021000u) |= 0x01000000u; \
+    while ((CH32RV_REG32(0x40021000u) & 0x02000000u) == 0x00000000u) {} \
+    CH32RV_REG32(0x40021004u) |= 0x30600000u; \
+    CH32RV_REG32(0x40022000u) &= 0xfffffffcu; \
+    CH32RV_REG32(0x40022000u) |= 0x00000002u; \
+    CH32RV_REG32(0x40021000u) &= 0x7fffffffu; \
+    CH32RV_REG32(0x40021004u) |= 0x00000002u; \
+    while ((CH32RV_REG32(0x40021004u) & 0x0000000cu) != 0x00000008u) {} \
+} while (0)
+#endif
+
+/* SetSYSCLK_625M_CoreCLK_625M_HCLK_312_5M_HSI, in EVT's order: from HSI with the reset above done. */
+#if CH32RV_CLOCK_SEQ == 5
+#define CH32RV_CLOCK_SEQUENCE() do { \
+    CH32RV_REG32(0x40021004u) |= 0x00000000u; \
+    CH32RV_REG32(0x40021004u) |= 0x00000100u; \
+    CH32RV_REG32(0x4002102cu) |= 0x00000200u; \
+    CH32RV_REG32(0x40021000u) |= 0x04000000u; \
+    while ((CH32RV_REG32(0x40021000u) & 0x08000000u) == 0x00000000u) {} \
+    CH32RV_REG32(0x40021004u) |= 0x20600000u; \
+    CH32RV_REG32(0x40022000u) &= 0xfffffffcu; \
+    CH32RV_REG32(0x40022000u) |= 0x00000003u; \
+    CH32RV_REG32(0x40021000u) &= 0x7fffffffu; \
+    CH32RV_REG32(0x40021004u) |= 0x00000002u; \
+    while ((CH32RV_REG32(0x40021004u) & 0x0000000cu) != 0x00000008u) {} \
+} while (0)
+#endif

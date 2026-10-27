@@ -56,8 +56,8 @@ import sys
     # wait-state field: EVT never writes ACTLR on CH32V407, and CH32X315's
     # ACTLR holds FLASH_ACTLR_SCK_CFG, a flash-clock divider. Both used to be
     # written with a 1 of no traceable origin; check_family_facts rejects that
-    # now. Raising CH32X315 past its default needs the divider, which is a
-    # separate mechanism not implemented by this generator.
+    # now. Raising CH32X315 past its default sets the divider in the setter's
+    # own steps (sequenced_clock).
     # The CH32V006 family is rv32ec_zmmul, not rv32emc. CH32V00XRM p.1: "the
     # 'm' extension in RV32EmC implements the multiplication subset of the M
     # extension" - the V2C multiplies in hardware but cannot divide. Declaring
@@ -106,7 +106,12 @@ FAMILY = {
     "CH32X315": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="20000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 "
                              "-DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01",
-                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=0,
+                     # The PLL comes from the USBHS / USBSS PLL (CFGR2, CTLR,
+                     # CFGR0) and the flash clock divider moves with it: the
+                     # setter's own steps are written out in EVT's order
+                     # (clock_init.csv), not resolved into fields.
+                     sequenced_clock=True),
     # CH32V103's table is a jump table and its startup never writes csr 0x804.
     # MPP = 3 (0x1888), not EVT's 0x88: sketches run in M mode on this part.
     # Its QingKe V3A has U mode but no gintenr (csr 0x800 reads 0 and ignores
@@ -424,6 +429,12 @@ CLOCK_MENU = {
     # with the clock, debug attach; Ethernet at 200 MHz).
     **{s: [("200", 400, 200, "200MHz"), ("120", 240, 120, "120MHz"), ("60", 120, 60, "60MHz"),
            ("20", 20, 20, "20MHz (HSI, lowest power)")] for s in ("CH32V407", "CH32V467")},
+    # X315: HSI into the USBHS PLL (480 MHz) over 2, HCLK = the core's clock
+    # (EVT SetSYSCLK_240M_CoreCLK_240M_HCLK_240M_HSI). The settings whose HCLK
+    # is half the core's are not offered (this core takes F_CPU as every bus
+    # clock), nor 312.5 MHz (micros()'s reciprocal, as V407's 175). Not run
+    # yet: the bench has no X315, so 20 MHz stays the default.
+    "CH32X315": [("20", 20, 20, "20MHz (HSI, lowest power)"), ("240", 240, 240, "240MHz (not checked)")],
     "CH32M030": [("72", 144, 72, "72MHz (USB)"), ("48", 144, 48, "48MHz (USB)"), ("24", 144, 24, "24MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
 }
@@ -1462,6 +1473,17 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
     if not row["pll"] and true_sysclk != hsi_hz:
         raise SystemExit(f"ERROR: {family}: {row['config']} has no PLL but SYSCLK={true_sysclk} "
                          f"is not the oscillator ({hsi_hz})")
+    if FAMILY[family].get("sequenced_clock") and row["pll"]:
+        # The setter's steps do the whole switch (gen_clock_init emits them as
+        # CH32RV_CLOCK_SEQUENCE() under this number). The core is clocked by
+        # CoreCLK, the buses by HCLK, and this core has one F_CPU for both.
+        core = int(domains.get("CoreCLK", hclk))
+        if core != hclk:
+            raise SystemExit(f"ERROR: {family}: {row['config']} runs the core at {core} Hz and HCLK at "
+                             f"{hclk} Hz; this core needs them equal")
+        return dict(sysclk=true_sysclk, hclk=hclk, pll_mask=0, pll_value=0, exten_addr=0, exten_bits=0,
+                    latency=None, config=row["config"],
+                    sequence=sequenced_configs(family, configs).index(row["config"]) + 1)
 
     # The value is the OR of the named constants; the mask to clear first is
     # the OR of the fields they sit in, found by longest-prefix against the
@@ -1599,43 +1621,39 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
 CLOCK_INIT_ACTIONS = ("set", "clear", "write", "poll")
 
 
-def load_clock_init(tables: pathlib.Path) -> dict:
-    """family -> the SystemInit steps, in order."""
+def sequenced_configs(family: str, configs: list) -> list:
+    """The HSI settings with a PLL of a sequenced_clock family, in a fixed
+    order: CH32RV_CLOCK_SEQ is the position in this list plus one."""
+    return sorted(r["config"] for r in configs
+                  if r["family"] == family and r["source"] == "HSI" and r["pll"])
+
+
+def load_clock_init(tables: pathlib.Path) -> tuple:
+    """(family -> the SystemInit steps, (family, function) -> every
+    function's steps), in order."""
     out: dict = {}
+    functions: dict = {}
     for r in read_table(tables, "clock_init.csv",
                         ("family", "function", "step", "action", "address",
                          "value", "condition")):
+        functions.setdefault((r["family"], r["function"]), []).append(r)
         if r["function"] == "SystemInit":
             out.setdefault(r["family"], []).append(r)
-    for steps in out.values():
+    for steps in list(out.values()) + list(functions.values()):
         steps.sort(key=lambda r: int(r["step"]))
-    return out
+    return out, functions
 
 
-def gen_clock_init(family: str, steps: list, symbols: dict, flash: tuple = ([], [])) -> str:
-    """The reset sequence for one family, as a macro SystemInit expands, and
-    the FLASH writes around the flash clock divider where the family makes
-    them (CH32RV_CLOCK_FLASH_UNLOCK / _RELOCK)."""
-    out = [
-        "/* DO NOT EDIT - machine generated by tools/generate/generate.py",
-        f" * {SOURCE_LINE}",
-        " *",
-        f" * {family}: what EVT's SystemInit writes before configuring the",
-        " * clock. Order matters, and so does doing it at all - PLLSRC and",
-        " * PLLMULL cannot be changed while PLLON is set, so a PLL left running",
-        " * by a previous program would otherwise keep its configuration.",
-        " */",
-        "#pragma once",
-        "",
-        "#define CH32RV_CLOCK_INIT_RESET() do { \\",
-    ]
-    skipped = []
+def _clock_steps(family: str, steps: list, symbols: dict) -> tuple:
+    """clock_init.csv steps as macro lines, and the ones left out."""
+    out, skipped = [], []
     for r in steps:
         action, value = r["action"], r["value"]
         if action not in CLOCK_INIT_ACTIONS:
-            # Only CH32V003 has one, an HSI calibration load. The field it
-            # writes is not in clock_symbols.csv, so it cannot be emitted;
-            # leaving it out matches what the core did before.
+            # SystemInit's HSI calibration load on CH32V003, a trim call in
+            # some setters. The field it writes is not in clock_symbols.csv,
+            # so it cannot be emitted; leaving it out matches what the core
+            # did before.
             skipped.append(f"step {r['step']} ({action})")
             continue
         addr, v = int(r["address"], 16), int(value)
@@ -1646,15 +1664,17 @@ def gen_clock_init(family: str, steps: list, symbols: dict, flash: tuple = ([], 
             out.append(f"    {reg} &= {v:#010x}u; \\")
         elif action == "write":
             out.append(f"    {reg} = {v:#010x}u; \\")
-        else:                                   # poll
-            want = r["condition"].removeprefix("!=").strip()
+        else:                                   # poll: wait while the condition holds
+            cond = r["condition"].strip()
+            op = "==" if cond.startswith("==") else "!="
+            want = cond[2:].strip() if cond[:2] in ("==", "!=") else cond
             if want.startswith("0x") or want.isdigit():
                 target = int(want, 0)
             else:
                 sym = symbols.get((family, want))
                 if sym is not None:
                     target = int(sym["value"])
-                elif v and not (v & (v - 1)):
+                elif op == "!=" and v and not (v & (v - 1)):
                     # A one-bit mask leaves one reading: wait for that bit to
                     # be set. CH32X315 polls "!= RCC_HSIRDY" with mask 0x2 and
                     # clock_symbols.csv does not carry RCC_HSIRDY, so the mask
@@ -1669,7 +1689,32 @@ def gen_clock_init(family: str, steps: list, symbols: dict, flash: tuple = ([], 
                     raise SystemExit(f"ERROR: {family}: clock_init.csv polls "
                                      f"for {want} against mask {v:#x}, and "
                                      f"clock_symbols.csv does not resolve it")
-            out.append(f"    while (({reg} & {v:#010x}u) != {target:#010x}u) {{}} \\")
+            out.append(f"    while (({reg} & {v:#010x}u) {op} {target:#010x}u) {{}} \\")
+    return out, skipped
+
+
+def gen_clock_init(family: str, steps: list, symbols: dict, flash: tuple = ([], []),
+                   sequences: list = ()) -> str:
+    """The reset sequence for one family, as a macro SystemInit expands, and
+    the FLASH writes around the flash clock divider where the family makes
+    them (CH32RV_CLOCK_FLASH_UNLOCK / _RELOCK). For a sequenced_clock family,
+    each setter's steps too, as CH32RV_CLOCK_SEQUENCE() under the
+    CH32RV_CLOCK_SEQ number the CPU Clock entry passes."""
+    out = [
+        "/* DO NOT EDIT - machine generated by tools/generate/generate.py",
+        f" * {SOURCE_LINE}",
+        " *",
+        f" * {family}: what EVT's SystemInit writes before configuring the",
+        " * clock. Order matters, and so does doing it at all - PLLSRC and",
+        " * PLLMULL cannot be changed while PLLON is set, so a PLL left running",
+        " * by a previous program would otherwise keep its configuration.",
+        " */",
+        "#pragma once",
+        "",
+        "#define CH32RV_CLOCK_INIT_RESET() do { \\",
+    ]
+    lines, skipped = _clock_steps(family, steps, symbols)
+    out += lines
     out.append("} while (0)")
     before, after = flash
     if before or after:
@@ -1679,6 +1724,14 @@ def gen_clock_init(family: str, steps: list, symbols: dict, flash: tuple = ([], 
         out += ["} while (0)", "#define CH32RV_CLOCK_FLASH_RELOCK() do { \\"]
         out += [f"    CH32RV_REG32({a:#010x}u) |= {v:#010x}u; \\" for a, v in after]
         out.append("} while (0)")
+    for number, name, fsteps in sequences:
+        lines, fskipped = _clock_steps(family, fsteps, symbols)
+        if fskipped:
+            raise SystemExit(f"ERROR: {family}: {name}: clock_init step(s) the generator cannot "
+                             f"emit: {', '.join(fskipped)}")
+        out += ["", f"/* {name}, in EVT's order: from HSI with the reset above done. */",
+                f"#if CH32RV_CLOCK_SEQ == {number}",
+                "#define CH32RV_CLOCK_SEQUENCE() do { \\"] + lines + ["} while (0)", "#endif"]
     if skipped:
         # index 7 is the closing */, so the note has to go before it
         out.insert(7, f" * NOT emitted because the generator cannot represent it: {', '.join(skipped)}.")
@@ -3430,6 +3483,7 @@ def clock_defines(clk: dict, latency: int) -> str:
             f"-DCH32RV_CLOCK_PLL_VALUE={clk['pll_value']:#x}u "
             f"-DCH32RV_CLOCK_EXTEN_ADDR={clk['exten_addr']:#x}u "
             f"-DCH32RV_CLOCK_EXTEN_BITS={clk['exten_bits']:#x}u"
+            + (f" -DCH32RV_CLOCK_SEQ={clk['sequence']}" if clk.get("sequence") else "")
             + ("" if not clk.get("h41x") else
                (lambda h: f" -DCH32RV_CLOCK_PLL_ADDR={h['pll_addr']:#x}u"
                           f" -DCH32RV_CLOCK_FPRE_MASK={h['fpre_mask']:#x}u"
@@ -3686,7 +3740,7 @@ def main() -> int:
     die_macro_series, die_macro_part = load_die_macros(args.tables)
     clock_configs_t, clock_symbols_t, clock_prescalers_t = load_clock(args.tables)
     register_addresses_t = load_register_addresses(args.tables)
-    clock_init_t = load_clock_init(args.tables)
+    clock_init_t, clock_functions_t = load_clock_init(args.tables)
     disagreements = check_family_facts(args.tables, facts)
     if disagreements:
         print("ERROR: hand-written values disagree with ch32-device-data:",
@@ -3820,7 +3874,10 @@ def main() -> int:
         outputs[args.platform / "cores" / "arduino" /
                 f"clock_init_{family.lower()}.h"] = \
             gen_clock_init(family, steps, clock_symbols_t,
-                           flash_writes(family, clock_configs_t, register_addresses_t))
+                           flash_writes(family, clock_configs_t, register_addresses_t),
+                           [(n + 1, name, clock_functions_t[(family, name)])
+                            for n, name in enumerate(sequenced_configs(family, clock_configs_t))]
+                           if FAMILY[family].get("sequenced_clock") else ())
 
     # Last: gen_lock checks that every table actually read is inside the
     # manifest it pins, so every loader above has to have run first.

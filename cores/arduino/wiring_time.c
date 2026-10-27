@@ -182,7 +182,13 @@ void SystemInit(void)
 
 /* The flag, not the value: CH32V30x_D8C encodes a x18 multiplier as field
  * 0 (RCC_PLLMULL18_EXTEN), so a zero PLL word is a real configuration. */
-#if CH32RV_CLOCK_USE_PLL
+#if CH32RV_CLOCK_USE_PLL && defined(CH32RV_CLOCK_SEQUENCE)
+    /* CH32X315: the PLL is the USBHS / USBSS PLL's output, the flash clock
+     * divider moves with it, and the steps are EVT's setter's own, in its
+     * order (clock_init_<family>.h, from ch32-device-data clock_init.csv),
+     * ending on the switch to the PLL and its SWS wait. */
+    CH32RV_CLOCK_SEQUENCE();
+#elif CH32RV_CLOCK_USE_PLL
     /* Some families gate the oscillator's path into the PLL from outside RCC:
      * CH32L103/V103/V205/V20x/V30x take HSI/2 unless EXTEN_PLL_HSI_PRE says
      * otherwise, and every HSI multiplier the tables list assumes the whole
