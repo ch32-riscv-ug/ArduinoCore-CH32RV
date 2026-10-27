@@ -205,6 +205,9 @@ private:
     void (*_on_request)(void) = nullptr;
     volatile bool _slave = false;
     volatile bool _slave_replying = false;
+    /* A write to this slave is in progress: onReceive() is still owed, at
+     * STOP or - before onRequest() - at a repeated START that turns to read. */
+    volatile bool _slave_receiving = false;
 
     /* Shared by the polled master and the slave interrupt handler - never
      * both at once, since the modes are exclusive. Volatile for the halves

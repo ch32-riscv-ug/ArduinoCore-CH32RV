@@ -335,6 +335,7 @@ void CH32RVTwoWire::begin(uint8_t address)
     _rx_read = 0;
     _tx_len = 0;
     _tx_sent = 0;
+    _slave_receiving = false;
     _slave = true;
     CH32RV_I2C_CTLR2(_base) |= CH32RV_I2C_CTLR2_ITEVTEN | CH32RV_I2C_CTLR2_ITBUFEN |
                              CH32RV_I2C_CTLR2_ITERREN;
@@ -397,6 +398,7 @@ void CH32RVTwoWire::end()
                                              CH32RV_I2C_CTLR2_ITBUFEN |
                                              CH32RV_I2C_CTLR2_ITERREN);
         _slave = false;
+        _slave_receiving = false;
     }
     CH32RV_I2C_CTLR1(_base) = 0;
     ch32rv_clock_disable_at(d.clken_addr, d.clken_mask);
@@ -664,12 +666,30 @@ void CH32RVTwoWire::ev_irq(void)
     const uint16_t s1 = CH32RV_I2C_STAR1(_base);
 
     if (s1 & CH32RV_I2C_STAR1_ADDR) {
+        /* The last byte of a write can still be waiting when a repeated START
+         * turns the transfer around: take it first, so it is in the message
+         * onReceive() gets. */
+        if (s1 & CH32RV_I2C_STAR1_RXNE) {
+            const uint8_t data = (uint8_t)CH32RV_I2C_DATAR(_base);
+            if (_rx_len < CH32RV_WIRE_BUFFER_SIZE) {
+                _rx[_rx_len] = data;
+                _rx_len = (uint8_t)(_rx_len + 1u);
+            }
+        }
         /* Reading STAR2 after STAR1 is what clears ADDR, and TRA in it says
-         * which way this transfer goes. Nothing else may happen in between:
-         * the peripheral stretches SCL until ADDR is cleared, which is also
-         * why onRequest() can safely run first - the master is held. */
+         * which way this transfer goes. The peripheral stretches SCL until
+         * ADDR is cleared, so the callbacks below run with the master held. */
         const uint16_t s2 = CH32RV_I2C_STAR2(_base);
         if (s2 & CH32RV_I2C_STAR2_TRA) {
+            /* Write, repeated START, read - a register read: onReceive() gets
+             * the written bytes (the register number) before onRequest()
+             * answers, as AVR's twi does. */
+            if (_slave_receiving) {
+                _slave_receiving = false;
+                if (_on_receive) {
+                    _on_receive((int)_rx_len);
+                }
+            }
             _tx_len = 0;
             _tx_sent = 0;
             if (_on_request) {
@@ -680,6 +700,7 @@ void CH32RVTwoWire::ev_irq(void)
         } else {
             _rx_len = 0;
             _rx_read = 0;
+            _slave_receiving = true;
         }
         return;
     }
@@ -701,8 +722,13 @@ void CH32RVTwoWire::ev_irq(void)
         /* Cleared by the STAR1 read above plus a CTLR1 write; re-arming ACK
          * is that write, and the next address match needs it anyway. */
         CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
-        if (_on_receive) {
-            _on_receive((int)_rx_len);
+        /* Only a write ends in onReceive(); a read ends here too, and AVR
+         * does not call it then. */
+        if (_slave_receiving) {
+            _slave_receiving = false;
+            if (_on_receive) {
+                _on_receive((int)_rx_len);
+            }
         }
     }
 }

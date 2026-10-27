@@ -1552,9 +1552,10 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
       （またはポーリングできる状態）と、転送 1 回分の受信バッファ。
     - 汎用 ADC（H41x 以外、X035 / V307 など）の連続変換: タイマーまたは自走で一定のレートを保ち、DMA の 2 面バッファで
       受ける。CH32RVHsAdc の startContinuous / readBuffer と同じ形。1〜数チャンネル。
-  - Wire のスレーブ: `onReceive` は STOP のときだけ呼ぶ。書き込みのあと repeated START で読みが続くと、`onRequest` が先に
-    呼ばれる（書かれたバイトはその中で `Wire.read()` できる）。AVR の twi は repeated START でも先に `onReceive` を呼ぶので、
-    合わせるか決める（未修正、実機の確認も未）。
+  - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
+    `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
+    `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。ビルドだけで、
+    実機の確認は未（OEP の治具は I2C のターゲットにしかなれず、マスター役の配線がベンチに無い）。
 - `analogReference()` はハードウェアに基準電圧の選択が無い。
 
 ## USB ホスト（CH32RVUsbHost）と ESP32-S3 との対向試験（2026-10-15）
