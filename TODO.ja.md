@@ -1411,7 +1411,7 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
   - コアの `time()` / `gettimeofday()` / `settimeofday()`（2026-10-21、syscalls.c）: これまで半ホスティングの `ecall` で
     落ちていた。直した。`clock()`、`fopen()` なども失敗を返すようにした。X035 の実機で確認済み（2026-10-21: settimeofday の後に
     time / gettimeofday / strftime が経過どおりに進む、clock、fopen / remove が失敗を返す、ecall なし）。millis() の 49.7 日の
-    折り返しの処理だけは未確認。
+    折り返しは PC の試験（tests/unit/test_core_time.py、2 回の折り返し）で確認した（2026-10-27）。
   - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口）。X305 / X315 は X035 と同じ手順を入れた（2026-10-22、ビルドのみ）。
     H41x は試して失敗（docs/usb.ja.md）。V20x / V30x / V103 / L103 / V205 / M030 / V4x7 は BOOT_MODE が無く、BOOT0 の端子だけ。
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
