@@ -106,9 +106,9 @@ OEP の常設とは別の、小さな組にします。
 | DUT の口 | 持っている DUT | 相手 | 理由 |
 |---|---|---|---|
 | RJ45（Ethernet） | V203RBT6（または V208）、V307、V407、H417 | スイッチと DHCP、相手の PC | — |
-| USB FS | V103、V20x、V205、V307、L103、M030、X035、H417 | **ESP32-S3**（host と device の相手） | 今の usb-peer の試験と EspUsbHost / EspUsbDevice がそのまま使える。pico にすると相手側の sketch とライブラリを作り直すことになる |
+| USB FS | V103、V20x、V205、V307、L103、M030、X035、H417 | **ESP32-S3 を 1 枚、ほかは pico**（host と device の相手） | S3 は高いので 1 枚。S3 は今の usb-peer の試験（EspUsbHost / EspUsbDevice）をそのまま使う。pico は arduino-pico の Adafruit TinyUSB（device と host）で相手の sketch を新しく作る |
 | USB HS | V205、V307、V407（2 口）、X315、H417 | **ESP32-P4**（OEP とは別の個体） | EspUsbHost / EspUsbDevice が P4 の HS（480 Mbps）で host と device の両方に対応 |
-| USB SS | H417、X315（どちらも device だけ） | **PC** | コアの USBSS に host は無い。H417 を相手にするには SS の host を作るところから要る |
+| USB SS | H417、X315 | DUT が device: **PC**。DUT が host: **SS の device を出す H417**（2 枚目） | X315 の SS は device だけで、host になれるのは H417。コアの USBSS の host はまだ実装していないので、host の試験はその後 |
 | USB-C の CC（PD） | X035、L103、V205、X315、H417、M030 | PD 電源と PD シンク、VBUS の電圧計 | — |
 
 - **device の試験には PC も相手にする**（OS のドライバ: CDC・MSC・HID・NCM・UVC・UAC）。1 つの口にケーブルは 1 本なので、USB の 2:1 の切り替え器を OEP の GPIO で切り替える案と、口ごとに相手を固定する案がある。
@@ -121,7 +121,7 @@ OEP の常設とは別の、小さな組にします。
 2. **P4 の分け方**は配線をしながら決める（1 台に 2 台まで）。
 3. **LinkE 2.12 を残すか**（上げてしまうと版の違いを確かめる手段が無くなる）。
 4. **評価ボードの選定**: 全端子が出ているか、USB・RJ45・CC が出ているか、電源を外から切れるか。
-5. **USB の相手の決め方**: FS を ESP32-S3 にするか pico にするか。device の試験で PC と相手を切り替える器具を使うか。
+5. **USB の相手**: pico 用の相手の sketch（Adafruit TinyUSB の device と host）を作る。SS の host の相手に 2 枚目の H417 を用意する（コアの SS の host を実装してから）。device の試験で PC と相手を切り替える器具を使うか。
 6. **OEP の I2C / SPI の controller**: OEP セッションに追加を依頼した（主側と従側の両方を OEP で受け持つ）。できるまで、DUT が従になる試験は保留。
 7. **コアの型番の扱い**: V208CBU6 には Ethernet が無いが、コアは V208 の全型番で Network をビルドする（lwipopts.h が系列で判定）。型番で断るように直すかを決める。
 
