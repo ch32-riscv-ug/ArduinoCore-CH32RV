@@ -1532,7 +1532,9 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 残り（方針待ち・新しい API・実機が要る）:
 - クロック: 2026-10-22 に CPU Clock のメニュー（項目名に周波数と使えるもの）と取得の API（`getCpuFrequencyMhz()` /
   `getApbFrequency()`）を入れた。実行中に変える API は作らない（F_CPU を定数として使う箇所が約 20、動いている周辺の
-  入れ直しが要る）。既定は M030 だけ 72 MHz（EVT の既定、実機で確認）に上げた。L103 / M103・V205 は 8 MHz のまま。
+  入れ直しが要る）。既定は M030 だけ 72 MHz（EVT の既定、実機で確認）に上げた。L103 / M103 は 8 MHz のまま。V205 は 2026-10-28 に全項目（8 / 40 / 80 / 120 / 160）を
+  V205RCT6 で確認し、既定を EVT と同じ 160 MHz に上げた（LinkE 2.22 は走っている V205 に接続すると s0 を壊すので、
+  リセットごとに 1 回だけ millis() を読んで測った。ch32rv セッションの調査）。V205 の UART はベンチの LinkE につながっていない。
   L103 の 72 / 96 MHz は、OEP probe（RP2350）が動いている L103 に接続できない（2026-10-23。8 / 48 MHz と WCH-LinkE は接続できる。
   コアのクロックの設定は原因ではない。プローブ側は ch32rv / dev-oep が調査中）。試すイメージには `CH32RV_BOOT_HOLD_MS` を付ける
   （docs/upload-routes.ja.md）。ベンチの L103 は戻してあり、NRST は RP2350 の GP2（`l103.nrst`）。V407 / V467 のメニューは

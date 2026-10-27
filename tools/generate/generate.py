@@ -415,10 +415,13 @@ CLOCK_MENU = {
     **{s: _V30X_CLOCKS for s in ("CH32V303", "CH32V305", "CH32V307", "CH32V317")},
     "CH32X033": _X035_CLOCKS, "CH32X035": _X035_CLOCKS,
     "CH32L103": _L103_CLOCKS, "CH32M103": _L103_CLOCKS,
-    # V205: 8 MHz by default until a PLL clock has run on one (see _L103_CLOCKS).
-    "CH32V205": [("8", 8, 8, "8MHz (HSI, lowest power, USB)"), ("160", 160, 160, "160MHz (USB, not checked)"),
-                 ("120", 120, 120, "120MHz (USB, not checked)"), ("80", 80, 80, "80MHz (USB, not checked)"),
-                 ("40", 40, 40, "40MHz (USB, not checked)")],
+    # V205: 160 MHz, EVT's default (there from HSE). Every entry ran on a
+    # CH32V205RCT6 behind a WCH-LinkE (2026-10-28: millis() against the wall
+    # clock, one read per reset - a LinkE 2.22 attach to a running V205
+    # overwrites s0, ch32rv's finding).
+    "CH32V205": [("160", 160, 160, "160MHz (USB)"), ("120", 120, 120, "120MHz (USB)"),
+                 ("80", 80, 80, "80MHz (USB)"), ("40", 40, 40, "40MHz (USB)"),
+                 ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
     # V407 / V467: the core runs on HCLK = SYSCLK / 2, up to 200 MHz (EVT's
     # 480 MHz setting gives HCLK 240 MHz, past the datasheet; not offered).
     # EVT's 350 MHz (HCLK 175) is left out too: 175 ticks per microsecond has
