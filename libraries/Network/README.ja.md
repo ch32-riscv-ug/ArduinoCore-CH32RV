@@ -4,11 +4,13 @@ lwIP の上の IPv4 のネットワークです。API は ESP32 の Arduino コ�
 
 ## 対象と今の状態
 
-- 対象は、Ethernet の MAC を持つ系列です: CH32V208、V307 / V317、V407 / V467、H415〜H417。ほかの系列でビルドすると、エラーで止まります。
-- **Ethernet の MAC のドライバはまだありません。** USB の NCM(`NetworkUsbNcm`、`CH32RVUsbDeviceNet` の `beginNetwork()` など)はありますが、これらの系列の USB デバイスのドライバがまだ無いので、実機では動きません。
+- 対象は、Ethernet の MAC を持つ系列です: CH32V208、V203RB、V307 / V317、V407 / V467、H415〜H417。ほかの系列でビルドすると、エラーで止まります。
+- Ethernet(`ETH`)は、CH32V307(内蔵の 10 Mbit/s の PHY)、CH32V407(200 MHz で 45 Mbit/s、TLS 1.3)、CH32H417 の実機で動きます。ベンチの `eth` の試験で、DHCP、ICMP、UDP と TCP のエコー、TCP の両方向、HTTP、HTTPS を確かめています。V208 / V203RB / V317 / V467 / H415 / H416 はビルドのみです。
+- USB の NCM(`NetworkUsbNcm`、`CH32RVUsbDeviceNet` の `beginNetwork()` など)は、これらの系列でビルドできますが、まだ実機では動かしていません。
+- 例: [EthernetStatus](examples/EthernetStatus/README.ja.md)、[TcpEchoServer](examples/TcpEchoServer/README.ja.md)、[UdpEcho](examples/UdpEcho/README.ja.md)、[HttpGet](examples/HttpGet/README.ja.md)、[MdnsWebServer](examples/MdnsWebServer/README.ja.md)、[NetworkTime](examples/NetworkTime/README.ja.md)。どれも V307 で動かしています。
 - 動作は、PC でビルドし、Linux の TCP/IP を相手に試しています(`tests/unit/network`)。固定アドレス、DHCP のクライアントとサーバー、SNTP、mDNS、ICMP、UDP、TCP(両方向、並列、こちらからの接続)、DNS を、パケットの落ちと入れ替わりのある回線でも確かめています。
 
-## 使い方(ドライバができたとき)
+## 使い方
 
 ```cpp
 #include <Network.h>

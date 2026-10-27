@@ -12,6 +12,7 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | Hardware I2C | [Wire](../libraries/Wire/examples/I2CScanner/README.md) | I2CScanner → I2CRegisterRead / I2CSlaveRegister → I2CTimeoutRecovery |
 | Software I2C | [SoftWire](../libraries/SoftWire/examples/SoftI2CScanner/README.md) | SoftI2CScanner |
 | Hardware SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.md) | SPILoopback → SpiFlashId |
+| Ethernet, TCP / UDP, HTTP, mDNS, NTP | [Network](../libraries/Network/README.md) | EthernetStatus → TcpEchoServer / UdpEcho → HttpGet → MdnsWebServer / NetworkTime |
 | SPI slave | [CH32RVSPISlave](../libraries/CH32RVSPISlave/README.md) | SPISlaveSelfTest |
 | Software SPI | [SoftSPI](../libraries/SoftSPI/examples/SoftSPILoopback/README.md) | SoftSPILoopback |
 | Servo control | [Servo](../libraries/Servo/examples/Sweep/README.md) | Sweep |

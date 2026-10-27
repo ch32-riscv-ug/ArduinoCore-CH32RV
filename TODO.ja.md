@@ -1168,6 +1168,13 @@ ESP32 の API の使い勝手は参考になるが、同じ保存エンジン、
 - [ ] 第2弾の実機確認：ボタンの押下・長押し・解放、可変抵抗とPWM、USB再接続時の中立、
   ゲームパッドの軸方向・両端・中立帯を、対象ボードとPCの確認画面で確かめる。
 
+### 第3弾の実装：ネットワーク
+
+- [x] Network に `EthernetStatus` / `TcpEchoServer` / `UdpEcho` / `HttpGet` / `MdnsWebServer` / `NetworkTime` を追加した
+  （2026-10-28）。日英README・生成profile（`requires: ETH_MAC` で V307）・日英一覧への導線をそろえた。
+  どれもベンチの V307 で、PC 側から確かめた（nc・Python のソケット・curl・mDNS の問い合わせ・PC の時計との比較）。
+  切断、DNS の失敗、接続の拒否、長すぎる UDP、存在しないパスも確認済み。残り: TLS（`NetworkClientSecure`）、USB NCM の例。
+
 ### A. 既存 API を使って追加する例
 
 | 機能 / スケッチ案 | 既存例に足りない使い方・例で示すこと | 比較元・参考例 |

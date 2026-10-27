@@ -17,8 +17,8 @@
  *   CH32V307           eth_driver_10M.c    10BASE-T PHY: PLL3 at 60 MHz, enabled through EXTEN
  *   CH32V317           eth_driver_CH32V317.c   10/100 PHY behind an internal RMII: PLL3 at 100 MHz
  *
- * Run on CH32H417 (docs/network-stack.ja.md); the others are built, not yet
- * run on a board. */
+ * Run on CH32H417, CH32V407 and CH32V307 (docs/network-stack.ja.md); V317 /
+ * V467 / H415 / H416 are built, not yet run on a board. */
 
 #if defined(CH32RV_SERIES_CH32H417)
 #define ETH_H417 1

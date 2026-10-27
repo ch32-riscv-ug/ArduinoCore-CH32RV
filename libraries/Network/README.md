@@ -4,8 +4,10 @@ IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network librar
 
 ## Targets and status
 
-- For the series with an Ethernet MAC: CH32V208, V307/V317, V407/V467, H415-H417. Other series stop with an error.
-- **No Ethernet MAC drivers yet.** USB NCM is here (`NetworkUsbNcm`, `CH32RVUsbDeviceNet::beginNetwork()` ...), but those series have no USB device driver yet, so it does not run on a chip.
+- For the series with an Ethernet MAC: CH32V208, V203RB, V307/V317, V407/V467, H415-H417. Other series stop with an error.
+- Ethernet (`ETH`) runs on a CH32V307 (its built-in 10 Mbit/s PHY), a CH32V407 (45 Mbit/s and TLS 1.3 at 200 MHz) and a CH32H417, checked with the bench's `eth` case: DHCP, ICMP, UDP and TCP echo, TCP both ways, HTTP and HTTPS. V208 / V203RB / V317 / V467 / H415 / H416 are built only.
+- USB NCM (`NetworkUsbNcm`, `CH32RVUsbDeviceNet::beginNetwork()` ...) is built for these series, not yet run on one.
+- Examples: [EthernetStatus](examples/EthernetStatus/README.md), [TcpEchoServer](examples/TcpEchoServer/README.md), [UdpEcho](examples/UdpEcho/README.md), [HttpGet](examples/HttpGet/README.md), [MdnsWebServer](examples/MdnsWebServer/README.md), [NetworkTime](examples/NetworkTime/README.md) - each run on the V307.
 - Tested on the host against Linux's TCP/IP (`tests/unit/network`): static addresses, the DHCP client and server, SNTP, mDNS, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
 
 ## USB NCM (as with EspUsbDevice)

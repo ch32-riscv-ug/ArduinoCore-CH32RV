@@ -13,6 +13,7 @@
 | ハードウェア I2C | [Wire](../libraries/Wire/examples/I2CScanner/README.ja.md) | I2CScanner → I2CRegisterRead / I2CSlaveRegister → I2CTimeoutRecovery |
 | GPIO による I2C | [SoftWire](../libraries/SoftWire/examples/SoftI2CScanner/README.ja.md) | SoftI2CScanner |
 | ハードウェア SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.ja.md) | SPILoopback → SpiFlashId |
+| Ethernet、TCP / UDP、HTTP、mDNS、NTP | [Network](../libraries/Network/README.ja.md) | EthernetStatus → TcpEchoServer / UdpEcho → HttpGet → MdnsWebServer / NetworkTime |
 | SPI のスレーブ | [CH32RVSPISlave](../libraries/CH32RVSPISlave/README.ja.md) | SPISlaveSelfTest |
 | GPIO による SPI | [SoftSPI](../libraries/SoftSPI/examples/SoftSPILoopback/README.ja.md) | SoftSPILoopback |
 | サーボ | [Servo](../libraries/Servo/examples/Sweep/README.ja.md) | Sweep |
