@@ -112,7 +112,7 @@ OEP の常設とは別の、小さな組にします。
 |---|---|---|
 | RJ45（Ethernet） | V203RBT6（または V208）、V307、V407、H417 | スイッチと DHCP、相手のマイコン（Ethernet を持つ別の DUT）か常設の PC |
 | USB FS | V103、V20x、V205、V307、L103、M030、X035、H417 | **常設の標準ベンチは全部 Pico**（host と device の相手。arduino-pico の Adafruit TinyUSB で相手の sketch を作る）。**X035 を 1 台だけ ESP32-S3 と組にする**（今の usb-peer の試験と EspUsbHost / EspUsbDevice をそのまま使い、ESP32 の USB スタックとの相互運用を 1 組確かめる） |
-| USB HS | V205、V307、V407（2 口）、X315 | **ESP32-P4**（OEP とは別の個体。EspUsbHost / EspUsbDevice が P4 の HS で host と device の両方に対応）。**H417 の HS は常設では試さない**（SWD と端子を共用していて検証が難しいので、手作業の試験だけ） |
+| USB HS | V205、V307、V407（2 口）、X315 | **常設で試すかは未定**（相手の P4 が DUT ごとに要り、台数が多くなるため省く可能性がある）。試すなら **ESP32-P4**（OEP とは別の個体。EspUsbHost / EspUsbDevice が P4 の HS で host と device の両方に対応）。**H417 の HS は常設では試さない**（SWD と端子を共用していて検証が難しいので、手作業の試験だけ） |
 | USB SS | H417、X315 | **H417 どうし**（H417 は 2 台を追加で確保中、計 3 台）。DUT が device なら相手の H417 が SS の host、DUT が host なら相手の H417 が SS の device。X315 の SS は device だけ（相手は H417 の host）。SS の host を作る間は、市販の USB 3.0 のメモリで手作業の試験をし、安定したら H417 どうしのピア試験に移る |
 | USB-C の CC（PD） | X035（常設に置くかは未定） | PD は基本は手作業の試験。常設に置くなら **X035 どうし**で、片方の CC の抵抗（WeAct の基板の R4 / R5）を外してソースにし、シンクとソースのピア試験にする。L103 / V205 / X315 / H417 / M030 の PD は手作業 |
 
