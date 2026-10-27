@@ -44,6 +44,12 @@ typedef enum {
     CH32RV_RESET_LOW_POWER,
 } CH32RVResetReason;
 
+/* Where SYSCLK comes from. */
+typedef enum {
+    CH32RV_CLOCK_SOURCE_HSI,     /* the internal oscillator               */
+    CH32RV_CLOCK_SOURCE_HSE,     /* the crystal (Clock Source menu)        */
+} CH32RVClockSource;
+
 namespace arduino {
 
 class CH32RVSystem {
@@ -64,6 +70,12 @@ public:
      * has no IWDG (CH32M030). Cannot be undone - see above. */
     bool wdtEnable(uint32_t ms);
     void wdtFeed();
+
+    /* HSE when the Clock Source menu chose the crystal and it started; HSI
+     * otherwise - also when the crystal was chosen and did not start, in
+     * which case the same CPU Clock runs off HSI (F_CPU is unchanged, its
+     * accuracy is HSI's). */
+    CH32RVClockSource clockSource();
 
     /* arduino-esp32's ESP.* names for the same facts. */
     /* The heap: the RAM between the end of .bss and the reserved stack. */

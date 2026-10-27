@@ -111,8 +111,13 @@ struct CH32RVUsbDeviceConfig {
      * device. */
     const char *serialNumber = nullptr;
     /* The crystal on HSE, for controllers whose PHY needs it (V30x USBHS:
-     * 3/4/5/8 MHz references divided from it). */
+     * 3/4/5/8 MHz references divided from it). The Clock Source menu's
+     * crystal when HSE is chosen there. */
+#ifdef CH32RV_CLOCK_HSE_HZ
+    uint32_t hseHz = CH32RV_CLOCK_HSE_HZ;
+#else
     uint32_t hseHz = 8000000;
+#endif
     uint16_t maxPowerMilliamps = 100;
     bool selfPowered = false;
     /* A DFU runtime interface, so a host can send DFU_DETACH and re-upload

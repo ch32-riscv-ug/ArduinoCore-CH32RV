@@ -78,6 +78,31 @@ void ch32rv_boot_hold(void)
 }
 #endif
 
+#ifdef CH32RV_CLOCK_HSE_HZ
+/* Clock Source = HSE: 1 while SYSCLK comes from the crystal, 0 when it did not
+ * start and the same CPU Clock entry runs off HSI instead (same SYSCLK, HCLK
+ * and wait states - the generator checks). Set by every SystemInit(), so a
+ * crystal that starts on a later attempt (the clock guard below runs
+ * SystemInit() again) is taken up then. */
+uint8_t ch32rv_clock_on_hse;
+
+/* HSEON, then HSERDY within a bound. The bench's crystals took 0.9-2.5 ms
+ * (2026-10-28, V003 / V006 / V103 / V203 / V205 / V307 / L103 / X315 / H417);
+ * the bound is about 10 ms on HSI at 48 MHz and longer at 8 or 24. A part
+ * without a crystal gives up here and keeps HSEON off. */
+static int ch32rv_hse_start(void)
+{
+    CH32RV_RCC_CTLR |= CH32RV_RCC_CTLR_HSEON;
+    for (uint32_t n = 0; n < 0x20000u; n++) {
+        if (CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_HSERDY) {
+            return 1;
+        }
+    }
+    CH32RV_RCC_CTLR &= ~CH32RV_RCC_CTLR_HSEON;
+    return 0;
+}
+#endif
+
 void SystemInit(void)
 {
     /* Put RCC back where reset leaves it before touching anything. This used
@@ -121,6 +146,24 @@ void SystemInit(void)
     CH32RV_CLOCK_INIT_RESET();
     while ((CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_HSIRDY) == 0u) {
     }
+
+    /* The setting this boot runs: the CPU Clock entry's HSI one, or with
+     * Clock Source = HSE its crystal one when the crystal starts. */
+#ifdef CH32RV_CLOCK_HSE_HZ
+    ch32rv_clock_on_hse = (uint8_t)ch32rv_hse_start();
+    const int on_hse = ch32rv_clock_on_hse;
+    const int use_pll = on_hse ? CH32RV_CLOCK_HSE_USE_PLL : CH32RV_CLOCK_USE_PLL;
+    const uint32_t pll_mask = on_hse ? CH32RV_CLOCK_HSE_PLL_MASK : CH32RV_CLOCK_PLL_MASK;
+    const uint32_t pll_value = on_hse ? CH32RV_CLOCK_HSE_PLL_VALUE : CH32RV_CLOCK_PLL_VALUE;
+#else
+    const int on_hse = 0;
+    const int use_pll = CH32RV_CLOCK_USE_PLL;
+    const uint32_t pll_mask = CH32RV_CLOCK_PLL_MASK;
+    const uint32_t pll_value = CH32RV_CLOCK_PLL_VALUE;
+#endif
+    (void)on_hse;
+    (void)pll_mask;
+    (void)pll_value;
 
     /* Wait states first: the core comes out of reset on a divided clock, and
      * the prescaler below may raise it. Too few wait states at 48 MHz makes the
@@ -188,7 +231,8 @@ void SystemInit(void)
      * order (clock_init_<family>.h, from ch32-device-data clock_init.csv),
      * ending on the switch to the PLL and its SWS wait. */
     CH32RV_CLOCK_SEQUENCE();
-#elif CH32RV_CLOCK_USE_PLL
+#else
+    if (use_pll) {
     /* Some families gate the oscillator's path into the PLL from outside RCC:
      * CH32L103/V103/V205/V20x/V30x take HSI/2 unless EXTEN_PLL_HSI_PRE says
      * otherwise, and every HSI multiplier the tables list assumes the whole
@@ -196,10 +240,11 @@ void SystemInit(void)
      * even called the same thing on all of them (CH32V205 spells it CTLR0),
      * so its address arrives as a number rather than a name. */
 #if CH32RV_CLOCK_EXTEN_ADDR
-    CH32RV_REG32(CH32RV_CLOCK_EXTEN_ADDR) |= (uint32_t)CH32RV_CLOCK_EXTEN_BITS;
+    if (!on_hse) {
+        CH32RV_REG32(CH32RV_CLOCK_EXTEN_ADDR) |= (uint32_t)CH32RV_CLOCK_EXTEN_BITS;
+    }
 #endif
-    CH32RV_CLOCK_PLL_REG = (CH32RV_CLOCK_PLL_REG & ~(uint32_t)CH32RV_CLOCK_PLL_MASK) |
-                         (uint32_t)CH32RV_CLOCK_PLL_VALUE;
+    CH32RV_CLOCK_PLL_REG = (CH32RV_CLOCK_PLL_REG & ~pll_mask) | pll_value;
     CH32RV_RCC_CTLR |= CH32RV_RCC_CTLR_PLLON;
     while ((CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_PLLRDY) == 0u) {
     }
@@ -227,6 +272,14 @@ void SystemInit(void)
                      CH32RV_RCC_CFGR0_SW_PLL;
     while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
            (CH32RV_RCC_CFGR0_SW_PLL << 2)) {
+    }
+    } else if (on_hse) {
+        /* The crystal itself as SYSCLK (EVT's SetSysClockToHSE). */
+        CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~CH32RV_RCC_CFGR0_SW_MASK) |
+                         CH32RV_RCC_CFGR0_SW_HSE;
+        while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
+               (CH32RV_RCC_CFGR0_SW_HSE << 2)) {
+        }
     }
 #endif
 
@@ -278,7 +331,20 @@ void SystemInit(void)
 static inline int ch32rv_clock_is_ours(void)
 {
     const uint32_t cfgr0 = CH32RV_RCC_CFGR0;
-    const uint32_t sw = CH32RV_CLOCK_USE_PLL ? CH32RV_RCC_CFGR0_SW_PLL : CH32RV_RCC_CFGR0_SW_HSI;
+#ifdef CH32RV_CLOCK_HSE_HZ
+    /* The setting SystemInit() chose: the crystal's, or HSI's when it did not
+     * start. */
+    const int use_pll = ch32rv_clock_on_hse ? CH32RV_CLOCK_HSE_USE_PLL : CH32RV_CLOCK_USE_PLL;
+    const uint32_t pll_mask = ch32rv_clock_on_hse ? CH32RV_CLOCK_HSE_PLL_MASK : CH32RV_CLOCK_PLL_MASK;
+    const uint32_t pll_value = ch32rv_clock_on_hse ? CH32RV_CLOCK_HSE_PLL_VALUE : CH32RV_CLOCK_PLL_VALUE;
+    const uint32_t sw = use_pll ? CH32RV_RCC_CFGR0_SW_PLL
+                      : ch32rv_clock_on_hse ? CH32RV_RCC_CFGR0_SW_HSE : CH32RV_RCC_CFGR0_SW_HSI;
+#else
+    const int use_pll = CH32RV_CLOCK_USE_PLL;
+    const uint32_t pll_mask = CH32RV_CLOCK_PLL_MASK;
+    const uint32_t pll_value = CH32RV_CLOCK_PLL_VALUE;
+    const uint32_t sw = use_pll ? CH32RV_RCC_CFGR0_SW_PLL : CH32RV_RCC_CFGR0_SW_HSI;
+#endif
     if ((cfgr0 & CH32RV_RCC_CFGR0_SWS_MASK) != (sw << 2)) {
         return 0;
     }
@@ -287,16 +353,16 @@ static inline int ch32rv_clock_is_ours(void)
         (CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD) | CH32RV_CLOCK_FPRE_VALUE)) {
         return 0;
     }
-#if CH32RV_CLOCK_USE_PLL
-    if ((CH32RV_CLOCK_PLL_REG & (uint32_t)CH32RV_CLOCK_PLL_MASK) != (uint32_t)CH32RV_CLOCK_PLL_VALUE) {
-        return 0;
-    }
+    if (use_pll) {
+        if ((CH32RV_CLOCK_PLL_REG & pll_mask) != pll_value) {
+            return 0;
+        }
 #ifdef CH32RV_CLOCK_SYSPLL_SEL_MASK
-    if ((CH32RV_CLOCK_PLL_REG & (uint32_t)CH32RV_CLOCK_SYSPLL_SEL_MASK) != 0u) {
-        return 0;
+        if ((CH32RV_CLOCK_PLL_REG & (uint32_t)CH32RV_CLOCK_SYSPLL_SEL_MASK) != 0u) {
+            return 0;
+        }
+#endif
     }
-#endif
-#endif
     return 1;
 }
 

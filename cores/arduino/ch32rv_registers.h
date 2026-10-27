@@ -61,11 +61,14 @@
 /* Same on every family clock_symbols.csv covers (10 for PLLON/PLLRDY, 11 for
  * the SW fields below), which is why these are here and the PLL *value* is
  * not. */
+#define CH32RV_RCC_CTLR_HSEON  (1u << 16)  /* the same on every family (device-data, 2026-10-28) */
+#define CH32RV_RCC_CTLR_HSERDY (1u << 17)
 #define CH32RV_RCC_CTLR_PLLON  (1u << 24)
 #define CH32RV_RCC_CTLR_PLLRDY (1u << 25)
 
 #define CH32RV_RCC_CFGR0_SW_MASK   0x3u        /* system clock switch          */
 #define CH32RV_RCC_CFGR0_SW_HSI    0x0u
+#define CH32RV_RCC_CFGR0_SW_HSE    0x1u
 #define CH32RV_RCC_CFGR0_SW_PLL    0x2u
 /* The fields the PLL configuration occupies are NOT the same everywhere, so
  * the mask to clear comes from boards.txt (CH32RV_CLOCK_PLL_MASK) rather than

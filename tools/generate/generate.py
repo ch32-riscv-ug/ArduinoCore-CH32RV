@@ -69,25 +69,31 @@ import sys
     # 8, and f_ADC on these families is 14 MHz, so 144 would leave the ADC at
     # 18 MHz - out of spec with no way to fix it. 96/8 = 12 MHz is inside it,
     # and USB still gets its 48 MHz (PLLCLK/2). Defaults stay in spec.
+# hse_hz: the crystal EVT's HSE_VALUE assumes (ch32*.h), which is what the
+# _HSE rows of clock_configs.csv multiply up from - and what every bench board
+# turned out to carry (2026-10-28: 8 MHz on V307 / V203 / L103, 24 MHz on V003
+# / V006). A family with it gets the Clock Source menu (HSE_SERIES). V208's
+# EVT crystal is 32 MHz with rows of their own, M030's EVT names none, and
+# X315 / V407 / H41x reach SYSCLK through PLLs this path does not drive yet.
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_HIGHCODE",
-                     systick64=0, flash_latency=0, adc_bits=10, i2c_has_rtr=0),
+                     systick64=0, flash_latency=0, adc_bits=10, i2c_has_rtr=0, hse_hz=24000000),
     "CH32V006": dict(march="rv32ec_zmmul_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3",
-                     systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=0),
+                     systick64=0, flash_latency=1, adc_bits=12, i2c_has_rtr=0, hse_hz=24000000),
     "CH32V205": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x7 "
                              "-DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x1",
-                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1, hse_hz=8000000),
     "CH32V20x": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="96000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 "
                              "-DCH32RV_CORECFGR=0x1f",
-                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
+                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1, hse_hz=8000000),
     "CH32V307": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="96000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x0b "
                              "-DCH32RV_CORECFGR=0x1f",
-                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
+                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1, hse_hz=8000000),
     # CH32V407 / V467: the PLL's output reaches SYSCLK through CFGR2's SYSPLL
     # source, divider and gate, and the flash's own clock divider (SCKMOD) sits
     # behind the FLASH keys - EVT's SetSYSCLK_*_HSI order. The core runs on
@@ -123,11 +129,11 @@ FAMILY = {
     # are open to it. tests/unit/test_startup_parameters.py pins this deviation.
     "CH32V103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="72000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x1888 -DCH32RV_MTVEC_MODE=1",
-                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
+                     systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1, hse_hz=8000000),
     "CH32L103": dict(march="rv32imac_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 "
                              "-DCH32RV_CORECFGR=0x1f",
-                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1),
+                     systick64=1, flash_latency=0, adc_bits=12, i2c_has_rtr=1, hse_hz=8000000),
     "CH32M030": dict(march="rv32imc_zicsr", mabi="ilp32", f_cpu="8000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 "
                              "-DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x1",
@@ -221,7 +227,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.opt=Optimize\nmenu.rtlib=C Runtime Library\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.rtlib=C Runtime Library\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
@@ -472,7 +478,42 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
         lines.append(f"{board}.menu.clock.{key}={label}")
         lines.append(f"{board}.menu.clock.{key}.build.f_cpu={hclk_mhz * 1000000}L")
         lines.append(f"{board}.menu.clock.{key}.build.clock_defines={clock_defines(clk, latency)}")
+        if hse_series(series):
+            hse = clock_for(None, sysclk_mhz * 1000000, hclk_mhz * 1000000, "HSE")
+            lines.append(f"{board}.menu.clock.{key}.build.clock_hse_defines="
+                         f"{clock_hse_defines(series, key, clk, hse, latency, fam)}")
     return lines
+
+
+def hse_series(series: str) -> bool:
+    """Whether the series gets the Clock Source menu (FAMILY's hse_hz)."""
+    return "hse_hz" in FAMILY[SERIES_CONFIG[series]["family"]] and series not in ("CH32V208",)
+
+
+def clock_hse_defines(series: str, key: str, hsi: dict, hse: dict, latency: int, fam: dict) -> str:
+    """The -D values SystemInit takes the crystal's setting from. Only the
+    oscillator and the PLL word change: the same SYSCLK, HCLK and wait states,
+    so that a crystal that does not start leaves the part on the HSI setting
+    of the same CPU Clock entry (wiring_time.c) at the same F_CPU."""
+    hse_latency = hse["latency"] if hse["latency"] is not None else fam["flash_latency"]
+    if (hse["sysclk"], hse["hclk"]) != (hsi["sysclk"], hsi["hclk"]) or hse_latency != latency:
+        raise SystemExit(f"ERROR: {series}: CPU Clock {key}: the HSE row gives SYSCLK {hse['sysclk']}, "
+                         f"HCLK {hse['hclk']}, latency {hse_latency}; the HSI row {hsi['sysclk']}, "
+                         f"{hsi['hclk']}, {latency}")
+    return (f"-DCH32RV_CLOCK_HSE_HZ={fam['hse_hz']} "
+            f"-DCH32RV_CLOCK_HSE_USE_PLL={1 if hse['config'] else 0} "
+            f"-DCH32RV_CLOCK_HSE_PLL_MASK={hse['pll_mask']:#x}u "
+            f"-DCH32RV_CLOCK_HSE_PLL_VALUE={hse['pll_value']:#x}u")
+
+
+def clocksrc_menu(board: str, series: str) -> list[str]:
+    """Clock Source: the internal oscillator, or the crystal EVT assumes. The
+    choice only switches the CPU Clock entry's HSE defines on."""
+    mhz = FAMILY[SERIES_CONFIG[series]["family"]]["hse_hz"] // 1000000
+    return [f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI)",
+            f"{board}.menu.clocksrc.hsi.build.clock_src_defines=",
+            f"{board}.menu.clocksrc.hse=External crystal {mhz} MHz (HSE; HSI if it does not start)",
+            f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}"]
 
 
 def opt_menu(board: str) -> list[str]:
@@ -1412,7 +1453,7 @@ def _row_hclk(row: dict) -> int:
 
 def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
                   configs: list, symbols: dict, prescalers: dict,
-                  hclk: int | None = None) -> dict:
+                  hclk: int | None = None, source: str = "HSI") -> dict:
     """What SystemInit has to write to run this family's SYSCLK at hz off HSI.
 
     Returns the numbers, not the symbol names: the same name is a different
@@ -1424,11 +1465,15 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
     rather than to the family: CH32V103 wants 0 at 8 MHz and 2 at 72, and
     getting that wrong is a part that cannot fetch its own code.
     """
+    # SetSysClockToHSE runs the system clock off the crystal itself and says no
+    # SYSCLK=: it is the crystal's frequency.
+    osc_hz = FAMILY[family]["hse_hz"] if source == "HSE" else hsi_hz
     want = [r for r in configs
-            if r["family"] == family and r["source"] == "HSI"
+            if r["family"] == family and r["source"] == source
             # An exact match: a substring test took "SYSCLK=80000000" (the
             # 80 MHz PLL setting) for 8 MHz on CH32V205.
-            and r["domains"].split(";")[0] == f"SYSCLK={hz}"]
+            and (r["domains"].split(";")[0] == f"SYSCLK={hz}"
+                 or (source == "HSE" and not r["domains"] and hz == osc_hz))]
     # One SYSCLK, several setters: CH32V003's 24 MHz row and its 8 MHz row
     # (HSI over HPRE /3) share SYSCLK=24000000. The HCLK asked for picks the
     # row; an undivided row serves a menu entry that divides it further here
@@ -1436,6 +1481,9 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
     if hclk is not None and len(want) > 1:
         exact = [r for r in want if _row_hclk(r) == hclk]
         want = exact or [r for r in want if _row_hclk(r) == hz]
+    if not want and source == "HSE":
+        raise SystemExit(f"ERROR: {family}: ch32-device-data lists no HSE clock "
+                         f"configuration for SYSCLK={hz}")
     if not want:
         if hz == hsi_hz:
             # The reset default: no setter configures it because nothing has to
@@ -1462,7 +1510,7 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
     # instruction trap in SystemInit's SWS wait, G8R7 on the bench
     # 2026-10-22). A row that divides without saying what it divides to is
     # refused rather than guessed.
-    domains = dict(d.split("=", 1) for d in row["domains"].split(";") if "=" in d)
+    domains = dict(d.split("=", 1) for d in row["domains"].split(";") if "=" in d) or {"SYSCLK": str(osc_hz)}
     true_sysclk = int(domains["SYSCLK"])
     row_hpre = int(row["hpre"] or 1)
     if "HCLK" in domains:
@@ -1474,9 +1522,9 @@ def resolve_clock(family: str, hz: int, die: str | None, hsi_hz: int,
     else:
         raise SystemExit(f"ERROR: {family}: {row['config']} has hpre {row_hpre} but no HCLK= "
                          "in its domains; the tables are older than ch32-device-data 51660a0")
-    if not row["pll"] and true_sysclk != hsi_hz:
+    if not row["pll"] and true_sysclk != osc_hz:
         raise SystemExit(f"ERROR: {family}: {row['config']} has no PLL but SYSCLK={true_sysclk} "
-                         f"is not the oscillator ({hsi_hz})")
+                         f"is not the oscillator ({osc_hz})")
     if FAMILY[family].get("sequenced_clock") and row["pll"]:
         # The setter's steps do the whole switch (gen_clock_init emits them as
         # CH32RV_CLOCK_SEQUENCE() under this number). The core is clocked by
@@ -3617,6 +3665,12 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     # value would be referring to itself.
     board_clock = clock_defines(clk, latency)
     lines.append(f"{board}.build.clock_defines={board_clock}")
+    if hse_series(series):
+        # The first CPU Clock entry's, as build.clock_defines is: what a build
+        # without the menu (a bare FQBN) gets with clocksrc=hse.
+        hse = clock_for(None, menu[0][1] * 1000000, menu[0][2] * 1000000, "HSE")
+        lines.append(f"{board}.build.clock_hse_defines="
+                     f"{clock_hse_defines(series, menu[0][0], clk, hse, latency, fam)}")
     lines.append("")
 
     ld_files = {}
@@ -3709,6 +3763,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
 
     if menu:
         lines += clock_menu(board, series, menu, fam, fact, clock_for)
+        if hse_series(series):
+            lines += clocksrc_menu(board, series)
         lines.append("")
     lines += opt_menu(board)
     lines.append("")
@@ -3797,14 +3853,14 @@ def main() -> int:
         rows = by_board[series]
         block, ld_files = gen_board(
             series, rows, ch32rv, facts, die,
-            lambda part=None, sysclk=None, hclk=None, series=series: resolve_clock(
+            lambda part=None, sysclk=None, hclk=None, source="HSI", series=series: resolve_clock(
                 SERIES_CONFIG[series]["family"],
                 sysclk or FAMILY[SERIES_CONFIG[series]["family"]].get(
                     "sysclk", int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L"))),
                 die_macro_part.get(part) if part else die_macro_series.get(series),
                 facts[SERIES_CONFIG[series]["family"]]["hsi_hz"],
                 clock_configs_t, clock_symbols_t, clock_prescalers_t,
-                hclk or int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L"))))
+                hclk or int(FAMILY[SERIES_CONFIG[series]["family"]]["f_cpu"].rstrip("L")), source))
         parts = sorted({r["part_number"] for r in rows})
         variant_text = gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                                 interrupts[SERIES_CONFIG[series]['vectors']], remap,

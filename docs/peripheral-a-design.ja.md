@@ -233,6 +233,8 @@ E5 の結果(2026-10-28、ベンチの基板。HSEON から HSERDY までと、S
 - **コアの SysTick は、クロックが自分の構成と違うとすぐに `SystemInit()` で戻す**(デバッガ対策、`ch32rv_clock_is_ours()`)。HSE の構成も「自分の構成」として認める生成が要る。`SystemInit()` は HSE を切る(Ethernet の注記)ので、HSE を選んだときは切らないようにする。
 - 周波数を間違えて選ぶと、UART も `millis()` もずれるだけで気づきにくい。**起動時に HSE を HSI と比べて、メニューの値から大きく外れていたら HSI に戻り、`clockSource()` で知らせる**案を足す(比べる方法は、タイマーの入力捕捉か、決まった数のループの時間)。
 
+実装(2026-10-28): Clock Source メニュー(`clocksrc`、`hsi` / `hse`)。CPU Clock の各項目に HSE の行(clock_configs.csv の `_HSE`)の PLL の値を出し、`SystemInit()` が水晶の立ち上がりを約 10 ms 待って選ぶ。立たなければ同じ項目の HSI の値で動く(`CH32RV.clockSource()` で分かる)。クロックの見張りは、選んだほうと比べる。USB HS の `hseHz` と `ETH` の HSE の既定もメニューの値にした。V003(24 / 48 MHz)、V006、V103、V203、V205(160 MHz)、V307(96 / 8 MHz)、L103(96 MHz)で、HSE で動き、`millis()` が PC の時計と合うことを確かめた。V103 と V205 の水晶もこれで 8 MHz と分かった。まだのもの: 水晶が立たないときの切り替え(ベンチに水晶の無い基板が無い)、起動時の HSE と HSI の比較、EVT 以外の周波数、V208・M030・X315・V407・H41x。
+
 ### 5.6 TouchKey
 
 - `touchRead(pin)` を ESP32 と同じ意味にする(生の数値を返す。正規化しない)。触ったときに増えるか減るかは系列ごとに文書にする(ESP32 も、ESP32 と S2 / S3 で逆)。

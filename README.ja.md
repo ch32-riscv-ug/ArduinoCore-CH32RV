@@ -45,6 +45,7 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 |---|---|---|
 | Part Number (`pnum`) | `ANY` | 型番。`ANY` は系列内の最小 flash/RAM を宣言するため、同じ系列のどの型番にも載せられる |
 | CPU Clock (`clock`) | 系列ごと | システムクロック。項目名に周波数と、その周波数で使えるもの（USB、Ethernet）を書いてある。既定は V20x / V30x が 96 MHz、V103 が 72 MHz、X035 が 48 MHz、V00x が 24 MHz、L103 / M103 が 8 MHz、M030 が 72 MHz、V205 が 160 MHz（M030 と V205 は実機で確かめて EVT の既定に上げた。L103 / M103 の PLL の項目は「not checked」で、L103 は 72 / 96 MHz で動いている間、OEP probe が接続できない（WCH-LinkE はできる）。試すときは [起動待ち](docs/upload-routes.ja.md#接続できなくなるイメージを試すとき起動待ち) を付ける）。V208 / V203RB の Ethernet は `60MHz (Ethernet, no USB)` を選ぶ。V407 / V467 は 200 MHz（120 / 60 / 20 MHz も選べる。V407WEU6 で実機確認）。X315 は 20 MHz で、240 MHz も選べる（HSI から USBHS PLL。X315MCU6 で実機確認）。H41x にはまだ無い。いまのクロックは `getCpuFrequencyMhz()` / `getApbFrequency()`（arduino-esp32 と同じ）で取れる。実行中に変える API は無い |
+| Clock Source (`clocksrc`) | `hsi` | `hse` にすると、CPU Clock の同じ周波数を外付けの水晶（HSE）から作る。水晶の周波数は EVT の前提のもの（V00x 24 MHz、V103 / V20x / V205 / V30x / L103 8 MHz）で、ベンチの基板はどれもそれだった。起動時に水晶が立たなければ（1〜2.5 ms で立つところを約 10 ms 待つ）、止まらずに HSI で同じ周波数を作る。どちらで動いているかは `CH32RV.clockSource()` で分かる。USB HS と Ethernet の HSE の周波数の既定も、このメニューの値になる。V208・M030・X315・V407・H41x にはまだ無い（[A の機能の全体設計](docs/peripheral-a-design.ja.md) 5.5） |
 | Optimize (`opt`) | `oslto` | `-Os` に LTO。flash が 9〜24% 減り、速さは同じ（X035 で実測）。`osltosr` は `-msave-restore` も足してさらに 4〜5% 減るが、関数呼び出しの多い処理（楕円曲線暗号など）が 7〜9% 遅くなる。`osstd` は LTO なし |
 | C Runtime Library (`rtlib`) | `nano` | `printf("%f")` / `scanf("%f")` の浮動小数点変換を追加するか |
 

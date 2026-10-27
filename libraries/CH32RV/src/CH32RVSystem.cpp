@@ -15,6 +15,9 @@ extern char _data_lma[];
 extern char _edata[];
 extern char _ch32rv_flash_origin[];
 extern char _ch32rv_flash_length[];
+#ifdef CH32RV_CLOCK_HSE_HZ
+extern uint8_t ch32rv_clock_on_hse;   /* wiring_time.c */
+#endif
 }
 
 uint32_t CH32RVSystem::getHeapSize()
@@ -163,6 +166,15 @@ void CH32RVSystem::wdtFeed()
 {
 #ifdef CH32RV_IWDG_BASE
     CH32RV_IWDG_CTLR = CH32RV_IWDG_KEY_FEED;
+#endif
+}
+
+CH32RVClockSource CH32RVSystem::clockSource()
+{
+#ifdef CH32RV_CLOCK_HSE_HZ
+    return ch32rv_clock_on_hse ? CH32RV_CLOCK_SOURCE_HSE : CH32RV_CLOCK_SOURCE_HSI;
+#else
+    return CH32RV_CLOCK_SOURCE_HSI;
 #endif
 }
 

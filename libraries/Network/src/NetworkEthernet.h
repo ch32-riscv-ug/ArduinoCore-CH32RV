@@ -86,7 +86,9 @@ private:
 #endif
 
     uint8_t _mac[6] = {0};
-#if defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
+#if defined(CH32RV_CLOCK_HSE_HZ)
+    uint32_t _hseHz = CH32RV_CLOCK_HSE_HZ;     /* the Clock Source menu's crystal */
+#elif defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
     uint32_t _hseHz = 8000000;
 #else
     uint32_t _hseHz = 25000000;
