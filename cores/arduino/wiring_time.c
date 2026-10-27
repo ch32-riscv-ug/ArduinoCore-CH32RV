@@ -138,10 +138,19 @@ void SystemInit(void)
                        CH32RV_FLASH_LATENCY;
 #endif
 #ifdef CH32RV_CLOCK_ACTLR_ADDR
-    /* CH32H41x: the flash clock (SCK_CFG), HCLK / 2 as EVT sets it for 400 MHz. */
+    /* The flash clock divider: CH32H41x's SCK_CFG (HCLK / 2 as EVT sets it for
+     * 400 MHz), CH32V407's SCKMOD - which sits behind the FLASH keys, so the
+     * family's header brackets it (clock_init_<family>.h). Slower than needed
+     * is safe while still on HSI, so it goes in before the PLL. */
+#ifdef CH32RV_CLOCK_FLASH_UNLOCK
+    CH32RV_CLOCK_FLASH_UNLOCK();
+#endif
     CH32RV_REG32(CH32RV_CLOCK_ACTLR_ADDR) =
         (CH32RV_REG32(CH32RV_CLOCK_ACTLR_ADDR) & ~(uint32_t)CH32RV_CLOCK_ACTLR_MASK) |
         CH32RV_CLOCK_ACTLR_VALUE;
+#ifdef CH32RV_CLOCK_FLASH_RELOCK
+    CH32RV_CLOCK_FLASH_RELOCK();
+#endif
 #endif
 
     /* Both APB prescalers stay at /1, so PCLK1 == PCLK2 == HCLK == F_CPU and
@@ -196,6 +205,17 @@ void SystemInit(void)
     while ((CH32RV_CLOCK_PLL_REG & (uint32_t)CH32RV_CLOCK_SYSPLL_SEL_MASK) != 0u) {
     }
     CH32RV_CLOCK_PLL_REG |= (uint32_t)CH32RV_CLOCK_SYSPLL_GATE;
+#endif
+#ifdef CH32RV_CLOCK_SYSPLL_ADDR
+    /* CH32V407: the PLL reaches SYSCLK through CFGR2 - its source and divider,
+     * confirmed, then the gate opened - EVT's SetSYSCLK_*_HSI order. */
+    CH32RV_REG32(CH32RV_CLOCK_SYSPLL_ADDR) =
+        (CH32RV_REG32(CH32RV_CLOCK_SYSPLL_ADDR) & ~(uint32_t)CH32RV_CLOCK_SYSPLL_MASK) |
+        CH32RV_CLOCK_SYSPLL_VALUE;
+    while ((CH32RV_REG32(CH32RV_CLOCK_SYSPLL_ADDR) & CH32RV_CLOCK_SYSPLL_POLL_MASK) !=
+           CH32RV_CLOCK_SYSPLL_POLL_VALUE) {
+    }
+    CH32RV_REG32(CH32RV_CLOCK_SYSPLL_ADDR) |= (uint32_t)CH32RV_CLOCK_SYSPLL_ON;
 #endif
     CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~CH32RV_RCC_CFGR0_SW_MASK) |
                      CH32RV_RCC_CFGR0_SW_PLL;

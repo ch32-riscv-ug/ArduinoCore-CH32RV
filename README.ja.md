@@ -44,7 +44,7 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | メニュー | 既定 | 内容 |
 |---|---|---|
 | Part Number (`pnum`) | `ANY` | 型番。`ANY` は系列内の最小 flash/RAM を宣言するため、同じ系列のどの型番にも載せられる |
-| CPU Clock (`clock`) | 系列ごと | システムクロック。項目名に周波数と、その周波数で使えるもの（USB、Ethernet）を書いてある。既定は V20x / V30x が 96 MHz、V103 が 72 MHz、X035 が 48 MHz、V00x が 24 MHz、L103 / M103 と V205 が 8 MHz、M030 が 72 MHz（M030 は実機で確かめて EVT の既定に上げた。L103 / M103・V205 の PLL の項目は「not checked」で、L103 は 72 / 96 MHz で動いている間、OEP probe が接続できない（WCH-LinkE はできる）。試すときは [起動待ち](docs/upload-routes.ja.md#接続できなくなるイメージを試すとき起動待ち) を付ける）。V208 / V203RB の Ethernet は `60MHz (Ethernet, no USB)` を選ぶ。V407 / X315 / H41x にはまだ無い。いまのクロックは `getCpuFrequencyMhz()` / `getApbFrequency()`（arduino-esp32 と同じ）で取れる。実行中に変える API は無い |
+| CPU Clock (`clock`) | 系列ごと | システムクロック。項目名に周波数と、その周波数で使えるもの（USB、Ethernet）を書いてある。既定は V20x / V30x が 96 MHz、V103 が 72 MHz、X035 が 48 MHz、V00x が 24 MHz、L103 / M103 と V205 が 8 MHz、M030 が 72 MHz（M030 は実機で確かめて EVT の既定に上げた。L103 / M103・V205 の PLL の項目は「not checked」で、L103 は 72 / 96 MHz で動いている間、OEP probe が接続できない（WCH-LinkE はできる）。試すときは [起動待ち](docs/upload-routes.ja.md#接続できなくなるイメージを試すとき起動待ち) を付ける）。V208 / V203RB の Ethernet は `60MHz (Ethernet, no USB)` を選ぶ。V407 / V467 は 200 MHz（120 / 60 / 20 MHz も選べる。V407WEU6 で実機確認）。X315 / H41x にはまだ無い。いまのクロックは `getCpuFrequencyMhz()` / `getApbFrequency()`（arduino-esp32 と同じ）で取れる。実行中に変える API は無い |
 | Optimize (`opt`) | `oslto` | `-Os` に LTO。flash が 9〜24% 減り、速さは同じ（X035 で実測）。`osltosr` は `-msave-restore` も足してさらに 4〜5% 減るが、関数呼び出しの多い処理（楕円曲線暗号など）が 7〜9% 遅くなる。`osstd` は LTO なし |
 | C Runtime Library (`rtlib`) | `nano` | `printf("%f")` / `scanf("%f")` の浮動小数点変換を追加するか |
 

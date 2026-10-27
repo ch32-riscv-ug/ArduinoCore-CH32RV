@@ -21,3 +21,14 @@
     CH32RV_REG32(0x40021030u) = 0x00000000u; \
     CH32RV_REG32(0x40021008u) = 0x008f0000u; \
 } while (0)
+
+/* Around the flash clock divider (SCKMOD): the keys first, the relock after. */
+#define CH32RV_CLOCK_FLASH_UNLOCK() do { \
+    CH32RV_REG32(0x40022004u) = 0x45670123u; \
+    CH32RV_REG32(0x40022004u) = 0xcdef89abu; \
+    CH32RV_REG32(0x40022024u) = 0x45670123u; \
+    CH32RV_REG32(0x40022024u) = 0xcdef89abu; \
+} while (0)
+#define CH32RV_CLOCK_FLASH_RELOCK() do { \
+    CH32RV_REG32(0x40022010u) |= 0x00008080u; \
+} while (0)
