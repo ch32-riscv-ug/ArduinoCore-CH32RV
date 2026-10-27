@@ -20,6 +20,7 @@
 | PC につなぐ USB 機器 | [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/examples/README.ja.md) | SerialUSBEcho → 目的のクラス |
 | ボードへ USB 機器をつなぐ | [CH32RVUsbHost](../libraries/CH32RVUsbHost/examples/README.ja.md) | DeviceInfo → 目的のクラス |
 | USB-C 電源の交渉 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/examples/README.ja.md) | ListProfiles / CycleVoltages |
+| ADC の連続取り込み | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.ja.md) | AdcStreamStats |
 | 高速 ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.ja.md) | HsAdcRead → HsAdcStream |
 | GPIO の取り込み | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.ja.md) | LogicBurst → LogicStream |
 | デバッグ接続の文字出力 | [SerialSDI](../libraries/SerialSDI/README.ja.md) | HelloSDI / PrintfToSDI |

@@ -1,0 +1,7 @@
+CH32RVAdcStream	KEYWORD1
+startContinuous	KEYWORD2
+readBuffer	KEYWORD2
+overruns	KEYWORD2
+buffersFilled	KEYWORD2
+sampleRate	KEYWORD2
+sampleTimeStep	KEYWORD2

@@ -19,6 +19,7 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | A USB device connected to a PC | [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/examples/README.md) | SerialUSBEcho → class examples |
 | USB peripherals connected to the board | [CH32RVUsbHost](../libraries/CH32RVUsbHost/examples/README.md) | DeviceInfo → class examples |
 | Type-C power negotiation | [CH32RVUsbPd](../libraries/CH32RVUsbPd/examples/README.md) | ListProfiles / CycleVoltages |
+| Continuous ADC capture | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.md) | AdcStreamStats |
 | High-speed ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.md) | HsAdcRead → HsAdcStream |
 | GPIO capture | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.md) | LogicBurst → LogicStream |
 | Debug text output | [SerialSDI](../libraries/SerialSDI/README.md) | HelloSDI / PrintfToSDI |
