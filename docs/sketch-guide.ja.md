@@ -56,7 +56,7 @@ delay(ms) の間も、裏の仕事は回り続ける（callback は動かない�
 | 9 | [BasicWork](../libraries/CH32RVTaskKit/examples/BasicWork/README.ja.md) | 仕事を「起動条件つきの関数」に分ける |
 | 10 | [ButtonBlinkConsole](../libraries/CH32RVTaskKit/examples/ButtonBlinkConsole/README.ja.md) | ボタン、点滅、コマンドを 1 つのスケッチにまとめる |
 
-以下のコード片の `LED` と `BUTTON` は、自分の板の端子に置き換えてください（`const int LED = PC0;` など）。
+以下のコード片の `LED` と `BUTTON` は、自分の板の端子に置き換えてください（`const int LED = PA2;` など）。
 Generic のボードは石の系列であって基板ではないので、`LED_BUILTIN` を持ちません。
 
 ## 1. `delay()` の代わりに時刻を比べる

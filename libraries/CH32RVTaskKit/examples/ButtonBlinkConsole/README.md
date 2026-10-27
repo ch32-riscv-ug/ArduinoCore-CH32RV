@@ -18,7 +18,7 @@ interrupts are turned off is where the two counters it writes are read.
 
 ## Hardware and connections
 
-- An LED with its resistor on `LED_PIN` (default `PC0`).
+- An LED with its resistor on `LED_PIN` (default `PA2`).
 - A push button between `BUTTON_PIN` (default `PA1`) and GND; the internal pull-up is used.
 - A 115200-baud 8N1 UART monitor on `RX` / `TX`, sending a line feed at the end of a line.
 

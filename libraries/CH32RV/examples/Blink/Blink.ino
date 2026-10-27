@@ -3,6 +3,10 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
+// en: Only a board that defines LED_BUILTIN builds this as is (the profile below); on a Generic board name the pad.
+// ja: そのままビルドできるのは LED_BUILTIN を持つ板だけ（下のプロファイル）。Generic の板では端子を指定する。
+/* board: UIAPDUINO_V003_V14 */
+
 // en: The board or build must identify the actual LED pin.
 // ja: 実際のLED端子はボード定義またはビルド設定で指定する。
 #ifndef LED_BUILTIN

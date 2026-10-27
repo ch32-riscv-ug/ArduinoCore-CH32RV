@@ -9,12 +9,7 @@ profiles:
       - platform: ch32-riscv-ug:ch32rv (0.3.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
-  ch32v003:
-    fqbn: ch32-riscv-ug:ch32rv:CH32V003:pnum=ANY
-    platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.3.0)
-        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
-
+  # CH32V003: omitted, requires USBFS, which CH32V003 does not have
   ch32v203:
     fqbn: ch32-riscv-ug:ch32rv:CH32V203:pnum=ANY
     platforms:
@@ -39,10 +34,5 @@ profiles:
       - platform: ch32-riscv-ug:ch32rv (0.3.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
-  ch32v006:
-    fqbn: ch32-riscv-ug:ch32rv:CH32V006:pnum=ANY
-    platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.3.0)
-        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
-
+  # CH32V006: omitted, requires USBFS, which CH32V006 does not have
 default_profile: ch32x035

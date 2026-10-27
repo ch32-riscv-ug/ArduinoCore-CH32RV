@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const int LED_PIN = PC0;
+static const int LED_PIN = PA2;
 static const int BUTTON_PIN = PA1;
 
 static CH32RVTaskKit::Executor app;

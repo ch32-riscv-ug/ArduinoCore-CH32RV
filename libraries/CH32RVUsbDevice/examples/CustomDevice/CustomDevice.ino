@@ -3,6 +3,8 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
+/* requires: USBFS */
+
 #include <CH32RVUsbDevice.h>
 
 static const int RX_PIN = RX;

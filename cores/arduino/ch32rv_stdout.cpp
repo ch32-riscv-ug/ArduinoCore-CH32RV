@@ -40,7 +40,11 @@ void ch32rv_stdout_offer(Print *port)
     }
 }
 
-extern "C" size_t ch32rv_serial_write_bytes(const uint8_t *data, size_t len)
+/* used: newlib reaches _write (syscalls.c), and through it this function,
+ * only at the end of the link, after LTO has already dropped whatever no LTO
+ * object referenced - a sketch that printf()s without anything else pulling in
+ * syscalls.c early (PrintfToSDI) then failed with an undefined reference. */
+extern "C" __attribute__((used)) size_t ch32rv_serial_write_bytes(const uint8_t *data, size_t len)
 {
     return ch32rv_stdout ? ch32rv_stdout->write(data, len) : 0;
 }

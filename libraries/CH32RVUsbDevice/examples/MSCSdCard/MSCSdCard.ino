@@ -3,6 +3,8 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
+/* requires: USBFS */
+
 #include <SPI.h>
 #include <CH32RVUsbDevice.h>
 #include <CH32RVUsbDeviceMscSdCard.h>
