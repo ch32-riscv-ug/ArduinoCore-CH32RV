@@ -42,3 +42,36 @@
 | X315 | 2.8 ms | はっきりしない |
 
 SysTick の数は、消去の間も進み続ける（CPU が止まる系列でも）。
+
+## M6: 書き込みの経路ごとに末尾が残るか（2026-10-28、ch32rv 0.23.2）
+
+手順はスクリプト m6.sh で、次のとおり。
+
+1. 末尾の 256 B 手前に、16 B の印を書く（`flash` の bin、`--at`、`--erase sector`）。
+2. 何もしないスケッチを、IDE の書き込みのレシピと同じ引数で書く（`flash … --reset run --confirm-run`、`--erase` は既定の auto）。
+3. 印を読み直す。
+
+| 経路 | 系列（石） | 書き方 | auto が選んだ消去 | 末尾 |
+|---|---|---|---|---|
+| WCH-LinkE | V003（F4P6） | WCH の書き込みスタブ | chip | 消えた |
+| WCH-LinkE | X035（C8T6） | 同上 | chip | 消えた |
+| WCH-LinkE | L103（C8T6） | 同上 | chip | 消えた |
+| WCH-LinkE | V203（C8T6） | 同上 | chip | 消えた |
+| WCH-LinkE | V307（VCT6） | 同上 | chip | 消えた（flash-raw） |
+| WCH-LinkE | V205（RCT6） | ch32rv のローダー | ページ | 残った |
+| WCH-LinkE | X315（MCU6） | 同上 | ページ | 残った |
+| WCH-LinkE | V006（K8U6） | 同上 | ページ | 残った |
+| OEP（RP2350） | L103（C8T6） | ch32rv のローダー | ページ | 残った |
+| OEP（ESP32-P4） | V407（WEU6） | 同上 | ページ | 残った |
+| OEP | M030（G8R7） | 同上 | ページ | 残った |
+| WCH-LinkE、`--erase sector` | V003、V307 | スタブ | sector | 残った |
+| H417 の DFU | H417 | — | — | 残った（flash-raw） |
+
+- ch32rv の `--erase auto` は、イメージがフラッシュの先頭から始まると chip にする（`cli/src/cmd_flash.rs` の `resolve_erase`）。ただし、chip の消去をするのはスタブの経路だけ。ローダーの経路（スタブのない系列、OEP）は、イメージが覆うページだけを消している。
+- このため、今の既定のままだと、末尾が残るかどうかは系列とプローブの組み合わせで決まる。LinkE の V003、X035、L103、V20x、V30x（と、たぶん V103）は消え、そのほかは残る。
+- `--erase sector` にすれば、測ったすべての組み合わせで残る。
+- 測れなかった経路:
+  - V103（CH549 の WCH-Link）: 石が止まったまま。
+  - X035 の WeAct（OEP の P4 30eda0e34a0e）: プローブが USB に見えない。
+  - V003 の HID ブートローダー（hid://3-1.3.4）: 見つからない。ブートローダーに入れていないため。
+  - 工場の ISP（USB の ROM ブートローダー）: BOOT の端子を操作する配線がない。
