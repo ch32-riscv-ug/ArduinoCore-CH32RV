@@ -43,6 +43,39 @@ jobs:
       - name: Compare ArduinoCore-API with the pinned upstream commit
         run: uv run --no-project python tools/vendor/check_api_sync.py "${{ runner.temp }}/api-sync"
 
+  example-profiles:
+    name: Example profiles
+    runs-on: ubuntu-latest
+    outputs:
+      profiles: ${{ steps.list.outputs.profiles }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - id: list
+        run: echo "profiles=$(uv run --no-project python tools/index/build_examples.py --list-profiles)" >> "$GITHUB_OUTPUT"
+
+  examples:
+    name: Examples (${{ matrix.profile }})
+    needs: example-profiles
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(needs.example-profiles.outputs.profiles) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Cache tool archives
+        uses: actions/cache@v4
+        with:
+          path: .tools/cache
+          key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
+      - name: Fetch pinned toolchain
+        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
+      - name: Build every example for this profile
+        run: uv run --no-project python tools/index/build_examples.py "${{ runner.temp }}/examples" --profile "${{ matrix.profile }}"
+
   install-test:
     name: Package install (${{ matrix.os }})
     strategy:

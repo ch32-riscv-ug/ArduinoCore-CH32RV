@@ -10,6 +10,7 @@
 | `ch32rv_chips.csv` | 同梱 `ch32rv` が受理する chip 名 |
 | `fetch_tools.py` | 固定 tool と device-data を `.tools/` へ取得する |
 | `install_check.py` | 一時 server と空の Arduino data directory で install を検証する |
+| `build_examples.py` | 同梱の例を、各 sketch.yaml のプロファイルで作業ツリーに対してビルドする（毎回 `--clean`。CI はプロファイルごとのジョブ） |
 
 ## Archive の内容
 
