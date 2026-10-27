@@ -1517,8 +1517,11 @@ WeAct CH32X035 と UIAPduino Pro Micro V003 の2つは作った（libraries/CH32
 
 直したもの（実機で確かめていないものは、その旨を書く）:
 - V205・X305 / X315 の Serial / Wire / SPI / PWM: 端子ごとの AF 番号（AFIO GPIOx_AFLR / AFHR）を書くようにした。
-  ルート表は AF 番号ごとに端子の組み合わせを全部並べ、FIX メニューにも出る。**ビルドのみ**。V205 / X315 の実機で
-  Serial・Wire・SPI・analogWrite の信号が端子に出ることを確かめる。
+  ルート表は AF 番号ごとに端子の組み合わせを全部並べ、FIX メニューにも出る。2026-10-28 に V205RCT6・X315MCU6 で、
+  配線なしで確認した（LogicCapture で自分の端子を取り込む）: Serial の既定の TX（115200 の 0x55 が 8〜9 サンプル幅）、
+  SPI1 の SCK、TIM2 の PWM（V205 PA0・X315 PA4、10 kHz が 100 サンプル周期）、CH32RVSPISlave の自己試験、CH32RVAdcStream。
+  X315 の Serial は BRR の 16 ビット書き込みで 22 bps になっていたのを直した（4829a0bc）。残り: Wire（プルアップの配線が要る）、
+  既定以外の route。V205 は LinkE の接続で s0 が壊れるので、結果はリセットごとに 1 回だけ読む。
 - X033 / X035 の IWDG: LSI が無く HSI / 1024 で動くので、その周波数（46.875 kHz）を使う。X035 で 1 秒のリセットを実測。
 - Serial6〜9: V205 の USART6〜8、V30x の UART6〜8、V407 / V467 の USART6〜10（Serial9 まで）。**ビルドのみ**。
 - PWM: TIM4 / TIM5 の既定ピンを追加（tone / Servo が使うタイマーは除く）。タイマー管理に TIM8〜10（V30x）/ TIM8（V4x7）。
