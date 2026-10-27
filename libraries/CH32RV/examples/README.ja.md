@@ -30,6 +30,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [Blink](Blink/README.ja.md) | GPIO を High/Low に切り替え、スケッチが実行されることを LED で確認します。 |
 | [SerialEcho](SerialEcho/README.ja.md) | ハードウェア UART で行を受け取り、前後の空白を除いて返信します。 |
 | [AnalogRead](AnalogRead/README.ja.md) | アナログ入力の生値を UART で観察します。 |
+| [InternalAnalogRead](InternalAnalogRead/README.ja.md) | 内部の基準電圧・電源電圧・チップの温度を読みます。 |
 | [AnalogResolution](AnalogResolution/README.ja.md) | ADC と PWM の数値のスケールを変える使い方を示します。 |
 | [Fade](Fade/README.ja.md) | PWM の duty を変えて LED の明るさを連続的に変えます。 |
 | [PinInterrupt](PinInterrupt/README.ja.md) | GPIO のエッジを割り込みで数え、表示を `loop()` へ分けます。 |

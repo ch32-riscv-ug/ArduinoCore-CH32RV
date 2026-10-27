@@ -1170,6 +1170,9 @@ ESP32 の API の使い勝手は参考になるが、同じ保存エンジン、
 
 ### 第3弾の実装：ネットワーク
 
+- [x] CH32RV に `InternalAnalogRead` を追加した（2026-10-28。V307 / V103 / V003 / X035 で確認）。X035C8T6 は ADC_IN15（VREFINT）を
+  4〜15 と読み（端子の変換は正常、RM に有効化の手順は無い）、VDD が 245 V と出たので、6 V を超える答えは「不明（0）」にした。
+  10 月に X035F8U6 で測れた理由と、C8T6 で読めない理由は未解明。
 - [x] Network に `EthernetStatus` / `TcpEchoServer` / `UdpEcho` / `HttpGet` / `MdnsWebServer` / `NetworkTime` を追加した
   （2026-10-28）。日英README・生成profile（`requires: ETH_MAC` で V307）・日英一覧への導線をそろえた。
   どれもベンチの V307 で、PC 側から確かめた（nc・Python のソケット・curl・mDNS の問い合わせ・PC の時計との比較）。

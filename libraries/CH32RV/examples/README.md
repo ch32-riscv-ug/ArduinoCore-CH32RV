@@ -26,6 +26,7 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [Blink](Blink/README.md) | Toggle a GPIO to confirm sketch execution with an LED. |
 | [SerialEcho](SerialEcho/README.md) | Receive a line over hardware UART and echo it with surrounding whitespace removed. |
 | [AnalogRead](AnalogRead/README.md) | Observe raw analog input readings on UART. |
+| [InternalAnalogRead](InternalAnalogRead/README.md) | Read the internal reference, the supply voltage and the die temperature. |
 | [AnalogResolution](AnalogResolution/README.md) | Change the numeric scales used by ADC and PWM APIs. |
 | [Fade](Fade/README.md) | Vary PWM duty to fade an LED up and down. |
 | [PinInterrupt](PinInterrupt/README.md) | Count GPIO edges in an interrupt and defer printing to `loop()`. |
