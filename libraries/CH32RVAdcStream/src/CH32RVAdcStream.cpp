@@ -6,7 +6,9 @@
  * DMA1 is at 0x40020000 with channel 1's registers from 0x08, as
  * CH32RVLogicCapture uses it. V407 / V467 take ADC1 on DMA1 channel 12
  * instead (EVT ADC_DMA; its flags are in DMA1_EXTEN at 0xF0, four bits per
- * channel from channel 9 - ch32v4x7_dma.h). analogRead() brings the ADC up (clock divider,
+ * channel from channel 9 - ch32v4x7_dma.h). H41x has no fixed request: DMAMUX
+ * channel 1, which feeds DMA1 channel 1, is set to ADC1's request 120 (EVT
+ * ADC_DMA writes 0x78; the register holds the number minus one). analogRead() brings the ADC up (clock divider,
  * calibration); this file only changes the sequence, the sample time and the
  * mode, and end() puts back what analogRead() expects. */
 #include "CH32RVAdcStream.h"
@@ -21,13 +23,20 @@
 #define CH_SHIFT    16u
 #define CH_IRQN     CH32RV_IRQN_DMA1_Channel12
 #define CH_HANDLER  DMA1_Channel12_IRQHandler
-#else
+#else   /* every other family, and H41x through the DMAMUX */
 #define DMA_INTFR   CH32RV_REG32(DMA1_BASE + 0x00u)
 #define DMA_INTFCR  CH32RV_REG32(DMA1_BASE + 0x04u)
 #define CH_BASE     (DMA1_BASE + 0x08u)
 #define CH_SHIFT    0u
 #define CH_IRQN     CH32RV_IRQN_DMA1_Channel1
 #define CH_HANDLER  DMA1_Channel1_IRQHandler
+#endif
+#if defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
+#define DMAMUX_C0_3 CH32RV_REG32(0x40020800u)   /* mux channels 1..4, a byte each; channel 1 -> DMA1 channel 1 */
+#define REQ_ADC1    120u
+#define MUX_ADC1()  (DMAMUX_C0_3 = (DMAMUX_C0_3 & ~0x7Fu) | (REQ_ADC1 - 1u))
+#else
+#define MUX_ADC1()  ((void)0)
 #endif
 #define CH1_CFGR    CH32RV_REG32(CH_BASE + 0x00u)
 #define CH1_CNTR    CH32RV_REG32(CH_BASE + 0x04u)
@@ -104,6 +113,7 @@ bool CH32RVAdcStream::begin(const pin_size_t *pins, uint8_t count, uint32_t rate
     }
     _count = count;
     ch32rv_clock_enable(DMA1);
+    MUX_ADC1();
 
     /* Fastest first: the first step at or below the rate is the one. */
     _step = 7;
@@ -221,6 +231,7 @@ bool CH32RVAdcStream::startContinuous(uint16_t *buffer, uint16_t samples)
     active = this;
     configure(_step);
     adc_halt();
+    MUX_ADC1();
     CH1_PADDR = (uint32_t)(uintptr_t)&CH32RV_ADC_RDATAR;
     CH1_MADDR = (uint32_t)(uintptr_t)buffer;
     CH1_CNTR = (uint32_t)samples * 2u;
