@@ -23,6 +23,7 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | Type-C power negotiation | [CH32RVUsbPd](../libraries/CH32RVUsbPd/examples/README.md) | ListProfiles / CycleVoltages |
 | Continuous ADC capture | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.md) | AdcStreamStats |
 | High-speed ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.md) | HsAdcRead → HsAdcStream |
+| Timer inputs (period, pulse width, encoders) | [CH32RVTimerInput](../libraries/CH32RVTimerInput/README.md) | PulseMeasure / RotaryEncoder |
 | GPIO capture | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.md) | LogicPulseDecode (every family) / LogicBurst → LogicStream (H41x) |
 | Debug text output | [SerialSDI](../libraries/SerialSDI/README.md) | HelloSDI / PrintfToSDI |
 | Bidirectional debug terminal | [SerialDMDATA](../libraries/SerialDMDATA/README.md) | HelloDMDATA |
