@@ -1,0 +1,19 @@
+--- /home/mt/dev_wch/ArduinoCore-CH32RV/cores/arduino/sections.ld	2026-10-27 19:27:38.954782198 +0900
++++ /var/tmp/claude-tmp/claude-1000/-home-mt-dev-wch-ArduinoCore-CH32RV/304fc7e3-f69d-4a99-9b8d-7edb631ee0f8/scratchpad/persist/user/hardware/ch32-riscv-ug/ch32rv/cores/arduino/sections.ld	2026-10-28 04:09:14.361447244 +0900
+@@ -133,6 +133,16 @@
+         . = . + __stack_size;
+         PROVIDE( _eusrstack = . );
+     } >RAM
++
++    /* EXPERIMENT (PERSIST-01): storage kept across uploads, packed against the end of flash. Only what something
++     * references survives --gc-sections, so it is 0 B unless a library or the sketch uses it. NOLOAD: never in the
++     * image. */
++    .ch32rv_store ORIGIN(FLASH) + LENGTH(FLASH) - SIZEOF(.ch32rv_store) (NOLOAD) :
++    {
++        PROVIDE( _ch32rv_store_start = . );
++        *(.ch32rv_store*)
++        PROVIDE( _ch32rv_store_end = . );
++    } >FLASH
+ }
+ 
+ ASSERT(_vector_base == 0,
