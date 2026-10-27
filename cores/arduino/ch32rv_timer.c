@@ -82,6 +82,9 @@ static bool any_channel_owner(const TimerState *state)
 static void stop_hardware(const CH32RVTimerCapability *cap)
 {
     CH32RV_TIM_CTLR1(cap->register_base) = 0;
+    /* An encoder or capture owner leaves a slave mode behind; the next owner's
+     * counter would still follow its pins. */
+    CH32RV_TIM_SMCFGR(cap->register_base) = 0;
     CH32RV_TIM_DMAINTENR(cap->register_base) = 0;
     CH32RV_TIM_CCER(cap->register_base) = 0;
     CH32RV_TIM_INTFR(cap->register_base) = 0;
@@ -407,7 +410,17 @@ bool ch32TimerApplyBase(const CH32RVTimerLease *lease)
     } else {
         CH32RV_TIM_ATRLR(cap->register_base) = (uint16_t)state->base.reload;
     }
+    /* UG loads the prescaler, but with the counter stopped it does not clear
+     * the count (V307, L103; 16- and 32-bit timers alike). A count left by
+     * the previous owner above the new reload would run on to the counter's
+     * end first: 2^32 ticks on a 32-bit timer - tone() on L103's TIM4 went
+     * silent for minutes after a lower note. */
     CH32RV_TIM_SWEVGR(cap->register_base) = CH32RV_TIM_SWEVGR_UG;
+    if (cap->counter_bits == 32u) {
+        CH32RV_TIM_CNT32(cap->register_base) = 0;
+    } else {
+        CH32RV_TIM_CNT(cap->register_base) = 0;
+    }
     CH32RV_TIM_INTFR(cap->register_base) = 0;
     CH32RV_TIM_CTLR1(cap->register_base) = state->base.control;
     state->applied_generation = state->base_generation;

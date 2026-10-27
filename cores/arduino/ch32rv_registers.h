@@ -496,6 +496,7 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
 #define CH32RV_TIM10_BASE (CH32RV_APB2_BASE + 0x5000u)
 
 #define CH32RV_TIM_CTLR1(b)   CH32RV_REG16((b) + 0x00u)
+#define CH32RV_TIM_SMCFGR(b)  CH32RV_REG16((b) + 0x08u)   /* slave mode (reserved on TIM6/7) */
 #define CH32RV_TIM_DMAINTENR(b) CH32RV_REG16((b) + 0x0Cu) /* interrupt enables */
 #define CH32RV_TIM_INTFR(b)   CH32RV_REG16((b) + 0x10u)   /* interrupt flags   */
 #define CH32RV_TIM_SWEVGR(b)  CH32RV_REG16((b) + 0x14u)   /* software events   */
@@ -524,6 +525,7 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
 #define CH32RV_TIM_BDTR(b)    CH32RV_REG16((b) + 0x44u)   /* TIM1 only */
 
 #define CH32RV_TIM_CTLR1_CEN  (1u << 0)
+#define CH32RV_TIM_CTLR1_URS  (1u << 2)  /* update event only from overflow */
 #define CH32RV_TIM_CTLR1_ARPE (1u << 7)
 #define CH32RV_TIM_INT_UIE    (1u << 0)  /* update interrupt enable / flag */
 #define CH32RV_TIM_SWEVGR_UG  (1u << 0)  /* force an update event          */
