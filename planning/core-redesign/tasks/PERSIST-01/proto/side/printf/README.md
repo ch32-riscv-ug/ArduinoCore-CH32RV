@@ -22,3 +22,6 @@ Print::printFloat does it (0.5 added at the last digit from a table, "ovf" past 
 ints and strings, 2: one %f, 3: a sketch that already prints doubles, 4: that plus one %f, 5: no formatter),
 own-run.txt (every case against C's results, stack depth per case, 20 calls' time). The first %f draft divided
 (1/v, rounding /= 10) and used 64-bit integers: size-f2 and the first lines of size.txt.
+
+Level 3: %f converted to float once (varargs always carry a double) and computed in float. own-size-float.txt adds
+mode 6 (a sketch with float math, no float printing) and 7 (6 plus one %f); own-run-float.txt.

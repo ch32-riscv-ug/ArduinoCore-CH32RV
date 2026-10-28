@@ -1,0 +1,15 @@
+CH32V003 impl1 lv3 mode1 code 8400 ram 708
+CH32V003 impl1 lv1 mode6 code 5932 ram 704
+CH32V003 impl1 lv2 mode7 code 14604 ram 728
+CH32V003 impl1 lv3 mode7 code 9904 ram 716
+CH32V003 impl1 lv3 mode4 code 15836 ram 756
+CH32X035 impl1 lv3 mode1 code 8756 ram 720
+CH32X035 impl1 lv1 mode6 code 6308 ram 716
+CH32X035 impl1 lv2 mode7 code 14432 ram 740
+CH32X035 impl1 lv3 mode7 code 10144 ram 728
+CH32X035 impl1 lv3 mode4 code 15752 ram 768
+CH32V307 impl1 lv3 mode1 code 5552 ram 736
+CH32V307 impl1 lv1 mode6 code 3304 ram 732
+CH32V307 impl1 lv2 mode7 code 16552 ram 764
+CH32V307 impl1 lv3 mode7 code 6228 ram 744
+CH32V307 impl1 lv3 mode4 code 17584 ram 792

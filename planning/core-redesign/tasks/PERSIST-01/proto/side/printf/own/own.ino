@@ -1,6 +1,7 @@
 // Own printf levels against newlib-nano. -DIMPL=0 newlib (the core's ch32rv_vprintf), 1 own (OWN_LEVEL picks the
 // level); -DMODE: 0 test (cases, stack depth, time), 1 size: ints and strings, 2 size: one %f, 3 size base for a sketch
-// that already prints doubles, 4 = 3 plus one %f through the formatter, 5 size base without any formatter.
+// that already prints doubles, 4 = 3 plus one %f through the formatter, 5 size base without any formatter,
+// 6 size base for a sketch with float math, 7 = 6 plus one %f.
 #include <stdarg.h>
 #ifndef IMPL
 #define IMPL 1
@@ -72,12 +73,18 @@ void loop() {
 #else
 volatile int v = 3;
 volatile double d = 2.5;
+volatile float fa = 1.5f;
 void setup() {
   Serial.begin(115200);
 #if MODE == 1
   OUT(Serial, "v=%d s=%s x=%08lx\n", v, "ok", (unsigned long)v);
 #elif MODE == 2
   OUT(Serial, "v=%d f=%.2f\n", v, d);
+#elif MODE == 6 || MODE == 7
+  Serial.println((int)(fa * v + fa / 3));  // float math, no float printing
+#if MODE == 7
+  OUT(Serial, "f=%.2f\n", (double)fa);
+#endif
 #elif MODE == 3 || MODE == 4
   Serial.println(d * v, 2);
 #if MODE == 4

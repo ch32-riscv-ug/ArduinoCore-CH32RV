@@ -1,5 +1,5 @@
 // Own small printf into a Print, for measuring. OWN_LEVEL 0: %[-0][width][l](d i u x X c s %);
-// 1: + precision, '*' width/precision, '+' and ' ' flags; 2: + %f (via double).
+// 1: + precision, '*' width/precision, '+' and ' ' flags; 2: + %f (via double); 3: + %f computed in float.
 #pragma once
 #include <stdarg.h>
 #include <string.h>
@@ -75,6 +75,7 @@ static size_t ownVprintf(Print &o, const char *f, va_list ap) {
         break;
       }
 #if OWN_LEVEL >= 2
+#if OWN_LEVEL == 2
       case 'f': {
         // Print::printFloat's way and results (0.5 added at the last digit, "ovf" past 4294967040), with the
         // double operations a sketch that prints doubles has already linked.
@@ -104,6 +105,37 @@ static size_t ownVprintf(Print &o, const char *f, va_list ap) {
         ownField(w, p, e - p, sign, 0, width, left, zero);
         break;
       }
+#else
+      case 'f': {
+        // Print::printFloat's way and results (0.5 added at the last digit, "ovf" past 4294967040), with the
+        // double operations a sketch that prints doubles has already linked.
+        float v = (float)va_arg(ap, double);  // varargs carry a double; one conversion, then float
+        if (prec < 0) prec = 6;
+        if (prec > 9) prec = 9;
+        if (__builtin_isnan(v)) { ownField(w, "nan", 3, 0, 0, width, left, false); break; }
+        if (__builtin_signbit(v)) { sign = '-'; v = -v; } else sign = plus;
+        if (__builtin_isinf(v)) { ownField(w, "inf", 3, sign, 0, width, left, false); break; }
+        if (v > 4294967040.0f) { ownField(w, "ovf", 3, sign, 0, width, left, false); break; }
+        // 0.5 at the last printed digit, from a table: a division would link __divdf3 (1.8 KB on rv32ec).
+        static const float rounding[10] = {0.5f, 0.05f, 0.005f, 5e-4f, 5e-5f, 5e-6f, 5e-7f, 5e-8f, 5e-9f, 5e-10f};
+        v += rounding[prec];
+        uint32_t ip = (uint32_t)v;
+        float rem = v - (float)ip;
+        char *q = buf + 12;  // fraction digits after the integer part's room
+        char *e = q;
+        if (prec) *e++ = '.';
+        for (int i = 0; i < prec; i++) {
+          rem *= 10.0f;
+          const unsigned d = (unsigned)rem;
+          *e++ = '0' + d;
+          rem -= d;
+        }
+        p = q;
+        do { *--p = '0' + ip % 10; ip /= 10; } while (ip);
+        ownField(w, p, e - p, sign, 0, width, left, zero);
+        break;
+      }
+#endif
 #endif
       case 'c': buf[0] = (char)va_arg(ap, int); ownField(w, buf, 1, 0, 0, width, left, false); break;
       case 's': {
