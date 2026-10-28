@@ -88,6 +88,13 @@ extern const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT];
 #define clockCyclesToMicroseconds(a) ((a) / clockCyclesPerMicrosecond())
 #define microsecondsToClockCycles(a) ((a) * clockCyclesPerMicrosecond())
 
+/* Run a function from RAM: `CH32RV_RAMFUNC void f(void) { ... }`. It costs
+ * its size in RAM. No flash wait states, and it keeps running while the flash
+ * is erased or programmed - but a call out of it into flash code (libgcc, an
+ * interrupt handler) stops there as usual. On CH32H41x everything already runs
+ * from RAM. */
+#define CH32RV_RAMFUNC __attribute__((section(".highcode"), noinline))
+
 /* arduino-esp32's clock getters. The clock is the board menu's (CPU Clock) and
  * fixed for the build, so these are F_CPU; there is no setter. The buses run
  * at HCLK (both APB prescalers stay /1, wiring_time.c). */

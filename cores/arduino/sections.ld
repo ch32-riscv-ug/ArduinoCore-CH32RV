@@ -60,10 +60,9 @@ SECTIONS
         PROVIDE_HIDDEN(__fini_array_end = .);
     } >FLASH
 
-    /* Code the user asks to run from RAM, e.g.
-     *   void f(void) __attribute__((section(".highcode")));
-     * crt0_ch32.S copies it when CH32RV_HIGHCODE is defined. Empty by default,
-     * so the copy loop moves zero bytes on families that do not use it. */
+    /* Code the sketch asks to run from RAM (CH32RV_RAMFUNC, Arduino.h).
+     * crt0_ch32.S copies it together with .data, so it must stay right before
+     * .data in both RAM and flash (asserted below). Empty unless used. */
     .highcode :
     {
         . = ALIGN(4);
@@ -149,5 +148,7 @@ SECTIONS
     } >FLASH
 }
 
+ASSERT(_data_lma - _highcode_lma == _data_vma - _highcode_vma_start,
+       "crt0 copies .highcode and .data in one loop: they must sit alike in flash and RAM")
 ASSERT(_vector_base == 0,
        "the interrupt vector table must start at the reset address")

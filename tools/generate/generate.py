@@ -77,7 +77,7 @@ import sys
 # X315 / V407 / H41x reach SYSCLK through PLLs this path does not drive yet.
 FAMILY = {
     "CH32V003": dict(march="rv32ec_zicsr", mabi="ilp32e", f_cpu="24000000L",
-                     defines="-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_HIGHCODE",
+                     defines="-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3",
                      systick64=0, flash_latency=0, adc_bits=10, i2c_has_rtr=0, hse_hz=24000000),
     "CH32V006": dict(march="rv32ec_zmmul_zicsr", mabi="ilp32e", f_cpu="24000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3",
