@@ -329,30 +329,45 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
 
 
 # newlib-nano always; floating point in printf / scanf is opt-in (ADR-0004,
-# approved 2026-10-01). The menu id and entry ids are the ones the WCH core,
-# ch32-riscv-arduino and STM32duino use for the same choice, so an FQBN or a
-# habit carries over. On CH32X035 a printf sketch is 48,492 bytes with the full
+# approved 2026-10-01). The newlib entries keep the ids the WCH core,
+# ch32-riscv-arduino and STM32duino use for the same choice. On CH32X035 a printf sketch is 48,492 bytes with the full
 # newlib formatter and 7,064 with nano; the float costs below were measured on
 # CH32X035 with one sscanf("%f") + snprintf("%f") sketch (2026-10-01: 10,092
 # bytes plain). Every board gets every entry: the choice is per sketch.
 # The Floating Point menu: (key, label, fp_flags for every compile, rtlib_flags
-# for the link, newlib's KB). The newlib entries keep the ids above. Float is
-# AVR's way (its double is 32 bits): float arithmetic, constants included;
-# print(float), String(float) and %f share the core's fixed-point text
-# (cores/arduino/ch32rv_format.h). printf's %f links floating point only where
-# the entry says so; without it %f prints as written.
+# for the link, newlib's KB). Float is AVR's way (its double is 32 bits): float
+# arithmetic, constants included; print(float), String(float) and %f share the
+# core's fixed-point text (cores/arduino/ch32rv_format.h). printf's %f links
+# floating point only where the entry says so; without it %f prints as written.
+# Stream::parseFloat adds its digits up in double (the nearest float, links
+# double arithmetic), in integers (the nearest float to 11 digits) or in float
+# (the smallest, the last bit off on one input in eight)
+# (cores/arduino/ch32rv_parse_float.h). Every combination of the core's three
+# is an entry of its own; the newlib entries parse the way their arithmetic
+# does by default (Double: double, Float: integers).
 _F32 = "-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant"
 _PF = "-DCH32RV_PRINTF_FLOAT=1"
 _NEWLIB = "-DCH32RV_PRINTF_NEWLIB=1"
 _UPF = "-Wl,-u,_printf_float"
 _USF = "-Wl,-u,_scanf_float"
-RTLIB_MENU = (
-    ("nano", "Double (64-bit) (default)", "", "", 0),
-    ("dblf", "Double (64-bit) + printf %f", _PF, "", 0),
-    ("flt", "Float (32-bit)", _F32, "", 0),
-    ("fltf", "Float (32-bit) + printf %f", f"{_F32} {_PF}", "", 0),
-    ("fltfs", "Float (32-bit) + printf %f + newlib scanf %f", f"{_F32} {_PF}", _USF, 24),
+_PARSE = (
+    ("pd", "parseFloat in double", "-DCH32RV_PARSE_FLOAT=1"),
+    ("pi", "parseFloat in integers", "-DCH32RV_PARSE_FLOAT=2"),
+    ("ps", "parseFloat in float (small)", "-DCH32RV_PARSE_FLOAT=3"),
+)
+RTLIB_MENU = tuple(
+    (f"{key}_{pk}", f"{label}, {pl}" + (" (default)" if key == "dbl" and pk == "pd" else ""),
+     f"{flags} {pf}".strip(), "", 0)
+    for key, label, flags in (
+        ("dbl", "Double (64-bit)", ""),
+        ("dblf", "Double (64-bit) + printf %f", _PF),
+        ("flt", "Float (32-bit)", _F32),
+        ("fltf", "Float (32-bit) + printf %f", f"{_F32} {_PF}"),
+    )
+    for pk, pl, pf in _PARSE
+) + (
     ("dblfs", "Double (64-bit) + printf %f + newlib scanf %f", _PF, _USF, 24),
+    ("fltfs", "Float (32-bit) + printf %f + newlib scanf %f", f"{_F32} {_PF}", _USF, 24),
     ("nanofp", "Double (64-bit) + newlib printf %f %e %g", _NEWLIB, _UPF, 21),
     ("nanofs", "Double (64-bit) + newlib scanf %f", "", _USF, 24),
     ("nanofps", "Double (64-bit) + newlib printf/scanf %f %e %g", _NEWLIB, f"{_UPF} {_USF}", 31),
@@ -3941,6 +3956,9 @@ def main() -> int:
         variant_text = outputs[args.platform / "variants" / series / "pins_arduino.h"]
         text += "\n".join(periph_menu(board_id, series, [part], pins_by_kind,
                                      remap, forbidden, variant_text)) + "\n"
+        # and the Floating Point menu every board has
+        flash = int(re.search(rf"^{board_id}\.upload\.maximum_size=(\d+)", text, re.M).group(1))
+        text += "\n" + "\n".join(rtlib_menu(board_id, flash)) + "\n"
         named_boards.append(text)
     outputs[args.platform / "boards.txt"] = (
         gen_header() + "\n" + MENU_HEADER + "\n" + "\n".join(boards_blocks)

@@ -13,7 +13,7 @@ license = "LGPL-2.1-or-later"
 license_file = "cores/arduino/api/LICENSE"
 dest = "cores/arduino/api"
 verified_date = "2026-08-19"
-patches = ["Print.cpp: Print::printFloat hands over to the core (check_api_sync.py PATCHES)"]   # sha256 below are upstream's
+patches = ["Print.cpp: Print::printFloat hands over to the core (check_api_sync.py PATCHES)", "Stream.cpp: Stream::parseFloat adds its digits up in the core (check_api_sync.py PATCHES)"]   # sha256 below are upstream's
 
 # SHA-256 of every vendored file, relative to dest.
 # LICENSE is upstream/LICENSE copied into dest; all other paths are upstream api/<path>.

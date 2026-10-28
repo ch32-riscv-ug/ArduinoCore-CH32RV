@@ -24,6 +24,7 @@
 
 #include "Common.h"
 #include "Stream.h"
+#include "ch32rv_parse_float.h"  /* ch32rv patch: Stream::parseFloat */
 
 #define PARSE_TIMEOUT 1000  // default number of milli-seconds to wait
 
@@ -162,9 +163,10 @@ float Stream::parseFloat(LookaheadMode lookahead, char ignore)
 {
   bool isNegative = false;
   bool isFraction = false;
-  double value = 0.0;
+  /* ch32rv patch: the arithmetic the Floating Point menu picks
+   * (ch32rv_parse_float.h, tools/vendor/check_api_sync.py). */
+  ch32rv_fread_t value = CH32RV_FREAD_INIT;
   int c;
-  double fraction = 1.0;
 
   c = peekNextDigit(lookahead, true);
     // ignore non numeric leading characters
@@ -179,22 +181,14 @@ float Stream::parseFloat(LookaheadMode lookahead, char ignore)
     else if (c == '.')
       isFraction = true;
     else if(c >= '0' && c <= '9')  {      // is c a digit?
-      if(isFraction) {
-        fraction *= 0.1;
-        value = value + fraction * (c - '0');
-      } else {
-        value = value * 10 + c - '0';
-      }
+      ch32rv_fread_digit(&value, c - '0', isFraction);
     }
     read();  // consume the character we got with peek
     c = timedPeek();
   }
   while( (c >= '0' && c <= '9')  || (c == '.' && !isFraction) || (char)c == ignore );
 
-  if(isNegative)
-    value = -value;
-
-  return value;
+  return ch32rv_fread_end(&value, isNegative);
 }
 
 // read characters from stream into buffer

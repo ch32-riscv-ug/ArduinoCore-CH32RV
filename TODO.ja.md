@@ -96,7 +96,7 @@ EspUsbDevice の常設設備を前提とした通常実行も、そのまま当�
 | `.menu.pnum.<part>=`（ANY除外） | 105型番 | seriesの下位軸。27系列×105型番とは掛けない。製品boardは別途扱う |
 | `.build.march` の異なる値 | 5種類 | ISAの差分。これだけでABI・startup・FPU・割込み・linker差分を代表できるとはしない |
 | `.menu.clock.<choice>=` | 20系列に計74選択肢 | 残り7系列の固定条件を加えると、汎用系列×clockは81セル。USB等が動くかは別条件 |
-| 汎用系列の `opt` / `rtlib` | 各3 / 4選択肢 | clockも全積にすると1 sketchで `81×3×4=972` セル。pnum・route・controllerはまだ含まない |
+| 汎用系列の `opt` / `rtlib` | 各3 / 17選択肢 | clockも全積にすると1 sketchで `81×3×17=4131` セル。pnum・route・controllerはまだ含まない |
 | `libraries/*/examples/*/sketch.yaml` | 101ファイル、profile定義617件 | 定義を数えただけ。build成功件数ではない。7つの通常profileに612件、H417専用4件、UIAPduino専用1件 |
 | `tests/run_hardware.py` の `MODULES` | case名18、異なるPython module 17 | runtime / hid は同じmodule。case数とassertion数・機能数は一致しない |
 
@@ -995,7 +995,7 @@ symbol／逆アセンブル／全コマンドに保存した（Git 管理外）�
     ほかは ±0）、並びが崩れたらリンクで止める。スケッチからは `CH32RV_RAMFUNC`（Arduino.h）で関数を RAM に置く。12 系列の実機で確認。
   - `printf` 1 回でスタックを 400〜600 B 使い、スタックの確保（512 B）をはみ出してヒープを壊していた件は、2026-10-28 に直した。
     printf の系統をコアの書式化（精度、`*`、フラグ付き、240〜340 B のスタック、ヒープなし）に替え、`Serial.print(float)`・
-    `String(float)`・`dtostrf()`・`%f` を同じ処理にまとめた。浮動小数は Floating Point のメニューで double / float と `%f` を選ぶ
+    `String(float)`・`dtostrf()`・`%f` を同じ処理にまとめた。浮動小数は Floating Point のメニューで double / float、`%f`、`parseFloat` の計算を選ぶ
     （docs/printf-float.ja.md）。測定は planning/core-redesign/tasks/PERSIST-01/proto/side/printf/。既定の選択肢は未定。
 
 ## examples の充実：既存例・ESP32・CH32 EVT からの追加候補

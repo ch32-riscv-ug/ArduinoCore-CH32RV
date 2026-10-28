@@ -13,7 +13,8 @@
   （表示は Floating Point）で、double / float の計算と printf の `%f` を選ぶ。newlib の printf / scanf の浮動小数も
   選択肢に残す
 
-`rtlib` の値は `nano`（既定、double、`%f` なし）、`dblf`、`flt`、`fltf`、`fltfs`、`dblfs`、`nanofp`、`nanofs`、`nanofps` です
+`rtlib` の値は、double / float の計算、printf の `%f` の有無、`parseFloat` の計算（double / 整数 / float）の組み合わせ 12 通り
+（`dbl_pd`（既定）〜`fltf_ps`）と、newlib の `dblfs`、`fltfs`、`nanofp`、`nanofs`、`nanofps` です
 （[printf と浮動小数](../printf-float.ja.md)）。
 
 ## 理由

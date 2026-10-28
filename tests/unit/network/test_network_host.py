@@ -36,9 +36,10 @@ def build(out: pathlib.Path) -> pathlib.Path:
     flags.append(f"-I{REPO / 'libraries/CH32RVUsbDevice/src'}")   # CH32RVUsbCallback.h for the USB stand-in
     c_sources = sorted((LIB / "lwip-src").rglob("*.c")) + sorted((TLS / "mbedtls-src").glob("*.c")) + [
         HERE / "host/link.c", REPO / "cores/arduino/itoa.c", REPO / "cores/arduino/dtostrf.c",
-        REPO / "cores/arduino/ch32rv_service.c"]
+        REPO / "cores/arduino/ch32rv_service.c", REPO / "cores/arduino/ch32rv_format.c"]
     cxx_sources = (sorted(LIB.glob("*.cpp")) + sorted(TLS.glob("*.cpp")) + sorted((HERE / "host").glob("*.cpp")) + [HERE / "app.cpp"]
-                   + [REPO / f"cores/arduino/api/{name}.cpp" for name in API])
+                   + [REPO / f"cores/arduino/api/{name}.cpp" for name in API]
+                   + [REPO / "cores/arduino/ch32rv_printf.cpp"])   # Print::printFloat's text
     # Mbed TLS's configuration checks: compile-time only, built here so a bad
     # combination in our two configuration headers fails the test.
     checks = sorted((TLS.parent / "extras/mbedtls-config-check").glob("*.c"))

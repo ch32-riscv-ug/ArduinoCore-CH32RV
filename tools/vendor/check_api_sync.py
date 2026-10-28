@@ -38,6 +38,12 @@ LOCK = REPO / "vendor" / "arduino-core-api.lock.toml"
 DEST = REPO / "cores" / "arduino" / "api"
 
 
+# Stream::parseFloat reads its digits into the core (cores/arduino/ch32rv_parse_float.h),
+# which adds them up in double, in integers or in float as the Floating Point
+# menu says; four pieces of one function, so one reason.
+STREAM_WHY = ("Stream::parseFloat in the arithmetic the Floating Point menu"
+              " picks: double, integers or float (ch32rv_parse_float.h)")
+
 # Print::printFloat hands over to the core (cores/arduino/ch32rv_printf.cpp),
 # which computes in float or double as the Floating Point menu says and shares
 # its fixed-point text with printf's %f and dtostrf.
@@ -48,6 +54,30 @@ PATCHES = (
         "after": "size_t Print::printFloat(double number, int digits)\n{\n" + "  /* ch32rv patch: the core's fixed-point text, in float or double as the\n   * Floating Point menu says (tools/vendor/check_api_sync.py). */\n  extern size_t ch32rv_print_float(Print &, double, int);\n  return ch32rv_print_float(*this, number, digits);\n}\n",
         "why": ("Print::printFloat in float or double as the Floating Point menu says, sharing the "
                 "core's fixed-point text (ch32rv_format.h) with printf's %f and dtostrf"),
+    },
+    {
+        "path": "Stream.cpp",
+        "before": '#include "Stream.h"\n',
+        "after": '#include "Stream.h"\n#include "ch32rv_parse_float.h"  /* ch32rv patch: Stream::parseFloat */\n',
+        "why": STREAM_WHY,
+    },
+    {
+        "path": "Stream.cpp",
+        "before": '  bool isNegative = false;\n  bool isFraction = false;\n  double value = 0.0;\n  int c;\n  double fraction = 1.0;\n',
+        "after": '  bool isNegative = false;\n  bool isFraction = false;\n  /* ch32rv patch: the arithmetic the Floating Point menu picks\n   * (ch32rv_parse_float.h, tools/vendor/check_api_sync.py). */\n  ch32rv_fread_t value = CH32RV_FREAD_INIT;\n  int c;\n',
+        "why": STREAM_WHY,
+    },
+    {
+        "path": "Stream.cpp",
+        "before": "      if(isFraction) {\n        fraction *= 0.1;\n        value = value + fraction * (c - '0');\n      } else {\n        value = value * 10 + c - '0';\n      }\n",
+        "after": "      ch32rv_fread_digit(&value, c - '0', isFraction);\n",
+        "why": STREAM_WHY,
+    },
+    {
+        "path": "Stream.cpp",
+        "before": '  if(isNegative)\n    value = -value;\n\n  return value;\n}\n\n// read characters from stream into buffer',
+        "after": '  return ch32rv_fread_end(&value, isNegative);\n}\n\n// read characters from stream into buffer',
+        "why": STREAM_WHY,
     },
 )
 
