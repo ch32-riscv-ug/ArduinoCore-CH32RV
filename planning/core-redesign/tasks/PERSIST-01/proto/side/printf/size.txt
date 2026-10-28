@@ -1,0 +1,20 @@
+CH32V003 -1 size code 2280 ram 696
+CH32V003 0 size code 5460 ram 800
+CH32V003 1 size code 5460 ram 800
+CH32V003 2 size code 5428 ram 800
+CH32V003 3 size code 8288 ram 1132
+CH32V003 4 size code 3120 ram 696
+CH32V003 5 size FAIL /var/tmp/claude-tmp/claude-1000/-home-mt-dev-wch-ArduinoCore-CH32RV/304fc7e3-f69d-4a99-9b8d-7edb631ee0f8/scratchpad/pfm/b/CH32V003/5-size/sk/pfm/printf.c:46:10: fatal error: printf/printf.h: No such file or directory
+CH32V003 6 size FAIL /var/tmp/claude-tmp/claude-1000/-home-mt-dev-wch-ArduinoCore-CH32RV/304fc7e3-f69d-4a99-9b8d-7edb631ee0f8/scratchpad/pfm/b/CH32V003/6-size/sk/pfm/printf.c:46:10: fatal error: printf/printf.h: No such file or directory
+CH32X035 -1 size code 2716 ram 708
+CH32X035 0 size code 5896 ram 812
+CH32X035 1 size code 5892 ram 812
+CH32X035 2 size code 5868 ram 812
+CH32X035 3 size code 8768 ram 1144
+CH32X035 4 size code 3448 ram 708
+CH32X035 5 size FAIL /var/tmp/claude-tmp/claude-1000/-home-mt-dev-wch-ArduinoCore-CH32RV/304fc7e3-f69d-4a99-9b8d-7edb631ee0f8/scratchpad/pfm/b/CH32X035/5-size/sk/pfm/printf.c:46:10: fatal error: printf/printf.h: No such file or directory
+CH32X035 6 size FAIL /var/tmp/claude-tmp/claude-1000/-home-mt-dev-wch-ArduinoCore-CH32RV/304fc7e3-f69d-4a99-9b8d-7edb631ee0f8/scratchpad/pfm/b/CH32X035/6-size/sk/pfm/printf.c:46:10: fatal error: printf/printf.h: No such file or directory
+CH32V003 5 size code 4536 ram 696
+CH32V003 6 size FAIL /home/mt/dev_wch/ArduinoCore-CH32RV/.tools/xpack-riscv-none-elf-gcc/14.3.0-1/bin/../lib/gcc/riscv-none-elf/14.3.0/../../../../riscv-none-elf/bin/ld: region `FLASH' overflowed by 8044 bytes
+CH32X035 5 size code 4844 ram 708
+CH32X035 6 size code 22612 ram 864

@@ -1,0 +1,138 @@
+== CH32V003 cand 0
+none 112 
+ 0 512 ok 
+ 1 572 ok 
+ 2 512 ok 
+ 3 512 ok 
+ 4 572 ok 
+ 5 544 ok 
+ 6 544 ok 
+ 7 432 got None 
+ time20 6944
+== CH32V003 cand 1
+none 120 
+ 0 560 ok 
+ 1 508 ok 
+ 2 480 ok 
+ 3 480 ok 
+ 4 512 ok 
+ 5 508 ok 
+ 6 512 ok 
+ 7 400 got None 
+ time20 6851
+== CH32V003 cand 2
+none 120 
+ 0 480 ok 
+ 1 476 ok 
+ 2 468 ok 
+ 3 468 ok 
+ 4 508 ok 
+ 5 480 ok 
+ 6 480 ok 
+ 7 368 got None 
+ time20 13740
+== CH32V003 cand 3
+none 120 
+ 0 456 ok 
+ 1 396 ok 
+ 2 408 ok 
+ 3 408 ok 
+ 4 416 ok 
+ 5 384 ok 
+ 6 448 ok 
+ 7 316 got '' 
+ time20 12284
+== CH32V003 cand 4
+none 100 
+ 0 180 ok 
+ 1 180 ok 
+ 2 200 ok 
+ 3 180 ok 
+ 4 180 ok 
+ 6 220 got '%|C 5 132\n0123456789abcdefghijklmnopqrst' 
+ 7 120 got None 
+ time20 5181
+== CH32V003 cand 5
+none 100 
+ 0 296 ok 
+ 1 296 ok 
+ 2 264 ok 
+ 3 296 ok 
+ 4 192 ok 
+ 5 192 ok 
+ 6 212 ok 
+ 7 112 got 'f' 
+ time20 6572
+== CH32X035 cand 0
+none 128 
+ 0 656 ok 
+ 1 656 ok 
+ 2 656 ok 
+ 3 656 ok 
+ 4 656 ok 
+ 5 656 ok 
+ 6 656 ok 
+ time20 2931
+== CH32X035 cand 1
+none 128 
+ 0 624 ok 
+ 1 624 ok 
+ 2 624 ok 
+ 3 624 ok 
+ 4 624 ok 
+ 5 656 ok 
+ 6 624 ok 
+ time20 3164
+== CH32X035 cand 2
+none 128 
+ 0 592 ok 
+ 1 592 ok 
+ 2 624 ok 
+ 3 592 ok 
+ 4 592 ok 
+ 5 592 ok 
+ 6 592 ok 
+ time20 5863
+== CH32X035 cand 3
+none 128 
+ 0 548 ok 
+ 1 548 ok 
+ 2 576 ok 
+ 3 576 ok 
+ 4 576 ok 
+ 5 528 ok 
+ 6 576 ok 
+ 7 452 got '' 
+ time20 8523
+== CH32X035 cand 4
+none 128 
+ 0 288 ok 
+ 1 256 ok 
+ 2 288 ok 
+ 3 288 ok 
+ 4 256 ok 
+ 6 288 got '%|C 5 212\n0123456789abcdefghijklmnopqrst' 
+ 7 176 got None 
+ time20 868
+== CH32X035 cand 5
+none 128 
+ 0 352 ok 
+ 1 352 ok 
+ 2 352 ok 
+ 3 288 ok 
+ 4 272 ok 
+ 5 272 ok 
+ 6 272 ok 
+ 7 184 got 'f' 
+ time20 2377
+== CH32X035 cand 6
+none 128 
+ 0 448 ok 
+ 1 448 ok 
+ 2 448 ok 
+ 3 448 ok 
+ 4 304 ok 
+ 5 304 ok 
+ 6 304 ok 
+ 7 576 ok 
+ time20 5178
