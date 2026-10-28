@@ -5,8 +5,8 @@
 // - each save erases a page; the flash wears out (10K erases on some series), so save on a user action, not on
 //   a timer (two pages halve the wear of each);
 // - re-uploading the sketch may erase the pages (depends on the route and the tool version);
-// - on V003, V103, X035 and L103 the CPU stops for a few ms while saving (UART bytes are lost, millis() falls
-//   behind).
+// - on V003, V00x, M030, V103, L103, X035 and V205 the CPU stops for a few ms while saving (UART bytes are lost,
+//   millis() falls behind).
 //
 // Send a number to set the interval and save it; reset the board to see it come back.
 #include <ch32rv_flash.h>

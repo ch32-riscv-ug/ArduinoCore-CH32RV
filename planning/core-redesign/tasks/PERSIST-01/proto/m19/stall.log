@@ -1,0 +1,9 @@
+2026-10-28, ch32rv 0.23.2, bench.lock taken. stall/stall.ino built with the repository core (default clocks).
+rewrite_page() x3 with interrupts off timed by SysTick CNT (us); x3 with interrupts on: millis() and micros() advance.
+  V003  us 6036 6036 6036   ms 2 2 2    micros 2001 2001 2001   stops
+  X035  us 4673 4673 4673   ms 2 2 2                             stops
+  V203  us 10726 10700 10698 ms 10 10 10                         runs
+  M030  us 9622 9622 9622   ms 2 2 2                             stops (debugger read)
+  V407  us 1969 1969 1969   ms 1 1 1    micros 1918 1918 1917   runs (debugger read; millis 1 is rounding)
+  X315  us 4047 4047 4047   ms 4 4 4    micros 4036 4036 4037   runs (debugger read)
+  H417  us 3037 3036 3037   ms 3 3 3                             runs (debugger read)

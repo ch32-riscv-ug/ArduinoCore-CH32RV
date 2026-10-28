@@ -4,9 +4,9 @@
  * recommended place (docs/flash-store.ja.md). The code flash wears out (10K
  * erases on some series); re-uploading a sketch may erase what was kept
  * (depends on the route and the tool version); it is erased by whole units
- * and programmed by whole pages; and on V003, V103, X035 and L103 the CPU and
- * interrupts stop while it is busy (a page takes about 6 ms on V003: UART
- * bytes are lost and millis() falls behind).
+ * and programmed by whole pages; and on V003, V00x, M030, V103, L103, X035
+ * and V205 the CPU and interrupts stop while it is busy (a page takes about
+ * 6 ms on V003: UART bytes are lost and millis() falls behind).
  *
  * Every series has the same functions; each costs nothing unless called.
  * Offsets count from the start of the code flash, which is also the link
