@@ -1,0 +1,39 @@
+--- cores/arduino/crt0_ch32.S	2026-10-23 20:12:47.420428861 +0900
++++ planning/core-redesign/tasks/PERSIST-01/proto/side/crt0_ch32.S.one-loop	2026-10-28 16:18:15.695166549 +0900
+@@ -161,24 +161,10 @@
+ .option pop
+     la sp, _eusrstack
+ 
+-#ifdef CH32RV_HIGHCODE
+-/* Load highcode section from flash to RAM */
++/* Load .highcode and .data from flash to RAM: one image, laid out alike in
++ * both (sections.ld asserts it). */
+     la a0, _highcode_lma
+     la a1, _highcode_vma_start
+-    la a2, _highcode_vma_end
+-    bgeu a1, a2, 2f
+-1:
+-    lw t0, (a0)
+-    sw t0, (a1)
+-    addi a0, a0, 4
+-    addi a1, a1, 4
+-    bltu a1, a2, 1b
+-2:
+-#endif
+-
+-/* Load data section from flash to RAM */
+-    la a0, _data_lma
+-    la a1, _data_vma
+     la a2, _edata
+     bgeu a1, a2, 2f
+ 1:
+--- cores/arduino/sections.ld	2026-10-28 13:00:57.445376142 +0900
++++ /var/tmp/claude-tmp/claude-1000/-home-mt-dev-wch-ArduinoCore-CH32RV/304fc7e3-f69d-4a99-9b8d-7edb631ee0f8/scratchpad/hc3/user/hardware/ch32-riscv-ug/ch32rv/cores/arduino/sections.ld	2026-10-28 15:57:34.727247228 +0900
+@@ -149,5 +149,7 @@
+     } >FLASH
+ }
+ 
++ASSERT(_data_lma - _highcode_lma == _data_vma - _highcode_vma_start,
++       "crt0 copies .highcode and .data in one loop: they must sit alike in flash and RAM")
+ ASSERT(_vector_base == 0,
+        "the interrupt vector table must start at the reset address")
