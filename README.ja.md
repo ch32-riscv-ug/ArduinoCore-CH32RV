@@ -47,12 +47,12 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | CPU Clock (`clock`) | 系列ごと | システムクロック。項目名に周波数と、その周波数で使えるもの（USB、Ethernet）を書いてある。既定は V20x / V30x が 96 MHz、V103 が 72 MHz、X035 が 48 MHz、V00x が 24 MHz、L103 / M103 が 8 MHz、M030 が 72 MHz、V205 が 160 MHz（M030 と V205 は実機で確かめて EVT の既定に上げた。L103 / M103 の PLL の項目は「not checked」で、L103 は 72 / 96 MHz で動いている間、OEP probe が接続できない（WCH-LinkE はできる）。試すときは [起動待ち](docs/upload-routes.ja.md#接続できなくなるイメージを試すとき起動待ち) を付ける）。V208 / V203RB の Ethernet は `60MHz (Ethernet, no USB)` を選ぶ。V407 / V467 は 200 MHz（120 / 60 / 20 MHz も選べる。V407WEU6 で実機確認）。X315 は 20 MHz で、240 MHz も選べる（HSI から USBHS PLL。X315MCU6 で実機確認）。H41x にはまだ無い。いまのクロックは `getCpuFrequencyMhz()` / `getApbFrequency()`（arduino-esp32 と同じ）で取れる。実行中に変える API は無い |
 | Clock Source (`clocksrc`) | `hsi` | `hse` にすると、CPU Clock の同じ周波数を外付けの水晶（HSE）から作る。水晶の周波数は EVT の前提のもの（V00x 24 MHz、V103 / V20x / V205 / V30x / L103 8 MHz）で、ベンチの基板はどれもそれだった。起動時に水晶が立たなければ（1〜2.5 ms で立つところを約 10 ms 待つ）、止まらずに HSI で同じ周波数を作る。どちらで動いているかは `CH32RV.clockSource()` で分かる。USB HS と Ethernet の HSE の周波数の既定も、このメニューの値になる。V208・M030・X315・V407・H41x にはまだ無い（[A の機能の全体設計](docs/peripheral-a-design.ja.md) 5.5） |
 | Optimize (`opt`) | `oslto` | `-Os` に LTO。flash が 9〜24% 減り、速さは同じ（X035 で実測）。`osltosr` は `-msave-restore` も足してさらに 4〜5% 減るが、関数呼び出しの多い処理（楕円曲線暗号など）が 7〜9% 遅くなる。`osstd` は LTO なし |
-| C Runtime Library (`rtlib`) | `nano` | `printf("%f")` / `scanf("%f")` の浮動小数点変換を追加するか |
+| Floating Point (`rtlib`) | `nano` | 浮動小数を double と float のどちらで計算するか、printf の `%f`、newlib の printf / scanf の浮動小数 |
 
-既定の newlib-nano では `printf("%f")` と `scanf("%f")` の浮動小数点変換は入りません。
-必要な場合だけ `nanofp`、`nanofs`、`nanofps` を選びます。これらはruntime codeを大きく
-増やし、小容量flashには収まらない場合があります。正確な使用量はbuild size reportで確認します。
-`Serial.print(1.5, 2)` はこのメニューに依存しません。
+printf の系統（`Serial.printf`、`printf`、`sprintf`、`snprintf`）、`Serial.print(float)`、`String(float)` はコアの書式化で動きます。
+既定（`nano`）は double で計算し、printf の `%f` は書式のまま出して浮動小数の処理を入れません。
+`dblf` / `fltf` で `%f` が出ます。`flt` / `fltf` は AVR と同じく float で計算し、FPU のない系列で数 KB、V30x・X3x5・H41x で十数 KB 小さくなります。
+選択肢と費用、C との違いは [printf と浮動小数](docs/printf-float.ja.md) にあります。
 
 ## リポジトリ構成
 

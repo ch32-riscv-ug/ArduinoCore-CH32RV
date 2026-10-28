@@ -140,6 +140,7 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 | ADC 内部チャネル（Vrefint・温度・VDD）と L103 のオフセット補正 | V00x 以外の温度センサ持ち・Vrefint 持ちの系列 | 手動（2026-10-15）: X035・L103・V103・V307 で値を確認 | 自動試験、V20x / V30x の校正値、外部電圧との照合 |
 | IWDG（`wdtEnable` の時間） | M030 以外 | 手動（2026-10-15）: X035（HSI/1024）・L103・V103・V307 で 1 秒のリセット | 自動試験、長い時間 |
 | 内蔵フラッシュへの保存（`ch32rv_flash.h`、例 FlashSettings / FlashSettingsTwoBanks） | 全系列 | 現行: tests/instrumented/flash（全関数と断る範囲、ソフトのリセット後の読み戻し、書く間の時間。V003・V307・L103）。手動（2026-10-28、PERSIST-01 M19〜M21）: 12 系列で全関数と 2 つの例、V003・V203・X035 で 2 面の電源断 130 回 | 自動の電源断、寿命、書き込みの経路ごとの保持（約束しない） |
+| printf の系統と浮動小数の表示（`ch32rv_format.c`、Floating Point のメニュー） | 全系列 | 現行: unit/test_core_format（PC で 4 通りの設定、`snprintf` と照合）。手動（2026-10-28）: V003・X035・V307 で Double の `Serial.print` / `String(float)` / `dtostrf` が以前と同じ出力、Float の出力が 3 系列で同じ、`snprintf` の切り詰め、`printf` と `puts` の順番 | 実機の自動試験、newlib の選択肢の出力、`fputs` と混ぜたときの順番 |
 | 端子ごとの AF（V205・X305 / X315 の Serial / Wire / SPI / PWM）、Serial6〜9 | 実装 | ビルドのみ | 実機で信号が出ること |
 | USB PD frame / fixed / PPS 計算 | あり | あり・限定: unit/test_pd_frames、pd_selftest | 境界・不正入力と target 差。native と実機 |
 | USB PD sink 交渉 | X033/X035 に実装 | あり・限定: pd_sink、pd_vbus | 脱着/再接続、source reset、fault、交渉と VBUS の独立照合。PD source と電圧計/電源制御 |

@@ -23,7 +23,8 @@ CH32V002/V004/V005/V006/V007/M007 の整数乗算は Zmmul で、整数除算命
 ## Runtime
 
 既定は newlib-nano と GNU++17 です。exceptions、RTTI、thread-safe statics は無効です。
-`printf` / `scanf` の浮動小数点変換は `rtlib` menu で必要なものだけ追加します。
+printf の系統はコアの書式化で動き、浮動小数の扱い（double / float、`%f`、newlib の printf / scanf）は
+Floating Point のメニュー（`rtlib`）で選びます（[printf と浮動小数](printf-float.ja.md)）。
 
 詳細な理由は [ADR-0002](adr/0002-toolchain-distribution.ja.md) と
 [ADR-0004](adr/0004-runtime-and-cxx.ja.md) を参照してください。

@@ -6,12 +6,12 @@
 ## 大きくなりやすいもの
 
 - `Serial.print(double)` は software floating-point 演算を取り込む
-- `printf("%f")` / `scanf("%f")` は `rtlib` menu で有効にした変換 code を取り込む
+- printf の `%f` と `scanf("%f")` は、Floating Point のメニュー（`rtlib`）で有効にした変換 code を取り込む（[printf と浮動小数](printf-float.ja.md)）
 - `printf` と `Serial.print` を併用すると別々の format 実装が残る
 - `String` と動的確保は flash より RAM / heap の制約が先に問題になる場合がある
 
-既定は newlib-nano で、stdio の浮動小数点変換は無効です。`Serial.print(float)` は newlib stdio とは
-別実装なので、`rtlib` menu に依存しません。
+既定は double で計算し、printf の `%f` は無効です。`Serial.print(float)` と printf の `%f` は同じ
+fixed-point の処理を使い、メニューで float を選ぶと float で計算します。
 
 ## 成果物を残して build する
 
