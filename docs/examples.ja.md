@@ -39,6 +39,7 @@ UART ログを見るための USB-UART アダプタも、MCU 自身の USB デ�
 
 `SerialEcho`の次は、固定長の[行受信](../libraries/CH32RV/examples/SerialLineReceiver/README.ja.md)と[バイナリ受信](../libraries/CH32RV/examples/SerialPacketReceiver/README.ja.md)で、入力待ちを分割する方法を試せます。
 [SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.ja.md)・[ResetReason](../libraries/CH32RV/examples/ResetReason/README.ja.md)・[WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.ja.md)はUARTだけで試せるシステムAPIの入口です。
+設定を内蔵のフラッシュに残す[FlashSettings](../libraries/CH32RV/examples/FlashSettings/README.ja.md)・[FlashSettingsTwoBanks](../libraries/CH32RV/examples/FlashSettingsTwoBanks/README.ja.md)は上級者向けです。制約と費用は[フラッシュへの保存](flash-store.ja.md)を読んでから使います。
 `Fade`の次は[PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.ja.md)で、周波数とdutyの違いを観察します。
 
 ## 物理入力からUSB HIDへ

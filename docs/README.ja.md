@@ -19,6 +19,7 @@
 | [debugger.ja.md](debugger.ja.md) | `arduino-cli debug` と GDB server の設定 |
 | [uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md) | UIAPduino の HID 書き込みと復旧 |
 | [flash-size.ja.md](flash-size.ja.md) | flash 使用量の調査と削減 |
+| [flash-store.ja.md](flash-store.ja.md) | 内蔵のフラッシュへの保存（上級者向け）。制約、API、使い分けと費用 |
 
 各同梱ライブラリの API と例は `libraries/<name>/README.md` / `README.ja.md` に置きます。
 

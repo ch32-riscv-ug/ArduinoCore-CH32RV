@@ -36,6 +36,7 @@ Distinguish USB roles first: Device connects as a peripheral to a PC or another 
 
 After `SerialEcho`, try the fixed-buffer [line receiver](../libraries/CH32RV/examples/SerialLineReceiver/README.md) and [binary packet receiver](../libraries/CH32RV/examples/SerialPacketReceiver/README.md) to process input incrementally.
 [SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.md), [ResetReason](../libraries/CH32RV/examples/ResetReason/README.md) and [WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.md) introduce system APIs using only UART.
+[FlashSettings](../libraries/CH32RV/examples/FlashSettings/README.md) and [FlashSettingsTwoBanks](../libraries/CH32RV/examples/FlashSettingsTwoBanks/README.md) keep settings in the internal flash; they are for advanced use - read [storing in flash](flash-store.ja.md) for the limits and costs first.
 After `Fade`, use [PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.md) to distinguish frequency from duty.
 
 ## From physical input to USB HID

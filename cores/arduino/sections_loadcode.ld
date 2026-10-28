@@ -61,6 +61,7 @@ SECTIONS
         PROVIDE( _edata = . );
     } >RAM AT>FLASH
     PROVIDE(_image_lma = LOADADDR(.image));
+    PROVIDE( _ch32rv_image_end = LOADADDR(.image) + SIZEOF(.image) );
 
     /* Kept through a reset that leaves RAM powered - a software or watchdog
      * reset, the restart deepSleep() ends with: startup neither copies nor
@@ -95,6 +96,17 @@ SECTIONS
         . = . + __stack_size;
         PROVIDE( _eusrstack = . );
     } >RAM
+
+    /* Storage kept across resets (CH32RV_FLASH_STORE, ch32rv_flash.h), packed
+     * against the end of FLASH. Only what something references survives
+     * --gc-sections, so it is 0 B unless used; NOLOAD keeps it out of the
+     * image. Overlapping code fails the link. */
+    .ch32rv_store ORIGIN(FLASH) + LENGTH(FLASH) - SIZEOF(.ch32rv_store) (NOLOAD) :
+    {
+        PROVIDE( _ch32rv_store_start = . );
+        *(.ch32rv_store*)
+        PROVIDE( _ch32rv_store_end = . );
+    } >FLASH
 }
 
 ASSERT(_start == ORIGIN(FLASH), "_start must be at the reset address")

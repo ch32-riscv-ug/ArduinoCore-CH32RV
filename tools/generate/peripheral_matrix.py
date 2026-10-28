@@ -177,10 +177,10 @@ STATUS = {
         "HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、L103/M103 8 MHz、M030 72 MHz・V205 160 MHz(実機で確認してEVTの既定に。L103/M103のPLLの項目は未確認)。X315は20 MHz(240 MHzも選べる。HSIからUSBHS PLL、EVTの手順の順に書く。X315MCU6で実機確認)。メニューの無いもの: X305 20 MHz、H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の 400 MHz、V5F は 400 MHz で停止のまま)。HSEは未実装(USB HSとH417のUSB SSのみHSEを使う)"),
     "PWR (低消費電力)": ("一部実装", "CH32RV.lightSleep / deepSleep",
         "V003・V00x・X033/X035はAWU、V20x・V205・V30x・L103/M103はRTCのアラームで起こす。RAMを残す深い休止(V00x・X035のスタンバイ、RTCの系列のストップ)、タイマーと端子(EXTI)で起床、millis()は測った分を足す(RTCの系列は端子での起床も測れる)、WDTは休止中は止まって見える(延ばして間で餌)、deepSleep()はRTCの系列でタイマーだけ・WDTなしなら本物のスタンバイ、ほかは休止のあと再起動。V103・M030・X315・V4x7・H41xは未対応。設計と実測はdocs/peripheral-a-design.ja.md 5.1"),
-    "FLASH (自己書き換え)": ("一部実装", "-",
-                            "公開APIとEEPROM emulationは無い。H415/H416/H417はコア内部の`ch32rv_flash_erase/write`"
-                            "(DFU runtimeが使う)。他は未実装。実機の数字はdocs/flash-raw.ja.md、"
-                            "保存の案はdocs/persistence-spec.ja.md(下書き)"),
+    "FLASH (自己書き換え)": ("実装済", "ch32rv_flash.h",
+                            "全系列で同じ関数(消す・書く・消して書く、範囲と1単位)とCH32RV_FLASH_STORE(末尾の確保)。"
+                            "上級者向け。推奨は外部のSD・EEPROM。EEPROM.hは無い。例はFlashSettings・FlashSettingsTwoBanks。"
+                            "H415/H416/H417は自分のイメージも書き換えられる(DFU runtimeが使う)。docs/flash-store.ja.md"),
     "USART": ("実装済", "Serial",
         "全インスタンス(V205/V30x/V407/V467のUSART6〜10も、Serial9まで)。V205・X305/X315は端子ごとのAF番号を書く(V205RCT6・X315MCU6で既定のTXの波形を確認)。X033/X035は送信をポーリングで行う(割込み送信の不具合の回避)"),
     "I2C": ("実装済", "Wire",
@@ -333,7 +333,7 @@ CELLS = {
     "USB PD": {"X033/X035": "◐", "V205": "◐", "L103/M103": "◐", "M030": "◐", "X305/X315": "◐", "H415/H416/H417": "◐"},
     "USB SS": {"H415/H416/H417": "◐", "X305/X315": "◐"},
     "Ethernet": {"H415/H416/H417": "◐", "V203/V208": "◐", "V303/305/307/317": "◐", "V407/V467": "◐"},
-    "FLASH (自己書き換え)": {ALL: "○", "H415/H416/H417": "◐"},
+    "FLASH (自己書き換え)": {ALL: "●"},
     "RNG": {"V303/305/307/317": "◐", "V407/V467": "◐", "H415/H416/H417": "◐"},
     "HSADC (高速ADC)": {"H415/H416/H417": "◐"},
     "V5F (2つ目のコア)/HSEM/IPC": {"H415/H416/H417": "○"},

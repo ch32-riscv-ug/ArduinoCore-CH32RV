@@ -122,6 +122,9 @@ SECTIONS
         PROVIDE( _ebss = . );
     } >RAM
 
+    /* Where the image ends in flash: ch32rv_flash.c refuses to erase or program below it. */
+    PROVIDE( _ch32rv_image_end = LOADADDR(.data) + SIZEOF(.data) );
+
     PROVIDE( _end = _ebss );
     PROVIDE( end = . );
 
@@ -133,6 +136,17 @@ SECTIONS
         . = . + __stack_size;
         PROVIDE( _eusrstack = . );
     } >RAM
+
+    /* Storage kept across resets (CH32RV_FLASH_STORE, ch32rv_flash.h), packed
+     * against the end of FLASH. Only what something references survives
+     * --gc-sections, so it is 0 B unless used; NOLOAD keeps it out of the
+     * image. Overlapping code fails the link. */
+    .ch32rv_store ORIGIN(FLASH) + LENGTH(FLASH) - SIZEOF(.ch32rv_store) (NOLOAD) :
+    {
+        PROVIDE( _ch32rv_store_start = . );
+        *(.ch32rv_store*)
+        PROVIDE( _ch32rv_store_end = . );
+    } >FLASH
 }
 
 ASSERT(_vector_base == 0,
