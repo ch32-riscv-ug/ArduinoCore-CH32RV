@@ -25,3 +25,9 @@ own-run.txt (every case against C's results, stack depth per case, 20 calls' tim
 
 Level 3: %f converted to float once (varargs always carry a double) and computed in float. own-size-float.txt adds
 mode 6 (a sketch with float math, no float printing) and 7 (6 plus one %f); own-run-float.txt.
+
+## Print::printFloat in float (printfloat/)
+
+Print-float.diff: the experiment's printFloat, converting to float once and computing in float (a table for the
+rounding, no division). pp/: a sketch printing one float with Serial.print; ppf/: that plus one %f (own level 3).
+pv/ and cap.py: values printed with the current core (pv-double.txt) and the float one (pv-float.txt) on V003.
