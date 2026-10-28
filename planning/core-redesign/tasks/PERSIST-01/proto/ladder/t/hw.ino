@@ -23,14 +23,14 @@ void setup() {
   }
 #endif
   const uint32_t t0 = millis(); const uint32_t s0 = CH32RV_SYSTICK_CNT;
-  uint32_t w[16]; for (uint32_t i = 0; i < 16; i++) w[i] = 0xA5A50000u + i;
-  __attribute__((section(".ch32rv_store"), aligned(64))) static uint8_t scratch[64];
+  uint32_t w[LF_WORDS]; for (uint32_t i = 0; i < LF_WORDS; i++) w[i] = 0xA5A50000u + i;
+  __attribute__((section(".ch32rv_store"), aligned(LF_PAGE))) static uint8_t scratch[LF_PAGE];
 #if LF_RESULT
   const bool r = lf_write_page((uint32_t)scratch, w);
 #else
   const bool r = true; lf_write_page((uint32_t)scratch, w);
 #endif
-  const bool ok = !memcmp(scratch, w, 64);
+  const bool ok = !memcmp(scratch, w, LF_PAGE);
   const uint32_t us = (CH32RV_SYSTICK_CNT - s0) / (F_CPU / 1000000u), ms = millis() - t0;
   Serial.print("kind "); Serial.print(ST_KIND); Serial.print(" n "); Serial.print(n); Serial.print(" bad "); Serial.print(bad);
   Serial.print(" raw "); Serial.print(r); Serial.print(ok); Serial.print(" us "); Serial.print(us); Serial.print(" millis "); Serial.println(ms);

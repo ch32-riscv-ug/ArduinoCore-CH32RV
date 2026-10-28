@@ -1,4 +1,4 @@
-// PERSIST-01 cost ladder, V003 (64 B fast page). The floor writes one page with nothing else; each LF_* switch adds
+// PERSIST-01 cost ladder: V003 (64 B), X035 (256 B, page buffer), V203 (256 B, words written straight in). The floor writes one page with nothing else; each LF_* switch adds
 // one safety item so its byte cost can be measured alone. Experiment only, not the core.
 #pragma once
 #include <Arduino.h>
@@ -24,9 +24,19 @@
 
 struct LfRegs { uint32_t ACTLR, KEYR, OBKEYR, STATR, CTLR, ADDR, RSV, OBR, WPR, MODEKEYR; };
 #define LF ((volatile LfRegs *)0x40022000u)
+#if defined(CH32RV_SERIES_CH32V003)
 #define LF_PAGE 64u
+#else
+#define LF_PAGE 256u
+#endif
+#if defined(CH32RV_SERIES_CH32V003) || defined(CH32RV_SERIES_CH32X035)
+#define LF_BUF 1     // buffer reset, load each word, then STRT
+#else
+#define LF_BUF 0     // PAGE_PG, write each word (wait WR_BSY), then PG_STRT
+#endif
+#define LF_WORDS (LF_PAGE / 4u)
 enum : uint32_t { LF_PG = 1u << 16, LF_ER = 1u << 17, LF_LOAD = 1u << 18, LF_RST = 1u << 19, LF_STRT = 1u << 6,
-                  LF_LOCK = (1u << 7) | (1u << 15) };
+                  LF_PGSTRT = 1u << 21, LF_LOCK = (1u << 7) | (1u << 15) };
 extern "C" void ch32rv_millis_advance(uint32_t ms);
 
 #if LF_BOUND
@@ -50,7 +60,9 @@ static inline void lf_busy() { while (LF->STATR & 1u) {} }
 #define LF_RET void
 #endif
 
-// Erase the page at a (link address, 64 B aligned) and program it from w (16 words).
+static inline void lf_wrbsy() { while (LF->STATR & 2u) {} }
+
+// Erase the page at a (link address, page aligned) and program it from w (LF_WORDS words).
 __attribute__((noinline)) static LF_RET lf_write_page(uint32_t a, const uint32_t *w) {
   a |= 0x08000000u;  // the controller wants the 0x08000000 address; the 0 alias does nothing
   bool ok = true; (void)ok;
@@ -67,10 +79,16 @@ __attribute__((noinline)) static LF_RET lf_write_page(uint32_t a, const uint32_t
   f->STATR = 0x30u;
 #endif
   f->CTLR = LF_ER; f->ADDR = a; f->CTLR = LF_ER | LF_STRT; LF_WAIT(ok);
-  f->CTLR = LF_PG; f->CTLR = LF_PG | LF_RST; LF_WAIT(ok);
   volatile uint32_t *p = (volatile uint32_t *)a;
-  for (uint32_t i = 0; i < 16u; i++) { p[i] = w[i]; f->CTLR = LF_PG | LF_LOAD; LF_WAIT(ok); }
+#if LF_BUF
+  f->CTLR = LF_PG; f->CTLR = LF_PG | LF_RST; LF_WAIT(ok);
+  for (uint32_t i = 0; i < LF_WORDS; i++) { p[i] = w[i]; f->CTLR = LF_PG | LF_LOAD; LF_WAIT(ok); }
   f->ADDR = a; f->CTLR = LF_PG | LF_STRT; LF_WAIT(ok);
+#else
+  f->CTLR = LF_PG; LF_WAIT(ok); lf_wrbsy();
+  for (uint32_t i = 0; i < LF_WORDS; i++) { p[i] = w[i]; lf_wrbsy(); }
+  f->CTLR = LF_PG | LF_PGSTRT; LF_WAIT(ok);
+#endif
 #if LF_CLR
   f->CTLR = 0; f->STATR = 0x30u;
 #endif
@@ -85,10 +103,10 @@ __attribute__((noinline)) static LF_RET lf_write_page(uint32_t a, const uint32_t
 #if LF_MILLIS == 1
   if (ms) ch32rv_millis_advance(ms - 1u);
 #elif LF_MILLIS == 2
-  ch32rv_millis_advance(5);
+  ch32rv_millis_advance(LF_PAGE == 64u ? 5u : 4u);
 #endif
 #if LF_VERIFY
-  for (uint32_t i = 0; i < 16u; i++) ok = ok && p[i] == w[i];
+  for (uint32_t i = 0; i < LF_WORDS; i++) ok = ok && p[i] == w[i];
 #endif
 #if LF_RESULT
   return ok;

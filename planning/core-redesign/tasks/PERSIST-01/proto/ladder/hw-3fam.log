@@ -1,0 +1,34 @@
+## x035
+hw-k1 : kind 1 n 20 bad 0 raw 11 us 188 millis 2
+hw-k1-safe : kind 1 n 20 bad 0 raw 11 us 209 millis 2
+hw-k2 : kind 2 n 20 bad 0 raw 11 us 89478322 millis 2
+hw-k2-safe : kind 2 n 20 bad 0 raw 11 us 216 millis 2
+hw-k1-m1 : kind 1 n 20 bad 0 raw 11 us 189 millis 89522
+hw-k1-irq : kind 1 n 20 bad 0 raw 11 us 210 millis 1
+hwv-k1-v1 : kind 1 ver 1 defaults boots 1 millis
+hwv-k1-v1 --erase sector: kind 1 ver 1 loaded boots 2 millis
+hwv-k1-v2 --erase sector: kind 1 ver 2 defaults boots 1 millis
+hwv-k1-v2 --erase sector: kind 1 ver 2 loaded boots 2 millis
+hwv-k1-v1 --erase sector: kind 1 ver 1 defaults boots 1 millis
+hwv-k2-v1 : kind 2 ver 1 defaults boots 1 millis
+hwv-k2-v1 --erase sector: kind 2 ver 1 loaded boots 2 millis
+hwv-k2-v2 --erase sector: kind 2 ver 2 defaults boots 1 millis
+hwv-k2-v2 --erase sector: kind 2 ver 2 loaded boots 2 millis
+hwv-k2-v1 --erase sector: kind 2 ver 1 defaults boots 1 millis
+## v203
+hw-k1 : kind 1 n 20 bad 0 raw 11 us 44738963 millis 11
+hw-k1-safe : kind 1 n 20 bad 0 raw 11 us 44739015 millis 11
+hw-k2 : kind 2 n 20 bad 0 raw 11 us 44739022 millis 11
+hw-k2-safe : kind 2 n 20 bad 0 raw 11 us 783 millis 10
+hw-k1-m1 : kind 1 n 20 bad 0 raw 11 us 44739025 millis 11
+hw-k1-irq : kind 1 n 20 bad 0 raw 11 us 31 millis 1
+hwv-k1-v1 : kind 1 ver 1 defaults boots 1 millis
+hwv-k1-v1 --erase sector: kind 1 ver 1 loaded boots 2 millis
+hwv-k1-v2 --erase sector: kind 1 ver 2 defaults boots 1 millis
+hwv-k1-v2 --erase sector: kind 1 ver 2 loaded boots 2 millis
+hwv-k1-v1 --erase sector: kind 1 ver 1 defaults boots 1 millis
+hwv-k2-v1 : kind 2 ver 1 defaults boots 1 millis
+hwv-k2-v1 --erase sector: kind 2 ver 1 loaded boots 2 millis
+hwv-k2-v2 --erase sector: kind 2 ver 2 defaults boots 1 millis
+hwv-k2-v2 --erase sector: kind 2 ver 2 loaded boots 2 millis
+hwv-k2-v1 --erase sector: kind 2 ver 1 defaults boots 1 millis
