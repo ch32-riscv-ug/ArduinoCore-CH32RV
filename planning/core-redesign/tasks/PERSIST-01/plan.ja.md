@@ -151,7 +151,7 @@
 
 API の案: [api.ja.md](api.ja.md)(M18)。2026-10-28 に、全系列で同じ関数を出す形(M19)でコアに入れた。利用者向けは [docs/flash-store.ja.md](../../../../docs/flash-store.ja.md)、例は `libraries/CH32RV/examples/FlashSettings`、`FlashSettingsTwoBanks`。
 
-残っていること: 2 面の形の電源断の試験。M030、V407、X315 で書く間に CPU が止まるか。工場の ISP や HID などの経路で保存が残るか。
+済んだこと: M030、V407、X315 で書く間に CPU が止まるか(M20)。H417 の DFU(M19)。2 面の形の電源断(M21)。経路ごとに保存が残るかは、方針により調べない(0.5 の 3)。
 
 ## 1. 用途から要求を出す
 
