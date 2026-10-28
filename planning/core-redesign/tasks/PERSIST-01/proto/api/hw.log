@@ -1,0 +1,28 @@
+2026-10-28, ch32rv 0.23.2, bench.lock taken. Samples built with the core copy carrying core/ch32rv_flash.{h,c}.
+
+hw.py (UART): flash (default --erase auto), reset, boot line, send 250, 250 (unchanged), 321, reset, boot line.
+Same five lines for FlashSettings and FlashSettingsTwoBanks on each of:
+  V003F4P6 (LinkE), X035C8T6 (LinkE), V203C8T6 (LinkE), V006 (LinkE, ANY), L103C8T6 (LinkE), V307VCT6 (LinkE 38EF)
+    boot  : defaults interval 500
+    send 250: saved interval 250
+    send 250: saved interval 250
+    send 321: saved interval 321
+    reset : loaded interval 321
+
+t/boot.ino (no UART on the bench: V103R8T6 on LinkE E4E1, V205RCT6 on LinkE 497E, M030G8R7 on OEP e8f60ae84e28/m030):
+reset, wait 0.5 s, one read of the store (V205: once per reset). interval_ms counts boots from 500 (0x1f4).
+  V103 FlashSettingsBoot      0800ff80 01 00 04 00 f5 01 01 03 | f6 01 | f7 01
+  V103 FlashSettingsTwoBanks  bank0 gen1 f5, bank1 gen2 f6 | bank0 gen3 f7 | bank1 gen4 f8
+  V205 FlashSettingsBoot      0803ff00 01 00 04 00 f6 01 | f7 01 | f8 01
+  V205 FlashSettingsTwoBanks  bank0 gen1, bank1 gen2 | bank0 gen3 | bank1 gen4
+  M030 FlashSettingsBoot      0800ff80 01 00 04 00 f6 01 | f7 01 | f8 01
+  M030 FlashSettingsTwoBanks  bank0 gen1, bank1 gen2 | bank0 gen3 | bank1 gen4
+
+t/rb (8 writes of different patterns, read back at once in the same run; then a page outside the store and an
+unaligned one):
+  V307 readback bad 0 fail 0 outside 0 unaligned 0
+  V203 readback bad 0 fail 0 outside 0 unaligned 0
+  V003 readback bad 0 fail 0 outside 0 unaligned 0
+
+Not run: V103R8T6 on LinkE E4E1 sends nothing on its UART (not even the boot line; the debugger works). V103R8T6
+on the CH549 WCH-Link: "no target detected on the debug pins". X315, V407, H41x: not supported by this API.
