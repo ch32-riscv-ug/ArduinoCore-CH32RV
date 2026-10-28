@@ -2,11 +2,11 @@
 # 250, 250 again (unchanged), 321, reset, read the boot line. Prints each line. Take bench.lock first.
 import serial, subprocess, sys, time
 ch, bid, elf = sys.argv[1:4]
-chip = ['--chip', sys.argv[4]] if len(sys.argv) > 4 else []
-c = ['--probe', 'port:/run/board-identify/by-id/' + bid, *chip, '--non-interactive', '--progress', 'none']
+chip = ['--chip', sys.argv[4]] if len(sys.argv) > 4 and sys.argv[4] else []
+c = ['--probe', bid if '://' in bid else 'port:/run/board-identify/by-id/' + bid, *chip, '--non-interactive', '--progress', 'none']
 r = subprocess.run([ch, *c, 'flash', elf, '--format', 'elf', '--reset', 'run', '--confirm-run'], capture_output=True, text=True, timeout=120)
 if r.returncode: sys.exit('flash failed: ' + (r.stderr or r.stdout)[-300:])
-s = serial.Serial('/run/board-identify/by-id/' + bid, 115200, timeout=0.1)
+s = serial.Serial(sys.argv[5] if len(sys.argv) > 5 else '/run/board-identify/by-id/' + bid, 115200, timeout=0.1)
 def line(want, t=4):
     b = b''; t0 = time.time()
     while time.time() - t0 < t:
