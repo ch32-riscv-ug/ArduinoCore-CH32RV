@@ -227,7 +227,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.rtlib=C Runtime Library\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
@@ -335,12 +335,27 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
 # newlib formatter and 7,064 with nano; the float costs below were measured on
 # CH32X035 with one sscanf("%f") + snprintf("%f") sketch (2026-10-01: 10,092
 # bytes plain). Every board gets every entry: the choice is per sketch.
+# The Floating Point menu: (key, label, fp_flags for every compile, rtlib_flags
+# for the link, newlib's KB). The newlib entries keep the ids above. Float is
+# AVR's way (its double is 32 bits): float arithmetic, constants included;
+# print(float), String(float) and %f share the core's fixed-point text
+# (cores/arduino/ch32rv_format.h). printf's %f links floating point only where
+# the entry says so; without it %f prints as written.
+_F32 = "-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant"
+_PF = "-DCH32RV_PRINTF_FLOAT=1"
+_NEWLIB = "-DCH32RV_PRINTF_NEWLIB=1"
+_UPF = "-Wl,-u,_printf_float"
+_USF = "-Wl,-u,_scanf_float"
 RTLIB_MENU = (
-    ("nano", "Newlib Nano (default)", "", 0),
-    ("nanofp", "Newlib Nano + Float Printf", "-Wl,-u,_printf_float", 21),
-    ("nanofs", "Newlib Nano + Float Scanf", "-Wl,-u,_scanf_float", 24),
-    ("nanofps", "Newlib Nano + Float Printf/Scanf",
-     "-Wl,-u,_printf_float -Wl,-u,_scanf_float", 31),
+    ("nano", "Double (64-bit) (default)", "", "", 0),
+    ("dblf", "Double (64-bit) + printf %f", _PF, "", 0),
+    ("flt", "Float (32-bit)", _F32, "", 0),
+    ("fltf", "Float (32-bit) + printf %f", f"{_F32} {_PF}", "", 0),
+    ("fltfs", "Float (32-bit) + printf %f + newlib scanf %f", f"{_F32} {_PF}", _USF, 24),
+    ("dblfs", "Double (64-bit) + printf %f + newlib scanf %f", _PF, _USF, 24),
+    ("nanofp", "Double (64-bit) + newlib printf %f %e %g", _NEWLIB, _UPF, 21),
+    ("nanofs", "Double (64-bit) + newlib scanf %f", "", _USF, 24),
+    ("nanofps", "Double (64-bit) + newlib printf/scanf %f %e %g", _NEWLIB, f"{_UPF} {_USF}", 31),
 )
 
 
@@ -528,11 +543,12 @@ def rtlib_menu(board: str, min_flash: int) -> list[str]:
     """The C runtime menu for one board. A float entry says what it costs, and
     on a board with a 16 KB part it says that part cannot take it."""
     lines = []
-    for key, label, flags, kb_cost in RTLIB_MENU:
+    for key, label, fp_flags, flags, kb_cost in RTLIB_MENU:
         if kb_cost:
             label += f" (+~{kb_cost} KB"
             label += "; too big for 16 KB parts)" if min_flash <= 16 * 1024 else ")"
         lines.append(f"{board}.menu.rtlib.{key}={label}")
+        lines.append(f"{board}.menu.rtlib.{key}.build.fp_flags={fp_flags}")
         lines.append(f"{board}.menu.rtlib.{key}.build.rtlib_flags={flags}")
     return lines
 

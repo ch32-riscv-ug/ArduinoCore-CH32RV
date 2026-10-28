@@ -10,8 +10,9 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 
 # A lock whose vendoring tool carries deliberate patches: the file on disk must
 # hold each patch, and with it taken out must hash to the recorded upstream file.
-# (None now: TinyUSB, the one that had them, is gone.)
-PATCH_TOOLS = {}
+PATCH_TOOLS = {
+    "arduino-core-api.lock.toml": REPO / "tools/vendor/check_api_sync.py",
+}
 
 
 def patch_tool(lock_name):

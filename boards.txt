@@ -6,7 +6,7 @@ menu.pnum=Part Number
 menu.clock=CPU Clock
 menu.clocksrc=Clock Source
 menu.opt=Optimize
-menu.rtlib=C Runtime Library
+menu.rtlib=Floating Point
 menu.usart1=USART1
 menu.usart2=USART2
 menu.usart3=USART3
@@ -116,13 +116,32 @@ CH32V003.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V003.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V003.menu.opt.osstd.build.optimize_flags=
 
-CH32V003.menu.rtlib.nano=Newlib Nano (default)
+CH32V003.menu.rtlib.nano=Double (64-bit) (default)
+CH32V003.menu.rtlib.nano.build.fp_flags=
 CH32V003.menu.rtlib.nano.build.rtlib_flags=
-CH32V003.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB; too big for 16 KB parts)
+CH32V003.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V003.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V003.menu.rtlib.dblf.build.rtlib_flags=
+CH32V003.menu.rtlib.flt=Float (32-bit)
+CH32V003.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V003.menu.rtlib.flt.build.rtlib_flags=
+CH32V003.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V003.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V003.menu.rtlib.fltf.build.rtlib_flags=
+CH32V003.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V003.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V003.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V003.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V003.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V003.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V003.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB; too big for 16 KB parts)
+CH32V003.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V003.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V003.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB parts)
+CH32V003.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V003.menu.rtlib.nanofs.build.fp_flags=
 CH32V003.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V003.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
+CH32V003.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
+CH32V003.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V003.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V003.menu.usart1.auto=AUTO (bind at begin())
 CH32V003.menu.usart1.auto.build.usart1_mode=
@@ -257,13 +276,32 @@ CH32V002.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V002.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V002.menu.opt.osstd.build.optimize_flags=
 
-CH32V002.menu.rtlib.nano=Newlib Nano (default)
+CH32V002.menu.rtlib.nano=Double (64-bit) (default)
+CH32V002.menu.rtlib.nano.build.fp_flags=
 CH32V002.menu.rtlib.nano.build.rtlib_flags=
-CH32V002.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB; too big for 16 KB parts)
+CH32V002.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V002.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V002.menu.rtlib.dblf.build.rtlib_flags=
+CH32V002.menu.rtlib.flt=Float (32-bit)
+CH32V002.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V002.menu.rtlib.flt.build.rtlib_flags=
+CH32V002.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V002.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V002.menu.rtlib.fltf.build.rtlib_flags=
+CH32V002.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V002.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V002.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V002.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V002.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V002.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V002.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB; too big for 16 KB parts)
+CH32V002.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V002.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V002.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB parts)
+CH32V002.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V002.menu.rtlib.nanofs.build.fp_flags=
 CH32V002.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V002.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
+CH32V002.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
+CH32V002.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V002.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V002.menu.usart1.auto=AUTO (bind at begin())
 CH32V002.menu.usart1.auto.build.usart1_mode=
@@ -372,13 +410,32 @@ CH32V004.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V004.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V004.menu.opt.osstd.build.optimize_flags=
 
-CH32V004.menu.rtlib.nano=Newlib Nano (default)
+CH32V004.menu.rtlib.nano=Double (64-bit) (default)
+CH32V004.menu.rtlib.nano.build.fp_flags=
 CH32V004.menu.rtlib.nano.build.rtlib_flags=
-CH32V004.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V004.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V004.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V004.menu.rtlib.dblf.build.rtlib_flags=
+CH32V004.menu.rtlib.flt=Float (32-bit)
+CH32V004.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V004.menu.rtlib.flt.build.rtlib_flags=
+CH32V004.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V004.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V004.menu.rtlib.fltf.build.rtlib_flags=
+CH32V004.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V004.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V004.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V004.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V004.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V004.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V004.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V004.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V004.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V004.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V004.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V004.menu.rtlib.nanofs.build.fp_flags=
 CH32V004.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V004.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V004.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V004.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V004.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V004.menu.usart1.auto=AUTO (bind at begin())
 CH32V004.menu.usart1.auto.build.usart1_mode=
@@ -507,13 +564,32 @@ CH32V005.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V005.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V005.menu.opt.osstd.build.optimize_flags=
 
-CH32V005.menu.rtlib.nano=Newlib Nano (default)
+CH32V005.menu.rtlib.nano=Double (64-bit) (default)
+CH32V005.menu.rtlib.nano.build.fp_flags=
 CH32V005.menu.rtlib.nano.build.rtlib_flags=
-CH32V005.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V005.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V005.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V005.menu.rtlib.dblf.build.rtlib_flags=
+CH32V005.menu.rtlib.flt=Float (32-bit)
+CH32V005.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V005.menu.rtlib.flt.build.rtlib_flags=
+CH32V005.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V005.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V005.menu.rtlib.fltf.build.rtlib_flags=
+CH32V005.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V005.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V005.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V005.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V005.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V005.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V005.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V005.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V005.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V005.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V005.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V005.menu.rtlib.nanofs.build.fp_flags=
 CH32V005.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V005.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V005.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V005.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V005.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V005.menu.usart1.auto=AUTO (bind at begin())
 CH32V005.menu.usart1.auto.build.usart1_mode=
@@ -710,13 +786,32 @@ CH32V006.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V006.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V006.menu.opt.osstd.build.optimize_flags=
 
-CH32V006.menu.rtlib.nano=Newlib Nano (default)
+CH32V006.menu.rtlib.nano=Double (64-bit) (default)
+CH32V006.menu.rtlib.nano.build.fp_flags=
 CH32V006.menu.rtlib.nano.build.rtlib_flags=
-CH32V006.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB; too big for 16 KB parts)
+CH32V006.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V006.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V006.menu.rtlib.dblf.build.rtlib_flags=
+CH32V006.menu.rtlib.flt=Float (32-bit)
+CH32V006.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V006.menu.rtlib.flt.build.rtlib_flags=
+CH32V006.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V006.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V006.menu.rtlib.fltf.build.rtlib_flags=
+CH32V006.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V006.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V006.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V006.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V006.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V006.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V006.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB; too big for 16 KB parts)
+CH32V006.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V006.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V006.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB; too big for 16 KB parts)
+CH32V006.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB; too big for 16 KB parts)
+CH32V006.menu.rtlib.nanofs.build.fp_flags=
 CH32V006.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V006.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB; too big for 16 KB parts)
+CH32V006.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
+CH32V006.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V006.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V006.menu.usart1.auto=AUTO (bind at begin())
 CH32V006.menu.usart1.auto.build.usart1_mode=
@@ -885,13 +980,32 @@ CH32V007.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V007.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V007.menu.opt.osstd.build.optimize_flags=
 
-CH32V007.menu.rtlib.nano=Newlib Nano (default)
+CH32V007.menu.rtlib.nano=Double (64-bit) (default)
+CH32V007.menu.rtlib.nano.build.fp_flags=
 CH32V007.menu.rtlib.nano.build.rtlib_flags=
-CH32V007.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V007.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V007.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V007.menu.rtlib.dblf.build.rtlib_flags=
+CH32V007.menu.rtlib.flt=Float (32-bit)
+CH32V007.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V007.menu.rtlib.flt.build.rtlib_flags=
+CH32V007.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V007.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V007.menu.rtlib.fltf.build.rtlib_flags=
+CH32V007.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V007.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V007.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V007.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V007.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V007.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V007.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V007.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V007.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V007.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V007.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V007.menu.rtlib.nanofs.build.fp_flags=
 CH32V007.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V007.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V007.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V007.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V007.menu.usart1.auto=AUTO (bind at begin())
 CH32V007.menu.usart1.auto.build.usart1_mode=
@@ -1060,13 +1174,32 @@ CH32M007.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32M007.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M007.menu.opt.osstd.build.optimize_flags=
 
-CH32M007.menu.rtlib.nano=Newlib Nano (default)
+CH32M007.menu.rtlib.nano=Double (64-bit) (default)
+CH32M007.menu.rtlib.nano.build.fp_flags=
 CH32M007.menu.rtlib.nano.build.rtlib_flags=
-CH32M007.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32M007.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32M007.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M007.menu.rtlib.dblf.build.rtlib_flags=
+CH32M007.menu.rtlib.flt=Float (32-bit)
+CH32M007.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M007.menu.rtlib.flt.build.rtlib_flags=
+CH32M007.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32M007.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M007.menu.rtlib.fltf.build.rtlib_flags=
+CH32M007.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32M007.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M007.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32M007.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32M007.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M007.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32M007.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32M007.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M007.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32M007.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32M007.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32M007.menu.rtlib.nanofs.build.fp_flags=
 CH32M007.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32M007.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32M007.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32M007.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32M007.menu.usart1.auto=AUTO (bind at begin())
 CH32M007.menu.usart1.auto.build.usart1_mode=
@@ -1205,13 +1338,32 @@ CH32V103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V103.menu.opt.osstd.build.optimize_flags=
 
-CH32V103.menu.rtlib.nano=Newlib Nano (default)
+CH32V103.menu.rtlib.nano=Double (64-bit) (default)
+CH32V103.menu.rtlib.nano.build.fp_flags=
 CH32V103.menu.rtlib.nano.build.rtlib_flags=
-CH32V103.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V103.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V103.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V103.menu.rtlib.dblf.build.rtlib_flags=
+CH32V103.menu.rtlib.flt=Float (32-bit)
+CH32V103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V103.menu.rtlib.flt.build.rtlib_flags=
+CH32V103.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V103.menu.rtlib.fltf.build.rtlib_flags=
+CH32V103.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V103.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V103.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V103.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V103.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V103.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V103.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V103.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V103.menu.rtlib.nanofs.build.fp_flags=
 CH32V103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V103.menu.usart1.auto=AUTO (bind at begin())
 CH32V103.menu.usart1.auto.build.usart1_mode=
@@ -1447,13 +1599,32 @@ CH32V203.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V203.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V203.menu.opt.osstd.build.optimize_flags=
 
-CH32V203.menu.rtlib.nano=Newlib Nano (default)
+CH32V203.menu.rtlib.nano=Double (64-bit) (default)
+CH32V203.menu.rtlib.nano.build.fp_flags=
 CH32V203.menu.rtlib.nano.build.rtlib_flags=
-CH32V203.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V203.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V203.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V203.menu.rtlib.dblf.build.rtlib_flags=
+CH32V203.menu.rtlib.flt=Float (32-bit)
+CH32V203.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V203.menu.rtlib.flt.build.rtlib_flags=
+CH32V203.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V203.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V203.menu.rtlib.fltf.build.rtlib_flags=
+CH32V203.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V203.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V203.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V203.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V203.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V203.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V203.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V203.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V203.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V203.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V203.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V203.menu.rtlib.nanofs.build.fp_flags=
 CH32V203.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V203.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V203.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V203.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V203.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V203.menu.usart1.auto=AUTO (bind at begin())
 CH32V203.menu.usart1.auto.build.usart1_mode=
@@ -1603,13 +1774,32 @@ CH32V208.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V208.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V208.menu.opt.osstd.build.optimize_flags=
 
-CH32V208.menu.rtlib.nano=Newlib Nano (default)
+CH32V208.menu.rtlib.nano=Double (64-bit) (default)
+CH32V208.menu.rtlib.nano.build.fp_flags=
 CH32V208.menu.rtlib.nano.build.rtlib_flags=
-CH32V208.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V208.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V208.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V208.menu.rtlib.dblf.build.rtlib_flags=
+CH32V208.menu.rtlib.flt=Float (32-bit)
+CH32V208.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V208.menu.rtlib.flt.build.rtlib_flags=
+CH32V208.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V208.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V208.menu.rtlib.fltf.build.rtlib_flags=
+CH32V208.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V208.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V208.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V208.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V208.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V208.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V208.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V208.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V208.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V208.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V208.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V208.menu.rtlib.nanofs.build.fp_flags=
 CH32V208.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V208.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V208.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V208.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V208.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V208.menu.usart1.auto=AUTO (bind at begin())
 CH32V208.menu.usart1.auto.build.usart1_mode=
@@ -1778,13 +1968,32 @@ CH32V303.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V303.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V303.menu.opt.osstd.build.optimize_flags=
 
-CH32V303.menu.rtlib.nano=Newlib Nano (default)
+CH32V303.menu.rtlib.nano=Double (64-bit) (default)
+CH32V303.menu.rtlib.nano.build.fp_flags=
 CH32V303.menu.rtlib.nano.build.rtlib_flags=
-CH32V303.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V303.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V303.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V303.menu.rtlib.dblf.build.rtlib_flags=
+CH32V303.menu.rtlib.flt=Float (32-bit)
+CH32V303.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V303.menu.rtlib.flt.build.rtlib_flags=
+CH32V303.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V303.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V303.menu.rtlib.fltf.build.rtlib_flags=
+CH32V303.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V303.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V303.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V303.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V303.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V303.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V303.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V303.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V303.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V303.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V303.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V303.menu.rtlib.nanofs.build.fp_flags=
 CH32V303.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V303.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V303.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V303.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V303.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V303.menu.usart1.auto=AUTO (bind at begin())
 CH32V303.menu.usart1.auto.build.usart1_mode=
@@ -2003,13 +2212,32 @@ CH32V305.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V305.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V305.menu.opt.osstd.build.optimize_flags=
 
-CH32V305.menu.rtlib.nano=Newlib Nano (default)
+CH32V305.menu.rtlib.nano=Double (64-bit) (default)
+CH32V305.menu.rtlib.nano.build.fp_flags=
 CH32V305.menu.rtlib.nano.build.rtlib_flags=
-CH32V305.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V305.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V305.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V305.menu.rtlib.dblf.build.rtlib_flags=
+CH32V305.menu.rtlib.flt=Float (32-bit)
+CH32V305.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V305.menu.rtlib.flt.build.rtlib_flags=
+CH32V305.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V305.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V305.menu.rtlib.fltf.build.rtlib_flags=
+CH32V305.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V305.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V305.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V305.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V305.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V305.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V305.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V305.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V305.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V305.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V305.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V305.menu.rtlib.nanofs.build.fp_flags=
 CH32V305.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V305.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V305.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V305.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V305.menu.usart1.auto=AUTO (bind at begin())
 CH32V305.menu.usart1.auto.build.usart1_mode=
@@ -2204,13 +2432,32 @@ CH32V307.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V307.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V307.menu.opt.osstd.build.optimize_flags=
 
-CH32V307.menu.rtlib.nano=Newlib Nano (default)
+CH32V307.menu.rtlib.nano=Double (64-bit) (default)
+CH32V307.menu.rtlib.nano.build.fp_flags=
 CH32V307.menu.rtlib.nano.build.rtlib_flags=
-CH32V307.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V307.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V307.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V307.menu.rtlib.dblf.build.rtlib_flags=
+CH32V307.menu.rtlib.flt=Float (32-bit)
+CH32V307.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V307.menu.rtlib.flt.build.rtlib_flags=
+CH32V307.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V307.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V307.menu.rtlib.fltf.build.rtlib_flags=
+CH32V307.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V307.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V307.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V307.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V307.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V307.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V307.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V307.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V307.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V307.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V307.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V307.menu.rtlib.nanofs.build.fp_flags=
 CH32V307.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V307.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V307.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V307.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V307.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V307.menu.usart1.auto=AUTO (bind at begin())
 CH32V307.menu.usart1.auto.build.usart1_mode=
@@ -2409,13 +2656,32 @@ CH32V317.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V317.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V317.menu.opt.osstd.build.optimize_flags=
 
-CH32V317.menu.rtlib.nano=Newlib Nano (default)
+CH32V317.menu.rtlib.nano=Double (64-bit) (default)
+CH32V317.menu.rtlib.nano.build.fp_flags=
 CH32V317.menu.rtlib.nano.build.rtlib_flags=
-CH32V317.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V317.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V317.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V317.menu.rtlib.dblf.build.rtlib_flags=
+CH32V317.menu.rtlib.flt=Float (32-bit)
+CH32V317.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V317.menu.rtlib.flt.build.rtlib_flags=
+CH32V317.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V317.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V317.menu.rtlib.fltf.build.rtlib_flags=
+CH32V317.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V317.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V317.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V317.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V317.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V317.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V317.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V317.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V317.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V317.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V317.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V317.menu.rtlib.nanofs.build.fp_flags=
 CH32V317.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V317.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V317.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V317.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V317.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V317.menu.usart1.auto=AUTO (bind at begin())
 CH32V317.menu.usart1.auto.build.usart1_mode=
@@ -2585,13 +2851,32 @@ CH32X033.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32X033.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X033.menu.opt.osstd.build.optimize_flags=
 
-CH32X033.menu.rtlib.nano=Newlib Nano (default)
+CH32X033.menu.rtlib.nano=Double (64-bit) (default)
+CH32X033.menu.rtlib.nano.build.fp_flags=
 CH32X033.menu.rtlib.nano.build.rtlib_flags=
-CH32X033.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32X033.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32X033.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X033.menu.rtlib.dblf.build.rtlib_flags=
+CH32X033.menu.rtlib.flt=Float (32-bit)
+CH32X033.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X033.menu.rtlib.flt.build.rtlib_flags=
+CH32X033.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32X033.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X033.menu.rtlib.fltf.build.rtlib_flags=
+CH32X033.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32X033.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X033.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32X033.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32X033.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X033.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32X033.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32X033.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X033.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32X033.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32X033.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32X033.menu.rtlib.nanofs.build.fp_flags=
 CH32X033.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32X033.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32X033.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32X033.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X033.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32X033.menu.usart1.auto=AUTO (bind at begin())
 CH32X033.menu.usart1.auto.build.usart1_mode=
@@ -2765,13 +3050,32 @@ CH32X035.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32X035.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X035.menu.opt.osstd.build.optimize_flags=
 
-CH32X035.menu.rtlib.nano=Newlib Nano (default)
+CH32X035.menu.rtlib.nano=Double (64-bit) (default)
+CH32X035.menu.rtlib.nano.build.fp_flags=
 CH32X035.menu.rtlib.nano.build.rtlib_flags=
-CH32X035.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32X035.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32X035.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X035.menu.rtlib.dblf.build.rtlib_flags=
+CH32X035.menu.rtlib.flt=Float (32-bit)
+CH32X035.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X035.menu.rtlib.flt.build.rtlib_flags=
+CH32X035.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32X035.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X035.menu.rtlib.fltf.build.rtlib_flags=
+CH32X035.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32X035.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X035.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32X035.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32X035.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X035.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32X035.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32X035.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X035.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32X035.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32X035.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32X035.menu.rtlib.nanofs.build.fp_flags=
 CH32X035.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32X035.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32X035.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32X035.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X035.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32X035.menu.usart1.auto=AUTO (bind at begin())
 CH32X035.menu.usart1.auto.build.usart1_mode=
@@ -2970,13 +3274,32 @@ CH32L103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32L103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32L103.menu.opt.osstd.build.optimize_flags=
 
-CH32L103.menu.rtlib.nano=Newlib Nano (default)
+CH32L103.menu.rtlib.nano=Double (64-bit) (default)
+CH32L103.menu.rtlib.nano.build.fp_flags=
 CH32L103.menu.rtlib.nano.build.rtlib_flags=
-CH32L103.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32L103.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32L103.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32L103.menu.rtlib.dblf.build.rtlib_flags=
+CH32L103.menu.rtlib.flt=Float (32-bit)
+CH32L103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32L103.menu.rtlib.flt.build.rtlib_flags=
+CH32L103.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32L103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32L103.menu.rtlib.fltf.build.rtlib_flags=
+CH32L103.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32L103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32L103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32L103.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32L103.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32L103.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32L103.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32L103.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32L103.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32L103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32L103.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32L103.menu.rtlib.nanofs.build.fp_flags=
 CH32L103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32L103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32L103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32L103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32L103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32L103.menu.usart1.auto=AUTO (bind at begin())
 CH32L103.menu.usart1.auto.build.usart1_mode=
@@ -3119,13 +3442,32 @@ CH32M103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32M103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M103.menu.opt.osstd.build.optimize_flags=
 
-CH32M103.menu.rtlib.nano=Newlib Nano (default)
+CH32M103.menu.rtlib.nano=Double (64-bit) (default)
+CH32M103.menu.rtlib.nano.build.fp_flags=
 CH32M103.menu.rtlib.nano.build.rtlib_flags=
-CH32M103.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32M103.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32M103.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M103.menu.rtlib.dblf.build.rtlib_flags=
+CH32M103.menu.rtlib.flt=Float (32-bit)
+CH32M103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M103.menu.rtlib.flt.build.rtlib_flags=
+CH32M103.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32M103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M103.menu.rtlib.fltf.build.rtlib_flags=
+CH32M103.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32M103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32M103.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32M103.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M103.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32M103.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32M103.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M103.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32M103.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32M103.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32M103.menu.rtlib.nanofs.build.fp_flags=
 CH32M103.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32M103.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32M103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32M103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32M103.menu.usart1.auto=AUTO (bind at begin())
 CH32M103.menu.usart1.auto.build.usart1_mode=
@@ -3286,13 +3628,32 @@ CH32V205.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V205.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V205.menu.opt.osstd.build.optimize_flags=
 
-CH32V205.menu.rtlib.nano=Newlib Nano (default)
+CH32V205.menu.rtlib.nano=Double (64-bit) (default)
+CH32V205.menu.rtlib.nano.build.fp_flags=
 CH32V205.menu.rtlib.nano.build.rtlib_flags=
-CH32V205.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V205.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V205.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V205.menu.rtlib.dblf.build.rtlib_flags=
+CH32V205.menu.rtlib.flt=Float (32-bit)
+CH32V205.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V205.menu.rtlib.flt.build.rtlib_flags=
+CH32V205.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V205.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V205.menu.rtlib.fltf.build.rtlib_flags=
+CH32V205.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V205.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V205.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V205.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V205.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V205.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V205.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V205.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V205.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V205.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V205.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V205.menu.rtlib.nanofs.build.fp_flags=
 CH32V205.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V205.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V205.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V205.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V205.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V205.menu.usart1.auto=AUTO (bind at begin())
 CH32V205.menu.usart1.auto.build.usart1_mode=
@@ -3604,13 +3965,32 @@ CH32V407.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V407.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V407.menu.opt.osstd.build.optimize_flags=
 
-CH32V407.menu.rtlib.nano=Newlib Nano (default)
+CH32V407.menu.rtlib.nano=Double (64-bit) (default)
+CH32V407.menu.rtlib.nano.build.fp_flags=
 CH32V407.menu.rtlib.nano.build.rtlib_flags=
-CH32V407.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V407.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V407.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V407.menu.rtlib.dblf.build.rtlib_flags=
+CH32V407.menu.rtlib.flt=Float (32-bit)
+CH32V407.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V407.menu.rtlib.flt.build.rtlib_flags=
+CH32V407.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V407.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V407.menu.rtlib.fltf.build.rtlib_flags=
+CH32V407.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V407.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V407.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V407.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V407.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V407.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V407.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V407.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V407.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V407.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V407.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V407.menu.rtlib.nanofs.build.fp_flags=
 CH32V407.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V407.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V407.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V407.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V407.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V407.menu.usart1.auto=AUTO (bind at begin())
 CH32V407.menu.usart1.auto.build.usart1_mode=
@@ -3824,13 +4204,32 @@ CH32V467.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V467.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V467.menu.opt.osstd.build.optimize_flags=
 
-CH32V467.menu.rtlib.nano=Newlib Nano (default)
+CH32V467.menu.rtlib.nano=Double (64-bit) (default)
+CH32V467.menu.rtlib.nano.build.fp_flags=
 CH32V467.menu.rtlib.nano.build.rtlib_flags=
-CH32V467.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32V467.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V467.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V467.menu.rtlib.dblf.build.rtlib_flags=
+CH32V467.menu.rtlib.flt=Float (32-bit)
+CH32V467.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V467.menu.rtlib.flt.build.rtlib_flags=
+CH32V467.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32V467.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V467.menu.rtlib.fltf.build.rtlib_flags=
+CH32V467.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V467.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V467.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V467.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32V467.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V467.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32V467.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32V467.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V467.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32V467.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32V467.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32V467.menu.rtlib.nanofs.build.fp_flags=
 CH32V467.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32V467.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32V467.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32V467.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V467.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32V467.menu.usart1.auto=AUTO (bind at begin())
 CH32V467.menu.usart1.auto.build.usart1_mode=
@@ -4011,13 +4410,32 @@ CH32X305.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32X305.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X305.menu.opt.osstd.build.optimize_flags=
 
-CH32X305.menu.rtlib.nano=Newlib Nano (default)
+CH32X305.menu.rtlib.nano=Double (64-bit) (default)
+CH32X305.menu.rtlib.nano.build.fp_flags=
 CH32X305.menu.rtlib.nano.build.rtlib_flags=
-CH32X305.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32X305.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32X305.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X305.menu.rtlib.dblf.build.rtlib_flags=
+CH32X305.menu.rtlib.flt=Float (32-bit)
+CH32X305.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X305.menu.rtlib.flt.build.rtlib_flags=
+CH32X305.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32X305.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X305.menu.rtlib.fltf.build.rtlib_flags=
+CH32X305.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32X305.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X305.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32X305.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32X305.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X305.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32X305.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32X305.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X305.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32X305.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32X305.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32X305.menu.rtlib.nanofs.build.fp_flags=
 CH32X305.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32X305.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32X305.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32X305.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32X305.menu.usart1.auto=AUTO (bind at begin())
 CH32X305.menu.usart1.auto.build.usart1_mode=
@@ -4377,13 +4795,32 @@ CH32X315.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32X315.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X315.menu.opt.osstd.build.optimize_flags=
 
-CH32X315.menu.rtlib.nano=Newlib Nano (default)
+CH32X315.menu.rtlib.nano=Double (64-bit) (default)
+CH32X315.menu.rtlib.nano.build.fp_flags=
 CH32X315.menu.rtlib.nano.build.rtlib_flags=
-CH32X315.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32X315.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32X315.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X315.menu.rtlib.dblf.build.rtlib_flags=
+CH32X315.menu.rtlib.flt=Float (32-bit)
+CH32X315.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X315.menu.rtlib.flt.build.rtlib_flags=
+CH32X315.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32X315.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X315.menu.rtlib.fltf.build.rtlib_flags=
+CH32X315.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32X315.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X315.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32X315.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32X315.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X315.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32X315.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32X315.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X315.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32X315.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32X315.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32X315.menu.rtlib.nanofs.build.fp_flags=
 CH32X315.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32X315.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32X315.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32X315.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X315.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32X315.menu.usart1.auto=AUTO (bind at begin())
 CH32X315.menu.usart1.auto.build.usart1_mode=
@@ -4891,13 +5328,32 @@ CH32M030.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32M030.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M030.menu.opt.osstd.build.optimize_flags=
 
-CH32M030.menu.rtlib.nano=Newlib Nano (default)
+CH32M030.menu.rtlib.nano=Double (64-bit) (default)
+CH32M030.menu.rtlib.nano.build.fp_flags=
 CH32M030.menu.rtlib.nano.build.rtlib_flags=
-CH32M030.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32M030.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32M030.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M030.menu.rtlib.dblf.build.rtlib_flags=
+CH32M030.menu.rtlib.flt=Float (32-bit)
+CH32M030.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M030.menu.rtlib.flt.build.rtlib_flags=
+CH32M030.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32M030.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M030.menu.rtlib.fltf.build.rtlib_flags=
+CH32M030.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32M030.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M030.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32M030.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32M030.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M030.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32M030.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32M030.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M030.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32M030.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32M030.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32M030.menu.rtlib.nanofs.build.fp_flags=
 CH32M030.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32M030.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32M030.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32M030.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M030.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 CH32M030.menu.usart1.auto=AUTO (bind at begin())
 CH32M030.menu.usart1.auto.build.usart1_mode=
@@ -4987,13 +5443,32 @@ CH32H415.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32H415.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H415.menu.opt.osstd.build.optimize_flags=
 
-CH32H415.menu.rtlib.nano=Newlib Nano (default)
+CH32H415.menu.rtlib.nano=Double (64-bit) (default)
+CH32H415.menu.rtlib.nano.build.fp_flags=
 CH32H415.menu.rtlib.nano.build.rtlib_flags=
-CH32H415.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32H415.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32H415.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H415.menu.rtlib.dblf.build.rtlib_flags=
+CH32H415.menu.rtlib.flt=Float (32-bit)
+CH32H415.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H415.menu.rtlib.flt.build.rtlib_flags=
+CH32H415.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32H415.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H415.menu.rtlib.fltf.build.rtlib_flags=
+CH32H415.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32H415.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H415.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32H415.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32H415.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H415.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32H415.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32H415.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H415.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32H415.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32H415.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32H415.menu.rtlib.nanofs.build.fp_flags=
 CH32H415.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32H415.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32H415.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32H415.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H415.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 
 CH32H415.menu.vio18.hw=Hardware default (XO strap)
@@ -5264,13 +5739,32 @@ CH32H416.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32H416.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H416.menu.opt.osstd.build.optimize_flags=
 
-CH32H416.menu.rtlib.nano=Newlib Nano (default)
+CH32H416.menu.rtlib.nano=Double (64-bit) (default)
+CH32H416.menu.rtlib.nano.build.fp_flags=
 CH32H416.menu.rtlib.nano.build.rtlib_flags=
-CH32H416.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32H416.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32H416.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H416.menu.rtlib.dblf.build.rtlib_flags=
+CH32H416.menu.rtlib.flt=Float (32-bit)
+CH32H416.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H416.menu.rtlib.flt.build.rtlib_flags=
+CH32H416.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32H416.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H416.menu.rtlib.fltf.build.rtlib_flags=
+CH32H416.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32H416.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H416.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32H416.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32H416.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H416.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32H416.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32H416.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H416.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32H416.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32H416.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32H416.menu.rtlib.nanofs.build.fp_flags=
 CH32H416.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32H416.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32H416.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32H416.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H416.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 
 CH32H416.menu.vio18.hw=Hardware default (XO strap)
@@ -5485,13 +5979,32 @@ CH32H417.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32H417.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H417.menu.opt.osstd.build.optimize_flags=
 
-CH32H417.menu.rtlib.nano=Newlib Nano (default)
+CH32H417.menu.rtlib.nano=Double (64-bit) (default)
+CH32H417.menu.rtlib.nano.build.fp_flags=
 CH32H417.menu.rtlib.nano.build.rtlib_flags=
-CH32H417.menu.rtlib.nanofp=Newlib Nano + Float Printf (+~21 KB)
+CH32H417.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32H417.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H417.menu.rtlib.dblf.build.rtlib_flags=
+CH32H417.menu.rtlib.flt=Float (32-bit)
+CH32H417.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H417.menu.rtlib.flt.build.rtlib_flags=
+CH32H417.menu.rtlib.fltf=Float (32-bit) + printf %f
+CH32H417.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H417.menu.rtlib.fltf.build.rtlib_flags=
+CH32H417.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32H417.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H417.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32H417.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB)
+CH32H417.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H417.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
+CH32H417.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
+CH32H417.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H417.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
-CH32H417.menu.rtlib.nanofs=Newlib Nano + Float Scanf (+~24 KB)
+CH32H417.menu.rtlib.nanofs=Double (64-bit) + newlib scanf %f (+~24 KB)
+CH32H417.menu.rtlib.nanofs.build.fp_flags=
 CH32H417.menu.rtlib.nanofs.build.rtlib_flags=-Wl,-u,_scanf_float
-CH32H417.menu.rtlib.nanofps=Newlib Nano + Float Printf/Scanf (+~31 KB)
+CH32H417.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
+CH32H417.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H417.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
 
 CH32H417.menu.vio18.hw=Hardware default (XO strap)
