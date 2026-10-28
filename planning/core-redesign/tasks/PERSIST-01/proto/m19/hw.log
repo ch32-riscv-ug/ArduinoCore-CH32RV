@@ -21,3 +21,8 @@ Bench trouble (not the sketches):
   port 2) brought them back without erasing; the same image then ran and passed twice.
 - H417 printed nothing on the LinkE UART (by-id tty); read through the debugger instead.
 - V103 behind E4E1 prints nothing on its UART either; V103 behind the CH549 WCH-Link: no target.
+
+3. H417 DFU with the new ch32rv_flash_erase / ch32rv_flash_write (dfu/dfu.ino, CDC + DFU runtime on USBFS, UART on
+   PB7/PB6): image A by SWD -> "dfu image A"; image B by tools/diagnostics/h417-bench/dfu.py (26268 B, status 0)
+   -> "dfu image B"; back to A by DFU -> "dfu image A". The default controller on H417 is USBSS, which the bench
+   did not enumerate (SS cable out); FullSpeed has to be named. The bench H417 is left running image A.
