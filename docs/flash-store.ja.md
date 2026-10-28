@@ -125,4 +125,4 @@ uint32_t ch32rv_flash_erase_size(void);
 - **2 つの例：** 保存して、リセットのあとに読み戻せました。
 - **電源断（例 FlashSettingsTwoBanks の形）：** V003、V203、X035 で 130 回、保存の最中に電源を切りました。そのうち 75 回は書いている途中で切れましたが、すべて前の値か新しい値が読めました。
 
-記録は [PERSIST-01 の measurements.ja.md](../planning/core-redesign/tasks/PERSIST-01/measurements.ja.md)（M15〜M19）にあります。
+記録は [PERSIST-01 の measurements.ja.md](../planning/core-redesign/tasks/PERSIST-01/measurements.ja.md)（M15〜M21）にあります。
