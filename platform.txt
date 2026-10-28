@@ -40,8 +40,8 @@ build.periph_defines=
 build.vio18_defines=
 # The Clock Source menu (boards.txt): the crystal's setting on; empty: HSI.
 build.clock_src_defines=
-compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.fp_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
-compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.fp_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
+compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.fp_flags} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
+compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.fp_flags} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
 compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
 # The three generated interrupt tables share one stem, so a board - or a
 # single pnum menu entry, for a part on a different die - selects all
@@ -69,6 +69,13 @@ build.extra_flags=
 # reach the link: newlib-nano's float printf / scanf.
 build.fp_flags=
 build.rtlib_flags=
+# The core defines printf, vprintf, sprintf, snprintf, vsprintf, vsnprintf,
+# puts and putchar on its own formatter (ch32rv_stdio_string.c,
+# ch32rv_stdio_out.c). As builtins, calls to them do not show in the LTO
+# symbol table, so the core's definitions were pulled in only after LTO had
+# dropped the formatter they call (an undefined ch32rv_vformat). Plain calls
+# resolve during LTO. Costs GCC's rewrites such as printf("x\n") -> puts().
+compiler.stdio_flags=-fno-builtin-printf -fno-builtin-vprintf -fno-builtin-sprintf -fno-builtin-snprintf -fno-builtin-vsprintf -fno-builtin-vsnprintf -fno-builtin-puts -fno-builtin-putchar
 
 # compiler.<lang>.extra_flags is where boards.local.txt or --build-property put
 # per-user flags. A recipe that leaves them out silently ignores them, so every
