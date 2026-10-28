@@ -1,0 +1,12 @@
+0	-42|7|3000000000
+0	   42|42   |-0042
+0	beef|BEEF|1234abcd
+0	-123456789|4000000000
+0	A|hey|     right|l   |
+0	0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+1	%|abc|xy      |       q|
+1	00042|     042|-042    ||00a
+1	+5| 5|  -42|     7|8   |ab
+2	3.14|1.500000|8|-0.001
+2	    3.14|2.2     |-005.250|+0.1
+2	0.123456789|123456.7812|10000000000.000000
