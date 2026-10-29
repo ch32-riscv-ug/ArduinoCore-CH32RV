@@ -69,8 +69,10 @@ Differences:
   `onWrite()` of MSC, `onApdu()`, `onControlRequest()`, `onFillPayload()`)
   are called inside the stack.
 - **Each class has a count limit** (CDC and MIDI 4, vendor and video 2,
-  others 1); within it, declaring is enough. CDC buffers can be replaced with
-  the sketch's own through `setBuffers()`.
+  others 1); within it, declaring is enough. CDC and vendor buffers are set
+  with `configure(CH32RVUsbBulkStreamConfig)` (EspUsbDevice v3's field names):
+  the class's own by default, the sketch's array when given; nothing is
+  allocated.
 - **Disks are objects the MSC class reads from** (`setStorage()`; `attach()`
   does it), not lambdas bound to `onRead()`.
 - **The network's IP layer** (`ipConfig()`, `dhcpServer()`, `dhcpClient()`,
@@ -83,9 +85,10 @@ Differences:
 - **Not here**: the firmware-update classes.
 - **The vendor class's direct path (`writeDirect()`) works on every series**:
   one transfer straight from the caller's buffer, which stays untouched until
-  `onTxComplete()` reports it. No build flag and no alignment rule (the USBSS
-  DMA reads a 4-byte-aligned buffer itself). `onRxData()` is a run-time choice
-  too, and `setRxDataBuffer()` gives it a bigger landing buffer. Only here:
+  `onDirectTxComplete()` hands it back (once, whether sent, reset or stopped).
+  No build flag and no alignment rule (the USBSS DMA reads a 4-byte-aligned
+  buffer itself). `onRxData()` is a run-time choice too; its transfers land in
+  the receive buffer `configure()` gives. Only here:
   `setInterfaceProtocol()` (subclass / protocol) and the HID vendor class's
   `setUsage()`.
 - **A DFU runtime interface comes by default**; `config.dfuRuntime = false`

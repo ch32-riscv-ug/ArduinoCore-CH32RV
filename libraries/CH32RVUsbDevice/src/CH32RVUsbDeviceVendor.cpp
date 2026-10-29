@@ -128,20 +128,17 @@ void CH32RVUsbDeviceVendor::receive()
         /* Nothing is kept: each transfer takes the whole buffer, whole packets
          * of it, and ends early on a short packet. */
         _rxHead = _rxTail = _rxEnd = 0;
-        uint8_t *at = _rx;
-        uint16_t room = BUFFER;
-        if (_rxData && _rxDataSize >= _packet) {
-            at = _rxData;
-            room = _rxDataSize;
+        if (_rxSize < _packet) {
+            return;
         }
-        _outBusy = device().transfer(_ep, at, (uint16_t)(room / _packet * _packet));
-        _rxAt = at;
+        _outBusy = device().transfer(_ep, _rx, (uint16_t)(_rxSize / _packet * _packet));
+        _rxAt = _rx;
         return;
     }
     if (!_rxEnd && _rxHead == _rxTail) {
         _rxHead = _rxTail = 0;
     }
-    if (!_rxEnd && (uint16_t)(BUFFER - _rxHead) < _packet) {
+    if (!_rxEnd && (uint16_t)(_rxSize - _rxHead) < _packet) {
         if (_rxTail <= _packet) {
             return;
         }
@@ -168,7 +165,7 @@ void CH32RVUsbDeviceVendor::push()
         }
         return;
     }
-    _txSending = _txHead > _txTail ? (uint16_t)(_txHead - _txTail) : (uint16_t)(BUFFER - _txTail);
+    _txSending = _txHead > _txTail ? (uint16_t)(_txHead - _txTail) : (uint16_t)(_txSize - _txTail);
     _inBusy = device().transfer((uint8_t)(0x80 | _ep), _tx + _txTail, _txSending);
 }
 
@@ -207,8 +204,8 @@ void CH32RVUsbDeviceVendor::usbTransferred(uint8_t address, uint16_t length)
         }
         const uint16_t sent = _txSending;
         if (_txSending) {
-            _txTail = (uint16_t)((_txTail + _txSending) % BUFFER);
-            _zlp = _txHead == _txTail && (_txSending % _packet) == 0;
+            _txTail = (uint16_t)((_txTail + _txSending) % _txSize);
+            _zlp = _terminate && _txHead == _txTail && (_txSending % _packet) == 0;
             _txSending = 0;
         }
         push();
@@ -274,7 +271,7 @@ size_t CH32RVUsbDeviceVendor::write(const uint8_t *buffer, size_t size)
     size_t n = 0;
     while (n < size && writeAvailable()) {
         _tx[_txHead] = buffer[n++];
-        _txHead = (uint16_t)(_txHead + 1 == BUFFER ? 0 : _txHead + 1);
+        _txHead = (uint16_t)(_txHead + 1 == _txSize ? 0 : _txHead + 1);
     }
     push();
     ch32rv_usb_task();
@@ -286,19 +283,33 @@ size_t CH32RVUsbDeviceVendor::writeAvailable() const
     if (!mounted()) {
         return 0;
     }
-    const uint16_t used = _txHead >= _txTail ? (uint16_t)(_txHead - _txTail) : (uint16_t)(BUFFER - _txTail + _txHead);
-    return (size_t)(BUFFER - 1 - used);
+    const uint16_t used = _txHead >= _txTail ? (uint16_t)(_txHead - _txTail) : (uint16_t)(_txSize - _txTail + _txHead);
+    return (size_t)(_txSize - 1 - used);
 }
 
-size_t CH32RVUsbDeviceVendor::writeCapacity()
+bool CH32RVUsbDeviceVendor::configure(const CH32RVUsbBulkStreamConfig &config)
 {
-    return BUFFER - 1;
+    uint8_t *rx, *tx;
+    uint16_t rxSize, txSize;
+    if (device().started() ||
+        !ch32rv_usb_bulk_buffer(config.rxBuffer, config.rxCapacity, _rxStore, sizeof _rxStore, rx, rxSize) ||
+        !ch32rv_usb_bulk_buffer(config.txBuffer, config.txCapacity, _txStore, sizeof _txStore, tx, txSize)) {
+        return false;
+    }
+    _rx = rx;
+    _rxSize = rxSize;
+    _tx = tx;
+    _txSize = txSize;
+    _terminate = config.streamTermination == CH32RVUsbStreamTermination::EndWithShortPacket;
+    _rxHead = _rxTail = _rxEnd = 0;
+    _txHead = _txTail = 0;
+    return true;
 }
 
 bool CH32RVUsbDeviceVendor::waitWritable(size_t bytes, uint32_t timeoutMs)
 {
     if (bytes > writeCapacity()) {
-        bytes = writeCapacity();
+        return false;
     }
     flush();
     const uint32_t t0 = millis();
@@ -400,6 +411,7 @@ bool CH32RVUsbDeviceVendor::handleControlRequest(CH32RVUsbControlStage stage, co
     r.wValue = setup.wValue;
     r.wIndex = setup.wIndex;
     r.wLength = setup.wLength;
+    r.actualBytes = device().controlActualBytes();
     r.rawRequest = &setup;
     return _onControl(r);
 }

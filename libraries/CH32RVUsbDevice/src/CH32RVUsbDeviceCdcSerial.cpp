@@ -56,17 +56,23 @@ void CH32RVUsbDeviceCdcSerial::begin(unsigned long baud)
     }
 }
 
-void CH32RVUsbDeviceCdcSerial::setBuffers(uint8_t *rx, uint16_t rxSize, uint8_t *tx, uint16_t txSize)
+bool CH32RVUsbDeviceCdcSerial::configure(const CH32RVUsbBulkStreamConfig &config)
 {
-    if (device().started() || !rx || !tx || rxSize < 2 || txSize < 2) {
-        return;
+    uint8_t *rx, *tx;
+    uint16_t rxSize, txSize;
+    if (device().started() ||
+        !ch32rv_usb_bulk_buffer(config.rxBuffer, config.rxCapacity, _rxStore, sizeof _rxStore, rx, rxSize) ||
+        !ch32rv_usb_bulk_buffer(config.txBuffer, config.txCapacity, _txStore, sizeof _txStore, tx, txSize)) {
+        return false;
     }
     _rx = rx;
     _rxSize = rxSize;
     _tx = tx;
     _txSize = txSize;
+    _terminate = config.streamTermination != CH32RVUsbStreamTermination::Continue;
     _rxHead = _rxTail = _rxEnd = 0;
     _txHead = _txTail = 0;
+    return true;
 }
 
 /* ---------------------------------------------------------- the stack's side */
@@ -148,7 +154,7 @@ void CH32RVUsbDeviceCdcSerial::usbTransferred(uint8_t address, uint16_t length)
         _inBusy = false;
         if (_txSending) {
             _txTail = (uint16_t)((_txTail + _txSending) % _txSize);
-            _zlp = _txHead == _txTail && (_txSending % _packet) == 0;
+            _zlp = _terminate && _txHead == _txTail && (_txSending % _packet) == 0;
             _txSending = 0;
         }
         push();
@@ -238,11 +244,35 @@ int CH32RVUsbDeviceCdcSerial::availableForWrite()
     return tx_free(_txHead, _txTail, _txSize);
 }
 
+size_t CH32RVUsbDeviceCdcSerial::writeAvailable() const
+{
+    return tx_free(_txHead, _txTail, _txSize);
+}
+
+bool CH32RVUsbDeviceCdcSerial::waitWritable(size_t bytes, uint32_t timeoutMs)
+{
+    if (bytes > writeCapacity()) {
+        return false;
+    }
+    push();
+    const uint32_t t0 = millis();
+    while (connected()) {
+        if (writeAvailable() >= bytes) {
+            return true;
+        }
+        if ((uint32_t)(millis() - t0) >= timeoutMs) {
+            return false;
+        }
+        push();
+    }
+    return false;
+}
+
 void CH32RVUsbDeviceCdcSerial::flush()
 {
     push();
     const uint32_t t0 = millis();
-    while ((_inBusy || _txHead != _txTail) && connected() && (uint32_t)(millis() - t0) < 1000u) {
+    while ((_inBusy || _txHead != _txTail) && connected() && (uint32_t)(millis() - t0) < _txTimeoutMs) {
         push();
     }
 }
@@ -255,12 +285,19 @@ size_t CH32RVUsbDeviceCdcSerial::write(uint8_t c)
 size_t CH32RVUsbDeviceCdcSerial::write(const uint8_t *buf, size_t size)
 {
     size_t done = 0;
+    uint32_t t0 = millis();
     while (done < size && connected()) {
+        const size_t before = done;
         while (done < size && tx_free(_txHead, _txTail, _txSize)) {
             _tx[_txHead] = buf[done++];
             _txHead = (uint16_t)(_txHead + 1 == _txSize ? 0 : _txHead + 1);
         }
         push();
+        if (done != before) {
+            t0 = millis();
+        } else if ((uint32_t)(millis() - t0) >= _txTimeoutMs) {
+            break;                               /* the host keeps the port open but reads nothing */
+        }
     }
     return done;
 }

@@ -17,25 +17,37 @@ public:
      * host's business; the argument exists for Serial compatibility. */
     void begin(unsigned long baud = 115200);
     void end() {}
-    /* Use the sketch's buffers instead of the built-in ones (twice the
-     * largest packet each: 256 bytes on a full-speed part). The receive
-     * buffer needs room for two packets at the speed the host picks (128 /
-     * 1024 / 2048 bytes); a smaller one cannot take data at that speed.
-     * Before begin(). */
-    void setBuffers(uint8_t *rx, uint16_t rxSize, uint8_t *tx, uint16_t txSize);
+    /* Buffers and how write() ends on the wire (CH32RVUsbBulkStreamConfig).
+     * While the device is stopped; false (nothing changed) for a setting
+     * that cannot be used. */
+    bool configure(const CH32RVUsbBulkStreamConfig &config);
+    /* Bytes the receive buffer holds at most, and write() can queue. */
+    size_t readCapacity() const { return (size_t)(_rxSize - 1); }
+    size_t writeCapacity() const { return (size_t)(_txSize - 1); }
 
     int available() override;
     int peek() override;
     int read() override;
     size_t read(uint8_t *buffer, size_t size);
     int availableForWrite() override;
+    /* Room in the transmit buffer now. */
+    size_t writeAvailable() const;
+    /* Wait until `bytes` fit, running the stack meanwhile. False when the
+     * port closes, on the timeout, and for more than writeCapacity(). */
+    bool waitWritable(size_t bytes, uint32_t timeoutMs = 100);
+    /* Waits until the queued bytes are sent (Serial's flush()), while a host
+     * has the port open, at most the write timeout. */
     void flush() override;
     size_t write(uint8_t c) override;
-    /* Blocks while a host has the port open and the buffer is full; with no
-     * host (or once it closes the port) the bytes are dropped instead, like an
-     * unconnected UART, so a sketch that prints never hangs on a missing
-     * cable. */
+    /* Waits for room while a host has the port open and the buffer is full -
+     * as Serial does, so print() loses nothing - but at most the write
+     * timeout without progress; then, and with no host (or once it closes the
+     * port), the rest is dropped, like an unconnected UART. The return value
+     * is what was queued. */
     size_t write(const uint8_t *buf, size_t size) override;
+    /* How long write() and flush() wait for the host to take data (1000 ms;
+     * 0 never waits). */
+    void setTxTimeoutMs(uint32_t ms) { _txTimeoutMs = ms; }
     using Print::write;
     /* printf() as on HardwareSerial (and ESP32's Print). */
     CH32RV_PRINTF_MEMBER
@@ -45,8 +57,10 @@ public:
     bool connected();
     /* This port's index among the device's CDC ports. */
     uint8_t port() const { return instance(); }
-    const CH32RVUsbDeviceCdcLineCoding &lineCoding() const { return _lineCoding; }
-    const CH32RVUsbDeviceCdcLineState &lineState() const { return _lineState; }
+    /* What the host last set (copies: they do not change under the caller). */
+    CH32RVUsbDeviceCdcLineCoding lineCoding() const { return _lineCoding; }
+    CH32RVUsbDeviceCdcLineState lineState() const { return _lineState; }
+    bool mounted() const { return attached() && device().ready(); }
     bool dtr();
     bool rts();
     /* The line coding the host last set. */
@@ -96,7 +110,9 @@ private:
     uint16_t _txHead = 0, _txTail = 0, _txSending = 0;
     uint8_t _coding[7] = {0, 0, 0, 0, 0, 0, 8};
     uint16_t _packet = 64;
+    uint32_t _txTimeoutMs = 1000;
     bool _outBusy = false, _inBusy = false, _zlp = false;
+    bool _terminate = true;                      /* a ZLP after whole packets */
     bool _bootTouch = true;
     uint8_t _pending = 0;                        /* notifications for usbDeliver() */
     CH32RVUsbDeviceCdcLineCoding _lineCoding;

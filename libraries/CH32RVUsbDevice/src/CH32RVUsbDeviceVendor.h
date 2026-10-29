@@ -18,6 +18,9 @@ struct CH32RVUsbDeviceVendorControlRequest {
     uint16_t wValue = 0;
     uint16_t wIndex = 0;
     uint16_t wLength = 0;
+    /* Data-stage bytes so far: 0 at SETUP, the actual total at DATA and ACK
+     * (either direction; no ZLP or status packet). */
+    uint16_t actualBytes = 0;
     const void *rawRequest = nullptr;
 };
 
@@ -48,14 +51,19 @@ public:
     using Print::write;
     /* printf() as on HardwareSerial (and ESP32's Print). */
     CH32RV_PRINTF_MEMBER
+    /* Buffers and how write() ends on the wire (CH32RVUsbBulkStreamConfig;
+     * Vendor's default sends no zero-length packet). While the device is
+     * stopped; false (nothing changed) for a setting that cannot be used. */
+    bool configure(const CH32RVUsbBulkStreamConfig &config);
+    /* Bytes the receive FIFO holds at most, and write() can queue. */
+    size_t readCapacity() const { return (size_t)(_rxSize - 1); }
+    size_t writeCapacity() const { return (size_t)(_txSize - 1); }
     /* Room in the transmit FIFO now; write() never takes more. */
     size_t writeAvailable() const;
     /* The same for Print (whose own answer is 0, which stalls code that waits for room). */
     int availableForWrite() override { return (int)writeAvailable(); }
-    /* The transmit buffer's size (twice the largest packet, at least 256). */
-    static size_t writeCapacity();
-    /* Wait until the FIFO has room for `bytes` (clamped to writeCapacity()),
-     * running the stack meanwhile. Flushes first. */
+    /* Wait until the FIFO has room for `bytes`, running the stack meanwhile.
+     * Flushes first. False on the timeout and for more than writeCapacity(). */
     bool waitWritable(size_t bytes, uint32_t timeoutMs = 100);
     /* Send what is in the FIFO now. write() already starts sending; this runs
      * the stack once more. */
@@ -91,17 +99,10 @@ public:
      * EspUsbDevice has this on its direct builds only; here it is a run-time
      * choice. Delivered from deliverEvents(): the transfer is held there until
      * then (the host waits), and the next one starts once the call returns.
-     * The data is valid during the call. */
+     * The data is valid during the call. Transfers land in the receive buffer
+     * (configure()), whole packets of it: a bigger one lets SuperSpeed OUT run
+     * at speed. */
     void onRxData(RxDataCallback cb) { _onRxData = cb; deliverWith(deliverThis); }
-    /* Where onRxData() transfers land instead of the class's own buffer (2 x
-     * the largest packet): a bigger one lets SuperSpeed OUT run at speed. It
-     * stays the class's until end(); at most 65535 bytes are used, in whole
-     * packets. nullptr goes back to the class's buffer. */
-    void setRxDataBuffer(void *buffer, size_t size)
-    {
-        _rxData = static_cast<uint8_t *>(buffer);
-        _rxDataSize = size > 65535u ? 65535u : (uint16_t)size;
-    }
     /* A provider: called inside the USB service while the host waits. */
     void onControlRequest(ControlRequestCallback cb) { _onControl = cb; }
     /* Answer a request at stage SETUP: data, or a status stage when none. */
@@ -141,16 +142,17 @@ private:
     void receive();
     void push();
     uint16_t rxUsed() const;
-    uint8_t _rx[BUFFER], _tx[BUFFER];
+    uint8_t _rxStore[BUFFER], _txStore[BUFFER];
+    uint8_t *_rx = _rxStore, *_tx = _txStore;
+    uint16_t _rxSize = BUFFER, _txSize = BUFFER;
     /* As CH32RVUsbDeviceCdcSerial: OUT straight into _rx, wrapping early at _rxEnd. */
     uint16_t _rxHead = 0, _rxTail = 0, _rxEnd = 0;
     uint16_t _txHead = 0, _txTail = 0, _txSending = 0;
     uint16_t _packet = 64;
     bool _outBusy = false, _inBusy = false, _zlp = false, _direct = false;
+    bool _terminate = false;          /* a ZLP after whole packets (EndWithShortPacket) */
     uint8_t _subclass = 0, _protocol = 0;
-    uint8_t *_rxData = nullptr;
     uint8_t *_rxAt = nullptr;         /* where the OUT transfer in flight lands */
-    uint16_t _rxDataSize = 0;
     uint16_t _rxHeld = 0;             /* an onRxData() transfer waiting for usbDeliver() */
     bool _rxPending = false;          /* onRx() */
     size_t _txDone = 0;               /* onTxComplete(): bytes since the last delivery */

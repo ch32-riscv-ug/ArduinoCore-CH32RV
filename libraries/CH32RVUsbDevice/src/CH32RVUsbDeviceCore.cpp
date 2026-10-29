@@ -37,6 +37,7 @@ struct CH32RVUsbDeviceCore {
     static CH32RVUsbDeviceFunction *owner;            /* who answers the request */
     static bool answered, zlp;
     static uint16_t in_length;
+    static uint16_t ep0_actual;                     /* data-stage bytes so far (controlActualBytes()) */
     /* A generated answer (controlInGenerated): where the next packet starts. */
     static void (*gen_fill)(void *context, uint32_t offset, uint8_t *buffer, uint16_t n);
     static void *gen_context;
@@ -98,6 +99,7 @@ CH32RVUsbSetup CH32RVUsbDeviceCore::req;
 CH32RVUsbDeviceFunction *CH32RVUsbDeviceCore::owner;
 bool CH32RVUsbDeviceCore::answered, CH32RVUsbDeviceCore::zlp;
 uint16_t CH32RVUsbDeviceCore::in_length;
+uint16_t CH32RVUsbDeviceCore::ep0_actual;
 void (*CH32RVUsbDeviceCore::gen_fill)(void *, uint32_t, uint8_t *, uint16_t);
 void *CH32RVUsbDeviceCore::gen_context;
 uint16_t CH32RVUsbDeviceCore::gen_offset, CH32RVUsbDeviceCore::gen_chunk;
@@ -612,6 +614,7 @@ void Core::handle_setup()
     answered = false;
     gen_fill = nullptr;
     in_length = 0;
+    ep0_actual = 0;
     ep0 = IDLE;
     bool ok = false;
     const uint8_t type = s.bmRequestType & 0x60, recipient = s.bmRequestType & 0x1F;
@@ -640,7 +643,6 @@ void Core::handle_setup()
 
 void Core::ep0_done(bool in, uint16_t length)
 {
-    (void)length;
     if (in && ep0 == DATA_IN && gen_fill) {
         gen_offset = (uint16_t)(gen_offset + gen_chunk);
         if (gen_offset < in_length) {                    /* the next packet of a generated answer */
@@ -653,6 +655,7 @@ void Core::ep0_done(bool in, uint16_t length)
         gen_fill = nullptr;
     }
     if (in && ep0 == DATA_IN) {
+        ep0_actual = in_length;
         if (zlp) {                                       /* a full last packet shorter than asked */
             zlp = false;
             dcd->xfer(0x80, nullptr, 0);
@@ -661,6 +664,7 @@ void Core::ep0_done(bool in, uint16_t length)
         ep0 = STATUS_OUT;
         dcd->xfer(0x00, nullptr, 0);
     } else if (!in && ep0 == DATA_OUT) {
+        ep0_actual = length;
         bool ok = true;
         if (owner) {
             ok = owner->usbControl(CH32RVUsbControlStage::Data, req);
@@ -1039,6 +1043,11 @@ bool CH32RVUsbDevice::controlInGenerated(uint16_t length,
     Core::gen_chunk = n < Core::ep0_mps ? n : Core::ep0_mps;
     fill(context, 0, ep0_packet, Core::gen_chunk);
     return Core::dcd->xfer(0x80, ep0_packet, Core::gen_chunk);
+}
+
+uint16_t CH32RVUsbDevice::controlActualBytes() const
+{
+    return Core::ep0_actual;
 }
 
 bool CH32RVUsbDevice::controlOut(void *buffer, uint16_t length)

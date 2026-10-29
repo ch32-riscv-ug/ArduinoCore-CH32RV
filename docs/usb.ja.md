@@ -100,7 +100,7 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホスト�
   （4 パケット）で記述します。0 だと IN 205 MB/s、OUT 138 MB/s でした。同じ測り方で、FS は IN 1.0 MB/s、
   OUT 0.7 MB/s です。Vendor クラスの `write()` は 1 バイトずつ FIFO に入れるので、ここまでは出ません。
   `writeDirect()`（16 KB のバッファ 2 つを完了の通知から交互に）で IN 194〜206 MB/s、`onRxData()` に
-  32 KB の `setRxDataBuffer()` を与えて OUT 52 MB/s でした（受け取った側の `memcpy` が律速）。
+  32 KB の受信バッファ（当時の `setRxDataBuffer()`、今は `configure()`）を与えて OUT 52 MB/s でした（受け取った側の `memcpy` が律速）。
 - **USBSS にはシステムクロックの速さが要ります。** HSI の 25 MHz のまま動かしていたときは、DMA が
   リンクに追いつかず、EP0 IN の 96 バイト目以降で 32 バイトの塊が重複していました。既定の
   400 MHz（V3F と HCLK は 100 MHz）では、512 バイトまで正しく返ります（2026-10-21）。
@@ -124,8 +124,8 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホスト�
 同じクラスは、クラスごとの上限まで宣言するだけで持てます（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。
 ビルド時の設定は要りません。宣言しなかったクラスはリンクされず、宣言した分だけ RAM を使います。
 
-バッファの大きさは、パケットの大きさ（コントローラと速度で決まる）から決めます。CDC と CCID は `setBuffers()` で
-スケッチの配列に差し替えられます。オーディオとビデオのパケットの上限は、コントローラのドライバが知らせる値
+バッファの大きさは、パケットの大きさ（コントローラと速度で決まる）から決めます。CDC とベンダーは `configure()`
+（`CH32RVUsbBulkStreamConfig`）、CCID は `setBuffers()` でスケッチの配列に差し替えられます。オーディオとビデオのパケットの上限は、コントローラのドライバが知らせる値
 （`device.maxPacketSize()`）です。ビデオをバルクで送るかアイソクロナスで送るかは `setTransferType()` で選びます。
 
 ビルド時の上限はありません。クラスの数、HID クラスの数、構成記述子・HID の合成レポート記述子・BOS・

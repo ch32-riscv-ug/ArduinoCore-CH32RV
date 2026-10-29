@@ -434,6 +434,9 @@ public:
     bool controlIn(const void *data, uint16_t length);
     bool controlOut(void *buffer, uint16_t length);
     bool controlStatus();
+    /* The current request's data-stage bytes so far: 0 at SETUP, the actual
+     * total at DATA and ACK (either direction, no ZLP or status packet). */
+    uint16_t controlActualBytes() const;
     /* The speed the host chose. */
     CH32RVUsbSpeed speed() const;
     bool highSpeed() const { return speed() != CH32RVUsbSpeed::Full; }

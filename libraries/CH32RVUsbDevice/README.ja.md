@@ -61,8 +61,9 @@ void loop() {
   待ちます。ホストが答えを待つ provider（MSC の `onRead()` / `onWrite()`、`onApdu()`、`onControlRequest()`、
   `onFillPayload()`）はスタックの中から呼ばれます。
 - **同じクラスの数には上限があります**（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。上限の中なら
-  宣言するだけで使えます。CDC と CCID のバッファは `setBuffers()` でスケッチのものに差し替えられます
-  （EspUsbDevice には無い拡張です）。クラスの総数や記述子の大きさには、ビルド時の上限がありません。
+  宣言するだけで使えます。CDC とベンダーのバッファは `configure(CH32RVUsbBulkStreamConfig)` で決めます
+  （EspUsbDevice v3 と同じ項目名）。既定はクラスの中の配列で、スケッチの配列を渡せばそれを使います。ヒープからは取りません。
+  CCID のバッファは `setBuffers()` で差し替えられます。クラスの総数や記述子の大きさには、ビルド時の上限がありません。
 - **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
   EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
 - **USB ネットワークの IP 層**（`ipConfig()`、`dhcpServer()`、`dhcpClient()`、`dhcpAdvertiseGateway()`、`dhcpDns()`、
@@ -72,9 +73,9 @@ void loop() {
   USB controller とネットワークの実機確認範囲は [USB の対応表](../../docs/usb.ja.md#対応状況) を参照してください。
 - **無いもの**: ファームウェア更新の各クラス（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
 - **ベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
-  送ります（`onTxComplete()` で返るまで、バッファは触らず残してください）。EspUsbDevice と違い、ビルド時の設定は
-  要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で直接読みます）。`onRxData()` も実行時に選べ、
-  `setRxDataBuffer()` で受信先を大きなバッファにできます。`setInterfaceProtocol()` で subclass / protocol を、
+  送ります（`onDirectTxComplete()` で返るまで、バッファは触らず残してください。送り終えても、リセットや `end()` で
+  止まっても、必ず 1 回返ります）。ビルド時の設定は要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で
+  直接読みます）。`onRxData()` も実行時に選べ、受信は `configure()` で渡した受信バッファに入ります。`setInterfaceProtocol()` で subclass / protocol を、
   HID ベンダーの `setUsage()` で usage page / usage を変えられます（どちらもこのライブラリだけのもの）。
 - **既定の文字列と ID は実行時に変えます**（`CH32RVUsbDeviceConfig` の VID/PID・メーカー名・製品名、`setName()`
   のインターフェース名、MSC の `vendorID()` など、FAT の `format()` のボリュームラベル）。`build_opt.h` の define では変えません。
@@ -103,7 +104,7 @@ void loop() {
 | `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID（ドライバ不要のデータ通信）。`sendInput()`、`onOutputReport()`、`onFeatureReport()`、`setUsage()`。レポートは FS だけの系列で 63 バイト、HS / SS の系列で 511 / 1023 バイトまで |
 | `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID |
 | `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル）。`noteOn(channel, note, velocity, cable)`、`readPacket()` |
-| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`peek()`（このコアの独自）、`write()`、`flush()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onTxComplete()`、`onRxData()`、`setRxDataBuffer()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
+| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`peek()`（このコアの独自）、`write()`、`flush()`、`configure()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onDirectTxComplete()`、`onTxComplete()`、`onRxData()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
 | `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`、`isWritable()`、`vendorID()` など |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |

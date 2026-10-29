@@ -377,3 +377,24 @@ struct CH32RVUsbTransferResult {
     bool actualBytesKnown = true;
     uint32_t id = 0;
 };
+
+/* How write()'s data ends on the wire when the queue empties on a whole
+ * packet: FunctionDefault is EndWithShortPacket for CDC (a terminal reads
+ * line by line) and Continue for Vendor (a byte stream the host reads in
+ * large requests). */
+enum class CH32RVUsbStreamTermination : uint8_t { FunctionDefault, Continue, EndWithShortPacket };
+
+/* CDC and Vendor buffers (EspUsbBulkStreamConfig's names). A capacity of 0
+ * keeps the class's own buffer (twice the largest packet, 256 bytes at
+ * least); a buffer is the sketch's, used from begin() to end(), and its
+ * capacity says how big it is. A bigger capacity with no buffer is refused:
+ * nothing is allocated. Receive needs room for two packets at the speed the
+ * host picks (128 / 1024 / 2048 bytes). Vendor's onRxData() transfers land
+ * in the receive buffer, whole packets of it. */
+struct CH32RVUsbBulkStreamConfig {
+    size_t rxCapacity = 0;
+    size_t txCapacity = 0;
+    uint8_t *rxBuffer = nullptr;
+    uint8_t *txBuffer = nullptr;
+    CH32RVUsbStreamTermination streamTermination = CH32RVUsbStreamTermination::FunctionDefault;
+};

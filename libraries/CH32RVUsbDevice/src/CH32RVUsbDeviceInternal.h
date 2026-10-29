@@ -84,3 +84,25 @@ extern void (*volatile ch32rv_usb_deferred)(void);
 /* CH32RVUsbDeviceConfig::hseHz of the device that is opening its
  * controller, for drivers whose PHY clock is divided from the crystal. */
 extern uint32_t ch32rv_usb_hse_hz;
+
+/* One buffer of a CH32RVUsbBulkStreamConfig: the sketch's region, or the
+ * class's own (`store`, `storeSize`) when none is given. False for what cannot
+ * be used: a capacity bigger than the class's own with no region, one too
+ * small for a ring, or more than 16-bit indices reach. */
+static inline bool ch32rv_usb_bulk_buffer(uint8_t *buffer, size_t capacity, uint8_t *store, uint16_t storeSize,
+                                          uint8_t *&to, uint16_t &size)
+{
+    if (!buffer) {
+        capacity = capacity ? capacity : storeSize;
+        if (capacity > storeSize) {
+            return false;
+        }
+        buffer = store;
+    }
+    if (capacity < 2 || capacity > 65535u) {
+        return false;
+    }
+    to = buffer;
+    size = (uint16_t)capacity;
+    return true;
+}
