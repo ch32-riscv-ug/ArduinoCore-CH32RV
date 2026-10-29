@@ -50,4 +50,9 @@ int putchar(int c)
     return (unsigned char)c;
 }
 
+/* newlib's integer-only names, in the same object as printf and vprintf
+ * there (see ch32rv_stdio_string.c). */
+int viprintf(const char *, va_list) __attribute__((used, alias("vprintf")));
+int iprintf(const char *, ...) __attribute__((used, alias("printf")));
+
 #endif

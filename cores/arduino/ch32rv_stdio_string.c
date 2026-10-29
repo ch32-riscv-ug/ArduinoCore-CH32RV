@@ -61,4 +61,13 @@ int sprintf(char *buf, const char *format, ...)
     return n;
 }
 
+/* newlib's integer-only names share an object with the names above
+ * (sniprintf with snprintf, ...); strftime calls sniprintf, asctime and
+ * strsignal siprintf. Defined here too, that object is not pulled in to
+ * collide with these. */
+int vsniprintf(char *, size_t, const char *, va_list) __attribute__((used, alias("vsnprintf")));
+int sniprintf(char *, size_t, const char *, ...) __attribute__((used, alias("snprintf")));
+int vsiprintf(char *, const char *, va_list) __attribute__((used, alias("vsprintf")));
+int siprintf(char *, const char *, ...) __attribute__((used, alias("sprintf")));
+
 #endif
