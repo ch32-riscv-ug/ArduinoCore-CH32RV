@@ -119,10 +119,13 @@ recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "
 # (String, new, malloc) or called printf() rebooted in a loop and printed
 # nothing at all. The group makes the linker come back to core.a when libc asks
 # for those symbols, and costs nothing when the sketch needs neither
-# (Blink stays 932 bytes on CH32X035).
+# (Blink stays 932 bytes on CH32X035). The sketch's objects and the libraries'
+# archives (dot_a_linkage) are in the group too: the archives come in the order
+# the sketch includes them, and one library's archive may need another's that
+# came earlier (a sketch with NetworkClientSecure.h before Network.h).
 # --no-warn-rwx-segments: .init_array (writable) shares the single FLASH segment with
 # text; acceptable for MCU flash layout. Revisit with PHDRS in the real core.
-recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -Os -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles --specs=nano.specs {build.rtlib_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" {object_files} -Wl,--start-group "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
+recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -Os -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles --specs=nano.specs {build.rtlib_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" -Wl,--start-group {object_files} "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
 recipe.objcopy.hex.pattern="{compiler.path}{compiler.objcopy.cmd}" -O ihex "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
 recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
 
