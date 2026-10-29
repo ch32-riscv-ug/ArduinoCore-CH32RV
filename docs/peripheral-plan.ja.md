@@ -21,6 +21,8 @@ device-data の漏れ（PIOC、H417 の HSEM / IPC、V103 の USB）と疑わし
 
 ## A. 実装したほうがよい（優先して）
 
+**2026-10-29: A はすべて入った。** 休止（6ce04f8c、AWU の系列）と RTC・RTC の系列の休止（ef6a4acf）、フラッシュの永続化（`ch32rv_flash.h`、[flash-store](flash-store.ja.md)）、タイマーの入力捕捉とエンコーダ（CH32RVTimerInput、758d73d4）、HSE（Clock Source のメニュー、d99f8979）、TouchKey（`touchRead()`、718996f4）。系列ごとの範囲は [周辺機能表](peripheral-support.ja.md)。
+
 | 機能 | ファミリー | 理由 | 置き場所の案 |
 |---|---|---|---|
 | PWR（スリープ・ストップ・スタンバイと起床。AWU を含む） | 12 | 電池で動かす用途の基本。ESP32 の `esp_sleep_*` に合わせられる。起床の手段（EXTI・RTC のアラーム・LPTIM・AWU）とまとめて設計する | コア（ESP32 に合わせた API） |
@@ -70,11 +72,4 @@ device-data の漏れ（PIOC、H417 の HSEM / IPC、V103 の USB）と疑わし
 
 ## 次の一歩
 
-A の項目をまたぐ仕組み(時間の段、クロック、時刻の不連続、休止の調停、資源の所有)は [A の機能の全体設計](peripheral-a-design.ja.md)(下書き)で先に決める。個別の実装はその後。
-
-A の 7 つから、ベンチで試しやすく需要の大きいものから取りかかる案です。
-
-1. PWR（スリープと起床）と RTC。一緒に設計する。
-2. タイマーの入力捕捉・エンコーダ。OEP の GPIO と PWM で刺激して試せる。
-3. HSE。基板に水晶が載っているかを、回路図で確かめてから。
-4. TouchKey（`touchRead()`）。
+A は入ったので、次は B から選ぶ。A の機能の全体設計の下書きは [peripheral-a-design.ja.md](peripheral-a-design.ja.md)。

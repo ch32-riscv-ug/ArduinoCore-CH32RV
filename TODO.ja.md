@@ -18,7 +18,6 @@
 - [ ] **TST-01 現状の照合**: 計画・coverage・library 実装・runner・実行 artifact の不整合を一覧化する。
   各契約を再利用/作り直し/対象外候補に分け、理由を書く。文書上の実機確認と今回の未測定を混同しない。
   2026-10-29: test-coverage の「sleep/RTC API 未実装」「CDC/HID 等の sketch USB class 未実装」を直した。
-- [ ] TEST_DESIGN の 0 章の組み合わせの数を数え直す（Floating Point の選択肢は 4 ではなく 17、例の sketch.yaml は 117）。
 - [ ] **TST-05 機材台帳と配線**、**TST-06 初回測定**（実機が要る）: 内容は移した記録の「次の検討TODO」。
 
 ## コアの再設計と実行モデル
@@ -167,7 +166,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
     土台は「永続化」の項で作るので、それと USB スタック・タスク周りの入れ替えのあとに取りかかる。工場出荷の ISP より得があるのは、読み出し保護をかけたまま更新
     したいとき、道具を入れずにドラッグ＆ドロップ（UF2）で更新させたいとき、署名の確かめや A/B の巻き戻しが要るとき、
     USB 以外（ネットワークなど）から更新したいとき。下地に Flash の自己書き換えが要る。
-  採否の記録は FEATURE_CANDIDATES の UPD-01 / UPD-02（「未決定」のままなので直す）。
+  採否は FEATURE_CANDIDATES の UPD-01 / UPD-02 に記録した。
 - [ ] EspUsbDevice との差の残り: Info の例 3 本の移植、ホストの Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。見込み（2026-10-21）: ブートローダーへ移る前の 20 ms の
   待ちが、印に `millis() | 1` を使っていたため 0 ms になることがあり、ステータス段の応答の前に抜けていた

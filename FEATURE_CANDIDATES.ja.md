@@ -6,7 +6,7 @@ ArduinoCore-CH32RV の機能範囲を、クラス単位と主要な動作モー�
 ESP32 の Arduino Core のように、利用者が公開 API から幅広い用途を扱える構成を検討する。
 ESP32 と同じハードウェア・クラス名・全 API の再現を前提にはしない。
 
-**現行仕様で対象外の機能も含め、今回の採否はすべて未決定。**
+**作成時（2026-10-17）は採否がすべて未決定だった。その後に入ったものは、2026-10-29 に現状と採否の欄を直した。**
 一覧への掲載は実装の決定ではなく、既存の仕様・ADR・対応表を変更するものでもない。
 現状欄の「対象外」は既存方針を表し、採否欄とは区別する。
 既存 TODO に実装方針がある項目はその旨を記載し、今回の整理で既存方針を取り消したとは扱わない。
@@ -26,11 +26,11 @@ ESP32 と同じハードウェア・クラス名・全 API の再現を前提に
 
 | ID | 検討する機能 | 現状 | 追加範囲と判断点 | 採否 |
 |---|---|---|---|---|
-| SYS-01 | 永続設定保存 | EEPROM エミュレーション、Preferences 相当の API なし | バイト列の読み書き／キーと値の保存・消去。両方式を用意するか選択するか。SYS-02 と保存領域の確保が必要 | 未決定 |
-| SYS-02 | Flash 自己書き換え | 公開 API なし | 読み出し・消去・書き込み。設定保存や更新の内部基盤に限定するか、利用者にも公開するか | 未決定 |
-| SYS-03 | 低消費電力 | Sleep API なし | Sleep／Stop／Standby、GPIO・RTC 等による復帰、復帰理由、時間・周辺機能の復帰時の扱い | 未決定 |
-| SYS-04 | RTC | 未実装 | 時刻設定・取得、アラーム、バックアップ保持、低消費電力との連携 | 未決定 |
-| SYS-05 | クロック設定 | 系列ごとの固定周波数。HSE の使用は一部 USB HS に限定 | クロック源・周波数の選択。ビルド時選択と実行時変更を分けて判断する | 未決定 |
+| SYS-01 | 永続設定保存 | 内蔵フラッシュは `ch32rv_flash.h`（2026-10-28、[flash-store](docs/flash-store.ja.md)）。`EEPROM.h` と Preferences 相当は出さないと決めた（推奨は外部の SD・I2C の EEPROM） | キーと値の保存は、必要になったら | 一部採用 |
+| SYS-02 | Flash 自己書き換え | `ch32rv_flash.h` を全系列で公開（範囲・1 単位・消して書く。2026-10-28） | 更新（UPD-01）での使い方 | 採用 |
+| SYS-03 | 低消費電力 | `CH32RV.lightSleep` / `deepSleep`、タイマーと端子での起床、起床の理由（2026-10-27。AWU の系列と RTC の系列。V103 は外した） | ほかの系列、周辺を動かしたままの休止 | 一部採用 |
+| SYS-04 | RTC | RTC の系列で `time()` / `settimeofday()` が RTC を読み書きし、リセットと standby をまたぐ。休止のアラームにも使う（2026-10-27） | カレンダー・アラームの公開 API、BKP の公開 API | 一部採用 |
+| SYS-05 | クロック設定 | CPU Clock のメニュー（2026-10-22）と Clock Source（HSI / HSE、2026-10-27）。実行中の変更はしないと決めた | H41x・X305 のメニュー、各項目の実機確認 | 一部採用 |
 | SYS-06 | ウィンドウウォッチドッグ | IWDG はあり、WWDG は未実装 | WWDG の開始・更新・状態通知。IWDG と別機能として提供するか | 未決定 |
 | SYS-07 | バックアップレジスタ | 現行対応表では対象外 | 少量の状態保存、保持領域へのアクセス。RTC とまとめるか | 未決定 |
 | SYS-08 | GPIO 以外の EXTI | GPIO 割り込みはあり、PVD・RTC・USB 起床等は未対応 | 非 GPIO イベント、復帰要因の登録・通知。SYS-03／04 と連携 | 未決定 |
@@ -40,7 +40,7 @@ ESP32 と同じハードウェア・クラス名・全 API の再現を前提に
 
 | ID | 検討する機能 | 現状 | 追加範囲と判断点 | 採否 |
 |---|---|---|---|---|
-| BUS-01 | SPI スレーブ | `CH32RVSPIClass` はマスターのみ | CS による通信区切り、送受信バッファ、完了通知。既存クラスに追加するか別クラスにするか | 未決定 |
+| BUS-01 | SPI スレーブ | 別ライブラリ CH32RVSPISlave（CS ごとに 1 回の転送をキューで。2026-10-27） | ハードウェアのマスターでの上限、V407・H417 の実機 | 採用 |
 | BUS-02 | SPI 非同期転送 | 同期・ポーリング転送 | 転送開始、完了確認・通知、中止。DMA 利用と公開 API の形は分けて判断する | 未決定 |
 | BUS-03 | SPI ハードウェア CS | CS はスケッチが GPIO として操作 | ハードウェアによる CS 制御。手動 CS と選択できる形を検討 | 未決定 |
 | BUS-04 | SPI 半二重・片方向モード | 通常の全二重転送が中心 | 3線式双方向、送信専用、受信専用。バッファを捨てる処理と物理的な通信モードを区別する | 未決定 |
@@ -66,16 +66,16 @@ ESP32 標準との互換性不足とは区別する。
 | TIM-02 | Ticker 相当 | 専用 API なし | 一定時間後・周期的なコールバック。ハードウェアタイマーとソフトウェアスケジュールのどちらを使うか、実行文脈を決める | 未決定 |
 | TIM-03 | 入力キャプチャ | `CH32RVTimerInput` の `CH32RVPulseCapture`（周期・High の時間を `read()` で読む。割り込みなし。2026-10-28） | エッジごとの時刻とキャプチャ通知は、通知の配送の規則に合わせて後で（docs/peripheral-a-design.ja.md の 3） | 一部採用 |
 | TIM-04 | エンコーダ・外部パルス計数 | `CH32RVTimerInput` の `CH32RVEncoder`（x4 / x2 / x1、64 ビット、ESP32Encoder の名前。2026-10-28） | 外部クロック（ETR）による計数、タイマーのチャネルの無い端子でのエンコーダ（EXTI で数える方式） | 一部採用 |
-| TIM-05 | PWM の端子・タイマー範囲拡張 | 通常 PWM あり。remap 先、CHxN 等は未対応 | remap、追加タイマー・チャネルの出力。TIM8〜10 等も系列の能力に応じて検討 | 未決定 |
+| TIM-05 | PWM の端子・タイマー範囲拡張 | TIM4 / TIM5 の既定ピン、TIM8〜10 の PWM（2026-10-22、ビルドのみ）。remap 先、CHxN は未対応 | remap、CHxN | 一部採用 |
 | TIM-06 | 高度な PWM 制御 | 通常 PWM、tone、Servo あり | 相補出力、デッドタイム、Break、同期・位相制御。通常 PWM と用途を分ける | 未決定 |
 | TIM-07 | 低消費電力タイマー | LPTIM は現行対応表では対象外 | Sleep 中の計時・起床、SYS-03／04 との役割分担 | 未決定 |
 | TIM-08 | SoftPWM | 未実装。現行方針では独立 API にしない | ハードウェア PWM のない端子での出力。timer 資源・割り込み負荷の制約 | 未決定 |
-| ANA-01 | ADC 連続取得 | `analogRead()` の単発取得、内部チャネル読み出しあり | 連続サンプリング、複数チャネル走査、バッファ取得、完了通知 | 未決定 |
+| ANA-01 | ADC 連続取得 | CH32RVAdcStream（自走、1〜6 本、DMA の 2 面バッファ。2026-10-27） | タイマーのトリガでの遅い一定のレート、しきい値の通知 | 一部採用 |
 | ANA-02 | ADC トリガ・監視 | 専用の利用者向け API なし | タイマートリガ、外部トリガ、しきい値監視。対応するハードウェア機能ごとに判断 | 未決定 |
 | ANA-03 | ADC 電圧換算 | Vref・VDD・温度の補助 API はあるが、外部入力の mV 取得 API なし | `analogReadMilliVolts()` 相当。推定値と校正値の扱いを決める | 未決定 |
 | ANA-04 | DAC 連続出力 | 対応系列で `analogWrite()` の値出力あり | バッファからの波形出力、タイマートリガ、繰り返し出力 | 未決定 |
 | ANA-05 | OPA・コンパレータ | 現行対応表では対象外 | 内蔵アンプの経路・ゲイン、比較器の入力・出力・イベント。両者を個別に判断 | 未決定 |
-| ANA-06 | TouchKey | 現行対応表では対象外 | タッチ取得・しきい値・イベント。搭載系列向け API | 未決定 |
+| ANA-06 | TouchKey | `touchRead()` / `touchSetCycles()`（arduino-esp32 の名前、2026-10-27） | しきい値・イベント | 一部採用 |
 
 対応表の「TIM（PWM/tone/入力捕捉）」は一括して実装済みになっているが、
 入力キャプチャを利用者がレジスタ操作なしで使う API まで提供しているわけではない。
@@ -90,11 +90,11 @@ TIM-03／04 は資源管理 API が存在することと分けて判断する。
 | STO-03 | SDIO／SDMMC によるストレージ | SDIO は現行対応表では対象外 | 搭載系列の SD カード制御とブロック API、STO-01 との接続 | 未決定 |
 | STO-04 | Flash 上のファイルシステム | 汎用 API なし | 内蔵／外付け Flash、LittleFS 等との接続。SYS-01 の少量設定保存とは別判断 | 未決定 |
 | STO-05 | USB Host MSC のファイル利用 | Host MSC はブロック読み書きまで | マウント・ファイル操作、STO-01 との接続 | 未決定 |
-| NET-01 | Ethernet | 現行対応表では対象外 | 内蔵 MAC／PHY 接続と外付け SPI Ethernet を分けて検討。IP 層は NET-02 | 未決定 |
-| NET-02 | TCP/IP とネットワーク共通 API | `Client`／`Server`／`UDP` は抽象型のみ。USB NCM は生フレームまで | TCP／UDP、IP 設定、DHCP／DNS、複数インターフェースの扱い。Ethernet と USB NCM の共通化 | 未決定 |
-| NET-03 | TLS・ネットワーク上位機能 | コアにネットワーク具体実装なし | TLS Client、HTTP Client／Server、mDNS、時刻同期等。NET-02 採用後に機能ごと・同梱範囲を判断 | 未決定 |
-| UPD-01 | ファームウェア自己更新 | ISP への移行入口はあるが、Update 相当の API なし | イメージ書き込み・検証・起動切り替え。SYS-02 と Flash 配置、bootloader の責務を決める | 未決定 |
-| UPD-02 | 更新データの受信経路 | 実際の DFU download・MSC 更新クラス等はない | USB DFU／MSC、UART、SD、ネットワーク更新を個別に判断。UPD-01 と分離 | 未決定 |
+| NET-01 | Ethernet | 内蔵 MAC のドライバ（H417・V307 は実機、V407 / V467・V317・V208 はビルドのみ） | 外付け SPI Ethernet | 一部採用 |
+| NET-02 | TCP/IP とネットワーク共通 API | Network ライブラリ（lwIP 2.2.1、ESP32 の `NetworkClient` / `NetworkServer` / `NetworkUDP`、DHCP、DNS）。Ethernet と USB NCM の共通化（2026-10-21） | — | 採用 |
+| NET-03 | TLS・ネットワーク上位機能 | TLS（NetworkClientSecure、Mbed TLS 4.1）、mDNS、SNTP の `configTime()` は入った | HTTP Client／Server、MQTT。同梱範囲 | 一部採用 |
+| UPD-01 | ファームウェア自己更新 | ISP への移行入口はあるが、Update 相当の API なし。土台の `ch32rv_flash.h` は入った | イメージ書き込み・検証・起動切り替え。bootloader の責務を決める | UF2（MscFirmwareDisk）は実装する（2026-10-20）。ほかは未決定 |
+| UPD-02 | 更新データの受信経路 | 実際の DFU download・MSC 更新クラス等はない | USB DFU／MSC、UART、SD、ネットワーク更新を個別に判断。UPD-01 と分離 | UF2 は実装する（2026-10-20）。ほかは未決定 |
 
 MSC デバイスを PC に見せる機能と、スケッチがファイルを開く機能は別。
 USB NCM で Ethernet フレームを送受信できることと、TCP/IP を使えることも別。
@@ -104,16 +104,16 @@ DFU Runtime による工場 ISP への移行は、DFU download や自己更新�
 
 | ID | 検討する機能 | 現状 | 追加範囲と判断点 | 採否 |
 |---|---|---|---|---|
-| USB-01 | Device の未対応系列・コントローラ | FS／第1世代 HS は一部系列で実装。既存 TODO あり | L103／M103・M030・V205 等のクロック対応、第2世代 USBHS ドライバ。ハードウェアのない型番を含めない | 未決定 |
+| USB-01 | Device の未対応系列・コントローラ | 自作のスタックで全系列のドライバ（V103、V20x の USBFS と USBD、V30x の USBFS と USBHS、第2世代 USBHS、X315 の USBSS）。実機は X035 と H417、ほかはビルドのみ | 各系列の実機確認 | 採用 |
 | USB-02 | Host のコントローラ・速度拡張 | 現行 Host は対応型番の USBFS | USBHS Host 等。USB-01 の Device ドライバとは別に採否を決める | 未決定 |
-| USB-03 | USB SuperSpeed Device | 現行対応表では対象外。H417 対応の既存 TODO・設計検討あり | 対象系列、SS Device ドライバ、TinyUSB 共通層、速度別 descriptor、USB2 接続への対応 | 未決定 |
+| USB-03 | USB SuperSpeed Device | H417 の USBSS のデバイス（実機で列挙・CDC・DFU）、X315 はビルドのみ。速度ごとの記述子あり | SS のホスト（TODO） | 採用 |
 | USB-04 | USB SuperSpeed Host | 未実装。設計検討では Device と別段階 | SS Host ドライバ、列挙・転送、HS 機器との接続管理 | 未決定 |
 | USB-05 | Host Audio／Video | 現行 Host API にはない | アイソクロナス転送、UAC／UVC クラス。両クラスと対応速度を個別に判断 | 未決定 |
 | USB-06 | Host ネットワーク | 現行 Host API にはない | USB ネットワーク機器のフレーム送受信、NET-02 との接続 | 未決定 |
-| USB-07 | Vendor 直接転送 | `writeDirect()` は NotSupported。既存 TODO あり | コピーを減らす転送経路とバッファ所有権。DMA 利用の範囲を決める | 未決定 |
-| USB-08 | ISP 移行の系列拡張 | `enterBootloader()` は X033／X035 で実装。他系列は通常 reset | 対応系列の工場 ISP への移行。自己更新とは別 | 未決定 |
+| USB-07 | Vendor 直接転送 | `writeDirect()` / `onRxData()` / `setRxDataBuffer()`（2026-10-21、84b57b0） | DMA の範囲 | 採用 |
+| USB-08 | ISP 移行の系列拡張 | `enterBootloader()` は X033／X035、X305 / X315（ビルドのみ）。H41x は試して失敗。ほかの系列は BOOT0 の端子だけ | — | 一部採用 |
 | USB-09 | ソフトウェア USB Device | V003 アプリ側では未実装。既存 TODO あり | rv003usb 等の採否、既存 Device API と共通化する範囲、小容量向けクラス構成 | 未決定 |
-| PD-01 | USB PD の系列拡張 | Sink／Source は X033／X035 で実装 | 他の PD 搭載系列のハードウェア・クロック対応。搭載の有無は型番ごとに確認 | 未決定 |
+| PD-01 | USB PD の系列拡張 | L103 / M103、V205、X305 / X315、H41x、M030 の USBPD0（2026-10-22、ビルドのみ） | 8 MHz の系列での BMC、M030 の USBPD1、実機確認 | 一部採用 |
 | PD-02 | USB PD DRP・Role Swap | Sink／Source の選択はあるが、公開された DRP／Role Swap 機能なし | DRP、Power Role／Data Role／VCONN Swap を個別に判断 | 未決定 |
 | PD-03 | USB PD の電源プロファイル拡張 | 固定電圧／PPS に対応。Battery／Variable は Sink で列挙のみ、EPR は対象外 | Battery／Variable の要求、EPR／AVS 等を個別に判断 | 未決定 |
 

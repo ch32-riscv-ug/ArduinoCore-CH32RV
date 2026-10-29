@@ -264,16 +264,12 @@ CORE_REDESIGN_PLAN.ja.md と指定した brief を読み、この依頼の範囲
 
 ## 現在地と次の作業
 
-P0／P1の案は作成済み。P2〜P4のhost・linkと用途比較は蓄積しているが、
-実機成立・総資源・人による評価を含む全項目の完了ではない。最終構成は未確定、P6／P7の新仕様実装は未着手。
-個別実験の履歴は[実行状況](planning/core-redesign/execution-status.ja.md)に集約し、この計画に重複して積み上げない。
+（2026-10-29 更新）P5 の選択は終わり、A 中心の案を [ADR-0016](docs/adr/0016-execution-model.ja.md)（実行モデル）として採った。
+実装も入った: system service（`ch32rv_service`、2026-10-22）、CH32RVTaskKit と CH32RVSyncKit（同日）、
+USB の通知を `deliverEvents()` でだけ配ること（ADR-0016 の規則 2）、永続化（PERSIST-01、2026-10-28）。
+選択までの経緯は [ARCH-SELECT-01](planning/core-redesign/tasks/ARCH-SELECT-01/proposal.ja.md) とそのレビュー、
+個別実験の履歴は [実行状況](planning/core-redesign/execution-status.ja.md) にある。
 
-P5前半の[選択案](planning/core-redesign/tasks/ARCH-SELECT-01/proposal.ja.md)を作成した。
-提案版4はA中心を維持し、通常通知／workの明示実行と、専用登録providerをsystem中で呼ぶ例外を提案する。
-[レビュー04](planning/core-redesign/tasks/ARCH-SELECT-01/review-04.ja.md)への
-[応答](planning/core-redesign/tasks/ARCH-SELECT-01/review-04-response.ja.md)に選択肢と推奨を記録した。
-一括通知配達は任意の共通入口とし、Bを必須にしない。providerを使うとdelay中にも利用者関数が動く点は版3からの変更。
-次は[版4の変更点の確認](planning/core-redesign/tasks/ARCH-SELECT-01/review-request.ja.md)と利用者による選択。最終仕様の決定ではない。
-必要な検証はレビューで特定し、構造上の未解決を残したまま本実装へ移らない。
-N08の網羅的な条件補完・H417の負荷拡大へ自動的に進まない。
+開いている問い（イベントの payload の持ち方、H417 の 2 コアの使い方、X035 の PD と PPS の操作画面の代表例）は
+[TODO](TODO.ja.md) の「コアの再設計と実行モデル」に置いた。
 当面の成果は「どの全体判断が解けたか」で報告する。テスト件数や消化した作業ID数を全体進捗率にしない。
