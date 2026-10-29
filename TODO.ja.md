@@ -207,10 +207,3 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。ビルドだけで、
     実機の確認は未（OEP の治具は I2C のターゲットにしかなれず、マスター役の配線がベンチに無い）。
 - `analogReference()` はハードウェアに基準電圧の選択が無い。
-
-## ライブラリの配布
-
-CH32RVUsbDevice / CH32RVUsbHost / CH32RVUsbPd（と Network など）をボードマネージャーに同梱するか、別のライブラリとして分けるかを決める。
-TinyUSB を外した（ADR-0012）ので、以前の「TinyUSB を使う他のボードとの衝突」は理由でなくなった。今の依存（同梱寄り）:
-- コアのフック（`loop()` / `delay()` から回るサービス）、variant の生成データ（クロック許可、IRQ 番号）、`ch32rv_registers.h` を直接使う。
-分けるなら「ボード共通の USB デバイス API」と「コアごとのポート層」に割る設計になる（EspUsbDevice との共通化も含めて）。

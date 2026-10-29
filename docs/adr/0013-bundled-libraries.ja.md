@@ -13,6 +13,7 @@
 一般的な sensor、display、filesystem driver は同梱しません。
 （2026-10-20 補足: ファイルシステムと IP スタックは「今はまだ入れない」という扱いで、入れないと決めたものではない。
 USB の MSC・NCM がつながる先として、タスク周りの入れ替えのあとに検討する。TODO.ja.md の USB の項。）
+（2026-10-29 決定: CH32RVUsbDevice / CH32RVUsbHost / CH32RVUsbPd と Network / NetworkClientSecure はボードマネージャーに同梱する。コアのサービス（`loop()` / `delay()` から回る）、variant の生成データ（クロック許可、IRQ 番号）、`ch32rv_registers.h` を直接使い、2 と 3 に当たるため。IP スタックは 2026-10-21 に入れた。）
 
 Arduino IDE は library 配下の examples を列挙するため、core API の examples は `libraries/CH32RV/examples/` に置きます。
 各同梱 library は README、examples、`keywords.txt` を持ち、利用条件を自身で説明します。
