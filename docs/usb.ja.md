@@ -99,7 +99,7 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホスト�
   バルク IN 246 MB/s、OUT 233 MB/s で、データはすべて一致しました。バルクのエンドポイントは bMaxBurst 3
   （4 パケット）で記述します。0 だと IN 205 MB/s、OUT 138 MB/s でした。同じ測り方で、FS は IN 1.0 MB/s、
   OUT 0.7 MB/s です。Vendor クラスの `write()` は 1 バイトずつ FIFO に入れるので、ここまでは出ません。
-  `writeDirect()`（16 KB のバッファ 2 つを `onTxComplete()` から交互に）で IN 194〜206 MB/s、`onRxData()` に
+  `writeDirect()`（16 KB のバッファ 2 つを完了の通知から交互に）で IN 194〜206 MB/s、`onRxData()` に
   32 KB の `setRxDataBuffer()` を与えて OUT 52 MB/s でした（受け取った側の `memcpy` が律速）。
 - **USBSS にはシステムクロックの速さが要ります。** HSI の 25 MHz のまま動かしていたときは、DMA が
   リンクに追いつかず、EP0 IN の 96 バイト目以降で 32 バイトの塊が重複していました。既定の

@@ -865,11 +865,13 @@ void CH32RVUsbDevice::end()
         return;
     }
     Core::dcd->connect(false);
+    /* Cleared before the functions forget their transfers, so a borrowed
+     * buffer is handed back as Stopped rather than BusReset. */
+    _started = false;
     if (Core::configured) {
         Core::set_configuration(false);
     }
     Core::dcd->close();
-    _started = false;
     Core::device = nullptr;
 }
 
@@ -939,7 +941,7 @@ void CH32RVUsbDevice::task()
 bool CH32RVUsbDevice::transfer(uint8_t address, void *buffer, uint16_t length)
 {
     const uint8_t ep = address & 0x0F;
-    if (!mounted() || ep == 0 || ep >= MAX_EP || !Core::ep_owner[ep]) {
+    if (!ready() || ep == 0 || ep >= MAX_EP || !Core::ep_owner[ep]) {
         return false;
     }
     const uint16_t bit = (uint16_t)(1u << ep);

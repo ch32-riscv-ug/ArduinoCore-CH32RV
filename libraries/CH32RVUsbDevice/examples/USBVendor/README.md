@@ -68,7 +68,7 @@ For new control requests, validate direction, recipient, `bRequest`, `wIndex` an
 
 ### Switching to direct transmission
 
-`writeDirect(buffer, length)` transmits from the caller's array. Success does not release the buffer: retain it unchanged until `onTxComplete()` is delivered by `deliverEvents()`. Inspect `lastDirectErrorName()` on failure.
+`writeDirect(buffer, length)` transmits from the caller's array. Success does not release the buffer: retain it unchanged until `onDirectTxComplete()` hands it back. That happens exactly once per accepted transfer - sent (`Success`), a bus reset (`BusReset`, from `deliverEvents()`) or `end()` (`Stopped`, from inside `end()`). A refused transfer borrows nothing; the returned submission's `error` says why.
 
 Do not pass a local array and return while it is in use. Plan FIFO/direct-transfer interaction and whether to retain or discard data when the next transfer cannot start. See [HsAdcStream](../../../CH32RVHsAdc/examples/HsAdcStream/README.md) and [LogicStream](../../../CH32RVLogicCapture/examples/LogicStream/README.md).
 

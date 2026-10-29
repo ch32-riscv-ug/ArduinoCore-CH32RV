@@ -139,6 +139,12 @@ bool CH32RVUsbDevice::begin()
     return begin(CH32RVUsbDeviceConfig());
 }
 
+bool CH32RVUsbDeviceFunction::refuseSettings() const
+{
+    _device._error = CH32RVUsbDeviceError::InvalidArgument;
+    return false;
+}
+
 /* ---------------------------------------------------------- descriptors */
 void CH32RVUsbDescriptorWriter::emit(uint8_t v)
 {
@@ -237,10 +243,15 @@ uint16_t CH32RVUsbDevice::buildConfiguration(CH32RVUsbDescriptorWriter &w, CH32R
         uint8_t itf = 0, ep = 1, i = 0;
         for (CH32RVUsbDeviceFunction *f = _first; f; f = f->_next, i++) {
             f->_interface = itf;
+            const CH32RVUsbDeviceError before = _error;
+            _error = CH32RVUsbDeviceError::None;
             if (!f->_type.descriptor(*f, to, itf, &ep, (uint8_t)(CH32RV_USB_FIRST_FUNCTION_STRING + i), speed)) {
-                _error = CH32RVUsbDeviceError::DescriptorTooLarge;
+                if (_error == CH32RVUsbDeviceError::None) {
+                    _error = CH32RVUsbDeviceError::DescriptorTooLarge;
+                }
                 return {itf, false};
             }
+            _error = before;
             if (ep > _endpoints) {
                 _error = CH32RVUsbDeviceError::OutOfEndpoints;
                 return {itf, false};

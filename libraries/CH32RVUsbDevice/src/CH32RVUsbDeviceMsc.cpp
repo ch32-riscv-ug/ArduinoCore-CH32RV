@@ -79,7 +79,7 @@ int32_t CH32RVUsbDeviceMsc::read10(uint32_t lba, uint32_t offset, void *buffer, 
 
 int32_t CH32RVUsbDeviceMsc::write10(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size)
 {
-    if (!_mediaPresent || !_writable) {
+    if (!_mediaPresent || !writable()) {
         return -1;
     }
     if (_onWrite) {
@@ -124,6 +124,7 @@ CH32RVUsbDeviceMsc::CH32RVUsbDeviceMsc(CH32RVUsbDevice &device)
 #define SCSI_READ_CAPACITY_10         0x25
 #define SCSI_READ_10                  0x28
 #define SCSI_WRITE_10                 0x2A
+#define SCSI_VERIFY_10                0x2F
 #define SCSI_SYNCHRONIZE_CACHE_10     0x35
 #define SCSI_MODE_SENSE_10            0x5A
 
@@ -249,11 +250,10 @@ void CH32RVUsbDeviceMsc::readNext()
     const uint32_t left = _total - _done;
     _chunk = (uint16_t)(left < sizeof _buffer ? left : sizeof _buffer);
     const int32_t n = read10(_lba + _done / _blockSize, _done % _blockSize, _buffer, _chunk);
-    if (n <= 0) {
+    if (n != (int32_t)_chunk) {
         fail(SENSE_MEDIUM_ERROR, 0x11, 0x00);    /* unrecovered read error */
         return;
     }
-    _chunk = (uint16_t)n;
     device().transfer((uint8_t)(0x80 | _ep), _buffer, _chunk);
 }
 
@@ -314,6 +314,19 @@ void CH32RVUsbDeviceMsc::command()
         }
         sendData(0);
         return;
+    case SCSI_VERIFY_10: {                       /* reported good without comparing (BYTCHK 0) */
+        const uint32_t lba = be32(_cmd + 2), blocks = (uint32_t)((_cmd[7] << 8) | _cmd[8]);
+        if (!testUnitReady()) {
+            fail(SENSE_NOT_READY, 0x3A, 0x00);
+            return;
+        }
+        if (lba > _blockCount || blocks > _blockCount - lba) {
+            fail(SENSE_ILLEGAL_REQUEST, 0x21, 0x00);
+            return;
+        }
+        sendData(0);
+        return;
+    }
     case SCSI_PREVENT_ALLOW:
     case SCSI_SYNCHRONIZE_CACHE_10:              /* around an eject, a cache flush: nothing to do */
         sendData(0);
@@ -359,7 +372,12 @@ void CH32RVUsbDeviceMsc::command()
             return;
         }
         _lba = be32(_cmd + 2);
-        const uint32_t bytes = (uint32_t)((_cmd[7] << 8) | _cmd[8]) * _blockSize;
+        const uint32_t blocks = (uint32_t)((_cmd[7] << 8) | _cmd[8]);
+        if (_lba > _blockCount || blocks > _blockCount - _lba) {
+            fail(SENSE_ILLEGAL_REQUEST, 0x21, 0x00);   /* LBA out of range */
+            return;
+        }
+        const uint32_t bytes = blocks * _blockSize;
         _total = bytes < _expected ? bytes : _expected;
         _residue = _expected - _total;
         _done = 0;
@@ -406,7 +424,7 @@ void CH32RVUsbDeviceMsc::usbTransferred(uint8_t address, uint16_t length)
             command();
         } else if (_stage == Stage::DataOut) {
             const int32_t n = write10(_lba + _done / _blockSize, _done % _blockSize, _buffer, length);
-            if (n < (int32_t)length) {
+            if (n != (int32_t)length) {
                 _residue = _expected - _done;
                 fail(SENSE_MEDIUM_ERROR, 0x0C, 0x00);   /* write error */
                 return;

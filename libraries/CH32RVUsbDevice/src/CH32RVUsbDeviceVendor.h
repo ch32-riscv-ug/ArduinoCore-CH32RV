@@ -21,18 +21,6 @@ struct CH32RVUsbDeviceVendorControlRequest {
     const void *rawRequest = nullptr;
 };
 
-/* EspUsbDeviceVendorDirectError: why writeDirect() refused. */
-enum class CH32RVUsbDeviceVendorDirectError : uint8_t {
-    None = 0,
-    NotSupported,
-    NotMounted,
-    BadArgument,
-    NotAligned,
-    NotDmaCapable,
-    Busy,
-    TransferFailed,
-};
-
 class CH32RVUsbDeviceVendor : public CH32RVUsbDeviceFunction, public Print {
 public:
     /* callback(bytes available) when data arrives. */
@@ -40,6 +28,7 @@ public:
     /* callback(sentBytes) when a transmit on the bulk IN endpoint completed. */
     typedef CH32RVCallback<void(size_t sentBytes)> TxCompleteCallback;
     typedef CH32RVCallback<void(const uint8_t *data, size_t length)> RxDataCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbTransferResult &result)> DirectCompleteCallback;
     /* A vendor request the library does not answer itself. Return true when
      * handled: answer it at stage SETUP with sendControlResponse(), and
      * return true at the later stages. */
@@ -72,25 +61,29 @@ public:
      * the stack once more. */
     void flush() override;
 
-    /* EspUsbDevice's zero-copy path: one bulk IN transfer straight from
+    /* The zero-copy path (EspUsbDevice's): one bulk IN transfer straight from
      * `buffer`, which stays the caller's - untouched and alive - until
-     * onTxComplete() reports it. Any length up to 65535 and any alignment;
-     * a length that is a multiple of the packet size gets no zero-length
-     * packet after it (send a short one, or let the host read whole
-     * transfers). Not mixed with write(): refused (Busy) while the FIFO has
-     * data in flight, and write() waits while a direct transfer is out.
-     * Arming the next one from onTxComplete() keeps a stream gapless. The
-     * controllers move it at their own speed: the USBSS DMA reads the buffer
-     * itself (keep it 4-byte aligned, or it goes a packet at a time through a
-     * bounce buffer), the USBFS ones copy a packet at a time. */
+     * onDirectTxComplete() hands it back, which happens exactly once for an
+     * accepted transfer: sent (Success), a bus reset (BusReset) or end()
+     * (Stopped, from inside end()). A refusal borrows nothing. Any length up
+     * to maxDirectTransfer() and any alignment. Not mixed with write():
+     * refused (Busy) while the FIFO has data in flight, and write() waits
+     * while a direct transfer is out. Arming the next one from
+     * onDirectTxComplete() keeps a stream gapless. The controllers move it
+     * at their own speed: the USBSS DMA reads the buffer itself (keep it
+     * 4-byte aligned, or it goes a packet at a time through a bounce buffer),
+     * the USBFS ones copy a packet at a time. */
     static bool directWriteSupported() { return true; }
-    bool writeDirect(const void *buffer, size_t length);
-    CH32RVUsbDeviceVendorDirectError lastDirectError() const { return _directError; }
-    const char *lastDirectErrorName() const;
+    size_t maxDirectTransfer() const { return 65535; }
+    CH32RVUsbTransferSubmission writeDirect(const void *buffer, size_t length,
+                                            CH32RVUsbTransferTermination termination =
+                                                CH32RVUsbTransferTermination::Continue);
+    /* From deliverEvents() (from end() for Stopped). */
+    void onDirectTxComplete(DirectCompleteCallback cb) { _onDirectTx = cb; deliverWith(deliverThis); }
 
     /* From deliverEvents(). onRx(): data waits in the FIFO (not at all when
-     * it was read before). onTxComplete(): the bytes sent since the last
-     * delivery, so a stream armed from it pauses until the sketch delivers. */
+     * it was read before). onTxComplete(): the bytes of write() sent since
+     * the last delivery (writeDirect() reports to onDirectTxComplete()). */
     void onRx(RxCallback cb) { _onRx = cb; deliverWith(deliverThis); }
     void onTxComplete(TxCompleteCallback cb) { _onTxComplete = cb; deliverWith(deliverThis); }
     /* Received data, straight from the endpoint buffer, one transfer at a
@@ -129,6 +122,7 @@ public:
     /* For the USB stack's callbacks. */
     void handleRx();
     void handleTxComplete(size_t sentBytes);
+    void directEnded(CH32RVUsbTransferStatus status, size_t actual, bool known);
     bool handleControlRequest(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup);
 
     /* The endpoint pair, set while the descriptors are laid out. */
@@ -163,7 +157,11 @@ private:
     uint16_t _endpointSize;
     RxCallback _onRx = nullptr;
     TxCompleteCallback _onTxComplete = nullptr;
+    DirectCompleteCallback _onDirectTx = nullptr;
+    CH32RVUsbTransferResult _directOut;   /* the loan in flight, then its result */
+    bool _directDone = false;            /* _directOut waits for delivery */
+    bool _directZlp = false;             /* EndWithShortPacket: a ZLP follows */
+    uint32_t _directId = 0;
     RxDataCallback _onRxData = nullptr;
     ControlRequestCallback _onControl = nullptr;
-    CH32RVUsbDeviceVendorDirectError _directError = CH32RVUsbDeviceVendorDirectError::None;
 };

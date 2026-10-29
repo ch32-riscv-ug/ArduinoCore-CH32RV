@@ -15,7 +15,7 @@
  *                   vendor bulk echo goes - read() / write() through the class
  *                   FIFOs (the default), or onRxData() handing each OUT
  *                   transfer over and writeDirect() sending it back, its
- *                   completion counted by a capturing onTxComplete() lambda
+ *                   completion counted by a capturing onDirectTxComplete() lambda
  *
  * The vendor interface is 0xFF / 0x4F / 0x45 (setInterfaceProtocol()).
  * Over USB, without a command: vendor bulk echoes every byte; vendor request
@@ -57,7 +57,7 @@ static void direct_rx(const uint8_t *data, size_t length)
         return;                                     /* the host sends one packet and waits for it */
     }
     memcpy(echo, data, length);
-    echoBusy = vendor.writeDirect(echo, length);
+    echoBusy = (bool)vendor.writeDirect(echo, length);
 }
 
 static void set_mode(bool direct)
@@ -65,14 +65,16 @@ static void set_mode(bool direct)
     directMode = direct;
     if (direct) {
         uint32_t *done = &directDone;
-        vendor.onTxComplete([done](size_t) {
-            (*done)++;
+        vendor.onDirectTxComplete([done](const CH32RVUsbTransferResult &result) {
+            if (result.status == CH32RVUsbTransferStatus::Success) {
+                (*done)++;
+            }
             echoBusy = false;
         });
         vendor.onRxData(direct_rx);
     } else {
         vendor.onRxData(nullptr);
-        vendor.onTxComplete(nullptr);
+        vendor.onDirectTxComplete(nullptr);
     }
 }
 

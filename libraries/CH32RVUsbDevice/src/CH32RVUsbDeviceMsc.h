@@ -30,9 +30,10 @@ class CH32RVUsbDeviceMsc : public CH32RVUsbDeviceFunction {
 public:
     explicit CH32RVUsbDeviceMsc(CH32RVUsbDevice &device = USBDevice);
 
-    /* The medium's geometry; true once it and the read/write path are set. */
+    /* The medium's geometry; true once it and the read path are set. Without
+     * onWrite() (or a storage) the medium is read-only. */
     bool begin(uint32_t blockCount, uint16_t blockSize);
-    bool begin() { return _blockCount && _blockSize && (_storage || (_onRead && _onWrite)); }
+    bool begin() { return _blockCount && _blockSize && (_storage || _onRead); }
     void end();
 
     /* SCSI INQUIRY strings: 8, 16 and 4 characters at most. */
@@ -42,7 +43,8 @@ public:
     /* No medium (false, the default) reads as "not ready" to the host. */
     void mediaPresent(bool value) { _mediaPresent = value; }
     void isWritable(bool value) { _writable = value; }
-    /* Providers: called inside the USB service while the host waits. */
+    /* Providers: called inside the USB service while the host waits. They
+     * return the bytes done; anything but `size` is an I/O error to the host. */
     void onRead(CH32RVUsbDeviceMscReadCallback cb) { _onRead = cb; }
     void onWrite(CH32RVUsbDeviceMscWriteCallback cb) { _onWrite = cb; }
     /* START STOP UNIT: start false + loadEject true is the host's eject. */
@@ -58,7 +60,7 @@ public:
     bool startStop(uint8_t powerCondition, bool start, bool loadEject);
     int32_t read10(uint32_t lba, uint32_t offset, void *buffer, uint32_t size);
     int32_t write10(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size);
-    bool writable() const { return _writable; }
+    bool writable() const { return _writable && (_storage || _onWrite); }
 
     /* The endpoint pair, set while the descriptors are laid out. */
     uint8_t _ep = 0;

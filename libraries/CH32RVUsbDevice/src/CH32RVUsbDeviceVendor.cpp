@@ -4,43 +4,45 @@
 #include <string.h>
 
 
-const char *CH32RVUsbDeviceVendor::lastDirectErrorName() const
+CH32RVUsbTransferSubmission CH32RVUsbDeviceVendor::writeDirect(const void *buffer, size_t length,
+                                                             CH32RVUsbTransferTermination termination)
 {
-    switch (_directError) {
-    case CH32RVUsbDeviceVendorDirectError::None: return "None";
-    case CH32RVUsbDeviceVendorDirectError::NotSupported: return "NotSupported";
-    case CH32RVUsbDeviceVendorDirectError::NotMounted: return "NotMounted";
-    case CH32RVUsbDeviceVendorDirectError::BadArgument: return "BadArgument";
-    case CH32RVUsbDeviceVendorDirectError::NotAligned: return "NotAligned";
-    case CH32RVUsbDeviceVendorDirectError::NotDmaCapable: return "NotDmaCapable";
-    case CH32RVUsbDeviceVendorDirectError::Busy: return "Busy";
-    case CH32RVUsbDeviceVendorDirectError::TransferFailed: return "TransferFailed";
+    CH32RVUsbTransferSubmission r;
+    if (!buffer || !length || length > maxDirectTransfer()) {
+        r.error = CH32RVUsbTransferError::BadArgument;
+    } else if (!mounted()) {
+        r.error = CH32RVUsbTransferError::NotMounted;
+    } else if (_inBusy || _zlp || _directDone || _txHead != _txTail) {
+        r.error = CH32RVUsbTransferError::Busy;     /* _directDone: the last one is not handed back yet */
+    } else if (!device().transfer((uint8_t)(0x80 | _ep), const_cast<void *>(buffer), (uint16_t)length)) {
+        r.error = CH32RVUsbTransferError::TransferFailed;
+    } else {
+        _inBusy = _direct = true;
+        _txSending = 0;
+        _directZlp = termination == CH32RVUsbTransferTermination::EndWithShortPacket && length % _packet == 0;
+        if (++_directId == 0) {
+            _directId = 1;
+        }
+        _directOut = CH32RVUsbTransferResult();
+        _directOut.buffer = buffer;
+        _directOut.requestedBytes = length;
+        _directOut.id = r.id = _directId;
     }
-    return "Unknown";
+    return r;
 }
 
-bool CH32RVUsbDeviceVendor::writeDirect(const void *buffer, size_t length)
+/* The loan in flight ends: report it once. From end() (Stopped) the sketch
+ * gets it before end() returns - nothing delivers after. */
+void CH32RVUsbDeviceVendor::directEnded(CH32RVUsbTransferStatus status, size_t actual, bool known)
 {
-    if (!buffer || !length || length > 65535u) {
-        _directError = CH32RVUsbDeviceVendorDirectError::BadArgument;
-        return false;
+    _direct = _directZlp = false;
+    _directOut.status = status;
+    _directOut.actualBytes = actual;
+    _directOut.actualBytesKnown = known;
+    _directDone = true;
+    if (status == CH32RVUsbTransferStatus::Stopped) {
+        usbDeliver();
     }
-    if (!mounted()) {
-        _directError = CH32RVUsbDeviceVendorDirectError::NotMounted;
-        return false;
-    }
-    if (_inBusy || _zlp || _txHead != _txTail) {
-        _directError = CH32RVUsbDeviceVendorDirectError::Busy;
-        return false;
-    }
-    if (!device().transfer((uint8_t)(0x80 | _ep), const_cast<void *>(buffer), (uint16_t)length)) {
-        _directError = CH32RVUsbDeviceVendorDirectError::TransferFailed;
-        return false;
-    }
-    _inBusy = _direct = true;
-    _txSending = 0;
-    _directError = CH32RVUsbDeviceVendorDirectError::None;
-    return true;
 }
 
 static uint16_t clamp_ep(uint16_t n)
@@ -95,7 +97,12 @@ CH32RVUsbDeviceVendor::CH32RVUsbDeviceVendor(CH32RVUsbDevice &device, uint16_t e
 /* ---------------------------------------------------------- the stack's side */
 void CH32RVUsbDeviceVendor::usbReset()
 {
-    _outBusy = _inBusy = _zlp = _direct = false;
+    if (_direct) {
+        /* end() has cleared started() by now; a bus reset has not. */
+        directEnded(device().started() ? CH32RVUsbTransferStatus::BusReset : CH32RVUsbTransferStatus::Stopped, 0,
+                    false);
+    }
+    _outBusy = _inBusy = _zlp = false;
     _rxHeld = 0;
 }
 
@@ -188,8 +195,13 @@ void CH32RVUsbDeviceVendor::usbTransferred(uint8_t address, uint16_t length)
     } else if (address == (uint8_t)(0x80 | _ep)) {
         _inBusy = false;
         if (_direct) {
-            _direct = false;
-            handleTxComplete(length);
+            _directOut.actualBytes += length;
+            if (_directZlp && device().transfer((uint8_t)(0x80 | _ep), _tx, 0)) {
+                _directZlp = false;                  /* EndWithShortPacket */
+                _inBusy = true;
+                return;
+            }
+            directEnded(CH32RVUsbTransferStatus::Success, _directOut.actualBytes, true);
             push();
             return;
         }
@@ -351,6 +363,15 @@ size_t CH32RVUsbDeviceVendor::usbDeliver()
         _rxPending = false;
         if (_onRx && rxUsed()) {
             _onRx(rxUsed());
+            ran++;
+        }
+    }
+    if (_directDone) {
+        /* Cleared first: the callback may arm the next one. */
+        const CH32RVUsbTransferResult result = _directOut;
+        _directDone = false;
+        if (_onDirectTx) {
+            _onDirectTx(result);
             ran++;
         }
     }

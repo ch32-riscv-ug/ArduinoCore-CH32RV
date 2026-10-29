@@ -8,8 +8,8 @@ class CH32RVUsbDeviceMidi : public CH32RVUsbDeviceFunction {
 public:
     static constexpr uint8_t MAX_CABLES = 16;
 
-    /* cableCount is clamped to 1..MAX_CABLES; each cable is a MIDI port on
-     * the host. */
+    /* Each cable is a MIDI port on the host. A count outside 1..MAX_CABLES
+     * fails the device's begin() with InvalidArgument. */
     explicit CH32RVUsbDeviceMidi(CH32RVUsbDevice &device = USBDevice, uint8_t cableCount = 1);
     /* IN is device to host (what this device sends), OUT host to device. */
     CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t inCableCount, uint8_t outCableCount);
@@ -21,6 +21,8 @@ public:
     uint16_t descriptorLength() const;
 
     bool readPacket(CH32RVUsbDeviceMidiPacket &packet);
+    /* False for a cable the host was not told about (>= inCableCount()) or
+     * a reserved code index (0, 1), as well as when the queue is full. */
     bool writePacket(const CH32RVUsbDeviceMidiPacket &packet);
     /* cable is 0-based (0..inCableCount()-1). Sending to a cable the host was
      * not told about fails. */
@@ -32,8 +34,13 @@ public:
     bool channelPressure(uint8_t channel, uint8_t pressure, uint8_t cable = 0);
     /* 0..16383, 8192 = centre. */
     bool pitchBend(uint8_t channel, uint16_t value, uint8_t cable = 0);
-    /* Packets waiting from the host (an extension; EspUsbDevice has none). */
-    uint32_t available();
+    /* Packets waiting from the host. */
+    size_t availablePackets();
+    /* Packets writePacket() takes now. */
+    size_t availableForWritePackets() const;
+    /* Packets from the host dropped: a reserved code index (0, 1), a cable
+     * beyond outCableCount(), or a transfer that is not whole packets. */
+    uint32_t receiveErrors() const { return _receiveErrors; }
 
     /* The endpoint pair, set while the descriptors are laid out. */
     uint8_t _ep = 0;
@@ -57,5 +64,6 @@ private:
     uint8_t _rx[RX_PACKETS][4], _tx[TX_PACKETS][4];
     uint16_t _rxHead = 0, _rxTail = 0, _txHead = 0, _txTail = 0;
     uint16_t _packet = 64;
+    uint32_t _receiveErrors = 0;
     bool _outBusy = false, _inBusy = false;
 };

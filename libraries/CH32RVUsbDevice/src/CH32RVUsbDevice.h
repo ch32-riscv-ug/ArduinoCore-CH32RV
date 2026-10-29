@@ -177,7 +177,7 @@ struct CH32RVUsbDeviceControlRequestInfo {
 /* What happened on the bus, as onBusEvent() reports it. */
 enum class CH32RVUsbBusEvent : uint8_t {
     Reset,          /* a bus reset: the configuration is gone */
-    Configured,     /* SET_CONFIGURATION 1: mounted() is now true */
+    Configured,     /* SET_CONFIGURATION 1: ready() is now true */
     Unconfigured,   /* SET_CONFIGURATION 0 */
     Suspended,
     Resumed,
@@ -272,6 +272,9 @@ public:
     /* False when the device refused it (see CH32RVUsbDevice::lastError()). */
     bool attached() const { return _attached; }
     CH32RVUsbDevice &device() const { return _device; }
+    /* For a class's descriptor writer: its settings cannot be laid out, so
+     * begin() fails with lastError() == InvalidArgument. Returns false. */
+    bool refuseSettings() const;
 
 protected:
     CH32RVUsbDeviceFunction(CH32RVUsbDevice &device, const CH32RVUsbFunctionType &type,
@@ -336,6 +339,7 @@ private:
 
 class CH32RVUsbDevice {
     friend struct CH32RVUsbDeviceCore;
+    friend class CH32RVUsbDeviceFunction;
 
 public:
     constexpr CH32RVUsbDevice() {}

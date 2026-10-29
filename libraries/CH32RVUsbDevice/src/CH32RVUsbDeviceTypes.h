@@ -341,3 +341,39 @@ static inline bool ch32rv_usb_at(CH32RVUsbSpeed actual, CH32RVUsbSpeed speed)
     return ch32rv_usb_series_can(speed) && actual == speed;
 }
 
+
+/* A borrowed transfer (Vendor writeDirect(), as EspUsbDevice's): why it was
+ * refused, and how it ended. A refusal borrows nothing and reports nothing;
+ * an accepted one is reported exactly once, whatever ends it. */
+enum class CH32RVUsbTransferError : uint8_t {
+    None = 0,
+    NotSupported,
+    NotMounted,      /* the host has not configured the interface */
+    BadArgument,     /* no buffer, no length, or beyond maxDirectTransfer() */
+    NotAligned,      /* not used: any alignment is taken */
+    NotDmaCapable,   /* not used */
+    Busy,            /* a transfer is already out on the endpoint */
+    TransferFailed,  /* the controller refused it */
+};
+
+struct CH32RVUsbTransferSubmission {
+    CH32RVUsbTransferError error = CH32RVUsbTransferError::None;
+    uint32_t id = 0;     /* nonzero for an accepted loan */
+    explicit operator bool() const { return error == CH32RVUsbTransferError::None; }
+};
+
+/* Continue: a transfer that is whole packets ends with no zero-length packet
+ * (the host reads on); EndWithShortPacket adds one. */
+enum class CH32RVUsbTransferTermination : uint8_t { Continue, EndWithShortPacket };
+
+enum class CH32RVUsbTransferStatus : uint8_t { Success, BusReset, Stopped, TransferError, Cancelled };
+
+struct CH32RVUsbTransferResult {
+    const void *buffer = nullptr;
+    size_t requestedBytes = 0;
+    size_t actualBytes = 0;
+    CH32RVUsbTransferStatus status = CH32RVUsbTransferStatus::Success;
+    /* False after a reset or end(): the controller may have sent part of it. */
+    bool actualBytesKnown = true;
+    uint32_t id = 0;
+};

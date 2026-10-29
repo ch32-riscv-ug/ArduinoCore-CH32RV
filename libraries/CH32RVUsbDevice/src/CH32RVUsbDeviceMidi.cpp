@@ -3,12 +3,6 @@
 
 #include <string.h>
 
-
-static uint8_t clamp_cables(uint8_t n)
-{
-    return n < 1 ? 1 : n > CH32RVUsbDeviceMidi::MAX_CABLES ? CH32RVUsbDeviceMidi::MAX_CABLES : n;
-}
-
 /* Jack IDs: four per cable, numbered from the device's side - embedded IN,
  * external IN, embedded OUT, external OUT (as TinyUSB and EspUsbDevice). A
  * cable in both directions has all four jacks; a one-way cable the pair its
@@ -39,6 +33,9 @@ static bool midi_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescri
 {
     CH32RVUsbDeviceMidi &m = const_cast<CH32RVUsbDeviceMidi &>(static_cast<const CH32RVUsbDeviceMidi &>(self));
     const uint8_t in = m.inCableCount(), out = m.outCableCount();
+    if (!in || in > CH32RVUsbDeviceMidi::MAX_CABLES || !out || out > CH32RVUsbDeviceMidi::MAX_CABLES) {
+        return self.refuseSettings();
+    }
     const uint8_t both = in < out ? in : out;
     const uint8_t n = (*ep)++;
     const uint16_t mps = ch32rv_usb_bulk_size(speed);
@@ -100,14 +97,14 @@ static bool midi_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescri
 static const CH32RVUsbFunctionType midi_type = {midi_descriptor, 2, 4, nullptr, 0};
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t cableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(cableCount)),
-      _outCables(clamp_cables(cableCount))
+    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(cableCount),
+      _outCables(cableCount)
 {
 }
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t inCableCount, uint8_t outCableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(clamp_cables(inCableCount)),
-      _outCables(clamp_cables(outCableCount))
+    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(inCableCount),
+      _outCables(outCableCount)
 {
 }
 
@@ -155,9 +152,15 @@ void CH32RVUsbDeviceMidi::usbTransferred(uint8_t address, uint16_t length)
 {
     if (address == _ep) {
         _outBusy = false;
+        if (length % 4u) {
+            _receiveErrors++;
+        }
         for (uint16_t i = 0; i + 4u <= length; i += 4) {
-            if (_out[i] == 0) {
-                continue;                            /* padding */
+            if ((_out[i] & 0x0f) < 2 || (_out[i] >> 4) >= _outCables) {
+                if (_out[i]) {
+                    _receiveErrors++;               /* 0 is padding */
+                }
+                continue;
             }
             memcpy(_rx[_rxHead % RX_PACKETS], _out + i, 4);
             _rxHead++;
@@ -184,6 +187,9 @@ bool CH32RVUsbDeviceMidi::readPacket(CH32RVUsbDeviceMidiPacket &packet)
 
 bool CH32RVUsbDeviceMidi::writePacket(const CH32RVUsbDeviceMidiPacket &packet)
 {
+    if ((packet.header & 0x0f) < 2 || (packet.header >> 4) >= _inCables) {
+        return false;
+    }
     ch32rv_usb_task();
     if (!device().ready() || (uint16_t)(_txHead - _txTail) >= TX_PACKETS) {
         return false;
@@ -194,10 +200,15 @@ bool CH32RVUsbDeviceMidi::writePacket(const CH32RVUsbDeviceMidiPacket &packet)
     return true;
 }
 
-uint32_t CH32RVUsbDeviceMidi::available()
+size_t CH32RVUsbDeviceMidi::availablePackets()
 {
     ch32rv_usb_task();
     return (uint16_t)(_rxHead - _rxTail);
+}
+
+size_t CH32RVUsbDeviceMidi::availableForWritePackets() const
+{
+    return device().ready() ? (size_t)(TX_PACKETS - (uint16_t)(_txHead - _txTail)) : 0;
 }
 
 /* Channel messages (EspUsbDevice): header = cable << 4 | code index, status =
