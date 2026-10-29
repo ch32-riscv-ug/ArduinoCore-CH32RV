@@ -118,7 +118,7 @@ Differences:
 (layouts, NKRO, boot protocol, `ledState()`), `CH32RVUsbDeviceHidMouse`,
 `CH32RVUsbDeviceHidGamepad`, `CH32RVUsbDeviceHidConsumerControl`,
 `CH32RVUsbDeviceHidSystemControl`, `CH32RVUsbDeviceHidVendor`,
-`CH32RVUsbDeviceHidCustom`, `CH32RVUsbDeviceMidi` (up to 16 cables),
+`CH32RVUsbDeviceHidCustom`, `CH32RVUsbDeviceMidi` (up to 16 cables; `configure()` sets the queues and how events are taken),
 `CH32RVUsbDeviceVendor` (bulk; with `peek()`, which EspUsbDevice lacks), `CH32RVUsbDeviceMsc` with
 `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` /
 `CH32RVUsbDeviceMscSdCard` (its own header), `CH32RVUsbDeviceCcid`,

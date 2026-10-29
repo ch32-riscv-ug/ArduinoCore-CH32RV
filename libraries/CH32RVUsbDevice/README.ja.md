@@ -106,7 +106,7 @@ void loop() {
 | `CH32RVUsbDeviceHidSystemControl` | 電源オフ・スタンバイ・ホストの起床 |
 | `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID（ドライバ不要のデータ通信）。`sendInput()`、`onOutputReport()`、`onFeatureReport()`、`setUsage()`。レポートは FS だけの系列で 63 バイト、HS / SS の系列で 511 / 1023 バイトまで |
 | `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID |
-| `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル）。`noteOn(channel, note, velocity, cable)`、`readPacket()` |
+| `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル）。`noteOn(channel, note, velocity, cable)`、`readPacket()`、`configure(CH32RVUsbMidiConfig)`（キューの大きさ、受け方、送り方）、`onPacket()` |
 | `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`peek()`（このコアの独自）、`write()`、`flush()`、`configure()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onDirectTxComplete()`、`readDirect()`、`onDirectRxComplete()`、`cancelDirectTx()`、`cancelDirectRx()`、`onTxComplete()`、`onRxData()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
 | `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`、`isWritable()`、`vendorID()` など |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |

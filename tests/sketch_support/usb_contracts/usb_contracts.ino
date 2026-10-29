@@ -13,7 +13,8 @@
  *
  * Over USB, without a command: CDC echoes every byte, a vendor output report
  * comes back as an input report with its first byte incremented, and a MIDI
- * packet comes back with its note raised by 12. */
+ * packet comes back with its note raised by 12 (the MIDI receive queue is
+ * one event: the rest of a USB packet waits in the endpoint's buffer). */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
@@ -88,6 +89,9 @@ static void reply(const char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    CH32RVUsbMidiConfig midiConfig = midi.configuration();
+    midiConfig.rxPackets = 1;
+    midi.configure(midiConfig);
     vendor.onOutputReport([](const CH32RVUsbDeviceHidReport &report) {
         vendorLength = report.length > sizeof vendorData ? sizeof vendorData : report.length;
         memcpy(vendorData, report.data, vendorLength);

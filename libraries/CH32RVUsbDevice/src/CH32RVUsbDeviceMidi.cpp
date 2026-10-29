@@ -19,10 +19,11 @@
 
 uint16_t CH32RVUsbDeviceMidi::descriptorLength() const
 {
-    const uint8_t both = _inCables < _outCables ? _inCables : _outCables;
-    const uint8_t surplus = (uint8_t)((_inCables > _outCables ? _inCables : _outCables) - both);
-    return (uint16_t)(MIDI_HEAD_LEN + MIDI_JACK_LEN * both + MIDI_ONE_WAY_JACK_LEN * surplus +
-                      MIDI_EP_LEN(_outCables) + MIDI_EP_LEN(_inCables));
+    const uint8_t in = _config.inCables, out = _config.outCables;
+    const uint8_t both = in < out ? in : out;
+    const uint8_t surplus = (uint8_t)((in > out ? in : out) - both);
+    return (uint16_t)(MIDI_HEAD_LEN + MIDI_JACK_LEN * both + MIDI_ONE_WAY_JACK_LEN * surplus + MIDI_EP_LEN(out) +
+                      MIDI_EP_LEN(in));
 }
 
 /* Audio control + MIDI streaming (two interfaces), OUT and IN on endpoint n.
@@ -33,7 +34,8 @@ static bool midi_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescri
 {
     CH32RVUsbDeviceMidi &m = const_cast<CH32RVUsbDeviceMidi &>(static_cast<const CH32RVUsbDeviceMidi &>(self));
     const uint8_t in = m.inCableCount(), out = m.outCableCount();
-    if (!in || in > CH32RVUsbDeviceMidi::MAX_CABLES || !out || out > CH32RVUsbDeviceMidi::MAX_CABLES) {
+    if (!in || in > CH32RVUsbDeviceMidi::MAX_CABLES || !out || out > CH32RVUsbDeviceMidi::MAX_CABLES ||
+        !m.receiveReady()) {
         return self.refuseSettings();
     }
     const uint8_t both = in < out ? in : out;
@@ -97,21 +99,62 @@ static bool midi_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescri
 static const CH32RVUsbFunctionType midi_type = {midi_descriptor, 2, 4, nullptr, 0};
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t cableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(cableCount),
-      _outCables(cableCount)
+    : CH32RVUsbDeviceMidi(device, cableCount, cableCount)
 {
 }
 
 CH32RVUsbDeviceMidi::CH32RVUsbDeviceMidi(CH32RVUsbDevice &device, uint8_t inCableCount, uint8_t outCableCount)
-    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME), _inCables(inCableCount),
-      _outCables(outCableCount)
+    : CH32RVUsbDeviceFunction(device, midi_type, CH32RV_USB_MIDI_NAME)
 {
+    _config.inCables = inCableCount;
+    _config.outCables = outCableCount;
+}
+
+static bool midi_queue(CH32RVUsbDeviceMidiPacket *buffer, size_t packets, CH32RVUsbDeviceMidiPacket *store,
+                       uint16_t storeSize, CH32RVUsbDeviceMidiPacket *&to, uint16_t &size)
+{
+    if (!buffer) {
+        packets = packets ? packets : storeSize;
+        if (packets > storeSize) {
+            return false;
+        }
+        buffer = store;
+    }
+    if (!packets || packets > 65535u) {
+        return false;
+    }
+    to = buffer;
+    size = (uint16_t)packets;
+    return true;
+}
+
+bool CH32RVUsbDeviceMidi::configure(const CH32RVUsbMidiConfig &config)
+{
+    CH32RVUsbDeviceMidiPacket *rx, *tx;
+    uint16_t rxSize, txSize;
+    if (device().started() || !config.inCables || config.inCables > MAX_CABLES || !config.outCables ||
+        config.outCables > MAX_CABLES || config.rxMode > CH32RVUsbMidiRxMode::Disabled ||
+        config.streamTermination > CH32RVUsbStreamTermination::EndWithShortPacket ||
+        !midi_queue(config.rxBuffer, config.rxPackets, _rxStore, RX_PACKETS, rx, rxSize) ||
+        !midi_queue(config.txBuffer, config.txPackets, _txStore, TX_PACKETS, tx, txSize)) {
+        return false;
+    }
+    _config = config;
+    _rx = rx;
+    _rxSize = rxSize;
+    _tx = tx;
+    _txSize = txSize;
+    if (config.name) {
+        setName(config.name);
+    }
+    _rxTail = _rxUsed = _txTail = _txUsed = 0;
+    return true;
 }
 
 /* ---------------------------------------------------------- the stack's side */
 void CH32RVUsbDeviceMidi::usbReset()
 {
-    _outBusy = _inBusy = false;
+    _outBusy = _inBusy = _zlp = false;
 }
 
 void CH32RVUsbDeviceMidi::usbConfigured(CH32RVUsbSpeed speed)
@@ -120,32 +163,78 @@ void CH32RVUsbDeviceMidi::usbConfigured(CH32RVUsbSpeed speed)
     if (_packet > sizeof _out) {
         _packet = sizeof _out;
     }
-    _rxHead = _rxTail = _txHead = _txTail = 0;
+    _rxTail = _rxUsed = _txTail = _txUsed = 0;
+    _outLength = _outAt = 0;
     receive();
 }
 
-/* The next OUT transfer only while every packet it may carry fits. */
+/* The next OUT packet once the last one has all gone to the queue. */
 void CH32RVUsbDeviceMidi::receive()
 {
-    const uint16_t used = (uint16_t)(_rxHead - _rxTail);
-    if (_outBusy || !device().ready() || (uint16_t)(RX_PACKETS - used) * 4u < _packet) {
+    if (_outBusy || !device().ready() || _config.rxMode == CH32RVUsbMidiRxMode::Disabled || _outAt < _outLength) {
         return;
     }
+    _outLength = _outAt = 0;
     _outBusy = device().transfer(_ep, _out, _packet);
+}
+
+/* Move events from the OUT packet to the queue while it has room; a
+ * reserved code index (0, 1) or a cable beyond outCableCount() is dropped
+ * (all-zero is padding). */
+static bool midi_valid(const uint8_t *p, uint8_t cables)
+{
+    return (p[0] & 0x0f) >= 2 && (p[0] >> 4) < cables;
+}
+
+void CH32RVUsbDeviceMidi::drain()
+{
+    while (_outAt < _outLength && _rxUsed < _rxSize) {
+        const uint8_t *p = _out + _outAt;
+        _outAt = (uint16_t)(_outAt + 4);
+        if (!midi_valid(p, _config.outCables)) {
+            if (p[0]) {
+                _receiveErrors++;
+            }
+            continue;
+        }
+        memcpy(&_rx[(_rxTail + _rxUsed) % _rxSize], p, 4);
+        _rxUsed++;
+    }
+    receive();
+}
+
+size_t CH32RVUsbDeviceMidi::waitingInPacket() const
+{
+    size_t n = 0;
+    for (uint16_t i = _outAt; i < _outLength; i = (uint16_t)(i + 4)) {
+        n += midi_valid(_out + i, _config.outCables);
+    }
+    return n;
 }
 
 void CH32RVUsbDeviceMidi::push()
 {
-    if (_inBusy || !device().ready() || _txHead == _txTail) {
+    if (_inBusy || !device().ready()) {
         return;
     }
+    if (!_txUsed) {
+        if (_zlp && device().transfer((uint8_t)(0x80 | _ep), _in, 0)) {
+            _zlp = false;
+            _inBusy = true;
+            _inLength = 0;
+        }
+        return;
+    }
+    const size_t limit = transferCapacity() * 4;
     uint16_t n = 0;
-    while (_txTail != _txHead && n + 4u <= _packet && n + 4u <= sizeof _in) {
-        memcpy(_in + n, _tx[_txTail % TX_PACKETS], 4);
-        _txTail++;
+    while (_txUsed && n + 4u <= limit) {
+        memcpy(_in + n, &_tx[_txTail], 4);
+        _txTail = (uint16_t)((_txTail + 1) % _txSize);
+        _txUsed--;
         n = (uint16_t)(n + 4);
     }
     _inBusy = device().transfer((uint8_t)(0x80 | _ep), _in, n);
+    _inLength = n;
 }
 
 void CH32RVUsbDeviceMidi::usbTransferred(uint8_t address, uint16_t length)
@@ -155,67 +244,111 @@ void CH32RVUsbDeviceMidi::usbTransferred(uint8_t address, uint16_t length)
         if (length % 4u) {
             _receiveErrors++;
         }
-        for (uint16_t i = 0; i + 4u <= length; i += 4) {
-            if ((_out[i] & 0x0f) < 2 || (_out[i] >> 4) >= _outCables) {
-                if (_out[i]) {
-                    _receiveErrors++;               /* 0 is padding */
-                }
-                continue;
-            }
-            memcpy(_rx[_rxHead % RX_PACKETS], _out + i, 4);
-            _rxHead++;
-        }
-        receive();
+        _outLength = (uint16_t)(length - length % 4u);
+        _outAt = 0;
+        drain();
     } else if (address == (uint8_t)(0x80 | _ep)) {
         _inBusy = false;
+        _zlp = _inLength == _packet && !_txUsed &&
+               _config.streamTermination != CH32RVUsbStreamTermination::Continue;
         push();
     }
+}
+
+size_t CH32RVUsbDeviceMidi::usbDeliver()
+{
+    size_t ran = 0;
+    while (_config.rxMode == CH32RVUsbMidiRxMode::Callback && _onPacket && _rxUsed) {
+        const CH32RVUsbDeviceMidiPacket packet = _rx[_rxTail];
+        _rxTail = (uint16_t)((_rxTail + 1) % _rxSize);
+        _rxUsed--;
+        drain();
+        _onPacket(packet);
+        ran++;
+    }
+    return ran;
+}
+
+bool CH32RVUsbDeviceMidi::receiveReady() const
+{
+    return _config.rxMode != CH32RVUsbMidiRxMode::Callback || _onPacket;
 }
 
 /* ---------------------------------------------------------- the API */
 bool CH32RVUsbDeviceMidi::readPacket(CH32RVUsbDeviceMidiPacket &packet)
 {
     ch32rv_usb_task();
-    if (_rxHead == _rxTail) {
+    if (!_rxUsed) {
         return false;
     }
-    memcpy(&packet, _rx[_rxTail % RX_PACKETS], 4);
-    _rxTail++;
-    receive();
+    packet = _rx[_rxTail];
+    _rxTail = (uint16_t)((_rxTail + 1) % _rxSize);
+    _rxUsed--;
+    drain();
     return true;
 }
 
 bool CH32RVUsbDeviceMidi::writePacket(const CH32RVUsbDeviceMidiPacket &packet)
 {
-    if ((packet.header & 0x0f) < 2 || (packet.header >> 4) >= _inCables) {
+    if ((packet.header & 0x0f) < 2 || (packet.header >> 4) >= _config.inCables) {
         return false;
     }
     ch32rv_usb_task();
-    if (!device().ready() || (uint16_t)(_txHead - _txTail) >= TX_PACKETS) {
+    if (!device().ready() || _txUsed >= _txSize) {
         return false;
     }
-    memcpy(_tx[_txHead % TX_PACKETS], &packet, 4);
-    _txHead++;
-    push();
+    _tx[(_txTail + _txUsed) % _txSize] = packet;
+    _txUsed++;
+    if (_config.autoFlush) {
+        push();
+    }
     return true;
+}
+
+void CH32RVUsbDeviceMidi::flush()
+{
+    push();
+    ch32rv_usb_task();
 }
 
 size_t CH32RVUsbDeviceMidi::availablePackets()
 {
     ch32rv_usb_task();
-    return (uint16_t)(_rxHead - _rxTail);
+    return _rxUsed + waitingInPacket();
 }
 
 size_t CH32RVUsbDeviceMidi::availableForWritePackets() const
 {
-    return device().ready() ? (size_t)(TX_PACKETS - (uint16_t)(_txHead - _txTail)) : 0;
+    return device().ready() ? (size_t)(_txSize - _txUsed) : 0;
+}
+
+size_t CH32RVUsbDeviceMidi::receiveCapacity() const
+{
+    return device().started() ? _rxSize : 0;
+}
+
+size_t CH32RVUsbDeviceMidi::sendCapacity() const
+{
+    return device().started() ? _txSize : 0;
+}
+
+size_t CH32RVUsbDeviceMidi::transferCapacity() const
+{
+    if (!device().started()) {
+        return 0;
+    }
+    size_t n = (_packet < sizeof _in ? _packet : sizeof _in) / 4;
+    if (_config.transferPackets && _config.transferPackets < n) {
+        n = _config.transferPackets;
+    }
+    return n;
 }
 
 /* Channel messages (EspUsbDevice): header = cable << 4 | code index, status =
  * code index << 4 | channel, data clamped to 7 bits. */
 bool CH32RVUsbDeviceMidi::send(uint8_t cin, uint8_t channel, uint8_t a, uint8_t b, uint8_t cable)
 {
-    if (cable >= _inCables) {
+    if (cable >= _config.inCables) {
         return false;
     }
     if (channel > 15) {
