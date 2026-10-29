@@ -140,6 +140,16 @@ bool CH32RVUsbAudioFunction::writeDescriptor(CH32RVUsbDescriptorWriter &o, uint8
     if (!describable()) {
         return false;
     }
+    for (uint8_t i = 0; i < 2; i++) {
+        uint8_t *buffer;
+        uint16_t depth;
+        if ((i == 0 ? _playbackEnabled : _captureEnabled) &&
+            !ring(i, packetSize(_streams[i].format, i == 0 ? CH32RVUsbAudioDirection::Playback
+                                                           : CH32RVUsbAudioDirection::Capture, hs),
+                  buffer, depth)) {
+            return refuseSettings();
+        }
+    }
     const bool uac2 = _protocol == CH32RVUsbAudioProtocol::Uac2;
     const bool play = _playbackEnabled, cap = _captureEnabled;
     Stream &ps = _streams[0], &cs = _streams[1];

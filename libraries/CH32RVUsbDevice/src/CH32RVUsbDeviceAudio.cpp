@@ -133,6 +133,76 @@ bool CH32RVUsbAudioFunction::addFormat(CH32RVUsbAudioDirection d, const CH32RVUs
     return true;
 }
 
+bool CH32RVUsbAudioFunction::configure(const CH32RVUsbAudioConfig &config)
+{
+    if (device().started() || config.eventCapacity > sizeof _events / sizeof _events[0] ||
+        !config.playbackBuffer != !config.playbackBufferBytes || !config.captureBuffer != !config.captureBufferBytes) {
+        return false;
+    }
+    _config = config;
+    return true;
+}
+
+bool CH32RVUsbAudioPlaybackStream::clearFormats()
+{
+    return _function.clearFormat(CH32RVUsbAudioDirection::Playback);
+}
+
+bool CH32RVUsbAudioCaptureStream::clearFormats()
+{
+    return _function.clearFormat(CH32RVUsbAudioDirection::Capture);
+}
+
+bool CH32RVUsbAudioFunction::clearFormat(CH32RVUsbAudioDirection d)
+{
+    if (device().started()) {
+        return false;
+    }
+    _streams[slot(d)].hasFormat = false;
+    return true;
+}
+
+bool CH32RVUsbAudioPlaybackStream::currentFormat(CH32RVUsbAudioFormat &format) const
+{
+    const CH32RVUsbAudioFunction::Stream &s = _function._streams[0];
+    if (!s.hasFormat) {
+        return false;
+    }
+    format = s.format;
+    return true;
+}
+
+bool CH32RVUsbAudioCaptureStream::currentFormat(CH32RVUsbAudioFormat &format) const
+{
+    const CH32RVUsbAudioFunction::Stream &s = _function._streams[1];
+    if (!s.hasFormat) {
+        return false;
+    }
+    format = s.format;
+    return true;
+}
+
+/* Stream i's ring for a nominal packet of `packet` bytes: the configured
+ * sample frames (or four packets), in the sketch's buffer or the class's,
+ * whole sample frames. False when the frames asked for do not fit. */
+bool CH32RVUsbAudioFunction::ring(uint8_t i, uint16_t packet, uint8_t *&buffer, uint16_t &depth) const
+{
+    const Stream &st = _streams[i];
+    const size_t frame = (size_t)st.format.channels * st.format.bytesPerSample;
+    const size_t frames = i == 0 ? _config.playbackBufferFrames : _config.captureBufferFrames;
+    uint8_t *const given = i == 0 ? _config.playbackBuffer : _config.captureBuffer;
+    const size_t room = given ? (i == 0 ? _config.playbackBufferBytes : _config.captureBufferBytes) : FIFO_SIZE;
+    buffer = given ? given : const_cast<uint8_t *>(i == 0 ? _rxStore : _txStore);
+    size_t want = frames ? frames * frame : (size_t)4 * packet;
+    if (frames && (want > room || want > 0xffffu)) {
+        return false;
+    }
+    want = want < room ? want : room;
+    want = want < 0xffffu ? want : 0xffffu;
+    depth = frame ? (uint16_t)(want - want % frame) : 0;
+    return true;
+}
+
 bool CH32RVUsbAudioFunction::begin()
 {
     if (!attached() || g_audio != this || !describable()) {
@@ -158,9 +228,11 @@ uint8_t CH32RVUsbAudioFunction::interfaceCount() const
 
 uint8_t CH32RVUsbAudioFunction::endpointCount() const
 {
-    return (uint8_t)((_playbackEnabled ? 1 : 0) +
-                     (_playbackEnabled && _protocol == CH32RVUsbAudioProtocol::Uac2 ? 1 : 0) +
-                     (_captureEnabled ? 1 : 0));
+    /* OUT: playback. IN: capture, and UAC2 playback's feedback. */
+    const uint8_t out = _playbackEnabled ? 1 : 0;
+    const uint8_t in = (uint8_t)((_captureEnabled ? 1 : 0) +
+                                 (_playbackEnabled && _protocol == CH32RVUsbAudioProtocol::Uac2 ? 1 : 0));
+    return out > in ? out : in;
 }
 
 uint32_t CH32RVUsbAudioFunction::currentSampleRate() const
@@ -316,7 +388,7 @@ bool CH32RVUsbAudioFunction::getVolumeRange(CH32RVUsbAudioVolumeRange &range, CH
 void CH32RVUsbAudioFunction::pushEvent(const CH32RVUsbAudioEvent &event)
 {
     const uint8_t head = _eventHead;
-    if ((uint8_t)(head - _eventTail) >= 8) {
+    if ((uint8_t)(head - _eventTail) >= _config.eventCapacity) {
         _droppedEvents++;
         return;
     }
@@ -430,6 +502,22 @@ int CH32RVUsbAudioPlaybackStream::available() const
     return _function._rxCount;
 }
 
+size_t CH32RVUsbAudioPlaybackStream::capacity() const
+{
+    return _function._rxDepth;
+}
+
+size_t CH32RVUsbAudioCaptureStream::capacity() const
+{
+    return _function._txDepth;
+}
+
+static uint16_t frame_bytes(const CH32RVUsbAudioFormat &f)
+{
+    const uint16_t n = (uint16_t)(f.channels * f.bytesPerSample);
+    return n ? n : 1;
+}
+
 size_t CH32RVUsbAudioPlaybackStream::read(void *data, size_t length)
 {
     if (!data || length == 0) {
@@ -437,8 +525,13 @@ size_t CH32RVUsbAudioPlaybackStream::read(void *data, size_t length)
     }
     ch32rv_usb_task();
     CH32RVUsbAudioFunction &f = _function;
-    return fifo_get(f._rxFifo, f._rxDepth ? f._rxDepth : 1, f._rxHead, f._rxCount, (uint8_t *)data,
-                    (uint16_t)(length > 0xffffu ? 0xffffu : length));
+    const uint16_t frame = frame_bytes(f._streams[0].format);
+    uint16_t n = (uint16_t)(length > 0xffffu ? 0xffffu : length);
+    if (n > f._rxCount) {
+        n = f._rxCount;
+    }
+    n = (uint16_t)(n - n % frame);
+    return fifo_get(f._rxFifo, f._rxDepth ? f._rxDepth : 1, f._rxHead, f._rxCount, (uint8_t *)data, n);
 }
 
 bool CH32RVUsbAudioPlaybackStream::clearBuffer()
@@ -454,21 +547,21 @@ size_t CH32RVUsbAudioCaptureStream::write(const void *data, size_t length)
         return 0;
     }
     ch32rv_usb_task();
-    const uint16_t n = (uint16_t)(length > f._txDepth ? f._txDepth : length);
     const uint16_t room = (uint16_t)(f._txDepth - f._txCount);
-    if (n > room || length > n) {
+    uint16_t n = (uint16_t)(length < room ? length : room);
+    n = (uint16_t)(n - n % frame_bytes(f._streams[1].format));
+    if (n < length) {
         _overrunCount = _overrunCount + 1;
-        _overrunBytes = _overrunBytes + (uint32_t)(length - n) + (n > room ? (uint32_t)(n - room) : 0u);
+        _overrunBytes = _overrunBytes + (uint32_t)(length - n);
     }
-    /* Only the last FIFO's worth of a longer write can stay. */
-    fifo_put(f._txFifo, f._txDepth, f._txHead, f._txCount, (const uint8_t *)data + (length - n), n);
-    return length;
+    fifo_put(f._txFifo, f._txDepth, f._txHead, f._txCount, (const uint8_t *)data, n);
+    return n;
 }
 
-int CH32RVUsbAudioCaptureStream::availableForWrite()
+size_t CH32RVUsbAudioCaptureStream::availableForWrite() const
 {
     ch32rv_usb_task();
-    return _function._txDepth - _function._txCount;
+    return (size_t)(_function._txDepth - _function._txCount);
 }
 
 bool CH32RVUsbAudioCaptureStream::clearBuffer()
@@ -500,16 +593,12 @@ void CH32RVUsbAudioFunction::usbConfigured(CH32RVUsbSpeed speed)
     _txPacketSize = stream(CH32RVUsbAudioDirection::Capture)
                         ? packetSize(_streams[1].format, CH32RVUsbAudioDirection::Capture, _highSpeed)
                         : 0;
-    const uint16_t rx = (uint16_t)(4 * _rxPacketSize), tx = (uint16_t)(4 * _txPacketSize);
-    _rxDepth = rx < FIFO_SIZE ? rx : FIFO_SIZE;
-    _txDepth = tx < FIFO_SIZE ? tx : FIFO_SIZE;
-    if (_rxPacketSize) {
-        const uint16_t frame = (uint16_t)(_streams[0].format.channels * _streams[0].format.bytesPerSample);
-        _rxDepth = (uint16_t)(_rxDepth - _rxDepth % frame);
+    _rxDepth = _txDepth = 0;
+    if (!_rxPacketSize || !ring(0, _rxPacketSize, _rxFifo, _rxDepth)) {
+        _rxDepth = 0;
     }
-    if (_txPacketSize) {
-        const uint16_t frame = (uint16_t)(_streams[1].format.channels * _streams[1].format.bytesPerSample);
-        _txDepth = (uint16_t)(_txDepth - _txDepth % frame);
+    if (!_txPacketSize || !ring(1, _txPacketSize, _txFifo, _txDepth)) {
+        _txDepth = 0;
     }
     _rxHead = _rxCount = _txHead = _txCount = 0;
     _txRemainder = 0;

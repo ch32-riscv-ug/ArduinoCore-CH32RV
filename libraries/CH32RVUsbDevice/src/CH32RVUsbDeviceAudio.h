@@ -85,6 +85,23 @@ struct CH32RVUsbAudioVolumeRange {
     int16_t resolution = 0;
 };
 
+/* EspUsbAudioConfig's names. bufferFrames 0 keeps four nominal packets
+ * (within the class's own ring, four of the largest packets); a count asks
+ * for that many sample frames of the stream's format. A buffer is the
+ * sketch's, used from begin() to end(), with its size in bytes; without one a
+ * count must fit the class's ring (nothing is allocated). eventCapacity is
+ * 0..8. A setting that does not fit fails the device's begin() with
+ * InvalidArgument. */
+struct CH32RVUsbAudioConfig {
+    size_t eventCapacity = 8;
+    size_t playbackBufferFrames = 0;
+    size_t captureBufferFrames = 0;
+    uint8_t *playbackBuffer = nullptr;
+    uint8_t *captureBuffer = nullptr;
+    size_t playbackBufferBytes = 0;
+    size_t captureBufferBytes = 0;
+};
+
 class CH32RVUsbAudioFunction;
 
 class CH32RVUsbAudioPlaybackStream {
@@ -92,8 +109,16 @@ public:
     static constexpr CH32RVUsbAudioDirection direction() { return CH32RVUsbAudioDirection::Playback; }
     /* The stream's format, before the device begins. One per stream. */
     bool addFormat(const CH32RVUsbAudioFormat &format);
+    /* Forget the format, so another can be added; before the device begins. */
+    bool clearFormats();
+    bool currentFormat(CH32RVUsbAudioFormat &format) const;
     /* Bytes received from the host and not read yet. */
     int available() const;
+    /* Bytes the ring holds (once the host has configured the device). */
+    size_t capacity() const;
+    /* Whole sample frames only: a length that is not a multiple of the frame
+     * is cut down to one. When the ring is full, the oldest samples give way
+     * to the new ones (an overrun): the delay stays at most the ring's. */
     size_t read(void *data, size_t length);
     bool clearBuffer();
     CH32RVUsbAudioStreamStats stats() const;
@@ -113,14 +138,16 @@ class CH32RVUsbAudioCaptureStream {
 public:
     static constexpr CH32RVUsbAudioDirection direction() { return CH32RVUsbAudioDirection::Capture; }
     bool addFormat(const CH32RVUsbAudioFormat &format);
-    /* Queue samples for the host. When the FIFO is full the oldest bytes
-     * are overwritten (counted as an overrun). */
+    bool clearFormats();
+    bool currentFormat(CH32RVUsbAudioFormat &format) const;
+    /* Queue samples for the host: as many whole sample frames as fit, and
+     * the bytes taken are returned (the rest counts as an overrun). */
     size_t write(const void *data, size_t length);
-    /* Bytes write() can take now without overwriting samples the host has not
-     * fetched yet (an extension: EspUsbDevice has no such call). A sketch
-     * whose own clock runs a little fast writes no more than this, so the
-     * host's pace - one packet per USB frame - sets the rate. */
-    int availableForWrite();
+    /* Bytes write() takes now. A sketch whose own clock runs a little fast
+     * writes no more than this, so the host's pace - one packet per USB
+     * frame - sets the rate. */
+    size_t availableForWrite() const;
+    size_t capacity() const;
     bool clearBuffer();
     CH32RVUsbAudioStreamStats stats() const;
     void resetStats();
@@ -145,6 +172,10 @@ public:
                                     CH32RVUsbAudioProtocol protocol = CH32RVUsbAudioProtocol::Uac1);
 
     CH32RVUsbAudioProtocol protocol() const { return _protocol; }
+    /* Ring sizes and the event queue; while the device is stopped. */
+    bool configure(const CH32RVUsbAudioConfig &config);
+    const CH32RVUsbAudioConfig &configuration() const { return _config; }
+    size_t eventCapacity() const { return _config.eventCapacity; }
     /* Add the stream (each once; a second call returns the same one). Before
      * the device begins. */
     CH32RVUsbAudioPlaybackStream &addPlaybackStream();
@@ -158,6 +189,7 @@ public:
     bool begin();
     void end();
     uint8_t interfaceCount() const;
+    /* Endpoint numbers it takes: OUT and IN of one number pair up. */
     uint8_t endpointCount() const;
 
     /* The sample rate the host set (UAC2) or the format's (UAC1). */
@@ -180,7 +212,7 @@ public:
     bool getVolumeRange(CH32RVUsbAudioVolumeRange &range,
                         CH32RVUsbAudioDirection direction = CH32RVUsbAudioDirection::Playback,
                         uint8_t channel = 0) const;
-    /* What the host changed, oldest first; 8 are kept, more are dropped. */
+    /* What the host changed, oldest first; eventCapacity() are kept, more are dropped. */
     bool pollEvent(CH32RVUsbAudioEvent &event);
     size_t pendingEvents() const;
     uint32_t droppedEvents() const;
@@ -215,6 +247,9 @@ private:
     };
 
     bool addFormat(CH32RVUsbAudioDirection direction, const CH32RVUsbAudioFormat &format);
+    bool clearFormat(CH32RVUsbAudioDirection direction);
+    /* The ring for a stream: the sketch's or the class's, and how deep. */
+    bool ring(uint8_t i, uint16_t packet, uint8_t *&buffer, uint16_t &depth) const;
     /* A stream, and a format on each stream added (begin()). */
     bool describable() const;
     Stream *stream(CH32RVUsbAudioDirection direction);
@@ -256,6 +291,7 @@ private:
     mutable Stream _streams[2];          /* [0] playback, [1] capture */
     mutable uint8_t _controlInterface = 0;
     uint32_t _sampleRate = 0;
+    CH32RVUsbAudioConfig _config;
     CH32RVUsbAudioEvent _events[8];
     volatile uint8_t _eventHead = 0;
     volatile uint8_t _eventTail = 0;
@@ -265,8 +301,9 @@ private:
      * write(), four packets deep, and the packet in flight. Transfers
      * finish in ch32rv_usb_task(), the sketch's own thread. */
     static constexpr uint16_t FIFO_SIZE = 4 * CH32RV_USB_MAX_PACKET;
-    uint8_t _rxFifo[FIFO_SIZE];
-    uint8_t _txFifo[FIFO_SIZE];
+    uint8_t _rxStore[FIFO_SIZE];
+    uint8_t _txStore[FIFO_SIZE];
+    uint8_t *_rxFifo = _rxStore, *_txFifo = _txStore;
     uint8_t _rxPacket[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
     uint8_t _txPacket[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
     uint8_t _feedback[4] __attribute__((aligned(4)));
