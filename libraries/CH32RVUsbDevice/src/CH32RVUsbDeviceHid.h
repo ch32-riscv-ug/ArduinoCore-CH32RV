@@ -37,6 +37,13 @@ public:
         (void)reportId, (void)reportType, (void)data, (void)length;
     }
     virtual void onHidSetProtocol(uint8_t protocol) { (void)protocol; }
+    /* GET_REPORT: the class's current report of `reportType` (1 input, 3
+     * feature) without the report ID, into `out`; its length, 0 to stall. */
+    virtual uint16_t hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const
+    {
+        (void)reportType, (void)out, (void)capacity;
+        return 0;
+    }
     virtual void onBusAttached() {}
     virtual void onBusDetached() {}
     /* From deliverEvents(): run the sketch's callbacks for what the hooks
@@ -94,8 +101,9 @@ public:
     uint8_t protocol() const { return _protocol; }
 
     /* N-key rollover, before the device begins: a bitmap of usages 0x00-0xDF
-     * (JIS International / LANG keys included). Default off (6 keys). */
-    void enableNkro(bool enable = true);
+     * (JIS International / LANG keys included). Default off (6 keys). False
+     * once the device has begun (the report descriptor would change). */
+    bool enableNkro(bool enable = true);
     bool nkroEnabled() const { return _nkro; }
     /* What the host was last told (NKRO only). */
     const CH32RVUsbDeviceNkroKeyboardReport &heldState() const { return _nkroState; }
@@ -103,6 +111,7 @@ public:
     uint8_t hidReportId() const override { return CH32RV_USB_DEVICE_HID_REPORT_ID_KEYBOARD; }
     const uint8_t *hidReportDescriptor() const override;
     uint16_t hidReportDescriptorLength() const override;
+    uint16_t hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const override;
     uint16_t hidInEndpointSize() const override { return _nkro ? 32 : 8; }
     uint8_t hidBootProtocol() const override { return 1; }
     void onHidSetReport(uint8_t reportId, uint8_t reportType, const uint8_t *data,
@@ -145,6 +154,7 @@ public:
     uint8_t hidReportId() const override { return CH32RV_USB_DEVICE_HID_REPORT_ID_MOUSE; }
     const uint8_t *hidReportDescriptor() const override;
     uint16_t hidReportDescriptorLength() const override;
+    uint16_t hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const override;
     uint16_t hidInEndpointSize() const override { return 8; }
     uint8_t hidBootProtocol() const override { return 2; }
 
@@ -192,6 +202,9 @@ public:
     void setUsage(uint16_t usagePage, uint8_t usage);
 
     bool sendInput(const void *data, size_t length, uint32_t timeoutMs = 100);
+    /* The Feature report GET_REPORT answers from now on (copied; at most
+     * reportSize() bytes). No interrupt report goes out. */
+    bool setFeatureReport(const void *data, size_t length);
     /* From deliverEvents(). One report is kept until then: from the OUT
      * endpoint the next waits in the host; by SET_REPORT (a feature report,
      * or an output report on a composite interface) it is dropped
@@ -205,6 +218,7 @@ public:
     uint8_t hidReportId() const override { return CH32RV_USB_DEVICE_HID_REPORT_ID_VENDOR; }
     const uint8_t *hidReportDescriptor() const override { return _desc; }
     uint16_t hidReportDescriptorLength() const override { return _descLength; }
+    uint16_t hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const override;
     uint16_t hidInEndpointSize() const override;
     bool hidOutEndpoint() const override { return true; }
     void onHidSetReport(uint8_t reportId, uint8_t reportType, const uint8_t *data,
@@ -223,6 +237,8 @@ private:
     ReportCallback _featureCallback = nullptr;
     /* The report waiting for hidDeliver(); _heldLength -1: none. */
     uint8_t _held[CH32RV_USB_MAX_PACKET > 64 ? CH32RV_USB_MAX_PACKET : 64];
+    uint8_t _feature[CH32RV_USB_MAX_PACKET > 64 ? CH32RV_USB_MAX_PACKET : 64] = {};
+    uint16_t _featureLength = 0;
     int16_t _heldLength = -1;
     uint8_t _heldId = 0, _heldType = 0;
     uint32_t _dropped = 0;
@@ -241,6 +257,7 @@ public:
     uint8_t hidReportId() const override { return CH32RV_USB_DEVICE_HID_REPORT_ID_GAMEPAD; }
     const uint8_t *hidReportDescriptor() const override;
     uint16_t hidReportDescriptorLength() const override;
+    uint16_t hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const override;
     uint16_t hidInEndpointSize() const override { return 16; }
 
 private:
@@ -263,6 +280,7 @@ public:
     uint8_t hidReportId() const override { return CH32RV_USB_DEVICE_HID_REPORT_ID_CONSUMER_CONTROL; }
     const uint8_t *hidReportDescriptor() const override;
     uint16_t hidReportDescriptorLength() const override;
+    uint16_t hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const override;
     uint16_t hidInEndpointSize() const override { return 8; }
 
 private:
@@ -284,6 +302,7 @@ public:
     uint8_t hidReportId() const override { return CH32RV_USB_DEVICE_HID_REPORT_ID_SYSTEM_CONTROL; }
     const uint8_t *hidReportDescriptor() const override;
     uint16_t hidReportDescriptorLength() const override;
+    uint16_t hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const override;
     uint16_t hidInEndpointSize() const override { return 8; }
 
 private:

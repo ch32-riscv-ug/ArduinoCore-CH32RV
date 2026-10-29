@@ -179,10 +179,13 @@ public:
 
     /* Every class under its own Report ID, inserted right after its
      * Collection (Application); a Report ID the class declares itself is
-     * replaced, not duplicated (EspUsbDevice::buildDescriptors). */
+     * replaced, not duplicated (EspUsbDevice::buildDescriptors). Each class
+     * sits between Push and Pop, so the global items it sets (units,
+     * physical ranges) do not carry over into the next. */
     bool merge(CH32RVUsbDescriptorWriter &w)
     {
         for (uint8_t i = 0; i < count; i++) {
+            w.u8(0xa4);                             /* Push */
             const uint8_t *src = at(i)->hidReportDescriptor();
             const uint16_t length = at(i)->hidReportDescriptorLength();
             size_t at = 0;
@@ -210,6 +213,7 @@ public:
             if (!written) {
                 return false;                       /* nothing to hang an ID on */
             }
+            w.u8(0xb4);                             /* Pop */
         }
         return true;
     }
@@ -388,8 +392,31 @@ public:
                 dispatch(id, (uint8_t)(s.wValue >> 8), buf, len);
             }
             return true;
-        case HID_GET_REPORT:                     /* optional and rarely used: stall */
-            return false;
+        case HID_GET_REPORT: {                   /* the class's current report (HID 1.11 7.2.1) */
+            if (stage != CH32RVUsbControlStage::Setup) {
+                return true;
+            }
+            const uint8_t id = (uint8_t)s.wValue;
+            CH32RVUsbDeviceHidClass *target = composite() ? nullptr : first;
+            for (uint8_t i = 0; composite() && i < count; i++) {
+                if (idOf(i) == id) {
+                    target = at(i);
+                }
+            }
+            if (!target) {
+                return false;
+            }
+            const uint8_t prefix = target->classReportId() ? 1 : 0;
+            const uint16_t n = target->hidGetReport((uint8_t)(s.wValue >> 8), ctrl + prefix,
+                                                    (uint16_t)(sizeof ctrl - prefix));
+            if (!n) {
+                return false;
+            }
+            if (prefix) {
+                ctrl[0] = target->classReportId();
+            }
+            return device().controlIn(ctrl, (uint16_t)(n + prefix));
+        }
         case HID_SET_IDLE:
             idle = (uint8_t)(s.wValue >> 8);
             return stage != CH32RVUsbControlStage::Setup || device().controlStatus();
@@ -610,6 +637,26 @@ bool CH32RVUsbDeviceHidKeyboard::sendNkroReport(uint32_t timeoutMs)
     return sendHidReport(classReportId(), buffer, sizeof buffer, timeoutMs);
 }
 
+uint16_t CH32RVUsbDeviceHidKeyboard::hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const
+{
+    if (reportType != CH32RV_USB_DEVICE_HID_REPORT_TYPE_INPUT) {
+        return 0;
+    }
+    if (_nkro && _protocol != 0) {
+        if (capacity < 1 + CH32RVUsbDeviceNkroKeyboardReport::BitmapSize) {
+            return 0;
+        }
+        out[0] = _nkroState.modifiers;
+        memcpy(out + 1, _nkroState.bitmap, sizeof _nkroState.bitmap);
+        return (uint16_t)(1 + sizeof _nkroState.bitmap);
+    }
+    if (capacity < sizeof _report) {
+        return 0;
+    }
+    memcpy(out, &_report, sizeof _report);
+    return (uint16_t)sizeof _report;
+}
+
 bool CH32RVUsbDeviceHidKeyboard::pressUsage(uint8_t usage, uint8_t modifiers, uint32_t holdMs)
 {
     (void)holdMs;
@@ -696,12 +743,16 @@ bool CH32RVUsbDeviceHidKeyboard::releaseAll(uint32_t timeoutMs)
     return sendReport(_report, timeoutMs);
 }
 
-void CH32RVUsbDeviceHidKeyboard::enableNkro(bool enable)
+bool CH32RVUsbDeviceHidKeyboard::enableNkro(bool enable)
 {
+    if (device().started()) {
+        return false;
+    }
     _nkro = enable;
     if (!enable) {
         _nkroState.clear();
     }
+    return true;
 }
 
 CH32RVUsbDeviceHidKeyboardOutputReport CH32RVUsbDeviceHidKeyboard::ledState() const
@@ -817,7 +868,20 @@ uint16_t CH32RVUsbDeviceHidMouse::hidReportDescriptorLength() const
 
 bool CH32RVUsbDeviceHidMouse::sendReport(const CH32RVUsbDeviceBootMouseReport &report, uint32_t timeoutMs)
 {
-    return sendHidReport(classReportId(), &report, sizeof report, timeoutMs);
+    /* Under the boot protocol a host reads buttons, x and y: no wheel. */
+    const bool boot = hid && !hid->composite() && hid->protocol == 0;
+    return sendHidReport(classReportId(), &report, boot ? 3 : sizeof report, timeoutMs);
+}
+
+uint16_t CH32RVUsbDeviceHidMouse::hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const
+{
+    if (reportType != CH32RV_USB_DEVICE_HID_REPORT_TYPE_INPUT || capacity < 4) {
+        return 0;
+    }
+    CH32RVUsbDeviceBootMouseReport r;           /* no motion between reports */
+    r.buttons = _buttons;
+    memcpy(out, &r, sizeof r);
+    return (uint16_t)sizeof r;
 }
 
 bool CH32RVUsbDeviceHidMouse::sendState(uint32_t timeoutMs)
@@ -949,6 +1013,28 @@ bool CH32RVUsbDeviceHidVendor::sendInput(const void *data, size_t length, uint32
     return sendHidReport(CH32RV_USB_DEVICE_HID_REPORT_ID_VENDOR, data, length, timeoutMs);
 }
 
+bool CH32RVUsbDeviceHidVendor::setFeatureReport(const void *data, size_t length)
+{
+    if ((!data && length) || length > _reportSize || length > sizeof _feature) {
+        return false;
+    }
+    memcpy(_feature, data, length);
+    _featureLength = (uint16_t)length;
+    return true;
+}
+
+/* Feature: what setFeatureReport() left, zero-filled to the report's size.
+ * Input has no state kept: stalled. */
+uint16_t CH32RVUsbDeviceHidVendor::hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const
+{
+    if (reportType != CH32RV_USB_DEVICE_HID_REPORT_TYPE_FEATURE || capacity < _reportSize) {
+        return 0;
+    }
+    memset(out, 0, _reportSize);
+    memcpy(out, _feature, _featureLength);
+    return _reportSize;
+}
+
 void CH32RVUsbDeviceHidVendor::onHidSetReport(uint8_t reportId, uint8_t reportType, const uint8_t *data,
                                               uint16_t length)
 {
@@ -1028,6 +1114,21 @@ bool CH32RVUsbDeviceHidGamepad::sendReport(const CH32RVUsbDeviceGamepadReport &r
     return sendHidReport(classReportId(), data, sizeof data, timeoutMs);
 }
 
+uint16_t CH32RVUsbDeviceHidGamepad::hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const
+{
+    if (reportType != CH32RV_USB_DEVICE_HID_REPORT_TYPE_INPUT || capacity < 11) {
+        return 0;
+    }
+    const CH32RVUsbDeviceGamepadReport &r = _report;
+    const uint8_t data[11] = {
+        (uint8_t)r.x, (uint8_t)r.y, (uint8_t)r.z, (uint8_t)r.rz, (uint8_t)r.rx, (uint8_t)r.ry, r.hat,
+        (uint8_t)(r.buttons & 0xff), (uint8_t)((r.buttons >> 8) & 0xff),
+        (uint8_t)((r.buttons >> 16) & 0xff), (uint8_t)((r.buttons >> 24) & 0xff),
+    };
+    memcpy(out, data, sizeof data);
+    return (uint16_t)sizeof data;
+}
+
 bool CH32RVUsbDeviceHidGamepad::send(int8_t x, int8_t y, int8_t z, int8_t rz, int8_t rx, int8_t ry,
                                      uint8_t hat, uint32_t buttons, uint32_t timeoutMs)
 {
@@ -1069,6 +1170,16 @@ bool CH32RVUsbDeviceHidConsumerControl::sendUsage(uint16_t usage, uint32_t timeo
     _usage = usage;
     const uint8_t report[2] = {(uint8_t)(usage & 0xff), (uint8_t)(usage >> 8)};
     return sendHidReport(classReportId(), report, sizeof report, timeoutMs);
+}
+
+uint16_t CH32RVUsbDeviceHidConsumerControl::hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const
+{
+    if (reportType != CH32RV_USB_DEVICE_HID_REPORT_TYPE_INPUT || capacity < 2) {
+        return 0;
+    }
+    out[0] = (uint8_t)(_usage & 0xff);
+    out[1] = (uint8_t)(_usage >> 8);
+    return 2;
 }
 
 bool CH32RVUsbDeviceHidConsumerControl::press(uint16_t usage, uint32_t timeoutMs)
@@ -1115,6 +1226,15 @@ bool CH32RVUsbDeviceHidSystemControl::sendUsage(uint8_t usage, uint32_t timeoutM
     /* The usage (0x81..0x83) goes out as the descriptor's selector 1..3; 0 releases. */
     const uint8_t selector = usage ? (uint8_t)(usage - CH32RV_USB_DEVICE_SYSTEM_CONTROL_POWER_OFF + 1) : 0;
     return sendHidReport(classReportId(), &selector, 1, timeoutMs);
+}
+
+uint16_t CH32RVUsbDeviceHidSystemControl::hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const
+{
+    if (reportType != CH32RV_USB_DEVICE_HID_REPORT_TYPE_INPUT || capacity < 1) {
+        return 0;
+    }
+    out[0] = _usage ? (uint8_t)(_usage - CH32RV_USB_DEVICE_SYSTEM_CONTROL_POWER_OFF + 1) : 0;
+    return 1;
 }
 
 bool CH32RVUsbDeviceHidSystemControl::press(uint8_t usage, uint32_t timeoutMs)
