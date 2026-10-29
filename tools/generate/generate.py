@@ -231,7 +231,8 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
-               + "menu.vio18=VIO18 Supply\n")
+               + "menu.vio18=VIO18 Supply\n"
+               + "menu.ramsplit=Flash / RAM Split\n")
 
 # Per-instance menus (ADR draft 0015): AUTO binds in begin(), Disable links
 # nothing, FIX fixes one route at build time. The point is to let a small
@@ -405,6 +406,43 @@ VIO18_MENU = (
     ("1v2", "1.2 V", "-DCH32RV_VIO18_MV=1200"),
 )
 
+
+# The Flash / RAM split of CH32V303/V307/V317 (RM 32.4.6, Table 32-4: USER
+# option byte [7:5]): of the 320 KB of SRAM, how much holds the zero-wait copy
+# of the flash and how much is RAM. Only the parts the RM names have it; the
+# rest keep their own linker script and ignore the menu. The linker script
+# follows the menu, and ch32rv_ramsplit.c sets the chip to match at boot.
+# The size limits are in the menu's entries: arduino-cli reads
+# upload.maximum_size as a number, without expanding {...}. Menus merge in the
+# order of the menu.* lines, so on CH32V303 the menu's limits also stand for
+# CBT6 / RBT6, which have no split - their linker script stays their own and
+# still stops an overflow.
+# (id, label, flash KB, RAM KB, USER value, the USER bits that decide it)
+RAMSPLIT_MENU = (
+    ("256k_64k", "256 KB flash + 64 KB RAM (factory setting)", 256, 64, 0xA0, 0xC0),
+    ("224k_96k", "224 KB flash + 96 KB RAM", 224, 96, 0x60, 0xC0),
+    ("192k_128k", "192 KB flash + 128 KB RAM", 192, 128, 0x20, 0xC0),
+    ("288k_32k", "288 KB flash + 32 KB RAM", 288, 32, 0xE0, 0xE0),
+    ("128k_192k", "128 KB flash + 192 KB RAM (newer lots only)", 128, 192, 0xC0, 0xE0),
+)
+RAMSPLIT_PARTS = ("CH32V303RC", "CH32V303VC", "CH32V307RC", "CH32V307WC", "CH32V307VC",
+                  "CH32V317VC", "CH32V317WC", "CH32V317SC")
+
+
+def ramsplit_part(pn: str) -> bool:
+    return pn.startswith(RAMSPLIT_PARTS)
+
+
+def ramsplit_menu(board: str) -> list[str]:
+    lines = []
+    for key, label, flash, ram, user, mask in RAMSPLIT_MENU:
+        pfx = f"{board}.menu.ramsplit.{key}"
+        lines.append(f"{pfx}={label}")
+        lines.append(f"{pfx}.build.ramsplit_ld={key}")
+        lines.append(f"{pfx}.upload.maximum_size={flash * 1024}")
+        lines.append(f"{pfx}.upload.maximum_data_size={ram * 1024}")
+        lines.append(f"{pfx}.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER={user:#04x}u -DCH32RV_RAMSPLIT_MASK={mask:#04x}u")
+    return lines
 
 def vio18_menu(board: str) -> list[str]:
     lines = []
@@ -3771,16 +3809,27 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
 
     # rows is sorted smallest flash first, so the ANY fallback below lands on
     # the smallest part ch32rv knows - which is what ANY declares.
+    # ANY has the split when every part of the series does (V307, V317; not V303).
+    split_parts = {pn for pn, _, _, _ in entries[1:] if ramsplit_part(pn) and not loadcode}
+    split_any = bool(split_parts) and len(split_parts) == len(entries) - 1
     for pn, label, flash, sram in entries:
         pfx = f"{board}.menu.pnum.{pn}"
+        split = pn in split_parts or (pn == "ANY" and split_any)
         lines.append(f"{pfx}={label}")
         # The part goes to CH32RV_PART_<pn>; ARDUINO_<board> stays the board's
         # (platform.txt), whichever part is picked.
         lines.append(f"{pfx}.build.part={pn}")
-        lines.append(f"{pfx}.build.ldscript={ld_for(flash, sram)}")
-        max_code, max_data = limits(flash, sram)
-        lines.append(f"{pfx}.upload.maximum_size={max_code}")
-        lines.append(f"{pfx}.upload.maximum_data_size={max_data}")
+        if split:
+            # The menu's split: every one of its linker scripts exists for this series.
+            for _, _, f_kb, r_kb, _, _ in RAMSPLIT_MENU:
+                ld_for(f_kb * 1024, r_kb * 1024)
+            lines.append(f"{pfx}.build.ldscript={series.lower()}_{{build.ramsplit_ld}}.ld")
+            lines.append(f"{pfx}.build.ramsplit_defines={{build.ramsplit_user}}")
+        else:
+            lines.append(f"{pfx}.build.ldscript={ld_for(flash, sram)}")
+            max_code, max_data = limits(flash, sram)
+            lines.append(f"{pfx}.upload.maximum_size={max_code}")
+            lines.append(f"{pfx}.upload.maximum_data_size={max_data}")
         # `auto` for a series ch32rv has no name for: see ch32rv_chip().
         known = ch32rv_chip(pn, series, ordered, ch32rv)
         # A series ch32rv has no name for flashes nothing: its own name, which
@@ -3821,6 +3870,9 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines.append("")
     if fam.get("h41x_clock"):
         lines += vio18_menu(board)
+        lines.append("")
+    if split_parts:
+        lines += ramsplit_menu(board)
         lines.append("")
 
     return "\n".join(lines), ld_files

@@ -156,7 +156,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   littlefs の設定（block_cycles、媒体の大きさ）を変えたときの値。
 - [ ] IP（docs/network-stack.ja.md）の残り: V407 / V317 / V208 の実機。V208 / V203RB は CPU Clock の `60MHz (Ethernet, no USB)` を選ぶ。
   V307 のチップのリビジョン 0x20 の回避策。対象の系列の USB デバイスのドライバで NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント（FEATURE_CANDIDATES の NET-03）。
-- [ ] **V307 / V317 の HTTPS のヒープ**（RAM 64 KB で TLS のハンドシェイクが足りない）。`RAM_CODE_MOD`（Flash と RAM の分け方）のメニューが要りそう。ユーザーと決める。
+- [ ] **ヒープとスタックの境**: `_sbrk` は `_heap_end`（スタックの予約 `__stack_size` = 512 B の下）まで伸ばす。V307 の 224 KB + 96 KB で、HTTPS の本文の復号が MAC エラーになった（192 KB + 128 KB では通る。docs/network-stack.ja.md）。スタックの深さを測り、予約を大きくするか、`_sbrk` で今の sp からの余白を見るかを決める。V20x の Flash / RAM の分け方（128/64、144/48、160/32）のメニューも、同じ作りで足せる。
   - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口）。X305 / X315 は X035 と同じ手順を入れた（2026-10-22、ビルドのみ）。
     H41x は試して失敗（docs/usb.ja.md）。V20x / V30x / V103 / L103 / V205 / M030 / V4x7 は BOOT_MODE が無く、BOOT0 の端子だけ。
   - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
