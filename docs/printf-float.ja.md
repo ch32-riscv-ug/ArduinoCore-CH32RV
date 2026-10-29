@@ -50,6 +50,8 @@ newlib を使う選択肢です。parseFloat は、計算が Double なら doubl
 | printf の `%f` | printf の中の小数の処理 | 0.9 / 0.8 / 1.5 KB（小数を使っていなくても、これだけ） | `%f` ありの選択肢で printf を使う。Double の選択肢（`dblf_*`）では soft-double も一緒に入る |
 | parseFloat の整数の計算（`_pi`） | 64 bit の割り算 | 0.8 / 0.4 / 1.5 KB | `_pi` で parseFloat を使う |
 
+soft-float と soft-double の引き算は、コアが足し算で行います（`cores/arduino/ch32rv_softfloat.c`。結果はビット単位で同じ）。上の大きさは、引き算を足し算と別に持っていたときの値です。足し算と引き算の両方を使うスケッチは、float で約 1.2 KB、double で約 2.2 KB（V307 は 3.9 KB）小さくなります。引き算だけを使うスケッチは、float で約 100 B 小さく、double で 50〜120 B 大きくなります。
+
 V003 で、機能を足していったときの実測です。
 
 | スケッチ | `fltf_pi`（既定） | `flt_pi` | `dbl_pd` |
