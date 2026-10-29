@@ -753,6 +753,11 @@ void Core::task()
             }
         }
     }
+    if (configured && !suspended) {
+        for (CH32RVUsbDeviceFunction *f = device->_first; f; f = f->_next) {
+            f->usbPoll();
+        }
+    }
 }
 
 /* main() and delay() call this (Arduino.h weak hook); defining it here means

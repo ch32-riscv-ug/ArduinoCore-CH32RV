@@ -31,6 +31,8 @@
  *   audioout <ms>        S3 AUDIOOUT <ok> <bytes> <byte sum>
  *   video <ms>           S3 VIDEO <frames> <pattern errors> <width> <height>
  *   dfu                  S3 DFU <ok>          (DFU_DETACH to the runtime interface)
+ *   hididle <d> <ms>     S3 HIDIDLE <ok> <vendor input reports in <ms>>  (SET_IDLE
+ *                        duration d x 4 ms, report ID 0, to the HID interface)
  *   reset                S3 RESET             (the counters below start over)
  *
  * Events: S3 CONNECTED <addr> <vid> <pid> <product> / S3 DISCONNECTED <addr>
@@ -346,6 +348,30 @@ static void cmdVideoInfo()
   Serial.printf("S3 VEND_INFO %u\n", (unsigned)n);
 }
 
+static volatile uint32_t hidVendorInputs;
+
+static void cmdHidIdle(char *arg)
+{
+  unsigned duration = 0, ms = 0;
+  sscanf(arg, "%u %u", &duration, &ms);
+  const uint8_t a = firstAddress();
+  EspUsbHostInterfaceInfo itfs[16];
+  const size_t n = usb.getInterfaces(a, itfs, 16);
+  for (size_t i = 0; i < n; i++)
+  {
+    if (itfs[i].interfaceClass == 0x03)
+    {
+      const bool ok = usb.vendorControlTransfer(0x21, 0x0A, (uint16_t)(duration << 8), itfs[i].number, nullptr, 0,
+                                                nullptr, a);
+      const uint32_t before = hidVendorInputs;
+      delay(ms);
+      Serial.printf("S3 HIDIDLE %u %lu\n", ok ? 1 : 0, (unsigned long)(hidVendorInputs - before));
+      return;
+    }
+  }
+  Serial.println("S3 HIDIDLE 0 0");
+}
+
 static void cmdDfu()
 {
   const uint8_t a = firstAddress();
@@ -406,6 +432,7 @@ static void run(char *cmd)
     if (!vendorOpened) vendorOpened = usb.vendorOpen(a);
     cmdVend(arg);
   }
+  else if (!strcmp(cmd, "hididle")) cmdHidIdle(arg);
   else if (!strcmp(cmd, "vreq"))
   {
     char buf[16] = {};
@@ -445,6 +472,7 @@ void setup()
                  { Serial.printf("S3 KEY %c %u %u\n", e.pressed ? 'p' : 'r', e.keycode, e.ascii); });
   usb.onHIDVendorInput([](const EspUsbHostHIDVendorInput &e)
                        {
+                         hidVendorInputs++;
                          Serial.print("S3 HIDVIN ");
                          printHex(e.reportData, e.reportLength);
                          Serial.println(); });

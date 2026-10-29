@@ -259,6 +259,20 @@ public:
         }
     }
 
+    /* The class a report ID belongs to: by ID when merged, the only one otherwise. */
+    CH32RVUsbDeviceHidClass *classOf(uint8_t report_id) const
+    {
+        if (!composite()) {
+            return first;
+        }
+        for (uint8_t i = 0; i < count; i++) {
+            if (idOf(i) == report_id) {
+                return at(i);
+            }
+        }
+        return nullptr;
+    }
+
     bool send(uint8_t report_id, const void *data, size_t length, uint32_t timeoutMs)
     {
         const uint32_t t0 = millis();
@@ -281,13 +295,61 @@ public:
         const size_t room = sizeof in - n;
         const size_t take = length < room ? length : room;
         memcpy(in + n, data, take);
+        inClass = classOf(report_id);
         return device().transfer(epIn, in, (uint16_t)(n + take));
+    }
+
+    /* SET_IDLE: the class's input report again every idle x 4 ms after the
+     * last one went out, its current state (hidGetReport(), which leaves out
+     * relative motion), while the IN endpoint is free. The most overdue goes first. */
+    void usbPoll() override
+    {
+        if (!epIn || device().transferBusy(epIn)) {
+            return;
+        }
+        const uint32_t now = millis();
+        CH32RVUsbDeviceHidClass *due = nullptr;
+        uint32_t late = 0;
+        for (uint8_t i = 0; i < count; i++) {
+            CH32RVUsbDeviceHidClass *c = at(i);
+            const uint32_t since = now - c->_idleFrom;
+            if (c->_idle && since >= c->_idle * 4u && (!due || since - c->_idle * 4u > late)) {
+                due = c;
+                late = since - c->_idle * 4u;
+            }
+        }
+        if (!due) {
+            return;
+        }
+        const uint8_t id = due->classReportId();
+        const uint8_t prefix = id ? 1 : 0;
+        const uint16_t n = due->hidGetReport(1, in + prefix, (uint16_t)(sizeof in - prefix));
+        if (n && prefix) {
+            in[0] = id;
+        }
+        if (n && device().transfer(epIn, in, (uint16_t)(n + prefix))) {
+            inClass = due;
+        } else {
+            due->_idleFrom = now;                /* nothing to send: try a period later */
+        }
+    }
+
+    void setIdle(uint8_t duration, uint8_t report_id)
+    {
+        for (uint8_t i = 0; i < count; i++) {
+            if (report_id == 0 || at(i) == classOf(report_id)) {
+                at(i)->_idle = duration;
+                at(i)->_idleFrom = millis();
+            }
+        }
     }
 
     /* ------------------------------------------------ the stack's side */
     void usbReset() override
     {
         outHeld = false;
+        inClass = nullptr;
+        setIdle(0, 0);
         for (uint8_t i = 0; i < count; i++) {
             at(i)->onBusDetached();
         }
@@ -313,7 +375,7 @@ public:
     void usbConfigured(CH32RVUsbSpeed) override
     {
         protocol = 1;                            /* report protocol after a configuration */
-        idle = 0;
+        setIdle(0, 0);
         outHeld = false;
         /* Each OUT transfer asks for the longest report: one that is a whole
          * number of packets then ends the transfer by its length. */
@@ -336,6 +398,13 @@ public:
 
     void usbTransferred(uint8_t address, uint16_t length) override
     {
+        if (address == epIn) {
+            if (inClass) {
+                inClass->_idleFrom = millis();   /* the idle period runs from here */
+                inClass = nullptr;
+            }
+            return;
+        }
         if (address == epOut) {
             dispatch(0, 2, out, length);         /* an output report */
             if (holding()) {
@@ -418,10 +487,23 @@ public:
             return device().controlIn(ctrl, (uint16_t)(n + prefix));
         }
         case HID_SET_IDLE:
-            idle = (uint8_t)(s.wValue >> 8);
-            return stage != CH32RVUsbControlStage::Setup || device().controlStatus();
-        case HID_GET_IDLE:
-            return stage != CH32RVUsbControlStage::Setup || device().controlIn(&idle, 1);
+            /* Duration in the high byte, the report ID (0: all) in the low. */
+            if ((uint8_t)s.wValue && !classOf((uint8_t)s.wValue)) {
+                return false;
+            }
+            if (stage == CH32RVUsbControlStage::Setup) {
+                setIdle((uint8_t)(s.wValue >> 8), (uint8_t)s.wValue);
+                return device().controlStatus();
+            }
+            return true;
+        case HID_GET_IDLE: {
+            const CH32RVUsbDeviceHidClass *c = classOf((uint8_t)s.wValue);
+            if (!c && (uint8_t)s.wValue) {
+                return false;
+            }
+            ctrl[0] = c ? c->_idle : first ? first->_idle : 0;
+            return stage != CH32RVUsbControlStage::Setup || device().controlIn(ctrl, 1);
+        }
         case HID_SET_PROTOCOL:
             if (stage == CH32RVUsbControlStage::Setup) {
                 return device().controlStatus();
@@ -443,7 +525,8 @@ public:
     uint8_t count = 0;
     uint8_t hidDescriptor[9] = {9, 0x21, 0x11, 0x01, 0, 1, 0x22, 0, 0};
     uint8_t epIn = 0, epOut = 0;
-    uint8_t idle = 0, protocol = 1;
+    uint8_t protocol = 1;
+    CH32RVUsbDeviceHidClass *inClass = nullptr;  /* whose report the IN transfer in flight is */
     uint16_t outLength = 64;
     bool outHeld = false;                        /* OUT not re-armed: a class holds a report */
     uint8_t in[HID_EP_SIZE], out[HID_EP_SIZE], ctrl[HID_EP_SIZE];
@@ -1007,10 +1090,15 @@ uint16_t CH32RVUsbDeviceHidVendor::hidInEndpointSize() const
 
 bool CH32RVUsbDeviceHidVendor::sendInput(const void *data, size_t length, uint32_t timeoutMs)
 {
-    if (length > _reportSize) {
+    if (length > _reportSize || (!data && length)) {
         return false;
     }
-    return sendHidReport(CH32RV_USB_DEVICE_HID_REPORT_ID_VENDOR, data, length, timeoutMs);
+    if (!sendHidReport(CH32RV_USB_DEVICE_HID_REPORT_ID_VENDOR, data, length, timeoutMs)) {
+        return false;
+    }
+    memcpy(_input, data, length);
+    _inputLength = (uint16_t)length;
+    return true;
 }
 
 bool CH32RVUsbDeviceHidVendor::setFeatureReport(const void *data, size_t length)
@@ -1027,11 +1115,12 @@ bool CH32RVUsbDeviceHidVendor::setFeatureReport(const void *data, size_t length)
  * Input has no state kept: stalled. */
 uint16_t CH32RVUsbDeviceHidVendor::hidGetReport(uint8_t reportType, uint8_t *out, uint16_t capacity) const
 {
-    if (reportType != CH32RV_USB_DEVICE_HID_REPORT_TYPE_FEATURE || capacity < _reportSize) {
+    const bool input = reportType == CH32RV_USB_DEVICE_HID_REPORT_TYPE_INPUT;
+    if ((!input && reportType != CH32RV_USB_DEVICE_HID_REPORT_TYPE_FEATURE) || capacity < _reportSize) {
         return 0;
     }
     memset(out, 0, _reportSize);
-    memcpy(out, _feature, _featureLength);
+    memcpy(out, input ? _input : _feature, input ? _inputLength : _featureLength);
     return _reportSize;
 }
 
@@ -1081,6 +1170,7 @@ size_t CH32RVUsbDeviceHidVendor::hidDeliver()
 
 void CH32RVUsbDeviceHidVendor::onBusDetached()
 {
+    _inputLength = 0;                            /* back to neutral, as the other classes */
     if (_heldLength >= 0) {
         _heldLength = -1;
         hid_held--;

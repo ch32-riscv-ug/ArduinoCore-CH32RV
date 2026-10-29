@@ -316,6 +316,9 @@ protected:
     }
     /* The host cleared a halt on one of its endpoints (data toggle back to DATA0). */
     virtual void usbHaltCleared(uint8_t address) { (void)address; }
+    /* Each time the stack runs while the device is configured and awake:
+     * timed work (HID's idle reports). */
+    virtual void usbPoll() {}
     /* For deliverEvents() (ch32rv_deliver.h), outside the stack: the function
      * that runs the sketch's notification callbacks for what the hooks above
      * recorded, returning how many ran. A class names it when the sketch

@@ -43,6 +43,13 @@ def test_usb_peer_device(dut, peers, record_property):
     dut.expect_exact("KEYS 1", timeout=5)
     assert command(s3, "leds 3", rb"LEDS (\d)").group(1) == b"1"
 
+    # SET_IDLE 100 ms (report ID 0: every report): the vendor HID's last input
+    # report comes again about ten times a second; idle 0 stops it.
+    m = command(s3, "hididle 25 1000", rb"HIDIDLE (\d) (\d+)", timeout=10)
+    assert m.group(1) == b"1" and 7 <= int(m.group(2)) <= 12
+    m = command(s3, "hididle 0 500", rb"HIDIDLE (\d) (\d+)", timeout=10)
+    assert m.group(1) == b"1" and int(m.group(2)) <= 1
+
     # MIDI: note 64 comes back as note 76.
     command(s3, "midi 0 64 127", rb"MIDI_SENT 1")
     s3.expect(rb"S3 MIDI 9 90 76 127", timeout=5)

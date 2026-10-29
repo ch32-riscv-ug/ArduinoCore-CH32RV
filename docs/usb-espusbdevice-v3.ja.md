@@ -16,7 +16,7 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | 借用転送の型 | `CH32RVUsbTransferSubmission`、`CH32RVUsbTransferResult`、`CH32RVUsbTransferStatus`、`CH32RVUsbTransferError`、`CH32RVUsbTransferTermination` |
 | Vendor | `writeDirect()` は Submission を返し、終端（ZLP）を選べる。借用した配列は `onDirectTxComplete()` で必ず 1 回返す（成功、`BusReset`、`Stopped`、`Cancelled`）。受信の `rxMode`（Stream / Callback / Borrowed / Disabled）、`readDirect()`、`onDirectRxComplete()`、`maxDirectReceive()`、`cancelDirectTx()` / `cancelDirectRx()`。1 回の借用転送の 65535 バイトの上限を外した（`maxDirectTransfer()`）。Print の `availableForWrite()` を実際の空きにした。制御要求に `actualBytes` |
 | CDC と Vendor | `configure(CH32RVUsbBulkStreamConfig)`（rxCapacity / txCapacity / rxBuffer / txBuffer / streamTermination）。`readCapacity()` / `writeCapacity()` はインスタンスごと。`waitWritable()` は容量を超える要求を断る。Vendor の既定の終端は Continue（ZLP なし）。CDC の `lineCoding()` は値で返す |
-| HID | System Control は usage 0x81〜0x83 で受け、記述子の selector 1..3 で送る。Gamepad の hat に Null を付けた。GET_REPORT に答え、HidVendor に `setFeatureReport()`。合成記述子はクラスごとに Push / Pop。boot protocol のマウスは 3 バイト。HidVendor の長すぎる送信は断る |
+| HID | System Control は usage 0x81〜0x83 で受け、記述子の selector 1..3 で送る。Gamepad の hat に Null を付けた。GET_REPORT に答え、HidVendor に `setFeatureReport()`。合成記述子はクラスごとに Push / Pop。boot protocol のマウスは 3 バイト。HidVendor の長すぎる送信は断る。SET_IDLE は report ID ごとに持ち（ID 0 は全部）、周期ごとに今の入力レポートを送り直す（前の送信が終わった時から数える。マウスの移動量は送り直さない）。GET_IDLE は ID ごと。HidVendor も最後に送った入力レポートを GET_REPORT で返す |
 | MIDI | ケーブル数の範囲外は `begin()` を失敗させる。送信の cable と CIN を検査し、受信の不正を `receiveErrors()` で数える。`availablePackets()` / `availableForWritePackets()`。`configure(CH32RVUsbMidiConfig)`（ケーブル数、名前、rxPackets / txPackets とスケッチの配列、transferPackets、rxMode の Queue / Callback / Disabled、autoFlush、streamTermination）、`onPacket()`、`flush()`、`receiveCapacity()` / `sendCapacity()` / `transferCapacity()`。受信のキューが 1 パケットより小さくても受けられる |
 | MSC | `onWrite()` が無ければ読み出し専用。LBA の範囲外は ILLEGAL REQUEST。読み書きの関数の戻り値は要求どおりでなければエラー。VERIFY(10) |
 | CCID | `configure(CH32RVUsbCcidConfig)`（messageBytes、removable）。removable false で通知の端点を省く。`removeCard()` は bool |
@@ -41,7 +41,8 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | Video の既定は Bulk | FS の isochronous は 62 KB/s しか出ない（3 章の 3 も見る） |
 | CDC の `write()` は空くまで待つ（上限 `setTxTimeoutMs()`、既定 1000 ms）、`flush()` は送り終えるまで待つ | Arduino の Serial と同じ意味（3 章の 1） |
 | Audio の再生のリングがあふれたら古い方を捨てる | 遅れの上限を保つ（3 章の 2） |
-| まだ入れていないもの | CDC の借用転送、Audio の複数の rate、NCM の容量の設定、HID の idle での再送、DFU の Download |
+| HidVendor の GET_REPORT は reportSize まで 0 で埋めて返す（v3 は送った長さのまま） | report の長さは記述子で決まっている |
+| まだ入れていないもの | CDC の借用転送、Audio の複数の rate、NCM の容量の設定、DFU の Download |
 
 ## 3. ESP 側への修正依頼の候補
 

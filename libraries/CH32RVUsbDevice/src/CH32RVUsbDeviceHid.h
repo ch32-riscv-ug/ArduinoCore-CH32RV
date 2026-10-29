@@ -63,6 +63,8 @@ protected:
 private:
     friend class HidInterface;
     CH32RVUsbDeviceHidClass *_hidNext = nullptr;   /* the shared interface's next class */
+    uint8_t _idle = 0;               /* SET_IDLE for its report, in 4 ms; 0: none */
+    uint32_t _idleFrom = 0;          /* its last input report went out */
 };
 
 /* ---------------------------------------------------------- keyboard */
@@ -201,6 +203,8 @@ public:
      * 0xFF4F / 0x45. Before begin(). */
     void setUsage(uint16_t usagePage, uint8_t usage);
 
+    /* GET_REPORT (Input) and the host's idle repeat answer with the last
+     * report sent, zero-filled to reportSize(). */
     bool sendInput(const void *data, size_t length, uint32_t timeoutMs = 100);
     /* The Feature report GET_REPORT answers from now on (copied; at most
      * reportSize() bytes). No interrupt report goes out. */
@@ -239,6 +243,9 @@ private:
     uint8_t _held[CH32RV_USB_MAX_PACKET > 64 ? CH32RV_USB_MAX_PACKET : 64];
     uint8_t _feature[CH32RV_USB_MAX_PACKET > 64 ? CH32RV_USB_MAX_PACKET : 64] = {};
     uint16_t _featureLength = 0;
+    /* The last input report sendInput() handed over: GET_REPORT and the idle repeat. */
+    uint8_t _input[CH32RV_USB_MAX_PACKET > 64 ? CH32RV_USB_MAX_PACKET : 64] = {};
+    uint16_t _inputLength = 0;
     int16_t _heldLength = -1;
     uint8_t _heldId = 0, _heldType = 0;
     uint32_t _dropped = 0;
