@@ -105,8 +105,23 @@ int main(void)
     IS("0x0", "%p", (void *)0);
 
     /* What this does not do prints as written, and the arguments after it still line up. */
-    IS("a %lld b 7", "a %lld b %d", 5LL, 7);
-    IS("%llx|9", "%llx|%d", 0x123456789abcLL, 9);
+    /* 64 bits */
+    static const long long llvalues[] = {0, 1, -1, 4294967295LL, 4294967296LL, -4294967296LL, 1761700000LL,
+                                         0x123456789abcLL, 9223372036854775807LL, -9223372036854775807LL - 1};
+    for (size_t i = 0; i < sizeof llvalues / sizeof llvalues[0]; i++) {
+        const long long v = llvalues[i];
+        SAME("%lld|%lli|%+lld|%25lld|%-22lld|%.21lld|% lld|%jd", v, v, v, v, v, v, v, (intmax_t)v);
+        SAME("%llu|%llx|%llX|%#llx|%llo|%#llo|%020llu", (unsigned long long)v, (unsigned long long)v,
+             (unsigned long long)v, (unsigned long long)v, (unsigned long long)v, (unsigned long long)v,
+             (unsigned long long)v);
+    }
+    uint64_t x = 88172645463325252ull; /* xorshift: values of every length */
+    for (int i = 0; i < 2000; i++) {
+        x ^= x << 13, x ^= x >> 7, x ^= x << 17;
+        const uint64_t v = x >> (i % 64);
+        SAME("%lld|%llu|%llx|%llo", (long long)v, (unsigned long long)v, (unsigned long long)v, (unsigned long long)v);
+    }
+    SAME("a %lld b %d", 5LL, 7);
     IS("%e|8", "%e|%d", 1.5, 8);
     IS("%.3g %G 5", "%.3g %G %d", 1.5, 2.5, 5);
     IS("%a 6", "%a %d", 1.0, 6);

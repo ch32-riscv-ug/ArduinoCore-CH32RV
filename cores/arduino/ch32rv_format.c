@@ -254,6 +254,18 @@ static int number(const char **f)
     return n;
 }
 
+/* (hi:lo) /= base, returning the remainder: on one word while the value fits, else 16 bits at a time,
+ * so %lld needs no 64-bit division or shift from libgcc. */
+static unsigned divide(uint32_t *hi, uint32_t *lo, unsigned base)
+{
+    const uint32_t h = *hi;
+    *hi = h / base;
+    const uint32_t up = (h % base) << 16 | *lo >> 16;
+    const uint32_t down = (up % base) << 16 | (*lo & 0xffff);
+    *lo = (up / base) << 16 | down / base;
+    return down % base;
+}
+
 size_t ch32rv_vformat(ch32rv_sink_fn sink, void *ctx, const char *f, va_list ap)
 {
     struct out o = {sink, ctx, 0};
@@ -334,24 +346,33 @@ size_t ch32rv_vformat(ch32rv_sink_fn sink, void *ctx, const char *f, va_list ap)
         case 'x':
         case 'X':
         case 'p': {
-            if (l >= 2) { /* 64 bits: taken off the list so what follows lines up, then shown as written */
-                (void)va_arg(ap, long long);
-                raw = true;
-                break;
-            }
             char pre[2];
             size_t npre = 0;
-            unsigned long u;
-            unsigned base = 10;
-            if (c == 'd' || c == 'i') {
-                long v = l ? va_arg(ap, long) : va_arg(ap, int);
+            const bool sign = c == 'd' || c == 'i';
+            uint32_t hi = 0, lo;
+            if (c == 'p') {
+                lo = (uint32_t)(uintptr_t)va_arg(ap, void *);
+                flags |= FMT_ALT;
+            } else if (l >= 2 || (l && sizeof(long) > sizeof(uint32_t))) { /* long is 64 bits on the host */
+                const unsigned long long v = l >= 2 ? va_arg(ap, unsigned long long) : va_arg(ap, unsigned long);
+                lo = (uint32_t)v;
+                hi = (uint32_t)(v >> 32);
+            } else {
+                lo = va_arg(ap, unsigned);
                 if (h == 1) {
-                    v = (short)v;
+                    lo = sign ? (uint32_t)(short)lo : (unsigned short)lo;
                 } else if (h >= 2) {
-                    v = (signed char)v;
+                    lo = sign ? (uint32_t)(signed char)lo : (unsigned char)lo;
                 }
-                u = v < 0 ? 0ul - (unsigned long)v : (unsigned long)v;
-                if (v < 0) {
+                if (sign) {
+                    hi = (uint32_t)((int32_t)lo >> 31);
+                }
+            }
+            unsigned base = 10;
+            if (sign) {
+                if ((int32_t)hi < 0) {
+                    lo = 0u - lo;
+                    hi = ~hi + !lo;
                     pre[npre++] = '-';
                 } else if (flags & CH32RV_FMT_PLUS) {
                     pre[npre++] = '+';
@@ -359,31 +380,19 @@ size_t ch32rv_vformat(ch32rv_sink_fn sink, void *ctx, const char *f, va_list ap)
                     pre[npre++] = ' ';
                 }
             } else {
-                if (c == 'p') {
-                    u = (unsigned long)(uintptr_t)va_arg(ap, void *);
-                    flags |= FMT_ALT;
-                } else {
-                    u = l ? va_arg(ap, unsigned long) : va_arg(ap, unsigned);
-                    if (h == 1) {
-                        u = (unsigned short)u;
-                    } else if (h >= 2) {
-                        u = (unsigned char)u;
-                    }
-                }
                 base = c == 'o' ? 8u : (c == 'u' ? 10u : 16u);
-                if ((flags & FMT_ALT) && base == 16u && (u || c == 'p')) {
+                if ((flags & FMT_ALT) && base == 16u && (hi | lo || c == 'p')) {
                     pre[npre++] = '0';
                     pre[npre++] = c == 'X' ? 'X' : 'x';
                 }
             }
             const char *digits = c == 'X' ? "0123456789ABCDEF" : "0123456789abcdef";
-            char buf[sizeof(unsigned long) * 8 / 3 + 2];
+            char buf[sizeof(unsigned long long) * 8 / 3 + 2];
             char *p = buf + sizeof buf;
-            if (u || prec != 0) {
+            if (hi | lo || prec != 0) {
                 do {
-                    *--p = digits[u % base];
-                    u /= base;
-                } while (u);
+                    *--p = digits[divide(&hi, &lo, base)];
+                } while (hi | lo);
             }
             const int n = (int)(buf + sizeof buf - p);
             int zeros = prec > n ? prec - n : 0;

@@ -7,8 +7,8 @@
  *                       the way AVR's 32-bit double prints; 0: double
  *   CH32RV_PRINTF_FLOAT 1: printf's %f / %F; 0: %f prints its own text
  *                       ("%.2f") and links no floating point at all
- * Conversions this does not do (%e %g %a, long long, %n) print their own
- * text too, so nothing is dropped silently. */
+ * Conversions this does not do (%e %g %a, %n) print their own text too, so
+ * nothing is dropped silently. */
 #pragma once
 
 #include <stdarg.h>
@@ -28,7 +28,7 @@ extern "C" {
 typedef void (*ch32rv_sink_fn)(void *ctx, const char *s, size_t n);
 
 /* printf's conversions: %[flags - 0 + space #][width|*][.precision|*]
- * [hh h l z t] d i u o x X c s p %, and %f %F with CH32RV_PRINTF_FLOAT.
+ * [hh h l ll j z t] d i u o x X c s p %, and %f %F with CH32RV_PRINTF_FLOAT.
  * Returns the characters produced. */
 size_t ch32rv_vformat(ch32rv_sink_fn sink, void *ctx, const char *format, va_list ap);
 
