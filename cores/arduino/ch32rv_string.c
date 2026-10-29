@@ -4,7 +4,11 @@
  * V3F that is 9-10 MB/s for memcpy against 72 MB/s for a word loop (32 KB,
  * measured 2026-10-21), and every USB class, Print and String goes through
  * them. Defined here, they take the place of the library's: the linker only
- * pulls an archive member for a symbol still undefined.
+ * pulls an archive member for a symbol still undefined. One function to a
+ * file (memmove and memset in ch32rv_memmove.c, ch32rv_memset.c): a libc
+ * object can pull in libc's memcpy before LTO's code calls the core's memset
+ * (setenv(), then a struct cleared with = {}), and an object holding both
+ * would then define memcpy a second time.
  *
  * No part here is relied on to take a misaligned word access: when source and
  * destination are aligned differently, memcpy reads aligned source words and
@@ -18,7 +22,7 @@
 
 #ifndef __riscv_32e
 
-#define CH32RV_STRING_FN __attribute__((optimize("no-tree-loop-distribute-patterns")))
+#include "ch32rv_string.h"
 
 CH32RV_STRING_FN void *memcpy(void *restrict dst, const void *restrict src, size_t n)
 {
@@ -69,64 +73,6 @@ CH32RV_STRING_FN void *memcpy(void *restrict dst, const void *restrict src, size
     }
     while (n--) {
         *d++ = *s++;
-    }
-    return dst;
-}
-
-CH32RV_STRING_FN void *memmove(void *dst, const void *src, size_t n)
-{
-    uint8_t *d = (uint8_t *)dst;
-    const uint8_t *s = (const uint8_t *)src;
-    if (d == s || n == 0u) {
-        return dst;
-    }
-    if (d < s || d >= s + n) {
-        /* Forward is safe: every read is at or ahead of the write. */
-        return memcpy(dst, src, n);
-    }
-    /* Overlapping with the destination above: from the end down. */
-    d += n;
-    s += n;
-    if (n >= 8u && (((uintptr_t)d ^ (uintptr_t)s) & 3u) == 0u) {
-        while ((uintptr_t)d & 3u) {
-            *--d = *--s;
-            n--;
-        }
-        uint32_t *dw = (uint32_t *)(void *)d;
-        const uint32_t *sw = (const uint32_t *)(const void *)s;
-        while (n >= 4u) {
-            *--dw = *--sw;
-            n -= 4u;
-        }
-        d = (uint8_t *)dw;
-        s = (const uint8_t *)sw;
-    }
-    while (n--) {
-        *--d = *--s;
-    }
-    return dst;
-}
-
-CH32RV_STRING_FN void *memset(void *dst, int c, size_t n)
-{
-    uint8_t *d = (uint8_t *)dst;
-    const uint8_t v = (uint8_t)c;
-    if (n >= 8u) {
-        while ((uintptr_t)d & 3u) {
-            *d++ = v;
-            n--;
-        }
-        uint32_t w = (uint32_t)v | ((uint32_t)v << 8);     /* no multiply: V00x has none */
-        w |= w << 16;
-        uint32_t *dw = (uint32_t *)(void *)d;
-        while (n >= 4u) {
-            *dw++ = w;
-            n -= 4u;
-        }
-        d = (uint8_t *)dw;
-    }
-    while (n--) {
-        *d++ = v;
     }
     return dst;
 }

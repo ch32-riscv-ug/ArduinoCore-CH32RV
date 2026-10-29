@@ -1,4 +1,5 @@
-"""The core's word-at-a-time memcpy / memmove / memset (cores/arduino/ch32rv_string.c), on the host.
+"""The core's word-at-a-time memcpy / memmove / memset (cores/arduino/ch32rv_string.c, ch32rv_memmove.c,
+ch32rv_memset.c), on the host.
 
 Built with the host compiler under other names (the host's libc keeps its own), called through
 ctypes, and compared with what Python's bytes say the result must be, over every length to 70,
@@ -12,7 +13,7 @@ import subprocess
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-SRC = REPO / "cores/arduino/ch32rv_string.c"
+SRCS = [REPO / "cores/arduino" / name for name in ("ch32rv_string.c", "ch32rv_memmove.c", "ch32rv_memset.c")]
 
 
 @pytest.fixture(scope="module")
@@ -22,7 +23,7 @@ def lib(tmp_path_factory):
         pytest.skip("no host C compiler")
     out = tmp_path_factory.mktemp("ch32rv_string") / "ch32rv_string.so"
     subprocess.run([cc, "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-fno-builtin", "-shared", "-fPIC",
-                    "-Dmemcpy=t_memcpy", "-Dmemmove=t_memmove", "-Dmemset=t_memset", str(SRC), "-o", str(out)],
+                    "-Dmemcpy=t_memcpy", "-Dmemmove=t_memmove", "-Dmemset=t_memset", *map(str, SRCS), "-o", str(out)],
                    check=True)
     lib = ctypes.CDLL(str(out))
     for name in ("t_memcpy", "t_memmove"):
