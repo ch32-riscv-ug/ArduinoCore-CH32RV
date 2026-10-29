@@ -53,6 +53,7 @@ printf の系統（`Serial.printf`、`printf`、`sprintf`、`snprintf`）、`Ser
 既定（`fltf_pi`）は AVR と同じく float で計算し、printf の `%f` も出します。double で計算するより、FPU のない系列で数 KB、V30x・X3x5・H41x で十数 KB 小さくなります。
 15 桁の精度が要るとき（GPS の緯度経度など）は `dbl_*` / `dblf_*` を選びます。小数を使わずに printf を使うときは、`%f` なしの `flt_*` で約 0.9 KB（FPU のある系列で 1.5 KB）小さくなります。FPU のない系列では、小数の表示に soft-float を使いません（float の計算を値のビットに対して行います）。
 小数も printf も使わなければ、どの選択肢でも大きさは同じです。
+`strftime()`、`gmtime_r()`、`localtime_r()`、`tzset()` もコアのもので、newlib のものより 2〜10 KB 小さくなります（出す文字は同じです）。
 `Serial.parseFloat()` の計算は、double（`_pd`：いちばん近い float）、整数（`_pi`：11 桁までいちばん近い float、double の計算なし）、float（`_ps`：いちばん小さいが、最後の 1 ビットがずれることがある）から選べます。
 選択肢と費用、C との違いは [printf と浮動小数](docs/printf-float.ja.md) にあります。
 

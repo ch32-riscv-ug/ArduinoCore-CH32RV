@@ -1,6 +1,6 @@
 # printf と浮動小数
 
-`Serial.printf()`、`printf()`、`sprintf()` / `snprintf()` と、`Serial.print(float)`、`String(float)`、`dtostrf()` の書式化、それに `Serial.parseFloat()` の読み取りについて説明します。書式化はコア（`cores/arduino/ch32rv_format.c`）で、読み取りの計算もコア（`cores/arduino/ch32rv_parse_float.h`）で動きます。浮動小数の扱いは **Floating Point** のメニュー（`rtlib`）で選びます。
+`Serial.printf()`、`printf()`、`sprintf()` / `snprintf()` と、`Serial.print(float)`、`String(float)`、`dtostrf()` の書式化、`Serial.parseFloat()` の読み取り、それに `strftime()` などの時刻の関数について説明します。書式化はコア（`cores/arduino/ch32rv_format.c`）で、読み取りの計算もコア（`cores/arduino/ch32rv_parse_float.h`）で動きます。浮動小数の扱いは **Floating Point** のメニュー（`rtlib`）で選びます。
 
 ## Floating Point のメニュー
 
@@ -140,9 +140,11 @@ FPU のない系列では、スケッチによって 2 番目と 3 番目の一�
 - **フラグ**：`-` `0` `+` 空白 `#`
 - **幅と精度**：数字か `*`
   - 精度は、整数なら最低の桁数（`%.5d` → `00042`）、文字列なら最大の文字数（`%.3s`）、`%f` なら小数点以下の桁数です。
-- **長さ**：`hh h l z t`
+- **長さ**：`hh h l ll j z t`
+  - `%lld`、`%llu`、`%llx` などの 64 bit は、libgcc の 64 bit の割り算を使わずに、32 bit の割り算で 16 bit ずつ出します。printf を使うスケッチは、使わなくても V003 で約 50 B 増えます（X035 は約 25 B）。
+  - そのかわり、printf の数字は 1 桁ごとに割り算が 4 回になり、以前より遅くなります。`Serial.print(int)` は別の処理なので変わりません。
 
-出せないもの（`%e %g %a`、`%lld` などの 64 bit、`%n`）は、**書式の文字列のまま**出します。黙って捨てることはしません。そのあとの引数もずれません（newlib-nano の `%lld` は、後ろの値を読み違えていました）。
+出せないもの（`%e %g %a`、`%n`）は、**書式の文字列のまま**出します。黙って捨てることはしません。そのあとの引数もずれません。
 
 ### C の printf との違い
 
@@ -151,7 +153,7 @@ FPU のない系列では、スケッチによって 2 番目と 3 番目の一�
 - **`nan` と `inf`**：`%f` では、`nan`、`inf`、`-inf` を出します。`Serial.print` では、今までどおり符号なしの `nan`、`inf` です。
 - **newlib の中から呼ばれる printf**：`strftime()`、`asctime()`、`strsignal()` は、newlib の `sniprintf` / `siprintf` を呼びます。コアはこの名前（と `iprintf`、`viprintf`、`vsniprintf`、`vsiprintf`）も定義しているので、これらもコアの書式化で動きます。
   - コアの名前と newlib の名前がぶつかって、リンクに失敗することはありません。
-  - `strftime()` の書式は `%s`（1970 年からの秒数）だけが `%lld` を使うので、`%lld` と出ます。ほかの書式は newlib と同じ文字を出します。
+  - `strftime()` はコアにあります（次の節）。
 
 ### スタックと出力のしかた
 
@@ -162,6 +164,37 @@ FPU のない系列では、スケッチによって 2 番目と 3 番目の一�
   - `fputs()`、`fwrite()`、`fprintf()` で `stdout` に書くものは newlib のまま（行ごとのバッファ）です。同じ行で混ぜると、順番が入れ替わることがあります。
 - **newlib の選択肢では**、printf の系統は newlib のものに戻ります。
 
+## 時刻の関数
+
+`strftime()`、`gmtime_r()`、`gmtime()`、`localtime_r()`、`localtime()`、`tzset()` は、コアのものを使います（`cores/arduino/ch32rv_strftime.c`、`ch32rv_gmtime.c`、`ch32rv_localtime.c`、`ch32rv_tzset.c`）。出す文字と結果は newlib 4.5 と同じです。`mktime()`、`time()`、`ctime()` などは newlib のままです。
+
+newlib のものでは、次のものが一緒に入っていました。
+
+- `strftime()`：newlib の printf と、TZ を読むための sscanf と malloc
+- `gmtime_r()`：64 bit の割り算（RV32 で 1.9 KB）
+- `tzset()`：sscanf と malloc（`localtime_r()` と `configTzTime()` が呼びます）
+
+コアのものは、これらを使いません。
+
+| スケッチ（Float + printf %f） | 系列 | newlib | コア |
+|---|---|---|---|
+| `gmtime_r()` の結果を `Serial.print` | V003 | 5640 | 2960 |
+| | X035 | 5384 | 3208 |
+| `gmtime_r()` と `strftime("%F %T %s")` | V003 | 入らない | 8384 |
+| | X035 | 17900 | 8312 |
+| `setenv("TZ")`、`tzset()`、`localtime_r()`、`strftime("%F %T %Z %z")` | V003 | 入らない | 12576 |
+| | X035 | 18884 | 12364 |
+| 例 NetworkTime | V307 | 61060 | 54636 |
+
+使い方は C の標準どおりです。newlib との違いは次の 2 つだけです。
+
+- **`strftime()` の `%s`、`%z`、`%Z`**：`tzset()` を呼びません。最後に `tzset()`、`configTzTime()`、`localtime_r()` のどれかで読んだ時間帯を使います。`setenv("TZ", ...)` だけで変えた TZ は、次の `tzset()` のあとから使われます。
+- **`strftime()` の大きさ 0**：何も書かずに 0 を返します（newlib は、渡した領域の外に書いていました）。
+
+`tzset()` は、前回読んだ TZ の文字列をハッシュ（32 bit）で覚えていて、同じなら読み直しません（newlib は、ヒープに写しを取って比べていました）。
+
+`gmtime_r()` は、newlib と同じく、日数を 32 bit で数えます。紀元から約 580 万年より先では、日数がひと回りします。
+
 ## 確かめたこと
 
 - **PC での試験**（`tests/unit/test_core_format.py`）：メニューの組み合わせ（Float は、整数で行う手順と float で行う手順の両方）の 6 通りそれぞれで、PC の `snprintf` と出力を比べました（380〜500 件）。
@@ -169,6 +202,12 @@ FPU のない系列では、スケッチによって 2 番目と 3 番目の一�
   - 乱数の 200 万個の値 × 桁数 0〜12 × 書式 4 通り（1 億 400 万件）で全件一致
   - float の全ビットパターン（約 43 億）を 2 桁と 6 桁で表示し、全件一致
   - V003、X035、V307 の実機で、6 万件の出力のハッシュが PC と同じ
+- **時刻の関数**（2026-10-29）：newlib 4.5 のソース（`strftime.c`、`gmtime_r.c`、`tzset_r.c`）を PC でコンパイルして、コアのものと突き合わせました。
+  - `strftime()`：乱数の日時と書式（全部の変換、`0` `+` と幅、`E` `O`、出力先の大きさ）3000 万件で全件一致。`tests/unit/test_core_strftime.py` に newlib の出力を表で残しています
+  - `gmtime_r()`：3000 万件で全件一致。試験では PC の `gmtime_r()` と 300 万件比べます
+  - `tzset()`：壊れた文字列を含む TZ 300 万件で、名前、時差、夏時間の規則まで全件一致。試験には 47 件を表で残しています
+  - X035 の実機で、夏時間のある TZ（CET、AEST）と JST の 9000 件の `gmtime_r()`、`localtime_r()`、`strftime()` の出力のハッシュが、newlib のものと同じ。V003 でも同じハッシュ
+- **`%lld`**：PC の `snprintf` と、端の値と乱数 2000 件で比べました。
 - **parseFloat の PC での試験**（`tests/unit/test_core_parse_float.py`）：3 通りの計算それぞれで、30 万件の入力を PC の `strtof` と比べました。
   - `pd`：全件一致
   - `pi`：12 桁以上の 3 件が 1 ビットずれ

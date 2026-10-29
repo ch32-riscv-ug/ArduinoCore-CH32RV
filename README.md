@@ -54,6 +54,7 @@ The printf family (`Serial.printf`, `printf`, `sprintf`, `snprintf`), `Serial.pr
 The default (`fltf_pi`) computes in float as AVR does and prints printf's `%f`: a few KB smaller than double without an FPU, over ten KB on V30x, X3x5 and H41x.
 Pick `dbl_*` / `dblf_*` for 15 digits (GPS coordinates and the like). A sketch that uses printf but no floats is about 0.9 KB smaller under `flt_*` (1.5 KB with an FPU), which prints `%f` as written. Without an FPU, printing a float takes no soft-float: the float steps are done on its bits.
 A sketch that uses neither floats nor printf is the same size under every entry.
+`strftime()`, `gmtime_r()`, `localtime_r()` and `tzset()` are the core's too: the same text as newlib's, 2-10 KB smaller.
 `Serial.parseFloat()` adds its digits up in double (`_pd`: the nearest float), in integers (`_pi`: the nearest float to 11 digits, no double arithmetic) or in float (`_ps`: the smallest, sometimes off by the last bit).
 The entries, their costs and how the output differs from C are in [printf and floating point](docs/printf-float.ja.md) (Japanese).
 
