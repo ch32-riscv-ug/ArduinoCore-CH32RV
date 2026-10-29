@@ -54,6 +54,76 @@ static void field(struct out *o, const char *pre, size_t npre, int zeros, const 
     }
 }
 
+/* Float builds without an FPU do fixed()'s float steps on the bits (below). */
+#ifndef CH32RV_FIXED_BITS
+#if CH32RV_FP_FLOAT && !defined(__riscv_flen)
+#define CH32RV_FIXED_BITS 1
+#else
+#define CH32RV_FIXED_BITS 0
+#endif
+#endif
+
+#if CH32RV_FIXED_BITS
+/* m rounded to 24 significant bits, to nearest, ties to even: what a float
+ * operation does to its exact result. */
+static uint32_t round24(uint32_t m)
+{
+    uint32_t unit = 1;
+    for (uint32_t t = m >> 24; t; t >>= 1) {
+        unit <<= 1;
+    }
+    const uint32_t low = m & (unit - 1);
+    m -= low;
+    if (low > unit / 2 || (low && low == unit / 2 && (m & unit))) {
+        m += unit;
+    }
+    return m;
+}
+
+/* The float steps of the other fixed() - (float)number, adding the rounding,
+ * splitting off the integer part, rem * 10 for each digit - carried out on
+ * the bits with the same rounding: the same output, and %f brings no
+ * soft-float in. A value is m * 2^e. */
+static void fixed(struct out *o, double number, int digits, int width, unsigned flags)
+{
+    union {
+        double d;
+        uint32_t w[2]; /* little-endian: w[1] holds the sign and exponent */
+    } b = {number};
+    const uint32_t hi = b.w[1], lo = b.w[0];
+    const int be = (int)(hi >> 20 & 0x7ff);
+    uint32_t m = (hi & 0xfffff) << 3 | lo >> 29;
+    int e = be - 1046;
+    char sign = 0;
+    const char *word = 0;
+    if (be == 0x7ff) {
+        word = (m | lo) ? "nan" : "inf";
+    } else if (be < 873 || (be == 873 && !(m | lo))) {
+        m = 0; /* 2^-150 or less: a float 0 */
+    } else {
+        /* Below 2^-126 a float has fewer bits; the rounding added next is
+         * far larger, so they never show. */
+        m |= 0x800000;
+        const uint32_t low = lo & 0x1fffffff;
+        if (low > 0x10000000 || (low == 0x10000000 && (m & 1))) {
+            m++;
+        }
+        if (e > 104 || (e == 104 && m >> 24)) {
+            word = "inf";
+        } else if (e > 8 || (e == 8 && m >> 24)) {
+            word = "ovf"; /* 2^32 or more */
+        }
+    }
+    if (!(word && word[0] == 'n')) {
+        if ((flags & CH32RV_FMT_PRINTFLOAT) ? hi >> 31 && m : hi >> 31) {
+            sign = '-';
+        } else if (flags & CH32RV_FMT_PLUS) {
+            sign = '+';
+        } else if (flags & CH32RV_FMT_SPACE) {
+            sign = ' ';
+        }
+    }
+#else
 static void fixed(struct out *o, double number, int digits, int width, unsigned flags)
 {
     fp_t v = (fp_t)number;
@@ -76,6 +146,7 @@ static void fixed(struct out *o, double number, int digits, int width, unsigned 
             word = "ovf";
         }
     }
+#endif
     if (word) {
         if (flags & CH32RV_FMT_PRINTFLOAT) {
             sign = 0;
@@ -83,10 +154,38 @@ static void fixed(struct out *o, double number, int digits, int width, unsigned 
         field(o, &sign, sign != 0, 0, word, 3, width, flags & ~CH32RV_FMT_ZERO);
         return;
     }
-#if CH32RV_FP_FLOAT
+#if CH32RV_FIXED_BITS
+    /* The bits of 0.5f, 0.05f, ... 5e-10f, added as a float addition does
+     * it: the one with the lower exponent shifted down under the other, what
+     * falls off kept as a sticky bit, the sum rounded. */
+    static const uint32_t rounding[10] = {0x3f000000, 0x3d4ccccd, 0x3ba3d70a, 0x3a03126f, 0x3851b717,
+                                          0x36a7c5ac, 0x350637bd, 0x3356bf95, 0x31abcc77, 0x3009705f};
+    const uint32_t r = rounding[digits < 9 ? digits : 9];
+    uint32_t big = (r & 0x7fffff) | 0x800000, small = m << 6;
+    int eb = (int)(r >> 23) - 150, d = eb - e;
+    if (d < 0) {
+        small = big << 6;
+        big = m;
+        eb = e;
+        d = -d;
+    }
+    small = d == 0 ? small : d < 31 ? small >> d | (small << (32 - d) != 0) : small != 0;
+    m = round24((big << 6) + small);
+    e = eb - 6;
+    while (e < 0 && !(m & 1)) {
+        m >>= 1;
+        e++;
+    }
+    /* At least 2^-32 now, so its last bit is no lower than 2^-55. */
+    int s = e < 0 ? -e : 0;
+    uint32_t ip = e < 0 ? (s < 32 ? m >> s : 0) : m << e;
+    uint32_t rem = m & (s < 32 ? (1u << s) - 1 : ~0u);
+#elif CH32RV_FP_FLOAT
     /* A table, not divisions: __divsf3 would come in for this alone. */
     static const float rounding[10] = {0.5f, 0.05f, 0.005f, 5e-4f, 5e-5f, 5e-6f, 5e-7f, 5e-8f, 5e-9f, 5e-10f};
     v += rounding[digits < 9 ? digits : 9];
+    uint32_t ip = (uint32_t)v;
+    fp_t rem = v - (fp_t)ip;
 #else
     /* Print::printFloat's own steps, so its output stays what it was. */
     double rounding = 0.5;
@@ -94,9 +193,9 @@ static void fixed(struct out *o, double number, int digits, int width, unsigned 
         rounding /= 10.0;
     }
     v += rounding;
-#endif
     uint32_t ip = (uint32_t)v;
     fp_t rem = v - (fp_t)ip;
+#endif
     char ib[10];
     char *p = ib + sizeof ib;
     do {
@@ -117,11 +216,22 @@ static void fixed(struct out *o, double number, int digits, int width, unsigned 
         put(o, ".", 1);
     }
     while (digits-- > 0) {
+#if CH32RV_FIXED_BITS
+        rem = round24(rem * 10);
+        const char c = (char)('0' + (s < 32 ? rem >> s : 0));
+        rem &= s < 32 ? (1u << s) - 1 : ~0u;
+        put(o, &c, 1);
+        while (rem && !(rem & 1)) { /* keeps it within 24 bits */
+            rem >>= 1;
+            s--;
+        }
+#else
         rem *= FP(10.0);
         const unsigned d = (unsigned)rem;
         const char c = (char)('0' + d);
         put(o, &c, 1);
         rem -= (fp_t)d;
+#endif
     }
     if (flags & CH32RV_FMT_LEFT) {
         fill(o, ' ', pad);

@@ -2,6 +2,7 @@
  * snprintf (for what both must print alike) and against fixed strings (where the core differs on purpose),
  * and prints one line per failure. Built once per Floating Point configuration. */
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -56,6 +57,15 @@ static void check(const char *what, const char *got, const char *want)
         own(a, fmt, __VA_ARGS__);                       \
         check(fmt, a, want);                            \
     } while (0)
+
+#if CH32RV_FP_FLOAT
+static double bits(uint64_t u)
+{
+    double d;
+    memcpy(&d, &u, sizeof d);
+    return d;
+}
+#endif
 
 static void fixed_is(const char *want, double v, int digits, int width, unsigned flags)
 {
@@ -150,6 +160,20 @@ int main(void)
     fixed_is("3", 2.5, 0, 0, CH32RV_FMT_PRINTFLOAT);
     fixed_is("   -1.5", -1.5, 1, 7, 0);
     fixed_is("-1.5   ", -1.5, 1, 7, CH32RV_FMT_LEFT);
+#if CH32RV_FP_FLOAT
+    /* What (float) does to the double first: past float's range, below its smallest, its last place.
+     * The doubles are given as bits: constants here are float (-fsingle-precision-constant). */
+    fixed_is("inf", bits(0x7e37e43c8800759cull), 2, 0, CH32RV_FMT_PRINTFLOAT);
+    fixed_is("4294967040.00", 4294967040.0, 2, 0, CH32RV_FMT_PRINTFLOAT);
+    fixed_is("ovf", 4294967200.0, 2, 0, CH32RV_FMT_PRINTFLOAT);
+    fixed_is("0.00", bits(0xb58dee7a4ad4b81full), 2, 0, CH32RV_FMT_PRINTFLOAT);
+    fixed_is("-0.00", bits(0xb58dee7a4ad4b81full), 2, 0, 0);
+    fixed_is("0.00", bits(0xb690000000000000ull), 2, 0, CH32RV_FMT_PRINTFLOAT);
+    fixed_is("-0.00", bits(0xb690000000000001ull), 2, 0, CH32RV_FMT_PRINTFLOAT);
+    fixed_is("1.00", bits(0x3ff0147ae147ae14ull), 2, 0, CH32RV_FMT_PRINTFLOAT);
+    fixed_is("2.68", bits(0x4005666666666666ull), 2, 0, CH32RV_FMT_PRINTFLOAT);
+    fixed_is("0.0000000009999", 5e-10, 13, 0, CH32RV_FMT_PRINTFLOAT); /* rounded at 10 digits at most */
+#endif
 
     printf("checks %d failures %d\n", checks, failures);
     return failures != 0;

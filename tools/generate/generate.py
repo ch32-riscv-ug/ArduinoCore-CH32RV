@@ -355,9 +355,8 @@ _PARSE = (
     ("pi", "parseFloat in integers", "-DCH32RV_PARSE_FLOAT=2"),
     ("ps", "parseFloat in float (small)", "-DCH32RV_PARSE_FLOAT=3"),
 )
-RTLIB_MENU = tuple(
-    (f"{key}_{pk}", f"{label}, {pl}" + (" (default)" if key == "dbl" and pk == "pd" else ""),
-     f"{flags} {pf}".strip(), "", 0)
+_RTLIB_CORE = {
+    f"{key}_{pk}": (f"{label}, {pl}", f"{flags} {pf}".strip(), "", 0)
     for key, label, flags in (
         ("dbl", "Double (64-bit)", ""),
         ("dblf", "Double (64-bit) + printf %f", _PF),
@@ -365,12 +364,31 @@ RTLIB_MENU = tuple(
         ("fltf", "Float (32-bit) + printf %f", f"{_F32} {_PF}"),
     )
     for pk, pl, pf in _PARSE
-) + (
-    ("dblfs", "Double (64-bit) + printf %f + newlib scanf %f", _PF, _USF, 24),
-    ("fltfs", "Float (32-bit) + printf %f + newlib scanf %f", f"{_F32} {_PF}", _USF, 24),
-    ("nanofp", "Double (64-bit) + newlib printf %f %e %g", _NEWLIB, _UPF, 21),
-    ("nanofs", "Double (64-bit) + newlib scanf %f", "", _USF, 24),
-    ("nanofps", "Double (64-bit) + newlib printf/scanf %f %e %g", _NEWLIB, f"{_UPF} {_USF}", 31),
+}
+_RTLIB_NEWLIB = {
+    "nanofp": ("Double (64-bit) + newlib printf %f %e %g", _NEWLIB, _UPF, 21),
+    "nanofs": ("Double (64-bit) + newlib scanf %f", "", _USF, 24),
+    "dblfs": ("Double (64-bit) + printf %f + newlib scanf %f", _PF, _USF, 24),
+    "fltfs": ("Float (32-bit) + printf %f + newlib scanf %f", f"{_F32} {_PF}", _USF, 24),
+    "nanofps": ("Double (64-bit) + newlib printf/scanf %f %e %g", _NEWLIB, f"{_UPF} {_USF}", 31),
+}
+# The default (first) is Float with printf's %f and parseFloat in integers on
+# every board: a sketch that uses floats pays 0.6-0.8 KB for %f (V003), and
+# one that uses neither floats nor printf pays nothing under any entry; only
+# printf without floats pays for %f (+5.2 KB on V003, +1.5 KB on V307), and
+# printf is a luxury on a 16 KB part anyway (docs/printf-float.ja.md). The
+# rest go smallest first by what each links: soft-float before soft-double,
+# printf's %f and parseFloat's double after what they add to (measured on
+# V003, X035 and V307, 2026-10-29), newlib last.
+RTLIB_DEFAULT = "fltf_pi"
+RTLIB_ORDER = ("fltf_pi", "flt_ps", "flt_pi", "fltf_ps", "flt_pd", "fltf_pd",
+               "dbl_ps", "dbl_pi", "dbl_pd", "dblf_ps", "dblf_pi", "dblf_pd",
+               "nanofp", "nanofs", "dblfs", "fltfs", "nanofps")
+_RTLIB_ALL = {**_RTLIB_CORE, **_RTLIB_NEWLIB}
+assert sorted(RTLIB_ORDER) == sorted(_RTLIB_ALL) and RTLIB_ORDER[0] == RTLIB_DEFAULT
+RTLIB_MENU = tuple(
+    (key, _RTLIB_ALL[key][0] + (" (default)" if key == RTLIB_DEFAULT else ""), *_RTLIB_ALL[key][1:])
+    for key in RTLIB_ORDER
 )
 
 
