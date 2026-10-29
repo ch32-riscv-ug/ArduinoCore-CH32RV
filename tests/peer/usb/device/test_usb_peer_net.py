@@ -30,3 +30,15 @@ def test_usb_peer_net(dut, peers):
     dut.expect_exact("NETSEND 1", timeout=5)
     m = command(s3, "netstat", rb"NETRX (\d+) (\d+)")
     assert int(m.group(2)) >= 2       # the echo and the DUT's own frame
+
+    # 20 frames back to back: with two transmit blocks, those sent while one
+    # is out go together in the next; every one reaches the S3.
+    before = int(command(s3, "netstat", rb"NETRX (\d+) (\d+)").group(2))
+    dut.write("netburst 20\n")
+    m = dut.expect(rb"NETBURST (\d+) (\d+) (\d+) (\d+) (\d+)\r?\n", timeout=15)
+    assert int(m.group(1)) == 20
+    assert int(m.group(3)) == 2048 and int(m.group(4)) == 2 and int(m.group(5)) == 2
+    sent = int(m.group(2))
+    assert sent >= 20
+    m = command(s3, "netstat", rb"NETRX (\d+) (\d+)")
+    assert int(m.group(2)) - before == 20

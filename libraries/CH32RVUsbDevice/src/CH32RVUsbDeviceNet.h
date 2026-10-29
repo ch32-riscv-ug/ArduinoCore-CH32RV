@@ -16,6 +16,26 @@ struct CH32RVUsbNetStats {
     uint32_t txFrames = 0, rxFrames = 0, invalidNtbs = 0;
 };
 
+/* Transfer blocks (NTB16; IN is device to host) in EspUsbNetConfig's names.
+ * 0 keeps the class's own: one 2048-byte block each way, eight frames a
+ * block, 1514-byte frames. Blocks are 2048..65535 bytes. More than one
+ * buffer, or a bigger block, needs the sketch's array (txBuffer /
+ * rxBuffer, 4-byte aligned, kept from begin() to end()): txBuffers x the
+ * block rounded up to 4 bytes, rxBuffers x the block rounded up to the
+ * series' largest packet. With two or more transmit buffers, frames sent
+ * while a block is on the wire are gathered into the next one; with two
+ * or more receive buffers the next block from the host comes in while
+ * onFrame() still works through the last. At most 8 buffers each way. */
+struct CH32RVUsbNetConfig {
+    size_t ntbInBytes = 0, ntbOutBytes = 0;
+    size_t txBuffers = 0, rxBuffers = 0;
+    size_t maxDatagrams = 0;        /* frames in one block (both ways), 1..32 */
+    uint16_t maxFrameBytes = 0;     /* the Ethernet frame with its header, 14 and up */
+    uint8_t *txBuffer = nullptr, *rxBuffer = nullptr;
+    size_t txBufferBytes = 0, rxBufferBytes = 0;
+    const char *name = nullptr;     /* nullptr keeps the function's name */
+};
+
 class CH32RVUsbDeviceNet : public CH32RVUsbDeviceFunction {
 public:
     /* callback(frame, length): a whole Ethernet frame from the host; the data
@@ -23,6 +43,16 @@ public:
     typedef CH32RVCallback<void(const uint8_t *frame, size_t length)> FrameCallback;
 
     explicit CH32RVUsbDeviceNet(CH32RVUsbDevice &device = USBDevice);
+
+    /* While the device is stopped; false (nothing changed) for a setting
+     * that cannot be used. */
+    bool configure(const CH32RVUsbNetConfig &config);
+    const CH32RVUsbNetConfig &configuration() const { return _config; }
+    /* The block sizes and buffer counts in use; 0 while the device is stopped. */
+    size_t ntbInCapacity() const;
+    size_t ntbOutCapacity() const;
+    size_t txBufferCount() const;
+    size_t rxBufferCount() const;
 
     /* The 6-byte MAC address the host's side of the link takes. Call before
      * begin(). Default: locally administered, from the chip's unique ID, so
@@ -45,14 +75,15 @@ public:
     typedef CH32RVCallback<bool()> ReceiveGate;
     void receiveGate(ReceiveGate gate) { _receiveGate = gate; }
     void resumeReceive();
-    /* Send one Ethernet frame (at most 1514 bytes) to the host, copying it.
-     * Waits up to timeoutMs for a transmit buffer; false when none freed up
+    /* Send one Ethernet frame (at most maxFrameBytes, 1514 by default) to
+     * the host, copying it: true once it is in a transmit block, not when the
+     * host has it. Waits up to timeoutMs for room; false when none freed up
      * or the link is down. */
     bool sendFrame(const uint8_t *data, size_t length, uint32_t timeoutMs = 10);
     /* The host has configured the interface. */
     bool linkUp() const;
-    /* Frames sent and received, and blocks from the host that were not a
-     * valid NTB16 (EspUsbNetStats's names). */
+    /* Frames sent (counted as their block goes out) and received, and blocks
+     * from the host that were not a valid NTB16 (EspUsbNetStats's names). */
     CH32RVUsbNetStats stats() const { return _stats; }
 
     /* --- EspUsbDevice's IP layer, from the Network library (#include <Network.h>) ---
@@ -95,11 +126,12 @@ protected:
 
 private:
     void notify();
-    size_t receiveBlock(uint16_t length, const FrameCallback &to);
+    size_t receiveBlock(const uint8_t *ntb, uint16_t length, const FrameCallback &to);
     void receiveNext();
+    void sendNext();
+    CH32RVUsbNetConfig _config;
     FrameCallback _onFrame = nullptr;
     FrameCallback _stackFrame = nullptr;
-    uint16_t _held = 0;              /* a block waiting for usbDeliver() */
     ReceiveGate _receiveGate = nullptr;
     NetworkUsbNcm *_network = nullptr;   /* created by the Network library on first use */
     bool _networkBegun = false;

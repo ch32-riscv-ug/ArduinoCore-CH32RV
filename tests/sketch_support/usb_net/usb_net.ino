@@ -6,6 +6,10 @@
  *   ready <nonce>   READY <nonce> <build id> <USB started 0/1> <last error>
  *   net             NET <frames received> <frames of EtherType 0x88B5> <MAC as 12 hex digits>
  *   netsend         one broadcast frame (EtherType 0x88B5) -> NETSEND 1 / 0
+ *   netburst <n>    n such frames back to back -> NETBURST <accepted> <frames
+ *                   sent (stats().txFrames)> <IN block bytes> <transmit buffers>
+ *                   <receive buffers>: two transmit buffers, so frames sent
+ *                   while a block is out are gathered into the next
  *
  * Over USB, without a command: every frame of EtherType 0x88B5 that arrives
  * goes back out with its payload's first byte incremented. */
@@ -13,6 +17,7 @@
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifndef BENCH_BUILD_ID
 #error BENCH_BUILD_ID must identify this compilation
@@ -25,6 +30,9 @@ static volatile uint32_t netFrames, netOurs;
 static uint8_t echo[64];
 static volatile uint16_t echoLength;
 static char line[80];
+/* Two blocks each way (configure()): the class keeps one of its own. */
+static uint8_t txRing[2 * 2048] __attribute__((aligned(4)));
+static uint8_t rxRing[2 * 2048] __attribute__((aligned(4)));
 static uint8_t used;
 
 static void reply(const char *command)
@@ -60,6 +68,23 @@ static void reply(const char *command)
         memcpy(frame + 14, "CH32RV usb-net", 14);
         SerialDMSeq.print("NETSEND ");
         SerialDMSeq.println(net.sendFrame(frame, sizeof frame, 500) ? 1 : 0);
+    } else if (strncmp(command, "netburst ", 9) == 0) {
+        static uint8_t frame[60];
+        memset(frame, 0xFF, 6);
+        memcpy(frame + 6, net.macAddress(), 6);
+        frame[11] ^= 1;
+        frame[12] = 0x88;
+        frame[13] = 0xB5;
+        const unsigned n = (unsigned)atoi(command + 9);
+        unsigned accepted = 0;
+        for (unsigned i = 0; i < n; i++) {
+            frame[14] = (uint8_t)i;
+            accepted += net.sendFrame(frame, sizeof frame, 500) ? 1 : 0;
+        }
+        delay(100);                              /* the last blocks go out */
+        SerialDMSeq.printf("NETBURST %u %lu %u %u %u\r\n", accepted, (unsigned long)net.stats().txFrames,
+                           (unsigned)net.ntbInCapacity(), (unsigned)net.txBufferCount(),
+                           (unsigned)net.rxBufferCount());
     } else {
         SerialDMSeq.println("ERROR COMMAND");
     }
@@ -68,6 +93,13 @@ static void reply(const char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    CH32RVUsbNetConfig netConfig;
+    netConfig.txBuffers = netConfig.rxBuffers = 2;
+    netConfig.txBuffer = txRing;
+    netConfig.txBufferBytes = sizeof txRing;
+    netConfig.rxBuffer = rxRing;
+    netConfig.rxBufferBytes = sizeof rxRing;
+    net.configure(netConfig);
     net.onFrame([](const uint8_t *frame, size_t length) {
         netFrames++;
         if (length >= 15 && frame[12] == 0x88 && frame[13] == 0xB5) {

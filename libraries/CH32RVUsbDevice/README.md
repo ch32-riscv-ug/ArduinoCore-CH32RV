@@ -122,7 +122,7 @@ Differences:
 `CH32RVUsbDeviceVendor` (bulk; with `peek()`, which EspUsbDevice lacks), `CH32RVUsbDeviceMsc` with
 `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` /
 `CH32RVUsbDeviceMscSdCard` (its own header), `CH32RVUsbDeviceCcid`,
-`CH32RVUsbDeviceNet` (CDC-NCM, raw frames), `CH32RVUsbAudioFunction`
+`CH32RVUsbDeviceNet` (CDC-NCM, raw frames; `configure()` sets the transfer blocks), `CH32RVUsbAudioFunction`
 (UAC1/UAC2), `CH32RVUsbDeviceVideo` (UVC),
 `CH32RVUsbDeviceDfuRuntime` (an update entry through DFU_DETACH; the next mode
 and programming method depend on the series). It is included by default

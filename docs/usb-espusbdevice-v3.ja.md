@@ -22,7 +22,7 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | CCID | `configure(CH32RVUsbCcidConfig)`（messageBytes、removable）。removable false で通知の端点を省く。`removeCard()` は bool |
 | Video | `configure(CH32RVUsbVideoConfig{transport})`。`submitFrame()` / `cancelFrame()` / `onFrameResult()` で、フレームを必ず 1 回返す。フレームの大きさと rate の範囲 |
 | Audio | `configure(CH32RVUsbAudioConfig)`（v3 と同じ項目名）。録音の `write()` は入った分を返す。`read()` はサンプルフレームの境界で切る。`clearFormats()`、`currentFormat()`、`capacity()`。`endpointCount()` は使う端点の番号の数 |
-| NCM | `stats()`、`endNetwork()`。MAC と IP の設定は bool を返し、開始後は断る |
+| NCM | `stats()`、`endNetwork()`。MAC と IP の設定は bool を返し、開始後は断る。`configure(CH32RVUsbNetConfig)`（ntbInBytes / ntbOutBytes、txBuffers / rxBuffers とスケッチの配列、maxDatagrams、maxFrameBytes、name）と `ntbInCapacity()` などの照会。送信中に来たフレームは次の NTB にまとめる。受信のバッファが複数なら、onFrame() の間に次の NTB を受ける。`txFrames` は送り終えた時に数える |
 
 ## 2. このコアの事情で残した違い
 
@@ -32,6 +32,7 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | コールバックは `deliverEvents()` から呼ぶ。登録はいつでもよく、`task()` がある | USB の worker のスレッドが無い協調実行 |
 | `std::function` でなく `CH32RVCallback` | ヒープを使わない |
 | 既定のバッファはオブジェクトの中。大きくするにはスケッチの配列を渡す | `begin()` で malloc しない（X035 などの RAM） |
+| NCM の既定は 2048 バイトの NTB を 1 つずつ（v3 は 3200 バイト、送信 3・受信 2）。バッファの数の 0 は「既定」（v3 は「その方向を使わない」）。最大 8 つずつ、1 つの NTB に 32 フレームまで | RAM。0 の意味は CDC / Vendor / MIDI と同じ |
 | MIDI の rxPackets / txPackets の 0 は「クラスのキューをそのまま使う」（v3 の 0 は「その方向を使わない」）。受信しないなら rxMode Disabled | 0 で既定を表すのは CDC / Vendor の容量と同じ |
 | 転送の id は 32 ビット | RAM。v3 は 64 ビット |
 | 借用転送は境界の条件なし。受信の容量はパケットの倍数だけ（64 の倍数は求めない） | DMA の 64 バイト境界は ESP の制約 |
@@ -42,7 +43,7 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | CDC の `write()` は空くまで待つ（上限 `setTxTimeoutMs()`、既定 1000 ms）、`flush()` は送り終えるまで待つ | Arduino の Serial と同じ意味（3 章の 1） |
 | Audio の再生のリングがあふれたら古い方を捨てる | 遅れの上限を保つ（3 章の 2） |
 | HidVendor の GET_REPORT は reportSize まで 0 で埋めて返す（v3 は送った長さのまま） | report の長さは記述子で決まっている |
-| まだ入れていないもの | CDC の借用転送、Audio の複数の rate、NCM の容量の設定、DFU の Download |
+| まだ入れていないもの | CDC の借用転送、Audio の複数の rate、DFU の Download |
 
 ## 3. ESP 側への修正依頼の候補
 
