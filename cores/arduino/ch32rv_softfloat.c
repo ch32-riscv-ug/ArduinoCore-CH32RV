@@ -13,12 +13,42 @@
  * and is made quiet, as libgcc's does (the same as every float on the host,
  * all 2^32 of them).
  *
+ * Leading zeros (__clzsi2), for libgcc's own soft-float: without libgcc's
+ * 256-byte table, the same counts (all 2^32 inputs, and 32 for 0).
+ *
  * GCC emits these calls when LTO is done; core.a is built with fat objects,
  * so the linker takes them from here before it reaches libgcc. Float only
  * without an FPU, double unless the FPU does double (V30x and others do
  * single only). */
 #include <stdint.h>
 #include <string.h>
+
+#if !defined(__riscv_flen) || __riscv_flen < 64
+/* libgcc's soft-float counts leading zeros with __clzsi2 and its 256-byte
+ * table; this one, in the object that subtraction and float-to-double bring
+ * in, is defined before the linker reaches libgcc, so the table stays out. */
+int __clzsi2(unsigned x)
+{
+    int n = 0;
+    if (!(x >> 16)) {
+        n += 16;
+        x <<= 16;
+    }
+    if (!(x >> 24)) {
+        n += 8;
+        x <<= 8;
+    }
+    if (!(x >> 28)) {
+        n += 4;
+        x <<= 4;
+    }
+    if (!(x >> 30)) {
+        n += 2;
+        x <<= 2;
+    }
+    return n + !(x >> 31) + !x; /* 32 for 0, as libgcc's */
+}
+#endif
 
 #if !defined(__riscv_flen)
 float __addsf3(float a, float b);

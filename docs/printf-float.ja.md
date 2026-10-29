@@ -54,6 +54,8 @@ soft-float と soft-double の引き算は、コアが足し算で行います�
 
 `Serial.print(float)` などで float を double に広げる関数も、コアの小さいもの（V003 で 120 B、libgcc は 174 B）です。結果は libgcc とビット単位で同じです（NaN の符号と中身も残します）。典型的なスケッチで V003 は 56 B、X035 は 64 B、V307 は 504 B 小さくなります。
 
+soft-float が先頭の 0 のビットを数える関数（`__clzsi2`）もコアのもので、libgcc の 256 B の表を使いません。結果は libgcc と同じです（32 bit の全部の値を PC で、100 万件を V003 で libgcc のものと照合）。soft-float か soft-double を使うスケッチは、V003・X035 で約 310 B 小さくなります。
+
 V003 で、機能を足していったときの実測です。
 
 | スケッチ | `fltf_pi`（既定） | `flt_pi` | `dbl_pd` |
