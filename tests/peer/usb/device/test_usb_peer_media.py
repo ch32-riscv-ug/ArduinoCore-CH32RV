@@ -1,5 +1,5 @@
 """usb.peer-media: the DUT (tests/sketch_support/usb_media - a UAC1 headset,
-32 kHz 16-bit mono both ways, and a UVC camera, 80x60 YUY2) as a device, the
+32 or 16 kHz 16-bit mono both ways, and a UVC camera, 80x60 YUY2) as a device, the
 ESP32-S3 (EspUsbHost) as the host.
 
 What the S3 cannot do, and so what is not asserted here:
@@ -32,13 +32,24 @@ def test_usb_peer_media(dut, peers, record_property):
     # silence around it, so the DUT counts at least what was sent, and its byte
     # sum - which silence leaves alone - is exactly the ramp's.
     dut.write("audio\n")
-    before = dut.expect(rb"AUDIO (\d+) (\d+) \d+\r?\n", timeout=5)
+    before = dut.expect(rb"AUDIO (\d+) (\d+) \d+ \d+ \d+\r?\n", timeout=5)
     m = command(s3, "audioout 500", rb"AUDIOOUT (\d) (\d+) (\d+)", timeout=10)
     assert m.group(1) == b"1" and int(m.group(2)) == 32000
     dut.write("audio\n")
-    after = dut.expect(rb"AUDIO (\d+) (\d+) \d+\r?\n", timeout=5)
+    after = dut.expect(rb"AUDIO (\d+) (\d+) \d+ (\d+) (\d+)\r?\n", timeout=5)
     assert int(after.group(1)) - int(before.group(1)) >= int(m.group(2))
     assert (int(after.group(2)) - int(before.group(2))) & 0xFFFFFFFF == int(m.group(3))
+    assert int(after.group(3)) == 32000
+
+    # The second rate: the host sets the clock to 16 kHz (SampleRateChanged on
+    # the DUT) and half a second is half as many bytes.
+    m = command(s3, "audioout 500 16000", rb"AUDIOOUT (\d) (\d+) (\d+)", timeout=10)
+    assert m.group(1) == b"1" and int(m.group(2)) == 16000
+    dut.write("audio\n")
+    rated = dut.expect(rb"AUDIO (\d+) (\d+) \d+ (\d+) (\d+)\r?\n", timeout=5)
+    assert int(rated.group(1)) - int(after.group(1)) >= int(m.group(2))
+    assert (int(rated.group(2)) - int(after.group(2))) & 0xFFFFFFFF == int(m.group(3))
+    assert int(rated.group(3)) == 16000 and int(rated.group(4)) > int(after.group(4))
 
     # Camera: whole 80x60 frames with the DUT's pattern.
     m = command(s3, "video 3000", rb"VIDEO (\d+) (\d+) (\d+) (\d+)", timeout=15)

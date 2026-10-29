@@ -27,8 +27,8 @@
  *   mscread              S3 MSCREAD <ok> <first line of /README.TXT>
  *   ccid                 S3 CCID <ok> <ATR hex>
  *   apdu <hex>           S3 APDU <ok> <response hex> <SW hex>
- *   audioin <ms>         S3 AUDIOIN <bytes> <ramp breaks>
- *   audioout <ms>        S3 AUDIOOUT <ok> <bytes> <byte sum>
+ *   audioin <ms> [rate]  S3 AUDIOIN <bytes> <ramp breaks>     (rate: 32000 by default)
+ *   audioout <ms> [rate] S3 AUDIOOUT <ok> <bytes> <byte sum>
  *   video <ms>           S3 VIDEO <frames> <pattern errors> <width> <height>
  *   dfu                  S3 DFU <ok>          (DFU_DETACH to the runtime interface)
  *   hididle <d> <ms>     S3 HIDIDLE <ok> <vendor input reports in <ms>>  (SET_IDLE
@@ -270,13 +270,13 @@ static void cmdApdu(const char *arg)
   Serial.printf(" %04x\n", sw);
 }
 
-static void cmdAudioIn(uint32_t ms)
+static void cmdAudioIn(uint32_t ms, uint32_t rate)
 {
   const uint8_t a = firstAddress();
   audioBytes = 0;
   audioBreaks = 0;
   audioLast = -1;
-  if (!usb.audioInputStart(1, 16, 32000, a))
+  if (!usb.audioInputStart(1, 16, rate, a))
   {
     Serial.printf("S3 AUDIOIN 0 0 %s\n", usb.lastErrorName());
     return;
@@ -291,14 +291,14 @@ static void cmdAudioIn(uint32_t ms)
 static volatile uint32_t outLeft, outGiven, outSum;
 static volatile uint16_t outSample;
 
-static void cmdAudioOut(uint32_t ms)
+static void cmdAudioOut(uint32_t ms, uint32_t rate)
 {
   const uint8_t a = firstAddress();
   outGiven = 0;
   outSum = 0;
   outSample = 0;
-  outLeft = 32000u * ms / 1000u;          /* frames: mono 16-bit */
-  if (!usb.audioOutputStart(1, 16, 32000, a))
+  outLeft = rate * ms / 1000u;            /* frames: mono 16-bit */
+  if (!usb.audioOutputStart(1, 16, rate, a))
   {
     outLeft = 0;
     Serial.printf("S3 AUDIOOUT 0 0 0 %s\n", usb.lastErrorName());
@@ -446,8 +446,14 @@ static void run(char *cmd)
   else if (!strcmp(cmd, "mscread")) cmdMscRead();
   else if (!strcmp(cmd, "ccid")) cmdCcid();
   else if (!strcmp(cmd, "apdu")) cmdApdu(arg);
-  else if (!strcmp(cmd, "audioin")) cmdAudioIn(strtoul(arg, nullptr, 10));
-  else if (!strcmp(cmd, "audioout")) cmdAudioOut(strtoul(arg, nullptr, 10));
+  else if (!strcmp(cmd, "audioin") || !strcmp(cmd, "audioout"))
+  {
+    char *rest = nullptr;
+    const uint32_t ms = strtoul(arg, &rest, 10);
+    const uint32_t rate = strtoul(rest, nullptr, 10);
+    if (!strcmp(cmd, "audioin")) cmdAudioIn(ms, rate ? rate : 32000);
+    else cmdAudioOut(ms, rate ? rate : 32000);
+  }
   else if (!strcmp(cmd, "video")) cmdVideo(strtoul(arg, nullptr, 10));
   else if (!strcmp(cmd, "dfu")) cmdDfu();
   else if (!strcmp(cmd, "vinfo")) cmdVideoInfo();

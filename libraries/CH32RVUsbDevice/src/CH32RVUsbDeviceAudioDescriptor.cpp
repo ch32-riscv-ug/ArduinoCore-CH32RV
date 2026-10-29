@@ -144,8 +144,8 @@ bool CH32RVUsbAudioFunction::writeDescriptor(CH32RVUsbDescriptorWriter &o, uint8
         uint8_t *buffer;
         uint16_t depth;
         if ((i == 0 ? _playbackEnabled : _captureEnabled) &&
-            !ring(i, packetSize(_streams[i].format, i == 0 ? CH32RVUsbAudioDirection::Playback
-                                                           : CH32RVUsbAudioDirection::Capture, hs),
+            !ring(i, packetSize(widest(i), i == 0 ? CH32RVUsbAudioDirection::Playback
+                                                  : CH32RVUsbAudioDirection::Capture, hs),
                   buffer, depth)) {
             return refuseSettings();
         }
@@ -325,7 +325,7 @@ bool CH32RVUsbAudioFunction::writeDescriptor(CH32RVUsbDescriptorWriter &o, uint8
         const Stream &s = _streams[i];
         const CH32RVUsbAudioDirection d = i == 0 ? P : C;
         const CH32RVUsbAudioFormat &f = s.format;
-        const uint16_t size = packetSize(f, d, hs);
+        const uint16_t size = packetSize(widest(i), d, hs);
         if (!size) {
             return false;
         }
@@ -370,15 +370,17 @@ bool CH32RVUsbAudioFunction::writeDescriptor(CH32RVUsbDescriptorWriter &o, uint8
             o.u8(usbTerminalId(d));
             o.u8(1);                        /* bDelay */
             o.u16(0x0001);                  /* PCM */
-            o.u8(11);
+            o.u8((uint8_t)(8 + 3 * s.rateCount));
             o.u8(DESC_CS_INTERFACE);
             o.u8(AS_FORMAT_TYPE);
             o.u8(0x01);
             o.u8(f.channels);
             o.u8(f.bytesPerSample);
             o.u8(f.bitsPerSample);
-            o.u8(1);                        /* one discrete rate */
-            o.u24(f.sampleRate);
+            o.u8(s.rateCount);              /* discrete rates */
+            for (uint8_t r = 0; r < s.rateCount; r++) {
+                o.u24(s.rates[r]);
+            }
             /* Playback adaptive (follows the host's frames), capture
              * asynchronous; no feedback endpoint. */
             o.u8(9);
@@ -411,7 +413,21 @@ bool CH32RVUsbAudioFunction::describable() const
     if (_captureEnabled && !_streams[1].hasFormat) {
         return false;
     }
-    /* One clock: a headset's two streams run at the same rate. */
-    return !(_playbackEnabled && _captureEnabled) ||
-           _streams[0].format.sampleRate == _streams[1].format.sampleRate;
+    /* One clock: a headset's two streams offer the same rates. */
+    if (!(_playbackEnabled && _captureEnabled)) {
+        return true;
+    }
+    if (_streams[0].rateCount != _streams[1].rateCount) {
+        return false;
+    }
+    for (uint8_t i = 0; i < _streams[0].rateCount; i++) {
+        bool found = false;
+        for (uint8_t j = 0; j < _streams[1].rateCount; j++) {
+            found = found || _streams[0].rates[i] == _streams[1].rates[j];
+        }
+        if (!found) {
+            return false;
+        }
+    }
+    return true;
 }

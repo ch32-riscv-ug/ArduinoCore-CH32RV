@@ -21,7 +21,7 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | MSC | `onWrite()` が無ければ読み出し専用。LBA の範囲外は ILLEGAL REQUEST。読み書きの関数の戻り値は要求どおりでなければエラー。VERIFY(10) |
 | CCID | `configure(CH32RVUsbCcidConfig)`（messageBytes、removable）。removable false で通知の端点を省く。`removeCard()` は bool |
 | Video | `configure(CH32RVUsbVideoConfig{transport})`。`submitFrame()` / `cancelFrame()` / `onFrameResult()` で、フレームを必ず 1 回返す。フレームの大きさと rate の範囲 |
-| Audio | `configure(CH32RVUsbAudioConfig)`（v3 と同じ項目名）。録音の `write()` は入った分を返す。`read()` はサンプルフレームの境界で切る。`clearFormats()`、`currentFormat()`、`capacity()`。`endpointCount()` は使う端点の番号の数 |
+| Audio | `configure(CH32RVUsbAudioConfig)`（v3 と同じ項目名）。録音の `write()` は入った分を返す。`read()` はサンプルフレームの境界で切る。`clearFormats()`、`currentFormat()`、`capacity()`。`endpointCount()` は使う端点の番号の数。同じ PCM 形状でレートだけ違う形式を `addFormat()` で 8 つまで登録でき、ホストが選ぶ（UAC1 は形式の記述子に一覧、UAC2 はクロックの RANGE）。始めは playback の最初のレート。両方向は同じレートの組。変わると `SampleRateChanged` |
 | NCM | `stats()`、`endNetwork()`。MAC と IP の設定は bool を返し、開始後は断る。`configure(CH32RVUsbNetConfig)`（ntbInBytes / ntbOutBytes、txBuffers / rxBuffers とスケッチの配列、maxDatagrams、maxFrameBytes、name）と `ntbInCapacity()` などの照会。送信中に来たフレームは次の NTB にまとめる。受信のバッファが複数なら、onFrame() の間に次の NTB を受ける。`txFrames` は送り終えた時に数える |
 
 ## 2. このコアの事情で残した違い
@@ -42,7 +42,8 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | CDC の `write()` は空くまで待つ（上限 `setTxTimeoutMs()`、既定 1000 ms）、`flush()` は送り終えるまで待つ | Arduino の Serial と同じ意味（3 章の 1） |
 | Audio の再生のリングがあふれたら古い方を捨てる | 遅れの上限を保つ（3 章の 2） |
 | HidVendor の GET_REPORT は reportSize まで 0 で埋めて返す（v3 は送った長さのまま） | report の長さは記述子で決まっている |
-| まだ入れていないもの | Audio の複数の rate、DFU の Download |
+| Audio の形式は 1 ストリームに PCM 形状 1 つ（レートは 8 つまで）。v3 は形状の違う形式を alternate setting で切り替える | まだ入れていない |
+| まだ入れていないもの | Audio の PCM 形状ごとの alternate、DFU の Download |
 
 ## 3. ESP 側への修正依頼の候補
 

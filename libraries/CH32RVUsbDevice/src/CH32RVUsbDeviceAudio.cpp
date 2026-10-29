@@ -120,16 +120,69 @@ bool CH32RVUsbAudioCaptureStream::addFormat(const CH32RVUsbAudioFormat &format)
 bool CH32RVUsbAudioFunction::addFormat(CH32RVUsbAudioDirection d, const CH32RVUsbAudioFormat &format)
 {
     Stream &s = _streams[slot(d)];
-    if (device().started() || s.hasFormat || !packetSize(format, d, false)) {
+    if (device().started() || !packetSize(format, d, false)) {
         return false;
     }
-    const Stream &other = _streams[1 - slot(d)];
-    if (other.hasFormat && other.format.sampleRate != format.sampleRate) {
-        return false;
+    if (s.hasFormat) {
+        /* Another rate of the same PCM shape. */
+        if (format.channels != s.format.channels || format.bytesPerSample != s.format.bytesPerSample ||
+            format.bitsPerSample != s.format.bitsPerSample) {
+            return false;
+        }
+        for (uint8_t i = 0; i < s.rateCount; i++) {
+            if (s.rates[i] == format.sampleRate) {
+                return true;                     /* already there */
+            }
+        }
+        if (s.rateCount >= RATES_MAX) {
+            return false;
+        }
+    } else {
+        s.format = format;
+        s.hasFormat = true;
+        s.rateCount = 0;
     }
-    s.format = format;
-    s.hasFormat = true;
-    _sampleRate = format.sampleRate;
+    s.rates[s.rateCount++] = format.sampleRate;
+    firstRate();
+    return true;
+}
+
+void CH32RVUsbAudioFunction::firstRate()
+{
+    const Stream &s = _streams[0].hasFormat ? _streams[0] : _streams[1];
+    _sampleRate = s.hasFormat ? s.rates[0] : 0;
+}
+
+CH32RVUsbAudioFormat CH32RVUsbAudioFunction::widest(uint8_t i) const
+{
+    CH32RVUsbAudioFormat f = _streams[i].format;
+    for (uint8_t r = 0; r < _streams[i].rateCount; r++) {
+        if (_streams[i].rates[r] > f.sampleRate) {
+            f.sampleRate = _streams[i].rates[r];
+        }
+    }
+    return f;
+}
+
+bool CH32RVUsbAudioFunction::setRate(uint32_t rate)
+{
+    const Stream &s = clockStream();
+    bool known = false;
+    for (uint8_t i = 0; i < s.rateCount; i++) {
+        known = known || s.rates[i] == rate;
+    }
+    if (!known) {
+        return false;                            /* the clock stays as it is */
+    }
+    if (rate != _sampleRate) {
+        _sampleRate = rate;
+        _txRemainder = 0;
+        CH32RVUsbAudioEvent e;
+        e.type = CH32RVUsbAudioEventType::SampleRateChanged;
+        e.target = CH32RVUsbAudioEventTarget::Function;
+        e.sampleRate = rate;
+        pushEvent(e);
+    }
     return true;
 }
 
@@ -159,6 +212,8 @@ bool CH32RVUsbAudioFunction::clearFormat(CH32RVUsbAudioDirection d)
         return false;
     }
     _streams[slot(d)].hasFormat = false;
+    _streams[slot(d)].rateCount = 0;
+    firstRate();
     return true;
 }
 
@@ -169,6 +224,7 @@ bool CH32RVUsbAudioPlaybackStream::currentFormat(CH32RVUsbAudioFormat &format) c
         return false;
     }
     format = s.format;
+    format.sampleRate = _function._sampleRate;
     return true;
 }
 
@@ -179,6 +235,7 @@ bool CH32RVUsbAudioCaptureStream::currentFormat(CH32RVUsbAudioFormat &format) co
         return false;
     }
     format = s.format;
+    format.sampleRate = _function._sampleRate;
     return true;
 }
 
@@ -588,10 +645,10 @@ void CH32RVUsbAudioFunction::usbConfigured(CH32RVUsbSpeed speed)
 {
     _highSpeed = ch32rv_usb_series_can(CH32RVUsbSpeed::High) && speed != CH32RVUsbSpeed::Full;
     _rxPacketSize = stream(CH32RVUsbAudioDirection::Playback)
-                        ? packetSize(_streams[0].format, CH32RVUsbAudioDirection::Playback, _highSpeed)
+                        ? packetSize(widest(0), CH32RVUsbAudioDirection::Playback, _highSpeed)
                         : 0;
     _txPacketSize = stream(CH32RVUsbAudioDirection::Capture)
-                        ? packetSize(_streams[1].format, CH32RVUsbAudioDirection::Capture, _highSpeed)
+                        ? packetSize(widest(1), CH32RVUsbAudioDirection::Capture, _highSpeed)
                         : 0;
     _rxDepth = _txDepth = 0;
     if (!_rxPacketSize || !ring(0, _rxPacketSize, _rxFifo, _rxDepth)) {
@@ -620,7 +677,7 @@ void CH32RVUsbAudioFunction::sendPacket()
     }
     const CH32RVUsbAudioFormat &f = _streams[1].format;
     const uint32_t frames = _highSpeed ? 8000u : 1000u;
-    _txRemainder += f.sampleRate;
+    _txRemainder += _sampleRate;
     uint32_t samples = _txRemainder / frames;
     _txRemainder %= frames;
     const uint16_t frameBytes = (uint16_t)(f.channels * f.bytesPerSample);
@@ -648,7 +705,7 @@ void CH32RVUsbAudioFunction::sendFeedback()
     }
     const uint32_t frames = _highSpeed ? 8000u : 1000u;
     const uint8_t shift = _highSpeed ? 16 : 14;
-    const uint32_t nominal = (uint32_t)(((uint64_t)s.format.sampleRate << shift) / frames);
+    const uint32_t nominal = (uint32_t)(((uint64_t)_sampleRate << shift) / frames);
     const int32_t frameBytes = s.format.channels * s.format.bytesPerSample;
     /* Off from half full by k sample frames: ask for k/32 more or fewer per
      * frame, at most one. */
@@ -715,12 +772,15 @@ bool CH32RVUsbAudioFunction::getEntity(const CH32RVUsbSetup &r, uint16_t &length
             put32(buf, _sampleRate);
             n = 4;
         } else if (selector == SEL_SAMPLE_RATE && r.bRequest == UAC2_RANGE) {
-            /* One discrete rate; Linux first reads only wNumSubRanges. */
-            put16(buf, 1);
-            put32(buf + 2, _sampleRate);
-            put32(buf + 6, _sampleRate);
-            put32(buf + 10, 0);
-            n = 14;
+            /* Each rate a subrange of its own; Linux first reads only wNumSubRanges. */
+            const Stream &s = clockStream();
+            put16(buf, s.rateCount);
+            for (uint8_t i = 0; i < s.rateCount; i++) {
+                put32(buf + 2 + 12 * i, s.rates[i]);
+                put32(buf + 6 + 12 * i, s.rates[i]);
+                put32(buf + 10 + 12 * i, 0);
+            }
+            n = (uint16_t)(2 + 12 * s.rateCount);
         } else if (selector == SEL_CLOCK_VALID && r.bRequest == UAC2_CUR) {
             buf[0] = 1;
             n = 1;
@@ -769,7 +829,7 @@ bool CH32RVUsbAudioFunction::getEntity(const CH32RVUsbSetup &r, uint16_t &length
     return true;
 }
 
-/* SET_CUR on an entity. The clock takes only the one rate it has. */
+/* SET_CUR on an entity. The clock takes the rates it offers. */
 bool CH32RVUsbAudioFunction::setEntity(const CH32RVUsbSetup &r, const uint8_t *data)
 {
     if (r.bRequest != (_protocol == CH32RVUsbAudioProtocol::Uac2 ? UAC2_CUR : UAC1_SET_CUR)) {
@@ -786,7 +846,7 @@ bool CH32RVUsbAudioFunction::setEntity(const CH32RVUsbSetup &r, const uint8_t *d
         }
         const uint32_t rate = (uint32_t)data[0] | ((uint32_t)data[1] << 8) | ((uint32_t)data[2] << 16) |
                               ((uint32_t)data[3] << 24);
-        return rate == _sampleRate;
+        return setRate(rate);
     }
     if (selector == SEL_MUTE && r.wLength == 1) {
         return applyControl(entity, SEL_MUTE, channel, data[0]);
@@ -797,7 +857,8 @@ bool CH32RVUsbAudioFunction::setEntity(const CH32RVUsbSetup &r, const uint8_t *d
     return false;
 }
 
-/* UAC1's sampling frequency control on a data endpoint: one fixed rate. */
+/* UAC1's sampling frequency control on a data endpoint: the clock's rate,
+ * one of the stream's (the two streams share the clock). */
 bool CH32RVUsbAudioFunction::getEndpoint(const CH32RVUsbSetup &r, uint16_t &length)
 {
     if (_protocol != CH32RVUsbAudioProtocol::Uac1) {
@@ -814,7 +875,12 @@ bool CH32RVUsbAudioFunction::getEndpoint(const CH32RVUsbSetup &r, uint16_t &leng
     if (!s || selector != 1 || r.wLength != 3 || r.bRequest < UAC1_GET_CUR || r.bRequest > UAC1_GET_RES) {
         return false;
     }
-    const uint32_t rate = r.bRequest == UAC1_GET_RES ? 0 : s->format.sampleRate;
+    uint32_t rate = r.bRequest == UAC1_GET_RES ? 0 : _sampleRate;
+    for (uint8_t i = 0; i < s->rateCount && (r.bRequest == UAC1_GET_MIN || r.bRequest == UAC1_GET_MAX); i++) {
+        if (i == 0 || (r.bRequest == UAC1_GET_MIN ? s->rates[i] < rate : s->rates[i] > rate)) {
+            rate = s->rates[i];
+        }
+    }
     _ctl[0] = (uint8_t)rate;
     _ctl[1] = (uint8_t)(rate >> 8);
     _ctl[2] = (uint8_t)(rate >> 16);
@@ -839,7 +905,7 @@ bool CH32RVUsbAudioFunction::setEndpoint(const CH32RVUsbSetup &r, const uint8_t 
         return false;
     }
     const uint32_t rate = (uint32_t)data[0] | ((uint32_t)data[1] << 8) | ((uint32_t)data[2] << 16);
-    return rate == s->format.sampleRate;
+    return setRate(rate);
 }
 
 bool CH32RVUsbAudioFunction::usbControl(CH32RVUsbControlStage stage, const CH32RVUsbSetup &r)

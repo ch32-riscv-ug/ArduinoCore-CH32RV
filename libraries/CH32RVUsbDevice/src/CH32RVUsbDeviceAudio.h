@@ -1,7 +1,7 @@
 /* USB Audio, UAC1 or UAC2, in EspUsbDevice's shape (EspUsbAudioFunction,
  * renamed Esp -> CH32RV): one function with a playback stream (host to
  * device, a speaker), a capture stream (device to host, a microphone), or
- * both (a headset), each with one PCM format, a feature unit with mute and
+ * both (a headset), each with one PCM shape at up to 8 sample rates, a feature unit with mute and
  * volume per channel, and an event queue for what the host changed. Included
  * by CH32RVUsbDevice.h.
  *
@@ -20,8 +20,14 @@
  * Packets move in ch32rv_usb_task() (after loop(), inside delay()): a sketch
  * that blocks for longer than the FIFOs hold (4 packets) loses samples.
  *
- * Differences from EspUsbDevice: one format per stream (Esp accepted more but
- * its begin() refused them), the function joins the device when declared,
+ * Several rates: addFormat() again with the same channels, bytes and bits
+ * per sample and another rate (up to 8 per stream). The function has one
+ * clock, so a headset gives both streams the same rates. It starts at the
+ * playback stream's first rate (capture's when there is none) and the host
+ * picks another of them (SampleRateChanged).
+ *
+ * Differences from EspUsbDevice: one PCM shape per stream (Esp switches
+ * between shapes with alternate settings), the function joins the device when declared,
  * and a format that cannot be described makes CH32RVUsbDevice::begin() fail
  * (DescriptorTooLarge) - check audio.begin() first to tell the two apart. */
 #pragma once
@@ -234,9 +240,12 @@ private:
     friend class CH32RVUsbAudioPlaybackStream;
     friend class CH32RVUsbAudioCaptureStream;
 
+    static constexpr uint8_t RATES_MAX = 8;
     struct Stream {
-        CH32RVUsbAudioFormat format;
+        CH32RVUsbAudioFormat format;     /* the PCM shape, at the first rate */
         bool hasFormat = false;
+        uint32_t rates[RATES_MAX] = {};
+        uint8_t rateCount = 0;
         uint8_t alternate = 0;
         bool muted[3] = {};
         int16_t volume[3] = {};
@@ -248,6 +257,13 @@ private:
 
     bool addFormat(CH32RVUsbAudioDirection direction, const CH32RVUsbAudioFormat &format);
     bool clearFormat(CH32RVUsbAudioDirection direction);
+    /* The shape at the stream's highest rate: what packets and rings are sized for. */
+    CH32RVUsbAudioFormat widest(uint8_t i) const;
+    /* The rates the clock offers: playback's, else capture's. */
+    const Stream &clockStream() const { return _streams[_playbackEnabled ? 0 : 1]; }
+    void firstRate();
+    /* The host picked a rate: false when it is not one of the stream's. */
+    bool setRate(uint32_t rate);
     /* The ring for a stream: the sketch's or the class's, and how deep. */
     bool ring(uint8_t i, uint16_t packet, uint8_t *&buffer, uint16_t &depth) const;
     /* A stream, and a format on each stream added (begin()). */
@@ -307,7 +323,8 @@ private:
     uint8_t _rxPacket[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
     uint8_t _txPacket[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
     uint8_t _feedback[4] __attribute__((aligned(4)));
-    uint8_t _ctl[16] __attribute__((aligned(4)));
+    /* A UAC2 RANGE answer is the longest: 2 + 12 bytes a rate. */
+    uint8_t _ctl[2 + 12 * RATES_MAX] __attribute__((aligned(4)));
     uint16_t _rxHead = 0, _rxCount = 0, _rxDepth = 0;
     uint16_t _txHead = 0, _txCount = 0, _txDepth = 0;
     uint16_t _rxPacketSize = 0, _txPacketSize = 0;

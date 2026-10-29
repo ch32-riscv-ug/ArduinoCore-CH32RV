@@ -1,5 +1,6 @@
 /* USB device contracts, media set (tests/instrumented/usb): a UAC1 headset
- * (32 kHz, 16-bit mono both ways) and a UVC camera (80x60 YUY2, bulk), with
+ * (32 kHz or 16 kHz - one clock, the host picks - 16-bit mono both ways) and
+ * a UVC camera (80x60 YUY2, bulk), with
  * the default DFU runtime. Content the host can check exactly:
  *   - microphone: consecutive samples count up by one (wrapping at 16 bits)
  *   - camera: byte i of frame f is (i * 7 + f) & 0xFF
@@ -7,6 +8,7 @@
  *
  *   ready <nonce>   READY <nonce> <build id> <USB started 0/1> <last error>
  *   audio           AUDIO <speaker bytes> <speaker byte sum> <mic writes refused>
+ *                   <current rate> <SampleRateChanged events>
  *   video           VIDEO <frames sent> <streaming 0/1> */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
@@ -27,6 +29,7 @@ static CH32RVUsbDeviceConfig config;
 static uint16_t ramp;
 static uint32_t lastMicros, owed, refused;
 static uint32_t speakerBytes, speakerSum;
+static uint32_t rateChanges;
 static volatile uint32_t frames;
 static uint32_t drawing;
 static uint32_t nextFrameMs;
@@ -62,7 +65,11 @@ static void reply(const char *command)
         SerialDMSeq.print(' ');
         SerialDMSeq.print((unsigned long)speakerSum);
         SerialDMSeq.print(' ');
-        SerialDMSeq.println((unsigned long)refused);
+        SerialDMSeq.print((unsigned long)refused);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print((unsigned long)audio.currentSampleRate());
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println((unsigned long)rateChanges);
     } else if (strcmp(command, "video") == 0) {
         SerialDMSeq.print("VIDEO ");
         SerialDMSeq.print((unsigned long)frames);
@@ -77,7 +84,9 @@ void setup()
 {
     SerialDMSeq.begin(115200);
     speaker.addFormat({RATE, 1, 2, 16});
+    speaker.addFormat({RATE / 2, 1, 2, 16});
     mic.addFormat({RATE, 1, 2, 16});
+    mic.addFormat({RATE / 2, 1, 2, 16});
     camera.setFormat(CH32RVUsbDeviceVideoFormat::Yuy2);
 #ifdef USB_MEDIA_ISOCHRONOUS
     CH32RVUsbVideoConfig video;
@@ -97,6 +106,12 @@ void setup()
 void loop()
 {
     deliverEvents();   /* the callbacks set in setup() run here */
+    CH32RVUsbAudioEvent event;
+    while (audio.pollEvent(event)) {
+        if (event.type == CH32RVUsbAudioEventType::SampleRateChanged) {
+            rateChanges++;
+        }
+    }
     /* Microphone: as many samples as real time asks for. */
     const uint32_t now = micros();
     uint32_t elapsed = now - lastMicros;
@@ -104,7 +119,7 @@ void loop()
     if (elapsed > 10000) {
         elapsed = 10000;
     }
-    owed += elapsed * RATE;
+    owed += elapsed * audio.currentSampleRate();
     uint32_t n = owed / 1000000;
     owed %= 1000000;
     /* No faster than the host fetches: this clock and the host's differ. */
