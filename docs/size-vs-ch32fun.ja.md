@@ -5,7 +5,7 @@ ADR-0016 と planning/core-redesign/tasks/ARCH-SELECT-01/decision.ja.md の優�
 
 ## 測り方（2026-10-22）
 
-- ch32fun は cnlohr/ch32fun の a800cbd（TODO.ja.md の参照と同じ）。`examples/blink` と、`SystemInit()` だけの空の `main()`。
+- ch32fun は cnlohr/ch32fun の a800cbd（planning/core-redesign/todo-carried.ja.md の用途調査の参照と同じ）。`examples/blink` と、`SystemInit()` だけの空の `main()`。
   `make TARGET_MCU=<MCU> PREFIX=riscv-none-elf <name>.elf`。
 - このコアは同じ動作の Arduino スケッチ（空の `setup()` / `loop()`、同じ 4 端子を 250 ms ごとに切り替える Blink）を
   既定のメニューでビルド。

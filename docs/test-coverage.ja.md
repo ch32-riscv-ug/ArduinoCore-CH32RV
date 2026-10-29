@@ -69,7 +69,8 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 | initVariant/yield/serialEvent | あり | あり・限定: hooks_selftest | dispatch/再入条件と他機能との共存。host と実機 |
 | reset/system 情報 | あり | あり・限定: system_selftest、reset_probe、core_api | reset 種別ごとの独立確認、系列差。P4/電源制御 |
 | IWDG | 条件付きであり | あり・限定: system_selftest | software reset fallback を IWDG 成功と数えない。実 watchdog/reset reason、独立 timeout 観測 |
-| EEPROM API、汎用 sleep/RTC API | 未実装 | なし | 採用範囲の決定が先。silicon や vendor header の存在を公開 API 実装と混同しない |
+| 休止（`CH32RV.lightSleep` / `deepSleep`）と RTC の時計（`time()` / `settimeofday()`） | AWU の系列（V003・V00x・X033/X035）と RTC の系列（V20x・V205・V30x・L103/M103）。V103 は外した | 手動（2026-10-27）: 休止は V003・V006・X035（長さのずれ X035 +3 %、V006 −10 %）、RTC と休止は V203・V205・V307・L103 | 自動試験、V103（最初の休止から起きない）、休止の長さの精度、外部時計との照合 |
+| EEPROM API | 出さない（[flash-store](flash-store.ja.md)。内蔵フラッシュは `ch32rv_flash.h`） | — | — |
 
 ## 通信
 
@@ -134,7 +135,6 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 | TinyUSB source の固定 | 撤去 | TinyUSB は 2026-10-20 に外した（USB は自前のスタック） | — |
 | Arduino USB 初期化・device API | 一部（X033/X035 の CDC・HID・MIDI・ベンダー・MSC・CCID・NCM・オーディオ・ビデオ・DFU runtime、WebUSB / MS OS 2.0。V103 / V20x / V30x はビルドのみ） | 現行: tests/instrumented/usb（X035、ホスト役は PC）。手動確認: 全 example の列挙と動作、CDC 双方向 32 KiB、`ch32rv isp flash --entry auto` での書き込み | 他系列、suspend / resume、大量転送、PC 以外のホスト役 |
 | Arduino USB host API | X035 R8T6/C8T6/G8U6/G8R6・V20x・V30x の USBFS（CH32RVUsbHost、HID・CDC・MIDI・MSC・ベンダー・CCID・ハブ） | 現行: peer/usb/host（usb-peer-host / -classes、CH32X035C8T6 と ESP32-S3 の EspUsbDevice）。F8U6 で Unsupported を実機確認。V20x / V30x はビルドのみ | V20x / V30x での実行、ハブ越し、低速デバイス、準備できない MSC |
-| CDC/HID 等の sketch USB class | 未実装 | なし | host 側 driver と device 側 class の control/data/error/復旧契約を別々に検証。対向機と role 別 profile |
 | USB 対向（X035 デバイス ⇔ ESP32-S3 ホスト） | X035 の全デバイスクラス | 現行: peer/usb/device（usb-peer / -classes / -media / -net、EspUsbHost 2.10.0） | バルク UVC（EspUsbHost が読まない）、オーディオの全二重（S3 が落とす）、マイクの毎フレーム取得 |
 | USB controller/speed の系列差 | V103/V20x(USBFS・USBD)/V303/V305/V307/V317(USBFS・USBHS)に統合 | ビルドのみ(実機は X035) | vendor driver の存在だけで対応とはしない。実装採用対象ごとの build と実機 |
 | ADC 内部チャネル（Vrefint・温度・VDD）と L103 のオフセット補正 | V00x 以外の温度センサ持ち・Vrefint 持ちの系列 | 手動（2026-10-15）: X035・L103・V103・V307 で値を確認 | 自動試験、V20x / V30x の校正値、外部電圧との照合 |
