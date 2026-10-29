@@ -7,6 +7,7 @@ CDC シリアル、HID（キーボード・マウス・ゲームパッド・メ�
 USB ネットワーク（CDC-NCM）、オーディオ（UAC1 / UAC2）、カメラ（UVC）、DFU ランタイム（書き込みの入口）を、宣言するだけで組み合わせられる USB デバイスのライブラリです。
 API は [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) と名前・操作をそろえています。
 移植時には下記の API 差分と、CH32 の pin・RAM・endpoint・帯域の制約を確認します。
+v3（TinyUSB を使わない版）との合わせ方と、残した違いの理由は [EspUsbDevice v3 との API の合わせ方](../../docs/usb-espusbdevice-v3.ja.md) にあります。
 土台はこのライブラリ自身のデバイススタックで、TinyUSB は使いません（[ADR-0012](../../docs/adr/0012-usb-stack.ja.md)）。
 使い方の全体は [docs/usb.ja.md](../../docs/usb.ja.md) にあります。
 
@@ -53,7 +54,8 @@ void loop() {
 - **キーボードレイアウトは、使ったものだけがリンクされます。** 全部（19種）を持つと約 17 KB になるため、
   レイアウトごとに別のオブジェクトにしています。
 - **CDC は `Stream` です。** `print()` などの Arduino の関数がそのまま使え、ホストが開いている間は書き込みが
-  全部終わるまで待ちます（EspUsbDevice は書けた分だけ返します）。1200bps タッチでブートローダーに入れます。
+  全部終わるまで待ちます。ただし、進まないまま `setTxTimeoutMs()`（既定 1000 ms）が過ぎたら、残りを捨てます
+  （EspUsbDevice は書けた分だけ返します）。1200bps タッチでブートローダーに入れます。
 - **スタックは `loop()` と `delay()` から動きます**（RTOS のタスクではありません）。`device.task()` で明示的にも
   動かせます。
 - **通知の callback は `deliverEvents()` から呼ばれます**（`onRx()`、`onLineState()`、`onBusEvent()`、`onFrame()`

@@ -9,6 +9,7 @@
 | [CH32RVUsbHost](../libraries/CH32RVUsbHost/) | チップの USB をホストとして使う（HID・CDC シリアル・MIDI・MSC・ベンダー・CCID） | `#include <CH32RVUsbHost.h>` |
 
 ホストは [CH32RVUsbHost](../libraries/CH32RVUsbHost/)（`#include <CH32RVUsbHost.h>`）です（[ホスト](#ホストch32rvusbhost)）。
+ESP32 の EspUsbDevice v3 と API をどう合わせたかは、[EspUsbDevice v3 との API の合わせ方](usb-espusbdevice-v3.ja.md) にあります。
 
 ## サンプルから始める
 
