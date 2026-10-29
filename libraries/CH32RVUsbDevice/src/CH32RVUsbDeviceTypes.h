@@ -342,14 +342,15 @@ static inline bool ch32rv_usb_at(CH32RVUsbSpeed actual, CH32RVUsbSpeed speed)
 }
 
 
-/* A borrowed transfer (Vendor writeDirect(), as EspUsbDevice's): why it was
+/* A borrowed transfer (Vendor writeDirect() / readDirect(), as EspUsbDevice's): why it was
  * refused, and how it ended. A refusal borrows nothing and reports nothing;
  * an accepted one is reported exactly once, whatever ends it. */
 enum class CH32RVUsbTransferError : uint8_t {
     None = 0,
     NotSupported,
     NotMounted,      /* the host has not configured the interface */
-    BadArgument,     /* no buffer, no length, or beyond maxDirectTransfer() */
+    BadArgument,     /* no buffer, no length, beyond maxDirectTransfer(), or
+                        a receive not whole packets */
     NotAligned,      /* not used: any alignment is taken */
     NotDmaCapable,   /* not used */
     Busy,            /* a transfer is already out on the endpoint */
@@ -373,7 +374,7 @@ struct CH32RVUsbTransferResult {
     size_t requestedBytes = 0;
     size_t actualBytes = 0;
     CH32RVUsbTransferStatus status = CH32RVUsbTransferStatus::Success;
-    /* False after a reset or end(): the controller may have sent part of it. */
+    /* False after a reset, end() or a cancel: the controller may have moved part of it. */
     bool actualBytesKnown = true;
     uint32_t id = 0;
 };
@@ -391,10 +392,18 @@ enum class CH32RVUsbStreamTermination : uint8_t { FunctionDefault, Continue, End
  * nothing is allocated. Receive needs room for two packets at the speed the
  * host picks (128 / 1024 / 2048 bytes). Vendor's onRxData() transfers land
  * in the receive buffer, whole packets of it. */
+/* How Vendor receives: Stream (available() / read(); onRxData() switches to
+ * handing each transfer over, at any time), Callback (the same, but begin()
+ * fails without onRxData()), Borrowed (only into readDirect()'s buffers;
+ * begin() fails without onDirectRxComplete()) or Disabled (the OUT endpoint
+ * is never armed: the host's writes wait). CDC takes Stream only. */
+enum class CH32RVUsbBulkRxMode : uint8_t { Stream, Callback, Borrowed, Disabled };
+
 struct CH32RVUsbBulkStreamConfig {
     size_t rxCapacity = 0;
     size_t txCapacity = 0;
     uint8_t *rxBuffer = nullptr;
     uint8_t *txBuffer = nullptr;
     CH32RVUsbStreamTermination streamTermination = CH32RVUsbStreamTermination::FunctionDefault;
+    CH32RVUsbBulkRxMode rxMode = CH32RVUsbBulkRxMode::Stream;
 };

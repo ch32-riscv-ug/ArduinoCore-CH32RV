@@ -68,7 +68,9 @@ For new control requests, validate direction, recipient, `bRequest`, `wIndex` an
 
 ### Switching to direct transmission
 
-`writeDirect(buffer, length)` transmits from the caller's array. Success does not release the buffer: retain it unchanged until `onDirectTxComplete()` hands it back. That happens exactly once per accepted transfer - sent (`Success`), a bus reset (`BusReset`, from `deliverEvents()`) or `end()` (`Stopped`, from inside `end()`). A refused transfer borrows nothing; the returned submission's `error` says why.
+`writeDirect(buffer, length)` transmits from the caller's array. Success does not release the buffer: retain it unchanged until `onDirectTxComplete()` hands it back. That happens exactly once per accepted transfer - sent (`Success`), a bus reset (`BusReset`, from `deliverEvents()`), `end()` (`Stopped`, from inside `end()`) or `cancelDirectTx()` (`Cancelled`, from inside it). A refused transfer borrows nothing; the returned submission's `error` says why. The length goes up to `maxDirectTransfer()`; past 65535 bytes it is still one transfer with no short packet inside.
+
+Receiving works the same way. Set `rxMode = CH32RVUsbBulkRxMode::Borrowed` with `configure()` and register `onDirectRxComplete()` before `begin()`. `readDirect(buffer, capacity)` posts one buffer; it comes back to `onDirectRxComplete()` when full or on a short packet (`actualBytes` is the data). Nothing is received until the next `readDirect()`, so the host's writes wait. `capacity` is a multiple of the packet size.
 
 Do not pass a local array and return while it is in use. Plan FIFO/direct-transfer interaction and whether to retain or discard data when the next transfer cannot start. See [HsAdcStream](../../../CH32RVHsAdc/examples/HsAdcStream/README.md) and [LogicStream](../../../CH32RVLogicCapture/examples/LogicStream/README.md).
 

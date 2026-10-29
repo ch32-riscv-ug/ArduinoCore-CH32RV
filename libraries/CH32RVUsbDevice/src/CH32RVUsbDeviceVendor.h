@@ -51,9 +51,10 @@ public:
     using Print::write;
     /* printf() as on HardwareSerial (and ESP32's Print). */
     CH32RV_PRINTF_MEMBER
-    /* Buffers and how write() ends on the wire (CH32RVUsbBulkStreamConfig;
-     * Vendor's default sends no zero-length packet). While the device is
-     * stopped; false (nothing changed) for a setting that cannot be used. */
+    /* Buffers, how write() ends on the wire (Vendor's default sends no
+     * zero-length packet) and how data is received (rxMode). While the
+     * device is stopped; false (nothing changed) for a setting that cannot be
+     * used. */
     bool configure(const CH32RVUsbBulkStreamConfig &config);
     /* Bytes the receive FIFO holds at most, and write() can queue. */
     size_t readCapacity() const { return (size_t)(_rxSize - 1); }
@@ -72,9 +73,11 @@ public:
     /* The zero-copy path (EspUsbDevice's): one bulk IN transfer straight from
      * `buffer`, which stays the caller's - untouched and alive - until
      * onDirectTxComplete() hands it back, which happens exactly once for an
-     * accepted transfer: sent (Success), a bus reset (BusReset) or end()
-     * (Stopped, from inside end()). A refusal borrows nothing. Any length up
-     * to maxDirectTransfer() and any alignment. Not mixed with write():
+     * accepted transfer: sent (Success), a bus reset (BusReset), end()
+     * (Stopped, from inside end()) or cancelDirectTx() (Cancelled, from
+     * inside it). A refusal borrows nothing. Any length up to
+     * maxDirectTransfer() and any alignment; a long one goes out as one
+     * transfer with no short packet inside it. Not mixed with write():
      * refused (Busy) while the FIFO has data in flight, and write() waits
      * while a direct transfer is out. Arming the next one from
      * onDirectTxComplete() keeps a stream gapless. The controllers move it
@@ -82,12 +85,30 @@ public:
      * 4-byte aligned, or it goes a packet at a time through a bounce buffer),
      * the USBFS ones copy a packet at a time. */
     static bool directWriteSupported() { return true; }
-    size_t maxDirectTransfer() const { return 65535; }
+    size_t maxDirectTransfer() const { return DIRECT_MAX; }
     CH32RVUsbTransferSubmission writeDirect(const void *buffer, size_t length,
                                             CH32RVUsbTransferTermination termination =
                                                 CH32RVUsbTransferTermination::Continue);
-    /* From deliverEvents() (from end() for Stopped). */
+    /* From deliverEvents() (from end() for Stopped, from the cancel for Cancelled). */
     void onDirectTxComplete(DirectCompleteCallback cb) { _onDirectTx = cb; deliverWith(deliverThis); }
+    /* Receive straight into `buffer` (rxMode Borrowed): one OUT transfer of
+     * up to `capacity` bytes, whole packets of the speed the host picked,
+     * that ends full or on a short packet. The buffer is handed back to
+     * onDirectRxComplete() exactly once, as for writeDirect(); actualBytes
+     * is the data. Until the next readDirect() the endpoint is not armed and
+     * the host's writes wait. Any alignment. */
+    CH32RVUsbTransferSubmission readDirect(void *buffer, size_t capacity);
+    /* The largest readDirect() capacity; 0 unless rxMode is Borrowed. */
+    size_t maxDirectReceive() const;
+    void onDirectRxComplete(DirectCompleteCallback cb) { _onDirectRx = cb; deliverWith(deliverThis); }
+    /* Stop the loan out (id 0: whichever it is; another id: only that one).
+     * The controller lets go of the buffer at once and the completion
+     * callback gets it with Cancelled before this returns; part of it may
+     * have moved (actualBytesKnown false). False when there is none to
+     * cancel (a second cancel of one is false: it has been handed back).
+     * The data toggle is left as it is. */
+    bool cancelDirectTx(uint32_t id = 0);
+    bool cancelDirectRx(uint32_t id = 0);
 
     /* From deliverEvents(). onRx(): data waits in the FIFO (not at all when
      * it was read before). onTxComplete(): the bytes of write() sent since
@@ -124,7 +145,14 @@ public:
     void handleRx();
     void handleTxComplete(size_t sentBytes);
     void directEnded(CH32RVUsbTransferStatus status, size_t actual, bool known);
+    void directRxEnded(CH32RVUsbTransferStatus status, size_t actual, bool known);
     bool handleControlRequest(CH32RVUsbControlStage stage, const CH32RVUsbSetup &setup);
+    /* The receive mode has the callback it needs (checked at begin()). */
+    bool receiveReady() const
+    {
+        return (_rxMode != CH32RVUsbBulkRxMode::Callback || _onRxData) &&
+               (_rxMode != CH32RVUsbBulkRxMode::Borrowed || _onDirectRx);
+    }
 
     /* The endpoint pair, set while the descriptors are laid out. */
     uint8_t _ep = 0;
@@ -139,6 +167,9 @@ protected:
 
 private:
     static constexpr uint16_t BUFFER = CH32RV_USB_MAX_PACKET < 128 ? 256 : 2 * CH32RV_USB_MAX_PACKET;
+    static constexpr size_t DIRECT_MAX = 0x7FFFFFFFu;
+    /* A borrowed transfer is armed in pieces of whole packets the controller takes at once. */
+    uint16_t directPiece() const { return (uint16_t)(0xFFFFu / _packet * _packet); }
     void receive();
     void push();
     uint16_t rxUsed() const;
@@ -163,7 +194,14 @@ private:
     CH32RVUsbTransferResult _directOut;   /* the loan in flight, then its result */
     bool _directDone = false;            /* _directOut waits for delivery */
     bool _directZlp = false;             /* EndWithShortPacket: a ZLP follows */
+    uint16_t _directArmed = 0;           /* the piece in flight */
     uint32_t _directId = 0;
+    DirectCompleteCallback _onDirectRx = nullptr;
+    CH32RVUsbTransferResult _directIn;   /* readDirect()'s loan, then its result */
+    bool _directRx = false, _directInDone = false;
+    uint16_t _directInArmed = 0;
+    uint32_t _directInId = 0;
+    CH32RVUsbBulkRxMode _rxMode = CH32RVUsbBulkRxMode::Stream;
     RxDataCallback _onRxData = nullptr;
     ControlRequestCallback _onControl = nullptr;
 };

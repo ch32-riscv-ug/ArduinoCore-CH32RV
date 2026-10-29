@@ -89,8 +89,10 @@ Differences:
   one transfer straight from the caller's buffer, which stays untouched until
   `onDirectTxComplete()` hands it back (once, whether sent, reset or stopped).
   No build flag and no alignment rule (the USBSS DMA reads a 4-byte-aligned
-  buffer itself). `onRxData()` is a run-time choice too; its transfers land in
-  the receive buffer `configure()` gives. Only here:
+  buffer itself). Receiving can borrow too (`rxMode` Borrowed, `readDirect()`),
+  and either loan can be cancelled (`cancelDirectTx()` / `cancelDirectRx()`).
+  `onRxData()` is a run-time choice; its transfers land in the receive buffer
+  `configure()` gives. Only here:
   `setInterfaceProtocol()` (subclass / protocol) and the HID vendor class's
   `setUsage()`.
 - **A DFU runtime interface comes by default**; `config.dfuRuntime = false`

@@ -77,7 +77,8 @@ void loop() {
 - **ベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
   送ります（`onDirectTxComplete()` で返るまで、バッファは触らず残してください。送り終えても、リセットや `end()` で
   止まっても、必ず 1 回返ります）。ビルド時の設定は要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で
-  直接読みます）。`onRxData()` も実行時に選べ、受信は `configure()` で渡した受信バッファに入ります。`setInterfaceProtocol()` で subclass / protocol を、
+  直接読みます）。受信も借りられ（`rxMode` を Borrowed にして `readDirect()`）、どちらも取り消せます
+（`cancelDirectTx()` / `cancelDirectRx()`）。`onRxData()` は実行時に選べ、受信は `configure()` で渡した受信バッファに入ります。`setInterfaceProtocol()` で subclass / protocol を、
   HID ベンダーの `setUsage()` で usage page / usage を変えられます（どちらもこのライブラリだけのもの）。
 - **既定の文字列と ID は実行時に変えます**（`CH32RVUsbDeviceConfig` の VID/PID・メーカー名・製品名、`setName()`
   のインターフェース名、MSC の `vendorID()` など、FAT の `format()` のボリュームラベル）。`build_opt.h` の define では変えません。
@@ -106,7 +107,7 @@ void loop() {
 | `CH32RVUsbDeviceHidVendor` | ベンダー定義の HID（ドライバ不要のデータ通信）。`sendInput()`、`onOutputReport()`、`onFeatureReport()`、`setUsage()`。レポートは FS だけの系列で 63 バイト、HS / SS の系列で 511 / 1023 バイトまで |
 | `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID |
 | `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル）。`noteOn(channel, note, velocity, cable)`、`readPacket()` |
-| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`peek()`（このコアの独自）、`write()`、`flush()`、`configure()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onDirectTxComplete()`、`onTxComplete()`、`onRxData()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
+| `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`peek()`（このコアの独自）、`write()`、`flush()`、`configure()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onDirectTxComplete()`、`readDirect()`、`onDirectRxComplete()`、`cancelDirectTx()`、`cancelDirectRx()`、`onTxComplete()`、`onRxData()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
 | `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`、`isWritable()`、`vendorID()` など |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |

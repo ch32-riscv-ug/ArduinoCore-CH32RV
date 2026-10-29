@@ -60,7 +60,7 @@ bool CH32RVUsbDeviceCdcSerial::configure(const CH32RVUsbBulkStreamConfig &config
 {
     uint8_t *rx, *tx;
     uint16_t rxSize, txSize;
-    if (device().started() ||
+    if (device().started() || config.rxMode != CH32RVUsbBulkRxMode::Stream ||
         !ch32rv_usb_bulk_buffer(config.rxBuffer, config.rxCapacity, _rxStore, sizeof _rxStore, rx, rxSize) ||
         !ch32rv_usb_bulk_buffer(config.txBuffer, config.txCapacity, _txStore, sizeof _txStore, tx, txSize)) {
         return false;

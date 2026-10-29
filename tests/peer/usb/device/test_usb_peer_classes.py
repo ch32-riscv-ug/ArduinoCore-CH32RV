@@ -71,3 +71,20 @@ def test_usb_peer_classes(dut, peers):
     dut.write("card\n")
     m = dut.expect(rb"CARD (\d) (\d) (\d+)\r?\n", timeout=5)
     assert m.group(1) == b"1" and m.group(2) == b"1" and int(m.group(3)) >= 1
+
+    # Borrowed receive (last: it restarts the device). The echo lands in
+    # readDirect()'s buffer and goes back through writeDirect(); a posted
+    # receive is cancelled and handed back before cancelDirectRx() returns.
+    dut.write("vborrow\n")
+    m = dut.expect(rb"VBORROW (\d) (\d)\r?\n", timeout=5)
+    assert m.group(1) == b"1" and m.group(2) == b"1"
+    wait_enumerated(s3, build_id)
+    for _ in range(3):
+        data = secrets.token_bytes(48)
+        assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
+    dut.write("vcancel\n")
+    m = dut.expect(rb"VCANCEL (\d) (\d) (\d) (\d+) (\d+)\r?\n", timeout=5)
+    assert m.group(1, 2, 3) == (b"1", b"0", b"0")
+    assert int(m.group(4)) == 1 and int(m.group(5)) == 3
+    data = secrets.token_bytes(48)
+    assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()

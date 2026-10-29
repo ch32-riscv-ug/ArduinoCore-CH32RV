@@ -76,7 +76,14 @@ interface claim 失敗はまずホスト側の権限・driver binding・ほか�
 `writeDirect(buffer, length)` は呼び出し側の配列を直接参照する送信です。通常の `write()` と違い、
 成功して戻っても配列を再利用できません。`onDirectTxComplete()` で返されるまで、その配列を破棄・上書きせずに保持します。
 受け付けた送信は、終わり方によらず必ず 1 回返されます。送り終えた（`Success`）、バスのリセット（`BusReset`。`deliverEvents()` から）、
-`end()`（`Stopped`。`end()` の中から）のどれかです。断られた送信は配列を借りません。理由は戻り値の `error` で確かめます。
+`end()`（`Stopped`。`end()` の中から）、`cancelDirectTx()`（`Cancelled`。その呼び出しの中から）のどれかです。
+断られた送信は配列を借りません。理由は戻り値の `error` で確かめます。長さは `maxDirectTransfer()` まで
+（65535 バイトを超えても、途中に短いパケットを挟まない 1 回の転送になります）。
+
+受信も同じ形にできます。`configure()` で `rxMode = CH32RVUsbBulkRxMode::Borrowed` にし、`onDirectRxComplete()` を
+登録してから `begin()` します。`readDirect(buffer, capacity)` が受信先を 1 つ渡し、満杯か短いパケットで
+`onDirectRxComplete()` に返ります（`actualBytes` が受け取ったデータの長さです）。次の `readDirect()` までは
+受信しないので、ホストの送信は待たされます。`capacity` はパケットの大きさの倍数です。
 
 ローカル配列を渡してすぐ関数から戻る使い方は避けます。通常の送信 FIFO と直接送信を無計画に混在させず、
 次のデータを投入できない場合の保留・破棄方針を決めます。実際の応用例は

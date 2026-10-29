@@ -16,6 +16,13 @@
  *                   FIFOs (the default), or onRxData() handing each OUT
  *                   transfer over and writeDirect() sending it back, its
  *                   completion counted by a capturing onDirectTxComplete() lambda
+ *   vborrow         VBORROW <configure() 0/1> <begin() 0/1>: restart the device with
+ *                   the vendor in rxMode Borrowed; the echo then lands in
+ *                   readDirect()'s buffer and goes back with writeDirect()
+ *   vcancel         VCANCEL <cancelDirectRx() 0/1> <again 0/1> <stale id 0/1>
+ *                   <cancelled results> <echoes>: cancel the posted receive
+ *                   (it comes back Cancelled before the call returns, so a
+ *                   repeat is false; after a new post the old id is false too)
  *
  * The vendor interface is 0xFF / 0x4F / 0x45 (setInterfaceProtocol()).
  * Over USB, without a command: vendor bulk echoes every byte; vendor request
@@ -50,6 +57,30 @@ static volatile bool echoBusy;
 static uint32_t directDone;
 static uint32_t peeksMatched, peeksMissed;   /* peek() against the byte read() returned next */
 static bool directMode;
+static bool borrowMode, posted;
+static uint8_t landing[64];
+static uint32_t borrowCancelled, borrowEchoes, postedId;
+
+static void borrowed_rx(const CH32RVUsbTransferResult &result)
+{
+    posted = false;
+    if (result.status == CH32RVUsbTransferStatus::Cancelled) {
+        borrowCancelled++;
+    } else if (result.status == CH32RVUsbTransferStatus::Success && result.actualBytes && !echoBusy) {
+        memcpy(echo, landing, result.actualBytes);
+        echoBusy = (bool)vendor.writeDirect(echo, result.actualBytes);
+        borrowEchoes++;
+    }
+}
+
+static void post()
+{
+    if (borrowMode && !posted && vendor.mounted()) {
+        const CH32RVUsbTransferSubmission s = vendor.readDirect(landing, sizeof landing);
+        posted = (bool)s;
+        postedId = s.id;
+    }
+}
 
 static void direct_rx(const uint8_t *data, size_t length)
 {
@@ -154,6 +185,26 @@ static void reply(const char *command)
         SerialDMSeq.print((unsigned long)peeksMatched);
         SerialDMSeq.print(' ');
         SerialDMSeq.println((unsigned long)peeksMissed);
+    } else if (strcmp(command, "vborrow") == 0) {
+        USBDevice.end();
+        CH32RVUsbBulkStreamConfig c;
+        c.rxMode = CH32RVUsbBulkRxMode::Borrowed;
+        const bool configured = vendor.configure(c);
+        set_mode(true);
+        vendor.onRxData(nullptr);
+        vendor.onDirectRxComplete(borrowed_rx);
+        borrowMode = true;
+        posted = false;
+        SerialDMSeq.printf("VBORROW %d %d\r\n", configured ? 1 : 0, USBDevice.begin(config) ? 1 : 0);
+    } else if (strcmp(command, "vcancel") == 0) {
+        post();
+        const uint32_t id = postedId;
+        const bool first = posted && vendor.cancelDirectRx(id);
+        const bool again = vendor.cancelDirectRx(id);
+        post();
+        const bool stale = vendor.cancelDirectRx(id);
+        SerialDMSeq.printf("VCANCEL %d %d %d %lu %lu\r\n", first ? 1 : 0, again ? 1 : 0, stale ? 1 : 0,
+                           (unsigned long)borrowCancelled, (unsigned long)borrowEchoes);
     } else {
         SerialDMSeq.println("ERROR COMMAND");
     }
@@ -196,6 +247,7 @@ void setup()
 void loop()
 {
     deliverEvents();   /* the callbacks set in setup() run here */
+    post();
     uint8_t buffer[64];
     /* read() only after peek() saw data: both run the USB task, and a packet
      * landing in read()'s would go uncounted either way. */
