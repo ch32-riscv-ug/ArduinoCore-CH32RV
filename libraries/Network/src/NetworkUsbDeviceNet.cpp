@@ -19,51 +19,78 @@ static NetworkUsbNcm &interface_of(CH32RVUsbDeviceNet &ncm, NetworkUsbNcm *&slot
     return *slot;
 }
 
-void CH32RVUsbDeviceNet::ipConfig(IPAddress local, IPAddress gateway, IPAddress subnet)
+bool CH32RVUsbDeviceNet::ipConfig(IPAddress local, IPAddress gateway, IPAddress subnet)
 {
+    if (_networkBegun) {
+        return false;
+    }
     settings.configured = true;
     NetworkUsbNcm &ifc = interface_of(*this, _network);
     if (!settings.client) {
         ifc.config(local, gateway, subnet);
     }
+    return true;
 }
 
-void CH32RVUsbDeviceNet::dhcpServer(bool enable)
+bool CH32RVUsbDeviceNet::dhcpServer(bool enable)
 {
+    if (_networkBegun) {
+        return false;
+    }
     settings.server = enable;
     if (enable) {
         settings.client = false;
     }
     interface_of(*this, _network);
+    return true;
 }
 
-void CH32RVUsbDeviceNet::dhcpClient(bool enable)
+bool CH32RVUsbDeviceNet::dhcpClient(bool enable)
 {
+    if (_networkBegun) {
+        return false;
+    }
     settings.client = enable;
     if (enable) {
         settings.server = false;
     }
     interface_of(*this, _network);
+    return true;
 }
 
-void CH32RVUsbDeviceNet::dhcpAdvertiseGateway(bool enable)
+bool CH32RVUsbDeviceNet::dhcpAdvertiseGateway(bool enable)
 {
+    if (_networkBegun) {
+        return false;
+    }
     interface_of(*this, _network).dhcpAdvertiseGateway(enable);
+    return true;
 }
 
-void CH32RVUsbDeviceNet::dhcpDns(IPAddress dns)
+bool CH32RVUsbDeviceNet::dhcpDns(IPAddress dns)
 {
+    if (_networkBegun) {
+        return false;
+    }
     interface_of(*this, _network).dhcpDns(dns);
+    return true;
 }
 
-void CH32RVUsbDeviceNet::defaultRoute(bool enable)
+bool CH32RVUsbDeviceNet::defaultRoute(bool enable)
 {
+    if (_networkBegun) {
+        return false;
+    }
     settings.defaultRoute = enable;
     interface_of(*this, _network);
+    return true;
 }
 
 bool CH32RVUsbDeviceNet::beginNetwork()
 {
+    if (_networkBegun) {
+        return false;
+    }
     NetworkUsbNcm &ifc = interface_of(*this, _network);
     if (settings.client) {
         ifc.config();                       /* all zero: DHCP */
@@ -75,6 +102,17 @@ bool CH32RVUsbDeviceNet::beginNetwork()
         ifc.setDefault();
     }
     ifc.dhcpServer(settings.server);
+    _networkBegun = true;
+    return true;
+}
+
+bool CH32RVUsbDeviceNet::endNetwork()
+{
+    if (!_networkBegun) {
+        return false;
+    }
+    _network->end();
+    _networkBegun = false;
     return true;
 }
 

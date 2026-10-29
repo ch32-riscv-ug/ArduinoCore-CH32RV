@@ -27,6 +27,19 @@ static constexpr size_t CH32RV_USB_DEVICE_CCID_MAX_ATR = 33;
  * exchange (261). Larger exchanges: setBuffers(). */
 static constexpr uint16_t CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE = 10 + 261;
 
+/* EspUsbCcidConfig's names. messageBytes is one whole message, its 10-byte
+ * header included (12 at least); 0 keeps the class's own 271 bytes (a short
+ * APDU and its answer). A bigger message needs the sketch's two buffers of
+ * messageBytes each (nothing is allocated). removable false leaves the slot
+ * change notifications - and their interrupt endpoint - out: insert the card
+ * before begin() and keep it. */
+struct CH32RVUsbCcidConfig {
+    size_t messageBytes = 0;
+    uint8_t *messageBuffer = nullptr;
+    uint8_t *responseBuffer = nullptr;
+    bool removable = true;
+};
+
 class CH32RVUsbDeviceCcid : public CH32RVUsbDeviceFunction {
 public:
     /* Answer one exchange: write the response (including SW1 SW2) into
@@ -42,15 +55,16 @@ public:
 
     explicit CH32RVUsbDeviceCcid(CH32RVUsbDevice &device = USBDevice);
 
-    /* The sketch's buffers for one received and one sent message, `size`
-     * bytes each (12 at least); before the device begins. The host is told
-     * the size (dwMaxCCIDMessageLength). */
-    bool setBuffers(uint8_t *message, uint8_t *response, uint16_t size);
+    /* While the device is stopped; false (nothing changed) for a setting that
+     * cannot be used. The host is told the size (dwMaxCCIDMessageLength). */
+    bool configure(const CH32RVUsbCcidConfig &config);
+    size_t messageCapacity() const;
 
     /* Put a card in the slot, answering IccPowerOn with this ATR (2..33
      * bytes), and tell the host. */
     bool insertCard(const uint8_t *atr, size_t length);
-    void removeCard();
+    /* False on a reader that is not removable. */
+    bool removeCard();
     bool cardPresent() const { return _cardPresent; }
     bool cardPowered() const { return _cardPowered; }
     size_t atr(uint8_t *buffer, size_t capacity) const;

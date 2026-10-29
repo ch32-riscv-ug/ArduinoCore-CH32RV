@@ -63,7 +63,7 @@ void loop() {
 - **同じクラスの数には上限があります**（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。上限の中なら
   宣言するだけで使えます。CDC とベンダーのバッファは `configure(CH32RVUsbBulkStreamConfig)` で決めます
   （EspUsbDevice v3 と同じ項目名）。既定はクラスの中の配列で、スケッチの配列を渡せばそれを使います。ヒープからは取りません。
-  CCID のバッファは `setBuffers()` で差し替えられます。クラスの総数や記述子の大きさには、ビルド時の上限がありません。
+  CCID（`CH32RVUsbCcidConfig`）とビデオ（`CH32RVUsbVideoConfig`）も `configure()` で設定します。クラスの総数や記述子の大きさには、ビルド時の上限がありません。
 - **ディスクは MSC クラスが読みに行くオブジェクト**です（`setStorage()`。`attach()` がこれを呼びます）。
   EspUsbDevice のように `onRead()` にラムダを結び付ける形ではありません。
 - **USB ネットワークの IP 層**（`ipConfig()`、`dhcpServer()`、`dhcpClient()`、`dhcpAdvertiseGateway()`、`dhcpDns()`、

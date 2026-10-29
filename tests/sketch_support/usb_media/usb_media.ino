@@ -80,7 +80,9 @@ void setup()
     mic.addFormat({RATE, 1, 2, 16});
     camera.setFormat(CH32RVUsbDeviceVideoFormat::Yuy2);
 #ifdef USB_MEDIA_ISOCHRONOUS
-    camera.setTransferType(CH32RVUsbDeviceVideoTransfer::Isochronous);
+    CH32RVUsbVideoConfig video;
+    video.transport = CH32RVUsbVideoTransport::Isochronous;
+    camera.configure(video);
 #endif
     camera.setFrameSize(80, 60);
     camera.setFrameRate(10);

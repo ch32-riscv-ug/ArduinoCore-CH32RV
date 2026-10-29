@@ -12,6 +12,10 @@
 
 class NetworkUsbNcm;
 
+struct CH32RVUsbNetStats {
+    uint32_t txFrames = 0, rxFrames = 0, invalidNtbs = 0;
+};
+
 class CH32RVUsbDeviceNet : public CH32RVUsbDeviceFunction {
 public:
     /* callback(frame, length): a whole Ethernet frame from the host; the data
@@ -23,7 +27,7 @@ public:
     /* The 6-byte MAC address the host's side of the link takes. Call before
      * begin(). Default: locally administered, from the chip's unique ID, so
      * two boards on one host differ. */
-    void macAddress(const uint8_t mac[6]);
+    bool macAddress(const uint8_t mac[6]);
     const uint8_t *macAddress() const;
 
     /* For the sketch: run from deliverEvents(). The host's block of frames is
@@ -47,28 +51,33 @@ public:
     bool sendFrame(const uint8_t *data, size_t length, uint32_t timeoutMs = 10);
     /* The host has configured the interface. */
     bool linkUp() const;
+    /* Frames sent and received, and blocks from the host that were not a
+     * valid NTB16 (EspUsbNetStats's names). */
+    CH32RVUsbNetStats stats() const { return _stats; }
 
     /* --- EspUsbDevice's IP layer, from the Network library (#include <Network.h>) ---
      * The device's own address, gateway and mask: the static address, and the
      * DHCP server's base. Default 192.168.7.1 / 192.168.7.1 / 255.255.255.0.
-     * Call before beginNetwork(). */
-    void ipConfig(IPAddress local, IPAddress gateway, IPAddress subnet);
+     * Call before beginNetwork(): these setters refuse (false) while it is up. */
+    bool ipConfig(IPAddress local, IPAddress gateway, IPAddress subnet);
     /* Hand the USB host an address (192.168.7.2 ... by default). Off by default;
      * excludes dhcpClient(). */
-    void dhcpServer(bool enable);
+    bool dhcpServer(bool enable);
     /* Take an address from the host's network instead (a host that bridges or
      * shares its connection). Off by default; excludes dhcpServer(). */
-    void dhcpClient(bool enable);
+    bool dhcpClient(bool enable);
     /* The DHCP server offers no router and no DNS unless told to: a host that
      * takes this link as its default route when nothing forwards behind it
      * loses its other traffic. */
-    void dhcpAdvertiseGateway(bool enable);
-    void dhcpDns(IPAddress dns);
+    bool dhcpAdvertiseGateway(bool enable);
+    bool dhcpDns(IPAddress dns);
     /* Make this link the device's own default route. Off by default, so it
      * never takes over from an Ethernet interface. */
-    void defaultRoute(bool enable);
+    bool defaultRoute(bool enable);
     /* Bring the IP interface up on this function. Call after USBDevice.begin(). */
     bool beginNetwork();
+    /* Take the IP interface down again; the function goes back to raw frames. */
+    bool endNetwork();
     bool networkUp() const;
     IPAddress localIP() const;
     /* The Network library's interface for this link (a NetworkInterface:
@@ -93,4 +102,6 @@ private:
     uint16_t _held = 0;              /* a block waiting for usbDeliver() */
     ReceiveGate _receiveGate = nullptr;
     NetworkUsbNcm *_network = nullptr;   /* created by the Network library on first use */
+    bool _networkBegun = false;
+    CH32RVUsbNetStats _stats;
 };

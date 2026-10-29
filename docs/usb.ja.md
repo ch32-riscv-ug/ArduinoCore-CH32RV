@@ -124,9 +124,9 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホスト�
 同じクラスは、クラスごとの上限まで宣言するだけで持てます（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。
 ビルド時の設定は要りません。宣言しなかったクラスはリンクされず、宣言した分だけ RAM を使います。
 
-バッファの大きさは、パケットの大きさ（コントローラと速度で決まる）から決めます。CDC とベンダーは `configure()`
-（`CH32RVUsbBulkStreamConfig`）、CCID は `setBuffers()` でスケッチの配列に差し替えられます。オーディオとビデオのパケットの上限は、コントローラのドライバが知らせる値
-（`device.maxPacketSize()`）です。ビデオをバルクで送るかアイソクロナスで送るかは `setTransferType()` で選びます。
+バッファの大きさは、パケットの大きさ（コントローラと速度で決まる）から決めます。CDC とベンダー（`CH32RVUsbBulkStreamConfig`）、CCID
+（`CH32RVUsbCcidConfig`）は `configure()` でスケッチの配列に差し替えられます。オーディオとビデオのパケットの上限は、コントローラのドライバが知らせる値
+（`device.maxPacketSize()`）です。ビデオをバルクで送るかアイソクロナスで送るかは `configure()`（`CH32RVUsbVideoConfig::transport`）で選びます。
 
 ビルド時の上限はありません。クラスの数、HID クラスの数、構成記述子・HID の合成レポート記述子・BOS・
 Microsoft OS 2.0 の大きさは、どれも RAM に組み立てて置かず、ホストが読むときに EP0 のパケットごとに作るので、

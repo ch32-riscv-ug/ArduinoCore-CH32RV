@@ -60,7 +60,7 @@ uint16_t CH32RVUsbDeviceVideo::isochronousPacketSize(bool highSpeed) const
     return n < CH32RV_USB_MAX_PACKET ? n : CH32RV_USB_MAX_PACKET;
 }
 
-uint16_t CH32RVUsbDeviceVideo::payloadBufferSize() const
+size_t CH32RVUsbDeviceVideo::payloadBufferSize() const
 {
     if (bulkStreaming()) {
         return ch32rv_usb_bulk_size(_highSpeed ? CH32RVUsbSpeed::High : CH32RVUsbSpeed::Full);
@@ -83,19 +83,20 @@ bool CH32RVUsbDeviceVideo::setFormat(CH32RVUsbDeviceVideoFormat format)
     return true;
 }
 
-bool CH32RVUsbDeviceVideo::setTransferType(CH32RVUsbDeviceVideoTransfer type)
+bool CH32RVUsbDeviceVideo::configure(const CH32RVUsbVideoConfig &config)
 {
-    if (!configurable()) {
+    if (!configurable() || (config.transport != CH32RVUsbVideoTransport::Bulk &&
+                            config.transport != CH32RVUsbVideoTransport::Isochronous)) {
         return false;
     }
-    _transfer = type;
+    _config = config;
     return true;
 }
 
 bool CH32RVUsbDeviceVideo::setFrameSize(uint16_t width, uint16_t height)
 {
     if (!configurable() || width == 0 || height == 0 || width > MAX_DIMENSION || height > MAX_DIMENSION ||
-        (width & 1) != 0 || (height & 1) != 0) {
+        (_format == CH32RVUsbDeviceVideoFormat::Yuy2 && (width & 1) != 0)) {
         return false;
     }
     _width = width;
@@ -105,7 +106,7 @@ bool CH32RVUsbDeviceVideo::setFrameSize(uint16_t width, uint16_t height)
 
 bool CH32RVUsbDeviceVideo::setFrameRate(uint8_t framesPerSecond)
 {
-    if (!configurable() || framesPerSecond == 0 || framesPerSecond > 120) {
+    if (!configurable() || framesPerSecond == 0) {
         return false;
     }
     _frameRate = framesPerSecond;
@@ -437,7 +438,7 @@ bool CH32RVUsbDeviceVideo::usbControl(CH32RVUsbControlStage stage, const CH32RVU
                  * stream; isochronous streams while alternate 1 is selected,
                  * which the host may set before or after the commit. */
                 const bool selected = _streaming && !bulkStreaming();
-                stop();
+                stop(CH32RVUsbTransferStatus::Cancelled);
                 _streaming = bulkStreaming() || selected;
                 handleCommit(c);
             }
@@ -482,8 +483,10 @@ bool CH32RVUsbDeviceVideo::usbControl(CH32RVUsbControlStage stage, const CH32RVU
 void CH32RVUsbDeviceVideo::usbReset()
 {
     _streaming = false;
-    _inFlight = false;
-    _frame = nullptr;
+    if (_inFlight) {
+        /* end() has cleared started() by now; a bus reset has not. */
+        frameEnded(device().started() ? CH32RVUsbTransferStatus::BusReset : CH32RVUsbTransferStatus::Stopped, false);
+    }
     memset(_probe, 0, sizeof _probe);
 }
 
@@ -493,15 +496,41 @@ void CH32RVUsbDeviceVideo::usbConfigured(CH32RVUsbSpeed speed)
     usbReset();
 }
 
-/* Drop a frame in flight; no completion for it. */
-void CH32RVUsbDeviceVideo::stop()
+/* Stop the stream; a frame in flight comes back with `status`. */
+void CH32RVUsbDeviceVideo::stop(CH32RVUsbTransferStatus status)
 {
     if (_inFlight || device().transferBusy(_ep)) {
         device().abort(_ep);
     }
     _streaming = false;
+    if (_inFlight) {
+        frameEnded(status, false);
+    }
+}
+
+/* The frame in flight is over: report it once. From end() (Stopped) the
+ * sketch gets it before end() returns - nothing delivers after. */
+void CH32RVUsbDeviceVideo::frameEnded(CH32RVUsbTransferStatus status, bool known)
+{
     _inFlight = false;
     _frame = nullptr;
+    _result.status = status;
+    _result.actualBytes = _offset;
+    _result.actualBytesKnown = known;
+    _frameDone = true;
+    if (status == CH32RVUsbTransferStatus::Stopped) {
+        usbDeliver();
+    }
+}
+
+bool CH32RVUsbDeviceVideo::cancelFrame(uint32_t id)
+{
+    if (!_inFlight || (id && id != _result.id)) {
+        return false;
+    }
+    device().abort(_ep);
+    frameEnded(CH32RVUsbTransferStatus::Cancelled, false);
+    return true;
 }
 
 bool CH32RVUsbDeviceVideo::usbSetInterface(uint8_t interfaceNumber, uint8_t alternate)
@@ -509,7 +538,7 @@ bool CH32RVUsbDeviceVideo::usbSetInterface(uint8_t interfaceNumber, uint8_t alte
     if (interfaceNumber != (uint8_t)(_vcInterface + 1) || alternate > (bulkStreaming() ? 0 : 1)) {
         return interfaceNumber == _vcInterface && alternate == 0;
     }
-    stop();
+    stop(CH32RVUsbTransferStatus::Cancelled);
     _streaming = alternate == 1;                 /* isochronous: the bandwidth is reserved now */
     return true;
 }
@@ -519,7 +548,7 @@ bool CH32RVUsbDeviceVideo::usbSetInterface(uint8_t interfaceNumber, uint8_t alte
 void CH32RVUsbDeviceVideo::usbHaltCleared(uint8_t address)
 {
     if (address == _ep) {
-        stop();
+        stop(CH32RVUsbTransferStatus::Cancelled);
     }
 }
 
@@ -539,7 +568,7 @@ void CH32RVUsbDeviceVideo::sendPayload()
         handleFill(_payload + 2, _sending, _offset);
     }
     if (!device().transfer(_ep, _payload, (uint16_t)(2 + _sending))) {
-        stop();
+        stop(CH32RVUsbTransferStatus::TransferError);
     }
 }
 
@@ -555,26 +584,50 @@ void CH32RVUsbDeviceVideo::usbTransferred(uint8_t address, uint16_t length)
         return;
     }
     _fid ^= 1;
-    _frame = nullptr;
-    handleFrameComplete();
+    frameEnded(CH32RVUsbTransferStatus::Success, true);
 }
 
 bool CH32RVUsbDeviceVideo::arm(const uint8_t *frame, size_t length)
 {
-    if (length == 0 || length > maxFrameSize() || _inFlight || !streaming()) {
+    if (length == 0 || length > maxFrameSize() || _inFlight || _frameDone || !streaming() ||
+        (_format == CH32RVUsbDeviceVideoFormat::Yuy2 && length != maxFrameSize())) {
         return false;
     }
     _frame = frame;
     _length = (uint32_t)length;
     _offset = 0;
     _inFlight = true;
+    if (++_frameId == 0) {
+        _frameId = 1;
+    }
+    _result = CH32RVUsbTransferResult();
+    _result.buffer = frame;
+    _result.requestedBytes = length;
+    _result.id = _frameId;
     sendPayload();
-    return _inFlight;
+    return true;                                 /* a first payload that failed has come back already */
 }
 
 bool CH32RVUsbDeviceVideo::sendFrame(const void *frame, size_t length)
 {
-    return frame && arm(static_cast<const uint8_t *>(frame), length);
+    return (bool)submitFrame(frame, length);
+}
+
+CH32RVUsbTransferSubmission CH32RVUsbDeviceVideo::submitFrame(const void *frame, size_t length)
+{
+    CH32RVUsbTransferSubmission r;
+    if (!frame || !length) {
+        r.error = CH32RVUsbTransferError::BadArgument;
+    } else if (!streaming()) {
+        r.error = CH32RVUsbTransferError::NotMounted;
+    } else if (_inFlight || _frameDone) {
+        r.error = CH32RVUsbTransferError::Busy;  /* _frameDone: the last one is not handed back yet */
+    } else if (!arm(static_cast<const uint8_t *>(frame), length)) {
+        r.error = CH32RVUsbTransferError::BadArgument;
+    } else {
+        r.id = _result.id;
+    }
+    return r;
 }
 
 bool CH32RVUsbDeviceVideo::sendGeneratedFrame(size_t length)
@@ -584,25 +637,14 @@ bool CH32RVUsbDeviceVideo::sendGeneratedFrame(size_t length)
 
 void CH32RVUsbDeviceVideo::end()
 {
-    if (device().ready()) {
-        stop();
-    }
-    _inFlight = false;
-    _frame = nullptr;
+    stop(CH32RVUsbTransferStatus::Stopped);
     _commit = CH32RVUsbDeviceVideoCommit();
-}
-
-void CH32RVUsbDeviceVideo::handleFrameComplete()
-{
-    _inFlight = false;
-    _frameDone = true;
 }
 
 /* A commit restarts the stream: any frame in flight was dropped. */
 void CH32RVUsbDeviceVideo::handleCommit(const CH32RVUsbDeviceVideoCommit &commit)
 {
     _commit = commit;
-    _inFlight = false;
     _committed = true;
 }
 
@@ -618,8 +660,14 @@ size_t CH32RVUsbDeviceVideo::usbDeliver()
         }
     }
     if (_frameDone) {
+        /* Cleared first: the callbacks may send the next frame. */
+        const CH32RVUsbTransferResult result = _result;
         _frameDone = false;
-        if (_onFrameComplete) {
+        if (_onFrameResult) {
+            _onFrameResult(result);
+            ran++;
+        }
+        if (_onFrameComplete && result.status == CH32RVUsbTransferStatus::Success) {
             _onFrameComplete();
             ran++;
         }

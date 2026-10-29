@@ -102,10 +102,14 @@ CH32RVUsbDeviceNet::CH32RVUsbDeviceNet(CH32RVUsbDevice &device)
     }
 }
 
-void CH32RVUsbDeviceNet::macAddress(const uint8_t value[6])
+bool CH32RVUsbDeviceNet::macAddress(const uint8_t value[6])
 {
+    if (device().started() || !value) {
+        return false;                            /* the host has read it */
+    }
     memcpy(mac, value, 6);
     mac_set = true;
+    return true;
 }
 
 const uint8_t *CH32RVUsbDeviceNet::macAddress() const
@@ -232,12 +236,14 @@ size_t CH32RVUsbDeviceNet::receiveBlock(uint16_t length, const FrameCallback &to
 {
     size_t frames = 0;
     if (length < 12 || get32(ntb_out) != NTH16_SIGNATURE || get16(ntb_out + 4) != 12) {
+        _stats.invalidNtbs++;
         return frames;
     }
     const uint16_t block = get16(ntb_out + 8) < length ? get16(ntb_out + 8) : length;
     uint16_t ndp = get16(ntb_out + 10);
     for (uint8_t guard = 0; ndp && guard < 8; guard++) {
         if ((uint32_t)ndp + 16 > block || get32(ntb_out + ndp) != NDP16_SIGNATURE) {
+            _stats.invalidNtbs++;
             return frames;
         }
         const uint16_t end = (uint16_t)(ndp + get16(ntb_out + ndp + 4));
@@ -249,6 +255,7 @@ size_t CH32RVUsbDeviceNet::receiveBlock(uint16_t length, const FrameCallback &to
             if ((uint32_t)index + size <= block && to) {
                 to(ntb_out + index, size);
                 frames++;
+                _stats.rxFrames++;
             }
         }
         ndp = get16(ntb_out + ndp + 6);
@@ -338,6 +345,9 @@ bool CH32RVUsbDeviceNet::sendFrame(const uint8_t *data, size_t length, uint32_t 
     memcpy(ntb_in + 28, data, length);
     drv.zlp = block < drv.in_max && block % drv.packet == 0;
     drv.in_busy = device().transfer(drv.ep_in, ntb_in, block);
+    if (drv.in_busy) {
+        _stats.txFrames++;
+    }
     return drv.in_busy;
 }
 

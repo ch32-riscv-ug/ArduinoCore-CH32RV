@@ -13,7 +13,7 @@
  *   - bulk streaming (the default) gets whatever the bus has left - several
  *     hundred KB/s on an idle bus, and the host retries a lost packet, so no
  *     frame is torn;
- *   - isochronous (setTransferType(Isochronous)) is one 64-byte packet per
+ *   - isochronous (configure() with transport Isochronous) is one 64-byte packet per
  *     1 ms frame: 62 bytes of picture, about 62 KB/s - a 64x48 YUY2 frame
  *     (6 KB) at 10 fps.
  * RAM bounds the frame before the bus does: a 20 KB part holds a 96x64 YUY2
@@ -41,11 +41,16 @@ enum class CH32RVUsbDeviceVideoFormat : uint8_t {
     Yuy2,
 };
 
-/* How the stream travels: bulk (what the bus has spare, retried) or
- * isochronous (a fixed share, reserved when the host starts streaming). */
-enum class CH32RVUsbDeviceVideoTransfer : uint8_t {
-    Bulk = 0,
-    Isochronous,
+/* How the stream travels: isochronous (a fixed share, reserved when the host
+ * starts streaming) or bulk (what the bus has spare, retried). */
+enum class CH32RVUsbVideoTransport : uint8_t { Isochronous, Bulk };
+
+/* EspUsbVideoConfig's name. Bulk by default here: at full speed (every
+ * controller but the USBHS / USBSS ones) an isochronous stream gets one
+ * packet a millisecond, 62 KB/s; bulk takes what the bus has. A payload is
+ * one packet. */
+struct CH32RVUsbVideoConfig {
+    CH32RVUsbVideoTransport transport = CH32RVUsbVideoTransport::Bulk;
 };
 
 /* What the host committed to after probe/commit negotiation. It can differ
@@ -64,6 +69,7 @@ struct CH32RVUsbDeviceVideoCommit {
 class CH32RVUsbDeviceVideo : public CH32RVUsbDeviceFunction {
 public:
     typedef CH32RVCallback<void()> FrameCompleteCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbTransferResult &result)> FrameResultCallback;
     typedef CH32RVCallback<void(const CH32RVUsbDeviceVideoCommit &commit)> CommitCallback;
     /* Fill dst with `length` bytes of the frame starting at byte `offset`
      * (sendGeneratedFrame()). Runs on the USB task once per payload. */
@@ -73,13 +79,14 @@ public:
      * IAD and iInterface on both interfaces); CH32RV_USB_VIDEO_NAME otherwise. */
     explicit CH32RVUsbDeviceVideo(CH32RVUsbDevice &device = USBDevice, const char *name = nullptr);
 
-    /* All five take effect when the device begins and are refused after,
+    /* All of these take effect when the device begins and are refused after,
      * because the host has read the descriptor by then. */
+    bool configure(const CH32RVUsbVideoConfig &config);
+    const CH32RVUsbVideoConfig &configuration() const { return _config; }
     bool setFormat(CH32RVUsbDeviceVideoFormat format);
-    bool setTransferType(CH32RVUsbDeviceVideoTransfer type);
-    /* Even, 2..4096 each way (YUY2 packs two pixels into four bytes). */
+    /* 1..4096 each way; YUY2 (two pixels in four bytes) needs an even width. */
     bool setFrameSize(uint16_t width, uint16_t height);
-    /* 1..120. */
+    /* 1..255. */
     bool setFrameRate(uint8_t framesPerSecond);
     /* Upper bound on one encoded frame (MJPEG); hosts size their buffers by
      * it. 0 restores the default: width * height * 2 for Yuy2, an eighth of
@@ -97,8 +104,7 @@ public:
     uint16_t height() const { return _height; }
     uint8_t frameRate() const { return _frameRate; }
     uint32_t maxFrameSize() const;
-    CH32RVUsbDeviceVideoTransfer transferType() const { return _transfer; }
-    bool bulkStreaming() const { return _transfer == CH32RVUsbDeviceVideoTransfer::Bulk; }
+    bool bulkStreaming() const { return _config.transport == CH32RVUsbVideoTransport::Bulk; }
     /* Bytes the descriptor takes at the given speed. */
     uint16_t descriptorLength(bool highSpeed = false) const;
     /* wMaxPacketSize of the isochronous endpoint at that speed: the
@@ -107,16 +113,23 @@ public:
     uint16_t isochronousPacketSize(bool highSpeed) const;
     /* One payload, header included: a packet at the speed the host runs the
      * bus (full speed before it has). */
-    uint16_t payloadBufferSize() const;
+    size_t payloadBufferSize() const;
 
     /* The host has committed and (isochronous) selected the streaming
      * alternate setting. False before, and after unplug. */
     bool streaming() const;
     /* Hand one whole frame to the class driver. The buffer is read payload by
-     * payload, not copied: leave it alone until the completion callback (or
-     * frameInFlight() turns false). Fails while a frame is in flight, before
-     * the host streams, or on a null, empty or oversized frame. */
+     * payload, not copied: leave it alone until it comes back
+     * (onFrameResult(), or frameInFlight() turns false). Fails while a frame
+     * is in flight, before the host streams, or on a null, empty or oversized
+     * frame (a YUY2 frame is exactly width * height * 2). */
     bool sendFrame(const void *frame, size_t length);
+    /* The same, with the loan's id: onFrameResult() hands the frame back
+     * exactly once - Success, Cancelled (cancelFrame(), or the host stopped
+     * the stream), BusReset, TransferError, or Stopped (from inside end()). */
+    CH32RVUsbTransferSubmission submitFrame(const void *frame, size_t length);
+    /* Stop the frame in flight (id 0: whichever); false when that is not it. */
+    bool cancelFrame(uint32_t id = 0);
     /* Send a `length`-byte frame with no buffer: the fill callback supplies
      * each payload's bytes as it goes out. An extension; the way to send
      * frames bigger than RAM. */
@@ -127,6 +140,10 @@ public:
      * frameInFlight() is false): arming the next frame there keeps the stream
      * going at the rate the sketch delivers. */
     void onFrameComplete(FrameCompleteCallback callback) { _onFrameComplete = callback; deliverWith(deliverThis); }
+    /* From deliverEvents() (from end() for Stopped): every frame's end, before
+     * onFrameComplete() for a successful one. actualBytes counts frame bytes
+     * sent (no headers). */
+    void onFrameResult(FrameResultCallback callback) { _onFrameResult = callback; deliverWith(deliverThis); }
     /* From deliverEvents(), when the host has committed its streaming
      * parameters: the latest commit. */
     void onCommit(CommitCallback callback) { _onCommit = callback; deliverWith(deliverThis); }
@@ -153,8 +170,8 @@ private:
     bool arm(const uint8_t *frame, size_t length);
     void defaultProbe(uint8_t *probe) const;
     void sendPayload();
-    void stop();
-    void handleFrameComplete();
+    void stop(CH32RVUsbTransferStatus status);
+    void frameEnded(CH32RVUsbTransferStatus status, bool known);
     void handleCommit(const CH32RVUsbDeviceVideoCommit &commit);
     void handleFill(uint8_t *dst, size_t length, uint32_t offset);
 
@@ -166,10 +183,13 @@ private:
     volatile bool _inFlight = false;
     bool _frameDone = false, _committed = false;   /* for usbDeliver() */
     FrameCompleteCallback _onFrameComplete = nullptr;
+    FrameResultCallback _onFrameResult = nullptr;
+    CH32RVUsbTransferResult _result;    /* the frame in flight, then how it ended */
+    uint32_t _frameId = 0;
     CommitCallback _onCommit = nullptr;
     FillCallback _onFill = nullptr;
     CH32RVUsbDeviceVideoCommit _commit;
-    CH32RVUsbDeviceVideoTransfer _transfer = CH32RVUsbDeviceVideoTransfer::Bulk;
+    CH32RVUsbVideoConfig _config;
 
     /* Set when the descriptor is laid out. */
     uint8_t _ep = 0;

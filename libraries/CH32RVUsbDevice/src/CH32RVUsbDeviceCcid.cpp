@@ -91,12 +91,13 @@ static uint8_t ep_out_buf[BULK_EP_BUF] __attribute__((aligned(4)));
 static uint8_t notify_buf[NOTIFY_EP_SIZE] __attribute__((aligned(4)));
 /* One message being received, and the response built and sent from its own
  * buffer: CCID is one command at a time, so the next one cannot overwrite a
- * response still in flight. setBuffers() replaces both. */
+ * response still in flight. configure() can replace both. */
 static uint8_t default_message[CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE] __attribute__((aligned(4)));
 static uint8_t default_response[CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE] __attribute__((aligned(4)));
 static uint8_t *message = default_message;
 static uint8_t *response = default_response;
 static uint16_t message_size = CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE;
+static bool removable = true;
 #define MESSAGE_SIZE message_size
 static CH32RVUsbDeviceCcid *ccid;
 
@@ -118,6 +119,9 @@ static bool driver_send(size_t length)
 
 static bool driver_notify(const uint8_t *data, size_t length)
 {
+    if (!removable) {
+        return true;                              /* no notification endpoint */
+    }
     if (!ccid || !drv.configured || ccid->device().transferBusy(drv.ep_notify)) {
         return false;
     }
@@ -125,17 +129,18 @@ static bool driver_notify(const uint8_t *data, size_t length)
     return ccid->device().transfer(drv.ep_notify, notify_buf, (uint16_t)length);
 }
 
-/* One interface: bulk OUT/IN on endpoint n, interrupt IN on n + 1. */
+/* One interface: bulk OUT/IN on endpoint n, interrupt IN on n + 1 (when the
+ * reader is removable). */
 static bool ccid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
                             uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
     (void)self;
     const uint8_t n = *ep;
-    *ep = (uint8_t)(n + 2);
+    *ep = (uint8_t)(n + (removable ? 2 : 1));
     drv.ep_out = n;
     drv.ep_in = (uint8_t)(0x80 | n);
-    drv.ep_notify = (uint8_t)(0x80 | (n + 1));
-    const uint8_t head[] = {9, 4, itf, 0, 3, 0x0B, 0, 0, str};
+    drv.ep_notify = removable ? (uint8_t)(0x80 | (n + 1)) : 0;
+    const uint8_t head[] = {9, 4, itf, 0, (uint8_t)(removable ? 3 : 2), 0x0B, 0, 0, str};
     w.put(head, sizeof head);
     /* CCID class descriptor (CCID 1.1 section 5.1). */
     uint8_t c[54] = {};
@@ -163,7 +168,7 @@ static bool ccid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescri
         7, 5, (uint8_t)(0x80 | (n + 1)), 3, NOTIFY_EP_SIZE, 0, ch32rv_usb_interval(speed, NOTIFY_INTERVAL_MS),
     };
     w.put(c, sizeof c);
-    w.put(eps, sizeof eps);
+    w.put(eps, removable ? sizeof eps : sizeof eps - 7);
     return true;
 }
 
@@ -177,15 +182,24 @@ CH32RVUsbDeviceCcid::CH32RVUsbDeviceCcid(CH32RVUsbDevice &device)
     }
 }
 
-bool CH32RVUsbDeviceCcid::setBuffers(uint8_t *messageBuffer, uint8_t *responseBuffer, uint16_t size)
+bool CH32RVUsbDeviceCcid::configure(const CH32RVUsbCcidConfig &config)
 {
-    if (device().started() || !messageBuffer || !responseBuffer || size < HEADER_SIZE + 2) {
+    const bool own = !config.messageBuffer && !config.responseBuffer;
+    const size_t size = config.messageBytes ? config.messageBytes : CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE;
+    if (device().started() || size < HEADER_SIZE + 2 || size > 65535u ||
+        (own ? size > CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE : !config.messageBuffer || !config.responseBuffer)) {
         return false;
     }
-    message = messageBuffer;
-    response = responseBuffer;
-    message_size = size;
+    message = own ? default_message : config.messageBuffer;
+    response = own ? default_response : config.responseBuffer;
+    message_size = (uint16_t)size;
+    removable = config.removable;
     return true;
+}
+
+size_t CH32RVUsbDeviceCcid::messageCapacity() const
+{
+    return message_size;
 }
 
 bool CH32RVUsbDeviceCcid::mounted() const
@@ -287,12 +301,16 @@ bool CH32RVUsbDeviceCcid::insertCard(const uint8_t *atr, size_t length)
     return true;
 }
 
-void CH32RVUsbDeviceCcid::removeCard()
+bool CH32RVUsbDeviceCcid::removeCard()
 {
+    if (!removable) {
+        return false;
+    }
     _cardPresent = false;
     _cardPowered = false;
     _atrLength = 0;
     notifySlotState();
+    return true;
 }
 
 /* RDR_to_PC_NotifySlotChange: bit 0 the state, bit 1 "changed". The
