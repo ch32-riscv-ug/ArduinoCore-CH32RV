@@ -50,9 +50,9 @@ static const uint8_t GAMEPAD_REPORT_DESCRIPTOR[] = {
     0x15, 0x81, 0x25, 0x7f,
     0x09, 0x30, 0x09, 0x31, 0x09, 0x32, 0x09, 0x35, 0x09, 0x33, 0x09, 0x34,
     0x75, 0x08, 0x95, 0x06, 0x81, 0x02,             /* X Y Z Rz Rx Ry */
-    0x15, 0x00, 0x25, 0x08, 0x35, 0x00, 0x46, 0x3b, 0x01, 0x65, 0x14,
-    0x09, 0x39, 0x75, 0x08, 0x95, 0x01, 0x81, 0x02, /* hat switch */
-    0x65, 0x00,
+    0x15, 0x01, 0x25, 0x08, 0x35, 0x00, 0x46, 0x3b, 0x01, 0x65, 0x14,
+    0x09, 0x39, 0x75, 0x08, 0x95, 0x01, 0x81, 0x42, /* hat switch 1..8, Null: 0 is centre */
+    0x65, 0x00, 0x45, 0x01,                         /* no unit, Physical Maximum 1 for the buttons */
     0x05, 0x09, 0x19, 0x01, 0x29, 0x20, 0x15, 0x00, 0x25, 0x01,
     0x75, 0x01, 0x95, 0x20, 0x81, 0x02,             /* 32 buttons */
     0xc0,
@@ -69,8 +69,8 @@ static const uint8_t CONSUMER_CONTROL_REPORT_DESCRIPTOR[] = {
 static const uint8_t SYSTEM_CONTROL_REPORT_DESCRIPTOR[] = {
     0x05, 0x01, 0x09, 0x80, 0xa1, 0x01,             /* Generic Desktop, System Control */
     0x85, CH32RV_USB_DEVICE_HID_REPORT_ID_SYSTEM_CONTROL,
-    0x15, 0x00, 0x25, 0x03, 0x19, 0x00, 0x29, 0x03,
-    0x75, 0x08, 0x95, 0x01, 0x81, 0x00,
+    0x15, 0x01, 0x25, 0x03, 0x19, 0x81, 0x29, 0x83, /* selectors 1..3: System Power Down .. Wake Up */
+    0x75, 0x08, 0x95, 0x01, 0x81, 0x00,             /* 0 is no item */
     0xc0,
 };
 
@@ -260,7 +260,7 @@ public:
         const uint32_t t0 = millis();
         for (;;) {
             ch32rv_usb_task();
-            if (!device().mounted()) {
+            if (!device().ready()) {
                 return false;
             }
             if (!device().transferBusy(epIn)) {
@@ -299,7 +299,7 @@ public:
         }
         if (outHeld && !holding()) {
             outHeld = false;
-            if (device().mounted()) {
+            if (device().ready()) {
                 device().transfer(epOut, out, outLength);
             }
         }
@@ -944,7 +944,7 @@ uint16_t CH32RVUsbDeviceHidVendor::hidInEndpointSize() const
 bool CH32RVUsbDeviceHidVendor::sendInput(const void *data, size_t length, uint32_t timeoutMs)
 {
     if (length > _reportSize) {
-        length = _reportSize;
+        return false;
     }
     return sendHidReport(CH32RV_USB_DEVICE_HID_REPORT_ID_VENDOR, data, length, timeoutMs);
 }
@@ -1108,8 +1108,13 @@ uint16_t CH32RVUsbDeviceHidSystemControl::hidReportDescriptorLength() const
 
 bool CH32RVUsbDeviceHidSystemControl::sendUsage(uint8_t usage, uint32_t timeoutMs)
 {
+    if (usage && (usage < CH32RV_USB_DEVICE_SYSTEM_CONTROL_POWER_OFF || usage > CH32RV_USB_DEVICE_SYSTEM_CONTROL_WAKE_HOST)) {
+        return false;
+    }
     _usage = usage;
-    return sendHidReport(classReportId(), &_usage, 1, timeoutMs);
+    /* The usage (0x81..0x83) goes out as the descriptor's selector 1..3; 0 releases. */
+    const uint8_t selector = usage ? (uint8_t)(usage - CH32RV_USB_DEVICE_SYSTEM_CONTROL_POWER_OFF + 1) : 0;
+    return sendHidReport(classReportId(), &selector, 1, timeoutMs);
 }
 
 bool CH32RVUsbDeviceHidSystemControl::press(uint8_t usage, uint32_t timeoutMs)

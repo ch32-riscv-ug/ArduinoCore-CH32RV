@@ -108,7 +108,7 @@ void loop()
     deliverEvents();
     const uint32_t now = millis();
     updateButton(now);
-    if (!usbStarted || !device.mounted()) {
+    if (!usbStarted || !device.ready()) {
         armed = false;
         return;
     }

@@ -515,7 +515,8 @@ bool Core::standard(const CH32RVUsbSetup &s)
             return device->controlIn(reply, 2);
         case 1:                                          /* CLEAR_FEATURE */
         case 3:                                          /* SET_FEATURE */
-            if (s.wValue == 1 && !ch32rv_usb_at(speed, CH32RVUsbSpeed::Super)) {   /* DEVICE_REMOTE_WAKEUP */
+            if (s.wValue == 1 && !ch32rv_usb_at(speed, CH32RVUsbSpeed::Super) &&   /* DEVICE_REMOTE_WAKEUP */
+                device->_config.remoteWakeupSupported) {
                 remote_wakeup = s.bRequest == 3;
                 return device->controlStatus();
             }
@@ -797,7 +798,8 @@ static ch32rv_delivery_t usb_delivery = CH32RV_DELIVERY_INIT(Core::deliver);
 bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
 {
     if (_started) {
-        return true;
+        _error = CH32RVUsbDeviceError::AlreadyStarted;
+        return false;
     }
 #ifndef CH32RV_USB_NO_DEFAULT_DFU
     if (config.dfuRuntime) {
@@ -886,7 +888,7 @@ bool CH32RVUsbDevice::restartWithOnly(CH32RVUsbDeviceFunction &only)
     return begin(c);
 }
 
-bool CH32RVUsbDevice::mounted() const
+bool CH32RVUsbDevice::ready() const
 {
     return _started && Core::device == this && Core::configured;
 }
@@ -903,6 +905,11 @@ uint8_t CH32RVUsbDevice::interfaceCount() const
 bool CH32RVUsbDevice::suspended() const
 {
     return _started && Core::suspended;
+}
+
+bool CH32RVUsbDevice::remoteWakeupEnabled() const
+{
+    return _started && Core::remote_wakeup;
 }
 
 bool CH32RVUsbDevice::remoteWakeup()

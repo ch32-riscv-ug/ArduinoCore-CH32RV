@@ -65,7 +65,7 @@ Attach functions to the same `device`. See [SerialUSBEcho](SerialUSBEcho/README.
 |---|---|
 | `device.begin(config)` returns `true` | Internal startup succeeded; host enumeration need not be complete |
 | `device.started()` | The stack has started |
-| `device.mounted()` / `device.ready()` | The host configured the device; these mean the same thing for Device |
+| `device.ready()` | The host configured the device (still true while the bus is suspended) |
 | CDC `connected()` / boolean conversion | Host DTR is active, commonly used to check whether a terminal opened the port |
 | A successful send API | The API accepted data; it does not prove the PC application interpreted or processed it |
 

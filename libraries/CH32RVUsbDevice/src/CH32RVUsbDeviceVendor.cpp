@@ -212,7 +212,7 @@ bool CH32RVUsbDeviceVendor::usbControl(CH32RVUsbControlStage stage, const CH32RV
 /* ---------------------------------------------------------- the API */
 bool CH32RVUsbDeviceVendor::mounted() const
 {
-    return attached() && device().mounted();
+    return attached() && device().ready();
 }
 
 int CH32RVUsbDeviceVendor::available()

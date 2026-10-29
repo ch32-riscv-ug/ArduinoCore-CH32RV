@@ -343,7 +343,7 @@ CH32RVUsbDeviceVideo::CH32RVUsbDeviceVideo(CH32RVUsbDevice &device, const char *
 bool CH32RVUsbDeviceVideo::streaming() const
 {
     ch32rv_usb_task();
-    return attached() && device().mounted() && _streaming;
+    return attached() && device().ready() && _streaming;
 }
 
 /* ---------------------------------------------------------- probe and commit */
@@ -584,7 +584,7 @@ bool CH32RVUsbDeviceVideo::sendGeneratedFrame(size_t length)
 
 void CH32RVUsbDeviceVideo::end()
 {
-    if (device().mounted()) {
+    if (device().ready()) {
         stop();
     }
     _inFlight = false;

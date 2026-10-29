@@ -327,7 +327,11 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
         }
         h.lastConsumer = u;
     } else if (page == HID_PAGE_DESKTOP && usage == HID_USAGE_SYSTEM_CONTROL && len >= 1) {
-        const uint8_t u = body[0];
+        /* The common descriptor (and the device library's) is an array of
+         * selectors 1..3 over Usage 0x81..0x83 (System Power Down / Sleep /
+         * Wake Up); the event carries the usage. A device that sends the
+         * usage itself passes through. */
+        const uint8_t u = body[0] >= 1 && body[0] <= 3 ? (uint8_t)(0x80 + body[0]) : body[0];
         if (u != h.lastSystem && system_cb) {
             CH32RVUsbHostSystemControlEvent e;
             fill_common(e, h, raw, rawLength, body, len);

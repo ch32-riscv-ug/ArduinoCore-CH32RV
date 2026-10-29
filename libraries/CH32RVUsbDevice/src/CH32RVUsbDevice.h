@@ -120,6 +120,9 @@ struct CH32RVUsbDeviceConfig {
 #endif
     uint16_t maxPowerMilliamps = 100;
     bool selfPowered = false;
+    /* Declare remote wakeup in the configuration descriptor, so the host may
+     * enable it; without it the host's SET_FEATURE is refused. */
+    bool remoteWakeupSupported = false;
     /* A DFU runtime interface, so a host can send DFU_DETACH and re-upload
      * over USB alone (ch32rv isp --entry auto): added at begin() unless the
      * sketch declared its own CH32RVUsbDeviceDfuRuntime. About 0.5 KB of flash
@@ -187,7 +190,6 @@ enum class CH32RVUsbDeviceError : uint8_t {
     NotStarted,           /* sendHidReport() before begin() */
     NotReady,             /* the host has not configured the device, or the endpoint stayed busy */
     AlreadyStarted,       /* begin() again, or a function added after begin() */
-    TooManyFunctions,     /* not returned any more: a device takes any number */
     TooManyInstances,     /* more of one class than the device takes */
     OutOfEndpoints,       /* the functions need more endpoints than exist */
     DescriptorTooLarge,   /* over CH32RV_USB_CONFIG_MAX (512) bytes */
@@ -339,24 +341,28 @@ public:
     constexpr CH32RVUsbDevice() {}
 
     /* Lay out the descriptors from the declared functions and connect.
-     * False, with lastError() set, when that is impossible. A second call
-     * after success returns true and does nothing. */
+     * False, with lastError() set, when that is impossible. While started,
+     * another call is refused (AlreadyStarted): to change the configuration,
+     * end() first. */
     bool begin();
     bool begin(const CH32RVUsbDeviceConfig &config);
     /* Leave the bus. begin() may be called again afterwards. */
     void end();
 
     bool started() const { return _started; }
-    /* The host has configured the device. ready() is EspUsbDevice's name. */
-    bool mounted() const;
-    bool ready() const { return mounted(); }
+    /* The host has configured the device (and keeps it configured while the
+     * bus is suspended). started() is begin() having succeeded. */
+    bool ready() const;
     /* Run the USB stack once. The core already does after every loop() and
      * inside delay(); a sketch busy elsewhere for long can call it. */
     void task();
     /* The bus is suspended (the host is asleep or the cable is unplugged
      * while VBUS stays). */
     bool suspended() const;
-    /* Wake a suspended host, if it allowed remote wakeup. */
+    /* The host has enabled remote wakeup (SET_FEATURE); only when the
+     * configuration declares it (CH32RVUsbDeviceConfig::remoteWakeupSupported). */
+    bool remoteWakeupEnabled() const;
+    /* Wake a suspended host, if it enabled remote wakeup. */
     bool remoteWakeup();
 
     CH32RVUsbDeviceError lastError() const { return _error; }

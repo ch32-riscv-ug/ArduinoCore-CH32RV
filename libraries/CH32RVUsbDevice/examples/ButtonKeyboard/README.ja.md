@@ -20,7 +20,7 @@
 
 ## USBの状態とreport API
 
-deviceとHID機能は`setup()`より前に宣言します。`device.begin(config)`は内部の開始であり、ホストの認識完了ではありません。`device.mounted()`でホストによる設定済みかを確認します。MCUのUSBデータ端子につながるコネクタとデータ対応ケーブルを使います。HIDはシリアルポートではありません。controller・clock・配線の条件は[USB Device案内](../README.ja.md)と[USB対応表](../../../../docs/usb.ja.md#対応状況)を参照してください。
+deviceとHID機能は`setup()`より前に宣言します。`device.begin(config)`は内部の開始であり、ホストの認識完了ではありません。`device.ready()`でホストによる設定済みかを確認します。MCUのUSBデータ端子につながるコネクタとデータ対応ケーブルを使います。HIDはシリアルポートではありません。controller・clock・配線の条件は[USB Device案内](../README.ja.md)と[USB対応表](../../../../docs/usb.ja.md#対応状況)を参照してください。
 
 `deliverEvents()`によって、登録した`onBusEvent()`の通知をloop()内で実行します。リセット・再認識ではボタン入力を無効にし、安定した解放を確認してから、新しい押下をホストへ渡します。このため、押したまま抜き差ししても即座に押下しません。ホストのsleepから起こすremote wakeは実装しません。
 

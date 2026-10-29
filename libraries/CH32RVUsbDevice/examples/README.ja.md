@@ -76,7 +76,7 @@ function は同じ `device` に結び付けます。定義済みの `USBDevice` 
 |---|---|
 | `device.begin(config)` が `true` | 内部の起動に成功。PC の列挙完了はまだ保証しない |
 | `device.started()` | スタックが起動している |
-| `device.mounted()` / `device.ready()` | ホストがデバイスを構成した。Device ではこの二つは同じ意味 |
+| `device.ready()` | ホストがデバイスを構成した（バスの休止中も true のまま） |
 | CDC の `connected()` / `operator bool` | ホストの DTR が有効。端末を開いたかを判断するために使う |
 | 送信 API の成功 | API がそのデータを受け付けた。PC アプリが意味を解釈・処理した保証ではない |
 

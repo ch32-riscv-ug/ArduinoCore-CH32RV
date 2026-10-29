@@ -20,7 +20,7 @@ Try a quick tap, long hold, and reconnect with the switch held. On reconnect the
 
 ## USB state and report API
 
-The device and HID function are declared before `setup()`. `device.begin(config)` starts the stack; it does not mean the host has finished enumeration. `device.mounted()` checks whether the host configured it. Use the MCU's USB data connector and a data cable; HID is not a serial port. See the [USB Device guide](../README.md) and [USB support table](../../../../docs/usb.ja.md#対応状況) for controller, clock and wiring requirements.
+The device and HID function are declared before `setup()`. `device.begin(config)` starts the stack; it does not mean the host has finished enumeration. `device.ready()` checks whether the host configured it. Use the MCU's USB data connector and a data cable; HID is not a serial port. See the [USB Device guide](../README.md) and [USB support table](../../../../docs/usb.ja.md#対応状況) for controller, clock and wiring requirements.
 
 `deliverEvents()` runs the registered `onBusEvent()` notification from the loop. Reset or reconfiguration disarms button input. After a stable release, a new press can operate the host. Unplugging and reconnecting while holding the switch therefore does not create an immediate press. This does not implement remote wake from host sleep.
 

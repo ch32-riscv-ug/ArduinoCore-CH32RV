@@ -29,7 +29,7 @@ A PC CDC terminal and a separate 115200-baud 8N1 UART monitor on the board RX/TX
 | `onRx()` | Notifies the sketch of received data. It does not read the data; this example reads it in `loop()`. |
 | `flush()` | Advances pending transmission; it does not clear received data. |
 
-Successful startup, host configuration (`device.mounted()`), and an open CDC port (`UsbSerial.connected()`) are separate states. Check DTR and the selected port if periodic output is missing. Host baud settings do not change the hardware UART; a bridge must apply them explicitly if needed.
+Successful startup, host configuration (`device.ready()`), and an open CDC port (`UsbSerial.connected()`) are separate states. Check DTR and the selected port if periodic output is missing. Host baud settings do not change the hardware UART; a bridge must apply them explicitly if needed.
 
 The sample discards CR, converts LF to CRLF, and prefixes each other character with `echo: `. Remove this text processing for binary forwarding, and handle the returned write lengths.
 

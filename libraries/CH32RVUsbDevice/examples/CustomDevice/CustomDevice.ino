@@ -54,8 +54,8 @@ void loop() {
   static bool was;
   // en: Track host configuration separately from CDC DTR.
   // ja: ホストの構成状態はCDCのDTRと分けて見る。
-  if (usb.mounted() != was) {
-    was = usb.mounted();
+  if (usb.ready() != was) {
+    was = usb.ready();
     Serial.println(was ? "host configured the device" : "host gone");
   }
 }

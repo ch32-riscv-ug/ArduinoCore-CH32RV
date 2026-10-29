@@ -115,7 +115,7 @@ const uint8_t *CH32RVUsbDeviceNet::macAddress() const
 
 bool CH32RVUsbDeviceNet::linkUp() const
 {
-    return net == this && drv.up && device().mounted();
+    return net == this && drv.up && device().ready();
 }
 
 /* ---------------------------------------------------------- the stack's side */

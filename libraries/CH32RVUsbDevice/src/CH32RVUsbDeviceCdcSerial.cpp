@@ -51,7 +51,9 @@ CH32RVUsbDeviceCdcSerial::CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device, cons
 void CH32RVUsbDeviceCdcSerial::begin(unsigned long baud)
 {
     (void)baud;
-    device().begin();
+    if (!device().started()) {      /* the core may have begun it already */
+        device().begin();
+    }
 }
 
 void CH32RVUsbDeviceCdcSerial::setBuffers(uint8_t *rx, uint16_t rxSize, uint8_t *tx, uint16_t txSize)
@@ -95,7 +97,7 @@ uint16_t CH32RVUsbDeviceCdcSerial::rxUsed() const
  * _rxEnd marks where. */
 void CH32RVUsbDeviceCdcSerial::receive()
 {
-    if (_outBusy || !device().mounted()) {
+    if (_outBusy || !device().ready()) {
         return;
     }
     if (!_rxEnd && _rxHead == _rxTail) {
@@ -118,7 +120,7 @@ void CH32RVUsbDeviceCdcSerial::receive()
  * driver splits it into packets. */
 void CH32RVUsbDeviceCdcSerial::push()
 {
-    if (_inBusy || !device().mounted()) {
+    if (_inBusy || !device().ready()) {
         return;
     }
     if (_txHead == _txTail) {
@@ -222,7 +224,7 @@ size_t CH32RVUsbDeviceCdcSerial::read(uint8_t *buffer, size_t size)
 bool CH32RVUsbDeviceCdcSerial::connected()
 {
     ch32rv_usb_task();
-    return device().mounted() && _lineState.dtr;
+    return device().ready() && _lineState.dtr;
 }
 
 static uint16_t tx_free(uint16_t head, uint16_t tail, uint16_t size)

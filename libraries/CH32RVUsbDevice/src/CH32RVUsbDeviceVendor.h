@@ -52,8 +52,7 @@ public:
     int available();
     int read();
     size_t read(uint8_t *buffer, size_t size);
-    /* The next byte read() would return, left in place; -1 when none. Not in
-     * EspUsbDevice: for code that parses the stream a byte ahead. */
+    /* The next byte read() would return, left in place; -1 when none. */
     int peek();
     size_t write(uint8_t data) override;
     size_t write(const uint8_t *buffer, size_t size) override;
@@ -62,13 +61,15 @@ public:
     CH32RV_PRINTF_MEMBER
     /* Room in the transmit FIFO now; write() never takes more. */
     size_t writeAvailable() const;
+    /* The same for Print (whose own answer is 0, which stalls code that waits for room). */
+    int availableForWrite() override { return (int)writeAvailable(); }
     /* The transmit buffer's size (twice the largest packet, at least 256). */
     static size_t writeCapacity();
     /* Wait until the FIFO has room for `bytes` (clamped to writeCapacity()),
      * running the stack meanwhile. Flushes first. */
     bool waitWritable(size_t bytes, uint32_t timeoutMs = 100);
-    /* Send what is in the FIFO now, whole packet or not: needed after a write
-     * shorter than the endpoint size. */
+    /* Send what is in the FIFO now. write() already starts sending; this runs
+     * the stack once more. */
     void flush() override;
 
     /* EspUsbDevice's zero-copy path: one bulk IN transfer straight from

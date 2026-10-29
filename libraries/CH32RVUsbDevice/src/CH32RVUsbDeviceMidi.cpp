@@ -131,7 +131,7 @@ void CH32RVUsbDeviceMidi::usbConfigured(CH32RVUsbSpeed speed)
 void CH32RVUsbDeviceMidi::receive()
 {
     const uint16_t used = (uint16_t)(_rxHead - _rxTail);
-    if (_outBusy || !device().mounted() || (uint16_t)(RX_PACKETS - used) * 4u < _packet) {
+    if (_outBusy || !device().ready() || (uint16_t)(RX_PACKETS - used) * 4u < _packet) {
         return;
     }
     _outBusy = device().transfer(_ep, _out, _packet);
@@ -139,7 +139,7 @@ void CH32RVUsbDeviceMidi::receive()
 
 void CH32RVUsbDeviceMidi::push()
 {
-    if (_inBusy || !device().mounted() || _txHead == _txTail) {
+    if (_inBusy || !device().ready() || _txHead == _txTail) {
         return;
     }
     uint16_t n = 0;
@@ -185,7 +185,7 @@ bool CH32RVUsbDeviceMidi::readPacket(CH32RVUsbDeviceMidiPacket &packet)
 bool CH32RVUsbDeviceMidi::writePacket(const CH32RVUsbDeviceMidiPacket &packet)
 {
     ch32rv_usb_task();
-    if (!device().mounted() || (uint16_t)(_txHead - _txTail) >= TX_PACKETS) {
+    if (!device().ready() || (uint16_t)(_txHead - _txTail) >= TX_PACKETS) {
         return false;
     }
     memcpy(_tx[_txHead % TX_PACKETS], &packet, 4);

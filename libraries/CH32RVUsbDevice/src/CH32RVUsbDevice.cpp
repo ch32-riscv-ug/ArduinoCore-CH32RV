@@ -125,7 +125,6 @@ const char *CH32RVUsbDevice::lastErrorName() const
     case CH32RVUsbDeviceError::NotStarted: return "NotStarted";
     case CH32RVUsbDeviceError::NotReady: return "NotReady";
     case CH32RVUsbDeviceError::AlreadyStarted: return "AlreadyStarted";
-    case CH32RVUsbDeviceError::TooManyFunctions: return "TooManyFunctions";
     case CH32RVUsbDeviceError::TooManyInstances: return "TooManyInstances";
     case CH32RVUsbDeviceError::OutOfEndpoints: return "OutOfEndpoints";
     case CH32RVUsbDeviceError::DescriptorTooLarge: return "DescriptorTooLarge";
@@ -137,9 +136,6 @@ const char *CH32RVUsbDevice::lastErrorName() const
 
 bool CH32RVUsbDevice::begin()
 {
-    if (_started) {
-        return true;
-    }
     return begin(CH32RVUsbDeviceConfig());
 }
 
@@ -272,7 +268,7 @@ uint16_t CH32RVUsbDevice::buildConfiguration(CH32RVUsbDescriptorWriter &w, CH32R
     /* The header. Bit 7 of bmAttributes is reserved and set, bit 5 offers
      * remote wakeup, bit 6 says self-powered; bMaxPower counts 2 mA units. */
     const uint8_t head[9] = {9, type, (uint8_t)len, (uint8_t)(len >> 8), l.interfaces, 1, 0,
-                             (uint8_t)(0x80u | 0x20u | (_config.selfPowered ? 0x40u : 0u)),
+                             (uint8_t)(0x80u | (_config.remoteWakeupSupported ? 0x20u : 0u) | (_config.selfPowered ? 0x40u : 0u)),
                              (uint8_t)(_config.maxPowerMilliamps > 500 ? 250 : _config.maxPowerMilliamps / 2)};
     w.companions = companions;
     w.put(head, sizeof head);

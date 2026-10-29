@@ -93,7 +93,7 @@ void loop() {
 
 | クラス | 内容 |
 |---|---|
-| `CH32RVUsbDevice` | デバイス本体。`begin(config)`、`end()`、`ready()` / `mounted()`、`task()`、`sendHidReport()`、`lastErrorName()`、`enterBootloader()` |
+| `CH32RVUsbDevice` | デバイス本体。`begin(config)`、`end()`、`started()` / `ready()`、`remoteWakeupEnabled()` / `remoteWakeup()`（`config.remoteWakeupSupported` で宣言）、`task()`、`sendHidReport()`、`lastErrorName()`、`enterBootloader()` |
 | `CH32RVUsbDeviceCdcSerial` | 仮想 COM ポート（`Stream`）。`connected()`、`lineCoding()`、`lineState()`、`onLineCoding()`、`onLineState()`、`onRx()`、1200bps タッチ |
 | `CH32RVUsbDeviceHidKeyboard` | キーボード。`write()`、`tapKey()`、`tapUsage()`、`pressUsage()`、`releaseAll()`、`setLayout()`、`ledState()`、`enableNkro()` |
 | `CH32RVUsbDeviceHidMouse` | マウス。`move()`、`wheel()`、`click()`、`press()` / `release()` |

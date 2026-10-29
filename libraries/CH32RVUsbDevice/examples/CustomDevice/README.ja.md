@@ -26,7 +26,7 @@ Vendor HID の payload は最大63 bytes、Report ID は6です。HID アプリ�
 | 各 function の constructor | 同じ `usb` を渡し、CDC・DFU・HID をデバイスへ登録します。使用中のオブジェクトを `setup()` のローカル変数にはしません。 |
 | `CH32RVUsbDeviceConfig` | USB の識別情報を設定します。設定を済ませてから `usb.begin(config)` を呼びます。 |
 | `data.onOutputReport()` / `data.sendInput()` | 受信 payload を返信します。返信の成功確認を追加する場合は `sendInput()` の `bool` を調べます。 |
-| `usb.mounted()` | ホストがデバイスを構成した状態を読みます。CDC の端末が開いているかとは別です。 |
+| `usb.ready()` | ホストがデバイスを構成した状態を読みます。CDC の端末が開いているかとは別です。 |
 
 製品名や serial number に動的な文字列を渡す場合は、USB が使っている間、その文字列の保存先を有効に保ちます。
 `String(...).c_str()` のような一時オブジェクトのアドレスは使わず、文字列リテラルや寿命の長い配列を使います。
