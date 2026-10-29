@@ -49,6 +49,15 @@ def series_limits() -> dict:
             pair = list(out.get(board, (0, 0)))
             pair[index] = int(value)
             out[board] = tuple(pair)
+        # A series with a flash/RAM split menu sets the sizes there; its
+        # first entry is the default (the factory split).
+        for board, value in re.findall(
+                rf"^([A-Za-z0-9_]+)\.menu\.ramsplit\.[A-Za-z0-9_]+\.{key}=(\d+)$",
+                text, re.M):
+            pair = list(out.get(board, (0, 0)))
+            if pair[index] == 0:
+                pair[index] = int(value)
+                out[board] = tuple(pair)
     return out
 
 

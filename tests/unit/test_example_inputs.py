@@ -52,7 +52,7 @@ public:
     void (*callback)(CH32RVUsbBusEvent)=nullptr;
     CH32RVUsbDevice() { activeDevice=this; }
     bool begin(const CH32RVUsbDeviceConfig &) { return allowBegin; }
-    bool mounted() const { return online; }
+    bool ready() const { return online; }
     void onBusEvent(void (*cb)(CH32RVUsbBusEvent)) { callback=cb; }
     const char *lastErrorName() const { return "NotReady"; }
 };

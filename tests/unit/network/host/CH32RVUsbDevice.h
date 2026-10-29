@@ -22,13 +22,14 @@ public:
     bool sendFrame(const uint8_t *data, size_t length, uint32_t timeoutMs = 10);
     bool linkUp() const;
 
-    void ipConfig(IPAddress local, IPAddress gateway, IPAddress subnet);
-    void dhcpServer(bool enable);
-    void dhcpClient(bool enable);
-    void dhcpAdvertiseGateway(bool enable);
-    void dhcpDns(IPAddress dns);
-    void defaultRoute(bool enable);
+    bool ipConfig(IPAddress local, IPAddress gateway, IPAddress subnet);
+    bool dhcpServer(bool enable);
+    bool dhcpClient(bool enable);
+    bool dhcpAdvertiseGateway(bool enable);
+    bool dhcpDns(IPAddress dns);
+    bool defaultRoute(bool enable);
     bool beginNetwork();
+    bool endNetwork();
     bool networkUp() const;
     IPAddress localIP() const;
     NetworkUsbNcm *networkInterface() const { return _network; }
@@ -42,4 +43,5 @@ private:
     FrameCallback _onFrame = nullptr;
     ReceiveGate _receiveGate = nullptr;
     NetworkUsbNcm *_network = nullptr;
+    bool _networkBegun = false;
 };
