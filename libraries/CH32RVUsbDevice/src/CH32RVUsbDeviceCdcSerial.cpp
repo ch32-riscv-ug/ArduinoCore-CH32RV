@@ -1,6 +1,6 @@
 /* CDC-ACM serial on the device stack: line coding and state on EP0, data on a
- * bulk OUT / IN pair, an interrupt IN for notifications (declared, never
- * sent). The ring buffers are the object's (or the sketch's, setBuffers()). */
+ * bulk OUT / IN pair (CH32RVUsbDeviceBulkStream), an interrupt IN for
+ * notifications (declared, never sent). */
 #include "CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
@@ -10,7 +10,6 @@
 /* What usbDeliver() has to tell the sketch. */
 #define PENDING_LINE_STATE  0x01
 #define PENDING_LINE_CODING 0x02
-#define PENDING_RX          0x04
 
 /* Notification IN on endpoint n, data OUT and IN on n + 1. */
 static bool cdc_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf, uint8_t *ep,
@@ -18,10 +17,13 @@ static bool cdc_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescrip
 {
     CH32RVUsbDeviceCdcSerial &cdc = const_cast<CH32RVUsbDeviceCdcSerial &>(
         static_cast<const CH32RVUsbDeviceCdcSerial &>(self));
+    if (!cdc.receiveReady()) {
+        return cdc.refuseSettings();
+    }
     const uint8_t n = *ep;
     *ep = (uint8_t)(n + 2);
     cdc._epNotify = (uint8_t)(0x80 | n);
-    cdc._epData = (uint8_t)(n + 1);
+    cdc._ep = (uint8_t)(n + 1);
     const uint16_t mps = ch32rv_usb_bulk_size(speed);
     const uint8_t d[] = {
         /* The association's iFunction names a composite child on Windows, so
@@ -44,7 +46,7 @@ static bool cdc_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescrip
 static const CH32RVUsbFunctionType cdc_type = {cdc_descriptor, 2, CDC_PORTS_MAX, nullptr, 0};
 
 CH32RVUsbDeviceCdcSerial::CH32RVUsbDeviceCdcSerial(CH32RVUsbDevice &device, const char *name)
-    : CH32RVUsbDeviceFunction(device, cdc_type, name ? name : CH32RV_USB_CDC_NAME)
+    : CH32RVUsbDeviceBulkStream(device, cdc_type, name ? name : CH32RV_USB_CDC_NAME, true)
 {
 }
 
@@ -56,108 +58,12 @@ void CH32RVUsbDeviceCdcSerial::begin(unsigned long baud)
     }
 }
 
-bool CH32RVUsbDeviceCdcSerial::configure(const CH32RVUsbBulkStreamConfig &config)
-{
-    uint8_t *rx, *tx;
-    uint16_t rxSize, txSize;
-    if (device().started() || config.rxMode != CH32RVUsbBulkRxMode::Stream ||
-        !ch32rv_usb_bulk_buffer(config.rxBuffer, config.rxCapacity, _rxStore, sizeof _rxStore, rx, rxSize) ||
-        !ch32rv_usb_bulk_buffer(config.txBuffer, config.txCapacity, _txStore, sizeof _txStore, tx, txSize)) {
-        return false;
-    }
-    _rx = rx;
-    _rxSize = rxSize;
-    _tx = tx;
-    _txSize = txSize;
-    _terminate = config.streamTermination != CH32RVUsbStreamTermination::Continue;
-    _rxHead = _rxTail = _rxEnd = 0;
-    _txHead = _txTail = 0;
-    return true;
-}
-
 /* ---------------------------------------------------------- the stack's side */
 void CH32RVUsbDeviceCdcSerial::usbReset()
 {
-    _outBusy = _inBusy = _zlp = false;
+    CH32RVUsbDeviceBulkStream::usbReset();
     if (_lineState.dtr || _lineState.rts) {
         handleLineState(false, false);
-    }
-}
-
-void CH32RVUsbDeviceCdcSerial::usbConfigured(CH32RVUsbSpeed speed)
-{
-    _packet = ch32rv_usb_bulk_size(speed);
-    _rxHead = _rxTail = _rxEnd = 0;
-    _txHead = _txTail = 0;
-    receive();
-}
-
-uint16_t CH32RVUsbDeviceCdcSerial::rxUsed() const
-{
-    return _rxEnd ? (uint16_t)(_rxEnd - _rxTail + _rxHead) : (uint16_t)(_rxHead - _rxTail);
-}
-
-/* The next OUT packet goes straight into the buffer, once there is a whole
- * packet of contiguous room: the host waits on NAK until then, and nothing is
- * dropped. When the end of the buffer is too short, the data wraps early and
- * _rxEnd marks where. */
-void CH32RVUsbDeviceCdcSerial::receive()
-{
-    if (_outBusy || !device().ready()) {
-        return;
-    }
-    if (!_rxEnd && _rxHead == _rxTail) {
-        _rxHead = _rxTail = 0;                   /* empty: all the room in one piece */
-    }
-    if (!_rxEnd && (uint16_t)(_rxSize - _rxHead) < _packet) {
-        if (_rxTail <= _packet) {
-            return;                              /* the front is still being read */
-        }
-        _rxEnd = _rxHead;
-        _rxHead = 0;
-    }
-    if (_rxEnd && (uint16_t)(_rxTail - _rxHead) <= _packet) {
-        return;
-    }
-    _outBusy = device().transfer(_epData, _rx + _rxHead, _packet);
-}
-
-/* The longest contiguous run of queued bytes goes out as one transfer; the
- * driver splits it into packets. */
-void CH32RVUsbDeviceCdcSerial::push()
-{
-    if (_inBusy || !device().ready()) {
-        return;
-    }
-    if (_txHead == _txTail) {
-        if (_zlp && device().transfer((uint8_t)(0x80 | _epData), _tx, 0)) {
-            _zlp = false;                        /* the last packet was full: end the transfer */
-            _inBusy = true;
-            _txSending = 0;
-        }
-        return;
-    }
-    _txSending = _txHead > _txTail ? (uint16_t)(_txHead - _txTail) : (uint16_t)(_txSize - _txTail);
-    _inBusy = device().transfer((uint8_t)(0x80 | _epData), _tx + _txTail, _txSending);
-}
-
-void CH32RVUsbDeviceCdcSerial::usbTransferred(uint8_t address, uint16_t length)
-{
-    if (address == _epData) {
-        _outBusy = false;
-        _rxHead = (uint16_t)(_rxHead + length);
-        receive();
-        if (length) {
-            handleRx();
-        }
-    } else if (address == (uint8_t)(0x80 | _epData)) {
-        _inBusy = false;
-        if (_txSending) {
-            _txTail = (uint16_t)((_txTail + _txSending) % _txSize);
-            _zlp = _terminate && _txHead == _txTail && (_txSending % _packet) == 0;
-            _txSending = 0;
-        }
-        push();
     }
 }
 
@@ -194,37 +100,10 @@ bool CH32RVUsbDeviceCdcSerial::usbControl(CH32RVUsbControlStage stage, const CH3
 }
 
 /* ---------------------------------------------------------- Stream */
-int CH32RVUsbDeviceCdcSerial::available()
-{
-    ch32rv_usb_task();
-    return rxUsed();
-}
-
-int CH32RVUsbDeviceCdcSerial::peek()
-{
-    ch32rv_usb_task();
-    return rxUsed() ? _rx[_rxTail] : -1;
-}
-
 int CH32RVUsbDeviceCdcSerial::read()
 {
     uint8_t c;
     return read(&c, 1) ? c : -1;
-}
-
-size_t CH32RVUsbDeviceCdcSerial::read(uint8_t *buffer, size_t size)
-{
-    ch32rv_usb_task();
-    size_t n = 0;
-    while (buffer && n < size && rxUsed()) {
-        buffer[n++] = _rx[_rxTail++];
-        if (_rxEnd && _rxTail == _rxEnd) {
-            _rxTail = 0;
-            _rxEnd = 0;
-        }
-    }
-    receive();
-    return n;
 }
 
 bool CH32RVUsbDeviceCdcSerial::connected()
@@ -233,20 +112,10 @@ bool CH32RVUsbDeviceCdcSerial::connected()
     return device().ready() && _lineState.dtr;
 }
 
-static uint16_t tx_free(uint16_t head, uint16_t tail, uint16_t size)
-{
-    return (uint16_t)(size - 1 - (head >= tail ? head - tail : size - tail + head));
-}
-
 int CH32RVUsbDeviceCdcSerial::availableForWrite()
 {
     ch32rv_usb_task();
-    return tx_free(_txHead, _txTail, _txSize);
-}
-
-size_t CH32RVUsbDeviceCdcSerial::writeAvailable() const
-{
-    return tx_free(_txHead, _txTail, _txSize);
+    return (int)writeAvailable();
 }
 
 bool CH32RVUsbDeviceCdcSerial::waitWritable(size_t bytes, uint32_t timeoutMs)
@@ -272,7 +141,7 @@ void CH32RVUsbDeviceCdcSerial::flush()
 {
     push();
     const uint32_t t0 = millis();
-    while ((_inBusy || _txHead != _txTail) && connected() && (uint32_t)(millis() - t0) < _txTimeoutMs) {
+    while (!bulkIdle() && connected() && (uint32_t)(millis() - t0) < _txTimeoutMs) {
         push();
     }
 }
@@ -288,11 +157,7 @@ size_t CH32RVUsbDeviceCdcSerial::write(const uint8_t *buf, size_t size)
     uint32_t t0 = millis();
     while (done < size && connected()) {
         const size_t before = done;
-        while (done < size && tx_free(_txHead, _txTail, _txSize)) {
-            _tx[_txHead] = buf[done++];
-            _txHead = (uint16_t)(_txHead + 1 == _txSize ? 0 : _txHead + 1);
-        }
-        push();
+        done += bulkQueue(buf + done, size - done);
         if (done != before) {
             t0 = millis();
         } else if ((uint32_t)(millis() - t0) >= _txTimeoutMs) {
@@ -345,11 +210,6 @@ void CH32RVUsbDeviceCdcSerial::handleLineCoding(uint32_t baud, uint8_t stopBits,
     _pending |= PENDING_LINE_CODING;
 }
 
-void CH32RVUsbDeviceCdcSerial::handleRx()
-{
-    _pending |= PENDING_RX;
-}
-
 size_t CH32RVUsbDeviceCdcSerial::usbDeliver()
 {
     const uint8_t pending = _pending;
@@ -363,9 +223,5 @@ size_t CH32RVUsbDeviceCdcSerial::usbDeliver()
         _onLineCoding(_lineCoding);
         ran++;
     }
-    if ((pending & PENDING_RX) && _onRx && rxUsed()) {
-        _onRx(rxUsed());
-        ran++;
-    }
-    return ran;
+    return ran + CH32RVUsbDeviceBulkStream::usbDeliver();
 }

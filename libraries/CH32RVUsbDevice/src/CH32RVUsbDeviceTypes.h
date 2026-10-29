@@ -342,7 +342,7 @@ static inline bool ch32rv_usb_at(CH32RVUsbSpeed actual, CH32RVUsbSpeed speed)
 }
 
 
-/* A borrowed transfer (Vendor writeDirect() / readDirect(), as EspUsbDevice's): why it was
+/* A borrowed transfer (CDC and Vendor writeDirect() / readDirect(), as EspUsbDevice's): why it was
  * refused, and how it ended. A refusal borrows nothing and reports nothing;
  * an accepted one is reported exactly once, whatever ends it. */
 enum class CH32RVUsbTransferError : uint8_t {
@@ -390,13 +390,13 @@ enum class CH32RVUsbStreamTermination : uint8_t { FunctionDefault, Continue, End
  * least); a buffer is the sketch's, used from begin() to end(), and its
  * capacity says how big it is. A bigger capacity with no buffer is refused:
  * nothing is allocated. Receive needs room for two packets at the speed the
- * host picks (128 / 1024 / 2048 bytes). Vendor's onRxData() transfers land
+ * host picks (128 / 1024 / 2048 bytes). onRxData()'s transfers land
  * in the receive buffer, whole packets of it. */
-/* How Vendor receives: Stream (available() / read(); onRxData() switches to
+/* How CDC and Vendor receive: Stream (available() / read(); onRxData() switches to
  * handing each transfer over, at any time), Callback (the same, but begin()
  * fails without onRxData()), Borrowed (only into readDirect()'s buffers;
  * begin() fails without onDirectRxComplete()) or Disabled (the OUT endpoint
- * is never armed: the host's writes wait). CDC takes Stream only. */
+ * is never armed: the host's writes wait). CDC and Vendor alike. */
 enum class CH32RVUsbBulkRxMode : uint8_t { Stream, Callback, Borrowed, Disabled };
 
 struct CH32RVUsbBulkStreamConfig {

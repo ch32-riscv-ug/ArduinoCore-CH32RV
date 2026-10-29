@@ -511,6 +511,7 @@ private:
 /* The predefined device, as Serial is predefined (CH32RVUsbDeviceInstance.cpp). */
 extern CH32RVUsbDevice USBDevice;
 
+#include "CH32RVUsbDeviceBulkStream.h"
 #include "CH32RVUsbDeviceCdcSerial.h"
 #include "CH32RVUsbDeviceDfuRuntime.h"
 #include "CH32RVUsbDeviceHid.h"

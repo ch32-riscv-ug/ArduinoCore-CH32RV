@@ -74,7 +74,7 @@ void loop() {
   H41x）向けで、X035 では使えません。`beginNetwork()` を呼ばなければ、生の Ethernet フレームを扱うだけです。
   USB controller とネットワークの実機確認範囲は [USB の対応表](../../docs/usb.ja.md#対応状況) を参照してください。
 - **無いもの**: ファームウェア更新の各クラス（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
-- **ベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
+- **CDC とベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
   送ります（`onDirectTxComplete()` で返るまで、バッファは触らず残してください。送り終えても、リセットや `end()` で
   止まっても、必ず 1 回返ります）。ビルド時の設定は要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で
   直接読みます）。受信も借りられ（`rxMode` を Borrowed にして `readDirect()`）、どちらも取り消せます
@@ -98,7 +98,7 @@ void loop() {
 | クラス | 内容 |
 |---|---|
 | `CH32RVUsbDevice` | デバイス本体。`begin(config)`、`end()`、`started()` / `ready()`、`remoteWakeupEnabled()` / `remoteWakeup()`（`config.remoteWakeupSupported` で宣言）、`task()`、`sendHidReport()`、`lastErrorName()`、`enterBootloader()` |
-| `CH32RVUsbDeviceCdcSerial` | 仮想 COM ポート（`Stream`）。`connected()`、`lineCoding()`、`lineState()`、`onLineCoding()`、`onLineState()`、`onRx()`、1200bps タッチ |
+| `CH32RVUsbDeviceCdcSerial` | 仮想 COM ポート（`Stream`）。`connected()`、`lineCoding()`、`lineState()`、`onLineCoding()`、`onLineState()`、`onRx()`、1200bps タッチ。`configure()`、`onRxData()`、`onTxComplete()`、`writeDirect()` / `readDirect()` などは Vendor と共通（`CH32RVUsbDeviceBulkStream`） |
 | `CH32RVUsbDeviceHidKeyboard` | キーボード。`write()`、`tapKey()`、`tapUsage()`、`pressUsage()`、`releaseAll()`、`setLayout()`、`ledState()`、`enableNkro()` |
 | `CH32RVUsbDeviceHidMouse` | マウス。`move()`、`wheel()`、`click()`、`press()` / `release()` |
 | `CH32RVUsbDeviceHidGamepad` | ゲームパッド（6 軸、ハット、32 ボタン）。`send()`、`sendReport()` |

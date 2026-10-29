@@ -31,6 +31,17 @@ def test_usb_peer_device(dut, peers, record_property):
     assert command(s3, "cdc " + payload.hex(), rb"CDC (\w*)").group(1).decode() == payload.hex()
     assert command(s3, "cdcbig 2000", rb"CDCBIG 2000 (\d) (\d+)", timeout=20).group(1) == b"1"
     assert command(s3, "baud 9600", rb"BAUD (\d)").group(1) == b"1"
+    # The same echo through onRxData() and writeDirect() (CH32RVUsbDeviceBulkStream,
+    # shared with Vendor), then back to the FIFOs.
+    dut.write("cdcmode direct\n")
+    before = int(dut.expect(rb"CDCMODE direct (\d+)\r?\n", timeout=5).group(1))
+    for _ in range(3):
+        payload = secrets.token_bytes(32)
+        assert command(s3, "cdc " + payload.hex(), rb"CDC (\w*)").group(1).decode() == payload.hex()
+    dut.write("cdcmode fifo\n")
+    assert int(dut.expect(rb"CDCMODE fifo (\d+)\r?\n", timeout=5).group(1)) - before == 3
+    payload = secrets.token_bytes(32)
+    assert command(s3, "cdc " + payload.hex(), rb"CDC (\w*)").group(1).decode() == payload.hex()
 
     # Vendor HID: report 6 out, back in with its first byte incremented.
     command(s3, "hidv 0641" + b"vendor".hex(), rb"HIDV_SENT 1")

@@ -10,6 +10,10 @@
  *   mounts          MOUNTS <times the host configured the device>
  *   net             NET <frames received> <MAC as 12 hex digits>
  *   netsend         one broadcast frame (EtherType 0x88B5) -> NETSEND 1 / 0
+ *   cdcmode fifo|direct   CDCMODE <mode> <direct transfers completed>: how
+ *                   the CDC echo goes - read() / write() through the FIFOs (the
+ *                   default), or onRxData() handing each OUT transfer over and
+ *                   writeDirect() sending it back
  *
  * Over USB, without a command: CDC echoes every byte, a vendor output report
  * comes back as an input report with its first byte incremented, and a MIDI
@@ -38,6 +42,21 @@ static uint32_t mounts;
 static bool wasMounted;
 static char line[80];
 static uint8_t used;
+
+/* The CDC echo through onRxData() and writeDirect(): one transfer at a time. */
+static uint8_t cdcEcho[64];
+static volatile bool cdcEchoBusy;
+static uint32_t cdcDirectDone;
+static bool cdcDirect;
+
+static void cdc_rx(const uint8_t *data, size_t length)
+{
+    if (cdcEchoBusy || length > sizeof cdcEcho) {
+        return;
+    }
+    memcpy(cdcEcho, data, length);
+    cdcEchoBusy = (bool)SerialUSB.writeDirect(cdcEcho, length);
+}
 
 static void reply(const char *command)
 {
@@ -81,6 +100,23 @@ static void reply(const char *command)
         memcpy(frame + 14, "CH32RV usb-contract", 19);
         SerialDMSeq.print("NETSEND ");
         SerialDMSeq.println(net.sendFrame(frame, sizeof frame, 500) ? 1 : 0);
+    } else if (strncmp(command, "cdcmode ", 8) == 0) {
+        cdcDirect = strcmp(command + 8, "direct") == 0;
+        if (cdcDirect) {
+            SerialUSB.onDirectTxComplete([](const CH32RVUsbTransferResult &result) {
+                if (result.status == CH32RVUsbTransferStatus::Success) {
+                    cdcDirectDone++;
+                }
+                cdcEchoBusy = false;
+            });
+            SerialUSB.onRxData(cdc_rx);
+        } else {
+            SerialUSB.onRxData(nullptr);
+            SerialUSB.onDirectTxComplete(nullptr);
+        }
+        SerialDMSeq.print("CDCMODE ");
+        SerialDMSeq.print(cdcDirect ? "direct " : "fifo ");
+        SerialDMSeq.println((unsigned long)cdcDirectDone);
     } else {
         SerialDMSeq.println("ERROR COMMAND");
     }

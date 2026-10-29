@@ -85,7 +85,7 @@ Differences:
   `beginNetwork()` the function exchanges raw Ethernet frames. Check controller
   and networking hardware coverage in the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況).
 - **Not here**: the firmware-update classes.
-- **The vendor class's direct path (`writeDirect()`) works on every series**:
+- **The CDC and vendor classes' direct path (`writeDirect()`, from their shared base `CH32RVUsbDeviceBulkStream`) works on every series**:
   one transfer straight from the caller's buffer, which stays untouched until
   `onDirectTxComplete()` hands it back (once, whether sent, reset or stopped).
   No build flag and no alignment rule (the USBSS DMA reads a 4-byte-aligned
