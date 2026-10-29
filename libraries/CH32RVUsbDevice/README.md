@@ -58,7 +58,9 @@ Differences:
 - **Only the keyboard layouts a sketch names are linked**; all 19 together
   would be about 17 KB.
 - **CDC is a `Stream`**, and blocks until everything is written while a host
-  has the port open (EspUsbDevice returns what fit). It also takes the
+  has the port open - up to `setTxTimeoutMs()` (1000 ms) without progress,
+  then the rest is dropped (EspUsbDevice returns what fit). How this library
+  follows EspUsbDevice v3 is in [docs/usb-espusbdevice-v3.ja.md](../../docs/usb-espusbdevice-v3.ja.md). It also takes the
   1200 bps touch.
 - **The stack runs from `loop()` and `delay()`**, not an RTOS task;
   `device.task()` runs it explicitly.
