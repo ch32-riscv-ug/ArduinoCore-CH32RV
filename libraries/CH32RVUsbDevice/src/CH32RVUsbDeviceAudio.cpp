@@ -189,7 +189,8 @@ bool CH32RVUsbAudioFunction::setRate(uint32_t rate)
 bool CH32RVUsbAudioFunction::configure(const CH32RVUsbAudioConfig &config)
 {
     if (device().started() || config.eventCapacity > sizeof _events / sizeof _events[0] ||
-        !config.playbackBuffer != !config.playbackBufferBytes || !config.captureBuffer != !config.captureBufferBytes) {
+        !config.playbackBuffer != !config.playbackBufferBytes || !config.captureBuffer != !config.captureBufferBytes ||
+        config.playbackOverflowPolicy > CH32RVUsbAudioOverflowPolicy::DropNewest) {
         return false;
     }
     _config = config;
@@ -725,12 +726,33 @@ void CH32RVUsbAudioFunction::usbTransferred(uint8_t address, uint16_t length)
             return;
         }
         _playback._transferredBytes = _playback._transferredBytes + length;
+        /* Whole frames only, and the ring's depth is whole frames: what is
+         * pushed out of it stays aligned too. */
+        const uint16_t frame = frame_bytes(ps.format);
+        const uint8_t *data = _rxPacket;
+        uint16_t n = frame ? (uint16_t)(length - length % frame) : 0;
+        uint32_t dropped = (uint32_t)(length - n);
         const uint16_t room = (uint16_t)(_rxDepth - _rxCount);
-        if (length > room) {
-            _playback._overrunCount = _playback._overrunCount + 1;
-            _playback._overrunBytes = _playback._overrunBytes + (uint32_t)(length - room);
+        if (_config.playbackOverflowPolicy == CH32RVUsbAudioOverflowPolicy::DropNewest) {
+            if (n > room) {
+                dropped += (uint32_t)(n - room);
+                n = room;
+            }
+        } else {
+            if (n > _rxDepth) {                  /* only the newest fit */
+                dropped += (uint32_t)(n - _rxDepth);
+                data += n - _rxDepth;
+                n = _rxDepth;
+            }
+            if (n > room) {
+                dropped += (uint32_t)(n - room);  /* the oldest pushed out */
+            }
         }
-        fifo_put(_rxFifo, _rxDepth, _rxHead, _rxCount, _rxPacket, length);
+        if (dropped) {
+            _playback._overrunCount = _playback._overrunCount + 1;
+            _playback._overrunBytes = _playback._overrunBytes + dropped;
+        }
+        fifo_put(_rxFifo, _rxDepth, _rxHead, _rxCount, data, n);
         receivePacket();
     } else if (_playbackEnabled && ps.feedbackEndpoint && address == ps.feedbackEndpoint) {
         sendFeedback();

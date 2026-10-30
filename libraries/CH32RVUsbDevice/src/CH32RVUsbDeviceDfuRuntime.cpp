@@ -173,7 +173,7 @@ bool CH32RVUsbDeviceDfuRuntime::usbControl(CH32RVUsbControlStage stage, const CH
     const bool setup = stage == CH32RVUsbControlStage::Setup;
     switch (s.bRequest) {
     case DFU_DETACH:                             /* leave once the status stage is out */
-        if (_dfuMode) {
+        if (_dfuMode || (s.bmRequestType & 0x80) || s.wLength) {
             return false;
         }
         if (setup) {

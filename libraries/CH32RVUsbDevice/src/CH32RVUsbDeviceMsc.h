@@ -44,7 +44,8 @@ public:
      * medium appearing while the host has the device configured (false, then
      * true) is reported once, as UNIT ATTENTION "medium may have changed",
      * to the next command but INQUIRY and REQUEST SENSE - so the host reads
-     * it afresh. Setting the same value again changes nothing. */
+     * it afresh - even if the medium went again meanwhile. Setting the same
+     * value again changes nothing; a bus reset forgets an untold change. */
     void mediaPresent(bool value);
     void isWritable(bool value) { _writable = value; }
     /* Providers: called inside the USB service while the host waits. They

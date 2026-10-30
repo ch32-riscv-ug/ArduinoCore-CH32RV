@@ -113,7 +113,7 @@ void loop() {
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |
 | `CH32RVUsbDeviceMscSdCard` | SPI の SD カードを MSC の中身にする。`begin(cs, SPI)`、`attach(msc)`（`#include <CH32RVUsbDeviceMscSdCard.h>`） |
 | `CH32RVUsbDeviceNet` | USB ネットワーク（CDC-NCM）。`onFrame()`、`sendFrame()`、`macAddress()`、`linkUp()`、`configure()`（NTB の大きさとバッファの数）、`stats()`、受信の流量制御の `receiveGate()` / `resumeReceive()`。IP 層は上記 |
-| `CH32RVUsbAudioFunction` | オーディオ（UAC1 / UAC2）。`addPlaybackStream()` / `addCaptureStream()`、`addFormat()`（同じ形でレート違いを 8 つまで）、`read()` / `write()`、ミュート・音量、`pollEvent()`。録音側の `availableForWrite()` はこのライブラリの追加 |
+| `CH32RVUsbAudioFunction` | オーディオ（UAC1 / UAC2）。`addPlaybackStream()` / `addCaptureStream()`、`addFormat()`（同じ形でレート違いを 8 つまで）、`read()` / `write()`、ミュート・音量、`pollEvent()`。再生のリングがあふれたときの扱いは `playbackOverflowPolicy`（既定は古い方を捨てる）。録音側の `availableForWrite()` はこのライブラリの追加 |
 | `CH32RVUsbDeviceVideo` | カメラ（UVC）。`setFormat()`、`setFrameSize()`、`sendFrame()`、`onCommit()`。`onFillPayload()` / `sendGeneratedFrame()`（フレームを持たずに作る）はこのライブラリの追加 |
 | `CH32RVUsbDeviceDfuRuntime` | DFU_DETACH による更新への入口。移行先は系列依存。**既定で付きます**（`config.dfuRuntime = false` で外す）。明示宣言は `onDetach()` で移行を判定するとき等に使用。インターフェース名 "CH32RV" は ch32rv の discovery の目印 |
 

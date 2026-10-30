@@ -125,7 +125,8 @@ with `mediaPresent(true)` while running is reported to the host as changed) with
 `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` /
 `CH32RVUsbDeviceMscSdCard` (its own header), `CH32RVUsbDeviceCcid`,
 `CH32RVUsbDeviceNet` (CDC-NCM, raw frames; `configure()` sets the transfer blocks), `CH32RVUsbAudioFunction`
-(UAC1/UAC2; up to 8 rates of one PCM shape per stream), `CH32RVUsbDeviceVideo` (UVC),
+(UAC1/UAC2; up to 8 rates of one PCM shape per stream; a full playback ring
+drops the oldest frames unless `playbackOverflowPolicy` says otherwise), `CH32RVUsbDeviceVideo` (UVC),
 `CH32RVUsbDeviceDfuRuntime` (an update entry through DFU_DETACH; the next mode
 and programming method depend on the series). It is included by default
 (`config.dfuRuntime = false` disables it); declare it explicitly when adding

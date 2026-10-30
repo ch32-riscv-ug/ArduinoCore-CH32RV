@@ -60,6 +60,12 @@ enum class CH32RVUsbAudioEventType : uint8_t {
     StreamStateChanged,   /* the host opened (alt 1) or closed (alt 0) a stream */
 };
 
+/* What a full playback ring keeps when the host's packet does not fit. */
+enum class CH32RVUsbAudioOverflowPolicy : uint8_t {
+    DropOldest,   /* the newest whole frames: the delay stays at most the ring's */
+    DropNewest,   /* what was there: the packet's frames that do not fit go */
+};
+
 enum class CH32RVUsbAudioEventTarget : uint8_t {
     Function,
     Playback,
@@ -106,6 +112,7 @@ struct CH32RVUsbAudioConfig {
     uint8_t *captureBuffer = nullptr;
     size_t playbackBufferBytes = 0;
     size_t captureBufferBytes = 0;
+    CH32RVUsbAudioOverflowPolicy playbackOverflowPolicy = CH32RVUsbAudioOverflowPolicy::DropOldest;
 };
 
 class CH32RVUsbAudioFunction;
@@ -123,8 +130,11 @@ public:
     /* Bytes the ring holds (once the host has configured the device). */
     size_t capacity() const;
     /* Whole sample frames only: a length that is not a multiple of the frame
-     * is cut down to one. When the ring is full, the oldest samples give way
-     * to the new ones (an overrun): the delay stays at most the ring's. */
+     * is cut down to one. When a packet does not fit, the ring keeps what
+     * playbackOverflowPolicy says (the oldest frames give way by default, so
+     * the delay stays at most the ring's); a part frame at a packet's end is
+     * dropped. Each such packet is one overrun, and every byte dropped or
+     * pushed out counts in overrunBytes. */
     size_t read(void *data, size_t length);
     bool clearBuffer();
     CH32RVUsbAudioStreamStats stats() const;

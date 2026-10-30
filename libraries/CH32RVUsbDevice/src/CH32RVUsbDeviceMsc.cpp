@@ -38,7 +38,8 @@ bool CH32RVUsbDeviceMsc::begin(uint32_t blockCount, uint16_t blockSize)
 
 void CH32RVUsbDeviceMsc::end()
 {
-    _mediaPresent = false;
+    _mediaPresent = _attention = false;
+    _senseKey = _asc = _ascq = 0;
 }
 
 void CH32RVUsbDeviceMsc::mediaPresent(bool value)
@@ -150,6 +151,8 @@ static void put_be32(uint8_t *p, uint32_t v) { p[0] = (uint8_t)(v >> 24); p[1] =
 void CH32RVUsbDeviceMsc::usbReset()
 {
     _stage = Stage::Command;
+    _attention = false;                          /* the host starts afresh (a reset recovery keeps it) */
+    _senseKey = _asc = _ascq = 0;
 }
 
 void CH32RVUsbDeviceMsc::usbConfigured(CH32RVUsbSpeed speed)
