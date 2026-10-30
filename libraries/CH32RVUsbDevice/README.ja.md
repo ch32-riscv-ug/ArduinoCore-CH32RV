@@ -55,7 +55,7 @@ void loop() {
   レイアウトごとに別のオブジェクトにしています。
 - **CDC は `Stream` です。** `print()` などの Arduino の関数がそのまま使え、ホストが開いている間は書き込みが
   全部終わるまで待ちます。ただし、進まないまま `setTxTimeoutMs()`（既定 1000 ms）が過ぎたら、残りを捨てます
-  （EspUsbDevice は書けた分だけ返します）。1200bps タッチでブートローダーに入れます。
+  （EspUsbDevice も同じです。ただし向こうは、ホストが開いていなくても送ります）。1200bps タッチでブートローダーに入れます。
 - **スタックは `loop()` と `delay()` から動きます**（RTOS のタスクではありません）。`device.task()` で明示的にも
   動かせます。
 - **通知の callback は `deliverEvents()` から呼ばれます**（`onRx()`、`onLineState()`、`onBusEvent()`、`onFrame()`
@@ -108,7 +108,7 @@ void loop() {
 | `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID |
 | `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル）。`noteOn(channel, note, velocity, cable)`、`readPacket()`、`configure(CH32RVUsbMidiConfig)`（キューの大きさ、受け方、送り方）、`onPacket()` |
 | `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`peek()`（このコアの独自）、`write()`、`flush()`、`configure()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onDirectTxComplete()`、`readDirect()`、`onDirectRxComplete()`、`cancelDirectTx()`、`cancelDirectRx()`、`onTxComplete()`、`onRxData()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
-| `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`、`isWritable()`、`vendorID()` など |
+| `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`（稼働中に挿すとホストに媒体の交換を知らせる）、`isWritable()`、`vendorID()` など |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |
 | `CH32RVUsbDeviceMscSdCard` | SPI の SD カードを MSC の中身にする。`begin(cs, SPI)`、`attach(msc)`（`#include <CH32RVUsbDeviceMscSdCard.h>`） |
@@ -194,4 +194,4 @@ controller の実装・型番ごとの例外・端子・クロック・実機確
 
 CDC の1200 bps touch、または DFU_DETACH を更新への入口に使います。
 移行先と書き込み方法は系列によって異なるため、[USB の書き込み手順](../../docs/usb.ja.md#書き込み) を確認してください。
-`onDetach()` は移行の可否をその場で返す処理で、通知用の `deliverEvents()` を待ちません。
+`onDetach()` は移行の可否をその場で返す処理で、通知用の `deliverEvents()` を待ちません。false を返すと DFU_DETACH を STALL で断り、ホストには失敗として見えます。

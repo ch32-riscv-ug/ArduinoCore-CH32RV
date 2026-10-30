@@ -40,7 +40,7 @@ bool CH32RVUsbDeviceBulkStream::configure(const CH32RVUsbBulkStreamConfig &confi
 
 size_t CH32RVUsbDeviceBulkStream::writeAvailable() const
 {
-    if (!mounted()) {
+    if (!mounted() || _direct) {
         return 0;
     }
     const uint16_t used = _txHead >= _txTail ? (uint16_t)(_txHead - _txTail) : (uint16_t)(_txSize - _txTail + _txHead);

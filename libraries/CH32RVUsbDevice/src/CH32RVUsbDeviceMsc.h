@@ -40,8 +40,12 @@ public:
     void vendorID(const char *value);
     void productID(const char *value);
     void productRevision(const char *value);
-    /* No medium (false, the default) reads as "not ready" to the host. */
-    void mediaPresent(bool value) { _mediaPresent = value; }
+    /* No medium (false, the default) reads as "not ready" to the host. A
+     * medium appearing while the host has the device configured (false, then
+     * true) is reported once, as UNIT ATTENTION "medium may have changed",
+     * to the next command but INQUIRY and REQUEST SENSE - so the host reads
+     * it afresh. Setting the same value again changes nothing. */
+    void mediaPresent(bool value);
     void isWritable(bool value) { _writable = value; }
     /* Providers: called inside the USB service while the host waits. They
      * return the bytes done; anything but `size` is an I/O error to the host. */
@@ -103,6 +107,7 @@ private:
     uint32_t _blockCount = 0;
     uint16_t _blockSize = 0;
     bool _mediaPresent = false;
+    bool _attention = false;          /* a medium change the host has not been told of */
     bool _writable = true;
     CH32RVUsbDeviceMscReadCallback _onRead = nullptr;
     CH32RVUsbDeviceMscWriteCallback _onWrite = nullptr;

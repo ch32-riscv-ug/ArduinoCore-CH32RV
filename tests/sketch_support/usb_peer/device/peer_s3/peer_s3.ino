@@ -25,12 +25,13 @@
  *   mscraw <lba>         S3 MSCRAW <ok>       (write a pattern, read it back, restore)
  *   mscwrite <text>      S3 MSCWRITE <ok>     (/HOST.TXT on the FAT volume)
  *   mscread              S3 MSCREAD <ok> <first line of /README.TXT>
+ *   msctur               S3 MSCTUR <ok> <sense key> <asc> <ascq>  (TEST UNIT READY; hex, the sense when it fails)
  *   ccid                 S3 CCID <ok> <ATR hex>
  *   apdu <hex>           S3 APDU <ok> <response hex> <SW hex>
  *   audioin <ms> [rate]  S3 AUDIOIN <bytes> <ramp breaks>     (rate: 32000 by default)
  *   audioout <ms> [rate] S3 AUDIOOUT <ok> <bytes> <byte sum>
  *   video <ms>           S3 VIDEO <frames> <pattern errors> <width> <height>
- *   dfu                  S3 DFU <ok>          (DFU_DETACH to the runtime interface)
+ *   dfu                  S3 DFU <found> <ok>  (DFU_DETACH to the runtime interface; ok 0 when stalled)
  *   hididle <d> <ms>     S3 HIDIDLE <ok> <vendor input reports in <ms>>  (SET_IDLE
  *                        duration d x 4 ms, report ID 0, to the HID interface)
  *   reset                S3 RESET             (the counters below start over)
@@ -201,6 +202,18 @@ static void cmdMsc()
   const bool ok = usb.mscWaitReady(a, 5000) && usb.mscInquiry(inq, a) && usb.mscCapacity(blocks, size, a);
   Serial.printf("S3 MSC %u %s %s %lu %lu\n", ok ? 1 : 0, ok ? inq.vendor : "-", ok ? inq.product : "-",
                 (unsigned long)blocks, (unsigned long)size);
+}
+
+static void cmdMscTur()
+{
+  const uint8_t a = firstAddress();
+  EspUsbHostMscSense sense;
+  const bool ok = usb.mscTestUnitReady(a);
+  if (!ok) {
+    usb.mscLastSense(sense, a);                  /* EspUsbHost asks REQUEST SENSE itself after a failure */
+  }
+  Serial.printf("S3 MSCTUR %u %02x %02x %02x\n", ok ? 1 : 0, sense.senseKey, sense.additionalSenseCode,
+                sense.additionalSenseQualifier);
 }
 
 static void cmdMscRaw(uint32_t lba)
@@ -383,12 +396,12 @@ static void cmdDfu()
     {
       /* DFU_DETACH: class request to the interface, wTimeout 1000 ms. The
        * device may leave before the status stage completes. */
-      usb.vendorControlTransfer(0x21, 0x00, 1000, itfs[i].number, nullptr, 0, nullptr, a);
-      Serial.println("S3 DFU 1");
+      const bool ok = usb.vendorControlTransfer(0x21, 0x00, 1000, itfs[i].number, nullptr, 0, nullptr, a);
+      Serial.printf("S3 DFU 1 %u\n", ok ? 1 : 0);
       return;
     }
   }
-  Serial.println("S3 DFU 0");
+  Serial.println("S3 DFU 0 0");
 }
 
 static void run(char *cmd)
@@ -444,6 +457,7 @@ static void run(char *cmd)
   else if (!strcmp(cmd, "mscraw")) cmdMscRaw(strtoul(arg, nullptr, 10));
   else if (!strcmp(cmd, "mscwrite")) cmdMscWrite(arg);
   else if (!strcmp(cmd, "mscread")) cmdMscRead();
+  else if (!strcmp(cmd, "msctur")) cmdMscTur();
   else if (!strcmp(cmd, "ccid")) cmdCcid();
   else if (!strcmp(cmd, "apdu")) cmdApdu(arg);
   else if (!strcmp(cmd, "audioin") || !strcmp(cmd, "audioout"))

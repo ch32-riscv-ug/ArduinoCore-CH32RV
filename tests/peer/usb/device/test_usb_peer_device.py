@@ -78,7 +78,7 @@ def test_usb_peer_device(dut, peers, record_property):
     # DFU_DETACH from the S3: the factory bootloader appears on the same port,
     # and without an upload it hands back to this build.
     wait_enumerated(s3, build_id)
-    command(s3, "dfu", rb"DFU 1")
+    command(s3, "dfu", rb"DFU 1 \d")
     s3.expect(rb"S3 DISCONNECTED \d+ 1209 0001", timeout=10)
     s3.expect(rb"S3 CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
     s3.expect(rb"S3 CONNECTED \d+ 1209 0001", timeout=40)

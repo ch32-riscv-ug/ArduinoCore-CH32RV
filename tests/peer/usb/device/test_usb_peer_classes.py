@@ -60,6 +60,25 @@ def test_usb_peer_classes(dut, peers):
     dut.write("file\n")
     m = dut.expect(rb"FILE (\d+) ([^\r\n]*)\r?\n", timeout=5)
     assert m.group(2).decode() == text
+    # The medium taken out reads as not ready (02/3A/00); put back, the next
+    # command gets UNIT ATTENTION 06/28/00 once, then it is ready. Setting it
+    # present again is no change.
+    for value, sense in (("0", "02 3a 00"), ("1", "06 28 00")):
+        dut.write("media " + value + "\n")
+        dut.expect(rb"MEDIA " + value.encode() + rb"\r?\n", timeout=5)
+        assert command(s3, "msctur", rb"MSCTUR (\d) (\w\w \w\w \w\w)").group(2).decode() == sense
+    assert command(s3, "msctur", rb"MSCTUR (\d) [^\r\n]*").group(1) == b"1"
+    dut.write("media 1\n")
+    dut.expect(rb"MEDIA 1\r?\n", timeout=5)
+    assert command(s3, "msctur", rb"MSCTUR (\d) [^\r\n]*").group(1) == b"1"
+
+    # DFU_DETACH refused by onDetach(): the request stalls (the S3 sees it
+    # fail), the callback ran once and the device stays, still answering.
+    m = command(s3, "dfu", rb"DFU (\d) (\d)", timeout=10)
+    assert (m.group(1), m.group(2)) == (b"1", b"0")
+    dut.write("detach\n")
+    assert dut.expect(rb"DETACH (\d+)\r?\n", timeout=5).group(1) == b"1"
+    assert command(s3, "vreq", rb"VREQ (\d) (\S*)").group(2) == b"CH32"
 
     # Smart card: power on returns the DUT's ATR, an APDU comes back reversed + 90 00.
     m = command(s3, "ccid", rb"CCID (\d) (\w*)", timeout=15)

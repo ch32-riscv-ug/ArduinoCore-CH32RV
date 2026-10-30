@@ -26,7 +26,7 @@ DFU runtime is attached by default; the explicit object installs the veto callba
 | API | Use in this example |
 |---|---|
 | `CH32RVUsbDeviceDfuRuntime dfu` | Adds a DFU function on predefined `USBDevice` with a configurable transition decision. |
-| `dfu.onDetach(callback)` | Return `true` to allow transition or `false` to remain in the application. This is a decision, not an after-the-fact notification. |
+| `dfu.onDetach(callback)` | Return `true` to allow transition or `false` to remain in the application. This is a decision, not an after-the-fact notification. A refusal stalls the DFU_DETACH request, so the host tool sees it fail and the device keeps running. |
 | `USBDevice.begin(config)` | Exposes DFU without a CDC serial port. |
 
 The detach callback runs inside USB request processing. Keep it to a short state check, such as whether a motor or write operation is active. Separate the decision from cleanup so refusal does not change application state.

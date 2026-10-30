@@ -42,6 +42,7 @@ public:
     /* How long write() and flush() wait for the host to take data (1000 ms;
      * 0 never waits). */
     void setTxTimeoutMs(uint32_t ms) { _txTimeoutMs = ms; }
+    uint32_t txTimeoutMs() const { return _txTimeoutMs; }
     using Print::write;
     /* printf() as on HardwareSerial (and ESP32's Print). */
     CH32RV_PRINTF_MEMBER

@@ -40,6 +40,8 @@
 CH32RVUsbDeviceVendor vendor;
 CH32RVUsbDeviceMsc msc;
 CH32RVUsbDeviceCcid ccid;
+CH32RVUsbDeviceDfuRuntime dfu;   /* refuses every DFU_DETACH */
+static uint32_t detachRefused;
 
 static uint8_t storage[20 * 512];   /* X035 has 20 KB of RAM */
 CH32RVUsbDeviceMscFatRamDisk disk(storage, sizeof storage);
@@ -161,6 +163,13 @@ static void reply(const char *command)
         SerialDMSeq.print((unsigned)disk.fileSize("HOST.TXT"));
         SerialDMSeq.print(' ');
         SerialDMSeq.println((const char *)text);
+    } else if (strncmp(command, "media ", 6) == 0) {
+        msc.mediaPresent(command[6] == '1');
+        SerialDMSeq.print("MEDIA ");
+        SerialDMSeq.println(msc.testUnitReady() ? 1 : 0);
+    } else if (strcmp(command, "detach") == 0) {
+        SerialDMSeq.print("DETACH ");
+        SerialDMSeq.println((unsigned long)detachRefused);
     } else if (strcmp(command, "card") == 0) {
         SerialDMSeq.print("CARD ");
         SerialDMSeq.print(ccid.cardPresent() ? 1 : 0);
@@ -219,6 +228,10 @@ void setup()
     msc.productID("usb-classes");
     msc.mediaPresent(true);
     disk.attach(msc);
+    dfu.onDetach([]() {
+        detachRefused++;
+        return false;
+    });
     ccid.onApdu(apdu);
     ccid.insertCard(atr, sizeof atr);
     vendor.onControlRequest(vendorRequest);

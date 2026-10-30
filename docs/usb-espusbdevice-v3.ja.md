@@ -5,7 +5,7 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 
 - **比べた ESP 側の資料**: `EspUsbDevice-v3/docs/V3_*_API.ja.md`、`V3_MIGRATION.ja.md`、`V3_CH32RV_API_ALIGNMENT.ja.md`、
   `src/EspUsbDevice.h`。
-- **方針**: より正しい方に合わせます。このコアの方が正しいところは、ESP 側への修正依頼にします（3 章）。
+- **方針**: より正しい方に合わせます。このコアの方が正しいところは、ESP 側への修正依頼にしました（3 章に返事と対応）。
   機能の限界から来るこのコア独自の制約は残します（2 章）。
 
 ## 1. v3 に合わせたもの
@@ -38,36 +38,22 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | 借用転送は境界の条件なし。受信の容量はパケットの倍数だけ（64 の倍数は求めない） | DMA の 64 バイト境界は ESP の制約 |
 | 取り消しは呼び出しの中で終わり、`Cancelled` もその中で返る。同じ転送をもう一度取り消すと false | worker のスレッドが無く、controller の転送はその場で止められる |
 | `onRxData()` は実行時に付け外しでき、Stream のままでも転送ごとに渡す。Callback は「begin() の時に onRxData() が要る」だけの違い | 協調実行なので途中で切り替えても競合しない |
-| Video の既定は Bulk | FS の isochronous は 62 KB/s しか出ない（3 章の 3 も見る） |
-| CDC の `write()` は空くまで待つ（上限 `setTxTimeoutMs()`、既定 1000 ms）、`flush()` は送り終えるまで待つ | Arduino の Serial と同じ意味（3 章の 1） |
-| Audio の再生のリングがあふれたら古い方を捨てる | 遅れの上限を保つ（3 章の 2） |
+| Video の既定は Bulk | このコアの USBFS は端点が 64 バイトまでで、isochronous は 1 ms に 64 バイト（62 KB/s）しか出ない。v3 の FS の isochronous は 512 バイトのパケットなので、v3 は Isochronous のまま（3 章の 3） |
+| CDC の `write()` は、ホストが端末を開いていない（DTR が無い）間は捨てる（v3 は DTR を見ずに送る） | 開いていない UART と同じで、待ちもしない（3 章の 1） |
 | HidVendor の GET_REPORT は reportSize まで 0 で埋めて返す（v3 は送った長さのまま） | report の長さは記述子で決まっている |
 | Audio の形式は 1 ストリームに PCM 形状 1 つ（レートは 8 つまで）。v3 は形状の違う形式を alternate setting で切り替える | まだ入れていない |
 | まだ入れていないもの | Audio の PCM 形状ごとの alternate、DFU の Download |
 
-## 3. ESP 側への修正依頼の候補
+## 3. ESP 側への修正依頼と返事
 
-どれも、このコアの方が正しいと考えるものです。ESP 側で判断してもらいます。
+このコアの方が正しいと考えた 6 点を ESP 側に送り、2026-10-30 に返事がありました
+（`V3_CH32RV_API_ALIGNMENT.ja.md` の「CH32RV側からの6点の再検討」）。
 
-1. **CDC の `write()` と `flush()` の意味。**
-   - v3 の `write()` は、書けた分だけ返してすぐ戻ります。`flush()` は送出を始めるだけです。
-   - Arduino の `Serial.print()` は `write()` の戻り値を見ないので、バッファが満杯だと出力が欠けます。
-   - このコアは Arduino の Serial に合わせ、`write()` はホストが開いている間は待ち、`flush()` は送り終えるまで待ちます。どちらも上限の時間付きです。
-   - 上限の時間の設定の名前は、ESP32 の Arduino の HWCDC と同じ `setTxTimeoutMs()` にしました。
-2. **Audio の再生のリングがあふれたときの扱い。**
-   - v3 は、未読を残して新しいデータを捨てます。そのため、あふれが続くと遅れがリングの長さまで溜まったままになります。
-   - 古い方を捨てれば、遅れは常にリングの長さ以下で、新しい音が鳴ります。
-3. **Video の既定の転送方式。**
-   - v3 の既定は Isochronous です。
-   - S3 は FS で、FS の isochronous は 1 ms に 1 パケットなので、64 B の端点では 62 KB/s しか出ません。
-   - FS の機種では Bulk を既定にするか、少なくとも文書で勧めるとよいと考えます。
-4. **Video の `submitFrame()` の戻り値。**
-   - v3 は `esp_err_t` を返し、id を参照の引数で返します。一方 `writeDirect()` は `EspUsbTransferSubmission` を返します。
-   - 同じ借用転送なので、`EspUsbTransferSubmission` にそろえると覚えることが減ります。このコアはそうしました。
-5. **DFU の `onDetach`。**
-   - このコアでは bool を返し、false で DETACH を断れます。再起動はコアが行います。
-   - v3 は void で、コールバックを登録すると再起動もそちらに任されます。
-   - 断れる方が、書き込み中のデータを守るのに使えます。
-6. **MSC のメディアの交換（両方とも未対応）。**
-   - `mediaPresent()` を稼働中に変えても、どちらも UNIT ATTENTION（28h、媒体が変わった）を返しません。
-   - そのため、ホストが中身を読み直さないことがあります。両方で足す候補です。
+| 項目 | 依頼 | ESP 側の判断 | このコアの対応 |
+|---|---|---|---|
+| 1. CDC の `write()` と `flush()` | Arduino の Serial に合わせ、`write()` は空くまで、`flush()` は送り終えるまで待つ（上限付き） | 採用。`setTxTimeoutMs()`（既定 1000 ms、0 は待たない）と `txTimeoutMs()`。借用送信の間は `availableForWrite()` が 0。DTR は求めない | `txTimeoutMs()` を足した。借用送信の間は `writeAvailable()` / `availableForWrite()` を 0 にし、`write()` もその間は受けない（CDC と Vendor）。DTR が無い間に捨てるのは違いとして残す（2 章） |
+| 2. Audio の再生のリングがあふれたとき | 新しいデータを捨てず、古い方を捨てる | 生の再生には古い方を捨てる方が自然。捨てる単位はサンプルフレーム、パケットがリングより大きいときは新しい側を残し、量を数える。録音などのために残す方も選べるようにする案 | 前からその形（リングの深さはフレームの倍数で、捨てる量もフレーム単位。量は `overrunBytes`）。残す方を選ぶ設定は、ESP 側で名前が決まってから合わせる |
+| 3. Video の既定の転送方式 | FS では Bulk を既定に | 変えない。v3 の FS の isochronous は 64 バイトでなく 512 バイトのパケット（1 ms に 1 つ） | 依頼の前提が誤りだったので取り下げた。このコアの既定 Bulk は、USBFS の端点の 64 バイトの限界から来る違いとして残す（2 章） |
+| 4. Video の `submitFrame()` の戻り値 | 借用転送の Submission にそろえる | 採用 | 同じ名前と型になった |
+| 5. DFU の `onDetach` | bool で DETACH を断れるように | false を返しても、もう成功を返した要求を断ったことにはならない。受け付けるかどうかは SETUP の時に決め、断るなら STALL にする案 | その案にした。`onDetach()` は DFU_DETACH の SETUP の時に呼び、false なら要求を STALL で断る（状態も変えず、再起動もしない）。true なら status の後に移る |
+| 6. MSC の媒体の交換 | `mediaPresent()` の変化を UNIT ATTENTION で知らせる | 賛成。稼働中の false→true を交換として、次のコマンドに 1 度だけ。INQUIRY と REQUEST SENSE は除く。同じ値の再設定は交換としない | その形で入れた。ホストが構成している間に false→true になると、次のコマンド（INQUIRY と REQUEST SENSE を除く）に UNIT ATTENTION 06/28/00 を 1 度返す |

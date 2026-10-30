@@ -22,7 +22,8 @@ public:
     /* Bytes the receive FIFO holds at most, and write() can queue. */
     size_t readCapacity() const { return (size_t)(_rxSize - 1); }
     size_t writeCapacity() const { return (size_t)(_txSize - 1); }
-    /* Room in the transmit FIFO now; write() never takes more at once. */
+    /* Room in the transmit FIFO now; write() never takes more at once. 0
+     * while a borrowed transfer (writeDirect()) is out. */
     size_t writeAvailable() const;
 
     /* The zero-copy path: one bulk IN transfer straight from `buffer`, which
@@ -33,9 +34,9 @@ public:
      * borrows nothing. Any length up to maxDirectTransfer() and any
      * alignment; a long one goes out as one transfer with no short packet
      * inside it. Not mixed with write(): refused (Busy) while the FIFO has
-     * data in flight, and write()'s data waits while a direct transfer is
-     * out. Arming the next one from onDirectTxComplete() keeps a stream
-     * gapless. The controllers move it at their own speed: the USBSS DMA
+     * data in flight, and write() takes nothing while a direct transfer
+     * is out (writeAvailable() is 0). Arming the next one from
+     * onDirectTxComplete() keeps a stream gapless. The controllers move it at their own speed: the USBSS DMA
      * reads the buffer itself (keep it 4-byte aligned, or it goes a packet at
      * a time through a bounce buffer), the USBFS ones copy a packet at a
      * time. */

@@ -96,9 +96,6 @@ void CH32RVUsbDeviceDfuRuntime::attachDefault(CH32RVUsbDevice &device)
 
 void CH32RVUsbDeviceDfuRuntime::detach()
 {
-    if (_onDetach && !_onDetach()) {
-        return;
-    }
 #if CH32RV_FLASH_SELF_WRITE
     _enterDfu = true;               /* done from usbTask(): not inside the stack's callback */
     ch32rv_usb_deferred = [] {
@@ -180,6 +177,10 @@ bool CH32RVUsbDeviceDfuRuntime::usbControl(CH32RVUsbControlStage stage, const CH
             return false;
         }
         if (setup) {
+            /* A refusal stalls the request: the host sees it fail and nothing changes. */
+            if (_onDetach && !_onDetach()) {
+                return false;
+            }
             return device().controlStatus();
         }
         if (stage == CH32RVUsbControlStage::Ack) {

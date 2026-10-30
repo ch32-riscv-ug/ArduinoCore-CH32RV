@@ -59,7 +59,8 @@ Differences:
   would be about 17 KB.
 - **CDC is a `Stream`**, and blocks until everything is written while a host
   has the port open - up to `setTxTimeoutMs()` (1000 ms) without progress,
-  then the rest is dropped (EspUsbDevice returns what fit). How this library
+  then the rest is dropped (EspUsbDevice does the same, but sends without a
+  host that has the port open too). How this library
   follows EspUsbDevice v3 is in [docs/usb-espusbdevice-v3.ja.md](../../docs/usb-espusbdevice-v3.ja.md). It also takes the
   1200 bps touch.
 - **The stack runs from `loop()` and `delay()`**, not an RTOS task;
@@ -119,7 +120,8 @@ Differences:
 `CH32RVUsbDeviceHidGamepad`, `CH32RVUsbDeviceHidConsumerControl`,
 `CH32RVUsbDeviceHidSystemControl`, `CH32RVUsbDeviceHidVendor`,
 `CH32RVUsbDeviceHidCustom`, `CH32RVUsbDeviceMidi` (up to 16 cables; `configure()` sets the queues and how events are taken),
-`CH32RVUsbDeviceVendor` (bulk; with `peek()`, which EspUsbDevice lacks), `CH32RVUsbDeviceMsc` with
+`CH32RVUsbDeviceVendor` (bulk; with `peek()`, which EspUsbDevice lacks), `CH32RVUsbDeviceMsc` (a medium put in
+with `mediaPresent(true)` while running is reported to the host as changed) with
 `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` /
 `CH32RVUsbDeviceMscSdCard` (its own header), `CH32RVUsbDeviceCcid`,
 `CH32RVUsbDeviceNet` (CDC-NCM, raw frames; `configure()` sets the transfer blocks), `CH32RVUsbAudioFunction`
@@ -203,4 +205,4 @@ See the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況) for im
 ## Uploading
 
 CDC 1200-bps touch and DFU_DETACH provide update entry points. The destination and programming method depend on the series; follow the [USB upload guide (Japanese)](../../docs/usb.ja.md#書き込み).
-`onDetach()` makes an immediate transition decision and does not wait for notification delivery through `deliverEvents()`.
+`onDetach()` makes an immediate transition decision and does not wait for notification delivery through `deliverEvents()`. Returning false stalls the DFU_DETACH request, so the host sees it fail.

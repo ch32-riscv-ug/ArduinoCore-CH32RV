@@ -27,7 +27,7 @@ Linux のアクセス権と Windows の WinUSB バインドも確認します。
 | API | この例での使い方 |
 |---|---|
 | `CH32RVUsbDeviceDfuRuntime dfu` | 定義済み `USBDevice` に、移行判定を設定できる DFU function を追加します。 |
-| `dfu.onDetach(callback)` | 移行してよいとき `true`、止めたいとき `false` を返します。単なる事後通知ではありません。 |
+| `dfu.onDetach(callback)` | 移行してよいとき `true`、止めたいとき `false` を返します。単なる事後通知ではありません。拒否すると DFU_DETACH の要求を STALL で断るので、ホストのツールには失敗として見え、デバイスはそのまま動き続けます。 |
 | `USBDevice.begin(config)` | DFU interface を公開します。CDC が無いため COM ポートは作りません。 |
 
 `onDetach()` は USB の要求処理中に呼ばれるので、短い状態確認だけにします。ボタンだけでなく、

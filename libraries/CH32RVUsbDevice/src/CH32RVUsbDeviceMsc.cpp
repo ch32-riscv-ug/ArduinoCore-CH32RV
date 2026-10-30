@@ -41,6 +41,14 @@ void CH32RVUsbDeviceMsc::end()
     _mediaPresent = false;
 }
 
+void CH32RVUsbDeviceMsc::mediaPresent(bool value)
+{
+    if (value && !_mediaPresent && device().ready()) {
+        _attention = true;
+    }
+    _mediaPresent = value;
+}
+
 void CH32RVUsbDeviceMsc::inquiry(uint8_t vendor[8], uint8_t product[16], uint8_t revision[4]) const
 {
     copy_padded(vendor, 8, _vendor);
@@ -131,6 +139,7 @@ CH32RVUsbDeviceMsc::CH32RVUsbDeviceMsc(CH32RVUsbDevice &device)
 #define SENSE_NOT_READY       0x02
 #define SENSE_MEDIUM_ERROR    0x03
 #define SENSE_ILLEGAL_REQUEST 0x05
+#define SENSE_UNIT_ATTENTION  0x06
 #define SENSE_DATA_PROTECT    0x07
 
 static uint32_t le32(const uint8_t *p) { return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24; }
@@ -267,6 +276,11 @@ void CH32RVUsbDeviceMsc::writeNext()
 void CH32RVUsbDeviceMsc::command()
 {
     const uint8_t op = _cmd[0];
+    if (_attention && op != SCSI_INQUIRY && op != SCSI_REQUEST_SENSE) {
+        _attention = false;
+        fail(SENSE_UNIT_ATTENTION, 0x28, 0x00);  /* not ready to ready change, medium may have changed */
+        return;
+    }
     switch (op) {
     case SCSI_TEST_UNIT_READY:
         if (!testUnitReady()) {
