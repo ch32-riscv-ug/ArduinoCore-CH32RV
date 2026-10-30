@@ -25,6 +25,7 @@
  *   mscraw <lba>         S3 MSCRAW <ok>       (write a pattern, read it back, restore)
  *   mscwrite <text>      S3 MSCWRITE <ok>     (/HOST.TXT on the FAT volume)
  *   mscread              S3 MSCREAD <ok> <first line of /README.TXT>
+ *   mscblk <lba> <n>     S3 MSCBLK <ok> <sense key> <asc> <ascq>  (one READ(10) of n blocks, n <= 4)
  *   msctur               S3 MSCTUR <ok> <sense key> <asc> <ascq>  (TEST UNIT READY; hex, the sense when it fails)
  *   ccid                 S3 CCID <ok> <ATR hex>
  *   apdu <hex>           S3 APDU <ok> <response hex> <SW hex>
@@ -202,6 +203,23 @@ static void cmdMsc()
   const bool ok = usb.mscWaitReady(a, 5000) && usb.mscInquiry(inq, a) && usb.mscCapacity(blocks, size, a);
   Serial.printf("S3 MSC %u %s %s %lu %lu\n", ok ? 1 : 0, ok ? inq.vendor : "-", ok ? inq.product : "-",
                 (unsigned long)blocks, (unsigned long)size);
+}
+
+static void cmdMscBlocks(const char *arg)
+{
+  const uint8_t a = firstAddress();
+  static uint8_t blocks[4 * 512];
+  char *end = nullptr;
+  const uint32_t lba = strtoul(arg, &end, 10);
+  uint32_t n = strtoul(end, nullptr, 10);
+  n = n < 1 ? 1 : n > 4 ? 4 : n;
+  EspUsbHostMscSense sense;
+  const bool ok = usb.mscReadBlocks(lba, blocks, n, a);
+  if (!ok) {
+    usb.mscLastSense(sense, a);                  /* not after a stalled data stage: EspUsbHost reads no CSW then */
+  }
+  Serial.printf("S3 MSCBLK %u %02x %02x %02x\n", ok ? 1 : 0, sense.senseKey, sense.additionalSenseCode,
+                sense.additionalSenseQualifier);
 }
 
 static void cmdMscTur()
@@ -458,6 +476,7 @@ static void run(char *cmd)
   else if (!strcmp(cmd, "mscwrite")) cmdMscWrite(arg);
   else if (!strcmp(cmd, "mscread")) cmdMscRead();
   else if (!strcmp(cmd, "msctur")) cmdMscTur();
+  else if (!strcmp(cmd, "mscblk")) cmdMscBlocks(arg);
   else if (!strcmp(cmd, "ccid")) cmdCcid();
   else if (!strcmp(cmd, "apdu")) cmdApdu(arg);
   else if (!strcmp(cmd, "audioin") || !strcmp(cmd, "audioout"))

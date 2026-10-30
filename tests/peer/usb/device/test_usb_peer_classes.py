@@ -71,6 +71,7 @@ def test_usb_peer_classes(dut, peers):
     dut.write("media 1\n")
     dut.expect(rb"MEDIA 1\r?\n", timeout=5)
     assert command(s3, "msctur", rb"MSCTUR (\d) [^\r\n]*").group(1) == b"1"
+    assert command(s3, "mscblk 0 2", rb"MSCBLK (\d) [^\r\n]*", timeout=20).group(1) == b"1"
 
     # DFU_DETACH refused by onDetach(): the request stalls (the S3 sees it
     # fail), the callback ran once and the device stays, still answering.
@@ -90,6 +91,16 @@ def test_usb_peer_classes(dut, peers):
     dut.write("card\n")
     m = dut.expect(rb"CARD (\d) (\d) (\d+)\r?\n", timeout=5)
     assert m.group(1) == b"1" and m.group(2) == b"1" and int(m.group(3)) >= 1
+
+    # Taken out after the first block of a two-block READ(10): the rest fails
+    # and the second block is never asked of the backend. Its sense (02/3A/00)
+    # is not checked, and this comes last but the restart: after the stalled
+    # data stage EspUsbHost 2.10.0 reads no CSW and stays a CSW behind.
+    dut.write("pull\n")
+    dut.expect(rb"PULL\r?\n", timeout=5)
+    assert command(s3, "mscblk 0 2", rb"MSCBLK (\d) [^\r\n]*", timeout=20).group(1) == b"0"
+    dut.write("pulled\n")
+    assert dut.expect(rb"PULLED (\d+)\r?\n", timeout=5).group(1) == b"1"
 
     # Borrowed receive (last: it restarts the device). The echo lands in
     # readDirect()'s buffer and goes back through writeDirect(); a posted

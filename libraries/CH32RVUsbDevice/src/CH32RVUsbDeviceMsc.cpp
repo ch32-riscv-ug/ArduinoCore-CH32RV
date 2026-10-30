@@ -47,6 +47,9 @@ void CH32RVUsbDeviceMsc::mediaPresent(bool value)
     if (value && !_mediaPresent && device().ready()) {
         _attention = true;
     }
+    if (!value && _mediaPresent) {
+        _removals++;
+    }
     _mediaPresent = value;
 }
 
@@ -261,8 +264,14 @@ void CH32RVUsbDeviceMsc::readNext()
 {
     const uint32_t left = _total - _done;
     _chunk = (uint16_t)(left < sizeof _buffer ? left : sizeof _buffer);
+    if (!mediumHeld()) {
+        _residue = _expected - _done;
+        fail(SENSE_NOT_READY, 0x3A, 0x00);       /* taken out during the command */
+        return;
+    }
     const int32_t n = read10(_lba + _done / _blockSize, _done % _blockSize, _buffer, _chunk);
     if (n != (int32_t)_chunk) {
+        _residue = _expected - _done;
         fail(SENSE_MEDIUM_ERROR, 0x11, 0x00);    /* unrecovered read error */
         return;
     }
@@ -398,6 +407,7 @@ void CH32RVUsbDeviceMsc::command()
         _total = bytes < _expected ? bytes : _expected;
         _residue = _expected - _total;
         _done = 0;
+        _commandRemovals = _removals;
         if (_total == 0) {
             if (_residue) {
                 fail(SENSE_ILLEGAL_REQUEST, 0x24, 0x00);
@@ -440,6 +450,11 @@ void CH32RVUsbDeviceMsc::usbTransferred(uint8_t address, uint16_t length)
             _failed = false;
             command();
         } else if (_stage == Stage::DataOut) {
+            if (!mediumHeld()) {
+                _residue = _expected - _done;
+                fail(SENSE_NOT_READY, 0x3A, 0x00);   /* taken out during the command: none of this block is written */
+                return;
+            }
             const int32_t n = write10(_lba + _done / _blockSize, _done % _blockSize, _buffer, length);
             if (n != (int32_t)length) {
                 _residue = _expected - _done;

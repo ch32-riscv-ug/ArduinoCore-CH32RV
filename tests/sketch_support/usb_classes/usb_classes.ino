@@ -46,6 +46,18 @@ static uint32_t detachRefused;
 static uint8_t storage[20 * 512];   /* X035 has 20 KB of RAM */
 CH32RVUsbDeviceMscFatRamDisk disk(storage, sizeof storage);
 
+/* "pull": the medium is taken out once the first block of the next read has
+ * been read - in the middle of a READ(10) of two blocks or more. */
+static uint32_t pulledReads;   /* readThenPull() calls: none comes after the medium went */
+
+static int32_t readThenPull(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
+{
+    pulledReads++;
+    const int32_t n = disk.read(lba, offset, buffer, size);
+    msc.mediaPresent(false);
+    return n;
+}
+
 static const uint8_t atr[] = {0x3B, 0x8A, 0x80, 0x01, 'C', 'H', '3', '2', 'R', 'V', 'C', 'C', 'I', 'D', 0x00};
 static CH32RVUsbDeviceConfig config;
 static char line[80];
@@ -164,9 +176,17 @@ static void reply(const char *command)
         SerialDMSeq.print(' ');
         SerialDMSeq.println((const char *)text);
     } else if (strncmp(command, "media ", 6) == 0) {
+        msc.onRead(nullptr);                     /* back to the disk */
         msc.mediaPresent(command[6] == '1');
         SerialDMSeq.print("MEDIA ");
         SerialDMSeq.println(msc.testUnitReady() ? 1 : 0);
+    } else if (strcmp(command, "pull") == 0) {
+        msc.onRead(readThenPull);
+        pulledReads = 0;
+        SerialDMSeq.println("PULL");
+    } else if (strcmp(command, "pulled") == 0) {
+        SerialDMSeq.print("PULLED ");
+        SerialDMSeq.println((unsigned long)pulledReads);
     } else if (strcmp(command, "detach") == 0) {
         SerialDMSeq.print("DETACH ");
         SerialDMSeq.println((unsigned long)detachRefused);

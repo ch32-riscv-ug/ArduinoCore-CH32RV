@@ -45,7 +45,10 @@ public:
      * true) is reported once, as UNIT ATTENTION "medium may have changed",
      * to the next command but INQUIRY and REQUEST SENSE - so the host reads
      * it afresh - even if the medium went again meanwhile. Setting the same
-     * value again changes nothing; a bus reset forgets an untold change. */
+     * value again changes nothing; a bus reset forgets an untold change.
+     * Taken out during a READ / WRITE, the rest of it fails (not ready,
+     * medium not present) - the block being read or written goes on to its
+     * end, nothing is undone, and the change still waits to be told. */
     void mediaPresent(bool value);
     void isWritable(bool value) { _writable = value; }
     /* Providers: called inside the USB service while the host waits. They
@@ -109,6 +112,10 @@ private:
     uint16_t _blockSize = 0;
     bool _mediaPresent = false;
     bool _attention = false;          /* a medium change the host has not been told of */
+    /* Times the medium went: a READ / WRITE whose medium went since it began
+     * fails the rest (02/3A/00), even if one is back - never onto another. */
+    uint8_t _removals = 0, _commandRemovals = 0;
+    bool mediumHeld() const { return _mediaPresent && _removals == _commandRemovals; }
     bool _writable = true;
     CH32RVUsbDeviceMscReadCallback _onRead = nullptr;
     CH32RVUsbDeviceMscWriteCallback _onWrite = nullptr;
