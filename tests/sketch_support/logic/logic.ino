@@ -69,14 +69,19 @@ static bool findPin()
     return false;
 }
 
-static void periods(const uint16_t *v, size_t n, uint32_t &count, uint32_t &lo, uint32_t &hi)
+/* One pass over a half: the periods, and the bits that differ from its first
+ * sample. A second loop for the bits left a 48 MHz X035 behind the 1 MS/s
+ * capture (one or two halves overrun of eight). */
+static void periods(const uint16_t *v, size_t n, uint32_t &count, uint32_t &lo, uint32_t &hi, uint32_t &changed)
 {
     const uint16_t m = (uint16_t)(1u << pwmBit);
     count = 0;
     lo = 0xFFFFFFFFu;
     hi = 0;
     long prev = -1;
+    uint16_t diff = 0;
     for (size_t i = 1; i < n; i++) {
+        diff |= (uint16_t)(v[i] ^ v[0]);
         if ((v[i] & m) && !(v[i - 1] & m)) {
             if (prev >= 0) {
                 const uint32_t d = (uint32_t)(i - (size_t)prev);
@@ -90,6 +95,7 @@ static void periods(const uint16_t *v, size_t n, uint32_t &count, uint32_t &lo, 
     if (!count) {
         lo = 0;
     }
+    changed |= diff;
 }
 
 /* Numbers after a word, one space each - no formatted printing, whose code
@@ -139,10 +145,7 @@ static void reply(char *command)
         while (halves < 8 && millis() - t0 < 3000) {
             if (const uint16_t *h = logic.readBuffer()) {
                 uint32_t c, l, x;
-                periods(h, SAMPLES / 2, c, l, x);
-                for (size_t i = 1; i < SAMPLES / 2; i++) {
-                    changed |= (uint32_t)(h[i] ^ h[0]);
-                }
+                periods(h, SAMPLES / 2, c, l, x, changed);
                 count += c;
                 if (c && l < lo) lo = l;
                 if (x > hi) hi = x;
@@ -201,8 +204,8 @@ static void reply(char *command)
         analogWriteFrequency(pwmPin, strtoul(command + 6, nullptr, 10));
         analogWrite(pwmPin, 128);
         const uint32_t rate = logic.captureBurst(buf, (uint16_t)(SAMPLES));
-        uint32_t c, l, x;
-        periods(buf, SAMPLES, c, l, x);
+        uint32_t c, l, x, changed = 0;
+        periods(buf, SAMPLES, c, l, x, changed);
         const uint32_t v[4] = {rate, c, l, x};
         say("BURST", v, 4);
     } else {
