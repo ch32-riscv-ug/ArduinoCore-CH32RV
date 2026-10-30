@@ -23,6 +23,10 @@
  *                   <cancelled results> <echoes>: cancel the posted receive
  *                   (it comes back Cancelled before the call returns, so a
  *                   repeat is false; after a new post the old id is false too)
+ *   detachend       DETACHEND: the next DFU_DETACH is accepted and, once
+ *                   onAnyControlRequest() has seen its ACK, loop() calls
+ *                   USBDevice.end(); the device still leaves for
+ *                   the factory bootloader (DETACHEND RETURNED if end() came back)
  *
  * The vendor interface is 0xFF / 0x4F / 0x45 (setInterfaceProtocol()).
  * Over USB, without a command: vendor bulk echoes every byte; vendor request
@@ -40,8 +44,10 @@
 CH32RVUsbDeviceVendor vendor;
 CH32RVUsbDeviceMsc msc;
 CH32RVUsbDeviceCcid ccid;
-CH32RVUsbDeviceDfuRuntime dfu;   /* refuses every DFU_DETACH */
+CH32RVUsbDeviceDfuRuntime dfu;   /* refuses every DFU_DETACH, until `detachend` */
 static uint32_t detachRefused;
+static bool detachAccept;
+static bool detachAcked;
 
 static uint8_t storage[20 * 512];   /* X035 has 20 KB of RAM */
 CH32RVUsbDeviceMscFatRamDisk disk(storage, sizeof storage);
@@ -190,6 +196,9 @@ static void reply(const char *command)
     } else if (strcmp(command, "detach") == 0) {
         SerialDMSeq.print("DETACH ");
         SerialDMSeq.println((unsigned long)detachRefused);
+    } else if (strcmp(command, "detachend") == 0) {
+        detachAccept = true;
+        SerialDMSeq.println("DETACHEND");
     } else if (strcmp(command, "card") == 0) {
         SerialDMSeq.print("CARD ");
         SerialDMSeq.print(ccid.cardPresent() ? 1 : 0);
@@ -249,6 +258,9 @@ void setup()
     msc.mediaPresent(true);
     disk.attach(msc);
     dfu.onDetach([]() {
+        if (detachAccept) {
+            return true;
+        }
         detachRefused++;
         return false;
     });
@@ -272,6 +284,11 @@ void setup()
         observed++;
         if (r.stage == CH32RV_USB_DEVICE_CONTROL_STAGE_ACK) {
             acks++;
+            /* DFU_DETACH (class, interface, host to device) answered: from here
+             * the device is committed to leave. */
+            if (detachAccept && r.bRequest == 0 && r.bmRequestType == 0x21) {
+                detachAcked = true;
+            }
         }
     });
     USBDevice.begin(config);
@@ -280,6 +297,14 @@ void setup()
 void loop()
 {
     deliverEvents();   /* the callbacks set in setup() run here */
+    /* An accepted DFU_DETACH goes on even if the sketch ends the device as
+     * soon as its status stage is out (within the 20 ms the stack waits
+     * before leaving): end() resets into the bootloader and does not return. */
+    if (detachAcked) {
+        detachAcked = false;
+        USBDevice.end();
+        SerialDMSeq.println("DETACHEND RETURNED");
+    }
     post();
     uint8_t buffer[64];
     /* read() only after peek() saw data: both run the USB task, and a packet

@@ -194,4 +194,4 @@ controller の実装・型番ごとの例外・端子・クロック・実機確
 
 CDC の1200 bps touch、または DFU_DETACH を更新への入口に使います。
 移行先と書き込み方法は系列によって異なるため、[USB の書き込み手順](../../docs/usb.ja.md#書き込み) を確認してください。
-`onDetach()` は移行の可否をその場で返す処理で、通知用の `deliverEvents()` を待ちません。false を返すと DFU_DETACH を STALL で断り、ホストには失敗として見えます。
+`onDetach()` は移行の可否をその場で返す処理で、通知用の `deliverEvents()` を待ちません。false を返すと DFU_DETACH を STALL で断り、ホストには失敗として見えます。受け付けたあとは、`end()`、バスのリセット、SET_CONFIGURATION 0 のどれが来ても取り消さずに移行します（`end()` はそのまま戻りません）。要求の wValue と記述子の wDetachTimeOut（1000 ms）は使わず、機器が自分でバスを離れます（WILL_DETACH）。EspUsbDevice v3 と同じ約束です。

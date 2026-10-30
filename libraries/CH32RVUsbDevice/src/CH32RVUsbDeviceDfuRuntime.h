@@ -20,7 +20,11 @@ public:
 
     /* Called when DFU_DETACH arrives, inside the USB service (a provider:
      * the request waits for the answer). Return false to refuse: the request
-     * is stalled, so the host sees it fail, and the device stays as it is. */
+     * is stalled, so the host sees it fail, and the device stays as it is.
+     * Once accepted the device leaves whatever follows - end(), a bus reset,
+     * SET_CONFIGURATION 0 (the contract agreed with EspUsbDevice v3). The
+     * request's wValue and the descriptor's wDetachTimeOut do not change
+     * that: the device detaches itself (WILL_DETACH). */
     typedef CH32RVCallback<bool(void)> DetachCallback;
     void onDetach(DetachCallback cb) { _onDetach = cb; }
 

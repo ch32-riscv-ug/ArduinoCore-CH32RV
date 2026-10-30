@@ -3,10 +3,12 @@ with a vendor request, a FAT RAM disk, a smart card reader, DFU runtime) as a
 device, the ESP32-S3 (EspUsbHost) as the host."""
 import pathlib
 import secrets
+
+import pytest
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from s3_peer import command, dut_ready, settings, wait_enumerated
+from s3_peer import ISP_ID_PATTERN, command, dut_ready, settings, wait_enumerated
 
 
 def test_usb_peer_classes(dut, peers):
@@ -118,3 +120,18 @@ def test_usb_peer_classes(dut, peers):
     assert int(m.group(4)) == 1 and int(m.group(5)) == 3
     data = secrets.token_bytes(48)
     assert command(s3, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
+
+    # An accepted DFU_DETACH is not taken back by end() (the contract agreed
+    # with EspUsbDevice v3): the sketch ends the device as soon as onDetach()
+    # has said yes, and the factory bootloader still appears, then hands back.
+    dut.write("detachend\n")
+    dut.expect(rb"DETACHEND\r?\n", timeout=5)
+    wait_enumerated(s3, build_id)
+    # The device may be gone before the S3 prints its reply: no DISCONNECTED in between.
+    assert command(s3, "dfu", rb"DFU (\d) (\d)", timeout=10).group(1, 2) == (b"1", b"1")
+    s3.expect(rb"S3 CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
+    s3.expect(rb"S3 CONNECTED \d+ 1209 0001", timeout=40)
+    wait_enumerated(s3, build_id)
+    # The reset came from end() itself: it never returned to print this.
+    with pytest.raises(Exception):
+        dut.expect(rb"DETACHEND RETURNED", timeout=1)

@@ -353,7 +353,10 @@ public:
      * end() first. */
     bool begin();
     bool begin(const CH32RVUsbDeviceConfig &config);
-    /* Leave the bus. begin() may be called again afterwards. */
+    /* Leave the bus. begin() may be called again afterwards. A departure
+     * the host has already been answered for - an accepted DFU_DETACH, a
+     * 1200 bps touch - is not taken back: end() then resets into the
+     * bootloader (or, on H41x, comes back in DFU mode) and does not return. */
     void end();
 
     bool started() const { return _started; }

@@ -206,4 +206,4 @@ See the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況) for im
 ## Uploading
 
 CDC 1200-bps touch and DFU_DETACH provide update entry points. The destination and programming method depend on the series; follow the [USB upload guide (Japanese)](../../docs/usb.ja.md#書き込み).
-`onDetach()` makes an immediate transition decision and does not wait for notification delivery through `deliverEvents()`. Returning false stalls the DFU_DETACH request, so the host sees it fail.
+`onDetach()` makes an immediate transition decision and does not wait for notification delivery through `deliverEvents()`. Returning false stalls the DFU_DETACH request, so the host sees it fail. Once accepted, the device leaves whatever follows - `end()` (which then does not return), a bus reset, SET_CONFIGURATION 0. The request's wValue and the descriptor's wDetachTimeOut (1000 ms) are not used: the device detaches itself (WILL_DETACH). EspUsbDevice v3 keeps the same contract.

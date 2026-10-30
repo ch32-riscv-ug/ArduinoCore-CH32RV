@@ -785,6 +785,8 @@ extern "C" void ch32rv_usb_task(void)
         } else if ((uint32_t)(millis() - leave_at) >= 20u) {
             CH32RVUsbDevice::enterBootloader();
         }
+    } else {
+        leaving = false;                /* the next request waits its 20 ms again */
     }
     busy = true;
     Core::task();
@@ -875,6 +877,12 @@ void CH32RVUsbDevice::end()
     if (!_started || Core::device != this) {
         return;
     }
+    /* A departure the host was told of goes on (DFU_DETACH accepted, the
+     * 1200 bps touch, a DFU download complete): end() does not take it back,
+     * as neither a bus reset nor SET_CONFIGURATION 0 does (agreed with
+     * EspUsbDevice v3). */
+    const bool leave = Core::bootloader;
+    void (*const pending)(void) = ch32rv_usb_deferred;
     Core::dcd->connect(false);
     /* Cleared before the functions forget their transfers, so a borrowed
      * buffer is handed back as Stopped rather than BusReset. */
@@ -884,6 +892,13 @@ void CH32RVUsbDevice::end()
     }
     Core::dcd->close();
     Core::device = nullptr;
+    if (leave) {
+        CH32RVUsbDevice::enterBootloader();
+    }
+    if (pending) {
+        ch32rv_usb_deferred = nullptr;
+        pending();                      /* H41x: back on the bus in DFU mode */
+    }
 }
 
 bool CH32RVUsbDevice::restartWithOnly(CH32RVUsbDeviceFunction &only)
@@ -1086,6 +1101,7 @@ bool CH32RVUsbDevice::controlStatus()
  * next transfer timeout; the bootloader then enumerates as 1a86:55e0. */
 [[noreturn]] void CH32RVUsbDevice::enterBootloader()
 {
+    Core::bootloader = false;           /* the end() below is this departure's own */
     if (Core::device && Core::device->_started) {
         Core::device->end();
     }
