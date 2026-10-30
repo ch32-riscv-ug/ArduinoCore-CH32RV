@@ -50,6 +50,32 @@ cannot divide by."
 
 static volatile uint32_t ch32rv_millis_counter;
 
+/* Where the current millisecond began on the counter. SysTick runs free and
+ * the handler moves the compare on by a millisecond: rewinding the counter
+ * there instead lost the ticks between the match and the write every
+ * millisecond (+1000 ppm slow on V103 at 72 MHz and V307 at 144 MHz), and the
+ * hardware's own reload (STRE) would wrap it under micros() while interrupts
+ * are off. The high word only exists for the 64-bit counters. */
+static volatile uint32_t ch32rv_systick_base;
+#if CH32RV_SYSTICK_V103 || CH32RV_SYSTICK_64
+static uint32_t ch32rv_systick_base_hi;
+#endif
+
+static inline void ch32rv_systick_compare(uint32_t lo, uint32_t hi)
+{
+#if CH32RV_SYSTICK_V103
+    CH32RV_SYSTICK_WRITE8(0x0Cu, lo);
+    CH32RV_SYSTICK_WRITE8(0x10u, hi);
+#else
+    CH32RV_SYSTICK_CMP = lo;
+#if CH32RV_SYSTICK_64
+    CH32RV_SYSTICK_CMP_HI = hi;
+#else
+    (void)hi;
+#endif
+#endif
+}
+
 /* CH32H417 has one SysTick per core: SysTick0 (this address) is the V3F's,
  * vector SysTick0_Handler, and its status word is shared - bit 0 is the
  * V3F's match, bit 1 the V5F's (SysTick1). Clear only ours there. */
@@ -291,15 +317,16 @@ void SystemInit(void)
 #if CH32RV_SYSTICK_V103
     CH32RV_SYSTICK_WRITE8(0x04u, 0u);
     CH32RV_SYSTICK_WRITE8(0x08u, 0u);
-    CH32RV_SYSTICK_WRITE8(0x0Cu, CH32RV_TICKS_PER_MS - 1u);
-    CH32RV_SYSTICK_WRITE8(0x10u, 0u);
 #else
     CH32RV_SYSTICK_CNT = 0u;
-    CH32RV_SYSTICK_CMP = CH32RV_TICKS_PER_MS - 1u;
 #if CH32RV_SYSTICK_64
     CH32RV_SYSTICK_CNT_HI = 0u;
-    CH32RV_SYSTICK_CMP_HI = 0u;
 #endif
+#endif
+    ch32rv_systick_compare(CH32RV_TICKS_PER_MS, 0u);
+    ch32rv_systick_base = 0u;
+#if CH32RV_SYSTICK_V103 || CH32RV_SYSTICK_64
+    ch32rv_systick_base_hi = 0u;
 #endif
     ch32rv_irq_enable(CH32RV_IRQN_SYSTICK);
 #if defined(CH32RV_HAS_VIO18) && defined(CH32RV_VIO18_MV)
@@ -366,7 +393,6 @@ static inline int ch32rv_clock_is_ours(void)
     return 1;
 }
 
-/* Rewind the counter in software so every supported family uses one path. */
 __attribute__((interrupt)) void CH32RV_SYSTICK_HANDLER(void)
 {
     /* Put the clock back within a millisecond of a probe moving it. Here and
@@ -376,18 +402,43 @@ __attribute__((interrupt)) void CH32RV_SYSTICK_HANDLER(void)
      * few-hundred-microsecond SystemInit() runs once per attach. */
     if (!ch32rv_clock_is_ours()) {
         SystemInit();
+        ch32rv_millis_counter++;
+        return;
     }
-#if CH32RV_SYSTICK_V103
-    CH32RV_SYSTICK_WRITE8(0x04u, 0u);
-    CH32RV_SYSTICK_WRITE8(0x08u, 0u);
-#else
+#if !CH32RV_SYSTICK_V103
     CH32RV_SYSTICK_SR_CLEAR();
-    CH32RV_SYSTICK_CNT = 0u;
-#if CH32RV_SYSTICK_64
-    CH32RV_SYSTICK_CNT_HI = 0u;
 #endif
+    /* Every millisecond the counter has passed, then the compare one ahead
+     * of it. A compare written as the counter reaches it is caught by the
+     * second look; a match on a half-written compare only enters here with
+     * nothing due. */
+    uint32_t base = ch32rv_systick_base;
+#if CH32RV_SYSTICK_V103 || CH32RV_SYSTICK_64
+    uint32_t base_hi = ch32rv_systick_base_hi;
+#else
+    const uint32_t base_hi = 0u;
 #endif
-    ch32rv_millis_counter++;
+    uint32_t ms = ch32rv_millis_counter;
+    uint32_t next;
+    for (;;) {
+        while ((int32_t)(CH32RV_SYSTICK_CNT - (base + CH32RV_TICKS_PER_MS)) >= 0) {
+            base += CH32RV_TICKS_PER_MS;
+#if CH32RV_SYSTICK_V103 || CH32RV_SYSTICK_64
+            base_hi += base < CH32RV_TICKS_PER_MS;
+#endif
+            ms++;
+        }
+        next = base + CH32RV_TICKS_PER_MS;
+        ch32rv_systick_compare(next, base_hi + (next < base));
+        if ((int32_t)(CH32RV_SYSTICK_CNT - next) < 0) {
+            break;
+        }
+    }
+    ch32rv_systick_base = base;
+#if CH32RV_SYSTICK_V103 || CH32RV_SYSTICK_64
+    ch32rv_systick_base_hi = base_hi;
+#endif
+    ch32rv_millis_counter = ms;
 }
 
 unsigned long millis(void)
@@ -452,7 +503,7 @@ unsigned long micros(void)
 
     do {
         ms = ch32rv_millis_counter;
-        ticks = CH32RV_SYSTICK_CNT;
+        ticks = CH32RV_SYSTICK_CNT - ch32rv_systick_base;
     } while (ms != ch32rv_millis_counter);
 
     return ms * 1000u + CH32RV_US_FROM_TICKS(ticks);
