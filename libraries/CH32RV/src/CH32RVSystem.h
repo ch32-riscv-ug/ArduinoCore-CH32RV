@@ -163,7 +163,9 @@ public:
      * 0xffffffff on V003/V006/X035/L103 and the same 0xe339e339 on a V203 and
      * a V307 (device-data errata esig-uniid3-not-unique), so it is left out.
      * Deliberately not called getEfuseMac() as on an ESP32: it is not a MAC
-     * address, and the name would invite using it as one. */
+     * address, and the name would invite using it as one. As a number,
+     * %016llx prints UNIID2 first; ch32rv, the USB serial number and the OEP
+     * unit names write UNIID1's eight digits first. */
     uint64_t getUniqueId();
 #endif
 

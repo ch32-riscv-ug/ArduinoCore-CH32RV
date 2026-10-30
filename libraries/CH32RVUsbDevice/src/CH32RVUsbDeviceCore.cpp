@@ -397,7 +397,9 @@ static uint16_t ascii_string(const char *s)
 }
 
 /* String descriptors: UTF-16LE built on request, ASCII only. Index 3 without
- * a configured serial number is the chip's 64-bit unique ID in hex. */
+ * a configured serial number is the chip's 64-bit unique ID in hex, UNIID1's
+ * eight digits then UNIID2's: the order ch32rv, WCH-Link's chip info and the
+ * OEP unit names use, so the same chip reads the same there and here. */
 static uint16_t string_descriptor(uint8_t index)
 {
     const CH32RVUsbDeviceConfig &c = Core::device->config();
@@ -420,9 +422,9 @@ static uint16_t string_descriptor(uint8_t index)
         char uid[17];
         const uint32_t lo = *(volatile const uint32_t *)CH32RV_ESIG_UNIID1_ADDR;
         const uint32_t hi = *(volatile const uint32_t *)CH32RV_ESIG_UNIID2_ADDR;
-        const uint64_t v = ((uint64_t)hi << 32) | lo;
-        for (uint8_t n = 0; n < 16; n++) {
-            uid[n] = hex[(v >> (60 - 4 * n)) & 0xF];
+        for (uint8_t n = 0; n < 8; n++) {
+            uid[n] = hex[(lo >> (28 - 4 * n)) & 0xF];
+            uid[n + 8] = hex[(hi >> (28 - 4 * n)) & 0xF];
         }
         uid[16] = 0;
         return ascii_string(uid);
