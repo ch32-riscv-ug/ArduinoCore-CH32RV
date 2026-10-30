@@ -232,7 +232,8 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
                + "menu.vio18=VIO18 Supply\n"
-               + "menu.ramsplit=Flash / RAM Split\n")
+               + "menu.ramsplit=Flash / RAM Split\n"
+               + "menu.rstpin=Reset Pin\n")
 
 # Per-instance menus (ADR draft 0015): AUTO binds in begin(), Disable links
 # nothing, FIX fixes one route at build time. The point is to let a small
@@ -443,6 +444,44 @@ def ramsplit_menu(board: str) -> list[str]:
         lines.append(f"{pfx}.upload.maximum_data_size={ram * 1024}")
         lines.append(f"{pfx}.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER={user:#04x}u -DCH32RV_RAMSPLIT_MASK={mask:#04x}u")
     return lines
+
+# The Reset Pin of the series whose reset input is an option byte setting
+# (USER [4:3] RST_MODE; X305/X315 USER bit 3 CFGRSTEN), checked at boot by
+# ch32rv_option_user.c. Each series defaults to its factory value (RM, device-data
+# option_byte_fields.csv): the reset pin on V002-V006 - and so on UIAPduino,
+# whose HID bootloader stays only after a reset from that pin - a GPIO on
+# V007/M007, X033/X035, M030 and X305/X315 (read 0xFF on the bench's X315).
+# The factory entry builds nothing in and leaves the chip as it is set: the
+# check and the rewrite cost 276 bytes on V003 (16 KB). Only the other entry
+# makes every boot compare and, once, rewrite. Its reset is the factory's on
+# V00x (12 ms of the pin ignored); the longest the RM offers on the others
+# (X035 12 ms, M030 1 ms; X3x5 has one).
+# (USER value with the reset pin, USER value as a GPIO, the bits, factory entry)
+RSTPIN = {
+    **{s: (0x10, 0x18, 0x18, "reset") for s in ("CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006")},
+    **{s: (0x10, 0x18, 0x18, "gpio") for s in ("CH32V007", "CH32M007", "CH32X033", "CH32X035", "CH32M030")},
+    **{s: (0x00, 0x08, 0x08, "gpio") for s in ("CH32X305", "CH32X315")},
+}
+
+
+def rstpin_defines(series: str, key: str) -> str:
+    reset, gpio, mask, _ = RSTPIN[series]
+    return f"-DCH32RV_RSTPIN_USER={reset if key == 'reset' else gpio:#04x}u -DCH32RV_RSTPIN_MASK={mask:#04x}u"
+
+
+def rstpin_menu(board: str, series: str) -> list[str]:
+    factory = RSTPIN[series][3]
+    entries = {"reset": "Reset input (NRST)", "gpio": "GPIO (no reset pin)"}
+    lines = []
+    for key in sorted(entries, key=lambda k: k != factory):
+        if key == factory:
+            lines.append(f"{board}.menu.rstpin.{key}={entries[key]} (factory setting, the chip left as set)")
+            lines.append(f"{board}.menu.rstpin.{key}.build.rstpin_defines=")
+        else:
+            lines.append(f"{board}.menu.rstpin.{key}={entries[key]} (set at boot)")
+            lines.append(f"{board}.menu.rstpin.{key}.build.rstpin_defines={rstpin_defines(series, key)}")
+    return lines
+
 
 def vio18_menu(board: str) -> list[str]:
     lines = []
@@ -3873,6 +3912,9 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines.append("")
     if split_parts:
         lines += ramsplit_menu(board)
+        lines.append("")
+    if series in RSTPIN:
+        lines += rstpin_menu(board, series)
         lines.append("")
 
     return "\n".join(lines), ld_files

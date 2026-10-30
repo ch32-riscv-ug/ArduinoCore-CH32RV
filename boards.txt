@@ -24,6 +24,7 @@ menu.spi2=SPI2
 menu.spi3=SPI3
 menu.vio18=VIO18 Supply
 menu.ramsplit=Flash / RAM Split
+menu.rstpin=Reset Pin
 
 CH32V003.name=Generic CH32V003
 CH32V003.build.board=CH32V003
@@ -168,6 +169,11 @@ CH32V003.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V003.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V003.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V003.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V003.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
+CH32V003.menu.rstpin.reset.build.rstpin_defines=
+CH32V003.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
+CH32V003.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V003.menu.usart1.auto=AUTO (bind at begin())
 CH32V003.menu.usart1.auto.build.usart1_mode=
 CH32V003.menu.usart1.disable=Disable
@@ -352,6 +358,11 @@ CH32V002.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V002.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V002.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V002.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V002.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
+CH32V002.menu.rstpin.reset.build.rstpin_defines=
+CH32V002.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
+CH32V002.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V002.menu.usart1.auto=AUTO (bind at begin())
 CH32V002.menu.usart1.auto.build.usart1_mode=
 CH32V002.menu.usart1.disable=Disable
@@ -510,6 +521,11 @@ CH32V004.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V004.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V004.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V004.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V004.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
+CH32V004.menu.rstpin.reset.build.rstpin_defines=
+CH32V004.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
+CH32V004.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V004.menu.usart1.auto=AUTO (bind at begin())
 CH32V004.menu.usart1.auto.build.usart1_mode=
 CH32V004.menu.usart1.disable=Disable
@@ -688,6 +704,11 @@ CH32V005.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V005.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V005.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V005.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V005.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
+CH32V005.menu.rstpin.reset.build.rstpin_defines=
+CH32V005.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
+CH32V005.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V005.menu.usart1.auto=AUTO (bind at begin())
 CH32V005.menu.usart1.auto.build.usart1_mode=
 CH32V005.menu.usart1.disable=Disable
@@ -934,6 +955,11 @@ CH32V006.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V006.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V006.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V006.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V006.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
+CH32V006.menu.rstpin.reset.build.rstpin_defines=
+CH32V006.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
+CH32V006.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V006.menu.usart1.auto=AUTO (bind at begin())
 CH32V006.menu.usart1.auto.build.usart1_mode=
 CH32V006.menu.usart1.disable=Disable
@@ -1152,6 +1178,11 @@ CH32V007.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V007.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V007.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
+CH32V007.menu.rstpin.gpio.build.rstpin_defines=
+CH32V007.menu.rstpin.reset=Reset input (NRST) (set at boot)
+CH32V007.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V007.menu.usart1.auto=AUTO (bind at begin())
 CH32V007.menu.usart1.auto.build.usart1_mode=
 CH32V007.menu.usart1.disable=Disable
@@ -1370,6 +1401,11 @@ CH32M007.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M007.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M007.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32M007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
+CH32M007.menu.rstpin.gpio.build.rstpin_defines=
+CH32M007.menu.rstpin.reset=Reset input (NRST) (set at boot)
+CH32M007.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32M007.menu.usart1.auto=AUTO (bind at begin())
 CH32M007.menu.usart1.auto.build.usart1_mode=
 CH32M007.menu.usart1.disable=Disable
@@ -3307,6 +3343,11 @@ CH32X033.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X033.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X033.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X033.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32X033.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
+CH32X033.menu.rstpin.gpio.build.rstpin_defines=
+CH32X033.menu.rstpin.reset=Reset input (NRST) (set at boot)
+CH32X033.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32X033.menu.usart1.auto=AUTO (bind at begin())
 CH32X033.menu.usart1.auto.build.usart1_mode=
 CH32X033.menu.usart1.disable=Disable
@@ -3530,6 +3571,11 @@ CH32X035.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X035.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X035.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X035.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32X035.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
+CH32X035.menu.rstpin.gpio.build.rstpin_defines=
+CH32X035.menu.rstpin.reset=Reset input (NRST) (set at boot)
+CH32X035.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32X035.menu.usart1.auto=AUTO (bind at begin())
 CH32X035.menu.usart1.auto.build.usart1_mode=
 CH32X035.menu.usart1.disable=Disable
@@ -5034,6 +5080,11 @@ CH32X305.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X305.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X305.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32X305.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
+CH32X305.menu.rstpin.gpio.build.rstpin_defines=
+CH32X305.menu.rstpin.reset=Reset input (NRST) (set at boot)
+CH32X305.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x00u -DCH32RV_RSTPIN_MASK=0x08u
 CH32X305.menu.usart1.auto=AUTO (bind at begin())
 CH32X305.menu.usart1.auto.build.usart1_mode=
 CH32X305.menu.usart1.disable=Disable
@@ -5443,6 +5494,11 @@ CH32X315.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X315.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X315.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X315.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32X315.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
+CH32X315.menu.rstpin.gpio.build.rstpin_defines=
+CH32X315.menu.rstpin.reset=Reset input (NRST) (set at boot)
+CH32X315.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x00u -DCH32RV_RSTPIN_MASK=0x08u
 CH32X315.menu.usart1.auto=AUTO (bind at begin())
 CH32X315.menu.usart1.auto.build.usart1_mode=
 CH32X315.menu.usart1.disable=Disable
@@ -6000,6 +6056,11 @@ CH32M030.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M030.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M030.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M030.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32M030.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
+CH32M030.menu.rstpin.gpio.build.rstpin_defines=
+CH32M030.menu.rstpin.reset=Reset input (NRST) (set at boot)
+CH32M030.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32M030.menu.usart1.auto=AUTO (bind at begin())
 CH32M030.menu.usart1.auto.build.usart1_mode=
 CH32M030.menu.usart1.disable=Disable

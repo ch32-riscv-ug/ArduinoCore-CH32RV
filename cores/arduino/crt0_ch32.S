@@ -159,13 +159,17 @@ ch32rv_loadcode_ram:
     la gp, __global_pointer$
 .option pop
 #ifdef CH32RV_RAMSPLIT_USER
-/* The Flash / RAM split menu (ch32rv_ramsplit.c): set the chip to the split
+/* The Flash / RAM split menu (ch32rv_option_user.c): set the chip to the split
  * this image is linked for before the stack goes to the top of RAM, which
  * another split may not have. A stack in the first 2 KB, there in every split. */
     li sp, 0x20000800
     call ch32rv_ramsplit_check
 #endif
     la sp, _eusrstack
+#ifdef CH32RV_RSTPIN_USER
+/* The Reset Pin menu (ch32rv_option_user.c): the reset input or a GPIO. */
+    call ch32rv_rstpin_check
+#endif
 
 /* Load .highcode (CH32RV_RAMFUNC) and .data from flash to RAM in one loop:
  * they follow each other alike in both (sections.ld asserts it). */

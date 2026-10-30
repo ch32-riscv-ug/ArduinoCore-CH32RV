@@ -48,6 +48,7 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | Clock Source (`clocksrc`) | `hsi` | `hse` にすると、CPU Clock の同じ周波数を外付けの水晶（HSE）から作る。水晶の周波数は EVT の前提のもの（V00x 24 MHz、V103 / V20x / V205 / V30x / L103 8 MHz）で、ベンチの基板はどれもそれだった。起動時に水晶が立たなければ（1〜2.5 ms で立つところを約 10 ms 待つ）、止まらずに HSI で同じ周波数を作る。どちらで動いているかは `CH32RV.clockSource()` で分かる。USB HS と Ethernet の HSE の周波数の既定も、このメニューの値になる。V208・M030・X315・V407・H41x にはまだ無い（[A の機能の全体設計](docs/peripheral-a-design.ja.md) 5.5） |
 | Optimize (`opt`) | `oslto` | `-Os` に LTO。flash が 9〜24% 減り、速さは同じ（X035 で実測）。`osltosr` は `-msave-restore` も足してさらに 4〜5% 減るが、関数呼び出しの多い処理（楕円曲線暗号など）が 7〜9% 遅くなる。`osstd` は LTO なし |
 | Floating Point (`rtlib`) | `fltf_pi` | 浮動小数を double と float のどちらで計算するか、printf の `%f`、`parseFloat` の計算、newlib の printf / scanf の浮動小数 |
+| Reset Pin (`rstpin`) | 系列の出荷時の値 | リセット端子をオプションバイトで決める系列（V002〜V006 は出荷時にリセット、V007・M007・X033・X035・M030・X305・X315 は GPIO）。出荷時の値の項目は何もせず、チップはそのときの設定のまま。もう一方を選ぶと、起動時にコアがオプションバイトを比べ、違えば一度だけ書き換えてリセットする（V003 で 276 B 増える）。ch32rv などで変えても、その項目で作ったスケッチが動くたびに戻る。UIAPduino にはメニューが無い（HID ブートローダーが出荷時のリセット端子を使う） |
 
 printf の系統（`Serial.printf`、`printf`、`sprintf`、`snprintf`）、`Serial.print(float)`、`String(float)` はコアの書式化で動きます。
 既定（`fltf_pi`）は AVR と同じく float で計算し、printf の `%f` も出します。double で計算するより、FPU のない系列で数 KB、V30x・X3x5・H41x で十数 KB 小さくなります。

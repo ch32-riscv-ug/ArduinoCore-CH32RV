@@ -41,11 +41,13 @@ build.vio18_defines=
 # The Clock Source menu (boards.txt): the crystal's setting on; empty: HSI.
 build.clock_src_defines=
 # The Flash / RAM split menu (boards.txt) on the parts that have it (CH32V303/V307/V317 RC, VC, WC, SC);
-# empty: the linker script's split is the chip's own and nothing is checked (ch32rv_ramsplit.c).
+# empty: the linker script's split is the chip's own and nothing is checked (ch32rv_option_user.c).
 build.ramsplit_defines=
-compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.fp_flags} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
-compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.fp_flags} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
-compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} {build.ramsplit_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
+# The Reset Pin menu's USER value and mask (ch32rv_option_user.c); empty where the series has no such option.
+build.rstpin_defines=
+compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.fp_flags} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
+compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.fp_flags} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
+compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} {build.ramsplit_defines} {build.rstpin_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
 # The three generated interrupt tables share one stem, so a board - or a
 # single pnum menu entry, for a part on a different die - selects all
 # three at once (CH32V203RBT6 is CH32V20x_D8 while the rest of CH32V203

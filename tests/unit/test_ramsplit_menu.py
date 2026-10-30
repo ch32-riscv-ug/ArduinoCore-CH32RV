@@ -1,6 +1,6 @@
 """The Flash / RAM Split menu (boards.txt) against RM 32.4.6, Table 32-4.
 
-The USER value and mask each entry hands ch32rv_ramsplit.c pick the split its
+The USER value and mask each entry hands ch32rv_option_user.c pick the split its
 linker script is built for; a wrong pair would have the core set the chip to one
 split and link the sketch for another. Only the parts the RM names get the
 split's linker script; the others keep their own and no check at boot.
@@ -69,7 +69,7 @@ def test_only_the_parts_with_the_split_follow_the_menu():
 def test_the_default_build_defines_nothing_and_the_core_checks_only_with_the_define():
     platform = (REPO / "platform.txt").read_text(encoding="utf-8")
     assert re.search(r"^build\.ramsplit_defines=$", platform, re.M)
-    src = (REPO / "cores/arduino/ch32rv_ramsplit.c").read_text(encoding="utf-8")
+    src = (REPO / "cores/arduino/ch32rv_option_user.c").read_text(encoding="utf-8")
     assert "#if defined(CH32RV_RAMSPLIT_USER)" in src
     crt0 = (REPO / "cores/arduino/crt0_ch32.S").read_text(encoding="utf-8")
     assert "#ifdef CH32RV_RAMSPLIT_USER" in crt0 and "call ch32rv_ramsplit_check" in crt0
