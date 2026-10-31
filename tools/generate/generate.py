@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate boards.txt and linker scripts from ch32-device-data tables.
 
-Reads the normalized CSV tables (products.csv) and writes, per configured family:
+Reads the normalized CSV tables (parts.csv) and writes, per configured family:
   - boards.txt            (board entry + menu.pnum entry per part number)
   - variants/<VARIANT>/<ld>  (one MEMORY script per unique flash/sram combination)
 
@@ -692,7 +692,7 @@ VERSION_REL = f"{INDEX_DIR}/VERSION"
 # before any change that can break a consumer (index/README.md), so another
 # value stops the run instead of regenerating from tables whose meaning moved -
 # the way ch32rv's db-gen refuses anything but its INDEX_VERSION.
-SUPPORTED_INDEX_VERSION = "1"
+SUPPORTED_INDEX_VERSION = "2"
 
 
 def check_index_version(tables: pathlib.Path) -> None:
@@ -1437,7 +1437,7 @@ def load_die_macros(tables: pathlib.Path) -> tuple:
     variants. The macro is what clock_configs.csv's conditions are written
     against, so it is kept whole here rather than reduced to a suffix."""
     part_series = {r["part_number"]: r["series"]
-                   for r in read_table(tables, "products.csv")}
+                   for r in read_table(tables, "parts.csv")}
     by_part, by_series = {}, {}
     for r in read_table(tables, "evt_variants.csv",
                         ("family", "macro", "part_number", "default")):
@@ -1467,7 +1467,7 @@ def load_die_variants(tables: pathlib.Path) -> dict:
     """
     variant_suffix = re.compile(r"_(D\d\w*)$")
     part_series = {r["part_number"]: r["series"]
-                   for r in read_table(tables, "products.csv")}
+                   for r in read_table(tables, "parts.csv")}
     suffix_of: dict = {}
     default_of: dict = {}
     for r in read_table(tables, "evt_variants.csv",
@@ -1952,7 +1952,7 @@ def check_family_facts(tables: pathlib.Path, facts: dict) -> list:
     # startup file, and WCH spells those as a D followed by a digit.
     variant_suffix = re.compile(r"_(D\d\w*)$")
     part_series = {r["part_number"]: r["series"]
-                   for r in read_table(tables, "products.csv")}
+                   for r in read_table(tables, "parts.csv")}
     by_series: dict = {}
     for r in read_table(tables, "evt_variants.csv",
                         ("family", "macro", "part_number", "default")):
@@ -3934,7 +3934,7 @@ def main() -> int:
     args.check = args.check or args.diff
     check_index_version(args.tables)
 
-    products = read_table(args.tables, "products.csv")
+    products = read_table(args.tables, "parts.csv")
     commit = source_commit(args.tables)
 
     interrupts, vector_forms = load_interrupts()
