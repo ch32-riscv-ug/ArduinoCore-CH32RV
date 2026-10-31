@@ -80,7 +80,7 @@ probe 側を SWIO だけにする必要があります。
 | UIAPduino Pro Micro CH32V003 V1.4 | HID bootloader。RESET を押したまま USB へ接続し、すぐ離す（[uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md)） | PD1 = SWIO に LinkE / OEP probe |
 
 - OEP の「未確認」の系列は、同じ RAM loader を LinkE 経由で V003 / V006 / V103 / V203 / V307 / L103 / X035 / V205 / X315 に対して確認済みです。
-- WCH-LinkE firmware 2.11 では書き込み後に target が起動しません。ベンチでの確認は LinkE 2.22、CH549 Link 2.12 です。
+- 初代の WCH-Link（CH549）の firmware 2.11 では、CH32V103R8T6 に書いたあと target が起動しませんでした（probe-rs で書いた記録）。ベンチでの確認は LinkE 2.22、CH549 Link 2.12 です。
 - 「USB device」の列はハードウェアの有無です。このコアの USB device は X033 / X035 だけ結線済みです（[peripheral-support.ja.md](peripheral-support.ja.md)）。
 
 ## CH32M030 を OEP probe で書かない
