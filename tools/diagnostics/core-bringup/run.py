@@ -121,7 +121,7 @@ def main():
                 raise RuntimeError("Core bring-up failed; see run transcript")
         finally:
             try:
-                invoke("restore", ["flash", str(prefix), "--erase", "chip", "--confirm-run", "pc"])
+                invoke("restore", ["flash", str(prefix), "--erase", "auto", "--confirm-run", "pc"])
                 restored = work / "flash-after.bin"
                 invoke("read-restored", ["read", "--range", f"0x08000000+{total}", "-o", str(restored)])
                 actual = restored.read_bytes()
