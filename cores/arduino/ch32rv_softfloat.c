@@ -17,7 +17,10 @@
  * 256-byte table, the same counts (all 2^32 inputs, and 32 for 0).
  *
  * GCC emits these calls when LTO is done; core.a is built with fat objects,
- * so the linker takes them from here before it reaches libgcc. Float only
+ * so the linker takes them from here before it reaches libgcc. Each one is
+ * `used`: once a non-LTO object (libc's strtod, with __subdf3) brings this
+ * object in, its definitions are LTO's, and one that nothing called before
+ * LTO would be dropped and leave the later call undefined. Float only
  * without an FPU, double unless the FPU does double (V30x and others do
  * single only). */
 #include <stdint.h>
@@ -27,7 +30,7 @@
 /* libgcc's soft-float counts leading zeros with __clzsi2 and its 256-byte
  * table; this one, in the object that subtraction and float-to-double bring
  * in, is defined before the linker reaches libgcc, so the table stays out. */
-int __clzsi2(unsigned x)
+__attribute__((used)) int __clzsi2(unsigned x)
 {
     int n = 0;
     if (!(x >> 16)) {
@@ -53,7 +56,7 @@ int __clzsi2(unsigned x)
 #if !defined(__riscv_flen)
 float __addsf3(float a, float b);
 
-float __subsf3(float a, float b)
+__attribute__((used)) float __subsf3(float a, float b)
 {
     uint32_t u;
     memcpy(&u, &b, sizeof u);
@@ -66,7 +69,7 @@ float __subsf3(float a, float b)
 #if !defined(__riscv_flen) || __riscv_flen < 64
 double __adddf3(double a, double b);
 
-double __extendsfdf2(float a)
+__attribute__((used)) double __extendsfdf2(float a)
 {
     uint32_t u;
     memcpy(&u, &a, sizeof u);
@@ -93,7 +96,7 @@ double __extendsfdf2(float a)
     return d;
 }
 
-double __subdf3(double a, double b)
+__attribute__((used)) double __subdf3(double a, double b)
 {
     uint32_t w[2];
     memcpy(w, &b, sizeof w);

@@ -26,3 +26,26 @@ def test_clz_and_extend(tmp_path):
     run = subprocess.run([str(exe)], capture_output=True, text=True)
     assert run.returncode == 0, run.stdout
     assert "failures 0" in run.stdout
+
+
+def test_a_call_gcc_makes_after_lto_finds_the_core_definition(tmp_path):
+    """core.a holds the object as LTO IR. When a non-LTO object (libc's strtod, here sub.o) brings it in with
+    __subdf3, the plugin owns every definition in it; without `used`, __extendsfdf2, which nothing calls before
+    LTO, is dropped, and the float to double conversion GCC makes after LTO has no definition (2026-10-31:
+    Serial.println(Serial.parseFloat(), 6) did not link on V003 and X035)."""
+    found = sorted(d for d in (REPO / ".tools" / "xpack-riscv-none-elf-gcc").glob("*") if (d / "bin").is_dir())
+    if not found:
+        pytest.skip("the RISC-V toolchain is not fetched: uv run tools/index/fetch_tools.py")
+    gcc = str(found[-1] / "bin" / "riscv-none-elf-gcc")
+    flags = ["-march=rv32ec_zicsr", "-mabi=ilp32e", "-Os", "-ffunction-sections", "-fdata-sections"]
+    (tmp_path / "sub.c").write_text("double sub(double a, double b) { return a - b; }\n")
+    (tmp_path / "main.c").write_text("double sub(double a, double b);\nvolatile float f = 1.5f;\nvolatile double g;\n"
+                                     "void _start(void) { g = f; g = sub(g, 1.0); for (;;) {} }\n")
+    subprocess.run([gcc, *flags, "-c", "sub.c", "-o", "sub.o"], cwd=tmp_path, check=True)
+    subprocess.run([gcc, *flags, "-flto", "-ffat-lto-objects", "-c", str(SRC), "-o", "softfloat.o"],
+                   cwd=tmp_path, check=True)
+    subprocess.run(["ar", "rcs", "libcore.a", "softfloat.o"], cwd=tmp_path, check=True)
+    link = subprocess.run([gcc, *flags, "-flto", "-nostartfiles", "-nostdlib", "main.c", "sub.o", "-Wl,--gc-sections",
+                           "-Wl,--start-group", "libcore.a", "-Wl,--end-group", "-lgcc", "-o", "a.elf"],
+                          cwd=tmp_path, capture_output=True, text=True)
+    assert link.returncode == 0, link.stderr
