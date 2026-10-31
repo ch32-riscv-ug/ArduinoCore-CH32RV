@@ -112,7 +112,7 @@ tests/
 | V205 | `oep_ch32v205` | CH32V205RCT6（あり。LinkE の接続で s0 が壊れる件は OEP では未確認） |
 | V30x | `oep_ch32v307` | CH32V307VCT6（あり） |
 | V4x7 | `oep_ch32v407` | CH32V407WEU6（P4 の後ろにあり） |
-| L103 | `oep_ch32l103` | CH32L103C8T6（RP2350 の後ろにあり） |
+| L103 | `oep_ch32l103` | CH32L103C8T6（LinkE の後ろにあり。OEP の後ろには無い） |
 | M030 | `oep_ch32m030` | CH32M030G8R7（ch32rv セッションの手元） |
 | X035 | `oep_ch32x035` | CH32X035C8T6（あり） |
 | X3x5 | `oep_ch32x315` | CH32X315MCU6（あり） |

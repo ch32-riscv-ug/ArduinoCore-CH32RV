@@ -59,7 +59,7 @@ OEPでは `probe_unit_id` に完全な個体IDを設定してください。専�
 | flash / flash.units、flash.kept、flash.time | DUTだけ（配線なし）。`ch32rv_flash.h` の5つの関数を末尾の作業用の領域で試し（消す、書く、消して書く、2単位の消去、境界にそろっていないデータからの書き込み）、プログラム自身・単位にそろわない番地・フラッシュの外・長さ0を断ること。乱数の値を保存してソフトのリセットのあとに`setup()`が読めること。1回の`rewrite_page()`の時間と、その間の`millis()`・`micros()`の進みを記録。1回の実行で末尾の消去が約16回 | 電源断、寿命、書き込みの経路で保存が残るか |
 | usb-media / usb.audio-capture、usb.audio-playback、usb.video-bulk | usb と同じ配線。UAC1ヘッドセット（32 kHz 16 bit モノラル）とUVCカメラ（80x60 YUY2、バルク）。OSのドライバを外し、アイソクロナス転送はlibusbをctypesで直接使う（usb_iso.py）。マイクの連番が途切れないこと、スピーカーに送った100 msが数も和も一致すること、カメラのフレームが1バイト残らず期待どおりであること | OSのサウンド／ビデオ機器としての動作、UAC2、アイソクロナスのビデオ、長時間の同期 |
 
-現在の配線ではLink＋V103、LinkE＋V307、ESP32＋V003、RP2350＋L103、追加のLinkE＋V003を対象にできます。L103と追加のLinkE＋V003にUART配線は宣言していません。GPIOはESP32側のV003に設定したpadだけです。P4フル結線、USB対向機、未接続系列は配線・契約の確定後に追加します。
+現在の配線ではLink＋V103、LinkE＋V307、ESP32＋V003、追加のLinkE＋V003を対象にできます。追加のLinkE＋V003にUART配線は宣言していません。GPIOはESP32側のV003に設定したpadだけです。P4フル結線、USB対向機、未接続系列は配線・契約の確定後に追加します。
 
 usbのホスト役は当面このPCです（`test_usb_contract.py` の `PcUsbHost`。キーボードの入力はHIDのカーネルドライバを外してから送らせるので、PCのデスクトップには届きません）。DUTは SWD で書き込み、DMSEQで指示します。ホスト役を別のマイコン（Pico）に替えるときは `PcUsbHost` だけを置き換えます。DUTはVBUSを使わず `selfPowered` で動かします。
 

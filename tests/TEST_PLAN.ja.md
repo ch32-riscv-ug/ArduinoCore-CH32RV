@@ -71,7 +71,7 @@ silicon capability、part/package の端子、コア実装、board 配線、fixt
 | DUT と安価な peer | 指定通信契約の繰り返し検証 | 独立実装との相互運用の代替 |
 | PD source と電圧計 | CC 交渉、VBUS、電源復旧 | USB データ通信 |
 
-現構成の経路代表はLink＋V103、LinkE＋V307、ESP32＋UIAPduino V003、RP2350＋L103です。
+現構成の経路代表はLink＋V103、LinkE＋V307、ESP32＋UIAPduino V003です。
 P4の系列代表とは別に、配線済みのUARTとGPIO、製品HID、PPPSの復帰を明示実行します。
 系列代表を共通 API の基準とし、小 RAM、別 ABI、複数 ADC/I2C、DAC、別 USB controller、製品 pin map など
 実装差分の理由がある対象を追加します。build は生成対象全体、実機は代表と差分を確認し、
