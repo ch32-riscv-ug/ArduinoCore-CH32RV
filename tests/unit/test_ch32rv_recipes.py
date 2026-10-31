@@ -17,11 +17,11 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 
 RECIPES = {
     'tools.ch32rv.upload.pattern':
-        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} --probe "port:{upload.port.address}"',
+        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} --probe "{upload.port.address}"',
     'tools.ch32rv.program.pattern':
         '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.probe_args}',
     'tools.ch32rv_hid.upload.pattern':
-        '"{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" --probe "port:{upload.port.address}" {upload.verbose}',
+        '"{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" --probe "{upload.port.address}" {upload.verbose}',
     'pluggable_discovery.ch32rv.pattern':
         '"{runtime.tools.ch32rv.path}/ch32rv" arduino discovery',
     'pluggable_monitor.pattern.serial':

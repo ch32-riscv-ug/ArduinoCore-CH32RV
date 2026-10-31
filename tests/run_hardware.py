@@ -184,7 +184,7 @@ def probe_address(target):
     """How ch32rv names the target's probe: an OEP probe by its port (oep://<probe>/<port>, which a probe
     with several ports needs), a WCH-Link by its serial path."""
     upload = target.get("upload_port", "")
-    return upload if upload.startswith("oep://") else f"port:{target['port']}"
+    return upload if upload.startswith("oep://") else target["port"]
 
 
 def target_info(tool, target, log, env):
@@ -197,7 +197,7 @@ def record_probe(tool, target, directory, env):
     directory.mkdir(parents=True, exist_ok=True)
     try:
         if target["usb_vid"] == "1a86" and target["usb_pid"] == "8010":
-            reported = json.loads(invoke([str(tool), "--probe", f"port:{target['port']}",
+            reported = json.loads(invoke([str(tool), "--probe", target["port"],
                 "--non-interactive", "--json", "probe", "info"], directory / "probe-info.log", env=env))
             if not reported.get("ok"):
                 raise RuntimeError("probe.info did not succeed")

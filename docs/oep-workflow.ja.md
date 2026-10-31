@@ -71,7 +71,7 @@ Uno と同じく、プログラマの選択は要らない。板は `upload.prot
 
 | 選んだ IDE port | 見分け方 | 書き込み |
 |---|---|---|
-| LinkE の CDC（serial） | ch32rv が `probe list` の `ports` から Link を引く（`--probe port:<path>`。シリアル番号が無くても topology で辿れる） | LinkE |
+| LinkE の CDC（serial） | ch32rv が `probe list` の `ports` から Link を引く（`--probe <path>`。シリアル番号が無くても topology で辿れる） | LinkE |
 | `wchlink://<serial>` | discovery（実装済み） | LinkE |
 | `oep://<probe>/<port>` | discovery（§3.3） | その口 |
 | OEP の probe の serial port（専用 PID の無い probe） | ch32rv が開いて describe が返る | 口が 1 つに決まればそこ（§3.4） |
@@ -119,7 +119,7 @@ unit_id、口の名前、target の家系が使う wire をその口が持つか
 - 名前つきの口がある probe: `oep://<probe>/<port>` で名指す（discovery の IDE port を選ぶのがいちばん迷わない）。その名前の口が
   無ければ止まる（ch32rv は exit 10、口の一覧つき）。口が 1 つだけなら `oep://<probe>/any` でも決まる（2 つ以上なら exit 23）。
 - 名前つきの口が無い probe: 名前の無い口を 1 つ持つとみなし、`oep://<probe>/any` で選ぶ。
-- 専用 PID の無い probe の serial port（`port:<serial port>`）や `tcp:` を選んだときも同じ規則で、口が 1 つならそこ、名前の無いまま
+- 専用 PID の無い probe の serial port の path や `tcp:` を選んだときも同じ規則で、口が 1 つならそこ、名前の無いまま
   複数なら止まる（exit 23、一覧つき）。そのときは `oep://<probe>/<port>` を選ぶか、ラベルつきの口を 1 つにする。
 - ピンは口のラベル `S.swdio` / `S.swclk` / `S.swio` から取る。ピンを host が選ぶ wire でラベルが無ければ止まり、scan で組を探さない。
 
@@ -295,7 +295,7 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
 
 | どこ | β までに |
 |---|---|
-| このリポジトリ | 板に `upload.protocol`。`upload.tool.<protocol>` → ch32rv（`--probe port:{upload.port.address}`）。`pluggable_monitor.pattern.serial` → ch32rv。discovery の登録。板に `monitor_port.serial.chip=<家系>`。ベンチを index から入れる形に。`trace_kit.Run` を pytest の道具に置き換える。`approval-status.ja.md` を埋める。index を作って公開 |
+| このリポジトリ | 板に `upload.protocol`。`upload.tool.<protocol>` → ch32rv（`--probe {upload.port.address}`）。`pluggable_monitor.pattern.serial` → ch32rv。discovery の登録。板に `monitor_port.serial.chip=<家系>`。ベンチを index から入れる形に。`trace_kit.Run` を pytest の道具に置き換える。`approval-status.ja.md` を埋める。index を作って公開 |
 | ch32rv | §6.2、§7.2、§3.3、§3.4、OEP の書き込み（`requests/ch32rv.md` の 1〜14。15 は後） |
 | oep-spec / oep-probe-arduino / oep-client-python | §11 の分 |
 | pytest-embedded-arduino-cli、新しいプラグイン 2 つ、wireskein | §7 の分 |
@@ -318,7 +318,7 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
 | oep-spec | CDC / USJ のフレームを COBS に（core §3.1）。serial port の共用の規則（§4.2）。fn 0 の describe に経路の一覧。スロットの項目（今の bind から pins と attach を移す、target_id は任意、`retry_s`）、同時に持てる接続の数の宣言、接続の一覧の操作、スロットの状態。bind の組み直し（複数のストリーム、mode、選択）と対応 mode の宣言。生の転送の再開の位置。probe 開発ガイドに再起動の抑止と、専用 PID / HID の口の推奨 |
 | oep-probe-arduino | serial port の共用（見分け、送信のキュー）。classic ESP32 に ProbeConfig（bind、NVS）。P4 を HS の口 + 専用 PID + HID の形に（USJ を COBS に、reset 抑止）。スロット、再試行、状態。bind の mode |
 | oep-client-python | package 化。シリアルのポートは常に COBS、フレームの外は雑音。接続先の抽象化（serial / USB / ブローカーの TCP）。記録の受け口。`ch32_flash` は ch32rv の OEP の書き込みが入ったら消す |
-| ch32rv | §6.2、§7.2、§3.3（`oep://`、`hid://`、後で `isp://`）、`--probe port:<path>`、OEP の transport と書き込み |
+| ch32rv | §6.2、§7.2、§3.3（`oep://`、`hid://`、後で `isp://`）、`--probe <path>`、OEP の transport と書き込み |
 | pytest-embedded-arduino-cli | 展開済み properties の fixture。自前の monitor を持つ profile で runtime を `arduino-cli monitor` の子プロセスに（§7.1） |
 | 新しいリポジトリ | `pytest-embedded-arduino-cli-ch32rv`、`pytest-embedded-wireskein` |
 | wireskein | package 化 |
