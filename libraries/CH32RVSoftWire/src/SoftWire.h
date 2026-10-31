@@ -31,8 +31,8 @@
 
 #include <stdint.h>
 
-#ifndef SOFTWIRE_BUFFER_SIZE
-#define SOFTWIRE_BUFFER_SIZE 32
+#ifndef CH32RV_SOFTWIRE_BUFFER_SIZE
+#define CH32RV_SOFTWIRE_BUFFER_SIZE 32
 #endif
 
 /* How long one wait for the bus may take before the call gives up. The same
@@ -115,8 +115,8 @@ private:
     uint8_t _sda;
     uint8_t _scl;
 
-    uint8_t _tx[SOFTWIRE_BUFFER_SIZE];
-    uint8_t _rx[SOFTWIRE_BUFFER_SIZE];
+    uint8_t _tx[CH32RV_SOFTWIRE_BUFFER_SIZE];
+    uint8_t _rx[CH32RV_SOFTWIRE_BUFFER_SIZE];
     uint8_t _tx_len = 0;
     uint8_t _rx_len = 0;
     uint8_t _rx_read = 0;

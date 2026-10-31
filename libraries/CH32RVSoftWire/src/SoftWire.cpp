@@ -217,7 +217,7 @@ size_t SoftWire::write(uint8_t data)
     if (!_transmitting) {
         return 0;                      /* outside a transmission, as on AVR */
     }
-    if (_tx_len >= SOFTWIRE_BUFFER_SIZE) {
+    if (_tx_len >= CH32RV_SOFTWIRE_BUFFER_SIZE) {
         _tx_overflow = true;
         return 0;
     }
@@ -274,8 +274,8 @@ size_t SoftWire::requestFrom(uint8_t address, size_t len, bool stopBit)
     if (!_started) {
         begin();
     }
-    if (len > SOFTWIRE_BUFFER_SIZE) {
-        len = SOFTWIRE_BUFFER_SIZE;
+    if (len > CH32RV_SOFTWIRE_BUFFER_SIZE) {
+        len = CH32RV_SOFTWIRE_BUFFER_SIZE;
     }
     if (len == 0) {
         return 0;
