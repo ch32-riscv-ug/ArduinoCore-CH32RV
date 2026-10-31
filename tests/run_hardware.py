@@ -215,16 +215,8 @@ def swio_wire(host):
     """oep.wire.swio on the probe's one named port (host guide §5.3: the pins come from the port's saved
     labels, `S.swio`; since the reworked spec an attach names its pins). uiapduino attaches without pins,
     so they are put on the wire's attach."""
-    from oep_client import riscv
-    try:
-        # oep-client-python 0.0.37+: the labels live in the core's settings (firmware 0.0.36+).
-        from oep_client import settings
-        labels = settings.labels(host)
-    except ImportError:
-        # Older clients and firmware: the probe's oep.probe.config interface.
-        from oep_client import config as settings
-        labels = [(item.channel, item.text) for item in settings.ProbeConfig(host).items()
-                  if isinstance(item, settings.Label)]
+    from oep_client import riscv, settings
+    labels = settings.labels(host)
     ports = settings.ports_named(labels)
     swio = settings.line_from_labels(labels, "swio", ports[0] if len(ports) == 1 else None)
     if swio is None:
