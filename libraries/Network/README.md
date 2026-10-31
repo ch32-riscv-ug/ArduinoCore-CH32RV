@@ -64,11 +64,11 @@ Over TLS, connect by host name: the certificate is checked against it.
 - `write()` waits for room in the send buffer and gives up after 10 s without progress, returning what it wrote.
 - The DHCP server (`dhcpServer(true, leases)`) lends `leases` addresses after the static one, an hour each, the same one again to the same MAC. It offers a router (`dhcpAdvertiseGateway()`) and DNS (`dhcpDns()`) only when told to: a device that does not forward would otherwise take over the peer's default route.
 - `NetworkUDP` queues up to four received datagrams and drops the rest; one datagram sent is at most 1472 bytes.
-- IPv4 only.
+- IPv4 only. 127.0.0.1 and the interface's own address loop back inside the board (a gateway and its client on one chip).
 
 ## Size (CH32V208, 2026-10-21)
 
-For a sketch using DHCP, a TCP server and client, UDP and DNS, the network adds about 44 KB of flash (lwIP about 37 KB, this library about 6 KB) and about 22 KB of static RAM (lwIP's 10 KB transmit heap, 9 KB receive pool ...), plus 2.9 KB per open connection. The V407 and H41x get larger windows and pools (about 60 KB static). The configuration is `src/lwipopts.h`.
+For a sketch using DHCP, a TCP server and client, UDP and DNS, the network adds about 44 KB of flash (lwIP about 37 KB, this library about 6 KB) and about 22 KB of static RAM (lwIP's 10 KB transmit heap, 9 KB receive pool ...), plus 2.9 KB per open connection. The V407 and H41x get larger windows and pools (about 60 KB static; 12 TCP connections instead of 6), and so do the V307/V317 with 128 KB of RAM or more in the Flash / RAM Split menu (TcpEchoServer: 37 KB of static RAM at 64 KB, 77 KB at 128 KB). The configuration is `src/lwipopts.h`.
 
 ## Writing a link driver
 

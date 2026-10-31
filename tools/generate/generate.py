@@ -417,7 +417,8 @@ VIO18_MENU = (
 # upload.maximum_size as a number, without expanding {...}. Menus merge in the
 # order of the menu.* lines, so on CH32V303 the menu's limits also stand for
 # CBT6 / RBT6, which have no split - their linker script stays their own and
-# still stops an overflow.
+# still stops an overflow. CH32RV_RAMSPLIT_RAM_KB tells libraries the RAM
+# (the Network library sizes lwIP by it).
 # (id, label, flash KB, RAM KB, USER value, the USER bits that decide it)
 RAMSPLIT_MENU = (
     ("256k_64k", "256 KB flash + 64 KB RAM (factory setting)", 256, 64, 0xA0, 0xC0),
@@ -442,7 +443,8 @@ def ramsplit_menu(board: str) -> list[str]:
         lines.append(f"{pfx}.build.ramsplit_ld={key}")
         lines.append(f"{pfx}.upload.maximum_size={flash * 1024}")
         lines.append(f"{pfx}.upload.maximum_data_size={ram * 1024}")
-        lines.append(f"{pfx}.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER={user:#04x}u -DCH32RV_RAMSPLIT_MASK={mask:#04x}u")
+        lines.append(f"{pfx}.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER={user:#04x}u -DCH32RV_RAMSPLIT_MASK={mask:#04x}u"
+                     f" -DCH32RV_RAMSPLIT_RAM_KB={ram}")
     return lines
 
 # The Reset Pin of the series whose reset input is an option byte setting

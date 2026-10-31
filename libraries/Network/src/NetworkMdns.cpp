@@ -44,6 +44,9 @@ static void add_services(struct netif *n)
 /* Interfaces starting and stopping, from the Network library. */
 static void netif_changed(struct netif *n, bool up)
 {
+    if (!n->state) {
+        return;   /* the loopback interface: no NetworkInterface, nothing to announce */
+    }
     if (up) {
         if (mdns_resp_add_netif(n, host) == ERR_OK) {
             add_services(n);

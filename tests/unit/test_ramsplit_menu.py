@@ -31,10 +31,12 @@ def test_each_entry_sets_the_split_its_sizes_and_linker_script_name():
     assert {e.split(".")[0] for e in entries} == {"CH32V303", "CH32V307", "CH32V317"}
     for e in entries:
         board = e.split(".")[0]
-        m = re.fullmatch(r"-DCH32RV_RAMSPLIT_USER=0x([0-9a-f]{2})u -DCH32RV_RAMSPLIT_MASK=0x([0-9a-f]{2})u",
+        m = re.fullmatch(r"-DCH32RV_RAMSPLIT_USER=0x([0-9a-f]{2})u -DCH32RV_RAMSPLIT_MASK=0x([0-9a-f]{2})u"
+                         r" -DCH32RV_RAMSPLIT_RAM_KB=(\d+)",
                          b[e + ".build.ramsplit_user"])
         user, mask = int(m.group(1), 16), int(m.group(2), 16)
         flash, ram = int(b[e + ".upload.maximum_size"]), int(b[e + ".upload.maximum_data_size"])
+        assert int(m.group(3)) * 1024 == ram, e
         # every USER[7:5] the mask lets through is the same split
         for bits, (f_kb, r_kb) in TABLE.items():
             if (bits << 5 ^ user) & mask == 0:

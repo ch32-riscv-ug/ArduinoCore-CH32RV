@@ -14,6 +14,8 @@
  *   running while it waits), answers it upper-cased, and closes
  *   UDP 9999: "C <port>" connects back and sends 256 KiB of PATTERN -> "CDONE 262144" / "CFAIL"
  *             "D <name>" -> "DNS a.b.c.d" / "DNSFAIL"
+ *             "L <address>" one NetworkUDP sends "loop" to another's port 4000 at <address> (127.0.0.1, or
+ *                 the interface's own address) -> "LOOP OK" / "LOOP FAIL"
  *             "T <server>" -> configTime(9 h, 0, server) -> "TIME STARTED"; the SNTP client's
  *                 settimeofday() prints "SETTIME <seconds>" (host/arduino_host.cpp)
  *             "S <host> <port> <how>" NetworkClientSecure to host:port, sends "hello\n", reads one line
@@ -280,6 +282,24 @@ static void serveCommands()
     } else if (line[0] == 'T') {
         configTime(9 * 3600, 0, line + 2);
         reply("TIME STARTED");
+    } else if (line[0] == 'L') {
+        IPAddress to;
+        to.fromString(line + 2);
+        static NetworkUDP from, at;
+        at.begin(4000);
+        from.begin(4001);
+        from.beginPacket(to, 4000);
+        from.write((const uint8_t *)"loop", 4);
+        bool ok = from.endPacket() == 1;
+        char got[8] = {0};
+        const uint32_t start = millis();
+        while (ok && millis() - start < 2000 && at.parsePacket() <= 0) {
+            delay(1);
+        }
+        ok = ok && at.read((unsigned char *)got, sizeof got - 1) == 4 && !strcmp(got, "loop");
+        at.stop();
+        from.stop();
+        reply(ok ? "LOOP OK" : "LOOP FAIL");
     } else if (line[0] == 'D') {
         IPAddress ip;
         char text[40];

@@ -316,6 +316,13 @@ def command(text, timeout, tries):
     return u, None
 
 
+def loopback(address):
+    """The sketch sending UDP to itself, through lwIP's loopback."""
+    u, reply = command(f"L {address}", 10, 3 if LOSSY else 1)
+    u.close()
+    return {"ok": reply == "LOOP OK", "reply": reply}
+
+
 def tcp_client():
     srv = socket.socket()
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -536,6 +543,8 @@ if ip_line:
     run("tcp_timed_read", tcp_timed_read, 60)
     run("tcp_parallel", tcp_parallel, 150)
     run("tcp_client", tcp_client, 120)
+    run("udp_loopback", lambda: loopback("127.0.0.1"), 60)
+    run("udp_own_address", lambda: loopback(DUT), 60)
     run("dns", dns_lookup, 60)
     run("sntp", sntp, 60)
     servers = tls_servers()

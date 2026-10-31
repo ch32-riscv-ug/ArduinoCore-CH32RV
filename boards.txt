@@ -2298,27 +2298,27 @@ CH32V303.menu.ramsplit.256k_64k=256 KB flash + 64 KB RAM (factory setting)
 CH32V303.menu.ramsplit.256k_64k.build.ramsplit_ld=256k_64k
 CH32V303.menu.ramsplit.256k_64k.upload.maximum_size=262144
 CH32V303.menu.ramsplit.256k_64k.upload.maximum_data_size=65536
-CH32V303.menu.ramsplit.256k_64k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xa0u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V303.menu.ramsplit.256k_64k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xa0u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=64
 CH32V303.menu.ramsplit.224k_96k=224 KB flash + 96 KB RAM
 CH32V303.menu.ramsplit.224k_96k.build.ramsplit_ld=224k_96k
 CH32V303.menu.ramsplit.224k_96k.upload.maximum_size=229376
 CH32V303.menu.ramsplit.224k_96k.upload.maximum_data_size=98304
-CH32V303.menu.ramsplit.224k_96k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x60u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V303.menu.ramsplit.224k_96k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x60u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=96
 CH32V303.menu.ramsplit.192k_128k=192 KB flash + 128 KB RAM
 CH32V303.menu.ramsplit.192k_128k.build.ramsplit_ld=192k_128k
 CH32V303.menu.ramsplit.192k_128k.upload.maximum_size=196608
 CH32V303.menu.ramsplit.192k_128k.upload.maximum_data_size=131072
-CH32V303.menu.ramsplit.192k_128k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x20u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V303.menu.ramsplit.192k_128k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x20u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=128
 CH32V303.menu.ramsplit.288k_32k=288 KB flash + 32 KB RAM
 CH32V303.menu.ramsplit.288k_32k.build.ramsplit_ld=288k_32k
 CH32V303.menu.ramsplit.288k_32k.upload.maximum_size=294912
 CH32V303.menu.ramsplit.288k_32k.upload.maximum_data_size=32768
-CH32V303.menu.ramsplit.288k_32k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xe0u -DCH32RV_RAMSPLIT_MASK=0xe0u
+CH32V303.menu.ramsplit.288k_32k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xe0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=32
 CH32V303.menu.ramsplit.128k_192k=128 KB flash + 192 KB RAM (newer lots only)
 CH32V303.menu.ramsplit.128k_192k.build.ramsplit_ld=128k_192k
 CH32V303.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V303.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
-CH32V303.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u
+CH32V303.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
 CH32V303.menu.usart1.auto=AUTO (bind at begin())
 CH32V303.menu.usart1.auto.build.usart1_mode=
 CH32V303.menu.usart1.disable=Disable
@@ -2832,27 +2832,27 @@ CH32V307.menu.ramsplit.256k_64k=256 KB flash + 64 KB RAM (factory setting)
 CH32V307.menu.ramsplit.256k_64k.build.ramsplit_ld=256k_64k
 CH32V307.menu.ramsplit.256k_64k.upload.maximum_size=262144
 CH32V307.menu.ramsplit.256k_64k.upload.maximum_data_size=65536
-CH32V307.menu.ramsplit.256k_64k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xa0u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V307.menu.ramsplit.256k_64k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xa0u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=64
 CH32V307.menu.ramsplit.224k_96k=224 KB flash + 96 KB RAM
 CH32V307.menu.ramsplit.224k_96k.build.ramsplit_ld=224k_96k
 CH32V307.menu.ramsplit.224k_96k.upload.maximum_size=229376
 CH32V307.menu.ramsplit.224k_96k.upload.maximum_data_size=98304
-CH32V307.menu.ramsplit.224k_96k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x60u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V307.menu.ramsplit.224k_96k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x60u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=96
 CH32V307.menu.ramsplit.192k_128k=192 KB flash + 128 KB RAM
 CH32V307.menu.ramsplit.192k_128k.build.ramsplit_ld=192k_128k
 CH32V307.menu.ramsplit.192k_128k.upload.maximum_size=196608
 CH32V307.menu.ramsplit.192k_128k.upload.maximum_data_size=131072
-CH32V307.menu.ramsplit.192k_128k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x20u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V307.menu.ramsplit.192k_128k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x20u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=128
 CH32V307.menu.ramsplit.288k_32k=288 KB flash + 32 KB RAM
 CH32V307.menu.ramsplit.288k_32k.build.ramsplit_ld=288k_32k
 CH32V307.menu.ramsplit.288k_32k.upload.maximum_size=294912
 CH32V307.menu.ramsplit.288k_32k.upload.maximum_data_size=32768
-CH32V307.menu.ramsplit.288k_32k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xe0u -DCH32RV_RAMSPLIT_MASK=0xe0u
+CH32V307.menu.ramsplit.288k_32k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xe0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=32
 CH32V307.menu.ramsplit.128k_192k=128 KB flash + 192 KB RAM (newer lots only)
 CH32V307.menu.ramsplit.128k_192k.build.ramsplit_ld=128k_192k
 CH32V307.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V307.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
-CH32V307.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u
+CH32V307.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
 CH32V307.menu.usart1.auto=AUTO (bind at begin())
 CH32V307.menu.usart1.auto.build.usart1_mode=
 CH32V307.menu.usart1.disable=Disable
@@ -3103,27 +3103,27 @@ CH32V317.menu.ramsplit.256k_64k=256 KB flash + 64 KB RAM (factory setting)
 CH32V317.menu.ramsplit.256k_64k.build.ramsplit_ld=256k_64k
 CH32V317.menu.ramsplit.256k_64k.upload.maximum_size=262144
 CH32V317.menu.ramsplit.256k_64k.upload.maximum_data_size=65536
-CH32V317.menu.ramsplit.256k_64k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xa0u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V317.menu.ramsplit.256k_64k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xa0u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=64
 CH32V317.menu.ramsplit.224k_96k=224 KB flash + 96 KB RAM
 CH32V317.menu.ramsplit.224k_96k.build.ramsplit_ld=224k_96k
 CH32V317.menu.ramsplit.224k_96k.upload.maximum_size=229376
 CH32V317.menu.ramsplit.224k_96k.upload.maximum_data_size=98304
-CH32V317.menu.ramsplit.224k_96k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x60u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V317.menu.ramsplit.224k_96k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x60u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=96
 CH32V317.menu.ramsplit.192k_128k=192 KB flash + 128 KB RAM
 CH32V317.menu.ramsplit.192k_128k.build.ramsplit_ld=192k_128k
 CH32V317.menu.ramsplit.192k_128k.upload.maximum_size=196608
 CH32V317.menu.ramsplit.192k_128k.upload.maximum_data_size=131072
-CH32V317.menu.ramsplit.192k_128k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x20u -DCH32RV_RAMSPLIT_MASK=0xc0u
+CH32V317.menu.ramsplit.192k_128k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x20u -DCH32RV_RAMSPLIT_MASK=0xc0u -DCH32RV_RAMSPLIT_RAM_KB=128
 CH32V317.menu.ramsplit.288k_32k=288 KB flash + 32 KB RAM
 CH32V317.menu.ramsplit.288k_32k.build.ramsplit_ld=288k_32k
 CH32V317.menu.ramsplit.288k_32k.upload.maximum_size=294912
 CH32V317.menu.ramsplit.288k_32k.upload.maximum_data_size=32768
-CH32V317.menu.ramsplit.288k_32k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xe0u -DCH32RV_RAMSPLIT_MASK=0xe0u
+CH32V317.menu.ramsplit.288k_32k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xe0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=32
 CH32V317.menu.ramsplit.128k_192k=128 KB flash + 192 KB RAM (newer lots only)
 CH32V317.menu.ramsplit.128k_192k.build.ramsplit_ld=128k_192k
 CH32V317.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V317.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
-CH32V317.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u
+CH32V317.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
 CH32V317.menu.usart1.auto=AUTO (bind at begin())
 CH32V317.menu.usart1.auto.build.usart1_mode=
 CH32V317.menu.usart1.disable=Disable

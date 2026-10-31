@@ -8,6 +8,7 @@
 #include "ch32rv_service.h"
 
 #include "lwip/init.h"
+#include "lwip/netif.h"
 #include "lwip/timeouts.h"
 
 namespace ch32rv_net {
@@ -118,6 +119,7 @@ extern "C" void ch32rv_net_task(void)
             ifc->poll();
         }
     }
+    netif_poll_all();   /* what was sent to 127.0.0.1 or an own address */
     sys_check_timeouts();
     running = false;
 }

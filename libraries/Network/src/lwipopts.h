@@ -5,7 +5,11 @@
  * series, by how much RAM it has - never from a sketch. Two sizes:
  *
  *   NETWORK_LWIP_SMALL  64 KB of RAM  (CH32V208, V203RB, V307/V317)
- *   NETWORK_LWIP_LARGE  more          (CH32V407/V467, H415-H417, the host test build)
+ *   NETWORK_LWIP_LARGE  more          (CH32V407/V467, H415-H417, the host test build,
+ *                                      V307/V317 with 128 KB or more in the Flash / RAM Split menu)
+ *
+ * The split menu's RAM reaches every compile as CH32RV_RAMSPLIT_RAM_KB (boards.txt).
+ * 96 KB stays small: the large pools alone take about 60 KB.
  *
  * IPv4 only. The pools below bound what the stack itself takes; each
  * NetworkClient also allocates a receive buffer of TCP_WND bytes while it is
@@ -13,7 +17,10 @@
 #pragma once
 #include <stdint.h>
 
-#if defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_PART_CH32V203RBT6) || defined(CH32RV_SERIES_CH32V307) || \
+#if (defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)) && defined(CH32RV_RAMSPLIT_RAM_KB) && \
+    CH32RV_RAMSPLIT_RAM_KB >= 128
+#define NETWORK_LWIP_LARGE 1
+#elif defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_PART_CH32V203RBT6) || defined(CH32RV_SERIES_CH32V307) || \
     defined(CH32RV_SERIES_CH32V317)
 #define NETWORK_LWIP_SMALL 1
 #elif defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || defined(CH32RV_SERIES_CH32H415) || \
@@ -46,6 +53,9 @@
 #define LWIP_NETIF_STATUS_CALLBACK 1
 #define LWIP_NETIF_EXT_STATUS_CALLBACK 1   /* mDNS re-announces when an address changes */
 #define LWIP_NETIF_LINK_CALLBACK 1
+#define LWIP_NETIF_LOOPBACK 1       /* to the interface's own address; ch32rv_net_task() polls the queue */
+#define LWIP_HAVE_LOOPIF 1          /* 127.0.0.1 */
+#define LWIP_LOOPBACK_MAX_PBUFS 8
 #define LWIP_STATS 0
 #ifndef NETWORK_HOST_TEST
 #define LWIP_NOASSERT 1             /* lwIP's asserts guard its own invariants; on the chip they would only hang */

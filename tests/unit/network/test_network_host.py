@@ -88,7 +88,7 @@ def check(results, names):
 
 
 ALL = ["address", "ping", "udp_echo", "tcp_echo", "tcp_host_to_sketch", "tcp_sketch_to_host", "tcp_timed_read", "tcp_parallel",
-       "tcp_client", "dns", "sntp", "mdns_host", "mdns_service"]
+       "tcp_client", "udp_loopback", "udp_own_address", "dns", "sntp", "mdns_host", "mdns_service"]
 TLS_CASES = ["tls_ecdsa_ca", "tls_ecdsa_bundle", "tls_rsa_bundle", "tls_rsa_tls12_server", "tls_insecure",
              "tls_client_certificate", "tls_tls13_only_server", "tls_tls12_only_server", "tls_asked_for_tls12",
              "tls_tls13_refused_by_tls12_server", "tls_tls12_refused_by_tls13_server", "tls_refuses_wrong_root",
