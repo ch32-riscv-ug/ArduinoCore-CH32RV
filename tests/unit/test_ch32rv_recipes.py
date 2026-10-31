@@ -17,11 +17,17 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 
 RECIPES = {
     'tools.ch32rv.upload.pattern':
-        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} --probe "{upload.port.address}"',
+        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.erase_args} --probe "{upload.port.address}"',
     'tools.ch32rv.program.pattern':
-        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.probe_args}',
+        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.erase_args} {upload.probe_args}',
+    'tools.ch32rv_isp.upload.pattern':
+        '"{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto {upload.erase_args} --device "{upload.port.address}" {upload.verbose}',
+    'tools.ch32rv_dfu.upload.pattern':
+        '"{path}/{cmd}" --non-interactive --progress none boot dfu flash "{build.path}/{build.project_name}.bin" --format bin {upload.erase_args} --device "{upload.port.address}" {upload.verbose}',
     'tools.ch32rv_hid.upload.pattern':
-        '"{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" --probe "{upload.port.address}" {upload.verbose}',
+        '"{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" {upload.erase_args} --device "{upload.port.address}" {upload.verbose}',
+    'upload.erase_args':
+        '',
     'pluggable_discovery.ch32rv.pattern':
         '"{runtime.tools.ch32rv.path}/ch32rv" arduino discovery',
     'pluggable_monitor.pattern.serial':
@@ -52,3 +58,21 @@ def test_no_menu_entry_flashes_with_chip_auto():
     boards = (REPO / "boards.txt").read_text(encoding="utf-8")
     auto = [line for line in boards.splitlines() if re.match(r"^[^#]*\.build\.ch32rv_chip=auto$", line)]
     assert not auto, f"{len(auto)} entries flash with --chip auto, e.g. {auto[:3]}"
+
+
+def test_every_flashable_board_but_uiapduino_offers_keep_store_first_and_all_flash():
+    """Erase Flash: Keep Store first, passing nothing (ch32rv keeps CH32RV_FLASH_STORE's tail by default), then
+    All Flash. UIAPduino uploads through its HID bootloader alone, which cannot erase the chip: no menu."""
+    entries = {}
+    values = {}
+    for line in (REPO / "boards.txt").read_text(encoding="utf-8").splitlines():
+        m = re.fullmatch(r"(\w+)\.menu\.erase\.(\w+)=(.*)", line)
+        if m:
+            entries.setdefault(m.group(1), []).append(m.group(2))
+        m = re.fullmatch(r"(\w+)\.menu\.erase\.(\w+)\.upload\.erase_args=(.*)", line)
+        if m:
+            values[(m.group(1), m.group(2))] = m.group(3)
+    assert entries and "UIAPDUINO_V003_V14" not in entries
+    for board, keys in entries.items():
+        assert keys == ["keep", "chip"], board
+        assert values[(board, "keep")] == "" and values[(board, "chip")] == "--erase chip", board

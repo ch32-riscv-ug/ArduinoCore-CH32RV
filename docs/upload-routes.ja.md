@@ -13,7 +13,7 @@ ch32rv の開発版では、下の表で「未確認」「不可」の系列も�
 |---|---|---|---|---|---|---|
 | WCH-Link / WCH-LinkE | 外付け probe、デバッグ線 | ○ 書き込み、reset、起動確認まで | 不要 | 不要（デバッグモジュールが CPU を止める） | 実装済 | 結線済（`serial`、`wchlink://`） |
 | OEP probe | OEP probe、デバッグ線 | ○ ch32rv の RAM loader で書く | 不要 | 不要 | 実装済 | 結線済（`oep://`、probe の serial port） |
-| HID bootloader（UIAPduino、`1209:b803`） | USB のみ | 書き込みは自動、入るのは手動 | 必要: RESET を押したまま USB へ接続し、すぐ離す | 不可: bootloader が外部 reset の履歴を確認する | 実装済（CH32V003、16 KiB まで） | 結線済（`hid://`） |
+| HID bootloader（UIAPduino、`1209:b803`） | USB のみ | 書き込みは自動、入るのは手動 | 必要: RESET を押したまま USB へ接続し、すぐ離す | 不可: bootloader が外部 reset の履歴を確認する | 実装済（CH32V003、16 KiB まで） | 結線済（`ch32rv-hid://`） |
 | factory USB ISP（`4348:55e0`）、BOOT0 ピンで入る系列 | USB | 入るのが手動 | 必要: BOOT0（V103 は BOOT0 / BOOT1） | 未設計 | 未実装（`isp` は予約のみ） | 未結線 |
 | factory USB ISP、X033 / X035 | USB | 初回は手動。`SerialUSB` を使うアプリからは 1200bps touch で入れる | 初回は必要: PC17（USB D+）を High にして電源投入 | 可能: `CH32RVUsbDevice` の 1200bps touch または DFU_DETACH → boot mode 設定 → software reset（X035 で実機確認）。DFU detach は未実装 | 開発版で実装（info / flash / verify / erase / reset、X035 で実機確認）。未リリース | upload recipe は未結線 |
 | factory USB ISP、X305 / X315 | USB | 未確認 | 未確認 | 可能（予定）: X033 / X035 と同じ | 未実装 | 未結線 |
@@ -82,6 +82,19 @@ probe 側を SWIO だけにする必要があります。
 - OEP の「未確認」の系列は、同じ RAM loader を LinkE 経由で V003 / V006 / V103 / V203 / V307 / L103 / X035 / V205 / X315 に対して確認済みです。
 - 初代の WCH-Link（CH549）の firmware 2.11 では、CH32V103R8T6 に書いたあと target が起動しませんでした（probe-rs で書いた記録）。ベンチでの確認は LinkE 2.22、CH549 Link 2.12 です。
 - 「USB device」の列はハードウェアの有無です。このコアの USB device は X033 / X035 だけ結線済みです（[peripheral-support.ja.md](peripheral-support.ja.md)）。
+
+## 書き込みで消す範囲（Erase Flash）
+
+ツール → Erase Flash で選びます。
+
+| 項目 | ch32rv に渡すもの | 動き |
+|---|---|---|
+| Keep Store（既定） | 何も渡さない（ch32rv の既定 `--erase keep-store`） | `CH32RV_FLASH_STORE` で確保した末尾を残す。WCH-Link と OEP では、ch32rv が退避して書き戻す（[flash-store.ja.md](flash-store.ja.md)） |
+| All Flash | `--erase chip` | チップ全体を消す。WCH-Link、OEP、工場の ISP で効く |
+
+- 値は書き込みの設定（`upload.erase_args`）なので、切り替えても再ビルドは起きません。
+- H41x の DFU の経路は、チップ全体を消せません。All Flash を選ぶと、ch32rv が書き込みを断ります（exit 24）。
+- UIAPduino の板は HID のブートローダーでしか書かないので、このメニューがありません。
 
 ## CH32M030 を OEP probe で書かない
 

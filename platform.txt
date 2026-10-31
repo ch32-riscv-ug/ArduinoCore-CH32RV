@@ -164,7 +164,7 @@ tools.ch32rv.cmd.windows=ch32rv.exe
 #   wchlink  wchlink://<serial>, from ch32rv's discovery
 #   oep      oep://<probe>/<port>, from ch32rv's discovery (<port> is the
 #            name the probe's saved pin labels give, S of S.swdio / S.swio)
-#   hid      hid://<topology>, the UIAPduino bootloader
+#   ch32rv-hid  ch32rv-hid://<topology>, the UIAPduino bootloader
 #   ch32rv-app  ch32rv-app://<USB serial>, a running sketch with CH32RVUsbDevice's
 #            DFU runtime (its interface named "CH32RV"); written over USB alone
 #   ch32rv-isp  ch32rv-isp://<USB position>, the factory USB bootloader (1a86:55e0)
@@ -178,16 +178,22 @@ upload.tool.default=ch32rv
 upload.tool.serial=ch32rv
 upload.tool.wchlink=ch32rv
 upload.tool.oep=ch32rv
-upload.tool.hid=ch32rv_hid
+upload.tool.ch32rv-hid=ch32rv_hid
 upload.tool.ch32rv-app=ch32rv_isp
 upload.tool.ch32rv-isp=ch32rv_isp
 
 # --progress none because a recipe's stdout is not a tty; ch32rv defaults to a
 # progress bar only on one, but saying so keeps the log identical either way.
 # --confirm-run fails (exit 50) when the target does not run after the reset.
+# upload.erase_args comes from the Erase Flash menu: empty keeps the flash
+# tail a sketch declared with CH32RV_FLASH_STORE (ch32rv's default,
+# keep-store), "--erase chip" erases the whole chip. Every route is given it;
+# one that cannot erase the chip (DFU, HID) refuses it with exit 24 rather
+# than ignoring it.
+upload.erase_args=
 tools.ch32rv.upload.params.verbose=--verbose
 tools.ch32rv.upload.params.quiet=
-tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} --probe "{upload.port.address}"
+tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.erase_args} --probe "{upload.port.address}"
 
 # `upload --programmer wch-link` (programmers.txt) stays for the probe-less
 # command line: it takes the only WCH-Link attached, or the one named by
@@ -196,7 +202,7 @@ tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_na
 upload.probe_args=
 tools.ch32rv.program.params.verbose=--verbose
 tools.ch32rv.program.params.quiet=
-tools.ch32rv.program.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.probe_args}
+tools.ch32rv.program.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.erase_args} {upload.probe_args}
 
 # Over USB alone, through the factory USB ISP bootloader (docs/usb.ja.md). On a
 # ch32rv-app port, --entry auto sends DFU_DETACH (or the 1200 bps touch) to the
@@ -208,7 +214,7 @@ tools.ch32rv_isp.cmd=ch32rv
 tools.ch32rv_isp.cmd.windows=ch32rv.exe
 tools.ch32rv_isp.upload.params.verbose=--verbose
 tools.ch32rv_isp.upload.params.quiet=
-tools.ch32rv_isp.upload.pattern="{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto --app-device "{upload.port.address}" {upload.verbose}
+tools.ch32rv_isp.upload.pattern="{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto {upload.erase_args} --device "{upload.port.address}" {upload.verbose}
 
 # Over USB alone, on the parts whose sketch rewrites its own flash
 # (CH32H41x, CH32RV_FLASH_SELF_WRITE): the running sketch's DFU interface
@@ -221,7 +227,7 @@ tools.ch32rv_dfu.cmd=ch32rv
 tools.ch32rv_dfu.cmd.windows=ch32rv.exe
 tools.ch32rv_dfu.upload.params.verbose=--verbose
 tools.ch32rv_dfu.upload.params.quiet=
-tools.ch32rv_dfu.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot dfu flash "{build.path}/{build.project_name}.bin" --format bin --probe "{upload.port.address}" {upload.verbose}
+tools.ch32rv_dfu.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot dfu flash "{build.path}/{build.project_name}.bin" --format bin {upload.erase_args} --device "{upload.port.address}" {upload.verbose}
 
 # UIAPduino Pro Micro CH32V003 V1.4 product bootloader. rv003usb takes the raw
 # binary, and boot entry still needs an external action (docs/uiapduino-hid-upload.ja.md).
@@ -230,13 +236,13 @@ tools.ch32rv_hid.cmd=ch32rv
 tools.ch32rv_hid.cmd.windows=ch32rv.exe
 tools.ch32rv_hid.upload.params.verbose=--verbose
 tools.ch32rv_hid.upload.params.quiet=
-tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" --probe "{upload.port.address}" {upload.verbose}
+tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" {upload.erase_args} --device "{upload.port.address}" {upload.verbose}
 
 # ---------------------------------------------------------------- discovery
 # ch32rv lists what a plain serial scan cannot see or name: every WCH-Link as
 # wchlink://<serial>, every labelled port of an OEP probe as oep://<probe>/<port> (a device
 # with the OEP project USB ID 1209:4F45), and the UIAPduino
-# bootloader as hid://, a running CH32RVUsbDevice sketch as ch32rv-app:// and
+# bootloader as ch32rv-hid://, a running CH32RVUsbDevice sketch as ch32rv-app:// and
 # the factory USB bootloader as ch32rv-isp://. It never opens an ordinary
 # serial port. Declaring one
 # discovery means the built-in ones have to be named too.

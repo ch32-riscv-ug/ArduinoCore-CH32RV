@@ -68,7 +68,7 @@ def load_bench(path):
             raise ValueError("invalid NRST channel")
         if "upload_port" in target:
             prefix = "oep://" + target.get("usb_serial", "") + "/"
-            hid = (target["upload_port"] == "hid://" + target.get("soft_usb_topology", "")
+            hid = (target["upload_port"] == "ch32rv-hid://" + target.get("soft_usb_topology", "")
                    and target.get("soft_usb_topology") and target["chip"] == "CH32V003F4U6"
                    and target["fqbn"].endswith(":UIAPDUINO_V003_V14") and "nrst_channel" in target)
             oep = (target.get("usb_serial") and target["upload_port"].startswith(prefix)
@@ -146,7 +146,7 @@ def check_identity(target, *, sysfs=pathlib.Path("/sys/bus/usb/devices"), tty_ro
 
 
 def check_target(target, info):
-    result = info.get("target") or info.get("result", {}).get("target", {})
+    result = info.get("target", {})
     if not info.get("ok") or result.get("sku") != target["chip"]:
         raise ValueError("DUT SKU does not match the selected profile")
     if "dut_uid" in target and result.get("uid") != target["dut_uid"]:

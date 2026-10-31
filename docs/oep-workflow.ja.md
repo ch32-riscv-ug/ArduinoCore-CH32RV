@@ -75,7 +75,7 @@ Uno と同じく、プログラマの選択は要らない。板は `upload.prot
 | `wchlink://<serial>` | discovery（実装済み） | LinkE |
 | `oep://<probe>/<port>` | discovery（§3.3） | その口 |
 | OEP の probe の serial port（専用 PID の無い probe） | ch32rv が開いて describe が返る | 口が 1 つに決まればそこ（§3.4） |
-| `hid://<topology>`（UIAPduino） | discovery | HID ブートローダー |
+| `ch32rv-hid://<topology>`（UIAPduino） | discovery | HID ブートローダー |
 | ポート無し | `upload.tool.default` | ch32rv が USB を走査し、候補が 1 つならそこ。複数なら候補を並べて断る |
 
 ### 3.3 discovery
@@ -91,8 +91,8 @@ platform.txt の `pluggable_discovery.ch32rv.pattern` で登録する（1 つで
 | 出すもの | 条件 | 中身 |
 |---|---|---|
 | `wchlink://<serial>` | LinkE（`1a86:8010` / `8012`） | USB の記述子だけ。target は引かない（LinkE の attach は target のクロックを組み替える） |
-| `oep://<probe>/<port>` | 専用 PID の USB で列挙する probe（P4 の HS の口、RP2350。OEP は pid.codes で PID を取る）と、DNS-SD で見つかる TCP の probe | ラベルのある口ごとに 1 つ。名前つきの口が無い probe は `oep://<probe>/any` を 1 つ（ch32rv 0.21.1 から。`oep://<probe>` は probe 自身を指し、attach するコマンドは exit 2 で止まる）。ロック無しで設定のラベルを読む |
-| `hid://<topology>` | UIAPduino のブートローダー（`1209:b803` / `b003`） | boards.txt の `upload_port.0.vid/pid` で板名を出す |
+| `oep://<probe>/<port>` | 専用 PID の USB で列挙する probe（P4 の HS の口、RP2350。OEP は pid.codes で PID を取る）と、DNS-SD で見つかる TCP の probe | ラベルのある口ごとに 1 つ。名前つきの口が無い probe は出さない（`oep://<probe>` は probe 自身を指し、口を選ばない）。ロック無しで設定のラベルを読む |
+| `ch32rv-hid://<topology>` | UIAPduino のブートローダー（`1209:b803` / `b003`） | boards.txt の `upload_port.0.vid/pid` で板名を出す |
 | `isp://<topology>`（後で） | ISP で待つ device（`4348:55e0`） | Identify で chip を読み、LinkE の IAP は除く。properties の `chip` で boards.txt の `upload_port.N.protocol=isp` / `.chip=…` と照合して板名を出す |
 
 専用 PID の無い OEP の probe（変換チップ越しの無印 ESP32、USJ だけの P4）は discovery に出さず、利用者が serial port を選ぶ。
@@ -103,7 +103,7 @@ OEP の probe は、取得したプロジェクトの USB ID **1209:4F45** で�
 device を開いて describe の unit_id で確かめる。以前の仮の ID（303a:0002）と名前（iProduct が `OEP` で始まる）での判定は、
 2026-10-06 の一斉切り替えで互換を残さずにやめた。
 
-`oep://<probe>/<port>` の `<port>` は口の名前（ラベル `S.N` の `S`。どの段も `a-z 0-9 - .`、`any` は予約語）。address は
+`oep://<probe>/<port>` の `<port>` は口の名前（ラベル `S.N` の `S`。どの段も `a-z 0-9 - .`）。address は
 sketch.yaml や pytest の `--port` に書かれるので、読めることを優先した。ラベルを変えると address も変わる。3 段目の target
 （`<family>-<UID の 16 進>`）は任意で、探す鍵ではなく照合の値: 付ければ、書き込みなどの副作用の前に、作業の接続でその個体かを
 確かめ、違えば何もせず止める。discovery は attach しないので UID を知らず、IDE の既定は `oep://<probe>/<port>` まで。治具で
@@ -117,10 +117,14 @@ unit_id、口の名前、target の家系が使う wire をその口が持つか
 家系は wire の有無の絞り込みと、attach 後の fail-closed の照合（ch32rv の `--chip`、monitor の `chip`）にだけ使う。
 
 - 名前つきの口がある probe: `oep://<probe>/<port>` で名指す（discovery の IDE port を選ぶのがいちばん迷わない）。その名前の口が
-  無ければ止まる（ch32rv は exit 10、口の一覧つき）。口が 1 つだけなら `oep://<probe>/any` でも決まる（2 つ以上なら exit 23）。
-- 名前つきの口が無い probe: 名前の無い口を 1 つ持つとみなし、`oep://<probe>/any` で選ぶ。
-- 専用 PID の無い probe の serial port の path や `tcp:` を選んだときも同じ規則で、口が 1 つならそこ、名前の無いまま
-  複数なら止まる（exit 23、一覧つき）。そのときは `oep://<probe>/<port>` を選ぶか、ラベルつきの口を 1 つにする。
+  無ければ止まる（ch32rv は exit 10、口の一覧つき）。住所はいつも全部を書く（`any` は無い）。
+- 名前つきの口が無い probe: 住所では選べない。ch32rv の `--pins swdio=<pin>,swclk=<pin>`（1 線は `swio=<pin>`）でピンを
+  直接指定し、`oep://<probe>`（probe 自身）と組み合わせる。
+- 専用 PID の無い probe の serial port の path を渡したときは、名前つきの口がちょうど 1 つならそれを使う（道具の便利機能）。
+  2 つ以上なら止まる（一覧つき）。そのときは `oep://<probe>/<port>` を選ぶ。
+- 同じ probe に届く経路は、住所の `?via=` で選ぶ（`usb`、`bulk`、`hid`、`cdc`、`net`、`tcp:<host>:<port>`、`tty:<path>`。
+  oep-spec host guide §5.3）。ネットワークの probe は `oep://<probe>/<port>?via=net`、mDNS が届かないときは
+  `?via=tcp:<host>:<port>`。`via` は場所の一部ではなく、無ければ host が選ぶ。
 - ピンは口のラベル `S.swdio` / `S.swclk` / `S.swio` から取る。ピンを host が選ぶ wire でラベルが無ければ止まり、scan で組を探さない。
 
 ### 3.5 C（factory ISP、USB）を後から足すときの形
@@ -318,7 +322,7 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
 | oep-spec | CDC / USJ のフレームを COBS に（core §3.1）。serial port の共用の規則（§4.2）。fn 0 の describe に経路の一覧。スロットの項目（今の bind から pins と attach を移す、target_id は任意、`retry_s`）、同時に持てる接続の数の宣言、接続の一覧の操作、スロットの状態。bind の組み直し（複数のストリーム、mode、選択）と対応 mode の宣言。生の転送の再開の位置。probe 開発ガイドに再起動の抑止と、専用 PID / HID の口の推奨 |
 | oep-probe-arduino | serial port の共用（見分け、送信のキュー）。classic ESP32 に ProbeConfig（bind、NVS）。P4 を HS の口 + 専用 PID + HID の形に（USJ を COBS に、reset 抑止）。スロット、再試行、状態。bind の mode |
 | oep-client-python | package 化。シリアルのポートは常に COBS、フレームの外は雑音。接続先の抽象化（serial / USB / ブローカーの TCP）。記録の受け口。`ch32_flash` は ch32rv の OEP の書き込みが入ったら消す |
-| ch32rv | §6.2、§7.2、§3.3（`oep://`、`hid://`、後で `isp://`）、`--probe <path>`、OEP の transport と書き込み |
+| ch32rv | §6.2、§7.2、§3.3（`oep://`、`ch32rv-hid://`、後で `isp://`）、`--probe <path>`、OEP の transport と書き込み |
 | pytest-embedded-arduino-cli | 展開済み properties の fixture。自前の monitor を持つ profile で runtime を `arduino-cli monitor` の子プロセスに（§7.1） |
 | 新しいリポジトリ | `pytest-embedded-arduino-cli-ch32rv`、`pytest-embedded-wireskein` |
 | wireskein | package 化 |

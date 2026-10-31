@@ -16,7 +16,7 @@ UIAPDUINO_V003_V14.build.clock_defines=-DCH32RV_CLOCK_SYSCLK_HZ=24000000 -DCH32R
 UIAPDUINO_V003_V14.build.ldscript=ch32v003_16k_2k.ld
 UIAPDUINO_V003_V14.upload.maximum_size=16384
 UIAPDUINO_V003_V14.upload.maximum_data_size=2048
-UIAPDUINO_V003_V14.upload.protocol=hid
+UIAPDUINO_V003_V14.upload.protocol=ch32rv-hid
 UIAPDUINO_V003_V14.upload.tool=ch32rv_hid
 UIAPDUINO_V003_V14.upload.tool.default=ch32rv_hid
 UIAPDUINO_V003_V14.build.ch32rv_chip=CH32V003F4U6

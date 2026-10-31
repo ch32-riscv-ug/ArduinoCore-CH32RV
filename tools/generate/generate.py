@@ -233,7 +233,8 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
                + "menu.vio18=VIO18 Supply\n"
                + "menu.ramsplit=Flash / RAM Split\n"
-               + "menu.rstpin=Reset Pin\n")
+               + "menu.rstpin=Reset Pin\n"
+               + "menu.erase=Erase Flash\n")
 
 # Per-instance menus (ADR draft 0015): AUTO binds in begin(), Disable links
 # nothing, FIX fixes one route at build time. The point is to let a small
@@ -482,6 +483,27 @@ def rstpin_menu(board: str, series: str) -> list[str]:
         else:
             lines.append(f"{board}.menu.rstpin.{key}={entries[key]} (set at boot)")
             lines.append(f"{board}.menu.rstpin.{key}.build.rstpin_defines={rstpin_defines(series, key)}")
+    return lines
+
+
+# What an upload erases (platform.txt upload.erase_args). Keep Store first and
+# empty: ch32rv's default keeps the flash tail a sketch declared with
+# CH32RV_FLASH_STORE, which costs 1 s or so over erasing the whole chip
+# (V003 16 KB 3.1 s against 2.3 s, V307 96 KB 5.0 s against 4.0 s; ch32rv
+# 0.25). An upload.* property, so changing it rebuilds nothing. DFU and HID
+# cannot erase the chip and refuse All Flash; the HID-only UIAPduino board has
+# no menu.
+ERASE_MENU = (
+    ("keep", "Keep Store (default)", ""),
+    ("chip", "All Flash", "--erase chip"),
+)
+
+
+def erase_menu(board: str) -> list[str]:
+    lines = []
+    for key, label, args in ERASE_MENU:
+        lines.append(f"{board}.menu.erase.{key}={label}")
+        lines.append(f"{board}.menu.erase.{key}.upload.erase_args={args}")
     return lines
 
 
@@ -3918,6 +3940,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     if series in RSTPIN:
         lines += rstpin_menu(board, series)
         lines.append("")
+    lines += erase_menu(board)
+    lines.append("")
 
     return "\n".join(lines), ld_files
 

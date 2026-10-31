@@ -208,7 +208,7 @@ USB から更新へ移る入口には、CDC の1200 bps touchと DFU_DETACH が�
 
 ```sh
 # アプリのデバイスを指定すると、DFU_DETACH かタッチかを ch32rv が選んでブートローダーに入れ、書き込む
-ch32rv --non-interactive isp flash sketch.ino.elf --entry auto --app-device /dev/ttyACM0
+ch32rv --non-interactive isp flash sketch.ino.elf --entry auto --device /dev/ttyACM0
 ```
 
 **DFU ランタイムは既定で付きます。** 更新へ移行できるかと実際の更新方式は系列の実装に依存します。

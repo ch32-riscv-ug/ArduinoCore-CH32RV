@@ -48,7 +48,7 @@ def test_upload_cannot_select_another_probe(tmp_path):
 
 
 def test_hid_upload_must_match_the_configured_topology(tmp_path):
-    file = config(tmp_path, 'power_ports = [1, 4]\nsoft_usb_topology = "3-2.3.4"\nnrst_channel = 23\nupload_port = "hid://3-2.3.2"')
+    file = config(tmp_path, 'power_ports = [1, 4]\nsoft_usb_topology = "3-2.3.4"\nnrst_channel = 23\nupload_port = "ch32rv-hid://3-2.3.2"')
     file.write_text(file.read_text().replace("CH32V103R8T6", "CH32V003F4U6").replace("CH32V103:pnum=CH32V003F4U6", "UIAPDUINO_V003_V14"))
     with pytest.raises(ValueError, match="upload_port"):
         bench.load_bench(file)
@@ -65,7 +65,7 @@ def test_wrong_dut_is_rejected():
 def test_oep_chip_id_must_match():
     target = {"chip": "CH32L103C8T6", "dut_chip_id": "0x10310710"}
     with pytest.raises(ValueError, match="chip ID mismatch"):
-        bench.check_target(target, {"ok": True, "result": {"target": {"sku": target["chip"], "chip_id": "0x03500601"}}})
+        bench.check_target(target, {"ok": True, "target": {"sku": target["chip"], "chip_id": "0x03500601"}})
 
 
 def test_serial_path_must_reach_the_expected_usb_device(tmp_path):

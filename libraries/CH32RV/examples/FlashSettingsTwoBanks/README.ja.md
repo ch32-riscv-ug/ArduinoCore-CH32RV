@@ -24,4 +24,4 @@
 
 ボードと正確な Part Number を選びます。ログはハードウェア `Serial` の 115200 baud・8N1 です。アダプタ RX をボード TX、アダプタ TX をボード RX へ接続し、GND を共通にします。
 
-書き込み直すと、保存した中身が消えることがあります（経路とツールの版による）。生成された `sketch.yaml` にビルド profile があります。[ビルド規則](../../../../docs/examples-build-rules.ja.md)と[書き込み経路](../../../../docs/upload-routes.ja.md)も参照してください。
+書き込み直しても、保存した中身は残ります（ツール → Erase Flash が既定の Keep Store のとき）。All Flash を選ぶと消えます。生成された `sketch.yaml` にビルド profile があります。[ビルド規則](../../../../docs/examples-build-rules.ja.md)と[書き込み経路](../../../../docs/upload-routes.ja.md)も参照してください。

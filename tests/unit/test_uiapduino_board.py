@@ -13,7 +13,7 @@ PINS = (REPO / "variants/UIAPduino_Pro_Micro_CH32V003_V14/pins_arduino.h").read_
 def test_named_board_uses_hid_binary_upload():
     prefix = "UIAPDUINO_V003_V14"
     assert f"{prefix}.name=UIAPduino Pro Micro CH32V003 V1.4" in BOARDS
-    assert f"{prefix}.upload.protocol=hid" in BOARDS
+    assert f"{prefix}.upload.protocol=ch32rv-hid" in BOARDS
     assert f"{prefix}.upload.tool=ch32rv_hid" in BOARDS
     assert f"{prefix}.build.variant=UIAPduino_Pro_Micro_CH32V003_V14" in BOARDS
     assert f"{prefix}.menu.pnum.ANY=CH32V003F4U6 (fixed on UIAPduino V1.4)" in BOARDS
@@ -23,8 +23,8 @@ def test_named_board_uses_hid_binary_upload():
     assert pattern
     assert "boot hid flash" in pattern.group(1)
     assert "{build.project_name}.bin" in pattern.group(1)
-    # The bootloader is picked by the IDE port (hid://<topology>, ch32rv discovery), not by VID:PID.
-    assert '--probe "{upload.port.address}"' in pattern.group(1)
+    # The bootloader is picked by the IDE port (ch32rv-hid://<topology>, ch32rv discovery), not by VID:PID.
+    assert '--device "{upload.port.address}"' in pattern.group(1)
     assert ".elf" not in pattern.group(1)
 
 

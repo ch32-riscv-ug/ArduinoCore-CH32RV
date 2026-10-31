@@ -171,7 +171,7 @@ def stage_case(work, name, case, target):
         # JSON strings are valid YAML scalars. No platform version is requested: use the isolated worktree platform.
         (directory / "sketch.yaml").write_text(
             f"profiles:\n  {name}:\n    fqbn: {json.dumps(target['fqbn'])}\n"
-            + ("    protocol: hid\n" if case == "hid" or target.get("upload_port", "").startswith("hid://") else "")
+            + ("    protocol: ch32rv-hid\n" if case == "hid" or target.get("upload_port", "").startswith("ch32rv-hid://") else "")
             +
             "    port_config:\n      source: dmseq\n"
             f"      chip: {target['chip']}\n"
@@ -201,7 +201,7 @@ def record_probe(tool, target, directory, env):
                 "--non-interactive", "--json", "probe", "info"], directory / "probe-info.log", env=env))
             if not reported.get("ok"):
                 raise RuntimeError("probe.info did not succeed")
-            snapshot = reported.get("probe") or reported.get("result", {})
+            snapshot = reported["probe"]
         else:
             snapshot = oep_snapshot(target["port"])
         snapshot["metadata_status"] = "reported" if snapshot.get("firmware") else "missing_firmware"
@@ -356,7 +356,7 @@ def main(argv=None):
                     case_env = dict(env, CH32_TEST_BUILD_ID=build_id)
                     if args.execute:
                         check_identity(target)
-                        if case == "hid" or (case != "power" and target.get("upload_port", "").startswith("hid://")):
+                        if case == "hid" or (case != "power" and target.get("upload_port", "").startswith("ch32rv-hid://")):
                             enter_hid(target)
                     command = [sys.executable, "-m", "pytest", "-c", str(REPO / "pytest.ini")]
                     for plugin in PLUGINS:
@@ -370,7 +370,7 @@ def main(argv=None):
                     if case in PEER_CASES:
                         command += ["--peer-port", "s3:" + target["usb_peer_port"]]
                     if case == "hid":
-                        command += ["--flash-port", "hid://" + target["soft_usb_topology"]]
+                        command += ["--flash-port", "ch32rv-hid://" + target["soft_usb_topology"]]
                     elif target.get("upload_port"):
                         command += ["--flash-port", target["upload_port"]]
                     # A peer case builds the ESP32 sketch inside pytest too; on a loaded

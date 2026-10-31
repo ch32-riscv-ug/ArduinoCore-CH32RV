@@ -25,6 +25,7 @@ menu.spi3=SPI3
 menu.vio18=VIO18 Supply
 menu.ramsplit=Flash / RAM Split
 menu.rstpin=Reset Pin
+menu.erase=Erase Flash
 
 CH32V003.name=Generic CH32V003
 CH32V003.build.board=CH32V003
@@ -174,6 +175,11 @@ CH32V003.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as
 CH32V003.menu.rstpin.reset.build.rstpin_defines=
 CH32V003.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V003.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V003.menu.erase.keep=Keep Store (default)
+CH32V003.menu.erase.keep.upload.erase_args=
+CH32V003.menu.erase.chip=All Flash
+CH32V003.menu.erase.chip.upload.erase_args=--erase chip
 CH32V003.menu.usart1.auto=AUTO (bind at begin())
 CH32V003.menu.usart1.auto.build.usart1_mode=
 CH32V003.menu.usart1.disable=Disable
@@ -363,6 +369,11 @@ CH32V002.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as
 CH32V002.menu.rstpin.reset.build.rstpin_defines=
 CH32V002.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V002.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V002.menu.erase.keep=Keep Store (default)
+CH32V002.menu.erase.keep.upload.erase_args=
+CH32V002.menu.erase.chip=All Flash
+CH32V002.menu.erase.chip.upload.erase_args=--erase chip
 CH32V002.menu.usart1.auto=AUTO (bind at begin())
 CH32V002.menu.usart1.auto.build.usart1_mode=
 CH32V002.menu.usart1.disable=Disable
@@ -526,6 +537,11 @@ CH32V004.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as
 CH32V004.menu.rstpin.reset.build.rstpin_defines=
 CH32V004.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V004.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V004.menu.erase.keep=Keep Store (default)
+CH32V004.menu.erase.keep.upload.erase_args=
+CH32V004.menu.erase.chip=All Flash
+CH32V004.menu.erase.chip.upload.erase_args=--erase chip
 CH32V004.menu.usart1.auto=AUTO (bind at begin())
 CH32V004.menu.usart1.auto.build.usart1_mode=
 CH32V004.menu.usart1.disable=Disable
@@ -709,6 +725,11 @@ CH32V005.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as
 CH32V005.menu.rstpin.reset.build.rstpin_defines=
 CH32V005.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V005.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V005.menu.erase.keep=Keep Store (default)
+CH32V005.menu.erase.keep.upload.erase_args=
+CH32V005.menu.erase.chip=All Flash
+CH32V005.menu.erase.chip.upload.erase_args=--erase chip
 CH32V005.menu.usart1.auto=AUTO (bind at begin())
 CH32V005.menu.usart1.auto.build.usart1_mode=
 CH32V005.menu.usart1.disable=Disable
@@ -960,6 +981,11 @@ CH32V006.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as
 CH32V006.menu.rstpin.reset.build.rstpin_defines=
 CH32V006.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V006.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V006.menu.erase.keep=Keep Store (default)
+CH32V006.menu.erase.keep.upload.erase_args=
+CH32V006.menu.erase.chip=All Flash
+CH32V006.menu.erase.chip.upload.erase_args=--erase chip
 CH32V006.menu.usart1.auto=AUTO (bind at begin())
 CH32V006.menu.usart1.auto.build.usart1_mode=
 CH32V006.menu.usart1.disable=Disable
@@ -1183,6 +1209,11 @@ CH32V007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32V007.menu.rstpin.gpio.build.rstpin_defines=
 CH32V007.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32V007.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V007.menu.erase.keep=Keep Store (default)
+CH32V007.menu.erase.keep.upload.erase_args=
+CH32V007.menu.erase.chip=All Flash
+CH32V007.menu.erase.chip.upload.erase_args=--erase chip
 CH32V007.menu.usart1.auto=AUTO (bind at begin())
 CH32V007.menu.usart1.auto.build.usart1_mode=
 CH32V007.menu.usart1.disable=Disable
@@ -1406,6 +1437,11 @@ CH32M007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32M007.menu.rstpin.gpio.build.rstpin_defines=
 CH32M007.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32M007.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32M007.menu.erase.keep=Keep Store (default)
+CH32M007.menu.erase.keep.upload.erase_args=
+CH32M007.menu.erase.chip=All Flash
+CH32M007.menu.erase.chip.upload.erase_args=--erase chip
 CH32M007.menu.usart1.auto=AUTO (bind at begin())
 CH32M007.menu.usart1.auto.build.usart1_mode=
 CH32M007.menu.usart1.disable=Disable
@@ -1594,6 +1630,11 @@ CH32V103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V103.menu.erase.keep=Keep Store (default)
+CH32V103.menu.erase.keep.upload.erase_args=
+CH32V103.menu.erase.chip=All Flash
+CH32V103.menu.erase.chip.upload.erase_args=--erase chip
 CH32V103.menu.usart1.auto=AUTO (bind at begin())
 CH32V103.menu.usart1.auto.build.usart1_mode=
 CH32V103.menu.usart1.disable=Disable
@@ -1879,6 +1920,11 @@ CH32V203.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V203.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V203.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V203.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V203.menu.erase.keep=Keep Store (default)
+CH32V203.menu.erase.keep.upload.erase_args=
+CH32V203.menu.erase.chip=All Flash
+CH32V203.menu.erase.chip.upload.erase_args=--erase chip
 CH32V203.menu.usart1.auto=AUTO (bind at begin())
 CH32V203.menu.usart1.auto.build.usart1_mode=
 CH32V203.menu.usart1.disable=Disable
@@ -2078,6 +2124,11 @@ CH32V208.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V208.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V208.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V208.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V208.menu.erase.keep=Keep Store (default)
+CH32V208.menu.erase.keep.upload.erase_args=
+CH32V208.menu.erase.chip=All Flash
+CH32V208.menu.erase.chip.upload.erase_args=--erase chip
 CH32V208.menu.usart1.auto=AUTO (bind at begin())
 CH32V208.menu.usart1.auto.build.usart1_mode=
 CH32V208.menu.usart1.disable=Disable
@@ -2319,6 +2370,11 @@ CH32V303.menu.ramsplit.128k_192k.build.ramsplit_ld=128k_192k
 CH32V303.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V303.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V303.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
+
+CH32V303.menu.erase.keep=Keep Store (default)
+CH32V303.menu.erase.keep.upload.erase_args=
+CH32V303.menu.erase.chip=All Flash
+CH32V303.menu.erase.chip.upload.erase_args=--erase chip
 CH32V303.menu.usart1.auto=AUTO (bind at begin())
 CH32V303.menu.usart1.auto.build.usart1_mode=
 CH32V303.menu.usart1.disable=Disable
@@ -2587,6 +2643,11 @@ CH32V305.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V305.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V305.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V305.menu.erase.keep=Keep Store (default)
+CH32V305.menu.erase.keep.upload.erase_args=
+CH32V305.menu.erase.chip=All Flash
+CH32V305.menu.erase.chip.upload.erase_args=--erase chip
 CH32V305.menu.usart1.auto=AUTO (bind at begin())
 CH32V305.menu.usart1.auto.build.usart1_mode=
 CH32V305.menu.usart1.disable=Disable
@@ -2853,6 +2914,11 @@ CH32V307.menu.ramsplit.128k_192k.build.ramsplit_ld=128k_192k
 CH32V307.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V307.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V307.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
+
+CH32V307.menu.erase.keep=Keep Store (default)
+CH32V307.menu.erase.keep.upload.erase_args=
+CH32V307.menu.erase.chip=All Flash
+CH32V307.menu.erase.chip.upload.erase_args=--erase chip
 CH32V307.menu.usart1.auto=AUTO (bind at begin())
 CH32V307.menu.usart1.auto.build.usart1_mode=
 CH32V307.menu.usart1.disable=Disable
@@ -3124,6 +3190,11 @@ CH32V317.menu.ramsplit.128k_192k.build.ramsplit_ld=128k_192k
 CH32V317.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V317.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V317.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
+
+CH32V317.menu.erase.keep=Keep Store (default)
+CH32V317.menu.erase.keep.upload.erase_args=
+CH32V317.menu.erase.chip=All Flash
+CH32V317.menu.erase.chip.upload.erase_args=--erase chip
 CH32V317.menu.usart1.auto=AUTO (bind at begin())
 CH32V317.menu.usart1.auto.build.usart1_mode=
 CH32V317.menu.usart1.disable=Disable
@@ -3348,6 +3419,11 @@ CH32X033.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32X033.menu.rstpin.gpio.build.rstpin_defines=
 CH32X033.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X033.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32X033.menu.erase.keep=Keep Store (default)
+CH32X033.menu.erase.keep.upload.erase_args=
+CH32X033.menu.erase.chip=All Flash
+CH32X033.menu.erase.chip.upload.erase_args=--erase chip
 CH32X033.menu.usart1.auto=AUTO (bind at begin())
 CH32X033.menu.usart1.auto.build.usart1_mode=
 CH32X033.menu.usart1.disable=Disable
@@ -3576,6 +3652,11 @@ CH32X035.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32X035.menu.rstpin.gpio.build.rstpin_defines=
 CH32X035.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X035.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32X035.menu.erase.keep=Keep Store (default)
+CH32X035.menu.erase.keep.upload.erase_args=
+CH32X035.menu.erase.chip=All Flash
+CH32X035.menu.erase.chip.upload.erase_args=--erase chip
 CH32X035.menu.usart1.auto=AUTO (bind at begin())
 CH32X035.menu.usart1.auto.build.usart1_mode=
 CH32X035.menu.usart1.disable=Disable
@@ -3824,6 +3905,11 @@ CH32L103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32L103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32L103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32L103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32L103.menu.erase.keep=Keep Store (default)
+CH32L103.menu.erase.keep.upload.erase_args=
+CH32L103.menu.erase.chip=All Flash
+CH32L103.menu.erase.chip.upload.erase_args=--erase chip
 CH32L103.menu.usart1.auto=AUTO (bind at begin())
 CH32L103.menu.usart1.auto.build.usart1_mode=
 CH32L103.menu.usart1.disable=Disable
@@ -4016,6 +4102,11 @@ CH32M103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32M103.menu.erase.keep=Keep Store (default)
+CH32M103.menu.erase.keep.upload.erase_args=
+CH32M103.menu.erase.chip=All Flash
+CH32M103.menu.erase.chip.upload.erase_args=--erase chip
 CH32M103.menu.usart1.auto=AUTO (bind at begin())
 CH32M103.menu.usart1.auto.build.usart1_mode=
 CH32M103.menu.usart1.disable=Disable
@@ -4226,6 +4317,11 @@ CH32V205.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V205.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V205.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V205.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V205.menu.erase.keep=Keep Store (default)
+CH32V205.menu.erase.keep.upload.erase_args=
+CH32V205.menu.erase.chip=All Flash
+CH32V205.menu.erase.chip.upload.erase_args=--erase chip
 CH32V205.menu.usart1.auto=AUTO (bind at begin())
 CH32V205.menu.usart1.auto.build.usart1_mode=
 CH32V205.menu.usart1.disable=Disable
@@ -4587,6 +4683,11 @@ CH32V407.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V407.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V407.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V407.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V407.menu.erase.keep=Keep Store (default)
+CH32V407.menu.erase.keep.upload.erase_args=
+CH32V407.menu.erase.chip=All Flash
+CH32V407.menu.erase.chip.upload.erase_args=--erase chip
 CH32V407.menu.usart1.auto=AUTO (bind at begin())
 CH32V407.menu.usart1.auto.build.usart1_mode=
 CH32V407.menu.usart1.disable=Disable
@@ -4850,6 +4951,11 @@ CH32V467.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V467.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V467.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V467.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V467.menu.erase.keep=Keep Store (default)
+CH32V467.menu.erase.keep.upload.erase_args=
+CH32V467.menu.erase.chip=All Flash
+CH32V467.menu.erase.chip.upload.erase_args=--erase chip
 CH32V467.menu.usart1.auto=AUTO (bind at begin())
 CH32V467.menu.usart1.auto.build.usart1_mode=
 CH32V467.menu.usart1.disable=Disable
@@ -5085,6 +5191,11 @@ CH32X305.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32X305.menu.rstpin.gpio.build.rstpin_defines=
 CH32X305.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X305.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x00u -DCH32RV_RSTPIN_MASK=0x08u
+
+CH32X305.menu.erase.keep=Keep Store (default)
+CH32X305.menu.erase.keep.upload.erase_args=
+CH32X305.menu.erase.chip=All Flash
+CH32X305.menu.erase.chip.upload.erase_args=--erase chip
 CH32X305.menu.usart1.auto=AUTO (bind at begin())
 CH32X305.menu.usart1.auto.build.usart1_mode=
 CH32X305.menu.usart1.disable=Disable
@@ -5499,6 +5610,11 @@ CH32X315.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32X315.menu.rstpin.gpio.build.rstpin_defines=
 CH32X315.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X315.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x00u -DCH32RV_RSTPIN_MASK=0x08u
+
+CH32X315.menu.erase.keep=Keep Store (default)
+CH32X315.menu.erase.keep.upload.erase_args=
+CH32X315.menu.erase.chip=All Flash
+CH32X315.menu.erase.chip.upload.erase_args=--erase chip
 CH32X315.menu.usart1.auto=AUTO (bind at begin())
 CH32X315.menu.usart1.auto.build.usart1_mode=
 CH32X315.menu.usart1.disable=Disable
@@ -6061,6 +6177,11 @@ CH32M030.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32M030.menu.rstpin.gpio.build.rstpin_defines=
 CH32M030.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32M030.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32M030.menu.erase.keep=Keep Store (default)
+CH32M030.menu.erase.keep.upload.erase_args=
+CH32M030.menu.erase.chip=All Flash
+CH32M030.menu.erase.chip.upload.erase_args=--erase chip
 CH32M030.menu.usart1.auto=AUTO (bind at begin())
 CH32M030.menu.usart1.auto.build.usart1_mode=
 CH32M030.menu.usart1.disable=Disable
@@ -6211,6 +6332,11 @@ CH32H415.menu.vio18.1v8=1.8 V
 CH32H415.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
 CH32H415.menu.vio18.1v2=1.2 V
 CH32H415.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
+
+CH32H415.menu.erase.keep=Keep Store (default)
+CH32H415.menu.erase.keep.upload.erase_args=
+CH32H415.menu.erase.chip=All Flash
+CH32H415.menu.erase.chip.upload.erase_args=--erase chip
 CH32H415.menu.usart1.auto=AUTO (bind at begin())
 CH32H415.menu.usart1.auto.build.usart1_mode=
 CH32H415.menu.usart1.disable=Disable
@@ -6531,6 +6657,11 @@ CH32H416.menu.vio18.1v8=1.8 V
 CH32H416.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
 CH32H416.menu.vio18.1v2=1.2 V
 CH32H416.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
+
+CH32H416.menu.erase.keep=Keep Store (default)
+CH32H416.menu.erase.keep.upload.erase_args=
+CH32H416.menu.erase.chip=All Flash
+CH32H416.menu.erase.chip.upload.erase_args=--erase chip
 CH32H416.menu.usart1.auto=AUTO (bind at begin())
 CH32H416.menu.usart1.auto.build.usart1_mode=
 CH32H416.menu.usart1.disable=Disable
@@ -6795,6 +6926,11 @@ CH32H417.menu.vio18.1v8=1.8 V
 CH32H417.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
 CH32H417.menu.vio18.1v2=1.2 V
 CH32H417.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
+
+CH32H417.menu.erase.keep=Keep Store (default)
+CH32H417.menu.erase.keep.upload.erase_args=
+CH32H417.menu.erase.chip=All Flash
+CH32H417.menu.erase.chip.upload.erase_args=--erase chip
 CH32H417.menu.usart1.auto=AUTO (bind at begin())
 CH32H417.menu.usart1.auto.build.usart1_mode=
 CH32H417.menu.usart1.disable=Disable
@@ -7118,7 +7254,7 @@ UIAPDUINO_V003_V14.build.clock_defines=-DCH32RV_CLOCK_SYSCLK_HZ=24000000 -DCH32R
 UIAPDUINO_V003_V14.build.ldscript=ch32v003_16k_2k.ld
 UIAPDUINO_V003_V14.upload.maximum_size=16384
 UIAPDUINO_V003_V14.upload.maximum_data_size=2048
-UIAPDUINO_V003_V14.upload.protocol=hid
+UIAPDUINO_V003_V14.upload.protocol=ch32rv-hid
 UIAPDUINO_V003_V14.upload.tool=ch32rv_hid
 UIAPDUINO_V003_V14.upload.tool.default=ch32rv_hid
 UIAPDUINO_V003_V14.build.ch32rv_chip=CH32V003F4U6

@@ -78,11 +78,12 @@ V307 と H417 は、消去後の値が 0xFF ではないことから、データ
 
 | 経路 | 末尾のデータ |
 |---|---|
-| ch32rv flash、既定の `--erase auto`(V307 ではチップ全体を消す) | 消える |
-| ch32rv flash `--erase sector` | 残る |
+| ch32rv flash、既定の `--erase keep-store`(ch32rv 0.25 から。ELF の `.ch32rv_store` を退避して書き戻す) | 残る |
+| ch32rv flash `--erase chip`(Erase Flash の All Flash) | 消える |
+| ch32rv flash `--erase sector`(イメージが覆うページだけを消す) | 残る |
 | H417 の DFU(`boot dfu flash`、イメージのブロックだけ書く) | 残る |
 
-Arduino の書き込みボタンは既定で `auto` を使う。スケッチを書き込むたびに、保存した中身が消える(V307 で確認)。ほかの経路(HID、ISP)は測っていない。
+Arduino の書き込みボタンは、ツール → Erase Flash の既定(Keep Store)で `--erase` を渡さず、ch32rv の既定の keep-store で書く。HID と ISP の経路は測っていない。
 
 ## リンカーで末尾を確保する
 

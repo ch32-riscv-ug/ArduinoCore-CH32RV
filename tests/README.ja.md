@@ -32,7 +32,7 @@ uv run --project tests --locked --extra hardware python tests/run_hardware.py \
   --bench tests/fixtures/bench.local.toml --execute --out work/hardware-run
 ```
 
-[.env.example](.env.example)を `tests/.env` へコピーすれば、設備TOMLと既存の共通ロック、結果の親ディレクトリを設定できます。設定値は `uv --env-file` で明示的に読み込みます。CLIの `--bench`、`--lock`、`--out` が環境変数より優先します。`--out` を省略すると `OEP_HW_RESULTS` 内に実行ごとの新しいディレクトリを作ります。書込みには常に `--execute` が必要です。
+[.env.example](.env.example)を `tests/.env` へコピーすれば、設備TOMLと結果の親ディレクトリを設定できます。設定値は `uv --env-file` で明示的に読み込みます。CLIの `--bench`、`--out` が環境変数より優先します。機器の排他は pytest の機器ロック（`--device-lock required`）が受け持ちます。`--out` を省略すると `OEP_HW_RESULTS` 内に実行ごとの新しいディレクトリを作ります。書込みには常に `--execute` が必要です。
 
 ```sh
 uv run --project tests --locked --extra hardware --env-file tests/.env \
@@ -63,13 +63,13 @@ OEPでは `probe_unit_id` に完全な個体IDを設定してください。専�
 
 usbのホスト役は当面このPCです（`test_usb_contract.py` の `PcUsbHost`。キーボードの入力はHIDのカーネルドライバを外してから送らせるので、PCのデスクトップには届きません）。DUTは SWD で書き込み、DMSEQで指示します。ホスト役を別のマイコン（Pico）に替えるときは `PcUsbHost` だけを置き換えます。DUTはVBUSを使わず `selfPowered` で動かします。
 
-UIAPduino V003は `upload_port = "hid://<soft_usb_topology>"` を設定します。runtime／UART／GPIOでも毎回SWIO＋NRSTからbootloaderへ移行し、HIDで書き込み、ESP32上のDMSEQとfixtureで観測します。RP2350は `upload_port = "oep://<usb_serial>/<port>"` を設定します（`<port>` は probe に保存したピンのラベル `S.swdio` などの `S`）。console用のserial pathとupload先をそれぞれ指定します。
+UIAPduino V003は `upload_port = "ch32rv-hid://<soft_usb_topology>"` を設定します。runtime／UART／GPIOでも毎回SWIO＋NRSTからbootloaderへ移行し、HIDで書き込み、ESP32上のDMSEQとfixtureで観測します。RP2350は `upload_port = "oep://<usb_serial>/<port>"` を設定します（`<port>` は probe に保存したピンのラベル `S.swdio` などの `S`）。console用のserial pathとupload先をそれぞれ指定します。
 
 ## 実行とartifact
 
 `run_hardware.py` は設定・環境の準備を行い、compile/upload/monitorとDUT lifecycleは固定したpytest pluginへ渡します。Pythonテストはsketchと別に保管し、実行時にout内へ組み立てるため、テスト収集だけでuploadは始まりません。Arduinoのuser/data/downloads、platform.local.txt、sketch、生成物、ログはout内に作り、作業ツリーのコアを使用します。通常のsketchbookや `.arduino15` は変更しません。
 
-out内のArduino CLI wrapperはupload時のdiscovery timeoutを10秒にします。HID／OEPのcustom discoveryをCLI既定の1秒で打ち切らないためです。HID profileには `protocol: hid` も指定します。
+out内のArduino CLI wrapperはupload時のdiscovery timeoutを10秒にします。HID／OEPのcustom discoveryをCLI既定の1秒で打ち切らないためです。HID profileには `protocol: ch32rv-hid` も指定します。
 
 実機時は共通ロックを全期間保持し、stable serial pathとUSB topology／VID／PID／serialを照合します。Link側はDUT UID、現在のOEP target.infoがUIDを返さない経路ではchip IDとSKUを照合します。OEPのchip IDは系列・構成の識別で、DUT個体のUID保証とは区別します。
 
