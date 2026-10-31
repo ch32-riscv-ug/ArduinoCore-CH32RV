@@ -110,7 +110,7 @@ void loop() {
 | `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`peek()`（このコアの独自）、`write()`、`flush()`、`configure()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onDirectTxComplete()`、`readDirect()`、`onDirectRxComplete()`、`cancelDirectTx()`、`cancelDirectRx()`、`onTxComplete()`、`onRxData()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
 | `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`（稼働中に挿すとホストに媒体の交換を知らせる）、`isWritable()`、`vendorID()` など |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
-| `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()` |
+| `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()`。メッセージの大きさ（`messageBytes`）の既定 0 は自動で、271 バイトか、選んだ controller の Bulk-OUT のパケット（USBHS 512、USBSS 1024）の大きい方 |
 | `CH32RVUsbDeviceMscSdCard` | SPI の SD カードを MSC の中身にする。`begin(cs, SPI)`、`attach(msc)`（`#include <CH32RVUsbDeviceMscSdCard.h>`） |
 | `CH32RVUsbDeviceNet` | USB ネットワーク（CDC-NCM）。`onFrame()`、`sendFrame()`、`macAddress()`、`linkUp()`、`configure()`（NTB の大きさとバッファの数）、`stats()`、受信の流量制御の `receiveGate()` / `resumeReceive()`。IP 層は上記 |
 | `CH32RVUsbAudioFunction` | オーディオ（UAC1 / UAC2）。`addPlaybackStream()` / `addCaptureStream()`、`addFormat()`（同じ形でレート違いを 8 つまで）、`read()` / `write()`、ミュート・音量、`pollEvent()`。再生のリングがあふれたときの扱いは `playbackOverflowPolicy`（既定は古い方を捨てる）。録音側の `availableForWrite()` はこのライブラリの追加 |

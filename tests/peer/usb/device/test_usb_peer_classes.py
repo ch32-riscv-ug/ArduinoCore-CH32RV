@@ -93,6 +93,11 @@ def test_usb_peer_classes(dut, peers):
     dut.write("card\n")
     m = dut.expect(rb"CARD (\d) (\d) (\d+)\r?\n", timeout=5)
     assert m.group(1) == b"1" and m.group(2) == b"1" and int(m.group(3)) >= 1
+    # messageBytes 0 (automatic): 271 on a full-speed controller, told the host as
+    # dwMaxCCIDMessageLength, at least the bulk OUT packet (CCID 1.1 section 5.1).
+    dut.write("ccidsize\n")
+    m = dut.expect(rb"CCIDSIZE (\d+) (\d+) (\d+)\r?\n", timeout=5)
+    assert (int(m.group(1)), int(m.group(2)), int(m.group(3))) == (271, 271, 64)
 
     # Taken out after the first block of a two-block READ(10): the rest fails
     # and the second block is never asked of the backend. Its sense (02/3A/00)

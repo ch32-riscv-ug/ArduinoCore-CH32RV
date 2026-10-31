@@ -23,16 +23,25 @@ enum CH32RVUsbDeviceCcidError : uint8_t {
 /* Longest ATR ISO 7816-3 allows. */
 static constexpr size_t CH32RV_USB_DEVICE_CCID_MAX_ATR = 33;
 
-/* The message buffers by default: a 10-byte header and a short APDU
- * exchange (261). Larger exchanges: setBuffers(). */
+/* A message by default: a 10-byte header and a short APDU exchange (261).
+ * The class's own two buffers hold this or one packet of the fastest
+ * controller the part has, whichever is larger. */
 static constexpr uint16_t CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE = 10 + 261;
+static constexpr uint16_t CH32RV_USB_DEVICE_CCID_BUFFER =
+    CH32RV_USB_MAX_PACKET > CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE ? CH32RV_USB_MAX_PACKET
+                                                                   : CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE;
 
 /* EspUsbCcidConfig's names. messageBytes is one whole message, its 10-byte
- * header included (12 at least); 0 keeps the class's own 271 bytes (a short
- * APDU and its answer). A bigger message needs the sketch's two buffers of
+ * header included. 0 (automatic) is decided at begin(): 271 bytes (a short
+ * APDU and its answer), or the controller's bulk OUT packet when that is
+ * larger - 512 on USBHS, 1024 on USBSS - since a short-APDU reader's
+ * dwMaxCCIDMessageLength is at least wMaxPacketSize (CCID 1.1 section 5.1).
+ * Another value, 64 to 65535, is kept as it is: begin() fails
+ * (InvalidArgument) when it is under that packet, rather than raise it. Over
+ * CH32RV_USB_DEVICE_CCID_BUFFER it needs the sketch's two buffers of
  * messageBytes each (nothing is allocated). removable false leaves the slot
  * change notifications - and their interrupt endpoint - out: insert the card
- * before begin() and keep it. */
+ * before begin() and keep it. The same rules as EspUsbDevice v3. */
 struct CH32RVUsbCcidConfig {
     size_t messageBytes = 0;
     uint8_t *messageBuffer = nullptr;
@@ -58,6 +67,8 @@ public:
     /* While the device is stopped; false (nothing changed) for a setting that
      * cannot be used. The host is told the size (dwMaxCCIDMessageLength). */
     bool configure(const CH32RVUsbCcidConfig &config);
+    /* The message size in use: messageBytes, or what 0 is decided to (for the
+     * controller begin() chose; before begin(), for the fastest one). */
     size_t messageCapacity() const;
 
     /* Put a card in the slot, answering IccPowerOn with this ATR (2..33

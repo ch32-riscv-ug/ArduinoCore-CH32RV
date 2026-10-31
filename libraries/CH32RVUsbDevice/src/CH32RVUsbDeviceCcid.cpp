@@ -92,11 +92,12 @@ static uint8_t notify_buf[NOTIFY_EP_SIZE] __attribute__((aligned(4)));
 /* One message being received, and the response built and sent from its own
  * buffer: CCID is one command at a time, so the next one cannot overwrite a
  * response still in flight. configure() can replace both. */
-static uint8_t default_message[CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE] __attribute__((aligned(4)));
-static uint8_t default_response[CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE] __attribute__((aligned(4)));
+static uint8_t default_message[CH32RV_USB_DEVICE_CCID_BUFFER] __attribute__((aligned(4)));
+static uint8_t default_response[CH32RV_USB_DEVICE_CCID_BUFFER] __attribute__((aligned(4)));
 static uint8_t *message = default_message;
 static uint8_t *response = default_response;
-static uint16_t message_size = CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE;
+static uint16_t message_bytes;    /* configure()'s messageBytes; 0 automatic */
+static uint16_t message_size = CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE;   /* in use, decided at begin() */
 static bool removable = true;
 #define MESSAGE_SIZE message_size
 static CH32RVUsbDeviceCcid *ccid;
@@ -129,12 +130,26 @@ static bool driver_notify(const uint8_t *data, size_t length)
     return ccid->device().transfer(drv.ep_notify, notify_buf, (uint16_t)length);
 }
 
+/* The message size for a controller whose largest bulk packet is `packet`. */
+static uint16_t decided_size(uint16_t packet)
+{
+    if (message_bytes) {
+        return message_bytes;
+    }
+    return packet > CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE ? packet : CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE;
+}
+
 /* One interface: bulk OUT/IN on endpoint n, interrupt IN on n + 1 (when the
- * reader is removable). */
+ * reader is removable). One message size at every speed of the controller
+ * begin() chose, decided by its largest packet. */
 static bool ccid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
                             uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
-    (void)self;
+    const uint16_t packet = self.device().maxPacketSize();
+    message_size = decided_size(packet);
+    if (message_size < packet) {
+        return self.refuseSettings();
+    }
     const uint8_t n = *ep;
     *ep = (uint8_t)(n + (removable ? 2 : 1));
     drv.ep_out = n;
@@ -185,21 +200,22 @@ CH32RVUsbDeviceCcid::CH32RVUsbDeviceCcid(CH32RVUsbDevice &device)
 bool CH32RVUsbDeviceCcid::configure(const CH32RVUsbCcidConfig &config)
 {
     const bool own = !config.messageBuffer && !config.responseBuffer;
-    const size_t size = config.messageBytes ? config.messageBytes : CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE;
-    if (device().started() || size < HEADER_SIZE + 2 || size > 65535u ||
-        (own ? size > CH32RV_USB_DEVICE_CCID_DEFAULT_MESSAGE : !config.messageBuffer || !config.responseBuffer)) {
+    const size_t size = config.messageBytes;
+    if (device().started() || (size && (size < 64 || size > 65535u)) ||
+        (own ? size > CH32RV_USB_DEVICE_CCID_BUFFER : !size || !config.messageBuffer || !config.responseBuffer)) {
         return false;
     }
     message = own ? default_message : config.messageBuffer;
     response = own ? default_response : config.responseBuffer;
-    message_size = (uint16_t)size;
+    message_bytes = (uint16_t)size;
+    message_size = decided_size(device().maxPacketSize());
     removable = config.removable;
     return true;
 }
 
 size_t CH32RVUsbDeviceCcid::messageCapacity() const
 {
-    return message_size;
+    return device().started() ? message_size : decided_size(device().maxPacketSize());
 }
 
 bool CH32RVUsbDeviceCcid::mounted() const

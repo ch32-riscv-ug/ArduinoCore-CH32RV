@@ -123,7 +123,7 @@ Differences:
 `CH32RVUsbDeviceVendor` (bulk; with `peek()`, which EspUsbDevice lacks), `CH32RVUsbDeviceMsc` (a medium put in
 with `mediaPresent(true)` while running is reported to the host as changed) with
 `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` /
-`CH32RVUsbDeviceMscSdCard` (its own header), `CH32RVUsbDeviceCcid`,
+`CH32RVUsbDeviceMscSdCard` (its own header), `CH32RVUsbDeviceCcid` (`messageBytes` 0, the default, is 271 bytes or the chosen controller's bulk OUT packet - 512 on USBHS, 1024 on USBSS - whichever is larger),
 `CH32RVUsbDeviceNet` (CDC-NCM, raw frames; `configure()` sets the transfer blocks), `CH32RVUsbAudioFunction`
 (UAC1/UAC2; up to 8 rates of one PCM shape per stream; a full playback ring
 drops the oldest frames unless `playbackOverflowPolicy` says otherwise), `CH32RVUsbDeviceVideo` (UVC),

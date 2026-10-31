@@ -6,6 +6,8 @@
  *   ready <nonce>   READY <nonce> <build id> <USB started 0/1> <last error>
  *   file            FILE <size> <first line of HOST.TXT>, or FILE NONE
  *   card            CARD <present 0/1> <powered 0/1> <APDUs answered>
+ *   ccidsize        CCIDSIZE <messageCapacity()> <dwMaxCCIDMessageLength> <bulk OUT
+ *                   wMaxPacketSize>, the last two from the configuration descriptor in use
  *   events          EVENTS <configured> <resets> <observed requests> <ACKs>
  *                   <configuration length> <VID:PID from deviceDescriptor()>
  *                   <HID report length> - onBusEvent(), onAnyControlRequest()
@@ -206,6 +208,27 @@ static void reply(const char *command)
         SerialDMSeq.print(ccid.cardPowered() ? 1 : 0);
         SerialDMSeq.print(' ');
         SerialDMSeq.println((unsigned long)ccid.apduCount());
+    } else if (strcmp(command, "ccidsize") == 0) {
+        /* The CCID class descriptor (0x21, 54 bytes) and the first bulk OUT
+         * endpoint after it. */
+        const uint8_t *cfg = USBDevice.configurationDescriptor(0);
+        const uint16_t cfgLen = cfg ? (uint16_t)(cfg[2] | cfg[3] << 8) : 0;
+        uint32_t maxMessage = 0;
+        uint16_t outPacket = 0;
+        for (uint16_t i = 0; cfg && i + 2 <= cfgLen && cfg[i]; i += cfg[i]) {
+            const uint8_t *d = cfg + i;
+            if (d[1] == 0x21 && d[0] == 54) {
+                maxMessage = d[44] | (uint32_t)d[45] << 8 | (uint32_t)d[46] << 16 | (uint32_t)d[47] << 24;
+            } else if (maxMessage && !outPacket && d[1] == 5 && !(d[2] & 0x80) && (d[3] & 3) == 2) {
+                outPacket = (uint16_t)(d[4] | d[5] << 8);
+            }
+        }
+        SerialDMSeq.print("CCIDSIZE ");
+        SerialDMSeq.print((unsigned long)ccid.messageCapacity());
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print((unsigned long)maxMessage);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println(outPacket);
     } else if (strcmp(command, "events") == 0) {
         const uint8_t *cfg = USBDevice.configurationDescriptor(0);
         const uint16_t cfgLen = cfg ? (uint16_t)(cfg[2] | cfg[3] << 8) : 0;
