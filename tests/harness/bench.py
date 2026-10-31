@@ -2,7 +2,6 @@
 import pathlib
 import re
 import tomllib
-from contextlib import contextmanager
 
 CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit", "flash",
          "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net",
@@ -19,19 +18,14 @@ TARGET_KEYS = {
 }
 
 
-def load_bench(path, *, lock_path=None):
+def load_bench(path):
+    """Exclusive use is pytest's device lock (--device-lock required): the Link's
+    UART tty, or an OEP probe's own lease. The bench's shared bench.lock belongs
+    to OEP's tools and is not taken here."""
     path = pathlib.Path(path).resolve()
     data = tomllib.loads(path.read_text())
-    if set(data) != {"lock_file", "targets"}:
-        raise ValueError("bench needs only lock_file and targets")
-    if lock_path is not None:
-        data["lock_file"] = str(pathlib.Path(lock_path).resolve())
-    if not isinstance(data["lock_file"], str) or not data["lock_file"]:
-        raise ValueError("an explicit shared lock_file is required")
-    lock = pathlib.Path(data["lock_file"])
-    if not lock.is_absolute():
-        lock = path.parent / lock
-    data["lock_file"] = str(lock.resolve())
+    if set(data) != {"targets"}:
+        raise ValueError("bench needs only targets")
     if not isinstance(data["targets"], dict) or not data["targets"]:
         raise ValueError("bench needs at least one target")
     ports, topologies = set(), set()
@@ -129,17 +123,6 @@ def load_bench(path, *, lock_path=None):
                 raise ValueError("usb needs a series CH32RVUsbDevice supports")
     return data
 
-
-@contextmanager
-def shared_lock(path):
-    """Use the existing shared inode throughout hardware operation; never create a private lock."""
-    import fcntl
-    with pathlib.Path(path).open("r+") as handle:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        try:
-            yield
-        finally:
-            fcntl.flock(handle, fcntl.LOCK_UN)
 
 
 def check_probe(target, snapshot):

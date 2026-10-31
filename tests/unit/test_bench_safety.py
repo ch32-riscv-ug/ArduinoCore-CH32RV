@@ -12,8 +12,7 @@ spec.loader.exec_module(bench)
 
 def config(tmp_path, extra="", *, port="/dev/serial/by-id/probe"):
     file = tmp_path / "bench.toml"
-    file.write_text(f'''lock_file = "bench.lock"
-[targets.test]
+    file.write_text(f'''[targets.test]
 port = "{port}"
 chip = "CH32V103R8T6"
 fqbn = "ch32-riscv-ug:ch32rv:CH32V103:pnum=CH32V103R8T6"
@@ -31,11 +30,6 @@ cases = ["runtime", "power"]
 def test_power_cannot_turn_off_an_unrelated_bench(tmp_path):
     with pytest.raises(ValueError, match="only this target"):
         bench.load_bench(config(tmp_path, "power_ports = [1, 2]"))
-
-
-def test_relative_lock_resolves_from_config_directory(tmp_path):
-    loaded = bench.load_bench(config(tmp_path, "power_ports = [1]"))
-    assert loaded["lock_file"] == str(tmp_path / "bench.lock")
 
 
 def test_raw_tty_selection_is_rejected(tmp_path):
@@ -101,26 +95,12 @@ def test_oep_identity_mismatch_stops_target_operations():
     bench.check_probe(target, dict(unit_id='0070070D9394', firmware=None))
 
 
-def test_shared_lock_is_existing_and_exclusive(tmp_path):
-    lock = tmp_path / 'shared.lock'
-    with pytest.raises(FileNotFoundError):
-        with bench.shared_lock(lock):
-            pytest.fail('missing lock was created')
-    assert not lock.exists()
-    lock.touch()
-    inode = lock.stat().st_ino
-    with bench.shared_lock(lock):
-        with pytest.raises(BlockingIOError):
-            with bench.shared_lock(lock):
-                pytest.fail('busy lock was acquired')
-    with bench.shared_lock(lock):
-        assert lock.stat().st_ino == inode
-
-
-def test_explicit_lock_path_overrides_legacy_config(tmp_path):
+def test_the_bench_takes_no_shared_lock(tmp_path):
     source = config(tmp_path, 'power_ports = [1]')
-    loaded = bench.load_bench(source, lock_path=tmp_path / 'other.lock')
-    assert loaded['lock_file'] == str(tmp_path / 'other.lock')
+    source.write_text('lock_file = "bench.lock"\n' + source.read_text())
+    with pytest.raises(ValueError, match="only targets"):
+        bench.load_bench(source)
+    assert not hasattr(bench, "shared_lock")
 
 
 def usb_config(tmp_path, topology):

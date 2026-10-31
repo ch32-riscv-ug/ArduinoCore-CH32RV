@@ -1,6 +1,4 @@
 # Copy to bench.local.toml and replace every empty identity/path field.
-lock_file = "" # Absolute path shared with other tools and uhubctl users.
-
 [targets.v103-link]
 port = "" # /run/board-identify/by-id/... or /dev/serial/by-id/...
 chip = "CH32V103R8T6"

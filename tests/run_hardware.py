@@ -12,7 +12,7 @@ import sys
 import time
 import uuid
 
-from harness.bench import CASES, PEER_CASES, check_identity, check_target, check_probe, load_bench, shared_lock
+from harness.bench import CASES, PEER_CASES, check_identity, check_target, check_probe, load_bench
 from harness.provenance import oep_snapshot
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -284,7 +284,6 @@ def parse_options(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bench", type=pathlib.Path, default=os.environ.get("CH32_TEST_CONFIG"), help="explicit config; otherwise CH32_TEST_CONFIG")
     parser.add_argument("--out", type=pathlib.Path, help="new run directory; otherwise auto-number under OEP_HW_RESULTS")
-    parser.add_argument("--lock", default=os.environ.get("OEP_HW_LOCK"), help="existing shared lock; otherwise OEP_HW_LOCK or config lock_file")
     parser.add_argument("--target", action="append", help="default: all configured targets")
     parser.add_argument("--case", action="append", choices=sorted(CASES), help="default: each target's declared cases")
     parser.add_argument("--execute", action="store_true", help="upload test sketches, observe and operate explicitly configured USB power")
@@ -301,7 +300,7 @@ def parse_options(argv=None):
 
 def main(argv=None):
     args, parser = parse_options(argv)
-    bench = load_bench(args.bench, lock_path=args.lock)
+    bench = load_bench(args.bench)
     targets = args.target or list(bench["targets"])
     if len(set(targets)) != len(targets) or set(targets) - bench["targets"].keys():
         parser.error("unknown or duplicate target")
@@ -328,12 +327,7 @@ def main(argv=None):
     def save():
         (work / "result.json").write_text(json.dumps(report, indent=2) + "\n")
     save()
-    lock = None
     try:
-        if args.execute:
-            holder = shared_lock(bench["lock_file"])
-            holder.__enter__()
-            lock = holder
         for name in targets:
             target = bench["targets"][name]
             cases = args.case or target["cases"]
@@ -395,8 +389,6 @@ def main(argv=None):
                     save()
                     print(f"{name}/{case}: {result['status']}", flush=True)
     finally:
-        if lock:
-            lock.__exit__(None, None, None)
         save()
     print(work / "result.json")
     return int(any(r["status"] in {"FAIL", "ENVIRONMENT_ERROR"} for r in report["cases"]))
