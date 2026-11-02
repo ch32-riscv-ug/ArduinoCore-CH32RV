@@ -70,6 +70,14 @@ Over TLS, connect by host name: the certificate is checked against it.
 
 For a sketch using DHCP, a TCP server and client, UDP and DNS, the network adds about 44 KB of flash (lwIP about 37 KB, this library about 6 KB) and about 22 KB of static RAM (lwIP's 10 KB transmit heap, 9 KB receive pool ...), plus 2.9 KB per open connection. The V407 and H41x get larger windows and pools (about 60 KB static; 12 TCP connections instead of 6), and so do the V307/V317 with 128 KB of RAM or more in the Flash / RAM Split menu (TcpEchoServer: 37 KB of static RAM at 64 KB, 77 KB at 128 KB). The configuration is `src/lwipopts.h`.
 
+## Calling lwIP directly
+
+A library may use lwIP's raw API itself (`tcp_*`, `udp_*`, `pbuf_*`, `sys_timeout()` ...), as an MQTT broker or a VPN does:
+
+- Call `Network.begin()` first (an interface's `begin()` does it too): it starts lwIP and has the core run it after each `loop()` and inside `delay()`.
+- Call lwIP only in task context - `setup()`, `loop()`, and lwIP's own callbacks, `sys_timeout()`'s included, which run in that same task. Never from an interrupt: lwIP is built without an OS (NO_SYS) and is not reentrant.
+- What stays the same is this calling context. lwIP's version and `src/lwipopts.h` (pools, connection counts, per series and RAM) may change with a core release.
+
 ## Writing a link driver
 
 Derive from `NetworkInterface`; everything is called in task context, never from an interrupt:
