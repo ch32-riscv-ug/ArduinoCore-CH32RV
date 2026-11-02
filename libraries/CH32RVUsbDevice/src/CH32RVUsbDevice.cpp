@@ -26,48 +26,6 @@ const char *(*ch32rv_usb_extra_string)(uint8_t index);
 /* Filled by CH32RVUsbDevicePlatform.cpp, when linked. */
 CH32RVUsbPlatform ch32rv_usb_platform;
 
-/* For a sketch that looks: the descriptors are not kept, so these produce
- * them into a buffer of their own - linked only when called. */
-const uint8_t *CH32RVUsbDevice::bosDescriptor() const
-{
-    static uint8_t buf[5 + 24 + 28];
-    const CH32RVUsbPlatform &p = ch32rv_usb_platform;
-    if (!p.bosLength || p.bosLength > sizeof buf) {
-        return nullptr;
-    }
-    CH32RVUsbDescriptorWriter w;
-    w.out = buf;
-    w.room = sizeof buf;
-    p.bosWrite(w);
-    return buf;
-}
-
-uint16_t CH32RVUsbDevice::bosDescriptorLength() const
-{
-    return ch32rv_usb_platform.bosLength;
-}
-
-/* Up to 512 bytes (four functions with DeviceInterfaceGUIDs); longer sets are
- * still served to the host, only not shown here. */
-const uint8_t *CH32RVUsbDevice::microsoftOs20Descriptor() const
-{
-    static uint8_t buf[512];
-    const CH32RVUsbPlatform &p = ch32rv_usb_platform;
-    if (!p.msOs20Length || p.msOs20Length > sizeof buf) {
-        return nullptr;
-    }
-    CH32RVUsbDescriptorWriter w;
-    w.out = buf;
-    w.room = sizeof buf;
-    p.msOs20Write(w);
-    return buf;
-}
-
-uint16_t CH32RVUsbDevice::microsoftOs20DescriptorLength() const
-{
-    return ch32rv_usb_platform.msOs20Length;
-}
-
 uint16_t CH32RVUsbDevice::microsoftOs20VendorRevision() const
 {
     return ch32rv_usb_platform.msOs20Revision;

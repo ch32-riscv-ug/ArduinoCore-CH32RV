@@ -10,7 +10,7 @@ struct UsbNetSettings {
 UsbNetSettings settings;
 }
 
-static NetworkUsbNcm &interface_of(CH32RVUsbDeviceNet &ncm, NetworkUsbNcm *&slot)
+NetworkUsbNcm &ch32rv_net::usbNcmInterface(CH32RVUsbDeviceNet &ncm, NetworkUsbNcm *&slot)
 {
     if (!slot) {
         slot = new NetworkUsbNcm(ncm);
@@ -25,7 +25,7 @@ bool CH32RVUsbDeviceNet::ipConfig(IPAddress local, IPAddress gateway, IPAddress 
         return false;
     }
     settings.configured = true;
-    NetworkUsbNcm &ifc = interface_of(*this, _network);
+    NetworkUsbNcm &ifc = ch32rv_net::usbNcmInterface(*this, _network);
     if (!settings.client) {
         ifc.config(local, gateway, subnet);
     }
@@ -41,7 +41,7 @@ bool CH32RVUsbDeviceNet::dhcpServer(bool enable)
     if (enable) {
         settings.client = false;
     }
-    interface_of(*this, _network);
+    ch32rv_net::usbNcmInterface(*this, _network);
     return true;
 }
 
@@ -54,7 +54,7 @@ bool CH32RVUsbDeviceNet::dhcpClient(bool enable)
     if (enable) {
         settings.server = false;
     }
-    interface_of(*this, _network);
+    ch32rv_net::usbNcmInterface(*this, _network);
     return true;
 }
 
@@ -63,7 +63,7 @@ bool CH32RVUsbDeviceNet::dhcpAdvertiseGateway(bool enable)
     if (_networkBegun) {
         return false;
     }
-    interface_of(*this, _network).dhcpAdvertiseGateway(enable);
+    ch32rv_net::usbNcmInterface(*this, _network).dhcpAdvertiseGateway(enable);
     return true;
 }
 
@@ -72,7 +72,7 @@ bool CH32RVUsbDeviceNet::dhcpDns(IPAddress dns)
     if (_networkBegun) {
         return false;
     }
-    interface_of(*this, _network).dhcpDns(dns);
+    ch32rv_net::usbNcmInterface(*this, _network).dhcpDns(dns);
     return true;
 }
 
@@ -82,7 +82,7 @@ bool CH32RVUsbDeviceNet::defaultRoute(bool enable)
         return false;
     }
     settings.defaultRoute = enable;
-    interface_of(*this, _network);
+    ch32rv_net::usbNcmInterface(*this, _network);
     return true;
 }
 
@@ -91,7 +91,7 @@ bool CH32RVUsbDeviceNet::beginNetwork()
     if (_networkBegun) {
         return false;
     }
-    NetworkUsbNcm &ifc = interface_of(*this, _network);
+    NetworkUsbNcm &ifc = ch32rv_net::usbNcmInterface(*this, _network);
     if (settings.client) {
         ifc.config();                       /* all zero: DHCP */
     }

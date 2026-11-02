@@ -405,12 +405,8 @@ public:
     bool sendHidReport(uint8_t instance, uint8_t reportId, const void *data, size_t length,
                        uint32_t timeoutMs = 100);
 
-    /* The BOS and Microsoft OS 2.0 set in use (null / 0 without one), and
-     * the wVendorRevision that applied. */
-    const uint8_t *bosDescriptor() const;
-    uint16_t bosDescriptorLength() const;
-    const uint8_t *microsoftOs20Descriptor() const;
-    uint16_t microsoftOs20DescriptorLength() const;
+    /* The wVendorRevision of the Microsoft OS 2.0 set in use (the set itself:
+     * microsoftOs20Descriptor() below). */
     uint16_t microsoftOs20VendorRevision() const;
     bool microsoftOs20UsesSubsets() const;
     /* Interfaces in the configuration (after begin()). */
@@ -447,8 +443,9 @@ public:
     CH32RVUsbSpeed speed() const;
     bool highSpeed() const { return speed() != CH32RVUsbSpeed::Full; }
 
-    /* For the class objects (EspUsbDevice::addClass). */
-    bool attach(CH32RVUsbDeviceFunction &f);
+    /* EspUsbDevice's way to add a class. A class object attaches itself when
+     * it is made, so this only says whether it is in: true when it is, false
+     * once begun (AlreadyStarted) or past its class's instances. */
     bool addClass(CH32RVUsbDeviceFunction *f) { return f && attach(*f); }
     const CH32RVUsbDeviceConfig &config() const { return _config; }
     /* The largest packet the controller's endpoints hold (once begun; before,
@@ -502,6 +499,8 @@ public:
     uint32_t droppedControlRequests() const;
 
 private:
+    /* The class objects attach themselves (CH32RVUsbDeviceFunction's constructor). */
+    bool attach(CH32RVUsbDeviceFunction &f);
     CH32RVUsbDeviceFunction *_first = nullptr;   /* the functions, in declaration order */
     CH32RVUsbDeviceConfig _config;
     uint8_t _count = 0;
