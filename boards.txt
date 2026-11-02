@@ -7,6 +7,7 @@ menu.clock=CPU Clock
 menu.clocksrc=Clock Source
 menu.opt=Optimize
 menu.rtlib=Floating Point
+menu.parsefloat=parseFloat
 menu.usart1=USART1
 menu.usart2=USART2
 menu.usart3=USART3
@@ -119,42 +120,18 @@ CH32V003.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V003.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V003.menu.opt.osstd.build.optimize_flags=
 
-CH32V003.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V003.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V003.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V003.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V003.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V003.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V003.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V003.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V003.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V003.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V003.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V003.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V003.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V003.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V003.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V003.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V003.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V003.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V003.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V003.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V003.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V003.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V003.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V003.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V003.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V003.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V003.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V003.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V003.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V003.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V003.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V003.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V003.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V003.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V003.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V003.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V003.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V003.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V003.menu.rtlib.fltf.build.rtlib_flags=
+CH32V003.menu.rtlib.flt=Float (32-bit)
+CH32V003.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V003.menu.rtlib.flt.build.rtlib_flags=
+CH32V003.menu.rtlib.dbl=Double (64-bit)
+CH32V003.menu.rtlib.dbl.build.fp_flags=
+CH32V003.menu.rtlib.dbl.build.rtlib_flags=
+CH32V003.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V003.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V003.menu.rtlib.dblf.build.rtlib_flags=
 CH32V003.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB; too big for 16 KB parts)
 CH32V003.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V003.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -170,6 +147,15 @@ CH32V003.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V003.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V003.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V003.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V003.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V003.menu.parsefloat.auto.build.parse_defines=
+CH32V003.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V003.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V003.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V003.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V003.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V003.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V003.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
 CH32V003.menu.rstpin.reset.build.rstpin_defines=
@@ -313,42 +299,18 @@ CH32V002.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V002.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V002.menu.opt.osstd.build.optimize_flags=
 
-CH32V002.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V002.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V002.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V002.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V002.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V002.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V002.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V002.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V002.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V002.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V002.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V002.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V002.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V002.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V002.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V002.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V002.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V002.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V002.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V002.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V002.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V002.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V002.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V002.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V002.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V002.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V002.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V002.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V002.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V002.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V002.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V002.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V002.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V002.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V002.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V002.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V002.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V002.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V002.menu.rtlib.fltf.build.rtlib_flags=
+CH32V002.menu.rtlib.flt=Float (32-bit)
+CH32V002.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V002.menu.rtlib.flt.build.rtlib_flags=
+CH32V002.menu.rtlib.dbl=Double (64-bit)
+CH32V002.menu.rtlib.dbl.build.fp_flags=
+CH32V002.menu.rtlib.dbl.build.rtlib_flags=
+CH32V002.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V002.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V002.menu.rtlib.dblf.build.rtlib_flags=
 CH32V002.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB; too big for 16 KB parts)
 CH32V002.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V002.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -364,6 +326,15 @@ CH32V002.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V002.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V002.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V002.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V002.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V002.menu.parsefloat.auto.build.parse_defines=
+CH32V002.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V002.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V002.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V002.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V002.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V002.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V002.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
 CH32V002.menu.rstpin.reset.build.rstpin_defines=
@@ -481,42 +452,18 @@ CH32V004.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V004.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V004.menu.opt.osstd.build.optimize_flags=
 
-CH32V004.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V004.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V004.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V004.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V004.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V004.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V004.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V004.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V004.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V004.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V004.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V004.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V004.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V004.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V004.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V004.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V004.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V004.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V004.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V004.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V004.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V004.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V004.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V004.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V004.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V004.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V004.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V004.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V004.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V004.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V004.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V004.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V004.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V004.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V004.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V004.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V004.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V004.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V004.menu.rtlib.fltf.build.rtlib_flags=
+CH32V004.menu.rtlib.flt=Float (32-bit)
+CH32V004.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V004.menu.rtlib.flt.build.rtlib_flags=
+CH32V004.menu.rtlib.dbl=Double (64-bit)
+CH32V004.menu.rtlib.dbl.build.fp_flags=
+CH32V004.menu.rtlib.dbl.build.rtlib_flags=
+CH32V004.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V004.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V004.menu.rtlib.dblf.build.rtlib_flags=
 CH32V004.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V004.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V004.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -532,6 +479,15 @@ CH32V004.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V004.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V004.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V004.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V004.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V004.menu.parsefloat.auto.build.parse_defines=
+CH32V004.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V004.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V004.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V004.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V004.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V004.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V004.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
 CH32V004.menu.rstpin.reset.build.rstpin_defines=
@@ -669,42 +625,18 @@ CH32V005.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V005.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V005.menu.opt.osstd.build.optimize_flags=
 
-CH32V005.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V005.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V005.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V005.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V005.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V005.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V005.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V005.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V005.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V005.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V005.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V005.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V005.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V005.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V005.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V005.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V005.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V005.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V005.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V005.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V005.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V005.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V005.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V005.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V005.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V005.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V005.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V005.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V005.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V005.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V005.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V005.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V005.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V005.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V005.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V005.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V005.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V005.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V005.menu.rtlib.fltf.build.rtlib_flags=
+CH32V005.menu.rtlib.flt=Float (32-bit)
+CH32V005.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V005.menu.rtlib.flt.build.rtlib_flags=
+CH32V005.menu.rtlib.dbl=Double (64-bit)
+CH32V005.menu.rtlib.dbl.build.fp_flags=
+CH32V005.menu.rtlib.dbl.build.rtlib_flags=
+CH32V005.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V005.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V005.menu.rtlib.dblf.build.rtlib_flags=
 CH32V005.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V005.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V005.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -720,6 +652,15 @@ CH32V005.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V005.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V005.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V005.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V005.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V005.menu.parsefloat.auto.build.parse_defines=
+CH32V005.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V005.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V005.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V005.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V005.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V005.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V005.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
 CH32V005.menu.rstpin.reset.build.rstpin_defines=
@@ -925,42 +866,18 @@ CH32V006.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V006.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V006.menu.opt.osstd.build.optimize_flags=
 
-CH32V006.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V006.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V006.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V006.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V006.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V006.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V006.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V006.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V006.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V006.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V006.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V006.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V006.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V006.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V006.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V006.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V006.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V006.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V006.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V006.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V006.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V006.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V006.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V006.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V006.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V006.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V006.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V006.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V006.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V006.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V006.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V006.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V006.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V006.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V006.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V006.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V006.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V006.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V006.menu.rtlib.fltf.build.rtlib_flags=
+CH32V006.menu.rtlib.flt=Float (32-bit)
+CH32V006.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V006.menu.rtlib.flt.build.rtlib_flags=
+CH32V006.menu.rtlib.dbl=Double (64-bit)
+CH32V006.menu.rtlib.dbl.build.fp_flags=
+CH32V006.menu.rtlib.dbl.build.rtlib_flags=
+CH32V006.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V006.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V006.menu.rtlib.dblf.build.rtlib_flags=
 CH32V006.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB; too big for 16 KB parts)
 CH32V006.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V006.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -976,6 +893,15 @@ CH32V006.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V006.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V006.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V006.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V006.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V006.menu.parsefloat.auto.build.parse_defines=
+CH32V006.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V006.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V006.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V006.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V006.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V006.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V006.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
 CH32V006.menu.rstpin.reset.build.rstpin_defines=
@@ -1153,42 +1079,18 @@ CH32V007.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V007.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V007.menu.opt.osstd.build.optimize_flags=
 
-CH32V007.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V007.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V007.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V007.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V007.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V007.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V007.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V007.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V007.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V007.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V007.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V007.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V007.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V007.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V007.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V007.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V007.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V007.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V007.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V007.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V007.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V007.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V007.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V007.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V007.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V007.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V007.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V007.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V007.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V007.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V007.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V007.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V007.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V007.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V007.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V007.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V007.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V007.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V007.menu.rtlib.fltf.build.rtlib_flags=
+CH32V007.menu.rtlib.flt=Float (32-bit)
+CH32V007.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V007.menu.rtlib.flt.build.rtlib_flags=
+CH32V007.menu.rtlib.dbl=Double (64-bit)
+CH32V007.menu.rtlib.dbl.build.fp_flags=
+CH32V007.menu.rtlib.dbl.build.rtlib_flags=
+CH32V007.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V007.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V007.menu.rtlib.dblf.build.rtlib_flags=
 CH32V007.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V007.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V007.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -1204,6 +1106,15 @@ CH32V007.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V007.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V007.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V007.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V007.menu.parsefloat.auto.build.parse_defines=
+CH32V007.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V007.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V007.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V007.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V007.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V007.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
 CH32V007.menu.rstpin.gpio.build.rstpin_defines=
@@ -1381,42 +1292,18 @@ CH32M007.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32M007.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M007.menu.opt.osstd.build.optimize_flags=
 
-CH32M007.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32M007.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32M007.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32M007.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32M007.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32M007.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32M007.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32M007.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32M007.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32M007.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32M007.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32M007.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32M007.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32M007.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32M007.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32M007.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32M007.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32M007.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32M007.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32M007.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32M007.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32M007.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32M007.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32M007.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32M007.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32M007.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32M007.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32M007.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32M007.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32M007.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32M007.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32M007.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32M007.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32M007.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32M007.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32M007.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32M007.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32M007.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M007.menu.rtlib.fltf.build.rtlib_flags=
+CH32M007.menu.rtlib.flt=Float (32-bit)
+CH32M007.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M007.menu.rtlib.flt.build.rtlib_flags=
+CH32M007.menu.rtlib.dbl=Double (64-bit)
+CH32M007.menu.rtlib.dbl.build.fp_flags=
+CH32M007.menu.rtlib.dbl.build.rtlib_flags=
+CH32M007.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32M007.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M007.menu.rtlib.dblf.build.rtlib_flags=
 CH32M007.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32M007.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M007.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -1432,6 +1319,15 @@ CH32M007.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M007.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M007.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M007.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32M007.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32M007.menu.parsefloat.auto.build.parse_defines=
+CH32M007.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32M007.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32M007.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32M007.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32M007.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32M007.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32M007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
 CH32M007.menu.rstpin.gpio.build.rstpin_defines=
@@ -1579,42 +1475,18 @@ CH32V103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V103.menu.opt.osstd.build.optimize_flags=
 
-CH32V103.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V103.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V103.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V103.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V103.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V103.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V103.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V103.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V103.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V103.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V103.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V103.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V103.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V103.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V103.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V103.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V103.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V103.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V103.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V103.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V103.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V103.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V103.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V103.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V103.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V103.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V103.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V103.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V103.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V103.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V103.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V103.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V103.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V103.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V103.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V103.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V103.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V103.menu.rtlib.fltf.build.rtlib_flags=
+CH32V103.menu.rtlib.flt=Float (32-bit)
+CH32V103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V103.menu.rtlib.flt.build.rtlib_flags=
+CH32V103.menu.rtlib.dbl=Double (64-bit)
+CH32V103.menu.rtlib.dbl.build.fp_flags=
+CH32V103.menu.rtlib.dbl.build.rtlib_flags=
+CH32V103.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V103.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V103.menu.rtlib.dblf.build.rtlib_flags=
 CH32V103.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V103.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V103.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -1630,6 +1502,15 @@ CH32V103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V103.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V103.menu.parsefloat.auto.build.parse_defines=
+CH32V103.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V103.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V103.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V103.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V103.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V103.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V103.menu.erase.keep=Keep Store (default)
 CH32V103.menu.erase.keep.upload.erase_args=
@@ -1869,42 +1750,18 @@ CH32V203.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V203.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V203.menu.opt.osstd.build.optimize_flags=
 
-CH32V203.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V203.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V203.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V203.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V203.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V203.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V203.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V203.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V203.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V203.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V203.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V203.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V203.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V203.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V203.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V203.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V203.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V203.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V203.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V203.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V203.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V203.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V203.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V203.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V203.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V203.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V203.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V203.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V203.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V203.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V203.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V203.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V203.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V203.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V203.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V203.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V203.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V203.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V203.menu.rtlib.fltf.build.rtlib_flags=
+CH32V203.menu.rtlib.flt=Float (32-bit)
+CH32V203.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V203.menu.rtlib.flt.build.rtlib_flags=
+CH32V203.menu.rtlib.dbl=Double (64-bit)
+CH32V203.menu.rtlib.dbl.build.fp_flags=
+CH32V203.menu.rtlib.dbl.build.rtlib_flags=
+CH32V203.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V203.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V203.menu.rtlib.dblf.build.rtlib_flags=
 CH32V203.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V203.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V203.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -1920,6 +1777,15 @@ CH32V203.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V203.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V203.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V203.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V203.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V203.menu.parsefloat.auto.build.parse_defines=
+CH32V203.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V203.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V203.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V203.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V203.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V203.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V203.menu.erase.keep=Keep Store (default)
 CH32V203.menu.erase.keep.upload.erase_args=
@@ -2073,42 +1939,18 @@ CH32V208.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V208.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V208.menu.opt.osstd.build.optimize_flags=
 
-CH32V208.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V208.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V208.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V208.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V208.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V208.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V208.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V208.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V208.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V208.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V208.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V208.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V208.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V208.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V208.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V208.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V208.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V208.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V208.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V208.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V208.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V208.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V208.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V208.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V208.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V208.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V208.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V208.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V208.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V208.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V208.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V208.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V208.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V208.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V208.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V208.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V208.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V208.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V208.menu.rtlib.fltf.build.rtlib_flags=
+CH32V208.menu.rtlib.flt=Float (32-bit)
+CH32V208.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V208.menu.rtlib.flt.build.rtlib_flags=
+CH32V208.menu.rtlib.dbl=Double (64-bit)
+CH32V208.menu.rtlib.dbl.build.fp_flags=
+CH32V208.menu.rtlib.dbl.build.rtlib_flags=
+CH32V208.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V208.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V208.menu.rtlib.dblf.build.rtlib_flags=
 CH32V208.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V208.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V208.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -2124,6 +1966,15 @@ CH32V208.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V208.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V208.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V208.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V208.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V208.menu.parsefloat.auto.build.parse_defines=
+CH32V208.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V208.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V208.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V208.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V208.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V208.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V208.menu.erase.keep=Keep Store (default)
 CH32V208.menu.erase.keep.upload.erase_args=
@@ -2293,42 +2144,18 @@ CH32V303.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V303.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V303.menu.opt.osstd.build.optimize_flags=
 
-CH32V303.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V303.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V303.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V303.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V303.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V303.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V303.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V303.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V303.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V303.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V303.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V303.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V303.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V303.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V303.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V303.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V303.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V303.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V303.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V303.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V303.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V303.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V303.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V303.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V303.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V303.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V303.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V303.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V303.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V303.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V303.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V303.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V303.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V303.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V303.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V303.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V303.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V303.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V303.menu.rtlib.fltf.build.rtlib_flags=
+CH32V303.menu.rtlib.flt=Float (32-bit)
+CH32V303.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V303.menu.rtlib.flt.build.rtlib_flags=
+CH32V303.menu.rtlib.dbl=Double (64-bit)
+CH32V303.menu.rtlib.dbl.build.fp_flags=
+CH32V303.menu.rtlib.dbl.build.rtlib_flags=
+CH32V303.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V303.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V303.menu.rtlib.dblf.build.rtlib_flags=
 CH32V303.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V303.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V303.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -2344,6 +2171,15 @@ CH32V303.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V303.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V303.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V303.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V303.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V303.menu.parsefloat.auto.build.parse_defines=
+CH32V303.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V303.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V303.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V303.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V303.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V303.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V303.menu.ramsplit.256k_64k=256 KB flash + 64 KB RAM (factory setting)
 CH32V303.menu.ramsplit.256k_64k.build.ramsplit_ld=256k_64k
@@ -2592,42 +2428,18 @@ CH32V305.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V305.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V305.menu.opt.osstd.build.optimize_flags=
 
-CH32V305.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V305.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V305.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V305.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V305.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V305.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V305.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V305.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V305.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V305.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V305.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V305.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V305.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V305.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V305.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V305.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V305.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V305.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V305.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V305.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V305.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V305.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V305.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V305.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V305.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V305.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V305.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V305.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V305.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V305.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V305.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V305.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V305.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V305.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V305.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V305.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V305.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V305.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V305.menu.rtlib.fltf.build.rtlib_flags=
+CH32V305.menu.rtlib.flt=Float (32-bit)
+CH32V305.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V305.menu.rtlib.flt.build.rtlib_flags=
+CH32V305.menu.rtlib.dbl=Double (64-bit)
+CH32V305.menu.rtlib.dbl.build.fp_flags=
+CH32V305.menu.rtlib.dbl.build.rtlib_flags=
+CH32V305.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V305.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V305.menu.rtlib.dblf.build.rtlib_flags=
 CH32V305.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V305.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V305.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -2643,6 +2455,15 @@ CH32V305.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V305.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V305.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V305.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V305.menu.parsefloat.auto.build.parse_defines=
+CH32V305.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V305.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V305.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V305.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V305.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V305.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V305.menu.erase.keep=Keep Store (default)
 CH32V305.menu.erase.keep.upload.erase_args=
@@ -2837,42 +2658,18 @@ CH32V307.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V307.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V307.menu.opt.osstd.build.optimize_flags=
 
-CH32V307.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V307.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V307.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V307.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V307.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V307.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V307.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V307.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V307.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V307.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V307.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V307.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V307.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V307.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V307.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V307.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V307.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V307.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V307.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V307.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V307.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V307.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V307.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V307.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V307.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V307.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V307.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V307.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V307.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V307.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V307.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V307.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V307.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V307.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V307.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V307.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V307.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V307.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V307.menu.rtlib.fltf.build.rtlib_flags=
+CH32V307.menu.rtlib.flt=Float (32-bit)
+CH32V307.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V307.menu.rtlib.flt.build.rtlib_flags=
+CH32V307.menu.rtlib.dbl=Double (64-bit)
+CH32V307.menu.rtlib.dbl.build.fp_flags=
+CH32V307.menu.rtlib.dbl.build.rtlib_flags=
+CH32V307.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V307.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V307.menu.rtlib.dblf.build.rtlib_flags=
 CH32V307.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V307.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V307.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -2888,6 +2685,15 @@ CH32V307.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V307.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V307.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V307.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V307.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V307.menu.parsefloat.auto.build.parse_defines=
+CH32V307.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V307.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V307.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V307.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V307.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V307.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V307.menu.ramsplit.256k_64k=256 KB flash + 64 KB RAM (factory setting)
 CH32V307.menu.ramsplit.256k_64k.build.ramsplit_ld=256k_64k
@@ -3113,42 +2919,18 @@ CH32V317.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V317.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V317.menu.opt.osstd.build.optimize_flags=
 
-CH32V317.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V317.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V317.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V317.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V317.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V317.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V317.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V317.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V317.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V317.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V317.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V317.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V317.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V317.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V317.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V317.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V317.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V317.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V317.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V317.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V317.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V317.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V317.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V317.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V317.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V317.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V317.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V317.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V317.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V317.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V317.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V317.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V317.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V317.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V317.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V317.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V317.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V317.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V317.menu.rtlib.fltf.build.rtlib_flags=
+CH32V317.menu.rtlib.flt=Float (32-bit)
+CH32V317.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V317.menu.rtlib.flt.build.rtlib_flags=
+CH32V317.menu.rtlib.dbl=Double (64-bit)
+CH32V317.menu.rtlib.dbl.build.fp_flags=
+CH32V317.menu.rtlib.dbl.build.rtlib_flags=
+CH32V317.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V317.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V317.menu.rtlib.dblf.build.rtlib_flags=
 CH32V317.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V317.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V317.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -3164,6 +2946,15 @@ CH32V317.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V317.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V317.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V317.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V317.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V317.menu.parsefloat.auto.build.parse_defines=
+CH32V317.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V317.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V317.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V317.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V317.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V317.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V317.menu.ramsplit.256k_64k=256 KB flash + 64 KB RAM (factory setting)
 CH32V317.menu.ramsplit.256k_64k.build.ramsplit_ld=256k_64k
@@ -3363,42 +3154,18 @@ CH32X033.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32X033.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X033.menu.opt.osstd.build.optimize_flags=
 
-CH32X033.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32X033.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32X033.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32X033.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32X033.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32X033.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32X033.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32X033.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32X033.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32X033.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32X033.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32X033.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32X033.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32X033.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32X033.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32X033.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32X033.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32X033.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32X033.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32X033.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32X033.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32X033.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32X033.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32X033.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32X033.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32X033.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32X033.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32X033.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32X033.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32X033.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32X033.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32X033.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32X033.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32X033.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32X033.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32X033.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32X033.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32X033.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X033.menu.rtlib.fltf.build.rtlib_flags=
+CH32X033.menu.rtlib.flt=Float (32-bit)
+CH32X033.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X033.menu.rtlib.flt.build.rtlib_flags=
+CH32X033.menu.rtlib.dbl=Double (64-bit)
+CH32X033.menu.rtlib.dbl.build.fp_flags=
+CH32X033.menu.rtlib.dbl.build.rtlib_flags=
+CH32X033.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32X033.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X033.menu.rtlib.dblf.build.rtlib_flags=
 CH32X033.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32X033.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X033.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -3414,6 +3181,15 @@ CH32X033.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X033.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X033.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X033.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32X033.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32X033.menu.parsefloat.auto.build.parse_defines=
+CH32X033.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32X033.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32X033.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32X033.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32X033.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32X033.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32X033.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
 CH32X033.menu.rstpin.gpio.build.rstpin_defines=
@@ -3596,42 +3372,18 @@ CH32X035.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32X035.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X035.menu.opt.osstd.build.optimize_flags=
 
-CH32X035.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32X035.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32X035.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32X035.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32X035.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32X035.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32X035.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32X035.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32X035.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32X035.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32X035.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32X035.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32X035.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32X035.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32X035.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32X035.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32X035.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32X035.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32X035.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32X035.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32X035.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32X035.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32X035.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32X035.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32X035.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32X035.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32X035.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32X035.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32X035.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32X035.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32X035.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32X035.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32X035.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32X035.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32X035.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32X035.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32X035.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32X035.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X035.menu.rtlib.fltf.build.rtlib_flags=
+CH32X035.menu.rtlib.flt=Float (32-bit)
+CH32X035.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X035.menu.rtlib.flt.build.rtlib_flags=
+CH32X035.menu.rtlib.dbl=Double (64-bit)
+CH32X035.menu.rtlib.dbl.build.fp_flags=
+CH32X035.menu.rtlib.dbl.build.rtlib_flags=
+CH32X035.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32X035.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X035.menu.rtlib.dblf.build.rtlib_flags=
 CH32X035.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32X035.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X035.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -3647,6 +3399,15 @@ CH32X035.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X035.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X035.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X035.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32X035.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32X035.menu.parsefloat.auto.build.parse_defines=
+CH32X035.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32X035.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32X035.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32X035.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32X035.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32X035.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32X035.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
 CH32X035.menu.rstpin.gpio.build.rstpin_defines=
@@ -3854,42 +3615,18 @@ CH32L103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32L103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32L103.menu.opt.osstd.build.optimize_flags=
 
-CH32L103.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32L103.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32L103.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32L103.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32L103.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32L103.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32L103.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32L103.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32L103.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32L103.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32L103.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32L103.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32L103.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32L103.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32L103.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32L103.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32L103.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32L103.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32L103.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32L103.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32L103.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32L103.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32L103.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32L103.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32L103.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32L103.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32L103.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32L103.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32L103.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32L103.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32L103.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32L103.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32L103.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32L103.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32L103.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32L103.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32L103.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32L103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32L103.menu.rtlib.fltf.build.rtlib_flags=
+CH32L103.menu.rtlib.flt=Float (32-bit)
+CH32L103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32L103.menu.rtlib.flt.build.rtlib_flags=
+CH32L103.menu.rtlib.dbl=Double (64-bit)
+CH32L103.menu.rtlib.dbl.build.fp_flags=
+CH32L103.menu.rtlib.dbl.build.rtlib_flags=
+CH32L103.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32L103.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32L103.menu.rtlib.dblf.build.rtlib_flags=
 CH32L103.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32L103.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32L103.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -3905,6 +3642,15 @@ CH32L103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32L103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32L103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32L103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32L103.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32L103.menu.parsefloat.auto.build.parse_defines=
+CH32L103.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32L103.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32L103.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32L103.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32L103.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32L103.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32L103.menu.erase.keep=Keep Store (default)
 CH32L103.menu.erase.keep.upload.erase_args=
@@ -4051,42 +3797,18 @@ CH32M103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32M103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M103.menu.opt.osstd.build.optimize_flags=
 
-CH32M103.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32M103.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32M103.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32M103.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32M103.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32M103.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32M103.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32M103.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32M103.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32M103.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32M103.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32M103.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32M103.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32M103.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32M103.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32M103.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32M103.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32M103.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32M103.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32M103.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32M103.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32M103.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32M103.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32M103.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32M103.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32M103.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32M103.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32M103.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32M103.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32M103.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32M103.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32M103.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32M103.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32M103.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32M103.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32M103.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32M103.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32M103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M103.menu.rtlib.fltf.build.rtlib_flags=
+CH32M103.menu.rtlib.flt=Float (32-bit)
+CH32M103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M103.menu.rtlib.flt.build.rtlib_flags=
+CH32M103.menu.rtlib.dbl=Double (64-bit)
+CH32M103.menu.rtlib.dbl.build.fp_flags=
+CH32M103.menu.rtlib.dbl.build.rtlib_flags=
+CH32M103.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32M103.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M103.menu.rtlib.dblf.build.rtlib_flags=
 CH32M103.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32M103.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M103.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -4102,6 +3824,15 @@ CH32M103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M103.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32M103.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32M103.menu.parsefloat.auto.build.parse_defines=
+CH32M103.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32M103.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32M103.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32M103.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32M103.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32M103.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32M103.menu.erase.keep=Keep Store (default)
 CH32M103.menu.erase.keep.upload.erase_args=
@@ -4266,42 +3997,18 @@ CH32V205.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V205.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V205.menu.opt.osstd.build.optimize_flags=
 
-CH32V205.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V205.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V205.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V205.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V205.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V205.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V205.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V205.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V205.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V205.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V205.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V205.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V205.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V205.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V205.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V205.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V205.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V205.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V205.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V205.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V205.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V205.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V205.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V205.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V205.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V205.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V205.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V205.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V205.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V205.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V205.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V205.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V205.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V205.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V205.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V205.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V205.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V205.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V205.menu.rtlib.fltf.build.rtlib_flags=
+CH32V205.menu.rtlib.flt=Float (32-bit)
+CH32V205.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V205.menu.rtlib.flt.build.rtlib_flags=
+CH32V205.menu.rtlib.dbl=Double (64-bit)
+CH32V205.menu.rtlib.dbl.build.fp_flags=
+CH32V205.menu.rtlib.dbl.build.rtlib_flags=
+CH32V205.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V205.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V205.menu.rtlib.dblf.build.rtlib_flags=
 CH32V205.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V205.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V205.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -4317,6 +4024,15 @@ CH32V205.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V205.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V205.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V205.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V205.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V205.menu.parsefloat.auto.build.parse_defines=
+CH32V205.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V205.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V205.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V205.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V205.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V205.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V205.menu.erase.keep=Keep Store (default)
 CH32V205.menu.erase.keep.upload.erase_args=
@@ -4632,42 +4348,18 @@ CH32V407.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V407.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V407.menu.opt.osstd.build.optimize_flags=
 
-CH32V407.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V407.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V407.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V407.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V407.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V407.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V407.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V407.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V407.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V407.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V407.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V407.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V407.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V407.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V407.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V407.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V407.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V407.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V407.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V407.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V407.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V407.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V407.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V407.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V407.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V407.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V407.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V407.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V407.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V407.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V407.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V407.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V407.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V407.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V407.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V407.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V407.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V407.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V407.menu.rtlib.fltf.build.rtlib_flags=
+CH32V407.menu.rtlib.flt=Float (32-bit)
+CH32V407.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V407.menu.rtlib.flt.build.rtlib_flags=
+CH32V407.menu.rtlib.dbl=Double (64-bit)
+CH32V407.menu.rtlib.dbl.build.fp_flags=
+CH32V407.menu.rtlib.dbl.build.rtlib_flags=
+CH32V407.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V407.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V407.menu.rtlib.dblf.build.rtlib_flags=
 CH32V407.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V407.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V407.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -4683,6 +4375,15 @@ CH32V407.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V407.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V407.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V407.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V407.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V407.menu.parsefloat.auto.build.parse_defines=
+CH32V407.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V407.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V407.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V407.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V407.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V407.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V407.menu.erase.keep=Keep Store (default)
 CH32V407.menu.erase.keep.upload.erase_args=
@@ -4900,42 +4601,18 @@ CH32V467.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32V467.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V467.menu.opt.osstd.build.optimize_flags=
 
-CH32V467.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32V467.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V467.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32V467.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32V467.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32V467.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32V467.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32V467.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32V467.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32V467.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32V467.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V467.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32V467.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32V467.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32V467.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32V467.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32V467.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V467.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32V467.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32V467.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32V467.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32V467.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32V467.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32V467.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32V467.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32V467.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32V467.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32V467.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32V467.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32V467.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32V467.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32V467.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32V467.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32V467.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32V467.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32V467.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32V467.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32V467.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V467.menu.rtlib.fltf.build.rtlib_flags=
+CH32V467.menu.rtlib.flt=Float (32-bit)
+CH32V467.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V467.menu.rtlib.flt.build.rtlib_flags=
+CH32V467.menu.rtlib.dbl=Double (64-bit)
+CH32V467.menu.rtlib.dbl.build.fp_flags=
+CH32V467.menu.rtlib.dbl.build.rtlib_flags=
+CH32V467.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32V467.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32V467.menu.rtlib.dblf.build.rtlib_flags=
 CH32V467.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32V467.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V467.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -4951,6 +4628,15 @@ CH32V467.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V467.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V467.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32V467.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32V467.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32V467.menu.parsefloat.auto.build.parse_defines=
+CH32V467.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32V467.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32V467.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32V467.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32V467.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32V467.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32V467.menu.erase.keep=Keep Store (default)
 CH32V467.menu.erase.keep.upload.erase_args=
@@ -5135,42 +4821,18 @@ CH32X305.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32X305.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X305.menu.opt.osstd.build.optimize_flags=
 
-CH32X305.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32X305.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32X305.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32X305.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32X305.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32X305.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32X305.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32X305.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32X305.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32X305.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32X305.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32X305.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32X305.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32X305.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32X305.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32X305.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32X305.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32X305.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32X305.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32X305.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32X305.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32X305.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32X305.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32X305.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32X305.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32X305.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32X305.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32X305.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32X305.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32X305.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32X305.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32X305.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32X305.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32X305.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32X305.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32X305.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32X305.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32X305.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X305.menu.rtlib.fltf.build.rtlib_flags=
+CH32X305.menu.rtlib.flt=Float (32-bit)
+CH32X305.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X305.menu.rtlib.flt.build.rtlib_flags=
+CH32X305.menu.rtlib.dbl=Double (64-bit)
+CH32X305.menu.rtlib.dbl.build.fp_flags=
+CH32X305.menu.rtlib.dbl.build.rtlib_flags=
+CH32X305.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32X305.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X305.menu.rtlib.dblf.build.rtlib_flags=
 CH32X305.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32X305.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X305.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -5186,6 +4848,15 @@ CH32X305.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X305.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X305.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X305.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32X305.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32X305.menu.parsefloat.auto.build.parse_defines=
+CH32X305.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32X305.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32X305.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32X305.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32X305.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32X305.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32X305.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
 CH32X305.menu.rstpin.gpio.build.rstpin_defines=
@@ -5554,42 +5225,18 @@ CH32X315.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32X315.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X315.menu.opt.osstd.build.optimize_flags=
 
-CH32X315.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32X315.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32X315.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32X315.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32X315.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32X315.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32X315.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32X315.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32X315.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32X315.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32X315.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32X315.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32X315.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32X315.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32X315.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32X315.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32X315.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32X315.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32X315.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32X315.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32X315.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32X315.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32X315.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32X315.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32X315.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32X315.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32X315.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32X315.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32X315.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32X315.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32X315.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32X315.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32X315.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32X315.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32X315.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32X315.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32X315.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32X315.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X315.menu.rtlib.fltf.build.rtlib_flags=
+CH32X315.menu.rtlib.flt=Float (32-bit)
+CH32X315.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X315.menu.rtlib.flt.build.rtlib_flags=
+CH32X315.menu.rtlib.dbl=Double (64-bit)
+CH32X315.menu.rtlib.dbl.build.fp_flags=
+CH32X315.menu.rtlib.dbl.build.rtlib_flags=
+CH32X315.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32X315.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32X315.menu.rtlib.dblf.build.rtlib_flags=
 CH32X315.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32X315.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X315.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -5605,6 +5252,15 @@ CH32X315.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X315.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X315.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32X315.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32X315.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32X315.menu.parsefloat.auto.build.parse_defines=
+CH32X315.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32X315.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32X315.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32X315.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32X315.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32X315.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32X315.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
 CH32X315.menu.rstpin.gpio.build.rstpin_defines=
@@ -6121,42 +5777,18 @@ CH32M030.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32M030.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M030.menu.opt.osstd.build.optimize_flags=
 
-CH32M030.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32M030.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32M030.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32M030.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32M030.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32M030.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32M030.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32M030.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32M030.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32M030.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32M030.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32M030.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32M030.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32M030.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32M030.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32M030.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32M030.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32M030.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32M030.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32M030.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32M030.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32M030.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32M030.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32M030.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32M030.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32M030.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32M030.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32M030.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32M030.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32M030.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32M030.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32M030.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32M030.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32M030.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32M030.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32M030.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32M030.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32M030.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M030.menu.rtlib.fltf.build.rtlib_flags=
+CH32M030.menu.rtlib.flt=Float (32-bit)
+CH32M030.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M030.menu.rtlib.flt.build.rtlib_flags=
+CH32M030.menu.rtlib.dbl=Double (64-bit)
+CH32M030.menu.rtlib.dbl.build.fp_flags=
+CH32M030.menu.rtlib.dbl.build.rtlib_flags=
+CH32M030.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32M030.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32M030.menu.rtlib.dblf.build.rtlib_flags=
 CH32M030.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32M030.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M030.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -6172,6 +5804,15 @@ CH32M030.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M030.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M030.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32M030.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32M030.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32M030.menu.parsefloat.auto.build.parse_defines=
+CH32M030.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32M030.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32M030.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32M030.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32M030.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32M030.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32M030.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
 CH32M030.menu.rstpin.gpio.build.rstpin_defines=
@@ -6270,42 +5911,18 @@ CH32H415.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32H415.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H415.menu.opt.osstd.build.optimize_flags=
 
-CH32H415.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32H415.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32H415.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32H415.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32H415.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32H415.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32H415.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32H415.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32H415.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32H415.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32H415.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32H415.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32H415.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32H415.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32H415.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32H415.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32H415.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32H415.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32H415.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32H415.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32H415.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32H415.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32H415.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32H415.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32H415.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32H415.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32H415.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32H415.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32H415.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32H415.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32H415.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32H415.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32H415.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32H415.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32H415.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32H415.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32H415.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32H415.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H415.menu.rtlib.fltf.build.rtlib_flags=
+CH32H415.menu.rtlib.flt=Float (32-bit)
+CH32H415.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H415.menu.rtlib.flt.build.rtlib_flags=
+CH32H415.menu.rtlib.dbl=Double (64-bit)
+CH32H415.menu.rtlib.dbl.build.fp_flags=
+CH32H415.menu.rtlib.dbl.build.rtlib_flags=
+CH32H415.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32H415.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H415.menu.rtlib.dblf.build.rtlib_flags=
 CH32H415.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32H415.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H415.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -6321,6 +5938,15 @@ CH32H415.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H415.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32H415.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H415.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32H415.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32H415.menu.parsefloat.auto.build.parse_defines=
+CH32H415.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32H415.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32H415.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32H415.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32H415.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32H415.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32H415.menu.vio18.hw=Hardware default (XO strap)
 CH32H415.menu.vio18.hw.build.vio18_defines=
@@ -6595,42 +6221,18 @@ CH32H416.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32H416.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H416.menu.opt.osstd.build.optimize_flags=
 
-CH32H416.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32H416.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32H416.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32H416.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32H416.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32H416.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32H416.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32H416.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32H416.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32H416.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32H416.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32H416.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32H416.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32H416.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32H416.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32H416.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32H416.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32H416.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32H416.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32H416.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32H416.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32H416.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32H416.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32H416.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32H416.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32H416.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32H416.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32H416.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32H416.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32H416.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32H416.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32H416.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32H416.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32H416.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32H416.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32H416.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32H416.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32H416.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H416.menu.rtlib.fltf.build.rtlib_flags=
+CH32H416.menu.rtlib.flt=Float (32-bit)
+CH32H416.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H416.menu.rtlib.flt.build.rtlib_flags=
+CH32H416.menu.rtlib.dbl=Double (64-bit)
+CH32H416.menu.rtlib.dbl.build.fp_flags=
+CH32H416.menu.rtlib.dbl.build.rtlib_flags=
+CH32H416.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32H416.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H416.menu.rtlib.dblf.build.rtlib_flags=
 CH32H416.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32H416.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H416.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -6646,6 +6248,15 @@ CH32H416.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H416.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32H416.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H416.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32H416.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32H416.menu.parsefloat.auto.build.parse_defines=
+CH32H416.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32H416.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32H416.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32H416.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32H416.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32H416.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32H416.menu.vio18.hw=Hardware default (XO strap)
 CH32H416.menu.vio18.hw.build.vio18_defines=
@@ -6864,42 +6475,18 @@ CH32H417.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-re
 CH32H417.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H417.menu.opt.osstd.build.optimize_flags=
 
-CH32H417.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-CH32H417.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32H417.menu.rtlib.fltf_pi.build.rtlib_flags=
-CH32H417.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-CH32H417.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-CH32H417.menu.rtlib.flt_ps.build.rtlib_flags=
-CH32H417.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-CH32H417.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-CH32H417.menu.rtlib.flt_pi.build.rtlib_flags=
-CH32H417.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-CH32H417.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32H417.menu.rtlib.fltf_ps.build.rtlib_flags=
-CH32H417.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-CH32H417.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-CH32H417.menu.rtlib.flt_pd.build.rtlib_flags=
-CH32H417.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-CH32H417.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32H417.menu.rtlib.fltf_pd.build.rtlib_flags=
-CH32H417.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-CH32H417.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-CH32H417.menu.rtlib.dbl_ps.build.rtlib_flags=
-CH32H417.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-CH32H417.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-CH32H417.menu.rtlib.dbl_pi.build.rtlib_flags=
-CH32H417.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-CH32H417.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-CH32H417.menu.rtlib.dbl_pd.build.rtlib_flags=
-CH32H417.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-CH32H417.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-CH32H417.menu.rtlib.dblf_ps.build.rtlib_flags=
-CH32H417.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-CH32H417.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-CH32H417.menu.rtlib.dblf_pi.build.rtlib_flags=
-CH32H417.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-CH32H417.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-CH32H417.menu.rtlib.dblf_pd.build.rtlib_flags=
+CH32H417.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+CH32H417.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H417.menu.rtlib.fltf.build.rtlib_flags=
+CH32H417.menu.rtlib.flt=Float (32-bit)
+CH32H417.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H417.menu.rtlib.flt.build.rtlib_flags=
+CH32H417.menu.rtlib.dbl=Double (64-bit)
+CH32H417.menu.rtlib.dbl.build.fp_flags=
+CH32H417.menu.rtlib.dbl.build.rtlib_flags=
+CH32H417.menu.rtlib.dblf=Double (64-bit) + printf %f
+CH32H417.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+CH32H417.menu.rtlib.dblf.build.rtlib_flags=
 CH32H417.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB)
 CH32H417.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H417.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -6915,6 +6502,15 @@ CH32H417.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H417.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32H417.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 CH32H417.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+
+CH32H417.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+CH32H417.menu.parsefloat.auto.build.parse_defines=
+CH32H417.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+CH32H417.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+CH32H417.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+CH32H417.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+CH32H417.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+CH32H417.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
 CH32H417.menu.vio18.hw=Hardware default (XO strap)
 CH32H417.menu.vio18.hw.build.vio18_defines=
@@ -7296,42 +6892,18 @@ UIAPDUINO_V003_V14.menu.spi1.fix_pc5_pc7_pc6=FIX (SCK:PC5, MISO:PC7, MOSI:PC6)
 UIAPDUINO_V003_V14.menu.spi1.fix_pc5_pc7_pc6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 UIAPDUINO_V003_V14.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
-UIAPDUINO_V003_V14.menu.rtlib.fltf_pi=Float (32-bit) + printf %f, parseFloat in integers (default)
-UIAPDUINO_V003_V14.menu.rtlib.fltf_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-UIAPDUINO_V003_V14.menu.rtlib.fltf_pi.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.flt_ps=Float (32-bit), parseFloat in float (small)
-UIAPDUINO_V003_V14.menu.rtlib.flt_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=3
-UIAPDUINO_V003_V14.menu.rtlib.flt_ps.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.flt_pi=Float (32-bit), parseFloat in integers
-UIAPDUINO_V003_V14.menu.rtlib.flt_pi.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=2
-UIAPDUINO_V003_V14.menu.rtlib.flt_pi.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.fltf_ps=Float (32-bit) + printf %f, parseFloat in float (small)
-UIAPDUINO_V003_V14.menu.rtlib.fltf_ps.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-UIAPDUINO_V003_V14.menu.rtlib.fltf_ps.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.flt_pd=Float (32-bit), parseFloat in double
-UIAPDUINO_V003_V14.menu.rtlib.flt_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PARSE_FLOAT=1
-UIAPDUINO_V003_V14.menu.rtlib.flt_pd.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.fltf_pd=Float (32-bit) + printf %f, parseFloat in double
-UIAPDUINO_V003_V14.menu.rtlib.fltf_pd.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-UIAPDUINO_V003_V14.menu.rtlib.fltf_pd.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.dbl_ps=Double (64-bit), parseFloat in float (small)
-UIAPDUINO_V003_V14.menu.rtlib.dbl_ps.build.fp_flags=-DCH32RV_PARSE_FLOAT=3
-UIAPDUINO_V003_V14.menu.rtlib.dbl_ps.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.dbl_pi=Double (64-bit), parseFloat in integers
-UIAPDUINO_V003_V14.menu.rtlib.dbl_pi.build.fp_flags=-DCH32RV_PARSE_FLOAT=2
-UIAPDUINO_V003_V14.menu.rtlib.dbl_pi.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.dbl_pd=Double (64-bit), parseFloat in double
-UIAPDUINO_V003_V14.menu.rtlib.dbl_pd.build.fp_flags=-DCH32RV_PARSE_FLOAT=1
-UIAPDUINO_V003_V14.menu.rtlib.dbl_pd.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.dblf_ps=Double (64-bit) + printf %f, parseFloat in float (small)
-UIAPDUINO_V003_V14.menu.rtlib.dblf_ps.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=3
-UIAPDUINO_V003_V14.menu.rtlib.dblf_ps.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.dblf_pi=Double (64-bit) + printf %f, parseFloat in integers
-UIAPDUINO_V003_V14.menu.rtlib.dblf_pi.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=2
-UIAPDUINO_V003_V14.menu.rtlib.dblf_pi.build.rtlib_flags=
-UIAPDUINO_V003_V14.menu.rtlib.dblf_pd=Double (64-bit) + printf %f, parseFloat in double
-UIAPDUINO_V003_V14.menu.rtlib.dblf_pd.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1 -DCH32RV_PARSE_FLOAT=1
-UIAPDUINO_V003_V14.menu.rtlib.dblf_pd.build.rtlib_flags=
+UIAPDUINO_V003_V14.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
+UIAPDUINO_V003_V14.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+UIAPDUINO_V003_V14.menu.rtlib.fltf.build.rtlib_flags=
+UIAPDUINO_V003_V14.menu.rtlib.flt=Float (32-bit)
+UIAPDUINO_V003_V14.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+UIAPDUINO_V003_V14.menu.rtlib.flt.build.rtlib_flags=
+UIAPDUINO_V003_V14.menu.rtlib.dbl=Double (64-bit)
+UIAPDUINO_V003_V14.menu.rtlib.dbl.build.fp_flags=
+UIAPDUINO_V003_V14.menu.rtlib.dbl.build.rtlib_flags=
+UIAPDUINO_V003_V14.menu.rtlib.dblf=Double (64-bit) + printf %f
+UIAPDUINO_V003_V14.menu.rtlib.dblf.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
+UIAPDUINO_V003_V14.menu.rtlib.dblf.build.rtlib_flags=
 UIAPDUINO_V003_V14.menu.rtlib.nanofp=Double (64-bit) + newlib printf %f %e %g (+~21 KB; too big for 16 KB parts)
 UIAPDUINO_V003_V14.menu.rtlib.nanofp.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 UIAPDUINO_V003_V14.menu.rtlib.nanofp.build.rtlib_flags=-Wl,-u,_printf_float
@@ -7347,3 +6919,11 @@ UIAPDUINO_V003_V14.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 UIAPDUINO_V003_V14.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 UIAPDUINO_V003_V14.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
 UIAPDUINO_V003_V14.menu.rtlib.nanofps.build.rtlib_flags=-Wl,-u,_printf_float -Wl,-u,_scanf_float
+UIAPDUINO_V003_V14.menu.parsefloat.auto=As the arithmetic: integers under Float, double under Double (default)
+UIAPDUINO_V003_V14.menu.parsefloat.auto.build.parse_defines=
+UIAPDUINO_V003_V14.menu.parsefloat.int=In integers (the nearest float to 11 digits)
+UIAPDUINO_V003_V14.menu.parsefloat.int.build.parse_defines=-DCH32RV_PARSE_FLOAT=2
+UIAPDUINO_V003_V14.menu.parsefloat.float=In float (smallest; the last bit off on one input in eight)
+UIAPDUINO_V003_V14.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
+UIAPDUINO_V003_V14.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
+UIAPDUINO_V003_V14.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1

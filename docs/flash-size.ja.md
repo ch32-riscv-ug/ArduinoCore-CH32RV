@@ -10,7 +10,7 @@
 - `printf` と `Serial.print` を併用すると別々の format 実装が残る
 - `String` と動的確保は flash より RAM / heap の制約が先に問題になる場合がある
 
-既定（`fltf_pi`）は float で計算し、printf の `%f` を出します。`Serial.print(float)` と printf の `%f` は同じ
+既定（`fltf`）は float で計算し、printf の `%f` を出します。`Serial.print(float)` と printf の `%f` は同じ
 fixed-point の処理を使います。soft-float の引き算は足し算で行うので、両方を使っても足し算 1 つ分です。
 
 ## 成果物を残して build する

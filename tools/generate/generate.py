@@ -227,7 +227,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
@@ -342,56 +342,44 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
 # arithmetic, constants included; print(float), String(float) and %f share the
 # core's fixed-point text (cores/arduino/ch32rv_format.h). printf's %f links
 # floating point only where the entry says so; without it %f prints as written.
-# Stream::parseFloat adds its digits up in double (the nearest float, links
-# double arithmetic), in integers (the nearest float to 11 digits) or in float
-# (the smallest, the last bit off on one input in eight)
-# (cores/arduino/ch32rv_parse_float.h). Every combination of the core's three
-# is an entry of its own; the newlib entries parse the way their arithmetic
-# does by default (Double: double, Float: integers).
+# Stream::parseFloat has a menu of its own (parsefloat): it adds the digits up in
+# double (the nearest float, links double arithmetic), in integers (the nearest
+# float to 11 digits) or in float (the smallest, the last bit off on one input
+# in eight) (cores/arduino/ch32rv_parse_float.h). Its first entry defines
+# nothing and parses the way the arithmetic does: integers under Float, double
+# under Double - the newlib entries' way, and with the default Float + %f, the
+# default before the menus were split.
 _F32 = "-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant"
 _PF = "-DCH32RV_PRINTF_FLOAT=1"
 _NEWLIB = "-DCH32RV_PRINTF_NEWLIB=1"
 _UPF = "-Wl,-u,_printf_float"
 _USF = "-Wl,-u,_scanf_float"
-_PARSE = (
-    ("pd", "parseFloat in double", "-DCH32RV_PARSE_FLOAT=1"),
-    ("pi", "parseFloat in integers", "-DCH32RV_PARSE_FLOAT=2"),
-    ("ps", "parseFloat in float (small)", "-DCH32RV_PARSE_FLOAT=3"),
+# (key, label, fp_flags, rtlib_flags, newlib's KB). The default (first) is Float
+# with printf's %f on every board: a sketch that uses floats pays 0.6-0.8 KB for
+# %f (V003), and one that uses neither floats nor printf pays nothing under any
+# entry; only printf without floats pays for %f (+5.2 KB on V003, +1.5 KB on
+# V307), and printf is a luxury on a 16 KB part anyway
+# (docs/printf-float.ja.md). The rest go smallest first by what each links:
+# soft-float before soft-double, printf's %f after what it adds to (measured
+# on V003, X035 and V307, 2026-10-29), newlib last.
+RTLIB_MENU = (
+    ("fltf", "Float (32-bit) + printf %f (default)", f"{_F32} {_PF}", "", 0),
+    ("flt", "Float (32-bit)", _F32, "", 0),
+    ("dbl", "Double (64-bit)", "", "", 0),
+    ("dblf", "Double (64-bit) + printf %f", _PF, "", 0),
+    ("nanofp", "Double (64-bit) + newlib printf %f %e %g", _NEWLIB, _UPF, 21),
+    ("nanofs", "Double (64-bit) + newlib scanf %f", "", _USF, 24),
+    ("dblfs", "Double (64-bit) + printf %f + newlib scanf %f", _PF, _USF, 24),
+    ("fltfs", "Float (32-bit) + printf %f + newlib scanf %f", f"{_F32} {_PF}", _USF, 24),
+    ("nanofps", "Double (64-bit) + newlib printf/scanf %f %e %g", _NEWLIB, f"{_UPF} {_USF}", 31),
 )
-_RTLIB_CORE = {
-    f"{key}_{pk}": (f"{label}, {pl}", f"{flags} {pf}".strip(), "", 0)
-    for key, label, flags in (
-        ("dbl", "Double (64-bit)", ""),
-        ("dblf", "Double (64-bit) + printf %f", _PF),
-        ("flt", "Float (32-bit)", _F32),
-        ("fltf", "Float (32-bit) + printf %f", f"{_F32} {_PF}"),
-    )
-    for pk, pl, pf in _PARSE
-}
-_RTLIB_NEWLIB = {
-    "nanofp": ("Double (64-bit) + newlib printf %f %e %g", _NEWLIB, _UPF, 21),
-    "nanofs": ("Double (64-bit) + newlib scanf %f", "", _USF, 24),
-    "dblfs": ("Double (64-bit) + printf %f + newlib scanf %f", _PF, _USF, 24),
-    "fltfs": ("Float (32-bit) + printf %f + newlib scanf %f", f"{_F32} {_PF}", _USF, 24),
-    "nanofps": ("Double (64-bit) + newlib printf/scanf %f %e %g", _NEWLIB, f"{_UPF} {_USF}", 31),
-}
-# The default (first) is Float with printf's %f and parseFloat in integers on
-# every board: a sketch that uses floats pays 0.6-0.8 KB for %f (V003), and
-# one that uses neither floats nor printf pays nothing under any entry; only
-# printf without floats pays for %f (+5.2 KB on V003, +1.5 KB on V307), and
-# printf is a luxury on a 16 KB part anyway (docs/printf-float.ja.md). The
-# rest go smallest first by what each links: soft-float before soft-double,
-# printf's %f and parseFloat's double after what they add to (measured on
-# V003, X035 and V307, 2026-10-29), newlib last.
-RTLIB_DEFAULT = "fltf_pi"
-RTLIB_ORDER = ("fltf_pi", "flt_ps", "flt_pi", "fltf_ps", "flt_pd", "fltf_pd",
-               "dbl_ps", "dbl_pi", "dbl_pd", "dblf_ps", "dblf_pi", "dblf_pd",
-               "nanofp", "nanofs", "dblfs", "fltfs", "nanofps")
-_RTLIB_ALL = {**_RTLIB_CORE, **_RTLIB_NEWLIB}
-assert sorted(RTLIB_ORDER) == sorted(_RTLIB_ALL) and RTLIB_ORDER[0] == RTLIB_DEFAULT
-RTLIB_MENU = tuple(
-    (key, _RTLIB_ALL[key][0] + (" (default)" if key == RTLIB_DEFAULT else ""), *_RTLIB_ALL[key][1:])
-    for key in RTLIB_ORDER
+# (key, label, parse_defines). On V003 a parseFloat sketch is 4836 B in float,
+# 5848 B in integers and 8012 B in double (2026-10-31).
+PARSEFLOAT_MENU = (
+    ("auto", "As the arithmetic: integers under Float, double under Double (default)", ""),
+    ("int", "In integers (the nearest float to 11 digits)", "-DCH32RV_PARSE_FLOAT=2"),
+    ("float", "In float (smallest; the last bit off on one input in eight)", "-DCH32RV_PARSE_FLOAT=3"),
+    ("double", "In double (the nearest float; links double arithmetic)", "-DCH32RV_PARSE_FLOAT=1"),
 )
 
 
@@ -684,6 +672,14 @@ def rtlib_menu(board: str, min_flash: int) -> list[str]:
         lines.append(f"{board}.menu.rtlib.{key}={label}")
         lines.append(f"{board}.menu.rtlib.{key}.build.fp_flags={fp_flags}")
         lines.append(f"{board}.menu.rtlib.{key}.build.rtlib_flags={flags}")
+    return lines
+
+
+def parsefloat_menu(board: str) -> list[str]:
+    lines = []
+    for key, label, defines in PARSEFLOAT_MENU:
+        lines.append(f"{board}.menu.parsefloat.{key}={label}")
+        lines.append(f"{board}.menu.parsefloat.{key}.build.parse_defines={defines}")
     return lines
 
 
@@ -3931,6 +3927,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines.append("")
     lines += rtlib_menu(board, min_flash)
     lines.append("")
+    lines += parsefloat_menu(board)
+    lines.append("")
     if fam.get("h41x_clock"):
         lines += vio18_menu(board)
         lines.append("")
@@ -4096,7 +4094,7 @@ def main() -> int:
                                      remap, forbidden, variant_text)) + "\n"
         # and the Floating Point menu every board has
         flash = int(re.search(rf"^{board_id}\.upload\.maximum_size=(\d+)", text, re.M).group(1))
-        text += "\n" + "\n".join(rtlib_menu(board_id, flash)) + "\n"
+        text += "\n" + "\n".join(rtlib_menu(board_id, flash) + parsefloat_menu(board_id)) + "\n"
         named_boards.append(text)
     outputs[args.platform / "boards.txt"] = (
         gen_header() + "\n" + MENU_HEADER + "\n" + "\n".join(boards_blocks)

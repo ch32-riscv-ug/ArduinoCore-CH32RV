@@ -45,8 +45,8 @@ build.clock_src_defines=
 build.ramsplit_defines=
 # The Reset Pin menu's USER value and mask (ch32rv_option_user.c); empty where the series has no such option.
 build.rstpin_defines=
-compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.fp_flags} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
-compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.fp_flags} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
+compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
+compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
 compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} {build.ramsplit_defines} {build.rstpin_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
 # The three generated interrupt tables share one stem, so a board - or a
 # single pnum menu entry, for a part on a different die - selects all
@@ -74,6 +74,9 @@ build.extra_flags=
 # reach the link: newlib-nano's float printf / scanf.
 build.fp_flags=
 build.rtlib_flags=
+# Chosen by the parseFloat menu: CH32RV_PARSE_FLOAT, or nothing to parse the
+# way the arithmetic does (cores/arduino/ch32rv_parse_float.h).
+build.parse_defines=
 # The core defines printf, vprintf, sprintf, snprintf, vsprintf, vsnprintf,
 # puts, putchar and strftime on its own formatter (ch32rv_stdio_string.c,
 # ch32rv_stdio_out.c, ch32rv_strftime.c). As builtins, calls to them do not show in the LTO
