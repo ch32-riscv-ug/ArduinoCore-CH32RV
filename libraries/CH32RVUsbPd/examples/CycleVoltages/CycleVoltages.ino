@@ -48,7 +48,7 @@ void loop() {
     uint8_t next = USBPD.contractProfile();
     for (uint8_t tries = 0; tries < count; tries++) {
       next = (uint8_t)((next + 1) % count);
-      if (USBPD.profile(next).kind == PD_SUPPLY_FIXED) {
+      if (USBPD.profile(next).kind == CH32RVUsbPdSupply::Fixed) {
         break;
       }
     }

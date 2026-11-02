@@ -77,9 +77,10 @@ BMCのクロックはF_CPUから計算します(CPU Clockで8 MHzを選ぶと送
 | `pps()` | 契約がPPS(system serviceが5秒ごとに再要求する) |
 | `maintain()` | ドライバの心拍を1回進める。**呼ばなくてよい**(`begin()`で登録したsystem serviceが`delay()`と`loop()`の戻りで同じことをする) |
 
-`PDProfile`のフィールドは単位入りの名前です: `kind`(`PD_SUPPLY_FIXED` /
-`PD_SUPPLY_PPS` / `PD_SUPPLY_BATTERY` / `PD_SUPPLY_VARIABLE`)、
-`min_mv` / `max_mv`(固定は同値)、`max_ma`、`max_mw`(batteryのみ)、`raw`。
+`CH32RVUsbPdProfile`のフィールドは単位入りの名前です: `kind`(`CH32RVUsbPdSupply::Fixed` /
+`Pps` / `Battery` / `Variable` / `Unknown`。名前は`ch32rv_usbpd_supply_name()`)、
+`min_mv` / `max_mv`(固定は同値)、`max_ma`、`max_mw`(batteryのみ)、`raw`。sinkの`USBPD.profile()`も
+sourceの`USBPDSource.profile()`も、この型を返します。
 
 ## 設計上の決めごと
 
@@ -125,7 +126,7 @@ bool vbus(bool on) { /* ロードスイッチ */ return true; }
 bool setVoltage(uint16_t mv, uint16_t ma, bool pps) { /* レギュレータ */ return true; }
 
 void setup() {
-    USBPDSource.setRpCurrent(PD_RP_3A0);
+    USBPDSource.setRpCurrent(CH32RVUsbPdRpCurrent::Current3A0);
     USBPDSource.addFixed(5000, 3000);       // 先頭は 5 V 固定
     USBPDSource.addFixed(9000, 2000);
     USBPDSource.addPps(3300, 11000, 2000);

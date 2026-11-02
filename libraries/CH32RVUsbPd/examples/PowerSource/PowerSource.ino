@@ -26,7 +26,7 @@ bool setVoltage(uint16_t mv, uint16_t ma, bool pps) {
 void setup() {
   Serial.begin(115200, SERIAL_8N1, RX, TX);
 
-  USBPDSource.setRpCurrent(PD_RP_3A0);
+  USBPDSource.setRpCurrent(CH32RVUsbPdRpCurrent::Current3A0);
   // en: The first advertised PDO must be fixed 5 V.
   // ja: 広告する先頭のPDOは固定5 Vにする。
   USBPDSource.addFixed(5000, 3000);

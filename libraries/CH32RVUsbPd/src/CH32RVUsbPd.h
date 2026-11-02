@@ -5,7 +5,7 @@
  *     if (USBPD.begin()) {
  *         while (!USBPD.ready()) { }              // charger enumerated
  *         for (uint8_t i = 0; i < USBPD.profileCount(); i++) {
- *             PDProfile p = USBPD.profile(i);     // what the charger offers
+ *             CH32RVUsbPdProfile p = USBPD.profile(i);     // what the charger offers
  *         }
  *         USBPD.request(9000);                    // 9 V, please
  *     }
@@ -72,10 +72,39 @@
  */
 #include "usbpd_hw.h"
 
-/* One entry of the source's advertisement, as Arduino code sees it.
- * Field names carry their unit on purpose: p.max_mv cannot be misread the
- * way p.maxVoltage can. min_mv == max_mv for a fixed profile. */
-typedef pd_pdo_t PDProfile;
+/* What kind of supply a profile is. */
+enum class CH32RVUsbPdSupply : uint8_t {
+    Fixed = PD_SUPPLY_FIXED,       /* one voltage, e.g. "9 V at up to 3 A"        */
+    Pps = PD_SUPPLY_PPS,           /* adjustable range in 20 mV steps (the APDO)  */
+    Battery = PD_SUPPLY_BATTERY,   /* a voltage range with a power cap            */
+    Variable = PD_SUPPLY_VARIABLE, /* a voltage range, unregulated, not settable  */
+    Unknown = PD_SUPPLY_UNKNOWN,   /* an APDO this library does not speak (AVS)   */
+};
+
+/* One profile of an advertisement - the charger's (CH32RVUsbPd) or our own
+ * (CH32RVUsbPdSource). Field names carry their unit on purpose: p.max_mv
+ * cannot be misread the way p.maxVoltage can. min_mv == max_mv for a fixed
+ * profile; max_mw only for Battery, whose current depends on the voltage;
+ * raw is the word as received, for logging and bug reports. */
+struct CH32RVUsbPdProfile {
+    CH32RVUsbPdSupply kind;
+    uint16_t min_mv;
+    uint16_t max_mv;
+    uint16_t max_ma;         /* 0 for battery profiles */
+    uint32_t max_mw;         /* 0 except for battery profiles */
+    uint32_t raw;
+};
+
+/* "fixed", "pps", "battery", "variable" or "unknown". */
+inline const char *ch32rv_usbpd_supply_name(CH32RVUsbPdSupply kind)
+{
+    return pd_supply_name(static_cast<uint8_t>(kind));
+}
+
+inline CH32RVUsbPdProfile ch32rv_usbpd_profile(const pd_pdo_t &p)
+{
+    return {static_cast<CH32RVUsbPdSupply>(p.kind), p.min_mv, p.max_mv, p.max_ma, p.max_mw, p.raw};
+}
 
 namespace arduino {
 
@@ -98,7 +127,7 @@ public:
     /* The source's advertisement, in the order it was sent. Index 0 is the
      * 5 V fixed profile the spec requires every source to list first. */
     uint8_t profileCount() const;
-    PDProfile profile(uint8_t index) const;
+    CH32RVUsbPdProfile profile(uint8_t index) const;
 
     /* Ask for a voltage, and wait (up to about 1.5 s) for the answer. Fixed
      * profiles match exactly; a PPS profile takes anything inside its range

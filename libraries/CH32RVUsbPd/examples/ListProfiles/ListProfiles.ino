@@ -28,11 +28,11 @@ void setup() {
   for (uint8_t i = 0; i < USBPD.profileCount(); i++) {
     // en: Each entry describes an advertised supply option; values are millivolts and milliamps.
     // ja: 各項目は相手が広告した供給候補。値の単位はmVとmA。
-    PDProfile p = USBPD.profile(i);
+    CH32RVUsbPdProfile p = USBPD.profile(i);
     Serial.print("  [");
     Serial.print(i);
     Serial.print("] ");
-    Serial.print(pd_supply_name(p.kind));
+    Serial.print(ch32rv_usbpd_supply_name(p.kind));
     Serial.print(" ");
     Serial.print(p.min_mv);
     if (p.max_mv != p.min_mv) {

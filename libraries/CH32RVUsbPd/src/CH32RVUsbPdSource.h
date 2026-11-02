@@ -44,16 +44,16 @@
 
 #include <stdint.h>
 
-#include "pd_frames.h"
+#include "CH32RVUsbPd.h"
 
 /* The current a source advertises through its Rp before any contract. */
-enum PDRpCurrent : uint8_t {
-    PD_RP_DEFAULT = 0,       /* Default USB power (500 / 900 mA)  */
-    PD_RP_1A5,               /* 1.5 A                             */
-    PD_RP_3A0,               /* 3.0 A                             */
+enum class CH32RVUsbPdRpCurrent : uint8_t {
+    Default = 0,             /* Default USB power (500 / 900 mA)  */
+    Current1A5,              /* 1.5 A                             */
+    Current3A0,              /* 3.0 A                             */
 };
 
-enum class PDSourceError : uint8_t {
+enum class CH32RVUsbPdSourceError : uint8_t {
     None = 0,
     Unsupported,             /* no USBPD block brought up on this part        */
     Busy,                    /* the block is a sink right now (USBPD)          */
@@ -76,7 +76,7 @@ public:
      * voltage in 20 mV steps). Return true once it is there. */
     typedef bool (*VoltageCallback)(uint16_t mv, uint16_t ma, bool pps);
 
-    void setRpCurrent(PDRpCurrent current);
+    void setRpCurrent(CH32RVUsbPdRpCurrent current);
     /* Up to 7 profiles, in the order the sink will see them; the first must
      * be fixed 5 V. False when there is no room or the values do not fit. */
     bool addFixed(uint16_t millivolts, uint16_t milliamps);
@@ -98,7 +98,7 @@ public:
     bool ready();
 
     uint8_t profileCount() const;
-    pd_pdo_t profile(uint8_t index) const;
+    CH32RVUsbPdProfile profile(uint8_t index) const;
     /* The contract: 5 V with no contract while attached, 0 when detached. */
     uint16_t voltage() const;
     uint16_t current() const;
@@ -110,7 +110,7 @@ public:
      * that wants it. */
     void maintain();
 
-    PDSourceError lastError() const;
+    CH32RVUsbPdSourceError lastError() const;
     const char *lastErrorName() const;
 
     /* For the interrupt. */

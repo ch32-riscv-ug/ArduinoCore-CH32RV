@@ -707,13 +707,12 @@ bool CH32RVUsbPd::ready()
 
 uint8_t CH32RVUsbPd::profileCount() const { return pd.caps.count; }
 
-PDProfile CH32RVUsbPd::profile(uint8_t index) const
+CH32RVUsbPdProfile CH32RVUsbPd::profile(uint8_t index) const
 {
     if (index >= pd.caps.count) {
-        PDProfile none = {PD_SUPPLY_UNKNOWN, 0, 0, 0, 0, 0};
-        return none;
+        return {CH32RVUsbPdSupply::Unknown, 0, 0, 0, 0, 0};
     }
-    return pd.caps.pdo[index];
+    return ch32rv_usbpd_profile(pd.caps.pdo[index]);
 }
 
 uint16_t CH32RVUsbPd::voltage() const { return pd.state == ST_DETACHED ? 0 : pd.contract_mv; }
@@ -860,10 +859,9 @@ bool CH32RVUsbPd::connected() { return false; }
 bool CH32RVUsbPd::ready()     { return false; }
 uint8_t CH32RVUsbPd::profileCount() const { return 0; }
 
-PDProfile CH32RVUsbPd::profile(uint8_t) const
+CH32RVUsbPdProfile CH32RVUsbPd::profile(uint8_t) const
 {
-    PDProfile none = {PD_SUPPLY_UNKNOWN, 0, 0, 0, 0, 0};
-    return none;
+    return {CH32RVUsbPdSupply::Unknown, 0, 0, 0, 0, 0};
 }
 
 uint16_t CH32RVUsbPd::voltage() const { return 0; }

@@ -54,6 +54,7 @@ the spec's timers, answers Get_Sink_Cap, says Not_Supported to the rest, and
 re-requests a PPS contract every 5 s from the system service (a `loop()` that
 does not return for seconds stops it; `delay()` does not).
 `contractProfile()` and `pps()` say what the contract is on.
+`profile(i)` (the sink's `USBPD` and the source's `USBPDSource` alike) returns a `CH32RVUsbPdProfile`: `kind` (`CH32RVUsbPdSupply::Fixed`, `Pps`, `Battery`, `Variable`, `Unknown`; `ch32rv_usbpd_supply_name()` names it), `min_mv` / `max_mv` (equal for fixed), `max_ma`, `max_mw` (battery only) and `raw`.
 
 Everything is millivolts and milliamps. `request()` matches fixed profiles
 exactly and PPS ranges inclusively (20 mV steps, truncated); it prefers a
@@ -78,7 +79,7 @@ bool vbus(bool on) { /* load switch */ return true; }
 bool setVoltage(uint16_t mv, uint16_t ma, bool pps) { /* regulator */ return true; }
 
 void setup() {
-    USBPDSource.setRpCurrent(PD_RP_3A0);
+    USBPDSource.setRpCurrent(CH32RVUsbPdRpCurrent::Current3A0);
     USBPDSource.addFixed(5000, 3000);       // the first profile must be 5 V fixed
     USBPDSource.addFixed(9000, 2000);
     USBPDSource.addPps(3300, 11000, 2000);

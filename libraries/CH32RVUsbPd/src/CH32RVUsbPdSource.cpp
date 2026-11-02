@@ -66,11 +66,11 @@ struct {
     uint32_t pdo[PD_PDO_MAX];
     uint8_t count;
     pd_caps_t offer;                   /* pdo[] read back, for checking Requests */
-    PDRpCurrent rp;
+    CH32RVUsbPdRpCurrent rp;
     bool unconstrained;
     arduino::CH32RVUsbPdSource::VbusCallback vbus_cb;
     arduino::CH32RVUsbPdSource::VoltageCallback volt_cb;
-    PDSourceError error;
+    CH32RVUsbPdSourceError error;
 
     /* attach */
     uint8_t line;                      /* 1 or 2 once attached, 0 none          */
@@ -120,8 +120,8 @@ void enter(uint8_t state)
 
 uint16_t rp_bits()
 {
-    return src.rp == PD_RP_3A0 ? CH32RV_UPD_CC_PU_330
-         : src.rp == PD_RP_1A5 ? CH32RV_UPD_CC_PU_180
+    return src.rp == CH32RVUsbPdRpCurrent::Current3A0 ? CH32RV_UPD_CC_PU_330
+         : src.rp == CH32RVUsbPdRpCurrent::Current1A5 ? CH32RV_UPD_CC_PU_180
          : CH32RV_UPD_CC_PU_80;
 }
 
@@ -130,8 +130,8 @@ uint16_t rp_bits()
  * / 0.35 V. */
 uint16_t rd_threshold()
 {
-    return src.rp == PD_RP_3A0 ? CH32RV_UPD_CC_CMP_66
-         : src.rp == PD_RP_1A5 ? CH32RV_UPD_CC_CMP_45
+    return src.rp == CH32RVUsbPdRpCurrent::Current3A0 ? CH32RV_UPD_CC_CMP_66
+         : src.rp == CH32RVUsbPdRpCurrent::Current1A5 ? CH32RV_UPD_CC_CMP_45
          : CH32RV_UPD_CC_CMP_22;
 }
 
@@ -434,7 +434,7 @@ void poll_once()
             CH32RV_USBPD_CONFIG &= (uint16_t)~CH32RV_UPD_CC_SEL;
         }
         if (!src.vbus_cb(true)) {
-            src.error = PDSourceError::VbusFailed;
+            src.error = CH32RVUsbPdSourceError::VbusFailed;
             enter(ST_ERROR);
             return;
         }
@@ -476,7 +476,7 @@ void poll_once()
             return;
         }
         if (!src.vbus_cb(true)) {
-            src.error = PDSourceError::VbusFailed;
+            src.error = CH32RVUsbPdSourceError::VbusFailed;
             enter(ST_ERROR);
             return;
         }
@@ -538,7 +538,7 @@ void poll_once()
             const bool same = src.contract_idx == (int8_t)src.want.index && src.contract_mv == mv &&
                               src.contract_ma == ma && src.contract_pps == pps;
             if (!same && !src.volt_cb(mv, ma, pps)) {
-                src.error = PDSourceError::VoltageFailed;
+                src.error = CH32RVUsbPdSourceError::VoltageFailed;
                 hard_reset_out();
                 break;
             }
@@ -605,7 +605,7 @@ static void source_irq(void);
 
 namespace arduino {
 
-void CH32RVUsbPdSource::setRpCurrent(PDRpCurrent current)
+void CH32RVUsbPdSource::setRpCurrent(CH32RVUsbPdRpCurrent current)
 {
     src.rp = current;
 }
@@ -658,24 +658,24 @@ bool CH32RVUsbPdSource::begin()
         return true;
     }
     if (ch32rv_usbpd_irq_hook && ch32rv_usbpd_irq_hook != source_irq) {
-        src.error = PDSourceError::Busy;
+        src.error = CH32RVUsbPdSourceError::Busy;
         return false;
     }
     if (!src.vbus_cb) {
-        src.error = PDSourceError::NoVbusCallback;
+        src.error = CH32RVUsbPdSourceError::NoVbusCallback;
         return false;
     }
     if (!src.volt_cb) {
-        src.error = PDSourceError::NoVoltageCallback;
+        src.error = CH32RVUsbPdSourceError::NoVoltageCallback;
         return false;
     }
     if (src.count == 0) {
-        src.error = PDSourceError::NoProfiles;
+        src.error = CH32RVUsbPdSourceError::NoProfiles;
         return false;
     }
     pd_parse_source_caps(src.pdo, src.count, &src.offer);
     if (src.offer.pdo[0].kind != PD_SUPPLY_FIXED || src.offer.pdo[0].max_mv != 5000) {
-        src.error = PDSourceError::BadProfiles;
+        src.error = CH32RVUsbPdSourceError::BadProfiles;
         return false;
     }
     src.pdo[0] &= ~(uint32_t)PD_SRC_UNCONSTRAINED;
@@ -688,7 +688,7 @@ bool CH32RVUsbPdSource::begin()
     ch32rv_usbpd_phy_init();
     CH32RV_USBPD_CONFIG = CH32RV_UPD_PD_DMA_EN | CH32RV_USBPD_FILTER;
     CH32RV_USBPD_STATUS = CH32RV_UPD_IF_ALL;
-    src.error = PDSourceError::None;
+    src.error = CH32RVUsbPdSourceError::None;
     src.vbus_on = false;
     src.hard_reset_rx = false;
     src.state = ST_DETACHED;     /* to_detached() leaves it here, VBUS off */
@@ -738,15 +738,14 @@ uint8_t CH32RVUsbPdSource::profileCount() const
     return src.count;
 }
 
-pd_pdo_t CH32RVUsbPdSource::profile(uint8_t index) const
+CH32RVUsbPdProfile CH32RVUsbPdSource::profile(uint8_t index) const
 {
     pd_caps_t caps;
     pd_parse_source_caps(src.pdo, src.count, &caps);
     if (index >= caps.count) {
-        pd_pdo_t none = {PD_SUPPLY_UNKNOWN, 0, 0, 0, 0, 0};
-        return none;
+        return {CH32RVUsbPdSupply::Unknown, 0, 0, 0, 0, 0};
     }
-    return caps.pdo[index];
+    return ch32rv_usbpd_profile(caps.pdo[index]);
 }
 
 uint16_t CH32RVUsbPdSource::voltage() const { return src.vbus_on ? src.contract_mv : 0; }
@@ -759,7 +758,7 @@ void CH32RVUsbPdSource::maintain()
     poll();
 }
 
-PDSourceError CH32RVUsbPdSource::lastError() const
+CH32RVUsbPdSourceError CH32RVUsbPdSource::lastError() const
 {
     return src.error;
 }
@@ -821,12 +820,12 @@ static void source_irq(void)
 #else  /* no USBPD block brought up on this part - see usbpd_hw.h */
 
 namespace {
-PDSourceError source_error = PDSourceError::Unsupported;
+CH32RVUsbPdSourceError source_error = CH32RVUsbPdSourceError::Unsupported;
 }
 
 namespace arduino {
 
-void CH32RVUsbPdSource::setRpCurrent(PDRpCurrent) {}
+void CH32RVUsbPdSource::setRpCurrent(CH32RVUsbPdRpCurrent) {}
 bool CH32RVUsbPdSource::addFixed(uint16_t, uint16_t) { return false; }
 bool CH32RVUsbPdSource::addPps(uint16_t, uint16_t, uint16_t) { return false; }
 void CH32RVUsbPdSource::clearProfiles() {}
@@ -838,17 +837,16 @@ void CH32RVUsbPdSource::end() {}
 bool CH32RVUsbPdSource::attached() { return false; }
 bool CH32RVUsbPdSource::ready() { return false; }
 uint8_t CH32RVUsbPdSource::profileCount() const { return 0; }
-pd_pdo_t CH32RVUsbPdSource::profile(uint8_t) const
+CH32RVUsbPdProfile CH32RVUsbPdSource::profile(uint8_t) const
 {
-    pd_pdo_t none = {PD_SUPPLY_UNKNOWN, 0, 0, 0, 0, 0};
-    return none;
+    return {CH32RVUsbPdSupply::Unknown, 0, 0, 0, 0, 0};
 }
 uint16_t CH32RVUsbPdSource::voltage() const { return 0; }
 uint16_t CH32RVUsbPdSource::current() const { return 0; }
 int8_t CH32RVUsbPdSource::contractProfile() const { return -1; }
 bool CH32RVUsbPdSource::pps() const { return false; }
 void CH32RVUsbPdSource::maintain() {}
-PDSourceError CH32RVUsbPdSource::lastError() const { return source_error; }
+CH32RVUsbPdSourceError CH32RVUsbPdSource::lastError() const { return source_error; }
 void CH32RVUsbPdSource::irq() {}
 
 }  // namespace arduino
@@ -860,15 +858,15 @@ namespace arduino {
 const char *CH32RVUsbPdSource::lastErrorName() const
 {
     switch (lastError()) {
-    case PDSourceError::None: return "None";
-    case PDSourceError::Unsupported: return "Unsupported";
-    case PDSourceError::Busy: return "Busy";
-    case PDSourceError::NoVbusCallback: return "NoVbusCallback";
-    case PDSourceError::NoVoltageCallback: return "NoVoltageCallback";
-    case PDSourceError::NoProfiles: return "NoProfiles";
-    case PDSourceError::BadProfiles: return "BadProfiles";
-    case PDSourceError::VbusFailed: return "VbusFailed";
-    case PDSourceError::VoltageFailed: return "VoltageFailed";
+    case CH32RVUsbPdSourceError::None: return "None";
+    case CH32RVUsbPdSourceError::Unsupported: return "Unsupported";
+    case CH32RVUsbPdSourceError::Busy: return "Busy";
+    case CH32RVUsbPdSourceError::NoVbusCallback: return "NoVbusCallback";
+    case CH32RVUsbPdSourceError::NoVoltageCallback: return "NoVoltageCallback";
+    case CH32RVUsbPdSourceError::NoProfiles: return "NoProfiles";
+    case CH32RVUsbPdSourceError::BadProfiles: return "BadProfiles";
+    case CH32RVUsbPdSourceError::VbusFailed: return "VbusFailed";
+    case CH32RVUsbPdSourceError::VoltageFailed: return "VoltageFailed";
     }
     return "?";
 }

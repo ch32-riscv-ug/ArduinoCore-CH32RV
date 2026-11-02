@@ -75,8 +75,8 @@ static void reply(char *command)
         const long c = n;
         say("CAPS", &c, 1);
         for (uint8_t i = 0; i < n; i++) {
-            const PDProfile p = USBPD.profile(i);
-            const long v[5] = {i, p.kind, p.min_mv, p.max_mv, p.max_ma};
+            const CH32RVUsbPdProfile p = USBPD.profile(i);
+            const long v[5] = {i, static_cast<long>(p.kind), p.min_mv, p.max_mv, p.max_ma};
             say("PDO", v, 5);
         }
     } else if (strncmp(command, "req ", 4) == 0) {
