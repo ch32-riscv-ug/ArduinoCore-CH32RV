@@ -95,19 +95,20 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
 ## The escape hatch
 
 ```cpp
-#include <CH32RV.h>
+#include <ch32rv_registers.h>
 
 CH32RV_TIM_ATRLR(CH32RV_TIM2_BASE) = 999;   // straight at the timer
 ```
 
-`CH32RV.h` pulls in the register map, the GPIO helpers, the pin encoding and the
-alternate-function route tables. Two warnings belong on the tin:
+The register map (`ch32rv_registers.h`), the GPIO helpers (`ch32rv_gpio.h`), the
+pin encoding (`ch32rv_pins.h`) and the alternate-function route tables
+(`ch32rv_route.h`) are included by name; `CH32RV.h` does not bring them in. Two
+warnings belong on the tin:
 
-1. **This layer is not stable.** The names are this core's own, not a vendor
-   SDK's, and they will change - the register map is on its way to being
-   generated from `ch32-device-data` rather than hand-written. A sketch that
-   uses it is pinned to a core version in a way that a sketch using the Arduino
-   API is not.
+1. **This layer is not kept from release to release.** The names are this core's own,
+   not a vendor SDK's, and they change - the register map is on its way to being
+   generated from `ch32-device-data`. What a release keeps is in
+   [the public API](../../docs/public-api.ja.md).
 2. **The core is using these registers too.** Writing `AFIO_PCFR1` by hand
    while `Serial` or `Wire` is open fights `begin()` and `setRoute()`, and the
    symptom is a peripheral that moves pins the next time it is opened.

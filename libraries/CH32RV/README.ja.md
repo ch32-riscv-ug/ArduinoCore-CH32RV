@@ -112,18 +112,18 @@ PA0が64、PB0が96、その間のほとんどの番号はpadに対応しませ�
 ## 逃げ道
 
 ```cpp
-#include <CH32RV.h>
+#include <ch32rv_registers.h>
 
 CH32RV_TIM_ATRLR(CH32RV_TIM2_BASE) = 999;   // timerを直接叩く
 ```
 
-`CH32RV.h`はレジスタマップ・GPIOヘルパ・pinエンコード・route表をまとめて読み込みます。
+レジスタマップ(`ch32rv_registers.h`)・GPIOヘルパ(`ch32rv_gpio.h`)・pinエンコード(`ch32rv_pins.h`)・
+route表(`ch32rv_route.h`)は、名前を指して読み込みます。`CH32RV.h`は読み込みません。
 注意書きが2つあります。
 
-1. **この層は安定APIではありません。** 名前はベンダSDKのものではなく
-   このコア独自のもので、互換性の対象外です。
-   これを使うsketchは、Arduino APIだけを使うsketchと違って
-   **使用したコアの版に固定**されます。
+1. **この層は、版をまたいで保たれません。** 名前はベンダSDKのものではなく
+   このコア独自のもので、`ch32-device-data`から生成する形へ変わっていきます。
+   版をまたいで保つものは[公開するAPI](../../docs/public-api.ja.md)にあります。
 2. **coreも同じレジスタを使っています。** `Serial`や`Wire`が開いている状態で
    `AFIO_PCFR1`を直接書くと`begin()`や`setRoute()`と衝突します。
    症状は「次に開いたときにpinが動く」です。

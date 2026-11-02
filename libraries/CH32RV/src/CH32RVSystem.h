@@ -155,6 +155,9 @@ public:
     uint32_t getSketchSize();
     uint32_t getFreeSketchSpace();
 #ifdef CH32RV_ESIG_FLACAP_ADDR
+    /* getFlashChipSize() and getUniqueId() exist (every series has the
+     * electronic signature today; a sketch tests this, not the address). */
+#define CH32RV_HAS_UNIQUE_ID 1
     /* The chip's own flash size in bytes, from its electronic signature
      * (FLACAP) - the silicon's, not the menu's (device-data esig.csv). */
     uint32_t getFlashChipSize();

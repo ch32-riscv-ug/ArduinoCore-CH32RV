@@ -1,24 +1,11 @@
-/* The register-level escape hatch, and the home of the core-API examples.
- *
- * A sketch never needs this header: everything the Arduino API offers is
- * already there through Arduino.h. What this adds is the layer underneath -
- * the register map, the GPIO helpers and the alternate-function route tables -
- * for the times when the API does not reach far enough.
+/* The chip-level object CH32RV, and the home of the core-API examples.
  *
  *   #include <CH32RV.h>
- *   CH32RV_TIM_ATRLR(CH32RV_TIM2_BASE) = 999;   // straight at the timer
+ *   CH32RV.restart();   CH32RV.getUniqueId();   CH32RV.deepSleep(...);
  *
- * Two warnings that belong on the tin:
- *
- * 1. **This layer is not stable.** The names here are this core's own, not a
- *    vendor SDK's, and they will change - the register map is on its way to
- *    being generated from ch32-device-data rather than hand-written. Sketches
- *    that use it are pinned to a core version in a way that sketches using the
- *    Arduino API are not.
- *
- * 2. **The core is also using these registers.** Writing AFIO_PCFR1 by hand
- *    while Serial or Wire is open will fight begin()/setRoute(), and the
- *    symptom is a peripheral that moves pins when you next call begin().
+ * The register map, the GPIO helpers and the route tables are the core's own
+ * (ch32rv_registers.h and the rest): not part of what a release keeps, and
+ * no longer pulled in here (docs/public-api.ja.md says what is).
  *
  * This library also carries the examples for the built-in APIs (Blink,
  * AnalogRead, Fade, tone, interrupts, Serial), because a platform can only
@@ -27,11 +14,6 @@
 #pragma once
 
 #include "Arduino.h"
-
-#include "ch32rv_gpio.h"
-#include "ch32rv_pins.h"
-#include "ch32rv_registers.h"
-#include "ch32rv_route.h"
 
 /* The chip-level object: CH32RV.restart(), CH32RV.resetReason(), the watchdog.
  * Modeled on the ESP cores' `ESP` - see CH32RVSystem.h. */

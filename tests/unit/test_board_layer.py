@@ -92,7 +92,7 @@ def _reachable_headers(variant: pathlib.Path) -> set:
 
 @pytest.mark.parametrize("header", VARIANTS, ids=lambda p: p.parent.name)
 def test_the_register_map_stays_out_of_the_sketch(header):
-    """Arduino.h must not reach ch32rv_registers.h. `#include <CH32RV.h>` is the door.
+    """Arduino.h must not reach ch32rv_registers.h: a sketch includes it by name (CH32RV.h does not either).
 
     ch32rv_pins.h repeats CH32RV_GPIO_PORT_BASE rather than including the register
     map, and says so in a comment; wiring_digital.c has a _Static_assert so the
@@ -104,7 +104,7 @@ def test_the_register_map_stays_out_of_the_sketch(header):
     assert "Arduino.h" in reachable, "the walk found nothing; check the roots"
     assert "ch32rv_registers.h" not in reachable, (
         f"the register map reaches a sketch through Arduino.h on "
-        f"{header.parent.name}; it belongs behind #include <CH32RV.h> "
+        f"{header.parent.name}; a sketch includes it by name "
         f"(docs/board-layer-rules.ja.md)")
 
 
@@ -136,3 +136,11 @@ def test_example_requirements_parse(ino):
         requirements(ino.parent)
     except BadRequirement as e:
         pytest.fail(str(e))
+
+
+def test_ch32rv_h_brings_in_the_object_and_not_the_register_layer():
+    """CH32RV.h is the CH32RV object's header. The register map, the GPIO helpers, the pin encoding and the
+    route tables are the core's own and are included by name (docs/public-api.ja.md)."""
+    text = _strip_comments((REPO / "libraries/CH32RV/src/CH32RV.h").read_text(encoding="utf-8"))
+    includes = re.findall(r'#\s*include\s*[<"]([^>"]+)[>"]', text)
+    assert includes == ["Arduino.h", "CH32RVSystem.h"], includes

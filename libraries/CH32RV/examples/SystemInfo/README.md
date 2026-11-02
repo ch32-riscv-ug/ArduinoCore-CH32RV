@@ -11,7 +11,7 @@ Reset the board with the terminal open to see the report. Send `i` to read the f
 - `getChipModel()` identifies the series the binary was built for; it is not a board or package detector.
 - `getSketchSize()` and `getFreeSketchSpace()` describe the linked program and its selected Flash region. Free space is not a persistent-storage allocation.
 - `getHeapSize()` and `getFreeHeap()` report bytes. Fragmentation can prevent a single allocation as large as the free total.
-- When `CH32RV_ESIG_FLACAP_ADDR` is defined, the sketch also calls `getFlashChipSize()` and `getUniqueId()`. Otherwise it reports that the signature is unavailable. The UID is displayed as high/low hexadecimal halves without zero padding; it is neither a MAC address nor a secret.
+- When `CH32RV_HAS_UNIQUE_ID` is defined (every series today), the sketch also calls `getFlashChipSize()` and `getUniqueId()`. Otherwise it reports that the signature is unavailable. The UID is displayed as high/low hexadecimal halves without zero padding; it is neither a MAC address nor a secret.
 
 If the signature's Flash size differs from the linked capacity, check the selected Part Number. Runtime values belong to this build and chip; do not treat the sample output as a specification for another board.
 

@@ -25,9 +25,9 @@ void setup()
     Serial.print("Free heap bytes: ");
     Serial.println(CH32RV.getFreeHeap());
 
-    // en: Optional members exist only when the variant declares an electronic signature.
-    // ja: 固有情報を持つvariantの場合だけ、対応するメンバーを呼び出す。
-#ifdef CH32RV_ESIG_FLACAP_ADDR
+    // en: These members exist where the chip has an electronic signature (CH32RV_HAS_UNIQUE_ID).
+    // ja: 電子署名を持つチップの場合だけ、対応するメンバーがある（CH32RV_HAS_UNIQUE_ID）。
+#ifdef CH32RV_HAS_UNIQUE_ID
     Serial.print("Silicon Flash bytes: ");
     Serial.println(CH32RV.getFlashChipSize());
     const uint64_t uid = CH32RV.getUniqueId();
