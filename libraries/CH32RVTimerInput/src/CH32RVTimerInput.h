@@ -102,7 +102,7 @@ public:
     /* One count per cycle (the half-quad count halved). */
     bool attachSingleEdge(int aPin, int bPin);
     void detach();
-    bool isAttached() const { return ch32TimerLeaseValid(&_lease); }
+    bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
 
     int64_t getCount();
     void clearCount() { setCount(0); }

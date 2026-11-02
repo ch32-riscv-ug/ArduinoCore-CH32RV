@@ -178,7 +178,7 @@ static void reply(char *command)
         /* and whether the PWM's timer counts at all: its CNT, CCR of the channel, ARR, CTLR1 */
         uint32_t v[11] = {high, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         if (havePin) {
-            const CH32RVTimerCapability *cap = ch32TimerCapabilityFor((uint8_t)CH32RV_PWM_PIN_TO_TIMER(pwmPin));
+            const CH32RVTimerCapability *cap = ch32rv_timer_capability_for((uint8_t)CH32RV_PWM_PIN_TO_TIMER(pwmPin));
             if (cap) {
                 const uint32_t b = cap->register_base;
                 v[1] = *(volatile uint32_t *)(b + 0x24u);

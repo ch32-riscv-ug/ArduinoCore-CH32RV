@@ -277,23 +277,23 @@ static CH32RVTimerLease acquire(const CH32RVTimerRequest *request,
     return result;
 }
 
-size_t ch32TimerCount(void)
+size_t ch32rv_timer_count(void)
 {
     return CH32RV_TIMER_COUNT;
 }
 
-const CH32RVTimerCapability *ch32TimerCapability(size_t index)
+const CH32RVTimerCapability *ch32rv_timer_capability(size_t index)
 {
     return index < CH32RV_TIMER_COUNT ? &timer_capabilities[index] : 0;
 }
 
-const CH32RVTimerCapability *ch32TimerCapabilityFor(uint8_t timer)
+const CH32RVTimerCapability *ch32rv_timer_capability_for(uint8_t timer)
 {
     int index = capability_index(timer);
     return index >= 0 ? &timer_capabilities[index] : 0;
 }
 
-bool ch32TimerGetStatus(uint8_t timer, CH32RVTimerStatus *status)
+bool ch32rv_timer_get_status(uint8_t timer, CH32RVTimerStatus *status)
 {
     int index = capability_index(timer);
     if (index < 0 || !status) {
@@ -317,19 +317,19 @@ bool ch32TimerGetStatus(uint8_t timer, CH32RVTimerStatus *status)
     return true;
 }
 
-CH32RVTimerLease ch32TimerTryAcquire(const CH32RVTimerRequest *request,
+CH32RVTimerLease ch32rv_timer_try_acquire(const CH32RVTimerRequest *request,
                                    const CH32RVTimerOwner *owner)
 {
     return acquire(request, owner, false);
 }
 
-CH32RVTimerLease ch32TimerTakeover(const CH32RVTimerRequest *request,
+CH32RVTimerLease ch32rv_timer_takeover(const CH32RVTimerRequest *request,
                                  const CH32RVTimerOwner *owner)
 {
     return acquire(request, owner, true);
 }
 
-bool ch32TimerLeaseValid(const CH32RVTimerLease *lease)
+bool ch32rv_timer_lease_valid(const CH32RVTimerLease *lease)
 {
     if (!lease || !lease->owner_identity) {
         return false;
@@ -354,9 +354,9 @@ bool ch32TimerLeaseValid(const CH32RVTimerLease *lease)
     return valid;
 }
 
-void ch32TimerRelease(CH32RVTimerLease *lease)
+void ch32rv_timer_release(CH32RVTimerLease *lease)
 {
-    if (!ch32TimerLeaseValid(lease)) {
+    if (!ch32rv_timer_lease_valid(lease)) {
         if (lease) {
             *lease = invalid_lease();
         }
@@ -391,9 +391,9 @@ void ch32TimerRelease(CH32RVTimerLease *lease)
     irq_restore(irq_state);
 }
 
-bool ch32TimerApplyBase(const CH32RVTimerLease *lease)
+bool ch32rv_timer_apply_base(const CH32RVTimerLease *lease)
 {
-    if (!ch32TimerLeaseValid(lease)) {
+    if (!ch32rv_timer_lease_valid(lease)) {
         return false;
     }
     int index = capability_index(lease->timer);
@@ -427,32 +427,32 @@ bool ch32TimerApplyBase(const CH32RVTimerLease *lease)
     return true;
 }
 
-bool ch32TimerStart(const CH32RVTimerLease *lease)
+bool ch32rv_timer_start(const CH32RVTimerLease *lease)
 {
-    if (!ch32TimerLeaseValid(lease)) {
+    if (!ch32rv_timer_lease_valid(lease)) {
         return false;
     }
-    const CH32RVTimerCapability *cap = ch32TimerCapabilityFor(lease->timer);
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(lease->timer);
     CH32RV_TIM_CTLR1(cap->register_base) |= CH32RV_TIM_CTLR1_CEN;
     return true;
 }
 
-bool ch32TimerStop(const CH32RVTimerLease *lease)
+bool ch32rv_timer_stop(const CH32RVTimerLease *lease)
 {
     /* A channel lease shares the counter and must not stop other channels. */
-    if (!ch32TimerLeaseValid(lease) ||
+    if (!ch32rv_timer_lease_valid(lease) ||
         lease->channel != CH32RV_TIMER_WHOLE) {
         return false;
     }
-    const CH32RVTimerCapability *cap = ch32TimerCapabilityFor(lease->timer);
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(lease->timer);
     CH32RV_TIM_CTLR1(cap->register_base) &= (uint16_t)~CH32RV_TIM_CTLR1_CEN;
     return true;
 }
 
-bool ch32TimerAttachUpdateInterrupt(const CH32RVTimerLease *lease,
+bool ch32rv_timer_attach_update_interrupt(const CH32RVTimerLease *lease,
                                     CH32RVTimerCallback callback, void *context)
 {
-    if (!callback || !ch32TimerLeaseValid(lease) ||
+    if (!callback || !ch32rv_timer_lease_valid(lease) ||
         lease->channel != CH32RV_TIMER_WHOLE) {
         return false;
     }
@@ -475,9 +475,9 @@ bool ch32TimerAttachUpdateInterrupt(const CH32RVTimerLease *lease,
     return true;
 }
 
-void ch32TimerDetachUpdateInterrupt(const CH32RVTimerLease *lease)
+void ch32rv_timer_detach_update_interrupt(const CH32RVTimerLease *lease)
 {
-    if (!ch32TimerLeaseValid(lease)) {
+    if (!ch32rv_timer_lease_valid(lease)) {
         return;
     }
     int index = capability_index(lease->timer);

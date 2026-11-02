@@ -14,7 +14,7 @@ UART モニタを用意します。GPIO の配線は不要です。
 
 ## API と処理の流れ
 
-`ch32TimerTryAcquire()` で lease を得て、`ch32TimerApplyBase()`、`ch32TimerAttachUpdateInterrupt()`、`ch32TimerStart()` の順で使います。lease の有効性も確認します。
+`ch32rv_timer_try_acquire()` で lease を得て、`ch32rv_timer_apply_base()`、`ch32rv_timer_attach_update_interrupt()`、`ch32rv_timer_start()` の順で使います。lease の有効性も確認します。
 
 ## 改造するときの注意
 

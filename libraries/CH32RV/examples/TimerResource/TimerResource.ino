@@ -40,12 +40,12 @@ void setup()
 
     // en: Use the ownership API before configuring the shared timer.
     // ja: 共有タイマーを設定する前に所有権を取得する。
-    lease = ch32TimerTryAcquire(&request, &owner);
+    lease = ch32rv_timer_try_acquire(&request, &owner);
     // en: Each setup step must succeed; && stops later steps if an earlier one fails.
     // ja: 各設定の成功を確認する。&&により、途中で失敗すると後続の処理は実行しない。
-    running = ch32TimerApplyBase(&lease) &&
-              ch32TimerAttachUpdateInterrupt(&lease, onUpdate, nullptr) &&
-              ch32TimerStart(&lease);
+    running = ch32rv_timer_apply_base(&lease) &&
+              ch32rv_timer_attach_update_interrupt(&lease, onUpdate, nullptr) &&
+              ch32rv_timer_start(&lease);
 }
 
 void loop()
@@ -54,7 +54,7 @@ void loop()
     if ((uint32_t)(millis() - last) >= 1000u) {
         last += 1000u;
         Serial.print("TIM lease: ");
-        Serial.print(running && ch32TimerLeaseValid(&lease) ? "active, "
+        Serial.print(running && ch32rv_timer_lease_valid(&lease) ? "active, "
                                                             : "lost, ");
         Serial.println(ticks);
     }

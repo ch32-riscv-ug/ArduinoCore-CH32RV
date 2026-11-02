@@ -64,9 +64,9 @@ static bool startTimer()
 {
     CH32RVTimerRequest req = {CH32RV_TIMER_ANY, CH32RV_TIMER_WHOLE,
                               {(uint16_t)((F_CPU / 1000000u) - 1u), 99u, 0}};   /* 1 MHz / 100 = 10 kHz */
-    lease = ch32TimerTryAcquire(&req, &owner);
-    if (!ch32TimerLeaseValid(&lease) || !ch32TimerApplyBase(&lease) ||
-        !ch32TimerAttachUpdateInterrupt(&lease, onTick, nullptr) || !ch32TimerStart(&lease)) {
+    lease = ch32rv_timer_try_acquire(&req, &owner);
+    if (!ch32rv_timer_lease_valid(&lease) || !ch32rv_timer_apply_base(&lease) ||
+        !ch32rv_timer_attach_update_interrupt(&lease, onTick, nullptr) || !ch32rv_timer_start(&lease)) {
         return false;
     }
     timerNumber = lease.timer;

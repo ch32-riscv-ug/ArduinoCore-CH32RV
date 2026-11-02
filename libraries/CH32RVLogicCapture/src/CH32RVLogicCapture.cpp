@@ -126,8 +126,8 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
     _rate = F_CPU / (psc * arr);
     const CH32RVTimerOwner me = {this, quiesce, this};   /* copied by the manager */
     const CH32RVTimerRequest request = {LC_TIMER, CH32RV_TIMER_WHOLE, {(uint16_t)(psc - 1u), arr - 1u, 0}};
-    _lease = ch32TimerTryAcquire(&request, &me);
-    if (!ch32TimerLeaseValid(&_lease) || !ch32TimerApplyBase(&_lease)) {
+    _lease = ch32rv_timer_try_acquire(&request, &me);
+    if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
         return false;
     }
     _port = 0x40010808u + 0x400u * (uint32_t)port;     /* GPIOx_INDR, the same on every family */
@@ -145,8 +145,8 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
 void CH32RVLogicCapture::end()
 {
     stop();
-    if (ch32TimerLeaseValid(&_lease)) {
-        ch32TimerRelease(&_lease);
+    if (ch32rv_timer_lease_valid(&_lease)) {
+        ch32rv_timer_release(&_lease);
     }
     _begun = false;
     if (active == this) {
@@ -174,10 +174,10 @@ bool CH32RVLogicCapture::startContinuous(uint16_t *buffer, uint32_t samples)
     CH_CFGR = CFGR_PL_VHIGH | CFGR_16BIT | CFGR_MINC | CFGR_CIRC | CFGR_HTIE | CFGR_TCIE;
     CH_CFGR |= CFGR_EN;
     ch32rv_irq_enable(LC_IRQN);
-    const uint32_t tim = ch32TimerCapabilityFor(LC_TIMER)->register_base;
+    const uint32_t tim = ch32rv_timer_capability_for(LC_TIMER)->register_base;
     CH32RV_REG32(tim + TIM_DMAINTENR) |= TIM_UDE;
     _running = true;
-    ch32TimerStart(&_lease);
+    ch32rv_timer_start(&_lease);
     return true;
 }
 
@@ -186,9 +186,9 @@ void CH32RVLogicCapture::stop()
     if (!_running) {
         return;
     }
-    if (ch32TimerLeaseValid(&_lease)) {
-        ch32TimerStop(&_lease);
-        CH32RV_REG32(ch32TimerCapabilityFor(LC_TIMER)->register_base + TIM_DMAINTENR) &= ~TIM_UDE;
+    if (ch32rv_timer_lease_valid(&_lease)) {
+        ch32rv_timer_stop(&_lease);
+        CH32RV_REG32(ch32rv_timer_capability_for(LC_TIMER)->register_base + TIM_DMAINTENR) &= ~TIM_UDE;
     }
     ch32rv_irq_disable(LC_IRQN);
     CH_CFGR = 0;

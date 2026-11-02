@@ -31,7 +31,7 @@ bool timerPad(int pin, uint8_t &timer, uint8_t &channel)
     pin = CH32RV_PIN_RESOLVE(pin);
     timer = (uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin);
     channel = (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin);
-    return timer != 0 && (channel == 1 || channel == 2) && ch32TimerCapabilityFor(timer);
+    return timer != 0 && (channel == 1 || channel == 2) && ch32rv_timer_capability_for(timer);
 }
 
 /* An input that the timer channel listens to. On the per-pin families the
@@ -90,7 +90,7 @@ bool CH32RVPulseCapture::begin(int pin, uint32_t minHz, uint8_t mode)
     if (!timerPad(pin, timer, channel)) {
         return false;
     }
-    const CH32RVTimerCapability *cap = ch32TimerCapabilityFor(timer);
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(timer);
     _wide = cap->counter_bits == 32u;
     if (minHz == 0u) {
         minHz = 1u;
@@ -111,9 +111,9 @@ bool CH32RVPulseCapture::begin(int pin, uint32_t minHz, uint8_t mode)
          (uint16_t)(CH32RV_TIM_CTLR1_URS | (_ckd << CKD_SHIFT))}
     };
     const CH32RVTimerOwner owner = {this, nullptr, nullptr};
-    _lease = ch32TimerTryAcquire(&request, &owner);
-    if (!ch32TimerLeaseValid(&_lease) || !ch32TimerApplyBase(&_lease)) {
-        ch32TimerRelease(&_lease);
+    _lease = ch32rv_timer_try_acquire(&request, &owner);
+    if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
+        ch32rv_timer_release(&_lease);
         return false;
     }
     inputPin(pin, mode);
@@ -141,17 +141,17 @@ bool CH32RVPulseCapture::begin(int pin, uint32_t minHz, uint8_t mode)
     _overflowed = false;
     _stalled = false;
     _dropNext = true;            /* the counter did not start on a rising edge */
-    ch32TimerStart(&_lease);
+    ch32rv_timer_start(&_lease);
     return true;
 }
 
 void CH32RVPulseCapture::end()
 {
-    if (ch32TimerLeaseValid(&_lease)) {
-        ch32TimerStop(&_lease);
+    if (ch32rv_timer_lease_valid(&_lease)) {
+        ch32rv_timer_stop(&_lease);
         quiet(_base);
     }
-    ch32TimerRelease(&_lease);
+    ch32rv_timer_release(&_lease);
     _tickHz = 0;
 }
 
@@ -166,7 +166,7 @@ void CH32RVPulseCapture::poll()
 
 bool CH32RVPulseCapture::read(Pulse &out)
 {
-    if (!ch32TimerLeaseValid(&_lease)) {
+    if (!ch32rv_timer_lease_valid(&_lease)) {
         return false;
     }
     poll();
@@ -204,7 +204,7 @@ bool CH32RVPulseCapture::read(Pulse &out)
 
 bool CH32RVPulseCapture::stalled()
 {
-    if (!ch32TimerLeaseValid(&_lease)) {
+    if (!ch32rv_timer_lease_valid(&_lease)) {
         return false;
     }
     poll();
@@ -217,7 +217,7 @@ bool CH32RVPulseCapture::stalled()
 void CH32RVPulseCapture::setFilter(uint16_t cycles)
 {
     filterFor(cycles, _filter, _ckd);
-    if (ch32TimerLeaseValid(&_lease)) {
+    if (ch32rv_timer_lease_valid(&_lease)) {
         applyFilter(_base, _filter, _ckd);
     }
 }
@@ -236,16 +236,16 @@ bool CH32RVEncoder::attach(int aPin, int bPin, uint8_t edges)
         timer != timerB || channelA == channelB) {
         return false;
     }
-    const CH32RVTimerCapability *cap = ch32TimerCapabilityFor(timer);
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(timer);
     _wide = cap->counter_bits == 32u;
     const CH32RVTimerRequest request = {
         timer, CH32RV_TIMER_WHOLE,
         {0, _wide ? 0xFFFFFFFFu : 0xFFFFu, (uint16_t)(_ckd << CKD_SHIFT)}
     };
     const CH32RVTimerOwner owner = {this, nullptr, nullptr};
-    _lease = ch32TimerTryAcquire(&request, &owner);
-    if (!ch32TimerLeaseValid(&_lease) || !ch32TimerApplyBase(&_lease)) {
-        ch32TimerRelease(&_lease);
+    _lease = ch32rv_timer_try_acquire(&request, &owner);
+    if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
+        ch32rv_timer_release(&_lease);
         return false;
     }
     inputPin(aPin, _pull);
@@ -270,24 +270,24 @@ bool CH32RVEncoder::attach(int aPin, int bPin, uint8_t edges)
     _wraps = 0;
     _offset = 0;
     _last = 0;
-    if (!ch32TimerAttachUpdateInterrupt(&_lease, onUpdate, this)) {
+    if (!ch32rv_timer_attach_update_interrupt(&_lease, onUpdate, this)) {
         quiet(_base);
-        ch32TimerRelease(&_lease);
+        ch32rv_timer_release(&_lease);
         return false;
     }
-    ch32TimerStart(&_lease);
+    ch32rv_timer_start(&_lease);
     return true;
 }
 
 void CH32RVEncoder::detach()
 {
-    if (ch32TimerLeaseValid(&_lease)) {
+    if (ch32rv_timer_lease_valid(&_lease)) {
         _last = getCount();
-        ch32TimerDetachUpdateInterrupt(&_lease);
-        ch32TimerStop(&_lease);
+        ch32rv_timer_detach_update_interrupt(&_lease);
+        ch32rv_timer_stop(&_lease);
         quiet(_base);
     }
-    ch32TimerRelease(&_lease);
+    ch32rv_timer_release(&_lease);
 }
 
 /* The counter came round (the core's dispatcher has cleared the flag). The
@@ -327,7 +327,7 @@ int64_t CH32RVEncoder::raw()
 
 int64_t CH32RVEncoder::getCount()
 {
-    if (ch32TimerLeaseValid(&_lease)) {
+    if (ch32rv_timer_lease_valid(&_lease)) {
         _last = (raw() >> _shift) + _offset;    /* >> on a negative count floors */
     }
     return _last;
@@ -336,7 +336,7 @@ int64_t CH32RVEncoder::getCount()
 void CH32RVEncoder::setCount(int64_t value)
 {
     _last = value;
-    if (ch32TimerLeaseValid(&_lease)) {
+    if (ch32rv_timer_lease_valid(&_lease)) {
         _offset = value - (raw() >> _shift);
     } else {
         _offset = value;
@@ -345,18 +345,18 @@ void CH32RVEncoder::setCount(int64_t value)
 
 bool CH32RVEncoder::pauseCount()
 {
-    return ch32TimerStop(&_lease);
+    return ch32rv_timer_stop(&_lease);
 }
 
 bool CH32RVEncoder::resumeCount()
 {
-    return ch32TimerStart(&_lease);
+    return ch32rv_timer_start(&_lease);
 }
 
 void CH32RVEncoder::setFilter(uint16_t cycles)
 {
     filterFor(cycles, _filter, _ckd);
-    if (ch32TimerLeaseValid(&_lease)) {
+    if (ch32rv_timer_lease_valid(&_lease)) {
         applyFilter(_base, _filter, _ckd);
     }
 }

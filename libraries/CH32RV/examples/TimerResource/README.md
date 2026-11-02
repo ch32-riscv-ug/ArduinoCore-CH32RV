@@ -14,7 +14,7 @@ Logs show `TIM lease: active` or `lost` and update counts. Failed acquisition or
 
 ## API and processing flow
 
-Acquire with `ch32TimerTryAcquire()`, then call `ch32TimerApplyBase()`, `ch32TimerAttachUpdateInterrupt()` and `ch32TimerStart()`. Check lease validity too.
+Acquire with `ch32rv_timer_try_acquire()`, then call `ch32rv_timer_apply_base()`, `ch32rv_timer_attach_update_interrupt()` and `ch32rv_timer_start()`. Check lease validity too.
 
 ## Adapting the example
 

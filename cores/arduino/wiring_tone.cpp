@@ -47,9 +47,9 @@ static const CH32RVTimerOwner tone_owner = {
 
 static void tone_stop(void)
 {
-    if (ch32TimerLeaseValid(&tone_lease)) {
-        ch32TimerDetachUpdateInterrupt(&tone_lease);
-        ch32TimerRelease(&tone_lease);
+    if (ch32rv_timer_lease_valid(&tone_lease)) {
+        ch32rv_timer_detach_update_interrupt(&tone_lease);
+        ch32rv_timer_release(&tone_lease);
     }
     if (tone_pin != 0xFF) {
         ch32rv_gpio_clear(tone_port, tone_bit);
@@ -137,18 +137,18 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
         CH32RV_TONE_TIMER, CH32RV_TIMER_WHOLE,
         {(uint16_t)psc, ticks - 1u, 0}
     };
-    tone_lease = ch32TimerTryAcquire(&request, &tone_owner);
-    if (!ch32TimerLeaseValid(&tone_lease)) {
+    tone_lease = ch32rv_timer_try_acquire(&request, &tone_owner);
+    if (!ch32rv_timer_lease_valid(&tone_lease)) {
         request.timer = CH32RV_TIMER_ANY;
-        tone_lease = ch32TimerTryAcquire(&request, &tone_owner);
+        tone_lease = ch32rv_timer_try_acquire(&request, &tone_owner);
     }
-    if (!ch32TimerLeaseValid(&tone_lease)) {
+    if (!ch32rv_timer_lease_valid(&tone_lease)) {
         request.timer = CH32RV_TONE_TIMER;
-        tone_lease = ch32TimerTakeover(&request, &tone_owner);
+        tone_lease = ch32rv_timer_takeover(&request, &tone_owner);
     }
-    if (!ch32TimerApplyBase(&tone_lease) ||
-        !ch32TimerAttachUpdateInterrupt(&tone_lease, tone_update, nullptr) ||
-        !ch32TimerStart(&tone_lease)) {
+    if (!ch32rv_timer_apply_base(&tone_lease) ||
+        !ch32rv_timer_attach_update_interrupt(&tone_lease, tone_update, nullptr) ||
+        !ch32rv_timer_start(&tone_lease)) {
         tone_stop();
     }
 }

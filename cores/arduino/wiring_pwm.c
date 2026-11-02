@@ -106,7 +106,7 @@ void analogWrite(pin_size_t pin, int value)
 #endif
     const uint8_t timer = (uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin);
     const uint8_t channel = (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin);
-    const CH32RVTimerCapability *cap = ch32TimerCapabilityFor(timer);
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(timer);
 
     if (!cap || channel == 0u) {
         /* No PWM here: behave like the AVR core and just pick a level. */
@@ -157,8 +157,8 @@ void analogWrite(pin_size_t pin, int value)
         {(uint16_t)(prescale - 1u), (uint16_t)(steps - 1u),
          CH32RV_TIM_CTLR1_ARPE}
     };
-    CH32RVTimerLease lease = ch32TimerTakeover(&request, &ch32rv_pwm_owner);
-    if (!ch32TimerLeaseValid(&lease) || !ch32TimerApplyBase(&lease)) {
+    CH32RVTimerLease lease = ch32rv_timer_takeover(&request, &ch32rv_pwm_owner);
+    if (!ch32rv_timer_lease_valid(&lease) || !ch32rv_timer_apply_base(&lease)) {
         return;
     }
     const uint32_t base = cap->register_base;
@@ -178,5 +178,5 @@ void analogWrite(pin_size_t pin, int value)
         /* Advanced timers keep every channel output gated behind MOE. */
         CH32RV_TIM_BDTR(base) |= CH32RV_TIM_BDTR_MOE;
     }
-    ch32TimerStart(&lease);
+    ch32rv_timer_start(&lease);
 }

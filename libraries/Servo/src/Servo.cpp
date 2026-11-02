@@ -46,7 +46,7 @@ inline void timer_set(uint16_t us)
      * wiring_tone.cpp does not hit this because its update event is fired once
      * at start, while the interrupt is still masked. */
     const CH32RVTimerCapability *cap =
-        ch32TimerCapabilityFor(timer_lease.timer);
+        ch32rv_timer_capability_for(timer_lease.timer);
     if (cap->counter_bits == 32u) {
         CH32RV_TIM_ATRLR32(cap->register_base) = us - 1u;
     } else {
@@ -56,31 +56,31 @@ inline void timer_set(uint16_t us)
 
 void timer_start(void)
 {
-    if (timer_running && ch32TimerLeaseValid(&timer_lease)) {
+    if (timer_running && ch32rv_timer_lease_valid(&timer_lease)) {
         return;
     }
     CH32RVTimerRequest request = {
         CH32RV_SERVO_TIMER, CH32RV_TIMER_WHOLE,
         {(uint16_t)((F_CPU / 1000000u) - 1u), 99u, 0}
     };
-    timer_lease = ch32TimerTryAcquire(&request, &servo_owner);
-    if (!ch32TimerLeaseValid(&timer_lease)) {
+    timer_lease = ch32rv_timer_try_acquire(&request, &servo_owner);
+    if (!ch32rv_timer_lease_valid(&timer_lease)) {
         request.timer = CH32RV_TIMER_ANY;
-        timer_lease = ch32TimerTryAcquire(&request, &servo_owner);
+        timer_lease = ch32rv_timer_try_acquire(&request, &servo_owner);
     }
-    if (!ch32TimerLeaseValid(&timer_lease)) {
+    if (!ch32rv_timer_lease_valid(&timer_lease)) {
         request.timer = CH32RV_SERVO_TIMER;
-        timer_lease = ch32TimerTakeover(&request, &servo_owner);
+        timer_lease = ch32rv_timer_takeover(&request, &servo_owner);
     }
-    if (!ch32TimerApplyBase(&timer_lease)) {
+    if (!ch32rv_timer_apply_base(&timer_lease)) {
         timer_quiesce(nullptr, CH32RV_SERVO_TIMER, CH32RV_TIMER_WHOLE);
         return;
     }
     current = -1;
     frame_used_us = 0;
-    if (!ch32TimerAttachUpdateInterrupt(&timer_lease, timer_update, nullptr) ||
-        !ch32TimerStart(&timer_lease)) {
-        ch32TimerRelease(&timer_lease);
+    if (!ch32rv_timer_attach_update_interrupt(&timer_lease, timer_update, nullptr) ||
+        !ch32rv_timer_start(&timer_lease)) {
+        ch32rv_timer_release(&timer_lease);
         timer_quiesce(nullptr, CH32RV_SERVO_TIMER, CH32RV_TIMER_WHOLE);
         return;
     }
@@ -89,9 +89,9 @@ void timer_start(void)
 
 void timer_stop(void)
 {
-    if (ch32TimerLeaseValid(&timer_lease)) {
-        ch32TimerDetachUpdateInterrupt(&timer_lease);
-        ch32TimerRelease(&timer_lease);
+    if (ch32rv_timer_lease_valid(&timer_lease)) {
+        ch32rv_timer_detach_update_interrupt(&timer_lease);
+        ch32rv_timer_release(&timer_lease);
     }
     timer_running = false;
     current = -1;

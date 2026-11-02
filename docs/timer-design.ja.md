@@ -13,15 +13,15 @@ SysTick は `millis()` / `micros()` / `delay()` の時間基盤専用で、TIM �
 - update interrupt は timer ごとに一つの owner だけが持つ
 
 series ごとの timer 能力は生成された `CH32RV_TIMER_TABLE` が正本です。library は timer 番号や register address を
-固定せず、`ch32TimerCapability*()` で問い合わせます。
+固定せず、`ch32rv_timer_capability*()` で問い合わせます。
 
 ## 取得方法
 
-`ch32TimerTryAcquire()` は既存 owner と競合する場合に失敗し、状態を変えません。
-`ch32TimerTakeover()` は互換な空き resource を先に探し、それが無い場合だけ既存 owner を停止して取得します。
+`ch32rv_timer_try_acquire()` は既存 owner と競合する場合に失敗し、状態を変えません。
+`ch32rv_timer_takeover()` は互換な空き resource を先に探し、それが無い場合だけ既存 owner を停止して取得します。
 
 takeover された owner には `quiesce` callback が呼ばれ、古い lease は generation の不一致により無効になります。
-library は register を操作する前に有効な lease を保持し、終了時に `ch32TimerRelease()` します。
+library は register を操作する前に有効な lease を保持し、終了時に `ch32rv_timer_release()` します。
 
 ## Arduino API の規則
 

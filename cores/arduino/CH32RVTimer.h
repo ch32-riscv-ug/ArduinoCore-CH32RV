@@ -82,30 +82,30 @@ typedef struct {
     const void *channel_owner_identity[4];
 } CH32RVTimerStatus;
 
-size_t ch32TimerCount(void);
-const CH32RVTimerCapability *ch32TimerCapability(size_t index);
-const CH32RVTimerCapability *ch32TimerCapabilityFor(uint8_t timer);
-bool ch32TimerGetStatus(uint8_t timer, CH32RVTimerStatus *status);
+size_t ch32rv_timer_count(void);
+const CH32RVTimerCapability *ch32rv_timer_capability(size_t index);
+const CH32RVTimerCapability *ch32rv_timer_capability_for(uint8_t timer);
+bool ch32rv_timer_get_status(uint8_t timer, CH32RVTimerStatus *status);
 
 /* Polite acquisition leaves an incompatible owner untouched.  Takeover uses
  * last-caller-wins: it quiesces and invalidates the displaced lease(s). */
-CH32RVTimerLease ch32TimerTryAcquire(const CH32RVTimerRequest *request,
+CH32RVTimerLease ch32rv_timer_try_acquire(const CH32RVTimerRequest *request,
                                    const CH32RVTimerOwner *owner);
-CH32RVTimerLease ch32TimerTakeover(const CH32RVTimerRequest *request,
+CH32RVTimerLease ch32rv_timer_takeover(const CH32RVTimerRequest *request,
                                  const CH32RVTimerOwner *owner);
-bool ch32TimerLeaseValid(const CH32RVTimerLease *lease);
-void ch32TimerRelease(CH32RVTimerLease *lease);
+bool ch32rv_timer_lease_valid(const CH32RVTimerLease *lease);
+void ch32rv_timer_release(CH32RVTimerLease *lease);
 
 /* Common operations which preserve ownership checks.  A library may use the
  * register_base in the capability for a feature this small API does not yet
  * cover, but it must still hold a valid lease while doing so. */
-bool ch32TimerApplyBase(const CH32RVTimerLease *lease);
-bool ch32TimerStart(const CH32RVTimerLease *lease);
-bool ch32TimerStop(const CH32RVTimerLease *lease);
-bool ch32TimerAttachUpdateInterrupt(const CH32RVTimerLease *lease,
+bool ch32rv_timer_apply_base(const CH32RVTimerLease *lease);
+bool ch32rv_timer_start(const CH32RVTimerLease *lease);
+bool ch32rv_timer_stop(const CH32RVTimerLease *lease);
+bool ch32rv_timer_attach_update_interrupt(const CH32RVTimerLease *lease,
                                     CH32RVTimerCallback callback,
                                     void *context);
-void ch32TimerDetachUpdateInterrupt(const CH32RVTimerLease *lease);
+void ch32rv_timer_detach_update_interrupt(const CH32RVTimerLease *lease);
 
 #ifdef __cplusplus
 }
