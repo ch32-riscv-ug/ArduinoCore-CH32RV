@@ -91,7 +91,7 @@ USB の内部処理は `loop()` の後と `delay()` 中に進みます。スケ�
 
 | 種類 | 例 | 呼ばれる場所・書き方 |
 |---|---|---|
-| 通知 | CDC の `onRx()`、HID の Output、バス通知、映像の完了通知 | `loop()` の `deliverEvents()` で実行。最新状態にまとまる通知もある |
+| 通知 | CDC の `onRx()`、HID の Output、バス通知、映像の完了通知 | `deliverEvents()` で実行（コアが `loop()` の後で呼ぶ）。最新状態にまとまる通知もある |
 | 応答を作る provider・判定 | MSC の読み書き・START STOP、CCID の APDU、Vendor 制御要求、映像の payload 生成、DFU の detach 判定 | USB の処理中に実行。短くし、`delay()` や待ち続けるループを入れない |
 | ポーリング | CDC の `available()`、MIDI の `readPacket()`、Audio の `pollEvent()` | スケッチから読み出す。この方式だけなら通知用の `deliverEvents()` は不要 |
 
@@ -120,7 +120,7 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | `begin()` が失敗 | `lastErrorName()` と [ライブラリ README](../README.ja.md)。型番・controller・クロック・他機能との競合 |
 | PC に現れない | ケーブル、USB データコネクタ、D+/D−、controller の選択 |
 | CDC に届かない | 正しいポートを DTR 有効で開いたか。送信先が UART ではないか |
-| callback が動かない | 通知を登録した場合、`loop()` で `deliverEvents()` を呼んでいるか |
+| callback が動かない | `loop()` から戻っているか（中で待ち続けていないか）。待つ間も受け取るなら、待ちの中で `deliverEvents()` を呼ぶ |
 | 列挙するが操作できない | 対応する PC アプリ、report/PCM 等の形式、interface と endpoint の選択 |
 | 高負荷時だけ欠落する | 処理の戻り値、長い callback、読み出し頻度、送受信量 |
 

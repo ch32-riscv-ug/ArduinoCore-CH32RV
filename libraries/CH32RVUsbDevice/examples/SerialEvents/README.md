@@ -24,7 +24,7 @@ A board with USB Device support and a USB data cable, a PC serial terminal (CDC)
 
 ## Settings and limits
 
-- No callback runs until `deliverEvents()` is called. Inside `delay()` USB transfers go on; callbacks do not.
+- Callbacks run only inside `deliverEvents()`, which the core calls after every `loop()` and a sketch may call itself, as this one does. Inside `delay()` USB transfers go on; callbacks do not.
 - Several notifications of one kind before a delivery arrive as one. `onRx()` gets what can be read then.
 - When the receive buffer (256 bytes at Full Speed) is full, the PC waits before sending more. No data is lost.
 - `SerialUSB` is the USB CDC port, `Serial` the UART.

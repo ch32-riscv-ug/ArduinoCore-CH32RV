@@ -129,7 +129,8 @@ static inline uint32_t getApbFrequency(void) { return (uint32_t)F_CPU; }
 #include "ch32rv_irq.h"
 
 /* deliverEvents(): where the libraries' notification callbacks (onRx and the
- * like) run - only there, never inside delay() (ch32rv_deliver.h). */
+ * like) run - after every loop() and where a sketch calls it, never inside
+ * delay() (ch32rv_deliver.h). */
 #include "ch32rv_deliver.h"
 
 /* api/Common.h declares these two but leaves them to the core.

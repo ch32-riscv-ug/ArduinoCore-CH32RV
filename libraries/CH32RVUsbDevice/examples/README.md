@@ -104,7 +104,7 @@ The sample VID/PID `1209:0001` is a test identity. Use identifiers appropriate f
 | `begin()` fails | `lastErrorName()`, [library guide](../README.md), part/controller/clock and resource conflicts |
 | Not visible on PC | Cable, data connector, D+/D− and selected controller |
 | No CDC output | Correct port opened with DTR, and output not routed to UART |
-| Callback does not run | Call `deliverEvents()` in `loop()` for registered notifications |
+| Callback does not run | Return from `loop()` (do not wait inside it); to receive while waiting, call `deliverEvents()` in the wait |
 | Enumerates but cannot be used | Class application, report/PCM format, interface and endpoint selection |
 | Loss only under load | Return values, long callbacks, read frequency and traffic volume |
 

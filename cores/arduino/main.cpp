@@ -22,9 +22,16 @@
  * host, the IP stack, USB PD - ch32rv_service.h). It runs after every loop()
  * and inside delay(). It is not hung on yield(), because a sketch may define
  * its own yield().
+ *
+ * deliverEvents() (ch32rv_deliver.h) runs after every loop() too, so the
+ * libraries' notification callbacks arrive without the sketch calling it; a
+ * sketch may still call it where it wants them sooner. A weak reference:
+ * ch32rv_deliver.o is linked only when a driver attaches a delivery.
  */
 #include "Arduino.h"
 #include "ch32rv_service.h"
+
+extern "C" size_t deliverEvents(void) __attribute__((weak));
 
 /* Empty by default; a variant or a library that needs something to happen
  * before setup() overrides it. */
@@ -41,6 +48,9 @@ int main(void)
         loop();
         if (ch32rv_services_run) {
             ch32rv_services_run();
+        }
+        if (deliverEvents) {
+            deliverEvents();
         }
         if (serialEventRun) {
             serialEventRun();

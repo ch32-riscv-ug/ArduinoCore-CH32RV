@@ -41,7 +41,7 @@ hardware に置く。
 - 5: `libraries/CH32RVSyncKit`。V003・V103・V307・X035・H417 で 10 kHz の割り込みとの実機試験を通した。
 - 2 の Work: `libraries/CH32RVTaskKit`（任意）。
 - 2 のライブラリの通知: `cores/arduino/ch32rv_deliver.{h,c}` の `deliverEvents()`。USB デバイスと USB ホストの
-  通知 callback（`onRx()`、`onBusEvent()`、`onKeyboard()` など）はここからだけ呼ばれる。届くまでデータは
+  通知 callback（`onRx()`、`onBusEvent()`、`onKeyboard()` など）はここからだけ呼ばれる。コアが `loop()` の後で毎回呼び（main.cpp、weak の参照なので通知を登録するドライバーが無ければ何もリンクしない）、スケッチも呼べる。届くまでデータは
   クラスの buffer か相手側で待つ。Network ライブラリが USB の生フレームを受ける口は利用者のコードではないので、
   サービスの中で呼ぶ別の口（`CH32RVUsbDeviceNet::onStackFrame()`）にした。
 - 3 の provider: MSC の `onRead()` / `onWrite()` / `onStartStop()`、CCID の `onApdu()` / `onEscape()`、

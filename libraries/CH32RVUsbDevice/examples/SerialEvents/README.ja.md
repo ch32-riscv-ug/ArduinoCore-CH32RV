@@ -24,8 +24,8 @@ UART は `RX` / `TX` に対応する端子を使います。
 
 ## 設定と制約
 
-- `deliverEvents()` を呼ばない限り callback は動きません。`delay()` の中では USB の転送は進みますが、
-  callback は動きません。
+- callback が動くのは `deliverEvents()` の中だけです。コアが `loop()` から戻るたびに呼び、この例のように
+  スケッチが呼ぶこともできます。`delay()` の中では USB の転送は進みますが、callback は動きません。
 - 届く前に何度か起きた同じ種類の通知は、1 回にまとまります。`onRx()` の引数はその時点で読める数です。
 - 受信の buffer（Full Speed では 256 バイト）が満杯になると、PC 側が送るのを待ちます。データは失われません。
 - `SerialUSB` が USB の CDC、`Serial` が UART です。

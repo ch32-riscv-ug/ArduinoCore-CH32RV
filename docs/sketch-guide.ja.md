@@ -10,7 +10,7 @@ ESP32 や Raspberry Pi Pico の RTOS に移ったときも、同じ考え方が�
 
 1. **割り込みは合図だけ。** 処理は `loop()` で行う。
 2. **待たない。** 「今は無理」なら、状態を覚えて `loop()` に戻る。
-3. **自分の関数は、自分が呼んだ場所で動く。** ライブラリの callback は `deliverEvents()` で受け取る。
+3. **自分の関数は、決まった場所で動く。** ライブラリの callback は、`loop()` から戻った後（と、スケッチが `deliverEvents()` を呼んだ所）で動く。
 
 各例の配線と API の使い方は [サンプルスケッチ案内](examples.ja.md) から参照できます。
 
@@ -22,9 +22,10 @@ ESP32 や Raspberry Pi Pico の RTOS に移ったときも、同じ考え方が�
 setup()
   └ USB / Network / USB PD の begin() が、自分の「裏の仕事」を登録する
 
-loop()                ← スケッチの仕事。deliverEvents() を呼ぶとここで callback が動く
+loop()                ← スケッチの仕事。deliverEvents() を呼べば、ここでも callback が動く
   ↓ 戻る
 裏の仕事を 1 回ずつ   ← USB の列挙と転送、IP スタックのタイマー、PD の応答
+deliverEvents()       ← ライブラリの callback
   ↓
 loop() ...
 
@@ -36,8 +37,8 @@ delay(ms) の間も、裏の仕事は回り続ける（callback は動かない�
   を書かなくても、USB はつながり、PD は電圧を保ちます。
 - 裏の仕事が回るのは、`loop()` から戻ったときと `delay()` の中です。`loop()` の中で `while` を回して
   待ち続けると、その間 USB は止まります。
-- スケッチの関数（callback）は、裏の仕事の中では呼ばれません。動くのは `loop()` の中で
-  `deliverEvents()` を呼んだときだけです。
+- スケッチの関数（callback）は、裏の仕事の中では呼ばれません。動くのは、`loop()` から戻った後と、
+  スケッチが `deliverEvents()` を呼んだときです。`delay()` の中では動きません。
 
 ## 学ぶ順番
 
@@ -52,7 +53,7 @@ delay(ms) の間も、裏の仕事は回り続ける（callback は動かない�
 | 5 | [PinInterrupt](../libraries/CH32RV/examples/PinInterrupt/PinInterrupt.ino) | `attachInterrupt()` と、ISR が書く変数の読み方 |
 | 6 | [QueueFromInterrupt](../libraries/CH32RVSyncKit/examples/QueueFromInterrupt/README.ja.md) | ISR から `loop()` へ、値を取りこぼさずに渡す |
 | 7 | [CriticalSection](../libraries/CH32RVSyncKit/examples/CriticalSection/README.ja.md) | 割り込み禁止区間。何を中に入れ、何を入れないか |
-| 8 | [SerialEvents](../libraries/CH32RVUsbDevice/examples/SerialEvents/README.ja.md) | USB の callback が `deliverEvents()` でだけ動くこと |
+| 8 | [SerialEvents](../libraries/CH32RVUsbDevice/examples/SerialEvents/README.ja.md) | USB の callback が動く場所（`loop()` の後と `deliverEvents()`）|
 | 9 | [BasicWork](../libraries/CH32RVTaskKit/examples/BasicWork/README.ja.md) | 仕事を「起動条件つきの関数」に分ける |
 | 10 | [ButtonBlinkConsole](../libraries/CH32RVTaskKit/examples/ButtonBlinkConsole/README.ja.md) | ボタン、点滅、コマンドを 1 つのスケッチにまとめる |
 
@@ -171,9 +172,9 @@ Arduino の `noInterrupts()` / `interrupts()` も使えます。ただし入れ�
 CH32RVSyncKit の部品（`Queue` など）は、この短い禁止区間を内側で自分で取ります。部品を使っている限り、
 スケッチで割り込みを止める必要はありません。
 
-## 4. ライブラリの callback は `deliverEvents()` で受け取る
+## 4. ライブラリの callback が動く場所
 
-USB の `onRx()` や `onKeyboard()` のような callback は、`loop()` の中で `deliverEvents()` を呼んだときだけ動きます。
+USB の `onRx()` や `onKeyboard()` のような callback は、`loop()` から戻るたびにコアが呼ぶ `deliverEvents()` の中で動きます。早く受け取りたいときは、スケッチが `loop()` の中で `deliverEvents()` を呼べます。
 
 ```cpp
 #include <CH32RVUsbDevice.h>
@@ -190,12 +191,11 @@ void setup() {
 }
 
 void loop() {
-  deliverEvents();                     // onData() はここで動く。ほかの場所では動かない
-  // 自分の仕事
+  // 自分の仕事。onData() は loop() から戻った後で動く（delay() の中では動かない）
 }
 ```
 
-- 通知 callback は `deliverEvents()` で受け取ります。読み出しが遅いとクラスの buffer が埋まって相手側で待ちが
+- 通知 callback は `deliverEvents()` の中で動きます。読み出しが遅いとクラスの buffer が埋まって相手側で待ちが
   発生する場合があります。通知の保存方法はクラスによって異なり、無制限に保存されるわけではありません。
   `delay()` の中でも USB の転送は進みますが、通知 callback は動きません。
 - 自分の関数が `loop()` の途中に割り込んで動くことはありません。グローバル変数を callback と `loop()` で
@@ -252,7 +252,7 @@ void loop() {
 | `noInterrupts()` の中で `delay()` | 永久に戻らない（`millis()` が進まない） | 禁止区間ではコピーだけ |
 | `while (!flag) {}` で待つ | 待つ間 USB が止まり、ホストから見えなくなる | `loop()` に戻り、次の回でもう一度見る |
 | `if (millis() > next)` | 49 日後の桁あふれで誤動作 | `millis() - last >= interval` |
-| callback を登録したのに動かない | `deliverEvents()` を呼んでいない | `loop()` で `deliverEvents()` を呼ぶ |
+| callback を登録したのに動かない | `loop()` から戻らない（中で待ち続けている） | `loop()` に戻る。待つ間も受け取るなら、待ちの中で `deliverEvents()` を呼ぶ |
 | provider（`onRead()` など）で長い処理 | ホストがタイムアウトする | すぐ答えられる形にする |
 
 ## ESP32 / Pico に移るとき

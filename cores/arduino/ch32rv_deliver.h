@@ -3,11 +3,12 @@
  * A driver's service (ch32rv_service.h) runs inside delay() and after loop();
  * the sketch's own functions must not. So a driver that has a notification
  * for the sketch - data arrived, the host set the line coding, a frame went
- * out - records it and returns, and the callback runs only when the sketch
- * calls deliverEvents():
+ * out - records it and returns, and the callback runs in deliverEvents(),
+ * which the core calls after every loop() and a sketch may call itself:
  *
  *     void setup() { SerialUSB.onRx(gotData); }
- *     void loop()  { deliverEvents(); }   // gotData() runs here, nowhere else
+ *     void loop()  { ... }   // gotData() runs between two loop()s
+ *     // or, sooner, where the sketch says: deliverEvents();
  *
  * A notification not yet delivered is kept, not dropped: a flag and the
  * latest state, or the data held in the driver's buffer (the host waits).

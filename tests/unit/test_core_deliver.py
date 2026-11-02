@@ -99,3 +99,12 @@ def results(tmp_path_factory):
 ])
 def test_deliver(results, label, expected):
     assert results[label] == expected
+
+
+def test_main_delivers_after_every_loop_through_a_weak_reference():
+    """The callbacks arrive without the sketch calling deliverEvents(); a sketch that attaches no delivery links
+    none of it (the reference is weak, like serialEventRun's)."""
+    main = (REPO / "cores/arduino/main.cpp").read_text(encoding="utf-8")
+    assert 'extern "C" size_t deliverEvents(void) __attribute__((weak));' in main
+    body = main[main.index("for (;;) {"):]
+    assert body.index("loop();") < body.index("if (deliverEvents) {") < body.index("deliverEvents();")
