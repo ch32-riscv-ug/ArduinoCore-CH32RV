@@ -1,4 +1,4 @@
-"""The Flash / RAM Split menu (boards.txt) against RM 32.4.6, Table 32-4.
+"""The Flash / RAM Split menu (boards.txt) against RM 32.4.6, Table 32-4 (V30x) and the V407 RM p.587 (USER bit 6).
 
 The USER value and mask each entry hands ch32rv_option_user.c pick the split its
 linker script is built for; a wrong pair would have the core set the chip to one
@@ -13,7 +13,9 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 # USER[7:5] -> (flash KB, RAM KB); 00x, 01x, 10x ignore bit 5
 TABLE = {0b000: (192, 128), 0b001: (192, 128), 0b010: (224, 96), 0b011: (224, 96),
          0b100: (256, 64), 0b101: (256, 64), 0b110: (128, 192), 0b111: (288, 32)}
-SPLIT_PARTS = re.compile(r"CH32V(303[RV]C|307[RWV]C|317[VWS]C)")
+# V407 / V467: USER bit 6 RAM_CODE_MOD, 0 512 KB + 200 KB (factory), 1 576 KB + 136 KB
+TABLE_V407 = {0: (512, 200), 1: (576, 136)}
+SPLIT_PARTS = re.compile(r"CH32V(303[RV]C|307[RWV]C|317[VWS]C|4[06]7(RET6|VET6|WEU6))")
 
 
 def boards() -> dict:
@@ -28,7 +30,7 @@ def boards() -> dict:
 def test_each_entry_sets_the_split_its_sizes_and_linker_script_name():
     b = boards()
     entries = {k.removesuffix(".build.ramsplit_ld") for k in b if ".menu.ramsplit." in k and k.endswith(".build.ramsplit_ld")}
-    assert {e.split(".")[0] for e in entries} == {"CH32V303", "CH32V307", "CH32V317"}
+    assert {e.split(".")[0] for e in entries} == {"CH32V303", "CH32V307", "CH32V317", "CH32V407", "CH32V467"}
     for e in entries:
         board = e.split(".")[0]
         m = re.fullmatch(r"-DCH32RV_RAMSPLIT_USER=0x([0-9a-f]{2})u -DCH32RV_RAMSPLIT_MASK=0x([0-9a-f]{2})u"
@@ -37,10 +39,14 @@ def test_each_entry_sets_the_split_its_sizes_and_linker_script_name():
         user, mask = int(m.group(1), 16), int(m.group(2), 16)
         flash, ram = int(b[e + ".upload.maximum_size"]), int(b[e + ".upload.maximum_data_size"])
         assert int(m.group(3)) * 1024 == ram, e
-        # every USER[7:5] the mask lets through is the same split
-        for bits, (f_kb, r_kb) in TABLE.items():
-            if (bits << 5 ^ user) & mask == 0:
-                assert (f_kb * 1024, r_kb * 1024) == (flash, ram), e
+        # every USER value the mask lets through is the same split
+        if board in ("CH32V407", "CH32V467"):
+            assert mask == 0x40, e
+            assert TABLE_V407[user >> 6 & 1] == (flash // 1024, ram // 1024), e
+        else:
+            for bits, (f_kb, r_kb) in TABLE.items():
+                if (bits << 5 ^ user) & mask == 0:
+                    assert (f_kb * 1024, r_kb * 1024) == (flash, ram), e
         assert b[e + ".build.ramsplit_ld"] == f"{flash // 1024}k_{ram // 1024}k"
         ld = REPO / "variants" / board / f"{board.lower()}_{b[e + '.build.ramsplit_ld']}.ld"
         text = ld.read_text(encoding="utf-8")
@@ -50,7 +56,7 @@ def test_each_entry_sets_the_split_its_sizes_and_linker_script_name():
 def test_only_the_parts_with_the_split_follow_the_menu():
     b = boards()
     for key, value in b.items():
-        m = re.fullmatch(r"(CH32V3[01][37])\.menu\.pnum\.(\w+)\.build\.ldscript", key)
+        m = re.fullmatch(r"(CH32V3[01][37]|CH32V4[06]7)\.menu\.pnum\.(\w+)\.build\.ldscript", key)
         if not m:
             continue
         pn = m.group(2)

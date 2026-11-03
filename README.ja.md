@@ -50,7 +50,7 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | Floating Point (`rtlib`) | `fltf` | 浮動小数を double と float のどちらで計算するか、printf の `%f`、newlib の printf / scanf の浮動小数 |
 | parseFloat (`parsefloat`) | `auto` | `Serial.parseFloat()` の計算。`auto` は Floating Point に合わせる（Float なら整数、Double なら double） |
 | USART1〜10、I2C1〜2、SPI1〜3（`usartN`、`i2cN`、`spiN`） | `auto` | その周辺の端子の決め方。AUTO は `begin()` で決める（既定の端子か、`setPins()` で選んだもの）。FIX は端子をビルドで決める（既定でない端子を使うとき、`setPins()` より Serial で 472〜1028 B、Wire で 28〜100 B 小さい）。Disable はその周辺をリンクしない（X035 で Serial 以外の USART を外すと 456 B 減る）。`Serial`、`Serial1`… の名前は、有効な周辺を番号順に並べたものなので、Disable にすると後ろの名前が詰まる |
-| Flash / RAM Split (`ramsplit`) | `256k_64k`（工場出荷） | V303 / V305 / V307 / V317 の SRAM 320 KB を、待ちなしの flash の写しと RAM に分ける割合（[support-status.ja.md](docs/support-status.ja.md)）。工場出荷でない値は、起動時にコアがオプションバイトを書き換える |
+| Flash / RAM Split (`ramsplit`) | `256k_64k` / `512k_200k`（工場出荷） | SRAM を、待ちなしの flash の写しと RAM に分ける割合。V303 / V305 / V307 / V317（320 KB、5 通り）と、V407 / V467 の RET6・VET6・WEU6（512 KB + 200 KB か 576 KB + 136 KB）（[support-status.ja.md](docs/support-status.ja.md)）。工場出荷でない値は、起動時にコアがオプションバイトを書き換える |
 | VIO18 Supply (`vio18`) | `hw` | H41x の VIO18 の電圧。`hw` は基板の XO の strap のまま。ほかは起動時にコアが設定する |
 | Reset Pin (`rstpin`) | 系列の出荷時の値 | リセット端子をオプションバイトで決める系列（V002〜V006 は出荷時にリセット、V007・M007・X033・X035・M030・X305・X315 は GPIO）。出荷時の値の項目は何もせず、チップはそのときの設定のまま。もう一方を選ぶと、起動時にコアがオプションバイトを比べ、違えば一度だけ書き換えてリセットする（V003 で 276 B 増える）。ch32rv などで変えても、その項目で作ったスケッチが動くたびに戻る。UIAPduino にはメニューが無い（HID ブートローダーが出荷時のリセット端子を使う） |
 | Watchdog (`iwdg`) | `sw`（工場出荷） | IWDG を、`wdtEnable()` で始める（工場出荷）か、電源投入から動かす（`hw`。起動時にオプションバイトを書き換える。80 B 増える）か。V00x、M007、X03x、X3x5、V20x、V205、V30x、L103 / M103、V407 / V467 |

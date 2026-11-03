@@ -419,15 +419,29 @@ RAMSPLIT_MENU = (
 )
 RAMSPLIT_PARTS = ("CH32V303RC", "CH32V303VC", "CH32V307RC", "CH32V307WC", "CH32V307VC",
                   "CH32V317VC", "CH32V317WC", "CH32V317SC")
+# CH32V407 / V467 (RM p.587, USER bit 6 RAM_CODE_MOD; device-data memory_configs.csv): two
+# splits of the code-and-RAM SRAM. The loaded value shows in FLASH_OBR bit 8, as the RM
+# says (the EVT's bit 9 is not it: a V407WEU6 with USER 0xBF read OBR 0x03FFFEFC), so the
+# boot check reads it the way it reads V30x's. KEU6 (480 KB) has no such split.
+RAMSPLIT_MENU_V407 = (
+    ("512k_200k", "512 KB flash + 200 KB RAM (factory setting)", 512, 200, 0x00, 0x40),
+    ("576k_136k", "576 KB flash + 136 KB RAM", 576, 136, 0x40, 0x40),
+)
+RAMSPLIT_PARTS_V407 = ("CH32V407RET6", "CH32V407VET6", "CH32V407WEU6",
+                       "CH32V467RET6", "CH32V467VET6", "CH32V467WEU6")
+
+
+def ramsplit_entries(series: str) -> tuple:
+    return RAMSPLIT_MENU_V407 if series in ("CH32V407", "CH32V467") else RAMSPLIT_MENU
 
 
 def ramsplit_part(pn: str) -> bool:
-    return pn.startswith(RAMSPLIT_PARTS)
+    return pn.startswith(RAMSPLIT_PARTS) or pn in RAMSPLIT_PARTS_V407
 
 
-def ramsplit_menu(board: str) -> list[str]:
+def ramsplit_menu(board: str, series: str) -> list[str]:
     lines = []
-    for key, label, flash, ram, user, mask in RAMSPLIT_MENU:
+    for key, label, flash, ram, user, mask in ramsplit_entries(series):
         pfx = f"{board}.menu.ramsplit.{key}"
         lines.append(f"{pfx}={label}")
         lines.append(f"{pfx}.build.ramsplit_ld={key}")
@@ -3901,7 +3915,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines.append(f"{pfx}.build.part={pn}")
         if split:
             # The menu's split: every one of its linker scripts exists for this series.
-            for _, _, f_kb, r_kb, _, _ in RAMSPLIT_MENU:
+            for _, _, f_kb, r_kb, _, _ in ramsplit_entries(series):
                 ld_for(f_kb * 1024, r_kb * 1024)
             lines.append(f"{pfx}.build.ldscript={series.lower()}_{{build.ramsplit_ld}}.ld")
             lines.append(f"{pfx}.build.ramsplit_defines={{build.ramsplit_user}}")
@@ -3954,7 +3968,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines += vio18_menu(board)
         lines.append("")
     if split_parts:
-        lines += ramsplit_menu(board)
+        lines += ramsplit_menu(board, series)
         lines.append("")
     if series in RSTPIN:
         lines += rstpin_menu(board, series)

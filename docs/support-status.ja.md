@@ -84,3 +84,10 @@ PD0〜PD7、PD9〜PD15、PE0〜PE1、PE7〜PE15、PF0〜PF5、PF11〜PF14 は、
 | UIAPduino Pro Micro CH32V003 V1.4 | HID bootloader upload。UART / GPIO / ADC / I2C / SPI は Generic CH32V003 の実装を使用 |
 
 ペリフェラル単位の実装範囲は [peripheral-support.ja.md](peripheral-support.ja.md) を参照してください。
+
+CH32V407 / V467 の RET6・VET6・WEU6 も、同じメニューで 2 通りに分けられます。オプションバイト USER の bit 6（RAM_CODE_MOD、RM p.587）で決まり、既定は出荷時の 512 KB + 200 KB です。
+
+- 512 KB + 200 KB（工場出荷）
+- 576 KB + 136 KB
+
+書き換えの仕組みは V30x と同じです（V407WEU6 で、書き換えと戻しを確かめました）。KEU6（480 KB）には、この分け方がありません。

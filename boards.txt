@@ -4391,9 +4391,8 @@ CH32V407.menu.pnum.CH32V407KEU6.monitor_port.oep.chip=CH32V407KEU6
 
 CH32V407.menu.pnum.CH32V407RET6=CH32V407RET6 (LQFP64, 512K/200K)
 CH32V407.menu.pnum.CH32V407RET6.build.part=CH32V407RET6
-CH32V407.menu.pnum.CH32V407RET6.build.ldscript=ch32v407_512k_200k.ld
-CH32V407.menu.pnum.CH32V407RET6.upload.maximum_size=524288
-CH32V407.menu.pnum.CH32V407RET6.upload.maximum_data_size=204800
+CH32V407.menu.pnum.CH32V407RET6.build.ldscript=ch32v407_{build.ramsplit_ld}.ld
+CH32V407.menu.pnum.CH32V407RET6.build.ramsplit_defines={build.ramsplit_user}
 CH32V407.menu.pnum.CH32V407RET6.build.ch32rv_chip=CH32V407RET6
 CH32V407.menu.pnum.CH32V407RET6.monitor_port.serial.chip=CH32V407RET6
 CH32V407.menu.pnum.CH32V407RET6.monitor_port.wchlink.chip=CH32V407RET6
@@ -4401,9 +4400,8 @@ CH32V407.menu.pnum.CH32V407RET6.monitor_port.oep.chip=CH32V407RET6
 
 CH32V407.menu.pnum.CH32V407VET6=CH32V407VET6 (LQFP100, 512K/200K)
 CH32V407.menu.pnum.CH32V407VET6.build.part=CH32V407VET6
-CH32V407.menu.pnum.CH32V407VET6.build.ldscript=ch32v407_512k_200k.ld
-CH32V407.menu.pnum.CH32V407VET6.upload.maximum_size=524288
-CH32V407.menu.pnum.CH32V407VET6.upload.maximum_data_size=204800
+CH32V407.menu.pnum.CH32V407VET6.build.ldscript=ch32v407_{build.ramsplit_ld}.ld
+CH32V407.menu.pnum.CH32V407VET6.build.ramsplit_defines={build.ramsplit_user}
 CH32V407.menu.pnum.CH32V407VET6.build.ch32rv_chip=CH32V407VET6
 CH32V407.menu.pnum.CH32V407VET6.monitor_port.serial.chip=CH32V407VET6
 CH32V407.menu.pnum.CH32V407VET6.monitor_port.wchlink.chip=CH32V407VET6
@@ -4411,9 +4409,8 @@ CH32V407.menu.pnum.CH32V407VET6.monitor_port.oep.chip=CH32V407VET6
 
 CH32V407.menu.pnum.CH32V407WEU6=CH32V407WEU6 (QFN68, 512K/200K)
 CH32V407.menu.pnum.CH32V407WEU6.build.part=CH32V407WEU6
-CH32V407.menu.pnum.CH32V407WEU6.build.ldscript=ch32v407_512k_200k.ld
-CH32V407.menu.pnum.CH32V407WEU6.upload.maximum_size=524288
-CH32V407.menu.pnum.CH32V407WEU6.upload.maximum_data_size=204800
+CH32V407.menu.pnum.CH32V407WEU6.build.ldscript=ch32v407_{build.ramsplit_ld}.ld
+CH32V407.menu.pnum.CH32V407WEU6.build.ramsplit_defines={build.ramsplit_user}
 CH32V407.menu.pnum.CH32V407WEU6.build.ch32rv_chip=CH32V407WEU6
 CH32V407.menu.pnum.CH32V407WEU6.monitor_port.serial.chip=CH32V407WEU6
 CH32V407.menu.pnum.CH32V407WEU6.monitor_port.wchlink.chip=CH32V407WEU6
@@ -4475,6 +4472,17 @@ CH32V407.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32V407.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V407.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V407.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32V407.menu.ramsplit.512k_200k=512 KB flash + 200 KB RAM (factory setting)
+CH32V407.menu.ramsplit.512k_200k.build.ramsplit_ld=512k_200k
+CH32V407.menu.ramsplit.512k_200k.upload.maximum_size=524288
+CH32V407.menu.ramsplit.512k_200k.upload.maximum_data_size=204800
+CH32V407.menu.ramsplit.512k_200k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x00u -DCH32RV_RAMSPLIT_MASK=0x40u -DCH32RV_RAMSPLIT_RAM_KB=200
+CH32V407.menu.ramsplit.576k_136k=576 KB flash + 136 KB RAM
+CH32V407.menu.ramsplit.576k_136k.build.ramsplit_ld=576k_136k
+CH32V407.menu.ramsplit.576k_136k.upload.maximum_size=589824
+CH32V407.menu.ramsplit.576k_136k.upload.maximum_data_size=139264
+CH32V407.menu.ramsplit.576k_136k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x40u -DCH32RV_RAMSPLIT_MASK=0x40u -DCH32RV_RAMSPLIT_RAM_KB=136
 
 CH32V407.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
 CH32V407.menu.iwdg.sw.build.iwdg_defines=
@@ -4639,9 +4647,8 @@ CH32V467.build.clock_defines=-DCH32RV_FLASH_LATENCY=0 -DCH32RV_CLOCK_SYSCLK_HZ=4
 
 CH32V467.menu.pnum.ANY=Any CH32V467 (512K/200K)
 CH32V467.menu.pnum.ANY.build.part=ANY
-CH32V467.menu.pnum.ANY.build.ldscript=ch32v467_512k_200k.ld
-CH32V467.menu.pnum.ANY.upload.maximum_size=524288
-CH32V467.menu.pnum.ANY.upload.maximum_data_size=204800
+CH32V467.menu.pnum.ANY.build.ldscript=ch32v467_{build.ramsplit_ld}.ld
+CH32V467.menu.pnum.ANY.build.ramsplit_defines={build.ramsplit_user}
 CH32V467.menu.pnum.ANY.build.ch32rv_chip=CH32V407
 CH32V467.menu.pnum.ANY.monitor_port.serial.chip=CH32V407
 CH32V467.menu.pnum.ANY.monitor_port.wchlink.chip=CH32V407
@@ -4649,9 +4656,8 @@ CH32V467.menu.pnum.ANY.monitor_port.oep.chip=CH32V407
 
 CH32V467.menu.pnum.CH32V467RET6=CH32V467RET6 (LQFP64, 512K/200K)
 CH32V467.menu.pnum.CH32V467RET6.build.part=CH32V467RET6
-CH32V467.menu.pnum.CH32V467RET6.build.ldscript=ch32v467_512k_200k.ld
-CH32V467.menu.pnum.CH32V467RET6.upload.maximum_size=524288
-CH32V467.menu.pnum.CH32V467RET6.upload.maximum_data_size=204800
+CH32V467.menu.pnum.CH32V467RET6.build.ldscript=ch32v467_{build.ramsplit_ld}.ld
+CH32V467.menu.pnum.CH32V467RET6.build.ramsplit_defines={build.ramsplit_user}
 CH32V467.menu.pnum.CH32V467RET6.build.ch32rv_chip=CH32V467RET6
 CH32V467.menu.pnum.CH32V467RET6.monitor_port.serial.chip=CH32V467RET6
 CH32V467.menu.pnum.CH32V467RET6.monitor_port.wchlink.chip=CH32V467RET6
@@ -4659,9 +4665,8 @@ CH32V467.menu.pnum.CH32V467RET6.monitor_port.oep.chip=CH32V467RET6
 
 CH32V467.menu.pnum.CH32V467VET6=CH32V467VET6 (LQFP100, 512K/200K)
 CH32V467.menu.pnum.CH32V467VET6.build.part=CH32V467VET6
-CH32V467.menu.pnum.CH32V467VET6.build.ldscript=ch32v467_512k_200k.ld
-CH32V467.menu.pnum.CH32V467VET6.upload.maximum_size=524288
-CH32V467.menu.pnum.CH32V467VET6.upload.maximum_data_size=204800
+CH32V467.menu.pnum.CH32V467VET6.build.ldscript=ch32v467_{build.ramsplit_ld}.ld
+CH32V467.menu.pnum.CH32V467VET6.build.ramsplit_defines={build.ramsplit_user}
 CH32V467.menu.pnum.CH32V467VET6.build.ch32rv_chip=CH32V467VET6
 CH32V467.menu.pnum.CH32V467VET6.monitor_port.serial.chip=CH32V467VET6
 CH32V467.menu.pnum.CH32V467VET6.monitor_port.wchlink.chip=CH32V467VET6
@@ -4669,9 +4674,8 @@ CH32V467.menu.pnum.CH32V467VET6.monitor_port.oep.chip=CH32V467VET6
 
 CH32V467.menu.pnum.CH32V467WEU6=CH32V467WEU6 (QFN68, 512K/200K)
 CH32V467.menu.pnum.CH32V467WEU6.build.part=CH32V467WEU6
-CH32V467.menu.pnum.CH32V467WEU6.build.ldscript=ch32v467_512k_200k.ld
-CH32V467.menu.pnum.CH32V467WEU6.upload.maximum_size=524288
-CH32V467.menu.pnum.CH32V467WEU6.upload.maximum_data_size=204800
+CH32V467.menu.pnum.CH32V467WEU6.build.ldscript=ch32v467_{build.ramsplit_ld}.ld
+CH32V467.menu.pnum.CH32V467WEU6.build.ramsplit_defines={build.ramsplit_user}
 CH32V467.menu.pnum.CH32V467WEU6.build.ch32rv_chip=CH32V467WEU6
 CH32V467.menu.pnum.CH32V467WEU6.monitor_port.serial.chip=CH32V467WEU6
 CH32V467.menu.pnum.CH32V467WEU6.monitor_port.wchlink.chip=CH32V467WEU6
@@ -4733,6 +4737,17 @@ CH32V467.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32V467.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V467.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V467.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32V467.menu.ramsplit.512k_200k=512 KB flash + 200 KB RAM (factory setting)
+CH32V467.menu.ramsplit.512k_200k.build.ramsplit_ld=512k_200k
+CH32V467.menu.ramsplit.512k_200k.upload.maximum_size=524288
+CH32V467.menu.ramsplit.512k_200k.upload.maximum_data_size=204800
+CH32V467.menu.ramsplit.512k_200k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x00u -DCH32RV_RAMSPLIT_MASK=0x40u -DCH32RV_RAMSPLIT_RAM_KB=200
+CH32V467.menu.ramsplit.576k_136k=576 KB flash + 136 KB RAM
+CH32V467.menu.ramsplit.576k_136k.build.ramsplit_ld=576k_136k
+CH32V467.menu.ramsplit.576k_136k.upload.maximum_size=589824
+CH32V467.menu.ramsplit.576k_136k.upload.maximum_data_size=139264
+CH32V467.menu.ramsplit.576k_136k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x40u -DCH32RV_RAMSPLIT_MASK=0x40u -DCH32RV_RAMSPLIT_RAM_KB=136
 
 CH32V467.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
 CH32V467.menu.iwdg.sw.build.iwdg_defines=
