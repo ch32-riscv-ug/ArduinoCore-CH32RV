@@ -1,9 +1,9 @@
 /* Deep sleep that keeps RAM (ch32rv_power.h). Measured 2026-10-28 on V003,
  * X035 and V307: docs/peripheral-a-design.ja.md 5.1. */
 #include "Arduino.h"
-#include "ch32rv_power.h"
-#include "ch32rv_registers.h"
-#include "ch32rv_rtc.h"
+#include "internal/ch32rv_power.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_rtc.h"
 
 volatile uint32_t ch32rv_time_domain;
 volatile uint8_t ch32rv_wake_cause;

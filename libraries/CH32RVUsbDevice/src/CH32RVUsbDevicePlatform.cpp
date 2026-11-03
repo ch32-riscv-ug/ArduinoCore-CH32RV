@@ -4,7 +4,7 @@
  * driver install). Laid out as EspUsbDevice does - same vendor codes, same
  * layout rules, same default GUID - so a host program written for one finds
  * the other. Linked only when a function that needs it is declared. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

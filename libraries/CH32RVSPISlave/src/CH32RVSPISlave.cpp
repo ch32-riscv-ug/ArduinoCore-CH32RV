@@ -15,8 +15,8 @@
  * SPI always runs MSB first and the bytes are reversed on the way in and out. */
 #include "CH32RVSPISlave.h"
 
-#include "ch32rv_gpio.h"
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_gpio.h"
+#include "internal/ch32rv_registers.h"
 
 #define CTLR2_ERRIE   (1u << 5)
 #define CTLR2_RXNEIE  (1u << 6)

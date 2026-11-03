@@ -13,7 +13,7 @@
  * WinUSB on it, which the Microsoft OS 2.0 set names
  * (CH32RVUsbDevicePlatform.cpp: compatible ID only, no DeviceInterfaceGUIDs -
  * libusb opens a WinUSB device without one). */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <ch32rv_flash.h>
 #include <stdlib.h>

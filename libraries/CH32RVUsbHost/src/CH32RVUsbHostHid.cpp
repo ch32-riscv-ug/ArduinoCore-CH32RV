@@ -1,7 +1,7 @@
 /* CH32RVUsbHost: HID (keyboards, mice, consumer / system control, gamepads,
  * vendor reports): the interfaces, their report descriptors and interrupt
  * endpoints, and the reports turned into EspUsbHost's events. */
-#include "CH32RVUsbHostInternal.h"
+#include "internal/CH32RVUsbHostInternal.h"
 
 #include <string.h>
 

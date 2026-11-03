@@ -1,6 +1,6 @@
 /* CH32RVUsbHost: USB MIDI 1.0. Messages are the 4-byte USB-MIDI event
  * packets; onMidiMessage() gets them decoded. */
-#include "CH32RVUsbHostInternal.h"
+#include "internal/CH32RVUsbHostInternal.h"
 
 #include <string.h>
 

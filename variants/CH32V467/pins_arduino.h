@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "ch32rv_pins.h"
+#include "internal/ch32rv_pins.h"
 
 #define CH32RV_VARIANT_CH32V467 1
 #define CH32RV_SERIES_NAME "CH32V467"   /* CH32RV.getChipModel() */

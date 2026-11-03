@@ -2,7 +2,7 @@
  * descriptor (the bytes pinned there by tests/single/video_descriptor):
  * probe / commit on EP0, payloads of one packet each on a bulk or
  * isochronous IN endpoint. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

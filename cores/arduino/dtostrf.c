@@ -5,7 +5,7 @@
  * left-aligns, as avr-libc's does. */
 #include "api/deprecated-avr-comp/avr/dtostrf.h"
 
-#include "ch32rv_format.h"
+#include "internal/ch32rv_format.h"
 
 static void to_buffer(void *ctx, const char *s, size_t n)
 {

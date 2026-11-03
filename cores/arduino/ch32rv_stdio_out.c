@@ -6,14 +6,14 @@
  * fprintf() on stdout stay newlib's, line-buffered: mixed with these on one
  * line they can come out of order. The newlib entries of the Floating Point
  * menu keep newlib's. */
-#include "ch32rv_format.h"
+#include "internal/ch32rv_format.h"
 
 #if !CH32RV_PRINTF_NEWLIB
 
 #include <stdio.h>
 #include <string.h>
 
-#include "ch32rv_serial_write.h"
+#include "internal/ch32rv_serial_write.h"
 
 static void to_stdout(void *ctx, const char *s, size_t n)
 {

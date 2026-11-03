@@ -20,7 +20,7 @@
 #error "CH32RV_VECTORS is required"
 #endif
 #define CH32RV_STR(s) #s
-#define CH32RV_VECTORS_FILE(s) CH32RV_STR(s)
+#define CH32RV_VECTORS_FILE(s) CH32RV_STR(internal/s)
 #ifndef CH32RV_MSTATUS_INIT
 #error "CH32RV_MSTATUS_INIT is required"
 #endif

@@ -1,4 +1,4 @@
-"""Stream::parseFloat's arithmetic (cores/arduino/ch32rv_parse_float.h), on the host.
+"""Stream::parseFloat's arithmetic (cores/arduino/internal/ch32rv_parse_float.h), on the host.
 
 format/parse_float_cases.c is built with the host compiler once per CH32RV_PARSE_FLOAT and under both kinds
 of constants (-fsingle-precision-constant is what the Float entries add) and compares against strtof: double

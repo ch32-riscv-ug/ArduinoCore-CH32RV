@@ -1,11 +1,11 @@
-#include "NetworkCore.h"
+#include "internal/NetworkCore.h"
 #include "NetworkInterface.h"
 
 #ifdef CH32RV_RNG_BASE
 #include <ch32rv_rng.h>
 #endif
 
-#include "ch32rv_service.h"
+#include "internal/ch32rv_service.h"
 
 #include "lwip/init.h"
 #include "lwip/netif.h"

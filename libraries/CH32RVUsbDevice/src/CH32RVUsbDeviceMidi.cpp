@@ -1,5 +1,5 @@
 /* USB MIDI 1.0 on the device stack, with EspUsbDevice's multi-cable descriptor. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

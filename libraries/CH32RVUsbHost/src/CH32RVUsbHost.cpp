@@ -7,9 +7,9 @@
  * changed. Everything else - the control stages, enumeration, the classes'
  * completions - runs in normal context from ch32rv_usb_host_task() (after
  * loop(), inside delay()) and from the blocking calls while they wait. */
-#include "CH32RVUsbHostInternal.h"
-#include "ch32rv_deliver.h"
-#include "ch32rv_service.h"
+#include "internal/CH32RVUsbHostInternal.h"
+#include "internal/ch32rv_deliver.h"
+#include "internal/ch32rv_service.h"
 
 #include <string.h>
 

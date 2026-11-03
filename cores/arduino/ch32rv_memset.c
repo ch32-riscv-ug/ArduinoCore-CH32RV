@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "ch32rv_string.h"
+#include "internal/ch32rv_string.h"
 
 #ifndef __riscv_32e
 

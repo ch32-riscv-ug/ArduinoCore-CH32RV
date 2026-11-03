@@ -1,5 +1,5 @@
 /* See ch32rv_format.h. */
-#include "ch32rv_format.h"
+#include "internal/ch32rv_format.h"
 
 #include <stdbool.h>
 #include <stdint.h>

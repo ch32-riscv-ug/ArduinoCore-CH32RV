@@ -1,8 +1,8 @@
 #include "Servo.h"
 
 #include "CH32RVTimer.h"
-#include "ch32rv_gpio.h"
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_gpio.h"
+#include "internal/ch32rv_registers.h"
 
 #ifdef CH32RV_SERVO_TIMER
 

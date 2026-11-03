@@ -9,8 +9,8 @@
  * elsewhere), so every generated handler funnels into ch32rv_exti_dispatch().
  */
 #include "Arduino.h"
-#include "ch32rv_gpio.h"
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_gpio.h"
+#include "internal/ch32rv_registers.h"
 
 #ifndef CH32RV_EXTI_LINES
 #define CH32RV_EXTI_LINES 16   /* generated exti_<variant>.h overrides (24 on X033/X035) */

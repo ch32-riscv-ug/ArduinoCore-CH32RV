@@ -1,7 +1,7 @@
 /* USB Audio: the configuration descriptor part, UAC1 and UAC2, for full and
  * high speed (EspUsbAudioDescriptor). Plain bytes, no TinyUSB, so the layout
  * is the same on every series. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

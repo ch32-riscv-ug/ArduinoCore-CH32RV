@@ -1,7 +1,7 @@
 /* CH32RVUsbHost: CCID smart-card readers (USB CCID 1.1). Bulk messages over
  * the reader's interface, slot changes from its interrupt endpoint. One
  * reader open at a time. */
-#include "CH32RVUsbHostInternal.h"
+#include "internal/CH32RVUsbHostInternal.h"
 
 #include <string.h>
 

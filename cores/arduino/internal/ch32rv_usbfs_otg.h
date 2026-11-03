@@ -18,7 +18,7 @@
 
 #include <Arduino.h>
 
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_registers.h"
 
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415) || \
     defined(CH32RV_SERIES_CH32M030)

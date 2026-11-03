@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "Arduino.h"
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_registers.h"
 
 #ifdef CH32RV_RNG_BASE
 

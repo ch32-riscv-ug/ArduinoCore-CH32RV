@@ -17,8 +17,8 @@
 #include <Arduino.h>
 #include <string.h>
 
-#include "ch32rv_registers.h"
-#include "CH32RVUsbDcd.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/CH32RVUsbDcd.h"
 
 #define USBD_BASE 0x40005C00u
 #define PMA_BASE  0x40006000u

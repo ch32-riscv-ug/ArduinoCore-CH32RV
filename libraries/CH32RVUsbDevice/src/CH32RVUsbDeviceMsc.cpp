@@ -1,6 +1,6 @@
 /* USB mass storage on the device stack: bulk-only transport and the SCSI
  * commands a host uses with a disk, one logical unit. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

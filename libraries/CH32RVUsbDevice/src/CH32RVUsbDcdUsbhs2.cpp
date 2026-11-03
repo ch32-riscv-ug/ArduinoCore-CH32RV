@@ -35,8 +35,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ch32rv_registers.h"
-#include "CH32RVUsbDcd.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/CH32RVUsbDcd.h"
 
 namespace {
 

@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-#include "ch32rv_format.h"
+#include "internal/ch32rv_format.h"
 
 #ifndef CH32RV_PARSE_FLOAT
 #define CH32RV_PARSE_FLOAT (CH32RV_FP_FLOAT ? 2 : 1)

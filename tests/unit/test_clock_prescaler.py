@@ -1,4 +1,4 @@
-"""The AHB prescaler table in cores/arduino/ch32rv_clock.h.
+"""The AHB prescaler table in cores/arduino/internal/ch32rv_clock.h.
 
 F_CPU is the target HCLK and the prescaler is derived from it, so that a
 different clock is a boards.txt change and nothing else. That only holds if the
@@ -90,7 +90,7 @@ def compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu, expect=None,
     prescaler divides SYSCLK, not the oscillator.
     """
     src = tmp_path / "probe.c"
-    body = f"#include <ch32rv_clock.h>\n"
+    body = f"#include <internal/ch32rv_clock.h>\n"
     if expect is not None:
         body += (f"_Static_assert(CH32RV_HPRE_FIELD == {expect}u,\n"
                  f'               "wrong AHB prescaler field");\n')
@@ -172,7 +172,7 @@ def test_sysclk_above_the_oscillator_needs_a_pll_setting(gcc_bin, repo,
     """SYSCLK and the PLL setting are generated together, so one without the
     other means boards.txt was hand-edited or half-regenerated."""
     src = tmp_path / "probe.c"
-    src.write_text("#include <ch32rv_clock.h>\n", encoding="utf-8")
+    src.write_text("#include <internal/ch32rv_clock.h>\n", encoding="utf-8")
     proc = subprocess.run(
         [f"{gcc_bin}/riscv-none-elf-gcc", "-std=c11", "-fsyntax-only",
          f"-I{repo / 'cores' / 'arduino'}",

@@ -27,7 +27,7 @@
 
 #if defined(CH32RV_RAMSPLIT_USER) || defined(CH32RV_RSTPIN_USER) || defined(CH32RV_IWDG_USER)
 
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_registers.h"
 
 #define FLASH_KEYR   CH32RV_REG32(CH32RV_FLASH_BASE + 0x04u)
 #define FLASH_OBKEYR CH32RV_REG32(CH32RV_FLASH_BASE + 0x08u)

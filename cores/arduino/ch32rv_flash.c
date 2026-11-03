@@ -1,7 +1,7 @@
 /* See ch32rv_flash.h. */
 #include "ch32rv_flash.h"
 
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_registers.h"
 
 #define FL_KEYR     CH32RV_REG32(CH32RV_FLASH_BASE + 0x04u)
 #define FL_STATR    CH32RV_REG32(CH32RV_FLASH_BASE + 0x0Cu)

@@ -2,12 +2,12 @@
  * to software, VSEL_VIO18 [12:10] = 0 1.2 V, 1 1.8 V, 2 2.5 V, 3 3.3 V
  * (CH32H417RM 3.4.1). Measured on the evaluation board (2026-10-21): PC0 /
  * PB0 highs of 1.36, 1.83, 2.54 and 3.31 V. */
-#include "ch32rv_vio18.h"
+#include "internal/ch32rv_vio18.h"
 
 #ifdef CH32RV_HAS_VIO18
 
 #include "pins_arduino.h"        /* CH32RV_CLKEN_PWR */
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_registers.h"
 
 #define PWR_CTLR       CH32RV_REG32(0x40007000u)
 #define VIO_SW_CR      (1u << 9)

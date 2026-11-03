@@ -2,7 +2,7 @@
  * file, so it is only pulled out of the core archive when a library attaches
  * a service: delay() and main() reach ch32rv_services_run through a weak
  * reference, which does not pull an archive member by itself. */
-#include "ch32rv_service.h"
+#include "internal/ch32rv_service.h"
 
 #include <stddef.h>
 

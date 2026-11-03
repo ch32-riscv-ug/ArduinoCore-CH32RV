@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "ch32rv_pins.h"
+#include "internal/ch32rv_pins.h"
 #include "ch32rv_version.h"
 
 #ifdef __cplusplus
@@ -126,12 +126,12 @@ static inline uint32_t getApbFrequency(void) { return (uint32_t)F_CPU; }
 
 /* Where the global interrupt enable lives (gintenr or mstatus, by core) and
  * the save / restore pair: ch32rv_irq.h, which CH32RVSyncKit uses too. */
-#include "ch32rv_irq.h"
+#include "internal/ch32rv_irq.h"
 
 /* deliverEvents(): where the libraries' notification callbacks (onRx and the
  * like) run - after every loop() and where a sketch calls it, never inside
  * delay() (ch32rv_deliver.h). */
-#include "ch32rv_deliver.h"
+#include "internal/ch32rv_deliver.h"
 
 /* api/Common.h declares these two but leaves them to the core.
  *

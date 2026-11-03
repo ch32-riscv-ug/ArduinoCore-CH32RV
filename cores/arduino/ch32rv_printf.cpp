@@ -1,9 +1,9 @@
 /* ch32rv_vprintf(), alone in its file for the reason ch32rv_sbrk.c gives: in
  * core.a a member is linked only when something needs one of its symbols, so
  * SerialDMSeq.printf() must not drag the USART driver in behind it. */
-#include "ch32rv_printf.h"
+#include "internal/ch32rv_printf.h"
 
-#include "ch32rv_format.h"
+#include "internal/ch32rv_format.h"
 
 #if CH32RV_PRINTF_NEWLIB
 #include <stdio.h>

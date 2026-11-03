@@ -1,6 +1,6 @@
 # printf と浮動小数
 
-`Serial.printf()`、`printf()`、`sprintf()` / `snprintf()` と、`Serial.print(float)`、`String(float)`、`dtostrf()` の書式化、`Serial.parseFloat()` の読み取り、それに `strftime()` などの時刻の関数について説明します。書式化はコア（`cores/arduino/ch32rv_format.c`）で、読み取りの計算もコア（`cores/arduino/ch32rv_parse_float.h`）で動きます。浮動小数の扱いは **Floating Point**（`rtlib`）と **parseFloat**（`parsefloat`）の 2 つのメニューで選びます。どちらの項目の組み合わせも選べます。
+`Serial.printf()`、`printf()`、`sprintf()` / `snprintf()` と、`Serial.print(float)`、`String(float)`、`dtostrf()` の書式化、`Serial.parseFloat()` の読み取り、それに `strftime()` などの時刻の関数について説明します。書式化はコア（`cores/arduino/ch32rv_format.c`）で、読み取りの計算もコア（`cores/arduino/internal/ch32rv_parse_float.h`）で動きます。浮動小数の扱いは **Floating Point**（`rtlib`）と **parseFloat**（`parsefloat`）の 2 つのメニューで選びます。どちらの項目の組み合わせも選べます。
 
 ## Floating Point のメニュー
 

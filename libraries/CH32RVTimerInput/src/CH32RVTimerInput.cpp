@@ -1,8 +1,8 @@
 #include "CH32RVTimerInput.h"
 
-#include "ch32rv_gpio.h"
-#include "ch32rv_irq.h"
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_gpio.h"
+#include "internal/ch32rv_irq.h"
+#include "internal/ch32rv_registers.h"
 
 #ifndef CH32RV_PWM_PIN_COUNT
 #define CH32RV_PWM_PIN_TO_TIMER(p)   ((void)(p), 0)

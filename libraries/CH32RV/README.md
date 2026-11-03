@@ -95,14 +95,15 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
 ## The escape hatch
 
 ```cpp
-#include <ch32rv_registers.h>
+#include <internal/ch32rv_registers.h>
 
 CH32RV_TIM_ATRLR(CH32RV_TIM2_BASE) = 999;   // straight at the timer
 ```
 
-The register map (`ch32rv_registers.h`), the GPIO helpers (`ch32rv_gpio.h`), the
-pin encoding (`ch32rv_pins.h`) and the alternate-function route tables
-(`ch32rv_route.h`) are included by name; `CH32RV.h` does not bring them in. Two
+The register map (`internal/ch32rv_registers.h`), the GPIO helpers (`internal/ch32rv_gpio.h`), the
+pin encoding (`internal/ch32rv_pins.h`) and the alternate-function route tables
+(`internal/ch32rv_route.h`) are included by name; `CH32RV.h` does not bring them in. `internal/`
+says what they are. Two
 warnings belong on the tin:
 
 1. **This layer is not kept from release to release.** The names are this core's own,

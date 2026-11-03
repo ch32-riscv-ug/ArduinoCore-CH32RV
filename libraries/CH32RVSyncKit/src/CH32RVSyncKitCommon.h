@@ -25,7 +25,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "ch32rv_irq.h"
+#include "internal/ch32rv_irq.h"
 
 extern "C" unsigned long millis(void);
 

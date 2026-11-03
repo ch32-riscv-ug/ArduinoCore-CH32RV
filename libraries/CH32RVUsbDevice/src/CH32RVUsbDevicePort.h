@@ -11,8 +11,8 @@
  * The drivers per controller are listed in docs/usb.ja.md. */
 #pragma once
 
-#include "ch32rv_registers.h"
-#include "CH32RVUsbDcd.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/CH32RVUsbDcd.h"
 
 /* ======================================================= CH32X035 / X033 */
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)

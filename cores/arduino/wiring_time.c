@@ -9,10 +9,10 @@
  * baud divisor is computed from F_CPU, and that is expensive to debug.
  */
 #include "Arduino.h"
-#include "ch32rv_clock.h"
-#include "ch32rv_service.h"
-#include "ch32rv_registers.h"
-#include "ch32rv_vio18.h"
+#include "internal/ch32rv_clock.h"
+#include "internal/ch32rv_service.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_vio18.h"
 #ifndef CH32RV_CLOCK_INIT
 #error "CH32RV_CLOCK_INIT is required (see build.clock_init in boards.txt)"
 #endif

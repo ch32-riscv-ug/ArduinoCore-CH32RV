@@ -4,7 +4,7 @@
  * bytes of stack rather than 400-600. Defined here, they take the place of the
  * library's (core.a is searched before libc; see ch32rv_string.c). The newlib
  * entries of the menu keep newlib's. */
-#include "ch32rv_format.h"
+#include "internal/ch32rv_format.h"
 
 #if !CH32RV_PRINTF_NEWLIB
 

@@ -13,7 +13,7 @@
  * mode, and end() puts back what analogRead() expects. */
 #include "CH32RVAdcStream.h"
 
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_registers.h"
 
 #define DMA1_BASE   0x40020000u
 #if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)

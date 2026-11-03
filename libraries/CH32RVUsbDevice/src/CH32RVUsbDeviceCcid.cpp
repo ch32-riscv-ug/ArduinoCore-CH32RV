@@ -1,7 +1,7 @@
 /* USB CCID (smart card reader) on the device stack: EspUsbDevice's reader,
  * with static buffers instead of heap ones; a sketch without a card reader
  * links none of it. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

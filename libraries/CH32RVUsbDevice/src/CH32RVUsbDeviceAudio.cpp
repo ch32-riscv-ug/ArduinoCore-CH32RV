@@ -6,7 +6,7 @@
  * Everything - packets, control requests, and so every event - happens in
  * the USB task, i.e. the sketch's own thread (after loop(), inside delay()),
  * so the FIFOs need no locking. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

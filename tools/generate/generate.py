@@ -341,12 +341,12 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
 # The Floating Point menu: (key, label, fp_flags for every compile, rtlib_flags
 # for the link, newlib's KB). Float is AVR's way (its double is 32 bits): float
 # arithmetic, constants included; print(float), String(float) and %f share the
-# core's fixed-point text (cores/arduino/ch32rv_format.h). printf's %f links
+# core's fixed-point text (cores/arduino/internal/ch32rv_format.h). printf's %f links
 # floating point only where the entry says so; without it %f prints as written.
 # Stream::parseFloat has a menu of its own (parsefloat): it adds the digits up in
 # double (the nearest float, links double arithmetic), in integers (the nearest
 # float to 11 digits) or in float (the smallest, the last bit off on one input
-# in eight) (cores/arduino/ch32rv_parse_float.h). Its first entry defines
+# in eight) (cores/arduino/internal/ch32rv_parse_float.h). Its first entry defines
 # nothing and parses the way the arithmetic does: integers under Float, double
 # under Double - the newlib entries' way, and with the default Float + %f, the
 # default before the menus were split.
@@ -936,7 +936,7 @@ def gen_vectors(variant: str, entries: list, form: str) -> str:
 
 # ---------------------------------------------------------------- pin maps
 # ADR-0010: pin = ((port + 2) << 5) | bit, so PA0 = 64 and 0..63 stay free for
-# the numbers printed on a product board (cores/arduino/ch32rv_pins.h). The pad
+# the numbers printed on a product board (cores/arduino/internal/ch32rv_pins.h). The pad
 # set is the union over every part number in the series, so one header serves
 # the ANY entry and all SKUs.
 PORTS = "ABCDEF"
@@ -3004,7 +3004,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" *")
         for line in textwrap.wrap(f"Behaviour, errata {eid}: {spec['note']}", 72):
             out.append(f" * {line}")
-    out += [" */", "#pragma once", "", '#include "ch32rv_pins.h"', ""]
+    out += [" */", "#pragma once", "", '#include "internal/ch32rv_pins.h"', ""]
 
     out.append(f"#define CH32RV_VARIANT_{series} 1")
     out.append(f'#define CH32RV_SERIES_NAME "{series}"   /* CH32RV.getChipModel() */')
@@ -4144,12 +4144,12 @@ def main() -> int:
             print(f"ERROR: no interrupt table for variant {variant} "
                   f"(rebuild with tools/generate/import_vectors.py)", file=sys.stderr)
             return 1
-        outputs[args.platform / "cores" / "arduino" / f"vectors_{variant}.inc"] = \
+        outputs[args.platform / "cores" / "arduino" / "internal" / f"vectors_{variant}.inc"] = \
             gen_vectors(variant, interrupts[variant],
                         vector_forms[variant])
-        outputs[args.platform / "cores" / "arduino" / f"irqn_{variant}.h"] = \
+        outputs[args.platform / "cores" / "arduino" / "internal" / f"irqn_{variant}.h"] = \
             gen_irqns(variant, interrupts[variant])
-        outputs[args.platform / "cores" / "arduino" / f"exti_{variant}.h"] = \
+        outputs[args.platform / "cores" / "arduino" / "internal" / f"exti_{variant}.h"] = \
             gen_exti(variant, interrupts[variant])
 
     for family in sorted({SERIES_CONFIG[s]["family"] for s in SERIES_CONFIG}):
@@ -4157,7 +4157,7 @@ def main() -> int:
         if not steps:
             raise SystemExit(f"ERROR: clock_init.csv has no SystemInit steps "
                              f"for {family}")
-        outputs[args.platform / "cores" / "arduino" /
+        outputs[args.platform / "cores" / "arduino" / "internal" /
                 f"clock_init_{family.lower()}.h"] = \
             gen_clock_init(family, steps, clock_symbols_t,
                            flash_writes(family, clock_configs_t, register_addresses_t),

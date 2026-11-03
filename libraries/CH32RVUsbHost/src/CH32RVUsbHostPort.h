@@ -12,8 +12,8 @@
  * USBHS) becomes a table of its own and a branch here. */
 #pragma once
 
-#include "ch32rv_registers.h"
-#include "CH32RVUsbHcd.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/CH32RVUsbHcd.h"
 
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
 /* CH32X035 / X033: USBFS on PC16 (D-) / PC17 (D+). Host mode wants the 15 kOhm
@@ -45,7 +45,7 @@ static void port_poll(void) {}
 
 #else /* the USBOTG_FS layout: V20x, V30x, V205, L103 / M103, M030, H41x */
 
-#include "ch32rv_usbfs_otg.h"
+#include "internal/ch32rv_usbfs_otg.h"
 
 #define USBFS_BASE_CTRL        (*(volatile uint8_t *)CH32RV_USBFS_OTG_BASE)
 

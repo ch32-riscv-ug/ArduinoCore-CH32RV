@@ -17,7 +17,7 @@ SRC = REPO / "cores/arduino/ch32rv_deliver.c"
 DRIVER = r"""
 #include <stdio.h>
 #include <string.h>
-#include "ch32rv_deliver.h"
+#include "internal/ch32rv_deliver.h"
 
 static char log_[256];
 static void mark(const char *s) { strcat(log_, s); }

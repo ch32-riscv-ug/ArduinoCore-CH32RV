@@ -1,13 +1,13 @@
 # 公開する API
 
-このコアが版をまたいで保つものの一覧です。ここに無いもの（include できても）はコアの内部で、版で変わります。
+このコアが版をまたいで保つものの一覧です。内部のものは置き場所で分かります: コアの `cores/arduino/internal/` と、各ライブラリの `src/internal/` です。そこにあるもの（include できても）は、版で変わります。
 
 ## スケッチとライブラリが使ってよいもの
 
 | 種類 | 中身 |
 |---|---|
 | Arduino の API | `Arduino.h`（ArduinoCore-API 1.5.2 と、このコアが足したもの: `HardwareSerial::setPins()` / `setRoute()` など、各 README に書いたもの） |
-| 同梱のライブラリ | 各ライブラリの README に書いたクラス、関数、型、定数。ヘッダーは `src/` の直下にあり、名前が `Internal` で終わらないもの（`CH32RVUsbDeviceInternal.h`、`CH32RVUsbHostInternal.h` などは内部） |
+| 同梱のライブラリ | 各ライブラリの README に書いたクラス、関数、型、定数。ヘッダーは `src/` の直下のもの（`src/internal/` は内部） |
 | チップの機能 | `CH32RV.h` の `CH32RV` オブジェクト（`restart()`、`resetReason()`、`getUniqueId()`、休止、WDT など） |
 | フラッシュ | `ch32rv_flash.h`（`CH32RV_FLASH_STORE()`、`ch32rv_flash_*()`、`CH32RV_FLASH_ERASE_SIZE` などの大きさ。[flash-store.ja.md](flash-store.ja.md)） |
 | タイマー | `CH32RVTimer.h`（`ch32rv_timer_*()` と `CH32RVTimer*` の型、`CH32RV_TIMER_ANY` などの定数） |
@@ -39,6 +39,6 @@
 
 ## 内部のもの（版で変わる）
 
-- レジスタの層: `ch32rv_registers.h`、`ch32rv_gpio.h`、`ch32rv_pins.h`、`ch32rv_route.h`。名前を指して include すれば使えますが、コアも同じレジスタを使っています（[CH32RV の README](../libraries/CH32RV/README.ja.md) の「逃げ道」）。
-- `cores/arduino` のほかのヘッダー（`ch32rv_service.h`、`ch32rv_irq.h`、`ch32rv_power.h` など）と、ライブラリの `*Internal.h`、`NetworkCore.h`、`pd_frames.h`、`usbpd_hw.h`。
+- `cores/arduino/internal/` のすべて。レジスタの層（`internal/ch32rv_registers.h`、`internal/ch32rv_gpio.h`、`internal/ch32rv_pins.h`、`internal/ch32rv_route.h`）も、名前を指して include すれば使えますが、コアも同じレジスタを使っています（[CH32RV の README](../libraries/CH32RV/README.ja.md) の「逃げ道」）。生成物（`clock_init_*`、`irqn_*`、`exti_*`、`vectors_*`）もここにあります。
+- 各ライブラリの `src/internal/`（`CH32RVUsbDeviceInternal.h`、`CH32RVUsbDcd.h`、`NetworkCore.h`、`pd_frames.h`、`usbpd_hw.h` など）。
 - 同梱の第三者のコード（lwIP、Mbed TLS、ArduinoCore-API の写し）の版。

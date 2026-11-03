@@ -97,7 +97,7 @@ def test_the_register_map_stays_out_of_the_sketch(header):
     ch32rv_pins.h repeats CH32RV_GPIO_PORT_BASE rather than including the register
     map, and says so in a comment; wiring_digital.c has a _Static_assert so the
     two constants cannot drift. Nothing checked the include boundary itself,
-    so one `#include "ch32rv_registers.h"` in ch32rv_pins.h would put 473 lines of
+    so one `#include "internal/ch32rv_registers.h"` in ch32rv_pins.h would put 473 lines of
     register map into every sketch's namespace and no test would notice.
     """
     reachable = _reachable_headers(header)

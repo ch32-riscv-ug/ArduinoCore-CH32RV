@@ -28,16 +28,16 @@
 #include <Arduino.h>
 #include <string.h>
 
-#include "ch32rv_registers.h"
-#include "ch32rv_usbfs_irq.h"
-#include "CH32RVUsbHcd.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_usbfs_irq.h"
+#include "internal/CH32RVUsbHcd.h"
 
 /* Which block, where, and how its registers are laid out. */
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
 #define CH32RV_HCD_USBFS_BASE   0x40023400u
 #define CH32RV_HCD_USBFS_LAYOUT 1
 #else
-#include "ch32rv_usbfs_otg.h"
+#include "internal/ch32rv_usbfs_otg.h"
 #ifdef CH32RV_USBFS_OTG_BASE      /* V20x, V30x, V205, L103 / M103, M030, H41x */
 #define CH32RV_HCD_USBFS_BASE   CH32RV_USBFS_OTG_BASE
 #define CH32RV_HCD_USBFS_LAYOUT 2

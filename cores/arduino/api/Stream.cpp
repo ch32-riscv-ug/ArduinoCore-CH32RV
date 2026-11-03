@@ -24,7 +24,7 @@
 
 #include "Common.h"
 #include "Stream.h"
-#include "ch32rv_parse_float.h"  /* ch32rv patch: Stream::parseFloat */
+#include "internal/ch32rv_parse_float.h"  /* ch32rv patch: Stream::parseFloat */
 
 #define PARSE_TIMEOUT 1000  // default number of milli-seconds to wait
 

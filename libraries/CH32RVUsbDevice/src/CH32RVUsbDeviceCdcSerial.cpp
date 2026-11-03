@@ -1,7 +1,7 @@
 /* CDC-ACM serial on the device stack: line coding and state on EP0, data on a
  * bulk OUT / IN pair (CH32RVUsbDeviceBulkStream), an interrupt IN for
  * notifications (declared, never sent). */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

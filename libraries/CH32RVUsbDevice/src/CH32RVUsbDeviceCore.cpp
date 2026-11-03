@@ -8,13 +8,13 @@
  * time. No descriptor set is kept in RAM: each is produced again when it is
  * asked for (CH32RVUsbDescriptorWriter), an EP0 packet at a time, so nothing
  * here is sized for the largest configuration. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 
-#include "ch32rv_registers.h"
-#include "ch32rv_deliver.h"
-#include "ch32rv_service.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_deliver.h"
+#include "internal/ch32rv_service.h"
 #include "CH32RVUsbDevicePort.h"
 
 #define MAX_EP 16

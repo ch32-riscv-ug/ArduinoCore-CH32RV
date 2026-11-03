@@ -29,10 +29,10 @@
 #pragma once
 
 #include "TwoWire.h"
-#include "ch32rv_pins.h"
-#include "ch32rv_route.h"
+#include "internal/ch32rv_pins.h"
+#include "internal/ch32rv_route.h"
 #include "pins_arduino.h"
-#include "ch32rv_instances.h"
+#include "internal/ch32rv_instances.h"
 
 #include <stdint.h>
 

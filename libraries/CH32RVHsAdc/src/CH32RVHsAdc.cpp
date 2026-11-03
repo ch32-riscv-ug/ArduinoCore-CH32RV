@@ -4,8 +4,8 @@
 
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
 
-#include "ch32rv_gpio.h"
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_gpio.h"
+#include "internal/ch32rv_registers.h"
 
 #define HSADC_CFGR  CH32RV_REG32(0x40017400u)
 #define HSADC_CTLR1 CH32RV_REG32(0x40017404u)

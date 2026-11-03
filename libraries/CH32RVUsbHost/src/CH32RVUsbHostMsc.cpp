@@ -1,7 +1,7 @@
 /* CH32RVUsbHost: mass storage, bulk-only transport and SCSI. Every call
  * waits for its command, driving the stack while it does. One device at a
  * time is addressed; the LUN is chosen with mscSelectLun(). */
-#include "CH32RVUsbHostInternal.h"
+#include "internal/CH32RVUsbHostInternal.h"
 
 #include <string.h>
 

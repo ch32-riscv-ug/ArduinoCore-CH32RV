@@ -27,7 +27,7 @@
 #pragma once
 
 #include "TwoWire.h"
-#include "ch32rv_pins.h"
+#include "internal/ch32rv_pins.h"
 
 #include <stdint.h>
 

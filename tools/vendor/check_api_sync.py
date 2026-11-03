@@ -38,7 +38,7 @@ LOCK = REPO / "vendor" / "arduino-core-api.lock.toml"
 DEST = REPO / "cores" / "arduino" / "api"
 
 
-# Stream::parseFloat reads its digits into the core (cores/arduino/ch32rv_parse_float.h),
+# Stream::parseFloat reads its digits into the core (cores/arduino/internal/ch32rv_parse_float.h),
 # which adds them up in double, in integers or in float as the Floating Point
 # menu says; four pieces of one function, so one reason.
 STREAM_WHY = ("Stream::parseFloat in the arithmetic the Floating Point menu"
@@ -58,7 +58,7 @@ PATCHES = (
     {
         "path": "Stream.cpp",
         "before": '#include "Stream.h"\n',
-        "after": '#include "Stream.h"\n#include "ch32rv_parse_float.h"  /* ch32rv patch: Stream::parseFloat */\n',
+        "after": '#include "Stream.h"\n#include "internal/ch32rv_parse_float.h"  /* ch32rv patch: Stream::parseFloat */\n',
         "why": STREAM_WHY,
     },
     {

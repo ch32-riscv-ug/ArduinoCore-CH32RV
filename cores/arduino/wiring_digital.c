@@ -1,7 +1,7 @@
 /* Digital I/O. Pin numbers are port-encoded (ADR-0010), so there is no
  * pin->pad table: the port and bit fall out of the number arithmetically. */
 #include "Arduino.h"
-#include "ch32rv_gpio.h"
+#include "internal/ch32rv_gpio.h"
 
 /* Arduino.h spells the port base out itself for portOutputRegister(), so that
  * sketches get the ESP32-shaped macros without the whole register map. This is

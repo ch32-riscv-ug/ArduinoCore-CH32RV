@@ -1,5 +1,5 @@
 #include "NetworkTime.h"
-#include "NetworkCore.h"
+#include "internal/NetworkCore.h"
 
 #include <stdio.h>
 #include <stdlib.h>

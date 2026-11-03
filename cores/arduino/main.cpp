@@ -29,7 +29,7 @@
  * ch32rv_deliver.o is linked only when a driver attaches a delivery.
  */
 #include "Arduino.h"
-#include "ch32rv_service.h"
+#include "internal/ch32rv_service.h"
 
 extern "C" size_t deliverEvents(void) __attribute__((weak));
 

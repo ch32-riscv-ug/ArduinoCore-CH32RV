@@ -25,7 +25,7 @@
 
 #include <stdint.h>
 
-#include "ch32rv_pins.h"
+#include "internal/ch32rv_pins.h"
 #include "pins_arduino.h"
 
 #if defined(CH32RV_CORE_QINGKE_V3B) || defined(CH32RV_CORE_QINGKE_V3F) || \

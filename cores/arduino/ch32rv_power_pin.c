@@ -1,7 +1,7 @@
 /* Pin wakeups (ch32rv_power.h), on their own: they need the EXTI handlers
  * (wiring_interrupts.c), and a timer-only sleep does not. */
 #include "Arduino.h"
-#include "ch32rv_power.h"
+#include "internal/ch32rv_power.h"
 
 void ch32rv_exti_configure(pin_size_t pin, PinStatus mode);   /* wiring_interrupts.c */
 

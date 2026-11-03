@@ -1,5 +1,5 @@
 /* USB PD frame logic. See pd_frames.h for why this file is hardware-free. */
-#include "pd_frames.h"
+#include "internal/pd_frames.h"
 
 /* ---- header --------------------------------------------------------------
  * B15 extended | B14..12 count | B11..9 message id | B8 power role |

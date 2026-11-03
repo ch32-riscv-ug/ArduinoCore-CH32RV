@@ -1,7 +1,7 @@
 /* HID: the shared interface every HID class of the device sits on, and the
  * classes themselves (ported from EspUsbDevice: same report descriptors, same
  * report layouts, same behaviour). */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

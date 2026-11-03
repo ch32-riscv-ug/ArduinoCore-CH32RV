@@ -35,5 +35,5 @@ def test_the_parse_define_reaches_c_and_cpp_and_defaults_to_nothing():
     assert re.search(r"^build\.parse_defines=$", platform, re.M)
     for flags in ("compiler.c.flags", "compiler.cpp.flags"):
         assert "{build.parse_defines}" in re.search(rf"^{re.escape(flags)}=.*$", platform, re.M).group(0), flags
-    header = (REPO / "cores/arduino/ch32rv_parse_float.h").read_text(encoding="utf-8")
+    header = (REPO / "cores/arduino/internal/ch32rv_parse_float.h").read_text(encoding="utf-8")
     assert "#define CH32RV_PARSE_FLOAT (CH32RV_FP_FLOAT ? 2 : 1)" in header

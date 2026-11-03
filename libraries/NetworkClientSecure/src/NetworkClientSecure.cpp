@@ -15,7 +15,7 @@
 #include "mbedtls/error.h"
 #endif
 
-#include "NetworkCore.h"
+#include "internal/NetworkCore.h"
 
 #ifdef NETWORK_HOST_TEST
 #include <stdio.h>

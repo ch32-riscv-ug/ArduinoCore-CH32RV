@@ -27,8 +27,8 @@
 
 unsigned long millis(void);
 
-#include "ch32rv_rtc.h"
-#include "ch32rv_serial_write.h"
+#include "internal/ch32rv_rtc.h"
+#include "internal/ch32rv_serial_write.h"
 
 #undef errno
 extern int errno;

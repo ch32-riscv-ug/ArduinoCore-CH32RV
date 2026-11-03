@@ -19,9 +19,9 @@
 #include <Arduino.h>
 #include <string.h>
 
-#include "ch32rv_registers.h"
-#include "ch32rv_usbfs_irq.h"
-#include "CH32RVUsbDcd.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_usbfs_irq.h"
+#include "internal/CH32RVUsbDcd.h"
 
 #define USB_BASE 0x40023400u
 #define R8(o)  (*(volatile uint8_t *)(USB_BASE + (o)))

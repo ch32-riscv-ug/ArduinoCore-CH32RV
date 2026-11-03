@@ -1,5 +1,5 @@
 #include "NetworkUdp.h"
-#include "NetworkCore.h"
+#include "internal/NetworkCore.h"
 #include "NetworkManager.h"
 
 #include <string.h>

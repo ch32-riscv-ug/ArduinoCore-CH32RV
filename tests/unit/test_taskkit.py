@@ -109,7 +109,8 @@ def results(tmp_path_factory):
     if not cxx:
         pytest.skip("no host C++ compiler")
     work = tmp_path_factory.mktemp("taskkit")
-    (work / "ch32rv_irq.h").write_text(IRQ_STUB)
+    (work / "internal").mkdir(exist_ok=True)
+    (work / "internal" / "ch32rv_irq.h").write_text(IRQ_STUB)
     (work / "driver.cpp").write_text(DRIVER)
     exe = work / "driver"
     subprocess.run([cxx, "-std=gnu++17", "-Wall", "-Wextra", "-Werror", "-fsanitize=address,undefined",

@@ -22,7 +22,7 @@
 
 #ifndef __riscv_32e
 
-#include "ch32rv_string.h"
+#include "internal/ch32rv_string.h"
 
 CH32RV_STRING_FN void *memcpy(void *restrict dst, const void *restrict src, size_t n)
 {

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CH32RVUsbHost.h"
-#include "CH32RVUsbHcd.h"
+#include "internal/CH32RVUsbHcd.h"
 
 /* The series with a host controller driver (CH32RVUsbHostPort.h). */
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033) || defined(CH32RV_SERIES_CH32V203) || \

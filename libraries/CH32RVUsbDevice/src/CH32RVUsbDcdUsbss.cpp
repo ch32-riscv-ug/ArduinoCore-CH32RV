@@ -46,8 +46,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ch32rv_registers.h"
-#include "CH32RVUsbDcd.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/CH32RVUsbDcd.h"
 
 #if defined(CH32RV_SERIES_CH32X315)
 #define SS_BASE 0x40038000u

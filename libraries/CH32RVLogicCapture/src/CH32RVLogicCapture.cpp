@@ -20,7 +20,7 @@
 
 #if CH32RV_LOGIC_CAPTURE
 
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_registers.h"
 
 #if CH32RV_LOGIC_DMAMUX
 #define LC_TIMER 6u

@@ -1,7 +1,7 @@
 /* See ch32rv_usbfs_irq.h. Linked only through the hook: a sketch that uses
  * neither USB library keeps the default (weak) vector. */
-#include "ch32rv_registers.h"
-#include "ch32rv_usbfs_irq.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_usbfs_irq.h"
 
 #ifdef CH32RV_IRQN_USBFS
 

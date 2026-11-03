@@ -5,7 +5,7 @@
  * as it was last set (tzset(), configTzTime(), localtime_r()) and do not call
  * tzset() themselves: TZ changed with setenv() alone is seen after the next
  * tzset(). The newlib entries of the Floating Point menu keep newlib's. */
-#include "ch32rv_format.h"
+#include "internal/ch32rv_format.h"
 
 #if !CH32RV_PRINTF_NEWLIB
 

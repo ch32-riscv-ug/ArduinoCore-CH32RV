@@ -65,12 +65,12 @@
 
 #include <stdint.h>
 
-#include "pd_frames.h"
+#include "internal/pd_frames.h"
 /* Where (and whether) this part's USBPD block lives. Included here so a
  * sketch can feature-test the same way the driver does:
  *     #ifdef CH32RV_USBPD_BASE
  */
-#include "usbpd_hw.h"
+#include "internal/usbpd_hw.h"
 
 /* What kind of supply a profile is. */
 enum class CH32RVUsbPdSupply : uint8_t {

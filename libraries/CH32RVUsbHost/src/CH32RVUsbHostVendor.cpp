@@ -1,7 +1,7 @@
 /* CH32RVUsbHost: a vendor-specific bulk interface (WebUSB devices, the
  * CH32RVUsbDevice / EspUsbDevice vendor function, instruments). One open at a
  * time. Vendor control requests are in CH32RVUsbHost.cpp. */
-#include "CH32RVUsbHostInternal.h"
+#include "internal/CH32RVUsbHostInternal.h"
 
 #include <string.h>
 

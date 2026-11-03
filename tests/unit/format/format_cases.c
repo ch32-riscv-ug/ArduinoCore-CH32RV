@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ch32rv_format.h"
+#include "internal/ch32rv_format.h"
 
 static int failures, checks;
 

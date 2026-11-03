@@ -2,8 +2,8 @@
  * Everything is inline and constant-folds when the pin is a pad name. */
 #pragma once
 
-#include "ch32rv_pins.h"
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_pins.h"
+#include "internal/ch32rv_registers.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -26,7 +26,7 @@
  */
 #pragma once
 
-#include "ch32rv_printf.h"
+#include "internal/ch32rv_printf.h"
 #include "api/HardwareSerial.h"
 
 #include <stdint.h>

@@ -9,10 +9,10 @@
 #pragma once
 
 #include "api/HardwareSerial.h"
-#include "ch32rv_pins.h"
-#include "ch32rv_printf.h"
-#include "ch32rv_ringbuffer.h"
-#include "ch32rv_route.h"
+#include "internal/ch32rv_pins.h"
+#include "internal/ch32rv_printf.h"
+#include "internal/ch32rv_ringbuffer.h"
+#include "internal/ch32rv_route.h"
 /* Not just for the pad names: CH32RV_SERIAL_COUNT below comes from the
  * variant, and this header has to work when it is included first.
  * HardwareSerial.cpp includes it before Arduino.h, and when the variant was
@@ -21,7 +21,7 @@
  * then compiled to `return 0` and made every stdio write to Serial a silent
  * no-op. */
 #include "pins_arduino.h"
-#include "ch32rv_instances.h"
+#include "internal/ch32rv_instances.h"
 
 #include <stdint.h>
 

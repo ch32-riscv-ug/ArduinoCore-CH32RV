@@ -15,8 +15,8 @@
 #include "CH32RVUsbPdSource.h"
 
 #include "Arduino.h"
-#include "ch32rv_service.h"
-#include "usbpd_hw.h"
+#include "internal/ch32rv_service.h"
+#include "internal/usbpd_hw.h"
 
 #ifdef CH32RV_USBPD_BASE
 

@@ -1,6 +1,6 @@
 /* The bulk pair CDC and Vendor share: FIFOs, per-transfer callbacks and the
  * borrowed transfers. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

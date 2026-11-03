@@ -2,7 +2,7 @@
  * blocks (NTB16), in a ring of buffers each way (one by default). A block
  * from the host may carry several frames; frames sent while a block is on
  * the wire are gathered into the next. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

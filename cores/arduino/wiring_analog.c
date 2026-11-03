@@ -17,8 +17,8 @@
 #ifndef CH32RV_ADC_MAX_HZ
 #error "CH32RV_ADC_MAX_HZ is required (see build.core_defines in boards.txt)"
 #endif
-#include "ch32rv_gpio.h"
-#include "ch32rv_registers.h"
+#include "internal/ch32rv_gpio.h"
+#include "internal/ch32rv_registers.h"
 
 #ifndef CH32RV_ADC_BITS
 #error "CH32RV_ADC_BITS is required (see build.core_defines in boards.txt)"

@@ -3,7 +3,7 @@
 #include "CH32RVSystem.h"
 
 #include "Arduino.h"
-#include "ch32rv_power.h"
+#include "internal/ch32rv_power.h"
 
 namespace arduino {
 

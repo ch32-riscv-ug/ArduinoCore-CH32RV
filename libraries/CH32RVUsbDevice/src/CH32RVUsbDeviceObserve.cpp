@@ -2,9 +2,9 @@
  * for deliverEvents(). Its own file, so a sketch that does not observe
  * carries neither the queue nor its delivery. */
 #include "CH32RVUsbDevice.h"
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
-#include "ch32rv_deliver.h"
+#include "internal/ch32rv_deliver.h"
 
 namespace {
 

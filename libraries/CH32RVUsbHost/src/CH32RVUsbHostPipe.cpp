@@ -1,6 +1,6 @@
 /* A bulk pipe pair on an interface no class driver took (vendor bulk, CCID).
  * See CH32RVUsbHostInternal.h. */
-#include "CH32RVUsbHostInternal.h"
+#include "internal/CH32RVUsbHostInternal.h"
 
 #include <string.h>
 

@@ -1,7 +1,7 @@
 /* A small DHCP server (RFC 2131) for one interface: DISCOVER / OFFER,
  * REQUEST / ACK or NAK, RELEASE, DECLINE. No relays, no INFORM, no static
  * reservations. Replies are broadcast, which every client accepts. */
-#include "NetworkDhcpServer.h"
+#include "internal/NetworkDhcpServer.h"
 
 #include <Arduino.h>
 #include <string.h>

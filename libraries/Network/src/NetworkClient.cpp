@@ -1,7 +1,7 @@
 #include "NetworkClient.h"
-#include "NetworkCore.h"
+#include "internal/NetworkCore.h"
 #include "NetworkManager.h"
-#include "NetworkTcp.h"
+#include "internal/NetworkTcp.h"
 
 #include <string.h>
 

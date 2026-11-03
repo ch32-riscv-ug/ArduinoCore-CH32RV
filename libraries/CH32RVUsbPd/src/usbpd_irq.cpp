@@ -1,7 +1,7 @@
 /* The USBPD interrupt, shared by the sink (CH32RVUsbPd) and the source
  * (CH32RVUsbPdSource): the block is one, the role that began owns it. Its own
  * file so that a sketch using either role links it once. */
-#include "usbpd_hw.h"
+#include "internal/usbpd_hw.h"
 
 #ifdef CH32RV_USBPD_BASE
 

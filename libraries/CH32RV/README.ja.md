@@ -119,13 +119,13 @@ PA0が64、PB0が96、その間のほとんどの番号はpadに対応しませ�
 ## 逃げ道
 
 ```cpp
-#include <ch32rv_registers.h>
+#include <internal/ch32rv_registers.h>
 
 CH32RV_TIM_ATRLR(CH32RV_TIM2_BASE) = 999;   // timerを直接叩く
 ```
 
-レジスタマップ(`ch32rv_registers.h`)・GPIOヘルパ(`ch32rv_gpio.h`)・pinエンコード(`ch32rv_pins.h`)・
-route表(`ch32rv_route.h`)は、名前を指して読み込みます。`CH32RV.h`は読み込みません。
+レジスタマップ(`internal/ch32rv_registers.h`)・GPIOヘルパ(`internal/ch32rv_gpio.h`)・pinエンコード(`internal/ch32rv_pins.h`)・
+route表(`internal/ch32rv_route.h`)は、名前を指して読み込みます。`CH32RV.h`は読み込みません。置き場所の`internal/`が、内部のものであることを示します。
 注意書きが2つあります。
 
 1. **この層は、版をまたいで保たれません。** 名前はベンダSDKのものではなく

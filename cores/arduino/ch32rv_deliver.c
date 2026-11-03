@@ -1,7 +1,7 @@
 /* The delivery round (ch32rv_deliver.h). Its own file, so it is only pulled
  * out of the core archive when a library attaches or the sketch calls
  * deliverEvents(). */
-#include "ch32rv_deliver.h"
+#include "internal/ch32rv_deliver.h"
 
 static ch32rv_delivery_t *head;
 static uint8_t running;

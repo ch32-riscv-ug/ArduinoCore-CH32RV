@@ -54,7 +54,7 @@
 #include <stdint.h>
 
 #include "pins_arduino.h"   /* CH32RV_ESIG_* decide which members exist */
-#include "ch32rv_vio18.h"
+#include "internal/ch32rv_vio18.h"
 
 extern "C" uint32_t ch32rv_adc_vdd_millivolts(void);   /* wiring_analog.c */
 

@@ -1,6 +1,6 @@
 #include "NetworkServer.h"
-#include "NetworkCore.h"
-#include "NetworkTcp.h"
+#include "internal/NetworkCore.h"
+#include "internal/NetworkTcp.h"
 
 NetworkServer::NetworkServer(uint16_t port, uint8_t max_clients) : _port(port), _max(max_clients ? max_clients : 1) {}
 

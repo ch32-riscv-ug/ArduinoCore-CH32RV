@@ -12,7 +12,7 @@
 #include "NetworkEthernet.h"
 
 #if NETWORK_ETHERNET_10M
-#include <ch32rv_registers.h>
+#include <internal/ch32rv_registers.h>
 #include <string.h>
 
 #define R8(off)  (*(volatile uint8_t *)(0x40028000u + (off)))

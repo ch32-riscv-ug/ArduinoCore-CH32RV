@@ -36,7 +36,7 @@
 #include <SPI.h>
 #include <CH32RVCallback.h>
 
-#include "ch32rv_deliver.h"
+#include "internal/ch32rv_deliver.h"
 #include "ch32rv_spi_claim.h"
 
 class CH32RVSPISlave {

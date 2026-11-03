@@ -31,9 +31,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ch32rv_registers.h"
-#include "CH32RVUsbDcd.h"
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/CH32RVUsbDcd.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #define HS_BASE 0x40023400u
 #define R8(o)  (*(volatile uint8_t *)(HS_BASE + (o)))

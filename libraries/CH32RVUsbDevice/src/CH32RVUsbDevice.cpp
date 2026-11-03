@@ -1,7 +1,7 @@
 /* The device: the functions attached to it and the configuration descriptor
  * laid out from them. The running stack (requests, transfers, the controller)
  * is CH32RVUsbDeviceCore.cpp. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

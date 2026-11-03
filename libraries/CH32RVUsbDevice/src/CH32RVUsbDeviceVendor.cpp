@@ -1,5 +1,5 @@
 /* Vendor (bulk) on the device stack: the bulk pair is CH32RVUsbDeviceBulkStream's. */
-#include "CH32RVUsbDeviceInternal.h"
+#include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <string.h>
 

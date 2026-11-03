@@ -1,8 +1,8 @@
 /* The RTC as the wall clock (ch32rv_rtc.h). Brought up on a CH32V307VCT6
  * 2026-10-28: RTCEN does not stick when written together with RTCSEL. */
 #include "Arduino.h"
-#include "ch32rv_registers.h"
-#include "ch32rv_rtc.h"
+#include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_rtc.h"
 
 #ifdef CH32RV_HAS_RTC
 

@@ -4,7 +4,7 @@
 
 using namespace arduino;
 
-#include "ch32rv_serial_write.h"
+#include "internal/ch32rv_serial_write.h"
 
 /* Where printf()/puts() go. A pointer rather than a compile-time choice,
  * because the alternatives to the UART - SDI print, and USB CDC - live in

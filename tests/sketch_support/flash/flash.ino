@@ -15,8 +15,8 @@
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <ch32rv_flash.h>
-#include <ch32rv_irq.h>
-#include <ch32rv_registers.h>
+#include <internal/ch32rv_irq.h>
+#include <internal/ch32rv_registers.h>
 #include <stdlib.h>
 #include <string.h>
 
