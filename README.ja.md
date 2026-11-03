@@ -49,6 +49,9 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | Optimize (`opt`) | `oslto` | `-Os` に LTO。flash が 9〜24% 減り、速さは同じ（X035 で実測）。`osltosr` は `-msave-restore` も足してさらに 4〜5% 減るが、関数呼び出しの多い処理（楕円曲線暗号など）が 7〜9% 遅くなる。`osstd` は LTO なし |
 | Floating Point (`rtlib`) | `fltf` | 浮動小数を double と float のどちらで計算するか、printf の `%f`、newlib の printf / scanf の浮動小数 |
 | parseFloat (`parsefloat`) | `auto` | `Serial.parseFloat()` の計算。`auto` は Floating Point に合わせる（Float なら整数、Double なら double） |
+| USART1〜10、I2C1〜2、SPI1〜3（`usartN`、`i2cN`、`spiN`） | `auto` | その周辺の端子の決め方。AUTO は `begin()` で決める（既定の端子か、`setPins()` で選んだもの）。FIX は端子をビルドで決める（既定でない端子を使うとき、`setPins()` より Serial で 472〜1028 B、Wire で 28〜100 B 小さい）。Disable はその周辺をリンクしない（X035 で Serial 以外の USART を外すと 456 B 減る）。`Serial`、`Serial1`… の名前は、有効な周辺を番号順に並べたものなので、Disable にすると後ろの名前が詰まる |
+| Flash / RAM Split (`ramsplit`) | `256k_64k`（工場出荷） | V303 / V305 / V307 / V317 の SRAM 320 KB を、待ちなしの flash の写しと RAM に分ける割合（[support-status.ja.md](docs/support-status.ja.md)）。工場出荷でない値は、起動時にコアがオプションバイトを書き換える |
+| VIO18 Supply (`vio18`) | `hw` | H41x の VIO18 の電圧。`hw` は基板の XO の strap のまま。ほかは起動時にコアが設定する |
 | Reset Pin (`rstpin`) | 系列の出荷時の値 | リセット端子をオプションバイトで決める系列（V002〜V006 は出荷時にリセット、V007・M007・X033・X035・M030・X305・X315 は GPIO）。出荷時の値の項目は何もせず、チップはそのときの設定のまま。もう一方を選ぶと、起動時にコアがオプションバイトを比べ、違えば一度だけ書き換えてリセットする（V003 で 276 B 増える）。ch32rv などで変えても、その項目で作ったスケッチが動くたびに戻る。UIAPduino にはメニューが無い（HID ブートローダーが出荷時のリセット端子を使う） |
 | Erase Flash (`erase`) | `keep` | 書き込みで消す範囲。Keep Store は `CH32RV_FLASH_STORE` で確保した末尾を残す（ch32rv が退避して書き戻す。V003 の 16 KB で約 0.8 秒、V307 の 96 KB で約 1 秒増える）。All Flash（`chip`）はチップ全体を消す。H41x の DFU では All Flash を選ぶと書き込みが断られる。UIAPduino にはメニューが無い（HID だけで書く） |
 
@@ -102,6 +105,8 @@ Board Manager の配布物は allowlist 方式で作られます。正確な対�
 | path | 由来 | ライセンス |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
+| `libraries/Network/src/lwip-src/` | lwIP 2.2.1 | BSD-3-Clause |
+| `libraries/NetworkClientSecure/src/mbedtls-src/` | Mbed TLS 4.1.1 | Apache-2.0 または GPL-2.0-or-later |
 | `libraries/CH32RVUsbHost/src/CH32RVUsbHostCdc.cpp` の USB シリアルチップの手順 | TinyUSB の cdc_host.c（Linux のドライバ由来）を書き直したもの | MIT |
 
 固定 revision とファイル hash は `vendor/*.lock.toml` に記録し、検証ツールで一致を確認します。

@@ -1,5 +1,5 @@
 {
-  "comment": "ch32rv 0.25.1 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.25.1. No mirror is needed (ADR-0011 applies to third-party tools): this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
+  "comment": "ch32rv 0.25.1 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.25.1. No mirror is needed: this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
   "name": "ch32rv",
   "version": "0.25.1",
   "upstreamTag": "v0.25.1",

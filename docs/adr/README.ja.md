@@ -17,7 +17,7 @@ ADR には、現行実装を拘束する決定と、その決定を変更する�
 | [0008](0008-upload-strategy.ja.md) | upload / discovery / monitor は `ch32rv` に一本化する |
 | [0009](0009-arduinocore-api-import.ja.md) | ArduinoCore-API 1.5.2 を固定 copy として持つ |
 | [0010](0010-pin-numbering.ja.md) | pad 名を安定した sparse pin 番号で表す |
-| [0012](0012-usb-stack.ja.md) | USB stack には TinyUSB を使う（2026-10-20 にデバイス・ホストとも自前のスタックへ置き換え） |
+| [0012](0012-usb-stack.ja.md) | USB stack は自作。割り込みは記録だけ、処理は通常の文脈、API は EspUsbDevice / EspUsbHost に合わせる |
 | [0013](0013-bundled-libraries.ja.md) | 同梱 library の範囲と examples の置き場所を限定する |
 | [0016](0016-execution-model.ja.md) | system service は begin で自動、利用者のコードは書いた場所で動く |
 | [0017](0017-option-byte-menus.ja.md) | option bytes のメニュー。先頭は工場出荷の値で何もしない。保護、DATA、起動の経路はメニューにしない |

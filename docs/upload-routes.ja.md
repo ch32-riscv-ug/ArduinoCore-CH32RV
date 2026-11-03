@@ -4,8 +4,7 @@
 書き込みツールは同梱の `ch32rv` に一本化しています（[ADR-0008](adr/0008-upload-strategy.ja.md)）。
 IDE port と経路の対応、discovery の設計は [oep-workflow.ja.md](oep-workflow.ja.md) §3 を参照してください。
 
-文書基準: ch32rv 0.19.0（`tools/index/tools_ch32rv.json`）、ch32-device-data@773f929。
-ch32rv の開発版では、下の表で「未確認」「不可」の系列も実機確認が済んでいます。次の ch32rv を採用するときに表を更新します。
+文書基準: ch32rv 0.25.1（`tools/index/tools_ch32rv.json`）、ch32-device-data@e6062d6。
 
 ## 経路の一覧
 
@@ -13,17 +12,17 @@ ch32rv の開発版では、下の表で「未確認」「不可」の系列も�
 |---|---|---|---|---|---|---|
 | WCH-Link / WCH-LinkE | 外付け probe、デバッグ線 | ○ 書き込み、reset、起動確認まで | 不要 | 不要（デバッグモジュールが CPU を止める） | 実装済 | 結線済（`serial`、`wchlink://`） |
 | OEP probe | OEP probe、デバッグ線 | ○ ch32rv の RAM loader で書く | 不要 | 不要 | 実装済 | 結線済（`oep://`、probe の serial port） |
-| HID bootloader（UIAPduino、`1209:b803`） | USB のみ | 書き込みは自動、入るのは手動 | 必要: RESET を押したまま USB へ接続し、すぐ離す | 不可: bootloader が外部 reset の履歴を確認する | 実装済（CH32V003、16 KiB まで） | 結線済（`ch32rv-hid://`） |
-| factory USB ISP（`4348:55e0`）、BOOT0 ピンで入る系列 | USB | 入るのが手動 | 必要: BOOT0（V103 は BOOT0 / BOOT1） | 未設計 | 未実装（`isp` は予約のみ） | 未結線 |
-| factory USB ISP、X033 / X035 | USB | 初回は手動。`SerialUSB` を使うアプリからは 1200bps touch で入れる | 初回は必要: PC17（USB D+）を High にして電源投入 | 可能: `CH32RVUsbDevice` の 1200bps touch または DFU_DETACH → boot mode 設定 → software reset（X035 で実機確認）。DFU detach は未実装 | 開発版で実装（info / flash / verify / erase / reset、X035 で実機確認）。未リリース | upload recipe は未結線 |
-| factory USB ISP、X305 / X315 | USB | 未確認 | 未確認 | 可能（予定）: X033 / X035 と同じ | 未実装 | 未結線 |
+| HID bootloader（UIAPduino、`1209:b803`） | USB のみ | 書き込みは自動、入るのは手動 | 必要: RESET を押したまま USB へ接続し、すぐ離す | 不可: bootloader が外部 reset の履歴を確認する | 実装済（`boot hid flash`、CH32V003、16 KiB まで） | 結線済（`ch32rv-hid://`） |
+| factory USB ISP（`4348:55e0`）、BOOT0 ピンで入る系列 | USB | 入るのが手動 | 必要: BOOT0（V103 は BOOT0 / BOOT1） | 不可（BOOT0 は端子） | 実装済（`isp flash`。V103、V20x、V30x、L103 の bootloader。実機は未確認） | 結線済（`ch32rv-isp://` の口） |
+| factory USB ISP、X033 / X035 | USB | ○ 動いているアプリからは自動 | 初回は必要: PC17（USB D+）を High にして電源投入 | 可能: `CH32RVUsbDevice` の DFU_DETACH または 1200bps touch → boot mode 設定 → software reset | 実装済（X035 で実機確認） | 結線済（`ch32rv-app://`、`ch32rv-isp://` の口。`--entry auto`） |
+| factory USB ISP、X305 / X315 | USB | 未確認 | 未確認 | 可能（予定）: X033 / X035 と同じ | 未確認 | 結線済（同じ recipe） |
 | factory UART ISP | USB-UART 変換 | — | — | V00x はアプリ経由、他は BOOT ピン | 未実装 | 対応しない |
-| DFU（アプリの DFU runtime、CH32H41x） | USB のみ | ○ 動いているアプリの DFU_DETACH で入る | 不要 | 可能（DFU runtime は既定で付く） | 実装済（`boot dfu flash` / `boot dfu info`、ch32rv 0.22.0） | 結線済（CH32H41x の `ch32rv-app://` の口、platform.txt の ch32rv_dfu）。H417 の FS で arduino-cli から書けた（2026-10-21）。DETACH 直後に開けず失敗することがある（ch32rv 側で対応中） |
+| DFU（アプリの DFU runtime、CH32H41x） | USB のみ | ○ 動いているアプリの DFU_DETACH で入る | 不要 | 可能（DFU runtime は既定で付く） | 実装済（`boot dfu flash` / `boot dfu info`） | 結線済（CH32H41x の `ch32rv-app://` の口、platform.txt の ch32rv_dfu）。H417 の FS で arduino-cli から書けた |
 | 独自 bootloader（UF2 / UART） | 板による | — | — | — | `boot uf2` / `boot uart` は予約のみ | 対応しない（該当する板が出たら recipe を足す） |
 
 デバッグ線の経路でも、アプリが SWIO を GPIO にした場合（`pinV32_DisconnectDebug()`）や深い sleep 中は接続できません。
-その場合の復旧は、LinkE の power-off erase か、NRST を配線した OEP スロットでの `recover --method nrst` です。
-1200bps touch、DTR/RTS、magic packet による自動切り替えは、どの経路にもまだありません。
+その場合の復旧は、LinkE の power-off erase か、NRST を配線した OEP の口での `recover --method nrst` です。
+アプリから書き込みモードへ自動で入れるのは、USB を持つ系列の factory USB ISP（DFU_DETACH / 1200bps touch）と、H41x の DFU です。
 
 ## デバッグ線
 
@@ -57,23 +56,24 @@ probe 側を SWIO だけにする必要があります。
 | 系列 | WCH-Link / LinkE | OEP probe | HID | factory USB ISP の入り方 | USB device |
 |---|---|---|---|---|---|
 | CH32V003 | 確認（LinkE 必須） | 確認（V003 治具、SWIO） | UIAPduino のみ確認 | — | — |
-| CH32V006 | 確認（flash controller 直接書込、62 KiB で約 6 分） | 未確認 | — | — | — |
+| CH32V006 | 確認（ch32rv の loader） | 未確認 | — | — | — |
 | CH32V002 / V004 | 未確認（LinkE 必須） | 未確認 | — | — | — |
 | CH32V005 / V007、CH32M007 | 未確認 | 未確認 | — | — | — |
 | CH32V103 | 確認（CH549 Link、LinkE） | 未確認 | — | BOOT0 / BOOT1 | FS |
 | CH32V203 | 確認 | 未確認 | — | BOOT0 | FS |
 | CH32V208 | 未確認 | 未確認 | — | BOOT0 | FS |
-| CH32V205 | 確認 | 未確認 | — | 未調査 | FS / HS |
+| CH32V205 | 確認（ch32rv の loader） | 未確認 | — | 未調査 | FS / HS |
 | CH32V307 | 確認 | 未確認 | — | BOOT0 | FS |
 | CH32V303 / V305 / V317 | 未確認 | 未確認 | — | BOOT0 | FS |
 | CH32L103 | 確認 | 確認（RP2350、RVSWD） | — | BOOT0 | FS |
 | CH32M103 | 未確認（L103 と同じ手順） | 未確認 | — | BOOT0 | FS |
 | CH32X035 | 確認 | 確認（ESP32-P4） | — | 電源投入時に PC17 = High、またはアプリから | FS |
 | CH32X033 | 未確認 | 未確認 | — | 電源投入時に PC17 = High、またはアプリから | FS |
-| CH32X315 | 確認（192 KiB の zero-wait 領域まで） | 未確認 | — | 電源投入時に BOOT 領域から起動（下記） | HS |
+| CH32X315 | 確認（ch32rv の loader） | 未確認 | — | 電源投入時に BOOT 領域から起動（下記） | HS |
 | CH32X305 | 未確認（X315 と同じ手順） | 未確認 | — | 電源投入時に BOOT 領域から起動（下記） | HS |
-| CH32V407 / V467 | 不可（未検証のため ch32rv が除外） | 不可（loader の手順を作れない） | — | BOOT0 | HS |
-| CH32M030 | 不可（未検証のため ch32rv が除外） | 使用しない（下記） | — | 無し | FS |
+| CH32V407 / V467 | 未確認 | 確認（ESP32-P4） | — | BOOT0 | HS |
+| CH32M030 | 未確認 | 確認（ESP32-P4X。128 B の page を EVT の手順で書く） | — | 無し | FS |
+| CH32H415 / H416 / H417 | 確認（H417） | 未確認 | — | 無し（アプリの DFU） | FS / HS / SS |
 
 | 製品ボード | 標準の経路 | 他の経路 |
 |---|---|---|
@@ -81,7 +81,7 @@ probe 側を SWIO だけにする必要があります。
 
 - OEP の「未確認」の系列は、同じ RAM loader を LinkE 経由で V003 / V006 / V103 / V203 / V307 / L103 / X035 / V205 / X315 に対して確認済みです。
 - 初代の WCH-Link（CH549）の firmware 2.11 では、CH32V103R8T6 に書いたあと target が起動しませんでした（probe-rs で書いた記録）。ベンチでの確認は LinkE 2.22、CH549 Link 2.12 です。
-- 「USB device」の列はハードウェアの有無です。このコアの USB device は X033 / X035 だけ結線済みです（[peripheral-support.ja.md](peripheral-support.ja.md)）。
+- 「USB device」の列はハードウェアの有無です。このコアの USB device の対応は [usb.ja.md](usb.ja.md) にあります。
 
 ## 書き込みで消す範囲（Erase Flash）
 
@@ -95,13 +95,6 @@ probe 側を SWIO だけにする必要があります。
 - 値は書き込みの設定（`upload.erase_args`）なので、切り替えても再ビルドは起きません。
 - H41x の DFU の経路は、チップ全体を消せません。All Flash を選ぶと、ch32rv が書き込みを断ります（exit 24）。
 - UIAPduino の板は HID のブートローダーでしか書かないので、このメニューがありません。
-
-## CH32M030 を OEP probe で書かない
-
-ch32rv 0.19.0 は M030 にも 128 byte page で書く RAM loader の手順を作ります。
-開発版では M030 の書き込みを実機確認済みなので、この節は次の ch32rv を採用するときに見直します。
-ところが M030 の BUFLOAD は 64 bit 幅で、ch32rv の 1 word ずつ書く方式は、幅の広い buffer を持つ部品で page を壊すとされています。
-M030 は実機で一度も書いていません。ch32rv 側で M030 を拒否するまでは、OEP の port を選んで M030 を書き込まないでください。
 
 ## 接続できなくなるイメージを試すとき（起動待ち）
 
@@ -143,7 +136,7 @@ X033 / X035 は BOOT0 ピンを持ちませんが、PC17（USB D+）が BOOT 検
 DOWNLOAD KEY を押したまま USB へ接続すれば factory USB ISP に入る回路です。実機での確認と、ボタンを離すタイミングの条件の確認はまだです。
 
 RVSWD の PC18 / PC19 を I2C など別の用途に使うボードでは、この経路が通常の書き込み経路になります。
-ただし ch32rv の `isp` は未実装です。
+IDE では、bootloader が出す `ch32rv-isp://` の口を選んで書きます。
 
 X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`START_MD`）と、
 「キー操作なしの USBFS ダウンロード」（`USBFSDLEN`）が option byte の既定で有効です（CH32X315 リファレンスマニュアル）。
@@ -151,8 +144,7 @@ X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`STAR
 
 ## USB を使う経路を足すときの前提
 
-- このコアに USB（TinyUSB、[ADR-0012](adr/0012-usb-stack.ja.md)）を結線することが先です。X033 / X035 は `CH32RVUsbDevice` で結線済みです（[docs/usb.ja.md](usb.ja.md)）。
-  これがないと、アプリから書き込みモードへ入れません。
+- アプリから書き込みモードへ入るには、アプリが `CH32RVUsbDevice` で USB を動かしている必要があります（[usb.ja.md](usb.ja.md)）。
 - factory USB ISP は WCH 独自の protocol で、USB DFU class ではありません。書き込みは ch32rv の `isp` が担当します。
 
 ### アプリの USB から書き込みモードへ入る
@@ -174,7 +166,7 @@ host が DFU_DETACH を送ると、アプリが書き込みモードへ切り替
 | user flash に置いた独自の DFU mode bootloader | dfu-util（Arduino 組み込みの dfu-discovery） | bootloader の分 | factory USB ISP へソフトウェアで入れない系列、標準 tool で書きたい板 |
 
 DFU detach から factory USB ISP へ入る場合、detach 後の device は DFU mode ではないので dfu-util では書けません。
-ch32rv が detach と `isp flash` を続けて行う形になります。
+ch32rv が detach と `isp flash` を続けて行います（`--entry auto`）。
 
 アプリが USB を止めた、または壊れた場合の復旧には、アプリに依存しない入口が要ります。X033 / X035 では電源投入時の PC17、
 BOOT0 ピンの系列では BOOT0、それ以外ではデバッグ線です。

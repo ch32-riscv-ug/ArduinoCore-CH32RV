@@ -337,7 +337,7 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
         # 4) the upload path is only real if the uploader came down with the
         #    platform. This is where a Windows install has broken before: a
         #    tool archive without a single root directory is refused by
-        #    arduino-cli (ADR-0011), and the failure only shows up here.
+        #    arduino-cli, and the failure only shows up here.
         tools_dir = work / "data" / "packages" / PACKAGER / "tools" / "ch32rv"
         uploaders = [p for p in tools_dir.glob("*/ch32rv*") if p.is_file()]
         if not uploaders:

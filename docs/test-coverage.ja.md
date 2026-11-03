@@ -26,7 +26,7 @@
 | tests/unit/test_workspace.py | 通常の収集範囲、Pythonテストとsketchの分離、旧 harness との分離 | コア API の動作 |
 | tests/unit/test_core_bringup_safety.py | 復元 prefix の保存性、書込み不能領域に非 blank がある場合の拒否 | 実際の消去・復元、実機動作 |
 | tests/unit/test_maintenance_tools.py | profile 同期、version 更新の対象限定、package 入力の自己完結、CI の旧 suite 非依存 | CH32 compile、実機動作 |
-| tests/platform/test_source_locks.py | ArduinoCore-API/TinyUSB のファイル一覧と lock の hash のオフライン一致 | upstream commit の由来、compile、実機動作 |
+| tests/platform/test_source_locks.py | ArduinoCore-API、lwIP、Mbed TLS のファイル一覧と lock の hash のオフライン一致 | upstream commit の由来、compile、実機動作 |
 | tests/unit/test_bench_safety.py | 誤ったDUT・USB topology・raw tty・無関係な電源port・設定typoの拒否 | 実際の実機操作 |
 | tests/single/runtime/test_runtime_contract.py | build IDとchallenge応答、data/bss/constructor、Print/String/malloc、粗い時間進行。HID後も独立consoleで確認 | OOM、時間精度、全clock・console方式 |
 | tests/instrumented/uart/test_uart_contract.py | 標準UARTの115200 8N1で独立UARTと64 byte binary往復 | 他instance/route/baud/format、overflow、波形 |
@@ -132,7 +132,6 @@ ADC の rail テストは channel の大きな異常検出には有用ですが�
 
 | 契約 | 実装 | 旧検証の参考（新 suite では未整備） | 不足する保証 / 必要設備 |
 |---|---|---|---|
-| TinyUSB source の固定 | 撤去 | TinyUSB は 2026-10-20 に外した（USB は自前のスタック） | — |
 | Arduino USB 初期化・device API | 一部（X033/X035 の CDC・HID・MIDI・ベンダー・MSC・CCID・NCM・オーディオ・ビデオ・DFU runtime、WebUSB / MS OS 2.0。V103 / V20x / V30x はビルドのみ） | 現行: tests/instrumented/usb（X035、ホスト役は PC）。手動確認: 全 example の列挙と動作、CDC 双方向 32 KiB、`ch32rv isp flash --entry auto` での書き込み | 他系列、suspend / resume、大量転送、PC 以外のホスト役 |
 | Arduino USB host API | X035 R8T6/C8T6/G8U6/G8R6・V20x・V30x の USBFS（CH32RVUsbHost、HID・CDC・MIDI・MSC・ベンダー・CCID・ハブ） | 現行: peer/usb/host（usb-peer-host / -classes、CH32X035C8T6 と ESP32-S3 の EspUsbDevice）。F8U6 で Unsupported を実機確認。V20x / V30x はビルドのみ | V20x / V30x での実行、ハブ越し、低速デバイス、準備できない MSC |
 | USB 対向（X035 デバイス ⇔ ESP32-S3 ホスト） | X035 の全デバイスクラス | 現行: peer/usb/device（usb-peer / -classes / -media / -net、EspUsbHost 2.10.0） | バルク UVC（EspUsbHost が読まない）、オーディオの全二重（S3 が落とす）、マイクの毎フレーム取得 |

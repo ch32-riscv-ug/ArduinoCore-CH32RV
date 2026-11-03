@@ -50,6 +50,9 @@ The [ADRs](docs/adr/README.ja.md) record the rationale that is still needed to m
 | Optimize (`opt`) | `oslto` | `-Os` with LTO: 9-24% less flash at the same speed (measured on CH32X035). `osltosr` adds `-msave-restore` for another 4-5%, but call-heavy code (elliptic-curve crypto) runs 7-9% slower. `osstd` builds without LTO |
 | Floating Point (`rtlib`) | `fltf` | Double or float arithmetic, printf's `%f`, and newlib's float printf / scanf |
 | parseFloat (`parsefloat`) | `auto` | How `Serial.parseFloat()` adds its digits up. `auto` follows Floating Point: integers under Float, double under Double |
+| USART1-10, I2C1-2, SPI1-3 (`usartN`, `i2cN`, `spiN`) | `auto` | How that peripheral's pins are chosen. AUTO decides in `begin()` (the default pins, or those `setPins()` chose). FIX fixes them in the build (for pins other than the default it is smaller than `setPins()`: 472-1028 B for Serial, 28-100 B for Wire). Disable links nothing of the peripheral (dropping X035's other USARTs saves 456 B). `Serial`, `Serial1` ... name the enabled peripherals in number order, so a Disable moves the later names down |
+| Flash / RAM Split (`ramsplit`) | `256k_64k` (factory setting) | How V303 / V305 / V307 / V317 split their 320 KB of SRAM between the zero-wait flash copy and RAM ([support-status.ja.md](docs/support-status.ja.md), Japanese). A non-factory entry has the core rewrite the option byte at boot |
+| VIO18 Supply (`vio18`) | `hw` | H41x's VIO18 voltage. `hw` keeps the board's XO strap; the others are set by the core at boot |
 | Reset Pin (`rstpin`) | the series' factory setting | On the series whose reset input is an option byte setting (the reset pin from the factory on V002-V006, a GPIO on V007, M007, X033, X035, M030, X305 and X315). The factory entry does nothing and leaves the chip as it is set. The other one has the core compare the option bytes at boot and, when they differ, rewrite them once and reset (276 B more on V003); a change made with ch32rv or the like is undone every time such a sketch starts. UIAPduino has no such menu (its HID bootloader relies on the factory reset pin) |
 | Erase Flash (`erase`) | `keep` | What an upload erases. Keep Store keeps the flash tail a sketch reserved with `CH32RV_FLASH_STORE` (ch32rv saves and writes it back: about 0.8 s more for 16 KB on V003, 1 s for 96 KB on V307). All Flash (`chip`) erases the whole chip. H41x's DFU route refuses All Flash. UIAPduino has no such menu (it uploads through HID alone) |
 
@@ -103,6 +106,8 @@ Third-party material retains its own license.
 | path | origin | license |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
+| `libraries/Network/src/lwip-src/` | lwIP 2.2.1 | BSD-3-Clause |
+| `libraries/NetworkClientSecure/src/mbedtls-src/` | Mbed TLS 4.1.1 | Apache-2.0 or GPL-2.0-or-later |
 | USB serial chip sequences in `libraries/CH32RVUsbHost/src/CH32RVUsbHostCdc.cpp` | rewritten from TinyUSB's cdc_host.c (after the Linux drivers) | MIT |
 
 Pinned revisions and file hashes are recorded in `vendor/*.lock.toml` and checked by the vendor tools.
