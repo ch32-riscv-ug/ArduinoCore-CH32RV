@@ -52,7 +52,7 @@ Measured 2026-10-28 with [SPISlaveSelfTest](examples/SPISlaveSelfTest/README.md)
 | `queue(tx, rx, size)` | Arm one transfer. `tx` nullptr: the fill byte; `rx` nullptr: keep nothing. False when four are waiting (finished ones not yet taken count) |
 | `transfer(tx, rx, size, timeout_ms = 0)` | `queue()` and wait for it; the bytes clocked, 0 on a timeout. Only with nothing else queued or waiting |
 | `poll(result)` | The oldest finished transfer: `rx`, `length` (clocked), `size` |
-| `onTransfer(callback, arg)` | Or each finished transfer to the callback, run by `deliverEvents()` from `loop()` |
+| `onTransfer(callback)` | Or each finished transfer to the callback (a function, or a lambda that captures a little), run by `deliverEvents()` (which the core calls after `loop()`) |
 | `setFill(byte)` | Sent after `tx` and when nothing is queued |
 | `numTransactionsInFlight()` / `available()` | Queued and not finished / finished and not taken |
 | `missed()` / `overruns()` | Chip selects with nothing queued / bytes lost to a late interrupt |

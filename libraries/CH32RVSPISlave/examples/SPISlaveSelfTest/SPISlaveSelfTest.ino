@@ -117,7 +117,7 @@ static bool same(int step, const uint8_t *got, const uint8_t *want, size_t n)
     return check(step, ok);
 }
 
-static void gotTransfer(const CH32RVSPISlave::Result &r, void *)
+static void gotTransfer(const CH32RVSPISlave::Result &r)
 {
     if (r.length == 3 && r.rx[0] == 0x77) {
         delivered++;

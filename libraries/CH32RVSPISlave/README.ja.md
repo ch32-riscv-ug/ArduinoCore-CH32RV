@@ -56,7 +56,7 @@ CS は割り込み付きの普通の端子で、SPI の NSS 端子ではあり�
 | `queue(tx, rx, size)` | 転送を 1 つ用意する。`tx` が nullptr なら埋め草のバイト、`rx` が nullptr なら受け取らない。4 つ待っていると false（終わって取り出していないものも数える） |
 | `transfer(tx, rx, size, timeout_ms = 0)` | `queue()` して終わりを待つ。送られたバイト数を返し、タイムアウトなら 0。ほかに待っているものが無いときだけ使える |
 | `poll(result)` | いちばん古い、終わった転送。`rx`、`length`（送られた数）、`size` |
-| `onTransfer(callback, arg)` | または、終わった転送ごとにコールバックを呼ぶ。呼ぶのは `loop()` の `deliverEvents()` |
+| `onTransfer(callback)` | または、終わった転送ごとにコールバックを呼ぶ（関数か、小さくキャプチャするラムダ）。呼ぶのは `deliverEvents()`（コアが `loop()` の後で呼ぶ） |
 | `setFill(byte)` | `tx` のあとと、キューが空のときに送るバイト |
 | `numTransactionsInFlight()` / `available()` | 用意して終わっていない数 / 終わって取り出していない数 |
 | `missed()` / `overruns()` | キューが空だった CS の数 / 割り込みが遅れて失ったバイトの数 |

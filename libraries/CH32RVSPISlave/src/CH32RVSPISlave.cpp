@@ -273,11 +273,10 @@ bool CH32RVSPISlave::poll(Result &out)
     return true;
 }
 
-void CH32RVSPISlave::onTransfer(TransferCallback cb, void *arg)
+void CH32RVSPISlave::onTransfer(TransferCallback cb)
 {
     noInterrupts();
     _cb = cb;
-    _cb_arg = arg;
     interrupts();
     if (delivery.deliver == nullptr) {
         delivery.deliver = deliver;
@@ -296,7 +295,7 @@ size_t CH32RVSPISlave::deliver()
         }
         Result r;
         while (s->_cb && s->poll(r)) {
-            s->_cb(r, s->_cb_arg);
+            s->_cb(r);
             ran++;
         }
     }

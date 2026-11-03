@@ -34,6 +34,7 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include <CH32RVCallback.h>
 
 #include "ch32rv_deliver.h"
 #include "ch32rv_spi_claim.h"
@@ -47,7 +48,8 @@ public:
         size_t length;      /* bytes the master clocked; at most `size` of them are in rx */
         size_t size;        /* what queue() was given */
     };
-    typedef void (*TransferCallback)(const Result &result, void *arg);
+    /* A function, or a lambda that captures a little ([this], a pointer). */
+    typedef CH32RVCallback<void(const Result &result)> TransferCallback;
 
     /* SCK, MISO, MOSI: one route of an SPI (as SPI.begin(sck, miso, mosi));
      * CS: any pin with an EXTI line. mode: SPI_MODE0..3, as the master's.
@@ -72,7 +74,7 @@ public:
     /* The oldest finished transfer, if there is one. */
     bool poll(Result &out);
     /* Or each finished transfer to `cb`, from deliverEvents(). nullptr: back to poll(). */
-    void onTransfer(TransferCallback cb, void *arg = nullptr);
+    void onTransfer(TransferCallback cb);
 
     /* Queued and not yet finished (the running one included). */
     uint8_t numTransactionsInFlight() const;
@@ -116,5 +118,4 @@ private:
     volatile uint32_t _missed = 0, _overruns = 0;
 
     TransferCallback _cb = nullptr;
-    void *_cb_arg = nullptr;
 };
