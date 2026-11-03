@@ -19,7 +19,7 @@ uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
 ```
 
 別 revision を採用するときは、その checkout を `--tables` に渡します。生成器は
-`index/manifest.csv` と `index/VERSION` を検証し、consumer surface 以外は読みません。
+`index/manifest.csv` を検証し、consumer surface 以外は読みません。
 
 ## 生成と確認
 

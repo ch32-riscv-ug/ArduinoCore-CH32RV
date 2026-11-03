@@ -143,7 +143,6 @@ def unpack(archive: pathlib.Path, dest: pathlib.Path) -> None:
 
 LOCK = REPO / "vendor" / f"{DEVICE_DATA}.lock.toml"
 MANIFEST_REL = pathlib.Path("index") / "manifest.csv"
-VERSION_REL = pathlib.Path("index") / "VERSION"
 
 
 def locked_pin() -> dict | None:
@@ -152,7 +151,7 @@ def locked_pin() -> dict | None:
     vendor/ch32-device-data.lock.toml records it the way upstream asks
     consumers to pin (index/README.md, Contract for consumers): the `commit`,
     the `manifest_sha256` of index/manifest.csv (which lists every file of the
-    public surface with its sha256) and index/VERSION as `version`. The commit
+    public surface with its sha256). The commit
     lets the tables be checked out at exactly the revision this working tree
     was generated against rather than at whatever main happens to be; the
     manifest hash then proves the checkout is that surface.
@@ -195,12 +194,6 @@ def verify_surface(dest: pathlib.Path, pin: dict) -> None:
             f"hashes to {got}, but {LOCK.name} says {want}. The lock and the "
             f"tables disagree; regenerate (tools/generate/generate.py) from a "
             f"clean checkout to move the pin, or check the clone for local edits.")
-    version = pin.get("version")
-    if version is not None:
-        have = (dest / VERSION_REL).read_text(encoding="utf-8").strip()
-        if str(version) != have:
-            raise SystemExit(f"{DEVICE_DATA}: {VERSION_REL} is {have}, "
-                             f"{LOCK.name} says {version}")
     print(f"  {MANIFEST_REL} matches the lock", file=sys.stderr)
 
 
