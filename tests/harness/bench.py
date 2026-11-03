@@ -3,7 +3,7 @@ import pathlib
 import re
 import tomllib
 
-CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit", "flash",
+CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit", "flash", "wire",
          "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net",
          "usb-peer-host", "usb-peer-host-classes"}
 # Cases with an ESP32-S3 USB peer on the DUT's own USB port (tests/peer/usb).

@@ -40,6 +40,15 @@ inline void clear_addr(uint32_t base)
     (void)CH32RV_I2C_STAR2(base);
 }
 
+/* How a read ends: STOP, or for Arduino's sendStop false a repeated START.
+ * Either is armed at the same point; after the NACKed byte the peripheral
+ * sends the START and waits with SB set, holding SCL, so the next start()
+ * goes straight on to the address. */
+inline void end_read(uint32_t base, bool stop)
+{
+    CH32RV_I2C_CTLR1(base) |= stop ? CH32RV_I2C_CTLR1_STOP : CH32RV_I2C_CTLR1_START;
+}
+
 }  // namespace
 
 /* Which I2Cs are in the table, and the board's choice for each (Disable /
@@ -583,7 +592,7 @@ size_t CH32RVTwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
         {
             NoIrq lock;
             clear_addr(_base);
-            stop();
+            end_read(_base, stopBit);
         }
         if (wait_flag1(CH32RV_I2C_STAR1_RXNE, true)) {
             _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
@@ -600,7 +609,7 @@ size_t CH32RVTwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
         }
         if (wait_flag1(CH32RV_I2C_STAR1_BTF, true)) {
             NoIrq lock;
-            stop();
+            end_read(_base, stopBit);
             _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
             _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
         }
@@ -620,7 +629,7 @@ size_t CH32RVTwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
             {
                 NoIrq lock;
                 _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
-                stop();
+                end_read(_base, stopBit);
             }
             _rx[got++] = (uint8_t)CH32RV_I2C_DATAR(_base);
             if (wait_flag1(CH32RV_I2C_STAR1_RXNE, true)) {
@@ -633,9 +642,6 @@ size_t CH32RVTwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
         clear_errors(_base);
         stop();
         _needs_recovery = true;
-    } else if (!stopBit) {
-        /* Arduino's repeated-start form. The bus is left owned, so the next
-         * call must not wait for it to go idle. */
     }
 
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
