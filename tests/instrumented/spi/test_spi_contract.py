@@ -97,13 +97,21 @@ def test_spi_contract(dut, oep_host, record_property):
                 target.configure(mode=mode, bit_order=lsb)
                 target.arm(5, miso)
                 rate, samples = WINDOW["software" if "soft_spi" in case else "hardware"]
-                cap.configure(rate=rate, samples=samples, trigger=(capture.EDGE, 0, 1), pretrigger=PRETRIGGER)
+                cfg = cap.configure(rate=rate, samples=samples, trigger=(capture.EDGE, 0, 1), pretrigger=PRETRIGGER)
                 cap.start()
+                label = f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST"
                 m = ask(dut, f"xfer {mode} {lsb} {word:04x} {out.hex()}", rb"XFER (\S+) ([0-9a-f]{4})")
                 got_bytes, got_word = bytes.fromhex(m.group(1).decode()), int(m.group(2), 16)
                 pending, bits, mosi = target.read_rx()
-                segs = cap.wait(timeout=5.0)
-                data = cap.read_segment(segs[0])
+                try:
+                    segs = cap.wait(timeout=5.0)
+                    data = cap.read_segment(segs[0])
+                except Exception as e:
+                    # For the probe's side: what the capture was asked and answered, and the target's state.
+                    record_property(label.replace(" ", "_") + "_capture",
+                                    f"{type(e).__name__}: {e}; configure answered rate {float(cfg.rate):.0f} samples {cfg.samples} "
+                                    f"pretrigger {PRETRIGGER} channels 3; status {cap.status()}; target {target.status()}; XFER returned")
+                    raise
                 cs_b, sck_b, mosi_b = (cap.channel(data, k, segs[0].samples) for k in range(3))
                 seen = wire_bits(cs_b, sck_b, mosi_b, mode)
                 # The shortest SCK level while CS is low, in samples: a glitch is far shorter than a half period.
@@ -130,7 +138,6 @@ def test_spi_contract(dut, oep_host, record_property):
                                 f"the last {last_before}, SCK {sck_b[0]} at the window's start")
                 wire_word = word.to_bytes(2, "little" if lsb else "big")
                 want_word = int.from_bytes(miso[3:5], "little" if lsb else "big")
-                label = f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST"
                 problems = []        # the DUT's
                 probe = []           # the probe's spi-target's
                 if len(seen) != 40 or to_bytes(seen, lsb) != out + wire_word:

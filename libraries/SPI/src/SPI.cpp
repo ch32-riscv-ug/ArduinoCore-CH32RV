@@ -373,9 +373,19 @@ void CH32RVSPIClass::apply(uint32_t clock_hz, BitOrder order, uint8_t mode)
         ctlr1 |= CH32RV_SPI_CTLR1_LSBFIRST;
     }
 
-    CH32RV_SPI_CTLR1(_base) = 0;        /* SPE off while the settings change */
+    /* beginTransaction() runs this before every transfer, usually with the
+     * settings the bus already has: then nothing is touched. */
+    const uint16_t now = CH32RV_SPI_CTLR1(_base);
+    if (now == (uint16_t)(ctlr1 | CH32RV_SPI_CTLR1_SPE)) {
+        return;
+    }
+    /* SPE off while the settings change, keeping MSTR and the old CPOL: a
+     * CTLR1 of 0 makes the peripheral a slave with CPOL 0 for that moment,
+     * and SCK left its idle level - a pulse a device could take for a clock. */
+    CH32RV_SPI_CTLR1(_base) = (uint16_t)(now & ~CH32RV_SPI_CTLR1_SPE);
     CH32RV_SPI_CTLR2(_base) = 0;
-    CH32RV_SPI_CTLR1(_base) = ctlr1 | CH32RV_SPI_CTLR1_SPE;
+    CH32RV_SPI_CTLR1(_base) = ctlr1;
+    CH32RV_SPI_CTLR1(_base) = (uint16_t)(ctlr1 | CH32RV_SPI_CTLR1_SPE);
 }
 
 void CH32RVSPIClass::beginTransaction(SPISettings settings)
