@@ -10,14 +10,11 @@
 # way upstream asks (index/README.md, Contract for consumers):
 #   commit          - the ch32-device-data revision
 #   manifest_sha256 - sha256 of index/manifest.csv, which lists every
-#                     file under index/ (CSV and VERSION) with its sha256,
-#                     so this one hash identifies the whole surface
-#   version         - index/VERSION, upstream's schema version; it is
-#                     raised before any change that can break a consumer
+#                     file under index/ with its sha256, so this one
+#                     hash identifies the whole surface
 
 [[source]]
 id = "ch32-device-data"
 url = "https://github.com/ch32-riscv-ug/ch32-device-data.git"
-commit = "dbd31184e6435fee68968e1d4b02258c3fd8229f"
-manifest_sha256 = "505954ef01dcd7a26886dc30075d2d4ff21f21ea51a7df8439169171c3a027ae"
-version = 1
+commit = "e83aa37d2790f68fd4f5ee82c85dcd029384d0b6"
+manifest_sha256 = "87d6986f4db1ce506b17773126aa34e0b290689a77e6652679ce30cd88e990b5"
