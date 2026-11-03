@@ -4,7 +4,11 @@ writes 0x10 with endTransmission(false), reads n bytes with requestFrom(addr, n,
 endTransmission(true), back to back, for n = 1, 2 and 3 (the driver's three read paths).
 
 Arduino's sendStop: false keeps the bus, so the next transfer starts with a repeated START. On the wire that is
-S W Sr R Sr W P with stop 0, and S W Sr R P S W P with stop 1. The pads come from the bench's gpio table."""
+S W Sr R Sr W P with stop 0, and S W Sr R P S W P with stop 1. The pads come from the bench's gpio table.
+
+wire.softwire: the same on a SoftWire (case softwire), on the pads the bench names as soft_wire
+({sda, scl}), which need not be a hardware route. Wire itself is the board's: a hardware I2C, or a
+SoftWire when the fqbn sets that I2C to Software (i2c1=software), which case wire then covers."""
 import json
 import pathlib
 import secrets
@@ -29,6 +33,11 @@ def ask(dut, line, reply, timeout=10):
 
 def pad(pin):
     return f"P{'ABCDEF'[(pin >> 5) - 2]}{pin & 31}"
+
+
+def pin(name):
+    """The sketch's pin number of a pad name (the variants' CH32RV_PIN(port, bit))."""
+    return ((ord(name[1]) - ord("A") + 2) << 5) | int(name[2:])
 
 
 def conditions(sda, scl):
@@ -57,6 +66,11 @@ def test_wire_contract(dut, oep_host, record_property):
     m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d+) (\d+)", timeout=15)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     sda_pad, scl_pad = pad(int(m.group(2))), pad(int(m.group(3)))
+    if "soft_wire" in case:
+        sda_pad, scl_pad = case["soft_wire"]["sda"], case["soft_wire"]["scl"]
+        m = ask(dut, f"soft {pin(sda_pad)} {pin(scl_pad)}", rb"SOFT (\d)")
+        assert m.group(1) == b"1", f"SoftWire refused SDA {sda_pad} / SCL {scl_pad}"
+        record_property("bus", "SoftWire")
     channels = {p["pad"]: p["channel"] for p in case["target"].get("gpio", [])}
     assert sda_pad in channels and scl_pad in channels, f"the bench's gpio table has no channel for {sda_pad} / {scl_pad}"
     sda, scl = channels[sda_pad], channels[scl_pad]
@@ -94,7 +108,10 @@ def test_wire_contract(dut, oep_host, record_property):
                 assert (first, last) == (0, 0), \
                     f"n {n} stop {stop}: endTransmission gave {first} / {last}; {bits(sda_bits, scl_bits) or 'nothing'} on the wire, target {target.status()}"
                 assert got == n and hexed.lower() == reply.hex(), f"n {n} stop {stop}: read {got} bytes {hexed}, the target sent {reply.hex()}"
-                assert frames == [b"\x10", b"\x20"], f"n {n} stop {stop}: the target received {frames}"
+                # The bytes, not the framing: a probe may join the two writes across the read (the
+                # conditions on the wire are what this contract judges).
+                record_property(f"frames_n{n}_stop{stop}", repr(frames))
+                assert b"".join(frames) == b"\x10\x20", f"n {n} stop {stop}: the target received {frames}"
                 want = ["S", "S", "P", "S", "P"] if stop else ["S", "S", "S", "P"]
                 assert seen == want, f"n {n} stop {stop}: {''.join(seen)} on the wire, not {''.join(want)} (rate {float(cfg.rate):.0f})"
     finally:

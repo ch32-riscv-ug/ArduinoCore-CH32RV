@@ -3,7 +3,9 @@
  * captures SDA and SCL, so the test sees which conditions went on the wire.
  * Console on SerialDMSeq:
  *
- *   ready <nonce>         READY <nonce> <build id> <sda pin> <scl pin>
+ *   ready <nonce>         READY <nonce> <build id> <sda pin> <scl pin> (Wire's)
+ *   soft <sda> <scl>      run the sequences on a SoftWire on these pins instead
+ *                         of Wire: SOFT <1 opened / 0 refused>
  *   seq <addr> <n> <stop> write 0x10 with endTransmission(false), then
  *                         requestFrom(addr, n, stop), then write 0x20 with
  *                         endTransmission(true), back to back:
@@ -18,20 +20,25 @@
 #error BENCH_BUILD_ID must identify this compilation
 #endif
 
+/* The bus the sequences run on: Wire (hardware, or a SoftWire when the board
+ * menu sets its I2C to Software), or the SoftWire `soft` names. */
+static TwoWire *bus = &Wire;
+static SoftWire soft(CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN);
+
 static void sequence(uint8_t address, size_t n, bool stop)
 {
-    Wire.beginTransmission(address);
-    Wire.write(0x10);
-    const uint8_t first = Wire.endTransmission(false);
-    const size_t got = Wire.requestFrom(address, n, stop);
+    bus->beginTransmission(address);
+    bus->write(0x10);
+    const uint8_t first = bus->endTransmission(false);
+    const size_t got = bus->requestFrom(address, n, stop);
     uint8_t data[8];
     size_t kept = 0;
-    while (Wire.available() && kept < sizeof data) {
-        data[kept++] = (uint8_t)Wire.read();
+    while (bus->available() && kept < sizeof data) {
+        data[kept++] = (uint8_t)bus->read();
     }
-    Wire.beginTransmission(address);
-    Wire.write(0x20);
-    const uint8_t last = Wire.endTransmission(true);
+    bus->beginTransmission(address);
+    bus->write(0x20);
+    const uint8_t last = bus->endTransmission(true);
 
     SerialDMSeq.print("SEQ ");
     SerialDMSeq.print(first);
@@ -82,6 +89,16 @@ void loop()
             SerialDMSeq.print(PIN_WIRE_SDA);
             SerialDMSeq.print(' ');
             SerialDMSeq.println(PIN_WIRE_SCL);
+        } else if (strncmp(line, "soft ", 5) == 0) {
+            char *p = line + 5;
+            const long sda = strtol(p, &p, 10);
+            const long scl = strtol(p, &p, 10);
+            const bool ok = soft.begin((int)sda, (int)scl, 100000);
+            if (ok) {
+                bus = &soft;
+            }
+            SerialDMSeq.print("SOFT ");
+            SerialDMSeq.println(ok ? 1 : 0);
         } else if (strncmp(line, "seq ", 4) == 0) {
             char *p = line + 4;
             const unsigned long address = strtoul(p, &p, 0);
