@@ -33,6 +33,7 @@ def pin(name):
 # (rate, samples) of the capture: the hardware SPI (~750 kHz) at ~13 samples a half period over 400 us; SoftSPI
 # (a few us a half period) over 4 ms. Bigger windows at these rates overrun the P4's capture store.
 WINDOW = {"hardware": (20_000_000, 8_000), "software": (5_000_000, 20_000)}
+PRETRIGGER = 400           # 20 us (hardware) / 80 us (SoftSPI) before CS falls
 
 
 def wire_bits(cs, sck, mosi, mode):
@@ -96,7 +97,7 @@ def test_spi_contract(dut, oep_host, record_property):
                 target.configure(mode=mode, bit_order=lsb)
                 target.arm(5, miso)
                 rate, samples = WINDOW["software" if "soft_spi" in case else "hardware"]
-                cap.configure(rate=rate, samples=samples, trigger=(capture.EDGE, 0, 1), pretrigger=100)
+                cap.configure(rate=rate, samples=samples, trigger=(capture.EDGE, 0, 1), pretrigger=PRETRIGGER)
                 cap.start()
                 m = ask(dut, f"xfer {mode} {lsb} {word:04x} {out.hex()}", rb"XFER (\S+) ([0-9a-f]{4})")
                 got_bytes, got_word = bytes.fromhex(m.group(1).decode()), int(m.group(2), 16)
@@ -119,8 +120,14 @@ def test_spi_contract(dut, oep_host, record_property):
                 low = [i for i in range(len(cs_b)) if not cs_b[i]]
                 edges = sum(1 for i in low[1:] if sck_b[i] != sck_b[i - 1])
                 at_fall = sck_b[low[0]] if low else -1
+                first_low = low[0] if low else 0
+                before = [i for i in range(1, first_low) if sck_b[i] != sck_b[i - 1]]
+                ns = 1e9 / rate
+                last_before = f"{(first_low - before[-1]) * ns:.0f} ns before" if before else "none"
                 record_property(f"mode_{mode}_{'LSB' if lsb else 'MSB'}_sck",
-                                f"shortest {min(runs[1:]) if len(runs) > 1 else -1}, {edges} edges, at CS fall {at_fall}, idle {mode >> 1}")
+                                f"shortest {min(runs[1:]) if len(runs) > 1 else -1}, {edges} edges, at CS fall {at_fall}, "
+                                f"idle {mode >> 1}; {len(before)} edges in the {first_low * ns:.0f} ns before CS fell, "
+                                f"the last {last_before}, SCK {sck_b[0]} at the window's start")
                 wire_word = word.to_bytes(2, "little" if lsb else "big")
                 want_word = int.from_bytes(miso[3:5], "little" if lsb else "big")
                 label = f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST"
