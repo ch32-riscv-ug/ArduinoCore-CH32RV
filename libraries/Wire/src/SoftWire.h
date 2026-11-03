@@ -31,75 +31,39 @@
 
 #include <stdint.h>
 
-#ifndef CH32RV_SOFTWIRE_BUFFER_SIZE
-#define CH32RV_SOFTWIRE_BUFFER_SIZE 32
-#endif
-
-/* How long one wait for the bus may take before the call gives up. The same
- * 25 ms <Wire.h> uses, and the same number AVR's own default uses. */
-#ifndef SOFTWIRE_TIMEOUT_US
-#define SOFTWIRE_TIMEOUT_US 25000UL
-#endif
-
 namespace arduino {
 
 class SoftWire : public ::TwoWire {
 public:
     SoftWire(uint8_t sda, uint8_t scl) : _sda(sda), _scl(scl) {}
 
+    using ::TwoWire::begin;
+
     void begin() override;
     /* Target mode is not possible here - see the note at the top. Accepted so
      * that code written for another core still compiles; the bus stays a
      * controller and nothing answers at `address`. */
     void begin(uint8_t address) override { (void)address; begin(); }
-    bool begin(int sda, int scl, uint32_t frequency = 0) override;
-    bool begin(uint8_t address, int sda, int scl, uint32_t frequency) override
-    {
-        (void)address;
-        return begin(sda, scl, frequency);
-    }
     /* Any two distinct pads; an open bus moves to them. */
     bool setPins(int sda, int scl) override;
     void end() override;
 
     /* Sets the floor on the half period, not an achieved frequency: a
      * bit-banged bus cannot hit a number. Anything at or above what the loop
-     * already produces leaves it running flat out. */
+     * already produces leaves it running flat out. getClock() returns what
+     * was asked. */
     void setClock(uint32_t freq) override;
-    /* The frequency the half-period floor stands for, not a measured one. */
-    uint32_t getClock(void) override { return _half_us ? 500000UL / _half_us : 1000000UL; }
 
-    void beginTransmission(uint8_t address) override;
-    uint8_t endTransmission(bool stopBit) override;
-    uint8_t endTransmission(void) override { return endTransmission(true); }
-
-    size_t requestFrom(uint8_t address, size_t len, bool stopBit) override;
-    size_t requestFrom(uint8_t address, size_t len) override {
-        return requestFrom(address, len, true);
-    }
+    /* The hardware I2C this bus is bound to: none, as Wire's says while closed. */
+    uint8_t peripheral(void) const { return 0; }
 
     /* No target mode, so no callbacks can ever fire. */
     void onReceive(void (*)(int)) override {}
     void onRequest(void (*)(void)) override {}
 
-    size_t write(uint8_t data) override;
-    size_t write(const uint8_t *data, size_t len) override;
-    using ::TwoWire::write;
-
-    int available(void) override;
-    int read(void) override;
-    int peek(void) override;
-    void flush(void) override {}
-
-    /* AVR's timeout API, and the same two divergences <Wire.h> documents: the
-     * timeout is ON by default, and the bus is released either way. */
-    void setWireTimeout(uint32_t timeout = SOFTWIRE_TIMEOUT_US,
-                        bool reset_with_timeout = false) override;
-    bool getWireTimeoutFlag(void) override { return _timeout_flag; }
-    void clearWireTimeoutFlag(void) override { _timeout_flag = false; }
-
 protected:
-    uint32_t wireTimeoutUs(void) override { return _timeout_us; }
+    uint8_t transmit(bool stop) override;
+    size_t receive(uint8_t address, size_t len, bool stop) override;
 
 private:
     void hold(uint8_t pin);            /* drive low                     */
@@ -115,19 +79,7 @@ private:
     uint8_t _sda;
     uint8_t _scl;
 
-    uint8_t _tx[CH32RV_SOFTWIRE_BUFFER_SIZE];
-    uint8_t _rx[CH32RV_SOFTWIRE_BUFFER_SIZE];
-    uint8_t _tx_len = 0;
-    uint8_t _rx_len = 0;
-    uint8_t _rx_read = 0;
-    uint8_t _address = 0;
-
     uint16_t _half_us = 5;             /* ~100 kHz if the loop were free */
-    uint32_t _timeout_us = SOFTWIRE_TIMEOUT_US;
-    bool _timeout_flag = false;
-    bool _transmitting = false;
-    bool _tx_overflow = false;
-    bool _started = false;
 };
 
 }  // namespace arduino

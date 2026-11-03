@@ -51,6 +51,46 @@ the same pair of pads, so the order matters and is checked.
 Calling either after `begin()` reopens the bus on the new pins and returns the
 old pads to inputs.
 
+## SoftWire (I2C on any two pads)
+
+The hardware I2C reaches only the pads its routes name, and on the small parts
+those are often not bonded out, or already carry something else. `SoftWire` is a
+bit-banged controller on any two pads. It is a `TwoWire`, like `Wire`, so a
+library that takes `TwoWire *` takes it unchanged. It comes with the same
+`<Wire.h>` (or `<SoftWire.h>`).
+
+```cpp
+#include <Wire.h>
+
+SoftWire bus(PA1, PA2);           // SDA, SCL
+Adafruit_Something device(&bus);
+```
+
+- **The class says software or hardware.** `Wire.begin(sda, scl)` takes a
+  hardware I2C only, and returns `false` for pins no route has; it never falls
+  back to software behind the sketch's back.
+- Both pads are `OUTPUT_OPENDRAIN` (emulated as input / output-low on X033 /
+  X035, whose GPIO has no open drain). **The bus still needs pull-ups.**
+- Clock stretching is waited for. `endTransmission()`'s codes and the timeout
+  API are Wire's.
+- `setClock()` sets a **floor** on the half period, not an achieved frequency;
+  `getClock()` returns what was asked.
+- **No target mode.** `begin(address)` opens a controller, and `onReceive()` /
+  `onRequest()` do nothing. There is no `setRoute()` or `clearBus()`: those
+  are the hardware's. `peripheral()` returns 0.
+- The buffers are Wire's `CH32RV_WIRE_BUFFER_SIZE` (32 by default).
+- `endTransmission()` on a bus that is not open returns 4, as on `Wire` (it
+  does not `begin()` by itself).
+
+### Making Wire software from the board menu
+
+Choose **Software** under **I2C1** (I2C2) in the board menu and the name that
+I2C backs (`Wire`, `Wire1`) is a `SoftWire`. `begin()` uses that I2C's default
+route pins and `begin(sda, scl)` takes any pads; no hardware I2C code is linked.
+It lets a library that uses the global `Wire` run on a board whose hardware I2C
+cannot be used. Hardware-only calls such as `Wire.setRoute()` then fail to
+compile.
+
 ## Things worth knowing
 
 - **Pull-ups are yours.** The core configures the pads as open drain, which is
@@ -98,10 +138,12 @@ old pads to inputs.
 
 - **I2CScanner** - list the devices that answer, and say so plainly when the
   bus times out because the pull-ups are missing.
+- **SoftI2CScanner** - the same with `SoftWire`, on two pads you choose.
 
 ## Detailed example guides
 
 - [I2CScanner](examples/I2CScanner/README.md): connections, operation, API use and adaptation notes.
+- [SoftI2CScanner](examples/SoftI2CScanner/README.md): scan two pads of your choice with `SoftWire`.
 - [I2CRegisterRead](examples/I2CRegisterRead/README.md): Select and read registers, checking write errors and short replies.
 - [I2CSlaveRegister](examples/I2CSlaveRegister/README.md): Expose a small register map with short interrupt callbacks.
 - [I2CTimeoutRecovery](examples/I2CTimeoutRecovery/README.md): Distinguish NACK from timeout and explicitly request bus recovery.

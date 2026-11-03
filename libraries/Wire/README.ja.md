@@ -51,6 +51,39 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
 
 `begin()`のあとに呼ぶと、古いpadを入力に戻してから新しいpinで開き直します。
 
+## SoftWire(任意の2 padのI2C)
+
+ハードウェアのI2Cはrouteが名指すpadにしか出せません。小さい部品ではそのpadが
+bondされていない、あるいは別の用途で埋まっていることがよくあります。
+`SoftWire`は任意の2 padでbit-bangするcontrollerで、`Wire`と同じ`TwoWire`なので、
+`TwoWire *`を取るライブラリがそのまま受け取れます。同じ`<Wire.h>`(または`<SoftWire.h>`)で使えます。
+
+```cpp
+#include <Wire.h>
+
+SoftWire bus(PA1, PA2);           // SDA, SCL
+Adafruit_Something device(&bus);
+```
+
+- **ソフトかハードかは、クラスで決めます。** `Wire.begin(sda, scl)`はハードウェアの
+  I2Cだけを選び、routeに無いpinなら`false`を返します。黙ってソフトに切り替えることはしません。
+- 両padを`OUTPUT_OPENDRAIN`にします(X033 / X035はGPIOにオープンドレインが無いので、
+  入力と出力Lowの切り替えで同じことをします)。**プルアップは必要です。**
+- クロックストレッチを待ちます。`endTransmission()`の戻り値とtimeout APIは`Wire`と同じです。
+- `setClock()`は半周期の**下限**を決めるもので、狙った周波数は出ません。`getClock()`は指定した値を返します。
+- **slaveモードはありません。** `begin(address)`はcontrollerとして開き、`onReceive()` / `onRequest()`は何もしません。
+  `setRoute()`と`clearBus()`はありません(ハードウェアだけの機能です)。`peripheral()`は0を返します。
+- バッファは`Wire`と同じ`CH32RV_WIRE_BUFFER_SIZE`(既定32)です。
+- 開いていないバスへの`endTransmission()`は、`Wire`と同じく4を返します(自動では`begin()`しません)。
+
+### ボードメニューでWireをソフトにする
+
+ボードメニューの**I2C1**(I2C2)で**Software**を選ぶと、そのI2Cに当たる名前
+(`Wire`、`Wire1`)が`SoftWire`になります。`begin()`はそのI2Cの既定routeのpinを使い、
+`begin(sda, scl)`は任意のpadを受けます。ハードウェアI2Cのコードはlinkされません。
+グローバルの`Wire`を直接使うライブラリを、ハードウェアI2Cの使えない基板で動かすためのものです。
+このとき`Wire.setRoute()`などハードウェアだけの関数はコンパイルエラーになります。
+
 ## 知っておくとよいこと
 
 - **プルアップは利用者側の責任です。** coreはpadをオープンドレインにしますが、
@@ -96,10 +129,12 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
 
 - **I2CScanner** — 応答するデバイスを列挙します。
   プルアップが無くてタイムアウトした場合は、そうと分かる表示をします。
+- **SoftI2CScanner** — 同じことを`SoftWire`で、選んだ2 padに対して行います。
 
 ## サンプルの詳しい使い方
 
 - [I2CScanner](examples/I2CScanner/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [SoftI2CScanner](examples/SoftI2CScanner/README.ja.md)：`SoftWire`で任意の2 padを走査します。
 - [I2CRegisterRead](examples/I2CRegisterRead/README.ja.md): レジスタを選んで読み、書き込みエラーと受信長を確認します。
 - [I2CSlaveRegister](examples/I2CSlaveRegister/README.ja.md): 短い割り込みcallbackで小さなレジスタを公開します。
 - [I2CTimeoutRecovery](examples/I2CTimeoutRecovery/README.ja.md): NACKとtimeoutを区別し、明示的な操作でバスを復旧します。

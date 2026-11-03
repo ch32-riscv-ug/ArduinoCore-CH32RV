@@ -22,7 +22,7 @@
 | 版と板 | `ARDUINO_ARCH_CH32RV`、`ARDUINO_<board>`、`CH32RV_SERIES_<series>`、`CH32RV_PART_<part>`、`CH32RV_VERSION`、`CH32RV_VERSION_VAL()` |
 | メニューで決まるもの | `CH32RV_RAMSPLIT_RAM_KB`（Flash / RAM Split の RAM の KB）、`F_CPU` |
 | 機能を調べる | `CH32RV_HAS_UNIQUE_ID`、`CH32RV_HAS_VIO18`、`CH32RV_RNG_BASE`、`CH32RV_USBPD_BASE`、`CH32RV_SLEEP_UNSUPPORTED` |
-| 利用者が決める大きさや時間 | 各 README に書いたもの（`CH32RV_SOFTWIRE_BUFFER_SIZE`、`CH32RV_WIRE_TIMEOUT_US`、`CH32RV_DMSEQ_RX_SIZE`、`CH32RV_DMDATA_RX_SIZE` など）。スケッチより前に定義する（`build_opt.h`、ADR-0007） |
+| 利用者が決める大きさや時間 | 各 README に書いたもの（`CH32RV_WIRE_BUFFER_SIZE`、`CH32RV_WIRE_TIMEOUT_US`、`CH32RV_DMSEQ_RX_SIZE`、`CH32RV_DMDATA_RX_SIZE` など）。スケッチより前に定義する（`build_opt.h`、ADR-0007） |
 | ライブラリの定数 | 各ライブラリの README に書いたもの（`CH32RV_USB_HID_KEY_*` など） |
 
 ほかの `CH32RV_*`（`boards.txt` が渡すレジスタの番地、クロックの設定、内部の切り替えなど）は内部です。名前も値も、版で変わります。

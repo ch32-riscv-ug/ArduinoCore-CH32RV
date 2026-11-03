@@ -1,5 +1,7 @@
 Wire	KEYWORD1
 CH32RVTwoWire	KEYWORD1
+TwoWire	KEYWORD1
+SoftWire	KEYWORD1
 setRoute	KEYWORD2
 setPins	KEYWORD2
 beginTransmission	KEYWORD2

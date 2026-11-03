@@ -251,6 +251,9 @@ PERIPH_MENU_KINDS = (
     ("i2c", "I2C", ("SCL", "SDA"), range(1, 3)),
     ("spi", "SPI", ("SCK", "MISO", "MOSI"), range(1, 4)),
 )
+# The kinds whose menu also offers Software: the library has a bit-banged bus
+# of the same type (SoftWire). USART has none.
+SOFTWARE_KINDS = ("i2c",)
 
 
 # The variant header's own name for each kind's default pins, for an instance
@@ -328,6 +331,11 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
                 lines.append(f"{pfx}.{ident}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
                              f"-DCH32RV_{macro}{n}_FIX_V1=0x{v1:08x}u "
                              f"-DCH32RV_{macro}{n}_FIX_V2=0x{v2:08x}u")
+            if kind in SOFTWARE_KINDS:
+                # The name this instance backs (Wire, SPI ...) bit-banged on its
+                # default pins, with no hardware code linked (ch32rv_instances.h).
+                lines.append(f"{pfx}.software=Software")
+                lines.append(f"{pfx}.software.{key}=-DCH32RV_{macro}{n}_MODE=3")
     lines.append(f"{board}.build.periph_defines={' '.join(uses)}")
     return lines
 

@@ -47,6 +47,12 @@ bool SoftWire::scl_high(void)
 
 void SoftWire::begin()
 {
+    /* No pins yet (a Software menu entry on a part with no default route):
+     * begin(sda, scl) names them. */
+    if (_sda == _scl || !ch32rv_pad_is_valid(_sda) || !ch32rv_pad_is_valid(_scl)) {
+        return;
+    }
+    setClock(_clock_hz);
     /* Both lines released. OUTPUT_OPENDRAIN before the write, so the pad never
      * drives high even briefly - on a bus with another controller, or a target
      * mid-transfer, a push-pull high is a short. */
@@ -91,15 +97,6 @@ bool SoftWire::setPins(int sda, int scl)
     return true;
 }
 
-bool SoftWire::begin(int sda, int scl, uint32_t frequency)
-{
-    if (!(sda < 0 && scl < 0) && !setPins(sda, scl)) {
-        return false;
-    }
-    setClock(frequency);                /* 0 keeps the floor */
-    begin();
-    return true;
-}
 
 void SoftWire::setClock(uint32_t freq)
 {
@@ -108,17 +105,11 @@ void SoftWire::setClock(uint32_t freq)
     if (freq == 0) {
         return;
     }
+    _clock_hz = freq;
     const uint32_t half = 500000UL / freq;
     _half_us = (uint16_t)(half > 0xFFFFUL ? 0xFFFFUL : half);
 }
 
-void SoftWire::setWireTimeout(uint32_t timeout, bool reset_with_timeout)
-{
-    /* Accepted, not honoured: a timeout here always ends in a stop condition,
-     * which is the whole of what "reset" can mean for a line pair. */
-    (void)reset_with_timeout;
-    _timeout_us = timeout;
-}
 
 void SoftWire::start_condition(void)
 {
@@ -204,83 +195,30 @@ uint8_t SoftWire::read_byte(bool ack)
     return b;
 }
 
-void SoftWire::beginTransmission(uint8_t address)
-{
-    _address = address;
-    _tx_len = 0;
-    _tx_overflow = false;
-    _transmitting = true;
-}
 
-size_t SoftWire::write(uint8_t data)
-{
-    if (!_transmitting) {
-        return 0;                      /* outside a transmission, as on AVR */
-    }
-    if (_tx_len >= CH32RV_SOFTWIRE_BUFFER_SIZE) {
-        _tx_overflow = true;
-        return 0;
-    }
-    _tx[_tx_len++] = data;
-    return 1;
-}
 
-size_t SoftWire::write(const uint8_t *data, size_t len)
-{
-    size_t written = 0;
-    while (len--) {
-        if (write(*data++) == 0) {
-            break;
-        }
-        written++;
-    }
-    return written;
-}
 
-uint8_t SoftWire::endTransmission(bool stopBit)
+uint8_t SoftWire::transmit(bool stopBit)
 {
-    _transmitting = false;
-    if (_tx_overflow) {
-        _tx_len = 0;
-        return 1;                      /* AVR's "data too long" */
-    }
-    if (!_started) {
-        begin();
-    }
-
     start_condition();
     if (!write_byte((uint8_t)(_address << 1))) {
         stop_condition();
-        _tx_len = 0;
         return _timeout_flag ? 5 : 2;  /* 2 = nothing at that address */
     }
     for (uint8_t i = 0; i < _tx_len; i++) {
         if (!write_byte(_tx[i])) {
             stop_condition();
-            _tx_len = 0;
             return _timeout_flag ? 5 : 3;   /* 3 = target stopped taking data */
         }
     }
     if (stopBit) {
         stop_condition();
     }
-    _tx_len = 0;
     return 0;
 }
 
-size_t SoftWire::requestFrom(uint8_t address, size_t len, bool stopBit)
+size_t SoftWire::receive(uint8_t address, size_t len, bool stopBit)
 {
-    _rx_len = _rx_read = 0;
-    if (!_started) {
-        begin();
-    }
-    if (len > CH32RV_SOFTWIRE_BUFFER_SIZE) {
-        len = CH32RV_SOFTWIRE_BUFFER_SIZE;
-    }
-    if (len == 0) {
-        return 0;
-    }
-
     start_condition();
     if (!write_byte((uint8_t)((address << 1) | 1u))) {
         stop_condition();
@@ -289,33 +227,14 @@ size_t SoftWire::requestFrom(uint8_t address, size_t len, bool stopBit)
     for (size_t i = 0; i < len; i++) {
         /* NACK the last byte: an ACK would ask for one more. */
         _rx[i] = read_byte(i + 1 < len);
-        _rx_len++;
     }
     if (stopBit) {
         stop_condition();
     }
-    return _rx_len;
+    return len;
 }
 
-int SoftWire::available(void)
-{
-    return _rx_len - _rx_read;
-}
 
-int SoftWire::read(void)
-{
-    if (_rx_read >= _rx_len) {
-        return -1;
-    }
-    return _rx[_rx_read++];
-}
 
-int SoftWire::peek(void)
-{
-    if (_rx_read >= _rx_len) {
-        return -1;
-    }
-    return _rx[_rx_read];
-}
 
 }  // namespace arduino

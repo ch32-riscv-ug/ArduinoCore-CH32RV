@@ -99,7 +99,7 @@ struct RouteSet {
  * packages of the series): begin() without pins fails on it. */
 #define CH32RV_WIRE_NO_DEF CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, 0u, 0u
 
-#if CH32RV_I2C_ON_1
+#if CH32RV_I2C_HW_1
 #define CH32RV_WIRE_HAS_1 1
 #if CH32RV_I2C1_MODE == CH32RV_I2C_FIX
 #define CH32RV_WIRE_DEF_1 CH32RV_I2C1_FIX_SCL, CH32RV_I2C1_FIX_SDA, CH32RV_I2C1_FIX_V1, CH32RV_I2C1_FIX_V2
@@ -117,7 +117,7 @@ static const ch32rv_route_t wire1_routes[] = { CH32RV_WIRE_ROUTE(CH32RV_WIRE_DEF
 #endif
 #endif
 #endif
-#if CH32RV_I2C_ON_2
+#if CH32RV_I2C_HW_2
 #define CH32RV_WIRE_HAS_2 1
 #if CH32RV_I2C2_MODE == CH32RV_I2C_FIX
 #define CH32RV_WIRE_DEF_2 CH32RV_I2C2_FIX_SCL, CH32RV_I2C2_FIX_SDA, CH32RV_I2C2_FIX_V1, CH32RV_I2C2_FIX_V2
@@ -245,23 +245,8 @@ bool CH32RVTwoWire::wait_flag1(uint16_t mask, bool set)
     }
 }
 
-void CH32RVTwoWire::setWireTimeout(uint32_t timeout, bool reset_with_timeout)
-{
-    /* Accepted, not honoured - see the note in Wire.h. The peripheral is
-     * reset after a timeout either way. */
-    (void)reset_with_timeout;
-    _timeout_us = timeout;
-}
 
-bool CH32RVTwoWire::getWireTimeoutFlag(void)
-{
-    return _timeout_flag;
-}
 
-void CH32RVTwoWire::clearWireTimeoutFlag(void)
-{
-    _timeout_flag = false;
-}
 
 void CH32RVTwoWire::begin()
 {
@@ -329,8 +314,12 @@ void CH32RVTwoWire::begin()
     setClock(_clock_hz);
 }
 
+extern "C" void ch32rv_wire_irq(void);
+
 void CH32RVTwoWire::begin(uint8_t address)
 {
+    /* Links WireIrq.cpp, the I2C vectors: only a target takes interrupts. */
+    __asm__ volatile("" : : "r"(&ch32rv_wire_irq));
     /* Same bring-up as the master - pins, reset, FREQ (which the slave needs
      * too: it times its own SCL stretching from it) - then the own address
      * and the interrupt machinery on top. */
@@ -354,44 +343,8 @@ void CH32RVTwoWire::begin(uint8_t address)
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
 }
 
-/* -1, -1 keeps the pins; anything else has to be a whole route. */
-static bool pins_ok(CH32RVTwoWire &bus, int sda, int scl)
-{
-    if (sda < 0 && scl < 0) {
-        return true;
-    }
-    return bus.setPins(sda, scl);
-}
 
-bool CH32RVTwoWire::begin(int sda, int scl, uint32_t frequency)
-{
-    if (_started) {
-        end();
-    }
-    if (!pins_ok(*this, sda, scl)) {
-        return false;
-    }
-    if (frequency) {
-        _clock_hz = frequency;
-    }
-    begin();
-    return true;
-}
 
-bool CH32RVTwoWire::begin(uint8_t address, int sda, int scl, uint32_t frequency)
-{
-    if (_started) {
-        end();
-    }
-    if (!pins_ok(*this, sda, scl)) {
-        return false;
-    }
-    if (frequency) {
-        _clock_hz = frequency;
-    }
-    begin(address);
-    return true;
-}
 
 void CH32RVTwoWire::end()
 {
@@ -487,33 +440,9 @@ void CH32RVTwoWire::stop(void)
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_STOP;
 }
 
-void CH32RVTwoWire::beginTransmission(uint8_t address)
-{
-    _address = address;
-    _tx_len = 0;
-    _tx_overflow = false;
-    _transmitting = true;
-}
 
-uint8_t CH32RVTwoWire::endTransmission(bool stopBit)
+uint8_t CH32RVTwoWire::transmit(bool stopBit)
 {
-    if (!_transmitting || _slave || !_started) {
-        /* A slave starting a master transfer would have to win the bus from
-         * the master that is addressing it; this driver does one role at a
-         * time (see the header comment). A bus that is not open (no begin(),
-         * or its I2C is Disable on this board) has no registers to drive. */
-        _transmitting = false;
-        return 4;
-    }
-    _transmitting = false;
-    if (!_started) {
-        return 4;
-    }
-    if (_tx_overflow) {
-        _tx_overflow = false;
-        _tx_len = 0;
-        return 1;                        /* AVR's "data too long" */
-    }
     if (_needs_recovery) {
         recover();
     }
@@ -558,16 +487,8 @@ uint8_t CH32RVTwoWire::endTransmission(bool stopBit)
     return 0;
 }
 
-size_t CH32RVTwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
+size_t CH32RVTwoWire::receive(uint8_t address, size_t len, bool stopBit)
 {
-    _rx_len = 0;
-    _rx_read = 0;
-    if (!_started || _slave || len == 0) {
-        return 0;
-    }
-    if (len > CH32RV_WIRE_BUFFER_SIZE) {
-        len = CH32RV_WIRE_BUFFER_SIZE;
-    }
     if (_needs_recovery) {
         recover();
     }
@@ -749,53 +670,10 @@ void CH32RVTwoWire::er_irq(void)
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
 }
 
-size_t CH32RVTwoWire::write(uint8_t data)
-{
-    if (!_transmitting && !_slave_replying) {
-        return 0;        /* outside any transmission, bytes go nowhere */
-    }
-    if (_tx_len >= CH32RV_WIRE_BUFFER_SIZE) {
-        /* AVR truncates and reports it from endTransmission() as 1, so the
-         * flag has to survive until then. */
-        _tx_overflow = true;
-        return 0;
-    }
-    _tx[_tx_len++] = data;
-    return 1;
-}
 
-size_t CH32RVTwoWire::write(const uint8_t *data, size_t len)
-{
-    size_t written = 0;
-    for (size_t i = 0; i < len; i++) {
-        if (!write(data[i])) {
-            break;
-        }
-        written++;
-    }
-    return written;
-}
 
-int CH32RVTwoWire::available(void)
-{
-    return _rx_len - _rx_read;
-}
 
-int CH32RVTwoWire::read(void)
-{
-    if (_rx_read >= _rx_len) {
-        return -1;
-    }
-    return _rx[_rx_read++];
-}
 
-int CH32RVTwoWire::peek(void)
-{
-    if (_rx_read >= _rx_len) {
-        return -1;
-    }
-    return _rx[_rx_read];
-}
 
 /* --------------------------------------------------------------- routes */
 bool CH32RVTwoWire::setRoute(uint8_t route)
@@ -905,15 +783,9 @@ bool CH32RVTwoWire::clearBus(void)
 }
 
 /* ------------------------------------------------------- interrupts */
-/* One handler for the EV and ER vectors of every enabled I2C (only a slave
- * enables them): each I2Cn_EV/ER_IRQHandler below is an alias of it, and mcause
- * says which fired. A Disable I2C gets no alias. The bus objects themselves
- * live in WireInstance.cpp / Wire1Instance.cpp, one per file, so a sketch links
- * only the buses it names. */
-extern "C" __attribute__((interrupt)) void ch32rv_wire_irq(void)
+/* Called by the vectors in WireIrq.cpp, which only a target links. */
+void ch32rv_wire_dispatch(uint32_t cause)
 {
-    uint32_t cause;
-    __asm__ volatile("csrr %0, mcause" : "=r"(cause));
     const uint8_t irqn = (uint8_t)(cause & 0xFFFu);
     for (uint8_t i = 0; i < WIRE_COUNT; i++) {
         if (!owner[i]) {
@@ -929,11 +801,3 @@ extern "C" __attribute__((interrupt)) void ch32rv_wire_irq(void)
         }
     }
 }
-#ifdef CH32RV_WIRE_HAS_1
-extern "C" void I2C1_EV_IRQHandler(void) __attribute__((alias("ch32rv_wire_irq")));
-extern "C" void I2C1_ER_IRQHandler(void) __attribute__((alias("ch32rv_wire_irq")));
-#endif
-#ifdef CH32RV_WIRE_HAS_2
-extern "C" void I2C2_EV_IRQHandler(void) __attribute__((alias("ch32rv_wire_irq")));
-extern "C" void I2C2_ER_IRQHandler(void) __attribute__((alias("ch32rv_wire_irq")));
-#endif

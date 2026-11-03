@@ -29,30 +29,13 @@
 #pragma once
 
 #include "TwoWire.h"
+#include "SoftWire.h"
 #include "internal/ch32rv_pins.h"
 #include "internal/ch32rv_route.h"
 #include "pins_arduino.h"
 #include "internal/ch32rv_instances.h"
 
 #include <stdint.h>
-
-/* AVR's Wire uses 32, and libraries written against it assume a write of more
- * than 32 bytes is truncated rather than sent. Raise it per sketch with
- *   -DCH32RV_WIRE_BUFFER_SIZE=128
- * remembering that both buffers grow, on every Wire instance. */
-#ifndef CH32RV_WIRE_BUFFER_SIZE
-#define CH32RV_WIRE_BUFFER_SIZE 32
-#endif
-/* The names libraries size their transfers by (arduino-esp32 / AVR spellings). */
-#define I2C_BUFFER_LENGTH CH32RV_WIRE_BUFFER_SIZE
-#define BUFFER_LENGTH CH32RV_WIRE_BUFFER_SIZE
-
-/* How long a single bus wait may take before the call gives up, in
- * microseconds. 25 ms is well past the worst case for a byte at the slowest
- * clock this driver programs, so hitting it means the bus is stuck. */
-#ifndef CH32RV_WIRE_TIMEOUT_US
-#define CH32RV_WIRE_TIMEOUT_US 25000UL
-#endif
 
 /* clearBus(): how long each SCL pulse waits for a slave that stretches the
  * clock before giving up on it, in microseconds. */
@@ -77,41 +60,10 @@ public:
 
     void begin() override;
     void begin(uint8_t address) override;
-    bool begin(int sda, int scl, uint32_t frequency = 0) override;
-    bool begin(uint8_t address, int sda, int scl, uint32_t frequency) override;
+    using ::TwoWire::begin;
     void end() override;
 
     void setClock(uint32_t freq) override;
-    uint32_t getClock(void) override { return _clock_hz; }
-
-    /* AVR's timeout API (Wire.h since 1.8.x), with two documented differences.
-     *
-     * The timeout is ON by default here, at CH32RV_WIRE_TIMEOUT_US (25 ms, the
-     * same number AVR's own default uses). On AVR it is off until a sketch
-     * asks for it, and a stuck bus hangs the sketch forever; that is not a
-     * behaviour worth reproducing, so the default stays on. Pass 0 to turn it
-     * off and get AVR's original behaviour.
-     *
-     * reset_with_timeout is accepted and the bus is reset either way: this
-     * driver already marks the peripheral for recovery whenever a wait ends in
-     * anything but a NACK, and the next endTransmission()/requestFrom() runs
-     * it. Leaving a latched-BUSY peripheral alone has no upside, so `false`
-     * does not switch that off. */
-    void setWireTimeout(uint32_t timeout = CH32RV_WIRE_TIMEOUT_US,
-                        bool reset_with_timeout = false) override;
-    /* Sticky: set by any wait that ran out, and only cleared by the call
-     * below, so a sketch can check once after a burst of transfers. */
-    bool getWireTimeoutFlag(void) override;
-    void clearWireTimeoutFlag(void) override;
-
-    void beginTransmission(uint8_t address) override;
-    uint8_t endTransmission(bool stopBit) override;
-    uint8_t endTransmission(void) override { return endTransmission(true); }
-
-    size_t requestFrom(uint8_t address, size_t len, bool stopBit) override;
-    size_t requestFrom(uint8_t address, size_t len) override {
-        return requestFrom(address, len, true);
-    }
 
     void onReceive(void (*)(int)) override;
     void onRequest(void (*)(void)) override;
@@ -154,17 +106,9 @@ public:
      * to CH32RV_WIRE_CLEAR_STRETCH_US per pulse. */
     bool clearBus(void);
 
-    /* Print/Stream */
-    size_t write(uint8_t data) override;
-    size_t write(const uint8_t *data, size_t len) override;
-    using ::TwoWire::write;
-    int available(void) override;
-    int read(void) override;
-    int peek(void) override;
-    void flush(void) override {}
-
 protected:
-    uint32_t wireTimeoutUs(void) override { return _timeout_us; }
+    uint8_t transmit(bool stop) override;
+    size_t receive(uint8_t address, size_t len, bool stop) override;
 
 private:
     bool wait_flag1(uint16_t mask, bool set);
@@ -186,48 +130,40 @@ private:
     uint8_t _scl_pin;
     uint8_t _sda_pin;
 
-    uint32_t _clock_hz = 100000;
-    uint8_t _address = 0;          /* target of the transmission being built */
-    bool _started = false;
-    bool _transmitting = false;
-    bool _tx_overflow = false;
     /* Set when a transfer ended badly, so the next one resets the peripheral
      * first: an aborted transfer can leave BUSY asserted forever. */
     bool _needs_recovery = false;
-    /* 0 disables the timeout, as on AVR. */
-    uint32_t _timeout_us = CH32RV_WIRE_TIMEOUT_US;
-    bool _timeout_flag = false;
 
-    /* Slave state. The callbacks run in interrupt context. _slave_replying
-     * is what lets write() tell "inside onRequest()" apart from "outside any
-     * transmission", where write() must go nowhere. */
+    /* Target state. The callbacks run in interrupt context; _slave_replying
+     * (in TwoWire) lets write() tell "inside onRequest()" apart from "outside
+     * any transmission", where write() must go nowhere. */
     void (*_on_receive)(int) = nullptr;
     void (*_on_request)(void) = nullptr;
-    volatile bool _slave = false;
-    volatile bool _slave_replying = false;
     /* A write to this slave is in progress: onReceive() is still owed, at
      * STOP or - before onRequest() - at a repeated START that turns to read. */
     volatile bool _slave_receiving = false;
 
-    /* Shared by the polled master and the slave interrupt handler - never
-     * both at once, since the modes are exclusive. Volatile for the halves
-     * the handler writes while the sketch reads. */
-    uint8_t _tx[CH32RV_WIRE_BUFFER_SIZE];
-    volatile uint8_t _tx_len = 0;
+    /* How much of _tx a target has sent the controller. */
     volatile uint8_t _tx_sent = 0;
-    uint8_t _rx[CH32RV_WIRE_BUFFER_SIZE];
-    volatile uint8_t _rx_len = 0;
-    volatile uint8_t _rx_read = 0;
 };
 
 }  // namespace arduino
 
 /* As many names as the board has enabled I2Cs (ch32rv_instances.h): the bare
- * name first and Wire1 second, as elsewhere in the Arduino ecosystem. */
+ * name first and Wire1 second, as elsewhere in the Arduino ecosystem. An I2C
+ * set to Software in the board menu makes its name a SoftWire. */
 #if CH32RV_WIRE_COUNT > 0
 #define WIRE_INTERFACES_COUNT CH32RV_WIRE_COUNT
+#if CH32RV_WIRE0_SOFT
+extern arduino::SoftWire Wire;            /* WireInstance.cpp */
+#else
 extern arduino::CH32RVTwoWire Wire;       /* WireInstance.cpp */
 #endif
+#endif
 #if CH32RV_WIRE_COUNT > 1
+#if CH32RV_WIRE1_SOFT
+extern arduino::SoftWire Wire1;           /* Wire1Instance.cpp */
+#else
 extern arduino::CH32RVTwoWire Wire1;      /* Wire1Instance.cpp */
+#endif
 #endif

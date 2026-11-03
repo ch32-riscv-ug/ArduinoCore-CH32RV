@@ -5,6 +5,9 @@
  *   0 Disable  not in the driver's table: no code, no route, no handler
  *   1 AUTO     bound in begin(); every route the variant knows is accepted
  *   2 FIX      one route, the board's: CH32RV_<KIND>n_FIX_<ROLE> / _V1 / _V2
+ *   3 Software I2C and SPI only: the name this instance would back is the
+ *              bit-banged bus instead (SoftWire, SoftSPI), on the instance's
+ *              default pins; the hardware is not in the driver's table
  * through CH32RV_USARTn_MODE, CH32RV_I2Cn_MODE and CH32RV_SPIn_MODE. A board
  * without the menu leaves every instance on AUTO.
  *
@@ -34,6 +37,7 @@
 #define CH32RV_PERIPH_DISABLE 0
 #define CH32RV_PERIPH_AUTO    1
 #define CH32RV_PERIPH_FIX     2
+#define CH32RV_PERIPH_SOFT    3
 
 /* ------------------------------------------------------------------ USART */
 #ifndef CH32RV_USART1_MODE
@@ -142,8 +146,17 @@
 #else
 #define CH32RV_I2C_ON_2 0
 #endif
-/* Wire, Wire1. */
+/* In the hardware driver's table: on, and not Software. */
+#define CH32RV_I2C_HW_1 (CH32RV_I2C_ON_1 && CH32RV_I2C1_MODE != CH32RV_PERIPH_SOFT)
+#define CH32RV_I2C_HW_2 (CH32RV_I2C_ON_2 && CH32RV_I2C2_MODE != CH32RV_PERIPH_SOFT)
+/* Wire, Wire1. Wire is the first instance that is on, Wire1 the second; a
+ * Software one is bit-banged, a hardware one is its row of the driver's table. */
 #define CH32RV_WIRE_COUNT (CH32RV_I2C_ON_1 + CH32RV_I2C_ON_2)
+#define CH32RV_WIRE0_INSTANCE (CH32RV_I2C_ON_1 ? 1 : 2)
+#define CH32RV_WIRE0_SOFT (CH32RV_I2C_ON_1 ? CH32RV_I2C1_MODE == CH32RV_PERIPH_SOFT \
+                                           : CH32RV_I2C2_MODE == CH32RV_PERIPH_SOFT)
+#define CH32RV_WIRE1_SOFT (CH32RV_I2C2_MODE == CH32RV_PERIPH_SOFT)
+#define CH32RV_WIRE1_ROW CH32RV_I2C_HW_1
 
 /* -------------------------------------------------------------------- SPI */
 #ifndef CH32RV_SPI1_MODE
