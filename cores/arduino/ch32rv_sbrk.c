@@ -19,11 +19,15 @@
 #include <stddef.h>
 #include <sys/types.h>
 
+#include "internal/ch32rv_heap.h"
+
 #undef errno
 extern int errno;
 
 extern char _end[];        /* linker script: first byte above .bss */
 extern char _heap_end[];   /* linker script: bottom of the reserved stack */
+
+size_t ch32rv_heap_stack_margin;   /* internal/ch32rv_heap.h */
 
 void *_sbrk(ptrdiff_t incr)
 {
@@ -42,6 +46,14 @@ void *_sbrk(ptrdiff_t incr)
     if (next > _heap_end || next < _end) {
         errno = ENOMEM;
         return (void *)-1;
+    }
+    if (incr > 0 && ch32rv_heap_stack_margin) {
+        char *sp;
+        __asm__ volatile("mv %0, sp" : "=r"(sp));
+        if (next > sp - ch32rv_heap_stack_margin) {
+            errno = ENOMEM;
+            return (void *)-1;
+        }
     }
     brk = next;
     return prev;

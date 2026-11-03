@@ -35,6 +35,8 @@ extern "C" void delay(unsigned long ms)
 }
 
 /* newlib has these and glibc does not; the core's itoa.c adds only the long forms. */
+/* The heap margin NetworkClientSecure raises (internal/ch32rv_heap.h); the host's malloc ignores it. */
+extern "C" { size_t ch32rv_heap_stack_margin; }
 extern "C" char *itoa(int value, char *buf, int radix) { return ltoa(value, buf, radix); }
 extern "C" char *utoa(unsigned value, char *buf, int radix) { return ultoa(value, buf, radix); }
 

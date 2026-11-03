@@ -1,5 +1,6 @@
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
 #include "NetworkClientSecure.h"
+#include "internal/ch32rv_heap.h"
 
 #include <string.h>
 #include <time.h>
@@ -207,6 +208,32 @@ struct NetworkTlsGlue {
     }
 };
 
+/* While a TLS session lives, the heap stays this far below the stack
+ * (internal/ch32rv_heap.h): the handshake's stack reaches 4.4 KB or more, and
+ * the heap would otherwise grow into where it goes - corrupting the session's
+ * keys - instead of the allocation failing. Override with a define in
+ * build_opt.h. */
+#ifndef NETWORK_TLS_STACK_MARGIN
+#define NETWORK_TLS_STACK_MARGIN 6144
+#endif
+
+static uint8_t tls_stack_holders;
+
+void NetworkClientSecure::holdStack(bool hold)
+{
+    if (hold == _holdsStack) {
+        return;
+    }
+    _holdsStack = hold;
+    if (hold) {
+        if (tls_stack_holders++ == 0) {
+            ch32rv_heap_stack_margin = NETWORK_TLS_STACK_MARGIN;
+        }
+    } else if (--tls_stack_holders == 0) {
+        ch32rv_heap_stack_margin = 0;
+    }
+}
+
 NetworkClientSecure::NetworkClientSecure() {}
 
 NetworkClientSecure::~NetworkClientSecure()
@@ -259,7 +286,12 @@ int NetworkClientSecure::connect(IPAddress ip, uint16_t port, int32_t timeout_ms
     }
     char host[16];
     snprintf(host, sizeof host, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-    return startTls(host);
+    holdStack(true);
+    const int ok = startTls(host);
+    if (!ok) {
+        holdStack(false);
+    }
+    return ok;
 }
 
 int NetworkClientSecure::connect(const char *host, uint16_t port)
@@ -273,7 +305,12 @@ int NetworkClientSecure::connect(const char *host, uint16_t port, int32_t timeou
     if (!(timeout_ms < 0 ? NetworkClient::connect(host, port) : NetworkClient::connect(host, port, timeout_ms))) {
         return 0;
     }
-    return startTls(host);
+    holdStack(true);
+    const int ok = startTls(host);
+    if (!ok) {
+        holdStack(false);
+    }
+    return ok;
 }
 
 int NetworkClientSecure::startTls(const char *host)
@@ -466,6 +503,7 @@ void NetworkClientSecure::stop()
     _peeked = -1;
     _version = 0;
     NetworkClient::stop();
+    holdStack(false);
 }
 
 uint8_t NetworkClientSecure::connected()

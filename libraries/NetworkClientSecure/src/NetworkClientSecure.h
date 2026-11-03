@@ -63,6 +63,7 @@ public:
 
 private:
     int startTls(const char *host);
+    void holdStack(bool hold);
     friend struct NetworkTlsGlue;
 
     NetworkTlsSession *_tls = nullptr;
@@ -76,6 +77,7 @@ private:
     int _lastError = 0;
     uint32_t _verifyFlags = 0;
     int _peeked = -1;
+    bool _holdsStack = false;   /* this session keeps the heap off the stack */
     TlsVersion _minVersion = TlsVersion::TLS1_2, _maxVersion = TlsVersion::TLS1_3;
     uint16_t _version = 0;
 };

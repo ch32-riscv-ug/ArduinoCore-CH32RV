@@ -9,7 +9,8 @@ TLS over the Network library's `NetworkClient`, with the API of ESP32's Arduino 
   - Connects with ECDSA and RSA chains, a root certificate, a bundle and a client certificate, over TLS 1.3 and 1.2, including servers that speak only one of them.
   - Refuses a wrong root, a wrong name, a root missing from the bundle, and an impostor root (same name, another key).
 - Not yet run on a chip (no Ethernet driver yet).
-- **V307 RAM:** about 30 KB static plus 30-40 KB of heap in a handshake may not fit in 64 KB. The V307 can trade flash for RAM in its option bytes, which the core does not offer yet.
+- **V307 RAM:** a handshake takes 30-40 KB of heap and 4.4 KB or more of stack. The Flash / RAM Split menu gives the V307 more RAM, but the test's eth sketch (with lwIP and the Ethernet buffers) fitted neither 224k_96k nor 192k_128k (2026-11-03). When it does not fit, `connect()` fails and `lastError()` returns -0x7F00 (MBEDTLS_ERR_SSL_ALLOC_FAILED) or -141 (PSA_ERROR_INSUFFICIENT_MEMORY).
+- **Stack margin:** while a TLS session lives, the heap stops 6 KB (`NETWORK_TLS_STACK_MARGIN`, settable in `build_opt.h`) short of the stack, so the handshake's deep stack cannot write over the heap and silently corrupt the session (a MAC error on the first record); it fails as out of memory instead.
 
 ## Use
 
