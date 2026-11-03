@@ -36,6 +36,21 @@ public:
         assign(f);
     }
 
+    /* Three word moves: -Os makes a copy of the 12-byte object a memcpy call,
+     * which pulled newlib's 298-byte memcpy into a USB PD source sketch. */
+    CH32RVCallback(const CH32RVCallback &o) : _call(o._call)
+    {
+        _store[0] = o._store[0];
+        _store[1] = o._store[1];
+    }
+    CH32RVCallback &operator=(const CH32RVCallback &o)
+    {
+        _store[0] = o._store[0];
+        _store[1] = o._store[1];
+        _call = o._call;
+        return *this;
+    }
+
     explicit operator bool() const { return _call != nullptr; }
     R operator()(Args... args) const { return _call(_store, static_cast<Args>(args)...); }
 
@@ -52,6 +67,6 @@ private:
         };
     }
 
-    alignas(void *) unsigned char _store[2 * sizeof(void *)] = {};
+    void *_store[2] = {};
     R (*_call)(const void *, Args...) = nullptr;
 };
