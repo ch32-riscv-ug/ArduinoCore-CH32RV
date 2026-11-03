@@ -3,7 +3,7 @@ import pathlib
 import re
 import tomllib
 
-CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit", "flash", "wire", "softwire",
+CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit", "flash", "wire", "softwire", "softspi",
          "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net",
          "usb-peer-host", "usb-peer-host-classes"}
 # Cases with an ESP32-S3 USB peer on the DUT's own USB port (tests/peer/usb).
@@ -14,7 +14,7 @@ TARGET_KEYS = {
     "usb_serial", "dut_uid", "dut_chip_id", "cases", "power_ports", "gpio",
     "soft_usb_topology", "nrst_channel", "upload_port", "probe_unit_id",
     "dut_usb_topology", "usb_peer_port", "logic_pin",
-    "pd_max_mv", "pd_vbus_pin", "pd_vbus_ratio", "soft_wire",
+    "pd_max_mv", "pd_vbus_pin", "pd_vbus_ratio", "soft_wire", "soft_spi",
 }
 
 
@@ -116,6 +116,12 @@ def load_bench(path):
             pads = {p["pad"] for p in target.get("gpio", [])}
             if not isinstance(soft, dict) or set(soft) != {"sda", "scl"} or not {soft["sda"], soft["scl"]} <= pads:
                 raise ValueError("softwire needs soft_wire = {sda, scl}, two pads of the gpio table")
+        if "softspi" in target["cases"]:
+            soft = target.get("soft_spi")
+            pads = {p["pad"] for p in target.get("gpio", [])}
+            if (not isinstance(soft, dict) or set(soft) != {"sck", "miso", "mosi", "cs"}
+                    or not set(soft.values()) <= pads or len(set(soft.values())) != 4):
+                raise ValueError("softspi needs soft_spi = {sck, miso, mosi, cs}, four pads of the gpio table")
         if "hid" in target["cases"]:
             if target["chip"] != "CH32V003F4U6" or not target.get("soft_usb_topology") or type(target.get("nrst_channel")) is not int:
                 raise ValueError("hid needs UIAPduino, soft USB topology and NRST wiring")
