@@ -77,6 +77,7 @@ struct Rx {
 };
 Rx rx[CDC_PORTS];
 CH32RVUsbHost::SerialDataCallback data_cb;
+bool data_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 
 uint16_t cdc_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
 void cdc_configured(uint8_t daddr, uint8_t itf);
@@ -695,7 +696,7 @@ size_t hand_on()
         if (!p.mounted || !n) {
             continue;
         }
-        if (!data_cb && !r.owner) {
+        if (!data_cb_set && !r.owner) {
             continue;              /* nobody listens: the device waits */
         }
         if (r.owner && (uint16_t)(r.size - 1u - rx_count(r)) < n) {
@@ -707,7 +708,7 @@ size_t hand_on()
                 r.head = (uint16_t)((r.head + 1u) % r.size);
             }
         }
-        if (data_cb) {
+        if (data_cb_set) {
             CH32RVUsbHostSerialData d;
             d.address = p.daddr;
             d.interfaceNumber = p.itf;
@@ -734,7 +735,7 @@ size_t hand_on()
 void poll(CH32RVUsbHost &host)
 {
     (void)host;
-    if (!data_cb) {
+    if (!data_cb_set) {
         hand_on();
     }
 }
@@ -742,13 +743,13 @@ void poll(CH32RVUsbHost &host)
 size_t deliver(CH32RVUsbHost &host)
 {
     (void)host;
-    return data_cb ? hand_on() : 0;
+    return data_cb_set ? hand_on() : 0;
 }
 
 }  // namespace
 
 /* ------------------------------------------------------------- host API */
-void CH32RVUsbHost::onSerialData(SerialDataCallback cb) { data_cb = cb; }
+void CH32RVUsbHost::onSerialData(SerialDataCallback cb) { data_cb = cb; data_cb_set = static_cast<bool>(cb); }
 
 bool CH32RVUsbHost::sendSerial(const uint8_t *data, size_t length, uint8_t address, uint8_t port)
 {

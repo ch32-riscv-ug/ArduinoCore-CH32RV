@@ -23,6 +23,7 @@ struct Port {
 };
 Port ports[1];
 CH32RVUsbHost::MidiMessageCallback message_cb;
+bool message_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 
 uint16_t midi_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
 void midi_configured(uint8_t daddr, uint8_t itf);
@@ -158,7 +159,7 @@ size_t deliver(CH32RVUsbHost &host)
     (void)host;
     size_t ran = 0;
     Port &p = ports[0];
-    if (!p.mounted || !message_cb) {
+    if (!p.mounted || !message_cb_set) {
         return ran;
     }
     while (p.mounted && p.tail != p.head) {
@@ -210,7 +211,7 @@ uint8_t cin_of(uint8_t status)
 
 }  // namespace
 
-void CH32RVUsbHost::onMidiMessage(MidiMessageCallback cb) { message_cb = cb; }
+void CH32RVUsbHost::onMidiMessage(MidiMessageCallback cb) { message_cb = cb; message_cb_set = static_cast<bool>(cb); }
 
 bool CH32RVUsbHost::midiReady(uint8_t address) const
 {

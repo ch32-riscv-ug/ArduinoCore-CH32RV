@@ -1,4 +1,4 @@
-"""CH32RVCallback (libraries/CH32RVUsbDevice/src/CH32RVUsbCallback.h), built and run on the host.
+"""CH32RVCallback (cores/arduino/CH32RVCallback.h), built and run on the host.
 
 Function pointers, a [this] lambda and a two-pointer capture are called through it; an empty one
 is false; a capture bigger than two pointers, or one that is not trivially copyable, must not
@@ -11,10 +11,10 @@ import subprocess
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-INC = REPO / "libraries/CH32RVUsbDevice/src"
+INC = REPO / "cores/arduino"
 
 PROGRAM = r"""
-#include "CH32RVUsbCallback.h"
+#include "CH32RVCallback.h"
 #include <cstdio>
 static int seen;
 static void plain(int v) { seen = v; }
@@ -43,7 +43,7 @@ int main() {
 """
 
 TOO_BIG = r"""
-#include "CH32RVUsbCallback.h"
+#include "CH32RVCallback.h"
 int main() {
     long long a = 1, b = 2, c = 3;
     CH32RVCallback<long long()> f = [a, b, c]() { return a + b + c; };

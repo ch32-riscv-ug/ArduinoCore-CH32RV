@@ -57,6 +57,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <CH32RVCallback.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -352,19 +353,19 @@ struct CH32RVUsbHostCcidSlotEvent {
 /* ------------------------------------------------------------- the host */
 class CH32RVUsbHost {
 public:
-    typedef void (*DeviceCallback)(const CH32RVUsbHostDeviceInfo &device);
-    typedef void (*KeyboardCallback)(const CH32RVUsbHostKeyboardEvent &event);
-    typedef void (*MouseCallback)(const CH32RVUsbHostMouseEvent &event);
-    typedef void (*ConsumerControlCallback)(const CH32RVUsbHostConsumerControlEvent &event);
-    typedef void (*SystemControlCallback)(const CH32RVUsbHostSystemControlEvent &event);
-    typedef void (*GamepadCallback)(const CH32RVUsbHostGamepadEvent &event);
-    typedef void (*HIDVendorInputCallback)(const CH32RVUsbHostHIDVendorInput &event);
-    typedef void (*HIDInputCallback)(const CH32RVUsbHostHIDInput &input);
-    typedef void (*HIDReportDescriptorCallback)(const CH32RVUsbHostHIDReportDescriptor &descriptor);
-    typedef void (*SerialDataCallback)(const CH32RVUsbHostSerialData &data);
-    typedef void (*MidiMessageCallback)(const CH32RVUsbHostMidiMessage &message);
-    typedef void (*VendorDataCallback)(const CH32RVUsbHostVendorData &data);
-    typedef void (*CcidSlotChangeCallback)(const CH32RVUsbHostCcidSlotEvent &event);
+    typedef CH32RVCallback<void(const CH32RVUsbHostDeviceInfo &device)> DeviceCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostKeyboardEvent &event)> KeyboardCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostMouseEvent &event)> MouseCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostConsumerControlEvent &event)> ConsumerControlCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostSystemControlEvent &event)> SystemControlCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostGamepadEvent &event)> GamepadCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostHIDVendorInput &event)> HIDVendorInputCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostHIDInput &input)> HIDInputCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostHIDReportDescriptor &descriptor)> HIDReportDescriptorCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostSerialData &data)> SerialDataCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostMidiMessage &message)> MidiMessageCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostVendorData &data)> VendorDataCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostCcidSlotEvent &event)> CcidSlotChangeCallback;
 
     CH32RVUsbHost();
 

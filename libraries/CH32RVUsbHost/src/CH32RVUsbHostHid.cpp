@@ -74,13 +74,21 @@ Queued queue[QUEUE];
 volatile uint8_t q_head, q_tail;
 
 CH32RVUsbHost::KeyboardCallback keyboard_cb;
+bool keyboard_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::MouseCallback mouse_cb;
+bool mouse_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::ConsumerControlCallback consumer_cb;
+bool consumer_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::SystemControlCallback system_cb;
+bool system_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::GamepadCallback gamepad_cb;
+bool gamepad_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::HIDVendorInputCallback vendor_cb;
+bool vendor_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::HIDInputCallback input_cb;
+bool input_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::HIDReportDescriptorCallback descriptor_cb;
+bool descriptor_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 const CH32RVUsbHostKeyboardLayout *layout;
 
 uint16_t hid_open(uint8_t daddr, const uint8_t *itf, uint16_t length);
@@ -211,7 +219,7 @@ void keyboard_report(HidItf &h, const uint8_t *raw, size_t rawLength, const uint
     const uint8_t modifiers = body[0];
     const uint8_t *keys = body + 2;
     const uint8_t *last = h.lastKeys + 2;
-    if (keyboard_cb) {
+    if (keyboard_cb_set) {
         for (int pass = 0; pass < 2; pass++) {
             const uint8_t *now = pass == 0 ? keys : last;
             const uint8_t *before = pass == 0 ? last : keys;
@@ -269,7 +277,7 @@ void mouse_report(HidItf &h, const uint8_t *raw, size_t rawLength, const uint8_t
     e.moved = e.x || e.y || e.wheel || e.pan;
     e.buttonsChanged = e.buttons != e.previousButtons;
     h.lastMouseButtons = e.buttons;
-    if (mouse_cb && (e.moved || e.buttonsChanged)) {
+    if (mouse_cb_set && (e.moved || e.buttonsChanged)) {
         mouse_cb(e);
     }
 }
@@ -277,7 +285,7 @@ void mouse_report(HidItf &h, const uint8_t *raw, size_t rawLength, const uint8_t
 void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
 {
     HidItf &h = hids[idx];
-    if (input_cb) {
+    if (input_cb_set) {
         CH32RVUsbHostHIDInput in;
         const CH32RVUsbHostDeviceInfo *d = ch32rv_usb_host_device(daddr);
         in.address = daddr;
@@ -317,7 +325,7 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
         mouse_report(h, raw, rawLength, body, len);
     } else if (page == HID_PAGE_CONSUMER && len >= 2) {
         const uint16_t u = (uint16_t)(body[0] | (body[1] << 8));
-        if (u != h.lastConsumer && consumer_cb) {
+        if (u != h.lastConsumer && consumer_cb_set) {
             CH32RVUsbHostConsumerControlEvent e;
             fill_common(e, h, raw, rawLength, body, len);
             e.usage = u ? u : h.lastConsumer;
@@ -332,7 +340,7 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
          * Wake Up); the event carries the usage. A device that sends the
          * usage itself passes through. */
         const uint8_t u = body[0] >= 1 && body[0] <= 3 ? (uint8_t)(0x80 + body[0]) : body[0];
-        if (u != h.lastSystem && system_cb) {
+        if (u != h.lastSystem && system_cb_set) {
             CH32RVUsbHostSystemControlEvent e;
             fill_common(e, h, raw, rawLength, body, len);
             e.usage = u ? u : h.lastSystem;
@@ -344,7 +352,7 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
     } else if (page == HID_PAGE_DESKTOP && (usage == HID_USAGE_GAMEPAD || usage == HID_USAGE_JOYSTICK)) {
         const size_t n = ch32rv_min(len, sizeof h.lastGamepad);
         const bool changed = n != h.lastGamepadLength || memcmp(body, h.lastGamepad, n) != 0;
-        if (gamepad_cb && changed) {
+        if (gamepad_cb_set && changed) {
             CH32RVUsbHostGamepadEvent e;
             fill_common(e, h, raw, rawLength, body, len);
             e.changed = true;
@@ -352,7 +360,7 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
         }
         memcpy(h.lastGamepad, body, n);
         h.lastGamepadLength = (uint8_t)n;
-    } else if (page >= 0xFF00 && vendor_cb) {
+    } else if (page >= 0xFF00 && vendor_cb_set) {
         CH32RVUsbHostHIDVendorInput e;
         fill_common(e, h, raw, rawLength, body, len);
         vendor_cb(e);
@@ -558,7 +566,7 @@ void hid_configured(uint8_t daddr, uint8_t itf)
     }
     h.mounted = true;
     ch32rv_usb_host_mark_claimed(daddr, h.itf);
-    h.descriptorPending = descriptor_cb && got;   /* read again for the sketch */
+    h.descriptorPending = descriptor_cb_set && got;   /* read again for the sketch */
     arm_in(h);
 }
 
@@ -570,7 +578,7 @@ size_t deliver_descriptor(HidItf &h)
     const uint16_t len = h.descriptorLength < sizeof ch32rv_usb_host_scratch ? h.descriptorLength
                                                                              : (uint16_t)sizeof ch32rv_usb_host_scratch;
     uint16_t got = 0;
-    if (!descriptor_cb || !len ||
+    if (!descriptor_cb_set || !len ||
         ch32rv_usb_host_control_sync(h.daddr, 0x81, 6, 0x2200, h.itf, ch32rv_usb_host_scratch, len, &got, 1000) !=
             CH32RV_USBH_OK ||
         !got || !h.mounted) {
@@ -635,14 +643,14 @@ void hid_detach(uint8_t daddr)
 }  // namespace
 
 /* ------------------------------------------------------------- the API */
-void CH32RVUsbHost::onKeyboard(KeyboardCallback cb) { keyboard_cb = cb; }
-void CH32RVUsbHost::onMouse(MouseCallback cb) { mouse_cb = cb; }
-void CH32RVUsbHost::onConsumerControl(ConsumerControlCallback cb) { consumer_cb = cb; }
-void CH32RVUsbHost::onSystemControl(SystemControlCallback cb) { system_cb = cb; }
-void CH32RVUsbHost::onGamepad(GamepadCallback cb) { gamepad_cb = cb; }
-void CH32RVUsbHost::onHIDVendorInput(HIDVendorInputCallback cb) { vendor_cb = cb; }
-void CH32RVUsbHost::onHIDInput(HIDInputCallback cb) { input_cb = cb; }
-void CH32RVUsbHost::onHIDReportDescriptor(HIDReportDescriptorCallback cb) { descriptor_cb = cb; }
+void CH32RVUsbHost::onKeyboard(KeyboardCallback cb) { keyboard_cb = cb; keyboard_cb_set = static_cast<bool>(cb); }
+void CH32RVUsbHost::onMouse(MouseCallback cb) { mouse_cb = cb; mouse_cb_set = static_cast<bool>(cb); }
+void CH32RVUsbHost::onConsumerControl(ConsumerControlCallback cb) { consumer_cb = cb; consumer_cb_set = static_cast<bool>(cb); }
+void CH32RVUsbHost::onSystemControl(SystemControlCallback cb) { system_cb = cb; system_cb_set = static_cast<bool>(cb); }
+void CH32RVUsbHost::onGamepad(GamepadCallback cb) { gamepad_cb = cb; gamepad_cb_set = static_cast<bool>(cb); }
+void CH32RVUsbHost::onHIDVendorInput(HIDVendorInputCallback cb) { vendor_cb = cb; vendor_cb_set = static_cast<bool>(cb); }
+void CH32RVUsbHost::onHIDInput(HIDInputCallback cb) { input_cb = cb; input_cb_set = static_cast<bool>(cb); }
+void CH32RVUsbHost::onHIDReportDescriptor(HIDReportDescriptorCallback cb) { descriptor_cb = cb; descriptor_cb_set = static_cast<bool>(cb); }
 void CH32RVUsbHost::setKeyboardLayout(const CH32RVUsbHostKeyboardLayout &l) { layout = &l; }
 
 bool CH32RVUsbHost::hidReady(uint8_t address) const

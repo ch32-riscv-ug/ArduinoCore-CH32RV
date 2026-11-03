@@ -6,7 +6,7 @@
  * the Network library defines them. */
 #pragma once
 #include <Arduino.h>
-#include "CH32RVUsbCallback.h"
+#include <CH32RVCallback.h>
 
 class NetworkUsbNcm;
 

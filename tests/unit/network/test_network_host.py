@@ -33,7 +33,6 @@ def build(out: pathlib.Path) -> pathlib.Path:
     flags = ["-g", "-O1", "-fsanitize=address,undefined", "-DNETWORK_HOST_TEST",
              f"-I{HERE / 'host'}", f"-I{REPO / 'cores/arduino'}", f"-I{LIB}", f"-I{TLS}"]
     objects = []
-    flags.append(f"-I{REPO / 'libraries/CH32RVUsbDevice/src'}")   # CH32RVUsbCallback.h for the USB stand-in
     c_sources = sorted((LIB / "lwip-src").rglob("*.c")) + sorted((TLS / "mbedtls-src").glob("*.c")) + [
         HERE / "host/link.c", REPO / "cores/arduino/itoa.c", REPO / "cores/arduino/dtostrf.c",
         REPO / "cores/arduino/ch32rv_service.c", REPO / "cores/arduino/ch32rv_format.c"]
