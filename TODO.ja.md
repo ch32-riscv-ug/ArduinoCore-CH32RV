@@ -152,17 +152,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   littlefs の設定（block_cycles、媒体の大きさ）を変えたときの値。
 - [ ] IP（docs/network-stack.ja.md）の残り: V407 / V317 / V208 の実機。V208 / V203RB は CPU Clock の `60MHz (Ethernet, no USB)` を選ぶ。
   V307 のチップのリビジョン 0x20 の回避策。対象の系列の USB デバイスのドライバで NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント（FEATURE_CANDIDATES の NET-03）。
-- [ ] **ヒープとスタックの境**: `_sbrk` は `_heap_end`（スタックの予約 `__stack_size` = 512 B の下）まで伸ばす。V307 の 224 KB + 96 KB で、HTTPS の本文の復号が MAC エラーになった（192 KB + 128 KB では通る。docs/network-stack.ja.md）。スタックの深さを測り、予約を大きくするか、`_sbrk` で今の sp からの余白を見るかを決める。V20x の Flash / RAM の分け方（128/64、144/48、160/32）のメニューも、同じ作りで足せる。
-  - ほかの系列の `enterBootloader()`（工場出荷 ISP への入口）。X305 / X315 は X035 と同じ手順を入れた（2026-10-22、ビルドのみ）。
-    H41x は試して失敗（docs/usb.ja.md）。V20x / V30x / V103 / L103 / V205 / M030 / V4x7 は BOOT_MODE が無く、BOOT0 の端子だけ。
-  - デバッガ復帰時の `SystemInit()` のやり直しで USB のクロック設定が消える件の対策。
-  - **UF2（MscFirmwareDisk）での更新はやる**（2026-10-20）。ほかのファームウェア更新のクラス（EspUsbDevice の
-    FirmwareUpdate、DFU の Download、CDC / Vendor / ネットワーク経由）も実装予定。使わなければ費用がかからない形にする。
-    UF2 は仮想の FAT を見せるだけなので、ファイルシステムのスタックを待たずに作れる。優先度は低いまま。Flash の書き換えの
-    土台は「永続化」の項で作るので、それと USB スタック・タスク周りの入れ替えのあとに取りかかる。工場出荷の ISP より得があるのは、読み出し保護をかけたまま更新
-    したいとき、道具を入れずにドラッグ＆ドロップ（UF2）で更新させたいとき、署名の確かめや A/B の巻き戻しが要るとき、
-    USB 以外（ネットワークなど）から更新したいとき。下地に Flash の自己書き換えが要る。
-  採否は FEATURE_CANDIDATES の UPD-01 / UPD-02 に記録した。
+- [ ] **V307 の HTTPS が、lwIP の小さい設定で MAC エラーになる**（2026-11-03、LinkE 38EF の V307、eth のケース）: 256k_64k はメモリー不足（MBEDTLS_ERR_SSL_ALLOC_FAILED）、224k_96k は本文の復号で MBEDTLS_ERR_SSL_INVALID_MAC（-0x7180、本文 0 B）、192k_128k（lwIP の大きい設定）は通る。224k_96k で lwIP だけを大きい設定にするとメモリー不足になる（静的に 84680 B）。ヒープとスタックの衝突ではない: `_sbrk` で sp から 256 B 手前で止めても、スタックの予約を 4 KB にしても、同じ MAC エラー。小さい設定での受信の扱い（TCP の窓、NetworkClient の受信バッファへの写し、pbuf の連なり）を疑う。
 - [ ] EspUsbDevice との差の残り: Info の例 3 本の移植、ホストの Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。見込み（2026-10-21）: ブートローダーへ移る前の 20 ms の
   待ちが、印に `millis() | 1` を使っていたため 0 ms になることがあり、ステータス段の応答の前に抜けていた
