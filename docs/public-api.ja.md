@@ -35,6 +35,7 @@
 | エラー | 操作は `bool` を返し、理由は `lastError()`（`<名前>Error` の enum class）と `lastErrorName()` で読む | Arduino と ESP の慣習の形はそのまま: Wire、`hostByName()`、`NetworkClientSecure::lastError(buf, size)`（Mbed TLS の番号）、`ccidLastError()`（読み取り機が返した bError）、`CH32RV.lightSleep()` の結果 |
 | C の関数 | `ch32rv_<部品>_<動き>()`（`ch32rv_flash_write()`、`ch32rv_timer_try_acquire()`） | Arduino の名前（`deliverEvents()` など） |
 | 型と enum | `CH32RV<ライブラリ>...` の名前の enum class（`CH32RVUsbPdSupply::Fixed`） | — |
+| SPI のクラス | `SPIClass` は ArduinoCore-API の `typedef HardwareSPI SPIClass` のまま（arduino-pico、mbed と同じ）。具体的なクラスは `CH32RVSPIClass`。`SoftSPI` も `SPIClass&` に渡せる | ESP32 の `SPIClass spi(bus)` の書き方は通らない |
 
 ## 内部のもの（版で変わる）
 
