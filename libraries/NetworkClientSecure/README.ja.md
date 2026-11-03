@@ -33,7 +33,7 @@ void setup() {
 - `setInsecure()`: 確かめません。試験の用途だけにしてください。
 - `setCertificate(pem)` / `setPrivateKey(pem)`: クライアント証明書を求めるサービス(AWS IoT など)向けです。
 - どれも、文字列やバンドルをポインタで持ちます。接続の間は残しておいてください。
-- `lastError()` は Mbed TLS の誤りの番号、`verifyFlags()` は証明書の検証の印(`MBEDTLS_X509_BADCERT_...`)です。
+- `lastError(buf, size)` は、ESP32 と同じく Mbed TLS の誤りの番号を返し、`buf` にその文を書きます(`-0x7780`。`build_opt.h` で `MBEDTLS_ERROR_C` を付けると Mbed TLS の文になり、8.6 KB 増えます)。`verifyFlags()` は証明書の検証の印(`MBEDTLS_X509_BADCERT_...`)です。
 
 ## 動きの決まり
 

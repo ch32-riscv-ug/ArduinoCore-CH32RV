@@ -33,7 +33,7 @@ void setup() {
 - `setInsecure()` skips verification (testing only).
 - `setCertificate(pem)` / `setPrivateKey(pem)` are for services that ask for a client certificate (AWS IoT ...).
 - Strings and bundles are kept by pointer, so they must stay valid while connected.
-- `lastError()` gives the Mbed TLS error, and `verifyFlags()` the certificate verification flags.
+- `lastError(buf, size)` gives the Mbed TLS error as ESP32's does: the number, and its text into `buf` (`-0x7780`; Mbed TLS's own words when the sketch builds with `MBEDTLS_ERROR_C` in `build_opt.h`, 8.6 KB more). `verifyFlags()` gives the certificate verification flags.
 
 ## Behaviour
 

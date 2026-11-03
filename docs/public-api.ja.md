@@ -27,6 +27,15 @@
 
 ほかの `CH32RV_*`（`boards.txt` が渡すレジスタの番地、クロックの設定、内部の切り替えなど）は内部です。名前も値も、版で変わります。
 
+## 形の決まり
+
+| 種類 | 決まり | 例外 |
+|---|---|---|
+| コールバック | `CH32RVCallback<R(Args...)>`（`CH32RVCallback.h`）。関数か、小さくキャプチャするラムダ（`[this]` など。ポインター 2 つまで）を受ける。ヒープを使わない。ESP の `std::function` の書き方がそのまま通る | — |
+| エラー | 操作は `bool` を返し、理由は `lastError()`（`<名前>Error` の enum class）と `lastErrorName()` で読む | Arduino と ESP の慣習の形はそのまま: Wire、`hostByName()`、`NetworkClientSecure::lastError(buf, size)`（Mbed TLS の番号）、`ccidLastError()`（読み取り機が返した bError）、`CH32RV.lightSleep()` の結果 |
+| C の関数 | `ch32rv_<部品>_<動き>()`（`ch32rv_flash_write()`、`ch32rv_timer_try_acquire()`） | Arduino の名前（`deliverEvents()` など） |
+| 型と enum | `CH32RV<ライブラリ>...` の名前の enum class（`CH32RVUsbPdSupply::Fixed`） | — |
+
 ## 内部のもの（版で変わる）
 
 - レジスタの層: `ch32rv_registers.h`、`ch32rv_gpio.h`、`ch32rv_pins.h`、`ch32rv_route.h`。名前を指して include すれば使えますが、コアも同じレジスタを使っています（[CH32RV の README](../libraries/CH32RV/README.ja.md) の「逃げ道」）。

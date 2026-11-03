@@ -276,7 +276,7 @@ static void serveCommands()
             tls.stop();
             snprintf(text, sizeof text, "STLS OK %s 0x%04x", got, version);
         } else {
-            snprintf(text, sizeof text, "STLS FAIL -0x%04x 0x%x", (unsigned)-tls.lastError(), (unsigned)tls.verifyFlags());
+            snprintf(text, sizeof text, "STLS FAIL -0x%04x 0x%x", (unsigned)-tls.lastError(nullptr, 0), (unsigned)tls.verifyFlags());
         }
         reply(text);
     } else if (line[0] == 'T') {

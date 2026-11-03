@@ -53,9 +53,12 @@ public:
     /* The handshake's whole budget; ESP32's default, as the public-key
      * operations take seconds on these chips. */
     void setHandshakeTimeout(unsigned long seconds) { _handshakeSeconds = seconds; }
-    /* The Mbed TLS error that ended the last connect() or transfer (0 none), and
-     * the certificate verification flags (MBEDTLS_X509_BADCERT_...). */
-    int lastError() const { return _lastError; }
+    /* The Mbed TLS error that ended the last connect() or transfer (0 none),
+     * as ESP32's: its text into buf (nullptr / 0: none) - "-0x7780" by
+     * default, Mbed TLS's own words when the sketch builds with
+     * MBEDTLS_ERROR_C (build_opt.h; 8.6 KB more). And the certificate
+     * verification flags (MBEDTLS_X509_BADCERT_...). */
+    int lastError(char *buf, size_t size) const;
     uint32_t verifyFlags() const { return _verifyFlags; }
 
 private:

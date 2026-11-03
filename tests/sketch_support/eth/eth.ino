@@ -187,10 +187,10 @@ static void reply(char *command)
             const int ok = c.connect(a, (uint16_t)port, 10000);
             const uint32_t hs = millis() - t0;
             const uint16_t version = c.tlsVersion();
-            int error = c.lastError();
+            int error = c.lastError(nullptr, 0);
             if (ok) {
                 get(c, ip, path, status, bytes, crc);
-                error = c.lastError(); /* a failure while reading the body */
+                error = c.lastError(nullptr, 0); /* a failure while reading the body */
             }
             snprintf(out, sizeof out, "HTTPS %lu %lu %08lx %04x %lu %d", (unsigned long)status, (unsigned long)bytes,
                      (unsigned long)crc, version, (unsigned long)hs, error);

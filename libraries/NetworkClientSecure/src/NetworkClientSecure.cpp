@@ -11,6 +11,9 @@
 #include "mbedtls/platform_time.h"
 #include "mbedtls/psa_util.h"
 #include "psa/crypto.h"
+#ifdef MBEDTLS_ERROR_C
+#include "mbedtls/error.h"
+#endif
 
 #include "NetworkCore.h"
 
@@ -474,4 +477,20 @@ uint8_t NetworkClientSecure::connected()
         return 1;
     }
     return NetworkClient::connected();
+}
+
+int NetworkClientSecure::lastError(char *buf, size_t size) const
+{
+    if (buf && size) {
+#ifdef MBEDTLS_ERROR_C
+        mbedtls_strerror(_lastError, buf, size);
+#else
+        if (_lastError) {
+            snprintf(buf, size, "-0x%04x", (unsigned)-_lastError);
+        } else {
+            buf[0] = 0;
+        }
+#endif
+    }
+    return _lastError;
 }
