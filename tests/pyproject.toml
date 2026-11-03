@@ -7,9 +7,9 @@ dependencies = ["pytest>=8"]
 
 [project.optional-dependencies]
 hardware = [
-    "oep-client-python==0.0.42",
+    "oep-client-python==0.0.43",
     "pytest-embedded-arduino-cli==1.11.0",
-    "pytest-embedded-arduino-cli-ch32rv==0.0.7",
+    "pytest-embedded-arduino-cli-ch32rv==0.0.8",
 ]
 
 [tool.pytest.ini_options]
