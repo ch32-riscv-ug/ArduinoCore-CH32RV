@@ -1,12 +1,9 @@
-# OEP を含む開発ワークフロー（最終の形）
+# OEP を含む開発ワークフロー
 
-文書基準日: 2026-09-29。状態: **決定**（2026-09-29 の議論で決めた最終の形。未決の点は §10 に列挙）。ここから実装を進め、
-実機で確かめて直す。個々の仕様は各リポジトリの文書が正で、ここは分担と、リポジトリをまたぐ決定を置く。
-
-**2026-10-16 の更新**: OEP の仕様が作り直され（oep-spec 675288a、3b32b12。probe は oep-probe-arduino 0.0.32 以降、ch32rv 0.21.2、
-oep-client-python 0.0.34）、**スロット、attach policy、bind は廃止**された。口（port）は probe に保存したピンのラベル `S.N` の `S`、
-アドレスは `oep://<probe>[/<port>[/<target>]]`（oep-spec host guide §5.3）、素の端末へのコンソールは probe.config の
-`console-passthrough`。§0・§3・§5・§6 はこの形に直した。§12 は 2026-09-29 の実測の記録としてそのまま残す。
+IDE port、discovery、probe の serial port、monitor、pytest の道具の分担と、リポジトリをまたぐ決まりを置く。経路ごとの状態と
+系列ごとの入り方は [upload-routes.ja.md](upload-routes.ja.md) が正本で、個々の仕様は各リポジトリの文書が正。口（port）は probe に
+保存したピンのラベル `S.N` の `S`、アドレスは `oep://<probe>[/<port>[/<target>]]`（oep-spec host guide §5.3）、素の端末への
+コンソールは probe.config の `console-passthrough`。
 
 ## 0. 用語（英語で決め、日本語は訳）
 
@@ -35,8 +32,8 @@ wire（線。debug の線を駆動するインターフェース: `oep.wire.rvsw
 | OEP の client | [Open-Embedded-Probe/oep-client-python](https://github.com/Open-Embedded-Probe/oep-client-python) | Python の host 側（純粋なモジュール） |
 | WireSkein | [Open-Embedded-Probe/wireskein](https://github.com/Open-Embedded-Probe/wireskein) | ロジックの記録の解析と照合（純粋なモジュール） |
 | pytest-embedded-arduino-cli | [tanakamasayuki/pytest-embedded-arduino-cli](https://github.com/tanakamasayuki/pytest-embedded-arduino-cli) | pytest から arduino-cli で upload / monitor |
-| pytest-embedded-arduino-cli-ch32rv | （新しいリポジトリ） | ch32rv の path、ブローカーの口、`oep_host` |
-| pytest-embedded-wireskein | （新しいリポジトリ） | test ごとの記録と照合 |
+| pytest-embedded-arduino-cli-ch32rv | [ch32-riscv-ug/pytest-embedded-arduino-cli-ch32rv](https://github.com/ch32-riscv-ug/pytest-embedded-arduino-cli-ch32rv) | ch32rv の path、ブローカーの口、`oep_host` |
+| pytest-embedded-wireskein | [Open-Embedded-Probe/pytest-embedded-wireskein](https://github.com/Open-Embedded-Probe/pytest-embedded-wireskein) | test ごとの記録と照合 |
 
 ## 2. 使う場面
 
@@ -51,16 +48,9 @@ wire（線。debug の線を駆動するインターフェース: `oep.wire.rvsw
 
 ### 3.1 対応する経路
 
-| 経路 | 家系 | 入り方 | 状態 |
-|---|---|---|---|
-| **A. WCH-Link / LinkE**（RVSWD、V003 / V00x は SWIO） | 全部 | 常時 | 現状維持（ch32rv `flash`） |
-| **B. OEP の probe**（RVSWD / SWIO） | 全部 | 常時 | **ch32rv で対応する**。pytest も arduino-cli 経由で書く。client の `ch32_flash` は ch32rv の OEP の書き込みが入った時点で消す |
-| **E. UIAPduino の HID ブートローダー**（`1209:b803`） | ブートローダーを入れた V003 の板 | **手動の pin reset**（probe があれば A / B を使う） | 現状維持（ch32rv `boot hid flash`）+ discovery |
-| **C. factory ISP、USB**（`4348:55e0`） | BOOT0 / BOOT1 ピンの家系（V103 / V20x / V30x / V31x / L103 / V407）。X033 / X035 は PC17（USB D+）が BOOT 検出ピン。X305 / X315 は [upload-routes.ja.md](upload-routes.ja.md) | BOOT ピン（X03x は電源投入時の PC17 = High）、または app の協力 | **設計は決めた。最初の β には入れず、後から足す**（§3.5） |
-| D. factory ISP、UART | V003 / V00x（app の協力が要る）ほか | — | **対応しない**。変換チップを足すなら、その ESP32 を OEP の probe にする |
-| F. 独自のブートローダー（DFU / UF2 / UART） | そのブートローダーを入れた板（今は無い） | — | **対応しない**。DFU の板が現れたら recipe を足すだけ（discovery は arduino-cli の組み込み） |
-
-ARM の SWD（`oep.wire.swd`、LinkE の DAP モード）は、この core の target には出てこない。
+経路の一覧と状態は [upload-routes.ja.md](upload-routes.ja.md)。どの経路も書き込みツールは ch32rv 1 つで、IDE port の protocol
+（`serial`、`wchlink`、`oep`、`ch32rv-hid`、`ch32rv-app`、`ch32rv-isp`）で経路が決まる。factory UART ISP と独自の bootloader
+（UF2 / UART）は対応しない。ARM の SWD（`oep.wire.swd`、LinkE の DAP モード）は、この core の target には出てこない。
 
 ### 3.2 IDE port を選ぶだけで書く
 
@@ -76,6 +66,8 @@ Uno と同じく、プログラマの選択は要らない。板は `upload.prot
 | `oep://<probe>/<port>` | discovery（§3.3） | その口 |
 | OEP の probe の serial port（専用 PID の無い probe） | ch32rv が開いて describe が返る | 口が 1 つに決まればそこ（§3.4） |
 | `ch32rv-hid://<topology>`（UIAPduino） | discovery | HID ブートローダー |
+| `ch32rv-app://<USB serial>`（CH32RVUsbDevice の動いているスケッチ、H41x の DFU runtime） | discovery | DFU_DETACH か 1200bps touch で factory ISP（H41x は DFU）へ入れてから書く |
+| `ch32rv-isp://<USB position>`（factory USB bootloader） | discovery | factory USB ISP |
 | ポート無し | `upload.tool.default` | ch32rv が USB を走査し、候補が 1 つならそこ。複数なら候補を並べて断る |
 
 ### 3.3 discovery
@@ -93,7 +85,8 @@ platform.txt の `pluggable_discovery.ch32rv.pattern` で登録する（1 つで
 | `wchlink://<serial>` | LinkE（`1a86:8010` / `8012`） | USB の記述子だけ。target は引かない（LinkE の attach は target のクロックを組み替える） |
 | `oep://<probe>/<port>` | 専用 PID の USB で列挙する probe（P4 の HS の口、RP2350。OEP は pid.codes で PID を取る）と、DNS-SD で見つかる TCP の probe | ラベルのある口ごとに 1 つ。名前つきの口が無い probe は出さない（`oep://<probe>` は probe 自身を指し、口を選ばない）。ロック無しで設定のラベルを読む |
 | `ch32rv-hid://<topology>` | UIAPduino のブートローダー（`1209:b803` / `b003`） | boards.txt の `upload_port.0.vid/pid` で板名を出す |
-| `isp://<topology>`（後で） | ISP で待つ device（`4348:55e0`） | Identify で chip を読み、LinkE の IAP は除く。properties の `chip` で boards.txt の `upload_port.N.protocol=isp` / `.chip=…` と照合して板名を出す |
+| `ch32rv-app://<USB serial>` | CH32RVUsbDevice の DFU runtime を持つ動いているスケッチ | スケッチの USB の記述子だけ。開かない |
+| `ch32rv-isp://<USB position>` | factory USB bootloader で待つ device | LinkE の IAP は除く |
 
 専用 PID の無い OEP の probe（変換チップ越しの無印 ESP32、USJ だけの P4）は discovery に出さず、利用者が serial port を選ぶ。
 
@@ -126,12 +119,6 @@ unit_id、口の名前、target の家系が使う wire をその口が持つか
   oep-spec host guide §5.3）。ネットワークの probe は `oep://<probe>/<port>?via=net`、mDNS が届かないときは
   `?via=tcp:<host>:<port>`。`via` は場所の一部ではなく、無ければ host が選ぶ。
 - ピンは口のラベル `S.swdio` / `S.swclk` / `S.swio` から取る。ピンを host が選ぶ wire でラベルが無ければ止まり、scan で組を探さない。
-
-### 3.5 C（factory ISP、USB）を後から足すときの形
-
-1 段目（BOOT ピンの家系）: ch32rv に `isp flash`、discovery に `isp://`、core に `upload.tool.isp` の recipe と boards.txt の照合。
-monitor は無い。2 段目（X035 / X315）: core に USB CDC（TinyUSB の結線）と touch1200 → `FLASH_STATR.BOOT_MODE` + software reset
-の入口を作ってから。全部足すだけで既存の経路に触れない。
 
 ## 4. probe の serial port の原則
 
@@ -227,7 +214,7 @@ UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数�
   （arduino-cli は tool の stderr を見せず exit 0 で終わる）。
 - OPEN に error を返すと arduino-cli は exit 1 で stderr に tool の message を出す。
 
-## 7. pytest の道具（最終の形）
+## 7. pytest の道具
 
 ### 7.1 家系
 
@@ -262,7 +249,7 @@ reset）と pytest の `oep_host` は、どれもブローカーの **client**�
   付け替え、client の `open` / `end` は受け止めて probe に出さない。client ごとの資源（接続、plan、stream、止めた hart）を台帳に持ち、
   client が切れたらその分だけ外す。待ち受けの場所は runtime ディレクトリ（ch32rv の内部。利用者は
   `ch32rv broker endpoint --probe <sel> --json` に聞く）。
-- **どの順で立ち上がっても同じ**。IDE は monitor を開いたまま debug を始められ、debug 中に monitor も開ける（§12）ので、monitor と
+- **どの順で立ち上がっても同じ**。IDE は monitor を開いたまま debug を始められ、debug 中に monitor も開ける（§10）ので、monitor と
   gdb server はどちらが先でも同じブローカーの client になる。3 つ以上でも同じ。昇格や引き継ぎは無い（client が落ちても、その
   client の資源が外れるだけ）。
 - 1 回だけのコマンドも同じ経路を通る（経路は 1 つ）。
@@ -281,54 +268,22 @@ pytest の側:
 
 ### 7.3 ベンチの platform の入れ方
 
-ベンチも利用者と同じ「index から入れる」形にする。作業ツリーの symlink（tool の依存が解けず `--build-property` / `--upload-property`
-で補う形）はやめる。**local index**（`tools/index/install_check.py`: archive と index を作って loopback で配り、まっさらな data
-ディレクトリに `core install`）は β を出す前の検査に使い、**日常のベンチは公開した β から入れる**。
+ベンチ（`tests/run_hardware.py`）は作業ツリーを試験ごとの `user/hardware` に symlink し、`platform.local.txt` で固定した版の
+ch32rv と gcc を指す（`tools/index/fetch_tools.py` が取る）。利用者と同じ「index から入れる」形の検査は、リリースの前に
+`tools/index/install_check.py`（archive と index を作って loopback で配り、まっさらな data ディレクトリに `core install`）で行う。
 
 ## 8. ch32rv の範囲
 
-書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe への書き込みと monitor を足す（B）。**gdb / debug を OEP の probe で扱うのはプロトタイプの範囲外**（書き込みに要る DM の操作は `DtmAccess` に載せ、gdb はその上に後で）。 ただし**デバッグは次の作業で載せる前提**で設計する: OEP の transport は `DtmAccess` を実装し、ブローカーはセッションを長く保持する client（gdb server）を想定して client ごとの資源を追い、gdb server もブローカーの client（§7.2）。キャプチャや fixture
-の仲介は持たない（試験の間は pytest の `oep_host` がブローカー経由で直接 OEP を話す）。OEP 対応の中身の設計は、この文書が固まった
-あとに ch32rv の側で。
+書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe の gdb / debug はまだ無い（書き込みに要る DM の操作は `DtmAccess` に載っていて、gdb はその上に足す）。そのための作り: OEP の transport は `DtmAccess` を実装し、ブローカーはセッションを長く保持する client（gdb server）を想定して client ごとの資源を追い、gdb server もブローカーの client（§7.2）。キャプチャや fixture
+の仲介は持たない（試験の間は pytest の `oep_host` がブローカー経由で直接 OEP を話す）。
 
-## 9. β のリリース
+## 9. 未決
 
-最終の形への節目。**暫定の形は作らず、最終の形に近いプロトタイプが端から端まで動いたところで β として出す。** 本番の利用者はいない
-想定なので、β の後も破壊的変更を入れる。端から端まで = IDE で IDE port を選ぶだけで LinkE と OEP の probe に書けてモニタが見え、
-pytest が upload → monitor → fixture（ブローカー経由の OEP）→ WireSkein の記録と照合まで通る。
-
-| どこ | β までに |
-|---|---|
-| このリポジトリ | 板に `upload.protocol`。`upload.tool.<protocol>` → ch32rv（`--probe {upload.port.address}`）。`pluggable_monitor.pattern.serial` → ch32rv。discovery の登録。板に `monitor_port.serial.chip=<家系>`。ベンチを index から入れる形に。`trace_kit.Run` を pytest の道具に置き換える。`approval-status.ja.md` を埋める。index を作って公開 |
-| ch32rv | §6.2、§7.2、§3.3、§3.4、OEP の書き込み（`requests/ch32rv.md` の 1〜14。15 は後） |
-| oep-spec / oep-probe-arduino / oep-client-python | §11 の分 |
-| pytest-embedded-arduino-cli、新しいプラグイン 2 つ、wireskein | §7 の分 |
-
-## 10. 未決
-
-- ベンチの pytest を最終の形（§7）に移す手順と順序（プラグイン 2 つと package 化が先）。
-- ch32rv の OEP 対応の中身（ブローカーの corr の付け替え、`broker endpoint`、`port:` selector）。
 - 切り離したブローカーが Windows / macOS でも生き残るか（IDE / arduino-cli が子を job object などでまとめて消さないか）。Linux は
-  確認済み（§12）。1 回だけのコマンドがブローカーを通る分の遅れ。
-- probe の HID の口（推奨の作り）。USB ID は取得済み（1209:4F45、§3.3）。
-- 設定ページと JavaScript の client の置き場（OEP 側で決める）。
+  確認済み（§10）。
+- ESP32 系の probe の port を開いたときの reset の振る舞いの、Windows / macOS での確認（§10 の最後）。
 
-## 11. 各リポジトリに要る変更
-
-（2026-09-29 の計画。スロット・bind・retry_s は 2026-10-16 の仕様の作り直しで口のラベルと console-passthrough に置き換わった。冒頭の更新を参照）
-
-| リポジトリ | 変更 |
-|---|---|
-| oep-spec | CDC / USJ のフレームを COBS に（core §3.1）。serial port の共用の規則（§4.2）。fn 0 の describe に経路の一覧。スロットの項目（今の bind から pins と attach を移す、target_id は任意、`retry_s`）、同時に持てる接続の数の宣言、接続の一覧の操作、スロットの状態。bind の組み直し（複数のストリーム、mode、選択）と対応 mode の宣言。生の転送の再開の位置。probe 開発ガイドに再起動の抑止と、専用 PID / HID の口の推奨 |
-| oep-probe-arduino | serial port の共用（見分け、送信のキュー）。classic ESP32 に ProbeConfig（bind、NVS）。P4 を HS の口 + 専用 PID + HID の形に（USJ を COBS に、reset 抑止）。スロット、再試行、状態。bind の mode |
-| oep-client-python | package 化。シリアルのポートは常に COBS、フレームの外は雑音。接続先の抽象化（serial / USB / ブローカーの TCP）。記録の受け口。`ch32_flash` は ch32rv の OEP の書き込みが入ったら消す |
-| ch32rv | §6.2、§7.2、§3.3（`oep://`、`ch32rv-hid://`、後で `isp://`）、`--probe <path>`、OEP の transport と書き込み |
-| pytest-embedded-arduino-cli | 展開済み properties の fixture。自前の monitor を持つ profile で runtime を `arduino-cli monitor` の子プロセスに（§7.1） |
-| 新しいリポジトリ | `pytest-embedded-arduino-cli-ch32rv`、`pytest-embedded-wireskein` |
-| wireskein | package 化 |
-| このリポジトリ | §9 の β の分。`monitor_port.serial.chip`。ベンチを index から入れる形に。`trace_kit.Run` の置き換え |
-
-## 12. 確認済み事実（決定を支えるもの。2026-09-29 の実測）
+## 10. 確かめた事実（決まりの根拠。2026-09-24〜29 の実測）
 
 - Linux の tty は `TIOCEXCL` で 2 つ目の open が `EBUSY` になる。`arduino-cli monitor` が開いている間も `EBUSY`。root は素通り。
 - classic ESP32 の UART bridge は、DTR と RTS を両方 on で開くと再起動せず、両方 off にして開くと再起動した。`arduino-cli monitor`
@@ -357,18 +312,8 @@ pytest が upload → monitor → fixture（ブローカー経由の OEP）→ W
   生き残り（別の session、親は init に付け替わる）、arduino-cli の終了は遅れない。
 - sketch.yaml の `default_fqbn` / `default_port` / `default_programmer` / `default_port_config` は CLI の flag なしで効く。
   `compile --show-properties=expanded` は `runtime.tools.*.path` を解いた形で返す。symlink で入れた platform では tool の依存が解けない。
-- pytest-embedded-arduino-cli 1.6.0: upload は `arduino-cli upload --build-path … [--profile …] --port <port>` だけ。runtime の port は
-  pyserial の `serial_for_url` で自分で開く。fqbn は扱わない。peers あり。device lock は port の path ごと。
-- ch32rv 0.10.1: `probe list --json` は Link ごとに CDC の `ports` と `topology` を返す。`arduino discovery` は `wchlink://` を出す。
-  `arduino monitor` の source は dmdata / dmseq / rtt。`isp` / `boot dfu|uf2|uart` は未実装。monitor の DESCRIBE は `port_descriptor` /
-  `values` を返す（要修正）。
-- 今の core の書き込み経路は 2 つ（LinkE の programmer、UIAPduino の HID）。core に USB CDC は無い（TinyUSB は取り込んだだけ）。
 - factory ISP: BOOT ピンの家系と、ソフトからしか入れない家系（V003 / V00x、X035 / X315）。M030 は無い。UART は `57 AB` の framing、
   115200（wch-protocols）。
-- OEP の仕様の今: 1 つの wire のインターフェースの connection は 1 つ（§5.2 で変える）。線の操作は scan / attach / detach /
-  attach_under_reset で接続の一覧は無い。bind と describe の port は USB の CDC だけが対象（§5 で組み直す）。fn 0 の describe に
-  経路の一覧は無い（§4.3 で足す）。X035 の治具で、CDC の口へのコンソールの bind が host の detach / reset を越えて続くこと、設定の
-  保存（NVS、2 ms）が動いた。
 - ESP32 系の probe の port は、DTR を立てたまま(pyserial の既定)なら開いても閉じても reset しない(P4 の USB-Serial/JTAG、
   CH340 越しの classic ESP32 と P4、CH343 越しの S3。2026-09-24)。DTR=0 で開くと reset するのは、pyserial が DTR を先に、
   RTS を後に書くので、途中で RTS=1 / DTR=0 = EN low を通るため。esp-idf-monitor は RTS を先に落とすので reset しない。

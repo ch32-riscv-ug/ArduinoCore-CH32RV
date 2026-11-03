@@ -35,7 +35,7 @@
 
 例を足すときの決まりは [docs/examples-build-rules.ja.md](docs/examples-build-rules.ja.md)。
 
-- [ ] 実機での確認がまだのもの: 第1弾（UART の操作、PWM の波形、I2C の対向通信・相手不在・復旧、外部 SPI Flash の ID）、
+- [ ] 実機での確認がまだのもの: 第1弾（UART の操作、PWM の波形、ハードウェアの I2C の対向通信・相手不在・復旧、外部 SPI Flash の ID）、
   第2弾（ボタンの押下・長押し・解放、可変抵抗と PWM、USB の再接続時の中立、ゲームパッドの軸・両端・中立帯を PC の確認画面で）。
 - [ ] X035 のハードウェアの I2C（Wire、ba8dc851 の repeated START を含む）を線で確かめる。ベンチの CH32X035C8T6（OEP 4-2）は、
   ロット番号の後ろから 5 桁目が 0 の、I2C と ADC の ch3 / 7 / 11 / 15 が使えない個体だった（データシート、device-data の errata
@@ -192,5 +192,5 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。ビルドだけで、
-    実機の確認は未（OEP の治具は I2C のターゲットにしかなれず、マスター役の配線がベンチに無い）。
+    実機の確認は未。OEP のプローブの i2c-controller（マスター役）で試せるが、ベンチの X035 は I2C の使えない個体なので、新しい X035 で。
 - `analogReference()` はハードウェアに基準電圧の選択が無い。
