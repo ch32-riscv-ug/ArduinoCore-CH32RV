@@ -5,9 +5,10 @@ both bit orders the sketch sends a few bytes with transfer() and a word with tra
 
 What must hold, judged on the wire (the probe's logic capture of CS, SCK and MOSI): 40 clocks while CS is low and the
 bytes, then the word high byte first under MSBFIRST and low byte first under LSBFIRST (as the hardware SPI and AVR send
-it); and the sketch reads back what the target was armed with, the word assembled the same way. The P4's spi-target
-now and then counts 41 bits of a clean 40-clock transfer (2026-11-03, hardware SPI at ~750 kHz, the capture at 20 MS/s
-shows no glitch); then its MISO is shifted too, and that is recorded as the target's, not failed."""
+it); and the sketch reads back what the target was armed with, the word assembled the same way. A probe's spi-target
+that counts other than 40 bits of a clean 40-clock transfer has its MISO shifted too; that is recorded as the target's,
+not failed. (x035-oep's P4 did, 7 in 48, until oep-probe-arduino 905616e drove MISO one step weaker: its edge reached the
+SCK wire next to it on the fixture.)"""
 import json
 import pathlib
 import secrets
