@@ -54,6 +54,13 @@ public:
      * was asked. */
     void setClock(uint32_t freq) override;
 
+    /* Free a bus a target is holding, as Wire's clearBus() does: while SDA
+     * reads low, up to 9 SCL pulses (a byte and its ACK), then a STOP. true
+     * when both lines read high afterwards. Explicit, never automatic: the
+     * pulses reach every device on the bus. Works on an open or closed bus;
+     * a stretching target is waited for, up to the timeout. */
+    bool clearBus(void);
+
     /* The hardware I2C this bus is bound to: none, as Wire's says while closed. */
     uint8_t peripheral(void) const { return 0; }
 

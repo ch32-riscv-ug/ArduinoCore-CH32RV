@@ -72,7 +72,7 @@ Adafruit_Something device(&bus);
 - クロックストレッチを待ちます。`endTransmission()`の戻り値とtimeout APIは`Wire`と同じです。
 - `setClock()`は半周期の**下限**を決めるもので、狙った周波数は出ません。`getClock()`は指定した値を返します。
 - **slaveモードはありません。** `begin(address)`はcontrollerとして開き、`onReceive()` / `onRequest()`は何もしません。
-  `setRoute()`と`clearBus()`はありません(ハードウェアだけの機能です)。`peripheral()`は0を返します。
+  `setRoute()`はありません(ハードウェアだけの機能です)。`peripheral()`は0を返します。`clearBus()`は`Wire`と同じ手順でバスを解放します。
 - バッファは`Wire`と同じ`CH32RV_WIRE_BUFFER_SIZE`(既定32)です。
 - 開いていないバスへの`endTransmission()`は、`Wire`と同じく4を返します(自動では`begin()`しません)。
 

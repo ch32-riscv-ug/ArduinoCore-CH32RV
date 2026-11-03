@@ -65,6 +65,43 @@ void SoftWire::begin()
     _started = true;
 }
 
+bool SoftWire::clearBus(void)
+{
+    if (_sda == CH32RV_ROUTE_NO_PIN) {
+        return false;
+    }
+    if (!_started) {
+        pinMode(_sda, OUTPUT_OPENDRAIN);
+        pinMode(_scl, OUTPUT_OPENDRAIN);
+    }
+    release(_sda);
+    bool scl_free = scl_high();
+    delayMicroseconds(5);
+    /* 100 kHz half periods, which every target accepts. The target shifts out
+     * the rest of its byte, sees no ACK, and lets go. */
+    for (uint8_t pulses = 0; scl_free && pulses < 9 && digitalRead(_sda) == LOW; pulses++) {
+        hold(_scl);
+        delayMicroseconds(5);
+        scl_free = scl_high();
+        delayMicroseconds(5);
+    }
+    /* STOP: SDA rises while SCL is high. */
+    hold(_scl);
+    delayMicroseconds(2);
+    hold(_sda);
+    delayMicroseconds(3);
+    scl_free = scl_high() && scl_free;
+    delayMicroseconds(5);
+    release(_sda);
+    delayMicroseconds(5);
+    const bool free = scl_free && digitalRead(_sda) == HIGH && digitalRead(_scl) == HIGH;
+    if (!_started) {
+        pinMode(_sda, INPUT);
+        pinMode(_scl, INPUT);
+    }
+    return free;
+}
+
 void SoftWire::end()
 {
     if (!_started) {

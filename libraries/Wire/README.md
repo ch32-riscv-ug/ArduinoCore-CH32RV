@@ -76,8 +76,9 @@ Adafruit_Something device(&bus);
 - `setClock()` sets a **floor** on the half period, not an achieved frequency;
   `getClock()` returns what was asked.
 - **No target mode.** `begin(address)` opens a controller, and `onReceive()` /
-  `onRequest()` do nothing. There is no `setRoute()` or `clearBus()`: those
-  are the hardware's. `peripheral()` returns 0.
+  `onRequest()` do nothing. There is no `setRoute()`: that is the
+  hardware's. `peripheral()` returns 0, and `clearBus()` frees the bus the way
+  Wire's does.
 - The buffers are Wire's `CH32RV_WIRE_BUFFER_SIZE` (32 by default).
 - `endTransmission()` on a bus that is not open returns 4, as on `Wire` (it
   does not `begin()` by itself).
