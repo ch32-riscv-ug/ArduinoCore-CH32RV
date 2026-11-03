@@ -5,7 +5,8 @@
  * are often gone - bonded out on no package you have, or already spoken for.
  * This is the way out: slower, but it goes anywhere digitalWrite() goes.
  *
- * It derives from HardwareSPI, so anything written against `SPIClass&` takes
+ * It derives from SPIClass (<SPIClass.h>), so anything written against
+ * `SPIClass&` takes
  * one of these unchanged:
  *
  *   SoftSPI bus(PC5, PC7, PC6);      // SCK, MISO, MOSI - SPI.begin()'s order
@@ -23,14 +24,14 @@
  */
 #pragma once
 
-#include "api/HardwareSPI.h"
+#include "SPIClass.h"
 #include "internal/ch32rv_pins.h"
 
 #include <stdint.h>
 
 namespace arduino {
 
-class SoftSPI : public HardwareSPI {
+class SoftSPI : public ::SPIClass {
 public:
     /* SCK, MISO, MOSI: the order of SPI.begin(sck, miso, mosi) here and on an
      * ESP32. miso may be NOT_A_PIN for a write-only bus - a display, a shift
@@ -39,34 +40,35 @@ public:
         : _sck(sck), _mosi(mosi), _miso(miso) {}
 
     void begin() override;
-    /* arduino-esp32's form. All -1 keeps the constructor's pins; otherwise sck
-     * and mosi must be pins, miso may be -1 (write-only). ss is not used. */
-    bool begin(int sck, int miso = -1, int mosi = -1, int ss = -1);
+    /* arduino-esp32's form: the pins (SCK, MISO, MOSI) named in the call.
+     * All -1 keeps the pins the bus has; false leaves the bus closed. ss is
+     * accepted for the same reason and not used: chip select stays a GPIO the
+     * sketch (or the library) drives. */
+    bool begin(int sck, int miso = -1, int mosi = -1, int ss = -1)
+    {
+        (void)ss;
+        if (_started) {
+            end();
+        }
+        if (!(sck < 0 && miso < 0 && mosi < 0) && !setPins(sck, miso, mosi)) {
+            return false;
+        }
+        begin();
+        return true;
+    }
+    /* sck and mosi must be pins, miso may be -1 (write-only). An open bus
+     * reopens on them. */
+    bool setPins(int sck, int miso, int mosi);
     void end() override;
 
     uint8_t transfer(uint8_t data) override;
-    uint16_t transfer16(uint16_t data) override;
-    void transfer(void *buf, size_t count) override;
-
-    /* The same buffer and wide-word transfers <SPI.h> has. */
-    uint32_t transfer32(uint32_t data);
-    void transferBytes(const uint8_t *data, uint8_t *out, uint32_t size);
-    void writeBytes(const uint8_t *data, uint32_t size) { transferBytes(data, nullptr, size); }
-    void write(uint8_t data) { (void)transfer(data); }
-    void write16(uint16_t data) { (void)transfer16(data); }
-    void write32(uint32_t data) { (void)transfer32(data); }
+    using ::SPIClass::transfer;
 
     void beginTransaction(SPISettings settings) override;
     void endTransaction(void) override;
 
-    /* Nothing to do: this bus is driven entirely from the caller's thread, so
-     * there is no ISR-shared state. Declared because HardwareSPI requires
-     * them, and because a library calling usingInterrupt() must still
-     * compile. */
-    void usingInterrupt(int interruptNumber) override { (void)interruptNumber; }
-    void notUsingInterrupt(int interruptNumber) override { (void)interruptNumber; }
-    void attachInterrupt() override {}
-    void detachInterrupt() override {}
+    /* The hardware SPI this bus is bound to: none, as SPI's says while closed. */
+    uint8_t peripheral(void) const { return 0; }
 
     /* Half of one clock period, in microseconds. 0 - the default - means "as
      * fast as the loop goes", which is the useful setting almost always.
@@ -78,8 +80,8 @@ public:
      * against micros(), so 1 is already a large step. */
     void setHalfPeriodUs(uint16_t us) { _half_us = us; }
 
-    /* Pre-transaction API. Still used by a lot of library code. The clock
-     * divider is accepted and ignored, for the reason above. */
+    /* Pre-transaction API. The clock divider is accepted and ignored, for
+     * the reason above. */
     void setBitOrder(BitOrder order) { _order = order; }
     void setDataMode(uint8_t mode);
     void setClockDivider(uint32_t divider) { (void)divider; }
@@ -91,12 +93,10 @@ private:
     uint8_t _mosi;
     uint8_t _miso;
 
-    BitOrder _order = MSBFIRST;
     /* CPOL: clock idles high. CPHA: sample on the trailing edge. */
     bool _cpol = false;
     bool _cpha = false;
     uint16_t _half_us = 0;
-    bool _started = false;
 };
 
 }  // namespace arduino

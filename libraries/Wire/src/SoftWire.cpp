@@ -49,7 +49,7 @@ void SoftWire::begin()
 {
     /* No pins yet (a Software menu entry on a part with no default route):
      * begin(sda, scl) names them. */
-    if (_sda == _scl || !ch32rv_pad_is_valid(_sda) || !ch32rv_pad_is_valid(_scl)) {
+    if (_sda == CH32RV_ROUTE_NO_PIN) {
         return;
     }
     setClock(_clock_hz);

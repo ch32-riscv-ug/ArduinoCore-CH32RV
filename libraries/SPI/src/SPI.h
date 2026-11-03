@@ -11,7 +11,8 @@
  */
 #pragma once
 
-#include "api/HardwareSPI.h"
+#include "SPIClass.h"
+#include "SoftSPI.h"
 #include "internal/ch32rv_pins.h"
 #include "internal/ch32rv_route.h"
 #include "pins_arduino.h"
@@ -22,13 +23,6 @@
 /* Legacy divider names. AVR's SPI.setClockDivider() took these, and enough
  * libraries still call it that leaving them out breaks compilation for no
  * gain. The divider is against F_CPU, as it is there. */
-#define SPI_CLOCK_DIV2   2
-#define SPI_CLOCK_DIV4   4
-#define SPI_CLOCK_DIV8   8
-#define SPI_CLOCK_DIV16  16
-#define SPI_CLOCK_DIV32  32
-#define SPI_CLOCK_DIV64  64
-#define SPI_CLOCK_DIV128 128
 
 namespace arduino {
 
@@ -41,42 +35,34 @@ namespace arduino {
  * its row in the table of enabled SPIs: begin(sck, miso, mosi) takes any free
  * SPI those pins are a route of, this row first; begin() without pins takes
  * this row on its default pins (ch32rv_instances.h). */
-class CH32RVSPIClass : public HardwareSPI {
+class CH32RVSPIClass : public ::SPIClass {
 public:
     explicit CH32RVSPIClass(uint8_t number) : _number(number) {}
 
     void begin() override;
     /* arduino-esp32's form: the pins (SCK, MISO, MOSI) named in the call.
-     * All -1 keeps the pins the bus has; the three have to be one route, and
-     * false leaves the bus closed. ss is accepted for the same reason and not
-     * used: chip select stays a GPIO the sketch (or the library) drives. */
-    bool begin(int sck, int miso = -1, int mosi = -1, int ss = -1);
+     * All -1 keeps the pins the bus has; false leaves the bus closed. ss is
+     * accepted for the same reason and not used: chip select stays a GPIO the
+     * sketch (or the library) drives. */
+    bool begin(int sck, int miso = -1, int mosi = -1, int ss = -1)
+    {
+        (void)ss;
+        if (_started) {
+            end();
+        }
+        if (!(sck < 0 && miso < 0 && mosi < 0) && !setPins(sck, miso, mosi)) {
+            return false;
+        }
+        begin();
+        return true;
+    }
     void end() override;
 
     uint8_t transfer(uint8_t data) override;
-    uint16_t transfer16(uint16_t data) override;
-    void transfer(void *buf, size_t count) override;
-
-    /* arduino-esp32's buffer and wide-word transfers. A word's bytes go in
-     * the bit order's direction, as transfer16() does (MSBFIRST: high first). */
-    uint32_t transfer32(uint32_t data);
-    void transferBytes(const uint8_t *data, uint8_t *out, uint32_t size);
-    void writeBytes(const uint8_t *data, uint32_t size);
-    void write(uint8_t data) { (void)transfer(data); }
-    void write16(uint16_t data) { (void)transfer16(data); }
-    void write32(uint32_t data) { (void)transfer32(data); }
+    using ::SPIClass::transfer;
 
     void beginTransaction(SPISettings settings) override;
     void endTransaction(void) override;
-
-    /* Nothing to do: this driver never touches the bus from an interrupt, so
-     * there is no shared state for an ISR to walk into. Declared because
-     * HardwareSPI requires them, and because a library calling
-     * usingInterrupt() must still compile. */
-    void usingInterrupt(int interruptNumber) override { (void)interruptNumber; }
-    void notUsingInterrupt(int interruptNumber) override { (void)interruptNumber; }
-    void attachInterrupt() override {}
-    void detachInterrupt() override {}
 
     /* Move this bus onto another of its pin routes. false, and nothing
      * changed, when the route does not exist on this series; setPins()
@@ -113,22 +99,33 @@ private:
     uint8_t _mosi_pin;
 
     uint32_t _clock_hz = 4000000;
-    BitOrder _order = MSBFIRST;
     uint8_t _mode = 0;
-    bool _started = false;
 };
 
 }  // namespace arduino
 
 /* As many names as the board has enabled SPIs (ch32rv_instances.h), in the
- * Arduino ecosystem's order: the bare name first. */
+ * Arduino ecosystem's order: the bare name first. An SPI set to Software in
+ * the board menu makes its name a SoftSPI. */
 #if CH32RV_SPI_COUNT > 0
 #define SPI_INTERFACES_COUNT CH32RV_SPI_COUNT
+#if CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW0_N)
+extern arduino::SoftSPI SPI;               /* SPIInstance.cpp */
+#else
 extern arduino::CH32RVSPIClass SPI;        /* SPIInstance.cpp */
 #endif
+#endif
 #if CH32RV_SPI_COUNT > 1
+#if CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW1_N)
+extern arduino::SoftSPI SPI1;              /* SPI1Instance.cpp */
+#else
 extern arduino::CH32RVSPIClass SPI1;       /* SPI1Instance.cpp */
 #endif
+#endif
 #if CH32RV_SPI_COUNT > 2
+#if CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW2_N)
+extern arduino::SoftSPI SPI2;              /* SPI2Instance.cpp */
+#else
 extern arduino::CH32RVSPIClass SPI2;       /* SPI2Instance.cpp */
+#endif
 #endif

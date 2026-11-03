@@ -13,6 +13,11 @@ void SoftSPI::idle_clock(void)
 
 void SoftSPI::begin()
 {
+    /* No pins yet (a Software menu entry on a part with no default route):
+     * begin(sck, miso, mosi) names them. */
+    if (_sck == CH32RV_ROUTE_NO_PIN) {
+        return;
+    }
     pinMode(_sck, OUTPUT);
     idle_clock();
     pinMode(_mosi, OUTPUT);
@@ -26,52 +31,30 @@ void SoftSPI::begin()
     _started = true;
 }
 
-bool SoftSPI::begin(int sck, int miso, int mosi, int ss)
+bool SoftSPI::setPins(int sck, int miso, int mosi)
 {
-    (void)ss;
-    if (!(sck < 0 && miso < 0 && mosi < 0)) {
-        if (sck < 0 || mosi < 0) {
-            return false;
-        }
-        /* Pads from here on: every bit toggled later skips the board-number lookup. */
-        sck = CH32RV_PIN_RESOLVE(sck);
-        mosi = CH32RV_PIN_RESOLVE(mosi);
-        if (miso >= 0) {
-            miso = CH32RV_PIN_RESOLVE(miso);
-        }
-        if (!ch32rv_pad_is_valid(sck) || !ch32rv_pad_is_valid(mosi) ||
-            (miso >= 0 && !ch32rv_pad_is_valid(miso))) {
-            return false;
-        }
-        end();
-        _sck = (uint8_t)sck;
-        _mosi = (uint8_t)mosi;
-        _miso = miso < 0 ? (uint8_t)NOT_A_PIN : (uint8_t)miso;
+    if (sck < 0 || mosi < 0) {
+        return false;
     }
-    begin();
+    /* Pads from here on: every bit toggled later skips the board-number lookup. */
+    sck = CH32RV_PIN_RESOLVE(sck);
+    mosi = CH32RV_PIN_RESOLVE(mosi);
+    if (miso >= 0) {
+        miso = CH32RV_PIN_RESOLVE(miso);
+    }
+    if (!ch32rv_pad_is_valid(sck) || !ch32rv_pad_is_valid(mosi) ||
+        (miso >= 0 && !ch32rv_pad_is_valid(miso))) {
+        return false;
+    }
+    const bool was_started = _started;
+    end();
+    _sck = (uint8_t)sck;
+    _mosi = (uint8_t)mosi;
+    _miso = miso < 0 ? (uint8_t)NOT_A_PIN : (uint8_t)miso;
+    if (was_started) {
+        begin();
+    }
     return true;
-}
-
-uint32_t SoftSPI::transfer32(uint32_t data)
-{
-    if (_order == LSBFIRST) {
-        const uint32_t lo = transfer16((uint16_t)data);
-        const uint32_t hi = transfer16((uint16_t)(data >> 16));
-        return (hi << 16) | lo;
-    }
-    const uint32_t hi = transfer16((uint16_t)(data >> 16));
-    const uint32_t lo = transfer16((uint16_t)data);
-    return (hi << 16) | lo;
-}
-
-void SoftSPI::transferBytes(const uint8_t *data, uint8_t *out, uint32_t size)
-{
-    for (uint32_t i = 0; i < size; i++) {
-        const uint8_t in = transfer(data ? data[i] : 0xFFu);
-        if (out) {
-            out[i] = in;
-        }
-    }
 }
 
 void SoftSPI::end()
@@ -157,25 +140,6 @@ uint8_t SoftSPI::transfer(uint8_t data)
         mask = msb ? (uint8_t)(mask >> 1) : (uint8_t)(mask << 1);
     }
     return in;
-}
-
-uint16_t SoftSPI::transfer16(uint16_t data)
-{
-    /* Big-endian on the wire, as <SPI.h> and every other core does it, and
-     * independently of bit order - which reorders the bits inside a byte, not
-     * the bytes inside a word. */
-    const uint8_t hi = transfer((uint8_t)(data >> 8));
-    const uint8_t lo = transfer((uint8_t)data);
-    return (uint16_t)((uint16_t)hi << 8 | lo);
-}
-
-void SoftSPI::transfer(void *buf, size_t count)
-{
-    uint8_t *p = (uint8_t *)buf;
-    while (count--) {
-        *p = transfer(*p);
-        p++;
-    }
 }
 
 }  // namespace arduino

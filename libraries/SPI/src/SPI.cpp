@@ -82,7 +82,7 @@ struct RouteSet {
  * packages of the series): begin() without pins fails on it. */
 #define CH32RV_SPI_NO_DEF CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, 0u, 0u
 
-#if CH32RV_SPI_ON_1
+#if CH32RV_SPI_HW_1
 #define CH32RV_SPI_HAS_1 1
 #if CH32RV_SPI1_MODE == CH32RV_SPI_FIX
 #define CH32RV_SPI_DEF_1 CH32RV_SPI1_FIX_SCK, CH32RV_SPI1_FIX_MISO, CH32RV_SPI1_FIX_MOSI, CH32RV_SPI1_FIX_V1, CH32RV_SPI1_FIX_V2
@@ -100,7 +100,7 @@ static const ch32rv_route_t spi1_routes[] = { CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_1)
 #endif
 #endif
 #endif
-#if CH32RV_SPI_ON_2
+#if CH32RV_SPI_HW_2
 #define CH32RV_SPI_HAS_2 1
 #if CH32RV_SPI2_MODE == CH32RV_SPI_FIX
 #define CH32RV_SPI_DEF_2 CH32RV_SPI2_FIX_SCK, CH32RV_SPI2_FIX_MISO, CH32RV_SPI2_FIX_MOSI, CH32RV_SPI2_FIX_V1, CH32RV_SPI2_FIX_V2
@@ -118,7 +118,7 @@ static const ch32rv_route_t spi2_routes[] = { CH32RV_SPI_ROUTE(CH32RV_SPI_DEF_2)
 #endif
 #endif
 #endif
-#if CH32RV_SPI_ON_3
+#if CH32RV_SPI_HW_3
 #define CH32RV_SPI_HAS_3 1
 #if CH32RV_SPI3_MODE == CH32RV_SPI_FIX
 #define CH32RV_SPI_DEF_3 CH32RV_SPI3_FIX_SCK, CH32RV_SPI3_FIX_MISO, CH32RV_SPI3_FIX_MOSI, CH32RV_SPI3_FIX_V1, CH32RV_SPI3_FIX_V2
@@ -178,7 +178,7 @@ constexpr uint8_t SPI_COUNT = 0;
 /* A board with one enabled SPI has one bus object (SPI) and one instance, so
  * there is nothing to share and nobody else to own it: no owner table, no
  * search. */
-#if CH32RV_SPI_COUNT == 1
+#if CH32RV_SPI_HW_COUNT == 1
 #define CH32RV_SPI_SINGLE 1
 #else
 #define CH32RV_SPI_SINGLE 0
@@ -328,45 +328,9 @@ void CH32RVSPIClass::begin()
     apply(_clock_hz, _order, _mode);
 }
 
-bool CH32RVSPIClass::begin(int sck, int miso, int mosi, int ss)
-{
-    (void)ss;
-    if (_started) {
-        end();
-    }
-    if (!(sck < 0 && miso < 0 && mosi < 0) && !setPins(sck, miso, mosi)) {
-        return false;
-    }
-    begin();
-    return true;
-}
 
-uint32_t CH32RVSPIClass::transfer32(uint32_t data)
-{
-    if (_order == LSBFIRST) {
-        const uint32_t lo = transfer16((uint16_t)data);
-        const uint32_t hi = transfer16((uint16_t)(data >> 16));
-        return (hi << 16) | lo;
-    }
-    const uint32_t hi = transfer16((uint16_t)(data >> 16));
-    const uint32_t lo = transfer16((uint16_t)data);
-    return (hi << 16) | lo;
-}
 
-void CH32RVSPIClass::transferBytes(const uint8_t *data, uint8_t *out, uint32_t size)
-{
-    for (uint32_t i = 0; i < size; i++) {
-        const uint8_t in = transfer(data ? data[i] : 0xFFu);
-        if (out) {
-            out[i] = in;
-        }
-    }
-}
 
-void CH32RVSPIClass::writeBytes(const uint8_t *data, uint32_t size)
-{
-    transferBytes(data, nullptr, size);
-}
 
 void CH32RVSPIClass::end()
 {
@@ -459,28 +423,7 @@ uint8_t CH32RVSPIClass::transfer(uint8_t data)
     return (uint8_t)CH32RV_SPI_DATAR(_base);
 }
 
-uint16_t CH32RVSPIClass::transfer16(uint16_t data)
-{
-    /* Two 8-bit frames rather than switching DFF: the wire result is the same
-     * and it keeps one frame size in play, so a driver that mixes transfer()
-     * and transfer16() cannot end up half-configured. */
-    if (_order == LSBFIRST) {
-        const uint16_t low = transfer((uint8_t)(data & 0xFFu));
-        const uint16_t high = transfer((uint8_t)(data >> 8));
-        return (uint16_t)(low | (high << 8));
-    }
-    const uint16_t high = transfer((uint8_t)(data >> 8));
-    const uint16_t low = transfer((uint8_t)(data & 0xFFu));
-    return (uint16_t)((high << 8) | low);
-}
 
-void CH32RVSPIClass::transfer(void *buf, size_t count)
-{
-    uint8_t *p = (uint8_t *)buf;
-    for (size_t i = 0; i < count; i++) {
-        p[i] = transfer(p[i]);
-    }
-}
 
 /* --------------------------------------------------------------- routes */
 bool CH32RVSPIClass::setRoute(uint8_t route)

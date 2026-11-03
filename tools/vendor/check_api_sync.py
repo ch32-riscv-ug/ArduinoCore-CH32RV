@@ -79,6 +79,13 @@ PATCHES = (
         "after": '  return ch32rv_fread_end(&value, isNegative);\n}\n\n// read characters from stream into buffer',
         "why": STREAM_WHY,
     },
+    {
+        "path": "HardwareSPI.h",
+        "before": "// Alias SPIClass to HardwareSPI since it's already the defacto standard for SPI class name\ntypedef HardwareSPI SPIClass;\n",
+        "after": "/* ch32rv patch: SPIClass is the SPI library's class at global scope\n * (libraries/SPI/src/SPIClass.h), the base of the hardware bus and SoftSPI,\n * so `class SPIClass;` compiles (tools/vendor/check_api_sync.py). */\n",
+        "why": ("SPIClass a class of its own, like TwoWire: the common base of the hardware SPI and "
+                "SoftSPI, which a forward declaration `class SPIClass;` can name"),
+    },
 )
 
 

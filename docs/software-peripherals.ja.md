@@ -19,7 +19,7 @@ hardware peripheral の代わりを GPIO で実装する library は、次を満
 | SoftSerial | 未実装 | RX の timing、割り込み競合、error reporting の共通仕様がない |
 | SoftPWM | 未実装 | timer resource manager と hardware PWM の競合を増やすため独立 API にしない |
 
-`SoftSPI` は `HardwareSPI`、`SoftWire` は `TwoWire`（Wire ライブラリ）を継承し、対応する Arduino API を受け取る library へ
+`SoftSPI` は `SPIClass`（SPI ライブラリ）、`SoftWire` は `TwoWire`（Wire ライブラリ）を継承し、対応する Arduino API を受け取る library へ
 渡せます。個別 API、pin 順、対応 mode は各 library の README を正本とします。
 
 ## 実装しないもの

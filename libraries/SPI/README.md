@@ -43,6 +43,47 @@ SPI.setPins(PB3, PB4, PB5);       // SCK, MISO, MOSI - all from one route
 Both return `false` and change nothing if the route does not exist, and
 `setPins()` refuses pins that do not all belong to the same route.
 
+## SoftSPI (SPI on any three pads)
+
+The hardware SPI reaches only the pads its routes name. `SoftSPI` is a
+bit-banged controller on any three pads. It is an `SPIClass`, like `SPI`, so a
+library that takes `SPIClass *` takes it unchanged. It comes with the same
+`<SPI.h>` (or `<SoftSPI.h>`).
+
+```cpp
+#include <SPI.h>
+
+SoftSPI bus(PA1, PA4, PA2);       // SCK, MISO, MOSI (SPI.begin()'s order)
+Adafruit_Something device(&bus);
+```
+
+- **The class says software or hardware.** `SPI.begin(sck, miso, mosi)` takes
+  a hardware SPI only, and returns `false` for pins no route has.
+- MISO can be `NOT_A_PIN` (-1 to `begin()`) for a write-only bus; `transfer()`
+  then returns 0.
+- **No clock frequency.** SPISettings' frequency is accepted and ignored; the
+  one knob is `setHalfPeriodUs()`, a **floor** on the half period.
+- All four modes, `MSBFIRST` and `LSBFIRST`. `transfer16()` / `transfer32()`
+  send the low byte first under `LSBFIRST`, as `SPI` does.
+- No CS and no target mode (CS is an ordinary GPIO, as on `SPI`). There is no
+  `setRoute()`; `peripheral()` returns 0.
+
+### Making SPI software from the board menu
+
+Choose **Software** under **SPI1** (SPI2, SPI3) in the board menu and the name
+that SPI backs (`SPI`, `SPI1`, `SPI2`) is a `SoftSPI`. `begin()` uses that SPI's
+default route pins and `begin(sck, miso, mosi)` takes any pads; no hardware SPI
+code is linked. It lets a library that uses the global `SPI` run on a board
+whose hardware SPI cannot be used.
+
+## `SPIClass`
+
+`SPIClass` is this library's class (`<SPIClass.h>`), the common type of the
+hardware bus (`CH32RVSPIClass`) and `SoftSPI`. It is not ArduinoCore-API's
+`typedef HardwareSPI SPIClass`, so a forward declaration `class SPIClass;`
+compiles. `SPI`'s type is `CH32RVSPIClass`, so `extern SPIClass SPI;` and
+ESP32's `SPIClass spi(bus)` do not compile.
+
 ## Things worth knowing
 
 - **The clock is rounded down, never up.** `SPISettings(1000000, ...)` on a
@@ -68,8 +109,10 @@ Both return `false` and change nothing if the route does not exist, and
 
 - **SPILoopback** - one jumper from MOSI to MISO proves the clock, the data
   line and the framing in one go.
+- **SoftSPILoopback** - the same with `SoftSPI`, on three pads you choose.
 
 ## Detailed example guides
 
 - [SPILoopback](examples/SPILoopback/README.md): connections, operation, API use and adaptation notes.
+- [SoftSPILoopback](examples/SoftSPILoopback/README.md): check a loopback on three pads of your choice with `SoftSPI`.
 - [SpiFlashId](examples/SpiFlashId/README.md): Read an external SPI Flash JEDEC ID without erase or programming.

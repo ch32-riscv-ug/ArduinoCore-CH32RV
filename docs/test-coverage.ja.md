@@ -75,7 +75,7 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 ## 通信
 
 実装根拠: [Wire](../libraries/Wire/src/)、[SoftWire](../libraries/Wire/src/SoftWire.cpp)、
-[SPI](../libraries/SPI/src/)、[SoftSPI](../libraries/SoftSPI/src/)、
+[SPI](../libraries/SPI/src/)、[SoftSPI](../libraries/SPI/src/SoftSPI.cpp)、
 [HardwareSerial](../cores/arduino/HardwareSerial.cpp)。
 
 | 契約 | 実装 | 旧検証の参考（新 suite では未整備） | 不足する保証 / 必要設備 |

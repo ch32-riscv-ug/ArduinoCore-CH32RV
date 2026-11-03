@@ -139,7 +139,8 @@ class HardwareSPI
     virtual void end() = 0;
 };
 
-// Alias SPIClass to HardwareSPI since it's already the defacto standard for SPI class name
-typedef HardwareSPI SPIClass;
+/* ch32rv patch: SPIClass is the SPI library's class at global scope
+ * (libraries/SPI/src/SPIClass.h), the base of the hardware bus and SoftSPI,
+ * so `class SPIClass;` compiles (tools/vendor/check_api_sync.py). */
 
 }

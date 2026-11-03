@@ -252,8 +252,8 @@ PERIPH_MENU_KINDS = (
     ("spi", "SPI", ("SCK", "MISO", "MOSI"), range(1, 4)),
 )
 # The kinds whose menu also offers Software: the library has a bit-banged bus
-# of the same type (SoftWire). USART has none.
-SOFTWARE_KINDS = ("i2c",)
+# of the same type (SoftWire, SoftSPI). USART has none.
+SOFTWARE_KINDS = ("i2c", "spi")
 
 
 # The variant header's own name for each kind's default pins, for an instance

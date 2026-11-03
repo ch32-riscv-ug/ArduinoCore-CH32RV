@@ -15,7 +15,7 @@
 | ハードウェア SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.ja.md) | SPILoopback → SpiFlashId |
 | Ethernet、TCP / UDP、HTTP、mDNS、NTP | [Network](../libraries/Network/README.ja.md) | EthernetStatus → TcpEchoServer / UdpEcho → HttpGet → MdnsWebServer / NetworkTime |
 | SPI のスレーブ | [CH32RVSPISlave](../libraries/CH32RVSPISlave/README.ja.md) | SPISlaveSelfTest |
-| GPIO による SPI | [SoftSPI](../libraries/SoftSPI/examples/SoftSPILoopback/README.ja.md) | SoftSPILoopback |
+| GPIO による SPI | [SoftSPI](../libraries/SPI/examples/SoftSPILoopback/README.ja.md) | SoftSPILoopback |
 | サーボ | [Servo](../libraries/Servo/examples/Sweep/README.ja.md) | Sweep |
 | ISR とのデータ受け渡し | [CH32RVSyncKit](../libraries/CH32RVSyncKit/examples/README.ja.md) | QueueFromInterrupt / DeadlinePeriod |
 | 複数の仕事を組み合わせる | [CH32RVTaskKit](../libraries/CH32RVTaskKit/examples/README.ja.md) | BasicWork → ButtonBlinkConsole |

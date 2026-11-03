@@ -202,6 +202,8 @@ CH32V003.menu.spi1.disable=Disable
 CH32V003.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
 CH32V003.menu.spi1.fix_pc5_pc7_pc6=FIX (SCK:PC5, MISO:PC7, MOSI:PC6)
 CH32V003.menu.spi1.fix_pc5_pc7_pc6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V003.menu.spi1.software=Software
+CH32V003.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V003.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -392,6 +394,8 @@ CH32V002.menu.spi1.fix_pc5_pc7_pc6=FIX (SCK:PC5, MISO:PC7, MOSI:PC6)
 CH32V002.menu.spi1.fix_pc5_pc7_pc6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V002.menu.spi1.fix_pd4_pd5_pd6=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
 CH32V002.menu.spi1.fix_pd4_pd5_pd6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V002.menu.spi1.software=Software
+CH32V002.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V002.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -552,6 +556,8 @@ CH32V004.menu.spi1.fix_pc5_pc7_pc6=FIX (SCK:PC5, MISO:PC7, MOSI:PC6)
 CH32V004.menu.spi1.fix_pc5_pc7_pc6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V004.menu.spi1.fix_pd4_pd5_pd6=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
 CH32V004.menu.spi1.fix_pd4_pd5_pd6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V004.menu.spi1.software=Software
+CH32V004.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V004.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -760,6 +766,8 @@ CH32V005.menu.spi1.fix_pd2_pb3_pd3=FIX (SCK:PD2, MISO:PB3, MOSI:PD3) [debug/stra
 CH32V005.menu.spi1.fix_pd2_pb3_pd3.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD2 -DCH32RV_SPI1_FIX_MISO=PB3 -DCH32RV_SPI1_FIX_MOSI=PD3 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V005.menu.spi1.fix_pd4_pd5_pd6=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
 CH32V005.menu.spi1.fix_pd4_pd5_pd6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V005.menu.spi1.software=Software
+CH32V005.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V005.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -1020,6 +1028,8 @@ CH32V006.menu.spi1.fix_pa1_pb5_pa2=FIX (SCK:PA1, MISO:PB5, MOSI:PA2)
 CH32V006.menu.spi1.fix_pa1_pb5_pa2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PB5 -DCH32RV_SPI1_FIX_MOSI=PA2 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V006.menu.spi1.fix_pb5_pc7_pb4=FIX (SCK:PB5, MISO:PC7, MOSI:PB4)
 CH32V006.menu.spi1.fix_pb5_pc7_pb4.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PB4 -DCH32RV_SPI1_FIX_V1=0x00000006u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V006.menu.spi1.software=Software
+CH32V006.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V006.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -1240,6 +1250,8 @@ CH32V007.menu.spi1.fix_pa1_pb5_pa2=FIX (SCK:PA1, MISO:PB5, MOSI:PA2)
 CH32V007.menu.spi1.fix_pa1_pb5_pa2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PB5 -DCH32RV_SPI1_FIX_MOSI=PA2 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V007.menu.spi1.fix_pb5_pc7_pb4=FIX (SCK:PB5, MISO:PC7, MOSI:PB4)
 CH32V007.menu.spi1.fix_pb5_pc7_pb4.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PB4 -DCH32RV_SPI1_FIX_V1=0x00000006u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V007.menu.spi1.software=Software
+CH32V007.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V007.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -1430,6 +1442,8 @@ CH32M007.menu.spi1.fix_pd2_pb3_pd3=FIX (SCK:PD2, MISO:PB3, MOSI:PD3) [debug/stra
 CH32M007.menu.spi1.fix_pd2_pb3_pd3.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD2 -DCH32RV_SPI1_FIX_MISO=PB3 -DCH32RV_SPI1_FIX_MOSI=PD3 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32M007.menu.spi1.fix_pd4_pd5_pd6=FIX (SCK:PD4, MISO:PD5, MOSI:PD6)
 CH32M007.menu.spi1.fix_pd4_pd5_pd6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PD4 -DCH32RV_SPI1_FIX_MISO=PD5 -DCH32RV_SPI1_FIX_MOSI=PD6 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M007.menu.spi1.software=Software
+CH32M007.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32M007.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -1614,12 +1628,16 @@ CH32V103.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V103.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V103.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V103.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V103.menu.spi1.software=Software
+CH32V103.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V103.menu.spi2.auto=AUTO (bind at begin())
 CH32V103.menu.spi2.auto.build.spi2_mode=
 CH32V103.menu.spi2.disable=Disable
 CH32V103.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V103.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V103.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V103.menu.spi2.software=Software
+CH32V103.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V103.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
@@ -1906,12 +1924,16 @@ CH32V203.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V203.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V203.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V203.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V203.menu.spi1.software=Software
+CH32V203.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V203.menu.spi2.auto=AUTO (bind at begin())
 CH32V203.menu.spi2.auto.build.spi2_mode=
 CH32V203.menu.spi2.disable=Disable
 CH32V203.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V203.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V203.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V203.menu.spi2.software=Software
+CH32V203.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V203.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
@@ -2104,12 +2126,16 @@ CH32V208.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V208.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V208.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V208.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V208.menu.spi1.software=Software
+CH32V208.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V208.menu.spi2.auto=AUTO (bind at begin())
 CH32V208.menu.spi2.auto.build.spi2_mode=
 CH32V208.menu.spi2.disable=Disable
 CH32V208.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V208.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V208.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V208.menu.spi2.software=Software
+CH32V208.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V208.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
@@ -2396,12 +2422,16 @@ CH32V303.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V303.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V303.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V303.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V303.menu.spi1.software=Software
+CH32V303.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V303.menu.spi2.auto=AUTO (bind at begin())
 CH32V303.menu.spi2.auto.build.spi2_mode=
 CH32V303.menu.spi2.disable=Disable
 CH32V303.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V303.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V303.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V303.menu.spi2.software=Software
+CH32V303.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V303.menu.spi3.auto=AUTO (bind at begin())
 CH32V303.menu.spi3.auto.build.spi3_mode=
 CH32V303.menu.spi3.disable=Disable
@@ -2410,6 +2440,8 @@ CH32V303.menu.spi3.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V303.menu.spi3.fix_pb3_pb4_pb5.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32V303.menu.spi3.fix_pc10_pc11_pc12=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
 CH32V303.menu.spi3.fix_pc10_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V303.menu.spi3.software=Software
+CH32V303.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32V303.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -2649,12 +2681,16 @@ CH32V305.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V305.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V305.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V305.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V305.menu.spi1.software=Software
+CH32V305.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V305.menu.spi2.auto=AUTO (bind at begin())
 CH32V305.menu.spi2.auto.build.spi2_mode=
 CH32V305.menu.spi2.disable=Disable
 CH32V305.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V305.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V305.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V305.menu.spi2.software=Software
+CH32V305.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V305.menu.spi3.auto=AUTO (bind at begin())
 CH32V305.menu.spi3.auto.build.spi3_mode=
 CH32V305.menu.spi3.disable=Disable
@@ -2663,6 +2699,8 @@ CH32V305.menu.spi3.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V305.menu.spi3.fix_pb3_pb4_pb5.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32V305.menu.spi3.fix_pc10_pc11_pc12=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
 CH32V305.menu.spi3.fix_pc10_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V305.menu.spi3.software=Software
+CH32V305.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32V305.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -2928,12 +2966,16 @@ CH32V307.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V307.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V307.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V307.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V307.menu.spi1.software=Software
+CH32V307.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V307.menu.spi2.auto=AUTO (bind at begin())
 CH32V307.menu.spi2.auto.build.spi2_mode=
 CH32V307.menu.spi2.disable=Disable
 CH32V307.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V307.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V307.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V307.menu.spi2.software=Software
+CH32V307.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V307.menu.spi3.auto=AUTO (bind at begin())
 CH32V307.menu.spi3.auto.build.spi3_mode=
 CH32V307.menu.spi3.disable=Disable
@@ -2942,6 +2984,8 @@ CH32V307.menu.spi3.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V307.menu.spi3.fix_pb3_pb4_pb5.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32V307.menu.spi3.fix_pc10_pc11_pc12=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
 CH32V307.menu.spi3.fix_pc10_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V307.menu.spi3.software=Software
+CH32V307.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32V307.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -3188,12 +3232,16 @@ CH32V317.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V317.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V317.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V317.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V317.menu.spi1.software=Software
+CH32V317.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V317.menu.spi2.auto=AUTO (bind at begin())
 CH32V317.menu.spi2.auto.build.spi2_mode=
 CH32V317.menu.spi2.disable=Disable
 CH32V317.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V317.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V317.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V317.menu.spi2.software=Software
+CH32V317.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V317.menu.spi3.auto=AUTO (bind at begin())
 CH32V317.menu.spi3.auto.build.spi3_mode=
 CH32V317.menu.spi3.disable=Disable
@@ -3202,6 +3250,8 @@ CH32V317.menu.spi3.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V317.menu.spi3.fix_pb3_pb4_pb5.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32V317.menu.spi3.fix_pc10_pc11_pc12=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
 CH32V317.menu.spi3.fix_pc10_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V317.menu.spi3.software=Software
+CH32V317.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32V317.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -3367,6 +3417,8 @@ CH32X033.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32X033.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32X033.menu.spi1.fix_pa11_pa9_pa10=FIX (SCK:PA11, MISO:PA9, MOSI:PA10)
 CH32X033.menu.spi1.fix_pa11_pa9_pa10.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA11 -DCH32RV_SPI1_FIX_MISO=PA9 -DCH32RV_SPI1_FIX_MOSI=PA10 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32X033.menu.spi1.software=Software
+CH32X033.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32X033.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -3618,6 +3670,8 @@ CH32X035.menu.spi1.fix_pa11_pa9_pa10=FIX (SCK:PA11, MISO:PA9, MOSI:PA10)
 CH32X035.menu.spi1.fix_pa11_pa9_pa10.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA11 -DCH32RV_SPI1_FIX_MISO=PA9 -DCH32RV_SPI1_FIX_MOSI=PA10 -DCH32RV_SPI1_FIX_V1=0x00000002u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32X035.menu.spi1.fix_pc5_pc6_pc7=FIX (SCK:PC5, MISO:PC6, MOSI:PC7)
 CH32X035.menu.spi1.fix_pc5_pc6_pc7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC6 -DCH32RV_SPI1_FIX_MOSI=PC7 -DCH32RV_SPI1_FIX_V1=0x00000003u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32X035.menu.spi1.software=Software
+CH32X035.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32X035.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -3853,12 +3907,16 @@ CH32L103.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32L103.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32L103.menu.spi1.fix_pb6_pb8_pb7=FIX (SCK:PB6, MISO:PB8, MOSI:PB7)
 CH32L103.menu.spi1.fix_pb6_pb8_pb7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB6 -DCH32RV_SPI1_FIX_MISO=PB8 -DCH32RV_SPI1_FIX_MOSI=PB7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x01000000u
+CH32L103.menu.spi1.software=Software
+CH32L103.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32L103.menu.spi2.auto=AUTO (bind at begin())
 CH32L103.menu.spi2.auto.build.spi2_mode=
 CH32L103.menu.spi2.disable=Disable
 CH32L103.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32L103.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32L103.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32L103.menu.spi2.software=Software
+CH32L103.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32L103.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
@@ -4034,6 +4092,8 @@ CH32M103.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32M103.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32M103.menu.spi1.fix_pb6_pb8_pb7=FIX (SCK:PB6, MISO:PB8, MOSI:PB7)
 CH32M103.menu.spi1.fix_pb6_pb8_pb7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB6 -DCH32RV_SPI1_FIX_MISO=PB8 -DCH32RV_SPI1_FIX_MOSI=PB7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x01000000u
+CH32M103.menu.spi1.software=Software
+CH32M103.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32M103.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode}
 
 
@@ -4401,12 +4461,16 @@ CH32V205.menu.spi1.fix_pb3_pa6_pb5=FIX (SCK:PB3, MISO:PA6, MOSI:PB5)
 CH32V205.menu.spi1.fix_pb3_pa6_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V205.menu.spi1.fix_pb3_pb4_pa7=FIX (SCK:PB3, MISO:PB4, MOSI:PA7)
 CH32V205.menu.spi1.fix_pb3_pb4_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V205.menu.spi1.software=Software
+CH32V205.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V205.menu.spi2.auto=AUTO (bind at begin())
 CH32V205.menu.spi2.auto.build.spi2_mode=
 CH32V205.menu.spi2.disable=Disable
 CH32V205.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V205.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V205.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000005u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V205.menu.spi2.software=Software
+CH32V205.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V205.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode}
 
 
@@ -4671,12 +4735,16 @@ CH32V407.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V407.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V407.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V407.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V407.menu.spi1.software=Software
+CH32V407.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V407.menu.spi2.auto=AUTO (bind at begin())
 CH32V407.menu.spi2.auto.build.spi2_mode=
 CH32V407.menu.spi2.disable=Disable
 CH32V407.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V407.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V407.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V407.menu.spi2.software=Software
+CH32V407.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V407.menu.spi3.auto=AUTO (bind at begin())
 CH32V407.menu.spi3.auto.build.spi3_mode=
 CH32V407.menu.spi3.disable=Disable
@@ -4685,6 +4753,8 @@ CH32V407.menu.spi3.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V407.menu.spi3.fix_pb3_pb4_pb5.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32V407.menu.spi3.fix_pc10_pc11_pc12=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
 CH32V407.menu.spi3.fix_pc10_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V407.menu.spi3.software=Software
+CH32V407.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32V407.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.usart9_mode} {build.usart10_mode} {build.i2c1_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -4938,12 +5008,16 @@ CH32V467.menu.spi1.fix_pa5_pa6_pa7=FIX (SCK:PA5, MISO:PA6, MOSI:PA7)
 CH32V467.menu.spi1.fix_pa5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32V467.menu.spi1.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V467.menu.spi1.fix_pb3_pb4_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000001u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32V467.menu.spi1.software=Software
+CH32V467.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32V467.menu.spi2.auto=AUTO (bind at begin())
 CH32V467.menu.spi2.auto.build.spi2_mode=
 CH32V467.menu.spi2.disable=Disable
 CH32V467.menu.spi2.disable.build.spi2_mode=-DCH32RV_SPI2_MODE=0
 CH32V467.menu.spi2.fix_pb13_pb14_pb15=FIX (SCK:PB13, MISO:PB14, MOSI:PB15)
 CH32V467.menu.spi2.fix_pb13_pb14_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB14 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000000u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32V467.menu.spi2.software=Software
+CH32V467.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32V467.menu.spi3.auto=AUTO (bind at begin())
 CH32V467.menu.spi3.auto.build.spi3_mode=
 CH32V467.menu.spi3.disable=Disable
@@ -4952,6 +5026,8 @@ CH32V467.menu.spi3.fix_pb3_pb4_pb5=FIX (SCK:PB3, MISO:PB4, MOSI:PB5)
 CH32V467.menu.spi3.fix_pb3_pb4_pb5.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PB5 -DCH32RV_SPI3_FIX_V1=0x00000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32V467.menu.spi3.fix_pc10_pc11_pc12=FIX (SCK:PC10, MISO:PC11, MOSI:PC12)
 CH32V467.menu.spi3.fix_pc10_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x10000000u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32V467.menu.spi3.software=Software
+CH32V467.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32V467.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.usart9_mode} {build.usart10_mode} {build.i2c1_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -5260,6 +5336,8 @@ CH32X305.menu.spi1.fix_pa13_pd3_pa14=FIX (SCK:PA13, MISO:PD3, MOSI:PA14) [debug/
 CH32X305.menu.spi1.fix_pa13_pd3_pa14.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA13 -DCH32RV_SPI1_FIX_MISO=PD3 -DCH32RV_SPI1_FIX_MOSI=PA14 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32X305.menu.spi1.fix_pa13_pd3_pd2=FIX (SCK:PA13, MISO:PD3, MOSI:PD2) [debug/strap pin]
 CH32X305.menu.spi1.fix_pa13_pd3_pd2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA13 -DCH32RV_SPI1_FIX_MISO=PD3 -DCH32RV_SPI1_FIX_MOSI=PD2 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32X305.menu.spi1.software=Software
+CH32X305.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32X305.menu.spi2.auto=AUTO (bind at begin())
 CH32X305.menu.spi2.auto.build.spi2_mode=
 CH32X305.menu.spi2.disable=Disable
@@ -5280,6 +5358,8 @@ CH32X305.menu.spi2.fix_pb13_pb15_pb6=FIX (SCK:PB13, MISO:PB15, MOSI:PB6)
 CH32X305.menu.spi2.fix_pb13_pb15_pb6.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB15 -DCH32RV_SPI2_FIX_MOSI=PB6 -DCH32RV_SPI2_FIX_V1=0x00000004u -DCH32RV_SPI2_FIX_V2=0x00000000u
 CH32X305.menu.spi2.fix_pb13_pb15_pb14=FIX (SCK:PB13, MISO:PB15, MOSI:PB14)
 CH32X305.menu.spi2.fix_pb13_pb15_pb14.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB15 -DCH32RV_SPI2_FIX_MOSI=PB14 -DCH32RV_SPI2_FIX_V1=0x00000004u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32X305.menu.spi2.software=Software
+CH32X305.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32X305.menu.spi3.auto=AUTO (bind at begin())
 CH32X305.menu.spi3.auto.build.spi3_mode=
 CH32X305.menu.spi3.disable=Disable
@@ -5338,6 +5418,8 @@ CH32X305.menu.spi3.fix_pd11_pd13_pc6=FIX (SCK:PD11, MISO:PD13, MOSI:PC6)
 CH32X305.menu.spi3.fix_pd11_pd13_pc6.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PD11 -DCH32RV_SPI3_FIX_MISO=PD13 -DCH32RV_SPI3_FIX_MOSI=PC6 -DCH32RV_SPI3_FIX_V1=0x00000004u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32X305.menu.spi3.fix_pd11_pd13_pc10=FIX (SCK:PD11, MISO:PD13, MOSI:PC10)
 CH32X305.menu.spi3.fix_pd11_pd13_pc10.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PD11 -DCH32RV_SPI3_FIX_MISO=PD13 -DCH32RV_SPI3_FIX_MOSI=PC10 -DCH32RV_SPI3_FIX_V1=0x00000004u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32X305.menu.spi3.software=Software
+CH32X305.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32X305.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -5795,6 +5877,8 @@ CH32X315.menu.spi1.fix_pb1_pd14_pb2=FIX (SCK:PB1, MISO:PD14, MOSI:PB2)
 CH32X315.menu.spi1.fix_pb1_pd14_pb2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB1 -DCH32RV_SPI1_FIX_MISO=PD14 -DCH32RV_SPI1_FIX_MOSI=PB2 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32X315.menu.spi1.fix_pb1_pd14_pd2=FIX (SCK:PB1, MISO:PD14, MOSI:PD2) [debug/strap pin]
 CH32X315.menu.spi1.fix_pb1_pd14_pd2.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB1 -DCH32RV_SPI1_FIX_MISO=PD14 -DCH32RV_SPI1_FIX_MOSI=PD2 -DCH32RV_SPI1_FIX_V1=0x00000004u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32X315.menu.spi1.software=Software
+CH32X315.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32X315.menu.spi2.auto=AUTO (bind at begin())
 CH32X315.menu.spi2.auto.build.spi2_mode=
 CH32X315.menu.spi2.disable=Disable
@@ -5815,6 +5899,8 @@ CH32X315.menu.spi2.fix_pb13_pb15_pb6=FIX (SCK:PB13, MISO:PB15, MOSI:PB6)
 CH32X315.menu.spi2.fix_pb13_pb15_pb6.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB15 -DCH32RV_SPI2_FIX_MOSI=PB6 -DCH32RV_SPI2_FIX_V1=0x00000004u -DCH32RV_SPI2_FIX_V2=0x00000000u
 CH32X315.menu.spi2.fix_pb13_pb15_pb14=FIX (SCK:PB13, MISO:PB15, MOSI:PB14)
 CH32X315.menu.spi2.fix_pb13_pb15_pb14.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PB13 -DCH32RV_SPI2_FIX_MISO=PB15 -DCH32RV_SPI2_FIX_MOSI=PB14 -DCH32RV_SPI2_FIX_V1=0x00000004u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32X315.menu.spi2.software=Software
+CH32X315.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32X315.menu.spi3.auto=AUTO (bind at begin())
 CH32X315.menu.spi3.auto.build.spi3_mode=
 CH32X315.menu.spi3.disable=Disable
@@ -5873,6 +5959,8 @@ CH32X315.menu.spi3.fix_pd11_pd13_pc10=FIX (SCK:PD11, MISO:PD13, MOSI:PC10)
 CH32X315.menu.spi3.fix_pd11_pd13_pc10.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PD11 -DCH32RV_SPI3_FIX_MISO=PD13 -DCH32RV_SPI3_FIX_MOSI=PC10 -DCH32RV_SPI3_FIX_V1=0x00000004u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32X315.menu.spi3.fix_pd11_pd13_pd12=FIX (SCK:PD11, MISO:PD13, MOSI:PD12)
 CH32X315.menu.spi3.fix_pd11_pd13_pd12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PD11 -DCH32RV_SPI3_FIX_MISO=PD13 -DCH32RV_SPI3_FIX_MOSI=PD12 -DCH32RV_SPI3_FIX_V1=0x00000004u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32X315.menu.spi3.software=Software
+CH32X315.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32X315.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -6061,6 +6149,8 @@ CH32M030.menu.spi1.fix_pa1_pc4_pa11=FIX (SCK:PA1, MISO:PC4, MOSI:PA11)
 CH32M030.menu.spi1.fix_pa1_pc4_pa11.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PC4 -DCH32RV_SPI1_FIX_MOSI=PA11 -DCH32RV_SPI1_FIX_V1=0x00000040u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32M030.menu.spi1.fix_pa1_pa4_pa8=FIX (SCK:PA1, MISO:PA4, MOSI:PA8)
 CH32M030.menu.spi1.fix_pa1_pa4_pa8.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PA1 -DCH32RV_SPI1_FIX_MISO=PA4 -DCH32RV_SPI1_FIX_MOSI=PA8 -DCH32RV_SPI1_FIX_V1=0x00000060u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32M030.menu.spi1.software=Software
+CH32M030.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32M030.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 
@@ -6299,6 +6389,8 @@ CH32H415.menu.spi1.fix_pf5_pa6_pa7=FIX (SCK:PF5, MISO:PA6, MOSI:PA7)
 CH32H415.menu.spi1.fix_pf5_pa6_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PF5 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32H415.menu.spi1.fix_pf5_pb4_pa7=FIX (SCK:PF5, MISO:PB4, MOSI:PA7)
 CH32H415.menu.spi1.fix_pf5_pb4_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PF5 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32H415.menu.spi1.software=Software
+CH32H415.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32H415.menu.spi2.auto=AUTO (bind at begin())
 CH32H415.menu.spi2.auto.build.spi2_mode=
 CH32H415.menu.spi2.disable=Disable
@@ -6363,6 +6455,8 @@ CH32H415.menu.spi2.fix_pd3_pc2_pb15=FIX (SCK:PD3, MISO:PC2, MOSI:PB15)
 CH32H415.menu.spi2.fix_pd3_pc2_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PD3 -DCH32RV_SPI2_FIX_MISO=PC2 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000005u -DCH32RV_SPI2_FIX_V2=0x00000000u
 CH32H415.menu.spi2.fix_pd3_pc2_pc1=FIX (SCK:PD3, MISO:PC2, MOSI:PC1)
 CH32H415.menu.spi2.fix_pd3_pc2_pc1.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PD3 -DCH32RV_SPI2_FIX_MISO=PC2 -DCH32RV_SPI2_FIX_MOSI=PC1 -DCH32RV_SPI2_FIX_V1=0x00000005u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32H415.menu.spi2.software=Software
+CH32H415.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32H415.menu.spi3.auto=AUTO (bind at begin())
 CH32H415.menu.spi3.auto.build.spi3_mode=
 CH32H415.menu.spi3.disable=Disable
@@ -6375,6 +6469,8 @@ CH32H415.menu.spi3.fix_pb3_pc11_pc12=FIX (SCK:PB3, MISO:PC11, MOSI:PC12)
 CH32H415.menu.spi3.fix_pb3_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x00000006u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32H415.menu.spi3.fix_pc10_pb4_pc12=FIX (SCK:PC10, MISO:PB4, MOSI:PC12)
 CH32H415.menu.spi3.fix_pc10_pb4_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x00000006u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32H415.menu.spi3.software=Software
+CH32H415.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32H415.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -6589,6 +6685,8 @@ CH32H416.menu.spi1.fix_pb3_pa6_pb5=FIX (SCK:PB3, MISO:PA6, MOSI:PB5)
 CH32H416.menu.spi1.fix_pb3_pa6_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PA6 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32H416.menu.spi1.fix_pb3_pb4_pa7=FIX (SCK:PB3, MISO:PB4, MOSI:PA7)
 CH32H416.menu.spi1.fix_pb3_pb4_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PB3 -DCH32RV_SPI1_FIX_MISO=PB4 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32H416.menu.spi1.software=Software
+CH32H416.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32H416.menu.spi2.auto=AUTO (bind at begin())
 CH32H416.menu.spi2.auto.build.spi2_mode=
 CH32H416.menu.spi2.disable=Disable
@@ -6601,6 +6699,8 @@ CH32H416.menu.spi2.fix_pa12_pc2_pc3=FIX (SCK:PA12, MISO:PC2, MOSI:PC3)
 CH32H416.menu.spi2.fix_pa12_pc2_pc3.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PA12 -DCH32RV_SPI2_FIX_MISO=PC2 -DCH32RV_SPI2_FIX_MOSI=PC3 -DCH32RV_SPI2_FIX_V1=0x00000005u -DCH32RV_SPI2_FIX_V2=0x00000000u
 CH32H416.menu.spi2.fix_pd3_pc2_pc1=FIX (SCK:PD3, MISO:PC2, MOSI:PC1)
 CH32H416.menu.spi2.fix_pd3_pc2_pc1.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PD3 -DCH32RV_SPI2_FIX_MISO=PC2 -DCH32RV_SPI2_FIX_MOSI=PC1 -DCH32RV_SPI2_FIX_V1=0x00000005u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32H416.menu.spi2.software=Software
+CH32H416.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32H416.menu.spi3.auto=AUTO (bind at begin())
 CH32H416.menu.spi3.auto.build.spi3_mode=
 CH32H416.menu.spi3.disable=Disable
@@ -6613,6 +6713,8 @@ CH32H416.menu.spi3.fix_pb3_pc11_pc12=FIX (SCK:PB3, MISO:PC11, MOSI:PC12)
 CH32H416.menu.spi3.fix_pb3_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x00000006u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32H416.menu.spi3.fix_pc10_pb4_pc12=FIX (SCK:PC10, MISO:PB4, MOSI:PC12)
 CH32H416.menu.spi3.fix_pc10_pb4_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x00000006u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32H416.menu.spi3.software=Software
+CH32H416.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32H416.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -6961,6 +7063,8 @@ CH32H417.menu.spi1.fix_pf5_pf3_pa7=FIX (SCK:PF5, MISO:PF3, MOSI:PA7)
 CH32H417.menu.spi1.fix_pf5_pf3_pa7.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PF5 -DCH32RV_SPI1_FIX_MISO=PF3 -DCH32RV_SPI1_FIX_MOSI=PA7 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
 CH32H417.menu.spi1.fix_pf5_pf3_pb5=FIX (SCK:PF5, MISO:PF3, MOSI:PB5)
 CH32H417.menu.spi1.fix_pf5_pf3_pb5.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PF5 -DCH32RV_SPI1_FIX_MISO=PF3 -DCH32RV_SPI1_FIX_MOSI=PB5 -DCH32RV_SPI1_FIX_V1=0x00000005u -DCH32RV_SPI1_FIX_V2=0x00000000u
+CH32H417.menu.spi1.software=Software
+CH32H417.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 CH32H417.menu.spi2.auto=AUTO (bind at begin())
 CH32H417.menu.spi2.auto.build.spi2_mode=
 CH32H417.menu.spi2.disable=Disable
@@ -7025,6 +7129,8 @@ CH32H417.menu.spi2.fix_pd3_pc2_pb15=FIX (SCK:PD3, MISO:PC2, MOSI:PB15)
 CH32H417.menu.spi2.fix_pd3_pc2_pb15.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PD3 -DCH32RV_SPI2_FIX_MISO=PC2 -DCH32RV_SPI2_FIX_MOSI=PB15 -DCH32RV_SPI2_FIX_V1=0x00000005u -DCH32RV_SPI2_FIX_V2=0x00000000u
 CH32H417.menu.spi2.fix_pd3_pc2_pc1=FIX (SCK:PD3, MISO:PC2, MOSI:PC1)
 CH32H417.menu.spi2.fix_pd3_pc2_pc1.build.spi2_mode=-DCH32RV_SPI2_MODE=2 -DCH32RV_SPI2_FIX_SCK=PD3 -DCH32RV_SPI2_FIX_MISO=PC2 -DCH32RV_SPI2_FIX_MOSI=PC1 -DCH32RV_SPI2_FIX_V1=0x00000005u -DCH32RV_SPI2_FIX_V2=0x00000000u
+CH32H417.menu.spi2.software=Software
+CH32H417.menu.spi2.software.build.spi2_mode=-DCH32RV_SPI2_MODE=3
 CH32H417.menu.spi3.auto=AUTO (bind at begin())
 CH32H417.menu.spi3.auto.build.spi3_mode=
 CH32H417.menu.spi3.disable=Disable
@@ -7037,6 +7143,8 @@ CH32H417.menu.spi3.fix_pb3_pc11_pc12=FIX (SCK:PB3, MISO:PC11, MOSI:PC12)
 CH32H417.menu.spi3.fix_pb3_pc11_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PB3 -DCH32RV_SPI3_FIX_MISO=PC11 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x00000006u -DCH32RV_SPI3_FIX_V2=0x00000000u
 CH32H417.menu.spi3.fix_pc10_pb4_pc12=FIX (SCK:PC10, MISO:PB4, MOSI:PC12)
 CH32H417.menu.spi3.fix_pc10_pb4_pc12.build.spi3_mode=-DCH32RV_SPI3_MODE=2 -DCH32RV_SPI3_FIX_SCK=PC10 -DCH32RV_SPI3_FIX_MISO=PB4 -DCH32RV_SPI3_FIX_MOSI=PC12 -DCH32RV_SPI3_FIX_V1=0x00000006u -DCH32RV_SPI3_FIX_V2=0x00000000u
+CH32H417.menu.spi3.software=Software
+CH32H417.menu.spi3.software.build.spi3_mode=-DCH32RV_SPI3_MODE=3
 CH32H417.build.periph_defines={build.usart1_mode} {build.usart2_mode} {build.usart3_mode} {build.usart4_mode} {build.usart5_mode} {build.usart6_mode} {build.usart7_mode} {build.usart8_mode} {build.i2c1_mode} {build.i2c2_mode} {build.spi1_mode} {build.spi2_mode} {build.spi3_mode}
 
 
@@ -7102,6 +7210,8 @@ UIAPDUINO_V003_V14.menu.spi1.disable=Disable
 UIAPDUINO_V003_V14.menu.spi1.disable.build.spi1_mode=-DCH32RV_SPI1_MODE=0
 UIAPDUINO_V003_V14.menu.spi1.fix_pc5_pc7_pc6=FIX (SCK:PC5, MISO:PC7, MOSI:PC6)
 UIAPDUINO_V003_V14.menu.spi1.fix_pc5_pc7_pc6.build.spi1_mode=-DCH32RV_SPI1_MODE=2 -DCH32RV_SPI1_FIX_SCK=PC5 -DCH32RV_SPI1_FIX_MISO=PC7 -DCH32RV_SPI1_FIX_MOSI=PC6 -DCH32RV_SPI1_FIX_V1=0x00000000u -DCH32RV_SPI1_FIX_V2=0x00000000u
+UIAPDUINO_V003_V14.menu.spi1.software=Software
+UIAPDUINO_V003_V14.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 UIAPDUINO_V003_V14.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 UIAPDUINO_V003_V14.menu.rtlib.fltf=Float (32-bit) + printf %f (default)

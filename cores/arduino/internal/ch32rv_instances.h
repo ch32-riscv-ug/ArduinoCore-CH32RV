@@ -184,5 +184,19 @@
 #else
 #define CH32RV_SPI_ON_3 0
 #endif
-/* SPI, SPI1, SPI2. */
+/* In the hardware driver's table: on, and not Software. */
+#define CH32RV_SPI_HW_1 (CH32RV_SPI_ON_1 && CH32RV_SPI1_MODE != CH32RV_PERIPH_SOFT)
+#define CH32RV_SPI_HW_2 (CH32RV_SPI_ON_2 && CH32RV_SPI2_MODE != CH32RV_PERIPH_SOFT)
+#define CH32RV_SPI_HW_3 (CH32RV_SPI_ON_3 && CH32RV_SPI3_MODE != CH32RV_PERIPH_SOFT)
+#define CH32RV_SPI_HW_COUNT (CH32RV_SPI_HW_1 + CH32RV_SPI_HW_2 + CH32RV_SPI_HW_3)
+/* SPI, SPI1, SPI2: the first, second and third SPI that is on. ROWk_N is the
+ * instance number of name k; a Software one is bit-banged, a hardware one is
+ * row HW_ROW(n) of the driver's table (the hardware instances below it). */
 #define CH32RV_SPI_COUNT (CH32RV_SPI_ON_1 + CH32RV_SPI_ON_2 + CH32RV_SPI_ON_3)
+#define CH32RV_SPI_ROW0_N (CH32RV_SPI_ON_1 ? 1 : CH32RV_SPI_ON_2 ? 2 : 3)
+#define CH32RV_SPI_ROW1_N (CH32RV_SPI_ON_1 && CH32RV_SPI_ON_2 ? 2 : 3)
+#define CH32RV_SPI_ROW2_N 3
+#define CH32RV_SPI_SOFT_N(n) ((n) == 1 ? CH32RV_SPI1_MODE == CH32RV_PERIPH_SOFT : \
+                              (n) == 2 ? CH32RV_SPI2_MODE == CH32RV_PERIPH_SOFT : \
+                                         CH32RV_SPI3_MODE == CH32RV_PERIPH_SOFT)
+#define CH32RV_SPI_HW_ROW(n) (((n) > 1 ? CH32RV_SPI_HW_1 : 0) + ((n) > 2 ? CH32RV_SPI_HW_2 : 0))
