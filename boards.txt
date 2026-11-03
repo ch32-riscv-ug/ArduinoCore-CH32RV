@@ -1823,6 +1823,11 @@ CH32V203.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V203.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V203.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
+CH32V203.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V203.menu.iwdg.sw.build.iwdg_defines=
+CH32V203.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V203.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32V203.menu.erase.keep=Keep Store (default)
 CH32V203.menu.erase.keep.upload.erase_args=
 CH32V203.menu.erase.chip=All Flash
@@ -2011,6 +2016,11 @@ CH32V208.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32V208.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V208.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V208.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32V208.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V208.menu.iwdg.sw.build.iwdg_defines=
+CH32V208.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V208.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32V208.menu.erase.keep=Keep Store (default)
 CH32V208.menu.erase.keep.upload.erase_args=
@@ -3718,6 +3728,11 @@ CH32L103.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32L103.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32L103.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
+CH32L103.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32L103.menu.iwdg.sw.build.iwdg_defines=
+CH32L103.menu.iwdg.hw=Running from power-on (set at boot)
+CH32L103.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32L103.menu.erase.keep=Keep Store (default)
 CH32L103.menu.erase.keep.upload.erase_args=
 CH32L103.menu.erase.chip=All Flash
@@ -3899,6 +3914,11 @@ CH32M103.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32M103.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32M103.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32M103.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32M103.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32M103.menu.iwdg.sw.build.iwdg_defines=
+CH32M103.menu.iwdg.hw=Running from power-on (set at boot)
+CH32M103.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32M103.menu.erase.keep=Keep Store (default)
 CH32M103.menu.erase.keep.upload.erase_args=
@@ -4099,6 +4119,11 @@ CH32V205.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32V205.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V205.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V205.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32V205.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V205.menu.iwdg.sw.build.iwdg_defines=
+CH32V205.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V205.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32V205.menu.erase.keep=Keep Store (default)
 CH32V205.menu.erase.keep.upload.erase_args=
@@ -4451,6 +4476,11 @@ CH32V407.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V407.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V407.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
+CH32V407.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V407.menu.iwdg.sw.build.iwdg_defines=
+CH32V407.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V407.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32V407.menu.erase.keep=Keep Store (default)
 CH32V407.menu.erase.keep.upload.erase_args=
 CH32V407.menu.erase.chip=All Flash
@@ -4703,6 +4733,11 @@ CH32V467.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32V467.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V467.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V467.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32V467.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V467.menu.iwdg.sw.build.iwdg_defines=
+CH32V467.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V467.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32V467.menu.erase.keep=Keep Store (default)
 CH32V467.menu.erase.keep.upload.erase_args=

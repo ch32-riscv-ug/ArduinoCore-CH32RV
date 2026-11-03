@@ -499,12 +499,14 @@ def erase_menu(board: str) -> list[str]:
 # The Watchdog of the series whose USER option byte writer (ch32rv_option_user.c)
 # has run on the chip through Reset Pin or Flash / RAM Split: USER bit 0 IWDG_SW,
 # 1 (factory) started by CH32RV.wdtEnable(), 0 running from power-on
-# (device-data option_byte_fields.csv, every family with the bit). The other
-# families with the bit (V103, V20x, V205, L103 / M103, V407, H41x) get it once
-# the writer has run on them; M030 has none (docs/adr/0017-option-byte-menus.ja.md).
+# (device-data option_byte_fields.csv, every family with the bit). V103 and H41x
+# have the bit too and get the menu once the writer has run on them (V103's
+# two bench parts would not take a flash write, 2026-11-03); M030 has none
+# (docs/adr/0017-option-byte-menus.ja.md).
 IWDG_SERIES = ("CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007",
                "CH32X033", "CH32X035", "CH32X305", "CH32X315",
-               "CH32V303", "CH32V305", "CH32V307", "CH32V317")
+               "CH32V303", "CH32V305", "CH32V307", "CH32V317",
+               "CH32V203", "CH32V208", "CH32L103", "CH32M103", "CH32V205", "CH32V407", "CH32V467")
 
 
 def iwdg_menu(board: str) -> list[str]:
