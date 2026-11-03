@@ -290,7 +290,7 @@ STATUS = {
     "MCO (クロック出力)": ("未実装", "-",
         "クロックを端子に出す。ベンチでクロックを測るのにも使える"),
     "HSE (外部水晶)": ("一部実装", "Clock Sourceメニュー",
-        "`clocksrc=hse`でCPU Clockの同じ周波数をEVTの前提の水晶(V00x 24 MHz、V103/V20x/V205/V30x/L103 8 MHz)から作る。水晶が立たなければHSIで同じ周波数。`CH32RV.clockSource()`。V003/V006/V103/V203/V205/V307/L103で実機確認(2026-10-28)。V208・M030・X315・V407・H41xは未対応(H417のUSB SSはライブラリが自分でHSEを使う)。X035にHSEは無い"),
+        "`clocksrc=hse`でCPU Clockの同じ周波数をEVTの前提の水晶(V00x 24 MHz、V103/V20x/V205/V30x/L103 8 MHz、V208 32 MHz)から作る。V208は`hse`が既定。水晶が立たなければHSIで同じ周波数。`CH32RV.clockSource()`。V003/V006/V103/V203/V205/V307/L103で実機確認(2026-10-28)。V208(2026-11-03、runtime・uart・synckit・flash・logic)でも実機確認。M030・X315・V407・H41xは未対応(H417のUSB SSはライブラリが自分でHSEを使う)。X035にHSEは無い"),
     "PMP (メモリ保護)": ("未実装", "-",
         ""),
     "FPU": ("実装済", "float/double",

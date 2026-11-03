@@ -658,7 +658,9 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
         lines.append(f"{board}.menu.clock.{key}={label}")
         lines.append(f"{board}.menu.clock.{key}.build.f_cpu={hclk_mhz * 1000000}L")
         lines.append(f"{board}.menu.clock.{key}.build.clock_defines={clock_defines(clk, latency)}")
-        if hse_series(series):
+        if series == "CH32V208":
+            lines.append(f"{board}.menu.clock.{key}.build.clock_hse_defines={v208_hse_defines(clk)}")
+        elif hse_series(series):
             hse = clock_for(None, sysclk_mhz * 1000000, hclk_mhz * 1000000, "HSE")
             lines.append(f"{board}.menu.clock.{key}.build.clock_hse_defines="
                          f"{clock_hse_defines(series, key, clk, hse, latency, fam)}")
@@ -666,8 +668,31 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
 
 
 def hse_series(series: str) -> bool:
-    """Whether the series gets the Clock Source menu (FAMILY's hse_hz)."""
-    return "hse_hz" in FAMILY[SERIES_CONFIG[series]["family"]] and series not in ("CH32V208",)
+    """Whether the series gets the Clock Source menu (FAMILY's hse_hz, or V208's own)."""
+    return "hse_hz" in FAMILY[SERIES_CONFIG[series]["family"]]
+
+
+# CH32V208 (V20x_D8W) carries a 32 MHz crystal, and its PLL entry divides HSE
+# by 4 with PLLXTPRE 0 (by 8 with 1; RM V2.5 p.39, not V20x's 1 / 2), so
+# HSE / 4 = 8 MHz feeds the PLL exactly as the undivided HSI does: the same
+# PLLMUL gives the same SYSCLK, and only PLLSRC changes (EVT system_ch32v20x.c,
+# "CH32V20x_D8W-PLL configuration: PLLCLK = HSE/4 * n"). USBPRE is left alone:
+# its 11b (HSE / 2 into the PLL, 240 MHz) is the RM's setting for USB and
+# Ethernet at once, which no CPU Clock entry offers yet. The 10M PHY needs the
+# crystal: on HSI the link never came up (2026-11-03, OEP 30eda0e31451 v208).
+V208_HSE_HZ = 32000000
+
+
+def v208_hse_defines(hsi: dict) -> str:
+    """V208's crystal setting for one CPU Clock entry: its HSI PLL word with
+    PLLSRC = HSE and PLLXTPRE = 0 (HSE / 4). An entry without the PLL (8 MHz)
+    has no crystal setting and stays on HSI."""
+    if not hsi["pll_mask"]:
+        return ""
+    mask = hsi["pll_mask"] | (1 << 16) | (1 << 17)
+    value = (hsi["pll_value"] & ~((1 << 16) | (1 << 17))) | (1 << 16)
+    return (f"-DCH32RV_CLOCK_HSE_HZ={V208_HSE_HZ} -DCH32RV_CLOCK_HSE_USE_PLL=1 "
+            f"-DCH32RV_CLOCK_HSE_PLL_MASK={mask:#x}u -DCH32RV_CLOCK_HSE_PLL_VALUE={value:#x}u")
 
 
 def clock_hse_defines(series: str, key: str, hsi: dict, hse: dict, latency: int, fam: dict) -> str:
@@ -689,6 +714,13 @@ def clock_hse_defines(series: str, key: str, hsi: dict, hse: dict, latency: int,
 def clocksrc_menu(board: str, series: str) -> list[str]:
     """Clock Source: the internal oscillator, or the crystal EVT assumes. The
     choice only switches the CPU Clock entry's HSE defines on."""
+    if series == "CH32V208":
+        # The crystal first: Ethernet (and the radio) need it, and every V208
+        # board carries one.
+        return [f"{board}.menu.clocksrc.hse=External crystal 32 MHz (HSE; HSI if it does not start)",
+                f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}",
+                f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI; no Ethernet link)",
+                f"{board}.menu.clocksrc.hsi.build.clock_src_defines="]
     mhz = FAMILY[SERIES_CONFIG[series]["family"]]["hse_hz"] // 1000000
     return [f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI)",
             f"{board}.menu.clocksrc.hsi.build.clock_src_defines=",
@@ -3832,7 +3864,9 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     # value would be referring to itself.
     board_clock = clock_defines(clk, latency)
     lines.append(f"{board}.build.clock_defines={board_clock}")
-    if hse_series(series):
+    if series == "CH32V208":
+        lines.append(f"{board}.build.clock_hse_defines={v208_hse_defines(clk)}")
+    elif hse_series(series):
         # The first CPU Clock entry's, as build.clock_defines is: what a build
         # without the menu (a bare FQBN) gets with clocksrc=hse.
         hse = clock_for(None, menu[0][1] * 1000000, menu[0][2] * 1000000, "HSE")
