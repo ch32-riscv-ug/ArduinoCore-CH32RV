@@ -11,6 +11,9 @@
  * - Reset Pin of the families whose reset input is an option (V00x and M007,
  *   X033/X035, M030, X305/X315): USER [4:3] RST_MODE, X3x5's bit 3 CFGRSTEN.
  *   The reset pin or a GPIO, each series defaulting to its factory value.
+ * - Watchdog: USER bit 0 IWDG_SW. 1 (factory) the independent watchdog starts
+ *   when software starts it (CH32RV.wdtEnable()); 0 it runs from power-on and
+ *   cannot be stopped.
  *
  * crt0 calls these before .data and .bss: no globals here. When the value
  * loaded at reset (FLASH_OBR) is another one, the option bytes are rewritten -
@@ -19,10 +22,10 @@
  * set stops (a loop a debugger can halt): when the option bytes already hold
  * it and the chip still runs another (128 KB + 192 KB on a lot without it),
  * and when the flash is read-protected. A reset pin that cannot be set is
- * left as it is and the sketch runs. */
+ * left as it is and the sketch runs; so is a watchdog. */
 #include <stdint.h>
 
-#if defined(CH32RV_RAMSPLIT_USER) || defined(CH32RV_RSTPIN_USER)
+#if defined(CH32RV_RAMSPLIT_USER) || defined(CH32RV_RSTPIN_USER) || defined(CH32RV_IWDG_USER)
 
 #include "ch32rv_registers.h"
 
@@ -125,6 +128,15 @@ __attribute__((used, noinline)) void ch32rv_rstpin_check(void)
 {
     if (needs(CH32RV_RSTPIN_USER, CH32RV_RSTPIN_MASK) > 0) {
         rewrite(CH32RV_RSTPIN_USER, CH32RV_RSTPIN_MASK);
+    }
+}
+#endif
+
+#if defined(CH32RV_IWDG_USER)
+__attribute__((used, noinline)) void ch32rv_iwdg_check(void)
+{
+    if (needs(CH32RV_IWDG_USER, CH32RV_IWDG_MASK) > 0) {
+        rewrite(CH32RV_IWDG_USER, CH32RV_IWDG_MASK);
     }
 }
 #endif

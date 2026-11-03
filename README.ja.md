@@ -53,6 +53,7 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | Flash / RAM Split (`ramsplit`) | `256k_64k`（工場出荷） | V303 / V305 / V307 / V317 の SRAM 320 KB を、待ちなしの flash の写しと RAM に分ける割合（[support-status.ja.md](docs/support-status.ja.md)）。工場出荷でない値は、起動時にコアがオプションバイトを書き換える |
 | VIO18 Supply (`vio18`) | `hw` | H41x の VIO18 の電圧。`hw` は基板の XO の strap のまま。ほかは起動時にコアが設定する |
 | Reset Pin (`rstpin`) | 系列の出荷時の値 | リセット端子をオプションバイトで決める系列（V002〜V006 は出荷時にリセット、V007・M007・X033・X035・M030・X305・X315 は GPIO）。出荷時の値の項目は何もせず、チップはそのときの設定のまま。もう一方を選ぶと、起動時にコアがオプションバイトを比べ、違えば一度だけ書き換えてリセットする（V003 で 276 B 増える）。ch32rv などで変えても、その項目で作ったスケッチが動くたびに戻る。UIAPduino にはメニューが無い（HID ブートローダーが出荷時のリセット端子を使う） |
+| Watchdog (`iwdg`) | `sw`（工場出荷） | IWDG を、`wdtEnable()` で始める（工場出荷）か、電源投入から動かす（`hw`。起動時にオプションバイトを書き換える。80 B 増える）か。V00x、M007、X03x、X3x5、V30x |
 | Erase Flash (`erase`) | `keep` | 書き込みで消す範囲。Keep Store は `CH32RV_FLASH_STORE` で確保した末尾を残す（ch32rv が退避して書き戻す。V003 の 16 KB で約 0.8 秒、V307 の 96 KB で約 1 秒増える）。All Flash（`chip`）はチップ全体を消す。H41x の DFU では All Flash を選ぶと書き込みが断られる。UIAPduino にはメニューが無い（HID だけで書く） |
 
 printf の系統（`Serial.printf`、`printf`、`sprintf`、`snprintf`）、`Serial.print(float)`、`String(float)` はコアの書式化で動きます。

@@ -170,6 +170,10 @@ ch32rv_loadcode_ram:
 /* The Reset Pin menu (ch32rv_option_user.c): the reset input or a GPIO. */
     call ch32rv_rstpin_check
 #endif
+#ifdef CH32RV_IWDG_USER
+/* The Watchdog menu (ch32rv_option_user.c): started by software or at power-on. */
+    call ch32rv_iwdg_check
+#endif
 
 /* Load .highcode (CH32RV_RAMFUNC) and .data from flash to RAM in one loop:
  * they follow each other alike in both (sections.ld asserts it). */

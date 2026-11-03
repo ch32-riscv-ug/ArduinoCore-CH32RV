@@ -26,6 +26,7 @@ menu.spi3=SPI3
 menu.vio18=VIO18 Supply
 menu.ramsplit=Flash / RAM Split
 menu.rstpin=Reset Pin
+menu.iwdg=Watchdog
 menu.erase=Erase Flash
 
 CH32V003.name=Generic CH32V003
@@ -161,6 +162,11 @@ CH32V003.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as
 CH32V003.menu.rstpin.reset.build.rstpin_defines=
 CH32V003.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V003.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V003.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V003.menu.iwdg.sw.build.iwdg_defines=
+CH32V003.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V003.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32V003.menu.erase.keep=Keep Store (default)
 CH32V003.menu.erase.keep.upload.erase_args=
@@ -341,6 +347,11 @@ CH32V002.menu.rstpin.reset.build.rstpin_defines=
 CH32V002.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V002.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 
+CH32V002.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V002.menu.iwdg.sw.build.iwdg_defines=
+CH32V002.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V002.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32V002.menu.erase.keep=Keep Store (default)
 CH32V002.menu.erase.keep.upload.erase_args=
 CH32V002.menu.erase.chip=All Flash
@@ -493,6 +504,11 @@ CH32V004.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as
 CH32V004.menu.rstpin.reset.build.rstpin_defines=
 CH32V004.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V004.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V004.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V004.menu.iwdg.sw.build.iwdg_defines=
+CH32V004.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V004.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32V004.menu.erase.keep=Keep Store (default)
 CH32V004.menu.erase.keep.upload.erase_args=
@@ -666,6 +682,11 @@ CH32V005.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as
 CH32V005.menu.rstpin.reset.build.rstpin_defines=
 CH32V005.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V005.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32V005.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V005.menu.iwdg.sw.build.iwdg_defines=
+CH32V005.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V005.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32V005.menu.erase.keep=Keep Store (default)
 CH32V005.menu.erase.keep.upload.erase_args=
@@ -908,6 +929,11 @@ CH32V006.menu.rstpin.reset.build.rstpin_defines=
 CH32V006.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V006.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 
+CH32V006.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V006.menu.iwdg.sw.build.iwdg_defines=
+CH32V006.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V006.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32V006.menu.erase.keep=Keep Store (default)
 CH32V006.menu.erase.keep.upload.erase_args=
 CH32V006.menu.erase.chip=All Flash
@@ -1121,6 +1147,11 @@ CH32V007.menu.rstpin.gpio.build.rstpin_defines=
 CH32V007.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32V007.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 
+CH32V007.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V007.menu.iwdg.sw.build.iwdg_defines=
+CH32V007.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V007.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32V007.menu.erase.keep=Keep Store (default)
 CH32V007.menu.erase.keep.upload.erase_args=
 CH32V007.menu.erase.chip=All Flash
@@ -1333,6 +1364,11 @@ CH32M007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32M007.menu.rstpin.gpio.build.rstpin_defines=
 CH32M007.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32M007.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32M007.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32M007.menu.iwdg.sw.build.iwdg_defines=
+CH32M007.menu.iwdg.hw=Running from power-on (set at boot)
+CH32M007.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32M007.menu.erase.keep=Keep Store (default)
 CH32M007.menu.erase.keep.upload.erase_args=
@@ -2207,6 +2243,11 @@ CH32V303.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V303.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V303.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
 
+CH32V303.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V303.menu.iwdg.sw.build.iwdg_defines=
+CH32V303.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V303.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32V303.menu.erase.keep=Keep Store (default)
 CH32V303.menu.erase.keep.upload.erase_args=
 CH32V303.menu.erase.chip=All Flash
@@ -2465,6 +2506,11 @@ CH32V305.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V305.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V305.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
+CH32V305.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V305.menu.iwdg.sw.build.iwdg_defines=
+CH32V305.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V305.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32V305.menu.erase.keep=Keep Store (default)
 CH32V305.menu.erase.keep.upload.erase_args=
 CH32V305.menu.erase.chip=All Flash
@@ -2720,6 +2766,11 @@ CH32V307.menu.ramsplit.128k_192k.build.ramsplit_ld=128k_192k
 CH32V307.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V307.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V307.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
+
+CH32V307.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V307.menu.iwdg.sw.build.iwdg_defines=
+CH32V307.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V307.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32V307.menu.erase.keep=Keep Store (default)
 CH32V307.menu.erase.keep.upload.erase_args=
@@ -2982,6 +3033,11 @@ CH32V317.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V317.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V317.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
 
+CH32V317.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32V317.menu.iwdg.sw.build.iwdg_defines=
+CH32V317.menu.iwdg.hw=Running from power-on (set at boot)
+CH32V317.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32V317.menu.erase.keep=Keep Store (default)
 CH32V317.menu.erase.keep.upload.erase_args=
 CH32V317.menu.erase.chip=All Flash
@@ -3195,6 +3251,11 @@ CH32X033.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32X033.menu.rstpin.gpio.build.rstpin_defines=
 CH32X033.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X033.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32X033.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32X033.menu.iwdg.sw.build.iwdg_defines=
+CH32X033.menu.iwdg.hw=Running from power-on (set at boot)
+CH32X033.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32X033.menu.erase.keep=Keep Store (default)
 CH32X033.menu.erase.keep.upload.erase_args=
@@ -3413,6 +3474,11 @@ CH32X035.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32X035.menu.rstpin.gpio.build.rstpin_defines=
 CH32X035.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X035.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
+
+CH32X035.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32X035.menu.iwdg.sw.build.iwdg_defines=
+CH32X035.menu.iwdg.hw=Running from power-on (set at boot)
+CH32X035.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32X035.menu.erase.keep=Keep Store (default)
 CH32X035.menu.erase.keep.upload.erase_args=
@@ -4863,6 +4929,11 @@ CH32X305.menu.rstpin.gpio.build.rstpin_defines=
 CH32X305.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X305.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x00u -DCH32RV_RSTPIN_MASK=0x08u
 
+CH32X305.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32X305.menu.iwdg.sw.build.iwdg_defines=
+CH32X305.menu.iwdg.hw=Running from power-on (set at boot)
+CH32X305.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
+
 CH32X305.menu.erase.keep=Keep Store (default)
 CH32X305.menu.erase.keep.upload.erase_args=
 CH32X305.menu.erase.chip=All Flash
@@ -5266,6 +5337,11 @@ CH32X315.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as
 CH32X315.menu.rstpin.gpio.build.rstpin_defines=
 CH32X315.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X315.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x00u -DCH32RV_RSTPIN_MASK=0x08u
+
+CH32X315.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
+CH32X315.menu.iwdg.sw.build.iwdg_defines=
+CH32X315.menu.iwdg.hw=Running from power-on (set at boot)
+CH32X315.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32X315.menu.erase.keep=Keep Store (default)
 CH32X315.menu.erase.keep.upload.erase_args=

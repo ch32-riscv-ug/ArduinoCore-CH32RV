@@ -23,6 +23,11 @@ analogReadVref();                        // 内部基準をanalogRead()と同じ
 
 - **`wdtDisable()`はありません**。IWDGは一度動くと止められない石なので、
   止まらない`disable()`を置くくらいなら無いほうが正直です
+- **電源投入から動かすこともできます**。ツール → Watchdog の`Running from power-on`を選ぶと、起動時にコアが
+  オプションバイト(USER の IWDG_SW)を書き換え、IWDGは電源投入から既定の周期(V003で約128 ms)で動きます。
+  `setup()`の早いうちに`wdtEnable()`で周期を決め、`loop()`で`wdtFeed()`を呼んでください。
+  工場出荷の項目は何もせず、チップの設定のままです(戻すときは`ch32rv target option set iwdg=sw --yes`)。
+  メニューがあるのはV00x・M007・X033/X035・X305/X315・V303/V305/V307/V317です
 - **timeoutは近似です**。時計のLSIは仕様上±50%近くばらつきます。
   換算は「実timeoutが頼んだ値より短くなる」側に倒してあります
 - 対応しない部品では`wdtEnable()`が**falseを返します**——
