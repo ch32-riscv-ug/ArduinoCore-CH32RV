@@ -45,6 +45,7 @@
 #include <stdint.h>
 
 #include "CH32RVUsbPd.h"
+#include <CH32RVCallback.h>
 
 /* The current a source advertises through its Rp before any contract. */
 enum class CH32RVUsbPdRpCurrent : uint8_t {
@@ -71,10 +72,10 @@ class CH32RVUsbPdSource {
 public:
     /* on: switch VBUS to vSafe5V (true) or vSafe0V (false). Return true once
      * it is there. */
-    typedef bool (*VbusCallback)(bool on);
+    typedef CH32RVCallback<bool(bool on)> VbusCallback;
     /* Bring the output to `mv` with `ma` available (pps: a PPS contract, the
      * voltage in 20 mV steps). Return true once it is there. */
-    typedef bool (*VoltageCallback)(uint16_t mv, uint16_t ma, bool pps);
+    typedef CH32RVCallback<bool(uint16_t mv, uint16_t ma, bool pps)> VoltageCallback;
 
     void setRpCurrent(CH32RVUsbPdRpCurrent current);
     /* Up to 7 profiles, in the order the sink will see them; the first must
