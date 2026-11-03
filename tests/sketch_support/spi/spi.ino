@@ -1,16 +1,17 @@
-/* SoftSPI contracts (tests/instrumented/softspi): a SoftSPI on the bench's
- * pads as the controller of an OEP probe's spi-target, CS an ordinary GPIO.
- * Console on SerialDMSeq:
+/* SPI contracts (tests/instrumented/spi): the hardware SPI on its default
+ * pins, or a SoftSPI on the bench's pads, as the controller of an OEP probe's
+ * spi-target, CS an ordinary GPIO. Console on SerialDMSeq:
  *
  *   ready <nonce>                      READY <nonce> <build id>
- *   pins <sck> <miso> <mosi> <cs>      PINS <1 opened / 0 refused>
+ *   pins <sck> <miso> <mosi> <cs>      SoftSPI on these: PINS <1 opened / 0 refused>
+ *   hw <cs>                            SPI on its default pins: HW <sck> <miso> <mosi>
  *   xfer <mode> <lsb> <word> <bytes>   CS low; transfer() each byte (hex,
  *                                      two digits each), then transfer16(word,
  *                                      hex); CS high:
  *                                      XFER <bytes read, hex> <word read, hex> */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
-#include <SoftSPI.h>
+#include <SPI.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,7 +19,8 @@
 #error BENCH_BUILD_ID must identify this compilation
 #endif
 
-static SoftSPI bus(CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN);
+static SoftSPI soft(CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN);
+static SPIClass *bus = &soft;
 static int cs = -1;
 
 static void hex(uint32_t v, uint8_t digits)
@@ -37,16 +39,16 @@ static void xfer(uint8_t mode, bool lsb, uint16_t word, const char *bytes)
         out[n++] = (uint8_t)strtoul(pair, nullptr, 16);
         bytes += 2;
     }
-    bus.beginTransaction(SPISettings(1000000, lsb ? LSBFIRST : MSBFIRST, mode));
+    bus->beginTransaction(SPISettings(1000000, lsb ? LSBFIRST : MSBFIRST, mode));
     digitalWrite(cs, LOW);
     delayMicroseconds(50);             /* the probe's CS set-up */
     for (size_t i = 0; i < n; i++) {
-        out[i] = bus.transfer(out[i]);
+        out[i] = bus->transfer(out[i]);
     }
-    const uint16_t in = bus.transfer16(word);
+    const uint16_t in = bus->transfer16(word);
     delayMicroseconds(10);
     digitalWrite(cs, HIGH);
-    bus.endTransaction();
+    bus->endTransaction();
     SerialDMSeq.print("XFER ");
     for (size_t i = 0; i < n; i++) {
         hex(out[i], 2);
@@ -91,7 +93,20 @@ void loop()
             pinMode(cs, OUTPUT);
             digitalWrite(cs, HIGH);
             SerialDMSeq.print("PINS ");
-            SerialDMSeq.println(bus.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
+            SerialDMSeq.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
+        } else if (strncmp(line, "hw ", 3) == 0) {
+            p += 3;
+            cs = (int)strtol(p, &p, 10);
+            pinMode(cs, OUTPUT);
+            digitalWrite(cs, HIGH);
+            SPI.begin();
+            bus = &SPI;
+            SerialDMSeq.print("HW ");
+            SerialDMSeq.print(PIN_SPI_SCK);
+            SerialDMSeq.print(' ');
+            SerialDMSeq.print(PIN_SPI_MISO);
+            SerialDMSeq.print(' ');
+            SerialDMSeq.println(PIN_SPI_MOSI);
         } else if (strncmp(line, "xfer ", 5) == 0) {
             p += 5;
             const unsigned long mode = strtoul(p, &p, 10);

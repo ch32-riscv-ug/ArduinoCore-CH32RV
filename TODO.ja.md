@@ -187,7 +187,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   試験は `--case pd`）。M030 の USBPD1 は未対応。
 - PWM の remap 先と CHxN。TIM8〜10 の PWM は 2026-10-22 に入れた（V30x・V4x7・H41x、TIM1〜5 の端子は奪わない、ビルドのみ。`--case logic` の `logic_pin` でその端子を指定して確かめられる）。
 - [ ] WWDG、GPIO 以外の EXTI（peripheral-plan の B）。
-- [ ] SPI のスレーブ（CH32RVSPISlave）の残り: ハードウェアのマスターでの上限のクロック、V407（PA7 が RMII と重なる可能性）・H417 の実機、SPI マスターの LSBFIRST が V003 / X035 で正しいか。
+- [ ] SPI のスレーブ（CH32RVSPISlave）の残り: ハードウェアのマスターでの上限のクロック、V407（PA7 が RMII と重なる可能性）・H417 の実機、SPI マスターの LSBFIRST が V003 で正しいか（X035 は 2026-11-03 に case spi で、モード 0〜3 と LSBFIRST の transfer16() まで線で確かめた）。
 - [ ] ADC の連続取得（CH32RVAdcStream）を一番遅い段より遅い一定のレートで（タイマーのトリガ。系列ごとの EXTSEL の対応が device-data に無い）。
   - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では

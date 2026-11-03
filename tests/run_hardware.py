@@ -33,7 +33,8 @@ MODULES = {
     "flash": TESTS / "instrumented/flash/test_flash_contract.py",
     "wire": TESTS / "instrumented/wire/test_wire_contract.py",
     "softwire": TESTS / "instrumented/wire/test_wire_contract.py",
-    "softspi": TESTS / "instrumented/softspi/test_softspi_contract.py",
+    "softspi": TESTS / "instrumented/spi/test_spi_contract.py",
+    "spi": TESTS / "instrumented/spi/test_spi_contract.py",
     "usb-peer": TESTS / "peer/usb/device/test_usb_peer_device.py",
     "usb-peer-classes": TESTS / "peer/usb/device/test_usb_peer_classes.py",
     "usb-peer-media": TESTS / "peer/usb/device/test_usb_peer_media.py",
@@ -53,7 +54,8 @@ SKETCHES = {
     "flash": TESTS / "sketch_support/flash/flash.ino",
     "wire": TESTS / "sketch_support/wire/wire.ino",
     "softwire": TESTS / "sketch_support/wire/wire.ino",
-    "softspi": TESTS / "sketch_support/softspi/softspi.ino",
+    "softspi": TESTS / "sketch_support/spi/spi.ino",
+    "spi": TESTS / "sketch_support/spi/spi.ino",
     "usb-peer": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-peer-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-peer-media": TESTS / "sketch_support/usb_media/usb_media.ino",
@@ -174,6 +176,8 @@ def stage_case(work, name, case, target):
         settings["soft_wire"] = target["soft_wire"]
     if case == "softspi":
         settings["soft_spi"] = target["soft_spi"]
+    if case == "spi":
+        settings["spi_cs"] = target["spi_cs"]
     (directory / "case.json").write_text(json.dumps(settings, indent=2))
     if case != "power":
         sketch = SKETCHES.get(case, TESTS / "sketch_support/core_contracts/core_contracts.ino")
