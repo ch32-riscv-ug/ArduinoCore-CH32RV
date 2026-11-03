@@ -7,8 +7,10 @@
  * the MAC's MIREGADR / MIRD / MIWR.
  *
  * The PHY wants a 60 MHz clock from HCLK / 1 or / 2 (RCC CFGR0 ETHPRE), so
- * HCLK must be 60 or 120 MHz; the core runs these parts at 96 MHz, and
- * begin() fails there. Built, not yet run on a board. */
+ * HCLK must be 60 or 120 MHz: CPU Clock 60MHz (the default 96 MHz makes
+ * begin() fail). 10BASE-T asks for +-100 ppm, which is the crystal's (Clock
+ * Source HSE, the V208's default); HSI linked as well against the bench's
+ * 10/100 partner, out of the spec. */
 #include "NetworkEthernet.h"
 
 #if NETWORK_ETHERNET_10M
@@ -99,7 +101,7 @@ static volatile uint32_t rxErrors;
 static uint8_t phyPN = 0x01, sucCnt, linkCnt, retryCnt, pnChangeCnt, linkStatus;
 static bool phyLinked, phyLinkReset;
 static uint32_t phyTime, taskAt;
-static uint16_t lastBsr = 0xFFFF;
+static uint16_t lastBsr;              /* BSR_LINK as last handed to phyLink() */
 
 NetworkEthernet ETH;
 
@@ -216,6 +218,10 @@ bool NetworkEthernet::begin(bool makeDefault)
     MAMXFL = BUF;
     ECON2 = (uint8_t)((ECON2 & ~(0x07u << 1)) | (5u << 1));
     EXTEN_CTR |= EXTEN_ETH10M;
+    /* Negotiate afresh: after end() the PHY's registers keep the old link
+     * (BSR said link 111 ms into a begin() 1.2 s after end(), with the partner
+     * long gone), and the EVT's own restart after its clock stop resets too. */
+    phyWrite(PHY_BCR, BCR_RESET);
 
     for (uint8_t i = 0; i < RX_N; i++) {
         rxLen[i] = 0;
@@ -228,7 +234,7 @@ bool NetworkEthernet::begin(bool makeDefault)
     phyPN = 0x01;
     phyLinkReset = false;
     negotiationInit();
-    lastBsr = 0xFFFF;
+    lastBsr = 0;
     phyTime = taskAt = millis();
     _linked = false;
     _speed = 0;
@@ -378,12 +384,18 @@ void NetworkEthernet::poll()
             phyLinkReset = false;
             EXTEN_CTR |= EXTEN_ETH10M;
             phyWrite(PHY_BCR, BCR_RESET);
+            _phyResets++;
             negotiationInit();
         }
         return;
     }
+    /* The EVT runs ETH_PHYLink() on LINKIF only; a lost interrupt is the
+     * link bit changing. Not on any BSR change: negotiation sets ANEG_DONE
+     * about 230 ms before LINK (measured on V208 against a 10/100 partner),
+     * and phyLink() takes that for a link down, stopping the PHY's clock for
+     * 500 ms and starting over - the link never came up. */
     const uint16_t bsr = phyRead(PHY_BSR);
-    if (linkEvent || bsr != lastBsr) {
+    if (linkEvent || ((bsr ^ lastBsr) & BSR_LINK)) {
         linkEvent = false;
         lastBsr = bsr;
         bool up;

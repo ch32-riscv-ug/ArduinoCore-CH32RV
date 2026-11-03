@@ -57,7 +57,7 @@
 5. PC の tap での試験を、テストの仕組み(tests/)に入れる。**済み**(`tests/unit/network`)
 6. 系列ごとの `lwipopts.h` と、クロスビルドでの大きさの確認。**済み**(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)
 7. USB の NCM(デバイス)のつなぎ込み。**済み**(案 B: `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出し、中身は Network ライブラリの `NetworkUsbNcm`。PC と X035 の生フレームの試験まで。対象の系列の USB デバイスのドライバ待ち)
-8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。**H417 は済み**(2026-10-22、下の「Ethernet(H417)」)。V407 / V467、V307、V317、V208 / V203RB はビルドまで(実機は未。下の「ほかの系列」)。
+8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。**H417 は済み**(2026-10-22、下の「Ethernet(H417)」)。V307、V407 と V208(2026-11-03)も実機で通った。V467、V317、V203RB はビルドまで(下の「ほかの系列」)。
 9. 段 3 以降。mDNS と SNTP は**済み**(lwIP の apps。PC で試験)。
    - HTTP サーバー、MQTT / HTTP のクライアントは、**自前では作らず、Arduino で広く使われている既存のライブラリを使ってもらう**ことにしました(2026-10-21)。
    - 次のライブラリが、手を入れずに `NetworkClient` / `NetworkClientSecure` / `NetworkServer` の上で動くことを、PC 上で確かめました。
@@ -86,7 +86,7 @@
 - **アドレスの絞り込み:** 自分の MAC、ブロードキャスト、全マルチキャスト(mDNS のため)。
 - **対象:** H417(ETH は QEU6、MEU6、WEU6 にある)。ほかの系列は下の「ほかの系列」。
 
-### ほかの系列(2026-10-22、ビルドまで。実機では試していない)
+### ほかの系列(2026-10-22 に EVT から移した。V307・V407・V208 は後で実機を通した)
 
 各系列の EVT の NetLib から移しました。H417 と同じ Synopsys の MAC の系列は `NetworkEthernet.cpp`、別の MAC の V208 / V203RB は `NetworkEthernet10m.cpp` です。
 
@@ -95,7 +95,7 @@
 | V407 / V467 | 内蔵 10/100(H417 と同じ) | HSE 25 MHz → ETH の PLL(CTLR の bit 22/23)、MAC のクロックは 0x40021014 の bit 14 | なし(V407 の EVT にない) | コアの HCLK は 20 MHz。MDC は /16。100M で DMA が間に合うかは未確認 |
 | V307 | 内蔵 10BASE-T | HSE → PLL3 をちょうど 60 MHz(PREDIV2 と PLL3MUL を HSE から計算)、EXTEN の bit 2 | T/R と P/N の切り替え、5 秒でリセット、リンクが落ちたら PHY のクロックを 500 ms 止める、リンクのあと CRC エラーで極性を反転 | チップのリビジョン 0x20 の MAC の作り直しは移していない。HTTPS は Flash / RAM Split で 192 KB + 128 KB にすると通る(2026-10-29。ECDSA 2.58 s、RSA 1.70 s)。出荷時の 64 KB ではヒープが入らない(試験は記録して飛ばす)。96 KB では本文の復号が MAC エラーになる(ヒープがスタックの予約 512 B の下まで伸び、暗号のスタックと重なると見ている) |
 | V317 | 内蔵 10/100(内部の RMII) | HSE → PLL3 を 100 MHz、RMII の端子(PD8、PE8〜PE15)と AFIO の RMII 選択 | P/N(0x10 の bit 12、0x16 の bit 5)、リンクを早める手順、100M のリンクの確認 | RAM は V307 と同じ |
-| V208 / V203RB | 内蔵 10BASE-T(別の MAC) | HCLK を 1/1 か 1/2 で 60 MHz(CFGR0 の ETHPRE) | T/R と P/N の切り替え、リンクが落ちたら 500 ms、CRC エラーで極性を反転 | **HCLK が 60 / 120 MHz のときだけ動く。CPU Clock で `60MHz (Ethernet, no USB)` を選ぶ**(既定の 96 MHz では `begin()` が false。60 MHz では USB の 48 MHz が作れない)。受信は割り込みで 4 つのバッファーを回す。チェックサムの機能も、アドレスの絞り込みもない(全部受けて lwIP が捨てる)。TLS は乱数の回路がないので無い |
+| V208 / V203RB | 内蔵 10BASE-T(別の MAC) | HCLK を 1/1 か 1/2 で 60 MHz(CFGR0 の ETHPRE) | T/R と P/N の切り替え、リンクが落ちたら 500 ms、CRC エラーで極性を反転 | **HCLK が 60 / 120 MHz のときだけ動く。CPU Clock で `60MHz (Ethernet, no USB)` を選ぶ**(既定の 96 MHz では `begin()` が false。60 MHz では USB の 48 MHz が作れない)。受信は割り込みで 4 つのバッファーを回す。チェックサムの機能も、アドレスの絞り込みもない(全部受けて lwIP が捨てる)。TLS は乱数の回路がないので無い。**V208 の実機(2026-11-03、OEP 30eda0e31451)**: eth の試験が通る(DHCP、ICMP、UDP / TCP のエコー、TCP 受信 9.3 Mbit/s・送信 8.1 Mbit/s、HTTP 200 KB 455 ms)。Clock Source は HSE(32 MHz、V208 の既定)でも HSI でも通った(10BASE-T の ±100 ppm を満たすのは水晶だけなので既定は HSE)。最初はリンクが上がらなかった: リンクの判定を BSR のどのビットが変わっても呼んでいたため、ネゴシエーションの完了(BSR の bit 5、リンクの約 230 ms 前に立つ)をリンク断と取り、PHY のクロックを 500 ms 止めてやり直し続けていた。EVT と同じく LINKIF(と、取りこぼし用にリンクのビットの変化)だけで判定するように直した。PHY のリセットでリンクを落とすと 2〜3 秒で戻る。32 MiB の受信、16 MiB の送信、TCP のエコー 2000 回、UDP のエコー 5000 個で、誤りも落ちも無し。PHY の内部ループバックも 10/10。`end()` と `begin()` の 6 回の繰り返しで毎回アドレスが戻る(リンク 0.7〜2.6 秒、その約 120 ms 後にアドレス)。そのために `begin()` で PHY をリセットする(`end()` で PHY のクロックを止めてもレジスタが古いリンクを持ったまま)。また `netifStop()` がリンクの状態を残していて、`begin()` し直すとリンクが無くても `linkUp()` が true だった(全系列。`tests/unit/network` の relink で確かめる)。CPU Clock 96 MHz では `begin()` が false。USB はベンチの暫定配線では PC につながっていない |
 
 - HSE の周波数は `ETH.setHseFrequency()` で変えられます(V307 / V317。既定 8 MHz)。60 / 100 MHz がちょうど作れない値なら、`begin()` は false を返します。
 - 試験(`--case eth`)は、どの系列でもそのまま使えます。V208 / V203RB では HTTPS の段を飛ばし、V307 / V317 で HTTPS のヒープが足りないときは、記録して飛ばします。

@@ -2023,7 +2023,7 @@ CH32V208.menu.clock.8.build.clock_defines=-DCH32RV_FLASH_LATENCY=0 -DCH32RV_CLOC
 CH32V208.menu.clock.8.build.clock_hse_defines=
 CH32V208.menu.clocksrc.hse=External crystal 32 MHz (HSE; HSI if it does not start)
 CH32V208.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
-CH32V208.menu.clocksrc.hsi=Internal oscillator (HSI; no Ethernet link)
+CH32V208.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32V208.menu.clocksrc.hsi.build.clock_src_defines=
 
 CH32V208.menu.opt.oslto=Smallest (-Os) with LTO (default)

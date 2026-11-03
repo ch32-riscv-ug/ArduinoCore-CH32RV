@@ -678,8 +678,9 @@ def hse_series(series: str) -> bool:
 # PLLMUL gives the same SYSCLK, and only PLLSRC changes (EVT system_ch32v20x.c,
 # "CH32V20x_D8W-PLL configuration: PLLCLK = HSE/4 * n"). USBPRE is left alone:
 # its 11b (HSE / 2 into the PLL, 240 MHz) is the RM's setting for USB and
-# Ethernet at once, which no CPU Clock entry offers yet. The 10M PHY needs the
-# crystal: on HSI the link never came up (2026-11-03, OEP 30eda0e31451 v208).
+# Ethernet at once, which no CPU Clock entry offers yet. 10BASE-T asks for
+# +-100 ppm, which only the crystal gives; HSI linked too against the bench's
+# 10/100 partner (2026-11-03, OEP 30eda0e31451 v208), but out of the spec.
 V208_HSE_HZ = 32000000
 
 
@@ -715,11 +716,11 @@ def clocksrc_menu(board: str, series: str) -> list[str]:
     """Clock Source: the internal oscillator, or the crystal EVT assumes. The
     choice only switches the CPU Clock entry's HSE defines on."""
     if series == "CH32V208":
-        # The crystal first: Ethernet (and the radio) need it, and every V208
-        # board carries one.
+        # The crystal first: Ethernet's +-100 ppm (and the radio) want it, and
+        # every V208 board carries one.
         return [f"{board}.menu.clocksrc.hse=External crystal 32 MHz (HSE; HSI if it does not start)",
                 f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}",
-                f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI; no Ethernet link)",
+                f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI)",
                 f"{board}.menu.clocksrc.hsi.build.clock_src_defines="]
     mhz = FAMILY[SERIES_CONFIG[series]["family"]]["hse_hz"] // 1000000
     return [f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI)",

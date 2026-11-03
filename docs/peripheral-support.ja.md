@@ -96,7 +96,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | H415/H416/H417 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | CAN | 対象外 | - |  |  |  | − | − | − | − | − |  |  |  | − |  |
-| Ethernet | 一部実装 | `ETH`(Network library) |  |  |  | ◐ |  | ◐ | ◐ |  |  |  |  | ◐ | H417の内蔵MAC+10/100 PHY(`NetworkEthernet.h`)。DHCP〜HTTPSまで実機確認(TCP 20/24 Mbit/s、docs/network-stack.ja.md)。H415/H416はETHが無い。V407/V467・V307・V317・V208/V203RBはEVTから移してビルドのみ(V208/V203RBはHCLK 60/120 MHzが要り、今の96 MHzでは`begin()`がfalse) |
+| Ethernet | 一部実装 | `ETH`(Network library) |  |  |  | ◐ |  | ◐ | ◐ |  |  |  |  | ◐ | H417の内蔵MAC+10/100 PHY(`NetworkEthernet.h`)。DHCP〜HTTPSまで実機確認(TCP 20/24 Mbit/s、docs/network-stack.ja.md)。H415/H416はETHが無い。V307・V407・V208も実機で通る(V208は2026-11-03、TCP 9.3/8.1 Mbit/s、TLSは無し)。V467・V317・V203RBはEVTから移してビルドのみ(V208/V203RBはHCLK 60/120 MHzが要り、CPU Clock `60MHz`を選ぶ。既定の96 MHzでは`begin()`がfalse) |
 | I2S | 対象外 | - |  |  |  |  |  | − | − |  |  |  |  | − |  |
 | SDIO | 対象外 | - |  |  |  |  |  | − | − |  |  |  |  | − | `SD`libraryの下地にはなる |
 | FSMC/FMC | 対象外 | - |  |  |  |  | − | − | − |  |  |  |  | − | H417のFMCはSDRAMも扱う |
