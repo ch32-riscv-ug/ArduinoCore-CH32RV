@@ -379,6 +379,9 @@ void NetworkInterface::netifStop()
     netif_remove(_netif);
     delete _netif;
     _netif = nullptr;
+    /* The driver says again after the next netifStart(); until then there is
+     * no link to report (a begin() after end() said linkUp() at once). */
+    _link = false;
 }
 
 void NetworkInterface::frameReceived(const uint8_t *frame, size_t length)

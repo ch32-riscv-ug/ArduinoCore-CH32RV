@@ -96,7 +96,7 @@ TLS_CASES = ["tls_ecdsa_ca", "tls_ecdsa_bundle", "tls_rsa_bundle", "tls_rsa_tls1
 
 
 def test_static_address(sketch):
-    check(drive(sketch, "static"), ALL + TLS_CASES)
+    check(drive(sketch, "static"), ALL + TLS_CASES + ["relink"])
 
 
 def test_dhcp_client(sketch):

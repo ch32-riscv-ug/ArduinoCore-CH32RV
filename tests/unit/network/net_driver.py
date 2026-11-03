@@ -571,6 +571,14 @@ if ip_line:
     run("mdns_host", mdns_host, 30)
     run("mdns_service", mdns_service, 30)
 
+if ip_line and MODE != "ncm":
+    def relink():
+        u, reply = command("R", 10, 3 if LOSSY else 1)
+        u.close()
+        after = udp_echo() if reply else {"ok": False}
+        return {"ok": reply == "RELINK OK" and after.get("ok", False), "reply": reply, "udp_echo_after": after.get("ok")}
+    run("relink", relink, 300)
+
 results["alive"] = sketch.poll() is None
 shutil.rmtree(PKI, ignore_errors=True)
 sketch.terminate()

@@ -14,6 +14,8 @@
  *   running while it waits), answers it upper-cased, and closes
  *   UDP 9999: "C <port>" connects back and sends 256 KiB of PATTERN -> "CDONE 262144" / "CFAIL"
  *             "D <name>" -> "DNS a.b.c.d" / "DNSFAIL"
+ *             "R" (tap) the netif stopped and started again, as a driver's end() / begin(): "RELINK OK"
+ *                 when linkUp() was false until the link was reported, "RELINK EARLY" when not
  *             "L <address>" one NetworkUDP sends "loop" to another's port 4000 at <address> (127.0.0.1, or
  *                 the interface's own address) -> "LOOP OK" / "LOOP FAIL"
  *             "T <server>" -> configTime(9 h, 0, server) -> "TIME STARTED"; the SNTP client's
@@ -300,6 +302,8 @@ static void serveCommands()
         at.stop();
         from.stop();
         reply(ok ? "LOOP OK" : "LOOP FAIL");
+    } else if (line[0] == 'R' && ifc == &tap) {
+        reply(tap.restart() ? "RELINK EARLY" : "RELINK OK");
     } else if (line[0] == 'D') {
         IPAddress ip;
         char text[40];
