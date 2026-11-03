@@ -27,7 +27,7 @@ device-data の漏れ（PIOC、H417 の HSEM / IPC、V103 の USB）と疑わし
 |---|---|---|---|
 | PWR（スリープ・ストップ・スタンバイと起床。AWU を含む） | 12 | 電池で動かす用途の基本。ESP32 の `esp_sleep_*` に合わせられる。起床の手段（EXTI・RTC のアラーム・LPTIM・AWU）とまとめて設計する | コア（ESP32 に合わせた API） |
 | RTC（BKP を含む） | 8 | リセットをまたいで時刻を保つ、アラームで起こす。今の `settimeofday()` / `time()` と同じ時計につなぐ | コア |
-| フラッシュの永続化（EEPROM / Preferences） | 12 | 設定の保存は定番の需要。設計は docs/persistence-spec.ja.md で進行中 | コア・ライブラリ |
+| フラッシュの永続化（EEPROM / Preferences） | 12 | 設定の保存は定番の需要。`ch32rv_flash.h` で実装済み（docs/flash-store.ja.md）。EEPROM / Preferences の形は用意しない | コア・ライブラリ |
 | タイマーの入力捕捉とエンコーダ | 12 | 周波数・パルス幅の測定、ロータリーエンコーダ。今は `pulseIn()` がソフトで数えるだけ | ライブラリ |
 | HSE（外付けの水晶） | 12 | 正確なクロック（UART・USB・時刻）。USBHS（V30x）はライブラリが自分で使っているだけで、CPU Clock では選べない | コア（CPU Clock のメニュー） |
 | TouchKey | 7 | ESP32 の `touchRead()` に合わせられる。ボタンを部品なしで作れる | コア（`touchRead()`） |

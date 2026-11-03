@@ -5,10 +5,10 @@
 [未実装の周辺の洗い直し](peripheral-plan.ja.md)の A(優先して実装する)の 6 項目を、ばらばらに作らずに、項目をまたいで共有する仕組みから先に決めるための文書。周辺の表には出ないが、同じ仕組みを使う機能(ソフトのタイマー、時刻源、`delay()` の待ち方など)も含める。
 
 従う決定(ここでは変えない):
-- 全体構成の決定 [ARCH-SELECT-01 decision](../planning/core-redesign/tasks/ARCH-SELECT-01/decision.ja.md) の D-1〜D-5。
+- 全体構成の決定 [ADR-0016](adr/0016-execution-model.ja.md)。
 - [スケッチの組み立て方](sketch-guide.ja.md)の 3 つの規則(割り込みは合図だけ、待たない、自分の関数は自分が呼んだ場所で動く)。
 - [Timer resource の契約](timer-design.ja.md)(TIM はリースで借りる)。
-- 永続化は [永続化の仕様案](persistence-spec.ja.md)(下書き)を正本にし、ここでは他の項目との接点だけを書く。
+- 永続化は [flash-store.ja.md](flash-store.ja.md) を正本にし、ここでは他の項目との接点だけを書く。
 
 ## 1. 対象
 
@@ -128,7 +128,7 @@
 | ADC | 規則なし(AdcStream の動作中は「`analogRead()` を使わないこと」と書いてあるだけ) | TIM と同じリースにする。`analogRead()` と `touchRead()` は短く借りて返す。AdcStream は持ち続ける。借りられなければ `analogRead()` は 0 など、決まった値を返す |
 | EXTI の線 | `attachInterrupt()` と SPI スレーブの CS が使う | 1 本に 1 つの持ち主。端子での起床も、同じ線を使う。GPIO 以外の線(RTC のアラーム、PVD、USB の起床)はコアが持つ |
 | RTC と BKP | 無い | コアが持つ(`time()` の元)。BKP の一部を、コアの印(RTC を合わせたか)に使う。残りを利用者に出すかは相談 |
-| フラッシュ | H417 の DFU が使う | 永続化の領域はリンカーで確保する(persistence-spec) |
+| フラッシュ | H417 の DFU が使う | 永続化の領域はリンカーで確保する(flash-store) |
 | 休止をまたぐ RAM | 無い | ESP32 の `RTC_DATA_ATTR` に当たる印を、ハードが RAM を残せる系列(V30x、L103。V20x は要確認)だけで出すかは相談 |
 
 ### 4.5 止まる場面での、各機能の振る舞い
@@ -196,7 +196,7 @@ E1・E3 の結果(2026-10-28。V003 と X035 は AWU、V307 は RTC のアラー
 
 ### 5.3 永続化
 
-persistence-spec の 3 層(raw、領域、EEPROM)と、その「決めてほしいこと」6 つのとおり。ほかの項目との接点は 2 つ。
+`ch32rv_flash.h`（raw と領域の確保、[flash-store.ja.md](flash-store.ja.md)）として実装した。ほかの項目との接点は 2 つ。
 - CPU が止まる系列での、`millis()` と通信への影響(4.2、4.5)。
 - 休止の参加者にはならない。書き込みは呼び出しの中で終わるため。
 
@@ -272,7 +272,7 @@ E5 の結果(2026-10-28、ベンチの基板。HSEON から HSERDY までと、S
 3. **HSE。** 休止からの復帰が、クロックの構成に依存するため、休止より先に作る。
 4. **休止と時計。** 一緒に作る。
 5. **TouchKey。** ADC のリースに依存する。
-6. **永続化。** persistence-spec の 6 問への答えが出てから。フラッシュの書き込み中の `millis()` の実験は、4 と共有する。
+6. **永続化。** 実装した（`ch32rv_flash.h`）。
 
 ## 7. 仕様を分ける実験
 

@@ -2,8 +2,6 @@
 
 決まったことは ADR や各文書に移し、ここからは消します。
 
-全体の作業順、成果物、判断条件とモデル間の引き継ぎは
-[コア全体再設計計画](CORE_REDESIGN_PLAN.ja.md) を正本とします。
 この TODO は個別の検討事項と予備調査を保持します。
 
 クラス・主要動作モードの追加候補と、現行で対象外の機能の採否検討は
@@ -12,22 +10,20 @@
 
 ## テスト計画
 
-2026-10-24 の検討は [tests/test-plan-review-2026-10-24.ja.md](tests/test-plan-review-2026-10-24.ja.md) に移した。引き継いだ案は
-[tests/TEST_DESIGN.ja.md](tests/TEST_DESIGN.ja.md)（採否は未定）と [tests/BENCH.ja.md](tests/BENCH.ja.md)。移行の順番は TEST_DESIGN の 9 章。
+案は [tests/TEST_DESIGN.ja.md](tests/TEST_DESIGN.ja.md)（採否は未定）と [tests/BENCH.ja.md](tests/BENCH.ja.md)。移行の順番は TEST_DESIGN の 9 章。
 
 - [ ] **TST-01 現状の照合**: 計画・coverage・library 実装・runner・実行 artifact の不整合を一覧化する。
   各契約を再利用/作り直し/対象外候補に分け、理由を書く。文書上の実機確認と今回の未測定を混同しない。
   2026-10-29: test-coverage の「sleep/RTC API 未実装」「CDC/HID 等の sketch USB class 未実装」を直した。
-- [ ] **TST-05 機材台帳と配線**、**TST-06 初回測定**（実機が要る）: 内容は移した記録の「次の検討TODO」。
+- [ ] **TST-05 機材台帳と配線**、**TST-06 初回測定**（実機が要る）。
 
 ## コアの再設計と実行モデル
 
-実行モデルは [ADR-0016](docs/adr/0016-execution-model.ja.md) で決まった。作業計画は [CORE_REDESIGN_PLAN.ja.md](CORE_REDESIGN_PLAN.ja.md)。
-TODO にあった理想像・用途調査・実行基盤の比較材料は [planning/core-redesign/todo-carried.ja.md](planning/core-redesign/todo-carried.ja.md) に移した。
+実行モデルは [ADR-0016](docs/adr/0016-execution-model.ja.md) で決まった。
 
 - [ ] H417 の 2 コア（V5F）をどう使うか（一方だけ、役割固定、コアごとのイベントループなど）。測定は docs/h417-multicore.ja.md、設計はまだ。
-- [ ] イベントの payload の持ち方（コピー・借用・所有の移転・共有 pool）と、複数の購読者への配達で誰が解放するか。移した記録の「イベントのデータ・順序・配送保証」。
-- [ ] 代表ユースケース「X035 の USB PD シンクと PPS の操作画面」（移した記録）。PD の充電器・画面・ボタンが要る。
+- [ ] イベントの payload の持ち方（コピー・借用・所有の移転・共有 pool）と、複数の購読者への配達で誰が解放するか。
+- [ ] 代表ユースケース「X035 の USB PD シンクと PPS の操作画面」。PD の充電器・画面・ボタンが要る。
 
 ## 永続化
 

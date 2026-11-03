@@ -119,7 +119,6 @@ DFU Runtime による工場 ISP への移行は、DFU download や自己更新�
 
 USB Device の Audio／Video クラスは既存。実際の音源・マイク・カメラとの接続には、
 I2S、ADC、DAC、DVP 等の別機能が必要になる。
-USB SS の既存検討は [usb-superspeed-design.ja.md](docs/usb-superspeed-design.ja.md) を参照する。
 
 ## 現行対応表で対象外の専用周辺機能
 
