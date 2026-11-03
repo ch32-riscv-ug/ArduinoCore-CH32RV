@@ -745,7 +745,7 @@ VERSION_REL = f"{INDEX_DIR}/VERSION"
 # before any change that can break a consumer (index/README.md), so another
 # value stops the run instead of regenerating from tables whose meaning moved -
 # the way ch32rv's db-gen refuses anything but its INDEX_VERSION.
-SUPPORTED_INDEX_VERSION = "2"
+SUPPORTED_INDEX_VERSION = "1"
 
 
 def check_index_version(tables: pathlib.Path) -> None:
