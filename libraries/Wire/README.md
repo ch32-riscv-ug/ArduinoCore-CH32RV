@@ -57,6 +57,10 @@ old pads to inputs.
   what I2C needs, but there are no internal pull-ups strong enough. Fit 4.7k to
   3V3 on each line unless the module already has them. Without them every
   transfer times out.
+- **Some X035s have no I2C.** A CH32X035 / X033 whose lot number has 0 as its
+  5th-from-last digit has no I2C (nor ADC channels 3, 7, 11 and 15), as its
+  datasheet says. On such a part an enabled I2C keeps SDA high, no target can
+  ACK, and `endTransmission()` returns 2 (address NACK).
 - **Every wait is bounded.** `CH32RV_WIRE_TIMEOUT_US` (25 ms by default) caps
   each step, so a stuck bus returns an error instead of hanging the sketch.
   `endTransmission()` returns 5 for a timeout, 2 for an address NACK, 3 for a

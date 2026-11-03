@@ -254,9 +254,11 @@ uint32_t ch32rv_adc_vdd_millivolts(void)
     const uint32_t full = (1u << CH32RV_ADC_BITS) - 1u;
     const uint32_t mv = (CH32RV_ADC_VREFINT_MV * full + raw / 2u) / raw;
     /* No CH32 runs above 5.5 V: a reference that reads lower than that allows
-     * is not one, and the answer is "unknown" rather than 245 V. Measured on a
-     * CH32X035C8T6, whose ADC_IN15 reads 4-15 (pads convert normally there;
-     * an X035F8U6 gave 3.2-3.4 V in October). */
+     * is not one, and the answer is "unknown" rather than 245 V. An X035 whose
+     * lot number has 0 as its 5th-from-last digit has no ADC channels 3, 7,
+     * 11 and 15 and no I2C (datasheet; device-data errata
+     * x035-adc-ch-i2c-unavailable): its IN15 reads garbage. An X035F8U6 of
+     * another lot gave 3.2-3.4 V in October. */
     return mv > 6000u ? 0u : mv;
 #else
     return 0;
