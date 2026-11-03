@@ -48,7 +48,7 @@
 | ボード | 結果 |
 |---|---|
 | V003、V006、V103、V205、V307、V407、L103、X315、H417 | I2C・SPI・USART のどのインスタンスにも、空いた route がある |
-| X035C8T6（OEP 30eda0e31108 の口 x035） | SPI・USART は空いた route がある。**I2C と ADC の ch3 / 7 / 11 / 15 は使えない個体**（ロット番号の後ろから 5 桁目が 0。データシートと device-data の errata `x035-adc-ch-i2c-unavailable`）。I2C1 を有効にすると SDA を high に駆動し、相手が ACK できない（2026-11-03、oep が線で確認）。case wire と、ADC の IN3 / IN15 を使う試験は、この個体では流せない |
+| X035C8T6（OEP 30eda0e31108 の口 x035） | SPI・USART は空いた route がある。**I2C と ADC の ch3 / 7 / 11 / 15 は使えない個体**（ロット番号の後ろから 5 桁目が 0。データシートと device-data の errata `x035-adc-ch-i2c-unavailable`）。I2C1 を有効にすると SDA を high に駆動し、相手が ACK できない。ADC の壊れたチャネルは 1 つ前のチャネルと同じ値を返す（IN3 は IN2 の、IN7 は IN6 の値。IN2 / IN5 / IN6 は正しく、3.3 V で約 4040、0 V で約 12）。IN15（VREFINT）も壊れている（2026-11-03、oep が線と ADC で確認）。case wire と、ADC の IN3 / IN7 / IN15 を使う試験は、この個体では流せない |
 | X035F8U6（WeAct） | **I2C は試せない**。route が USB（PC16 / 17）か、2 線のデバッグ（PC18 / 19）にしか無い。USART1 は無く、USART3 はデバッグとぶつかる。X035 のハードウェアの I2C を線で確かめるには、I2C の使えるロットの X035 を、プローブにつながる route で置く必要がある |
 | M030G8R7 | **SPI が無い**。I2C1 と USART1 は、どちらも PB6（水晶の端子）を通る route だけが使える（デバッグは 1 線なので PA2 は空く）。基板に水晶が無いことが条件で、I2C と UART のコンソールは同時に配線できない（コンソールを DMSEQ にすれば I2C に回せる） |
 | V20x | Ethernet は V203RBT6（または Ethernet 付きの V208） |
