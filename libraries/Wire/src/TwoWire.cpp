@@ -16,7 +16,7 @@ bool TwoWire::begin(int sda, int scl, uint32_t frequency)
     return true;
 }
 
-bool TwoWire::begin(uint8_t address, int sda, int scl, uint32_t frequency)
+bool TwoWire::prepare(int sda, int scl, uint32_t frequency)
 {
     if (_started) {
         end();
@@ -27,7 +27,6 @@ bool TwoWire::begin(uint8_t address, int sda, int scl, uint32_t frequency)
     if (frequency) {
         _clock_hz = frequency;
     }
-    begin(address);
     return true;
 }
 

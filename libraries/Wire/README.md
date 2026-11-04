@@ -114,6 +114,12 @@ compile.
   `onReceive()` and `onRequest()` callbacks run in interrupt context. An instance
   cannot act as master and slave simultaneously. Multi-master arbitration and
   general-call responses are unsupported.
+- **Slave mode is begun on the bus object** (`Wire.begin(0x42)`), not through
+  a `TwoWire *`: `begin(address)` belongs to `Wire`'s and `SoftWire`'s classes,
+  not to `TwoWire`, so a sketch that never calls it links none of the slave's
+  interrupt handling (a controller-only `Wire` sketch is 3364 B on V003, 644 B
+  less than with it). `TwoWire` is not derived from ArduinoCore-API's
+  `HardwareI2C` for the same reason.
 - **Names are `Wire`, `Wire1`**, one per I2C the board enables (not set to
   Disable in the menu). Using a name the board does not have fails to compile.
 - Timeout: a wait gives up after 25 ms and `endTransmission()` returns 5. That

@@ -43,7 +43,16 @@ public:
     /* Target mode is not possible here - see the note at the top. Accepted so
      * that code written for another core still compiles; the bus stays a
      * controller and nothing answers at `address`. */
-    void begin(uint8_t address) override { (void)address; begin(); }
+    void begin(uint8_t address) { (void)address; begin(); }
+    /* The same on these pins: a controller, false when they cannot carry it. */
+    bool begin(uint8_t address, int sda, int scl, uint32_t frequency)
+    {
+        if (!prepare(sda, scl, frequency)) {
+            return false;
+        }
+        begin(address);
+        return true;
+    }
     /* Any two distinct pads; an open bus moves to them. */
     bool setPins(int sda, int scl) override;
     void end() override;

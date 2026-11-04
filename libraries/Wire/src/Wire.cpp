@@ -314,19 +314,12 @@ void CH32RVTwoWire::begin()
     setClock(_clock_hz);
 }
 
-extern "C" void ch32rv_wire_irq(void);
-
-void CH32RVTwoWire::begin(uint8_t address)
+/* begin(address)'s second half, after the controller's bring-up (pins,
+ * reset, FREQ, which the slave needs too: it times its own SCL stretching
+ * from it): the own address and the interrupt machinery. begin(address)
+ * itself is WireTarget.cpp's, so that nothing here names the vectors. */
+void CH32RVTwoWire::targetStart(uint8_t address)
 {
-    /* Links WireIrq.cpp, the I2C vectors: only a target takes interrupts. */
-    __asm__ volatile("" : : "r"(&ch32rv_wire_irq));
-    /* Same bring-up as the master - pins, reset, FREQ (which the slave needs
-     * too: it times its own SCL stretching from it) - then the own address
-     * and the interrupt machinery on top. */
-    begin();
-    if (!_slot) {
-        return;
-    }
     /* Bit 14 of OADDR1 is documented "must be kept set"; the EVT init does. */
     CH32RV_I2C_OADDR1(_base) = (uint16_t)(0x4000u | ((address & 0x7Fu) << 1));
     _rx_len = 0;
@@ -773,10 +766,12 @@ bool CH32RVTwoWire::clearBus(void)
 
     const bool free = scl_free && digitalRead(sda) == HIGH && digitalRead(scl) == HIGH;
     if (was_started) {
-        if (was_slave) {
-            begin(own);
-        } else {
-            begin();
+        /* As it was. A bus that was a target came from begin(address), which
+         * linked the interrupt handling; begin(address) itself is not named
+         * here, or every sketch calling clearBus() would carry it. */
+        begin();
+        if (was_slave && _slot) {
+            targetStart(own);
         }
     }
     return free;

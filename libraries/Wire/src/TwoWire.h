@@ -11,8 +11,12 @@
  * Serial. The base also carries what both share - the transmit and receive
  * buffers, the Stream side, the timeout - and leaves opening the bus and the
  * transfers themselves to the two. The interface is ArduinoCore-API's
- * HardwareI2C plus what arduino-esp32's TwoWire adds, with its names and
- * argument order (SDA before SCL), so code written for an ESP32 carries over:
+ * HardwareI2C's plus what arduino-esp32's TwoWire adds, with its names and
+ * argument order (SDA before SCL), so code written for an ESP32 carries over.
+ * It is not derived from HardwareI2C: that makes begin(address) virtual, and
+ * a virtual function is linked whether called or not - the target's
+ * interrupt handling came with every controller (504 B on V003). Becoming a
+ * target is the bus object's own call (Wire.begin(0x42)), not the base's:
  *
  *   Wire.begin(PA10, PA11);             // SDA, SCL; -1, -1 keeps the pins
  *   Wire.begin(PA10, PA11, 400000);
@@ -25,7 +29,7 @@
 #pragma once
 
 #include "Arduino.h"
-#include "api/HardwareI2C.h"
+#include "api/Stream.h"
 
 #include <stdint.h>
 
@@ -51,21 +55,22 @@
 #define CH32RV_WIRE_TIMEOUT_US 25000UL
 #endif
 
-class TwoWire : public arduino::HardwareI2C {
+class TwoWire : public arduino::Stream {
 public:
-    /* Keep HardwareI2C's begin() / begin(address) visible next to the pin forms. */
-    using arduino::HardwareI2C::begin;
-
+    /* Controller on the bus's pins. */
+    virtual void begin() = 0;
     /* Controller on these pins (SDA, SCL). -1, -1 keeps the pins the bus has
      * (the board's default, or the last setPins() / setRoute()); one -1 alone
      * is refused. frequency 0 keeps the clock. false, and the bus left closed,
      * when the pins cannot carry this bus. */
     bool begin(int sda, int scl, uint32_t frequency = 0);
-    /* Target at `address` on these pins. A bus that cannot be a target (SoftWire)
-     * opens as a controller, the same as its begin(address). */
-    bool begin(uint8_t address, int sda, int scl, uint32_t frequency);
+    virtual void end() = 0;
+    virtual void setClock(uint32_t freq) = 0;
     /* Move the bus to these pins (SDA, SCL); an open bus reopens on them. */
     virtual bool setPins(int sda, int scl) = 0;
+    /* A target's callbacks (the bus object's begin(address) makes it one). */
+    virtual void onReceive(void (*)(int)) = 0;
+    virtual void onRequest(void (*)(void)) = 0;
 
     uint32_t getClock(void) { return _clock_hz; }
 
@@ -93,13 +98,13 @@ public:
     void setTimeOut(uint16_t timeout_ms) { setWireTimeout((uint32_t)timeout_ms * 1000u); }
     uint16_t getTimeOut(void) { return (uint16_t)(_timeout_us / 1000u); }
 
-    void beginTransmission(uint8_t address) override;
+    void beginTransmission(uint8_t address);
     /* 0 sent, 1 more than CH32RV_WIRE_BUFFER_SIZE, 2 address NACK, 3 data
      * NACK, 4 the bus is not open (or is a target), 5 timeout. */
-    uint8_t endTransmission(bool stopBit) override;
-    uint8_t endTransmission(void) override { return endTransmission(true); }
-    size_t requestFrom(uint8_t address, size_t len, bool stopBit) override;
-    size_t requestFrom(uint8_t address, size_t len) override { return requestFrom(address, len, true); }
+    uint8_t endTransmission(bool stopBit);
+    uint8_t endTransmission(void) { return endTransmission(true); }
+    size_t requestFrom(uint8_t address, size_t len, bool stopBit);
+    size_t requestFrom(uint8_t address, size_t len) { return requestFrom(address, len, true); }
 
     size_t write(uint8_t data) override;
     size_t write(const uint8_t *data, size_t len) override;
@@ -116,6 +121,11 @@ public:
     void flush(void) override {}
 
 protected:
+    /* begin(address, sda, scl, frequency)'s shared half: close an open bus,
+     * move it to the pins (unless both are -1) and keep the clock; false when
+     * the pins cannot carry this bus. */
+    bool prepare(int sda, int scl, uint32_t frequency);
+
     /* The transfers, on an open bus that is a controller. transmit() sends
      * _tx[0.._tx_len) to _address and returns endTransmission()'s code;
      * receive() reads len (1..CH32RV_WIRE_BUFFER_SIZE) bytes into _rx and

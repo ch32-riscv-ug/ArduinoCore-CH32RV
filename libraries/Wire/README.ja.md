@@ -105,6 +105,10 @@ Adafruit_Something device(&bus);
   `onReceive()`と`onRequest()`のcallbackは割り込みcontextで呼ばれます。
   1つのinstanceをmasterとslaveに同時利用すること、multi-master arbitration、
   general callへの応答には対応しません。
+- **slaveはバスのオブジェクトで始めます**(`Wire.begin(0x42)`)。`TwoWire *`越しには呼べません。
+  `begin(address)`は`Wire`と`SoftWire`のクラスのもので、`TwoWire`にはありません。呼ばないスケッチには
+  slaveの割り込みの処理がリンクされません(V003でcontrollerだけの`Wire`のスケッチは3364 B、644 B小さい)。
+  `TwoWire`がArduinoCore-APIの`HardwareI2C`から派生しないのも同じ理由です。
 - **名前は`Wire`、`Wire1`の順**で、ボードで有効な(メニューでDisableにしていない)
   I2Cの数だけあります。無い名前を使うとコンパイルエラーになります。
 - タイムアウトは25msで、`endTransmission()`は5を返します。**既定で有効**です

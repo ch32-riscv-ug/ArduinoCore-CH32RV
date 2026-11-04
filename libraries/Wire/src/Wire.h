@@ -59,7 +59,20 @@ public:
     explicit CH32RVTwoWire(uint8_t number) : _number(number) {}
 
     void begin() override;
-    void begin(uint8_t address) override;
+    /* Target at `address` on the bus's pins - a plain member, not a virtual
+     * one, in a file of its own (WireTarget.cpp), so that only a sketch
+     * calling it links the target's interrupt handling (WireIrq.cpp). */
+    void begin(uint8_t address);
+    /* Target at `address` on these pins (SDA, SCL); false when they cannot
+     * carry this bus. */
+    bool begin(uint8_t address, int sda, int scl, uint32_t frequency)
+    {
+        if (!prepare(sda, scl, frequency)) {
+            return false;
+        }
+        begin(address);
+        return true;
+    }
     using ::TwoWire::begin;
     void end() override;
 
@@ -111,6 +124,7 @@ protected:
     size_t receive(uint8_t address, size_t len, bool stop) override;
 
 private:
+    void targetStart(uint8_t address);   /* Wire.cpp: begin(address) after begin() */
     bool wait_flag1(uint16_t mask, bool set);
     bool start(uint8_t address, bool read);
     void stop(void);

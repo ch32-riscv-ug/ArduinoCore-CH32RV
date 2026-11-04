@@ -1,6 +1,6 @@
 /* The I2C vectors, in a file of their own: only a target takes I2C
- * interrupts, and CH32RVTwoWire::begin(address) is what links this file, so a
- * controller-only sketch carries no handler. One handler for the EV and ER
+ * interrupts, and CH32RVTwoWire::begin(address) (WireTarget.cpp) is what links
+ * this file, so a controller-only sketch carries no handler. One handler for the EV and ER
  * vectors of every enabled I2C: each I2Cn_EV/ER_IRQHandler is an alias of it,
  * and mcause says which fired. A Disable or Software I2C gets no alias. */
 #include "Wire.h"
