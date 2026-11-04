@@ -8,6 +8,7 @@ with the address and undefined-behaviour sanitizers, on disk images.
   the tree again.
 - Volumes the library formats, checked the same way.
 - Two volumes mounted at once.
+- The SD library's SPI driver against a simulated card (sdspi/).
 
 Built twice: the large-series configuration (exFAT, GPT, two volumes) and the
 small one (CH32X035: no exFAT, no format, one volume). Where dosfstools /
@@ -31,28 +32,34 @@ SAMPLE = ["README.TXT", "lower.txt", "MixedCase.Txt", "A directory with a long n
           "many/big.bin"]
 
 
-def build(out: pathlib.Path, defines) -> pathlib.Path:
+SDLIB = REPO / "libraries/SD/src"
+SDSPI = HERE / "sdspi"
+
+
+def build(out: pathlib.Path, defines, sd=False) -> pathlib.Path:
     cc, cxx = shutil.which("gcc"), shutil.which("g++")
     if not cc or not cxx:
         pytest.skip("no host gcc / g++")
+    # The SD build: host/SPI.h (sdspi/) stands in for the SPI library, the card is simulated.
     flags = ["-g", "-O1", "-fsanitize=address,undefined", "-fno-sanitize-recover=all", *defines,
-             f"-I{HERE / 'host'}", f"-I{REPO / 'cores/arduino'}", f"-I{LIB}"]
+             f"-I{HERE / 'host'}", *([f"-I{SDSPI}", f"-I{SDLIB}"] if sd else []), f"-I{REPO / 'cores/arduino'}",
+             f"-I{LIB}"]
     objects = []
     sources = [LIB / "fatfs/ff.c", LIB / "fatfs/ffunicode.c", REPO / "cores/arduino/itoa.c",
-               REPO / "cores/arduino/dtostrf.c", REPO / "cores/arduino/ch32rv_format.c"] + sorted(LIB.glob("*.cpp")) + [HERE / "host/arduino_host.cpp",
-                                                                                   HERE / "app.cpp"] + [
+               REPO / "cores/arduino/dtostrf.c", REPO / "cores/arduino/ch32rv_format.c"] + sorted(LIB.glob("*.cpp")) + [HERE / "host/arduino_host.cpp"] + (
+        sorted(SDLIB.glob("*.cpp")) + [SDSPI / "sdcard_sim.cpp", SDSPI / "sd_app.cpp"] if sd else [HERE / "app.cpp"]) + [
         REPO / f"cores/arduino/api/{name}.cpp" for name in API] + [REPO / "cores/arduino/ch32rv_printf.cpp"]
     for index, source in enumerate(sources):
         obj = out / f"{index:03d}-{source.stem}.o"
         if source.suffix == ".c":
             command = [cc, *flags, "-w", "-c", str(source), "-o", str(obj)]
         else:
-            strict = ["-Wall", "-Wextra", "-Werror"] if source.parent in (LIB, HERE) else ["-w"]
+            strict = ["-Wall", "-Wextra", "-Werror"] if source.parent in (LIB, HERE, SDLIB, SDSPI) else ["-w"]
             command = [cxx, "-std=gnu++17", *flags, "-include", str(HERE / "host/prelude.h"), *strict, "-c",
                        str(source), "-o", str(obj)]
         subprocess.run(command, check=True)
         objects.append(str(obj))
-    binary = out / "fs-host"
+    binary = out / ("sd-host" if sd else "fs-host")
     subprocess.run([cxx, "-fsanitize=address,undefined", *objects, "-o", str(binary)], check=True)
     return binary
 
@@ -202,3 +209,28 @@ def test_two_volumes(host):
         assert "FAIL mount both" in p.stdout, p.stdout   # one volume at a time there
         return
     run(binary, a, "twovol", b)
+
+
+@pytest.fixture(scope="module")
+def sd_host(tmp_path_factory):
+    out = tmp_path_factory.mktemp("sd-spi")
+    return build(out, CONFIGS["large"], sd=True), out
+
+
+@pytest.mark.parametrize("kind,size", [("sdhc", 64 * MB), ("sdscv2", 64 * MB), ("sdscv1", 32 * MB)])
+def test_sd_spi_simulated_card(sd_host, kind, size):
+    """The SD library's SPI driver against a simulated card (sdspi/): identification
+    of SDHC / SDSC v2 / v1, CRC on, multiple-block transfers, faults; fsck after."""
+    binary, out = sd_host
+    need("fsck.fat")
+    image = blank(out / f"{kind}.img", size)
+    run(binary, image, kind)
+    with open(image, "rb") as f:
+        mbr = f.read(512)
+    offset = int.from_bytes(mbr[454:458], "little") * 512 if mbr[450] else 0
+    fsck(image, offset, "fat")
+
+
+def test_sd_spi_no_card(sd_host):
+    binary, _ = sd_host
+    run(binary, "-", "absent")

@@ -270,7 +270,11 @@ RAM はスケッチの 300 B のバッファを含む(媒体の RAM は除いた
     512 B が 2 KB の RAM に入らない)、開けるファイル 2 つ。
   - 試験は tests/unit/fs(ホスト、Linux の mkfs と fsck)と、tests/peer/usb の usb-peer-fs(X035 と ESP32-S3。
     DUT の FatFS と S3 の ESP-IDF の FAT が、USB の MSC で 1 つのボリュームを受け渡す。2026-11-04 に通った)。
-  - SD(SPI、SDIO)、eMMC、USB ホストの MSC のブロックデバイスはまだ無い。
+  - SD(SPI)は `libraries/SD`(`SD`、`SDSPIBlockDevice`。CRC 付き、複数ブロックの転送)、SD(SDIO)は
+    `libraries/SD_MMC`(`SD_MMC`、`SDIOBlockDevice`。V30x / V4x7 / H41x、1 / 4 ビット、CPU が FIFO を動かし
+    ハードウェアのフロー制御)。2026-11-04 に入れた。SPI は tests/unit/fs の模擬カードで確かめ、SDIO はビルドだけ。
+    実機の確認は後日(SPI のカードは V20x の CH32V203C-R1 などのスロット、SDIO は CH32V307V-R2 の評価ボードか互換機)。
+  - eMMC(H41x の SDMMC)と USB ホストの MSC のブロックデバイスはまだ無い。
 
 ## まだ決めないこと
 

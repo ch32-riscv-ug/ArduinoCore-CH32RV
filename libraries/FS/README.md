@@ -32,7 +32,9 @@ void loop() { }
 |---|---|
 | RAM | `fs::RamBlockDevice` (here). At least 64 blocks (32 KB) |
 | USB mass storage shown to a PC | the same block device through `CH32RVUsbDeviceMscBlockStorage` (CH32RVUsbDevice). Only one side has the volume at a time: [MSCFileSystem](../CH32RVUsbDevice/examples/MSCFileSystem/README.md) |
-| SD card (SPI, SDIO), eMMC, a USB stick through the USB host | not yet (docs/filesystem.ja.md) |
+| SD card over SPI | `SDSPIBlockDevice` ([SD library](../SD/README.md): `SD`) |
+| SD card on SDIO (V30x, V4x7, H41x) | `SDIOBlockDevice` ([SD_MMC library](../SD_MMC/README.md): `SD_MMC`) |
+| eMMC, a USB stick through the USB host | not yet (docs/filesystem.ja.md) |
 
 A sketch can implement `fs::BlockDevice` for anything else: `readBlocks()`,
 `writeBlocks()`, `blockCount()`, and optionally `begin()`, `sync()`,

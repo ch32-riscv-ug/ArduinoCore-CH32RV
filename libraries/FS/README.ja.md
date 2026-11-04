@@ -31,7 +31,9 @@ void loop() { }
 |---|---|
 | RAM | `fs::RamBlockDevice`（このライブラリ）。64 ブロック（32 KB）以上 |
 | PC に見せる USB のマスストレージ | 同じブロックデバイスを `CH32RVUsbDeviceMscBlockStorage`（CH32RVUsbDevice）で。ボリュームを持つのは一度にどちらか一方だけ: [MSCFileSystem](../CH32RVUsbDevice/examples/MSCFileSystem/README.ja.md) |
-| SD カード（SPI、SDIO）、eMMC、USB ホストの USB メモリ | まだ無い（docs/filesystem.ja.md） |
+| SPI の SD カード | `SDSPIBlockDevice`（[SD ライブラリ](../SD/README.ja.md): `SD`） |
+| SDIO の SD カード（V30x、V4x7、H41x） | `SDIOBlockDevice`（[SD_MMC ライブラリ](../SD_MMC/README.ja.md): `SD_MMC`） |
+| eMMC、USB ホストの USB メモリ | まだ無い（docs/filesystem.ja.md） |
 
 ほかの媒体は、スケッチで `fs::BlockDevice` を実装すれば使えます。`readBlocks()`、`writeBlocks()`、
 `blockCount()` と、必要なら `begin()`、`sync()`、`writable()`、`eraseBlocks()` です。

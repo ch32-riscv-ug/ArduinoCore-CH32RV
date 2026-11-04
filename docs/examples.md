@@ -15,6 +15,7 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | Ethernet, TCP / UDP, HTTP, mDNS, NTP | [Network](../libraries/Network/README.md) | EthernetStatus → TcpEchoServer / UdpEcho → HttpGet → MdnsWebServer / NetworkTime |
 | HTTPS (TLS, certificate checked) | [NetworkClientSecure](../libraries/NetworkClientSecure/examples/HttpsGet/README.md) | HttpGet → HttpsGet |
 | Files on FAT (RAM disk, shared with a PC over USB) | [FS](../libraries/FS/README.md) | RamDisk → MSCFileSystem (CH32RVUsbDevice) |
+| SD cards (SPI, SDIO) | [SD](../libraries/SD/README.md), [SD_MMC](../libraries/SD_MMC/README.md) | CardInfo |
 | SPI slave | [CH32RVSPISlave](../libraries/CH32RVSPISlave/README.md) | SPISlaveSelfTest |
 | Software SPI | [SoftSPI](../libraries/SPI/examples/SoftSPILoopback/README.md) | SoftSPILoopback |
 | Servo control | [Servo](../libraries/Servo/examples/Sweep/README.md) | Sweep |
