@@ -16,7 +16,7 @@ IDE port、discovery、probe の serial port、monitor、pytest の道具の分�
 | **connection** | 接続 | 口への生きている attach。attach のたびに新しく作る |
 | **console-passthrough** | コンソールの素通し | probe.config の項目。serial port（fn 0 の transport の番号）ごとに、セッションが来ていない間だけ probe が止めない attach をしてコンソールをその口へ流す |
 | **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行。probe の serial port とは別の概念 |
-| **broker** | ブローカー | probe ごとに 1 つ、誰の子でもない ch32rv のプロセス。probe のセッションを持ち、client（ch32rv の各コマンド、pytest）を束ねる。client が 0 になったら終わる |
+| **broker** | ブローカー | probe ごとに 1 つ、誰の子でもない ch32rv のプロセス。probe のセッションを持ち、client（ch32rv の各コマンド、pytest）を束ねる。最後の client が抜けてから 3 秒で終わる |
 
 wire（線。debug の線を駆動するインターフェース: `oep.wire.rvswd` / `oep.wire.swio`）、pins、console は仕様の語のまま。
 
@@ -167,8 +167,10 @@ unit_id、口の名前、target の家系が使う wire をその口が持つか
 
 ### 4.5 リンクの速さ
 
-UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数字が渡るだけで問題にならない。設定で変えられるようにすると
-忘れたときに入れなくなり、自動 baud 検出は生のバイトと混ざる口では危うい。dmseq と書き込みには足りる。
+UART bridge の probe は 115200 で起動し、ブローカーが port_speed（oep-spec link §3）で **500000** に上げる。それより速い速さは、
+利用者が `CH32RV_PORT_SPEED` で明示したときだけ試す（CH340 は 921600 で確かめを通っても、書き込みのたびに長い応答が壊れた。
+500000 はそれと CH552 で崩れなかった）。上げた速さは、host が黙って一定の時間が過ぎると probe が起動の速さに戻す。USB CDC / USJ では
+baud は数字が渡るだけで問題にならない。
 
 ## 5. OEP の probe の設定
 
@@ -244,7 +246,7 @@ reset）と pytest の `oep_host` は、どれもブローカーの **client**�
 
 - ブローカーは**誰の子でもないプロセス**（ch32rv が切り離して起動する。stdio は捨てる）で、probe ごとに 1 つ。client は「この probe の
   ブローカーにつなぐ」と頼み、無ければ起動させる（起動の取り合いは DeviceLock と同じ利用者ごとの runtime ディレクトリの lock で
-  1 つに絞る）。**client が 0 になったらすぐ終わる**（待ち時間は持たない。誰も使っていないのにプロセスが残らない）。
+  1 つに絞る）。**最後の client が抜けてから 3 秒で終わる**（IDE がモニターを閉じてから書き込みを始めるまでの間、セッションと上げた速さを保つ。それより長くは残らない）。
 - 口は 127.0.0.1 の TCP で、OEP のフレーム（仕様の TCP の形）を受けて probe との 1 本のセッションに束ねる。client ごとに corr を
   付け替え、client の `open` / `end` は受け止めて probe に出さない。client ごとの資源（接続、plan、stream、止めた hart）を台帳に持ち、
   client が切れたらその分だけ外す。待ち受けの場所は runtime ディレクトリ（ch32rv の内部。利用者は
@@ -274,7 +276,7 @@ ch32rv と gcc を指す（`tools/index/fetch_tools.py` が取る）。利用者
 
 ## 8. ch32rv の範囲
 
-書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe の gdb / debug はまだ無い（書き込みに要る DM の操作は `DtmAccess` に載っていて、gdb はその上に足す）。そのための作り: OEP の transport は `DtmAccess` を実装し、ブローカーはセッションを長く保持する client（gdb server）を想定して client ごとの資源を追い、gdb server もブローカーの client（§7.2）。キャプチャや fixture
+書き込み・デバッグ・人が使うモニタ・discovery・ブローカー。OEP の probe でも `ch32rv gdb` が gdb server を出す（DM の操作は `DtmAccess` に載り、OEP の transport がそれを実装する）。ブローカーはセッションを長く保持する client（gdb server）の資源を client ごとに追い、gdb server もブローカーの client（§7.2）。キャプチャや fixture
 の仲介は持たない（試験の間は pytest の `oep_host` がブローカー経由で直接 OEP を話す）。
 
 ## 9. 未決
