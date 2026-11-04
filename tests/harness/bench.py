@@ -3,7 +3,7 @@ import pathlib
 import re
 import tomllib
 
-CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit", "flash", "wire", "softwire", "softspi", "spi",
+CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit", "flash", "wire", "softwire", "softspi", "spi", "sd", "periph",
          "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs",
          "usb-peer-host", "usb-peer-host-classes"}
 # Cases with an ESP32-S3 USB peer on the DUT's own USB port (tests/peer/usb).
@@ -11,11 +11,14 @@ PEER_CASES = {"usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", 
               "usb-peer-host", "usb-peer-host-classes"}
 TARGET_KEYS = {
     "port", "chip", "fqbn", "f_cpu", "usb_topology", "usb_vid", "usb_pid",
-    "usb_serial", "dut_uid", "dut_chip_id", "cases", "power_ports", "gpio",
+    "usb_serial", "dut_uid", "dut_chip_id", "cases", "power_ports",
     "soft_usb_topology", "nrst_channel", "upload_port", "probe_unit_id",
     "dut_usb_topology", "usb_peer_port", "logic_pin",
-    "pd_max_mv", "pd_vbus_pin", "pd_vbus_ratio", "soft_wire", "soft_spi", "spi_cs",
+    "pd_max_mv", "pd_vbus_pin", "pd_vbus_ratio",
 }
+# Retired 2026-11-04: the probe's labels are the wiring (tests/instrumented/bench_lines.py, tests/BENCH.ja.md §5).
+RETIRED_KEYS = {"gpio": "<port>@<pad>", "soft_wire": "<port>.softwire_sda@<pad> / softwire_scl",
+                "soft_spi": "<port>.softspi_sck@<pad> / _miso / _mosi / _cs", "spi_cs": "<port>.spi_cs@<pad>"}
 
 
 def load_bench(path):
@@ -32,6 +35,10 @@ def load_bench(path):
     for name, target in data["targets"].items():
         if not re.fullmatch(r"[a-z][a-z0-9-]*", name):
             raise ValueError(f"invalid target name: {name}")
+        retired = set(target) & set(RETIRED_KEYS) if isinstance(target, dict) else set()
+        if retired:
+            raise ValueError(f"{name}: {', '.join(sorted(retired))} are retired - label the probe's lines instead ("
+                             + "; ".join(f"{k}: {RETIRED_KEYS[k]}" for k in sorted(retired)) + ")")
         if not isinstance(target, dict) or set(target) - TARGET_KEYS:
             raise ValueError(f"unknown target fields: {name}")
         required = {"port", "chip", "fqbn", "f_cpu", "usb_topology", "usb_vid", "usb_pid", "cases"}
@@ -95,35 +102,6 @@ def load_bench(path):
                 allowed.add(int(target["soft_usb_topology"].rsplit(".", 1)[1]))
             if set(power_ports) != allowed:
                 raise ValueError("power_ports must name only this target's USB connections")
-        if "gpio" in target["cases"]:
-            gpio = target.get("gpio")
-            if not isinstance(gpio, list) or not gpio:
-                raise ValueError("gpio requires explicit pad/channel wiring")
-            channels, pads = set(), set()
-            for pin in gpio:
-                if set(pin) != {"pad", "channel"} or not re.fullmatch(r"P[A-F](?:[0-9]|[12][0-9]|30)", pin["pad"]):
-                    raise ValueError("invalid GPIO pad/channel mapping")
-                if type(pin["channel"]) is not int or not 0 <= pin["channel"] <= 65535:
-                    raise ValueError("invalid GPIO channel")
-                if pin["pad"] in pads or pin["channel"] in channels:
-                    raise ValueError("duplicate GPIO pad/channel")
-                if pin["pad"] in {"PD1", "PD7", "PD3", "PD4", "PD5", "PD6"}:
-                    raise ValueError("GPIO test must not drive debug/reset/USB/UART pads")
-                pads.add(pin["pad"])
-                channels.add(pin["channel"])
-        if "softwire" in target["cases"]:
-            soft = target.get("soft_wire")
-            pads = {p["pad"] for p in target.get("gpio", [])}
-            if not isinstance(soft, dict) or set(soft) != {"sda", "scl"} or not {soft["sda"], soft["scl"]} <= pads:
-                raise ValueError("softwire needs soft_wire = {sda, scl}, two pads of the gpio table")
-        if "softspi" in target["cases"]:
-            soft = target.get("soft_spi")
-            pads = {p["pad"] for p in target.get("gpio", [])}
-            if (not isinstance(soft, dict) or set(soft) != {"sck", "miso", "mosi", "cs"}
-                    or not set(soft.values()) <= pads or len(set(soft.values())) != 4):
-                raise ValueError("softspi needs soft_spi = {sck, miso, mosi, cs}, four pads of the gpio table")
-        if "spi" in target["cases"] and target.get("spi_cs") not in {p["pad"] for p in target.get("gpio", [])}:
-            raise ValueError("spi needs spi_cs, a pad of the gpio table")
         if "hid" in target["cases"]:
             if target["chip"] != "CH32V003F4U6" or not target.get("soft_usb_topology") or type(target.get("nrst_channel")) is not int:
                 raise ValueError("hid needs UIAPduino, soft USB topology and NRST wiring")

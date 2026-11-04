@@ -1,7 +1,14 @@
-"""gpio.external-levels: both drive directions, without a shared DUT input/output oracle."""
+"""gpio.external-levels: both drive directions, without a shared DUT input/output oracle, on every line the probe
+labels for the port (bench_lines.gpio_lines: `<port>@<pad>` and the probe-only roles)."""
 import json
 import pathlib
 import secrets
+
+import pytest
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py is staged beside the test
+from bench_lines import gpio_lines
 
 from oep_client import core
 from oep_client.fixture import Gpio
@@ -11,7 +18,10 @@ def test_gpio_contract(dut, oep_host, record_property):
     settings = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
     host = oep_host.host
     gpio = Gpio(host)
-    pins = settings["gpio"]
+    pins = gpio_lines(oep_host, settings["target"])
+    if not pins:
+        pytest.skip("the probe labels no <port>@<pad> line")
+    record_property("lines", " ".join(f"{p['pad']}:ch{p['channel']}" for p in pins))
     core.plan_apply(host, [(gpio.fn, 1, p["channel"]) for p in pins])
     try:
         for p in pins:

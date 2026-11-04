@@ -4,14 +4,21 @@ writes 0x10 with endTransmission(false), reads n bytes with requestFrom(addr, n,
 endTransmission(true), back to back, for n = 1, 2 and 3 (the driver's three read paths).
 
 Arduino's sendStop: false keeps the bus, so the next transfer starts with a repeated START. On the wire that is
-S W Sr R Sr W P with stop 0, and S W Sr R P S W P with stop 1. The pads come from the bench's gpio table.
+S W Sr R Sr W P with stop 0, and S W Sr R P S W P with stop 1. The lines are the ones the probe labels i2c_sda /
+i2c_scl (bench_lines.py), which must be the I2C's default pins; without them the test skips.
 
-wire.softwire: the same on a SoftWire (case softwire), on the pads the bench names as soft_wire
-({sda, scl}), which need not be a hardware route. Wire itself is the board's: a hardware I2C, or a
+wire.softwire: the same on a SoftWire (case softwire), on the lines the probe labels softwire_sda / softwire_scl
+(bench_lines.py), which need not be a hardware route. Wire itself is the board's: a hardware I2C, or a
 SoftWire when the fqbn sets that I2C to Software (i2c1=software), which case wire then covers."""
 import json
 import pathlib
 import secrets
+
+import pytest
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py is staged beside the test
+from bench_lines import require
 
 from oep_client import capture, core
 from oep_client.fixture import I2cTarget
@@ -66,13 +73,17 @@ def test_wire_contract(dut, oep_host, record_property):
     m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d+) (\d+)", timeout=15)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     sda_pad, scl_pad = pad(int(m.group(2))), pad(int(m.group(3)))
-    if "soft_wire" in case:
-        sda_pad, scl_pad = case["soft_wire"]["sda"], case["soft_wire"]["scl"]
+    soft = case.get("case") == "softwire"
+    found = require(oep_host, case["target"], "softwire" if soft else "wire")
+    if not soft:
+        for role, at in (("i2c_sda", sda_pad), ("i2c_scl", scl_pad)):
+            assert found[role]["pad"] == at, f"{role} is labelled on {found[role]['pad']}, the I2C's default pin is {at}"
+    if soft:
+        sda_pad, scl_pad = found["softwire_sda"]["pad"], found["softwire_scl"]["pad"]
         m = ask(dut, f"soft {pin(sda_pad)} {pin(scl_pad)}", rb"SOFT (\d)")
         assert m.group(1) == b"1", f"SoftWire refused SDA {sda_pad} / SCL {scl_pad}"
         record_property("bus", "SoftWire")
-    channels = {p["pad"]: p["channel"] for p in case["target"].get("gpio", [])}
-    assert sda_pad in channels and scl_pad in channels, f"the bench's gpio table has no channel for {sda_pad} / {scl_pad}"
+    channels = {line["pad"]: line["channel"] for line in found.values()}
     sda, scl = channels[sda_pad], channels[scl_pad]
     record_property("pins", f"SDA {sda_pad} ch{sda}, SCL {scl_pad} ch{scl}")
 

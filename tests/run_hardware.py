@@ -35,6 +35,8 @@ MODULES = {
     "softwire": TESTS / "instrumented/wire/test_wire_contract.py",
     "softspi": TESTS / "instrumented/spi/test_spi_contract.py",
     "spi": TESTS / "instrumented/spi/test_spi_contract.py",
+    "sd": TESTS / "instrumented/sd/test_sd_contract.py",
+    "periph": TESTS / "instrumented/periph/test_periph_contract.py",
     "usb-peer": TESTS / "peer/usb/device/test_usb_peer_device.py",
     "usb-peer-classes": TESTS / "peer/usb/device/test_usb_peer_classes.py",
     "usb-peer-media": TESTS / "peer/usb/device/test_usb_peer_media.py",
@@ -57,6 +59,8 @@ SKETCHES = {
     "softwire": TESTS / "sketch_support/wire/wire.ino",
     "softspi": TESTS / "sketch_support/spi/spi.ino",
     "spi": TESTS / "sketch_support/spi/spi.ino",
+    "sd": TESTS / "sketch_support/sd/sd.ino",
+    "periph": TESTS / "sketch_support/periph/periph.ino",
     "usb-peer": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-peer-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-peer-media": TESTS / "sketch_support/usb_media/usb_media.ino",
@@ -86,6 +90,13 @@ HELPERS = {
     "usb": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-classes": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-media": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
+    "gpio": [TESTS / "instrumented/bench_lines.py"],
+    "sd": [TESTS / "instrumented/bench_lines.py"],
+    "periph": [TESTS / "instrumented/bench_lines.py"],
+    "spi": [TESTS / "instrumented/bench_lines.py"],
+    "softspi": [TESTS / "instrumented/bench_lines.py"],
+    "wire": [TESTS / "instrumented/bench_lines.py"],
+    "softwire": [TESTS / "instrumented/bench_lines.py"],
     "usb-peer": [TESTS / "peer/usb/device/s3_peer.py"],
     "usb-peer-classes": [TESTS / "peer/usb/device/s3_peer.py"],
     "usb-peer-media": [TESTS / "peer/usb/device/s3_peer.py"],
@@ -163,6 +174,19 @@ def isolated_environment(work, tool, gcc):
     return env
 
 
+def junit_skips(path):
+    """The skip messages when every test of the junit file skipped, else None (also when there is no file)."""
+    import xml.etree.ElementTree as ET
+    try:
+        cases = list(ET.parse(path).getroot().iter("testcase"))
+    except (OSError, ET.ParseError):
+        return None
+    skips = [c.find("skipped") for c in cases]
+    if not cases or any(s is None for s in skips):
+        return None
+    return [s.get("message", "") for s in skips]
+
+
 def stage_case(work, name, case, target):
     directory = work / "cases" / name / case
     directory.mkdir(parents=True)
@@ -175,15 +199,8 @@ def stage_case(work, name, case, target):
     if case in BUILD_OPTS:
         (directory / "build_opt.h").write_text(BUILD_OPTS[case])
     build_id = uuid.uuid4().hex[:12]
-    settings = dict(build_id=build_id, target=target, f_cpu=target["f_cpu"])
-    if case == "gpio":
-        settings["gpio"] = [dict(p, pin=((ord(p["pad"][1]) - ord("A") + 2) << 5) | int(p["pad"][2:])) for p in target["gpio"]]
-    if case == "softwire":
-        settings["soft_wire"] = target["soft_wire"]
-    if case == "softspi":
-        settings["soft_spi"] = target["soft_spi"]
-    if case == "spi":
-        settings["spi_cs"] = target["spi_cs"]
+    settings = dict(build_id=build_id, target=target, f_cpu=target["f_cpu"], case=case)
+    # The lines of gpio, spi, softspi, wire, softwire and sd come from the probe's labels (bench_lines.py).
     (directory / "case.json").write_text(json.dumps(settings, indent=2))
     if case != "power":
         sketch = SKETCHES.get(case, TESTS / "sketch_support/core_contracts/core_contracts.ino")
@@ -390,6 +407,10 @@ def main(argv=None):
                     invoke(command, module.parent / "pytest.log", env=case_env,
                            timeout=900 if case in PEER_CASES else 300)
                     result["status"] = "PASS" if args.execute else "COMPILE_PASS"
+                    skipped = junit_skips(module.parent / "junit.xml") if args.execute else None
+                    if skipped:
+                        # Every test skipped (its lines are not labelled): not a pass.
+                        result.update(status="SKIP", reason="; ".join(skipped))
                     if args.execute and case == "power":
                         # Wait for board-identify, then check the target through the reopened connection.
                         time.sleep(2)

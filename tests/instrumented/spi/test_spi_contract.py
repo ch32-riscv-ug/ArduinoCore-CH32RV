@@ -1,5 +1,6 @@
-"""spi.modes (case spi): the hardware SPI on its default pins, CS the bench's spi_cs pad; softspi.modes (case
-softspi): a SoftSPI on the bench's soft_spi pads ({sck, miso, mosi, cs}). Either is the controller of the OEP probe's
+"""spi.modes (case spi): the hardware SPI on its default pins, on the lines the probe labels spi_sck / _miso / _mosi /
+_cs (bench_lines.py; the labels must be the SPI's default pins); softspi.modes (case softspi): a SoftSPI on the lines
+labelled softspi_sck / _miso / _mosi / _cs. Without the labels the test skips. Either is the controller of the OEP probe's
 spi-target (tests/sketch_support/spi/spi.ino), every pad in the gpio table. In each of the four modes and
 both bit orders the sketch sends a few bytes with transfer() and a word with transfer16(), CS low around them.
 
@@ -12,6 +13,12 @@ SCK wire next to it on the fixture.)"""
 import json
 import pathlib
 import secrets
+
+import pytest
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py is staged beside the test
+from bench_lines import require
 
 from oep_client import capture, core
 from oep_client.fixture import SpiTarget
@@ -66,18 +73,22 @@ def test_spi_contract(dut, oep_host, record_property):
     nonce = secrets.token_hex(4)
     m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
-    if "soft_spi" in case:
-        pads = case["soft_spi"]
+    soft = case.get("case") == "softspi"
+    found = require(oep_host, case["target"], "softspi" if soft else "spi")
+    if soft:
+        pads = {r[len("softspi_"):]: found[r]["pad"] for r in found}
         assert ask(dut, f"pins {pin(pads['sck'])} {pin(pads['miso'])} {pin(pads['mosi'])} {pin(pads['cs'])}",
                    rb"PINS (\d)").group(1) == b"1", "SoftSPI refused the pins"
         record_property("bus", "SoftSPI")
     else:
-        m = ask(dut, f"hw {pin(case['spi_cs'])}", rb"HW (\d+) (\d+) (\d+)")
-        pads = dict(sck=pad(int(m.group(1))), miso=pad(int(m.group(2))), mosi=pad(int(m.group(3))), cs=case["spi_cs"])
+        cs = found["spi_cs"]["pad"]
+        m = ask(dut, f"hw {pin(cs)}", rb"HW (\d+) (\d+) (\d+)")
+        pads = dict(sck=pad(int(m.group(1))), miso=pad(int(m.group(2))), mosi=pad(int(m.group(3))), cs=cs)
+        for role in ("sck", "miso", "mosi"):
+            assert found[f"spi_{role}"]["pad"] == pads[role], \
+                f"spi_{role} is labelled on {found[f'spi_{role}']['pad']}, the SPI's default pin is {pads[role]}"
         record_property("bus", "SPI")
-    channels = {p["pad"]: p["channel"] for p in case["target"]["gpio"]}
-    missing = [pads[r] for r in pads if pads[r] not in channels]
-    assert not missing, f"the bench's gpio table has no channel for {missing}"
+    channels = {line["pad"]: line["channel"] for line in found.values()}
     ch = {role: channels[pads[role]] for role in ("sck", "miso", "mosi", "cs")}
     record_property("pins", json.dumps({r: f"{pads[r]} ch{c}" for r, c in ch.items()}))
 
