@@ -2,13 +2,13 @@
 
 > English: [TEST_PLAN.md](TEST_PLAN.md)
 
-この文書は再設計の概要です。新しい検査・CI・保守ツールは旧テストと設定に依存しません。
-新ベンチの基準環境はネイティブ Linux です。通常のpytestはunit/とplatform/のボード不要検査を実行します。
+この文書はテストの計画の概要です。
+ベンチの基準環境はネイティブ Linux です。通常のpytestはunit/とplatform/のボード不要検査を実行します。
 実機契約はrun_hardware.pyの明示入口で、local TOMLの接続先と配線を検証して実行します。
 初期 bring-up の明示実行は [独立した診断入口](../tools/diagnostics/core-bringup/README.ja.md) に置き、
 通常の pytest に実機操作を持ち込みません。
 [カバレッジ](../docs/test-coverage.ja.md)は実装とテスト定義の照合、
-[README](README.ja.md)は新 workspace の操作を扱います。
+[README](README.ja.md)は workspace の操作を扱います。
 
 ## 保証対象
 
@@ -171,15 +171,15 @@ FS のペアで HS を保証しません。安価な CH32X035 peer に替えて�
 既知不良の判定・対応条件・更新imageと更新処理はプローブ提供側、設備個体と配線はhost-local設定で管理します。
 版情報が取れない場合はunknownとして理由を記録し、最新版や互換性を推定しません。
 
-## 作り直す依存順序
+## 試験を足す順序
 
 1. contract ID、capability/対象 matrix、設定 schema、安全条件を定義する。
 2. Linux で隔離 build → 一意な DUT へ upload → READY → GPIO 外部観測 → 証拠保存を通す。
 3. 共通 API と系列差分を分け、SoftWire/SoftSPI、独立 peer による Wire slave、ADC/PWM 設定、DAC の不足を埋める。
 4. USB host/device 両側の実装範囲を定義し、role 別に独立 peer の契約を実装する。
-5. 経路別 Arduino E2E、package、外部 library を追加し、旧ケースを契約単位で置換・撤去する。
+5. 経路別 Arduino E2E、package、外部 library を追加する。
 
-完了条件は既存テストの温存ではなく、対象契約を観測でき、必要 target/経路で実行でき、
+完了条件は、対象契約を観測でき、必要 target/経路で実行でき、
 設定と証拠から別の Linux 環境で再現できることです。
 
 ## 参照

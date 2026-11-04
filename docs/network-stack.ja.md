@@ -1,6 +1,6 @@
-# IP スタック(方針と作業計画)
+# IP スタックの設計
 
-2026-10-21 にユーザーと決めた方針と、作業の計画です。ADR-0013 で「今はまだ入れない」としていた IP スタックに、この方針で取りかかります。実装して動いたところで ADR にします。
+Network ライブラリ(lwIP の上の IPv4)と NetworkClientSecure(TLS)の範囲、作り、測った値です。使い方は [Network の README](../libraries/Network/README.ja.md) にあります。
 
 候補の比較(lwIP、uIP、FNET、自前の最小版の大きさ)は、コミット becf0f1 の版にあります。
 
@@ -43,23 +43,23 @@
 
 ## lwIP の raw API で気をつけること
 
-2026-10-21 の試しの実装で確かめたことです。
+試しの実装で確かめたことです。
 
 - `tcp_write()` や `tcp_close()` は、メモリが足りないと `ERR_MEM` で失敗します。送信中のデータがないコネクションには `sent` のコールバックが来ないので、そこで再試行を待つと止まります。`tcp_poll()` のコールバックで再試行します。
 - 受けた pbuf をアプリが持ったままにすると、受信用のプールが尽き、相手からの ACK も受けられなくなって止まります。Client の層は、受けたデータを自分のバッファに写して、pbuf をすぐに返します。
 
-## 作業の順番
+## 作ったもの
 
-1. lwIP の取り込み(ロック、取り込みの道具、照合の試験)。**済み**
-2. Network ライブラリの土台: lwIP を回す仕組み、`NetworkInterface`(固定アドレス、DHCP のクライアント)、ドライバとの境目。**済み**
-3. `NetworkUDP`、`NetworkClient`、`NetworkServer`、`Network.hostByName()`。**済み**
-4. DHCP サーバー。**済み**(自前。TinyUSB の dhserver は使わない)
-5. PC の tap での試験を、テストの仕組み(tests/)に入れる。**済み**(`tests/unit/network`)
-6. 系列ごとの `lwipopts.h` と、クロスビルドでの大きさの確認。**済み**(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)
-7. USB の NCM(デバイス)のつなぎ込み。**済み**(案 B: `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出し、中身は Network ライブラリの `NetworkUsbNcm`。PC と X035 の生フレームの試験まで。対象の系列の USB デバイスのドライバ待ち)
-8. Ethernet の MAC のドライバ(機材が要る。V208 / V307 / V407 / H417)。**H417 は済み**(2026-10-22、下の「Ethernet(H417)」)。V307、V407 と V208(2026-11-03)も実機で通った。V467、V317、V203RB はビルドまで(下の「ほかの系列」)。
-9. 段 3 以降。mDNS と SNTP は**済み**(lwIP の apps。PC で試験)。
-   - HTTP サーバー、MQTT / HTTP のクライアントは、**自前では作らず、Arduino で広く使われている既存のライブラリを使ってもらう**ことにしました(2026-10-21)。
+1. lwIP の取り込み(ロック、取り込みの道具、照合の試験)。
+2. Network ライブラリの土台: lwIP を回す仕組み、`NetworkInterface`(固定アドレス、DHCP のクライアント)、ドライバとの境目。
+3. `NetworkUDP`、`NetworkClient`、`NetworkServer`、`Network.hostByName()`。
+4. DHCP サーバー(自前。TinyUSB の dhserver は使わない)。
+5. PC の tap での試験(`tests/unit/network`)。
+6. 系列ごとの `lwipopts.h`(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)。
+7. USB の NCM(デバイス): `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出しがあり、中身は Network ライブラリの `NetworkUsbNcm`。試したのは PC と X035 の生フレームまで(対象の系列の USB デバイスでは実機で確かめていない)。
+8. Ethernet の MAC のドライバ。H417(下の「Ethernet(H417)」)、V307、V407、V208 は実機で通る。V467、V317、V203RB はビルドまで(下の「ほかの系列」)。
+9. 段 3: mDNS と SNTP(lwIP の apps。PC で試験)。
+   - HTTP サーバー、MQTT / HTTP のクライアントは、**自前では作らず、Arduino で広く使われている既存のライブラリを使ってもらいます**。
    - 次のライブラリが、手を入れずに `NetworkClient` / `NetworkClientSecure` / `NetworkServer` の上で動くことを、PC 上で確かめました。
 
      | ライブラリ | 役目 | 確かめたこと |
@@ -72,7 +72,7 @@
      - 相手は、Python で書いた最小限の MQTT のブローカーと、HTTP(S) のサーバーです。
      - 試験は作業用の場所で行い、リポジトリには入れていません。外部のライブラリに依存させないためです。
    - TLS でつなぐときは、IP アドレスではなくホスト名で接続します。証明書の名前と照らし合わせるためで、ESP32 と同じです。
-   - この確認の中で、Network ライブラリの不具合を 1 つ見つけて直しました。`NetworkClient::read()` と `peek()` が、データが無いときにスタックを回していなかったため、`Stream` の待ち付きの読み出し(`readStringUntil()` など。aWOT が使う)が、時間切れまで受信できずにいました。
+   - `NetworkClient::read()` と `peek()` は、データが無いときにスタックを 1 回回します。`Stream` の待ち付きの読み出し(`readStringUntil()` など。aWOT が使う)は、これが無いと時間切れまで受信できません。
 
 ## Ethernet(H417)
 
@@ -86,14 +86,14 @@
 - **アドレスの絞り込み:** 自分の MAC、ブロードキャスト、全マルチキャスト(mDNS のため)。
 - **対象:** H417(ETH は QEU6、MEU6、WEU6 にある)。ほかの系列は下の「ほかの系列」。
 
-### ほかの系列(2026-10-22 に EVT から移した。V307・V407・V208 は後で実機を通した)
+### ほかの系列(EVT から移した)
 
 各系列の EVT の NetLib から移しました。H417 と同じ Synopsys の MAC の系列は `NetworkEthernet.cpp`、別の MAC の V208 / V203RB は `NetworkEthernet10m.cpp` です。
 
 | 系列 | PHY | クロック | 回避策(EVT のとおり) | 注意 |
 |---|---|---|---|---|
 | V407 / V467 | 内蔵 10/100(H417 と同じ) | HSE 25 MHz → ETH の PLL(CTLR の bit 22/23)、MAC のクロックは 0x40021014 の bit 14 | なし(V407 の EVT にない) | コアの HCLK は 20 MHz。MDC は /16。100M で DMA が間に合うかは未確認 |
-| V307 | 内蔵 10BASE-T | HSE → PLL3 をちょうど 60 MHz(PREDIV2 と PLL3MUL を HSE から計算)、EXTEN の bit 2 | T/R と P/N の切り替え、5 秒でリセット、リンクが落ちたら PHY のクロックを 500 ms 止める、リンクのあと CRC エラーで極性を反転 | チップのリビジョン 0x20 の MAC の作り直しは移していない。HTTPS は Flash / RAM Split で 192 KB + 128 KB にすると通る(2026-10-29。ECDSA 2.58 s、RSA 1.70 s)。出荷時の 64 KB ではヒープが入らない(試験は記録して飛ばす)。96 KB では本文の復号が MAC エラーになる(ヒープがスタックの予約 512 B の下まで伸び、暗号のスタックと重なると見ている) |
+| V307 | 内蔵 10BASE-T | HSE → PLL3 をちょうど 60 MHz(PREDIV2 と PLL3MUL を HSE から計算)、EXTEN の bit 2 | T/R と P/N の切り替え、5 秒でリセット、リンクが落ちたら PHY のクロックを 500 ms 止める、リンクのあと CRC エラーで極性を反転 | チップのリビジョン 0x20 の MAC の作り直しは移していない。HTTPS は、軽いスケッチなら Flash / RAM Split の 192 KB + 128 KB で通る(ECDSA 2.58 s、RSA 1.70 s)。試験の eth のスケッチは 224k_96k でも 192k_128k でも RAM が足りず、`connect()` がメモリー不足で失敗する(試験は記録して飛ばす) |
 | V317 | 内蔵 10/100(内部の RMII) | HSE → PLL3 を 100 MHz、RMII の端子(PD8、PE8〜PE15)と AFIO の RMII 選択 | P/N(0x10 の bit 12、0x16 の bit 5)、リンクを早める手順、100M のリンクの確認 | RAM は V307 と同じ |
 | V208 / V203RB | 内蔵 10BASE-T(別の MAC) | HCLK を 1/1 か 1/2 で 60 MHz(CFGR0 の ETHPRE) | T/R と P/N の切り替え、リンクが落ちたら 500 ms、CRC エラーで極性を反転 | **HCLK が 60 / 120 MHz のときだけ動く。CPU Clock で `60MHz (Ethernet, no USB)` を選ぶ**(既定の 96 MHz では `begin()` が false。60 MHz では USB の 48 MHz が作れない)。受信は割り込みで 4 つのバッファーを回す。チェックサムの機能も、アドレスの絞り込みもない(全部受けて lwIP が捨てる)。TLS は乱数の回路がないので無い。**V208 の実機(2026-11-03、OEP 30eda0e31451)**: eth の試験が通る(DHCP、ICMP、UDP / TCP のエコー、TCP 受信 9.3 Mbit/s・送信 8.1 Mbit/s、HTTP 200 KB 455 ms)。Clock Source は HSE(32 MHz、V208 の既定)でも HSI でも通った(10BASE-T の ±100 ppm を満たすのは水晶だけなので既定は HSE)。最初はリンクが上がらなかった: リンクの判定を BSR のどのビットが変わっても呼んでいたため、ネゴシエーションの完了(BSR の bit 5、リンクの約 230 ms 前に立つ)をリンク断と取り、PHY のクロックを 500 ms 止めてやり直し続けていた。EVT と同じく LINKIF(と、取りこぼし用にリンクのビットの変化)だけで判定するように直した。PHY のリセットでリンクを落とすと 2〜3 秒で戻る。32 MiB の受信、16 MiB の送信、TCP のエコー 2000 回、UDP のエコー 5000 個で、誤りも落ちも無し。PHY の内部ループバックも 10/10。`end()` と `begin()` の 6 回の繰り返しで毎回アドレスが戻る(リンク 0.7〜2.6 秒、その約 120 ms 後にアドレス)。そのために `begin()` で PHY をリセットする(`end()` で PHY のクロックを止めてもレジスタが古いリンクを持ったまま)。また `netifStop()` がリンクの状態を残していて、`begin()` し直すとリンクが無くても `linkUp()` が true だった(全系列。`tests/unit/network` の relink で確かめる)。CPU Clock 96 MHz では `begin()` が false。USB はベンチの暫定配線では PC につながっていない |
 
@@ -193,7 +193,7 @@ TLS は入れると決めました。下の比較をもとに、**Mbed TLS 4.1 �
   - git の本流には、2019 年以降 30 件のコミットがあり、2026 年 4 月にも受信の処理の不具合が直っています(GCM / ChaCha20 には関係しない部分)。採るなら、本流のコミットを固定して使うことになります。
   - TLS 1.3 には対応していません。
 
-## 決めていないこと## 決めていないこと
+## 決めていないこと
 
 - 段 4 以降の採否(段 2、3 を測ってから)。
-- V307 で TLS を使うときの RAM。静的な分が約 45 KB、ハンドシェイク中のヒープが 30〜40 KB。メニューの Flash / RAM Split で 192 KB + 128 KB にすると通る(2026-10-29)。96 KB(lwIP の小さい設定)では、本文の復号が MAC エラーになる。ヒープとスタックの衝突ではない(スタックの予約を 4 KB にしても同じ)。原因は調べている(TODO)。
+- V307 で TLS を使うときの RAM の収め方(lwIP の大きさ、`MBEDTLS_SSL_IN_CONTENT_LEN` の縮小と max_fragment_length)。静的な分が約 45 KB、ハンドシェイク中のヒープが 30〜40 KB、スタックが 4.4 KB 以上要り、試験の eth のスケッチは Flash / RAM Split の 224k_96k でも 192k_128k でも収まらない。足りないときは `connect()` がメモリー不足で失敗する(TLS のセッションがある間は `_sbrk` がスタックから 6 KB の余白を空けるので、ヒープがスタックを上書きすることはない)。

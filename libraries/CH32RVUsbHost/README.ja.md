@@ -40,7 +40,10 @@ X035 のどの型番がホストを持つかはデータシートの型番表の
 立つかどうかで実際に確かめます（F8U6 では立ちません）。対向試験は [tests/peer/usb/host](../../tests/peer/usb/host/)
 にあり、CH32X035C8T6 と ESP32-S3 で両方（usb-peer-host / usb-peer-host-classes）が通っています。
 
-**VBUS は基板が供給します。** チップには VBUS を入り切りする機能がありません。
+**VBUS は基板が供給します。** チップには VBUS を入り切りする機能がありません。ホストを始めても、Type-C のソースの CC の回路や、
+基板の外部電源の切り替えは設定しません。V30x のホストは、チップに USBHS があっても USBFS を使います。
+
+例の `Serial` はボードのハードの UART（115200 baud）で、ホストにつないだ USB の口ではありません。
 
 必要な型番、D+/D−、VBUS、UART の接続とビルド手順は
 [サンプル共通ガイド](examples/README.ja.md)を参照してください。
@@ -71,7 +74,7 @@ X035 のどの型番がホストを持つかはデータシートの型番表の
 - アイソクロナス（オーディオ・ビデオ）と USB ネットワークはありません。帯域とバッファがこのチップには足りません。
 - MSC はブロック単位だけです（`mscMount` / `EspUsbHostMscFS` に当たるものはありません）。
 - ベンダーのバルクと CCID は、同時に開けるのはそれぞれ1つです。
-- USB シリアルの runtime `setRxBufferSize()` はありません。容量は `build_opt.h` の define で変えます。
+- USB シリアルの `setRxBufferSize()` はありません。受信の大きさは `CH32RVUsbHostCdcSerial::setBuffer()` でスケッチの配列に差し替えます（下の「容量の設定と失敗の確認」）。
 - エラーは `esp_err_t` ではなく `CH32RVUsbHostError` です。ESP32 の task / PHY / channel 設定を持ち込みません。
 
 API の語彙は共有しますが、現行 EspUsbHost のすべての機能との互換を意味しません。
@@ -154,6 +157,7 @@ program/pressure/pitch bend/SysEx の helper を使えます。channel は0始�
 `mscWaitReady()` → `mscInquiry()` / `mscCapacity()` → `mscReadBlocks()` / `mscWriteBlocks()` の順で扱います。
 必要な byte 数は block count × block size です。媒体が512-byte sectorとは限らないので容量情報を確認します。
 `mscRequestSense()` で SCSI の状態、`mscSelectLun()` で対象 LUN を選べます。
+媒体の入っていないリーダーは、TEST UNIT READY を数回試したあと容量無しでマウントされます。`mscWaitReady()` で長く待てます。
 filesystem、ファイル名、mount は扱いません。書き込みを追加する場合は、partition/FAT等を壊さないよう媒体の所有者を明確にします。
 
 ### Vendor bulk と CCID
@@ -208,7 +212,7 @@ HID インタフェースごとに覚えるレポート ID は 8、文字列記�
 
 - ホストスタックはこのライブラリ自身のものです（`CH32RVUsbHost.cpp`。TinyUSB は使いません）。割り込みは転送の
   完了とポートの変化を記録するだけで、制御転送の段階・列挙（ルートポートとハブ）・クラスの処理は通常の文脈で
-  動きます。ホストコントローラのドライバ（`CH32RVUsbHcdUsbfs.cpp`、`CH32RVUsbHcd.h` の表）は、開いているエンドポイントごとに転送を持ち、1 本しかない
+  動きます。ホストコントローラのドライバ（`CH32RVUsbHcdUsbfs.cpp`、`internal/CH32RVUsbHcd.h` の表）は、開いているエンドポイントごとに転送を持ち、1 本しかない
   トランザクションエンジンで順に流します。NAK は次のフレーム（インタラプトは bInterval ごと）で再試行し、STALL・
   無応答・トグル違いを区別します。制御転送は 5 秒（USB 仕様の上限）で打ち切ります。
 - スケッチが使う機能のファイルだけがリンクされます（ハブはいつも入ります）。

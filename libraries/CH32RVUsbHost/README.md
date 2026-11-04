@@ -3,31 +3,11 @@
 [日本語](README.ja.md)
 
 Keyboards, mice and other HID, USB serial (CDC-ACM and FTDI / CP210x / CH34x /
-PL2303), MIDI, mass storage, vendor bulk interfaces and CCID smart-card
-readers, through a hub too. The API is EspUsbHost's (the same author's ESP32
-library), renamed EspUsbHost -> CH32RVUsbHost.
+PL2303), MIDI, mass storage, vendor bulk interfaces and smart card readers
+(CCID), through a hub too.
 
-Runs on CH32X035 R8T6 / C8T6 / G8U6 / G8R6 (the F8U6, F7P6, D8U6 and the X033
-have no host in silicon; `begin()` says Unsupported), CH32V203/V208 (PB6/PB7)
-and CH32V303/V305/V307/V317, CH32V205, CH32L103/M103, CH32M030 and CH32H41x
-(PA11/PA12; L103/M103 need a CPU Clock of 48, 72 or 96 MHz, not the
-default 8 MHz; not checked on hardware). Verified on a CH32X035C8T6 against an ESP32-S3 (HID, CDC, MSC, MIDI,
-vendor, CCID); the others are build-only. The board
-supplies VBUS. Not here: isochronous audio / video and USB networking.
-
-The host stack is this library's own (CH32RVUsbHost.cpp, no TinyUSB), and so
-is the host controller driver (CH32RVUsbHcdUsbfs.cpp behind CH32RVUsbHcd.h): every open endpoint can have a transfer pending, NAKs are retried
-at the next frame (interrupt endpoints at their interval), STALL / no response
-/ toggle errors are told apart, control transfers give up after 5 s. See
-README.ja.md for the full description, and tests/peer/usb/host for the peer
-tests against an ESP32-S3.
-
-## Getting started
-
-Start with [DeviceInfo](examples/DeviceInfo/README.md). The
-[shared example guide](examples/README.md) covers exact parts, D+/D− wiring,
-VBUS, the UART monitor, building and troubleshooting. Every example directory
-has English and Japanese instructions matching its actual sketch.
+The API is that of EspUsbHost, the same author's ESP32 library, with
+`EspUsbHost` -> `CH32RVUsbHost` and `ESP_USB_HOST_` -> `CH32RV_USB_HOST_`.
 
 ```cpp
 #include <CH32RVUsbHost.h>
@@ -36,145 +16,251 @@ CH32RVUsbHost usb;
 
 void setup() {
   Serial.begin(115200);
-  usb.onDeviceConnected([](const CH32RVUsbHostDeviceInfo &d) {
-    usb.printDeviceInfo(d.address);
-  });
+  usb.onDeviceConnected([](const CH32RVUsbHostDeviceInfo &d) { usb.printDeviceInfo(d.address); });
+  usb.onKeyboard([](const CH32RVUsbHostKeyboardEvent &e) { if (e.pressed && e.ascii) Serial.print((char)e.ascii); });
   if (!usb.begin()) {
     Serial.println(usb.lastErrorName());
   }
 }
-void loop() { deliverEvents(); }   // the callbacks run here
+void loop() { deliverEvents(); }   // the callbacks run here; the stack runs after loop() and inside delay()
 ```
 
-`Serial` is the hardware UART at 115200 baud, not the hosted USB port.
-The board supplies 5-V VBUS through its own power circuit. Host startup does
-not configure a Type-C source/CC circuit or switch a board's external supply.
-X035F8U6 is a device-only part; choose a host-capable part such as C8T6.
-V30x host uses USBFS here, even when the chip also contains USBHS.
+## Support
+
+| Series | Port | Checked |
+|---|---|---|
+| CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS (PC16 / PC17) | on a C8T6 against an ESP32-S3 (EspUsbDevice): HID, CDC, MSC, MIDI, vendor, CCID |
+| CH32X035 F8U6 / F7P6 / D8U6, CH32X033 | - (no host in silicon; `begin()` says `Unsupported`) | `Unsupported` seen on an F8U6 |
+| CH32V203 / V208 | USBFS (PB6 / PB7) | built only |
+| CH32V303 / V305 / V307 / V317 | USBFS (PA11 / PA12) | built only |
+| CH32V205, CH32M030, CH32H415 / H416 / H417 | USBFS (PA11 / PA12) | built only. 48 MHz is made as for the device (V205 and H41x from the USBHS PLL, M030 from the 144 MHz PLL) |
+| CH32L103 / M103 | USBFS (PA11 / PA12) | built only. The 8 MHz CPU Clock cannot make 48 MHz and `begin()` fails (choose 48 / 72 / 96 MHz; not checked) |
+| other series | - (`begin()` says `Unsupported`) | built only |
+
+Which X035 parts have a host is the datasheet's part table, and `begin()`
+checks it on the chip: whether BASE_CTRL's host-mode bit sets (it does not on
+an F8U6). The peer tests are in [tests/peer/usb/host](../../tests/peer/usb/host/);
+both (usb-peer-host / usb-peer-host-classes) pass on a CH32X035C8T6 against an
+ESP32-S3.
+
+**The board supplies VBUS.** The chip cannot switch it. Starting the host does
+not set up a Type-C source's CC circuit or switch the board's external supply.
+On V30x the host uses USBFS even where the chip also has USBHS.
+
+`Serial` in the examples is the board's hardware UART (115200 baud), not the
+hosted USB port.
+
+The parts, D+/D−, VBUS, the UART wiring and building are in the
+[shared example guide](examples/README.md). Check the first connection with
+[DeviceInfo](examples/DeviceInfo/README.md).
+
+## What it does
+
+- **Devices**: connect / disconnect callbacks, descriptors, strings,
+  interfaces, endpoints, control transfers (`vendorControlTransfer` /
+  `vendorControlIn` / `vendorControlOut`), hubs (one level, port status and
+  power).
+- **HID**: keyboards (16 layouts, the Caps / Num / Scroll Lock LEDs), mice
+  (fields placed from the report descriptor), consumer / system control,
+  gamepads, vendor reports, raw input, report descriptors, output / feature
+  reports, boot / report protocol.
+- **CDC serial**: `CH32RVUsbHostCdcSerial` (a Stream) or `sendSerial` /
+  `onSerialData`. Baud rate, data format, DTR / RTS.
+- **MIDI**: a receive callback; sending notes, CC, program, pressure, pitch
+  bend and SysEx.
+- **Mass storage**: INQUIRY, capacity, REQUEST SENSE, TEST UNIT READY, block
+  reads and writes, LUN selection. No file system (blocks only).
+- **Vendor (bulk)**: open with `vendorOpen`, then `vendorWrite` / `vendorRead`
+  / `onVendorData`.
+- **CCID**: power, ATR, APDU (the response's SW comes apart in `statusWord`,
+  as in EspUsbHost), escape, slot state, card insertion and removal.
+
+## Differences from EspUsbHost
+
+- Callbacks are function pointers (no `std::function`, no lists of
+  listeners), for a chip with 20 KB of RAM.
+- There are no task settings. The stack runs after `loop()` and inside
+  `delay()`, and the waiting APIs run it while they wait. Callbacks are called
+  from `deliverEvents()`, which the sketch calls (never inside `delay()` or an
+  interrupt), and may call the waiting APIs. Until then reports, received data
+  and packets wait in the stack's buffers (a full one holds the device off),
+  and up to 4 connections and disconnections queue.
+- No isochronous transfers (audio, video) and no USB networking: the chip has
+  neither the bandwidth nor the buffers.
+- MSC works in blocks only (nothing like `mscMount` / `EspUsbHostMscFS`).
+- One vendor bulk interface and one CCID interface can be open at a time.
+- USB serial has no `setRxBufferSize()`. Replace the receive buffer with the
+  sketch's own array through `CH32RVUsbHostCdcSerial::setBuffer()` ("Sizes and
+  errors" below).
+- Errors are `CH32RVUsbHostError`, not `esp_err_t`. ESP32's task / PHY /
+  channel settings do not carry over.
+
+Sharing the API's vocabulary does not mean every feature of the current
+EspUsbHost is here. The [public header](src/CH32RVUsbHost.h) in this repository
+is what defines the API.
 
 ## Lifecycle and callbacks
 
 | API | Meaning |
 |---|---|
-| begin / end | Start/stop the controller and stack; check return values |
-| ready | Controller started; does not mean a class has enumerated |
-| task | Advance USB processing inside long application loops |
-| onDeviceConnected / onDeviceDisconnected | Track addresses and connection state |
-| deviceCount / getDevices / getDevice | Inspect connected devices |
+| `begin()` / `end()` | Start / stop the controller and the host stack. Check the result and `lastErrorName()` |
+| `ready()` | The host has started; not that a device has enumerated |
+| `task()` | Moves the host along explicitly, inside long computations |
+| `onDeviceConnected()` / `onDeviceDisconnected()` | A device connected / disconnected |
+| `deviceCount()` / `getDevices()` / `getDevice()` | The connected devices and their addresses |
 
-Callbacks run from deliverEvents(), which the sketch calls in loop(): never
-inside delay() or the ISR. Until then reports, bytes and packets wait in the
-stack's buffers (a full one holds the device off) and connections in a queue
-of four. Blocking APIs drive processing while waiting. Keep callbacks short;
-several examples set a flag and do class open/transfer work from loop.
-Callbacks are plain function pointers, one slot each. A new registration
-replaces the previous callback. Use captureless lambdas or ordinary functions.
-Copy callback data/string pointers into your own storage if needed later.
+Each callback is one slot holding a function pointer; registering again
+replaces it. Use lambdas without captures or plain functions, and keep the
+state you need in static variables. Copy an event's `data` / `rawData` and
+string pointers into your own buffer to use them later.
 
-ANY_ADDRESS/ANY_PORT select the first matching device/port. For multiple
-devices use callback addresses and explicit API arguments, or CDC
-setAddress/setPort. CDC port numbers are zero-based within a device. Addresses
-can change after reconnect.
+`CH32RV_USB_HOST_ANY_ADDRESS` and `CH32RV_USB_HOST_ANY_PORT` pick the first
+matching device / port. A USB address can change across a reconnect. With
+several devices, choose by the address the connect callback gives, and drop
+the state on disconnect. A CDC port is a number from 0 within one device.
 
 ## Descriptors and control transfers
 
-| API | Purpose |
+| API | For |
 |---|---|
-| printDeviceInfo / printAllDeviceInfo | Print identity, configuration, interfaces and endpoints |
-| getInterfaces / getEndpoints | Enumerate descriptor information |
-| getStringDescriptor | Read a string as ASCII; non-ASCII becomes ? |
-| vendorControlTransfer | Specify request type, recipient, value, index and buffer |
-| vendorControlIn / vendorControlOut | Convenience vendor-device requests |
-| getHubInfo / getHubPortStatus / setHubPortPower | Hub capabilities, status/change and power requests |
+| `printDeviceInfo(address)` / `printAllDeviceInfo()` | Identity, configuration, interfaces and endpoints to a `Print` (`Serial` by default) |
+| `getInterfaces()` / `getEndpoints()` | Interfaces / endpoints from the descriptors |
+| `getStringDescriptor(address, index, out, capacity)` | A string; non-ASCII becomes `?` |
+| `vendorControlTransfer(requestType, request, value, index, ...)` | An EP0 transfer with its request type and recipient |
+| `vendorControlIn()` / `vendorControlOut()` | The short forms for vendor device requests |
+| `getHubInfo()` / `getHubPortStatus()` / `setHubPortPower()` | A hub's information, port status / change, port power |
 
-Device address, interface number, endpoint address and CDC port are different
-identifiers. Endpoint addresses include direction, such as 0x81. Use the
-actual interface number in wIndex for interface requests and set the matching
-recipient/direction. Hub power requests control a hub port; they do not switch
-the board's own VBUS. Hub hardware may not implement individual switching.
+For your own interface request, put the descriptor's interface number in
+`wIndex` and give the right recipient and direction. The USB address, the
+interface number, the endpoint address and the CDC port number are different
+values; an endpoint address such as `0x81` includes the direction. Read the
+actual descriptors rather than reusing fixed values from a PC application or
+another implementation.
+
+The hub power API is a hub's port power request, not a switch of the board's
+own VBUS, and a hub may not implement per-port power.
 
 ## Class APIs
 
-| Class | Main APIs |
+### HID
+
+| API | For |
 |---|---|
-| Keyboard | onKeyboard, setKeyboardLayout, setKeyboardLeds |
-| Other HID | onMouse, onGamepad, onConsumerControl, onSystemControl |
-| Raw/vendor HID | onHIDInput, onHIDVendorInput, onHIDReportDescriptor, sendHIDReport/getHIDReport, sendHIDVendorOutput/Feature, sendSetProtocol |
-| Serial | CH32RVUsbHostCdcSerial Stream, or onSerialData/sendSerial |
-| MIDI | onMidiMessage; note, control, program, pressure, pitch-bend and SysEx helpers |
-| MSC | mscWaitReady, mscInquiry, mscCapacity, mscReadBlocks/WriteBlocks, mscRequestSense, mscSelectLun |
-| Vendor bulk | vendorOpen/Close, vendorWrite, vendorAvailable/Read, onVendorData, getVendorInterface |
-| CCID | ccidOpen, ccidPowerOn, ccidApdu, ccidEscape, card-state callbacks |
+| `onKeyboard()` / `setKeyboardLayout()` / `setKeyboardLeds()` | Keys, the character layout, the Lock LEDs |
+| `onMouse()` / `onGamepad()` | Input decoded from the descriptor |
+| `onConsumerControl()` / `onSystemControl()` | Media and system usages |
+| `onHIDInput()` / `onHIDVendorInput()` / `onHIDReportDescriptor()` | Raw input, vendor input, the report descriptor |
+| `sendHIDReport()` / `getHIDReport()` | Report transfers naming the interface, type and report ID |
+| `sendHIDVendorOutput()` / `sendHIDVendorFeature()` | Sending vendor reports |
+| `sendSetProtocol()` | Switching between boot and report protocol |
 
-Keyboard ascii=0 can simply mean the key has no ASCII character. Use raw
-usage and pressed/released state for non-text keys. Layout selection changes
-host-side conversion, not the physical keyboard. Unusual gamepad/mouse fields
-may need inspection of raw reports and descriptors.
+A keyboard event's `ascii=0` also means a key that has no ASCII character;
+the raw usage and pressed / released handle keys other than characters. A
+gamepad's own layout is checked through the raw report and the descriptor.
 
-The CDC Stream offers begin, available, read, peek, write, flush,
-setBaudRate/setConfig and setDtr/setRts. begin before connection stores settings
-for when a device appears. Check write return counts for partial transfers.
-serialReady/serialPortCount/getSerialPortInfo expose class state. Baud is the
-peer UART line coding, not USB bus speed.
+### USB serial
 
-When its receive ring fills, this implementation stops taking packets (the
-device is NAKed). Do not assume EspUsbHost's old-byte-drop policy. End-to-end losses still
-depend on the peripheral/UART and how often the application reads.
+`CH32RVUsbHostCdcSerial port(usb)` is an Arduino `Stream`: `begin(baud)`,
+`available()`, `read()`, `peek()`, `write()`, `flush()`, with `setBaudRate()` /
+`setConfig()` / `setDtr()` / `setRts()` for the settings. A `begin()` before a
+device is there keeps the settings and applies them when one appears. Choose
+among several ports with `setAddress()` / `setPort()`.
 
-MIDI channel numbers are zero-based. Messages need a sound generator to
-produce audio. MSC operates on blocks, without filesystem/mount support;
-size buffers using blockCount × blockSize from the media, not a fixed 512-byte
-assumption. Keep media ownership explicit when adding writes.
+The callback form is `onSerialData()` / `sendSerial()`; the state is
+`serialReady()` / `serialPortCount()` / `getSerialPortInfo()`. The baud setting
+is the peer UART's line coding, not the speed of the FS bus. For large
+transfers, check what `write()` returns and move the resend position on.
 
-Vendor bulk is a byte stream without application message boundaries. One
-vendor interface and one CCID interface can be open at a time. CCID APDU
-response data excludes SW1/SW2, returned separately as statusWord, but buffer
-capacity must also accommodate those two status bytes. Transport success and
-APDU command success are distinct.
+When the receive ring is full, this implementation takes no more packets (the
+device is held off with NAK). Do not apply EspUsbHost's "the old data is
+dropped" description. Whether anything is lost in the end also depends on the
+peer device, its UART and how often the sketch reads.
 
-Exact signatures and structures are in the [public header](src/CH32RVUsbHost.h).
+### MIDI
 
-## Limits
+`onMidiMessage()` receives the cable, status and data1 / data2.
+`midiSendNoteOn/Off()`, `midiSendControlChange()` and the program / pressure /
+pitch bend / SysEx helpers send. Channels count from 0. The arguments are in
+the [public header](src/CH32RVUsbHost.h) and the
+[MIDI example](examples/MIDI/README.md).
 
-Fixed counts: 5 devices (a hub and what is behind it), 2 hubs, 4 HID
-interfaces, 2 USB serial ports, 1 mass storage, 1 MIDI. Configuration
-descriptors are read up to 256 bytes. Receive buffers have defaults and
-take the sketch's own arrays instead (no build-time settings):
+### MSC
 
-| Default | Resource | Replace with |
+Go `mscWaitReady()` -> `mscInquiry()` / `mscCapacity()` -> `mscReadBlocks()` /
+`mscWriteBlocks()`. The bytes needed are block count × block size; a medium
+does not always have 512-byte sectors, so read the capacity.
+`mscRequestSense()` gives the SCSI state and `mscSelectLun()` picks the LUN.
+A reader with no medium in it is mounted without a capacity after a few
+TEST UNIT READY tries; `mscWaitReady()` waits longer. There are no file
+systems, file names or mounting. Before adding writes, be clear who owns the
+medium, so as not to break its partitions or FAT.
+
+### Vendor bulk and CCID
+
+`vendorOpen()` opens a class `0xff` interface; `vendorWrite()`, `vendorRead()`
+/ `onVendorData()` talk through it. `getVendorInterface()` shows the actual
+endpoints. The bulk byte stream has no application message boundaries.
+
+CCID has `ccidOpen()`, `ccidPowerOn()`, `ccidApdu()`, `ccidEscape()` and card
+state notifications. `ccidApdu()`'s response is the payload without SW1/SW2,
+and the status word is a separate output, but the receive buffer's capacity
+must hold those two status bytes too. A successful transfer and a successful
+command (`SW=9000`) are different things.
+
+## Sizes and errors
+
+The counts are fixed: 5 devices (a hub and what is behind it), 2 hubs, 4 HID
+interfaces, 2 USB serial ports, 1 MSC, 1 MIDI. Configuration descriptors are
+read up to 256 bytes (interfaces beyond that are not assigned).
+
+The receive buffers have default sizes and take the sketch's own arrays
+instead (there are no build-time settings).
+
+| Default | Buffer | Replace with |
 |---|---|---|
-| 128 | Stream receive ring | CH32RVUsbHostCdcSerial::setBuffer() |
-| 256 | Vendor receive ring | setVendorBuffer(), before vendorOpen() |
-| 272 | CCID ring and response | setCcidBuffers(), before ccidOpen() |
+| 128 | the USB serial (Stream) receive ring | `CH32RVUsbHostCdcSerial::setBuffer()` |
+| 256 | the vendor receive ring | `setVendorBuffer()` (before `vendorOpen()`) |
+| 272 | the CCID receive ring and response | `setCcidBuffers()` (before `ccidOpen()`) |
 
-Report IDs kept per HID interface: 8; one string descriptor: 32 characters.
+Each HID interface remembers 8 report IDs; a string descriptor is up to 32
+characters, the terminator included.
 
-## Errors and EspUsbHost differences
-
-Errors use CH32RVUsbHostError, not esp_err_t. Check lastErrorName after a
-failed operation: Unsupported (part/implementation), Busy (device owns the
-controller), NotStarted/NotConnected, NotSupported (function absent/not open),
-Timeout, Stalled, TransferFailed, InvalidArgument, InvalidResponse or NoMemory.
-
-This core uses its own host stack, function-pointer callbacks and
-cooperative task processing. It does not provide ESP32 task/PHY/channel configuration,
-listener lists, MSC filesystem mounting, host ISO audio/video or USB
-networking. One hub level is supported. Sharing API vocabulary does not mean
-all current EspUsbHost examples and features carry over.
-
-## Examples and verification
-
-| Example | Purpose |
+| Error | Meaning |
 |---|---|
-| [DeviceInfo](examples/DeviceInfo/README.md) | Enumeration and descriptors |
-| [Keyboard](examples/Keyboard/README.md) / [Mouse](examples/Mouse/README.md) | HID input and LEDs |
-| [USBSerial](examples/USBSerial/README.md) | UART/USB serial bridge |
-| [MIDI](examples/MIDI/README.md) | MIDI input and generated note |
-| [MSCBlockDump](examples/MSCBlockDump/README.md) | Capacity and LBA 0 read |
-| [VendorBulk](examples/VendorBulk/README.md) | A known bulk protocol peer |
-| [CcidReader](examples/CcidReader/README.md) | ATR and APDU status |
+| `Unsupported` | No host in this implementation, or none in the silicon |
+| `Busy` | The device side has the controller |
+| `NotStarted` / `NotConnected` | Not started / no such device |
+| `NotSupported` | The function is not there, or the interface is not open |
+| `Timeout` / `Stalled` / `TransferFailed` | Out of time / refused by the device / the transfer failed |
+| `InvalidArgument` / `InvalidResponse` | A bad argument / a bad response |
+| `NoMemory` | A buffer or table is full |
 
-See the [shared example guide](examples/README.md) and
-[peer-test documentation](../../tests/peer/usb/README.ja.md). Build profiles
-are not hardware-verification claims. Empty storage readers have a known
-enumeration TEST UNIT READY retry limitation; insert media before connecting.
+## Examples
+
+The wiring, steps, output and limits are in each README, from the
+[example index](examples/README.md).
+
+| Example | What it checks |
+|---|---|
+| [DeviceInfo](examples/DeviceInfo/README.md) | Enumeration, interfaces / endpoints, plugging and unplugging |
+| [Keyboard](examples/Keyboard/README.md) / [Mouse](examples/Mouse/README.md) | HID input and the LEDs |
+| [USBSerial](examples/USBSerial/README.md) | Relaying between the UART and USB serial |
+| [MIDI](examples/MIDI/README.md) | MIDI input and a periodic note |
+| [MSCBlockDump](examples/MSCBlockDump/README.md) | The medium's capacity and reading LBA 0 |
+| [VendorBulk](examples/VendorBulk/README.md) | Sending and receiving a known bulk protocol |
+| [CcidReader](examples/CcidReader/README.md) | The ATR and an APDU's status word |
+
+## Inside
+
+- The host stack is this library's own (`CH32RVUsbHost.cpp`; no TinyUSB). The
+  interrupt only records completed transfers and port changes; the control
+  transfer stages, enumeration (the root port and hubs) and the class work run
+  in normal context. The host controller driver (`CH32RVUsbHcdUsbfs.cpp`, the
+  table in `internal/CH32RVUsbHcd.h`) holds a transfer per open endpoint and runs them in
+  turn through the single transaction engine. NAKs are retried at the next
+  frame (interrupt endpoints at their bInterval), STALL, no response and toggle
+  errors are told apart, and a control transfer gives up after 5 s (the USB
+  spec's limit).
+- Only the files of the functions a sketch uses are linked (the hub always is).
+- The device (CH32RVUsbDevice) uses the same controller, so only one of them
+  runs at a time (the other is `Busy`).

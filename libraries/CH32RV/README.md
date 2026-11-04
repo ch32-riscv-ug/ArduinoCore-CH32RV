@@ -1,11 +1,104 @@
 # CH32RV
 
-Two things live here: the **examples for the core's own APIs**, and the
-**register-level escape hatch**.
+Three things live here: the **`CH32RV` object** for the chip as a whole, the
+**examples for the core's own APIs**, and the **register-level escape hatch**.
 
-They share a library because an Arduino platform can only ship examples through
-one, and a library needs at least one header to be well formed. Rather than the
-empty placeholder other cores use for this, the header does a job.
+## The `CH32RV` object (CH32RVSystem.h)
+
+The role of `ESP.*` in the ESP32 core: what concerns the whole chip and has no
+standard Arduino API.
+
+```cpp
+#include <CH32RV.h>
+
+CH32RV.restart();                        // software reset (does not return)
+CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / ...
+CH32RV.resetReasonName();                // "software" and so on, for printing
+CH32RV.wdtEnable(2000);                  // reset unless fed every 2 s
+CH32RV.wdtFeed();                        // call it in loop()
+CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI (Clock Source menu)
+CH32RV.getVddMillivolts();               // supply voltage (mV), from the ADC's internal reference
+CH32RV.getHeapSize();                    // the heap, and what malloc() can still hand out
+CH32RV.getFreeHeap();
+CH32RV.getChipModel();                   // "CH32V003": the series built for
+CH32RV.getSketchSize();                  // flash used, and what is left of the part's
+CH32RV.getFreeSketchSpace();
+CH32RV.getFlashChipSize();               // the silicon's flash, from its signature
+CH32RV.getUniqueId();                    // 64 bits of the chip's unique ID
+analogReadTemp();                        // die temperature (°C), NAN without a sensor (core)
+analogReadVref();                        // the internal reference, on analogRead()'s scale (core)
+```
+
+- **There is no `wdtDisable()`.** Once running, the IWDG cannot be stopped,
+  so a `disable()` that did not would be worse than none.
+- **The watchdog can run from power-on.** Tools → Watchdog → `Running from power-on`
+  has the core rewrite the option byte (USER's IWDG_SW) at boot, and the IWDG
+  then runs from power-on at its default period (about 128 ms on V003).
+  Set the period with `wdtEnable()` early in `setup()` and call `wdtFeed()` in
+  `loop()`. The factory entry does nothing and leaves the chip as set. To go
+  back, upload a sketch built with the factory entry, run
+  `ch32rv target option set iwdg=sw --yes` and reset (a `Running from power-on`
+  sketch left on the chip writes USER back to hw at every boot). The menu is on
+  V00x, M007, X033/X035, X305/X315, V20x, V205, V30x, L103/M103 and V407/V467.
+- **The timeout is approximate.** The LSI it counts can be off by close to
+  ±50 % by the datasheet; the conversion errs towards a timeout shorter than
+  asked for.
+- `wdtEnable()` **returns false** on CH32M030, which has no IWDG. CH32X033/X035
+  have no LSI; their IWDG runs on HSI/1024 (46.875 kHz).
+- **`clockSource()`** says HSE only when the Clock Source menu chose the crystal
+  and it started. A crystal that does not start leaves the same CPU Clock on HSI
+  (`F_CPU` unchanged, at HSI's accuracy).
+- **Voltage and temperature are computed from typical values.** The internal
+  reference (Vrefint) is the datasheet's typical value, within a few percent.
+  The temperature is uncalibrated and can be tens of °C off on some series
+  (V103's datasheet gives V25 as 1.1-1.6 V). The sensor is on V103, V20x, V205,
+  V30x, V407/V467 and L103/M103. M030 has no reference data and returns 0.
+- **`getUniqueId()`** is UNIID1 | UNIID2 << 32: only these 64 of the 96 UID bits
+  differ from chip to chip. It is not called `getEfuseMac()` because it is not a
+  MAC address.
+- **H41x** has `setVio18Millivolts()` / `getVio18Millivolts()` for the supply
+  of the high-speed pins (1200, 1800, 2500 or 3300 mV); the VIO18 Supply menu
+  sets it before `setup()` instead.
+
+### Sleep (`lightSleep()` / `deepSleep()`)
+
+ESP32's `esp_sleep_*` meanings, under `CH32RV` names.
+
+```cpp
+CH32RV.enableTimerWakeup(5 * 1000000ULL);  // wake in 5 s
+CH32RV.enablePinWakeup(PA1, LOW);          // or when PA1 reads LOW (set the pin's mode yourself)
+CH32RV.lightSleep();                       // returns on waking; RAM and pin states kept
+CH32RV.deepSleep();                        // starts again from setup() (a software restart)
+CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _UNDEFINED
+CH32RV.timeDomain();                       // moves on whenever unmeasured time was skipped
+```
+
+- **Supported families.**
+  - V003, V00x and X033/X035, woken by the AWU.
+  - V20x, V205, V30x and L103/M103, woken by the RTC alarm; they sleep in stop.
+  - Elsewhere the calls return `CH32RV_SLEEP_UNSUPPORTED`.
+- **On the RTC families `time()` is the RTC.**
+  - It runs at 1 Hz from LSI, measured once, and the time survives resets and standby. After a power cut it starts again from 1970.
+  - `settimeofday()` sets it, including through SNTP's `configTime()`.
+  - BKP DR1-DR4 are the core's.
+- **Nothing sleeps by itself.** Only these calls do. `Serial` finishes sending first.
+- **`millis()` counts the sleep.** The AWU measures the time asleep, and the core adds it.
+  - On the AWU families a pin wake part-way through cannot be measured. It adds nothing and moves `timeDomain()` on instead. The RTC families measure it with the RTC.
+  - Accuracy (2026-10-28, one chip of each): V003 matched the wall clock within 0.1 %, X035 slept 3 % long, and V006 slept 10 % short. On those two the AWU runs at a different rate asleep than when it is measured awake.
+- **The watchdog looks paused while asleep.** The IWDG cannot be stopped, so the core works around it:
+  - just before sleeping it stretches the IWDG to its longest;
+  - it wakes every half of that to feed it, and nothing else runs;
+  - on waking it puts back the `wdtEnable()` setting.
+- **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families when only the timer wakes it and the watchdog is off. Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
+- **Size.** 0 B unless used. On V003, timer sleep adds about 1.4 KB, and pin wakeups about 0.65 KB more.
+
+The design and the measurements are in sections 4.3 and 5.1 of
+[the design of the A features](../../docs/peripheral-a-design.ja.md) (Japanese).
+
+The object, the examples and the escape hatch share a library because an
+Arduino platform can only ship examples through one, and a library needs at
+least one header to be well formed. Rather than the empty placeholder other
+cores use for this, the header does a job.
 
 ## The examples
 
@@ -60,38 +153,6 @@ board (fqbn) only (`board:`, `docs/examples-build-rules.ja.md`).
 
 Both were run on the boards (2026-10-14).
 
-## Sleep (`lightSleep()` / `deepSleep()`)
-
-ESP32's `esp_sleep_*` meanings, under `CH32RV` names.
-
-```cpp
-CH32RV.enableTimerWakeup(5 * 1000000ULL);  // wake in 5 s
-CH32RV.enablePinWakeup(PA1, LOW);          // or when PA1 reads LOW (set the pin's mode yourself)
-CH32RV.lightSleep();                       // returns on waking; RAM and pin states kept
-CH32RV.deepSleep();                        // starts again from setup() (a software restart)
-CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _UNDEFINED
-CH32RV.timeDomain();                       // moves on whenever unmeasured time was skipped
-```
-
-- **Supported families.**
-  - V003, V00x and X033/X035, woken by the AWU.
-  - V20x, V205, V30x and L103/M103, woken by the RTC alarm; they sleep in stop.
-  - Elsewhere the calls return `CH32RV_SLEEP_UNSUPPORTED`.
-- **On the RTC families `time()` is the RTC.**
-  - It runs at 1 Hz from LSI, measured once, and the time survives resets and standby. After a power cut it starts again from 1970.
-  - `settimeofday()` sets it, including through SNTP's `configTime()`.
-  - BKP DR1-DR4 are the core's.
-- **Nothing sleeps by itself.** Only these calls do. `Serial` finishes sending first.
-- **`millis()` counts the sleep.** The AWU measures the time asleep, and the core adds it.
-  - On the AWU families a pin wake part-way through cannot be measured. It adds nothing and moves `timeDomain()` on instead. The RTC families measure it with the RTC.
-  - Accuracy (2026-10-28, one chip of each): V003 matched the wall clock within 0.1 %, X035 slept 3 % long, and V006 slept 10 % short. On those two the AWU runs at a different rate asleep than when it is measured awake.
-- **The watchdog looks paused while asleep.** The IWDG cannot be stopped, so the core works around it:
-  - just before sleeping it stretches the IWDG to its longest;
-  - it wakes every half of that to feed it, and nothing else runs;
-  - on waking it puts back the `wdtEnable()` setting.
-- **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families when only the timer wakes it and the watchdog is off. Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
-- **Size.** 0 B unless used. On V003, timer sleep adds about 1.4 KB, and pin wakeups about 0.65 KB more.
-
 ## The escape hatch
 
 ```cpp
@@ -107,8 +168,7 @@ says what they are. Two
 warnings belong on the tin:
 
 1. **This layer is not kept from release to release.** The names are this core's own,
-   not a vendor SDK's, and they change - the register map is on its way to being
-   generated from `ch32-device-data`. What a release keeps is in
+   not a vendor SDK's, and they can change between releases. What a release keeps is in
    [the public API](../../docs/public-api.ja.md).
 2. **The core is using these registers too.** Writing `AFIO_PCFR1` by hand
    while `Serial` or `Wire` is open fights `begin()` and `setRoute()`, and the

@@ -3,9 +3,9 @@
 [Japanese plan](TEST_PLAN.ja.md) is the reference.
 [Coverage](../docs/test-coverage.ja.md) inventories implementation and test definitions, not run results.
 
-The redesign targets native Linux. Preserving the existing tests, harness, wiring or directory layout is not a requirement.
-Default pytest collection runs board-free unit/ and platform/ checks only. Tests, CI and maintenance tools do not depend on the archived suite.
-run_hardware.py explicitly stages and runs runtime, UART, GPIO, HID upload and USB power-cycle contracts using validated local settings. Python tests and sketches are stored separately to avoid flashing during collection.
+The suite runs on native Linux.
+Default pytest collection runs board-free unit/ and platform/ checks only.
+run_hardware.py explicitly stages and runs the hardware contracts (runtime, UART, GPIO, HID upload, USB power cycling and the rest) using validated local settings. Python tests and sketches are stored separately to avoid flashing during collection.
 
 Execution directories are split by equipment: board-free unit/host checks, platform checks, a single DUT, loopback, peers, instrumentation and manual operation.
 Contracts distinguish core behavior, series/part/board differences, Arduino ecosystem integration, USB data, USB PD and bootloader HID.

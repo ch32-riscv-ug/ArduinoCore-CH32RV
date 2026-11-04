@@ -14,7 +14,7 @@ IDE port、discovery、probe の serial port、monitor、pytest の道具の分�
 | **stream** | ストリーム | probe の中の位置付きのバイト列。target console と fixture UART の受信。読んでも消えず、読み手が複数いてよい |
 | **port** | 口 | probe のどのピンの組か。probe に保存した設定のラベル `S.N`（`S.swdio`、`S.swclk`、`S.swio`、`S.nrst`、`S.rx`、`S.tx`）の `S` が名前。名前つきの口が無い probe は、名前の無い口を 1 つ持つとみなす（`any` でだけ選べる）。IDE port は口ごと |
 | **connection** | 接続 | 口への生きている attach。attach のたびに新しく作る |
-| **console-passthrough** | コンソールの素通し | probe.config の項目。serial port（fn 0 の transport の番号）ごとに、セッションが来ていない間だけ probe が止めない attach をしてコンソールをその口へ流す。旧仕様の attach policy（at boot）と bind の代わり |
+| **console-passthrough** | コンソールの素通し | probe.config の項目。serial port（fn 0 の transport の番号）ごとに、セッションが来ていない間だけ probe が止めない attach をしてコンソールをその口へ流す |
 | **IDE port** | IDE のポート | Arduino の discovery が並べる 1 行。probe の serial port とは別の概念 |
 | **broker** | ブローカー | probe ごとに 1 つ、誰の子でもない ch32rv のプロセス。probe のセッションを持ち、client（ch32rv の各コマンド、pytest）を束ねる。client が 0 になったら終わる |
 
@@ -90,7 +90,7 @@ platform.txt の `pluggable_discovery.ch32rv.pattern` で登録する（1 つで
 
 専用 PID の無い OEP の probe（変換チップ越しの無印 ESP32、USJ だけの P4）は discovery に出さず、利用者が serial port を選ぶ。
 
-OEP の probe は、取得したプロジェクトの USB ID **1209:4F45** で見分ける（oep-spec core §3.3）。その device の中の口は interface の
+OEP の probe は、プロジェクトの USB ID **1209:4F45**（oep-spec の registry の `usb`）で見分ける（oep-spec transports §3）。その device の中の口は interface の
 種類で決まる（CDC はシリアルの口、vendor class の bulk は vendor bulk、vendor 定義の HID は HID）。interface や device の文字列
 （iProduct）は表示のためのもので、見分けには使わない。利用者が `oep://<unit_id>` で名指ししたときは、USB の serial number が同じ
 device を開いて describe の unit_id で確かめる。以前の仮の ID（303a:0002）と名前（iProduct が `OEP` で始まる）での判定は、
@@ -106,7 +106,7 @@ sketch.yaml や pytest の `--port` に書かれるので、読めることを�
 
 書き込みもモニタも同じ規則（oep-spec host guide §5.3 の「解決」）。attach せずに分かる情報だけで probe と口を絞る: discovery の
 unit_id、口の名前、target の家系が使う wire をその口が持つか（V003 なら swio、L103 / X035 なら rvswd）。**残りが 1 つでなければ
-止める**（0 なら見つからない、2 つ以上なら曖昧。一覧を出す）。旧仕様の「板の家系に合うスロットを attach して探す」動きは無い。
+止める**（0 なら見つからない、2 つ以上なら曖昧。一覧を出す）。板の家系に合う口を attach して探すことはしない。
 家系は wire の有無の絞り込みと、attach 後の fail-closed の照合（ch32rv の `--chip`、monitor の `chip`）にだけ使う。
 
 - 名前つきの口がある probe: `oep://<probe>/<port>` で名指す（discovery の IDE port を選ぶのがいちばん迷わない）。その名前の口が
@@ -126,9 +126,9 @@ unit_id、口の名前、target の家系が使う wire をその口が持つか
 
 1. シリアルに見える transport（USB CDC、USB-Serial/JTAG、UART bridge）は、いつでも OEP のフレームを受ける。フレーム以外の
    バイトは console-passthrough のコンソールが流れる先になる（設定が無ければ何も流れない）。
-2. vendor bulk / HID を持つ probe では host はそちらで OEP を話す（core §3.3 の順）。CDC は実際にはコンソールだけが流れるが、
+2. vendor bulk / HID を持つ probe では host はそちらで OEP を話す（oep-spec transports §3 の順）。CDC は実際にはコンソールだけが流れるが、
    OEP を受けなくなるわけではない（Web Serial や権限の無い環境からは CDC で話せる）。
-3. どの transport から来た要求も、セッションとロックは 1 つ（core §3.3）。
+3. どの transport から来た要求も、セッションとロックは 1 つ（oep-spec transports §3）。
 4. 起動モード（setup / debugger）は持たない。設定は同じ口で行い、すぐ効く。再起動も、setup へ戻る手段も要らない。
 
 ### 4.2 フレームの形と共用の規則
@@ -188,7 +188,7 @@ UART bridge の probe は **115200 固定**。USB CDC / USJ では baud は数�
 - その口からセッションの要求が来ておらず、セッションがそのピンを取っていない間だけ、probe が止めない attach をしてコンソールを
   口へ流す。セッションが来れば素通しが先に退く。IDE と pytest の monitor は ch32rv が自分で attach する（ブローカーのセッション）。
 - 試し直しは、swio は probe が決める間隔で行う。rvswd は wake が target をリセットしうるので、条件が成り立つたびに 1 回だけ。
-  旧仕様の `retry_s` のような設定は無い。
+  試し直しの間隔の設定は無い。
 - rvswd の休ませ方は probe が target_id から決める（oep-spec debug §3.1。CH32L103 は low）。口ごとの設定 `rvswd-rest` で止められる。
 - fixture UART のピンは口の `rx` / `tx` のラベルから plan する。
 

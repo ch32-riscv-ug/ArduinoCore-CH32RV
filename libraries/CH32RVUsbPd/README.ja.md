@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-旧名は `USBPD` ライブラリ（`USBPD.h`）です。定義済みのオブジェクト名 `USBPD` は変わりません。USB デバイスと合わせた使い方は
+定義済みのオブジェクトは `USBPD` です。USB デバイスと合わせた使い方は
 [docs/usb.ja.md](../../docs/usb.ja.md) にあります。
 
 ```cpp

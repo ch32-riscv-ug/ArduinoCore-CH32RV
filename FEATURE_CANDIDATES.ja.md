@@ -158,7 +158,7 @@ I2S、ADC、DAC、DVP 等の別機能が必要になる。
 - [RTOS 方針](docs/adr/0006-rtos-policy.ja.md)
 - [タイマー資源の契約](docs/timer-design.ja.md)
 - [ソフトウェア実装ペリフェラル](docs/software-peripherals.ja.md)
-- [USB の仕様と今後の予定](docs/usb.ja.md)
+- [USB の仕様と、確かめていない構成](docs/usb.ja.md)
 - [既存 TODO](TODO.ja.md)
 
 ## ESP32 の比較参照

@@ -73,7 +73,7 @@ void loop() {
   `#include <Network.h>` も書きます。Network ライブラリは Ethernet の MAC を持つ系列（V208、V307 / V317、V407 / V467、
   H41x）向けで、X035 では使えません。`beginNetwork()` を呼ばなければ、生の Ethernet フレームを扱うだけです。
   USB controller とネットワークの実機確認範囲は [USB の対応表](../../docs/usb.ja.md#対応状況) を参照してください。
-- **無いもの**: ファームウェア更新の各クラス（[docs/usb.ja.md](../../docs/usb.ja.md#今後の予定)）。
+- **無いもの**: ファームウェア更新の各クラス（[docs/usb.ja.md](../../docs/usb.ja.md#確かめていない構成と無いもの)）。
 - **CDC とベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
   送ります（`onDirectTxComplete()` で返るまで、バッファは触らず残してください。送り終えても、リセットや `end()` で
   止まっても、必ず 1 回返ります）。ビルド時の設定は要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で
@@ -157,6 +157,9 @@ HID の複数機能は report ID で一つの interface を共有します。
 IN/OUT の endpoint 数、packet memory、ISO 能力は controller ごとに異なります。ESP32 の「IN endpoint が四つ」等の
 制約をそのまま使わず、[USB controller の対応表](../../docs/usb.ja.md#コントローラと速度)を確認します。
 `OutOfEndpoints` は割当て不足、`TooManyInstances` は class 個数不足で、対処する設定も異なります。
+
+`begin()` が true なのはスタックが始まったこと、`ready()` はホストが構成したこと、CDC の `connected()` は DTR が立っていることです。
+自分の長いループの中では `device.task()` を呼んでスタックを進めます。
 
 ## 各クラスの確認方法
 

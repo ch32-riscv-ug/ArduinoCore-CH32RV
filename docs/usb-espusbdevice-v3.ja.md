@@ -41,8 +41,8 @@ CH32RVUsbDevice の利用者 API の差を調べ、なるべく小さくしま�
 | Video の既定は Bulk | このコアの USBFS は端点が 64 バイトまでで、isochronous は 1 ms に 64 バイト（62 KB/s）しか出ない。v3 の FS の isochronous は 512 バイトのパケットなので、v3 は Isochronous のまま（3 章の 3） |
 | CDC の `write()` は、ホストが端末を開いていない（DTR が無い）間は捨てる（v3 は DTR を見ずに送る） | 開いていない UART と同じで、待ちもしない（3 章の 1） |
 | HidVendor の GET_REPORT は reportSize まで 0 で埋めて返す（v3 は送った長さのまま） | report の長さは記述子で決まっている |
-| Audio の形式は 1 ストリームに PCM 形状 1 つ（レートは 8 つまで）。v3 は形状の違う形式を alternate setting で切り替える | まだ入れていない |
-| まだ入れていないもの | Audio の PCM 形状ごとの alternate、DFU の Download |
+| Audio の形式は 1 ストリームに PCM 形状 1 つ（レートは 8 つまで）。v3 は形状の違う形式を alternate setting で切り替える | 入れていない |
+| 入れていないもの | Audio の PCM 形状ごとの alternate、DFU の Download |
 
 ## 3. ESP 側への修正依頼と返事
 

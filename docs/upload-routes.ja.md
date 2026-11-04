@@ -15,7 +15,7 @@ IDE port と経路の対応、discovery の設計は [oep-workflow.ja.md](oep-wo
 | HID bootloader（UIAPduino、`1209:b803`） | USB のみ | 書き込みは自動、入るのは手動 | 必要: RESET を押したまま USB へ接続し、すぐ離す | 不可: bootloader が外部 reset の履歴を確認する | 実装済（`boot hid flash`、CH32V003、16 KiB まで） | 結線済（`ch32rv-hid://`） |
 | factory USB ISP（`4348:55e0`）、BOOT0 ピンで入る系列 | USB | 入るのが手動 | 必要: BOOT0（V103 は BOOT0 / BOOT1） | 不可（BOOT0 は端子） | 実装済（`isp flash`。V103、V20x、V30x、L103 の bootloader。実機は未確認） | 結線済（`ch32rv-isp://` の口） |
 | factory USB ISP、X033 / X035 | USB | ○ 動いているアプリからは自動 | 初回は必要: PC17（USB D+）を High にして電源投入 | 可能: `CH32RVUsbDevice` の DFU_DETACH または 1200bps touch → boot mode 設定 → software reset | 実装済（X035 で実機確認） | 結線済（`ch32rv-app://`、`ch32rv-isp://` の口。`--entry auto`） |
-| factory USB ISP、X305 / X315 | USB | 未確認 | 未確認 | 可能（予定）: X033 / X035 と同じ | 未確認 | 結線済（同じ recipe） |
+| factory USB ISP、X305 / X315 | USB | 未確認 | 未確認 | 可能: X033 / X035 と同じ手順を入れてある（実機は未確認） | 未確認 | 結線済（同じ recipe） |
 | factory UART ISP | USB-UART 変換 | — | — | V00x はアプリ経由、他は BOOT ピン | 未実装 | 対応しない |
 | DFU（アプリの DFU runtime、CH32H41x） | USB のみ | ○ 動いているアプリの DFU_DETACH で入る | 不要 | 可能（DFU runtime は既定で付く） | 実装済（`boot dfu flash` / `boot dfu info`） | 結線済（CH32H41x の `ch32rv-app://` の口、platform.txt の ch32rv_dfu）。H417 の FS で arduino-cli から書けた |
 | 独自 bootloader（UF2 / UART） | 板による | — | — | — | `boot uf2` / `boot uart` は予約のみ | 対応しない（該当する板が出たら recipe を足す） |

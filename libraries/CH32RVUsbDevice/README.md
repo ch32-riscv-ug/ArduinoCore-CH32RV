@@ -50,7 +50,8 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
 | `EspUsbDeviceConfig::controller` | `CH32RVUsbDeviceConfig::controller` (`CH32RVUsbController`) |
 | `lastError()` returns `esp_err_t` | `lastError()` returns `CH32RVUsbDeviceError`; `lastErrorName()` as before |
 
-Differences:
+### Differences
+
 - **Callbacks are `CH32RVCallback`** (EspUsbDevice takes `std::function`): a
   function pointer, or a lambda capturing at most two pointers' worth
   (`[this]`, a pointer and a small value). No heap; a bigger capture is a
@@ -75,7 +76,9 @@ Differences:
   others 1); within it, declaring is enough. CDC and vendor buffers are set
   with `configure(CH32RVUsbBulkStreamConfig)` (EspUsbDevice v3's field names):
   the class's own by default, the sketch's array when given; nothing is
-  allocated.
+  allocated. CCID (`CH32RVUsbCcidConfig`) and video (`CH32RVUsbVideoConfig`)
+  are set with `configure()` too. Neither the number of classes nor the size
+  of the descriptors has a build-time limit.
 - **Disks are objects the MSC class reads from** (`setStorage()`; `attach()`
   does it), not lambdas bound to `onRead()`.
 - **The network's IP layer** (`ipConfig()`, `dhcpServer()`, `dhcpClient()`,
@@ -85,7 +88,7 @@ Differences:
   MAC (V208, V307/V317, V407/V467, H41x), not the X035. Without
   `beginNetwork()` the function exchanges raw Ethernet frames. Check controller
   and networking hardware coverage in the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況).
-- **Not here**: the firmware-update classes.
+- **Not here**: the firmware-update classes ([docs/usb.ja.md](../../docs/usb.ja.md#確かめていない構成と無いもの), Japanese).
 - **The CDC and vendor classes' direct path (`writeDirect()`, from their shared base `CH32RVUsbDeviceBulkStream`) works on every series**:
   one transfer straight from the caller's buffer, which stays untouched until
   `onDirectTxComplete()` hands it back (once, whether sent, reset or stopped).
@@ -115,22 +118,27 @@ Differences:
 
 ## Classes
 
-`CH32RVUsbDevice`, `CH32RVUsbDeviceCdcSerial`, `CH32RVUsbDeviceHidKeyboard`
-(layouts, NKRO, boot protocol, `ledState()`), `CH32RVUsbDeviceHidMouse`,
-`CH32RVUsbDeviceHidGamepad`, `CH32RVUsbDeviceHidConsumerControl`,
-`CH32RVUsbDeviceHidSystemControl`, `CH32RVUsbDeviceHidVendor`,
-`CH32RVUsbDeviceHidCustom`, `CH32RVUsbDeviceMidi` (up to 16 cables; `configure()` sets the queues and how events are taken),
-`CH32RVUsbDeviceVendor` (bulk; with `peek()`, which EspUsbDevice lacks), `CH32RVUsbDeviceMsc` (a medium put in
-with `mediaPresent(true)` while running is reported to the host as changed) with
-`CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` /
-`CH32RVUsbDeviceMscSdCard` (its own header), `CH32RVUsbDeviceCcid` (`messageBytes` 0, the default, is 271 bytes or the chosen controller's bulk OUT packet - 512 on USBHS, 1024 on USBSS - whichever is larger),
-`CH32RVUsbDeviceNet` (CDC-NCM, raw frames; `configure()` sets the transfer blocks), `CH32RVUsbAudioFunction`
-(UAC1/UAC2; up to 8 rates of one PCM shape per stream; a full playback ring
-drops the oldest frames unless `playbackOverflowPolicy` says otherwise), `CH32RVUsbDeviceVideo` (UVC),
-`CH32RVUsbDeviceDfuRuntime` (an update entry through DFU_DETACH; the next mode
-and programming method depend on the series). It is included by default
-(`config.dfuRuntime = false` disables it); declare it explicitly when adding
-an `onDetach()` decision. Its interface name, "CH32RV", identifies a ch32rv upload port.
+| Class | What it is |
+|---|---|
+| `CH32RVUsbDevice` | The device. `begin(config)`, `end()`, `started()` / `ready()`, `remoteWakeupEnabled()` / `remoteWakeup()` (declared with `config.remoteWakeupSupported`), `task()`, `sendHidReport()`, `lastErrorName()`, `enterBootloader()` |
+| `CH32RVUsbDeviceCdcSerial` | A virtual COM port (`Stream`). `connected()`, `lineCoding()`, `lineState()`, `onLineCoding()`, `onLineState()`, `onRx()`, the 1200 bps touch. `configure()`, `onRxData()`, `onTxComplete()`, `writeDirect()` / `readDirect()` and the rest are shared with Vendor (`CH32RVUsbDeviceBulkStream`) |
+| `CH32RVUsbDeviceHidKeyboard` | A keyboard. `write()`, `tapKey()`, `tapUsage()`, `pressUsage()`, `releaseAll()`, `setLayout()`, `ledState()`, `enableNkro()` |
+| `CH32RVUsbDeviceHidMouse` | A mouse. `move()`, `wheel()`, `click()`, `press()` / `release()` |
+| `CH32RVUsbDeviceHidGamepad` | A gamepad (6 axes, a hat, 32 buttons). `send()`, `sendReport()` |
+| `CH32RVUsbDeviceHidConsumerControl` | Media keys. `click(CH32RV_USB_DEVICE_CONSUMER_CONTROL_VOLUME_UP)` and so on |
+| `CH32RVUsbDeviceHidSystemControl` | Power off, standby, waking the host |
+| `CH32RVUsbDeviceHidVendor` | A vendor-defined HID (data without a driver). `sendInput()`, `onOutputReport()`, `onFeatureReport()`, `setUsage()`. Reports up to 63 bytes on the full-speed-only series, 511 / 1023 bytes on the HS / SS series |
+| `CH32RVUsbDeviceHidCustom` | A HID with your own report descriptor |
+| `CH32RVUsbDeviceMidi` | USB MIDI (up to 16 cables). `noteOn(channel, note, velocity, cable)`, `readPacket()`, `configure(CH32RVUsbMidiConfig)` (queue sizes, how events are taken and sent), `onPacket()` |
+| `CH32RVUsbDeviceVendor` | Vendor-defined bulk transfers (`Print`). `read()`, `peek()` (this core's own), `write()`, `flush()`, `configure()`, `waitWritable()`, `onRx()`, `onControlRequest()`, `writeDirect()`, `onDirectTxComplete()`, `readDirect()`, `onDirectRxComplete()`, `cancelDirectTx()`, `cancelDirectRx()`, `onTxComplete()`, `onRxData()`, `setInterfaceProtocol()`. WebUSB and Windows' WinUSB are on while this class is there |
+| `CH32RVUsbDeviceMsc` | A USB drive. `begin(blocks, size)`, `onRead()` / `onWrite()`, `mediaPresent()` (a medium put in while running is reported to the host as changed), `isWritable()`, `vendorID()` and so on |
+| `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | Blocks in RAM / a FAT12 volume in RAM. `attach(msc)`, `addTextFile()`, `readFile()`, `onEject()` |
+| `CH32RVUsbDeviceCcid` | A smart card reader. `insertCard(atr)`, `removeCard()`, `onApdu()`, `onEscape()`, `onPower()`. `messageBytes` 0, the default, is 271 bytes or the chosen controller's bulk OUT packet (512 on USBHS, 1024 on USBSS), whichever is larger |
+| `CH32RVUsbDeviceMscSdCard` | An SPI SD card as the MSC's medium. `begin(cs, SPI)`, `attach(msc)` (`#include <CH32RVUsbDeviceMscSdCard.h>`) |
+| `CH32RVUsbDeviceNet` | A USB network adapter (CDC-NCM). `onFrame()`, `sendFrame()`, `macAddress()`, `linkUp()`, `configure()` (NTB sizes and buffer counts), `stats()`, `receiveGate()` / `resumeReceive()` for receive flow control. The IP layer: above |
+| `CH32RVUsbAudioFunction` | Audio (UAC1 / UAC2). `addPlaybackStream()` / `addCaptureStream()`, `addFormat()` (up to 8 rates of one shape), `read()` / `write()`, mute and volume, `pollEvent()`. A full playback ring drops the oldest frames unless `playbackOverflowPolicy` says otherwise. The capture side's `availableForWrite()` is this library's addition |
+| `CH32RVUsbDeviceVideo` | A camera (UVC). `setFormat()`, `setFrameSize()`, `sendFrame()`, `onCommit()`. `onFillPayload()` / `sendGeneratedFrame()` (making the frame without holding it) are this library's additions |
+| `CH32RVUsbDeviceDfuRuntime` | An update entry through DFU_DETACH; the next mode depends on the series. **Included by default** (`config.dfuRuntime = false` leaves it out); declare it to decide the transition in `onDetach()`. Its interface name, "CH32RV", marks a ch32rv upload port in discovery |
 
 Every default string and ID (VID/PID, manufacturer, product, interface names,
 MSC inquiry, FAT volume label) is changed at run time - CH32RVUsbDeviceConfig,
@@ -143,16 +151,26 @@ more are told apart by report ID.
 
 ## Examples
 
-Serial, SerialMulti, Keyboard, KeyboardNKRO, Mouse, KeyboardMouse, MediaKeys,
-Gamepad, VendorHID, CustomHID, MIDI, MIDIController, MIDIInterface, USBVendor,
-MSC, MSCFatRamDisk, MSCSdCard, CompositeHidCdcMsc, SmartCardReader,
-AudioSpeaker, AudioMicrophone, AudioHeadset and VideoCamera are adapted from
-EspUsbDevice, with CH32-specific memory, audio-rate and generated-video changes.
-HID examples generate input automatically. SerialUSBEcho, CustomDevice,
-DfuRuntime and UsbNetworkPing are this library's.
+| Example | What it is |
+|---|---|
+| Serial, SerialMulti | CDC. SerialMulti has two |
+| Keyboard, KeyboardNKRO, Mouse, KeyboardMouse, MediaKeys, Gamepad | HID. **They send input by themselves once started** (as EspUsbDevice's do) |
+| VendorHID, CustomHID | A vendor HID / your own report descriptor |
+| MIDI, MIDIController, MIDIInterface | MIDI. MIDIInterface converts between UART MIDI and USB MIDI |
+| USBVendor | Vendor bulk with WebUSB and vendor requests |
+| MSC, MSCFatRamDisk | A RAM disk / a FAT RAM disk (cut to 8-10 KB for the X035's RAM) |
+| CompositeHidCdcMsc | Keyboard + CDC + MSC in one device |
+| SmartCardReader | A CCID card reader |
+| MSCSdCard | An SD card as a USB drive |
+| AudioSpeaker, AudioMicrophone, AudioHeadset | Audio (16-32 kHz, for the X035's 64 B/ms) |
+| VideoCamera | A camera sending 80x60 colour bars |
+| UsbNetworkPing | Answers ARP and ping over the USB network (this library's own) |
+| SerialUSBEcho, CustomDevice, DfuRuntime | This library's own: `SerialUSB` alone, the settings and their failures, the upload entry alone |
 
-The [complete example index](examples/README.md) links hardware, operation,
-expected output, API use and adaptation notes for each sketch.
+The [complete example index](examples/README.md) gives the hardware, operation,
+expected output, the constants to change and the limits of each sketch. The
+examples taken from EspUsbDevice differ too: disks sized for CH32's RAM, audio
+sample rates, video without a frame buffer.
 
 ## Composite configuration and runtime
 
@@ -172,13 +190,11 @@ apply ESP32-specific endpoint counts to CH32. OutOfEndpoints and
 TooManyInstances indicate different resource limits; see the
 [controller table](../../docs/usb.ja.md#コントローラと速度).
 
-begin success means the stack started; mounted means the host configured it.
-CDC connected means DTR is active. Callbacks are small (no heap); copy
-received data if needed later and keep device callbacks short. The stack runs
-after loop and during delay; call device.task inside long processing loops.
-Notification callbacks run only in deliverEvents().
+`begin()` returning true means the stack started; `ready()` means the host
+configured the device; a CDC port's `connected()` means DTR is set. In a long
+loop of your own, call `device.task()` to keep the stack running.
 
-## Choosing the matching host application
+## Checking each class from the host
 
 | Class | Host-side check |
 |---|---|
@@ -192,12 +208,19 @@ Notification callbacks run only in deliverEvents().
 | Video | UVC viewer supporting the resolution, YUY2 and transport |
 | NCM | A NIC and static IP; IP handled by the sketch (raw frames) or the Network library (`beginNetwork()`) |
 
-The MIDIController sketch maps 12-bit readings while the core defaults to
-10 bits; its README explains how to use the full CC range. AudioSpeaker counts
-received PCM, AudioMicrophone generates a tone, and AudioHeadset loops PCM back;
-none drives a physical codec. VideoCamera generates an 80×60 pattern per payload;
-ISO on X035 needs a lower frame rate. UsbNetworkPing handles ordinary small
-ARP/ICMP packets, without DHCP, web serving or a general IP parser.
+A callback's receive buffer is not yours to keep: copy what is needed later,
+and do not rely on long waits or re-entry inside device callbacks. `loop()` and
+`delay()` move USB along, and notification callbacks arrive in
+`deliverEvents()`. Ignoring the length `write()` returns for audio or video can
+lose data.
+
+### Example-specific limits
+
+- The HID examples that type and click by themselves send characters, clicks and volume changes once connected; have a test target ready.
+- [MIDIController](examples/MIDIController/README.md) maps 12-bit readings while the core defaults to 10 bits; its README explains how to use the full CC range.
+- AudioSpeaker only counts what it receives, AudioMicrophone generates a tone, and AudioHeadset loops USB back. None drives a real codec.
+- VideoCamera generates an 80×60 test pattern per payload. With ISO on X035, lower the frame rate too.
+- UsbNetworkPing is for experiments with small, ordinary ARP/ICMP packets: no DHCP, web serving or general IP parser.
 
 ## Support
 

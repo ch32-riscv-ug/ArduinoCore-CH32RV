@@ -2,7 +2,7 @@
 
 ここには core API の examples、レジスタレベルの逃げ道、チップ全体を扱う `CH32RV` オブジェクトが入っています。
 
-## `CH32` オブジェクト (CH32RVSystem.h)
+## `CH32RV` オブジェクト (CH32RVSystem.h)
 
 ESP core の `ESP.*` と同じ役割で、Arduino 標準 API がない chip 全体の機能をまとめます。
 
@@ -14,7 +14,15 @@ CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / 
 CH32RV.resetReasonName();                // "software" など、印字用
 CH32RV.wdtEnable(2000);                  // 2秒ごとに餌をやらないとリセット
 CH32RV.wdtFeed();                        // loop()で呼ぶ
+CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI（Clock Source メニュー）
 CH32RV.getVddMillivolts();               // 電源電圧(mV)、ADCの内部基準から
+CH32RV.getHeapSize();                    // ヒープの大きさと、malloc() がまだ渡せる量
+CH32RV.getFreeHeap();
+CH32RV.getChipModel();                   // "CH32V003": ビルドした系列
+CH32RV.getSketchSize();                  // スケッチが使う flash と、その部品の残り
+CH32RV.getFreeSketchSpace();
+CH32RV.getFlashChipSize();               // シリコンの flash の大きさ(電子署名から)
+CH32RV.getUniqueId();                    // チップの固有 ID の 64 ビット
 analogReadTemp();                        // チップの温度(℃)、センサが無ければNAN (core)
 analogReadVref();                        // 内部基準をanalogRead()と同じ幅で (core)
 ```
@@ -38,6 +46,12 @@ analogReadVref();                        // 内部基準をanalogRead()と同じ
   ばらつきは数%。温度は校正していないので、系列によっては数十℃ずれます
   (V103はデータシートのV25が1.1〜1.6 Vと広い)。温度センサがあるのは
   V103・V20x・V205・V30x・V407/V467・L103/M103。M030は内部基準のデータが無く0を返します
+- **`clockSource()`** が HSE を返すのは、Clock Source メニューで水晶を選び、その水晶が立ったときだけです。
+  立たなければ同じ CPU Clock を HSI で作ります(`F_CPU` は同じで、精度は HSI のもの)
+- **`getUniqueId()`** は UNIID1 | UNIID2 << 32 です。UID の 96 ビットのうち、チップごとに違うのはこの 64 ビットだけです。
+  MAC アドレスではないので、ESP32 の `getEfuseMac()` の名前にはしていません
+- **H41x** には、高速の端子の電源(VIO18)を変える `setVio18Millivolts()` / `getVio18Millivolts()` があります
+  (1200、1800、2500、3300 mV)。VIO18 Supply メニューを使うと `setup()` の前に決まります
 
 ### 休止（`lightSleep()` / `deepSleep()`）
 
@@ -62,7 +76,7 @@ CH32RV.timeDomain();                       // 測れない時間を飛ばすた�
 
 設計と実測は [A の機能の全体設計](../../docs/peripheral-a-design.ja.md) の 4.3 と 5.1 にあります。
 
-同居している理由は、Arduinoのプラットフォームが**ライブラリ経由でしかexamplesを
+オブジェクト、examples、逃げ道が同居している理由は、Arduinoのプラットフォームが**ライブラリ経由でしかexamplesを
 配れない**ことと、ライブラリには最低1つヘッダが要ることです。
 他のコアがこの用途に空のダミーを置いているのに対し、
 こちらはそのファイルに仕事を持たせました。
@@ -79,6 +93,7 @@ CH32RV.timeDomain();                       // 測れない時間を飛ばすた�
   — Generic boardはsiliconのseriesであって基板ではないので`LED_BUILTIN`を
   定義せず、coreが勝手に決めることもしません(`docs/board-layer-rules.ja.md`)
 - 冒頭コメントに**何を示すか**と**必要な配線**を書いています
+- CI で、いちばん広い板といちばん狭い板の両方でビルドしています
 
 | example | 何を示すか |
 |---|---|
@@ -129,7 +144,7 @@ route表(`internal/ch32rv_route.h`)は、名前を指して読み込みます。
 注意書きが2つあります。
 
 1. **この層は、版をまたいで保たれません。** 名前はベンダSDKのものではなく
-   このコア独自のもので、`ch32-device-data`から生成する形へ変わっていきます。
+   このコア独自のもので、版が変わると変わることがあります。
    版をまたいで保つものは[公開するAPI](../../docs/public-api.ja.md)にあります。
 2. **coreも同じレジスタを使っています。** `Serial`や`Wire`が開いている状態で
    `AFIO_PCFR1`を直接書くと`begin()`や`setRoute()`と衝突します。

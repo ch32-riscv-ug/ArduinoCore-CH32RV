@@ -1,14 +1,36 @@
 # Network
 
-IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network library (`Network`, `NetworkInterface`, `NetworkClient`, `NetworkServer`, `NetworkUDP`). The plan is in [docs/network-stack.ja.md](../../docs/network-stack.ja.md).
+IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network library (`Network`, `NetworkInterface`, `NetworkClient`, `NetworkServer`, `NetworkUDP`). The design is in [docs/network-stack.ja.md](../../docs/network-stack.ja.md).
 
 ## Targets and status
 
 - For the series with an Ethernet MAC: CH32V208, V203RB, V307/V317, V407/V467, H415-H417. Other series stop with an error.
 - Ethernet (`ETH`) runs on a CH32V307 (its built-in 10 Mbit/s PHY), a CH32V407 (45 Mbit/s and TLS 1.3 at 200 MHz), a CH32H417 and a CH32V208 (its built-in 10 Mbit/s PHY, CPU Clock `60MHz`, no TLS), checked with the bench's `eth` case: DHCP, ICMP, UDP and TCP echo, TCP both ways, HTTP and HTTPS. V203RB / V317 / V467 / H415 / H416 are built only.
-- USB NCM (`NetworkUsbNcm`, `CH32RVUsbDeviceNet::beginNetwork()` ...) is built for these series, not yet run on one.
+- USB NCM (`NetworkUsbNcm`, `CH32RVUsbDeviceNet::beginNetwork()` ...) is built for these series and has not been run on hardware.
 - Examples: [EthernetStatus](examples/EthernetStatus/README.md), [TcpEchoServer](examples/TcpEchoServer/README.md), [UdpEcho](examples/UdpEcho/README.md), [HttpGet](examples/HttpGet/README.md), [MdnsWebServer](examples/MdnsWebServer/README.md), [NetworkTime](examples/NetworkTime/README.md) - each run on the V307.
 - Tested on the host against Linux's TCP/IP (`tests/unit/network`): static addresses, the DHCP client and server, SNTP, mDNS, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
+
+## Usage
+
+```cpp
+#include <Network.h>
+// a driver such as ETH provides the NetworkInterface
+NetworkServer server(80);
+
+void setup() {
+  ETH.begin();                 // DHCP; for a static address call ETH.config(ip, gw, mask, dns) first
+  while (!ETH.hasIP()) delay(100);
+  server.begin();
+}
+
+void loop() {
+  NetworkClient client = server.accept();
+  if (client) {
+    client.print("HTTP/1.0 200 OK\r\n\r\nhello\r\n");
+    client.stop();
+  }
+}
+```
 
 ## USB NCM (as with EspUsbDevice)
 
@@ -42,7 +64,7 @@ MDNS.addServiceTxt("http", "tcp", "path", "/");
 ```
 
 - SNTP sets the core's clock (`settimeofday()`) and resyncs every hour; `time()`, `localtime_r()` and `strftime()` read it.
-- mDNS answers on every interface the library has started, including later ones. Up to 4 services, 96 bytes of TXT each. No queries (`queryHost()` ...) yet.
+- mDNS answers on every interface the library has started, including later ones. Up to 4 services, 96 bytes of TXT each. There are no queries (`queryHost()` ...).
 - Size (V208): using both adds about 26 KB of flash (lwIP's mDNS 12 KB, newlib's time and time-zone code ...). Sketches that do not use them carry neither.
 
 ## Common libraries
