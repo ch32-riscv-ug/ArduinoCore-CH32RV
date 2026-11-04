@@ -106,6 +106,7 @@ Board Manager の配布物は allowlist 方式で作られます。正確な対�
 | path | 由来 | ライセンス |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
+| `libraries/FS/src/fatfs/` | FatFs R0.16 と作者の patch 1・2 | FatFs の license（1 条項の BSD 相当） |
 | `libraries/Network/src/lwip-src/` | lwIP 2.2.1 | BSD-3-Clause |
 | `libraries/NetworkClientSecure/src/mbedtls-src/` | Mbed TLS 4.1.1 | Apache-2.0 または GPL-2.0-or-later |
 | `libraries/CH32RVUsbHost/src/CH32RVUsbHostCdc.cpp` の USB シリアルチップの手順 | TinyUSB の cdc_host.c（Linux のドライバ由来）を書き直したもの | MIT |

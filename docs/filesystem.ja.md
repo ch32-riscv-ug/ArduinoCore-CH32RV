@@ -261,6 +261,15 @@ RAM はスケッチの 300 B のバッファを含む(媒体の RAM は除いた
 ## 決めたこと
 
 - 同梱する(2026-11-04、ADR-0013 の補足)。
+- ライブラリは `libraries/FS`(2026-11-04 に入れた)。`FS.h`(ESP32 の `FS` / `File`)、`FSBlockDevice.h`
+  (`fs::BlockDevice`、`fs::RamBlockDevice`)、`FatFS.h`(FatFs のボリューム)。FatFs は `src/fatfs/` に取り込み
+  (`tools/vendor/vendor_fatfs.py`、作者の patch 1・2 を当てる)、設定は `src/ffconf.h` と `src/FSConfig.h`。
+  USB の MSC デバイスで PC と共有する口は `CH32RVUsbDeviceMscBlockStorage`(CH32RVUsbDevice、ヘッダーだけ)。
+  - 既定の構成と大きさは libraries/FS/README.ja.md。小さい系列(V002〜V007、M007、X033、X035、M030)は exFAT・
+    タイムスタンプ・フォーマットなし、ボリューム 1 つ、FF_FS_TINY。V003 は長い名前もなし(作業用のバッファ
+    512 B が 2 KB の RAM に入らない)、開けるファイル 2 つ。
+  - 試験は tests/unit/fs(ホスト、Linux の mkfs と fsck)。チップではビルドだけ。
+  - SD(SPI、SDIO)、eMMC、USB ホストの MSC のブロックデバイスはまだ無い。
 
 ## まだ決めないこと
 

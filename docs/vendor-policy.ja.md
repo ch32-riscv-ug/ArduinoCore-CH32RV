@@ -15,6 +15,7 @@
 |---|---|---|
 | `vendor/arduino-core-api.lock.toml` | ArduinoCore-API | `cores/arduino/api/` |
 | `vendor/ch32-device-data.lock.toml` | ch32-device-data の consumer surface | 生成物のみ。上流 table は copy しない |
+| `vendor/fatfs.lock.toml` | FatFs R0.16 と作者の patch 1・2(CVE-2026-6682 ほかの修正) | `libraries/FS/src/fatfs/`。取り込みと照合は `tools/vendor/vendor_fatfs.py`。設定の `ffconf.h` と disk の口は自前 |
 | `vendor/lwip.lock.toml` | lwIP の release(NO_SYS・raw API で使う部分) | `libraries/Network/src/` の `lwip/`・`netif/`・`lwip-src/`。取り込みと照合は `tools/vendor/vendor_lwip.py` |
 | `vendor/mbedtls.lock.toml` | Mbed TLS 4.1 の release(TLS 1.2 のクライアントに使う部分) | `libraries/NetworkClientSecure/` の `src/mbedtls/`・`src/psa/`・`src/tf-psa-crypto/`・`src/mbedtls-src/`・`extras/mbedtls-config-check/`。取り込みと照合は `tools/vendor/vendor_mbedtls.py`。設定の 2 つの header は自前 |
 

@@ -14,7 +14,7 @@
 （2026-10-20 補足: ファイルシステムと IP スタックは「今はまだ入れない」という扱いで、入れないと決めたものではない。
 USB の MSC・NCM がつながる先として、タスク周りの入れ替えのあとに検討する。TODO.ja.md の USB の項。）
 （2026-10-29 決定: CH32RVUsbDevice / CH32RVUsbHost / CH32RVUsbPd と Network / NetworkClientSecure はボードマネージャーに同梱する。コアのサービス（`loop()` / `delay()` から回る）、variant の生成データ（クロック許可、IRQ 番号）、`ch32rv_registers.h` を直接使い、2 と 3 に当たるため。IP スタックは 2026-10-21 に入れた。）
-（2026-11-04 決定: ファイルシステムも同梱する。USB の MSC と SD・Flash の置き場が同じ API を使えるようにするため。形は docs/filesystem.ja.md、FEATURE_CANDIDATES の STO-01 / STO-04。）
+（2026-11-04 決定: ファイルシステムも同梱する（`libraries/FS`、FatFs）。USB の MSC と SD・Flash の置き場が同じ API を使えるようにするため。形は docs/filesystem.ja.md、FEATURE_CANDIDATES の STO-01 / STO-04。）
 
 Arduino IDE は library 配下の examples を列挙するため、core API の examples は `libraries/CH32RV/examples/` に置きます。
 各同梱 library は README、examples、`keywords.txt` を持ち、利用条件を自身で説明します。

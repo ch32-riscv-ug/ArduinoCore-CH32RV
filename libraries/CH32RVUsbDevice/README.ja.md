@@ -168,7 +168,7 @@ IN/OUT の endpoint 数、packet memory、ISO 能力は controller ごとに異�
 | CDC | 端末を DTR 有効で開く。baud は USB バス速度とは別 |
 | HID | 入力先アプリまたは raw report viewer。report ID と payload を区別 |
 | MIDI | MIDI モニタや音源。channel は0始まり |
-| MSC | raw blockなら [MSC](examples/MSC/README.ja.md)、ファイルなら [MSCFatRamDisk](examples/MSCFatRamDisk/README.ja.md) |
+| MSC | raw blockなら [MSC](examples/MSC/README.ja.md)、ファイルなら [MSCFatRamDisk](examples/MSCFatRamDisk/README.ja.md)、スケッチもマウントするボリューム（FS ライブラリ）なら [MSCFileSystem](examples/MSCFileSystem/README.ja.md) |
 | Vendor bulk | libusb/WinUSB/WebUSB のアプリ。COM端末では開かない |
 | CCID | PC/SC の ATR/APDU。callback の応答に SW1/SW2 も含める |
 | Audio | 再生/録音アプリ。PCM format の一致と FIFO の読み書き |

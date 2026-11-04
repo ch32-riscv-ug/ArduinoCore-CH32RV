@@ -27,6 +27,7 @@ def patch_tool(lock_name):
 
 @pytest.mark.parametrize("lock_name", [
     "arduino-core-api.lock.toml",
+    "fatfs.lock.toml",
     "lwip.lock.toml",
     "mbedtls.lock.toml",
 ])

@@ -1,0 +1,29 @@
+# FatFs vendored snapshot lock
+# Regenerate/verify: tools/vendor/vendor_fatfs.py
+# See docs/filesystem.ja.md
+
+[[source]]
+id = "fatfs"
+url = "https://elm-chan.org/fsw/ff/"
+tag = "R0.16"
+archive = "https://elm-chan.org/fsw/ff/arc/ff16.zip"
+archive_sha256 = "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e"
+license = "FatFs (BSD-style, 1 clause)"
+license_file = "libraries/FS/src/fatfs/LICENSE.txt"
+dest = "libraries/FS/src"
+# Only this directory under dest is upstream; the rest of dest is the FS library.
+dirs = ["fatfs"]
+# The author's own fixes to the release, applied in order to ff.c (see the tool's docstring).
+patches = [
+  { url = "https://elm-chan.org/fsw/ff/patch/ff16p1.diff", sha256 = "7996ddc3135f3d534a8153f7d75d587030e5c8551b003c3b7ee823ffb7fc64bf", why = "upstream patch 1: minimum volume 64 sectors" },
+  { url = "https://elm-chan.org/fsw/ff/patch/ff16p2.diff", sha256 = "5cd39f1fc299f0f1dec9fa1ce544dc0bc048b2f6eb3b8161476ed20f9cf1e290", why = "upstream patch 2: CVE-2026-6682, -6683, -6687" },
+]
+
+# SHA-256 of every vendored file (after the patches), relative to dest.
+files = [
+  { path = "fatfs/LICENSE.txt", sha256 = "2576183a3e1c2d2f4b3628a7ef93c2f937879698abdd6d554dd718e79062e079" },
+  { path = "fatfs/diskio.h", sha256 = "1c2b29f53e061c55d43b2e412c3a61320b2621bac7561a05e275514baa44785a" },
+  { path = "fatfs/ff.c", sha256 = "2d6b991a6d2103b7a4f57ba4f6da350ef33c6ab9e4139e3026ec488fb5c16ff2" },
+  { path = "fatfs/ff.h", sha256 = "42920ae4d6080bfc2a72d92a9969b5e94eeaff070e5e71d90da9ab6d7d8e158e" },
+  { path = "fatfs/ffunicode.c", sha256 = "3f1632c1f1e64b0b683b0d7e51341b9870728f398604869dd8211f1819509a8e" },
+]

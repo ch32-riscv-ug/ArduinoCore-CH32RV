@@ -153,6 +153,7 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [MIDIInterface](MIDIInterface/README.ja.md) | USB MIDI と 31250 bps UART の MIDI メッセージを双方向に変換する例です。 |
 | [MSC](MSC/README.ja.md) | RAM を16×512 bytesの raw block device として公開します。SCSI やブロック転送の確認用です。 |
 | [MSCFatRamDisk](MSCFatRamDisk/README.ja.md) | 10 KiB の RAM に FAT12 を作り、PC が書いた `CONFIG.TXT` を取り出す例です。 |
+| [MSCFileSystem](MSCFileSystem/README.ja.md) | スケッチと PC で 1 つの FAT のボリューム（FS ライブラリ）を使い、取り外しで受け渡す例です。 |
 | [MSCSdCard](MSCSdCard/README.ja.md) | SPI の SD カードを USB MSC の媒体として PC へ公開します。ファイルシステムは PC が扱います。 |
 | [MediaKeys](MediaKeys/README.ja.md) | 音量・再生・トラック操作の Consumer Control と、System Control の宣言例です。 |
 | [Mouse](Mouse/README.ja.md) | 相対移動、ホイール、左ボタンを順に送る USB マウスです。物理スイッチやセンサは使いません。 |

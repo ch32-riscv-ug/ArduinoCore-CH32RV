@@ -15,6 +15,7 @@
 | ハードウェア SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.ja.md) | SPILoopback → SpiFlashId |
 | Ethernet、TCP / UDP、HTTP、mDNS、NTP | [Network](../libraries/Network/README.ja.md) | EthernetStatus → TcpEchoServer / UdpEcho → HttpGet → MdnsWebServer / NetworkTime |
 | HTTPS（TLS、証明書を確かめる） | [NetworkClientSecure](../libraries/NetworkClientSecure/examples/HttpsGet/README.ja.md) | HttpGet → HttpsGet |
+| FAT 上のファイル（RAM ディスク、USB で PC と共有） | [FS](../libraries/FS/README.ja.md) | RamDisk → MSCFileSystem（CH32RVUsbDevice） |
 | SPI のスレーブ | [CH32RVSPISlave](../libraries/CH32RVSPISlave/README.ja.md) | SPISlaveSelfTest |
 | GPIO による SPI | [SoftSPI](../libraries/SPI/examples/SoftSPILoopback/README.ja.md) | SoftSPILoopback |
 | サーボ | [Servo](../libraries/Servo/examples/Sweep/README.ja.md) | Sweep |

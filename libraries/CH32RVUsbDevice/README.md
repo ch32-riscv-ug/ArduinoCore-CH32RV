@@ -201,7 +201,7 @@ loop of your own, call `device.task()` to keep the stack running.
 | CDC | Serial terminal with DTR; baud is not bus speed |
 | HID | Input window or raw report viewer; distinguish ID from payload |
 | MIDI | MIDI monitor/synthesizer; API channels are zero-based |
-| MSC | MSC for raw blocks, MSCFatRamDisk for files |
+| MSC | MSC for raw blocks, MSCFatRamDisk for files, MSCFileSystem for a volume the sketch also mounts (FS library) |
 | Vendor | libusb/WinUSB/WebUSB application, not a serial terminal |
 | CCID | PC/SC ATR and APDU; device responses include SW1/SW2 |
 | Audio | Playback/recording with the advertised PCM format |

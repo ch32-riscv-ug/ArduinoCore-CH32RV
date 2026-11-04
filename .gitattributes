@@ -1,0 +1,2 @@
+# FatFs is vendored byte for byte (CRLF, as released); vendor/fatfs.lock.toml hashes those bytes.
+libraries/FS/src/fatfs/** -text

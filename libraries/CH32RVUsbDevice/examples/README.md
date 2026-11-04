@@ -134,6 +134,7 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [MIDIInterface](MIDIInterface/README.md) | A bidirectional bridge between USB MIDI and 31250-baud UART MIDI messages. |
 | [MSC](MSC/README.md) | An eight-KiB RAM-backed raw block device for SCSI and block-transfer checks. |
 | [MSCFatRamDisk](MSCFatRamDisk/README.md) | A ten-KiB FAT12 RAM disk that reads back a CONFIG.TXT file written by the PC. |
+| [MSCFileSystem](MSCFileSystem/README.md) | One FAT volume (the FS library) for the sketch and a PC, handed over at eject. |
 | [MSCSdCard](MSCSdCard/README.md) | An SPI SD card exposed as USB mass storage; the PC owns the filesystem. |
 | [MediaKeys](MediaKeys/README.md) | Consumer media-key reports plus a declared System Control function. |
 | [Mouse](Mouse/README.md) | A USB mouse generating relative movement, a wheel event and a left-button press/release without external sensors. |

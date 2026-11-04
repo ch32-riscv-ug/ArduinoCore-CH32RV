@@ -107,6 +107,7 @@ Third-party material retains its own license.
 | path | origin | license |
 |---|---|---|
 | `cores/arduino/api/` | ArduinoCore-API 1.5.2 | LGPL-2.1-or-later |
+| `libraries/FS/src/fatfs/` | FatFs R0.16 with its author's patches 1 and 2 | FatFs license (1-clause BSD-style) |
 | `libraries/Network/src/lwip-src/` | lwIP 2.2.1 | BSD-3-Clause |
 | `libraries/NetworkClientSecure/src/mbedtls-src/` | Mbed TLS 4.1.1 | Apache-2.0 or GPL-2.0-or-later |
 | USB serial chip sequences in `libraries/CH32RVUsbHost/src/CH32RVUsbHostCdc.cpp` | rewritten from TinyUSB's cdc_host.c (after the Linux drivers) | MIT |
