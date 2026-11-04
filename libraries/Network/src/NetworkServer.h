@@ -17,7 +17,6 @@ public:
     void begin(uint16_t port, int reuse_enable);
     /* The next waiting connection, or a client that is not connected. */
     NetworkClient accept();
-    NetworkClient available() __attribute__((deprecated("Renamed to accept()."))) { return accept(); }
     bool hasClient();
     void setNoDelay(bool nodelay) { _noDelay = nodelay; }
     bool getNoDelay() { return _noDelay; }
