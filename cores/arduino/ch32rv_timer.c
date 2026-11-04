@@ -1,4 +1,6 @@
-/* Shared TIM ownership and update-IRQ dispatch.
+/* Shared TIM ownership. The update interrupt (attach, dispatch, the vectors)
+ * is ch32rv_timer_irq.c's, linked only by a sketch that attaches one: PWM
+ * alone carries none of it.
  *
  * There is no heap and no hidden lock policy.  Arduino's void standard APIs
  * use takeover; libraries that can report a busy resource use tryAcquire.
@@ -6,21 +8,20 @@
 #include "Arduino.h"
 #include "CH32RVTimer.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_timer_internal.h"
 
-#include <string.h>
-
+/* Owners are kept by pointer: the owner object outlives its lease (the
+ * header's contract), and a pointer is a quarter of a copy - on V003, two
+ * timers' states went from 216 B to under 100. */
 typedef struct {
-    CH32RVTimerOwner owner;
+    const CH32RVTimerOwner *owner;
     uint16_t generation;
 } ChannelOwner;
 
 typedef struct {
     CH32RVTimerBaseConfig base;
-    CH32RVTimerOwner whole_owner;
+    const CH32RVTimerOwner *whole_owner;
     ChannelOwner channel[4];
-    CH32RVTimerCallback update_callback;
-    void *update_context;
-    const void *update_owner;
     uint16_t base_generation;
     uint16_t applied_generation;
     bool configured;
@@ -30,7 +31,7 @@ typedef struct {
                   clkmask, irq, handler)                                      \
     { (number), (kind), (bits), (channels), (complementary) != 0, (base),      \
       (clkaddr), (clkmask), (irq) },
-static const CH32RVTimerCapability timer_capabilities[] = {
+const CH32RVTimerCapability ch32rv_timer_caps[] = {
     CH32RV_TIMER_TABLE(TIMER_CAP)
 };
 #undef TIMER_CAP
@@ -41,16 +42,30 @@ static uint32_t irq_save(void) { return ch32rv_irq_save(); }
 
 static void irq_restore(uint32_t old) { ch32rv_irq_restore(old); }
 
+/* What ch32rv_timer_irq.c keeps of the update interrupt; without that file
+ * there is none to forget or report. */
+__attribute__((weak)) void ch32rv_timer_update_forget(size_t index, const void *identity)
+{
+    (void)index;
+    (void)identity;
+}
+
+__attribute__((weak)) bool ch32rv_timer_update_owned(size_t index)
+{
+    (void)index;
+    return false;
+}
+
 static uint16_t next_generation(uint16_t value)
 {
     value++;
     return value ? value : 1u;
 }
 
-static int capability_index(uint8_t timer)
+int ch32rv_timer_index(uint8_t timer)
 {
     for (size_t i = 0; i < CH32RV_TIMER_COUNT; i++) {
-        if (timer_capabilities[i].number == timer) {
+        if (ch32rv_timer_caps[i].number == timer) {
             return (int)i;
         }
     }
@@ -72,7 +87,7 @@ static bool same_base(const CH32RVTimerBaseConfig *a,
 static bool any_channel_owner(const TimerState *state)
 {
     for (unsigned i = 0; i < 4; i++) {
-        if (state->channel[i].owner.identity) {
+        if (state->channel[i].owner) {
             return true;
         }
     }
@@ -103,7 +118,7 @@ static void disable_channel(const CH32RVTimerCapability *cap, uint8_t channel)
 static void call_quiesce(const CH32RVTimerOwner *owner, uint8_t timer,
                          uint8_t channel)
 {
-    if (owner->identity && owner->quiesce) {
+    if (owner && owner->quiesce) {
         owner->quiesce(owner->context, timer, channel);
     }
 }
@@ -111,41 +126,39 @@ static void call_quiesce(const CH32RVTimerOwner *owner, uint8_t timer,
 static void invalidate_channel(size_t index, uint8_t channel)
 {
     TimerState *state = &timer_states[index];
-    const CH32RVTimerCapability *cap = &timer_capabilities[index];
-    ChannelOwner old = state->channel[channel - 1u];
+    const CH32RVTimerCapability *cap = &ch32rv_timer_caps[index];
+    const CH32RVTimerOwner *old = state->channel[channel - 1u].owner;
 
     disable_channel(cap, channel);
-    memset(&state->channel[channel - 1u].owner, 0, sizeof(CH32RVTimerOwner));
+    state->channel[channel - 1u].owner = 0;
     state->channel[channel - 1u].generation =
         next_generation(state->channel[channel - 1u].generation);
-    if (state->update_owner == old.owner.identity) {
-        state->update_callback = 0;
-        state->update_context = 0;
-        state->update_owner = 0;
+    if (old) {
+        ch32rv_timer_update_forget(index, old->identity);
     }
-    call_quiesce(&old.owner, cap->number, channel);
+    call_quiesce(old, cap->number, channel);
 }
 
 static void invalidate_all(size_t index)
 {
     TimerState *state = &timer_states[index];
-    const CH32RVTimerCapability *cap = &timer_capabilities[index];
-    CH32RVTimerOwner owners[5];
+    const CH32RVTimerCapability *cap = &ch32rv_timer_caps[index];
+    const CH32RVTimerOwner *owners[5];
     unsigned count = 0;
 
     stop_hardware(cap);
-    if (state->whole_owner.identity) {
+    if (state->whole_owner) {
         owners[count] = state->whole_owner;
         count++;
     }
     for (unsigned i = 0; i < 4; i++) {
-        CH32RVTimerOwner owner = state->channel[i].owner;
-        if (!owner.identity) {
+        const CH32RVTimerOwner *owner = state->channel[i].owner;
+        if (!owner) {
             continue;
         }
         bool duplicate = false;
         for (unsigned j = 0; j < count; j++) {
-            if (owners[j].identity == owner.identity) {
+            if (owners[j]->identity == owner->identity) {
                 duplicate = true;
                 break;
             }
@@ -156,21 +169,19 @@ static void invalidate_all(size_t index)
         }
     }
 
-    memset(&state->whole_owner, 0, sizeof(state->whole_owner));
+    state->whole_owner = 0;
     for (unsigned i = 0; i < 4; i++) {
-        memset(&state->channel[i].owner, 0, sizeof(CH32RVTimerOwner));
+        state->channel[i].owner = 0;
         state->channel[i].generation =
             next_generation(state->channel[i].generation);
     }
-    state->update_callback = 0;
-    state->update_context = 0;
-    state->update_owner = 0;
+    ch32rv_timer_update_forget(index, 0);
     state->configured = false;
     state->base_generation = next_generation(state->base_generation);
     state->applied_generation = 0;
 
     for (unsigned i = 0; i < count; i++) {
-        call_quiesce(&owners[i], cap->number, CH32RV_TIMER_WHOLE);
+        call_quiesce(owners[i], cap->number, CH32RV_TIMER_WHOLE);
     }
 }
 
@@ -183,7 +194,7 @@ static CH32RVTimerLease invalid_lease(void)
 static CH32RVTimerLease acquire_at(size_t index, const CH32RVTimerRequest *request,
                                  const CH32RVTimerOwner *owner, bool takeover)
 {
-    const CH32RVTimerCapability *cap = &timer_capabilities[index];
+    const CH32RVTimerCapability *cap = &ch32rv_timer_caps[index];
     TimerState *state = &timer_states[index];
     const uint8_t channel = request->channel;
 
@@ -192,32 +203,33 @@ static CH32RVTimerLease acquire_at(size_t index, const CH32RVTimerRequest *reque
         return invalid_lease();
     }
 
-    const bool occupied = state->whole_owner.identity || any_channel_owner(state);
+    const bool occupied = state->whole_owner || any_channel_owner(state);
     const bool base_compatible = !state->configured ||
                                  same_base(&state->base, &request->base);
 
     if (channel == CH32RV_TIMER_WHOLE) {
-        if (occupied && state->whole_owner.identity == owner->identity &&
+        if (occupied && state->whole_owner &&
+            state->whole_owner->identity == owner->identity &&
             !any_channel_owner(state) && base_compatible) {
-            state->whole_owner = *owner;
+            state->whole_owner = owner;
         } else if (occupied) {
             if (!takeover) {
                 return invalid_lease();
             }
             invalidate_all(index);
         }
-        if (!state->whole_owner.identity) {
+        if (!state->whole_owner) {
             state->base = request->base;
             state->configured = true;
             state->base_generation = next_generation(state->base_generation);
             state->applied_generation = 0;
-            state->whole_owner = *owner;
+            state->whole_owner = owner;
         }
         return (CH32RVTimerLease){cap->number, CH32RV_TIMER_WHOLE,
                                 state->base_generation, 0, owner->identity};
     }
 
-    if (state->whole_owner.identity || (occupied && !base_compatible)) {
+    if (state->whole_owner || (occupied && !base_compatible)) {
         if (!takeover) {
             return invalid_lease();
         }
@@ -225,7 +237,7 @@ static CH32RVTimerLease acquire_at(size_t index, const CH32RVTimerRequest *reque
     }
 
     ChannelOwner *slot = &state->channel[channel - 1u];
-    if (slot->owner.identity && slot->owner.identity != owner->identity) {
+    if (slot->owner && slot->owner->identity != owner->identity) {
         if (!takeover) {
             return invalid_lease();
         }
@@ -238,10 +250,10 @@ static CH32RVTimerLease acquire_at(size_t index, const CH32RVTimerRequest *reque
         state->base_generation = next_generation(state->base_generation);
         state->applied_generation = 0;
     }
-    if (!slot->owner.identity) {
+    if (!slot->owner) {
         slot->generation = next_generation(slot->generation);
     }
-    slot->owner = *owner;
+    slot->owner = owner;
     return (CH32RVTimerLease){cap->number, channel, state->base_generation,
                             slot->generation, owner->identity};
 }
@@ -256,7 +268,7 @@ static CH32RVTimerLease acquire(const CH32RVTimerRequest *request,
     uint32_t irq_state = irq_save();
     CH32RVTimerLease result = invalid_lease();
     if (request->timer != CH32RV_TIMER_ANY) {
-        int index = capability_index(request->timer);
+        int index = ch32rv_timer_index(request->timer);
         if (index >= 0) {
             result = acquire_at((size_t)index, request, owner, takeover);
         }
@@ -284,34 +296,35 @@ size_t ch32rv_timer_count(void)
 
 const CH32RVTimerCapability *ch32rv_timer_capability(size_t index)
 {
-    return index < CH32RV_TIMER_COUNT ? &timer_capabilities[index] : 0;
+    return index < CH32RV_TIMER_COUNT ? &ch32rv_timer_caps[index] : 0;
 }
 
 const CH32RVTimerCapability *ch32rv_timer_capability_for(uint8_t timer)
 {
-    int index = capability_index(timer);
-    return index >= 0 ? &timer_capabilities[index] : 0;
+    int index = ch32rv_timer_index(timer);
+    return index >= 0 ? &ch32rv_timer_caps[index] : 0;
 }
 
 bool ch32rv_timer_get_status(uint8_t timer, CH32RVTimerStatus *status)
 {
-    int index = capability_index(timer);
+    int index = ch32rv_timer_index(timer);
     if (index < 0 || !status) {
         return false;
     }
     uint32_t irq_state = irq_save();
     const TimerState *state = &timer_states[index];
-    const CH32RVTimerCapability *cap = &timer_capabilities[index];
+    const CH32RVTimerCapability *cap = &ch32rv_timer_caps[index];
     status->configured = state->configured;
     status->running = (CH32RV_TIM_CTLR1(cap->register_base) &
                        CH32RV_TIM_CTLR1_CEN) != 0u;
-    status->update_interrupt_owned = state->update_owner != 0;
+    status->update_interrupt_owned = ch32rv_timer_update_owned((size_t)index);
     status->base_generation = state->base_generation;
     status->base = state->base;
-    status->whole_owner_identity = state->whole_owner.identity;
+    status->whole_owner_identity =
+        state->whole_owner ? state->whole_owner->identity : 0;
     for (unsigned i = 0; i < 4; i++) {
         status->channel_owner_identity[i] =
-            state->channel[i].owner.identity;
+            state->channel[i].owner ? state->channel[i].owner->identity : 0;
     }
     irq_restore(irq_state);
     return true;
@@ -334,7 +347,7 @@ bool ch32rv_timer_lease_valid(const CH32RVTimerLease *lease)
     if (!lease || !lease->owner_identity) {
         return false;
     }
-    int index = capability_index(lease->timer);
+    int index = ch32rv_timer_index(lease->timer);
     if (index < 0) {
         return false;
     }
@@ -342,10 +355,11 @@ bool ch32rv_timer_lease_valid(const CH32RVTimerLease *lease)
     TimerState *state = &timer_states[index];
     bool valid = state->base_generation == lease->base_generation;
     if (valid && lease->channel == CH32RV_TIMER_WHOLE) {
-        valid = state->whole_owner.identity == lease->owner_identity;
+        valid = state->whole_owner &&
+                state->whole_owner->identity == lease->owner_identity;
     } else if (valid && lease->channel >= 1u && lease->channel <= 4u) {
         const ChannelOwner *slot = &state->channel[lease->channel - 1u];
-        valid = slot->owner.identity == lease->owner_identity &&
+        valid = slot->owner && slot->owner->identity == lease->owner_identity &&
                 slot->generation == lease->channel_generation;
     } else {
         valid = false;
@@ -363,22 +377,20 @@ void ch32rv_timer_release(CH32RVTimerLease *lease)
         return;
     }
     uint32_t irq_state = irq_save();
-    int index = capability_index(lease->timer);
+    int index = ch32rv_timer_index(lease->timer);
     TimerState *state = &timer_states[index];
-    const CH32RVTimerCapability *cap = &timer_capabilities[index];
+    const CH32RVTimerCapability *cap = &ch32rv_timer_caps[index];
     if (lease->channel == CH32RV_TIMER_WHOLE) {
         stop_hardware(cap);
-        memset(&state->whole_owner, 0, sizeof(state->whole_owner));
-        state->update_callback = 0;
-        state->update_context = 0;
-        state->update_owner = 0;
+        state->whole_owner = 0;
+        ch32rv_timer_update_forget((size_t)index, 0);
         state->configured = false;
         state->base_generation = next_generation(state->base_generation);
         state->applied_generation = 0;
     } else {
         disable_channel(cap, lease->channel);
         ChannelOwner *slot = &state->channel[lease->channel - 1u];
-        memset(&slot->owner, 0, sizeof(slot->owner));
+        slot->owner = 0;
         slot->generation = next_generation(slot->generation);
         if (!any_channel_owner(state)) {
             stop_hardware(cap);
@@ -396,8 +408,8 @@ bool ch32rv_timer_apply_base(const CH32RVTimerLease *lease)
     if (!ch32rv_timer_lease_valid(lease)) {
         return false;
     }
-    int index = capability_index(lease->timer);
-    const CH32RVTimerCapability *cap = &timer_capabilities[index];
+    int index = ch32rv_timer_index(lease->timer);
+    const CH32RVTimerCapability *cap = &ch32rv_timer_caps[index];
     TimerState *state = &timer_states[index];
     if (state->applied_generation == state->base_generation) {
         return true;
@@ -448,74 +460,3 @@ bool ch32rv_timer_stop(const CH32RVTimerLease *lease)
     CH32RV_TIM_CTLR1(cap->register_base) &= (uint16_t)~CH32RV_TIM_CTLR1_CEN;
     return true;
 }
-
-bool ch32rv_timer_attach_update_interrupt(const CH32RVTimerLease *lease,
-                                    CH32RVTimerCallback callback, void *context)
-{
-    if (!callback || !ch32rv_timer_lease_valid(lease) ||
-        lease->channel != CH32RV_TIMER_WHOLE) {
-        return false;
-    }
-    int index = capability_index(lease->timer);
-    uint32_t irq_state = irq_save();
-    TimerState *state = &timer_states[index];
-    if (state->update_owner && state->update_owner != lease->owner_identity) {
-        irq_restore(irq_state);
-        return false;
-    }
-    state->update_callback = callback;
-    state->update_context = context;
-    state->update_owner = lease->owner_identity;
-    const CH32RVTimerCapability *cap = &timer_capabilities[index];
-    /* Do not deliver an update event left pending before this owner attached. */
-    CH32RV_TIM_INTFR(cap->register_base) = (uint16_t)~CH32RV_TIM_INT_UIE;
-    CH32RV_TIM_DMAINTENR(cap->register_base) |= CH32RV_TIM_INT_UIE;
-    ch32rv_irq_enable(cap->update_irq);
-    irq_restore(irq_state);
-    return true;
-}
-
-void ch32rv_timer_detach_update_interrupt(const CH32RVTimerLease *lease)
-{
-    if (!ch32rv_timer_lease_valid(lease)) {
-        return;
-    }
-    int index = capability_index(lease->timer);
-    uint32_t irq_state = irq_save();
-    TimerState *state = &timer_states[index];
-    if (state->update_owner == lease->owner_identity) {
-        const CH32RVTimerCapability *cap = &timer_capabilities[index];
-        CH32RV_TIM_DMAINTENR(cap->register_base) &= (uint16_t)~CH32RV_TIM_INT_UIE;
-        ch32rv_irq_disable(cap->update_irq);
-        state->update_callback = 0;
-        state->update_context = 0;
-        state->update_owner = 0;
-    }
-    irq_restore(irq_state);
-}
-
-static void timer_irq_dispatch(uint8_t timer)
-{
-    int index = capability_index(timer);
-    if (index < 0) {
-        return;
-    }
-    const CH32RVTimerCapability *cap = &timer_capabilities[index];
-    if ((CH32RV_TIM_INTFR(cap->register_base) & CH32RV_TIM_INT_UIE) == 0u) {
-        return;
-    }
-    CH32RV_TIM_INTFR(cap->register_base) = (uint16_t)~CH32RV_TIM_INT_UIE;
-    CH32RVTimerCallback callback = timer_states[index].update_callback;
-    if (callback) {
-        callback(timer_states[index].update_context);
-    }
-}
-
-#define TIMER_HANDLER(number, kind, bits, channels, complementary, base,       \
-                      clkaddr, clkmask, irq, handler)                           \
-    __attribute__((interrupt)) void handler(void)                               \
-    {                                                                            \
-        timer_irq_dispatch(number);                                               \
-    }
-CH32RV_TIMER_TABLE(TIMER_HANDLER)
-#undef TIMER_HANDLER

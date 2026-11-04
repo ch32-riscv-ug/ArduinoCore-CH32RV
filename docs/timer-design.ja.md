@@ -23,6 +23,16 @@ series ごとの timer 能力は生成された `CH32RV_TIMER_TABLE` が正本�
 takeover された owner には `quiesce` callback が呼ばれ、古い lease は generation の不一致により無効になります。
 library は register を操作する前に有効な lease を保持し、終了時に `ch32rv_timer_release()` します。
 
+manager は owner（`CH32RVTimerOwner`）を写さず、ポインタで持ちます。owner のオブジェクトは lease の間ずっと有効でなければならず、
+static なオブジェクトか library のインスタンスのメンバーに置きます（関数の中の変数は不可）。写しをやめたことで、V003 の 2 つの
+timer の状態は 216 B から 112 B になりました。
+
+## 大きさ
+
+update interrupt（`ch32rv_timer_attach_update_interrupt()`、振り分け、TIM のベクタ）は `ch32rv_timer_irq.c` にあり、attach する
+スケッチだけがリンクします。`analogWrite()` だけのスケッチには入りません。V003 の `analogWrite()` 1 本のスケッチは Flash 2756 B /
+RAM 632 B（空のスケッチは 728 B / 520 B）です。
+
 ## Arduino API の規則
 
 - `analogWrite()` は対象 pad の timer channel を取得する

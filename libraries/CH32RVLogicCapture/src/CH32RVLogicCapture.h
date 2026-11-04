@@ -88,8 +88,11 @@ public:
     void isr();
 
 private:
+    static void quiesce(void *context, uint8_t timer, uint8_t channel);
+
     uint32_t _port = 0;           /* the INDR address */
     uint32_t _rate = 0;
+    const CH32RVTimerOwner _owner = {this, quiesce, this};   /* the manager keeps a pointer */
     CH32RVTimerLease _lease = {};
     bool _begun = false, _running = false;
     uint16_t *_buf = nullptr;

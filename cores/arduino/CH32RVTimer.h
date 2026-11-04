@@ -50,6 +50,9 @@ typedef void (*CH32RVTimerQuiesce)(void *context, uint8_t timer,
                                  uint8_t channel);
 typedef void (*CH32RVTimerCallback)(void *context);
 
+/* The manager keeps a pointer to the owner, not a copy: the owner object
+ * itself must stay valid for the lifetime of the lease (a static object, or a
+ * member of the library's instance - not a local). */
 typedef struct {
     /* Must be non-null and stable for the lifetime of a lease.  A library
      * normally uses the address of one static object or of its instance. */

@@ -140,7 +140,9 @@ void analogWrite(pin_size_t pin, int value)
     if (duty >= full) {
         duty = steps;
     } else {
-        duty = (uint32_t)(((uint64_t)duty * steps) / (full + 1u));
+        /* duty < full <= 65535 and steps <= 65536: the product stays under
+         * 2^32, so no 64-bit multiply (114 B of __muldi3 on V003). */
+        duty = (duty * steps) / (full + 1u);
     }
 
     const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);

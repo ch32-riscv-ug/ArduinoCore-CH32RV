@@ -77,6 +77,7 @@ public:
 private:
     void poll();
 
+    const CH32RVTimerOwner _owner = {this, nullptr, nullptr};   /* the manager keeps a pointer */
     CH32RVTimerLease _lease = {};
     uint32_t _base = 0;
     uint32_t _tickHz = 0;
@@ -123,6 +124,7 @@ private:
     int64_t raw();
     static void onUpdate(void *self);
 
+    const CH32RVTimerOwner _owner = {this, nullptr, nullptr};   /* the manager keeps a pointer */
     CH32RVTimerLease _lease = {};
     uint32_t _base = 0;
     volatile int32_t _wraps = 0;

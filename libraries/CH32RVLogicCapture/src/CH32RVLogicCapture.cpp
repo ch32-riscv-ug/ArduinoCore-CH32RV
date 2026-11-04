@@ -97,7 +97,7 @@ uint8_t CH32RVLogicCapture::timer()
     return (uint8_t)LC_TIMER;
 }
 
-static void quiesce(void *context, uint8_t, uint8_t)
+void CH32RVLogicCapture::quiesce(void *context, uint8_t, uint8_t)
 {
     static_cast<CH32RVLogicCapture *>(context)->stop();
 }
@@ -124,9 +124,8 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
     }
     const uint32_t arr = ticks / psc;
     _rate = F_CPU / (psc * arr);
-    const CH32RVTimerOwner me = {this, quiesce, this};   /* copied by the manager */
     const CH32RVTimerRequest request = {LC_TIMER, CH32RV_TIMER_WHOLE, {(uint16_t)(psc - 1u), arr - 1u, 0}};
-    _lease = ch32rv_timer_try_acquire(&request, &me);
+    _lease = ch32rv_timer_try_acquire(&request, &_owner);
     if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
         return false;
     }

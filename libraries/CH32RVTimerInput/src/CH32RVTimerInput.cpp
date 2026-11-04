@@ -110,8 +110,7 @@ bool CH32RVPulseCapture::begin(int pin, uint32_t minHz, uint8_t mode)
         {(uint16_t)(prescale - 1u), _wide ? 0xFFFFFFFFu : 0xFFFFu,
          (uint16_t)(CH32RV_TIM_CTLR1_URS | (_ckd << CKD_SHIFT))}
     };
-    const CH32RVTimerOwner owner = {this, nullptr, nullptr};
-    _lease = ch32rv_timer_try_acquire(&request, &owner);
+    _lease = ch32rv_timer_try_acquire(&request, &_owner);
     if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
         ch32rv_timer_release(&_lease);
         return false;
@@ -242,8 +241,7 @@ bool CH32RVEncoder::attach(int aPin, int bPin, uint8_t edges)
         timer, CH32RV_TIMER_WHOLE,
         {0, _wide ? 0xFFFFFFFFu : 0xFFFFu, (uint16_t)(_ckd << CKD_SHIFT)}
     };
-    const CH32RVTimerOwner owner = {this, nullptr, nullptr};
-    _lease = ch32rv_timer_try_acquire(&request, &owner);
+    _lease = ch32rv_timer_try_acquire(&request, &_owner);
     if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
         ch32rv_timer_release(&_lease);
         return false;
