@@ -29,9 +29,52 @@
  * ch32rv_deliver.o is linked only when a driver attaches a delivery.
  */
 #include "Arduino.h"
+#include "internal/ch32rv_serial_write.h"
 #include "internal/ch32rv_service.h"
 
+#include <string.h>
+
 extern "C" size_t deliverEvents(void) __attribute__((weak));
+
+/* assert()'s end, here because this object is always linked: defined before
+ * libc is searched, newlib's assert.o - which prints through fiprintf to
+ * stderr - is never pulled in. It was, by String alone: String's toDouble()
+ * names atof, whose strtod reaches an assert, and fiprintf brought stdio's
+ * three FILEs (__sf), 312 B of RAM on V003 that no code used after LTO had
+ * dropped toDouble(). The same words as newlib's, to the same place
+ * (_write's), then a stop. Linked only where an assert can fire. */
+static void ch32rv_assert_out(const char *text)
+{
+    if (text) {
+        ch32rv_serial_write_bytes((const uint8_t *)text, strlen(text));
+    }
+}
+
+extern "C" __attribute__((noreturn)) void __assert_func(const char *file, int line,
+                                                        const char *func, const char *expr)
+{
+    char digits[12];
+    char *d = digits + sizeof digits;
+    unsigned n = line < 0 ? 0u : (unsigned)line;
+    *--d = 0;
+    do {
+        *--d = (char)('0' + n % 10u);
+        n /= 10u;
+    } while (n);
+    ch32rv_assert_out("assertion \"");
+    ch32rv_assert_out(expr);
+    ch32rv_assert_out("\" failed: file \"");
+    ch32rv_assert_out(file);
+    ch32rv_assert_out("\", line ");
+    ch32rv_assert_out(d);
+    if (func) {
+        ch32rv_assert_out(", function: ");
+        ch32rv_assert_out(func);
+    }
+    ch32rv_assert_out("\n");
+    for (;;) {
+    }
+}
 
 /* Empty by default; a variant or a library that needs something to happen
  * before setup() overrides it. */

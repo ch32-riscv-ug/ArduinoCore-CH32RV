@@ -39,6 +39,14 @@ class CH32RVSPIClass : public ::SPIClass {
 public:
     explicit CH32RVSPIClass(uint8_t number) : _number(number) {}
 
+    /* A hardware bus is the predefined object (SPI, SPI1 ...), never one on
+     * the heap: no operator new, and a delete with nothing to give back.
+     * HardwareSPI's virtual destructor otherwise puts a deleting destructor
+     * in the vtable that calls free() - newlib's allocator and its reent,
+     * 76 B of RAM and 200 B of flash on V003, in every SPI sketch. */
+    static void *operator new(size_t) = delete;
+    static void operator delete(void *) noexcept {}
+
     void begin() override;
     /* arduino-esp32's form: the pins (SCK, MISO, MOSI) named in the call.
      * All -1 keeps the pins the bus has; false leaves the bus closed. ss is
