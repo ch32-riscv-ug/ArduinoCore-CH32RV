@@ -4,7 +4,7 @@
 #pragma once
 
 #define CH32RV_EXTI_GROUP_COUNT 7
-/* Pin bits that have an EXTI line (24 on the X0 parts, 16 elsewhere). */
+/* Pin bits whose EXTI line a vector here reaches (bits 0 .. this - 1). */
 #define CH32RV_EXTI_LINES 16
 
 /* AFIO_EXTICR field layout: bits per EXTI line and lines per register. */
