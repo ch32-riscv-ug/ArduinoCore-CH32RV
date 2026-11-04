@@ -96,6 +96,27 @@ Flashの退避は行わず、指定したテストsketchを書き込んで使用
 
 このコアではプローブfirmwareの数値的な最低版を一律に指定しません。ケースの実行に必要な機能・interface revisionの互換性はch32rv／OEP client／pluginの判定と実行結果に従います。版やcapabilityの記録だけで互換性をPASSにしません。プローブ側の既知不良・対応条件・更新imageの検証はプローブ提供側、host依存の固定はこのsuiteのlockで管理します。新しい最低版が必要な不具合を見つけたときは、根拠となる契約と修正を所有リポジトリへ渡します。
 
+## カバレッジ
+
+どこまで実機で確かめたかは、`tests/coverage.toml` の項目と、`run_hardware.py` の実行結果（`--out` のディレクトリ）を
+`tests/coverage.py` で突き合わせて見ます。
+
+```
+uv run --no-project python tests/coverage.py <--out のディレクトリ> ... [--markdown coverage.md]
+```
+
+- 項目には範囲が 2 つあります。`scope = "series"` は**系列ごとに 1 回は**通したいもの（系列ごとにドライバ、端子、
+  クロックが違う: runtime、uart、gpio、flash、spi、wire、uart2、pwm、adc、USB デバイス、Ethernet、PD、SDIO、CAN）。
+  `scope = "once"` は**全体で 1 回**通せばよいもの（ドライバの上の共通のコード、相手との手順: SoftSPI、SoftWire、
+  SPI の SD、USB のピア試験、HID、電源）。
+- 系列の表は、系列ごとに一番よい結果（✓ が ✗ より、✗ が skip より上）を出します。その周辺機能の無い系列は n/a、
+  まだ走らせていない所は空欄です。最後の行が「通った系列の数 / 対象の系列の数」です。
+- 結果は試験の関数ごとに junit から取ります（`<case>::<関数>[<引数>]`）。ラベルが足りずにスキップしたものは skip で、
+  通ったことにはなりません。
+- 周辺機能の有無は、variant のクロックの許可の名前（`needs` / `any_of`）で見ます。名前で拾えない系列は `also` に書きます。
+- 項目を足すときは `coverage.toml` に書きます。`tests/unit/test_coverage_report.py` が、どの項目も `run_hardware.py`
+  の case を指していることを確かめます。
+
 ## 配置
 
 | 場所 | 内容 |

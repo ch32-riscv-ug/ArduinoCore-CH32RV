@@ -1,0 +1,190 @@
+# What the hardware tests should cover (tests/coverage.py reads this with the runs' results).
+#
+# scope = "series": at least one pass on every series that has `needs` (each series' own driver, pins or clocks).
+# scope = "once":   at least one pass on any series (shared code: a library above the drivers, a peer's protocol).
+# test:  "<case>" (every test of the case) or "<case>::<test function>[<parameter>]" as junit names it.
+# needs: clock-enable names of the series' variant (tools/generate/sketch_requirements.series_capabilities);
+#        any_of: at least one of them. also: series that have it although the names miss it. A series
+#        without them shows n/a.
+
+[[item]]
+id = "runtime"
+test = "runtime"
+scope = "series"
+
+[[item]]
+id = "uart"
+test = "uart"
+scope = "series"
+
+[[item]]
+id = "gpio"
+test = "gpio"
+scope = "series"
+
+[[item]]
+id = "flash"
+test = "flash"
+scope = "series"
+
+[[item]]
+id = "synckit"
+test = "synckit"
+scope = "series"
+
+[[item]]
+id = "logic"
+test = "logic"
+scope = "series"
+
+[[item]]
+id = "spi"
+test = "spi"
+scope = "series"
+needs = ["SPI1"]
+
+[[item]]
+id = "wire"
+test = "wire"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "uart2"
+test = "periph::test_uart2"
+scope = "series"
+any_of = ["USART2", "UART2"]
+
+[[item]]
+id = "pwm"
+test = "periph::test_pwm"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "adc"
+test = "periph::test_adc"
+scope = "series"
+needs = ["ADC1"]
+
+[[item]]
+id = "usb-device"
+test = "usb"
+scope = "series"
+any_of = ["USBFS", "USBHS", "USBHS1", "USBHS2", "USBD", "USB", "USBSS", "OTG_FS"]
+
+[[item]]
+id = "eth"
+test = "eth"
+scope = "series"
+any_of = ["ETH_MAC", "ETH"]
+also = ["CH32V208"]   # its MAC's clock enable is not named ETH in the variant
+
+[[item]]
+id = "pd"
+test = "pd"
+scope = "series"
+any_of = ["USBPD", "USBPD0"]
+
+[[item]]
+id = "softspi"
+test = "softspi"
+scope = "once"
+
+[[item]]
+id = "softwire"
+test = "softwire"
+scope = "once"
+
+[[item]]
+id = "sd-spi"
+test = "sd::test_sd_spi"
+scope = "once"
+
+[[item]]
+id = "sd-sdio"
+test = "sd::test_sd_sdio"
+scope = "series"
+needs = ["SDIO"]
+
+[[item]]
+id = "usb-classes"
+test = "usb-classes"
+scope = "once"
+
+[[item]]
+id = "usb-media"
+test = "usb-media"
+scope = "once"
+
+[[item]]
+id = "usb-peer"
+test = "usb-peer"
+scope = "once"
+
+[[item]]
+id = "usb-peer-classes"
+test = "usb-peer-classes"
+scope = "once"
+
+[[item]]
+id = "usb-peer-media"
+test = "usb-peer-media"
+scope = "once"
+
+[[item]]
+id = "usb-peer-net"
+test = "usb-peer-net"
+scope = "once"
+
+[[item]]
+id = "usb-peer-fs"
+test = "usb-peer-fs"
+scope = "once"
+
+[[item]]
+id = "usb-peer-host"
+test = "usb-peer-host"
+scope = "once"
+
+[[item]]
+id = "usb-peer-host-classes"
+test = "usb-peer-host-classes"
+scope = "once"
+
+[[item]]
+id = "hid"
+test = "hid"
+scope = "once"
+
+[[item]]
+id = "power"
+test = "power"
+scope = "once"
+
+# Planned (no driver yet: the test fails once the lines are labelled).
+[[item]]
+id = "can"
+test = "periph::test_planned[can]"
+scope = "series"
+any_of = ["CAN1", "CAN"]
+
+[[item]]
+id = "i2s"
+test = "periph::test_planned[i2s]"
+scope = "once"
+
+[[item]]
+id = "argb"
+test = "periph::test_planned[argb]"
+scope = "once"
+
+[[item]]
+id = "rs485"
+test = "periph::test_planned[rs485]"
+scope = "once"
+
+[[item]]
+id = "qspi"
+test = "periph::test_planned[qspi]"
+scope = "once"
