@@ -8,7 +8,7 @@ Network ライブラリの `NetworkClient` の上の TLS です。API は ESP32 
 - 動作は、PC 上で openssl のサーバーを相手に確かめています(`tests/unit/network`)。
   - つながること: ECDSA の鎖と RSA の鎖、根の証明書、バンドル、クライアント証明書。それぞれ TLS 1.3 と 1.2 で、1.3 だけ、1.2 だけのサーバーも含みます。
   - 拒むこと: 違う根、名前の違い、バンドルに無い根、同じ名前の別の鍵の根。
-- 実機ではまだ動かしていません(Ethernet のドライバ待ち)。
+- 実機: ベンチの `eth` の試験で、CH32V407 と CH32H417 の HTTPS が ECDSA と RSA の証明書で通ります(CA で確かめ、違う CA を断る)。例は [HttpsGet](examples/HttpsGet/README.ja.md) です。
 - **V307 の RAM:** ハンドシェイク中のヒープが 30〜40 KB、スタックが 4.4 KB 以上要ります。ボードメニューの Flash / RAM Split で RAM を増やせますが、試験の eth のスケッチ(lwIP と Ethernet のバッファ込み)は、224k_96k でも 192k_128k でも収まりませんでした(2026-11-03)。足りないときは、`connect()` が失敗し、`lastError()` が -0x7F00(MBEDTLS_ERR_SSL_ALLOC_FAILED)か -141(PSA_ERROR_INSUFFICIENT_MEMORY)を返します。
 - **スタックの余白:** TLS のセッションが生きている間、ヒープはスタックから 6 KB(`NETWORK_TLS_STACK_MARGIN`、`build_opt.h` で変えられる)離れた所で止まります。ハンドシェイクの深いスタックがヒープを上書きして、黙って壊れる(最初のレコードが MAC エラーになる)のを防ぐためです。代わりに、メモリー不足として失敗します。
 

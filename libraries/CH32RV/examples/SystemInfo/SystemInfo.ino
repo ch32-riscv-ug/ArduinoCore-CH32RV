@@ -12,6 +12,10 @@ void setup()
     Serial.println(CH32RV.getChipModel());
     Serial.print("CPU MHz: ");
     Serial.println(CH32RV.getCpuFreqMHz());
+    // en: HSE only when Tools > Clock Source chose the crystal and it started.
+    // ja: ツール → Clock Source で水晶を選び、それが立ったときだけ HSE。
+    Serial.print("Clock source: ");
+    Serial.println(CH32RV.clockSource() == CH32RV_CLOCK_SOURCE_HSE ? "HSE (crystal)" : "HSI (internal)");
     Serial.print("Reset: ");
     Serial.println(CH32RV.resetReasonName());
     Serial.print("Sketch bytes: ");

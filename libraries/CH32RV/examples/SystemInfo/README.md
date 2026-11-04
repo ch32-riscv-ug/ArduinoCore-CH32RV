@@ -2,13 +2,14 @@
 
 [日本語](README.ja.md)
 
-Print the build's target series, CPU frequency, reset reason, sketch size and heap information. This example needs only the UART connection.
+Print the build's target series, CPU frequency, clock source, reset reason, sketch size and heap information. This example needs only the UART connection.
 
 ## Operation and API
 
 Reset the board with the terminal open to see the report. Send `i` to read the free heap again. The sketch does not allocate memory to demonstrate exhaustion.
 
 - `getChipModel()` identifies the series the binary was built for; it is not a board or package detector.
+- `clockSource()` says HSE only when the Clock Source menu chose the crystal (`clocksrc=hse`; the default on V208) and it started at boot. A crystal that does not start leaves the same CPU Clock running on HSI, so a board without one prints HSI either way.
 - `getSketchSize()` and `getFreeSketchSpace()` describe the linked program and its selected Flash region. Free space is not a persistent-storage allocation.
 - `getHeapSize()` and `getFreeHeap()` report bytes. Fragmentation can prevent a single allocation as large as the free total.
 - When `CH32RV_HAS_UNIQUE_ID` is defined (every series today), the sketch also calls `getFlashChipSize()` and `getUniqueId()`. Otherwise it reports that the signature is unavailable. The UID is displayed as high/low hexadecimal halves without zero padding; it is neither a MAC address nor a secret.
