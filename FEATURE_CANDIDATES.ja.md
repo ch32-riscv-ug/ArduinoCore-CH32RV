@@ -89,7 +89,7 @@ TIM-03／04 は資源管理 API が存在することと分けて判断する。
 | STO-01 | FS／File 共通 API | 同梱すると決めた（2026-11-04、ADR-0013）。API は未実装 | ファイル・ディレクトリ操作の共通入口。独自実装か外部ライブラリとの接続かを選ぶ | 採用（同梱） |
 | STO-02 | SPI SD のファイル利用 | USB MSC 用の SD ブロックアクセスあり | スケッチからの SD ファイル読み書き。既存 MSC ストレージとは役割を区別 | 未決定 |
 | STO-03 | SDIO／SDMMC によるストレージ | SDIO は現行対応表では対象外 | 搭載系列の SD カード制御とブロック API、STO-01 との接続 | 未決定 |
-| STO-04 | Flash 上のファイルシステム | 汎用 API なし | 内蔵／外付け Flash、LittleFS 等との接続。SYS-01 の少量設定保存とは別判断 | 未決定 |
+| STO-04 | Flash 上のファイルシステム | 汎用 API なし | 外付けの SPI NOR は生のイメージとして使い、ファイルは SD に置く。littlefs は測ったが入れない（docs/filesystem.ja.md、2026-11-04）。内蔵 Flash は対象外 | 不採用 |
 | STO-05 | USB Host MSC のファイル利用 | Host MSC はブロック読み書きまで | マウント・ファイル操作、STO-01 との接続 | 未決定 |
 | NET-01 | Ethernet | 内蔵 MAC のドライバ（H417・V307 は実機、V407 / V467・V317・V208 はビルドのみ） | 外付け SPI Ethernet | 一部採用 |
 | NET-02 | TCP/IP とネットワーク共通 API | Network ライブラリ（lwIP 2.2.1、ESP32 の `NetworkClient` / `NetworkServer` / `NetworkUDP`、DHCP、DNS）。Ethernet と USB NCM の共通化（2026-10-21） | — | 採用 |
