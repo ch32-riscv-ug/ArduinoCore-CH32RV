@@ -10,7 +10,7 @@
 
 ## テスト計画
 
-案は [tests/TEST_DESIGN.ja.md](tests/TEST_DESIGN.ja.md)（採否は未定）と [tests/BENCH.ja.md](tests/BENCH.ja.md)。移行の順番は TEST_DESIGN の 9 章。
+計画は [tests/TEST_PLAN.ja.md](tests/TEST_PLAN.ja.md)、常設ベンチの案は [tests/BENCH.ja.md](tests/BENCH.ja.md)。
 
 - [ ] **TST-01 現状の照合**: 計画・coverage・library 実装・runner・実行 artifact の不整合を一覧化する。
   各契約を再利用/作り直し/対象外候補に分け、理由を書く。文書上の実機確認と今回の未測定を混同しない。
