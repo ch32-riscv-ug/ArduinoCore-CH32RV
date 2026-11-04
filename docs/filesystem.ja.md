@@ -268,7 +268,8 @@ RAM はスケッチの 300 B のバッファを含む(媒体の RAM は除いた
   - 既定の構成と大きさは libraries/FS/README.ja.md。小さい系列(V002〜V007、M007、X033、X035、M030)は exFAT・
     タイムスタンプ・フォーマットなし、ボリューム 1 つ、FF_FS_TINY。V003 は長い名前もなし(作業用のバッファ
     512 B が 2 KB の RAM に入らない)、開けるファイル 2 つ。
-  - 試験は tests/unit/fs(ホスト、Linux の mkfs と fsck)。チップではビルドだけ。
+  - 試験は tests/unit/fs(ホスト、Linux の mkfs と fsck)と、tests/peer/usb の usb-peer-fs(X035 と ESP32-S3。
+    DUT の FatFS と S3 の ESP-IDF の FAT が、USB の MSC で 1 つのボリュームを受け渡す。2026-11-04 に通った)。
   - SD(SPI、SDIO)、eMMC、USB ホストの MSC のブロックデバイスはまだ無い。
 
 ## まだ決めないこと

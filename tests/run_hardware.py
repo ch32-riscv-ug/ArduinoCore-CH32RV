@@ -39,6 +39,7 @@ MODULES = {
     "usb-peer-classes": TESTS / "peer/usb/device/test_usb_peer_classes.py",
     "usb-peer-media": TESTS / "peer/usb/device/test_usb_peer_media.py",
     "usb-peer-net": TESTS / "peer/usb/device/test_usb_peer_net.py",
+    "usb-peer-fs": TESTS / "peer/usb/device/test_usb_peer_fs.py",
     "usb-peer-host": TESTS / "peer/usb/host/hid/test_usb_peer_host.py",
     "usb-peer-host-classes": TESTS / "peer/usb/host/classes/test_usb_peer_host_classes.py",
 }
@@ -60,6 +61,7 @@ SKETCHES = {
     "usb-peer-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-peer-media": TESTS / "sketch_support/usb_media/usb_media.ino",
     "usb-peer-net": TESTS / "sketch_support/usb_net/usb_net.ino",
+    "usb-peer-fs": TESTS / "sketch_support/usb_fs/usb_fs.ino",
     "usb-peer-host": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
 }
@@ -67,6 +69,8 @@ SKETCHES = {
 BUILD_OPTS = {
     # EspUsbHost 2.10.0 starts a bulk UVC stream but never reads it.
     "usb-peer-media": "-DUSB_MEDIA_ISOCHRONOUS=1\n",
+    # X035 (a small series) has no format() by default; the test formats.
+    "usb-peer-fs": "-DFF_USE_MKFS=1\n",
 }
 # The peer sketch directory staged beside a case's test (pytest-embedded-arduino-cli's peer_<name>/).
 PEERS = {
@@ -74,6 +78,7 @@ PEERS = {
     "usb-peer-classes": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-media": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-net": TESTS / "sketch_support/usb_peer/device/peer_s3",
+    "usb-peer-fs": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_s3",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_s3",
 }
@@ -85,6 +90,7 @@ HELPERS = {
     "usb-peer-classes": [TESTS / "peer/usb/device/s3_peer.py"],
     "usb-peer-media": [TESTS / "peer/usb/device/s3_peer.py"],
     "usb-peer-net": [TESTS / "peer/usb/device/s3_peer.py"],
+    "usb-peer-fs": [TESTS / "peer/usb/device/s3_peer.py"],
     "usb-peer-host": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-classes": [TESTS / "peer/usb/host/host_peer.py"],
 }

@@ -4,10 +4,10 @@ import re
 import tomllib
 
 CASES = {"runtime", "uart", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit", "flash", "wire", "softwire", "softspi", "spi",
-         "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net",
+         "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs",
          "usb-peer-host", "usb-peer-host-classes"}
 # Cases with an ESP32-S3 USB peer on the DUT's own USB port (tests/peer/usb).
-PEER_CASES = {"usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net",
+PEER_CASES = {"usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs",
               "usb-peer-host", "usb-peer-host-classes"}
 TARGET_KEYS = {
     "port", "chip", "fqbn", "f_cpu", "usb_topology", "usb_vid", "usb_pid",

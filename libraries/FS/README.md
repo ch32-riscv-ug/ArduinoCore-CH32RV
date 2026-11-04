@@ -113,4 +113,11 @@ and undefined-behaviour sanitizers: the API's behaviour, volumes Linux's
 `mkfs.fat` / `mkfs.exfat` makes (FAT12/16/32, exFAT; with and without an MBR)
 written and found clean by `fsck` with the names Linux reads, volumes the
 library formats, two volumes at once; in the large and the small series'
-configuration. On a chip it has been built only.
+configuration.
+
+On a chip (tests/peer/usb, case usb-peer-fs, CH32X035F8U6 with an ESP32-S3):
+a volume FatFS formats and writes, shown over USB mass storage, is mounted by
+the S3 with ESP-IDF's FAT, which reads it and writes a file; the DUT takes it
+back, finds its own files (a long-named directory and file among them) and
+reads the S3's; then it rewrites a file in place and the S3 reads the new
+content. Twice, passing (2026-11-04).

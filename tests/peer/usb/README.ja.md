@@ -13,6 +13,7 @@ USB ホスト、EspUsbDevice は TinyUSB を S3 の OTG で動かすもの）な
 | usb-peer-classes | デバイス | usb_classes | device/peer_s3 | ベンダーバルクと要求（FIFO の経路と、`onRxData()` + `writeDirect()` の経路、`setInterfaceProtocol()` の subclass）、MSC（INQUIRY・容量・ブロックの読み書き・FAT 上のファイルの読み書き）、CCID（ATR・APDU） |
 | usb-peer-media | デバイス | usb_media（カメラはアイソクロナス） | device/peer_s3 | スピーカー（合計値の一致）、カメラ（パターン）、マイク（連番） |
 | usb-peer-net | デバイス | usb_net | device/peer_s3 | NCM のフレームの往復 |
+| usb-peer-fs | デバイス | usb_fs（FS ライブラリ、128 ブロックの疎な RAM ディスク） | device/peer_s3 | FatFS がフォーマットして書いたボリュームを S3（ESP-IDF の FAT）が読み、S3 が書いたファイルを DUT が読む。長い名前のディレクトリとファイル、その場の書き換え。2 往復 |
 | usb-peer-host | ホスト | usb_peer_host | host_hid/peer_s3（EspUsbDevice: HID・CDC・MSC） | 列挙と文字列、CDC、キーボード・マウス・コンシューマ、LED、ベンダー HID、MSC |
 | usb-peer-host-classes | ホスト | usb_peer_host | host_classes/peer_s3（EspUsbDevice: MIDI・ベンダー・CCID） | MIDI、ベンダーバルクと要求、CCID |
 
