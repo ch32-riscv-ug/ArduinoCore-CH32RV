@@ -7,7 +7,8 @@
  *   uart2 <rx> <tx> <baud>    UART2 <ok>: Serial1 on those pads, then every byte
  *                             it receives goes back out (until `stop`)
  *   stop                      STOP <bytes echoed>
- *   adc <pin>                 ADC <reading> <full scale> */
+ *   adc <pin>                 ADC <reading> <full scale>
+ *   acaps <pin>               ACAPS <ADC channel of the pad, or -1> */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <string.h>
@@ -46,6 +47,15 @@ static void reply(char *command)
 #endif
         echoing = false;
         SerialDMSeq.printf("STOP %lu\r\n", (unsigned long)echoed);
+    } else if (!strcmp(argv[0], "acaps") && argc == 2) {
+        const pin_size_t pin = (pin_size_t)atoi(argv[1]);
+#if defined(NUM_ANALOG_INPUTS)
+        const int channel = digitalPinIsValid(pin) && digitalPinHasADC(pin) ? (int)digitalPinToAnalogChannel(pin) : -1;
+#else
+        const int channel = -1;
+        (void)pin;
+#endif
+        SerialDMSeq.printf("ACAPS %d\r\n", channel);
     } else if (!strcmp(argv[0], "adc") && argc == 2) {
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
         pinMode(pin, INPUT);

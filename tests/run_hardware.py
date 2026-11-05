@@ -102,7 +102,7 @@ HELPERS = {
     "gpio": [TESTS / "instrumented/bench_lines.py"],
     "uart": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "sd": [TESTS / "instrumented/bench_lines.py"],
-    "periph": [TESTS / "instrumented/bench_lines.py"],
+    "periph": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "signals": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "spi": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "softspi": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],

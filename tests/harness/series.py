@@ -40,3 +40,18 @@ def part_capabilities(series, part, caps=None, absent=None):
     caps = series_capabilities() if caps is None else caps
     absent = part_absent() if absent is None else absent
     return set(caps.get(series, set())) - absent.get(series, {}).get((part or "").upper(), set())
+
+
+_ROUTES = re.compile(r"#define CH32RV_SERIAL(\d+)_ROUTES \{ \\\n((?:\s*\{ *\d+, \{[^}]*\}[^\n]*\\\n)+)\}")
+_ROUTE = re.compile(r"\{ *(\d+), \{ *(P[A-K]\d+), *(P[A-K]\d+)")
+
+
+def serial_routes(series):
+    """{USART number: [(route, TX pad, RX pad), ...]} from variants/<series>/pins_arduino.h (CH32RV_SERIALn_ROUTES)."""
+    header = REPO / "variants" / series / "pins_arduino.h"
+    if not header.exists():
+        return {}
+    out = {}
+    for number, body in _ROUTES.findall(header.read_text(encoding="utf-8")):
+        out[int(number)] = [(int(k), tx, rx) for k, tx, rx in _ROUTE.findall(body)]
+    return out

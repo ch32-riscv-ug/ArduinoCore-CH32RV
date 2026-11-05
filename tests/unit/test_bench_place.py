@@ -185,3 +185,10 @@ def test_a_part_without_a_peripheral_and_a_port_without_its_lines():
     assert cases["spi"] == "run" and cases["uart"] == "run"
     link = dict(g8, kind="wchlink", lines={})
     assert place.choose_cases(link, items, caps)["uart"] == "run"   # a WCH-Link's own UART bridge
+
+
+def test_serial_routes_come_from_the_variant():
+    from harness import series
+    routes = series.serial_routes("CH32X035")
+    assert (0, "PA2", "PA3") in routes[2] and (0, "PB10", "PB11") in routes[1]
+    assert series.serial_routes("CH32NOPE") == {}

@@ -294,6 +294,10 @@ def resolve(address, tool, env, logs, *, chip=None):
     if not expected and parsed["kind"] == "oep":
         place["warnings"].append(f"no target in {address} or its port record: the board is not checked against one")
     place["fqbn"], place["f_cpu"] = fqbn_of(part)
+    # Every USART's routes (TX, RX) from the variant: a test picks a pair among the labelled lines (periph's Serial1).
+    from harness.series import serial_routes
+    place["serial_routes"] = [[n, k, tx, rx] for n, routes in sorted(serial_routes(series_of(part, series_needs()[1]) or "").items())
+                              for k, tx, rx in routes]
     place["dut_usb_serial"] = uid.upper()
     core = place["record"]
     if core.get("usb", {}).get("to") == "esp32-s3":

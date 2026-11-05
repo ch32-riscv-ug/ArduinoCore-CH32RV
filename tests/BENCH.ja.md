@@ -87,7 +87,8 @@
   - `<口>@<端子>`: DUT のその端子への線。どの試験でも使ってよい線で、gpio の試験は両方向に動かす。signals の試験
     （analogWrite、Servo、tone、割り込み、タイマーの入力）と spi・softspi・wire・softwire も、この線から端子を選ぶ（PWM とタイマーの
     入力は DUT が variant の表でタイマーの端子だと答えた線、ハードの SPI は DUT が答えた既定の SCK / MISO / MOSI と残りの
-    線の CS、SoftSPI は 4 本、Wire は DUT が答えた既定の SDA / SCL、SoftWire は Wire の端子でない 2 本）。役割のラベルは要らない。
+    線の CS、SoftSPI は 4 本、Wire は DUT が答えた既定の SDA / SCL、SoftWire は Wire の端子でない 2 本、2 本目の UART は variant の route のうち両方の端子にラベルがある組、ADC は DUT が
+    ADC のチャネルだと答えた線）。役割のラベルは要らない。
   - `<口>.<役割>@<端子>`: 同じく端子への線で、試験がその役割に使う（下の表）。端子も書くので、gpio の試験もこの線を
     見つけられる。
   - `<口>.<役割>`: デバッグとリセット（`swio` / `swdio` / `swclk` / `nrst`）、コンソール（`rx` / `tx`。OEP 側から見た
@@ -105,8 +106,6 @@
 
 | 機能 | 必須の役割 | 任意の役割 | 部品 | 試験 |
 |---|---|---|---|---|
-| 2 本目の UART | `uart2_tx`、`uart2_rx` | | なし | periph（Serial1 でプローブの UART と往復） |
-| ADC の線 | `adc` | | なし | periph（プローブが Low / High に駆動） |
 | SPI の SD カード | `spisd_sck`、`spisd_miso`、`spisd_mosi`、`spisd_cs` | | あり（カード） | sd |
 | SDIO の SD カード | `sdio_ck`、`sdio_cmd`、`sdio_d0` | `sdio_d1`〜`sdio_d3`（4 本で試す） | あり（カード） | sd |
 | CAN | `can_tx`、`can_rx` | | あり（トランシーバー） | periph（未実装なので失敗する） |

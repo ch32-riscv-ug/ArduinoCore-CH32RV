@@ -14,8 +14,6 @@ import pytest
 # feature: (required roles, optional roles). Optional roles widen the test (sdio's d1-d3: 4 lines instead of 1).
 ROLES = {
     # lines between the DUT and the probe only
-    "uart2": (("uart2_tx", "uart2_rx"), ()),
-    "adc": (("adc",), ()),
     # lines to a device on the bench (each also on a probe channel, which stays an input): DEVICE_FEATURES
     # storage (libraries/SD, libraries/SD_MMC): a card wired to the DUT
     "spisd": (("spisd_sck", "spisd_miso", "spisd_mosi", "spisd_cs"), ()),
