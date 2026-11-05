@@ -25,7 +25,7 @@ requires-dist = [
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-embedded-arduino-cli", marker = "extra == 'hardware'", specifier = "==1.11.0" },
     { name = "pytest-embedded-arduino-cli-ch32rv", marker = "extra == 'hardware'", specifier = "==0.0.8" },
-    { name = "pytest-embedded-wireskein", marker = "extra == 'hardware'", specifier = "==0.0.6" },
+    { name = "pytest-embedded-wireskein", marker = "extra == 'hardware'", specifier = "==0.0.7" },
     { name = "wireskein", marker = "extra == 'hardware'", specifier = "==0.0.21" },
 ]
 provides-extras = ["hardware"]
@@ -275,16 +275,16 @@ wheels = [
 
 [[package]]
 name = "pytest-embedded-wireskein"
-version = "0.0.6"
+version = "0.0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
     { name = "pytest-embedded" },
     { name = "wireskein" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fb/74/fa19826c3169f683233e81835d5348ba98d1f73c04f81d8310b5749be3f9/pytest_embedded_wireskein-0.0.6.tar.gz", hash = "sha256:6f2053d0ff6d6a9524a12d495cc70cb97ca960c611f2c0614a5bdc1671448eb2", size = 11982, upload-time = "2026-11-05T05:48:02.992Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/84/a6db63763572eef96e4efaa790563c600f819ec2b05ae050b7dabb9fee80/pytest_embedded_wireskein-0.0.7.tar.gz", hash = "sha256:a73c86119c191190ffd1698bbd634bdfe85e8828d3f5b2e40a7c3fe7220a620d", size = 12594, upload-time = "2026-11-05T11:46:49.145Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/eb/7c0ec5e8d035fa57d17942da5a893a8778ef6ba05f8322ba529b5ff3ddb5/pytest_embedded_wireskein-0.0.6-py3-none-any.whl", hash = "sha256:f95bc2b0291de1be42f97fee4a63345fd1f01770f743e9bbe55df42c1e3e29ac", size = 7449, upload-time = "2026-11-05T05:48:01.884Z" },
+    { url = "https://files.pythonhosted.org/packages/88/b6/1923091c85b4509eaed6b46b4607cc5aa9c23fa38851980a9b13c1ca917d/pytest_embedded_wireskein-0.0.7-py3-none-any.whl", hash = "sha256:8d2775e208e73ab4b3469527f6b48a4785619da0bfd1bc6d05965d567c72e907", size = 7593, upload-time = "2026-11-05T11:46:47.907Z" },
 ]
 
 [[package]]
