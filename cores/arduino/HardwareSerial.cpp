@@ -493,16 +493,20 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(uint32_t ba
      * core never returns to loop() - which is what a noisy or unconnected RX
      * line produces. So always drain the data register when any receive flag
      * is set, and only keep the byte when it is a real one: a frame that came
-     * with a framing, noise or parity error is a glitch on the line (a probe
+     * with a framing or parity error is a glitch on the line (a probe
      * re-opening its UART put one such byte in front of the next command line,
-     * 2026-09-22), not data. An overrun still leaves this byte valid. */
+     * 2026-09-22), not data. Noise alone (NE: the three samples of a bit did
+     * not agree) leaves the byte valid - its bits are the samples' majority -
+     * and the byte is kept, as AVR, STM32duino and WCH's own core do. (A good
+     * byte, right on the wire, was lost once in about 13 000 at 115200 on
+     * CH32X035's Serial1, 2026-11-05; noise alone explains it, the flags were
+     * not seen.) An overrun still leaves this byte valid. */
     if (status & (CH32RV_USART_STATR_RXNE | CH32RV_USART_STATR_ORE |
                   CH32RV_USART_STATR_NE | CH32RV_USART_STATR_FE |
                   CH32RV_USART_STATR_PE)) {
         const uint8_t data = (uint8_t)CH32RV_USART_DATAR(base);
         if ((status & CH32RV_USART_STATR_RXNE) &&
-            !(status & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_NE |
-                        CH32RV_USART_STATR_PE))) {
+            !(status & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_PE))) {
             _rx.push((uint8_t)(data & _rx_mask));
         }
     }
