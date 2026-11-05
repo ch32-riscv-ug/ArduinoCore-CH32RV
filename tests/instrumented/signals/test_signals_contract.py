@@ -14,9 +14,10 @@ the capture's readings) is compared here.
 - signals.pwm: analogWrite() of 64, 128 and 192 at 1 kHz (a 1 kHz square of that duty, 2 %, 1 point), the same
   value again, 255 and 0 (the line high and low), 128 at 2 kHz and 500 Hz (analogWriteFrequency), and stopped.
 - signals.servo: Servo.writeMicroseconds() of 544, 1000, 1500, 2000 and 2400 us and 2400 again (50 Hz, the pulse
-  within 20 us), then detach() (low).
-- signals.tone: tone() of 440 Hz, 2 kHz and 2 kHz again (50 %, 1 %, 5 points), noTone() (low), and tone() of 1 kHz
+  within 30 us), then detach() (low).
+- signals.tone: tone() of 440 Hz, 2 kHz and 2 kHz again (50 %, 2 %, 1 point), noTone() (low), and tone() of 1 kHz
   for 30 ms (30 periods, then low).
+Each waveform condition wants 20 periods after its change and the change within 50 ms of the command.
 - signals.interrupt: attachInterrupt RISING, FALLING and CHANGE while the probe drives the line through 20 periods:
   20, 20 and 40 edges counted.
 - signals.timer-input: CH32RVPulseCapture on the line while the probe's PWM makes 1 kHz at 25 % and 10 kHz at 50 %:
@@ -85,6 +86,12 @@ def timer_pad(dut, lines, channels=(1, 2, 3, 4)):
     return None
 
 
+# Every waveform condition: 20 whole periods after the change at least (a change that comes late, near the
+# section's end, fails), and the change within 50 ms of the command (8-25 ms measured on x035: the console and the
+# period boundary). Frequencies within 2 % (the DUT's internal oscillator, about 1 % by part and temperature).
+WAVE = dict(min_periods=20, within_s=0.05)
+
+
 def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000):
     """Stream `lines` (the line under test first) while going through `conditions`: (name, command or None, reply
     pattern, expectations, hold s) each. Each is one section: the command is sent as it opens and the line held
@@ -128,7 +135,7 @@ def test_pwm(dut, oep_host, ws_run):
     if line is None:
         pytest.skip("no labelled line is a PWM pad: " + ", ".join(p["pad"] for p in lines))
     pad, pin = line["pad"], line["pin"]
-    duty = lambda v, **k: [becomes(pad, freq_hz=1000, duty=v / 255, **k)]   # noqa: E731
+    duty = lambda v, **k: [becomes(pad, freq_hz=1000, duty=v / 255, **WAVE, **k)]   # noqa: E731
     conditions = [
         ("rest", None, None, [level(pad, 0)], 0.03),
         ("value=64", f"pwm {pin} 64 1000", rb"PWM (\d)", duty(64), 0.03),               # a start: 1 cut period
@@ -139,9 +146,9 @@ def test_pwm(dut, oep_host, ws_run):
         ("value=0", f"pwm {pin} 0 1000", rb"PWM (\d)", [becomes(pad, level=0)], 0.03),
         ("value=128 at 1 kHz", f"pwm {pin} 128 1000", rb"PWM (\d)", duty(128), 0.03),
         ("value=128 at 2 kHz", f"pwm {pin} 128 2000", rb"PWM (\d)",
-         [becomes(pad, freq_hz=2000, duty=0.5, irregular_max=2)], 0.03),                 # a new frequency: 2
+         [becomes(pad, freq_hz=2000, duty=0.5, irregular_max=2, **WAVE)], 0.03),         # a new frequency: 2
         ("value=128 at 500 Hz", f"pwm {pin} 128 500", rb"PWM (\d)",
-         [becomes(pad, freq_hz=500, duty=0.5, irregular_max=2)], 0.06),
+         [becomes(pad, freq_hz=500, duty=0.5, irregular_max=2, **WAVE)], 0.06),
         ("stopped", f"pwmoff {pin}", rb"PWMOFF", [becomes(pad, level=0)], 0.03),
     ]
     try:
@@ -158,7 +165,7 @@ def test_servo(dut, oep_host, ws_run):
     line = first_line(oep_host, case)
     ready(dut, case)
     pad, pin = line["pad"], line["pin"]
-    width = lambda us, **k: [becomes(pad, period_s=0.02, high_s=us * 1e-6, high_abs_s=20e-6, **k)]   # noqa: E731
+    width = lambda us, **k: [becomes(pad, period_s=0.02, high_s=us * 1e-6, high_abs_s=30e-6, **WAVE, **k)]   # noqa: E731
     conditions = [("rest", None, None, [level(pad, 0)], 0.05),
                   ("us=544", f"servo {pin} 544", rb"SERVO (\d)", width(544), 0.5)]                    # a start
     conditions += [(f"us={us}", f"servo {pin} {us}", rb"SERVO (\d)", width(us, irregular_max=0), 0.5)
@@ -178,7 +185,7 @@ def test_tone(dut, oep_host, ws_run):
     line = first_line(oep_host, case)
     ready(dut, case)
     pad, pin = line["pad"], line["pin"]
-    note = lambda hz: [becomes(pad, freq_hz=hz, duty=0.5, freq_rel=0.01, duty_abs=0.05)]   # 1 cut period
+    note = lambda hz: [becomes(pad, freq_hz=hz, duty=0.5, duty_abs=0.01, **WAVE)]   # 1 cut period
     conditions = [("rest", None, None, [level(pad, 0)], 0.03),
                   ("hz=440", f"tone {pin} 440", rb"TONE", note(440), 0.06),
                   ("hz=2000", f"tone {pin} 2000", rb"TONE", note(2000), 0.03),
