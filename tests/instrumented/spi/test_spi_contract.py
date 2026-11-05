@@ -7,7 +7,9 @@ SoftSPI the first four lines. Without them the test skips, naming what is missin
 
 In each of the four modes and both bit orders at 250 kHz, and mode 0 MSB first at 1 MHz, the sketch sends three
 bytes with transfer() and a word with transfer16(), CS low around them, while the target answers five armed bytes.
-One capture of CS, SCK, MOSI and MISO streams through all of them (ws_capture.stream), a WireSkein section per
+spi.output-only runs first with no target: the probe only captures CS, SCK and MOSI, so a fault there is the DUT's
+own, and SCK must stay still while CS is high except the one move of a changed idle level (CPOL). The round trip
+(test_spi_contract) then adds the probe's spi-target: one capture of CS, SCK, MOSI and MISO streams through all of them (ws_capture.stream), a WireSkein section per
 condition, judged there (spi): the mode on the lines, 40 clocks while CS is low, no SCK glitch, MOSI = the bytes then the word high byte first under MSBFIRST and low byte first under LSBFIRST (as the
 hardware SPI and AVR send it), MISO = the armed bytes; CS high at the condition's start and end. What the sketch
 read back (its XFER reply) is compared here: the armed bytes, and the word assembled the same way. SCK may move
@@ -45,9 +47,8 @@ def pad(number):
     return f"P{'ABCDEFGHIJK'[(number >> 5) - 2]}{number & 31}"
 
 
-def test_spi_contract(dut, oep_host, ws_run, record_property):
-    from wireskein.runlog import ends, spi, starts
-    case = settings(__file__)
+def open_bus(dut, oep_host, case, record_property):
+    """Start the case's bus on the DUT and pick its lines: (lines by pad, sck, miso, mosi, cs, soft)."""
     nonce = secrets.token_hex(4)
     m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
@@ -73,10 +74,61 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
         if not others:
             pytest.skip("no other <port>@<pad> line for CS")
         cs = others[0]
-        m = ask(dut, f"hw {lines[cs]['pin']}", rb"HW (\d+) (\d+) (\d+)")
+        ask(dut, f"hw {lines[cs]['pin']}", rb"HW (\d+) (\d+) (\d+)")
         record_property("bus", "SPI")
-    ch = {role: lines[p]["channel"] for role, p in (("sck", sck), ("miso", miso), ("mosi", mosi), ("cs", cs))}
     record_property("pins", json.dumps({"sck": sck, "miso": miso, "mosi": mosi, "cs": cs}))
+    return lines, sck, miso, mosi, cs, soft
+
+
+def wait_reply(dut, wait, pattern, timeout=3.0):
+    """The DUT's reply, looked for in short tries with wait() between so the stream keeps being read."""
+    end = time.monotonic() + timeout
+    while True:
+        try:
+            return dut.expect(pattern + rb"\r?\n", timeout=0.05)
+        except pexpect.TIMEOUT:
+            assert time.monotonic() < end, f"no {pattern!r}"
+            wait(0.05)
+
+
+def test_spi_output_only(dut, oep_host, ws_run, record_property):
+    """The bus with no target: the probe only captures CS, SCK and MOSI (MISO floats and is not judged), so what is
+    seen is the DUT's own doing - the baseline the round trip below is compared with when something looks wrong.
+    Every condition of the round trip, judged the same way, and SCK must stay still while CS is high unless the
+    mode's idle level (CPOL) changes, which beginTransaction() makes as one move before CS falls."""
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+
+    def steps(wait):
+        idle = {cs: 1}
+        cpol = 0                                       # the bus begins in mode 0
+        with ws_run.section(1, f"{'softspi' if soft else 'spi'} output only {sck} {mosi} {cs}"):
+            for mode, lsb, hz in CONDITIONS:
+                name = f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST {hz // 1000} kHz"
+                out = secrets.token_bytes(3)
+                word = int.from_bytes(secrets.token_bytes(2), "big")
+                wire_word = word.to_bytes(2, "little" if lsb else "big")
+                same_idle = (mode >> 1) == cpol
+                cpol = mode >> 1
+                want = [spi(sck, mosi=mosi, cs=cs, mode=mode, bit_order="lsb" if lsb else "msb",
+                            mosi_bytes=(out + wire_word).hex(), bits=40, sck_idle_outside_cs=same_idle),
+                        starts(idle), ends(idle)]
+                with ws_run.section(2, name, expect=want):
+                    command = f"xfer {mode} {lsb} {hz} {word:04x} {out.hex()}"
+                    ws_run.command(command)
+                    dut.write(command + "\n")
+                    ws_run.reply(wait_reply(dut, wait, rb"XFER \S+ [0-9a-f]{4}").group(0).decode())
+                    wait(0.01)
+
+    ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi)], rate=RATE, steps=steps)
+
+
+def test_spi_contract(dut, oep_host, ws_run, record_property):
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+    ch = {role: lines[p]["channel"] for role, p in (("sck", sck), ("miso", miso), ("mosi", mosi), ("cs", cs))}
 
     host = oep_host.host
     target = SpiTarget(host)
@@ -84,15 +136,6 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
     orders = [0, 1] if target.features & SpiTarget.FEATURE_LSB_FIRST else [0]
     record_property("orders", json.dumps(orders))
     read_wrong = []
-
-    def wait_reply(wait, pattern, timeout=3.0):
-        end = time.monotonic() + timeout
-        while True:
-            try:
-                return dut.expect(pattern + rb"\r?\n", timeout=0.05)
-            except pexpect.TIMEOUT:
-                assert time.monotonic() < end, f"no {pattern!r}"
-                wait(0.05)
 
     def steps(wait):
         idle = {cs: 1}
@@ -114,7 +157,7 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
                     command = f"xfer {mode} {lsb} {hz} {word:04x} {out.hex()}"
                     ws_run.command(command)
                     dut.write(command + "\n")
-                    m = wait_reply(wait, rb"XFER (\S+) ([0-9a-f]{4})")
+                    m = wait_reply(dut, wait, rb"XFER (\S+) ([0-9a-f]{4})")
                     ws_run.reply(m.group(0).decode())
                     got_bytes, got_word = bytes.fromhex(m.group(1).decode()), int(m.group(2), 16)
                     want_word = int.from_bytes(armed[3:5], "little" if lsb else "big")
