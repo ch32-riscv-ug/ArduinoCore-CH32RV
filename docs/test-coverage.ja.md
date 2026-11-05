@@ -13,6 +13,9 @@
 不足欄が新しい契約の候補であり、既存テストを残す義務ではありません。
 
 実行カバレッジは別 artifact で contract × target × environment × observation の結果を記録します。
+実機の結果の集計は [tests/coverage.toml](../tests/coverage.toml)（何をどの範囲で確かめるか）と
+[tests/coverage.py](../tests/coverage.py)（`run_hardware.py` の結果との突き合わせ）で行います（使い方は
+[tests/README.ja.md](../tests/README.ja.md) の「カバレッジ」）。
 特定系列のテストファイルの存在を、その系列の実機 PASS に変換しません。
 リリース状態や、意味のない機能数・テスト数・割合は持ちません。
 

@@ -3,7 +3,7 @@
 # scope = "series": at least one pass on every series that has `needs` (each series' own driver, pins or clocks).
 # scope = "once":   at least one pass on any series (shared code: a library above the drivers, a peer's protocol).
 # test:  "<case>" (every test of the case) or "<case>::<test function>[<parameter>]" as junit names it.
-# needs: clock-enable names of the series' variant (tools/generate/sketch_requirements.series_capabilities);
+# needs: clock-enable names of the series' variant (tests/harness/series.py series_capabilities);
 #        any_of: at least one of them. also: series that have it although the names miss it. A series
 #        without them shows n/a.
 

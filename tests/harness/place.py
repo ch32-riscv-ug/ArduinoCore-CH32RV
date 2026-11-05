@@ -26,9 +26,13 @@ from harness import records
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SYSFS = pathlib.Path("/sys/bus/usb/devices")
 
-# CH32RVUsbDevice runs on X035 / X033 (its header); CH32RVUsbHost's device-only parts (CH32RVUsbHostPort.h).
-USB_DEVICE_SERIES = ("CH32X035", "CH32X033")
+# CH32RVUsbDevice has a driver for every USB controller (docs/usb.ja.md), so a series with one runs the device cases
+# (coverage.toml's usb-device). CH32RVUsbHost drives the USBFS of the X03x and USBOTG_FS layouts (CH32RVUsbHostPort.h):
+# not V103's older USB, not the USBHS / USBSS-only series, and not the parts without the host half or without USBFS.
+USB_HOST_CLOCKS = {"USBFS", "OTG_FS"}
+USB_HOST_NOT_SERIES = ("CH32V103",)
 USB_DEVICE_ONLY_PARTS = ("CH32X035F8U6", "CH32X035F7P6", "CH32X035D8U6", "CH32X033F8P6")
+USB_HOST_NO_PARTS = USB_DEVICE_ONLY_PARTS + ("CH32V203F6P6", "CH32V203G6U6")
 UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
 USB_CASES = ("usb", "usb-classes", "usb-media")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs")
@@ -163,20 +167,21 @@ def choose_cases(place, items=None, caps=None):
     out["pd"] = ("run" if "pd" in core and series_has("pd", series, items, caps)
                  else "skip: no pd in the record" if "pd" not in core else f"skip: {series} has no USB PD")
     usb = core.get("usb", {})
-    device = series in USB_DEVICE_SERIES
+    device = series_has("usb", series, items, caps)
+    host = (series not in USB_HOST_NOT_SERIES and bool(caps.get(series, set()) & USB_HOST_CLOCKS)
+            and part not in USB_HOST_NO_PARTS)
     for case in USB_CASES:
         out[case] = ("run" if usb.get("to") == "host" and device else
-                     f"skip: CH32RVUsbDevice does not run on {series}" if not device else
+                     f"skip: {part} has no USB controller" if not device else
                      "skip: the record's usb is not {to: host}")
     for case in PEER_DEVICE_CASES:
         out[case] = ("run" if usb.get("to") == "esp32-s3" and device else
-                     f"skip: CH32RVUsbDevice does not run on {series}" if not device else
+                     f"skip: {part} has no USB controller" if not device else
                      "skip: the record's usb is not {to: esp32-s3}")
     for case in PEER_HOST_CASES:
-        out[case] = ("run" if usb.get("to") == "esp32-s3" and part not in USB_DEVICE_ONLY_PARTS and device else
-                     f"skip: {part} has no USB host" if part in USB_DEVICE_ONLY_PARTS else
-                     "skip: the record's usb is not {to: esp32-s3}" if usb.get("to") != "esp32-s3" else
-                     f"skip: the host tests' peer setup runs on {', '.join(USB_DEVICE_SERIES)} only")
+        out[case] = ("run" if usb.get("to") == "esp32-s3" and host else
+                     f"skip: {part} has no USB host CH32RVUsbHost drives" if not host else
+                     "skip: the record's usb is not {to: esp32-s3}")
     out["power"] = ("run" if oep and core.get("supply", {}).get("from") == "probe"
                     else "skip: the record's supply is not {from: probe}" if oep else "skip: not on an OEP port")
     out["hid"] = ("run" if core.get("board") == UIAPDUINO_BOARD and oep and place["lines"].get("nrst") is not None

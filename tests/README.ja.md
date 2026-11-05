@@ -126,14 +126,19 @@ uv run --no-project python tests/coverage.py <--out のディレクトリ> ... [
 ```
 
 - 項目には範囲が 2 つあります。`scope = "series"` は**系列ごとに 1 回は**通したいもの（系列ごとにドライバ、端子、
-  クロックが違う: runtime、uart、gpio、flash、spi、wire、uart2、pwm、adc、USB デバイス、Ethernet、PD、SDIO、CAN）。
-  `scope = "once"` は**全体で 1 回**通せばよいもの（ドライバの上の共通のコード、相手との手順: SoftSPI、SoftWire、
-  SPI の SD、USB のピア試験、HID、電源）。
+  クロックが違う: runtime、uart、gpio、flash、synckit、logic、spi、wire、uart2、pwm、adc、USB デバイス、Ethernet、
+  PD、SDIO、CAN）。`scope = "once"` は**全体で 1 回**通せばよいもの（ドライバの上の共通のコード、相手との手順:
+  SoftSPI、SoftWire、SPI の SD、USB のクラスとピア試験、HID、電源）。I2S・ARGB・RS485・QSPI・CAN は予定の項目で、
+  ドライバはまだありません（ラベルを付けると失敗として出ます）。
 - 系列の表は、系列ごとに一番よい結果（✓ が ✗ より、✗ が skip より上）を出します。その周辺機能の無い系列は n/a、
   まだ走らせていない所は空欄です。最後の行が「通った系列の数 / 対象の系列の数」です。
 - 結果は試験の関数ごとに junit から取ります（`<case>::<関数>[<引数>]`）。ラベルが足りずにスキップしたものは skip で、
   通ったことにはなりません。
 - 周辺機能の有無は、variant のクロックの許可の名前（`needs` / `any_of`）で見ます。名前で拾えない系列は `also` に書きます。
+  表は系列ごとです。系列の中で型番によって周辺が無いもの（variant の `CH32RV_<instance>_ABSENT`。CH32M030G8R7 の SPI など）は、
+  `run_hardware.py` がその型番で流さないだけで、表の上では系列の欄に数えます。
+- 渡した実行の全部から一番よい結果を取るので、古い実行の ✗ は、あとで通るまで残ります。今の状態を見るときは、
+  今のコミットの実行だけを渡します。
 - 項目を足すときは `coverage.toml` に書きます。`tests/unit/test_coverage_report.py` が、どの項目も `run_hardware.py`
   の case を指していることを確かめます。
 

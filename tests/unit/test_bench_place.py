@@ -105,12 +105,19 @@ def test_peer_cases_and_usb_host_parts():
     items, caps = place.series_needs()
     f8 = dict(chip="CH32X035F8U6", kind="oep", lines={}, record={"usb": {"to": "esp32-s3", "serial": "58FA041040"}})
     cases = place.choose_cases(f8, items, caps)
-    assert cases["usb-peer-fs"] == "run" and cases["usb-peer-host"] == "skip: CH32X035F8U6 has no USB host"
+    assert cases["usb-peer-fs"] == "run" and cases["usb-peer-host"] == "skip: CH32X035F8U6 has no USB host CH32RVUsbHost drives"
     c8 = dict(f8, chip="CH32X035C8T6")
     assert place.choose_cases(c8, items, caps)["usb-peer-host"] == "run"
     v307 = dict(chip="CH32V307VCT6", kind="wchlink", lines={}, record={})
     cases = place.choose_cases(v307, items, caps)
-    assert cases["usb"].startswith("skip: CH32RVUsbDevice") and cases["power"] == "skip: not on an OEP port"
+    assert cases["usb"] == "skip: the record's usb is not {to: host}" and cases["power"] == "skip: not on an OEP port"
+    s3 = {"usb": {"to": "esp32-s3", "serial": "x"}}
+    assert place.choose_cases(dict(v307, record=s3), items, caps)["usb-peer-host"] == "run"
+    for chip in ("CH32V407WEU6", "CH32V103R8T6", "CH32X315MCU6"):   # USBHS / older USB only: device, no host
+        cases = place.choose_cases(dict(v307, chip=chip, record=s3), items, caps)
+        assert cases["usb-peer"] == "run" and cases["usb-peer-host"].startswith("skip:"), chip
+    assert place.choose_cases(dict(v307, chip="CH32V003F4U6", record=s3), items, caps)["usb-peer"] == \
+        "skip: CH32V003F4U6 has no USB controller"
 
 
 def test_record_checks():
