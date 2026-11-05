@@ -10,6 +10,8 @@ hardware = [
     "oep-client-python==0.0.46",
     "pytest-embedded-arduino-cli==1.11.0",
     "pytest-embedded-arduino-cli-ch32rv==0.0.8",
+    "pytest-embedded-wireskein==0.0.6",
+    "wireskein==0.0.18",
 ]
 
 [tool.pytest.ini_options]

@@ -19,7 +19,6 @@ ROLES = {
     "wire": (("i2c_sda", "i2c_scl"), ()),
     "softwire": (("softwire_sda", "softwire_scl"), ()),
     "uart2": (("uart2_tx", "uart2_rx"), ()),
-    "pwm": (("pwm",), ()),
     "adc": (("adc",), ()),
     # lines to a device on the bench (each also on a probe channel, which stays an input): DEVICE_FEATURES
     # storage (libraries/SD, libraries/SD_MMC): a card wired to the DUT
@@ -86,8 +85,8 @@ RESERVED = {"swio", "swdio", "swclk", "nrst", "rx", "tx"}
 
 
 def port_lines(oep_host, target):
-    """Every labelled line of the target's port that reaches a pad: [{"channel", "pad", "pin", "role"}], role None
-    for a plain `<port>@<pad>`."""
+    """Every labelled line of the target's port that reaches a pad: [{"channel", "pad", "pin", "role", "label"}], role
+    None for a plain `<port>@<pad>`; label is the probe's label text (what oep_client.acquire names a line by)."""
     from oep_client import settings
     port = port_of(target)
     host = getattr(oep_host, "host", oep_host)
@@ -100,7 +99,7 @@ def port_lines(oep_host, target):
                 and re.fullmatch(r"p[a-k]\d{1,2}", parsed[2], re.I):   # one pad (not "pc16-pc11")
             pad = parsed[2].upper()
             role = settings.fold_name(parsed[1]) if parsed[1] else None
-            out.append(dict(channel=channel, pad=pad, pin=pin_number(pad), role=role))
+            out.append(dict(channel=channel, pad=pad, pin=pin_number(pad), role=role, label=text))
     return sorted(out, key=lambda line: line["channel"])
 
 

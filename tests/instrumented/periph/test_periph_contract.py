@@ -2,8 +2,6 @@
 (bench_lines.py, tests/BENCH.ja.md §5). Each test skips when its labels are not there.
 
 - periph.uart2: Serial1 on the uart2_rx / uart2_tx pads echoes 200 random bytes the probe's UART sends, 115200 8N1.
-- periph.pwm: analogWrite() of 64 / 255 at 1 kHz on the pwm pad: the probe's capture sees 1 kHz within 2 % and a
-  duty of 25 % within 2 points.
 - periph.adc: the probe drives the adc pad low, then high: analogRead() is under 5 % of full scale, then over 95 %.
 - periph.can / i2s / argb / rs485 / qspi: not implemented in the core. With their lines labelled the test fails,
   saying so; that is the reminder that the bench is ready for them."""
@@ -66,37 +64,6 @@ def test_uart2(dut, oep_host, record_property):
         record_property("echoed", int(m.group(1)))
     finally:
         core.plan_release(host, [used])
-
-
-def test_pwm(dut, oep_host, record_property):
-    from oep_client import capture, core
-    case = settings(__file__)
-    lines = require(oep_host, case["target"], "pwm")
-    ready(dut, case)
-    host = oep_host.host
-    line = lines["pwm"]
-    m = ask(dut, f"pwm {line['pin']} 64 1000", rb"PWM (\d)")
-    assert m.group(1) == b"1", f"{line['pad']} has no PWM"
-    cap = capture.LogicCapture(host)
-    core.plan_apply(host, [(cap.fn, 0, line["channel"])])
-    try:
-        cap.configure(rate=1_000_000, samples=20_000)
-        cap.start()
-        segs = cap.wait(timeout=5.0)
-        bits = cap.channel(cap.read_segment(segs[0]), 0, segs[0].samples)
-    finally:
-        core.plan_release(host, [cap.fn])
-        ask(dut, f"pwmoff {line['pin']}", rb"PWMOFF")
-    rises = [i for i in range(1, len(bits)) if bits[i] and not bits[i - 1]]
-    assert len(rises) >= 5, f"{len(rises)} rising edges in 20 ms"
-    span = rises[-1] - rises[0]
-    period_us = span / (len(rises) - 1)
-    high = sum(bits[rises[0]:rises[-1]])
-    duty = high / span
-    record_property("period_us", round(period_us, 1))
-    record_property("duty", round(duty, 4))
-    assert abs(period_us - 1000) <= 20, f"period {period_us:.1f} us"
-    assert abs(duty - 64 / 255) <= 0.02, f"duty {duty:.3f}"
 
 
 def test_adc(dut, oep_host, record_property):

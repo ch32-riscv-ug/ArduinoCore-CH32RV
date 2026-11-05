@@ -1,13 +1,12 @@
 /* Single-line peripherals on labelled lines (tests/instrumented/periph): a
- * second UART, a PWM output, an ADC input, on the pads the bench labels
- * (bench_lines.py: uart2, pwm, adc). Pins are the sketch's pin numbers.
+ * second UART and an ADC input, on the pads the bench labels (bench_lines.py:
+ * uart2, adc; analogWrite() is tests/instrumented/signals'). Pins are the
+ * sketch's pin numbers.
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   uart2 <rx> <tx> <baud>    UART2 <ok>: Serial1 on those pads, then every byte
  *                             it receives goes back out (until `stop`)
  *   stop                      STOP <bytes echoed>
- *   pwm <pin> <value> <hz>    PWM <ok>: analogWrite(pin, value) of 255 at hz
- *   pwmoff <pin>              PWMOFF
  *   adc <pin>                 ADC <reading> <full scale> */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
@@ -47,19 +46,6 @@ static void reply(char *command)
 #endif
         echoing = false;
         SerialDMSeq.printf("STOP %lu\r\n", (unsigned long)echoed);
-    } else if (!strcmp(argv[0], "pwm") && argc == 4) {
-        const pin_size_t pin = (pin_size_t)atoi(argv[1]);
-        const bool ok = digitalPinIsValid(pin) && CH32RV_PWM_PIN_TO_TIMER(pin) && CH32RV_PWM_PIN_TO_CHANNEL(pin);
-        if (ok) {
-            analogWriteFrequency(pin, (uint32_t)atol(argv[3]));
-            analogWrite(pin, atoi(argv[2]));
-        }
-        SerialDMSeq.printf("PWM %d\r\n", ok ? 1 : 0);
-    } else if (!strcmp(argv[0], "pwmoff") && argc == 2) {
-        const pin_size_t pin = (pin_size_t)atoi(argv[1]);
-        analogWrite(pin, 0);
-        pinMode(pin, INPUT);
-        SerialDMSeq.println("PWMOFF");
     } else if (!strcmp(argv[0], "adc") && argc == 2) {
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
         pinMode(pin, INPUT);

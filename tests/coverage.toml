@@ -59,7 +59,7 @@ any_of = ["USART2", "UART2"]
 
 [[item]]
 id = "pwm"
-test = "periph::test_pwm"
+test = "signals::test_pwm"
 scope = "series"
 needs = ["TIM1"]
 
@@ -200,6 +200,7 @@ scope = "once"
 # Not covered yet: the core has them, no hardware test does (docs/test-coverage.ja.md: テスト未定義).
 [[item]]
 id = "interrupt"            # attachInterrupt (EXTI, AFIO's EXTICR per series)
+test = "signals::test_interrupt"
 scope = "series"
 
 [[item]]
@@ -233,6 +234,7 @@ needs = ["SPI1"]
 
 [[item]]
 id = "timer-input"          # CH32RVTimerInput (input capture)
+test = "signals::test_timer_input"
 scope = "series"
 needs = ["TIM1"]
 
@@ -248,10 +250,12 @@ needs = ["HSADC"]
 
 [[item]]
 id = "servo"                # Servo (on the timers pwm covers)
+test = "signals::test_servo"
 scope = "once"
 
 [[item]]
 id = "tone"                 # tone() (on the timers pwm covers)
+test = "signals::test_tone"
 scope = "once"
 
 [[item]]

@@ -44,6 +44,7 @@ MODULES = {
     "spi": TESTS / "instrumented/spi/test_spi_contract.py",
     "sd": TESTS / "instrumented/sd/test_sd_contract.py",
     "periph": TESTS / "instrumented/periph/test_periph_contract.py",
+    "signals": TESTS / "instrumented/signals/test_signals_contract.py",
     "usb-peer": TESTS / "peer/usb/device/test_usb_peer_device.py",
     "usb-peer-classes": TESTS / "peer/usb/device/test_usb_peer_classes.py",
     "usb-peer-media": TESTS / "peer/usb/device/test_usb_peer_media.py",
@@ -68,6 +69,7 @@ SKETCHES = {
     "spi": TESTS / "sketch_support/spi/spi.ino",
     "sd": TESTS / "sketch_support/sd/sd.ino",
     "periph": TESTS / "sketch_support/periph/periph.ino",
+    "signals": TESTS / "sketch_support/signals/signals.ino",
     "usb-peer": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-peer-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-peer-media": TESTS / "sketch_support/usb_media/usb_media.ino",
@@ -100,6 +102,7 @@ HELPERS = {
     "gpio": [TESTS / "instrumented/bench_lines.py"],
     "sd": [TESTS / "instrumented/bench_lines.py"],
     "periph": [TESTS / "instrumented/bench_lines.py"],
+    "signals": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "spi": [TESTS / "instrumented/bench_lines.py"],
     "softspi": [TESTS / "instrumented/bench_lines.py"],
     "wire": [TESTS / "instrumented/bench_lines.py"],
@@ -113,7 +116,8 @@ HELPERS = {
     "usb-peer-host-classes": [TESTS / "peer/usb/host/host_peer.py"],
 }
 PLUGINS = ["pytest_embedded.plugin",
-           "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin"]
+           "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin",
+           "pytest_embedded_wireskein.plugin"]
 
 
 def invoke(command, log, *, env=None, timeout=180):

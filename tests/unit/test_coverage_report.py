@@ -27,7 +27,7 @@ def run_dir(tmp_path, target, chip, cases):
 def test_series_and_once(tmp_path):
     a = run_dir(tmp_path, "x035-oep", "CH32X035C8T6",
                 {"gpio": {"test_gpio_contract": "pass"}, "sd": {"test_sd_spi": "skip", "test_sd_sdio": "skip"},
-                 "periph": {"test_pwm": "fail", "test_planned[can]": "skip"}})
+                 "periph": {"test_planned[can]": "skip"}, "signals": {"test_pwm": "fail"}})
     b = run_dir(tmp_path, "v307-linke", "CH32V307VCT6", {"sd": {"test_sd_spi": "pass"}})
     caps = {s: set(c) for s, c in coverage.series_capabilities().items()}
     rows = coverage.collect([a, b / "result.json"], list(caps))
@@ -67,7 +67,7 @@ def test_a_list_of_tests_not_on_and_no_test(tmp_path):
                                                         if line.startswith(f"| {series} |")).strip("|").split("|")]))
     x035 = row("CH32X035")
     assert x035["usb-device"] == "✓"              # the S3 as the host counts for the device driver
-    assert x035["interrupt"] == "no test" and x035["dac"] == "n/a"
+    assert x035["sleep"] == "no test" and x035["interrupt"] == "" and x035["dac"] == "n/a"
     assert row("CH32V103")["usb-peer-host"] == "n/a" and row("CH32V307")["usb-peer-host"] == ""
     assert row("CH32M030")["watchdog"] == "n/a"
-    assert "| servo | no test |  |" in text
+    assert "| taskkit | no test |  |" in text and "| servo | not run |  |" in text
