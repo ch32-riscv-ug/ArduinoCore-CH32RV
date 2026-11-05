@@ -40,6 +40,7 @@
 | [toolchain.ja.md](toolchain.ja.md) | compiler と C/C++ runtime の固定方針 |
 | [vendor-policy.ja.md](vendor-policy.ja.md) | 第三者ソースの取込、lock、license |
 | [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | テストの保証対象、設備、環境分離、責務分担 |
+| [../tests/RECORDS.ja.md](../tests/RECORDS.ja.md) | OEP プローブのメモ欄に置く、口ごとの記録の決まり（名前、形、メンバー、読み方と書き方） |
 | [test-coverage.ja.md](test-coverage.ja.md) | 実装範囲と既存テストの保証・不足 |
 | [adr/README.ja.md](adr/README.ja.md) | 現行設計の判断理由 |
 

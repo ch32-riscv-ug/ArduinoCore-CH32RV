@@ -1,4 +1,5 @@
-"""The board records kept on an OEP probe's memo area (oep-spec interfaces/oep-if-memo §4), one pair per port:
+"""The board records kept on an OEP probe's memo area (oep-spec interfaces/oep-if-memo §4), one pair per port.
+The rules are tests/RECORDS.ja.md; this module checks them, and where the two differ the document is right:
 
   oep.probe.memo/port/<port>                   the project's port record (§4.3): target, part, note
   io.github.ch32-riscv-ug.arduino/port/<port>  this core's: what only these tests use (CORE_MEMBERS)
