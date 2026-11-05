@@ -46,6 +46,9 @@ MODULES = {
     "periph": TESTS / "instrumented/periph/test_periph_contract.py",
     "signals": TESTS / "instrumented/signals/test_signals_contract.py",
     "system": TESTS / "instrumented/system/test_system_contract.py",
+    "console-rtt": TESTS / "instrumented/console/test_console_contract.py",
+    "console-dmdata": TESTS / "instrumented/console/test_console_contract.py",
+    "console-sdi": TESTS / "instrumented/console/test_console_contract.py",
     "usb-peer": TESTS / "peer/usb/device/test_usb_peer_device.py",
     "usb-peer-classes": TESTS / "peer/usb/device/test_usb_peer_classes.py",
     "usb-peer-media": TESTS / "peer/usb/device/test_usb_peer_media.py",
@@ -55,6 +58,9 @@ MODULES = {
     "usb-peer-host-classes": TESTS / "peer/usb/host/classes/test_usb_peer_host_classes.py",
 }
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
+# The console cases: the monitor's source (port_config), and the flag that makes the sketch use that console.
+CONSOLE_SOURCES = {"console-rtt": "rtt", "console-dmdata": "dmdata", "console-sdi": "sdi"}
+CONSOLE_FLAGS = {"console-rtt": "CONSOLE_RTT", "console-dmdata": "CONSOLE_DMDATA", "console-sdi": "CONSOLE_SDI"}
 SKETCHES = {
     "usb": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
@@ -72,6 +78,9 @@ SKETCHES = {
     "periph": TESTS / "sketch_support/periph/periph.ino",
     "signals": TESTS / "sketch_support/signals/signals.ino",
     "system": TESTS / "sketch_support/system/system.ino",
+    "console-rtt": TESTS / "sketch_support/console/console.ino",
+    "console-dmdata": TESTS / "sketch_support/console/console.ino",
+    "console-sdi": TESTS / "sketch_support/console/console.ino",
     "usb-peer": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-peer-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-peer-media": TESTS / "sketch_support/usb_media/usb_media.ino",
@@ -227,10 +236,12 @@ def stage_case(work, name, case, target):
             f"profiles:\n  {name}:\n    fqbn: {json.dumps(target['fqbn'])}\n"
             + ("    protocol: ch32rv-hid\n" if case == "hid" or target.get("upload_port", "").startswith("ch32rv-hid://") else "")
             +
-            "    port_config:\n      source: dmseq\n"
+            f"    port_config:\n      source: {CONSOLE_SOURCES.get(case, 'dmseq')}\n"
             f"      chip: {target['chip']}\n"
         )
-        (directory / "build_config.toml").write_text('[defines]\nCH32_TEST_BUILD_ID = "BENCH_BUILD_ID"\n')
+        flag = CONSOLE_FLAGS.get(case)
+        (directory / "build_config.toml").write_text('[defines]\nCH32_TEST_BUILD_ID = "BENCH_BUILD_ID"\n'
+                                                     + (f"[flags]\n{flag} = true\n" if flag else ""))
     return module, build_id, target
 
 

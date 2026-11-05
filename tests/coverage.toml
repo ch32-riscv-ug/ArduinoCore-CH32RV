@@ -276,12 +276,15 @@ scope = "once"
 
 [[item]]
 id = "console-sdi"          # SerialSDI
+test = "console-sdi::test_console_sdi"
 scope = "once"
 
 [[item]]
 id = "console-rtt"          # SerialRTT
+test = "console-rtt::test_console_two_way"
 scope = "once"
 
 [[item]]
 id = "console-dmdata"       # SerialDMDATA
+test = "console-dmdata::test_console_two_way"
 scope = "once"
