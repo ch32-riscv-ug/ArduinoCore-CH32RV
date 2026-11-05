@@ -9,7 +9,9 @@
  *   seq <addr> <n> <stop> write 0x10 with endTransmission(false), then
  *                         requestFrom(addr, n, stop), then write 0x20 with
  *                         endTransmission(true), back to back:
- *                         SEQ <first result> <got> <hex bytes or -> <last result> */
+ *                         SEQ <first result> <got> <hex bytes or -> <last result>
+ *   nack <addr>           with no target: write 0x10 to addr, endTransmission(true):
+ *                         NACK <result> (2: the address was not acknowledged) */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <Wire.h>
@@ -99,6 +101,12 @@ void loop()
             }
             SerialDMSeq.print("SOFT ");
             SerialDMSeq.println(ok ? 1 : 0);
+        } else if (strncmp(line, "nack ", 5) == 0) {
+            const unsigned long address = strtoul(line + 5, nullptr, 0);
+            bus->beginTransmission((uint8_t)address);
+            bus->write(0x10);
+            SerialDMSeq.print("NACK ");
+            SerialDMSeq.println(bus->endTransmission(true));
         } else if (strncmp(line, "seq ", 4) == 0) {
             char *p = line + 4;
             const unsigned long address = strtoul(p, &p, 0);
