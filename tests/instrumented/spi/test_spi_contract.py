@@ -12,8 +12,9 @@ own, and SCK must stay still while CS is high except the one move of a changed i
 (test_spi_contract) then adds the probe's spi-target: one capture of CS, SCK, MOSI and MISO streams through all of them (ws_capture.stream), a WireSkein section per
 condition, judged there (spi): the mode on the lines, 40 clocks while CS is low, no SCK glitch, MOSI = the bytes then the word high byte first under MSBFIRST and low byte first under LSBFIRST (as the
 hardware SPI and AVR send it), MISO = the armed bytes; CS high at the condition's start and end. What the sketch
-read back (its XFER reply) is compared here: the armed bytes, and the word assembled the same way. SCK may move
-while CS is high: beginTransaction() sets the new mode's idle level before CS falls, as Arduino's SPI does."""
+read back (its XFER reply) is compared here: the armed bytes, and the word assembled the same way. SCK moves
+while CS is high only once when the mode's idle level (CPOL) changes: beginTransaction() sets it before CS falls,
+as Arduino's SPI does (WireSkein's sck_outside_cs notice: one allowed then, ng otherwise)."""
 import json
 import pathlib
 import secrets
@@ -94,8 +95,9 @@ def wait_reply(dut, wait, pattern, timeout=3.0):
 def test_spi_output_only(dut, oep_host, ws_run, record_property):
     """The bus with no target: the probe only captures CS, SCK and MOSI (MISO floats and is not judged), so what is
     seen is the DUT's own doing - the baseline the round trip below is compared with when something looks wrong.
-    Every condition of the round trip, judged the same way, and SCK must stay still while CS is high unless the
-    mode's idle level (CPOL) changes, which beginTransaction() makes as one move before CS falls."""
+    Every condition of the round trip, judged the same way, and SCK must stay still while CS is high (WireSkein's
+    sck_outside_cs notice: ng) unless the mode's idle level (CPOL) changes, which beginTransaction() makes as one
+    move before CS falls (one notice allowed)."""
     from wireskein.runlog import ends, spi, starts
     case = settings(__file__)
     lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
@@ -112,7 +114,8 @@ def test_spi_output_only(dut, oep_host, ws_run, record_property):
                 same_idle = (mode >> 1) == cpol
                 cpol = mode >> 1
                 want = [spi(sck, mosi=mosi, cs=cs, mode=mode, bit_order="lsb" if lsb else "msb",
-                            mosi_bytes=(out + wire_word).hex(), bits=40, sck_idle_outside_cs=same_idle),
+                            mosi_bytes=(out + wire_word).hex(), bits=40,
+                            notices={"sck_outside_cs": "ng" if same_idle else 1}),
                         starts(idle), ends(idle)]
                 with ws_run.section(2, name, expect=want):
                     command = f"xfer {mode} {lsb} {hz} {word:04x} {out.hex()}"
@@ -139,17 +142,21 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
 
     def steps(wait):
         idle = {cs: 1}
+        cpol = 0                                       # the bus begins in mode 0
         with ws_run.section(1, f"{'softspi' if soft else 'spi'} {sck} {miso} {mosi} {cs}"):
             for mode, lsb, hz in CONDITIONS:
                 if lsb not in orders:
                     continue
+                same_idle = (mode >> 1) == cpol
+                cpol = mode >> 1
                 name = f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST {hz // 1000} kHz"
                 out = secrets.token_bytes(3)
                 word = int.from_bytes(secrets.token_bytes(2), "big")
                 armed = secrets.token_bytes(5)
                 wire_word = word.to_bytes(2, "little" if lsb else "big")
                 want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=mode, bit_order="lsb" if lsb else "msb",
-                            mosi_bytes=(out + wire_word).hex(), miso_bytes=armed.hex(), bits=40),
+                            mosi_bytes=(out + wire_word).hex(), miso_bytes=armed.hex(), bits=40,
+                            notices={"sck_outside_cs": "ng" if same_idle else 1}),
                         starts(idle), ends(idle)]
                 with ws_run.section(2, name, expect=want):
                     target.configure(mode=mode, bit_order=lsb)
