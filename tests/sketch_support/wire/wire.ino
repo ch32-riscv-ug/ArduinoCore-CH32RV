@@ -11,7 +11,15 @@
  *                         endTransmission(true), back to back:
  *                         SEQ <first result> <got> <hex bytes or -> <last result>
  *   nack <addr>           with no target: write 0x10 to addr, endTransmission(true):
- *                         NACK <result> (2: the address was not acknowledged) */
+ *                         NACK <result> (2: the address was not acknowledged)
+ *
+ * Wire as a target of the probe's i2c-controller (begin(address)):
+ *
+ *   slave <addr>          Wire.end(), Wire.begin(addr) with onReceive / onRequest:
+ *                         SLAVE 1 (SLAVE 0 where Wire has no target mode)
+ *   sreply <hex or ->     what onRequest() write()s from now on (- : nothing)
+ *   sgot                  SGOT <onReceive calls> <onRequest calls> <the order, R / Q per
+ *                         call, last 8> <the last onReceive's count> <its bytes, hex or -> */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <Wire.h>
@@ -26,6 +34,48 @@
  * menu sets its I2C to Software), or the SoftWire `soft` names. */
 static TwoWire *bus = &Wire;
 static SoftWire soft(CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN);
+
+/* The target side: what onReceive() got, what onRequest() sends, and in which order they ran. */
+static volatile uint32_t receives, requests;
+static volatile int lastCount;
+static uint8_t lastBytes[40];
+static uint8_t replyBytes[16];
+static volatile uint8_t replyLength;
+static char order[9];
+static volatile uint8_t orderUsed;
+
+static void noteOrder(char c)
+{
+    if (orderUsed == sizeof order - 1) {
+        memmove(order, order + 1, sizeof order - 2);
+        orderUsed--;
+    }
+    order[orderUsed++] = c;
+    order[orderUsed] = 0;
+}
+
+static void onReceived(int count)
+{
+    receives = receives + 1;
+    lastCount = count;
+    int i = 0;
+    while (Wire.available()) {
+        const int b = Wire.read();
+        if (i < (int)sizeof lastBytes) {
+            lastBytes[i++] = (uint8_t)b;
+        }
+    }
+    noteOrder('R');
+}
+
+static void onRequested()
+{
+    requests = requests + 1;
+    if (replyLength) {
+        Wire.write(replyBytes, replyLength);
+    }
+    noteOrder('Q');
+}
 
 static void sequence(uint8_t address, size_t n, bool stop)
 {
@@ -107,6 +157,44 @@ void loop()
             bus->write(0x10);
             SerialDMSeq.print("NACK ");
             SerialDMSeq.println(bus->endTransmission(true));
+        } else if (strncmp(line, "slave ", 6) == 0) {
+            const unsigned long address = strtoul(line + 6, nullptr, 0);
+            Wire.end();
+            receives = requests = 0;
+            lastCount = 0;
+            orderUsed = 0;
+            order[0] = 0;
+            Wire.onReceive(onReceived);
+            Wire.onRequest(onRequested);
+            Wire.begin((uint8_t)address);
+            SerialDMSeq.println("SLAVE 1");
+        } else if (strncmp(line, "sreply ", 7) == 0) {
+            const char *p = line + 7;
+            uint8_t n = 0;
+            while (p[0] && p[1] && p[0] != '-' && n < sizeof replyBytes) {
+                const char pair[3] = {p[0], p[1], 0};
+                replyBytes[n++] = (uint8_t)strtoul(pair, nullptr, 16);
+                p += 2;
+            }
+            replyLength = n;
+            SerialDMSeq.print("SREPLY ");
+            SerialDMSeq.println(n);
+        } else if (strcmp(line, "sgot") == 0) {
+            SerialDMSeq.print("SGOT ");
+            SerialDMSeq.print((unsigned long)receives);
+            SerialDMSeq.print(' ');
+            SerialDMSeq.print((unsigned long)requests);
+            SerialDMSeq.print(' ');
+            SerialDMSeq.print(orderUsed ? order : "-");
+            SerialDMSeq.print(' ');
+            SerialDMSeq.print(lastCount);
+            SerialDMSeq.print(' ');
+            const int shown = lastCount < (int)sizeof lastBytes ? lastCount : (int)sizeof lastBytes;
+            for (int i = 0; i < shown; i++) {
+                SerialDMSeq.print((char)"0123456789abcdef"[lastBytes[i] >> 4]);
+                SerialDMSeq.print((char)"0123456789abcdef"[lastBytes[i] & 15]);
+            }
+            SerialDMSeq.println(shown ? "" : "-");
         } else if (strncmp(line, "seq ", 4) == 0) {
             char *p = line + 4;
             const unsigned long address = strtoul(p, &p, 0);

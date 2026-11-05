@@ -179,3 +179,101 @@ def test_wire_contract(dut, oep_host, ws_run, record_property):
         core.plan_release(host, [target.fn])
     record_property("results", json.dumps(wrong) if wrong else "ok")
     assert not wrong, " | ".join(wrong)
+
+
+SLAVE_ADDRESS = 0x42
+
+
+def test_wire_slave(dut, oep_host, ws_run, record_property):
+    """wire.slave (case wire only): Wire.begin(0x42) on its default pins with onReceive / onRequest, the probe's
+    i2c-controller the master at 100 kHz (its pull-ups). One capture of SDA and SCL, a WireSkein section per
+    condition judging the bus (i2c: the transactions, their starts and ends, the bytes, the bus released); what the
+    sketch's callbacks saw (sgot) and what the probe read are compared here - Wire's target contract
+    (libraries/Wire/README.md, AVR's semantics):
+    - write: 3 bytes - onReceive(3) after the stop, those bytes;
+    - read: onRequest() writes 4 bytes, the master reads 4;
+    - register read: write 1 byte, repeated START, read 2 - onReceive first, then onRequest (R then Q);
+    - read past the reply: 2 bytes provided, 4 read - the rest 0xFF;
+    - long write: 40 bytes - onReceive gets the buffer's 32 (CH32RV_WIRE_BUFFER_SIZE), the head;
+    - another address: 0x43 - not acknowledged, no callback.
+    Prepared before a bench target had a usable hardware I2C (the x035 bench's lot has none, 2026-11-05)."""
+    from oep_client.fixture import I2cController, I2cSegment
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    if case.get("case") != "wire":
+        pytest.skip("the target mode is the hardware Wire's")
+    lines, sda, scl, _ = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    ctrl = I2cController(host)
+    core.plan_apply(host, ctrl.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+    record_property("probe_pullups", ctrl.internal_pullups)
+    m = ask(dut, f"slave {SLAVE_ADDRESS}", rb"SLAVE (\d)")
+    if m.group(1) != b"1":
+        pytest.skip("this Wire has no target mode")
+    clock = ctrl.configure(100_000, 25_000)
+    wrong = []
+
+    def got(wait):
+        dut.write("sgot\n")
+        m = wait_reply(dut, wait, rb"SGOT (\d+) (\d+) (\S+) (-?\d+) (\S+)")
+        ws_run.reply(m.group(0).decode())
+        return int(m.group(1)), int(m.group(2)), m.group(3).decode(), int(m.group(4)), m.group(5).decode()
+
+    def steps(wait):
+        idle = {sda: 1, scl: 1}
+        A = SLAVE_ADDRESS
+        with ws_run.section(1, f"wire slave {sda} {scl} at 0x{A:02x}, master {clock} Hz"):
+            def run(name, segments, transactions, reply=None):
+                with ws_run.section(2, name, expect=[i2c(scl, sda, transactions=transactions),
+                                                     starts(idle), ends(idle)]):
+                    if reply is not None:
+                        dut.write(f"sreply {reply.hex() or '-'}\n")
+                        wait_reply(dut, wait, rb"SREPLY \d+")
+                    ws_run.command(name)
+                    done = ctrl.transfer(segments)
+                    wait(0.02)
+                    r = got(wait)
+                    wait(0.01)
+                    return done, r
+
+            data = secrets.token_bytes(3)
+            done, (rx, rq, order, count, hexed) = run("write 3", [I2cSegment.write(A, data)],
+                [{"addr": A, "rw": "write", "bytes": list(data), "ack": True, "start": "S", "end": "P"}])
+            if (rx, rq, count, hexed) != (1, 0, 3, data.hex()) or not done.ok:
+                wrong.append(f"write 3: result {done.result}, onReceive {rx} onRequest {rq}, {count} bytes {hexed}")
+            reply = secrets.token_bytes(4)
+            done, (rx, rq, order, count, hexed) = run("read 4", [I2cSegment.reading(A, 4)],
+                [{"addr": A, "rw": "read", "bytes": list(reply), "ack": True, "start": "S", "end": "P"}], reply)
+            if (rx, rq) != (1, 1) or done.data != reply:
+                wrong.append(f"read 4: onReceive {rx} onRequest {rq}, the master read {done.data.hex()}")
+            reply = secrets.token_bytes(2)
+            done, (rx, rq, order, count, hexed) = run("register read",
+                [I2cSegment.write(A, b"\x05"), I2cSegment.reading(A, 2)],
+                [{"addr": A, "rw": "write", "bytes": [5], "ack": True, "start": "S", "end": "Sr"},
+                 {"addr": A, "rw": "read", "bytes": list(reply), "ack": True, "start": "Sr", "end": "P"}], reply)
+            if (rx, rq, count, hexed) != (2, 2, 1, "05") or not order.endswith("RQ") or done.data != reply:
+                wrong.append(f"register read: onReceive {rx} onRequest {rq} order {order}, {count} bytes {hexed}, "
+                             f"the master read {done.data.hex()}")
+            reply = secrets.token_bytes(2)
+            done, (rx, rq, order, count, hexed) = run("read past the reply", [I2cSegment.reading(A, 4)],
+                [{"addr": A, "rw": "read", "bytes": list(reply + b"\xff\xff"), "ack": True, "start": "S", "end": "P"}],
+                reply)
+            if done.data != reply + b"\xff\xff":
+                wrong.append(f"read past the reply: the master read {done.data.hex()}, want {(reply + b'  ').hex()[:4]}ffff")
+            data = secrets.token_bytes(40)
+            done, (rx, rq, order, count, hexed) = run("long write", [I2cSegment.write(A, data)],
+                [{"addr": A, "rw": "write", "bytes": list(data), "start": "S", "end": "P"}])
+            if (count, hexed) != (32, data[:32].hex()):
+                wrong.append(f"long write: onReceive({count}) {hexed}, want the head 32")
+            before = got(wait)[:2]
+            done, after = run("another address", [I2cSegment.write(A + 1, b"\x01")],
+                [{"addr": A + 1, "rw": "write", "bytes": [], "ack": False, "start": "S", "end": "P"}])
+            if done.result != I2cController.ADDRESS_NACK or after[:2] != before:
+                wrong.append(f"another address: result {done.result}, callbacks {before} -> {after[:2]}")
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [ctrl.fn])
+    record_property("results", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)

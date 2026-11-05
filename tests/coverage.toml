@@ -228,11 +228,13 @@ not_on = ["CH32M030"]
 
 [[item]]
 id = "dac"                  # analogWrite to a DAC pin
+test = "analog::test_dac"
 scope = "series"
 needs = ["DAC"]
 
 [[item]]
 id = "wire-slave"           # Wire as an I2C target (onReceive / onRequest)
+test = "wire::test_wire_slave"
 scope = "series"
 needs = ["I2C1"]
 
