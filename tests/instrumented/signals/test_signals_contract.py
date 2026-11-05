@@ -2,9 +2,11 @@
 test picks the line: for analogWrite() and the pulse capture the first that is a PWM pad of a timer (the DUT says,
 from its variant), else the first plain one. Each test skips when the port has no such line.
 
-The waveforms are WireSkein's to judge (pytest-embedded-wireskein's ws_run): each condition is a section with its
-expectation, the probe's capture of the line is added to it (ws_capture.py), and the plugin fails the test on an NG
-or an unchecked item. What the DUT itself reports (interrupt counts, the capture's readings) is compared here.
+The waveforms are WireSkein's to judge (pytest-embedded-wireskein's ws_run). One capture of the line streams while
+the conditions are gone through (ws_capture.stream); each condition is a section (## <condition>) in which the
+command is sent and the line given time to change, and inside it a section (### steady) carrying the expectation,
+which WireSkein cuts out of the capture by the probe's clock and checks. The plugin fails the test on an NG or an
+unchecked item. What the DUT itself reports (interrupt counts, the capture's readings) is compared here.
 
 - signals.pwm: analogWrite() of 64, 128 and 192 at 1 kHz: a 1 kHz square of that duty (2 %, 1 point); 255 and 0:
   the line high and low.
@@ -76,6 +78,37 @@ def timer_pad(dut, lines, channels=(1, 2, 3, 4)):
     return None
 
 
+def sweep(dut, ws_run, oep_host, line, title, conditions, *, rate=1_000_000):
+    """Stream the line while going through `conditions`: (name, command, reply pattern, expectation, settle s, hold s)
+    each. The command is sent inside ## name, the line given `settle` to change (the gap after the marker, where it
+    may move anywhere), then ### steady holds `hold` with the expectation. Returns the replies."""
+    replies = []
+
+    def steps(wait):
+        with ws_run.section(1, title):
+            for name, command, reply, want, settle, hold in conditions:
+                with ws_run.section(2, name):
+                    ws_run.command(command)
+                    dut.write(command + "\n")
+                    wait(settle)
+                    # The reply is looked for in short tries with wait() between, so the stream keeps being read
+                    # (a long expect would leave it in the probe's buffer).
+                    m = None
+                    for _ in range(40):
+                        try:
+                            m = dut.expect(reply + rb"\r?\n", timeout=0.05)
+                            break
+                        except pexpect.TIMEOUT:
+                            wait(0.05)
+                    assert m is not None, f"{name}: no reply to {command!r}"
+                    ws_run.reply(m.group(0).decode())
+                    replies.append(m)
+                    with ws_run.section(3, "steady", expect=want):
+                        wait(hold)
+    ws_capture.stream(ws_run, oep_host, [line], rate=rate, steps=steps)
+    return replies
+
+
 def test_pwm(dut, oep_host, ws_run):
     case = settings(__file__)
     lines = labelled_lines(oep_host, case)
@@ -83,62 +116,49 @@ def test_pwm(dut, oep_host, ws_run):
     line = timer_pad(dut, lines)
     if line is None:
         pytest.skip("no labelled line is a PWM pad: " + ", ".join(p["pad"] for p in lines))
-    pad = line["pad"]
+    pad, pin = line["pad"], line["pin"]
+    conditions = [(f"value={v}", f"pwm {pin} {v} 1000", rb"PWM (\d)",
+                   [square(pad, 1000, v / 255, freq_rel=0.02, duty_abs=0.01)] if 0 < v < 255 else [level(pad, 1 if v else 0)],
+                   0.02, 0.03)                                     # 30 periods steady
+                  for v in (64, 128, 192, 255, 0)]
     try:
-        with ws_run.section(1, f"pwm {pad} 1 kHz"):
-            for value in (64, 128, 192, 255, 0):
-                want = ([square(pad, 1000, value / 255, freq_rel=0.02, duty_abs=0.01)] if 0 < value < 255
-                        else [level(pad, 1 if value else 0)])
-                with ws_run.section(2, f"value={value}", expect=want):
-                    ws_run.command(f"pwm {line['pin']} {value} 1000")
-                    ws_run.reply(ask(dut, f"pwm {line['pin']} {value} 1000", rb"PWM (\d)").group(0).decode())
-                    time.sleep(0.02)
-                    ws_capture.capture(ws_run, oep_host, [line], rate=1_000_000, samples=25_000)   # 25 periods
+        replies = sweep(dut, ws_run, oep_host, line, f"pwm {pad} 1 kHz", conditions)
+        assert all(m.group(1) == b"1" for m in replies), f"{pad}: analogWrite() found no PWM there"
     finally:
-        ask(dut, f"pwmoff {line['pin']}", rb"PWMOFF")
-        ask(dut, f"input {line['pin']}", rb"INPUT")
+        ask(dut, f"pwmoff {pin}", rb"PWMOFF")
+        ask(dut, f"input {pin}", rb"INPUT")
 
 
 def test_servo(dut, oep_host, ws_run):
     case = settings(__file__)
     line = first_line(oep_host, case)
     ready(dut, case)
-    pad = line["pad"]
+    pad, pin = line["pad"], line["pin"]
+    conditions = [(f"us={us}", f"servo {pin} {us}", rb"SERVO (\d)",
+                   [square(pad, 50, us / 20000, freq_rel=0.02, duty_abs=0.001)],
+                   0.06, 0.4)                                      # 3 periods to change, 20 steady
+                  for us in (544, 1000, 1500, 2000, 2400)]
     try:
-        with ws_run.section(1, f"servo {pad}"):
-            for us in (544, 1000, 1500, 2000, 2400):
-                with ws_run.section(2, f"us={us}", expect=[square(pad, 50, us / 20000, freq_rel=0.02, duty_abs=0.001)]):
-                    ws_run.command(f"servo {line['pin']} {us}")
-                    m = ask(dut, f"servo {line['pin']} {us}", rb"SERVO (\d)")
-                    ws_run.reply(m.group(0).decode())
-                    assert m.group(1) == b"1", "attach() failed"
-                    time.sleep(0.05)          # the new width from the next period
-                    ws_capture.capture(ws_run, oep_host, [line], rate=1_000_000, samples=200_000)   # 10 periods
+        replies = sweep(dut, ws_run, oep_host, line, f"servo {pad}", conditions)
+        assert all(m.group(1) == b"1" for m in replies), "attach() failed"
     finally:
         ask(dut, "servooff", rb"SERVOOFF")
-        ask(dut, f"input {line['pin']}", rb"INPUT")
+        ask(dut, f"input {pin}", rb"INPUT")
 
 
 def test_tone(dut, oep_host, ws_run):
     case = settings(__file__)
     line = first_line(oep_host, case)
     ready(dut, case)
-    pad = line["pad"]
+    pad, pin = line["pad"], line["pin"]
+    conditions = [(f"hz={hz}", f"tone {pin} {hz}", rb"TONE", [square(pad, hz, 0.5, freq_rel=0.01, duty_abs=0.05)],
+                   0.02, 0.05) for hz in (440, 2000)]
+    conditions.append(("notone", f"notone {pin}", rb"NOTONE", [level(pad, 0)], 0.02, 0.02))
     try:
-        with ws_run.section(1, f"tone {pad}"):
-            for hz in (440, 2000):
-                with ws_run.section(2, f"hz={hz}", expect=[square(pad, hz, 0.5, freq_rel=0.01, duty_abs=0.05)]):
-                    ws_run.command(f"tone {line['pin']} {hz}")
-                    ws_run.reply(ask(dut, f"tone {line['pin']} {hz}", rb"TONE").group(0).decode())
-                    time.sleep(0.02)
-                    ws_capture.capture(ws_run, oep_host, [line], rate=1_000_000, samples=50_000)
-            with ws_run.section(2, "notone", expect=[level(pad, 0)]):
-                ws_run.command(f"notone {line['pin']}")
-                ws_run.reply(ask(dut, f"notone {line['pin']}", rb"NOTONE").group(0).decode())
-                ws_capture.capture(ws_run, oep_host, [line], rate=1_000_000, samples=20_000)
+        sweep(dut, ws_run, oep_host, line, f"tone {pad}", conditions)
     finally:
-        ask(dut, f"notone {line['pin']}", rb"NOTONE")
-        ask(dut, f"input {line['pin']}", rb"INPUT")
+        ask(dut, f"notone {pin}", rb"NOTONE")
+        ask(dut, f"input {pin}", rb"INPUT")
 
 
 def test_interrupt(dut, oep_host, record_property):
