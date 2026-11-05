@@ -41,7 +41,7 @@ device-data の漏れ（PIOC、H417 の HSEM / IPC、V103 の USB）と疑わし
 | SD カード（SDIO / SDMMC）とファイルシステム | 3 | データの記録。まず SPI の SD で始め、SDIO は速さが要るとき | ライブラリ |
 | ADC のトリガ（タイマー）・アナログウォッチドッグ・デュアル | 12 / 12 / 5 | 遅い一定のレートでの取り込み（AdcStream の残り）、しきい値の割込み | ライブラリ（CH32RVAdcStream の拡張） |
 | 相補 PWM・デッドタイム・ワンパルス | 12 | モーターと電源の制御 | ライブラリ |
-| ARGB（WS2812 など） | 2（ハード）、12（SPI / PIOC で代える） | NeoPixel は利用者に人気。Adafruit_NeoPixel と同じ使い方にしたい。まず ESP32 と同じ `rgbLedWrite(pin, r, g, b)` を、LED 1 つ分ずつ割り込みを止めたビジーループで入れる計画（複数の LED は間で割り込みを許して続けて送り、最後に間を空けてラッチ。FEATURE_CANDIDATES の HW-11） | コア（`rgbLedWrite()`）、多数の LED はライブラリ |
+| ARGB（WS2812 など） | 2（ハード）、12（SPI / PIOC で代える） | NeoPixel は利用者に人気。Adafruit_NeoPixel と同じ使い方にしたい。まず ESP32 と同じ `rgbLedWrite(pin, r, g, b)` を、LED 1 つ分だけ割り込みを止めたビジーループで入れる計画。関数は LED 1 つ分の信号だけを出し、複数の LED をつなぐ待ち（`delayMicroseconds()`）はサンプルのスケッチに書く（FEATURE_CANDIDATES の HW-11） | コア（`rgbLedWrite()`）、多数の LED はライブラリ |
 | 比較器と OPA | 7 | アナログの前段（PGA）と、比較器の割込み・ブレーキ・起床 | ライブラリ |
 | PVD（電圧低下の検出） | 11 | 電池の低下を知らせる。PWR と一緒に設計する | コア（PWR と同じ所） |
 | RNG の公開 API | 3 | ESP32 の `esp_random()` と `randomSeed()` の種。中身は既にある | コア |
