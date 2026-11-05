@@ -2,17 +2,21 @@
 test picks the line: for analogWrite() and the pulse capture the first that is a PWM pad of a timer (the DUT says,
 from its variant), else the first plain one. Each test skips when the port has no such line.
 
-The waveforms are WireSkein's to judge (pytest-embedded-wireskein's ws_run). One capture of the line streams while
-the conditions are gone through (ws_capture.stream); each condition is a section (## <condition>) in which the
-command is sent and the line given time to change, and inside it a section (### steady) carrying the expectation,
-which WireSkein cuts out of the capture by the probe's clock and checks. The plugin fails the test on an NG or an
-unchecked item. What the DUT itself reports (interrupt counts, the capture's readings) is compared here.
+The waveforms are WireSkein's to judge (pytest-embedded-wireskein's ws_run). One capture of the line and two
+neighbours streams while the test goes through its conditions (ws_capture.stream); each condition is a section (##)
+opened as its command is sent, its expectation is the state the line becomes (becomes): before it the state it was
+in, then one change with at most `irregular_max` pulses of neither, then every period right. The outer section has
+only_moving (the neighbours stay still). The core's rules for a change: a duty or a Servo pulse width switches at
+the period's end (0 cut periods), a PWM frequency may cut 2, tone 1, and starting or stopping an output 1 (the
+default). The plugin fails the test on an NG or an unchecked item. What the DUT itself reports (interrupt counts,
+the capture's readings) is compared here.
 
-- signals.pwm: analogWrite() of 64, 128 and 192 at 1 kHz: a 1 kHz square of that duty (2 %, 1 point); 255 and 0:
-  the line high and low.
-- signals.servo: Servo.writeMicroseconds() of 544, 1000, 1500, 2000 and 2400 us: a 50 Hz square whose duty is the
-  pulse over 20 ms (2 %, 20 us).
-- signals.tone: tone() of 440 Hz and 2 kHz: that square at 50 % (1 %, 5 points); after noTone() the line low.
+- signals.pwm: analogWrite() of 64, 128 and 192 at 1 kHz (a 1 kHz square of that duty, 2 %, 1 point), the same
+  value again, 255 and 0 (the line high and low), 128 at 2 kHz and 500 Hz (analogWriteFrequency), and stopped.
+- signals.servo: Servo.writeMicroseconds() of 544, 1000, 1500, 2000 and 2400 us and 2400 again (50 Hz, the pulse
+  within 20 us), then detach() (low).
+- signals.tone: tone() of 440 Hz, 2 kHz and 2 kHz again (50 %, 1 %, 5 points), noTone() (low), and tone() of 1 kHz
+  for 30 ms (30 periods, then low).
 - signals.interrupt: attachInterrupt RISING, FALLING and CHANGE while the probe drives the line through 20 periods:
   20, 20 and 40 edges counted.
 - signals.timer-input: CH32RVPulseCapture on the line while the probe's PWM makes 1 kHz at 25 % and 10 kHz at 50 %:
@@ -32,7 +36,7 @@ import pytest
 sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py, ws_capture.py are staged beside the test
 from bench_lines import gpio_lines
 import ws_capture
-from wireskein.runlog import level, square
+from wireskein.runlog import becomes, ends, level, only_moving, pulses
 
 
 def settings(test_file):
@@ -81,35 +85,39 @@ def timer_pad(dut, lines, channels=(1, 2, 3, 4)):
     return None
 
 
-def sweep(dut, ws_run, oep_host, line, title, conditions, *, rate=1_000_000):
-    """Stream the line while going through `conditions`: (name, command, reply pattern, expectation, settle s, hold s)
-    each. The command is sent inside ## name, the line given `settle` to change (the gap after the marker, where it
-    may move anywhere), then ### steady holds `hold` with the expectation. Returns the replies."""
+def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000):
+    """Stream `lines` (the line under test first) while going through `conditions`: (name, command or None, reply
+    pattern, expectations, hold s) each. Each is one section: the command is sent as it opens and the line held
+    for `hold`. The reply is looked for in short tries with wait() between, so the stream keeps being read.
+    Returns the replies."""
     replies = []
+    pad = lines[0]["pad"]
 
     def steps(wait):
-        with ws_run.section(1, title):
-            for name, command, reply, want, settle, hold in conditions:
-                with ws_run.section(2, name):
-                    ws_run.command(command)
-                    dut.write(command + "\n")
-                    wait(settle)
-                    # The reply is looked for in short tries with wait() between, so the stream keeps being read
-                    # (a long expect would leave it in the probe's buffer).
-                    m = None
-                    for _ in range(40):
-                        try:
-                            m = dut.expect(reply + rb"\r?\n", timeout=0.05)
-                            break
-                        except pexpect.TIMEOUT:
-                            wait(0.05)
-                    assert m is not None, f"{name}: no reply to {command!r}"
-                    ws_run.reply(m.group(0).decode())
-                    replies.append(m)
-                    with ws_run.section(3, "steady", expect=want):
-                        wait(hold)
-    ws_capture.stream(ws_run, oep_host, [line], rate=rate, steps=steps)
+        with ws_run.section(1, title, expect=[only_moving([pad])]):
+            for name, command, reply, want, hold in conditions:
+                with ws_run.section(2, name, expect=want):
+                    if command:
+                        ws_run.command(command)
+                        dut.write(command + "\n")
+                        m = None
+                        for _ in range(60):
+                            try:
+                                m = dut.expect(reply + rb"\r?\n", timeout=0.05)
+                                break
+                            except pexpect.TIMEOUT:
+                                wait(0.05)
+                        assert m is not None, f"{name}: no reply to {command!r}"
+                        ws_run.reply(m.group(0).decode())
+                        replies.append(m)
+                    wait(hold)
+    ws_capture.stream(ws_run, oep_host, lines, rate=rate, steps=steps)
     return replies
+
+
+def with_neighbours(oep_host, case, line, n=2):
+    """The line under test and up to n other labelled lines, for only_moving."""
+    return [line] + [p for p in gpio_lines(oep_host, case["target"]) if p["pad"] != line["pad"]][:n]
 
 
 def test_pwm(dut, oep_host, ws_run):
@@ -120,13 +128,26 @@ def test_pwm(dut, oep_host, ws_run):
     if line is None:
         pytest.skip("no labelled line is a PWM pad: " + ", ".join(p["pad"] for p in lines))
     pad, pin = line["pad"], line["pin"]
-    conditions = [(f"value={v}", f"pwm {pin} {v} 1000", rb"PWM (\d)",
-                   [square(pad, 1000, v / 255, freq_rel=0.02, duty_abs=0.01)] if 0 < v < 255 else [level(pad, 1 if v else 0)],
-                   0.02, 0.03)                                     # 30 periods steady
-                  for v in (64, 128, 192, 255, 0)]
+    duty = lambda v, **k: [becomes(pad, freq_hz=1000, duty=v / 255, **k)]   # noqa: E731
+    conditions = [
+        ("rest", None, None, [level(pad, 0)], 0.03),
+        ("value=64", f"pwm {pin} 64 1000", rb"PWM (\d)", duty(64), 0.03),               # a start: 1 cut period
+        ("value=128", f"pwm {pin} 128 1000", rb"PWM (\d)", duty(128, irregular_max=0), 0.03),
+        ("value=192", f"pwm {pin} 192 1000", rb"PWM (\d)", duty(192, irregular_max=0), 0.03),
+        ("value=192 again", f"pwm {pin} 192 1000", rb"PWM (\d)", duty(192, irregular_max=0), 0.03),
+        ("value=255", f"pwm {pin} 255 1000", rb"PWM (\d)", [becomes(pad, level=1)], 0.03),   # a plain level
+        ("value=0", f"pwm {pin} 0 1000", rb"PWM (\d)", [becomes(pad, level=0)], 0.03),
+        ("value=128 at 1 kHz", f"pwm {pin} 128 1000", rb"PWM (\d)", duty(128), 0.03),
+        ("value=128 at 2 kHz", f"pwm {pin} 128 2000", rb"PWM (\d)",
+         [becomes(pad, freq_hz=2000, duty=0.5, irregular_max=2)], 0.03),                 # a new frequency: 2
+        ("value=128 at 500 Hz", f"pwm {pin} 128 500", rb"PWM (\d)",
+         [becomes(pad, freq_hz=500, duty=0.5, irregular_max=2)], 0.06),
+        ("stopped", f"pwmoff {pin}", rb"PWMOFF", [becomes(pad, level=0)], 0.03),
+    ]
     try:
-        replies = sweep(dut, ws_run, oep_host, line, f"pwm {pad} 1 kHz", conditions)
-        assert all(m.group(1) == b"1" for m in replies), f"{pad}: analogWrite() found no PWM there"
+        replies = sweep(dut, ws_run, oep_host, with_neighbours(oep_host, case, line), f"pwm {pad}", conditions)
+        assert all(m.group(1) == b"1" for m in replies if m.group(0).startswith(b"PWM ")), \
+            f"{pad}: analogWrite() found no PWM there"
     finally:
         ask(dut, f"pwmoff {pin}", rb"PWMOFF")
         ask(dut, f"input {pin}", rb"INPUT")
@@ -137,13 +158,16 @@ def test_servo(dut, oep_host, ws_run):
     line = first_line(oep_host, case)
     ready(dut, case)
     pad, pin = line["pad"], line["pin"]
-    conditions = [(f"us={us}", f"servo {pin} {us}", rb"SERVO (\d)",
-                   [square(pad, 50, us / 20000, freq_rel=0.02, duty_abs=0.001)],
-                   0.06, 0.4)                                      # 3 periods to change, 20 steady
-                  for us in (544, 1000, 1500, 2000, 2400)]
+    width = lambda us, **k: [becomes(pad, period_s=0.02, high_s=us * 1e-6, high_abs_s=20e-6, **k)]   # noqa: E731
+    conditions = [("rest", None, None, [level(pad, 0)], 0.05),
+                  ("us=544", f"servo {pin} 544", rb"SERVO (\d)", width(544), 0.5)]                    # a start
+    conditions += [(f"us={us}", f"servo {pin} {us}", rb"SERVO (\d)", width(us, irregular_max=0), 0.5)
+                   for us in (1000, 1500, 2000, 2400)]
+    conditions += [("us=2400 again", f"servo {pin} 2400", rb"SERVO (\d)", width(2400, irregular_max=0), 0.5),
+                   ("detach", "servooff", rb"SERVOOFF", [becomes(pad, level=0)], 0.06)]
     try:
-        replies = sweep(dut, ws_run, oep_host, line, f"servo {pad}", conditions)
-        assert all(m.group(1) == b"1" for m in replies), "attach() failed"
+        replies = sweep(dut, ws_run, oep_host, with_neighbours(oep_host, case, line), f"servo {pad}", conditions)
+        assert all(m.group(1) == b"1" for m in replies if m.group(0).startswith(b"SERVO ")), "attach() failed"
     finally:
         ask(dut, "servooff", rb"SERVOOFF")
         ask(dut, f"input {pin}", rb"INPUT")
@@ -154,11 +178,16 @@ def test_tone(dut, oep_host, ws_run):
     line = first_line(oep_host, case)
     ready(dut, case)
     pad, pin = line["pad"], line["pin"]
-    conditions = [(f"hz={hz}", f"tone {pin} {hz}", rb"TONE", [square(pad, hz, 0.5, freq_rel=0.01, duty_abs=0.05)],
-                   0.02, 0.05) for hz in (440, 2000)]
-    conditions.append(("notone", f"notone {pin}", rb"NOTONE", [level(pad, 0)], 0.02, 0.02))
+    note = lambda hz: [becomes(pad, freq_hz=hz, duty=0.5, freq_rel=0.01, duty_abs=0.05)]   # 1 cut period
+    conditions = [("rest", None, None, [level(pad, 0)], 0.03),
+                  ("hz=440", f"tone {pin} 440", rb"TONE", note(440), 0.06),
+                  ("hz=2000", f"tone {pin} 2000", rb"TONE", note(2000), 0.03),
+                  ("hz=2000 again", f"tone {pin} 2000", rb"TONE", note(2000), 0.03),
+                  ("notone", f"notone {pin}", rb"NOTONE", [becomes(pad, level=0)], 0.03),
+                  ("1 kHz for 30 ms", f"toned {pin} 1000 30", rb"TONE",
+                   [pulses(pad, count=30, period_s=1e-3, period_rel=0.02), ends({pad: 0})], 0.08)]
     try:
-        sweep(dut, ws_run, oep_host, line, f"tone {pad}", conditions)
+        sweep(dut, ws_run, oep_host, with_neighbours(oep_host, case, line), f"tone {pad}", conditions)
     finally:
         ask(dut, f"notone {pin}", rb"NOTONE")
         ask(dut, f"input {pin}", rb"INPUT")
