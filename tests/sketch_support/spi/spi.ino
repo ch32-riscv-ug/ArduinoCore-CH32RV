@@ -4,9 +4,12 @@
  *
  *   ready <nonce>                      READY <nonce> <build id>
  *   pins <sck> <miso> <mosi> <cs>      SoftSPI on these: PINS <1 opened / 0 refused>
+ *   spipins                            the SPI's default pins, SPI not begun:
+ *                                      SPIPINS <sck> <miso> <mosi> (SPIPINS NONE)
  *   hw <cs>                            SPI on its default pins: HW <sck> <miso> <mosi>
  *                                      (HW NONE on a part without SPI)
- *   xfer <mode> <lsb> <word> <bytes>   CS low; transfer() each byte (hex,
+ *   xfer <mode> <lsb> <hz> <word> <bytes>
+ *                                      at SPISettings(hz, ...): CS low; transfer() each byte (hex,
  *                                      two digits each), then transfer16(word,
  *                                      hex); CS high:
  *                                      XFER <bytes read, hex> <word read, hex> */
@@ -31,7 +34,7 @@ static void hex(uint32_t v, uint8_t digits)
     }
 }
 
-static void xfer(uint8_t mode, bool lsb, uint16_t word, const char *bytes)
+static void xfer(uint8_t mode, bool lsb, uint32_t hz, uint16_t word, const char *bytes)
 {
     uint8_t out[16];
     size_t n = 0;
@@ -40,7 +43,7 @@ static void xfer(uint8_t mode, bool lsb, uint16_t word, const char *bytes)
         out[n++] = (uint8_t)strtoul(pair, nullptr, 16);
         bytes += 2;
     }
-    bus->beginTransaction(SPISettings(1000000, lsb ? LSBFIRST : MSBFIRST, mode));
+    bus->beginTransaction(SPISettings(hz, lsb ? LSBFIRST : MSBFIRST, mode));
     digitalWrite(cs, LOW);
     delayMicroseconds(50);             /* the probe's CS set-up */
     for (size_t i = 0; i < n; i++) {
@@ -95,6 +98,17 @@ void loop()
             digitalWrite(cs, HIGH);
             SerialDMSeq.print("PINS ");
             SerialDMSeq.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
+        } else if (strcmp(line, "spipins") == 0) {
+#if defined(SPI_INTERFACES_COUNT)
+            SerialDMSeq.print("SPIPINS ");
+            SerialDMSeq.print(PIN_SPI_SCK);
+            SerialDMSeq.print(' ');
+            SerialDMSeq.print(PIN_SPI_MISO);
+            SerialDMSeq.print(' ');
+            SerialDMSeq.println(PIN_SPI_MOSI);
+#else
+            SerialDMSeq.println("SPIPINS NONE");
+#endif
         } else if (strncmp(line, "hw ", 3) == 0) {
 #if defined(SPI_INTERFACES_COUNT)
             p += 3;
@@ -116,11 +130,12 @@ void loop()
             p += 5;
             const unsigned long mode = strtoul(p, &p, 10);
             const unsigned long lsb = strtoul(p, &p, 10);
+            const unsigned long hz = strtoul(p, &p, 10);
             const unsigned long word = strtoul(p, &p, 16);
             while (*p == ' ') {
                 p++;
             }
-            xfer((uint8_t)mode, lsb != 0, (uint16_t)word, p);
+            xfer((uint8_t)mode, lsb != 0, (uint32_t)hz, (uint16_t)word, p);
         }
     }
 }

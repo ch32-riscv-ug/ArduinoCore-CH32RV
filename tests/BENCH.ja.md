@@ -85,8 +85,9 @@
 - ラベルは OEP の host guide §5.3 の形で、`<口>@<端子>`、`<口>.<役割>@<端子>`、`<口>.<役割>` の 3 つ。口は接続先
   `oep://<プローブ>/<口>` の `<口>`、端子は DUT の端子名を小文字で（`pa10`）。
   - `<口>@<端子>`: DUT のその端子への線。どの試験でも使ってよい線で、gpio の試験は両方向に動かす。signals の試験
-    （analogWrite、Servo、tone、割り込み、タイマーの入力）も、この線から端子を選ぶ（PWM とタイマーの入力は、DUT が
-    variant の表でタイマーの端子だと答えた線）。役割のラベルは要らない。
+    （analogWrite、Servo、tone、割り込み、タイマーの入力）と spi・softspi も、この線から端子を選ぶ（PWM とタイマーの
+    入力は DUT が variant の表でタイマーの端子だと答えた線、ハードの SPI は DUT が答えた既定の SCK / MISO / MOSI と残りの
+    線の CS、SoftSPI は 4 本）。役割のラベルは要らない。
   - `<口>.<役割>@<端子>`: 同じく端子への線で、試験がその役割に使う（下の表）。端子も書くので、gpio の試験もこの線を
     見つけられる。
   - `<口>.<役割>`: デバッグとリセット（`swio` / `swdio` / `swclk` / `nrst`）、コンソール（`rx` / `tx`。OEP 側から見た
@@ -104,8 +105,6 @@
 
 | 機能 | 必須の役割 | 任意の役割 | 部品 | 試験 |
 |---|---|---|---|---|
-| ハードウェアの SPI（既定の端子） | `spi_sck`、`spi_miso`、`spi_mosi`、`spi_cs` | | なし | spi |
-| SoftSPI | `softspi_sck`、`softspi_miso`、`softspi_mosi`、`softspi_cs` | | なし | softspi |
 | ハードウェアの I2C（既定の端子） | `i2c_sda`、`i2c_scl` | | なし | wire |
 | SoftWire | `softwire_sda`、`softwire_scl` | | なし | softwire |
 | 2 本目の UART | `uart2_tx`、`uart2_rx` | | なし | periph（Serial1 でプローブの UART と往復） |

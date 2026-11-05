@@ -1,27 +1,35 @@
-"""spi.modes (case spi): the hardware SPI on its default pins, on the lines the probe labels spi_sck / _miso / _mosi /
-_cs (bench_lines.py; the labels must be the SPI's default pins); softspi.modes (case softspi): a SoftSPI on the lines
-labelled softspi_sck / _miso / _mosi / _cs. Without the labels the test skips. Either is the controller of the OEP probe's
-spi-target (tests/sketch_support/spi/spi.ino), every pad in the gpio table. In each of the four modes and
-both bit orders the sketch sends a few bytes with transfer() and a word with transfer16(), CS low around them.
+"""spi.modes (case spi): the hardware SPI on its default pins; softspi.modes (case softspi): a SoftSPI. Either is the
+controller of the OEP probe's spi-target (tests/sketch_support/spi/spi.ino).
 
-What must hold, judged on the wire (the probe's logic capture of CS, SCK and MOSI): 40 clocks while CS is low and the
-bytes, then the word high byte first under MSBFIRST and low byte first under LSBFIRST (as the hardware SPI and AVR send
-it); and the sketch reads back what the target was armed with, the word assembled the same way. A probe's spi-target
-that counts other than 40 bits of a clean 40-clock transfer has its MISO shifted too; that is recorded as the target's,
-not failed. (x035-oep's P4 did, 7 in 48, until oep-probe-arduino 905616e drove MISO one step weaker: its edge reached the
-SCK wire next to it on the fixture.)"""
+The lines are `<port>@<pad>` ones the probe labels (bench_lines.py gpio_lines): for the hardware SPI the three the
+DUT names as its default SCK / MISO / MOSI (spipins), which must all be labelled, and CS the first other line; for
+SoftSPI the first four lines. Without them the test skips, naming what is missing.
+
+In each of the four modes and both bit orders at 250 kHz, and mode 0 MSB first at 1 MHz, the sketch sends three
+bytes with transfer() and a word with transfer16(), CS low around them, while the target answers five armed bytes.
+One capture of CS, SCK, MOSI and MISO streams through all of them (ws_capture.stream), a WireSkein section per
+condition, judged there (spi): the mode on the lines, 40 clocks while CS is low, no SCK glitch, MOSI = the bytes then the word high byte first under MSBFIRST and low byte first under LSBFIRST (as the
+hardware SPI and AVR send it), MISO = the armed bytes; CS high at the condition's start and end. What the sketch
+read back (its XFER reply) is compared here: the armed bytes, and the word assembled the same way. SCK may move
+while CS is high: beginTransaction() sets the new mode's idle level before CS falls, as Arduino's SPI does."""
 import json
 import pathlib
 import secrets
-
-import pytest
 import sys
+import time
 
-sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py is staged beside the test
-from bench_lines import require
+import pexpect
+import pytest
 
-from oep_client import capture, core
+sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py, ws_capture.py are staged beside the test
+from bench_lines import gpio_lines
+import ws_capture
+
+from oep_client import core
 from oep_client.fixture import SpiTarget
+
+RATE = 10_000_000          # 20 samples a half period at 250 kHz, 5 at 1 MHz
+CONDITIONS = [(mode, lsb, 250_000) for mode in range(4) for lsb in (0, 1)] + [(0, 0, 1_000_000)]
 
 
 def settings(test_file):
@@ -33,141 +41,92 @@ def ask(dut, line, reply, timeout=10):
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
-def pin(name):
-    """The sketch's pin number of a pad name (the variants' CH32RV_PIN(port, bit))."""
-    return ((ord(name[1]) - ord("A") + 2) << 5) | int(name[2:])
-
-
-# (rate, samples) of the capture: the hardware SPI (~750 kHz) at ~13 samples a half period over 400 us; SoftSPI
-# (a few us a half period) over 4 ms. Bigger windows at these rates overrun the P4's capture store.
-WINDOW = {"hardware": (20_000_000, 8_000), "software": (5_000_000, 20_000)}
-PRETRIGGER = 400           # 20 us (hardware) / 80 us (SoftSPI) before CS falls
-
-
-def wire_bits(cs, sck, mosi, mode):
-    """MOSI sampled at the edges the mode samples on, while CS is low: what the DUT put on the wire."""
-    sample_rising = mode in (0, 3)
-    out = []
-    for i in range(1, len(cs)):
-        if cs[i] or cs[i - 1]:
-            continue
-        if sck[i] != sck[i - 1] and (sck[i] == 1) == sample_rising:
-            out.append(mosi[i])
-    return out
-
-
-def to_bytes(bits, lsb):
-    out = bytearray()
-    for k in range(0, len(bits) - len(bits) % 8, 8):
-        chunk = bits[k:k + 8]
-        out.append(sum(b << (j if lsb else 7 - j) for j, b in enumerate(chunk)))
-    return bytes(out)
-
-
 def pad(number):
-    return f"P{'ABCDEF'[(number >> 5) - 2]}{number & 31}"
+    return f"P{'ABCDEFGHIJK'[(number >> 5) - 2]}{number & 31}"
 
 
-def test_spi_contract(dut, oep_host, record_property):
+def test_spi_contract(dut, oep_host, ws_run, record_property):
+    from wireskein.runlog import ends, spi, starts
     case = settings(__file__)
     nonce = secrets.token_hex(4)
     m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     soft = case.get("case") == "softspi"
-    found = require(oep_host, case["target"], "softspi" if soft else "spi")
+    lines = {line["pad"]: line for line in gpio_lines(oep_host, case["target"])}
     if soft:
-        pads = {r[len("softspi_"):]: found[r]["pad"] for r in found}
-        assert ask(dut, f"pins {pin(pads['sck'])} {pin(pads['miso'])} {pin(pads['mosi'])} {pin(pads['cs'])}",
+        if len(lines) < 4:
+            pytest.skip(f"SoftSPI wants four <port>@<pad> lines, the probe labels {len(lines)}")
+        sck, miso, mosi, cs = list(lines)[:4]
+        assert ask(dut, f"pins {lines[sck]['pin']} {lines[miso]['pin']} {lines[mosi]['pin']} {lines[cs]['pin']}",
                    rb"PINS (\d)").group(1) == b"1", "SoftSPI refused the pins"
         record_property("bus", "SoftSPI")
     else:
-        cs = found["spi_cs"]["pad"]
-        m = ask(dut, f"hw {pin(cs)}", rb"HW (\d+) (\d+) (\d+)")
-        pads = dict(sck=pad(int(m.group(1))), miso=pad(int(m.group(2))), mosi=pad(int(m.group(3))), cs=cs)
-        for role in ("sck", "miso", "mosi"):
-            assert found[f"spi_{role}"]["pad"] == pads[role], \
-                f"spi_{role} is labelled on {found[f'spi_{role}']['pad']}, the SPI's default pin is {pads[role]}"
+        m = ask(dut, "spipins", rb"SPIPINS (NONE|\d+ \d+ \d+)")
+        if m.group(1) == b"NONE":
+            pytest.skip("the part has no SPI")
+        sck, miso, mosi = (pad(int(n)) for n in m.group(1).split())
+        missing = [p for p in (sck, miso, mosi) if p not in lines]
+        if missing:
+            pytest.skip(f"the SPI's default pins {sck} / {miso} / {mosi}: the probe labels no "
+                        + ", ".join(f"<port>@{p.lower()}" for p in missing))
+        others = [p for p in lines if p not in (sck, miso, mosi)]
+        if not others:
+            pytest.skip("no other <port>@<pad> line for CS")
+        cs = others[0]
+        m = ask(dut, f"hw {lines[cs]['pin']}", rb"HW (\d+) (\d+) (\d+)")
         record_property("bus", "SPI")
-    channels = {line["pad"]: line["channel"] for line in found.values()}
-    ch = {role: channels[pads[role]] for role in ("sck", "miso", "mosi", "cs")}
-    record_property("pins", json.dumps({r: f"{pads[r]} ch{c}" for r, c in ch.items()}))
+    ch = {role: lines[p]["channel"] for role, p in (("sck", sck), ("miso", miso), ("mosi", mosi), ("cs", cs))}
+    record_property("pins", json.dumps({"sck": sck, "miso": miso, "mosi": mosi, "cs": cs}))
 
     host = oep_host.host
     target = SpiTarget(host)
-    cap = capture.LogicCapture(host)
-    core.plan_apply(host, target.assignments(ch["sck"], ch["mosi"], ch["miso"], ch["cs"]) +
-                    [(cap.fn, 0, ch["cs"]), (cap.fn, 1, ch["sck"]), (cap.fn, 2, ch["mosi"])])
-    try:
-        failures = []
-        orders = [0, 1] if target.features & SpiTarget.FEATURE_LSB_FIRST else [0]
-        record_property("orders", json.dumps(orders))
-        for mode in range(4):
-            for lsb in orders:
+    core.plan_apply(host, target.assignments(ch["sck"], ch["mosi"], ch["miso"], ch["cs"]))
+    orders = [0, 1] if target.features & SpiTarget.FEATURE_LSB_FIRST else [0]
+    record_property("orders", json.dumps(orders))
+    read_wrong = []
+
+    def wait_reply(wait, pattern, timeout=3.0):
+        end = time.monotonic() + timeout
+        while True:
+            try:
+                return dut.expect(pattern + rb"\r?\n", timeout=0.05)
+            except pexpect.TIMEOUT:
+                assert time.monotonic() < end, f"no {pattern!r}"
+                wait(0.05)
+
+    def steps(wait):
+        idle = {cs: 1}
+        with ws_run.section(1, f"{'softspi' if soft else 'spi'} {sck} {miso} {mosi} {cs}"):
+            for mode, lsb, hz in CONDITIONS:
+                if lsb not in orders:
+                    continue
+                name = f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST {hz // 1000} kHz"
                 out = secrets.token_bytes(3)
                 word = int.from_bytes(secrets.token_bytes(2), "big")
-                miso = secrets.token_bytes(5)
-                target.configure(mode=mode, bit_order=lsb)
-                target.arm(5, miso)
-                rate, samples = WINDOW["software" if "soft_spi" in case else "hardware"]
-                cfg = cap.configure(rate=rate, samples=samples, trigger=(capture.EDGE, 0, 1), pretrigger=PRETRIGGER)
-                cap.start()
-                label = f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST"
-                m = ask(dut, f"xfer {mode} {lsb} {word:04x} {out.hex()}", rb"XFER (\S+) ([0-9a-f]{4})")
-                got_bytes, got_word = bytes.fromhex(m.group(1).decode()), int(m.group(2), 16)
-                pending, bits, mosi = target.read_rx()
-                try:
-                    segs = cap.wait(timeout=5.0)
-                    data = cap.read_segment(segs[0])
-                except Exception as e:
-                    # For the probe's side: what the capture was asked and answered, and the target's state.
-                    record_property(label.replace(" ", "_") + "_capture",
-                                    f"{type(e).__name__}: {e}; configure answered rate {float(cfg.rate):.0f} samples {cfg.samples} "
-                                    f"pretrigger {PRETRIGGER} channels 3; status {cap.status()}; target {target.status()}; XFER returned")
-                    raise
-                cs_b, sck_b, mosi_b = (cap.channel(data, k, segs[0].samples) for k in range(3))
-                seen = wire_bits(cs_b, sck_b, mosi_b, mode)
-                # The shortest SCK level while CS is low, in samples: a glitch is far shorter than a half period.
-                runs, last, n_run = [], None, 0
-                for i in range(len(cs_b)):
-                    if cs_b[i]:
-                        continue
-                    if sck_b[i] == last:
-                        n_run += 1
-                    else:
-                        if last is not None:
-                            runs.append(n_run)
-                        last, n_run = sck_b[i], 1
-                low = [i for i in range(len(cs_b)) if not cs_b[i]]
-                edges = sum(1 for i in low[1:] if sck_b[i] != sck_b[i - 1])
-                at_fall = sck_b[low[0]] if low else -1
-                first_low = low[0] if low else 0
-                before = [i for i in range(1, first_low) if sck_b[i] != sck_b[i - 1]]
-                ns = 1e9 / rate
-                last_before = f"{(first_low - before[-1]) * ns:.0f} ns before" if before else "none"
-                record_property(f"mode_{mode}_{'LSB' if lsb else 'MSB'}_sck",
-                                f"shortest {min(runs[1:]) if len(runs) > 1 else -1}, {edges} edges, at CS fall {at_fall}, "
-                                f"idle {mode >> 1}; {len(before)} edges in the {first_low * ns:.0f} ns before CS fell, "
-                                f"the last {last_before}, SCK {sck_b[0]} at the window's start")
+                armed = secrets.token_bytes(5)
                 wire_word = word.to_bytes(2, "little" if lsb else "big")
-                want_word = int.from_bytes(miso[3:5], "little" if lsb else "big")
-                problems = []        # the DUT's
-                probe = []           # the probe's spi-target's
-                if len(seen) != 40 or to_bytes(seen, lsb) != out + wire_word:
-                    problems.append(f"on the wire {len(seen)} bits, {to_bytes(seen, lsb).hex()}, not 40, {(out + wire_word).hex()}")
-                if bits != 40 or mosi != out + wire_word:
-                    probe.append(f"the target clocked {bits} bits, received {mosi.hex()}")
-                read_wrong = []
-                if got_bytes != miso[:3]:
-                    read_wrong.append(f"read {got_bytes.hex()}, the target was armed with {miso[:3].hex()}")
-                if got_word != want_word:
-                    read_wrong.append(f"transfer16() read {got_word:04x}, not {want_word:04x}")
-                # A target that counted otherwise shifted its MISO too: what the DUT read then is the probe's doing.
-                (probe if bits != 40 else problems).extend(read_wrong)
-                if probe:
-                    record_property(label.replace(" ", "_") + "_target", "; ".join(probe))
-                record_property(label.replace(" ", "_"), "; ".join(problems) or "ok")
-                if problems:
-                    failures.append(f"{label}: " + "; ".join(problems))
-        assert not failures, " | ".join(failures)
+                want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=mode, bit_order="lsb" if lsb else "msb",
+                            mosi_bytes=(out + wire_word).hex(), miso_bytes=armed.hex(), bits=40),
+                        starts(idle), ends(idle)]
+                with ws_run.section(2, name, expect=want):
+                    target.configure(mode=mode, bit_order=lsb)
+                    target.arm(5, armed)
+                    command = f"xfer {mode} {lsb} {hz} {word:04x} {out.hex()}"
+                    ws_run.command(command)
+                    dut.write(command + "\n")
+                    m = wait_reply(wait, rb"XFER (\S+) ([0-9a-f]{4})")
+                    ws_run.reply(m.group(0).decode())
+                    got_bytes, got_word = bytes.fromhex(m.group(1).decode()), int(m.group(2), 16)
+                    want_word = int.from_bytes(armed[3:5], "little" if lsb else "big")
+                    if got_bytes != armed[:3] or got_word != want_word:
+                        read_wrong.append(f"{name}: read {got_bytes.hex()} {got_word:04x}, "
+                                          f"the target was armed with {armed[:3].hex()} {want_word:04x}")
+                    wait(0.01)
+
+    lines_in_order = [lines[p] for p in (cs, sck, mosi, miso)]
+    try:
+        ws_capture.stream(ws_run, oep_host, lines_in_order, rate=RATE, steps=steps)
     finally:
-        core.plan_release(host, [target.fn, cap.fn])
+        core.plan_release(host, [target.fn])
+    record_property("read", json.dumps(read_wrong) if read_wrong else "ok")
+    assert not read_wrong, " | ".join(read_wrong)

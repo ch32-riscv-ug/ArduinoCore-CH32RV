@@ -14,8 +14,6 @@ import pytest
 # feature: (required roles, optional roles). Optional roles widen the test (sdio's d1-d3: 4 lines instead of 1).
 ROLES = {
     # lines between the DUT and the probe only
-    "spi": (("spi_sck", "spi_miso", "spi_mosi", "spi_cs"), ()),
-    "softspi": (("softspi_sck", "softspi_miso", "softspi_mosi", "softspi_cs"), ()),
     "wire": (("i2c_sda", "i2c_scl"), ()),
     "softwire": (("softwire_sda", "softwire_scl"), ()),
     "uart2": (("uart2_tx", "uart2_rx"), ()),
