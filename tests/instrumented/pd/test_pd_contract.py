@@ -1,11 +1,11 @@
 """pd.attach / pd.caps / pd.fixed / pd.pps / pd.restart: CH32RVUsbPd as a sink
 (tests/sketch_support/pd/pd.ino) against the USB PD charger on the DUT's USB-C.
 
-Bench settings on the target:
-  pd_max_mv      the highest voltage the board's input takes (default 5000: only
+From the port's record (tests/harness/records.py, `pd`):
+  max_mv         the highest voltage the board's input takes (default 5000: only
                  the charger's 5 V contract and refusals are tried)
-  pd_vbus_pin    optional: an analog pin on VBUS through a divider, and
-  pd_vbus_ratio  that divider's VBUS / pin ratio; with both, every contract is
+  vbus_pin       optional: an analog pad on VBUS through a divider, and
+  vbus_ratio     that divider's VBUS / pin ratio; with both, every contract is
                  also measured (within 10 %)
 
 Every fixed level up to pd_max_mv and back to 5 V; a PPS profile (if offered)

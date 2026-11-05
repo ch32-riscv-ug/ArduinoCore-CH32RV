@@ -22,6 +22,30 @@ class PcUsbHost:
         self.topology = topology
         self.sysfs = pathlib.Path("/sys/bus/usb/devices") / topology
 
+    @classmethod
+    def by_serial(cls, serial, timeout=15):
+        """The DUT's own USB port, found by its device's serial (CH32RVUsbDevice's default is the chip's UID, which
+        the bench reads from the chip): where it is on this host's USB tree is not configured anywhere. The topology
+        stays the port's through ISP modes and replugs, whatever they report as serial."""
+        root = pathlib.Path("/sys/bus/usb/devices")
+        deadline = time.monotonic() + timeout
+        while True:
+            hits = []
+            for dev in root.glob("*"):
+                try:
+                    if (dev / "serial").read_text().strip().upper() == serial.upper():
+                        hits.append(dev.name)
+                except OSError:
+                    pass
+            if len(hits) == 1:
+                return cls(hits[0])
+            if len(hits) > 1:
+                raise RuntimeError(f"USB serial {serial} on several devices: {hits}")
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"no USB device with serial {serial} (the DUT's UID) within {timeout} s: "
+                                   "is the DUT's USB connected to this host, as the record's usb says?")
+            time.sleep(0.1)
+
     def ids(self):
         try:
             return ((self.sysfs / "idVendor").read_text().strip(), (self.sysfs / "idProduct").read_text().strip())

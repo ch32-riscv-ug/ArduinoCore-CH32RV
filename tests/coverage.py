@@ -3,8 +3,8 @@
 
   uv run --no-project python tests/coverage.py <run directory or result.json> ... [--markdown out.md]
 
-A run directory is run_hardware.py's --out (result.json, bench.json, cases/<target>/<case>/junit.xml). Each test's
-outcome comes from its junit file; the target's series from its chip (bench.json). For every item:
+A run directory is run_hardware.py's --out (result.json, places.json, cases/<target>/<case>/junit.xml). Each test's
+outcome comes from its junit file; the target's series from its chip (places.json). For every item:
 
 - scope "series": one table row per series, the best outcome on that series (PASS beats FAIL beats SKIP), n/a
   where the series lacks the item's peripheral, blank where nothing ran.
@@ -20,8 +20,8 @@ import xml.etree.ElementTree as ET
 
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
-sys.path.insert(0, str(REPO / "tools/generate"))
-from sketch_requirements import series_capabilities  # noqa: E402
+sys.path.insert(0, str(HERE))
+from harness.series import series_capabilities  # noqa: E402
 
 RANK = {"PASS": 3, "FAIL": 2, "SKIP": 1}
 MARK = {"PASS": "✓", "FAIL": "✗", "SKIP": "skip", None: "", "n/a": "n/a"}
@@ -66,8 +66,12 @@ def collect(paths, names):
             print(f"skip {run}: no result.json", file=sys.stderr)
             continue
         report = json.loads(result.read_text())
-        bench = json.loads((run / "bench.json").read_text()) if (run / "bench.json").exists() else {}
-        targets = bench.get("targets", bench)
+        # places.json (a target named by its address); bench.json in runs before 2026-11-05
+        if (run / "places.json").exists():
+            targets = json.loads((run / "places.json").read_text())
+        else:
+            bench = json.loads((run / "bench.json").read_text()) if (run / "bench.json").exists() else {}
+            targets = bench.get("targets", bench)
         for entry in report.get("cases", []):
             target, case = entry["target"], entry["case"]
             chip = (targets.get(target) or {}).get("chip", "")

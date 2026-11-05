@@ -2,7 +2,7 @@
 usb.net-frames, usb.reconnect, usb.isp-entry-dfu-detach, usb.isp-entry-touch.
 
 The DUT runs tests/sketch_support/usb_contracts; the test host is this PC (PcUsbHost in usb_host.py), which
-reaches the DUT's own USB port at the configured dut_usb_topology. A host microcontroller (a Pico on
+reaches the DUT's own USB port, found by its serial (the chip's UID). A host microcontroller (a Pico on
 the bench, later) replaces PcUsbHost and nothing else. The OS HID driver is detached before the
 keyboard types, so no input reaches this PC's desktop.
 """
@@ -23,7 +23,7 @@ from usb_host import APP, ISP, PcUsbHost, endpoints, interface
 def test_usb_contract(dut, record_property):
     settings = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
     build_id = settings["build_id"]
-    host = PcUsbHost(settings["target"]["dut_usb_topology"])
+    host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
 
     # usb.enumerate: this build, at this topology, with every declared function.
     nonce = secrets.token_hex(4)

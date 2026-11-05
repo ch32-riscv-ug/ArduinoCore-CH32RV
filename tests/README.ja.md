@@ -14,34 +14,54 @@ repository rootからは `uv run --project tests --locked pytest -c tests/pyproj
 
 ## 実機契約
 
-ネイティブLinuxで固定toolを取得し、[bench.example.toml](fixtures/bench.example.toml)を `fixtures/bench.local.toml` へコピーして接続先を埋めます。個体ID、USB topology、実配線と共通ロックはGit管理外です。接続情報はこの明示的な設定だけから読み、別のリポジトリや隣接checkoutは検索しません。以下はrepository rootで実行します。
+試験の相手は、アドレス 1 つで名指します。ch32rv に渡すのと同じもので、`tests/.env` の `CH32RV_PROBE` に書きます（[.env.example](.env.example)）。OEP の口なら `oep://<unit>/<口>`、WCH-Link なら `wchlink://<serial>` です。設備のファイル（bench.toml）はありません。ほかの事実は、本当にある場所から読みます（[harness/place.py](harness/place.py)）。
 
-`arduino-cli` をPATHへ配置し、serial／HIDへのアクセス権を準備します。power caseにはPPPS対応ハブ、`uhubctl`、USBとsysfs port disable属性の権限が必要です。
+| 事実 | どこから |
+|---|---|
+| プローブの USB の位置、電源を切る hub の口 | USB のシリアル（OEP の unit ID、Link のシリアル）で sysfs を引く |
+| 線と DUT の端子 | プローブの設定のラベル（`<口>@<端子>`、`<口>.<役目>@<端子>`） |
+| 型番、UID、チップ ID | チップ（`ch32rv target info`）。チップ ID で型番が決まらないときだけ、記録の `part` から候補の 1 つを選ぶ |
+| 基板、外付けの部品、DUT の USB の先、電源、不良 | プローブのメモ欄の記録（下） |
+| fqbn、クロック | boards.txt |
+| 系列ごとの周辺の有無 | [coverage.toml](coverage.toml) の needs と variant の定義 |
+| DUT の USB、相手の ESP32-S3 | 実行のときに USB のシリアルで探す（DUT は UID、S3 は記録の serial） |
+
+流す試験は、これらから決まります。流さない試験は、理由といっしょに result.json の `not_chosen` に残ります。記録が別の個体を指していれば（UID が違う）、何もせずに止めます。
 
 ```sh
 uv run --no-project python tools/index/fetch_tools.py --tool ch32rv
 uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
 uv sync --project tests --locked --extra hardware
 
-# 接続先を開かず、対応するsketchをcompile（outは未作成のディレクトリ）
-uv run --project tests --locked --extra hardware python tests/run_hardware.py \
-  --bench tests/fixtures/bench.local.toml --case runtime --out work/runtime-compile
+# その口で何が流れるかを見る（チップは読むだけ）
+uv run --project tests --locked --extra hardware --env-file tests/.env python tests/bench_record.py plan
 
-# 個体照合、書込み、観測、宣言したcaseの実行
-uv run --project tests --locked --extra hardware python tests/run_hardware.py \
-  --bench tests/fixtures/bench.local.toml --execute --out work/hardware-run
+# ビルドだけ／書込み、観測、試験
+uv run --project tests --locked --extra hardware --env-file tests/.env python tests/run_hardware.py --case runtime
+uv run --project tests --locked --extra hardware --env-file tests/.env python tests/run_hardware.py --execute
+
+# 相手を並べる、case を選ぶ
+uv run --project tests --locked --extra hardware python tests/run_hardware.py --execute \
+  --probe oep://30eda0e31108/x035 --probe wchlink://FB868F068059 --case gpio --out work/run1
 ```
 
-[.env.example](.env.example)を `tests/.env` へコピーすれば、設備TOMLと結果の親ディレクトリを設定できます。設定値は `uv --env-file` で明示的に読み込みます。CLIの `--bench`、`--out` が環境変数より優先します。機器の排他は pytest の機器ロック（`--device-lock required`）が受け持ちます。`--out` を省略すると `OEP_HW_RESULTS` 内に実行ごとの新しいディレクトリを作ります。書込みには常に `--execute` が必要です。
+`--probe` と `--out` は環境変数より優先します。`--out` を省略すると `OEP_HW_RESULTS` 内に実行ごとの新しいディレクトリを作ります。書込みには常に `--execute` が必要です。機器の排他は pytest の機器ロック（`--device-lock required`）が受け持ち、ベンチの共通ロックは取りません。`--case` で、その相手で流せない case を求めると、理由つきの SKIP になります。
+
+### 記録（プローブのメモ欄）
+
+個体ごとに違い、機器から読めない事実は、プローブのメモ欄（oep-spec oep-if-memo §4）に、口ごとに置きます。プローブについて行くので、プローブを別のホストにつないでも、そのまま試験できます。プローブは中身を読まないので、守らせる必要のある値は置きません。
+
+| 名前 | 持ち主 | 中身 |
+|---|---|---|
+| `oep.probe.memo/port/<口>` | OEP（§4.3） | `target`（`<系統>-<UID>`、照合に使う）、`part`（チップ ID で決まらないときの型番）、`note` |
+| `io.github.ch32-riscv-ug.arduino/port/<口>` | このコア | `board`（`<作り手>:<型>`）、`supply`（`{from: probe \| usb \| other}`）、`usb`（`{to: host}`、`{to: esp32-s3, serial, mac}`）、`parts`（`{sd: {bus, <信号>: <端子>}, eth: {to: lan}}`）、`pd`（`{max_mv, vbus_pin, vbus_ratio}`）、`defects`（`[{id, lose: [機能], why}]`）、`note`、`updated` |
+
+形の決まりと検査は [harness/records.py](harness/records.py) にあります。書くときは `tests/bench_record.py set`（同じセッションの中で読んで書き、渡した項目だけを変え、ほかの道具の項目は残す）、見るときは `show` を使います。正しい中身はホストの側にも残してください。WCH-Link は記録を持てないので、記録の要る試験（sd、usb の相手など）は流れません。チップ ID で型番が決まらない Link の相手には、`CH32RV_CHIP` を書きます。
 
 ```sh
-uv run --project tests --locked --extra hardware --env-file tests/.env \
-  python tests/run_hardware.py --target configured-target --case runtime --execute
+uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035s3 \
+  --target auto --board weact:CH32X035-CoreBoard-V1.0 --supply usb --usb esp32-s3,serial=58FA041040,mac=e4b063b49f2c
 ```
-
-OEPでは `probe_unit_id` に完全な個体IDを設定してください。専用OEP USBの `usb_serial` からも照合できます。USB-UART bridgeを使う場合は、そのserialとOEP個体IDを別々に設定します。プローブの個体照合に失敗した場合、DUTの操作には進みません。共通ロックは設備管理側で作成済みのファイルを指定し、テスト側では作成・コピーしません。
-
-`--target <名前>` と `--case runtime|uart|gpio|hid|power|usb|usb-classes|usb-media` は繰り返し指定できます。省略時はlocal設定に明記したtargetと、そのtargetが宣言したcaseだけを実行します。未配線caseの明示要求は設定エラーで、skipによる成功にはしません。
 
 | case / contract | 必要設備と確認するもの | 確認しないもの |
 |---|---|---|

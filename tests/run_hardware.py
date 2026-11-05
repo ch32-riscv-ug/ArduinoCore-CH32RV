@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Compile contracts by default; explicitly execute against a host-local bench with --execute."""
+"""Run the hardware cases on bench targets named by their addresses alone.
+
+  uv run --project tests --locked --extra hardware --env-file tests/.env python tests/run_hardware.py [--execute]
+  ... python tests/run_hardware.py --probe oep://30eda0e31108/x035 --probe wchlink://FB868F068059 --case gpio
+
+A target is its address (CH32RV_PROBE in tests/.env, or --probe; oep://<unit>/<port>[/<target>] or
+wchlink://<serial>): the probe, the chip and the probe's memo records say the rest (harness/place.py), and the cases
+that can run there are chosen from those (each skipped one with its reason). Builds only, unless --execute."""
 import argparse
 import hashlib
 import importlib.metadata
@@ -12,8 +19,8 @@ import sys
 import time
 import uuid
 
-from harness.bench import CASES, PEER_CASES, check_identity, check_target, check_probe, load_bench
-from harness.provenance import oep_snapshot
+from harness.bench import CASES, PEER_CASES
+from harness import place as places
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 TESTS = REPO / "tests"
@@ -196,10 +203,12 @@ def stage_case(work, name, case, target):
         shutil.copyfile(helper, directory / helper.name)
     if case in PEERS:
         shutil.copytree(PEERS[case], directory / "peer_s3")
+        target = dict(target, usb_peer_port=places.peer_tty(target["usb_peer_serial"]))
     if case in BUILD_OPTS:
         (directory / "build_opt.h").write_text(BUILD_OPTS[case])
     build_id = uuid.uuid4().hex[:12]
-    settings = dict(build_id=build_id, target=target, f_cpu=target["f_cpu"], case=case)
+    staged = {k: v for k, v in target.items() if k != "snapshot"}
+    settings = dict(build_id=build_id, target=staged, f_cpu=target["f_cpu"], case=case)
     # The lines of gpio, spi, softspi, wire, softwire and sd come from the probe's labels (bench_lines.py).
     (directory / "case.json").write_text(json.dumps(settings, indent=2))
     if case != "power":
@@ -214,38 +223,7 @@ def stage_case(work, name, case, target):
             f"      chip: {target['chip']}\n"
         )
         (directory / "build_config.toml").write_text('[defines]\nCH32_TEST_BUILD_ID = "BENCH_BUILD_ID"\n')
-    return module, build_id
-
-
-def probe_address(target):
-    """How ch32rv names the target's probe: an OEP probe by its port (oep://<probe>/<port>, which a probe
-    with several ports needs), a WCH-Link by its serial path."""
-    upload = target.get("upload_port", "")
-    return upload if upload.startswith("oep://") else target["port"]
-
-
-def target_info(tool, target, log, env):
-    info = json.loads(invoke([str(tool), "--probe", probe_address(target), "--chip", target["chip"],
-                             "--non-interactive", "--json", "target", "info"], log, env=env))
-    return check_target(target, info)
-
-
-def record_probe(tool, target, directory, env):
-    directory.mkdir(parents=True, exist_ok=True)
-    try:
-        if target["usb_vid"] == "1a86" and target["usb_pid"] == "8010":
-            reported = json.loads(invoke([str(tool), "--probe", target["port"],
-                "--non-interactive", "--json", "probe", "info"], directory / "probe-info.log", env=env))
-            if not reported.get("ok"):
-                raise RuntimeError("probe.info did not succeed")
-            snapshot = reported["probe"]
-        else:
-            snapshot = oep_snapshot(target["port"])
-        snapshot["metadata_status"] = "reported" if snapshot.get("firmware") else "missing_firmware"
-    except Exception as error:
-        snapshot = dict(metadata_status="unavailable", firmware=None, error=str(error))
-    (directory / "probe.json").write_text(json.dumps(snapshot, indent=2) + "\n")
-    return snapshot
+    return module, build_id, target
 
 
 def swio_wire(host):
@@ -264,13 +242,26 @@ def swio_wire(host):
     return wire
 
 
+def hid_bootloaders():
+    root = pathlib.Path("/sys/bus/usb/devices")
+    out = set()
+    for dev in root.glob("*"):
+        try:
+            if (dev / "idVendor").read_text().strip() == "1209" and (dev / "idProduct").read_text().strip() == "b803":
+                out.add(dev.name)
+        except OSError:
+            pass
+    return out
+
+
 def enter_hid(target):
     from oep_client import core, link, uiapduino
+    before = hid_bootloaders()
     # The uploader's broker can retain the exclusive serial handle for a short idle period.
     deadline = time.monotonic() + 12
     while True:
         try:
-            host = link.open_host(target["port"])
+            host = link.open_host(target["upload_port"])
             break
         except link.PortBusy:
             if time.monotonic() >= deadline:
@@ -286,14 +277,18 @@ def enter_hid(target):
             host.end()
         finally:
             host.link.close()
-    usb = pathlib.Path("/sys/bus/usb/devices") / target["soft_usb_topology"]
+    # The board's own USB is the bootloader's: the 1209:b803 device that appears now (none was there before).
     deadline = time.monotonic() + 10
-    while time.monotonic() < deadline:
-        if (usb / "idProduct").exists() and (usb / "idProduct").read_text().strip() == "b803":
-            break
+    usb = None
+    while time.monotonic() < deadline and usb is None:
+        new = hid_bootloaders() - before
+        if len(new) > 1:
+            raise RuntimeError(f"several HID bootloaders appeared: {sorted(new)}")
+        usb = pathlib.Path("/sys/bus/usb/devices") / new.pop() if new else None
         time.sleep(0.1)
-    if not (usb / "idVendor").exists() or (usb / "idVendor").read_text().strip() != "1209" or (usb / "idProduct").read_text().strip() != "b803":
-        raise RuntimeError("expected HID bootloader did not enumerate on the configured USB topology")
+    if usb is None:
+        raise RuntimeError("the HID bootloader did not enumerate")
+    target["soft_usb_topology"] = usb.name
     # Enumeration precedes udev permission assignment: wait for an accessible matching node.
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
@@ -310,15 +305,20 @@ def enter_hid(target):
 
 
 def parse_options(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--bench", type=pathlib.Path, default=os.environ.get("CH32_TEST_CONFIG"), help="explicit config; otherwise CH32_TEST_CONFIG")
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--probe", action="append",
+                        help="a target's address (repeat for several); otherwise CH32RV_PROBE (tests/.env)")
     parser.add_argument("--out", type=pathlib.Path, help="new run directory; otherwise auto-number under OEP_HW_RESULTS")
-    parser.add_argument("--target", action="append", help="default: all configured targets")
-    parser.add_argument("--case", action="append", choices=sorted(CASES), help="default: each target's declared cases")
-    parser.add_argument("--execute", action="store_true", help="upload test sketches, observe and operate explicitly configured USB power")
+    parser.add_argument("--case", action="append", choices=sorted(CASES), help="default: every case the target can run")
+    parser.add_argument("--execute", action="store_true", help="upload test sketches, observe and operate the probe's USB power")
     args = parser.parse_args(argv)
-    if args.bench is None:
-        parser.error("--bench or CH32_TEST_CONFIG is required; no implicit equipment discovery")
+    if not args.probe:
+        address = places.address_from_env()
+        if not address:
+            parser.error("--probe or CH32RV_PROBE (tests/.env) is required; no implicit equipment discovery")
+        args.probe = [address]
+    if len(set(a.lower() for a in args.probe)) != len(args.probe):
+        parser.error("duplicate address")
     if args.out is None:
         root = os.environ.get("OEP_HW_RESULTS")
         if not root:
@@ -329,13 +329,7 @@ def parse_options(argv=None):
 
 def main(argv=None):
     args, parser = parse_options(argv)
-    bench = load_bench(args.bench)
-    targets = args.target or list(bench["targets"])
-    if len(set(targets)) != len(targets) or set(targets) - bench["targets"].keys():
-        parser.error("unknown or duplicate target")
-    for name in targets:
-        if args.case and set(args.case) - set(bench["targets"][name]["cases"]):
-            parser.error(f"requested case is not wired/supported on {name}")
+    chip = os.environ.get("CH32RV_CHIP")       # read before the isolated environment drops it (place.resolve)
     tool, gcc, versions = tool_paths()
     work = args.out.resolve()
     work.mkdir(parents=True, exist_ok=False)
@@ -343,36 +337,49 @@ def main(argv=None):
     report = dict(execute=args.execute, tools=versions,
                   commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
                   dirty=bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=REPO)), cases=[], probes={},
-                  flash_backup=False, firmware_restore=False, probe_firmware_update=False,
-                  configuration_path=str(args.bench.resolve()),
-                  configuration_sha256=hashlib.sha256(args.bench.read_bytes()).hexdigest())
+                  flash_backup=False, firmware_restore=False, probe_firmware_update=False, addresses=args.probe)
     packages = ("pytest", "pytest-embedded", "pytest-embedded-arduino-cli",
                 "pytest-embedded-arduino-cli-ch32rv", "oep-client-python")
     report["host"] = dict(python=sys.version, packages={p: importlib.metadata.version(p) for p in packages},
         arduino_cli=invoke(["arduino-cli", "version"], work / "host/arduino-cli.log", env=env).strip(),
         ch32rv=json.loads(invoke([str(tool), "--json", "version"], work / "host/ch32rv.log", env=env)),
         uv_lock_sha256=hashlib.sha256((TESTS / "uv.lock").read_bytes()).hexdigest())
-    (work / "bench.json").write_text(json.dumps(bench, indent=2))
+    resolved = {}
+
     def save():
         (work / "result.json").write_text(json.dumps(report, indent=2) + "\n")
+        (work / "places.json").write_text(json.dumps(
+            {n: {k: v for k, v in p.items() if k != "snapshot"} for n, p in resolved.items()}, indent=2) + "\n")
     save()
     try:
-        for name in targets:
-            target = bench["targets"][name]
-            cases = args.case or target["cases"]
-            if args.execute:
-                try:
-                    check_identity(target)
-                    report["probes"][name] = record_probe(tool, target, work / f"preflight/{name}", env)
-                    check_probe(target, report["probes"][name])
-                    save()
-                    target_info(tool, target, work / f"preflight/{name}/info.log", env)
-                except Exception as error:
-                    report["cases"].extend(dict(target=name, case=case, status="ENVIRONMENT_ERROR", error=str(error)) for case in cases)
-                    save()
-                    print(f"{name}: PREFLIGHT ERROR: {error}", flush=True)
+        for address in args.probe:
+            try:
+                target = places.resolve(address, tool, env, work / "preflight" / address.replace("://", "-").replace("/", "-"),
+                                        chip=chip)
+            except Exception as error:
+                name = address
+                report["cases"].extend(dict(target=name, address=address, case=case, status="ENVIRONMENT_ERROR",
+                                            error=str(error)) for case in (args.case or ["*"]))
+                save()
+                print(f"{address}: PREFLIGHT ERROR: {error}", flush=True)
+                continue
+            name = target["name"]
+            if name in resolved:
+                parser.error(f"two addresses name the target {name}")
+            resolved[name] = target
+            report["probes"][name] = target.get("snapshot")
+            for warning in target["warnings"]:
+                print(f"{name}: warning: {warning}", flush=True)
+            wanted = args.case or [c for c, why in target["cases"].items() if why == "run"]
+            for case in args.case or []:
+                if target["cases"].get(case, "run") != "run":
+                    report["cases"].append(dict(target=name, case=case, status="SKIP", reason=target["cases"][case][6:]))
+            skipped = [c for c, why in target["cases"].items() if why != "run" and c not in wanted]
+            report.setdefault("not_chosen", {})[name] = {c: target["cases"][c] for c in skipped}
+            save()
+            for case in wanted:
+                if target["cases"].get(case, "run") != "run":
                     continue
-            for case in cases:
                 result = dict(target=name, case=case, status="NOT_RUN")
                 report["cases"].append(result)
                 save()
@@ -380,42 +387,39 @@ def main(argv=None):
                     if case == "power" and not args.execute:
                         result.update(status="NOT_RUN", reason="power requires --execute")
                         continue
-                    module, build_id = stage_case(work, name, case, target)
+                    module, build_id, staged = stage_case(work, name, case, target)
                     result["build_id"] = build_id
                     case_env = dict(env, CH32_TEST_BUILD_ID=build_id)
-                    if args.execute:
-                        check_identity(target)
-                        if case == "hid" or (case != "power" and target.get("upload_port", "").startswith("ch32rv-hid://")):
-                            enter_hid(target)
+                    if args.execute and (case == "hid" or (case != "power" and target.get("upload_port", "").startswith("ch32rv-hid://"))):
+                        enter_hid(staged)
                     command = [sys.executable, "-m", "pytest", "-c", str(REPO / "pytest.ini")]
                     for plugin in PLUGINS:
                         command += ["-p", plugin]
-                    # An OEP probe's port goes by its oep:// address: a probe with several ports opens none by its serial path.
-                    port = target["upload_port"] if target.get("upload_port", "").startswith("oep://") else target["port"]
-                    command += [str(module), "--profile", name, "--port", port,
+                    command += [str(module), "--profile", name, "--port", staged["port"],
                                 "--run-mode", "all" if args.execute else "build",
                                 "--device-lock", "required", "--root-logdir", str(module.parent / "logs"),
                                 "--junitxml", str(module.parent / "junit.xml"), "-o", "junit_family=xunit1", "-s", "-q"]
                     if case in PEER_CASES:
-                        command += ["--peer-port", "s3:" + target["usb_peer_port"]]
+                        command += ["--peer-port", "s3:" + staged["usb_peer_port"]]
                     if case == "hid":
-                        command += ["--flash-port", "ch32rv-hid://" + target["soft_usb_topology"]]
-                    elif target.get("upload_port"):
-                        command += ["--flash-port", target["upload_port"]]
+                        command += ["--flash-port", "ch32rv-hid://" + staged["soft_usb_topology"]]
+                    elif staged.get("upload_port"):
+                        command += ["--flash-port", staged["upload_port"]]
                     # A peer case builds the ESP32 sketch inside pytest too; on a loaded
                     # host that alone can take minutes.
                     invoke(command, module.parent / "pytest.log", env=case_env,
                            timeout=900 if case in PEER_CASES else 300)
                     result["status"] = "PASS" if args.execute else "COMPILE_PASS"
-                    skipped = junit_skips(module.parent / "junit.xml") if args.execute else None
-                    if skipped:
+                    skips = junit_skips(module.parent / "junit.xml") if args.execute else None
+                    if skips:
                         # Every test skipped (its lines are not labelled): not a pass.
-                        result.update(status="SKIP", reason="; ".join(skipped))
+                        result.update(status="SKIP", reason="; ".join(skips))
                     if args.execute and case == "power":
-                        # Wait for board-identify, then check the target through the reopened connection.
+                        # The probe came back: the same chip is still on the port.
                         time.sleep(2)
-                        check_identity(target)
-                        target_info(tool, target, module.parent / "info-after.log", env)
+                        again = places.resolve(address, tool, env, module.parent / "after", chip=chip)
+                        if again["target_name"] != target["target_name"]:
+                            raise RuntimeError(f"after the power cycle the port has {again['target_name']}")
                 except Exception as error:
                     result.update(status="FAIL", error=str(error))
                 finally:

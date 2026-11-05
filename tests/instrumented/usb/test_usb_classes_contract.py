@@ -109,7 +109,7 @@ def ccid_exchange(ep_in, ep_out, seq, kind, data=b"", param=b"\0\0\0"):
 def test_usb_classes_contract(dut, record_property):
     settings = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
     build_id = settings["build_id"]
-    host = PcUsbHost(settings["target"]["dut_usb_topology"])
+    host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
 
     nonce = secrets.token_hex(4)
     dut.write(f"ready {nonce}\n")

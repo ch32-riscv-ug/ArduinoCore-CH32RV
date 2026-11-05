@@ -27,7 +27,7 @@
 | tests/unit/test_core_bringup_safety.py | 復元 prefix の保存性、書込み不能領域に非 blank がある場合の拒否 | 実際の消去・復元、実機動作 |
 | tests/unit/test_maintenance_tools.py | profile 同期、version 更新の対象限定、package 入力の自己完結、CI の旧 suite 非依存 | CH32 compile、実機動作 |
 | tests/platform/test_source_locks.py | ArduinoCore-API、lwIP、Mbed TLS のファイル一覧と lock の hash のオフライン一致 | upstream commit の由来、compile、実機動作 |
-| tests/unit/test_bench_safety.py | 誤ったDUT・USB topology・raw tty・無関係な電源port・設定typoの拒否 | 実際の実機操作 |
+| tests/unit/test_bench_place.py | アドレスの形、プローブの見つけ方、記録が別の個体を指すときの拒否、型番の候補の選び方、記録の検査、流す case の選び方、電源を切る口がプローブの口だけであること | 実際の実機操作 |
 | tests/single/runtime/test_runtime_contract.py | build IDとchallenge応答、data/bss/constructor、Print/String/malloc、粗い時間進行。HID後も独立consoleで確認 | OOM、時間精度、全clock・console方式 |
 | tests/instrumented/uart/test_uart_contract.py | 標準UARTの115200 8N1で独立UARTと64 byte binary往復 | 他instance/route/baud/format、overflow、波形 |
 | tests/instrumented/gpio/test_gpio_contract.py | 設定したpadの出力を独立観測し、外部刺激をDUTで読む | 全pad、analog、PWM、interrupt |

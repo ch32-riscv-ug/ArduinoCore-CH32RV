@@ -26,10 +26,7 @@ def test_logic_contract(dut, record_property):
     rate = 1000000 if samples >= 2048 else 250000
     per_half = samples // 2 // 100        # whole periods a half can hold
 
-    # logic.continuous. A pin from the bench file (logic_pin) or the sketch's own choice.
-    pin = settings(__file__)["target"].get("logic_pin")
-    if pin is not None:
-        assert ask(dut, f"pin {pin}", rb"PIN \d+ (\d)").group(1) == b"1", f"pin {pin} has no PWM on another timer"
+    # logic.continuous, on the sketch's own choice of pin.
     m = ask(dut, f"run {rate} {rate // 100}",
             rb"LOGIC (?:NONE|FAIL \S+|(\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+))", timeout=15)
     assert m.group(1), m.group(0).decode()
