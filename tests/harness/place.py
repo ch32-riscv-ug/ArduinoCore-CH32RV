@@ -36,7 +36,7 @@ PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes")
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
 ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
-          "signals")
+          "signals", "system")
 # A defect's `lose` names a feature; these are the cases that test it.
 FEATURE_CASES = {"i2c": ("wire",), "spi": ("spi",), "usb": USB_CASES + PEER_DEVICE_CASES + PEER_HOST_CASES,
                  "uart": ("uart",), "sd": ("sd",), "pd": ("pd",), "eth": ("eth",)}

@@ -67,7 +67,7 @@ def test_a_list_of_tests_not_on_and_no_test(tmp_path):
                                                         if line.startswith(f"| {series} |")).strip("|").split("|")]))
     x035 = row("CH32X035")
     assert x035["usb-device"] == "✓"              # the S3 as the host counts for the device driver
-    assert x035["sleep"] == "no test" and x035["interrupt"] == "" and x035["dac"] == "n/a"
+    assert x035["wire-slave"] == "no test" and x035["interrupt"] == "" and x035["dac"] == "n/a"
     assert row("CH32V103")["usb-peer-host"] == "n/a" and row("CH32V307")["usb-peer-host"] == ""
     assert row("CH32M030")["watchdog"] == "n/a"
     assert "| taskkit | no test |  |" in text and "| servo | not run |  |" in text

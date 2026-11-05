@@ -216,11 +216,13 @@ scope = "series"
 
 [[item]]
 id = "sleep"                # sleep / standby and the wake-ups (CH32RV)
+test = "system::test_watchdog_and_sleep"
 scope = "series"
 needs = ["PWR"]
 
 [[item]]
 id = "watchdog"             # wdtEnable / the IWDG on LSI (no IWDG on M030)
+test = "system::test_watchdog_and_sleep"
 scope = "series"
 not_on = ["CH32M030"]
 
