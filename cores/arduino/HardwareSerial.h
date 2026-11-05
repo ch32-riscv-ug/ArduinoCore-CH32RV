@@ -130,6 +130,9 @@ private:
     uint16_t _config;
     /* BRR, remembered so a pin change can reopen the port exactly as it was. */
     uint16_t _brr;
+    /* What a received byte keeps: 7 data bits with parity are an 8-bit word
+     * whose top bit is the parity, which read() must not return. */
+    uint8_t _rx_mask = 0xFF;
     CH32RVRingBuffer<CH32RV_SERIAL_RX_BUFFER_SIZE> _rx;
     CH32RVRingBuffer<CH32RV_SERIAL_TX_BUFFER_SIZE> _tx;
 };

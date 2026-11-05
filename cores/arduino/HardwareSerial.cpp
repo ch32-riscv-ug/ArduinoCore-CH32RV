@@ -503,7 +503,7 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(uint32_t ba
         if ((status & CH32RV_USART_STATR_RXNE) &&
             !(status & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_NE |
                         CH32RV_USART_STATR_PE))) {
-            _rx.push(data);
+            _rx.push((uint8_t)(data & _rx_mask));
         }
     }
     if (status & CH32RV_USART_STATR_TXE) {
@@ -609,6 +609,11 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::start(void)
         (ctlr1 & CH32RV_USART_CTLR1_PCE)) {
         ctlr1 |= CH32RV_USART_CTLR1_M;
     }
+    /* 7 data bits with parity are an 8-bit word: its top bit is the parity
+     * (until 2026-11-05 read() returned it - 7E1 / 7O1 read bytes with bit 7
+     * set by the parity, measured on CH32X035 with the probe's UART). */
+    _rx_mask = ((_config & SERIAL_DATA_MASK) == SERIAL_DATA_7 &&
+                (ctlr1 & CH32RV_USART_CTLR1_PCE)) ? 0x7Fu : 0xFFu;
     switch (_config & SERIAL_STOP_BIT_MASK) {
     case SERIAL_STOP_BIT_2:   ctlr2 |= CH32RV_USART_CTLR2_STOP_2; break;
     case SERIAL_STOP_BIT_1_5: ctlr2 |= CH32RV_USART_CTLR2_STOP_1P5; break;
