@@ -2,10 +2,12 @@
 #
 # scope = "series": at least one pass on every series that has `needs` (each series' own driver, pins or clocks).
 # scope = "once":   at least one pass on any series (shared code: a library above the drivers, a peer's protocol).
-# test:  "<case>" (every test of the case) or "<case>::<test function>[<parameter>]" as junit names it.
+# test:  "<case>" (every test of the case) or "<case>::<test function>[<parameter>]" as junit names it, or a list of
+#        them (any of them counts). No test: a feature the tests do not cover yet ("no test" in the report).
 # needs: clock-enable names of the series' variant (tests/harness/series.py series_capabilities);
-#        any_of: at least one of them. also: series that have it although the names miss it. A series
-#        without them shows n/a.
+#        any_of: at least one of them. also: series that have it although the names miss it. not_on: series that
+#        have the names but not what the item tests. A series without them shows n/a.
+# tests/harness/place.py reads the same items to choose the cases a series can run.
 
 [[item]]
 id = "runtime"
@@ -69,7 +71,7 @@ needs = ["ADC1"]
 
 [[item]]
 id = "usb-device"
-test = "usb"
+test = ["usb", "usb-peer"]   # the host is this PC or the ESP32-S3: the same device driver either way
 scope = "series"
 any_of = ["USBFS", "USBHS", "USBHS1", "USBHS2", "USBD", "USB", "USBSS", "OTG_FS"]
 
@@ -142,15 +144,21 @@ id = "usb-peer-fs"
 test = "usb-peer-fs"
 scope = "once"
 
+# CH32RVUsbHost drives the USBFS of the X03x and the USBOTG_FS layouts (CH32RVUsbHostPort.h), each series with its
+# own 48 MHz: not V103's older USB, not the USBHS / USBSS-only series.
 [[item]]
 id = "usb-peer-host"
 test = "usb-peer-host"
-scope = "once"
+scope = "series"
+any_of = ["USBFS", "OTG_FS"]
+not_on = ["CH32V103"]
 
 [[item]]
 id = "usb-peer-host-classes"
 test = "usb-peer-host-classes"
-scope = "once"
+scope = "series"
+any_of = ["USBFS", "OTG_FS"]
+not_on = ["CH32V103"]
 
 [[item]]
 id = "hid"
@@ -187,4 +195,77 @@ scope = "once"
 [[item]]
 id = "qspi"
 test = "periph::test_planned[qspi]"
+scope = "once"
+
+# Not covered yet: the core has them, no hardware test does (docs/test-coverage.ja.md: テスト未定義).
+[[item]]
+id = "interrupt"            # attachInterrupt (EXTI, AFIO's EXTICR per series)
+scope = "series"
+
+[[item]]
+id = "route"                # setRoute() / setPins() of the peripherals (remap registers per series)
+scope = "series"
+
+[[item]]
+id = "sleep"                # sleep / standby and the wake-ups (CH32RV)
+scope = "series"
+needs = ["PWR"]
+
+[[item]]
+id = "watchdog"             # wdtEnable / the IWDG on LSI (no IWDG on M030)
+scope = "series"
+not_on = ["CH32M030"]
+
+[[item]]
+id = "dac"                  # analogWrite to a DAC pin
+scope = "series"
+needs = ["DAC"]
+
+[[item]]
+id = "wire-slave"           # Wire as an I2C target (onReceive / onRequest)
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "spi-slave"            # CH32RVSPISlave
+scope = "series"
+needs = ["SPI1"]
+
+[[item]]
+id = "timer-input"          # CH32RVTimerInput (input capture)
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "adc-stream"           # CH32RVAdcStream (ADC with DMA)
+scope = "series"
+needs = ["ADC1"]
+
+[[item]]
+id = "hs-adc"               # CH32RVHsAdc
+scope = "series"
+needs = ["HSADC"]
+
+[[item]]
+id = "servo"                # Servo (on the timers pwm covers)
+scope = "once"
+
+[[item]]
+id = "tone"                 # tone() (on the timers pwm covers)
+scope = "once"
+
+[[item]]
+id = "taskkit"              # CH32RVTaskKit
+scope = "once"
+
+[[item]]
+id = "console-sdi"          # SerialSDI
+scope = "once"
+
+[[item]]
+id = "console-rtt"          # SerialRTT
+scope = "once"
+
+[[item]]
+id = "console-dmdata"       # SerialDMDATA
 scope = "once"

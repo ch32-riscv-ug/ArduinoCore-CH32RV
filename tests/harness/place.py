@@ -26,11 +26,8 @@ from harness import records
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SYSFS = pathlib.Path("/sys/bus/usb/devices")
 
-# CH32RVUsbDevice has a driver for every USB controller (docs/usb.ja.md), so a series with one runs the device cases
-# (coverage.toml's usb-device). CH32RVUsbHost drives the USBFS of the X03x and USBOTG_FS layouts (CH32RVUsbHostPort.h):
-# not V103's older USB, not the USBHS / USBSS-only series, and not the parts without the host half or without USBFS.
-USB_HOST_CLOCKS = {"USBFS", "OTG_FS"}
-USB_HOST_NOT_SERIES = ("CH32V103",)
+# Which series run the USB device and host cases is coverage.toml's (usb-device, usb-peer-host); these are the parts
+# of a host series without the host half or without USBFS (CH32RVUsbHostPort.h).
 USB_DEVICE_ONLY_PARTS = ("CH32X035F8U6", "CH32X035F7P6", "CH32X035D8U6", "CH32X033F8P6")
 USB_HOST_NO_PARTS = USB_DEVICE_ONLY_PARTS + ("CH32V203F6P6", "CH32V203G6U6")
 UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
@@ -119,16 +116,23 @@ def series_needs():
     return items, {s: set(c) for s, c in series_capabilities().items()}
 
 
+def _item_tests(item):
+    test = item.get("test", [])
+    return [test] if isinstance(test, str) else list(test)
+
+
 def series_has(case, series, items=None, caps=None):
-    """Whether the series has what the case tests (coverage.toml's needs / any_of / also); a case no item names is
-    taken as every series'."""
+    """Whether the series has what the case tests (coverage.toml's needs / any_of / also / not_on); a case no item
+    names is taken as every series'."""
     if items is None:
         items, caps = series_needs()
-    mine = [i for i in items if i["test"].partition("::")[0] == case]
+    mine = [i for i in items if any(t.partition("::")[0] == case for t in _item_tests(i))]
     if not mine:
         return True
     have = caps.get(series, set())
     for item in mine:
+        if series in item.get("not_on", []):
+            continue
         if series in item.get("also", []):
             return True
         need, any_of = set(item.get("needs", [])), set(item.get("any_of", []))
@@ -168,8 +172,7 @@ def choose_cases(place, items=None, caps=None):
                  else "skip: no pd in the record" if "pd" not in core else f"skip: {series} has no USB PD")
     usb = core.get("usb", {})
     device = series_has("usb", series, items, caps)
-    host = (series not in USB_HOST_NOT_SERIES and bool(caps.get(series, set()) & USB_HOST_CLOCKS)
-            and part not in USB_HOST_NO_PARTS)
+    host = series_has("usb-peer-host", series, items, caps) and part not in USB_HOST_NO_PARTS
     for case in USB_CASES:
         out[case] = ("run" if usb.get("to") == "host" and device else
                      f"skip: {part} has no USB controller" if not device else

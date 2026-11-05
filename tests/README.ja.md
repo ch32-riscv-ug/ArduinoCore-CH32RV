@@ -126,15 +126,22 @@ uv run --no-project python tests/coverage.py <--out のディレクトリ> ... [
 ```
 
 - 項目には範囲が 2 つあります。`scope = "series"` は**系列ごとに 1 回は**通したいもの（系列ごとにドライバ、端子、
-  クロックが違う: runtime、uart、gpio、flash、synckit、logic、spi、wire、uart2、pwm、adc、USB デバイス、Ethernet、
-  PD、SDIO、CAN）。`scope = "once"` は**全体で 1 回**通せばよいもの（ドライバの上の共通のコード、相手との手順:
-  SoftSPI、SoftWire、SPI の SD、USB のクラスとピア試験、HID、電源）。I2S・ARGB・RS485・QSPI・CAN は予定の項目で、
-  ドライバはまだありません（ラベルを付けると失敗として出ます）。
+  クロックが違う: runtime、uart、gpio、flash、synckit、logic、spi、wire、uart2、pwm、adc、USB デバイス、USB ホスト、
+  Ethernet、PD、SDIO、CAN）。`scope = "once"` は**全体で 1 回**通せばよいもの（ドライバの上の共通のコード、相手との
+  手順: SoftSPI、SoftWire、SPI の SD、USB のクラスとデバイス側のピア試験、HID、電源）。I2S・ARGB・RS485・QSPI・CAN は
+  予定の項目で、ドライバはまだありません（ラベルを付けると失敗として出ます）。
+- `test` は 1 つか、そのリストです（どれが通っても数える）。USB デバイスは、相手が PC の `usb` と、ESP32-S3 の
+  `usb-peer` のどちらでも数えます。
+- `test` の無い項目は、コアにあって実機の試験がまだ無い機能です（割り込み、route、スリープ、ウォッチドッグ、DAC、
+  Wire と SPI のスレーブ、タイマーの入力、ADC の DMA、HSADC、Servo、tone、TaskKit、SDI / RTT / DMDATA のコンソール）。
+  表には「no test」と出て、分母に入ります。
+- `run_hardware.py`（harness/place.py）も同じ項目を読んで、その系列で流せる case を決めます。
 - 系列の表は、系列ごとに一番よい結果（✓ が ✗ より、✗ が skip より上）を出します。その周辺機能の無い系列は n/a、
   まだ走らせていない所は空欄です。最後の行が「通った系列の数 / 対象の系列の数」です。
 - 結果は試験の関数ごとに junit から取ります（`<case>::<関数>[<引数>]`）。ラベルが足りずにスキップしたものは skip で、
   通ったことにはなりません。
-- 周辺機能の有無は、variant のクロックの許可の名前（`needs` / `any_of`）で見ます。名前で拾えない系列は `also` に書きます。
+- 周辺機能の有無は、variant のクロックの許可の名前（`needs` / `any_of`）で見ます。名前で拾えない系列は `also`、
+  名前はあっても項目の試すものが無い系列（V103 の旧い USB に USB ホストは無い、など）は `not_on` に書きます。
   表は系列ごとです。系列の中で型番によって周辺が無いもの（variant の `CH32RV_<instance>_ABSENT`。CH32M030G8R7 の SPI など）は、
   `run_hardware.py` がその型番で流さないだけで、表の上では系列の欄に数えます。
 - 渡した実行の全部から一番よい結果を取るので、古い実行の ✗ は、あとで通るまで残ります。今の状態を見るときは、

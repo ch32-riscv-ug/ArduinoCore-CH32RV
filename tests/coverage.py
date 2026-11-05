@@ -9,6 +9,8 @@ outcome comes from its junit file; the target's series from its chip (places.jso
 - scope "series": one table row per series, the best outcome on that series (PASS beats FAIL beats SKIP), n/a
   where the series lacks the item's peripheral, blank where nothing ran.
 - scope "once": the best outcome anywhere, and where it was.
+- an item with no `test` is a feature the tests do not cover yet: "no test" in each cell it applies to, counted in the
+  wanted numbers, so the gap shows.
 
 Exit status 0; the report is the output (stdout, or --markdown)."""
 import argparse
@@ -24,7 +26,7 @@ sys.path.insert(0, str(HERE))
 from harness.series import series_capabilities  # noqa: E402
 
 RANK = {"PASS": 3, "FAIL": 2, "SKIP": 1}
-MARK = {"PASS": "✓", "FAIL": "✗", "SKIP": "skip", None: "", "n/a": "n/a"}
+MARK = {"PASS": "✓", "FAIL": "✗", "SKIP": "skip", None: "", "n/a": "n/a", "no test": "no test"}
 
 
 def load_items():
@@ -87,12 +89,23 @@ def collect(paths, names):
     return rows
 
 
+def tests_of(item):
+    """The item's tests: `test` is one "<case>[::<test>]" or a list of them (any of them counts); none: not covered."""
+    test = item.get("test", [])
+    return [test] if isinstance(test, str) else list(test)
+
+
 def matches(item, case, name):
-    want_case, _, want_test = item["test"].partition("::")
-    return case == want_case and (not want_test or name == want_test or name.startswith(want_test + "["))
+    for test in tests_of(item):
+        want_case, _, want_test = test.partition("::")
+        if case == want_case and (not want_test or name == want_test or name.startswith(want_test + "[")):
+            return True
+    return False
 
 
 def applies(item, caps, series=None):
+    if series in item.get("not_on", []):
+        return False
     if series in item.get("also", []):
         return True
     need = set(item.get("needs", []))
@@ -123,6 +136,9 @@ def report(rows, items, caps):
                 cells.append(MARK["n/a"])
                 continue
             wanted[item["id"]] += 1
+            if not tests_of(item):
+                cells.append(MARK["no test"])
+                continue
             outcome = best([o for (ser, _, case, name, o, _) in rows if ser == s and matches(item, case, name)])
             done[item["id"]] += outcome == "PASS"
             cells.append(MARK[outcome])
@@ -134,6 +150,9 @@ def report(rows, items, caps):
     lines.append("| item | result | where |")
     lines.append("|---|---|---|")
     for item in once:
+        if not tests_of(item):
+            lines.append(f"| {item['id']} | no test |  |")
+            continue
         hits = [(o, ser, target, run) for (ser, target, case, name, o, run) in rows if matches(item, case, name)]
         outcome = best([h[0] for h in hits])
         where = sorted({f"{h[1]} ({h[2]}, {h[3]})" for h in hits if h[0] == outcome}) if outcome else []

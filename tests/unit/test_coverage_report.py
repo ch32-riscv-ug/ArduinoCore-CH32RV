@@ -50,4 +50,24 @@ def test_every_item_names_a_case_run_hardware_knows():
     from harness.bench import CASES
     for item in coverage.load_items():
         assert item["scope"] in ("series", "once"), item
-        assert item["test"].partition("::")[0] in CASES, item
+        assert set(item) <= {"id", "test", "scope", "needs", "any_of", "also", "not_on"}, item
+        for test in coverage.tests_of(item):   # none: not covered yet, shown as "no test"
+            assert test.partition("::")[0] in CASES, item
+
+
+def test_a_list_of_tests_not_on_and_no_test(tmp_path):
+    a = run_dir(tmp_path, "x035s3", "CH32X035F8U6", {"usb-peer": {"test_usb_peer": "pass"}})
+    caps = {s: set(c) for s, c in coverage.series_capabilities().items()}
+    text = coverage.report(coverage.collect([a], list(caps)), coverage.load_items(), caps)
+    header = next(line for line in text.splitlines() if line.startswith("| series |"))
+    cols = [c.strip() for c in header.strip("|").split("|")]
+
+    def row(series):
+        return dict(zip(cols, [c.strip() for c in next(line for line in text.splitlines()
+                                                        if line.startswith(f"| {series} |")).strip("|").split("|")]))
+    x035 = row("CH32X035")
+    assert x035["usb-device"] == "✓"              # the S3 as the host counts for the device driver
+    assert x035["interrupt"] == "no test" and x035["dac"] == "n/a"
+    assert row("CH32V103")["usb-peer-host"] == "n/a" and row("CH32V307")["usb-peer-host"] == ""
+    assert row("CH32M030")["watchdog"] == "n/a"
+    assert "| servo | no test |  |" in text
