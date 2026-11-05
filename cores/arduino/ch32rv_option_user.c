@@ -106,7 +106,7 @@ static void rewrite(uint32_t value, uint32_t mask)
     FLASH_CTLR &= ~CR_OPTPG;
     FLASH_CTLR |= CR_LOCK;
 
-    CH32RV_PFIC_CFGR = CH32RV_PFIC_KEY3 | CH32RV_PFIC_SYSRST; /* the option bytes load at the reset */
+    CH32RV_SYSTEM_RESET(); /* the option bytes load at the reset */
     stop();
 }
 

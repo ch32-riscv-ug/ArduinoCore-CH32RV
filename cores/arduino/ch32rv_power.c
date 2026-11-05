@@ -57,7 +57,7 @@ static struct {
 
 #define PWR_CTLR       CH32RV_REG32(0x40007000u)
 #define PWR_CTLR_PDDS  (1u << 1)
-#define PFIC_SCTLR     CH32RV_REG32(0xE000ED10u)
+#define PFIC_SCTLR     CH32RV_PFIC_SCTLR
 #define SCTLR_SLEEPDEEP (1u << 2)
 #define PFIC_IPRR(i)   CH32RV_REG32(CH32RV_PFIC_BASE + 0x280u + 4u * (i))
 #define AWU_IRQN       21u

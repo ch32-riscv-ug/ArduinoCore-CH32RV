@@ -67,7 +67,7 @@ namespace arduino {
 
 void CH32RVSystem::restart()
 {
-    CH32RV_PFIC_CFGR = CH32RV_PFIC_KEY3 | CH32RV_PFIC_SYSRST;
+    CH32RV_SYSTEM_RESET();
     for (;;) {
         /* The write takes effect within a couple of cycles; this is only
          * here so the compiler believes [[noreturn]]. */

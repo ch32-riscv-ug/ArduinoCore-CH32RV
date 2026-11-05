@@ -1112,7 +1112,7 @@ bool CH32RVUsbDevice::controlStatus()
 #ifdef CH32RV_USB_FACTORY_ISP_ENTRY
     port_set_boot_mode();
 #endif
-    CH32RV_PFIC_CFGR = CH32RV_PFIC_KEY3 | CH32RV_PFIC_SYSRST;
+    CH32RV_SYSTEM_RESET();
     for (;;) {
     }
 }

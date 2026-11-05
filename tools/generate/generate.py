@@ -793,6 +793,15 @@ def table_relpath(name: str) -> str:
     return f"{INDEX_DIR}/{name}"
 
 
+def pfic_reset_sctlr(family: str, registers: set) -> bool:
+    """Whether the family requests a software reset through PFIC_SCTLR (it has no PFIC_CFGR)."""
+    if "CFGR" in registers:
+        return False
+    if "SCTLR" in registers:
+        return True
+    raise SystemExit(f"ERROR: {family}: registers.csv has neither PFIC CFGR nor SCTLR")
+
+
 def read_table(tables: pathlib.Path, name: str, require: tuple = ()) -> list:
     """One ch32-device-data CSV, as a list of dicts.
 
@@ -1343,6 +1352,18 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
         if r["region"] == "RNG" and r["base_address"]:
             rng.setdefault(r["family"], set()).add(int(r["base_address"], 16))
 
+    # Where a software reset is requested. Most families take it in PFIC_CFGR
+    # (0x48: key 0xBEEF in the top half, SYSRST in bit 7); CH32M030 and
+    # CH32V205 have no CFGR and reset through PFIC_SCTLR's SYSRESET (0xD10,
+    # bit 31) only. The CFGR write there lands on nothing, and CH32RV.restart()
+    # spun in its loop (measured 2026-11-05 on a CH32M030G8R7: no answer after
+    # the flash test's restart). A family with neither register is an error.
+    pfic_regs: dict = {}
+    for r in read_table(tables, "registers.csv",
+                        ("family", "type", "register", "kind")):
+        if r["type"] == "PFIC" and r["kind"] == "register":
+            pfic_regs.setdefault(r["family"], set()).add(r["register"])
+
     # AHB prescaler encoding. The two schemes agree on /1 and differ on /2,
     # which is the cheapest question that separates them: 0x10 counts (/2 is
     # field 1) and 0x80 is a power-of-two field. Reading /2 wrong runs the part
@@ -1482,6 +1503,7 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             lsi_hz=lsi.get(family, 0) or (
                 one(family, "the HSI frequency", set(hsi.get(family, ())))
                 // IWDG_HSI_DIVIDER[family] if family in IWDG_HSI_DIVIDER else 0),
+            pfic_reset_sctlr=pfic_reset_sctlr(family, pfic_regs.get(family, set())),
             iwdg_base=one(family, "the IWDG base",
                           set(iwdg[family])) if family in iwdg else 0,
             rng_base=one(family, "the RNG base",
@@ -3848,6 +3870,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         f"-DCH32RV_ADC_MAX_HZ={fact['adc_max_hz']}u"
         + (" -DCH32RV_ADC_CLK_CTLR3=1" if fact['adc_clk_ctlr3'] else "")
         + (f" -DCH32RV_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
+        + (" -DCH32RV_PFIC_RESET_SCTLR=1" if fact['pfic_reset_sctlr'] else "")
         + (f" -DCH32RV_IWDG_BASE={fact['iwdg_base']:#x}u"
            if fact['iwdg_base'] else "")
         + (f" -DCH32RV_RNG_BASE={fact['rng_base']:#x}u"

@@ -376,12 +376,23 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
     CH32RV_PFIC_IRER(irqn >> 5) = 1u << (irqn & 31u);
 }
 
-/* System reset through the PFIC, the RISC-V equivalent of NVIC_SystemReset:
- * the config register takes a key in the top half and the reset request in
- * bit 7. Identical across every EVT's core_riscv.h. */
+/* System reset through the PFIC, the RISC-V equivalent of NVIC_SystemReset.
+ * Most families take it in the config register: a key in the top half and the
+ * reset request in bit 7. CH32M030 and CH32V205 have no CFGR and take it in
+ * the system control register's SYSRESET, bit 31 (CH32RV_PFIC_RESET_SCTLR,
+ * from build.core_defines, generated from registers.csv). */
 #define CH32RV_PFIC_CFGR    CH32RV_REG32(CH32RV_PFIC_BASE + 0x48u)
 #define CH32RV_PFIC_KEY3    0xBEEF0000u
 #define CH32RV_PFIC_SYSRST  (1u << 7)
+#define CH32RV_PFIC_SCTLR   CH32RV_REG32(CH32RV_PFIC_BASE + 0xD10u)
+#define CH32RV_PFIC_SCTLR_SYSRESET (1u << 31)
+
+/* Request a system reset; the caller spins until it lands. */
+#if defined(CH32RV_PFIC_RESET_SCTLR)
+#define CH32RV_SYSTEM_RESET() (CH32RV_PFIC_SCTLR = CH32RV_PFIC_SCTLR_SYSRESET)
+#else
+#define CH32RV_SYSTEM_RESET() (CH32RV_PFIC_CFGR = CH32RV_PFIC_KEY3 | CH32RV_PFIC_SYSRST)
+#endif
 
 /* ---------------------------------------------------------- reset cause */
 /* RSTSCKR sits at RCC+0x24 with the same flag bits on every family checked
