@@ -14,8 +14,10 @@
  *   servo <pin> <us>       SERVO <ok>: a Servo on pin, writeMicroseconds(us)
  *   servooff               SERVOOFF
  *   tone <pin> <hz>        TONE: tone(pin, hz)
+ *   toned <pin> <hz> <ms>  TONE: tone(pin, hz, ms), which stops by itself
  *   notone <pin>           NOTONE (the pin as noTone() leaves it)
  *   input <pin>            INPUT: pinMode(pin, INPUT), the line let go
+ *   level <pin> <0/1>      LEVEL: digitalWrite(pin, v)
  *   irq <pin> <mode>       IRQ <ok>: attachInterrupt, mode 1 RISING, 2 FALLING,
  *                          3 CHANGE; the count starts at 0
  *   count                  COUNT <edges seen>
@@ -90,9 +92,15 @@ static void reply(char *command)
     } else if (!strcmp(argv[0], "tone") && argc == 3) {
         tone(pin, (unsigned int)atol(argv[2]));
         SerialDMSeq.println("TONE");
+    } else if (!strcmp(argv[0], "toned") && argc == 4) {
+        tone(pin, (unsigned int)atol(argv[2]), (unsigned long)atol(argv[3]));
+        SerialDMSeq.println("TONE");
     } else if (!strcmp(argv[0], "notone") && argc == 2) {
         noTone(pin);
         SerialDMSeq.println("NOTONE");
+    } else if (!strcmp(argv[0], "level") && argc == 3) {
+        digitalWrite(pin, atoi(argv[2]) ? HIGH : LOW);
+        SerialDMSeq.println("LEVEL");
     } else if (!strcmp(argv[0], "input") && argc == 2) {
         pinMode(pin, INPUT);
         SerialDMSeq.println("INPUT");

@@ -3,6 +3,10 @@
 #include "Arduino.h"
 #include "internal/ch32rv_gpio.h"
 
+/* wiring_pwm.c: stops the pad's PWM and gives its timer channel back; false
+ * when the pad had none (one load when no pad has PWM). */
+bool ch32rv_pwm_stop(pin_size_t pin);
+
 /* Arduino.h spells the port base out itself for portOutputRegister(), so that
  * sketches get the ESP32-shaped macros without the whole register map. This is
  * the one place that sees both definitions, so it is where they are held to
@@ -39,6 +43,7 @@ void pinMode(pin_size_t pin, PinMode mode)
     if (port >= CH32RV_PORT_COUNT) {
         return;
     }
+    ch32rv_pwm_stop(pin);       /* a new mode ends the pad's PWM */
     ch32rv_gpio_clock_enable(port);
 
 #if CH32RV_GPIO_NO_OPEN_DRAIN
@@ -85,6 +90,17 @@ void digitalWrite(pin_size_t pin, PinStatus val)
     const uint8_t bit  = (uint8_t)CH32RV_PIN_BIT(pin);
 
     if (port >= CH32RV_PORT_COUNT) {
+        return;
+    }
+    if (ch32rv_pwm_stop(pin)) {
+        /* The pad was a PWM output: as the AVR core, digitalWrite() ends the
+         * PWM and leaves a plain output at the level written. */
+        if (val == LOW) {
+            ch32rv_gpio_clear(port, bit);
+        } else {
+            ch32rv_gpio_set(port, bit);
+        }
+        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
         return;
     }
 #if CH32RV_GPIO_NO_OPEN_DRAIN

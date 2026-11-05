@@ -43,6 +43,46 @@ static const CH32RVTimerOwner ch32rv_pwm_owner = {
     &ch32rv_pwm_owner_identity, 0, 0
 };
 
+/* Each pad's PWM holds its timer channel through a lease kept here, so the pad
+ * gives the channel back when its PWM stops: analogWrite() of 0 or full scale
+ * (a plain level, as the AVR core does), pinMode() or digitalWrite() on the
+ * pad. The timer stops when none of its channels is held
+ * (ch32rv_timer_release), and tone(), Servo or a capture can take it again.
+ * Until 2026-11-05 a lease was never given back: one analogWrite() kept the
+ * timer from them until a reset. A slot's timer 0 is an empty slot. */
+static CH32RVTimerLease ch32rv_pwm_lease[CH32RV_TIMER_COUNT][4];
+static uint8_t ch32rv_pwm_held;
+
+static CH32RVTimerLease *ch32rv_pwm_slot(uint8_t timer, uint8_t channel)
+{
+    if (channel == 0u || channel > 4u) {
+        return 0;
+    }
+    for (size_t i = 0; i < CH32RV_TIMER_COUNT; i++) {
+        const CH32RVTimerCapability *cap = ch32rv_timer_capability(i);
+        if (cap && cap->number == timer) {
+            return &ch32rv_pwm_lease[i][channel - 1u];
+        }
+    }
+    return 0;
+}
+
+bool ch32rv_pwm_stop(pin_size_t pin)
+{
+    if (ch32rv_pwm_held == 0u) {
+        return false;      /* the common case, cheap for digitalWrite() */
+    }
+    CH32RVTimerLease *slot = ch32rv_pwm_slot((uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin),
+                                             (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin));
+    if (!slot || slot->timer == 0u) {
+        return false;
+    }
+    /* A lease another owner took over is only forgotten here. */
+    ch32rv_timer_release(slot);
+    ch32rv_pwm_held--;
+    return true;
+}
+
 void analogWriteResolution(int bits)
 {
     if (bits > 0 && bits <= 16) {
@@ -108,10 +148,13 @@ void analogWrite(pin_size_t pin, int value)
     const uint8_t channel = (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin);
     const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(timer);
 
-    if (!cap || channel == 0u) {
-        /* No PWM here: behave like the AVR core and just pick a level. */
+    const uint32_t full = (1u << ch32rv_pwm_write_bits) - 1u;
+    if (!cap || channel == 0u || value <= 0 || (uint32_t)value >= full) {
+        /* No PWM here, or 0 / full scale: a plain level, as the AVR core does.
+         * A PWM running on the pad stops and its timer channel is given back. */
+        ch32rv_pwm_stop(pin);
+        digitalWrite(pin, value > 0 ? HIGH : LOW);
         pinMode(pin, OUTPUT);
-        digitalWrite(pin, value ? HIGH : LOW);
         return;
     }
 
@@ -134,16 +177,10 @@ void analogWrite(pin_size_t pin, int value)
         steps = CH32RV_PWM_STEPS;
     }
 
-    /* Scale the caller's range onto the counter's 0..steps. */
-    const uint32_t full = (1u << ch32rv_pwm_write_bits) - 1u;
-    uint32_t duty = (value <= 0) ? 0u : (uint32_t)value;
-    if (duty >= full) {
-        duty = steps;
-    } else {
-        /* duty < full <= 65535 and steps <= 65536: the product stays under
-         * 2^32, so no 64-bit multiply (114 B of __muldi3 on V003). */
-        duty = (duty * steps) / (full + 1u);
-    }
+    /* Scale the caller's range onto the counter's 0..steps (0 < value < full
+     * here). value < full <= 65535 and steps <= 65536: the product stays
+     * under 2^32, so no 64-bit multiply (114 B of __muldi3 on V003). */
+    const uint32_t duty = ((uint32_t)value * steps) / (full + 1u);
 
     const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
     ch32rv_gpio_clock_enable(port);
@@ -162,6 +199,13 @@ void analogWrite(pin_size_t pin, int value)
     CH32RVTimerLease lease = ch32rv_timer_takeover(&request, &ch32rv_pwm_owner);
     if (!ch32rv_timer_lease_valid(&lease) || !ch32rv_timer_apply_base(&lease)) {
         return;
+    }
+    CH32RVTimerLease *slot = ch32rv_pwm_slot(timer, channel);
+    if (slot) {
+        if (slot->timer == 0u) {
+            ch32rv_pwm_held++;
+        }
+        *slot = lease;
     }
     const uint32_t base = cap->register_base;
 

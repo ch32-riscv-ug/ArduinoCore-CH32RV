@@ -64,6 +64,12 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "capture-after-pwm"    # a pulse capture begins on a pad once its analogWrite() has stopped
+test = "signals::test_capture_after_pwm"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
 id = "adc"
 test = "periph::test_adc"
 scope = "series"

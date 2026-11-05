@@ -16,7 +16,10 @@ unchecked item. What the DUT itself reports (interrupt counts, the capture's rea
 - signals.interrupt: attachInterrupt RISING, FALLING and CHANGE while the probe drives the line through 20 periods:
   20, 20 and 40 edges counted.
 - signals.timer-input: CH32RVPulseCapture on the line while the probe's PWM makes 1 kHz at 25 % and 10 kHz at 50 %:
-  the period and the high time within 1 % (+ one tick) of what the probe says it made."""
+  the period and the high time within 1 % (+ one tick) of what the probe says it made.
+- signals.capture-after-pwm: on a PWM pad, CH32RVPulseCapture.begin() is refused while analogWrite() drives it and
+  succeeds once the sketch has stopped the PWM in any of the Arduino ways: analogWrite(pin, 0), pinMode(),
+  digitalWrite(). How the core shares its timers is its own; this is what a sketch sees."""
 import json
 import pathlib
 import secrets
@@ -42,8 +45,8 @@ def ask(dut, line, reply, timeout=10):
 
 
 def ready(dut, case):
-    """Restart the DUT, then wait for its answer: each test starts from a fresh run (what an earlier test left, as
-    analogWrite()'s timer, does not carry over)."""
+    """Restart the DUT, then wait for its answer: each test starts from a fresh run, independent of what an earlier
+    test left."""
     dut.write("restart\n")
     # Lines sent while the DUT restarts are lost; ask again until the new run answers.
     for attempt in range(8):
@@ -224,3 +227,28 @@ def test_timer_input(dut, oep_host, record_property):
         ask(dut, "capoff", rb"CAPOFF")
         core.plan_release(host, [pwm.fn])
     record_property("line", line["pad"])
+
+
+def test_capture_after_pwm(dut, oep_host, record_property):
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    line = timer_pad(dut, lines, channels=(1, 2))
+    if line is None:
+        pytest.skip("no labelled line is channel 1 or 2 of a timer: " + ", ".join(p["pad"] for p in lines))
+    pin = line["pin"]
+    seen = {}
+    for name, stop in (("analogWrite 0", f"pwm {pin} 0 1000"), ("pinMode", f"input {pin}"),
+                       ("digitalWrite", f"level {pin} 0")):
+        assert ask(dut, f"pwm {pin} 128 1000", rb"PWM (\d)").group(1) == b"1"
+        held = ask(dut, f"cap {pin}", rb"CAP (\d)").group(1)
+        ask(dut, "capoff", rb"CAPOFF")
+        dut.write(stop + "\n")
+        dut.expect(rb"(PWM \d|INPUT|LEVEL)\r?\n", timeout=10)
+        back = ask(dut, f"cap {pin}", rb"CAP (\d)").group(1)
+        ask(dut, "capoff", rb"CAPOFF")
+        seen[name] = (held.decode(), back.decode())
+        assert held == b"0", f"{line['pad']}: the capture took the timer while analogWrite() held it"
+        assert back == b"1", f"{line['pad']}: CH32RVPulseCapture could not begin after {name} stopped the PWM"
+    record_property("refused_then_began", json.dumps(seen))
+    ask(dut, f"input {pin}", rb"INPUT")
