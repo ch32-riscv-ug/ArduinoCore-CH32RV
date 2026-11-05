@@ -11,6 +11,7 @@ gpio_lines), and the planned features on their role labels (tests/BENCH.ja.md §
 - periph.adc: a labelled pad the DUT names as an ADC channel (not one a defect of the board's record takes): the probe
   drives it low, then high: analogRead() is under 5 % of full scale, then over 95 %.
 - periph.adc-stream: CH32RVAdcStream on one or two such pads, the probe's PWM on the first (test_adc_stream).
+- periph.hsadc: CH32RVHsAdc on an HSADC pad on VDDIO (PF8-PF10), the probe's PWM on it (test_hsadc).
 - periph.can / i2s / argb / rs485 / qspi: not implemented in the core. With their lines labelled the test fails,
   saying so; that is the reminder that the bench is ready for them."""
 import json
@@ -260,6 +261,83 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
         if rest:
             gpio.configure(rest[0][0]["channel"], Gpio.INPUT)
             core.plan_release(host, [gpio.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
+HSADC_SAFE_CHANNELS = (4, 5, 6)     # PF8-PF10, VDDIO pads; PC0-PC3 (0-3) are VIO18's, rated to VIO18 + 0.3 V
+
+
+def test_hsadc(dut, oep_host, ws_run, record_property):
+    """periph.hsadc (H41x): CH32RVHsAdc on a labelled pad that is an HSADC input on VDDIO (PF8-PF10 - never PC0-PC3,
+    whose inputs are rated to VIO18 + 0.3 V and VIO18 may be below the probe's 3.3 V), the probe's PWM on it. The
+    sketch reads 8 buffers of 1024 samples and reports the square wave as periph.adc-stream does; one capture, a
+    WireSkein section per condition judging the stimulus (becomes); compared here: the frequency from the rises
+    within 3 % of the probe's, the duty within 0.03, no overrun - at 20 Msps with 100 kHz / 0.5 and 1 MHz / 0.25,
+    and at the slowest step (1.25 Msps) with 50 kHz / 0.75. Prepared before an H41x on the bench had labelled lines
+    (2026-11-05)."""
+    from oep_client import core
+    from oep_client.fixture import Pwm
+    from wireskein.runlog import becomes
+    case = settings(__file__)
+    ready(dut, case)
+    line = None
+    for candidate in gpio_lines(oep_host, case["target"]):
+        channel = int(ask(dut, f"hscaps {candidate['pin']}", rb"HSCAPS (-?\d+)").group(1))
+        if channel in HSADC_SAFE_CHANNELS:
+            line = candidate
+            break
+    if line is None:
+        pytest.skip("no labelled <port>@<pad> line is an HSADC input on VDDIO (PF8-PF10)")
+    record_property("line", f"{line['pad']} channel {channel}")
+    host = oep_host.host
+    pwm = Pwm(host)
+    core.plan_apply(host, pwm.assignments(line["channel"]))
+    conditions = [(20_000_000, 100_000, 0.5), (20_000_000, 1_000_000, 0.25), (1_250_000, 50_000, 0.75)]
+    results, wrong = {}, []
+
+    def steps(wait):
+        with ws_run.section(1, f"hsadc {line['pad']}"):
+            for rate, hz, duty in conditions:
+                name = f"{rate // 1000} ksps, {hz // 1000} kHz duty {duty}"
+                with ws_run.section(2, name, expect=[becomes(line["pad"], freq_hz=hz, duty=duty, irregular_max=3,
+                                                             min_periods=20, duty_abs=0.01)]):
+                    made = pwm.start(0, hz, round(duty * Pwm.FULL))
+                    wait(0.02)
+                    command = f"hstream {rate} 8 {line['pin']}"
+                    ws_run.command(command)
+                    dut.write(command + "\n")
+                    end = time.monotonic() + 5
+                    while True:
+                        try:
+                            m = dut.expect(rb"HSTREAM ([\d ]+)\r?\n", timeout=0.05)
+                            break
+                        except Exception:
+                            assert time.monotonic() < end, f"{name}: no HSTREAM"
+                            wait(0.05)
+                    ws_run.reply(m.group(0).decode())
+                    v = [int(x) for x in m.group(1).split()]
+                    if v[0] == 0:
+                        wrong.append(f"{name}: begin() refused")
+                        continue
+                    got_rate, overruns, n, high, low, rises, first, last = v
+                    got_hz = got_rate * (rises - 1) / (last - first) if rises > 1 and last > first else 0.0
+                    got_duty = high / (high + low) if high + low else 0.0
+                    results[name] = dict(rate=got_rate, hz=round(got_hz, 1), duty=round(got_duty, 4),
+                                         overruns=overruns, probe_hz=made.hz)
+                    if abs(got_hz / made.hz - 1) > 0.03:
+                        wrong.append(f"{name}: {got_hz:.1f} Hz from the stream, the probe makes {made.hz:.1f}")
+                    if abs(got_duty - made.duty / Pwm.FULL) > 0.03:
+                        wrong.append(f"{name}: duty {got_duty:.3f}, the probe makes {made.duty / Pwm.FULL:.3f}")
+                    if overruns:
+                        wrong.append(f"{name}: {overruns} overruns")
+                    wait(0.02)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [line], rate=10_000_000, steps=steps)
+    finally:
+        pwm.stop(0)
+        core.plan_release(host, [pwm.fn])
     record_property("results", json.dumps(results))
     assert not wrong, " | ".join(wrong)
 

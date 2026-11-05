@@ -18,12 +18,23 @@
  *                             ASTREAM <rate got> <step> <overruns> <rounds>
  *                             <high> <low> <rises> <first rise> <last rise>
  *                             <pin1 min> <pin1 max> <full scale> (rounds counted from the
- *                             first read; ASTREAM 0 when begin() refused) */
+ *                             first read; ASTREAM 0 when begin() refused)
+ *   hscaps <pin>              HSCAPS <HSADC channel of the pad, or -1 (no HSADC)>
+ *   hstream <rate> <bufs> <pin>
+ *                             CH32RVHsAdc on the pin at <rate> (the first buffer dropped,
+ *                             <bufs> buffers of HSTREAM_SAMPLES read), a square wave read
+ *                             as astream does (10 bits): HSTREAM <rate got> <overruns>
+ *                             <samples> <high> <low> <rises> <first rise> <last rise>
+ *                             (HSTREAM 0 when begin() refused) */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <string.h>
 #if defined(NUM_ANALOG_INPUTS)
 #include <CH32RVAdcStream.h>
+#endif
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
+#define PERIPH_HSADC 1
+#include <CH32RVHsAdc.h>
 #endif
 
 #ifndef BENCH_BUILD_ID
@@ -94,6 +105,59 @@ static void astream(uint32_t rate, uint32_t halves, const pin_size_t *pins, uint
 }
 #endif
 
+#if PERIPH_HSADC
+#define HSTREAM_SAMPLES 1024
+static CH32RVHsAdc hsadc;
+static uint16_t hs_buf[2][HSTREAM_SAMPLES];
+
+static void hstream(uint32_t rate, uint32_t bufs, pin_size_t pin)
+{
+    if (!hsadc.begin(pin, rate)) {
+        SerialDMSeq.printf("HSTREAM 0\r\n");
+        return;
+    }
+    const uint16_t full = 1023, lo = full / 4, hi = (uint16_t)(full - full / 4);
+    hsadc.startContinuous(hs_buf[0], hs_buf[1], HSTREAM_SAMPLES);
+    uint32_t n = 0, high = 0, low = 0, rises = 0, first = 0, last = 0;
+    int8_t state = -1;
+    bool skipped = false;
+    const uint32_t start = millis();
+    while (bufs && millis() - start < 2000) {
+        const uint16_t *buf = hsadc.readBuffer();
+        if (!buf) {
+            continue;
+        }
+        if (!skipped) {
+            skipped = true;
+            continue;
+        }
+        for (uint16_t i = 0; i < HSTREAM_SAMPLES; i++, n++) {
+            const uint16_t v = buf[i];
+            if (v >= hi) {
+                high++;
+                if (state == 0) {
+                    if (!rises++) {
+                        first = n;
+                    }
+                    last = n;
+                }
+                state = 1;
+            } else if (v <= lo) {
+                low++;
+                state = 0;
+            }
+        }
+        bufs--;
+    }
+    hsadc.stop();
+    const uint32_t overruns = hsadc.overruns(), got = hsadc.sampleRate();
+    hsadc.end();
+    SerialDMSeq.printf("HSTREAM %lu %lu %lu %lu %lu %lu %lu %lu\r\n", (unsigned long)got,
+                       (unsigned long)overruns, (unsigned long)n, (unsigned long)high, (unsigned long)low,
+                       (unsigned long)rises, (unsigned long)first, (unsigned long)last);
+}
+#endif
+
 static void reply(char *command)
 {
     char *argv[6];
@@ -137,6 +201,18 @@ static void reply(char *command)
         pinMode(pin, INPUT);
         analogReadResolution(CH32RV_ADC_BITS);
         SerialDMSeq.printf("ADC %d %d\r\n", analogRead(pin), (1 << CH32RV_ADC_BITS) - 1);
+    } else if (!strcmp(argv[0], "hscaps") && argc == 2) {
+#if PERIPH_HSADC
+        SerialDMSeq.printf("HSCAPS %d\r\n", CH32RVHsAdc::channelOf((pin_size_t)atoi(argv[1])));
+#else
+        SerialDMSeq.printf("HSCAPS -1\r\n");
+#endif
+    } else if (!strcmp(argv[0], "hstream") && argc == 4) {
+#if PERIPH_HSADC
+        hstream((uint32_t)atol(argv[1]), (uint32_t)atol(argv[2]), (pin_size_t)atoi(argv[3]));
+#else
+        SerialDMSeq.printf("HSTREAM 0\r\n");
+#endif
     } else if (!strcmp(argv[0], "astream") && argc >= 4) {
 #if defined(NUM_ANALOG_INPUTS)
         pin_size_t pins[3] = {};

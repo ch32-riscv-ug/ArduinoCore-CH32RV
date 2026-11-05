@@ -258,6 +258,7 @@ needs = ["ADC1"]
 
 [[item]]
 id = "hs-adc"               # CH32RVHsAdc
+test = "periph::test_hsadc"
 scope = "series"
 needs = ["HSADC"]
 

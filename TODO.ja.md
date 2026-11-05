@@ -191,6 +191,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 - [ ] WWDG、GPIO 以外の EXTI（peripheral-plan の B）。
 - [ ] SPI のスレーブ（CH32RVSPISlave）の残り（X035 で、プローブの spi-controller が 100 kHz のマスターになる spi.slave が通る。2026-11-05）: ハードウェアのマスターでの上限のクロック、V407（PA7 が RMII と重なる可能性）・H417 の実機、SPI マスターの LSBFIRST が V003 で正しいか（X035 は 2026-11-03 に case spi で、モード 0〜3 と LSBFIRST の transfer16() まで線で確かめた）。
 - [ ] ADC の連続取得（CH32RVAdcStream）を一番遅い段より遅い一定のレートで（タイマーのトリガ。系列ごとの EXTSEL の対応が device-data に無い）。
+- [ ] V103 の DAC: variant に DAC のクロックの定義（CH32RV_CLKEN_DAC_*）があるのに、DAC の端子の定義が無く、analogWrite は DAC を
+  使わない（tests/analog は V103 でスキップになる）。データシートで DAC の有無を確かめ、あれば端子を足し、無ければ device-data の
+  clock_enables を確かめる（2026-11-05）。
 - [ ] CH32RVAdcStream の複数の端子が CH32X035 で 1 つずれる（2026-11-05、periph の test_adc_stream）。バッファが値 1 つ早く始まり、
   端子 0 の場所に最後の端子の値が入る（3 本なら X, A, B, C, A, B, C…）。一番速いサンプル時間では毎回、一番遅いときはときどき。
   効かなかったこと: 止めるときに ADON を落とす、開始を SWSTART の 1 回の書き込みにする、先に並びを 1 回空で変換する、

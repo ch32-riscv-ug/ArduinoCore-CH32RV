@@ -188,6 +188,24 @@ FS のペアで HS を保証しません。安価な CH32X035 peer に替えて�
 既知不良の判定・対応条件・更新imageと更新処理はプローブ提供側、設備個体と配線はhost-local設定で管理します。
 版情報が取れない場合はunknownとして理由を記録し、最新版や互換性を推定しません。
 
+## 実機待ちの試験
+
+書いてあって、まだ流せていない試験です（2026-11-05）。機材がそろったら、下のコマンドでそのまま流せます。
+`<口>@<端子>`はプローブのラベルの線で、試験は足りない線をスキップの理由に書きます。
+
+| 試験 | 要るもの | 流し方 | 確かめること |
+|---|---|---|---|
+| wire.slave（`instrumented/wire`） | I2Cの使える系列の部品と、そのWireの既定のSDA / SCLに`<口>@<端子>`の線（ベンチのX035C8T6は、ロットの都合でI2Cが使えない） | `--probe oep://<unit>/<port> --case wire` | `onReceive` / `onRequest`の順番と中身、0xFFの埋め、32バイトの頭、別の番地へのNACK |
+| periph.hsadc（`instrumented/periph`） | H415 / H416 / H417と、PF8〜PF10のどれかに`<口>@<端子>`の線（PC0〜PC3はVIO18側で、VIO18 + 0.3 Vまでなので使わない） | `--case periph` | 20 Msps と 1.25 Msps で、プローブのPWMの周波数とデューティ、取りこぼし0 |
+| console-sdi の V307 | `ch32rv`の673a178（LinkEがSDIの有効化を取りこぼす件の直し）のリリースと、固定の更新 | `--probe wchlink://38EF8F06BDC2 --case console-sdi` | 100 msごとの行が飛ばない（V003のLinkEでは通っている） |
+| periph.adc-stream の2本以上 | CH32X035のCH32RVAdcStreamのずれの原因と直し（TODO.ja.md）。直るまでx035では落ちる | `--case periph` | 2本・3本の並びが正しく、方形波の周波数とデューティ |
+| analog.dac のほかの系列 | DACのある系列（V30x / V317 / V4x7 / H41x）の部品。配線なし | `--case analog` | V307では通った。H41x・V4x7で同じ |
+| system のほかの系列 | `<口>@<端子>`の線が2本ある、X035以外の系列（LSIの系列は誤差の幅が広い） | `--case system` | ウォッチドッグのタイムアウト、RTCで眠る系列（V20x / V30x / L103）のlightSleep / deepSleep |
+| ほかの系列のSerialの経路・SPIターゲット・TaskKit | X035以外の系列の`<口>@<端子>`の線 | `--case periph --case spi --case synckit` | 系列ごとのremap、SPIスレーブ、割り込みからのpost |
+
+V103はvariantにDACのクロックの定義（`CH32RV_CLKEN_DAC_*`）があるのに、DACの端子（`CH32RV_DAC1_PIN`）が無く、
+analogWriteはDACを使わない。V103のDACの有無を確かめてから、variantかcoverageのどちらかを直す（TODO.ja.md）。
+
 ## 試験を足す順序
 
 1. contract ID、capability/対象 matrix、設定 schema、安全条件を定義する。
