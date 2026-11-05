@@ -2,7 +2,8 @@
 the same port: puts() reaches Serial once it is begun, ch32rv_set_stdout(nullptr) discards, and
 ch32rv_set_stdout(&Serial) brings it back.
 
-uart.formats (OEP ports with <port>.rx@<pad> and <port>.tx@<pad> labelled): 9600, 115200 and 1 Mbaud at 8N1, and
+uart.output-only (OEP ports with <port>.rx@<pad>): the formats' conditions with no UART on the probe, the DUT's TX
+only, decoded the same way - the baseline. uart.formats (OEP ports with <port>.rx@<pad> and <port>.tx@<pad> labelled): 9600, 115200 and 1 Mbaud at 8N1, and
 8E1, 8O1, 8N2, 7E1, 7O1 at 115200, both ways, in one capture of the two lines with a WireSkein section per
 condition (both lines idle at its start and end): the DUT sends 16 bytes (decoded on its TX: the bytes, the format, the bit time F_CPU / BRR within 3 %,
 no framing or parity error) and receives 16 the probe's UART sends (decoded on its RX the same way, and the DUT's
@@ -49,6 +50,62 @@ def _fnv(data):
     for b in data:
         h = ((h ^ b) * 16777619) & 0xFFFFFFFF
     return h
+
+
+def test_uart_output_only(dut, ws_run, request, record_property):
+    """Every condition of uart.formats with no UART on the probe: it only captures the DUT's TX, so what is seen is
+    the DUT's own (the baseline when the round trip looks wrong). The DUT sends 16 bytes in each; decoded on its TX
+    (the bytes, the format, the bit time F_CPU / BRR within 3 %, no framing or parity error), idle at the section's
+    start and end."""
+    from wireskein.runlog import ends, starts, uart
+    case = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
+    target = case["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("the formats need the probe's logic capture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    roles = {line["role"]: line for line in port_lines(oep_host, target) if line["role"] in ("rx", "tx")}
+    if "rx" not in roles:
+        pytest.skip("the probe labels no <port>.rx@<pad> (the DUT's TX)")
+    dut_tx = roles["rx"]
+    f_cpu = int(target["f_cpu"])
+    sent = bytes((i * 37 + 11) & 0xFF for i in range(COUNT))
+
+    def steps(wait):
+        idle = {dut_tx["pad"]: 1}
+        with ws_run.section(1, f"uart output only {dut_tx['pad']}"):
+            for baud, k in CONDITIONS:
+                bits, parity, stop = FORMATS[k]
+                name = f"{baud} {bits}{parity[0].upper()}{stop}"
+                out = bytes(b & ((1 << bits) - 1) for b in sent)
+                with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
+                    ws_run.command(f"ucfg {baud} {k}")
+                    dut.write(f"ucfg {baud} {k}\n")
+                    _expect(dut, wait, rb"UCFG 1")
+                    wait(0.02)
+                    with ws_run.section(3, "dut sends", expect=[uart(dut_tx["pad"], f_cpu / round(f_cpu / baud),
+                                                                     data=out.hex(), bits=bits, parity=parity,
+                                                                     stop=stop, errors_max=0)]):
+                        ws_run.command(f"usend {COUNT}")
+                        dut.write(f"usend {COUNT}\n")
+                        _expect(dut, wait, rb"USEND \d+")
+                        wait(0.02 + 12 * COUNT / baud)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [dut_tx], rate=5_000_000, steps=steps)
+    finally:
+        dut.write("ucfg 115200 0\n")
+        dut.expect(rb"UCFG \d\r?\n", timeout=5)
+
+
+def _expect(dut, wait, pattern, timeout=3.0):
+    """The DUT's reply, looked for in short tries with wait() between so the stream keeps being read."""
+    end = time.monotonic() + timeout
+    while True:
+        try:
+            return dut.expect(pattern + rb"\r?\n", timeout=0.05)
+        except pexpect.TIMEOUT:
+            assert time.monotonic() < end, f"no {pattern!r}"
+            wait(0.05)
 
 
 def test_uart_formats(dut, ws_run, request, record_property):
