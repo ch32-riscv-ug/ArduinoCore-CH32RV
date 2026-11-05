@@ -92,6 +92,12 @@ void digitalWrite(pin_size_t pin, PinStatus val)
     if (port >= CH32RV_PORT_COUNT) {
         return;
     }
+    /* digitalWrite() before pinMode() sets the level the output starts at
+     * (AVR's way, and every core's); with the port's clock still off - at
+     * reset, before anything on that port was set up - the write was lost
+     * and pinMode(OUTPUT) then drove low (CH32X035 PB6 after a watchdog
+     * reset, 2026-11-05). One read-modify-write of RCC, 12 bytes. */
+    ch32rv_gpio_clock_enable(port);
     if (ch32rv_pwm_stop(pin)) {
         /* The pad was a PWM output: as the AVR core, digitalWrite() ends the
          * PWM and leaves a plain output at the level written. */
