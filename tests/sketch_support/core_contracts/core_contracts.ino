@@ -17,6 +17,7 @@ struct Constructor {
 uint32_t requests;
 char line[80];
 uint8_t used;
+volatile uint8_t receiveErrors;
 
 void reply(const char *command) {
   ++requests;
@@ -120,6 +121,37 @@ void reply(const char *command) {
     SerialDMSeq.print(got);
     SerialDMSeq.print(' ');
     SerialDMSeq.println(hash, HEX);
+  } else if (strcmp(command, "uerr") == 0) {
+    // uerr: UERR <mask> of what Serial.onReceiveError() reported since the last uerr (bit k: hardwareSerial_error_t k),
+    // cleared. The first uerr registers the callback, so it reports 0.
+    static bool registered;
+    if (!registered) {
+      Serial.onReceiveError([](hardwareSerial_error_t kind) { receiveErrors |= 1u << kind; });
+      registered = true;
+    }
+    SerialDMSeq.print("UERR ");
+    SerialDMSeq.println(receiveErrors);
+    receiveErrors = 0;
+  } else if (strncmp(command, "uhold ", 6) == 0) {
+    // uhold <ms>: Serial not read for ms (after what came before is dropped), then UHOLD <available()>.
+    while (Serial.available()) Serial.read();
+    SerialDMSeq.println("UHOLD READY");
+    delay(strtoul(command + 6, nullptr, 10));
+    SerialDMSeq.print("UHOLD ");
+    SerialDMSeq.println(Serial.available());
+    while (Serial.available()) Serial.read();
+  } else if (strncmp(command, "uoff ", 5) == 0) {
+    // uoff <ms>: interrupts off for at least ms, so bytes coming meanwhile overrun the USART's data register. Counted
+    // in loop turns (each at least 4 cycles): micros() stands still without the SysTick interrupt.
+    const unsigned long ms = strtoul(command + 5, nullptr, 10);
+    SerialDMSeq.println("UOFF READY");
+    SerialDMSeq.flush();
+    noInterrupts();
+    for (volatile uint32_t i = 0; i < F_CPU / 4000u * ms; i = i + 1) {
+    }
+    interrupts();
+    SerialDMSeq.println("UOFF");
+    while (Serial.available()) Serial.read();
   } else if (strcmp(command, "stdio") == 0) {
     // stdout follows Serial once it is begun (setup()); ch32rv_set_stdout() overrides it, nullptr discards.
     puts("STDIO SERIAL");

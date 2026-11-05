@@ -7,7 +7,10 @@ only, decoded the same way - the baseline. uart.formats (OEP ports with <port>.r
 8E1, 8O1, 8N2, 7E1, 7O1 at 115200, both ways, in one capture of the two lines with a WireSkein section per
 condition (both lines idle at its start and end): the DUT sends 16 bytes (decoded on its TX: the bytes, the format, the bit time F_CPU / BRR within 3 %,
 no framing or parity error) and receives 16 the probe's UART sends (decoded on its RX the same way, and the DUT's
-count and FNV-1a hash of what it read); the other line stays idle meanwhile."""
+count and FNV-1a hash of what it read); the other line stays idle meanwhile.
+
+uart.receive-errors (the same labels): the probe's UART set off from the DUT's format on purpose, and what
+Serial.onReceiveError() reports compared with the kind made (test_uart_receive_errors)."""
 import secrets
 
 
@@ -108,29 +111,34 @@ def _expect(dut, wait, pattern, timeout=3.0):
             wait(0.05)
 
 
-def test_uart_formats(dut, ws_run, request, record_property):
+def _probe_uart(oep_host, target):
+    """The DUT's TX and RX lines and the probe's UART on them: (dut_tx, dut_rx, io, fn); skips without both labels."""
     from oep_client import core, fixture, host as oh, registry
-    case = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
-    target = case["target"]
-    if not target.get("upload_port", "").startswith("oep://"):
-        pytest.skip("the formats need the probe's logic capture (an OEP port)")
-    oep_host = request.getfixturevalue("oep_host")
     roles = {line["role"]: line for line in port_lines(oep_host, target) if line["role"] in ("rx", "tx")}
     if set(roles) != {"rx", "tx"}:
         pytest.skip("the probe labels no <port>.rx@<pad> and <port>.tx@<pad>")
     dut_tx, dut_rx = roles["rx"], roles["tx"]          # the probe's rx hears the DUT's TX
-    f_cpu = int(target["f_cpu"])
     host = oep_host.host
     RX, TX = (registry.FIXTURE_UART.enum["role"][r] for r in ("rx", "tx"))
-    io, used = None, None
     for fn in core.find_all(host, "oep.fixture.uart"):
         try:
             core.plan_apply(host, [(fn, RX, dut_tx["channel"]), (fn, TX, dut_rx["channel"])])
         except oh.Rejected:
             continue
-        io, used = fixture.FixtureUartIO(host, fn), fn
-        break
-    assert io is not None, "no free oep.fixture.uart on the probe"
+        return dut_tx, dut_rx, fixture.FixtureUartIO(host, fn), fn
+    raise AssertionError("no free oep.fixture.uart on the probe")
+
+
+def test_uart_formats(dut, ws_run, request, record_property):
+    from oep_client import core, fixture
+    case = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
+    target = case["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("the formats need the probe's logic capture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    dut_tx, dut_rx, io, used = _probe_uart(oep_host, target)
+    f_cpu = int(target["f_cpu"])
+    host = oep_host.host
     sent = bytes((i * 37 + 11) & 0xFF for i in range(COUNT))
     hashes = {}
 
@@ -199,3 +207,98 @@ def test_uart_formats(dut, ws_run, request, record_property):
         name = f"{baud} {bits}{parity[0].upper()}{stop}"
         back = bytes(b & ((1 << bits) - 1) for b in reversed(sent))
         assert hashes.get(name) == (COUNT, f"{_fnv(back):X}"), f"{name}: the DUT received {hashes.get(name)}"
+
+
+# ---- uart.receive-errors: Serial.onReceiveError() for each kind the probe can make on purpose --------------------
+# hardwareSerial_error_t's numbers (ESP32's): the sketch's uerr reports bit k for kind k.
+BREAK, BUFFER_FULL, FIFO_OVF, FRAME, PARITY = 1, 2, 3, 4, 5
+RX_BUFFER = 64                     # CH32RV_SERIAL_RX_BUFFER_SIZE's default
+EVEN_NONZERO = bytes(b for b in range(1, 256) if bin(b).count("1") % 2 == 0)
+
+
+def test_uart_receive_errors(dut, ws_run, request, record_property):
+    """Each condition sets the DUT's Serial at 115200 and the probe's UART to a format, then the probe sends: what
+    goes on the DUT's RX is decoded by WireSkein in the probe's format (the bytes, no error of that format's own), and
+    what the DUT made of it - how many bytes it kept and which kinds onReceiveError() reported (uerr) - is compared
+    here. clean: 8N1 both, nothing reported, every byte kept. parity: 8E1 on the DUT, 8O1 sent, every byte dropped
+    with UART_PARITY_ERROR. frame: 8N1 on the DUT, 8E1 sent with even-parity bytes, so the DUT samples the parity
+    bit (0) as its stop bit: UART_FRAME_ERROR, every byte dropped. break: the same with 0x00, the line low for the
+    whole frame: UART_BREAK_ERROR alone. buffer-full: 100 bytes while the sketch reads none, the buffer keeps
+    RX_BUFFER - 1 (one slot tells full from empty) and UART_BUFFER_FULL_ERROR. overrun: interrupts off while 16
+    bytes come: UART_FIFO_OVF_ERROR."""
+    from oep_client import core, fixture
+    from wireskein.runlog import ends, starts, uart
+    case = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
+    target = case["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("the receive errors need the probe's UART and logic capture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    dut_tx, dut_rx, io, used = _probe_uart(oep_host, target)
+    host = oep_host.host
+    baud = 115200
+    clean = bytes((i * 37 + 11) & 0xFF for i in range(COUNT))
+    # name: (DUT format index, probe format, bytes, how the DUT waits, bytes it keeps, kinds reported)
+    conditions = {
+        "clean": (0, (8, "none", 1), clean, "hold", COUNT, set()),
+        "parity": (1, (8, "odd", 1), clean, "hold", 0, {PARITY}),
+        "frame": (0, (8, "even", 1), EVEN_NONZERO[:COUNT], "hold", 0, {FRAME}),
+        "break": (0, (8, "even", 1), bytes(4), "hold", 0, {BREAK}),
+        "buffer-full": (0, (8, "none", 1), bytes((i * 37 + 11) & 0xFF for i in range(100)), "hold", RX_BUFFER - 1,
+                        {BUFFER_FULL}),
+        "overrun": (0, (8, "none", 1), clean, "off", None, {FIFO_OVF}),
+    }
+    got = {}
+
+    def steps(wait):
+        idle = {dut_tx["pad"]: 1, dut_rx["pad"]: 1}
+        with ws_run.section(1, f"receive errors {dut_rx['pad']}"):
+            for name, (k, (bits, parity, stop), data, how, _, _) in conditions.items():
+                with ws_run.section(2, name):
+                    ws_run.command(f"ucfg {baud} {k}")
+                    assert _expect_after(dut, wait, f"ucfg {baud} {k}", rb"UCFG (\d)").group(1) == b"1"
+                    probe_baud = io.configure(baud, fixture.FixtureUart.format_byte(bits, parity[0].upper(), stop))
+                    _expect_after(dut, wait, "uerr", rb"UERR \d+")          # registers, clears what came before
+                    wait(0.02)
+                    with ws_run.section(3, "probe sends",
+                                        expect=[uart(dut_rx["pad"], probe_baud, data=data.hex(), bits=bits,
+                                                     parity=parity, stop=stop, errors_max=0),
+                                                starts(idle), ends(idle)]):
+                        if how == "hold":
+                            ws_run.command("uhold 500")
+                            _expect_after(dut, wait, "uhold 500", rb"UHOLD READY")
+                            io.write(data)
+                            m = _expect(dut, wait, rb"UHOLD (\d+)")
+                            kept = int(m.group(1))
+                        else:
+                            ws_run.command("uoff 100")
+                            _expect_after(dut, wait, "uoff 100", rb"UOFF READY")
+                            io.write(data)
+                            m = _expect(dut, wait, rb"UOFF")
+                            kept = None
+                        ws_run.reply(m.group(0).decode())
+                        wait(0.02)
+                    m = _expect_after(dut, wait, "uerr", rb"UERR (\d+)")
+                    ws_run.reply(m.group(0).decode())
+                    mask = int(m.group(1))
+                    got[name] = (kept, {kind for kind in range(8) if mask >> kind & 1})
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [dut_tx, dut_rx], rate=5_000_000, steps=steps)
+    finally:
+        core.plan_release(host, [used])
+        dut.write("ucfg 115200 0\n")
+        dut.expect(rb"UCFG \d\r?\n", timeout=5)
+    record_property("received", json.dumps({n: [kept, sorted(kinds)] for n, (kept, kinds) in got.items()}))
+    wrong = []
+    for name, (*_, kept, kinds) in conditions.items():
+        if name not in got:
+            wrong.append(f"{name}: not run")
+            continue
+        if got[name][1] != kinds or (kept is not None and got[name][0] != kept):
+            wrong.append(f"{name}: kept {got[name][0]} reported {sorted(got[name][1])}, want {kept} {sorted(kinds)}")
+    assert not wrong, " | ".join(wrong)
+
+
+def _expect_after(dut, wait, line, pattern, timeout=3.0):
+    dut.write(line + "\n")
+    return _expect(dut, wait, pattern, timeout)

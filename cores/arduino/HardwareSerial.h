@@ -13,6 +13,7 @@
 #include "internal/ch32rv_printf.h"
 #include "internal/ch32rv_ringbuffer.h"
 #include "internal/ch32rv_route.h"
+#include "CH32RVCallback.h"
 /* Not just for the pad names: CH32RV_SERIAL_COUNT below comes from the
  * variant, and this header has to work when it is included first.
  * HardwareSerial.cpp includes it before Arduino.h, and when the variant was
@@ -45,6 +46,27 @@
 #endif
 
 namespace arduino {
+
+/* What onReceiveError() reports, by ESP32's names (arduino-esp32 HardwareSerial).
+ * UART_FIFO_OVF_ERROR is the USART's overrun (a byte came before the last was
+ * read out of the data register), UART_BUFFER_FULL_ERROR the receive buffer
+ * full (the byte was dropped), UART_FRAME_ERROR / UART_PARITY_ERROR a byte that
+ * came with that error and was dropped, UART_BREAK_ERROR a frame error on an
+ * all-zero byte (the line held low). */
+typedef enum {
+    UART_NO_ERROR,
+    UART_BREAK_ERROR,
+    UART_BUFFER_FULL_ERROR,
+    UART_FIFO_OVF_ERROR,
+    UART_FRAME_ERROR,
+    UART_PARITY_ERROR
+} hardwareSerial_error_t;
+
+/* takeErrors()'s two kinds besides STATR's ORE (bit 3), FE (bit 1) and PE
+ * (bit 0): a frame error on an all-zero byte (in place of FE), and a byte
+ * dropped because the receive buffer was full. */
+#define CH32RV_SERIAL_MARK_BREAK (1u << 4)
+#define CH32RV_SERIAL_MARK_FULL  (1u << 5)
 
 /* One object is one port. Which USART it drives is decided in begin(), not
  * here: the object holds state only, and that state is all zero at reset, so a
@@ -109,9 +131,20 @@ public:
     bool setRoute(uint8_t route);
     bool setPins(int rxPin, int txPin, int ctsPin = -1, int rtsPin = -1);
 
+    /* Called after loop() (with serialEvent()), once for each kind of receive
+     * error that happened since, as ESP32's onReceiveError() reports them
+     * (there from its UART event task). The interrupt only marks the kinds;
+     * how many of each is not kept. nullptr removes it. Defined in
+     * HardwareSerialError.cpp, so a sketch that never calls it links none of
+     * the delivery (the interrupt's marks are one byte per port). */
+    void onReceiveError(CH32RVCallback<void(hardwareSerial_error_t)> function);
+
     /* For the shared interrupt handler and serialEvent() only. */
     void irq(uint32_t base);
     uint8_t number(void) const { return _number; }
+    /* The receive errors since the last call, cleared: STATR's ORE / FE / PE
+     * bits and CH32RV_SERIAL_MARK_BREAK / _FULL. */
+    uint8_t takeErrors(void);
 
 private:
     bool bind(uint8_t index, const ch32rv_route_t &route);
@@ -133,6 +166,8 @@ private:
     /* What a received byte keeps: 7 data bits with parity are an 8-bit word
      * whose top bit is the parity, which read() must not return. */
     uint8_t _rx_mask = 0xFF;
+    /* Receive errors since the last takeErrors(). */
+    volatile uint8_t _errors;
     CH32RVRingBuffer<CH32RV_SERIAL_RX_BUFFER_SIZE> _rx;
     CH32RVRingBuffer<CH32RV_SERIAL_TX_BUFFER_SIZE> _tx;
 };

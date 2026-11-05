@@ -505,10 +505,18 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(uint32_t ba
                   CH32RV_USART_STATR_NE | CH32RV_USART_STATR_FE |
                   CH32RV_USART_STATR_PE)) {
         const uint8_t data = (uint8_t)CH32RV_USART_DATAR(base);
-        if ((status & CH32RV_USART_STATR_RXNE) &&
-            !(status & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_PE))) {
-            _rx.push((uint8_t)(data & _rx_mask));
+        /* The kinds for onReceiveError(), as STATR's own bits (overrun,
+         * framing, parity) plus two of ours, read out there. */
+        uint8_t marks = (uint8_t)(status & (CH32RV_USART_STATR_ORE | CH32RV_USART_STATR_FE |
+                                            CH32RV_USART_STATR_PE));
+        if (marks & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_PE)) {
+            if ((marks & CH32RV_USART_STATR_FE) && !data) {
+                marks ^= CH32RV_USART_STATR_FE | CH32RV_SERIAL_MARK_BREAK;
+            }
+        } else if ((status & CH32RV_USART_STATR_RXNE) && !_rx.push((uint8_t)(data & _rx_mask))) {
+            marks |= CH32RV_SERIAL_MARK_FULL;
         }
+        _errors |= marks;
     }
     if (status & CH32RV_USART_STATR_TXE) {
         if (_tx.isEmpty()) {
@@ -864,10 +872,25 @@ void serialEvent7(void) __attribute__((weak));
 void serialEvent8(void) __attribute__((weak));
 void serialEvent9(void) __attribute__((weak));
 
+uint8_t CH32RVHardwareSerial::takeErrors(void)
+{
+    noInterrupts();
+    const uint8_t errors = _errors;
+    _errors = 0;
+    interrupts();
+    return errors;
+}
+
+/* Set by onReceiveError() (HardwareSerialError.cpp): run after loop(). */
+void (*ch32rv_serial_error_delivery)(void) = nullptr;
+
 namespace arduino {
 
 void serialEventRun(void)
 {
+    if (ch32rv_serial_error_delivery) {
+        ch32rv_serial_error_delivery();
+    }
     static void (*const events[])(void) = {serialEvent, serialEvent1, serialEvent2,
                                            serialEvent3, serialEvent4, serialEvent5,
                                            serialEvent6, serialEvent7, serialEvent8,
