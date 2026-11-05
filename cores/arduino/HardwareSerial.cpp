@@ -504,11 +504,13 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(uint32_t ba
     if (status & (CH32RV_USART_STATR_RXNE | CH32RV_USART_STATR_ORE |
                   CH32RV_USART_STATR_NE | CH32RV_USART_STATR_FE |
                   CH32RV_USART_STATR_PE)) {
-        const uint8_t data = (uint8_t)CH32RV_USART_DATAR(base);
+        /* The whole register: a break is every bit 0, the parity bit's
+         * place too. */
+        const uint32_t data = CH32RV_USART_DATAR(base);
         /* The kinds for onReceiveError(), as STATR's own bits (overrun,
          * framing, parity) plus two of ours, read out there. */
-        uint8_t marks = (uint8_t)(status & (CH32RV_USART_STATR_ORE | CH32RV_USART_STATR_FE |
-                                            CH32RV_USART_STATR_PE));
+        uint32_t marks = status & (CH32RV_USART_STATR_ORE | CH32RV_USART_STATR_FE |
+                                   CH32RV_USART_STATR_PE);
         if (marks & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_PE)) {
             if ((marks & CH32RV_USART_STATR_FE) && !data) {
                 marks ^= CH32RV_USART_STATR_FE | CH32RV_SERIAL_MARK_BREAK;
@@ -516,13 +518,14 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(uint32_t ba
         } else if ((status & CH32RV_USART_STATR_RXNE) && !_rx.push((uint8_t)(data & _rx_mask))) {
             marks |= CH32RV_SERIAL_MARK_FULL;
         }
-        _errors |= marks;
+        _errors |= (uint8_t)marks;
     }
     if (status & CH32RV_USART_STATR_TXE) {
-        if (_tx.isEmpty()) {
+        const int c = _tx.pop();   /* empty: -1, the ring's indices read once */
+        if (c < 0) {
             CH32RV_USART_CTLR1(base) &= (uint16_t)~CH32RV_USART_CTLR1_TXEIE;
         } else {
-            CH32RV_USART_DATAR(base) = (uint16_t)(uint8_t)_tx.pop();
+            CH32RV_USART_DATAR(base) = (uint16_t)c;
         }
     }
 }

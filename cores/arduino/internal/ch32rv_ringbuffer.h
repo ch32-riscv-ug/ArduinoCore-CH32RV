@@ -29,11 +29,12 @@ public:
     /* Producer side. Drops the byte when full, like every Arduino core. */
     CH32RV_RB_INLINE bool push(uint8_t c)
     {
-        const uint16_t n = next(_head);
+        const uint16_t h = _head;   /* ours: read once, not at each use */
+        const uint16_t n = next(h);
         if (n == _tail) {
             return false;
         }
-        _buffer[_head] = c;
+        _buffer[h] = c;
         _head = n;
         return true;
     }
@@ -41,11 +42,12 @@ public:
     /* Consumer side. Returns -1 when empty, matching Stream::read(). */
     CH32RV_RB_INLINE int pop(void)
     {
-        if (_head == _tail) {
+        const uint16_t t = _tail;   /* ours: read once, not at each use */
+        if (_head == t) {
             return -1;
         }
-        const uint8_t c = _buffer[_tail];
-        _tail = next(_tail);
+        const uint8_t c = _buffer[t];
+        _tail = next(t);
         return c;
     }
 
