@@ -102,9 +102,16 @@ static void awu_lines(void)
     CH32RV_EXTI_INTFR = 1u << AWU_LINE;
 }
 
-/* The AWU's clock, once per boot: four periods of 16 x 63 ticks (about 8 ms
- * each) timed with micros(), between consecutive events, so the unknown
- * phase of the first one does not count. */
+/* The calibration's window: periods of 16 x window ticks, about 8 ms at the
+ * nominal clock - 63 on the LSI's 128 kHz, 23 on X035's 46.9 kHz. With 63
+ * there a period was 21.5 ms, and the first lightSleep() of a boot slept
+ * about 100 ms more than asked while it measured (200 ms took 317, CH32X035,
+ * 2026-11-05). */
+#define AWU_CAL_WINDOW (AWU_NOMINAL_HZ / 2000u < 63u ? AWU_NOMINAL_HZ / 2000u : 63u)
+
+/* The AWU's clock, once per boot: four periods of 16 x AWU_CAL_WINDOW ticks
+ * (about 8 ms each) timed with micros(), between consecutive events, so the
+ * unknown phase of the first one does not count. */
 static uint32_t awu_clock(void)
 {
     ch32rv_clock_enable(PWR);                  /* or the AWU's registers ignore the writes */
@@ -115,7 +122,7 @@ static uint32_t awu_clock(void)
 #endif
     ch32rv_irq_disable(AWU_IRQN);
     awu_lines();
-    awu_run(5, 63);
+    awu_run(5, AWU_CAL_WINDOW);
     uint32_t t0 = 0;
     for (int n = 0; n <= 4; n++) {
         const uint32_t start = micros();
@@ -132,7 +139,7 @@ static uint32_t awu_clock(void)
     }
     const uint32_t us = micros() - t0;
     AWU_CSR &= ~AWU_CSR_AWUEN;
-    return 4u * 16u * 63u * 1000000u / us;     /* 4.03e9: still 32 bits */
+    return 4u * 16u * AWU_CAL_WINDOW * 1000000u / us;     /* at most 4.03e9: still 32 bits */
 }
 
 /* AWU ticks to microseconds, in 32 bits (V003 has no 64-bit divide, and the

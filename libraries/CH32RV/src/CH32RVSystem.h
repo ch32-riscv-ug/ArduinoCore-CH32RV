@@ -39,6 +39,8 @@
  *    wakes through a reset).
  *  - Nothing sleeps by itself: only these calls do (docs/peripheral-a-design
  *    .ja.md 4.3). Serial sends what it holds before the clock stops.
+ *  - On the AWU families the first sleep of a boot measures the AWU's clock
+ *    first: about 40 ms more than asked (four 8 ms periods and a phase).
  *  - millis() keeps counting through a timer wake: the sleep is measured and
  *    added. A pin wake part-way cannot be measured, and timeDomain() moves on.
  *  - The watchdog looks paused while asleep: it cannot be stopped, so it is
