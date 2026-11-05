@@ -144,9 +144,18 @@ def choose_cases(place, items=None, caps=None):
         items, caps = series_needs()
     part, core, oep = place["chip"], place["record"], place["kind"] == "oep"
     series = series_of(part, caps)
+    from harness.series import part_capabilities
+    whole = caps
+    caps = dict(caps, **{series: part_capabilities(series, part, whole)}) if series else caps
     out = {}
     for case in ALWAYS:
-        out[case] = "run" if series_has(case, series, items, caps) else f"skip: {series} has no {case}"
+        out[case] = ("run" if series_has(case, series, items, caps) else
+                     f"skip: {part} has no {case}" if series_has(case, series, items, whole) else
+                     f"skip: {series} has no {case}")
+    if oep and out.get("uart") == "run":
+        lacking = [line for line in ("rx", "tx") if place["lines"].get(line) is None]
+        if lacking:
+            out["uart"] = "skip: the probe labels no " + " / ".join(f"{place.get('port_name') or '<port>'}.{l}" for l in lacking)
     parts = core.get("parts", {})
     out["sd"] = "run" if "sd" in parts else "skip: no sd in the record's parts"
     out["eth"] = ("run" if "eth" in parts and series_has("eth", series, items, caps)

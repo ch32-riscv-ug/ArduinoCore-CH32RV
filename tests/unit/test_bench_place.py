@@ -162,3 +162,19 @@ def test_update_keeps_other_members_and_writes_only_changes(monkeypatch):
         records.update(None, "x035", core_changes={"usb": {"to": "pc"}})
     records.update(None, "x035", port_changes={"target": "ch32x035-1ff9"})
     assert json.loads(store["oep.probe.memo/port/x035"]) == {"target": "ch32x035-1ff9"}
+
+
+def test_a_part_without_a_peripheral_and_a_port_without_its_lines():
+    from harness import series
+    assert series.part_absent()["CH32M030"]["CH32M030G8R7"] == {"SPI1"}
+    assert "USART1" not in series.part_capabilities("CH32X035", "CH32X035F8U6")
+    items, caps = place.series_needs()
+    g8 = dict(chip="CH32M030G8R7", kind="oep", port_name="m030", lines={"rx": 30, "swio": 31}, record={})
+    cases = place.choose_cases(g8, items, caps)
+    assert cases["spi"] == "skip: CH32M030G8R7 has no spi" and cases["softspi"] == "run"
+    assert cases["uart"] == "skip: the probe labels no m030.tx"
+    c8 = dict(g8, chip="CH32M030C8T7", lines={"rx": 30, "tx": 29})
+    cases = place.choose_cases(c8, items, caps)
+    assert cases["spi"] == "run" and cases["uart"] == "run"
+    link = dict(g8, kind="wchlink", lines={})
+    assert place.choose_cases(link, items, caps)["uart"] == "run"   # a WCH-Link's own UART bridge

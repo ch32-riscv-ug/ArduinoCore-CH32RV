@@ -304,6 +304,18 @@ def enter_hid(target):
     raise RuntimeError("HID bootloader has no accessible hidraw node after udev settling")
 
 
+def wait_for_probe(address, tool, env, logs, chip, timeout=60):
+    """The place again, once the probe answers after a power cycle (it boots for some seconds)."""
+    deadline = time.monotonic() + timeout
+    while True:
+        time.sleep(2)
+        try:
+            return places.resolve(address, tool, env, logs, chip=chip)
+        except Exception:
+            if time.monotonic() > deadline:
+                raise
+
+
 def parse_options(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--probe", action="append",
@@ -416,12 +428,17 @@ def main(argv=None):
                         result.update(status="SKIP", reason="; ".join(skips))
                     if args.execute and case == "power":
                         # The probe came back: the same chip is still on the port.
-                        time.sleep(2)
-                        again = places.resolve(address, tool, env, module.parent / "after", chip=chip)
+                        again = wait_for_probe(address, tool, env, module.parent / "after", chip)
                         if again["target_name"] != target["target_name"]:
                             raise RuntimeError(f"after the power cycle the port has {again['target_name']}")
                 except Exception as error:
                     result.update(status="FAIL", error=str(error))
+                    if args.execute and case == "power":
+                        # Pass or fail, the next case must not start while the probe still boots.
+                        try:
+                            wait_for_probe(address, tool, env, module.parent / "after-fail", chip)
+                        except Exception as again:
+                            result["after"] = str(again)
                 finally:
                     save()
                     print(f"{name}/{case}: {result['status']}", flush=True)

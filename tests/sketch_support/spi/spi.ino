@@ -5,6 +5,7 @@
  *   ready <nonce>                      READY <nonce> <build id>
  *   pins <sck> <miso> <mosi> <cs>      SoftSPI on these: PINS <1 opened / 0 refused>
  *   hw <cs>                            SPI on its default pins: HW <sck> <miso> <mosi>
+ *                                      (HW NONE on a part without SPI)
  *   xfer <mode> <lsb> <word> <bytes>   CS low; transfer() each byte (hex,
  *                                      two digits each), then transfer16(word,
  *                                      hex); CS high:
@@ -95,6 +96,7 @@ void loop()
             SerialDMSeq.print("PINS ");
             SerialDMSeq.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
         } else if (strncmp(line, "hw ", 3) == 0) {
+#if defined(SPI_INTERFACES_COUNT)
             p += 3;
             cs = (int)strtol(p, &p, 10);
             pinMode(cs, OUTPUT);
@@ -107,6 +109,9 @@ void loop()
             SerialDMSeq.print(PIN_SPI_MISO);
             SerialDMSeq.print(' ');
             SerialDMSeq.println(PIN_SPI_MOSI);
+#else
+            SerialDMSeq.println("HW NONE");   /* the part has no SPI (CH32RV_SPI1_ABSENT); SoftSPI still runs */
+#endif
         } else if (strncmp(line, "xfer ", 5) == 0) {
             p += 5;
             const unsigned long mode = strtoul(p, &p, 10);
