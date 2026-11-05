@@ -10,6 +10,7 @@ gpio_lines), and the planned features on their role labels (tests/BENCH.ja.md §
   back to the probe is compared here.
 - periph.adc: a labelled pad the DUT names as an ADC channel (not one a defect of the board's record takes): the probe
   drives it low, then high: analogRead() is under 5 % of full scale, then over 95 %.
+- periph.adc-stream: CH32RVAdcStream on one or two such pads, the probe's PWM on the first (test_adc_stream).
 - periph.can / i2s / argb / rs485 / qspi: not implemented in the core. With their lines labelled the test fails,
   saying so; that is the reminder that the bench is ready for them."""
 import json
@@ -167,6 +168,100 @@ def test_adc(dut, oep_host, record_property):
     finally:
         gpio.configure(line["channel"], Gpio.INPUT)
         core.plan_release(host, [gpio.fn])
+
+
+def test_adc_stream(dut, oep_host, ws_run, record_property):
+    """periph.adc-stream: CH32RVAdcStream (the ADC by DMA) on the labelled pads the DUT names as ADC channels (not
+    the record's defects'). The probe's PWM drives the first, its GPIO holds the second (when there is one) high or
+    low; the sketch reads 16 halves of 256 rounds and reports the square wave it saw on the first (samples over 3/4
+    of full scale high, under 1/4 low, the rounds of its rises) and the second's range. One capture of the lines, a
+    WireSkein section per condition judging the stimulus (becomes: the probe's wave and level); compared here: the
+    wave's frequency from the rises (rounds between the first and last over the rate sampleRate() says) within 3 %
+    of the probe's, its duty within 0.03 of the probe's, no overrun, and the second pin's range at its level."""
+    from oep_client import core
+    from oep_client.fixture import Gpio, Pwm
+    from wireskein.runlog import becomes
+    case = settings(__file__)
+    lost = {int(f.split(":")[1]) for d in case["target"].get("record", {}).get("defects", [])
+            for f in d.get("lose", []) if f.startswith("adc:")}
+    ready(dut, case)
+    found = []
+    for candidate in gpio_lines(oep_host, case["target"]):
+        channel = int(ask(dut, f"acaps {candidate['pin']}", rb"ACAPS (-?\d+)").group(1))
+        if channel >= 0 and channel not in lost:
+            found.append((candidate, channel))
+        if len(found) == 2:
+            break
+    if not found:
+        pytest.skip("no labelled <port>@<pad> line is an ADC channel")
+    (wave, wave_ch), *rest = found
+    record_property("lines", json.dumps([f"{line['pad']} channel {ch}" for line, ch in found]))
+    host = oep_host.host
+    pwm, gpio = Pwm(host), Gpio(host)
+    core.plan_apply(host, pwm.assignments(wave["channel"]))
+    if rest:
+        core.plan_apply(host, [(gpio.fn, 1, rest[0][0]["channel"])])
+    # (wave Hz, duty, the second pin's level or None for one pin)
+    conditions = [(1000, 0.5, None)]
+    if rest:
+        conditions += [(2000, 0.25, 1), (1000, 0.75, 0)]
+    results, wrong = {}, []
+
+    def steps(wait):
+        with ws_run.section(1, f"adc stream {' '.join(line['pad'] for line, _ in found)}"):
+            for hz, duty, second in conditions:
+                name = f"{hz} Hz duty {duty}" + ("" if second is None else f", {rest[0][0]['pad']} {second}")
+                want = [becomes(wave["pad"], freq_hz=hz, duty=duty, irregular_max=3, min_periods=20, duty_abs=0.01)]
+                if second is not None:
+                    want.append(becomes(rest[0][0]["pad"], level=second))
+                with ws_run.section(2, name, expect=want):
+                    made = pwm.start(0, hz, round(duty * Pwm.FULL))
+                    if second is not None:
+                        gpio.configure(rest[0][0]["channel"], Gpio.OUTPUT_HIGH if second else Gpio.OUTPUT_LOW)
+                    wait(0.02)
+                    pins = [wave["pin"]] + ([rest[0][0]["pin"]] if second is not None else [])
+                    command = f"astream 250000 16 {' '.join(str(p) for p in pins)}"
+                    ws_run.command(command)
+                    dut.write(command + "\n")
+                    end = time.monotonic() + 5
+                    while True:
+                        try:
+                            m = dut.expect(rb"ASTREAM ([\d ]+)\r?\n", timeout=0.05)
+                            break
+                        except Exception:
+                            assert time.monotonic() < end, f"{name}: no ASTREAM"
+                            wait(0.05)
+                    ws_run.reply(m.group(0).decode())
+                    v = [int(x) for x in m.group(1).split()]
+                    if v[0] == 0:
+                        wrong.append(f"{name}: begin() refused")
+                        continue
+                    rate, step, overruns, rounds, high, low, rises, first, last, lo1, hi1, full = v
+                    got_hz = rate * (rises - 1) / (last - first) if rises > 1 and last > first else 0.0
+                    got_duty = high / (high + low) if high + low else 0.0
+                    results[name] = dict(rate=rate, step=step, rounds=rounds, hz=round(got_hz, 2),
+                                         duty=round(got_duty, 4), overruns=overruns, second=[lo1, hi1],
+                                         probe_hz=made.hz, probe_duty=made.duty / Pwm.FULL)
+                    if abs(got_hz / made.hz - 1) > 0.03:
+                        wrong.append(f"{name}: {got_hz:.1f} Hz from the stream, the probe makes {made.hz:.1f}")
+                    if abs(got_duty - made.duty / Pwm.FULL) > 0.03:
+                        wrong.append(f"{name}: duty {got_duty:.3f} from the stream, the probe makes {made.duty / Pwm.FULL:.3f}")
+                    if overruns:
+                        wrong.append(f"{name}: {overruns} overruns")
+                    if second == 1 and lo1 < full * 0.9 or second == 0 and hi1 > full * 0.1:
+                        wrong.append(f"{name}: the second pin read {lo1}..{hi1}")
+                    wait(0.02)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [line for line, _ in found], rate=1_000_000, steps=steps)
+    finally:
+        pwm.stop(0)
+        core.plan_release(host, [pwm.fn])
+        if rest:
+            gpio.configure(rest[0][0]["channel"], Gpio.INPUT)
+            core.plan_release(host, [gpio.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
 
 
 @pytest.mark.parametrize("feature", ["can", "i2s", "argb", "rs485", "qspi"])

@@ -68,21 +68,49 @@
 
 static CH32RVAdcStream *active;
 
-static void adc_halt(void)
+/* Stopping by clearing CONT lets the conversion in flight, and with several
+ * pins the rest of the sequence, finish after the stop: a result left behind,
+ * its EOC set, which analogRead() after end() returned at once instead of its
+ * own pin (the stream's last pin read; CH32X035, 2026-11-05). So a stop powers
+ * the ADC down (ADON 0 drops whatever is converting) and up again (ADON 0 to 1
+ * starts nothing: measured, no conversion follows without SWSTART), the mode
+ * is set while it waits, and a start is the one write that sets SWSTART. */
+static void adc_restart(uint32_t mode)
 {
-    const bool was_running = (CH32RV_ADC_CTLR2 & ADC_CTLR2_CONT) != 0u;
-    CH32RV_ADC_CTLR2 &= ~(ADC_CTLR2_CONT | ADC_CTLR2_DMA);
-    CH1_CFGR = 0;
-    DMA_INTFCR = CH1_ALL;
-    if (was_running) {
-        /* A conversion in flight still ends; let it, so the next start begins clean. */
-        for (uint32_t t0 = micros(); (CH32RV_ADC_STATR & CH32RV_ADC_STATR_EOC) == 0u;) {
-            if ((uint32_t)(micros() - t0) > 1000u) {
-                break;
-            }
-        }
+    CH32RV_ADC_CTLR2 = mode;
+    CH32RV_ADC_CTLR2 = mode | CH32RV_ADC_CTLR2_ADON;
+    for (volatile int settle = 0; settle < 1000; settle++) {   /* as analogRead()'s power-up */
     }
     (void)CH32RV_ADC_RDATAR;
+}
+
+/* What CTLR2 holds besides the bits this file sets (analogRead()'s trigger
+ * selection, a temperature sensor enable). */
+static uint32_t adc_mode(void)
+{
+    return CH32RV_ADC_CTLR2 & ~(CH32RV_ADC_CTLR2_ADON | ADC_CTLR2_CONT | ADC_CTLR2_DMA | CH32RV_ADC_CTLR2_SWSTART);
+}
+
+static void adc_halt(void)
+{
+    adc_restart(adc_mode());
+    CH1_CFGR = 0;
+    DMA_INTFCR = CH1_ALL;
+}
+
+/* Continuous with DMA, the ADC up and waiting (the DMA channel set up
+ * already): the mode for adc_go(). */
+static uint32_t adc_arm(void)
+{
+    const uint32_t mode = adc_mode();
+    adc_restart(mode);
+    return mode | ADC_CTLR2_CONT | ADC_CTLR2_DMA;
+}
+
+/* The start: from the first pin of the sequence. */
+static void adc_go(uint32_t mode)
+{
+    CH32RV_ADC_CTLR2 = mode | CH32RV_ADC_CTLR2_ADON | CH32RV_ADC_CTLR2_SWSTART;
 }
 
 bool CH32RVAdcStream::begin(pin_size_t pin, uint32_t rate)
@@ -173,9 +201,9 @@ uint32_t CH32RVAdcStream::measure(uint8_t step)
     CH1_MADDR = (uint32_t)(uintptr_t)scratch;
     CH1_CNTR = n;
     CH1_CFGR = CFGR_MINC | CFGR_16BIT | CFGR_PL_HI | CFGR_EN;
-    CH32RV_ADC_CTLR2 |= ADC_CTLR2_CONT | ADC_CTLR2_DMA;
+    const uint32_t mode = adc_arm();
     const uint32_t t0 = micros();
-    CH32RV_ADC_CTLR2 |= CH32RV_ADC_CTLR2_SWSTART;
+    adc_go(mode);
     uint32_t dt = 0;
     while ((DMA_INTFR & CH1_TCIF) == 0u) {
         dt = (uint32_t)(micros() - t0);
@@ -201,7 +229,7 @@ void CH32RVAdcStream::end()
     }
     /* What analogRead() set up and keeps relying on (wiring_analog.c). */
     CH32RV_ADC_CTLR1 = 0;
-    CH32RV_ADC_CTLR2 = CH32RV_ADC_CTLR2_EXTSEL_SWSTART | CH32RV_ADC_CTLR2_EXTTRIG | CH32RV_ADC_CTLR2_ADON;
+    adc_restart(CH32RV_ADC_CTLR2_EXTSEL_SWSTART | CH32RV_ADC_CTLR2_EXTTRIG);
     CH32RV_ADC_SAMPTR1 = 0x00FFFFFFu;
     CH32RV_ADC_SAMPTR2 = 0x3FFFFFFFu;
     CH32RV_ADC_RSQR1 = 0;
@@ -238,8 +266,7 @@ bool CH32RVAdcStream::startContinuous(uint16_t *buffer, uint16_t samples)
     CH1_CFGR = CFGR_MINC | CFGR_CIRC | CFGR_16BIT | CFGR_PL_HI | CFGR_HTIE | CFGR_TCIE | CFGR_EN;
     _running = true;
     ch32rv_irq_enable(CH_IRQN);
-    CH32RV_ADC_CTLR2 |= ADC_CTLR2_CONT | ADC_CTLR2_DMA;
-    CH32RV_ADC_CTLR2 |= CH32RV_ADC_CTLR2_SWSTART;
+    adc_go(adc_arm());
     return true;
 }
 

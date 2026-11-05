@@ -248,6 +248,7 @@ needs = ["TIM1"]
 
 [[item]]
 id = "adc-stream"           # CH32RVAdcStream (ADC with DMA)
+test = "periph::test_adc_stream"
 scope = "series"
 needs = ["ADC1"]
 

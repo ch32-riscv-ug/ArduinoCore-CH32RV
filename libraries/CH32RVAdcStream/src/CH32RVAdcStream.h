@@ -28,7 +28,11 @@
  *
  * Several pins (up to six) are converted in turn, one round per sample:
  * the buffer then holds pin 0, pin 1, ... pin 0, pin 1, ..., and
- * sampleRate() counts rounds.
+ * sampleRate() counts rounds. Not right yet on CH32X035: there the
+ * buffer can begin one value early (pin 0's place holds the last pin's, the
+ * rest following), always at the fastest sample time and sometimes at the
+ * slowest - seen with two and three pins, 2026-11-05, cause not found
+ * (tests/instrumented/periph test_adc_stream; TODO.ja.md).
  *
  * Values are the converter's own (0 .. 4095, or 0 .. 1023 on 10-bit parts),
  * without analogRead()'s scaling or calibration offset.

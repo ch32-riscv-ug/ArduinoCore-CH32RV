@@ -134,7 +134,7 @@ uv run --no-project python tests/coverage.py <--out のディレクトリ> ... [
 - `test` は 1 つか、そのリストです（どれが通っても数える）。USB デバイスは、相手が PC の `usb` と、ESP32-S3 の
   `usb-peer` のどちらでも数えます。
 - `test` の無い項目は、コアにあって実機の試験がまだ無い機能です（スリープ、ウォッチドッグ、DAC、Wire のスレーブ、
-  ADC の DMA、HSADC、TaskKit、SDI / RTT / DMDATA のコンソール）。
+  HSADC、TaskKit、SDI / RTT / DMDATA のコンソール）。
   表には「no test」と出て、分母に入ります。
 - `run_hardware.py`（harness/place.py）も同じ項目を読んで、その系列で流せる case を決めます。
 - 系列の表は、系列ごとに一番よい結果（✓ が ✗ より、✗ が skip より上）を出します。その周辺機能の無い系列は n/a、
