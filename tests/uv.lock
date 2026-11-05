@@ -21,12 +21,12 @@ hardware = [
 
 [package.metadata]
 requires-dist = [
-    { name = "oep-client-python", marker = "extra == 'hardware'", specifier = "==0.0.47" },
+    { name = "oep-client-python", marker = "extra == 'hardware'", specifier = "==0.0.48" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-embedded-arduino-cli", marker = "extra == 'hardware'", specifier = "==1.11.0" },
     { name = "pytest-embedded-arduino-cli-ch32rv", marker = "extra == 'hardware'", specifier = "==0.0.8" },
     { name = "pytest-embedded-wireskein", marker = "extra == 'hardware'", specifier = "==0.0.6" },
-    { name = "wireskein", marker = "extra == 'hardware'", specifier = "==0.0.19" },
+    { name = "wireskein", marker = "extra == 'hardware'", specifier = "==0.0.20" },
 ]
 provides-extras = ["hardware"]
 
@@ -121,15 +121,15 @@ wheels = [
 
 [[package]]
 name = "oep-client-python"
-version = "0.0.47"
+version = "0.0.48"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyserial" },
     { name = "pyusb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/ee/09bfaf75cf9bd7db74fa8d2fbe1d4fbcbfa550fbdf48f7137979963ed2e1/oep_client_python-0.0.47.tar.gz", hash = "sha256:347d571a98ec904d1373631ed0689a8ccaf7285243c02d3017a05723099fa153", size = 2022814, upload-time = "2026-11-05T05:56:15.956Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/d3/5e801dcbb03a2ea5d07b0f3a39a3cf2afcde153d645556e04bed277a43cf/oep_client_python-0.0.48.tar.gz", hash = "sha256:0d1d2b403d091005fe87d1e044928bc134dec97c3113148c15613429f246fde1", size = 2024348, upload-time = "2026-11-05T08:42:57.684Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ab/f2/9dd1fdb7f00c6f1e1f0e2018ca17e756754bb9755bd418b66f7952bdd6eb/oep_client_python-0.0.47-py3-none-any.whl", hash = "sha256:f0946a61374a03d01004b8435a0b1a0e26e02e64d53912f9ed6380f513b76eeb", size = 928759, upload-time = "2026-11-05T05:56:14.092Z" },
+    { url = "https://files.pythonhosted.org/packages/74/36/eb7d3c208b5dd551266e28fb5767a9d11d4fdde1cc72772f366c156fa9de/oep_client_python-0.0.48-py3-none-any.whl", hash = "sha256:91f6afdabea935f3118c481a2d30a875119b7ab07e76c8d24856642407ac6870", size = 929184, upload-time = "2026-11-05T08:42:56.033Z" },
 ]
 
 [[package]]
@@ -334,12 +334,12 @@ wheels = [
 
 [[package]]
 name = "wireskein"
-version = "0.0.19"
+version = "0.0.20"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/02/7f/079c2736a3b5668ba7c4b933d1921ceb937b0478d49df1333c2c6a7ef191/wireskein-0.0.19.tar.gz", hash = "sha256:89912c45ab00bfcba8d50936b80dac4d015b6ba7c9abc48bcef5503be5eac741", size = 424609, upload-time = "2026-11-05T07:34:06.382Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b0/e1/595ceee1e1b51bd5eef3428fa9bf71589f15b3464b62b7ba9e5bdbecf390/wireskein-0.0.20.tar.gz", hash = "sha256:bcdd08a1d25718d0e62c8e9db83224a182c5abceb81840b8ef9f70278d52f979", size = 429766, upload-time = "2026-11-05T08:42:46.501Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/bc/339f40216374514b6aba26e4de5d3cf39507b75edd99aa7b959c5830f5a3/wireskein-0.0.19-py3-none-any.whl", hash = "sha256:959c0ff3eb0da405d3c46aa4545eea8bc9b80b457d38132bb0ef070ef447d407", size = 257237, upload-time = "2026-11-05T07:34:04.355Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/4d/d29a1663f379a0bcc9decefe40f8ca677d838415b7136fc819669fedf329/wireskein-0.0.20-py3-none-any.whl", hash = "sha256:ef5466abff5be3a4b76ffa6eaa49c24595d83f0d9b7604cee2c7642411aa65f4", size = 259353, upload-time = "2026-11-05T08:42:44.579Z" },
 ]

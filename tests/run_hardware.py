@@ -100,6 +100,7 @@ HELPERS = {
     "usb-classes": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-media": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
     "gpio": [TESTS / "instrumented/bench_lines.py"],
+    "uart": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "sd": [TESTS / "instrumented/bench_lines.py"],
     "periph": [TESTS / "instrumented/bench_lines.py"],
     "signals": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
