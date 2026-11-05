@@ -271,6 +271,7 @@ scope = "once"
 
 [[item]]
 id = "taskkit"              # CH32RVTaskKit
+test = "synckit::test_taskkit_contract"
 scope = "once"
 
 [[item]]

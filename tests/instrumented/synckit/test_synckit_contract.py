@@ -7,7 +7,12 @@ What must hold, on every series (CH32V003 included, which has no atomic instruct
 nothing is lost or duplicated that the parts did not report as refused, the 64-bit value
 read inside a CriticalSection is never torn, and the critical section stays short. The
 unguarded read of the same value is recorded as the negative control; it may or may not
-catch a torn read in a given run."""
+catch a torn read in a given run.
+
+taskkit.executor (test_taskkit_contract): CH32RVTaskKit's Executor in loop() for 1 s with three Works - one the
+same 10 kHz interrupt posts, one woken every 10 ms by a Period, one by a 50 ms Deadline. Posts coalesce (runs at
+most posts, at least one), and the last run saw every post; the Period's runs and the periods it reports missed
+add up to the 100 periods; the Deadline's Work ran once, at most 5 ms late."""
 import json
 import pathlib
 import secrets
@@ -54,3 +59,18 @@ def test_synckit_contract(dut, record_property):
     assert r["reads"] > 1000
     assert r["torn_guarded"] == 0
     assert r["max_cs_us"] < 50, "a critical section around one 64-bit copy took too long"
+
+
+def test_taskkit_contract(dut, record_property):
+    nonce = secrets.token_hex(4)
+    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d+)", timeout=15)
+    assert m.group(2) != b"0", "no timer with an update interrupt could be leased"
+    m = ask(dut, "task 1000", rb"TASK" + rb" (\d+)" * 7, timeout=15)
+    posts, runs, seen, period_runs, missed, deadline_runs, late = (int(g) for g in m.groups())
+    for k, v in zip(("posts", "runs", "seen", "period_runs", "missed", "deadline_runs", "late_ms"), m.groups()):
+        record_property(k, int(v))
+    assert 8000 <= posts <= 12000, "the 10 kHz interrupt did not post for ~1 s"
+    assert 1 <= runs <= posts, "posts coalesce: no more runs than posts, at least one"
+    assert seen == posts, "the last run came after the last post"
+    assert 99 <= period_runs + missed <= 101, f"{period_runs} period runs and {missed} missed for 100 periods"
+    assert deadline_runs == 1 and late <= 5, f"the deadline's work ran {deadline_runs} times, {late} ms late"

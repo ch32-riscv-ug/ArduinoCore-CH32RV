@@ -10,10 +10,15 @@
  *                      <torn guarded> <torn unguarded> <reads> <max cs us>
  *                  (gaps: sequence jumps not explained by drops; breaks: ring bytes out of order
  *                   beyond its drops; torn: 64-bit reads whose halves differ)
+ *   task <ms>      CH32RVTaskKit for as long: a Work the same interrupt posts, one woken every
+ *                  10 ms (Period), one by a 50 ms Deadline, loop() running the executor:
+ *                  TASK <posts> <runs> <posts seen by the last run> <period runs> <periods missed>
+ *                     <deadline runs> <deadline late ms>
  *   fail <step>    when the timer cannot be had */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <CH32RVSyncKit.h>
+#include <CH32RVTaskKit.h>
 #include <CH32RVTimer.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,12 +36,38 @@ static volatile uint64_t wide;          /* both halves move together: +0x1000000
 static volatile uint32_t isrCalls, sent, qDropped, notified, ringWritten, ringDropped;
 static volatile bool armed;
 
+/* TaskKit: the interrupt posts `posted`; each run records how many posts it had seen. */
+static volatile bool taskArmed;
+static volatile uint32_t taskPosts;
+static uint32_t taskRuns, taskSeen, periodRuns, deadlineRuns, deadlineLate;
+static uint32_t deadlineAt;
+static CH32RVSyncKit::Period tick(10);
+static CH32RVSyncKit::Deadline due;
+static void onPosted()
+{
+    taskRuns++;
+    taskSeen = taskPosts;
+}
+static void onPeriod() { periodRuns++; }
+static void onDeadline()
+{
+    deadlineRuns++;
+    deadlineLate = millis() - deadlineAt;
+    due.disarm();
+}
+static CH32RVTaskKit::Work posted(onPosted), periodic(onPeriod), timed(onDeadline);
+static CH32RVTaskKit::Executor app;
+
 static CH32RVTimerOwner owner = {&owner, nullptr, nullptr};
 static CH32RVTimerLease lease;
 static uint8_t timerNumber;
 
 static void onTick(void *)
 {
+    if (taskArmed) {
+        taskPosts = taskPosts + 1;
+        posted.post();
+    }
     if (!armed) {
         return;
     }
@@ -168,6 +199,34 @@ static void run(uint32_t ms)
     say("RUN", out, 16);
 }
 
+static void task(uint32_t ms)
+{
+    app.attach(posted);
+    app.attach(periodic);
+    app.attach(timed);
+    app.runOnce();                      /* a Work starts ready: its first run, before the counting */
+    taskRuns = taskSeen = periodRuns = deadlineRuns = deadlineLate = 0;
+    taskPosts = 0;
+    periodic.wakeEvery(tick);
+    timed.wakeOn(due);
+    const uint32_t t0 = millis();
+    tick.start(t0);
+    tick.clearMissed();
+    deadlineAt = t0 + 50u;
+    due.arm(t0, 50u);
+    taskArmed = true;
+    while ((uint32_t)(millis() - t0) < ms) {
+        app.runOnce();
+    }
+    taskArmed = false;
+    app.runOnce();                      /* what the last posts asked for */
+    app.detach(posted);
+    app.detach(periodic);
+    app.detach(timed);
+    const uint32_t out[7] = {taskPosts, taskRuns, taskSeen, periodRuns, tick.missed(), deadlineRuns, deadlineLate};
+    say("TASK", out, 7);
+}
+
 static char line[48];
 static uint8_t used;
 
@@ -200,6 +259,12 @@ void loop()
                 SerialDMSeq.println("FAIL timer");
             } else {
                 run(strtoul(line + 4, nullptr, 10));
+            }
+        } else if (strncmp(line, "task ", 5) == 0) {
+            if (!timerNumber && !startTimer()) {
+                SerialDMSeq.println("FAIL timer");
+            } else {
+                task(strtoul(line + 5, nullptr, 10));
             }
         } else if (used == 0 && line[0]) {
             SerialDMSeq.println("ERROR COMMAND");
