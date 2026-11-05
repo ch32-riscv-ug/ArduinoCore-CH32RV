@@ -4,8 +4,9 @@
  * sketch's pin numbers.
  *
  *   ready <nonce>             READY <nonce> <build id>
- *   uart2 <rx> <tx> <baud>    UART2 <ok>: Serial1 on those pads, then every byte
- *                             it receives goes back out (until `stop`)
+ *   uart2 <rx> <tx> <baud>    UART2 <ok> <USART>: Serial1 on those pads (the
+ *                             USART it took, 0 if none), then every byte it
+ *                             receives goes back out (until `stop`)
  *   stop                      STOP <bytes echoed>
  *   adc <pin>                 ADC <reading> <full scale>
  *   acaps <pin>               ACAPS <ADC channel of the pad, or -1> */
@@ -40,7 +41,11 @@ static void reply(char *command)
         echoing = (bool)Serial1;
         echoed = 0;
 #endif
-        SerialDMSeq.printf("UART2 %d\r\n", echoing ? 1 : 0);
+#if defined(SERIAL_PORT_HARDWARE1)
+        SerialDMSeq.printf("UART2 %d %d\r\n", echoing ? 1 : 0, (int)Serial1.peripheral());
+#else
+        SerialDMSeq.printf("UART2 0 0\r\n");
+#endif
     } else if (!strcmp(argv[0], "stop")) {
 #if defined(SERIAL_PORT_HARDWARE1)
         Serial1.end();

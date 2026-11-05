@@ -53,7 +53,7 @@ needs = ["I2C1"]
 
 [[item]]
 id = "uart2"
-test = "periph::test_uart2"
+test = "periph::test_serial_routes"
 scope = "series"
 any_of = ["USART2", "UART2"]
 
@@ -210,7 +210,8 @@ test = "signals::test_interrupt"
 scope = "series"
 
 [[item]]
-id = "route"                # setRoute() / setPins() of the peripherals (remap registers per series)
+id = "route"                # setRoute() / setPins() of the peripherals (remap registers per series); Serial's so far
+test = "periph::test_serial_routes"
 scope = "series"
 
 [[item]]
@@ -235,6 +236,7 @@ needs = ["I2C1"]
 
 [[item]]
 id = "spi-slave"            # CH32RVSPISlave
+test = "spi::test_spi_slave"
 scope = "series"
 needs = ["SPI1"]
 

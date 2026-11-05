@@ -1,11 +1,13 @@
 """periph (case periph): a second UART and an ADC input on `<port>@<pad>` lines the probe labels (bench_lines.py
 gpio_lines), and the planned features on their role labels (tests/BENCH.ja.md §5).
 
-- periph.uart2: Serial1 on a USART route both of whose pads are labelled (the variant's routes, place.py
-  serial_routes; not the console's USART), at 115200 8N1. The probe's UART sends 200 random bytes and the sketch
-  echoes them. Both lines stream in one capture (ws_capture.stream) with a WireSkein section: the bytes decoded on
-  the DUT's RX and TX (uart: the format, F_CPU / BRR within 3 %, no framing error), both lines idle at its start
-  and end; what came back to the probe is compared here.
+- periph.serial-routes: Serial1 begun on each pair of pads that is a USART route (the variant's routes, place.py
+  serial_routes; not the console's USART) with both pads labelled, one after another in one capture of all their
+  lines (ws_capture.stream), a WireSkein section per pair: at 115200 8N1 the probe's UART sends 64 bytes (random
+  after 00 55 AA FF) and the sketch echoes them; the bytes decoded on the DUT's RX and TX (uart: the format, F_CPU /
+  BRR within 3 %, no framing error), only that pair moving (a remap that lands elsewhere moves another line), every
+  line idle at its start and end (the probe's input pull-ups hold the lines the section does not use). Serial1 must take a USART the pair is a route of (peripheral()), and what came
+  back to the probe is compared here.
 - periph.adc: a labelled pad the DUT names as an ADC channel (not one a defect of the board's record takes): the probe
   drives it low, then high: analogRead() is under 5 % of full scale, then over 95 %.
 - periph.can / i2s / argb / rs485 / qspi: not implemented in the core. With their lines labelled the test fails,
@@ -38,64 +40,97 @@ def ready(dut, case):
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
 
 
-def test_uart2(dut, oep_host, ws_run, record_property):
+def test_serial_routes(dut, oep_host, ws_run, record_property):
     from oep_client import core, fixture, host as oh, registry
-    from wireskein.runlog import ends, starts, uart
+    from oep_client.fixture import Gpio
+    from wireskein.runlog import ends, only_moving, starts, uart
     case = settings(__file__)
     target = case["target"]
     lines = {line["pad"]: line for line in gpio_lines(oep_host, target)}
     console = {line["pad"] for line in port_lines(oep_host, target) if line["role"] in ("rx", "tx")}
     routes = target.get("serial_routes", [])
     console_usarts = {n for n, _, tx, rx in routes if {tx, rx} & console}
-    pairs = [(n, k, tx, rx) for n, k, tx, rx in routes if n not in console_usarts and tx in lines and rx in lines]
+    pairs = {}                      # (tx, rx): [(usart, route), ...] - one section per pad pair
+    for n, k, tx, rx in routes:
+        if n not in console_usarts and tx in lines and rx in lines:
+            pairs.setdefault((tx, rx), []).append((n, k))
     if not pairs:
         pytest.skip("no USART route besides the console's has both pads labelled <port>@<pad>")
-    usart, route, tx, rx = pairs[0]
-    record_property("route", f"USART{usart} route {route}: TX {tx}, RX {rx}")
+    record_property("routes", json.dumps({f"{tx}/{rx}": [f"USART{n} route {k}" for n, k in nk]
+                                          for (tx, rx), nk in pairs.items()}))
     ready(dut, case)
     host = oep_host.host
     RX, TX = (registry.FIXTURE_UART.enum["role"][r] for r in ("rx", "tx"))
-    io, used = None, None
-    for fn in core.find_all(host, "oep.fixture.uart"):
-        try:
-            core.plan_apply(host, [(fn, RX, lines[tx]["channel"]), (fn, TX, lines[rx]["channel"])])
-        except oh.Rejected:
-            continue          # the console's, or busy
-        io, used = fixture.FixtureUartIO(host, fn), fn
-        break
-    assert io is not None, "no free oep.fixture.uart on the probe for the second UART"
-    payload = bytes([0, 0x55, 0xAA, 0xFF]) + secrets.token_bytes(196)
+    uarts = core.find_all(host, "oep.fixture.uart")
     f_cpu = int(target["f_cpu"])
-    got = bytearray()
+    pads = sorted({p for pair in pairs for p in pair})
+    wrong = []
+
+    gpio = Gpio(host)
+
+    def probe_uart(tx, rx):
+        """The probe's UART on this pair (the console's is busy), and its pads' input pull-ups on every other line
+        (released or never driven, they would float): (io, fn)."""
+        core.plan_release(host, [gpio.fn])
+        others = [lines[p]["channel"] for p in pads if p not in (tx, rx)]
+        if others:
+            core.plan_apply(host, [(gpio.fn, 1, ch) for ch in others])
+            for ch in others:
+                gpio.configure(ch, Gpio.INPUT_PULLUP)
+        for fn in uarts:
+            try:
+                core.plan_apply(host, [(fn, RX, lines[tx]["channel"]), (fn, TX, lines[rx]["channel"])])
+            except oh.Rejected:
+                continue
+            return fixture.FixtureUartIO(host, fn), fn
+        raise AssertionError("no free oep.fixture.uart on the probe for Serial1")
 
     def steps(wait):
-        idle = {tx: 1, rx: 1}
-        with ws_run.section(1, f"Serial1 USART{usart} route {route} TX {tx} RX {rx}"):
-            with ws_run.section(2, "115200 8N1 echo", expect=[
-                    uart(rx, probe_baud, data=payload.hex(), errors_max=0),
-                    uart(tx, f_cpu / round(f_cpu / 115200), data=payload.hex(), errors_max=0),
-                    starts(idle), ends(idle)]):
-                ws_run.command(f"uart2 {lines[rx]['pin']} {lines[tx]['pin']} 115200")
-                dut.write(f"uart2 {lines[rx]['pin']} {lines[tx]['pin']} 115200\n")
-                m = dut.expect(rb"UART2 (\d)\r?\n", timeout=5)
-                ws_run.reply(m.group(0).decode())
-                assert m.group(1) == b"1", f"Serial1 did not start on TX {tx} / RX {rx}"
-                wait(0.02)
-                io.write(payload)
-                deadline = time.monotonic() + 5
-                while len(got) < len(payload) and time.monotonic() < deadline:
-                    wait(0.02)
-                    got.extend(io.read(480))
-                wait(0.02)
+        idle = {p: 1 for p in pads}
+        with ws_run.section(1, f"Serial1 routes {' '.join(f'{tx}/{rx}' for tx, rx in pairs)}"):
+            for (tx, rx), usarts in pairs.items():
+                payload = bytes([0, 0x55, 0xAA, 0xFF]) + secrets.token_bytes(60)
+                io, used = probe_uart(tx, rx)
+                try:
+                    probe_baud = io.configure(115200)
+                    name = " / ".join(f"USART{n} route {k}" for n, k in usarts) + f" TX {tx} RX {rx}"
+                    with ws_run.section(2, name, expect=[
+                            uart(rx, probe_baud, data=payload.hex(), errors_max=0),
+                            uart(tx, f_cpu / round(f_cpu / 115200), data=payload.hex(), errors_max=0),
+                            only_moving([tx, rx]), starts(idle), ends(idle)]):
+                        command = f"uart2 {lines[rx]['pin']} {lines[tx]['pin']} 115200"
+                        ws_run.command(command)
+                        dut.write(command + "\n")
+                        m = dut.expect(rb"UART2 (\d) (\d+)\r?\n", timeout=5)
+                        ws_run.reply(m.group(0).decode())
+                        took = int(m.group(2))
+                        if m.group(1) != b"1" or took not in {n for n, _ in usarts}:
+                            wrong.append(f"{name}: Serial1 began {m.group(1).decode()} on USART{took}")
+                        wait(0.02)
+                        io.write(payload)
+                        got = bytearray()
+                        deadline = time.monotonic() + 3
+                        while len(got) < len(payload) and time.monotonic() < deadline:
+                            wait(0.02)
+                            got.extend(io.read(480))
+                        m = ask(dut, "stop", rb"STOP (\d+)")
+                        ws_run.reply(m.group(0).decode())
+                        if bytes(got[:len(payload)]) != payload:
+                            wrong.append(f"{name}: echo differs ({len(got)} of {len(payload)} bytes back)")
+                        wait(0.02)
+                finally:
+                    core.plan_release(host, [used])
 
     try:
-        probe_baud = io.configure(115200)
-        ws_capture.stream(ws_run, oep_host, [lines[tx], lines[rx]], rate=5_000_000, steps=steps)
-        m = ask(dut, "stop", rb"STOP (\d+)")
-        record_property("echoed", int(m.group(1)))
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in pads], rate=5_000_000, steps=steps)
     finally:
-        core.plan_release(host, [used])
-    assert bytes(got[:len(payload)]) == payload, f"echo differs ({len(got)} of {len(payload)} bytes back)"
+        for p in pads:
+            try:
+                gpio.configure(lines[p]["channel"], Gpio.INPUT)
+            except Exception:
+                pass            # not this fn's channel any more
+        core.plan_release(host, [gpio.fn])
+    assert not wrong, " | ".join(wrong)
 
 
 def test_adc(dut, oep_host, record_property):

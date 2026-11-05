@@ -180,3 +180,87 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
         core.plan_release(host, [target.fn])
     record_property("read", json.dumps(read_wrong) if read_wrong else "ok")
     assert not read_wrong, " | ".join(read_wrong)
+
+
+SLAVE_HZ = 100_000                 # within what CH32RVSPISlave's README measured (100-200 kHz, one interrupt a byte)
+SLAVE_SETUP_NS = 20_000            # CS falling to the first clock: the CS interrupt selects the slave
+SLAVE_FILL = 0xA5
+
+
+def test_spi_slave(dut, oep_host, ws_run, record_property):
+    """spi.slave (case spi only): CH32RVSPISlave on the SPI's default pins, CS the first other labelled line, the
+    probe's spi-controller the master at 100 kHz with 20 us from CS to the first clock. One capture of the four lines,
+    a WireSkein section per condition judging the bus (spi: the mode, the clocks, MOSI = what the probe sent, MISO =
+    what the slave queued, then its fill byte); what the slave kept (its Result: length and bytes) and what the
+    probe read are compared here. In each of the four modes and both bit orders, 8 bytes queued and 8 clocked; then
+    in mode 0: the master clocking 10 for 8 queued (length 10, 8 kept, the fill byte after tx), and a chip select with
+    nothing queued (the fill byte throughout, missed() one more). SCK moves while CS is high only where the master's
+    idle level (CPOL) changes."""
+    from oep_client.fixture import SpiController, SpiItem
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    if case.get("case") != "spi":
+        pytest.skip("the slave is the hardware SPI's")
+    lines, sck, miso, mosi, cs, _ = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    ctrl = SpiController(host)
+    core.plan_apply(host, ctrl.assignments(lines[sck]["channel"], lines[mosi]["channel"], lines[miso]["channel"],
+                                           lines[cs]["channel"]))
+    orders = [0, 1] if ctrl.features & SpiController.FEATURE_LSB_FIRST else [0]
+    record_property("orders", json.dumps(orders))
+    conditions = [(mode, lsb, 8, 8, True) for mode in range(4) for lsb in orders]
+    conditions += [(0, 0, 8, 10, True), (0, 0, 8, 8, False)]     # clocked past what was queued; nothing queued
+    wrong = []
+
+    def steps(wait):
+        idle = {cs: 1}
+        cpol = None
+        with ws_run.section(1, f"spi slave {sck} {miso} {mosi} {cs}"):
+            for mode, lsb, size, clocked, queued in conditions:
+                name = (f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST {size} queued {clocked} clocked"
+                        if queued else f"mode {mode} nothing queued")
+                order = "lsb" if lsb else "msb"
+                same_idle = cpol is not None and (mode >> 1) == cpol
+                cpol = mode >> 1
+                sent = secrets.token_bytes(clocked)
+                armed = secrets.token_bytes(size)
+                back = (armed + bytes([SLAVE_FILL]) * clocked)[:clocked] if queued else bytes([SLAVE_FILL]) * clocked
+                want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=mode, bit_order=order, mosi_bytes=sent.hex(),
+                            miso_bytes=back.hex(), bits=8 * clocked,
+                            notices={"sck_outside_cs": "ng" if same_idle else 1}),
+                        starts(idle), ends(idle)]
+                with ws_run.section(2, name, expect=want):
+                    ctrl.configure(mode=mode, bit_order=lsb, clock_hz=SLAVE_HZ)
+                    for command, reply in ((f"slave {lines[cs]['pin']} {mode} {lsb} {SLAVE_FILL:02x}", rb"SLAVE (\d)"),
+                                           *(((f"sq {size} {armed.hex()}", rb"SQ (\d)"),) if queued else ())):
+                        ws_run.command(command)
+                        dut.write(command + "\n")
+                        m = wait_reply(dut, wait, reply)
+                        ws_run.reply(m.group(0).decode())
+                        assert m.group(1) == b"1", f"{name}: {command} refused"
+                    wait(0.01)
+                    got = ctrl.transfer([SpiItem(sent, 0, SLAVE_SETUP_NS, SLAVE_SETUP_NS)])[0].rx
+                    wait(0.01)
+                    ws_run.command("sres")
+                    dut.write("sres\n")
+                    m = wait_reply(dut, wait, rb"SRES (\S+) (\S+) (\d+) (\d+)")
+                    ws_run.reply(m.group(0).decode())
+                    length, kept, missed, overruns = m.groups()
+                    if queued:
+                        want_kept = sent[:size].hex()
+                        if (length.decode(), kept.decode(), overruns) != (str(clocked), want_kept, b"0") or missed != b"0":
+                            wrong.append(f"{name}: the slave kept {length.decode()} {kept.decode()} (missed "
+                                         f"{missed.decode()}, overruns {overruns.decode()}), want {clocked} {want_kept}")
+                    elif (length, missed) != (b"NONE", b"1"):
+                        wrong.append(f"{name}: sres {m.group(0).decode()}, want no result and missed 1")
+                    if got != back:
+                        wrong.append(f"{name}: the probe read {got.hex()}, want {back.hex()}")
+                    wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi, miso)], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [ctrl.fn])
+        dut.write("send\n")
+    record_property("results", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
