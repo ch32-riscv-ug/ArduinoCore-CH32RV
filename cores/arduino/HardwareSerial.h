@@ -140,7 +140,7 @@ public:
     void onReceiveError(CH32RVCallback<void(hardwareSerial_error_t)> function);
 
     /* For the shared interrupt handler and serialEvent() only. */
-    void irq(uint32_t base);
+    void irq(void);
     uint8_t number(void) const { return _number; }
     /* The receive errors since the last call, cleared: STATR's ORE / FE / PE
      * bits and CH32RV_SERIAL_MARK_BREAK / _FULL. */
@@ -148,11 +148,18 @@ public:
 
 private:
     bool bind(uint8_t index, const ch32rv_route_t &route);
+    uint32_t base(void) const;
     void start(void);
 
     const uint8_t _number;
     /* 0 = closed; otherwise 1 + index into the USART table. */
     uint8_t _slot;
+#if CH32RV_SERIAL_COUNT > 1
+    /* The open USART's registers, set by bind(): the interrupt and write()
+     * read it here instead of the table (an entry is 36 bytes, found by a
+     * multiply). With one USART the table's entry is a constant (base()). */
+    uint32_t _base;
+#endif
     /* Route chosen by setPins() / setRoute() for the next begin(), already
      * looked up, so begin() itself never searches: a sketch that does not name
      * pins links no route table and no search. nullptr = the default. */

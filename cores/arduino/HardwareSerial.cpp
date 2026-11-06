@@ -383,6 +383,7 @@ const UsartDesc usarts[] = {
 #endif
 };
 constexpr uint8_t USART_COUNT = (uint8_t)(sizeof usarts / sizeof usarts[0]);
+static_assert(USART_COUNT == CH32RV_SERIAL_COUNT, "base() and _base follow CH32RV_SERIAL_COUNT");
 const RouteSet route_sets[] = {
 #ifdef CH32RV_USART_HAS_1
     CH32RV_USART_SET(1)
@@ -483,8 +484,18 @@ Found find_route(uint8_t prefer, uint8_t tx, uint8_t rx, const CH32RVHardwareSer
  * caller-saved registers around the call (2026-09-29: an X035 at 8 MHz lost
  * bytes below about 200 CPU cycles a byte). Measured on V2 (V003), V3A (V103,
  * jump-instruction vector table) and V4 (X035): wch-protocols E172. */
-__attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(uint32_t base)
+__attribute__((always_inline)) inline uint32_t CH32RVHardwareSerial::base(void) const
 {
+#if CH32RV_SERIAL_COUNT > 1
+    return _base;
+#else
+    return usarts[0].base;
+#endif
+}
+
+__attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(void)
+{
+    const uint32_t base = this->base();
     const uint16_t status = CH32RV_USART_STATR(base);
 
     /* RXNEIE also raises the interrupt for the receive error flags, and those
@@ -534,7 +545,7 @@ extern "C" __attribute__((interrupt)) void ch32rv_usart_irq(void)
 {
     if (USART_COUNT == 1) {          /* one vector, so no need to ask which */
         if (owner[0]) {
-            owner[0]->irq(usarts[0].base);
+            owner[0]->irq();
         }
         return;
     }
@@ -544,7 +555,7 @@ extern "C" __attribute__((interrupt)) void ch32rv_usart_irq(void)
     for (uint8_t i = 0; i < USART_COUNT; i++) {
         if (usarts[i].irqn == irqn) {
             if (owner[i]) {
-                owner[i]->irq(usarts[i].base);
+                owner[i]->irq();
             }
             return;
         }
@@ -654,6 +665,9 @@ __attribute__((always_inline)) inline bool CH32RVHardwareSerial::bind(uint8_t in
     const UsartDesc &d = usarts[index];
     owner[index] = this;
     _slot = (uint8_t)(index + 1);
+#if CH32RV_SERIAL_COUNT > 1
+    _base = d.base;
+#endif
     _tx_pin = route.pins[0];
     _rx_pin = route.pins[1];
 
@@ -810,7 +824,7 @@ void CH32RVHardwareSerial::flush(void)
     if (!_slot) {
         return;
     }
-    const uint32_t base = usarts[index_of(_slot)].base;
+    const uint32_t base = this->base();
     while (!_tx.isEmpty()) {
     }
     while ((CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TC) == 0u) {
@@ -822,7 +836,7 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
     if (!_slot) {
         return 0;
     }
-    const uint32_t base = usarts[index_of(_slot)].base;
+    const uint32_t base = this->base();
 #if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
     /* X035's (and the same die's X033) USART TXE interrupt path is not yet reliable on every USART:
      * a burst larger than the 63-byte ring capacity can otherwise wait here
