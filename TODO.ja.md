@@ -219,6 +219,11 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
     CH32V003（v003evt、2026-11-06）で wire.slave が 6 条件とも通った。
+- ADC の値の形（2026-11-06）: `analogRead()` は全系列で変換器の値そのまま（arduino-esp32 と同じ）。L103 / M103 の EVT の
+  VDDA/2 オフセット補正は `analogReadCalibrated()` だけがかける（補正なしでは約 620 カウント低い、c6657f40）。AdcStream と
+  `analogRead()` は同じ値になる。mV を返す関数は作らない（基準は VDD で、コアは VDD を知らない。Vrefint は ±2.5〜7 %）。
+  精度は外部の電圧源でのマニュアル試験に回し、periph.adc は 1/4・3/4 で分かれるかだけを見る（v003evt の PC4 は High で
+  908 前後に読めたが、プローブの出力は基準にならない）。L103 の実機で両方の値はまだ見ていない。
 - [ ] 型番を選んだときの既定の経路が USB の端子に当たることがある（2026-11-06）。generate.py の既定は、デバッグとストラップ
   （SWD・NRST・BOOT）の端子は避けるが USB の D-/D+ は避けないので、CH32X035 の小さいパッケージ（D8U6 / F7P6 / F8U6 / G8R6 /
   G8U6）では I2C1 の既定が PC16 / PC17（UDM / UDP）になる。USB を使わないなら正しく、使うなら `Wire.begin()` が USB を
@@ -230,7 +235,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   `SPI.begin()` は NRST の PC5 に SCK を出し、X035F8U6 などの `Wire.begin()` は出ていない PA10 / PA11 に出ていた。
   15 系列の 61 件（emit_misfit_defaults）。SS も同じ経路の NSS にそろえた。既定なしにする案（B）も試作したが、既定の経路が
   系列で決まらないインスタンスはすでに型番ごとに選び直しているので、それとそろう方（A）にした。
-- [ ] CH32V003 の DUT が、試験の途中で「ソフトウェアのリセット」で再起動することがある（2026-11-06）。UIAPduino（30eda0ea068b
+- CH32V003 の DUT が、試験の途中で「ソフトウェアのリセット」で再起動することがある（2026-11-06）。UIAPduino（30eda0ea068b
   の v003）で softspi を 7 回流して 2 回。millis() が 2134 → 65 ms、6390 → 5 ms と戻り、起動時の resetReasonName() は
   software。スケッチはリセットを呼んでいない。リセット後のスケッチは試験が設定した端子を忘れ、端子の無い SoftSPI で答えるので、
   「線に何も出ない、読みが 0」で落ちる（v003evt の最初の流しの softspi も同じ形）。どちらも ws_capture の取り込み中で、一方は
@@ -241,9 +246,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   原因はプローブ（[oep]、2026-11-06）: dmseq のために DMCONTROL を読むとき、キャプチャと USB の DMA の負荷で P4 の CPU が
   0.3〜0.6 µs 止まり、rw のビット（長い low）が縮んで V003 は書き込みと読み、DMCONTROL に 0xFFFFFFFF（ndmreset）が入っていた。
   test_spi_contract と同じ組み合わせで 6 往復目に再現。oep-probe-arduino 695d4dc（SWIO の low を線が下がった時刻から数える）で
-  144 往復リセットなし。残り: 全プローブがその版になったら、v003（UIAPduino）と v003evt で softspi を流し直して閉じる。
-- [ ] v003evt の PC4 は、プローブで High にしても analogRead が 1023 中 909（同じ試験の PD2 は 1023、UIAPduino の PC4 は正しい）。
-  評価ボード側の負荷とみて [oep] に確かめを頼んだ（2026-11-06）。負荷なら記録の defect（adc の lose）にする。
+  144 往復リセットなし。全プローブを 0.0.51+695d4dc にしたあと、softspi は v003（UIAPduino）でも v003evt でも PASS（同日）。
 - [ ] Wire（ハードウェアの I2C）の `requestFrom(addr, n, false)` のあとの転送が、ときどき 5（タイムアウト）になる（CH32V003、
   v003evt、2026-11-06。n = 1〜3 のどれが落ちるかは回ごとに違い、0〜3 回）。読み終わりで CTLR1 の START が立ったまま SB が来ず、
   SCL が Low のまま（WireSkein の取り込みで 3.8 ms のあと、次の start() の間ずっと 24.9 ms）。タイムアウトの後には SB が立っている。

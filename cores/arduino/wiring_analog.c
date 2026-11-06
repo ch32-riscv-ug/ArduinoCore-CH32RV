@@ -161,7 +161,9 @@ static uint32_t ch32rv_adc_convert_raw(uint32_t base, uint32_t channel)
     return CH32RV_ADC_RDATAR_AT(base) & ((1u << CH32RV_ADC_BITS) - 1u);
 }
 
-/* The same, with the family's offset correction where it has one. */
+/* The same, with the family's offset correction where it has one: what
+ * analogReadCalibrated() and the internal-channel measurements use.
+ * analogRead() returns the converter's own value, as arduino-esp32's does. */
 static uint32_t ch32rv_adc_convert(uint32_t base, uint32_t channel)
 {
     const uint32_t raw = ch32rv_adc_convert_raw(base, channel);
@@ -211,7 +213,7 @@ static uint32_t ch32rv_adc_scale(uint32_t value)
  * a switch (CTLR2.TSVREFE, X315's VREFE) it is turned on once and left on -
  * the sensor needs about 10 us to start. The first conversion after a channel
  * change is thrown away: the sample capacitor still holds the last pad. */
-static uint32_t ch32rv_adc_read_internal(uint32_t channel)
+static uint32_t ch32rv_adc_read_internal(uint32_t channel, int calibrated)
 {
     ch32rv_adc_begin(0);
     const uint32_t base = CH32RV_ADC_BASE(0);
@@ -226,8 +228,8 @@ static uint32_t ch32rv_adc_read_internal(uint32_t channel)
      * and reads pads without it. */
     CH32RV_ADC_CTLR1_AT(base) |= CH32RV_ADC_BUFFER_ENABLE;
 #endif
-    (void)ch32rv_adc_convert(base, channel);
-    const uint32_t value = ch32rv_adc_convert(base, channel);
+    (void)ch32rv_adc_convert_raw(base, channel);
+    const uint32_t value = calibrated ? ch32rv_adc_convert(base, channel) : ch32rv_adc_convert_raw(base, channel);
 #ifdef CH32RV_ADC_BUFFER_ENABLE
     CH32RV_ADC_CTLR1_AT(base) &= ~CH32RV_ADC_BUFFER_ENABLE;
 #endif
@@ -238,7 +240,7 @@ static uint32_t ch32rv_adc_read_internal(uint32_t channel)
 int analogReadVref(void)
 {
 #ifdef CH32RV_ADC_VREFINT_CHANNEL
-    return (int)ch32rv_adc_scale(ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL));
+    return (int)ch32rv_adc_scale(ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL, 0));
 #else
     return 0;
 #endif
@@ -247,7 +249,7 @@ int analogReadVref(void)
 uint32_t ch32rv_adc_vdd_millivolts(void)
 {
 #if defined(CH32RV_ADC_VREFINT_CHANNEL) && defined(CH32RV_ADC_VREFINT_MV)
-    const uint32_t raw = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL);
+    const uint32_t raw = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL, 1);
     if (raw == 0u) {
         return 0;
     }
@@ -271,8 +273,8 @@ float analogReadTemp(void)
     /* The sensor voltage against Vrefint rather than an assumed 3.3 V supply:
      * T = (V25 - Vsense) / slope + 25, the datasheet's typicals (+/- several
      * degrees uncalibrated). */
-    const uint32_t vref = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL);
-    const uint32_t sense = ch32rv_adc_read_internal(CH32RV_ADC_TEMP_CHANNEL);
+    const uint32_t vref = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL, 1);
+    const uint32_t sense = ch32rv_adc_read_internal(CH32RV_ADC_TEMP_CHANNEL, 1);
     if (vref == 0u) {
         return __builtin_nanf("");
     }
@@ -354,6 +356,21 @@ uint16_t touchRead(uint8_t pin)
 }
 
 int analogRead(pin_size_t pin)
+{
+#ifdef NUM_ANALOG_INPUTS
+    uint8_t index = 0;
+    const uint32_t channel = ch32rv_adc_prepare(pin, &index);
+    if (channel == NOT_AN_ANALOG_PIN) {
+        return 0;
+    }
+    return (int)ch32rv_adc_scale(ch32rv_adc_convert_raw(CH32RV_ADC_BASE(index), channel));
+#else
+    (void)pin;
+    return 0;
+#endif
+}
+
+int analogReadCalibrated(pin_size_t pin)
 {
 #ifdef NUM_ANALOG_INPUTS
     uint8_t index = 0;

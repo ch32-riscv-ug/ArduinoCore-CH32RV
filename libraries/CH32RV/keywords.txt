@@ -22,6 +22,7 @@ getFreeHeap	KEYWORD2
 getCpuFreqMHz	KEYWORD2
 getVddMillivolts	KEYWORD2
 analogReadVref	KEYWORD2
+analogReadCalibrated	KEYWORD2
 analogReadTemp	KEYWORD2
 getChipModel	KEYWORD2
 getSketchSize	KEYWORD2

@@ -168,11 +168,18 @@ void SystemInit(void);
 void analogReadResolution(int bits);
 void analogWriteResolution(int bits);
 /* The ADC's internal channels (arduino-pico's names). analogReadVref(): the
- * internal reference as analogRead() would return it - 0 where the family
+ * internal reference as analogRead() would return it (uncorrected) - 0 where the family
  * has none in the data (CH32M030). analogReadTemp(): the die temperature in
  * degrees C from the datasheet's typical sensor constants, NAN where there is
  * no sensor (V00x, X033/X035, X305/X315, M030). */
 int analogReadVref(void);
+/* analogRead() is the converter's own value, as arduino-esp32's. This one
+ * adds the correction the family's vendor code applies before using the ADC
+ * (CH32L103 / M103: the EVT's VDDA / 2 offset, which otherwise reads about 620
+ * counts low); elsewhere it is analogRead(). Not a millivolt reading: the ADC's
+ * reference is VDD, which the core does not know (CH32RV.getVddMillivolts()
+ * estimates it from Vrefint, a few percent either way). */
+int analogReadCalibrated(pin_size_t pin);
 float analogReadTemp(void);
 /* arduino-esp32's: the TouchKey's raw count on an analog pin. It moves with
  * the pin's capacitance, so a finger on a pad changes it; an unconnected pad

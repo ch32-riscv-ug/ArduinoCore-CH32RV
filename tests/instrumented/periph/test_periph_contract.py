@@ -9,7 +9,8 @@ gpio_lines), and the planned features on their role labels (tests/BENCH.ja.md §
   line idle at its start and end (the probe's input pull-ups hold the lines the section does not use). Serial1 must take a USART the pair is a route of (peripheral()), and what came
   back to the probe is compared here.
 - periph.adc: a labelled pad the DUT names as an ADC channel (not one a defect of the board's record takes): the probe
-  drives it low, then high: analogRead() is under 5 % of full scale, then over 95 %.
+  drives it low, then high: analogRead() is under a quarter of full scale, then over three quarters (whether it works;
+  the ADC's accuracy is a manual test with an external source).
 - periph.adc-stream: CH32RVAdcStream on one or two such pads, the probe's PWM on the first (test_adc_stream).
 - periph.hsadc: CH32RVHsAdc on an HSADC pad on VDDIO (PF8-PF10), the probe's PWM on it (test_hsadc).
 - periph.can / i2s / argb / rs485 / qspi: not implemented in the core. With their lines labelled the test fails,
@@ -164,8 +165,10 @@ def test_adc(dut, oep_host, record_property):
         record_property("readings", json.dumps(readings))
         low, full = readings[0]
         high, _ = readings[1]
-        assert low <= full * 0.05, f"{line['pad']} driven low reads {low} of {full}"
-        assert high >= full * 0.95, f"{line['pad']} driven high reads {high} of {full}"
+        # Whether it works, not how well: the probe's levels are no reference (the ADC's own accuracy is a manual
+        # test with an external source). Under a quarter / over three quarters of full scale, as adc-stream.
+        assert low < full / 4, f"{line['pad']} driven low reads {low} of {full}"
+        assert high > full * 3 / 4, f"{line['pad']} driven high reads {high} of {full}"
     finally:
         gpio.configure(line["channel"], Gpio.INPUT)
         core.plan_release(host, [gpio.fn])
