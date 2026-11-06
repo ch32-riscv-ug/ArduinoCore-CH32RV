@@ -224,10 +224,13 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   SCK を NRST の PC5 に出す（同じファイルの説明では、チップがリセットする）。device-data 10a71f8（V006 系の NRST を 1 本に）で
   V005 の既定が remap-4 から default に移って目に入った（2026-11-06）。直し方: その型番を ABSENT にする、型番ごとに別の経路を
   既定にする、`reset` メニューのときだけ外す、などを比べる。
-- [ ] softspi（SoftSPI）が CH32V003 で途中から線に出なくなることがある（2026-11-06）。UIAPduino（30eda0ea068b の v003、PD2 /
-  PA1 / PA2）で、output-only の 10 条件のうち 5 番目（mode 2 MSBFIRST）まで通り、6 番目からは 3 本とも動かない。スケッチは
-  XFER に答え続け、読みは 000000。v003evt の最初の流しでも読みが 0 で落ち、2 回目と v006evt では通った。端子の設定が途中で
-  入力に戻る、などを疑う。次: 落ちた回の GPIO の CFGLR を XFER ごとに出して確かめる。
+- [ ] CH32V003 の DUT が、試験の途中で「ソフトウェアのリセット」で再起動することがある（2026-11-06）。UIAPduino（30eda0ea068b
+  の v003）で softspi を 7 回流して 2 回。millis() が 2134 → 65 ms、6390 → 5 ms と戻り、起動時の resetReasonName() は
+  software。スケッチはリセットを呼んでいない。リセット後のスケッチは試験が設定した端子を忘れ、端子の無い SoftSPI で答えるので、
+  「線に何も出ない、読みが 0」で落ちる（v003evt の最初の流しの softspi も同じ形）。どちらも ws_capture の取り込み中で、一方は
+  プローブの spi-target を使う最中。DUT の外から（SWIO のデバッグの線、ch32rv の dmseq やブローカー、プローブ）リセットが入る
+  道筋を [oep] と [ch32rv] に調べてもらっている。試験の側は、起動を知らせる行（BOOT とリセットの理由）をスケッチに足し、
+  途中のリセットを「線が出ない」でなく「DUT がリセットした」と報告できるようにしたい。
 - [ ] v003evt の PC4 は、プローブで High にしても analogRead が 1023 中 909（同じ試験の PD2 は 1023、UIAPduino の PC4 は正しい）。
   評価ボード側の負荷とみて [oep] に確かめを頼んだ（2026-11-06）。負荷なら記録の defect（adc の lose）にする。
 - [ ] Wire（ハードウェアの I2C）の `requestFrom(addr, n, false)` のあとの転送が、ときどき 5（タイムアウト）になる（CH32V003、
