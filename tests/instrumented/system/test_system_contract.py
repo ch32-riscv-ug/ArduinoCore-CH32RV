@@ -7,8 +7,8 @@
   first is the sketch's timing line, held low by the probe's input pull-down when the DUT lets it go, the second
   the wake line, which the probe drives. One capture of both, a WireSkein section per condition. The timing line is
   high for exactly what is timed: from the watchdog's last feed until its reset lets the line go, or through a
-  sleep. Its high time is read from WireSkein's analysis (states) and judged here against the condition's bounds,
-  written back with the run (ws_run.result), so WireSkein's report holds it with the rest.
+  sleep. Each condition's section expects one whole high pulse of the condition's width there (WireSkein's pulses,
+  judged by WireSkein); the widths it measures are recorded (high_s) and the timer sleep's compared with millis().
   - watchdog: wdtEnable(ms) fed every 50 ms for 600 ms (no reset meanwhile: FED comes back), then not fed; the
     high time is the timeout - within -7 % / +3 % of ms on X033 / X035, whose IWDG runs from HSI / 1024 (the
     conversion rounds down, 46 for 46.875 ticks a millisecond), -60 % / +70 % elsewhere (the LSI is specified that
@@ -94,25 +94,11 @@ def test_reset_reasons(dut, oep_host, record_property):
     assert external == RESET_EXTERNAL, f"after NRST resetReason() is {external}"
 
 
-def high_times(path, pad):
-    """The timing line's highs in the capture, in order (WireSkein's states, every pulse on its own: max_odd=None
-    keeps of_file() from gathering odd pulses into one stretch of activity): [(t0 tick, seconds)]."""
-    from wireskein import states
-    found = states.of_file(path, pins=[pad], max_odd=None)
-    rate, out = found["tick_hz"], []
-    for part in found["parts"]:
-        for s in part["lines"][pad]:
-            if s.get("level") == 1:
-                out.append((s["t0"], (s["t1"] - s["t0"]) / rate))
-            elif "odd" in s:
-                out.append((s["odd"], s["high_s"]))
-    return out
-
-
 def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
     from oep_client import core
     from oep_client.fixture import Gpio
-    from wireskein.runlog import ends, starts
+    from wireskein.runlog import ends, pulses, starts
+    from wireskein.verify import check_pulses
     case = settings(__file__)
     lines = gpio_lines(oep_host, case["target"])
     if len(lines) < 2:
@@ -126,8 +112,12 @@ def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
     gpio.set([(timing["channel"], Gpio.INPUT_PULLDOWN), (wake["channel"], Gpio.OUTPUT_HIGH)])
     boot(dut, case)
     top = f"system {timing['pad']} {wake['pad']}"
-    want = []          # (section name, low s, high s) for each high stretch, in order
+    want = {}          # section name -> its timing pulse (WireSkein's pulses: one whole high, its width bounded)
     facts, wrong = {}, []
+
+    def expect_high(name, lo, hi):
+        want[name] = pulses(timing["pad"], count=1, width_min_s=lo, width_max_s=hi)
+        ws_run.expect(f"{top}/{name}", [want[name]])
 
     def steps(wait):
         idle = {timing["pad"]: 0, wake["pad"]: 1}
@@ -150,7 +140,7 @@ def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
                     if reason != RESET_WATCHDOG:
                         wrong.append(f"{name}: the next boot's resetReason() is {reason}")
                     lo, hi = (0.93, 1.03) if tight else (0.4, 1.7)
-                    want.append((name, ms / 1000 * lo, ms / 1000 * hi))
+                    expect_high(name, ms / 1000 * lo, ms / 1000 * hi)
             name = "lightSleep timer 200 ms"
             with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
                 command = f"tsleep 200000 {timing['pin']}"
@@ -165,7 +155,7 @@ def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
                     return
                 if (result, cause) != (SLEEP_OK, WAKEUP_TIMER):
                     wrong.append(f"{name}: lightSleep() {result}, wakeupCause() {cause}")
-                want.append((name, 0.1, 0.3))
+                expect_high(name, 0.1, 0.3)
                 wait(0.05)
             name = "lightSleep pin"
             with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
@@ -182,7 +172,7 @@ def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
                 facts[name] = [result, cause, slept]
                 if (result, cause) != (SLEEP_OK, WAKEUP_PIN):
                     wrong.append(f"{name}: lightSleep() {result}, wakeupCause() {cause}")
-                want.append((name, 0.15, 2.0))
+                expect_high(name, 0.15, 2.0)
                 wait(0.05)
             name = "deepSleep timer 200 ms"
             with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
@@ -195,29 +185,27 @@ def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
                 facts[name] = [reason, cause]
                 if cause != WAKEUP_TIMER:
                     wrong.append(f"{name}: the next boot's wakeupCause() is {cause}")
-                want.append((name, 0.1, 0.3))
+                expect_high(name, 0.1, 0.3)
                 wait(0.05)
 
     try:
-        name = ws_capture.stream(ws_run, oep_host, [timing, wake], rate=1_000_000, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [timing, wake], rate=1_000_000, steps=steps)
     finally:
         gpio.set([(timing["channel"], Gpio.INPUT), (wake["channel"], Gpio.INPUT)])
         core.plan_release(host, [gpio.fn])
     record_property("facts", json.dumps(facts))
-    highs = high_times(ws_run.dir / name, timing["pad"])
-    record_property("high_s", json.dumps([round(s, 4) for _, s in highs]))
-    if len(highs) != len(want):
-        for section, _, _ in want:
-            ws_run.result(f"{top}/{section}", "high_time", "ng", capture=name,
-                          reason=f"{len(highs)} high stretches on {timing['pad']} for {len(want)} conditions")
-    else:
-        for (section, lo, hi), (t0, s) in zip(want, highs):
-            ok = lo <= s <= hi
-            ws_run.result(f"{top}/{section}", "high_time", "ok" if ok else "ng", capture=name,
-                          measured={"high_s": round(s, 4)}, reason="" if ok else f"{s:.4f} s, want {lo:.3f} .. {hi:.3f}",
-                          notices=[{"kind": "timed", "tick": int(t0)}])
-            if section == "lightSleep timer 200 ms":
-                slept = facts[section][2] / 1000
-                if abs(slept / s - 1) > 0.2:
-                    wrong.append(f"{section}: millis() moved {slept:.3f} s across a {s:.3f} s sleep")
+    # The widths WireSkein measured (it judges them through the expectations above); what is compared here is the
+    # sketch's own report against them: millis() across the timer sleep.
+    widths = {}
+    for seg in ws_run.sections():
+        section = seg["path"].rsplit("/", 1)[-1]
+        if seg["path"] == f"{top}/{section}" and section in want and seg["capture"] is not None:
+            _ok, got, _why = check_pulses(seg["capture"], want[section])
+            widths[section] = got.get("widths_s", [])
+    record_property("high_s", json.dumps({k: [round(w, 4) for w in v] for k, v in widths.items()}))
+    section = "lightSleep timer 200 ms"
+    if len(widths.get(section, [])) == 1 and isinstance(facts.get(section), list):
+        high, slept = widths[section][0], facts[section][2] / 1000
+        if abs(slept / high - 1) > 0.2:
+            wrong.append(f"{section}: millis() moved {slept:.3f} s across a {high:.3f} s sleep")
     assert not wrong, " | ".join(wrong)

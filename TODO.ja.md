@@ -219,10 +219,6 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
     CH32V003（v003evt、2026-11-06）で wire.slave が 6 条件とも通った。
-- [ ] system の試験（test_watchdog_and_sleep）の High の長さを WireSkein で判定する（2026-11-06）。いまは states.of_file で
-  区間を取り出し、条件への当てはめと長さの比べを試験の側でしている。WireSkein 66a415c で `pulses(pad, count=1,
-  width_min_s=..., width_max_s=...)` が入った（区間の中で始まって終わるパルス、measured に widths_s）。PyPI に出たら版を
-  上げて置き換え、high_times を消す。
 - [ ] 型番を選んだときの既定の経路が USB の端子に当たることがある（2026-11-06）。generate.py の既定は、デバッグとストラップ
   （SWD・NRST・BOOT）の端子は避けるが USB の D-/D+ は避けないので、CH32X035 の小さいパッケージ（D8U6 / F7P6 / F8U6 / G8R6 /
   G8U6）では I2C1 の既定が PC16 / PC17（UDM / UDP）になる。USB を使わないなら正しく、使うなら `Wire.begin()` が USB を
