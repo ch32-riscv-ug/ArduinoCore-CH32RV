@@ -151,6 +151,12 @@ private:
     /* The last transfer ended without a STOP (sendStop false): the bus is
      * ours and BUSY is meant, so bus_stale() is not asked. */
     bool _held = false;
+    /* A read ended with sendStop false armed the repeated START (end_read):
+     * the next start() only waits for SB. Setting START again there is a
+     * read-modify-write of CTLR1 racing the peripheral, which clears START
+     * when it sends the armed one - writing the old 1 back asks for a second
+     * START in the middle of the next address. */
+    bool _restart_armed = false;
 
     /* Target state. The callbacks run in interrupt context; _slave_replying
      * (in TwoWire) lets write() tell "inside onRequest()" apart from "outside

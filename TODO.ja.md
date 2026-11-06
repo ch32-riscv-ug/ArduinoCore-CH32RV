@@ -261,10 +261,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   0.3〜0.6 µs 止まり、rw のビット（長い low）が縮んで V003 は書き込みと読み、DMCONTROL に 0xFFFFFFFF（ndmreset）が入っていた。
   test_spi_contract と同じ組み合わせで 6 往復目に再現。oep-probe-arduino 695d4dc（SWIO の low を線が下がった時刻から数える）で
   144 往復リセットなし。全プローブを 0.0.51+695d4dc にしたあと、softspi は v003（UIAPduino）でも v003evt でも PASS（同日）。
-- [ ] Wire（ハードウェアの I2C）の `requestFrom(addr, n, false)` のあとの転送が、ときどき 5（タイムアウト）になる（CH32V003、
-  v003evt、2026-11-06。n = 1〜3 のどれが落ちるかは回ごとに違い、0〜3 回）。読み終わりで CTLR1 の START が立ったまま SB が来ず、
-  SCL が Low のまま（WireSkein の取り込みで 3.8 ms のあと、次の start() の間ずっと 24.9 ms）。タイムアウトの後には SB が立っている。
-  SoftWire は同じ相手（プローブの i2c-target）で通る。試したこと: 3 バイト以上の読みで START を最後のバイトの後に立てる（効かず、
-  戻した）。次: 1 / 2 バイトの読みでも START を立てる時期を変える、BTF・RXNE の状態と SCL を start() の前に見る、EVT に読みの後の
-  repeated START の例が無いので WCH の他のコア（ch32fun など）の実装と比べる。
+- Wire の読みのあとの repeated START（2026-11-07）: `requestFrom(addr, n, false)` のあとの転送が、ときどき 5（タイムアウト）に
+  なっていた（V003・V006・X035）。読みの終わりで CTLR1 に START を立てて予約したうえで、次の start() がもう一度
+  `CTLR1 |= START` を書いていた。周辺が予約の START を出して START を下ろすのと、この読んで書き戻す操作がぶつかると、2 回目の
+  START を頼んだことになる。予約したとき（_restart_armed）は start() で立て直さず SB を待つだけにした。UIAPduino の V003 で、
+  前は 3 回とも落ちたのが 3 回とも PASS、v003evt・v006evt も PASS。
 - `analogReference()` はハードウェアに基準電圧の選択が無い。

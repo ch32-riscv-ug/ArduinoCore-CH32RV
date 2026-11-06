@@ -312,6 +312,7 @@ void CH32RVTwoWire::begin()
     _started = true;
     _needs_recovery = false;
     _held = false;
+    _restart_armed = false;
     setClock(_clock_hz);
 }
 
@@ -415,6 +416,7 @@ void CH32RVTwoWire::recover(void)
     CH32RV_I2C_CTLR1(_base) = CH32RV_I2C_CTLR1_SWRST;
     CH32RV_I2C_CTLR1(_base) = 0;
     _needs_recovery = false;
+    _restart_armed = false;            /* the reset dropped an armed START */
     setClock(_clock_hz);
 }
 
@@ -438,7 +440,10 @@ bool CH32RVTwoWire::bus_stale(void) const
 bool CH32RVTwoWire::start(uint8_t address, bool read)
 {
     clear_errors(_base);
-    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_START;
+    if (!_restart_armed) {
+        CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_START;
+    }
+    _restart_armed = false;
     if (!wait_flag1(CH32RV_I2C_STAR1_SB, true)) {
         return false;
     }
@@ -583,6 +588,7 @@ size_t CH32RVTwoWire::receive(uint8_t address, size_t len, bool stopBit)
 
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
     _held = !stopBit && got == len;
+    _restart_armed = _held;
     _rx_len = (uint8_t)got;
     return got;
 }
