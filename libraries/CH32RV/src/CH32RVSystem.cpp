@@ -3,11 +3,9 @@
 #include "Arduino.h"
 #include "internal/ch32rv_registers.h"
 
-#include <malloc.h>
 #include <stdint.h>
 
 extern "C" {
-void *_sbrk(ptrdiff_t incr);
 extern char _end[];
 extern char _heap_end[];
 extern char _data_vma[];
@@ -23,13 +21,6 @@ extern uint8_t ch32rv_clock_on_hse;   /* wiring_time.c */
 uint32_t CH32RVSystem::getHeapSize()
 {
     return (uint32_t)(_heap_end - _end);
-}
-
-uint32_t CH32RVSystem::getFreeHeap()
-{
-    const char *brk = (const char *)_sbrk(0);
-    const struct mallinfo mi = mallinfo();
-    return (uint32_t)(_heap_end - brk) + (uint32_t)mi.fordblks;
 }
 
 const char *CH32RVSystem::getChipModel()
