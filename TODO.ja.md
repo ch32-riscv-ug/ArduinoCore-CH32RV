@@ -219,6 +219,11 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
     CH32V003（v003evt、2026-11-06）で wire.slave が 6 条件とも通った。
+- [ ] 既定の経路の端子が、その型番のリセットの端子に当たるときの印。generate.py の choose_routes はその型番を経路の数えから
+  外すが、`CH32RV_<X>_ABSENT` は端子の出ていない型番にしか付けないので、V006E8R6 / E8R7 と V005E6R6 では `SPI.begin()` が
+  SCK を NRST の PC5 に出す（同じファイルの説明では、チップがリセットする）。device-data 10a71f8（V006 系の NRST を 1 本に）で
+  V005 の既定が remap-4 から default に移って目に入った（2026-11-06）。直し方: その型番を ABSENT にする、型番ごとに別の経路を
+  既定にする、`reset` メニューのときだけ外す、などを比べる。
 - [ ] Wire（ハードウェアの I2C）の `requestFrom(addr, n, false)` のあとの転送が、ときどき 5（タイムアウト）になる（CH32V003、
   v003evt、2026-11-06。n = 1〜3 のどれが落ちるかは回ごとに違い、0〜3 回）。読み終わりで CTLR1 の START が立ったまま SB が来ず、
   SCL が Low のまま（WireSkein の取り込みで 3.8 ms のあと、次の start() の間ずっと 24.9 ms）。タイムアウトの後には SB が立っている。

@@ -298,7 +298,7 @@
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
-/* SPI1: route default, on 1 of 8 parts */
+/* SPI1: route default, on 5 of 8 parts */
 #define CH32RV_SPI1_SCK PC5
 #define CH32RV_SPI1_MISO PC7
 #define CH32RV_SPI1_MOSI PC6
