@@ -127,6 +127,7 @@ private:
     void targetStart(uint8_t address);   /* Wire.cpp: begin(address) after begin() */
     bool wait_flag1(uint16_t mask, bool set);
     bool start(uint8_t address, bool read);
+    bool bus_stale(void) const;
     void stop(void);
     void recover(void);
 
@@ -147,6 +148,9 @@ private:
     /* Set when a transfer ended badly, so the next one resets the peripheral
      * first: an aborted transfer can leave BUSY asserted forever. */
     bool _needs_recovery = false;
+    /* The last transfer ended without a STOP (sendStop false): the bus is
+     * ours and BUSY is meant, so bus_stale() is not asked. */
+    bool _held = false;
 
     /* Target state. The callbacks run in interrupt context; _slave_replying
      * (in TwoWire) lets write() tell "inside onRequest()" apart from "outside

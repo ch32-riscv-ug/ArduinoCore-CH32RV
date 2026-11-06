@@ -212,8 +212,15 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
     （端子 0 の場所に最後の端子）。決まった形でないので、並びを回して打ち消すことはできない。
   次に試すこと: 不連続モード（DISCEN）や注入グループ（JSQR、JAUTO）での並び、DMA を使わず EOC の割り込みで読む場合、
   開始の前に並びを 1 周空で回してから DMA を有効にする手順。
+  CH32V003（v003evt、2026-11-06）でも同じく、1 本は通り（1000 Hz に 998 Hz）、2 本は端子 0 の場所に 2 本目が入る。V307 では起きない。
   - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
-    `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。ビルドだけで、
-    実機の確認は未。OEP のプローブの i2c-controller（マスター役）で試せるが、ベンチの X035 は I2C の使えない個体なので、新しい X035 で。
+    `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
+    CH32V003（v003evt、2026-11-06）で wire.slave が 6 条件とも通った。
+- [ ] Wire（ハードウェアの I2C）の `requestFrom(addr, n, false)` のあとの転送が、ときどき 5（タイムアウト）になる（CH32V003、
+  v003evt、2026-11-06。n = 1〜3 のどれが落ちるかは回ごとに違い、0〜3 回）。読み終わりで CTLR1 の START が立ったまま SB が来ず、
+  SCL が Low のまま（WireSkein の取り込みで 3.8 ms のあと、次の start() の間ずっと 24.9 ms）。タイムアウトの後には SB が立っている。
+  SoftWire は同じ相手（プローブの i2c-target）で通る。試したこと: 3 バイト以上の読みで START を最後のバイトの後に立てる（効かず、
+  戻した）。次: 1 / 2 バイトの読みでも START を立てる時期を変える、BTF・RXNE の状態と SCL を start() の前に見る、EVT に読みの後の
+  repeated START の例が無いので WCH の他のコア（ch32fun など）の実装と比べる。
 - `analogReference()` はハードウェアに基準電圧の選択が無い。

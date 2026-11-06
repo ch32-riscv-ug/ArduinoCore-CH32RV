@@ -311,6 +311,7 @@ void CH32RVTwoWire::begin()
 
     _started = true;
     _needs_recovery = false;
+    _held = false;
     setClock(_clock_hz);
 }
 
@@ -417,6 +418,23 @@ void CH32RVTwoWire::recover(void)
     setClock(_clock_hz);
 }
 
+/* BUSY latched with the bus free: a falling SDA while SCL was high - the
+ * lines settling after begin(), a pull-up that came later, a glitch - reads
+ * as a START from someone else, and with no STOP after it BUSY stays set and
+ * our START waits for a bus that never frees (5 after the timeout; the first
+ * transfer on an OEP bench whose probe pulls the lines up after the DUT has
+ * begun, CH32V003, 2026-11-06). Not ours (MSL clear) and both lines high: no
+ * transfer is on, so start from a reset peripheral. */
+bool CH32RVTwoWire::bus_stale(void) const
+{
+    if ((CH32RV_I2C_STAR2(_base) & (CH32RV_I2C_STAR2_BUSY | CH32RV_I2C_STAR2_MSL)) !=
+        CH32RV_I2C_STAR2_BUSY) {
+        return false;
+    }
+    return ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_scl_pin), (uint8_t)CH32RV_PIN_BIT(_scl_pin)) &&
+           ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_sda_pin), (uint8_t)CH32RV_PIN_BIT(_sda_pin));
+}
+
 bool CH32RVTwoWire::start(uint8_t address, bool read)
 {
     clear_errors(_base);
@@ -436,7 +454,9 @@ void CH32RVTwoWire::stop(void)
 
 uint8_t CH32RVTwoWire::transmit(bool stopBit)
 {
-    if (_needs_recovery) {
+    const bool held = _held;
+    _held = false;
+    if (_needs_recovery || (!held && bus_stale())) {
         recover();
     }
 
@@ -476,13 +496,16 @@ uint8_t CH32RVTwoWire::transmit(bool stopBit)
     if (stopBit) {
         stop();
     }
+    _held = !stopBit;
     _tx_len = 0;
     return 0;
 }
 
 size_t CH32RVTwoWire::receive(uint8_t address, size_t len, bool stopBit)
 {
-    if (_needs_recovery) {
+    const bool held = _held;
+    _held = false;
+    if (_needs_recovery || (!held && bus_stale())) {
         recover();
     }
 
@@ -559,6 +582,7 @@ size_t CH32RVTwoWire::receive(uint8_t address, size_t len, bool stopBit)
     }
 
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
+    _held = !stopBit && got == len;
     _rx_len = (uint8_t)got;
     return got;
 }
