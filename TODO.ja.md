@@ -219,7 +219,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   正しい。80 MS/s（12.5 ns）なら hold_s 12.5 ns と読めて ok になるが、試験は 10 条件を 10 秒以上流し続けるので、プローブがデータを
   落とした（no_stage_bytes、dma_overruns 2）。条件ごとの短い取り込み（80 MS/s）でも、コンソールの往復と同時だと v103evt・x035 とも
   落ちた（プローブの経路の帯域。[oep] の測りでは、ほかの通信が無ければ 80 MS/s・10 秒も落ちない）。WireSkein に、読み取りの
-  エッジと同じサンプルの変化をエッジのあととして扱う指定を頼んだ（V103 の試験だけに付ける）。
+  エッジと同じサンプルの変化をエッジのあととして扱う指定を頼んだ（V103 の試験だけに付ける）。WireSkein 1e78523 に
+  `spi(..., edge_sample="before")` が入った（measured に hold_under_sample と sample_s が残る）。PyPI に出たら版を上げて、V103 の
+  spi.slave に付ける。
 - 既定の端子が USB の D- / D+ を兼ねる件（2026-11-07）: 型番を選ぶと 110 か所あった（X035 の小さいパッケージの I2C1 が PC16 / PC17、
   V205 の Serial1・V407 / V467 の Wire が PB6 / PB7、X305 / X315 の Serial2・Wire1 が PD6 / PD7 など）。後の 3 つはデータシートの標準の
   端子で、一律に既定から外すと標準の Wire / Serial が消える。USB を使うかは variant を生成する時点ではわからず（ボードメニューも

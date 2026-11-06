@@ -215,13 +215,18 @@ ch32rv_loadcode_ram:
     li t0, CH32RV_INTSYSCR_INIT
     csrw 0x804, t0
 #endif
-    li t0, CH32RV_MSTATUS_INIT
-    csrw mstatus, t0
-
-/* Vector table base plus the mode bits; the base has to be 0, see above. */
+/* Vector table base plus the mode bits; the base has to be 0, see above.
+   Before mstatus: several families' value sets MIE (V103 0x1888, X035 0x88,
+   V307 0x6088, as their EVTs do), and an interrupt still pending from the
+   image before - a reset that left the PFIC and the peripherals as they were
+   (a debugger's ndmreset) - would otherwise be taken through whatever mtvec
+   held. */
     la t0, _vector_base
     ori t0, t0, CH32RV_MTVEC_MODE
     csrw mtvec, t0
+
+    li t0, CH32RV_MSTATUS_INIT
+    csrw mstatus, t0
 
 /* CH32RV_BOOT_HOLD_MS (build.extra_flags, off unless set): stay on the reset
    clock, debug pins untouched, for that long before anything else runs, so a
