@@ -158,13 +158,17 @@ CH32V003.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V003.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V003.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V003.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
-CH32V003.menu.rstpin.reset.build.rstpin_defines=
+CH32V003.menu.rstpin.keep=Leave as set on the chip (default)
+CH32V003.menu.rstpin.keep.build.rstpin_defines=
+CH32V003.menu.rstpin.reset=Reset input (NRST) (set at boot, factory setting)
+CH32V003.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V003.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V003.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32V003.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V003.menu.iwdg.sw.build.iwdg_defines=
+CH32V003.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V003.menu.iwdg.keep.build.iwdg_defines=
+CH32V003.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V003.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V003.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V003.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -346,13 +350,17 @@ CH32V002.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V002.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V002.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V002.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
-CH32V002.menu.rstpin.reset.build.rstpin_defines=
+CH32V002.menu.rstpin.keep=Leave as set on the chip (default)
+CH32V002.menu.rstpin.keep.build.rstpin_defines=
+CH32V002.menu.rstpin.reset=Reset input (NRST) (set at boot, factory setting)
+CH32V002.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V002.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V002.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32V002.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V002.menu.iwdg.sw.build.iwdg_defines=
+CH32V002.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V002.menu.iwdg.keep.build.iwdg_defines=
+CH32V002.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V002.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V002.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V002.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -508,13 +516,17 @@ CH32V004.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V004.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V004.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V004.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
-CH32V004.menu.rstpin.reset.build.rstpin_defines=
+CH32V004.menu.rstpin.keep=Leave as set on the chip (default)
+CH32V004.menu.rstpin.keep.build.rstpin_defines=
+CH32V004.menu.rstpin.reset=Reset input (NRST) (set at boot, factory setting)
+CH32V004.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V004.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V004.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32V004.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V004.menu.iwdg.sw.build.iwdg_defines=
+CH32V004.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V004.menu.iwdg.keep.build.iwdg_defines=
+CH32V004.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V004.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V004.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V004.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -690,13 +702,17 @@ CH32V005.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V005.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V005.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V005.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
-CH32V005.menu.rstpin.reset.build.rstpin_defines=
+CH32V005.menu.rstpin.keep=Leave as set on the chip (default)
+CH32V005.menu.rstpin.keep.build.rstpin_defines=
+CH32V005.menu.rstpin.reset=Reset input (NRST) (set at boot, factory setting)
+CH32V005.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V005.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V005.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32V005.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V005.menu.iwdg.sw.build.iwdg_defines=
+CH32V005.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V005.menu.iwdg.keep.build.iwdg_defines=
+CH32V005.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V005.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V005.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V005.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -940,13 +956,17 @@ CH32V006.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V006.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V006.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V006.menu.rstpin.reset=Reset input (NRST) (factory setting, the chip left as set)
-CH32V006.menu.rstpin.reset.build.rstpin_defines=
+CH32V006.menu.rstpin.keep=Leave as set on the chip (default)
+CH32V006.menu.rstpin.keep.build.rstpin_defines=
+CH32V006.menu.rstpin.reset=Reset input (NRST) (set at boot, factory setting)
+CH32V006.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V006.menu.rstpin.gpio=GPIO (no reset pin) (set at boot)
 CH32V006.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32V006.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V006.menu.iwdg.sw.build.iwdg_defines=
+CH32V006.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V006.menu.iwdg.keep.build.iwdg_defines=
+CH32V006.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V006.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V006.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V006.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -1162,13 +1182,17 @@ CH32V007.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V007.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V007.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
-CH32V007.menu.rstpin.gpio.build.rstpin_defines=
+CH32V007.menu.rstpin.keep=Leave as set on the chip (default)
+CH32V007.menu.rstpin.keep.build.rstpin_defines=
+CH32V007.menu.rstpin.gpio=GPIO (no reset pin) (set at boot, factory setting)
+CH32V007.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32V007.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32V007.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32V007.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V007.menu.iwdg.sw.build.iwdg_defines=
+CH32V007.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V007.menu.iwdg.keep.build.iwdg_defines=
+CH32V007.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V007.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V007.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V007.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -1384,13 +1408,17 @@ CH32M007.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32M007.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32M007.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32M007.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
-CH32M007.menu.rstpin.gpio.build.rstpin_defines=
+CH32M007.menu.rstpin.keep=Leave as set on the chip (default)
+CH32M007.menu.rstpin.keep.build.rstpin_defines=
+CH32M007.menu.rstpin.gpio=GPIO (no reset pin) (set at boot, factory setting)
+CH32M007.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32M007.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32M007.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32M007.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32M007.menu.iwdg.sw.build.iwdg_defines=
+CH32M007.menu.iwdg.keep=Leave as set on the chip (default)
+CH32M007.menu.iwdg.keep.build.iwdg_defines=
+CH32M007.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32M007.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32M007.menu.iwdg.hw=Running from power-on (set at boot)
 CH32M007.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -1859,8 +1887,10 @@ CH32V203.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V203.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V203.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V203.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V203.menu.iwdg.sw.build.iwdg_defines=
+CH32V203.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V203.menu.iwdg.keep.build.iwdg_defines=
+CH32V203.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V203.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V203.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V203.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -2070,8 +2100,10 @@ CH32V208.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V208.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V208.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V208.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V208.menu.iwdg.sw.build.iwdg_defines=
+CH32V208.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V208.menu.iwdg.keep.build.iwdg_defines=
+CH32V208.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V208.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V208.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V208.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -2314,8 +2346,10 @@ CH32V303.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V303.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V303.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
 
-CH32V303.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V303.menu.iwdg.sw.build.iwdg_defines=
+CH32V303.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V303.menu.iwdg.keep.build.iwdg_defines=
+CH32V303.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V303.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V303.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V303.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -2587,8 +2621,10 @@ CH32V305.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V305.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V305.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V305.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V305.menu.iwdg.sw.build.iwdg_defines=
+CH32V305.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V305.menu.iwdg.keep.build.iwdg_defines=
+CH32V305.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V305.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V305.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V305.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -2858,8 +2894,10 @@ CH32V307.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V307.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V307.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
 
-CH32V307.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V307.menu.iwdg.sw.build.iwdg_defines=
+CH32V307.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V307.menu.iwdg.keep.build.iwdg_defines=
+CH32V307.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V307.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V307.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V307.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -3134,8 +3172,10 @@ CH32V317.menu.ramsplit.128k_192k.upload.maximum_size=131072
 CH32V317.menu.ramsplit.128k_192k.upload.maximum_data_size=196608
 CH32V317.menu.ramsplit.128k_192k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0xc0u -DCH32RV_RAMSPLIT_MASK=0xe0u -DCH32RV_RAMSPLIT_RAM_KB=192
 
-CH32V317.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V317.menu.iwdg.sw.build.iwdg_defines=
+CH32V317.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V317.menu.iwdg.keep.build.iwdg_defines=
+CH32V317.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V317.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V317.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V317.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -3358,13 +3398,17 @@ CH32X033.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32X033.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32X033.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32X033.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
-CH32X033.menu.rstpin.gpio.build.rstpin_defines=
+CH32X033.menu.rstpin.keep=Leave as set on the chip (default)
+CH32X033.menu.rstpin.keep.build.rstpin_defines=
+CH32X033.menu.rstpin.gpio=GPIO (no reset pin) (set at boot, factory setting)
+CH32X033.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32X033.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X033.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32X033.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32X033.menu.iwdg.sw.build.iwdg_defines=
+CH32X033.menu.iwdg.keep=Leave as set on the chip (default)
+CH32X033.menu.iwdg.keep.build.iwdg_defines=
+CH32X033.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32X033.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32X033.menu.iwdg.hw=Running from power-on (set at boot)
 CH32X033.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -3585,13 +3629,17 @@ CH32X035.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32X035.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32X035.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32X035.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
-CH32X035.menu.rstpin.gpio.build.rstpin_defines=
+CH32X035.menu.rstpin.keep=Leave as set on the chip (default)
+CH32X035.menu.rstpin.keep.build.rstpin_defines=
+CH32X035.menu.rstpin.gpio=GPIO (no reset pin) (set at boot, factory setting)
+CH32X035.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32X035.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X035.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32X035.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32X035.menu.iwdg.sw.build.iwdg_defines=
+CH32X035.menu.iwdg.keep=Leave as set on the chip (default)
+CH32X035.menu.iwdg.keep.build.iwdg_defines=
+CH32X035.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32X035.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32X035.menu.iwdg.hw=Running from power-on (set at boot)
 CH32X035.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -3837,8 +3885,10 @@ CH32L103.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32L103.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32L103.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32L103.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32L103.menu.iwdg.sw.build.iwdg_defines=
+CH32L103.menu.iwdg.keep=Leave as set on the chip (default)
+CH32L103.menu.iwdg.keep.build.iwdg_defines=
+CH32L103.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32L103.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32L103.menu.iwdg.hw=Running from power-on (set at boot)
 CH32L103.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -4032,8 +4082,10 @@ CH32M103.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32M103.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32M103.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32M103.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32M103.menu.iwdg.sw.build.iwdg_defines=
+CH32M103.menu.iwdg.keep=Leave as set on the chip (default)
+CH32M103.menu.iwdg.keep.build.iwdg_defines=
+CH32M103.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32M103.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32M103.menu.iwdg.hw=Running from power-on (set at boot)
 CH32M103.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -4243,8 +4295,10 @@ CH32V205.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V205.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32V205.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V205.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V205.menu.iwdg.sw.build.iwdg_defines=
+CH32V205.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V205.menu.iwdg.keep.build.iwdg_defines=
+CH32V205.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V205.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V205.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V205.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -4615,8 +4669,10 @@ CH32V407.menu.ramsplit.576k_136k.upload.maximum_size=589824
 CH32V407.menu.ramsplit.576k_136k.upload.maximum_data_size=139264
 CH32V407.menu.ramsplit.576k_136k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x40u -DCH32RV_RAMSPLIT_MASK=0x40u -DCH32RV_RAMSPLIT_RAM_KB=136
 
-CH32V407.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V407.menu.iwdg.sw.build.iwdg_defines=
+CH32V407.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V407.menu.iwdg.keep.build.iwdg_defines=
+CH32V407.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V407.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V407.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V407.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -4888,8 +4944,10 @@ CH32V467.menu.ramsplit.576k_136k.upload.maximum_size=589824
 CH32V467.menu.ramsplit.576k_136k.upload.maximum_data_size=139264
 CH32V467.menu.ramsplit.576k_136k.build.ramsplit_user=-DCH32RV_RAMSPLIT_USER=0x40u -DCH32RV_RAMSPLIT_MASK=0x40u -DCH32RV_RAMSPLIT_RAM_KB=136
 
-CH32V467.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32V467.menu.iwdg.sw.build.iwdg_defines=
+CH32V467.menu.iwdg.keep=Leave as set on the chip (default)
+CH32V467.menu.iwdg.keep.build.iwdg_defines=
+CH32V467.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32V467.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32V467.menu.iwdg.hw=Running from power-on (set at boot)
 CH32V467.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -5121,13 +5179,17 @@ CH32X305.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32X305.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32X305.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32X305.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
-CH32X305.menu.rstpin.gpio.build.rstpin_defines=
+CH32X305.menu.rstpin.keep=Leave as set on the chip (default)
+CH32X305.menu.rstpin.keep.build.rstpin_defines=
+CH32X305.menu.rstpin.gpio=GPIO (no reset pin) (set at boot, factory setting)
+CH32X305.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x08u -DCH32RV_RSTPIN_MASK=0x08u
 CH32X305.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X305.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x00u -DCH32RV_RSTPIN_MASK=0x08u
 
-CH32X305.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32X305.menu.iwdg.sw.build.iwdg_defines=
+CH32X305.menu.iwdg.keep=Leave as set on the chip (default)
+CH32X305.menu.iwdg.keep.build.iwdg_defines=
+CH32X305.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32X305.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32X305.menu.iwdg.hw=Running from power-on (set at boot)
 CH32X305.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -5540,13 +5602,17 @@ CH32X315.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32X315.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32X315.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32X315.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
-CH32X315.menu.rstpin.gpio.build.rstpin_defines=
+CH32X315.menu.rstpin.keep=Leave as set on the chip (default)
+CH32X315.menu.rstpin.keep.build.rstpin_defines=
+CH32X315.menu.rstpin.gpio=GPIO (no reset pin) (set at boot, factory setting)
+CH32X315.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x08u -DCH32RV_RSTPIN_MASK=0x08u
 CH32X315.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32X315.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x00u -DCH32RV_RSTPIN_MASK=0x08u
 
-CH32X315.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)
-CH32X315.menu.iwdg.sw.build.iwdg_defines=
+CH32X315.menu.iwdg.keep=Leave as set on the chip (default)
+CH32X315.menu.iwdg.keep.build.iwdg_defines=
+CH32X315.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32X315.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
 CH32X315.menu.iwdg.hw=Running from power-on (set at boot)
 CH32X315.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
@@ -6107,8 +6173,10 @@ CH32M030.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32M030.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32M030.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32M030.menu.rstpin.gpio=GPIO (no reset pin) (factory setting, the chip left as set)
-CH32M030.menu.rstpin.gpio.build.rstpin_defines=
+CH32M030.menu.rstpin.keep=Leave as set on the chip (default)
+CH32M030.menu.rstpin.keep.build.rstpin_defines=
+CH32M030.menu.rstpin.gpio=GPIO (no reset pin) (set at boot, factory setting)
+CH32M030.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32RV_RSTPIN_MASK=0x18u
 CH32M030.menu.rstpin.reset=Reset input (NRST) (set at boot)
 CH32M030.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 

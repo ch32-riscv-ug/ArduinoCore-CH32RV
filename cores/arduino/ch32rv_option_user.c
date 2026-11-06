@@ -10,10 +10,13 @@
  *   sits at its top.
  * - Reset Pin of the families whose reset input is an option (V00x and M007,
  *   X033/X035, M030, X305/X315): USER [4:3] RST_MODE, X3x5's bit 3 CFGRSTEN.
- *   The reset pin or a GPIO, each series defaulting to its factory value.
+ *   The reset pin or a GPIO.
  * - Watchdog: USER bit 0 IWDG_SW. 1 (factory) the independent watchdog starts
  *   when software starts it (CH32RV.wdtEnable()); 0 it runs from power-on and
  *   cannot be stopped.
+ *
+ * Reset Pin and Watchdog open on "keep" (nothing built in, the chip as it is
+ * set); either value, the factory one too, is set here at boot.
  *
  * crt0 calls these before .data and .bss: no globals here. When the value
  * loaded at reset (FLASH_OBR) is another one, the option bytes are rewritten -

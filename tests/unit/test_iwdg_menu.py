@@ -1,7 +1,8 @@
 """The Watchdog menu (boards.txt): USER bit 0 IWDG_SW on the series whose option byte writer has run on the chip.
 
-The factory entry (started by wdtEnable()) comes first and defines nothing; the other has ch32rv_option_user.c
-clear the bit at boot, so the independent watchdog runs from power-on (docs/adr/0017-option-byte-menus.ja.md).
+The menu opens on "keep", which defines nothing (the chip as it is set); "sw" (the factory value, started by
+wdtEnable()) and "hw" (running from power-on) both have ch32rv_option_user.c set the bit at boot
+(docs/adr/0017-option-byte-menus.ja.md).
 """
 import pathlib
 import re
@@ -12,7 +13,7 @@ SERIES = {"CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32V007"
           "CH32V203", "CH32V208", "CH32L103", "CH32M103", "CH32V205", "CH32V407", "CH32V467"}
 
 
-def test_the_series_offer_the_factory_entry_first_and_clear_bit_0_otherwise():
+def test_the_series_open_on_keep_and_set_bit_0_either_way():
     entries, values = {}, {}
     for line in (REPO / "boards.txt").read_text(encoding="utf-8").splitlines():
         if m := re.fullmatch(r"(\w+)\.menu\.iwdg\.(\w+)=(.*)", line):
@@ -21,8 +22,9 @@ def test_the_series_offer_the_factory_entry_first_and_clear_bit_0_otherwise():
             values[(m.group(1), m.group(2))] = m.group(3)
     assert set(entries) == SERIES
     for series in SERIES:
-        assert entries[series] == ["sw", "hw"], series
-        assert values[(series, "sw")] == "", series
+        assert entries[series] == ["keep", "sw", "hw"], series
+        assert values[(series, "keep")] == "", series
+        assert values[(series, "sw")] == "-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u", series
         assert values[(series, "hw")] == "-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u", series
 
 

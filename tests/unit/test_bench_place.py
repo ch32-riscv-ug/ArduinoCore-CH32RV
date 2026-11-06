@@ -42,7 +42,9 @@ def test_the_probe_is_found_by_its_serial_only(tmp_path):
 
 
 def test_fqbn_and_clock_come_from_boards_txt():
-    assert place.fqbn_of("CH32X035C8T6") == ("ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6", 48000000)
+    assert place.fqbn_of("CH32X035C8T6") == (
+        "ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6,rstpin=reset,iwdg=sw", 48000000)
+    assert place.fqbn_of("CH32V307VCT6")[0] == "ch32-riscv-ug:ch32rv:CH32V307:pnum=CH32V307VCT6,iwdg=sw"
     with pytest.raises(place.PlaceError):
         place.fqbn_of("CH32X999Z9")
 
@@ -71,7 +73,7 @@ X035 = dict(sku="CH32X035C8T6", family="CH32X035", uid="1ff9abcd880ebc48", chip_
 def test_a_place_from_the_chip_and_the_records(monkeypatch, tmp_path):
     p, _ = fake_resolve(monkeypatch, tmp_path, info=X035, port_record={"target": "ch32x035-1ff9abcd880ebc48"},
                         record={"usb": {"to": "host"}, "defects": [{"id": "d", "lose": ["i2c"]}]})
-    assert p["fqbn"] == "ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6" and p["f_cpu"] == 48000000
+    assert p["fqbn"] == "ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6,rstpin=reset,iwdg=sw" and p["f_cpu"] == 48000000
     assert p["power_hub"] == "3-1.4" and p["power_ports"] == [2]   # only the probe's own port
     assert p["dut_usb_serial"] == "1FF9ABCD880EBC48" and p["nrst_channel"] == 32
     assert p["cases"]["usb"] == "run" and p["cases"]["usb-peer"].startswith("skip")

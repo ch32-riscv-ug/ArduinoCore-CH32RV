@@ -483,17 +483,23 @@ def rstpin_defines(series: str, key: str) -> str:
     return f"-DCH32RV_RSTPIN_USER={reset if key == 'reset' else gpio:#04x}u -DCH32RV_RSTPIN_MASK={mask:#04x}u"
 
 
+# The option byte menus (Reset Pin, Watchdog) open on "keep": nothing built in,
+# the chip as it is set - a sketch that never touches the menu pays nothing.
+# Each value is an entry of its own that sets the chip at boot, the factory one
+# too, so a chip changed once (by another sketch, by ch32rv) can be brought
+# back from the menu (docs/adr/0017-option-byte-menus.ja.md).
+KEEP_LABEL = "Leave as set on the chip (default)"
+
+
 def rstpin_menu(board: str, series: str) -> list[str]:
     factory = RSTPIN[series][3]
     entries = {"reset": "Reset input (NRST)", "gpio": "GPIO (no reset pin)"}
-    lines = []
+    lines = [f"{board}.menu.rstpin.keep={KEEP_LABEL}",
+             f"{board}.menu.rstpin.keep.build.rstpin_defines="]
     for key in sorted(entries, key=lambda k: k != factory):
-        if key == factory:
-            lines.append(f"{board}.menu.rstpin.{key}={entries[key]} (factory setting, the chip left as set)")
-            lines.append(f"{board}.menu.rstpin.{key}.build.rstpin_defines=")
-        else:
-            lines.append(f"{board}.menu.rstpin.{key}={entries[key]} (set at boot)")
-            lines.append(f"{board}.menu.rstpin.{key}.build.rstpin_defines={rstpin_defines(series, key)}")
+        mark = ", factory setting" if key == factory else ""
+        lines.append(f"{board}.menu.rstpin.{key}={entries[key]} (set at boot{mark})")
+        lines.append(f"{board}.menu.rstpin.{key}.build.rstpin_defines={rstpin_defines(series, key)}")
     return lines
 
 
@@ -532,8 +538,10 @@ IWDG_SERIES = ("CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32
 
 
 def iwdg_menu(board: str) -> list[str]:
-    return [f"{board}.menu.iwdg.sw=Started by wdtEnable() (factory setting, the chip left as set)",
-            f"{board}.menu.iwdg.sw.build.iwdg_defines=",
+    return [f"{board}.menu.iwdg.keep={KEEP_LABEL}",
+            f"{board}.menu.iwdg.keep.build.iwdg_defines=",
+            f"{board}.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)",
+            f"{board}.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u",
             f"{board}.menu.iwdg.hw=Running from power-on (set at boot)",
             f"{board}.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u"]
 

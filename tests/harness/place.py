@@ -101,6 +101,20 @@ def boards(path=REPO / "boards.txt"):
     return out
 
 
+# The option byte menus a bench build names, so no case leans on what the chip was left with (an earlier sketch's
+# menu, ch32rv): the core sets them at boot. The reset pin as NRST - the probe's reset line, system's reset
+# reasons and a recovery need it -, and the watchdog started by wdtEnable(), as system's watchdog expects (a chip
+# left running it from power-on would reset every case). A board without the menu (a dedicated reset pin, the
+# UIAPduino) gets neither.
+BENCH_MENUS = (("rstpin", "reset"), ("iwdg", "sw"))
+
+
+def bench_menus(board, path=REPO / "boards.txt"):
+    text = path.read_text(encoding="utf-8")
+    return [f"{menu}={value}" for menu, value in BENCH_MENUS
+            if re.search(rf"^{re.escape(board)}\.menu\.{menu}\.{value}=", text, re.M)]
+
+
 def fqbn_of(part):
     found = boards().get(part)
     if not found:
@@ -108,7 +122,7 @@ def fqbn_of(part):
     board, f_cpu = found
     if not f_cpu:
         raise PlaceError(f"{board}: no clock menu in boards.txt")
-    return f"ch32-riscv-ug:ch32rv:{board}:pnum={part}", f_cpu
+    return ",".join([f"ch32-riscv-ug:ch32rv:{board}:pnum={part}"] + bench_menus(board)), f_cpu
 
 
 def series_needs():
