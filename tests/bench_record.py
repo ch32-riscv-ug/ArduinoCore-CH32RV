@@ -66,7 +66,8 @@ def set_records(address, args):
     port_changes, core_changes = {}, {}
     if args.target == "auto":
         info = place.chip_info(tool(), address, args.part, pathlib.Path(tempfile.mkdtemp()) / "info.log", None)
-        family = info.get("family") or (info.get("sku") or "")[:8]
+        # A chip without a chip ID (CH32V103) names no family: the given part does.
+        family = info.get("family") or (info.get("sku") or args.part or "")[:8]
         port_changes["target"] = records.target_name(family, info["uid"])
     elif args.target:
         port_changes["target"] = args.target.lower()
