@@ -198,7 +198,6 @@ FS のペアで HS を保証しません。安価な CH32X035 peer に替えて�
 | wire.slave（`instrumented/wire`） | I2Cの使える系列の部品と、そのWireの既定のSDA / SCLに`<口>@<端子>`の線（ベンチのX035C8T6は、ロットの都合でI2Cが使えない） | `--probe oep://<unit>/<port> --case wire` | `onReceive` / `onRequest`の順番と中身、0xFFの埋め、32バイトの頭、別の番地へのNACK |
 | periph.hsadc（`instrumented/periph`） | H415 / H416 / H417と、PF8〜PF10のどれかに`<口>@<端子>`の線（PC0〜PC3はVIO18側で、VIO18 + 0.3 Vまでなので使わない） | `--case periph` | 20 Msps と 1.25 Msps で、プローブのPWMの周波数とデューティ、取りこぼし0 |
 | console-sdi の V307 | 同梱の`ch32rv`を0.29.1へ上げること。v0.29.1にx86_64-apple-darwinのファイルが無く、上げられない（GitHubのランナーの都合。再実行待ち） | `--probe wchlink://38EF8F06BDC2 --case console-sdi` | 手元に置いた0.29.1で2回とも通った（2026-11-06）。上げた後にもう一度 |
-| uart.receive-errors の break | wireskeinのa7ef57a（休みのレベルを、誤りが続く区間でも長い休みから決める直し）のリリースと、固定の更新 | `--case uart` | 0.0.22では、DUTの形式で読む判定が「idle level 0」でng（誤り4つは期待どおり） |
 | periph.adc-stream の2本以上 | CH32X035のCH32RVAdcStreamのずれの原因と直し（TODO.ja.md）。直るまでx035では落ちる | `--case periph` | 2本・3本の並びが正しく、方形波の周波数とデューティ |
 | analog.dac のほかの系列 | DACのある系列（V30x / V317 / V4x7 / H41x）の部品。配線なし | `--case analog` | V307では通った。H41x・V4x7で同じ |
 | system のほかの系列 | `<口>@<端子>`の線が2本ある、X035以外の系列（LSIの系列は誤差の幅が広い） | `--case system` | ウォッチドッグのタイムアウト、RTCで眠る系列（V20x / V30x / L103）のlightSleep / deepSleep |
