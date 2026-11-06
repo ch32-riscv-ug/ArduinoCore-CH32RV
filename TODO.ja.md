@@ -227,6 +227,11 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   前に立てておき、開始は SWSTART だけにする、などを比べる。→ CONT と DMA を電源を入れる前の書き込みに含めても同じ（段 0 で入れ替わり、
   戻した）。DMA の要求が最初の変換の EOC で出ていないのか、最初の変換そのものが ch5 なのかを分けるには、DMA を使わずに EOC を
   ポーリングして 1 回のシーケンスを読む小さな試し（スケッチの側）が要る。
+  小さな試し（scratchpad の adcseq.ino、X035、PA2 を Low・PA5 を High の出力、ch2 → ch5 を DMA で 2 個または 8 個）: 段 0 も段 7 も
+  ch2 が先で正しい（連続変換で段 7 30/30、段 0 29/30）。段 0 の連続変換で 30 回に 1 回だけ入れ替わった。AdcStream では毎回なので、
+  違いは AdcStream の側（begin() の measure() のくり返し、循環の DMA と HT / TC の割り込み、プローブが駆動する入力のインピーダンス
+  など）にある。なお X035 の ADC は、スキャン中も 1 本ごとに EOC を立てる（EOC を見て SWSTART を書くとシーケンスが頭から
+  やり直しになる）。次: adcseq に AdcStream の手順を 1 つずつ足して（measure() のくり返し、循環 DMA）、毎回ずれる所を探す。
   - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
