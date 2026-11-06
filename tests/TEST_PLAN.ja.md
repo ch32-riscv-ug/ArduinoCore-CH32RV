@@ -202,8 +202,8 @@ FS のペアで HS を保証しません。安価な CH32X035 peer に替えて�
 | system のほかの系列 | `<口>@<端子>`の線が2本ある、X035以外の系列（LSIの系列は誤差の幅が広い） | `--case system` | ウォッチドッグのタイムアウト、RTCで眠る系列（V20x / V30x / L103）のlightSleep / deepSleep |
 | ほかの系列のSerialの経路・SPIターゲット・TaskKit | X035以外の系列の`<口>@<端子>`の線 | `--case periph --case spi --case synckit` | 系列ごとのremap、SPIスレーブ、割り込みからのpost |
 
-V103はvariantにDACのクロックの定義（`CH32RV_CLKEN_DAC_*`）があるのに、DACの端子（`CH32RV_DAC1_PIN`）が無く、
-analogWriteはDACを使わない。V103のDACの有無を確かめてから、variantかcoverageのどちらかを直す（TODO.ja.md）。
+V103にDACは無い（RMのF103との比較表）。variantにあるDACのクロックの定義（`CH32RV_CLKEN_DAC_*`）は写し残りで、device-dataの
+直しを待って消す（TODO.ja.md）。analogはV103でスキップのままでよい。
 
 ## 試験を足す順序
 
