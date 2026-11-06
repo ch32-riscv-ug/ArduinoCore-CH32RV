@@ -224,7 +224,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   RSQR3 0x0a2（ch2 → ch5）、SAMPTR2 は段 0 で、設定は正しい。バッファは最初の半分から最後の半分まで同じ形で、PA5 の値、PA2 の値の順に
   並ぶ（PA5 High の条件で 4042 11 4053 5 …、PA5 Low で 15 11 12 4030 …）。途中でずれるのではなく、開始のときに最初の変換が 1 つ
   DMA に拾われていない。開始は adc_go() の CTLR2 への 1 回の書き込み（CONT・DMA・ADON・SWSTART）。次: CONT と DMA を電源を入れる
-  前に立てておき、開始は SWSTART だけにする、などを比べる。
+  前に立てておき、開始は SWSTART だけにする、などを比べる。→ CONT と DMA を電源を入れる前の書き込みに含めても同じ（段 0 で入れ替わり、
+  戻した）。DMA の要求が最初の変換の EOC で出ていないのか、最初の変換そのものが ch5 なのかを分けるには、DMA を使わずに EOC を
+  ポーリングして 1 回のシーケンスを読む小さな試し（スケッチの側）が要る。
   - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
