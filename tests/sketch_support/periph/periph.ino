@@ -47,7 +47,11 @@ static bool echoing;
 static uint32_t echoed;
 
 #if defined(NUM_ANALOG_INPUTS)
+#if defined(CH32RV_VARIANT_CH32V003)
+#define ASTREAM_HALF 96    /* 2 KB of RAM: 2 x 256 values left the stack 16 bytes and the sketch never started */
+#else
 #define ASTREAM_HALF 256
+#endif
 static CH32RVAdcStream stream;
 static uint16_t stream_buf[2 * ASTREAM_HALF];
 

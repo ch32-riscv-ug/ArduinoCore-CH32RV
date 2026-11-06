@@ -174,7 +174,7 @@ def test_adc(dut, oep_host, record_property):
 def test_adc_stream(dut, oep_host, ws_run, record_property):
     """periph.adc-stream: CH32RVAdcStream (the ADC by DMA) on the labelled pads the DUT names as ADC channels (not
     the record's defects'). The probe's PWM drives the first, its GPIO holds the second (when there is one) high or
-    low; the sketch reads 16 halves of 256 rounds and reports the square wave it saw on the first (samples over 3/4
+    low; the sketch reads 16 halves of 256 rounds (96 on V003's 2 KB of RAM) and reports the square wave it saw on the first (samples over 3/4
     of full scale high, under 1/4 low, the rounds of its rises) and the second's range. One capture of the lines, a
     WireSkein section per condition judging the stimulus (becomes: the probe's wave and level); compared here: the
     wave's frequency from the rises (rounds between the first and last over the rate sampleRate() says) within 3 %
