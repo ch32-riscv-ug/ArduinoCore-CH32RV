@@ -95,16 +95,15 @@ def test_reset_reasons(dut, oep_host, record_property):
 
 
 def high_times(path, pad):
-    """The timing line's highs in the capture, in order (WireSkein's states, every pulse on its own - of_file()
-    gathers more than three odd pulses into one stretch of activity): [(t0 tick, seconds)]."""
+    """The timing line's highs in the capture, in order (WireSkein's states, every pulse on its own: max_odd=None
+    keeps of_file() from gathering odd pulses into one stretch of activity): [(t0 tick, seconds)]."""
     from wireskein import states
-    from wireskein._engine import fileio      # what states.of_file() reads with; asked for max_odd there
-    out = []
-    for cap in fileio.load_runs(pathlib.Path(path)):
-        ch = next(c for c in cap.channels if c.name == pad)
-        for s in states.of_line(ch.edges, ch.initial, cap.n_samples, cap.rate, ch.step, max_odd=1 << 30):
+    found = states.of_file(path, pins=[pad], max_odd=None)
+    rate, out = found["tick_hz"], []
+    for part in found["parts"]:
+        for s in part["lines"][pad]:
             if s.get("level") == 1:
-                out.append((s["t0"], (s["t1"] - s["t0"]) / cap.rate))
+                out.append((s["t0"], (s["t1"] - s["t0"]) / rate))
             elif "odd" in s:
                 out.append((s["odd"], s["high_s"]))
     return out

@@ -87,7 +87,7 @@ def test_uart_output_only(dut, ws_run, request, record_property):
                     wait(0.02)
                     with ws_run.section(3, "dut sends", expect=[uart(dut_tx["pad"], f_cpu / round(f_cpu / baud),
                                                                      data=out.hex(), bits=bits, parity=parity,
-                                                                     stop=stop, errors_max=0)]):
+                                                                     stop=stop)]):
                         ws_run.command(f"usend {COUNT}")
                         dut.write(f"usend {COUNT}\n")
                         _expect(dut, wait, rb"USEND \d+")
@@ -169,7 +169,7 @@ def test_uart_formats(dut, ws_run, request, record_property):
                     assert ask(wait, f"ucfg {baud} {k}", rb"UCFG (\d)").group(1) == b"1", f"{name}: Serial.begin refused"
                     probe_baud = io.configure(baud, fixture.FixtureUart.format_byte(bits, parity[0].upper(), stop))
                     wait(0.02)
-                    common = dict(bits=bits, parity=parity, stop=stop, errors_max=0)
+                    common = dict(bits=bits, parity=parity, stop=stop)
                     with ws_run.section(3, "dut sends", expect=[uart(dut_tx["pad"], dut_baud, data=out.hex(), **common),
                                                                 level(dut_rx["pad"], 1)]):
                         ws_run.command(f"usend {COUNT}")
@@ -214,13 +214,18 @@ def test_uart_formats(dut, ws_run, request, record_property):
 BREAK, BUFFER_FULL, FIFO_OVF, FRAME, PARITY = 1, 2, 3, 4, 5
 RX_BUFFER = 64                     # CH32RV_SERIAL_RX_BUFFER_SIZE's default
 EVEN_NONZERO = bytes(b for b in range(1, 256) if bin(b).count("1") % 2 == 0)
+# What WireSkein finds on the DUT's RX read in the DUT's own format (exactly; the rest none): every 8O1 byte a parity
+# error to 8E1, every even-parity 8E1 byte a framing error to 8N1 (the parity bit 0 where the stop bit should be), and
+# the four 0x00 four framing errors - a break to the core, which WireSkein reads as data 0 with no stop bit.
+WIRE_ERRORS = {"parity": {"parity": COUNT}, "frame": {"framing": COUNT}, "break": {"framing": 4}}
 
 
 def test_uart_receive_errors(dut, ws_run, request, record_property):
     """Each condition sets the DUT's Serial at 115200 and the probe's UART to a format, then the probe sends: what
     goes on the DUT's RX is decoded by WireSkein in the probe's format (the bytes, no error of that format's own), and
     what the DUT made of it - how many bytes it kept and which kinds onReceiveError() reported (uerr) - is compared
-    here. clean: 8N1 both, nothing reported, every byte kept. parity: 8E1 on the DUT, 8O1 sent, every byte dropped
+    here; the same line is read by WireSkein in the DUT's format too, with the errors the DUT should see there
+    (WIRE_ERRORS). clean: 8N1 both, nothing reported, every byte kept. parity: 8E1 on the DUT, 8O1 sent, every byte dropped
     with UART_PARITY_ERROR. frame: 8N1 on the DUT, 8E1 sent with even-parity bytes, so the DUT samples the parity
     bit (0) as its stop bit: UART_FRAME_ERROR, every byte dropped. break: the same with 0x00, the line low for the
     whole frame: UART_BREAK_ERROR alone. buffer-full: 100 bytes while the sketch reads none, the buffer keeps
@@ -253,6 +258,8 @@ def test_uart_receive_errors(dut, ws_run, request, record_property):
         idle = {dut_tx["pad"]: 1, dut_rx["pad"]: 1}
         with ws_run.section(1, f"receive errors {dut_rx['pad']}"):
             for name, (k, (bits, parity, stop), data, how, _, _) in conditions.items():
+                dut_bits, dut_parity, dut_stop = FORMATS[k]
+                wire_errors = WIRE_ERRORS.get(name)
                 with ws_run.section(2, name):
                     ws_run.command(f"ucfg {baud} {k}")
                     assert _expect_after(dut, wait, f"ucfg {baud} {k}", rb"UCFG (\d)").group(1) == b"1"
@@ -261,7 +268,10 @@ def test_uart_receive_errors(dut, ws_run, request, record_property):
                     wait(0.02)
                     with ws_run.section(3, "probe sends",
                                         expect=[uart(dut_rx["pad"], probe_baud, data=data.hex(), bits=bits,
-                                                     parity=parity, stop=stop, errors_max=0),
+                                                     parity=parity, stop=stop),
+                                                # the same line in the DUT's format: the errors it should see
+                                                uart(dut_rx["pad"], probe_baud, bits=dut_bits, parity=dut_parity,
+                                                     stop=dut_stop, errors=wire_errors),
                                                 starts(idle), ends(idle)]):
                         if how == "hold":
                             ws_run.command("uhold 500")

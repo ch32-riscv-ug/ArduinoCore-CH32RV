@@ -97,8 +97,8 @@ def test_serial_routes(dut, oep_host, ws_run, record_property):
                     probe_baud = io.configure(115200)
                     name = " / ".join(f"USART{n} route {k}" for n, k in usarts) + f" TX {tx} RX {rx}"
                     with ws_run.section(2, name, expect=[
-                            uart(rx, probe_baud, data=payload.hex(), errors_max=0),
-                            uart(tx, f_cpu / round(f_cpu / 115200), data=payload.hex(), errors_max=0),
+                            uart(rx, probe_baud, data=payload.hex()),
+                            uart(tx, f_cpu / round(f_cpu / 115200), data=payload.hex()),
                             only_moving([tx, rx]), starts(idle), ends(idle)]):
                         command = f"uart2 {lines[rx]['pin']} {lines[tx]['pin']} 115200"
                         ws_run.command(command)
