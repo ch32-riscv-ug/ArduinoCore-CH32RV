@@ -220,6 +220,11 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   出ない。1 本だけなら同じ段 7 で波は正しい。v003evt も 2 本で段 0、入れ替わり。試したこと: 止めるときに CONT を下ろして
   シーケンス 1 回分待ってから電源を落とす（前の止め方では途中の位置が残るという見立て）は効かず、戻した。次: 2 本のときに
   CTLR1・CTLR2・RSQR1/3・SAMPTR と DMA の CNTR を、開始の直後と最初の半分で読む（スケッチの側に一時的な診断を入れる）。
+  読んだ結果（同日、X035、段 0、2 本 PA2 / PA5）: CTLR1 0x100（SCAN）、CTLR2 0x001e0103（ADON・CONT・DMA）、RSQR1 0x00100000（2 本）、
+  RSQR3 0x0a2（ch2 → ch5）、SAMPTR2 は段 0 で、設定は正しい。バッファは最初の半分から最後の半分まで同じ形で、PA5 の値、PA2 の値の順に
+  並ぶ（PA5 High の条件で 4042 11 4053 5 …、PA5 Low で 15 11 12 4030 …）。途中でずれるのではなく、開始のときに最初の変換が 1 つ
+  DMA に拾われていない。開始は adc_go() の CTLR2 への 1 回の書き込み（CONT・DMA・ADON・SWSTART）。次: CONT と DMA を電源を入れる
+  前に立てておき、開始は SWSTART だけにする、などを比べる。
   - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
