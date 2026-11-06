@@ -181,7 +181,7 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
     of full scale high, under 1/4 low, the rounds of its rises) and the second's range. One capture of the lines, a
     WireSkein section per condition judging the stimulus (becomes: the probe's wave and level); compared here: the
     wave's frequency from the rises (rounds between the first and last over the rate sampleRate() says) within 3 %
-    of the probe's, its duty within 0.03 of the probe's, no overrun, and the second pin's range at its level."""
+    of the probe's, its duty within 0.03 of the probe's, no overrun, and the second pin's range at its level (all over 3/4 of full scale high, under 1/4 low)."""
     from oep_client import core
     from oep_client.fixture import Gpio, Pwm
     from wireskein.runlog import becomes
@@ -252,7 +252,8 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
                         wrong.append(f"{name}: duty {got_duty:.3f} from the stream, the probe makes {made.duty / Pwm.FULL:.3f}")
                     if overruns:
                         wrong.append(f"{name}: {overruns} overruns")
-                    if second == 1 and lo1 < full * 0.9 or second == 0 and hi1 > full * 0.1:
+                    # Over three quarters / under a quarter, as periph.adc: the probe's level is no reference.
+                    if second == 1 and lo1 <= full * 3 / 4 or second == 0 and hi1 >= full / 4:
                         wrong.append(f"{name}: the second pin read {lo1}..{hi1}")
                     wait(0.02)
 

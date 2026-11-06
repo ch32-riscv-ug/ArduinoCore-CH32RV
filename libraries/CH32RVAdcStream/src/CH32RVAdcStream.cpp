@@ -91,10 +91,29 @@ static uint32_t adc_mode(void)
     return CH32RV_ADC_CTLR2 & ~(CH32RV_ADC_CTLR2_ADON | ADC_CTLR2_CONT | ADC_CTLR2_DMA | CH32RV_ADC_CTLR2_SWSTART);
 }
 
+/* Stopped, powered down and up (adc_restart), with no DMA request left over.
+ * A conversion the DMA never took - the ADC still converting when a counted
+ * transfer (measure()) ran out - leaves a request that outlives the power-down
+ * and a read of RDATAR: the next channel enable moved one stale value at once,
+ * before the ADC started, and every pin after it sat one place late (pin 0's
+ * place holding the last pin's - X A B C A B C, CH32X035 / V003 with two or
+ * three pins, 2026-11-07). It is taken here into a dummy, with the ADC's DMA
+ * bit set so the ADC sees it answered; with none pending nothing moves. */
 static void adc_halt(void)
 {
-    adc_restart(adc_mode());
+    const uint32_t mode = adc_mode();
+    adc_restart(mode);
+    static volatile uint16_t dummy;
     CH1_CFGR = 0;
+    CH32RV_ADC_CTLR2 = mode | CH32RV_ADC_CTLR2_ADON | ADC_CTLR2_DMA;
+    CH1_PADDR = (uint32_t)(uintptr_t)&CH32RV_ADC_RDATAR;
+    CH1_MADDR = (uint32_t)(uintptr_t)&dummy;
+    CH1_CNTR = 1;
+    CH1_CFGR = CFGR_16BIT | CFGR_PL_HI | CFGR_EN;
+    for (volatile int settle = 0; settle < 100 && CH1_CNTR; settle++) {
+    }
+    CH1_CFGR = 0;
+    CH32RV_ADC_CTLR2 = mode | CH32RV_ADC_CTLR2_ADON;
     DMA_INTFCR = CH1_ALL;
 }
 
