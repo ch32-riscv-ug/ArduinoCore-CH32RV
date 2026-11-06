@@ -229,15 +229,11 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   ndmreset で、前のスケッチの周辺（SysTick、USART、RCC）が戻らないまま新しいスケッチが起動していた。OEP の reset op を
   システムリセットにして直った（oep-spec f3709f8、プローブ 0.0.51+c7556e3）。その版で v103evt の一通りは、spi.slave と wire の
   ほかは PASS。
-- [ ] CH32V103 の SPI スレーブは、バイトの境目でホールド時間がほぼ 0（2026-11-06、v103evt、全モード）。WireSkein の取り込みでは
-  MISO はモード 0 として正しい（8d5a515f542cc72c）が、各バイトの最後のビットの読み取りのエッジとほぼ同時に次のバイトの最初の
-  ビットに変わり（PA6 の hold_s 0.0）、エッジの少しあとで読むプローブの spi-controller はそこだけ次のビットを読む（モード 1 として
-  読んだ値 8c5a505e542dc62d と同じ）。X035・V006・V003 は通る。コアが入れるデータの誤りではなく、V103 の SPI の性質とみる。
-  CH32RVSPISlave の文書に V103 の注意として書くか、試験の相手の読み取りの時期を揃えるか（プローブの spi-controller がエッジで
-  読めるか [oep] に聞く）を決める。
-- [ ] CH32V103 の Wire: 3 バイトを STOP 付きで読むと、1 バイト目のあとが FF（2026-11-06、v103evt、n 3 stop 1）。WireSkein の
-  取り込みでは線の上でも 09 FF FF で、DUT は線のとおり読んでいる。クロックの引き延ばしは 0 回。相手（プローブの i2c-target）が
-  2 バイト目を用意できず FF を出したとみて、[oep] に確かめを頼んだ。同じ流しの n 3 stop 0 は通っている。
+- CH32V103 の spi.slave と wire（2026-11-07、v103evt）: どちらもコアではなかった。spi.slave は、プローブの spi-controller が
+  エッジの約 300 ns あとで MISO を読んでいたのと、試験の取り込み（10 MS/s）では V103 のホールド時間 25 ns が 0 に見えて WireSkein が
+  「どのモードでも読めない」としていたのの 2 つ。spi-controller はエッジちょうどで読むように直り（[oep]）、slave の取り込みを
+  40 MS/s にした（V103・X035 で PASS）。wire の n 3 stop 1 は、プローブの i2c-target が書き込みのあとの Sr を読みと取り違えていた
+  （[oep] が向きのビットで直した）。
 - [ ] 型番を選んだときの既定の経路が USB の端子に当たることがある（2026-11-06）。generate.py の既定は、デバッグとストラップ
   （SWD・NRST・BOOT）の端子は避けるが USB の D-/D+ は避けないので、CH32X035 の小さいパッケージ（D8U6 / F7P6 / F8U6 / G8R6 /
   G8U6）では I2C1 の既定が PC16 / PC17（UDM / UDP）になる。USB を使わないなら正しく、使うなら `Wire.begin()` が USB を

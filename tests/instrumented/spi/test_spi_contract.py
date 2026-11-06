@@ -32,6 +32,9 @@ from oep_client import core
 from oep_client.fixture import SpiTarget
 
 RATE = 10_000_000          # 20 samples a half period at 250 kHz, 5 at 1 MHz
+# The slave's MISO changes some 25 ns after the sampling edge at each byte boundary (CH32V103, 2026-11-07): at
+# 10 MS/s that falls in the edge's own sample and WireSkein reads it as changing at the edge (no mode reads it).
+SLAVE_RATE = 40_000_000
 CONDITIONS = [(mode, lsb, 250_000) for mode in range(4) for lsb in (0, 1)] + [(0, 0, 1_000_000)]
 
 
@@ -189,7 +192,8 @@ SLAVE_FILL = 0xA5
 
 def test_spi_slave(dut, oep_host, ws_run, record_property):
     """spi.slave (case spi only): CH32RVSPISlave on the SPI's default pins, CS the first other labelled line, the
-    probe's spi-controller the master at 100 kHz with 20 us from CS to the first clock. One capture of the four lines,
+    probe's spi-controller the master at 100 kHz with 20 us from CS to the first clock. One capture of the four lines
+    at 40 MS/s (SLAVE_RATE),
     a WireSkein section per condition judging the bus (spi: the mode, the clocks, MOSI = what the probe sent, MISO =
     what the slave queued, then its fill byte); what the slave kept (its Result: length and bytes) and what the
     probe read are compared here. In each of the four modes and both bit orders, 8 bytes queued and 8 clocked; then
@@ -258,7 +262,7 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
                     wait(0.01)
 
     try:
-        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi, miso)], rate=RATE, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi, miso)], rate=SLAVE_RATE, steps=steps)
     finally:
         core.plan_release(host, [ctrl.fn])
         dut.write("send\n")
