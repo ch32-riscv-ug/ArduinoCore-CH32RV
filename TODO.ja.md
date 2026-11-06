@@ -219,18 +219,33 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
     CH32V003（v003evt、2026-11-06）で wire.slave が 6 条件とも通った。
-- [ ] 既定の経路の端子が、その型番のリセットの端子に当たるときの印。generate.py の choose_routes はその型番を経路の数えから
-  外すが、`CH32RV_<X>_ABSENT` は端子の出ていない型番にしか付けないので、V006E8R6 / E8R7 と V005E6R6 では `SPI.begin()` が
-  SCK を NRST の PC5 に出す（同じファイルの説明では、チップがリセットする）。device-data 10a71f8（V006 系の NRST を 1 本に）で
-  V005 の既定が remap-4 から default に移って目に入った（2026-11-06）。直し方: その型番を ABSENT にする、型番ごとに別の経路を
-  既定にする、`reset` メニューのときだけ外す、などを比べる。
+- [ ] system の試験（test_watchdog_and_sleep）の High の長さを WireSkein で判定する（2026-11-06）。いまは states.of_file で
+  区間を取り出し、条件への当てはめと長さの比べを試験の側でしている。WireSkein 66a415c で `pulses(pad, count=1,
+  width_min_s=..., width_max_s=...)` が入った（区間の中で始まって終わるパルス、measured に widths_s）。PyPI に出たら版を
+  上げて置き換え、high_times を消す。
+- [ ] 型番を選んだときの既定の経路が USB の端子に当たることがある（2026-11-06）。generate.py の既定は、デバッグとストラップ
+  （SWD・NRST・BOOT）の端子は避けるが USB の D-/D+ は避けないので、CH32X035 の小さいパッケージ（D8U6 / F7P6 / F8U6 / G8R6 /
+  G8U6）では I2C1 の既定が PC16 / PC17（UDM / UDP）になる。USB を使わないなら正しく、使うなら `Wire.begin()` が USB を
+  止める。避けるなら、その型番の I2C1 は既定なしになる。USB を使うかは組み立ての時にしかわからないので、避ける・避けない・
+  USB を使う組み立てでだけ外す、を比べてから決める。
+- 型番ごとの既定の経路（2026-11-06）: 系列の既定の経路がその型番に無いとき（端子が出ていない、またはその型番の NRST・SWD・BOOT に当たる）、
+  型番を選んだ組み立てでは、その型番が出している経路から同じ規則で既定を選び直す（なければ既定なし。begin() に端子を渡す）。
+  ANY は系列の既定のまま。前は型番の ABSENT（経路が 1 本も無い）しか見ていなかったので、V006E8R6 / E8R7・V005E6R6 の
+  `SPI.begin()` は NRST の PC5 に SCK を出し、X035F8U6 などの `Wire.begin()` は出ていない PA10 / PA11 に出ていた。
+  15 系列の 61 件（emit_misfit_defaults）。SS も同じ経路の NSS にそろえた。既定なしにする案（B）も試作したが、既定の経路が
+  系列で決まらないインスタンスはすでに型番ごとに選び直しているので、それとそろう方（A）にした。
 - [ ] CH32V003 の DUT が、試験の途中で「ソフトウェアのリセット」で再起動することがある（2026-11-06）。UIAPduino（30eda0ea068b
   の v003）で softspi を 7 回流して 2 回。millis() が 2134 → 65 ms、6390 → 5 ms と戻り、起動時の resetReasonName() は
   software。スケッチはリセットを呼んでいない。リセット後のスケッチは試験が設定した端子を忘れ、端子の無い SoftSPI で答えるので、
   「線に何も出ない、読みが 0」で落ちる（v003evt の最初の流しの softspi も同じ形）。どちらも ws_capture の取り込み中で、一方は
   プローブの spi-target を使う最中。DUT の外から（SWIO のデバッグの線、ch32rv の dmseq やブローカー、プローブ）リセットが入る
-  道筋を [oep] と [ch32rv] に調べてもらっている。試験の側は、起動を知らせる行（BOOT とリセットの理由）をスケッチに足し、
-  途中のリセットを「線が出ない」でなく「DUT がリセットした」と報告できるようにしたい。
+  道筋を [oep] と [ch32rv] に調べてもらっている。試験の側は済み（2026-11-06）: スケッチは起動で `STARTUP <理由>` を出し、
+  run_hardware.py が落ちた case の dut.log から途中の STARTUP を拾って「the DUT restarted」とエラーの頭に付ける
+  （tests/sketch_support/README.ja.md）。
+  原因はプローブ（[oep]、2026-11-06）: dmseq のために DMCONTROL を読むとき、キャプチャと USB の DMA の負荷で P4 の CPU が
+  0.3〜0.6 µs 止まり、rw のビット（長い low）が縮んで V003 は書き込みと読み、DMCONTROL に 0xFFFFFFFF（ndmreset）が入っていた。
+  test_spi_contract と同じ組み合わせで 6 往復目に再現。oep-probe-arduino 695d4dc（SWIO の low を線が下がった時刻から数える）で
+  144 往復リセットなし。残り: 全プローブがその版になったら、v003（UIAPduino）と v003evt で softspi を流し直して閉じる。
 - [ ] v003evt の PC4 は、プローブで High にしても analogRead が 1023 中 909（同じ試験の PD2 は 1023、UIAPduino の PC4 は正しい）。
   評価ボード側の負荷とみて [oep] に確かめを頼んだ（2026-11-06）。負荷なら記録の defect（adc の lose）にする。
 - [ ] Wire（ハードウェアの I2C）の `requestFrom(addr, n, false)` のあとの転送が、ときどき 5（タイムアウト）になる（CH32V003、

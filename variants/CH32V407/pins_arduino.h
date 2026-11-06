@@ -383,15 +383,22 @@
     { 0, { PA2, PA3, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PD5, PD6, CH32RV_ROUTE_NO_PIN }, 0x00000008u, 0x00000000u }, \
 }
-/* USART3: route default, on 3 of 4 parts */
+/* USART3: route default, on 3 of 4 parts. Not on
+ * CH32V407KEU6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V407KEU6)
+/* no default on this part: begin() has to name the pins */
+#else
 #define CH32RV_SERIAL3_TX PB10
 #define CH32RV_SERIAL3_RX PB11
+#define CH32RV_SERIAL3_REMAP_VAL  0x00000000u
+#endif
 #define CH32RV_SERIAL3_HANDLER USART3_IRQHandler
 #define CH32RV_SERIAL3_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL3_CLKEN_MASK 0x00040000u
 #define CH32RV_SERIAL3_IRQ CH32RV_IRQN_USART3
 #define CH32RV_SERIAL3_REMAP_MASK 0x00000030u
-#define CH32RV_SERIAL3_REMAP_VAL  0x00000000u
 /* SERIAL3 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL3_ROUTE_COUNT 4
 #define CH32RV_SERIAL3_ROUTES { \
@@ -420,15 +427,25 @@
     { 2, { PE0, PE1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00020000u }, \
     { 3, { PE0, PE1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00030000u }, \
 }
-/* USART5: route default, on 3 of 4 parts */
+/* USART5: route default, on 3 of 4 parts. Not on
+ * CH32V407KEU6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V407KEU6)
+/* route remap-1: the series default is not on this part */
+#define CH32RV_SERIAL5_TX PB4
+#define CH32RV_SERIAL5_RX PB5
+#define CH32RV_SERIAL5_REMAP2_VAL 0x00040000u
+#else
 #define CH32RV_SERIAL5_TX PC12
 #define CH32RV_SERIAL5_RX PD2
+#define CH32RV_SERIAL5_REMAP2_VAL 0x00000000u
+#endif
 #define CH32RV_SERIAL5_HANDLER USART5_IRQHandler
 #define CH32RV_SERIAL5_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL5_CLKEN_MASK 0x00100000u
 #define CH32RV_SERIAL5_IRQ CH32RV_IRQN_USART5
 #define CH32RV_SERIAL5_REMAP2_MASK 0x000c0000u
-#define CH32RV_SERIAL5_REMAP2_VAL  0x00000000u
 /* SERIAL5 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL5_ROUTE_COUNT 4
 #define CH32RV_SERIAL5_ROUTES { \
@@ -457,15 +474,25 @@
     { 2, { PE10, PE11, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00200000u }, \
     { 3, { PC0, PC1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00300000u }, \
 }
-/* USART7: route default, on 3 of 4 parts */
+/* USART7: route default, on 3 of 4 parts. Not on
+ * CH32V407KEU6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V407KEU6)
+/* route remap-1: the series default is not on this part */
+#define CH32RV_SERIAL7_TX PA6
+#define CH32RV_SERIAL7_RX PA7
+#define CH32RV_SERIAL7_REMAP2_VAL 0x00400000u
+#else
 #define CH32RV_SERIAL7_TX PC2
 #define CH32RV_SERIAL7_RX PC3
+#define CH32RV_SERIAL7_REMAP2_VAL 0x00000000u
+#endif
 #define CH32RV_SERIAL7_HANDLER USART7_IRQHandler
 #define CH32RV_SERIAL7_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL7_CLKEN_MASK 0x00000080u
 #define CH32RV_SERIAL7_IRQ CH32RV_IRQN_USART7
 #define CH32RV_SERIAL7_REMAP2_MASK 0x00c00000u
-#define CH32RV_SERIAL7_REMAP2_VAL  0x00000000u
 /* SERIAL7 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL7_ROUTE_COUNT 4
 #define CH32RV_SERIAL7_ROUTES { \
@@ -474,15 +501,22 @@
     { 2, { PA9, PA10, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00800000u }, \
     { 3, { PA9, PA10, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00c00000u }, \
 }
-/* USART8: route default, on 3 of 4 parts */
+/* USART8: route default, on 3 of 4 parts. Not on
+ * CH32V407KEU6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V407KEU6)
+/* no default on this part: begin() has to name the pins */
+#else
 #define CH32RV_SERIAL8_TX PC4
 #define CH32RV_SERIAL8_RX PC5
+#define CH32RV_SERIAL8_REMAP2_VAL 0x00000000u
+#endif
 #define CH32RV_SERIAL8_HANDLER USART8_IRQHandler
 #define CH32RV_SERIAL8_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL8_CLKEN_MASK 0x00000100u
 #define CH32RV_SERIAL8_IRQ CH32RV_IRQN_USART8
 #define CH32RV_SERIAL8_REMAP2_MASK 0x03000000u
-#define CH32RV_SERIAL8_REMAP2_VAL  0x00000000u
 /* SERIAL8 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL8_ROUTE_COUNT 4
 #define CH32RV_SERIAL8_ROUTES { \
@@ -508,15 +542,25 @@
     { 2, { PE3, PE4, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x20000000u }, \
     { 3, { PE3, PE4, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x30000000u }, \
 }
-/* USART10: route default, on 2 of 4 parts */
+/* USART10: route default, on 2 of 4 parts. Not on
+ * CH32V407RET6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V407RET6)
+/* route remap-1: the series default is not on this part */
+#define CH32RV_SERIAL10_TX PB8
+#define CH32RV_SERIAL10_RX PB9
+#define CH32RV_SERIAL10_REMAP2_VAL 0x40000000u
+#else
 #define CH32RV_SERIAL10_TX PE0
 #define CH32RV_SERIAL10_RX PE1
+#define CH32RV_SERIAL10_REMAP2_VAL 0x00000000u
+#endif
 #define CH32RV_SERIAL10_HANDLER USART10_IRQHandler
 #define CH32RV_SERIAL10_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL10_CLKEN_MASK 0x00000400u
 #define CH32RV_SERIAL10_IRQ CH32RV_IRQN_USART10
 #define CH32RV_SERIAL10_REMAP2_MASK 0xc0000000u
-#define CH32RV_SERIAL10_REMAP2_VAL  0x00000000u
 #if defined(CH32RV_PART_CH32V407KEU6)
 #define CH32RV_SERIAL10_ABSENT 1   /* not on this part */
 #endif
@@ -554,7 +598,7 @@
     { 1, { PB8, PB9, CH32RV_ROUTE_NO_PIN }, 0x00000002u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (Wire). These are
- * the pads of I2C1's default route in the datasheet - a fact about
+ * the pads of I2C1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32RV_I2C1_SCL
@@ -604,7 +648,7 @@
     { 1, { PC10, PC11, PC12 }, 0x10000000u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (SPI). These are
- * the pads of SPI1's default route in the datasheet - a fact about
+ * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
 #define PIN_SPI_SCK CH32RV_SPI1_SCK

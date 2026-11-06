@@ -320,17 +320,28 @@
 
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
-/* USART1: route default, on 2 of 4 parts */
+/* USART1: route default, on 2 of 4 parts. Not on
+ * CH32V305FBP6, CH32V305GBU6: they have their own default (the same
+ * rule, from what they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V305FBP6) || defined(CH32RV_PART_CH32V305GBU6)
+/* route remap-1: the series default is not on this part */
+#define CH32RV_SERIAL1_TX PB6
+#define CH32RV_SERIAL1_RX PB7
+#define CH32RV_SERIAL1_REMAP_VAL  0x00000004u
+#define CH32RV_SERIAL1_REMAP2_VAL 0x00000000u
+#else
 #define CH32RV_SERIAL1_TX PA9
 #define CH32RV_SERIAL1_RX PA10
+#define CH32RV_SERIAL1_REMAP_VAL  0x00000000u
+#define CH32RV_SERIAL1_REMAP2_VAL 0x00000000u
+#endif
 #define CH32RV_SERIAL1_HANDLER USART1_IRQHandler
 #define CH32RV_SERIAL1_CLKEN_ADDR 0x40021018u
 #define CH32RV_SERIAL1_CLKEN_MASK 0x00004000u
 #define CH32RV_SERIAL1_IRQ CH32RV_IRQN_USART1
 #define CH32RV_SERIAL1_REMAP_MASK 0x00000004u
-#define CH32RV_SERIAL1_REMAP_VAL  0x00000000u
 #define CH32RV_SERIAL1_REMAP2_MASK 0x04000000u
-#define CH32RV_SERIAL1_REMAP2_VAL  0x00000000u
 /* SERIAL1 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL1_ROUTE_COUNT 4
 #define CH32RV_SERIAL1_ROUTES { \
@@ -372,15 +383,25 @@
     { 1, { PC10, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
     { 2, { PA13, PA14, CH32RV_ROUTE_NO_PIN }, 0x00000020u, 0x00000000u }, \
 }
-/* USART4: route default, on 2 of 4 parts */
+/* USART4: route default, on 2 of 4 parts. Not on
+ * CH32V305CCT6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V305CCT6)
+/* route remap-1: the series default is not on this part */
+#define CH32RV_SERIAL4_TX PB0
+#define CH32RV_SERIAL4_RX PB1
+#define CH32RV_SERIAL4_REMAP2_VAL 0x00010000u
+#else
 #define CH32RV_SERIAL4_TX PC10
 #define CH32RV_SERIAL4_RX PC11
+#define CH32RV_SERIAL4_REMAP2_VAL 0x00000000u
+#endif
 #define CH32RV_SERIAL4_HANDLER UART4_IRQHandler
 #define CH32RV_SERIAL4_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL4_CLKEN_MASK 0x00080000u
 #define CH32RV_SERIAL4_IRQ CH32RV_IRQN_UART4
 #define CH32RV_SERIAL4_REMAP2_MASK 0x00030000u
-#define CH32RV_SERIAL4_REMAP2_VAL  0x00000000u
 #if defined(CH32RV_PART_CH32V305FBP6)
 #define CH32RV_SERIAL4_ABSENT 1   /* not on this part */
 #endif
@@ -390,15 +411,25 @@
     { 0, { PC10, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PB0, PB1, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00010000u }, \
 }
-/* USART5: route default, on 2 of 4 parts */
+/* USART5: route default, on 2 of 4 parts. Not on
+ * CH32V305CCT6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V305CCT6)
+/* route remap-1: the series default is not on this part */
+#define CH32RV_SERIAL5_TX PB4
+#define CH32RV_SERIAL5_RX PB5
+#define CH32RV_SERIAL5_REMAP2_VAL 0x00040000u
+#else
 #define CH32RV_SERIAL5_TX PC12
 #define CH32RV_SERIAL5_RX PD2
+#define CH32RV_SERIAL5_REMAP2_VAL 0x00000000u
+#endif
 #define CH32RV_SERIAL5_HANDLER UART5_IRQHandler
 #define CH32RV_SERIAL5_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL5_CLKEN_MASK 0x00100000u
 #define CH32RV_SERIAL5_IRQ CH32RV_IRQN_UART5
 #define CH32RV_SERIAL5_REMAP2_MASK 0x000c0000u
-#define CH32RV_SERIAL5_REMAP2_VAL  0x00000000u
 #if defined(CH32RV_PART_CH32V305FBP6)
 #define CH32RV_SERIAL5_ABSENT 1   /* not on this part */
 #endif
@@ -493,7 +524,7 @@
 #define CH32RV_I2C2_CLKEN_ADDR 0x4002101cu
 #define CH32RV_I2C2_CLKEN_MASK 0x00400000u
 /* Arduino's standard names for the first bus (Wire). These are
- * the pads of I2C1's default route in the datasheet - a fact about
+ * the pads of I2C1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32RV_I2C1_SCL
@@ -528,18 +559,25 @@
 #define CH32RV_SPI2_MOSI PB15
 #define CH32RV_SPI2_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SPI2_CLKEN_MASK 0x00004000u
-/* SPI3: route default, on 2 of 4 parts */
+/* SPI3: route default, on 2 of 4 parts. Not on
+ * CH32V305GBU6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V305GBU6)
+/* route remap-1: the series default is not on this part */
+#define CH32RV_SPI3_SCK PC10
+#define CH32RV_SPI3_MISO PC11
+#define CH32RV_SPI3_MOSI PC12
+#define CH32RV_SPI3_REMAP_VAL  0x10000000u
+#else
 #define CH32RV_SPI3_SCK PB3
 #define CH32RV_SPI3_MISO PB4
 #define CH32RV_SPI3_MOSI PB5
+#define CH32RV_SPI3_REMAP_VAL  0x00000000u
+#endif
 #define CH32RV_SPI3_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SPI3_CLKEN_MASK 0x00008000u
-/* device-data lists PA15, PB5 for MOSI on this route;
- * the selection rule picked the one above (never a debug
- * or strap pad, prefer a pad on every part, else table
- * order - see resolve_pin_candidates). */
 #define CH32RV_SPI3_REMAP_MASK 0x10000000u
-#define CH32RV_SPI3_REMAP_VAL  0x00000000u
 #if defined(CH32RV_PART_CH32V305FBP6)
 #define CH32RV_SPI3_ABSENT 1   /* not on this part */
 #endif
@@ -550,7 +588,7 @@
     { 1, { PC10, PC11, PC12 }, 0x10000000u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (SPI). These are
- * the pads of SPI1's default route in the datasheet - a fact about
+ * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
 #define PIN_SPI_SCK CH32RV_SPI1_SCK

@@ -495,15 +495,25 @@
     { 2, { PE3, PE4, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x20000000u }, \
     { 3, { PE3, PE4, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x30000000u }, \
 }
-/* USART10: route default, on 2 of 3 parts */
+/* USART10: route default, on 2 of 3 parts. Not on
+ * CH32V467RET6: they have their own default (the same rule, from what
+ * they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V467RET6)
+/* route remap-1: the series default is not on this part */
+#define CH32RV_SERIAL10_TX PB8
+#define CH32RV_SERIAL10_RX PB9
+#define CH32RV_SERIAL10_REMAP2_VAL 0x40000000u
+#else
 #define CH32RV_SERIAL10_TX PE0
 #define CH32RV_SERIAL10_RX PE1
+#define CH32RV_SERIAL10_REMAP2_VAL 0x00000000u
+#endif
 #define CH32RV_SERIAL10_HANDLER USART10_IRQHandler
 #define CH32RV_SERIAL10_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL10_CLKEN_MASK 0x00000400u
 #define CH32RV_SERIAL10_IRQ CH32RV_IRQN_USART10
 #define CH32RV_SERIAL10_REMAP2_MASK 0xc0000000u
-#define CH32RV_SERIAL10_REMAP2_VAL  0x00000000u
 /* SERIAL10 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL10_ROUTE_COUNT 4
 #define CH32RV_SERIAL10_ROUTES { \
@@ -538,7 +548,7 @@
     { 1, { PB8, PB9, CH32RV_ROUTE_NO_PIN }, 0x00000002u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (Wire). These are
- * the pads of I2C1's default route in the datasheet - a fact about
+ * the pads of I2C1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32RV_I2C1_SCL
@@ -585,7 +595,7 @@
     { 1, { PC10, PC11, PC12 }, 0x10000000u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (SPI). These are
- * the pads of SPI1's default route in the datasheet - a fact about
+ * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
 #define PIN_SPI_SCK CH32RV_SPI1_SCK

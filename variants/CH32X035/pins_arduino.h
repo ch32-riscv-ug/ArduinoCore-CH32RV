@@ -328,15 +328,22 @@
     { 3, { PC0, PC1, CH32RV_ROUTE_NO_PIN }, 0x00000180u, 0x00000000u }, \
     { 4, { PA15, PA16, CH32RV_ROUTE_NO_PIN }, 0x00000200u, 0x00000000u }, \
 }
-/* USART3: route default, on 4 of 7 parts */
+/* USART3: route default, on 4 of 7 parts. Not on
+ * CH32X035D8U6, CH32X035F7P6, CH32X035F8U6: they have their own default
+ * (the same rule, from what they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32X035D8U6) || defined(CH32RV_PART_CH32X035F7P6) || defined(CH32RV_PART_CH32X035F8U6)
+/* no default on this part: begin() has to name the pins */
+#else
 #define CH32RV_SERIAL3_TX PB3
 #define CH32RV_SERIAL3_RX PB4
+#define CH32RV_SERIAL3_REMAP_VAL  0x00000000u
+#endif
 #define CH32RV_SERIAL3_HANDLER USART3_IRQHandler
 #define CH32RV_SERIAL3_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL3_CLKEN_MASK 0x00040000u
 #define CH32RV_SERIAL3_IRQ CH32RV_IRQN_USART3
 #define CH32RV_SERIAL3_REMAP_MASK 0x00000c00u
-#define CH32RV_SERIAL3_REMAP_VAL  0x00000000u
 /* SERIAL3 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL3_ROUTE_COUNT 4
 #define CH32RV_SERIAL3_ROUTES { \
@@ -345,15 +352,25 @@
     { 2, { PA18, PB14, CH32RV_ROUTE_NO_PIN }, 0x00000800u, 0x00000000u }, \
     { 3, { PB16, PB17, CH32RV_ROUTE_NO_PIN }, 0x00000c00u, 0x00000000u }, \
 }
-/* USART4: route default, on 5 of 7 parts */
+/* USART4: route default, on 5 of 7 parts. Not on
+ * CH32X035D8U6, CH32X035F7P6: they have their own default (the same
+ * rule, from what they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32X035D8U6) || defined(CH32RV_PART_CH32X035F7P6)
+/* route remap-2: the series default is not on this part */
+#define CH32RV_SERIAL4_TX PC16
+#define CH32RV_SERIAL4_RX PC17
+#define CH32RV_SERIAL4_REMAP_VAL  0x00002000u
+#else
 #define CH32RV_SERIAL4_TX PB0
 #define CH32RV_SERIAL4_RX PB1
+#define CH32RV_SERIAL4_REMAP_VAL  0x00000000u
+#endif
 #define CH32RV_SERIAL4_HANDLER USART4_IRQHandler
 #define CH32RV_SERIAL4_CLKEN_ADDR 0x4002101cu
 #define CH32RV_SERIAL4_CLKEN_MASK 0x00080000u
 #define CH32RV_SERIAL4_IRQ CH32RV_IRQN_USART4
 #define CH32RV_SERIAL4_REMAP_MASK 0x00007000u
-#define CH32RV_SERIAL4_REMAP_VAL  0x00000000u
 /* SERIAL4 routes for setRoute()/setPins(): route number, then TX, RX */
 #define CH32RV_SERIAL4_ROUTE_COUNT 6
 #define CH32RV_SERIAL4_ROUTES { \
@@ -376,13 +393,24 @@
 
 /* ---- I2C pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_i2cs) ---- */
-/* I2C1: route default, on 2 of 7 parts */
+/* I2C1: route default, on 2 of 7 parts. Not on
+ * CH32X035D8U6, CH32X035F7P6, CH32X035F8U6, CH32X035G8R6, CH32X035G8U6:
+ * they have their own default (the same rule, from what they bond) or
+ * none.
+ */
+#if defined(CH32RV_PART_CH32X035D8U6) || defined(CH32RV_PART_CH32X035F7P6) || defined(CH32RV_PART_CH32X035F8U6) || defined(CH32RV_PART_CH32X035G8R6) || defined(CH32RV_PART_CH32X035G8U6)
+/* route remap-2: the series default is not on this part */
+#define CH32RV_I2C1_SCL PC16
+#define CH32RV_I2C1_SDA PC17
+#define CH32RV_I2C1_REMAP_VAL  0x00000008u
+#else
 #define CH32RV_I2C1_SCL PA10
 #define CH32RV_I2C1_SDA PA11
+#define CH32RV_I2C1_REMAP_VAL  0x00000000u
+#endif
 #define CH32RV_I2C1_CLKEN_ADDR 0x4002101cu
 #define CH32RV_I2C1_CLKEN_MASK 0x00200000u
 #define CH32RV_I2C1_REMAP_MASK 0x0000001cu
-#define CH32RV_I2C1_REMAP_VAL  0x00000000u
 /* I2C1 routes for setRoute()/setPins(): route number, then SCL, SDA */
 #define CH32RV_I2C1_ROUTE_COUNT 6
 #define CH32RV_I2C1_ROUTES { \
@@ -394,7 +422,7 @@
     { 5, { PC18, PC19, CH32RV_ROUTE_NO_PIN }, 0x00000014u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (Wire). These are
- * the pads of I2C1's default route in the datasheet - a fact about
+ * the pads of I2C1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32RV_I2C1_SCL
@@ -423,7 +451,7 @@
     { 3, { PC5, PC6, PC7 }, 0x00000003u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (SPI). These are
- * the pads of SPI1's default route in the datasheet - a fact about
+ * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
 #define PIN_SPI_SCK CH32RV_SPI1_SCK

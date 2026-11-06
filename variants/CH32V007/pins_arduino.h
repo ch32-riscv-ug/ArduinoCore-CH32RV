@@ -268,7 +268,7 @@
     { 4, { PB3, PD1, CH32RV_ROUTE_NO_PIN }, 0x00000020u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (Wire). These are
- * the pads of I2C1's default route in the datasheet - a fact about
+ * the pads of I2C1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32RV_I2C1_SCL
@@ -280,14 +280,25 @@
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
-/* SPI1: route remap-3, on 2 of 4 parts */
+/* SPI1: route remap-3, on 2 of 4 parts. Not on
+ * CH32V007E8R6, CH32V007E8R7: they have their own default (the same
+ * rule, from what they bond) or none.
+ */
+#if defined(CH32RV_PART_CH32V007E8R6) || defined(CH32RV_PART_CH32V007E8R7)
+/* route remap-4: the series default is not on this part */
+#define CH32RV_SPI1_SCK PD4
+#define CH32RV_SPI1_MISO PD5
+#define CH32RV_SPI1_MOSI PD6
+#define CH32RV_SPI1_REMAP_VAL  0x00000004u
+#else
 #define CH32RV_SPI1_SCK PB1
 #define CH32RV_SPI1_MISO PB2
 #define CH32RV_SPI1_MOSI PC0
+#define CH32RV_SPI1_REMAP_VAL  0x00000003u
+#endif
 #define CH32RV_SPI1_CLKEN_ADDR 0x40021018u
 #define CH32RV_SPI1_CLKEN_MASK 0x00001000u
 #define CH32RV_SPI1_REMAP_MASK 0x00000007u
-#define CH32RV_SPI1_REMAP_VAL  0x00000003u
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
 #define CH32RV_SPI1_ROUTE_COUNT 7
 #define CH32RV_SPI1_ROUTES { \
@@ -300,7 +311,7 @@
     { 6, { PB5, PC7, PB4 }, 0x00000006u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (SPI). These are
- * the pads of SPI1's default route in the datasheet - a fact about
+ * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
 #define PIN_SPI_SCK CH32RV_SPI1_SCK
@@ -309,8 +320,14 @@
 #define SCK PIN_SPI_SCK
 #define MISO PIN_SPI_MISO
 #define MOSI PIN_SPI_MOSI
+#if defined(CH32RV_PART_CH32V007E8R6) || defined(CH32RV_PART_CH32V007E8R7)
+#define PIN_SPI_SS PD3
+#else
 #define PIN_SPI_SS PB0
+#endif
+#if defined(PIN_SPI_SS)
 #define SS PIN_SPI_SS
+#endif
 #endif
 
 /* ---- PWM: 8 pads on TIM1/TIM2, default route ---- */

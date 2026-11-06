@@ -519,7 +519,7 @@
     { 9, { PC0, PC1, CH32RV_ROUTE_NO_PIN }, 0x00000009u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (Wire). These are
- * the pads of I2C2's default route in the datasheet - a fact about
+ * the pads of I2C2's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32RV_I2C2_SCL
@@ -613,7 +613,7 @@
     { 6, { PC10, PB4, PC12 }, 0x00000006u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (SPI). These are
- * the pads of SPI1's default route in the datasheet - a fact about
+ * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
 #define PIN_SPI_SCK CH32RV_SPI1_SCK
