@@ -224,6 +224,12 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   SCK を NRST の PC5 に出す（同じファイルの説明では、チップがリセットする）。device-data 10a71f8（V006 系の NRST を 1 本に）で
   V005 の既定が remap-4 から default に移って目に入った（2026-11-06）。直し方: その型番を ABSENT にする、型番ごとに別の経路を
   既定にする、`reset` メニューのときだけ外す、などを比べる。
+- [ ] softspi（SoftSPI）が CH32V003 で途中から線に出なくなることがある（2026-11-06）。UIAPduino（30eda0ea068b の v003、PD2 /
+  PA1 / PA2）で、output-only の 10 条件のうち 5 番目（mode 2 MSBFIRST）まで通り、6 番目からは 3 本とも動かない。スケッチは
+  XFER に答え続け、読みは 000000。v003evt の最初の流しでも読みが 0 で落ち、2 回目と v006evt では通った。端子の設定が途中で
+  入力に戻る、などを疑う。次: 落ちた回の GPIO の CFGLR を XFER ごとに出して確かめる。
+- [ ] v003evt の PC4 は、プローブで High にしても analogRead が 1023 中 909（同じ試験の PD2 は 1023、UIAPduino の PC4 は正しい）。
+  評価ボード側の負荷とみて [oep] に確かめを頼んだ（2026-11-06）。負荷なら記録の defect（adc の lose）にする。
 - [ ] Wire（ハードウェアの I2C）の `requestFrom(addr, n, false)` のあとの転送が、ときどき 5（タイムアウト）になる（CH32V003、
   v003evt、2026-11-06。n = 1〜3 のどれが落ちるかは回ごとに違い、0〜3 回）。読み終わりで CTLR1 の START が立ったまま SB が来ず、
   SCL が Low のまま（WireSkein の取り込みで 3.8 ms のあと、次の start() の間ずっと 24.9 ms）。タイムアウトの後には SB が立っている。
