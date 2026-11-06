@@ -232,6 +232,13 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   違いは AdcStream の側（begin() の measure() のくり返し、循環の DMA と HT / TC の割り込み、プローブが駆動する入力のインピーダンス
   など）にある。なお X035 の ADC は、スキャン中も 1 本ごとに EOC を立てる（EOC を見て SWSTART を書くとシーケンスが頭から
   やり直しになる）。次: adcseq に AdcStream の手順を 1 つずつ足して（measure() のくり返し、循環 DMA）、毎回ずれる所を探す。
+  原因の手前（同日）: AdcStream そのもの（scratchpad の adcseq2.ino、プローブ無し、PA2 Low・PA5 High の出力）でも毎回ずれ、最初の半分の
+  先頭に中途半端な値（293〜2076）が 1 個入り、そのあとは ch2・ch5 の正しい順。startContinuous() で ADC を走らせる前（adc_go() の直前）
+  に、DMA の残り数がもう 128 → 127 に減っている（STATR は 0x10、EOC なし）。DMA のチャネルを有効にした瞬間に、残っていた要求が古い
+  値を 1 個運んでいる。チャネルを止めて数え直し、有効にし直しても、また 1 個運ぶ（要求が消えない）。adc_arm() を DMA の前に
+  移しても同じ。最小の手順（adcseq.ino、事前に DMA を回すが begin() を通らない）では起きない。次: 要求の出どころを分ける
+  （ADC の DMA ビットを 0 にしたまま要求が出るのか、DMA1 チャネル 1 につながる別の周辺か。最小の手順で begin() と同じ
+  measure() を足す）。分かれば、開始の前にその要求を落とす。
   - Wire のスレーブ: AVR の twi に合わせた（2026-10-27）。書き込みのあと repeated START で読みが続くと、`onReceive` が先、
     `onRequest` が後（レジスタの番地を書いて読む形。Wire の I2CSlaveRegister の例がこの形）。読むだけの転送の STOP では
     `onReceive` を呼ばない。番地一致と最後の受信バイトが同時に立ったときも、そのバイトを `onReceive` に入れる。
