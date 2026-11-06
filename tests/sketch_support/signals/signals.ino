@@ -148,7 +148,12 @@ static void reply(char *command)
     }
 }
 
-void setup() { SerialDMSeq.begin(115200); }
+void setup()
+{
+    SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
+}
 
 void loop()
 {

@@ -16,6 +16,7 @@
  * Servers, always: TCP 7 echoes, TCP 5001 takes and counts, TCP 5002 sends
  * bytes i & 0xFF (i from 0) until the peer closes, UDP 9000 echoes. */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <Network.h>
 /* No TLS where there is no hardware RNG (CH32V208 / V203RB): https answers HTTPS NOTLS. */
@@ -216,6 +217,8 @@ static void reply(char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     begun = ETH.begin();
     echoServer.begin();
     sinkServer.begin();

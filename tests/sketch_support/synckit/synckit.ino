@@ -16,6 +16,7 @@
  *                     <deadline runs> <deadline late ms>
  *   fail <step>    when the timer cannot be had */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVSyncKit.h>
 #include <CH32RVTaskKit.h>
@@ -233,6 +234,8 @@ static uint8_t used;
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
 }
 
 void loop()

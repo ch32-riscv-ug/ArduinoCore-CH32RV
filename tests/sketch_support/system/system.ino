@@ -114,6 +114,8 @@ void setup()
     reason = (int)CH32RV.resetReason();
     cause = (int)CH32RV.wakeupCause();
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
 }
 
 void loop()

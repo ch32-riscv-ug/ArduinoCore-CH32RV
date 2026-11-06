@@ -11,6 +11,7 @@
  *                   <current rate> <SampleRateChanged events>
  *   video           VIDEO <frames sent> <streaming 0/1> */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
 #include <string.h>
@@ -83,6 +84,8 @@ static void reply(const char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     speaker.addFormat({RATE, 1, 2, 16});
     speaker.addFormat({RATE / 2, 1, 2, 16});
     mic.addFormat({RATE, 1, 2, 16});

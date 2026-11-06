@@ -42,3 +42,15 @@ def test_no_address_does_not_search_for_equipment(runner, monkeypatch, tmp_path)
 def test_duplicate_addresses_are_refused(runner):
     with pytest.raises(SystemExit):
         runner.parse_options(['--probe', 'oep://30eda0e31108/x035', '--probe', 'OEP://30EDA0E31108/X035', '--out', 'r'])
+
+
+def test_restarts_are_startup_lines_after_the_first_line_of_a_test(runner, tmp_path):
+    logs = tmp_path / 'logs' / 'pytest-embedded' / 'run'
+    (logs / 'test_a').mkdir(parents=True)
+    (logs / 'test_b').mkdir(parents=True)
+    (logs / 'test_c').mkdir(parents=True)
+    (logs / 'test_a' / 'dut.log').write_text('STARTUP external\r\nREADY 1 x\r\n')     # the boot the console caught
+    (logs / 'test_b' / 'dut.log').write_text('READY 2 x\r\nXFER 00\r\nSTARTUP software\r\nXFER 00\r\n')
+    (logs / 'test_c' / 'dut.log').write_text('')
+    assert runner.restarts(tmp_path / 'logs') == [('test_b', 'software')]
+    assert runner.restarts(tmp_path / 'none') == []

@@ -20,6 +20,7 @@
  * packet comes back with its note raised by 12 (the MIDI receive queue is
  * one event: the rest of a USB packet waits in the endpoint's buffer). */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
 #include <string.h>
@@ -125,6 +126,8 @@ static void reply(const char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     CH32RVUsbMidiConfig midiConfig = midi.configuration();
     midiConfig.rxPackets = 1;
     midi.configure(midiConfig);

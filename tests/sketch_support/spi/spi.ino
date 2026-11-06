@@ -24,6 +24,7 @@
  *                                      (SRES NONE - <missed> <overruns> when none)
  *   send                               slave.end(): SEND */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <SPI.h>
 #if defined(SPI_INTERFACES_COUNT)
@@ -94,6 +95,8 @@ static uint8_t used;
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
 }
 
 void loop()

@@ -158,6 +158,8 @@ void setup()
     bootFound = k[0] == KEPT_MAGIC && k[2] == ~k[1];
     bootValue = bootFound ? k[1] : 0;
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
 }
 
 void loop()

@@ -24,6 +24,7 @@
  * <buttons> / H CONSUMER <usage> <p|r> / H HIDVIN <hex> / H MIDI <cin>
  * <status> <d1> <d2>. */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbHost.h>
 #include <string.h>
@@ -323,6 +324,8 @@ static void reply(char *cmd)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     usb.onDeviceConnected([](const CH32RVUsbHostDeviceInfo &d) {
         SerialDMSeq.print("H CONNECTED ");
         SerialDMSeq.print(d.address);

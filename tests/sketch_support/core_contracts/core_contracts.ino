@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,6 +191,8 @@ void reply(const char *command) {
 void setup() {
   Serial.begin(115200);
   SerialDMSeq.begin(115200);
+  SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+  SerialDMSeq.println(CH32RV.resetReasonName());
 }
 
 void loop() {

@@ -14,6 +14,7 @@
  * Over USB, without a command: every frame of EtherType 0x88B5 that arrives
  * goes back out with its payload's first byte incremented. */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
 #include <string.h>
@@ -93,6 +94,8 @@ static void reply(const char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     CH32RVUsbNetConfig netConfig;
     netConfig.txBuffers = netConfig.rxBuffers = 2;
     netConfig.txBuffer = txRing;

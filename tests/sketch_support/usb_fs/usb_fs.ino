@@ -18,6 +18,7 @@
  *                   (an in-place rewrite, cut at close), unmount, show it again
  *   slots           SLOTS <used> <failed writes> */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
 #include <CH32RVUsbDeviceMscBlock.h>
@@ -201,6 +202,8 @@ static void reply(const char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     msc.vendorID("CH32RV");
     msc.productID("usb-fs");
     shared.attach(msc);

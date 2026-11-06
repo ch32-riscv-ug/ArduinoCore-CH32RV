@@ -8,6 +8,7 @@
  *                             then analogRead(pin) at the ADC's own width, eight times:
  *                             DAC <mean> <min> <max> <full scale> */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +68,12 @@ static void reply(char *command)
     }
 }
 
-void setup() { SerialDMSeq.begin(115200); }
+void setup()
+{
+    SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
+}
 
 void loop()
 {

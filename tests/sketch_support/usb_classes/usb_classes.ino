@@ -35,6 +35,7 @@
  * 0x10 (IN) answers "CH32"; the FAT disk holds README.TXT; the card answers
  * an APDU with its bytes reversed followed by 90 00. */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
 #include <string.h>
@@ -274,6 +275,8 @@ static void reply(const char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     disk.format("CONTRACT");
     disk.addTextFile("README.TXT", "CH32RV usb-classes " BENCH_BUILD_ID "\r\n");
     msc.vendorID("CH32RV");

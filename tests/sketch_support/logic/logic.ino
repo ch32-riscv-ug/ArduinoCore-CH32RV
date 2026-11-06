@@ -11,6 +11,7 @@
  *
  * A period is counted from one rising edge of the pin's bit to the next. */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVLogicCapture.h>
 #include <CH32RVTimer.h>
@@ -21,11 +22,13 @@
 #error BENCH_BUILD_ID must identify this compilation
 #endif
 
-/* 2 KB of RAM on V003 (4 KB on V006's ANY): a smaller buffer there. */
+/* 2 KB of RAM on V003 (4 KB on V006's ANY): a smaller buffer there, which
+ * V003 fills to its stack (496 leaves room for the CH32RV object of the
+ * STARTUP line; a half still holds two 100-sample periods). */
 #if defined(CH32RV_SERIES_CH32V002) || defined(CH32RV_SERIES_CH32V003) || defined(CH32RV_SERIES_CH32V004) || \
     defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
     defined(CH32RV_SERIES_CH32M007)
-#define SAMPLES 512u
+#define SAMPLES 496u
 #else
 #define SAMPLES 2048u
 #endif
@@ -216,6 +219,8 @@ static void reply(char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
 }
 
 void loop()

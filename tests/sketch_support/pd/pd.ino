@@ -13,6 +13,7 @@
  *   vbus <pin>                VBUS <mV at the pin> (analogRead, scaled by the measured VDD)
  *   restart                   RESTART <begin 0/1>: end() and begin() under a live contract */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbPd.h>
 #include <stdlib.h>
@@ -109,6 +110,8 @@ static void reply(char *command)
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     begun = USBPD.begin();
 }
 

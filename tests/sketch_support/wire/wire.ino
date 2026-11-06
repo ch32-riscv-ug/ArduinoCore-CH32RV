@@ -21,6 +21,7 @@
  *   sgot                  SGOT <onReceive calls> <onRequest calls> <the order, R / Q per
  *                         call, last 8> <the last onReceive's count> <its bytes, hex or -> */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <Wire.h>
 #include <stdlib.h>
@@ -116,6 +117,8 @@ static uint8_t used;
 void setup()
 {
     SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
     Wire.begin();
     Wire.setClock(100000);
 }

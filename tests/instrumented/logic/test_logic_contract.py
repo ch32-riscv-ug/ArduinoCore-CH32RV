@@ -1,7 +1,7 @@
 """logic.continuous / logic.burst: CH32RVLogicCapture on a port of the DUT's own
 (tests/sketch_support/logic/logic.ino). The sketch outputs a PWM from another
 timer on a pin of that port; with the capture at 1 MS/s and the PWM at 10 kHz
-(250 kS/s and 2.5 kHz with the small parts' 512-sample buffer), both from
+(250 kS/s and 2.5 kHz with the small parts' 496-sample buffer), both from
 F_CPU, every period is 100 samples. No wiring."""
 import json
 import pathlib

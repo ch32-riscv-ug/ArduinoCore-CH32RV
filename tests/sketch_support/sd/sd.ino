@@ -11,6 +11,7 @@
  *   end                                END
  * Pins are the sketch's pin numbers. */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <SD.h>
 #include <SD_MMC.h>
@@ -102,7 +103,12 @@ static void reply(char *command)
     }
 }
 
-void setup() { SerialDMSeq.begin(115200); }
+void setup()
+{
+    SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
+}
 
 void loop()
 {

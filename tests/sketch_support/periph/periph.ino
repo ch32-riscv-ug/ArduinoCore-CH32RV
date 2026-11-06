@@ -27,6 +27,7 @@
  *                             <samples> <high> <low> <rises> <first rise> <last rise>
  *                             (HSTREAM 0 when begin() refused) */
 #include <Arduino.h>
+#include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <string.h>
 #if defined(NUM_ANALOG_INPUTS)
@@ -232,7 +233,12 @@ static void reply(char *command)
     }
 }
 
-void setup() { SerialDMSeq.begin(115200); }
+void setup()
+{
+    SerialDMSeq.begin(115200);
+    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    SerialDMSeq.println(CH32RV.resetReasonName());
+}
 
 void loop()
 {

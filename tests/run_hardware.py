@@ -213,6 +213,19 @@ def junit_skips(path):
     return [s.get("message", "") for s in skips]
 
 
+def restarts(logs):
+    """The DUT's restarts in the middle of a test: (test, reset reason) for each STARTUP line (every sketch prints
+    `STARTUP <resetReasonName()>` at boot) that comes after another line of the same test's dut.log. A STARTUP as
+    the log's first line is the boot the console caught opening, not a restart."""
+    found = []
+    for log in sorted(pathlib.Path(logs).glob("**/dut.log")):
+        lines = [line.strip() for line in log.read_text(errors="replace").splitlines() if line.strip()]
+        for index, line in enumerate(lines):
+            if index and line.startswith("STARTUP "):
+                found.append((log.parent.name, line.split(None, 1)[1]))
+    return found
+
+
 def stage_case(work, name, case, target):
     directory = work / "cases" / name / case
     directory.mkdir(parents=True)
@@ -414,6 +427,7 @@ def main(argv=None):
                 if target["cases"].get(case, "run") != "run":
                     continue
                 result = dict(target=name, case=case, status="NOT_RUN")
+                module = None
                 report["cases"].append(result)
                 save()
                 try:
@@ -454,6 +468,13 @@ def main(argv=None):
                             raise RuntimeError(f"after the power cycle the port has {again['target_name']}")
                 except Exception as error:
                     result.update(status="FAIL", error=str(error))
+                    if args.execute and module is not None:
+                        # A test that failed because the DUT restarted under it says so first.
+                        restarted = restarts(module.parent / "logs")
+                        if restarted:
+                            result["restarted"] = [f"{test}: {reason}" for test, reason in restarted]
+                            result["error"] = ("the DUT restarted (" + "; ".join(result["restarted"]) + "); "
+                                               + result["error"])
                     if args.execute and case == "power":
                         # Pass or fail, the next case must not start while the probe still boots.
                         try:
