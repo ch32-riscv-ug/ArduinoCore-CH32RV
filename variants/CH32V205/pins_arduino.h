@@ -332,6 +332,8 @@
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
 /* USART1: route af-2, on every part */
+/* PB6 / PB7 also USB D- / D+ (CH32V205CCT6, CH32V205RCT6,
+ * CH32V205VCT6): with USB in use, name other pins. */
 #define CH32RV_SERIAL1_TX PB6
 #define CH32RV_SERIAL1_RX PB7
 /* device-data lists PA6, PA9, PB15, PB6 for TX on this route;

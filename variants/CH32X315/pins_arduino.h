@@ -411,6 +411,8 @@
     { 1, { PD8, PD9, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
 }
 /* USART2: route af-1, on every part */
+/* PD6 / PD7 also USB D- / D+ (every part): with USB in use, name other
+ * pins. */
 #define CH32RV_SERIAL2_TX PD6
 #define CH32RV_SERIAL2_RX PD7
 /* device-data lists PA4, PD6, PC12 for TX on this route;
@@ -559,6 +561,8 @@
     { 3, { PD4, PC15, CH32RV_ROUTE_NO_PIN }, 0x00000003u, 0x00000000u }, \
 }
 /* I2C2: route af-3, on every part */
+/* PD6 / PD7 also USB D- / D+ (every part): with USB in use, name other
+ * pins. */
 #define CH32RV_I2C2_SCL PD6
 #define CH32RV_I2C2_SDA PD7
 #define CH32RV_I2C2_CLKEN_ADDR 0x4002101cu

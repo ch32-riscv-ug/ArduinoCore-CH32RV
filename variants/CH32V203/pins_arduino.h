@@ -424,6 +424,9 @@
 /* ---- I2C pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_i2cs) ---- */
 /* I2C1: route default, on 10 of 12 parts */
+/* PB6 / PB7 also USB D- / D+ (CH32V203C6T6, CH32V203C6U6, CH32V203C8T6,
+ * CH32V203C8U6, CH32V203F8P6, CH32V203G8R6, CH32V203K8T6, CH32V203K8U7,
+ * CH32V203RBT6): with USB in use, name other pins. */
 #define CH32RV_I2C1_SCL PB6
 #define CH32RV_I2C1_SDA PB7
 #define CH32RV_I2C1_CLKEN_ADDR 0x4002101cu

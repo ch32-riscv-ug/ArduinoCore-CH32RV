@@ -358,6 +358,8 @@
  */
 #if defined(CH32RV_PART_CH32X035D8U6) || defined(CH32RV_PART_CH32X035F7P6)
 /* route remap-2: the series default is not on this part */
+/* PC16 / PC17 also USB D- / D+ (every part): with USB in use, name
+ * other pins. */
 #define CH32RV_SERIAL4_TX PC16
 #define CH32RV_SERIAL4_RX PC17
 #define CH32RV_SERIAL4_REMAP_VAL  0x00002000u
@@ -400,6 +402,8 @@
  */
 #if defined(CH32RV_PART_CH32X035D8U6) || defined(CH32RV_PART_CH32X035F7P6) || defined(CH32RV_PART_CH32X035F8U6) || defined(CH32RV_PART_CH32X035G8R6) || defined(CH32RV_PART_CH32X035G8U6)
 /* route remap-2: the series default is not on this part */
+/* PC16 / PC17 also USB D- / D+ (every part): with USB in use, name
+ * other pins. */
 #define CH32RV_I2C1_SCL PC16
 #define CH32RV_I2C1_SDA PC17
 #define CH32RV_I2C1_REMAP_VAL  0x00000008u

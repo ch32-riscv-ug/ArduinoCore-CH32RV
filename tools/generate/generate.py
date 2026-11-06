@@ -2300,6 +2300,38 @@ def load_forbidden_pads(tables: pathlib.Path) -> dict:
     return forbidden
 
 
+# part -> pads that are the part's USB D- / D+ (any USB controller but PD's CC
+# lines). Not kept off the defaults: on V205, V407 / V467 and X305 / X315 they
+# are the standard Serial / Wire pads too, and whether a sketch uses USB is not
+# known when the variant is generated. The headers say so instead (usb_note).
+USB_PADS: dict = {}
+
+
+def load_usb_pads(tables: pathlib.Path) -> dict:
+    usb: dict = {}
+    for r in read_table(tables, "pinout.csv"):
+        if (r["peripheral"].startswith("USB") and r["peripheral"] != "USBPD"
+                and r["role"] in ("DM", "DP") and r.get("port") and r.get("gpio")):
+            usb.setdefault(r["part_number"], set()).add((r["port"], int(r["gpio"])))
+    return usb
+
+
+def usb_note(pads, parts) -> list:
+    """A comment when a default pad is also a USB D- / D+ on some of `parts`:
+    begin() there takes the pad from USB, so a sketch using both names other
+    pins (setPins / begin(pins))."""
+    shared = sorted({pad for pad in pads for pn in parts if pad in USB_PADS.get(pn, ())})
+    if not shared:
+        return []
+    on = [pn for pn in parts if any(pad in USB_PADS.get(pn, ()) for pad in shared)]
+    where = "every part" if len(on) == len(parts) else ", ".join(on)
+    lines = textwrap.wrap(f"{' / '.join(pad_name(*p) for p in shared)} also USB D- / D+ ({where}): "
+                          "with USB in use, name other pins.",
+                          width=72, initial_indent="/* ", subsequent_indent=" * ")
+    lines[-1] += " */"
+    return lines
+
+
 def resolve_pin_candidates(by_board: dict, kinds: list):
     """Collapse each role's candidate list to one pad, per board.
 
@@ -2714,10 +2746,12 @@ def emit_misfit_defaults(out: list, prefix: str, roles: tuple, series: str,
         first = False
         if pick:
             out.append(f"/* route {pick[0]}: the series default is not on this part */")
+            out.extend(usb_note(pick[1], members))
             define(*pick)
         else:
             out.append("/* no default on this part: begin() has to name the pins */")
     out.append("#else")
+    out.extend(usb_note(pads, [pn for pn in parts if pn not in mis]))
     define(route, pads)
     out.append("#endif")
 
@@ -3458,6 +3492,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 where = ("on every part" if coverage == len(parts)
                          else f"on {coverage} of {len(parts)} parts")
                 out.append(f"/* USART{index}: route {route}, {where} */")
+                out.extend(usb_note(pads, parts))
                 out.append(f"#define CH32RV_SERIAL{index}_TX {pad_name(*tx)}")
                 out.append(f"#define CH32RV_SERIAL{index}_RX {pad_name(*rx)}")
                 out.extend(alternatives("uart", index, route, ("TX", "RX")))
@@ -3552,6 +3587,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 where = ("on every part" if coverage == len(parts)
                          else f"on {coverage} of {len(parts)} parts")
                 out.append(f"/* I2C{index}: route {route}, {where} */")
+                out.extend(usb_note(pads, parts))
                 out.append(f"#define CH32RV_I2C{index}_SCL {pad_name(*scl)}")
                 out.append(f"#define CH32RV_I2C{index}_SDA {pad_name(*sda)}")
                 out.extend(clken_defines(f"CH32RV_I2C{index}", f"I2C{index}"))
@@ -3631,6 +3667,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 where = ("on every part" if coverage == len(parts)
                          else f"on {coverage} of {len(parts)} parts")
                 out.append(f"/* SPI{index}: route {route}, {where} */")
+                out.extend(usb_note(pads, parts))
                 out.append(f"#define CH32RV_SPI{index}_SCK {pad_name(*sck)}")
                 out.append(f"#define CH32RV_SPI{index}_MISO {pad_name(*miso)}")
                 out.append(f"#define CH32RV_SPI{index}_MOSI {pad_name(*mosi)}")
@@ -4240,6 +4277,8 @@ def main() -> int:
 
     resolve_pin_candidates(by_board, [uarts, i2cs, spis, dacs])
     forbidden = load_forbidden_pads(args.tables)
+    USB_PADS.clear()
+    USB_PADS.update(load_usb_pads(args.tables))
 
     missing = [s for s in SERIES_CONFIG if s not in by_board]
     if missing:

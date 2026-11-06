@@ -326,6 +326,8 @@
  */
 #if defined(CH32RV_PART_CH32V305FBP6) || defined(CH32RV_PART_CH32V305GBU6)
 /* route remap-1: the series default is not on this part */
+/* PB6 / PB7 also USB D- / D+ (every part): with USB in use, name other
+ * pins. */
 #define CH32RV_SERIAL1_TX PB6
 #define CH32RV_SERIAL1_RX PB7
 #define CH32RV_SERIAL1_REMAP_VAL  0x00000004u
@@ -506,6 +508,8 @@
 /* ---- I2C pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_i2cs) ---- */
 /* I2C1: route default, on every part */
+/* PB6 / PB7 also USB D- / D+ (every part): with USB in use, name other
+ * pins. */
 #define CH32RV_I2C1_SCL PB6
 #define CH32RV_I2C1_SDA PB7
 #define CH32RV_I2C1_CLKEN_ADDR 0x4002101cu
