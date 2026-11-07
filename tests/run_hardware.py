@@ -439,7 +439,7 @@ def main(argv=None):
                     case_env = dict(env, CH32_TEST_BUILD_ID=build_id)
                     if args.execute and (case == "hid" or (case != "power" and target.get("upload_port", "").startswith("ch32rv-hid://"))):
                         enter_hid(staged)
-                    command = [sys.executable, "-m", "pytest", "-c", str(REPO / "pytest.ini")]
+                    command = [sys.executable, "-m", "pytest", "-c", str(TESTS / "pyproject.toml")]
                     for plugin in PLUGINS:
                         command += ["-p", plugin]
                     command += [str(module), "--profile", name, "--port", staged["port"],

@@ -1,5 +1,4 @@
 """Default collection stays board-free even with opt-in hardware contracts installed."""
-import configparser
 import ast
 import pathlib
 import tomllib
@@ -14,11 +13,8 @@ def test_default_collection_is_board_free():
     pytest_config = config["tool"]["pytest"]["ini_options"]
     assert pytest_config["testpaths"] == ["unit", "platform"]
     assert set(HARDWARE) <= set(pytest_config["norecursedirs"])
-    root_config = configparser.ConfigParser()
-    root_config.read(REPO / "pytest.ini")
-    assert root_config["pytest"]["testpaths"].split() == [
-        "tests/unit", "tests/platform"
-    ]
+    # The one pytest configuration is tests/pyproject.toml; from the repository root it is named with -c.
+    assert not (REPO / "pytest.ini").exists()
 
 
 def test_hardware_contracts_cannot_trigger_an_upload_when_collected():

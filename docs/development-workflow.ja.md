@@ -6,7 +6,7 @@
 ## 実機不要の検査
 
 ```sh
-uv run --project tests --locked pytest
+uv run --project tests --locked pytest -c tests/pyproject.toml
 uv run --no-project python tools/generate/sync_example_profiles.py --check
 ```
 
