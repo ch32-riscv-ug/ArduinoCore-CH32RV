@@ -217,6 +217,8 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   th(SO) 15 ns 以上、tV(SO) 25 ns 以下）。40 MS/s の取り込みではエッジと同じサンプルに入る回があり、WireSkein が「どのモードでも
   読めない」としていた。80 MS/s は、コンソールと同時だとプローブの経路の帯域が足りず使えなかった。wireskein 0.0.25 の
   `spi(..., edge_sample="before")` を V103 にだけ付けて、v103evt で 2 回とも PASS（記録には hold_under_sample が残る）。
+  [ ] プローブの直し（流し続けの DMA の輪を内部 RAM へ。コンソールと同時でも 4 本 80 MHz で欠落なし、[oep] 2026-11-07）が main に
+  入ったら、spi.slave を 80 MS/s（12.5 ns、V103 の th(SO) 15 ns より細かい）にして、V103 の edge_sample を外せるか確かめる。
 - 取り込みの帯域（2026-11-07、利用者の提案。今の試験には要らず、速い SPI の試験を作るときに使う）: 選べる速さ、本数ごとの幅、
   取り方ごとの上限、線ごとの解像度（resolution=）、流し続け中の reset-halt の注意は、oep-probe-arduino の docs/guide/capture.ja.md
   「ESP32-P4 / P4X の速さと本数」が正（034eaf9）。ここには写さない。WireSkein は線ごとの間隔と変化点の線を扱え、粗い CS では
