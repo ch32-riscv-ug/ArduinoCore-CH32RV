@@ -2,6 +2,7 @@
 // ja: USBマウスの移動・ホイール・ボタン操作を自動で送る。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

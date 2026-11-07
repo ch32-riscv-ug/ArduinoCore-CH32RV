@@ -26,14 +26,23 @@ def all_boards() -> tuple:
     return tuple(dict.fromkeys(re.findall(r"^([A-Za-z0-9_]+)\.name=", text, re.M)))
 
 
+# Capabilities that are one of several peripherals: a series has the name when
+# it has any of them. USB_DEVICE is a controller CH32RVUsbDevice drives (V103
+# and X035's USBFS, V20x's USB (USBD), V30x / H41x's USBHS, V407's USBHS1 / 2);
+# the V00x / M007 series have none, so a USB device example is not built there.
+DERIVED = {"USB_DEVICE": frozenset({"USB", "USBFS", "USBHS", "USBHS1", "USBHS2"})}
+
+
 @functools.lru_cache(maxsize=1)
 def series_capabilities() -> dict:
-    """series -> the peripherals its variant header names a clock enable for."""
+    """series -> the peripherals its variant header names a clock enable for,
+    plus the DERIVED names it has one of."""
     caps = {}
     for header in sorted((REPO / "variants").glob("*/pins_arduino.h")):
-        caps[header.parent.name] = frozenset(
-            re.findall(r"CH32RV_CLKEN_([A-Z0-9_]+)_ADDR",
-                       header.read_text(encoding="utf-8")))
+        found = frozenset(re.findall(r"CH32RV_CLKEN_([A-Z0-9_]+)_ADDR",
+                                     header.read_text(encoding="utf-8")))
+        caps[header.parent.name] = found | {name for name, any_of in DERIVED.items()
+                                            if found & any_of}
     return caps
 
 
@@ -81,7 +90,7 @@ def requirements(src: pathlib.Path) -> dict:
                 raise BadRequirement(
                     f"{ino.name}: no series declares a capability {cap!r}. "
                     f"Capabilities are the <X> of CH32RV_CLKEN_<X>_ADDR in "
-                    f"variants/*/pins_arduino.h.")
+                    f"variants/*/pins_arduino.h, or {', '.join(DERIVED)}.")
             need["caps"].append(cap)
             continue
         if key not in ("flash", "ram"):

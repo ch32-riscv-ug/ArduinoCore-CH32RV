@@ -2,7 +2,7 @@
 // ja: USBネットワーク経由でARPとIPv4のpingに応答する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
-/* requires: ram=16K */
+/* requires: USB_DEVICE, ram=16K */
 
 #include <CH32RVUsbDevice.h>
 #include <string.h>

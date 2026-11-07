@@ -20,6 +20,8 @@ example が追加の機能を必要とする場合は .ino に宣言します。
 ```
 
 capability は生成 header の CH32RV_CLKEN_<name>_ADDR に対応します。
+`USB_DEVICE` は、CH32RVUsbDevice が動かす USB のコントローラ（USB、USBFS、USBHS、USBHS1、USBHS2）のどれかがあることを表します。
+USB デバイスの例は `USBFS` ではなくこれを宣言します（V00x・M007 にはどれも無い）。
 flash=/ram= は ANY menu entry に対する下限です。未知の capability/key はエラーにします。
 
 製品ボードのテンプレートのように特定の板だけのための example は、板を宣言します。代表 board ごとの profile の代わりに、

@@ -2,6 +2,7 @@
 // ja: 可変抵抗とボタンの入力をUSB MIDIの制御値と音符に変える。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

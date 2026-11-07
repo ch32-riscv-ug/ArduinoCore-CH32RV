@@ -2,7 +2,7 @@
 // ja: スケッチとPCで1つのFATボリュームを使う。スケッチがファイルを書き、PCはドライブとして見て、PCが取り外したらスケッチがPCの残したものを一覧する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
-/* requires: USBFS, ram=48K */
+/* requires: USB_DEVICE, ram=48K */
 
 #include <CH32RVUsbDevice.h>
 #include <CH32RVUsbDeviceMscBlock.h>

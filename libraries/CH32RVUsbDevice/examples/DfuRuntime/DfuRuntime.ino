@@ -2,6 +2,7 @@
 // ja: USBの更新入口を公開し、ボタンで移行を拒否できるようにする。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

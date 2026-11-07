@@ -2,6 +2,7 @@
 // ja: USB MIDIの音符と制御値を送り、受信packetを表示する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

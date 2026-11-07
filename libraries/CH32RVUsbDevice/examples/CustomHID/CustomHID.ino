@@ -2,6 +2,7 @@
 // ja: 独自のHID reportを定義し、8 byteのデータを定期的に送る。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

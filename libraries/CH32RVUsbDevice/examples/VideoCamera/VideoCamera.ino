@@ -2,6 +2,7 @@
 // ja: 動くテスト画像を作り、USBカメラの映像として送る。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

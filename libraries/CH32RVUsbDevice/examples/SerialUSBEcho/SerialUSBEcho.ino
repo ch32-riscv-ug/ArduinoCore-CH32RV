@@ -2,6 +2,7 @@
 // ja: USBシリアルの受信を返し、一定間隔でカウンタを表示する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

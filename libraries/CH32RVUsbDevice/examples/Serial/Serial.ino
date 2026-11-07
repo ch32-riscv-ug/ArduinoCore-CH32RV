@@ -2,6 +2,7 @@
 // ja: USBシリアルの入力を返し、ホストの通信設定と制御線を観察する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

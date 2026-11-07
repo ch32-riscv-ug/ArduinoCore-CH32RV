@@ -2,6 +2,7 @@
 // ja: 通知の受け取りを意図的に止め、USB通知が動く場所を確認する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

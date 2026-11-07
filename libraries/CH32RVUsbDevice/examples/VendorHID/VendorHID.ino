@@ -2,6 +2,7 @@
 // ja: ベンダー定義のHID reportを送り、ホストのOutputとFeatureを表示する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

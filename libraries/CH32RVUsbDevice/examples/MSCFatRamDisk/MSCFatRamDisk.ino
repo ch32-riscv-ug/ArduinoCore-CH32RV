@@ -2,7 +2,7 @@
 // ja: FAT RAMディスクを公開し、取り外し後にPCが書いたファイルを読む。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
-/* requires: ram=16K */
+/* requires: USB_DEVICE, ram=16K */
 
 #include <CH32RVUsbDevice.h>
 

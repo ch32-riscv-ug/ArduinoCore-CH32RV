@@ -2,6 +2,7 @@
 // ja: 軸・ハット・ボタンのテスト値をUSBゲームパッドとして送る。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: USB_DEVICE */
 
 #include <CH32RVUsbDevice.h>
 

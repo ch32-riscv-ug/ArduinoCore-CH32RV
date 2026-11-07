@@ -2,7 +2,7 @@
 // ja: USBで受けた再生音声を、録音側のストリームへ返す。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
-/* requires: flash=48K */
+/* requires: USB_DEVICE, flash=48K */
 
 #include <CH32RVUsbDevice.h>
 
