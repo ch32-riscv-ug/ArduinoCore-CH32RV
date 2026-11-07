@@ -214,6 +214,10 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
     record_property("orders", json.dumps(orders))
     conditions = [(mode, lsb, 8, 8, True) for mode in range(4) for lsb in orders]
     conditions += [(0, 0, 8, 10, True), (0, 0, 8, 8, False)]     # clocked past what was queued; nothing queued
+    # CH32V103's slave MISO changes 0..25 ns after the sampling edge at byte boundaries, within its datasheet
+    # (output hold th(SO) 15 ns min): a change in the edge's own sample at SLAVE_RATE counts as after the edge,
+    # and WireSkein records it (hold_under_sample).
+    edge_sample = "before" if case["target"].get("family") == "CH32V103" else None
     wrong = []
 
     def steps(wait):
@@ -231,7 +235,7 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
                 back = (armed + bytes([SLAVE_FILL]) * clocked)[:clocked] if queued else bytes([SLAVE_FILL]) * clocked
                 want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=mode, bit_order=order, mosi_bytes=sent.hex(),
                             miso_bytes=back.hex(), bits=8 * clocked,
-                            notices={"sck_outside_cs": "ng" if same_idle else 1}),
+                            notices={"sck_outside_cs": "ng" if same_idle else 1}, edge_sample=edge_sample),
                         starts(idle), ends(idle)]
                 with ws_run.section(2, name, expect=want):
                     ctrl.configure(mode=mode, bit_order=lsb, clock_hz=SLAVE_HZ)
