@@ -1,13 +1,36 @@
-"""The DUT as USB host (usb_peer_host.ino, CH32RVUsbHost) and the ESP32-S3 as
-the device (peer_s3/, EspUsbDevice): helpers shared by the host-role tests.
-The runner stages this module beside the test."""
+"""The DUT as USB host (usb_peer_host.ino, CH32RVUsbHost) and the peer as the device: an ESP32-S3 (peer_s3/,
+EspUsbDevice, lines "S3D ...") or an RP2040 (peer_pico/, TinyUSB's device stack, lines "PD ..."); the bench
+record's usb.to says which. Helpers shared by the host-role tests. The runner stages this module beside the
+test."""
 import json
 import pathlib
 import re
 import secrets
 import time
 
-S3_VID = "303a"                      # EspUsbDevice's default identity
+# How each peer's two device configurations name themselves (its sketches set the strings; the VIDs are the
+# stacks' defaults, EspUsbDevice's and Adafruit TinyUSB's).
+IDENTITY = {
+    "s3": dict(tag=b"S3D ", vid="303a", manufacturer="EspUsbDevice", hid="S3 peer hid", hid_serial="S3PEERHID",
+               classes="S3 peer classes", vreq="ESP32S3"),
+    "pico": dict(tag=b"PD ", vid="239a", manufacturer="ch32rv-tests", hid="Pico peer hid", hid_serial="PICOPEERHID",
+                 classes="Pico peer classes", vreq="RP2040"),
+}
+
+
+class Peer:
+    """The one peer of the test (pytest-embedded's `peers`) and how it names itself."""
+
+    def __init__(self, peers):
+        ((self.kind, self.serial),) = peers.items()
+        self.id = IDENTITY[self.kind]
+
+    def write(self, text):
+        self.serial.write(text)
+
+    def expect(self, pattern, timeout):
+        """`pattern` (a regex, bytes) after the peer's tag."""
+        return self.serial.expect(self.id["tag"] + pattern, timeout=timeout)
 
 
 def settings(test_file):
@@ -21,9 +44,9 @@ def host(dut, line, reply, timeout=10):
 
 
 def device(peer, line, reply, timeout=10):
-    """Send `line` to the S3, return the match of `S3D <reply>`."""
+    """Send `line` to the peer, return the match of `<tag><reply>`."""
     peer.write(line + "\n")
-    return peer.expect(rb"S3D " + reply + rb"\r?\n", timeout=timeout)
+    return peer.expect(reply + rb"\r?\n", timeout=timeout)
 
 
 def dut_ready(dut, build_id):
@@ -36,7 +59,7 @@ def dut_ready(dut, build_id):
 
 
 def wait_device(dut, product, timeout=20):
-    """Poll `dev` until the DUT lists the S3 as `product`; its DEV fields and interfaces."""
+    """Poll `dev` until the DUT lists the peer as `product`; its DEV fields and interfaces."""
     deadline = time.monotonic() + timeout
     while True:
         dut.write("dev\n")
@@ -51,5 +74,5 @@ def wait_device(dut, product, timeout=20):
                             speed=int(dev.group(4)), manufacturer=fields[0], product=fields[1],
                             serial=fields[2], interfaces=[(i[3], i[4]) for i in itfs])
         if time.monotonic() > deadline:
-            raise AssertionError("the DUT did not enumerate the S3: " + text)
+            raise AssertionError("the DUT did not enumerate the peer: " + text)
         time.sleep(0.5)

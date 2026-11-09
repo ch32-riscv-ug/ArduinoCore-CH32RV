@@ -1,7 +1,8 @@
-# peer/usb — ESP32-S3 との USB 対向試験
+# peer/usb — ESP32-S3 / RP2040 との USB 対向試験
 
 スケッチは規約どおり tests/sketch_support に置き、run_hardware.py がケースの作業ディレクトリへ
-`peer_s3/` として並べます（pytest-embedded-arduino-cli の peer の置き方）。
+`peer_s3/` か `peer_pico/` として並べます（pytest-embedded-arduino-cli の peer の置き方）。どちらを使うかは、
+ベンチの記録（records の usb.to）で決まります。`esp32-s3` なら S3、`rp2040` なら Pico です（下の「RP2040（Pico）を相手にする」）。
 
 DUT（CH32）の USB ポートを ESP32-S3 の USB OTG ポートにつなぎ、役割ごとに別のケースとして試験します
 （[テスト計画](../../TEST_PLAN.ja.md) の「USB peer 計画」）。S3 側は独立した実装（EspUsbHost は ESP-IDF の
@@ -23,7 +24,50 @@ S3 側の制約に合わせて試験の形を変えたところがあります�
 ホスト側（usb-peer-host*）は、ホスト機能を持つ DUT が必要です。CH32X035 では R8T6 / C8T6 / G8U6 / G8R6 だけが
 ホストを持ち、ベンチの WeAct 板の F8U6 は持ちません（`begin()` が `Unsupported`）。V20x / V30x の USBFS でも動きます。
 CH32X035C8T6 と ESP32-S3 で usb-peer-host / usb-peer-host-classes の両方が通っています（デバイス側の usb-peer も
-同じ組み合わせで通ります。工場 ISP の VID は C8T6 が 4348、F8U6 が 1a86 で、試験はどちらも受け付けます）。
+同じ組み合わせで通ります。工場 ISP の VID は 4348 か 1a86 で、試験はどちらも受け付けます。ベンチの F8U6 と、
+2026-11-10 の新しい C8T6（UID 0477abcd6c67bc23）は 1a86、それより前の C8T6 は 4348 でした）。
+CH32X035C8T6 と RP2040（Pico）でも、usb-peer-media 以外の 6 ケースが通っています（2026-11-10）。
+
+## RP2040（Pico）を相手にする
+
+DUT と同じ OEP プローブに Pico をつなぎ、記録に `usb: {to: rp2040, port: <Pico の口の名前>}` と書きます
+（`bench_record.py set <DUT の口> --usb rp2040,port=pico`）。
+
+- **書き込みとコンソール:** Pico への書き込みは SWD で、コンソールは SEGGER RTT（ライブラリ RTT Stream）です。
+  どちらも oep-client-python の pytest プラグイン `oep_client.pytest_rp2040_peer` が扱います。run_hardware が
+  `-p` で読み込み、`TEST_SERIAL_PORT_PEER_PICO` に Pico の口を渡します。
+- **ケースと行の頭:** Pico のスケッチは S3 と同じコマンドを持ち、試験は同じものを使います。答えの行の頭だけ違い、
+  host 役は `P `、device 役は `PD ` です（S3 は `S3 ` / `S3D `）。試験は `device_peer.Peer` / `host_peer.Peer` で見分けます。
+  - device 役の名前は、S3 と同じ形で別の名前にしています（`Pico peer hid` / `Pico peer classes`、製造元 `ch32rv-tests`）。
+  - VID は Adafruit TinyUSB の既定の 239a です。
+- **流せないケース:** usb-peer-media は流しません。RP2040 のホストのドライバにアイソクロナス転送がありません。
+- **TinyUSB:** Pico 側は、arduino-pico 6.3.1 に同梱の Adafruit TinyUSB 3.7.7 では動きません。
+  run_hardware は、3.7.7 の固定のアーカイブに `sketch_support/usb_peer/pico/adafruit-tinyusb-3.7.7.patch` を当てた写しを
+  キャッシュに作ります。それを peer の sketch.yaml の `- TINYUSB` の行（`- dir:` に置き換える）で差します。パッチの中身:
+  - RP2040 のポートを上流の tinyusb 38bd85a0c0 に差し替える。理由は 2 つあります。
+    - control のデータ段が DATA0 で出る不具合（72e09788e4）。
+    - 切断のときに EPX の転送が残り、次の列挙で panic する不具合（#4166、#4177）。
+  - ホストの列挙のバッファを 1024 にする（usb_contracts の構成記述子は 302 バイト）。
+  - `tuh_edpt_xfer()` を有効にする。
+
+### TinyUSB（Pico）側の挙動
+
+DUT の不具合と見分けるために残します。Adafruit TinyUSB を上げたときは、直っているかを確かめて、回避を外せるか見直します。
+
+- **MSC ホストは転送の結果を見ない。** データ段が STALL でも CSW を読みに行きます。受け取れなかったときは、前のコマンドの
+  CSW（成功）のまま完了を返します。CBW のタグも毎回同じです。Pico のスケッチは、読み終えた CSW の署名を消しておき、
+  次に CSW が届かなければ失敗とします。
+- **MSC ホストは、媒体が準備できるまで TEST UNIT READY を繰り返し、`tuh_mount_cb` を出さない。** Pico のスケッチは、
+  構成が済んだ時点（`tuh_mounted()`）で CONNECTED を出します。
+- **`*_sync` の記述子の取得には時間切れが無い。** 途中で装置が去ると、待ち続けることがありました。Pico のスケッチの要求は、
+  全部時間切れ付きにしています。
+- **`hcd_edpt_clear_stall()` は panic する（上流も同じ）。** STALL した端点を戻せません。STALL の後は、DUT の再起動で
+  つなぎ直す順にしています（usb-peer-classes の pull の後）。
+- **SdFat 2.3.1（arduino-pico に同梱）は FAT12 を切ってある（`FAT12_SUPPORT 0`）。** DUT の RAM ディスクは FAT12 です。
+  そのため Pico のスケッチは、ルートの 8.3 名だけを読み書きする小さな FAT12 / FAT16 を自前で持ちます（`peer_fat.h`）。
+- **arduino-pico の device は、`setup()` の前に CDC だけで列挙される。** Pico のスケッチは、インタフェースを足してから
+  切って、つなぎ直します。host_classes では、CDC を外して（`clearConfiguration()`）S3 と同じ構成にします。
+- **RTTStream の `printf` は 16 進を大文字で書く。** 行は `vsnprintf` で作ります。
 
 ## 配線と設定
 

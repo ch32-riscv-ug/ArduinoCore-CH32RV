@@ -34,6 +34,12 @@ UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
 USB_CASES = ("usb", "usb-classes", "usb-media")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes")
+# The USB peer a record's usb.to names: an ESP32-S3 on its own port to this host, or an RP2040 (a Raspberry Pi
+# Pico) on the same OEP probe as the DUT.
+PEER_KINDS = {"esp32-s3": "s3", "rp2040": "pico"}
+# Device cases the RP2040 cannot be the host for: its host controller driver has no isochronous transfers.
+PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochronous transfers (the speaker, "
+                                     "microphone and camera streams)"}
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
 ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
@@ -193,14 +199,15 @@ def choose_cases(place, items=None, caps=None):
         out[case] = ("run" if usb.get("to") == "host" and device else
                      f"skip: {part} has no USB controller" if not device else
                      "skip: the record's usb is not {to: host}")
+    peer = usb.get("to") in PEER_KINDS
+    not_peer = "skip: the record's usb is not {to: esp32-s3} or {to: rp2040}"
     for case in PEER_DEVICE_CASES:
-        out[case] = ("run" if usb.get("to") == "esp32-s3" and device else
+        out[case] = ("run" if peer and device and not (usb["to"] == "rp2040" and case in PICO_HOST_LACKS) else
                      f"skip: {part} has no USB controller" if not device else
-                     "skip: the record's usb is not {to: esp32-s3}")
+                     PICO_HOST_LACKS[case] if peer else not_peer)
     for case in PEER_HOST_CASES:
-        out[case] = ("run" if usb.get("to") == "esp32-s3" and host else
-                     f"skip: {part} has no USB host CH32RVUsbHost drives" if not host else
-                     "skip: the record's usb is not {to: esp32-s3}")
+        out[case] = ("run" if peer and host else
+                     f"skip: {part} has no USB host CH32RVUsbHost drives" if not host else not_peer)
     out["power"] = ("run" if oep and core.get("supply", {}).get("from") == "probe"
                     else "skip: the record's supply is not {from: probe}" if oep else "skip: not on an OEP port")
     out["hid"] = ("run" if core.get("board") == UIAPDUINO_BOARD and oep and place["lines"].get("nrst") is not None
@@ -315,8 +322,14 @@ def resolve(address, tool, env, logs, *, chip=None):
                               for k, tx, rx in routes]
     place["dut_usb_serial"] = uid.upper()
     core = place["record"]
+    if core.get("usb", {}).get("to") in PEER_KINDS:
+        place["usb_peer"] = PEER_KINDS[core["usb"]["to"]]
     if core.get("usb", {}).get("to") == "esp32-s3":
         place["usb_peer_serial"] = core["usb"]["serial"]
+    if core.get("usb", {}).get("to") == "rp2040":
+        if parsed["kind"] != "oep":
+            raise PlaceError(f"{address}: an rp2040 USB peer is on the DUT's OEP probe; this is not an OEP port")
+        place["usb_peer_address"] = f"oep://{parsed['unit']}/{core['usb']['port']}"
     if "pd" in core:
         place.update({f"pd_{k}": v for k, v in core["pd"].items()})
         if "vbus_pin" in core["pd"]:

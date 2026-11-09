@@ -18,14 +18,14 @@ import pathlib
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from s3_peer import command, dut_ready, settings, wait_enumerated
+from device_peer import Peer, command, dut_ready, settings, wait_enumerated
 
 
 def test_usb_peer_media(dut, peers, record_property):
-    s3 = peers["s3"]
+    peer = Peer(peers)
     build_id = settings(__file__)["build_id"]
     dut_ready(dut, build_id)
-    dev = wait_enumerated(s3, build_id)
+    dev = wait_enumerated(peer, build_id)
     assert {(0x01, 0x01), (0x01, 0x02), (0x0E, 0x01), (0x0E, 0x02)} <= set(dev["interfaces"])
 
     # Speaker: half a second of a ramp. EspUsbHost keeps the stream going with
@@ -33,7 +33,7 @@ def test_usb_peer_media(dut, peers, record_property):
     # sum - which silence leaves alone - is exactly the ramp's.
     dut.write("audio\n")
     before = dut.expect(rb"AUDIO (\d+) (\d+) \d+ \d+ \d+\r?\n", timeout=5)
-    m = command(s3, "audioout 500", rb"AUDIOOUT (\d) (\d+) (\d+)", timeout=10)
+    m = command(peer, "audioout 500", rb"AUDIOOUT (\d) (\d+) (\d+)", timeout=10)
     assert m.group(1) == b"1" and int(m.group(2)) == 32000
     dut.write("audio\n")
     after = dut.expect(rb"AUDIO (\d+) (\d+) \d+ (\d+) (\d+)\r?\n", timeout=5)
@@ -43,7 +43,7 @@ def test_usb_peer_media(dut, peers, record_property):
 
     # The second rate: the host sets the clock to 16 kHz (SampleRateChanged on
     # the DUT) and half a second is half as many bytes.
-    m = command(s3, "audioout 500 16000", rb"AUDIOOUT (\d) (\d+) (\d+)", timeout=10)
+    m = command(peer, "audioout 500 16000", rb"AUDIOOUT (\d) (\d+) (\d+)", timeout=10)
     assert m.group(1) == b"1" and int(m.group(2)) == 16000
     dut.write("audio\n")
     rated = dut.expect(rb"AUDIO (\d+) (\d+) \d+ (\d+) (\d+)\r?\n", timeout=5)
@@ -52,12 +52,12 @@ def test_usb_peer_media(dut, peers, record_property):
     assert int(rated.group(3)) == 16000 and int(rated.group(4)) > int(after.group(4))
 
     # Camera: whole 80x60 frames with the DUT's pattern.
-    m = command(s3, "video 3000", rb"VIDEO (\d+) (\d+) (\d+) (\d+)", timeout=15)
+    m = command(peer, "video 3000", rb"VIDEO (\d+) (\d+) (\d+) (\d+)", timeout=15)
     record_property("video_frames_per_3s", int(m.group(1)))
     assert int(m.group(1)) >= 5 and int(m.group(2)) == 0
     assert (int(m.group(3)), int(m.group(4))) == (80, 60)
 
     # Microphone: a second of the DUT's ramp, without a break.
-    m = command(s3, "audioin 1000", rb"AUDIOIN (\d+) (\d+)", timeout=10)
+    m = command(peer, "audioin 1000", rb"AUDIOIN (\d+) (\d+)", timeout=10)
     record_property("audio_capture_bytes_per_s", int(m.group(1)))
     assert int(m.group(1)) >= 32000 and int(m.group(2)) == 0

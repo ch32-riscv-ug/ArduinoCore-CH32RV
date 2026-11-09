@@ -1,0 +1,723 @@
+Adafruit TinyUSB Library 3.7.7 (the one arduino-pico 6.3.x bundles) as the RP2040 USB peer uses it.
+tests/run_hardware.py applies this to the pinned release and puts the result in the peer's sketch.yaml
+(libraries: - dir:), ahead of the bundled copy.
+
+1. src/portable/raspberrypi/rp2040/ (hcd_rp2040.c, dcd_rp2040.c, rp2040_usb.c, rp2040_usb.h): replaced with
+   hathach/tinyusb 38bd85a0c0 (2026-10-25). 3.7.7 took TinyUSB at dcd2a4bd (2026-05-11); the host driver fixed
+   since then is what the tests ran into:
+   - 72e09788e4: a control transfer's OUT data stage (SET_LINE_CODING, SET_REPORT) went out as DATA0, and a
+     device that checks the toggle (CH32RVUsbDevice) dropped it and waited.
+   - e204823875 (#4166), 3174e76034 (#4177): transfers left on EPX or an interrupt endpoint when a device
+     goes away are aborted. Without them the next device's enumeration panics ("buf_ctrl ... already
+     available") - CH32RVUsbDevice's end() + begin() was enough.
+2. tusb_config_rp2040.h: tuh_edpt_xfer() on, for the classes the host has no driver for (vendor bulk,
+   CCID, NCM); and the host's enumeration buffer 1024 bytes, not 256 (a configuration descriptor longer than
+   it, as usb_contracts' 302, failed the enumeration at an assert).
+
+--- a/src/arduino/ports/rp2040/tusb_config_rp2040.h
++++ c/src/arduino/ports/rp2040/tusb_config_rp2040.h
+@@ -129,7 +129,7 @@
+ //--------------------------------------------------------------------
+ 
+ // Size of buffer to hold descriptors and other data used for enumeration
+-#define CFG_TUH_ENUMERATION_BUFSIZE 256
++#define CFG_TUH_ENUMERATION_BUFSIZE 1024
+ 
+ // Number of hub devices
+ #define CFG_TUH_HUB 1
+@@ -141,7 +141,7 @@
+ #define CFG_TUH_MIDI 1
+ 
+ // Enable tuh_edpt_xfer() API
+-// #define CFG_TUH_API_EDPT_XFER       1
++#define CFG_TUH_API_EDPT_XFER       1
+ 
+ // Number of mass storage
+ #define CFG_TUH_MSC 1
+--- a/src/portable/raspberrypi/rp2040/dcd_rp2040.c
++++ c/src/portable/raspberrypi/rp2040/dcd_rp2040.c
+@@ -1,25 +1,7 @@
+ /*
+- * The MIT License (MIT)
+- *
+- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
+- *
+- * Permission is hereby granted, free of charge, to any person obtaining a copy
+- * of this software and associated documentation files (the "Software"), to deal
+- * in the Software without restriction, including without limitation the rights
+- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+- * copies of the Software, and to permit persons to whom the Software is
+- * furnished to do so, subject to the following conditions:
+- *
+- * The above copyright notice and this permission notice shall be included in
+- * all copies or substantial portions of the Software.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+- * THE SOFTWARE.
++ * SPDX-FileCopyrightText: Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
++ * SPDX-FileCopyrightText: Copyright (c) 2020 Ha Thach (tinyusb.org)
++ * SPDX-License-Identifier: MIT
+  *
+  * This file is part of the TinyUSB stack.
+  */
+@@ -361,9 +343,20 @@
+ 
+   // TU_LOG(1, "Chip Version B%u\r\n", rp2040_chip_version());
+ 
++  // A warm restart (SWD flash, debugger reset) keeps the previous image's pull-up: sample it before
++  // rp2usb_init() resets USBCTRL
++  const bool was_attached = (resets_hw->reset_done & RESETS_RESET_USBCTRL_BITS) &&
++                            (usb_hw->sie_ctrl & USB_SIE_CTRL_PULLUP_EN_BITS);
++
+   // Reset hardware to default state
+   rp2usb_init();
+ 
++  // hold the pull-up off 2 ms so the host sees a detach even behind a max-size full-speed packet
++  // (USB 2.0 7.1.7.3 needs undriven SE0)
++  if (was_attached) {
++    busy_wait_us(2000);
++  }
++
+   #if FORCE_VBUS_DETECT
+   // Force VBUS detect so the device thinks it is plugged into a host
+   usb_hw->pwr = USB_USB_PWR_VBUS_DETECT_BITS | USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS;
+@@ -405,6 +398,9 @@
+   reset_block(RESETS_RESET_USBCTRL_BITS);
+   unreset_block_wait(RESETS_RESET_USBCTRL_BITS);
+ 
++  // Release allocated resources
++  rp2usb_deinit();
++
+   return true;
+ }
+ 
+@@ -568,9 +564,46 @@
+ 
+   if (epnum != 0) {
+     struct hw_endpoint* ep = hw_endpoint_get(epnum, dir);
+-    ep->next_pid = 0; // reset data toggle
+-    io_rw_32 *buf_reg      = get_buf_ctrl(epnum, dir);
+-    *buf_reg               = 0;
++
++    if (ep->state == EPSTATE_ACTIVE) {
++      // Clear-halt on an endpoint with an in-flight transfer is used as a data-toggle reset
++      // (e.g. usbtest case 29) rather than to recover from a real stall (a stall aborts the
++      // transfer, leaving the endpoint IDLE). Abort and re-issue the transfer with the toggle
++      // reset to DATA0 so it still completes and releases the usbd claim, instead of silently
++      // dropping it and starving the endpoint. Save the buffer/length before the abort clears them.
++      uint8_t*       user_buf  = ep->user_buf;
++      uint16_t       remaining = ep->remaining_len;
++      const uint16_t xferred   = ep->xferred_len; // bytes already moved on this submission
++      io_rw_32 *ep_reg  = get_ep_ctrl(epnum, dir);
++      io_rw_32 *buf_reg = get_buf_ctrl(epnum, dir);
++      // bufctrl_prepare16() subtracts each armed buffer's length from remaining_len when arming,
++      // for BOTH directions, before the host has drained (IN) or filled (OUT) it. The abort below
++      // discards those still-armed buffers, so rewind remaining_len by their lengths or the re-issue
++      // is short by 1-2 packets. IN additionally advances user_buf as packets are copied into DPRAM,
++      // so its pointer must rewind too; OUT copies out only on completion, so its pointer is intact.
++      const uint32_t bc = *buf_reg;
++      uint16_t staged = 0;
++      if (bc & USB_BUF_CTRL_AVAIL) {
++        staged = (uint16_t)(bc & USB_BUF_CTRL_LEN_MASK);
++      }
++      if ((bc >> 16) & USB_BUF_CTRL_AVAIL) {
++        staged = (uint16_t)(staged + ((bc >> 16) & USB_BUF_CTRL_LEN_MASK));
++      }
++      remaining = (uint16_t)(remaining + staged);
++      if (dir == TUSB_DIR_IN) {
++        user_buf -= staged;
++      }
++      hw_endpoint_abort_xfer(ep); // safe abort (handles RP2040-E2), resets ep transfer state
++      ep->next_pid = 0;           // DATA0
++      rp2usb_xfer_start(ep, ep_reg, buf_reg, user_buf, NULL, remaining);
++      // rp2usb_xfer_start() zeroes xferred_len; add back what the aborted transfer already moved so
++      // the eventual completion reports the full length, not just the post-clear-halt remainder.
++      ep->xferred_len += xferred;
++    } else {
++      ep->next_pid = 0; // reset data toggle
++      io_rw_32 *buf_reg = get_buf_ctrl(epnum, dir);
++      *buf_reg          = 0; // clear the stall response
++    }
+   }
+ }
+ 
+--- a/src/portable/raspberrypi/rp2040/hcd_rp2040.c
++++ c/src/portable/raspberrypi/rp2040/hcd_rp2040.c
+@@ -1,27 +1,7 @@
+-
+ /*
+- * The MIT License (MIT)
+- *
+- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
+- * Copyright (c) 2021 Ha Thach (tinyusb.org) for Double Buffered
+- *
+- * Permission is hereby granted, free of charge, to any person obtaining a copy
+- * of this software and associated documentation files (the "Software"), to deal
+- * in the Software without restriction, including without limitation the rights
+- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+- * copies of the Software, and to permit persons to whom the Software is
+- * furnished to do so, subject to the following conditions:
+- *
+- * The above copyright notice and this permission notice shall be included in
+- * all copies or substantial portions of the Software.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+- * THE SOFTWARE.
++ * SPDX-FileCopyrightText: Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
++ * SPDX-FileCopyrightText: Copyright (c) 2021 Ha Thach (tinyusb.org) for Double Buffered
++ * SPDX-License-Identifier: MIT
+  *
+  * This file is part of the TinyUSB stack.
+  */
+@@ -212,27 +192,89 @@
+   }
+ }
+ 
++TU_ATTR_ALWAYS_INLINE static inline bool epx_is_pending(const hw_endpoint_t *ep) {
++  return ep->state == EPSTATE_PENDING || ep->state == EPSTATE_PENDING_SETUP;
++}
++
++enum {
++  ABORT_FRAME_MASK = 0x1Fu // hw_endpoint_t.abort_frame keeps SOF_RD modulo 32
++};
++
++TU_ATTR_ALWAYS_INLINE static inline bool int_edpt_is_aborting(const hw_endpoint_t *ep) {
++  return ep->state == EPSTATE_ABORTING || ep->state == EPSTATE_ABORTING_PENDING;
++}
++
++// BUFF_STATUS bit of an interrupt endpoint slot: 2n for IN, 2n+1 for OUT
++TU_ATTR_ALWAYS_INLINE static inline uint32_t int_edpt_status_bit(const hw_endpoint_t *ep) {
++  return TU_BIT(2u * ep->interrupt_num + (tu_edpt_dir(ep->ep_addr) == TUSB_DIR_OUT ? 1u : 0u));
++}
++
+ // Round-robin find next pending ep after current epx
+ static hw_endpoint_t *__tusb_irq_path_func(epx_next_pending)(hw_endpoint_t *cur_ep) {
+   const uint cur_idx = (uint)(cur_ep - &ep_pool[0]);
+   for (uint i = cur_idx + 1; i < TU_ARRAY_SIZE(ep_pool); i++) {
+-    if (ep_pool[i].state >= EPSTATE_PENDING) {
++    if (epx_is_pending(&ep_pool[i])) {
+       return &ep_pool[i];
+     }
+   }
+   for (uint i = 0; i < cur_idx; i++) {
+-    if (ep_pool[i].state >= EPSTATE_PENDING) {
++    if (epx_is_pending(&ep_pool[i])) {
+       return &ep_pool[i];
+     }
+   }
+   return NULL;
+ }
+ 
++// Release an unfinished EPX transfer's buffers: a STALL or RX timeout leaves one AVAILABLE, and a buffer completed
++// before it leaves BUFF_STATUS pending, which the ISR would otherwise apply to the next transfer
++static void __tusb_irq_path_func(epx_drop_buffers)(void) {
++  usbh_dpram->epx_buf_ctrl = 0;
++  for (uint i = 0; i < 2 && (usb_hw->buf_status & 1u); i++) { // re-sets once if both buffers completed
++    usb_hw_clear->buf_status = 1u;
++  }
++}
++
++// Cancel ep's transfer without completing it; if it owns EPX, stop the SIE and drop status latched for it so the
++// ISR cannot apply it to the next transfer. Caller holds the critical section and starts the next pending ep.
++static void epx_retire(hw_endpoint_t *ep) {
++  if (ep == epx && ep->state == EPSTATE_ACTIVE) {
++    const bool is_setup = (usb_hw->sie_ctrl & USB_SIE_CTRL_SEND_SETUP_BITS) != 0;
++    sie_stop_xfer();
++    if (!is_setup) {
++      epx_save_context(ep); // undo PID toggle of buffers not completed on the wire; a SETUP has none
++    }
++    epx_drop_buffers();
++
++    usb_hw_clear->sie_status =
++      USB_SIE_STATUS_RX_TIMEOUT_BITS | USB_SIE_STATUS_TRANS_COMPLETE_BITS | USB_SIE_STATUS_STALL_REC_BITS;
++  #ifdef HAS_STOP_EPX_ON_NAK
++    usb_hw_clear->nak_poll = USB_NAK_POLL_EPX_STOPPED_ON_NAK_BITS;
++  #else
++    epx_switch_request = false; // the next transfer gets its own two-SOF window
++  #endif
++  }
++
++  rp2usb_reset_transfer(ep);
++}
++
++static void __tusb_irq_path_func(epx_start_next_pending)(void) {
++  if (epx->state != EPSTATE_ACTIVE) {
++    hw_endpoint_t *next_ep = epx_next_pending(epx);
++    if (next_ep != NULL) {
++      epx_switch_ep(next_ep);
++    }
++  }
++}
++
+ 
+ //--------------------------------------------------------------------+
+ // Interrupt handlers
+ //--------------------------------------------------------------------+
+ static void __tusb_irq_path_func(xfer_complete_isr)(hw_endpoint_t *ep, xfer_result_t xfer_result, bool is_more) {
++  if (ep == epx && xfer_result != XFER_RESULT_SUCCESS) {
++    epx_drop_buffers();
++  }
++
+   // Mark transfer as done before we tell the tinyusb stack
+   uint32_t xferred_len = ep->xferred_len;
+   rp2usb_reset_transfer(ep);
+@@ -240,10 +282,7 @@
+ 
+   // Carry more transfer on epx
+   if (is_more) {
+-    hw_endpoint_t *next_ep = epx_next_pending(epx);
+-    if (next_ep != NULL) {
+-      epx_switch_ep(next_ep);
+-    }
++    epx_start_next_pending();
+   }
+ }
+ 
+@@ -289,6 +328,10 @@
+     for (size_t e = 0; e < TU_ARRAY_SIZE(ep_pool); e++) {
+       hw_endpoint_t *ep = &ep_pool[e];
+       if (ep->interrupt_num == epnum) {
++        if (int_edpt_is_aborting(ep)) {
++          ep->next_pid ^= 1u; // the aborted packet completed on the wire after all
++          break;
++        }
+         io_rw_32  *ep_reg  = dpram_int_ep_ctrl(ep->interrupt_num);
+         io_rw_32  *buf_reg = dpram_int_ep_buffer_ctrl(ep->interrupt_num);
+         const bool done    = rp2usb_xfer_continue(ep, ep_reg, buf_reg, 0, tu_edpt_dir(ep->ep_addr) == TUSB_DIR_IN);
+@@ -301,6 +344,82 @@
+   }
+ }
+ 
++// Reclaim an aborted interrupt endpoint's slot once no poll can still complete; start the transfer queued meanwhile
++TU_ATTR_ALWAYS_INLINE static inline void int_edpt_reclaim(hw_endpoint_t *ep) {
++  const uint32_t status_bit = int_edpt_status_bit(ep);
++  if (usb_hw->buf_status & status_bit) {
++    usb_hw_clear->buf_status = status_bit;
++    ep->next_pid ^= 1u; // defensive: a late completion lands before the next SOF and the ISR has taken it
++  }
++
++  io_rw_32 *buf_reg = dpram_int_ep_buffer_ctrl(ep->interrupt_num);
++  *buf_reg          = 0;
++  if (ep->state == EPSTATE_ABORTING_PENDING) {
++    ep->state = EPSTATE_ACTIVE;
++    rp2usb_buffer_start(ep, dpram_int_ep_ctrl(ep->interrupt_num), buf_reg, tu_edpt_dir(ep->ep_addr) == TUSB_DIR_IN);
++  } else {
++    rp2usb_reset_transfer(ep);
++  }
++  usb_hw_set->int_ep_ctrl = TU_BIT(ep->interrupt_num);
++}
++
++  #ifndef HAS_STOP_EPX_ON_NAK
++// RP2040: on SOF, switch EPX if another endpoint is pending.
++// First SOF sets epx_switch_request. If a transfer completes before next SOF, the flag is
++// cleared (data is flowing, no need to force-switch). Second SOF with flag still set means
++// no data exchanged (endpoint NAK-retrying): STOP_TRANS is safe and we switch.
++// This avoids stopping mid-data-transfer which corrupts double-buffered PID tracking.
++// Return true while an endpoint is pending.
++TU_ATTR_ALWAYS_INLINE static inline bool epx_sof_round_robin(void) {
++  hw_endpoint_t *next_ep = epx_next_pending(epx);
++  if (next_ep == NULL) {
++    usb_hw->nak_poll   = USB_NAK_POLL_RESET;
++    epx_switch_request = false;
++    return false;
++  }
++
++  if (epx->state == EPSTATE_ACTIVE) {
++    if (epx_switch_request) {
++      // Second SOF with no transfer completion: endpoint is NAK-retrying, safe to switch.
++      epx_switch_request = false;
++      sie_stop_xfer();
++      epx_save_context(epx);
++      epx_switch_ep(next_ep);
++    } else {
++      epx_switch_request = true;
++    }
++  }
++  return true;
++}
++  #endif
++
++// HOST_SOF is enabled while an EPX endpoint is pending (RP2040) or an interrupt endpoint is aborting. A SOF hidden by
++// another SOF_RD read only delays the reclaim, which counts frames.
++static void __tusb_irq_path_func(sof_service)(void) {
++  const uint32_t frame      = usb_hw->sof_rd; // also acknowledges HOST_SOF
++  bool           sof_needed = false;
++  #ifndef HAS_STOP_EPX_ON_NAK
++  sof_needed = epx_sof_round_robin(); // first, as close to SOF as possible: its STOP_TRANS relies on it
++  #endif
++
++  for (size_t i = 0; i < TU_ARRAY_SIZE(ep_pool); i++) {
++    hw_endpoint_t *ep = &ep_pool[i];
++    if (int_edpt_is_aborting(ep)) {
++      // an abort just before SOF_RD advances can still see a poll in frame abort_frame + 1 (measured on RP2350); that
++      // poll ends before the following SOF (USB 2.0 §11.3)
++      if (((frame - ep->abort_frame) & ABORT_FRAME_MASK) >= 2u) {
++        int_edpt_reclaim(ep);
++      } else {
++        sof_needed = true;
++      }
++    }
++  }
++
++  if (!sof_needed) {
++    usb_hw_clear->inte = USB_INTE_HOST_SOF_BITS;
++  }
++}
++
+ static void __tusb_irq_path_func(hcd_rp2040_irq)(void) {
+   const uint32_t status = usb_hw->ints;
+ 
+@@ -353,47 +472,28 @@
+     handle_buf_status_isr();
+   }
+ 
+-  // SOF-based round-robin MUST run BEFORE BUFF_STATUS to avoid processing
+-  // buf_status on the wrong EPX after a completion+switch in handle_buf_status_isr.
++  // EPX switching below runs after BUFF_STATUS, so a completion is credited to the EPX endpoint it belongs to
+   #ifdef HAS_STOP_EPX_ON_NAK
+   if (status & USB_INTS_EPX_STOPPED_ON_NAK_BITS) {
+     usb_hw_clear->nak_poll = USB_NAK_POLL_EPX_STOPPED_ON_NAK_BITS;
+-    hw_endpoint_t *next_ep = epx_next_pending(epx);
+-    if (next_ep != NULL) {
+-      epx_save_context(epx);
+-      epx_switch_ep(next_ep);
+-    } else {
+-      usb_hw_clear->nak_poll = USB_NAK_POLL_STOP_EPX_ON_NAK_BITS;
+-      sie_start_xfer(false, TUSB_DIR_IN == tu_edpt_dir(epx->ep_addr), epx->need_pre);
+-    }
+-  }
+-  #else
+-  // RP2040: on SOF, switch EPX if another endpoint is pending.
+-  // First SOF sets epx_switch_request. If a transfer completes before next SOF, the flag is
+-  // cleared (data is flowing, no need to force-switch). Second SOF with flag still set means
+-  // no data exchanged (endpoint NAK-retrying): STOP_TRANS is safe and we switch.
+-  // This avoids stopping mid-data-transfer which corrupts double-buffered PID tracking.
+-  if (status & USB_INTS_HOST_SOF_BITS) {
+-    (void)usb_hw->sof_rd; // clear SOF by reading SOF_RD
+-    hw_endpoint_t *next_ep = epx_next_pending(epx);
+-    if (next_ep == NULL) {
+-      usb_hw_clear->inte = USB_INTE_HOST_SOF_BITS;
+-      usb_hw->nak_poll   = USB_NAK_POLL_RESET;
+-      epx_switch_request = false;
+-    } else if (epx->state == EPSTATE_ACTIVE) {
+-      if (epx_switch_request) {
+-        // Second SOF with no transfer completion: endpoint is NAK-retrying, safe to switch.
+-        epx_switch_request = false;
+-        sie_stop_xfer();
++    // epx may have been retired above (RX timeout) in the same interrupt: never restart or re-queue it
++    if (epx->state == EPSTATE_ACTIVE) {
++      hw_endpoint_t *next_ep = epx_next_pending(epx);
++      if (next_ep != NULL) {
+         epx_save_context(epx);
+         epx_switch_ep(next_ep);
+       } else {
+-        epx_switch_request = true;
++        usb_hw_clear->nak_poll = USB_NAK_POLL_STOP_EPX_ON_NAK_BITS;
++        sie_start_xfer(false, TUSB_DIR_IN == tu_edpt_dir(epx->ep_addr), epx->need_pre);
+       }
+     }
+   }
+   #endif
+ 
++  if (status & USB_INTS_HOST_SOF_BITS) {
++    sof_service();
++  }
++
+   if (status & USB_INTS_ERROR_DATA_SEQ_BITS) {
+     usb_hw_clear->sie_status = USB_SIE_STATUS_DATA_SEQ_ERROR_BITS;
+     panic("Data Seq Error \n");
+@@ -431,9 +531,9 @@
+   // Enable in host mode with SOF / Keep alive on
+   usb_hw->main_ctrl = USB_MAIN_CTRL_CONTROLLER_EN_BITS | USB_MAIN_CTRL_HOST_NDEVICE_BITS;
+   usb_hw->sie_ctrl  = SIE_CTRL_BASE;
+-  usb_hw->inte      = USB_INTE_BUFF_STATUS_BITS | USB_INTE_HOST_CONN_DIS_BITS | USB_INTE_HOST_RESUME_BITS |
+-                 USB_INTE_STALL_BITS | USB_INTE_TRANS_COMPLETE_BITS | USB_INTE_ERROR_RX_TIMEOUT_BITS |
+-                 USB_INTE_ERROR_DATA_SEQ_BITS;
++  // HOST_RESUME stays off: no host suspend support, and nothing would clear SIE_STATUS.RESUME
++  usb_hw->inte      = USB_INTE_BUFF_STATUS_BITS | USB_INTE_HOST_CONN_DIS_BITS | USB_INTE_STALL_BITS |
++                 USB_INTE_TRANS_COMPLETE_BITS | USB_INTE_ERROR_RX_TIMEOUT_BITS | USB_INTE_ERROR_DATA_SEQ_BITS;
+ 
+   #ifdef HAS_STOP_EPX_ON_NAK
+   usb_hw_set->inte = USB_INTE_EPX_STOPPED_ON_NAK_BITS;
+@@ -447,12 +547,21 @@
+   irq_remove_handler(USBCTRL_IRQ, hcd_rp2040_irq);
+   reset_block(RESETS_RESET_USBCTRL_BITS);
+   unreset_block_wait(RESETS_RESET_USBCTRL_BITS);
++
++  // Release allocated resources
++  rp2usb_deinit();
++
+   return true;
+ }
+ 
+ void hcd_port_reset(uint8_t rhport) {
+   (void)rhport;
+-  // TODO: Nothing to do here yet. Perhaps need to reset some state?
++  // The controller's line-state machine resets the bus itself on attach, so first enumeration needs nothing here.
++  // Measured on RP2040 and RP2350 via SIE_STATUS.LINE_STATE: 100 ms after attach (or VBUS_DETECT) it drives SE0 for
++  // 50 ms, then sets SPEED and raises HOST_CONN_DIS. SIE_CTRL.RESET_BUS self-clears within ~1 us, no usable reset.
++  // TODO a reset of a device already attached (enumeration retry, tuh_rhport_reset_bus()) is not done: clearing then
++  // setting USB_PWR.VBUS_DETECT re-runs the sequence (pico-feedback #387), but drops the connection for ~150 ms,
++  // longer than usbh waits after hcd_port_reset_end().
+ }
+ 
+ void hcd_port_reset_end(uint8_t rhport) {
+@@ -480,18 +589,15 @@
+ void hcd_device_close(uint8_t rhport, uint8_t dev_addr) {
+   (void)rhport;
+ 
+-  if (dev_addr == 0) {
+-    return; // address 0 is for device enumeration
+-  }
+-
+   rp2usb_critical_enter();
+ 
+   for (size_t i = 0; i < TU_ARRAY_SIZE(ep_pool); i++) {
+     hw_endpoint_t *ep = &ep_pool[i];
+     if (ep->dev_addr == dev_addr && ep->max_packet_size > 0) {
+-      ep->state = EPSTATE_IDLE; // clear any pending transfer
+-
+-      if (ep->interrupt_num > 0) {
++      if (ep->interrupt_num == 0) {
++        epx_retire(ep);
++      } else {
++        ep->state = EPSTATE_IDLE;
+         // disable interrupt endpoint
+         usb_hw_clear->int_ep_ctrl                       = TU_BIT(ep->interrupt_num);
+         usb_hw->int_ep_addr_ctrl[ep->interrupt_num - 1] = 0;
+@@ -500,11 +606,13 @@
+         io_rw_32 *buf_reg = dpram_int_ep_buffer_ctrl(ep->interrupt_num);
+         *buf_reg          = 0;
+         *ep_reg           = 0;
++        ep->interrupt_num = 0; // the slot may go to another endpoint
+       }
+ 
+       ep->max_packet_size = 0; // mark as unused
+     }
+   }
++  epx_start_next_pending();
+ 
+   rp2usb_critical_exit();
+ }
+@@ -552,10 +660,14 @@
+   if (ep->transfer_type != TUSB_XFER_INTERRUPT) {
+     ep->dpram_buf = usbh_dpram->epx_data;
+   } else {
+-    // from 15 interrupt endpoints pool
++    // from 15 interrupt endpoints pool; not from INT_EP_CTRL, which an abort clears while it keeps the slot
++    uint32_t used = 0;
++    for (size_t i = 0; i < TU_ARRAY_SIZE(ep_pool); i++) {
++      used |= TU_BIT(ep_pool[i].interrupt_num);
++    }
+     uint8_t int_idx;
+     for (int_idx = 0; int_idx < USB_HOST_INTERRUPT_ENDPOINTS; int_idx++) {
+-      if (!tu_bit_test(usb_hw->int_ep_ctrl, 1 + int_idx)) {
++      if (!tu_bit_test(used, 1 + int_idx)) {
+         ep->interrupt_num = int_idx + 1;
+         break;
+       }
+@@ -596,12 +708,48 @@
+   return false; // TODO not implemented yet
+ }
+ 
++// Clearing the slot's INT_EP_CTRL bit stops polling, but one poll may still complete. sof_service() reclaims the buffer
++// two frames later, so a late completion is neither reported nor lost from the data toggle.
++static bool int_edpt_abort(hw_endpoint_t *ep) {
++  bool ret = true;
++
++  rp2usb_critical_enter();
++  if (ep->state == EPSTATE_ABORTING_PENDING) {
++    ep->state = EPSTATE_ABORTING; // the queued transfer never reached the controller
++  } else if (ep->state == EPSTATE_ACTIVE) {
++    usb_hw_clear->int_ep_ctrl = TU_BIT(ep->interrupt_num);
++    const uint32_t buf_ctrl   = *dpram_int_ep_buffer_ctrl(ep->interrupt_num);
++    if (buf_ctrl & USB_BUF_CTRL_AVAIL) {
++      ep->next_pid = (buf_ctrl & USB_BUF_CTRL_DATA1_PID) ? 1u : 0u; // armed packet not done: reuse its PID
++    } else {
++      usb_hw_clear->buf_status = int_edpt_status_bit(ep); // completed before abort: drop it, keep its toggle
++    }
++    ep->state        = EPSTATE_ABORTING;
++    ep->abort_frame  = usb_hw->sof_rd & ABORT_FRAME_MASK;
++    usb_hw_set->inte = USB_INTE_HOST_SOF_BITS;
++  } else {
++    ret = false; // already completed, its event is queued
++  }
++  rp2usb_critical_exit();
++
++  return ret;
++}
++
+ bool hcd_edpt_abort_xfer(uint8_t rhport, uint8_t dev_addr, uint8_t ep_addr) {
+   (void)rhport;
+-  (void)dev_addr;
+-  (void)ep_addr;
+-  // TODO not implemented yet
+-  return false;
++  hw_endpoint_t *ep = edpt_find(dev_addr, ep_addr);
++  TU_VERIFY(ep != NULL);
++
++  if (ep->interrupt_num > 0) {
++    return int_edpt_abort(ep);
++  }
++
++  rp2usb_critical_enter();
++  epx_retire(ep);
++  epx_start_next_pending();
++  rp2usb_critical_exit();
++
++  return true;
+ }
+ 
+ bool hcd_edpt_xfer(uint8_t rhport, uint8_t dev_addr, uint8_t ep_addr, uint8_t *buffer, uint16_t buflen) {
+@@ -613,14 +761,33 @@
+   if (ep->interrupt_num > 0) {
+     // For interrupt endpoint control and buffer is already configured
+     // Note: Interrupt is single buffered only
+-    io_rw_32 *ep_reg  = dpram_int_ep_ctrl(ep->interrupt_num);
+-    io_rw_32 *buf_reg = dpram_int_ep_buffer_ctrl(ep->interrupt_num);
+-    rp2usb_xfer_start(ep, ep_reg, buf_reg, buffer, NULL, buflen);
++    bool ret = true;
++
++    rp2usb_critical_enter();
++    if (ep->state == EPSTATE_ABORTING) {
++      ep->user_buf      = buffer; // started by sof_service() once the abort reclaims the slot
++      ep->remaining_len = buflen;
++      ep->xferred_len   = 0;
++      ep->state         = EPSTATE_ABORTING_PENDING;
++    } else if (ep->state == EPSTATE_ABORTING_PENDING) {
++      ret = false;
++    } else {
++      rp2usb_xfer_start(ep, dpram_int_ep_ctrl(ep->interrupt_num), dpram_int_ep_buffer_ctrl(ep->interrupt_num), buffer,
++                        NULL, buflen);
++    }
++    rp2usb_critical_exit();
++    return ret;
+   } else {
+-    // Control endpoint can change direction 0x00 <-> 0x80 when changing stages
+-    if (ep_addr != ep->ep_addr) {
++    // Control transfer data and status stages always start with DATA1, regardless of
++    // whether the direction changed since the previous stage. SET_REPORT (and any other
++    // host-to-device class request with an OUT data stage) keeps the same direction
++    // across SETUP -> DATA, so we cannot key off "direction changed" -- we must reset
++    // next_pid every time hcd_edpt_xfer is invoked on ep 0. Without this, the data stage
++    // of SET_REPORT goes out as DATA0 because ep->next_pid is still 0 from hcd_edpt_open(),
++    // which strict devices treat as a protocol violation and disconnect.
++    if (tu_edpt_number(ep_addr) == 0) {
+       ep->ep_addr  = ep_addr;
+-      ep->next_pid = 1; // data and status stage start with DATA1
++      ep->next_pid = 1;
+     }
+ 
+     // If EPX is busy with another transfer, mark as pending
+--- a/src/portable/raspberrypi/rp2040/rp2040_usb.c
++++ c/src/portable/raspberrypi/rp2040/rp2040_usb.c
+@@ -1,26 +1,7 @@
+ /*
+- * The MIT License (MIT)
+- *
+- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
+- * Copyright (c) 2021 Ha Thach (tinyusb.org) for Double Buffered
+- *
+- * Permission is hereby granted, free of charge, to any person obtaining a copy
+- * of this software and associated documentation files (the "Software"), to deal
+- * in the Software without restriction, including without limitation the rights
+- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+- * copies of the Software, and to permit persons to whom the Software is
+- * furnished to do so, subject to the following conditions:
+- *
+- * The above copyright notice and this permission notice shall be included in
+- * all copies or substantial portions of the Software.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+- * THE SOFTWARE.
++ * SPDX-FileCopyrightText: Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
++ * SPDX-FileCopyrightText: Copyright (c) 2021 Ha Thach (tinyusb.org) for Double Buffered
++ * SPDX-License-Identifier: MIT
+  *
+  * This file is part of the TinyUSB stack.
+  */
+@@ -104,6 +85,10 @@
+   critical_section_init(&rp2usb_lock);
+ }
+ 
++void rp2usb_deinit(void) {
++  critical_section_deinit(&rp2usb_lock);
++}
++
+ void __tusb_irq_path_func(rp2usb_reset_transfer)(hw_endpoint_t *ep) {
+   ep->state         = EPSTATE_IDLE;
+   ep->remaining_len = 0;
+@@ -195,10 +180,15 @@
+   // Note: device EP0 does not have an endpoint control register
+   if (ep_reg != NULL) {
+     uint32_t ep_ctrl = *ep_reg;
++    // Isochronous endpoints get a single DPRAM buffer (hw_endpoint_open only double-sizes BULK), so
++    // they must never be double-buffered here even when a transfer spans multiple packets, or buffer
++    // 1 (at dpram_buf+64) would spill into the next endpoint's DPRAM. (Never true for BULK, so the
++    // double-buffered bulk path is unaffected.)
++    const bool is_iso = (((ep_ctrl >> EP_CTRL_BUFFER_TYPE_LSB) & 0x3u) == TUSB_XFER_ISOCHRONOUS);
+   #if CFG_TUH_ENABLED
+-    const bool force_single = (rp2usb_is_host_mode() && ep->interrupt_num > 0);
++    const bool force_single = is_iso || (rp2usb_is_host_mode() && ep->interrupt_num > 0);
+   #else
+-    const bool force_single = false;
++    const bool force_single = is_iso;
+   #endif
+ 
+     if (ep->remaining_len && !force_single) {
+--- a/src/portable/raspberrypi/rp2040/rp2040_usb.h
++++ c/src/portable/raspberrypi/rp2040/rp2040_usb.h
+@@ -1,3 +1,11 @@
++/*
++ * SPDX-FileCopyrightText: Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
++ * SPDX-FileCopyrightText: Copyright (c) 2020 Ha Thach (tinyusb.org)
++ * SPDX-License-Identifier: MIT
++ *
++ * This file is part of the TinyUSB stack.
++ */
++
+ #ifndef RP2040_COMMON_H_
+ #define RP2040_COMMON_H_
+ 
+@@ -90,7 +98,9 @@
+   EPSTATE_IDLE = 0,
+   EPSTATE_ACTIVE,
+   EPSTATE_PENDING,
+-  EPSTATE_PENDING_SETUP
++  EPSTATE_PENDING_SETUP,
++  EPSTATE_ABORTING,        // host interrupt endpoint: abort waits for a poll already on the wire
++  EPSTATE_ABORTING_PENDING // as ABORTING, with the next transfer queued in user_buf/remaining_len
+ };
+ 
+ // Hardware information per endpoint
+@@ -118,6 +128,7 @@
+   struct TU_ATTR_PACKED {
+     uint8_t transfer_type : 2;
+     uint8_t need_pre      : 1; // preamble for low-speed device behind full speed hub
++    uint8_t abort_frame   : 5; // SOF_RD (modulo 32) when an interrupt endpoint abort stopped polling
+   };
+ #endif
+ 
+@@ -139,6 +150,7 @@
+ #endif
+ 
+ void rp2usb_init(void);
++void rp2usb_deinit(void);
+ 
+ // if usb hardware is in host mode
+ TU_ATTR_ALWAYS_INLINE static inline bool rp2usb_is_host_mode(void) {

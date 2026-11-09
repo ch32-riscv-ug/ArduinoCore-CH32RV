@@ -1,0 +1,75 @@
+"""Talking to the USB host peer and to the DUT console, for the tests where the DUT is the device.
+
+The peer is an ESP32-S3 (tests/sketch_support/usb_peer/device/peer_s3, EspUsbHost) or an RP2040
+(device/peer_pico, TinyUSB's host); the bench record's usb.to says which, and the runner stages one of them.
+Both take the same commands and answer each with one line, "S3 ..." or "P ..."; events (connect, disconnect,
+keys, HID / MIDI input) arrive the same way, so a reply is matched by its own keyword, never as "the next
+line". The runner stages this module beside the test.
+"""
+import json
+import pathlib
+import re
+import secrets
+import time
+
+DEVICE_VID_PID = ("1209", "0001")       # CH32RVUsbDevice's default identity
+# The CH32X035 factory bootloader: 1a86:55e0 on the F8U6, 4348:55e0 on the C8T6
+# (both WCH vendor IDs; which one depends on the ROM).
+ISP_ID_PATTERN = rb"(?:1a86|4348) 55e0"
+
+
+class Peer:
+    """The one peer of the test (pytest-embedded's `peers`), its lines' tag put in front of what is expected."""
+    TAGS = {"s3": b"S3 ", "pico": b"P "}
+
+    def __init__(self, peers):
+        ((self.kind, self.serial),) = peers.items()
+        self.tag = self.TAGS[self.kind]
+
+    def write(self, text):
+        self.serial.write(text)
+
+    def expect(self, pattern, timeout):
+        """`pattern` (a regex, bytes) after the tag."""
+        return self.serial.expect(self.tag + pattern, timeout=timeout)
+
+
+def settings(test_file):
+    return json.loads(pathlib.Path(test_file).with_name("case.json").read_text())
+
+
+def command(peer, line, reply, timeout=10):
+    """Send `line`, return the match of `<tag><reply>` (a regex, bytes)."""
+    peer.write(line + "\n")
+    return peer.expect(reply + rb"\r?\n", timeout=timeout)
+
+
+def dut_ready(dut, build_id):
+    nonce = secrets.token_hex(4)
+    dut.write(f"ready {nonce}\n")
+    m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
+    assert m.group(1).decode() == build_id, "the DUT runs another build"
+    assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
+
+
+def wait_enumerated(peer, build_id, timeout=20):
+    """Poll `dev` until the peer lists this build; the DEV line and its ITF rows."""
+    deadline = time.monotonic() + timeout
+    while True:
+        peer.write("dev\n")
+        t = re.escape(peer.tag)
+        block = peer.serial.expect(rb"(" + t + rb"DEV [^\n]*\n(?:" + t + rb"ITF [^\n]*\n)*)?" + t + rb"DEVEND (\d+)\r?\n",
+                                   timeout=10)
+        text = (block.group(1) or b"").decode(errors="replace")
+        tag = peer.tag.decode()
+        for dev in re.finditer(tag + r"DEV (\d+) (\w{4}) (\w{4}) (\d) (\w{4}) (\w{2}) ([^\n]*)", text):
+            product = dev.group(7).split("|")[1] if "|" in dev.group(7) else ""
+            if product.rstrip().endswith(build_id):
+                itfs = [tuple(int(x, 16) if i >= 3 else int(x) for i, x in enumerate(r.split()))
+                        for r in re.findall(tag + r"ITF (\d+ \d+ \d+ \w{2} \w{2} \w{2}) \d", text)]
+                return dict(address=int(dev.group(1)), vid=dev.group(2), pid=dev.group(3),
+                            speed=int(dev.group(4)), usb=dev.group(5), product=product.strip(),
+                            interfaces=[(i[3], i[4]) for i in itfs if i[0] == int(dev.group(1))])
+        if time.monotonic() > deadline:
+            raise AssertionError("the peer did not enumerate this build: " + text)
+        time.sleep(0.5)

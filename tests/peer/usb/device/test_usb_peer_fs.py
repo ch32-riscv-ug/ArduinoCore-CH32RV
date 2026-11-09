@@ -9,37 +9,37 @@ import secrets
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from s3_peer import command, dut_ready, settings, wait_enumerated
+from device_peer import Peer, command, dut_ready, settings, wait_enumerated
 
 
-def ready_again(s3):
+def ready_again(peer):
     """The medium came back: the S3 gets UNIT ATTENTION once, then it is ready."""
     for _ in range(4):
-        if command(s3, "msctur", rb"MSCTUR (\d) [^\r\n]*").group(1) == b"1":
+        if command(peer, "msctur", rb"MSCTUR (\d) [^\r\n]*").group(1) == b"1":
             return
     raise AssertionError("the medium did not become ready for the S3")
 
 
 def test_usb_peer_fs(dut, peers):
-    s3 = peers["s3"]
+    peer = Peer(peers)
     build_id = settings(__file__)["build_id"]
     dut_ready(dut, build_id)
-    wait_enumerated(s3, build_id)
+    wait_enumerated(peer, build_id)
 
     dut.write("prep\n")
     m = dut.expect(rb"PREP (\d) (\d+)\r?\n", timeout=15)
     assert m.group(1) == b"1", "FatFS could not format and write the volume"
-    ready_again(s3)
-    m = command(s3, "msc", rb"MSC (\d) (\S+) (.+) (\d+) (\d+)", timeout=20)
+    ready_again(peer)
+    m = command(peer, "msc", rb"MSC (\d) (\S+) (.+) (\d+) (\d+)", timeout=20)
     assert m.group(1) == b"1" and int(m.group(4)) == 128 and int(m.group(5)) == 512
 
     expected = f"CH32RV usb-fs {build_id}"
     for round_ in range(2):
-        m = command(s3, "mscread", rb"MSCREAD (\d) ([^\r\n]*)", timeout=20)
+        m = command(peer, "mscread", rb"MSCREAD (\d) ([^\r\n]*)", timeout=20)
         assert m.group(1) == b"1", "ESP-IDF's FAT could not mount what FatFS wrote"
         assert m.group(2).decode() == expected
         text = f"S3 round {round_} {secrets.token_hex(4)}"
-        assert command(s3, "mscwrite " + text, rb"MSCWRITE (\d)", timeout=20).group(1) == b"1"
+        assert command(peer, "mscwrite " + text, rb"MSCWRITE (\d)", timeout=20).group(1) == b"1"
 
         token = secrets.token_hex(4)
         dut.write(f"take {token}\n")
@@ -49,9 +49,9 @@ def test_usb_peer_fs(dut, peers):
         assert int(m.group(3)) == 4          # README.TXT, CFG.TXT, the directory, HOST.TXT
         assert m.group(4).decode() == text
         expected = f"CH32RV usb-fs {token}"
-        ready_again(s3)
+        ready_again(peer)
 
-    m = command(s3, "mscread", rb"MSCREAD (\d) ([^\r\n]*)", timeout=20)
+    m = command(peer, "mscread", rb"MSCREAD (\d) ([^\r\n]*)", timeout=20)
     assert m.group(1) == b"1" and m.group(2).decode() == expected
     dut.write("slots\n")
     m = dut.expect(rb"SLOTS (\d+) (\d+)\r?\n", timeout=5)

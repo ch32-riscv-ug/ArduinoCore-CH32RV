@@ -108,6 +108,22 @@ PEERS = {
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_s3",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_s3",
 }
+# The same cases with an RP2040 (Raspberry Pi Pico) as the peer: on the DUT's own OEP probe, written over SWD and
+# talked to over SEGGER RTT (oep_client.pytest_rp2040_peer), staged as peer_pico/.
+PICO_PEERS = {
+    "usb-peer": TESTS / "sketch_support/usb_peer/device/peer_pico",
+    "usb-peer-classes": TESTS / "sketch_support/usb_peer/device/peer_pico",
+    "usb-peer-net": TESTS / "sketch_support/usb_peer/device/peer_pico",
+    "usb-peer-fs": TESTS / "sketch_support/usb_peer/device/peer_pico",
+    "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_pico",
+    "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_pico",
+}
+# The Pico peers' TinyUSB: Adafruit TinyUSB Library 3.7.7 (arduino-pico 6.3.x's) with
+# sketch_support/usb_peer/pico/adafruit-tinyusb-3.7.7.patch (its RP2040 host sends an OUT data stage as DATA0).
+PICO_TINYUSB = dict(version="3.7.7",
+                    url="https://github.com/adafruit/Adafruit_TinyUSB_Arduino/archive/refs/tags/3.7.7.tar.gz",
+                    sha256="c51a2cf28da568271d385412058e5290bf3afad3f32e6bad8fe5123a3f28bb83",
+                    patch=TESTS / "sketch_support/usb_peer/pico/adafruit-tinyusb-3.7.7.patch")
 HELPERS = {
     "usb": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-classes": [TESTS / "instrumented/usb/usb_host.py"],
@@ -122,11 +138,11 @@ HELPERS = {
     "softspi": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "wire": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "softwire": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
-    "usb-peer": [TESTS / "peer/usb/device/s3_peer.py"],
-    "usb-peer-classes": [TESTS / "peer/usb/device/s3_peer.py"],
-    "usb-peer-media": [TESTS / "peer/usb/device/s3_peer.py"],
-    "usb-peer-net": [TESTS / "peer/usb/device/s3_peer.py"],
-    "usb-peer-fs": [TESTS / "peer/usb/device/s3_peer.py"],
+    "usb-peer": [TESTS / "peer/usb/device/device_peer.py"],
+    "usb-peer-classes": [TESTS / "peer/usb/device/device_peer.py"],
+    "usb-peer-media": [TESTS / "peer/usb/device/device_peer.py"],
+    "usb-peer-net": [TESTS / "peer/usb/device/device_peer.py"],
+    "usb-peer-fs": [TESTS / "peer/usb/device/device_peer.py"],
     "usb-peer-host": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-classes": [TESTS / "peer/usb/host/host_peer.py"],
 }
@@ -226,6 +242,32 @@ def restarts(logs):
     return found
 
 
+def pico_tinyusb():
+    """The patched Adafruit TinyUSB for the Pico peers, made once per patch in the bench's cache."""
+    import tarfile
+    import urllib.request
+    patch = PICO_TINYUSB["patch"].read_bytes()
+    cache = pathlib.Path(os.environ.get("CH32_TEST_ARDUINO_CACHE", pathlib.Path.home() / ".cache/ch32rv-core-bench/arduino"))
+    root = cache / "pico-tinyusb" / f"{PICO_TINYUSB['version']}-{hashlib.sha256(patch).hexdigest()[:12]}"
+    library = root / "Adafruit_TinyUSB_Arduino"
+    if (root / "done").exists():
+        return library
+    shutil.rmtree(root, ignore_errors=True)
+    root.mkdir(parents=True)
+    archive = root / "source.tar.gz"
+    with urllib.request.urlopen(PICO_TINYUSB["url"], timeout=60) as response:
+        archive.write_bytes(response.read())
+    if hashlib.sha256(archive.read_bytes()).hexdigest() != PICO_TINYUSB["sha256"]:
+        raise RuntimeError(f"{PICO_TINYUSB['url']}: not the pinned archive (sha256)")
+    with tarfile.open(archive) as tar:
+        tar.extractall(root, filter="data")
+    (root / f"Adafruit_TinyUSB_Arduino-{PICO_TINYUSB['version']}").rename(library)
+    subprocess.run(["patch", "-p1", "-d", str(library), "-i", str(PICO_TINYUSB["patch"])], check=True,
+                   capture_output=True)
+    (root / "done").write_text("")
+    return library
+
+
 def stage_case(work, name, case, target):
     directory = work / "cases" / name / case
     directory.mkdir(parents=True)
@@ -233,7 +275,16 @@ def stage_case(work, name, case, target):
     shutil.copyfile(MODULES[case], module)
     for helper in HELPERS.get(case, []):
         shutil.copyfile(helper, directory / helper.name)
-    if case in PEERS:
+    if case in PEERS and target.get("usb_peer") == "pico":
+        peer = directory / "peer_pico"
+        shutil.copytree(PICO_PEERS[case], peer)
+        sketch = peer / "sketch.yaml"
+        text = sketch.read_text()
+        if "      - TINYUSB\n" not in text:
+            raise RuntimeError(f"{PICO_PEERS[case]}/sketch.yaml: no '- TINYUSB' line in its libraries")
+        sketch.write_text(text.replace("      - TINYUSB\n", f"      - dir: {json.dumps(str(pico_tinyusb()))}\n"))
+        target = dict(target, usb_peer_port=target["usb_peer_address"])
+    elif case in PEERS:
         shutil.copytree(PEERS[case], directory / "peer_s3")
         target = dict(target, usb_peer_port=places.peer_tty(target["usb_peer_serial"]))
     if case in BUILD_OPTS:
@@ -446,7 +497,10 @@ def main(argv=None):
                                 "--run-mode", "all" if args.execute else "build",
                                 "--device-lock", "required", "--root-logdir", str(module.parent / "logs"),
                                 "--junitxml", str(module.parent / "junit.xml"), "-o", "junit_family=xunit1", "-s", "-q"]
-                    if case in PEER_CASES:
+                    if case in PEER_CASES and staged.get("usb_peer") == "pico":
+                        command += ["-p", "oep_client.pytest_rp2040_peer"]
+                        case_env["TEST_SERIAL_PORT_PEER_PICO"] = staged["usb_peer_port"]
+                    elif case in PEER_CASES:
                         command += ["--peer-port", "s3:" + staged["usb_peer_port"]]
                     if case == "hid":
                         command += ["--flash-port", "ch32rv-hid://" + staged["soft_usb_topology"]]

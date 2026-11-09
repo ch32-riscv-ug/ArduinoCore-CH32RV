@@ -122,6 +122,18 @@ def test_peer_cases_and_usb_host_parts():
         "skip: CH32V003F4U6 has no USB controller"
 
 
+def test_an_rp2040_peer_on_the_same_probe(monkeypatch, tmp_path):
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=X035, record={"usb": {"to": "rp2040", "port": "pico"}})
+    assert p["usb_peer"] == "pico" and p["usb_peer_address"] == "oep://30eda0e31108/pico"
+    assert p["cases"]["usb-peer"] == "run" and p["cases"]["usb-peer-host"] == "run"
+    # The RP2040's host has no isochronous transfers.
+    assert p["cases"]["usb-peer-media"].startswith("skip: the RP2040's USB host has no isochronous")
+    with pytest.raises(place.PlaceError, match="usb.port"):
+        fake_resolve(monkeypatch, tmp_path / "b", info=X035, record={"usb": {"to": "rp2040"}})
+    s3, _ = fake_resolve(monkeypatch, tmp_path / "c", info=X035, record={"usb": {"to": "esp32-s3", "serial": "x"}})
+    assert s3["usb_peer"] == "s3" and s3["cases"]["usb-peer-media"] == "run"
+
+
 def test_record_checks():
     assert records.check_core({"board": "wch:CH32X035C8T-R0", "supply": {"from": "probe"},
                                "parts": {"sd": {"bus": "sd1", "clk": "pa5", "cmd": "pa7", "dat0": "pa6"},
