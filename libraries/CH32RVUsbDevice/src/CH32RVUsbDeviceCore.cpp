@@ -606,6 +606,16 @@ bool Core::standard(const CH32RVUsbSetup &s)
 
 void Core::handle_setup()
 {
+    /* USBHS can report BUS_RST before the high-speed handshake finishes.
+     * The negotiated speed is valid by SETUP: refresh it before describing
+     * or opening endpoints, otherwise a high-speed device advertises 64-byte
+     * bulk packets instead of the required 512 bytes. */
+    const CH32RVUsbSpeed negotiated = dcd->speed();
+    if (speed != negotiated) {
+        speed = negotiated;
+        ep0_mps = ch32rv_usb_at(speed, CH32RVUsbSpeed::Super) ? 512 : 64;
+        build_device_descriptor(device->_config);
+    }
     CH32RVUsbSetup &s = req;
     s.bmRequestType = setup_raw[0];
     s.bRequest = setup_raw[1];
