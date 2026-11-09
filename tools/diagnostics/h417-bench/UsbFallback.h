@@ -44,7 +44,7 @@ public:
             command(c, Serial, _uartLine);
             _from = 'c';
         }
-        if (_d.mounted()) {
+        if (_d.ready()) {
             _waiting = false;
             return;
         }
@@ -87,7 +87,7 @@ public:
         if (c == 'p') {
             reply.print("pong ");
             reply.print(onSuperSpeed() ? "ss " : "fs ");
-            reply.print(_d.mounted() ? "mounted " : "unmounted ");
+            reply.print(_d.ready() ? "mounted " : "unmounted ");
             reply.print(millis());
             reply.print(" since ");
             reply.print(_waiting ? (uint32_t)(millis() - _since) : 0);

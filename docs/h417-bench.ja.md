@@ -23,7 +23,7 @@ CH32H417 の評価ボードで、USB3.0-A(SS)を PC に挿したまま実験を�
 | 手段 | SS を挿したまま | 条件 |
 |---|---|---|
 | DFU(FS または SS) | 使える | 動いているアプリに DFU runtime(既定で付く)があり、USB が生きていること。`dfu.py`、または `ch32rv boot dfu flash` |
-| SWD(`ch32rv flash`) | **使えない** | SS を挿していると、フラッシュの書き込みや長い読み出しが途中で `reason 0x55` になる(`--speed low` でも同じ)。短い操作(halt、レジスタや RAM の読み書き、`reset`)は通ることが多い |
+| SWD(`ch32rv flash`) | **使えない** | SS を挿していると、フラッシュの書き込みや長い読み出しが途中で `reason 0x55` になる(`--speed low` でも同じ)。短い操作(halt、レジスタや RAM の読み書き、`reset`)は通ることが多い。USB 2.0 の線(PB8 / PB9)を外して SS だけをつないだ状態でも、ch32rv 0.29.1 の `flash` は `the loader did not read back as written after 3 tries` で 3 回とも失敗した(2026-11-09、`target info` は通る)。列挙が PB8 / PB9 を乱すことだけが理由ではないとみる(SS を抜いた同じ条件との比べはまだ) |
 | SWD(SS を抜いた状態) | — | 確実に使える。止まったイメージからの最終的な戻り先 |
 | 工場出荷の USB ISP | 使えない | 電源投入時に DP(PA12)が High のときだけ入る。ソフトの BOOT_MODE + リセットでは入らない |
 | 工場出荷の UART ISP | 使えない | PB6(TX)/ PB7(RX)、つまり LinkE の UART。電源投入時に入る(評価ボードの説明書 §5)。ソフトのリセットでは入らなかった(下の「UART ISP の実験」) |
