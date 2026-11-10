@@ -25,6 +25,7 @@ from harness import records
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SYSFS = pathlib.Path("/sys/bus/usb/devices")
+BOARD_IDENTIFY = pathlib.Path("/run/board-identify/by-id")
 
 # Which series run the USB device and host cases is coverage.toml's (usb-device, usb-peer-host); these are the parts
 # of a host series without the host half or without USBFS (CH32RVUsbHostPort.h).
@@ -337,7 +338,8 @@ def resolve(address, tool, env, logs, *, chip=None):
     if core.get("usb", {}).get("to") in PEER_KINDS:
         place["usb_peer"] = PEER_KINDS[core["usb"]["to"]]
     if core.get("usb", {}).get("to") in ESP_PEERS:
-        place["usb_peer_serial"] = core["usb"]["serial"]
+        place["usb_peer_serial"] = core["usb"].get("serial")
+        place["usb_peer_mac"] = core["usb"].get("mac")
     if core.get("usb", {}).get("to") == "rp2040":
         if parsed["kind"] != "oep":
             raise PlaceError(f"{address}: an rp2040 USB peer is on the DUT's OEP probe; this is not an OEP port")
@@ -358,8 +360,14 @@ def pin_number(pad):
     return ((ord(pad[1]) - ord("A") + 2) << 5) | int(pad[2:])
 
 
-def peer_tty(serial, sysfs=SYSFS):
-    """The ESP32 peer's tty, by the USB serial of its port to this host (records.py: usb.serial)."""
+def peer_tty(serial, sysfs=SYSFS, mac=None, identify=BOARD_IDENTIFY):
+    """The ESP32 peer's tty, by the USB serial of its port to this host (records.py: usb.serial), or without one
+    by its MAC in board-identify's names (<chip>-<mac>)."""
+    if not serial:
+        names = sorted(pathlib.Path(identify).glob(f"*-{mac}")) if mac else []
+        if len(names) != 1:
+            raise PlaceError(f"ESP32 peer {mac}: {len(names)} board-identify names end in it under {identify}")
+        return str(names[0])
     topology = usb_device(serial, sysfs)[0]
     tty = tty_of(topology, sysfs=sysfs)
     if tty is None:

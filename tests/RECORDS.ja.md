@@ -75,7 +75,7 @@ DUT 自身の USB 端子がどこへつながっているかです。
 | `{"to": "esp32-p4", "serial": "<USB serial>", "mac": "<12 桁>"}` | 相手の ESP32-P4 の OTG HS の口につながっている（high speed） | usb-peer のデバイス側の case。USB host の case は、CH32RVUsbHost に USBHS のホストができるまで飛ばす |
 | `{"to": "rp2040", "port": "<口>"}` | 同じ OEP プローブの口 `<口>` にいる RP2040（Pico）につながっている（full speed） | usb-peer の各 case（usb-peer-media を除く。RP2040 のホストは isochronous を持たない） |
 
-`serial` は省けません。ESP32 からこのホストへつながる口の USB serial（USB-UART ブリッジのもの、または USB-Serial/JTAG のもの）を書きます。どのホストでも、これで ESP32 を見つけます。`mac` は省けます。書くときは、ESP32 の MAC を 16 進の小文字 12 桁で書きます（区切りなし）。
+`serial` には、ESP32 からこのホストへつながる口の USB serial（USB-UART ブリッジのもの、または USB-Serial/JTAG のもの）を書きます。どのホストでも、これで ESP32 を見つけます。`mac` には ESP32 の MAC を 16 進の小文字 12 桁で書きます（区切りなし）。どちらか一方は必ず書きます。CH340 のように USB serial を持たないブリッジでは `serial` を省き、`mac` だけを書きます。このときは board-identify の名前（`/run/board-identify/by-id/<チップ>-<mac>`）で口を探すので、board-identify が動いているホストでだけ見つかります。
 
 ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/peer_s3`）を、sketch.yaml の `p4_host` の設定で動かします。答えの行の頭は、どちらも `S3 ` です。
 

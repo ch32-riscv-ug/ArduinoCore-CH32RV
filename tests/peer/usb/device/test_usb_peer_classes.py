@@ -93,11 +93,12 @@ def test_usb_peer_classes(dut, peers):
     dut.write("card\n")
     m = dut.expect(rb"CARD (\d) (\d) (\d+)\r?\n", timeout=5)
     assert m.group(1) == b"1" and m.group(2) == b"1" and int(m.group(3)) >= 1
-    # messageBytes 0 (automatic): 271 on a full-speed controller, told the host as
-    # dwMaxCCIDMessageLength, at least the bulk OUT packet (CCID 1.1 section 5.1).
+    # messageBytes 0 (automatic): 271 at full speed, the 512-byte bulk OUT packet at high speed (the ESP32-P4 on
+    # the DUT's USBHS), told the host as dwMaxCCIDMessageLength - at least that packet (CCID 1.1 section 5.1).
     dut.write("ccidsize\n")
     m = dut.expect(rb"CCIDSIZE (\d+) (\d+) (\d+)\r?\n", timeout=5)
-    assert (int(m.group(1)), int(m.group(2)), int(m.group(3))) == (271, 271, 64)
+    high = settings(__file__)["target"].get("usb_peer") == "p4"
+    assert (int(m.group(1)), int(m.group(2)), int(m.group(3))) == ((512, 512, 512) if high else (271, 271, 64))
 
     # Taken out after the first block of a two-block READ(10): the rest fails
     # and the second block is never asked of the backend. Its sense (02/3A/00)
@@ -132,13 +133,15 @@ def test_usb_peer_classes(dut, peers):
 
     # An accepted DFU_DETACH is not taken back by end() (the contract agreed
     # with EspUsbDevice v3): the sketch ends the device as soon as onDetach()
-    # has said yes, and the factory bootloader still appears, then hands back.
+    # has said yes, and the factory bootloader still appears (the X035; elsewhere enterBootloader() is a plain
+    # reset), then hands back.
     dut.write("detachend\n")
     dut.expect(rb"DETACHEND\r?\n", timeout=5)
     wait_enumerated(peer, build_id)
     # The device may be gone before the S3 prints its reply: no DISCONNECTED in between.
     assert command(peer, "dfu", rb"DFU (\d) (\d)", timeout=10).group(1, 2) == (b"1", b"1")
-    peer.expect(rb"CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
+    if settings(__file__)["target"]["family"].startswith("CH32X03"):
+        peer.expect(rb"CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
     peer.expect(rb"CONNECTED \d+ 1209 0001", timeout=40)
     wait_enumerated(peer, build_id)
     # The reset came from end() itself: it never returned to print this.

@@ -99,7 +99,7 @@ def test_an_ambiguous_chip_takes_the_recorded_part_only_if_it_is_a_candidate(mon
 
 
 def test_a_bad_record_stops_before_the_chip_is_touched(monkeypatch, tmp_path):
-    with pytest.raises(place.PlaceError, match="usb.serial"):
+    with pytest.raises(place.PlaceError, match="serial .* or, for a bridge without one, mac"):
         fake_resolve(monkeypatch, tmp_path, info=X035, record={"usb": {"to": "esp32-s3"}})
 
 
@@ -145,6 +145,20 @@ def test_an_esp32_p4_peer_on_the_usbhs():
     # Every device case runs (the P4's host has isochronous transfers); the DUT's host cases wait for a USBHS host.
     assert all(cases[c] == "run" for c in place.PEER_DEVICE_CASES)
     assert cases["usb-peer-host"] == place.P4_LACKS["usb-peer-host"]
+
+
+def test_an_esp32_peer_found_by_mac(tmp_path):
+    # A CH340 bridge has no USB serial: the record carries the MAC, and board-identify's name finds the tty.
+    errors = []
+    records._usb({"to": "esp32-s3", "mac": "7cdfa1fc77d0"}, errors)
+    assert errors == []
+    records._usb({"to": "esp32-s3"}, errors)
+    assert errors and "mac" in errors[0]
+    (tmp_path / "esp32-s3-7cdfa1fc77d0").touch()
+    (tmp_path / "esp32-s3-d0cf1358fd94").touch()
+    assert place.peer_tty(None, mac="7cdfa1fc77d0", identify=tmp_path) == str(tmp_path / "esp32-s3-7cdfa1fc77d0")
+    with pytest.raises(place.PlaceError, match="0 board-identify names"):
+        place.peer_tty(None, mac="000000000000", identify=tmp_path)
 
 
 def test_record_checks():

@@ -574,6 +574,9 @@ static void run(char *cmd)
 
 void setup()
 {
+  /* A command line holds up to 399 characters; the P4's USB-Serial/JTAG keeps 256 by default and drops the
+   * rest, newline included. */
+  Serial.setRxBufferSize(1024);
   Serial.begin(115200);
   usb.onDeviceConnected([](const EspUsbHostDeviceInfo &d)
                         { Serial.printf("S3 CONNECTED %u %04x %04x %s\n", d.address, d.vid, d.pid, d.product); });

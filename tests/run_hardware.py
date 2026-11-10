@@ -306,7 +306,7 @@ def stage_case(work, name, case, target):
             if "default_profile: s3_host\n" not in text or "  p4_host:\n" not in text:
                 raise RuntimeError(f"{PEERS[case]}/sketch.yaml: no p4_host profile")
             sketch.write_text(text.replace("default_profile: s3_host\n", "default_profile: p4_host\n"))
-        target = dict(target, usb_peer_port=places.peer_tty(target["usb_peer_serial"]))
+        target = dict(target, usb_peer_port=places.peer_tty(target["usb_peer_serial"], mac=target.get("usb_peer_mac")))
     if case in BUILD_OPTS:
         (directory / "build_opt.h").write_text(BUILD_OPTS[case])
     build_id = uuid.uuid4().hex[:12]

@@ -81,7 +81,7 @@ static uint32_t directDone;
 static uint32_t peeksMatched, peeksMissed;   /* peek() against the byte read() returned next */
 static bool directMode;
 static bool borrowMode, posted;
-static uint8_t landing[64];
+static uint8_t landing[CH32RV_USB_MAX_PACKET];   /* readDirect(): whole packets of the link's speed (512 at high speed) */
 static uint32_t borrowCancelled, borrowEchoes, postedId;
 
 static void borrowed_rx(const CH32RVUsbTransferResult &result)
@@ -89,7 +89,8 @@ static void borrowed_rx(const CH32RVUsbTransferResult &result)
     posted = false;
     if (result.status == CH32RVUsbTransferStatus::Cancelled) {
         borrowCancelled++;
-    } else if (result.status == CH32RVUsbTransferStatus::Success && result.actualBytes && !echoBusy) {
+    } else if (result.status == CH32RVUsbTransferStatus::Success && result.actualBytes &&
+               result.actualBytes <= sizeof echo && !echoBusy) {
         memcpy(echo, landing, result.actualBytes);
         echoBusy = (bool)vendor.writeDirect(echo, result.actualBytes);
         borrowEchoes++;
