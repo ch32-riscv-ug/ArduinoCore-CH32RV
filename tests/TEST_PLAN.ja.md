@@ -84,7 +84,8 @@ silicon capability、part/package の端子、コア実装、board 配線、fixt
 | LinkE と代表 DUT | upload/reset/monitor と基本動作の経路差 | P4 capture を前提とした精密判定 |
 | Link と CH32V103 | V103 の経路別回帰 | 他系列の経路 |
 | UIAPduino HID | 製品 pin map、HID upload、再接続、sketch 起動 | sketch 内 USB API |
-| CH32X035 と ESP32S3 | USB host/device 両側の契約と異なる実装間の通信 | 他 controller/speed、PD |
+| CH32X035 と RP2040（Pico） | FS の USB host/device 両側の契約と、異なる実装（TinyUSB）との通信。同じ OEP プローブで書き込みと RTT コンソール | アイソクロナス（RP2040 のホストに無い）、他 controller/speed、PD |
+| CH32X035 と ESP32S3 | FS の USB host/device 両側。ESP-IDF の独立したスタックとの比べ役、アイソクロナス（usb-peer-media） | 他 controller/speed、PD |
 | DUT と安価な peer | 指定通信契約の繰り返し検証 | 独立実装との相互運用の代替 |
 | PD source と電圧計 | CC 交渉、VBUS、電源復旧 | USB データ通信 |
 
@@ -171,6 +172,15 @@ primary が先に upload されるため、setup 直後の通信開始は peer u
 VBUS の給電元、逆流防止、切断方法、GND は wiring と安全条件に含めます。
 FS のペアで HS を保証しません。安価な CH32X035 peer に替えても contract ID と payload を維持します。
 同じ stack 同士に共通の不具合があっても通るため、ESP32S3 等との独立相互運用検証は残します。
+
+速さごとの対向（2026-11-10 の方針）。どの速さも、DUT は host と device の両方を対向で確かめます。PC 直結は
+初期の開発に使い、最終の検証は対向を主にします。
+
+| 速さ | 対向 | 状態 |
+|---|---|---|
+| FS | RP2040（Pico）を主、ESP32-S3 を 1 組（アイソクロナスと比べ役） | X035 で 6 ケース（media 以外）。ほかの FS のボードにも Pico をつないでいく |
+| HS | ESP32-P4（より安い HS のボードに替えることもある）。H417 は SS と同じ口で HS の線が SWD と兼用のため、常駐のベンチにしない | コアの USBHS はデバイスのみ。ホストは未実装 |
+| SS | H417 どうし。X315 の SS はデバイスのみなので、ホストの検証には使えない | コアの USBSS はデバイスのみ。ホストは未実装（作る間は USB 3.0 メモリ） |
 
 ## プローブとの責務分担
 

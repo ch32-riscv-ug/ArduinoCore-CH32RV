@@ -20,7 +20,7 @@ Record the actual host tool/client versions and reported probe firmware, protoco
 Do not impose a blanket minimum probe firmware here. The owning ch32rv/OEP tools handle compatibility, known-bad releases and firmware updates; this suite pins host dependencies and verifies its DUT contracts.
 
 USB covers both DUT host / peer device and DUT device / peer host as equal, separate scenarios.
-Do not assign a fixed USB role to CH32X035 or ESP32S3; select role-specific profiles and verify capabilities and power for each case.
+Do not assign a fixed USB role to CH32X035, the RP2040 (Pico) or ESP32S3; select role-specific profiles and verify capabilities and power for each case. Each speed is verified against a peer in both roles: FS with the Pico (and one ESP32-S3 for isochronous transfers), HS with an ESP32-P4, SS with two H417s (see the Japanese plan).
 Keep separate coverage and results for each role, with control logs independent of the USB link under test.
 Enable USB only after both sides are prepared. A cheaper CH32X035 peer does not replace independent interoperability evidence.
 TinyUSB vendoring is not Arduino USB integration.

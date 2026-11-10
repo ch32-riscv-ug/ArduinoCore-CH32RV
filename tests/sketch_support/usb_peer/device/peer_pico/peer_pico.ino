@@ -36,7 +36,7 @@
  *
  * Events: P CONNECTED <addr> <vid> <pid> <product> / P DISCONNECTED <addr>
  * <vid> <pid> / P KEY <p|r> <keycode> <ascii> / P HIDVIN <hex> /
- * P MIDI <cin> <status> <d1> <d2>.
+ * P MIDI <cin> <status> <d1> <d2> / P NOTE <text> (MSC mount, for the logs).
  *
  * Not here: the speaker, microphone and camera (peer_s3's audioin / audioout /
  * video). The RP2040's host controller driver has no isochronous transfers. */
@@ -545,6 +545,16 @@ static void cmdMsc()
   static scsi_inquiry_resp_t inq;
   static scsi_read_capacity10_resp_t cap;
   bool ok = false;
+  /* TinyUSB's MSC driver takes commands once it has mounted the device (its own TEST UNIT READY and READ
+   * CAPACITY at enumeration): say so at once rather than time each command out. */
+  const uint32_t t0 = millis();
+  while (dev.address && !tuh_msc_mounted(dev.address) && millis() - t0 < 8000) pump();
+  if (!dev.address || !tuh_msc_mounted(dev.address))
+  {
+    say("P NOTE the MSC driver has not mounted the device\n");
+    say("P MSC 0 - - 0 0\n");
+    return;
+  }
   for (int i = 0; i < 10 && !(ok = mscTur()); i++) pause(200);   /* ready, through UNIT ATTENTION */
   mscStart();
   ok = ok && mscFinish(tuh_msc_inquiry(dev.address, 0, &inq, mscDone, 0));
@@ -831,10 +841,22 @@ void loop()
   pump();
   if (!dev.announced)
   {
-    /* Configured is enough: TinyUSB's MSC driver repeats TEST UNIT READY until the medium is ready, and holds
-     * tuh_mount_cb back until then. */
-    for (uint8_t a = 1; !mounted && a <= CFG_TUH_DEVICE_MAX; a++)
-      if (tuh_mounted(a)) mounted = a;
+    /* Announced at tuh_mount_cb, when every driver has set its interface up. A device configured for 1 s
+     * without it is announced too: TinyUSB's MSC driver repeats TEST UNIT READY until a medium is ready and
+     * holds tuh_mount_cb back until then. Not sooner - the drivers' own control requests (GET_MAX_LUN,
+     * SET_LINE_CODING) run right after the configuration, and one of ours in between left the MSC driver
+     * never mounted (its request refused as busy). */
+    static uint32_t configuredSince;
+    static uint8_t configured;
+    uint8_t now = 0;
+    for (uint8_t a = 1; !now && a <= CFG_TUH_DEVICE_MAX; a++)
+      if (tuh_mounted(a)) now = a;
+    if (now != configured)
+    {
+      configured = now;
+      configuredSince = millis();
+    }
+    if (!mounted && configured && millis() - configuredSince >= 1000) mounted = configured;
     if (mounted) announce();
   }
   while (rtt.available())
@@ -927,6 +949,10 @@ void tuh_hid_set_report_complete_cb(uint8_t, uint8_t, uint8_t, uint8_t, uint16_t
   setReportLength = len;
   setReportDone = true;
 }
+
+void tuh_msc_mount_cb(uint8_t daddr) { say("P NOTE MSC mounted %u\n", daddr); }
+
+void tuh_msc_umount_cb(uint8_t daddr) { say("P NOTE MSC unmounted %u\n", daddr); }
 
 void tuh_midi_mount_cb(uint8_t idx, const tuh_midi_mount_cb_t *) { midiIndex = idx; }
 

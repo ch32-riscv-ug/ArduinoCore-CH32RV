@@ -49,6 +49,7 @@ DUT と同じ OEP プローブに Pico をつなぎ、記録に `usb: {to: rp204
     - 切断のときに EPX の転送が残り、次の列挙で panic する不具合（#4166、#4177）。
   - ホストの列挙のバッファを 1024 にする（usb_contracts の構成記述子は 302 バイト）。
   - `tuh_edpt_xfer()` を有効にする。
+  - MSC ホストが転送の失敗で止まらないようにする。失敗した段は失敗の CSW で終え、列挙中は TEST UNIT READY に戻る。
 
 ### TinyUSB（Pico）側の挙動
 
@@ -58,7 +59,9 @@ DUT の不具合と見分けるために残します。Adafruit TinyUSB を上�
   CSW（成功）のまま完了を返します。CBW のタグも毎回同じです。Pico のスケッチは、読み終えた CSW の署名を消しておき、
   次に CSW が届かなければ失敗とします。
 - **MSC ホストは、媒体が準備できるまで TEST UNIT READY を繰り返し、`tuh_mount_cb` を出さない。** Pico のスケッチは、
-  構成が済んだ時点（`tuh_mounted()`）で CONNECTED を出します。
+  ふだんは `tuh_mount_cb` で CONNECTED を出し、構成済み（`tuh_mounted()`）のまま 1 秒たっても来なければ自分で出します。
+  構成のすぐ後は、各ドライバが自分の control 要求（GET_MAX_LUN、SET_LINE_CODING）を出しています。その間にスケッチの要求を
+  割り込ませると、ドライバの要求が「使用中」で断られて黙って止まりました（MSC が mount されないまま。8 回に 1 回）。
 - **`*_sync` の記述子の取得には時間切れが無い。** 途中で装置が去ると、待ち続けることがありました。Pico のスケッチの要求は、
   全部時間切れ付きにしています。
 - **`hcd_edpt_clear_stall()` は panic する（上流も同じ）。** STALL した端点を戻せません。STALL の後は、DUT の再起動で
