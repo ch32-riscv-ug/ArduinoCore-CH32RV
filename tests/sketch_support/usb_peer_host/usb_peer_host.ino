@@ -646,7 +646,13 @@ void setup()
     usb.onCcidCardInserted([](const CH32RVUsbHostCcidSlotEvent &) { SerialDMSeq.println("H CARD in"); });
     usb.onCcidCardRemoved([](const CH32RVUsbHostCcidSlotEvent &) { SerialDMSeq.println("H CARD out"); });
     cdc.begin(115200);
+#ifdef USB_PEER_HOST_PORT
+    CH32RVUsbHostConfig config;
+    config.port = USB_PEER_HOST_PORT;   /* run_hardware.py: the ESP32-P4 is on the USBHS */
+    began = usb.begin(config);
+#else
     began = usb.begin();
+#endif
 }
 
 void loop()

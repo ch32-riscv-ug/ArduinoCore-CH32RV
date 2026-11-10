@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import importlib.metadata
 import json
+import re
 import os
 import pathlib
 import shutil
@@ -303,12 +304,16 @@ def stage_case(work, name, case, target):
             # The same sketch on the ESP32-P4: its sketch.yaml's p4 profile (the OTG HS port).
             sketch = directory / "peer_s3/sketch.yaml"
             text = sketch.read_text()
-            if "default_profile: s3_host\n" not in text or "  p4_host:\n" not in text:
-                raise RuntimeError(f"{PEERS[case]}/sketch.yaml: no p4_host profile")
-            sketch.write_text(text.replace("default_profile: s3_host\n", "default_profile: p4_host\n"))
+            m = re.search(r"^default_profile: s3_(\w+)\n", text, re.M)
+            if not m or f"  p4_{m.group(1)}:\n" not in text:
+                raise RuntimeError(f"{PEERS[case]}/sketch.yaml: no p4 profile beside the s3 one")
+            sketch.write_text(text.replace(m.group(0), f"default_profile: p4_{m.group(1)}\n"))
         target = dict(target, usb_peer_port=places.peer_tty(target["usb_peer_serial"], mac=target.get("usb_peer_mac")))
-    if case in BUILD_OPTS:
-        (directory / "build_opt.h").write_text(BUILD_OPTS[case])
+    opts = BUILD_OPTS.get(case, "")
+    if case in places.PEER_HOST_CASES and target.get("usb_peer") == "p4":
+        opts += "-DUSB_PEER_HOST_PORT=CH32RV_USB_HOST_PORT_HIGH_SPEED\n"   # the P4 is on the DUT's USBHS
+    if opts:
+        (directory / "build_opt.h").write_text(opts)
     build_id = uuid.uuid4().hex[:12]
     staged = {k: v for k, v in target.items() if k != "snapshot"}
     settings = dict(build_id=build_id, target=staged, f_cpu=target["f_cpu"], case=case)

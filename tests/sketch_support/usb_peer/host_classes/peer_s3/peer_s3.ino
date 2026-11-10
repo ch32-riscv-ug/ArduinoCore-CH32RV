@@ -64,6 +64,9 @@ void setup()
   config.product = "S3 peer classes";
   config.manufacturer = "EspUsbDevice";
   config.serialNumber = "S3PEERCLS";
+#if CONFIG_IDF_TARGET_ESP32P4
+  config.controller = EspUsbController::HighSpeed;   /* the OTG HS port, wired to the DUT's USBHS */
+#endif
   if (!device.begin(config))
     Serial.printf("S3D BEGIN_FAILED %s\n", device.lastErrorName());
   Serial.println("S3D BOOTED");

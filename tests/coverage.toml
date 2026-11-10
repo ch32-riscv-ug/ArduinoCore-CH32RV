@@ -155,13 +155,15 @@ id = "usb-peer-fs"
 test = "usb-peer-fs"
 scope = "once"
 
-# CH32RVUsbHost drives the USBFS of the X03x and the USBOTG_FS layouts (CH32RVUsbHostPort.h), each series with its
-# own 48 MHz: not V103's older USB, not the USBHS / USBSS-only series.
+# CH32RVUsbHost drives the USBFS of the X03x and the USBOTG_FS layouts, and the second-generation USBHS
+# (CH32RVUsbHostPort.h): not V103's older USB, not V30x's first-generation USBHS alone. The USBHS-only series are
+# listed by name (an ESP32-P4 peer on their USBHS).
 [[item]]
 id = "usb-peer-host"
 test = "usb-peer-host"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
+also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315"]
 not_on = ["CH32V103"]
 
 [[item]]
@@ -169,6 +171,7 @@ id = "usb-peer-host-classes"
 test = "usb-peer-host-classes"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
+also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315"]
 not_on = ["CH32V103"]
 
 [[item]]
@@ -176,6 +179,7 @@ id = "usb-peer-host-storage"
 test = "usb-peer-host-storage"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
+also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315"]
 not_on = ["CH32V103"]
 
 [[item]]
@@ -183,6 +187,7 @@ id = "usb-peer-host-input"
 test = "usb-peer-host-input"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
+also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315"]
 not_on = ["CH32V103"]
 
 [[item]]

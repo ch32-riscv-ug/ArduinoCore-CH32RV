@@ -115,9 +115,12 @@ def test_peer_cases_and_usb_host_parts():
     assert cases["usb"] == "skip: the record's usb is not {to: host}" and cases["power"] == "skip: not on an OEP port"
     s3 = {"usb": {"to": "esp32-s3", "serial": "x"}}
     assert place.choose_cases(dict(v307, record=s3), items, caps)["usb-peer-host"] == "run"
-    for chip in ("CH32V407WEU6", "CH32V103R8T6", "CH32X315MCU6"):   # USBHS / older USB only: device, no host
+    for chip in ("CH32V103R8T6",):   # the older USB: device, no host
         cases = place.choose_cases(dict(v307, chip=chip, record=s3), items, caps)
         assert cases["usb-peer"] == "run" and cases["usb-peer-host"].startswith("skip:"), chip
+    for chip in ("CH32V407WEU6", "CH32X315MCU6"):   # the second-generation USBHS: a host too
+        cases = place.choose_cases(dict(v307, chip=chip, record=s3), items, caps)
+        assert cases["usb-peer"] == cases["usb-peer-host"] == "run", chip
     assert place.choose_cases(dict(v307, chip="CH32V003F4U6", record=s3), items, caps)["usb-peer"] == \
         "skip: CH32V003F4U6 has no USB controller"
 
@@ -140,11 +143,12 @@ def test_an_esp32_p4_peer_on_the_usbhs():
     errors = []
     records._usb(p4["usb"], errors)
     assert errors == []
-    v307 = dict(chip="CH32V307VCT6", kind="wchlink", lines={}, record=p4)
-    cases = place.choose_cases(v307, items, caps)
-    # Every device case runs (the P4's host has isochronous transfers); the DUT's host cases wait for a USBHS host.
+    v407 = dict(chip="CH32V407WEU6", kind="wchlink", lines={}, record=p4)
+    cases = place.choose_cases(v407, items, caps)
+    # Every device case runs (the P4's host has isochronous transfers), and the host cases the P4 has sketches for.
     assert all(cases[c] == "run" for c in place.PEER_DEVICE_CASES)
-    assert cases["usb-peer-host"] == place.P4_LACKS["usb-peer-host"]
+    assert cases["usb-peer-host"] == cases["usb-peer-host-classes"] == "run"
+    assert cases["usb-peer-host-input"] == place.P4_LACKS["usb-peer-host-input"]
 
 
 def test_an_esp32_peer_found_by_mac(tmp_path):

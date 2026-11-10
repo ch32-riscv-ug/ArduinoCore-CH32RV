@@ -1,8 +1,16 @@
-# The ESP32-S3 as the USB device for tests/peer/usb/host (the DUT is the host).
+# The ESP32-S3 (or the ESP32-P4, p4_device) as the USB device for tests/peer/usb/host (the DUT is the host).
 # Pinned core and library: the peer is a fixed reference, not under test.
 profiles:
   s3_device:
     fqbn: esp32:esp32:esp32s3:USBMode=default
+    platforms:
+      - platform: esp32:esp32 (3.3.12)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - EspUsbDevice (2.6.0)
+  # The ESP32-P4 (v1.x silicon) on its OTG HS port; Serial is its USB-Serial/JTAG.
+  p4_device:
+    fqbn: esp32:esp32:esp32p4:ChipVariant=prev3,USBMode=hwcdc,CDCOnBoot=cdc
     platforms:
       - platform: esp32:esp32 (3.3.12)
         platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json

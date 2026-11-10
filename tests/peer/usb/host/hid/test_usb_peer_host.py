@@ -19,7 +19,9 @@ def test_usb_peer_host(dut, peers):
 
     # Enumeration, strings, the interfaces the host drivers took.
     dev = wait_device(dut, peer.id["hid"])
-    assert dev["vid"] == peer.id["vid"] and dev["speed"] == 1
+    # Full speed, or high speed with the ESP32-P4 on the DUT's USBHS.
+    speed = 2 if settings(__file__)["target"].get("usb_peer") == "p4" else 1
+    assert dev["vid"] == peer.id["vid"] and dev["speed"] == speed
     assert dev["manufacturer"] == peer.id["manufacturer"] and dev["serial"] == peer.id["hid_serial"]
     assert {(0x03, 0x00), (0x02, 0x02), (0x0A, 0x00), (0x08, 0x06)} <= set(dev["interfaces"])
     device(peer, "?", rb"READY 1")

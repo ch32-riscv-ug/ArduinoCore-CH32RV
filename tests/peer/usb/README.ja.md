@@ -3,6 +3,8 @@
 スケッチは規約どおり tests/sketch_support に置き、run_hardware.py がケースの作業ディレクトリへ
 `peer_s3/` か `peer_pico/` として並べます（pytest-embedded-arduino-cli の peer の置き方）。どちらを使うかは、
 ベンチの記録（records の usb.to）で決まります。`esp32-s3` なら S3、`rp2040` なら Pico です（下の「RP2040（Pico）を相手にする」）。
+`esp32-p4` なら P4 が S3 と同じスケッチを、sketch.yaml の p4 の設定（OTG HS の口）で動かし、DUT の USBHS と HS で
+つながります（ホストの case では DUT が `CH32RV_USB_HOST_PORT_HIGH_SPEED` で始めます）。
 
 DUT（CH32）の USB ポートを ESP32-S3 の USB OTG ポートにつなぎ、役割ごとに別のケースとして試験します
 （[テスト計画](../../TEST_PLAN.ja.md) の「USB peer 計画」）。S3 側は独立した実装（EspUsbHost は ESP-IDF の
