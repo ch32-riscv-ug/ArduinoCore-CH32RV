@@ -26,7 +26,7 @@ requires-dist = [
     { name = "pytest-embedded-arduino-cli", marker = "extra == 'hardware'", specifier = "==1.11.0" },
     { name = "pytest-embedded-arduino-cli-ch32rv", marker = "extra == 'hardware'", specifier = "==0.0.8" },
     { name = "pytest-embedded-wireskein", marker = "extra == 'hardware'", specifier = "==0.0.7" },
-    { name = "wireskein", marker = "extra == 'hardware'", specifier = "==0.0.26" },
+    { name = "wireskein", marker = "extra == 'hardware'", specifier = "==0.0.27" },
 ]
 provides-extras = ["hardware"]
 
@@ -334,12 +334,12 @@ wheels = [
 
 [[package]]
 name = "wireskein"
-version = "0.0.26"
+version = "0.0.27"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/98/b5/fa90eafb2b95caf4a074849d0a9bd7fbb825d9f239310cc906f6ce2146bb/wireskein-0.0.26.tar.gz", hash = "sha256:525bfe739687d58bcc6a9ab07d824d2c3af80f293a5455ac0a764cafe94687c1", size = 1218433, upload-time = "2026-11-07T15:03:08.686Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e5/7b/ecdca3d0fc38f79bca4c1f8a9713daa9e25c6b4fd438facba60c3b781f07/wireskein-0.0.27.tar.gz", hash = "sha256:e466eed59b1a39b5ea21c45525b54222c3b6f56438f723a8827e50e613cb3d33", size = 3167198, upload-time = "2026-11-08T09:03:18.389Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/f1/cf987ec1d6ed91887d4bf28d470c27ff218fd6c878ad56e957d7bd40df07/wireskein-0.0.26-py3-none-any.whl", hash = "sha256:174cb26e4b01947372a935285cd43ea795e1be76e417bdd892155263c8e75bc0", size = 327316, upload-time = "2026-11-07T15:03:06.803Z" },
+    { url = "https://files.pythonhosted.org/packages/47/c7/f4ce99423989c6e71f90265a439e50e6dcd71b00b53d2eddff3ebf3b99d3/wireskein-0.0.27-py3-none-any.whl", hash = "sha256:50e7748820689beff5129f6c3de3b49c8bc0dfb36558e67dc7f9ba8c4ac364ac", size = 335964, upload-time = "2026-11-08T09:03:16.592Z" },
 ]
