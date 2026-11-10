@@ -11,8 +11,9 @@ tests/run_hardware.py applies this to the pinned release and puts the result in 
      goes away are aborted. Without them the next device's enumeration panics ("buf_ctrl ... already
      available") - CH32RVUsbDevice's end() + begin() was enough.
 2. tusb_config_rp2040.h: tuh_edpt_xfer() on, for the classes the host has no driver for (vendor bulk,
-   CCID, NCM); and the host's enumeration buffer 1024 bytes, not 256 (a configuration descriptor longer than
-   it, as usb_contracts' 302, failed the enumeration at an assert).
+   CCID, NCM); the host's enumeration buffer 1024 bytes, not 256 (a configuration descriptor longer than
+   it, as usb_contracts' 302, failed the enumeration at an assert); and two CDC interfaces on the host, not
+   one (usb_input's two ports).
 3. class/msc/msc_host.c: a failed stage (a stall, no handshake, an aborted transfer) ends the command with a
    failed CSW, and a failed REQUEST SENSE or READ CAPACITY at enumeration goes back to TEST UNIT READY. 3.7.7
    stopped at an assert instead, and the device was never mounted: it happened now and then while the driver
@@ -38,6 +39,15 @@ tests/run_hardware.py applies this to the pinned release and puts the result in 
  
  // Number of mass storage
  #define CFG_TUH_MSC 1
+@@ -152,7 +152,7 @@
+ 
+ // Number of CDC interfaces
+ // FTDI and CP210x are not part of CDC class, only to re-use CDC driver API
+-#define CFG_TUH_CDC 1
++#define CFG_TUH_CDC 2
+ #define CFG_TUH_CDC_FTDI 1
+ #define CFG_TUH_CDC_CP210X 1
+ #define CFG_TUH_CDC_CH34X 1
 --- a/src/class/msc/msc_host.c
 +++ c/src/class/msc/msc_host.c
 @@ -330,6 +330,27 @@

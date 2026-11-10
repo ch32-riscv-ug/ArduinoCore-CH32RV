@@ -55,8 +55,11 @@ MODULES = {
     "usb-peer-media": TESTS / "peer/usb/device/test_usb_peer_media.py",
     "usb-peer-net": TESTS / "peer/usb/device/test_usb_peer_net.py",
     "usb-peer-fs": TESTS / "peer/usb/device/test_usb_peer_fs.py",
+    "usb-peer-input": TESTS / "peer/usb/device/test_usb_peer_input.py",
     "usb-peer-host": TESTS / "peer/usb/host/hid/test_usb_peer_host.py",
     "usb-peer-host-classes": TESTS / "peer/usb/host/classes/test_usb_peer_host_classes.py",
+    "usb-peer-host-input": TESTS / "peer/usb/host/input/test_usb_peer_host_input.py",
+    "usb-peer-host-storage": TESTS / "peer/usb/host/storage/test_usb_peer_host_storage.py",
 }
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
 # The console cases: the monitor's source (port_config), and the flag that makes the sketch use that console.
@@ -88,8 +91,11 @@ SKETCHES = {
     "usb-peer-media": TESTS / "sketch_support/usb_media/usb_media.ino",
     "usb-peer-net": TESTS / "sketch_support/usb_net/usb_net.ino",
     "usb-peer-fs": TESTS / "sketch_support/usb_fs/usb_fs.ino",
+    "usb-peer-input": TESTS / "sketch_support/usb_input/usb_input.ino",
     "usb-peer-host": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
+    "usb-peer-host-input": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
+    "usb-peer-host-storage": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
 }
 # build_opt.h lines staged beside a case's DUT sketch.
 BUILD_OPTS = {
@@ -115,8 +121,11 @@ PICO_PEERS = {
     "usb-peer-classes": TESTS / "sketch_support/usb_peer/device/peer_pico",
     "usb-peer-net": TESTS / "sketch_support/usb_peer/device/peer_pico",
     "usb-peer-fs": TESTS / "sketch_support/usb_peer/device/peer_pico",
+    "usb-peer-input": TESTS / "sketch_support/usb_peer/device/peer_pico",
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_pico",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_pico",
+    "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_pico",
+    "usb-peer-host-storage": TESTS / "sketch_support/usb_peer/host_storage/peer_pico",
 }
 # The Pico peers' TinyUSB: Adafruit TinyUSB Library 3.7.7 (arduino-pico 6.3.x's) with
 # sketch_support/usb_peer/pico/adafruit-tinyusb-3.7.7.patch (its RP2040 host sends an OUT data stage as DATA0).
@@ -143,8 +152,11 @@ HELPERS = {
     "usb-peer-media": [TESTS / "peer/usb/device/device_peer.py"],
     "usb-peer-net": [TESTS / "peer/usb/device/device_peer.py"],
     "usb-peer-fs": [TESTS / "peer/usb/device/device_peer.py"],
+    "usb-peer-input": [TESTS / "peer/usb/device/device_peer.py"],
     "usb-peer-host": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-classes": [TESTS / "peer/usb/host/host_peer.py"],
+    "usb-peer-host-input": [TESTS / "peer/usb/host/host_peer.py"],
+    "usb-peer-host-storage": [TESTS / "peer/usb/host/host_peer.py"],
 }
 PLUGINS = ["pytest_embedded.plugin",
            "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin",
@@ -275,7 +287,7 @@ def stage_case(work, name, case, target):
     shutil.copyfile(MODULES[case], module)
     for helper in HELPERS.get(case, []):
         shutil.copyfile(helper, directory / helper.name)
-    if case in PEERS and target.get("usb_peer") == "pico":
+    if case in PICO_PEERS and target.get("usb_peer") == "pico":
         peer = directory / "peer_pico"
         shutil.copytree(PICO_PEERS[case], peer)
         sketch = peer / "sketch.yaml"

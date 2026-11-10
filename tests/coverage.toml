@@ -131,6 +131,11 @@ test = "usb-peer"
 scope = "once"
 
 [[item]]
+id = "usb-peer-input"
+test = "usb-peer-input"
+scope = "once"
+
+[[item]]
 id = "usb-peer-classes"
 test = "usb-peer-classes"
 scope = "once"
@@ -162,6 +167,20 @@ not_on = ["CH32V103"]
 [[item]]
 id = "usb-peer-host-classes"
 test = "usb-peer-host-classes"
+scope = "series"
+any_of = ["USBFS", "OTG_FS"]
+not_on = ["CH32V103"]
+
+[[item]]
+id = "usb-peer-host-storage"
+test = "usb-peer-host-storage"
+scope = "series"
+any_of = ["USBFS", "OTG_FS"]
+not_on = ["CH32V103"]
+
+[[item]]
+id = "usb-peer-host-input"
+test = "usb-peer-host-input"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
 not_on = ["CH32V103"]

@@ -33,10 +33,16 @@
  *   hididle <d> <ms>     P HIDIDLE <ok> <vendor input reports in <ms>>  (SET_IDLE duration d x 4 ms,
  *                        report ID 0, to the HID interface)
  *   reset                P RESET              (the network counters start over)
+ *   cdcports             P CDCPORTS <CDC interfaces mounted>
+ *   cdcn <idx> <hex>     P CDCN <idx> <hex back within 2 s>   (any CDC interface by TinyUSB's index)
+ *   cdcline <idx> <baud> <bits> <parity> <stop>   P CDCLINE <ok>   (SET_LINE_CODING)
+ *   cdcctl <idx> <dtr> <rts>                      P CDCCTL <ok>    (SET_CONTROL_LINE_STATE)
  *
  * Events: P CONNECTED <addr> <vid> <pid> <product> / P DISCONNECTED <addr>
  * <vid> <pid> / P KEY <p|r> <keycode> <ascii> / P HIDVIN <hex> /
- * P MIDI <cin> <status> <d1> <d2> / P NOTE <text> (MSC mount, for the logs).
+ * P MIDI <cin> <status> <d1> <d2> / P NOTE <text> (MSC mount, for the logs) /
+ * P HIDIN <instance> <report hex, ID first> (any other HID report: mouse, gamepad, consumer, system,
+ * an NKRO keyboard, a custom report).
  *
  * Not here: the speaker, microphone and camera (peer_s3's audioin / audioout /
  * video). The RP2040's host controller driver has no isochronous transfers. */
@@ -263,7 +269,65 @@ static int bulk(uint8_t ep, uint8_t *data, uint16_t length, uint32_t ms)
 }
 
 /* ------------------------------------------------------------ CDC */
-static int cdcIndex = -1;
+static int cdcIndex = -1;                 /* the interface `cdc` (Adafruit_USBH_CDC) reads: the first mounted */
+static bool cdcMounted[CFG_TUH_CDC];
+
+static void cmdCdcN(const char *arg)
+{
+  char *end;
+  const uint8_t idx = (uint8_t)strtoul(arg, &end, 10);
+  uint8_t tx[64], rx[64];
+  const size_t n = parseHex(*end ? end + 1 : end, tx, sizeof tx);
+  size_t got = 0;
+  if (idx < CFG_TUH_CDC && cdcMounted[idx])
+  {
+    uint8_t junk[64];
+    while (tuh_cdc_read(idx, junk, sizeof junk)) {}
+    tuh_cdc_write(idx, tx, n);
+    tuh_cdc_write_flush(idx);
+    const uint32_t t0 = millis();
+    while (got < n && millis() - t0 < 2000)
+    {
+      pump();
+      got += tuh_cdc_read(idx, rx + got, n - got);
+    }
+  }
+  say("P CDCN %u ", idx);
+  printHex(rx, got);
+  say("\n");
+}
+
+static void cdcDone(tuh_xfer_t *x) { waitDone(x); }
+
+static void cmdCdcLine(const char *arg)
+{
+  char *end;
+  const uint8_t idx = (uint8_t)strtoul(arg, &end, 10);
+  cdc_line_coding_t c = {};
+  c.bit_rate = strtoul(end, &end, 10);
+  c.data_bits = (uint8_t)strtoul(end, &end, 10);
+  c.parity = (uint8_t)strtoul(end, &end, 10);
+  c.stop_bits = (uint8_t)strtoul(end, &end, 10);
+  static Wait w;
+  w = Wait{false, XFER_RESULT_INVALID, 0};
+  const bool ok = idx < CFG_TUH_CDC && cdcMounted[idx] && tuh_cdc_set_line_coding(idx, &c, cdcDone, (uintptr_t)&w) &&
+                  waitFor(w, 2000) && w.result == XFER_RESULT_SUCCESS;
+  say("P CDCLINE %u\n", ok ? 1 : 0);
+}
+
+static void cmdCdcCtl(const char *arg)
+{
+  char *end;
+  const uint8_t idx = (uint8_t)strtoul(arg, &end, 10);
+  const bool dtr = strtoul(end, &end, 10) != 0, rts = strtoul(end, &end, 10) != 0;
+  static Wait w;
+  w = Wait{false, XFER_RESULT_INVALID, 0};
+  const bool ok = idx < CFG_TUH_CDC && cdcMounted[idx] &&
+                  tuh_cdc_set_control_line_state(idx, (uint16_t)((dtr ? 1 : 0) | (rts ? 2 : 0)), cdcDone,
+                                                 (uintptr_t)&w) &&
+                  waitFor(w, 2000) && w.result == XFER_RESULT_SUCCESS;
+  say("P CDCCTL %u\n", ok ? 1 : 0);
+}
 
 static size_t collectCdc(uint8_t *out, size_t want, uint32_t ms)
 {
@@ -821,6 +885,15 @@ static void run(char *cmd)
   else if (!strcmp(cmd, "ccid")) cmdCcid();
   else if (!strcmp(cmd, "apdu")) cmdApdu(arg);
   else if (!strcmp(cmd, "dfu")) cmdDfu();
+  else if (!strcmp(cmd, "cdcports"))
+  {
+    unsigned n = 0;
+    for (bool m : cdcMounted) n += m ? 1 : 0;
+    say("P CDCPORTS %u\n", n);
+  }
+  else if (!strcmp(cmd, "cdcn")) cmdCdcN(arg);
+  else if (!strcmp(cmd, "cdcline")) cmdCdcLine(arg);
+  else if (!strcmp(cmd, "cdcctl")) cmdCdcCtl(arg);
   else if (!strcmp(cmd, "reset"))
   {
     netFrames = netOurs = 0;
@@ -895,14 +968,22 @@ void tuh_umount_cb(uint8_t daddr)
 
 void tuh_cdc_mount_cb(uint8_t idx)
 {
-  cdc.mount(idx);
-  cdcIndex = idx;
+  if (idx < CFG_TUH_CDC) cdcMounted[idx] = true;
+  if (cdcIndex < 0)
+  {
+    cdc.mount(idx);
+    cdcIndex = idx;
+  }
 }
 
 void tuh_cdc_umount_cb(uint8_t idx)
 {
-  cdc.umount(idx);
-  cdcIndex = -1;
+  if (idx < CFG_TUH_CDC) cdcMounted[idx] = false;
+  if (idx == cdcIndex)
+  {
+    cdc.umount(idx);
+    cdcIndex = -1;
+  }
 }
 
 void tuh_hid_mount_cb(uint8_t daddr, uint8_t idx, const uint8_t *desc, uint16_t len)
@@ -932,13 +1013,20 @@ void tuh_hid_report_received_cb(uint8_t daddr, uint8_t idx, const uint8_t *repor
       len--;
     }
     const tuh_hid_report_info_t *r = reportOf(idx, id);
-    if (r && r->usage_page == HID_USAGE_PAGE_DESKTOP && r->usage == HID_USAGE_DESKTOP_KEYBOARD) keyboard(h, report, len);
-    else if (r && r->usage_page >= 0xFF00)
+    if (r && r->usage_page == HID_USAGE_PAGE_DESKTOP && r->usage == HID_USAGE_DESKTOP_KEYBOARD && len == 8)
+      keyboard(h, report, len);
+    else if (r && r->usage_page == 0xFF00)
     {
       hidVendorInputs++;
-      rtt.print("P HIDVIN ");
+      say("P HIDVIN ");
       printHex(report, len);
-      rtt.println();
+      say("\n");
+    }
+    else
+    {
+      say("P HIDIN %u %02x", idx, id);
+      printHex(report, len);
+      say("\n");
     }
   }
   tuh_hid_receive_report(daddr, idx);

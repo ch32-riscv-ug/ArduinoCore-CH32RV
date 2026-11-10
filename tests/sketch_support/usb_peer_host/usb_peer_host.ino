@@ -18,11 +18,34 @@
  *   ccid                 H CCID <ok> <ATR hex>
  *   apdu <hex>           H APDU <ok> <response hex> <SW hex>
  *   strings              H STRINGS <ok> <manufacturer>|<product>|<serial>
+ *   ports                H PORTS <CDC ports of the device>
+ *   sser <port> <hex>    H SSER <ok>           (sendSerial() to that port)
+ *   srx <port>           H SRX <port> <hex>    (what onSerialData() brought from it since the last srx)
+ *   sconf <port> <baud> <bits> <parity> <stop>   H SCONF <ok>   (setSerialConfig())
+ *   slines <port> <dtr> <rts>   H SLINES <ok>  (setSerialControlLines())
+ *   hidget <itf> <type> <id> <n>   H HIDGET <ok> <hex>   (getHIDReport())
+ *   hidset <itf> <type> <id> <hex> H HIDSET <ok>        (sendHIDReport())
+ *   hidfeat <hex>        H HIDFEAT <ok>        (sendHIDVendorFeature())
+ *   proto <itf> <boot 0/1>   H PROTO <ok>      (sendSetProtocol())
+ *   layout <us|jp>       H LAYOUT              (setKeyboardLayout())
+ *   locks                H LOCKS <num> <caps> <scroll>
+ *   hiddesc              H HIDDESC <itf> <bytes> per report descriptor seen / H HIDDESCEND
+ *   hidraw <0|1>         H HIDRAW <0|1>        (onHIDInput() events on or off)
+ *   mscmaxlun            H MSCMAXLUN <ok> <max LUN>
+ *   msclun <n>           H MSCLUN <ok>         (mscSelectLun(): the unit the next msc* commands use)
+ *   msctur               H MSCTUR <ok> <sense key> <asc> <ascq>  (the sense asked for when not ready)
+ *   midicc <ch> <c> <v> / midipc <ch> <p> / midipb <ch> <v> / midisx <hex>   H MIDIOUT <ok>
+ *   vreqout <req> <value> <index> <hex>   H VREQOUT <ok>   (vendorControlOut())
+ *   ccidstatus           H CCIDSTATUS <ok> <icc status> <present> <active>
+ *   ccidpresent          H CCIDPRESENT <present>
+ *   ccidoff              H CCIDOFF <ok>
+ *   ccidesc <hex>        H CCIDESC <ok> <hex>  (ccidEscape())
  *
  * Events: H CONNECTED <addr> <vid> <pid> <product> / H DISCONNECTED <addr>
  * <vid> <pid> / H KEY <p|r> <keycode> <ascii> / H MOUSE <x> <y> <wheel>
  * <buttons> / H CONSUMER <usage> <p|r> / H HIDVIN <hex> / H MIDI <cin>
- * <status> <d1> <d2>. */
+ * <status> <d1> <d2> / H GAMEPAD <report hex> / H SYSTEM <usage> <p|r> /
+ * H HIDIN <itf> <report hex> (with hidraw 1) / H CARD <in|out>. */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
@@ -40,6 +63,14 @@ static bool began;
 static char line[160];
 static uint8_t used;
 static uint8_t block[512], keep[512];
+static uint8_t serialRx[2][128];
+static size_t serialRxLength[2];
+static uint8_t hidDescItf[4];
+static uint16_t hidDescLength[4];
+static uint8_t hidDescCount;
+static bool hidRaw;
+
+static uint8_t any_address() { return usb.resolve(CH32RV_USB_HOST_ANY_ADDRESS); }
 
 static void hex(const uint8_t *d, size_t n)
 {
@@ -128,6 +159,7 @@ static size_t collect_cdc(uint8_t *out, size_t want, uint32_t ms)
     size_t got = 0;
     const uint32_t t0 = millis();
     while (got < want && millis() - t0 < ms) {
+        deliverEvents();   /* with onSerialData() set, received packets move on only from here */
         while (got < want && cdc.available()) out[got++] = (uint8_t)cdc.read();
         delay(1);
     }
@@ -159,6 +191,7 @@ static void cmd_cdcbig(size_t n)
             for (size_t i = 0; i < k; i++) chunk[i] = (uint8_t)((sent + i) * 13 + 7);
             if (cdc.write(chunk, k) == k) sent += k;
         }
+        deliverEvents();   /* with onSerialData() set, received packets move on only from here */
         while (got < n && cdc.available()) {
             if ((uint8_t)cdc.read() != (uint8_t)(got * 13 + 7)) bad++;
             got++;
@@ -316,6 +349,179 @@ static void reply(char *cmd)
         SerialDMSeq.print(d.product);
         SerialDMSeq.print('|');
         SerialDMSeq.println(d.serial);
+    } else if (strcmp(cmd, "ports") == 0) {
+        SerialDMSeq.print("H PORTS ");
+        SerialDMSeq.println(usb.serialPortCount());
+    } else if (strcmp(cmd, "sser") == 0) {
+        char *end;
+        const uint8_t port = (uint8_t)strtoul(arg, &end, 10);
+        uint8_t d[64];
+        const size_t n = parse_hex(*end ? end + 1 : end, d, sizeof d);
+        SerialDMSeq.print("H SSER ");
+        SerialDMSeq.println(usb.sendSerial(d, n, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
+    } else if (strcmp(cmd, "srx") == 0) {
+        const uint8_t port = (uint8_t)strtoul(arg, nullptr, 10) & 1;
+        SerialDMSeq.print("H SRX ");
+        SerialDMSeq.print(port);
+        SerialDMSeq.print(' ');
+        hex(serialRx[port], serialRxLength[port]);
+        SerialDMSeq.println();
+        serialRxLength[port] = 0;
+    } else if (strcmp(cmd, "sconf") == 0) {
+        char *end;
+        const uint8_t port = (uint8_t)strtoul(arg, &end, 10);
+        CH32RVUsbHostSerialConfig c;
+        c.baud = strtoul(end, &end, 10);
+        c.dataBits = (uint8_t)strtoul(end, &end, 10);
+        c.parity = (CH32RVUsbHostSerialParity)strtoul(end, &end, 10);
+        c.stopBits = (CH32RVUsbHostSerialStopBits)strtoul(end, &end, 10);
+        SerialDMSeq.print("H SCONF ");
+        SerialDMSeq.println(usb.setSerialConfig(c, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
+    } else if (strcmp(cmd, "slines") == 0) {
+        char *end;
+        const uint8_t port = (uint8_t)strtoul(arg, &end, 10);
+        const bool dtr = strtoul(end, &end, 10) != 0;
+        const bool rts = strtoul(end, &end, 10) != 0;
+        SerialDMSeq.print("H SLINES ");
+        SerialDMSeq.println(usb.setSerialControlLines(dtr, rts, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
+    } else if (strcmp(cmd, "hidget") == 0) {
+        char *end;
+        const uint8_t itf = (uint8_t)strtoul(arg, &end, 10);
+        const uint8_t type = (uint8_t)strtoul(end, &end, 10);
+        const uint8_t id = (uint8_t)strtoul(end, &end, 10);
+        size_t n = strtoul(end, &end, 10), got = 0;
+        uint8_t d[64];
+        n = n > sizeof d ? sizeof d : n;
+        const bool ok = usb.getHIDReport(itf, type, id, d, n, &got);
+        SerialDMSeq.print("H HIDGET ");
+        SerialDMSeq.print(ok ? 1 : 0);
+        SerialDMSeq.print(' ');
+        hex(d, ok ? got : 0);
+        SerialDMSeq.println();
+    } else if (strcmp(cmd, "hidset") == 0) {
+        char *end;
+        const uint8_t itf = (uint8_t)strtoul(arg, &end, 10);
+        const uint8_t type = (uint8_t)strtoul(end, &end, 10);
+        const uint8_t id = (uint8_t)strtoul(end, &end, 10);
+        uint8_t d[64];
+        const size_t n = parse_hex(*end ? end + 1 : end, d, sizeof d);
+        SerialDMSeq.print("H HIDSET ");
+        SerialDMSeq.println(usb.sendHIDReport(itf, type, id, d, n) ? 1 : 0);
+    } else if (strcmp(cmd, "hidfeat") == 0) {
+        uint8_t d[63];
+        const size_t n = parse_hex(arg, d, sizeof d);
+        SerialDMSeq.print("H HIDFEAT ");
+        SerialDMSeq.println(usb.sendHIDVendorFeature(d, n) ? 1 : 0);
+    } else if (strcmp(cmd, "proto") == 0) {
+        char *end;
+        const uint8_t itf = (uint8_t)strtoul(arg, &end, 10);
+        const bool boot = strtoul(end, &end, 10) != 0;
+        SerialDMSeq.print("H PROTO ");
+        SerialDMSeq.println(usb.sendSetProtocol(itf, any_address(), boot) ? 1 : 0);
+    } else if (strcmp(cmd, "layout") == 0) {
+        usb.setKeyboardLayout(strcmp(arg, "jp") == 0 ? CH32RV_USB_HOST_KEYBOARD_LAYOUT_JA_JP
+                                                     : CH32RV_USB_HOST_KEYBOARD_LAYOUT_EN_US);
+        SerialDMSeq.println("H LAYOUT");
+    } else if (strcmp(cmd, "locks") == 0) {
+        SerialDMSeq.print("H LOCKS ");
+        SerialDMSeq.print(usb.getKeyboardNumLock() ? 1 : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(usb.getKeyboardCapsLock() ? 1 : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println(usb.getKeyboardScrollLock() ? 1 : 0);
+    } else if (strcmp(cmd, "hiddesc") == 0) {
+        for (uint8_t i = 0; i < hidDescCount; i++) {
+            SerialDMSeq.print("H HIDDESC ");
+            SerialDMSeq.print(hidDescItf[i]);
+            SerialDMSeq.print(' ');
+            SerialDMSeq.println(hidDescLength[i]);
+        }
+        SerialDMSeq.println("H HIDDESCEND");
+    } else if (strcmp(cmd, "hidraw") == 0) {
+        hidRaw = strtoul(arg, nullptr, 10) != 0;
+        SerialDMSeq.print("H HIDRAW ");
+        SerialDMSeq.println(hidRaw ? 1 : 0);
+    } else if (strcmp(cmd, "mscmaxlun") == 0) {
+        uint8_t lun = 0;
+        const bool ok = usb.mscMaxLun(lun);
+        SerialDMSeq.print("H MSCMAXLUN ");
+        SerialDMSeq.print(ok ? 1 : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println(lun);
+    } else if (strcmp(cmd, "msclun") == 0) {
+        SerialDMSeq.print("H MSCLUN ");
+        SerialDMSeq.println(usb.mscSelectLun((uint8_t)strtoul(arg, nullptr, 10)) ? 1 : 0);
+    } else if (strcmp(cmd, "msctur") == 0) {
+        const bool ok = usb.mscTestUnitReady(CH32RV_USB_HOST_ANY_ADDRESS, 2000);
+        CH32RVUsbHostMscSense sense;
+        if (!ok) {
+            usb.mscRequestSense(sense);
+        }
+        SerialDMSeq.print("H MSCTUR ");
+        SerialDMSeq.print(ok ? 1 : 0);
+        SerialDMSeq.print(' ');
+        hex(&sense.senseKey, 1);
+        SerialDMSeq.print(' ');
+        hex(&sense.additionalSenseCode, 1);
+        SerialDMSeq.print(' ');
+        hex(&sense.additionalSenseQualifier, 1);
+        SerialDMSeq.println();
+    } else if (strcmp(cmd, "midicc") == 0 || strcmp(cmd, "midipc") == 0 || strcmp(cmd, "midipb") == 0) {
+        char *end;
+        const uint8_t ch = (uint8_t)strtoul(arg, &end, 10);
+        const long a = strtol(end, &end, 10);
+        const long b = strtol(end, &end, 10);
+        bool ok;
+        if (strcmp(cmd, "midicc") == 0) {
+            ok = usb.midiSendControlChange(ch, (uint8_t)a, (uint8_t)b);
+        } else if (strcmp(cmd, "midipc") == 0) {
+            ok = usb.midiSendProgramChange(ch, (uint8_t)a);
+        } else {
+            ok = usb.midiSendPitchBend(ch, (uint16_t)a);
+        }
+        SerialDMSeq.print("H MIDIOUT ");
+        SerialDMSeq.println(ok ? 1 : 0);
+    } else if (strcmp(cmd, "midisx") == 0) {
+        uint8_t d[32];
+        const size_t n = parse_hex(arg, d, sizeof d);
+        SerialDMSeq.print("H MIDIOUT ");
+        SerialDMSeq.println(usb.midiSendSysEx(d, n) ? 1 : 0);
+    } else if (strcmp(cmd, "vreqout") == 0) {
+        char *end;
+        const uint8_t req = (uint8_t)strtoul(arg, &end, 0);
+        const uint16_t value = (uint16_t)strtoul(end, &end, 0);
+        const uint16_t index = (uint16_t)strtoul(end, &end, 0);
+        uint8_t d[32];
+        const size_t n = parse_hex(*end ? end + 1 : end, d, sizeof d);
+        SerialDMSeq.print("H VREQOUT ");
+        SerialDMSeq.println(usb.vendorControlOut(req, value, index, d, n) ? 1 : 0);
+    } else if (strcmp(cmd, "ccidstatus") == 0) {
+        CH32RVUsbHostCcidStatus st;
+        const bool ok = (usb.ccidReady() || usb.ccidOpen()) && usb.ccidGetStatus(st);
+        SerialDMSeq.print("H CCIDSTATUS ");
+        SerialDMSeq.print(ok ? 1 : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print((unsigned)st.iccStatus);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(st.present ? 1 : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println(st.active ? 1 : 0);
+    } else if (strcmp(cmd, "ccidpresent") == 0) {
+        SerialDMSeq.print("H CCIDPRESENT ");
+        SerialDMSeq.println((usb.ccidReady() || usb.ccidOpen()) && usb.ccidCardPresent() ? 1 : 0);
+    } else if (strcmp(cmd, "ccidoff") == 0) {
+        SerialDMSeq.print("H CCIDOFF ");
+        SerialDMSeq.println(usb.ccidPowerOff() ? 1 : 0);
+    } else if (strcmp(cmd, "ccidesc") == 0) {
+        uint8_t tx[32], rx[40];
+        const size_t n = parse_hex(arg, tx, sizeof tx);
+        size_t got = 0;
+        const bool ok = (usb.ccidReady() || usb.ccidOpen()) && usb.ccidEscape(tx, n, rx, sizeof rx, &got);
+        SerialDMSeq.print("H CCIDESC ");
+        SerialDMSeq.print(ok ? 1 : 0);
+        SerialDMSeq.print(' ');
+        hex(rx, ok ? got : 0);
+        SerialDMSeq.println();
     } else {
         SerialDMSeq.println("ERROR COMMAND");
     }
@@ -383,6 +589,46 @@ void setup()
         SerialDMSeq.print(' ');
         SerialDMSeq.println(m.data2);
     });
+    usb.onGamepad([](const CH32RVUsbHostGamepadEvent &e) {
+        SerialDMSeq.print("H GAMEPAD ");
+        hex(e.reportData, e.reportLength);
+        SerialDMSeq.println();
+    });
+    usb.onSystemControl([](const CH32RVUsbHostSystemControlEvent &e) {
+        SerialDMSeq.print("H SYSTEM ");
+        SerialDMSeq.print(e.usage);
+        SerialDMSeq.println(e.pressed ? " p" : " r");
+    });
+    usb.onHIDInput([](const CH32RVUsbHostHIDInput &e) {
+        if (!hidRaw) {
+            return;
+        }
+        SerialDMSeq.print("H HIDIN ");
+        SerialDMSeq.print(e.interfaceNumber);
+        SerialDMSeq.print(' ');
+        hex(e.data, e.length);
+        SerialDMSeq.println();
+    });
+    usb.onHIDReportDescriptor([](const CH32RVUsbHostHIDReportDescriptor &e) {
+        for (uint8_t i = 0; i < hidDescCount; i++) {
+            if (hidDescItf[i] == e.interfaceNumber) {
+                hidDescLength[i] = e.length;
+                return;
+            }
+        }
+        if (hidDescCount < sizeof hidDescItf) {
+            hidDescItf[hidDescCount] = e.interfaceNumber;
+            hidDescLength[hidDescCount++] = e.length;
+        }
+    });
+    usb.onSerialData([](const CH32RVUsbHostSerialData &e) {
+        const uint8_t port = e.port & 1;
+        for (size_t i = 0; i < e.length && serialRxLength[port] < sizeof serialRx[port]; i++) {
+            serialRx[port][serialRxLength[port]++] = e.data[i];
+        }
+    });
+    usb.onCcidCardInserted([](const CH32RVUsbHostCcidSlotEvent &) { SerialDMSeq.println("H CARD in"); });
+    usb.onCcidCardRemoved([](const CH32RVUsbHostCcidSlotEvent &) { SerialDMSeq.println("H CARD out"); });
     cdc.begin(115200);
     began = usb.begin();
 }

@@ -14,7 +14,7 @@ IDENTITY = {
     "s3": dict(tag=b"S3D ", vid="303a", manufacturer="EspUsbDevice", hid="S3 peer hid", hid_serial="S3PEERHID",
                classes="S3 peer classes", vreq="ESP32S3"),
     "pico": dict(tag=b"PD ", vid="239a", manufacturer="ch32rv-tests", hid="Pico peer hid", hid_serial="PICOPEERHID",
-                 classes="Pico peer classes", vreq="RP2040"),
+                 classes="Pico peer classes", vreq="RP2040", input="Pico peer input", storage="Pico peer storage"),
 }
 
 
@@ -72,7 +72,9 @@ def wait_device(dut, product, timeout=20):
                         for r in re.findall(r"H ITF (\d+ \d+ \d+ \w{2} \w{2} \w{2}) \d", text)]
                 return dict(address=int(dev.group(1)), vid=dev.group(2), pid=dev.group(3),
                             speed=int(dev.group(4)), manufacturer=fields[0], product=fields[1],
-                            serial=fields[2], interfaces=[(i[3], i[4]) for i in itfs])
+                            serial=fields[2], interfaces=[(i[3], i[4]) for i in itfs],
+                            # (number, alternate, class, subclass, protocol) of each interface
+                            itfs=[i[1:] for i in itfs])
         if time.monotonic() > deadline:
             raise AssertionError("the DUT did not enumerate the peer: " + text)
         time.sleep(0.5)
