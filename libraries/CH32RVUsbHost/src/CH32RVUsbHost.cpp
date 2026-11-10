@@ -563,6 +563,8 @@ struct Enumeration {
     uint8_t speed, address, tries, polls;
     uint16_t configLength;         /* what GET_DESCRIPTOR(configuration) brought */
     uint32_t t;
+    bool again;                    /* the root port's device gave up on: try it again at `againAt` */
+    uint32_t againAt;
     volatile bool waiting;         /* a control transfer of ours in flight */
     volatile uint8_t result;
     volatile uint16_t actual;
@@ -651,7 +653,15 @@ void en_retry(void)
         en.state = E_DEBOUNCE;
         en.t = millis();
     } else {
-        en.state = E_IDLE;         /* given up until it is plugged in again */
+        en.state = E_IDLE;
+        /* On the root port, three times without an answer is not the end: a device still starting, or one
+         * a debugger holds, answers later, and a quick restart of it need not show as a detach (it came
+         * back before DETECT saw it go). While it stays attached, it is tried again every 2 s. Behind a
+         * hub, the hub's port change brings it back. */
+        if (en.now.hub == 0) {
+            en.again = true;
+            en.againAt = millis() + 2000;
+        }
     }
 }
 
@@ -694,6 +704,16 @@ void en_step(void)
     const uint32_t now = millis();
     switch (en.state) {
     case E_IDLE:
+        if (!en.queued && en.again && (int32_t)(now - en.againAt) >= 0) {
+            en.again = false;
+            bool present = false;
+            for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
+                present = present || (devs[a].state != DEV_FREE && devs[a].parent == 0);
+            }
+            if (hcd->connected() && !present) {
+                en.queue[en.queued++] = {0, 0};
+            }
+        }
         if (!en.queued) {
             return;
         }
@@ -1075,6 +1095,7 @@ void remove_device(uint8_t daddr)
 
 void root_changed(void)
 {
+    en.again = false;              /* plugged or unplugged: the usual way from here */
     if (hcd->connected()) {
         bool present = false;
         for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
