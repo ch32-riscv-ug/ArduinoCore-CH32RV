@@ -48,6 +48,7 @@ struct CH32RVUsbDeviceCore {
     /* The configuration. */
     static bool configured, suspended, remote_wakeup;
     static CH32RVUsbSpeed speed;
+    static bool speed_settled;                       /* read again at the first SETUP after a reset */
     static uint8_t ss_features;                      /* GET_STATUS bits 2-4: U1, U2, LTM enabled */
     static uint16_t ep0_mps;
     static uint8_t sel[6];                           /* SET_SEL: the exit latencies (not acted on) */
@@ -57,6 +58,7 @@ struct CH32RVUsbDeviceCore {
     static volatile bool bootloader;
 
     static void reset_state();
+    static void take_speed();
     static void handle_setup();
     static bool standard(const CH32RVUsbSetup &s);
     static bool get_descriptor(const CH32RVUsbSetup &s);
@@ -106,6 +108,7 @@ uint16_t CH32RVUsbDeviceCore::gen_offset, CH32RVUsbDeviceCore::gen_chunk;
 uint8_t CH32RVUsbDeviceCore::pending_address;
 uint8_t CH32RVUsbDeviceCore::reply[2];
 CH32RVUsbSpeed CH32RVUsbDeviceCore::speed;
+bool CH32RVUsbDeviceCore::speed_settled;
 uint8_t CH32RVUsbDeviceCore::ss_features;
 uint16_t CH32RVUsbDeviceCore::ep0_mps = 64;
 uint8_t CH32RVUsbDeviceCore::sel[6];
@@ -363,6 +366,19 @@ void Core::reset_state()
     suspended = false;
     remote_wakeup = false;
     ss_features = 0;
+    take_speed();
+    speed_settled = false;
+}
+
+/* The speed the link runs at, and what follows from it (EP0's packet size, the
+ * device descriptor). A bus reset is not the moment to know it: on the USBHS
+ * (measured on a V407, second generation) the reset interrupt comes while the
+ * high-speed handshake is still on and the controller still says full speed;
+ * it says high about 30 ms later (LINK_RDY), before the host's first SETUP.
+ * So the reset takes a first reading and the first SETUP after it the one
+ * that counts (the configuration descriptor is built per request, from it). */
+void Core::take_speed()
+{
     speed = dcd->speed();
     ep0_mps = ch32rv_usb_at(speed, CH32RVUsbSpeed::Super) ? 512 : 64;
     build_device_descriptor(device->_config);
@@ -728,6 +744,10 @@ void Core::task()
     }
     if (e & EV_SETUP) {
         memcpy(setup_raw, s, 8);
+        if (!speed_settled) {
+            take_speed();
+            speed_settled = true;
+        }
         handle_setup();
     }
     /* SET_CONFIGURATION answered just now. */

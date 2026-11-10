@@ -127,20 +127,20 @@ SDKの初期化をそのまま貼り付けて、コアの管理する周辺回�
 
 ## USB
 
-CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0012-usb-stack.ja.md)）。全系列のドライバはあり、実機で確かめたのは X035 と H417。
+CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0012-usb-stack.ja.md)）。全系列のドライバはあり、実機で確かめたのは X035、H417、V407（HS）。
 
-- [ ] **USBHS で、リセットの後の速さを読む時期**（PR #1、ladyada、2026-11-10。PR はそのまま取り込まず、実験してから独自に直す）。
-  報告: USBHS では BUS_RST の割り込みが HS のハンドシェイク（chirp）の完了より前に来ることがあり、`Core::reset_state()` が
-  その時点の `dcd->speed()` を読むと full speed のまま記述子を作る。HS で列挙されたのに、バルクの最大パケットが 512 でなく 64 になる
-  （V407 / V467 で確認とのこと）。PR は SETUP のたびに `dcd->speed()` を読み直し、変わっていたら `ep0_mps` と装置記述子を作り直す。
-  - 実験で確かめること:
-    - HS のホストにつないだ V407 / V467 / V30x / H417 で、BUS_RST の時点と最初の SETUP の時点の速さのレジスタ（USBHS2 の `MIS_ST.UDMS_HS_MOD`、USBHS1 の `SPEED_TYPE`）を記録する。
-    - 64 になるのがどの IP か（第1世代か第2世代か）を分ける。
-  - 直し方の候補:
-    - DCD の側で、ハンドシェイクの終わり（速さが決まった割り込み、またはリセットの終わり）で速さを確定してからコアに知らせる。
-    - コアは、リセットの後の最初の SETUP で 1 回だけ読み直す（SETUP のたびではなく）。
-    - どちらが速さの変わり目を確実に捕まえるかを測ってから決める。
-  - 実験環境がまだ無い: HS のホストにつながる USBHS の DUT が要る（Pico は full speed のみ。H417 の USB 2.0 の線は SWD と兼用で、記録された問題がある）。
+- [x] **USBHS で、リセットの後の速さを読む時期**（PR #1、ladyada。PR は取り込まず、実験してから独自に直した。2026-11-11）。
+  - 測った結果（V407、第2世代 USBHS、HS のホストは ESP32-P4）: BUS_RST の割り込みでは `MIS_ST` の HS ビットが 0（full speed）。約 30 ms 後の LINK_RDY で 1 になり、最初の SETUP のときは HS。2 回目のリセットも同じ順。
+  - 直し方: コアは、リセットで仮に読み、リセット後の最初の SETUP で 1 回だけ読み直す（`Core::take_speed()`）。V407 で、HS のバルクが 64 → 512 になり、usb-peer が HS で通る。FS（X035 の S3 と Pico の組）の usb-peer も通る。
+  - 残り: 第1世代（V30x の USBHS1）と H417 の USBSS は、HS / SS の相手がまだ無いので未確認。
+- [ ] **V407 の HS で落ちるデバイスの case**（ESP32-P4 の相手、2026-11-11）。
+  - usb-peer は通る。次の 5 件は、HS で落ちる。
+    - usb-peer-classes: MSC の生の読み書き（mscraw）が 0。
+    - usb-peer-net: 送れた数が 6（20 以上のはず）。
+    - usb-peer-fs: ESP-IDF の FAT がマウントできない。
+    - usb-peer-input: 2 ポートの CDC で、63 / 64 / 65 バイトは往復するが、128 で止まる。
+    - usb-peer-media: 映像のフレームが 0。
+  - 第2世代 USBHS のデバイスのドライバ（`CH32RVUsbDcdUsbhs2.cpp`）が、これまでビルドだけだったため。
 - [ ] 新しい系列の実機確認（ベンチの DUT の USB 端子を配線してから）。HSI から作る 48 MHz の精度、V103 の EP4〜7 の
   自動トグル、HS の PHY と HSE。第2世代 USBHS（V407 / V467、X305 / X315、V205）と X315 の USBSS はビルドだけ。
 - H417:
