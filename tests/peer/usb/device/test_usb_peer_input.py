@@ -67,7 +67,9 @@ def test_usb_peer_input(dut, peers):
     line_a, line_b = lines(dut)
     assert line_a == [230400, 8, 0, 0, 0, 1] and line_b == [9600, 7, 1, 2, 1, 0]
     after = [int(v) for v in dut_cmd(dut, "events", rb"EVENTS (\d+) (\d+) (\d+) (\d+)").groups()]
-    assert [x - y for x, y in zip(after, before)] == [1, 1, 1, 1]
+    # Each port's callbacks ran (a host may send the control lines again with a line coding: EspUsbHost does,
+    # TinyUSB does not); that nothing reached the other port is what the values above show.
+    assert all(x - y >= 1 for x, y in zip(after, before)), (before, after)
     # A port writes only while the host holds DTR (connected()): port A, DTR off, sends nothing back; port B
     # still answers, and A again once DTR is back.
     assert command(peer, f"cdcn {a} 41", rb"CDCN \d (\w*)").group(1) == b""

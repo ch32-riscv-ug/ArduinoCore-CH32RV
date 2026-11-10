@@ -36,10 +36,15 @@
  *   hididle <d> <ms>     S3 HIDIDLE <ok> <vendor input reports in <ms>>  (SET_IDLE
  *                        duration d x 4 ms, report ID 0, to the HID interface)
  *   reset                S3 RESET             (the counters below start over)
+ *   cdcports             S3 CDCPORTS <CDC ports of the device>
+ *   cdcn <port> <hex>    S3 CDCN <port> <hex back within 2 s>
+ *   cdcline <port> <baud> <bits> <parity> <stop>   S3 CDCLINE <ok>   (SET_LINE_CODING)
+ *   cdcctl <port> <dtr> <rts>                      S3 CDCCTL <ok>    (one SET_CONTROL_LINE_STATE)
  *
  * Events: S3 CONNECTED <addr> <vid> <pid> <product> / S3 DISCONNECTED <addr>
  * <vid> <pid> / S3 KEY <p|r> <keycode> <ascii> / S3 HIDVIN <hex> /
- * S3 MIDI <cin> <status> <d1> <d2>. */
+ * S3 MIDI <cin> <status> <d1> <d2> / S3 HIDIN <interface> <report hex, ID first> (every HID
+ * report as it came). */
 #include <Arduino.h>
 #include <EspUsbHost.h>
 
@@ -48,9 +53,11 @@ typedef size_t (*ReadFn)(uint8_t *out, size_t length);
 
 EspUsbHost usb;
 EspUsbHostCdcSerial cdc(usb);
+EspUsbHostCdcSerial cdcPort0(usb), cdcPort1(usb);   /* by port, for usb-peer-input */
+static EspUsbHostCdcSerial *const cdcPorts[2] = {&cdcPort0, &cdcPort1};
 EspUsbHostMscFS msc;
 
-static char line[200];
+static char line[400];
 static size_t used;
 
 static volatile uint32_t netFrames, netOurs;
@@ -422,6 +429,54 @@ static void cmdDfu()
   Serial.println("S3 DFU 0 0");
 }
 
+static void cmdCdcN(const char *arg)
+{
+  char *end;
+  const uint8_t port = (uint8_t)strtoul(arg, &end, 10) & 1;
+  static uint8_t tx[160], rx[160];
+  const size_t n = parseHex(*end ? end + 1 : end, tx, sizeof tx);
+  EspUsbHostCdcSerial &p = *cdcPorts[port];
+  while (p.available()) p.read();
+  p.write(tx, n);
+  p.flush();
+  size_t got = 0;
+  const uint32_t t0 = millis();
+  while (got < n && millis() - t0 < 2000)
+  {
+    while (got < n && p.available()) rx[got++] = (uint8_t)p.read();
+    delay(1);
+  }
+  Serial.printf("S3 CDCN %u ", port);
+  printHex(rx, got);
+  Serial.println();
+}
+
+static void cmdCdcLine(const char *arg)
+{
+  char *end;
+  const uint8_t port = (uint8_t)strtoul(arg, &end, 10) & 1;
+  EspUsbHostSerialConfig c;
+  c.baud = strtoul(end, &end, 10);
+  c.dataBits = (uint8_t)strtoul(end, &end, 10);
+  c.parity = (EspUsbHostSerialParity)strtoul(end, &end, 10);
+  c.stopBits = (EspUsbHostSerialStopBits)strtoul(end, &end, 10);
+  Serial.printf("S3 CDCLINE %u\n", cdcPorts[port]->setConfig(c) ? 1 : 0);
+}
+
+/* DTR and RTS in one request, as a terminal sends them: setDtr() and setRts() would be two. */
+static void cmdCdcCtl(const char *arg)
+{
+  char *end;
+  const uint8_t port = (uint8_t)strtoul(arg, &end, 10) & 1;
+  const bool dtr = strtoul(end, &end, 10) != 0, rts = strtoul(end, &end, 10) != 0;
+  const uint8_t a = firstAddress();
+  EspUsbHostSerialPortInfo info;
+  const bool ok = usb.getSerialPortInfo(info, a, port) &&
+                  usb.vendorControlTransfer(0x21, 0x22, (uint16_t)((dtr ? 1 : 0) | (rts ? 2 : 0)),
+                                            info.controlInterfaceNumber, nullptr, 0, nullptr, a);
+  Serial.printf("S3 CDCCTL %u\n", ok ? 1 : 0);
+}
+
 static void run(char *cmd)
 {
   char *arg = strchr(cmd, ' ');
@@ -490,6 +545,10 @@ static void run(char *cmd)
   else if (!strcmp(cmd, "video")) cmdVideo(strtoul(arg, nullptr, 10));
   else if (!strcmp(cmd, "dfu")) cmdDfu();
   else if (!strcmp(cmd, "vinfo")) cmdVideoInfo();
+  else if (!strcmp(cmd, "cdcports")) Serial.printf("S3 CDCPORTS %u\n", usb.serialPortCount(a));
+  else if (!strcmp(cmd, "cdcn")) cmdCdcN(arg);
+  else if (!strcmp(cmd, "cdcline")) cmdCdcLine(arg);
+  else if (!strcmp(cmd, "cdcctl")) cmdCdcCtl(arg);
   else if (!strcmp(cmd, "reset"))
   {
     netFrames = netOurs = 0;
@@ -553,7 +612,17 @@ void setup()
                                outGiven++;
                              }
                              r.writtenFrames = n; });
+  usb.onHIDInput([](const EspUsbHostHIDInput &e)
+                 {
+                   Serial.printf("S3 HIDIN %u ", e.interfaceNumber);
+                   printHex(e.data, e.length);
+                   Serial.println(); });
   cdc.begin(115200);
+  for (uint8_t i = 0; i < 2; i++)
+  {
+    cdcPorts[i]->setPort(i);
+    cdcPorts[i]->begin(115200);
+  }
   if (!usb.begin())
     Serial.printf("S3 BEGIN_FAILED %s\n", usb.lastErrorName());
   Serial.println("S3 READY");

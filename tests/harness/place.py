@@ -39,7 +39,7 @@ PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-inpu
 PEER_KINDS = {"esp32-s3": "s3", "rp2040": "pico"}
 # Cases written for the RP2040 first (TEST_PLAN.ja.md, the USB peer split); the S3's sketches follow.
 S3_LACKS = {case: "skip: the ESP32-S3 peer has no sketch for this case (the RP2040 peer covers it)"
-            for case in ("usb-peer-host-input", "usb-peer-host-storage", "usb-peer-input")}
+            for case in ("usb-peer-host-input", "usb-peer-host-storage")}
 # Device cases the RP2040 cannot be the host for: its host controller driver has no isochronous transfers.
 PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochronous transfers (the speaker, "
                                      "microphone and camera streams)"}

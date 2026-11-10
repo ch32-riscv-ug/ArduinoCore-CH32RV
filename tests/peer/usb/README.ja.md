@@ -17,13 +17,14 @@ USB ホスト、EspUsbDevice は TinyUSB を S3 の OTG で動かすもの）な
 | usb-peer-fs | デバイス | usb_fs（FS ライブラリ、128 ブロックの疎な RAM ディスク） | device/peer_s3 | FatFS がフォーマットして書いたボリュームを S3（ESP-IDF の FAT）が読み、S3 が書いたファイルを DUT が読む。長い名前のディレクトリとファイル、その場の書き換え。2 往復 |
 | usb-peer-host | ホスト | usb_peer_host | host_hid/peer_s3（EspUsbDevice: HID・CDC・MSC） | 列挙と文字列、CDC、キーボード・マウス・コンシューマ、LED、ベンダー HID、MSC |
 | usb-peer-host-classes | ホスト | usb_peer_host | host_classes/peer_s3（EspUsbDevice: MIDI・ベンダー・CCID） | MIDI、ベンダーバルクと要求、CCID |
-| usb-peer-input | デバイス | usb_input（NKRO キーボード・マウス・ゲームパッド・コンシューマ・システム・カスタム HID、CDC 2 ポート） | device/peer_pico のみ | HID の各レポートのバイト列と解放、2 ポートの識別、ポートごとの行の設定・DTR/RTS のイベント、DTR を落とした間は送らないこと |
+| usb-peer-input | デバイス | usb_input（NKRO キーボード・マウス・ゲームパッド・コンシューマ・システム・カスタム HID、CDC 2 ポート） | device/peer_pico、device/peer_s3 | HID の各レポートのバイト列と解放、2 ポートの識別、ポートごとの行の設定・DTR/RTS のイベント、DTR を落とした間は送らないこと |
 | usb-peer-host-input | ホスト | usb_peer_host | host_input/peer_pico のみ（HID 2 つ・CDC 2 ポート） | ゲームパッド、システムコントロール、レポート記述子、HID の生の入力、GET/SET_REPORT と Feature、SET_PROTOCOL、ロック状態とレイアウト、CDC の 2 ポートと行の設定・制御線、相手の抜き差し |
 | usb-peer-host-storage | ホスト | usb_peer_host | host_storage/peer_pico のみ（MSC 2 LUN・MIDI・ベンダー・CCID） | MSC の LUN と準備できない媒体（02/3A/00）、MIDI の CC・PC・ピッチベンド・SysEx の往復、ベンダーの要求 OUT、CCID の状態・Escape・電源オフ・カードの抜き差しの通知 |
 
 対向の分担（2026-11-10）。Pico は、アイソクロナス以外の全部を両方の役で受け持ちます。S3 は、別のスタックでの確かめと、
 アイソクロナス（usb-peer-media）を受け持ちます。S3 の組の DUT は、ホストを持つ X035（C8T6）に替える予定です（今の F8U6 は
-ホストを持たない）。「peer_pico のみ」のケースの S3 版は、その後に足します。
+ホストを持たない）。「peer_pico のみ」のケース（host-input・host-storage）の S3 版は、その後に足します。EspUsbDevice は IN
+エンドポイントが 4 本までなので、Pico の構成（IN が 6 本・5 本）をそのままは作れず、構成を分けることになります。
 
 S3 側の制約に合わせて試験の形を変えたところがあります。詳しくは下の「ESP32-S3 側の挙動」と、各試験の docstring を
 見てください。

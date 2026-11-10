@@ -111,6 +111,7 @@ PEERS = {
     "usb-peer-media": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-net": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-fs": TESTS / "sketch_support/usb_peer/device/peer_s3",
+    "usb-peer-input": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_s3",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_s3",
 }
