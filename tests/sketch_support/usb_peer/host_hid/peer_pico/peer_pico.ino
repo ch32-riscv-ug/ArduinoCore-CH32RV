@@ -28,6 +28,16 @@ static const uint8_t report_descriptor[] = {
 
 RTTStream rtt;
 
+/* Adafruit TinyUSB's RP2040 port runs the USB task in an interrupt, and only when it can take __usb_mutex.
+ * Every TinyUSB call from loop() holds it (UsbLock), or the task comes in while loop() holds a FIFO's own
+ * lock and waits for it - a second at a bus reset, long enough for the host to give up on the device. */
+extern mutex_t __usb_mutex;
+struct UsbLock
+{
+  UsbLock() { mutex_enter_blocking(&__usb_mutex); }
+  ~UsbLock() { mutex_exit(&__usb_mutex); }
+};
+
 /* printf to the console. RTTStream's own printf writes hex digits in upper case; the lines are lower case. */
 static void say(const char *format, ...)
 {
@@ -52,12 +62,15 @@ static size_t used;
 static bool report(uint8_t id, const void *data, uint16_t length)
 {
   const uint32_t t0 = millis();
-  while (!hid.ready())
+  for (;;)
   {
+    {
+      UsbLock lock;
+      if (hid.ready()) return hid.sendReport(id, data, length);
+    }
     if (millis() - t0 > 500) return false;
     delay(1);
   }
-  return hid.sendReport(id, data, length);
 }
 
 static bool key(uint8_t keycode)
@@ -121,8 +134,12 @@ static void run(char *cmd)
     uint8_t d[96];
     size_t n = 0;
     for (const char *s = arg; s[0] && s[1] && n < sizeof d; s += 2) d[n++] = (uint8_t)(hexval(s[0]) << 4 | hexval(s[1]));
-    const bool ok = Serial.write(d, n) == n;
-    Serial.flush();
+    bool ok;
+    {
+      UsbLock lock;
+      ok = Serial.write(d, n) == n;
+      Serial.flush();
+    }
     say("PD CDCSENT %u\n", ok ? 1 : 0);
   }
   else say("PD UNKNOWN %s\n", cmd);
@@ -188,7 +205,10 @@ void setup()
 
 void loop()
 {
-  while (Serial.available()) Serial.write((uint8_t)Serial.read());
+  {
+    UsbLock lock;
+    while (Serial.available()) Serial.write((uint8_t)Serial.read());
+  }
   if (vendorEchoLength)
   {
     report(RID_VENDOR, vendorEcho, sizeof vendorEcho);
@@ -207,4 +227,5 @@ void loop()
     else if (used + 1 < sizeof line)
       line[used++] = c;
   }
+  TinyUSB_Device_Task();   /* what the interrupt skipped while loop() held the lock */
 }

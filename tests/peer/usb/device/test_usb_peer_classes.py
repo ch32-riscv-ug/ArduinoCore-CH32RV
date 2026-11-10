@@ -108,6 +108,10 @@ def test_usb_peer_classes(dut, peers):
     assert command(peer, "mscblk 0 2", rb"MSCBLK (\d) [^\r\n]*", timeout=20).group(1) == b"0"
     dut.write("pulled\n")
     assert dut.expect(rb"PULLED (\d+)\r?\n", timeout=5).group(1) == b"1"
+    # The medium back before the restart below: TinyUSB's MSC host (the Pico) repeats TEST UNIT READY without
+    # a pause while a medium is out, at enumeration, and the vendor transfers after it then failed now and then.
+    dut.write("media 1\n")
+    dut.expect(rb"MEDIA 1\r?\n", timeout=5)
 
     # Borrowed receive (last: it restarts the device). The echo lands in
     # readDirect()'s buffer and goes back through writeDirect(); a posted

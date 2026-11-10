@@ -300,9 +300,12 @@ static void cmdCdcBig(size_t n)
   const uint32_t t0 = millis();
   while ((sent < n || got < n) && millis() - t0 < 10000)
   {
-    if (sent < n)
+    /* Only what the FIFO takes now: Adafruit's write() waits for the rest, and with the echoes not read
+     * meanwhile the RP2040 stops asking for them, the DUT stops taking ours, and neither moves. */
+    const size_t room = min((size_t)cdc.availableForWrite(), min((size_t)64, n - sent));
+    if (room)
     {
-      sent += cdc.write(tx + sent, min((size_t)64, n - sent));
+      sent += cdc.write(tx + sent, room);
       cdc.flush();
     }
     pump();

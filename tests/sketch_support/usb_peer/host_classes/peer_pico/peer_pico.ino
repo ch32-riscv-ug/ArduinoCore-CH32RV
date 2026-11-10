@@ -18,6 +18,16 @@
 
 RTTStream rtt;
 
+/* Adafruit TinyUSB's RP2040 port runs the USB task in an interrupt, and only when it can take __usb_mutex.
+ * Every TinyUSB call from loop() holds it (UsbLock), or the task comes in while loop() holds a FIFO's own
+ * lock and waits for it - a second at a bus reset, long enough for the host to give up on the device. */
+extern mutex_t __usb_mutex;
+struct UsbLock
+{
+  UsbLock() { mutex_enter_blocking(&__usb_mutex); }
+  ~UsbLock() { mutex_exit(&__usb_mutex); }
+};
+
 /* printf to the console. RTTStream's own printf writes hex digits in upper case; the lines are lower case. */
 static void say(const char *format, ...)
 {
@@ -218,7 +228,12 @@ static void run(char *cmd)
     unsigned ch = 0, n = 0, v = 0;
     sscanf(arg, "%u %u %u", &ch, &n, &v);
     const uint8_t p[4] = {0x09, (uint8_t)(0x90 | (ch & 15)), (uint8_t)n, (uint8_t)v};
-    say("PD MIDISENT %u\n", tud_midi_packet_write(p) ? 1 : 0);
+    bool ok;
+    {
+      UsbLock lock;
+      ok = tud_midi_packet_write(p);
+    }
+    say("PD MIDISENT %u\n", ok ? 1 : 0);
   }
   else if (!strcmp(cmd, "card")) say("PD CARD %lu\n", (unsigned long)apdus);
   else say("PD UNKNOWN %s\n", cmd);
@@ -246,18 +261,21 @@ void setup()
 
 void loop()
 {
-  uint8_t p[4];
-  while (tud_midi_packet_read(p))
   {
-    p[2] = (uint8_t)(p[2] + 12);
-    tud_midi_packet_write(p);
-  }
-  uint8_t buf[64];
-  while (tud_vendor_available())
-  {
-    const uint32_t n = tud_vendor_read(buf, sizeof buf);
-    tud_vendor_write(buf, n);
-    tud_vendor_write_flush();
+    UsbLock lock;
+    uint8_t p[4];
+    while (tud_midi_packet_read(p))
+    {
+      p[2] = (uint8_t)(p[2] + 12);
+      tud_midi_packet_write(p);
+    }
+    uint8_t buf[64];
+    while (tud_vendor_available())
+    {
+      const uint32_t n = tud_vendor_read(buf, sizeof buf);
+      tud_vendor_write(buf, n);
+      tud_vendor_write_flush();
+    }
   }
   while (rtt.available())
   {
@@ -272,4 +290,5 @@ void loop()
     else if (used + 1 < sizeof line)
       line[used++] = c;
   }
+  TinyUSB_Device_Task();   /* what the interrupt skipped while loop() held the lock */
 }

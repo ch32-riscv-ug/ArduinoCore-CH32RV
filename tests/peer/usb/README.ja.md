@@ -68,6 +68,11 @@ DUT の不具合と見分けるために残します。Adafruit TinyUSB を上�
 - **arduino-pico の device は、`setup()` の前に CDC だけで列挙される。** Pico のスケッチは、インタフェースを足してから
   切って、つなぎ直します。host_classes では、CDC を外して（`clearConfiguration()`）S3 と同じ構成にします。
 - **RTTStream の `printf` は 16 進を大文字で書く。** 行は `vsnprintf` で作ります。
+- **arduino-pico の Adafruit TinyUSB は、USB の処理（`tud_task()`）を割り込みで回す。** 回すのは `__usb_mutex` が取れたときだけで、
+  クラスの API（`tud_midi_*`、`tud_vendor_*`、`Serial`、HID の送信）自身はこれを取りません。`loop()` が FIFO の中にいる間に
+  割り込みが来ると、FIFO の lock を 1 秒待ちます（バスリセットのたびに起きる）。この間ホストに答えられず、DUT のホストは
+  列挙をあきらめていました。デバイス役のスケッチは、TinyUSB を呼ぶ所を `UsbLock` で囲み、`loop()` の終わりで
+  `TinyUSB_Device_Task()` を呼びます。
 
 ## 配線と設定
 
