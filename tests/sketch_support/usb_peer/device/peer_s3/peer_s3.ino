@@ -10,6 +10,7 @@
  *
  *   ping                 S3 PONG
  *   dev                  S3 DEV ... / S3 ITF ... per interface / S3 DEVEND <n>
+ *   eps                  S3 EP <itf> <address> <attributes> <max packet> per endpoint / S3 EPEND <n>
  *   cdc <hex>            S3 CDC <hex echoed back within 2 s>
  *   cdcbig <n>           S3 CDCBIG <n> <ok> <bytes back>  (patterned echo)
  *   baud <n>             S3 BAUD <ok>
@@ -92,6 +93,19 @@ static void printHex(const uint8_t *d, size_t n)
   for (size_t i = 0; i < n; i++) Serial.printf("%02x", d[i]);
 }
 
+static uint8_t firstAddress();
+
+// The endpoints of the configuration the host took, as the device described them for this link's speed.
+static void cmdEps()
+{
+  EspUsbHostEndpointInfo eps[32];
+  const size_t n = usb.getEndpoints(firstAddress(), eps, 32);
+  for (size_t i = 0; i < n; i++)
+    Serial.printf("S3 EP %u %02x %02x %u\n", eps[i].interfaceNumber, eps[i].address, eps[i].attributes,
+                  eps[i].maxPacketSize);
+  Serial.printf("S3 EPEND %u\n", (unsigned)n);
+}
+
 static uint8_t firstAddress()
 {
   EspUsbHostDeviceInfo list[4];
@@ -109,7 +123,7 @@ static void cmdDev()
   {
     const EspUsbHostDeviceInfo &d = list[i];
     Serial.printf("S3 DEV %u %04x %04x %u %04x %02x %s|%s|%s\n", d.address, d.vid, d.pid,
-                  d.speed == USB_SPEED_LOW ? 0 : 1, d.usbVersion, d.deviceClass,
+                  (unsigned)d.speed, d.usbVersion, d.deviceClass,
                   d.manufacturer, d.product, d.serial);
     EspUsbHostInterfaceInfo itfs[16];
     const size_t ni = usb.getInterfaces(d.address, itfs, 16);
@@ -485,6 +499,7 @@ static void run(char *cmd)
   const uint8_t a = firstAddress();
   if (!strcmp(cmd, "ping")) Serial.println("S3 PONG");
   else if (!strcmp(cmd, "dev")) cmdDev();
+  else if (!strcmp(cmd, "eps")) cmdEps();
   else if (!strcmp(cmd, "cdc")) cmdCdc(arg);
   else if (!strcmp(cmd, "cdcbig")) cmdCdcBig(strtoul(arg, nullptr, 10));
   else if (!strcmp(cmd, "baud")) Serial.printf("S3 BAUD %u\n", cdc.setBaudRate(strtoul(arg, nullptr, 10)) ? 1 : 0);
@@ -623,7 +638,11 @@ void setup()
     cdcPorts[i]->setPort(i);
     cdcPorts[i]->begin(115200);
   }
-  if (!usb.begin())
+  EspUsbHostConfig config;
+#if CONFIG_IDF_TARGET_ESP32P4
+  config.port = ESP_USB_HOST_PORT_HIGH_SPEED;  // the P4 is the high-speed peer (its OTG HS port)
+#endif
+  if (!usb.begin(config))
     Serial.printf("S3 BEGIN_FAILED %s\n", usb.lastErrorName());
   Serial.println("S3 READY");
 }

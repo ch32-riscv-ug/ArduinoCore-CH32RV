@@ -299,6 +299,13 @@ def stage_case(work, name, case, target):
         target = dict(target, usb_peer_port=target["usb_peer_address"])
     elif case in PEERS:
         shutil.copytree(PEERS[case], directory / "peer_s3")
+        if target.get("usb_peer") == "p4":
+            # The same sketch on the ESP32-P4: its sketch.yaml's p4 profile (the OTG HS port).
+            sketch = directory / "peer_s3/sketch.yaml"
+            text = sketch.read_text()
+            if "default_profile: s3_host\n" not in text or "  p4_host:\n" not in text:
+                raise RuntimeError(f"{PEERS[case]}/sketch.yaml: no p4_host profile")
+            sketch.write_text(text.replace("default_profile: s3_host\n", "default_profile: p4_host\n"))
         target = dict(target, usb_peer_port=places.peer_tty(target["usb_peer_serial"]))
     if case in BUILD_OPTS:
         (directory / "build_opt.h").write_text(BUILD_OPTS[case])

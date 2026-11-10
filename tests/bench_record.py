@@ -139,7 +139,7 @@ def main(argv=None):
             s.add_argument("--port-note", help="oep.probe.memo/port's note")
             s.add_argument("--board", help="<maker>:<model>")
             s.add_argument("--supply", choices=("probe", "usb", "other"))
-            s.add_argument("--usb", help="host, or esp32-s3,serial=<its port's USB serial>[,mac=<mac>]")
+            s.add_argument("--usb", help="host, esp32-s3 / esp32-p4,serial=<its port's USB serial>[,mac=<mac>], or rp2040,port=<port>")
             s.add_argument("--sd", help="JSON: {bus, <signal>: <pad>}")
             s.add_argument("--eth", action="store_true", help="the Ethernet jack is on the host's network")
             s.add_argument("--pd", help="JSON: {max_mv, vbus_pin, vbus_ratio}")

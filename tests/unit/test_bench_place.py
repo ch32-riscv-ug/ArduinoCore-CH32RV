@@ -134,6 +134,19 @@ def test_an_rp2040_peer_on_the_same_probe(monkeypatch, tmp_path):
     assert s3["usb_peer"] == "s3" and s3["cases"]["usb-peer-media"] == "run"
 
 
+def test_an_esp32_p4_peer_on_the_usbhs():
+    items, caps = place.series_needs()
+    p4 = {"usb": {"to": "esp32-p4", "serial": "30:ED:A0:E3:14:F5"}}
+    errors = []
+    records._usb(p4["usb"], errors)
+    assert errors == []
+    v307 = dict(chip="CH32V307VCT6", kind="wchlink", lines={}, record=p4)
+    cases = place.choose_cases(v307, items, caps)
+    # Every device case runs (the P4's host has isochronous transfers); the DUT's host cases wait for a USBHS host.
+    assert all(cases[c] == "run" for c in place.PEER_DEVICE_CASES)
+    assert cases["usb-peer-host"] == place.P4_LACKS["usb-peer-host"]
+
+
 def test_record_checks():
     assert records.check_core({"board": "wch:CH32X035C8T-R0", "supply": {"from": "probe"},
                                "parts": {"sd": {"bus": "sd1", "clk": "pa5", "cmd": "pa7", "dat0": "pa6"},

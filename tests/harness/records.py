@@ -75,18 +75,18 @@ def _usb(value, errors):
     to = value.get("to")
     if to == "host":
         return
-    if to == "esp32-s3":
+    if to in ("esp32-s3", "esp32-p4"):
         if not isinstance(value.get("serial"), str) or not value["serial"]:
-            errors.append("usb.serial: the USB serial of the ESP32-S3's own port to this host (its USB-UART bridge's "
-                          "or its USB-Serial/JTAG's), which finds it on any host")
+            errors.append(f"usb.serial: the USB serial of the {to.upper()}'s own port to this host (its USB-UART "
+                          "bridge's or its USB-Serial/JTAG's), which finds it on any host")
         if "mac" in value and (not isinstance(value["mac"], str) or not re.fullmatch(r"[0-9a-f]{12}", value["mac"])):
-            errors.append("usb.mac: the ESP32-S3's MAC, 12 lower-case hex digits")
+            errors.append(f"usb.mac: the {to.upper()}'s MAC, 12 lower-case hex digits")
         return
     if to == "rp2040":
         if not isinstance(value.get("port"), str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9-]{0,15}", value["port"]):
             errors.append("usb.port: the RP2040's port on the same OEP probe (its SWD and RTT console), e.g. pico")
         return
-    errors.append(f"usb.to: host, esp32-s3 or rp2040, not {to!r}")
+    errors.append(f"usb.to: host, esp32-s3, esp32-p4 or rp2040, not {to!r}")
 
 
 def _pd(value, errors):
@@ -121,7 +121,7 @@ def _supply(value, errors):
 CORE_MEMBERS = {
     "board": (_board, "the board model, <maker>:<model>; the tests know each model's onboard parts"),
     "supply": (_supply, "where the board's power comes from: {from: probe | usb | other}"),
-    "usb": (_usb, "where the DUT's own USB goes: {to: host}, {to: esp32-s3, serial, mac} or {to: rp2040, port}"),
+    "usb": (_usb, "where the DUT's own USB goes: {to: host}, {to: esp32-s3 / esp32-p4, serial, mac} or {to: rp2040, port}"),
     "parts": (_parts, "external parts: {sd: {bus: spi | sd1 | sd4, <signal>: <pad>, ...}, eth: {to: lan}}"),
     "pd": (_pd, "a USB PD sink on the board: {max_mv, vbus_pin, vbus_ratio}"),
     "defects": (_defects, "this board's own faults: [{id, lose: [feature, ...], why}]"),

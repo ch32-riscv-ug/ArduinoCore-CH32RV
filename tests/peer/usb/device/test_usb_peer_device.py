@@ -20,10 +20,20 @@ def test_usb_peer_device(dut, peers, record_property):
     dut_ready(dut, build_id)
     command(peer, "ping", rb"PONG")
 
-    # Enumeration: this build, full speed, every declared function.
+    # Enumeration: this build, at the link's speed (1 full, 2 high: the ESP32-P4 is on the DUT's USBHS), every
+    # declared function.
     dev = wait_enumerated(peer, build_id)
     assert (dev["vid"], dev["pid"]) == DEVICE_VID_PID
-    assert dev["speed"] == 1 and dev["usb"] == "0210"
+    speed = 2 if settings(__file__)["target"].get("usb_peer") == "p4" else 1
+    assert dev["speed"] == speed and dev["usb"] == "0210"
+    if peer.kind == "s3":
+        # The descriptors are this speed's: bulk endpoints 512 bytes at high speed, 64 at full speed (PR #1: the
+        # USBHS bus reset can come before the high-speed handshake ends, and the speed read then is full).
+        peer.write("eps\n")
+        block = peer.serial.expect(rb"((?:S3 EP \d+ \w+ \w+ \d+\r?\n)*)S3 EPEND (\d+)", timeout=5)
+        eps = [line.split()[2:] for line in block.group(1).decode().splitlines() if line.strip()]
+        bulk = {int(mps) for itf, address, attributes, mps in eps if int(attributes, 16) & 3 == 2}
+        assert bulk == {512 if speed == 2 else 64}, eps
     assert {(0x02, 0x02), (0x02, 0x0D), (0x0A, 0x00), (0x03, 0x00), (0x01, 0x03), (0xFE, 0x01)} <= set(dev["interfaces"])
 
     # CDC: binary bytes echoed, then 2000 bytes in both directions at once.
@@ -75,11 +85,13 @@ def test_usb_peer_device(dut, peers, record_property):
     dut.write("mounts\n")
     assert int(dut.expect(rb"MOUNTS (\d+)\r?\n", timeout=5).group(1)) > mounts
 
-    # DFU_DETACH from the S3: the factory bootloader appears on the same port,
-    # and without an upload it hands back to this build.
+    # DFU_DETACH from the peer: on the X035 the factory bootloader appears on the same port, and without an
+    # upload it hands back to this build; elsewhere enterBootloader() is a plain reset (CH32RVUsbDevicePort.h:
+    # the other series reach their bootloader by BOOT0 alone), so this build comes straight back.
     wait_enumerated(peer, build_id)
     command(peer, "dfu", rb"DFU 1 \d")
     peer.expect(rb"DISCONNECTED \d+ 1209 0001", timeout=10)
-    peer.expect(rb"CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
+    if settings(__file__)["target"]["family"].startswith("CH32X03"):
+        peer.expect(rb"CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
     peer.expect(rb"CONNECTED \d+ 1209 0001", timeout=40)
     wait_enumerated(peer, build_id)

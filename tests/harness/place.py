@@ -34,12 +34,17 @@ UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
 USB_CASES = ("usb", "usb-classes", "usb-media")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage")
-# The USB peer a record's usb.to names: an ESP32-S3 on its own port to this host, or an RP2040 (a Raspberry Pi
-# Pico) on the same OEP probe as the DUT.
-PEER_KINDS = {"esp32-s3": "s3", "rp2040": "pico"}
+# The USB peer a record's usb.to names: an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
+# own port to this host, or an RP2040 (a Raspberry Pi Pico) on the same OEP probe as the DUT. The P4 runs the S3's
+# sketches (EspUsbHost / EspUsbDevice) under their p4 profile.
+PEER_KINDS = {"esp32-s3": "s3", "esp32-p4": "p4", "rp2040": "pico"}
+ESP_PEERS = ("esp32-s3", "esp32-p4")
 # Cases written for the RP2040 first (TEST_PLAN.ja.md, the USB peer split); the S3's sketches follow.
 S3_LACKS = {case: "skip: the ESP32-S3 peer has no sketch for this case (the RP2040 peer covers it)"
             for case in ("usb-peer-host-input", "usb-peer-host-storage")}
+# The P4 is on the DUT's USBHS, which CH32RVUsbHost does not drive yet (docs/usb.ja.md).
+P4_LACKS = {case: "skip: CH32RVUsbHost has no USBHS host yet (the ESP32-P4 is on the DUT's USBHS)"
+            for case in ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage")}
 # Device cases the RP2040 cannot be the host for: its host controller driver has no isochronous transfers.
 PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochronous transfers (the speaker, "
                                      "microphone and camera streams)"}
@@ -203,7 +208,7 @@ def choose_cases(place, items=None, caps=None):
                      f"skip: {part} has no USB controller" if not device else
                      "skip: the record's usb is not {to: host}")
     peer = usb.get("to") in PEER_KINDS
-    not_peer = "skip: the record's usb is not {to: esp32-s3} or {to: rp2040}"
+    not_peer = "skip: the record's usb is not {to: esp32-s3}, {to: esp32-p4} or {to: rp2040}"
     for case in PEER_DEVICE_CASES:
         lacks = (PICO_HOST_LACKS.get(case) if usb.get("to") == "rp2040" else
                  S3_LACKS.get(case) if usb.get("to") == "esp32-s3" else None)
@@ -211,10 +216,10 @@ def choose_cases(place, items=None, caps=None):
                      f"skip: {part} has no USB controller" if not device else
                      lacks if peer else not_peer)
     for case in PEER_HOST_CASES:
-        s3_lacks = usb.get("to") == "esp32-s3" and case in S3_LACKS
-        out[case] = ("run" if peer and host and not s3_lacks else
+        lacks = {"esp32-s3": S3_LACKS, "esp32-p4": P4_LACKS}.get(usb.get("to"), {}).get(case)
+        out[case] = ("run" if peer and host and not lacks else
                      f"skip: {part} has no USB host CH32RVUsbHost drives" if not host else
-                     S3_LACKS[case] if s3_lacks else not_peer)
+                     lacks if lacks else not_peer)
     out["power"] = ("run" if oep and core.get("supply", {}).get("from") == "probe"
                     else "skip: the record's supply is not {from: probe}" if oep else "skip: not on an OEP port")
     out["hid"] = ("run" if core.get("board") == UIAPDUINO_BOARD and oep and place["lines"].get("nrst") is not None
@@ -331,7 +336,7 @@ def resolve(address, tool, env, logs, *, chip=None):
     core = place["record"]
     if core.get("usb", {}).get("to") in PEER_KINDS:
         place["usb_peer"] = PEER_KINDS[core["usb"]["to"]]
-    if core.get("usb", {}).get("to") == "esp32-s3":
+    if core.get("usb", {}).get("to") in ESP_PEERS:
         place["usb_peer_serial"] = core["usb"]["serial"]
     if core.get("usb", {}).get("to") == "rp2040":
         if parsed["kind"] != "oep":
@@ -354,11 +359,11 @@ def pin_number(pad):
 
 
 def peer_tty(serial, sysfs=SYSFS):
-    """The ESP32-S3 peer's tty, by the USB serial of its port to this host (records.py: usb.serial)."""
+    """The ESP32 peer's tty, by the USB serial of its port to this host (records.py: usb.serial)."""
     topology = usb_device(serial, sysfs)[0]
     tty = tty_of(topology, sysfs=sysfs)
     if tty is None:
-        raise PlaceError(f"ESP32-S3 {serial}: its USB device has no tty")
+        raise PlaceError(f"ESP32 peer {serial}: its USB device has no tty")
     return tty
 
 
