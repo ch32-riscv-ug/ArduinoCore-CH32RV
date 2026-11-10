@@ -143,7 +143,7 @@ IDE では、bootloader が出す `ch32rv-isp://` の口を選んで書きます
 - 待つ時間は 60 秒以上です。
 - 2 台以上現れたら止めます。
 - probe は候補に入りません。
-- 行き先はボードで決まります。既定は factory USB ISP で、UIAPduino は HID の bootloader です。
+- 行き先はボードで決まります。既定は factory USB ISP で、UIAPduino は boards.txt の `upload.tool.ch32rv-bootloader` で HID の bootloader に向けています。
 - USB の無いチップ（V002〜V007、M007）は、ch32rv が待つ前に断ります。
 
 X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`START_MD`）と、

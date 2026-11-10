@@ -177,7 +177,9 @@ tools.ch32rv.cmd.windows=ch32rv.exe
 #            after 0.29.1): the upload waits for the board's USB bootloader to
 #            appear - the user presses BOOT - and writes the one that does. The
 #            factory ISP by default; a board with a HID bootloader (UIAPduino)
-#            goes to ch32rv_hid by its plain upload.tool. No probe is a candidate.
+#            names ch32rv_hid in its boards.txt upload.tool.ch32rv-bootloader -
+#            this key wins over a board's plain upload.tool (measured,
+#            arduino-cli 1.5.1). No probe is a candidate.
 # ch32rv resolves the address itself, passed as it is. A port is chosen by its
 # name, without attaching; a probe with several ports and none named is refused
 # with the list (ch32rv 0.21, the reworked OEP spec: slots are gone).

@@ -7248,6 +7248,9 @@ UIAPDUINO_V003_V14.upload.maximum_data_size=2048
 UIAPDUINO_V003_V14.upload.protocol=ch32rv-hid
 UIAPDUINO_V003_V14.upload.tool=ch32rv_hid
 UIAPDUINO_V003_V14.upload.tool.default=ch32rv_hid
+# The waiting port (ch32rv-bootloader://WAIT_FOR_BOOT) goes to the HID bootloader: platform.txt's
+# upload.tool.ch32rv-bootloader would otherwise win over the plain upload.tool above (measured, arduino-cli 1.5.1).
+UIAPDUINO_V003_V14.upload.tool.ch32rv-bootloader=ch32rv_hid
 UIAPDUINO_V003_V14.build.ch32rv_chip=CH32V003F4U6
 UIAPDUINO_V003_V14.monitor_port.serial.chip=CH32V003F4U6
 UIAPDUINO_V003_V14.monitor_port.wchlink.chip=CH32V003F4U6
