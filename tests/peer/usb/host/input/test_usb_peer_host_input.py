@@ -96,6 +96,11 @@ def test_usb_peer_host_input(dut, peers):
     assert serial_rx(dut, 0, 2) == "a5c3"
     device(peer, "send 1 5566", rb"SENT 1")
     assert serial_rx(dut, 1, 2) == "5566"
+    # Across the packet boundary: 63, 64, 65 and 128 bytes, each back whole (plus one).
+    for size in (63, 64, 65, 128):
+        data = bytes((i * 5 + size) & 0xFF for i in range(size))
+        assert host(dut, "sser 1 " + data.hex(), rb"SSER (\d)").group(1) == b"1", size
+        assert serial_rx(dut, 1, size) == bytes((b + 1) & 0xFF for b in data).hex(), size
     # Line coding (57600 7E2) and the control lines, as the device sees them.
     assert host(dut, "sconf 1 57600 7 2 2", rb"SCONF (\d)").group(1) == b"1"
     assert host(dut, "slines 1 1 0", rb"SLINES (\d)").group(1) == b"1"

@@ -50,6 +50,12 @@ def test_usb_peer_input(dut, peers):
     echoes = {i: command(peer, f"cdcn {i} 0102fe", rb"CDCN \d (\w*)").group(1) for i in (0, 1)}
     assert sorted(echoes.values()) == [b"0102fe", b"0203ff"]
     a, b = (0, 1) if echoes[0] == b"0102fe" else (1, 0)
+    # Across the packet boundary: 63, 64, 65 and 128 bytes, each back whole on both ports.
+    for size in (63, 64, 65, 128):
+        data = bytes((i * 3 + size) & 0xFF for i in range(size))
+        assert command(peer, f"cdcn {a} {data.hex()}", rb"CDCN \d (\w*)").group(1).decode() == data.hex(), size
+        back = bytes((x + 1) & 0xFF for x in data).hex()
+        assert command(peer, f"cdcn {b} {data.hex()}", rb"CDCN \d (\w*)").group(1).decode() == back, size
     # Line coding and control lines reach each port's own callbacks.
     before = [int(v) for v in dut_cmd(dut, "events", rb"EVENTS (\d+) (\d+) (\d+) (\d+)").groups()]
     assert command(peer, f"cdcline {b} 9600 7 1 2", rb"CDCLINE (\d)").group(1) == b"1"

@@ -276,7 +276,7 @@ static void cmdCdcN(const char *arg)
 {
   char *end;
   const uint8_t idx = (uint8_t)strtoul(arg, &end, 10);
-  uint8_t tx[64], rx[64];
+  uint8_t tx[160], rx[160];
   const size_t n = parseHex(*end ? end + 1 : end, tx, sizeof tx);
   size_t got = 0;
   if (idx < CFG_TUH_CDC && cdcMounted[idx])
@@ -846,7 +846,7 @@ static void cmdDfu()
 }
 
 /* ------------------------------------------------------------ commands */
-static char line[200];
+static char line[400];
 static size_t used;
 
 static void run(char *cmd)

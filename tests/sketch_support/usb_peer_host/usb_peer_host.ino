@@ -32,6 +32,7 @@
  *   hiddesc              H HIDDESC <itf> <bytes> per report descriptor seen / H HIDDESCEND
  *   hidraw <0|1>         H HIDRAW <0|1>        (onHIDInput() events on or off)
  *   mscmaxlun            H MSCMAXLUN <ok> <max LUN>
+ *   mscrd <lba>          H MSCRD <ok> <sense key> <asc> <ascq>  (one block read; the sense when it fails)
  *   msclun <n>           H MSCLUN <ok>         (mscSelectLun(): the unit the next msc* commands use)
  *   msctur               H MSCTUR <ok> <sense key> <asc> <ascq>  (the sense asked for when not ready)
  *   midicc <ch> <c> <v> / midipc <ch> <p> / midipb <ch> <v> / midisx <hex>   H MIDIOUT <ok>
@@ -60,10 +61,10 @@ CH32RVUsbHost usb;
 CH32RVUsbHostCdcSerial cdc(usb);
 
 static bool began;
-static char line[160];
-static uint8_t used;
+static char line[400];
+static uint16_t used;
 static uint8_t block[512], keep[512];
-static uint8_t serialRx[2][128];
+static uint8_t serialRx[2][256];
 static size_t serialRxLength[2];
 static uint8_t hidDescItf[4];
 static uint16_t hidDescLength[4];
@@ -168,7 +169,7 @@ static size_t collect_cdc(uint8_t *out, size_t want, uint32_t ms)
 
 static void cmd_cdc(const char *arg)
 {
-    uint8_t tx[64], rx[64];
+    uint8_t tx[160], rx[160];
     const size_t n = parse_hex(arg, tx, sizeof tx);
     while (cdc.available()) cdc.read();
     cdc.write(tx, n);
@@ -208,7 +209,7 @@ static void cmd_cdcbig(size_t n)
 
 static void cmd_vend(const char *arg)
 {
-    uint8_t tx[64], rx[64];
+    uint8_t tx[160], rx[160];
     const size_t n = parse_hex(arg, tx, sizeof tx);
     if (!usb.vendorReady() && !usb.vendorOpen()) {
         SerialDMSeq.print("H VEND ERR ");
@@ -355,7 +356,7 @@ static void reply(char *cmd)
     } else if (strcmp(cmd, "sser") == 0) {
         char *end;
         const uint8_t port = (uint8_t)strtoul(arg, &end, 10);
-        uint8_t d[64];
+        uint8_t d[160];
         const size_t n = parse_hex(*end ? end + 1 : end, d, sizeof d);
         SerialDMSeq.print("H SSER ");
         SerialDMSeq.println(usb.sendSerial(d, n, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
@@ -448,6 +449,21 @@ static void reply(char *cmd)
         SerialDMSeq.print(ok ? 1 : 0);
         SerialDMSeq.print(' ');
         SerialDMSeq.println(lun);
+    } else if (strcmp(cmd, "mscrd") == 0) {
+        const bool ok = usb.mscReadBlocks(strtoul(arg, nullptr, 10), block, 1);
+        CH32RVUsbHostMscSense sense;
+        if (!ok) {
+            usb.mscRequestSense(sense);
+        }
+        SerialDMSeq.print("H MSCRD ");
+        SerialDMSeq.print(ok ? 1 : 0);
+        SerialDMSeq.print(' ');
+        hex(&sense.senseKey, 1);
+        SerialDMSeq.print(' ');
+        hex(&sense.additionalSenseCode, 1);
+        SerialDMSeq.print(' ');
+        hex(&sense.additionalSenseQualifier, 1);
+        SerialDMSeq.println();
     } else if (strcmp(cmd, "msclun") == 0) {
         SerialDMSeq.print("H MSCLUN ");
         SerialDMSeq.println(usb.mscSelectLun((uint8_t)strtoul(arg, nullptr, 10)) ? 1 : 0);

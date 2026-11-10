@@ -3,7 +3,8 @@
 requests both ways, and a smart card reader whose card comes and goes.
 
 What usb-peer-host-classes leaves out: the MSC logical units, TEST UNIT READY and REQUEST SENSE on a unit
-that is not ready, MIDI beyond note-on (control and program change, pitch bend, SysEx both ways), the
+that is not ready, a read whose data stage stalls (the halt cleared, the sense taken), vendor bulk across
+the packet boundary, MIDI beyond note-on (control and program change, pitch bend, SysEx both ways), the
 vendor request OUT, and the CCID slot: its status, the card's removal and insertion (NotifySlotChange),
 power off and Escape. Same silicon requirement as usb-peer-host."""
 import pathlib
@@ -36,6 +37,12 @@ def test_usb_peer_host_storage(dut, peers):
     # Unit 0 stays ready meanwhile.
     assert host(dut, "msclun 0", rb"MSCLUN (\d)").group(1) == b"1"
     assert host(dut, "msctur", rb"MSCTUR (\d) [^\r\n]*").group(1) == b"1"
+    # A read the device fails: its data stage stalls, the host clears the halt, takes the failed CSW and the
+    # sense, and the next reads and writes work. (TinyUSB's device reports 02/3A/00 for any failed read: it
+    # overwrites the sense the callback sets.)
+    assert host(dut, "mscrd 13", rb"MSCRD (\d) (\w\w \w\w \w\w)", timeout=20).group(1, 2) == (b"0", b"02 3a 00")
+    assert host(dut, "mscrd 12", rb"MSCRD (\d) [^\r\n]*", timeout=20).group(1) == b"1"
+    assert host(dut, "mscraw 6", rb"MSCRAW (\d)", timeout=20).group(1) == b"1"
 
     # MIDI, host to device: control change, program change, pitch bend, SysEx (USB-MIDI packets as sent).
     device(peer, "midilast", rb"MIDILAST \w*")
@@ -50,6 +57,11 @@ def test_usb_peer_host_storage(dut, peers):
     dut.expect(rb"H MIDI 11 b4 10 127", timeout=5)
     dut.expect(rb"H MIDI 12 c5 9 0", timeout=5)
     dut.expect(rb"H MIDI 6 f0 247 0", timeout=5)
+
+    # Vendor bulk across the packet boundary (63, 64, 65 and 128 bytes), echoed whole.
+    for size in (63, 64, 65, 128):
+        data = bytes((i * 7 + size) & 0xFF for i in range(size)).hex()
+        assert host(dut, "vend " + data, rb"VEND (\w*)").group(1).decode() == data, size
 
     # The vendor request OUT, with its value, index and data.
     assert host(dut, "vreqout 0x11 0x1234 0x0002 c0ffee", rb"VREQOUT (\d)").group(1) == b"1"

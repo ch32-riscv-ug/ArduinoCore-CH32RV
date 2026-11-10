@@ -13,7 +13,8 @@
  *   vlast                 PD VLAST <wValue> <wIndex> <hex>  (the last vendor request 0x11 OUT)
  *   card <0|1>            PD CARD <0|1>         (the card taken out or put in: NotifySlotChange)
  *
- * Without a command: logical unit 0 holds 64 blocks of (LBA ^ offset), unit
+ * Without a command: logical unit 0 holds 64 blocks of (LBA ^ offset) - its
+ * block 13 fails to read (the data stage stalled, sense 02/3A/00) - unit
  * 1 16 blocks of 0xA5; a note-on comes back with its note raised by 12 (other
  * MIDI packets are only recorded); vendor request 0x10 (IN) answers "RP2040";
  * the card answers an APDU reversed then 90 00, and an Escape with its bytes. */
@@ -52,6 +53,7 @@ static uint8_t lun0[64][512], lun1[16][512];
 
 static int32_t read0(uint32_t lba, void *buffer, uint32_t size)
 {
+  if (lba == 13) return -1;   /* the data stage stalls; TinyUSB reports 02/3A/00 whatever sense is set here */
   if (lba >= 64) return -1;
   memcpy(buffer, lun0[lba], size);
   return (int32_t)size;
@@ -279,7 +281,7 @@ extern "C" bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, const 
 }
 
 /* ------------------------------------------------------------ the console */
-static char line[200];
+static char line[400];
 static size_t used;
 
 static int hexval(char c)
