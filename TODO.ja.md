@@ -142,6 +142,10 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   自動トグル、HS の PHY と HSE。第2世代 USBHS（V467、X305 / X315、V205）と X315 の USBSS はビルドだけ（V407 は HS で確認済み）。
 - H417:
   - [ ] USBSS のデバイスの実機の続き（列挙と CDC、DFU までは確認済み）。
+  - [ ] SS の列挙が、リセットの後に 4〜5 回に 1 回ほど失敗する（2026-11-11、HS の線を切った後のベンチ。SWD の書き込み
+    3 回とリセット 5 回のうち 2 回）。カーネルは `device descriptor read/all, error -71` や
+    `unable to get BOS descriptor set` / `unable to read config index 0 descriptor/start: -71` を出し、UsbFallback が FS に
+    移る。`s` で SS に戻すと列挙する。SS で列挙している最中の SWD の書き込みは 4 回とも通った。
   - [ ] USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
   - [ ] UART ISP（PB6/PB7）: ソフトのリセットでは入らなかった（docs/h417-bench.ja.md）。電源の入れ直しは未確認。入れるかどうかは別に決める。
   - OEP の probe にする件は、コアの側は入れた（84b57b0）。oep-probe-arduino への依頼は 2026-10-21 に dev-oep のセッションへ送った（向こうの状況は未確認）。
