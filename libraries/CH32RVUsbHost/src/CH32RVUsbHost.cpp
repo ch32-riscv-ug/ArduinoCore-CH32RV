@@ -781,7 +781,7 @@ void en_step(void)
             en.state = E_HUB_POLL_WAIT;
             return;
         }
-        en.speed = (status & 0x0200) ? CH32RV_USBH_LOW : CH32RV_USBH_FULL;
+        en.speed = (status & 0x0400) ? CH32RV_USBH_HIGH : (status & 0x0200) ? CH32RV_USBH_LOW : CH32RV_USBH_FULL;
         if (en_control(en.now.hub, 0x23, 1, 20, en.now.port, nullptr, 0)) {   /* CLEAR_FEATURE(C_PORT_RESET) */
             en.state = E_HUB_CLEAR;
         }
@@ -1187,7 +1187,9 @@ void complete_mount(CH32RVUsbHost &host, uint8_t daddr)
     d.isHub = dev[4] == 9;
     d.parentAddress = s.parent;
     d.portId = s.parent ? (uint8_t)((s.parent << 4) | (s.port & 0x0F)) : 0x01;
-    d.speed = s.speed == CH32RV_USBH_LOW ? CH32RV_USB_HOST_SPEED_LOW : CH32RV_USB_HOST_SPEED_FULL;
+    d.speed = s.speed == CH32RV_USBH_LOW    ? CH32RV_USB_HOST_SPEED_LOW
+              : s.speed == CH32RV_USBH_HIGH ? CH32RV_USB_HOST_SPEED_HIGH
+                                            : CH32RV_USB_HOST_SPEED_FULL;
     d.configurationValue = s.configValue;
     d.configurationAttributes = s.configAttributes;
     d.configurationMaxPower = s.configPower;
@@ -1232,7 +1234,11 @@ extern "C" void ch32rv_usb_host_task(void)
         return;
     }
     busy = true;
-    port_poll();
+    if (port_is_usbfs(hcd)) {
+        port_poll();
+    } else if (hcd->poll) {
+        hcd->poll();
+    }
     pump();
     for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
         Device &d = devs[a];
@@ -1324,6 +1330,11 @@ uint32_t CH32RVUsbHost::droppedDeviceEvents() const
 
 bool CH32RVUsbHost::begin()
 {
+    return begin(CH32RVUsbHostConfig());
+}
+
+bool CH32RVUsbHost::begin(const CH32RVUsbHostConfig &config)
+{
     if (_started) {
         return ok();
     }
@@ -1336,16 +1347,22 @@ bool CH32RVUsbHost::begin()
     memset(hubs, 0, sizeof hubs);
     ev_head = ev_tail = 0;
     port_changed = false;
-    const CH32RVUsbHcd *driver = port_hcd();
-    if (!port_open()) {
+    const CH32RVUsbHcd *driver = port_hcd(config.port);
+    if (!driver) {
         return fail(CH32RVUsbHostError::Unsupported);
     }
-    if (!port_has_host()) {
+    const bool usbfs = port_is_usbfs(driver);   /* the others open their own clock */
+    if (usbfs && !port_open()) {
+        return fail(CH32RVUsbHostError::Unsupported);
+    }
+    if (usbfs && !port_has_host()) {
         port_close();
         return fail(CH32RVUsbHostError::Unsupported);
     }
     if (!driver->open()) {
-        port_close();
+        if (usbfs) {
+            port_close();
+        }
         return fail(CH32RVUsbHostError::Busy);
     }
     hcd = driver;
@@ -1372,9 +1389,12 @@ void CH32RVUsbHost::end()
             remove_device(a);
         }
     }
+    const bool usbfs = port_is_usbfs(hcd);
     hcd->close();
     hcd = nullptr;
-    port_close();
+    if (usbfs) {
+        port_close();
+    }
     _started = false;
     ch32rv_service_detach(&host_service);
     if (ch32rv_usb_host_active == this) {
@@ -1583,6 +1603,7 @@ bool CH32RVUsbHost::getStringDescriptor(uint8_t address, uint8_t index, char *ou
 #else /* no host on this series */
 
 bool CH32RVUsbHost::begin() { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::begin(const CH32RVUsbHostConfig &) { return fail(CH32RVUsbHostError::Unsupported); }
 void CH32RVUsbHost::end() {}
 bool CH32RVUsbHost::ready() const { return false; }
 void CH32RVUsbHost::task() {}
@@ -1653,7 +1674,7 @@ void ch32rvUsbHostPrint(const CH32RVUsbHostDeviceInfo &d, Print &out)
     print_hex16(out, d.pid);
     out.print(" class=");
     out.print(d.deviceClass, HEX);
-    out.print(d.speed == CH32RV_USB_HOST_SPEED_LOW ? " speed=low" : " speed=full");
+    out.print(d.speed == CH32RV_USB_HOST_SPEED_LOW ? " speed=low" : d.speed == CH32RV_USB_HOST_SPEED_HIGH ? " speed=high" : " speed=full");
     out.print(" manufacturer=\"");
     out.print(d.manufacturer);
     out.print("\" product=\"");

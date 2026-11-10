@@ -335,10 +335,16 @@ void loop() {
 | CH32X035 F8U6 / F7P6 / D8U6、X033 | シリコンにホストが無い（データシートの型番表）。`begin()` が `Unsupported` | F8U6 で実機確認 |
 | CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
 | CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
+| CH32V407 / V467 | USBHS1（既定）、USBHS2（`CH32RV_USB_HOST_PORT_HIGH_SPEED_2`） | V407 の USBHS1 で ESP32-P4（HS）相手に実機確認 |
+| CH32X305 / X315 | USBHS（既定） | ビルドのみ |
+| CH32V205、H41x | USBFS（既定）、USBHS（`CH32RV_USB_HOST_PORT_HIGH_SPEED`） | ビルドのみ |
 
+- ポートは `CH32RVUsbHostConfig.port` で選びます（EspUsbHost の `EspUsbHostConfig.port` と同じ形）。第 2 世代の USBHS の
+  ホスト（`CH32RVUsbHcdUsbhs2.cpp`）は HS の機器を HS で扱います。HS のハブの先の FS・LS の機器（split）はまだ扱えません
+  （[ライブラリの README](../libraries/CH32RVUsbHost/README.ja.md#ポートと速さ)）。
 - VBUS は基板が供給します（チップには入り切りの機能がありません）。
 - ホストとデバイスは同じコントローラを使うので、同時にはどちらか一方です（もう一方が動いていれば `Busy`）。
-- ホストのスタックとコントローラのドライバ（`CH32RVUsbHcdUsbfs.cpp`、`internal/CH32RVUsbHcd.h` の表）はこのコアのものです。
+- ホストのスタックとコントローラのドライバ（`CH32RVUsbHcdUsbfs.cpp`、`CH32RVUsbHcdUsbhs2.cpp`、`internal/CH32RVUsbHcd.h` の表）はこのコアのものです。
   開いているエンドポイントごとに転送を持ち、NAK は次のフレームで再試行します。列挙はルートポートとハブのポートを
   ノンブロッキングの状態機械で進めます。
 - 列挙は、ポートをリセットして 3 回まで試します。ルートポートでは、3 回とも答えなかった装置も、つながっている間は
@@ -363,8 +369,9 @@ void loop() {
   X305 / X315 には同じ FLASH_STATR.BOOT_MODE があるので同じ手順を入れてありますが、実機では確かめていません（ブートローダーが
   どのポートで待つかも）。H41x は BOOT_MODE がありますが、試すと起動に失敗しました（上）。V20x / V30x / V103 / L103 / V205 /
   M030 / V4x7 には BOOT_MODE が無く、ブートローダーには BOOT0 の端子でしか入れないので、普通のリセットです。
-- **ホスト**: 実機で確かめたのは X035（C8T6、相手は ESP32-S3）です。V20x / V30x / V205 / L103 / M030 / H41x
-  （USBOTG_FS の配置、`ch32rv_usbfs_otg.h`）はビルドだけです。
+- **ホスト**: 実機で確かめたのは X035（C8T6、相手は ESP32-S3 と RP2040）と V407（USBHS1、相手は ESP32-P4 の HS）です。
+  V20x / V30x / V205 / L103 / M030 / H41x（USBOTG_FS の配置、`ch32rv_usbfs_otg.h`）と、V407 の USBHS2・X305 / X315・
+  V205 / H41x の USBHS はビルドだけです。V30x の第 1 世代 USBHS のホストと、HS のハブの先の split はありません。
 - **無いもの**: ホストのアイソクロナスと USB ネットワーク（オーディオ、ビデオ、NCM）、デバイスのファームウェア更新の各クラス。
 
 ## 既知の問題

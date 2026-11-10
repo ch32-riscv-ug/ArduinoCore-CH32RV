@@ -14,7 +14,7 @@
  *
  * The API is EspUsbHost's (the same author's ESP32 library), renamed EspUsbHost
  * -> CH32RVUsbHost and ESP_USB_HOST_ -> CH32RV_USB_HOST_, and cut to what a
- * full-speed controller with 20 KB of RAM can do:
+ * full-speed controller with 20 KB of RAM can do (on a high-speed host the same, with 512-byte packets):
  *
  *   - devices: connect / disconnect callbacks, descriptors, strings,
  *     interfaces, endpoints, control transfers, a hub (one level);
@@ -51,8 +51,9 @@
  * Runs on CH32X035 R8T6 / C8T6 / G8U6 / G8R6 (USBFS, PC16/PC17; the F8U6,
  * F7P6, D8U6 and the X033 have no host in silicon), CH32V203/V208 (USBFS,
  * PB6/PB7), and CH32V303/V305/V307/V317, V205, L103/M103, M030 and H41x
- * (USBFS, PA11/PA12); begin() reports Unsupported elsewhere. The board supplies VBUS to the device - the chip
- * cannot switch it.
+ * (USBFS, PA11/PA12), and on the second-generation USBHS at high speed (CH32V407/V467: USBHS1 by default,
+ * USBHS2 as HIGH_SPEED_2; X305/X315 by default; V205 and H41x as HIGH_SPEED - CH32RVUsbHostConfig::port);
+ * begin() reports Unsupported elsewhere. The board supplies VBUS to the device - the chip cannot switch it.
  */
 #pragma once
 
@@ -67,6 +68,24 @@
 
 #define CH32RV_USB_HOST_SPEED_LOW   0
 #define CH32RV_USB_HOST_SPEED_FULL  1
+#define CH32RV_USB_HOST_SPEED_HIGH  2
+
+/* Which controller the host runs on (EspUsbHostPort). DEFAULT is the series'
+ * usual one: USBFS where the part has it, else its USBHS. HIGH_SPEED_2 is the
+ * second USBHS of CH32V407 / V467. A port the part does not have makes begin()
+ * fail with Unsupported. */
+enum CH32RVUsbHostPort : uint8_t {
+    CH32RV_USB_HOST_PORT_DEFAULT = 0,
+    CH32RV_USB_HOST_PORT_HIGH_SPEED,
+    CH32RV_USB_HOST_PORT_FULL_SPEED,
+    CH32RV_USB_HOST_PORT_HIGH_SPEED_2,
+};
+
+/* begin()'s settings (EspUsbHostConfig, less what a task-less stack has no
+ * use for). */
+struct CH32RVUsbHostConfig {
+    CH32RVUsbHostPort port = CH32RV_USB_HOST_PORT_DEFAULT;
+};
 
 #define CH32RV_USB_HOST_MOUSE_LEFT    0x01
 #define CH32RV_USB_HOST_MOUSE_RIGHT   0x02
@@ -97,9 +116,20 @@
  * with its own (CH32RVUsbHostCdcSerial::setBuffer(), setVendorBuffer(),
  * setCcidBuffers()). */
 #define CH32RV_USB_HOST_STRING_MAX 32               /* per string, with the terminator */
-#define CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE 128
-#define CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE 256
-#define CH32RV_USB_HOST_CCID_BUFFER_SIZE 272        /* 10-byte header + a short APDU response */
+/* The largest bulk or interrupt packet a class takes in one piece: 512 on the
+ * series with a high-speed host, where the receive buffers below grow to hold
+ * at least one such packet (an IN is armed only with room for a whole one). */
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415) || \
+    defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || \
+    defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
+#define CH32RV_USB_HOST_MAX_PACKET 512
+#else
+#define CH32RV_USB_HOST_MAX_PACKET 64
+#endif
+#define CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 1024 : 128)
+#define CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 1024 : 256)
+/* 10-byte header + a short APDU response; on a high-speed host also more than a packet (the ring) */
+#define CH32RV_USB_HOST_CCID_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 1024 : 272)
 #define CH32RV_USB_HOST_HID_REPORTS 8               /* report IDs remembered per HID interface */
 
 enum class CH32RVUsbHostError : uint8_t {
@@ -371,6 +401,7 @@ public:
 
     /* ---- lifecycle ---- */
     bool begin();
+    bool begin(const CH32RVUsbHostConfig &config);
     void end();
     bool ready() const;            /* begun, and the port is up */
     /* What ch32rv_usb_host_task() does; call it yourself only from code that

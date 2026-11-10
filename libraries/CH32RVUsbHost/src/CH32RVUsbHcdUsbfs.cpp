@@ -703,6 +703,7 @@ const CH32RVUsbHcd ch32rv_usb_hcd_usbfs = {
     "USBFS host", PACKET_MAX,
     hcd_open, hcd_close, hcd_connected, hcd_port_reset, hcd_port_reset_end, hcd_port_disable,
     hcd_ep_open, hcd_ep_close, hcd_device_close, hcd_xfer, hcd_setup, hcd_abort, hcd_reset_toggle, hcd_frame,
+    nullptr,
 };
 
 #endif

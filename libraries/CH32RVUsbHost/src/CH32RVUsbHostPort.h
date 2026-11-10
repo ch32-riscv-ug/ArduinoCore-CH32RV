@@ -1,18 +1,28 @@
-/* Which host controller driver (CH32RVUsbHcd.h) serves a series, and how its
- * pins and clock are set up. Included once, by CH32RVUsbHost.cpp.
+/* Which host controller driver (CH32RVUsbHcd.h) serves a series and port
+ * (CH32RVUsbHostConfig::port), and how USBFS's pins and clock are set up.
+ * Included once, by CH32RVUsbHost.cpp.
  *
- * Every series with a host provides:
- *   port_hcd()        the driver
- *   port_open()       clock, PHY and pins for host mode; false when the clock
- *                     cannot feed the PHY or the part has no such block
+ *   port_hcd(port)       the driver for that port, nullptr when the part has
+ *                        none (Unsupported)
+ * and for the USBFS driver (a driver with its own clock - USBHS - opens it in
+ * open() and keeps it in poll()):
+ *   port_open()          clock, PHY and pins for host mode; false when the
+ *                        clock cannot feed the PHY or the part has no USBFS
  *   port_close()
- *   port_has_host()   whether this die has the host half
- *   port_poll()       from the task: put back a clock taken away under it
- * Extension point: another controller (V30x USBHS, the second-generation
- * USBHS) becomes a table of its own and a branch here. */
+ *   port_has_host()      whether this die has the host half
+ *   port_poll()          from the task: put back a clock taken away under it
+ *
+ * The ports per series:
+ *   X035 / X033, V20x, L103 / M103, M030   DEFAULT = FULL_SPEED: USBFS
+ *   V30x                                   DEFAULT = FULL_SPEED: USBFS (its USBHS host is not here yet)
+ *   V205, H41x                             DEFAULT = FULL_SPEED: USBFS; HIGH_SPEED: USBHS (H41x: PB8 / PB9,
+ *                                          the SWD pins - only when asked)
+ *   X305 / X315                            DEFAULT = HIGH_SPEED: USBHS
+ *   V407 / V467                            DEFAULT = HIGH_SPEED: USBHS1; HIGH_SPEED_2: USBHS2 */
 #pragma once
 
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_usbhs2.h"
 #include "internal/CH32RVUsbHcd.h"
 
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
@@ -41,6 +51,15 @@ static void port_close(void)
     CH32RV_AFIO_CTLR &= ~X03X_AFIO_USB_IOEN;
 }
 
+static void port_poll(void) {}
+
+#elif defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || \
+    defined(CH32RV_SERIES_CH32V467)
+/* No USBFS: the USBHS driver alone. */
+#define PORT_NO_USBFS 1
+
+static bool port_open(void) { return false; }
+static void port_close(void) {}
 static void port_poll(void) {}
 
 #else /* the USBOTG_FS layout: V20x, V30x, V205, L103 / M103, M030, H41x */
@@ -87,6 +106,9 @@ static void port_poll(void)
  * bit is the test, which also covers a board built for "ANY". */
 static bool port_has_host(void)
 {
+#ifdef PORT_NO_USBFS
+    return false;
+#else
     USBFS_BASE_CTRL = 0x80;
     const uint32_t t0 = micros();
     while (!(USBFS_BASE_CTRL & 0x80) && (uint32_t)(micros() - t0) < 2000u) {
@@ -94,9 +116,38 @@ static bool port_has_host(void)
     const bool has = (USBFS_BASE_CTRL & 0x80) != 0;
     USBFS_BASE_CTRL = 0;
     return has;
+#endif
 }
 
-static const CH32RVUsbHcd *port_hcd(void)
+static const CH32RVUsbHcd *port_hcd(uint8_t port)
 {
-    return &ch32rv_usb_hcd_usbfs;
+#if defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || \
+    defined(CH32RV_SERIES_CH32V467)
+    if (port == CH32RV_USB_HOST_PORT_DEFAULT || port == CH32RV_USB_HOST_PORT_HIGH_SPEED) {
+        return &ch32rv_usb_hcd_usbhs2;
+    }
+#if CH32RV_USBHS2_UNITS == 2
+    if (port == CH32RV_USB_HOST_PORT_HIGH_SPEED_2) {
+        return &ch32rv_usb_hcd_usbhs2_b;
+    }
+#endif
+    return nullptr;
+#else
+    if (port == CH32RV_USB_HOST_PORT_DEFAULT || port == CH32RV_USB_HOST_PORT_FULL_SPEED) {
+        return &ch32rv_usb_hcd_usbfs;
+    }
+#ifdef CH32RV_USBHS2_UNITS
+    if (port == CH32RV_USB_HOST_PORT_HIGH_SPEED) {
+        return &ch32rv_usb_hcd_usbhs2;
+    }
+#endif
+    return nullptr;
+#endif
 }
+
+/* Whether `h` is the USBFS driver (the one port_open() and the rest are for). */
+#ifdef PORT_NO_USBFS
+#define port_is_usbfs(h) ((void)(h), false)
+#else
+#define port_is_usbfs(h) ((h) == &ch32rv_usb_hcd_usbfs)
+#endif

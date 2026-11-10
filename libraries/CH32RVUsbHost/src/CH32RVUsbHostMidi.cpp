@@ -8,7 +8,8 @@
 
 namespace {
 
-#define RX_PACKETS 32
+/* Room for a whole packet of event packets (mps / 4) and some: 32 at full speed, 160 at high. */
+#define RX_PACKETS (CH32RV_USB_HOST_MAX_PACKET > 64 ? CH32RV_USB_HOST_MAX_PACKET / 4 + 32 : 32)
 
 struct Port {
     bool mounted;
@@ -19,7 +20,7 @@ struct Port {
     volatile uint8_t outResult;
     volatile uint8_t head, tail;               /* rx ring of packets */
     uint8_t rx[RX_PACKETS][4];
-    uint8_t in[64] __attribute__((aligned(4)));
+    uint8_t in[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
 };
 Port ports[1];
 CH32RVUsbHost::MidiMessageCallback message_cb;

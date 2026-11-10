@@ -52,6 +52,7 @@ struct CH32RVUsbHcd {
     void (*abort)(uint8_t daddr, uint8_t address);   /* no completion for it */
     void (*resetToggle)(uint8_t daddr, uint8_t address);   /* after CLEAR_FEATURE(ENDPOINT_HALT) */
     uint32_t (*frame)(void);      /* frames (ms) since open */
+    void (*poll)(void);           /* from the task: put back a clock taken away under it (nullptr: nothing) */
 };
 
 /* From a driver's interrupt. */
@@ -61,3 +62,5 @@ void ch32rv_usbh_isr_xfer(uint8_t daddr, uint8_t address, uint8_t result, uint16
 }
 
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbfs;
+extern const CH32RVUsbHcd ch32rv_usb_hcd_usbhs2;     /* the second-generation USBHS (V407 / V467: USBHS1) */
+extern const CH32RVUsbHcd ch32rv_usb_hcd_usbhs2_b;   /* V407 / V467: USBHS2 */

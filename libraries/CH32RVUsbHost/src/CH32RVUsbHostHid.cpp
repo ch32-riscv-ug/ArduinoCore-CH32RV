@@ -12,7 +12,7 @@
 namespace {
 
 #define HID_INTERFACES 4
-#define HID_REPORT_MAX 64
+#define HID_REPORT_MAX CH32RV_USB_HOST_MAX_PACKET
 
 #define HID_PAGE_DESKTOP 0x01
 #define HID_PAGE_CONSUMER 0x0C
@@ -44,7 +44,7 @@ struct HidItf {
     uint16_t mpsIn;
     uint16_t descriptorLength;               /* the report descriptor's */
     volatile bool inBusy, outBusy;
-    uint8_t held;                            /* a report left in `in`: the queue was full */
+    uint16_t held;                           /* a report left in `in`: the queue was full */
     bool descriptorPending;                  /* onHIDReportDescriptor() still due */
     uint8_t reportCount;
     ReportInfo reports[CH32RV_USB_HOST_HID_REPORTS];
@@ -66,7 +66,7 @@ HidItf hids[HID_INTERFACES];
  * again: the device keeps its reports until there is room. */
 struct Queued {
     uint8_t idx;
-    uint8_t length;
+    uint16_t length;
     uint8_t data[HID_REPORT_MAX];
 };
 #define QUEUE 4
@@ -458,12 +458,12 @@ void in_done(void *user, uint8_t result, uint16_t length)
     if (result == CH32RV_USBH_OK && length) {
         const uint8_t next = (uint8_t)((q_head + 1) % QUEUE);
         if (next == q_tail) {
-            h.held = (uint8_t)(length < sizeof h.in ? length : sizeof h.in);
+            h.held = (uint16_t)(length < sizeof h.in ? length : sizeof h.in);
             return;                                 /* hid_deliver() queues it and re-arms */
         }
         Queued &q = queue[q_head];
         q.idx = (uint8_t)(&h - hids);
-        q.length = (uint8_t)(length < sizeof q.data ? length : sizeof q.data);
+        q.length = (uint16_t)(length < sizeof q.data ? length : sizeof q.data);
         memcpy(q.data, h.in, q.length);
         q_head = next;
     }
@@ -685,11 +685,11 @@ bool CH32RVUsbHost::sendHIDReport(uint8_t interfaceNumber, uint8_t reportType, u
     if (idx < 0) {
         return fail(CH32RVUsbHostError::NotSupported);
     }
-    if (length > 63 || (length && !data)) {
+    if (length > HID_REPORT_MAX - 1 || (length && !data)) {
         return fail(CH32RVUsbHostError::InvalidArgument);
     }
     /* SET_REPORT over EP0, the report ID in front when there is one. */
-    uint8_t buf[64];
+    uint8_t buf[HID_REPORT_MAX];
     size_t n = 0;
     if (reportId) {
         buf[n++] = reportId;

@@ -32,16 +32,41 @@ void loop() { deliverEvents(); }   // callback はここで動く。スタック
 | CH32X035 F8U6 / F7P6 / D8U6、CH32X033 | — （シリコンにホストが無い。`begin()` が `Unsupported`） | F8U6 で `Unsupported` を実機確認 |
 | CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
 | CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
-| CH32V205、CH32M030、CH32H415 / H416 / H417 | USBFS（PA11 / PA12） | ビルドのみ。48 MHz の作り方はデバイスと同じ（V205 と H41x は USBHS PLL、M030 は 144 MHz の PLL） |
+| CH32V205、CH32M030、CH32H415 / H416 / H417 | USBFS（PA11 / PA12）。V205 と H41x は `CH32RV_USB_HOST_PORT_HIGH_SPEED` で USBHS（H41x は PB8 / PB9 で SWD と兼用） | ビルドのみ。48 MHz の作り方はデバイスと同じ（V205 と H41x は USBHS PLL、M030 は 144 MHz の PLL） |
+| CH32V407 / V467 | USBHS1（既定、`HIGH_SPEED`）、USBHS2（`HIGH_SPEED_2`） | V407 の USBHS1 で ESP32-P4（EspUsbDevice、HS）相手に HID・CDC・MSC・MIDI・ベンダー・CCID を実機確認 |
+| CH32X305 / X315 | USBHS（既定） | ビルドのみ |
 | CH32L103 / M103 | USBFS（PA11 / PA12） | ビルドのみ。CPU Clock の 8 MHz では 48 MHz が作れず `begin()` が失敗する（48 / 72 / 96 MHz を選ぶ。未確認） |
 | ほかの系列 | — （`begin()` が `Unsupported`） | ビルドのみ |
 
 X035 のどの型番がホストを持つかはデータシートの型番表のとおりで、`begin()` は BASE_CTRL のホストモードのビットが
 立つかどうかで実際に確かめます（F8U6 では立ちません）。対向試験は [tests/peer/usb/host](../../tests/peer/usb/host/)
-にあり、CH32X035C8T6 と ESP32-S3 で両方（usb-peer-host / usb-peer-host-classes）が通っています。
+にあり、CH32X035C8T6 と ESP32-S3 で両方（usb-peer-host / usb-peer-host-classes）が、V407 と ESP32-P4（HS）でも
+両方が通っています。
 
 **VBUS は基板が供給します。** チップには VBUS を入り切りする機能がありません。ホストを始めても、Type-C のソースの CC の回路や、
-基板の外部電源の切り替えは設定しません。V30x のホストは、チップに USBHS があっても USBFS を使います。
+基板の外部電源の切り替えは設定しません。V30x のホストは、チップに USBHS があっても USBFS を使います（第 1 世代の
+USBHS のホストのドライバは、まだありません）。
+
+### ポートと速さ
+
+`begin()` は系列の既定のポートで始めます。ほかのポートは `CH32RVUsbHostConfig` で選びます（EspUsbHost の
+`EspUsbHostConfig.port` と同じ形）。
+
+```cpp
+CH32RVUsbHostConfig config;
+config.port = CH32RV_USB_HOST_PORT_HIGH_SPEED;   // DEFAULT / HIGH_SPEED / FULL_SPEED / HIGH_SPEED_2（V407 / V467 の USBHS2）
+usb.begin(config);                               // 無いポートは Unsupported
+```
+
+第 2 世代の USBHS（V407 / V467、X305 / X315、V205、H41x）では、HS（480 Mbps）の機器を HS で、FS・LS の機器を
+それぞれの速さで直接つなげます。`CH32RVUsbHostDeviceInfo::speed` は `CH32RV_USB_HOST_SPEED_HIGH`（2）になります。
+受信の受け皿は 512 バイトのパケットが入る大きさになります（`CH32RV_USB_HOST_MAX_PACKET`、既定のリングも大きくなります）。
+
+- HS には水晶（HSE）が要ります。ドライバが HSE を起こし、無い基板では HSI のままです（短いパケットしか通りません）。
+- HS のハブの先の FS・LS の機器（split トランザクション）は、まだ扱えません。HS のハブ自体と、その先の HS の機器は
+  扱う作りですが、実機では確かめていません。
+- X305 / X315 は、HSE が無いと HSI をホストの SOF で合わせる仕組みしか無いので、ホストには HSE が要ります。
+- OUT の後の NYET は受け付けとして扱い、PING は送りません（機器は空くまで NAK します）。
 
 例の `Serial` はボードのハードの UART（115200 baud）で、ホストにつないだ USB の口ではありません。
 

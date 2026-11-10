@@ -60,7 +60,7 @@ struct Port {
     bool dtr, rts;
     volatile bool inBusy;
     volatile uint8_t pendingLength;          /* a received packet the task has not handed on */
-    uint8_t in[64] __attribute__((aligned(4)));
+    uint8_t in[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
     uint8_t ctl[8] __attribute__((aligned(4)));
 };
 Port ports[CDC_PORTS];
