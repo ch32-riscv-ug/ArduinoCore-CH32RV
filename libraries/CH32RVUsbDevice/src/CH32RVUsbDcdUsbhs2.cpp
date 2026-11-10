@@ -22,7 +22,7 @@
  * about a third of the SETUPs go unanswered and suspects this IP lacks the
  * USBFS INT_BUSY auto-NAK.
  *
- * Per series below: the clock. On H41x PB8 / PB9 are also SWCLK / SWDIO;
+ * The clock and pads per series: internal/ch32rv_usbhs2.h. On H41x PB8 / PB9 are also SWCLK / SWDIO;
  * opening the driver there turns the debug interface off (AFIO_PCFR1.SW_CFG =
  * 100b, the EVT's GPIO_Remap_SWJ_Disable): a probe gets the chip back only
  * through a reset (ch32rv --connect-under-reset, with NRST wired), and
@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_usbhs2.h"
 #include "internal/CH32RVUsbDcd.h"
 
 namespace {
@@ -64,173 +65,6 @@ struct Xfer {
     uint8_t *bounce;             /* one packet, DMA-side */
     bool active, iso, tog;
 };
-
-bool wait_ctlr(uint32_t bit)
-{
-    for (uint32_t t0 = millis(); !(CH32RV_RCC_CTLR & bit);) {
-        if ((uint32_t)(millis() - t0) > 100u) {
-            return false;
-        }
-    }
-    return true;
-}
-
-/* ------------------------------------------------------------ per series: clocks */
-#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
-/* The USBHS PLL from HSE (25 MHz reference), UTMI (EVT USBHS_RCC_Init). The
- * PHY pads are PB8 / PB9, which are SWCLK / SWDIO: SDI goes off. */
-constexpr uint32_t CTLR_HSEON = 1u << 16, CTLR_HSERDY = 1u << 17, CTLR_PLLON = 1u << 20, CTLR_PLLRDY = 1u << 21;
-constexpr uint32_t CFGR0_UTMION = 1u << 23;
-#define RCC_PLLCFGR2 CH32RV_REG32(0x40021034u)
-
-bool clock_ok(uint8_t)
-{
-    return (CH32RV_RCC_CTLR & CTLR_PLLRDY) && (CH32RV_RCC_CFGR0 & CFGR0_UTMION);
-}
-
-bool clock_on(uint8_t)
-{
-    if (!(CH32RV_RCC_CTLR & CTLR_PLLRDY)) {
-        CH32RV_RCC_CTLR |= CTLR_HSEON;
-        if (!wait_ctlr(CTLR_HSERDY)) {
-            return false;
-        }
-        CH32RV_RCC_CTLR &= ~CTLR_PLLON;
-        RCC_PLLCFGR2 &= ~0x00001F0Fu;                    /* HSE, 25 MHz reference, no input division */
-        CH32RV_RCC_CTLR |= CTLR_PLLON;
-        if (!wait_ctlr(CTLR_PLLRDY)) {
-            return false;
-        }
-    }
-    CH32RV_RCC_CFGR0 |= CFGR0_UTMION;
-    ch32rv_clock_enable(USBHS);
-    return true;
-}
-
-void pads_on(uint8_t)
-{
-    CH32RV_REG32(CH32RV_AFIO_BASE + 0x00u) = (CH32RV_REG32(CH32RV_AFIO_BASE + 0x00u) & ~(7u << 24)) | (4u << 24);
-}
-
-#elif defined(CH32RV_SERIES_CH32V205)
-/* The USBHS PLL from HSE with an 8 MHz reference (EVT USBHS_RCC_Init):
- * RCC_CTLR 22 / 23, RCC_CFGR2 (+0x2C) 27 source, 29:28 reference, 26:24
- * input division. High speed needs the crystal. */
-constexpr uint32_t CTLR_HSEON = 1u << 16, CTLR_HSERDY = 1u << 17, CTLR_PLLON = 1u << 22, CTLR_PLLRDY = 1u << 23;
-#define RCC_CFGR2 CH32RV_REG32(CH32RV_RCC_BASE + 0x2Cu)
-
-bool clock_ok(uint8_t)
-{
-    return (CH32RV_RCC_CTLR & CTLR_PLLRDY) && !(RCC_CFGR2 & (1u << 27));
-}
-
-bool clock_on(uint8_t)
-{
-    if (!clock_ok(0)) {
-        CH32RV_RCC_CTLR |= CTLR_HSEON;
-        if (!wait_ctlr(CTLR_HSERDY)) {
-            return false;
-        }
-        CH32RV_RCC_CTLR &= ~CTLR_PLLON;
-        RCC_CFGR2 = (RCC_CFGR2 & ~((3u << 28) | (1u << 27) | (7u << 24))) | (1u << 28);
-        CH32RV_RCC_CTLR |= CTLR_PLLON;
-        if (!wait_ctlr(CTLR_PLLRDY)) {
-            return false;
-        }
-    }
-    ch32rv_clock_enable(USBHS);
-    return true;
-}
-
-void pads_on(uint8_t) {}
-
-#elif defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
-/* UTMI (RCC_CFGR0 23) and the controller clock; without HSE the PHY runs from
- * HSI kept in step with the host's SOF by USBHSI (base + 0x200: CAL_RST 0,
- * CAL_EN 1, SOF_FREE 3) - EVT USBHS_RCC_Init. */
-constexpr uint32_t CTLR_HSERDY = 1u << 17, CFGR0_UTMION = 1u << 23;
-#define USBHSI_CAL_CR CH32RV_REG32(0x40030200u)
-
-bool clock_ok(uint8_t)
-{
-    return (CH32RV_RCC_CFGR0 & CFGR0_UTMION) != 0;
-}
-
-bool clock_on(uint8_t)
-{
-    CH32RV_RCC_CFGR0 |= CFGR0_UTMION;
-    ch32rv_clock_enable(USBHS);
-    if (!(CH32RV_RCC_CTLR & CTLR_HSERDY)) {
-        USBHSI_CAL_CR |= 0x01u;
-        USBHSI_CAL_CR &= ~0x01u;
-        USBHSI_CAL_CR |= 0x02u | 0x08u;
-    }
-    return true;
-}
-
-void pads_on(uint8_t) {}
-
-#else /* CH32V407 / V467 */
-/* One USBHS PLL for both: HSE with a 25 MHz reference, or HSI with 20 MHz
- * (EVT usbhsN_dcp.c), RCC_CTLR 20 / 21, RCC_CFGR2 (+0x2C) 27:26 source,
- * 29:28 reference; each controller its UTMI gate, USBHS1 at CFGR2 30 and
- * USBHS2 at 31 (RM; the EVT header has the two names swapped, its functions
- * do not).
- *
- * High speed needs the crystal, and the CPU clock may run from HSI with HSE
- * off, so it is started here. From HSI the link comes up at high speed and
- * short packets go, but a full one does not (V407 with an ESP32-P4 as the
- * host, 2026-11-11: up to 36 bytes went, every 512-byte IN was a transaction
- * error at the host). HSI only on a board without a crystal. */
-constexpr uint32_t CTLR_HSEON = 1u << 16, CTLR_HSERDY = 1u << 17, CTLR_PLLON = 1u << 20, CTLR_PLLRDY = 1u << 21;
-constexpr uint32_t PLL_SOURCE = (3u << 28) | (3u << 26), PLL_FROM_HSI = (1u << 28) | (1u << 26);
-#define RCC_CFGR2 CH32RV_REG32(CH32RV_RCC_BASE + 0x2Cu)
-
-constexpr uint32_t utmi(uint8_t unit)
-{
-    return unit == 1 ? (1u << 30) : (1u << 31);
-}
-
-uint32_t pll_source()
-{
-    return (CH32RV_RCC_CTLR & CTLR_HSERDY) ? 0u : PLL_FROM_HSI;
-}
-
-/* HSE off again (SystemInit() after a probe's attach) shows as the PLL still
- * set to it: on again from the task. */
-bool clock_ok(uint8_t unit)
-{
-    return (CH32RV_RCC_CTLR & CTLR_PLLRDY) && (RCC_CFGR2 & utmi(unit)) && (RCC_CFGR2 & PLL_SOURCE) == pll_source();
-}
-
-bool clock_on(uint8_t unit)
-{
-    if (!(CH32RV_RCC_CTLR & CTLR_HSERDY)) {
-        CH32RV_RCC_CTLR |= CTLR_HSEON;
-        if (!wait_ctlr(CTLR_HSERDY)) {
-            CH32RV_RCC_CTLR &= ~CTLR_HSEON;                /* no crystal */
-        }
-    }
-    const uint32_t source = pll_source();
-    if (!(CH32RV_RCC_CTLR & CTLR_PLLRDY) || (RCC_CFGR2 & PLL_SOURCE) != source) {
-        CH32RV_RCC_CTLR &= ~CTLR_PLLON;                    /* the source is writable only while it is off */
-        RCC_CFGR2 = (RCC_CFGR2 & ~PLL_SOURCE) | source;
-        CH32RV_RCC_CTLR |= CTLR_PLLON;
-        if (!wait_ctlr(CTLR_PLLRDY)) {
-            return false;
-        }
-    }
-    RCC_CFGR2 |= utmi(unit);
-    if (unit == 1) {
-        ch32rv_clock_enable(USBHS1);
-    } else {
-        ch32rv_clock_enable(USBHS2);
-    }
-    return true;
-}
-
-void pads_on(uint8_t) {}
-#endif
 
 /* ------------------------------------------------------------ one controller */
 template <uint32_t BASE, uint8_t UNIT, uint32_t IRQN>
@@ -326,17 +160,20 @@ struct Hs {
      * turns the PLL and UTMI off: put them back from the task. */
     static void poll()
     {
-        if (!clock_ok(UNIT)) {
-            clock_on(UNIT);
+        if (!ch32rv_usbhs2_clock_ok(UNIT)) {
+            ch32rv_usbhs2_clock_on(UNIT);
         }
     }
 
     static bool open()
     {
-        if (!clock_on(UNIT)) {
+        if (ch32rv_usbhs2_irq_hook[UNIT - 1] && ch32rv_usbhs2_irq_hook[UNIT - 1] != isr) {
+            return false;                                /* the host has the controller */
+        }
+        if (!ch32rv_usbhs2_clock_on(UNIT)) {
             return false;
         }
-        pads_on(UNIT);
+        ch32rv_usbhs2_pads_on(UNIT);
         for (uint8_t ep = 0; ep < 8; ep++) {
             xin[ep].mps = xout[ep].mps = 64;
         }
@@ -348,6 +185,7 @@ struct Hs {
         r8(O_DEV_AD) = 0;
         r8(O_INT_FG) = 0xFF;
         r8(O_CONTROL) = UD_DMA_EN | UD_LPM_EN | UD_PHY_SUSPENDM;   /* DEV_EN (the pull-up) on connect */
+        ch32rv_usbhs2_irq_hook[UNIT - 1] = isr;
         ch32rv_irq_enable(IRQN);
         return true;
     }
@@ -363,6 +201,9 @@ struct Hs {
         r8(O_INT_EN) = 0;
         r8(O_INT_FG) = 0xFF;
         r8(O_CONTROL) = UD_RST_SIE | UD_RST_LINK;
+        if (ch32rv_usbhs2_irq_hook[UNIT - 1] == isr) {
+            ch32rv_usbhs2_irq_hook[UNIT - 1] = nullptr;
+        }
         for (uint8_t ep = 1; ep < 8; ep++) {
             free(xin[ep].bounce);
             free(xout[ep].bounce);
@@ -693,20 +534,13 @@ template <uint32_t B, uint8_t U, uint32_t I> bool Hs<B, U, I>::suspended;
 
 }  // namespace
 
-#if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
-using Hs1 = Hs<0x40024000u, 1, CH32RV_IRQN_USBHS1>;
-using Hs2 = Hs<0x40023400u, 2, CH32RV_IRQN_USBHS2>;
-extern "C" __attribute__((interrupt)) void USBHS1_IRQHandler(void) { Hs1::isr(); }
-extern "C" __attribute__((interrupt)) void USBHS2_IRQHandler(void) { Hs2::isr(); }
+#if CH32RV_USBHS2_UNITS == 2
+using Hs1 = Hs<CH32RV_USBHS2_BASE1, 1, CH32RV_USBHS2_IRQN1>;
+using Hs2 = Hs<CH32RV_USBHS2_BASE2, 2, CH32RV_USBHS2_IRQN2>;
 const CH32RVUsbDcd ch32rv_usb_dcd_usbhs2 = Hs1::table("USBHS1 (CH32V407/V467)");
 const CH32RVUsbDcd ch32rv_usb_dcd_usbhs2_b = Hs2::table("USBHS2 (CH32V407/V467)");
 #else
-#if defined(CH32RV_SERIES_CH32V205)
-using Hs1 = Hs<0x40023400u, 1, CH32RV_IRQN_USBHS>;
-#else
-using Hs1 = Hs<0x40030000u, 1, CH32RV_IRQN_USBHS>;
-#endif
-extern "C" __attribute__((interrupt)) void USBHS_IRQHandler(void) { Hs1::isr(); }
+using Hs1 = Hs<CH32RV_USBHS2_BASE1, 1, CH32RV_USBHS2_IRQN1>;
 const CH32RVUsbDcd ch32rv_usb_dcd_usbhs2 = Hs1::table("USBHS (second generation)");
 #endif
 
