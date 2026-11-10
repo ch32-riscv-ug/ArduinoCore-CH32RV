@@ -43,7 +43,7 @@ USB のコントローラを持つ系列と、それぞれの IP の種類、ド
 | USB（旧 IP） | V103 | `CH32RVUsbDcdUsbV103.cpp` | ビルドのみ |
 | USBD（fsdev 型、CAN と共用） | V203 / V208 | `CH32RVUsbDcdUsbd.cpp`（`Usbd` を指定） | ビルドのみ |
 | USBHS 第 1 世代 | V305 / V307 / V317 | `CH32RVUsbDcdUsbhs1.cpp`（`HighSpeed`、HSE が要る） | ビルドのみ |
-| USBHS 第 2 世代 | H417 / H416 / H415、V205、X305 / X315、V407 / V467（2 基、2 基目は `HighSpeed2`） | `CH32RVUsbDcdUsbhs2.cpp` | 実機（V407 の USBHS1、HS で列挙。CDC・HID・MIDI・DFU。MSC などは未。TODO.ja.md） |
+| USBHS 第 2 世代 | H417 / H416 / H415、V205、X305 / X315、V407 / V467（2 基、2 基目は `HighSpeed2`） | `CH32RVUsbDcdUsbhs2.cpp` | 実機（V407 の USBHS1、HS。ESP32-P4 の相手で、usb-peer のデバイス側の 6 件が通る。HS には HSE が要る） |
 | USBSS | H417 / H416 | `CH32RVUsbDcdUsbss.cpp` | 実機（H417、5000M で列挙） |
 | 〃 | X315（デバイスのみ） | 〃（`SuperSpeed`） | ビルドのみ |
 

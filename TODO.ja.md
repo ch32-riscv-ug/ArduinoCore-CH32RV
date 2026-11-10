@@ -133,16 +133,13 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - 測った結果（V407、第2世代 USBHS、HS のホストは ESP32-P4）: BUS_RST の割り込みでは `MIS_ST` の HS ビットが 0（full speed）。約 30 ms 後の LINK_RDY で 1 になり、最初の SETUP のときは HS。2 回目のリセットも同じ順。
   - 直し方: コアは、リセットで仮に読み、リセット後の最初の SETUP で 1 回だけ読み直す（`Core::take_speed()`）。V407 で、HS のバルクが 64 → 512 になり、usb-peer が HS で通る。FS（X035 の S3 と Pico の組）の usb-peer も通る。
   - 残り: 第1世代（V30x の USBHS1）と H417 の USBSS は、HS / SS の相手がまだ無いので未確認。
-- [ ] **V407 の HS で落ちるデバイスの case**（ESP32-P4 の相手、2026-11-11）。
-  - usb-peer は通る。次の 5 件は、HS で落ちる。
-    - usb-peer-classes: MSC の生の読み書き（mscraw）が 0。
-    - usb-peer-net: 送れた数が 6（20 以上のはず）。
-    - usb-peer-fs: ESP-IDF の FAT がマウントできない。
-    - usb-peer-input: 2 ポートの CDC で、63 / 64 / 65 バイトは往復するが、128 で止まる。
-    - usb-peer-media: 映像のフレームが 0。
-  - 第2世代 USBHS のデバイスのドライバ（`CH32RVUsbDcdUsbhs2.cpp`）が、これまでビルドだけだったため。
+- [x] **V407 の HS で落ちていたデバイスの case**（ESP32-P4 の相手、2026-11-11）。6 件とも HS で通る。原因は次の 3 つと、試験の側の FS の前提。
+  - 相手の P4 の Serial（USB-Serial/JTAG）の受信は既定で 256 バイト。長いコマンドの行の残りと改行が落ちていた（input の 128 バイト）。`setRxBufferSize(1024)` にした。
+  - V407 の USBHS の PLL が HSI から作られていた（CPU のクロックが HSI のままのとき HSE は止まっている）。列挙と短いパケットは通るが、512 バイトの IN はホストで通信エラーになっていた（MSC、NCM、FAT）。ドライバが HSE を起こすようにした。HSE が無い基板では HSI のまま。
+  - isochronous の IN は、転送が終わっても最後のパケットを TX_LEN のまま返し続けていた（映像の最後のペイロードが毎マイクロフレーム届く）。転送が無いときは TX_LEN を 0 にして、長さ 0 のパケットを返す。
+  - 試験の側: CCID の自動の大きさは HS で 512（ライブラリの決めたとおり）。Borrowed の受け皿は HS のパケットの倍数が要る（スケッチの 64 → `CH32RV_USB_MAX_PACKET`）。DFU_DETACH で工場のブートローダーが出るのは X035 だけ。
 - [ ] 新しい系列の実機確認（ベンチの DUT の USB 端子を配線してから）。HSI から作る 48 MHz の精度、V103 の EP4〜7 の
-  自動トグル、HS の PHY と HSE。第2世代 USBHS（V407 / V467、X305 / X315、V205）と X315 の USBSS はビルドだけ。
+  自動トグル、HS の PHY と HSE。第2世代 USBHS（V467、X305 / X315、V205）と X315 の USBSS はビルドだけ（V407 は HS で確認済み）。
 - H417:
   - [ ] USBSS のデバイスの実機の続き（列挙と CDC、DFU までは確認済み）。
   - [ ] USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。

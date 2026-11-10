@@ -26,7 +26,8 @@
  * opening the driver there turns the debug interface off (AFIO_PCFR1.SW_CFG =
  * 100b, the EVT's GPIO_Remap_SWJ_Disable): a probe gets the chip back only
  * through a reset (ch32rv --connect-under-reset, with NRST wired), and
- * sketches are best written by DFU. Build only everywhere so far. */
+ * sketches are best written by DFU. On hardware: V407 USBHS1 at high speed
+ * (an ESP32-P4 as the host, tests/peer/usb); the others build only. */
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415) || \
     defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || \
     defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
@@ -174,8 +175,15 @@ void pads_on(uint8_t) {}
  * (EVT usbhsN_dcp.c), RCC_CTLR 20 / 21, RCC_CFGR2 (+0x2C) 27:26 source,
  * 29:28 reference; each controller its UTMI gate, USBHS1 at CFGR2 30 and
  * USBHS2 at 31 (RM; the EVT header has the two names swapped, its functions
- * do not). */
-constexpr uint32_t CTLR_HSERDY = 1u << 17, CTLR_PLLON = 1u << 20, CTLR_PLLRDY = 1u << 21;
+ * do not).
+ *
+ * High speed needs the crystal, and the CPU clock may run from HSI with HSE
+ * off, so it is started here. From HSI the link comes up at high speed and
+ * short packets go, but a full one does not (V407 with an ESP32-P4 as the
+ * host, 2026-11-11: up to 36 bytes went, every 512-byte IN was a transaction
+ * error at the host). HSI only on a board without a crystal. */
+constexpr uint32_t CTLR_HSEON = 1u << 16, CTLR_HSERDY = 1u << 17, CTLR_PLLON = 1u << 20, CTLR_PLLRDY = 1u << 21;
+constexpr uint32_t PLL_SOURCE = (3u << 28) | (3u << 26), PLL_FROM_HSI = (1u << 28) | (1u << 26);
 #define RCC_CFGR2 CH32RV_REG32(CH32RV_RCC_BASE + 0x2Cu)
 
 constexpr uint32_t utmi(uint8_t unit)
@@ -183,17 +191,30 @@ constexpr uint32_t utmi(uint8_t unit)
     return unit == 1 ? (1u << 30) : (1u << 31);
 }
 
+uint32_t pll_source()
+{
+    return (CH32RV_RCC_CTLR & CTLR_HSERDY) ? 0u : PLL_FROM_HSI;
+}
+
+/* HSE off again (SystemInit() after a probe's attach) shows as the PLL still
+ * set to it: on again from the task. */
 bool clock_ok(uint8_t unit)
 {
-    return (CH32RV_RCC_CTLR & CTLR_PLLRDY) && (RCC_CFGR2 & utmi(unit));
+    return (CH32RV_RCC_CTLR & CTLR_PLLRDY) && (RCC_CFGR2 & utmi(unit)) && (RCC_CFGR2 & PLL_SOURCE) == pll_source();
 }
 
 bool clock_on(uint8_t unit)
 {
-    if (!(CH32RV_RCC_CTLR & CTLR_PLLRDY)) {
-        CH32RV_RCC_CTLR &= ~CTLR_PLLON;
-        const bool hse = (CH32RV_RCC_CTLR & CTLR_HSERDY) != 0;
-        RCC_CFGR2 = (RCC_CFGR2 & ~((3u << 28) | (3u << 26))) | (hse ? 0u : (1u << 28) | (1u << 26));
+    if (!(CH32RV_RCC_CTLR & CTLR_HSERDY)) {
+        CH32RV_RCC_CTLR |= CTLR_HSEON;
+        if (!wait_ctlr(CTLR_HSERDY)) {
+            CH32RV_RCC_CTLR &= ~CTLR_HSEON;                /* no crystal */
+        }
+    }
+    const uint32_t source = pll_source();
+    if (!(CH32RV_RCC_CTLR & CTLR_PLLRDY) || (RCC_CFGR2 & PLL_SOURCE) != source) {
+        CH32RV_RCC_CTLR &= ~CTLR_PLLON;                    /* the source is writable only while it is off */
+        RCC_CFGR2 = (RCC_CFGR2 & ~PLL_SOURCE) | source;
         CH32RV_RCC_CTLR |= CTLR_PLLON;
         if (!wait_ctlr(CTLR_PLLRDY)) {
             return false;
@@ -524,12 +545,23 @@ struct Hs {
 
     static void remote_wakeup() { r8(O_WAKE_CTRL) |= 0x01; }   /* hardware drives K, clears the bit */
 
+    /* With nothing armed, an endpoint gets TX_LEN 0 along with NAK: an
+     * isochronous one has no NAK to give and would answer every IN token with
+     * the last packet again (V407 at high speed: the last payload of a video
+     * frame came 8000 times a second until the next frame); this way it sends
+     * a zero-length packet, the isochronous idle. */
+    static void tx_idle(uint8_t ep)
+    {
+        tx_len(ep) = 0;
+        set_tx(ep, RES_NAK);
+    }
+
     static void in_done(uint8_t ep)
     {
         Xfer &x = xin[ep];
         if (!x.active) {
             if (ep) {
-                set_tx(ep, RES_NAK);
+                tx_idle(ep);
             }
             return;
         }
@@ -545,7 +577,7 @@ struct Hs {
         if (ep == 0) {
             tx_ctrl(0) = (uint8_t)(RES_NAK | (ep0_tog ? TOG1 : 0));
         } else {
-            set_tx(ep, RES_NAK);
+            tx_idle(ep);
         }
         ch32rv_usbd_isr_xfer((uint8_t)(0x80 | ep), x.done);
     }
