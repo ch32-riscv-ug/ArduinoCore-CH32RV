@@ -137,6 +137,14 @@ DOWNLOAD KEY を押したまま USB へ接続すれば factory USB ISP に入る
 
 RVSWD の PC18 / PC19 を I2C など別の用途に使うボードでは、この経路が通常の書き込み経路になります。
 IDE では、bootloader が出す `ch32rv-isp://` の口を選んで書きます。
+書き込みを押す時点でまだ bootloader に入っていないときは、いつも一覧にある `ch32rv-bootloader://WAIT_FOR_BOOT`
+（ch32rv の 0.29.1 の次の版から）を選びます。書き込みを押してから BOOT を押してつなぐと、現れた 1 台に書きます。
+
+- 待つ時間は 60 秒以上です。
+- 2 台以上現れたら止めます。
+- probe は候補に入りません。
+- 行き先はボードで決まります。既定は factory USB ISP で、UIAPduino は HID の bootloader です。
+- USB の無いチップ（V002〜V007、M007）は、ch32rv が待つ前に断ります。
 
 X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`START_MD`）と、
 「キー操作なしの USBFS ダウンロード」（`USBFSDLEN`）が option byte の既定で有効です（CH32X315 リファレンスマニュアル）。

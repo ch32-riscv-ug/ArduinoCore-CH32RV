@@ -36,6 +36,12 @@ RECIPES = {
         '"{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol wchlink',
     'pluggable_monitor.pattern.oep':
         '"{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol oep',
+    'pluggable_monitor.pattern.ch32rv-bootloader':
+        '"{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-bootloader',
+    # The always-listed port that waits for BOOT: the factory ISP by default (UIAPduino's plain upload.tool
+    # sends it to the HID bootloader).
+    'upload.tool.ch32rv-bootloader':
+        'ch32rv_isp',
 }
 
 

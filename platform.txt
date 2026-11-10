@@ -173,6 +173,11 @@ tools.ch32rv.cmd.windows=ch32rv.exe
 #   ch32rv-app  ch32rv-app://<USB serial>, a running sketch with CH32RVUsbDevice's
 #            DFU runtime (its interface named "CH32RV"); written over USB alone
 #   ch32rv-isp  ch32rv-isp://<USB position>, the factory USB bootloader (1a86:55e0)
+#   ch32rv-bootloader  ch32rv-bootloader://WAIT_FOR_BOOT, always listed (ch32rv
+#            after 0.29.1): the upload waits for the board's USB bootloader to
+#            appear - the user presses BOOT - and writes the one that does. The
+#            factory ISP by default; a board with a HID bootloader (UIAPduino)
+#            goes to ch32rv_hid by its plain upload.tool. No probe is a candidate.
 # ch32rv resolves the address itself, passed as it is. A port is chosen by its
 # name, without attaching; a probe with several ports and none named is refused
 # with the list (ch32rv 0.21, the reworked OEP spec: slots are gone).
@@ -186,6 +191,7 @@ upload.tool.oep=ch32rv
 upload.tool.ch32rv-hid=ch32rv_hid
 upload.tool.ch32rv-app=ch32rv_isp
 upload.tool.ch32rv-isp=ch32rv_isp
+upload.tool.ch32rv-bootloader=ch32rv_isp
 
 # --progress none because a recipe's stdout is not a tty; ch32rv defaults to a
 # progress bar only on one, but saying so keeps the log identical either way.
@@ -266,9 +272,10 @@ pluggable_monitor.pattern.serial="{runtime.tools.ch32rv.path}/ch32rv" arduino mo
 pluggable_monitor.pattern.wchlink="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol wchlink
 pluggable_monitor.pattern.oep="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol oep
 # ch32rv-app opens the sketch's own CDC port (none: the monitor says so);
-# ch32rv-isp has nothing to show and refuses.
+# ch32rv-isp and ch32rv-bootloader have nothing to show and refuse.
 pluggable_monitor.pattern.ch32rv-app="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-app
 pluggable_monitor.pattern.ch32rv-isp="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-isp
+pluggable_monitor.pattern.ch32rv-bootloader="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-bootloader
 
 # ---------------------------------------------------------------- debug
 # `arduino-cli debug` (and the IDE's debugger) drive GDB plus a GDB server.
