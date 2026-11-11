@@ -43,6 +43,24 @@
 - [ ] ITCM（128 KB）からあふれたコードは共有 SRAM で動き、命令キャッシュに収まらないと 2.5 倍遅い。どのコードを ITCM に
   優先して置くか（今はリンクの順）。
 
+## Clang への移行（2026-11-11 から）
+
+計画は docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
+
+- [ ] 既定を Clang にする（Compiler メニューの順）。前に、ベンチの全系列で試験一式を Clang で流す（V003 は済み、
+  2026-11-12）。XW を実機で確かめていない系列: V2C（V006 など）、X035、M030、H417。
+- [ ] 段 2（GCC を外す）: picolibc と compiler-rt を、multilib.yaml の 4 組（rv32ec / rv32imc / rv32imac / rv32imafc）
+  にまとめて ch32rv-clang に入れる。platform.txt の Clang の側を sysroot だけの形にする。
+- [ ] C++ のヘッダー: GCC の libstdc++ のヘッダーを配るか、例外と RTTI を外した libc++ に移るかを、全部の例のビルドと
+  大きさで比べる。
+- [ ] compiler-rt の浮動小数から int への変換は、範囲外で飽和しない（libgcc と RISC-V の命令は飽和する）。飽和させる版を
+  コアで持つか決める。
+- [ ] clang は rv32ec で定数の掛け算に `__mulsi3` を呼ぶ（GCC はシフトに開く）。時間に厳しいところ（printf の数の変換など）
+  を洗い出す。
+- [ ] Windows の ch32rv-clang が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
+- [ ] gdb の出どころ（今は xPack の GCC に入っているもの）。GCC を外すときに決める。
+- [ ] V003 の Clang で、TZ のスケッチが GCC より 108 B 大きい理由（段 0 の後）。
+
 ## PIOC（CH32X035、CH32V205、CH32H41x）
 
 - [ ] PIOC（RISC8B の 8 ビットのコア）を読み込んで動かすライブラリ。最初のプロトコル（ARGB、UART など）は自前の ASM から

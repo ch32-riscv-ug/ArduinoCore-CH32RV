@@ -168,6 +168,14 @@ V003、X035、V307 の crt0 とベクターを clang の組み込みのアセン
 - パッケージ: tools/index/gen_index.py は tools/index/tools_ch32rv_clang.json があるときだけ、ch32rv-clang を依存に入れ、`compiler.clang.path=` を書き換える。fetch_tools.py は `CH32_CLANG_BIN` を出す。build_examples.py に `--compiler clang`。
 - 残り: リリースが出たら tools_ch32rv_clang.json を作る（bump_tool.py）。Clang を既定にする。実機の試験を Clang で流す。CI の例のビルドに Clang を足す。
 
+## 実機（2026-11-12）
+
+`CH32_TEST_COMPILER=clang` で、tests/run_hardware.py が Clang でビルドします（FQBN に `compiler=clang`、配布版の ch32rv-clang）。V003（OEP の口 `v003`）で、全部のケースを Clang で流しました。XW を含むスケッチも、QingKe V2A で動きました。Clang でだけ起きた問題が 2 つ見つかり、直しました。
+
+- **deepSleep の起き方（system）。** clang は constructor を、コンパイル時に実行できるときは実行してしまいます。`.noinit` に置いた `wake_record` は、C の上では 0 で始まる変数に見えます。そのため clang は、ch32rv_power_boot() を「何もしない」と計算して消し、記録への書き込みも消していました。結果、タイマーで起きても `wakeupCause()` が 0 でした。`wake_record` を `volatile` にして直しました。`.noinit` の変数は、ほかにありません。
+- **ADC のストリームの速さ（periph）。** `micros()` は、掛け算の命令のない V003 で `__mulsi3` を呼ばないよう、定数の掛け算をシフトと足し算に開いて書いてあります。clang はこれを掛け算にまとめ直し、`-Oz` では `__mulsi3` を 2 回呼んでいました。`micros()` が遅くなったので、CH32RVAdcStream が測る標本化の速さが 7.5% 低く出ていました。clang のときだけ、各項を空のアセンブリに通して直しました。GCC の命令列は前と同じです。
+- clang は、rv32ec で定数の掛け算に `__mulsi3` を呼ぶことが多いです（printf の 10 倍など）。GCC はシフトに開きます。大きさは clang のほうが小さく、速さは遅くなります。時間に厳しいところは、`micros()` と同じ書き方で避けます。
+
 ## 次に確かめること
 
 1. RISC-V だけの clang + lld を手元でビルドして、大きさと時間を測る（段 1 の準備）。

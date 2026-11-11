@@ -252,6 +252,79 @@ newlib 以外の libc に移るには、タイムゾーンの状態（規則、`
 
 LLVM libc は、getenv などが足りないことと、C++ ごと libc++ に移る必要があることから、今は二番手です。
 
+### 5. compiler-rt と libgcc の結果の一致（2026-11-12）
+
+libgcc（xPack の rv32ec/ilp32e と rv32imac/ilp32 の multilib）と compiler-rt（手元で -Oz でビルドしたもの）を 1 つのプログラムにリンクし、Python の unicorn（RISC-V 32 bit の命令のエミュレーター）の上で、同じ入力（特別な値と乱数、関数ごとに 4,000 組）を与えて比べました。
+
+| 関数 | 結果 |
+|---|---|
+| float と double の四則演算（`__addsf3` 〜 `__divdf3`） | 数値はすべて一致。違うのは NaN のビットだけ（libgcc は正準の NaN、compiler-rt は入力の NaN を伝える） |
+| 整数の割り算（32 bit と 64 bit、符号あり・なし） | すべて一致 |
+| 整数と浮動小数の変換（範囲内） | すべて一致 |
+| 浮動小数から int への変換で、範囲外の値（`__fixsfsi`、`__fixdfsi`） | **違う**。libgcc は飽和する（2³¹ → 0x7fffffff）、compiler-rt は飽和しない。C では未定義の動作だが、RISC-V の命令は飽和するので、スケッチの見た目が変わりうる |
+| 比較（`__eqsf2` など） | 判定は一致 |
+| `__truncdfsf2`、`__extendsfdf2` | NaN のビット以外は一致 |
+
+同じ方法で、コアの `__truncdfsf2` が NaN を libgcc と違う形にしていたことも分かりました。libgcc は、どの NaN も正準の 0x7fc00000 にします。コアもそれに合わせ、エミュレーターで 40,098 件ずつ（2 通りの multilib）一致を確かめました。コアの `__extendsfdf2` は、元から一致していました。
+
+compiler-rt に移るなら、範囲外の変換を飽和させる薄い版をコアで持つかどうかを決める必要があります。
+
+### 6. 32 bit の割り算（rv32ec、2026-11-12）
+
+割り算の命令のない系列（V003 の rv32ec、V00x の rv32ec_zmmul）向けに、`__udivsi3`、`__umodsi3`、`__divsi3`、`__modsi3` をアセンブリで書き、cores/arduino/ch32rv_div.S に置きました。libgcc のソースは写していません。
+
+- 結果: libgcc と全部一致しました（0 での割り算、INT_MIN ÷ −1 などの端と、35,000 組の乱数。エミュレーターで比較）。
+- 速さ: 実行する命令の数は libgcc と同じです（10 で割るとき、符号なし 125.5、符号付き 127.5 命令）。
+- 大きさ: 146 B です（libgcc は 176 B、compiler-rt の C の版は符号なしの割り算だけで 296 B）。
+- コアに置いたので、GCC でも Clang（compiler-rt でも libgcc でも）でも使われます。
+
+### 7. 配り方の試作: multilib.yaml（2026-11-12）
+
+clang の BareMetal ドライバーは、sysroot（既定では `<clang>/lib/clang-runtimes/riscv32-unknown-elf`）の multilib.yaml を読み、`-march` と `-mabi` から組を選びます。選んだ組の `include` と `lib` は、clang が自分でヘッダーとライブラリの探し先に加えます。段 2 の platform.txt は、今の `-nostdlibinc`、`-isystem`、`-L` を並べた形がいらなくなります。
+
+clang は `-march` を、拡張ごとの版の番号まで付けて正規化します（`rv32e2p0_c2p0_zicsr2p0_zca1p0_xwchc2p2` など）。正規表現の Mappings で、系列ごとの印（`-fch32-rv32ec` など）を付けて組を選びます。こうすると、ボードごとの追加（zmmul、xwchc、zba/zbb/zbs）があっても、素の組が選ばれます。4 つの組で、どのボードの `-march` も 1 つの組に決まることを、`-print-multi-directory` で確かめました。
+
+| ボードの -march / -mabi | 組 |
+|---|---|
+| rv32ec_zicsr(_xwchc) / ilp32e、rv32ec_zmmul_zicsr_xwchc / ilp32e | rv32ec/ilp32e |
+| rv32imc_zicsr_xwchc / ilp32 | rv32imc/ilp32 |
+| rv32imac_zicsr(_xwchc) / ilp32 | rv32imac/ilp32 |
+| rv32imafc_zicsr_xwchc / ilp32f、rv32imafc_zicsr_zba_zbb_zbs_xwchc / ilp32f | rv32imafc/ilp32f |
+
+組に当たらない組み合わせ（rv32imafc と ilp32 など）は、clang が警告を出して止まります。
+
+```yaml
+# The C library and runtime variants for the CH32 cores, chosen by clang's
+# BareMetal driver from -march / -mabi. clang normalises -march with every
+# extension's version; the Mappings turn that into one tag per variant, so a
+# board's extras (zmmul, xwchc, zba/zbb/zbs) still find the plain library.
+MultilibVersion: 1.0
+Variants:
+- Dir: rv32ec/ilp32e
+  Flags: [--target=riscv32-unknown-unknown-elf, -mabi=ilp32e, -fch32-rv32ec]
+- Dir: rv32imc/ilp32
+  Flags: [--target=riscv32-unknown-unknown-elf, -mabi=ilp32, -fch32-rv32imc]
+- Dir: rv32imac/ilp32
+  Flags: [--target=riscv32-unknown-unknown-elf, -mabi=ilp32, -fch32-rv32imac]
+- Dir: rv32imafc/ilp32f
+  Flags: [--target=riscv32-unknown-unknown-elf, -mabi=ilp32f, -fch32-rv32imafc]
+Mappings:
+# rv32e with C, any of zicsr / zmmul / xwchc after it (CH32V003, the V00x)
+- Match: -march=rv32e2p0_c2p0(_zicsr[0-9p]+)?(_zmmul[0-9p]+)?(_zca[0-9p]+)?(_xwchc[0-9p]+)?
+  Flags: [-fch32-rv32ec]
+# rv32imc without A (CH32V205, M030)
+- Match: -march=rv32i2p1_m2p0_c2p0(_zicsr[0-9p]+)?(_zmmul[0-9p]+)?(_zca[0-9p]+)?(_xwchc[0-9p]+)?
+  Flags: [-fch32-rv32imc]
+# rv32imac (V103 / V20x / L103 / X035 / V407)
+- Match: -march=rv32i2p1_m2p0_a2p1_c2p0(_zicsr[0-9p]+)?(_zmmul[0-9p]+)?(_zaamo[0-9p]+)?(_zalrsc[0-9p]+)?(_zca[0-9p]+)?(_xwchc[0-9p]+)?
+  Flags: [-fch32-rv32imac]
+# rv32imafc, and with B (H41x)
+- Match: -march=rv32i2p1_m2p0_a2p1_f2p2_c2p0(_b[0-9p]+)?(_zicsr[0-9p]+)?(_zmmul[0-9p]+)?(_zaamo[0-9p]+)?(_zalrsc[0-9p]+)?(_zca[0-9p]+)?(_zcf[0-9p]+)?(_zba[0-9p]+)?(_zbb[0-9p]+)?(_zbs[0-9p]+)?(_xwchc[0-9p]+)?
+  Flags: [-fch32-rv32imafc]
+```
+
+組ごとに入れるもの: picolibc（libc.a、ヘッダー）、compiler-rt の builtins（rv32ec の組は、コアの ch32rv_div.S が 32 bit の割り算を受け持つ）、C++ のヘッダー（次の段で決める）。
+
 ### ほかに見つかったこと
 
 - Clang で V307 の Network の例 7 本が、lwIP の `"%"U16_F` でコンパイルエラーになっていました。原因は、arduino-cli がライブラリを探すときに .c のファイルも C++ のコマンドに通すことです。g++ は警告を出してマクロを展開し、clang++ はエラーで止まります。Clang の C++ のフラグに `-Wno-reserved-user-defined-literal` を足して、7 本とも通るようにしました（platform.txt）。
