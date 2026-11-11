@@ -77,6 +77,13 @@ compiler.clang.c.sysinc=-nostdlibinc "-isystem{compiler.gcc.root}/riscv-none-elf
 compiler.clang.cpp.sysinc=-nostdlibinc "-isystem{compiler.gcc.root}/riscv-none-elf/include/c++/{compiler.gcc.version}" "-isystem{compiler.gcc.root}/riscv-none-elf/include/c++/{compiler.gcc.version}/riscv-none-elf/{compiler.multilib}" "-isystem{compiler.gcc.root}/riscv-none-elf/include/c++/{compiler.gcc.version}/backward" "-isystem{compiler.gcc.root}/riscv-none-elf/include"
 compiler.c.sysinc={compiler.{build.toolchain}.c.sysinc}
 compiler.cpp.sysinc={compiler.{build.toolchain}.cpp.sysinc}
+# A string literal followed by a macro ("%"U16_F, lwIP's printf formats) is a
+# C++11 user-defined literal: g++ warns and expands the macro, clang++ stops.
+# arduino-cli's library detection runs .c files through the C++ command too,
+# so lwIP's C failed with clang. The flag makes clang do what GCC does.
+compiler.gcc.cpp.compat_flags=
+compiler.clang.cpp.compat_flags=-Wno-reserved-user-defined-literal
+compiler.cpp.compat_flags={compiler.{build.toolchain}.cpp.compat_flags}
 # The link. GCC: its driver adds the multilib's newlib-nano (nano.specs) and
 # libgcc; GNU ld warns about the one RWX segment (see the combine recipe).
 # clang: lld, nothing implicit (-nostdlib), the same libraries named.
@@ -141,7 +148,7 @@ build.rstpin_defines=
 # The Watchdog menu's USER value and mask (ch32rv_option_user.c); empty for the factory entry and where the series has no such menu.
 build.iwdg_defines=
 compiler.c.flags={compiler.common_flags} {compiler.c.sysinc} -std=gnu11 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
-compiler.cpp.flags={compiler.common_flags} {compiler.cpp.sysinc} -std=gnu++17 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
+compiler.cpp.flags={compiler.common_flags} {compiler.cpp.sysinc} {compiler.cpp.compat_flags} -std=gnu++17 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
 compiler.S.flags={compiler.common_flags} {compiler.c.sysinc} -x assembler-with-cpp {build.startup_defines} {build.core_run_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
 # The three generated interrupt tables share one stem, so a board - or a
 # single pnum menu entry, for a part on a different die - selects all

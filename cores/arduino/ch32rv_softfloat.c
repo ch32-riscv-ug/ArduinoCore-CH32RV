@@ -1,4 +1,5 @@
-/* Soft-float calls GCC makes itself, smaller than libgcc's.
+/* Calls the compiler makes itself (soft-float and bit counting), smaller
+ * than libgcc's.
  *
  * Subtraction: libgcc's (__subsf3, __subdf3) is a second copy of its addition,
  * 1.2 KB in float and 2.2 KB in double on RV32: here it is the addition with
@@ -16,8 +17,24 @@
  * Leading zeros (__clzsi2), for libgcc's own soft-float: without libgcc's
  * 256-byte table, the same counts (all 2^32 inputs, and 32 for 0).
  *
+ * Trailing zeros (__ctzsi2, for __builtin_ctz: the EXTI dispatch): libgcc's
+ * looks the lowest bit up in the same 256-byte table, 364 B in all; this one
+ * is a few compares. Not built where Zbb makes it one instruction.
+ *
+ * double to float (__truncdfsf2, for printf's %f under Float, where the
+ * argument comes as a double, and any double stored in a float): rounded to
+ * nearest, ties to even, subnormals and overflow to infinity as IEEE 754 has
+ * them, so every non-NaN result is libgcc's bit for bit; a NaN keeps its sign
+ * and the top of its payload and is made quiet. libgcc's is 344 B without an
+ * FPU, and 1,056 B with a single-precision one (V30x, X315, H41x), where it
+ * also reads the rounding mode from frm and sets fflags: this one always
+ * rounds to nearest and sets no flags (nothing in the core or Arduino changes
+ * frm).
+ *
  * GCC emits these calls when LTO is done; core.a is built with fat objects,
- * so the linker takes them from here before it reaches libgcc. Each one is
+ * so the linker takes them from here before it reaches libgcc. lld (clang)
+ * extracts an archive member of LTO IR that defines a runtime library call
+ * before LTO (handleLibcall in lld/ELF/Driver.cpp), with the same result. Each one is
  * `used`: once a non-LTO object (libc's strtod, with __subdf3) brings this
  * object in, its definitions are LTO's, and one that nothing called before
  * LTO would be dropped and leave the later call undefined. Float only
@@ -50,6 +67,31 @@ __attribute__((used)) int __clzsi2(unsigned x)
         x <<= 2;
     }
     return n + !(x >> 31) + !x; /* 32 for 0, as libgcc's */
+}
+#endif
+
+#if !defined(__riscv_zbb)
+/* Undefined for 0, as __builtin_ctz is. */
+__attribute__((used)) int __ctzsi2(unsigned x)
+{
+    int n = 0;
+    if (!(x & 0xffffu)) {
+        n += 16;
+        x >>= 16;
+    }
+    if (!(x & 0xffu)) {
+        n += 8;
+        x >>= 8;
+    }
+    if (!(x & 0xfu)) {
+        n += 4;
+        x >>= 4;
+    }
+    if (!(x & 3u)) {
+        n += 2;
+        x >>= 2;
+    }
+    return n + !(x & 1u);
 }
 #endif
 
@@ -94,6 +136,49 @@ __attribute__((used)) double __extendsfdf2(float a)
     double d;
     memcpy(&d, w, sizeof d);
     return d;
+}
+
+__attribute__((used)) float __truncdfsf2(double a)
+{
+    uint32_t w[2];
+    memcpy(w, &a, sizeof w);
+    const uint32_t s = w[1] & 0x80000000u;
+    const int de = (int)(w[1] >> 20 & 0x7ffu);
+    uint32_t m = (w[1] & 0xfffffu) << 3 | w[0] >> 29; /* the 23 bits a float keeps */
+    uint32_t rest = w[0] & 0x1fffffffu;              /* the 29 below them */
+    uint32_t u;
+    if (de == 0x7ff) { /* infinity, or NaN made quiet */
+        u = s | 0x7f800000u | ((m | rest) ? 0x400000u | m : 0u);
+    } else if (de == 0) { /* zero or a double subnormal: far below a float's */
+        u = s;
+    } else {
+        int e = de - 896; /* the float's biased exponent */
+        m |= 0x800000u;
+        if (e <= 0) { /* a float subnormal, or 0: shifted down, the rest sticky */
+            const int sh = 1 - e;
+            if (sh > 25) { /* under half the least subnormal: 0 */
+                m = 0;
+                rest = 0;
+            } else {
+                rest = (rest != 0) | (m << (32 - sh)); /* what falls off m, at the top */
+                m >>= sh;
+            }
+            e = 0;
+        } else {
+            rest <<= 3; /* the guard bit at the top, as above */
+        }
+        if (rest > 0x80000000u || (rest == 0x80000000u && (m & 1u))) {
+            m++; /* may carry into the exponent: a subnormal becomes normal, 2^24 the next binade */
+        }
+        if (e >= 0xff || (e == 0xfe && m >> 24)) {
+            u = s | 0x7f800000u;
+        } else {
+            u = s | (((uint32_t)e << 23) + m - (e ? 0x800000u : 0u));
+        }
+    }
+    float f;
+    memcpy(&f, &u, sizeof f);
+    return f;
 }
 
 __attribute__((used)) double __subdf3(double a, double b)

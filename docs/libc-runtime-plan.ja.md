@@ -44,7 +44,7 @@ GCC でも Clang でも、次のものを xPack GNU RISC-V Embedded GCC 15.2.0 �
   - `truncdfsf2.o`（1,056 B）: 呼んでいるのはコアの `HardwareSerial::printf`。可変引数で double になった値を、Float の書式化のために float へ戻しています。V307 と H417 で printf を使う例のすべてに入ります。
   - `_udivdi3.o`（878〜1,202 B）: 64 bit の割り算。AdcStream、LogicCapture、TimerInput、USB オーディオのライブラリが、レートの計算で使っています。
   - soft-float と soft-double の四則演算: 浮動小数の足し算・引き算・掛け算と `Serial.print` を使う V003 のスケッチ（FloatMix）で、`__addsf3` が 1,340 B、`__adddf3` が 2,288 B。スケッチ全体は 9.7 KB です。
-- Clang（ビットコードだけの LTO、lld）でも、コアの置き換え（引き算、`__extendsfdf2`、`__clzsi2`）が libgcc より先に選ばれていました（FloatMix、V003。`__subsf3` が 10 B、`__subdf3` が 10 B）。GCC の fat オブジェクトに頼らずにそうなる理由は、まだ確かめていません。
+- Clang（ビットコードだけの LTO、lld）でも、コアの置き換え（引き算、`__extendsfdf2`、`__clzsi2`）が libgcc より先に選ばれていました（FloatMix、V003。`__subsf3` が 10 B、`__subdf3` が 10 B）。lld は、実行時ライブラリの関数（`__subsf3` など）を定義しているビットコードのアーカイブメンバーを、LTO の前に取り出します（lld/ELF/Driver.cpp の `handleLibcall`）。そのため、GCC の fat オブジェクトに頼らなくても同じ結果になります。
 
 ## 候補
 
@@ -104,6 +104,59 @@ GCC でも Clang でも、次のものを xPack GNU RISC-V Embedded GCC 15.2.0 �
 7. **選んで配る形を決める。** clang の BareMetal ドライバーが読む `lib/clang-runtimes/riscv32-unknown-elf/multilib.yaml` の形で、ch32rv-clang に入れるか、ホストによらない別の道具（ClangBuiltArduino が libc を分けているのと同じ形）にするかを決めます。
 
 各段で、V003、X035、V307、H417 の例の flash と RAM を表にして、この文書に足していきます。
+
+## 結果
+
+### 1. compiler-rt の builtins（2026-11-11）
+
+LLVM 23.1.5 の compiler-rt/lib/builtins を、手元の clang で rv32ec/ilp32e、rv32imac/ilp32、rv32imafc/ilp32f 向けに `-Oz` でビルドしました（156 ファイル。失敗した 16 は bf16、tf、stdint の型が要るもので、使わない）。
+
+関数ごとの大きさ（rv32ec/ilp32e、バイト）:
+
+| 関数 | libgcc | compiler-rt |
+|---|---|---|
+| `__addsf3` | 1,352 | 722 |
+| `__mulsf3` | 886 | 584 |
+| `__divsf3` | 942 | 802 |
+| `__adddf3` | 2,300 | 1,148 |
+| `__muldf3` | 1,686 | 950 |
+| `__divdf3` | 1,924 | 1,382 |
+| `__udivdi3` | 1,370 | 506（`__udivmoddi4` を呼ぶ） |
+| `__udivsi3` | 44（アセンブリ） | 296（C） |
+| `__umodsi3` | 8 | 290 |
+| `__truncdfsf2` | 344 | 332 |
+
+例を Clang で、libgcc の代わりに compiler-rt を先に置いてリンクした差（compiler-rt − libgcc、text）:
+
+| | 組 | 中央値 | 小さくなった | 大きくなった | 最小 | 最大 |
+|---|---|---|---|---|---|---|
+| V003 | 63 | +168 | 4 | 56 | −796（PulseMeasure） | +516（ServoPulseControl） |
+| X035 | 106 | 0 | 7 | 1 | −692（PulseMeasure） | +4 |
+| V307 | 108 | 0 | 34 | 1 | −832（CardInfo） | +4 |
+| H417 | 6 | −144 | 6 | 0 | −832（LogicBurst） | −144 |
+
+- 乗除算のない V003 では、32 bit の割り算が C で書かれている分だけ大きくなります。soft-float と 64 bit の割り算では小さくなります。
+- data と bss は、どの例でも変わりませんでした。
+- compiler-rt を先に置いても libgcc から取られたのは、V003 の `multi3.o`（7 本）だけでした。
+- 見込み: compiler-rt に、32 bit の割り算（と乗算）の小さいアセンブリを組み合わせれば、V003 でも libgcc 以下になります。アセンブリは、libgcc（GPL + 実行時の例外）を写さずに書きます。soft-float の結果が libgcc とビット単位で同じかは、まだ照合していません（NaN の中身が違う可能性がある）。
+
+### 2. 自前の最適化 A と B（2026-11-11）
+
+`cores/arduino/ch32rv_softfloat.c` に `__truncdfsf2` と `__ctzsi2` を足しました。照合はホストで行いました。`__ctzsi2` は 0 以外の値をホストの ctz と、`__truncdfsf2` は丸めの境目の下位の語を付けた double をホストの `(float)` と、ビット単位で比べています。わざと丸めを壊したコピーでは、試験が失敗することも確かめました。
+
+| 例 | GCC 前 → 後 | Clang 前 → 後 |
+|---|---|---|
+| H417 HsAdcRead（A） | 9,632 → 8,760（−872） | 8,872 → 8,044（−828） |
+| X035 PinInterrupt（B） | 5,300 → 4,988（−312） | 4,004 → 4,004（clang は ctz を呼び出しにしない） |
+| V307 PrintFormatting | 変わらない | 変わらない |
+| V003 FloatMix | 変わらない | 変わらない |
+
+- NaN の扱い（符号と上位の中身を残し、quiet にする）が libgcc と同じかは、実機で確かめていません。
+- 最初の版は `-0.0f` を浮動小数の定数として置き、V307 で `.data` が 4 B 増えました。整数のまま返すように直しました。小さい定数（`.srodata`）は、リンカースクリプトで RAM の `.data` に置いています（gp から近い番地にして、短い命令で読むため）。
+
+### ほかに見つかったこと
+
+- Clang で V307 の Network の例 7 本が、lwIP の `"%"U16_F` でコンパイルエラーになっていました。原因は、arduino-cli がライブラリを探すときに .c のファイルも C++ のコマンドに通すことです。g++ は警告を出してマクロを展開し、clang++ はエラーで止まります。Clang の C++ のフラグに `-Wno-reserved-user-defined-literal` を足して、7 本とも通るようにしました（platform.txt）。
 
 ## GCC を外すときに残るもの
 
