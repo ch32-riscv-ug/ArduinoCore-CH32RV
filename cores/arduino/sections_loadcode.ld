@@ -61,6 +61,10 @@ SECTIONS
         PROVIDE( _edata = . );
     } >RAM AT>FLASH
     PROVIDE(_image_lma = LOADADDR(.image));
+    /* No ITCM in this layout: crt0's ITCM copy (CH32RV_RUN_V5F) finds it empty. */
+    PROVIDE(_itcm_lma = 0);
+    PROVIDE(_itcm_vma = 0);
+    PROVIDE(_itcm_end = 0);
     PROVIDE( _ch32rv_image_end = LOADADDR(.image) + SIZEOF(.image) );
 
     /* Kept through a reset that leaves RAM powered - a software or watchdog
