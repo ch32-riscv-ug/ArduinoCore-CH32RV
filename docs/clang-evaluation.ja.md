@@ -193,7 +193,7 @@ LinkE の先の系列（Clang）:
 | V307 | runtime、flash、synckit、logic、console などは通った。uart は GCC でも同じく失敗（Link の UART に化けたバイト）。gpio は OEP の GPIO が要る試験で、LinkE では環境のエラー |
 | V203 | gpio（上と同じ環境のエラー）のほかは通った |
 | L103 | synckit が失敗（下）。logic は GCC でも同じく失敗（727,272 と 1,000,000）。gpio は環境のエラー |
-| V103（XW なし、WCH-Link CH549、ファーム 2.12） | **不安定**。Clang では 12 件中 10 件が失敗する回と、runtime が通る回がある。GCC は 9 件中 6 件が通る（gpio、console-rtt、console-sdi が失敗）。落ちた回を止めて読むと、`s1` が壊れて境界の例外（mcause 4）になった回と、SysTick の割り込みのあとに既定のハンドラにいた回があった。machine outliner を止めても同じ（lld に `-Wl,-mllvm,-enable-machine-outliner=never` を渡し、くくり出しが 0 個のビルドで確かめた）。デバッガを通るコンソールを 30 秒動かしながらレジスタを見張っても、壊れなかった。monitor の接続のときに「WCH-Link が石のクロックを設定し直したかもしれない」という警告が出る。原因は未解明 |
+| V103（XW なし、WCH-Link CH549、ファーム 2.12） | **不安定**。Clang では 12 件中 10 件が失敗する回と、runtime が通る回がある。GCC は 9 件中 6 件が通る（gpio、console-rtt、console-sdi が失敗）。落ちた回を止めて読むと、`s1` が壊れて境界の例外（mcause 4）になった回と、SysTick の割り込みのあとに既定のハンドラにいた回があった。machine outliner を止めても同じ（lld に `-Wl,-mllvm,-enable-machine-outliner=never` を渡し、くくり出しが 0 個のビルドで確かめた）。デバッガを通るコンソールを 30 秒動かしながらレジスタを見張っても、壊れなかった。**原因はプローブの側**: WCH-Link の接続の処理（AttachChip）が、走っている V103 の `s1`（x9）を石の ID で上書きして戻さない（wch-protocols の pc-to-link.ja.md「V103 attach quirk」。ch32rv のセッションが確かめた）。デバッガを通るコンソールは、走っている石に接続するので当たる。clang はループの間、番地を `s1` に置いたままにすることが多く、落ちやすい。ch32rv が修正にかかった（2026-11-12） |
 | V006（V2C、OEP の口 v006evt） | signals のほかは通った。signals は PB1 が動いたという WireSkein の NG が 1 回出たが、流し直した 2 回とも通った |
 
 **`-Oz` は割り込みの処理を遅くする（L103、8 MHz）。** synckit は、64 bit のコピーを守る臨界区間の最大の長さを `micros()` で測ります。区間の直後に走る割り込みの処理も、測った値に入ります。上限は 50 µs です。

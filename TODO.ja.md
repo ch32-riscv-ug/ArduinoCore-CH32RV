@@ -47,9 +47,8 @@
 
 計画は docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 
-- [ ] 既定を Clang にする（Compiler メニューの順）。XW は全部のコアで実機で動いた（2026-11-12）。残り: V103 で Clang の
-  ビルドが不安定な原因（同じビルドで通る回と s1 が壊れて落ちる回がある。CH549 の Link が接続のときにクロックを触る
-  警告あり。docs/clang-evaluation.ja.md の「実機」）。
+- [ ] 既定を Clang にする（Compiler メニューの順）。XW は全部のコアで実機で動いた（2026-11-12）。残り: V103 の試験一式を、
+  ch32rv の修正（WCH-Link の接続が V103 の s1 を壊す件）が入ってから Clang で流し直す。
 - [ ] Clang の既定の最適化: `-Oz` は L103 の synckit で割り込みの処理が遅く、上限 50 µs を超えた（55 µs。`-Os` は 40 µs、
   GCC は 43 µs）。`-Oz` のままにするか、`-Os` にするか、Optimize メニューで選べるようにするか。
 - [ ] 段 2（GCC を外す）: picolibc と compiler-rt を、multilib.yaml の 4 組（rv32ec / rv32imc / rv32imac / rv32imafc）
