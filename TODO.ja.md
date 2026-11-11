@@ -21,7 +21,34 @@
 
 実行モデルは [ADR-0016](docs/adr/0016-execution-model.ja.md) で決まった。
 
-- [ ] H417 の 2 コア（V5F）をどう使うか（一方だけ、役割固定、コアごとのイベントループなど）。測定は docs/h417-multicore.ja.md、設計はまだ。
+- [x] H417 の 2 コア（V5F）をどう使うか: スケッチは既定で V5F（CPU Core メニュー、418d1a5c）。V3F は起こすだけで、
+  受け渡し用の語で関数を受け取れる（5c42a9b5）。調査と測定は docs/h417-cores-design.ja.md。
+
+## CH32H41x の V5F と V3F（2026-11-11 から）
+
+- [ ] ベンチの H417 で、試験一式（instrumented / peer）を V5F（既定）で流し直す。V3F（メニュー）でも一度。
+- [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
+  91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
+- [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
+- [ ] V3F を起動する API（`ch32rv_v3f_mailbox` を包む）、その上の `setup1()` / `loop1()`、V3F 用の領域（V5F と別の
+  SRAM のバンク、スタック）、V3F を止める仕組み、V3F から使ってよいコアの機能（Serial は不可から）。最悪は今の
+  「起こして眠る」だけでもよい（利用者、2026-11-11）。
+- [ ] BOOT 域のブートローダー（DFU）から起動したときに V5F が動くことを実機で確かめる（入口は 0x08000400 で渡している）。
+- [ ] 低消費電力（lightSleep / deepSleep）、`CH32RV.restart()`、WDT、フラッシュへの書き込み（CH32RV_FLASH_STORE、DFU）を
+  V5F で確かめる。
+- [ ] DTCM の使い道（読むだけの定数、頻繁に読む変数）。V5F の HPE のハードウェアスタックは DTCM の先頭を使う（INTSYSCR
+  0x0F、CSR 0xBC4）。DMA が要るものは共有 SRAM に残す。
+- [ ] 利用者向けの文書: CPU Core メニュー、F_CPU と CH32RV_HCLK_HZ の違い、V5F では `mcycle` が読めない、デバッグは
+  `--core 1` と `dbg resume --all`。
+- [ ] ITCM（128 KB）からあふれたコードは共有 SRAM で動き、命令キャッシュに収まらないと 2.5 倍遅い。どのコードを ITCM に
+  優先して置くか（今はリンクの順）。
+
+## PIOC（CH32X035、CH32V205、CH32H41x）
+
+- [ ] PIOC（RISC8B の 8 ビットのコア）を読み込んで動かすライブラリ。最初のプロトコル（ARGB、UART など）は自前の ASM から
+  作った配列を同梱し、アセンブラは Python で用意する（WCH の WASM53B は Windows 専用でライセンスの記載が無い）。
+  CH32X035 では PIOC が本体の SRAM の 4 KB を使うので、取り分ける仕組みが要る。調査は docs/h417-cores-design.ja.md。
+  今はやらない（利用者、2026-11-11）。
 - [ ] イベントの payload の持ち方（コピー・借用・所有の移転・共有 pool）と、複数の購読者への配達で誰が解放するか。
 - [ ] 代表ユースケース「X035 の USB PD シンクと PPS の操作画面」。PD の充電器・画面・ボタンが要る。
 
