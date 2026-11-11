@@ -91,7 +91,7 @@ DUT の不具合と見分けるために残します。Adafruit TinyUSB を上�
 
 - DUT の USB（D+ / D- / GND）を S3 の USB OTG ポートへ。VBUS は使いません（DUT と S3 はそれぞれ給電）。
 - S3 の制御は UART0（ボードの USB シリアル）。ベンチ設定の target に `usb_peer_port`（安定した by-id のパス）を書きます。
-- S3 のコアとライブラリは sketch.yaml で版を固定します（esp32 3.3.12、EspUsbHost 2.10.0、EspUsbDevice 2.6.0）。
+- S3 のコアとライブラリは sketch.yaml で版を固定します（esp32 3.3.12、EspUsbHost 2.10.0、EspUsbDevice 3.1.0）。
   run_hardware.py は Arduino の data / downloads を `~/.cache/ch32rv-core-bench/arduino` に置き、実行のたびに
   ESP32 のツールチェーンを取り直さないようにしています（~/.arduino15 には触れません）。
 
@@ -130,6 +130,10 @@ DUT の不具合と見分けるために残します。Adafruit TinyUSB を上�
   付けるので、データの並びが 1 バイトずれて見えます。
 
 ### EspUsbDevice 2.6.0（S3 がデバイス: usb-peer-host / -classes）
+
+2026-11-11 に 3.1.0（TinyUSB を使わない版）へ上げ、S3 と P4 の両方で usb-peer-host / -classes が通っています。
+下は 2.6.0 で見つけたことです。3.1.0 で変わったかは、項目ごとには確かめていません。
+
 
 - **IN エンドポイントが 4 本まで。** HID・CDC・MSC・MIDI・ベンダー・CCID を一度に出せないので、S3 のデバイス
   構成を host_hid と host_classes の 2 つに分けています。

@@ -35,9 +35,10 @@ static volatile size_t vendorEchoLength;
 static char line[200];
 static size_t used;
 
-/* EspUsbDevice 2.6.0's sendHidReport() ignores its timeout: a report while
- * the previous one still waits for the host's IN fails at once. Every report
- * here is retried until the host has taken the one before (up to 500 ms). */
+/* EspUsbDevice 2.6.0's sendHidReport() ignored its timeout: a report while
+ * the previous one still waited for the host's IN failed at once (2.6.1 honours
+ * it). Every report here is still retried until the host has taken the one
+ * before (up to 500 ms), which costs nothing when the first try succeeds. */
 #define RETRY(expr) ({ bool ok_; const uint32_t t0_ = millis(); \
                        while (!(ok_ = (expr)) && millis() - t0_ < 500) delay(1); ok_; })
 

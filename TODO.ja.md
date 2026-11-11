@@ -176,9 +176,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 - ホストで未対応: アイソクロナス（オーディオ・ビデオ）、USB ネットワーク（NCM / ECM）、MSC のファイルシステム、
   ハブ越しの低速デバイス（PRE PID の実機確認）、V103（旧 USBFS）と第 1 世代 USBHS（V30x）のホスト、HS のハブの先の
   FS・LS（split）。第 2 世代 USBHS のホストは V407 で HS を確認済み（2026-11-11）。
-- [ ] usb-peer-host-input / -storage を ESP32-P4（HS）でも流す。EspUsbDevice 2.6.0 には、HID のインターフェースが 1 つしか
-  無い（boot キーボードを別に置けない）、GET_REPORT（feature）に答えられない、MSC の LUN が 1 つだけ、の 3 つが無く、
-  Pico の相手と同じことができない（2026-11-11 に試作して確かめた）。EspUsbDevice に入ったら P4 用の相手を書く。ESP32-S3 側の癖は tests/peer/usb/README.ja.md。
+- [ ] usb-peer-host-input / -storage を ESP32-P4（HS）でも流す。EspUsbDevice 3.1.0 で GET_REPORT（`setFeatureReport()`）、
+  任意のレポート記述子（`EspUsbDeviceHidCustom`）、CDC 2 ポートは入った。残るのは、HID のインターフェースが 1 つ
+  （boot キーボードを別のインターフェースに置けない）と、MSC の LUN が 1 つの 2 点で、Pico の相手と同じ構成にはできない。ESP32-S3 側の癖は tests/peer/usb/README.ja.md。
 - UIAPduino のソフトウェア USB（rv003usb）をアプリモードでも動かす件は FEATURE_CANDIDATES の USB-09。
 
 ## USB PD ソース（CH32RVUsbPd）の実機確認
