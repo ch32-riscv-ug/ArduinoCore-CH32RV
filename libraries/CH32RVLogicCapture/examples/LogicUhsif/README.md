@@ -45,8 +45,8 @@ in turn. `readBuffer()` returns a filled half. Bit n of a sample is DATAn.
   USB, for instance).
 - At lower rates `begin()` takes the nearest SYSCLK / n (n = 2-64); check
   `sampleRate()`.
-- Make a half last 20 us or more; samples a multiple of 16, the buffer
-  16-byte aligned.
+- Make a half last 20 us or more; samples a multiple of 64, the buffer
+  32-byte aligned.
 
 ## Related
 

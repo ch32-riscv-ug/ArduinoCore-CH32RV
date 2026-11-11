@@ -5,7 +5,7 @@
  * built from measurements on CH32H417 (2026-11-11).
  *
  * Covered (and measured): the data lines as inputs, the internal clock
- * SYSCLK / (divider + 1) up to 400 MHz, the state machine, the data counter,
+ * (SYSCLK or the 480 MHz USBHS PLL, divided by 1-64), the state machine, the data counter,
  * up to four threads each writing a ring of buffers, and an interrupt raised
  * by the state machine. Not covered: driving the bus (output), an external
  * clock, the control lines as outputs, 8- and 32-bit widths.
@@ -57,9 +57,16 @@ struct CH32RVUhsifState {
     CH32RVUhsifTransition left, right;
 };
 
+/* Where the UHSIF clock comes from (RCC_CFGR2 UHSIFSRC). */
+enum class CH32RVUhsifClock : uint8_t {
+    Sysclk = 0,            /* SYSCLK (400 MHz on this core) */
+    UsbhsPll = 2,          /* the USBHS PLL, 480 MHz from the 25 MHz crystal; begin() starts it */
+};
+
 enum class CH32RVUhsifError : uint8_t {
     None,
     NotBegun,
+    ClockFailed,         /* the USBHS PLL did not lock (no crystal?) */
     InvalidArgument,     /* a bad index, size or alignment */
     TooManyFunctions,    /* more than 16 different goRight tables */
     Running,             /* stop() first */
@@ -78,11 +85,13 @@ public:
 
     static constexpr uint8_t MaxStates = 255;
     static constexpr uint8_t MaxRingBuffers = 16;        /* per thread */
-    static constexpr uint16_t MaxBufferBytes = 0xFFF0;
+    static constexpr uint16_t BufferUnit = 64;          /* a buffer is a multiple of this */
+    static constexpr uint16_t MaxBufferBytes = 0xFFC0;
 
-    /* Clock the UHSIF from SYSCLK / (divider + 1), divider 0..63, and put it
-     * in a known state: 16-bit bus, data lines in, control lines in. */
-    bool begin(uint8_t divider);
+    /* Clock the UHSIF from `source` / (divider + 1), divider 0..63, and put
+     * it in a known state: 16-bit bus, data lines in, control lines in. */
+    bool begin(uint8_t divider, CH32RVUhsifClock source = CH32RVUhsifClock::Sysclk);
+    static uint32_t sourceHz(CH32RVUhsifClock source);
     void end();
     uint32_t clockHz() const;
 
@@ -91,16 +100,22 @@ public:
 
     /* The data counter: +1 on CountData, 0 on ResetDataCount; DataCountHit
      * reads 1 once it reaches `limit` (it stays there until ResetDataCount).
+     * With the alternating machines of the examples, a thread pushes limit +
+     * 2 samples before it switches: limit = samples per buffer - 2.
      * A ResetDataCount is not yet seen by the next state's decision: let the
      * state a reset enters leave by `left` whatever the counter says. */
     bool setDataCounter(uint32_t limit);
 
     /* Thread `n` (0..3) writes `count` buffers of `bytes` each (a multiple of
-     * 16, up to MaxBufferBytes) in turn, round and round, without the CPU:
-     * buffer k at first + k * stride. Buffers in RAM the DMA reaches (globals
-     * and statics), 16-byte aligned. A buffer change takes the socket about
-     * 30 clocks at 200 MHz while it fetches the next descriptor: a machine
-     * that needs every sample alternates two threads (see CH32RVLogicCapture). */
+     * BufferUnit, up to MaxBufferBytes) in turn, round and round: buffer k at
+     * first + k * stride. Buffers in RAM the DMA reaches (globals and
+     * statics), 32-byte aligned. After each buffer the socket stops until
+     * the UHSIF interrupt sends it on (the library does it), so the thread
+     * must not come back to it sooner than that: a machine that needs every
+     * sample alternates two threads (see CH32RVLogicCapture), and a buffer
+     * should last 20 us or more. Sizes that were not a multiple of 32 bytes
+     * stopped the CPU (the DMA wrote outside the buffer, we think); 64 is
+     * the thread's burst. */
     bool setRing(uint8_t n, void *first, uint16_t bytes, uint8_t count, uint32_t stride);
     /* Bytes thread `n` has written since start() (wraps at 2^32). */
     uint32_t bytesWritten(uint8_t n) const;
@@ -130,9 +145,10 @@ private:
 
     CH32RVCallback<void()> _onInterrupt;
     uint8_t _divider = 0;
+    CH32RVUhsifClock _source = CH32RVUhsifClock::Sysclk;
     bool _begun = false, _running = false;
     uint8_t _threads = 0;                 /* bit n: setRing(n) done */
-    uint8_t _firstDscr[4] = {};
+    volatile uint32_t _written[4] = {};    /* bytes of the buffers finished so far */
     CH32RVUhsifError _error = CH32RVUhsifError::None;
 };
 

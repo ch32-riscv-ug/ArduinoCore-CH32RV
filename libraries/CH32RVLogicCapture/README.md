@@ -67,8 +67,8 @@ continuously at up to 200 MS/s, with no CPU and no timer. It is built on
 [CH32RVUhsif](../CH32RVUhsif/README.md).
 
 ```cpp
-static uint16_t buf[32768] __attribute__((aligned(16)));
-logic.begin(UHSIF_DATA, 200000000);         // SYSCLK / 2 to / 64 (200-6.25 MS/s)
+static uint16_t buf[32768] __attribute__((aligned(32)));
+logic.begin(UHSIF_DATA, 200000000);         // 200, 160, 133, 120, 100 ... 6.25 MS/s
 logic.startContinuous(buf, 32768);          // halves of 16384, in turn
 if (const uint16_t *half = logic.readBuffer()) { ... }
 ```
@@ -81,19 +81,27 @@ if (const uint16_t *half = logic.readBuffer()) { ... }
 | DATA13-15 | PA13-PA15 |
 
 - Bit n of each sample is DATAn, whatever the pins' modes.
-- The rate is SYSCLK / n (n = 2-64); `begin()` takes the nearest
-  (`sampleRate()` says which). `maxUhsifRate()` is SYSCLK / 2 = 200 MS/s.
+- The rate is SYSCLK (400 MHz) / n or the USBHS PLL (480 MHz) / n;
+  `begin()` takes the nearest (`sampleRate()` says which). `maxUhsifRate()`
+  is 200 MS/s.
+  - The USBHS PLL comes from the crystal, so its timing is exact; SYSCLK
+    comes from the internal oscillator and can be about 1% off (one PWM
+    captured from both gave periods 1% apart).
 - No sample is lost. Two threads write the two halves in turn, so while one
-  changes buffer (about 150 ns) the other is writing. A 390.625 kHz PWM kept
-  its period across every boundary at 6.25, 100, 133 and 200 MS/s
-  (CH32H417, 2026-11-11).
-- `startContinuous()` takes 32-65520 samples, a multiple of 16, in a
-  16-byte aligned buffer.
+  moves on to its next buffer the other is writing. Read back whole after a
+  stop, a 390.625 kHz PWM kept its period across every boundary and the wrap
+  at 6.25, 100 and 200 MS/s (CH32H417, 2026-11-11).
+- `startContinuous()` takes 64-65472 samples, a multiple of 64, in a
+  32-byte aligned buffer.
 - Make each half last 20 us or more (8000 samples or more at 200 MS/s):
   each half is an interrupt, and short ones leave the CPU nothing else.
 - `captureBurst()` is not offered (returns 0).
-- How fast this can stream over USB is not yet measured; 200 MS/s is
-  400 MB/s.
+- Streamed to a PC over USB SuperSpeed (a ring of 8 x 32 KB, each run of
+  filled parts handed to `writeDirect()`), nothing was lost in 30 seconds at
+  up to 133 MS/s (266 MB/s). At 160 MS/s a few parts were lost every few
+  seconds, and at 200 MS/s (400 MB/s) the USB topped out near 365 MB/s and
+  about a tenth was lost. The USB work runs on the 100 MHz V3F
+  (2026-11-11).
 
 ## Other notes
 

@@ -11,7 +11,7 @@ CH32RVLogicCapture logic;
 // en: Two halves of 16384 samples; each half lasts 82 us at 200 MS/s.
 // ja: 16384サンプルの半分が2つ。200 MS/sでは半分が82 usで埋まる。
 static const uint32_t SAMPLES = 32768;
-static uint16_t buf[SAMPLES] __attribute__((aligned(16)));
+static uint16_t buf[SAMPLES] __attribute__((aligned(32)));
 
 // en: PC6 is UHSIF DATA9 and a TIM3 PWM pin, so the sketch can measure its own signal.
 // ja: PC6はUHSIFのDATA9で、TIM3のPWMも出せるので、自分の信号を測れる。

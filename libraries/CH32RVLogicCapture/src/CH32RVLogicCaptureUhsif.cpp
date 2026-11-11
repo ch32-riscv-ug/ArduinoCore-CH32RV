@@ -4,12 +4,12 @@
  * Every clock the state machine latches the 16 data lines and pushes the
  * sample. Two threads take turns: thread 0 writes the first half of the
  * buffer, thread 1 the second, and the data counter switches them after
- * each half. A socket that has filled its buffer needs about 30 clocks (at
- * 200 MHz) to fetch its next descriptor and takes nothing meanwhile; with
- * one thread that gap opened at every buffer (measured: a 390.6 kHz PWM's
- * period came 32 samples short at each boundary at 200 MS/s). With two, the
- * other socket is writing during it, and the captured PWM keeps its period
- * across every boundary (CH32H417, 2026-11-11, 6.25 / 100 / 200 MS/s).
+ * each half. A socket stops after each buffer until CH32RVUhsif's interrupt
+ * sends it on, and drops what comes meanwhile; with two threads the other
+ * one is writing then. Checked on CH32H417 (2026-11-11) by stopping and
+ * reading the whole buffer: a 390.625 kHz PWM kept its period (16 samples
+ * at 6.25 MS/s, 512 at 200 MS/s) across every boundary and the wrap, and a
+ * marker written before the start was gone everywhere.
  *
  * States (inputs: a = DataCountHit):
  *   0 A0: left -> B0                (thread 0)
@@ -18,9 +18,8 @@
  *   3 B1: a ? -> A0 (reset, interrupt) : -> A1
  * The A states do not look at the counter: a reset is not seen by the
  * decision of the state it enters. Every transition latches and pushes, so
- * the machine alternates A and B and samples every clock. With the counter's
- * limit at half - 2 each thread pushes exactly `half` samples (measured:
- * limit 8189 and 8190 gave 8192, 8191 gave 8194). */
+ * the machine alternates A and B and samples every clock. A thread pushes
+ * limit + 2 samples before it switches, so the limit is half - 2. */
 #include "CH32RVLogicCapture.h"
 
 #if CH32RV_LOGIC_CAPTURE && CH32RV_LOGIC_DMAMUX
@@ -29,12 +28,13 @@
 
 static CH32RVUhsif uhsif;
 static uint8_t uhsifDivider;
+static CH32RVUhsifClock uhsifSource;
 static uint8_t nextHalf;
 
 struct CH32RVLogicUhsif {
     static bool start(CH32RVLogicCapture &lc, uint16_t *buffer, uint32_t samples)
     {
-        if (!buffer || ((uint32_t)(uintptr_t)buffer & 15u) || samples < 32u || samples > 65520u || (samples & 15u)) {
+        if (!buffer || ((uint32_t)(uintptr_t)buffer & 31u) || samples < 64u || samples > 65472u || (samples & 63u)) {
             return false;
         }
         const uint32_t half = samples / 2u;
@@ -55,7 +55,7 @@ struct CH32RVLogicUhsif {
             {{hit, one, one, one}, 0xAAAA, {2, S, P | C | t1}, {0, S, P | R | t0}},
         };
         const CH32RVUhsifTransition first = {0, S, P | CH32RVUhsif::ResetDataCount | t0};
-        if (!uhsif.begin(uhsifDivider) || !uhsif.setStates(states, 4, first) || !uhsif.setDataCounter(half - 2u) ||
+        if (!uhsif.begin(uhsifDivider, uhsifSource) || !uhsif.setStates(states, 4, first) || !uhsif.setDataCounter(half - 2u) ||
             !uhsif.setRing(0, buffer, (uint16_t)(half * 2u), 1, 0) ||
             !uhsif.setRing(1, buffer + half, (uint16_t)(half * 2u), 1, 0)) {
             return false;
@@ -99,16 +99,27 @@ bool CH32RVLogicCapture::begin(CH32RVLogicUhsifData, uint32_t sampleRate)
         return false;
     }
     end();
-    /* SYSCLK / (divider + 1), divider 1..63. */
-    uint32_t n = (CH32RV_CLOCK_SYSCLK_HZ + sampleRate / 2u) / sampleRate;
-    if (n < 2u) {
-        n = 2u;
+    /* The nearest of SYSCLK / n and the 480 MHz USBHS PLL / n (n = 1..64),
+     * up to maxUhsifRate(); SYSCLK when both are as near. */
+    const CH32RVUhsifClock sources[2] = {CH32RVUhsifClock::Sysclk, CH32RVUhsifClock::UsbhsPll};
+    uint32_t best = 0, bestErr = 0xFFFFFFFFu;
+    for (const CH32RVUhsifClock src : sources) {
+        const uint32_t hz = CH32RVUhsif::sourceHz(src);
+        for (uint32_t n = 1; n <= 64; n++) {
+            const uint32_t f = hz / n;
+            if (f > maxUhsifRate()) {
+                continue;
+            }
+            const uint32_t err = f > sampleRate ? f - sampleRate : sampleRate - f;
+            if (err < bestErr) {
+                bestErr = err;
+                best = f;
+                uhsifDivider = (uint8_t)(n - 1u);
+                uhsifSource = src;
+            }
+        }
     }
-    if (n > 64u) {
-        n = 64u;
-    }
-    uhsifDivider = (uint8_t)(n - 1u);
-    _rate = CH32RV_CLOCK_SYSCLK_HZ / n;
+    _rate = best;
     _backend = &CH32RVLogicUhsif::backend;
     _begun = true;
     return true;

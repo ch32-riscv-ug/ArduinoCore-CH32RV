@@ -51,7 +51,15 @@
 #define INTR_CPU               (1u << 1)         /* beta INTR_CPU */
 #define DC_ENABLE_UP_BY_1      ((1u << 8) | (1u << 3) | 1u)   /* increment 1, up, enable; no reload */
 #define THREAD_ENABLE_BURST4   0x80000480u       /* ENABLE, burst 2^4 words, WM_CFG */
-#define SCK_GO_ENABLE_TRUNCATE 0x80200000u       /* no SUSP_*: the socket runs on through its ring */
+/* GO_ENABLE, SUSP_EOP, SUSP_TRANS, TRUNCATE: the socket stops after each
+ * buffer (SCK_SIZE = one buffer) and the interrupt sends it on to the next
+ * descriptor. Left running on with no transfer size, a socket moved on 16
+ * bytes before the end of every buffer and dropped the 8 samples meant for
+ * them (measured: the phase of a PWM jumped by 8 samples at every buffer
+ * boundary, and the last 16 bytes kept a marker written before the start). */
+#define SCK_STATUS_PER_BUFFER  0x8C200000u
+#define SCK_INTR_TRANS_DONE    (1u << 7)
+#define GPIF_INTR_SOCKETS      (0xFu << 11)      /* a thread's socket raised an unmasked interrupt */
 #define WAVE_VALID             (1u << 31)
 
 /* A socket fetches its first descriptor after it is enabled; a machine
@@ -96,15 +104,56 @@ static void writeEntry(uint32_t base, uint32_t hwState, uint32_t next, const uin
     w[3] = 0;
 }
 
-bool CH32RVUhsif::begin(uint8_t divider)
+/* The USBHS PLL from HSE with a 25 MHz reference, as the USB drivers start
+ * it (internal/ch32rv_usbhs2.h); left running once on. */
+#define RCC_CTLR_HSEON        (1u << 16)
+#define RCC_CTLR_HSERDY       (1u << 17)
+#define RCC_CTLR_USBHS_PLLON  (1u << 20)
+#define RCC_CTLR_USBHS_PLLRDY (1u << 21)
+#define RCC_PLLCFGR2          CH32RV_REG32(0x40021034u)
+
+static bool waitCtlr(uint32_t bit)
 {
-    if (divider > 63) {
+    for (uint32_t t0 = millis(); !(CH32RV_RCC_CTLR & bit);) {
+        if ((uint32_t)(millis() - t0) > 100u) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool usbhsPllOn()
+{
+    if (CH32RV_RCC_CTLR & RCC_CTLR_USBHS_PLLRDY) {
+        return true;
+    }
+    CH32RV_RCC_CTLR |= RCC_CTLR_HSEON;
+    if (!waitCtlr(RCC_CTLR_HSERDY)) {
+        return false;
+    }
+    CH32RV_RCC_CTLR &= ~RCC_CTLR_USBHS_PLLON;
+    RCC_PLLCFGR2 &= ~0x00001F0Fu;                     /* HSE, 25 MHz reference, no input division */
+    CH32RV_RCC_CTLR |= RCC_CTLR_USBHS_PLLON;
+    return waitCtlr(RCC_CTLR_USBHS_PLLRDY);
+}
+
+uint32_t CH32RVUhsif::sourceHz(CH32RVUhsifClock source)
+{
+    return source == CH32RVUhsifClock::UsbhsPll ? 480000000u : CH32RV_CLOCK_SYSCLK_HZ;
+}
+
+bool CH32RVUhsif::begin(uint8_t divider, CH32RVUhsifClock source)
+{
+    if (divider > 63 || (source != CH32RVUhsifClock::Sysclk && source != CH32RVUhsifClock::UsbhsPll)) {
         return fail(CH32RVUhsifError::InvalidArgument);
     }
     end();
+    if (source == CH32RVUhsifClock::UsbhsPll && !usbhsPllOn()) {
+        return fail(CH32RVUhsifError::ClockFailed);
+    }
     RCC_HBPCENR |= RCC_UHSIF;
     resetBlock();
-    RCC_CFGR2 = (RCC_CFGR2 & ~0xFFu) | divider;      /* UHSIFSRC [7:6] = 0: SYSCLK */
+    RCC_CFGR2 = (RCC_CFGR2 & ~0xFFu) | ((uint32_t)source << 6) | divider;   /* UHSIFSRC [7:6], UHSIFDIV [5:0] */
     AFIO_PCFR1 &= ~PCFR1_UHSIF_RM;
     for (uint32_t i = 0; i < 76; i++) {
         GPIF_REG(4u * i) = 0;
@@ -123,6 +172,7 @@ bool CH32RVUhsif::begin(uint8_t divider)
     GPIF_AD_CONFIG = AD_DATA_ALWAYS_IN;
     GPIF_BETA_DEASSERT = 0xFFFFFFC1u;                 /* FX3's default, as the vendor sets it */
     _divider = divider;
+    _source = source;
     _threads = 0;
     _begun = true;
     active = this;
@@ -145,7 +195,7 @@ void CH32RVUhsif::end()
 
 uint32_t CH32RVUhsif::clockHz() const
 {
-    return _begun ? CH32RV_CLOCK_SYSCLK_HZ / (_divider + 1u) : 0;
+    return _begun ? sourceHz(_source) / (_divider + 1u) : 0;
 }
 
 bool CH32RVUhsif::setStates(const CH32RVUhsifState *states, uint8_t count, const CH32RVUhsifTransition &start)
@@ -229,8 +279,8 @@ bool CH32RVUhsif::setRing(uint8_t n, void *first, uint16_t bytes, uint8_t count,
         return fail(CH32RVUhsifError::Running);
     }
     const uint32_t base = (uint32_t)(uintptr_t)first;
-    if (n > 3 || !first || (base & 15u) || bytes == 0 || (bytes & 15u) || bytes > MaxBufferBytes || count == 0 ||
-        count > MaxRingBuffers || (count > 1 && stride < bytes) || (stride & 15u)) {
+    if (n > 3 || !first || (base & 31u) || bytes == 0 || (bytes % BufferUnit) || bytes > MaxBufferBytes || count == 0 ||
+        count > MaxRingBuffers || (count > 1 && stride < bytes) || (stride & 31u)) {
         return fail(CH32RVUhsifError::InvalidArgument);
     }
     volatile uint32_t(*d)[8] = dscrPool[n];
@@ -241,20 +291,27 @@ bool CH32RVUhsif::setRing(uint8_t n, void *first, uint16_t bytes, uint8_t count,
         d[k][3] = ((uint32_t)bytes << 16) | bytes;
     }
     __asm__ volatile("fence rw, rw" ::: "memory");
-    SCK_SIZE(n) = 0;                                   /* no transfer size: on and on */
+    SCK_SIZE(n) = bytes;                               /* one buffer, then suspend */
     SCK_COUNT(n) = 0;
     SCK_INTR(n) = 0x3FFu;
-    SCK_INTR_MASK(n) = 0;
+    SCK_INTR_MASK(n) = SCK_INTR_TRANS_DONE;
     SCK_DSCR(n) = dnum(d[0]) | (1u << 16);
-    SCK_STATUS(n) = SCK_GO_ENABLE_TRUNCATE;
+    SCK_STATUS(n) = SCK_STATUS_PER_BUFFER;
     GPIF_THREAD_CONFIG(n) = THREAD_ENABLE_BURST4 | n;
     _threads |= (uint8_t)(1u << n);
+    _written[n] = 0;
     return true;
 }
 
 uint32_t CH32RVUhsif::bytesWritten(uint8_t n) const
 {
-    return (_begun && n < 4 && (_threads & (1u << n))) ? SCK_COUNT(n) : 0;
+    if (!_begun || n > 3 || !(_threads & (1u << n))) {
+        return 0;
+    }
+    noInterrupts();
+    const uint32_t b = _written[n] + SCK_COUNT(n);
+    interrupts();
+    return b;
 }
 
 bool CH32RVUhsif::start()
@@ -267,7 +324,7 @@ bool CH32RVUhsif::start()
     }
     delayMicroseconds(SOCKET_SETTLE_US);
     GPIF_INTR = 0xFFFFFFFFu;
-    GPIF_INTR_MASK = INTR_CPU;
+    GPIF_INTR_MASK = INTR_CPU | GPIF_INTR_SOCKETS;
     _running = true;
     GPIF_WAVEFORM_CTRL_STAT |= 1u;                    /* WAVEFORM_VALID */
     GPIF_WAVEFORM_SWITCH |= 1u;
@@ -294,6 +351,8 @@ const char *CH32RVUhsif::lastErrorName() const
         return "None";
     case CH32RVUhsifError::NotBegun:
         return "NotBegun";
+    case CH32RVUhsifError::ClockFailed:
+        return "ClockFailed";
     case CH32RVUhsifError::InvalidArgument:
         return "InvalidArgument";
     case CH32RVUhsifError::TooManyFunctions:
@@ -306,6 +365,23 @@ const char *CH32RVUhsif::lastErrorName() const
 
 void CH32RVUhsif::isr()
 {
+    /* A socket that finished a buffer: clear what it raised (SUSPEND and
+     * DSCR_IS_LOW among them, or it stays suspended), and pulse GO_SUSPEND
+     * to send it on to its next descriptor. It must happen before the
+     * thread comes back to it: the other thread is writing meanwhile. */
+    for (uint8_t n = 0; n < 4; n++) {
+        if (!(_threads & (1u << n))) {
+            continue;
+        }
+        const uint32_t si = SCK_INTR(n);
+        if (si & SCK_INTR_TRANS_DONE) {
+            SCK_INTR(n) = si;
+            _written[n] += SCK_COUNT(n);
+            SCK_COUNT(n) = 0;
+            SCK_STATUS(n) |= 1u << 30;
+            SCK_STATUS(n) &= ~(1u << 30);
+        }
+    }
     const uint32_t intr = GPIF_INTR;
     GPIF_INTR = intr;
     if ((intr & INTR_CPU) && _onInterrupt) {

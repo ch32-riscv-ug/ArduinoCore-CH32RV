@@ -71,9 +71,9 @@ public:
      * when the port does not exist or the timer is held by someone else. */
     bool begin(CH32RVLogicPort port, uint32_t sampleRate);
 #if CH32RV_LOGIC_DMAMUX
-    /* The UHSIF data lines, at SYSCLK / n (n = 2..64: 200 MS/s down to 6.25
-     * MS/s on a 400 MHz SYSCLK), every sample kept. startContinuous() takes
-     * 32..65520 samples, a multiple of 16, 16-byte aligned, and each half
+    /* The UHSIF data lines, at SYSCLK / n or the 480 MHz USBHS PLL / n
+     * (200, 160, 133, 120, 100 ... 6.25 MS/s), every sample kept. startContinuous() takes
+     * 64..65472 samples, a multiple of 64, 32-byte aligned, and each half
      * must last 20 us or more (8000 samples at 200 MS/s); captureBurst() is
      * not offered (0). No timer is used. */
     static constexpr uint32_t maxUhsifRate() { return CH32RV_CLOCK_SYSCLK_HZ / 2u; }

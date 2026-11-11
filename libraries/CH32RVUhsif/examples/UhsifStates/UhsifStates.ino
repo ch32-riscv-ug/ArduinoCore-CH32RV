@@ -12,7 +12,7 @@ CH32RVUhsif uhsif;
 // ja: スレッド0が順に書く、4096バイト(2048サンプル)のバッファ4つ。
 static const uint16_t BUFFER_BYTES = 4096;
 static const uint8_t BUFFERS = 4;
-static uint16_t ring[BUFFERS * BUFFER_BYTES / 2] __attribute__((aligned(16)));
+static uint16_t ring[BUFFERS * BUFFER_BYTES / 2] __attribute__((aligned(32)));
 static volatile uint32_t filledBuffers;
 
 void setup()

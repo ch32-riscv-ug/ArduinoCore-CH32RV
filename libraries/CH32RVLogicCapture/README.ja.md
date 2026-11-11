@@ -57,8 +57,8 @@ uint32_t rate = logic.captureBurst(buf, 32768);   // 1 回だけ、速く
 H41x では、ポートの代わりに UHSIF のデータ線 16 本を指定すると、CPU とタイマーを使わずに最大 200 MS/s で連続して取り込めます。中では [CH32RVUhsif](../CH32RVUhsif/README.ja.md) を使っています。
 
 ```cpp
-static uint16_t buf[32768] __attribute__((aligned(16)));
-logic.begin(UHSIF_DATA, 200000000);         // SYSCLK ÷ 2〜÷ 64(200〜6.25 MS/s)
+static uint16_t buf[32768] __attribute__((aligned(32)));
+logic.begin(UHSIF_DATA, 200000000);         // 200、160、133、120、100 … 6.25 MS/s
 logic.startContinuous(buf, 32768);          // 16384 ずつの半分を交互に埋める
 if (const uint16_t *half = logic.readBuffer()) { ... }
 ```
@@ -71,12 +71,13 @@ if (const uint16_t *half = logic.readBuffer()) { ... }
 | DATA13〜15 | PA13〜PA15 |
 
 - 各サンプルの bit n は DATAn です。端子のモードに関係なく読めます。
-- 速さは SYSCLK ÷ n（n = 2〜64）で、`begin()` は近い値を選びます（`sampleRate()` で分かります）。`maxUhsifRate()` は SYSCLK ÷ 2 = 200 MS/s です。
-- サンプルは抜けません。前半と後半を 2 つのスレッドが交互に書くので、バッファーを替える間（約 150 ns）も、もう片方が書いています。390.625 kHz の PWM を取り、境目をまたいでも周期が一定なのを、6.25、100、133、200 MS/s で確かめました（CH32H417、2026-11-11）。
-- `startContinuous()` のサンプル数は 32〜65520 で、16 の倍数です。バッファーは 16 バイト境界に置きます。
+- 速さは SYSCLK（400 MHz）÷ n か、USBHS の PLL（480 MHz）÷ n です。`begin()` は近い値を選びます（`sampleRate()` で分かります）。`maxUhsifRate()` は 200 MS/s です。
+  - USBHS の PLL は水晶から作るので、時間は正確です。SYSCLK は内蔵の発振器から作るので、1% ほどずれることがあります（同じ PWM を両方で取ると、周期の比が 1% 違いました）。
+- サンプルは抜けません。前半と後半を 2 つのスレッドが交互に書くので、片方が次へ移る間も、もう片方が書いています。止めたあとにバッファー全体を調べ、390.625 kHz の PWM の周期が、境目と折り返しを含めてそろうのを、6.25、100、200 MS/s で確かめました（CH32H417、2026-11-11）。
+- `startContinuous()` のサンプル数は 64〜65472 で、64 の倍数です。バッファーは 32 バイト境界に置きます。
 - 半分は 20 µs 以上の長さにしてください（200 MS/s なら 8000 サンプル以上）。半分ごとに割り込みが入るので、短いと CPU が割り込みだけで手一杯になります。
 - `captureBurst()` は使えません（0 を返します）。
-- USB で流すときの上限は、まだ測っていません。200 MS/s は 400 MB/s です。
+- USB SuperSpeed で PC へ流すと（8 個 × 32 KB のリングを、埋まった順にまとめて `writeDirect()`）、30 秒の間、133 MS/s（266 MB/s）まで 1 つも落ちませんでした。160 MS/s では 8 秒に数か所落ち、200 MS/s（400 MB/s）は USB が 1 秒に約 365 MB/s までで、約 1 割が落ちます。USB の処理は 100 MHz の V3F で動いています（2026-11-11）。
 
 ## そのほか
 
