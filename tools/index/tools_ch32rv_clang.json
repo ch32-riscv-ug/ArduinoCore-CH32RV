@@ -1,0 +1,59 @@
+{
+  "comment": "ch32rv-clang 23.1.5-1 tool definition (the Compiler menu's Clang), taken from the ch32-riscv-ug/ch32rv-clang release v23.1.5-1: a RISC-V-only clang + lld from LLVM 23.1.5, without a libc (platform.txt links newlib-nano and libgcc from the xPack GCC). The same organisation's own release, one root directory per archive. Rebuild with tools/index/bump_tool.py ch32rv-clang <version>, not by hand.",
+  "name": "ch32rv-clang",
+  "version": "23.1.5-1",
+  "upstreamTag": "v23.1.5-1",
+  "systems": [
+    {
+      "host": "x86_64-pc-linux-gnu",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-clang/releases/download/v23.1.5-1/ch32rv-clang-23.1.5-1-x86_64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-clang-23.1.5-1-x86_64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:de143be26bc7db25e274147971c11dfe8b3cfbcb49f828487b093ee8286913af",
+      "size": "51876132"
+    },
+    {
+      "host": "aarch64-linux-gnu",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-clang/releases/download/v23.1.5-1/ch32rv-clang-23.1.5-1-aarch64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-clang-23.1.5-1-aarch64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:b46624f24fbf6af908a9436005a1e5be061d9f9882c6f50d9e59ad87cc2b4803",
+      "size": "50451944"
+    },
+    {
+      "host": "x86_64-apple-darwin",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-clang/releases/download/v23.1.5-1/ch32rv-clang-23.1.5-1-x86_64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-clang-23.1.5-1-x86_64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:b01846841a8cb59491001901d41c81675eb2f0a0368d7c75eca6db69ab25182e",
+      "size": "38972177"
+    },
+    {
+      "host": "arm64-apple-darwin",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-clang/releases/download/v23.1.5-1/ch32rv-clang-23.1.5-1-aarch64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-clang-23.1.5-1-aarch64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:71fcd8a0eb32a252737af4c1a4f7ddc1c23794f262943045f911c061b29ecdfb",
+      "size": "36759383"
+    },
+    {
+      "host": "x86_64-mingw32",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-clang/releases/download/v23.1.5-1/ch32rv-clang-23.1.5-1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-clang-23.1.5-1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:16b60dc338f01c46c0e5041f0f2a5f66e906ebb346470d4633c07dcde1bf0fae",
+      "size": "250815439"
+    },
+    {
+      "host": "i686-mingw32",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-clang/releases/download/v23.1.5-1/ch32rv-clang-23.1.5-1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-clang-23.1.5-1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:16b60dc338f01c46c0e5041f0f2a5f66e906ebb346470d4633c07dcde1bf0fae",
+      "size": "250815439",
+      "comment": "no 32-bit build: 64-bit Windows runs the x64 binary, and arduino-cli picks a host slot, not an architecture"
+    },
+    {
+      "host": "arm64-mingw32",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-clang/releases/download/v23.1.5-1/ch32rv-clang-23.1.5-1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-clang-23.1.5-1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:16b60dc338f01c46c0e5041f0f2a5f66e906ebb346470d4633c07dcde1bf0fae",
+      "size": "250815439",
+      "comment": "no native arm64 build: Windows on ARM runs the x64 binary under emulation"
+    }
+  ]
+}

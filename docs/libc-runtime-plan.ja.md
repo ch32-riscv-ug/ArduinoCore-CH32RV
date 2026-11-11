@@ -95,6 +95,7 @@ GCC でも Clang でも、次のものを xPack GNU RISC-V Embedded GCC 15.2.0 �
 
 ## 進め方
 
+0. **コアの libc の内部への依存をなくす。** 3 の結果から、tzset、localtime、mktime、strftime の `%Z` をコアの状態で動かし、`putchar` の `#undef`、`CLOCKS_PER_SEC`、システムコールの名前の違い（`sbrk`、`gettimeofday`）を吸収する。newlib のままでも結果を変えない。
 1. **compiler-rt の builtins を測る。** rv32ec/ilp32e、rv32imac/ilp32、rv32imafc/ilp32f 向けに、手元の clang で compiler-rt の builtins を作ります。関数ごとの大きさを libgcc と比べ（`__addsf3`、`__mulsf3`、`__divsf3`、`__adddf3`、`__udivsi3`、`__udivdi3` など）、例を libgcc の代わりにこれでリンクして比べます。速さも H417 と V003 で測ります。
 2. **自前の最適化 A と B。** libc の選択と関係なく効き、GCC にも効くので先にやります。照合の試験は、今の soft-float と同じ形で書きます。
 3. **picolibc を試しに作る。** 3 つの multilib 向けに、clang でビルドします。設定は single-thread、tinystdio、libm 入りです。例を newlib-nano の代わりに picolibc でリンクし、flash、RAM（`impure` や TLS の分も）、malloc の大きさを比べます。コアの printf と文字列の関数が、picolibc のものより先に選ばれることも確かめます。
@@ -153,6 +154,33 @@ LLVM 23.1.5 の compiler-rt/lib/builtins を、手元の clang で rv32ec/ilp32e
 
 - NaN の扱い（符号と上位の中身を残し、quiet にする）が libgcc と同じかは、実機で確かめていません。
 - 最初の版は `-0.0f` を浮動小数の定数として置き、V307 で `.data` が 4 B 増えました。整数のまま返すように直しました。小さい定数（`.srodata`）は、リンカースクリプトで RAM の `.data` に置いています（gp から近い番地にして、短い命令で読むため）。
+
+### 3. picolibc を試しに作る（2026-11-11）
+
+picolibc 1.8.12 を、手元の clang で rv32ec/ilp32e、rv32imac/ilp32、rv32imafc/ilp32f 向けにビルドしました（meson。single-thread、TLS なし、`atomic-ungetc` なし（rv32ec に A 拡張がない）、semihost なし、`-Oz`）。
+
+**コアが newlib の内部に頼っているところ。** picolibc のヘッダーでコアを通すと、エラーは 11 件で、原因は次の 3 種類でした。C++ のファイルはすべてそのまま通りました。
+
+| 箇所 | newlib に頼っているもの | picolibc では |
+|---|---|---|
+| ch32rv_tzset.c、ch32rv_localtime.c、ch32rv_strftime.c | `sys/_tz_structs.h`、`__gettzinfo()`、`_tzset_unlocked()`、`__tzcalc_limits()`、`__tz_lock()`、`__month_lengths`、`_daylight`、`_timezone`、`_tzname` | 同じ名前の多くは内部の local.h にだけあり、`__gettzinfo` などはない。`tzname` は `const` |
+| ch32rv_stdio_out.c | `putchar` を関数として定義 | `putchar` はマクロ（`#undef` が要る） |
+| syscalls.c | `CLOCKS_PER_SEC` | 定義されていない |
+| ch32rv_sbrk.c、syscalls.c | `_sbrk`、`_gettimeofday`（newlib のシステムコールの名前） | `sbrk`、`gettimeofday` を呼ぶ |
+
+newlib 以外の libc に移るには、タイムゾーンの状態（規則、`daylight`、`timezone`、`tzname`）と、それを使う関数（tzset、localtime、mktime、strftime の `%Z`）をコアが自分で持つ必要があります。コアはすでに tzset の読み取りと gmtime を持っているので、残りは状態の置き場と localtime、mktime です。この作業は newlib のままでも害がなく、どの libc にしても要るので、次の段で行います。
+
+**大きさ（仮の比較）。** スクラッチに置いたコアのコピーで、上の 3 つを仮に避けました（タイムゾーンのファイルを空にし、`sbrk` と `gettimeofday` を別名で足した）。そのうえで、Clang と libgcc の組み合わせのまま、libc だけを newlib-nano から picolibc に替えて全部の例をリンクしました（picolibc − newlib-nano）。
+
+| | 例 | text の中央値 | text の最小 | text の最大 | data | bss |
+|---|---|---|---|---|---|---|
+| V003 | 63 | 0 | −316（ButtonBlinkConsole） | 0 | 0 〜 −84 | +4 〜 −352 |
+| X035 | 106 | 0 | −332（ButtonBlinkConsole） | +76（PrintFormatting） | 0 〜 −84 | +4 〜 −352 |
+| V307 | 114 | 0 | −512（HttpGet） | +7,676（RamDisk など 3 本） | 0 〜 −152 | +160 〜 −352 |
+
+- malloc を使う例（String、Network など）で、text が 250〜510 B、RAM の data が 84 B（newlib の `impure`）小さくなります。SystemInfo などでは、bss も 352 B 小さくなりました（newlib の stdio の FILE）。
+- V307 のファイルシステムの例 3 本が 7.6 KB 大きくなりました。主な理由は 2 つです。1 つは、タイムゾーンのファイルを空にしたので picolibc の tzset が入り、それが sscanf と vfscanf を引き込んだこと（コアがタイムゾーンを持てば消える）。もう 1 つは、picolibc の strtod（atof から）が ryu の表を使うことで、こちらは別に測ります。
+- NetworkTime は、タイムゾーンを外したのでリンクできませんでした（想定どおり）。
 
 ### ほかに見つかったこと
 
