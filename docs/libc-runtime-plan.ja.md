@@ -201,6 +201,57 @@ newlib 以外の libc に移るには、タイムゾーンの状態（規則、`
 
   data は +8 B（libc の公開の変数の初期値）です。bss は GCC で 12〜32 B 減り、Clang ではほぼ変わりません。V003 の Clang で +108 B になる理由は、まだ調べていません。
 
+### 4. 3 つの libc を同じ物差しで（2026-11-11）
+
+**段 0 の後のコアで、newlib-nano と picolibc を全部の例で比較。** 仮の回避なしで、すべての例がリンクできました（Clang と libgcc の組み合わせのまま、libc だけを替えた。picolibc − newlib-nano）。
+
+| | 例 | text の中央値 | 最小 | 最大 | data | bss |
+|---|---|---|---|---|---|---|
+| V003 | 63 | 0 | −316（ButtonBlinkConsole） | 0 | 0 〜 −84 | +4 〜 −352 |
+| X035 | 106 | 0 | −332（ButtonBlinkConsole） | +76（PrintFormatting） | 0 〜 −84 | +4 〜 −352 |
+| V307 | 115 | 0 | −1,000（HttpsGet） | +92（PrintFormatting） | 0 〜 −84 | +128 〜 −352 |
+
+以前の V307 の FS の例の +7.6 KB は、タイムゾーンを外した仮の回避のせいでした。
+
+**LLVM libc。** LLVM 23.1.5 の libc を、配布版の clang で rv32ec、rv32imac、rv32imafc 向けに full build でビルドできました。rv32ec では、不可分命令のない rand と srand の警告だけを外しました。大きさを公平に比べるため、`-fpie`、フレームポインタ、`-ftrivial-auto-var-init=pattern` は外しています（既定では付く）。ただし、コアと例をそのままリンクすることはできません。
+
+- getenv がありません（TZ の読み取りに使う）。acos、asin、cosh、sinh、tanh と、マルチバイト文字の関数もありません。
+- `sys/types.h` と `sys/stat.h` がありません（コアのシステムコールが使う）。
+- GCC の libstdc++ のヘッダーは newlib を前提にしているので通りません。C++ を libc++ に替える必要があります。
+
+**関数ごとの大きさ。** 1 つの関数を呼ぶだけのプログラムを、空のプログラムと比べました（text+data、バイト。clang -Oz、lld、libgcc は同じ）。
+
+| 関数 | rv32ec newlib-nano | rv32ec picolibc | rv32ec LLVM libc | rv32imafc newlib-nano | rv32imafc picolibc | rv32imafc LLVM libc |
+|---|---|---|---|---|---|---|
+| malloc + free | 766 | 582 | 2,610 | 770 | 582 | 2,464 |
+| realloc | 894 | 844 | 3,418 | 902 | 848 | 3,280 |
+| strtol | 911 | 522 | 1,326 | 701 | 302 | 1,046 |
+| strtod | 25,166 | 5,070 | 14,374 | 29,558 | 4,332 | 10,396 |
+| qsort | 1,174 | 1,270 | 620 | 868 | 916 | 562 |
+| memcpy | 52 | 52 | 238 | 52 | 52 | 238 |
+| isspace | 287 | 28 | 64 | 287 | 28 | 64 |
+| sinf | 10,000 | 7,618 | 9,984 | 4,566 | 9,344 | 940 |
+| expf | 6,770 | 6,210 | 12,112 | 970 | 596 | 11,080 |
+| powf | 9,186 | 8,578 | 13,396 | 3,016 | 3,038 | 14,458 |
+| sqrtf | 5,774 | 3,126 | 3,492 | 428 | 16 | 32 |
+| sin | 13,898 | 14,306 | 3,964 | 17,336 | 19,000 | 3,584 |
+| pow | 14,266 | 13,106 | 19,386 | 18,994 | 17,674 | 23,912 |
+
+- picolibc は、malloc、strtol、strtod、ctype が一番小さい。newlib の strtod は gdtoa と stdio の後始末まで入るので大きい。
+- LLVM libc は、double の sin が小さく、qsort も小さい。malloc、strtod と、FPU のある系列の float の数学関数（expf、powf）が大きい。
+- 数学関数は、どの libc でも得意と不得意が混じる。例は libm を使っていない（実測 0 本）。
+
+**今の見立て。** 段 2 の libc は picolibc が第一の候補です。理由は次のとおりです。
+
+- 段 0 の後のコアと、全部の例でそのまま動く。
+- 例ではほぼ同じか小さい。
+- 関数単位でも小さいものが多い。
+- BSD 系のライセンス。
+- clang でビルドでき、rv32e にも対応している。
+- Zephyr と ESP-IDF が使っている。
+
+LLVM libc は、getenv などが足りないことと、C++ ごと libc++ に移る必要があることから、今は二番手です。
+
 ### ほかに見つかったこと
 
 - Clang で V307 の Network の例 7 本が、lwIP の `"%"U16_F` でコンパイルエラーになっていました。原因は、arduino-cli がライブラリを探すときに .c のファイルも C++ のコマンドに通すことです。g++ は警告を出してマクロを展開し、clang++ はエラーで止まります。Clang の C++ のフラグに `-Wno-reserved-user-defined-literal` を足して、7 本とも通るようにしました（platform.txt）。
