@@ -48,7 +48,7 @@
 計画は docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 
 - [ ] 既定を Clang にする（Compiler メニューの順）。XW は全部のコアで実機で動いた（2026-11-12）。V103 は ch32rv の
-  修正版（e958bbe）で GCC と同じ結果。修正の入った ch32rv がリリースされたら同梱を上げる。
+  修正版（e958bbe、console-rtt は 15d9a89）で GCC と同じ結果。修正の入った ch32rv がリリースされたら同梱を上げる。
 - [ ] Clang の既定の最適化: `-Oz` は L103 の synckit で割り込みの処理が遅く、上限 50 µs を超えた（55 µs。`-Os` は 40 µs、
   GCC は 43 µs）。`-Oz` のままにするか、`-Os` にするか、Optimize メニューで選べるようにするか。
 - [ ] 段 2（GCC を外す）: picolibc と compiler-rt を、multilib.yaml の 4 組（rv32ec / rv32imc / rv32imac / rv32imafc）
