@@ -180,6 +180,12 @@ def tool_paths():
     for name, metadata in [("ch32rv", "tools_ch32rv.json"), ("gcc", "tools_xpack_gcc.json")]:
         versions[name] = json.loads((REPO / "tools/index" / metadata).read_text())["version"]
     tool = REPO / ".tools/ch32rv" / versions["ch32rv"] / "ch32rv"
+    # CH32_TEST_CH32RV: another ch32rv binary (one built ahead of its release) in place of the pinned one; the
+    # results record it as `ch32rv: <path>`.
+    other = os.environ.get("CH32_TEST_CH32RV", "").strip()
+    if other:
+        tool = pathlib.Path(other).resolve()
+        versions["ch32rv"] = str(tool)
     gcc = REPO / ".tools/xpack-riscv-none-elf-gcc" / versions["gcc"] / "bin"
     if not tool.is_file() or not (gcc / "riscv-none-elf-gcc").is_file():
         raise ValueError("fetch pinned ch32rv and xpack-riscv-none-elf-gcc first (tools/index/fetch_tools.py)")
