@@ -201,8 +201,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   ハブ越しの低速デバイス（PRE PID の実機確認）、V103（旧 USBFS）と第 1 世代 USBHS（V30x）のホスト、HS のハブの先の
   FS・LS（split）。第 2 世代 USBHS のホストは V407 で HS を確認済み（2026-11-11）。
 - [ ] usb-peer-host-input / -storage を ESP32-P4（HS）でも流す。EspUsbDevice 3.1.0 で GET_REPORT（`setFeatureReport()`）、
-  任意のレポート記述子（`EspUsbDeviceHidCustom`）、CDC 2 ポートは入った。残るのは、HID のインターフェースが 1 つ
-  （boot キーボードを別のインターフェースに置けない）と、MSC の LUN が 1 つの 2 点で、Pico の相手と同じ構成にはできない。ESP32-S3 側の癖は tests/peer/usb/README.ja.md。
+  任意のレポート記述子（`EspUsbDeviceHidCustom`）、CDC 2 ポートは入った。boot キーボードの専用インターフェース
+  （`keyboard.enableOwnInterface()`）は EspUsbDevice の main に入った（27e8f1e、未リリース。2026-11-11）。リリースされたら
+  input の P4 用の相手を書く。MSC の複数 LUN は向こうで保留になったので、storage は Pico だけのまま。ESP32-S3 側の癖は tests/peer/usb/README.ja.md。
 - UIAPduino のソフトウェア USB（rv003usb）をアプリモードでも動かす件は FEATURE_CANDIDATES の USB-09。
 
 ## USB PD ソース（CH32RVUsbPd）の実機確認
