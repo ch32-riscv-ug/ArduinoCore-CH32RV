@@ -176,6 +176,39 @@ V003、X035、V307 の crt0 とベクターを clang の組み込みのアセン
 - **ADC のストリームの速さ（periph）。** `micros()` は、掛け算の命令のない V003 で `__mulsi3` を呼ばないよう、定数の掛け算をシフトと足し算に開いて書いてあります。clang はこれを掛け算にまとめ直し、`-Oz` では `__mulsi3` を 2 回呼んでいました。`micros()` が遅くなったので、CH32RVAdcStream が測る標本化の速さが 7.5% 低く出ていました。clang のときだけ、各項を空のアセンブリに通して直しました。GCC の命令列は前と同じです。
 - clang は、rv32ec で定数の掛け算に `__mulsi3` を呼ぶことが多いです（printf の 10 倍など）。GCC はシフトに開きます。大きさは clang のほうが小さく、速さは遅くなります。時間に厳しいところは、`micros()` と同じ書き方で避けます。
 
+ほかの系列（Clang、XW 付き、2026-11-12）:
+
+| 系列（コア） | 結果 |
+|---|---|
+| V003（QingKe V2A） | 全部のケースが通った（console-sdi は GCC と同じくスキップ） |
+| X035（V4C） | periph 以外は通った。periph は GCC でも同じく失敗し、CH32RVAdcStream の速さの測り方を直してからは両方で通った |
+| M030（V3B） | runtime、flash、synckit、logic、console が通った。wire と softwire は GCC でもビルドで失敗する（元からの問題）。ほかは配線が無くスキップ |
+| H417（V5F、V3F） | run_hardware.py は H417 に未対応（CPU Clock のメニューが無い）。代わりに、配列の読み書きで XW の 16 bit の命令（413 個）を使う確認用のスケッチを、SWD で書いて動かした。結果は V5F と V3F の両方でホストの計算と一致した |
+| V00x（V2C） | V006 の LinkE が USB に見えず、未確認 |
+
+LinkE の先の系列（Clang）:
+
+| 系列 | 結果 |
+|---|---|
+| V307 | runtime、flash、synckit、logic、console などは通った。uart は GCC でも同じく失敗（Link の UART に化けたバイト）。gpio は OEP の GPIO が要る試験で、LinkE では環境のエラー |
+| V203 | gpio（上と同じ環境のエラー）のほかは通った |
+| L103 | synckit が失敗（下）。logic は GCC でも同じく失敗（727,272 と 1,000,000）。gpio は環境のエラー |
+| V103（XW なし、WCH-Link CH549、ファーム 2.12） | **不安定**。Clang では 12 件中 10 件が失敗する回と、runtime が通る回がある。GCC は 9 件中 6 件が通る（gpio、console-rtt、console-sdi が失敗）。落ちた回を止めて読むと、`s1` が壊れて境界の例外（mcause 4）になった回と、SysTick の割り込みのあとに既定のハンドラにいた回があった。machine outliner を止めても同じ（lld に `-Wl,-mllvm,-enable-machine-outliner=never` を渡し、くくり出しが 0 個のビルドで確かめた）。デバッガを通るコンソールを 30 秒動かしながらレジスタを見張っても、壊れなかった。monitor の接続のときに「WCH-Link が石のクロックを設定し直したかもしれない」という警告が出る。原因は未解明 |
+| V006（V2C、OEP の口 v006evt） | signals のほかは通った。signals は PB1 が動いたという WireSkein の NG が 1 回出たが、流し直した 2 回とも通った |
+
+**`-Oz` は割り込みの処理を遅くする（L103、8 MHz）。** synckit は、64 bit のコピーを守る臨界区間の最大の長さを `micros()` で測ります。区間の直後に走る割り込みの処理も、測った値に入ります。上限は 50 µs です。
+
+| ビルド | text | max_cs_us |
+|---|---|---|
+| GCC `-Os` | 8,320 | 43 |
+| Clang `-Oz`（今の既定） | 7,984 | 55 |
+| Clang `-Oz`、machine outliner なし | 7,984 | 56 |
+| Clang `-Os` | 8,620 | 40 |
+
+くくり出し（machine outliner）が原因ではありません。`-Oz` そのものが、大きさを速さと引き換えにしています。Clang の `-Os` は GCC より速くなりますが、大きさは `-Oz` より 8% 大きくなります（GCC よりも 4% 大きい）。
+
+これで XW は、XW を持つ全部のコアで実機で動きました（V2A、V2C、V3B、V3F、V4B、V4C、V4F、V5F）。
+
 ## 次に確かめること
 
 1. RISC-V だけの clang + lld を手元でビルドして、大きさと時間を測る（段 1 の準備）。
