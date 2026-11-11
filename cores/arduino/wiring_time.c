@@ -79,7 +79,11 @@ static inline void ch32rv_systick_compare(uint32_t lo, uint32_t hi)
 /* CH32H417 has one SysTick per core: SysTick0 (this address) is the V3F's,
  * vector SysTick0_Handler, and its status word is shared - bit 0 is the
  * V3F's match, bit 1 the V5F's (SysTick1). Clear only ours there. */
-#ifdef CH32RV_IRQN_SysTick0
+#if defined(CH32RV_IRQN_SysTick1) && defined(CH32RV_RUN_V5F)
+#define CH32RV_IRQN_SYSTICK      CH32RV_IRQN_SysTick1
+#define CH32RV_SYSTICK_HANDLER   SysTick1_Handler
+#define CH32RV_SYSTICK_SR_CLEAR() (CH32RV_SYSTICK_SR &= ~2u)
+#elif defined(CH32RV_IRQN_SysTick0)
 #define CH32RV_IRQN_SYSTICK      CH32RV_IRQN_SysTick0
 #define CH32RV_SYSTICK_HANDLER   SysTick0_Handler
 #define CH32RV_SYSTICK_SR_CLEAR() (CH32RV_SYSTICK_SR &= ~1u)

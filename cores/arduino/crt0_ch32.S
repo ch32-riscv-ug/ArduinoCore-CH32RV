@@ -14,6 +14,10 @@
  *                       table and the rest are one image copied at reset
  *                       (sections_loadcode.ld; CH32H417)
  *   CH32RV_NO_INIT_ARRAY  optional, skip calling C++ global constructors
+ *   CH32RV_RUN_V5F        optional (CH32H41x with CH32RV_LOADCODE): the sketch
+ *                       runs on the V5F core. The V3F, which starts at reset,
+ *                       only wakes the V5F at handle_reset and sleeps; the V5F
+ *                       does everything below with its own CSR values.
  */
 
 #ifndef CH32RV_VECTORS
@@ -29,6 +33,16 @@
  * addresses (most families), 1 = the entries are jump instructions (V103). */
 #ifndef CH32RV_MTVEC_MODE
 #define CH32RV_MTVEC_MODE 3
+#endif
+#ifdef CH32RV_RUN_V5F
+/* The V5F's own values (EVT startup_ch32h417_v5f.S): prefetch, nesting
+ * depth, nesting and the hardware stack. */
+#undef CH32RV_CORECFGR
+#define CH32RV_CORECFGR 0x1237B3E0
+#undef CH32RV_CSR_BC1
+#define CH32RV_CSR_BC1 0x07
+#undef CH32RV_INTSYSCR_INIT
+#define CH32RV_INTSYSCR_INIT 0x0F
 #endif
 /* Where the flash holding the LOADCODE image sits besides its 0x0 alias. */
 #ifndef CH32RV_LOADCODE_FLASH
@@ -61,7 +75,26 @@
     .section  .reset, "ax", @progbits
     .globl    _start
 _start:
+#ifdef CH32RV_RUN_V5F
+/* The V3F starts here at reset. It wakes the V5F at handle_reset (WAKEIP1
+ * takes a 1 KB aligned address, PFIC_SCTLR.SETEVENT starts it, as the EVT's
+ * NVIC_WakeUp_V5F) and sleeps with interrupts off. Base instructions only:
+ * the rest of the image may use the V5F's. */
+    csrci   mstatus, 8
+    lui     t0, %hi(handle_reset)
+    addi    t0, t0, %lo(handle_reset)
+    li      t1, 0xE000E724
+    sw      t0, 0(t1)
+    li      t1, 0xE000ED10
+    lw      t2, 0(t1)
+    ori     t2, t2, 0x20
+    sw      t2, 0(t1)
+1:
+    wfi
+    j       1b
+#else
     j       handle_reset
+#endif
 
     .section  .vector, "ax", @progbits
     .globl    _vector_base
@@ -112,7 +145,11 @@ Default_Handler:
     .section  .text.handle_reset, "ax", @progbits
 #endif
     .weak     handle_reset
+#ifdef CH32RV_RUN_V5F
+    .balign   1024                      /* WAKEIP1 keeps address bits 31:10 */
+#else
     .align    1
+#endif
 handle_reset:
 #ifdef CH32RV_LOADCODE
 /* Absolute addresses only, from here to the jump into RAM: this runs from
@@ -214,6 +251,15 @@ ch32rv_loadcode_ram:
 #ifdef CH32RV_INTSYSCR_INIT
     li t0, CH32RV_INTSYSCR_INIT
     csrw 0x804, t0
+#endif
+#ifdef CH32RV_RUN_V5F
+/* The V5F's instruction cache: off at reset (CACHE_STRTG_CTLR bit 1), and
+ * the image runs from the shared SRAM, which its default policy caches.
+ * Flush it (OPCACHE_CTLR), then turn it on. */
+    li t0, 0x4
+    csrw 0xbd0, t0
+    li t0, 0x2
+    csrc 0xbc2, t0
 #endif
 /* Vector table base plus the mode bits; the base has to be 0, see above.
    Before mstatus: several families' value sets MIE (V103 0x1888, X035 0x88,

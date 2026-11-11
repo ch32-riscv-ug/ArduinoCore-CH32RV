@@ -328,7 +328,11 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #error "CH32RV_SYSTICK_V103 is required (see build.core_defines in boards.txt)"
 #endif
 
+#ifdef CH32RV_RUN_V5F
+#define CH32RV_SYSTICK_BASE 0xE000F080u     /* CH32H41x: SysTick1, the V5F's */
+#else
 #define CH32RV_SYSTICK_BASE 0xE000F000u
+#endif
 #define CH32RV_SYSTICK_CTLR CH32RV_REG32(CH32RV_SYSTICK_BASE + 0x00u)
 #if CH32RV_SYSTICK_V103
 /* Read as a word - EVT's own delay loop does - but WRITE AS BYTES. WCH
@@ -347,7 +351,11 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
     CH32RV_REG8(CH32RV_SYSTICK_BASE + (off) + 3u) = (uint8_t)((v) >> 24); \
 } while (0)
 #else
+#ifdef CH32RV_RUN_V5F
+#define CH32RV_SYSTICK_SR   CH32RV_REG32(0xE000F004u)   /* shared, in SysTick0: bit 1 is the V5F's */
+#else
 #define CH32RV_SYSTICK_SR   CH32RV_REG32(CH32RV_SYSTICK_BASE + 0x04u)
+#endif
 #define CH32RV_SYSTICK_CNT  CH32RV_REG32(CH32RV_SYSTICK_BASE + 0x08u)  /* low word */
 #define CH32RV_SYSTICK_CMP  CH32RV_REG32(CH32RV_SYSTICK_BASE + 0x10u)  /* low word */
 #if CH32RV_SYSTICK_64
