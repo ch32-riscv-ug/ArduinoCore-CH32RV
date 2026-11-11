@@ -170,7 +170,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
       - SWD で書く。PB8 / PB9 が USB 2.0 の線なので、評価ボードと同じく線を切るなどの手が要る。
       - 元に戻せるように、最初に SWD でフラッシュ全体（960 KB）を読んで保存しておく。WeAct のリポジトリにあるのは
         各 APP の bin だけで、IAP の bin は無い。同じチップへ書き戻すなら UID の写しも一致する。
-    - 判断の材料: PC 側アプリ（U3LogicAnalyzer）の調査を WireSkein のセッションに頼んだ（2026-11-11、保存先は返事待ち）。
+    - 判断の材料: PC 側アプリ（U3LogicAnalyzer）の調査が wireskein の docs/instruments/weact-u3-logic-analyzer.ja.md
+      にある（2026-11-11）。sigrok の改変版（GPL-3.0）、USB は 1a86:5537 のバルクで、生のサンプルが流れる。保存は普通の
+      .sr で、WireSkein で読める。ファームの更新は HID（1a86:fe17）。
 - **USBSS の host（H417）を実装する**（2026-10-28 にユーザーの依頼。後回し）。常設ベンチ（tests/BENCH.ja.md 7 章）で、SS の試験を
   H417 どうしで組むために要る（DUT が device のとき相手の H417 が host、DUT が host のとき相手の H417 が device）。
   - 材料: EVT `USBSS/HOST/Host_SS_Access_Sector`（ほかにハブ経由の 2 例）。`Common/ch32h417_usbss_host.c` がリンクの初期化と
