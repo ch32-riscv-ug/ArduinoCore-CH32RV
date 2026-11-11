@@ -8,9 +8,7 @@
 extern "C" {
 extern char _end[];
 extern char _heap_end[];
-extern char _data_vma[];
-extern char _data_lma[];
-extern char _edata[];
+extern char _ch32rv_image_end[];       /* the end of the image in flash, every layout */
 extern char _ch32rv_flash_origin[];
 extern char _ch32rv_flash_length[];
 #ifdef CH32RV_CLOCK_HSE_HZ
@@ -30,7 +28,9 @@ const char *CH32RVSystem::getChipModel()
 
 uint32_t CH32RVSystem::getSketchSize()
 {
-    return (uint32_t)((_data_lma + (_edata - _data_vma)) - _ch32rv_flash_origin);
+    /* _data_lma does not exist in the LOADCODE layouts (CH32H41x), which failed
+     * to link any sketch calling this. */
+    return (uint32_t)(_ch32rv_image_end - _ch32rv_flash_origin);
 }
 
 #ifdef CH32RV_ESIG_FLACAP_ADDR
