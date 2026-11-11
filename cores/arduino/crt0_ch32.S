@@ -76,22 +76,72 @@
     .globl    _start
 _start:
 #ifdef CH32RV_RUN_V5F
+.option push
+.option norelax                         /* no gp-relative addresses: gp is not set here */
 /* The V3F starts here at reset. It wakes the V5F at handle_reset (WAKEIP1
  * takes a 1 KB aligned address, PFIC_SCTLR.SETEVENT starts it, as the EVT's
  * NVIC_WakeUp_V5F) and sleeps with interrupts off. Base instructions only:
  * the rest of the image may use the V5F's. */
     csrci   mstatus, 8
-    lui     t0, %hi(handle_reset)
-    addi    t0, t0, %lo(handle_reset)
+    lui     t3, %hi(ch32rv_v3f_mailbox)
+    addi    t3, t3, %lo(ch32rv_v3f_mailbox)
+    sw      zero, 0(t3)
+    lui     t0, %hi(handle_reset + CH32RV_LOADCODE_FLASH)
+    addi    t0, t0, %lo(handle_reset + CH32RV_LOADCODE_FLASH)
     li      t1, 0xE000E724
     sw      t0, 0(t1)
     li      t1, 0xE000ED10
     lw      t2, 0(t1)
     ori     t2, t2, 0x20
     sw      t2, 0(t1)
+/* Then wait for work: ch32rv_v3f_mailbox = {function, argument, stack top}.
+ * The V5F writes the stack and the argument, then the function, then sets
+ * an event. The V3F takes it, clears the word and calls the function with
+ * its own CSR values; when the function returns it waits again. */
+/* wfi as wait-for-event (PFIC_SCTLR.WFITOWFE): the V5F's SETEVENT wakes it.
+ * A plain wfi never woke (its interrupts are off), and polling the mailbox
+ * without a pause stalls the V5F on the shared SRAM. */
+    li      t1, 0xE000ED10
+    lw      t2, 0(t1)
+    ori     t2, t2, 0x08
+    sw      t2, 0(t1)
 1:
     wfi
+    lw      t0, 0(t3)
+    beqz    t0, 1b
+    lw      a0, 4(t3)
+    lw      sp, 8(t3)
+    sw      zero, 0(t3)
+.option push
+.option norelax
+    lui     gp, %hi(__global_pointer$)
+    addi    gp, gp, %lo(__global_pointer$)
+.option pop
+    li      t1, 0x123703E1
+    csrw    0xbc0, t1
+    li      t1, 0x01
+    csrw    0xbc1, t1
+    li      t1, 0x07
+    csrw    0x804, t1
+    lui     t1, %hi(_vector_base)
+    addi    t1, t1, %lo(_vector_base)
+    ori     t1, t1, CH32RV_MTVEC_MODE
+    csrw    mtvec, t1
+    li      t1, 0x6000                 /* FPU on, interrupts off */
+    csrw    mstatus, t1
+    jalr    t0
+    csrci   mstatus, 8
+    lui     t3, %hi(ch32rv_v3f_mailbox)
+    addi    t3, t3, %lo(ch32rv_v3f_mailbox)
     j       1b
+.option pop
+
+    .section  .bss.ch32rv_v3f_mailbox, "aw", @nobits
+    .globl    ch32rv_v3f_mailbox
+    .align    2
+ch32rv_v3f_mailbox:
+    .space    12
+    .section  .reset, "ax", @progbits
 #else
     j       handle_reset
 #endif
