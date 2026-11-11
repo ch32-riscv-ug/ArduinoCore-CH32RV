@@ -42,6 +42,7 @@
 | [wch-evt-binary-libraries.ja.md](wch-evt-binary-libraries.ja.md) | WCH の EVT に .a だけで配られている機能の一覧と、ライセンスの記述 |
 | [h417-uhsif.ja.md](h417-uhsif.ja.md) | CH32H417 の UHSIF の解析（FX3 の GPIF II と同じ作り）と、CH32RVUhsif の根拠 |
 | [h417-cores-design.ja.md](h417-cores-design.ja.md) | CH32H417 の V5F・V3F・PIOC をどう組むかの調査（ほかのコアの例、候補の比較、推奨） |
+| [clang-evaluation.ja.md](clang-evaluation.ja.md) | GCC から clang（LLVM 23）へ移せるかの調査: V003 の大きさ、WCH の XW（Xwchc）、移す作業と得失 |
 | [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | テストの保証対象、設備、環境分離、責務分担 |
 | [../tests/RECORDS.ja.md](../tests/RECORDS.ja.md) | OEP プローブのメモ欄に置く、口ごとの記録の決まり（名前、形、メンバー、読み方と書き方） |
 | [test-coverage.ja.md](test-coverage.ja.md) | 実装範囲と既存テストの保証・不足 |
