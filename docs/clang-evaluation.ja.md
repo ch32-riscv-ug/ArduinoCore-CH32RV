@@ -78,11 +78,52 @@
 - Xwchc は系列を間違えると止まる。
 - 全系列の試験をやり直す費用。
 
+## 大きい系列（バイト、text、LTO 有り）
+
+| 系列 | 例 | GCC + LTO | clang + LTO -Os | clang + LTO -Oz |
+|---|---|---|---|---|
+| X035 | SystemInfo | 4,764 | 5,576 | 4,732（-1%） |
+| X035 | I2CScanner | 6,504 | 7,284 | 6,344（-2%） |
+| V203 | SystemInfo | 4,772 | 5,460 | 4,804（+1%） |
+| V203 | I2CScanner | 6,748 | 7,212 | 6,544（-3%） |
+| V307 | SystemInfo | 5,764 | 6,436 | 5,820（+1%） |
+| V307 | I2CScanner | 7,736 | 8,180 | 7,508（-3%） |
+| H417（V5F） | SystemInfo | 8,124 | 8,056 | 7,252（-11%） |
+| H417（V5F） | I2CScanner | 10,048 | 9,864 | 9,008（-10%） |
+
+XW は付けていません。V003 ほど差は出ませんが、-Oz にすればほぼ同じか小さくなります。
+
+## XW を持つコア
+
+- **一次資料（ch32-device-data、2026-11-11）:** QingKe V2/V3/V4/V5 のプロセッサマニュアルの冒頭の表。XW 有りは V2A、V2C、V3B、V3C、V3F、V3V、V4B、V4C、V4F、V4J、V5F。**XW 無しは V3A と V4A。** このコアの系列では CH32V103（V3A）だけが XW を持ちません。表は ch32-device-data の index/cores.csv の xw 列として入る予定です。
+- **実機（2026-11-11）:** XW の 2 バイトの lbu / lhu / sb / sh が入ったイメージ（clang 23.1.5、スケッチ全体を `_xwchc` でビルド）を書き込み、計算の結果を XW 無しの版と比べました。L103、V205、X315、V203、V307 は同じ結果で動き、V103 は起動の途中で止まりました。表と合います。
+- H417 は、-march に B（Zba・Zbb・Zbs）があると clang が XW の命令を出しませんでした（イメージの中に 0 個）。
+
+## .S（crt0 とベクター）を clang で組む
+
+V003、X035、V307 の crt0 とベクターを clang の組み込みのアセンブラで組み、リンクして動く大きさになりました（V003 の SystemInfo で GCC で組んだ場合より 52 バイト大きい）。H417 は、このとき見つかった別の不具合（`CH32RV.getSketchSize()` が LOADCODE の形でリンクできない。GCC でも同じ）を直してから、まだ確かめ直していません。
+
+## 配り方（2026-11-11 の調査）
+
+- RISC-V の組み込み向けに「clang + lld + rv32 の libc と実行時ライブラリ」を各ホスト向けにまとめて配っているものは見つかりませんでした。
+  - xPack の clang は RISC-V へ出せません（ホスト向けのターゲットだけでビルドしている）。
+  - LLVM の公式の版は 0.3〜1.2 GB と大きく、macOS x64 版がありません。
+  - esp-clang は ESP の命令セットの組み合わせだけで、rv32e がありません。
+  - Embecosm の版は 2.6〜3.2 GB です。
+  - Zig は小さい（53〜100 MB）が、libc が無く、Arduino のレシピから ld.lld などを呼べません。
+- 手本: ClangBuiltArduino（Arduino の Boards Manager で clang を配っている唯一の例、AVR と Renesas）。必要なターゲットだけの clang + lld を 1 本の multicall の実行ファイルにまとめ、1 ホストあたり 40〜65 MB。GitHub Actions で 1 ホストあたり 2〜4 時間。libc 側（sysroot）はホストによらない 1 本の道具として別に配っている。
+- libc: picolibc は newlib より小さい（ESP-IDF 6.0 の ESP32-C3 で 20% 小さく、既定になった）。clang の BareMetal ドライバーは multilib.yaml で -march / -mabi から libc を選べる（LLVM 19 以降、実験的）。
+
+### 案
+
+| 段 | 内容 | 手間 |
+|---|---|---|
+| 1 | RISC-V だけの clang + lld を自前でビルドして配る。libc と libgcc は今の xPack GCC の newlib nano を借りる（今回の試験と同じ形） | 中（CI のビルドと、パッケージの index） |
+| 2 | picolibc と compiler-rt を、全部の命令セットの組み合わせ（rv32ec、rv32imac、rv32imafc、B 有り）で作り、multilib.yaml 付きの 1 本の道具にする。GCC を外す | 大 |
+
 ## 次に確かめること
 
 1. 速さ（-Oz と GCC の -Os、CRC や memcpy などの測定、H417 と V003）。
-2. 大きい系列（X035、V307、H417）での大きさ。
-3. .S（crt0 とベクター）を clang の組み込みのアセンブラで通す。
-4. picolibc と compiler-rt で GCC を使わずに作れるか。作ったものの大きさ（newlib nano との差）。
-5. どの QingKe が XW を持つか（V2A、V3A、V4 など）。
-6. 配布の形（必要なものだけの LLVM を xpack と同じように配れるか、既存の配布物があるか）。
+2. RISC-V だけの clang + lld を手元でビルドして、大きさと時間を測る（段 1 の準備）。
+3. picolibc と compiler-rt で GCC を使わずに作れるか。作ったものの大きさ（newlib nano との差）。rv32e の compiler-rt。
+4. H417 で、B と XW を両方使えるか（clang が XW を出さなかった理由）。
