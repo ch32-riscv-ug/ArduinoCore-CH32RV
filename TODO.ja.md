@@ -149,6 +149,28 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - [ ] USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
   - [ ] UART ISP（PB6/PB7）: ソフトのリセットでは入らなかった（docs/h417-bench.ja.md）。電源の入れ直しは未確認。入れるかどうかは別に決める。
   - OEP の probe にする件は、コアの側は入れた（84b57b0）。oep-probe-arduino への依頼は 2026-10-21 に dev-oep のセッションへ送った（向こうの状況は未確認）。
+  - [ ] WeAct LogicAnalyzerV2（CH32H417、https://github.com/WeActStudio/WeActStudio.LogicAnalyzerV2）で、このコアの
+    スケッチを動かす。入手予定（2026-11-11 時点）。どちらの形にするかは未定。
+    - 入力の D0〜D15 は UHSIF の PORT16〜31（RM の表 9-33）。GPIO の DMA ではなく UHSIF で取り込んでいる。UHSIF の
+      レジスタは非公開で、WCH の EVT の `libUHSIF.a`（API だけ）を使う。このコアの CH32RVLogicCapture（連続 9.09 MS/s）
+      より速く取るなら、ここを調べる。
+    - **案 A: ユーザー領域（slot 2）に乗せる。** WeAct の IAP（0x0〜0x6000）が、電源を入れるたびに slot を選んで飛ぶ。
+      ロジアナ（slot 0）と DAP（slot 1）は残る。要ること:
+      - リンク先を 0x09E000（V3F は 104 KB まで。V5F の分を使わないなら 304 KB）にするボードの定義。
+      - CH32RV_FLASH_STORE を slot の中に置く。今は FLASH の末尾で、WeAct の設定の領域（0x0EA000〜）と予約の領域を壊す。
+      - VIO18 の内部の LDO を触らない（外の電源で 1.0〜3.3 V を作っている。例のアプリは VSEL_VIO18_MODE5）。
+      - PC6 は SWPMI の TBYP を立てる。
+      - 抜け道をコアの側で持つ: KEY（PE1）の 2 秒長押しで 0x2017FFF0 に `0x736C7400 | slot` を書いてリセット、
+        CDC のボーレート 2048 で `0x69617021`（IAP に入る）。RAM の末尾 16 バイトは空ける。
+      - 書き込みは WeAct の CLI ツール（`-f <bin> -b 0809E000`）。IAP の手順は非公開。H417 の SWD は USB 2.0 の線
+        （PB8 / PB9）と兼用で、アプリも SWD を切るので、実際には使えない。
+      - IAP の領域、特に 0x5FF4 の UID の写しには触らない（不一致で IAP が自分を消す）。
+    - **案 B: チップ全体を乗っ取る。** フラッシュも RAM も全部使え、このコアの普通の書き込み経路（DFU、USB）で回せる。
+      要ること:
+      - SWD で書く。PB8 / PB9 が USB 2.0 の線なので、評価ボードと同じく線を切るなどの手が要る。
+      - 元に戻せるように、最初に SWD でフラッシュ全体（960 KB）を読んで保存しておく。WeAct のリポジトリにあるのは
+        各 APP の bin だけで、IAP の bin は無い。同じチップへ書き戻すなら UID の写しも一致する。
+    - 判断の材料: PC 側アプリ（U3LogicAnalyzer）の調査を WireSkein のセッションに頼んだ（2026-11-11、保存先は返事待ち）。
 - **USBSS の host（H417）を実装する**（2026-10-28 にユーザーの依頼。後回し）。常設ベンチ（tests/BENCH.ja.md 7 章）で、SS の試験を
   H417 どうしで組むために要る（DUT が device のとき相手の H417 が host、DUT が host のとき相手の H417 が device）。
   - 材料: EVT `USBSS/HOST/Host_SS_Access_Sector`（ほかにハブ経由の 2 例）。`Common/ch32h417_usbss_host.c` がリンクの初期化と
