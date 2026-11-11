@@ -78,6 +78,22 @@
 - Xwchc は系列を間違えると止まる。
 - 全系列の試験をやり直す費用。
 
+## 速さ（CH32H417 の V5F、µs、2026-11-11）
+
+測定のスケッチは、入力の回数を volatile の変数から読み、結果を volatile の変数に書き、測る関数を volatile の関数ポインター越しに呼びました。そうしないと、clang は LTO で計算をコンパイル時に済ませるか、micros() の外へ移し、0 µs になりました。
+
+| 処理 | GCC -Os + LTO（今） | clang -Os | clang -Oz | clang -O2 |
+|---|---|---|---|---|
+| CRC（ビット演算） | 2,003 | 1,903 | 2,053 | 1,002 |
+| popcount、ctz、andn | 4,015 | 2,513 | 2,513 | 2,514 |
+| 配列の添え字の計算 | 1,377 | 1,720 | 1,720 | 1,721 |
+| memcpy 640 KB（newlib） | 4,528 | 4,526 | 4,525 | 4,526 |
+| qsort 2000 個 | 2,277 | 2,176 | 2,178 | 2,178 |
+| float（sqrtf と割り算） | 64,696 | 5,522 | 5,523 | 5,523 |
+
+- clang -Oz の速さは、今の GCC -Os とほぼ同じか速い。配列の添え字の計算だけ 25% 遅い。
+- float の差は、clang が sqrtf を fsqrt.s にしたため。GCC は errno のためにライブラリの sqrtf を呼ぶ。GCC でも `-fno-math-errno` で同じになるはずで、clang に限らない改善点。
+
 ## 大きい系列（バイト、text、LTO 有り）
 
 | 系列 | 例 | GCC + LTO | clang + LTO -Os | clang + LTO -Oz |
@@ -123,7 +139,6 @@ V003、X035、V307 の crt0 とベクターを clang の組み込みのアセン
 
 ## 次に確かめること
 
-1. 速さ（-Oz と GCC の -Os、CRC や memcpy などの測定、H417 と V003）。
-2. RISC-V だけの clang + lld を手元でビルドして、大きさと時間を測る（段 1 の準備）。
-3. picolibc と compiler-rt で GCC を使わずに作れるか。作ったものの大きさ（newlib nano との差）。rv32e の compiler-rt。
-4. H417 で、B と XW を両方使えるか（clang が XW を出さなかった理由）。
+1. RISC-V だけの clang + lld を手元でビルドして、大きさと時間を測る（段 1 の準備）。
+2. picolibc と compiler-rt で GCC を使わずに作れるか。作ったものの大きさ（newlib nano との差）。rv32e の compiler-rt。
+3. H417 で、B と XW を両方使えるか（clang が XW を出さなかった理由）。
