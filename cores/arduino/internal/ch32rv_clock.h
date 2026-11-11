@@ -12,6 +12,12 @@
 #ifndef F_CPU
 #error "F_CPU is required (build.f_cpu in boards.txt)"
 #endif
+/* HCLK, which the peripherals, SysTick and the timers count. F_CPU is the
+ * clock of the core the sketch runs on; they differ only on CH32H41x with the
+ * V5F (CPU Core menu: F_CPU 400 MHz, HCLK 100 MHz), which passes this. */
+#ifndef CH32RV_HCLK_HZ
+#define CH32RV_HCLK_HZ F_CPU
+#endif
 #ifndef CH32RV_HSI_HZ
 #error "CH32RV_HSI_HZ is required (see build.core_defines in boards.txt)"
 #endif
@@ -41,16 +47,16 @@ came with it. Both are generated together; regenerate boards.txt."
 #define CH32RV_CLOCK_FPRE_DIV 1
 #endif
 
-#if F_CPU * CH32RV_CLOCK_FPRE_DIV > CH32RV_CLOCK_SYSCLK_HZ
+#if CH32RV_HCLK_HZ * CH32RV_CLOCK_FPRE_DIV > CH32RV_CLOCK_SYSCLK_HZ
 #error "F_CPU is above SYSCLK. The AHB prescaler can only divide, so this \
 needs a different generated clock configuration."
 #endif
-#if (CH32RV_CLOCK_SYSCLK_HZ % (F_CPU * CH32RV_CLOCK_FPRE_DIV)) != 0
+#if (CH32RV_CLOCK_SYSCLK_HZ % (CH32RV_HCLK_HZ * CH32RV_CLOCK_FPRE_DIV)) != 0
 #error "F_CPU must divide SYSCLK exactly: the AHB prescaler is the only thing \
 between them."
 #endif
 
-#define CH32RV_AHB_DIV (CH32RV_CLOCK_SYSCLK_HZ / F_CPU / CH32RV_CLOCK_FPRE_DIV)
+#define CH32RV_AHB_DIV (CH32RV_CLOCK_SYSCLK_HZ / CH32RV_HCLK_HZ / CH32RV_CLOCK_FPRE_DIV)
 
 /* The AHB prescaler is four bits in RCC_CFGR0[7:4], and the CH32 line encodes
  * them two different ways. They agree only on /1, so choosing the wrong one is

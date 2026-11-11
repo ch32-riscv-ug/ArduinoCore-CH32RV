@@ -707,7 +707,7 @@ void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config)
      * the port would talk at a rate nobody asked for, so an unreachable baud
      * leaves it closed. The range is fck / 65535 .. fck / 16 (48 MHz: 733 baud
      * .. 3 Mbaud). */
-    const unsigned long brr = baudrate ? (F_CPU + baudrate / 2) / baudrate : 0;
+    const unsigned long brr = baudrate ? (CH32RV_HCLK_HZ + baudrate / 2) / baudrate : 0;
     if (brr < 16 || brr > 0xFFFFul) {
         return;
     }

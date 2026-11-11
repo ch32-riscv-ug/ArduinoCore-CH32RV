@@ -9,7 +9,7 @@ using namespace arduino;
 /* The I2C block hangs off PCLK1. The supported clock configuration leaves the
  * APB prescaler at /1, so PCLK1 is HCLK == F_CPU. Any non-unity APB setting
  * must provide the actual peripheral clock here. */
-static const uint32_t CH32RV_I2C_PCLK1 = F_CPU;
+static const uint32_t CH32RV_I2C_PCLK1 = CH32RV_HCLK_HZ;
 
 namespace {
 

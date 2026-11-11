@@ -42,7 +42,7 @@
 cannot divide by."
 #endif
 #else
-#define CH32RV_SYSTICK_HZ (F_CPU)
+#define CH32RV_SYSTICK_HZ (CH32RV_HCLK_HZ)   /* SysTick counts HCLK (STCLK) */
 #endif
 
 #define CH32RV_TICKS_PER_MS ((uint32_t)(CH32RV_SYSTICK_HZ / 1000u))
@@ -513,6 +513,22 @@ unsigned long micros(void)
     return ms * 1000u + CH32RV_US_FROM_TICKS(ticks);
 }
 
+/* A busy wait's pause between polls. On the CH32H41x V5F, which has no data
+ * cache, a loop reading the millisecond counter back to back holds that SRAM
+ * bank and starves the V3F working there (bench, 2026-11-11: a V3F counting
+ * in the same bank got 12.7 thousand counts a second instead of 10 million;
+ * docs/h417-cores-design.ja.md). nops touch no memory. Nothing elsewhere. */
+#ifdef CH32RV_RUN_V5F
+static inline void ch32rv_spin_pause(void)
+{
+    for (int i = 0; i < 32; i++) {
+        __asm__ volatile("nop");
+    }
+}
+#else
+#define ch32rv_spin_pause() ((void)0)
+#endif
+
 void delay(unsigned long ms)
 {
     const uint32_t start = ch32rv_millis_counter;
@@ -525,6 +541,7 @@ void delay(unsigned long ms)
             ch32rv_services_run();
         }
         yield();
+        ch32rv_spin_pause();
     }
 }
 
@@ -533,6 +550,7 @@ void delayMicroseconds(unsigned int us)
     const uint32_t start = micros();
 
     while ((uint32_t)(micros() - start) < (uint32_t)us) {
+        ch32rv_spin_pause();
     }
 }
 

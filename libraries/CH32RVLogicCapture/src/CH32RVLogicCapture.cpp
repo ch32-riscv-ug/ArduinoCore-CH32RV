@@ -115,7 +115,7 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
         sampleRate = maxContinuousRate();
     }
     /* F_CPU / rate ticks a sample, split into PSC x ARR. */
-    uint32_t ticks = (F_CPU + sampleRate / 2u) / sampleRate;
+    uint32_t ticks = (CH32RV_HCLK_HZ + sampleRate / 2u) / sampleRate;
     if (ticks < 8u) {
         ticks = 8u;
     }
@@ -124,7 +124,7 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
         psc++;
     }
     const uint32_t arr = ticks / psc;
-    _rate = F_CPU / (psc * arr);
+    _rate = CH32RV_HCLK_HZ / (psc * arr);
     const CH32RVTimerRequest request = {LC_TIMER, CH32RV_TIMER_WHOLE, {(uint16_t)(psc - 1u), arr - 1u, 0}};
     _lease = ch32rv_timer_try_acquire(&request, &_owner);
     if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {

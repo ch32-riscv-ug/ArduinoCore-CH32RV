@@ -94,5 +94,5 @@
 #define SDIO_PIN_AF_PP 0xBu
 
 /* The kernel clock (HCLK). The series here run HCLK at F_CPU. */
-#define SDIO_KERNEL_HZ ((uint32_t)F_CPU)
+#define SDIO_KERNEL_HZ ((uint32_t)CH32RV_HCLK_HZ)
 #endif

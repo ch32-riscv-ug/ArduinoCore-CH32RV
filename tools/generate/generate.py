@@ -151,7 +151,12 @@ FAMILY = {
     # repeated from byte 96 on (bench, 2026-10-21). The device-data row gives
     # the multiplier, the SYSPLL switch, FPRE and the flash SCK divider; what is
     # named here is only which fields those are.
-    "CH32H417": dict(march="rv32imafc_zicsr", mabi="ilp32f", f_cpu="100000000L",
+    #
+    # Both cores have B (RM 4: I, C, M, A, B, F); Zba/Zbb/Zbs made bit work
+    # 4.5-4.7 times faster on either and slowed nothing (bench, 2026-11-11,
+    # docs/h417-cores-design.ja.md). Xw, the V5F's own extension, is not known
+    # to this toolchain.
+    "CH32H417": dict(march="rv32imafc_zicsr_zba_zbb_zbs", mabi="ilp32f", f_cpu="100000000L",
                      defines="-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 "
                              "-DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01 "
                              "-DCH32RV_LOADCODE=1",
@@ -177,6 +182,13 @@ FAMILY = {
 # the boot model, so both are ours.
 LOADCODE_RAM = {
     "CH32H417": (0x20100000, 512 * 1024),
+}
+
+# Memory only the V5F layout uses (cores/arduino/v5f/sections_loadcode.ld):
+# the V5F's 128 KiB ITCM (RM 1.2.1). Named in every H41x linker script; the
+# V3F layout leaves it alone.
+LOADCODE_TCM = {
+    "CH32H417": (("ITCM", 0x200A0000, 128 * 1024),),
 }
 
 # One board per silicon series, so the board name matches the chip marking.
@@ -231,6 +243,7 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
+               + "menu.core=CPU Core\n"
                + "menu.vio18=VIO18 Supply\n"
                + "menu.ramsplit=Flash / RAM Split\n"
                + "menu.rstpin=Reset Pin\n"
@@ -544,6 +557,41 @@ def iwdg_menu(board: str) -> list[str]:
             f"{board}.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u",
             f"{board}.menu.iwdg.hw=Running from power-on (set at boot)",
             f"{board}.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u"]
+
+
+# CH32H41x's CPU Core menu: which core runs the sketch. The V5F (400 MHz)
+# first, as the default: the V3F, which starts at reset, only wakes it and
+# waits (crt0_ch32.S, CH32RV_RUN_V5F), and the code goes to the V5F's ITCM
+# (cores/arduino/v5f/sections_loadcode.ld, found first through the extra -L).
+# The V3F (100 MHz) entry is the layout the core had before
+# (docs/h417-cores-design.ja.md).
+#
+# F_CPU is the clock of the core that runs the sketch (the V5F's is SYSCLK);
+# CH32RV_HCLK_HZ is what the peripherals, SysTick and the timers count, the
+# V3F's clock (SYSCLK / FPRE). Without it (the V3F entry, every other board)
+# the two are the same and the core takes HCLK = F_CPU.
+CORE_MENU = (
+    ("v5f", "V5F (400 MHz)", True),
+    ("v3f", "V3F (100 MHz)", False),
+)
+
+
+def core_menu(board: str, fam: dict) -> list[str]:
+    hclk = int(fam["f_cpu"].rstrip("L"))
+    lines = []
+    for key, label, v5f in CORE_MENU:
+        lines.append(f"{board}.menu.core.{key}={label}")
+        if v5f:
+            lines.append(f"{board}.menu.core.{key}.build.f_cpu={fam['sysclk']}L")
+            lines.append(f"{board}.menu.core.{key}.build.core_run_defines="
+                         f"-DCH32RV_RUN_V5F=1 -DCH32RV_HCLK_HZ={hclk}")
+            lines.append(f"{board}.menu.core.{key}.build.ld_layout_flags="
+                         '"-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions')
+        else:
+            lines.append(f"{board}.menu.core.{key}.build.f_cpu={fam['f_cpu']}")
+            lines.append(f"{board}.menu.core.{key}.build.core_run_defines=")
+            lines.append(f"{board}.menu.core.{key}.build.ld_layout_flags=")
+    return lines
 
 
 def vio18_menu(board: str) -> list[str]:
@@ -4103,6 +4151,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
                     + "ENTRY( _start )\n\nMEMORY\n{\n"
                     + f"    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = {flash}\n"
                     + f"    RAM (xrw)  : ORIGIN = 0x{origin:08x}, LENGTH = {length}\n"
+                    + "".join(f"    {name} (xrw) : ORIGIN = 0x{o:08x}, LENGTH = {n}\n"
+                              for name, o, n in LOADCODE_TCM.get(cfg["family"], ()))
                     + "}\n\nINCLUDE sections_loadcode.ld\n")
             else:
                 ld_files[name] = (
@@ -4198,6 +4248,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines += parsefloat_menu(board)
     lines.append("")
     if fam.get("h41x_clock"):
+        lines += core_menu(board, fam)
+        lines.append("")
         lines += vio18_menu(board)
         lines.append("")
     if split_parts:

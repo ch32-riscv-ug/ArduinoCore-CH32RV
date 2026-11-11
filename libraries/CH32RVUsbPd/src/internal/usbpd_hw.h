@@ -183,8 +183,8 @@ extern void (*ch32rv_usbpd_irq_hook)(void);
  * and the receiver's sampling count (400 kHz) - the EVTs' tables at 12 to 240
  * MHz are these two divisions (48 MHz: 80 and 120). Rounded, so 8 MHz sends at
  * 615 kHz, 2.5 % fast, within the 270-330 kbit/s the specification allows. */
-#define CH32RV_UPD_TMR_TX ((uint16_t)((F_CPU + 300000u) / 600000u) - 1u)
-#define CH32RV_UPD_TMR_RX ((uint16_t)((F_CPU + 200000u) / 400000u) - 1u)
+#define CH32RV_UPD_TMR_TX ((uint16_t)((CH32RV_HCLK_HZ + 300000u) / 600000u) - 1u)
+#define CH32RV_UPD_TMR_RX ((uint16_t)((CH32RV_HCLK_HZ + 200000u) / 400000u) - 1u)
 
 /* Clocks, the PHY's AFIO bits and the CC pads: what the sink and the source
  * both do first. Where the pads are routed per pin (V205, X305/X315, H41x)

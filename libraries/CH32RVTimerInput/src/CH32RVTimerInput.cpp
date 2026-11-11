@@ -97,7 +97,7 @@ bool CH32RVPulseCapture::begin(int pin, uint32_t minHz, uint8_t mode)
     }
     /* The smallest prescaler that lets one period of minHz fit the counter. */
     const uint64_t span = (uint64_t)minHz << (_wide ? 32 : 16);
-    uint64_t prescale = ((uint64_t)F_CPU + span - 1u) / span;
+    uint64_t prescale = ((uint64_t)CH32RV_HCLK_HZ + span - 1u) / span;
     if (prescale == 0u) {
         prescale = 1u;
     } else if (prescale > 65536u) {
@@ -117,7 +117,7 @@ bool CH32RVPulseCapture::begin(int pin, uint32_t minHz, uint8_t mode)
     }
     inputPin(pin, mode);
     _base = cap->register_base;
-    _tickHz = (uint32_t)(F_CPU / prescale);
+    _tickHz = (uint32_t)(CH32RV_HCLK_HZ / prescale);
 
     /* PWM-input mode: both captures listen to the pin's own input; the
      * rising edge captures the period and resets the counter (slave reset

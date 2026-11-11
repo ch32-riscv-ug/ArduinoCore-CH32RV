@@ -61,7 +61,7 @@ void timer_start(void)
     }
     CH32RVTimerRequest request = {
         CH32RV_SERVO_TIMER, CH32RV_TIMER_WHOLE,
-        {(uint16_t)((F_CPU / 1000000u) - 1u), 99u, 0}
+        {(uint16_t)((CH32RV_HCLK_HZ / 1000000u) - 1u), 99u, 0}
     };
     timer_lease = ch32rv_timer_try_acquire(&request, &servo_owner);
     if (!ch32rv_timer_lease_valid(&timer_lease)) {

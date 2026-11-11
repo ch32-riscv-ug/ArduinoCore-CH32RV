@@ -9,7 +9,7 @@ using namespace arduino;
 
 /* Both supported APB prescalers are /1, so either bus runs at F_CPU. A
  * non-unity setting must provide the clock of the instance's own bus here. */
-static const uint32_t CH32RV_SPI_PCLK = F_CPU;
+static const uint32_t CH32RV_SPI_PCLK = CH32RV_HCLK_HZ;
 
 /* BR selects a power-of-two divider from 2 to 256. Pick the first one that
  * does not exceed the requested clock, so asking for 1 MHz on a 48 MHz part

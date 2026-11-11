@@ -64,7 +64,7 @@ constexpr CH32RVLogicUhsifData UHSIF_DATA{};
 class CH32RVLogicCapture {
 public:
     /* The fastest continuous rate that kept every sample: F_CPU / 11. */
-    static constexpr uint32_t maxContinuousRate() { return F_CPU / 11u; }
+    static constexpr uint32_t maxContinuousRate() { return CH32RV_HCLK_HZ / 11u; }
 
     /* `sampleRate` is clamped to maxContinuousRate() and rounded to what the
      * timer reaches (F_CPU / an integer); sampleRate() says what it got. False

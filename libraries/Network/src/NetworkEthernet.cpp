@@ -166,16 +166,16 @@ static bool waitSet(volatile uint32_t &reg, uint32_t bit, uint32_t ms)
 /* MDC from HCLK: the CR field (bits 4:2) by the EVT headers' ranges. */
 static uint32_t mdcRange()
 {
-    if (F_CPU <= 35000000u) {
+    if (CH32RV_HCLK_HZ <= 35000000u) {
         return 0x8u;               /* /16 */
     }
-    if (F_CPU <= 60000000u) {
+    if (CH32RV_HCLK_HZ <= 60000000u) {
         return 0xCu;               /* /26 */
     }
-    if (F_CPU <= 100000000u) {
+    if (CH32RV_HCLK_HZ <= 100000000u) {
         return 0x0u;               /* /42 */
     }
-    if (F_CPU <= 150000000u) {
+    if (CH32RV_HCLK_HZ <= 150000000u) {
         return 0x4u;               /* /62 */
     }
     return 0x10u;                  /* /102 */

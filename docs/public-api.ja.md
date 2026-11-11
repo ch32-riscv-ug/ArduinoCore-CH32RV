@@ -20,7 +20,7 @@
 | 種類 | 名前 |
 |---|---|
 | 版と板 | `ARDUINO_ARCH_CH32RV`、`ARDUINO_<board>`、`CH32RV_SERIES_<series>`、`CH32RV_PART_<part>`、`CH32RV_VERSION`、`CH32RV_VERSION_VAL()` |
-| メニューで決まるもの | `CH32RV_RAMSPLIT_RAM_KB`（Flash / RAM Split の RAM の KB）、`F_CPU` |
+| メニューで決まるもの | `CH32RV_RAMSPLIT_RAM_KB`（Flash / RAM Split の RAM の KB）、`F_CPU`（スケッチを動かすコアのクロック）、`CH32RV_HCLK_HZ`（周辺の回路とタイマーが数える HCLK。CH32H41x の V5F では F_CPU 400 MHz に対して 100 MHz、ほかでは F_CPU と同じ）、`CH32RV_RUN_V5F`（CH32H41x の CPU Core が V5F のとき 1） |
 | 機能を調べる | `CH32RV_HAS_UNIQUE_ID`、`CH32RV_HAS_VIO18`、`CH32RV_RNG_BASE`、`CH32RV_USBPD_BASE`、`CH32RV_SLEEP_UNSUPPORTED` |
 | 利用者が決める大きさや時間 | 各 README に書いたもの（`CH32RV_WIRE_BUFFER_SIZE`、`CH32RV_WIRE_TIMEOUT_US`、`CH32RV_DMSEQ_RX_SIZE`、`CH32RV_DMDATA_RX_SIZE` など）。スケッチより前に定義する（`build_opt.h`、ADR-0007） |
 | ライブラリの定数 | 各ライブラリの README に書いたもの（`CH32RV_USB_HID_KEY_*` など） |

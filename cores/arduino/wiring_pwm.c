@@ -32,7 +32,7 @@ static uint32_t ch32rv_pwm_hz = CH32RV_PWM_HZ;
 void analogWriteFrequency(pin_size_t pin, uint32_t frequency)
 {
     (void)pin;
-    const uint32_t top = F_CPU / CH32RV_PWM_STEPS;
+    const uint32_t top = CH32RV_HCLK_HZ / CH32RV_PWM_STEPS;
     if (frequency == 0u) {
         return;
     }
@@ -163,7 +163,7 @@ void analogWrite(pin_size_t pin, int value)
      * fixed 256-step counter could only divide F_CPU by whole multiples of
      * 256: asked for 100 kHz, CH32H417 (100 MHz) gave 130 kHz and CH32X035
      * (48 MHz) would give 187.5 kHz. */
-    const uint32_t period = F_CPU / ch32rv_pwm_hz;
+    const uint32_t period = CH32RV_HCLK_HZ / ch32rv_pwm_hz;
     uint32_t prescale = (period + 65535u) / 65536u;
     if (prescale == 0u) {
         prescale = 1u;

@@ -23,6 +23,7 @@ menu.i2c2=I2C2
 menu.spi1=SPI1
 menu.spi2=SPI2
 menu.spi3=SPI3
+menu.core=CPU Core
 menu.vio18=VIO18 Supply
 menu.ramsplit=Flash / RAM Split
 menu.rstpin=Reset Pin
@@ -6239,7 +6240,7 @@ CH32H415.monitor_port.serial.baudrate=115200
 CH32H415.upload.protocol=ch32rv
 CH32H415.upload.tool.ch32rv-app=ch32rv_dfu
 CH32H415.build.variant=CH32H415
-CH32H415.build.march=rv32imafc_zicsr
+CH32H415.build.march=rv32imafc_zicsr_zba_zbb_zbs
 CH32H415.build.mabi=ilp32f
 CH32H415.build.f_cpu=100000000L
 CH32H415.build.series=CH32H415
@@ -6312,6 +6313,15 @@ CH32H415.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32H415.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32H415.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32H415.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32H415.menu.core.v5f=V5F (400 MHz)
+CH32H415.menu.core.v5f.build.f_cpu=400000000L
+CH32H415.menu.core.v5f.build.core_run_defines=-DCH32RV_RUN_V5F=1 -DCH32RV_HCLK_HZ=100000000
+CH32H415.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions
+CH32H415.menu.core.v3f=V3F (100 MHz)
+CH32H415.menu.core.v3f.build.f_cpu=100000000L
+CH32H415.menu.core.v3f.build.core_run_defines=
+CH32H415.menu.core.v3f.build.ld_layout_flags=
 
 CH32H415.menu.vio18.hw=Hardware default (XO strap)
 CH32H415.menu.vio18.hw.build.vio18_defines=
@@ -6559,7 +6569,7 @@ CH32H416.monitor_port.serial.baudrate=115200
 CH32H416.upload.protocol=ch32rv
 CH32H416.upload.tool.ch32rv-app=ch32rv_dfu
 CH32H416.build.variant=CH32H416
-CH32H416.build.march=rv32imafc_zicsr
+CH32H416.build.march=rv32imafc_zicsr_zba_zbb_zbs
 CH32H416.build.mabi=ilp32f
 CH32H416.build.f_cpu=100000000L
 CH32H416.build.series=CH32H416
@@ -6632,6 +6642,15 @@ CH32H416.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32H416.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32H416.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32H416.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32H416.menu.core.v5f=V5F (400 MHz)
+CH32H416.menu.core.v5f.build.f_cpu=400000000L
+CH32H416.menu.core.v5f.build.core_run_defines=-DCH32RV_RUN_V5F=1 -DCH32RV_HCLK_HZ=100000000
+CH32H416.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions
+CH32H416.menu.core.v3f=V3F (100 MHz)
+CH32H416.menu.core.v3f.build.f_cpu=100000000L
+CH32H416.menu.core.v3f.build.core_run_defines=
+CH32H416.menu.core.v3f.build.ld_layout_flags=
 
 CH32H416.menu.vio18.hw=Hardware default (XO strap)
 CH32H416.menu.vio18.hw.build.vio18_defines=
@@ -6803,7 +6822,7 @@ CH32H417.monitor_port.serial.baudrate=115200
 CH32H417.upload.protocol=ch32rv
 CH32H417.upload.tool.ch32rv-app=ch32rv_dfu
 CH32H417.build.variant=CH32H417
-CH32H417.build.march=rv32imafc_zicsr
+CH32H417.build.march=rv32imafc_zicsr_zba_zbb_zbs
 CH32H417.build.mabi=ilp32f
 CH32H417.build.f_cpu=100000000L
 CH32H417.build.series=CH32H417
@@ -6896,6 +6915,15 @@ CH32H417.menu.parsefloat.float=In float (smallest; the last bit off on one input
 CH32H417.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32H417.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 CH32H417.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+
+CH32H417.menu.core.v5f=V5F (400 MHz)
+CH32H417.menu.core.v5f.build.f_cpu=400000000L
+CH32H417.menu.core.v5f.build.core_run_defines=-DCH32RV_RUN_V5F=1 -DCH32RV_HCLK_HZ=100000000
+CH32H417.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions
+CH32H417.menu.core.v3f=V3F (100 MHz)
+CH32H417.menu.core.v3f.build.f_cpu=100000000L
+CH32H417.menu.core.v3f.build.core_run_defines=
+CH32H417.menu.core.v3f.build.ld_layout_flags=
 
 CH32H417.menu.vio18.hw=Hardware default (XO strap)
 CH32H417.menu.vio18.hw.build.vio18_defines=

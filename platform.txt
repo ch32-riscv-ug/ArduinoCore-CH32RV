@@ -38,6 +38,12 @@ compiler.common_flags=-march={build.march} -mabi={build.mabi} -Os -g -ffunction-
 build.periph_defines=
 # CH32H41x's VIO18 Supply menu (boards.txt); empty: the XO strap's voltage.
 build.vio18_defines=
+# CH32H41x's CPU Core menu (boards.txt): -DCH32RV_RUN_V5F=1 runs the sketch on
+# the V5F, and the link then takes cores/arduino/v5f/sections_loadcode.ld (code
+# in the V5F's ITCM, spilling into the shared SRAM) ahead of the core's own.
+# Empty elsewhere: the core that starts at reset runs the sketch.
+build.core_run_defines=
+build.ld_layout_flags=
 # The Clock Source menu (boards.txt): the crystal's setting on; empty: HSI.
 build.clock_src_defines=
 # The Flash / RAM split menu (boards.txt) on the parts that have it (CH32V303/V307/V317 RC, VC, WC, SC);
@@ -47,9 +53,9 @@ build.ramsplit_defines=
 build.rstpin_defines=
 # The Watchdog menu's USER value and mask (ch32rv_option_user.c); empty for the factory entry and where the series has no such menu.
 build.iwdg_defines=
-compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
-compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
-compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
+compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
+compiler.cpp.flags={compiler.common_flags} -std=gnu++17 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
+compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} {build.core_run_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
 # The three generated interrupt tables share one stem, so a board - or a
 # single pnum menu entry, for a part on a different die - selects all
 # three at once (CH32V203RBT6 is CH32V20x_D8 while the rest of CH32V203
@@ -135,14 +141,14 @@ recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "
 # came earlier (a sketch with NetworkClientSecure.h before Network.h).
 # --no-warn-rwx-segments: .init_array (writable) shares the single FLASH segment with
 # text; acceptable for MCU flash layout. Revisit with PHDRS in the real core.
-recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -Os -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles --specs=nano.specs {build.rtlib_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" -Wl,--start-group {object_files} "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
+recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" -march={build.march} -mabi={build.mabi} -Os -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles --specs=nano.specs {build.rtlib_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections -Wl,--no-warn-rwx-segments {build.ld_layout_flags} "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" -Wl,--start-group {object_files} "{build.path}/{archive_file}" -lc -lm -Wl,--end-group
 recipe.objcopy.hex.pattern="{compiler.path}{compiler.objcopy.cmd}" -O ihex "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
 recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
 
 recipe.size.pattern="{compiler.path}{compiler.size.cmd}" -A "{build.path}/{build.project_name}.elf"
 # .reset / .image: CH32RV_LOADCODE (sections_loadcode.ld) - the image is stored
 # in flash and runs from RAM, so it counts on both sides.
-recipe.size.regex=^(?:\.init|\.vector|\.text|\.rodata|\.data|\.init_array|\.preinit_array|\.fini_array|\.reset|\.image)\s+([0-9]+).*
+recipe.size.regex=^(?:\.init|\.vector|\.text|\.rodata|\.data|\.init_array|\.preinit_array|\.fini_array|\.reset|\.image|\.itcm)\s+([0-9]+).*
 recipe.size.regex.data=^(?:\.data|\.bss|\.image)\s+([0-9]+).*
 
 # ---------------------------------------------------------------- upload

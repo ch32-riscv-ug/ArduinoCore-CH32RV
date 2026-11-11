@@ -8,6 +8,7 @@ MEMORY
 {
     FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 491520
     RAM (xrw)  : ORIGIN = 0x20100000, LENGTH = 524288
+    ITCM (xrw) : ORIGIN = 0x200a0000, LENGTH = 131072
 }
 
 INCLUDE sections_loadcode.ld

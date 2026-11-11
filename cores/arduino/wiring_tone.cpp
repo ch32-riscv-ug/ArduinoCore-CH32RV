@@ -94,10 +94,10 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
      * prescaler only comes in when the count will not fit 16 bits, which for
      * the lowest audible tones it does not: 31 Hz at 48 MHz is 774193 ticks. */
     uint32_t psc = 0;
-    uint32_t ticks = (uint32_t)(F_CPU / (2UL * (uint32_t)frequency));
+    uint32_t ticks = (uint32_t)(CH32RV_HCLK_HZ / (2UL * (uint32_t)frequency));
     while (ticks > 0x10000UL) {
         psc++;
-        ticks = (uint32_t)(F_CPU / ((psc + 1UL) * 2UL * (uint32_t)frequency));
+        ticks = (uint32_t)(CH32RV_HCLK_HZ / ((psc + 1UL) * 2UL * (uint32_t)frequency));
     }
     if (ticks == 0u) {
         ticks = 1u;                 /* frequency above what the timer can do */
