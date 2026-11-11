@@ -208,36 +208,48 @@ bool CH32RVAdcStream::configure(uint8_t step)
     return true;
 }
 
-/* Rounds per second at `step`: 64 conversions moved by DMA into a scratch
- * array on the stack, timed with micros(). 0 if the DMA never finished. */
-uint32_t CH32RVAdcStream::measure(uint8_t step)
+/* Microseconds from the start to the end of n conversions, each moved by DMA
+ * into the same place (no memory increment, so n is not bounded by a buffer).
+ * 0 if the DMA never finished. */
+static uint32_t timed_run(uint16_t n)
 {
-    configure(step);
-    uint16_t scratch[64];
-    const uint16_t n = (uint16_t)(64u / _count * _count);
+    static volatile uint16_t sink;
     adc_halt();
     CH1_PADDR = (uint32_t)(uintptr_t)&CH32RV_ADC_RDATAR;
-    CH1_MADDR = (uint32_t)(uintptr_t)scratch;
+    CH1_MADDR = (uint32_t)(uintptr_t)&sink;
     CH1_CNTR = n;
-    CH1_CFGR = CFGR_MINC | CFGR_16BIT | CFGR_PL_HI | CFGR_EN;
+    CH1_CFGR = CFGR_16BIT | CFGR_PL_HI | CFGR_EN;
     const uint32_t mode = adc_arm();
     const uint32_t t0 = micros();
     adc_go(mode);
-    uint32_t dt = 0;
     while ((DMA_INTFR & CH1_TCIF) == 0u) {
-        dt = (uint32_t)(micros() - t0);
-        if (dt > 200000u) {
+        if ((uint32_t)(micros() - t0) > 200000u) {
             adc_halt();
             return 0;
         }
     }
-    dt = (uint32_t)(micros() - t0);
+    const uint32_t dt = (uint32_t)(micros() - t0);
     adc_halt();
     DMA_DONE();
-    if (dt == 0) {
-        dt = 1;
+    return dt ? dt : 1u;
+}
+
+/* Rounds per second at `step`, from two runs: the rate is the difference in
+ * conversions over the difference in time, so what both runs pay once - the
+ * ADC's first conversion after the start, the calls around it - drops out.
+ * One run of 64 conversions counted that in and came out 4 % slow on a
+ * CH32X035 (960 Hz for a 1 kHz wave, 2026-11-12). 0 if the DMA never finished. */
+uint32_t CH32RVAdcStream::measure(uint8_t step)
+{
+    configure(step);
+    const uint16_t n1 = (uint16_t)(32u / _count * _count);
+    const uint16_t n2 = (uint16_t)(544u / _count * _count);
+    const uint32_t dt1 = timed_run(n1);
+    const uint32_t dt2 = dt1 ? timed_run(n2) : 0u;
+    if (dt2 <= dt1) {
+        return 0;
     }
-    return (uint32_t)((uint64_t)n * 1000000u / dt / _count);
+    return (uint32_t)((uint64_t)(n2 - n1) * 1000000u / (dt2 - dt1) / _count);
 }
 
 void CH32RVAdcStream::end()
