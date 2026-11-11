@@ -6,6 +6,7 @@ menu.pnum=Part Number
 menu.clock=CPU Clock
 menu.clocksrc=Clock Source
 menu.opt=Optimize
+menu.compiler=Compiler
 menu.rtlib=Floating Point
 menu.parsefloat=parseFloat
 menu.usart1=USART1
@@ -39,6 +40,7 @@ CH32V003.upload.protocol=ch32rv
 CH32V003.build.variant=CH32V003
 CH32V003.build.march=rv32ec_zicsr
 CH32V003.build.mabi=ilp32e
+CH32V003.build.march_xw=_xwchc
 CH32V003.build.f_cpu=24000000L
 CH32V003.build.series=CH32V003
 CH32V003.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3
@@ -116,17 +118,22 @@ CH32V003.menu.clocksrc.hse=External crystal 24 MHz (HSE; HSI if it does not star
 CH32V003.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V003.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V003.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V003.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V003.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V003.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V003.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V003.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V003.menu.opt.osstd.build.optimize_flags=
 
+CH32V003.menu.compiler.gcc=GCC
+CH32V003.menu.compiler.gcc.build.toolchain=gcc
+CH32V003.menu.compiler.clang=Clang
+CH32V003.menu.compiler.clang.build.toolchain=clang
+
 CH32V003.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V003.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V003.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V003.menu.rtlib.fltf.build.rtlib_flags=
 CH32V003.menu.rtlib.flt=Float (32-bit)
-CH32V003.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V003.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V003.menu.rtlib.flt.build.rtlib_flags=
 CH32V003.menu.rtlib.dbl=Double (64-bit)
 CH32V003.menu.rtlib.dbl.build.fp_flags=
@@ -144,7 +151,7 @@ CH32V003.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V003.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V003.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V003.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
-CH32V003.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V003.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V003.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V003.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V003.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -221,6 +228,7 @@ CH32V002.upload.protocol=ch32rv
 CH32V002.build.variant=CH32V002
 CH32V002.build.march=rv32ec_zmmul_zicsr
 CH32V002.build.mabi=ilp32e
+CH32V002.build.march_xw=_xwchc
 CH32V002.build.f_cpu=24000000L
 CH32V002.build.series=CH32V002
 CH32V002.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3
@@ -308,17 +316,22 @@ CH32V002.menu.clocksrc.hse=External crystal 24 MHz (HSE; HSI if it does not star
 CH32V002.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V002.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V002.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V002.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V002.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V002.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V002.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V002.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V002.menu.opt.osstd.build.optimize_flags=
 
+CH32V002.menu.compiler.gcc=GCC
+CH32V002.menu.compiler.gcc.build.toolchain=gcc
+CH32V002.menu.compiler.clang=Clang
+CH32V002.menu.compiler.clang.build.toolchain=clang
+
 CH32V002.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V002.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V002.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V002.menu.rtlib.fltf.build.rtlib_flags=
 CH32V002.menu.rtlib.flt=Float (32-bit)
-CH32V002.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V002.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V002.menu.rtlib.flt.build.rtlib_flags=
 CH32V002.menu.rtlib.dbl=Double (64-bit)
 CH32V002.menu.rtlib.dbl.build.fp_flags=
@@ -336,7 +349,7 @@ CH32V002.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V002.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V002.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V002.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
-CH32V002.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V002.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V002.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V002.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V002.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -417,6 +430,7 @@ CH32V004.upload.protocol=ch32rv
 CH32V004.build.variant=CH32V004
 CH32V004.build.march=rv32ec_zmmul_zicsr
 CH32V004.build.mabi=ilp32e
+CH32V004.build.march_xw=_xwchc
 CH32V004.build.f_cpu=24000000L
 CH32V004.build.series=CH32V004
 CH32V004.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3
@@ -474,17 +488,22 @@ CH32V004.menu.clocksrc.hse=External crystal 24 MHz (HSE; HSI if it does not star
 CH32V004.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V004.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V004.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V004.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V004.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V004.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V004.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V004.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V004.menu.opt.osstd.build.optimize_flags=
 
+CH32V004.menu.compiler.gcc=GCC
+CH32V004.menu.compiler.gcc.build.toolchain=gcc
+CH32V004.menu.compiler.clang=Clang
+CH32V004.menu.compiler.clang.build.toolchain=clang
+
 CH32V004.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V004.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V004.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V004.menu.rtlib.fltf.build.rtlib_flags=
 CH32V004.menu.rtlib.flt=Float (32-bit)
-CH32V004.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V004.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V004.menu.rtlib.flt.build.rtlib_flags=
 CH32V004.menu.rtlib.dbl=Double (64-bit)
 CH32V004.menu.rtlib.dbl.build.fp_flags=
@@ -502,7 +521,7 @@ CH32V004.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V004.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V004.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V004.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V004.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V004.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V004.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V004.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V004.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -583,6 +602,7 @@ CH32V005.upload.protocol=ch32rv
 CH32V005.build.variant=CH32V005
 CH32V005.build.march=rv32ec_zmmul_zicsr
 CH32V005.build.mabi=ilp32e
+CH32V005.build.march_xw=_xwchc
 CH32V005.build.f_cpu=24000000L
 CH32V005.build.series=CH32V005
 CH32V005.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3
@@ -660,17 +680,22 @@ CH32V005.menu.clocksrc.hse=External crystal 24 MHz (HSE; HSI if it does not star
 CH32V005.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V005.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V005.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V005.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V005.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V005.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V005.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V005.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V005.menu.opt.osstd.build.optimize_flags=
 
+CH32V005.menu.compiler.gcc=GCC
+CH32V005.menu.compiler.gcc.build.toolchain=gcc
+CH32V005.menu.compiler.clang=Clang
+CH32V005.menu.compiler.clang.build.toolchain=clang
+
 CH32V005.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V005.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V005.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V005.menu.rtlib.fltf.build.rtlib_flags=
 CH32V005.menu.rtlib.flt=Float (32-bit)
-CH32V005.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V005.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V005.menu.rtlib.flt.build.rtlib_flags=
 CH32V005.menu.rtlib.dbl=Double (64-bit)
 CH32V005.menu.rtlib.dbl.build.fp_flags=
@@ -688,7 +713,7 @@ CH32V005.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V005.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V005.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V005.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V005.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V005.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V005.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V005.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V005.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -797,6 +822,7 @@ CH32V006.upload.protocol=ch32rv
 CH32V006.build.variant=CH32V006
 CH32V006.build.march=rv32ec_zmmul_zicsr
 CH32V006.build.mabi=ilp32e
+CH32V006.build.march_xw=_xwchc
 CH32V006.build.f_cpu=24000000L
 CH32V006.build.series=CH32V006
 CH32V006.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3
@@ -914,17 +940,22 @@ CH32V006.menu.clocksrc.hse=External crystal 24 MHz (HSE; HSI if it does not star
 CH32V006.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V006.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V006.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V006.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V006.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V006.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V006.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V006.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V006.menu.opt.osstd.build.optimize_flags=
 
+CH32V006.menu.compiler.gcc=GCC
+CH32V006.menu.compiler.gcc.build.toolchain=gcc
+CH32V006.menu.compiler.clang=Clang
+CH32V006.menu.compiler.clang.build.toolchain=clang
+
 CH32V006.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V006.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V006.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V006.menu.rtlib.fltf.build.rtlib_flags=
 CH32V006.menu.rtlib.flt=Float (32-bit)
-CH32V006.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V006.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V006.menu.rtlib.flt.build.rtlib_flags=
 CH32V006.menu.rtlib.dbl=Double (64-bit)
 CH32V006.menu.rtlib.dbl.build.fp_flags=
@@ -942,7 +973,7 @@ CH32V006.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V006.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V006.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V006.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
-CH32V006.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V006.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V006.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V006.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 CH32V006.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -1063,6 +1094,7 @@ CH32V007.upload.protocol=ch32rv
 CH32V007.build.variant=CH32V007
 CH32V007.build.march=rv32ec_zmmul_zicsr
 CH32V007.build.mabi=ilp32e
+CH32V007.build.march_xw=_xwchc
 CH32V007.build.f_cpu=24000000L
 CH32V007.build.series=CH32V007
 CH32V007.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3
@@ -1140,17 +1172,22 @@ CH32V007.menu.clocksrc.hse=External crystal 24 MHz (HSE; HSI if it does not star
 CH32V007.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V007.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V007.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V007.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V007.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V007.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V007.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V007.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V007.menu.opt.osstd.build.optimize_flags=
 
+CH32V007.menu.compiler.gcc=GCC
+CH32V007.menu.compiler.gcc.build.toolchain=gcc
+CH32V007.menu.compiler.clang=Clang
+CH32V007.menu.compiler.clang.build.toolchain=clang
+
 CH32V007.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V007.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V007.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V007.menu.rtlib.fltf.build.rtlib_flags=
 CH32V007.menu.rtlib.flt=Float (32-bit)
-CH32V007.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V007.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V007.menu.rtlib.flt.build.rtlib_flags=
 CH32V007.menu.rtlib.dbl=Double (64-bit)
 CH32V007.menu.rtlib.dbl.build.fp_flags=
@@ -1168,7 +1205,7 @@ CH32V007.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V007.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V007.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V007.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V007.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V007.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V007.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V007.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V007.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -1289,6 +1326,7 @@ CH32M007.upload.protocol=ch32rv
 CH32M007.build.variant=CH32M007
 CH32M007.build.march=rv32ec_zmmul_zicsr
 CH32M007.build.mabi=ilp32e
+CH32M007.build.march_xw=_xwchc
 CH32M007.build.f_cpu=24000000L
 CH32M007.build.series=CH32M007
 CH32M007.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x1880 -DCH32RV_INTSYSCR_INIT=0x3
@@ -1366,17 +1404,22 @@ CH32M007.menu.clocksrc.hse=External crystal 24 MHz (HSE; HSI if it does not star
 CH32M007.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32M007.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32M007.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32M007.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32M007.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32M007.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32M007.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32M007.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M007.menu.opt.osstd.build.optimize_flags=
 
+CH32M007.menu.compiler.gcc=GCC
+CH32M007.menu.compiler.gcc.build.toolchain=gcc
+CH32M007.menu.compiler.clang=Clang
+CH32M007.menu.compiler.clang.build.toolchain=clang
+
 CH32M007.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32M007.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M007.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32M007.menu.rtlib.fltf.build.rtlib_flags=
 CH32M007.menu.rtlib.flt=Float (32-bit)
-CH32M007.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M007.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32M007.menu.rtlib.flt.build.rtlib_flags=
 CH32M007.menu.rtlib.dbl=Double (64-bit)
 CH32M007.menu.rtlib.dbl.build.fp_flags=
@@ -1394,7 +1437,7 @@ CH32M007.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32M007.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32M007.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M007.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32M007.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M007.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32M007.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M007.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M007.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -1562,17 +1605,22 @@ CH32V103.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32V103.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V103.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V103.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V103.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V103.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V103.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V103.menu.opt.osstd.build.optimize_flags=
 
+CH32V103.menu.compiler.gcc=GCC
+CH32V103.menu.compiler.gcc.build.toolchain=gcc
+CH32V103.menu.compiler.clang=Clang
+CH32V103.menu.compiler.clang.build.toolchain=clang
+
 CH32V103.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V103.menu.rtlib.fltf.build.rtlib_flags=
 CH32V103.menu.rtlib.flt=Float (32-bit)
-CH32V103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V103.menu.rtlib.flt.build.rtlib_flags=
 CH32V103.menu.rtlib.dbl=Double (64-bit)
 CH32V103.menu.rtlib.dbl.build.fp_flags=
@@ -1590,7 +1638,7 @@ CH32V103.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V103.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V103.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V103.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -1679,6 +1727,7 @@ CH32V203.upload.protocol=ch32rv
 CH32V203.build.variant=CH32V203
 CH32V203.build.march=rv32imac_zicsr
 CH32V203.build.mabi=ilp32
+CH32V203.build.march_xw=_xwchc
 CH32V203.build.f_cpu=96000000L
 CH32V203.build.series=CH32V203
 CH32V203.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_CORECFGR=0x1f
@@ -1845,17 +1894,22 @@ CH32V203.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32V203.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V203.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V203.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V203.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V203.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V203.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V203.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V203.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V203.menu.opt.osstd.build.optimize_flags=
 
+CH32V203.menu.compiler.gcc=GCC
+CH32V203.menu.compiler.gcc.build.toolchain=gcc
+CH32V203.menu.compiler.clang=Clang
+CH32V203.menu.compiler.clang.build.toolchain=clang
+
 CH32V203.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V203.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V203.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V203.menu.rtlib.fltf.build.rtlib_flags=
 CH32V203.menu.rtlib.flt=Float (32-bit)
-CH32V203.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V203.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V203.menu.rtlib.flt.build.rtlib_flags=
 CH32V203.menu.rtlib.dbl=Double (64-bit)
 CH32V203.menu.rtlib.dbl.build.fp_flags=
@@ -1873,7 +1927,7 @@ CH32V203.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V203.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V203.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V203.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V203.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V203.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V203.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V203.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V203.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -1977,6 +2031,7 @@ CH32V208.upload.protocol=ch32rv
 CH32V208.build.variant=CH32V208
 CH32V208.build.march=rv32imac_zicsr
 CH32V208.build.mabi=ilp32
+CH32V208.build.march_xw=_xwchc
 CH32V208.build.f_cpu=96000000L
 CH32V208.build.series=CH32V208
 CH32V208.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_CORECFGR=0x1f
@@ -2058,17 +2113,22 @@ CH32V208.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32V208.menu.clocksrc.hsi.build.clock_src_defines=
 
 CH32V208.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V208.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V208.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V208.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V208.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V208.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V208.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V208.menu.opt.osstd.build.optimize_flags=
 
+CH32V208.menu.compiler.gcc=GCC
+CH32V208.menu.compiler.gcc.build.toolchain=gcc
+CH32V208.menu.compiler.clang=Clang
+CH32V208.menu.compiler.clang.build.toolchain=clang
+
 CH32V208.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V208.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V208.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V208.menu.rtlib.fltf.build.rtlib_flags=
 CH32V208.menu.rtlib.flt=Float (32-bit)
-CH32V208.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V208.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V208.menu.rtlib.flt.build.rtlib_flags=
 CH32V208.menu.rtlib.dbl=Double (64-bit)
 CH32V208.menu.rtlib.dbl.build.fp_flags=
@@ -2086,7 +2146,7 @@ CH32V208.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V208.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V208.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V208.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V208.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V208.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V208.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V208.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V208.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -2190,6 +2250,7 @@ CH32V303.upload.protocol=ch32rv
 CH32V303.build.variant=CH32V303
 CH32V303.build.march=rv32imafc_zicsr
 CH32V303.build.mabi=ilp32f
+CH32V303.build.march_xw=_xwchc
 CH32V303.build.f_cpu=96000000L
 CH32V303.build.series=CH32V303
 CH32V303.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x0b -DCH32RV_CORECFGR=0x1f
@@ -2278,17 +2339,22 @@ CH32V303.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32V303.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V303.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V303.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V303.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V303.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V303.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V303.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V303.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V303.menu.opt.osstd.build.optimize_flags=
 
+CH32V303.menu.compiler.gcc=GCC
+CH32V303.menu.compiler.gcc.build.toolchain=gcc
+CH32V303.menu.compiler.clang=Clang
+CH32V303.menu.compiler.clang.build.toolchain=clang
+
 CH32V303.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V303.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V303.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V303.menu.rtlib.fltf.build.rtlib_flags=
 CH32V303.menu.rtlib.flt=Float (32-bit)
-CH32V303.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V303.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V303.menu.rtlib.flt.build.rtlib_flags=
 CH32V303.menu.rtlib.dbl=Double (64-bit)
 CH32V303.menu.rtlib.dbl.build.fp_flags=
@@ -2306,7 +2372,7 @@ CH32V303.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V303.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V303.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V303.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V303.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V303.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V303.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V303.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V303.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -2498,6 +2564,7 @@ CH32V305.upload.protocol=ch32rv
 CH32V305.build.variant=CH32V305
 CH32V305.build.march=rv32imafc_zicsr
 CH32V305.build.mabi=ilp32f
+CH32V305.build.march_xw=_xwchc
 CH32V305.build.f_cpu=96000000L
 CH32V305.build.series=CH32V305
 CH32V305.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x0b -DCH32RV_CORECFGR=0x1f
@@ -2579,17 +2646,22 @@ CH32V305.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32V305.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V305.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V305.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V305.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V305.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V305.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V305.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V305.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V305.menu.opt.osstd.build.optimize_flags=
 
+CH32V305.menu.compiler.gcc=GCC
+CH32V305.menu.compiler.gcc.build.toolchain=gcc
+CH32V305.menu.compiler.clang=Clang
+CH32V305.menu.compiler.clang.build.toolchain=clang
+
 CH32V305.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V305.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V305.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V305.menu.rtlib.fltf.build.rtlib_flags=
 CH32V305.menu.rtlib.flt=Float (32-bit)
-CH32V305.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V305.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V305.menu.rtlib.flt.build.rtlib_flags=
 CH32V305.menu.rtlib.dbl=Double (64-bit)
 CH32V305.menu.rtlib.dbl.build.fp_flags=
@@ -2607,7 +2679,7 @@ CH32V305.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V305.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V305.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V305.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V305.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V305.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V305.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V305.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V305.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -2759,6 +2831,7 @@ CH32V307.upload.protocol=ch32rv
 CH32V307.build.variant=CH32V307
 CH32V307.build.march=rv32imafc_zicsr
 CH32V307.build.mabi=ilp32f
+CH32V307.build.march_xw=_xwchc
 CH32V307.build.f_cpu=96000000L
 CH32V307.build.series=CH32V307
 CH32V307.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x0b -DCH32RV_CORECFGR=0x1f
@@ -2826,17 +2899,22 @@ CH32V307.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32V307.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V307.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V307.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V307.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V307.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V307.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V307.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V307.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V307.menu.opt.osstd.build.optimize_flags=
 
+CH32V307.menu.compiler.gcc=GCC
+CH32V307.menu.compiler.gcc.build.toolchain=gcc
+CH32V307.menu.compiler.clang=Clang
+CH32V307.menu.compiler.clang.build.toolchain=clang
+
 CH32V307.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V307.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V307.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V307.menu.rtlib.fltf.build.rtlib_flags=
 CH32V307.menu.rtlib.flt=Float (32-bit)
-CH32V307.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V307.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V307.menu.rtlib.flt.build.rtlib_flags=
 CH32V307.menu.rtlib.dbl=Double (64-bit)
 CH32V307.menu.rtlib.dbl.build.fp_flags=
@@ -2854,7 +2932,7 @@ CH32V307.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V307.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V307.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V307.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V307.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V307.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V307.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V307.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V307.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -3046,6 +3124,7 @@ CH32V317.upload.protocol=ch32rv
 CH32V317.build.variant=CH32V317
 CH32V317.build.march=rv32imafc_zicsr
 CH32V317.build.mabi=ilp32f
+CH32V317.build.march_xw=_xwchc
 CH32V317.build.f_cpu=96000000L
 CH32V317.build.series=CH32V317
 CH32V317.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x0b -DCH32RV_CORECFGR=0x1f
@@ -3104,17 +3183,22 @@ CH32V317.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32V317.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V317.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V317.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V317.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V317.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V317.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V317.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V317.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V317.menu.opt.osstd.build.optimize_flags=
 
+CH32V317.menu.compiler.gcc=GCC
+CH32V317.menu.compiler.gcc.build.toolchain=gcc
+CH32V317.menu.compiler.clang=Clang
+CH32V317.menu.compiler.clang.build.toolchain=clang
+
 CH32V317.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V317.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V317.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V317.menu.rtlib.fltf.build.rtlib_flags=
 CH32V317.menu.rtlib.flt=Float (32-bit)
-CH32V317.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V317.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V317.menu.rtlib.flt.build.rtlib_flags=
 CH32V317.menu.rtlib.dbl=Double (64-bit)
 CH32V317.menu.rtlib.dbl.build.fp_flags=
@@ -3132,7 +3216,7 @@ CH32V317.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V317.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V317.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V317.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V317.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V317.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V317.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V317.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V317.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -3314,6 +3398,7 @@ CH32X033.upload.protocol=ch32rv
 CH32X033.build.variant=CH32X033
 CH32X033.build.march=rv32imac_zicsr
 CH32X033.build.mabi=ilp32
+CH32X033.build.march_xw=_xwchc
 CH32X033.build.f_cpu=48000000L
 CH32X033.build.series=CH32X033
 CH32X033.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_CORECFGR=0x1f
@@ -3356,17 +3441,22 @@ CH32X033.menu.clock.8.build.f_cpu=8000000L
 CH32X033.menu.clock.8.build.clock_defines=-DCH32RV_FLASH_LATENCY=0 -DCH32RV_CLOCK_SYSCLK_HZ=48000000 -DCH32RV_CLOCK_USE_PLL=0 -DCH32RV_CLOCK_PLL_MASK=0x0u -DCH32RV_CLOCK_PLL_VALUE=0x0u -DCH32RV_CLOCK_EXTEN_ADDR=0x0u -DCH32RV_CLOCK_EXTEN_BITS=0x0u
 
 CH32X033.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32X033.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32X033.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32X033.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32X033.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32X033.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32X033.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X033.menu.opt.osstd.build.optimize_flags=
 
+CH32X033.menu.compiler.gcc=GCC
+CH32X033.menu.compiler.gcc.build.toolchain=gcc
+CH32X033.menu.compiler.clang=Clang
+CH32X033.menu.compiler.clang.build.toolchain=clang
+
 CH32X033.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32X033.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X033.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32X033.menu.rtlib.fltf.build.rtlib_flags=
 CH32X033.menu.rtlib.flt=Float (32-bit)
-CH32X033.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X033.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32X033.menu.rtlib.flt.build.rtlib_flags=
 CH32X033.menu.rtlib.dbl=Double (64-bit)
 CH32X033.menu.rtlib.dbl.build.fp_flags=
@@ -3384,7 +3474,7 @@ CH32X033.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32X033.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32X033.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X033.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32X033.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X033.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32X033.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X033.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X033.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -3485,6 +3575,7 @@ CH32X035.upload.protocol=ch32rv
 CH32X035.build.variant=CH32X035
 CH32X035.build.march=rv32imac_zicsr
 CH32X035.build.mabi=ilp32
+CH32X035.build.march_xw=_xwchc
 CH32X035.build.f_cpu=48000000L
 CH32X035.build.series=CH32X035
 CH32X035.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_CORECFGR=0x1f
@@ -3587,17 +3678,22 @@ CH32X035.menu.clock.8.build.f_cpu=8000000L
 CH32X035.menu.clock.8.build.clock_defines=-DCH32RV_FLASH_LATENCY=0 -DCH32RV_CLOCK_SYSCLK_HZ=48000000 -DCH32RV_CLOCK_USE_PLL=0 -DCH32RV_CLOCK_PLL_MASK=0x0u -DCH32RV_CLOCK_PLL_VALUE=0x0u -DCH32RV_CLOCK_EXTEN_ADDR=0x0u -DCH32RV_CLOCK_EXTEN_BITS=0x0u
 
 CH32X035.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32X035.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32X035.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32X035.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32X035.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32X035.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32X035.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X035.menu.opt.osstd.build.optimize_flags=
 
+CH32X035.menu.compiler.gcc=GCC
+CH32X035.menu.compiler.gcc.build.toolchain=gcc
+CH32X035.menu.compiler.clang=Clang
+CH32X035.menu.compiler.clang.build.toolchain=clang
+
 CH32X035.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32X035.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X035.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32X035.menu.rtlib.fltf.build.rtlib_flags=
 CH32X035.menu.rtlib.flt=Float (32-bit)
-CH32X035.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X035.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32X035.menu.rtlib.flt.build.rtlib_flags=
 CH32X035.menu.rtlib.dbl=Double (64-bit)
 CH32X035.menu.rtlib.dbl.build.fp_flags=
@@ -3615,7 +3711,7 @@ CH32X035.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32X035.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32X035.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X035.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32X035.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X035.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32X035.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X035.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X035.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -3742,6 +3838,7 @@ CH32L103.upload.protocol=ch32rv
 CH32L103.build.variant=CH32L103
 CH32L103.build.march=rv32imac_zicsr
 CH32L103.build.mabi=ilp32
+CH32L103.build.march_xw=_xwchc
 CH32L103.build.f_cpu=8000000L
 CH32L103.build.series=CH32L103
 CH32L103.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_CORECFGR=0x1f
@@ -3843,17 +3940,22 @@ CH32L103.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32L103.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32L103.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32L103.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32L103.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32L103.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32L103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32L103.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32L103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32L103.menu.opt.osstd.build.optimize_flags=
 
+CH32L103.menu.compiler.gcc=GCC
+CH32L103.menu.compiler.gcc.build.toolchain=gcc
+CH32L103.menu.compiler.clang=Clang
+CH32L103.menu.compiler.clang.build.toolchain=clang
+
 CH32L103.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32L103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32L103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32L103.menu.rtlib.fltf.build.rtlib_flags=
 CH32L103.menu.rtlib.flt=Float (32-bit)
-CH32L103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32L103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32L103.menu.rtlib.flt.build.rtlib_flags=
 CH32L103.menu.rtlib.dbl=Double (64-bit)
 CH32L103.menu.rtlib.dbl.build.fp_flags=
@@ -3871,7 +3973,7 @@ CH32L103.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32L103.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32L103.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32L103.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32L103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32L103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32L103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32L103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32L103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -3989,6 +4091,7 @@ CH32M103.upload.protocol=ch32rv
 CH32M103.build.variant=CH32M103
 CH32M103.build.march=rv32imac_zicsr
 CH32M103.build.mabi=ilp32
+CH32M103.build.march_xw=_xwchc
 CH32M103.build.f_cpu=8000000L
 CH32M103.build.series=CH32M103
 CH32M103.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_CORECFGR=0x1f
@@ -4040,17 +4143,22 @@ CH32M103.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32M103.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32M103.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32M103.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32M103.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32M103.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32M103.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32M103.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32M103.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M103.menu.opt.osstd.build.optimize_flags=
 
+CH32M103.menu.compiler.gcc=GCC
+CH32M103.menu.compiler.gcc.build.toolchain=gcc
+CH32M103.menu.compiler.clang=Clang
+CH32M103.menu.compiler.clang.build.toolchain=clang
+
 CH32M103.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32M103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M103.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32M103.menu.rtlib.fltf.build.rtlib_flags=
 CH32M103.menu.rtlib.flt=Float (32-bit)
-CH32M103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M103.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32M103.menu.rtlib.flt.build.rtlib_flags=
 CH32M103.menu.rtlib.dbl=Double (64-bit)
 CH32M103.menu.rtlib.dbl.build.fp_flags=
@@ -4068,7 +4176,7 @@ CH32M103.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32M103.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32M103.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M103.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32M103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M103.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32M103.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M103.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M103.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -4168,6 +4276,7 @@ CH32V205.upload.protocol=ch32rv
 CH32V205.build.variant=CH32V205
 CH32V205.build.march=rv32imc_zicsr
 CH32V205.build.mabi=ilp32
+CH32V205.build.march_xw=_xwchc
 CH32V205.build.f_cpu=160000000L
 CH32V205.build.series=CH32V205
 CH32V205.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x7 -DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x1
@@ -4253,17 +4362,22 @@ CH32V205.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start
 CH32V205.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
 CH32V205.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V205.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V205.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V205.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V205.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V205.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V205.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V205.menu.opt.osstd.build.optimize_flags=
 
+CH32V205.menu.compiler.gcc=GCC
+CH32V205.menu.compiler.gcc.build.toolchain=gcc
+CH32V205.menu.compiler.clang=Clang
+CH32V205.menu.compiler.clang.build.toolchain=clang
+
 CH32V205.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V205.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V205.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V205.menu.rtlib.fltf.build.rtlib_flags=
 CH32V205.menu.rtlib.flt=Float (32-bit)
-CH32V205.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V205.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V205.menu.rtlib.flt.build.rtlib_flags=
 CH32V205.menu.rtlib.dbl=Double (64-bit)
 CH32V205.menu.rtlib.dbl.build.fp_flags=
@@ -4281,7 +4395,7 @@ CH32V205.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V205.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V205.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V205.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V205.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V205.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V205.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V205.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V205.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -4547,6 +4661,7 @@ CH32V407.upload.protocol=ch32rv
 CH32V407.build.variant=CH32V407
 CH32V407.build.march=rv32imac_zicsr
 CH32V407.build.mabi=ilp32
+CH32V407.build.march_xw=_xwchc
 CH32V407.build.f_cpu=200000000L
 CH32V407.build.series=CH32V407
 CH32V407.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x688 -DCH32RV_INTSYSCR_INIT=0x07 -DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x01 -DCH32RV_CSR805_CLR=0x100
@@ -4616,17 +4731,22 @@ CH32V407.menu.clock.20.build.f_cpu=20000000L
 CH32V407.menu.clock.20.build.clock_defines=-DCH32RV_FLASH_LATENCY=0 -DCH32RV_CLOCK_SYSCLK_HZ=20000000 -DCH32RV_CLOCK_USE_PLL=0 -DCH32RV_CLOCK_PLL_MASK=0x0u -DCH32RV_CLOCK_PLL_VALUE=0x0u -DCH32RV_CLOCK_EXTEN_ADDR=0x0u -DCH32RV_CLOCK_EXTEN_BITS=0x0u
 
 CH32V407.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V407.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V407.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V407.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V407.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V407.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V407.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V407.menu.opt.osstd.build.optimize_flags=
 
+CH32V407.menu.compiler.gcc=GCC
+CH32V407.menu.compiler.gcc.build.toolchain=gcc
+CH32V407.menu.compiler.clang=Clang
+CH32V407.menu.compiler.clang.build.toolchain=clang
+
 CH32V407.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V407.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V407.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V407.menu.rtlib.fltf.build.rtlib_flags=
 CH32V407.menu.rtlib.flt=Float (32-bit)
-CH32V407.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V407.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V407.menu.rtlib.flt.build.rtlib_flags=
 CH32V407.menu.rtlib.dbl=Double (64-bit)
 CH32V407.menu.rtlib.dbl.build.fp_flags=
@@ -4644,7 +4764,7 @@ CH32V407.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V407.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V407.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V407.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V407.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V407.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V407.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V407.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V407.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -4833,6 +4953,7 @@ CH32V467.upload.protocol=ch32rv
 CH32V467.build.variant=CH32V467
 CH32V467.build.march=rv32imac_zicsr
 CH32V467.build.mabi=ilp32
+CH32V467.build.march_xw=_xwchc
 CH32V467.build.f_cpu=200000000L
 CH32V467.build.series=CH32V467
 CH32V467.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x688 -DCH32RV_INTSYSCR_INIT=0x07 -DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x01 -DCH32RV_CSR805_CLR=0x100
@@ -4891,17 +5012,22 @@ CH32V467.menu.clock.20.build.f_cpu=20000000L
 CH32V467.menu.clock.20.build.clock_defines=-DCH32RV_FLASH_LATENCY=0 -DCH32RV_CLOCK_SYSCLK_HZ=20000000 -DCH32RV_CLOCK_USE_PLL=0 -DCH32RV_CLOCK_PLL_MASK=0x0u -DCH32RV_CLOCK_PLL_VALUE=0x0u -DCH32RV_CLOCK_EXTEN_ADDR=0x0u -DCH32RV_CLOCK_EXTEN_BITS=0x0u
 
 CH32V467.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32V467.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32V467.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32V467.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32V467.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32V467.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32V467.menu.opt.osstd=Smallest (-Os) without LTO
 CH32V467.menu.opt.osstd.build.optimize_flags=
 
+CH32V467.menu.compiler.gcc=GCC
+CH32V467.menu.compiler.gcc.build.toolchain=gcc
+CH32V467.menu.compiler.clang=Clang
+CH32V467.menu.compiler.clang.build.toolchain=clang
+
 CH32V467.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32V467.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V467.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V467.menu.rtlib.fltf.build.rtlib_flags=
 CH32V467.menu.rtlib.flt=Float (32-bit)
-CH32V467.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32V467.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32V467.menu.rtlib.flt.build.rtlib_flags=
 CH32V467.menu.rtlib.dbl=Double (64-bit)
 CH32V467.menu.rtlib.dbl.build.fp_flags=
@@ -4919,7 +5045,7 @@ CH32V467.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32V467.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32V467.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V467.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32V467.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32V467.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32V467.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32V467.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32V467.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -5108,6 +5234,7 @@ CH32X305.upload.protocol=ch32rv
 CH32X305.build.variant=CH32X305
 CH32X305.build.march=rv32imafc_zicsr
 CH32X305.build.mabi=ilp32f
+CH32X305.build.march_xw=_xwchc
 CH32X305.build.f_cpu=20000000L
 CH32X305.build.series=CH32X305
 CH32X305.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 -DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01
@@ -5137,17 +5264,22 @@ CH32X305.menu.pnum.CH32X305RCT6.monitor_port.wchlink.chip=CH32X305RCT6
 CH32X305.menu.pnum.CH32X305RCT6.monitor_port.oep.chip=CH32X305RCT6
 
 CH32X305.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32X305.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32X305.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32X305.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32X305.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32X305.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32X305.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X305.menu.opt.osstd.build.optimize_flags=
 
+CH32X305.menu.compiler.gcc=GCC
+CH32X305.menu.compiler.gcc.build.toolchain=gcc
+CH32X305.menu.compiler.clang=Clang
+CH32X305.menu.compiler.clang.build.toolchain=clang
+
 CH32X305.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32X305.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X305.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32X305.menu.rtlib.fltf.build.rtlib_flags=
 CH32X305.menu.rtlib.flt=Float (32-bit)
-CH32X305.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X305.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32X305.menu.rtlib.flt.build.rtlib_flags=
 CH32X305.menu.rtlib.dbl=Double (64-bit)
 CH32X305.menu.rtlib.dbl.build.fp_flags=
@@ -5165,7 +5297,7 @@ CH32X305.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32X305.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32X305.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X305.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32X305.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X305.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32X305.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X305.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X305.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -5504,6 +5636,7 @@ CH32X315.upload.protocol=ch32rv
 CH32X315.build.variant=CH32X315
 CH32X315.build.march=rv32imafc_zicsr
 CH32X315.build.mabi=ilp32f
+CH32X315.build.march_xw=_xwchc
 CH32X315.build.f_cpu=20000000L
 CH32X315.build.series=CH32X315
 CH32X315.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 -DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01
@@ -5560,17 +5693,22 @@ CH32X315.menu.clock.240.build.f_cpu=240000000L
 CH32X315.menu.clock.240.build.clock_defines=-DCH32RV_FLASH_LATENCY=0 -DCH32RV_CLOCK_SYSCLK_HZ=240000000 -DCH32RV_CLOCK_USE_PLL=1 -DCH32RV_CLOCK_PLL_MASK=0x7e0000u -DCH32RV_CLOCK_PLL_VALUE=0x20000u -DCH32RV_CLOCK_EXTEN_ADDR=0x0u -DCH32RV_CLOCK_EXTEN_BITS=0x0u -DCH32RV_CLOCK_SEQ=2
 
 CH32X315.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32X315.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32X315.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32X315.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32X315.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32X315.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32X315.menu.opt.osstd=Smallest (-Os) without LTO
 CH32X315.menu.opt.osstd.build.optimize_flags=
 
+CH32X315.menu.compiler.gcc=GCC
+CH32X315.menu.compiler.gcc.build.toolchain=gcc
+CH32X315.menu.compiler.clang=Clang
+CH32X315.menu.compiler.clang.build.toolchain=clang
+
 CH32X315.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32X315.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X315.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32X315.menu.rtlib.fltf.build.rtlib_flags=
 CH32X315.menu.rtlib.flt=Float (32-bit)
-CH32X315.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32X315.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32X315.menu.rtlib.flt.build.rtlib_flags=
 CH32X315.menu.rtlib.dbl=Double (64-bit)
 CH32X315.menu.rtlib.dbl.build.fp_flags=
@@ -5588,7 +5726,7 @@ CH32X315.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32X315.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32X315.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X315.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32X315.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32X315.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32X315.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32X315.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32X315.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -6049,6 +6187,7 @@ CH32M030.upload.protocol=ch32rv
 CH32M030.build.variant=CH32M030
 CH32M030.build.march=rv32imc_zicsr
 CH32M030.build.mabi=ilp32
+CH32M030.build.march_xw=_xwchc
 CH32M030.build.f_cpu=72000000L
 CH32M030.build.series=CH32M030
 CH32M030.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x88 -DCH32RV_INTSYSCR_INIT=0x3 -DCH32RV_CORECFGR=0x21 -DCH32RV_CSR_BC1=0x1
@@ -6131,17 +6270,22 @@ CH32M030.menu.clock.8.build.f_cpu=8000000L
 CH32M030.menu.clock.8.build.clock_defines=-DCH32RV_FLASH_LATENCY=0 -DCH32RV_CLOCK_SYSCLK_HZ=8000000 -DCH32RV_CLOCK_USE_PLL=0 -DCH32RV_CLOCK_PLL_MASK=0x0u -DCH32RV_CLOCK_PLL_VALUE=0x0u -DCH32RV_CLOCK_EXTEN_ADDR=0x0u -DCH32RV_CLOCK_EXTEN_BITS=0x0u
 
 CH32M030.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32M030.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32M030.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32M030.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32M030.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32M030.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32M030.menu.opt.osstd=Smallest (-Os) without LTO
 CH32M030.menu.opt.osstd.build.optimize_flags=
 
+CH32M030.menu.compiler.gcc=GCC
+CH32M030.menu.compiler.gcc.build.toolchain=gcc
+CH32M030.menu.compiler.clang=Clang
+CH32M030.menu.compiler.clang.build.toolchain=clang
+
 CH32M030.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32M030.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M030.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32M030.menu.rtlib.fltf.build.rtlib_flags=
 CH32M030.menu.rtlib.flt=Float (32-bit)
-CH32M030.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32M030.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32M030.menu.rtlib.flt.build.rtlib_flags=
 CH32M030.menu.rtlib.dbl=Double (64-bit)
 CH32M030.menu.rtlib.dbl.build.fp_flags=
@@ -6159,7 +6303,7 @@ CH32M030.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32M030.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32M030.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M030.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32M030.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32M030.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32M030.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32M030.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32M030.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -6242,6 +6386,7 @@ CH32H415.upload.tool.ch32rv-app=ch32rv_dfu
 CH32H415.build.variant=CH32H415
 CH32H415.build.march=rv32imafc_zicsr_zba_zbb_zbs
 CH32H415.build.mabi=ilp32f
+CH32H415.build.march_xw=_xwchc
 CH32H415.build.f_cpu=100000000L
 CH32H415.build.series=CH32H415
 CH32H415.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 -DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01 -DCH32RV_LOADCODE=1
@@ -6271,17 +6416,22 @@ CH32H415.menu.pnum.CH32H415REU6.monitor_port.wchlink.chip=CH32H415REU6
 CH32H415.menu.pnum.CH32H415REU6.monitor_port.oep.chip=CH32H415REU6
 
 CH32H415.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32H415.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32H415.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32H415.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32H415.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32H415.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32H415.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H415.menu.opt.osstd.build.optimize_flags=
 
+CH32H415.menu.compiler.gcc=GCC
+CH32H415.menu.compiler.gcc.build.toolchain=gcc
+CH32H415.menu.compiler.clang=Clang
+CH32H415.menu.compiler.clang.build.toolchain=clang
+
 CH32H415.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32H415.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H415.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32H415.menu.rtlib.fltf.build.rtlib_flags=
 CH32H415.menu.rtlib.flt=Float (32-bit)
-CH32H415.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H415.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32H415.menu.rtlib.flt.build.rtlib_flags=
 CH32H415.menu.rtlib.dbl=Double (64-bit)
 CH32H415.menu.rtlib.dbl.build.fp_flags=
@@ -6299,7 +6449,7 @@ CH32H415.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32H415.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32H415.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H415.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32H415.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H415.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32H415.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H415.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32H415.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -6571,6 +6721,7 @@ CH32H416.upload.tool.ch32rv-app=ch32rv_dfu
 CH32H416.build.variant=CH32H416
 CH32H416.build.march=rv32imafc_zicsr_zba_zbb_zbs
 CH32H416.build.mabi=ilp32f
+CH32H416.build.march_xw=_xwchc
 CH32H416.build.f_cpu=100000000L
 CH32H416.build.series=CH32H416
 CH32H416.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 -DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01 -DCH32RV_LOADCODE=1
@@ -6600,17 +6751,22 @@ CH32H416.menu.pnum.CH32H416RDU6.monitor_port.wchlink.chip=CH32H416RDU6
 CH32H416.menu.pnum.CH32H416RDU6.monitor_port.oep.chip=CH32H416RDU6
 
 CH32H416.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32H416.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32H416.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32H416.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32H416.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32H416.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32H416.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H416.menu.opt.osstd.build.optimize_flags=
 
+CH32H416.menu.compiler.gcc=GCC
+CH32H416.menu.compiler.gcc.build.toolchain=gcc
+CH32H416.menu.compiler.clang=Clang
+CH32H416.menu.compiler.clang.build.toolchain=clang
+
 CH32H416.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32H416.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H416.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32H416.menu.rtlib.fltf.build.rtlib_flags=
 CH32H416.menu.rtlib.flt=Float (32-bit)
-CH32H416.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H416.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32H416.menu.rtlib.flt.build.rtlib_flags=
 CH32H416.menu.rtlib.dbl=Double (64-bit)
 CH32H416.menu.rtlib.dbl.build.fp_flags=
@@ -6628,7 +6784,7 @@ CH32H416.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32H416.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32H416.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H416.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32H416.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H416.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32H416.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H416.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32H416.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -6824,6 +6980,7 @@ CH32H417.upload.tool.ch32rv-app=ch32rv_dfu
 CH32H417.build.variant=CH32H417
 CH32H417.build.march=rv32imafc_zicsr_zba_zbb_zbs
 CH32H417.build.mabi=ilp32f
+CH32H417.build.march_xw=_xwchc
 CH32H417.build.f_cpu=100000000L
 CH32H417.build.series=CH32H417
 CH32H417.build.startup_defines=-DCH32RV_MSTATUS_INIT=0x6088 -DCH32RV_INTSYSCR_INIT=0x07 -DCH32RV_CORECFGR=0x123703E1 -DCH32RV_CSR_BC1=0x01 -DCH32RV_LOADCODE=1
@@ -6873,17 +7030,22 @@ CH32H417.menu.pnum.CH32H417WEU6.monitor_port.wchlink.chip=CH32H417WEU6
 CH32H417.menu.pnum.CH32H417WEU6.monitor_port.oep.chip=CH32H417WEU6
 
 CH32H417.menu.opt.oslto=Smallest (-Os) with LTO (default)
-CH32H417.menu.opt.oslto.build.optimize_flags=-flto -ffat-lto-objects
+CH32H417.menu.opt.oslto.build.optimize_flags={compiler.lto_flags}
 CH32H417.menu.opt.osltosr=Smallest (-Os) with LTO and -msave-restore (slower calls)
-CH32H417.menu.opt.osltosr.build.optimize_flags=-flto -ffat-lto-objects -msave-restore
+CH32H417.menu.opt.osltosr.build.optimize_flags={compiler.lto_flags} -msave-restore
 CH32H417.menu.opt.osstd=Smallest (-Os) without LTO
 CH32H417.menu.opt.osstd.build.optimize_flags=
 
+CH32H417.menu.compiler.gcc=GCC
+CH32H417.menu.compiler.gcc.build.toolchain=gcc
+CH32H417.menu.compiler.clang=Clang
+CH32H417.menu.compiler.clang.build.toolchain=clang
+
 CH32H417.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-CH32H417.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H417.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32H417.menu.rtlib.fltf.build.rtlib_flags=
 CH32H417.menu.rtlib.flt=Float (32-bit)
-CH32H417.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+CH32H417.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 CH32H417.menu.rtlib.flt.build.rtlib_flags=
 CH32H417.menu.rtlib.dbl=Double (64-bit)
 CH32H417.menu.rtlib.dbl.build.fp_flags=
@@ -6901,7 +7063,7 @@ CH32H417.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %f (+~24 KB
 CH32H417.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 CH32H417.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H417.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB)
-CH32H417.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+CH32H417.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 CH32H417.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 CH32H417.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB)
 CH32H417.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -7323,10 +7485,10 @@ UIAPDUINO_V003_V14.menu.spi1.software.build.spi1_mode=-DCH32RV_SPI1_MODE=3
 UIAPDUINO_V003_V14.build.periph_defines={build.usart1_mode} {build.i2c1_mode} {build.spi1_mode}
 
 UIAPDUINO_V003_V14.menu.rtlib.fltf=Float (32-bit) + printf %f (default)
-UIAPDUINO_V003_V14.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+UIAPDUINO_V003_V14.menu.rtlib.fltf.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 UIAPDUINO_V003_V14.menu.rtlib.fltf.build.rtlib_flags=
 UIAPDUINO_V003_V14.menu.rtlib.flt=Float (32-bit)
-UIAPDUINO_V003_V14.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant
+UIAPDUINO_V003_V14.menu.rtlib.flt.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}
 UIAPDUINO_V003_V14.menu.rtlib.flt.build.rtlib_flags=
 UIAPDUINO_V003_V14.menu.rtlib.dbl=Double (64-bit)
 UIAPDUINO_V003_V14.menu.rtlib.dbl.build.fp_flags=
@@ -7344,7 +7506,7 @@ UIAPDUINO_V003_V14.menu.rtlib.dblfs=Double (64-bit) + printf %f + newlib scanf %
 UIAPDUINO_V003_V14.menu.rtlib.dblfs.build.fp_flags=-DCH32RV_PRINTF_FLOAT=1
 UIAPDUINO_V003_V14.menu.rtlib.dblfs.build.rtlib_flags=-Wl,-u,_scanf_float
 UIAPDUINO_V003_V14.menu.rtlib.fltfs=Float (32-bit) + printf %f + newlib scanf %f (+~24 KB; too big for 16 KB parts)
-UIAPDUINO_V003_V14.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant -DCH32RV_PRINTF_FLOAT=1
+UIAPDUINO_V003_V14.menu.rtlib.fltfs.build.fp_flags=-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags} -DCH32RV_PRINTF_FLOAT=1
 UIAPDUINO_V003_V14.menu.rtlib.fltfs.build.rtlib_flags=-Wl,-u,_scanf_float
 UIAPDUINO_V003_V14.menu.rtlib.nanofps=Double (64-bit) + newlib printf/scanf %f %e %g (+~31 KB; too big for 16 KB parts)
 UIAPDUINO_V003_V14.menu.rtlib.nanofps.build.fp_flags=-DCH32RV_PRINTF_NEWLIB=1
@@ -7357,3 +7519,9 @@ UIAPDUINO_V003_V14.menu.parsefloat.float=In float (smallest; the last bit off on
 UIAPDUINO_V003_V14.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 UIAPDUINO_V003_V14.menu.parsefloat.double=In double (the nearest float; links double arithmetic)
 UIAPDUINO_V003_V14.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
+UIAPDUINO_V003_V14.build.march_xw=_xwchc
+
+UIAPDUINO_V003_V14.menu.compiler.gcc=GCC
+UIAPDUINO_V003_V14.menu.compiler.gcc.build.toolchain=gcc
+UIAPDUINO_V003_V14.menu.compiler.clang=Clang
+UIAPDUINO_V003_V14.menu.compiler.clang.build.toolchain=clang

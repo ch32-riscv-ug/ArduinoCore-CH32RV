@@ -127,7 +127,9 @@ SECTIONS
     PROVIDE( _end = _ebss );
     PROVIDE( end = . );
 
-    .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size :
+    /* NOLOAD: GNU ld makes a section of only symbols and a moved `.` NOBITS on
+     * its own, lld makes it PROGBITS - a RAM-sized gap in the .bin. */
+    .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size (NOLOAD) :
     {
         PROVIDE( _heap_end = . );
         . = ALIGN(4);

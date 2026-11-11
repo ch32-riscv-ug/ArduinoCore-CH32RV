@@ -14,6 +14,10 @@ PLATFORM_ENTRIES), so nothing is packaged or installed - install_check.py is
 the test of that. Each example is copied without its sketch.yaml (which pins
 a released platform) and built with `-b` and the profile's FQBN. The compiler
 comes from the pinned toolchain (fetch_tools.py --tool xpack-riscv-none-elf-gcc).
+--compiler clang builds with the Compiler menu's Clang instead (build.toolchain);
+its bin/ is $CH32_CLANG_BIN, else the pinned ch32rv-clang (fetch_tools.py
+--tool ch32rv-clang). GCC's install is needed either way: clang links its
+newlib-nano and libgcc.
 
 Every build is `--clean`: no cached core or sketch from an earlier build
 counts as checked (it costs little - the core is rebuilt in seconds). Builds
@@ -67,6 +71,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("workdir", nargs="?", type=pathlib.Path)
     ap.add_argument("--profile", action="append", help="only these profiles (default: all)")
+    ap.add_argument("--compiler", choices=("gcc", "clang"), default=None,
+                    help="the Compiler menu's entry (default: the board's default)")
     ap.add_argument("--list-profiles", action="store_true",
                     help="print the profiles the examples declare, as a JSON list, and exit")
     args = ap.parse_args()
@@ -91,6 +97,17 @@ def main() -> int:
     if shutil.which("arduino-cli") is None:
         print("arduino-cli is not on PATH", file=sys.stderr)
         return 2
+    props = ["--build-property", f"compiler.path={gcc}{os.sep}"]
+    if args.compiler:
+        props += ["--build-property", f"build.toolchain={args.compiler}"]
+    if args.compiler == "clang":
+        clang = os.environ.get("CH32_CLANG_BIN") or env_defaults(DEFAULT_ROOT).get("CH32_CLANG_BIN")
+        clang = pathlib.Path(clang) if clang else None
+        if clang is None or not any((clang / n).exists() for n in ("clang", "clang.exe")):
+            print(f"no clang at {clang}: set CH32_CLANG_BIN or run "
+                  "tools/index/fetch_tools.py --tool ch32rv-clang", file=sys.stderr)
+            return 2
+        props += ["--build-property", f"compiler.clang.path={clang}{os.sep}"]
 
     work = args.workdir.resolve()
     work.mkdir(parents=True, exist_ok=True)
@@ -113,7 +130,7 @@ def main() -> int:
         for profile, fqbn in todo:
             proc = subprocess.run(
                 ["arduino-cli", "compile", "--clean", "-b", f"{PACKAGER}:{ARCH}:{fqbn}",
-                 "--build-property", f"compiler.path={gcc}{os.sep}",
+                 *props,
                  "--build-path", str(work / "build" / profile), str(copy)],
                 env=env, text=True, capture_output=True)
             built += 1

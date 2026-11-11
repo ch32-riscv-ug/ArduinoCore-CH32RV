@@ -259,6 +259,9 @@ def env_defaults(root: pathlib.Path) -> dict:
             out["CH32_XPACK_ARCHIVE"] = root / "cache" / entry["archiveFileName"]
     if "ch32rv" in frags:
         out["CH32_CH32RV"] = str(pathlib.Path(where["ch32rv"]) / "ch32rv")
+    if "ch32rv-clang" in frags:
+        # The Compiler menu's Clang (platform.txt compiler.clang.path).
+        out["CH32_CLANG_BIN"] = where["ch32rv-clang"] / "bin"
     out["CH32_TABLES"] = where[DEVICE_DATA]
     return out
 

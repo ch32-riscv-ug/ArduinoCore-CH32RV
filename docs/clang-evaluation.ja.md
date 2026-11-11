@@ -137,6 +137,37 @@ V003、X035、V307 の crt0 とベクターを clang の組み込みのアセン
 | 1 | RISC-V だけの clang + lld を自前でビルドして配る。libc と libgcc は今の xPack GCC の newlib nano を借りる（今回の試験と同じ形） | 中（CI のビルドと、パッケージの index） |
 | 2 | picolibc と compiler-rt を、全部の命令セットの組み合わせ（rv32ec、rv32imac、rv32imafc、B 有り）で作り、multilib.yaml 付きの 1 本の道具にする。GCC を外す | 大 |
 
+## コアへの組み込み（段 1、2026-11-11）
+
+- 配る clang: ch32-riscv-ug/ch32rv-clang。LLVM の正式リリースから RISC-V だけの clang + lld と、llvm-ar などのツールをビルドし、ホストごとに 1 つのアーカイブにして GitHub のリリースに載せる（GitHub Actions）。libc と libgcc は入れない。
+- ボードのメニュー「Compiler」（`compiler`）: GCC と Clang。メニューは `build.toolchain` だけを切り替える。違う値は platform.txt に `compiler.gcc.*` と `compiler.clang.*` の組で並べ、`compiler.<x>={compiler.{build.toolchain}.<x>}` で選ぶ（arduino-cli はこの入れ子を展開する）。レシピは選んだあとの名前だけを使う。
+  - 既定は GCC のまま。ch32rv-clang のリリースを index に入れたら Clang を既定にする。
+- Clang の中身:
+  - `--target=riscv32-unknown-elf`、`-Oz`、LTO は `-flto` だけ（lld は fat オブジェクトのビットコードを既定で使わず、機械語のほうをリンクするため）。
+  - ヘッダーは `-nostdlibinc` のうえで、libstdc++（汎用、multilib の `bits/c++config.h`、backward）、newlib の順に `-isystem` で並べる（GCC のドライバーと同じ順。libstdc++ が `#include_next` で newlib を読む）。
+  - リンクは lld、`-nostdlib`、`-lc_nano -lm -lgcc`。ライブラリの場所は GCC の multilib のディレクトリ。clang のドライバーは xPack の multilib を選べない（常に既定の rv32imac）ので、`compiler.multilib.<march>.<mabi>` に GCC の `-print-multi-directory` の答えを書いた。tests/unit/test_clang_platform.py が GCC の答えと比べる。
+  - Float（32-bit）のメニューの `-fsingle-precision-constant` は、clang では `-cl-single-precision-constant`（C と C++ でも効く。double の変数はそのまま double）。
+  - XW: `build.march_xw=_xwchc` を、ボードの部品の系列がすべて XW のコアだけのときに付ける（ch32-device-data の cores.csv の `xw` と series.csv の `core`）。V103 だけ付かない。
+  - ch32rv_string.h: clang は `optimize(...)` の属性を無視するので、`no_builtin` にした（memset などのループが自分自身の呼び出しに戻らない）。
+- リンカースクリプト: `.stack` に `(NOLOAD)` を付けた。GCC の出力は変わらない。
+- GCC で作ったものは変わらない: V003 の 6 本で、変更の前後の text・data・bss が同じ。
+- Clang でビルドが通るもの（手元の LLVM 23.1.5 の公式の版で）:
+  - V003 の例 63 本すべてと、H417 のプロファイルの 6 本すべて（V5F の ITCM から SRAM へのはみ出しも lld で）。
+  - SystemInfo を V103、V205、X035、V307、H417（V5F と V3F）で。
+
+| SystemInfo の text | GCC | Clang |
+|---|---|---|
+| CH32V003 | 3,988 | 3,828 |
+| CH32V103（XW 無し） | 4,800 | 4,732 |
+| CH32V205 | 5,820 | 5,668 |
+| CH32X035 | 4,764 | 4,656 |
+| CH32V307 | 5,764 | 5,740 |
+| CH32H417（V5F） | 8,124 | 7,160 |
+| CH32H417（V3F） | 6,288 | 6,072 |
+
+- パッケージ: tools/index/gen_index.py は tools/index/tools_ch32rv_clang.json があるときだけ、ch32rv-clang を依存に入れ、`compiler.clang.path=` を書き換える。fetch_tools.py は `CH32_CLANG_BIN` を出す。build_examples.py に `--compiler clang`。
+- 残り: リリースが出たら tools_ch32rv_clang.json を作る（bump_tool.py）。Clang を既定にする。実機の試験を Clang で流す。CI の例のビルドに Clang を足す。
+
 ## 次に確かめること
 
 1. RISC-V だけの clang + lld を手元でビルドして、大きさと時間を測る（段 1 の準備）。

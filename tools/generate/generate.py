@@ -239,7 +239,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.compiler=Compiler\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
@@ -371,7 +371,9 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
 # nothing and parses the way the arithmetic does: integers under Float, double
 # under Double - the newlib entries' way, and with the default Float + %f, the
 # default before the menus were split.
-_F32 = "-DCH32RV_FP_FLOAT=1 -fsingle-precision-constant"
+# {compiler.fp32_flags}: the compiler's own flag (platform.txt; GCC
+# -fsingle-precision-constant, clang -cl-single-precision-constant).
+_F32 = "-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}"
 _PF = "-DCH32RV_PRINTF_FLOAT=1"
 _NEWLIB = "-DCH32RV_PRINTF_NEWLIB=1"
 _UPF = "-Wl,-u,_printf_float"
@@ -606,9 +608,9 @@ def vio18_menu(board: str) -> list[str]:
 # further 4-5% for 7-9% slower ECC. The menu id and the first entries are
 # STM32duino's for the same choice.
 OPT_MENU = (
-    ("oslto", "Smallest (-Os) with LTO (default)", "-flto -ffat-lto-objects"),
+    ("oslto", "Smallest (-Os) with LTO (default)", "{compiler.lto_flags}"),
     ("osltosr", "Smallest (-Os) with LTO and -msave-restore (slower calls)",
-     "-flto -ffat-lto-objects -msave-restore"),
+     "{compiler.lto_flags} -msave-restore"),
     ("osstd", "Smallest (-Os) without LTO", ""),
 )
 
@@ -783,6 +785,42 @@ def clocksrc_menu(board: str, series: str) -> list[str]:
             f"{board}.menu.clocksrc.hsi.build.clock_src_defines=",
             f"{board}.menu.clocksrc.hse=External crystal {mhz} MHz (HSE; HSI if it does not start)",
             f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}"]
+
+
+# Compiler (platform.txt build.toolchain; the compiler.gcc.* / compiler.clang.*
+# pairs there). GCC first, the default, until the ch32rv-clang package is in
+# the index: Clang then becomes the default (-Oz, lld, LTO, XW where the cores
+# have it; docs/clang-evaluation.ja.md).
+COMPILER_MENU = (
+    ("gcc", "GCC"),
+    ("clang", "Clang"),
+)
+
+
+def compiler_menu(board: str) -> list[str]:
+    lines = []
+    for key, label in COMPILER_MENU:
+        lines.append(f"{board}.menu.compiler.{key}={label}")
+        lines.append(f"{board}.menu.compiler.{key}.build.toolchain={key}")
+    return lines
+
+
+# Series -> True where every QingKe core it has carries WCH's XW compressed
+# instructions (ch32-device-data cores.csv `xw`, series.csv `core`; a dual-core
+# series names both, "QingKe V5F + QingKe V3F"). Filled in main().
+SERIES_XW: dict = {}
+
+
+def load_series_xw(tables: pathlib.Path) -> dict:
+    xw = {r["core"]: r["xw"] for r in read_table(tables, "cores.csv", ("core", "xw"))}
+    out = {}
+    for r in read_table(tables, "series.csv", ("series", "core")):
+        cores = [c.strip() for c in r["core"].split("+") if c.strip()]
+        unknown = [c for c in cores if xw.get(c) not in ("yes", "no")]
+        if unknown:
+            raise SystemExit(f"ERROR: {r['series']}: cores.csv has no xw for {unknown}")
+        out[r["series"]] = bool(cores) and all(xw[c] == "yes" for c in cores)
+    return out
 
 
 def opt_menu(board: str) -> list[str]:
@@ -4068,6 +4106,10 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines.append(f"{board}.build.variant={board}")
     lines.append(f"{board}.build.march={fam['march']}")
     lines.append(f"{board}.build.mabi={fam['mabi']}")
+    # XW for clang (platform.txt build.march_xw): only where every series the
+    # board's parts belong to has it, so CH32V103 (QingKe V3A) never gets it.
+    if all(SERIES_XW.get(r["series"], False) for r in rows):
+        lines.append(f"{board}.build.march_xw=_xwchc")
     # The clock: the CPU Clock menu's first entry where there is one.
     menu = CLOCK_MENU.get(series)
     clk = clock_for(None, menu[0][1] * 1000000 if menu else None, menu[0][2] * 1000000 if menu else None)
@@ -4243,6 +4285,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines.append("")
     lines += opt_menu(board)
     lines.append("")
+    lines += compiler_menu(board)
+    lines.append("")
     lines += rtlib_menu(board, min_flash)
     lines.append("")
     lines += parsefloat_menu(board)
@@ -4300,6 +4344,7 @@ def main() -> int:
     ADC_INTERNAL.update(load_adc_internal(args.tables))
     cores = {r["series"]: r["core"]
              for r in read_table(args.tables, "series.csv", ("series", "core"))}
+    SERIES_XW.update(load_series_xw(args.tables))
     pwm = load_pwm_pins(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
@@ -4419,6 +4464,10 @@ def main() -> int:
         # and the Floating Point menu every board has
         flash = int(re.search(rf"^{board_id}\.upload\.maximum_size=(\d+)", text, re.M).group(1))
         text += "\n" + "\n".join(rtlib_menu(board_id, flash) + parsefloat_menu(board_id)) + "\n"
+        # and the Compiler menu, with XW for clang where the series has it
+        if SERIES_XW.get(series, False):
+            text += f"{board_id}.build.march_xw=_xwchc\n"
+        text += "\n" + "\n".join(compiler_menu(board_id)) + "\n"
         named_boards.append(text)
     outputs[args.platform / "boards.txt"] = (
         gen_header() + "\n" + MENU_HEADER + "\n" + "\n".join(boards_blocks)
