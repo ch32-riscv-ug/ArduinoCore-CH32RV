@@ -186,6 +186,22 @@ def tool_paths():
     return tool, gcc, versions
 
 
+def bench_compiler():
+    """The Compiler menu's entry the bench builds with: CH32_TEST_COMPILER (gcc or clang), else the board's default."""
+    value = os.environ.get("CH32_TEST_COMPILER", "").strip().lower()
+    if value not in ("", "gcc", "clang"):
+        raise ValueError(f"CH32_TEST_COMPILER={value!r}: gcc or clang")
+    return value
+
+
+def with_compiler(fqbn):
+    """The FQBN with compiler=<CH32_TEST_COMPILER> added to its options (a board menu outranks platform.local.txt)."""
+    value = bench_compiler()
+    if not value:
+        return fqbn
+    return fqbn + ("," if fqbn.count(":") >= 3 else ":") + f"compiler={value}"
+
+
 def isolated_environment(work, tool, gcc):
     env = dict(os.environ)
     for key in ("CH32RV_PROBE", "CH32RV_CHIP", "CH32RV_DB", "CH32RV_REPLAY", "CH32RV_CAPTURE", "ARDUINO_CONFIG_FILE"):
@@ -221,7 +237,17 @@ def isolated_environment(work, tool, gcc):
     platform.mkdir(parents=True)
     for name in ("cores", "variants", "libraries", "platform.txt", "boards.txt", "programmers.txt"):
         (platform / name).symlink_to(REPO / name, target_is_directory=(REPO / name).is_dir())
+    # CH32_TEST_COMPILER=clang: the Compiler menu's Clang (the FQBN gets compiler=clang, see with_compiler()),
+    # from the pinned ch32rv-clang; GCC's install still gives its newlib-nano and libgcc.
+    clang_line = ""
+    if bench_compiler() == "clang":
+        version = json.loads((REPO / "tools/index/tools_ch32rv_clang.json").read_text())["version"]
+        clang = REPO / ".tools/ch32rv-clang" / version / "bin"
+        if not (clang / "clang").exists() and not (clang / "clang.exe").exists():
+            raise ValueError("CH32_TEST_COMPILER=clang: fetch ch32rv-clang first (tools/index/fetch_tools.py)")
+        clang_line = f"compiler.clang.path={clang}{os.sep}\n"
     (platform / "platform.local.txt").write_text(
+        clang_line +
         f"compiler.path={gcc}{os.sep}\n"
         f"runtime.tools.ch32rv.path={tool.parent}\n"
         f"tools.ch32rv.path={tool.parent}\n"
@@ -316,7 +342,7 @@ def stage_case(work, name, case, target):
         (directory / "build_opt.h").write_text(opts)
     build_id = uuid.uuid4().hex[:12]
     staged = {k: v for k, v in target.items() if k != "snapshot"}
-    settings = dict(build_id=build_id, target=staged, f_cpu=target["f_cpu"], case=case)
+    settings = dict(build_id=build_id, target=staged, f_cpu=target["f_cpu"], case=case, compiler=bench_compiler() or "default")
     # The lines of gpio, spi, softspi, wire, softwire and sd come from the probe's labels (bench_lines.py).
     (directory / "case.json").write_text(json.dumps(settings, indent=2))
     if case != "power":
@@ -324,7 +350,7 @@ def stage_case(work, name, case, target):
         shutil.copyfile(sketch, directory / f"{case}.ino")
         # JSON strings are valid YAML scalars. No platform version is requested: use the isolated worktree platform.
         (directory / "sketch.yaml").write_text(
-            f"profiles:\n  {name}:\n    fqbn: {json.dumps(target['fqbn'])}\n"
+            f"profiles:\n  {name}:\n    fqbn: {json.dumps(with_compiler(target['fqbn']))}\n"
             + ("    protocol: ch32rv-hid\n" if case == "hid" or target.get("upload_port", "").startswith("ch32rv-hid://") else "")
             +
             f"    port_config:\n      source: {CONSOLE_SOURCES.get(case, 'dmseq')}\n"

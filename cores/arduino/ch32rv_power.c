@@ -10,8 +10,13 @@ volatile uint8_t ch32rv_wake_cause;
 
 struct ch32rv_power_wake ch32rv_power_wake;
 
-/* deepSleep()'s cause across its restart: RAM keeps power through it. */
-static struct {
+/* deepSleep()'s cause across its restart: RAM keeps power through it.
+ * volatile: to the compiler the record starts as zero like any static, and
+ * clang evaluates a constructor at compile time when it can - it read magic
+ * as 0, dropped ch32rv_power_boot() and with it every store to the record
+ * (V003, 2026-11-12: wakeupCause() was 0 after a timer deepSleep). A volatile
+ * read it cannot evaluate. */
+static volatile struct {
     uint32_t magic;
     uint32_t cause;
 } wake_record __attribute__((section(".noinit")));

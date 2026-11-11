@@ -24,8 +24,9 @@
  * double to float (__truncdfsf2, for printf's %f under Float, where the
  * argument comes as a double, and any double stored in a float): rounded to
  * nearest, ties to even, subnormals and overflow to infinity as IEEE 754 has
- * them, so every non-NaN result is libgcc's bit for bit; a NaN keeps its sign
- * and the top of its payload and is made quiet. libgcc's is 344 B without an
+ * them, so every non-NaN result is libgcc's bit for bit; a NaN of any sign and
+ * payload becomes the canonical 0x7fc00000, as libgcc's does on RISC-V (its
+ * code run in an emulator against this one, 2026-11-12). libgcc's is 344 B without an
  * FPU, and 1,056 B with a single-precision one (V30x, X315, H41x), where it
  * also reads the rounding mode from frm and sets fflags: this one always
  * rounds to nearest and sets no flags (nothing in the core or Arduino changes
@@ -147,8 +148,8 @@ __attribute__((used)) float __truncdfsf2(double a)
     uint32_t m = (w[1] & 0xfffffu) << 3 | w[0] >> 29; /* the 23 bits a float keeps */
     uint32_t rest = w[0] & 0x1fffffffu;              /* the 29 below them */
     uint32_t u;
-    if (de == 0x7ff) { /* infinity, or NaN made quiet */
-        u = s | 0x7f800000u | ((m | rest) ? 0x400000u | m : 0u);
+    if (de == 0x7ff) { /* infinity, or NaN: the canonical one, as libgcc's (RISC-V's) */
+        u = (m | rest) ? 0x7fc00000u : s | 0x7f800000u;
     } else if (de == 0) { /* zero or a double subnormal: far below a float's */
         u = s;
     } else {

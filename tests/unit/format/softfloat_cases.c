@@ -1,7 +1,8 @@
 /* Host driver for tests/unit/test_core_softfloat.py: the core's __clzsi2, __ctzsi2, __extendsfdf2 and
  * __truncdfsf2 (cores/arduino/ch32rv_softfloat.c, built as core_clz, core_ctz, core_ext and core_trunc)
- * against the host's clz, ctz and float <-> double conversions (which keep a NaN's sign and payload and
- * make it quiet; IEEE 754 fixes every other result, so they are libgcc's too), over every 251st 32-bit
+ * against the host's clz, ctz and float <-> double conversions (IEEE 754 fixes every result but a NaN's, so
+ * they are libgcc's too; a NaN keeps its sign and payload, made quiet, from float to double as libgcc's does,
+ * and becomes the canonical 0x7fc00000 from double to float as libgcc's does on RISC-V), over every 251st 32-bit
  * value and the edges; for double to float, each such value as the high word with low words at and
  * around the rounding point. Prints one line per failure. */
 #include <stdint.h>
@@ -42,7 +43,12 @@ static void one(uint32_t u)
         const uint32_t w[2] = {lows[i], u};
         double d;
         memcpy(&d, w, sizeof d);
-        const float x = core_trunc(d), y = (float)d;
+        float y = (float)d;
+        if (y != y) { /* libgcc on RISC-V gives the canonical NaN, not the host's sign and payload */
+            const uint32_t canonical = 0x7fc00000u;
+            memcpy(&y, &canonical, sizeof y);
+        }
+        const float x = core_trunc(d);
         if (memcmp(&x, &y, sizeof x) && failures++ < 20) {
             uint32_t xb, yb;
             memcpy(&xb, &x, 4);

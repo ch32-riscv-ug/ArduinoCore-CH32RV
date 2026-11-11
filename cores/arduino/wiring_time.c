@@ -485,19 +485,35 @@ void ch32rv_clock_check(void)
 /* The multiply by the reciprocal is spelled out per bit: GCC at -Os on rv32e
  * otherwise emits a __mulsi3 libcall for it (seen in the V003 disassembly),
  * which is the very cost this is meant to remove. Each `((R >> b) & 1)` is a
- * constant, so only the set bits of R survive as a shift and an add. */
-#define CH32RV_MULC_BIT(x, R, b) (((R) >> (b)) & 1u ? ((uint32_t)(x) << (b)) : 0u)
-#define CH32RV_MULC(x, R) (CH32RV_MULC_BIT(x, R, 0) + CH32RV_MULC_BIT(x, R, 1) + CH32RV_MULC_BIT(x, R, 2) + CH32RV_MULC_BIT(x, R, 3) + \
-                         CH32RV_MULC_BIT(x, R, 4) + CH32RV_MULC_BIT(x, R, 5) + CH32RV_MULC_BIT(x, R, 6) + CH32RV_MULC_BIT(x, R, 7) + \
-                         CH32RV_MULC_BIT(x, R, 8) + CH32RV_MULC_BIT(x, R, 9) + CH32RV_MULC_BIT(x, R, 10) + CH32RV_MULC_BIT(x, R, 11) + \
-                         CH32RV_MULC_BIT(x, R, 12) + CH32RV_MULC_BIT(x, R, 13) + CH32RV_MULC_BIT(x, R, 14) + CH32RV_MULC_BIT(x, R, 15) + \
-                         CH32RV_MULC_BIT(x, R, 16) + CH32RV_MULC_BIT(x, R, 17) + CH32RV_MULC_BIT(x, R, 18) + CH32RV_MULC_BIT(x, R, 19))
+ * constant, so only the set bits of R survive as a shift and an add. Each
+ * shifted term goes through an empty asm: clang folds the shifts and adds
+ * back into one multiply, and at -Oz on rv32ec calls __mulsi3 for it (V003,
+ * 2026-11-12: two calls in micros(), whose extra microseconds made
+ * CH32RVAdcStream's measured rate 7.5 % low). Under clang only. */
+/* T wraps each term: CH32RV_MULC_PLAIN where the result must be a constant
+ * expression (the static assertions below), CH32RV_OPAQUE_U32 in code. */
+#define CH32RV_MULC_PLAIN(v) (v)
+#if defined(__clang__)
+#define CH32RV_OPAQUE_U32(v) __extension__({ uint32_t ch32rv_v_ = (v); __asm__("" : "+r"(ch32rv_v_)); ch32rv_v_; })
+#else
+/* GCC keeps the shifts and adds as written; the asm would only cost it registers (rv32e: +48 B, spills). */
+#define CH32RV_OPAQUE_U32(v) (v)
+#endif
+#define CH32RV_MULC_BIT(x, R, b, T) (((R) >> (b)) & 1u ? T((uint32_t)(x) << (b)) : 0u)
+#define CH32RV_MULC_T(x, R, T) (CH32RV_MULC_BIT(x, R, 0, T) + CH32RV_MULC_BIT(x, R, 1, T) + CH32RV_MULC_BIT(x, R, 2, T) + CH32RV_MULC_BIT(x, R, 3, T) + \
+CH32RV_MULC_BIT(x, R, 4, T) + CH32RV_MULC_BIT(x, R, 5, T) + CH32RV_MULC_BIT(x, R, 6, T) + CH32RV_MULC_BIT(x, R, 7, T) + \
+CH32RV_MULC_BIT(x, R, 8, T) + CH32RV_MULC_BIT(x, R, 9, T) + CH32RV_MULC_BIT(x, R, 10, T) + CH32RV_MULC_BIT(x, R, 11, T) + \
+CH32RV_MULC_BIT(x, R, 12, T) + CH32RV_MULC_BIT(x, R, 13, T) + CH32RV_MULC_BIT(x, R, 14, T) + CH32RV_MULC_BIT(x, R, 15, T) + \
+CH32RV_MULC_BIT(x, R, 16, T) + CH32RV_MULC_BIT(x, R, 17, T) + CH32RV_MULC_BIT(x, R, 18, T) + CH32RV_MULC_BIT(x, R, 19, T))
+#define CH32RV_MULC(x, R) CH32RV_MULC_T(x, R, CH32RV_OPAQUE_U32)
 _Static_assert(CH32RV_US_DIV_R < (1u << 20), "reciprocal wider than the spelled-out multiply");
-#define CH32RV_US_FROM_TICKS(t) (CH32RV_MULC((uint32_t)(t) >> CH32RV_US_DIV_K, CH32RV_US_DIV_R) >> CH32RV_US_DIV_S)
-_Static_assert(CH32RV_US_FROM_TICKS(CH32RV_TICKS_PER_MS - 1u) == 999u, "ticks->us reciprocal off at the top of the millisecond");
-_Static_assert(CH32RV_US_FROM_TICKS(CH32RV_TICKS_PER_US) == 1u && CH32RV_US_FROM_TICKS(CH32RV_TICKS_PER_US - 1u) == 0u,
+#define CH32RV_US_FROM_TICKS_T(t, T) (CH32RV_MULC_T((uint32_t)(t) >> CH32RV_US_DIV_K, CH32RV_US_DIV_R, T) >> CH32RV_US_DIV_S)
+#define CH32RV_US_FROM_TICKS(t) CH32RV_US_FROM_TICKS_T(t, CH32RV_OPAQUE_U32)
+#define CH32RV_US_FROM_TICKS_CONST(t) CH32RV_US_FROM_TICKS_T(t, CH32RV_MULC_PLAIN)
+_Static_assert(CH32RV_US_FROM_TICKS_CONST(CH32RV_TICKS_PER_MS - 1u) == 999u, "ticks->us reciprocal off at the top of the millisecond");
+_Static_assert(CH32RV_US_FROM_TICKS_CONST(CH32RV_TICKS_PER_US) == 1u && CH32RV_US_FROM_TICKS_CONST(CH32RV_TICKS_PER_US - 1u) == 0u,
                "ticks->us reciprocal off at one microsecond");
-_Static_assert(CH32RV_US_FROM_TICKS(CH32RV_TICKS_PER_US * 500u - 1u) == 499u, "ticks->us reciprocal off at half a millisecond");
+_Static_assert(CH32RV_US_FROM_TICKS_CONST(CH32RV_TICKS_PER_US * 500u - 1u) == 499u, "ticks->us reciprocal off at half a millisecond");
 
 /* Wraps every 2^32 us (about 71 minutes), same as the AVR core. Differences
  * stay correct across the wrap because the arithmetic is modulo 2^32. */
@@ -510,7 +526,12 @@ unsigned long micros(void)
         ticks = CH32RV_SYSTICK_CNT - ch32rv_systick_base;
     } while (ms != ch32rv_millis_counter);
 
+#if defined(__clang__)
+    /* ms * 1000 spelled out the same way: clang calls __mulsi3 for the plain form on rv32ec. */
+    return CH32RV_MULC(ms, 1000u) + CH32RV_US_FROM_TICKS(ticks);
+#else
     return ms * 1000u + CH32RV_US_FROM_TICKS(ticks);
+#endif
 }
 
 /* A busy wait's pause between polls. On the CH32H41x V5F, which has no data
