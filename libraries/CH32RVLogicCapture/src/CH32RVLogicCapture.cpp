@@ -110,6 +110,7 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
         return false;
     }
     end();
+    _backend = nullptr;
     if (sampleRate > maxContinuousRate()) {
         sampleRate = maxContinuousRate();
     }
@@ -144,6 +145,10 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
 void CH32RVLogicCapture::end()
 {
     stop();
+    if (_backend) {
+        _backend->end(*this);
+    }
+    _backend = nullptr;
     if (ch32rv_timer_lease_valid(&_lease)) {
         ch32rv_timer_release(&_lease);
     }
@@ -155,6 +160,10 @@ void CH32RVLogicCapture::end()
 
 bool CH32RVLogicCapture::startContinuous(uint16_t *buffer, uint32_t samples)
 {
+    if (_backend) {
+        stop();
+        return _backend->start(*this, buffer, samples);
+    }
     if (!_begun || !buffer || samples < 2u || samples > 65534u || (samples & 1u)) {
         return false;
     }
@@ -185,6 +194,11 @@ void CH32RVLogicCapture::stop()
     if (!_running) {
         return;
     }
+    if (_backend) {
+        _backend->stop(*this);
+        _running = false;
+        return;
+    }
     if (ch32rv_timer_lease_valid(&_lease)) {
         ch32rv_timer_stop(&_lease);
         CH32RV_REG32(ch32rv_timer_capability_for(LC_TIMER)->register_base + TIM_DMAINTENR) &= ~TIM_UDE;
@@ -209,28 +223,32 @@ const uint16_t *CH32RVLogicCapture::readBuffer()
     return take == 0xFF ? nullptr : _buf + (take ? _half : 0u);
 }
 
+void CH32RVLogicCapture::halfFilled(uint8_t k)
+{
+    if (_ready & (1u << k)) {
+        _overruns++;
+    }
+    _ready |= (uint8_t)(1u << k);
+    _last = k;
+    _filled++;
+}
+
 void CH32RVLogicCapture::isr()
 {
     const uint32_t f = DMA_INTFR & (CH_HTIF | CH_TCIF);
     DMA_INTFCR = CH_ALL;
     /* Both at once: the handler came late by a whole half. */
-    for (uint8_t k = 0; k < 2; k++) {
-        const bool done = k == 0 ? (f & CH_HTIF) : (f & CH_TCIF);
-        if (!done) {
-            continue;
-        }
-        if (_ready & (1u << k)) {
-            _overruns++;
-        }
-        _ready |= (uint8_t)(1u << k);
-        _last = k;
-        _filled++;
+    if (f & CH_HTIF) {
+        halfFilled(0);
+    }
+    if (f & CH_TCIF) {
+        halfFilled(1);
     }
 }
 
 uint32_t CH32RVLogicCapture::captureBurst(uint16_t *buffer, uint16_t samples)
 {
-    if (!_begun || !buffer || samples == 0) {
+    if (!_begun || _backend || !buffer || samples == 0) {
         return 0;
     }
     stop();

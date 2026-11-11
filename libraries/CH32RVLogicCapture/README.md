@@ -60,6 +60,41 @@ modes.
   about 320 PWM periods were off by a few samples.
 - Interrupts are off while it runs.
 
+## Fast capture on the UHSIF data lines (CH32H415 / H416 / H417)
+
+On H41x, naming the 16 UHSIF data lines instead of a port captures them
+continuously at up to 200 MS/s, with no CPU and no timer. It is built on
+[CH32RVUhsif](../CH32RVUhsif/README.md).
+
+```cpp
+static uint16_t buf[32768] __attribute__((aligned(16)));
+logic.begin(UHSIF_DATA, 200000000);         // SYSCLK / 2 to / 64 (200-6.25 MS/s)
+logic.startContinuous(buf, 32768);          // halves of 16384, in turn
+if (const uint16_t *half = logic.readBuffer()) { ... }
+```
+
+| Data line | Pin |
+|---|---|
+| DATA0-5 | PD10-PD15 |
+| DATA6-8 | PF0-PF2 |
+| DATA9-12 | PC6-PC9 |
+| DATA13-15 | PA13-PA15 |
+
+- Bit n of each sample is DATAn, whatever the pins' modes.
+- The rate is SYSCLK / n (n = 2-64); `begin()` takes the nearest
+  (`sampleRate()` says which). `maxUhsifRate()` is SYSCLK / 2 = 200 MS/s.
+- No sample is lost. Two threads write the two halves in turn, so while one
+  changes buffer (about 150 ns) the other is writing. A 390.625 kHz PWM kept
+  its period across every boundary at 6.25, 100, 133 and 200 MS/s
+  (CH32H417, 2026-11-11).
+- `startContinuous()` takes 32-65520 samples, a multiple of 16, in a
+  16-byte aligned buffer.
+- Make each half last 20 us or more (8000 samples or more at 200 MS/s):
+  each half is an interrupt, and short ones leave the CPU nothing else.
+- `captureBurst()` is not offered (returns 0).
+- How fast this can stream over USB is not yet measured; 200 MS/s is
+  400 MB/s.
+
 ## Other notes
 
 - The timer is taken through the core's timer manager (`CH32RVTimer.h`), so
@@ -78,4 +113,5 @@ modes.
 
 - [LogicBurst](examples/LogicBurst/README.md): connections, operation, API use and adaptation notes.
 - [LogicStream](examples/LogicStream/README.md): connections, operation, API use and adaptation notes.
+- [LogicUhsif](examples/LogicUhsif/README.md): capture the UHSIF data lines at 200 MS/s and measure a PWM's frequency and duty cycle (H41x).
 - [LogicPulseDecode](examples/LogicPulseDecode/README.md): frequency and duty cycle of a signal, on every family (its own PWM with no wiring).

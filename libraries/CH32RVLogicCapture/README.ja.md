@@ -52,6 +52,32 @@ uint32_t rate = logic.captureBurst(buf, 32768);   // 1 回だけ、速く
   16 ビットで約 320 周期を取ったうち、6 か所が数サンプルずれました。
 - 実行中は割り込みを止めます。
 
+## UHSIF のデータ線で速く取る(CH32H415 / H416 / H417)
+
+H41x では、ポートの代わりに UHSIF のデータ線 16 本を指定すると、CPU とタイマーを使わずに最大 200 MS/s で連続して取り込めます。中では [CH32RVUhsif](../CH32RVUhsif/README.ja.md) を使っています。
+
+```cpp
+static uint16_t buf[32768] __attribute__((aligned(16)));
+logic.begin(UHSIF_DATA, 200000000);         // SYSCLK ÷ 2〜÷ 64(200〜6.25 MS/s)
+logic.startContinuous(buf, 32768);          // 16384 ずつの半分を交互に埋める
+if (const uint16_t *half = logic.readBuffer()) { ... }
+```
+
+| データ線 | 端子 |
+|---|---|
+| DATA0〜5 | PD10〜PD15 |
+| DATA6〜8 | PF0〜PF2 |
+| DATA9〜12 | PC6〜PC9 |
+| DATA13〜15 | PA13〜PA15 |
+
+- 各サンプルの bit n は DATAn です。端子のモードに関係なく読めます。
+- 速さは SYSCLK ÷ n（n = 2〜64）で、`begin()` は近い値を選びます（`sampleRate()` で分かります）。`maxUhsifRate()` は SYSCLK ÷ 2 = 200 MS/s です。
+- サンプルは抜けません。前半と後半を 2 つのスレッドが交互に書くので、バッファーを替える間（約 150 ns）も、もう片方が書いています。390.625 kHz の PWM を取り、境目をまたいでも周期が一定なのを、6.25、100、133、200 MS/s で確かめました（CH32H417、2026-11-11）。
+- `startContinuous()` のサンプル数は 32〜65520 で、16 の倍数です。バッファーは 16 バイト境界に置きます。
+- 半分は 20 µs 以上の長さにしてください（200 MS/s なら 8000 サンプル以上）。半分ごとに割り込みが入るので、短いと CPU が割り込みだけで手一杯になります。
+- `captureBurst()` は使えません（0 を返します）。
+- USB で流すときの上限は、まだ測っていません。200 MS/s は 400 MB/s です。
+
 ## そのほか
 
 - タイマーは、コアのタイマー管理(`CH32RVTimer.h`)を通して借ります。`analogWrite()` / `tone()` / Servo と取り合いません。
@@ -66,4 +92,5 @@ uint32_t rate = logic.captureBurst(buf, 32768);   // 1 回だけ、速く
 
 - [LogicBurst](examples/LogicBurst/README.ja.md)：配線・操作・API の使い方と改造時の注意。
 - [LogicStream](examples/LogicStream/README.ja.md)：配線・操作・API の使い方と改造時の注意。
+- [LogicUhsif](examples/LogicUhsif/README.ja.md)：UHSIF のデータ線を 200 MS/s で取り込み、PWM の周波数とデューティ比を測る(H41x)。
 - [LogicPulseDecode](examples/LogicPulseDecode/README.ja.md)：信号の周波数とデューティ比を測る。全系列(配線なしで自分の PWM を測れる)。

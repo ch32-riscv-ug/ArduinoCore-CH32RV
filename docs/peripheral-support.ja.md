@@ -103,7 +103,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | SDMMC | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | H417。host(HS200/HS400)とSDIO slave |
 | SAI (音声) | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | TDM、SPDIF出力 |
 | SWPMI | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | NFC/UICCのSWP master |
-| UHSIF (高速パラレル) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | 8〜32 bitの同期パラレル(FPGA・USB3ブリッジ)。レジスタは非公開(EVTは閉じたライブラリ)。docs/unused-peripherals.ja.md |
+| UHSIF (高速パラレル) | 一部実装 | CH32RVUhsif(library) |  |  |  |  |  |  |  |  |  |  |  | ◐ | 16 bitの入力・内部クロックだけ(出力、外部クロック、8/32 bitは未対応)。レジスタは非公開で、実測から作った(docs/h417-uhsif.ja.md)。CH32RVLogicCaptureのbegin(UHSIF_DATA)が使う |
 | SerDes | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | 1.5 Gbpsの差動リンク |
 | QSPI | 対象外 | - |  |  |  |  | − |  |  |  |  |  |  | − |  |
 | PSRAM | 対象外 | - |  |  |  |  |  |  | − |  |  |  |  |  |  |

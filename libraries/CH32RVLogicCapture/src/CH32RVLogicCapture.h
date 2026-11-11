@@ -54,6 +54,13 @@
 
 enum CH32RVLogicPort : uint8_t { PORT_A = 0, PORT_B, PORT_C, PORT_D, PORT_E, PORT_F };
 
+#if CH32RV_LOGIC_DMAMUX
+/* CH32H41x: the 16 UHSIF data lines instead of a port (CH32RVUhsif). Sample
+ * bit n = DATAn: PD10-PD15, PF0-PF2, PC6-PC9, PA13-PA15. */
+struct CH32RVLogicUhsifData {};
+constexpr CH32RVLogicUhsifData UHSIF_DATA{};
+#endif
+
 class CH32RVLogicCapture {
 public:
     /* The fastest continuous rate that kept every sample: F_CPU / 11. */
@@ -63,6 +70,15 @@ public:
      * timer reaches (F_CPU / an integer); sampleRate() says what it got. False
      * when the port does not exist or the timer is held by someone else. */
     bool begin(CH32RVLogicPort port, uint32_t sampleRate);
+#if CH32RV_LOGIC_DMAMUX
+    /* The UHSIF data lines, at SYSCLK / n (n = 2..64: 200 MS/s down to 6.25
+     * MS/s on a 400 MHz SYSCLK), every sample kept. startContinuous() takes
+     * 32..65520 samples, a multiple of 16, 16-byte aligned, and each half
+     * must last 20 us or more (8000 samples at 200 MS/s); captureBurst() is
+     * not offered (0). No timer is used. */
+    static constexpr uint32_t maxUhsifRate() { return CH32RV_CLOCK_SYSCLK_HZ / 2u; }
+    bool begin(CH32RVLogicUhsifData, uint32_t sampleRate);
+#endif
     void end();
     uint32_t sampleRate() const { return _rate; }
     /* The timer it paces with (TIM6, TIM4, TIM3 or TIM2 by family). */
@@ -88,12 +104,21 @@ public:
     void isr();
 
 private:
+    friend struct CH32RVLogicUhsif;
+    struct Backend {
+        bool (*start)(CH32RVLogicCapture &, uint16_t *, uint32_t);
+        void (*stop)(CH32RVLogicCapture &);
+        void (*end)(CH32RVLogicCapture &);
+    };
+
     static void quiesce(void *context, uint8_t timer, uint8_t channel);
+    void halfFilled(uint8_t k);
 
     uint32_t _port = 0;           /* the INDR address */
     uint32_t _rate = 0;
     const CH32RVTimerOwner _owner = {this, quiesce, this};   /* the manager keeps a pointer */
     CH32RVTimerLease _lease = {};
+    const Backend *_backend = nullptr;   /* set by begin(UHSIF_DATA, ...) */
     bool _begun = false, _running = false;
     uint16_t *_buf = nullptr;
     uint32_t _half = 0;

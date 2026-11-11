@@ -149,10 +149,10 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - [ ] USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
   - [ ] UART ISP（PB6/PB7）: ソフトのリセットでは入らなかった（docs/h417-bench.ja.md）。電源の入れ直しは未確認。入れるかどうかは別に決める。
   - OEP の probe にする件は、コアの側は入れた（84b57b0）。oep-probe-arduino への依頼は 2026-10-21 に dev-oep のセッションへ送った（向こうの状況は未確認）。
-  - [ ] UHSIF（docs/h417-uhsif.ja.md）: 正体は FX3 の GPIF II と PIB と同じ作り。`libUHSIF.a` を使わずに、16 本を
-    内部クロックで連続して取り込めた（SYSCLK ÷ 2 で約 197 MS/s、÷ 1 で約 390 MS/s を SRAM のリングへ。2026-11-11、
-    tools/diagnostics/h417-bench/UhsifCapture）。残り: 速い信号での確かさ（外の発振器で）、USB SS で PC へ流すときの
-    上限、右の辺（F1）の意味、外部クロック・トリガー。ライブラリにする（CH32RVLogicCapture の H417 版）かは別に決める。
+  - [ ] UHSIF（docs/h417-uhsif.ja.md）: CH32RVUhsif（薄い層）と CH32RVLogicCapture の `begin(UHSIF_DATA, rate)` に
+    した（2026-11-11）。2 スレッドを交互に使い、200 MS/s まで 1 サンプルも抜けない（SRAM へは 400 MS/s も）。残り:
+    速い信号での確かさ（外の発振器か OEP のプローブで 50〜200 MHz）、USB SS で PC へ流すときの上限（LogicStream の
+    UHSIF 版と、受け取るホストの側）、外部クロック・トリガー・出力・8 / 32 ビット幅、自動の試験。
   - [ ] WeAct LogicAnalyzerV2（CH32H417、https://github.com/WeActStudio/WeActStudio.LogicAnalyzerV2）で、このコアの
     スケッチを動かす。入手予定（2026-11-11 時点）。どちらの形にするかは未定。
     - 入力の D0〜D15 は UHSIF の PORT16〜31（RM の表 9-33）。GPIO の DMA ではなく UHSIF で取り込んでいる。WeAct は WCH の
