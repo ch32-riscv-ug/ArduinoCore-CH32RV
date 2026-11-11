@@ -39,6 +39,7 @@
 | [software-peripherals.ja.md](software-peripherals.ja.md) | SoftSPI / SoftWire 等の採用基準 |
 | [toolchain.ja.md](toolchain.ja.md) | compiler と C/C++ runtime の固定方針 |
 | [vendor-policy.ja.md](vendor-policy.ja.md) | 第三者ソースの取込、lock、license |
+| [wch-evt-binary-libraries.ja.md](wch-evt-binary-libraries.ja.md) | WCH の EVT に .a だけで配られている機能の一覧と、ライセンスの記述 |
 | [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | テストの保証対象、設備、環境分離、責務分担 |
 | [../tests/RECORDS.ja.md](../tests/RECORDS.ja.md) | OEP プローブのメモ欄に置く、口ごとの記録の決まり（名前、形、メンバー、読み方と書き方） |
 | [test-coverage.ja.md](test-coverage.ja.md) | 実装範囲と既存テストの保証・不足 |
