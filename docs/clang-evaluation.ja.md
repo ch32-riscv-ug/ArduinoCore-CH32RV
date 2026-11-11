@@ -171,5 +171,5 @@ V003、X035、V307 の crt0 とベクターを clang の組み込みのアセン
 ## 次に確かめること
 
 1. RISC-V だけの clang + lld を手元でビルドして、大きさと時間を測る（段 1 の準備）。
-2. picolibc と compiler-rt で GCC を使わずに作れるか。作ったものの大きさ（newlib nano との差）。rv32e の compiler-rt。
+2. picolibc と compiler-rt で GCC を使わずに作れるか。作ったものの大きさ（newlib nano との差）。rv32e の compiler-rt。計画は docs/libc-runtime-plan.ja.md。
 3. H417 で、B と XW を両方使えるか（clang が XW を出さなかった理由）。
