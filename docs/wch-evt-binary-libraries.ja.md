@@ -21,7 +21,7 @@ WCH の EVT（~/dev_wch/<系列>/EVT/EXAM）で、機能がバイナリ（.a）�
 
 | ライブラリ | 中身 | 系列（EVT の場所） | このコアの相当品 |
 |---|---|---|---|
-| libUHSIF.a | UHSIF（高速並列インターフェース、最大 125 MHz・32 ビット・500 MB/s）の設定と転送。レジスタは RM に載っていない | H417（UHSIF/UHSIF_SLAVE） | 無い（CH32RVLogicCapture は GPIO + DMA） |
+| libUHSIF.a | UHSIF（高速並列インターフェース、最大 125 MHz・32 ビット・500 MB/s）の設定と転送。レジスタは RM に載っていない | H417（UHSIF/UHSIF_SLAVE） | 無い。自前の設定での取り込みは試験のスケッチで確認済み |
 | libRV3UFI.a | U ディスク（USB メモリ）のホストとファイルシステム（CHRV3UFI）。FS・HS・SS、ルートハブと外付けハブ | H417、V407、X315、V307、V205、V20x、L103、M030、V103、X035（Udisk_Lib。全系列で同じ中身） | CH32RVUsbHost の MSC（ブロックの読み書き）と FS（FatFs）の組み合わせ |
 | libwchnet.a / libwchnet_float.a | TCP/IP のスタック（WCHNET）。V407 の DualNetPorts は 2 ポート（内蔵 MAC と CH390D）用の別版 | H417、V407、V307、V20x（ETH/NetLib） | Network（lwIP 2.2.1） |
 | libwchiochub.a | IoCHub（WAN / LAN を自動で切り替える、MCU 同士やホストとの透過の通信） | H417、V407、V307（ETH/IoCHub） | 無い |
@@ -44,7 +44,7 @@ WCH の EVT（~/dev_wch/<系列>/EVT/EXAM）で、機能がバイナリ（.a）�
 ## このコアから見た候補
 
 - **UHSIF:** H417 で取り込みを速くするには、これが要ります（WeAct の LogicAnalyzerV2 は、入力 16 本を UHSIF の
-  PORT16〜31 につないで、200 MHz × 16 ch を取っています）。レジスタが非公開なので、ライブラリが設定した値を読み出して
-  再現するか、ライブラリを使う許可を WCH に確かめるかの、どちらかになります。
+  PORT16〜31 につないで、200 MHz × 16 ch を取っています）。レジスタは非公開ですが、FX3 の GPIF II と同じ作りと分かり、
+  ライブラリを使わずに取り込めました（[h417-uhsif.ja.md](h417-uhsif.ja.md)）。
 - **タッチキー:** 自前で書くには、各系列の TKEY のレジスタが RM にあるかを先に確かめます。
 - **BLE（V208）:** 無線の部分の資料が無いので、自前では難しいと思われます。

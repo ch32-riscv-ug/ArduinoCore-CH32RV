@@ -149,14 +149,14 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - [ ] USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
   - [ ] UART ISP（PB6/PB7）: ソフトのリセットでは入らなかった（docs/h417-bench.ja.md）。電源の入れ直しは未確認。入れるかどうかは別に決める。
   - OEP の probe にする件は、コアの側は入れた（84b57b0）。oep-probe-arduino への依頼は 2026-10-21 に dev-oep のセッションへ送った（向こうの状況は未確認）。
-  - [ ] UHSIF（docs/h417-uhsif.ja.md）: 正体は FX3 の GPIF II と PIB と同じ作りと分かり、自前の状態機械と DMA は動いた。
-    取り込んだ値が端子から来ていない（定数 0xFD49FEF7）ところで止まっている。次は、ライブラリの master で相手の合図を
-    満たして読ませ、端子の値が入るかを見る。
+  - [ ] UHSIF（docs/h417-uhsif.ja.md）: 正体は FX3 の GPIF II と PIB と同じ作り。`libUHSIF.a` を使わずに、16 本を
+    内部クロックで連続して取り込めた（SYSCLK ÷ 2 で約 197 MS/s、÷ 1 で約 390 MS/s を SRAM のリングへ。2026-11-11、
+    tools/diagnostics/h417-bench/UhsifCapture）。残り: 速い信号での確かさ（外の発振器で）、USB SS で PC へ流すときの
+    上限、右の辺（F1）の意味、外部クロック・トリガー。ライブラリにする（CH32RVLogicCapture の H417 版）かは別に決める。
   - [ ] WeAct LogicAnalyzerV2（CH32H417、https://github.com/WeActStudio/WeActStudio.LogicAnalyzerV2）で、このコアの
     スケッチを動かす。入手予定（2026-11-11 時点）。どちらの形にするかは未定。
-    - 入力の D0〜D15 は UHSIF の PORT16〜31（RM の表 9-33）。GPIO の DMA ではなく UHSIF で取り込んでいる。UHSIF の
-      レジスタは非公開で、WCH の EVT の `libUHSIF.a`（API だけ）を使う。このコアの CH32RVLogicCapture（連続 9.09 MS/s）
-      より速く取るなら、ここを調べる。
+    - 入力の D0〜D15 は UHSIF の PORT16〜31（RM の表 9-33）。GPIO の DMA ではなく UHSIF で取り込んでいる。WeAct は WCH の
+      `libUHSIF.a` を使うが、このコアでは自前のレジスタ設定で取り込めた（上の UHSIF の項）。
     - **案 A: ユーザー領域（slot 2）に乗せる。** WeAct の IAP（0x0〜0x6000）が、電源を入れるたびに slot を選んで飛ぶ。
       ロジアナ（slot 0）と DAP（slot 1）は残る。要ること:
       - リンク先を 0x09E000（V3F は 104 KB まで。V5F の分を使わないなら 304 KB）にするボードの定義。
@@ -205,8 +205,8 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   FS・LS（split）。第 2 世代 USBHS のホストは V407 で HS を確認済み（2026-11-11）。
 - [ ] usb-peer-host-input / -storage を ESP32-P4（HS）でも流す。EspUsbDevice 3.1.0 で GET_REPORT（`setFeatureReport()`）、
   任意のレポート記述子（`EspUsbDeviceHidCustom`）、CDC 2 ポートは入った。boot キーボードの専用インターフェース
-  （`keyboard.enableOwnInterface()`）は EspUsbDevice の main に入った（27e8f1e、未リリース。2026-11-11）。リリースされたら
-  input の P4 用の相手を書く。MSC の複数 LUN は向こうで保留になったので、storage は Pico だけのまま。ESP32-S3 側の癖は tests/peer/usb/README.ja.md。
+  （`keyboard.enableOwnInterface()`）は EspUsbDevice 3.2.0 で入った（2026-11-11 時点でリリース済み）。
+  次は input の P4 用の相手を書く。MSC の複数 LUN は向こうで保留になったので、storage は Pico だけのまま。ESP32-S3 側の癖は tests/peer/usb/README.ja.md。
 - UIAPduino のソフトウェア USB（rv003usb）をアプリモードでも動かす件は FEATURE_CANDIDATES の USB-09。
 
 ## USB PD ソース（CH32RVUsbPd）の実機確認
