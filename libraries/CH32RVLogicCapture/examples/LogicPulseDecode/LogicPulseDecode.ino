@@ -15,7 +15,7 @@ static const uint32_t RATE = 100000;    // en: samples per second; resolution 10
 #if defined(CH32RV_SERIES_CH32V002) || defined(CH32RV_SERIES_CH32V003) || defined(CH32RV_SERIES_CH32V004) || \
     defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
     defined(CH32RV_SERIES_CH32M007)
-static const uint32_t SAMPLES = 512;    // en: 2 KB of RAM here / ja: RAMが2 KBの系列
+static const uint32_t SAMPLES = 448;    // en: 2 KB of RAM here; a half holds 2 periods / ja: RAMが2 KBの系列。半分に2周期入る
 #else
 static const uint32_t SAMPLES = 2048;
 #endif

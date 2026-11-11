@@ -110,7 +110,7 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
         return false;
     }
     end();
-    _backend = nullptr;
+    setBackend(nullptr);
     if (sampleRate > maxContinuousRate()) {
         sampleRate = maxContinuousRate();
     }
@@ -148,7 +148,7 @@ void CH32RVLogicCapture::end()
     if (_backend) {
         _backend->end(*this);
     }
-    _backend = nullptr;
+    setBackend(nullptr);
     if (ch32rv_timer_lease_valid(&_lease)) {
         ch32rv_timer_release(&_lease);
     }

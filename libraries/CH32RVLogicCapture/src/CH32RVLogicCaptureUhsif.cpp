@@ -120,7 +120,7 @@ bool CH32RVLogicCapture::begin(CH32RVLogicUhsifData, uint32_t sampleRate)
         }
     }
     _rate = best;
-    _backend = &CH32RVLogicUhsif::backend;
+    setBackend(&CH32RVLogicUhsif::backend);
     _begun = true;
     return true;
 }

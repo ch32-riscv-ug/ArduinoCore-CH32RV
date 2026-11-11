@@ -118,7 +118,15 @@ private:
     uint32_t _rate = 0;
     const CH32RVTimerOwner _owner = {this, quiesce, this};   /* the manager keeps a pointer */
     CH32RVTimerLease _lease = {};
+#if CH32RV_LOGIC_DMAMUX
     const Backend *_backend = nullptr;   /* set by begin(UHSIF_DATA, ...) */
+    void setBackend(const Backend *b) { _backend = b; }
+#else
+    /* No UHSIF: no pointer either (CH32V003 has 2 KB of RAM; four more bytes
+     * here pushed LogicPulseDecode's .bss into the stack). */
+    static constexpr const Backend *_backend = nullptr;
+    void setBackend(const Backend *) {}
+#endif
     bool _begun = false, _running = false;
     uint16_t *_buf = nullptr;
     uint32_t _half = 0;
