@@ -1,35 +1,19 @@
 /* Host driver for tests/unit/test_core_strftime.py: the core's strftime() (cores/arduino/ch32rv_strftime.c)
- * against newlib 4.5's output in the C locale, its tzset() (ch32rv_tzset.c) against what newlib's leaves
- * behind, and its gmtime_r() (ch32rv_gmtime.c) against the host's. The core's are built as core_strftime,
- * core_tzset and core_gmtime_r. The expected values were printed by newlib's strftime.c and tzset_r.c built
- * on the host (with the host's snprintf and sscanf for its sniprintf and siscanf); prints one line per
- * failure. */
+ * against newlib 4.5's output in the C locale, its tzset() (ch32rv_tzset.c, read through ch32rv_tz_read())
+ * against what newlib's leaves behind, and its gmtime_r() (ch32rv_gmtime.c) against the host's. The core's
+ * are built as core_strftime and core_gmtime_r. The expected values were printed by newlib's strftime.c and
+ * tzset_r.c built on the host (with the host's snprintf and sscanf for its sniprintf and siscanf); prints
+ * one line per failure. */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#include <sys/_tz_structs.h>
+#include "internal/ch32rv_tz.h"
 
 size_t core_strftime(char *, size_t, const char *, const struct tm *);
 struct tm *core_gmtime_r(const time_t *, struct tm *);
-void core_tzset(void);
-
-static __tzinfo_type tz;
-__tzinfo_type *__gettzinfo(void)
-{
-    return &tz;
-}
-char *_tzname[2] = {"CET", "CEST"};
-long _timezone;
-int _daylight;
-static int calc_year = -99;
-int __tzcalc_limits(int year)
-{
-    calc_year = year;
-    return 1;
-}
 
 static int failures, checks;
 
@@ -127,8 +111,8 @@ static const struct {
     {12, 4, "-2147481748-12-31 -2147481748-12-31 -2147481748-12-31 -2147481748-12-31 31-Dec--2147481748 31-Dec--2147481748 31-Dec--2147481748"},
 };
 
-/* TZ, then what tzset() leaves: the two names, _timezone, _daylight, the year __tzcalc_limits() was called
- * with (-99: not called) and the two rules (ch, m, n, d, s, offset). In this order: on some malformed TZ
+/* TZ, then what tzset() leaves: the two names, timezone, daylight, the year the changes were worked out for
+ * (newlib's __tzcalc_limits(); -99: not called) and the two rules (ch, m, n, d, s, offset). In this order: on some malformed TZ
  * newlib keeps a name from the TZ before, and so does the core. */
 static const struct {
     const char *tz, *std, *dst;
@@ -211,8 +195,10 @@ static void check_size(const char *fmt, const struct tm *t, size_t max, size_t w
 
 int main(void)
 {
-    tz.__tzrule[0].offset = -3600; /* CET: 1 hour east, in TZ's sign */
-    tz.__tzrule[1].offset = -7200;
+    ch32rv_tz.rule[0].offset = -3600; /* CET: 1 hour east, in TZ's sign */
+    ch32rv_tz.rule[1].offset = -7200;
+    ch32rv_tz.name[0] = "CET";
+    ch32rv_tz.name[1] = "CEST";
     for (size_t i = 0; i < sizeof golden / sizeof golden[0]; i++) {
         const struct tm t = tm_of(&cases[golden[i].c]);
         char b[256];
@@ -278,23 +264,26 @@ int main(void)
         } else {
             unsetenv("TZ");
         }
-        calc_year = -99;
-        tz.__tzyear = 2025;
-        core_tzset();
-        int same = !strcmp(_tzname[0], tzs[i].std) && !strcmp(_tzname[1], tzs[i].dst) &&
-                   _timezone == tzs[i].timezone && _daylight == tzs[i].daylight && calc_year == tzs[i].calc;
+        struct ch32rv_tz *const tz = &ch32rv_tz;
+        tz->year = 2025;
+        /* Worked out, the changes are neither this nor the 0 newlib's default rules carry. */
+        tz->rule[0].change = tz->rule[1].change = 12345;
+        ch32rv_tz_read();
+        const time_t c0 = tz->rule[0].change, c1 = tz->rule[1].change;
+        const int calc_year = (c0 != 12345 && c0 != 0) || (c1 != 12345 && c1 != 0) ? tz->year : -99;
+        int same = !strcmp(tz->name[0], tzs[i].std) && !strcmp(tz->name[1], tzs[i].dst) &&
+                   tz->timezone == tzs[i].timezone && tz->daylight == tzs[i].daylight && calc_year == tzs[i].calc;
         for (int j = 0; j < 2; j++) {
-            const __tzrule_type *r = &tz.__tzrule[j];
+            const struct ch32rv_tz_rule *r = &tz->rule[j];
             same &= r->ch == tzs[i].rule[j].ch && r->m == tzs[i].rule[j].m && r->n == tzs[i].rule[j].n &&
                     r->d == tzs[i].rule[j].d && r->s == tzs[i].rule[j].s && r->offset == tzs[i].rule[j].offset;
         }
         checks++;
         if (!same) {
             printf("FAIL tzset(\"%s\"): %s/%s %ld %d calc %d, rules %c%d.%d.%d/%d@%ld %c%d.%d.%d/%d@%ld\n",
-                   tzs[i].tz ? tzs[i].tz : "(unset)", _tzname[0], _tzname[1], _timezone, _daylight, calc_year,
-                   tz.__tzrule[0].ch, tz.__tzrule[0].m, tz.__tzrule[0].n, tz.__tzrule[0].d, tz.__tzrule[0].s,
-                   tz.__tzrule[0].offset, tz.__tzrule[1].ch, tz.__tzrule[1].m, tz.__tzrule[1].n, tz.__tzrule[1].d,
-                   tz.__tzrule[1].s, tz.__tzrule[1].offset);
+                   tzs[i].tz ? tzs[i].tz : "(unset)", tz->name[0], tz->name[1], tz->timezone, tz->daylight, calc_year,
+                   tz->rule[0].ch, tz->rule[0].m, tz->rule[0].n, tz->rule[0].d, tz->rule[0].s, tz->rule[0].offset,
+                   tz->rule[1].ch, tz->rule[1].m, tz->rule[1].n, tz->rule[1].d, tz->rule[1].s, tz->rule[1].offset);
             failures++;
         }
     }

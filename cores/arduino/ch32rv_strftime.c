@@ -4,17 +4,18 @@
  * printf, the heap or TZ parsing coming in with it. %s %z %Z read the time zone
  * as it was last set (tzset(), configTzTime(), localtime_r()) and do not call
  * tzset() themselves: TZ changed with setenv() alone is seen after the next
- * tzset(). The newlib entries of the Floating Point menu keep newlib's. */
+ * tzset(). Under every entry of the Floating Point menu, the newlib ones too:
+ * the time zone is the core's (internal/ch32rv_tz.h), which newlib's strftime
+ * would not see. */
 #include "internal/ch32rv_format.h"
-
-#if !CH32RV_PRINTF_NEWLIB
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/_tz_structs.h> /* after time.h: it needs time_t */
+
+#include "internal/ch32rv_tz.h"
 
 #define YEAR_BASE 1900
 
@@ -114,7 +115,7 @@ static void full_year(struct st *st, char pad, unsigned long width)
 /* -offset of the time zone in use for tm_isdst, in seconds east of UTC. */
 static long zone_offset(const struct tm *t)
 {
-    return -__gettzinfo()->__tzrule[t->tm_isdst > 0].offset;
+    return -ch32rv_tz.rule[t->tm_isdst > 0].offset;
 }
 
 static bool format(struct st *st, const char *f)
@@ -324,7 +325,7 @@ static bool format(struct st *st, const char *f)
             break;
         case 'Z':
             if (t->tm_isdst >= 0) {
-                out(st, "%s", _tzname[t->tm_isdst > 0]);
+                out(st, "%s", ch32rv_tz.name[t->tm_isdst > 0]);
             }
             break;
         case '%':
@@ -346,5 +347,3 @@ size_t strftime(char *__restrict s, size_t maxsize, const char *__restrict fmt, 
     s[st.n] = 0;
     return st.n;
 }
-
-#endif

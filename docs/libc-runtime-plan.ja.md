@@ -182,6 +182,25 @@ newlib 以外の libc に移るには、タイムゾーンの状態（規則、`
 - V307 のファイルシステムの例 3 本が 7.6 KB 大きくなりました。主な理由は 2 つです。1 つは、タイムゾーンのファイルを空にしたので picolibc の tzset が入り、それが sscanf と vfscanf を引き込んだこと（コアがタイムゾーンを持てば消える）。もう 1 つは、picolibc の strtod（atof から）が ryu の表を使うことで、こちらは別に測ります。
 - NetworkTime は、タイムゾーンを外したのでリンクできませんでした（想定どおり）。
 
+### 0. コアの libc の内部への依存をなくす（2026-11-11）
+
+- タイムゾーンをコアが持つようにしました（`internal/ch32rv_tz.h`）。tzset が TZ を読む先、年ごとの切り替え時刻の計算（newlib の `__tzcalc_limits`）、localtime_r、mktime（新しく ch32rv_mktime.c）、strftime の `%z` `%Z` `%s` が、この状態を使います。読み方と計算は newlib 4.5 のものを移したので、結果は変わりません。
+  - 照合: newlib 4.5 の lcltime_r.c、mktime.c、tzcalc_limits.c をホストでビルドし、コアのものと 16 通りの TZ で 1,280 万件を比べて、違いは 0 でした。わざと壊したコピー 2 つは、どちらも失敗として拾われました。そのうち 240 件（範囲外の値、切り替えの前後、重なりと空白の時刻で tm_isdst が −1、0、1）を、newlib の値を期待値として tests/unit/format/tz_cases.c に入れました。
+- libc の公開の `tzname`、`timezone`、`daylight` は、ch32rv_tzvars.c が libc ごとの名前で弱い定義として持ち、tzset のたびに書きます。このファイルは `<time.h>` を読みません（picolibc の `tzname` は `const`）。どの libc かは `internal/ch32rv_libc.h` が見分けます。
+- strftime は、Floating Point の newlib の選択肢でもコアのものになりました。newlib の strftime は newlib の内部のタイムゾーンを読むためです。
+- picolibc のために: `putchar` の `#undef`、`CLOCKS_PER_SEC` が無いときの定義、`sbrk` と `gettimeofday` の別名。変えたファイルは、picolibc と newlib のどちらのヘッダーでもエラーも警告もなく通りました。
+- 大きさ（変更後 − 変更前、text）:
+
+| スケッチ | GCC | Clang |
+|---|---|---|
+| V003 TZ のスケッチ | −204 | +108 |
+| X035 TZ のスケッチ | −324 | −156 |
+| V307 NetworkTime | −48 | −144 |
+| V307 RamDisk（mktime） | −556 | −64 |
+| X035 TZ のスケッチ、newlib の printf の選択肢 | −2,184 | −748 |
+
+  data は +8 B（libc の公開の変数の初期値）です。bss は GCC で 12〜32 B 減り、Clang ではほぼ変わりません。V003 の Clang で +108 B になる理由は、まだ調べていません。
+
 ### ほかに見つかったこと
 
 - Clang で V307 の Network の例 7 本が、lwIP の `"%"U16_F` でコンパイルエラーになっていました。原因は、arduino-cli がライブラリを探すときに .c のファイルも C++ のコマンドに通すことです。g++ は警告を出してマクロを展開し、clang++ はエラーで止まります。Clang の C++ のフラグに `-Wno-reserved-user-defined-literal` を足して、7 本とも通るようにしました（platform.txt）。

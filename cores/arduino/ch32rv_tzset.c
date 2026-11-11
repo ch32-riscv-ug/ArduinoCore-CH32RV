@@ -1,18 +1,31 @@
-/* tzset() in place of newlib's: the same reading of TZ (newlib 4.5's
- * tzset_r.c), with the fields read here rather than by sscanf, and the TZ last
- * read remembered as a hash rather than a copy on the heap. newlib's pulled in
- * its scanf, strtol and malloc (3 KB on V003) for every localtime(). */
+/* tzset() in place of the C library's: the same reading of TZ as newlib 4.5's
+ * tzset_r.c, into the core's own time zone (internal/ch32rv_tz.h), with the
+ * fields read here rather than by sscanf, and the TZ last read remembered as a
+ * hash rather than a copy on the heap. newlib's pulled in its scanf, strtol and
+ * malloc (3 KB on V003) for every localtime(). Also the two changes of a year
+ * (newlib's __tzcalc_limits), which localtime_r() and mktime() need. */
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/_tz_structs.h> /* after time.h: it needs time_t */
+
+#include "internal/ch32rv_tz.h"
 
 #define TZNAME_MIN 3
 #define TZNAME_MAX 10
 
-int __tzcalc_limits(int year);
+/* Unset TZ: UTC, named GMT, both rules newlib's default. */
+struct ch32rv_tz ch32rv_tz = {
+    .north = 1,
+    .name = {"GMT", "GMT"},
+    .rule = {{'J', 0, 0, 0, 0, 0, 0}, {'J', 0, 0, 0, 0, 0, 0}},
+};
+
+const int ch32rv_month_lengths[2][12] = {
+    {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+    {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+};
 
 static char tzname_std[TZNAME_MAX + 2];
 static char tzname_dst[TZNAME_MAX + 2];
@@ -103,10 +116,10 @@ static int hms(const char *s, char lead, unsigned short v[3], int *len)
 
 /* Both rules to newlib's default, {'J', 0, ...}. Field by field: a struct copy may become a memcpy call only
  * after LTO, and pull libc's in beside the core's (ch32rv_string.c). */
-static void default_rules(__tzinfo_type *tz)
+static void default_rules(struct ch32rv_tz *tz)
 {
     for (int i = 0; i < 2; i++) {
-        __tzrule_type *const r = &tz->__tzrule[i];
+        struct ch32rv_tz_rule *const r = &tz->rule[i];
         r->ch = 'J';
         r->m = r->n = r->d = r->s = 0;
         r->change = 0;
@@ -114,16 +127,17 @@ static void default_rules(__tzinfo_type *tz)
     }
 }
 
-__attribute__((used)) void _tzset_unlocked(void)
+/* The reading itself; ch32rv_tz_read() publishes what it leaves. */
+static void read_tz(void)
 {
-    __tzinfo_type *const tz = __gettzinfo();
+    struct ch32rv_tz *const tz = &ch32rv_tz;
     const char *tzenv = getenv("TZ");
 
     if (!tzenv) {
-        _timezone = 0;
-        _daylight = 0;
-        _tzname[0] = "GMT";
-        _tzname[1] = "GMT";
+        tz->timezone = 0;
+        tz->daylight = 0;
+        tz->name[0] = "GMT";
+        tz->name[1] = "GMT";
         default_rules(tz);
         prev_set = false;
         return;
@@ -140,10 +154,10 @@ __attribute__((used)) void _tzset_unlocked(void)
     prev_set = true;
 
     /* unnamed UTC in case of error */
-    _timezone = 0;
-    _daylight = 0;
-    _tzname[0] = "";
-    _tzname[1] = "";
+    tz->timezone = 0;
+    tz->daylight = 0;
+    tz->name[0] = "";
+    tz->name[1] = "";
     default_rules(tz);
 
     if (*tzenv == ':') {
@@ -204,10 +218,10 @@ __attribute__((used)) void _tzset_unlocked(void)
         }
     }
     if (n < 0) {
-        _tzname[0] = tzname_std;
-        _tzname[1] = _tzname[0];
-        tz->__tzrule[0].offset = offset0;
-        _timezone = offset0;
+        tz->name[0] = tzname_std;
+        tz->name[1] = tz->name[0];
+        tz->rule[0].offset = offset0;
+        tz->timezone = offset0;
         return;
     }
     tzenv += n;
@@ -247,10 +261,10 @@ __attribute__((used)) void _tzset_unlocked(void)
             if (got != 3 || mwd[0] < 1 || mwd[0] > 12 || mwd[1] < 1 || mwd[1] > 5 || mwd[2] > 6) {
                 return;
             }
-            tz->__tzrule[i].ch = 'M';
-            tz->__tzrule[i].m = mwd[0];
-            tz->__tzrule[i].n = mwd[1];
-            tz->__tzrule[i].d = mwd[2];
+            tz->rule[i].ch = 'M';
+            tz->rule[i].m = mwd[0];
+            tz->rule[i].n = mwd[1];
+            tz->rule[i].d = mwd[2];
             tzenv = end;
         } else {
             char ch = 'D';
@@ -262,13 +276,13 @@ __attribute__((used)) void _tzset_unlocked(void)
             const unsigned short d = number(tzenv, &end);
             if (end == tzenv) {
                 /* unspecified: the US rules since 2007, M3.2.0 and M11.1.0 */
-                tz->__tzrule[i].ch = 'M';
-                tz->__tzrule[i].m = i ? 11 : 3;
-                tz->__tzrule[i].n = i ? 1 : 2;
-                tz->__tzrule[i].d = 0;
+                tz->rule[i].ch = 'M';
+                tz->rule[i].m = i ? 11 : 3;
+                tz->rule[i].n = i ? 1 : 2;
+                tz->rule[i].d = 0;
             } else {
-                tz->__tzrule[i].ch = ch;
-                tz->__tzrule[i].d = d;
+                tz->rule[i].ch = ch;
+                tz->rule[i].d = d;
             }
             tzenv = end;
         }
@@ -280,21 +294,71 @@ __attribute__((used)) void _tzset_unlocked(void)
             default_rules(tz);
             return;
         }
-        tz->__tzrule[i].s = t[2] + 60 * t[1] + 3600 * t[0];
+        tz->rule[i].s = t[2] + 60 * t[1] + 3600 * t[0];
         tzenv += n;
     }
 
-    tz->__tzrule[0].offset = offset0;
-    tz->__tzrule[1].offset = offset1;
-    _tzname[0] = tzname_std;
-    _tzname[1] = tzname_dst;
-    __tzcalc_limits(tz->__tzyear);
-    _timezone = tz->__tzrule[0].offset;
-    _daylight = tz->__tzrule[0].offset != tz->__tzrule[1].offset;
+    tz->rule[0].offset = offset0;
+    tz->rule[1].offset = offset1;
+    tz->name[0] = tzname_std;
+    tz->name[1] = tzname_dst;
+    ch32rv_tz_limits(tz->year);
+    tz->timezone = tz->rule[0].offset;
+    tz->daylight = tz->rule[0].offset != tz->rule[1].offset;
 }
 
-/* newlib's lock is a no-op here: one thread. */
+void ch32rv_tz_read(void)
+{
+    read_tz();
+    ch32rv_tz_publish(ch32rv_tz.name[0], ch32rv_tz.name[1], ch32rv_tz.timezone, ch32rv_tz.daylight);
+}
+
+/* newlib 4.5's __tzcalc_limits (tzcalc_limits.c): the days from 1970 to the
+ * year, then each rule's day in it. */
+int ch32rv_tz_limits(int year)
+{
+    struct ch32rv_tz *const tz = &ch32rv_tz;
+    if (year < 1970) {
+        return 0;
+    }
+    tz->year = year;
+    const int years = year - 1970;
+    const int year_days = years * 365 + (years - 1 + 2) / 4 - (years - 1 + 70) / 100 + (years - 1 + 370) / 400;
+    for (int i = 0; i < 2; ++i) {
+        struct ch32rv_tz_rule *const r = &tz->rule[i];
+        int days;
+        if (r->ch == 'J') {
+            /* The Julian day n (1 <= n <= 365), as a day of the year from 0. */
+            days = year_days + r->d + (CH32RV_ISLEAP(year) && r->d >= 60) - 1;
+        } else if (r->ch == 'D') {
+            days = year_days + r->d;
+        } else {
+            const int *const ip = ch32rv_month_lengths[CH32RV_ISLEAP(year)];
+            days = year_days;
+            int j;
+            for (j = 1; j < r->m; ++j) {
+                days += ip[j - 1];
+            }
+            const int m_wday = (4 + days) % 7; /* 1970-01-01 was a Thursday */
+            int wday_diff = r->d - m_wday;
+            if (wday_diff < 0) {
+                wday_diff += 7;
+            }
+            int m_day = (r->n - 1) * 7 + wday_diff;
+            while (m_day >= ip[j - 1]) {
+                m_day -= 7;
+            }
+            days += m_day;
+        }
+        /* the change in UTC: the local time of day plus the offset before it */
+        r->change = (time_t)days * 86400 + r->s + r->offset;
+    }
+    tz->north = tz->rule[0].change < tz->rule[1].change;
+    return 1;
+}
+
+/* One thread: no lock. */
 __attribute__((used)) void tzset(void)
 {
-    _tzset_unlocked();
+    ch32rv_tz_read();
 }

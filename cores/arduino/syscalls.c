@@ -27,6 +27,7 @@
 
 unsigned long millis(void);
 
+#include "internal/ch32rv_libc.h"
 #include "internal/ch32rv_rtc.h"
 #include "internal/ch32rv_serial_write.h"
 
@@ -91,6 +92,11 @@ static uint64_t uptime_ms(void)
     return uptime_high | now;
 }
 
+#if CH32RV_LIBC_PICOLIBC
+/* picolibc's time() and friends call gettimeofday() itself, newlib's reach _gettimeofday(). */
+int gettimeofday(struct timeval *tv, void *tz) __attribute__((alias("_gettimeofday")));
+#endif
+
 int _gettimeofday(struct timeval *tv, void *tz)
 {
     (void)tz;
@@ -130,7 +136,11 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz)
     return 0;
 }
 
-/* clock(): CPU time is the time since reset here. */
+/* clock(): CPU time is the time since reset here. newlib's time.h defines
+ * CLOCKS_PER_SEC (1000 on RISC-V); a library whose time.h leaves it out gets the same. */
+#ifndef CLOCKS_PER_SEC
+#define CLOCKS_PER_SEC 1000
+#endif
 clock_t _times(struct tms *buf)
 {
     const clock_t ticks = (clock_t)(uptime_ms() * CLOCKS_PER_SEC / 1000u);

@@ -43,6 +43,7 @@ int puts(const char *s)
     return (int)n + 1;
 }
 
+#undef putchar /* a macro over fputc in some C libraries (picolibc) */
 int putchar(int c)
 {
     const char ch = (char)c;

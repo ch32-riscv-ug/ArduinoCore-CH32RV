@@ -20,6 +20,7 @@
 #include <sys/types.h>
 
 #include "internal/ch32rv_heap.h"
+#include "internal/ch32rv_libc.h"
 
 #undef errno
 extern int errno;
@@ -58,3 +59,8 @@ void *_sbrk(ptrdiff_t incr)
     brk = next;
     return prev;
 }
+
+#if CH32RV_LIBC_PICOLIBC
+/* picolibc's malloc() calls sbrk() itself, newlib's reaches _sbrk(). */
+void *sbrk(ptrdiff_t incr) __attribute__((alias("_sbrk")));
+#endif
