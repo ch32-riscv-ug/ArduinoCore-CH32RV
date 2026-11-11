@@ -149,6 +149,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - [ ] USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
   - [ ] UART ISP（PB6/PB7）: ソフトのリセットでは入らなかった（docs/h417-bench.ja.md）。電源の入れ直しは未確認。入れるかどうかは別に決める。
   - OEP の probe にする件は、コアの側は入れた（84b57b0）。oep-probe-arduino への依頼は 2026-10-21 に dev-oep のセッションへ送った（向こうの状況は未確認）。
+  - [ ] UHSIF（docs/h417-uhsif.ja.md）: 正体は FX3 の GPIF II と PIB と同じ作りと分かり、自前の状態機械と DMA は動いた。
+    取り込んだ値が端子から来ていない（定数 0xFD49FEF7）ところで止まっている。次は、ライブラリの master で相手の合図を
+    満たして読ませ、端子の値が入るかを見る。
   - [ ] WeAct LogicAnalyzerV2（CH32H417、https://github.com/WeActStudio/WeActStudio.LogicAnalyzerV2）で、このコアの
     スケッチを動かす。入手予定（2026-11-11 時点）。どちらの形にするかは未定。
     - 入力の D0〜D15 は UHSIF の PORT16〜31（RM の表 9-33）。GPIO の DMA ではなく UHSIF で取り込んでいる。UHSIF の
