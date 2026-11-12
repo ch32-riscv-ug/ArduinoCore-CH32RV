@@ -33,6 +33,11 @@ M007 は ADC のチャンネル 0 が外に出ていないので `A0` があり�
 - `SERIAL1`：USART / UART が 2 つ以上ある系列（`Serial1` がある）。
 - `ETHERNET`：Network ライブラリが `ETH` を持つ系列（`libraries/Network/src/NetworkEthernet.h` が
   `NETWORK_ETHERNET` を定義する系列）。V303 / V305 は variant に ETH_MAC の clock enable がありますが、Ethernet を持ちません。
+  品番の指定でだけ `ETH` を持つもの（CH32V203RBT6）は、その系列の ANY の代わりに品番の profile（`ch32v203rbt6`）を作ります。
+  ANY のメモリーは全品番の共通部分（V203 は 32K / 10K）で、Ethernet のスタックは入らないためです。逆に
+  `!defined(CH32RV_PART_...)` で外した品番（Ethernet の無い CH32V208CBU6）は、ANY の profile に影響しません。
+  10M の MAC の系列（V208、V203RB）は、CPU Clock のメニューで Ethernet と書かれた値（60 MHz）でビルドします。
+  既定のクロックでは `ETH.begin()` がコンパイル時に false になり、スタックがまるごと消えて、何も試験されないためです。
 
 製品ボードのテンプレートのように特定の板だけのための example は、板を宣言します。代表 board ごとの profile の代わりに、
 その fqbn（`ch32-riscv-ug:ch32rv:` より後ろ）の profile を1つだけ作ります。boards.txt に無い板や menu の値はエラーにします。

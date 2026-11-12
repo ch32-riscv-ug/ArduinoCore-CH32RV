@@ -151,6 +151,21 @@ def test_derived_example_capabilities():
     assert unmet(need, "CH32M007") and not unmet(need, "CH32V006")
 
 
+def test_ethernet_part_profiles():
+    """V203's ANY entry (32K / 10K) has no ETH; its RBT6 does, by part number,
+    so an Ethernet example gets a profile for that part. V208CBU6's
+    `!defined(...)` takes a part away and is not one. The 10M MAC's series
+    build those examples at the clock labelled for Ethernet (at the default
+    one ETH.begin() is false at compile time and the stack drops out)."""
+    assert _requirements.ethernet_parts() == {"CH32V203RBT6": "CH32V203"}
+    need = {"caps": ["ETHERNET"], "defines": [], "flash": 0, "ram": 0}
+    assert _requirements.unmet(need, "CH32V203")
+    assert not _requirements.unmet(need, "CH32V203", "CH32V203RBT6")
+    assert _requirements.ethernet_clocks() == {"CH32V203": "60", "CH32V208": "60"}
+    text = (REPO / "libraries/Network/examples/HttpGet/sketch.yaml").read_text(encoding="utf-8")
+    assert "CH32V203:pnum=CH32V203RBT6,clock=60" in text and "CH32V208:pnum=ANY,clock=60" in text
+
+
 def test_ch32rv_h_brings_in_the_object_and_not_the_register_layer():
     """CH32RV.h is the CH32RV object's header. The register map, the GPIO helpers, the pin encoding and the
     route tables are the core's own and are included by name (docs/public-api.ja.md)."""

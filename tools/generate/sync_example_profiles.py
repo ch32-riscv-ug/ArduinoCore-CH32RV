@@ -5,11 +5,19 @@ import pathlib
 import re
 import sys
 
-from sketch_requirements import all_boards, requirements, series_capabilities, target_board, unmet
+from sketch_requirements import (all_boards, ethernet_clocks, ethernet_parts, requirements,
+                                 series_capabilities, target_board, unmet)
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 INDEX_URL = ("https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/"
              "package_ch32-riscv-ug_index.json")
+
+
+def clock(need: dict, board: str) -> str:
+    """`,clock=<id>` where an Ethernet example needs the series' Ethernet clock."""
+    if "ETHERNET" in need["caps"] and board in ethernet_clocks():
+        return f",clock={ethernet_clocks()[board]}"
+    return ""
 
 
 def render(source: pathlib.Path) -> str:
@@ -42,21 +50,31 @@ def render(source: pathlib.Path) -> str:
             "",
         ])
         return "\n".join(lines)
-    for board in generic_boards:
-        reason = unmet(need, board)
-        if reason:
-            lines.append(f"  # {board}: omitted, {reason}")
-            continue
-        name = board.lower()
+    def profile(name: str, fqbn: str) -> None:
         kept.append(name)
         lines.extend([
             f"  {name}:",
-            f"    fqbn: ch32-riscv-ug:ch32rv:{board}:pnum=ANY",
+            f"    fqbn: ch32-riscv-ug:ch32rv:{fqbn}",
             "    platforms:",
             f"      - platform: ch32-riscv-ug:ch32rv ({version})",
             f"        platform_index_url: {INDEX_URL}",
             "",
         ])
+
+    for board in generic_boards:
+        reason = unmet(need, board)
+        if not reason:
+            profile(board.lower(), f"{board}:pnum=ANY{clock(need, board)}")
+            continue
+        lines.append(f"  # {board}: omitted, {reason}")
+        # A part with what its series' ANY entry lacks (CH32V203RBT6's
+        # Ethernet): an example that needs it builds there, in the series'
+        # place, with the part selected. Only for that: an example the ANY
+        # entry is merely too small for stays omitted.
+        if "ETHERNET" in need["caps"]:
+            for part, series in ethernet_parts().items():
+                if series == board and not unmet(need, board, part):
+                    profile(part.lower(), f"{board}:pnum={part}{clock(need, board)}")
     if not kept:
         raise ValueError(f"{source}: no generic board satisfies requirements")
     # No default_profile: no series is the example's own, and arduino-cli

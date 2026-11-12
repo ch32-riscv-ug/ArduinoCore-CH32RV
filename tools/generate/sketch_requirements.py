@@ -37,13 +37,32 @@ DERIVED = {"USB_DEVICE": frozenset({"USB", "USBFS", "USBHS", "USBHS1", "USBHS2"}
 def ethernet_series() -> frozenset:
     """The series the Network library has an ETH for: the CH32RV_SERIES_<X>
     its NetworkEthernet.h names where it defines NETWORK_ETHERNET. A part-only
-    condition (CH32RV_PART_CH32V203RBT6) does not count: a profile builds the
-    series' ANY part."""
+    condition (CH32RV_PART_CH32V203RBT6) does not count here: the series' ANY
+    part has no ETH (ethernet_parts())."""
+    return frozenset(s for cond in _ethernet_conditions()
+                     for s in re.findall(r"CH32RV_SERIES_(\w+)", cond))
+
+
+def _ethernet_conditions() -> list:
     text = (REPO / "libraries/Network/src/NetworkEthernet.h").read_text(encoding="utf-8")
-    found = set()
-    for cond in re.findall(r"^#(?:el)?if\b(.*(?:\\\n.*)*)\n#define NETWORK_ETHERNET 1", text, re.M):
-        found |= set(re.findall(r"CH32RV_SERIES_(\w+)", cond))
-    return frozenset(found)
+    return re.findall(r"^#(?:el)?if\b(.*(?:\\\n.*)*)\n#define NETWORK_ETHERNET 1", text, re.M)
+
+
+@functools.lru_cache(maxsize=1)
+def ethernet_parts() -> dict:
+    """part -> series, for the parts NetworkEthernet.h gives an ETH by part
+    number in a series that has none (CH32V203RBT6): the ANY entry, sized for
+    every part (V203: 32K / 10K), could not hold the stack anyway, so such an
+    example gets a profile for the part itself. A `!defined(CH32RV_PART_...)`
+    takes a part away and is not one."""
+    text = (REPO / "boards.txt").read_text(encoding="utf-8")
+    out = {}
+    for cond in _ethernet_conditions():
+        for part in re.findall(r"(?<!!)defined\(CH32RV_PART_(\w+)\)", cond):
+            board = re.search(rf"^([A-Za-z0-9_]+)\.menu\.pnum\.{part}\.build\.part=", text, re.M)
+            if board and board.group(1) not in ethernet_series():
+                out[part] = board.group(1)
+    return out
 
 
 @functools.lru_cache(maxsize=1)
@@ -161,18 +180,40 @@ def target_board(src: pathlib.Path):
     return board + (":" + options if options else "")
 
 
-def unmet(need: dict, board: str):
-    """Why `board` cannot run this sketch, in the sketch's own words, or None."""
-    caps = series_capabilities().get(board, ())
+@functools.lru_cache(maxsize=1)
+def ethernet_clocks() -> dict:
+    """series -> its CPU Clock menu id labelled for Ethernet (`60MHz (Ethernet,
+    no USB)`): V208 and V203RB's 10M MAC runs only at HCLK 60 / 120 MHz, and
+    at the default clock ETH.begin() returns false at compile time, so an
+    example built there would drop the whole stack and test nothing of it."""
+    text = (REPO / "boards.txt").read_text(encoding="utf-8")
+    return dict(re.findall(r"^([A-Za-z0-9_]+)\.menu\.clock\.(\w+)=[^\n]*\(Ethernet", text, re.M))
+
+
+@functools.lru_cache(maxsize=None)
+def part_limits(board: str, part: str) -> tuple:
+    """(flash, RAM) of one part's menu entry."""
+    text = (REPO / "boards.txt").read_text(encoding="utf-8")
+    return tuple(int(re.search(rf"^{board}\.menu\.pnum\.{part}\.{key}=(\d+)$", text, re.M).group(1))
+                 for key in ("upload.maximum_size", "upload.maximum_data_size"))
+
+
+def unmet(need: dict, board: str, part: str = ""):
+    """Why `board` (its ANY entry, or `part`) cannot run this sketch, in the
+    sketch's own words, or None."""
+    caps = set(series_capabilities().get(board, ()))
+    if part and ethernet_parts().get(part) == board:
+        caps.add("ETHERNET")
     missing = [c for c in need["caps"] if c not in caps]
     missing += [d for d in need.get("defines", ()) if d not in series_defines().get(board, ())]
     if missing:
         return f"requires {', '.join(missing)}, which {board} does not have"
-    flash, ram = series_limits().get(board, (0, 0))
+    flash, ram = part_limits(board, part) if part else series_limits().get(board, (0, 0))
+    where = part or f"{board} ANY"
     if need["flash"] and flash < need["flash"]:
         return (f"requires {need['flash'] // 1024} KB flash, "
-                f"{board} ANY has {flash // 1024} KB")
+                f"{where} has {flash // 1024} KB")
     if need["ram"] and ram < need["ram"]:
         return (f"requires {need['ram'] // 1024} KB RAM, "
-                f"{board} ANY has {ram // 1024} KB")
+                f"{where} has {ram // 1024} KB")
     return None
