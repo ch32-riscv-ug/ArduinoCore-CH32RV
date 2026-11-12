@@ -1,7 +1,7 @@
 /* Calls the compiler makes itself (soft-float and bit counting), smaller
  * than the runtime library's (compiler-rt; sizes on rv32ec at -Oz, against
  * this file's): __truncdfsf2 332 B (190), __extendsfdf2 210 B (98),
- * __clzsi2 104 B (78), __ctzsi2 82 B (72). They were first written against
+ * __clzsi2 104 B (78). They were first written against
  * libgcc, whose tables and second copies made the difference larger.
  *
  * float to double (__extendsfdf2, for Serial.print(float) and any float
@@ -10,9 +10,6 @@
  *
  * Leading zeros (__clzsi2), for the runtime's own soft-float: the same counts
  * (all 2^32 inputs, and 32 for 0).
- *
- * Trailing zeros (__ctzsi2, for __builtin_ctz: the EXTI dispatch): a few
- * compares. Not built where Zbb makes it one instruction.
  *
  * double to float (__truncdfsf2, for printf's %f under Float, where the
  * argument comes as a double, and any double stored in a float): rounded to
@@ -59,31 +56,6 @@ __attribute__((used)) int __clzsi2(unsigned x)
         x <<= 2;
     }
     return n + !(x >> 31) + !x; /* 32 for 0 */
-}
-#endif
-
-#if !defined(__riscv_zbb)
-/* Undefined for 0, as __builtin_ctz is. */
-__attribute__((used)) int __ctzsi2(unsigned x)
-{
-    int n = 0;
-    if (!(x & 0xffffu)) {
-        n += 16;
-        x >>= 16;
-    }
-    if (!(x & 0xffu)) {
-        n += 8;
-        x >>= 8;
-    }
-    if (!(x & 0xfu)) {
-        n += 4;
-        x >>= 4;
-    }
-    if (!(x & 3u)) {
-        n += 2;
-        x >>= 2;
-    }
-    return n + !(x & 1u);
 }
 #endif
 

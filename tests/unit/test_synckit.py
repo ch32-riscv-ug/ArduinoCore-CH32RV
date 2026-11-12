@@ -171,6 +171,9 @@ def results(tmp_path_factory):
     work = tmp_path_factory.mktemp("synckit")
     (work / "internal").mkdir(exist_ok=True)
     (work / "internal" / "ch32rv_irq.h").write_text(IRQ_STUB)
+    # The real one: plain C, nothing of the target in it.
+    (work / "internal" / "ch32rv_bits.h").write_text(
+        (REPO / "cores/arduino/internal/ch32rv_bits.h").read_text(encoding="utf-8"))
     (work / "driver.cpp").write_text(DRIVER)
     exe = work / "driver"
     subprocess.run([cxx, "-std=gnu++17", "-Wall", "-Wextra", "-Werror", "-fsanitize=address,undefined",

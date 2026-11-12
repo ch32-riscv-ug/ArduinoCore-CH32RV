@@ -11,6 +11,7 @@
 #include "Arduino.h"
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_bits.h"
 #include "internal/ch32rv_interrupt.h"
 
 #ifndef CH32RV_EXTI_LINES
@@ -133,7 +134,7 @@ static void ch32rv_exti_dispatch(uint32_t lines)
     ch32rv_exti_seen |= pending;
 
     while (pending) {
-        const uint32_t bit = (uint32_t)__builtin_ctz(pending);
+        const uint32_t bit = ch32rv_ctz32(pending);
         pending &= ~(1u << bit);
         CH32RV_EXTI_INTFR = 1u << bit;
         if (ch32rv_exti_callback[bit]) {

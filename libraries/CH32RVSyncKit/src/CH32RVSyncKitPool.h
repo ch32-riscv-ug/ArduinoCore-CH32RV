@@ -16,6 +16,7 @@
 #include <type_traits>
 
 #include "CH32RVSyncKitCommon.h"
+#include "internal/ch32rv_bits.h"
 
 namespace CH32RVSyncKit {
 
@@ -34,7 +35,7 @@ public:
         for (size_t w = 0; w < WORDS; w++) {
             const uint32_t free = ~_out[w] & mask(w);
             if (free) {
-                const unsigned bit = (unsigned)__builtin_ctz(free);
+                const unsigned bit = ch32rv_ctz32(free);
                 _out[w] |= 1u << bit;
                 return &_block[w * 32u + bit];
             }
@@ -64,7 +65,7 @@ public:
         typename Sharing::Guard g;
         size_t n = 0;
         for (size_t w = 0; w < WORDS; w++) {
-            n += (size_t)__builtin_popcount(~_out[w] & mask(w));
+            n += (size_t)ch32rv_popcount32(~_out[w] & mask(w));
         }
         return n;
     }

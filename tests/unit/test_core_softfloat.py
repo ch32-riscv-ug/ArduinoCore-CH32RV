@@ -1,5 +1,5 @@
-"""The core's soft-float pieces (cores/arduino/ch32rv_softfloat.c), on the host: __clzsi2 and __ctzsi2 against
-the host's clz and ctz, __extendsfdf2 and __truncdfsf2 against the host's float <-> double conversions, over
+"""The core's soft-float pieces (cores/arduino/ch32rv_softfloat.c), on the host: __clzsi2 against the host's
+clz, ch32rv_ctz32 / ch32rv_popcount32 (internal/ch32rv_bits.h, without a multiply) against ctz / popcount, __extendsfdf2 and __truncdfsf2 against the host's float <-> double conversions, over
 every 251st 32-bit value and the edges (all 2^32 of clz and extend were checked once, 2026-10-29); for
 __truncdfsf2 each value is a double's high word, with low words around the rounding point. The subtractions only call the addition with b's
 sign turned over (compiler-rt's now; the core's were checked against libgcc's on V003 and X035).
@@ -46,7 +46,7 @@ def test_clz_and_extend(tmp_path):
     exe = tmp_path / "softfloat_cases"
     # __riscv_flen=32: the double half only, as on V30x.
     subprocess.run([cc, "-std=gnu11", "-O2", "-Wall", "-Wextra", "-Werror", "-D__riscv_flen=32",
-                    "-D__clzsi2=core_clz", "-D__ctzsi2=core_ctz", "-D__extendsfdf2=core_ext", "-D__truncdfsf2=core_trunc",
+                    "-D__clzsi2=core_clz", "-D__extendsfdf2=core_ext", "-DCH32RV_BITS_PORTABLE", f"-I{REPO / 'cores/arduino'}", "-D__truncdfsf2=core_trunc",
                     str(SRC), str(CASES), "-o", str(exe)], check=True)
     run = subprocess.run([str(exe)], capture_output=True, text=True)
     assert run.returncode == 0, run.stdout

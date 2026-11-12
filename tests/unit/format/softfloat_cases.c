@@ -1,5 +1,6 @@
-/* Host driver for tests/unit/test_core_softfloat.py: the core's __clzsi2, __ctzsi2, __extendsfdf2 and
- * __truncdfsf2 (cores/arduino/ch32rv_softfloat.c, built as core_clz, core_ctz, core_ext and core_trunc)
+/* Host driver for tests/unit/test_core_softfloat.py: the core's __clzsi2, __extendsfdf2 and __truncdfsf2
+ * (cores/arduino/ch32rv_softfloat.c, built as core_clz, core_ext and core_trunc), and the multiply-free
+ * ch32rv_ctz32 / ch32rv_popcount32 (internal/ch32rv_bits.h, CH32RV_BITS_PORTABLE)
  * against the host's clz, ctz and float <-> double conversions (IEEE 754 fixes every result but a NaN's, so
  * they are libgcc's too; a NaN keeps its sign and payload, made quiet, from float to double as libgcc's does,
  * and becomes the canonical 0x7fc00000 from double to float as libgcc's does on RISC-V), over every 251st 32-bit
@@ -10,7 +11,8 @@
 #include <string.h>
 
 int core_clz(unsigned x);
-int core_ctz(unsigned x);
+#include "internal/ch32rv_bits.h"
+static int core_ctz(unsigned x) { return (int)ch32rv_ctz32(x); }
 double core_ext(float a);
 float core_trunc(double a);
 
@@ -24,6 +26,9 @@ static void one(uint32_t u)
     }
     if (u && core_ctz(u) != __builtin_ctz(u) && failures++ < 20) {
         printf("FAIL ctz(%08x) = %d, want %d\n", u, core_ctz(u), __builtin_ctz(u));
+    }
+    if (ch32rv_popcount32(u) != (unsigned)__builtin_popcount(u) && failures++ < 20) {
+        printf("FAIL popcount(%08x) = %u, want %d\n", u, ch32rv_popcount32(u), __builtin_popcount(u));
     }
     float f;
     memcpy(&f, &u, sizeof f);
