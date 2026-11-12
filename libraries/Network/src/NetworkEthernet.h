@@ -27,7 +27,8 @@
     defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
 #define NETWORK_ETHERNET 1
 #define NETWORK_ETHERNET_GMAC 1        /* NetworkEthernet.cpp */
-#elif defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_PART_CH32V203RBT6)
+/* CH32V208CBU6 (QFN48) has no Ethernet (device-data capabilities.csv); the other V208 parts and V203RBT6 have the 10M MAC. */
+#elif (defined(CH32RV_SERIES_CH32V208) && !defined(CH32RV_PART_CH32V208CBU6)) || defined(CH32RV_PART_CH32V203RBT6)
 #define NETWORK_ETHERNET 1
 #define NETWORK_ETHERNET_10M 1         /* NetworkEthernet10m.cpp: the CH57x-style 10M MAC */
 #endif

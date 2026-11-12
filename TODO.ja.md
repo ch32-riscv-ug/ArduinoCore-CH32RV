@@ -55,8 +55,7 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [x] main の CI で例を全部ビルドした。例の profile を全系列（27）に広げ、合わなかった例は要件で外した（ETHERNET、SERIAL1、
   variant の `#define` の名前を要件に書けるようにした）。
 - [ ] X305 の variant に SPI1 の既定の route（`CH32RV_SPI1_SCK` など）が無い。SPI1 の clock enable はある。
-- [ ] Network ライブラリは V208 の系列全体で `ETH` を定義するが、CH32V208CBU6 には Ethernet が無い（device-data
-  capabilities.csv）。品番で外すか。
+- [x] Network ライブラリの `ETH` を CH32V208CBU6 では定義しない（Ethernet が無い、device-data capabilities.csv）。ANY と他の V208 は今までどおり。
 - [x] リポジトリの名前を ch32rv-toolchain に変えた（2026-11-12）。コアの tool 名、index、環境変数（`CH32_TOOLCHAIN_BIN`）も合わせた。
 - [x] 割り込みは `WCH-Interrupt-fast`（clang のパッチ）にした。naked 関数で HPE に任せる案は、FPU のあるコアで浮動小数点の
   レジスタを壊し、命令も多い。HPE の無い V103 は普通の `interrupt`（`CH32RV_INTERRUPT`、internal/ch32rv_interrupt.h）。
