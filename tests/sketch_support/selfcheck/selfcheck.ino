@@ -14,7 +14,12 @@
  *                             either: <USARTn or 0> CLOSED when begin() or the default route refused
  *   spi <hz> <n>              SPI (the library's default instance), n bytes at hz, MISO left as it is:
  *                             SPI <SPIn> <microseconds> <BR field>, or SPI 0 NONE
- *   vref                      VREF <analogReadVref()> <full scale>, or VREF -1 0 without an ADC */
+ *   pins                      PINS <pin> ...: the pads gpio may drive (USART RX defaults, SPI SCK / MOSI)
+ *   gpio <pin>                GPIO <pin> <read at HIGH> <read at LOW> <RISING count> <FALLING count>
+ *                             <CHANGE count> <read with INPUT_PULLUP> <read with INPUT_PULLDOWN>
+ *                             (five pulses written on the output for each interrupt mode)
+ *   vref                      VREF <analogReadVref()> <full scale> <CH32RV.getVddMillivolts()>,
+ *                             or VREF -1 0 0 without an ADC */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
@@ -220,6 +225,68 @@ static void receive(int k, int n)
     SerialDMSeq.printf("RX %u %d %d %u\r\n", number, received, matching, errors);
 }
 
+static volatile uint16_t edges;
+static void count_edge(void) { edges++; }
+
+/* One pad on its own: written as an output and read back, its pin interrupt
+ * (the EXTI line, the dispatch) raised by writing it (the input path stays on
+ * in output mode), then its pull-up and pull-down as an input. */
+static void gpio(int pin)
+{
+    const pin_size_t p = (pin_size_t)pin;
+    pinMode(p, OUTPUT);
+    digitalWrite(p, HIGH);
+    delayMicroseconds(10);
+    const int high = digitalRead(p);
+    digitalWrite(p, LOW);
+    delayMicroseconds(10);
+    const int low = digitalRead(p);
+    static const PinStatus modes[3] = {RISING, FALLING, CHANGE};
+    unsigned counts[3];
+    for (int m = 0; m < 3; m++) {
+        digitalWrite(p, LOW);
+        delayMicroseconds(10);
+        edges = 0;
+        attachInterrupt(digitalPinToInterrupt(p), count_edge, modes[m]);
+        for (int i = 0; i < 5; i++) {
+            digitalWrite(p, HIGH);
+            delayMicroseconds(20);
+            digitalWrite(p, LOW);
+            delayMicroseconds(20);
+        }
+        detachInterrupt(digitalPinToInterrupt(p));
+        counts[m] = edges;
+    }
+    pinMode(p, INPUT_PULLUP);
+    delay(1);
+    const int up = digitalRead(p);
+    pinMode(p, INPUT_PULLDOWN);
+    delay(1);
+    const int down = digitalRead(p);
+    pinMode(p, INPUT);
+    SerialDMSeq.printf("GPIO %d %d %d %u %u %u %d %d\r\n", pin, high, low, counts[0], counts[1], counts[2], up, down);
+}
+
+/* The pads this check may drive: each USART's default RX (driven by the
+ * receive check already) and the default SPI's SCK and MOSI - pads a board
+ * leaves for its user. */
+static int gpio_pins[16];
+static int gpio_count;
+static void collect_pins(void)
+{
+    gpio_count = 0;
+    for (uint8_t n = 1; n <= 8 && gpio_count < 14; n++) {
+        const int pin = rx_pin(n);
+        if (pin >= 0) {
+            gpio_pins[gpio_count++] = pin;
+        }
+    }
+#if defined(PIN_SPI_SCK) && defined(PIN_SPI_MOSI)
+    gpio_pins[gpio_count++] = PIN_SPI_SCK;
+    gpio_pins[gpio_count++] = PIN_SPI_MOSI;
+#endif
+}
+
 static void reply(char *command)
 {
     char *argv[5];
@@ -269,12 +336,22 @@ static void reply(char *command)
 #else
         SerialDMSeq.printf("SPI 0 NONE\r\n");
 #endif
+    } else if (!strcmp(argv[0], "pins")) {
+        collect_pins();
+        SerialDMSeq.printf("PINS");
+        for (int i = 0; i < gpio_count; i++) {
+            SerialDMSeq.printf(" %d", gpio_pins[i]);
+        }
+        SerialDMSeq.printf("\r\n");
+    } else if (!strcmp(argv[0], "gpio") && argc == 2) {
+        gpio(atoi(argv[1]));
     } else if (!strcmp(argv[0], "vref")) {
 #if defined(NUM_ANALOG_INPUTS) && defined(CH32RV_ADC_BITS)
         analogReadResolution(CH32RV_ADC_BITS);
-        SerialDMSeq.printf("VREF %d %d\r\n", analogReadVref(), (1 << CH32RV_ADC_BITS) - 1);
+        SerialDMSeq.printf("VREF %d %d %lu\r\n", analogReadVref(), (1 << CH32RV_ADC_BITS) - 1,
+                           (unsigned long)CH32RV.getVddMillivolts());
 #else
-        SerialDMSeq.printf("VREF -1 0\r\n");
+        SerialDMSeq.printf("VREF -1 0 0\r\n");
 #endif
     } else {
         SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);

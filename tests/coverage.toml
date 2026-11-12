@@ -267,6 +267,11 @@ scope = "series"
 any_of = ["SPI1", "SPI2", "SPI3"]
 
 [[item]]
+id = "selfcheck-gpio"       # output read back, pin interrupts raised from the output, the pulls
+test = "selfcheck::test_gpio"
+scope = "series"
+
+[[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference
 test = "selfcheck::test_vref"
 scope = "series"

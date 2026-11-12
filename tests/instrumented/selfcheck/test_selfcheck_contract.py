@@ -18,7 +18,15 @@ selfcheck.spi: 128 bytes at 500 kHz on the default SPI: the BR field is the larg
 not exceed 500 kHz from the instance's bus clock, and the transfer took 8 bits a byte at that clock, the
 polling's gaps allowed (-2 % .. +25 %).
 
-selfcheck.vref: analogReadVref() reads 1.2 V of a 3.3 V supply within 15 % (the bench's DUTs run on 3.3 V).
+selfcheck.gpio: on the pads the sketch may drive (each USART's default RX, the default SPI's SCK and MOSI):
+written HIGH and LOW as an output and read back; five pulses written raise 5 RISING, 5 FALLING and 10 CHANGE
+interrupts (attachInterrupt on the output itself: the EXTI line and the dispatch); INPUT_PULLUP reads 1 and
+INPUT_PULLDOWN 0. A pad that reads the same with both is held by something on the board and its pulls are not
+judged (recorded as `held`).
+
+selfcheck.vref: the supply worked out from the internal reference (CH32RV.getVddMillivolts(), with the family's
+offset correction) reads 3.0-3.6 V (the bench's DUTs run on 3.3 V); analogReadVref()'s raw value is recorded only:
+on CH32L103 it read 1545 in one run and 945 in the next (2026-11-12), the VDDA / 2 offset the correction takes out.
 
 Started 2026-11-12 with the user's direction: as much as can be checked without wiring, the wiring kept to
 what only the outside can show (the pad, the level, the real speed against a partner)."""
@@ -126,12 +134,35 @@ def test_spi(dut, ready, record_property):
     assert 0.98 * ideal <= took <= 1.25 * ideal, f"SPI{number}: 128 bytes took {took} us, {ideal:.0f} at {sck} Hz"
 
 
+def test_gpio(dut, ready, record_property):
+    pins = [int(p) for p in ask(dut, "pins", rb"PINS([ \d]*)").group(1).split()]
+    if not pins:
+        pytest.skip("no pad to drive")
+    results, wrong, driven = {}, [], []
+    for pin in dict.fromkeys(pins):
+        high, low, rise, fall, change, up, down = (int(x) for x in ask(
+            dut, f"gpio {pin}", rb"GPIO -?\d+ (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)").groups())
+        results[pin] = [high, low, rise, fall, change, up, down]
+        if (high, low) != (1, 0):
+            wrong.append(f"pin {pin}: read {high} at HIGH, {low} at LOW")
+        if (rise, fall, change) != (5, 5, 10):
+            wrong.append(f"pin {pin}: {rise} RISING, {fall} FALLING, {change} CHANGE of 5, 5, 10")
+        if up == down:
+            driven.append(pin)                  # something on the board holds the pad: no pull to see
+        elif (up, down) != (1, 0):
+            wrong.append(f"pin {pin}: read {up} with INPUT_PULLUP, {down} with INPUT_PULLDOWN")
+    record_property("gpio", json.dumps(results))
+    if driven:
+        record_property("held", json.dumps(driven))
+    assert not wrong, " | ".join(wrong)
+
+
 def test_vref(dut, ready, record_property):
-    value, full = (int(x) for x in ask(dut, "vref", rb"VREF (-?\d+) (\d+)").groups())
+    value, full, vdd = (int(x) for x in ask(dut, "vref", rb"VREF (-?\d+) (\d+) (\d+)").groups())
     if value < 0 or not full:
         pytest.skip("no ADC")
     if value == 0:
         pytest.skip("no internal reference in the data (CH32M030)")
-    record_property("vref", value)
-    want = 1.2 / 3.3 * full
-    assert abs(value - want) <= 0.15 * want, f"analogReadVref() {value} of {full}, about {want:.0f} expected"
+    record_property("vref", json.dumps(dict(raw=value, full=full, vdd_mv=vdd)))
+    assert vdd, "getVddMillivolts() gave 0 on a part with the reference"
+    assert 3000 <= vdd <= 3600, f"VDD read as {vdd} mV from the internal reference (raw {value} of {full})"
