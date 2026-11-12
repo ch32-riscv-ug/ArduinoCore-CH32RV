@@ -94,9 +94,18 @@ static void onTick(void *)
 
 static bool startTimer()
 {
+    /* 1 MHz / 100 = 10 kHz, from the clock the timer counts - not F_CPU (H41x's V5F runs 400 MHz over a
+     * 100 MHz HCLK) and not the same on every timer (an APB1 at HCLK / 4 gives its timers HCLK / 2): the
+     * timer the manager picks, then that one again with its own prescaler. */
     CH32RVTimerRequest req = {CH32RV_TIMER_ANY, CH32RV_TIMER_WHOLE,
-                              {(uint16_t)((F_CPU / 1000000u) - 1u), 99u, 0}};   /* 1 MHz / 100 = 10 kHz */
+                              {(uint16_t)((CH32RV_HCLK_HZ / 1000000u) - 1u), 99u, 0}};
     lease = ch32rv_timer_try_acquire(&req, &owner);
+    if (ch32rv_timer_lease_valid(&lease) && ch32rv_timer_clock_hz(lease.timer) != CH32RV_HCLK_HZ) {
+        req.timer = lease.timer;
+        req.base.prescaler = (uint16_t)(ch32rv_timer_clock_hz(lease.timer) / 1000000u - 1u);
+        ch32rv_timer_release(&lease);
+        lease = ch32rv_timer_try_acquire(&req, &owner);
+    }
     if (!ch32rv_timer_lease_valid(&lease) || !ch32rv_timer_apply_base(&lease) ||
         !ch32rv_timer_attach_update_interrupt(&lease, onTick, nullptr) || !ch32rv_timer_start(&lease)) {
         return false;

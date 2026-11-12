@@ -8,7 +8,7 @@ CH32H417 の評価ボードで、USB3.0-A(SS)を PC に挿したまま実験を�
 | 線 | つながっている先 | 備考 |
 |---|---|---|
 | SWD(PB8 / PB9)と NRST | WCH-LinkE(シリアル 49808F06CE30) | LinkE の RST を NRST に配線してある |
-| UART(PB6 TX / PB7 RX) | 同じ LinkE の UART(PC からは `/dev/ttyACM8`) | VDDIO の端子。スケッチでは `Serial.begin(115200, SERIAL_8N1, PB7, PB6)` |
+| UART(PB6 TX / PB7 RX) | 同じ LinkE の UART(PC からは `/dev/ttyACM8`) | VDDIO の端子。スケッチでは `Serial.begin(115200, SERIAL_8N1, PB7, PB6)`。試験の uart は `CH32_TEST_OPTIONS=usart1=fix_pb6_pb7` で流す（既定の Serial は PA9 / PA10） |
 | USBFS(PA11 / PA12) | PC | |
 | USB3.0-A(SS と USB 2.0 の線) | PC | **USB 2.0 の D+ / D− は PB8 / PB9、つまり SWD と同じ線** |
 

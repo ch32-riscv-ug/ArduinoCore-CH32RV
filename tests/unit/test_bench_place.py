@@ -113,6 +113,8 @@ def test_peer_cases_and_usb_host_parts():
     v307 = dict(chip="CH32V307VCT6", kind="wchlink", lines={}, record={})
     cases = place.choose_cases(v307, items, caps)
     assert cases["usb"] == "skip: the record's usb is not {to: host}" and cases["power"] == "skip: not on an OEP port"
+    assert cases["gpio"].startswith("skip: the gpio case drives"), "a WCH-Link has no GPIO fixture"
+    assert place.choose_cases(f8, items, caps)["gpio"] == "run"
     s3 = {"usb": {"to": "esp32-s3", "serial": "x"}}
     assert place.choose_cases(dict(v307, record=s3), items, caps)["usb-peer-host"] == "run"
     for chip in ("CH32V103R8T6",):   # the older USB: device, no host

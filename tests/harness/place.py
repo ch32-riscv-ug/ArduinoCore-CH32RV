@@ -270,6 +270,8 @@ def choose_cases(place, items=None, caps=None):
         out[case] = ("run" if series_has(case, series, items, caps) else
                      f"skip: {part} has no {case}" if series_has(case, series, items, whole) else
                      f"skip: {series} has no {case}")
+    if not oep and out.get("gpio") == "run":
+        out["gpio"] = "skip: the gpio case drives and reads the pads from an OEP probe's GPIO fixture"
     if oep and out.get("uart") == "run":
         lacking = [line for line in ("rx", "tx") if place["lines"].get(line) is None]
         if lacking:
