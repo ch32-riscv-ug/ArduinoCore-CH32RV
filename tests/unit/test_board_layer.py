@@ -172,3 +172,38 @@ def test_ch32rv_h_brings_in_the_object_and_not_the_register_layer():
     text = _strip_comments((REPO / "libraries/CH32RV/src/CH32RV.h").read_text(encoding="utf-8"))
     includes = re.findall(r'#\s*include\s*[<"]([^>"]+)[>"]', text)
     assert includes == ["Arduino.h", "CH32RVSystem.h"], includes
+
+
+# The startup variant (gen_exti) -> the device-data family whose AFIO_EXTICR it uses.
+EXTICR_FAMILIES = {"v003": "CH32V003", "v00x": "CH32V006", "x035": "CH32X035", "x3x5": "CH32X315",
+                   "h417": "CH32H417", "l103": "CH32L103", "v103": "CH32V103", "v205": "CH32V205",
+                   "v20x_d6": "CH32V20x", "v20x_d8": "CH32V20x", "v20x_d8w": "CH32V20x", "v307_d8": "CH32V307",
+                   "v307_d8c": "CH32V307", "v4x7": "CH32V407"}
+
+
+def test_exticr_layout_matches_device_data():
+    """The generator's AFIO_EXTICR layout (bits per line, lines per register) is the one registers.csv gives:
+    EXTI1's width and where EXTI4 starts. X3x5 was listed with X035's 2-bit fields until 2026-11-12 (pin
+    interrupts on ports C / D of CH32X315 never fired). M030 is not in registers.csv and keeps its EVT reading."""
+    import csv
+    table = REPO / ".tools" / "ch32-device-data" / "index" / "registers.csv"
+    if not table.exists():
+        pytest.skip("ch32-device-data is not fetched (.tools/ch32-device-data)")
+    generate = _load_tool("tools/generate/generate.py", "generate_for_exticr")
+    fields = {}
+    with table.open(encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["type"] == "AFIO" and "EXTICR" in r["register"] and r["field"] in ("EXTI1", "EXTI4") \
+                    and r["kind"] != "value":
+                fields.setdefault(r["family"], {})[r["field"]] = (r["offset"], int(r["bits"].split(":")[1]),
+                                                                  int(r["bits"].split(":")[0]))
+    wrong = []
+    for variant, family in EXTICR_FAMILIES.items():
+        f = fields[family]
+        width = f["EXTI1"][2] - f["EXTI1"][1] + 1
+        per_reg = 4 if f["EXTI4"][0] != f["EXTI1"][0] else 32 // width
+        want = (width, per_reg)
+        got = generate.EXTICR_LAYOUT.get(variant, generate.EXTICR_LAYOUT_DEFAULT)
+        if got != want:
+            wrong.append(f"{variant}: {got}, registers.csv ({family}) gives {want}")
+    assert not wrong, "; ".join(wrong)

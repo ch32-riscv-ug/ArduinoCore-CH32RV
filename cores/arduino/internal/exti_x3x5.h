@@ -8,8 +8,8 @@
 #define CH32RV_EXTI_LINES 16
 
 /* AFIO_EXTICR field layout: bits per EXTI line and lines per register. */
-#define CH32RV_EXTICR_FIELD_BITS 2
-#define CH32RV_EXTICR_FIELDS_PER_REG 16
+#define CH32RV_EXTICR_FIELD_BITS 4
+#define CH32RV_EXTICR_FIELDS_PER_REG 4
 
 /* X(handler, mask, irqn) for every EXTI vector this variant has. */
 #define CH32RV_EXTI_GROUPS(X) \

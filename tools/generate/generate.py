@@ -3135,8 +3135,13 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
 # fields (16 per 32-bit register); the L1/V1/V3 families have the STM32-F1 style
 # 4-bit fields, 4 per register. Writing the F1 layout on a 2-bit part configures
 # the wrong line (2026-09-22: PB3 EXTI on CH32X035 ended up selecting line 6).
+# X3x5 is F1-style (device-data registers.csv: EXTI1 at 7:4, four EXTICR): it was
+# listed with X035's 2-bit layout until 2026-11-12, when selfcheck's pin
+# interrupts on CH32X315 fired on PA5 / PA6 / PA9 and never on PC9 / PD5 / PD7 -
+# port A is 0 in either layout. tests/unit/test_board_layer.py checks this table
+# against registers.csv.
 EXTICR_LAYOUT = {
-    "m030": (2, 16), "v003": (2, 16), "v00x": (2, 16), "x035": (2, 16), "x3x5": (2, 16),
+    "m030": (2, 16), "v003": (2, 16), "v00x": (2, 16), "x035": (2, 16),
     "h417": (4, 8),
 }
 EXTICR_LAYOUT_DEFAULT = (4, 4)
