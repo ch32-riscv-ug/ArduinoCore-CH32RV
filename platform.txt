@@ -31,8 +31,11 @@ compiler.target_flags=--target=riscv32-unknown-elf
 # command too, so lwIP's C needs it as well.
 compiler.cpp.compat_flags=-Wno-reserved-user-defined-literal
 # The link: lld, nothing implicit (-nostdlib), the libraries named in
-# compiler.libs. libc++abi after libc++, which refers to it.
-compiler.ld_flags=-fuse-ld=lld -nostdlib
+# compiler.libs. libc++abi after libc++, which refers to it. --relax-gp:
+# globals within 2 KB of __global_pointer$ are reached in one instruction
+# from gp, as GNU ld did by default (crt0_ch32.S sets gp first; V003's
+# PrintFormatting 136 B smaller, and OEP's X035 probe fits again).
+compiler.ld_flags=-fuse-ld=lld -nostdlib -Wl,--relax-gp
 compiler.libs=-lc++ -lc++abi -lc -lclang_rt.builtins
 
 compiler.warning_flags=-Wall
